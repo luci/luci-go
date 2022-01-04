@@ -992,5 +992,959 @@
         "data": ")]}'\n{\"runningBuildsCount\":1}\n"
       }
     }
+  },
+  {
+    "req": {
+      "url": "https://localhost:8080/prpc/luci.milo.v1.MiloInternal/QueryRecentBuilds",
+      "method": "POST",
+      "headers": {
+        "host": "localhost:8080",
+        "connection": "keep-alive",
+        "content-length": "92",
+        "accept": "application/json",
+        "user-agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Cypress/9.1.0 Chrome/94.0.4606.81 Electron/15.2.0 Safari/537.36",
+        "content-type": "application/json",
+        "sec-fetch-site": "same-origin",
+        "sec-fetch-mode": "cors",
+        "sec-fetch-dest": "empty",
+        "referer": "https://localhost:8080/ui/p/chromium/builders",
+        "accept-encoding": "gzip, deflate, br",
+        "accept-language": "en-GB"
+      },
+      "body": {
+        "type": "json",
+        "data": {
+          "builder": {
+            "project": "chromium",
+            "bucket": "ci",
+            "builder": "win11-rel-swarming"
+          },
+          "pageSize": 0
+        }
+      }
+    },
+    "res": {
+      "statusCode": 200,
+      "headers": {
+        "x-powered-by": "Express",
+        "content-type": "application/json",
+        "vary": "Accept-Encoding",
+        "x-content-type-options": "nosniff",
+        "x-prpc-grpc-code": "0",
+        "content-encoding": "",
+        "x-cloud-trace-context": "d203195cb5e94f68016ba600f1fe27a0",
+        "date": "Wed, 15 Dec 2021 23:29:42 GMT",
+        "server": "Google Frontend",
+        "cache-control": "private",
+        "alt-svc": "h3=\":443\"; ma=2592000,h3-29=\":443\"; ma=2592000,h3-Q050=\":443\"; ma=2592000,h3-Q046=\":443\"; ma=2592000,h3-Q043=\":443\"; ma=2592000,quic=\":443\"; ma=2592000; v=\"46,43\"",
+        "connection": "close",
+        "transfer-encoding": "chunked"
+      },
+      "body": {
+        "type": "string",
+        "data": ")]}'\n{\"builds\":[{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"win11-rel-swarming\"},\"number\":13,\"createTime\":\"2021-12-15T20:03:20.335119Z\",\"status\":\"SUCCESS\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"win11-rel-swarming\"},\"number\":12,\"createTime\":\"2021-12-15T18:04:03.318862Z\",\"status\":\"SUCCESS\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"win11-rel-swarming\"},\"number\":11,\"createTime\":\"2021-12-15T16:43:29.249922Z\",\"status\":\"FAILURE\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"win11-rel-swarming\"},\"number\":10,\"createTime\":\"2021-12-15T14:54:47.255936Z\",\"status\":\"SUCCESS\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"win11-rel-swarming\"},\"number\":9,\"createTime\":\"2021-12-15T13:13:01.281670Z\",\"status\":\"FAILURE\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"win11-rel-swarming\"},\"number\":8,\"createTime\":\"2021-12-15T10:50:05.332793Z\",\"status\":\"SUCCESS\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"win11-rel-swarming\"},\"number\":7,\"createTime\":\"2021-12-15T09:36:17.253550Z\",\"status\":\"FAILURE\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"win11-rel-swarming\"},\"number\":6,\"createTime\":\"2021-12-15T07:48:37.366760Z\",\"status\":\"FAILURE\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"win11-rel-swarming\"},\"number\":5,\"createTime\":\"2021-12-15T05:52:23.261031Z\",\"status\":\"FAILURE\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"win11-rel-swarming\"},\"number\":4,\"createTime\":\"2021-12-15T03:34:16.373419Z\",\"status\":\"FAILURE\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"win11-rel-swarming\"},\"number\":3,\"createTime\":\"2021-12-15T01:47:49.319553Z\",\"status\":\"SUCCESS\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"win11-rel-swarming\"},\"number\":2,\"createTime\":\"2021-12-15T00:02:29.270595Z\",\"status\":\"FAILURE\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"win11-rel-swarming\"},\"number\":1,\"createTime\":\"2021-12-14T22:03:23.372566Z\",\"status\":\"FAILURE\"}]}\n"
+      }
+    }
+  },
+  {
+    "req": {
+      "url": "https://localhost:8080/prpc/luci.milo.v1.MiloInternal/QueryRecentBuilds",
+      "method": "POST",
+      "headers": {
+        "host": "localhost:8080",
+        "connection": "keep-alive",
+        "content-length": "100",
+        "accept": "application/json",
+        "user-agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Cypress/9.1.0 Chrome/94.0.4606.81 Electron/15.2.0 Safari/537.36",
+        "content-type": "application/json",
+        "sec-fetch-site": "same-origin",
+        "sec-fetch-mode": "cors",
+        "sec-fetch-dest": "empty",
+        "referer": "https://localhost:8080/ui/p/chromium/builders",
+        "accept-encoding": "gzip, deflate, br",
+        "accept-language": "en-GB"
+      },
+      "body": {
+        "type": "json",
+        "data": {
+          "builder": {
+            "project": "chromium",
+            "bucket": "ci",
+            "builder": "linux-rel-swarming-staging"
+          },
+          "pageSize": 0
+        }
+      }
+    },
+    "res": {
+      "statusCode": 200,
+      "headers": {
+        "x-powered-by": "Express",
+        "content-type": "application/json",
+        "vary": "Accept-Encoding",
+        "x-content-type-options": "nosniff",
+        "x-prpc-grpc-code": "0",
+        "content-encoding": "",
+        "x-cloud-trace-context": "87d7745a6a87b21751070d5e4bd0d1d0",
+        "date": "Wed, 15 Dec 2021 23:29:42 GMT",
+        "server": "Google Frontend",
+        "cache-control": "private",
+        "alt-svc": "h3=\":443\"; ma=2592000,h3-29=\":443\"; ma=2592000,h3-Q050=\":443\"; ma=2592000,h3-Q046=\":443\"; ma=2592000,h3-Q043=\":443\"; ma=2592000,quic=\":443\"; ma=2592000; v=\"46,43\"",
+        "connection": "close",
+        "transfer-encoding": "chunked"
+      },
+      "body": {
+        "type": "string",
+        "data": ")]}'\n{\"builds\":[{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"linux-rel-swarming-staging\"},\"number\":36516,\"createTime\":\"2021-07-01T05:55:22.407120Z\",\"status\":\"INFRA_FAILURE\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"linux-rel-swarming-staging\"},\"number\":36515,\"createTime\":\"2021-07-01T05:54:52.507473Z\",\"status\":\"INFRA_FAILURE\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"linux-rel-swarming-staging\"},\"number\":36514,\"createTime\":\"2021-07-01T05:51:24.357087Z\",\"status\":\"INFRA_FAILURE\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"linux-rel-swarming-staging\"},\"number\":36513,\"createTime\":\"2021-07-01T05:50:17.391363Z\",\"status\":\"INFRA_FAILURE\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"linux-rel-swarming-staging\"},\"number\":36512,\"createTime\":\"2021-07-01T05:44:01.389304Z\",\"status\":\"INFRA_FAILURE\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"linux-rel-swarming-staging\"},\"number\":36511,\"createTime\":\"2021-07-01T05:42:24.349984Z\",\"status\":\"INFRA_FAILURE\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"linux-rel-swarming-staging\"},\"number\":36510,\"createTime\":\"2021-07-01T05:33:48.390543Z\",\"status\":\"INFRA_FAILURE\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"linux-rel-swarming-staging\"},\"number\":36509,\"createTime\":\"2021-07-01T05:30:23.448279Z\",\"status\":\"INFRA_FAILURE\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"linux-rel-swarming-staging\"},\"number\":36508,\"createTime\":\"2021-07-01T05:23:39.337489Z\",\"status\":\"INFRA_FAILURE\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"linux-rel-swarming-staging\"},\"number\":36507,\"createTime\":\"2021-07-01T05:20:12.423648Z\",\"status\":\"INFRA_FAILURE\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"linux-rel-swarming-staging\"},\"number\":36506,\"createTime\":\"2021-07-01T04:56:16.336200Z\",\"status\":\"INFRA_FAILURE\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"linux-rel-swarming-staging\"},\"number\":36505,\"createTime\":\"2021-07-01T04:54:15.389840Z\",\"status\":\"INFRA_FAILURE\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"linux-rel-swarming-staging\"},\"number\":36504,\"createTime\":\"2021-07-01T04:53:37.348139Z\",\"status\":\"INFRA_FAILURE\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"linux-rel-swarming-staging\"},\"number\":36503,\"createTime\":\"2021-07-01T04:45:07.379400Z\",\"status\":\"INFRA_FAILURE\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"linux-rel-swarming-staging\"},\"number\":36502,\"createTime\":\"2021-07-01T04:17:51.324928Z\",\"status\":\"INFRA_FAILURE\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"linux-rel-swarming-staging\"},\"number\":36501,\"createTime\":\"2021-07-01T04:17:19.407678Z\",\"status\":\"INFRA_FAILURE\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"linux-rel-swarming-staging\"},\"number\":36500,\"createTime\":\"2021-07-01T04:04:52.321994Z\",\"status\":\"INFRA_FAILURE\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"linux-rel-swarming-staging\"},\"number\":36499,\"createTime\":\"2021-07-01T04:01:57.415503Z\",\"status\":\"INFRA_FAILURE\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"linux-rel-swarming-staging\"},\"number\":36498,\"createTime\":\"2021-07-01T04:00:53.316420Z\",\"status\":\"INFRA_FAILURE\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"linux-rel-swarming-staging\"},\"number\":36497,\"createTime\":\"2021-07-01T03:52:53.407768Z\",\"status\":\"INFRA_FAILURE\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"linux-rel-swarming-staging\"},\"number\":36496,\"createTime\":\"2021-07-01T03:51:49.286201Z\",\"status\":\"INFRA_FAILURE\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"linux-rel-swarming-staging\"},\"number\":36495,\"createTime\":\"2021-07-01T03:50:35.317942Z\",\"status\":\"INFRA_FAILURE\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"linux-rel-swarming-staging\"},\"number\":36494,\"createTime\":\"2021-07-01T03:48:22.298660Z\",\"status\":\"INFRA_FAILURE\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"linux-rel-swarming-staging\"},\"number\":36493,\"createTime\":\"2021-07-01T03:41:31.431976Z\",\"status\":\"INFRA_FAILURE\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"linux-rel-swarming-staging\"},\"number\":36492,\"createTime\":\"2021-07-01T03:36:28.292222Z\",\"status\":\"INFRA_FAILURE\"}],\"nextPageToken\":\"AS3KPthzhSUmtyteyl96dsL-Q2oIr9U2HRcv_l8WUfjUSzWyz_m9GrJ1SCb2W1X1jrJOiqt5-ZUNFpTknI5cNzvrBazdamcLITsn_WbPGQr5IP3kFuKQ9ocnwEGdGODVHvNm2-qaVVW-LRvw9eeFrLOafu8Tobqa4C1g1a8CpebfUzf5uMJg8NzYC1RN6MrJDsBnPtdI9eviWp_qhxOxXCv2F-nwVuBiqj6ffAwmkTJ26zAxbfaaiXX73SNHa-jt1YX2rdd5e5Wr_74QaYfnwagbzjRz2D7ykVsAIgp_34FoPUdChCIGuBSRTy9kxWo7Ugs2ownnFZgnzE4atC2qXNYnj-ttyWM\"}\n"
+      }
+    }
+  },
+  {
+    "req": {
+      "url": "https://localhost:8080/prpc/luci.milo.v1.MiloInternal/QueryRecentBuilds",
+      "method": "POST",
+      "headers": {
+        "host": "localhost:8080",
+        "connection": "keep-alive",
+        "content-length": "92",
+        "accept": "application/json",
+        "user-agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Cypress/9.1.0 Chrome/94.0.4606.81 Electron/15.2.0 Safari/537.36",
+        "content-type": "application/json",
+        "sec-fetch-site": "same-origin",
+        "sec-fetch-mode": "cors",
+        "sec-fetch-dest": "empty",
+        "referer": "https://localhost:8080/ui/p/chromium/builders",
+        "accept-encoding": "gzip, deflate, br",
+        "accept-language": "en-GB"
+      },
+      "body": {
+        "type": "json",
+        "data": {
+          "builder": {
+            "project": "chromium",
+            "bucket": "ci",
+            "builder": "linux-rel-swarming"
+          },
+          "pageSize": 0
+        }
+      }
+    },
+    "res": {
+      "statusCode": 200,
+      "headers": {
+        "x-powered-by": "Express",
+        "content-type": "application/json",
+        "vary": "Accept-Encoding",
+        "x-content-type-options": "nosniff",
+        "x-prpc-grpc-code": "0",
+        "content-encoding": "",
+        "x-cloud-trace-context": "257fbdf03c78a57d6ed2a5be8dfbbd52",
+        "date": "Wed, 15 Dec 2021 23:29:42 GMT",
+        "server": "Google Frontend",
+        "cache-control": "private",
+        "alt-svc": "h3=\":443\"; ma=2592000,h3-29=\":443\"; ma=2592000,h3-Q050=\":443\"; ma=2592000,h3-Q046=\":443\"; ma=2592000,h3-Q043=\":443\"; ma=2592000,quic=\":443\"; ma=2592000; v=\"46,43\"",
+        "connection": "close",
+        "transfer-encoding": "chunked"
+      },
+      "body": {
+        "type": "string",
+        "data": ")]}'\n{\"builds\":[{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"linux-rel-swarming\"},\"number\":21743,\"createTime\":\"2021-12-15T21:50:23.323500Z\",\"status\":\"SUCCESS\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"linux-rel-swarming\"},\"number\":21742,\"createTime\":\"2021-12-15T20:57:12.232229Z\",\"status\":\"SUCCESS\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"linux-rel-swarming\"},\"number\":21741,\"createTime\":\"2021-12-15T20:04:42.369379Z\",\"status\":\"SUCCESS\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"linux-rel-swarming\"},\"number\":21740,\"createTime\":\"2021-12-15T19:10:05.265090Z\",\"status\":\"SUCCESS\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"linux-rel-swarming\"},\"number\":21739,\"createTime\":\"2021-12-15T17:34:57.285972Z\",\"status\":\"SUCCESS\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"linux-rel-swarming\"},\"number\":21738,\"createTime\":\"2021-12-15T16:43:33.292458Z\",\"status\":\"SUCCESS\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"linux-rel-swarming\"},\"number\":21737,\"createTime\":\"2021-12-15T15:49:17.252705Z\",\"status\":\"SUCCESS\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"linux-rel-swarming\"},\"number\":21736,\"createTime\":\"2021-12-15T14:51:13.259488Z\",\"status\":\"SUCCESS\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"linux-rel-swarming\"},\"number\":21735,\"createTime\":\"2021-12-15T13:52:30.031293Z\",\"status\":\"SUCCESS\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"linux-rel-swarming\"},\"number\":21734,\"createTime\":\"2021-12-15T12:55:07.323872Z\",\"status\":\"FAILURE\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"linux-rel-swarming\"},\"number\":21733,\"createTime\":\"2021-12-15T11:23:19.289690Z\",\"status\":\"SUCCESS\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"linux-rel-swarming\"},\"number\":21732,\"createTime\":\"2021-12-15T10:32:11.265454Z\",\"status\":\"SUCCESS\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"linux-rel-swarming\"},\"number\":21731,\"createTime\":\"2021-12-15T09:42:15.281921Z\",\"status\":\"SUCCESS\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"linux-rel-swarming\"},\"number\":21730,\"createTime\":\"2021-12-15T08:51:25.300868Z\",\"status\":\"SUCCESS\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"linux-rel-swarming\"},\"number\":21729,\"createTime\":\"2021-12-15T07:58:51.306174Z\",\"status\":\"SUCCESS\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"linux-rel-swarming\"},\"number\":21728,\"createTime\":\"2021-12-15T07:02:55.260621Z\",\"status\":\"SUCCESS\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"linux-rel-swarming\"},\"number\":21727,\"createTime\":\"2021-12-15T05:33:35.349679Z\",\"status\":\"SUCCESS\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"linux-rel-swarming\"},\"number\":21726,\"createTime\":\"2021-12-15T04:40:31.252908Z\",\"status\":\"SUCCESS\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"linux-rel-swarming\"},\"number\":21725,\"createTime\":\"2021-12-15T03:15:03.232300Z\",\"status\":\"SUCCESS\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"linux-rel-swarming\"},\"number\":21724,\"createTime\":\"2021-12-15T02:24:13.390469Z\",\"status\":\"FAILURE\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"linux-rel-swarming\"},\"number\":21723,\"createTime\":\"2021-12-15T01:30:43.348641Z\",\"status\":\"SUCCESS\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"linux-rel-swarming\"},\"number\":21722,\"createTime\":\"2021-12-15T00:38:57.342493Z\",\"status\":\"SUCCESS\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"linux-rel-swarming\"},\"number\":21721,\"createTime\":\"2021-12-14T23:46:43.290154Z\",\"status\":\"SUCCESS\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"linux-rel-swarming\"},\"number\":21720,\"createTime\":\"2021-12-14T22:54:11.401134Z\",\"status\":\"SUCCESS\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"linux-rel-swarming\"},\"number\":21719,\"createTime\":\"2021-12-14T21:57:09.324509Z\",\"status\":\"SUCCESS\"}],\"nextPageToken\":\"AS3KPtj6oXIvxwnQ1eWe8_nOlw8TzxL02al0x_aNliiAiCl05PQcwZsTs_3jaL1kBeHbwS9TLMC0c5FHCpCKhDFUDqVlv3dXualFqjoLtoft1qj4ffdMHhvftl4l03ne2RYA4NIltizNe9DXDJvUET6Q8xWiMyIRt8CF74Xi0eAO03tkgKevTDgVLEw7R7dy1n9WocvPbq7dG9D7EOml4FSVjXf2UgIhGzjR_jBGEGQyWmRmybxDe5zK4iFxvfsUX5kNwlBbgU4A69dNa6madleYz2c6tG-3WSpZEGRU15Y0qyy-SpQ2eqmWBsv6dpaKYBN4p2yMwNkKUgjQ\"}\n"
+      }
+    }
+  },
+  {
+    "req": {
+      "url": "https://localhost:8080/prpc/luci.milo.v1.MiloInternal/QueryRecentBuilds",
+      "method": "POST",
+      "headers": {
+        "host": "localhost:8080",
+        "connection": "keep-alive",
+        "content-length": "98",
+        "accept": "application/json",
+        "user-agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Cypress/9.1.0 Chrome/94.0.4606.81 Electron/15.2.0 Safari/537.36",
+        "content-type": "application/json",
+        "sec-fetch-site": "same-origin",
+        "sec-fetch-mode": "cors",
+        "sec-fetch-dest": "empty",
+        "referer": "https://localhost:8080/ui/p/chromium/builders",
+        "accept-encoding": "gzip, deflate, br",
+        "accept-language": "en-GB"
+      },
+      "body": {
+        "type": "json",
+        "data": {
+          "builder": {
+            "project": "chromium",
+            "bucket": "ci",
+            "builder": "win-rel-swarming-staging"
+          },
+          "pageSize": 0
+        }
+      }
+    },
+    "res": {
+      "statusCode": 200,
+      "headers": {
+        "x-powered-by": "Express",
+        "content-type": "application/json",
+        "vary": "Accept-Encoding",
+        "x-content-type-options": "nosniff",
+        "x-prpc-grpc-code": "0",
+        "content-encoding": "",
+        "x-cloud-trace-context": "03880c1d64ca1a4c8005b53600c40759",
+        "date": "Wed, 15 Dec 2021 23:29:42 GMT",
+        "server": "Google Frontend",
+        "cache-control": "private",
+        "alt-svc": "h3=\":443\"; ma=2592000,h3-29=\":443\"; ma=2592000,h3-Q050=\":443\"; ma=2592000,h3-Q046=\":443\"; ma=2592000,h3-Q043=\":443\"; ma=2592000,quic=\":443\"; ma=2592000; v=\"46,43\"",
+        "connection": "close",
+        "transfer-encoding": "chunked"
+      },
+      "body": {
+        "type": "string",
+        "data": ")]}'\n{\"builds\":[{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"win-rel-swarming-staging\"},\"number\":25221,\"createTime\":\"2021-07-01T05:55:24.304786Z\",\"status\":\"INFRA_FAILURE\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"win-rel-swarming-staging\"},\"number\":25220,\"createTime\":\"2021-07-01T05:54:50.407690Z\",\"status\":\"INFRA_FAILURE\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"win-rel-swarming-staging\"},\"number\":25219,\"createTime\":\"2021-07-01T05:51:27.337876Z\",\"status\":\"INFRA_FAILURE\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"win-rel-swarming-staging\"},\"number\":25218,\"createTime\":\"2021-07-01T05:50:19.341598Z\",\"status\":\"INFRA_FAILURE\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"win-rel-swarming-staging\"},\"number\":25217,\"createTime\":\"2021-07-01T05:44:04.309314Z\",\"status\":\"INFRA_FAILURE\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"win-rel-swarming-staging\"},\"number\":25216,\"createTime\":\"2021-07-01T05:42:22.769438Z\",\"status\":\"INFRA_FAILURE\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"win-rel-swarming-staging\"},\"number\":25215,\"createTime\":\"2021-07-01T05:33:51.397182Z\",\"status\":\"INFRA_FAILURE\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"win-rel-swarming-staging\"},\"number\":25214,\"createTime\":\"2021-07-01T05:30:26.341015Z\",\"status\":\"INFRA_FAILURE\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"win-rel-swarming-staging\"},\"number\":25213,\"createTime\":\"2021-07-01T05:23:37.369485Z\",\"status\":\"INFRA_FAILURE\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"win-rel-swarming-staging\"},\"number\":25212,\"createTime\":\"2021-07-01T05:20:15.488736Z\",\"status\":\"INFRA_FAILURE\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"win-rel-swarming-staging\"},\"number\":25211,\"createTime\":\"2021-07-01T04:56:19.303977Z\",\"status\":\"INFRA_FAILURE\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"win-rel-swarming-staging\"},\"number\":25210,\"createTime\":\"2021-07-01T04:54:13.429294Z\",\"status\":\"INFRA_FAILURE\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"win-rel-swarming-staging\"},\"number\":25209,\"createTime\":\"2021-07-01T04:53:42.359226Z\",\"status\":\"INFRA_FAILURE\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"win-rel-swarming-staging\"},\"number\":25208,\"createTime\":\"2021-07-01T04:45:09.384897Z\",\"status\":\"INFRA_FAILURE\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"win-rel-swarming-staging\"},\"number\":25207,\"createTime\":\"2021-07-01T04:17:56.383768Z\",\"status\":\"INFRA_FAILURE\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"win-rel-swarming-staging\"},\"number\":25206,\"createTime\":\"2021-07-01T04:17:20.381825Z\",\"status\":\"INFRA_FAILURE\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"win-rel-swarming-staging\"},\"number\":25205,\"createTime\":\"2021-07-01T04:04:48.346412Z\",\"status\":\"INFRA_FAILURE\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"win-rel-swarming-staging\"},\"number\":25204,\"createTime\":\"2021-07-01T04:02:01.283084Z\",\"status\":\"INFRA_FAILURE\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"win-rel-swarming-staging\"},\"number\":25203,\"createTime\":\"2021-07-01T04:00:48.365772Z\",\"status\":\"INFRA_FAILURE\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"win-rel-swarming-staging\"},\"number\":25202,\"createTime\":\"2021-07-01T03:52:57.314167Z\",\"status\":\"INFRA_FAILURE\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"win-rel-swarming-staging\"},\"number\":25201,\"createTime\":\"2021-07-01T03:51:48.282685Z\",\"status\":\"INFRA_FAILURE\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"win-rel-swarming-staging\"},\"number\":25200,\"createTime\":\"2021-07-01T03:50:34.307068Z\",\"status\":\"INFRA_FAILURE\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"win-rel-swarming-staging\"},\"number\":25199,\"createTime\":\"2021-07-01T03:48:23.343203Z\",\"status\":\"INFRA_FAILURE\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"win-rel-swarming-staging\"},\"number\":25198,\"createTime\":\"2021-07-01T03:41:34.325364Z\",\"status\":\"INFRA_FAILURE\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"win-rel-swarming-staging\"},\"number\":25197,\"createTime\":\"2021-07-01T03:36:25.299894Z\",\"status\":\"INFRA_FAILURE\"}],\"nextPageToken\":\"AS3KPthTbRx5mH8K3IR5a5tElqY8CidLgTrM8K7WHOAs3SMuz2D70PgslOb8sLTKMXwJzJHET3qx0Ftlff80Wug13zSS-eiCxcuAwCZhMCzowHgS9z9Pyj0Qi7Dr6PSyfltZfHZn5ShjWxlxXF9Hg_ciRPXKu6xTDIlDsmogZtTevEktC9o7cZKNvWid173JuKHvUrgSylIMvCaiMbKy9-kT9LrFXfiYwi0k8mKIjQb2EeWdcFyu9VYB8WI3HWwSkhw_a61kp5bBsKR94BEV-avlWyfRovif0FK45M1p-QdjK4VAy_iYORz5o4FM-A0KWJPqZMptdWbMcqgQoFwdnV2tH8I\"}\n"
+      }
+    }
+  },
+  {
+    "req": {
+      "url": "https://localhost:8080/prpc/luci.milo.v1.MiloInternal/QueryRecentBuilds",
+      "method": "POST",
+      "headers": {
+        "host": "localhost:8080",
+        "connection": "keep-alive",
+        "content-length": "112",
+        "accept": "application/json",
+        "user-agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Cypress/9.1.0 Chrome/94.0.4606.81 Electron/15.2.0 Safari/537.36",
+        "content-type": "application/json",
+        "sec-fetch-site": "same-origin",
+        "sec-fetch-mode": "cors",
+        "sec-fetch-dest": "empty",
+        "referer": "https://localhost:8080/ui/p/chromium/builders",
+        "accept-encoding": "gzip, deflate, br",
+        "accept-language": "en-GB"
+      },
+      "body": {
+        "type": "json",
+        "data": {
+          "builder": {
+            "project": "chromium",
+            "bucket": "ci",
+            "builder": "android-marshmallow-arm64-rel-swarming"
+          },
+          "pageSize": 0
+        }
+      }
+    },
+    "res": {
+      "statusCode": 200,
+      "headers": {
+        "x-powered-by": "Express",
+        "content-type": "application/json",
+        "vary": "Accept-Encoding",
+        "x-content-type-options": "nosniff",
+        "x-prpc-grpc-code": "0",
+        "content-encoding": "",
+        "x-cloud-trace-context": "d6f2cc213c65512fe3caf0319a842070",
+        "date": "Wed, 15 Dec 2021 23:29:42 GMT",
+        "server": "Google Frontend",
+        "cache-control": "private",
+        "alt-svc": "h3=\":443\"; ma=2592000,h3-29=\":443\"; ma=2592000,h3-Q050=\":443\"; ma=2592000,h3-Q046=\":443\"; ma=2592000,h3-Q043=\":443\"; ma=2592000,quic=\":443\"; ma=2592000; v=\"46,43\"",
+        "connection": "close",
+        "transfer-encoding": "chunked"
+      },
+      "body": {
+        "type": "string",
+        "data": ")]}'\n{\"builds\":[{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"android-marshmallow-arm64-rel-swarming\"},\"number\":22041,\"createTime\":\"2021-12-15T22:34:27.404251Z\",\"status\":\"SUCCESS\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"android-marshmallow-arm64-rel-swarming\"},\"number\":22040,\"createTime\":\"2021-12-15T22:02:59.288204Z\",\"status\":\"SUCCESS\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"android-marshmallow-arm64-rel-swarming\"},\"number\":22039,\"createTime\":\"2021-12-15T21:21:31.259627Z\",\"status\":\"SUCCESS\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"android-marshmallow-arm64-rel-swarming\"},\"number\":22038,\"createTime\":\"2021-12-15T19:39:59.291464Z\",\"status\":\"SUCCESS\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"android-marshmallow-arm64-rel-swarming\"},\"number\":22037,\"createTime\":\"2021-12-15T19:10:11.319687Z\",\"status\":\"SUCCESS\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"android-marshmallow-arm64-rel-swarming\"},\"number\":22036,\"createTime\":\"2021-12-15T18:42:09.450Z\",\"status\":\"SUCCESS\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"android-marshmallow-arm64-rel-swarming\"},\"number\":22035,\"createTime\":\"2021-12-15T18:05:51.313568Z\",\"status\":\"SUCCESS\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"android-marshmallow-arm64-rel-swarming\"},\"number\":22034,\"createTime\":\"2021-12-15T17:43:00.345631Z\",\"status\":\"SUCCESS\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"android-marshmallow-arm64-rel-swarming\"},\"number\":22033,\"createTime\":\"2021-12-15T17:18:10.287968Z\",\"status\":\"SUCCESS\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"android-marshmallow-arm64-rel-swarming\"},\"number\":22032,\"createTime\":\"2021-12-15T16:45:33.282361Z\",\"status\":\"SUCCESS\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"android-marshmallow-arm64-rel-swarming\"},\"number\":22031,\"createTime\":\"2021-12-15T15:10:47.340259Z\",\"status\":\"SUCCESS\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"android-marshmallow-arm64-rel-swarming\"},\"number\":22030,\"createTime\":\"2021-12-15T13:31:49.325604Z\",\"status\":\"SUCCESS\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"android-marshmallow-arm64-rel-swarming\"},\"number\":22029,\"createTime\":\"2021-12-15T13:00:07.283641Z\",\"status\":\"SUCCESS\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"android-marshmallow-arm64-rel-swarming\"},\"number\":22028,\"createTime\":\"2021-12-15T12:20:53.310138Z\",\"status\":\"SUCCESS\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"android-marshmallow-arm64-rel-swarming\"},\"number\":22027,\"createTime\":\"2021-12-15T11:56:34.335072Z\",\"status\":\"SUCCESS\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"android-marshmallow-arm64-rel-swarming\"},\"number\":22026,\"createTime\":\"2021-12-15T11:22:47.252715Z\",\"status\":\"SUCCESS\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"android-marshmallow-arm64-rel-swarming\"},\"number\":22025,\"createTime\":\"2021-12-15T09:49:49.256145Z\",\"status\":\"SUCCESS\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"android-marshmallow-arm64-rel-swarming\"},\"number\":22024,\"createTime\":\"2021-12-15T08:13:55.325759Z\",\"status\":\"SUCCESS\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"android-marshmallow-arm64-rel-swarming\"},\"number\":22023,\"createTime\":\"2021-12-15T06:38:31.303214Z\",\"status\":\"SUCCESS\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"android-marshmallow-arm64-rel-swarming\"},\"number\":22022,\"createTime\":\"2021-12-15T04:57:01.341820Z\",\"status\":\"SUCCESS\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"android-marshmallow-arm64-rel-swarming\"},\"number\":22021,\"createTime\":\"2021-12-15T04:17:09.296210Z\",\"status\":\"SUCCESS\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"android-marshmallow-arm64-rel-swarming\"},\"number\":22020,\"createTime\":\"2021-12-15T02:42:27.267600Z\",\"status\":\"SUCCESS\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"android-marshmallow-arm64-rel-swarming\"},\"number\":22019,\"createTime\":\"2021-12-15T01:05:28.321577Z\",\"status\":\"SUCCESS\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"android-marshmallow-arm64-rel-swarming\"},\"number\":22018,\"createTime\":\"2021-12-14T23:23:37.293964Z\",\"status\":\"SUCCESS\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"android-marshmallow-arm64-rel-swarming\"},\"number\":22017,\"createTime\":\"2021-12-14T22:36:25.284971Z\",\"status\":\"SUCCESS\"}],\"nextPageToken\":\"AS3KPtjWW48uGk3D2H_eGQSc44Y9jhKIxm9-mHo0DMZb9sKgfc46GzaA603nNXEMGFUpgiATN7P4wV6agOLA5KTHPqhtPh20BL5cKwNTASWKOkKJfQzYCahS8zLljKcWodFxojkoLlmHhN2UpvKOX9FWPiCFG0-SdX3XWfE3GS1b0YkzFtDUEh0c6TUEt9-TPhgvBrvgQxJJyZT94YemHvDrZsn0HRbTMAtZGzTjD5lMVspzqoq_k-cC9-RnnEVGnzz-q62uXSuEEiBWvXh5BmhaN8fzLyWLaccMXg8Z2HWAP7ChOFCvmFv6RG2lk4ZC5m4JVITPgTB7eVjOSDk4wGPyIY_U98rrC1TcY20WKI9Zvs-vQrL3KA\"}\n"
+      }
+    }
+  },
+  {
+    "req": {
+      "url": "https://localhost:8080/prpc/luci.milo.v1.MiloInternal/QueryRecentBuilds",
+      "method": "POST",
+      "headers": {
+        "host": "localhost:8080",
+        "connection": "keep-alive",
+        "content-length": "96",
+        "accept": "application/json",
+        "user-agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Cypress/9.1.0 Chrome/94.0.4606.81 Electron/15.2.0 Safari/537.36",
+        "content-type": "application/json",
+        "sec-fetch-site": "same-origin",
+        "sec-fetch-mode": "cors",
+        "sec-fetch-dest": "empty",
+        "referer": "https://localhost:8080/ui/p/chromium/builders",
+        "accept-encoding": "gzip, deflate, br",
+        "accept-language": "en-GB"
+      },
+      "body": {
+        "type": "json",
+        "data": {
+          "builder": {
+            "project": "chromium",
+            "bucket": "ci",
+            "builder": "linux-ssd-rel-swarming"
+          },
+          "pageSize": 0
+        }
+      }
+    },
+    "res": {
+      "statusCode": 200,
+      "headers": {
+        "x-powered-by": "Express",
+        "content-type": "application/json",
+        "vary": "Accept-Encoding",
+        "x-content-type-options": "nosniff",
+        "x-prpc-grpc-code": "0",
+        "content-encoding": "",
+        "x-cloud-trace-context": "e864c5f388e31315f68d8075fd7ff7d8",
+        "date": "Wed, 15 Dec 2021 23:29:42 GMT",
+        "server": "Google Frontend",
+        "cache-control": "private",
+        "alt-svc": "h3=\":443\"; ma=2592000,h3-29=\":443\"; ma=2592000,h3-Q050=\":443\"; ma=2592000,h3-Q046=\":443\"; ma=2592000,h3-Q043=\":443\"; ma=2592000,quic=\":443\"; ma=2592000; v=\"46,43\"",
+        "connection": "close",
+        "transfer-encoding": "chunked"
+      },
+      "body": {
+        "type": "string",
+        "data": ")]}'\n{\"builds\":[{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"linux-ssd-rel-swarming\"},\"number\":19418,\"createTime\":\"2021-12-15T23:24:09.258602Z\",\"status\":\"SUCCESS\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"linux-ssd-rel-swarming\"},\"number\":19417,\"createTime\":\"2021-12-15T23:19:31.259841Z\",\"status\":\"SUCCESS\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"linux-ssd-rel-swarming\"},\"number\":19416,\"createTime\":\"2021-12-15T23:15:01.313873Z\",\"status\":\"SUCCESS\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"linux-ssd-rel-swarming\"},\"number\":19415,\"createTime\":\"2021-12-15T23:00:28.367157Z\",\"status\":\"SUCCESS\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"linux-ssd-rel-swarming\"},\"number\":19414,\"createTime\":\"2021-12-15T22:55:53.330217Z\",\"status\":\"SUCCESS\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"linux-ssd-rel-swarming\"},\"number\":19413,\"createTime\":\"2021-12-15T22:51:29.279085Z\",\"status\":\"SUCCESS\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"linux-ssd-rel-swarming\"},\"number\":19412,\"createTime\":\"2021-12-15T22:47:13.361120Z\",\"status\":\"SUCCESS\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"linux-ssd-rel-swarming\"},\"number\":19411,\"createTime\":\"2021-12-15T22:42:39.310174Z\",\"status\":\"SUCCESS\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"linux-ssd-rel-swarming\"},\"number\":19410,\"createTime\":\"2021-12-15T22:38:18.556886Z\",\"status\":\"SUCCESS\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"linux-ssd-rel-swarming\"},\"number\":19409,\"createTime\":\"2021-12-15T22:33:57.255937Z\",\"status\":\"SUCCESS\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"linux-ssd-rel-swarming\"},\"number\":19408,\"createTime\":\"2021-12-15T22:29:35.272540Z\",\"status\":\"SUCCESS\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"linux-ssd-rel-swarming\"},\"number\":19407,\"createTime\":\"2021-12-15T22:25:13.329997Z\",\"status\":\"SUCCESS\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"linux-ssd-rel-swarming\"},\"number\":19406,\"createTime\":\"2021-12-15T22:20:57.316505Z\",\"status\":\"SUCCESS\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"linux-ssd-rel-swarming\"},\"number\":19405,\"createTime\":\"2021-12-15T22:15:50.287632Z\",\"status\":\"SUCCESS\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"linux-ssd-rel-swarming\"},\"number\":19404,\"createTime\":\"2021-12-15T22:07:17.283461Z\",\"status\":\"SUCCESS\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"linux-ssd-rel-swarming\"},\"number\":19403,\"createTime\":\"2021-12-15T22:02:45.315875Z\",\"status\":\"SUCCESS\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"linux-ssd-rel-swarming\"},\"number\":19402,\"createTime\":\"2021-12-15T21:58:24.289413Z\",\"status\":\"SUCCESS\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"linux-ssd-rel-swarming\"},\"number\":19401,\"createTime\":\"2021-12-15T21:53:57.355289Z\",\"status\":\"SUCCESS\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"linux-ssd-rel-swarming\"},\"number\":19400,\"createTime\":\"2021-12-15T21:47:07.491431Z\",\"status\":\"SUCCESS\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"linux-ssd-rel-swarming\"},\"number\":19399,\"createTime\":\"2021-12-15T20:54:32.294672Z\",\"status\":\"SUCCESS\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"linux-ssd-rel-swarming\"},\"number\":19398,\"createTime\":\"2021-12-15T20:49:56.228717Z\",\"status\":\"SUCCESS\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"linux-ssd-rel-swarming\"},\"number\":19397,\"createTime\":\"2021-12-15T20:40:02.401537Z\",\"status\":\"SUCCESS\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"linux-ssd-rel-swarming\"},\"number\":19396,\"createTime\":\"2021-12-15T20:34:53.287422Z\",\"status\":\"SUCCESS\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"linux-ssd-rel-swarming\"},\"number\":19395,\"createTime\":\"2021-12-15T20:30:31.257982Z\",\"status\":\"SUCCESS\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"linux-ssd-rel-swarming\"},\"number\":19394,\"createTime\":\"2021-12-15T20:25:49.270929Z\",\"status\":\"SUCCESS\"}],\"nextPageToken\":\"AS3KPth4XFvhGg8lhHEPBT_kXTJjBzEUqgTrwRZ7qy_1TPcdWyP1O1a3b_8VoQKuYThq7ajWukbzlWISgEDw_wYJHaPvZ-Uf1k7j_jqxJofm43rpd9XW2s6ZjABw4lQIYqkEDPt7q_KnWv7h0KwKUsnxwDESXkapVWqTaqeUU4twZqbeGEIQbdEbfYvyGEYL9KPab16jOqAyHINipb-OCDgvD4Ib8cP48gyhdket5wUpCCE2ih-q0pstrMHHdMPtHZ7r3XlVa8ADm-8qzrTQ58rbkphIJ-D5zRbibatu43Kq_msG-vL6pLk6XlqRtKE5jD6J6yvhFm15vSbWYu0ecKw\"}\n"
+      }
+    }
+  },
+  {
+    "req": {
+      "url": "https://localhost:8080/prpc/luci.milo.v1.MiloInternal/QueryRecentBuilds",
+      "method": "POST",
+      "headers": {
+        "host": "localhost:8080",
+        "connection": "keep-alive",
+        "content-length": "94",
+        "accept": "application/json",
+        "user-agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Cypress/9.1.0 Chrome/94.0.4606.81 Electron/15.2.0 Safari/537.36",
+        "content-type": "application/json",
+        "sec-fetch-site": "same-origin",
+        "sec-fetch-mode": "cors",
+        "sec-fetch-dest": "empty",
+        "referer": "https://localhost:8080/ui/p/chromium/builders",
+        "accept-encoding": "gzip, deflate, br",
+        "accept-language": "en-GB"
+      },
+      "body": {
+        "type": "json",
+        "data": {
+          "builder": {
+            "project": "chromium",
+            "bucket": "ci",
+            "builder": "mac-arm-rel-swarming"
+          },
+          "pageSize": 0
+        }
+      }
+    },
+    "res": {
+      "statusCode": 200,
+      "headers": {
+        "x-powered-by": "Express",
+        "content-type": "application/json",
+        "vary": "Accept-Encoding",
+        "x-content-type-options": "nosniff",
+        "x-prpc-grpc-code": "0",
+        "content-encoding": "",
+        "x-cloud-trace-context": "4b7cd7795de342bfe5a2daa343290f49",
+        "date": "Wed, 15 Dec 2021 23:29:42 GMT",
+        "server": "Google Frontend",
+        "cache-control": "private",
+        "alt-svc": "h3=\":443\"; ma=2592000,h3-29=\":443\"; ma=2592000,h3-Q050=\":443\"; ma=2592000,h3-Q046=\":443\"; ma=2592000,h3-Q043=\":443\"; ma=2592000,quic=\":443\"; ma=2592000; v=\"46,43\"",
+        "connection": "close",
+        "transfer-encoding": "chunked"
+      },
+      "body": {
+        "type": "string",
+        "data": ")]}'\n{\"builds\":[{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"mac-arm-rel-swarming\"},\"number\":2425,\"createTime\":\"2021-12-15T21:15:16.480652Z\",\"status\":\"SUCCESS\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"mac-arm-rel-swarming\"},\"number\":2424,\"createTime\":\"2021-12-15T19:41:55.340613Z\",\"status\":\"SUCCESS\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"mac-arm-rel-swarming\"},\"number\":2423,\"createTime\":\"2021-12-15T18:06:09.324425Z\",\"status\":\"SUCCESS\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"mac-arm-rel-swarming\"},\"number\":2422,\"createTime\":\"2021-12-15T16:41:11.493645Z\",\"status\":\"SUCCESS\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"mac-arm-rel-swarming\"},\"number\":2421,\"createTime\":\"2021-12-15T15:11:45.274792Z\",\"status\":\"SUCCESS\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"mac-arm-rel-swarming\"},\"number\":2420,\"createTime\":\"2021-12-15T13:17:52.272167Z\",\"status\":\"SUCCESS\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"mac-arm-rel-swarming\"},\"number\":2419,\"createTime\":\"2021-12-15T11:57:15.270614Z\",\"status\":\"SUCCESS\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"mac-arm-rel-swarming\"},\"number\":2418,\"createTime\":\"2021-12-15T10:33:53.243634Z\",\"status\":\"SUCCESS\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"mac-arm-rel-swarming\"},\"number\":2417,\"createTime\":\"2021-12-15T09:14:37.260071Z\",\"status\":\"SUCCESS\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"mac-arm-rel-swarming\"},\"number\":2416,\"createTime\":\"2021-12-15T07:51:39.335851Z\",\"status\":\"SUCCESS\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"mac-arm-rel-swarming\"},\"number\":2415,\"createTime\":\"2021-12-15T06:16:31.289714Z\",\"status\":\"SUCCESS\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"mac-arm-rel-swarming\"},\"number\":2414,\"createTime\":\"2021-12-15T04:45:29.330333Z\",\"status\":\"SUCCESS\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"mac-arm-rel-swarming\"},\"number\":2413,\"createTime\":\"2021-12-15T03:23:48.313753Z\",\"status\":\"SUCCESS\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"mac-arm-rel-swarming\"},\"number\":2412,\"createTime\":\"2021-12-15T01:55:59.301865Z\",\"status\":\"SUCCESS\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"mac-arm-rel-swarming\"},\"number\":2411,\"createTime\":\"2021-12-15T00:29:31.299591Z\",\"status\":\"SUCCESS\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"mac-arm-rel-swarming\"},\"number\":2410,\"createTime\":\"2021-12-14T23:05:01.373311Z\",\"status\":\"SUCCESS\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"mac-arm-rel-swarming\"},\"number\":2409,\"createTime\":\"2021-12-14T21:39:40.302368Z\",\"status\":\"SUCCESS\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"mac-arm-rel-swarming\"},\"number\":2408,\"createTime\":\"2021-12-14T20:01:39.312153Z\",\"status\":\"SUCCESS\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"mac-arm-rel-swarming\"},\"number\":2407,\"createTime\":\"2021-12-14T18:22:01.337130Z\",\"status\":\"SUCCESS\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"mac-arm-rel-swarming\"},\"number\":2406,\"createTime\":\"2021-12-14T16:49:05.298163Z\",\"status\":\"SUCCESS\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"mac-arm-rel-swarming\"},\"number\":2405,\"createTime\":\"2021-12-14T15:18:09.324814Z\",\"status\":\"SUCCESS\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"mac-arm-rel-swarming\"},\"number\":2404,\"createTime\":\"2021-12-14T13:54:13.311604Z\",\"status\":\"SUCCESS\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"mac-arm-rel-swarming\"},\"number\":2403,\"createTime\":\"2021-12-14T12:32:03.283137Z\",\"status\":\"SUCCESS\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"mac-arm-rel-swarming\"},\"number\":2402,\"createTime\":\"2021-12-14T11:07:29.290353Z\",\"status\":\"SUCCESS\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"mac-arm-rel-swarming\"},\"number\":2401,\"createTime\":\"2021-12-14T09:39:00.330431Z\",\"status\":\"SUCCESS\"}],\"nextPageToken\":\"AS3KPthLawEjEJhqPXd7Sd9vFO6PX9pJXQYsFq2gcKZvw53I3-2mMCy3mw8zPPMUVq_ga4avTW-eUg1-jycn1IqIBfe7LpTnNEnyuxaXdAKv_zvt4eeghFGIeNeJwCOKIqPdl5T8JgcNmlldw6Fl4nEy8ocnQnDTwKBzafmhsfYSJ6ysL5XWjf6HWT-Z_rxon1ThS8YcEJrLUbCGkfOCiPjFbAMSg_H-uZfzvQVstRDU13u-jc5zICcLrmgjJj2EaHxr7opEYoYZioWWQXd4oiBjEe201WUw_ENUOLilcpumWGpPuL_kd8WD_HMoVFAOVrYb3wYJFtR7d9vUtw\"}\n"
+      }
+    }
+  },
+  {
+    "req": {
+      "url": "https://localhost:8080/prpc/luci.milo.v1.MiloInternal/QueryRecentBuilds",
+      "method": "POST",
+      "headers": {
+        "host": "localhost:8080",
+        "connection": "keep-alive",
+        "content-length": "90",
+        "accept": "application/json",
+        "user-agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Cypress/9.1.0 Chrome/94.0.4606.81 Electron/15.2.0 Safari/537.36",
+        "content-type": "application/json",
+        "sec-fetch-site": "same-origin",
+        "sec-fetch-mode": "cors",
+        "sec-fetch-dest": "empty",
+        "referer": "https://localhost:8080/ui/p/chromium/builders",
+        "accept-encoding": "gzip, deflate, br",
+        "accept-language": "en-GB"
+      },
+      "body": {
+        "type": "json",
+        "data": {
+          "builder": {
+            "project": "chromium",
+            "bucket": "ci",
+            "builder": "mac-rel-swarming"
+          },
+          "pageSize": 0
+        }
+      }
+    },
+    "res": {
+      "statusCode": 200,
+      "headers": {
+        "x-powered-by": "Express",
+        "content-type": "application/json",
+        "vary": "Accept-Encoding",
+        "x-content-type-options": "nosniff",
+        "x-prpc-grpc-code": "0",
+        "content-encoding": "",
+        "x-cloud-trace-context": "31206a18e446f59566316ac4c77a1b58",
+        "date": "Wed, 15 Dec 2021 23:29:42 GMT",
+        "server": "Google Frontend",
+        "cache-control": "private",
+        "alt-svc": "h3=\":443\"; ma=2592000,h3-29=\":443\"; ma=2592000,h3-Q050=\":443\"; ma=2592000,h3-Q046=\":443\"; ma=2592000,h3-Q043=\":443\"; ma=2592000,quic=\":443\"; ma=2592000; v=\"46,43\"",
+        "connection": "close",
+        "transfer-encoding": "chunked"
+      },
+      "body": {
+        "type": "string",
+        "data": ")]}'\n{\"builds\":[{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"mac-rel-swarming\"},\"number\":19879,\"createTime\":\"2021-12-15T22:46:41.248618Z\",\"status\":\"SUCCESS\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"mac-rel-swarming\"},\"number\":19878,\"createTime\":\"2021-12-15T22:07:43.400251Z\",\"status\":\"FAILURE\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"mac-rel-swarming\"},\"number\":19877,\"createTime\":\"2021-12-15T21:32:52.355688Z\",\"status\":\"FAILURE\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"mac-rel-swarming\"},\"number\":19876,\"createTime\":\"2021-12-15T20:55:43.229690Z\",\"status\":\"SUCCESS\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"mac-rel-swarming\"},\"number\":19875,\"createTime\":\"2021-12-15T20:21:35.328653Z\",\"status\":\"SUCCESS\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"mac-rel-swarming\"},\"number\":19874,\"createTime\":\"2021-12-15T19:43:47.476727Z\",\"status\":\"SUCCESS\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"mac-rel-swarming\"},\"number\":19873,\"createTime\":\"2021-12-15T19:09:49.258287Z\",\"status\":\"SUCCESS\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"mac-rel-swarming\"},\"number\":19872,\"createTime\":\"2021-12-15T18:35:35.376601Z\",\"status\":\"SUCCESS\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"mac-rel-swarming\"},\"number\":19871,\"createTime\":\"2021-12-15T17:51:01.292483Z\",\"status\":\"SUCCESS\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"mac-rel-swarming\"},\"number\":19870,\"createTime\":\"2021-12-15T17:17:48.249904Z\",\"status\":\"FAILURE\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"mac-rel-swarming\"},\"number\":19869,\"createTime\":\"2021-12-15T16:44:53.373418Z\",\"status\":\"SUCCESS\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"mac-rel-swarming\"},\"number\":19868,\"createTime\":\"2021-12-15T16:08:23.545215Z\",\"status\":\"FAILURE\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"mac-rel-swarming\"},\"number\":19867,\"createTime\":\"2021-12-15T15:33:49.274621Z\",\"status\":\"SUCCESS\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"mac-rel-swarming\"},\"number\":19866,\"createTime\":\"2021-12-15T14:56:21.355084Z\",\"status\":\"FAILURE\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"mac-rel-swarming\"},\"number\":19865,\"createTime\":\"2021-12-15T14:24:09.388755Z\",\"status\":\"SUCCESS\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"mac-rel-swarming\"},\"number\":19864,\"createTime\":\"2021-12-15T13:50:54.302808Z\",\"status\":\"SUCCESS\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"mac-rel-swarming\"},\"number\":19863,\"createTime\":\"2021-12-15T13:16:41.261009Z\",\"status\":\"FAILURE\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"mac-rel-swarming\"},\"number\":19862,\"createTime\":\"2021-12-15T12:33:59.362910Z\",\"status\":\"SUCCESS\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"mac-rel-swarming\"},\"number\":19861,\"createTime\":\"2021-12-15T11:59:33.319020Z\",\"status\":\"SUCCESS\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"mac-rel-swarming\"},\"number\":19860,\"createTime\":\"2021-12-15T11:23:43.235178Z\",\"status\":\"SUCCESS\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"mac-rel-swarming\"},\"number\":19859,\"createTime\":\"2021-12-15T10:51:23.250223Z\",\"status\":\"SUCCESS\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"mac-rel-swarming\"},\"number\":19858,\"createTime\":\"2021-12-15T10:17:55.309421Z\",\"status\":\"SUCCESS\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"mac-rel-swarming\"},\"number\":19857,\"createTime\":\"2021-12-15T09:45:45.247444Z\",\"status\":\"FAILURE\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"mac-rel-swarming\"},\"number\":19856,\"createTime\":\"2021-12-15T09:11:27.462493Z\",\"status\":\"FAILURE\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"mac-rel-swarming\"},\"number\":19855,\"createTime\":\"2021-12-15T08:37:29.282403Z\",\"status\":\"FAILURE\"}],\"nextPageToken\":\"AS3KPtghA6WvvDqb4Opg2RqjqkValx88jeAIlZSUjMYPFu--yFQ6m1m6ienS--UGN3DJ7u5d6w0LKVRqwVBOe7SXMlupcyeaBBVk_kstMJRWe6iBZ0gKI4mKv70xKMOgiRMJQKYuZBKND3VeMgSptbmlqO28jeXOYMGxk1feMWhICl2IIq4ZgeIcEyBAkxsmjpSUREy0thcryxKVrOXakhH1CIFixD-20isPy_skJdZ8w1ZzITWSEY-GpXMi-iylShkcQ_a79I6JA_LJLBRPs7ceMp0LBPx2wn3GAsa6cDQbyLjWZbfV0sI8LCLUAjcm7YXk3F9PlD5n\"}\n"
+      }
+    }
+  },
+  {
+    "req": {
+      "url": "https://localhost:8080/prpc/luci.milo.v1.MiloInternal/QueryRecentBuilds",
+      "method": "POST",
+      "headers": {
+        "host": "localhost:8080",
+        "connection": "keep-alive",
+        "content-length": "113",
+        "accept": "application/json",
+        "user-agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Cypress/9.1.0 Chrome/94.0.4606.81 Electron/15.2.0 Safari/537.36",
+        "content-type": "application/json",
+        "sec-fetch-site": "same-origin",
+        "sec-fetch-mode": "cors",
+        "sec-fetch-dest": "empty",
+        "referer": "https://localhost:8080/ui/p/chromium/builders",
+        "accept-encoding": "gzip, deflate, br",
+        "accept-language": "en-GB"
+      },
+      "body": {
+        "type": "json",
+        "data": {
+          "builder": {
+            "project": "chromium",
+            "bucket": "ci",
+            "builder": "android-marshmallow-arm64-rel-swarming"
+          },
+          "pageSize": 15
+        }
+      }
+    },
+    "res": {
+      "statusCode": 200,
+      "headers": {
+        "x-powered-by": "Express",
+        "content-type": "application/json",
+        "vary": "Accept-Encoding",
+        "x-content-type-options": "nosniff",
+        "x-prpc-grpc-code": "0",
+        "content-encoding": "",
+        "x-cloud-trace-context": "609c42bcec7e3deaa58dc29f77b4f2e2",
+        "date": "Wed, 15 Dec 2021 23:29:43 GMT",
+        "server": "Google Frontend",
+        "cache-control": "private",
+        "alt-svc": "h3=\":443\"; ma=2592000,h3-29=\":443\"; ma=2592000,h3-Q050=\":443\"; ma=2592000,h3-Q046=\":443\"; ma=2592000,h3-Q043=\":443\"; ma=2592000,quic=\":443\"; ma=2592000; v=\"46,43\"",
+        "connection": "close",
+        "transfer-encoding": "chunked"
+      },
+      "body": {
+        "type": "string",
+        "data": ")]}'\n{\"builds\":[{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"android-marshmallow-arm64-rel-swarming\"},\"number\":22041,\"createTime\":\"2021-12-15T22:34:27.404251Z\",\"status\":\"SUCCESS\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"android-marshmallow-arm64-rel-swarming\"},\"number\":22040,\"createTime\":\"2021-12-15T22:02:59.288204Z\",\"status\":\"SUCCESS\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"android-marshmallow-arm64-rel-swarming\"},\"number\":22039,\"createTime\":\"2021-12-15T21:21:31.259627Z\",\"status\":\"SUCCESS\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"android-marshmallow-arm64-rel-swarming\"},\"number\":22038,\"createTime\":\"2021-12-15T19:39:59.291464Z\",\"status\":\"SUCCESS\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"android-marshmallow-arm64-rel-swarming\"},\"number\":22037,\"createTime\":\"2021-12-15T19:10:11.319687Z\",\"status\":\"SUCCESS\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"android-marshmallow-arm64-rel-swarming\"},\"number\":22036,\"createTime\":\"2021-12-15T18:42:09.450Z\",\"status\":\"SUCCESS\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"android-marshmallow-arm64-rel-swarming\"},\"number\":22035,\"createTime\":\"2021-12-15T18:05:51.313568Z\",\"status\":\"SUCCESS\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"android-marshmallow-arm64-rel-swarming\"},\"number\":22034,\"createTime\":\"2021-12-15T17:43:00.345631Z\",\"status\":\"SUCCESS\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"android-marshmallow-arm64-rel-swarming\"},\"number\":22033,\"createTime\":\"2021-12-15T17:18:10.287968Z\",\"status\":\"SUCCESS\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"android-marshmallow-arm64-rel-swarming\"},\"number\":22032,\"createTime\":\"2021-12-15T16:45:33.282361Z\",\"status\":\"SUCCESS\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"android-marshmallow-arm64-rel-swarming\"},\"number\":22031,\"createTime\":\"2021-12-15T15:10:47.340259Z\",\"status\":\"SUCCESS\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"android-marshmallow-arm64-rel-swarming\"},\"number\":22030,\"createTime\":\"2021-12-15T13:31:49.325604Z\",\"status\":\"SUCCESS\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"android-marshmallow-arm64-rel-swarming\"},\"number\":22029,\"createTime\":\"2021-12-15T13:00:07.283641Z\",\"status\":\"SUCCESS\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"android-marshmallow-arm64-rel-swarming\"},\"number\":22028,\"createTime\":\"2021-12-15T12:20:53.310138Z\",\"status\":\"SUCCESS\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"android-marshmallow-arm64-rel-swarming\"},\"number\":22027,\"createTime\":\"2021-12-15T11:56:34.335072Z\",\"status\":\"SUCCESS\"}],\"nextPageToken\":\"AS3KPtgLVDYCP-sPeJKMtnbqEj1GBAY74vtExZHYVJ5IAqW90guhCeFF3srT0h9r79VLSTpdgKm6uc0VpAgol_iMJeJ0JpiIsy3X94F5BDA6fF1eBWwc9QkrxvjAhQ8s7AnJ7vSJ-Wtz66JF2xc5d1YaeGsuBedYeYS1BDU8ozNrST4e0Rr9xZFMuDSjtfTb7LZRkJqaQ4aemNQhhIYQzpyRWTlcI_QqgNx1H1RKLlPn5M9A19Qdnd72O_4dsTfoZNMSgAWePRGbHLmGD9arnX6TYNeN-dYF4H8Vk5pgpKVCGatPC3Tn-3d1Fuv2tZ1aedgHMxjqrUFJCzB_vqpt_BuG_jEj8u7lQfW8oR7404YFXk_0iabT-A\"}\n"
+      }
+    }
+  },
+  {
+    "req": {
+      "url": "https://localhost:8080/prpc/luci.milo.v1.MiloInternal/QueryRecentBuilds",
+      "method": "POST",
+      "headers": {
+        "host": "localhost:8080",
+        "connection": "keep-alive",
+        "content-length": "90",
+        "accept": "application/json",
+        "user-agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Cypress/9.1.0 Chrome/94.0.4606.81 Electron/15.2.0 Safari/537.36",
+        "content-type": "application/json",
+        "sec-fetch-site": "same-origin",
+        "sec-fetch-mode": "cors",
+        "sec-fetch-dest": "empty",
+        "referer": "https://localhost:8080/ui/p/chromium/builders",
+        "accept-encoding": "gzip, deflate, br",
+        "accept-language": "en-GB"
+      },
+      "body": {
+        "type": "json",
+        "data": {
+          "builder": {
+            "project": "chromium",
+            "bucket": "ci",
+            "builder": "win-rel-swarming"
+          },
+          "pageSize": 0
+        }
+      }
+    },
+    "res": {
+      "statusCode": 200,
+      "headers": {
+        "x-powered-by": "Express",
+        "content-type": "application/json",
+        "vary": "Accept-Encoding",
+        "x-content-type-options": "nosniff",
+        "x-prpc-grpc-code": "0",
+        "content-encoding": "",
+        "x-cloud-trace-context": "156f5515023befa802ea74c5a6f1bd56",
+        "date": "Wed, 15 Dec 2021 23:29:43 GMT",
+        "server": "Google Frontend",
+        "cache-control": "private",
+        "alt-svc": "h3=\":443\"; ma=2592000,h3-29=\":443\"; ma=2592000,h3-Q050=\":443\"; ma=2592000,h3-Q046=\":443\"; ma=2592000,h3-Q043=\":443\"; ma=2592000,quic=\":443\"; ma=2592000; v=\"46,43\"",
+        "connection": "close",
+        "transfer-encoding": "chunked"
+      },
+      "body": {
+        "type": "string",
+        "data": ")]}'\n{\"builds\":[{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"win-rel-swarming\"},\"number\":17736,\"createTime\":\"2021-12-15T19:04:21.408816Z\",\"status\":\"INFRA_FAILURE\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"win-rel-swarming\"},\"number\":17735,\"createTime\":\"2021-12-15T17:52:55.312139Z\",\"status\":\"SUCCESS\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"win-rel-swarming\"},\"number\":17734,\"createTime\":\"2021-12-15T17:02:22.903529Z\",\"status\":\"SUCCESS\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"win-rel-swarming\"},\"number\":17733,\"createTime\":\"2021-12-15T15:55:09.387504Z\",\"status\":\"SUCCESS\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"win-rel-swarming\"},\"number\":17732,\"createTime\":\"2021-12-15T14:22:31.253096Z\",\"status\":\"SUCCESS\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"win-rel-swarming\"},\"number\":17731,\"createTime\":\"2021-12-15T12:11:07.497806Z\",\"status\":\"FAILURE\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"win-rel-swarming\"},\"number\":17730,\"createTime\":\"2021-12-15T10:59:32.279682Z\",\"status\":\"FAILURE\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"win-rel-swarming\"},\"number\":17729,\"createTime\":\"2021-12-15T09:41:25.307834Z\",\"status\":\"SUCCESS\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"win-rel-swarming\"},\"number\":17728,\"createTime\":\"2021-12-15T08:03:03.323156Z\",\"status\":\"FAILURE\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"win-rel-swarming\"},\"number\":17727,\"createTime\":\"2021-12-15T05:37:40.249182Z\",\"status\":\"FAILURE\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"win-rel-swarming\"},\"number\":17726,\"createTime\":\"2021-12-15T03:24:33.313750Z\",\"status\":\"FAILURE\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"win-rel-swarming\"},\"number\":17725,\"createTime\":\"2021-12-14T23:03:41.291211Z\",\"status\":\"INFRA_FAILURE\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"win-rel-swarming\"},\"number\":17724,\"createTime\":\"2021-12-14T20:40:41.360705Z\",\"status\":\"SUCCESS\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"win-rel-swarming\"},\"number\":17723,\"createTime\":\"2021-12-14T16:42:55.283828Z\",\"status\":\"INFRA_FAILURE\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"win-rel-swarming\"},\"number\":17722,\"createTime\":\"2021-12-14T15:24:03.373131Z\",\"status\":\"SUCCESS\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"win-rel-swarming\"},\"number\":17721,\"createTime\":\"2021-12-14T14:05:49.265651Z\",\"status\":\"FAILURE\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"win-rel-swarming\"},\"number\":17720,\"createTime\":\"2021-12-14T12:47:13.279939Z\",\"status\":\"FAILURE\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"win-rel-swarming\"},\"number\":17719,\"createTime\":\"2021-12-14T10:31:17.324903Z\",\"status\":\"FAILURE\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"win-rel-swarming\"},\"number\":17718,\"createTime\":\"2021-12-14T08:48:09.303777Z\",\"status\":\"SUCCESS\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"win-rel-swarming\"},\"number\":17717,\"createTime\":\"2021-12-14T07:06:49.382962Z\",\"status\":\"FAILURE\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"win-rel-swarming\"},\"number\":17716,\"createTime\":\"2021-12-14T05:34:41.298422Z\",\"status\":\"SUCCESS\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"win-rel-swarming\"},\"number\":17715,\"createTime\":\"2021-12-14T03:07:45.282431Z\",\"status\":\"FAILURE\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"win-rel-swarming\"},\"number\":17714,\"createTime\":\"2021-12-14T01:29:11.260059Z\",\"status\":\"SUCCESS\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"win-rel-swarming\"},\"number\":17713,\"createTime\":\"2021-12-14T00:08:01.401384Z\",\"status\":\"FAILURE\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"win-rel-swarming\"},\"number\":17712,\"createTime\":\"2021-12-13T22:26:43.266776Z\",\"status\":\"SUCCESS\"}],\"nextPageToken\":\"AS3KPthUhb9EXlZvG3BaE-kTzf1prB5OOWQt4p3gTSYsnHMHWOVHF1nJkcWp1E4doRvzeBxTyedcVuQ8-EmBEKVsAHGZuuFpjHOnGcsw8LCISoVEVJigvPFHlUKZwcEuOmca6nsC2jNPsQMJSJ3LYycuSkr19f36aqXEjHqWyGrOBhbWNyBJ-3iHotV18xg3znZuoXmuq5q-3WKet7fUHRz5ik25LIL2MkApL1unrc_fSA2Mrla-5XbazHwbxgQp4vwL4mz6X-tQBXLQa9tgFltWQKAINbcRWQmelO49cOFLuujKQgNIiJ98j61De6hqdBS8b_02BktT\"}\n"
+      }
+    }
+  },
+  {
+    "req": {
+      "url": "https://localhost:8080/prpc/luci.milo.v1.MiloInternal/QueryRecentBuilds",
+      "method": "POST",
+      "headers": {
+        "host": "localhost:8080",
+        "connection": "keep-alive",
+        "content-length": "93",
+        "accept": "application/json",
+        "user-agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Cypress/9.1.0 Chrome/94.0.4606.81 Electron/15.2.0 Safari/537.36",
+        "content-type": "application/json",
+        "sec-fetch-site": "same-origin",
+        "sec-fetch-mode": "cors",
+        "sec-fetch-dest": "empty",
+        "referer": "https://localhost:8080/ui/p/chromium/builders",
+        "accept-encoding": "gzip, deflate, br",
+        "accept-language": "en-GB"
+      },
+      "body": {
+        "type": "json",
+        "data": {
+          "builder": {
+            "project": "chromium",
+            "bucket": "ci",
+            "builder": "linux-rel-swarming"
+          },
+          "pageSize": 15
+        }
+      }
+    },
+    "res": {
+      "statusCode": 200,
+      "headers": {
+        "x-powered-by": "Express",
+        "content-type": "application/json",
+        "vary": "Accept-Encoding",
+        "x-content-type-options": "nosniff",
+        "x-prpc-grpc-code": "0",
+        "content-encoding": "",
+        "x-cloud-trace-context": "d7f3be62dcbb3bb73aed7514a3eb4e4a",
+        "date": "Wed, 15 Dec 2021 23:29:43 GMT",
+        "server": "Google Frontend",
+        "cache-control": "private",
+        "alt-svc": "h3=\":443\"; ma=2592000,h3-29=\":443\"; ma=2592000,h3-Q050=\":443\"; ma=2592000,h3-Q046=\":443\"; ma=2592000,h3-Q043=\":443\"; ma=2592000,quic=\":443\"; ma=2592000; v=\"46,43\"",
+        "connection": "close",
+        "transfer-encoding": "chunked"
+      },
+      "body": {
+        "type": "string",
+        "data": ")]}'\n{\"builds\":[{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"linux-rel-swarming\"},\"number\":21743,\"createTime\":\"2021-12-15T21:50:23.323500Z\",\"status\":\"SUCCESS\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"linux-rel-swarming\"},\"number\":21742,\"createTime\":\"2021-12-15T20:57:12.232229Z\",\"status\":\"SUCCESS\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"linux-rel-swarming\"},\"number\":21741,\"createTime\":\"2021-12-15T20:04:42.369379Z\",\"status\":\"SUCCESS\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"linux-rel-swarming\"},\"number\":21740,\"createTime\":\"2021-12-15T19:10:05.265090Z\",\"status\":\"SUCCESS\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"linux-rel-swarming\"},\"number\":21739,\"createTime\":\"2021-12-15T17:34:57.285972Z\",\"status\":\"SUCCESS\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"linux-rel-swarming\"},\"number\":21738,\"createTime\":\"2021-12-15T16:43:33.292458Z\",\"status\":\"SUCCESS\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"linux-rel-swarming\"},\"number\":21737,\"createTime\":\"2021-12-15T15:49:17.252705Z\",\"status\":\"SUCCESS\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"linux-rel-swarming\"},\"number\":21736,\"createTime\":\"2021-12-15T14:51:13.259488Z\",\"status\":\"SUCCESS\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"linux-rel-swarming\"},\"number\":21735,\"createTime\":\"2021-12-15T13:52:30.031293Z\",\"status\":\"SUCCESS\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"linux-rel-swarming\"},\"number\":21734,\"createTime\":\"2021-12-15T12:55:07.323872Z\",\"status\":\"FAILURE\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"linux-rel-swarming\"},\"number\":21733,\"createTime\":\"2021-12-15T11:23:19.289690Z\",\"status\":\"SUCCESS\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"linux-rel-swarming\"},\"number\":21732,\"createTime\":\"2021-12-15T10:32:11.265454Z\",\"status\":\"SUCCESS\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"linux-rel-swarming\"},\"number\":21731,\"createTime\":\"2021-12-15T09:42:15.281921Z\",\"status\":\"SUCCESS\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"linux-rel-swarming\"},\"number\":21730,\"createTime\":\"2021-12-15T08:51:25.300868Z\",\"status\":\"SUCCESS\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"linux-rel-swarming\"},\"number\":21729,\"createTime\":\"2021-12-15T07:58:51.306174Z\",\"status\":\"SUCCESS\"}],\"nextPageToken\":\"AS3KPticiU15_TETBvOGunsHy30LRZJfma6zNIrKxf-GIlVVIrCJ5ZwOHbtVuIE_aFqjVCi_mnvt33DRIY5zILhyoPFDuXPUg31UHMNh8521RcFp2hV-_LrSC_o92C6XGd60eipdRViesQY-jNc8r0_waT3r0ZtHzvwbJaPFEc9V6njA_VDFt1Gmy6ERg31gQwZdaiWHzHvpaKp752VF21beE1AUmod4kO84xmMV6nbXs2bLfAI9pjYAdX_hH8Bp3VmTJmAmfq8sHty4gcxBSfM7Uzvi64MVEjzgU9S-jSjrtktLpCo0eXoXo7d1UwJWca7Xgi-efGdbGwNQ\"}\n"
+      }
+    }
+  },
+  {
+    "req": {
+      "url": "https://localhost:8080/prpc/luci.milo.v1.MiloInternal/QueryRecentBuilds",
+      "method": "POST",
+      "headers": {
+        "host": "localhost:8080",
+        "connection": "keep-alive",
+        "content-length": "101",
+        "accept": "application/json",
+        "user-agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Cypress/9.1.0 Chrome/94.0.4606.81 Electron/15.2.0 Safari/537.36",
+        "content-type": "application/json",
+        "sec-fetch-site": "same-origin",
+        "sec-fetch-mode": "cors",
+        "sec-fetch-dest": "empty",
+        "referer": "https://localhost:8080/ui/p/chromium/builders",
+        "accept-encoding": "gzip, deflate, br",
+        "accept-language": "en-GB"
+      },
+      "body": {
+        "type": "json",
+        "data": {
+          "builder": {
+            "project": "chromium",
+            "bucket": "ci",
+            "builder": "linux-rel-swarming-staging"
+          },
+          "pageSize": 15
+        }
+      }
+    },
+    "res": {
+      "statusCode": 200,
+      "headers": {
+        "x-powered-by": "Express",
+        "content-type": "application/json",
+        "vary": "Accept-Encoding",
+        "x-content-type-options": "nosniff",
+        "x-prpc-grpc-code": "0",
+        "content-encoding": "",
+        "x-cloud-trace-context": "47c9836cc85d6dac3ff76bff30e21c8d",
+        "date": "Wed, 15 Dec 2021 23:29:43 GMT",
+        "server": "Google Frontend",
+        "cache-control": "private",
+        "alt-svc": "h3=\":443\"; ma=2592000,h3-29=\":443\"; ma=2592000,h3-Q050=\":443\"; ma=2592000,h3-Q046=\":443\"; ma=2592000,h3-Q043=\":443\"; ma=2592000,quic=\":443\"; ma=2592000; v=\"46,43\"",
+        "connection": "close",
+        "transfer-encoding": "chunked"
+      },
+      "body": {
+        "type": "string",
+        "data": ")]}'\n{\"builds\":[{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"linux-rel-swarming-staging\"},\"number\":36516,\"createTime\":\"2021-07-01T05:55:22.407120Z\",\"status\":\"INFRA_FAILURE\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"linux-rel-swarming-staging\"},\"number\":36515,\"createTime\":\"2021-07-01T05:54:52.507473Z\",\"status\":\"INFRA_FAILURE\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"linux-rel-swarming-staging\"},\"number\":36514,\"createTime\":\"2021-07-01T05:51:24.357087Z\",\"status\":\"INFRA_FAILURE\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"linux-rel-swarming-staging\"},\"number\":36513,\"createTime\":\"2021-07-01T05:50:17.391363Z\",\"status\":\"INFRA_FAILURE\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"linux-rel-swarming-staging\"},\"number\":36512,\"createTime\":\"2021-07-01T05:44:01.389304Z\",\"status\":\"INFRA_FAILURE\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"linux-rel-swarming-staging\"},\"number\":36511,\"createTime\":\"2021-07-01T05:42:24.349984Z\",\"status\":\"INFRA_FAILURE\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"linux-rel-swarming-staging\"},\"number\":36510,\"createTime\":\"2021-07-01T05:33:48.390543Z\",\"status\":\"INFRA_FAILURE\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"linux-rel-swarming-staging\"},\"number\":36509,\"createTime\":\"2021-07-01T05:30:23.448279Z\",\"status\":\"INFRA_FAILURE\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"linux-rel-swarming-staging\"},\"number\":36508,\"createTime\":\"2021-07-01T05:23:39.337489Z\",\"status\":\"INFRA_FAILURE\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"linux-rel-swarming-staging\"},\"number\":36507,\"createTime\":\"2021-07-01T05:20:12.423648Z\",\"status\":\"INFRA_FAILURE\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"linux-rel-swarming-staging\"},\"number\":36506,\"createTime\":\"2021-07-01T04:56:16.336200Z\",\"status\":\"INFRA_FAILURE\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"linux-rel-swarming-staging\"},\"number\":36505,\"createTime\":\"2021-07-01T04:54:15.389840Z\",\"status\":\"INFRA_FAILURE\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"linux-rel-swarming-staging\"},\"number\":36504,\"createTime\":\"2021-07-01T04:53:37.348139Z\",\"status\":\"INFRA_FAILURE\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"linux-rel-swarming-staging\"},\"number\":36503,\"createTime\":\"2021-07-01T04:45:07.379400Z\",\"status\":\"INFRA_FAILURE\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"linux-rel-swarming-staging\"},\"number\":36502,\"createTime\":\"2021-07-01T04:17:51.324928Z\",\"status\":\"INFRA_FAILURE\"}],\"nextPageToken\":\"AS3KPthS6gBncJxxPGGu8aJPSksh99TTlsFSK1yC7gBRTNGVYMhHVxT0l1e6VJ_olHLwx1a2nWltwKVMvNrfwvH3N6QdIQGvgJZ2-uZ4ngrVon71oKt4z-SG4UJ-O__QyJgRSJGoJun4VlA7XJtjMjH20y_3uqxNUlRHU92kDnPw8c47vOfXXR5It1a5x1ZMxJTVlaenedUSlA0pLaguIU4dmcjATU_nRjZ8OXAMK9nO_pjvKVs5s1nZ7NLgzgcDUDYXQIrI8OD8soPbwOXjkhP1FBKVoFfzKv1IYpw2qTXBWS8yAWldMAEockDLgyZZYR8SbqKI6qeSE2pCSZlIshnFDXBMYhY\"}\n"
+      }
+    }
+  },
+  {
+    "req": {
+      "url": "https://localhost:8080/prpc/luci.milo.v1.MiloInternal/QueryRecentBuilds",
+      "method": "POST",
+      "headers": {
+        "host": "localhost:8080",
+        "connection": "keep-alive",
+        "content-length": "97",
+        "accept": "application/json",
+        "user-agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Cypress/9.1.0 Chrome/94.0.4606.81 Electron/15.2.0 Safari/537.36",
+        "content-type": "application/json",
+        "sec-fetch-site": "same-origin",
+        "sec-fetch-mode": "cors",
+        "sec-fetch-dest": "empty",
+        "referer": "https://localhost:8080/ui/p/chromium/builders",
+        "accept-encoding": "gzip, deflate, br",
+        "accept-language": "en-GB"
+      },
+      "body": {
+        "type": "json",
+        "data": {
+          "builder": {
+            "project": "chromium",
+            "bucket": "ci",
+            "builder": "linux-ssd-rel-swarming"
+          },
+          "pageSize": 15
+        }
+      }
+    },
+    "res": {
+      "statusCode": 200,
+      "headers": {
+        "x-powered-by": "Express",
+        "content-type": "application/json",
+        "vary": "Accept-Encoding",
+        "x-content-type-options": "nosniff",
+        "x-prpc-grpc-code": "0",
+        "content-encoding": "",
+        "x-cloud-trace-context": "e5a58525374e2815d1a8a3f14c6f3644",
+        "date": "Wed, 15 Dec 2021 23:29:43 GMT",
+        "server": "Google Frontend",
+        "cache-control": "private",
+        "alt-svc": "h3=\":443\"; ma=2592000,h3-29=\":443\"; ma=2592000,h3-Q050=\":443\"; ma=2592000,h3-Q046=\":443\"; ma=2592000,h3-Q043=\":443\"; ma=2592000,quic=\":443\"; ma=2592000; v=\"46,43\"",
+        "connection": "close",
+        "transfer-encoding": "chunked"
+      },
+      "body": {
+        "type": "string",
+        "data": ")]}'\n{\"builds\":[{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"linux-ssd-rel-swarming\"},\"number\":19418,\"createTime\":\"2021-12-15T23:24:09.258602Z\",\"status\":\"SUCCESS\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"linux-ssd-rel-swarming\"},\"number\":19417,\"createTime\":\"2021-12-15T23:19:31.259841Z\",\"status\":\"SUCCESS\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"linux-ssd-rel-swarming\"},\"number\":19416,\"createTime\":\"2021-12-15T23:15:01.313873Z\",\"status\":\"SUCCESS\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"linux-ssd-rel-swarming\"},\"number\":19415,\"createTime\":\"2021-12-15T23:00:28.367157Z\",\"status\":\"SUCCESS\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"linux-ssd-rel-swarming\"},\"number\":19414,\"createTime\":\"2021-12-15T22:55:53.330217Z\",\"status\":\"SUCCESS\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"linux-ssd-rel-swarming\"},\"number\":19413,\"createTime\":\"2021-12-15T22:51:29.279085Z\",\"status\":\"SUCCESS\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"linux-ssd-rel-swarming\"},\"number\":19412,\"createTime\":\"2021-12-15T22:47:13.361120Z\",\"status\":\"SUCCESS\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"linux-ssd-rel-swarming\"},\"number\":19411,\"createTime\":\"2021-12-15T22:42:39.310174Z\",\"status\":\"SUCCESS\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"linux-ssd-rel-swarming\"},\"number\":19410,\"createTime\":\"2021-12-15T22:38:18.556886Z\",\"status\":\"SUCCESS\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"linux-ssd-rel-swarming\"},\"number\":19409,\"createTime\":\"2021-12-15T22:33:57.255937Z\",\"status\":\"SUCCESS\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"linux-ssd-rel-swarming\"},\"number\":19408,\"createTime\":\"2021-12-15T22:29:35.272540Z\",\"status\":\"SUCCESS\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"linux-ssd-rel-swarming\"},\"number\":19407,\"createTime\":\"2021-12-15T22:25:13.329997Z\",\"status\":\"SUCCESS\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"linux-ssd-rel-swarming\"},\"number\":19406,\"createTime\":\"2021-12-15T22:20:57.316505Z\",\"status\":\"SUCCESS\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"linux-ssd-rel-swarming\"},\"number\":19405,\"createTime\":\"2021-12-15T22:15:50.287632Z\",\"status\":\"SUCCESS\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"linux-ssd-rel-swarming\"},\"number\":19404,\"createTime\":\"2021-12-15T22:07:17.283461Z\",\"status\":\"SUCCESS\"}],\"nextPageToken\":\"AS3KPtgnET2Z03gnCDGDYLmV_3-mL4LzMKMXTaRpw8PeSQ4xNrmeKEj3kKBBCMpSoolHHhq6snQSqLEIUAzj5LQNub8JSKmIyNItezPQ60PX9H5Bc3r-qy06LXnBcdMAcR4OPSpBo9eoE58bopN5XDljy4CG1TCoUY-Q0D1RctuQsjWH27vSS3SQV-sEPp9lUens_61ZGggPYK8ypF7OpYv2vSmYymT0k786zYOEELV7zWCYUj-AxktWYWaj22uVOPJCznyI7g4yBI3OOFfmpHUzRQ4cBRCIxWipHHkzM9ki7aTgGw-Vt5Ovv_Jjb-r-rLfpHMPMMFE_BSwlc_ViabE\"}\n"
+      }
+    }
+  },
+  {
+    "req": {
+      "url": "https://localhost:8080/prpc/luci.milo.v1.MiloInternal/QueryRecentBuilds",
+      "method": "POST",
+      "headers": {
+        "host": "localhost:8080",
+        "connection": "keep-alive",
+        "content-length": "95",
+        "accept": "application/json",
+        "user-agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Cypress/9.1.0 Chrome/94.0.4606.81 Electron/15.2.0 Safari/537.36",
+        "content-type": "application/json",
+        "sec-fetch-site": "same-origin",
+        "sec-fetch-mode": "cors",
+        "sec-fetch-dest": "empty",
+        "referer": "https://localhost:8080/ui/p/chromium/builders",
+        "accept-encoding": "gzip, deflate, br",
+        "accept-language": "en-GB"
+      },
+      "body": {
+        "type": "json",
+        "data": {
+          "builder": {
+            "project": "chromium",
+            "bucket": "ci",
+            "builder": "mac-arm-rel-swarming"
+          },
+          "pageSize": 15
+        }
+      }
+    },
+    "res": {
+      "statusCode": 200,
+      "headers": {
+        "x-powered-by": "Express",
+        "content-type": "application/json",
+        "vary": "Accept-Encoding",
+        "x-content-type-options": "nosniff",
+        "x-prpc-grpc-code": "0",
+        "content-encoding": "",
+        "x-cloud-trace-context": "bd9ea1c9ba33e752f1467daa2206809e",
+        "date": "Wed, 15 Dec 2021 23:29:43 GMT",
+        "server": "Google Frontend",
+        "cache-control": "private",
+        "alt-svc": "h3=\":443\"; ma=2592000,h3-29=\":443\"; ma=2592000,h3-Q050=\":443\"; ma=2592000,h3-Q046=\":443\"; ma=2592000,h3-Q043=\":443\"; ma=2592000,quic=\":443\"; ma=2592000; v=\"46,43\"",
+        "connection": "close",
+        "transfer-encoding": "chunked"
+      },
+      "body": {
+        "type": "string",
+        "data": ")]}'\n{\"builds\":[{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"mac-arm-rel-swarming\"},\"number\":2425,\"createTime\":\"2021-12-15T21:15:16.480652Z\",\"status\":\"SUCCESS\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"mac-arm-rel-swarming\"},\"number\":2424,\"createTime\":\"2021-12-15T19:41:55.340613Z\",\"status\":\"SUCCESS\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"mac-arm-rel-swarming\"},\"number\":2423,\"createTime\":\"2021-12-15T18:06:09.324425Z\",\"status\":\"SUCCESS\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"mac-arm-rel-swarming\"},\"number\":2422,\"createTime\":\"2021-12-15T16:41:11.493645Z\",\"status\":\"SUCCESS\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"mac-arm-rel-swarming\"},\"number\":2421,\"createTime\":\"2021-12-15T15:11:45.274792Z\",\"status\":\"SUCCESS\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"mac-arm-rel-swarming\"},\"number\":2420,\"createTime\":\"2021-12-15T13:17:52.272167Z\",\"status\":\"SUCCESS\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"mac-arm-rel-swarming\"},\"number\":2419,\"createTime\":\"2021-12-15T11:57:15.270614Z\",\"status\":\"SUCCESS\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"mac-arm-rel-swarming\"},\"number\":2418,\"createTime\":\"2021-12-15T10:33:53.243634Z\",\"status\":\"SUCCESS\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"mac-arm-rel-swarming\"},\"number\":2417,\"createTime\":\"2021-12-15T09:14:37.260071Z\",\"status\":\"SUCCESS\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"mac-arm-rel-swarming\"},\"number\":2416,\"createTime\":\"2021-12-15T07:51:39.335851Z\",\"status\":\"SUCCESS\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"mac-arm-rel-swarming\"},\"number\":2415,\"createTime\":\"2021-12-15T06:16:31.289714Z\",\"status\":\"SUCCESS\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"mac-arm-rel-swarming\"},\"number\":2414,\"createTime\":\"2021-12-15T04:45:29.330333Z\",\"status\":\"SUCCESS\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"mac-arm-rel-swarming\"},\"number\":2413,\"createTime\":\"2021-12-15T03:23:48.313753Z\",\"status\":\"SUCCESS\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"mac-arm-rel-swarming\"},\"number\":2412,\"createTime\":\"2021-12-15T01:55:59.301865Z\",\"status\":\"SUCCESS\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"mac-arm-rel-swarming\"},\"number\":2411,\"createTime\":\"2021-12-15T00:29:31.299591Z\",\"status\":\"SUCCESS\"}],\"nextPageToken\":\"AS3KPtg0mY4TgV2OUy8V80yQPO7y9pd6iOImpt192vHLnid_GLcyHsFXvJgRgyevnffR0PzmjgQCZu-iZdT2MQsEKMCXpZCh-e8jbkG9DBxcfnpltvPEtGmhGgwDkrIGFSyYyfrfHKzdb_s8oos1iJ_1DLgVJIYv_c5Bcty7ifMAayRgG3uDLkOkmkhLQ4t3hmYhSxe936jJIXY99GqXArCd41MqY5S2n78_h998I5sdxoEQXtHtDWePBbpc3ygbsyzBGvWCRKij5-emSCzstWacytabtqgDWuMOf6qovKdaJ7aCCyocn91f6wQvWxoJAEuUgaqjF51dnqFZ_g\"}\n"
+      }
+    }
+  },
+  {
+    "req": {
+      "url": "https://localhost:8080/prpc/luci.milo.v1.MiloInternal/QueryRecentBuilds",
+      "method": "POST",
+      "headers": {
+        "host": "localhost:8080",
+        "connection": "keep-alive",
+        "content-length": "93",
+        "accept": "application/json",
+        "user-agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Cypress/9.1.0 Chrome/94.0.4606.81 Electron/15.2.0 Safari/537.36",
+        "content-type": "application/json",
+        "sec-fetch-site": "same-origin",
+        "sec-fetch-mode": "cors",
+        "sec-fetch-dest": "empty",
+        "referer": "https://localhost:8080/ui/p/chromium/builders",
+        "accept-encoding": "gzip, deflate, br",
+        "accept-language": "en-GB"
+      },
+      "body": {
+        "type": "json",
+        "data": {
+          "builder": {
+            "project": "chromium",
+            "bucket": "ci",
+            "builder": "win11-rel-swarming"
+          },
+          "pageSize": 15
+        }
+      }
+    },
+    "res": {
+      "statusCode": 200,
+      "headers": {
+        "x-powered-by": "Express",
+        "content-type": "application/json",
+        "vary": "Accept-Encoding",
+        "x-content-type-options": "nosniff",
+        "x-prpc-grpc-code": "0",
+        "content-encoding": "",
+        "x-cloud-trace-context": "b7c9d31518e7a71f6e9e06142492fb02",
+        "date": "Wed, 15 Dec 2021 23:29:43 GMT",
+        "server": "Google Frontend",
+        "cache-control": "private",
+        "alt-svc": "h3=\":443\"; ma=2592000,h3-29=\":443\"; ma=2592000,h3-Q050=\":443\"; ma=2592000,h3-Q046=\":443\"; ma=2592000,h3-Q043=\":443\"; ma=2592000,quic=\":443\"; ma=2592000; v=\"46,43\"",
+        "connection": "close",
+        "transfer-encoding": "chunked"
+      },
+      "body": {
+        "type": "string",
+        "data": ")]}'\n{\"builds\":[{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"win11-rel-swarming\"},\"number\":13,\"createTime\":\"2021-12-15T20:03:20.335119Z\",\"status\":\"SUCCESS\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"win11-rel-swarming\"},\"number\":12,\"createTime\":\"2021-12-15T18:04:03.318862Z\",\"status\":\"SUCCESS\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"win11-rel-swarming\"},\"number\":11,\"createTime\":\"2021-12-15T16:43:29.249922Z\",\"status\":\"FAILURE\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"win11-rel-swarming\"},\"number\":10,\"createTime\":\"2021-12-15T14:54:47.255936Z\",\"status\":\"SUCCESS\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"win11-rel-swarming\"},\"number\":9,\"createTime\":\"2021-12-15T13:13:01.281670Z\",\"status\":\"FAILURE\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"win11-rel-swarming\"},\"number\":8,\"createTime\":\"2021-12-15T10:50:05.332793Z\",\"status\":\"SUCCESS\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"win11-rel-swarming\"},\"number\":7,\"createTime\":\"2021-12-15T09:36:17.253550Z\",\"status\":\"FAILURE\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"win11-rel-swarming\"},\"number\":6,\"createTime\":\"2021-12-15T07:48:37.366760Z\",\"status\":\"FAILURE\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"win11-rel-swarming\"},\"number\":5,\"createTime\":\"2021-12-15T05:52:23.261031Z\",\"status\":\"FAILURE\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"win11-rel-swarming\"},\"number\":4,\"createTime\":\"2021-12-15T03:34:16.373419Z\",\"status\":\"FAILURE\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"win11-rel-swarming\"},\"number\":3,\"createTime\":\"2021-12-15T01:47:49.319553Z\",\"status\":\"SUCCESS\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"win11-rel-swarming\"},\"number\":2,\"createTime\":\"2021-12-15T00:02:29.270595Z\",\"status\":\"FAILURE\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"win11-rel-swarming\"},\"number\":1,\"createTime\":\"2021-12-14T22:03:23.372566Z\",\"status\":\"FAILURE\"}]}\n"
+      }
+    }
+  },
+  {
+    "req": {
+      "url": "https://localhost:8080/prpc/luci.milo.v1.MiloInternal/QueryRecentBuilds",
+      "method": "POST",
+      "headers": {
+        "host": "localhost:8080",
+        "connection": "keep-alive",
+        "content-length": "91",
+        "accept": "application/json",
+        "user-agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Cypress/9.1.0 Chrome/94.0.4606.81 Electron/15.2.0 Safari/537.36",
+        "content-type": "application/json",
+        "sec-fetch-site": "same-origin",
+        "sec-fetch-mode": "cors",
+        "sec-fetch-dest": "empty",
+        "referer": "https://localhost:8080/ui/p/chromium/builders",
+        "accept-encoding": "gzip, deflate, br",
+        "accept-language": "en-GB"
+      },
+      "body": {
+        "type": "json",
+        "data": {
+          "builder": {
+            "project": "chromium",
+            "bucket": "ci",
+            "builder": "win-rel-swarming"
+          },
+          "pageSize": 15
+        }
+      }
+    },
+    "res": {
+      "statusCode": 200,
+      "headers": {
+        "x-powered-by": "Express",
+        "content-type": "application/json",
+        "vary": "Accept-Encoding",
+        "x-content-type-options": "nosniff",
+        "x-prpc-grpc-code": "0",
+        "content-encoding": "",
+        "x-cloud-trace-context": "efd09d3b05a224473531ed88d3548640",
+        "date": "Wed, 15 Dec 2021 23:29:43 GMT",
+        "server": "Google Frontend",
+        "cache-control": "private",
+        "alt-svc": "h3=\":443\"; ma=2592000,h3-29=\":443\"; ma=2592000,h3-Q050=\":443\"; ma=2592000,h3-Q046=\":443\"; ma=2592000,h3-Q043=\":443\"; ma=2592000,quic=\":443\"; ma=2592000; v=\"46,43\"",
+        "connection": "close",
+        "transfer-encoding": "chunked"
+      },
+      "body": {
+        "type": "string",
+        "data": ")]}'\n{\"builds\":[{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"win-rel-swarming\"},\"number\":17736,\"createTime\":\"2021-12-15T19:04:21.408816Z\",\"status\":\"INFRA_FAILURE\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"win-rel-swarming\"},\"number\":17735,\"createTime\":\"2021-12-15T17:52:55.312139Z\",\"status\":\"SUCCESS\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"win-rel-swarming\"},\"number\":17734,\"createTime\":\"2021-12-15T17:02:22.903529Z\",\"status\":\"SUCCESS\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"win-rel-swarming\"},\"number\":17733,\"createTime\":\"2021-12-15T15:55:09.387504Z\",\"status\":\"SUCCESS\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"win-rel-swarming\"},\"number\":17732,\"createTime\":\"2021-12-15T14:22:31.253096Z\",\"status\":\"SUCCESS\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"win-rel-swarming\"},\"number\":17731,\"createTime\":\"2021-12-15T12:11:07.497806Z\",\"status\":\"FAILURE\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"win-rel-swarming\"},\"number\":17730,\"createTime\":\"2021-12-15T10:59:32.279682Z\",\"status\":\"FAILURE\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"win-rel-swarming\"},\"number\":17729,\"createTime\":\"2021-12-15T09:41:25.307834Z\",\"status\":\"SUCCESS\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"win-rel-swarming\"},\"number\":17728,\"createTime\":\"2021-12-15T08:03:03.323156Z\",\"status\":\"FAILURE\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"win-rel-swarming\"},\"number\":17727,\"createTime\":\"2021-12-15T05:37:40.249182Z\",\"status\":\"FAILURE\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"win-rel-swarming\"},\"number\":17726,\"createTime\":\"2021-12-15T03:24:33.313750Z\",\"status\":\"FAILURE\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"win-rel-swarming\"},\"number\":17725,\"createTime\":\"2021-12-14T23:03:41.291211Z\",\"status\":\"INFRA_FAILURE\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"win-rel-swarming\"},\"number\":17724,\"createTime\":\"2021-12-14T20:40:41.360705Z\",\"status\":\"SUCCESS\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"win-rel-swarming\"},\"number\":17723,\"createTime\":\"2021-12-14T16:42:55.283828Z\",\"status\":\"INFRA_FAILURE\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"win-rel-swarming\"},\"number\":17722,\"createTime\":\"2021-12-14T15:24:03.373131Z\",\"status\":\"SUCCESS\"}],\"nextPageToken\":\"AS3KPthprZv0oeYEIHcxe-7KGuPy7HA17BeSicc9IbVjtQ5XY8OMsjwcmhBnuVq9atb5HDLwgGGuJTKDhX9rBOptZQVHoTBjALeBgKjsUQUspMtEJGMyk_IjZ-sniYroiA1Ox3YPJDYeCUy86AriBB0GpC8ECaot1flNpnfjpXCr4SBIpkFJdXF3Yjy0QwSeDaqvg-yVl8BPFkDQ4K1ynsmj6JE1zA4VBIOH7EBvfKvm-VljjHsIscONgKOj2DrndtDvpyEFGSslanIYfCgqrj0JAUxv0K2s5kGC99vVUadr9vhe9vvbSYfkpBHdtT8gEBRRhqB5Nzce\"}\n"
+      }
+    }
+  },
+  {
+    "req": {
+      "url": "https://localhost:8080/prpc/luci.milo.v1.MiloInternal/QueryRecentBuilds",
+      "method": "POST",
+      "headers": {
+        "host": "localhost:8080",
+        "connection": "keep-alive",
+        "content-length": "91",
+        "accept": "application/json",
+        "user-agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Cypress/9.1.0 Chrome/94.0.4606.81 Electron/15.2.0 Safari/537.36",
+        "content-type": "application/json",
+        "sec-fetch-site": "same-origin",
+        "sec-fetch-mode": "cors",
+        "sec-fetch-dest": "empty",
+        "referer": "https://localhost:8080/ui/p/chromium/builders",
+        "accept-encoding": "gzip, deflate, br",
+        "accept-language": "en-GB"
+      },
+      "body": {
+        "type": "json",
+        "data": {
+          "builder": {
+            "project": "chromium",
+            "bucket": "ci",
+            "builder": "mac-rel-swarming"
+          },
+          "pageSize": 15
+        }
+      }
+    },
+    "res": {
+      "statusCode": 200,
+      "headers": {
+        "x-powered-by": "Express",
+        "content-type": "application/json",
+        "vary": "Accept-Encoding",
+        "x-content-type-options": "nosniff",
+        "x-prpc-grpc-code": "0",
+        "content-encoding": "",
+        "x-cloud-trace-context": "e52d8d1d7ace758e9ca8d2f10208ea3a",
+        "date": "Wed, 15 Dec 2021 23:29:43 GMT",
+        "server": "Google Frontend",
+        "cache-control": "private",
+        "alt-svc": "h3=\":443\"; ma=2592000,h3-29=\":443\"; ma=2592000,h3-Q050=\":443\"; ma=2592000,h3-Q046=\":443\"; ma=2592000,h3-Q043=\":443\"; ma=2592000,quic=\":443\"; ma=2592000; v=\"46,43\"",
+        "connection": "close",
+        "transfer-encoding": "chunked"
+      },
+      "body": {
+        "type": "string",
+        "data": ")]}'\n{\"builds\":[{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"mac-rel-swarming\"},\"number\":19879,\"createTime\":\"2021-12-15T22:46:41.248618Z\",\"status\":\"SUCCESS\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"mac-rel-swarming\"},\"number\":19878,\"createTime\":\"2021-12-15T22:07:43.400251Z\",\"status\":\"FAILURE\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"mac-rel-swarming\"},\"number\":19877,\"createTime\":\"2021-12-15T21:32:52.355688Z\",\"status\":\"FAILURE\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"mac-rel-swarming\"},\"number\":19876,\"createTime\":\"2021-12-15T20:55:43.229690Z\",\"status\":\"SUCCESS\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"mac-rel-swarming\"},\"number\":19875,\"createTime\":\"2021-12-15T20:21:35.328653Z\",\"status\":\"SUCCESS\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"mac-rel-swarming\"},\"number\":19874,\"createTime\":\"2021-12-15T19:43:47.476727Z\",\"status\":\"SUCCESS\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"mac-rel-swarming\"},\"number\":19873,\"createTime\":\"2021-12-15T19:09:49.258287Z\",\"status\":\"SUCCESS\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"mac-rel-swarming\"},\"number\":19872,\"createTime\":\"2021-12-15T18:35:35.376601Z\",\"status\":\"SUCCESS\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"mac-rel-swarming\"},\"number\":19871,\"createTime\":\"2021-12-15T17:51:01.292483Z\",\"status\":\"SUCCESS\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"mac-rel-swarming\"},\"number\":19870,\"createTime\":\"2021-12-15T17:17:48.249904Z\",\"status\":\"FAILURE\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"mac-rel-swarming\"},\"number\":19869,\"createTime\":\"2021-12-15T16:44:53.373418Z\",\"status\":\"SUCCESS\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"mac-rel-swarming\"},\"number\":19868,\"createTime\":\"2021-12-15T16:08:23.545215Z\",\"status\":\"FAILURE\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"mac-rel-swarming\"},\"number\":19867,\"createTime\":\"2021-12-15T15:33:49.274621Z\",\"status\":\"SUCCESS\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"mac-rel-swarming\"},\"number\":19866,\"createTime\":\"2021-12-15T14:56:21.355084Z\",\"status\":\"FAILURE\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"mac-rel-swarming\"},\"number\":19865,\"createTime\":\"2021-12-15T14:24:09.388755Z\",\"status\":\"SUCCESS\"}],\"nextPageToken\":\"AS3KPtiFMMAFdt4XAfGdkEII8HZM1Cb1zFd10FUA9jy94LLmn6pItGMxitHxRUrwyonB-PoVVC2gm252OxG6E5fhPaKQr0KhFhglu3D6pt5G85Ou_3tJI6G2BSf7D0nsnXFyHg74LmRBKoNfX0YiTMw5-eVY8uQF4tSiMySE7drYZGDUD9bILmWDvkhrOcscHMlwaYO_KtNQ-obuPlkCra_3D5mYbXO5J7xcrl8Zd2LU8e3gIE1tcZppyC0PCkUnzsZnROEwCn4qQ6thxD2to5UhnQwwJGHiQ8VegHY6BPq3lbhthR8BzpuKym4olgYMyuWLMIyafQU6\"}\n"
+      }
+    }
+  },
+  {
+    "req": {
+      "url": "https://localhost:8080/prpc/luci.milo.v1.MiloInternal/QueryRecentBuilds",
+      "method": "POST",
+      "headers": {
+        "host": "localhost:8080",
+        "connection": "keep-alive",
+        "content-length": "99",
+        "accept": "application/json",
+        "user-agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Cypress/9.1.0 Chrome/94.0.4606.81 Electron/15.2.0 Safari/537.36",
+        "content-type": "application/json",
+        "sec-fetch-site": "same-origin",
+        "sec-fetch-mode": "cors",
+        "sec-fetch-dest": "empty",
+        "referer": "https://localhost:8080/ui/p/chromium/builders",
+        "accept-encoding": "gzip, deflate, br",
+        "accept-language": "en-GB"
+      },
+      "body": {
+        "type": "json",
+        "data": {
+          "builder": {
+            "project": "chromium",
+            "bucket": "ci",
+            "builder": "win-rel-swarming-staging"
+          },
+          "pageSize": 15
+        }
+      }
+    },
+    "res": {
+      "statusCode": 200,
+      "headers": {
+        "x-powered-by": "Express",
+        "content-type": "application/json",
+        "vary": "Accept-Encoding",
+        "x-content-type-options": "nosniff",
+        "x-prpc-grpc-code": "0",
+        "content-encoding": "",
+        "x-cloud-trace-context": "9d15b308a5cdaac84dba8f0970340c2d",
+        "date": "Wed, 15 Dec 2021 23:29:43 GMT",
+        "server": "Google Frontend",
+        "cache-control": "private",
+        "alt-svc": "h3=\":443\"; ma=2592000,h3-29=\":443\"; ma=2592000,h3-Q050=\":443\"; ma=2592000,h3-Q046=\":443\"; ma=2592000,h3-Q043=\":443\"; ma=2592000,quic=\":443\"; ma=2592000; v=\"46,43\"",
+        "connection": "close",
+        "transfer-encoding": "chunked"
+      },
+      "body": {
+        "type": "string",
+        "data": ")]}'\n{\"builds\":[{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"win-rel-swarming-staging\"},\"number\":25221,\"createTime\":\"2021-07-01T05:55:24.304786Z\",\"status\":\"INFRA_FAILURE\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"win-rel-swarming-staging\"},\"number\":25220,\"createTime\":\"2021-07-01T05:54:50.407690Z\",\"status\":\"INFRA_FAILURE\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"win-rel-swarming-staging\"},\"number\":25219,\"createTime\":\"2021-07-01T05:51:27.337876Z\",\"status\":\"INFRA_FAILURE\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"win-rel-swarming-staging\"},\"number\":25218,\"createTime\":\"2021-07-01T05:50:19.341598Z\",\"status\":\"INFRA_FAILURE\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"win-rel-swarming-staging\"},\"number\":25217,\"createTime\":\"2021-07-01T05:44:04.309314Z\",\"status\":\"INFRA_FAILURE\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"win-rel-swarming-staging\"},\"number\":25216,\"createTime\":\"2021-07-01T05:42:22.769438Z\",\"status\":\"INFRA_FAILURE\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"win-rel-swarming-staging\"},\"number\":25215,\"createTime\":\"2021-07-01T05:33:51.397182Z\",\"status\":\"INFRA_FAILURE\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"win-rel-swarming-staging\"},\"number\":25214,\"createTime\":\"2021-07-01T05:30:26.341015Z\",\"status\":\"INFRA_FAILURE\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"win-rel-swarming-staging\"},\"number\":25213,\"createTime\":\"2021-07-01T05:23:37.369485Z\",\"status\":\"INFRA_FAILURE\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"win-rel-swarming-staging\"},\"number\":25212,\"createTime\":\"2021-07-01T05:20:15.488736Z\",\"status\":\"INFRA_FAILURE\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"win-rel-swarming-staging\"},\"number\":25211,\"createTime\":\"2021-07-01T04:56:19.303977Z\",\"status\":\"INFRA_FAILURE\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"win-rel-swarming-staging\"},\"number\":25210,\"createTime\":\"2021-07-01T04:54:13.429294Z\",\"status\":\"INFRA_FAILURE\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"win-rel-swarming-staging\"},\"number\":25209,\"createTime\":\"2021-07-01T04:53:42.359226Z\",\"status\":\"INFRA_FAILURE\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"win-rel-swarming-staging\"},\"number\":25208,\"createTime\":\"2021-07-01T04:45:09.384897Z\",\"status\":\"INFRA_FAILURE\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"win-rel-swarming-staging\"},\"number\":25207,\"createTime\":\"2021-07-01T04:17:56.383768Z\",\"status\":\"INFRA_FAILURE\"}],\"nextPageToken\":\"AS3KPth_MMxe7n2q3zwXtNOq4sZXAeffHuTQJ0wrE3hCI87h2uqrhtR3JcJsGQEzwaSUxBTc9ymTKNjM4UY7yFpzdWjNTqbBXaGIX5u1beLhgJbWyVPtgUtKF_Bzd8UnmzTfufKrZcqEZLUhwz4HdKFHsFPv13uiNMyWlhh7SK3NCnazqO0QsXtyvpRPE1RyJcxqcSo5skj8UCuwczOId3WUQT8Nh5L9hW4vakEBXfNXr3Suvpzlt4jcMnWCPyXXWxysb-3vTmeL-LuWyXwkFzVGNcwgzVMojB_GbMP6X7t8yl5n0MZCTKOez7oqLsQRBepdaiskoiCoqXSNFvhLRKKXzS8\"}\n"
+      }
+    }
   }
 ]

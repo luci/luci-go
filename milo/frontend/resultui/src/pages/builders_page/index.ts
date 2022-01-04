@@ -39,6 +39,7 @@ export class BuildersPageElement extends MiloBaseElement implements BeforeEnterO
   private project!: string;
   private group!: string;
 
+  @observable.ref private numOfBuilds = 25;
   @observable.ref private builders: readonly BuilderID[] = [];
   @observable.ref private isLoading = false;
   @observable.ref private endOfPage = true;
@@ -134,7 +135,8 @@ export class BuildersPageElement extends MiloBaseElement implements BeforeEnterO
             ${repeat(
               this.builders,
               (b) => b.project + '/' + b.bucket + '/' + b.builder,
-              (b) => html`<milo-builders-page-row .builder=${b}></milo-builders-page-row>`
+              (b) =>
+                html`<milo-builders-page-row .builder=${b} .numOfBuilds=${this.numOfBuilds}></milo-builders-page-row>`
             )}
           </tbody>
         </table>
@@ -152,6 +154,20 @@ export class BuildersPageElement extends MiloBaseElement implements BeforeEnterO
             <span style=${styleMap({ display: this.isLoading ? '' : 'none' })}>
               Loading <milo-dot-spinner></milo-dot-spinner>
             </span>
+          </span>
+          <br />
+          <span>
+            Number of builds per builder (10-100):
+            <input
+              id="num-of-builds"
+              type="number"
+              min="10"
+              max="100"
+              value=${this.numOfBuilds}
+              @change=${(e: InputEvent) => {
+                this.numOfBuilds = Number((e.target as HTMLInputElement).value);
+              }}
+            />
           </span>
         </div>
       </div>

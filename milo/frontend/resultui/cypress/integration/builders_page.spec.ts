@@ -56,4 +56,10 @@ describe('Builders Page', () => {
     cy.get('milo-builders-page-row:first-child').shadow().get('.stats-badge.pending-cell').contains(0);
     cy.get('milo-builders-page-row:first-child').shadow().get('.stats-badge.running-cell').contains(31);
   });
+
+  it('should be able to configure the number of builds', () => {
+    cy.visit('/ui/p/chromium/builders');
+    cy.get('#num-of-builds').clear().type('15{enter}', { force: true });
+    cy.get('milo-builders-page-row:first-child').shadow().get('#builds > a').should('have.length', 15);
+  });
 });
