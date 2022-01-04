@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import { STUB_REQUEST_OPTIONS } from '../support/stub_prpc_services';
+
 describe('Builders Page', () => {
   it('should get project ID from URL', () => {
     cy.visit('/ui/p/chromium/builders');
@@ -19,8 +21,19 @@ describe('Builders Page', () => {
   });
 
   it('should get group ID from URL', () => {
+    // We don't actually have a builders group in -dev.
+    // Modify the RPC responses to not return 404.
+    cy.stubRequests({ url: 'https://localhost:8080/prpc/**', method: 'POST' }, 'modified-milo', STUB_REQUEST_OPTIONS);
+
     cy.visit('/ui/p/chromium/g/builders-group/builders');
     cy.get('milo-builders-page').shadow().get('#builders-group-id').contains('chromium');
     cy.get('milo-builders-page').shadow().get('#builders-group-id').contains('builders-group');
+  });
+
+  it('should render builder rows', () => {
+    cy.visit('/ui/p/chromium/builders');
+    cy.get('milo-builders-page-row:first-child').contains('chromium/ci/android-marshmallow-arm64-rel-swarming');
+    cy.get('milo-builders-page-row').should('have.length', 9);
+    cy.get('#loading-row').contains('Showing 9 builders.');
   });
 });

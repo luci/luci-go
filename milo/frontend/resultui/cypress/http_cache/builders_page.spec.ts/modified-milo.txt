@@ -6,14 +6,14 @@
       "headers": {
         "host": "localhost:8080",
         "connection": "keep-alive",
-        "content-length": "33",
+        "content-length": "47",
         "accept": "application/json",
         "user-agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Cypress/9.1.0 Chrome/94.0.4606.81 Electron/15.2.0 Safari/537.36",
         "content-type": "application/json",
         "sec-fetch-site": "same-origin",
         "sec-fetch-mode": "cors",
         "sec-fetch-dest": "empty",
-        "referer": "https://localhost:8080/ui/p/chromium/builders/",
+        "referer": "https://localhost:8080/ui/p/chromium/g/builders-group/builders/",
         "accept-encoding": "gzip, deflate, br",
         "accept-language": "en-GB"
       },
@@ -21,7 +21,7 @@
         "type": "json",
         "data": {
           "project": "chromium",
-          "group": ""
+          "group": "builders-group"
         }
       }
     },
