@@ -551,5 +551,500 @@
         "data": ")]}'\n{\"builds\":[{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"win11-rel-swarming\"},\"number\":13,\"createTime\":\"2021-12-15T20:03:20.335119Z\",\"status\":\"SUCCESS\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"win11-rel-swarming\"},\"number\":12,\"createTime\":\"2021-12-15T18:04:03.318862Z\",\"status\":\"SUCCESS\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"win11-rel-swarming\"},\"number\":11,\"createTime\":\"2021-12-15T16:43:29.249922Z\",\"status\":\"FAILURE\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"win11-rel-swarming\"},\"number\":10,\"createTime\":\"2021-12-15T14:54:47.255936Z\",\"status\":\"SUCCESS\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"win11-rel-swarming\"},\"number\":9,\"createTime\":\"2021-12-15T13:13:01.281670Z\",\"status\":\"FAILURE\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"win11-rel-swarming\"},\"number\":8,\"createTime\":\"2021-12-15T10:50:05.332793Z\",\"status\":\"SUCCESS\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"win11-rel-swarming\"},\"number\":7,\"createTime\":\"2021-12-15T09:36:17.253550Z\",\"status\":\"FAILURE\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"win11-rel-swarming\"},\"number\":6,\"createTime\":\"2021-12-15T07:48:37.366760Z\",\"status\":\"FAILURE\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"win11-rel-swarming\"},\"number\":5,\"createTime\":\"2021-12-15T05:52:23.261031Z\",\"status\":\"FAILURE\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"win11-rel-swarming\"},\"number\":4,\"createTime\":\"2021-12-15T03:34:16.373419Z\",\"status\":\"FAILURE\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"win11-rel-swarming\"},\"number\":3,\"createTime\":\"2021-12-15T01:47:49.319553Z\",\"status\":\"SUCCESS\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"win11-rel-swarming\"},\"number\":2,\"createTime\":\"2021-12-15T00:02:29.270595Z\",\"status\":\"FAILURE\"},{\"builder\":{\"project\":\"chromium\",\"bucket\":\"ci\",\"builder\":\"win11-rel-swarming\"},\"number\":1,\"createTime\":\"2021-12-14T22:03:23.372566Z\",\"status\":\"FAILURE\"}]}\n"
       }
     }
+  },
+  {
+    "req": {
+      "url": "https://localhost:8080/prpc/luci.milo.v1.MiloInternal/QueryBuilderStats",
+      "method": "POST",
+      "headers": {
+        "host": "localhost:8080",
+        "connection": "keep-alive",
+        "content-length": "99",
+        "accept": "application/json",
+        "user-agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Cypress/9.1.0 Chrome/94.0.4606.81 Electron/15.2.0 Safari/537.36",
+        "content-type": "application/json",
+        "sec-fetch-site": "same-origin",
+        "sec-fetch-mode": "cors",
+        "sec-fetch-dest": "empty",
+        "referer": "https://localhost:8080/ui/p/chromium/g/builders-group/builders",
+        "accept-encoding": "gzip, deflate, br",
+        "accept-language": "en-GB"
+      },
+      "body": {
+        "type": "json",
+        "data": {
+          "builder": {
+            "project": "chromium",
+            "bucket": "ci",
+            "builder": "android-marshmallow-arm64-rel-swarming"
+          }
+        }
+      }
+    },
+    "res": {
+      "statusCode": 200,
+      "headers": {
+        "x-powered-by": "Express",
+        "content-type": "application/json",
+        "vary": "Accept-Encoding",
+        "x-content-type-options": "nosniff",
+        "x-prpc-grpc-code": "0",
+        "content-encoding": "",
+        "x-cloud-trace-context": "980fa3e98a0ca5cbd6ba41b1f3963130",
+        "date": "Wed, 15 Dec 2021 23:08:16 GMT",
+        "server": "Google Frontend",
+        "cache-control": "private",
+        "alt-svc": "h3=\":443\"; ma=2592000,h3-29=\":443\"; ma=2592000,h3-Q050=\":443\"; ma=2592000,h3-Q046=\":443\"; ma=2592000,h3-Q043=\":443\"; ma=2592000,quic=\":443\"; ma=2592000; v=\"46,43\"",
+        "connection": "close",
+        "transfer-encoding": "chunked",
+        "access-control-expose-headers": "*",
+        "access-control-allow-origin": "*",
+        "access-control-allow-credentials": "true"
+      },
+      "body": {
+        "type": "string",
+        "data": ")]}'\n{\"runningBuildsCount\":31}\n"
+      }
+    }
+  },
+  {
+    "req": {
+      "url": "https://localhost:8080/prpc/luci.milo.v1.MiloInternal/QueryBuilderStats",
+      "method": "POST",
+      "headers": {
+        "host": "localhost:8080",
+        "connection": "keep-alive",
+        "content-length": "79",
+        "accept": "application/json",
+        "user-agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Cypress/9.1.0 Chrome/94.0.4606.81 Electron/15.2.0 Safari/537.36",
+        "content-type": "application/json",
+        "sec-fetch-site": "same-origin",
+        "sec-fetch-mode": "cors",
+        "sec-fetch-dest": "empty",
+        "referer": "https://localhost:8080/ui/p/chromium/g/builders-group/builders",
+        "accept-encoding": "gzip, deflate, br",
+        "accept-language": "en-GB"
+      },
+      "body": {
+        "type": "json",
+        "data": {
+          "builder": {
+            "project": "chromium",
+            "bucket": "ci",
+            "builder": "linux-rel-swarming"
+          }
+        }
+      }
+    },
+    "res": {
+      "statusCode": 200,
+      "headers": {
+        "x-powered-by": "Express",
+        "content-type": "application/json",
+        "vary": "Accept-Encoding",
+        "x-content-type-options": "nosniff",
+        "x-prpc-grpc-code": "0",
+        "content-encoding": "",
+        "x-cloud-trace-context": "f956f7f6f185328d3e379343154bd610",
+        "date": "Wed, 15 Dec 2021 23:08:16 GMT",
+        "server": "Google Frontend",
+        "cache-control": "private",
+        "alt-svc": "h3=\":443\"; ma=2592000,h3-29=\":443\"; ma=2592000,h3-Q050=\":443\"; ma=2592000,h3-Q046=\":443\"; ma=2592000,h3-Q043=\":443\"; ma=2592000,quic=\":443\"; ma=2592000; v=\"46,43\"",
+        "connection": "close",
+        "transfer-encoding": "chunked",
+        "access-control-expose-headers": "*",
+        "access-control-allow-origin": "*",
+        "access-control-allow-credentials": "true"
+      },
+      "body": {
+        "type": "string",
+        "data": ")]}'\n{\"runningBuildsCount\":43}\n"
+      }
+    }
+  },
+  {
+    "req": {
+      "url": "https://localhost:8080/prpc/luci.milo.v1.MiloInternal/QueryBuilderStats",
+      "method": "POST",
+      "headers": {
+        "host": "localhost:8080",
+        "connection": "keep-alive",
+        "content-length": "87",
+        "accept": "application/json",
+        "user-agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Cypress/9.1.0 Chrome/94.0.4606.81 Electron/15.2.0 Safari/537.36",
+        "content-type": "application/json",
+        "sec-fetch-site": "same-origin",
+        "sec-fetch-mode": "cors",
+        "sec-fetch-dest": "empty",
+        "referer": "https://localhost:8080/ui/p/chromium/g/builders-group/builders",
+        "accept-encoding": "gzip, deflate, br",
+        "accept-language": "en-GB"
+      },
+      "body": {
+        "type": "json",
+        "data": {
+          "builder": {
+            "project": "chromium",
+            "bucket": "ci",
+            "builder": "linux-rel-swarming-staging"
+          }
+        }
+      }
+    },
+    "res": {
+      "statusCode": 200,
+      "headers": {
+        "x-powered-by": "Express",
+        "content-type": "application/json",
+        "vary": "Accept-Encoding",
+        "x-content-type-options": "nosniff",
+        "x-prpc-grpc-code": "0",
+        "content-encoding": "",
+        "x-cloud-trace-context": "f18198e7a700529c06631c63655b6468",
+        "date": "Wed, 15 Dec 2021 23:08:16 GMT",
+        "server": "Google Frontend",
+        "cache-control": "private",
+        "alt-svc": "h3=\":443\"; ma=2592000,h3-29=\":443\"; ma=2592000,h3-Q050=\":443\"; ma=2592000,h3-Q046=\":443\"; ma=2592000,h3-Q043=\":443\"; ma=2592000,quic=\":443\"; ma=2592000; v=\"46,43\"",
+        "connection": "close",
+        "transfer-encoding": "chunked",
+        "access-control-expose-headers": "*",
+        "access-control-allow-origin": "*",
+        "access-control-allow-credentials": "true"
+      },
+      "body": {
+        "type": "string",
+        "data": ")]}'\n{\"runningBuildsCount\":46}\n"
+      }
+    }
+  },
+  {
+    "req": {
+      "url": "https://localhost:8080/prpc/luci.milo.v1.MiloInternal/QueryBuilderStats",
+      "method": "POST",
+      "headers": {
+        "host": "localhost:8080",
+        "connection": "keep-alive",
+        "content-length": "83",
+        "accept": "application/json",
+        "user-agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Cypress/9.1.0 Chrome/94.0.4606.81 Electron/15.2.0 Safari/537.36",
+        "content-type": "application/json",
+        "sec-fetch-site": "same-origin",
+        "sec-fetch-mode": "cors",
+        "sec-fetch-dest": "empty",
+        "referer": "https://localhost:8080/ui/p/chromium/g/builders-group/builders",
+        "accept-encoding": "gzip, deflate, br",
+        "accept-language": "en-GB"
+      },
+      "body": {
+        "type": "json",
+        "data": {
+          "builder": {
+            "project": "chromium",
+            "bucket": "ci",
+            "builder": "linux-ssd-rel-swarming"
+          }
+        }
+      }
+    },
+    "res": {
+      "statusCode": 200,
+      "headers": {
+        "x-powered-by": "Express",
+        "content-type": "application/json",
+        "vary": "Accept-Encoding",
+        "x-content-type-options": "nosniff",
+        "x-prpc-grpc-code": "0",
+        "content-encoding": "",
+        "x-cloud-trace-context": "2469484d9b921a8e560364e00939edbe",
+        "date": "Wed, 15 Dec 2021 23:08:16 GMT",
+        "server": "Google Frontend",
+        "cache-control": "private",
+        "alt-svc": "h3=\":443\"; ma=2592000,h3-29=\":443\"; ma=2592000,h3-Q050=\":443\"; ma=2592000,h3-Q046=\":443\"; ma=2592000,h3-Q043=\":443\"; ma=2592000,quic=\":443\"; ma=2592000; v=\"46,43\"",
+        "connection": "close",
+        "transfer-encoding": "chunked",
+        "access-control-expose-headers": "*",
+        "access-control-allow-origin": "*",
+        "access-control-allow-credentials": "true"
+      },
+      "body": {
+        "type": "string",
+        "data": ")]}'\n{\"runningBuildsCount\":1}\n"
+      }
+    }
+  },
+  {
+    "req": {
+      "url": "https://localhost:8080/prpc/luci.milo.v1.MiloInternal/QueryBuilderStats",
+      "method": "POST",
+      "headers": {
+        "host": "localhost:8080",
+        "connection": "keep-alive",
+        "content-length": "81",
+        "accept": "application/json",
+        "user-agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Cypress/9.1.0 Chrome/94.0.4606.81 Electron/15.2.0 Safari/537.36",
+        "content-type": "application/json",
+        "sec-fetch-site": "same-origin",
+        "sec-fetch-mode": "cors",
+        "sec-fetch-dest": "empty",
+        "referer": "https://localhost:8080/ui/p/chromium/g/builders-group/builders",
+        "accept-encoding": "gzip, deflate, br",
+        "accept-language": "en-GB"
+      },
+      "body": {
+        "type": "json",
+        "data": {
+          "builder": {
+            "project": "chromium",
+            "bucket": "ci",
+            "builder": "mac-arm-rel-swarming"
+          }
+        }
+      }
+    },
+    "res": {
+      "statusCode": 200,
+      "headers": {
+        "x-powered-by": "Express",
+        "content-type": "application/json",
+        "vary": "Accept-Encoding",
+        "x-content-type-options": "nosniff",
+        "x-prpc-grpc-code": "0",
+        "content-encoding": "",
+        "x-cloud-trace-context": "81db4658137c91e28250438f122bf045",
+        "date": "Wed, 15 Dec 2021 23:08:16 GMT",
+        "server": "Google Frontend",
+        "cache-control": "private",
+        "alt-svc": "h3=\":443\"; ma=2592000,h3-29=\":443\"; ma=2592000,h3-Q050=\":443\"; ma=2592000,h3-Q046=\":443\"; ma=2592000,h3-Q043=\":443\"; ma=2592000,quic=\":443\"; ma=2592000; v=\"46,43\"",
+        "connection": "close",
+        "transfer-encoding": "chunked",
+        "access-control-expose-headers": "*",
+        "access-control-allow-origin": "*",
+        "access-control-allow-credentials": "true"
+      },
+      "body": {
+        "type": "string",
+        "data": ")]}'\n{\"runningBuildsCount\":1}\n"
+      }
+    }
+  },
+  {
+    "req": {
+      "url": "https://localhost:8080/prpc/luci.milo.v1.MiloInternal/QueryBuilderStats",
+      "method": "POST",
+      "headers": {
+        "host": "localhost:8080",
+        "connection": "keep-alive",
+        "content-length": "77",
+        "accept": "application/json",
+        "user-agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Cypress/9.1.0 Chrome/94.0.4606.81 Electron/15.2.0 Safari/537.36",
+        "content-type": "application/json",
+        "sec-fetch-site": "same-origin",
+        "sec-fetch-mode": "cors",
+        "sec-fetch-dest": "empty",
+        "referer": "https://localhost:8080/ui/p/chromium/g/builders-group/builders",
+        "accept-encoding": "gzip, deflate, br",
+        "accept-language": "en-GB"
+      },
+      "body": {
+        "type": "json",
+        "data": {
+          "builder": {
+            "project": "chromium",
+            "bucket": "ci",
+            "builder": "mac-rel-swarming"
+          }
+        }
+      }
+    },
+    "res": {
+      "statusCode": 200,
+      "headers": {
+        "x-powered-by": "Express",
+        "content-type": "application/json",
+        "vary": "Accept-Encoding",
+        "x-content-type-options": "nosniff",
+        "x-prpc-grpc-code": "0",
+        "content-encoding": "",
+        "x-cloud-trace-context": "57f0092ebc0ff2a201f8a455838bed90",
+        "date": "Wed, 15 Dec 2021 23:08:16 GMT",
+        "server": "Google Frontend",
+        "cache-control": "private",
+        "alt-svc": "h3=\":443\"; ma=2592000,h3-29=\":443\"; ma=2592000,h3-Q050=\":443\"; ma=2592000,h3-Q046=\":443\"; ma=2592000,h3-Q043=\":443\"; ma=2592000,quic=\":443\"; ma=2592000; v=\"46,43\"",
+        "connection": "close",
+        "transfer-encoding": "chunked",
+        "access-control-expose-headers": "*",
+        "access-control-allow-origin": "*",
+        "access-control-allow-credentials": "true"
+      },
+      "body": {
+        "type": "string",
+        "data": ")]}'\n{\"runningBuildsCount\":36}\n"
+      }
+    }
+  },
+  {
+    "req": {
+      "url": "https://localhost:8080/prpc/luci.milo.v1.MiloInternal/QueryBuilderStats",
+      "method": "POST",
+      "headers": {
+        "host": "localhost:8080",
+        "connection": "keep-alive",
+        "content-length": "77",
+        "accept": "application/json",
+        "user-agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Cypress/9.1.0 Chrome/94.0.4606.81 Electron/15.2.0 Safari/537.36",
+        "content-type": "application/json",
+        "sec-fetch-site": "same-origin",
+        "sec-fetch-mode": "cors",
+        "sec-fetch-dest": "empty",
+        "referer": "https://localhost:8080/ui/p/chromium/g/builders-group/builders",
+        "accept-encoding": "gzip, deflate, br",
+        "accept-language": "en-GB"
+      },
+      "body": {
+        "type": "json",
+        "data": {
+          "builder": {
+            "project": "chromium",
+            "bucket": "ci",
+            "builder": "win-rel-swarming"
+          }
+        }
+      }
+    },
+    "res": {
+      "statusCode": 200,
+      "headers": {
+        "x-powered-by": "Express",
+        "content-type": "application/json",
+        "vary": "Accept-Encoding",
+        "x-content-type-options": "nosniff",
+        "x-prpc-grpc-code": "0",
+        "content-encoding": "",
+        "x-cloud-trace-context": "0f4a3edcf642431d0dbbf0f24a0805e7",
+        "date": "Wed, 15 Dec 2021 23:08:16 GMT",
+        "server": "Google Frontend",
+        "cache-control": "private",
+        "alt-svc": "h3=\":443\"; ma=2592000,h3-29=\":443\"; ma=2592000,h3-Q050=\":443\"; ma=2592000,h3-Q046=\":443\"; ma=2592000,h3-Q043=\":443\"; ma=2592000,quic=\":443\"; ma=2592000; v=\"46,43\"",
+        "connection": "close",
+        "transfer-encoding": "chunked",
+        "access-control-expose-headers": "*",
+        "access-control-allow-origin": "*",
+        "access-control-allow-credentials": "true"
+      },
+      "body": {
+        "type": "string",
+        "data": ")]}'\n{\"runningBuildsCount\":25}\n"
+      }
+    }
+  },
+  {
+    "req": {
+      "url": "https://localhost:8080/prpc/luci.milo.v1.MiloInternal/QueryBuilderStats",
+      "method": "POST",
+      "headers": {
+        "host": "localhost:8080",
+        "connection": "keep-alive",
+        "content-length": "85",
+        "accept": "application/json",
+        "user-agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Cypress/9.1.0 Chrome/94.0.4606.81 Electron/15.2.0 Safari/537.36",
+        "content-type": "application/json",
+        "sec-fetch-site": "same-origin",
+        "sec-fetch-mode": "cors",
+        "sec-fetch-dest": "empty",
+        "referer": "https://localhost:8080/ui/p/chromium/g/builders-group/builders",
+        "accept-encoding": "gzip, deflate, br",
+        "accept-language": "en-GB"
+      },
+      "body": {
+        "type": "json",
+        "data": {
+          "builder": {
+            "project": "chromium",
+            "bucket": "ci",
+            "builder": "win-rel-swarming-staging"
+          }
+        }
+      }
+    },
+    "res": {
+      "statusCode": 200,
+      "headers": {
+        "x-powered-by": "Express",
+        "content-type": "application/json",
+        "vary": "Accept-Encoding",
+        "x-content-type-options": "nosniff",
+        "x-prpc-grpc-code": "0",
+        "content-encoding": "",
+        "x-cloud-trace-context": "686df12870cb7ee3430b64499f4faab0",
+        "date": "Wed, 15 Dec 2021 23:08:16 GMT",
+        "server": "Google Frontend",
+        "cache-control": "private",
+        "alt-svc": "h3=\":443\"; ma=2592000,h3-29=\":443\"; ma=2592000,h3-Q050=\":443\"; ma=2592000,h3-Q046=\":443\"; ma=2592000,h3-Q043=\":443\"; ma=2592000,quic=\":443\"; ma=2592000; v=\"46,43\"",
+        "connection": "close",
+        "transfer-encoding": "chunked",
+        "access-control-expose-headers": "*",
+        "access-control-allow-origin": "*",
+        "access-control-allow-credentials": "true"
+      },
+      "body": {
+        "type": "string",
+        "data": ")]}'\n{\"runningBuildsCount\":22}\n"
+      }
+    }
+  },
+  {
+    "req": {
+      "url": "https://localhost:8080/prpc/luci.milo.v1.MiloInternal/QueryBuilderStats",
+      "method": "POST",
+      "headers": {
+        "host": "localhost:8080",
+        "connection": "keep-alive",
+        "content-length": "79",
+        "accept": "application/json",
+        "user-agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Cypress/9.1.0 Chrome/94.0.4606.81 Electron/15.2.0 Safari/537.36",
+        "content-type": "application/json",
+        "sec-fetch-site": "same-origin",
+        "sec-fetch-mode": "cors",
+        "sec-fetch-dest": "empty",
+        "referer": "https://localhost:8080/ui/p/chromium/g/builders-group/builders",
+        "accept-encoding": "gzip, deflate, br",
+        "accept-language": "en-GB"
+      },
+      "body": {
+        "type": "json",
+        "data": {
+          "builder": {
+            "project": "chromium",
+            "bucket": "ci",
+            "builder": "win11-rel-swarming"
+          }
+        }
+      }
+    },
+    "res": {
+      "statusCode": 200,
+      "headers": {
+        "x-powered-by": "Express",
+        "content-type": "application/json",
+        "vary": "Accept-Encoding",
+        "x-content-type-options": "nosniff",
+        "x-prpc-grpc-code": "0",
+        "content-encoding": "",
+        "x-cloud-trace-context": "ffdb8b0e8857a8a9603f48d6a7e3056c",
+        "date": "Wed, 15 Dec 2021 23:08:16 GMT",
+        "server": "Google Frontend",
+        "cache-control": "private",
+        "alt-svc": "h3=\":443\"; ma=2592000,h3-29=\":443\"; ma=2592000,h3-Q050=\":443\"; ma=2592000,h3-Q046=\":443\"; ma=2592000,h3-Q043=\":443\"; ma=2592000,quic=\":443\"; ma=2592000; v=\"46,43\"",
+        "connection": "close",
+        "transfer-encoding": "chunked",
+        "access-control-expose-headers": "*",
+        "access-control-allow-origin": "*",
+        "access-control-allow-credentials": "true"
+      },
+      "body": {
+        "type": "string",
+        "data": ")]}'\n{\"runningBuildsCount\":1}\n"
+      }
+    }
   }
 ]

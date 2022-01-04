@@ -25,6 +25,7 @@ import { consumer } from '../../libs/context';
 import { reportRenderError } from '../../libs/error_handler';
 import { unwrapObservable } from '../../libs/unwrap_observable';
 import { Build, BuilderID } from '../../services/buildbucket';
+import { BuilderStats } from '../../services/milo_internal';
 import commonStyle from '../../styles/common_style.css';
 
 @customElement('milo-builders-page-row')
@@ -34,6 +35,10 @@ export class BuildersPageRowElement extends MiloBaseElement {
 
   @observable.ref builder!: BuilderID;
   @observable.ref numOfBuilds = 25;
+
+  @computed private get builderLink() {
+    return getURLPathForBuilder(this.builder);
+  }
 
   @computed private get recentBuilds$(): IPromiseBasedObservable<readonly Build[]> {
     if (!this.appState?.milo) {
@@ -54,16 +59,45 @@ export class BuildersPageRowElement extends MiloBaseElement {
     return unwrapObservable<readonly Build[] | null>(this.recentBuilds$, null);
   }
 
+  @computed private get builderStats$(): IPromiseBasedObservable<BuilderStats> {
+    if (!this.appState?.milo) {
+      return fromPromise(Promise.race([]));
+    }
+
+    return fromPromise(
+      this.appState.milo.queryBuilderStats({
+        builder: this.builder,
+      })
+    );
+  }
+
+  @computed private get builderStats() {
+    return unwrapObservable<BuilderStats | null>(this.builderStats$, null);
+  }
+
   protected render = reportRenderError(this, () => {
     return html`
-      <td class="builder-id">
-        <a href=${getURLPathForBuilder(this.builder)}>
-          ${this.builder.project}/${this.builder.bucket}/${this.builder.builder}
-        </a>
+      <td class="shrink-to-fit">
+        <a href=${this.builderLink}>${this.builder.project}/${this.builder.bucket}/${this.builder.builder}</a>
       </td>
+      <td class="shrink-to-fit">${this.renderBuilderStats()}</td>
       <td>${this.renderRecentBuilds()}</td>
     `;
   });
+
+  private renderBuilderStats() {
+    if (!this.builderStats) {
+      return html`<milo-dot-spinner></milo-dot-spinner>`;
+    }
+    return html`
+      <a href=${this.builderLink} class="stats-badge pending-cell">
+        ${this.builderStats.pendingBuildsCount || 0} pending
+      </a>
+      <a href=${this.builderLink} class="stats-badge running-cell">
+        ${this.builderStats.runningBuildsCount || 0} running
+      </a>
+    `;
+  }
 
   private renderRecentBuilds() {
     if (!this.recentBuilds) {
@@ -104,9 +138,22 @@ export class BuildersPageRowElement extends MiloBaseElement {
         padding: 5px;
       }
 
-      .builder-id {
+      .shrink-to-fit {
         width: 1px;
         white-space: nowrap;
+      }
+
+      .stats-badge {
+        font-size: 10px;
+        display: inline-block;
+        width: 55px;
+        height: 20px;
+        line-height: 20px;
+        text-align: center;
+        border: 1px solid black;
+        border-radius: 3px;
+        text-decoration: none;
+        color: var(--default-text-color);
       }
 
       #builds {

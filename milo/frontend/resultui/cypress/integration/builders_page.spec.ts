@@ -50,4 +50,10 @@ describe('Builders Page', () => {
       .get('a:nth-child(9)')
       .should('have.class', 'failure-cell');
   });
+
+  it('should render pending/running builds', () => {
+    cy.visit('/ui/p/chromium/builders');
+    cy.get('milo-builders-page-row:first-child').shadow().get('.stats-badge.pending-cell').contains(0);
+    cy.get('milo-builders-page-row:first-child').shadow().get('.stats-badge.running-cell').contains(31);
+  });
 });
