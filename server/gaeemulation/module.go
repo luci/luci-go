@@ -66,6 +66,7 @@ var ModuleName = module.RegisterName("go.chromium.org/luci/server/gaeemulation")
 type ModuleOptions struct {
 	DSCache                  string // currently either "disable" (default) or "redis"
 	RandomSecretsInDatastore bool   // true to replace the random secrets store with the GAEv1-one
+	DSConnectionPoolSize     int    // passed to WithGRPCConnectionPool, if > 0.
 }
 
 // Register registers the command line flags.
@@ -82,6 +83,12 @@ func (o *ModuleOptions) Register(f *flag.FlagSet) {
 		o.RandomSecretsInDatastore,
 		`If set, use datastore to store random secrets instead of deriving them from a -root-secret. `+
 			`Can be used for compatibility with older GAE services. Do not use in new services.`,
+	)
+	f.IntVar(
+		&o.DSConnectionPoolSize,
+		"ds-connection-pool-size",
+		o.DSConnectionPoolSize,
+		"If set, DS client is constructed with WithGRPCConnectionPool() and this value. ",
 	)
 }
 
@@ -151,10 +158,14 @@ func (m *gaeModule) Initialize(ctx context.Context, host module.Host, opts modul
 		store.SetRandomSecretsStore(gaesecrets.New(nil))
 	}
 
+	if s := m.opts.DSConnectionPoolSize; s < 0 {
+		return nil, errors.Reason("-ds-connection-pool-size: must be >= 0, but %d", s).Err()
+	}
+
 	var client *datastore.Client
 	if opts.CloudProject != "" {
 		var err error
-		if client, err = m.initDSClient(ctx, host, opts.CloudProject); err != nil {
+		if client, err = m.initDSClient(ctx, host, opts.CloudProject, m.opts.DSConnectionPoolSize); err != nil {
 			return nil, err
 		}
 	}
@@ -173,7 +184,7 @@ func (m *gaeModule) Initialize(ctx context.Context, host module.Host, opts modul
 
 // initDSClient sets up Cloud Datastore client that uses AsSelf server token
 // source.
-func (m *gaeModule) initDSClient(ctx context.Context, host module.Host, cloudProject string) (*datastore.Client, error) {
+func (m *gaeModule) initDSClient(ctx context.Context, host module.Host, cloudProject string, poolSize int) (*datastore.Client, error) {
 	logging.Infof(ctx, "Setting up datastore client for project %q", cloudProject)
 
 	// Enable auth only when using the real datastore.
@@ -189,6 +200,9 @@ func (m *gaeModule) initDSClient(ctx context.Context, host module.Host, cloudPro
 		}
 	}
 
+	if poolSize > 0 {
+		clientOpts = append(clientOpts, option.WithGRPCConnectionPool(poolSize))
+	}
 	client, err := datastore.NewClient(ctx, cloudProject, clientOpts...)
 	if err != nil {
 		return nil, errors.Annotate(err, "failed to instantiate the datastore client").Err()
