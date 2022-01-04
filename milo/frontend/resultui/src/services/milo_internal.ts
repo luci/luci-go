@@ -16,7 +16,7 @@ import stableStringify from 'fast-json-stable-stringify';
 
 import { cached, CacheOption } from '../libs/cached_fn';
 import { PrpcClientExt } from '../libs/prpc_client_ext';
-import { BuilderID, GitilesCommit } from './buildbucket';
+import { Build, BuilderID, BuilderItem, GitilesCommit } from './buildbucket';
 
 /**
  * Manually coded type definition and classes for milo internal service.
@@ -88,6 +88,39 @@ export interface BugTemplate {
   readonly components?: readonly string[];
 }
 
+export interface QueryRecentBuildsRequest {
+  readonly builder: BuilderID;
+  readonly pageSize?: number;
+  readonly pageToken?: string;
+}
+
+export interface QueryRecentBuildsResponse {
+  readonly builds?: readonly Build[];
+  readonly nextPageToken?: string;
+}
+
+export interface ListBuildersRequest {
+  readonly project: string;
+  readonly group?: string;
+  readonly pageSize?: number;
+  readonly pageToken?: string;
+}
+
+export interface ListBuildersResponse {
+  readonly builders?: readonly BuilderItem[];
+  readonly nextPageToken?: string;
+}
+
+export interface QueryBuilderStatsRequest {
+  readonly builder: BuilderID;
+}
+
+export interface BuilderStats {
+  readonly builder: BuilderID;
+  readonly pendingBuildsCount?: number;
+  readonly runningBuildsCount?: number;
+}
+
 export class MiloInternal {
   private static SERVICE = 'luci.milo.v1.MiloInternal';
   private readonly cachedCallFn: (opt: CacheOption, method: string, message: object) => Promise<unknown>;
@@ -107,6 +140,18 @@ export class MiloInternal {
 
   async getProjectCfg(req: GetProjectCfgRequest, cacheOpt: CacheOption = {}) {
     return (await this.cachedCallFn(cacheOpt, 'GetProjectCfg', req)) as Project;
+  }
+
+  async queryRecentBuilds(req: QueryRecentBuildsRequest, cacheOpt: CacheOption = {}) {
+    return (await this.cachedCallFn(cacheOpt, 'QueryRecentBuilds', req)) as QueryRecentBuildsResponse;
+  }
+
+  async listBuilders(req: ListBuildersRequest, cacheOpt: CacheOption = {}) {
+    return (await this.cachedCallFn(cacheOpt, 'ListBuilders', req)) as ListBuildersResponse;
+  }
+
+  async queryBuilderStats(req: QueryBuilderStatsRequest, cacheOpt: CacheOption = {}) {
+    return (await this.cachedCallFn(cacheOpt, 'QueryBuilderStats', req)) as BuilderStats;
   }
 }
 
