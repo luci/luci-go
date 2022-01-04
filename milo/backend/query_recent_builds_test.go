@@ -25,7 +25,6 @@ import (
 	. "github.com/smartystreets/goconvey/convey"
 	"go.chromium.org/luci/buildbucket/access"
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
-	"go.chromium.org/luci/common/data/caching/lru"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
 	milopb "go.chromium.org/luci/milo/api/service/v1"
@@ -35,7 +34,6 @@ import (
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
 	"go.chromium.org/luci/server/caching"
-	"go.chromium.org/luci/server/caching/cachingtest"
 	"go.chromium.org/luci/server/secrets"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
@@ -44,16 +42,7 @@ func TestQueryRecentBuilds(t *testing.T) {
 	t.Parallel()
 	Convey(`TestQueryRecentBuilds`, t, func() {
 		ctx := memory.Use(context.Background())
-
-		caches := make(map[string]caching.BlobCache)
-		ctx = caching.WithGlobalCache(ctx, func(namespace string) caching.BlobCache {
-			cache, ok := caches[namespace]
-			if !ok {
-				cache = &cachingtest.BlobCache{LRU: lru.New(0)}
-				caches[namespace] = cache
-			}
-			return cache
-		})
+		ctx = common.SetUpTestGlobalCache(ctx)
 
 		kh, err := keyset.NewHandle(aead.AES256GCMKeyTemplate())
 		So(err, ShouldBeNil)

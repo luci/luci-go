@@ -15,7 +15,12 @@
 package common
 
 import (
+	"context"
+
 	"github.com/smartystreets/goconvey/convey"
+	"go.chromium.org/luci/common/data/caching/lru"
+	"go.chromium.org/luci/server/caching"
+	"go.chromium.org/luci/server/caching/cachingtest"
 )
 
 // shouldResembleMatcher is a gomock.Matcher that performs
@@ -41,4 +46,17 @@ func (e shouldResembleMatcher) Matches(actual interface{}) bool {
 // String implements gomock.Matcher
 func (e shouldResembleMatcher) String() string {
 	return "ShouldResemble"
+}
+
+// SetUpTestGlobalCache sets up GlobalCache in the context.
+func SetUpTestGlobalCache(ctx context.Context) context.Context {
+	caches := make(map[string]caching.BlobCache)
+	return caching.WithGlobalCache(ctx, func(namespace string) caching.BlobCache {
+		cache, ok := caches[namespace]
+		if !ok {
+			cache = &cachingtest.BlobCache{LRU: lru.New(0)}
+			caches[namespace] = cache
+		}
+		return cache
+	})
 }
