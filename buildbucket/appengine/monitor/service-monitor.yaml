@@ -25,7 +25,7 @@ entrypoint: >
   -cloud-error-reporting
   -root-secret sm://root-secret
   -primary-tink-aead-key sm://tink-aead-primary
-  -ds-connection-pool-size 4
+  -ds-connection-pool-size 8
 handlers:
 - url: /.*
   script: auto
