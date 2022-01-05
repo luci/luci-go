@@ -36,7 +36,6 @@ import (
 	"go.chromium.org/luci/cv/internal/configs/prjcfg"
 	"go.chromium.org/luci/cv/internal/gerrit"
 	"go.chromium.org/luci/cv/internal/gerrit/gobmap"
-	"go.chromium.org/luci/cv/internal/gerrit/updater"
 )
 
 const TaskClassID = "poll-gerrit"
@@ -50,8 +49,8 @@ type pmNotifier interface {
 
 // CLUpdater encapsulates interaction with Gerrit CL Updater by the Poller.
 type CLUpdater interface {
-	Schedule(context.Context, *updater.RefreshGerritCL) error
-	ScheduleDelayed(context.Context, *updater.RefreshGerritCL, time.Duration) error
+	Schedule(context.Context, *changelist.UpdateCLTask) error
+	ScheduleDelayed(context.Context, *changelist.UpdateCLTask, time.Duration) error
 }
 
 // Poller polls Gerrit to discover new CLs and modifications of the existing

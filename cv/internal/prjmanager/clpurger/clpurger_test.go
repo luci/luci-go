@@ -31,7 +31,7 @@ import (
 	gf "go.chromium.org/luci/cv/internal/gerrit/gerritfake"
 	"go.chromium.org/luci/cv/internal/gerrit/gobmap/gobmaptest"
 	"go.chromium.org/luci/cv/internal/gerrit/trigger"
-	"go.chromium.org/luci/cv/internal/gerrit/updater"
+	gerritupdater "go.chromium.org/luci/cv/internal/gerrit/updater"
 	"go.chromium.org/luci/cv/internal/prjmanager"
 	"go.chromium.org/luci/cv/internal/prjmanager/pmtest"
 	"go.chromium.org/luci/cv/internal/prjmanager/prjpb"
@@ -50,7 +50,8 @@ func TestPurgeCL(t *testing.T) {
 
 		pmNotifier := prjmanager.NewNotifier(ct.TQDispatcher)
 		clMutator := changelist.NewMutator(ct.TQDispatcher, pmNotifier, nil)
-		clUpdater := updater.New(ct.TQDispatcher, ct.GFactory(), clMutator)
+		clUpdater := changelist.NewUpdater(ct.TQDispatcher, clMutator)
+		gerritupdater.RegisterUpdater(clUpdater, ct.GFactory())
 		purger := New(pmNotifier, ct.GFactory(), clUpdater)
 
 		const lProject = "lprj"
@@ -72,10 +73,9 @@ func TestPurgeCL(t *testing.T) {
 		ct.GFake.AddFrom(gf.WithCIs(gHost, gf.ACLRestricted(lProject), ci))
 
 		refreshCL := func() {
-			So(clUpdater.Refresh(ctx, &updater.RefreshGerritCL{
+			So(clUpdater.HandleCL(ctx, &changelist.UpdateCLTask{
 				LuciProject: lProject,
-				Host:        gHost,
-				Change:      change,
+				ExternalId:  string(changelist.MustGobID(gHost, change)),
 			}), ShouldBeNil)
 		}
 		refreshCL()

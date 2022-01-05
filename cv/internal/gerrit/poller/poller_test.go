@@ -35,7 +35,6 @@ import (
 	"go.chromium.org/luci/cv/internal/configs/prjcfg/prjcfgtest"
 	"go.chromium.org/luci/cv/internal/cvtesting"
 	gf "go.chromium.org/luci/cv/internal/gerrit/gerritfake"
-	"go.chromium.org/luci/cv/internal/gerrit/updater"
 
 	. "github.com/smartystreets/goconvey/convey"
 )
@@ -317,7 +316,7 @@ func TestDiscoversCLs(t *testing.T) {
 			s.QueryStates.GetStates()[0].LastFullTime = timestamppb.New(ct.Clock.Now()) // Force incremental fetch
 			So(datastore.Put(ctx, s), ShouldBeNil)
 
-			Convey("In a typical case, schedules refresh tasks without forceNotify", func() {
+			Convey("In a typical case, schedules update tasks for new CLs", func() {
 				s.QueryStates.GetStates()[0].Changes = []int64{31, 32, 33}
 				So(datastore.Put(ctx, s), ShouldBeNil)
 				So(p.poll(ctx, lProject, ct.Clock.Now()), ShouldBeNil)
@@ -329,9 +328,7 @@ func TestDiscoversCLs(t *testing.T) {
 				So(qs.GetChanges(), ShouldResemble, []int64{31, 32, 33, 34, 35})
 			})
 
-			Convey("Even if CL is already known, schedules refresh task for it without forceNotify", func() {
-				// This is important because forceNotify=False allows de-duplication in
-				// an actual CLupdater implementation.
+			Convey("Even if CL is already known, schedules update tasks", func() {
 				s.QueryStates.GetStates()[0].Changes = []int64{31, 32, 33, 34, 35}
 				So(datastore.Put(ctx, s), ShouldBeNil)
 				So(p.poll(ctx, lProject, ct.Clock.Now()), ShouldBeNil)
@@ -407,20 +404,20 @@ func sortedCLIDs(ids ...common.CLID) common.CLIDs {
 type clUpdaterMock struct {
 	m     sync.Mutex
 	tasks []struct {
-		payload *updater.RefreshGerritCL
+		payload *changelist.UpdateCLTask
 		eta     time.Time
 	}
 }
 
-func (c *clUpdaterMock) Schedule(ctx context.Context, t *updater.RefreshGerritCL) error {
+func (c *clUpdaterMock) Schedule(ctx context.Context, t *changelist.UpdateCLTask) error {
 	return c.ScheduleDelayed(ctx, t, 0)
 }
 
-func (c *clUpdaterMock) ScheduleDelayed(ctx context.Context, t *updater.RefreshGerritCL, d time.Duration) error {
+func (c *clUpdaterMock) ScheduleDelayed(ctx context.Context, t *changelist.UpdateCLTask, d time.Duration) error {
 	c.m.Lock()
 	defer c.m.Unlock()
 	c.tasks = append(c.tasks, struct {
-		payload *updater.RefreshGerritCL
+		payload *changelist.UpdateCLTask
 		eta     time.Time
 	}{t, clock.Now(ctx).Add(d)})
 	return nil
@@ -441,14 +438,14 @@ func (c *clUpdaterMock) peekETAs() []time.Time {
 	return out
 }
 
-func (c *clUpdaterMock) popPayloadsByETA() []*updater.RefreshGerritCL {
+func (c *clUpdaterMock) popPayloadsByETA() []*changelist.UpdateCLTask {
 	c.m.Lock()
 	c.sortTasksByETAlocked()
 	tasks := c.tasks
 	c.tasks = nil
 	c.m.Unlock()
 
-	out := make([]*updater.RefreshGerritCL, len(tasks))
+	out := make([]*changelist.UpdateCLTask, len(tasks))
 	for i, t := range tasks {
 		out[i] = t.payload
 	}
@@ -460,7 +457,11 @@ func (c *clUpdaterMock) peekScheduledChanges() []int {
 	defer c.m.Unlock()
 	out := make([]int, len(c.tasks))
 	for i, t := range c.tasks {
-		out[i] = int(t.payload.GetChange())
+		_, change, err := changelist.ExternalID(t.payload.GetExternalId()).ParseGobID()
+		if err != nil {
+			panic(err)
+		}
+		out[i] = int(change)
 	}
 	sort.Ints(out)
 	return out

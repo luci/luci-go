@@ -27,7 +27,6 @@ import (
 
 	"go.chromium.org/luci/cv/internal/changelist"
 	"go.chromium.org/luci/cv/internal/common"
-	"go.chromium.org/luci/cv/internal/gerrit/updater"
 )
 
 // maxLoadCLBatchSize limits how many CL entities are loaded at once for
@@ -54,10 +53,9 @@ func (p *Poller) notifyOnMatchedCLs(ctx context.Context, luciProject, host strin
 
 	errs := parallel.WorkPool(min(10, len(changes)), func(work chan<- func() error) {
 		for _, c := range changes {
-			payload := &updater.RefreshGerritCL{
+			payload := &changelist.UpdateCLTask{
 				LuciProject: luciProject,
-				Host:        host,
-				Change:      c.GetNumber(),
+				ExternalId:  string(changelist.MustGobID(host, c.GetNumber())),
 				UpdatedHint: c.GetUpdated(),
 			}
 			work <- func() error {
@@ -79,10 +77,9 @@ func (p *Poller) notifyOnUnmatchedCLs(ctx context.Context, luciProject, host str
 	}
 	errs := parallel.WorkPool(min(10, len(changes)), func(work chan<- func() error) {
 		for i, c := range changes {
-			payload := &updater.RefreshGerritCL{
+			payload := &changelist.UpdateCLTask{
 				LuciProject: luciProject,
-				Host:        host,
-				Change:      c,
+				ExternalId:  string(changelist.MustGobID(host, c)),
 			}
 			// Distribute these tasks in time to avoid high peaks (e.g. see
 			// https://crbug.com/1211057).

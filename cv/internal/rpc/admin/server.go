@@ -41,7 +41,6 @@ import (
 	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/common/eventbox"
 	"go.chromium.org/luci/cv/internal/gerrit/poller"
-	"go.chromium.org/luci/cv/internal/gerrit/updater"
 	"go.chromium.org/luci/cv/internal/prjmanager"
 	"go.chromium.org/luci/cv/internal/prjmanager/prjpb"
 	adminpb "go.chromium.org/luci/cv/internal/rpc/admin/api"
@@ -55,23 +54,23 @@ import (
 const allowGroup = "service-luci-change-verifier-admins"
 
 type AdminServer struct {
-	tqDispatcher  *tq.Dispatcher
-	gerritUpdater *updater.Updater
-	pmNotifier    *prjmanager.Notifier
-	runNotifier   *run.Notifier
+	tqDispatcher *tq.Dispatcher
+	clUpdater    *changelist.Updater
+	pmNotifier   *prjmanager.Notifier
+	runNotifier  *run.Notifier
 
 	dsmapper *dsMapper
 
 	adminpb.UnimplementedAdminServer
 }
 
-func New(t *tq.Dispatcher, ctrl *dsmapper.Controller, u *updater.Updater, p *prjmanager.Notifier, r *run.Notifier) *AdminServer {
+func New(t *tq.Dispatcher, ctrl *dsmapper.Controller, u *changelist.Updater, p *prjmanager.Notifier, r *run.Notifier) *AdminServer {
 	return &AdminServer{
-		tqDispatcher:  t,
-		gerritUpdater: u,
-		pmNotifier:    p,
-		runNotifier:   r,
-		dsmapper:      newDSMapper(ctrl),
+		tqDispatcher: t,
+		clUpdater:    u,
+		pmNotifier:   p,
+		runNotifier:  r,
+		dsmapper:     newDSMapper(ctrl),
 	}
 }
 
@@ -434,18 +433,12 @@ func (a *AdminServer) RefreshProjectCLs(ctx context.Context, req *adminpb.Refres
 					return errors.Annotate(err, "failed to fetch CL %d", id).Tag(transient.Tag).Err()
 				}
 				cls[i] = &changelist.CL{ID: cl.ID, EVersion: cl.EVersion}
-
-				host, change, err := cl.ExternalID.ParseGobID()
-				if err != nil {
-					return err
-				}
-				payload := &updater.RefreshGerritCL{
+				payload := &changelist.UpdateCLTask{
 					LuciProject: req.GetProject(),
-					Host:        host,
-					Change:      change,
-					ClidHint:    id,
+					ExternalId:  string(cl.ExternalID),
+					Id:          int64(cl.ID),
 				}
-				return a.gerritUpdater.Schedule(ctx, payload)
+				return a.clUpdater.Schedule(ctx, payload)
 			}
 		}
 	})

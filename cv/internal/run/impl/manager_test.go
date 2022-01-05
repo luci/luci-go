@@ -31,7 +31,6 @@ import (
 	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/common/eventbox"
 	"go.chromium.org/luci/cv/internal/cvtesting"
-	"go.chromium.org/luci/cv/internal/gerrit/updater"
 	"go.chromium.org/luci/cv/internal/prjmanager"
 	"go.chromium.org/luci/cv/internal/run"
 	"go.chromium.org/luci/cv/internal/run/eventpb"
@@ -68,8 +67,8 @@ func TestRunManager(t *testing.T) {
 		notifier := run.NewNotifier(ct.TQDispatcher)
 		pm := prjmanager.NewNotifier(ct.TQDispatcher)
 		clMutator := changelist.NewMutator(ct.TQDispatcher, pm, notifier)
-		u := updater.New(ct.TQDispatcher, ct.GFactory(), clMutator)
-		_ = New(notifier, pm, clMutator, u, ct.GFactory(), ct.TreeFake.Client(), ct.BQFake, ct.Env)
+		clUpdater := changelist.NewUpdater(ct.TQDispatcher, clMutator)
+		_ = New(notifier, pm, clMutator, clUpdater, ct.GFactory(), ct.TreeFake.Client(), ct.BQFake, ct.Env)
 
 		// sorted by the order of execution.
 		eventTestcases := []struct {
@@ -400,8 +399,8 @@ func TestRunManager(t *testing.T) {
 		notifier := run.NewNotifier(ct.TQDispatcher)
 		pm := prjmanager.NewNotifier(ct.TQDispatcher)
 		clMutator := changelist.NewMutator(ct.TQDispatcher, pm, notifier)
-		u := updater.New(ct.TQDispatcher, ct.GFactory(), clMutator)
-		_ = New(notifier, pm, clMutator, u, ct.GFactory(), ct.TreeFake.Client(), ct.BQFake, ct.Env)
+		clUpdater := changelist.NewUpdater(ct.TQDispatcher, clMutator)
+		_ = New(notifier, pm, clMutator, clUpdater, ct.GFactory(), ct.TreeFake.Client(), ct.BQFake, ct.Env)
 
 		Convey("Recursive", func() {
 			So(notifier.PokeNow(ctx, runID), ShouldBeNil)

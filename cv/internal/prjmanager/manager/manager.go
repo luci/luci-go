@@ -35,7 +35,6 @@ import (
 	"go.chromium.org/luci/cv/internal/common/eventbox"
 	"go.chromium.org/luci/cv/internal/gerrit"
 	"go.chromium.org/luci/cv/internal/gerrit/poller"
-	"go.chromium.org/luci/cv/internal/gerrit/updater"
 	"go.chromium.org/luci/cv/internal/prjmanager"
 	"go.chromium.org/luci/cv/internal/prjmanager/clpurger"
 	"go.chromium.org/luci/cv/internal/prjmanager/prjpb"
@@ -70,7 +69,7 @@ type ProjectManager struct {
 
 // New creates a new ProjectManager and registers it for handling tasks created
 // by the given TQ Notifier.
-func New(n *prjmanager.Notifier, rn state.RunNotifier, c *changelist.Mutator, g gerrit.Factory, u *updater.Updater) *ProjectManager {
+func New(n *prjmanager.Notifier, rn state.RunNotifier, c *changelist.Mutator, g gerrit.Factory, u *changelist.Updater) *ProjectManager {
 	pm := &ProjectManager{
 		tasksBinding: n.TasksBinding,
 		handler: state.Handler{

@@ -35,7 +35,6 @@ import (
 	"go.chromium.org/luci/cv/internal/gerrit"
 	"go.chromium.org/luci/cv/internal/gerrit/cancel"
 	"go.chromium.org/luci/cv/internal/gerrit/trigger"
-	"go.chromium.org/luci/cv/internal/gerrit/updater"
 	"go.chromium.org/luci/cv/internal/prjmanager"
 	"go.chromium.org/luci/cv/internal/prjmanager/prjpb"
 	"go.chromium.org/luci/cv/internal/run"
@@ -46,12 +45,12 @@ import (
 type Purger struct {
 	pmNotifier *prjmanager.Notifier
 	gFactory   gerrit.Factory
-	clUpdater  *updater.Updater
+	clUpdater  *changelist.Updater
 }
 
 // New creates a Purger and registers it for handling tasks created by the given
 // PM Notifier.
-func New(n *prjmanager.Notifier, g gerrit.Factory, u *updater.Updater) *Purger {
+func New(n *prjmanager.Notifier, g gerrit.Factory, u *changelist.Updater) *Purger {
 	p := &Purger{n, g, u}
 	n.TasksBinding.PurgeProjectCL.AttachHandler(
 		func(ctx context.Context, payload proto.Message) error {
@@ -145,12 +144,11 @@ func (p *Purger) purgeWithDeadline(ctx context.Context, task *prjpb.PurgeCLTask)
 		return errors.Annotate(err, "failed to purge CL %d of project %q", cl.ID, task.GetLuciProject()).Err()
 	}
 
-	// Refresh a CL.
-	return p.clUpdater.Refresh(ctx, &updater.RefreshGerritCL{
+	// Refresh a CL immediately.
+	return p.clUpdater.HandleCL(ctx, &changelist.UpdateCLTask{
 		LuciProject: task.GetLuciProject(),
-		Host:        cl.Snapshot.GetGerrit().GetHost(),
-		Change:      cl.Snapshot.GetGerrit().GetInfo().GetNumber(),
-		ClidHint:    int64(cl.ID),
+		ExternalId:  string(cl.ExternalID),
+		Id:          int64(cl.ID),
 	})
 }
 

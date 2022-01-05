@@ -38,7 +38,6 @@ import (
 	"go.chromium.org/luci/cv/internal/common/tree"
 	"go.chromium.org/luci/cv/internal/gerrit"
 	"go.chromium.org/luci/cv/internal/gerrit/cancel"
-	"go.chromium.org/luci/cv/internal/gerrit/updater"
 	"go.chromium.org/luci/cv/internal/prjmanager"
 	"go.chromium.org/luci/cv/internal/run"
 	runbq "go.chromium.org/luci/cv/internal/run/bq"
@@ -75,7 +74,7 @@ func New(
 	n *run.Notifier,
 	pm *prjmanager.Notifier,
 	clm *changelist.Mutator,
-	u *updater.Updater,
+	clu *changelist.Updater,
 	g gerrit.Factory,
 	tc tree.Client,
 	bqc bq.Client,
@@ -90,7 +89,7 @@ func New(
 		handler: &handler.Impl{
 			PM:         pm,
 			RM:         n,
-			CLUpdater:  u,
+			CLUpdater:  clu,
 			CLMutator:  clm,
 			BQExporter: runbq.NewExporter(n.TasksBinding.TQDispatcher, bqc, env),
 			GFactory:   g,

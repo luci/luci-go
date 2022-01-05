@@ -106,9 +106,9 @@ func main() {
 		clMutator := changelist.NewMutator(&tq.Default, pmNotifier, runNotifier)
 		clUpdater := changelist.NewUpdater(&tq.Default, clMutator)
 		gerritupdater.RegisterUpdater(clUpdater, gFactory)
-		// TODO(tandrii): delete gclUpdater.
-		gclUpdater := gerritupdater.New(&tq.Default, gFactory, clMutator)
-		_ = pmimpl.New(pmNotifier, runNotifier, clMutator, gFactory, gclUpdater)
+		// TODO(tandrii): delete the legacy Gerrit-specific handler.
+		_ = gerritupdater.New(&tq.Default, gFactory, clMutator)
+		_ = pmimpl.New(pmNotifier, runNotifier, clMutator, gFactory, clUpdater)
 		tc, err := tree.NewClient(srv.Context)
 		if err != nil {
 			return err
@@ -117,7 +117,7 @@ func main() {
 		if err != nil {
 			return err
 		}
-		_ = runimpl.New(runNotifier, pmNotifier, clMutator, gclUpdater, gFactory, tc, bqc, env)
+		_ = runimpl.New(runNotifier, pmNotifier, clMutator, clUpdater, gFactory, tc, bqc, env)
 
 		// Setup pRPC authentication.
 		srv.PRPC.Authenticator = &auth.Authenticator{
@@ -138,7 +138,7 @@ func main() {
 		})
 		adminpb.RegisterAdminServer(srv.PRPC, admin.New(
 			&tq.Default, &dsmapper.Default,
-			gclUpdater, pmNotifier, runNotifier,
+			clUpdater, pmNotifier, runNotifier,
 		))
 		apiv0pb.RegisterRunsServer(srv.PRPC, &rpcv0.RunsServer{})
 

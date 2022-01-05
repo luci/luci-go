@@ -34,8 +34,6 @@ import (
 	"go.chromium.org/luci/cv/internal/configs/prjcfg/prjcfgtest"
 	"go.chromium.org/luci/cv/internal/cvtesting"
 	"go.chromium.org/luci/cv/internal/gerrit/poller"
-	"go.chromium.org/luci/cv/internal/gerrit/updater"
-	"go.chromium.org/luci/cv/internal/gerrit/updater/updatertest"
 	"go.chromium.org/luci/cv/internal/prjmanager"
 	"go.chromium.org/luci/cv/internal/prjmanager/prjpb"
 	adminpb "go.chromium.org/luci/cv/internal/rpc/admin/api"
@@ -620,8 +618,8 @@ func TestRefreshProjectCLs(t *testing.T) {
 
 		const lProject = "luci"
 		a := AdminServer{
-			gerritUpdater: updater.New(ct.TQDispatcher, ct.GFactory(), nil),
-			pmNotifier:    prjmanager.NewNotifier(ct.TQDispatcher),
+			clUpdater:  changelist.NewUpdater(ct.TQDispatcher, nil),
+			pmNotifier: prjmanager.NewNotifier(ct.TQDispatcher),
 		}
 
 		Convey("without access", func() {
@@ -646,16 +644,23 @@ func TestRefreshProjectCLs(t *testing.T) {
 					},
 				},
 			}), ShouldBeNil)
-			So(datastore.Put(ctx, &changelist.CL{
+			cl := changelist.CL{
 				ID:         1,
 				EVersion:   4,
 				ExternalID: changelist.MustGobID("x-review.example.com", 55),
-			}), ShouldBeNil)
+			}
+			So(datastore.Put(ctx, &cl), ShouldBeNil)
 
 			resp, err := a.RefreshProjectCLs(ctx, &adminpb.RefreshProjectCLsRequest{Project: lProject})
 			So(err, ShouldBeNil)
 			So(resp.GetClVersions(), ShouldResemble, map[int64]int64{1: 4})
-			So(updatertest.ChangeNumbers(ct.TQ.Tasks()), ShouldResemble, []int64{55})
+			scheduledIDs := stringset.New(1)
+			for _, p := range ct.TQ.Tasks().Payloads() {
+				if t, ok := p.(*changelist.UpdateCLTask); ok {
+					scheduledIDs.Add(t.GetExternalId())
+				}
+			}
+			So(scheduledIDs.ToSortedSlice(), ShouldResemble, []string{string(cl.ExternalID)})
 		})
 	})
 }

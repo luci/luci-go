@@ -38,7 +38,7 @@ import (
 	gf "go.chromium.org/luci/cv/internal/gerrit/gerritfake"
 	"go.chromium.org/luci/cv/internal/gerrit/gobmap/gobmaptest"
 	"go.chromium.org/luci/cv/internal/gerrit/poller"
-	"go.chromium.org/luci/cv/internal/gerrit/updater"
+	gerritupdater "go.chromium.org/luci/cv/internal/gerrit/updater"
 	"go.chromium.org/luci/cv/internal/prjmanager"
 	"go.chromium.org/luci/cv/internal/prjmanager/pmtest"
 	"go.chromium.org/luci/cv/internal/prjmanager/prjpb"
@@ -60,7 +60,8 @@ func TestProjectTQLateTasks(t *testing.T) {
 		pmNotifier := prjmanager.NewNotifier(ct.TQDispatcher)
 		runNotifier := runNotifierMock{}
 		clMutator := changelist.NewMutator(ct.TQDispatcher, pmNotifier, &runNotifier)
-		clUpdater := updater.New(ct.TQDispatcher, ct.GFactory(), clMutator)
+		clUpdater := changelist.NewUpdater(ct.TQDispatcher, clMutator)
+		gerritupdater.RegisterUpdater(clUpdater, ct.GFactory())
 		_ = New(pmNotifier, &runNotifier, clMutator, ct.GFactory(), clUpdater)
 
 		const lProject = "infra"
@@ -104,7 +105,8 @@ func TestProjectLifeCycle(t *testing.T) {
 		pmNotifier := prjmanager.NewNotifier(ct.TQDispatcher)
 		runNotifier := runNotifierMock{}
 		clMutator := changelist.NewMutator(ct.TQDispatcher, pmNotifier, &runNotifier)
-		clUpdater := updater.New(ct.TQDispatcher, ct.GFactory(), clMutator)
+		clUpdater := changelist.NewUpdater(ct.TQDispatcher, clMutator)
+		gerritupdater.RegisterUpdater(clUpdater, ct.GFactory())
 		_ = New(pmNotifier, &runNotifier, clMutator, ct.GFactory(), clUpdater)
 
 		const lProject = "infra"
@@ -234,7 +236,8 @@ func TestProjectHandlesManyEvents(t *testing.T) {
 		pmNotifier := prjmanager.NewNotifier(ct.TQDispatcher)
 		runNotifier := runNotifierMock{}
 		clMutator := changelist.NewMutator(ct.TQDispatcher, pmNotifier, &runNotifier)
-		clUpdater := updater.New(ct.TQDispatcher, ct.GFactory(), clMutator)
+		clUpdater := changelist.NewUpdater(ct.TQDispatcher, clMutator)
+		gerritupdater.RegisterUpdater(clUpdater, ct.GFactory())
 		pm := New(pmNotifier, &runNotifier, clMutator, ct.GFactory(), clUpdater)
 
 		cfg := singleRepoConfig(gHost, gRepo)
