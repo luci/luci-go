@@ -262,6 +262,14 @@ func (r *baseCommandRun) uploadToCAS(ctx context.Context, dumpJSON string, authO
 		return nil, err
 	}
 
+	if al != nil {
+		for i, opt := range opts {
+			if _, err := al.Printf("uploaded digest for %s: %s\n", opt.Isolate, rootDgs[i]); err != nil {
+				return nil, err
+			}
+		}
+	}
+
 	if dumpJSON == "" {
 		return rootDgs, nil
 	}

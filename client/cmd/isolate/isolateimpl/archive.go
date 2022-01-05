@@ -88,12 +88,8 @@ func (c *archiveRun) main(a subcommands.Application, args []string) error {
 	if err != nil {
 		return err
 	}
-	roots, err := c.uploadToCAS(ctx, c.dumpJSON, c.commonServerFlags.parsedAuthOpts, &c.casFlags, al, &c.ArchiveOptions)
-	if err != nil {
-		return err
-	}
-	al.Printf("uploaded digest: %s\n", roots[0])
-	return nil
+	_, err = c.uploadToCAS(ctx, c.dumpJSON, c.commonServerFlags.parsedAuthOpts, &c.casFlags, al, &c.ArchiveOptions)
+	return err
 }
 
 func (c *archiveRun) Run(a subcommands.Application, args []string, _ subcommands.Env) int {
