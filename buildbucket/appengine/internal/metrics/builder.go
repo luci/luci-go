@@ -102,9 +102,9 @@ func ReportBuilderMetrics(ctx context.Context) error {
 		return errors.Annotate(err, "fetching LUCI buckets w/ swarming config").Err()
 	}
 
-	return parallel.WorkPool(1024, func(taskC chan<- func() error) {
+	return parallel.WorkPool(256, func(taskC chan<- func() error) {
 		q := datastore.NewQuery(model.BuilderStatKind)
-		err := datastore.RunBatch(ctx, 256, q, func(k *datastore.Key) error {
+		err := datastore.RunBatch(ctx, 64, q, func(k *datastore.Key) error {
 			project, bucket, builder := mustParseBuilderStatID(k.StringID())
 			tctx := WithBuilder(ctx, project, bucket, builder)
 			legacyBucket := bucket
