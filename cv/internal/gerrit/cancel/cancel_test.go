@@ -102,8 +102,8 @@ func TestCancel(t *testing.T) {
 			LUCIProject:       lProject,
 			Message:           "Full Run has passed",
 			Requester:         "test",
-			Notify:            []gerrit.Whom{gerrit.Owner, gerrit.CQVoters},
-			AddToAttentionSet: []gerrit.Whom{gerrit.Reviewers},
+			Notify:            gerrit.Whoms{gerrit.Owner, gerrit.CQVoters},
+			AddToAttentionSet: gerrit.Whoms{gerrit.Reviewers},
 			AttentionReason:   usertext.StoppedRun,
 			LeaseDuration:     30 * time.Second,
 			RunCLExternalIDs: []changelist.ExternalID{

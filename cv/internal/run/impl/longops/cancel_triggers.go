@@ -207,8 +207,8 @@ func (op *CancelTriggersOp) loadInputs(ctx context.Context) error {
 	return nil
 }
 
-func convertToGerritWhoms(whoms []run.OngoingLongOps_Op_TriggersCancellation_Whom) []gerrit.Whom {
-	ret := make([]gerrit.Whom, len(whoms))
+func convertToGerritWhoms(whoms []run.OngoingLongOps_Op_TriggersCancellation_Whom) gerrit.Whoms {
+	ret := make(gerrit.Whoms, len(whoms))
 	for i, whom := range whoms {
 		switch whom {
 		case run.OngoingLongOps_Op_TriggersCancellation_OWNER:

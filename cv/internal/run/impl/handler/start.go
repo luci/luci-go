@@ -151,8 +151,8 @@ func (impl *Impl) onCompletedPostStartMessage(ctx context.Context, rs *state.Run
 
 	msgPrefix, attentionReason := usertext.OnRunFailed(rs.Mode)
 	meta := reviewInputMeta{
-		notify:    []gerrit.Whom{gerrit.Owner, gerrit.CQVoters},
-		attention: []gerrit.Whom{gerrit.Owner, gerrit.CQVoters},
+		notify:    gerrit.Whoms{gerrit.Owner, gerrit.CQVoters},
+		attention: gerrit.Whoms{gerrit.Owner, gerrit.CQVoters},
 		reason:    attentionReason,
 		message:   msgPrefix + "\n\n" + failRunReason,
 	}

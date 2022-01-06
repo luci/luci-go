@@ -14,7 +14,12 @@
 
 package gerrit
 
-import "fmt"
+import (
+	"fmt"
+	"sort"
+
+	gerritpb "go.chromium.org/luci/common/proto/gerrit"
+)
 
 // Whom identifies one or a group of Gerrit users involved in the code review
 // workflow.
@@ -40,4 +45,36 @@ func (w Whom) String() string {
 	default:
 		return fmt.Sprintf("whom[%d]", w)
 	}
+}
+
+// Whoms is a collection of `Whom`s.
+type Whoms []Whom
+
+// ToAccountIDsSorted translates whom to actual Gerrit account ids in a CL.
+func (whoms Whoms) ToAccountIDsSorted(ci *gerritpb.ChangeInfo) []int64 {
+	accountSet := make(map[int64]struct{})
+	for _, whom := range whoms {
+		switch whom {
+		case Owner:
+			accountSet[ci.GetOwner().GetAccountId()] = struct{}{}
+		case Reviewers:
+			for _, reviewer := range ci.GetReviewers().GetReviewers() {
+				accountSet[reviewer.GetAccountId()] = struct{}{}
+			}
+		case CQVoters:
+			for _, vote := range ci.GetLabels()["Commit-Queue"].GetAll() {
+				if vote.GetValue() > 0 {
+					accountSet[vote.GetUser().GetAccountId()] = struct{}{}
+				}
+			}
+		default:
+			panic(fmt.Sprintf("unknown whom: %s", whom))
+		}
+	}
+	ret := make([]int64, 0, len(accountSet))
+	for acct := range accountSet {
+		ret = append(ret, acct)
+	}
+	sort.Slice(ret, func(i, j int) bool { return ret[i] < ret[j] })
+	return ret
 }

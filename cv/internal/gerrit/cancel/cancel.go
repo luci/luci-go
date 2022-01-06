@@ -80,11 +80,11 @@ type Input struct {
 	// Notify describes whom to notify regarding the cancellation.
 	//
 	// If empty, notifies no one.
-	Notify []gerrit.Whom
+	Notify gerrit.Whoms
 	// AddToAttentionSet describes whom to add in the attention set.
 	//
 	// If empty, no change will be made to attention set.
-	AddToAttentionSet []gerrit.Whom
+	AddToAttentionSet gerrit.Whoms
 	// AttentionReason describes the reason of the attention change.
 	//
 	// It is attached to the attention set change, and rendered in UI to explain
@@ -348,7 +348,7 @@ func sortedReviewerAccountIDs(ci *gerritpb.ChangeInfo) []int64 {
 	return ids
 }
 
-func (c *change) removeVotesAndPostMsg(ctx context.Context, ci *gerritpb.ChangeInfo, t *run.Trigger, msg string, notify, addAttn []gerrit.Whom, reason string) error {
+func (c *change) removeVotesAndPostMsg(ctx context.Context, ci *gerritpb.ChangeInfo, t *run.Trigger, msg string, notify, addAttn gerrit.Whoms, reason string) error {
 	var nonTriggeringVotesRemovalErrs errors.MultiError
 	needRemoveTriggerVote := false
 	for _, voter := range c.sortedVoterAccountIDs() {
@@ -409,7 +409,7 @@ func (c *change) removeVote(ctx context.Context, accountID int64) error {
 	}
 }
 
-func (c *change) postCancelMessage(ctx context.Context, ci *gerritpb.ChangeInfo, msg string, t *run.Trigger, runCLExternalIDs []changelist.ExternalID, notify, addAttn []gerrit.Whom, reason string) (err error) {
+func (c *change) postCancelMessage(ctx context.Context, ci *gerritpb.ChangeInfo, msg string, t *run.Trigger, runCLExternalIDs []changelist.ExternalID, notify, addAttn gerrit.Whoms, reason string) (err error) {
 	bd := botdata.BotData{
 		Action:      botdata.Cancel,
 		TriggeredAt: t.GetTime().AsTime(),
@@ -431,7 +431,7 @@ func (c *change) postCancelMessage(ctx context.Context, ci *gerritpb.ChangeInfo,
 // postGerritMsg posts the given message to Gerrit.
 //
 // Skips if duplicate message is found after triggering time.
-func (c *change) postGerritMsg(ctx context.Context, ci *gerritpb.ChangeInfo, msg string, t *run.Trigger, notify, addAttn []gerrit.Whom, reason string) (err error) {
+func (c *change) postGerritMsg(ctx context.Context, ci *gerritpb.ChangeInfo, msg string, t *run.Trigger, notify, addAttn gerrit.Whoms, reason string) (err error) {
 	for _, m := range ci.GetMessages() {
 		switch {
 		case m.GetDate().AsTime().Before(t.GetTime().AsTime()):
@@ -439,11 +439,9 @@ func (c *change) postGerritMsg(ctx context.Context, ci *gerritpb.ChangeInfo, msg
 			return nil
 		}
 	}
-
-	owner, reviewers, voters := ci.GetOwner().GetAccountId(), sortedReviewerAccountIDs(ci), c.sortedVoterAccountIDs()
+	nd := makeGerritNotifyDetails(notify, ci)
 	reason = fmt.Sprintf("ps#%d: %s", ci.GetRevisions()[ci.GetCurrentRevision()].GetNumber(), reason)
-	nd := makeGerritNotifyDetails(notify, owner, reviewers, voters)
-	attention := makeGerritAttentionSetInputs(addAttn, owner, reviewers, voters, reason)
+	attention := makeGerritAttentionSetInputs(addAttn, ci, reason)
 	var gerritErr error
 	outerErr := c.gf.MakeMirrorIterator(ctx).RetryIfStale(func(opt grpc.CallOption) error {
 		_, gerritErr = c.gc.SetReview(ctx, &gerritpb.SetReviewRequest{
@@ -481,8 +479,8 @@ func (c *change) postGerritMsg(ctx context.Context, ci *gerritpb.ChangeInfo, msg
 	}
 }
 
-func makeGerritNotifyDetails(notify []gerrit.Whom, owner int64, reviewers []int64, voters []int64) *gerritpb.NotifyDetails {
-	accounts := pickAccountsSorted(notify, owner, reviewers, voters)
+func makeGerritNotifyDetails(notify gerrit.Whoms, ci *gerritpb.ChangeInfo) *gerritpb.NotifyDetails {
+	accounts := notify.ToAccountIDsSorted(ci)
 	if len(accounts) == 0 {
 		return nil
 	}
@@ -499,8 +497,8 @@ func makeGerritNotifyDetails(notify []gerrit.Whom, owner int64, reviewers []int6
 	}
 }
 
-func makeGerritAttentionSetInputs(addAttn []gerrit.Whom, owner int64, reviewers []int64, voters []int64, reason string) []*gerritpb.AttentionSetInput {
-	accounts := pickAccountsSorted(addAttn, owner, reviewers, voters)
+func makeGerritAttentionSetInputs(addAttn gerrit.Whoms, ci *gerritpb.ChangeInfo, reason string) []*gerritpb.AttentionSetInput {
+	accounts := addAttn.ToAccountIDsSorted(ci)
 	if len(accounts) == 0 {
 		return nil
 	}
@@ -513,32 +511,6 @@ func makeGerritAttentionSetInputs(addAttn []gerrit.Whom, owner int64, reviewers 
 			Reason: reason,
 		}
 	}
-	return ret
-}
-
-func pickAccountsSorted(whoms []gerrit.Whom, owner int64, reviewers []int64, voters []int64) []int64 {
-	accountSet := map[int64]struct{}{}
-	for _, whom := range whoms {
-		switch whom {
-		case gerrit.Owner:
-			accountSet[owner] = struct{}{}
-		case gerrit.Reviewers:
-			for _, reviewer := range reviewers {
-				accountSet[reviewer] = struct{}{}
-			}
-		case gerrit.CQVoters:
-			for _, voter := range voters {
-				accountSet[voter] = struct{}{}
-			}
-		default:
-			panic(fmt.Errorf("unknown whom: %s", whom))
-		}
-	}
-	ret := make([]int64, 0, len(accountSet))
-	for acct := range accountSet {
-		ret = append(ret, acct)
-	}
-	sort.Slice(ret, func(i, j int) bool { return ret[i] < ret[j] })
 	return ret
 }
 

@@ -43,7 +43,6 @@ import (
 	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/configs/prjcfg"
 	"go.chromium.org/luci/cv/internal/gerrit"
-	"go.chromium.org/luci/cv/internal/gerrit/trigger"
 	"go.chromium.org/luci/cv/internal/run"
 	"go.chromium.org/luci/cv/internal/run/eventpb"
 	"go.chromium.org/luci/cv/internal/run/impl/state"
@@ -461,9 +460,9 @@ func (impl *Impl) cancelNotSubmittedCLTriggers(ctx context.Context, runID common
 	allCLIDs := common.MakeCLIDs(submission.GetCls()...)
 	allRunCLs, err := run.LoadRunCLs(ctx, runID, allCLIDs)
 	meta := reviewInputMeta{
-		notify: []gerrit.Whom{gerrit.Owner, gerrit.CQVoters},
+		notify: gerrit.Whoms{gerrit.Owner, gerrit.CQVoters},
 		// Add the same set of group/people to the attention set.
-		attention: []gerrit.Whom{gerrit.Owner, gerrit.CQVoters},
+		attention: gerrit.Whoms{gerrit.Owner, gerrit.CQVoters},
 		reason:    submissionFailureAttentionReason,
 	}
 	if err != nil {
@@ -969,19 +968,7 @@ func postMsgForDependentFailures(ctx context.Context, gf gerrit.Factory, rcl *ru
 	}
 
 	ci := rcl.Detail.GetGerrit().GetInfo()
-	votes := ci.GetLabels()[trigger.CQLabelName].GetAll()
-	accountSet := make(map[int64]struct{}, len(votes)+1) // owner and voters
-	accountSet[ci.GetOwner().GetAccountId()] = struct{}{}
-	for _, vote := range votes {
-		if vote.GetValue() > 0 {
-			accountSet[vote.GetUser().GetAccountId()] = struct{}{}
-		}
-	}
-	accounts := make([]int64, 0, len(accountSet))
-	for acct := range accountSet {
-		accounts = append(accounts, acct)
-	}
-	sort.Slice(accounts, func(i, j int) bool { return accounts[i] < accounts[j] })
+	ownerAndVotersAccounts := gerrit.Whoms{gerrit.Owner, gerrit.CQVoters}.ToAccountIDsSorted(ci)
 	req := &gerritpb.SetReviewRequest{
 		Number:     ci.GetNumber(),
 		Project:    ci.GetProject(),
@@ -994,16 +981,16 @@ func postMsgForDependentFailures(ctx context.Context, gf gerrit.Factory, rcl *ru
 				{
 					RecipientType: gerritpb.NotifyDetails_RECIPIENT_TYPE_TO,
 					Info: &gerritpb.NotifyDetails_Info{
-						Accounts: accounts,
+						Accounts: ownerAndVotersAccounts,
 					},
 				},
 			},
 		},
-		AddToAttentionSet: make([]*gerritpb.AttentionSetInput, len(accounts)),
+		AddToAttentionSet: make([]*gerritpb.AttentionSetInput, len(ownerAndVotersAccounts)),
 	}
 	reason := fmt.Sprintf("ps#%d: failed to submit dependent CLs",
 		ci.GetRevisions()[ci.GetCurrentRevision()].GetNumber())
-	for i, acct := range accounts {
+	for i, acct := range ownerAndVotersAccounts {
 		req.AddToAttentionSet[i] = &gerritpb.AttentionSetInput{
 			User:   strconv.Itoa(int(acct)),
 			Reason: reason,
