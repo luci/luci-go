@@ -15,7 +15,10 @@
 package authdbimpl
 
 import (
+	"bytes"
 	"context"
+	"crypto/sha256"
+	"encoding/hex"
 	"fmt"
 	"strings"
 	"time"
@@ -29,6 +32,9 @@ import (
 	"go.chromium.org/luci/server/auth/service"
 	"go.chromium.org/luci/server/auth/service/protocol"
 )
+
+// maxShardSize is a limit on a blob size to store in a single entity.
+const maxShardSize = 1020 * 1024 // 1020 KiB
 
 // SnapshotInfo identifies some concrete AuthDB snapshot.
 //
@@ -62,12 +68,35 @@ type Snapshot struct {
 	ID string `gae:"$id"`
 
 	// AuthDBDeflated is zlib-compressed serialized AuthDB protobuf message.
+	//
+	// If it is too big, it is stored in a bunch of SnapshotShard entities
+	// referenced by ShardIDs field below.
+	//
+	// Note: if the old version of this code tries to load a new Snapshot entity
+	// with ShardIDs field populated, it would abort with an error because old
+	// code doesn't know about ShardIDs field (it is not in the old Snapshot
+	// entity struct). This is desirable: the new sharded data structure is not
+	// (and can't be made) compatible with old code, so it is good that it breaks
+	// as soon as possible.
 	AuthDBDeflated []byte `gae:",noindex"`
+
+	// ShardIDs is a list of IDs of SnapshotShard entities to fetch.
+	ShardIDs []string `gae:",noindex"`
 
 	CreatedAt time.Time // when it was created on Auth service
 	FetchedAt time.Time // when it was fetched and put into the datastore
 
 	_kind string `gae:"$kind,gaeauth.Snapshot"`
+}
+
+// SnapshotShard holds a shard of a deflated AuthDB.
+type SnapshotShard struct {
+	// ID is "<Snapshot ID>:<shard hash>".
+	ID string `gae:"$id"`
+	// Shard is the actual data.
+	Shard []byte `gae:",noindex"`
+
+	_kind string `gae:"$kind,gaeauth.SnapshotShard"`
 }
 
 // GetLatestSnapshotInfo fetches SnapshotInfo singleton entity.
@@ -105,18 +134,13 @@ func GetAuthDBSnapshot(ctx context.Context, id string) (*protocol.AuthDB, error)
 	logging.Debugf(ctx, "Fetching AuthDB snapshot from the datastore")
 	defer logging.Debugf(ctx, "AuthDB snapshot fetched")
 
-	ctx = ds.WithoutTransaction(defaultNS(ctx))
-	snap := Snapshot{ID: id}
-	switch err := ds.Get(ctx, &snap); {
-	case err == ds.ErrNoSuchEntity:
-		report("ERROR_NO_SNAPSHOT")
-		return nil, err // not transient
-	case err != nil:
-		report("ERROR_TRANSIENT")
-		return nil, transient.Tag.Apply(err)
+	blob, code, err := fetchDeflated(ctx, id)
+	if err != nil {
+		report(code)
+		return nil, err
 	}
 
-	db, err := service.InflateAuthDB(snap.AuthDBDeflated)
+	db, err := service.InflateAuthDB(blob)
 	if err != nil {
 		report("ERROR_INFLATION")
 		return nil, err
@@ -124,6 +148,35 @@ func GetAuthDBSnapshot(ctx context.Context, id string) (*protocol.AuthDB, error)
 
 	report("SUCCESS")
 	return db, nil
+}
+
+// fetchDeflated fetches a deflated AuthDB from datastore, perhaps reassembling
+// it from shards.
+//
+// See also storeDeflated.
+func fetchDeflated(ctx context.Context, id string) (blob []byte, code string, err error) {
+	ctx = ds.WithoutTransaction(defaultNS(ctx))
+
+	snap := Snapshot{ID: id}
+
+	switch err = ds.Get(ctx, &snap); {
+	case err == ds.ErrNoSuchEntity:
+		return nil, "ERROR_NO_SNAPSHOT", err // not transient
+	case err != nil:
+		return nil, "ERROR_TRANSIENT", transient.Tag.Apply(err)
+	}
+
+	if len(snap.ShardIDs) != 0 {
+		logging.Infof(ctx, "Reconstructing from %d shards", len(snap.ShardIDs))
+		switch snap.AuthDBDeflated, err = unshardAuthDB(ctx, snap.ShardIDs); {
+		case transient.Tag.In(err):
+			return nil, "ERROR_SHARDS_TRANSIENT", err
+		case err != nil:
+			return nil, "ERROR_SHARDS_MISSING", err
+		}
+	}
+
+	return snap.AuthDBDeflated, "SUCCESS", nil
 }
 
 // ConfigureAuthService makes initial fetch of AuthDB snapshot from the auth
@@ -209,14 +262,41 @@ func fetchSnapshot(ctx context.Context, info *SnapshotInfo) error {
 	if err != nil {
 		return err
 	}
-	ent := Snapshot{
-		ID:             info.GetSnapshotID(),
-		AuthDBDeflated: blob,
-		CreatedAt:      snap.Created.UTC(),
-		FetchedAt:      clock.Now(ctx).UTC(),
+	if err := storeDeflated(ctx, info.GetSnapshotID(), blob, snap.Created, maxShardSize); err != nil {
+		return err
 	}
-	logging.Infof(ctx, "Lag: %s", ent.FetchedAt.Sub(ent.CreatedAt))
-	return transient.Tag.Apply(ds.Put(ds.WithoutTransaction(ctx), &ent))
+	logging.Infof(ctx, "Lag: %s", clock.Now(ctx).Sub(snap.Created))
+	return nil
+}
+
+// storeDeflated stores a deflated AuthDB into datastore, perhaps splitting it
+// into shards.
+//
+// See also fetchDeflated.
+func storeDeflated(ctx context.Context, id string, blob []byte, created time.Time, maxShardSize int) error {
+	ctx = ds.WithoutTransaction(defaultNS(ctx))
+
+	snapshot := Snapshot{
+		ID:        id,
+		CreatedAt: created.UTC(),
+		FetchedAt: clock.Now(ctx).UTC(),
+	}
+
+	// If we are able to store AuthDB inline in the Snapshot, do it. That way
+	// older versions of this code can still successfully read it. If it doesn't
+	// fit, there's nothing we can do other than to store it separately in shards.
+	// The old code will see unrecognized ShardIDs field and will fail.
+	if len(blob) < maxShardSize {
+		snapshot.AuthDBDeflated = blob
+	} else {
+		var err error
+		if snapshot.ShardIDs, err = shardAuthDB(ctx, id, blob, maxShardSize); err != nil {
+			return err
+		}
+		logging.Infof(ctx, "Split into %d shards", len(snapshot.ShardIDs))
+	}
+
+	return transient.Tag.Apply(ds.Put(ctx, &snapshot))
 }
 
 // syncAuthDB fetches latest AuthDB snapshot from the configured auth service,
@@ -303,4 +383,60 @@ func syncAuthDB(ctx context.Context) (*SnapshotInfo, error) {
 
 	report("SUCCESS_UPDATED")
 	return latest, nil
+}
+
+// shardAuthDB splits an AuthDB blob into multiple SnapshotShard entities.
+func shardAuthDB(ctx context.Context, id string, blob []byte, maxSize int) ([]string, error) {
+	var ids []string
+
+	var shard []byte
+	for len(blob) != 0 {
+		shardSize := maxSize
+		if shardSize > len(blob) {
+			shardSize = len(blob)
+		}
+		shard, blob = blob[:shardSize], blob[shardSize:]
+
+		digest := sha256.Sum256(shard)
+		shardID := fmt.Sprintf("%s:%s", id, hex.EncodeToString(digest[:]))
+		ids = append(ids, shardID)
+
+		// Store shards sequentially to avoid allocating RAM to store full `blob` in
+		// RPC buffers. There's no requirement for this code to be performant, it
+		// executes in a background job.
+		err := ds.Put(ctx, &SnapshotShard{ID: shardID, Shard: shard})
+		if err != nil {
+			return nil, transient.Tag.Apply(err)
+		}
+	}
+
+	return ids, nil
+}
+
+// unshardAuthDB fetches SnapshotShard entities and reassembles the AuthDB blob.
+func unshardAuthDB(ctx context.Context, shardIDs []string) ([]byte, error) {
+	shards := make([]SnapshotShard, len(shardIDs))
+	for idx, id := range shardIDs {
+		shards[idx].ID = id
+	}
+
+	if err := ds.Get(ctx, shards); err != nil {
+		if merr, ok := err.(errors.MultiError); ok {
+			for _, inner := range merr {
+				if inner == ds.ErrNoSuchEntity {
+					return nil, err // fatal
+				}
+			}
+			return nil, transient.Tag.Apply(err)
+		} else {
+			// Overall RPC error.
+			return nil, transient.Tag.Apply(err)
+		}
+	}
+
+	slices := make([][]byte, len(shards))
+	for idx, shard := range shards {
+		slices[idx] = shard.Shard
+	}
+	return bytes.Join(slices, nil), nil
 }

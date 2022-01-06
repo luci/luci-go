@@ -18,8 +18,10 @@ import (
 	"context"
 	"fmt"
 	"testing"
+	"time"
 
 	"go.chromium.org/luci/appengine/gaetesting"
+	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/server/auth/service"
 	"go.chromium.org/luci/server/auth/service/protocol"
@@ -29,6 +31,8 @@ import (
 )
 
 func TestConfigureAuthService(t *testing.T) {
+	t.Parallel()
+
 	Convey("Initial config", t, func() {
 		srv := &fakeAuthService{LatestRev: 123}
 		ctx := setAuthService(gaetesting.TestingContext(), srv)
@@ -107,6 +111,8 @@ func TestConfigureAuthService(t *testing.T) {
 }
 
 func TestSyncAuthDB(t *testing.T) {
+	t.Parallel()
+
 	Convey("No new changes", t, func() {
 		srv := &fakeAuthService{LatestRev: 123}
 		ctx := setAuthService(gaetesting.TestingContext(), srv)
@@ -132,6 +138,82 @@ func TestSyncAuthDB(t *testing.T) {
 		So(info, ShouldResemble, &SnapshotInfo{
 			AuthServiceURL: "http://auth-service",
 			Rev:            456,
+		})
+	})
+}
+
+func TestSharding(t *testing.T) {
+	t.Parallel()
+
+	Convey("With datastore", t, func() {
+		ctx := gaetesting.TestingContext()
+
+		Convey("Shard+unshard", func() {
+			shardIDs, err := shardAuthDB(ctx, "some-id", []byte("0123456789"), 3)
+			So(err, ShouldBeNil)
+			So(shardIDs, ShouldResemble, []string{
+				"some-id:bf6aaaab7c143ca12ae448c69fb72bb4cf1b29154b9086a927a0a91ae334cdf7",
+				"some-id:da70dfa4d9f95ac979f921e8e623358236313f334afcd06cddf8a5621cf6a1e9",
+				"some-id:cebe3d9d614ba5c19f633566104315854a11353a333bf96f16b5afa0e90abdc4",
+				"some-id:19581e27de7ced00ff1ce50b2047e7a567c76b1cbaebabe5ef03f7c3017bb5b7",
+			})
+
+			Convey("OK", func() {
+				blob, err := unshardAuthDB(ctx, shardIDs)
+				So(err, ShouldBeNil)
+				So(string(blob), ShouldEqual, "0123456789")
+			})
+
+			Convey("Missing one", func() {
+				_, err := unshardAuthDB(ctx, append(shardIDs, "missing"))
+				So(err, ShouldNotBeNil)
+				So(transient.Tag.In(err), ShouldBeFalse)
+			})
+		})
+
+		Convey("Store+load unsharded", func() {
+			So(storeDeflated(ctx, "some-id", []byte("0123456789"), time.Now(), 1000), ShouldBeNil)
+
+			Convey("OK", func() {
+				blob, _, err := fetchDeflated(ctx, "some-id")
+				So(err, ShouldBeNil)
+				So(string(blob), ShouldEqual, "0123456789")
+			})
+
+			Convey("Missing snapshot", func() {
+				_, code, err := fetchDeflated(ctx, "another-id")
+				So(err, ShouldNotBeNil)
+				So(transient.Tag.In(err), ShouldBeFalse)
+				So(code, ShouldEqual, "ERROR_NO_SNAPSHOT")
+			})
+		})
+
+		Convey("Store+load sharded", func() {
+			So(storeDeflated(ctx, "some-id", []byte("0123456789"), time.Now(), 3), ShouldBeNil)
+
+			Convey("OK", func() {
+				blob, _, err := fetchDeflated(ctx, "some-id")
+				So(err, ShouldBeNil)
+				So(string(blob), ShouldEqual, "0123456789")
+			})
+
+			Convey("Missing snapshot", func() {
+				_, code, err := fetchDeflated(ctx, "another-id")
+				So(err, ShouldNotBeNil)
+				So(transient.Tag.In(err), ShouldBeFalse)
+				So(code, ShouldEqual, "ERROR_NO_SNAPSHOT")
+			})
+
+			Convey("Missing shard", func() {
+				// See the test above for the ID.
+				datastore.Delete(ctx, datastore.KeyForObj(ctx, &SnapshotShard{
+					ID: "some-id:bf6aaaab7c143ca12ae448c69fb72bb4cf1b29154b9086a927a0a91ae334cdf7",
+				}))
+				_, code, err := fetchDeflated(ctx, "some-id")
+				So(err, ShouldNotBeNil)
+				So(transient.Tag.In(err), ShouldBeFalse)
+				So(code, ShouldEqual, "ERROR_SHARDS_MISSING")
+			})
 		})
 	})
 }
