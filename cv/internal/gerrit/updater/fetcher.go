@@ -52,12 +52,6 @@ const (
 	//
 	// Set it at approximately ~2 tries before noAccessGraceDuration expires.
 	noAccessGraceRetryDelay = noAccessGraceDuration / 3
-
-	// autoRefreshAfter makes CLs worthy of "blind" refresh.
-	//
-	// "blind" refresh means that CL is already stored in Datastore and is up to
-	// date to the best knowledge of CV.
-	autoRefreshAfter = 2 * time.Hour
 )
 
 var errStaleOrNoAccess = errors.Annotate(gerrit.ErrStaleData, "either no access or deleted or stale").Err()
@@ -68,7 +62,11 @@ var errStaleOrNoAccess = errors.Annotate(gerrit.ErrStaleData, "either no access 
 // creating CLs in the Datastore as needed. Schedules tasks to update
 // dependencies but doesn't wait for them to complete.
 //
-// fetch is a single-use object.
+// fetch is a single-use object:
+//
+//  f := fetcher{...}
+//  if err := f.fetch(ctx); err != nil {...}
+//  // Do something with `f.toUpdate`.
 type fetcher struct {
 	// Dependencies & input. Must be set.
 	gFactory                     gerrit.Factory
