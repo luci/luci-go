@@ -518,7 +518,8 @@ func (a *AdminServer) ScheduleTask(ctx context.Context, req *adminpb.ScheduleTas
 		inTransaction bool
 		payload       proto.Message
 	}{
-		{trans, req.GetBatchRefreshGerritCl()},
+		{trans, req.GetBatchUpdateCl()},
+		{trans, req.GetBatchOnClUpdated()},
 		{false, req.GetExportRunToBq()},
 		{trans, req.GetKickManageProject()},
 		{trans, req.GetKickManageRun()},
@@ -526,7 +527,7 @@ func (a *AdminServer) ScheduleTask(ctx context.Context, req *adminpb.ScheduleTas
 		{false, req.GetManageRun()},
 		{false, req.GetPollGerrit()},
 		{trans, req.GetPurgeCl()},
-		{false, req.GetRefreshGerritCl()},
+		{false, req.GetUpdateCl()},
 		{false, req.GetRefreshProjectConfig()},
 		{trans, req.GetManageRunLongOp()},
 	}

@@ -41,7 +41,7 @@ import (
 	"go.chromium.org/luci/cv/internal/gerrit/gobmap/gobmaptest"
 	"go.chromium.org/luci/cv/internal/gerrit/poller"
 	"go.chromium.org/luci/cv/internal/gerrit/trigger"
-	"go.chromium.org/luci/cv/internal/gerrit/updater"
+	gerritupdater "go.chromium.org/luci/cv/internal/gerrit/updater"
 	"go.chromium.org/luci/cv/internal/prjmanager"
 	"go.chromium.org/luci/cv/internal/prjmanager/prjpb"
 	"go.chromium.org/luci/cv/internal/run"
@@ -56,13 +56,14 @@ type ctest struct {
 	lProject  string
 	gHost     string
 	pm        *prjmanager.Notifier
-	clUpdater *updater.Updater
+	clUpdater *changelist.Updater
 }
 
 func (ct *ctest) SetUp() (context.Context, func()) {
 	ctx, cancel := ct.Test.SetUp()
 	ct.pm = prjmanager.NewNotifier(ct.TQDispatcher)
-	ct.clUpdater = updater.New(ct.TQDispatcher, ct.GFactory(), changelist.NewMutator(ct.TQDispatcher, ct.pm, nil))
+	ct.clUpdater = changelist.NewUpdater(ct.TQDispatcher, changelist.NewMutator(ct.TQDispatcher, ct.pm, nil))
+	gerritupdater.RegisterUpdater(ct.clUpdater, ct.GFactory())
 	return ctx, cancel
 }
 
@@ -71,10 +72,9 @@ func (ct ctest) runCLUpdater(ctx context.Context, change int64) *changelist.CL {
 }
 
 func (ct ctest) runCLUpdaterAs(ctx context.Context, change int64, lProject string) *changelist.CL {
-	So(ct.clUpdater.Refresh(ctx, &updater.RefreshGerritCL{
+	So(ct.clUpdater.HandleCL(ctx, &changelist.UpdateCLTask{
 		LuciProject: lProject,
-		Host:        ct.gHost,
-		Change:      change,
+		ExternalId:  string(changelist.MustGobID(ct.gHost, change)),
 	}), ShouldBeNil)
 	eid, err := changelist.GobID(ct.gHost, change)
 	So(err, ShouldBeNil)

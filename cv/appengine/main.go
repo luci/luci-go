@@ -106,8 +106,6 @@ func main() {
 		clMutator := changelist.NewMutator(&tq.Default, pmNotifier, runNotifier)
 		clUpdater := changelist.NewUpdater(&tq.Default, clMutator)
 		gerritupdater.RegisterUpdater(clUpdater, gFactory)
-		// TODO(tandrii): delete the legacy Gerrit-specific handler.
-		_ = gerritupdater.New(&tq.Default, gFactory, clMutator)
 		_ = pmimpl.New(pmNotifier, runNotifier, clMutator, gFactory, clUpdater)
 		tc, err := tree.NewClient(srv.Context)
 		if err != nil {

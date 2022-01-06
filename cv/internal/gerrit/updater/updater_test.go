@@ -168,6 +168,9 @@ func TestUpdateCLWorks(t *testing.T) {
 	t.Parallel()
 
 	Convey("Updating CL works", t, func() {
+		// TODO(tandrii): simplify this test drastically by focusing on the
+		// functionality that the `updaterBackend` implements, as the rest is
+		// already covered by changelist.Updater tests.
 		ct := cvtesting.Test{}
 		ctx, cancel := ct.SetUp()
 		defer cancel()
@@ -450,7 +453,7 @@ Cq-Depend: 101
 				Convey("New revision doesn't re-use files & related changes", func() {
 					// Stay within the same blindRefreshInterval for de-duping refresh
 					// tasks of dependencies.
-					ct.Clock.Add(blindRefreshInterval - 2*time.Second)
+					ct.Clock.Add(changelist.BlindRefreshInterval - 2*time.Second)
 					ct.GFake.MutateChange(gHost, 123, func(c *gf.Change) {
 						c.ACLs = gf.ACLPublic()
 						// Simulate new patchset which no longer has GerritGitDeps.
@@ -672,25 +675,6 @@ func sortedRefreshTasks(ct cvtesting.Test) []*changelist.UpdateCLTask {
 		}
 	})
 	return ret
-}
-
-func (l *RefreshGerritCL) less(r *RefreshGerritCL) bool {
-	switch {
-	case l.GetHost() < r.GetHost():
-		return true
-	case l.GetHost() > r.GetHost():
-		return false
-	case l.GetChange() < r.GetChange():
-		return true
-	case l.GetChange() > r.GetChange():
-		return false
-	case l.GetLuciProject() < r.GetLuciProject():
-		return true
-	case l.GetLuciProject() > r.GetLuciProject():
-		return false
-	default:
-		return l.GetUpdatedHint().AsTime().Before(r.GetUpdatedHint().AsTime())
-	}
 }
 
 type pmMock struct {

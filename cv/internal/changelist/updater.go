@@ -45,6 +45,7 @@ const (
 
 	// blindRefreshInterval sets interval between blind refreshes of a CL.
 	blindRefreshInterval = time.Minute
+	BlindRefreshInterval = blindRefreshInterval
 
 	// knownRefreshInterval sets interval between refreshes of a CL when
 	// updatedHint is known.

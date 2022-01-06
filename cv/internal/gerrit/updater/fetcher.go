@@ -672,25 +672,3 @@ func (f *fetcher) String() string {
 	}
 	return fmt.Sprintf("CL(%s/%d [%d])", f.host, f.change, f.priorCL.ID)
 }
-
-// needsRefresh returns true if CL
-func needsRefresh(ctx context.Context, cl *changelist.CL, luciProject string) bool {
-	switch {
-	case cl == nil:
-		panic("dep must be not nil")
-	case cl.Snapshot == nil:
-		return true
-	case cl.Snapshot.GetOutdated() != nil:
-		return true
-	case cl.Snapshot.GetLuciProject() != luciProject:
-		return true
-	case clock.Since(ctx, cl.UpdateTime) > autoRefreshAfter:
-		// Strictly speaking, cl.UpdateTime isn't just changed on refresh, but also
-		// whenever Run starts/ends. However, the start of Run is usually
-		// happenening right after recent refresh, and end of Run is usually
-		// followed by the refresh.
-		return true
-	default:
-		return false
-	}
-}

@@ -12,5 +12,5 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package updater fetches latest CL data from Gerrit.
+// Package updater implements changelist.Updater backend for Gerrit.
 package updater
