@@ -385,8 +385,14 @@ func (u *Updater) handleBatch(ctx context.Context, batch *BatchUpdateCLTask) err
 	}
 }
 
-// TODO: remove.
-func (u *Updater) HandleCL(ctx context.Context, task *UpdateCLTask) error {
+// TestingForceUpdate runs the CL Updater synchronously.
+//
+// For use in tests only. Production code should use Schedule() to benefit from
+// task de-duplication.
+//
+// TODO(crbug/1284393): revisit the usefullness of the sync refresh after
+// consistency-on-demand is provided by Gerrit.
+func (u *Updater) TestingForceUpdate(ctx context.Context, task *UpdateCLTask) error {
 	return u.handleCL(ctx, task)
 }
 

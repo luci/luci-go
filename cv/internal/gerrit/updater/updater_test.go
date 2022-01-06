@@ -222,7 +222,7 @@ func TestUpdateCLWorks(t *testing.T) {
 
 					Convey("finalizes status after the grace duration", func() {
 						ct.Clock.Add(noAccessGraceDuration + time.Second)
-						So(gu.clUpdater.HandleCL(ctx, task), ShouldBeNil)
+						So(gu.clUpdater.TestingForceUpdate(ctx, task), ShouldBeNil)
 
 						clAfter := getCL(ctx, gHost, change)
 						// NoAccessTime must remain unchanged.
@@ -236,12 +236,12 @@ func TestUpdateCLWorks(t *testing.T) {
 				}
 				Convey("HTTP 404", func() {
 					task.ExternalId = string(changelist.MustGobID(gHost, 404))
-					So(gu.clUpdater.HandleCL(ctx, task), ShouldBeNil)
+					So(gu.clUpdater.TestingForceUpdate(ctx, task), ShouldBeNil)
 					assertAccessDeniedTemporary(404)
 				})
 				Convey("HTTP 403", func() {
 					task.ExternalId = string(changelist.MustGobID(gHost, 403))
-					So(gu.clUpdater.HandleCL(ctx, task), ShouldBeNil)
+					So(gu.clUpdater.TestingForceUpdate(ctx, task), ShouldBeNil)
 					assertAccessDeniedTemporary(403)
 				})
 			})
@@ -249,7 +249,7 @@ func TestUpdateCLWorks(t *testing.T) {
 			Convey("because CL isn't watched by the LUCI project", func() {
 				verifyNoAccess := func() {
 					task.ExternalId = string(changelist.MustGobID(gHost, 1))
-					So(gu.clUpdater.HandleCL(ctx, task), ShouldBeNil)
+					So(gu.clUpdater.TestingForceUpdate(ctx, task), ShouldBeNil)
 					cl := getCL(ctx, gHost, 1)
 					So(cl, ShouldNotBeNil)
 					So(cl.Snapshot, ShouldBeNil)
@@ -297,7 +297,7 @@ func TestUpdateCLWorks(t *testing.T) {
 			Convey("fail to fetch change details", func() {
 				ct.GFake.AddFrom(gf.WithCIs(gHost, err5xx, ci500))
 				task.ExternalId = string(changelist.MustGobID(gHost, 500))
-				So(gu.clUpdater.HandleCL(ctx, task), ShouldErrLike, "boo")
+				So(gu.clUpdater.TestingForceUpdate(ctx, task), ShouldErrLike, "boo")
 				cl := getCL(ctx, gHost, 500)
 				So(cl, ShouldBeNil)
 			})
@@ -305,7 +305,7 @@ func TestUpdateCLWorks(t *testing.T) {
 			Convey("fail to get filelist", func() {
 				ct.GFake.AddFrom(gf.WithCIs(gHost, okThenErr5xx(), ci500))
 				task.ExternalId = string(changelist.MustGobID(gHost, 500))
-				So(gu.clUpdater.HandleCL(ctx, task), ShouldErrLike, "boo")
+				So(gu.clUpdater.TestingForceUpdate(ctx, task), ShouldErrLike, "boo")
 				cl := getCL(ctx, gHost, 500)
 				So(cl, ShouldBeNil)
 			})
@@ -314,7 +314,7 @@ func TestUpdateCLWorks(t *testing.T) {
 		Convey("CL hint must actually exist", func() {
 			task.ExternalId = string(changelist.MustGobID(gHost, 123))
 			task.Id = 848484881
-			So(gu.clUpdater.HandleCL(ctx, task), ShouldErrLike, "doesn't exist")
+			So(gu.clUpdater.TestingForceUpdate(ctx, task), ShouldErrLike, "doesn't exist")
 		})
 
 		Convey("Fetch for the first time", func() {
@@ -342,7 +342,7 @@ Cq-Depend: 101
 			ct.GFake.SetDependsOn(gHost, ciParent, ciGrandpa)
 
 			task.ExternalId = string(changelist.MustGobID(gHost, 123))
-			So(gu.clUpdater.HandleCL(ctx, task), ShouldBeNil)
+			So(gu.clUpdater.TestingForceUpdate(ctx, task), ShouldBeNil)
 			cl := getCL(ctx, gHost, 123)
 			So(cl.AccessKind(ctx, lProject), ShouldEqual, changelist.AccessGranted)
 			So(cl.Snapshot.GetGerrit().GetHost(), ShouldEqual, gHost)
@@ -410,7 +410,7 @@ Cq-Depend: 101
 
 			Convey("Skips update with updatedHint", func() {
 				task.UpdatedHint = cl.Snapshot.GetExternalUpdateTime()
-				So(gu.clUpdater.HandleCL(ctx, task), ShouldBeNil)
+				So(gu.clUpdater.TestingForceUpdate(ctx, task), ShouldBeNil)
 				So(getCL(ctx, gHost, 123).EVersion, ShouldEqual, cl.EVersion)
 			})
 
@@ -418,7 +418,7 @@ Cq-Depend: 101
 				task.UpdatedHint = cl.Snapshot.GetExternalUpdateTime()
 				cl.Snapshot.Outdated = &changelist.Snapshot_Outdated{}
 				So(datastore.Put(ctx, cl), ShouldBeNil)
-				So(gu.clUpdater.HandleCL(ctx, task), ShouldBeNil)
+				So(gu.clUpdater.TestingForceUpdate(ctx, task), ShouldBeNil)
 				So(getCL(ctx, gHost, 123).EVersion, ShouldEqual, cl.EVersion+1)
 			})
 
@@ -427,7 +427,7 @@ Cq-Depend: 101
 				task.UpdatedHint = timestamppb.New(
 					cl.Snapshot.GetExternalUpdateTime().AsTime().Add(time.Minute),
 				)
-				err := gu.clUpdater.HandleCL(ctx, task)
+				err := gu.clUpdater.TestingForceUpdate(ctx, task)
 				So(errors.Contains(err, gerrit.ErrStaleData), ShouldBeTrue)
 				So(getCL(ctx, gHost, 123).EVersion, ShouldEqual, cl.EVersion)
 			})
@@ -444,7 +444,7 @@ Cq-Depend: 101
 					// c.ACLs = okThenErr5xx()
 					gf.Files("crbug/1227384/detected.diff")(c.Info)
 				})
-				So(gu.clUpdater.HandleCL(ctx, task), ShouldBeNil)
+				So(gu.clUpdater.TestingForceUpdate(ctx, task), ShouldBeNil)
 				cl2 := getCL(ctx, gHost, 123)
 				So(cl2.EVersion, ShouldEqual, cl.EVersion+1)
 				So(cl2.Snapshot.GetExternalUpdateTime().AsTime(), ShouldResemble,
@@ -465,7 +465,7 @@ Cq-Depend: 101
 					})
 
 					task.UpdatedHint = nil
-					So(gu.clUpdater.HandleCL(ctx, task), ShouldBeNil)
+					So(gu.clUpdater.TestingForceUpdate(ctx, task), ShouldBeNil)
 					cl3 := getCL(ctx, gHost, 123)
 					So(cl3.EVersion, ShouldEqual, cl2.EVersion+1)
 					So(cl3.Snapshot.GetExternalUpdateTime().AsTime(), ShouldResemble, ct.Clock.Now().UTC())
@@ -492,7 +492,7 @@ Cq-Depend: 101
 				ct.Clock.Add(time.Second)
 				prjcfgtest.Update(ctx, lProject, singleRepoConfig(gHost, "another/repo"))
 				gobmaptest.Update(ctx, lProject)
-				So(gu.clUpdater.HandleCL(ctx, task), ShouldBeNil)
+				So(gu.clUpdater.TestingForceUpdate(ctx, task), ShouldBeNil)
 				cl2 := getCL(ctx, gHost, 123)
 				So(cl2.AccessKind(ctx, lProject), ShouldEqual, changelist.AccessDenied)
 				So(cl2.EVersion, ShouldEqual, cl.EVersion+1)
@@ -513,7 +513,7 @@ Cq-Depend: 101
 				task.LuciProject = lProject2
 
 				Convey("with access", func() {
-					So(gu.clUpdater.HandleCL(ctx, task), ShouldBeNil)
+					So(gu.clUpdater.TestingForceUpdate(ctx, task), ShouldBeNil)
 					cl2 := getCL(ctx, gHost, 123)
 					So(cl2.EVersion, ShouldEqual, cl.EVersion+1)
 					So(cl2.Snapshot.GetLuciProject(), ShouldEqual, lProject2)
@@ -526,7 +526,7 @@ Cq-Depend: 101
 					ct.GFake.MutateChange(gHost, 123, func(c *gf.Change) {
 						c.ACLs = gf.ACLRestricted("neither-lProject-nor-lProject2")
 					})
-					So(gu.clUpdater.HandleCL(ctx, task), ShouldBeNil)
+					So(gu.clUpdater.TestingForceUpdate(ctx, task), ShouldBeNil)
 					cl2 := getCL(ctx, gHost, 123)
 					So(cl2.EVersion, ShouldEqual, cl.EVersion+1)
 					// Snapshot is kept as is, incl. binding to old project and its ExternalUpdateTime.
@@ -550,7 +550,7 @@ Cq-Depend: 101
 			ct.GFake.AddFrom(gf.WithCIs(gHost, gf.ACLPublic(), ci))
 			task.ExternalId = string(changelist.MustGobID(gHost, 101))
 			task.Id = int64(cl.ID)
-			So(gu.clUpdater.HandleCL(ctx, task), ShouldBeNil)
+			So(gu.clUpdater.TestingForceUpdate(ctx, task), ShouldBeNil)
 
 			cl2 := getCL(ctx, gHost, 101)
 			So(cl2.EVersion, ShouldEqual, 2)
@@ -570,7 +570,7 @@ Cq-Depend: 101
 			ct.GFake.AddFrom(gf.WithCIs(gHost, gf.ACLPublic(), ci, ciParent))
 			ct.GFake.SetDependsOn(gHost, ci, ciParent)
 
-			So(gu.clUpdater.HandleCL(ctx, task), ShouldBeNil)
+			So(gu.clUpdater.TestingForceUpdate(ctx, task), ShouldBeNil)
 			v1 := getCL(ctx, gHost, 123)
 			So(v1.Snapshot.GetGerrit().GetInfo().GetStatus(), ShouldEqual, gerritpb.ChangeStatus_NEW)
 			So(v1.Snapshot.GetGerrit().GetFiles(), ShouldResemble, []string{"a.cpp", "c/b.py"})
@@ -585,7 +585,7 @@ Cq-Depend: 101
 				c.Info.Status = gerritpb.ChangeStatus_ABANDONED
 				c.Info.Updated = timestamppb.New(ct.Clock.Now())
 			})
-			So(gu.clUpdater.HandleCL(ctx, task), ShouldBeNil)
+			So(gu.clUpdater.TestingForceUpdate(ctx, task), ShouldBeNil)
 			v2 := getCL(ctx, gHost, 123)
 			So(v2.Snapshot.GetGerrit().GetInfo().GetStatus(), ShouldEqual, gerritpb.ChangeStatus_ABANDONED)
 			// Files and deps don't have to be set as CV doesn't work with abandoned such CLs.
@@ -596,7 +596,7 @@ Cq-Depend: 101
 				c.Info.Status = gerritpb.ChangeStatus_NEW
 				c.Info.Updated = timestamppb.New(ct.Clock.Now())
 			})
-			So(gu.clUpdater.HandleCL(ctx, task), ShouldBeNil)
+			So(gu.clUpdater.TestingForceUpdate(ctx, task), ShouldBeNil)
 			v3 := getCL(ctx, gHost, 123)
 			So(v3.Snapshot.GetGerrit().GetInfo().GetStatus(), ShouldEqual, gerritpb.ChangeStatus_NEW)
 			So(v3.Snapshot.GetGerrit().GetFiles(), ShouldResemble, v1.Snapshot.GetGerrit().GetFiles())

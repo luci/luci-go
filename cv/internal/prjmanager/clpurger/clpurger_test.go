@@ -37,6 +37,7 @@ import (
 	"go.chromium.org/luci/cv/internal/prjmanager/prjpb"
 
 	. "github.com/smartystreets/goconvey/convey"
+	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestPurgeCL(t *testing.T) {
@@ -50,9 +51,8 @@ func TestPurgeCL(t *testing.T) {
 
 		pmNotifier := prjmanager.NewNotifier(ct.TQDispatcher)
 		clMutator := changelist.NewMutator(ct.TQDispatcher, pmNotifier, nil)
-		clUpdater := changelist.NewUpdater(ct.TQDispatcher, clMutator)
-		gerritupdater.RegisterUpdater(clUpdater, ct.GFactory())
-		purger := New(pmNotifier, ct.GFactory(), clUpdater)
+		fakeCLUpdater := clUpdaterMock{}
+		purger := New(pmNotifier, ct.GFactory(), &fakeCLUpdater)
 
 		const lProject = "lprj"
 		const gHost = "x-review"
@@ -72,8 +72,11 @@ func TestPurgeCL(t *testing.T) {
 		)
 		ct.GFake.AddFrom(gf.WithCIs(gHost, gf.ACLRestricted(lProject), ci))
 
+		// The real CL Updater for realistic CL Snapshot in datastore.
+		clUpdater := changelist.NewUpdater(ct.TQDispatcher, clMutator)
+		gerritupdater.RegisterUpdater(clUpdater, ct.GFactory())
 		refreshCL := func() {
-			So(clUpdater.HandleCL(ctx, &changelist.UpdateCLTask{
+			So(clUpdater.TestingForceUpdate(ctx, &changelist.UpdateCLTask{
 				LuciProject: lProject,
 				ExternalId:  string(changelist.MustGobID(gHost, change)),
 			}), ShouldBeNil)
@@ -120,26 +123,39 @@ func TestPurgeCL(t *testing.T) {
 
 		ct.Clock.Add(time.Minute)
 
-		Convey("Happy path: cancel trigger, refresh CL, and notify PM", func() {
+		Convey("Happy path: cancel trigger, schedule CL refresh, and notify PM", func() {
 			So(schedule(), ShouldBeNil)
 			ct.TQ.Run(ctx, tqtesting.StopAfterTask(prjpb.PurgeProjectCLTaskClass))
 
-			clAfter := loadCL()
-			So(clAfter.EVersion, ShouldBeGreaterThan, clBefore.EVersion)
-			ciAfter := clAfter.Snapshot.GetGerrit().GetInfo()
+			ciAfter := ct.GFake.GetChange(gHost, change).Info
 			So(trigger.Find(ciAfter, cfg.GetConfigGroups()[0]), ShouldBeNil)
 			So(ciAfter, gf.ShouldLastMessageContain, "owner doesn't have a preferred email")
+
+			So(fakeCLUpdater.scheduledTasks, ShouldHaveLength, 1)
 			assertPMNotified("op")
 
 			Convey("Idempotent: if TQ task is retried, just notify PM", func() {
-				// Use different Operation ID s.t. we can easily assert PM was notified
-				// the 2nd time.
-				task.PurgingCl.OperationId = "op-2"
-				So(schedule(), ShouldBeNil)
-				ct.TQ.Run(ctx, tqtesting.StopAfterTask(prjpb.PurgeProjectCLTaskClass))
-				So(loadCL().EVersion, ShouldEqual, clAfter.EVersion)
-				assertPMNotified("op-2")
-				So(pmDispatcher.LatestETAof(lProject), ShouldHappenBefore, ct.Clock.Now().Add(2*time.Second))
+				verifyIdempotency := func() {
+					// Use different Operation ID s.t. we can easily assert PM was notified
+					// the 2nd time.
+					task.PurgingCl.OperationId = "op-2"
+					So(schedule(), ShouldBeNil)
+					ct.TQ.Run(ctx, tqtesting.StopAfterTask(prjpb.PurgeProjectCLTaskClass))
+					// CL in Gerrit shouldn't be changed.
+					ciAfter2 := ct.GFake.GetChange(gHost, change).Info
+					So(ciAfter2, ShouldResembleProto, ciAfter)
+					// But PM must be notified.
+					assertPMNotified("op-2")
+					So(pmDispatcher.LatestETAof(lProject), ShouldHappenBefore, ct.Clock.Now().Add(2*time.Second))
+				}
+				// Idempotency must not rely on CL being updated between retries.
+				Convey("CL updated between retries", func() {
+					verifyIdempotency()
+				})
+				Convey("CL not updated between retries", func() {
+					refreshCL()
+					verifyIdempotency()
+				})
 			})
 		})
 
@@ -188,4 +204,13 @@ func makeConfig(gHost string, gRepo string) *cfgpb.Config {
 			},
 		},
 	}
+}
+
+type clUpdaterMock struct {
+	scheduledTasks []*changelist.UpdateCLTask
+}
+
+func (c *clUpdaterMock) Schedule(_ context.Context, task *changelist.UpdateCLTask) error {
+	c.scheduledTasks = append(c.scheduledTasks, task)
+	return nil
 }

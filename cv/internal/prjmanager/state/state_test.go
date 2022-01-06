@@ -72,7 +72,7 @@ func (ct ctest) runCLUpdater(ctx context.Context, change int64) *changelist.CL {
 }
 
 func (ct ctest) runCLUpdaterAs(ctx context.Context, change int64, lProject string) *changelist.CL {
-	So(ct.clUpdater.HandleCL(ctx, &changelist.UpdateCLTask{
+	So(ct.clUpdater.TestingForceUpdate(ctx, &changelist.UpdateCLTask{
 		LuciProject: lProject,
 		ExternalId:  string(changelist.MustGobID(ct.gHost, change)),
 	}), ShouldBeNil)

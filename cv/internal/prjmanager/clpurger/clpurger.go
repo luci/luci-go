@@ -45,12 +45,17 @@ import (
 type Purger struct {
 	pmNotifier *prjmanager.Notifier
 	gFactory   gerrit.Factory
-	clUpdater  *changelist.Updater
+	clUpdater  clUpdater
+}
+
+// clUpdater is a subset of the *changelist.Updater which Purger needs.
+type clUpdater interface {
+	Schedule(context.Context, *changelist.UpdateCLTask) error
 }
 
 // New creates a Purger and registers it for handling tasks created by the given
 // PM Notifier.
-func New(n *prjmanager.Notifier, g gerrit.Factory, u *changelist.Updater) *Purger {
+func New(n *prjmanager.Notifier, g gerrit.Factory, u clUpdater) *Purger {
 	p := &Purger{n, g, u}
 	n.TasksBinding.PurgeProjectCL.AttachHandler(
 		func(ctx context.Context, payload proto.Message) error {
@@ -144,8 +149,9 @@ func (p *Purger) purgeWithDeadline(ctx context.Context, task *prjpb.PurgeCLTask)
 		return errors.Annotate(err, "failed to purge CL %d of project %q", cl.ID, task.GetLuciProject()).Err()
 	}
 
-	// Refresh a CL immediately.
-	return p.clUpdater.HandleCL(ctx, &changelist.UpdateCLTask{
+	// Schedule a refresh of a CL.
+	// TODO(crbug.com/1284393): use Gerrit's consistency-on-demand when available.
+	return p.clUpdater.Schedule(ctx, &changelist.UpdateCLTask{
 		LuciProject: task.GetLuciProject(),
 		ExternalId:  string(cl.ExternalID),
 		Id:          int64(cl.ID),
