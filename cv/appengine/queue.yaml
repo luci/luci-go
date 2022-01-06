@@ -48,14 +48,6 @@ queue:
 - name: refresh-project-config
   rate: 20/s
 
-# TODO(tandrii): deprecate & delete in favor of update-cl.
-- name: refresh-gerrit-cl
-  rate: 50/s
-  retry_parameters:
-    min_backoff_seconds: 1
-    max_backoff_seconds: 300
-    task_age_limit: 1h
-
 - name: update-cl
   rate: 50/s
   retry_parameters:
