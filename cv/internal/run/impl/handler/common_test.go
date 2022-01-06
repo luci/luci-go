@@ -180,9 +180,7 @@ func TestCancelTriggers(t *testing.T) {
 		ct.Clock.Add(time.Minute)
 		impl, deps := makeImpl(&ct)
 		meta := reviewInputMeta{
-			notify:    gcancel.NONE,
-			message:   "Dry Run OK",
-			attention: gcancel.NONE,
+			message: "Dry Run OK",
 		}
 		err = impl.cancelCLTriggers(ctx, rid, []*run.RunCL{&rcl}, []changelist.ExternalID{cl.ExternalID}, cg, meta)
 		// The cancelation errors out, but the CL refresh is scheduled.

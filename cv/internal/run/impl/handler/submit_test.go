@@ -289,6 +289,7 @@ func TestOnSubmissionCompleted(t *testing.T) {
 		genCL := func(clid common.CLID, change int, deps ...common.CLID) (*gerritpb.ChangeInfo, *changelist.CL, *run.RunCL) {
 			ci := gf.CI(
 				change, gf.PS(2),
+				gf.Owner("user-99"),
 				gf.CQ(1, ct.Clock.Now().Add(-5*time.Minute), gf.U("user-101")),
 				gf.CQ(2, ct.Clock.Now().Add(-2*time.Minute), gf.U("user-100")),
 				gf.Updated(clock.Now(ctx).Add(-1*time.Minute)))
@@ -426,15 +427,15 @@ func TestOnSubmissionCompleted(t *testing.T) {
 			})
 			return
 		}
-		assertNotify := func(req *gerritpb.SetReviewRequest, n gerritpb.Notify, accs ...int64) {
+		assertNotify := func(req *gerritpb.SetReviewRequest, accts ...int64) {
 			So(req, ShouldNotBeNil)
-			So(req.GetNotify(), ShouldEqual, n)
+			So(req.GetNotify(), ShouldEqual, gerritpb.Notify_NOTIFY_NONE)
 			So(req.GetNotifyDetails(), ShouldResembleProto, &gerritpb.NotifyDetails{
 				Recipients: []*gerritpb.NotifyDetails_Recipient{
 					{
 						RecipientType: gerritpb.NotifyDetails_RECIPIENT_TYPE_TO,
 						Info: &gerritpb.NotifyDetails_Info{
-							Accounts: accs,
+							Accounts: accts,
 						},
 					},
 				},
@@ -558,13 +559,7 @@ func TestOnSubmissionCompleted(t *testing.T) {
 							reqs := selfSetReviewRequests()
 							So(reqs, ShouldHaveLength, 1)
 							So(reqs[0].GetNumber(), ShouldEqual, ci2.GetNumber())
-							// The gerrit request is set with NOTIFY_OWNER, and
-							// the NotifyDetails only includes the voters' IDs w/o
-							// the owner's ID. Hence, [100 and 101]
-							//
-							// In contrast, the attention set includes all of
-							// the owner and voters' IDs. i.e., p99, 100, 101]
-							assertNotify(reqs[0], gerritpb.Notify_NOTIFY_OWNER, 100, 101)
+							assertNotify(reqs[0], 99, 100, 101)
 							assertAttentionSet(reqs[0], submissionFailureAttentionReason, 99, 100, 101)
 						})
 						Convey("Unclassified failure", func() {
@@ -637,16 +632,10 @@ func TestOnSubmissionCompleted(t *testing.T) {
 							reqs := selfSetReviewRequests()
 							So(reqs, ShouldHaveLength, 2) // each for CL1 and CL2
 							So(reqs[0].GetNumber(), ShouldEqual, ci1.GetNumber())
-							// The gerrit request is set with NOTIFY_ONWER, and
-							// the NotifyDetails only includes the voters' IDs w/o
-							// the owner's ID. Hence, [100 and 101]
-							//
-							// In contrast, the attention set includes all of
-							// the owner and voters' IDs. i.e., p99, 100, 101]
-							assertNotify(reqs[0], gerritpb.Notify_NOTIFY_OWNER, 100, 101)
+							assertNotify(reqs[0], 99, 100, 101)
 							assertAttentionSet(reqs[0], submissionFailureAttentionReason, 99, 100, 101)
 							So(reqs[1].GetNumber(), ShouldEqual, ci2.GetNumber())
-							assertNotify(reqs[0], gerritpb.Notify_NOTIFY_OWNER, 100, 101)
+							assertNotify(reqs[0], 99, 100, 101)
 							assertAttentionSet(reqs[0], submissionFailureAttentionReason, 99, 100, 101)
 						})
 						Convey("Unclassified failure", func() {
@@ -688,18 +677,12 @@ func TestOnSubmissionCompleted(t *testing.T) {
 							reqs := selfSetReviewRequests()
 							So(reqs, ShouldHaveLength, 2) // for both submitted and failed CLs
 							So(reqs[0].GetNumber(), ShouldEqual, ci1.GetNumber())
-							// The gerrit request is set with NOTIFY_ONWER, and
-							// the NotifyDetails only includes the voters' IDs w/o
-							// the owner's ID. Hence, [100 and 101]
-							//
-							// In contrast, the attention set includes all of
-							// the owner and voters' IDs. i.e., p99, 100, 101]
-							assertNotify(reqs[0], gerritpb.Notify_NOTIFY_OWNER, 100, 101)
+							assertNotify(reqs[0], 99, 100, 101)
 							assertAttentionSet(reqs[0], submissionFailureAttentionReason, 99, 100, 101)
 							So(reqs[0].Message, ShouldContainSubstring, "CL failed to submit because of transient failure")
 							// The 2nd Gerrit message should be for the submitted CL to indicate
 							// the submission failure on the dependent CLs.
-							assertNotify(reqs[1], gerritpb.Notify_NOTIFY_OWNER, 100, 101)
+							assertNotify(reqs[1], 99, 100, 101)
 							assertAttentionSet(reqs[1], "failed to submit dependent CLs", 99, 100, 101)
 							So(reqs[1].Message, ShouldContainSubstring, "CV submitted this CL, but failed to submit")
 						})
@@ -785,13 +768,7 @@ func TestOnSubmissionCompleted(t *testing.T) {
 					reqs := selfSetReviewRequests()
 					So(reqs, ShouldHaveLength, 1)
 					So(reqs[0].GetNumber(), ShouldEqual, ci2.GetNumber())
-					// The gerrit request is set with NOTIFY_ONWER, and
-					// the NotifyDetails only includes the voters' IDs w/o
-					// the owner's ID. Hence, [100 and 101]
-					//
-					// In contrast, the attention set includes all of
-					// the owner and voters' IDs. i.e., p99, 100, 101]
-					assertNotify(reqs[0], gerritpb.Notify_NOTIFY_OWNER, 100, 101)
+					assertNotify(reqs[0], 99, 100, 101)
 					assertAttentionSet(reqs[0], submissionFailureAttentionReason, 99, 100, 101)
 				})
 
@@ -848,16 +825,10 @@ func TestOnSubmissionCompleted(t *testing.T) {
 						reqs := selfSetReviewRequests()
 						So(reqs, ShouldHaveLength, 2) // each for CL1 and CL2
 						So(reqs[0].GetNumber(), ShouldEqual, ci1.GetNumber())
-						// The gerrit request is set with NOTIFY_OWNER, and
-						// the NotifyDetails only includes the voters' IDs w/o
-						// the owner's ID. Hence, [100 and 101]
-						//
-						// In contrast, the attention set includes all of
-						// the owner and voters' IDs. i.e., p99, 100, 101]
-						assertNotify(reqs[0], gerritpb.Notify_NOTIFY_OWNER, 100, 101)
+						assertNotify(reqs[0], 99, 100, 101)
 						assertAttentionSet(reqs[0], submissionFailureAttentionReason, 99, 100, 101)
 						So(reqs[1].GetNumber(), ShouldEqual, ci2.GetNumber())
-						assertNotify(reqs[0], gerritpb.Notify_NOTIFY_OWNER, 100, 101)
+						assertNotify(reqs[1], 99, 100, 101)
 						assertAttentionSet(reqs[1], submissionFailureAttentionReason, 99, 100, 101)
 					})
 
@@ -896,18 +867,12 @@ func TestOnSubmissionCompleted(t *testing.T) {
 						reqs := selfSetReviewRequests()
 						So(reqs, ShouldHaveLength, 2) // for both submitted and failed CLs
 						So(reqs[0].GetNumber(), ShouldEqual, ci1.GetNumber())
-						// The gerrit request is set with NOTIFY_ONWER, and
-						// the NotifyDetails only includes the voters' IDs w/o
-						// the owner's ID. Hence, [100 and 101]
-						//
-						// In contrast, the attention set includes all of
-						// the owner and voters' IDs. i.e., p99, 100, 101]
-						assertNotify(reqs[0], gerritpb.Notify_NOTIFY_OWNER, 100, 101)
+						assertNotify(reqs[0], 99, 100, 101)
 						assertAttentionSet(reqs[0], submissionFailureAttentionReason, 99, 100, 101)
 						So(reqs[0].Message, ShouldContainSubstring, "CV failed to submit this CL")
 						// The 2nd Gerrit message should be for the submitted CL to indicate
 						// the submission failure on the dependent CLs.
-						assertNotify(reqs[1], gerritpb.Notify_NOTIFY_OWNER, 100, 101)
+						assertNotify(reqs[1], 99, 100, 101)
 						assertAttentionSet(reqs[1], "failed to submit dependent CLs", 99, 100, 101)
 						So(reqs[1].Message, ShouldContainSubstring, "CV submitted this CL, but failed to submit")
 					})

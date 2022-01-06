@@ -25,7 +25,7 @@ import (
 	migrationpb "go.chromium.org/luci/cv/api/migration"
 	"go.chromium.org/luci/cv/internal/changelist"
 	"go.chromium.org/luci/cv/internal/configs/prjcfg"
-	"go.chromium.org/luci/cv/internal/gerrit/cancel"
+	"go.chromium.org/luci/cv/internal/gerrit"
 	"go.chromium.org/luci/cv/internal/migration"
 	"go.chromium.org/luci/cv/internal/run"
 	"go.chromium.org/luci/cv/internal/run/impl/state"
@@ -69,9 +69,9 @@ func (impl *Impl) OnCQDVerificationCompleted(ctx context.Context, rs *state.RunS
 	case migrationpb.ReportVerifiedRunRequest_ACTION_DRY_RUN_OK:
 		msg, reason := usertext.OnRunSucceeded(rs.Mode)
 		meta := reviewInputMeta{
-			notify:    cancel.OWNER | cancel.VOTERS,
+			notify:    []gerrit.Whom{gerrit.Owner, gerrit.CQVoters},
 			message:   msg,
-			attention: cancel.VOTERS,
+			attention: []gerrit.Whom{gerrit.CQVoters},
 			reason:    reason,
 		}
 		if err := impl.cancelTriggers(ctx, rs, meta); err != nil {
@@ -83,10 +83,10 @@ func (impl *Impl) OnCQDVerificationCompleted(ctx context.Context, rs *state.RunS
 	case migrationpb.ReportVerifiedRunRequest_ACTION_FAIL:
 		_, reason := usertext.OnRunFailed(rs.Mode)
 		meta := reviewInputMeta{
-			notify:  cancel.OWNER | cancel.VOTERS,
+			notify:  []gerrit.Whom{gerrit.Owner, gerrit.CQVoters},
 			message: vr.Payload.FinalMessage,
 			// Add the same set of group/people to the attention set.
-			attention: cancel.OWNER | cancel.VOTERS,
+			attention: []gerrit.Whom{gerrit.Owner, gerrit.CQVoters},
 			reason:    reason,
 		}
 		if err := impl.cancelTriggers(ctx, rs, meta); err != nil {

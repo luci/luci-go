@@ -116,7 +116,7 @@ func TestCancelTriggers(t *testing.T) {
 					},
 					AddToAttention: []run.OngoingLongOps_Op_TriggersCancellation_Whom{
 						run.OngoingLongOps_Op_TriggersCancellation_OWNER,
-						run.OngoingLongOps_Op_TriggersCancellation_VOTERS,
+						run.OngoingLongOps_Op_TriggersCancellation_CQ_VOTERS,
 					},
 					AddToAttentionReason: fmt.Sprintf("attention reason for CL %d", clid),
 				}

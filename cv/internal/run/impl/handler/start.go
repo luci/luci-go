@@ -29,7 +29,7 @@ import (
 
 	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/configs/prjcfg"
-	"go.chromium.org/luci/cv/internal/gerrit/cancel"
+	"go.chromium.org/luci/cv/internal/gerrit"
 	"go.chromium.org/luci/cv/internal/run"
 	"go.chromium.org/luci/cv/internal/run/eventpb"
 	"go.chromium.org/luci/cv/internal/run/impl/state"
@@ -151,8 +151,8 @@ func (impl *Impl) onCompletedPostStartMessage(ctx context.Context, rs *state.Run
 
 	msgPrefix, attentionReason := usertext.OnRunFailed(rs.Mode)
 	meta := reviewInputMeta{
-		notify:    cancel.OWNER | cancel.VOTERS,
-		attention: cancel.OWNER | cancel.VOTERS,
+		notify:    []gerrit.Whom{gerrit.Owner, gerrit.CQVoters},
+		attention: []gerrit.Whom{gerrit.Owner, gerrit.CQVoters},
 		reason:    attentionReason,
 		message:   msgPrefix + "\n\n" + failRunReason,
 	}

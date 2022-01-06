@@ -58,97 +58,6 @@ var ErrPermanentTag = errors.BoolTag{
 	Key: errors.NewTagKey("permanent error while cancelling triggers"),
 }
 
-// Whom defines whom to notify for the cancellation.
-//
-// Note: REVIEWERS or VOTERS must be used together with OWNERS.
-// TODO(yiwzhang): Remove this restriction if necessary.
-type Whom int32
-
-const (
-	// NONE notifies no one.
-	NONE Whom = 0
-	// OWNER notifies the owner of the CL.
-	OWNER Whom = 1
-	// REVIEWERS notifies all reviewers of the CL.
-	REVIEWERS Whom = 2
-	// VOTERS notifies all users that have voted on CQ label when cancelling.
-	VOTERS Whom = 4
-)
-
-func (notify Whom) toGerritNotify(voterAccounts []int64) (n gerritpb.Notify, nd *gerritpb.NotifyDetails) {
-	n = gerritpb.Notify_NOTIFY_NONE
-	if len(voterAccounts) > 0 && notify&VOTERS == VOTERS {
-		nd = &gerritpb.NotifyDetails{
-			Recipients: []*gerritpb.NotifyDetails_Recipient{
-				{
-					RecipientType: gerritpb.NotifyDetails_RECIPIENT_TYPE_TO,
-					Info: &gerritpb.NotifyDetails_Info{
-						Accounts: voterAccounts,
-					},
-				},
-			},
-		}
-	}
-	switch {
-	case notify&REVIEWERS == REVIEWERS:
-		n = gerritpb.Notify_NOTIFY_OWNER_REVIEWERS
-	case notify&OWNER == OWNER:
-		n = gerritpb.Notify_NOTIFY_OWNER
-	}
-	return
-}
-
-func (notify Whom) toGerritAttentionSet(owner int64, reviewers []int64, voters []int64, reason string) []*gerritpb.AttentionSetInput {
-	accs := stringset.New(len(reviewers))
-	if notify&OWNER != 0 {
-		accs.Add(strconv.FormatInt(owner, 10))
-	}
-	if notify&REVIEWERS != 0 {
-		for _, r := range reviewers {
-			// The accountID supports various formats, including
-			// a bare account ID, email, full-name, and others.
-			accs.Add(strconv.FormatInt(r, 10))
-		}
-	}
-	if notify&VOTERS != 0 {
-		for _, v := range voters {
-			accs.Add(strconv.FormatInt(v, 10))
-		}
-	}
-	if len(accs) > 0 {
-		ret := make([]*gerritpb.AttentionSetInput, len(accs))
-		for i, acc := range accs.ToSortedSlice() {
-			ret[i] = &gerritpb.AttentionSetInput{
-				User:   acc,
-				Reason: reason,
-			}
-		}
-		return ret
-	}
-	return nil
-}
-
-func (in *Input) panicIfInvalid() {
-	// These are the conditions that shouldn't be met, and likely require code
-	// changes for fixes.
-	var err error
-	switch {
-	case in.CL.Snapshot == nil:
-		err = fmt.Errorf("cl.Snapshot must be non-nil")
-	case in.Trigger == nil:
-		err = fmt.Errorf("trigger must be non-nil")
-	case in.LUCIProject != in.CL.Snapshot.GetLuciProject():
-		err = fmt.Errorf("mismatched LUCI Project: got %q in input and %q in CL snapshot", in.LUCIProject, in.CL.Snapshot.GetLuciProject())
-	case len(in.ConfigGroups) == 0:
-		err = fmt.Errorf("ConfigGroups must be given")
-	case (in.Notify&VOTERS == VOTERS || in.Notify&REVIEWERS == REVIEWERS) && in.Notify&OWNER != OWNER:
-		err = fmt.Errorf("must notify OWNER when notifying REVIEWERS or VOTERS")
-	}
-	if err != nil {
-		panic(err)
-	}
-}
-
 // Input contains info to cancel triggers of Run on a CL.
 type Input struct {
 	// CL is a Gerrit CL entity.
@@ -170,16 +79,18 @@ type Input struct {
 	Requester string
 	// Notify describes whom to notify regarding the cancellation.
 	//
-	// Example: OWNER|REVIEWERS|VOTERS
-	Notify Whom
+	// If empty, notifies no one.
+	Notify []gerrit.Whom
 	// AddToAttentionSet describes whom to add in the attention set.
-	AddToAttentionSet Whom
+	//
+	// If empty, no change will be made to attention set.
+	AddToAttentionSet []gerrit.Whom
 	// AttentionReason describes the reason of the attention change.
 	//
 	// It is attached to the attention set change, and rendered in UI to explain
 	// the reason of the attention to users.
 	//
-	// This is noop, if AddAttentionSet == NONE.
+	// This is noop, if AddAttentionSet is empty.
 	AttentionReason string
 	// LeaseDuration is how long a lease will be held for this cancellation.
 	//
@@ -199,6 +110,25 @@ type Input struct {
 	// TODO(yiwzhang): consider dropping after M1 is launched if it is not adding
 	// any value to include those IDs in the bot data.
 	RunCLExternalIDs []changelist.ExternalID
+}
+
+func (in *Input) panicIfInvalid() {
+	// These are the conditions that shouldn't be met, and likely require code
+	// changes for fixes.
+	var err error
+	switch {
+	case in.CL.Snapshot == nil:
+		err = fmt.Errorf("cl.Snapshot must be non-nil")
+	case in.Trigger == nil:
+		err = fmt.Errorf("trigger must be non-nil")
+	case in.LUCIProject != in.CL.Snapshot.GetLuciProject():
+		err = fmt.Errorf("mismatched LUCI Project: got %q in input and %q in CL snapshot", in.LUCIProject, in.CL.Snapshot.GetLuciProject())
+	case len(in.ConfigGroups) == 0:
+		err = fmt.Errorf("ConfigGroups must be given")
+	}
+	if err != nil {
+		panic(err)
+	}
 }
 
 // Cancel removes or "deactivates" CQ-triggering votes on a CL and posts the
@@ -226,7 +156,7 @@ func Cancel(ctx context.Context, gFactory gerrit.Factory, in Input) error {
 	if in.CL.AccessKindFromCodeReviewSite(ctx, in.LUCIProject) != changelist.AccessGranted {
 		return errors.New("failed to cancel trigger because CV lost access to this CL", ErrPreconditionFailedTag)
 	}
-	if in.AddToAttentionSet != NONE && in.AttentionReason == "" {
+	if len(in.AddToAttentionSet) > 0 && in.AttentionReason == "" {
 		logging.Warningf(ctx, "FIXME Cancel was given empty in AttentionReason.")
 		in.AttentionReason = usertext.StoppedRun
 	}
@@ -418,7 +348,7 @@ func sortedReviewerAccountIDs(ci *gerritpb.ChangeInfo) []int64 {
 	return ids
 }
 
-func (c *change) removeVotesAndPostMsg(ctx context.Context, ci *gerritpb.ChangeInfo, t *run.Trigger, msg string, notify, addAtt Whom, reason string) error {
+func (c *change) removeVotesAndPostMsg(ctx context.Context, ci *gerritpb.ChangeInfo, t *run.Trigger, msg string, notify, addAttn []gerrit.Whom, reason string) error {
 	var nonTriggeringVotesRemovalErrs errors.MultiError
 	needRemoveTriggerVote := false
 	for _, voter := range c.sortedVoterAccountIDs() {
@@ -443,7 +373,7 @@ func (c *change) removeVotesAndPostMsg(ctx context.Context, ci *gerritpb.ChangeI
 			return err
 		}
 	}
-	return c.postGerritMsg(ctx, ci, msg, t, notify, addAtt, reason)
+	return c.postGerritMsg(ctx, ci, msg, t, notify, addAttn, reason)
 }
 
 func (c *change) removeVote(ctx context.Context, accountID int64) error {
@@ -479,7 +409,7 @@ func (c *change) removeVote(ctx context.Context, accountID int64) error {
 	}
 }
 
-func (c *change) postCancelMessage(ctx context.Context, ci *gerritpb.ChangeInfo, msg string, t *run.Trigger, runCLExternalIDs []changelist.ExternalID, notify, addAtt Whom, reason string) (err error) {
+func (c *change) postCancelMessage(ctx context.Context, ci *gerritpb.ChangeInfo, msg string, t *run.Trigger, runCLExternalIDs []changelist.ExternalID, notify, addAttn []gerrit.Whom, reason string) (err error) {
 	bd := botdata.BotData{
 		Action:      botdata.Cancel,
 		TriggeredAt: t.GetTime().AsTime(),
@@ -495,13 +425,13 @@ func (c *change) postCancelMessage(ctx context.Context, ci *gerritpb.ChangeInfo,
 	if msg, err = botdata.Append(msg, bd); err != nil {
 		return err
 	}
-	return c.postGerritMsg(ctx, ci, msg, t, notify, addAtt, reason)
+	return c.postGerritMsg(ctx, ci, msg, t, notify, addAttn, reason)
 }
 
 // postGerritMsg posts the given message to Gerrit.
 //
 // Skips if duplicate message is found after triggering time.
-func (c *change) postGerritMsg(ctx context.Context, ci *gerritpb.ChangeInfo, msg string, t *run.Trigger, notify, addAtt Whom, reason string) (err error) {
+func (c *change) postGerritMsg(ctx context.Context, ci *gerritpb.ChangeInfo, msg string, t *run.Trigger, notify, addAttn []gerrit.Whom, reason string) (err error) {
 	for _, m := range ci.GetMessages() {
 		switch {
 		case m.GetDate().AsTime().Before(t.GetTime().AsTime()):
@@ -510,21 +440,25 @@ func (c *change) postGerritMsg(ctx context.Context, ci *gerritpb.ChangeInfo, msg
 		}
 	}
 
-	reviewers, voters := sortedReviewerAccountIDs(ci), c.sortedVoterAccountIDs()
+	owner, reviewers, voters := ci.GetOwner().GetAccountId(), sortedReviewerAccountIDs(ci), c.sortedVoterAccountIDs()
 	reason = fmt.Sprintf("ps#%d: %s", ci.GetRevisions()[ci.GetCurrentRevision()].GetNumber(), reason)
-	n, nd := notify.toGerritNotify(voters)
-
+	nd := makeGerritNotifyDetails(notify, owner, reviewers, voters)
+	attention := makeGerritAttentionSetInputs(addAttn, owner, reviewers, voters, reason)
 	var gerritErr error
 	outerErr := c.gf.MakeMirrorIterator(ctx).RetryIfStale(func(opt grpc.CallOption) error {
 		_, gerritErr = c.gc.SetReview(ctx, &gerritpb.SetReviewRequest{
-			Number:            c.Number,
-			Project:           c.Project,
-			RevisionId:        ci.GetCurrentRevision(),
-			Message:           gerrit.TruncateMessage(msg),
-			Tag:               c.RunMode.GerritMessageTag(),
-			Notify:            n,
+			Number:     c.Number,
+			Project:    c.Project,
+			RevisionId: ci.GetCurrentRevision(),
+			Message:    gerrit.TruncateMessage(msg),
+			Tag:        c.RunMode.GerritMessageTag(),
+			// Set `Notify` to NONE because LUCI CV has the knowledge on all the
+			// accounts to notify. All of them are included through `NotifyDetails`.
+			// Therefore, there is no point using the special enum provided via
+			// `Notify`.
+			Notify:            gerritpb.Notify_NOTIFY_NONE,
 			NotifyDetails:     nd,
-			AddToAttentionSet: addAtt.toGerritAttentionSet(ci.GetOwner().GetAccountId(), reviewers, voters, reason),
+			AddToAttentionSet: attention,
 		}, opt)
 		switch grpcutil.Code(gerritErr) {
 		case codes.NotFound:
@@ -545,6 +479,67 @@ func (c *change) postGerritMsg(ctx context.Context, ci *gerritpb.ChangeInfo, msg
 	default:
 		return nil
 	}
+}
+
+func makeGerritNotifyDetails(notify []gerrit.Whom, owner int64, reviewers []int64, voters []int64) *gerritpb.NotifyDetails {
+	accounts := pickAccountsSorted(notify, owner, reviewers, voters)
+	if len(accounts) == 0 {
+		return nil
+	}
+
+	return &gerritpb.NotifyDetails{
+		Recipients: []*gerritpb.NotifyDetails_Recipient{
+			{
+				RecipientType: gerritpb.NotifyDetails_RECIPIENT_TYPE_TO,
+				Info: &gerritpb.NotifyDetails_Info{
+					Accounts: accounts,
+				},
+			},
+		},
+	}
+}
+
+func makeGerritAttentionSetInputs(addAttn []gerrit.Whom, owner int64, reviewers []int64, voters []int64, reason string) []*gerritpb.AttentionSetInput {
+	accounts := pickAccountsSorted(addAttn, owner, reviewers, voters)
+	if len(accounts) == 0 {
+		return nil
+	}
+	ret := make([]*gerritpb.AttentionSetInput, len(accounts))
+	for i, acct := range accounts {
+		ret[i] = &gerritpb.AttentionSetInput{
+			// The accountID supports various formats, including a bare account ID,
+			// email, full-name, and others.
+			User:   strconv.Itoa(int(acct)),
+			Reason: reason,
+		}
+	}
+	return ret
+}
+
+func pickAccountsSorted(whoms []gerrit.Whom, owner int64, reviewers []int64, voters []int64) []int64 {
+	accountSet := map[int64]struct{}{}
+	for _, whom := range whoms {
+		switch whom {
+		case gerrit.Owner:
+			accountSet[owner] = struct{}{}
+		case gerrit.Reviewers:
+			for _, reviewer := range reviewers {
+				accountSet[reviewer] = struct{}{}
+			}
+		case gerrit.CQVoters:
+			for _, voter := range voters {
+				accountSet[voter] = struct{}{}
+			}
+		default:
+			panic(fmt.Errorf("unknown whom: %s", whom))
+		}
+	}
+	ret := make([]int64, 0, len(accountSet))
+	for acct := range accountSet {
+		ret = append(ret, acct)
+	}
+	sort.Slice(ret, func(i, j int) bool { return ret[i] < ret[j] })
+	return ret
 }
 
 func (c *change) annotateGerritErr(ctx context.Context, err error, action string) error {

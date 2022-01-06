@@ -271,15 +271,13 @@ func TestOnVerificationCompleted(t *testing.T) {
 					})
 					So(reqs, ShouldHaveLength, 1)
 					So(reqs[0].GetNumber(), ShouldEqual, ci.GetNumber())
-					So(reqs[0].GetNotify(), ShouldEqual, gerritpb.Notify_NOTIFY_OWNER)
+					So(reqs[0].GetNotify(), ShouldEqual, gerritpb.Notify_NOTIFY_NONE)
 					So(reqs[0].GetNotifyDetails(), ShouldResembleProto, &gerritpb.NotifyDetails{
 						Recipients: []*gerritpb.NotifyDetails_Recipient{
 							{
 								RecipientType: gerritpb.NotifyDetails_RECIPIENT_TYPE_TO,
 								Info: &gerritpb.NotifyDetails_Info{
-									// The OWNER didnt't vote, so the details do not include
-									// the owner.
-									Accounts: []int64{2},
+									Accounts: []int64{1, 2},
 								},
 							},
 						},

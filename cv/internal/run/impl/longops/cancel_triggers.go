@@ -193,11 +193,11 @@ func (op *CancelTriggersOp) loadInputs(ctx context.Context) error {
 			LUCIProject:       luciProject,
 			Message:           req.Message,
 			Requester:         "Trigger Cancellation",
-			Notify:            convertToCancelWhom(req.Notify),
+			Notify:            convertToGerritWhoms(req.Notify),
 			LeaseDuration:     time.Minute,
 			ConfigGroups:      []*prjcfg.ConfigGroup{cfg},
 			RunCLExternalIDs:  allRunCLExternalIDs,
-			AddToAttentionSet: convertToCancelWhom(req.AddToAttention),
+			AddToAttentionSet: convertToGerritWhoms(req.AddToAttention),
 			AttentionReason:   req.AddToAttentionReason,
 		}
 		op.results[i] = cancelResult{
@@ -207,16 +207,16 @@ func (op *CancelTriggersOp) loadInputs(ctx context.Context) error {
 	return nil
 }
 
-func convertToCancelWhom(whoms []run.OngoingLongOps_Op_TriggersCancellation_Whom) cancel.Whom {
-	ret := cancel.NONE
-	for _, whom := range whoms {
+func convertToGerritWhoms(whoms []run.OngoingLongOps_Op_TriggersCancellation_Whom) []gerrit.Whom {
+	ret := make([]gerrit.Whom, len(whoms))
+	for i, whom := range whoms {
 		switch whom {
 		case run.OngoingLongOps_Op_TriggersCancellation_OWNER:
-			ret |= cancel.OWNER
+			ret[i] = gerrit.Owner
 		case run.OngoingLongOps_Op_TriggersCancellation_REVIEWERS:
-			ret |= cancel.REVIEWERS
-		case run.OngoingLongOps_Op_TriggersCancellation_VOTERS:
-			ret |= cancel.VOTERS
+			ret[i] = gerrit.Reviewers
+		case run.OngoingLongOps_Op_TriggersCancellation_CQ_VOTERS:
+			ret[i] = gerrit.CQVoters
 		default:
 			panic(fmt.Errorf("unrecognized whom [%s] in trigger cancellation", whom))
 		}

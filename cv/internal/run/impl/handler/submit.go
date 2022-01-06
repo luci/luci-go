@@ -30,7 +30,6 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/common/clock"
-	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	gerritpb "go.chromium.org/luci/common/proto/gerrit"
@@ -44,7 +43,6 @@ import (
 	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/configs/prjcfg"
 	"go.chromium.org/luci/cv/internal/gerrit"
-	"go.chromium.org/luci/cv/internal/gerrit/cancel"
 	"go.chromium.org/luci/cv/internal/gerrit/trigger"
 	"go.chromium.org/luci/cv/internal/run"
 	"go.chromium.org/luci/cv/internal/run/eventpb"
@@ -463,9 +461,9 @@ func (impl *Impl) cancelNotSubmittedCLTriggers(ctx context.Context, runID common
 	allCLIDs := common.MakeCLIDs(submission.GetCls()...)
 	allRunCLs, err := run.LoadRunCLs(ctx, runID, allCLIDs)
 	meta := reviewInputMeta{
-		notify: cancel.OWNER | cancel.VOTERS,
+		notify: []gerrit.Whom{gerrit.Owner, gerrit.CQVoters},
 		// Add the same set of group/people to the attention set.
-		attention: cancel.OWNER | cancel.VOTERS,
+		attention: []gerrit.Whom{gerrit.Owner, gerrit.CQVoters},
 		reason:    submissionFailureAttentionReason,
 	}
 	if err != nil {
@@ -972,41 +970,42 @@ func postMsgForDependentFailures(ctx context.Context, gf gerrit.Factory, rcl *ru
 
 	ci := rcl.Detail.GetGerrit().GetInfo()
 	votes := ci.GetLabels()[trigger.CQLabelName].GetAll()
-	voters := make([]int64, 0, len(votes))
-	attens := stringset.New(len(votes))
-	attens.Add(strconv.FormatInt(ci.GetOwner().GetAccountId(), 10))
+	accountSet := make(map[int64]struct{}, len(votes)+1) // owner and voters
+	accountSet[ci.GetOwner().GetAccountId()] = struct{}{}
 	for _, vote := range votes {
-		if vote.GetValue() != 0 {
-			acc := vote.GetUser().GetAccountId()
-			voters = append(voters, acc)
-			attens.Add(strconv.FormatInt(acc, 10))
+		if vote.GetValue() > 0 {
+			accountSet[vote.GetUser().GetAccountId()] = struct{}{}
 		}
 	}
-	sort.Slice(voters, func(i, j int) bool { return voters[i] < voters[j] })
+	accounts := make([]int64, 0, len(accountSet))
+	for acct := range accountSet {
+		accounts = append(accounts, acct)
+	}
+	sort.Slice(accounts, func(i, j int) bool { return accounts[i] < accounts[j] })
 	req := &gerritpb.SetReviewRequest{
 		Number:     ci.GetNumber(),
 		Project:    ci.GetProject(),
 		RevisionId: ci.GetCurrentRevision(),
 		Message:    msg,
 		Tag:        run.FullRun.GerritMessageTag(),
-		Notify:     gerritpb.Notify_NOTIFY_OWNER,
+		Notify:     gerritpb.Notify_NOTIFY_NONE,
 		NotifyDetails: &gerritpb.NotifyDetails{
 			Recipients: []*gerritpb.NotifyDetails_Recipient{
 				{
 					RecipientType: gerritpb.NotifyDetails_RECIPIENT_TYPE_TO,
 					Info: &gerritpb.NotifyDetails_Info{
-						Accounts: voters,
+						Accounts: accounts,
 					},
 				},
 			},
 		},
-		AddToAttentionSet: make([]*gerritpb.AttentionSetInput, len(attens)),
+		AddToAttentionSet: make([]*gerritpb.AttentionSetInput, len(accounts)),
 	}
 	reason := fmt.Sprintf("ps#%d: failed to submit dependent CLs",
 		ci.GetRevisions()[ci.GetCurrentRevision()].GetNumber())
-	for i, att := range attens.ToSortedSlice() {
+	for i, acct := range accounts {
 		req.AddToAttentionSet[i] = &gerritpb.AttentionSetInput{
-			User:   att,
+			User:   strconv.Itoa(int(acct)),
 			Reason: reason,
 		}
 	}

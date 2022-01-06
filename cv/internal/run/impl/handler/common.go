@@ -32,6 +32,7 @@ import (
 	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/common/eventbox"
 	"go.chromium.org/luci/cv/internal/configs/prjcfg"
+	"go.chromium.org/luci/cv/internal/gerrit"
 	"go.chromium.org/luci/cv/internal/gerrit/cancel"
 	"go.chromium.org/luci/cv/internal/run"
 	"go.chromium.org/luci/cv/internal/run/impl/state"
@@ -113,13 +114,13 @@ func (impl *Impl) removeRunFromCLs(ctx context.Context, runID common.RunID, clid
 
 type reviewInputMeta struct {
 	// notify is whom to notify.
-	notify cancel.Whom
+	notify []gerrit.Whom
 	// message provides the reason and details of the review change performed.
 	//
 	// This is posted as a comment in the CL.
 	message string
 	// attention is whom to add in the attention set.
-	attention cancel.Whom
+	attention []gerrit.Whom
 	// reason explains the reason of the attention.
 	reason string
 }

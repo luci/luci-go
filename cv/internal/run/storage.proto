@@ -338,12 +338,12 @@ message OngoingLongOps {
 
     message TriggersCancellation {
       // Whom is a proto copy of
-      // https://pkg.go.dev/go.chromium.org/luci/cv/internal/gerrit/cancel#Whom
+      // https://pkg.go.dev/go.chromium.org/luci/cv/internal/gerrit#Whom
       enum Whom {
         NONE = 0;
         OWNER = 1;
         REVIEWERS = 2;
-        VOTERS = 3;
+        CQ_VOTERS = 3;
       }
 
       // Request is the trigger cancellation request of a CL.
