@@ -48,15 +48,6 @@ module.exports = (config: Config) => {
       'index_test.ts': ['webpack', 'sourcemap'],
     },
 
-    plugins: [
-      'karma-chrome-launcher',
-      'karma-webpack',
-      'karma-sourcemap-loader',
-      'karma-mocha',
-      'karma-mocha-reporter',
-      'karma-chai',
-    ],
-
     webpack: {
       // webpack configuration
       devtool: 'inline-source-map',
