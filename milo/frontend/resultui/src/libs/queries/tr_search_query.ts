@@ -18,6 +18,7 @@ import { Suggestion } from '../../components/auto_complete';
 import { TestVariant } from '../../services/resultdb';
 import { highlight } from '../lit_utils';
 import { parseProtoDuration } from '../time_utils';
+import { KV_SYNTAX_EXPLANATION, parseKeyValue } from './utils';
 
 const SPECIAL_QUERY_RE = /^(-?)([a-zA-Z]+):(.+)$/;
 
@@ -61,12 +62,10 @@ export function parseTestResultSearchQuery(searchQuery: string): TestVariantFilt
       }
       // Whether the test variant has a matching variant key-value pair.
       case 'V': {
-        // Don't use String.split here because then vValue can't contain '='.
-        const [, vKey, vValue] = value.match(/^([^=]*)(?:=(.*))?$/)!;
+        const [vKey, vValue] = parseKeyValue(value);
 
-        // If the variant value is unspecified, accept any value.
         // Otherwise, the value must match the specified value (case sensitive).
-        return vValue === undefined
+        return vValue === null
           ? (v: TestVariant) => negate !== (v.variant?.def?.[vKey] !== undefined)
           : (v: TestVariant) => negate !== (v.variant?.def?.[vKey] === vValue);
       }
@@ -85,8 +84,8 @@ export function parseTestResultSearchQuery(searchQuery: string): TestVariantFilt
       }
       // Whether the test has a run with a matching tag (case sensitive).
       case 'TAG': {
-        // Don't use String.split here because then vValue can't contain '='.
-        const [, tKey, tValue] = value.match(/^([^=]*)(?:=(.*))?$/)!;
+        const [tKey, tValue] = parseKeyValue(value);
+
         if (tValue) {
           return (v: TestVariant) =>
             negate === !v.results?.some((r) => r.result.tags?.some((t) => t.key === tKey && t.value === tValue));
@@ -149,16 +148,22 @@ const QUERY_SUGGESTIONS = [
 
 // Queries with arbitrary value.
 const QUERY_TYPE_SUGGESTIONS = [
-  { type: 'V:', explanation: 'Include only tests with a matching variant key-value pair (case sensitive)' },
-  { type: '-V:', explanation: 'Exclude tests with a matching variant key-value pair (case sensitive)' },
+  {
+    type: 'V:',
+    explanation: `Include only tests with a matching variant key-value pair (${KV_SYNTAX_EXPLANATION})`,
+  },
+  {
+    type: '-V:',
+    explanation: `Exclude tests with a matching variant key-value pair (${KV_SYNTAX_EXPLANATION})`,
+  },
 
   {
     type: 'Tag:',
-    explanation: 'Include only tests with a run that has a matching tag key-value pair (case sensitive)',
+    explanation: `Include only tests with a run that has a matching tag key-value pair (${KV_SYNTAX_EXPLANATION})`,
   },
   {
     type: '-Tag:',
-    explanation: 'Exclude tests with a run that has a matching tag key-value pair (case sensitive)',
+    explanation: `Exclude tests with a run that has a matching tag key-value pair (${KV_SYNTAX_EXPLANATION})`,
   },
 
   { type: 'ID:', explanation: 'Include only tests with the specified substring in their ID (case insensitive)' },
@@ -208,19 +213,19 @@ export function suggestTestResultSearchQuery(query: string): readonly Suggestion
         explanation: 'Include only tests with the specified substring in their ID or name (case insensitive)',
       },
       {
-        value: 'V:variant-key=variant-value',
+        value: 'V:query-encoded-variant-key=query-encoded-variant-value',
         explanation: 'Include only tests with a matching test variant key-value pair (case sensitive)',
       },
       {
-        value: 'V:variant-key',
+        value: 'V:query-encoded-variant-key',
         explanation: 'Include only tests with the specified variant key (case sensitive)',
       },
       {
-        value: 'Tag:tag-key=tag-value',
+        value: 'Tag:query-encoded-tag-key=query-encoded-tag-value',
         explanation: 'Include only tests with a run that has a matching tag key-value pair (case sensitive)',
       },
       {
-        value: 'Tag:tag-key',
+        value: 'Tag:query-encoded-tag-key',
         explanation: 'Include only tests with a run that has the specified tag key (case sensitive)',
       },
       {

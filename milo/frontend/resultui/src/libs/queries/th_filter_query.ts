@@ -20,6 +20,7 @@ import { Suggestion } from '../../components/auto_complete';
 import { Variant, VariantPredicate } from '../../services/resultdb';
 import { TestVariantHistoryEntry } from '../../services/test_history_service';
 import { highlight } from '../lit_utils';
+import { KV_SYNTAX_EXPLANATION, parseKeyValue } from './utils';
 
 const FILTER_QUERY_RE = /^(-?)([a-zA-Z]+):(.+)$/;
 
@@ -46,12 +47,11 @@ export function parseTVHFilterQuery(filterQuery: string): TVHEntryFilter {
         }
         // Whether the test variant has a matching variant key-value pair.
         case 'V': {
-          // Don't use String.split here because then vValue can't contain '='.
-          const [, vKey, vValue] = value.match(/^([^=]*)(?:=(.*))?$/)!;
+          const [vKey, vValue] = parseKeyValue(value);
 
           // If the variant value is unspecified, accept any value.
           // Otherwise, the value must match the specified value (case sensitive).
-          return vValue === undefined
+          return vValue === null
             ? (v: TestVariantHistoryEntry) => negate !== (v.variant?.def?.[vKey] !== undefined)
             : (v: TestVariantHistoryEntry) => negate !== (v.variant?.def?.[vKey] === vValue);
         }
@@ -63,7 +63,7 @@ export function parseTVHFilterQuery(filterQuery: string): TVHEntryFilter {
   return (v) => filters.every((f) => f(v));
 }
 
-const VARIANT_FILTER_RE = /(-?)V:([^=]*)(?:=(.*))?$/i;
+const VARIANT_FILTER_RE = /(-?)V:(.+)?$/i;
 
 export type VariantFilter = (v: Variant) => boolean;
 
@@ -84,9 +84,11 @@ export function parseVariantFilter(filterQuery: string): [VariantPredicate, Vari
       continue;
     }
 
-    const [, neg, vKey, vValue] = match;
+    const [, neg, value] = match;
+    const [vKey, vValue] = parseKeyValue(value);
+
     const negate = neg === '-';
-    if (vValue) {
+    if (vValue !== null) {
       filters.push((v) => negate !== (v.def[vKey] === vValue));
     } else {
       filters.push((v) => negate !== (v.def[vKey] !== undefined));
@@ -116,8 +118,14 @@ const QUERY_SUGGESTIONS = [
 
 // Queries with arbitrary value.
 const QUERY_TYPE_SUGGESTIONS = [
-  { type: 'V:', explanation: 'Include only tests with a matching variant key-value pair (case sensitive)' },
-  { type: '-V:', explanation: 'Exclude tests with a matching variant key-value pair (case sensitive)' },
+  {
+    type: 'V:',
+    explanation: `Include only tests with a matching variant key-value pair (${KV_SYNTAX_EXPLANATION})`,
+  },
+  {
+    type: '-V:',
+    explanation: `Exclude tests with a matching variant key-value pair (${KV_SYNTAX_EXPLANATION})`,
+  },
 ];
 
 export function suggestTestHistoryFilterQuery(query: string): readonly Suggestion[] {
@@ -144,11 +152,11 @@ export function suggestTestHistoryFilterQuery(query: string): readonly Suggestio
         display: html`<strong>Supported Filter Types</strong>`,
       },
       {
-        value: 'V:variant-key=variant-value',
+        value: 'V:uri-encoded-variant-key=uri-encoded-variant-value',
         explanation: 'Include only tests with a matching test variant key-value pair (case sensitive)',
       },
       {
-        value: 'V:variant-key',
+        value: 'V:uri-encoded-variant-key',
         explanation: 'Include only tests with the specified variant key (case sensitive)',
       },
       {

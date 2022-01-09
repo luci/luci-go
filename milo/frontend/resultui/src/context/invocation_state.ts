@@ -70,7 +70,9 @@ export class InvocationState implements TestVariantTableState {
     let query = '';
     if (variant) {
       const searchParam = new URLSearchParams({
-        q: [...Object.entries(variant.def)].map(([key, val]) => `V:${key}=${val}`).join(' '),
+        q: [...Object.entries(variant.def)]
+          .map(([key, val]) => `V:${encodeURIComponent(key)}=${encodeURIComponent(val)}`)
+          .join(' '),
       });
       query = '?' + searchParam.toString();
     }

@@ -237,7 +237,7 @@ describe('parseTestResultSearchQuery', () => {
     });
 
     it("should support variant value with '=' in it", () => {
-      const filter = parseTestResultSearchQuery('v:key2=val3=val');
+      const filter = parseTestResultSearchQuery('v:key2=val3%3Dval');
       const filtered = variants.filter(filter);
       assert.deepEqual(filtered, [variant7]);
     });

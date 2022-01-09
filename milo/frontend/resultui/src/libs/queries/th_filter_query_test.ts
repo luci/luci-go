@@ -85,7 +85,7 @@ describe('parseTVHFilterQuery', () => {
     });
 
     it("should support variant value with '=' in it", () => {
-      const filter = parseTVHFilterQuery('v:key2=val3=val');
+      const filter = parseTVHFilterQuery('v:key2=val3%3Dval');
       const filtered = variants.filter(filter);
       assert.deepEqual(filtered, [entry7]);
     });
@@ -129,7 +129,7 @@ describe('parseVariantFilterFromQuery', () => {
   });
 
   it("should support variant value with '=' in it", () => {
-    const [predicate, filter] = parseVariantFilter('v:key2=val3=val');
+    const [predicate, filter] = parseVariantFilter('v:key2=val3%3Dval');
 
     assert.deepEqual(predicate, { contains: { def: { key2: 'val3=val' } } });
 
