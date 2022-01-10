@@ -106,7 +106,12 @@ func (impl *Impl) Start(ctx context.Context, rs *state.RunState) (*Result, error
 		// TODO(crbug/1227363): enqueue long op to execute requirement.
 	default:
 		rs.LogInfof(ctx, "tryjob requirement computation", "failed to compute tryjob requirement. Reason: %s", result.ComputationFailure.Reason())
-		// TODO(crbug/1227363): enqueue long op to cancel triggers
+		scheduleTriggersCancellation(ctx, rs, rs.CLs, reviewInputMeta{
+			message:        fmt.Sprintf("LUCI CV failed to compute tryjob requirement. Reason:\n\n  %s", result.ComputationFailure.Reason()),
+			notify:         gerrit.Whoms{gerrit.Owner, gerrit.CQVoters},
+			addToAttention: gerrit.Whoms{gerrit.Owner, gerrit.CQVoters},
+			reason:         "failed to compute tryjob requirement",
+		}, run.Status_FAILED)
 	}
 	// Note that it is inevitable that duplicate pickup latency metric maybe
 	// emitted for the same Run if the state transition fails later that
@@ -153,10 +158,10 @@ func (impl *Impl) onCompletedPostStartMessage(ctx context.Context, rs *state.Run
 
 	msgPrefix, attentionReason := usertext.OnRunFailed(rs.Mode)
 	meta := reviewInputMeta{
-		notify:    gerrit.Whoms{gerrit.Owner, gerrit.CQVoters},
-		attention: gerrit.Whoms{gerrit.Owner, gerrit.CQVoters},
-		reason:    attentionReason,
-		message:   msgPrefix + "\n\n" + failRunReason,
+		notify:         gerrit.Whoms{gerrit.Owner, gerrit.CQVoters},
+		addToAttention: gerrit.Whoms{gerrit.Owner, gerrit.CQVoters},
+		reason:         attentionReason,
+		message:        msgPrefix + "\n\n" + failRunReason,
 	}
 	if err := impl.cancelTriggers(ctx, rs, meta); err != nil {
 		return nil, err

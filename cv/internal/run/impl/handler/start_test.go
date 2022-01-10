@@ -25,6 +25,7 @@ import (
 	"go.chromium.org/luci/common/clock"
 
 	cfgpb "go.chromium.org/luci/cv/api/config/v2"
+	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/configs/prjcfg/prjcfgtest"
 	"go.chromium.org/luci/cv/internal/cvtesting"
 	"go.chromium.org/luci/cv/internal/run"
@@ -68,7 +69,6 @@ func TestStart(t *testing.T) {
 		h, _ := makeTestHandler(&ct)
 
 		Convey("Starts when Run is PENDING", func() {
-			rs.Status = run.Status_PENDING
 			res, err := h.Start(ctx, rs)
 			So(err, ShouldBeNil)
 			So(res.SideEffectFn, ShouldBeNil)
@@ -91,6 +91,39 @@ func TestStart(t *testing.T) {
 				ShouldAlmostEqual, startLatency.Seconds())
 			So(ct.TSMonSentDistr(ctx, metricPickupLatencyAdjustedS, lProject).Sum(),
 				ShouldAlmostEqual, (startLatency - stabilizationDelay).Seconds())
+		})
+
+		// TODO(crbug/1227363): Enable this test after tryjob requirement
+		// computation works.
+		SkipConvey("Fail the Run if tryjob computation fails", func() {
+			// TODO(crbug/1227363): Setup to fail the Tryjob requirement (e.g.
+			// include an unauthorized or non-existent builder via git footer).
+			res, err := h.Start(ctx, rs)
+			So(err, ShouldBeNil)
+			So(res.SideEffectFn, ShouldBeNil)
+			So(res.PreserveEvents, ShouldBeFalse)
+
+			So(res.State.Status, ShouldEqual, run.Status_PENDING)
+			So(res.State.StartTime, ShouldResemble, clock.Now(ctx).UTC())
+			So(res.State.Tryjobs, ShouldResembleProto, &run.Tryjobs{
+				Requirement: nil,
+			})
+			So(res.State.LogEntries, ShouldHaveLength, 1)
+			So(res.State.LogEntries[0].GetInfo(), ShouldResembleProto, &run.LogEntry_Info{
+				Label:   "tryjob requirement computation",
+				Message: "failed to compute tryjob requirement. Reason:\n\n  Provide Reason",
+			})
+
+			So(res.State.NewLongOpIDs, ShouldHaveLength, 1)
+			longOp := res.State.OngoingLongOps.GetOps()[res.State.NewLongOpIDs[0]]
+			So(longOp.GetCancelTriggers(), ShouldBeTrue)
+			// assert that triggers of ALL CLs are cancelled.
+			cancelledCLs := common.CLIDs{}
+			for _, req := range longOp.GetCancelTriggers().GetRequests() {
+				cancelledCLs = append(cancelledCLs, common.CLID(req.Clid))
+			}
+			So(cancelledCLs, ShouldResemble, res.State.CLs)
+			So(longOp.GetDeadline().AsTime(), ShouldHappenOnOrAfter, clock.Now(ctx).Add(maxTriggersCancellationDuration))
 		})
 
 		statuses := []run.Status{

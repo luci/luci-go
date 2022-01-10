@@ -119,8 +119,8 @@ type reviewInputMeta struct {
 	//
 	// This is posted as a comment in the CL.
 	message string
-	// attention is whom to add in the attention set.
-	attention gerrit.Whoms
+	// addToAttention is whom to add in the attention set.
+	addToAttention gerrit.Whoms
 	// reason explains the reason of the attention.
 	reason string
 }
@@ -152,7 +152,7 @@ func (impl *Impl) cancelCLTriggers(ctx context.Context, runID common.RunID, toCa
 					LeaseDuration:     time.Minute,
 					ConfigGroups:      []*prjcfg.ConfigGroup{cg},
 					RunCLExternalIDs:  runCLExternalIDs,
-					AddToAttentionSet: meta.attention,
+					AddToAttentionSet: meta.addToAttention,
 					AttentionReason:   meta.reason,
 				})
 				switch {
@@ -183,6 +183,53 @@ func (impl *Impl) cancelCLTriggers(ctx context.Context, runID common.RunID, toCa
 		}
 	}
 	return nil
+}
+
+func scheduleTriggersCancellation(ctx context.Context, rs *state.RunState, cls common.CLIDs, meta reviewInputMeta, statusIfSucceeded run.Status) {
+	if !run.IsEnded(statusIfSucceeded) {
+		panic(fmt.Errorf("expected a terminal status; got %s", statusIfSucceeded))
+	}
+	reqs := make([]*run.OngoingLongOps_Op_TriggersCancellation_Request, len(cls))
+	notify := fromGerritWhoms(meta.notify)
+	addToAttention := fromGerritWhoms(meta.addToAttention)
+	for i, cl := range cls {
+		reqs[i] = &run.OngoingLongOps_Op_TriggersCancellation_Request{
+			Clid:                 int64(cl),
+			Notify:               notify,
+			Message:              meta.message,
+			AddToAttention:       addToAttention,
+			AddToAttentionReason: meta.reason,
+		}
+	}
+	rs.EnqueueLongOp(&run.OngoingLongOps_Op{
+		Deadline: timestamppb.New(clock.Now(ctx).Add(maxTriggersCancellationDuration)),
+		Work: &run.OngoingLongOps_Op_CancelTriggers{
+			CancelTriggers: &run.OngoingLongOps_Op_TriggersCancellation{
+				Requests:             reqs,
+				RunStatusIfSucceeded: statusIfSucceeded,
+			},
+		},
+	})
+}
+
+func fromGerritWhoms(whoms gerrit.Whoms) []run.OngoingLongOps_Op_TriggersCancellation_Whom {
+	if len(whoms) == 0 {
+		return nil
+	}
+	ret := make([]run.OngoingLongOps_Op_TriggersCancellation_Whom, len(whoms))
+	for i, whom := range whoms {
+		switch whom {
+		case gerrit.Owner:
+			ret[i] = run.OngoingLongOps_Op_TriggersCancellation_OWNER
+		case gerrit.Reviewers:
+			ret[i] = run.OngoingLongOps_Op_TriggersCancellation_REVIEWERS
+		case gerrit.CQVoters:
+			ret[i] = run.OngoingLongOps_Op_TriggersCancellation_CQ_VOTERS
+		default:
+			panic(fmt.Errorf("unknown gerrit.Whom; got %s", whom))
+		}
+	}
+	return ret
 }
 
 func min(i, j int) int {

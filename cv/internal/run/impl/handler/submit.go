@@ -462,8 +462,8 @@ func (impl *Impl) cancelNotSubmittedCLTriggers(ctx context.Context, runID common
 	meta := reviewInputMeta{
 		notify: gerrit.Whoms{gerrit.Owner, gerrit.CQVoters},
 		// Add the same set of group/people to the attention set.
-		attention: gerrit.Whoms{gerrit.Owner, gerrit.CQVoters},
-		reason:    submissionFailureAttentionReason,
+		addToAttention: gerrit.Whoms{gerrit.Owner, gerrit.CQVoters},
+		reason:         submissionFailureAttentionReason,
 	}
 	if err != nil {
 		return err

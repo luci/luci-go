@@ -69,10 +69,10 @@ func (impl *Impl) OnCQDVerificationCompleted(ctx context.Context, rs *state.RunS
 	case migrationpb.ReportVerifiedRunRequest_ACTION_DRY_RUN_OK:
 		msg, reason := usertext.OnRunSucceeded(rs.Mode)
 		meta := reviewInputMeta{
-			notify:    gerrit.Whoms{gerrit.Owner, gerrit.CQVoters},
-			message:   msg,
-			attention: gerrit.Whoms{gerrit.CQVoters},
-			reason:    reason,
+			notify:         gerrit.Whoms{gerrit.Owner, gerrit.CQVoters},
+			message:        msg,
+			addToAttention: gerrit.Whoms{gerrit.CQVoters},
+			reason:         reason,
 		}
 		if err := impl.cancelTriggers(ctx, rs, meta); err != nil {
 			return nil, err
@@ -86,8 +86,8 @@ func (impl *Impl) OnCQDVerificationCompleted(ctx context.Context, rs *state.RunS
 			notify:  gerrit.Whoms{gerrit.Owner, gerrit.CQVoters},
 			message: vr.Payload.FinalMessage,
 			// Add the same set of group/people to the attention set.
-			attention: gerrit.Whoms{gerrit.Owner, gerrit.CQVoters},
-			reason:    reason,
+			addToAttention: gerrit.Whoms{gerrit.Owner, gerrit.CQVoters},
+			reason:         reason,
 		}
 		if err := impl.cancelTriggers(ctx, rs, meta); err != nil {
 			return nil, err
