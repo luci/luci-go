@@ -78,6 +78,7 @@ func TestRelatedChangeProcessing(t *testing.T) {
 			So(f.toUpdate.Snapshot.GetErrors(), ShouldHaveLength, 1)
 			So(f.toUpdate.Snapshot.GetErrors()[0].GetCorruptGerritMetadata(), ShouldContainSubstring, "https://crbug.com/1199471")
 		})
+
 		Convey("Has related, and several times itself", func() {
 			f.setGitDeps(ctx, []*gerritpb.GetRelatedChangesResponse_ChangeAndCommit{
 				gf.RelatedChange(111, 2, 2, "107_2"),
