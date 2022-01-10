@@ -160,9 +160,19 @@ func (i *Interpreter) GetVersion(c context.Context) (v Version, err error) {
 // GetRuntime returns all runtime info to identify a python installation.
 // It use the same way as CPython to determine Prefix to avoid invoke python.
 func (i *Interpreter) GetRuntime(c context.Context) (r *vpython.Runtime, err error) {
-	path, err := filepath.EvalSymlinks(i.Python)
-	if err != nil {
-		return
+	// EvalSymlinks is generally broken on windows:
+	// https://github.com/golang/go/issues/40180
+	//
+	// Not resolving the symlink on windows is unlikely to cause any problem
+	// since the lib ships with python is at the same location of python binary
+	// on windows, and we have binary hash in the cache identity to differentiate
+	// Python installations.
+	path := i.Python
+	if runtime.GOOS != "windows" {
+		path, err = filepath.EvalSymlinks(i.Python)
+		if err != nil {
+			return
+		}
 	}
 	path, err = filepath.Abs(path)
 	if err != nil {
