@@ -30,6 +30,7 @@ import (
 	"go.chromium.org/luci/cv/internal/run"
 	"go.chromium.org/luci/cv/internal/run/eventpb"
 	"go.chromium.org/luci/cv/internal/run/impl/state"
+	"go.chromium.org/luci/cv/internal/tryjob"
 
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
@@ -76,7 +77,7 @@ func TestStart(t *testing.T) {
 			So(res.State.Status, ShouldEqual, run.Status_RUNNING)
 			So(res.State.StartTime, ShouldResemble, clock.Now(ctx).UTC())
 			So(res.State.Tryjobs, ShouldResembleProto, &run.Tryjobs{
-				Requirement: nil, // TODO(crbug/1257922): add expected requirement.
+				Requirement: &tryjob.Requirement{},
 			})
 			So(res.State.LogEntries, ShouldHaveLength, 1)
 			So(res.State.LogEntries[0].GetStarted(), ShouldNotBeNil)

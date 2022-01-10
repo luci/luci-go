@@ -33,6 +33,7 @@ import (
 	"go.chromium.org/luci/cv/internal/run"
 	"go.chromium.org/luci/cv/internal/run/eventpb"
 	"go.chromium.org/luci/cv/internal/run/impl/state"
+	"go.chromium.org/luci/cv/internal/tryjob/requirement"
 	"go.chromium.org/luci/cv/internal/usertext"
 )
 
@@ -84,13 +85,15 @@ func (impl *Impl) Start(ctx context.Context, rs *state.RunState) (*Result, error
 		return nil, err
 	}
 
-	switch requirement, err := computeRequirement(ctx, requirementInput{
-		cg:      cg,
-		owner:   rs.Owner,
-		cls:     runCLs,
-		options: rs.Options,
+	switch result, err := requirement.Compute(ctx, requirement.Input{
+		ConfigGroup: cg,
+		RunOwner:    rs.Owner,
+		CLs:         runCLs,
+		RunOptions:  rs.Options,
 	}); {
-	case err == nil:
+	case err != nil:
+		return nil, err
+	case result.OK():
 		rs.EnqueueLongOp(&run.OngoingLongOps_Op{
 			Deadline: timestamppb.New(clock.Now(ctx).Add(maxPostStartMessageDuration)),
 			Work: &run.OngoingLongOps_Op_PostStartMessage{
@@ -98,13 +101,12 @@ func (impl *Impl) Start(ctx context.Context, rs *state.RunState) (*Result, error
 			},
 		})
 		rs.Tryjobs = &run.Tryjobs{
-			Requirement: requirement,
+			Requirement: result.Requirement,
 		}
 		// TODO(crbug/1227363): enqueue long op to execute requirement.
-	case isInvalidRequirementErr(err):
-		// TODO(crbug/1227363): enqueue long op to cancel triggers
 	default:
-		return nil, errors.Annotate(err, "failed to compute tryjob requirement").Err()
+		rs.LogInfof(ctx, "tryjob requirement computation", "failed to compute tryjob requirement. Reason: %s", result.ComputationFailure.Reason())
+		// TODO(crbug/1227363): enqueue long op to cancel triggers
 	}
 	// Note that it is inevitable that duplicate pickup latency metric maybe
 	// emitted for the same Run if the state transition fails later that
