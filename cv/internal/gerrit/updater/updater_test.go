@@ -29,6 +29,7 @@ import (
 	"go.chromium.org/luci/common/errors"
 	gerritpb "go.chromium.org/luci/common/proto/gerrit"
 	"go.chromium.org/luci/gae/service/datastore"
+	"go.chromium.org/luci/server/tq"
 
 	cfgpb "go.chromium.org/luci/cv/api/config/v2"
 	"go.chromium.org/luci/cv/internal/changelist"
@@ -42,6 +43,86 @@ import (
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
 )
+
+func TestUpdaterBackend(t *testing.T) {
+	t.Parallel()
+
+	Convey("updaterBackend methods work, except Fetch()", t, func() {
+		// Fetch() is covered in TestUpdaterBackendFetch.
+		ct := cvtesting.Test{}
+		ctx, cancel := ct.SetUp()
+		defer cancel()
+
+		gu := &updaterBackend{
+			clUpdater: changelist.NewUpdater(ct.TQDispatcher, changelist.NewMutator(ct.TQDispatcher, &pmMock{}, &rmMock{})),
+			gFactory:  ct.GFactory(),
+		}
+
+		Convey("Kind", func() {
+			So(gu.Kind(), ShouldEqual, "gerrit")
+		})
+		Convey("TQErrorSpec", func() {
+			tqSpec := gu.TQErrorSpec()
+			err := errors.Annotate(gerrit.ErrStaleData, "retry, don't ignore").Err()
+			So(tq.Ignore.In(tqSpec.Error(ctx, err)), ShouldBeFalse)
+		})
+		Convey("LookupApplicableConfig", func() {
+			const gHost = "x-review.example.com"
+			prjcfgtest.Create(ctx, "luci-project-x", singleRepoConfig(gHost, "x"))
+			gobmaptest.Update(ctx, "luci-project-x")
+			xConfigGroupID := string(prjcfgtest.MustExist(ctx, "luci-project-x").ConfigGroupIDs[0])
+
+			// Setup valid CL snapshot; it'll be modified in tests below.
+			cl := &changelist.CL{
+				ID: 11111,
+				Snapshot: &changelist.Snapshot{
+					Kind: &changelist.Snapshot_Gerrit{Gerrit: &changelist.Gerrit{
+						Host: gHost,
+						Info: &gerritpb.ChangeInfo{
+							Number:  456,
+							Ref:     "refs/heads/main",
+							Project: "x",
+						},
+					}},
+				},
+			}
+
+			Convey("Happy path", func() {
+				acfg, err := gu.LookupApplicableConfig(ctx, cl)
+				So(err, ShouldBeNil)
+				So(acfg, ShouldResembleProto, &changelist.ApplicableConfig{
+					Projects: []*changelist.ApplicableConfig_Project{
+						{Name: "luci-project-x", ConfigGroupIds: []string{string(xConfigGroupID)}},
+					},
+				})
+			})
+
+			Convey("CL without Gerrit Snapshot can't be decided on", func() {
+				cl.Snapshot.Kind = nil
+				acfg, err := gu.LookupApplicableConfig(ctx, cl)
+				So(err, ShouldBeNil)
+				So(acfg, ShouldBeNil)
+			})
+
+			Convey("No watching projects", func() {
+				cl.Snapshot.GetGerrit().GetInfo().Ref = "ref/un/watched"
+				acfg, err := gu.LookupApplicableConfig(ctx, cl)
+				So(err, ShouldBeNil)
+				// Must be empty, but not nil per updaterBackend interface contract.
+				So(acfg, ShouldNotBeNil)
+				So(acfg, ShouldResembleProto, &changelist.ApplicableConfig{})
+			})
+
+			Convey("Works with >1 LUCI project watching the same CL", func() {
+				prjcfgtest.Create(ctx, "luci-project-dupe", singleRepoConfig(gHost, "x"))
+				gobmaptest.Update(ctx, "luci-project-dupe")
+				acfg, err := gu.LookupApplicableConfig(ctx, cl)
+				So(err, ShouldBeNil)
+				So(acfg.GetProjects(), ShouldHaveLength, 2)
+			})
+		})
+	})
+}
 
 func TestUpdateCLWorks(t *testing.T) {
 	t.Parallel()
