@@ -123,45 +123,6 @@ func TestUpdaterBackend(t *testing.T) {
 	})
 }
 
-func singleRepoConfig(gHost string, gRepos ...string) *cfgpb.Config {
-	projects := make([]*cfgpb.ConfigGroup_Gerrit_Project, len(gRepos))
-	for i, gRepo := range gRepos {
-		projects[i] = &cfgpb.ConfigGroup_Gerrit_Project{
-			Name:      gRepo,
-			RefRegexp: []string{"refs/heads/main"},
-		}
-	}
-	return &cfgpb.Config{
-		ConfigGroups: []*cfgpb.ConfigGroup{
-			{
-				Name: "main",
-				Gerrit: []*cfgpb.ConfigGroup_Gerrit{
-					{
-						Url:      "https://" + gHost + "/",
-						Projects: projects,
-					},
-				},
-			},
-		},
-	}
-}
-
-type pmMock struct {
-}
-
-func (*pmMock) NotifyCLsUpdated(ctx context.Context, project string, cls *changelist.CLUpdatedEvents) error {
-	return nil
-}
-
-type rmMock struct {
-}
-
-func (*rmMock) NotifyCLsUpdated(ctx context.Context, rid common.RunID, cls *changelist.CLUpdatedEvents) error {
-	return nil
-}
-
-// TODO(tandrii): move above in the follow up CL to avoid spurious diff during
-// review.
 func TestUpdaterBackendFetch(t *testing.T) {
 	t.Parallel()
 
@@ -581,4 +542,41 @@ func TestUpdaterBackendFetch(t *testing.T) {
 			})
 		})
 	})
+}
+
+func singleRepoConfig(gHost string, gRepos ...string) *cfgpb.Config {
+	projects := make([]*cfgpb.ConfigGroup_Gerrit_Project, len(gRepos))
+	for i, gRepo := range gRepos {
+		projects[i] = &cfgpb.ConfigGroup_Gerrit_Project{
+			Name:      gRepo,
+			RefRegexp: []string{"refs/heads/main"},
+		}
+	}
+	return &cfgpb.Config{
+		ConfigGroups: []*cfgpb.ConfigGroup{
+			{
+				Name: "main",
+				Gerrit: []*cfgpb.ConfigGroup_Gerrit{
+					{
+						Url:      "https://" + gHost + "/",
+						Projects: projects,
+					},
+				},
+			},
+		},
+	}
+}
+
+type pmMock struct {
+}
+
+func (*pmMock) NotifyCLsUpdated(ctx context.Context, project string, cls *changelist.CLUpdatedEvents) error {
+	return nil
+}
+
+type rmMock struct {
+}
+
+func (*rmMock) NotifyCLsUpdated(ctx context.Context, rid common.RunID, cls *changelist.CLUpdatedEvents) error {
+	return nil
 }
