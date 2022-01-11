@@ -220,7 +220,7 @@ func HasInBucket(ctx context.Context, perm realms.Permission, project, bucket st
 func hasPerm(ctx context.Context, bucketPB *pb.Bucket, perm realms.Permission, project, bucket string) (bool, error) {
 	// Check realm ACLs first.
 	realm := realms.Join(project, bucket)
-	switch has, err := auth.HasPermission(ctx, perm, realm); {
+	switch has, err := auth.HasPermission(ctx, perm, realm, nil); {
 	case err != nil:
 		return false, errors.Annotate(err, "failed to check realm %q ACLs", realm).Err()
 	case has:

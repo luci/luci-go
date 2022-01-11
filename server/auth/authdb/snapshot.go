@@ -209,7 +209,7 @@ func (db *SnapshotDB) CheckMembership(c context.Context, id identity.Identity, g
 
 // HasPermission returns true if the identity has the given permission in any
 // of the realms.
-func (db *SnapshotDB) HasPermission(c context.Context, id identity.Identity, perm realms.Permission, realm string) (ok bool, err error) {
+func (db *SnapshotDB) HasPermission(c context.Context, id identity.Identity, perm realms.Permission, realm string, attrs realms.Attrs) (ok bool, err error) {
 	_, span := trace.StartSpan(c, "go.chromium.org/luci/server/auth/authdb.HasPermission")
 	span.Attribute("cr.dev/permission", perm.Name())
 	span.Attribute("cr.dev/realm", realm)

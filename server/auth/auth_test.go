@@ -380,7 +380,7 @@ func (db *fakeDB) CheckMembership(ctx context.Context, id identity.Identity, gro
 	panic("not implemented")
 }
 
-func (db *fakeDB) HasPermission(ctx context.Context, id identity.Identity, perm realms.Permission, realm string) (bool, error) {
+func (db *fakeDB) HasPermission(ctx context.Context, id identity.Identity, perm realms.Permission, realm string, attrs realms.Attrs) (bool, error) {
 	return false, errors.New("fakeDB: HasPermission is not implemented")
 }
 

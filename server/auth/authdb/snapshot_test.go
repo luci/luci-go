@@ -246,42 +246,42 @@ func TestSnapshotDB(t *testing.T) {
 		Convey("HasPermission works", func() {
 
 			// A direct hit.
-			ok, err := db.HasPermission(c, "user:realm@example.com", perm1, "proj:some/realm")
+			ok, err := db.HasPermission(c, "user:realm@example.com", perm1, "proj:some/realm", nil)
 			So(err, ShouldBeNil)
 			So(ok, ShouldBeTrue)
 
 			// A hit through a group.
-			ok, err = db.HasPermission(c, "user:abc@example.com", perm1, "proj:some/realm")
+			ok, err = db.HasPermission(c, "user:abc@example.com", perm1, "proj:some/realm", nil)
 			So(err, ShouldBeNil)
 			So(ok, ShouldBeTrue)
 
 			// Fallback to the root.
-			ok, err = db.HasPermission(c, "user:root@example.com", perm1, "proj:unknown")
+			ok, err = db.HasPermission(c, "user:root@example.com", perm1, "proj:unknown", nil)
 			So(err, ShouldBeNil)
 			So(ok, ShouldBeTrue)
 
 			// No permission.
-			ok, err = db.HasPermission(c, "user:realm@example.com", perm2, "proj:some/realm")
+			ok, err = db.HasPermission(c, "user:realm@example.com", perm2, "proj:some/realm", nil)
 			So(err, ShouldBeNil)
 			So(ok, ShouldBeFalse)
 
 			// Unknown root realm.
-			ok, err = db.HasPermission(c, "user:realm@example.com", perm1, "unknown:@root")
+			ok, err = db.HasPermission(c, "user:realm@example.com", perm1, "unknown:@root", nil)
 			So(err, ShouldBeNil)
 			So(ok, ShouldBeFalse)
 
 			// Unknown permission.
-			ok, err = db.HasPermission(c, "user:realm@example.com", unknownPerm, "proj:some/realm")
+			ok, err = db.HasPermission(c, "user:realm@example.com", unknownPerm, "proj:some/realm", nil)
 			So(err, ShouldBeNil)
 			So(ok, ShouldBeFalse)
 
 			// Empty realm.
-			ok, err = db.HasPermission(c, "user:realm@example.com", perm1, "proj:empty")
+			ok, err = db.HasPermission(c, "user:realm@example.com", perm1, "proj:empty", nil)
 			So(err, ShouldBeNil)
 			So(ok, ShouldBeFalse)
 
 			// Invalid realm name.
-			_, err = db.HasPermission(c, "user:realm@example.com", perm1, "@root")
+			_, err = db.HasPermission(c, "user:realm@example.com", perm1, "@root", nil)
 			So(err, ShouldErrLike, "bad global realm name")
 		})
 

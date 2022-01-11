@@ -148,7 +148,7 @@ func verifyCreateInvocationPermissions(ctx context.Context, in *pb.CreateInvocat
 		return appstatus.BadRequest(errors.Annotate(err, "invocation.realm").Err())
 	}
 
-	switch allowed, err := auth.HasPermission(ctx, permCreateInvocation, realm); {
+	switch allowed, err := auth.HasPermission(ctx, permCreateInvocation, realm, nil); {
 	case err != nil:
 		return err
 	case !allowed:
@@ -156,7 +156,7 @@ func verifyCreateInvocationPermissions(ctx context.Context, in *pb.CreateInvocat
 	}
 
 	if !strings.HasPrefix(in.InvocationId, "u-") {
-		switch allowed, err := auth.HasPermission(ctx, permCreateWithReservedID, realm); {
+		switch allowed, err := auth.HasPermission(ctx, permCreateWithReservedID, realm, nil); {
 		case err != nil:
 			return err
 		case !allowed:
@@ -165,7 +165,7 @@ func verifyCreateInvocationPermissions(ctx context.Context, in *pb.CreateInvocat
 	}
 
 	if len(inv.GetBigqueryExports()) > 0 {
-		switch allowed, err := auth.HasPermission(ctx, permExportToBigQuery, realm); {
+		switch allowed, err := auth.HasPermission(ctx, permExportToBigQuery, realm, nil); {
 		case err != nil:
 			return err
 		case !allowed:
@@ -174,7 +174,7 @@ func verifyCreateInvocationPermissions(ctx context.Context, in *pb.CreateInvocat
 	}
 
 	if inv.GetProducerResource() != "" {
-		switch allowed, err := auth.HasPermission(ctx, permSetProducerResource, realm); {
+		switch allowed, err := auth.HasPermission(ctx, permSetProducerResource, realm, nil); {
 		case err != nil:
 			return err
 		case !allowed:

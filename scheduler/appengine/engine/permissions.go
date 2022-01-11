@@ -84,7 +84,7 @@ func checkRealmACL(ctx context.Context, perm realms.Permission, realm string) er
 	}
 
 	// Else fallback to checking permissions.
-	switch yes, err := auth.HasPermission(ctx, perm, realm); {
+	switch yes, err := auth.HasPermission(ctx, perm, realm, nil); {
 	case err != nil:
 		return err
 	case !yes:
@@ -112,7 +112,7 @@ func checkLegacyACL(ctx context.Context, job *Job, perm realms.Permission, realm
 		ExpectedResult: legacyResult,
 		TrackingBug:    "crbug.com/1070761",
 		AdminGroup:     adminGroup,
-	}.Execute(ctx, perm, realm)
+	}.Execute(ctx, perm, realm, nil)
 
 	if !legacyResult {
 		return ErrNoPermission

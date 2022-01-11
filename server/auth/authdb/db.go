@@ -66,9 +66,14 @@ type DB interface {
 	// realms (including the root realm) are considered empty. HasPermission
 	// returns false in this case.
 	//
+	// Attributes are the context of this particular permission check and are used
+	// as inputs to `conditions` predicates in conditional bindings. If a service
+	// supports conditional bindings, it must document what attributes it passes
+	// with each permission it checks.
+	//
 	// Returns an error only if the check itself failed due to a misconfiguration
 	// or transient issues. This should usually result in an Internal error.
-	HasPermission(ctx context.Context, id identity.Identity, perm realms.Permission, realm string) (bool, error)
+	HasPermission(ctx context.Context, id identity.Identity, perm realms.Permission, realm string, attrs realms.Attrs) (bool, error)
 
 	// GetCertificates returns a bundle with certificates of a trusted signer.
 	//

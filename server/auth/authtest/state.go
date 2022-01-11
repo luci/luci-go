@@ -38,7 +38,7 @@ import (
 //     }
 //   })
 //   auth.IsMember(ctx, "admins") -> returns true.
-//   auth.HasPermission(ctx, perm1, "proj:realm1") -> returns true.
+//   auth.HasPermission(ctx, perm1, "proj:realm1", nil) -> returns true.
 //
 // Note that IdentityGroups, IdentityPermissions, PeerIPWhitelists and Error
 // are effective only when FakeDB is nil. They are used as a shortcut to

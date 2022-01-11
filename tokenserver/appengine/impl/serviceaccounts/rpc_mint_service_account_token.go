@@ -316,7 +316,7 @@ func (r *MintServiceAccountTokenRPC) validateRequest(req *minter.MintServiceAcco
 // Logs errors inside.
 func (r *MintServiceAccountTokenRPC) checkACLs(ctx context.Context, env *callEnv, req *validatedRequest) error {
 	// Check that caller is allowed to mint tokens for accounts in the realm.
-	switch yes, err := env.db.HasPermission(ctx, env.caller, permMintToken, req.realm); {
+	switch yes, err := env.db.HasPermission(ctx, env.caller, permMintToken, req.realm, nil); {
 	case err != nil:
 		logging.Errorf(ctx, "HasPermission(%q, %q, %q) failed: %s", env.caller, permMintToken, req.realm, err)
 		return status.Errorf(codes.Internal, "internal server error")
@@ -327,7 +327,7 @@ func (r *MintServiceAccountTokenRPC) checkACLs(ctx context.Context, env *callEnv
 
 	// Check the service account is defined in the realm.
 	accountID := identity.Identity("user:" + req.account)
-	switch yes, err := env.db.HasPermission(ctx, accountID, permExistInRealm, req.realm); {
+	switch yes, err := env.db.HasPermission(ctx, accountID, permExistInRealm, req.realm, nil); {
 	case err != nil:
 		logging.Errorf(ctx, "HasPermission(%q, %q, %q) failed: %s", accountID, permExistInRealm, req.realm, err)
 		return status.Errorf(codes.Internal, "internal server error")

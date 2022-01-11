@@ -76,7 +76,7 @@ func getTemplateBundle() *templates.Bundle {
 
 // checkPermission checks if the user has permission to read the blob.
 func checkPermission(c *router.Context, next router.Handler) {
-	switch ok, err := auth.HasPermission(c.Context, permMintToken, readOnlyRealm(c.Params)); {
+	switch ok, err := auth.HasPermission(c.Context, permMintToken, readOnlyRealm(c.Params), nil); {
 	case err != nil:
 		renderErrorPage(c.Context, c.Writer, err)
 	case !ok:

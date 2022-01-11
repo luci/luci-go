@@ -57,7 +57,7 @@ func VerifyBatch(ctx context.Context, permission realms.Permission, ids invocati
 			continue
 		}
 		// Note: HasPermission does not make RPCs.
-		switch allowed, err := auth.HasPermission(ctx, permission, realm); {
+		switch allowed, err := auth.HasPermission(ctx, permission, realm, nil); {
 		case err != nil:
 			return err
 		case !allowed:

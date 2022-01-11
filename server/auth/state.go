@@ -156,11 +156,16 @@ func IsMember(c context.Context, groups ...string) (bool, error) {
 // realms (including the root realm) are considered empty. HasPermission returns
 // false in this case.
 //
+// Attributes are the context of this particular permission check and are used
+// as inputs to `conditions` predicates in conditional bindings. If a service
+// supports conditional bindings, it must document what attributes it passes
+// with each permission it checks.
+//
 // Returns an error only if the check itself failed due to a misconfiguration
 // or transient issues. This should usually result in an Internal error.
-func HasPermission(c context.Context, perm realms.Permission, realm string) (bool, error) {
+func HasPermission(c context.Context, perm realms.Permission, realm string, attrs realms.Attrs) (bool, error) {
 	if s := GetState(c); s != nil {
-		return s.DB().HasPermission(c, s.User().Identity, perm, realm)
+		return s.DB().HasPermission(c, s.User().Identity, perm, realm, attrs)
 	}
 	return false, ErrNotConfigured
 }
@@ -179,7 +184,7 @@ type HasPermissionDryRun struct {
 // Logs information about the call and any errors or discrepancies found.
 //
 // Accepts same arguments as HasPermission. Intentionally returns nothing.
-func (dr HasPermissionDryRun) Execute(c context.Context, perm realms.Permission, realm string) {
+func (dr HasPermissionDryRun) Execute(c context.Context, perm realms.Permission, realm string, attrs realms.Attrs) {
 	s := GetState(c)
 	if s == nil { // this should not really be happening at all
 		logging.Errorf(c, "HasPermissionDryRun: no state in the context")
@@ -203,7 +208,7 @@ func (dr HasPermissionDryRun) Execute(c context.Context, perm realms.Permission,
 		return "DENY"
 	}
 
-	switch result, err := db.HasPermission(c, ident, perm, realm); {
+	switch result, err := db.HasPermission(c, ident, perm, realm, attrs); {
 	case err != nil:
 		logging.Errorf(c, "%s: error - want %s, got: %s", logPfx, allowDeny(dr.ExpectedResult), err)
 	case result == dr.ExpectedResult:

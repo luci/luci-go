@@ -74,7 +74,7 @@ func MockMembership(id identity.Identity, group string) MockedDatum {
 	}
 }
 
-// MockPermission modifies db to make HasPermission(id, realm, perm) == true.
+// MockPermission modifies db to make HasPermission(id, realm, perm, …) == true.
 //
 // Panics if `realm` is not a valid globally scoped realm, i.e. it doesn't look
 // like "<project>:<realm>".
@@ -199,7 +199,7 @@ func (db *FakeDB) CheckMembership(ctx context.Context, id identity.Identity, gro
 }
 
 // HasPermission is part of authdb.DB interface.
-func (db *FakeDB) HasPermission(ctx context.Context, id identity.Identity, perm realms.Permission, realm string) (bool, error) {
+func (db *FakeDB) HasPermission(ctx context.Context, id identity.Identity, perm realms.Permission, realm string, attrs realms.Attrs) (bool, error) {
 	db.m.RLock()
 	defer db.m.RUnlock()
 

@@ -59,7 +59,7 @@ func verifyGetTestResultHistoryPermission(ctx context.Context, realm string) err
 	if realm == "" {
 		return appstatus.BadRequest(errors.Reason("realm is required").Err())
 	}
-	switch allowed, err := auth.HasPermission(ctx, permListTestResults, realm); {
+	switch allowed, err := auth.HasPermission(ctx, permListTestResults, realm, nil); {
 	case err != nil:
 		return err
 	case !allowed:

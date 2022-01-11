@@ -106,7 +106,7 @@ func CheckPermission(ctx context.Context, perm realms.Permission, prefix types.S
 	})
 
 	// Do the realms ACL check.
-	granted, err := auth.HasPermission(ctx, perm, realm)
+	granted, err := auth.HasPermission(ctx, perm, realm, nil)
 	if err != nil {
 		logging.WithError(err).Errorf(ctx, "failed to check realms ACL")
 		return grpcutil.Internal
