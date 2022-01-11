@@ -93,6 +93,45 @@ message Executable {
   //
   // Optional. If omitted, defaults to `['luciexe']`.
   repeated string cmd = 3;
+
+  // Wrapper is a command and its args which will be used to 'wrap' the
+  // execution of `cmd`.
+  // Given:
+  //  wrapper = ['/some/exe', '--arg']
+  //  cmd = ['my_exe', '--other-arg']
+  // Buildbucket's agent will invoke
+  //  /some/exe --arg -- /path/to/task/root/dir/my_exe --other-arg
+  // Note that '--' is always inserted between the wrapper and the target
+  // cmd
+  //
+  // The wrapper program MUST maintain all the invariants specified in
+  // go.chromium.org/luci/luciexe (likely by passing-through
+  // most of this responsibility to `cmd`).
+  //
+  // wrapper[0] MAY be an absolute path. If https://pkg.go.dev/path/filepath#IsAbs
+  // returns `true` for wrapper[0], it will be interpreted as an absolute
+  // path. In this case, it is your responsibility to ensure that the target
+  // binary is correctly deployed an any machine where the Build might run
+  // (by whatever means you use to prepare/adjust your system image). Failure to do
+  // so will cause the build to terminate with INFRA_FAILURE.
+  //
+  // If wrapper[0] is non-absolute, but does not contain a path separator,
+  // it will be looked for in $PATH (and the same rules apply for
+  // pre-distribution as in the absolute path case).
+  //
+  // If wrapper[0] begins with a "./" (or ".\") or contains a path separator
+  // anywhere, it will be considered relative to the task root.
+  //
+  // Example wrapper[0]:
+  //
+  // Absolute path (*nix): /some/prog
+  // Absolute path (Windows): C:\some\prog.exe
+  // $PATH or %PATH% lookup: prog
+  // task-relative (*nix): ./prog ($taskRoot/prog)
+  // task-relative (*nix): dir/prog ($taskRoot/dir/prog)
+  // task-relative (Windows): .\prog.exe ($taskRoot\\prog.exe)
+  // task-relative (Windows): dir\prog.exe ($taskRoot\\dir\\prog.exe)
+  repeated string wrapper = 4;
 }
 
 // Machine-readable details of a status.
