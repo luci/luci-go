@@ -258,7 +258,7 @@ type PState struct {
 	//
 	// A CL being purged does not necessarily have a corresponding PCL.
 	// A PurgingCL is kept in PState until purging process stops, regardless of
-	// successful or failed.
+	// whether purging was successful or failed.
 	//
 	// See more in PurgingCL doc.
 	//
