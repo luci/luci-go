@@ -2218,8 +2218,10 @@ type BuildsClient interface {
 	// * if a v2 Build field does not make sense in V1, it is unset/empty.
 	// * step support is not implemented for Buildbot builds.
 	// Note that it does not support getting a buildbot build by build number.
+	// Examples: go/buildbucket-rpc#getbuild
 	GetBuild(ctx context.Context, in *GetBuildRequest, opts ...grpc.CallOption) (*Build, error)
 	// Searches for builds.
+	// Examples: go/buildbucket-rpc#searchbuilds
 	SearchBuilds(ctx context.Context, in *SearchBuildsRequest, opts ...grpc.CallOption) (*SearchBuildsResponse, error)
 	// Updates a build. Returns an empty build.
 	//
@@ -2228,6 +2230,7 @@ type BuildsClient interface {
 	UpdateBuild(ctx context.Context, in *UpdateBuildRequest, opts ...grpc.CallOption) (*Build, error)
 	// Schedules a new build.
 	// The requester must have at least SCHEDULER role in the destination bucket.
+	// Example: go/buildbucket-rpc#schedulebuild
 	ScheduleBuild(ctx context.Context, in *ScheduleBuildRequest, opts ...grpc.CallOption) (*Build, error)
 	// Cancels a build.
 	// The requester must have at least SCHEDULER role in the destination bucket.
@@ -2237,6 +2240,7 @@ type BuildsClient interface {
 	CancelBuild(ctx context.Context, in *CancelBuildRequest, opts ...grpc.CallOption) (*Build, error)
 	// Executes multiple requests in a batch.
 	// The response code is always OK.
+	// Examples: go/buildbucket-rpc#batch
 	Batch(ctx context.Context, in *BatchRequest, opts ...grpc.CallOption) (*BatchResponse, error)
 }
 type buildsPRPCClient struct {
@@ -2377,8 +2381,10 @@ type BuildsServer interface {
 	// * if a v2 Build field does not make sense in V1, it is unset/empty.
 	// * step support is not implemented for Buildbot builds.
 	// Note that it does not support getting a buildbot build by build number.
+	// Examples: go/buildbucket-rpc#getbuild
 	GetBuild(context.Context, *GetBuildRequest) (*Build, error)
 	// Searches for builds.
+	// Examples: go/buildbucket-rpc#searchbuilds
 	SearchBuilds(context.Context, *SearchBuildsRequest) (*SearchBuildsResponse, error)
 	// Updates a build. Returns an empty build.
 	//
@@ -2387,6 +2393,7 @@ type BuildsServer interface {
 	UpdateBuild(context.Context, *UpdateBuildRequest) (*Build, error)
 	// Schedules a new build.
 	// The requester must have at least SCHEDULER role in the destination bucket.
+	// Example: go/buildbucket-rpc#schedulebuild
 	ScheduleBuild(context.Context, *ScheduleBuildRequest) (*Build, error)
 	// Cancels a build.
 	// The requester must have at least SCHEDULER role in the destination bucket.
@@ -2396,6 +2403,7 @@ type BuildsServer interface {
 	CancelBuild(context.Context, *CancelBuildRequest) (*Build, error)
 	// Executes multiple requests in a batch.
 	// The response code is always OK.
+	// Examples: go/buildbucket-rpc#batch
 	Batch(context.Context, *BatchRequest) (*BatchResponse, error)
 }
 

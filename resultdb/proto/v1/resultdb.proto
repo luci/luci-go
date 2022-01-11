@@ -59,6 +59,7 @@ service ResultDB {
   // Retrieves test results from an invocation, recursively.
   // Supports invocation inclusions.
   // Supports advanced filtering.
+  // Examples: go/resultdb-rpc#querytestresults
   rpc QueryTestResults(QueryTestResultsRequest)
       returns (QueryTestResultsResponse) {};
 
@@ -97,6 +98,7 @@ service ResultDB {
   // Note, testIdRegexp and variantPredicate SHOULD be specified to get the
   // results in a timely manner. Queries without either of the predicates will
   // be slow.
+  // Examples: go/resultdb-rpc#gettestresultshistory
   rpc GetTestResultHistory (GetTestResultHistoryRequest) returns (
     GetTestResultHistoryResponse) {};
 

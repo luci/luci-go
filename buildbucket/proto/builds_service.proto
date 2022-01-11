@@ -38,9 +38,11 @@ service Builds {
   // * if a v2 Build field does not make sense in V1, it is unset/empty.
   // * step support is not implemented for Buildbot builds.
   // Note that it does not support getting a buildbot build by build number.
+  // Examples: go/buildbucket-rpc#getbuild
   rpc GetBuild(GetBuildRequest) returns (Build) {};
 
   // Searches for builds.
+  // Examples: go/buildbucket-rpc#searchbuilds
   rpc SearchBuilds(SearchBuildsRequest) returns (SearchBuildsResponse) {};
 
   // Updates a build. Returns an empty build.
@@ -51,6 +53,7 @@ service Builds {
 
   // Schedules a new build.
   // The requester must have at least SCHEDULER role in the destination bucket.
+  // Example: go/buildbucket-rpc#schedulebuild
   rpc ScheduleBuild(ScheduleBuildRequest) returns (Build) {};
 
   // Cancels a build.
@@ -62,6 +65,7 @@ service Builds {
 
   // Executes multiple requests in a batch.
   // The response code is always OK.
+  // Examples: go/buildbucket-rpc#batch
   rpc Batch(BatchRequest) returns (BatchResponse) {};
 }
 

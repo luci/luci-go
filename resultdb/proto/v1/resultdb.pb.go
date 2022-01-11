@@ -2679,6 +2679,7 @@ type ResultDBClient interface {
 	// Retrieves test results from an invocation, recursively.
 	// Supports invocation inclusions.
 	// Supports advanced filtering.
+	// Examples: go/resultdb-rpc#querytestresults
 	QueryTestResults(ctx context.Context, in *QueryTestResultsRequest, opts ...grpc.CallOption) (*QueryTestResultsResponse, error)
 	// Retrieves test exonerations from an invocation.
 	// Supports invocation inclusions.
@@ -2706,6 +2707,7 @@ type ResultDBClient interface {
 	// Note, testIdRegexp and variantPredicate SHOULD be specified to get the
 	// results in a timely manner. Queries without either of the predicates will
 	// be slow.
+	// Examples: go/resultdb-rpc#gettestresultshistory
 	GetTestResultHistory(ctx context.Context, in *GetTestResultHistoryRequest, opts ...grpc.CallOption) (*GetTestResultHistoryResponse, error)
 	// Retrieves test variants from an invocation, recursively.
 	// Supports invocation inclusions.
@@ -3003,6 +3005,7 @@ type ResultDBServer interface {
 	// Retrieves test results from an invocation, recursively.
 	// Supports invocation inclusions.
 	// Supports advanced filtering.
+	// Examples: go/resultdb-rpc#querytestresults
 	QueryTestResults(context.Context, *QueryTestResultsRequest) (*QueryTestResultsResponse, error)
 	// Retrieves test exonerations from an invocation.
 	// Supports invocation inclusions.
@@ -3030,6 +3033,7 @@ type ResultDBServer interface {
 	// Note, testIdRegexp and variantPredicate SHOULD be specified to get the
 	// results in a timely manner. Queries without either of the predicates will
 	// be slow.
+	// Examples: go/resultdb-rpc#gettestresultshistory
 	GetTestResultHistory(context.Context, *GetTestResultHistoryRequest) (*GetTestResultHistoryResponse, error)
 	// Retrieves test variants from an invocation, recursively.
 	// Supports invocation inclusions.
