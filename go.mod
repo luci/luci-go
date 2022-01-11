@@ -50,7 +50,7 @@ require (
 	github.com/jordan-wright/email v4.0.1-0.20210109023952-943e75fe5223+incompatible
 	github.com/julienschmidt/httprouter v1.3.0
 	github.com/klauspost/compress v1.13.5
-	github.com/kr/pretty v0.3.0
+	github.com/kr/pretty v0.3.0 // indirect
 	github.com/luci/gtreap v0.0.0-20161228054646-35df89791e8f
 	github.com/maruel/subcommands v1.1.0
 	github.com/mattn/go-colorable v0.1.8 // indirect

@@ -16,10 +16,10 @@ package swarmingimpl
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"os"
 
-	"github.com/kr/pretty"
 	"github.com/maruel/subcommands"
 
 	"go.chromium.org/luci/common/errors"
@@ -64,11 +64,18 @@ func (c *requestShowRun) main(_ subcommands.Application, taskID string) error {
 		return err
 	}
 
-	result, err := service.TaskRequest(ctx, taskID)
+	request, err := service.TaskRequest(ctx, taskID)
+	if err != nil {
+		return errors.Annotate(err, fmt.Sprintf("failed to get task request. task ID = %s", taskID)).Err()
+	}
+	b, err := json.MarshalIndent(request, "", "  ")
+	if err != nil {
+		return errors.Annotate(err, "faled to marshal task request").Err()
+	}
 
-	pretty.Println(result)
+	fmt.Println(string(b))
 
-	return err
+	return nil
 }
 
 func (c *requestShowRun) Run(a subcommands.Application, args []string, _ subcommands.Env) int {
