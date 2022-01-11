@@ -34,6 +34,8 @@ option go_package = "go.chromium.org/luci/server/auth/service/protocol;protocol"
 // individual downstream services generally **must not care** how it works.
 // Instead they should follow the rules outlined in comments in this file (or
 // equivalently just use the Realms API exposed by the LUCI auth libraries).
+//
+// Next ID: 5.
 message Realms {
   // API version is incremented whenever the semantic meaning of Realms message
   // changes in some backward incompatible way (e.g. some message grows a new
@@ -54,6 +56,11 @@ message Realms {
   //
   // See Permission message for more details.
   repeated Permission permissions = 2;
+
+  // List of all conditions referenced by bindings.
+  //
+  // Bindings reference them by their zero-based index in this list.
+  repeated Condition conditions = 4;
 
   // List of all registered realms in alphabetical order.
   //
@@ -106,6 +113,35 @@ message Realms {
 message Permission {
   string name = 1;  // "<service>.<subject>.<verb>"
   bool internal = 2; // internal permissions cannot be used in project realms
+}
+
+
+// Condition defines a predicate that takes a set of `attribute = value` pairs
+// with a context of a particular permission check and returns True if the
+// binding guarded by this condition should be respected.
+//
+// When a service checks a permission, it should pass to the authorization
+// library a string-valued dictionary of attributes that describe the context
+// of the permission check. It may contain things like the name of the resource
+// being accessed, or parameters of the incoming RPC request that triggered
+// the check.
+//
+// A list of available attributes and meaning of their values depends on
+// the permission being checked and the service should document it in its API
+// documentation.
+message Condition {
+  // AttributeRestriction checks that the attributes set (as a set of key-value
+  // pairs) contains a particular (attribute, value) pair. Checked values are
+  // given as a list. The check succeeds if ANY of (attribute, value) pairs are
+  // present: `any((attribute, value) in attrs for value in values)`.
+  message AttributeRestriction {
+    string attribute = 1;
+    repeated string values = 2;  // sorted alphabetically, no dups
+  }
+
+  oneof op {
+    AttributeRestriction restrict = 1;
+  }
 }
 
 
@@ -207,6 +243,17 @@ message Binding {
   //
   // Ordered alphabetically.
   repeated string principals = 2;
+
+  // Conditions in increasing order of their indexes.
+  //
+  // Each element is an index of a condition in the `conditions` list in the
+  // Realms message. These conditions are ANDed together. See the public API for
+  // details of the semantics.
+  //
+  // These indexes are not stable across different copies of Realms message.
+  // They must not be stored or processed in isolation from the containing
+  // Realms message.
+  repeated uint32 conditions = 3;
 }
 
 
