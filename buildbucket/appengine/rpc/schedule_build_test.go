@@ -29,6 +29,8 @@ import (
 	"go.chromium.org/luci/common/data/rand/mathrand"
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/common/logging/memlogger"
 	"go.chromium.org/luci/common/tsmon"
 	"go.chromium.org/luci/gae/filter/txndefer"
 	"go.chromium.org/luci/gae/impl/memory"
@@ -3782,10 +3784,12 @@ func TestScheduleBuild(t *testing.T) {
 	})
 
 	Convey("setInput", t, func() {
+		ctx := memlogger.Use(context.Background())
+
 		Convey("nil", func() {
 			b := &pb.Build{}
 
-			setInput(nil, nil, b)
+			setInput(ctx, nil, nil, b)
 			So(b.Input, ShouldResembleProto, &pb.Build_Input{
 				Properties: &structpb.Struct{},
 			})
@@ -3797,7 +3801,7 @@ func TestScheduleBuild(t *testing.T) {
 					req := &pb.ScheduleBuildRequest{}
 					b := &pb.Build{}
 
-					setInput(req, nil, b)
+					setInput(ctx, req, nil, b)
 					So(b.Input, ShouldResembleProto, &pb.Build_Input{
 						Properties: &structpb.Struct{},
 					})
@@ -3822,7 +3826,7 @@ func TestScheduleBuild(t *testing.T) {
 					}
 					b := &pb.Build{}
 
-					setInput(req, nil, b)
+					setInput(ctx, req, nil, b)
 					So(b.Input, ShouldResembleProto, &pb.Build_Input{
 						Properties: &structpb.Struct{
 							Fields: map[string]*structpb.Value{
@@ -3848,9 +3852,15 @@ func TestScheduleBuild(t *testing.T) {
 				cfg := &pb.Builder{
 					Properties: "{\"int\": 1, \"str\": \"value\"}",
 				}
-				b := &pb.Build{}
+				b := &pb.Build{
+					Builder: &pb.BuilderID{
+						Project: "project",
+						Bucket:  "bucket",
+						Builder: "builder",
+					},
+				}
 
-				setInput(nil, cfg, b)
+				setInput(ctx, nil, cfg, b)
 				So(b.Input, ShouldResembleProto, &pb.Build_Input{
 					Properties: &structpb.Struct{
 						Fields: map[string]*structpb.Value{
@@ -3874,9 +3884,15 @@ func TestScheduleBuild(t *testing.T) {
 					cfg := &pb.Builder{
 						Recipe: &pb.Builder_Recipe{},
 					}
-					b := &pb.Build{}
+					b := &pb.Build{
+						Builder: &pb.BuilderID{
+							Project: "project",
+							Bucket:  "bucket",
+							Builder: "builder",
+						},
+					}
 
-					setInput(nil, cfg, b)
+					setInput(ctx, nil, cfg, b)
 					So(b.Input, ShouldResembleProto, &pb.Build_Input{
 						Properties: &structpb.Struct{
 							Fields: map[string]*structpb.Value{
@@ -3896,9 +3912,15 @@ func TestScheduleBuild(t *testing.T) {
 							},
 						},
 					}
-					b := &pb.Build{}
+					b := &pb.Build{
+						Builder: &pb.BuilderID{
+							Project: "project",
+							Bucket:  "bucket",
+							Builder: "builder",
+						},
+					}
 
-					setInput(nil, cfg, b)
+					setInput(ctx, nil, cfg, b)
 					So(b.Input, ShouldResembleProto, &pb.Build_Input{
 						Properties: &structpb.Struct{
 							Fields: map[string]*structpb.Value{
@@ -3926,9 +3948,15 @@ func TestScheduleBuild(t *testing.T) {
 							},
 						},
 					}
-					b := &pb.Build{}
+					b := &pb.Build{
+						Builder: &pb.BuilderID{
+							Project: "project",
+							Bucket:  "bucket",
+							Builder: "builder",
+						},
+					}
 
-					setInput(nil, cfg, b)
+					setInput(ctx, nil, cfg, b)
 					So(b.Input, ShouldResembleProto, &pb.Build_Input{
 						Properties: &structpb.Struct{
 							Fields: map[string]*structpb.Value{
@@ -3956,9 +3984,15 @@ func TestScheduleBuild(t *testing.T) {
 							Name: "recipe",
 						},
 					}
-					b := &pb.Build{}
+					b := &pb.Build{
+						Builder: &pb.BuilderID{
+							Project: "project",
+							Bucket:  "bucket",
+							Builder: "builder",
+						},
+					}
 
-					setInput(nil, cfg, b)
+					setInput(ctx, nil, cfg, b)
 					So(b.Input, ShouldResembleProto, &pb.Build_Input{
 						Properties: &structpb.Struct{
 							Fields: map[string]*structpb.Value{
@@ -3983,9 +4017,15 @@ func TestScheduleBuild(t *testing.T) {
 							},
 						},
 					}
-					b := &pb.Build{}
+					b := &pb.Build{
+						Builder: &pb.BuilderID{
+							Project: "project",
+							Bucket:  "bucket",
+							Builder: "builder",
+						},
+					}
 
-					setInput(nil, cfg, b)
+					setInput(ctx, nil, cfg, b)
 					So(b.Input, ShouldResembleProto, &pb.Build_Input{
 						Properties: &structpb.Struct{
 							Fields: map[string]*structpb.Value{
@@ -4013,9 +4053,15 @@ func TestScheduleBuild(t *testing.T) {
 							},
 						},
 					}
-					b := &pb.Build{}
+					b := &pb.Build{
+						Builder: &pb.BuilderID{
+							Project: "project",
+							Bucket:  "bucket",
+							Builder: "builder",
+						},
+					}
 
-					setInput(nil, cfg, b)
+					setInput(ctx, nil, cfg, b)
 					So(b.Input, ShouldResembleProto, &pb.Build_Input{
 						Properties: &structpb.Struct{
 							Fields: map[string]*structpb.Value{
@@ -4038,9 +4084,15 @@ func TestScheduleBuild(t *testing.T) {
 							},
 						},
 					}
-					b := &pb.Build{}
+					b := &pb.Build{
+						Builder: &pb.BuilderID{
+							Project: "project",
+							Bucket:  "bucket",
+							Builder: "builder",
+						},
+					}
 
-					setInput(nil, cfg, b)
+					setInput(ctx, nil, cfg, b)
 					So(b.Input, ShouldResembleProto, &pb.Build_Input{
 						Properties: &structpb.Struct{
 							Fields: map[string]*structpb.Value{
@@ -4076,9 +4128,15 @@ func TestScheduleBuild(t *testing.T) {
 			cfg := &pb.Builder{
 				Properties: "{\"override\": \"cfg value\", \"cfg key\": \"cfg value\"}",
 			}
-			b := &pb.Build{}
+			b := &pb.Build{
+				Builder: &pb.BuilderID{
+					Project: "project",
+					Bucket:  "bucket",
+					Builder: "builder",
+				},
+			}
 
-			setInput(req, cfg, b)
+			setInput(ctx, req, cfg, b)
 			So(b.Input, ShouldResembleProto, &pb.Build_Input{
 				Properties: &structpb.Struct{
 					Fields: map[string]*structpb.Value{
@@ -4100,6 +4158,9 @@ func TestScheduleBuild(t *testing.T) {
 					},
 				},
 			})
+			So(ctx, memlogger.ShouldHaveLog, logging.Warning, "ScheduleBuild: Overriding property \"override\"")
+			So(ctx, memlogger.ShouldNotHaveLog, logging.Warning, "ScheduleBuild: Overriding property \"cfg key\"")
+			So(ctx, memlogger.ShouldNotHaveLog, logging.Warning, "ScheduleBuild: Overriding property \"req key\"")
 		})
 	})
 

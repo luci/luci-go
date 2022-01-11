@@ -15,6 +15,7 @@
 package memlogger
 
 import (
+	"context"
 	"fmt"
 	"reflect"
 	"strings"
@@ -24,13 +25,26 @@ import (
 
 // ShouldHaveLog is a goconvey custom assertion which asserts that the logger has
 // received a log. It takes up to 3 arguments.
+//
+// `actual` should either be a *MemLogger or a context.Context containing
+// a *MemLogger.
+//
 // argument 1 (expected[0]) is the log level.
 // argument 2 (expected[1]) is a substring the message. If omitted or the empty string, this value is not checked.
 // argument 3 (expected[2]) is the fields data. If omitted or nil, this value is not checked.
 func ShouldHaveLog(actual interface{}, expected ...interface{}) string {
-	m, ok := actual.(*MemLogger)
-	if !ok {
-		return fmt.Sprintf("actual value must be a *MemLogger, not %T", actual)
+	var ok bool
+	var m *MemLogger
+
+	switch x := actual.(type) {
+	case *MemLogger:
+		m = x
+	case context.Context:
+		if m, ok = logging.Get(x).(*MemLogger); !ok {
+			return "context does not contain a *MemLogger"
+		}
+	default:
+		return fmt.Sprintf("actual value must be a *MemLogger or context.Context, not %T", actual)
 	}
 
 	level := logging.Level(0)

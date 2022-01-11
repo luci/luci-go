@@ -835,7 +835,7 @@ func setInfra(req *pb.ScheduleBuildRequest, cfg *pb.Builder, build *pb.Build, gl
 // setInput computes the input values from the given request and builder config,
 // setting them in the proto. Mutates the given *pb.Build. May panic if the
 // builder config is invalid.
-func setInput(req *pb.ScheduleBuildRequest, cfg *pb.Builder, build *pb.Build) {
+func setInput(ctx context.Context, req *pb.ScheduleBuildRequest, cfg *pb.Builder, build *pb.Build) {
 	build.Input = &pb.Build_Input{
 		Properties: &structpb.Struct{},
 	}
@@ -882,6 +882,9 @@ func setInput(req *pb.ScheduleBuildRequest, cfg *pb.Builder, build *pb.Build) {
 		build.Input.Properties.Fields = make(map[string]*structpb.Value, len(req.GetProperties().GetFields()))
 	}
 	for k, v := range req.GetProperties().GetFields() {
+		if _, ok := build.Input.Properties.Fields[k]; ok {
+			logging.Warningf(ctx, "ScheduleBuild: Overriding property %q for builder %q", k, protoutil.FormatBuilderID(build.Builder))
+		}
 		build.Input.Properties.Fields[k] = v
 	}
 
@@ -975,7 +978,7 @@ func buildFromScheduleRequest(ctx context.Context, req *pb.ScheduleBuildRequest,
 
 	setExecutable(req, cfg, b)
 	setInfra(req, cfg, b, globalCfg)
-	setInput(req, cfg, b)
+	setInput(ctx, req, cfg, b)
 	setTags(req, b)
 	setTimeouts(req, cfg, b)
 	setExperiments(ctx, req, cfg, globalCfg, b)         // Requires setExecutable, setInfra, setInput.
