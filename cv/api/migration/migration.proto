@@ -99,6 +99,8 @@ message ReportVerifiedRunRequest {
   Action action = 11;
   // Final message to post to Gerrit in case of ACTION_FAIL.
   string final_message = 12;
+  // Report which verifier fails the Run in case of ACTION_FAIL.
+  string failed_verifier = 13;
 }
 
 // ReportedRun as reported by the CQDaemon to CV.
