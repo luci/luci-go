@@ -31,6 +31,8 @@ _self.addEventListener('fetch', (event) => {
     url.pathname.match(/^\/b\//) ||
     // Long build link.
     url.pathname.match(/^\/p\/[^/]+\/builders\/[^/]+\/[^/]+\//) ||
+    // Builders link.
+    url.pathname.match(/^\/p\/[^/]+(\/g\/[^/]+)?\/builders(\/)?$/) ||
     // Invocation link.
     url.pathname.match(/^\/inv\//) ||
     // Artifact link.

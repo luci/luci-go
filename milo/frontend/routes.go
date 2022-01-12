@@ -109,12 +109,9 @@ func Run(srv *server.Server, templatePath string) {
 	r.GET("/p/:project/g/:group/", baseMW, movedPermanently("/p/:project/g/:group"))
 
 	// Builder list
-	r.GET("/p/:project/builders", projectMW, handleError(func(c *router.Context) error {
-		return BuildersRelativeHandler(c, c.Params.ByName("project"), "")
-	}))
-	r.GET("/p/:project/g/:group/builders", projectMW, handleError(func(c *router.Context) error {
-		return BuildersRelativeHandler(c, c.Params.ByName("project"), c.Params.ByName("group"))
-	}))
+	// Redirects to the lit-element implementation.
+	r.GET("/p/:project/builders", baseMW, redirect("/ui/p/:project/builders", http.StatusFound))
+	r.GET("/p/:project/g/:group/builders", baseMW, redirect("/ui/p/:project/g/:group/builders", http.StatusFound))
 
 	// Swarming
 	r.GET(swarming.URLBase+"/:id/steps/*logname", htmlMW, handleError(HandleSwarmingLog))
