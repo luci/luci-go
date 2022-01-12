@@ -139,3 +139,15 @@ func (t *Tryjob) LUCIProject() string {
 	}
 	return t.ReusedBy[0].LUCIProject()
 }
+
+// AllWatchingRuns returns the IDs for the Runs that care about this tryjob.
+//
+// This includes the triggerer (if the tryjob was triggered by CV) and all the
+// Runs reusing this tryjob (if any).
+func (t *Tryjob) AllWatchingRuns() common.RunIDs {
+	ret := make(common.RunIDs, 0, 1+len(t.ReusedBy))
+	if t.TriggeredBy != "" {
+		ret = append(ret, t.TriggeredBy)
+	}
+	return append(ret, t.ReusedBy...)
+}

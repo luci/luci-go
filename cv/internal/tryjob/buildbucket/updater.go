@@ -18,13 +18,17 @@ import (
 	"context"
 	"net/http"
 
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/fieldmaskpb"
 
 	bbpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/proto/structmask"
+	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/config/validation"
+	"go.chromium.org/luci/grpc/grpcutil"
 	"go.chromium.org/luci/grpc/prpc"
 	"go.chromium.org/luci/server/auth"
 
@@ -72,10 +76,14 @@ func (u *Updater) Update(ctx context.Context, saved *tryjob.Tryjob) (tryjob.Stat
 	}
 
 	build, err := bbClient.GetBuild(ctx, &bbpb.GetBuildRequest{Id: buildID, Mask: TryjobBuildMask})
-	if err != nil {
+	switch code := status.Code(err); {
+	case code == codes.OK:
+		return toTryjobStatusAndResult(ctx, build)
+	case grpcutil.IsTransientCode(code) || code == codes.DeadlineExceeded:
+		return 0, nil, transient.Tag.Apply(err)
+	default:
 		return 0, nil, err
 	}
-	return toTryjobStatusAndResult(ctx, build)
 }
 
 func toTryjobStatusAndResult(ctx context.Context, b *bbpb.Build) (tryjob.Status, *tryjob.Result, error) {

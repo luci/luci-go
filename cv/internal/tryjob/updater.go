@@ -20,11 +20,18 @@ import (
 	"strings"
 	"sync"
 
+	"google.golang.org/protobuf/proto"
+
+	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/retry/transient"
+	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/server/tq"
 
 	"go.chromium.org/luci/cv/internal/common"
 )
+
+const TaskClass = "update-tryjob"
 
 type updaterBackend interface {
 	// Kind identifies the backend.
@@ -40,7 +47,7 @@ type updaterBackend interface {
 
 // rmNotifier abstracts out Run Manager notifier.
 type rmNotifier interface {
-	NotifyTryjobsUpdated(context.Context, common.RunID, TryjobUpdatedEvents)
+	NotifyTryjobsUpdated(context.Context, common.RunID, *TryjobUpdatedEvents) error
 }
 
 // Updater knows how to update Tryjobs, notifying other CV parts as needed.
@@ -61,8 +68,15 @@ func NewUpdater(tqd *tq.Dispatcher, rm rmNotifier) *Updater {
 		rmNotifier: rm,
 		backends:   make(map[string]updaterBackend, 1),
 	}
-	// TODO(crbug.com/1227363): implement.
-	// u.tqd.RegisterTaskClass(..., Handler: u.handleTask, ...)
+	u.tqd.RegisterTaskClass(tq.TaskClass{
+		ID:        TaskClass,
+		Prototype: &UpdateTryjobTask{},
+		Queue:     "update-tryjob",
+		Kind:      tq.FollowsContext,
+		Handler: func(ctx context.Context, payload proto.Message) error {
+			return common.TQifyError(ctx, u.handleTask(ctx, payload.(*UpdateTryjobTask)))
+		},
+	})
 	return u
 }
 
@@ -98,11 +112,81 @@ func (u *Updater) Schedule(ctx context.Context, id common.TryjobID, eid External
 }
 
 func (u *Updater) handleTask(ctx context.Context, task *UpdateTryjobTask) error {
-	// TODO(crbug.com/1227363): implement.
-	// 1. Load Tryjob depending supporting both task.GetId or task.GetExternalID()
-	// being set.
-	// 2. Dispatch to backend.
-	// 3. Update && notify Runs, if necessary.
+	tj := &Tryjob{ID: common.TryjobID(task.Id)}
+	switch {
+	case task.GetId() != 0:
+		switch err := datastore.Get(ctx, tj); {
+		case err == nil:
+			if task.GetExternalId() != "" && task.GetExternalId() != string(tj.ExternalID) {
+				return errors.Reason("the given internal and external ids for the tryjob do not match").Err()
+			}
+		case err == datastore.ErrNoSuchEntity:
+			return errors.Annotate(err, "unknown Tryjob with id %d", task.Id).Err()
+		default:
+			return errors.Annotate(err, "loading Tryjob with id %d", task.Id).Tag(transient.Tag).Err()
+		}
+	case task.GetExternalId() != "":
+		var err error
+		switch tj, err = ExternalID(task.ExternalId).Load(ctx); {
+		case err != nil:
+			return errors.Annotate(err, "loading Tryjob with ExternalID %s", task.ExternalId).Tag(transient.Tag).Err()
+		case tj == nil:
+			return errors.Reason("unknown Tryjob with ExternalID %s", task.ExternalId).Err()
+		}
+	default:
+		return errors.Reason("expected at least one of {Id, ExternalId} in %+v", task).Err()
+	}
+	loadedEVer := tj.EVersion
+
+	backend, err := u.backendFor(tj)
+	if err != nil {
+		return errors.Annotate(err, "resolving backend for %v", tj).Err()
+	}
+
+	status, result, err := backend.Update(ctx, tj)
+	switch {
+	case err != nil:
+		return errors.Annotate(err, "reading status and result from %q", tj.ExternalID).Err()
+	case status == tj.Status && proto.Equal(tj.Result, result):
+		return nil
+	}
+	// Captures the error that may cause the transaction to commit, and any relevant tags.
+	var innerErr error
+	err = datastore.RunInTransaction(ctx, func(ctx context.Context) (err error) {
+		defer func() {
+			innerErr = err
+		}()
+		tj = &Tryjob{ID: common.TryjobID(tj.ID)}
+		if err := datastore.Get(ctx, tj); err != nil {
+			return errors.Annotate(err, "failed to load Tryjob %d", tj.ID).Tag(transient.Tag).Err()
+		}
+		if loadedEVer != tj.EVersion {
+			// A parallel task must have already updated this tryjob, retry.
+			return errors.Reason("the tryjob data has changed").Tag(transient.Tag).Err()
+		}
+		tj.EntityUpdateTime = datastore.RoundTime(clock.Now(ctx).UTC())
+		tj.EVersion++
+		tj.Status = status
+		tj.Result = result
+		if err := datastore.Put(ctx, tj); err != nil {
+			return errors.Annotate(err, "failed to save Tryjob %d", tj.ID).Tag(transient.Tag).Err()
+		}
+		for _, run := range tj.AllWatchingRuns() {
+			if err := u.rmNotifier.NotifyTryjobsUpdated(
+				ctx, run, &TryjobUpdatedEvents{Events: []*TryjobUpdatedEvent{{TryjobId: int64(tj.ID)}}},
+			); err != nil {
+				return err
+			}
+		}
+
+		return nil
+	}, nil)
+	switch {
+	case innerErr != nil:
+		return innerErr
+	case err != nil:
+		return errors.Annotate(err, "failed to commit transaction updating tryjob %v", tj.ExternalID).Tag(transient.Tag).Err()
+	}
 	return nil
 }
 
