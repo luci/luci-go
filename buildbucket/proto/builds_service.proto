@@ -222,7 +222,7 @@ message UpdateBuildRequest {
 
 // A request message for ScheduleBuild rpc.
 //
-// Next ID: 21.
+// Next ID: 22.
 message ScheduleBuildRequest {
   // ** STRONGLY RECOMMENDED **.
   // A unique string id used for detecting duplicate requests.
@@ -399,6 +399,26 @@ message ScheduleBuildRequest {
   // Does not cause side-effects. When batching, all requests must specify the
   // same value for dry_run.
   bool dry_run = 20;
+
+  // Flag to control if the build can outlive its parent.
+  //
+  // If the value is UNSET, it means this build doesn't have any parent, so
+  // the request must not have a head with any BuildToken.
+  //
+  // If the value is anything other than UNSET, then the BuildToken for the
+  // parent build must be set as a header.
+  // Note: it's not currently possible to establish parent/child relationship
+  // except via the parent build at the time the build is launched.
+  //
+  // If the value is NO, it means that the build SHOULD reach a terminal status
+  // (SUCCESS, FAILURE, INFRA_FAILURE or CANCELED) before its parent. If the
+  // child fails to do so, Buildbucket will cancel it some time after the
+  // parent build reaches a terminal status.
+  //
+  // A build that can outlive its parent can also outlive its parent's ancestors.
+  //
+  // If schedule a build without parent, this field must be UNSET.
+  Trinary can_outlive_parent = 21;
 }
 
 // A request message for CancelBuild rpc.

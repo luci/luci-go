@@ -40,7 +40,7 @@ import "go.chromium.org/luci/swarming/proto/api/swarming.proto";
 // represents a state of a build at completion time and does not change after
 // that. All fields are included.
 //
-// Next id: 30.
+// Next id: 32.
 message Build {
   // Defines what to build/test.
   //
@@ -271,6 +271,24 @@ message Build {
   // If set, swarming was requested to wait until it sees at least one bot
   // report a superset of the build's requested dimensions.
   bool wait_for_capacity = 28;
+
+  // Flag to control if the build can outlive its parent.
+  //
+  // This field is only meaningful if the build has ancestors.
+  // If the build has ancestors and the value is false, it means that the build
+  // SHOULD reach a terminal status (SUCCESS, FAILURE, INFRA_FAILURE or
+  // CANCELED) before its parent. If the child fails to do so, Buildbucket will
+  // cancel it some time after the parent build reaches a terminal status.
+  //
+  // A build that can outlive its parent can also outlive its parent's ancestors.
+  bool can_outlive_parent = 30;
+
+  // Ids of the build’s ancestors. This includes all parents/grandparents/etc.
+  // This is ordered from top-to-bottom so `ancestor_ids[0]` is the root of
+  // the builds tree, and `ancestor_ids[-1]` is this build's immediate parent.
+  // This does not include any "siblings" at higher levels of the tree, just
+  // the direct chain of ancestors from root to this build.
+  repeated int64 ancestor_ids = 31 [(google.api.field_behavior) = OUTPUT_ONLY];
 }
 
 message InputDataRef {
