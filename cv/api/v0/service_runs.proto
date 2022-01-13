@@ -51,7 +51,7 @@ message SearchRunsRequest {
 
   // Number of Runs to return.
   //
-  // TODO(qyearsley): Document the default page size after it is decided.
+  // Default 32; maximum 128.
   int32 page_size = 2;
 
   // Value of SearchRunsResponse.next_page_token from the previous response.
@@ -79,6 +79,6 @@ message RunPredicate {
   // Limit results to this LUCI project. Required.
   string project = 1;
 
-  // The Run must include each of these changes.
+  // The Run must include each of these changes, and may include others.
   repeated GerritChange gerrit_changes = 2;
 }

@@ -25,13 +25,18 @@ import (
 	"go.chromium.org/luci/server/auth"
 
 	apiv0pb "go.chromium.org/luci/cv/api/v0"
-	"go.chromium.org/luci/cv/internal/acls"
 	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/rpc/versioning"
 	"go.chromium.org/luci/cv/internal/run"
 )
 
+// allowGroup is a CRIA group with users that may make requests to v0 API.
 const allowGroup = "service-luci-change-verifier-v0-api-users"
+
+// RunsServer implements the v0 API.
+type RunsServer struct {
+	apiv0pb.UnimplementedRunsServer
+}
 
 // checkCanUseAPI ensures that calling user is granted permission to use
 // unstable v0 API.
@@ -45,31 +50,6 @@ func checkCanUseAPI(ctx context.Context, name string) error {
 		logging.Debugf(ctx, "%s is calling %s", auth.CurrentIdentity(ctx), name)
 		return nil
 	}
-}
-
-// RunsServer implements rpc v0 APIs.
-type RunsServer struct {
-	apiv0pb.UnimplementedRunsServer
-}
-
-// GetRun implements apiv0pb.RunsServer.
-func (s *RunsServer) GetRun(ctx context.Context, req *apiv0pb.GetRunRequest) (resp *apiv0pb.Run, err error) {
-	defer func() { err = appstatus.GRPCifyAndLog(ctx, err) }()
-	if err = checkCanUseAPI(ctx, "Runs.GetRun"); err != nil {
-		return
-	}
-
-	id, err := toInternalRunID(req.GetId())
-	if err != nil {
-		return nil, err
-	}
-
-	r, err := run.LoadRun(ctx, id, acls.NewRunReadChecker())
-	if err != nil {
-		return nil, err
-	}
-
-	return populateRunResponse(ctx, r)
 }
 
 // populateRunResponse constructs and populates a apiv0pb.Run to use in a response.
@@ -143,13 +123,9 @@ func populateRunResponse(ctx context.Context, r *run.Run) (resp *apiv0pb.Run, er
 	}, nil
 }
 
-func toInternalRunID(id string) (common.RunID, error) {
-	if id == "" {
-		return "", appstatus.Errorf(codes.InvalidArgument, "Run ID is required")
+func min(i, j int) int {
+	if i < j {
+		return i
 	}
-	internalID, err := common.FromPublicRunID(id)
-	if err != nil {
-		return "", appstatus.Errorf(codes.InvalidArgument, err.Error())
-	}
-	return internalID, nil
+	return j
 }
