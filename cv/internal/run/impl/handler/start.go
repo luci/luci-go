@@ -27,6 +27,7 @@ import (
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/gae/service/datastore"
 
+	"go.chromium.org/luci/cv/internal/acls"
 	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/configs/prjcfg"
 	"go.chromium.org/luci/cv/internal/gerrit"
@@ -83,6 +84,20 @@ func (impl *Impl) Start(ctx context.Context, rs *state.RunState) (*Result, error
 	})
 	if err := eg.Wait(); err != nil {
 		return nil, err
+	}
+
+	switch result, err := acls.CheckRunCreateACL(ctx, cg, runCLs); {
+	case err != nil:
+		return nil, errors.Annotate(err, "CheckRunCreateACL").Err()
+	case !result.OK:
+		// Let the Run move forwards.
+		// CQD should reject the Run via the migration steps.
+		//
+		// TODO(crbug/1268574): cancel the Run, once it's verified that
+		// both (CQ and CV) implementations agree with each other.
+		if s := result.FailuresSummary; s != "" {
+			logging.Infof(ctx, "crbug/1268574: %s", s)
+		}
 	}
 
 	switch result, err := requirement.Compute(ctx, requirement.Input{

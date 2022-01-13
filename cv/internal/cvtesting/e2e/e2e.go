@@ -466,6 +466,9 @@ func MakeCfgSingular(cgName, gHost, gRepo, gRef string) *cfgpb.Config {
 						},
 					},
 				},
+				Verifiers: &cfgpb.Verifiers{
+					GerritCqAbility: &cfgpb.Verifiers_GerritCQAbility{},
+				},
 			},
 		},
 	}
@@ -490,6 +493,9 @@ func MakeCfgCombinable(cgName, gHost, gRepo, gRef string) *cfgpb.Config {
 				},
 				CombineCls: &cfgpb.CombineCLs{
 					StabilizationDelay: durationpb.New(5 * time.Minute),
+				},
+				Verifiers: &cfgpb.Verifiers{
+					GerritCqAbility: &cfgpb.Verifiers_GerritCQAbility{},
 				},
 			},
 		},

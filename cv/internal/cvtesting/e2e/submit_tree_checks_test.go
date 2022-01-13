@@ -54,10 +54,8 @@ func TestSubmissionDuringClosedTree(t *testing.T) {
 		ct.TreeFake.ModifyState(ctx, tree.Closed)
 
 		cfg := MakeCfgSingular("cg0", gHost, gRepo, gRef)
-		cfg.ConfigGroups[0].Verifiers = &cfgpb.Verifiers{
-			TreeStatus: &cfgpb.Verifiers_TreeStatus{
-				Url: "https://tree-status.example.com/",
-			},
+		cfg.ConfigGroups[0].Verifiers.TreeStatus = &cfgpb.Verifiers_TreeStatus{
+			Url: "https://tree-status.example.com/",
 		}
 		prjcfgtest.Create(ctx, lProject, cfg)
 		So(ct.PMNotifier.UpdateConfig(ctx, lProject), ShouldBeNil)

@@ -52,6 +52,7 @@ import (
 	_ "go.chromium.org/luci/gae/service/datastore/crbug1242998safeget"
 	"go.chromium.org/luci/gae/service/info"
 	serverauth "go.chromium.org/luci/server/auth"
+	"go.chromium.org/luci/server/auth/authtest"
 	"go.chromium.org/luci/server/caching"
 	"go.chromium.org/luci/server/secrets"
 	"go.chromium.org/luci/server/tq"
@@ -182,6 +183,7 @@ func (t *Test) SetUp() (context.Context, func()) {
 
 	ctx = t.installDS(ctx)
 	ctx = txndefer.FilterRDS(ctx)
+	ctx = serverauth.WithState(ctx, &authtest.FakeState{FakeDB: authtest.NewFakeDB()})
 
 	ctx, _, _ = tsmon.WithFakes(ctx)
 	t.TSMonStore = store.NewInMemory(&target.Task{})
