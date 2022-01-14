@@ -29,8 +29,6 @@ import (
 )
 
 // CheckResult tells the result of an ACL check performed.
-//
-// If OK == false, FailureSummary will be set with the reasons for the decision.
 type CheckResult struct {
 	// FailuresSummary is a summary of the check failures with the reasons.
 	//
@@ -46,11 +44,16 @@ type runCreateACLFailures struct {
 	neitherCommitterNorOwner []*run.RunCL
 }
 
-func (fs *runCreateACLFailures) summary() string {
-	var sb strings.Builder
-	const header = "CV run can't continue due to the following CLs\n\n"
-	sb.WriteString(header)
+func (fs *runCreateACLFailures) length() int {
+	return len(fs.neitherCommitterNorOwner)
+}
 
+func (fs *runCreateACLFailures) summary() string {
+	if fs.length() == 0 {
+		return ""
+	}
+	var sb strings.Builder
+	sb.WriteString("CV run can't continue due to the following CLs\n\n")
 	if cls := fs.neitherCommitterNorOwner; len(cls) > 0 {
 		sb.WriteString("* only the full committers or CL owner can trigger runs.\n")
 		for _, cl := range cls {
@@ -58,20 +61,13 @@ func (fs *runCreateACLFailures) summary() string {
 			sb.WriteString("\n")
 		}
 	}
-
-	ret := sb.String()
-	if len(ret) == len(header) {
-		return ""
-	}
-	return ret
+	return sb.String()
 }
 
 // CheckRunCreateACL verifies that the user(s) who triggered Run are authorized
 // to create the Run for the CLs.
 func CheckRunCreateACL(ctx context.Context, cg *prjcfg.ConfigGroup, cls []*run.RunCL) (*CheckResult, error) {
-	res := &CheckResult{}
 	failures := &runCreateACLFailures{}
-
 	for _, cl := range cls {
 		triggerer, err := identity.MakeIdentity("user:" + cl.Trigger.Email)
 		if err != nil {
@@ -94,10 +90,10 @@ func CheckRunCreateACL(ctx context.Context, cg *prjcfg.ConfigGroup, cls []*run.R
 			}
 		}
 	}
-
-	res.FailuresSummary = failures.summary()
-	res.OK = len(res.FailuresSummary) == 0
-	return res, nil
+	if failures.length() > 0 {
+		return &CheckResult{failures.summary(), false}, nil
+	}
+	return &CheckResult{"", true}, nil
 }
 
 func isCommitter(ctx context.Context, one identity.Identity, v *cfgpb.Verifiers) (bool, error) {
