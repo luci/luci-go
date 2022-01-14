@@ -367,10 +367,13 @@ message OngoingLongOps {
       Status run_status_if_succeeded = 2;
     }
 
+    message TryjobsExecution {}
+
     oneof work {
       // If true, posts a start message.
       bool post_start_message = 3;
       TriggersCancellation cancel_triggers = 4;
+      TryjobsExecution execute_tryjobs = 5;
     }
   }
   // Ops map operation ID to details.

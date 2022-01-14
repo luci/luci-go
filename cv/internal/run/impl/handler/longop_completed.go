@@ -52,6 +52,8 @@ func (impl *Impl) OnLongOpCompleted(ctx context.Context, rs *state.RunState, res
 		return impl.onCompletedPostStartMessage(ctx, rs, op, result)
 	case *run.OngoingLongOps_Op_CancelTriggers:
 		return impl.onCompletedCancelTriggers(ctx, rs, op, result)
+	case *run.OngoingLongOps_Op_ExecuteTryjobs:
+		return nil, errors.New("not implemented")
 	default:
 		logging.Errorf(ctx, "Unknown long operation %q work type %T finished with:\n%s", result.GetOperationId(), w, result)
 		// Remove the long op from the Run anyway, and move on.
