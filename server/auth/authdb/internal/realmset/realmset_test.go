@@ -105,25 +105,23 @@ func TestRealms(t *testing.T) {
 		So(r.Data("proj:empty"), ShouldBeNil)
 		So(r.Data("proj:unknown"), ShouldBeNil)
 
-		groups, idents := r.QueryAuthorized("proj:r1", 0)
-		So(groups, ShouldResemble, indexes(grp, "g1"))
-		So(idents.ToSortedSlice(), ShouldResemble, []string{"user:u1@example.com", "user:u2@example.com"})
+		bs := r.Bindings("proj:r1", 0)
+		So(bs, ShouldHaveLength, 1)
+		So(bs[0].Groups, ShouldResemble, indexes(grp, "g1"))
+		So(bs[0].Idents.ToSortedSlice(), ShouldResemble, []string{"user:u1@example.com", "user:u2@example.com"})
 
-		groups, idents = r.QueryAuthorized("proj:r1", 1)
-		So(groups, ShouldResemble, indexes(grp, "g1"))
-		So(idents.ToSortedSlice(), ShouldResemble, []string{"user:u2@example.com"})
+		bs = r.Bindings("proj:r1", 1)
+		So(bs, ShouldHaveLength, 1)
+		So(bs[0].Groups, ShouldResemble, indexes(grp, "g1"))
+		So(bs[0].Idents.ToSortedSlice(), ShouldResemble, []string{"user:u2@example.com"})
 
-		groups, idents = r.QueryAuthorized("proj:r1", 2)
-		So(groups, ShouldResemble, indexes(grp, "g1", "g2"))
-		So(idents.ToSortedSlice(), ShouldResemble, []string{"user:u2@example.com"})
+		bs = r.Bindings("proj:r1", 2)
+		So(bs, ShouldHaveLength, 1)
+		So(bs[0].Groups, ShouldResemble, indexes(grp, "g1", "g2"))
+		So(bs[0].Idents.ToSortedSlice(), ShouldResemble, []string{"user:u2@example.com"})
 
-		groups, idents = r.QueryAuthorized("proj:empty", 0)
-		So(groups, ShouldBeNil)
-		So(idents, ShouldBeNil)
-
-		groups, idents = r.QueryAuthorized("proj:unknown", 0)
-		So(groups, ShouldBeNil)
-		So(idents, ShouldBeNil)
+		So(r.Bindings("proj:empty", 0), ShouldBeEmpty)
+		So(r.Bindings("proj:unknown", 0), ShouldBeEmpty)
 	})
 }
 

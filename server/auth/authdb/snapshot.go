@@ -207,12 +207,15 @@ func (db *SnapshotDB) CheckMembership(c context.Context, id identity.Identity, g
 	return
 }
 
-// HasPermission returns true if the identity has the given permission in any
-// of the realms.
+// HasPermission returns true if the identity has the given permission in the
+// realm.
 func (db *SnapshotDB) HasPermission(c context.Context, id identity.Identity, perm realms.Permission, realm string, attrs realms.Attrs) (ok bool, err error) {
 	_, span := trace.StartSpan(c, "go.chromium.org/luci/server/auth/authdb.HasPermission")
 	span.Attribute("cr.dev/permission", perm.Name())
 	span.Attribute("cr.dev/realm", realm)
+	for k, v := range attrs {
+		span.Attribute("cr.dev/attr/"+k, v)
+	}
 	defer func() { span.End(err) }()
 
 	// This may happen if the AuthDB proto has no Realms yet.
@@ -248,17 +251,22 @@ func (db *SnapshotDB) HasPermission(c context.Context, id identity.Identity, per
 		realm = root
 	}
 
-	// For the given <realm, permission> pair, get indexes of groups with
-	// principals that have the permission (if any) and a set of identities
-	// mentioned in the realm ACL explicitly (not via a group).
-	switch groups, idents := db.realms.QueryAuthorized(realm, permIdx); {
-	case idents.Has(string(id)):
-		return true, nil // `id` was granted the permission explicitly in the ACL
-	case db.groups.IsMemberOfAny(id, groups):
-		return true, nil // `id` has the permission through a group
-	default:
-		return false, nil
+	// Walk over a list of (condition, groups, idents) tuples that define who has
+	// the permission under what condition. Groups are represented as indexes in
+	// `db.groups`.
+	for _, binding := range db.realms.Bindings(realm, permIdx) {
+		if binding.Condition.Eval(attrs) {
+			switch {
+			case binding.Idents.Has(string(id)):
+				return true, nil // `id` was granted the permission explicitly in the ACL
+			case db.groups.IsMemberOfAny(id, binding.Groups):
+				return true, nil // `id` has the permission through a group
+			}
+		}
 	}
+
+	// No applicable bindings, deny the permission.
+	return false, nil
 }
 
 // GetCertificates returns a bundle with certificates of a trusted signer.

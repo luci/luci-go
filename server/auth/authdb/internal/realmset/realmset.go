@@ -47,6 +47,26 @@ type Realms struct {
 // Note: should match an int type used in `permissions` field in the proto.
 type PermissionIndex uint32
 
+// Condition is a predicate on attributes map.
+//
+// `nil` condition evaluates to true.
+type Condition struct{}
+
+// Eval evaluates the condition over given attributes.
+func (c *Condition) Eval(attrs realms.Attrs) bool {
+	// TODO(vadimsh): Implement.
+	return true
+}
+
+// Binding represents a set of principals and a condition when it can be used.
+//
+// See Bindings(...) method for more details.
+type Binding struct {
+	Condition *Condition
+	Groups    graph.SortedNodeSet
+	Idents    stringset.Set
+}
+
 // realmAndPerm is used as a composite key in `realms` map.
 type realmAndPerm struct {
 	realm string
@@ -61,7 +81,7 @@ type groupsAndIdents struct {
 
 // PermissionIndex returns an index of the given permission.
 //
-// It can be passed to QueryAuthorized. Returns (0, false) if there's no such
+// It can be passed to Bindings(...). Returns (0, false) if there's no such
 // permission in the Realms DB.
 func (r *Realms) PermissionIndex(perm realms.Permission) (idx PermissionIndex, ok bool) {
 	idx, ok = r.perms[perm.Name()]
@@ -78,23 +98,31 @@ func (r *Realms) Data(realm string) *protocol.RealmData {
 	return r.data[realm]
 }
 
-// QueryAuthorized returns a representation of principals that have the
-// requested permission in the given realm.
+// Bindings returns representation of bindings that define who has the requested
+// permission in the given realm.
 //
-// The permission should be given as its index obtained via PermissionIndex.
+// Each returned binding is a tuple (condition, groups, identities):
+//   * Condition: a predicate over realms.Attrs map that evaluates to true if
+//     this binding is "active". Inactive bindings should be skipped.
+//   * Groups: a set of groups with principals that have the permission,
+//     represented by a sorted slice of group indexes in a graph.QueryableGraph
+//     which was passed to Build().
+//   * Identities: a set of identity strings that were specified in the realm
+//     ACL directly (not via a group).
+//
+// The permission should be specified as its index obtained via PermissionIndex.
 //
 // The realm name is not validated. Unknown or invalid realms are silently
 // treated as empty. No fallback to @root happens.
 //
-// Returns a set of groups with principals that have the permission and a set
-// of identity strings that were specified in the realm ACL directly (not via
-// a group). nils are used in place of empty sets.
-//
-// The set of groups is represented by a sorted slice of group indexes in a
-// graph.QueryableGraph which was passed to Build().
-func (r *Realms) QueryAuthorized(realm string, perm PermissionIndex) (graph.SortedNodeSet, stringset.Set) {
-	out := r.realms[realmAndPerm{realm, perm}]
-	return out.groups, out.idents
+// Returns nil if the requested permission is not mentioned in any binding in
+// the realm at all.
+func (r *Realms) Bindings(realm string, perm PermissionIndex) []Binding {
+	if out, ok := r.realms[realmAndPerm{realm, perm}]; ok {
+		return []Binding{{nil, out.groups, out.idents}}
+	} else {
+		return nil
+	}
 }
 
 // Build constructs Realms from the proto message and the group graph.
@@ -142,6 +170,9 @@ func Build(r *protocol.Realms, qg *graph.QueryableGraph) (*Realms, error) {
 		for _, binding := range realm.Bindings {
 			// Categorize 'principals' into groups and identity strings.
 			groups, idents := categorizePrincipals(binding.Principals, qg, interner)
+			if len(groups) == 0 && len(idents) == 0 {
+				continue
+			}
 
 			// Add them into the corresponding principal sets in realmsToBe.
 			for _, permIdx := range binding.Permissions {
