@@ -18,6 +18,7 @@
 package realmset
 
 import (
+	"sort"
 	"strings"
 
 	"go.chromium.org/luci/common/data/stringset"
@@ -36,10 +37,10 @@ const ExpectedAPIVersion = 1
 
 // Realms is a queryable representation of realms.Realms proto.
 type Realms struct {
-	perms  map[string]PermissionIndex       // permission name -> its index
-	names  stringset.Set                    // just names of all defined realms
-	realms map[realmAndPerm]groupsAndIdents // <realm, perm> -> who has it
-	data   map[string]*protocol.RealmData   // per-realm attached RealmData
+	perms  map[string]PermissionIndex     // permission name -> its index
+	names  stringset.Set                  // just names of all defined realms
+	realms map[realmAndPerm][]Binding     // <realm, perm> -> who has it under which conditions
+	data   map[string]*protocol.RealmData // per-realm attached RealmData
 }
 
 // PermissionIndex is used in place of permission names.
@@ -67,16 +68,25 @@ type Binding struct {
 	Idents    stringset.Set
 }
 
+// badness is an overall heuristic score of how complex this binding to
+// evaluate and how likely it will apply.
+//
+// 0 means "easy to evaluate, high likelihood of applying". Used to sort
+// bindings in []Binding array returned by Bindings(...).
+func (b *Binding) badness() int {
+	// TODO(vadimsh): This can be improved. For example, bindings with groups
+	// that contain globs (like `user:*`) are more likely to apply and should
+	// have lower badness.
+	if b.Condition == nil {
+		return 0
+	}
+	return 1
+}
+
 // realmAndPerm is used as a composite key in `realms` map.
 type realmAndPerm struct {
 	realm string
 	perm  PermissionIndex
-}
-
-// groupsAndIdents is used as a value in `realms` map.
-type groupsAndIdents struct {
-	groups graph.SortedNodeSet
-	idents stringset.Set
 }
 
 // PermissionIndex returns an index of the given permission.
@@ -118,11 +128,7 @@ func (r *Realms) Data(realm string) *protocol.RealmData {
 // Returns nil if the requested permission is not mentioned in any binding in
 // the realm at all.
 func (r *Realms) Bindings(realm string, perm PermissionIndex) []Binding {
-	if out, ok := r.realms[realmAndPerm{realm, perm}]; ok {
-		return []Binding{{nil, out.groups, out.idents}}
-	} else {
-		return nil
-	}
+	return r.realms[realmAndPerm{realm, perm}]
 }
 
 // Build constructs Realms from the proto message and the group graph.
@@ -157,10 +163,13 @@ func Build(r *protocol.Realms, qg *graph.QueryableGraph) (*Realms, error) {
 	}
 
 	// This is the `realms` map under construction. We'll shrink its memory
-	// footprint at the end. Just like `realms` it uses a composite key
-	// realmAndPerm as a more memory-efficient alternative to a map of maps
-	// (realm -> perm -> principals).
-	realmsToBe := map[realmAndPerm]principalSet{}
+	// footprint at the end.
+	type bindingKey struct {
+		realmAndPerm
+		cond *Condition
+	}
+	realmsToBe := map[bindingKey]principalSet{}
+	counts := map[realmAndPerm]int{}
 
 	// interner is used to deduplicate memory used to store identity names.
 	interner := stringInterner{}
@@ -174,23 +183,50 @@ func Build(r *protocol.Realms, qg *graph.QueryableGraph) (*Realms, error) {
 				continue
 			}
 
+			// Build a condition predicate. `nil` means "no condition".
+			//
+			// TODO.
+			var cond *Condition
+
 			// Add them into the corresponding principal sets in realmsToBe.
 			for _, permIdx := range binding.Permissions {
-				key := realmAndPerm{realm.Name, PermissionIndex(permIdx)}
+				key := bindingKey{realmAndPerm{realm.Name, PermissionIndex(permIdx)}, cond}
 				if ps, ok := realmsToBe[key]; ok {
 					ps.add(groups, idents)
 				} else {
 					realmsToBe[key] = newPrincipalSet(groups, idents)
+					counts[key.realmAndPerm] += 1
 				}
 			}
 		}
 	}
 
 	// Replace identically looking group sets with references to a single copy.
-	realms := make(map[realmAndPerm]groupsAndIdents, len(realmsToBe))
+	// Collect conditional bindings for the same (realm, perm) key into an array,
+	// since we'll need to evaluate them sequentially when serving HasPermission
+	// checks.
+	realms := make(map[realmAndPerm][]Binding, len(counts))
 	dedupper := graph.NodeSetDedupper{}
 	for key, ps := range realmsToBe {
-		realms[key] = ps.finalize(dedupper)
+		groups, idents := ps.finalize(dedupper)
+		if realms[key.realmAndPerm] == nil {
+			realms[key.realmAndPerm] = make([]Binding, 0, counts[key.realmAndPerm])
+		}
+		realms[key.realmAndPerm] = append(realms[key.realmAndPerm], Binding{
+			Condition: key.cond,
+			Groups:    groups,
+			Idents:    idents,
+		})
+	}
+
+	// Order bindings by "badness" of checking (easiest to check first) and
+	// chances of applying. Right now this uses a very simplistic heuristic:
+	// unconditional bindings are easier to check and more likely to apply than
+	// conditional ones.
+	for _, bindings := range realms {
+		sort.Slice(bindings, func(i, j int) bool {
+			return bindings[i].badness() < bindings[j].badness()
+		})
 	}
 
 	// Extract attached per-realm data into a queryable map.
@@ -280,7 +316,7 @@ func (ps principalSet) add(groups []graph.NodeIndex, idents []string) {
 // Non-empty identity sets are kept as is without any dedupping, assuming using
 // identities in Realm ACLs directly is rare and not worth optimizing for (on
 // top of the string interning optimization we've already done).
-func (ps principalSet) finalize(dedupper graph.NodeSetDedupper) groupsAndIdents {
+func (ps principalSet) finalize(dedupper graph.NodeSetDedupper) (graph.SortedNodeSet, stringset.Set) {
 	var groups graph.SortedNodeSet
 	if len(ps.groups) > 0 {
 		groups = dedupper.Dedup(ps.groups)
@@ -289,5 +325,5 @@ func (ps principalSet) finalize(dedupper graph.NodeSetDedupper) groupsAndIdents 
 	if ps.idents.Len() > 0 {
 		idents = ps.idents
 	}
-	return groupsAndIdents{groups, idents}
+	return groups, idents
 }
