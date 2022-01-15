@@ -132,10 +132,6 @@ func Build(r *protocol.Realms, qg *graph.QueryableGraph) (*Realms, error) {
 	// footprint at the end. Just like `realms` it uses a composite key
 	// realmAndPerm as a more memory-efficient alternative to a map of maps
 	// (realm -> perm -> principals).
-	type principalSet struct {
-		groups graph.NodeSet
-		idents stringset.Set
-	}
 	realmsToBe := map[realmAndPerm]principalSet{}
 
 	// interner is used to deduplicate memory used to store identity names.
@@ -150,43 +146,20 @@ func Build(r *protocol.Realms, qg *graph.QueryableGraph) (*Realms, error) {
 			// Add them into the corresponding principal sets in realmsToBe.
 			for _, permIdx := range binding.Permissions {
 				key := realmAndPerm{realm.Name, PermissionIndex(permIdx)}
-
-				ps, ok := realmsToBe[key]
-				if !ok {
-					ps = principalSet{
-						groups: make(graph.NodeSet, len(groups)),
-						idents: stringset.New(len(idents)),
-					}
-					realmsToBe[key] = ps
-				}
-
-				for _, idx := range groups {
-					ps.groups.Add(idx)
-				}
-				for _, ident := range idents {
-					ps.idents.Add(ident)
+				if ps, ok := realmsToBe[key]; ok {
+					ps.add(groups, idents)
+				} else {
+					realmsToBe[key] = newPrincipalSet(groups, idents)
 				}
 			}
 		}
 	}
 
 	// Replace identically looking group sets with references to a single copy.
-	// Also throw away zero-length sets, just a waste of memory. Finally, for
-	// identity sets we just keep using stringset.Set we've built as is, assuming
-	// using identities in Realm ACLs directly is rare and not worth optimizing
-	// for (on top of the string interning optimization we've already done).
 	realms := make(map[realmAndPerm]groupsAndIdents, len(realmsToBe))
 	dedupper := graph.NodeSetDedupper{}
-	for key, sets := range realmsToBe {
-		var groups graph.SortedNodeSet
-		if len(sets.groups) > 0 {
-			groups = dedupper.Dedup(sets.groups)
-		}
-		var idents stringset.Set
-		if sets.idents.Len() > 0 {
-			idents = sets.idents
-		}
-		realms[key] = groupsAndIdents{groups: groups, idents: idents}
+	for key, ps := range realmsToBe {
+		realms[key] = ps.finalize(dedupper)
 	}
 
 	// Extract attached per-realm data into a queryable map.
@@ -238,4 +211,52 @@ func categorizePrincipals(p []string, qg *graph.QueryableGraph, interner stringI
 		}
 	}
 	return
+}
+
+// principalSet represents a set of groups and identities.
+//
+// It is used transiently when constructing the final memory-optimized set in
+// Build.
+type principalSet struct {
+	groups graph.NodeSet
+	idents stringset.Set
+}
+
+func newPrincipalSet(groups []graph.NodeIndex, idents []string) principalSet {
+	ps := principalSet{
+		groups: make(graph.NodeSet, len(groups)),
+		idents: stringset.New(len(idents)),
+	}
+	ps.add(groups, idents)
+	return ps
+}
+
+func (ps principalSet) add(groups []graph.NodeIndex, idents []string) {
+	for _, idx := range groups {
+		ps.groups.Add(idx)
+	}
+	for _, ident := range idents {
+		ps.idents.Add(ident)
+	}
+}
+
+// finalize produces a memory-optimized representation of this principal set.
+//
+// It replace identically looking group sets with references to a single copy
+// using the given dedupper. It also throws away zero-length sets replacing them
+// with nils.
+//
+// Non-empty identity sets are kept as is without any dedupping, assuming using
+// identities in Realm ACLs directly is rare and not worth optimizing for (on
+// top of the string interning optimization we've already done).
+func (ps principalSet) finalize(dedupper graph.NodeSetDedupper) groupsAndIdents {
+	var groups graph.SortedNodeSet
+	if len(ps.groups) > 0 {
+		groups = dedupper.Dedup(ps.groups)
+	}
+	var idents stringset.Set
+	if ps.idents.Len() > 0 {
+		idents = ps.idents
+	}
+	return groupsAndIdents{groups, idents}
 }
