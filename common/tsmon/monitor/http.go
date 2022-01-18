@@ -61,7 +61,7 @@ func (m *httpMonitor) Send(ctx context.Context, cells []types.Cell) (err error) 
 		if err == nil {
 			logging.Debugf(ctx, "tsmon: sent %d cells in %s", len(cells), clock.Now(ctx).Sub(startTime))
 		} else {
-			logging.Errorf(ctx, "tsmon: failed to send some of %d cells - %s", len(cells), err)
+			logging.Warningf(ctx, "tsmon: failed to send %d cells - %s", len(cells), err)
 		}
 	}()
 
@@ -98,9 +98,9 @@ func (m *httpMonitor) Send(ctx context.Context, cells []types.Cell) (err error) 
 		if resp != nil {
 			body, err := ioutil.ReadAll(resp.Body)
 			if err != nil {
-				logging.WithError(err).Errorf(ctx, "Failed to read error response body")
+				logging.WithError(err).Warningf(ctx, "Failed to read error response body")
 			} else {
-				logging.Errorf(
+				logging.Warningf(
 					ctx, "Monitoring push failed.\nResponse body: %s\nRequest body: %s",
 					body, encoded.Bytes())
 			}

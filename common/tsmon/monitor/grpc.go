@@ -63,7 +63,7 @@ func (m *grpcMonitor) Send(ctx context.Context, cells []types.Cell) error {
 		},
 	})
 	if err != nil {
-		logging.Errorf(ctx, "tsmon: failed to send some of %d cells - %s", len(cells), err)
+		logging.Warningf(ctx, "tsmon: failed to send %d cells - %s", len(cells), err)
 		return err
 	}
 	logging.Debugf(ctx, "tsmon: sent %d cells in %s", len(cells), clock.Now(ctx).Sub(startTime))
