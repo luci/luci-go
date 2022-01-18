@@ -57,7 +57,7 @@ type State struct {
 	// implement the service. Each individual process in the collection is
 	// additionally identified by a task number, later (optionally) dynamically
 	// assigned via TaskNumAllocator based on unique InstanceID.
-	Target func(c context.Context) target.Task
+	Target func(ctx context.Context) target.Task
 
 	// InstanceID returns a unique (within the scope of the service) identifier of
 	// this particular process.
@@ -66,7 +66,7 @@ type State struct {
 	//
 	// If nil, instance ID will be set to "". Useful when TaskNumAllocator is nil
 	// too (then instance ID is not important).
-	InstanceID func(c context.Context) string
+	InstanceID func(ctx context.Context) string
 
 	// TaskNumAllocator knows how to dynamically map instance ID to a task number.
 	//
@@ -124,8 +124,8 @@ const (
 // Activate updates the tsmon state in the context to use this config.
 //
 // Not needed if metrics are updated only from inside the middleware.
-func (s *State) Activate(c context.Context) {
-	s.checkSettings(c)
+func (s *State) Activate(ctx context.Context) {
+	s.checkSettings(ctx)
 }
 
 // Middleware is a middleware that collects request metrics and triggers metric
@@ -160,20 +160,20 @@ func (s *State) Middleware(c *router.Context, next router.Handler) {
 // FlushPeriodically runs a loop that periodically flushes metrics.
 //
 // Blocks until the context is canceled. Handles (and logs) errors internally.
-func (s *State) FlushPeriodically(c context.Context) {
+func (s *State) FlushPeriodically(ctx context.Context) {
 	for {
 		var nextFlush time.Time
-		state, settings := s.checkSettings(c)
+		state, settings := s.checkSettings(ctx)
 		if settings.Enabled {
-			nextFlush = s.flushIfNeededImpl(c, state, settings)
+			nextFlush = s.flushIfNeededImpl(ctx, state, settings)
 		}
 		// Don't sleep less than 1 sec to avoid busy looping. It is always OK to
 		// flush a sec later. In most cases we'll be sleeping ~= FlushIntervalSec.
 		sleep := time.Second
-		if dt := nextFlush.Sub(clock.Now(c)); dt > sleep {
+		if dt := nextFlush.Sub(clock.Now(ctx)); dt > sleep {
 			sleep = dt
 		}
-		if r := <-clock.After(c, sleep); r.Err != nil {
+		if r := <-clock.After(ctx, sleep); r.Err != nil {
 			return // the context is canceled
 		}
 	}
@@ -184,14 +184,14 @@ func (s *State) FlushPeriodically(c context.Context) {
 //
 // Returns current tsmon state and settings. Panics if the context is using
 // unexpected tsmon state.
-func (s *State) checkSettings(c context.Context) (*tsmon.State, *Settings) {
-	state := tsmon.GetState(c)
+func (s *State) checkSettings(ctx context.Context) (*tsmon.State, *Settings) {
+	state := tsmon.GetState(ctx)
 
 	var settings Settings
 	if s.Settings != nil {
 		settings = *s.Settings
 	} else {
-		settings = fetchCachedSettings(c)
+		settings = fetchCachedSettings(ctx)
 	}
 
 	// Read the values used when handling previous request. In most cases they
@@ -215,7 +215,7 @@ func (s *State) checkSettings(c context.Context) (*tsmon.State, *Settings) {
 		s.state.SetMonitor(monitor.NewNilMonitor()) // doFlush uses its own monitor
 		s.state.InhibitGlobalCallbacksOnFlush()
 		if s.InstanceID != nil {
-			s.instanceID = s.InstanceID(c)
+			s.instanceID = s.InstanceID(ctx)
 		}
 	} else if state != s.state {
 		panic("tsmon state in the context was unexpectedly changed between requests")
@@ -223,20 +223,20 @@ func (s *State) checkSettings(c context.Context) (*tsmon.State, *Settings) {
 
 	switch {
 	case !bool(s.lastSettings.Enabled) && bool(settings.Enabled):
-		s.enableTsMon(c)
+		s.enableTSMon(ctx)
 	case bool(s.lastSettings.Enabled) && !bool(settings.Enabled):
-		s.disableTsMon(c)
+		s.disableTSMon(ctx)
 	}
 	s.lastSettings = settings
 
 	return state, &settings
 }
 
-// enableTsMon puts in-memory metrics store in the context's tsmon state.
+// enableTSMon puts in-memory metrics store in the context's tsmon state.
 //
 // Called with 's.lock' locked.
-func (s *State) enableTsMon(c context.Context) {
-	t := s.Target(c)
+func (s *State) enableTSMon(ctx context.Context) {
+	t := s.Target(ctx)
 	t.TaskNum = -1 // will be assigned later via TaskNumAllocator
 
 	s.state.SetStore(store.NewInMemory(&t))
@@ -244,16 +244,16 @@ func (s *State) enableTsMon(c context.Context) {
 	// Request the flush to be executed ASAP, so it registers a claim for a task
 	// number via NotifyTaskIsAlive. Also reset 'lastFlush', so that we don't get
 	// invalid logging that the last flush was long time ago.
-	s.nextFlush = clock.Now(c)
+	s.nextFlush = clock.Now(ctx)
 	s.lastFlush = s.nextFlush
 	// Set initial value for retry delay.
 	s.flushRetry = flushInitialRetry
 }
 
-// disableTsMon puts nil metrics store in the context's tsmon state.
+// disableTSMon puts nil metrics store in the context's tsmon state.
 //
 // Called with 's.lock' locked.
-func (s *State) disableTsMon(c context.Context) {
+func (s *State) disableTSMon(ctx context.Context) {
 	s.state.SetStore(store.NewNilStore())
 }
 
@@ -267,13 +267,13 @@ func (s *State) disableTsMon(c context.Context) {
 // TODO(vadimsh): Refactor flushIfNeededImpl + FlushPeriodically to be less
 // awkward. Historically, flushIfNeededImpl was used only from Middleware and
 // FlushPeriodically was slapped on top later.
-func (s *State) flushIfNeededImpl(c context.Context, state *tsmon.State, settings *Settings) (nextFlush time.Time) {
+func (s *State) flushIfNeededImpl(ctx context.Context, state *tsmon.State, settings *Settings) (nextFlush time.Time) {
 	// Used to compare 'nextFlush' to 'now'. Needed to make sure we really do
 	// the flush after sleeping in FlushPeriodically even if we happened to wake
 	// up a few nanoseconds earlier.
 	const epsilonT = 100 * time.Millisecond
 
-	now := clock.Now(c)
+	now := clock.Now(ctx)
 
 	// Most of the time the flush is not needed and we can get away with
 	// lightweight RLock.
@@ -304,13 +304,13 @@ func (s *State) flushIfNeededImpl(c context.Context, state *tsmon.State, setting
 	if timeout == 0 {
 		timeout = defaultSettings.FlushTimeoutSec
 	}
-	c, cancel := clock.WithTimeout(c, time.Duration(timeout)*time.Second)
+	ctx, cancel := clock.WithTimeout(ctx, time.Duration(timeout)*time.Second)
 	defer cancel()
 
 	// Report per-process statistic.
-	versions.Report(c)
+	versions.Report(ctx)
 	if settings.ReportRuntimeStats {
-		runtimestats.Report(c)
+		runtimestats.Report(ctx)
 	}
 
 	// Unset 'flushingNow' no matter what (even on panics).
@@ -338,17 +338,17 @@ func (s *State) flushIfNeededImpl(c context.Context, state *tsmon.State, setting
 		nextFlush = s.nextFlush
 	}()
 
-	err = s.ensureTaskNumAndFlush(c, state, settings)
+	err = s.ensureTaskNumAndFlush(ctx, state, settings)
 	if err != nil {
 		if err == ErrNoTaskNumber {
-			logging.Warningf(c, "Skipping the tsmon flush: no task number assigned yet")
+			logging.Warningf(ctx, "Skipping the tsmon flush: no task number assigned yet")
 		} else {
-			logging.WithError(err).Errorf(c, "Failed to flush tsmon metrics (tried to act as %q)", settings.ProdXAccount)
+			logging.WithError(err).Errorf(ctx, "Failed to flush tsmon metrics (tried to act as %q)", settings.ProdXAccount)
 		}
 		if sinceLastFlush := now.Sub(lastFlush); sinceLastFlush > noFlushErrorThreshold {
-			logging.Errorf(c, "No successful tsmon flush for %s", sinceLastFlush)
+			logging.Errorf(ctx, "No successful tsmon flush for %s", sinceLastFlush)
 			if s.TaskNumAllocator != nil {
-				logging.Errorf(c, "Is /internal/cron/ts_mon/housekeeping running?")
+				logging.Errorf(ctx, "Is /internal/cron/ts_mon/housekeeping running?")
 			}
 		}
 	}
@@ -361,18 +361,18 @@ func (s *State) flushIfNeededImpl(c context.Context, state *tsmon.State, setting
 // the metrics.
 //
 // Returns ErrNoTaskNumber if the task wasn't assigned a task number yet.
-func (s *State) ensureTaskNumAndFlush(c context.Context, state *tsmon.State, settings *Settings) error {
+func (s *State) ensureTaskNumAndFlush(ctx context.Context, state *tsmon.State, settings *Settings) error {
 	task := *state.Store().DefaultTarget().(*target.Task)
 	if s.TaskNumAllocator != nil {
 		// Notify the task number allocator that we are still alive and grab
 		// the TaskNum assigned to us.
-		switch num, err := s.TaskNumAllocator.NotifyTaskIsAlive(c, &task, s.instanceID); {
+		switch num, err := s.TaskNumAllocator.NotifyTaskIsAlive(ctx, &task, s.instanceID); {
 		case err == nil:
 			task.TaskNum = int32(num)
 		case err == ErrNoTaskNumber:
 			if task.TaskNum >= 0 {
-				logging.Warningf(c, "The task was inactive for too long and lost its task number, clearing cumulative metrics")
-				state.ResetCumulativeMetrics(c)
+				logging.Warningf(ctx, "The task was inactive for too long and lost its task number, clearing cumulative metrics")
+				state.ResetCumulativeMetrics(ctx)
 
 				// set the task num to -1 to stop resetting cumulative metrics,
 				// in case ErrNoTaskNumber is repeated.
@@ -387,11 +387,11 @@ func (s *State) ensureTaskNumAndFlush(c context.Context, state *tsmon.State, set
 		task.TaskNum = 0
 	}
 	state.Store().SetDefaultTarget(&task)
-	return s.doFlush(c, state, settings)
+	return s.doFlush(ctx, state, settings)
 }
 
 // doFlush actually sends the metrics to the monitor.
-func (s *State) doFlush(c context.Context, state *tsmon.State, settings *Settings) error {
+func (s *State) doFlush(ctx context.Context, state *tsmon.State, settings *Settings) error {
 	var mon monitor.Monitor
 	var err error
 
@@ -401,7 +401,7 @@ func (s *State) doFlush(c context.Context, state *tsmon.State, settings *Setting
 		mon = monitor.NewDebugMonitor("")
 	} else {
 		transport, err := auth.GetRPCTransport(
-			c,
+			ctx,
 			auth.AsActor,
 			auth.WithServiceAccount(settings.ProdXAccount),
 			auth.WithScopes(monitor.ProdxmonScopes...))
@@ -412,14 +412,14 @@ func (s *State) doFlush(c context.Context, state *tsmon.State, settings *Setting
 		if err != nil {
 			return err
 		}
-		mon, err = monitor.NewHTTPMonitor(c, &http.Client{Transport: transport}, endpoint)
+		mon, err = monitor.NewHTTPMonitor(ctx, &http.Client{Transport: transport}, endpoint)
 		if err != nil {
 			return err
 		}
 	}
 
 	defer mon.Close()
-	if err = state.Flush(c, mon); err != nil {
+	if err = state.Flush(ctx, mon); err != nil {
 		return err
 	}
 
