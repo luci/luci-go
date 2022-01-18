@@ -61,6 +61,8 @@ import (
 	rpcv0 "go.chromium.org/luci/cv/internal/rpc/v0"
 	"go.chromium.org/luci/cv/internal/run"
 	runimpl "go.chromium.org/luci/cv/internal/run/impl"
+	"go.chromium.org/luci/cv/internal/tryjob"
+	"go.chromium.org/luci/cv/internal/tryjob/buildbucket"
 	"go.chromium.org/luci/cv/internal/userhtml"
 )
 
@@ -106,6 +108,8 @@ func main() {
 		clMutator := changelist.NewMutator(&tq.Default, pmNotifier, runNotifier)
 		clUpdater := changelist.NewUpdater(&tq.Default, clMutator)
 		gerritupdater.RegisterUpdater(clUpdater, gFactory)
+		tryjobUpdater := tryjob.NewUpdater(&tq.Default, runNotifier)
+		tryjobUpdater.RegisterBackend(&buildbucket.Updater{})
 		_ = pmimpl.New(pmNotifier, runNotifier, clMutator, gFactory, clUpdater)
 		tc, err := tree.NewClient(srv.Context)
 		if err != nil {
@@ -148,6 +152,13 @@ func main() {
 		aggregator := aggrmetrics.New(srv.Context, &tq.Default)
 		cron.RegisterHandler("aggregate-metrics", func(ctx context.Context) error {
 			return aggregator.Cron(ctx)
+		})
+		buildbucketListener, err := buildbucket.NewListener(tryjobUpdater, srv.Options.CloudProject, buildbucket.SubscriptionID)
+		if err != nil {
+			return err
+		}
+		cron.RegisterHandler("update-buildbucket-tryjobs", func(ctx context.Context) error {
+			return buildbucketListener.Process(ctx)
 		})
 
 		// The service has no general-use UI, so just redirect to the RPC Explorer.

@@ -36,6 +36,10 @@ import (
 	"go.chromium.org/luci/cv/internal/tryjob"
 )
 
+// SubscriptionID is the default subscription id for listening to buildbucket
+// build updates.
+const SubscriptionID = "buildbucket-builds"
+
 // Updater implements updaterBackend interface.
 //
 // It knows how to get a tryjob from buildbucket and interpret its build
