@@ -40,15 +40,15 @@ type CheckResult struct {
 	OK bool
 }
 
-type runCreateACLFailures struct {
+type runCreateFailures struct {
 	neitherCommitterNorOwner []*run.RunCL
 }
 
-func (fs *runCreateACLFailures) length() int {
+func (fs *runCreateFailures) length() int {
 	return len(fs.neitherCommitterNorOwner)
 }
 
-func (fs *runCreateACLFailures) summary() string {
+func (fs *runCreateFailures) summary() string {
 	if fs.length() == 0 {
 		return ""
 	}
@@ -64,10 +64,10 @@ func (fs *runCreateACLFailures) summary() string {
 	return sb.String()
 }
 
-// CheckRunCreateACL verifies that the user(s) who triggered Run are authorized
+// CheckRunCreate verifies that the user(s) who triggered Run are authorized
 // to create the Run for the CLs.
-func CheckRunCreateACL(ctx context.Context, cg *prjcfg.ConfigGroup, cls []*run.RunCL) (*CheckResult, error) {
-	failures := &runCreateACLFailures{}
+func CheckRunCreate(ctx context.Context, cg *prjcfg.ConfigGroup, cls []*run.RunCL) (*CheckResult, error) {
+	failures := &runCreateFailures{}
 	for _, cl := range cls {
 		triggerer, err := identity.MakeIdentity("user:" + cl.Trigger.Email)
 		if err != nil {

@@ -25,12 +25,11 @@ import (
 	"go.chromium.org/luci/cv/internal/run"
 )
 
-// CheckRunAccess checks if the calling user has access to the Run.
+// CheckRunRead verifies that the calling user has read access to the Run.
 //
-// Returns true if user has access, false otherwise.
-func CheckRunAccess(ctx context.Context, r *run.Run) (bool, error) {
+// Returns true if user has. False, otherwise.
+func CheckRunRead(ctx context.Context, r *run.Run) (bool, error) {
 	// TODO(https://crbug.com/1233963): design & implement & test.
-
 	switch yes, err := checkLegacyCQStatusAccess(ctx, r.ID.LUCIProject()); {
 	case err != nil:
 		return false, err
@@ -42,15 +41,15 @@ func CheckRunAccess(ctx context.Context, r *run.Run) (bool, error) {
 	return false, nil
 }
 
-// NewRunReadChecker returns an object to check read premission when loading
-// Runs.
+// NewRunReadChecker returns a ProjectAwareChecker that checks read access
+// for the Run to be loaded.
 //
-// If current identity lacks read permission, ensures an appopriate appstatus
+// If current identity lacks read access, ensures an appopriate appstatus
 // package error is returned.
 //
 // Example:
 //   r, err := run.LoadRuns(ctx, id, acls.NewRunReadChecker())
-func NewRunReadChecker() runReadChecker { return runReadChecker{} }
+func NewRunReadChecker() run.ProjectAwareChecker { return runReadChecker{} }
 
 // runNotFoundMsg is used as textual reason for gRPC NotFound code.
 //
@@ -72,7 +71,7 @@ func (c runReadChecker) After(ctx context.Context, r *run.Run) error {
 	if r == nil {
 		return appstatus.Error(codes.NotFound, runNotFoundMsg)
 	}
-	switch yes, err := CheckRunAccess(ctx, r); {
+	switch yes, err := CheckRunRead(ctx, r); {
 	case err != nil:
 		return err
 	case yes:

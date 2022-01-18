@@ -43,7 +43,7 @@ func TestCheckRunCLs(t *testing.T) {
 		gerritHost = "chromium-review.googlesource.com"
 	)
 
-	Convey("CheckRunCreateACL", t, func() {
+	Convey("CheckRunCreate", t, func() {
 		ct := cvtesting.Test{}
 		ctx, cancel := ct.SetUp()
 		defer cancel()
@@ -89,12 +89,12 @@ func TestCheckRunCLs(t *testing.T) {
 			authState.FakeDB = authtest.NewFakeDB(authtest.MockMembership(id, "grp1"))
 		}
 		mustOK := func() {
-			res, err := CheckRunCreateACL(ctx, &cg, rCLs)
+			res, err := CheckRunCreate(ctx, &cg, rCLs)
 			So(err, ShouldBeNil)
 			So(res.OK, ShouldBeTrue)
 		}
 		mustFail := func(format string, args ...interface{}) {
-			res, err := CheckRunCreateACL(ctx, &cg, rCLs)
+			res, err := CheckRunCreate(ctx, &cg, rCLs)
 			So(err, ShouldBeNil)
 			So(res.OK, ShouldBeFalse)
 

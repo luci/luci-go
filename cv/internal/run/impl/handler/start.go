@@ -86,9 +86,9 @@ func (impl *Impl) Start(ctx context.Context, rs *state.RunState) (*Result, error
 		return nil, err
 	}
 
-	switch result, err := acls.CheckRunCreateACL(ctx, cg, runCLs); {
+	switch result, err := acls.CheckRunCreate(ctx, cg, runCLs); {
 	case err != nil:
-		return nil, errors.Annotate(err, "CheckRunCreateACL").Err()
+		return nil, errors.Annotate(err, "CheckRunCreate").Err()
 	case !result.OK:
 		// Let the Run move forwards.
 		// CQD should reject the Run via the migration steps.
