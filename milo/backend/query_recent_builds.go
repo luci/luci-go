@@ -16,7 +16,6 @@ package backend
 
 import (
 	"context"
-	"strconv"
 
 	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/buildbucket/access"
@@ -97,11 +96,11 @@ func (s *MiloInternalService) QueryRecentBuilds(ctx context.Context, req *milopb
 		}
 
 		var buildID int64 = 0
-		_, buildNum, err := common.ParseLegacyBuildID(b.BuildID)
+		_, buildNum, err := common.ParseLegacyBuildbucketBuildID(b.BuildID)
 		if err != nil {
 			// If the BuildID is not the legacy build ID, trying parsing it as
 			// the new build ID.
-			buildID, err = strconv.ParseInt(b.BuildID, 10, 64)
+			buildID, err = common.ParseBuildbucketBuildID(b.BuildID)
 			if err != nil {
 				return err
 			}

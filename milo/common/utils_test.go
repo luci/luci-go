@@ -136,9 +136,23 @@ func TestTagGRPC(t *testing.T) {
 		})
 	})
 
-	Convey("ParseLegacyBuildID", t, func() {
+	Convey("ParseBuildbucketBuildID", t, func() {
 		Convey("For valid build ID", func() {
-			builderID, buildNum, err := ParseLegacyBuildID("buildbucket/luci.test project.test bucket/test builder/123456")
+			bid, err := ParseBuildbucketBuildID("buildbucket/123456")
+			So(err, ShouldBeNil)
+			So(bid, ShouldEqual, 123456)
+		})
+
+		Convey("For invalid build ID", func() {
+			bid, err := ParseBuildbucketBuildID("notbuildbucket/123456")
+			So(err, ShouldEqual, ErrInvalidLegacyBuildID)
+			So(bid, ShouldEqual, 0)
+		})
+	})
+
+	Convey("ParseLegacyBuildbucketBuildID", t, func() {
+		Convey("For valid build ID", func() {
+			builderID, buildNum, err := ParseLegacyBuildbucketBuildID("buildbucket/luci.test project.test bucket/test builder/123456")
 			So(err, ShouldBeNil)
 			So(builderID, ShouldResemble, &buildbucketpb.BuilderID{
 				Project: "test project",
@@ -149,7 +163,7 @@ func TestTagGRPC(t *testing.T) {
 		})
 
 		Convey("Allow '.' in builder ID", func() {
-			builderID, buildNum, err := ParseLegacyBuildID("buildbucket/luci.test project.test bucket/test.builder/123456")
+			builderID, buildNum, err := ParseLegacyBuildbucketBuildID("buildbucket/luci.test project.test bucket/test.builder/123456")
 			So(err, ShouldBeNil)
 			So(builderID, ShouldResemble, &buildbucketpb.BuilderID{
 				Project: "test project",
@@ -160,7 +174,7 @@ func TestTagGRPC(t *testing.T) {
 		})
 
 		Convey("Allow '.' in bucket ID", func() {
-			builderID, buildNum, err := ParseLegacyBuildID("buildbucket/luci.test project.test.bucket/test builder/123456")
+			builderID, buildNum, err := ParseLegacyBuildbucketBuildID("buildbucket/luci.test project.test.bucket/test builder/123456")
 			So(err, ShouldBeNil)
 			So(builderID, ShouldResemble, &buildbucketpb.BuilderID{
 				Project: "test project",
@@ -171,7 +185,7 @@ func TestTagGRPC(t *testing.T) {
 		})
 
 		Convey("For invalid build ID", func() {
-			builderID, buildNum, err := ParseLegacyBuildID("buildbucket/123456")
+			builderID, buildNum, err := ParseLegacyBuildbucketBuildID("buildbucket/123456")
 			So(err, ShouldEqual, ErrInvalidLegacyBuildID)
 			So(builderID, ShouldBeNil)
 			So(buildNum, ShouldEqual, 0)

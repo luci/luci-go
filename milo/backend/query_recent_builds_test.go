@@ -77,14 +77,17 @@ func TestQueryRecentBuilds(t *testing.T) {
 			Builder: "fake_builder2",
 		}
 
-		createFakeBuild := func(builder *buildbucketpb.BuilderID, buildNum int, createdAt time.Time, status milostatus.Status) *model.BuildSummary {
+		createFakeBuild := func(builder *buildbucketpb.BuilderID, buildNum int, buildID int64, createdAt time.Time, status milostatus.Status) *model.BuildSummary {
 			builderID := common.LegacyBuilderIDString(builder)
-			buildID := fmt.Sprintf("%s/%d", builderID, buildNum)
+			bsBuildID := fmt.Sprintf("%s/%d", builderID, buildNum)
+			if buildID != 0 {
+				bsBuildID = fmt.Sprintf("buildbucket/%d", buildID)
+			}
 			return &model.BuildSummary{
-				BuildKey:  datastore.MakeKey(ctx, "build", buildID),
+				BuildKey:  datastore.MakeKey(ctx, "buildbucket.Build", bsBuildID),
 				ProjectID: builder.Project,
 				BuilderID: builderID,
-				BuildID:   buildID,
+				BuildID:   bsBuildID,
 				Summary: model.Summary{
 					Status: status,
 				},
@@ -94,11 +97,11 @@ func TestQueryRecentBuilds(t *testing.T) {
 
 		baseTime := time.Date(2020, 0, 0, 0, 0, 0, 0, time.UTC)
 		builds := []*model.BuildSummary{
-			createFakeBuild(builder1, 1, baseTime.AddDate(0, 0, -5), milostatus.Running),
-			createFakeBuild(builder1, 2, baseTime.AddDate(0, 0, -4), milostatus.Success),
-			createFakeBuild(builder2, 1, baseTime.AddDate(0, 0, -3), milostatus.Success),
-			createFakeBuild(builder1, 3, baseTime.AddDate(0, 0, -2), milostatus.Failure),
-			createFakeBuild(builder1, 4, baseTime.AddDate(0, 0, -1), milostatus.InfraFailure),
+			createFakeBuild(builder1, 1, 0, baseTime.AddDate(0, 0, -5), milostatus.Running),
+			createFakeBuild(builder1, 2, 0, baseTime.AddDate(0, 0, -4), milostatus.Success),
+			createFakeBuild(builder2, 1, 0, baseTime.AddDate(0, 0, -3), milostatus.Success),
+			createFakeBuild(builder1, 0, 999, baseTime.AddDate(0, 0, -2), milostatus.Failure),
+			createFakeBuild(builder1, 0, 998, baseTime.AddDate(0, 0, -1), milostatus.InfraFailure),
 		}
 
 		err = datastore.Put(ctx, builds)
@@ -119,13 +122,13 @@ func TestQueryRecentBuilds(t *testing.T) {
 			So(res.Builds, ShouldResemble, []*buildbucketpb.Build{
 				{
 					Builder:    builder1,
-					Number:     4,
+					Id:         998,
 					Status:     buildbucketpb.Status_INFRA_FAILURE,
 					CreateTime: timestamppb.New(builds[4].Created),
 				},
 				{
 					Builder:    builder1,
-					Number:     3,
+					Id:         999,
 					Status:     buildbucketpb.Status_FAILURE,
 					CreateTime: timestamppb.New(builds[3].Created),
 				},
