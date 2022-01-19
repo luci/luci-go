@@ -16,7 +16,6 @@ package buildbucket
 
 import (
 	"context"
-	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"sync"
@@ -47,7 +46,7 @@ func TestGetBuildIDFromPubsubMessage(t *testing.T) {
 	Convey("no ID", t, func() {
 		buildJSON, err := json.Marshal(&v1.LegacyApiBuildResponseMessage{Build: &v1.LegacyApiCommonBuildMessage{}})
 		So(err, ShouldBeNil)
-		message := &pubsub.Message{Data: []byte(base64.StdEncoding.EncodeToString(buildJSON))}
+		message := &pubsub.Message{Data: buildJSON}
 		eid, err := getBuildIDFromPubsubMessage(context.Background(), message.Data)
 		So(err, ShouldErrLike, "missing build details")
 		So(eid, ShouldEqual, tryjob.ExternalID(""))
@@ -55,7 +54,7 @@ func TestGetBuildIDFromPubsubMessage(t *testing.T) {
 	Convey("no Build", t, func() {
 		buildJSON, err := json.Marshal(&v1.LegacyApiBuildResponseMessage{})
 		So(err, ShouldBeNil)
-		message := &pubsub.Message{Data: []byte(base64.StdEncoding.EncodeToString(buildJSON))}
+		message := &pubsub.Message{Data: buildJSON}
 		eid, err := getBuildIDFromPubsubMessage(context.Background(), message.Data)
 		So(err, ShouldErrLike, "missing build details")
 		So(eid, ShouldEqual, tryjob.ExternalID(""))
@@ -155,7 +154,7 @@ func TestProcessNotificationBatch(t *testing.T) {
 		Convey("Permanent failure", func() {
 			Convey("Unparseable", func() {
 				var n notification = &mockMessage{data: []byte("Unparseable hot garbage.'}]\"")}
-				So(processNotificationsBatch(ctx, updater, []notification{n}), ShouldErrLike, "while decoding pubsub message")
+				So(processNotificationsBatch(ctx, updater, []notification{n}), ShouldErrLike, "while unmarshalling build notification")
 				So(n.(*mockMessage).ackCount, ShouldEqual, 1)
 				So(n.(*mockMessage).nackCount, ShouldEqual, 0)
 				So(updater.callCount, ShouldEqual, 0)
@@ -185,7 +184,7 @@ func mockBuildNotification(eid tryjob.ExternalID) notification {
 	if err != nil {
 		panic(err)
 	}
-	return &mockMessage{data: []byte(base64.StdEncoding.EncodeToString(buildJSON))}
+	return &mockMessage{data: buildJSON}
 }
 
 type testUpdater struct {

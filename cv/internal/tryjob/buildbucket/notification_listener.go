@@ -16,7 +16,6 @@ package buildbucket
 
 import (
 	"context"
-	"encoding/base64"
 	"encoding/json"
 	"sync"
 
@@ -120,17 +119,13 @@ type buildMessage struct {
 }
 
 func getBuildIDFromPubsubMessage(ctx context.Context, data []byte) (tryjob.ExternalID, error) {
-	buildJSON, err := base64.StdEncoding.DecodeString(string(data))
-	if err != nil {
-		return "", errors.Annotate(err, "while decoding pubsub message").Err()
-	}
 	build := &buildMessage{}
-	if err := json.Unmarshal([]byte(buildJSON), build); err != nil {
+	if err := json.Unmarshal(data, build); err != nil {
 		return "", errors.Annotate(err, "while unmarshalling build notification").Err()
 	}
 
 	if build.Build == nil || build.Hostname == "" || build.Build.Id == 0 {
-		return "", errors.Reason("missing build details in pubsub message: %s", buildJSON).Err()
+		return "", errors.Reason("missing build details in pubsub message: %s", data).Err()
 	}
 	return tryjob.BuildbucketID(build.Hostname, build.Build.Id)
 }
