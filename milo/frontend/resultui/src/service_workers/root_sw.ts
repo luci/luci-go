@@ -44,3 +44,9 @@ _self.addEventListener('fetch', (event) => {
     return;
   }
 });
+
+// Ensures that the redirection logic takes effect immediately so users won't be
+// redirected to broken pages (e.g. when app is rolled back to a previous
+// version).
+_self.addEventListener('install', () => _self.skipWaiting());
+_self.addEventListener('activate', (e) => e.waitUntil(_self.clients.claim()));
