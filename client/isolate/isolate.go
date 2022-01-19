@@ -149,7 +149,7 @@ func processDependencies(deps []string, isolateDir string, opts *ArchiveOptions)
 		info, err := os.Stat(dep)
 		if err != nil {
 			if !opts.AllowMissingFileDir {
-				return nil, "", errors.Annotate(err, "faled to call Stat for %s", dep).Err()
+				return nil, "", errors.Annotate(err, "failed to call Stat for %s", dep).Err()
 			}
 			log.Printf("Ignore missing dep: %s, err: %v", dep, err)
 			continue
