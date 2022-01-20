@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// Package resultdb provides implementation for luci.resultdb.v1.ResultDB
+// service.
 package resultdb
 
 import (

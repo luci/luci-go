@@ -349,6 +349,26 @@ func (mr *MockResultDBClientMockRecorder) QueryTestVariants(ctx, in interface{},
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "QueryTestVariants", reflect.TypeOf((*MockResultDBClient)(nil).QueryTestVariants), varargs...)
 }
 
+// QueryUniqueTestVariants mocks base method.
+func (m *MockResultDBClient) QueryUniqueTestVariants(ctx context.Context, in *QueryUniqueTestVariantsRequest, opts ...grpc.CallOption) (*QueryUniqueTestVariantsResponse, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{ctx, in}
+	for _, a := range opts {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "QueryUniqueTestVariants", varargs...)
+	ret0, _ := ret[0].(*QueryUniqueTestVariantsResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// QueryUniqueTestVariants indicates an expected call of QueryUniqueTestVariants.
+func (mr *MockResultDBClientMockRecorder) QueryUniqueTestVariants(ctx, in interface{}, opts ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{ctx, in}, opts...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "QueryUniqueTestVariants", reflect.TypeOf((*MockResultDBClient)(nil).QueryUniqueTestVariants), varargs...)
+}
+
 // MockResultDBServer is a mock of ResultDBServer interface.
 type MockResultDBServer struct {
 	ctrl     *gomock.Controller
@@ -580,4 +600,19 @@ func (m *MockResultDBServer) QueryTestVariants(arg0 context.Context, arg1 *Query
 func (mr *MockResultDBServerMockRecorder) QueryTestVariants(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "QueryTestVariants", reflect.TypeOf((*MockResultDBServer)(nil).QueryTestVariants), arg0, arg1)
+}
+
+// QueryUniqueTestVariants mocks base method.
+func (m *MockResultDBServer) QueryUniqueTestVariants(arg0 context.Context, arg1 *QueryUniqueTestVariantsRequest) (*QueryUniqueTestVariantsResponse, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "QueryUniqueTestVariants", arg0, arg1)
+	ret0, _ := ret[0].(*QueryUniqueTestVariantsResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// QueryUniqueTestVariants indicates an expected call of QueryUniqueTestVariants.
+func (mr *MockResultDBServerMockRecorder) QueryUniqueTestVariants(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "QueryUniqueTestVariants", reflect.TypeOf((*MockResultDBServer)(nil).QueryUniqueTestVariants), arg0, arg1)
 }
