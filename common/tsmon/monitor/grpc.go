@@ -16,6 +16,7 @@ package monitor
 
 import (
 	"context"
+	"sync"
 
 	"google.golang.org/grpc"
 
@@ -27,15 +28,18 @@ import (
 )
 
 type grpcMonitor struct {
-	client    pb.MonitoringServiceClient
-	chunkSize int
+	lck        sync.Mutex
+	client     pb.MonitoringServiceClient
+	chunkSize  int
+	connection *grpc.ClientConn
 }
 
 // NewGRPCMonitor creates a new Monitor object that sends metric by gRPC.
 func NewGRPCMonitor(ctx context.Context, conn *grpc.ClientConn) Monitor {
 	return &grpcMonitor{
-		client:    pb.NewMonitoringServiceClient(conn),
-		chunkSize: 500,
+		client:     pb.NewMonitoringServiceClient(conn),
+		chunkSize:  500,
+		connection: conn,
 	}
 }
 
@@ -71,5 +75,14 @@ func (m *grpcMonitor) Send(ctx context.Context, cells []types.Cell) error {
 }
 
 func (m *grpcMonitor) Close() error {
+	m.lck.Lock()
+	defer m.lck.Unlock()
+	if m.connection == nil {
+		return nil
+	}
+	if err := m.connection.Close(); err != nil {
+		return err
+	}
+	m.connection = nil
 	return nil
 }

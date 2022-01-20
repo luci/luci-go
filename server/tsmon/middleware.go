@@ -16,10 +16,11 @@ package tsmon
 
 import (
 	"context"
-	"net/http"
-	"net/url"
 	"sync"
 	"time"
+
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials"
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
@@ -32,6 +33,7 @@ import (
 	"go.chromium.org/luci/common/tsmon/store"
 	"go.chromium.org/luci/common/tsmon/target"
 	"go.chromium.org/luci/common/tsmon/versions"
+	"go.chromium.org/luci/grpc/grpcmon"
 
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/router"
@@ -212,7 +214,7 @@ func (s *State) checkSettings(ctx context.Context) (*tsmon.State, *Settings) {
 	// First call to 'checkSettings' ever?
 	if s.state == nil {
 		s.state = state
-		s.state.SetMonitor(monitor.NewNilMonitor()) // doFlush uses its own monitor
+		s.state.SetMonitor(monitor.NewNilMonitor())
 		s.state.InhibitGlobalCallbacksOnFlush()
 		if s.InstanceID != nil {
 			s.instanceID = s.InstanceID(ctx)
@@ -223,7 +225,7 @@ func (s *State) checkSettings(ctx context.Context) (*tsmon.State, *Settings) {
 
 	switch {
 	case !bool(s.lastSettings.Enabled) && bool(settings.Enabled):
-		s.enableTSMon(ctx)
+		s.enableTSMon(ctx, settings.ProdXAccount)
 	case bool(s.lastSettings.Enabled) && !bool(settings.Enabled):
 		s.disableTSMon(ctx)
 	}
@@ -235,7 +237,7 @@ func (s *State) checkSettings(ctx context.Context) (*tsmon.State, *Settings) {
 // enableTSMon puts in-memory metrics store in the context's tsmon state.
 //
 // Called with 's.lock' locked.
-func (s *State) enableTSMon(ctx context.Context) {
+func (s *State) enableTSMon(ctx context.Context, prodXAccount string) {
 	t := s.Target(ctx)
 	t.TaskNum = -1 // will be assigned later via TaskNumAllocator
 
@@ -248,6 +250,18 @@ func (s *State) enableTSMon(ctx context.Context) {
 	s.lastFlush = s.nextFlush
 	// Set initial value for retry delay.
 	s.flushRetry = flushInitialRetry
+
+	mon := s.CustomMonitor
+	if mon == nil {
+		conn, err := dialProdX(ctx, prodXAccount)
+		if err != nil {
+			logging.WithError(err).Errorf(ctx, "failed to dial ProdX; using NilMonitor()")
+			mon = monitor.NewNilMonitor()
+		} else {
+			mon = monitor.NewGRPCMonitor(ctx, conn)
+		}
+	}
+	s.state.SetMonitor(mon)
 }
 
 // disableTSMon puts nil metrics store in the context's tsmon state.
@@ -255,6 +269,11 @@ func (s *State) enableTSMon(ctx context.Context) {
 // Called with 's.lock' locked.
 func (s *State) disableTSMon(ctx context.Context) {
 	s.state.SetStore(store.NewNilStore())
+	if mon := s.state.Monitor(); mon != nil {
+		if err := mon.Close(); err != nil {
+			logging.WithError(err).Errorf(ctx, "failed to close tsmon monitor; ignoring")
+		}
+	}
 }
 
 // flushIfNeededImpl periodically flushes the accumulated metrics.
@@ -387,41 +406,27 @@ func (s *State) ensureTaskNumAndFlush(ctx context.Context, state *tsmon.State, s
 		task.TaskNum = 0
 	}
 	state.Store().SetDefaultTarget(&task)
-	return s.doFlush(ctx, state, settings)
+	return state.ParallelFlush(ctx, state.Monitor(), 4)
 }
 
-// doFlush actually sends the metrics to the monitor.
-func (s *State) doFlush(ctx context.Context, state *tsmon.State, settings *Settings) error {
-	var mon monitor.Monitor
-	var err error
-
-	if s.CustomMonitor != nil {
-		mon = s.CustomMonitor
-	} else if settings.ProdXAccount == "" {
-		mon = monitor.NewDebugMonitor("")
-	} else {
-		transport, err := auth.GetRPCTransport(
-			ctx,
-			auth.AsActor,
-			auth.WithServiceAccount(settings.ProdXAccount),
-			auth.WithScopes(monitor.ProdxmonScopes...))
-		if err != nil {
-			return err
-		}
-		endpoint, err := url.Parse(prodXEndpoint)
-		if err != nil {
-			return err
-		}
-		mon, err = monitor.NewHTTPMonitor(ctx, &http.Client{Transport: transport}, endpoint)
-		if err != nil {
-			return err
-		}
+// dialProdX creates a gRPC connection to ProdX with a given service account.
+func dialProdX(ctx context.Context, account string) (*grpc.ClientConn, error) {
+	cred, err := auth.GetPerRPCCredentials(
+		ctx, auth.AsActor,
+		auth.WithServiceAccount(account),
+		auth.WithScopes(monitor.ProdxmonScopes...),
+	)
+	if err != nil {
+		return nil, errors.Annotate(err, "obtaining credential with %q", account).Err()
 	}
-
-	defer mon.Close()
-	if err = state.Flush(ctx, mon); err != nil {
-		return err
+	conn, err := grpc.Dial(
+		prodXEndpoint,
+		grpc.WithTransportCredentials(credentials.NewTLS(nil)),
+		grpc.WithPerRPCCredentials(cred),
+		grpcmon.WithClientRPCStatsMonitor(),
+	)
+	if err != nil {
+		return nil, errors.Annotate(err, "dialing ProdX at %q", prodXEndpoint).Err()
 	}
-
-	return nil
+	return conn, err
 }

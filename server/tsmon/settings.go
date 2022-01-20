@@ -35,7 +35,7 @@ import (
 // prodXEndpoint is endpoint to send metrics to.
 //
 // Hardcoded for now...
-const prodXEndpoint = "https://prodxmon-pa.googleapis.com/v1:insert"
+const prodXEndpoint = "prodxmon-pa.googleapis.com:443"
 
 // settingsKey is key for tsmon settings (described by Settings struct)
 // in the settings store. See go.chromium.org/luci/server/settings.
