@@ -32,6 +32,8 @@ import (
 	"go.chromium.org/luci/resultdb/internal/testresults"
 	"go.chromium.org/luci/resultdb/internal/testutil"
 	"go.chromium.org/luci/resultdb/internal/testutil/insert"
+	"go.chromium.org/luci/resultdb/internal/uniquetestvariants"
+	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -159,24 +161,30 @@ func TestBatchCreateTestResults(t *testing.T) {
 			for i, r := range req.Requests {
 				expected := proto.Clone(r.TestResult).(*pb.TestResult)
 				expected.Name = fmt.Sprintf("invocations/u-build-1/tests/%s/results/result-id-%d", expected.TestId, i)
+				expected.VariantHash = pbutil.VariantHash(expected.Variant)
 				So(response.TestResults[i], ShouldResembleProto, expected)
 
 				// double-check it with the database
-				expected.VariantHash = "c8643f74854d84b4"
 				row, err := testresults.Read(span.Single(ctx), expected.Name)
 				So(err, ShouldBeNil)
 				So(row, ShouldResembleProto, expected)
 
-				var invCommonTestIdPrefix string
+				// variant should be recorded
+				utvID := uniquetestvariants.UniqueTestVariantID{Realm: "", TestID: row.TestId, VariantHash: row.VariantHash}
+				utv, err := uniquetestvariants.Read(span.Single(ctx), utvID)
+				So(err, ShouldBeNil)
+				So(utv.Variant, ShouldResembleProto, expected.Variant)
+
+				var invCommonTestIDPrefix string
 				var invVars []string
 				err = invocations.ReadColumns(
 					span.Single(ctx), invocations.ID("u-build-1"),
 					map[string]interface{}{
-						"CommonTestIDPrefix":     &invCommonTestIdPrefix,
+						"CommonTestIDPrefix":     &invCommonTestIDPrefix,
 						"TestResultVariantUnion": &invVars,
 					})
 				So(err, ShouldBeNil)
-				So(invCommonTestIdPrefix, ShouldEqual, expectedCommonPrefix)
+				So(invCommonTestIDPrefix, ShouldEqual, expectedCommonPrefix)
 				So(invVars, ShouldResemble, []string{
 					"a/b:1",
 					"c:2",

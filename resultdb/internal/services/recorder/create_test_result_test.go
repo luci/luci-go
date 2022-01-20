@@ -130,6 +130,7 @@ func TestCreateTestResult(t *testing.T) {
 		createTestResult := func(req *pb.CreateTestResultRequest, expectedCommonPrefix string) {
 			expected := proto.Clone(req.TestResult).(*pb.TestResult)
 			expected.Name = "invocations/u-build-1/tests/test-id/results/result-id-0"
+			expected.VariantHash = "c8643f74854d84b4"
 			res, err := recorder.CreateTestResult(ctx, req)
 			So(err, ShouldBeNil)
 			So(res, ShouldResembleProto, expected)

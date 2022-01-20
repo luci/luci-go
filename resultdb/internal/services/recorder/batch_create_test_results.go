@@ -26,12 +26,14 @@ import (
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/grpc/appstatus"
 	"go.chromium.org/luci/server/span"
 
 	"go.chromium.org/luci/resultdb/internal/invocations"
 	"go.chromium.org/luci/resultdb/internal/resultcount"
 	"go.chromium.org/luci/resultdb/internal/spanutil"
+	"go.chromium.org/luci/resultdb/internal/uniquetestvariants"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
@@ -112,6 +114,8 @@ func (s *recorderServer) BatchCreateTestResults(ctx context.Context, in *pb.Batc
 	}
 
 	var realm string
+	var totalUTVCount int
+	var utvsToRecord []*uniquetestvariants.UniqueTestVariant
 	err := mutateInvocation(ctx, invID, func(ctx context.Context) error {
 		span.BufferWrite(ctx, ms...)
 		eg, ctx := errgroup.WithContext(ctx)
@@ -139,6 +143,25 @@ func (s *recorderServer) BatchCreateTestResults(ctx context.Context, in *pb.Batc
 					"TestResultVariantUnion": varUnion.ToSortedSlice(),
 				}))
 			}
+
+			// Find all the unique test variants in the test results.
+			utvMap := uniquetestvariants.FromTestResults(realm, ret.TestResults)
+			totalUTVCount = len(utvMap)
+
+			// Find all the recently recorded unique test variants.
+			utvIDs := uniquetestvariants.IDsFromMap(utvMap)
+			recentlyRecordedUTVIDs, err := uniquetestvariants.FilterIDsRecordedAfter(ctx, utvIDs, time.Now().Add(-24*time.Hour))
+			if err != nil {
+				return err
+			}
+
+			// To reduce the number of writes, we only record unique test variants
+			// that were not recorded in the last 24 hours.
+			for _, utvID := range recentlyRecordedUTVIDs {
+				delete(utvMap, utvID)
+			}
+			utvsToRecord = uniquetestvariants.FromMap(utvMap)
+
 			return
 		})
 		eg.Go(func() error {
@@ -149,6 +172,32 @@ func (s *recorderServer) BatchCreateTestResults(ctx context.Context, in *pb.Batc
 	if err != nil {
 		return nil, err
 	}
+
+	if len(utvsToRecord) > 0 {
+		logging.Infof(ctx, "recording %d/%d unique test variants", len(utvsToRecord), totalUTVCount)
+		start := time.Now()
+
+		// Update record time.
+		for _, utv := range utvsToRecord {
+			utv.LastRecordTime = spanner.CommitTimestamp
+		}
+
+		// Record the unique test variants in a separate transaction so this is
+		// treated as blind write and won't cause contentions.
+		_, err := span.ReadWriteTransaction(ctx, func(ctx context.Context) error {
+			uniquetestvariants.InsertOrUpdate(ctx, utvsToRecord...)
+			return nil
+		})
+
+		// Failing to record unique variants is not critical.
+		// We don't want to return an error here since the added test results are
+		// already committed to spanner.
+		if err != nil {
+			logging.Errorf(ctx, "failed to record unique test variants")
+		}
+		logging.Infof(ctx, "recording unique test variants took %s", time.Since(start))
+	}
+
 	spanutil.IncRowCount(ctx, len(in.Requests), spanutil.TestResults, spanutil.Inserted, realm)
 	return ret, nil
 }
@@ -158,6 +207,7 @@ func insertTestResult(ctx context.Context, invID invocations.ID, requestID strin
 	// the response
 	ret := proto.Clone(body).(*pb.TestResult)
 	ret.Name = pbutil.TestResultName(string(invID), ret.TestId, ret.ResultId)
+	ret.VariantHash = pbutil.VariantHash(ret.Variant)
 
 	// handle values for nullable columns
 	var runDuration spanner.NullInt64
@@ -171,7 +221,7 @@ func insertTestResult(ctx context.Context, invID invocations.ID, requestID strin
 		"TestId":          ret.TestId,
 		"ResultId":        ret.ResultId,
 		"Variant":         ret.Variant,
-		"VariantHash":     pbutil.VariantHash(ret.Variant),
+		"VariantHash":     ret.VariantHash,
 		"CommitTimestamp": spanner.CommitTimestamp,
 		"IsUnexpected":    spanner.NullBool{Bool: true, Valid: !body.Expected},
 		"Status":          ret.Status,
