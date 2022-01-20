@@ -91,12 +91,12 @@ func TestCheckRunCLs(t *testing.T) {
 		mustOK := func() {
 			res, err := CheckRunCreate(ctx, &cg, rCLs)
 			So(err, ShouldBeNil)
-			So(res.OK, ShouldBeTrue)
+			So(res.OK(), ShouldBeTrue)
 		}
 		mustFail := func(format string, args ...interface{}) {
 			res, err := CheckRunCreate(ctx, &cg, rCLs)
 			So(err, ShouldBeNil)
-			So(res.OK, ShouldBeFalse)
+			So(res.OK(), ShouldBeFalse)
 
 			if format != "" {
 				msg := fmt.Sprintf(format, args...)

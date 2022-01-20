@@ -36,8 +36,11 @@ type CheckResult struct {
 	// when OK == false.
 	// Empty if OK == true.
 	FailuresSummary string
-	// OK tells if the check result was OK.
-	OK bool
+}
+
+// OK returns true if the result indicates no failures. False, otherwise.
+func (res CheckResult) OK() bool {
+	return res.FailuresSummary == ""
 }
 
 type runCreateFailures struct {
@@ -66,23 +69,23 @@ func (fs *runCreateFailures) summary() string {
 
 // CheckRunCreate verifies that the user(s) who triggered Run are authorized
 // to create the Run for the CLs.
-func CheckRunCreate(ctx context.Context, cg *prjcfg.ConfigGroup, cls []*run.RunCL) (*CheckResult, error) {
+func CheckRunCreate(ctx context.Context, cg *prjcfg.ConfigGroup, cls []*run.RunCL) (CheckResult, error) {
 	failures := &runCreateFailures{}
 	for _, cl := range cls {
 		triggerer, err := identity.MakeIdentity("user:" + cl.Trigger.Email)
 		if err != nil {
-			return nil, errors.Annotate(
+			return CheckResult{}, errors.Annotate(
 				err, "the triggerer identity %q of CL %q is invalid", cl.Trigger.Email, cl.ID).Err()
 		}
 
 		switch yes, err := isCommitter(ctx, triggerer, cg.Content.Verifiers); {
 		case err != nil:
-			return nil, errors.Annotate(err, "failed to check committer").Err()
+			return CheckResult{}, errors.Annotate(err, "failed to check committer").Err()
 		case !yes:
 			// Non-committer must be CL owner.
 			owner, err := cl.Detail.OwnerIdentity()
 			if err != nil {
-				return nil, errors.Annotate(
+				return CheckResult{}, errors.Annotate(
 					err, "the owner identity of CL %q is invalid", cl.ID).Err()
 			}
 			if triggerer != owner {
@@ -90,10 +93,7 @@ func CheckRunCreate(ctx context.Context, cg *prjcfg.ConfigGroup, cls []*run.RunC
 			}
 		}
 	}
-	if failures.length() > 0 {
-		return &CheckResult{failures.summary(), false}, nil
-	}
-	return &CheckResult{"", true}, nil
+	return CheckResult{failures.summary()}, nil
 }
 
 func isCommitter(ctx context.Context, one identity.Identity, v *cfgpb.Verifiers) (bool, error) {
