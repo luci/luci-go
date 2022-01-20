@@ -120,36 +120,28 @@ describe('parseTVHFilterQuery', () => {
 
 describe('parseVariantFilterFromQuery', () => {
   it('should filter out variants with no matching variant key-value pair', () => {
-    const [predicate, filter] = parseVariantFilter('v:key1=val1');
-
-    assert.deepEqual(predicate, { contains: { def: { key1: 'val1' } } });
+    const filter = parseVariantFilter('v:key1=val1');
 
     const filtered = variants.map((v) => v.variant || { def: {} }).filter(filter);
     assert.deepEqual(filtered, [entry1.variant]);
   });
 
   it("should support variant value with '=' in it", () => {
-    const [predicate, filter] = parseVariantFilter('v:key2=val3%3Dval');
-
-    assert.deepEqual(predicate, { contains: { def: { key2: 'val3=val' } } });
+    const filter = parseVariantFilter('v:key2=val3%3Dval');
 
     const filtered = variants.map((v) => v.variant || { def: {} }).filter(filter);
     assert.deepEqual(filtered, [entry7.variant]);
   });
 
   it('should support filter with only variant key', () => {
-    const [predicate, filter] = parseVariantFilter('V:key2');
-
-    assert.deepEqual(predicate, { contains: { def: {} } });
+    const filter = parseVariantFilter('V:key2');
 
     const filtered = variants.map((v) => v.variant || { def: {} }).filter(filter);
     assert.deepEqual(filtered, [entry5.variant, entry6.variant, entry7.variant]);
   });
 
   it('should work with negation', () => {
-    const [predicate, filter] = parseVariantFilter('-v:key1=val1');
-
-    assert.deepEqual(predicate, { contains: { def: {} } });
+    const filter = parseVariantFilter('-v:key1=val1');
 
     const filtered = variants.map((v) => v.variant || { def: {} }).filter(filter);
     assert.deepEqual(filtered, [
@@ -163,9 +155,7 @@ describe('parseVariantFilterFromQuery', () => {
   });
 
   it('should work multiple queries', () => {
-    const [predicate, filter] = parseVariantFilter('-v:key1=val1 STATUS:Unexpected v:key1=val2');
-
-    assert.deepEqual(predicate, { contains: { def: { key1: 'val2' } } });
+    const filter = parseVariantFilter('-v:key1=val1 STATUS:Unexpected v:key1=val2');
 
     const filtered = variants.map((v) => v.variant || { def: {} }).filter(filter);
     assert.deepEqual(filtered, [entry2.variant, entry4.variant, entry5.variant, entry6.variant, entry7.variant]);

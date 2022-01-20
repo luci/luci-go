@@ -68,19 +68,18 @@ export class TestHistoryVariantLoader {
     readonly resolve: (time: DateTime) => string,
     readonly testHistoryService: TestHistoryService
   ) {
-    this.worker = this.workerGen(this.loadedTime);
+    this.worker = this.workerGen();
   }
 
   /**
    * Generates a worker that loads the entries between
-   * [`beforeTime`, `this.targetTime`] then yields back.
+   * [`now`, `this.targetTime`] then yields back.
    *
    * `this.targetTime` can be updated so the worker can load the entries between
    * [`last target time`, `this.targetTime`] when `.next()` is called.
    */
-  private async *workerGen(before: DateTime) {
+  private async *workerGen() {
     let pageToken = '';
-    const beforeTimeStr = before.toISO();
     for (;;) {
       // We've loaded all required entries. Yield back.
       while (this.targetTime > this.loadedTime && this.targetTimeGroupId !== this.loadedTimeGroupId) {
@@ -91,7 +90,7 @@ export class TestHistoryVariantLoader {
         realm: this.realm,
         testId: this.testId,
         variantPredicate: { equals: this.variant },
-        timeRange: { latest: beforeTimeStr },
+        timeRange: {},
         pageToken: pageToken,
       });
 
@@ -146,50 +145,6 @@ export class TestHistoryVariantLoader {
     }
 
     dateCache.push(entry);
-  }
-
-  /**
-   * Add entries to the cache. All entries must be sorted by timestamp.
-   *
-   * @param entries a list of entries to be added to the cache. All entries must
-   * belong to the variant of this loader and must be in the same order as the
-   * entries returned from the server.
-   * @param afterTime the timestamp where the entries occur after. Must be
-   * greater than the timestamp of any provided entry.
-   * @precondition the caller must ensure that any entry that has a timestamp
-   * greater than `afterTime` must has been loaded by the worker or provided in
-   * the `entries` param. Duplicated entries will be ignored automatically.
-   */
-  // This should be used when we load entries elsewhere. Currently, we need to
-  // rely on the test history RPC to discover variants. As a result, we will get
-  // some test history entries back. Reusing those entries can reduce loading
-  // time.
-  // TODO(crbug/1266759): once we have a faster test history RPC and a dedicated
-  // (and fast) RPC to query variant definitions, we won't need this anymore.
-  populateEntries(entries: readonly TestVariantHistoryEntry[], afterTime: DateTime) {
-    // All the entries has been loaded. Ignore them.
-    if (afterTime > this.loadedTime) {
-      return;
-    }
-
-    // If the caller has provided entries we haven't reached yet, we don't want
-    // `this.worker` to waste time loading entries between
-    // [this.loadedTime, afterTime). We should set the `this.loadedTime` to
-    // `afterTime` and create a new worker that starts from `afterTime`.
-    //
-    // We need to compute this before `this.addEntry(...)` because
-    // `this.addEntry(...)` will update `this.loadedTime`.
-    const shouldSkipAhead = afterTime < this.loadedTime;
-
-    // Add all entries to the cache.
-    for (const entry of entries) {
-      this.addEntry(entry);
-    }
-
-    if (shouldSkipAhead) {
-      this.loadedTime = afterTime;
-      this.worker = this.workerGen(afterTime);
-    }
   }
 
   /**

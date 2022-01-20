@@ -12,12 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import stableStringify from 'fast-json-stable-stringify';
-import { groupBy } from 'lodash-es';
 import { DateTime } from 'luxon';
 import { computed, observable } from 'mobx';
 
-import { Variant, VariantPredicate } from '../services/resultdb';
+import { ResultDb, Variant } from '../services/resultdb';
 import { TestHistoryService, TestVariantHistoryEntry } from '../services/test_history_service';
 import { TestHistoryVariantLoader } from './test_history_variant_loader';
 
@@ -28,9 +26,9 @@ export class TestHistoryLoader {
   @observable private readonly loaders = new Map<string, TestHistoryVariantLoader>();
 
   /**
-   * variant predicate hash -> Worker.
+   * The worker that drives variant discovery.
    */
-  private workers = new Map<string, AsyncIterableIterator<null>>();
+  private readonly worker: AsyncIterableIterator<null>;
 
   @computed.struct get variants(): readonly [string, Variant][] {
     return [...this.loaders.entries()].map(([hash, loader]) => [hash, loader.variant]);
@@ -51,57 +49,42 @@ export class TestHistoryLoader {
      * between time1 and time2 must resolves to the same string.
      */
     readonly resolve: (time: DateTime) => string,
-    readonly testHistoryService: TestHistoryService
-  ) {}
+    readonly testHistoryService: TestHistoryService,
+    readonly resultDb: ResultDb
+  ) {
+    this.worker = this.workerGen();
+  }
 
   /**
    * Return a generator that drives the discovery of new variants.
    */
-  private async *workerGen(predicate: VariantPredicate | undefined) {
-    const visitedLoaders = new Set<TestHistoryVariantLoader>();
+  private async *workerGen() {
     let pageToken = '';
     for (;;) {
-      const res = await this.testHistoryService.queryTestHistory({
+      const res = await this.resultDb.queryUniqueTestVariants({
         realm: this.realm,
         testId: this.testId,
-        timeRange: {},
-        variantPredicate: predicate,
-        pageToken: pageToken,
+        pageToken,
       });
 
-      if (res.entries.length) {
-        const loadedTime = DateTime.fromISO(res.entries[res.entries.length - 1].invocationTimestamp);
-        const groupedEntries = groupBy(res.entries, (entry) => entry.variantHash);
-
-        for (const [hash, group] of Object.entries(groupedEntries)) {
-          let loader = this.loaders.get(hash);
+      if (res.variants?.length) {
+        for (const utv of res.variants) {
+          let loader = this.loaders.get(utv.variantHash);
           if (!loader) {
             // If the variant is new, add a new loader for that variant.
             loader = new TestHistoryVariantLoader(
               this.realm,
               this.testId,
-              group[0].variant || { def: {} },
+              utv.variant || { def: {} },
               this.resolve,
               this.testHistoryService
             );
-            this.loaders.set(hash, loader);
+            this.loaders.set(utv.variantHash, loader);
           }
-
-          // We mainly load those entries to get the variant definitions. But we
-          // can also reuse those entries in variant loaders.
-          loader.populateEntries(group, loadedTime);
-          visitedLoaders.add(loader);
         }
       }
 
       if (!res.nextPageToken) {
-        // Since we reached the end of the page, all the variants this loader
-        // encountered can be considered finalized.
-        const after = DateTime.fromMillis(0);
-        for (const loader of visitedLoaders) {
-          loader.populateEntries([], after);
-        }
-
         return;
       }
 
@@ -112,20 +95,13 @@ export class TestHistoryLoader {
   }
 
   /**
-   * Load variants that matches the predicate.
+   * Load all unique test variants associated with the test.
    *
-   * Return true if all variants matches the predicate are discovered.
+   * Return true if all variants have been discovered.
    * Return false otherwise.
    */
-  async discoverVariants(predicate: VariantPredicate | undefined) {
-    const hash = stableStringify(predicate);
-    let worker = this.workers.get(hash);
-    if (!worker) {
-      worker = this.workerGen(predicate);
-      this.workers.set(hash, worker);
-    }
-
-    const next = await worker.next();
+  async discoverVariants() {
+    const next = await this.worker.next();
     return Boolean(next.done);
   }
 

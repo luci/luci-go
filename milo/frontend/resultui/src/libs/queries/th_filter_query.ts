@@ -17,7 +17,7 @@
 import { html } from 'lit-html';
 
 import { Suggestion } from '../../components/auto_complete';
-import { Variant, VariantPredicate } from '../../services/resultdb';
+import { Variant } from '../../services/resultdb';
 import { TestVariantHistoryEntry } from '../../services/test_history_service';
 import { highlight } from '../lit_utils';
 import { KV_SYNTAX_EXPLANATION, parseKeyValue } from './utils';
@@ -75,8 +75,7 @@ export type VariantFilter = (v: Variant) => boolean;
  * positives, so it should be used in conjunction of the TestVariantFilter
  * parsed from the same query.
  */
-export function parseVariantFilter(filterQuery: string): [VariantPredicate, VariantFilter] {
-  const predicate: DeepMutable<VariantPredicate> = { contains: { def: {} } };
+export function parseVariantFilter(filterQuery: string): VariantFilter {
   const filters: VariantFilter[] = [];
   for (const subQuery of filterQuery.split(' ')) {
     const match = subQuery.match(VARIANT_FILTER_RE);
@@ -93,13 +92,9 @@ export function parseVariantFilter(filterQuery: string): [VariantPredicate, Vari
     } else {
       filters.push((v) => negate !== (v.def[vKey] !== undefined));
     }
-
-    if (!negate && vValue) {
-      predicate.contains.def[vKey] = vValue;
-    }
   }
 
-  return [predicate, (v) => filters.every((f) => f(v))];
+  return (v) => filters.every((f) => f(v));
 }
 
 // Queries with predefined value.

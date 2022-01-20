@@ -43,11 +43,6 @@ const entry2 = createEntry('2021-11-05T00:00:01Z', 'inv1');
 const entry3 = createEntry('2021-11-05T00:00:00Z', 'inv1');
 const entry4 = createEntry('2021-11-04T00:00:00Z', 'inv1');
 const entry5 = createEntry('2021-11-03T00:00:00Z', 'inv1');
-const entry6 = createEntry('2021-11-02T00:00:00Z', 'inv1');
-const entry7 = createEntry('2021-11-02T00:00:00Z', 'inv2');
-const entry8 = createEntry('2021-11-01T00:00:00Z', 'inv1');
-const entry9 = createEntry('2021-11-01T00:00:00Z', 'inv2');
-const entry10 = createEntry('2021-11-01T00:00:00Z', 'inv3');
 
 describe('TestHistoryVariantLoader', () => {
   it('loadUntil should work correctly', async () => {
@@ -115,87 +110,6 @@ describe('TestHistoryVariantLoader', () => {
     // loaded.
     assert.deepEqual(thvLoader.getEntries(DateTime.fromISO('2021-11-03T00:00:00Z'), true), [entry5]);
     // Any past date should be considered loaded and return empty array.
-    assert.deepEqual(thvLoader.getEntries(DateTime.fromISO('2021-10-01T00:00:00Z'), true), []);
-  });
-
-  it('populateEntries should work correctly', async () => {
-    // Set up.
-    const stub = sinon.stub<[QueryTestHistoryRequest, CacheOption], Promise<QueryTestHistoryResponse>>();
-    const thvLoader = new TestHistoryVariantLoader(
-      'test-realm',
-      'test-id',
-      variant,
-      (resolve) => resolve.toFormat('yyyy-MM-dd'),
-      {
-        queryTestHistory: stub,
-      } as Partial<TestHistoryService> as TestHistoryService
-    );
-
-    // Load all entries created on or after 2021-11-05.
-    stub.onCall(0).resolves({ entries: [entry1, entry2], nextPageToken: 'page2' });
-    stub.onCall(1).resolves({ entries: [entry3, entry4], nextPageToken: 'page3' });
-    await thvLoader.loadUntil(DateTime.fromISO('2021-11-05T12:00:00Z'));
-
-    // Populate entries manually.
-    const afterTime = DateTime.fromISO(entry6.invocationTimestamp);
-    thvLoader.populateEntries([entry4, entry5, entry6], afterTime);
-
-    // Entry 4 should not be duplicated.
-    assert.deepEqual(thvLoader.getEntries(DateTime.fromISO('2021-11-04T00:00:00Z'), true), [entry4]);
-    // Entry 5 should be recorded.
-    assert.deepEqual(thvLoader.getEntries(DateTime.fromISO('2021-11-03T00:00:00Z'), true), [entry5]);
-    // Entry 6 should also be recorded, but we don't know whether all entries on
-    // 2021-11-02 has been loaded yet.
-    assert.deepEqual(thvLoader.getEntries(DateTime.fromISO('2021-11-02T00:00:00Z'), true), null);
-
-    // Load all entries created on or after 2021-11-02.
-    stub.onCall(2).resolves({ entries: [entry6, entry7], nextPageToken: 'page2' });
-    stub.onCall(3).resolves({ entries: [entry8, entry9], nextPageToken: 'page3' });
-    await thvLoader.loadUntil(DateTime.fromISO('2021-11-02T00:00:00Z'));
-
-    // The loader should skip ahead.
-    assert.deepEqual(stub.getCalls().length, 4);
-    assert.deepIncludeProperties(stub.getCall(2).args[0], {
-      realm: 'test-realm',
-      testId: 'test-id',
-      variantPredicate: { equals: variant },
-    });
-    assert.strictEqual(stub.getCall(2).args[0].timeRange.latest, afterTime.toISO());
-    assert.isFalse(Boolean(stub.getCall(2).args[0].pageToken));
-    assert.deepIncludeProperties(stub.getCall(3).args[0], {
-      realm: 'test-realm',
-      testId: 'test-id',
-      variantPredicate: { equals: variant },
-      pageToken: 'page2',
-    });
-    assert.strictEqual(stub.getCall(3).args[0].timeRange.latest, afterTime.toISO());
-
-    assert.deepEqual(thvLoader.getEntries(DateTime.fromISO('2021-11-02T00:00:00Z'), true), [entry6, entry7]);
-    assert.deepEqual(thvLoader.getEntries(DateTime.fromISO('2021-11-01T00:00:00Z'), true), null);
-
-    // Populate entries with already loaded entries.
-    thvLoader.populateEntries([entry4, entry5, entry6], afterTime);
-
-    // It should not affect any getEntries call.
-    assert.deepEqual(thvLoader.getEntries(DateTime.fromISO('2021-11-04T00:00:00Z'), true), [entry4]);
-    assert.deepEqual(thvLoader.getEntries(DateTime.fromISO('2021-11-03T00:00:00Z'), true), [entry5]);
-    assert.deepEqual(thvLoader.getEntries(DateTime.fromISO('2021-11-02T00:00:00Z'), true), [entry6, entry7]);
-    assert.deepEqual(thvLoader.getEntries(DateTime.fromISO('2021-11-01T00:00:00Z'), true), null);
-
-    // Load all entries created on or after 2021-11-01.
-    stub.onCall(4).resolves({ entries: [entry10] });
-    await thvLoader.loadUntil(DateTime.fromISO('2021-11-01T00:00:00Z'));
-
-    // The loader should not skip ahead.
-    assert.deepEqual(stub.getCalls().length, 5);
-    assert.deepIncludeProperties(stub.getCall(4).args[0], {
-      realm: 'test-realm',
-      testId: 'test-id',
-      variantPredicate: { equals: variant },
-      pageToken: 'page3',
-    });
-    assert.strictEqual(stub.getCall(3).args[0].timeRange.latest, afterTime.toISO());
-    assert.deepEqual(thvLoader.getEntries(DateTime.fromISO('2021-11-01T00:00:00Z'), true), [entry8, entry9, entry10]);
     assert.deepEqual(thvLoader.getEntries(DateTime.fromISO('2021-10-01T00:00:00Z'), true), []);
   });
 });

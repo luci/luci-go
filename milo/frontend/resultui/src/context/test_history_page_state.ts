@@ -21,7 +21,7 @@ import { createContextLink } from '../libs/context';
 import { parseTVHFilterQuery, parseVariantFilter } from '../libs/queries/th_filter_query';
 import { TestHistoryEntriesLoader } from '../models/test_history_entries_loader';
 import { TestHistoryLoader } from '../models/test_history_loader';
-import { createTVCmpFn, getCriticalVariantKeys, Variant, VariantPredicate } from '../services/resultdb';
+import { createTVCmpFn, getCriticalVariantKeys, ResultDb, Variant } from '../services/resultdb';
 import { TestHistoryService, TestVariantHistoryEntry } from '../services/test_history_service';
 
 export const enum GraphType {
@@ -58,7 +58,6 @@ export class TestHistoryPageState implements TestVariantTableState {
 
   @observable.ref filterText = '';
   @observable.ref tvhEntryFilter = (_v: TestVariantHistoryEntry) => true;
-  @observable.ref private variantPredicate: VariantPredicate | undefined;
   @observable.ref private variantFilter = (_v: Variant) => true;
   @computed get filteredVariants() {
     return this.testHistoryLoader.variants.filter(([, v]) => this.variantFilter(v));
@@ -139,25 +138,20 @@ export class TestHistoryPageState implements TestVariantTableState {
 
   @observable.ref isDisposed = false;
   private disposers: Array<() => void> = [];
-  constructor(readonly realm: string, readonly testId: string, readonly testHistoryService: TestHistoryService) {
+  constructor(
+    readonly realm: string,
+    readonly testId: string,
+    readonly testHistoryService: TestHistoryService,
+    readonly resultDb: ResultDb
+  ) {
     this.testHistoryLoader = new TestHistoryLoader(
       realm,
       testId,
       (datetime) => datetime.toFormat('yyyy-MM-dd'),
-      testHistoryService
+      testHistoryService,
+      resultDb
     );
-
-    // When a new variant predicate is applied, trigger variant discovering.
-    this.disposers.push(
-      reaction(
-        () => [this.testHistoryLoader, this.variantPredicate],
-        () => {
-          this._loadedAllVariants = false;
-          this.discoverVariants();
-        },
-        { fireImmediately: true }
-      )
-    );
+    this.discoverVariants();
 
     // Ensure the first page of test history entry details are loaded / being
     // loaded.
@@ -174,11 +168,10 @@ export class TestHistoryPageState implements TestVariantTableState {
       autorun(() => {
         try {
           const newEntryFilter = parseTVHFilterQuery(this.filterText);
-          const [newPredicate, newVariantFilter] = parseVariantFilter(this.filterText);
+          const newVariantFilter = parseVariantFilter(this.filterText);
 
           // Only update the filters after the query is successfully parsed.
           this.tvhEntryFilter = newEntryFilter;
-          this.variantPredicate = newPredicate;
           this.variantFilter = newVariantFilter;
         } catch (e) {
           //TODO(weiweilin): display the error to the user.
@@ -190,7 +183,7 @@ export class TestHistoryPageState implements TestVariantTableState {
 
   async discoverVariants() {
     this.discoverVariantReqCount++;
-    const req = this.testHistoryLoader.discoverVariants(this.variantPredicate);
+    const req = this.testHistoryLoader.discoverVariants();
     req.finally(() => this.discoverVariantReqCount--);
     this._loadedAllVariants = await req;
     return this._loadedAllVariants;

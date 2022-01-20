@@ -89,14 +89,19 @@ export class TestHistoryPageElement extends MiloBaseElement implements BeforeEnt
       reaction(
         () => [this.realm, this.testId, this.appState?.testHistoryService],
         () => {
-          if (!this.realm || !this.testId || !this.appState.testHistoryService) {
+          if (!this.realm || !this.testId || !this.appState.testHistoryService || !this.appState.resultDb) {
             return;
           }
 
           const filterText = this.pageState ? this.pageState.filterText : this.initialFilterText;
           this.pageState?.dispose();
 
-          this.pageState = new TestHistoryPageState(this.realm, this.testId, this.appState.testHistoryService);
+          this.pageState = new TestHistoryPageState(
+            this.realm,
+            this.testId,
+            this.appState.testHistoryService,
+            this.appState.resultDb
+          );
           this.pageState.filterText = filterText;
           // Emulate @property() update.
           this.updated(new Map([['pageState', this.pageState]]));
