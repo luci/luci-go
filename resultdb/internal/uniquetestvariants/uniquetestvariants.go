@@ -158,3 +158,55 @@ func Read(ctx context.Context, id UniqueTestVariantID) (*UniqueTestVariant, erro
 	}
 	return ret, nil
 }
+
+// Query reterives the all the unique variants associated with the specified
+// testId, in the specified realm.
+func Query(ctx context.Context, req *pb.QueryUniqueTestVariantsRequest) (*pb.QueryUniqueTestVariantsResponse, error) {
+	pageSize := int(req.PageSize)
+	st := spanner.NewStatement(`
+		SELECT Variant, VariantHash
+		FROM UniqueTestVariants
+		WHERE Realm = @realm AND TestId = @testId AND VariantHash >= @pageToken
+		ORDER BY VariantHash ASC
+		LIMIT @pageSize
+	`)
+	st.Params = map[string]interface{}{
+		"realm":     req.Realm,
+		"testId":    req.TestId,
+		"pageToken": req.PageToken,
+		// Query one more row so we know whether we have reached the last page.
+		"pageSize": pageSize + 1,
+	}
+
+	utvs := make([]*pb.UniqueTestVariant, 0, req.PageSize)
+	nextPageToken := ""
+
+	var b spanutil.Buffer
+	err := span.Query(ctx, st).Do(func(r *spanner.Row) error {
+		utv := &pb.UniqueTestVariant{
+			Realm:  req.Realm,
+			TestId: req.TestId,
+		}
+		if err := b.FromSpanner(r, &utv.Variant, &utv.VariantHash); err != nil {
+			return err
+		}
+
+		// If we got enough unique test variants, use the last one as the next page
+		// token.
+		if len(utvs) == pageSize {
+			nextPageToken = utv.VariantHash
+			return nil
+		}
+
+		utvs = append(utvs, utv)
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return &pb.QueryUniqueTestVariantsResponse{
+		Variants:      utvs,
+		NextPageToken: nextPageToken,
+	}, nil
+}

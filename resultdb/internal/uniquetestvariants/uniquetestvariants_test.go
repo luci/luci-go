@@ -39,10 +39,10 @@ func createVariantForTest(id string) *pb.Variant {
 	}
 }
 
-func createTestResultForTest(testID string, variant *pb.Variant) *pb.TestResult {
+func createTestResultForTest(testID string, vHash string, variant *pb.Variant) *pb.TestResult {
 	return &pb.TestResult{
 		TestId:      testID,
-		VariantHash: pbutil.VariantHash(variant),
+		VariantHash: vHash,
 		Variant:     variant,
 	}
 }
@@ -53,10 +53,10 @@ func TestFromTestResults(t *testing.T) {
 		variant2 := createVariantForTest("2")
 
 		results := []*pb.TestResult{
-			createTestResultForTest("test-id-1", variant1),
-			createTestResultForTest("test-id-1", variant2),
-			createTestResultForTest("test-id-2", variant1),
-			createTestResultForTest("test-id-1", variant1),
+			createTestResultForTest("test-id-1", pbutil.VariantHash(variant1), variant1),
+			createTestResultForTest("test-id-1", pbutil.VariantHash(variant2), variant2),
+			createTestResultForTest("test-id-2", pbutil.VariantHash(variant1), variant1),
+			createTestResultForTest("test-id-1", pbutil.VariantHash(variant1), variant1),
 		}
 
 		utvs := FromTestResults("chromium:public", results)
@@ -195,17 +195,17 @@ func TestInsertOrUpdate(t *testing.T) {
 		variant1 := createVariantForTest("1")
 		variant2 := createVariantForTest("2")
 
-		utvID1 := UniqueTestVariantID{Realm: "chromium:public", TestID: "test-id-1", VariantHash: pbutil.VariantHash(variant1)}
-		utvID2 := UniqueTestVariantID{Realm: "chromium:public", TestID: "test-id-1", VariantHash: pbutil.VariantHash(variant2)}
-		utvID3 := UniqueTestVariantID{Realm: "chromium:public", TestID: "test-id-2", VariantHash: pbutil.VariantHash(variant1)}
-		utvID4 := UniqueTestVariantID{Realm: "chromium:public", TestID: "test-id-2", VariantHash: pbutil.VariantHash(variant2)}
+		utvID1 := UniqueTestVariantID{Realm: "chromium:public", TestID: "test-id-1-1", VariantHash: pbutil.VariantHash(variant1)}
+		utvID2 := UniqueTestVariantID{Realm: "chromium:public", TestID: "test-id-1-1", VariantHash: pbutil.VariantHash(variant2)}
+		utvID3 := UniqueTestVariantID{Realm: "chromium:public", TestID: "test-id-1-2", VariantHash: pbutil.VariantHash(variant1)}
+		utvID4 := UniqueTestVariantID{Realm: "chromium:public", TestID: "test-id-1-2", VariantHash: pbutil.VariantHash(variant2)}
 
 		// Record variants from test results.
 		commitTimestamp, err := span.ReadWriteTransaction(ctx, func(ctx context.Context) error {
 			results := []*pb.TestResult{
-				createTestResultForTest("test-id-1", variant1),
-				createTestResultForTest("test-id-1", variant2),
-				createTestResultForTest("test-id-2", variant1),
+				createTestResultForTest("test-id-1-1", pbutil.VariantHash(variant1), variant1),
+				createTestResultForTest("test-id-1-1", pbutil.VariantHash(variant2), variant2),
+				createTestResultForTest("test-id-1-2", pbutil.VariantHash(variant1), variant1),
 			}
 			utvs := FromTestResults("chromium:public", results)
 			InsertOrUpdate(ctx, FromMap(utvs)...)
@@ -240,8 +240,8 @@ func TestInsertOrUpdate(t *testing.T) {
 		time.Sleep(time.Second)
 		updatedCommitTimestamp, err := span.ReadWriteTransaction(ctx, func(ctx context.Context) error {
 			results := []*pb.TestResult{
-				createTestResultForTest("test-id-1", variant1),
-				createTestResultForTest("test-id-2", variant2),
+				createTestResultForTest("test-id-1-1", pbutil.VariantHash(variant1), variant1),
+				createTestResultForTest("test-id-1-2", pbutil.VariantHash(variant2), variant2),
 			}
 			utvs := FromTestResults("chromium:public", results)
 			InsertOrUpdate(ctx, FromMap(utvs)...)
@@ -273,5 +273,97 @@ func TestInsertOrUpdate(t *testing.T) {
 		So(err, ShouldBeNil)
 		So(utv4.Variant, ShouldResembleProto, variant2)
 		So(utv4.LastRecordTime, ShouldEqual, updatedCommitTimestamp)
+	})
+}
+
+func TestQuery(t *testing.T) {
+	Convey(`Query`, t, func() {
+		ctx := testutil.SpannerTestContext(t)
+
+		variant1 := createVariantForTest("1")
+		variant2 := createVariantForTest("2")
+		variant3 := createVariantForTest("3")
+		variant4 := createVariantForTest("4")
+		variant5 := createVariantForTest("5")
+
+		// Record variants from test results.
+		_, err := span.ReadWriteTransaction(ctx, func(ctx context.Context) error {
+			// Create test results with predefined variant hashes so we know how the
+			// unique test variants will be sorted.
+			results := []*pb.TestResult{
+				createTestResultForTest("test-id-2-1", "hash1", variant1),
+				createTestResultForTest("test-id-2-1", "hash2", variant2),
+				createTestResultForTest("test-id-2-1", "hash3", variant3),
+				createTestResultForTest("test-id-2-1", "hash4", variant4),
+				createTestResultForTest("test-id-2-2", "hash5", variant5),
+			}
+			utvs := FromTestResults("chromium:public", results)
+			InsertOrUpdate(ctx, FromMap(utvs)...)
+			return nil
+		})
+		So(err, ShouldBeNil)
+
+		Convey(`E2E`, func() {
+			// Query the first page.
+			req := &pb.QueryUniqueTestVariantsRequest{
+				Realm:    "chromium:public",
+				TestId:   "test-id-2-1",
+				PageSize: 2,
+			}
+			res, err := Query(span.Single(ctx), req)
+			So(err, ShouldBeNil)
+			pageToken := res.GetNextPageToken()
+
+			expected := &pb.QueryUniqueTestVariantsResponse{
+				Variants: []*pb.UniqueTestVariant{
+					{
+						Realm:       "chromium:public",
+						TestId:      "test-id-2-1",
+						VariantHash: "hash1",
+						Variant:     variant1,
+					},
+					{
+						Realm:       "chromium:public",
+						TestId:      "test-id-2-1",
+						VariantHash: "hash2",
+						Variant:     variant2,
+					},
+				},
+				NextPageToken: pageToken,
+			}
+
+			So(res, ShouldResembleProto, expected)
+			So(pageToken, ShouldNotBeEmpty)
+
+			// Query the second page.
+			req = &pb.QueryUniqueTestVariantsRequest{
+				Realm:     "chromium:public",
+				TestId:    "test-id-2-1",
+				PageSize:  2,
+				PageToken: pageToken,
+			}
+			res, err = Query(span.Single(ctx), req)
+			So(err, ShouldBeNil)
+
+			expected = &pb.QueryUniqueTestVariantsResponse{
+				Variants: []*pb.UniqueTestVariant{
+					{
+						Realm:       "chromium:public",
+						TestId:      "test-id-2-1",
+						VariantHash: "hash3",
+						Variant:     variant3,
+					},
+					{
+						Realm:       "chromium:public",
+						TestId:      "test-id-2-1",
+						VariantHash: "hash4",
+						Variant:     variant4,
+					},
+				},
+			}
+
+			So(err, ShouldBeNil)
+			So(res, ShouldResembleProto, expected)
+		})
 	})
 }
