@@ -280,6 +280,25 @@ export interface GetTestResultHistoryResponse {
   readonly nextPageToken: string;
 }
 
+export interface QueryUniqueTestVariantsRequest {
+  readonly realm: string;
+  readonly testId: string;
+  readonly pageSize?: number;
+  readonly pageToken?: string;
+}
+
+export interface UniqueTestVariant {
+  readonly realm: string;
+  readonly testId: string;
+  readonly variantHash: string;
+  readonly variant?: Variant;
+}
+
+export interface QueryUniqueTestVariantsResponse {
+  readonly variants?: readonly UniqueTestVariant[];
+  readonly nextPageToken?: string;
+}
+
 export class ResultDb {
   private static SERVICE = 'luci.resultdb.v1.ResultDB';
 
@@ -321,6 +340,10 @@ export class ResultDb {
 
   async getTestResultHistory(req: GetTestResultHistoryRequest, cacheOpt: CacheOption = {}) {
     return (await this.cachedCallFn(cacheOpt, 'GetTestResultHistory', req)) as GetTestResultHistoryResponse;
+  }
+
+  async queryUniqueTestVariants(req: QueryUniqueTestVariantsRequest, cacheOpt: CacheOption = {}) {
+    return (await this.cachedCallFn(cacheOpt, 'QueryUniqueTestVariants', req)) as QueryUniqueTestVariantsResponse;
   }
 }
 
