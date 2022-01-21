@@ -38,6 +38,8 @@ import (
 type CLQueryBuilder struct {
 	// CLID of the CL being searched for. Required.
 	CLID common.CLID
+	// Optional extra CLs that must be included.
+	AdditionalCLIDs common.CLIDsSet
 	// Project optionally restricts Runs to the given LUCI project.
 	Project string
 	// MaxExcl restricts query to Runs with ID lexicographically smaller.
@@ -61,6 +63,19 @@ type CLQueryBuilder struct {
 
 // isSatisfied returns whether the given Run satisfies the query.
 func (b CLQueryBuilder) isSatisfied(r *Run) bool {
+	// If there are additional CLs that must be included,
+	// check whether all of these are indeed included.
+	if len(b.AdditionalCLIDs) > 0 {
+		count := 0
+		for _, clid := range r.CLs {
+			if b.AdditionalCLIDs.Has(clid) {
+				count += 1
+			}
+		}
+		if count != len(b.AdditionalCLIDs) {
+			return false
+		}
+	}
 	switch {
 	case r == nil:
 	case b.Project != "" && r.ID.LUCIProject() != b.Project:
@@ -159,8 +174,23 @@ func (b CLQueryBuilder) GetAllRunKeys(ctx context.Context) ([]*datastore.Key, er
 }
 
 // LoadRuns returns matched Runs and the page token to continue search later.
-func (b CLQueryBuilder) LoadRuns(ctx context.Context, checkers ...LoadRunChecker) ([]*Run, *PageToken, error) {
-	return loadRunsFromQuery(ctx, b, checkers...)
+func (b CLQueryBuilder) LoadRuns(ctx context.Context, checkers ...ProjectAwareChecker) ([]*Run, *PageToken, error) {
+	var rCheckers []LoadRunChecker
+	switch l := len(checkers); {
+	case l > 1:
+		panic(fmt.Errorf("at most 1 LoadRunChecker allowed, %d given", l))
+	case l == 1:
+		c := checkers[0]
+		// TODO(qyearsley): Refactor LoadRuns and LoadRunCheckers as per
+		// discussion in https://crrev.com/c/3362742.
+		if b.Project != "" {
+			if err := c.BeforeQuery(ctx, b.Project); err != nil {
+				return nil, nil, err
+			}
+		}
+		rCheckers = append(rCheckers, c)
+	}
+	return loadRunsFromQuery(ctx, b, rCheckers...)
 }
 
 // qLimit implements runKeysQuery interface.

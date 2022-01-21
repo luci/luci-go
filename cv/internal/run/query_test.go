@@ -43,17 +43,20 @@ func TestCLQueryBuilder(t *testing.T) {
 		ctx, cancel := ct.SetUp()
 		defer cancel()
 
+		// getAll asserts that LoadRuns returns Runs with the given RunIDs.
 		getAll := func(q CLQueryBuilder) common.RunIDs {
 			keys, err := q.GetAllRunKeys(ctx)
 			So(err, ShouldBeNil)
+			// They keys may be different than the Runs because some Runs
+			// may be filtered out (by isSatisfied).
 			runs, pageToken, err := q.LoadRuns(ctx)
 			So(err, ShouldBeNil)
-			ids := idsOfKeys(keys)
-			So(ids, ShouldResemble, idsOf(runs))
+			ids := idsOf(runs)
 			assertCorrectPageToken(q, keys, pageToken)
 			return ids
 		}
 
+		// makeRun puts a Run and returns the RunID.
 		makeRun := func(proj string, delay time.Duration, clids ...common.CLID) common.RunID {
 			createdAt := ct.Clock.Now().Add(delay)
 			runID := common.MakeRunID(proj, createdAt, 1, []byte{0, byte(delay / time.Millisecond)})
@@ -70,7 +73,8 @@ func TestCLQueryBuilder(t *testing.T) {
 
 		clA, clB, clZ := common.CLID(1), common.CLID(2), common.CLID(3)
 
-		// RunID below are ordered lexicographically.
+		// The below runs are sorted by RunID; by project then by time from
+		// latest to earliest.
 		bond9 := makeRun("bond", 9*time.Millisecond, clA)
 		bond4 := makeRun("bond", 4*time.Millisecond, clA, clB)
 		bond2 := makeRun("bond", 2*time.Millisecond, clA)
@@ -92,6 +96,21 @@ func TestCLQueryBuilder(t *testing.T) {
 		Convey("CL with all Runs", func() {
 			qb := CLQueryBuilder{CLID: clA}
 			So(getAll(qb), ShouldResemble, common.RunIDs{bond9, bond4, bond2, dart5, dart3, rust1, xero7})
+		})
+
+		Convey("Two CLs, with some Runs", func() {
+			qb := CLQueryBuilder{CLID: clB, AdditionalCLIDs: common.MakeCLIDsSet(int64(clA))}
+			So(getAll(qb), ShouldResemble, common.RunIDs{bond4, rust1})
+		})
+
+		Convey("Two CLs with some Runs, other order", func() {
+			qb := CLQueryBuilder{CLID: clA, AdditionalCLIDs: common.MakeCLIDsSet(int64(clB))}
+			So(getAll(qb), ShouldResemble, common.RunIDs{bond4, rust1})
+		})
+
+		Convey("Two CLs, with no Runs", func() {
+			qb := CLQueryBuilder{CLID: clA, AdditionalCLIDs: common.MakeCLIDsSet(int64(clZ))}
+			So(getAll(qb), ShouldBeEmpty)
 		})
 
 		Convey("Filter by Project", func() {
@@ -687,6 +706,8 @@ type projQueryInTest interface {
 	LoadRuns(context.Context, ...ProjectAwareChecker) ([]*Run, *PageToken, error)
 }
 
+// execQueryInTest calls GetAllRunKeys and LoadRuns and returns the Run keys, Runs
+// and page token.
 func execQueryInTest(ctx context.Context, q projQueryInTest, checkers ...ProjectAwareChecker) ([]*datastore.Key, []*Run, *PageToken) {
 	keys, err := q.GetAllRunKeys(ctx)
 	So(err, ShouldBeNil)
@@ -695,6 +716,8 @@ func execQueryInTest(ctx context.Context, q projQueryInTest, checkers ...Project
 	return keys, runs, pageToken
 }
 
+// execQueryInTestSameRunsAndKeysWithPageToken asserts that the Run keys and
+// Runs match; then returns the IDs and page token.
 func execQueryInTestSameRunsAndKeysWithPageToken(ctx context.Context, q projQueryInTest, checkers ...ProjectAwareChecker) (common.RunIDs, *PageToken) {
 	keys, runs, pageToken := execQueryInTest(ctx, q, checkers...)
 	ids := idsOfKeys(keys)
@@ -703,11 +726,18 @@ func execQueryInTestSameRunsAndKeysWithPageToken(ctx context.Context, q projQuer
 	return ids, pageToken
 }
 
+// execQueryInTestSameRunsAndKeys asserts that the Run keys and Runs match;
+// then returns just the IDs.
 func execQueryInTestSameRunsAndKeys(ctx context.Context, q projQueryInTest) common.RunIDs {
 	ids, _ := execQueryInTestSameRunsAndKeysWithPageToken(ctx, q)
 	return ids
 }
 
+// assertCorrectPageToken asserts that page token is as expected.
+//
+// That is, page token should be nil if the number of keys is less than the
+// limit (or if there's no limit); and page token should have the correct value
+// when the number of keys is equal to the limit.
 func assertCorrectPageToken(q runKeysQuery, keys []*datastore.Key, pageToken *PageToken) {
 	if l := len(keys); q.qLimit() <= 0 || l < int(q.qLimit()) {
 		So(pageToken, ShouldBeNil)

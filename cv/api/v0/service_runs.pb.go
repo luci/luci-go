@@ -90,9 +90,9 @@ type SearchRunsRequest struct {
 
 	// Returned Runs must satisfy this predicate. Required.
 	Predicate *RunPredicate `protobuf:"bytes,1,opt,name=predicate,proto3" json:"predicate,omitempty"`
-	// Number of Runs to return.
+	// Maximum number of Runs to return at once.
 	//
-	// TODO(qyearsley): Document the default page size after it is decided.
+	// Default 32; maximum 128.
 	PageSize int32 `protobuf:"varint,2,opt,name=page_size,json=pageSize,proto3" json:"page_size,omitempty"`
 	// Value of SearchRunsResponse.next_page_token from the previous response.
 	// Use it to continue searching.
@@ -224,7 +224,10 @@ type RunPredicate struct {
 
 	// Limit results to this LUCI project. Required.
 	Project string `protobuf:"bytes,1,opt,name=project,proto3" json:"project,omitempty"`
-	// The Run must include each of these changes.
+	// The Run must include each of these Gerrit CLs, and may include others.
+	//
+	// The Patchset field in the GerritChanges is disallowed; Runs for the CL
+	// across all patchsets will be returned.
 	GerritChanges []*GerritChange `protobuf:"bytes,2,rep,name=gerrit_changes,json=gerritChanges,proto3" json:"gerrit_changes,omitempty"`
 }
 

@@ -24,6 +24,7 @@ import (
 	"go.chromium.org/luci/common/sync/parallel"
 	apiv0pb "go.chromium.org/luci/cv/api/v0"
 	"go.chromium.org/luci/cv/internal/acls"
+	"go.chromium.org/luci/cv/internal/changelist"
 	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/rpc/pagination"
 	"go.chromium.org/luci/cv/internal/run"
@@ -61,19 +62,50 @@ func (s *RunsServer) SearchRuns(ctx context.Context, req *apiv0pb.SearchRunsRequ
 		return nil, appstatus.Errorf(codes.InvalidArgument, "Project is required")
 	}
 
-	// TODO(qyearsley): Implement query by Gerrit changes.
-	// This will involve getting RunCLs from external IDs (Lookup) and either
-	// adding a new function to run/query.go or looking up by one CL then
-	// filtering.
-	if len(pred.GetGerritChanges()) != 0 {
-		return nil, appstatus.Errorf(codes.InvalidArgument, "Query by GerritChanges not yet implemented")
+	var qb interface {
+		LoadRuns(context.Context, ...run.ProjectAwareChecker) ([]*run.Run, *run.PageToken, error)
 	}
+	if gcs := pred.GetGerritChanges(); len(gcs) == 0 {
+		qb = run.ProjectQueryBuilder{
+			Project: pred.GetProject(),
+			Limit:   limit,
+		}.PageToken(pt)
+	} else {
+		var eids []changelist.ExternalID
+		for _, gc := range gcs {
+			if gc.Patchset != 0 {
+				return nil, appstatus.Errorf(codes.InvalidArgument, "Patchset is disallowed in GerritChange %v", gc)
+			}
 
-	qb := run.ProjectQueryBuilder{
-		Project: req.Predicate.GetProject(),
-		Limit:   limit,
-	}.PageToken(pt)
-
+			eid, err := changelist.GobID(gc.Host, gc.Change)
+			if err != nil {
+				return nil, appstatus.Errorf(codes.InvalidArgument, "invalid GerritChange %v: %s", gc, err)
+			}
+			eids = append(eids, eid)
+		}
+		// Look up CLIDs from CL ExternalIDs.
+		clids, err := changelist.Lookup(ctx, eids)
+		if err != nil {
+			return nil, err
+		}
+		// changelist.Lookup returns 0 for unknown external ID, i.e. CL not found.
+		// In that case, no Runs match; return empty response.
+		for _, clid := range clids {
+			if clid == 0 {
+				return &apiv0pb.SearchRunsResponse{}, nil
+			}
+		}
+		additionalCLIDs := make(common.CLIDsSet, len(clids)-1)
+		for _, clid := range clids[1:] {
+			additionalCLIDs.Add(clid)
+		}
+		qb = run.CLQueryBuilder{
+			CLID:            clids[0],
+			AdditionalCLIDs: additionalCLIDs,
+			Project:         pred.GetProject(),
+			Limit:           limit,
+		}.PageToken(pt)
+	}
 	runs, nextPageToken, err := qb.LoadRuns(ctx, acls.NewRunReadChecker())
 	if err != nil {
 		return nil, err
@@ -109,7 +141,7 @@ func populateRuns(ctx context.Context, runs []*run.Run) ([]*apiv0pb.Run, error) 
 			i, r := i, r
 			work <- func() (err error) {
 				respRuns[i], err = populateRunResponse(ctx, r)
-				return
+				return err
 			}
 		}
 	})

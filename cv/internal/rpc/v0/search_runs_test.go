@@ -45,12 +45,12 @@ func TestSearchRuns(t *testing.T) {
 
 		srv := RunsServer{}
 
-		prjcfgtest.Create(ctx, "prj", &cfgpb.Config{
+		const projectName = "prj"
+
+		prjcfgtest.Create(ctx, projectName, &cfgpb.Config{
 			// TODO(crbug/1233963): remove once non-legacy ACLs are implemented.
 			CqStatusHost: "chromium-cq-status.appspot.com",
-			ConfigGroups: []*cfgpb.ConfigGroup{{
-				Name: "first",
-			}},
+			ConfigGroups: []*cfgpb.ConfigGroup{{Name: "first"}},
 		})
 
 		ctx = auth.WithState(ctx, &authtest.FakeState{
@@ -63,7 +63,7 @@ func TestSearchRuns(t *testing.T) {
 				Identity: "anonymous:anonymous",
 			})
 			_, err := srv.SearchRuns(ctx, &apiv0pb.SearchRunsRequest{
-				Predicate: &apiv0pb.RunPredicate{Project: "prj"},
+				Predicate: &apiv0pb.RunPredicate{Project: projectName},
 			})
 			So(err, ShouldBeRPCPermissionDenied)
 		})
@@ -97,13 +97,14 @@ func TestSearchRuns(t *testing.T) {
 
 		Convey("with no runs", func() {
 			resp, err := srv.SearchRuns(ctx, &apiv0pb.SearchRunsRequest{
-				Predicate: &apiv0pb.RunPredicate{Project: "prj"},
+				Predicate: &apiv0pb.RunPredicate{Project: projectName},
 			})
 			So(err, ShouldBeNil)
 			So(resp.Runs, ShouldBeEmpty)
-			So(resp.NextPageToken, ShouldEqual, "")
+			So(resp.NextPageToken, ShouldBeEmpty)
 		})
 
+		// Add example data for tests below.
 		gHost := "r-review.example.com"
 		epoch := testclock.TestRecentTimeUTC.Truncate(time.Millisecond)
 
@@ -139,37 +140,36 @@ func TestSearchRuns(t *testing.T) {
 					ID:         cl.ID,
 					IndexedID:  cl.ID,
 					ExternalID: cl.ExternalID,
-					Detail: &changelist.Snapshot{
-						Patchset: 1,
-					},
+					Detail:     &changelist.Snapshot{Patchset: 1},
 				}), ShouldBeNil)
 			}
 			return r
 		}
 
-		Convey("with matching Runs", func() {
+		Convey("with matching Runs, project-only predicate", func() {
 			cl1 := changelist.MustGobID(gHost, 1).MustCreateIfNotExists(ctx)
 			cl2 := changelist.MustGobID(gHost, 2).MustCreateIfNotExists(ctx)
-			r1 := putRun("prj", 1*time.Millisecond, cl1)
-			r2 := putRun("prj", 5*time.Millisecond, cl2)
+			r1 := putRun(projectName, 1*time.Millisecond, cl1)
+			r2 := putRun(projectName, 5*time.Millisecond, cl2)
 			resp, err := srv.SearchRuns(ctx, &apiv0pb.SearchRunsRequest{
-				Predicate: &apiv0pb.RunPredicate{Project: "prj"},
+				Predicate: &apiv0pb.RunPredicate{Project: projectName},
 			})
 			So(err, ShouldBeNil)
+
 			// Most recent Run comes first.
 			So(respIDs(resp.Runs), ShouldResemble, runIDs(r2, r1))
 			So(resp.NextPageToken, ShouldBeEmpty)
 		})
 
-		Convey("paging", func() {
+		Convey("paging, project-only predicate", func() {
 			cl1 := changelist.MustGobID(gHost, 1).MustCreateIfNotExists(ctx)
 			cl2 := changelist.MustGobID(gHost, 2).MustCreateIfNotExists(ctx)
-			r1 := putRun("prj", 1*time.Millisecond, cl1)
-			r2 := putRun("prj", 5*time.Millisecond, cl2)
+			r1 := putRun(projectName, 1*time.Millisecond, cl1)
+			r2 := putRun(projectName, 5*time.Millisecond, cl2)
 
 			// First request, first page.
 			resp, err := srv.SearchRuns(ctx, &apiv0pb.SearchRunsRequest{
-				Predicate: &apiv0pb.RunPredicate{Project: "prj"},
+				Predicate: &apiv0pb.RunPredicate{Project: projectName},
 				PageSize:  1,
 			})
 			So(err, ShouldBeNil)
@@ -178,7 +178,7 @@ func TestSearchRuns(t *testing.T) {
 
 			// Second request, second page.
 			resp, err = srv.SearchRuns(ctx, &apiv0pb.SearchRunsRequest{
-				Predicate: &apiv0pb.RunPredicate{Project: "prj"},
+				Predicate: &apiv0pb.RunPredicate{Project: projectName},
 				PageSize:  1,
 				PageToken: resp.NextPageToken,
 			})
@@ -188,13 +188,116 @@ func TestSearchRuns(t *testing.T) {
 
 			// Third request, no more results.
 			resp, err = srv.SearchRuns(ctx, &apiv0pb.SearchRunsRequest{
-				Predicate: &apiv0pb.RunPredicate{Project: "prj"},
+				Predicate: &apiv0pb.RunPredicate{Project: projectName},
 				PageSize:  1,
 				PageToken: resp.NextPageToken,
 			})
 			So(err, ShouldBeNil)
 			So(resp.Runs, ShouldBeEmpty)
 			So(resp.NextPageToken, ShouldBeEmpty)
+		})
+
+		Convey("with matching Run, single CL predicate", func() {
+			cl1 := changelist.MustGobID(gHost, 1).MustCreateIfNotExists(ctx)
+			r1 := putRun(projectName, 1*time.Millisecond, cl1)
+			resp, err := srv.SearchRuns(ctx, &apiv0pb.SearchRunsRequest{
+				Predicate: &apiv0pb.RunPredicate{
+					Project: projectName,
+					GerritChanges: []*apiv0pb.GerritChange{
+						&apiv0pb.GerritChange{Host: gHost, Change: 1},
+					},
+				},
+			})
+			So(err, ShouldBeNil)
+			So(respIDs(resp.Runs), ShouldResemble, runIDs(r1))
+		})
+
+		Convey("with CL predicate that includes patchset", func() {
+			cl1 := changelist.MustGobID(gHost, 1).MustCreateIfNotExists(ctx)
+			putRun(projectName, 1*time.Millisecond, cl1)
+			_, err := srv.SearchRuns(ctx, &apiv0pb.SearchRunsRequest{
+				Predicate: &apiv0pb.RunPredicate{
+					Project: projectName,
+					GerritChanges: []*apiv0pb.GerritChange{
+						&apiv0pb.GerritChange{Host: gHost, Change: 1, Patchset: 3},
+					},
+				},
+			})
+			So(err, ShouldBeRPCInvalidArgument)
+		})
+
+		Convey("with CL predicate and no project given", func() {
+			cl1 := changelist.MustGobID(gHost, 1).MustCreateIfNotExists(ctx)
+			putRun(projectName, 1*time.Millisecond, cl1)
+			_, err := srv.SearchRuns(ctx, &apiv0pb.SearchRunsRequest{
+				Predicate: &apiv0pb.RunPredicate{
+					GerritChanges: []*apiv0pb.GerritChange{
+						&apiv0pb.GerritChange{Host: gHost, Change: 1},
+					},
+				},
+			})
+			So(err, ShouldBeRPCInvalidArgument)
+		})
+
+		Convey("with no matching Run, CL predicate", func() {
+			// No Runs put.
+			resp, err := srv.SearchRuns(ctx, &apiv0pb.SearchRunsRequest{
+				Predicate: &apiv0pb.RunPredicate{
+					Project: projectName,
+					GerritChanges: []*apiv0pb.GerritChange{
+						&apiv0pb.GerritChange{Host: gHost, Change: 1},
+					},
+				},
+			})
+			So(err, ShouldBeNil)
+			So(resp.Runs, ShouldBeEmpty)
+		})
+
+		Convey("query with multiple CLs returns Run that contains all CLs", func() {
+			cl1 := changelist.MustGobID(gHost, 2).MustCreateIfNotExists(ctx)
+			cl2 := changelist.MustGobID(gHost, 3).MustCreateIfNotExists(ctx)
+			r1 := putRun(projectName, 1*time.Millisecond, cl1, cl2)
+			resp, err := srv.SearchRuns(ctx, &apiv0pb.SearchRunsRequest{
+				Predicate: &apiv0pb.RunPredicate{
+					Project: projectName,
+					GerritChanges: []*apiv0pb.GerritChange{
+						&apiv0pb.GerritChange{
+							Host:   gHost,
+							Change: 2,
+						},
+						&apiv0pb.GerritChange{
+							Host:   gHost,
+							Change: 3,
+						},
+					},
+				},
+			})
+			So(err, ShouldBeNil)
+			So(respIDs(resp.Runs), ShouldResemble, runIDs(r1))
+		})
+
+		Convey("query with multiple CLs returns nothing if no single CL contains all CLs", func() {
+			cl1 := changelist.MustGobID(gHost, 1).MustCreateIfNotExists(ctx)
+			cl2 := changelist.MustGobID(gHost, 2).MustCreateIfNotExists(ctx)
+			putRun(projectName, 1*time.Millisecond, cl1)
+			putRun(projectName, 5*time.Millisecond, cl2)
+			resp, err := srv.SearchRuns(ctx, &apiv0pb.SearchRunsRequest{
+				Predicate: &apiv0pb.RunPredicate{
+					Project: projectName,
+					GerritChanges: []*apiv0pb.GerritChange{
+						&apiv0pb.GerritChange{
+							Host:   gHost,
+							Change: 1,
+						},
+						&apiv0pb.GerritChange{
+							Host:   gHost,
+							Change: 2,
+						},
+					},
+				},
+			})
+			So(err, ShouldBeNil)
+			So(resp.Runs, ShouldBeEmpty)
 		})
 	})
 }
