@@ -102,6 +102,7 @@ func TestLoadingConfigs(t *testing.T) {
 			})
 
 			m2, err := GetHashMeta(ctx, project, h)
+			So(err, ShouldBeNil)
 			So(m2, ShouldResemble, m)
 
 			cgs, err := m.GetConfigGroups(ctx)
@@ -205,7 +206,7 @@ func TestLoadingConfigs(t *testing.T) {
 			So(err, ShouldBeNil)
 			So(cg.Content, ShouldResembleProto, cfg.ConfigGroups[2])
 			// ... except the deleted one.
-			cg, err = GetConfigGroup(ctx, project, m.ConfigGroupIDs[1])
+			_, err = GetConfigGroup(ctx, project, m.ConfigGroupIDs[1])
 			So(datastore.IsErrNoSuchEntity(err), ShouldBeTrue)
 		})
 	})
