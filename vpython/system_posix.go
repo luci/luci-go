@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+//go:build darwin || linux || freebsd || netbsd || openbsd || android
 // +build darwin linux freebsd netbsd openbsd android
 
 package vpython
@@ -20,8 +21,6 @@ import (
 	"context"
 	"os"
 	"syscall"
-
-	"golang.org/x/sys/unix"
 
 	"go.chromium.org/luci/vpython/python"
 	"go.chromium.org/luci/vpython/venv"
@@ -41,15 +40,8 @@ import (
 // manage the file descriptor.
 func systemSpecificLaunch(c context.Context, ve *venv.Env, cl *python.CommandLine, env environ.Env, dir string) error {
 	return Exec(c, ve.Interpreter(), cl, env, dir, func() error {
-		// Clear the close-on-exec flag, which Go enables by default.
-		lockFD := ve.LockHandle.LockFile().Fd()
-		fdFlags, err := unix.FcntlInt(lockFD, unix.F_GETFD, 0)
-		if err != nil {
-			return errors.Annotate(err, "could not get flags for lock file").Err()
-		}
-		if _, err := unix.FcntlInt(lockFD, unix.F_SETFD,
-			fdFlags & ^unix.FD_CLOEXEC); err != nil {
-			return errors.Annotate(err, "could not remove close-on-exec for lock file").Err()
+		if err := ve.LockHandle.PreserveExec(); err != nil {
+			return errors.Annotate(err, "could not perserve lock across exec").Err()
 		}
 		return nil
 	})
