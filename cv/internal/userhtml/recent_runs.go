@@ -20,8 +20,11 @@ import (
 	"strings"
 	"time"
 
+	"google.golang.org/grpc/codes"
+
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/grpc/appstatus"
 	"go.chromium.org/luci/server/caching"
 	"go.chromium.org/luci/server/caching/layered"
 	"go.chromium.org/luci/server/router"
@@ -122,14 +125,26 @@ func searchRuns(ctx context.Context, project string, params recentRunsParams) (r
 	}
 
 	var qb interface {
-		LoadRuns(context.Context, ...run.ProjectAwareChecker) ([]*run.Run, *run.PageToken, error)
+		LoadRuns(context.Context, ...run.LoadRunChecker) ([]*run.Run, *run.PageToken, error)
 	}
 	if project == "" {
 		qb = run.RecentQueryBuilder{
-			Limit:  50,
-			Status: params.status,
+			Limit:              50,
+			CheckProjectAccess: acls.CheckProjectAccess,
+			Status:             params.status,
 		}.PageToken(pageToken)
 	} else {
+		switch ok, err := acls.CheckProjectAccess(ctx, project); {
+		case err != nil:
+			return nil, "", "", err
+		case !ok:
+			// Return NotFound error in the case of access denied.
+			//
+			// Rationale: the caller shouldn't be able to distinguish between
+			// project not existing and not having access to the project, because
+			// it may leak the existence of the project.
+			return nil, "", "", appstatus.Errorf(codes.NotFound, "Project %q not found", project)
+		}
 		qb = run.ProjectQueryBuilder{
 			Project: project,
 			Limit:   50,

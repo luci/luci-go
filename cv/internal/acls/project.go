@@ -17,17 +17,18 @@ package acls
 import (
 	"context"
 
-	"google.golang.org/grpc/codes"
-
-	"go.chromium.org/luci/grpc/appstatus"
-
 	"go.chromium.org/luci/cv/internal/configs/prjcfg"
 )
 
 // CheckProjectAccess checks if the calling user has access to the LUCI project.
 //
-// Returns true if user has access, false otherwise.
+// Returns true if project exists and is active and user has access to this
+// LUCI project, false otherwise.
 func CheckProjectAccess(ctx context.Context, project string) (bool, error) {
+	// TODO(yiwzhang): Consider returning a enum (UNKNOWN, ALLOWED, DENIED,
+	// PROJECT_NOT_EXISTS) so that callsite can explicitly specify logic to
+	// handle various scenarios.
+	//
 	// TODO(https://crbug.com/1233963): design & implement & test.
 
 	// Check whether project is active.
@@ -47,25 +48,4 @@ func CheckProjectAccess(ctx context.Context, project string) (bool, error) {
 
 	// Default to no access.
 	return false, nil
-}
-
-// projectNotFoundMsg is used as textual reason for gRPC NotFound code.
-//
-// Rational: the caller shouldn't be able to distinguish between project not
-// existing and not having access to the project, because it may leak the
-// existence of the project.
-const projectNotFoundMsg = "Project not found"
-
-// grpcProjectAccess checks if user has access to the project.
-//
-// Returns nil if so or an appstatus-tagged error if not.
-func grpcCheckProjectAccess(ctx context.Context, project string) error {
-	switch yes, err := CheckProjectAccess(ctx, project); {
-	case err != nil:
-		return err
-	case yes:
-		return nil
-	default:
-		return appstatus.Error(codes.NotFound, projectNotFoundMsg)
-	}
 }

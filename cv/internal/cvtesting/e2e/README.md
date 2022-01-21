@@ -43,7 +43,7 @@ If test is flaky, try:
     above).
   * Use exactly 1 Convey block inside each `TestXYZ` function.
   * Avoid deeply nested Convey blocks. Ideally there is 1 top level only.
-      * Rational: easier to debug, since each section may produce substantial
+      * Rationale: easier to debug, since each section may produce substantial
         amount of logs, which are harder to attribute to individual sub-blocks.
       * Corollary: moderate copy-pasta is fine.
   * Tests should be fast, finishing with 1s even on under-powered laptops.

@@ -123,53 +123,5 @@ func TestRunReadChecker(t *testing.T) {
 				So(err, ShouldHaveAppStatus, codes.NotFound)
 			})
 		})
-
-		Convey("Searching Runs", func() {
-			Convey("OK public project", func() {
-				runs, _, err := run.ProjectQueryBuilder{Project: projectPublic}.LoadRuns(ctx, NewRunReadChecker())
-				So(err, ShouldBeNil)
-				So(runs, ShouldHaveLength, 1)
-				So(runs[0].ID, ShouldResemble, publicRun.ID)
-			})
-			Convey("OK internal project with access", func() {
-				ctx = auth.WithState(ctx, &authtest.FakeState{
-					Identity:       "user:googler@example.com",
-					IdentityGroups: []string{"googlers"},
-				})
-				runs, _, err := run.ProjectQueryBuilder{Project: projectInternal}.LoadRuns(ctx, NewRunReadChecker())
-				So(err, ShouldBeNil)
-				So(runs, ShouldHaveLength, 1)
-				So(runs[0].ID, ShouldResemble, internalRun.ID)
-			})
-			Convey("Internal Project is not found without access", func() {
-				runs, _, err := run.ProjectQueryBuilder{Project: projectInternal}.LoadRuns(ctx, NewRunReadChecker())
-				So(err, ShouldHaveAppStatus, codes.NotFound)
-				So(runs, ShouldBeEmpty)
-			})
-			Convey("Not existing project is also not found", func() {
-				runs, _, err := run.ProjectQueryBuilder{Project: "does-not-exist"}.LoadRuns(ctx, NewRunReadChecker())
-				So(err, ShouldHaveAppStatus, codes.NotFound)
-				So(runs, ShouldBeEmpty)
-			})
-			Convey("Searching across projects", func() {
-				Convey("without access to internal project", func() {
-					runs, _, err := run.RecentQueryBuilder{}.LoadRuns(ctx, NewRunReadChecker())
-					So(err, ShouldBeNil)
-					So(runs, ShouldHaveLength, 1)
-					So(runs[0].ID, ShouldResemble, publicRun.ID)
-				})
-				Convey("with access to internal project", func() {
-					ctx = auth.WithState(ctx, &authtest.FakeState{
-						Identity:       "user:googler@example.com",
-						IdentityGroups: []string{"googlers"},
-					})
-					runs, _, err := run.RecentQueryBuilder{}.LoadRuns(ctx, NewRunReadChecker())
-					So(err, ShouldBeNil)
-					So(runs, ShouldHaveLength, 2)
-					So(runs[0].ID, ShouldResemble, publicRun.ID)
-					So(runs[1].ID, ShouldResemble, internalRun.ID)
-				})
-			})
-		})
 	})
 }

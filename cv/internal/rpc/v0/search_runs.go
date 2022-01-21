@@ -58,30 +58,40 @@ func (s *RunsServer) SearchRuns(ctx context.Context, req *apiv0pb.SearchRunsRequ
 		return nil, appstatus.Errorf(codes.InvalidArgument, "Predicate is required")
 	}
 	pred := req.GetPredicate()
-	if pred.GetProject() == "" {
+	project := pred.GetProject()
+	if project == "" {
 		return nil, appstatus.Errorf(codes.InvalidArgument, "Project is required")
+	}
+	switch ok, err := acls.CheckProjectAccess(ctx, project); {
+	case err != nil:
+		return nil, err
+	case !ok:
+		// Return NotFound error in the case of access denied.
+		//
+		// Rationale: the caller shouldn't be able to distinguish between
+		// project not existing and not having access to the project, because
+		// it may leak the existence of the project.
+		return nil, appstatus.Errorf(codes.NotFound, "Project %q not found", project)
 	}
 
 	var qb interface {
-		LoadRuns(context.Context, ...run.ProjectAwareChecker) ([]*run.Run, *run.PageToken, error)
+		LoadRuns(context.Context, ...run.LoadRunChecker) ([]*run.Run, *run.PageToken, error)
 	}
 	if gcs := pred.GetGerritChanges(); len(gcs) == 0 {
 		qb = run.ProjectQueryBuilder{
-			Project: pred.GetProject(),
+			Project: project,
 			Limit:   limit,
 		}.PageToken(pt)
 	} else {
-		var eids []changelist.ExternalID
-		for _, gc := range gcs {
+		eids := make([]changelist.ExternalID, len(gcs))
+		for i, gc := range gcs {
 			if gc.Patchset != 0 {
 				return nil, appstatus.Errorf(codes.InvalidArgument, "Patchset is disallowed in GerritChange %v", gc)
 			}
-
-			eid, err := changelist.GobID(gc.Host, gc.Change)
+			eids[i], err = changelist.GobID(gc.Host, gc.Change)
 			if err != nil {
 				return nil, appstatus.Errorf(codes.InvalidArgument, "invalid GerritChange %v: %s", gc, err)
 			}
-			eids = append(eids, eid)
 		}
 		// Look up CLIDs from CL ExternalIDs.
 		clids, err := changelist.Lookup(ctx, eids)
@@ -102,7 +112,7 @@ func (s *RunsServer) SearchRuns(ctx context.Context, req *apiv0pb.SearchRunsRequ
 		qb = run.CLQueryBuilder{
 			CLID:            clids[0],
 			AdditionalCLIDs: additionalCLIDs,
-			Project:         pred.GetProject(),
+			Project:         project,
 			Limit:           limit,
 		}.PageToken(pt)
 	}

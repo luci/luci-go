@@ -41,19 +41,19 @@ func CheckRunRead(ctx context.Context, r *run.Run) (bool, error) {
 	return false, nil
 }
 
-// NewRunReadChecker returns a ProjectAwareChecker that checks read access
+// NewRunReadChecker returns a LoadRunChecker that checks read access
 // for the Run to be loaded.
 //
-// If current identity lacks read access, ensures an appopriate appstatus
+// If current identity lacks read access, ensures an appropriate appstatus
 // package error is returned.
 //
 // Example:
 //   r, err := run.LoadRuns(ctx, id, acls.NewRunReadChecker())
-func NewRunReadChecker() run.ProjectAwareChecker { return runReadChecker{} }
+func NewRunReadChecker() run.LoadRunChecker { return runReadChecker{} }
 
 // runNotFoundMsg is used as textual reason for gRPC NotFound code.
 //
-// Rational: the caller shouldn't be able to distinguish between Run not
+// Rationale: the caller shouldn't be able to distinguish between Run not
 // existing and not having access to the Run, because it may leak the existence
 // of the Run.
 const runNotFoundMsg = "Run not found"
@@ -79,9 +79,4 @@ func (c runReadChecker) After(ctx context.Context, r *run.Run) error {
 	default:
 		return appstatus.Error(codes.NotFound, runNotFoundMsg)
 	}
-}
-
-// BeforeQuery implements run.ProjectAwareChecker.
-func (c runReadChecker) BeforeQuery(ctx context.Context, project string) error {
-	return grpcCheckProjectAccess(ctx, project)
 }

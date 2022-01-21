@@ -417,11 +417,15 @@ func TestRecentQueryBuilder(t *testing.T) {
 				So(getAll(RecentQueryBuilder{Limit: 3}.PageToken(next)), ShouldResemble, expIDs[3:6])
 			})
 			Convey("without read access to project", func() {
-				runs, pageToken, err := RecentQueryBuilder{}.LoadRuns(ctx, &fakeProjRunchecker{
-					projects: map[string]error{
-						expIDs[0].LUCIProject(): appstatus.Error(codes.NotFound, "but really, no permission"),
+				runs, pageToken, err := RecentQueryBuilder{
+					CheckProjectAccess: func(ctx context.Context, proj string) (bool, error) {
+						if proj == expIDs[0].LUCIProject() {
+							return false, nil
+						}
+						return true, nil
+
 					},
-				})
+				}.LoadRuns(ctx)
 				So(err, ShouldBeNil)
 				So(pageToken, ShouldBeNil)
 				So(runs, ShouldBeEmpty)
@@ -449,9 +453,14 @@ func TestRecentQueryBuilder(t *testing.T) {
 			Convey("without read access to one project", func() {
 				prj1 := expIDs[0].LUCIProject()
 				prj2 := expIDs[2].LUCIProject()
-				runs, pageToken, err := RecentQueryBuilder{}.LoadRuns(ctx, &fakeProjRunchecker{
-					projects: map[string]error{prj1: appstatus.Error(codes.PermissionDenied, "")},
-				})
+				runs, pageToken, err := RecentQueryBuilder{
+					CheckProjectAccess: func(ctx context.Context, proj string) (bool, error) {
+						if proj == prj1 {
+							return false, nil
+						}
+						return true, nil
+					},
+				}.LoadRuns(ctx)
 				So(err, ShouldBeNil)
 				So(pageToken, ShouldBeNil)
 				checkOrder(runs)
@@ -463,12 +472,16 @@ func TestRecentQueryBuilder(t *testing.T) {
 			Convey("without read access to any project", func() {
 				prj1 := expIDs[0].LUCIProject()
 				prj2 := expIDs[2].LUCIProject()
-				runs, pageToken, err := RecentQueryBuilder{}.LoadRuns(ctx, &fakeProjRunchecker{
-					projects: map[string]error{
-						prj1: appstatus.Error(codes.PermissionDenied, ""),
-						prj2: appstatus.Error(codes.NotFound, ""),
+				runs, pageToken, err := RecentQueryBuilder{
+					CheckProjectAccess: func(ctx context.Context, proj string) (bool, error) {
+						switch proj {
+						case prj1, prj2:
+							return false, nil
+						default:
+							return true, nil
+						}
 					},
-				})
+				}.LoadRuns(ctx)
 				So(err, ShouldBeNil)
 				So(pageToken, ShouldBeNil)
 				So(runs, ShouldBeEmpty)
@@ -691,24 +704,14 @@ func TestLoadRunsFromQuery(t *testing.T) {
 	})
 }
 
-type fakeProjRunchecker struct {
-	fakeRunChecker
-	projects map[string]error
-}
-
-// BeforeQuery implements ProjectAwareChecker.
-func (f *fakeProjRunchecker) BeforeQuery(ctx context.Context, project string) error {
-	return f.projects[project]
-}
-
 type projQueryInTest interface {
 	runKeysQuery
-	LoadRuns(context.Context, ...ProjectAwareChecker) ([]*Run, *PageToken, error)
+	LoadRuns(context.Context, ...LoadRunChecker) ([]*Run, *PageToken, error)
 }
 
-// execQueryInTest calls GetAllRunKeys and LoadRuns and returns the Run keys, Runs
-// and page token.
-func execQueryInTest(ctx context.Context, q projQueryInTest, checkers ...ProjectAwareChecker) ([]*datastore.Key, []*Run, *PageToken) {
+// execQueryInTest calls GetAllRunKeys and LoadRuns and returns the Run keys,
+// Runs and page token.
+func execQueryInTest(ctx context.Context, q projQueryInTest, checkers ...LoadRunChecker) ([]*datastore.Key, []*Run, *PageToken) {
 	keys, err := q.GetAllRunKeys(ctx)
 	So(err, ShouldBeNil)
 	runs, pageToken, err := q.LoadRuns(ctx, checkers...)
@@ -718,7 +721,7 @@ func execQueryInTest(ctx context.Context, q projQueryInTest, checkers ...Project
 
 // execQueryInTestSameRunsAndKeysWithPageToken asserts that the Run keys and
 // Runs match; then returns the IDs and page token.
-func execQueryInTestSameRunsAndKeysWithPageToken(ctx context.Context, q projQueryInTest, checkers ...ProjectAwareChecker) (common.RunIDs, *PageToken) {
+func execQueryInTestSameRunsAndKeysWithPageToken(ctx context.Context, q projQueryInTest, checkers ...LoadRunChecker) (common.RunIDs, *PageToken) {
 	keys, runs, pageToken := execQueryInTest(ctx, q, checkers...)
 	ids := idsOfKeys(keys)
 	So(ids, ShouldResemble, idsOf(runs))
