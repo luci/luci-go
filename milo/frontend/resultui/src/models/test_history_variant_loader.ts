@@ -92,6 +92,11 @@ export class TestHistoryVariantLoader {
         variantPredicate: { equals: this.variant },
         timeRange: {},
         pageToken: pageToken,
+        // TODO(weiweilin): the RPC is currently implemented in the frontend.
+        // Use a small page size so we don't need to wait for several
+        // GetTestResultHistory calls to gather 1 page. Adjust the value once
+        // we have the actual RPC implemented on the server side.
+        pageSize: 5,
       });
 
       for (const entry of res.entries) {
