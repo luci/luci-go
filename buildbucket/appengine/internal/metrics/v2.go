@@ -34,6 +34,7 @@ var (
 		BuildDurationRun        metric.CumulativeDistribution
 		BuildDurationScheduling metric.CumulativeDistribution
 		BuilderPresence         metric.Bool
+		ConsecutiveFailureCount metric.Int
 		MaxAgeScheduled         metric.Float
 	}{
 		BuildCount: metric.NewIntWithTargetType(
@@ -102,6 +103,13 @@ var (
 			(&Builder{}).Type(),
 			"A constant, always-true metric that indicates the presence of LUCI Builder",
 			nil,
+		),
+		ConsecutiveFailureCount: metric.NewIntWithTargetType(
+			"buildbucket/v2/builds/consecutive_failure_count",
+			(&Builder{}).Type(),
+			"Number of consecutive non-successful build terminations since the last successful build.",
+			nil,
+			field.String("status"),
 		),
 		MaxAgeScheduled: metric.NewFloatWithTargetType(
 			"buildbucket/v2/builds/max_age_scheduled",

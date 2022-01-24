@@ -113,14 +113,12 @@ func TestReportBuilderMetrics(t *testing.T) {
 			}
 			builds := []*model.Build{
 				{
-					Proto:        &pb.Build{Id: 1, Builder: builderID, Status: pb.Status_SCHEDULED},
-					Experimental: false,
-					Tags:         []string{"builder:b1"},
+					Proto: &pb.Build{Id: 1, Builder: builderID, Status: pb.Status_SCHEDULED},
+					Tags:  []string{"builder:b1"},
 				},
 				{
-					Proto:        &pb.Build{Id: 2, Builder: builderID, Status: pb.Status_SCHEDULED},
-					Experimental: false,
-					Tags:         []string{"builder:b1"},
+					Proto: &pb.Build{Id: 2, Builder: builderID, Status: pb.Status_SCHEDULED},
+					Tags:  []string{"builder:b1"},
 				},
 			}
 			builds[0].NeverLeased = true
@@ -189,6 +187,89 @@ func TestReportBuilderMetrics(t *testing.T) {
 					// V2 doesn't care. It always reports the bucket name as it is.
 					So(store.Get(target("b1"), V2.MaxAgeScheduled, time.Time{}, nil), ShouldNotBeNil)
 				})
+			})
+		})
+
+		Convey("report ConsecutiveFailures", func() {
+			So(createBuilder("b1"), ShouldBeNil)
+			builderID := &pb.BuilderID{
+				Project: prj,
+				Bucket:  bkt,
+				Builder: "b1",
+			}
+			B := func(status pb.Status, changedAt time.Time) *model.Build {
+				return &model.Build{
+					Proto: &pb.Build{
+						Builder: builderID, Status: status,
+						UpdateTime: timestamppb.New(changedAt)},
+					Tags: []string{"builder:b1"},
+				}
+			}
+			count := func(s string) interface{} {
+				return store.Get(target("b1"), V2.ConsecutiveFailureCount, time.Time{}, []interface{}{s})
+			}
+			t := clock.Now()
+
+			Convey("w/o success", func() {
+				builds := []*model.Build{
+					B(pb.Status_CANCELED, t.Add(-4*time.Minute)),
+					B(pb.Status_FAILURE, t.Add(-3*time.Minute)),
+					B(pb.Status_INFRA_FAILURE, t.Add(-2*time.Minute)),
+					B(pb.Status_CANCELED, t.Add(-1*time.Minute)),
+				}
+				So(datastore.Put(ctx, builds), ShouldBeNil)
+				So(ReportBuilderMetrics(ctx), ShouldBeNil)
+				So(count("FAILURE"), ShouldEqual, 1)
+				So(count("INFRA_FAILURE"), ShouldEqual, 1)
+				So(count("CANCELED"), ShouldEqual, 2)
+			})
+
+			Convey("w/ success only", func() {
+				builds := []*model.Build{
+					B(pb.Status_SUCCESS, t.Add(-3*time.Minute)),
+					B(pb.Status_SUCCESS, t.Add(-2*time.Minute)),
+					B(pb.Status_SUCCESS, t.Add(-1*time.Minute)),
+				}
+				So(datastore.Put(ctx, builds), ShouldBeNil)
+				So(ReportBuilderMetrics(ctx), ShouldBeNil)
+				// The count for each status should still be reported w/o 0.
+				So(count("FAILURE"), ShouldEqual, 0)
+				So(count("INFRA_FAILURE"), ShouldEqual, 0)
+				So(count("CANCELED"), ShouldEqual, 0)
+			})
+
+			Convey("w/ a series of failures after success", func() {
+				builds := []*model.Build{
+					B(pb.Status_CANCELED, t.Add(-6*time.Minute)),
+					B(pb.Status_SUCCESS, t.Add(-5*time.Minute)),
+					B(pb.Status_FAILURE, t.Add(-4*time.Minute)),
+					B(pb.Status_FAILURE, t.Add(-3*time.Minute)),
+					B(pb.Status_INFRA_FAILURE, t.Add(-2*time.Minute)),
+					B(pb.Status_CANCELED, t.Add(-1*time.Minute)),
+				}
+				So(datastore.Put(ctx, builds), ShouldBeNil)
+				So(ReportBuilderMetrics(ctx), ShouldBeNil)
+				// 2 failures, 1 infra-failure, and 1 cancel.
+				// Note that the first cancel is ignored because it happened before
+				// the success.
+				So(count("FAILURE"), ShouldEqual, 2)
+				So(count("INFRA_FAILURE"), ShouldEqual, 1)
+				So(count("CANCELED"), ShouldEqual, 1)
+			})
+			Convey("w/ a series of failures before a success", func() {
+				builds := []*model.Build{
+					B(pb.Status_CANCELED, t.Add(-5*time.Minute)),
+					B(pb.Status_SUCCESS, t.Add(-4*time.Minute)),
+					B(pb.Status_FAILURE, t.Add(-3*time.Minute)),
+					B(pb.Status_INFRA_FAILURE, t.Add(-2*time.Minute)),
+					B(pb.Status_CANCELED, t.Add(-1*time.Minute)),
+					B(pb.Status_SUCCESS, t.Add(time.Minute)),
+				}
+				So(datastore.Put(ctx, builds), ShouldBeNil)
+				So(ReportBuilderMetrics(ctx), ShouldBeNil)
+				So(count("FAILURE"), ShouldEqual, 0)
+				So(count("INFRA_FAILURE"), ShouldEqual, 0)
+				So(count("CANCELED"), ShouldEqual, 0)
 			})
 		})
 	})

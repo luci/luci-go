@@ -127,6 +127,12 @@ func ReportBuilderMetrics(ctx context.Context) error {
 					"reportBuildCount",
 				).Err()
 			}
+			taskC <- func() error {
+				return errors.Annotate(
+					reportConsecutiveFailures(tctx, project, bucket, builder),
+					"reportConsecutiveFailures",
+				).Err()
+			}
 			return nil
 		})
 		if err != nil {
@@ -242,5 +248,46 @@ func reportBuildCount(ctx context.Context, project, bucket, legacyBucket, builde
 	V1.BuildCount.Set(ctx, nStarted, legacyBucket, builder, pb.Status_name[int32(pb.Status_STARTED)])
 	V2.BuildCount.Set(ctx, nScheduled, pb.Status_name[int32(pb.Status_SCHEDULED)])
 	V2.BuildCount.Set(ctx, nStarted, pb.Status_name[int32(pb.Status_STARTED)])
+	return nil
+}
+
+func reportConsecutiveFailures(ctx context.Context, project, bucket, builder string) error {
+	var b []*model.Build
+	q := datastore.NewQuery(model.BuildKind).
+		Eq("bucket_id", protoutil.FormatBucketID(project, bucket)).
+		Eq("tags", "builder:"+builder).
+		Order("-status_changed_time")
+	if err := datastore.GetAll(ctx, q.Eq("status_v2", pb.Status_SUCCESS).Limit(1), &b); err != nil {
+		return err
+	}
+
+	// if there was at least one successful build, add Ge()
+	// to narrow the scope of the index scan.
+	if len(b) > 0 {
+		q = q.Gt("status_changed_time", b[0].StatusChangedTime.UTC())
+	}
+
+	var nCancels, nFailures, nInfraFailures int64
+	eg, ctx := errgroup.WithContext(ctx)
+	eg.Go(func() (err error) {
+		nCancels, err = datastore.Count(ctx, q.Eq("status_v2", pb.Status_CANCELED))
+		return
+	})
+	eg.Go(func() (err error) {
+		nFailures, err = datastore.Count(ctx, q.Eq("status_v2", pb.Status_FAILURE))
+		return
+	})
+	eg.Go(func() (err error) {
+		nInfraFailures, err = datastore.Count(ctx, q.Eq("status_v2", pb.Status_INFRA_FAILURE))
+		return
+	})
+	if err := eg.Wait(); err != nil {
+		return err
+	}
+
+	// These counts can be inaccurate a bit, but should be accurate enough.
+	V2.ConsecutiveFailureCount.Set(ctx, nCancels, pb.Status_name[int32(pb.Status_CANCELED)])
+	V2.ConsecutiveFailureCount.Set(ctx, nFailures, pb.Status_name[int32(pb.Status_FAILURE)])
+	V2.ConsecutiveFailureCount.Set(ctx, nInfraFailures, pb.Status_name[int32(pb.Status_INFRA_FAILURE)])
 	return nil
 }
