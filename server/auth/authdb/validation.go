@@ -24,21 +24,29 @@ import (
 
 // validateAuthDB returns nil if AuthDB looks correct.
 func validateAuthDB(db *protocol.AuthDB) error {
-	groups := make(map[string]*protocol.AuthGroup, len(db.GetGroups()))
-	for _, g := range db.GetGroups() {
-		groups[g.GetName()] = g
+	groups := make(map[string]*protocol.AuthGroup, len(db.Groups))
+	for _, g := range db.Groups {
+		groups[g.Name] = g
 	}
 	for name := range groups {
 		if err := validateAuthGroup(name, groups); err != nil {
 			return err
 		}
 	}
-	for _, wl := range db.GetIpWhitelists() {
+	for _, wl := range db.IpWhitelists {
 		if err := validateIPWhitelist(wl); err != nil {
-			return fmt.Errorf("auth: bad IP whitlist %q - %s", wl.GetName(), err)
+			return fmt.Errorf("auth: bad IP whitlist %q - %s", wl.Name, err)
 		}
 	}
-	// TODO: check out of bounds references to conditions.
+	if db.Realms != nil {
+		perms := uint32(len(db.Realms.Permissions))
+		conds := uint32(len(db.Realms.Conditions))
+		for _, realm := range db.Realms.Realms {
+			if err := validateRealm(realm, perms, conds); err != nil {
+				return fmt.Errorf("auth: bad realm %q - %s", realm.Name, err)
+			}
+		}
+	}
 	return nil
 }
 
@@ -46,19 +54,19 @@ func validateAuthDB(db *protocol.AuthDB) error {
 func validateAuthGroup(name string, groups map[string]*protocol.AuthGroup) error {
 	g := groups[name]
 
-	for _, ident := range g.GetMembers() {
+	for _, ident := range g.Members {
 		if _, err := identity.MakeIdentity(ident); err != nil {
 			return fmt.Errorf("auth: invalid identity %q in group %q - %s", ident, name, err)
 		}
 	}
 
-	for _, glob := range g.GetGlobs() {
+	for _, glob := range g.Globs {
 		if _, err := identity.MakeGlob(glob); err != nil {
 			return fmt.Errorf("auth: invalid glob %q in group %q - %s", glob, name, err)
 		}
 	}
 
-	for _, nested := range g.GetNested() {
+	for _, nested := range g.Nested {
 		if groups[nested] == nil {
 			return fmt.Errorf("auth: unknown nested group %q in group %q", nested, name)
 		}
@@ -118,9 +126,26 @@ func findGroupCycle(name string, groups map[string]*protocol.AuthGroup) []string
 
 // validateIPWhitelist checks IPs in the whitelist are parsable.
 func validateIPWhitelist(wl *protocol.AuthIPWhitelist) error {
-	for _, subnet := range wl.GetSubnets() {
+	for _, subnet := range wl.Subnets {
 		if _, _, err := net.ParseCIDR(subnet); err != nil {
 			return fmt.Errorf("bad subnet %q - %s", subnet, err)
+		}
+	}
+	return nil
+}
+
+// validateRealm checks indexes of permissions and conditions in bindings.
+func validateRealm(r *protocol.Realm, permsCount, condsCount uint32) error {
+	for _, b := range r.Bindings {
+		for _, perm := range b.Permissions {
+			if perm >= permsCount {
+				return fmt.Errorf("referencing out-of-bounds permission: %d>=%d", perm, permsCount)
+			}
+		}
+		for _, cond := range b.Conditions {
+			if cond >= condsCount {
+				return fmt.Errorf("referencing out-of-bounds condition: %d>=%d", cond, condsCount)
+			}
 		}
 	}
 	return nil

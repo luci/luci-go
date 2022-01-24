@@ -17,6 +17,7 @@ package authdb
 import (
 	"testing"
 
+	"go.chromium.org/luci/server/auth/authdb/internal/realmset"
 	"go.chromium.org/luci/server/auth/service/protocol"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -197,5 +198,64 @@ func TestFindGroupCycle(t *testing.T) {
 			"A2":    []string{"B"},
 			"B":     []string{"start"},
 		}), ShouldResemble, []string{"start", "A1", "B"})
+	})
+}
+
+func TestValidateRealms(t *testing.T) {
+	t.Parallel()
+
+	validate := func(realms *protocol.Realms) error {
+		_, err := NewSnapshotDB(&protocol.AuthDB{Realms: realms}, "", 0, true)
+		return err
+	}
+
+	perm := &protocol.Permission{}
+	cond := &protocol.Condition{}
+
+	Convey("Works", t, func() {
+		So(validate(&protocol.Realms{
+			ApiVersion:  realmset.ExpectedAPIVersion,
+			Conditions:  []*protocol.Condition{cond, cond},
+			Permissions: []*protocol.Permission{perm, perm},
+			Realms: []*protocol.Realm{
+				{
+					Bindings: []*protocol.Binding{
+						{Permissions: []uint32{0}},
+						{Conditions: []uint32{0}},
+						{Permissions: []uint32{0, 1}, Conditions: []uint32{0, 1}},
+					},
+				},
+			},
+		}), ShouldBeNil)
+	})
+
+	Convey("Out of bounds permission", t, func() {
+		So(validate(&protocol.Realms{
+			ApiVersion:  realmset.ExpectedAPIVersion,
+			Conditions:  []*protocol.Condition{cond, cond},
+			Permissions: []*protocol.Permission{perm, perm},
+			Realms: []*protocol.Realm{
+				{
+					Bindings: []*protocol.Binding{
+						{Permissions: []uint32{2}},
+					},
+				},
+			},
+		}), ShouldErrLike, "referencing out-of-bounds permission")
+	})
+
+	Convey("Out of bounds condition", t, func() {
+		So(validate(&protocol.Realms{
+			ApiVersion:  realmset.ExpectedAPIVersion,
+			Conditions:  []*protocol.Condition{cond, cond},
+			Permissions: []*protocol.Permission{perm, perm},
+			Realms: []*protocol.Realm{
+				{
+					Bindings: []*protocol.Binding{
+						{Conditions: []uint32{2}},
+					},
+				},
+			},
+		}), ShouldErrLike, "referencing out-of-bounds condition")
 	})
 }
