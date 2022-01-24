@@ -1001,11 +1001,13 @@ message SetReviewRequest {
   // permission for all keys of labels.
   int64 on_behalf_of = 9;
 
-  // If true, and if the change is work in progress, then start review. It is an
-  // error for both ready and work_in_progress to be true.
+  // If true, then start review.
+  // It is an error for both ready and work_in_progress to be true at the same
+  // time.
   bool ready = 10;
-  // If true, mark the change as work in progress. It is an error for both ready
-  // and work_in_progress to be true.
+  // If true, mark the change as work in progress.
+  // It is an error for both ready and work_in_progress to be true at the same
+  // time.
   bool work_in_progress = 11;
 
   // list of AttentionSetInput entities to add to the attention set. Users that

@@ -3153,11 +3153,13 @@ type SetReviewRequest struct {
 	// To use this option the caller must have been granted labelAs-NAME
 	// permission for all keys of labels.
 	OnBehalfOf int64 `protobuf:"varint,9,opt,name=on_behalf_of,json=onBehalfOf,proto3" json:"on_behalf_of,omitempty"`
-	// If true, and if the change is work in progress, then start review. It is an
-	// error for both ready and work_in_progress to be true.
+	// If true, then start review.
+	// It is an error for both ready and work_in_progress to be true at the same
+	// time.
 	Ready bool `protobuf:"varint,10,opt,name=ready,proto3" json:"ready,omitempty"`
-	// If true, mark the change as work in progress. It is an error for both ready
-	// and work_in_progress to be true.
+	// If true, mark the change as work in progress.
+	// It is an error for both ready and work_in_progress to be true at the same
+	// time.
 	WorkInProgress bool `protobuf:"varint,11,opt,name=work_in_progress,json=workInProgress,proto3" json:"work_in_progress,omitempty"`
 	// list of AttentionSetInput entities to add to the attention set. Users that
 	// are not reviewers, ccs, owner, or uploader are silently ignored.
