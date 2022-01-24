@@ -297,6 +297,9 @@ type Builder struct {
 	//
 	// If a builder name, will be propagated to "builder" build tag and
 	// "buildername" recipe property.
+	//
+	// A builder name must be unique within the bucket, and match regex
+	// ^[a-zA-Z0-9\-_.\(\) ]{1,128}$.
 	Name string `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
 	// Backend for this builder.
 	// If unset, builds are scheduled using the legacy pipeline.
@@ -805,6 +808,7 @@ type Bucket struct {
 	// Name of the bucket. Names are unique within one instance of buildbucket.
 	// If another project already uses this name, a config will be rejected.
 	// Name reservation is first-come first-serve.
+	// Regex: ^[a-z0-9\-_.]{1,100}$
 	Name string `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
 	// List of access control rules for the bucket.
 	// The order does not matter.

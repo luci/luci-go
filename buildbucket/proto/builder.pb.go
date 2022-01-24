@@ -32,11 +32,14 @@ type BuilderID struct {
 	unknownFields protoimpl.UnknownFields
 
 	// Project ID, e.g. "chromium". Unique within a LUCI deployment.
+	// Regex: ^[a-z0-9\-_]+$
 	Project string `protobuf:"bytes,1,opt,name=project,proto3" json:"project,omitempty"`
 	// Bucket name, e.g. "try". Unique within the project.
+	// Regex: ^[a-z0-9\-_.]{1,100}$
 	// Together with project, defines an ACL.
 	Bucket string `protobuf:"bytes,2,opt,name=bucket,proto3" json:"bucket,omitempty"`
 	// Builder name, e.g. "linux-rel". Unique within the bucket.
+	// Regex: ^[a-zA-Z0-9\-_.\(\) ]{1,128}$
 	Builder string `protobuf:"bytes,3,opt,name=builder,proto3" json:"builder,omitempty"`
 }
 
