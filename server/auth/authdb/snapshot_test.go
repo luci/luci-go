@@ -210,6 +210,16 @@ func TestSnapshotDB(t *testing.T) {
 					{Name: perm1.Name()},
 					{Name: perm2.Name()},
 				},
+				Conditions: []*protocol.Condition{
+					{
+						Op: &protocol.Condition_Restrict{
+							Restrict: &protocol.Condition_AttributeRestriction{
+								Attribute: "a",
+								Values:    []string{"ok_1", "ok_2"},
+							},
+						},
+					},
+				},
 				Realms: []*protocol.Realm{
 					{
 						Name: "proj:@root",
@@ -230,6 +240,11 @@ func TestSnapshotDB(t *testing.T) {
 								Permissions: []uint32{0},
 								Principals:  []string{"user:realm@example.com", "group:direct"},
 							},
+							{
+								Conditions:  []uint32{0},
+								Permissions: []uint32{0},
+								Principals:  []string{"user:cond@example.com"},
+							},
 						},
 						Data: &protocol.RealmData{
 							EnforceInService: []string{"some"},
@@ -244,7 +259,6 @@ func TestSnapshotDB(t *testing.T) {
 		So(err, ShouldBeNil)
 
 		Convey("HasPermission works", func() {
-
 			// A direct hit.
 			ok, err := db.HasPermission(c, "user:realm@example.com", perm1, "proj:some/realm", nil)
 			So(err, ShouldBeNil)
@@ -283,6 +297,28 @@ func TestSnapshotDB(t *testing.T) {
 			// Invalid realm name.
 			_, err = db.HasPermission(c, "user:realm@example.com", perm1, "@root", nil)
 			So(err, ShouldErrLike, "bad global realm name")
+		})
+
+		Convey("Conditional bindings", func() {
+			ok, err := db.HasPermission(c, "user:cond@example.com", perm1, "proj:some/realm", nil)
+			So(err, ShouldBeNil)
+			So(ok, ShouldBeFalse)
+
+			ok, err = db.HasPermission(c, "user:cond@example.com", perm1, "proj:some/realm", realms.Attrs{"a": "ok_1"})
+			So(err, ShouldBeNil)
+			So(ok, ShouldBeTrue)
+
+			ok, err = db.HasPermission(c, "user:cond@example.com", perm1, "proj:some/realm", realms.Attrs{"a": "ok_2"})
+			So(err, ShouldBeNil)
+			So(ok, ShouldBeTrue)
+
+			ok, err = db.HasPermission(c, "user:cond@example.com", perm1, "proj:some/realm", realms.Attrs{"a": "???"})
+			So(err, ShouldBeNil)
+			So(ok, ShouldBeFalse)
+
+			ok, err = db.HasPermission(c, "user:cond@example.com", perm2, "proj:some/realm", realms.Attrs{"a": "ok_1"})
+			So(err, ShouldBeNil)
+			So(ok, ShouldBeFalse)
 		})
 
 		Convey("GetRealmData works", func() {

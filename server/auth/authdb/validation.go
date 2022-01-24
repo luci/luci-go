@@ -38,6 +38,7 @@ func validateAuthDB(db *protocol.AuthDB) error {
 			return fmt.Errorf("auth: bad IP whitlist %q - %s", wl.GetName(), err)
 		}
 	}
+	// TODO: check out of bounds references to conditions.
 	return nil
 }
 

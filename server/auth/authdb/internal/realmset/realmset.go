@@ -27,6 +27,7 @@ import (
 	"go.chromium.org/luci/server/auth/realms"
 	"go.chromium.org/luci/server/auth/service/protocol"
 
+	"go.chromium.org/luci/server/auth/authdb/internal/conds"
 	"go.chromium.org/luci/server/auth/authdb/internal/graph"
 )
 
@@ -48,22 +49,11 @@ type Realms struct {
 // Note: should match an int type used in `permissions` field in the proto.
 type PermissionIndex uint32
 
-// Condition is a predicate on attributes map.
-//
-// `nil` condition evaluates to true.
-type Condition struct{}
-
-// Eval evaluates the condition over given attributes.
-func (c *Condition) Eval(attrs realms.Attrs) bool {
-	// TODO(vadimsh): Implement.
-	return true
-}
-
 // Binding represents a set of principals and a condition when it can be used.
 //
 // See Bindings(...) method for more details.
 type Binding struct {
-	Condition *Condition
+	Condition *conds.Condition // nil if the binding is unconditional
 	Groups    graph.SortedNodeSet
 	Idents    stringset.Set
 }
@@ -166,10 +156,13 @@ func Build(r *protocol.Realms, qg *graph.QueryableGraph) (*Realms, error) {
 	// footprint at the end.
 	type bindingKey struct {
 		realmAndPerm
-		cond *Condition
+		cond *conds.Condition
 	}
 	realmsToBe := map[bindingKey]principalSet{}
 	counts := map[realmAndPerm]int{}
+
+	// A caching factory of Conditions for conditional bindings.
+	conds := conds.NewBuilder(r.Conditions)
 
 	// interner is used to deduplicate memory used to store identity names.
 	interner := stringInterner{}
@@ -183,12 +176,17 @@ func Build(r *protocol.Realms, qg *graph.QueryableGraph) (*Realms, error) {
 				continue
 			}
 
-			// Build a condition predicate. `nil` means "no condition".
-			//
-			// TODO.
-			var cond *Condition
+			// Build a condition predicate (`nil` means "no condition"). If such
+			// predicate was already seen before, returns the existing condition, so
+			// using Condition pointers in map keys is OK. Returns an error if
+			// a condition index in binding.Conditions is out of bounds or the
+			// condition is malformed. This should not happen in a valid AuthDB.
+			cond, err := conds.Condition(binding.Conditions)
+			if err != nil {
+				return nil, errors.Annotate(err, "invalid binding %q in realm %q", binding, realm.Name).Err()
+			}
 
-			// Add them into the corresponding principal sets in realmsToBe.
+			// Add principals into the corresponding principal sets in realmsToBe.
 			for _, permIdx := range binding.Permissions {
 				key := bindingKey{realmAndPerm{realm.Name, PermissionIndex(permIdx)}, cond}
 				if ps, ok := realmsToBe[key]; ok {
@@ -224,8 +222,23 @@ func Build(r *protocol.Realms, qg *graph.QueryableGraph) (*Realms, error) {
 	// unconditional bindings are easier to check and more likely to apply than
 	// conditional ones.
 	for _, bindings := range realms {
-		sort.Slice(bindings, func(i, j int) bool {
-			return bindings[i].badness() < bindings[j].badness()
+		sort.Slice(bindings, func(l, r int) bool {
+			if bl, br := bindings[l].badness(), bindings[r].badness(); bl != br {
+				return bl < br
+			}
+			// Order bindings of equal "badness" deterministically based on index of
+			// their conditions (which ultimately depends on order of data in Realms
+			// proto). This simplifies tests and makes HasPermission check
+			// performance more deterministic too.
+			idxLeft := 0
+			if bindings[l].Condition != nil {
+				idxLeft = bindings[l].Condition.Index() + 1
+			}
+			idxRight := 0
+			if bindings[r].Condition != nil {
+				idxRight = bindings[r].Condition.Index() + 1
+			}
+			return idxLeft < idxRight
 		})
 	}
 

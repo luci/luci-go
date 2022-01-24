@@ -253,9 +253,9 @@ func (db *SnapshotDB) HasPermission(c context.Context, id identity.Identity, per
 
 	// Walk over a list of (condition, groups, idents) tuples that define who has
 	// the permission under what condition. Groups are represented as indexes in
-	// `db.groups`.
+	// `db.groups`. Nil conditions evaluate to true.
 	for _, binding := range db.realms.Bindings(realm, permIdx) {
-		if binding.Condition.Eval(attrs) {
+		if binding.Condition == nil || binding.Condition.Eval(c, attrs) {
 			switch {
 			case binding.Idents.Has(string(id)):
 				return true, nil // `id` was granted the permission explicitly in the ACL
