@@ -33,6 +33,12 @@ import (
 	"go.chromium.org/luci/common/proto/google/descutil"
 )
 
+const truncMsg = "...(truncated)"
+
+// The maximum length of a BigQuery field description is 1024 characters.
+// https://cloud.google.com/bigquery/quotas#all_tables
+const fieldDescriptionMaxlength = 1024 - len(truncMsg)
+
 // SourceCodeInfoMap maps descriptor proto messages to source code info,
 // if available.
 // See also descutil.IndexSourceCodeInfo.
@@ -173,15 +179,26 @@ func (c *SchemaConverter) description(file *descriptorpb.FileDescriptorProto, pt
 			trimSize = space
 		}
 	}
-	if trimSize > 0 {
-		for i := range lines {
-			if len(lines[i]) >= trimSize {
-				lines[i] = lines[i][trimSize:]
-			}
+
+	totalSize := 0
+	end := len(lines)
+	for i := range lines {
+		if trimSize > 0 && len(lines[i]) >= trimSize {
+			lines[i] = lines[i][trimSize:]
 		}
-		description = strings.Join(lines, "\n")
+		lineLen := len(lines[i]) + 1  // add 1 for the ending "\n".
+		if totalSize + lineLen > fieldDescriptionMaxlength {
+			// description is too long, discard the rest of it.
+			end = i
+			break
+		}
+		totalSize += lineLen
 	}
+	description = strings.Join(lines[0: end], "\n")
 	description = strings.TrimSpace(description)
+	if end < len(lines) {
+		description += truncMsg
+	}
 
 	// Append valid enum values.
 	if field, ok := ptr.(*descriptorpb.FieldDescriptorProto); ok && field.GetType() == descriptorpb.FieldDescriptorProto_TYPE_ENUM {
