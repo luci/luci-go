@@ -224,24 +224,12 @@ func validateSchedule(req *pb.ScheduleBuildRequest, wellKnownExperiments strings
 	}
 
 	for expName := range req.Experiments {
-		if err := validateExperimentName(expName, wellKnownExperiments); err != nil {
+		if err := config.ValidateExperimentName(expName, wellKnownExperiments); err != nil {
 			return errors.Annotate(err, "experiment %q", expName).Err()
 		}
 	}
 
 	// TODO(crbug/1042991): Validate Properties.
-	return nil
-}
-
-var experimentNameRE = regexp.MustCompile(`^[a-z][a-z0-9_]*(?:\.[a-z][a-z0-9_]*)*$`)
-
-func validateExperimentName(expName string, wellKnownExperiments stringset.Set) error {
-	switch {
-	case !experimentNameRE.MatchString(expName):
-		return errors.Reason("does not match %q", experimentNameRE).Err()
-	case strings.HasPrefix(expName, "luci.") && !wellKnownExperiments.Has(expName):
-		return errors.New(`unknown experiment has reserved prefix "luci."`)
-	}
 	return nil
 }
 
