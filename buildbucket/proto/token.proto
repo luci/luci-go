@@ -41,8 +41,17 @@ message TokenBody {
 // TokenEnvelope is what is actually being serialized and represented
 // as a token (after being encoded using base64 standard raw encoding).
 message TokenEnvelope {
+
+  // Possible verison of the token.
+  enum Version {
+    // The default value. This value is used if version is omitted.
+    VERSION_UNSPECIFIED = 0;
+
+    // The token is saved in model.Build like a password.
+    UNENCRYPTED_PASSWORD_LIKE = 1;
+  }
   // Version of the token.
-  int32 version = 1;
+  Version version = 1;
 
   // Serialized and potentially encrypted TokenBody.
   bytes payload = 2;
