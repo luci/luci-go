@@ -102,4 +102,21 @@ func init() {
 		}
 		return starlark.Bool(call.State.experiments.IsEnabled(id.GoString())), nil
 	})
+
+	// list_enabled_experiments lists experiments enabled via enable_experiment.
+	//
+	// Lists all experiments passed to enable_experiment(...), even ones that
+	// aren't registered anymore. This list ends up in `lucicfg {...}` section of
+	// project.cfg. Listing *all* experiments there is useful to figure out what
+	// LUCI projects enable retired experiments.
+	declNative("list_enabled_experiments", func(call nativeCall) (starlark.Value, error) {
+		if err := call.unpack(0); err != nil {
+			return nil, err
+		}
+		exps := make([]starlark.Value, 0, call.State.experiments.enabled.Len())
+		for _, exp := range call.State.experiments.enabled.ToSortedSlice() {
+			exps = append(exps, starlark.String(exp))
+		}
+		return starlark.NewList(exps), nil
+	})
 }

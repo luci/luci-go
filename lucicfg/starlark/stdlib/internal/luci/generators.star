@@ -219,6 +219,7 @@ def gen_project_cfg(ctx):
             package_dir = __native__.package_dir(config_dir),
             entry_point = __native__.entry_point,
             vars = __native__.var_flags,
+            experiments = __native__.list_enabled_experiments(),
         ) if emit_metadata else None,
     ))
 

@@ -50,6 +50,8 @@ message GeneratorMetadata {
   string entry_point = 3;
   // Set of vars passed to lucicfg as "-var ...".
   map<string, string> vars = 4;
+  // Set of enabled lucicfg experiments.
+  repeated string experiments = 6;
 }
 
 // DEPRECATED per crbug/924803. DO NOT USE in your project.
