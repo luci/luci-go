@@ -19,7 +19,6 @@ package quotaconfig
 
 import (
 	"context"
-	"fmt"
 	"sync"
 
 	"google.golang.org/protobuf/proto"
@@ -32,11 +31,11 @@ import (
 // Interface encapsulates the functionality needed to implement a configuration
 // layer usable by the quota library.
 type Interface interface {
-	// Get returns the given project's named *pb.Policy.
+	// Get returns the named *pb.Policy.
 	//
 	// Called by the quota library every time quota is manipulated,
 	// so implementations should return relatively quickly.
-	Get(context.Context, string, string) (*pb.Policy, error)
+	Get(context.Context, string) (*pb.Policy, error)
 }
 
 // Ensure Memory implements Interface at compile-time.
@@ -52,13 +51,13 @@ type Memory struct {
 	policies map[string]*pb.Policy
 }
 
-// Get returns a copy of the given project's named *pb.Policy if it exists.
-func (m *Memory) Get(ctx context.Context, project, name string) (*pb.Policy, error) {
+// Get returns a copy of the named *pb.Policy if it exists.
+func (m *Memory) Get(ctx context.Context, name string) (*pb.Policy, error) {
 	m.lock.RLock()
 	defer m.lock.RUnlock()
-	p, ok := m.policies[fmt.Sprintf("%s/%s", project, name)]
+	p, ok := m.policies[name]
 	if !ok {
-		return nil, errors.Reason("policy %q for project %q not found", name, project).Err()
+		return nil, errors.Reason("policy %q not found", name).Err()
 	}
 	return proto.Clone(p).(*pb.Policy), nil
 }

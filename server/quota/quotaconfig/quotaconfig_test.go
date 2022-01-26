@@ -33,7 +33,7 @@ func TestMemory(t *testing.T) {
 		Convey("Get", func() {
 			m := &Memory{
 				policies: map[string]*pb.Policy{
-					"project/name": {
+					"name": {
 						Name:          "name",
 						Resources:     1,
 						Replenishment: 1,
@@ -42,7 +42,7 @@ func TestMemory(t *testing.T) {
 			}
 
 			Convey("found", func() {
-				p, err := m.Get(ctx, "project", "name")
+				p, err := m.Get(ctx, "name")
 				So(err, ShouldBeNil)
 				So(p, ShouldResembleProto, &pb.Policy{
 					Name:          "name",
@@ -51,20 +51,14 @@ func TestMemory(t *testing.T) {
 				})
 			})
 
-			Convey("project not found", func() {
-				p, err := m.Get(ctx, "missing", "name")
-				So(err, ShouldErrLike, "not found")
-				So(p, ShouldBeNil)
-			})
-
 			Convey("policy not found", func() {
-				p, err := m.Get(ctx, "project", "missing")
+				p, err := m.Get(ctx, "missing")
 				So(err, ShouldErrLike, "not found")
 				So(p, ShouldBeNil)
 			})
 
 			Convey("immutable", func() {
-				p, err := m.Get(ctx, "project", "name")
+				p, err := m.Get(ctx, "name")
 				So(err, ShouldBeNil)
 				So(p, ShouldResembleProto, &pb.Policy{
 					Name:          "name",
@@ -79,7 +73,7 @@ func TestMemory(t *testing.T) {
 					Replenishment: 1,
 				})
 
-				p, err = m.Get(ctx, "project", "name")
+				p, err = m.Get(ctx, "name")
 				So(err, ShouldBeNil)
 				So(p, ShouldResembleProto, &pb.Policy{
 					Name:          "name",

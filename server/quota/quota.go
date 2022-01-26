@@ -45,8 +45,6 @@ func getConfig(ctx context.Context) quotaconfig.Interface {
 }
 
 type Options struct {
-	// Project is the project to look for policy names in.
-	Project string
 	// User is a value to substitute for ${user} in policy names.
 	// Policy defaults are sourced from the unsubstituted name.
 	User string
@@ -115,10 +113,6 @@ var setEntry = template.Must(template.New("setEntry").Parse(`
 // Panics if quotaconfig.Interface is not available in the given context.Context
 // (see WithConfig).
 func DebitQuota(ctx context.Context, debits map[string]int64, opts *Options) error {
-	if opts == nil || opts.Project == "" {
-		return errors.Reason("project unspecified").Err()
-	}
-
 	now := clock.Now(ctx).Unix()
 	cfg := getConfig(ctx)
 
@@ -127,15 +121,15 @@ func DebitQuota(ctx context.Context, debits map[string]int64, opts *Options) err
 
 	i := 0
 	for pol, val := range debits {
-		name := fmt.Sprintf("%s/%s", opts.Project, pol)
+		name := pol
 		if strings.Contains(pol, "${user}") {
-			if opts.User == "" {
+			if opts == nil || opts.User == "" {
 				return errors.Reason("user unspecified for %q", pol).Err()
 			}
 			name = strings.ReplaceAll(name, "${user}", opts.User)
 		}
 		name = fmt.Sprintf("entry:%x", sha256.Sum256([]byte(name)))
-		def, err := cfg.Get(ctx, opts.Project, pol)
+		def, err := cfg.Get(ctx, pol)
 		if err != nil {
 			return errors.Annotate(err, "fetching config").Err()
 		}

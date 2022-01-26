@@ -47,12 +47,12 @@ func TestQuota(t *testing.T) {
 		})
 		ctx = WithConfig(ctx, quotaconfig.NewMemory([]*pb.Policy{
 			{
-				Name:          "project/quota",
+				Name:          "quota",
 				Resources:     5,
 				Replenishment: 1,
 			},
 			{
-				Name:          "project/quota/${user}",
+				Name:          "quota/${user}",
 				Resources:     2,
 				Replenishment: 1,
 			},
@@ -61,24 +61,12 @@ func TestQuota(t *testing.T) {
 		now := strconv.FormatInt(tc.Now().Unix(), 10)
 
 		Convey("empty database", func() {
-			Convey("project not specified", func() {
-				up := map[string]int64{
-					"fake": 0,
-				}
-
-				So(DebitQuota(ctx, up, nil), ShouldErrLike, "project unspecified")
-				So(s.Keys(), ShouldBeEmpty)
-			})
-
 			Convey("policy not found", func() {
 				up := map[string]int64{
 					"fake": 0,
 				}
-				opts := &Options{
-					Project: "project",
-				}
 
-				So(DebitQuota(ctx, up, opts), ShouldErrLike, "not found")
+				So(DebitQuota(ctx, up, nil), ShouldErrLike, "not found")
 				So(s.Keys(), ShouldBeEmpty)
 			})
 
@@ -86,11 +74,8 @@ func TestQuota(t *testing.T) {
 				up := map[string]int64{
 					"quota/${user}": 0,
 				}
-				opts := &Options{
-					Project: "project",
-				}
 
-				So(DebitQuota(ctx, up, opts), ShouldErrLike, "user unspecified")
+				So(DebitQuota(ctx, up, nil), ShouldErrLike, "user unspecified")
 				So(s.Keys(), ShouldBeEmpty)
 			})
 
@@ -99,16 +84,15 @@ func TestQuota(t *testing.T) {
 					"quota/${user}": -1,
 				}
 				opts := &Options{
-					Project: "project",
-					User:    "user@example.com",
+					User: "user@example.com",
 				}
 
 				So(DebitQuota(ctx, up, opts), ShouldBeNil)
 				So(s.Keys(), ShouldResemble, []string{
-					"entry:50c6ce8e6f680e66574e75fd724f5feb4d7a45ee35c7c5028c62872ee547f085",
+					"entry:f20c860d2ea007ea2360c6ebe2d943acc8a531412c18ff3bd47ab1449988aa6d",
 				})
-				So(s.HGet("entry:50c6ce8e6f680e66574e75fd724f5feb4d7a45ee35c7c5028c62872ee547f085", "resources"), ShouldEqual, "2")
-				So(s.HGet("entry:50c6ce8e6f680e66574e75fd724f5feb4d7a45ee35c7c5028c62872ee547f085", "updated"), ShouldEqual, now)
+				So(s.HGet("entry:f20c860d2ea007ea2360c6ebe2d943acc8a531412c18ff3bd47ab1449988aa6d", "resources"), ShouldEqual, "2")
+				So(s.HGet("entry:f20c860d2ea007ea2360c6ebe2d943acc8a531412c18ff3bd47ab1449988aa6d", "updated"), ShouldEqual, now)
 			})
 
 			Convey("zero", func() {
@@ -116,16 +100,15 @@ func TestQuota(t *testing.T) {
 					"quota/${user}": 0,
 				}
 				opts := &Options{
-					Project: "project",
-					User:    "user@example.com",
+					User: "user@example.com",
 				}
 
 				So(DebitQuota(ctx, up, opts), ShouldBeNil)
 				So(s.Keys(), ShouldResemble, []string{
-					"entry:50c6ce8e6f680e66574e75fd724f5feb4d7a45ee35c7c5028c62872ee547f085",
+					"entry:f20c860d2ea007ea2360c6ebe2d943acc8a531412c18ff3bd47ab1449988aa6d",
 				})
-				So(s.HGet("entry:50c6ce8e6f680e66574e75fd724f5feb4d7a45ee35c7c5028c62872ee547f085", "resources"), ShouldEqual, "2")
-				So(s.HGet("entry:50c6ce8e6f680e66574e75fd724f5feb4d7a45ee35c7c5028c62872ee547f085", "updated"), ShouldEqual, now)
+				So(s.HGet("entry:f20c860d2ea007ea2360c6ebe2d943acc8a531412c18ff3bd47ab1449988aa6d", "resources"), ShouldEqual, "2")
+				So(s.HGet("entry:f20c860d2ea007ea2360c6ebe2d943acc8a531412c18ff3bd47ab1449988aa6d", "updated"), ShouldEqual, now)
 			})
 
 			Convey("one", func() {
@@ -133,16 +116,15 @@ func TestQuota(t *testing.T) {
 					"quota/${user}": 1,
 				}
 				opts := &Options{
-					Project: "project",
-					User:    "user@example.com",
+					User: "user@example.com",
 				}
 
 				So(DebitQuota(ctx, up, opts), ShouldBeNil)
 				So(s.Keys(), ShouldResemble, []string{
-					"entry:50c6ce8e6f680e66574e75fd724f5feb4d7a45ee35c7c5028c62872ee547f085",
+					"entry:f20c860d2ea007ea2360c6ebe2d943acc8a531412c18ff3bd47ab1449988aa6d",
 				})
-				So(s.HGet("entry:50c6ce8e6f680e66574e75fd724f5feb4d7a45ee35c7c5028c62872ee547f085", "resources"), ShouldEqual, "1")
-				So(s.HGet("entry:50c6ce8e6f680e66574e75fd724f5feb4d7a45ee35c7c5028c62872ee547f085", "updated"), ShouldEqual, now)
+				So(s.HGet("entry:f20c860d2ea007ea2360c6ebe2d943acc8a531412c18ff3bd47ab1449988aa6d", "resources"), ShouldEqual, "1")
+				So(s.HGet("entry:f20c860d2ea007ea2360c6ebe2d943acc8a531412c18ff3bd47ab1449988aa6d", "updated"), ShouldEqual, now)
 			})
 
 			Convey("all", func() {
@@ -150,16 +132,15 @@ func TestQuota(t *testing.T) {
 					"quota/${user}": 2,
 				}
 				opts := &Options{
-					Project: "project",
-					User:    "user@example.com",
+					User: "user@example.com",
 				}
 
 				So(DebitQuota(ctx, up, opts), ShouldBeNil)
 				So(s.Keys(), ShouldResemble, []string{
-					"entry:50c6ce8e6f680e66574e75fd724f5feb4d7a45ee35c7c5028c62872ee547f085",
+					"entry:f20c860d2ea007ea2360c6ebe2d943acc8a531412c18ff3bd47ab1449988aa6d",
 				})
-				So(s.HGet("entry:50c6ce8e6f680e66574e75fd724f5feb4d7a45ee35c7c5028c62872ee547f085", "resources"), ShouldEqual, "0")
-				So(s.HGet("entry:50c6ce8e6f680e66574e75fd724f5feb4d7a45ee35c7c5028c62872ee547f085", "updated"), ShouldEqual, now)
+				So(s.HGet("entry:f20c860d2ea007ea2360c6ebe2d943acc8a531412c18ff3bd47ab1449988aa6d", "resources"), ShouldEqual, "0")
+				So(s.HGet("entry:f20c860d2ea007ea2360c6ebe2d943acc8a531412c18ff3bd47ab1449988aa6d", "updated"), ShouldEqual, now)
 			})
 
 			Convey("excessive", func() {
@@ -167,8 +148,7 @@ func TestQuota(t *testing.T) {
 					"quota/${user}": 3,
 				}
 				opts := &Options{
-					Project: "project",
-					User:    "user@example.com",
+					User: "user@example.com",
 				}
 
 				So(DebitQuota(ctx, up, opts), ShouldErrLike, "insufficient resources")
@@ -181,18 +161,17 @@ func TestQuota(t *testing.T) {
 					"quota/${user}": 1,
 				}
 				opts := &Options{
-					Project: "project",
-					User:    "user@example.com",
+					User: "user@example.com",
 				}
 
 				So(DebitQuota(ctx, up, opts), ShouldBeNil)
 				So(DebitQuota(ctx, up, opts), ShouldBeNil)
 				So(DebitQuota(ctx, up, opts), ShouldErrLike, "insufficient resources")
 				So(s.Keys(), ShouldResemble, []string{
-					"entry:50c6ce8e6f680e66574e75fd724f5feb4d7a45ee35c7c5028c62872ee547f085",
+					"entry:f20c860d2ea007ea2360c6ebe2d943acc8a531412c18ff3bd47ab1449988aa6d",
 				})
-				So(s.HGet("entry:50c6ce8e6f680e66574e75fd724f5feb4d7a45ee35c7c5028c62872ee547f085", "resources"), ShouldEqual, "0")
-				So(s.HGet("entry:50c6ce8e6f680e66574e75fd724f5feb4d7a45ee35c7c5028c62872ee547f085", "updated"), ShouldEqual, now)
+				So(s.HGet("entry:f20c860d2ea007ea2360c6ebe2d943acc8a531412c18ff3bd47ab1449988aa6d", "resources"), ShouldEqual, "0")
+				So(s.HGet("entry:f20c860d2ea007ea2360c6ebe2d943acc8a531412c18ff3bd47ab1449988aa6d", "updated"), ShouldEqual, now)
 			})
 
 			Convey("atomicity", func() {
@@ -203,8 +182,7 @@ func TestQuota(t *testing.T) {
 						"fake":          0,
 					}
 					opts := &Options{
-						Project: "project",
-						User:    "user@example.com",
+						User: "user@example.com",
 					}
 
 					So(DebitQuota(ctx, up, opts), ShouldErrLike, "not found")
@@ -216,9 +194,7 @@ func TestQuota(t *testing.T) {
 						"quota":         0,
 						"quota/${user}": 0,
 					}
-					opts := &Options{
-						Project: "project",
-					}
+					opts := &Options{}
 
 					So(DebitQuota(ctx, up, opts), ShouldErrLike, "user unspecified")
 					So(s.Keys(), ShouldBeEmpty)
@@ -230,19 +206,18 @@ func TestQuota(t *testing.T) {
 						"quota/${user}": 1,
 					}
 					opts := &Options{
-						Project: "project",
-						User:    "user@example.com",
+						User: "user@example.com",
 					}
 
 					So(DebitQuota(ctx, up, opts), ShouldBeNil)
 					So(s.Keys(), ShouldResemble, []string{
-						"entry:50c6ce8e6f680e66574e75fd724f5feb4d7a45ee35c7c5028c62872ee547f085",
-						"entry:9316336a8f8a1e0e34ab8770e856e18b059163b656e2987f8880896d03d72546",
+						"entry:b878a6801d9a9e68b30ed63430bb5e0bddcd984a37a3ee385abc27ff031c7fe7",
+						"entry:f20c860d2ea007ea2360c6ebe2d943acc8a531412c18ff3bd47ab1449988aa6d",
 					})
-					So(s.HGet("entry:50c6ce8e6f680e66574e75fd724f5feb4d7a45ee35c7c5028c62872ee547f085", "resources"), ShouldEqual, "1")
-					So(s.HGet("entry:50c6ce8e6f680e66574e75fd724f5feb4d7a45ee35c7c5028c62872ee547f085", "updated"), ShouldEqual, now)
-					So(s.HGet("entry:9316336a8f8a1e0e34ab8770e856e18b059163b656e2987f8880896d03d72546", "resources"), ShouldEqual, "4")
-					So(s.HGet("entry:9316336a8f8a1e0e34ab8770e856e18b059163b656e2987f8880896d03d72546", "updated"), ShouldEqual, now)
+					So(s.HGet("entry:b878a6801d9a9e68b30ed63430bb5e0bddcd984a37a3ee385abc27ff031c7fe7", "resources"), ShouldEqual, "4")
+					So(s.HGet("entry:b878a6801d9a9e68b30ed63430bb5e0bddcd984a37a3ee385abc27ff031c7fe7", "updated"), ShouldEqual, now)
+					So(s.HGet("entry:f20c860d2ea007ea2360c6ebe2d943acc8a531412c18ff3bd47ab1449988aa6d", "resources"), ShouldEqual, "1")
+					So(s.HGet("entry:f20c860d2ea007ea2360c6ebe2d943acc8a531412c18ff3bd47ab1449988aa6d", "updated"), ShouldEqual, now)
 				})
 
 				Convey("excessive", func() {
@@ -251,8 +226,7 @@ func TestQuota(t *testing.T) {
 						"quota/${user}": 3,
 					}
 					opts := &Options{
-						Project: "project",
-						User:    "user@example.com",
+						User: "user@example.com",
 					}
 
 					So(DebitQuota(ctx, up, opts), ShouldErrLike, "insufficient resources")
@@ -264,9 +238,9 @@ func TestQuota(t *testing.T) {
 		Convey("existing database", func() {
 			conn, err := redisconn.Get(ctx)
 			So(err, ShouldBeNil)
-			_, err = conn.Do("HINCRBY", "entry:9316336a8f8a1e0e34ab8770e856e18b059163b656e2987f8880896d03d72546", "resources", 2)
+			_, err = conn.Do("HINCRBY", "entry:b878a6801d9a9e68b30ed63430bb5e0bddcd984a37a3ee385abc27ff031c7fe7", "resources", 2)
 			So(err, ShouldBeNil)
-			_, err = conn.Do("HINCRBY", "entry:9316336a8f8a1e0e34ab8770e856e18b059163b656e2987f8880896d03d72546", "updated", tc.Now().Unix())
+			_, err = conn.Do("HINCRBY", "entry:b878a6801d9a9e68b30ed63430bb5e0bddcd984a37a3ee385abc27ff031c7fe7", "updated", tc.Now().Unix())
 			So(err, ShouldBeNil)
 
 			Convey("capped", func() {
@@ -274,16 +248,15 @@ func TestQuota(t *testing.T) {
 					"quota": -10,
 				}
 				opts := &Options{
-					Project: "project",
-					User:    "user@example.com",
+					User: "user@example.com",
 				}
 
 				So(DebitQuota(ctx, up, opts), ShouldBeNil)
 				So(s.Keys(), ShouldResemble, []string{
-					"entry:9316336a8f8a1e0e34ab8770e856e18b059163b656e2987f8880896d03d72546",
+					"entry:b878a6801d9a9e68b30ed63430bb5e0bddcd984a37a3ee385abc27ff031c7fe7",
 				})
-				So(s.HGet("entry:9316336a8f8a1e0e34ab8770e856e18b059163b656e2987f8880896d03d72546", "resources"), ShouldEqual, "5")
-				So(s.HGet("entry:9316336a8f8a1e0e34ab8770e856e18b059163b656e2987f8880896d03d72546", "updated"), ShouldEqual, now)
+				So(s.HGet("entry:b878a6801d9a9e68b30ed63430bb5e0bddcd984a37a3ee385abc27ff031c7fe7", "resources"), ShouldEqual, "5")
+				So(s.HGet("entry:b878a6801d9a9e68b30ed63430bb5e0bddcd984a37a3ee385abc27ff031c7fe7", "updated"), ShouldEqual, now)
 			})
 
 			Convey("negative", func() {
@@ -291,48 +264,43 @@ func TestQuota(t *testing.T) {
 					"quota": -1,
 				}
 				opts := &Options{
-					Project: "project",
-					User:    "user@example.com",
+					User: "user@example.com",
 				}
 
 				So(DebitQuota(ctx, up, opts), ShouldBeNil)
 				So(s.Keys(), ShouldResemble, []string{
-					"entry:9316336a8f8a1e0e34ab8770e856e18b059163b656e2987f8880896d03d72546",
+					"entry:b878a6801d9a9e68b30ed63430bb5e0bddcd984a37a3ee385abc27ff031c7fe7",
 				})
-				So(s.HGet("entry:9316336a8f8a1e0e34ab8770e856e18b059163b656e2987f8880896d03d72546", "resources"), ShouldEqual, "3")
-				So(s.HGet("entry:9316336a8f8a1e0e34ab8770e856e18b059163b656e2987f8880896d03d72546", "updated"), ShouldEqual, now)
+				So(s.HGet("entry:b878a6801d9a9e68b30ed63430bb5e0bddcd984a37a3ee385abc27ff031c7fe7", "resources"), ShouldEqual, "3")
+				So(s.HGet("entry:b878a6801d9a9e68b30ed63430bb5e0bddcd984a37a3ee385abc27ff031c7fe7", "updated"), ShouldEqual, now)
 			})
 
 			Convey("one", func() {
 				up := map[string]int64{
 					"quota": 1,
 				}
-				opts := &Options{
-					Project: "project",
-				}
+				opts := &Options{}
 
 				So(DebitQuota(ctx, up, opts), ShouldBeNil)
 				So(s.Keys(), ShouldResemble, []string{
-					"entry:9316336a8f8a1e0e34ab8770e856e18b059163b656e2987f8880896d03d72546",
+					"entry:b878a6801d9a9e68b30ed63430bb5e0bddcd984a37a3ee385abc27ff031c7fe7",
 				})
-				So(s.HGet("entry:9316336a8f8a1e0e34ab8770e856e18b059163b656e2987f8880896d03d72546", "resources"), ShouldEqual, "1")
-				So(s.HGet("entry:9316336a8f8a1e0e34ab8770e856e18b059163b656e2987f8880896d03d72546", "updated"), ShouldEqual, now)
+				So(s.HGet("entry:b878a6801d9a9e68b30ed63430bb5e0bddcd984a37a3ee385abc27ff031c7fe7", "resources"), ShouldEqual, "1")
+				So(s.HGet("entry:b878a6801d9a9e68b30ed63430bb5e0bddcd984a37a3ee385abc27ff031c7fe7", "updated"), ShouldEqual, now)
 			})
 
 			Convey("excessive", func() {
 				up := map[string]int64{
 					"quota": 3,
 				}
-				opts := &Options{
-					Project: "project",
-				}
+				opts := &Options{}
 
 				So(DebitQuota(ctx, up, opts), ShouldErrLike, "insufficient resources")
 				So(s.Keys(), ShouldResemble, []string{
-					"entry:9316336a8f8a1e0e34ab8770e856e18b059163b656e2987f8880896d03d72546",
+					"entry:b878a6801d9a9e68b30ed63430bb5e0bddcd984a37a3ee385abc27ff031c7fe7",
 				})
-				So(s.HGet("entry:9316336a8f8a1e0e34ab8770e856e18b059163b656e2987f8880896d03d72546", "resources"), ShouldEqual, "2")
-				So(s.HGet("entry:9316336a8f8a1e0e34ab8770e856e18b059163b656e2987f8880896d03d72546", "updated"), ShouldEqual, now)
+				So(s.HGet("entry:b878a6801d9a9e68b30ed63430bb5e0bddcd984a37a3ee385abc27ff031c7fe7", "resources"), ShouldEqual, "2")
+				So(s.HGet("entry:b878a6801d9a9e68b30ed63430bb5e0bddcd984a37a3ee385abc27ff031c7fe7", "updated"), ShouldEqual, now)
 			})
 
 			Convey("atomicity", func() {
@@ -343,16 +311,15 @@ func TestQuota(t *testing.T) {
 						"fake":          0,
 					}
 					opts := &Options{
-						Project: "project",
-						User:    "user@example.com",
+						User: "user@example.com",
 					}
 
 					So(DebitQuota(ctx, up, opts), ShouldErrLike, "not found")
 					So(s.Keys(), ShouldResemble, []string{
-						"entry:9316336a8f8a1e0e34ab8770e856e18b059163b656e2987f8880896d03d72546",
+						"entry:b878a6801d9a9e68b30ed63430bb5e0bddcd984a37a3ee385abc27ff031c7fe7",
 					})
-					So(s.HGet("entry:9316336a8f8a1e0e34ab8770e856e18b059163b656e2987f8880896d03d72546", "resources"), ShouldEqual, "2")
-					So(s.HGet("entry:9316336a8f8a1e0e34ab8770e856e18b059163b656e2987f8880896d03d72546", "updated"), ShouldEqual, now)
+					So(s.HGet("entry:b878a6801d9a9e68b30ed63430bb5e0bddcd984a37a3ee385abc27ff031c7fe7", "resources"), ShouldEqual, "2")
+					So(s.HGet("entry:b878a6801d9a9e68b30ed63430bb5e0bddcd984a37a3ee385abc27ff031c7fe7", "updated"), ShouldEqual, now)
 				})
 
 				Convey("user not specified", func() {
@@ -360,16 +327,14 @@ func TestQuota(t *testing.T) {
 						"quota":         0,
 						"quota/${user}": 0,
 					}
-					opts := &Options{
-						Project: "project",
-					}
+					opts := &Options{}
 
 					So(DebitQuota(ctx, up, opts), ShouldErrLike, "user unspecified")
 					So(s.Keys(), ShouldResemble, []string{
-						"entry:9316336a8f8a1e0e34ab8770e856e18b059163b656e2987f8880896d03d72546",
+						"entry:b878a6801d9a9e68b30ed63430bb5e0bddcd984a37a3ee385abc27ff031c7fe7",
 					})
-					So(s.HGet("entry:9316336a8f8a1e0e34ab8770e856e18b059163b656e2987f8880896d03d72546", "resources"), ShouldEqual, "2")
-					So(s.HGet("entry:9316336a8f8a1e0e34ab8770e856e18b059163b656e2987f8880896d03d72546", "updated"), ShouldEqual, now)
+					So(s.HGet("entry:b878a6801d9a9e68b30ed63430bb5e0bddcd984a37a3ee385abc27ff031c7fe7", "resources"), ShouldEqual, "2")
+					So(s.HGet("entry:b878a6801d9a9e68b30ed63430bb5e0bddcd984a37a3ee385abc27ff031c7fe7", "updated"), ShouldEqual, now)
 				})
 
 				Convey("one", func() {
@@ -378,19 +343,18 @@ func TestQuota(t *testing.T) {
 						"quota/${user}": 1,
 					}
 					opts := &Options{
-						Project: "project",
-						User:    "user@example.com",
+						User: "user@example.com",
 					}
 
 					So(DebitQuota(ctx, up, opts), ShouldBeNil)
 					So(s.Keys(), ShouldResemble, []string{
-						"entry:50c6ce8e6f680e66574e75fd724f5feb4d7a45ee35c7c5028c62872ee547f085",
-						"entry:9316336a8f8a1e0e34ab8770e856e18b059163b656e2987f8880896d03d72546",
+						"entry:b878a6801d9a9e68b30ed63430bb5e0bddcd984a37a3ee385abc27ff031c7fe7",
+						"entry:f20c860d2ea007ea2360c6ebe2d943acc8a531412c18ff3bd47ab1449988aa6d",
 					})
-					So(s.HGet("entry:50c6ce8e6f680e66574e75fd724f5feb4d7a45ee35c7c5028c62872ee547f085", "resources"), ShouldEqual, "1")
-					So(s.HGet("entry:50c6ce8e6f680e66574e75fd724f5feb4d7a45ee35c7c5028c62872ee547f085", "updated"), ShouldEqual, now)
-					So(s.HGet("entry:9316336a8f8a1e0e34ab8770e856e18b059163b656e2987f8880896d03d72546", "resources"), ShouldEqual, "1")
-					So(s.HGet("entry:9316336a8f8a1e0e34ab8770e856e18b059163b656e2987f8880896d03d72546", "updated"), ShouldEqual, now)
+					So(s.HGet("entry:b878a6801d9a9e68b30ed63430bb5e0bddcd984a37a3ee385abc27ff031c7fe7", "resources"), ShouldEqual, "1")
+					So(s.HGet("entry:b878a6801d9a9e68b30ed63430bb5e0bddcd984a37a3ee385abc27ff031c7fe7", "updated"), ShouldEqual, now)
+					So(s.HGet("entry:f20c860d2ea007ea2360c6ebe2d943acc8a531412c18ff3bd47ab1449988aa6d", "resources"), ShouldEqual, "1")
+					So(s.HGet("entry:f20c860d2ea007ea2360c6ebe2d943acc8a531412c18ff3bd47ab1449988aa6d", "updated"), ShouldEqual, now)
 				})
 
 				Convey("excessive", func() {
@@ -399,16 +363,15 @@ func TestQuota(t *testing.T) {
 						"quota/${user}": 3,
 					}
 					opts := &Options{
-						Project: "project",
-						User:    "user@example.com",
+						User: "user@example.com",
 					}
 
 					So(DebitQuota(ctx, up, opts), ShouldErrLike, "insufficient resources")
 					So(s.Keys(), ShouldResemble, []string{
-						"entry:9316336a8f8a1e0e34ab8770e856e18b059163b656e2987f8880896d03d72546",
+						"entry:b878a6801d9a9e68b30ed63430bb5e0bddcd984a37a3ee385abc27ff031c7fe7",
 					})
-					So(s.HGet("entry:9316336a8f8a1e0e34ab8770e856e18b059163b656e2987f8880896d03d72546", "resources"), ShouldEqual, "2")
-					So(s.HGet("entry:9316336a8f8a1e0e34ab8770e856e18b059163b656e2987f8880896d03d72546", "updated"), ShouldEqual, now)
+					So(s.HGet("entry:b878a6801d9a9e68b30ed63430bb5e0bddcd984a37a3ee385abc27ff031c7fe7", "resources"), ShouldEqual, "2")
+					So(s.HGet("entry:b878a6801d9a9e68b30ed63430bb5e0bddcd984a37a3ee385abc27ff031c7fe7", "updated"), ShouldEqual, now)
 				})
 			})
 
@@ -421,112 +384,91 @@ func TestQuota(t *testing.T) {
 					up := map[string]int64{
 						"quota": 1,
 					}
-					opts := &Options{
-						Project: "project",
-					}
 
-					So(DebitQuota(ctx, up, opts), ShouldErrLike, "last updated in the future")
+					So(DebitQuota(ctx, up, nil), ShouldErrLike, "last updated in the future")
 					So(s.Keys(), ShouldResemble, []string{
-						"entry:9316336a8f8a1e0e34ab8770e856e18b059163b656e2987f8880896d03d72546",
+						"entry:b878a6801d9a9e68b30ed63430bb5e0bddcd984a37a3ee385abc27ff031c7fe7",
 					})
-					So(s.HGet("entry:9316336a8f8a1e0e34ab8770e856e18b059163b656e2987f8880896d03d72546", "resources"), ShouldEqual, "2")
-					So(s.HGet("entry:9316336a8f8a1e0e34ab8770e856e18b059163b656e2987f8880896d03d72546", "updated"), ShouldEqual, strconv.FormatInt(testclock.TestRecentTimeLocal.Unix(), 10))
+					So(s.HGet("entry:b878a6801d9a9e68b30ed63430bb5e0bddcd984a37a3ee385abc27ff031c7fe7", "resources"), ShouldEqual, "2")
+					So(s.HGet("entry:b878a6801d9a9e68b30ed63430bb5e0bddcd984a37a3ee385abc27ff031c7fe7", "updated"), ShouldEqual, strconv.FormatInt(testclock.TestRecentTimeLocal.Unix(), 10))
 				})
 
 				Convey("cap", func() {
 					up := map[string]int64{
 						"quota": -10,
 					}
-					opts := &Options{
-						Project: "project",
-					}
 
-					So(DebitQuota(ctx, up, opts), ShouldBeNil)
+					So(DebitQuota(ctx, up, nil), ShouldBeNil)
 					So(s.Keys(), ShouldResemble, []string{
-						"entry:9316336a8f8a1e0e34ab8770e856e18b059163b656e2987f8880896d03d72546",
+						"entry:b878a6801d9a9e68b30ed63430bb5e0bddcd984a37a3ee385abc27ff031c7fe7",
 					})
-					So(s.HGet("entry:9316336a8f8a1e0e34ab8770e856e18b059163b656e2987f8880896d03d72546", "resources"), ShouldEqual, "5")
-					So(s.HGet("entry:9316336a8f8a1e0e34ab8770e856e18b059163b656e2987f8880896d03d72546", "updated"), ShouldEqual, now)
+					So(s.HGet("entry:b878a6801d9a9e68b30ed63430bb5e0bddcd984a37a3ee385abc27ff031c7fe7", "resources"), ShouldEqual, "5")
+					So(s.HGet("entry:b878a6801d9a9e68b30ed63430bb5e0bddcd984a37a3ee385abc27ff031c7fe7", "updated"), ShouldEqual, now)
 				})
 
 				Convey("negative", func() {
 					up := map[string]int64{
 						"quota": -1,
 					}
-					opts := &Options{
-						Project: "project",
-					}
 
-					So(DebitQuota(ctx, up, opts), ShouldBeNil)
+					So(DebitQuota(ctx, up, nil), ShouldBeNil)
 					So(s.Keys(), ShouldResemble, []string{
-						"entry:9316336a8f8a1e0e34ab8770e856e18b059163b656e2987f8880896d03d72546",
+						"entry:b878a6801d9a9e68b30ed63430bb5e0bddcd984a37a3ee385abc27ff031c7fe7",
 					})
-					So(s.HGet("entry:9316336a8f8a1e0e34ab8770e856e18b059163b656e2987f8880896d03d72546", "resources"), ShouldEqual, "4")
-					So(s.HGet("entry:9316336a8f8a1e0e34ab8770e856e18b059163b656e2987f8880896d03d72546", "updated"), ShouldEqual, now)
+					So(s.HGet("entry:b878a6801d9a9e68b30ed63430bb5e0bddcd984a37a3ee385abc27ff031c7fe7", "resources"), ShouldEqual, "4")
+					So(s.HGet("entry:b878a6801d9a9e68b30ed63430bb5e0bddcd984a37a3ee385abc27ff031c7fe7", "updated"), ShouldEqual, now)
 				})
 
 				Convey("zero", func() {
 					up := map[string]int64{
 						"quota": 0,
 					}
-					opts := &Options{
-						Project: "project",
-					}
 
-					So(DebitQuota(ctx, up, opts), ShouldBeNil)
+					So(DebitQuota(ctx, up, nil), ShouldBeNil)
 					So(s.Keys(), ShouldResemble, []string{
-						"entry:9316336a8f8a1e0e34ab8770e856e18b059163b656e2987f8880896d03d72546",
+						"entry:b878a6801d9a9e68b30ed63430bb5e0bddcd984a37a3ee385abc27ff031c7fe7",
 					})
-					So(s.HGet("entry:9316336a8f8a1e0e34ab8770e856e18b059163b656e2987f8880896d03d72546", "resources"), ShouldEqual, "3")
-					So(s.HGet("entry:9316336a8f8a1e0e34ab8770e856e18b059163b656e2987f8880896d03d72546", "updated"), ShouldEqual, now)
+					So(s.HGet("entry:b878a6801d9a9e68b30ed63430bb5e0bddcd984a37a3ee385abc27ff031c7fe7", "resources"), ShouldEqual, "3")
+					So(s.HGet("entry:b878a6801d9a9e68b30ed63430bb5e0bddcd984a37a3ee385abc27ff031c7fe7", "updated"), ShouldEqual, now)
 				})
 
 				Convey("one", func() {
 					up := map[string]int64{
 						"quota": 1,
 					}
-					opts := &Options{
-						Project: "project",
-					}
 
-					So(DebitQuota(ctx, up, opts), ShouldBeNil)
+					So(DebitQuota(ctx, up, nil), ShouldBeNil)
 					So(s.Keys(), ShouldResemble, []string{
-						"entry:9316336a8f8a1e0e34ab8770e856e18b059163b656e2987f8880896d03d72546",
+						"entry:b878a6801d9a9e68b30ed63430bb5e0bddcd984a37a3ee385abc27ff031c7fe7",
 					})
-					So(s.HGet("entry:9316336a8f8a1e0e34ab8770e856e18b059163b656e2987f8880896d03d72546", "resources"), ShouldEqual, "2")
-					So(s.HGet("entry:9316336a8f8a1e0e34ab8770e856e18b059163b656e2987f8880896d03d72546", "updated"), ShouldEqual, now)
+					So(s.HGet("entry:b878a6801d9a9e68b30ed63430bb5e0bddcd984a37a3ee385abc27ff031c7fe7", "resources"), ShouldEqual, "2")
+					So(s.HGet("entry:b878a6801d9a9e68b30ed63430bb5e0bddcd984a37a3ee385abc27ff031c7fe7", "updated"), ShouldEqual, now)
 				})
 
 				Convey("all", func() {
 					up := map[string]int64{
 						"quota": 3,
 					}
-					opts := &Options{
-						Project: "project",
-					}
 
-					So(DebitQuota(ctx, up, opts), ShouldBeNil)
+					So(DebitQuota(ctx, up, nil), ShouldBeNil)
 					So(s.Keys(), ShouldResemble, []string{
-						"entry:9316336a8f8a1e0e34ab8770e856e18b059163b656e2987f8880896d03d72546",
+						"entry:b878a6801d9a9e68b30ed63430bb5e0bddcd984a37a3ee385abc27ff031c7fe7",
 					})
-					So(s.HGet("entry:9316336a8f8a1e0e34ab8770e856e18b059163b656e2987f8880896d03d72546", "resources"), ShouldEqual, "0")
-					So(s.HGet("entry:9316336a8f8a1e0e34ab8770e856e18b059163b656e2987f8880896d03d72546", "updated"), ShouldEqual, now)
+					So(s.HGet("entry:b878a6801d9a9e68b30ed63430bb5e0bddcd984a37a3ee385abc27ff031c7fe7", "resources"), ShouldEqual, "0")
+					So(s.HGet("entry:b878a6801d9a9e68b30ed63430bb5e0bddcd984a37a3ee385abc27ff031c7fe7", "updated"), ShouldEqual, now)
 				})
 
 				Convey("excessive", func() {
 					up := map[string]int64{
 						"quota": 4,
 					}
-					opts := &Options{
-						Project: "project",
-					}
 
-					So(DebitQuota(ctx, up, opts), ShouldErrLike, "insufficient resources")
+					So(DebitQuota(ctx, up, nil), ShouldErrLike, "insufficient resources")
 					So(s.Keys(), ShouldResemble, []string{
-						"entry:9316336a8f8a1e0e34ab8770e856e18b059163b656e2987f8880896d03d72546",
+						"entry:b878a6801d9a9e68b30ed63430bb5e0bddcd984a37a3ee385abc27ff031c7fe7",
 					})
-					So(s.HGet("entry:9316336a8f8a1e0e34ab8770e856e18b059163b656e2987f8880896d03d72546", "resources"), ShouldEqual, "2")
-					So(s.HGet("entry:9316336a8f8a1e0e34ab8770e856e18b059163b656e2987f8880896d03d72546", "updated"), ShouldEqual, strconv.FormatInt(testclock.TestRecentTimeLocal.Unix(), 10))
+					So(s.HGet("entry:b878a6801d9a9e68b30ed63430bb5e0bddcd984a37a3ee385abc27ff031c7fe7", "resources"), ShouldEqual, "2")
+					So(s.HGet("entry:b878a6801d9a9e68b30ed63430bb5e0bddcd984a37a3ee385abc27ff031c7fe7", "updated"), ShouldEqual, strconv.FormatInt(testclock.TestRecentTimeLocal.Unix(), 10))
 				})
 
 				Convey("atomicity", func() {
@@ -537,16 +479,15 @@ func TestQuota(t *testing.T) {
 							"quota/${user}": 1,
 						}
 						opts := &Options{
-							Project: "project",
-							User:    "user@example.com",
+							User: "user@example.com",
 						}
 
 						So(DebitQuota(ctx, up, opts), ShouldErrLike, "last updated in the future")
 						So(s.Keys(), ShouldResemble, []string{
-							"entry:9316336a8f8a1e0e34ab8770e856e18b059163b656e2987f8880896d03d72546",
+							"entry:b878a6801d9a9e68b30ed63430bb5e0bddcd984a37a3ee385abc27ff031c7fe7",
 						})
-						So(s.HGet("entry:9316336a8f8a1e0e34ab8770e856e18b059163b656e2987f8880896d03d72546", "resources"), ShouldEqual, "2")
-						So(s.HGet("entry:9316336a8f8a1e0e34ab8770e856e18b059163b656e2987f8880896d03d72546", "updated"), ShouldEqual, strconv.FormatInt(testclock.TestRecentTimeLocal.Unix(), 10))
+						So(s.HGet("entry:b878a6801d9a9e68b30ed63430bb5e0bddcd984a37a3ee385abc27ff031c7fe7", "resources"), ShouldEqual, "2")
+						So(s.HGet("entry:b878a6801d9a9e68b30ed63430bb5e0bddcd984a37a3ee385abc27ff031c7fe7", "updated"), ShouldEqual, strconv.FormatInt(testclock.TestRecentTimeLocal.Unix(), 10))
 					})
 
 					Convey("one", func() {
@@ -555,19 +496,18 @@ func TestQuota(t *testing.T) {
 							"quota/${user}": 1,
 						}
 						opts := &Options{
-							Project: "project",
-							User:    "user@example.com",
+							User: "user@example.com",
 						}
 
 						So(DebitQuota(ctx, up, opts), ShouldBeNil)
 						So(s.Keys(), ShouldResemble, []string{
-							"entry:50c6ce8e6f680e66574e75fd724f5feb4d7a45ee35c7c5028c62872ee547f085",
-							"entry:9316336a8f8a1e0e34ab8770e856e18b059163b656e2987f8880896d03d72546",
+							"entry:b878a6801d9a9e68b30ed63430bb5e0bddcd984a37a3ee385abc27ff031c7fe7",
+							"entry:f20c860d2ea007ea2360c6ebe2d943acc8a531412c18ff3bd47ab1449988aa6d",
 						})
-						So(s.HGet("entry:50c6ce8e6f680e66574e75fd724f5feb4d7a45ee35c7c5028c62872ee547f085", "resources"), ShouldEqual, "1")
-						So(s.HGet("entry:50c6ce8e6f680e66574e75fd724f5feb4d7a45ee35c7c5028c62872ee547f085", "updated"), ShouldEqual, now)
-						So(s.HGet("entry:9316336a8f8a1e0e34ab8770e856e18b059163b656e2987f8880896d03d72546", "resources"), ShouldEqual, "2")
-						So(s.HGet("entry:9316336a8f8a1e0e34ab8770e856e18b059163b656e2987f8880896d03d72546", "updated"), ShouldEqual, now)
+						So(s.HGet("entry:b878a6801d9a9e68b30ed63430bb5e0bddcd984a37a3ee385abc27ff031c7fe7", "resources"), ShouldEqual, "2")
+						So(s.HGet("entry:b878a6801d9a9e68b30ed63430bb5e0bddcd984a37a3ee385abc27ff031c7fe7", "updated"), ShouldEqual, now)
+						So(s.HGet("entry:f20c860d2ea007ea2360c6ebe2d943acc8a531412c18ff3bd47ab1449988aa6d", "resources"), ShouldEqual, "1")
+						So(s.HGet("entry:f20c860d2ea007ea2360c6ebe2d943acc8a531412c18ff3bd47ab1449988aa6d", "updated"), ShouldEqual, now)
 					})
 
 					Convey("excessive", func() {
@@ -576,16 +516,15 @@ func TestQuota(t *testing.T) {
 							"quota/${user}": 3,
 						}
 						opts := &Options{
-							Project: "project",
-							User:    "user@example.com",
+							User: "user@example.com",
 						}
 
 						So(DebitQuota(ctx, up, opts), ShouldErrLike, "insufficient resources")
 						So(s.Keys(), ShouldResemble, []string{
-							"entry:9316336a8f8a1e0e34ab8770e856e18b059163b656e2987f8880896d03d72546",
+							"entry:b878a6801d9a9e68b30ed63430bb5e0bddcd984a37a3ee385abc27ff031c7fe7",
 						})
-						So(s.HGet("entry:9316336a8f8a1e0e34ab8770e856e18b059163b656e2987f8880896d03d72546", "resources"), ShouldEqual, "2")
-						So(s.HGet("entry:9316336a8f8a1e0e34ab8770e856e18b059163b656e2987f8880896d03d72546", "updated"), ShouldEqual, strconv.FormatInt(testclock.TestRecentTimeLocal.Unix(), 10))
+						So(s.HGet("entry:b878a6801d9a9e68b30ed63430bb5e0bddcd984a37a3ee385abc27ff031c7fe7", "resources"), ShouldEqual, "2")
+						So(s.HGet("entry:b878a6801d9a9e68b30ed63430bb5e0bddcd984a37a3ee385abc27ff031c7fe7", "updated"), ShouldEqual, strconv.FormatInt(testclock.TestRecentTimeLocal.Unix(), 10))
 					})
 				})
 			})
