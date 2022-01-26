@@ -234,17 +234,9 @@ func validateStep(step *pb.Step, parent *pb.Step, buildStatus pb.Status) error {
 	return nil
 }
 
-func getBuildForUpdate(ctx context.Context, updateMask *mask.Mask, req *pb.UpdateBuildRequest) (*model.Build, error) {
-	build, err := getBuild(ctx, req.Build.Id)
-	if err != nil {
-		if _, isAppStatusErr := appstatus.Get(err); isAppStatusErr {
-			return nil, err
-		}
-		return nil, appstatus.Errorf(codes.Internal, "failed to get build %d: %s", req.Build.Id, err)
-	}
-
+func checkBuildForUpdate(updateMask *mask.Mask, req *pb.UpdateBuildRequest, build *model.Build) error {
 	if protoutil.IsEnded(build.Status) {
-		return nil, appstatus.Errorf(codes.FailedPrecondition, "cannot update an ended build")
+		return appstatus.Errorf(codes.FailedPrecondition, "cannot update an ended build")
 	}
 
 	finalStatus := build.Proto.Status
@@ -255,15 +247,15 @@ func getBuildForUpdate(ctx context.Context, updateMask *mask.Mask, req *pb.Updat
 	// ensure that a SCHEDULED build does not have steps or output.
 	if finalStatus == pb.Status_SCHEDULED {
 		if updateMask.MustIncludes("steps") != mask.Exclude {
-			return nil, appstatus.Errorf(codes.InvalidArgument, "cannot update steps of a SCHEDULED build; either set status to non-SCHEDULED or do not update steps")
+			return appstatus.Errorf(codes.InvalidArgument, "cannot update steps of a SCHEDULED build; either set status to non-SCHEDULED or do not update steps")
 		}
 
 		if updateMask.MustIncludes("output") != mask.Exclude {
-			return nil, appstatus.Errorf(codes.InvalidArgument, "cannot update build output fields of a SCHEDULED build; either set status to non-SCHEDULED or do not update build output")
+			return appstatus.Errorf(codes.InvalidArgument, "cannot update build output fields of a SCHEDULED build; either set status to non-SCHEDULED or do not update build output")
 		}
 	}
 
-	return build, nil
+	return nil
 }
 
 func updateEntities(ctx context.Context, req *pb.UpdateBuildRequest, updateMask *mask.Mask, steps *model.BuildSteps) error {
@@ -271,7 +263,14 @@ func updateEntities(ctx context.Context, req *pb.UpdateBuildRequest, updateMask 
 	var origStatus pb.Status
 	txErr := datastore.RunInTransaction(ctx, func(ctx context.Context) error {
 		var err error
-		b, err = getBuildForUpdate(ctx, updateMask, req)
+		b, err = getBuild(ctx, req.Build.Id)
+		if err != nil {
+			if _, isAppStatusErr := appstatus.Get(err); isAppStatusErr {
+				return err
+			}
+			return appstatus.Errorf(codes.Internal, "failed to get build %d: %s", req.Build.Id, err)
+		}
+		err = checkBuildForUpdate(updateMask, req, b)
 		if err != nil {
 			return err
 		}
@@ -403,14 +402,14 @@ func (*Builds) UpdateBuild(ctx context.Context, req *pb.UpdateBuildRequest) (*pb
 	}
 	updateMask := um.MustSubmask("build")
 
-	// pre-check if the build can be updated before updating it with a transaction.
-	b, err := getBuildForUpdate(ctx, updateMask, req)
+	// TODO(crbug.com/1152628) - Use Cloud Secret Manager to validate build update tokens.
+	_, build, err := validateBuildToken(ctx, req.Build.Id, true)
 	if err != nil {
 		return nil, err
 	}
 
-	// TODO(crbug.com/1152628) - Use Cloud Secret Manager to validate build update tokens.
-	if err := validateBuildToken(ctx, b); err != nil {
+	// pre-check if the build can be updated before updating it with a transaction.
+	if err := checkBuildForUpdate(updateMask, req, build); err != nil {
 		return nil, err
 	}
 

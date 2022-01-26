@@ -17,6 +17,7 @@ package rpc
 import (
 	"context"
 	"crypto/subtle"
+	"encoding/base64"
 	"regexp"
 	"strings"
 	"time"
@@ -60,6 +61,10 @@ const (
 	//
 	// It's used to authenticate build messages, such as UpdateBuild request,
 	BuildTokenKey = "x-build-token"
+
+	// Sanity length limitation for build tokens to allow us to quickly reject
+	// potentially abusive inputs.
+	buildTokenMaxLength = 200
 )
 
 const UserPackageDir = "cipd_bin_packages"
@@ -70,6 +75,8 @@ var (
 	gitilesCommitRegex = regexp.MustCompile(`^commit/gitiles/([^/]+)/(.+?)/\+/([a-f0-9]{40})$`)
 	gerritCLRegex      = regexp.MustCompile(`^patch/gerrit/([^/]+)/(\d+)/(\d+)$`)
 )
+
+var buildTokenInOldFormat = errors.BoolTag{Key: errors.NewTagKey("build token in the old format")}
 
 func init() {
 	bqlog.RegisterSink(bqlog.Sink{
@@ -283,21 +290,86 @@ func validateCommit(cm *pb.GitilesCommit) error {
 	return nil
 }
 
-// validateBuildToken validates the update token from the header.
-func validateBuildToken(ctx context.Context, b *model.Build) error {
-	if b.UpdateToken == "" {
-		return appstatus.Errorf(codes.Internal, "build %d has no update_token", b.ID)
+// tokenBody deserialize the build token and returns the token body.
+func tokenBody(bldTok string) (*pb.TokenBody, error) {
+	if len(bldTok) > buildTokenMaxLength {
+		return nil, errors.Reason("build token %s is too long", bldTok).Err()
+	}
+	tokBytes, err := base64.RawURLEncoding.DecodeString(bldTok)
+	if err != nil {
+		return nil, errors.Reason("error decoding token").Err()
 	}
 
+	msg := &pb.TokenEnvelope{}
+	if err := proto.Unmarshal(tokBytes, msg); err != nil {
+		return nil, errors.Reason("error unmarshalling token").Tag(buildTokenInOldFormat).Err()
+	}
+
+	if msg.Version != pb.TokenEnvelope_UNENCRYPTED_PASSWORD_LIKE {
+		return nil, errors.Reason("token with version %d is not supported", msg.Version).Err()
+	}
+
+	body := &pb.TokenBody{}
+	if err := proto.Unmarshal(msg.Payload, body); err != nil {
+		return nil, errors.Reason("error unmarshalling token payload").Err()
+	}
+	return body, nil
+}
+
+// validateBuildToken validates the update token from the header.
+//
+// bID is mainly used to retrieve the build with the old build token
+// for validation, if known (i.e. in UpdateBuild, bID can be retrieved from
+// the request).
+// It can also be 0, witch means we only rely on the build token itself to be
+// self-validating (i.e. when schedule a child build).
+//
+// requireToken is a flag to indicate if the build token is required. For example
+// build token is required in UpdateBuild, but in ScheduleBuild, build token is
+// only attached in the context when scheduling a child build.
+// So missing the build token in ScheduleBuild doesn't necessarily mean there's an
+// error.
+func validateBuildToken(ctx context.Context, bID int64, requireToken bool) (*pb.TokenBody, *model.Build, error) {
 	md, _ := metadata.FromIncomingContext(ctx)
 	buildToks := md.Get(BuildTokenKey)
 	if len(buildToks) == 0 {
-		return appstatus.Errorf(codes.Unauthenticated, "missing header %q", BuildTokenKey)
+		if !requireToken {
+			return nil, nil, nil
+		}
+		return nil, nil, appstatus.Errorf(codes.Unauthenticated, "missing header %q", BuildTokenKey)
+	}
+
+	if len(buildToks) > 1 {
+		return nil, nil, errors.Reason("multiple build tokens are provided").Err()
+	}
+
+	bldTok := buildToks[0]
+	tokBody, err := tokenBody(bldTok)
+	// There's something wrong with the build token itself.
+	if err != nil && !buildTokenInOldFormat.In(err) {
+		return nil, nil, err
+	}
+
+	if tokBody != nil {
+		if bID == 0 {
+			bID = tokBody.BuildId
+		} else if tokBody.BuildId != bID {
+			return nil, nil, errors.Reason("unmatched requested build id and build token").Err()
+		}
+	}
+
+	if bID == 0 {
+		return nil, nil, errors.Reason("failed to get build id to validate the build token").Err()
+	}
+
+	bld, err := getBuild(ctx, bID)
+	if err != nil {
+		return nil, nil, err
 	}
 
 	// validate it against the token stored in the build entity.
-	if subtle.ConstantTimeCompare([]byte(buildToks[0]), []byte(b.UpdateToken)) == 1 {
-		return nil
+	if subtle.ConstantTimeCompare([]byte(bldTok), []byte(bld.UpdateToken)) == 1 {
+		return tokBody, bld, nil
 	}
-	return perm.NotFoundErr(ctx)
+	return nil, nil, perm.NotFoundErr(ctx)
 }

@@ -16,6 +16,7 @@ package rpc
 
 import (
 	"context"
+	"encoding/base64"
 	"fmt"
 	"strings"
 	"testing"
@@ -24,6 +25,8 @@ import (
 	storagepb "google.golang.org/genproto/googleapis/cloud/bigquery/storage/v1beta2"
 
 	// TODO(crbug/1242998): Remove once safe get becomes datastore default.
+	"go.chromium.org/luci/gae/impl/memory"
+	"go.chromium.org/luci/gae/service/datastore"
 	_ "go.chromium.org/luci/gae/service/datastore/crbug1242998safeget"
 
 	"go.chromium.org/luci/server/bqlog"
@@ -275,27 +278,40 @@ func TestValidateBuildToken(t *testing.T) {
 	t.Parallel()
 
 	Convey("validateBuildToken", t, func() {
-		ctx := context.Background()
+		ctx := memory.Use(context.Background())
 		ctx, _ = testclock.UseTime(ctx, time.Unix(1444945245, 0))
-		b := &model.Build{}
-		tk1 := "a token"
-		tk2 := "b token"
+		tk1 := base64.RawURLEncoding.EncodeToString([]byte("a token"))
+		tk2 := base64.RawURLEncoding.EncodeToString([]byte("b token"))
+		build := &model.Build{
+			ID: 1,
+			Proto: &pb.Build{
+				Id: 1,
+				Builder: &pb.BuilderID{
+					Project: "project",
+					Bucket:  "bucket",
+					Builder: "builder",
+				},
+				Status: pb.Status_STARTED,
+			},
+			UpdateToken: tk1,
+		}
+		So(datastore.Put(ctx, build), ShouldBeNil)
 
 		Convey("Works", func() {
-			b.UpdateToken = tk1
 			ctx = metadata.NewIncomingContext(ctx, metadata.Pairs(BuildTokenKey, tk1))
-			So(validateBuildToken(ctx, b), ShouldBeNil)
+			_, _, err := validateBuildToken(ctx, 1, true)
+			So(err, ShouldBeNil)
 		})
 
 		Convey("Fails", func() {
 			Convey("if unmatched", func() {
-				b.UpdateToken = tk1
 				ctx = metadata.NewIncomingContext(ctx, metadata.Pairs(BuildTokenKey, tk2))
-				So(validateBuildToken(ctx, b), ShouldNotBeNil)
+				_, _, err := validateBuildToken(ctx, 1, true)
+				So(err, ShouldNotBeNil)
 			})
 			Convey("if missing", func() {
-				b.UpdateToken = tk1
-				So(validateBuildToken(ctx, b), ShouldNotBeNil)
+				_, _, err := validateBuildToken(ctx, 1, true)
+				So(err, ShouldNotBeNil)
 			})
 		})
 	})
