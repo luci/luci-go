@@ -50,15 +50,35 @@ type FakeDB struct {
 
 var _ authdb.DB = (*FakeDB)(nil)
 
+// Condition evaluates attributes passed to HasPermission and decides if the
+// permission should apply.
+//
+// Used for mocking conditional bindings.
+type Condition func(realms.Attrs) bool
+
+// RestrictAttribute produces a Condition that check the given attribute has any
+// of the given values.
+//
+// Its logic matches AttributeRestriction condition in the RealmsDB.
+func RestrictAttribute(attr string, vals ...string) Condition {
+	set := stringset.NewFromSlice(vals...)
+	return func(attrs realms.Attrs) bool {
+		val, ok := attrs[attr]
+		return ok && set.Has(val)
+	}
+}
+
 // mockedForID is mocked groups and permissions of some identity.
 type mockedForID struct {
 	groups stringset.Set // a set of group names
-	perms  stringset.Set // a set of "<realm>\t<perm>" strings
+	perms  []mockedPerm
 }
 
-// mockedPermKey is used as a key in mocked.perms map.
-func mockedPermKey(realm string, perm realms.Permission) string {
-	return fmt.Sprintf("%s\t%s", realm, perm)
+// mockedPerm is a single permission of a single identity.
+type mockedPerm struct {
+	realm string
+	perm  realms.Permission
+	cond  Condition
 }
 
 // MockedDatum is a return value of various Mock* constructors.
@@ -78,12 +98,30 @@ func MockMembership(id identity.Identity, group string) MockedDatum {
 //
 // Panics if `realm` is not a valid globally scoped realm, i.e. it doesn't look
 // like "<project>:<realm>".
-func MockPermission(id identity.Identity, realm string, perm realms.Permission) MockedDatum {
+//
+// Optional `conds` allow mocking conditional bindings by defining a condition
+// on realms.Attrs that must evaluate to true to allow this permission. Multiple
+// `conds` callbacks are AND'ed together to get the final verdict.
+func MockPermission(id identity.Identity, realm string, perm realms.Permission, conds ...Condition) MockedDatum {
 	if err := realms.ValidateRealmName(realm, realms.GlobalScope); err != nil {
 		panic(err)
 	}
 	return MockedDatum{
-		apply: func(db *FakeDB) { db.mockedForID(id).perms.Add(mockedPermKey(realm, perm)) },
+		apply: func(db *FakeDB) {
+			perID := db.mockedForID(id)
+			perID.perms = append(perID.perms, mockedPerm{
+				realm: realm,
+				perm:  perm,
+				cond: func(attrs realms.Attrs) bool {
+					for _, cond := range conds {
+						if !cond(attrs) {
+							return false
+						}
+					}
+					return true
+				},
+			})
+		},
 	}
 }
 
@@ -208,8 +246,10 @@ func (db *FakeDB) HasPermission(ctx context.Context, id identity.Identity, perm 
 	}
 
 	if mocked := db.perID[id]; mocked != nil {
-		if mocked.perms.Has(mockedPermKey(realm, perm)) {
-			return true, nil
+		for _, mockedPerm := range mocked.perms {
+			if mockedPerm.realm == realm && mockedPerm.perm == perm && mockedPerm.cond(attrs) {
+				return true, nil
+			}
 		}
 	}
 
@@ -269,10 +309,7 @@ func (db *FakeDB) GetRealmData(ctx context.Context, realm string) (*protocol.Rea
 func (db *FakeDB) mockedForID(id identity.Identity) *mockedForID {
 	m, ok := db.perID[id]
 	if !ok {
-		m = &mockedForID{
-			groups: stringset.New(1),
-			perms:  stringset.New(1),
-		}
+		m = &mockedForID{groups: stringset.New(0)}
 		if db.perID == nil {
 			db.perID = make(map[identity.Identity]*mockedForID, 1)
 		}

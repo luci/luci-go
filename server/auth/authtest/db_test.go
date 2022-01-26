@@ -41,10 +41,19 @@ func TestFakeDB(t *testing.T) {
 		db := NewFakeDB(
 			MockMembership("user:abc@def.com", "group-a"),
 			MockMembership("user:abc@def.com", "group-b"),
+
 			MockPermission("user:abc@def.com", "proj:realm", testPerm1),
 			MockPermission("user:abc@def.com", "proj:realm", testPerm2),
+
+			MockPermission("user:abc@def.com", "proj:cond", testPerm1,
+				RestrictAttribute("attr1", "val1", "val2")),
+			MockPermission("user:abc@def.com", "proj:cond", testPerm2,
+				RestrictAttribute("attr1", "val1", "val2"),
+				RestrictAttribute("attr2", "val3")),
+
 			MockRealmData("proj:@root", dataRoot),
 			MockRealmData("proj:some", dataSome),
+
 			MockIPWhitelist("127.0.0.42", "wl"),
 		)
 
@@ -94,6 +103,49 @@ func TestFakeDB(t *testing.T) {
 			resp, err = db.HasPermission(ctx, "user:abc@def.com", testPerm1, "proj:unknown", nil)
 			So(err, ShouldBeNil)
 			So(resp, ShouldBeFalse)
+		})
+
+		Convey("Conditional permission checks work", func() {
+			resp, err := db.HasPermission(ctx, "user:abc@def.com", testPerm1, "proj:cond", nil)
+			So(err, ShouldBeNil)
+			So(resp, ShouldBeFalse)
+
+			resp, err = db.HasPermission(ctx, "user:abc@def.com", testPerm1, "proj:cond", realms.Attrs{
+				"attr1": "val1",
+			})
+			So(err, ShouldBeNil)
+			So(resp, ShouldBeTrue)
+
+			resp, err = db.HasPermission(ctx, "user:abc@def.com", testPerm1, "proj:cond", realms.Attrs{
+				"attr1": "val2",
+			})
+			So(err, ShouldBeNil)
+			So(resp, ShouldBeTrue)
+
+			resp, err = db.HasPermission(ctx, "user:abc@def.com", testPerm1, "proj:cond", realms.Attrs{
+				"attr1": "val3",
+			})
+			So(err, ShouldBeNil)
+			So(resp, ShouldBeFalse)
+
+			resp, err = db.HasPermission(ctx, "user:abc@def.com", testPerm1, "proj:cond", realms.Attrs{
+				"unknown": "val1",
+			})
+			So(err, ShouldBeNil)
+			So(resp, ShouldBeFalse)
+
+			resp, err = db.HasPermission(ctx, "user:abc@def.com", testPerm2, "proj:cond", realms.Attrs{
+				"attr1": "val1",
+			})
+			So(err, ShouldBeNil)
+			So(resp, ShouldBeFalse)
+
+			resp, err = db.HasPermission(ctx, "user:abc@def.com", testPerm2, "proj:cond", realms.Attrs{
+				"attr1": "val1",
+				"attr2": "val3",
+			})
+			So(err, ShouldBeNil)
+			So(resp, ShouldBeTrue)
 		})
 
 		Convey("GetRealmData works", func() {
