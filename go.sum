@@ -114,8 +114,8 @@ github.com/bazelbuild/buildtools v0.0.0-20210911013817-37179d5767a1/go.mod h1:68
 github.com/bazelbuild/remote-apis v0.0.0-20210718193713-0ecef08215cf/go.mod h1:ry8Y6CkQqCVcYsjPOlLXDX2iRVjOnjogdNwhvHmRcz8=
 github.com/bazelbuild/remote-apis v0.0.0-20210812183132-3e816456ee28 h1:lxnT86MpnwOnQoYVc/SaFwl8hZwVBEcznJWt9kYLwvs=
 github.com/bazelbuild/remote-apis v0.0.0-20210812183132-3e816456ee28/go.mod h1:ry8Y6CkQqCVcYsjPOlLXDX2iRVjOnjogdNwhvHmRcz8=
-github.com/bazelbuild/remote-apis-sdks v0.0.0-20211112060257-af570c2721ed h1:V5IDtJ98ISG+i0xcEMli5OcTA4RDTG+jkvWJ9m82wTw=
-github.com/bazelbuild/remote-apis-sdks v0.0.0-20211112060257-af570c2721ed/go.mod h1:50ZasLDlgIh6V79vGr/vS7K8LXZC9xjJFJX8QCrxNhE=
+github.com/bazelbuild/remote-apis-sdks v0.0.0-20220119194911-052cf871811d h1:R/ovzS+mb/9G5MQ9PQEK1z16ICxlwoZzRJhcsQO+0gw=
+github.com/bazelbuild/remote-apis-sdks v0.0.0-20220119194911-052cf871811d/go.mod h1:XzcNCw8akq6qEXdeyeET8y74NX/JtD0RiFjk9I1Pqx0=
 github.com/beorn7/perks v0.0.0-20180321164747-3a771d992973/go.mod h1:Dwedo/Wpr24TaqPxmxbtue+5NUziq4I4S80YR8gNf3Q=
 github.com/beorn7/perks v1.0.0/go.mod h1:KWe93zE9D1o94FZ5RNwFwVgaQK1VOXiVxmqh+CedLV8=
 github.com/bgentry/speakeasy v0.1.0/go.mod h1:+zsyZBPWlz7T6j88CTgSN5bM796AkVf0kBD4zp0CCIs=
@@ -436,6 +436,8 @@ github.com/pkg/errors v0.8.0/go.mod h1:bwawxfHBFNV+L2hUp1rHADufV3IMtnDRdf1r5NINE
 github.com/pkg/errors v0.8.1/go.mod h1:bwawxfHBFNV+L2hUp1rHADufV3IMtnDRdf1r5NINEl0=
 github.com/pkg/errors v0.9.1 h1:FEBLx1zS214owpjy7qsBeixbURkuhQAwrK5UwLGTwt4=
 github.com/pkg/errors v0.9.1/go.mod h1:bwawxfHBFNV+L2hUp1rHADufV3IMtnDRdf1r5NINEl0=
+github.com/pkg/xattr v0.4.4 h1:FSoblPdYobYoKCItkqASqcrKCxRn9Bgurz0sCBwzO5g=
+github.com/pkg/xattr v0.4.4/go.mod h1:sBD3RAqlr8Q+RC3FutZcikpT8nyDrIEEBw2J744gVWs=
 github.com/pmezard/go-difflib v1.0.0 h1:4DBwDE0NGyQoBHbLQYPwSUPoCMWR5BEzIk/f1lZbAQM=
 github.com/pmezard/go-difflib v1.0.0/go.mod h1:iKH77koFhYxTK1pcRnkKkqfTogsbg7gZNVY4sRDYZ/4=
 github.com/posener/complete v1.1.1/go.mod h1:em0nMJCgc9GFtwrmVmEMR/ZL6WyhyjMBndrE9hABlRI=
@@ -659,6 +661,7 @@ golang.org/x/sys v0.0.0-20200523222454-059865788121/go.mod h1:h1NjWce9XRLGQEsW7w
 golang.org/x/sys v0.0.0-20200803210538-64077c9b5642/go.mod h1:h1NjWce9XRLGQEsW7wpKNCjG9DtNlClVuFLEZdDNbEs=
 golang.org/x/sys v0.0.0-20200905004654-be1d3432aa8f/go.mod h1:h1NjWce9XRLGQEsW7wpKNCjG9DtNlClVuFLEZdDNbEs=
 golang.org/x/sys v0.0.0-20200930185726-fdedc70b468f/go.mod h1:h1NjWce9XRLGQEsW7wpKNCjG9DtNlClVuFLEZdDNbEs=
+golang.org/x/sys v0.0.0-20201101102859-da207088b7d1/go.mod h1:h1NjWce9XRLGQEsW7wpKNCjG9DtNlClVuFLEZdDNbEs=
 golang.org/x/sys v0.0.0-20201119102817-f84b799fce68/go.mod h1:h1NjWce9XRLGQEsW7wpKNCjG9DtNlClVuFLEZdDNbEs=
 golang.org/x/sys v0.0.0-20201201145000-ef89a241ccb3/go.mod h1:h1NjWce9XRLGQEsW7wpKNCjG9DtNlClVuFLEZdDNbEs=
 golang.org/x/sys v0.0.0-20210104204734-6f8348627aad/go.mod h1:h1NjWce9XRLGQEsW7wpKNCjG9DtNlClVuFLEZdDNbEs=
