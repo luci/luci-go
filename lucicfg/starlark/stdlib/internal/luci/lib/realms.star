@@ -20,7 +20,6 @@ realms. The code that does this lives elsewhere.
 """
 
 load("@stdlib//internal/error.star", "error")
-load("@stdlib//internal/experiments.star", "experiments")
 load("@stdlib//internal/graph.star", "graph")
 load("@stdlib//internal/luci/common.star", "keys", "kinds")
 load("@stdlib//internal/luci/proto.star", "realms_pb")
@@ -67,6 +66,9 @@ _default_impl = _implementation_api(
     keys_custom_role = keys.custom_role,
     keys_realm = keys.realm,
 )
+
+# A construct for conditions passed to luci.binding(...).
+_condition_ctor = __native__.genstruct("luci.binding_condition")
 
 def _realm(
         *,
@@ -160,7 +162,8 @@ def _binding(
         roles = None,
         groups = None,
         users = None,
-        projects = None):
+        projects = None,
+        conditions = None):
     """Implements luci.binding(...) in terms of `impl`."""
     realm_keys = []
     if realm != None:
@@ -194,6 +197,7 @@ def _binding(
     groups = _validate_str_or_list("groups", groups)
     users = _validate_str_or_list("users", users)
     projects = _validate_str_or_list("projects", projects)
+    conditions = _validate_conditions("conditions", conditions)
 
     # Note: the second argument here is irrelevant. It will appear when this key
     # is printed but otherwise it is unused.
@@ -203,6 +207,7 @@ def _binding(
         "groups": groups,
         "users": users,
         "projects": projects,
+        "conditions": conditions,
     })
 
     # This adds the binding to the realm(s).
@@ -219,6 +224,39 @@ def _binding(
 
     return graph.keyset(key)
 
+def _restrict_attribute(attribute, values):
+    """A condition for luci.binding(...) to restrict allowed attribute values.
+
+    When a service checks a permission, it passes to the authorization library
+    a string-valued dictionary of attributes that describes the context of the
+    permission check. It contains things like the name of the resource being
+    accessed, or parameters of the incoming RPC request that triggered the
+    check.
+
+    luci.restrict_attribute(...) condition makes the binding active only if
+    the value of the given attribute is in the given set of allowed values.
+
+    A list of available attributes and meaning of their values depends on the
+    permission being checked and is documented in the corresponding service
+    documentation.
+
+    DocTags:
+      Experimental.
+
+    Args:
+      attribute: name of the attribute to restrict.
+      values: a list of strings with allowed values of the attribute.
+
+    Returns:
+      An opaque struct that can be passed to luci.binding(...) as a condition.
+    """
+    return _condition_ctor(
+        restrict = struct(
+            attribute = validate.string("attribute", attribute, required = True),
+            values = tuple(sorted(set(validate.str_list("values", values)))),
+        ),
+    )
+
 def _validate_str_or_list(name, val, required = False):
     if type(val) == "string":
         val = [val]
@@ -228,6 +266,40 @@ def _validate_str_or_list(name, val, required = False):
     for v in val:
         validate.string(name, v)
     return sorted(set(val))
+
+def _validate_conditions(name, val):
+    """Validates and normalizes a list of conditions.
+
+    Sorts conditions according to some arbitrary (but stable) order. Returns
+    a struct with conditions in their proto form and in a form of a dict key
+    that can be used to group and dedup bindings that match these conditions.
+    """
+    conds = []  # [(key, proto)]
+    for v in validate.list(name, val):
+        validate.struct(name, v, _condition_ctor)
+        key = None
+        msg = realms_pb.Condition()
+        if v.restrict:
+            # Note: v.restrict.values is a sorted string tuple here already.
+            key = (0, v.restrict.attribute, v.restrict.values)
+            msg.restrict = realms_pb.Condition.AttributeRestriction(
+                attribute = v.restrict.attribute,
+                values = v.restrict.values,
+            )
+        else:
+            fail("unexpected luci.binding_condition: %s" % v)
+        conds.append((key, msg))
+
+    # Sort and get a composite key that encodes all conditions in the list.
+    protos, encoded = [], []
+    for key, msg in sorted(conds, key = lambda x: x[0]):
+        protos.append(msg)
+        encoded.append(key)
+
+    return struct(
+        protos = protos,
+        encoded = tuple(encoded),
+    )
 
 def _generate_realms_cfg(impl):
     """Implementation of realms.cfg generation."""
@@ -250,20 +322,28 @@ def _generate_realms_cfg(impl):
 
 def _generate_realm(impl, realm):
     """Given a REALM node returns realms_pb.Realm."""
-    per_role = {}
+
+    # (role, encoded conditions) => [(role, [realms_pb.Condition], set(str))]
+    bindings = {}
     for b in graph.children(realm.key, impl.kinds.binding):
         for role in b.props.roles:
             principals = []
             principals.extend(["group:" + g for g in b.props.groups])
             principals.extend(["user:" + u for u in b.props.users])
             principals.extend(["project:" + p for p in b.props.projects])
-            if role in per_role:
-                per_role[role] = per_role[role].union(principals)
-            else:
-                per_role[role] = set(principals)
+            if not principals:
+                continue
 
-    # Convert into a sorted list of pairs (role, set of principals).
-    per_role = sorted(per_role.items(), key = lambda x: x[0])
+            # Update an existing binding with the exact same role+conditions
+            # or create a new one.
+            binding = bindings.setdefault(
+                (role, b.props.conditions.encoded),
+                [role, b.props.conditions.protos, set()],
+            )
+            binding[2] = binding[2].union(principals)
+
+    # Convert into a sorted list of (role, conditions, set of principals).
+    bindings = [bindings[key] for key in sorted(bindings)]
 
     parents = graph.parents(realm.key, impl.kinds.realm)
     return realms_pb.Realm(
@@ -272,10 +352,10 @@ def _generate_realm(impl, realm):
         bindings = [
             realms_pb.Binding(
                 role = role,
-                principals = sorted(bindings),
+                principals = sorted(principals),
+                conditions = conditions,
             )
-            for role, bindings in per_role
-            if bindings
+            for role, conditions, principals in bindings
         ],
         enforce_in_service = realm.props.enforce_in_service,
     )
@@ -298,6 +378,9 @@ realms = struct(
     custom_role = _custom_role,
     binding = _binding,
 
-    # The generator (to run from lucicfg.generator).
+    # Condition constructors.
+    restrict_attribute = _restrict_attribute,
+
+    # The generator (to run from lucicfg.generator)
     generate_realms_cfg = _generate_realms_cfg,
 )

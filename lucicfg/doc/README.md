@@ -1164,6 +1164,7 @@ luci.binding(
     groups = None,
     users = None,
     projects = None,
+    conditions = None,
 )
 ```
 
@@ -1188,7 +1189,47 @@ of permissions.
 * **groups**: a single group name or a list of groups to assign the role to.
 * **users**: a single user email or a list of emails to assign the role to.
 * **projects**: a single LUCI project name or a list of project names to assign the role to.
+* **conditions**: a list of conditions (ANDed together) that define when this binding is active. Currently only a list of [luci.restrict_attribute(...)](#luci.restrict_attribute) conditions is supported. See [luci.restrict_attribute(...)](#luci.restrict_attribute) for more details. This is an experimental feature.
 
+
+
+
+### luci.restrict_attribute {#luci.restrict_attribute}
+
+```python
+luci.restrict_attribute(attribute = None, values = None)
+```
+
+
+*** note
+**Experimental.** No backward compatibility guarantees.
+***
+
+
+A condition for [luci.binding(...)](#luci.binding) to restrict allowed attribute values.
+
+When a service checks a permission, it passes to the authorization library
+a string-valued dictionary of attributes that describes the context of the
+permission check. It contains things like the name of the resource being
+accessed, or parameters of the incoming RPC request that triggered the
+check.
+
+[luci.restrict_attribute(...)](#luci.restrict_attribute) condition makes the binding active only if
+the value of the given attribute is in the given set of allowed values.
+
+A list of available attributes and meaning of their values depends on the
+permission being checked and is documented in the corresponding service
+documentation.
+
+#### Arguments {#luci.restrict_attribute-args}
+
+* **attribute**: name of the attribute to restrict.
+* **values**: a list of strings with allowed values of the attribute.
+
+
+#### Returns  {#luci.restrict_attribute-returns}
+
+An opaque struct that can be passed to [luci.binding(...)](#luci.binding) as a condition.
 
 
 

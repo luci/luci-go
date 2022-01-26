@@ -24,7 +24,8 @@ def _binding(
         roles = None,
         groups = None,
         users = None,
-        projects = None):
+        projects = None,
+        conditions = None):
     """Binding assigns roles in a realm to individuals, groups or LUCI projects.
 
     A role can either be predefined (if its name starts with `role/`) or custom
@@ -47,6 +48,10 @@ def _binding(
       users: a single user email or a list of emails to assign the role to.
       projects: a single LUCI project name or a list of project names to assign
         the role to.
+      conditions: a list of conditions (ANDed together) that define when this
+        binding is active. Currently only a list of luci.restrict_attribute(...)
+        conditions is supported. See luci.restrict_attribute(...) for more
+        details. This is an experimental feature.
     """
     return realms.binding(
         impl = realms.default_impl,
@@ -55,6 +60,7 @@ def _binding(
         groups = groups,
         users = users,
         projects = projects,
+        conditions = conditions,
     )
 
 binding = lucicfg.rule(impl = _binding)
