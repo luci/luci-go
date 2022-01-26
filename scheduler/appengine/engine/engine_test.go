@@ -391,7 +391,15 @@ func TestQueries(t *testing.T) {
 			"user:some@example.com",
 			"user:admin@example.com",
 		)
-		mockRealm("abc:admin")
+
+		mockRealm("abc:secret")
+		db.AddMocks(
+			authtest.MockPermission(
+				"user:some@example.com",
+				"abc:secret",
+				permJobsGet,
+				authtest.RestrictAttribute("scheduler.job.name", "restricted"),
+			))
 
 		ctxAnon := auth.WithState(c, &authtest.FakeState{
 			Identity: "anonymous:anonymous",
@@ -420,7 +428,8 @@ func TestQueries(t *testing.T) {
 			&Job{JobID: job3, ProjectID: "abc", Enabled: true, RealmID: "abc:public"},
 			&Job{JobID: "def/1", ProjectID: "def", Enabled: true, RealmID: "abc:public"},
 			&Job{JobID: "def/2", ProjectID: "def", Enabled: false, RealmID: "abc:public"},
-			&Job{JobID: "secret/1", ProjectID: "secret", Enabled: true, RealmID: "abc:admin"},
+			&Job{JobID: "secret/admin-only", ProjectID: "secret", Enabled: true, RealmID: "abc:secret"},
+			&Job{JobID: "secret/restricted", ProjectID: "secret", Enabled: true, RealmID: "abc:secret"},
 		), ShouldBeNil)
 
 		// Mocked invocations, all in finished state (IndexedJobID set).
@@ -464,10 +473,22 @@ func TestQueries(t *testing.T) {
 				So(get(ctxOne), ShouldResemble, []string{"abc/1", "abc/3", "def/1"})
 			})
 			Convey("Explicit readers", func() {
-				So(get(ctxSome), ShouldResemble, []string{"abc/2", "abc/3", "def/1"})
+				So(get(ctxSome), ShouldResemble, []string{
+					"abc/2",
+					"abc/3",
+					"def/1",
+					"secret/restricted", // via the conditional permission
+				})
 			})
 			Convey("Admins have implicit READER access to all jobs", func() {
-				So(get(ctxAdmin), ShouldResemble, []string{"abc/1", "abc/2", "abc/3", "def/1", "secret/1"})
+				So(get(ctxAdmin), ShouldResemble, []string{
+					"abc/1",
+					"abc/2",
+					"abc/3",
+					"def/1",
+					"secret/admin-only",
+					"secret/restricted",
+				})
 			})
 		})
 

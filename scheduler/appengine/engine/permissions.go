@@ -62,18 +62,23 @@ func checkPermission(ctx context.Context, job *Job, perm realms.Permission) erro
 		realm = realms.Join(job.ProjectID, realms.LegacyRealm)
 	}
 
+	// Inputs to condition checks in conditional bindings.
+	attrs := realms.Attrs{
+		"scheduler.job.name": job.JobName(),
+	}
+
 	switch enforce, err := auth.ShouldEnforceRealmACL(ctx, realm); {
 	case err != nil:
 		return err
 	case enforce:
-		return checkRealmACL(ctx, perm, realm)
+		return checkRealmACL(ctx, perm, realm, attrs)
 	default:
-		return checkLegacyACL(ctx, job, perm, realm)
+		return checkLegacyACL(ctx, job, perm, realm, attrs)
 	}
 }
 
 // checkRealmACL uses Realms ACLs, totally ignoring legacy ACLs.
-func checkRealmACL(ctx context.Context, perm realms.Permission, realm string) error {
+func checkRealmACL(ctx context.Context, perm realms.Permission, realm string, attrs realms.Attrs) error {
 	// Admins have implicit access to everything.
 	// TODO(vadimsh): We should probably remove this.
 	switch yes, err := auth.IsMember(ctx, adminGroup); {
@@ -84,7 +89,7 @@ func checkRealmACL(ctx context.Context, perm realms.Permission, realm string) er
 	}
 
 	// Else fallback to checking permissions.
-	switch yes, err := auth.HasPermission(ctx, perm, realm, nil); {
+	switch yes, err := auth.HasPermission(ctx, perm, realm, attrs); {
 	case err != nil:
 		return err
 	case !yes:
@@ -95,8 +100,8 @@ func checkRealmACL(ctx context.Context, perm realms.Permission, realm string) er
 }
 
 // checkLegacyACL uses legacy ACLs, but also compares them to realm ACLs.
-func checkLegacyACL(ctx context.Context, job *Job, perm realms.Permission, realm string) error {
-	// Covert the permission to a legacy role and check job's AclSet for it.
+func checkLegacyACL(ctx context.Context, job *Job, perm realms.Permission, realm string, attrs realms.Attrs) error {
+	// Convert the permission to a legacy role and check job's AclSet for it.
 	role, ok := permToRole[perm]
 	if !ok {
 		return errors.Reason("unknown job permission %q", perm).Err()
@@ -112,7 +117,7 @@ func checkLegacyACL(ctx context.Context, job *Job, perm realms.Permission, realm
 		ExpectedResult: legacyResult,
 		TrackingBug:    "crbug.com/1070761",
 		AdminGroup:     adminGroup,
-	}.Execute(ctx, perm, realm, nil)
+	}.Execute(ctx, perm, realm, attrs)
 
 	if !legacyResult {
 		return ErrNoPermission

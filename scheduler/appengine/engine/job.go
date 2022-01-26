@@ -183,7 +183,7 @@ func (j *JobTriageLog) Stale() bool {
 
 // JobName returns name of this Job as defined its project's config.
 //
-// This is "<name>"" part extracted from "<project>/<name>" job ID.
+// This is "<name>" part extracted from "<project>/<name>" job ID.
 func (e *Job) JobName() string {
 	chunks := strings.Split(e.JobID, "/")
 	return chunks[1]
