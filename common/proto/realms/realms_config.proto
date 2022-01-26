@@ -131,6 +131,40 @@ message Binding {
   // Each entry can either be an identity string (like "user:<email>") or a
   // LUCI group reference "group:<name>".
   repeated string principals = 2;
+
+  // A list of conditions ANDed together that define when the binding is active.
+  //
+  // If empty, the binding is active all the time.
+  repeated Condition conditions = 3;
+}
+
+
+// Condition defines a predicate that takes a set of `attribute = value` pairs
+// with a context of a particular permission check and returns True if the
+// binding guarded by this conditions should be respected.
+//
+// When a service checks a permission, it passes to the authorization library
+// a string-valued dictionary of attributes that describes the context of the
+// permission check. It contains things like the name of the resource being
+// accessed, or parameters of the incoming RPC request that triggered
+// the check.
+//
+// A list of available attributes and meaning of their values depends on
+// the permission being checked and is documented in the corresponding service
+// documentation.
+message Condition {
+  // AttributeRestriction checks that the attributes set (as a set of key-value
+  // pairs) contains a particular (attribute, value) pair. Checked values are
+  // given as a list. The check succeeds if ANY of (attribute, value) pairs are
+  // present: `any((attribute, value) in attrs for value in values)`.
+  message AttributeRestriction {
+    string attribute = 1;
+    repeated string values = 2;
+  }
+
+  oneof op {
+    AttributeRestriction restrict = 1;
+  }
 }
 
 

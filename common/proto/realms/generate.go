@@ -17,7 +17,7 @@
 // Copied from:
 //
 // Repo: https://chromium.googlesource.com/infra/luci/luci-py/
-// Revision: d5e72d070990966aea8d0d8d405b32fb3fdbbb4d
+// Revision: ce8d5d5b7bf677374051555ab67832d46531330d
 // Path: appengine/auth_service/proto/realms_config.proto
 //
 // Modification: added luci.file_metadata annotation.
