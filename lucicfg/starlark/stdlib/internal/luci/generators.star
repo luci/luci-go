@@ -35,6 +35,7 @@ load(
     "logdog_pb",
     "milo_pb",
     "notify_pb",
+    "realms_pb",
     "scheduler_pb",
     "tricium_pb",
 )
@@ -56,6 +57,20 @@ def register():
 ################################################################################
 ## Utilities to be used from generators.
 
+def output_path(path):
+    """Returns a full path to a LUCI config in the output set.
+
+    Args:
+      path: a LUCI config path relative to LUCI config root.
+
+    Returns:
+      A path relative to the config output root.
+    """
+    root = get_project().props.config_dir
+    if root != ".":
+        path = root + "/" + path
+    return path
+
 def set_config(ctx, path, cfg):
     """Adds `cfg` as a LUCI config to the output at the given `path`.
 
@@ -64,10 +79,7 @@ def set_config(ctx, path, cfg):
       path: the path in the output to populate.
       cfg: a proto or a string to put in the output.
     """
-    root = get_project().props.config_dir
-    if root != ".":
-        path = root + "/" + path
-    ctx.output[path] = cfg
+    ctx.output[output_path(path)] = cfg
 
 def get_project(required = True):
     """Returns project() node or fails if it wasn't declared.
@@ -213,6 +225,10 @@ def gen_project_cfg(ctx):
 ################################################################################
 ## realm.cfg.
 
+def realms_cfg(proj):
+    """Returns either `realms.cfg` or `realms-dev.cfg`."""
+    return "realms-dev.cfg" if proj.props.dev else "realms.cfg"
+
 def gen_realms_cfg(ctx):
     """Generates realms.cfg.
 
@@ -223,7 +239,7 @@ def gen_realms_cfg(ctx):
     if proj:
         set_config(
             ctx = ctx,
-            path = "realms-dev.cfg" if proj.props.dev else "realms.cfg",
+            path = realms_cfg(proj),
             cfg = realms.generate_realms_cfg(realms.default_impl),
         )
 
@@ -449,7 +465,7 @@ _scheduler_roles = {
     acl.SCHEDULER_OWNER: scheduler_pb.Acl.OWNER,
 }
 
-# Enables generation of shorter BuildbucketTask protos.
+# Enables generation of shorter BuildbucketTask protos and conditional bindings.
 _scheduler_use_bb_v2 = experiments.register("crbug.com/1182002")
 
 def gen_scheduler_cfg(ctx):
@@ -513,7 +529,7 @@ def gen_scheduler_cfg(ctx):
 
     scheduler = get_service("scheduler", "using triggering or pollers")
     buildbucket = get_service("buildbucket", "using triggering")
-    project_name = get_project().props.name
+    project = get_project()
 
     cfg = scheduler_pb.ProjectConfig()
     set_config(ctx, scheduler.cfg_file, cfg)
@@ -571,9 +587,18 @@ def gen_scheduler_cfg(ctx):
             ])),
             schedule = builder.props.schedule,
             triggering_policy = builder.props.triggering_policy,
-            buildbucket = _scheduler_task(builder, buildbucket, project_name),
+            buildbucket = _scheduler_task(builder, buildbucket, project.props.name),
         ))
     cfg.job = sorted(cfg.job, key = lambda x: x.id)
+
+    # Add conditional "role/scheduler.triggerer" bindings that allow builders to
+    # trigger jobs.
+    if _scheduler_use_bb_v2.is_enabled():
+        _gen_scheduler_bindings(
+            ctx.output[output_path(realms_cfg(project))],
+            builders,
+            node_to_id,
+        )
 
 def _scheduler_disambiguate_ids(nodes):
     """[graph.node] => dict{node: name to use for it in scheduler.cfg}."""
@@ -614,6 +639,41 @@ def _scheduler_disambiguate_ids(nodes):
                 use_name("%s-%s" % (node.props.bucket, nm), node)
 
     return names
+
+def _gen_scheduler_bindings(realms_cfg, builders, node_to_id):
+    """Mutates realms.cfg by adding `role/scheduler.triggerer` bindings.
+
+    Args:
+      realms_cfg: realms_pb.RealmsCfg to mutate.
+      builders: BUILDER node -> list GITILES_POLLER|BUILDER that trigger it.
+      node_to_id: dict{BUILDER node: name to use for it in scheduler.cfg}.
+    """
+
+    # (target realm, triggering service account) => [triggered job ID].
+    per_realm_per_account = {}
+    for builder, triggered_by in builders.items():
+        job_id = node_to_id[builder]
+        job_realm = builder.props.realm
+        for t in triggered_by:
+            if t.key.kind == kinds.BUILDER and t.props.service_account:
+                key = (job_realm, t.props.service_account)
+                per_realm_per_account.setdefault(key, []).append(job_id)
+
+    # Append corresponding bindings to realms.cfg.
+    for realm, account in sorted(per_realm_per_account):
+        jobs = sorted(set(per_realm_per_account[(realm, account)]))
+        realms.append_binding_pb(realms_cfg, realm, realms_pb.Binding(
+            role = "role/scheduler.triggerer",
+            principals = ["user:" + account],
+            conditions = [
+                realms_pb.Condition(
+                    restrict = realms_pb.Condition.AttributeRestriction(
+                        attribute = "scheduler.job.name",
+                        values = jobs,
+                    ),
+                ),
+            ],
+        ))
 
 def _scheduler_acls(elementary):
     """[acl.elementary] => filtered [scheduler_pb.Acl]."""

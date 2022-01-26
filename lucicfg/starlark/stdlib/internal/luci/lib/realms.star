@@ -360,6 +360,23 @@ def _generate_realm(impl, realm):
         enforce_in_service = realm.props.enforce_in_service,
     )
 
+def _append_binding_pb(realms_cfg, realm, binding):
+    """Appends a binding to an existing realms_pb.RealmsCfg proto.
+
+    Args:
+      realms_cfg: realms_pb.RealmsCfg to mutate.
+      realm: a name of the realm to mutate or add.
+      binding: a realms_pb.Binding to append.
+    """
+    for r in realms_cfg.realms:
+        if r.name == realm:
+            r.bindings.append(binding)
+            return
+    realms_cfg.realms.append(realms_pb.Realm(
+        name = realm,
+        bindings = [binding],
+    ))
+
 def _generate_custom_role(impl, role):
     """Given a CUSTOM_ROLE node returns realms_pb.CustomRole."""
     return realms_pb.CustomRole(
@@ -381,6 +398,7 @@ realms = struct(
     # Condition constructors.
     restrict_attribute = _restrict_attribute,
 
-    # The generator (to run from lucicfg.generator)
+    # The generator helpers (to run from lucicfg.generator).
     generate_realms_cfg = _generate_realms_cfg,
+    append_binding_pb = _append_binding_pb,
 )
