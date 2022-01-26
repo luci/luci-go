@@ -16,6 +16,7 @@ package projectscope
 
 import (
 	"context"
+	"fmt"
 	"testing"
 
 	"google.golang.org/protobuf/encoding/prototext"
@@ -31,14 +32,15 @@ func TestValidation(t *testing.T) {
 	t.Parallel()
 
 	cases := []struct {
-		Cfg      string
-		Warnings []string
+		Cfg    string
+		Errors []string
 	}{
 		{
 			// No errors, "normal looking" config.
 			Cfg: `
 				projects {
 					id: "id1"
+					owned_by: "team A"
 					config_location {
 						url: "https://some/repo"
 						storage_type: GITILES
@@ -50,10 +52,11 @@ func TestValidation(t *testing.T) {
 			`,
 		},
 		{
-			// Identity double assignment, produces a warning.
+			// Identity double assignment across teams, produces an error.
 			Cfg: `
 				projects {
 					id: "id1"
+					owned_by: "team A"
 					config_location {
 						url: "https://some/repo"
 						storage_type: GITILES
@@ -64,6 +67,7 @@ func TestValidation(t *testing.T) {
 				}
 				projects {
 					id: "id2"
+					owned_by: "team B"
 					config_location {
 						url: "https://some/repo"
 						storage_type: GITILES
@@ -73,36 +77,63 @@ func TestValidation(t *testing.T) {
 					}
 				}
 			`,
-			Warnings: []string{
-				`project-scoped account foo@bar.com is used by multiple projects: id1, id2`,
+			Errors: []string{
+				`project-scoped account foo@bar.com is used by multiple teams: team A, team B`,
 			},
+		},
+		{
+			// Identity double assignment within the same team, no error.
+			Cfg: `
+				projects {
+					id: "id1"
+					owned_by: "team A"
+					config_location {
+						url: "https://some/repo"
+						storage_type: GITILES
+					}
+					identity_config {
+						service_account_email: "foo@bar.com"
+					}
+				}
+				projects {
+					id: "id2"
+					owned_by: "team A"
+					config_location {
+						url: "https://some/repo"
+						storage_type: GITILES
+					}
+					identity_config {
+						service_account_email: "foo@bar.com"
+					}
+				}
+			`,
 		},
 	}
 
 	Convey("Validation works", t, func(c C) {
 		for idx, cs := range cases {
-			c.Printf("Case #%d\n", idx)
+			Convey(fmt.Sprintf("Case #%d", idx), func() {
+				cfg := &config.ProjectsCfg{}
+				err := prototext.Unmarshal([]byte(cs.Cfg), cfg)
+				So(err, ShouldBeNil)
 
-			cfg := &config.ProjectsCfg{}
-			err := prototext.Unmarshal([]byte(cs.Cfg), cfg)
-			So(err, ShouldBeNil)
+				ctx := &validation.Context{Context: context.Background()}
+				ctx.SetFile(projectsCfg)
+				validateSingleIdentityProjectAssignment(ctx, cfg)
+				verr := ctx.Finalize()
 
-			ctx := &validation.Context{Context: context.Background()}
-			ctx.SetFile(projectsCfg)
-			validateSingleIdentityProjectAssignment(ctx, cfg)
-			verr := ctx.Finalize()
-
-			if len(cs.Warnings) == 0 {
-				So(verr, ShouldBeNil)
-			} else {
-				verr := verr.(*validation.Error)
-				So(verr.Errors, ShouldHaveLength, len(cs.Warnings))
-				for i, err := range verr.Errors {
-					sev, _ := validation.SeverityTag.In(err)
-					So(sev, ShouldEqual, validation.Warning)
-					So(err, ShouldErrLike, cs.Warnings[i])
+				if len(cs.Errors) == 0 {
+					So(verr, ShouldBeNil)
+				} else {
+					verr := verr.(*validation.Error)
+					So(verr.Errors, ShouldHaveLength, len(cs.Errors))
+					for i, err := range verr.Errors {
+						sev, _ := validation.SeverityTag.In(err)
+						So(sev, ShouldEqual, validation.Blocking)
+						So(err, ShouldErrLike, cs.Errors[i])
+					}
 				}
-			}
+			})
 		}
 	})
 }
