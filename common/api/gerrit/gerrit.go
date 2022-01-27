@@ -26,6 +26,7 @@ import (
 	"strings"
 
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/retry"
 	"go.chromium.org/luci/common/retry/transient"
 
 	"golang.org/x/net/context/ctxhttp"
@@ -286,6 +287,10 @@ type Client struct {
 
 	// Set by NewClient after validation.
 	gerritURL url.URL
+
+	// Strategy for retrying GET requests. Other requests are not retried as
+	// they may not be idempotent.
+	retryStrategy retry.Factory
 }
 
 // NewClient creates a new instance of Client and validates and stores
@@ -300,7 +305,7 @@ func NewClient(c *http.Client, gerritURL string) (*Client, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &Client{c, *pu}, nil
+	return &Client{c, *pu, retry.Default}, nil
 }
 
 // ChangeQueryParams contains the parameters necessary for querying changes from Gerrit.
@@ -599,7 +604,6 @@ func (c *Client) IsChangePureRevert(ctx context.Context, changeID string) (bool,
 		default:
 			return false, err
 		}
-
 	}
 	return resp.IsPureRevert, nil
 }
@@ -956,6 +960,17 @@ func (c *Client) get(ctx context.Context, path string, query url.Values, result 
 	u := c.gerritURL
 	u.Opaque = "//" + u.Host + "/" + path
 	u.RawQuery = query.Encode()
+
+	var statusCode int
+	err := retry.Retry(ctx, transient.Only(c.retryStrategy), func() error {
+		var err error
+		statusCode, err = c.getOnce(ctx, u, result)
+		return err
+	}, nil)
+	return statusCode, err
+}
+
+func (c *Client) getOnce(ctx context.Context, u url.URL, result interface{}) (int, error) {
 	r, err := ctxhttp.Get(ctx, c.httpClient, u.String())
 	if err != nil {
 		return 0, transient.Tag.Apply(err)
@@ -964,7 +979,6 @@ func (c *Client) get(ctx context.Context, path string, query url.Values, result 
 	if r.StatusCode < 200 || r.StatusCode >= 300 {
 		err = errors.Reason("failed to fetch %q, status code %d", u.String(), r.StatusCode).Err()
 		if r.StatusCode >= 500 {
-			// TODO(tandrii): consider retrying.
 			err = transient.Tag.Apply(err)
 		}
 		return r.StatusCode, err

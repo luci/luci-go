@@ -24,6 +24,8 @@ import (
 	"net/url"
 	"testing"
 
+	"go.chromium.org/luci/common/retry"
+
 	. "github.com/smartystreets/goconvey/convey"
 )
 
@@ -148,6 +150,29 @@ func TestChangeDetails(t *testing.T) {
 
 	})
 
+	Convey("Retry", t, func() {
+		var attempts int
+		srv, c := newMockClient(func(w http.ResponseWriter, r *http.Request) {
+			// First attempt fails, second succeeds.
+			if attempts == 0 {
+				w.WriteHeader(500)
+				w.Header().Set("Content-Type", "text/plain")
+				fmt.Fprintf(w, "Internal server error")
+			} else {
+				w.WriteHeader(200)
+				w.Header().Set("Content-Type", "application/json")
+				fmt.Fprintf(w, ")]}'\n%s\n", fakeCL3Str)
+			}
+			attempts++
+		})
+		defer srv.Close()
+
+		cl, err := c.ChangeDetails(ctx, "629279", ChangeDetailsParams{})
+		So(err, ShouldBeNil)
+		So(cl.RevertOf, ShouldEqual, 629277)
+		So(cl.CurrentRevision, ShouldEqual, "1ee75012c0de")
+		So(attempts, ShouldEqual, 2)
+	})
 }
 
 func TestListChangeComments(t *testing.T) {
@@ -1060,6 +1085,11 @@ var (
 func newMockClient(handler func(w http.ResponseWriter, r *http.Request)) (*httptest.Server, *Client) {
 	srv := httptest.NewServer(http.HandlerFunc(handler))
 	pu, _ := url.Parse(srv.URL)
-	c := &Client{http.DefaultClient, *pu}
+	// Tests shouldn't sleep, so make sure we don't wait between request
+	// attempts.
+	retryStrategy := func() retry.Iterator {
+		return &retry.Limited{Retries: 10, Delay: 0}
+	}
+	c := &Client{http.DefaultClient, *pu, retryStrategy}
 	return srv, c
 }
