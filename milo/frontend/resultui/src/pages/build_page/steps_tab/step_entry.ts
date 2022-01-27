@@ -252,6 +252,16 @@ export class BuildPageStepEntryElement extends MiloBaseElement implements Render
               }}
             ></milo-copy-to-clipboard>
             <span id="header-markdown">${this.step.header}</span>
+            ${this.step.header != null && this.step.header.title != '' ? html`
+              <milo-copy-to-clipboard
+                .textToCopy=${this.step.header.title}
+                title="Copy the step header."
+                class="hidden-icon"
+                @click=${(e: Event) => {
+                  e.stopPropagation();
+                  this.trackInteraction();
+                }}
+              ></milo-copy-to-clipboard>` : html``}
           </div>
         </span>
         <div id="content" slot="content">${this.renderContent()}</div>
@@ -299,6 +309,13 @@ export class BuildPageStepEntryElement extends MiloBaseElement implements Render
         padding-left: 4px;
         box-sizing: border-box;
         height: 24px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        display: grid;
+        grid-template-columns: auto auto auto auto 1fr;
+      }
+
+      #header-markdown  {
         overflow: hidden;
         text-overflow: ellipsis;
       }
