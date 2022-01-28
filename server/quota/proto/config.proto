@@ -18,10 +18,9 @@ package proto;
 message Policy {
   // A globally unique name.
   //
+  // Must start with a letter. Allowed characters (no spaces): A-Z a-z 0-9 - _ /
   // The substring "${user}" can be used in this name to define identical
-  // per-user policies.
-  //
-  // TODO(crbug.com/1280055): Define alphabet and validate.
+  // per-user policies. Must not exceed 64 characters.
   string name = 1;
 
   // The amount of resources available.

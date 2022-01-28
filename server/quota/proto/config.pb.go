@@ -39,10 +39,9 @@ type Policy struct {
 
 	// A globally unique name.
 	//
+	// Must start with a letter. Allowed characters (no spaces): A-Z a-z 0-9 - _ /
 	// The substring "${user}" can be used in this name to define identical
-	// per-user policies.
-	//
-	// TODO(crbug.com/1280055): Define alphabet and validate.
+	// per-user policies. Must not exceed 64 characters.
 	Name string `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
 	// The amount of resources available.
 	Resources int64 `protobuf:"varint,2,opt,name=resources,proto3" json:"resources,omitempty"`

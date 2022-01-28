@@ -18,6 +18,8 @@ import (
 	"context"
 	"testing"
 
+	"go.chromium.org/luci/config/validation"
+
 	pb "go.chromium.org/luci/server/quota/proto"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -80,6 +82,125 @@ func TestMemory(t *testing.T) {
 					Resources:     1,
 					Replenishment: 1,
 				})
+			})
+		})
+	})
+
+	Convey("ValidatePolicy", t, func() {
+		ctx := &validation.Context{Context: context.Background()}
+
+		Convey("name", func() {
+			Convey("nil", func() {
+				ValidatePolicy(ctx, nil)
+				err := ctx.Finalize()
+				So(err, ShouldNotBeNil)
+				So(err.(*validation.Error).Errors, ShouldContainErr, "name must match")
+			})
+
+			Convey("empty", func() {
+				p := &pb.Policy{}
+
+				ValidatePolicy(ctx, p)
+				err := ctx.Finalize()
+				So(err, ShouldNotBeNil)
+				So(err.(*validation.Error).Errors, ShouldContainErr, "name must match")
+			})
+
+			Convey("invalid char", func() {
+				p := &pb.Policy{
+					Name: "projects/project/users/${name}",
+				}
+
+				ValidatePolicy(ctx, p)
+				err := ctx.Finalize()
+				So(err, ShouldNotBeNil)
+				So(err.(*validation.Error).Errors, ShouldContainErr, "name must match")
+			})
+
+			Convey("user", func() {
+				p := &pb.Policy{
+					Name: "projects/project/users/${user}",
+				}
+
+				ValidatePolicy(ctx, p)
+				So(ctx.Finalize(), ShouldBeNil)
+			})
+
+			Convey("len", func() {
+				p := &pb.Policy{
+					Name: "projects/project/users/user/policies/very-long-policy-name-exceeds-limit",
+				}
+
+				ValidatePolicy(ctx, p)
+				err := ctx.Finalize()
+				So(err, ShouldNotBeNil)
+				So(err.(*validation.Error).Errors, ShouldContainErr, "name must not exceed")
+			})
+		})
+
+		Convey("resources", func() {
+			Convey("negative", func() {
+				p := &pb.Policy{
+					Name:      "name",
+					Resources: -1,
+				}
+
+				ValidatePolicy(ctx, p)
+				err := ctx.Finalize()
+				So(err, ShouldNotBeNil)
+				So(err.(*validation.Error).Errors, ShouldContainErr, "resources must not be negative")
+			})
+
+			Convey("zero", func() {
+				p := &pb.Policy{
+					Name: "name",
+				}
+
+				ValidatePolicy(ctx, p)
+				So(ctx.Finalize(), ShouldBeNil)
+			})
+
+			Convey("positive", func() {
+				p := &pb.Policy{
+					Name:      "name",
+					Resources: 1,
+				}
+
+				ValidatePolicy(ctx, p)
+				So(ctx.Finalize(), ShouldBeNil)
+			})
+		})
+
+		Convey("replenishment", func() {
+			Convey("negative", func() {
+				p := &pb.Policy{
+					Name:          "name",
+					Replenishment: -1,
+				}
+
+				ValidatePolicy(ctx, p)
+				err := ctx.Finalize()
+
+				So(err, ShouldNotBeNil)
+				So(err.(*validation.Error).Errors, ShouldContainErr, "replenishment must not be negative")
+			})
+
+			Convey("zero", func() {
+				p := &pb.Policy{
+					Name: "name",
+				}
+
+				ValidatePolicy(ctx, p)
+				So(ctx.Finalize(), ShouldBeNil)
+			})
+			Convey("positive", func() {
+				p := &pb.Policy{
+					Name:          "name",
+					Replenishment: 1,
+				}
+
+				ValidatePolicy(ctx, p)
+				So(ctx.Finalize(), ShouldBeNil)
 			})
 		})
 	})

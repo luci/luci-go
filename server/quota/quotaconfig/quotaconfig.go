@@ -19,17 +19,20 @@ package quotaconfig
 
 import (
 	"context"
+	"regexp"
 	"sync"
 
 	"google.golang.org/protobuf/proto"
 
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/config/validation"
 
 	pb "go.chromium.org/luci/server/quota/proto"
 )
 
 // Interface encapsulates the functionality needed to implement a configuration
-// layer usable by the quota library.
+// layer usable by the quota library. Implementations should ensure returned
+// *pb.Policies are valid (see ValidatePolicy).
 type Interface interface {
 	// Get returns the named *pb.Policy.
 	//
@@ -71,4 +74,25 @@ func NewMemory(policies []*pb.Policy) Interface {
 		m.policies[p.Name] = p
 	}
 	return m
+}
+
+// policyName is a *regexp.Regexp which policy names must match.
+// Must start with a letter. Allowed characters (no spaces): A-Z a-z 0-9 - _ /
+// The special substring ${user} is allowed. Must not exceed 64 characters.
+var policyName = regexp.MustCompile(`^[A-Za-z]([A-Za-z0-9-_/]|(\$\{user\}))*$`)
+
+// ValidatePolicy validates the given *pb.Policy.
+func ValidatePolicy(ctx *validation.Context, p *pb.Policy) {
+	if !policyName.MatchString(p.GetName()) {
+		ctx.Errorf("name must match %q", policyName.String())
+	}
+	if len(p.GetName()) > 64 {
+		ctx.Errorf("name must not exceed 64 characters")
+	}
+	if p.GetResources() < 0 {
+		ctx.Errorf("resources must not be negative")
+	}
+	if p.GetReplenishment() < 0 {
+		ctx.Errorf("replenishment must not be negative")
+	}
 }
