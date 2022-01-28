@@ -13,7 +13,7 @@
 // limitations under the License.
 
 import { createContextLink } from '../../libs/context';
-import { TestVariant, Variant } from '../../services/resultdb';
+import { TestVariant } from '../../services/resultdb';
 
 export interface VariantGroup {
   readonly def: ReadonlyArray<readonly [string, unknown]>;
@@ -58,7 +58,7 @@ export interface TestVariantTableState {
   loadFirstPage(): Promise<void>;
   loadNextPage(): Promise<void>;
 
-  getHistoryUrl(testId: string, variantHash: string, variant: Variant): string;
+  getHistoryUrl(testId: string, variantHash: string): string;
 }
 
 export const [provideTestVariantTableState, consumeTestVariantTableState] = createContextLink<TestVariantTableState>();

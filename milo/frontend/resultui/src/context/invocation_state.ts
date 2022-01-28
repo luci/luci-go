@@ -25,14 +25,7 @@ import { unwrapObservable } from '../libs/unwrap_observable';
 import { TestLoader } from '../models/test_loader';
 import { router } from '../routes';
 import { TestPresentationConfig } from '../services/buildbucket';
-import {
-  createTVCmpFn,
-  createTVPropGetter,
-  Invocation,
-  TestVariant,
-  TestVariantStatus,
-  Variant,
-} from '../services/resultdb';
+import { createTVCmpFn, createTVPropGetter, Invocation, TestVariant, TestVariantStatus } from '../services/resultdb';
 import { AppState } from './app_state';
 
 export class QueryInvocationError extends Error implements InnerTag {
@@ -63,20 +56,18 @@ export class InvocationState implements TestVariantTableState {
 
   @observable.ref presentationConfig: TestPresentationConfig = {};
 
-  getHistoryUrl(testId: string, _variantHash: string, variant: Variant) {
+  getHistoryUrl(testId: string, variantHash: string) {
     if (!this.invocation?.realm) {
       return '';
     }
-    let query = '';
-    if (variant) {
-      const searchParam = new URLSearchParams({
-        q: [...Object.entries(variant.def)]
-          .map(([key, val]) => `V:${encodeURIComponent(key)}=${encodeURIComponent(val)}`)
-          .join(' '),
-      });
-      query = '?' + searchParam.toString();
-    }
-    return router.urlForName('test-history', { realm: this.invocation.realm, test_id: testId }) + query;
+    const searchParam = new URLSearchParams({
+      q: 'VHASH:' + variantHash,
+    });
+    return (
+      router.urlForName('test-history', { realm: this.invocation.realm, test_id: testId }) +
+      '?' +
+      searchParam.toString()
+    );
   }
 
   @observable.ref private customColumnKeys?: readonly string[];
