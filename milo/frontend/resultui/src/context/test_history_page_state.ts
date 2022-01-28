@@ -58,9 +58,9 @@ export class TestHistoryPageState implements TestVariantTableState {
 
   @observable.ref filterText = '';
   @observable.ref tvhEntryFilter = (_v: TestVariantHistoryEntry) => true;
-  @observable.ref private variantFilter = (_v: Variant) => true;
+  @observable.ref private variantFilter = (_v: Variant, _hash: string) => true;
   @computed get filteredVariants() {
-    return this.testHistoryLoader.variants.filter(([, v]) => this.variantFilter(v));
+    return this.testHistoryLoader.variants.filter(([hash, v]) => this.variantFilter(v, hash));
   }
 
   @observable.ref private discoverVariantReqCount = 0;

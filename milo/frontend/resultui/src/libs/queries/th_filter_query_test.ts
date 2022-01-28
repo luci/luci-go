@@ -14,7 +14,7 @@
 
 import { assert } from 'chai';
 
-import { TestVariantStatus } from '../../services/resultdb';
+import { TestVariantStatus, Variant } from '../../services/resultdb';
 import { TestVariantHistoryEntry } from '../../services/test_history_service';
 import { parseTVHFilterQuery, parseVariantFilter, suggestTestHistoryFilterQuery } from './th_filter_query';
 
@@ -103,6 +103,20 @@ describe('parseTVHFilterQuery', () => {
     });
   });
 
+  describe('VHASH query', () => {
+    it('should filter out variants with no matching variant key-value pair', () => {
+      const filter = parseTVHFilterQuery('vhash:key1:val1');
+      const filtered = variants.filter(filter);
+      assert.deepEqual(filtered, [entry1]);
+    });
+
+    it('should work with negation', () => {
+      const filter = parseTVHFilterQuery('-vhash:key1:val1');
+      const filtered = variants.filter(filter);
+      assert.deepEqual(filtered, [entry2, entry3, entry4, entry5, entry6, entry7]);
+    });
+  });
+
   describe('multiple queries', () => {
     it('should be able to combine different types of query', () => {
       const filter = parseTVHFilterQuery('status:expected v:key1=val2');
@@ -122,28 +136,40 @@ describe('parseVariantFilterFromQuery', () => {
   it('should filter out variants with no matching variant key-value pair', () => {
     const filter = parseVariantFilter('v:key1=val1');
 
-    const filtered = variants.map((v) => v.variant || { def: {} }).filter(filter);
+    const filtered = variants
+      .map((v) => [v.variant || { def: {} }, v.variantHash] as [Variant, string])
+      .filter(([v, hash]) => filter(v, hash))
+      .map(([v]) => v);
     assert.deepEqual(filtered, [entry1.variant]);
   });
 
   it("should support variant value with '=' in it", () => {
     const filter = parseVariantFilter('v:key2=val3%3Dval');
 
-    const filtered = variants.map((v) => v.variant || { def: {} }).filter(filter);
+    const filtered = variants
+      .map((v) => [v.variant || { def: {} }, v.variantHash] as [Variant, string])
+      .filter(([v, hash]) => filter(v, hash))
+      .map(([v]) => v);
     assert.deepEqual(filtered, [entry7.variant]);
   });
 
   it('should support filter with only variant key', () => {
     const filter = parseVariantFilter('V:key2');
 
-    const filtered = variants.map((v) => v.variant || { def: {} }).filter(filter);
+    const filtered = variants
+      .map((v) => [v.variant || { def: {} }, v.variantHash] as [Variant, string])
+      .filter(([v, hash]) => filter(v, hash))
+      .map(([v]) => v);
     assert.deepEqual(filtered, [entry5.variant, entry6.variant, entry7.variant]);
   });
 
   it('should work with negation', () => {
     const filter = parseVariantFilter('-v:key1=val1');
 
-    const filtered = variants.map((v) => v.variant || { def: {} }).filter(filter);
+    const filtered = variants
+      .map((v) => [v.variant || { def: {} }, v.variantHash] as [Variant, string])
+      .filter(([v, hash]) => filter(v, hash))
+      .map(([v]) => v);
     assert.deepEqual(filtered, [
       entry2.variant,
       entry3.variant,
@@ -157,8 +183,31 @@ describe('parseVariantFilterFromQuery', () => {
   it('should work multiple queries', () => {
     const filter = parseVariantFilter('-v:key1=val1 STATUS:Unexpected v:key1=val2');
 
-    const filtered = variants.map((v) => v.variant || { def: {} }).filter(filter);
+    const filtered = variants
+      .map((v) => [v.variant || { def: {} }, v.variantHash] as [Variant, string])
+      .filter(([v, hash]) => filter(v, hash))
+      .map(([v]) => v);
     assert.deepEqual(filtered, [entry2.variant, entry4.variant, entry5.variant, entry6.variant, entry7.variant]);
+  });
+
+  it('should work with variant hash filter', () => {
+    const filter = parseVariantFilter('vhash:key1:val2');
+
+    const filtered = variants
+      .map((v) => [v.variant || { def: {} }, v.variantHash] as [Variant, string])
+      .filter(([v, hash]) => filter(v, hash))
+      .map(([v]) => v);
+    assert.deepEqual(filtered, [entry2.variant, entry4.variant]);
+  });
+
+  it('should work with negated variant hash filter', () => {
+    const filter = parseVariantFilter('-vhash:key1:val2');
+
+    const filtered = variants
+      .map((v) => [v.variant || { def: {} }, v.variantHash] as [Variant, string])
+      .filter(([v, hash]) => filter(v, hash))
+      .map(([v]) => v);
+    assert.deepEqual(filtered, [entry1.variant, entry3.variant, entry5.variant, entry6.variant, entry7.variant]);
   });
 });
 

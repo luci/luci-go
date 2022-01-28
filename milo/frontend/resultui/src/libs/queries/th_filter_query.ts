@@ -55,6 +55,9 @@ export function parseTVHFilterQuery(filterQuery: string): TVHEntryFilter {
             ? (v: TestVariantHistoryEntry) => negate !== (v.variant?.def?.[vKey] !== undefined)
             : (v: TestVariantHistoryEntry) => negate !== (v.variant?.def?.[vKey] === vValue);
         }
+        case 'VHASH': {
+          return (v: TestVariantHistoryEntry) => negate !== (v.variantHash.toUpperCase() === valueUpper);
+        }
         default: {
           throw new Error(`invalid query type: ${queryType}`);
         }
@@ -63,9 +66,10 @@ export function parseTVHFilterQuery(filterQuery: string): TVHEntryFilter {
   return (v) => filters.every((f) => f(v));
 }
 
-const VARIANT_FILTER_RE = /(-?)V:(.+)?$/i;
+const VARIANT_FILTER_RE = /(-?)V:(.+)$/i;
+const VARIANT_HASH_FILTER_RE = /(-?)VHASH:(.+)$/i;
 
-export type VariantFilter = (v: Variant) => boolean;
+export type VariantFilter = (v: Variant, hash: string) => boolean;
 
 /**
  * Parses the variant predicate and variant filter from the query string. They
@@ -78,23 +82,30 @@ export type VariantFilter = (v: Variant) => boolean;
 export function parseVariantFilter(filterQuery: string): VariantFilter {
   const filters: VariantFilter[] = [];
   for (const subQuery of filterQuery.split(' ')) {
-    const match = subQuery.match(VARIANT_FILTER_RE);
-    if (!match) {
+    let match = subQuery.match(VARIANT_FILTER_RE);
+    if (match) {
+      const [, neg, value] = match;
+      const [vKey, vValue] = parseKeyValue(value);
+
+      const negate = neg === '-';
+      if (vValue !== null) {
+        filters.push((v) => negate !== (v.def[vKey] === vValue));
+      } else {
+        filters.push((v) => negate !== (v.def[vKey] !== undefined));
+      }
       continue;
     }
 
-    const [, neg, value] = match;
-    const [vKey, vValue] = parseKeyValue(value);
-
-    const negate = neg === '-';
-    if (vValue !== null) {
-      filters.push((v) => negate !== (v.def[vKey] === vValue));
-    } else {
-      filters.push((v) => negate !== (v.def[vKey] !== undefined));
+    match = subQuery.match(VARIANT_HASH_FILTER_RE);
+    if (match) {
+      const [, neg, value] = match;
+      const valueUpper = value.toUpperCase();
+      const negate = neg === '-';
+      filters.push((_, hash) => negate !== (hash.toUpperCase() === valueUpper));
     }
   }
 
-  return (v) => filters.every((f) => f(v));
+  return (v, hash) => filters.every((f) => f(v, hash));
 }
 
 // Queries with predefined value.
