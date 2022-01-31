@@ -128,6 +128,17 @@ type Build struct {
 
 	// PubSubCallback, if set, creates notifications for build status changes.
 	PubSubCallback PubSubCallback `gae:"pubsub_callback,noindex"`
+
+	// ParentID is the build's immediate parent build id.
+	// Stored separately from AncestorIds in order to index this special case.
+	ParentID int64 `gae:"parent_id"`
+
+	// Ids of the build’s ancestors. This includes all parents/grandparents/etc.
+	// This is ordered from top-to-bottom so `ancestor_ids[0]` is the root of
+	// the builds tree, and `ancestor_ids[-1]` is this build's immediate parent.
+	// This does not include any "siblings" at higher levels of the tree, just
+	// the direct chain of ancestors from root to this build.
+	AncestorIds []int64 `gae:"ancestor_ids"`
 }
 
 // Realm returns this build's auth realm, or an empty string if not opted into the
@@ -260,6 +271,11 @@ func (b *Build) Save(withMeta bool) (datastore.PropertyMap, error) {
 		b.LegacyProperties.CancelationReason = ExplicitlyCanceled
 		b.LegacyProperties.Result = Canceled
 		b.LegacyProperties.Status = Completed
+	}
+
+	b.AncestorIds = b.Proto.AncestorIds
+	if len(b.Proto.AncestorIds) > 0 {
+		b.ParentID = b.Proto.AncestorIds[len(b.Proto.AncestorIds)-1]
 	}
 
 	p, err := datastore.GetPLS(b).Save(withMeta)

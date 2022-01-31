@@ -57,9 +57,10 @@ func TestBuild(t *testing.T) {
 						Bucket:  "bucket",
 						Builder: "builder",
 					},
-					Status:     pb.Status_SUCCESS,
-					CreateTime: t0pb,
-					UpdateTime: t0pb,
+					Status:      pb.Status_SUCCESS,
+					CreateTime:  t0pb,
+					UpdateTime:  t0pb,
+					AncestorIds: []int64{2, 3, 4},
 				},
 			}), ShouldBeNil)
 
@@ -85,6 +86,8 @@ func TestBuild(t *testing.T) {
 					Result: Success,
 					Status: Completed,
 				},
+				AncestorIds: []int64{2, 3, 4},
+				ParentID:    4,
 			})
 			So(p, ShouldResembleProto, &pb.Build{
 				Id: 1,
@@ -93,9 +96,10 @@ func TestBuild(t *testing.T) {
 					Bucket:  "bucket",
 					Builder: "builder",
 				},
-				Status:     pb.Status_SUCCESS,
-				CreateTime: t0pb,
-				UpdateTime: t0pb,
+				Status:      pb.Status_SUCCESS,
+				CreateTime:  t0pb,
+				UpdateTime:  t0pb,
+				AncestorIds: []int64{2, 3, 4},
 			})
 		})
 
