@@ -29,7 +29,7 @@ require (
 	github.com/bazelbuild/remote-apis v0.0.0-20210812183132-3e816456ee28
 	github.com/bazelbuild/remote-apis-sdks v0.0.0-20220119194911-052cf871811d
 	github.com/cespare/xxhash/v2 v2.1.2 // indirect
-	github.com/danjacques/gofslock v0.0.0-20200623023034-5d0bd0fa6ef0
+	github.com/danjacques/gofslock v0.0.0-20220131014315-6e321f4509c8
 	github.com/dgraph-io/badger/v3 v3.2103.1
 	github.com/dustin/go-humanize v1.0.0
 	github.com/go-sql-driver/mysql v1.6.0
@@ -79,7 +79,7 @@ require (
 	golang.org/x/net v0.0.0-20210614182718-04defd469f4e
 	golang.org/x/oauth2 v0.0.0-20210819190943-2bc19b11175f
 	golang.org/x/sync v0.0.0-20210220032951-036812b2e83c
-	golang.org/x/sys v0.0.0-20210910150752-751e447fb3d0
+	golang.org/x/sys v0.0.0-20220128215802-99c3d69c2c27
 	golang.org/x/term v0.0.0-20210615171337-6886f2dfbf5b // indirect
 	golang.org/x/text v0.3.7 // indirect
 	golang.org/x/time v0.0.0-20210723032227-1f47c861a9ac
