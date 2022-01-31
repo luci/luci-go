@@ -87,6 +87,7 @@ luci.builder(
 #   acl_sets: "buck1"
 #   buildbucket {
 #     server: "cr-buildbucket.appspot.com"
+#     bucket: "buck1"
 #     builder: "b1"
 #   }
 # }
@@ -100,6 +101,7 @@ luci.builder(
 #   acl_sets: "buck1"
 #   buildbucket {
 #     server: "cr-buildbucket.appspot.com"
+#     bucket: "buck1"
 #     builder: "b2"
 #   }
 # }
@@ -113,6 +115,7 @@ luci.builder(
 #   acl_sets: "buck2"
 #   buildbucket {
 #     server: "cr-buildbucket.appspot.com"
+#     bucket: "buck2"
 #     builder: "b2"
 #   }
 # }

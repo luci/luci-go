@@ -698,10 +698,9 @@ def _scheduler_identity(a):
 
 def _scheduler_task(builder, buildbucket, project_name):
     """Produces scheduler_pb.BuildbucketTask for a scheduler job."""
-    bucket = None
     if not _scheduler_use_bb_v2.is_enabled():
         bucket = legacy_bucket_name(builder.props.bucket, project_name)
-    elif builder.props.realm != builder.props.bucket:
+    else:
         bucket = builder.props.bucket
     return scheduler_pb.BuildbucketTask(
         server = buildbucket.host,
