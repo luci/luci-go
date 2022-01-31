@@ -195,8 +195,23 @@ func validateProperties(p *structpb.Struct) error {
 	return nil
 }
 
+// validateParent validates the given parent build.
+func validateParent(ctx context.Context) (*model.Build, error) {
+	_, pBld, err := validateBuildToken(ctx, 0, false)
+	switch {
+	case err != nil:
+		return nil, err
+	case pBld == nil:
+		return nil, nil
+	case protoutil.IsEnded(pBld.Proto.Status):
+		return nil, errors.Reason("%d has ended, cannot add child to it", pBld.ID).Err()
+	default:
+		return pBld, nil
+	}
+}
+
 // validateSchedule validates the given request.
-func validateSchedule(req *pb.ScheduleBuildRequest, wellKnownExperiments stringset.Set) error {
+func validateSchedule(req *pb.ScheduleBuildRequest, wellKnownExperiments stringset.Set, parent *model.Build) error {
 	var err error
 	switch {
 	case strings.Contains(req.GetRequestId(), "/"):
@@ -219,6 +234,8 @@ func validateSchedule(req *pb.ScheduleBuildRequest, wellKnownExperiments strings
 		return errors.Reason("priority must be in [0, 255]").Err()
 	case req.Properties != nil && teeErr(validateProperties(req.Properties), &err) != nil:
 		return errors.Annotate(err, "properties").Err()
+	case parent == nil && req.CanOutliveParent != pb.Trinary_UNSET:
+		return errors.Reason("can_outlive_parent is specified without parent build token").Err()
 	case teeErr(validateTags(req.Tags, TagNew), &err) != nil:
 		return errors.Annotate(err, "tags").Err()
 	}
@@ -1316,9 +1333,9 @@ func normalizeSchedule(req *pb.ScheduleBuildRequest) {
 
 // validateScheduleBuild validates and authorizes the given request, returning
 // a normalized version of the request and field mask.
-func validateScheduleBuild(ctx context.Context, wellKnownExperiments stringset.Set, req *pb.ScheduleBuildRequest) (*pb.ScheduleBuildRequest, *model.BuildMask, error) {
+func validateScheduleBuild(ctx context.Context, wellKnownExperiments stringset.Set, req *pb.ScheduleBuildRequest, parent *model.Build) (*pb.ScheduleBuildRequest, *model.BuildMask, error) {
 	var err error
-	if err = validateSchedule(req, wellKnownExperiments); err != nil {
+	if err = validateSchedule(req, wellKnownExperiments, parent); err != nil {
 		return nil, nil, appstatus.BadRequest(err)
 	}
 	normalizeSchedule(req)
@@ -1345,7 +1362,12 @@ func (*Builds) ScheduleBuild(ctx context.Context, req *pb.ScheduleBuildRequest) 
 	}
 	wellKnownExperiments := protoutil.WellKnownExperiments(globalCfg)
 
-	req, m, err := validateScheduleBuild(ctx, wellKnownExperiments, req)
+	pBld, err := validateParent(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	req, m, err := validateScheduleBuild(ctx, wellKnownExperiments, req, pBld)
 	if err != nil {
 		return nil, err
 	}
@@ -1379,12 +1401,19 @@ func (*Builds) scheduleBuilds(ctx context.Context, globalCfg *pb.SettingsCfg, re
 		return merr
 	}
 
+	// Validate parent.
+	pBld, err := validateParent(ctx)
+	if err != nil {
+		return nil, errorInBatch(err)
+	}
+
+	// Validate requests.
 	_ = parallel.WorkPool(min(64, len(reqs)), func(work chan<- func() error) {
 		for i, req := range reqs {
 			i := i
 			req := req
 			work <- func() error {
-				reqs[i], masks[i], merr[i] = validateScheduleBuild(ctx, wellKnownExperiments, req)
+				reqs[i], masks[i], merr[i] = validateScheduleBuild(ctx, wellKnownExperiments, req, pBld)
 				return nil
 			}
 		}
