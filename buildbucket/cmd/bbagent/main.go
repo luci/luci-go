@@ -270,6 +270,14 @@ func mainImpl() int {
 	}
 	exeArgs[0] = exePath
 
+	wrapperArgs := append(([]string)(nil), input.Build.Exe.Wrapper...)
+	if len(wrapperArgs) != 0 {
+		wrapperArgs = append(wrapperArgs, "--")
+
+		// TODO(sumakasa): Fix wrapper[0] for relative path
+		exeArgs = append(wrapperArgs, exeArgs...)
+	}
+
 	initialJSONPB, err := (&jsonpb.Marshaler{
 		OrigName: true, Indent: "  ",
 	}).MarshalToString(input)
