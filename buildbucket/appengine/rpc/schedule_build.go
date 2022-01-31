@@ -970,15 +970,20 @@ func setTimeouts(req *pb.ScheduleBuildRequest, cfg *pb.Builder, build *pb.Build)
 // buildFromScheduleRequest returns a build proto created from the given
 // request and builder config. Sets fields except those which can only be
 // determined at creation time.
-func buildFromScheduleRequest(ctx context.Context, req *pb.ScheduleBuildRequest, cfg *pb.Builder, globalCfg *pb.SettingsCfg) (b *pb.Build) {
+func buildFromScheduleRequest(ctx context.Context, req *pb.ScheduleBuildRequest, ancestors []int64, cfg *pb.Builder, globalCfg *pb.SettingsCfg) (b *pb.Build) {
 	b = &pb.Build{
-		Builder:         req.Builder,
-		Critical:        cfg.GetCritical(),
-		WaitForCapacity: cfg.GetWaitForCapacity() == pb.Trinary_YES,
+		Builder:          req.Builder,
+		Critical:         cfg.GetCritical(),
+		WaitForCapacity:  cfg.GetWaitForCapacity() == pb.Trinary_YES,
+		CanOutliveParent: req.GetCanOutliveParent() == pb.Trinary_YES,
 	}
 
 	if req.Critical != pb.Trinary_UNSET {
 		b.Critical = req.Critical
+	}
+
+	if len(ancestors) > 0 {
+		b.AncestorIds = ancestors
 	}
 
 	setExecutable(req, cfg, b)
@@ -1132,13 +1137,29 @@ func scheduleBuilds(ctx context.Context, globalCfg *pb.SettingsCfg, reqs ...*pb.
 	} else {
 		ids = buildid.NewBuildIDs(ctx, now, len(validReq))
 	}
+
+	_, pBld, err := validateBuildToken(ctx, 0, false)
+	if err != nil {
+		return nil, err
+	}
+
+	var ancestors []int64
+	switch {
+	case pBld == nil:
+		ancestors = make([]int64, 0)
+	case len(pBld.AncestorIds) > 0:
+		ancestors = append(pBld.AncestorIds, pBld.ID)
+	default:
+		ancestors = append(ancestors, pBld.ID)
+	}
+
 	for i := range blds {
 		origI := idxMapBlds[i]
 		bucket := fmt.Sprintf("%s/%s", validReq[i].Builder.Project, validReq[i].Builder.Bucket)
 		cfg := cfgs[bucket][validReq[i].Builder.Builder]
 
 		// TODO(crbug.com/1042991): Parallelize build creation from requests if necessary.
-		build := buildFromScheduleRequest(ctx, reqs[i], cfg, globalCfg)
+		build := buildFromScheduleRequest(ctx, reqs[i], ancestors, cfg, globalCfg)
 
 		blds[i] = &model.Build{
 			ID:         ids[i],

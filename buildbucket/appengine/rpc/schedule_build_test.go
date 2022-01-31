@@ -1329,6 +1329,188 @@ func TestScheduleBuild(t *testing.T) {
 			})
 			So(datastore.Get(ctx, &model.Build{ID: 9021868963222163297}), ShouldErrLike, "no such entity")
 		})
+
+		Convey("one with parent", func() {
+			tkBody := &pb.TokenBody{
+				BuildId: 1,
+				State:   []byte("random"),
+			}
+			tkBytes, err := proto.Marshal(tkBody)
+			So(err, ShouldBeNil)
+			tkEnvelop := &pb.TokenEnvelope{
+				Version: pb.TokenEnvelope_UNENCRYPTED_PASSWORD_LIKE,
+				Payload: tkBytes,
+			}
+			tkeBytes, err := proto.Marshal(tkEnvelop)
+			So(err, ShouldBeNil)
+			tk := base64.RawURLEncoding.EncodeToString(tkeBytes)
+
+			So(datastore.Put(ctx, &model.Builder{
+				Parent: model.BucketKey(ctx, "project", "bucket"),
+				ID:     "builder",
+				Config: &pb.Builder{
+					Name: "builder",
+				},
+			}), ShouldBeNil)
+			So(datastore.Put(ctx, &model.Bucket{
+				Parent: model.ProjectKey(ctx, "project"),
+				ID:     "bucket",
+				Proto: &pb.Bucket{
+					Name: "bucket",
+				},
+			}), ShouldBeNil)
+
+			So(datastore.Put(ctx, &model.Build{
+				Proto: &pb.Build{
+					Id: 1,
+					Builder: &pb.BuilderID{
+						Project: "project",
+						Bucket:  "bucket",
+						Builder: "builder",
+					},
+					Status:      pb.Status_STARTED,
+					AncestorIds: []int64{2, 3},
+				},
+				UpdateToken: tk,
+			}), ShouldBeNil)
+
+			bld := &model.Build{ID: 1}
+			So(datastore.Get(ctx, bld), ShouldBeNil)
+
+			req := &pb.ScheduleBuildRequest{
+				Builder: &pb.BuilderID{
+					Project: "project",
+					Bucket:  "bucket",
+					Builder: "builder",
+				},
+				Notify: &pb.NotificationConfig{
+					PubsubTopic: "topic",
+					UserData:    []byte("data"),
+				},
+				Tags: []*pb.StringPair{
+					{
+						Key:   "buildset",
+						Value: "buildset",
+					},
+					{
+						Key:   "user_agent",
+						Value: "gerrit",
+					},
+				},
+				CanOutliveParent: pb.Trinary_NO,
+			}
+			ctx := metadata.NewIncomingContext(ctx, metadata.Pairs(BuildTokenKey, tk))
+			blds, err := scheduleBuilds(ctx, globalCfg, req)
+			So(err, ShouldBeNil)
+			So(store.Get(ctx, metrics.V1.BuildCountCreated, time.Time{}, fv("gerrit")), ShouldEqual, 1)
+			So(stripProtos(blds), ShouldResembleProto, []*pb.Build{
+				{
+					Builder: &pb.BuilderID{
+						Project: "project",
+						Bucket:  "bucket",
+						Builder: "builder",
+					},
+					CreatedBy:  "anonymous:anonymous",
+					CreateTime: timestamppb.New(testclock.TestRecentTimeUTC),
+					UpdateTime: timestamppb.New(testclock.TestRecentTimeUTC),
+					Exe: &pb.Executable{
+						Cmd: []string{"recipes"},
+					},
+					ExecutionTimeout: &durationpb.Duration{
+						Seconds: 10800,
+					},
+					GracePeriod: &durationpb.Duration{
+						Seconds: 30,
+					},
+					Id: 9021868963221667745,
+					Infra: &pb.BuildInfra{
+						Bbagent: &pb.BuildInfra_BBAgent{
+							CacheDir:    "cache",
+							PayloadPath: "kitchen-checkout",
+						},
+						Buildbucket: &pb.BuildInfra_Buildbucket{
+							Hostname: "app.appspot.com",
+							Agent: &pb.BuildInfra_Buildbucket_Agent{
+								Input: &pb.BuildInfra_Buildbucket_Agent_Input{},
+							},
+						},
+						Logdog: &pb.BuildInfra_LogDog{
+							Prefix:  "buildbucket/app/9021868963221667745",
+							Project: "project",
+						},
+						Resultdb: &pb.BuildInfra_ResultDB{
+							Hostname: "rdbHost",
+						},
+						Swarming: &pb.BuildInfra_Swarming{
+							Caches: []*pb.BuildInfra_Swarming_CacheEntry{
+								{
+									Name: "builder_1809c38861a9996b1748e4640234fbd089992359f6f23f62f68deb98528f5f2b_v2",
+									Path: "builder",
+									WaitForWarmCache: &durationpb.Duration{
+										Seconds: 240,
+									},
+								},
+							},
+							Priority: 30,
+						},
+					},
+					Input: &pb.Build_Input{
+						Properties: &structpb.Struct{},
+					},
+					SchedulingTimeout: &durationpb.Duration{
+						Seconds: 21600,
+					},
+					Status: pb.Status_SCHEDULED,
+					Tags: []*pb.StringPair{
+						{
+							Key:   "builder",
+							Value: "builder",
+						},
+						{
+							Key:   "buildset",
+							Value: "buildset",
+						},
+						{
+							Key:   "user_agent",
+							Value: "gerrit",
+						},
+					},
+					CanOutliveParent: false,
+					AncestorIds:      []int64{2, 3, 1},
+				},
+			})
+			So(blds, ShouldResemble, []*model.Build{
+				{
+					ID:                9021868963221667745,
+					BucketID:          "project/bucket",
+					BuilderID:         "project/bucket/builder",
+					CreatedBy:         "anonymous:anonymous",
+					CreateTime:        testclock.TestRecentTimeUTC,
+					StatusChangedTime: testclock.TestRecentTimeUTC,
+					Experiments:       nil,
+					Incomplete:        true,
+					IsLuci:            true,
+					Status:            pb.Status_SCHEDULED,
+					Tags: []string{
+						"builder:builder",
+						"buildset:buildset",
+						"user_agent:gerrit",
+					},
+					Project: "project",
+					PubSubCallback: model.PubSubCallback{
+						Topic:    "topic",
+						UserData: []byte("data"),
+					},
+					LegacyProperties: model.LegacyProperties{
+						Status: model.Scheduled,
+					},
+					AncestorIds: []int64{2, 3, 1},
+					ParentID:    1,
+				},
+			})
+			So(sch.Tasks(), ShouldHaveLength, 1)
+			So(datastore.Get(ctx, blds), ShouldBeNil)
+		})
 	})
 
 	Convey("scheduleRequestFromTemplate", t, func() {
