@@ -27,6 +27,7 @@ import (
 
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/trace"
+	"go.chromium.org/luci/grpc/prpc"
 
 	"go.chromium.org/luci/gae/service/datastore"
 
@@ -85,6 +86,15 @@ func main() {
 				fmt.Fprintf(c.Writer, "Gerrit CL: %v\n", info.Change)
 			}
 		})
+
+		// Allow cross-origin calls, in particular calls using Gerrit auth headers.
+		srv.PRPC.AccessControl = func(context.Context, string) prpc.AccessControlDecision {
+			return prpc.AccessControlDecision{
+				AllowCrossOriginRequests: true,
+				AllowCredentials:         true,
+				AllowHeaders:             []string{gerritauth.Method.Header},
+			}
+		}
 
 		// Redis example.
 		//

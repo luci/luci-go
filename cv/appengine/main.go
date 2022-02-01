@@ -23,6 +23,7 @@ import (
 
 	"go.chromium.org/luci/config/server/cfgmodule"
 	_ "go.chromium.org/luci/gae/service/datastore/crbug1242998safeget"
+	"go.chromium.org/luci/grpc/prpc"
 	"go.chromium.org/luci/server"
 	"go.chromium.org/luci/server/analytics"
 	"go.chromium.org/luci/server/auth"
@@ -131,6 +132,15 @@ func main() {
 				// For authenticating calls from Gerrit plugins.
 				&gerritauth.Method,
 			},
+		}
+
+		// Allow cross-origin calls, in particular calls using Gerrit auth headers.
+		srv.PRPC.AccessControl = func(context.Context, string) prpc.AccessControlDecision {
+			return prpc.AccessControlDecision{
+				AllowCrossOriginRequests: true,
+				AllowCredentials:         true,
+				AllowHeaders:             []string{gerritauth.Method.Header},
+			}
 		}
 
 		// Register pRPC servers.

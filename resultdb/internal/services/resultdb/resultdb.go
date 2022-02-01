@@ -26,6 +26,7 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/grpc/prpc"
 	"go.chromium.org/luci/server"
+	"go.chromium.org/luci/server/gerritauth"
 
 	"go.chromium.org/luci/resultdb/internal"
 	"go.chromium.org/luci/resultdb/internal/artifactcontent"
@@ -96,7 +97,15 @@ func InitServer(srv *server.Server, opts Options) error {
 	// returns their union.
 	pb.RegisterRecorderServer(srv.PRPC, nil)
 
-	srv.PRPC.AccessControl = prpc.AllowOriginAll
+	// Allow cross-origin calls, in particular calls using Gerrit auth headers.
+	srv.PRPC.AccessControl = func(context.Context, string) prpc.AccessControlDecision {
+		return prpc.AccessControlDecision{
+			AllowCrossOriginRequests: true,
+			AllowCredentials:         true,
+			AllowHeaders:             []string{gerritauth.Method.Header},
+		}
+	}
+
 	// TODO(crbug/1082369): Remove this workaround once field masks can be decoded.
 	srv.PRPC.HackFixFieldMasksForJSON = true
 	return nil

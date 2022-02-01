@@ -16,6 +16,8 @@
 package main
 
 import (
+	"context"
+
 	"go.chromium.org/luci/common/proto/access"
 	"go.chromium.org/luci/config/server/cfgmodule"
 	"go.chromium.org/luci/grpc/prpc"
@@ -55,7 +57,6 @@ func main() {
 		o := srv.Options
 		srv.Context = metrics.WithServiceInfo(srv.Context, o.TsMonServiceName, o.TsMonJobName, o.Hostname)
 
-		srv.PRPC.AccessControl = prpc.AllowOriginAll
 		srv.PRPC.Authenticator = &auth.Authenticator{
 			Methods: []auth.Method{
 				// The default method used by majority of clients.
@@ -65,6 +66,15 @@ func main() {
 				// For authenticating calls from Gerrit plugins.
 				&gerritauth.Method,
 			},
+		}
+
+		// Allow cross-origin calls, in particular calls using Gerrit auth headers.
+		srv.PRPC.AccessControl = func(context.Context, string) prpc.AccessControlDecision {
+			return prpc.AccessControlDecision{
+				AllowCrossOriginRequests: true,
+				AllowCredentials:         true,
+				AllowHeaders:             []string{gerritauth.Method.Header},
+			}
 		}
 
 		access.RegisterAccessServer(srv.PRPC, &access.UnimplementedAccessServer{})
