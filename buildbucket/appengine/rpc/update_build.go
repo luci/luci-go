@@ -259,7 +259,7 @@ func checkBuildForUpdate(updateMask *mask.Mask, req *pb.UpdateBuildRequest, buil
 	return nil
 }
 
-func updateEntities(ctx context.Context, req *pb.UpdateBuildRequest, updateMask *mask.Mask, steps *model.BuildSteps) error {
+func updateEntities(ctx context.Context, req *pb.UpdateBuildRequest, updateMask *mask.Mask, steps *model.BuildSteps) (*model.Build, error) {
 	var b *model.Build
 	var origStatus pb.Status
 	txErr := datastore.RunInTransaction(ctx, func(ctx context.Context) error {
@@ -380,7 +380,7 @@ func updateEntities(ctx context.Context, req *pb.UpdateBuildRequest, updateMask 
 		logging.Infof(ctx, "Build %d: started", b.ID)
 		metrics.BuildStarted(ctx, b)
 	}
-	return txErr
+	return b, txErr
 }
 
 // UpdateBuild handles a request to update a build. Implements pb.UpdateBuild.
@@ -403,6 +403,11 @@ func (*Builds) UpdateBuild(ctx context.Context, req *pb.UpdateBuildRequest) (*pb
 	}
 	updateMask := um.MustSubmask("build")
 
+	readMask, err := model.NewBuildMask("", req.Fields, req.Mask)
+	if err != nil {
+		return nil, appstatus.BadRequest(errors.Annotate(err, "invalid mask").Err())
+	}
+
 	// TODO(crbug.com/1152628) - Use Cloud Secret Manager to validate build update tokens.
 	_, build, err := validateBuildToken(ctx, req.Build.Id, true)
 	if err != nil {
@@ -414,11 +419,10 @@ func (*Builds) UpdateBuild(ctx context.Context, req *pb.UpdateBuildRequest) (*pb
 		return nil, err
 	}
 
-	if err := updateEntities(ctx, req, updateMask, &bs); err != nil {
+	build, err = updateEntities(ctx, req, updateMask, &bs)
+	if err != nil {
 		return nil, appstatus.Errorf(codes.Internal, "failed to update the build entity: %s", err)
 	}
 
-	// return an empty build. In practice, clients do not need the response, but just
-	// want to provide the data.
-	return &pb.Build{}, nil
+	return build.ToProto(ctx, readMask)
 }

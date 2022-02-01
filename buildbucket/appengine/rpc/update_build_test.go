@@ -24,6 +24,7 @@ import (
 	"google.golang.org/genproto/protobuf/field_mask"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
+	"google.golang.org/protobuf/types/known/fieldmaskpb"
 	"google.golang.org/protobuf/types/known/structpb"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
@@ -670,6 +671,23 @@ func TestUpdateBuild(t *testing.T) {
 				// BuildCompleted metric should be set to 1 with SUCCESS.
 				fvs := fv(model.Success.String(), "", "", false)
 				So(store.Get(ctx, metrics.V1.BuildCountCompleted, time.Time{}, fvs), ShouldEqual, 1)
+			})
+		})
+
+		Convey("with read mask", func() {
+			req.UpdateMask.Paths[0] = "build.status"
+			req.Build.Status = pb.Status_SUCCESS
+			req.Mask = &pb.BuildMask{
+				Fields: &fieldmaskpb.FieldMask{
+					Paths: []string{
+						"status",
+					},
+				},
+			}
+			b, err := srv.UpdateBuild(ctx, req)
+			So(err, ShouldBeNil)
+			So(b, ShouldResembleProto, &pb.Build{
+				Status: pb.Status_SUCCESS,
 			})
 		})
 	})
