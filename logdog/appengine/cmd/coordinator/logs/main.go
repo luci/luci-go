@@ -111,13 +111,16 @@ func accessControl(ctx context.Context, origin string) prpc.AccessControlDecisio
 
 	ccfg := cfg.GetCoordinator()
 	if ccfg == nil {
-		return prpc.AccessDefault
+		return prpc.AccessControlDecision{}
 	}
 
 	for _, o := range ccfg.RpcAllowOrigins {
 		if o == origin {
-			return prpc.AccessAllowWithCredentials
+			return prpc.AccessControlDecision{
+				AllowCrossOriginRequests: true,
+				AllowCredentials:         true,
+			}
 		}
 	}
-	return prpc.AccessDefault
+	return prpc.AccessControlDecision{}
 }

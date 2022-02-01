@@ -35,7 +35,14 @@ import (
 )
 
 var (
-	// Describe the permitted Access Control requests.
+	// Describes the default permitted headers for cross-origin requests.
+	//
+	// It explicitly includes a subset of the default CORS-safelisted request
+	// headers that are relevant to RPCs, as well as "Authorization" header.
+	//
+	// Custom AccessControl implementations may allow more headers.
+	//
+	// See https://developer.mozilla.org/en-US/docs/Glossary/CORS-safelisted_request_header
 	allowHeaders = strings.Join([]string{"Origin", "Content-Type", "Accept", "Authorization"}, ", ")
 	allowMethods = strings.Join([]string{"OPTIONS", "POST"}, ", ")
 
@@ -45,8 +52,8 @@ var (
 	// 600 seconds is 10 minutes.
 	allowPreflightCacheAgeSecs = "600"
 
-	// exposeHeaders lists the whitelisted non-standard response headers that the
-	// client may accept.
+	// exposeHeaders lists the non-standard response headers that are exposed to
+	// client that make cross-origin calls.
 	exposeHeaders = strings.Join([]string{HeaderGRPCCode}, ", ")
 
 	// NoAuthentication can be used in place of an Authenticator to explicitly
@@ -56,37 +63,58 @@ var (
 	NoAuthentication Authenticator = nullAuthenticator{}
 )
 
-// AccessControlDecision describes what access control headers to add.
-type AccessControlDecision int
+// AccessControlDecision describes how to handle a cross-origin request.
+//
+// It is returned by AccessControl server callback based on the origin of the
+// call and defines what CORS policy headers to add to responses to preflight
+// requests and actual cross-origin requests.
+//
+// See https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS for the general
+// overview of CORS policies.
+type AccessControlDecision struct {
+	// AllowCrossOriginRequests defines if CORS policies should be enabled at all.
+	//
+	// If false, the server will not send any CORS policy headers and the browser
+	// will use the default "same-origin" policy.
+	//
+	// See https://developer.mozilla.org/en-US/docs/Web/Security/Same-origin_policy
+	AllowCrossOriginRequests bool
 
-const (
-	// AccessDefault does not write any CORS headers at all.
-	AccessDefault AccessControlDecision = iota
-	// AccessAllowWithoutCredentials adds usual CORS headers except for 'Access-Control-Allow-Credentials'.
-	// This may be used with cookie-based authentication.
-	AccessAllowWithoutCredentials
-	// AccessAllowWithCredentials adds all usual CORS headers.
-	// This must NOT be used with cookie-based authentication.
-	AccessAllowWithCredentials
-)
+	// AllowCredentials defines if a cross-origin request is allowed to use
+	// credentials associated with the pRPC server's domain.
+	//
+	// This setting controls if the client can use `credentials: include` option
+	// in Fetch init parameters or `withCredentials = true` in XMLHttpRequest.
+	//
+	// Credentials, as defined by Web APIs, are cookies, HTTP authentication
+	// entries, and TLS client certificates.
+	//
+	// See
+	//   https://developer.mozilla.org/en-US/docs/Web/API/fetch#parameters
+	//   https://developer.mozilla.org/en-US/docs/Web/API/XMLHttpRequest/withCredentials
+	//   https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Access-Control-Allow-Credentials
+	AllowCredentials bool
 
-func (a AccessControlDecision) String() string {
-	switch a {
-	case AccessDefault:
-		return "AccessDefault"
-	case AccessAllowWithoutCredentials:
-		return "AccessAllowWithoutCredentials"
-	case AccessAllowWithCredentials:
-		return "AccessAllowWithCredentials"
-	}
-	return fmt.Sprintf("Unknown AccessControlDecision(%d)", int(a))
+	// AllowHeaders is a list of request headers that a cross-origin request is
+	// allowed to have.
+	//
+	// Extends the default list of allowed headers, which is: "Accept",
+	// "Authorization", "Content-Type", Origin".
+	//
+	// Use this option if the server's authenticator checks some custom headers.
+	AllowHeaders []string
 }
 
-// AllowOriginAll returns AccessAllowWithCredentials unconditionally.
-// It can be used as Server.AccessControl.
-// It must NOT be used in combination with cookie-based authentication.
+// AllowOriginAll is a CORS policy that allows any origin to send cross-origin
+// requests that can use credentials (e.g. cookies) and "Authorization" header.
+//
+// Other non-standard headers are forbidden. Use a custom AccessControl callback
+// to allow them.
 func AllowOriginAll(ctx context.Context, origin string) AccessControlDecision {
-	return AccessAllowWithCredentials
+	return AccessControlDecision{
+		AllowCrossOriginRequests: true,
+		AllowCredentials:         true,
+	}
 }
 
 // Override is a pRPC method-specific override which may optionally handle the
@@ -113,13 +141,22 @@ type Server struct {
 	Authenticator Authenticator
 
 	// AccessControl, if not nil, is a callback that is invoked per request to
-	// determine what permissive access control headers, if any, should be added to
+	// determine what CORS access control headers, if any, should be added to
 	// the response.
 	//
-	// This callback includes the request Context and the origin header supplied
-	// by the client. If nil, no headers will be written.
-	// Otherwise, see AccessControlDecision for what access control headers will be
-	// included in the response for the specified origin.
+	// It controls what cross-origin RPC calls are allowed from a browser and what
+	// responses cross-origin clients may see. Does not effect calls made by
+	// non-browser RPC clients.
+	//
+	// This callback is invoked for each CORS pre-flight request as well as for
+	// actual RPC requests. It can make its decision based on the origin of
+	// the request.
+	//
+	// If nil, the server will not send any CORS headers and the browser will
+	// use the default "same-origin" policy.
+	//
+	// See https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS for the general
+	// overview of CORS policies.
 	AccessControl func(ctx context.Context, origin string) AccessControlDecision
 
 	// HackFixFieldMasksForJSON indicates whether to attempt a workaround for
@@ -394,19 +431,24 @@ func (s *Server) setAccessControlHeaders(c *router.Context, preflight bool) {
 		return
 	}
 	accessControl := s.AccessControl(c.Context, origin)
-	if accessControl == AccessDefault {
+	if !accessControl.AllowCrossOriginRequests {
 		return
 	}
 
 	h := c.Writer.Header()
 	h.Add("Access-Control-Allow-Origin", origin)
-	h.Add("Vary", originHeader)
-	if accessControl == AccessAllowWithCredentials {
+	h.Add("Vary", originHeader) // indicate the response depends on Origin header
+	if accessControl.AllowCredentials {
 		h.Add("Access-Control-Allow-Credentials", "true")
 	}
 
 	if preflight {
-		h.Add("Access-Control-Allow-Headers", allowHeaders)
+		if len(accessControl.AllowHeaders) == 0 {
+			h.Add("Access-Control-Allow-Headers", allowHeaders)
+		} else {
+			h.Add("Access-Control-Allow-Headers",
+				strings.Join(accessControl.AllowHeaders, ", ")+", "+allowHeaders)
+		}
 		h.Add("Access-Control-Allow-Methods", allowMethods)
 		h.Add("Access-Control-Max-Age", allowPreflightCacheAgeSecs)
 	} else {

@@ -164,6 +164,7 @@ func TestServer(t *testing.T) {
 				So(res.Code, ShouldEqual, http.StatusNotImplemented)
 				So(res.Header().Get(HeaderGRPCCode), ShouldEqual, unimplemented)
 			})
+
 			Convey("no such method", func() {
 				req.URL.Path = "/prpc/Greeter/xxx"
 				r.ServeHTTP(res, req)
@@ -173,7 +174,10 @@ func TestServer(t *testing.T) {
 
 			Convey(`When access control is enabled without credentials`, func() {
 				server.AccessControl = func(c context.Context, origin string) AccessControlDecision {
-					return AccessAllowWithoutCredentials
+					return AccessControlDecision{
+						AllowCrossOriginRequests: true,
+						AllowCredentials:         false,
+					}
 				}
 				req.Header.Add("Origin", "http://example.com")
 
@@ -184,13 +188,17 @@ func TestServer(t *testing.T) {
 				So(res.Header().Get("Access-Control-Allow-Credentials"), ShouldEqual, "")
 				So(res.Header().Get("Access-Control-Expose-Headers"), ShouldEqual, HeaderGRPCCode)
 			})
+
 			Convey(`When access control is enabled for "http://example.com"`, func() {
+				decision := AccessControlDecision{
+					AllowCrossOriginRequests: true,
+					AllowCredentials:         true,
+				}
 				server.AccessControl = func(c context.Context, origin string) AccessControlDecision {
 					if origin == "http://example.com" {
-						return AccessAllowWithCredentials
+						return decision
 					}
-					return AccessDefault
-
+					return AccessControlDecision{}
 				}
 
 				Convey(`When sending an OPTIONS request`, func() {
@@ -237,6 +245,21 @@ func TestServer(t *testing.T) {
 						So(res.Header().Get(HeaderGRPCCode), ShouldEqual, "0")
 						So(res.Header().Get("Access-Control-Allow-Origin"), ShouldEqual, "")
 					})
+				})
+
+				Convey(`Using custom AllowHeaders`, func() {
+					decision.AllowHeaders = []string{"Booboo", "bobo"}
+
+					req.Method = "OPTIONS"
+					req.Header.Add("Origin", "http://example.com")
+
+					r.ServeHTTP(res, req)
+					So(res.Code, ShouldEqual, http.StatusOK)
+					So(res.Header().Get("Access-Control-Allow-Origin"), ShouldEqual, "http://example.com")
+					So(res.Header().Get("Access-Control-Allow-Credentials"), ShouldEqual, "true")
+					So(res.Header().Get("Access-Control-Allow-Headers"), ShouldEqual, "Booboo, bobo, Origin, Content-Type, Accept, Authorization")
+					So(res.Header().Get("Access-Control-Allow-Methods"), ShouldEqual, "OPTIONS, POST")
+					So(res.Header().Get("Access-Control-Max-Age"), ShouldEqual, "600")
 				})
 			})
 		})
