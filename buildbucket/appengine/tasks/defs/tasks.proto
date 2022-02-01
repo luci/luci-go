@@ -44,3 +44,12 @@ message NotifyPubSub {
   // Whether to use the global or build-specific callback Pub/Sub topic.
   bool callback = 2;
 }
+
+// A task to cancel a build.
+//
+// Besides canceling the build, the task also enqueues CancelBuildTask tasks for
+// each of the build's children that cannot outlive it.
+message CancelBuildTask {
+  // ID of a build in the datastore. See model.Build.
+  int64 build_id = 1;
+}
