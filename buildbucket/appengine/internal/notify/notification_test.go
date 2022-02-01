@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package rpc
+package notify
 
 import (
 	"context"
@@ -46,7 +46,7 @@ func TestNotification(t *testing.T) {
 
 		Convey("w/o callback", func() {
 			txErr := datastore.RunInTransaction(ctx, func(ctx context.Context) error {
-				return notifyPubSub(ctx, &model.Build{ID: 123})
+				return NotifyPubSub(ctx, &model.Build{ID: 123})
 			}, nil)
 			So(txErr, ShouldBeNil)
 			tasks := sch.Tasks()
@@ -58,7 +58,7 @@ func TestNotification(t *testing.T) {
 		Convey("w/ callback", func() {
 			txErr := datastore.RunInTransaction(ctx, func(ctx context.Context) error {
 				cb := model.PubSubCallback{"token", "topic", []byte("user_data")}
-				return notifyPubSub(ctx, &model.Build{ID: 123, PubSubCallback: cb})
+				return NotifyPubSub(ctx, &model.Build{ID: 123, PubSubCallback: cb})
 			}, nil)
 			So(txErr, ShouldBeNil)
 			tasks := sch.Tasks()

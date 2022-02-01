@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package rpc
+package notify
 
 import (
 	"context"
@@ -24,10 +24,10 @@ import (
 	taskdefs "go.chromium.org/luci/buildbucket/appengine/tasks/defs"
 )
 
-// notifyPubSub enqueues tasks to notify Pub/Sub about the given build.
+// NotifyPubSub enqueues tasks to notify Pub/Sub about the given build.
 // TODO(crbug/1091604): Move next to Pub/Sub notification task handler.
 // Currently the task handler is implemented in Python.
-func notifyPubSub(ctx context.Context, b *model.Build) error {
+func NotifyPubSub(ctx context.Context, b *model.Build) error {
 	if err := tasks.NotifyPubSub(ctx, &taskdefs.NotifyPubSub{
 		BuildId: b.ID,
 	}); err != nil {
