@@ -29,6 +29,7 @@ import (
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
 
+	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/grpc/grpcutil"
 	"go.chromium.org/luci/server/router"
@@ -75,7 +76,8 @@ type AccessControlDecision struct {
 	// AllowCrossOriginRequests defines if CORS policies should be enabled at all.
 	//
 	// If false, the server will not send any CORS policy headers and the browser
-	// will use the default "same-origin" policy.
+	// will use the default "same-origin" policy. All fields below will be
+	// ignored.
 	//
 	// See https://developer.mozilla.org/en-US/docs/Web/Security/Same-origin_policy
 	AllowCrossOriginRequests bool
@@ -432,6 +434,12 @@ func (s *Server) setAccessControlHeaders(c *router.Context, preflight bool) {
 	}
 	accessControl := s.AccessControl(c.Context, origin)
 	if !accessControl.AllowCrossOriginRequests {
+		if accessControl.AllowCredentials {
+			logging.Warningf(c.Context, "pRPC AccessControl: ignoring AllowCredentials since AllowCrossOriginRequests is false")
+		}
+		if len(accessControl.AllowHeaders) != 0 {
+			logging.Warningf(c.Context, "pRPC AccessControl: ignoring AllowHeaders since AllowCrossOriginRequests is false")
+		}
 		return
 	}
 
