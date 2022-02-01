@@ -578,6 +578,8 @@ type ExperimentSettings_Experiment struct {
 	// The name of the global experiment.
 	Name string `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
 	// The default_value (% chance, 0 - 100) of the global experiment.
+	//
+	// This must be greater than or equal to minimum_value.
 	DefaultValue int32 `protobuf:"varint,2,opt,name=default_value,json=defaultValue,proto3" json:"default_value,omitempty"`
 	// The minimum_value (% chance, 0 - 100) of the global experiment.
 	//

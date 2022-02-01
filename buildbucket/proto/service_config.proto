@@ -99,6 +99,8 @@ message ExperimentSettings {
     string name = 1;
 
     // The default_value (% chance, 0 - 100) of the global experiment.
+    //
+    // This must be greater than or equal to minimum_value.
     int32 default_value = 2;
 
     // The minimum_value (% chance, 0 - 100) of the global experiment.

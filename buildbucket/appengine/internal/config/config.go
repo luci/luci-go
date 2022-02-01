@@ -120,11 +120,11 @@ func validateExperiment(ctx *validation.Context, exp *pb.ExperimentSettings_Expe
 	if exp.Name == "" {
 		ctx.Errorf("name is required")
 	}
-	if exp.DefaultValue < 0 || exp.DefaultValue > 100 {
-		ctx.Errorf("default_value must be in [0,100]")
+	if exp.MinimumValue < 0 || exp.MinimumValue > 100 {
+		ctx.Errorf("minimum_value must be in [0,100]")
 	}
-	if exp.MinimumValue < exp.DefaultValue || exp.MinimumValue > 100 {
-		ctx.Errorf("minimum_value must be in [${default_value},100]")
+	if exp.DefaultValue < exp.MinimumValue || exp.DefaultValue > 100 {
+		ctx.Errorf("default_value must be in [${minimum_value},100]")
 	}
 	if exp.Inactive && (exp.DefaultValue != 0 || exp.MinimumValue != 0) {
 		ctx.Errorf("default_value and minimum_value must both be 0 when inactive is true")

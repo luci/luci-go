@@ -122,31 +122,31 @@ func TestConfig(t *testing.T) {
 			So(vctx.Finalize().Error(), ShouldContainSubstring, "(experiment.experiments #0): builders.regex \"(no right parenthesis\": invalid regex")
 		})
 
-		Convey("wrong default_value in experiments", func() {
-			content := []byte(`
-				experiment {
-					experiments {
-						name: "luci.buildbucket.bbagent_getbuild"
-						default_value: 101
-					}
-				}
-			`)
-			So(validateSettingsCfg(vctx, configSet, path, content), ShouldBeNil)
-			So(vctx.Finalize().Error(), ShouldContainSubstring, "default_value must be in [0,100]")
-		})
-
 		Convey("wrong minimum_value in experiments", func() {
 			content := []byte(`
 				experiment {
 					experiments {
 						name: "luci.buildbucket.bbagent_getbuild"
-						default_value: 10
-						minimum_value: 5
+						minimum_value: 101
 					}
 				}
 			`)
 			So(validateSettingsCfg(vctx, configSet, path, content), ShouldBeNil)
-			So(vctx.Finalize().Error(), ShouldContainSubstring, "minimum_value must be in [${default_value},100]")
+			So(vctx.Finalize().Error(), ShouldContainSubstring, "minimum_value must be in [0,100]")
+		})
+
+		Convey("wrong default_value in experiments", func() {
+			content := []byte(`
+				experiment {
+					experiments {
+						name: "luci.buildbucket.bbagent_getbuild"
+						default_value: 5
+						minimum_value: 10
+					}
+				}
+			`)
+			So(validateSettingsCfg(vctx, configSet, path, content), ShouldBeNil)
+			So(vctx.Finalize().Error(), ShouldContainSubstring, "default_value must be in [${minimum_value},100]")
 		})
 
 		Convey("invalid inactive in experiments", func() {
@@ -155,6 +155,7 @@ func TestConfig(t *testing.T) {
 					experiments {
 						name: "luci.buildbucket.bbagent_getbuild"
 						minimum_value: 5
+						default_value: 5
 						inactive: true
 					}
 				}
