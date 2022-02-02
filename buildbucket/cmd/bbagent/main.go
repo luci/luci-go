@@ -40,6 +40,7 @@ import (
 
 	"github.com/golang/protobuf/jsonpb"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/fieldmaskpb"
 	"google.golang.org/protobuf/types/known/timestamppb"
@@ -53,6 +54,8 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/logging/gologger"
+	"go.chromium.org/luci/common/retry"
+	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/common/sync/dispatcher"
 	"go.chromium.org/luci/common/system/environ"
 	"go.chromium.org/luci/grpc/grpcutil"
@@ -168,23 +171,9 @@ func mainImpl() int {
 	logdogOutput, err := mkLogdogOutput(ctx, input.Build.Infra.Logdog)
 	check(errors.Annotate(err, "could not create logdog output").Err())
 
-	// We send a single status=STARTED here, and will send the final build status
-	// after the user executable completes.
-	_, err = bbclient.UpdateBuild(
-		ctx,
-		&bbpb.UpdateBuildRequest{
-			Build: &bbpb.Build{
-				Id:     input.Build.Id,
-				Status: bbpb.Status_STARTED,
-			},
-			UpdateMask: &fieldmaskpb.FieldMask{Paths: []string{"build.status"}},
-		})
-	if err != nil {
-		logging.Errorf(ctx, "Failed to report status STARTED to Buildbucket due to %s", err)
-		return 1
-	}
-
-	bbclientRetriesEnabled = false // dispatcher.Channel will handle retries
+	// We retry on more return codes for the single status=STARTED update.
+	// Also dispatcher.Channel will handle retries.
+	bbclientRetriesEnabled = false
 
 	var (
 		cctx   context.Context
@@ -198,6 +187,36 @@ func mainImpl() int {
 		cctx, cancel = context.WithCancel(ctx)
 	}
 	defer cancel()
+
+	// We send a single status=STARTED here, and will send the final build status
+	// after the user executable completes.
+	err = retry.Retry(cctx, transient.Only(retry.Default), func() (err error) {
+		_, err = bbclient.UpdateBuild(
+			cctx,
+			&bbpb.UpdateBuildRequest{
+				Build: &bbpb.Build{
+					Id:     input.Build.Id,
+					Status: bbpb.Status_STARTED,
+				},
+				UpdateMask: &fieldmaskpb.FieldMask{Paths: []string{"build.status"}},
+			})
+
+		// Attach transient tag to NotFound error.
+		// The other transient errors should have had the tag attached at prpc layer.
+		if status.Code(err) == codes.NotFound {
+			err = transient.Tag.Apply(err)
+		}
+		return err
+	}, func(err error, sleepTime time.Duration) {
+		logging.Fields{
+			logging.ErrorKey: err,
+			"sleepTime":      sleepTime,
+		}.Warningf(ctx, "Transient error to report status STARTED to Buildbucket. Will retry in %s", sleepTime)
+	})
+	if err != nil {
+		logging.Errorf(cctx, "Failed to report status STARTED to Buildbucket due to %s", err)
+		return 1
+	}
 
 	dispatcherOpts, dispatcherErrCh := channelOpts(cctx)
 	buildsCh, err := dispatcher.NewChannel(cctx, dispatcherOpts, mkSendFn(cctx, bbclient))
