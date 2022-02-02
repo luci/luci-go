@@ -43,9 +43,9 @@ type Policy struct {
 	// The substring "${user}" can be used in this name to define identical
 	// per-user policies. Must not exceed 64 characters.
 	Name string `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
-	// The amount of resources available.
+	// The amount of resources available. Must not be negative.
 	Resources int64 `protobuf:"varint,2,opt,name=resources,proto3" json:"resources,omitempty"`
-	// The amount of resources to replenish every second.
+	// The amount of resources to replenish every second. Must not be negative.
 	Replenishment int64 `protobuf:"varint,3,opt,name=replenishment,proto3" json:"replenishment,omitempty"`
 }
 

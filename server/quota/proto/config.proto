@@ -23,10 +23,10 @@ message Policy {
   // per-user policies. Must not exceed 64 characters.
   string name = 1;
 
-  // The amount of resources available.
+  // The amount of resources available. Must not be negative.
   int64 resources = 2;
 
-  // The amount of resources to replenish every second.
+  // The amount of resources to replenish every second. Must not be negative.
   int64 replenishment = 3;
 }
 

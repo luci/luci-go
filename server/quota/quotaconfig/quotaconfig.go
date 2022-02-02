@@ -39,6 +39,12 @@ type Interface interface {
 	// Called by the quota library every time quota is manipulated,
 	// so implementations should return relatively quickly.
 	Get(context.Context, string) (*pb.Policy, error)
+
+	// Refresh fetches all *pb.Policies.
+	//
+	// Implementations should validate (see ValidatePolicy) and cache configs so
+	// future Get calls return relatively quickly.
+	Refresh(context.Context) error
 }
 
 // Ensure Memory implements Interface at compile-time.
@@ -63,6 +69,11 @@ func (m *Memory) Get(ctx context.Context, name string) (*pb.Policy, error) {
 		return nil, errors.Reason("policy %q not found", name).Err()
 	}
 	return proto.Clone(p).(*pb.Policy), nil
+}
+
+// Refresh fetches all *pb.Policies.
+func (m *Memory) Refresh(ctx context.Context) error {
+	return nil
 }
 
 // NewMemory returns a new Memory initialized with the given policies.
