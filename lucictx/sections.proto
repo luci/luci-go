@@ -160,3 +160,16 @@ message Deadline {
   // value for the child process by an appropriate margin.
   double grace_period = 2 [json_name = "grace_period"];
 }
+
+// Buildbucket is a struct that contains the necessary info to update
+// a buildbucket build.
+//
+// It may be used with the "buildbucket" section of LUCI_CONTEXT.
+message Buildbucket {
+  // Buildbucket host name.
+  // E.g. cr-buildbucket.appspot.com.
+  string hostname = 1 [json_name = "hostname"];
+
+  // Token to use to schedule child builds for this build.
+  string schedule_build_token = 2 [json_name = "schedule_build_token"];
+}

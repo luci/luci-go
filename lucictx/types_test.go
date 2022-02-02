@@ -105,5 +105,23 @@ func TestPredefinedTypes(t *testing.T) {
 			So(proj, ShouldEqual, "test")
 			So(realm, ShouldEqual, "realm")
 		})
+
+		Convey("buildbucket", func() {
+			So(GetBuildbucket(c), ShouldBeNil)
+
+			b := &Buildbucket{
+				Hostname:           "hostname",
+				ScheduleBuildToken: "a token",
+			}
+			c = SetBuildbucket(c, b)
+			data, _ := getCurrent(c).sections["buildbucket"]
+			var v interface{}
+			So(json.Unmarshal(*data, &v), ShouldBeNil)
+			So(v, ShouldResemble, map[string]interface{}{
+				"hostname":             "hostname",
+				"schedule_build_token": "a token",
+			})
+			So(GetBuildbucket(c), ShouldResembleProto, b)
+		})
 	})
 }
