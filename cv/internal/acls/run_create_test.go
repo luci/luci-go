@@ -88,16 +88,26 @@ func TestCheckRunCLs(t *testing.T) {
 			So(err, ShouldBeNil)
 			authState.FakeDB = authtest.NewFakeDB(authtest.MockMembership(id, "grp1"))
 		}
-		mustOK := func() {
-			res, err := CheckRunCreate(ctx, &cg, rCLs)
+		mustOK := func(mode run.Mode) {
+			res, err := CheckRunCreate(ctx, &cg, rCLs, mode)
 			So(err, ShouldBeNil)
 			So(res.OK(), ShouldBeTrue)
 		}
-		mustFail := func() CheckResult {
-			res, err := CheckRunCreate(ctx, &cg, rCLs)
+		mustFail := func(mode run.Mode) CheckResult {
+			res, err := CheckRunCreate(ctx, &cg, rCLs, mode)
 			So(err, ShouldBeNil)
 			So(res.OK(), ShouldBeFalse)
 			return res
+		}
+		mustAllModeOK := func() {
+			mustOK(run.DryRun)
+			mustOK(run.QuickDryRun)
+			mustOK(run.FullRun)
+		}
+		mustAllModeFail := func() CheckResult {
+			mustFail(run.DryRun)
+			mustFail(run.QuickDryRun)
+			return mustFail(run.FullRun)
 		}
 		checkMsg := func(res CheckResult, rcl *run.RunCL, msg string) {
 			So(res.Failure(rcl), ShouldContainSubstring, msg)
@@ -108,10 +118,9 @@ func TestCheckRunCLs(t *testing.T) {
 
 			Convey("trigger is a committer", func() {
 				setCommitterMembership("tr1@example.org")
-				mustOK()
 			})
 			Convey("trigger is not a committer", func() {
-				res := mustFail()
+				res := mustAllModeFail()
 				So(res.OK(), ShouldBeFalse)
 				checkMsg(res, cl, "neither the CL owner nor a member of the committer groups.")
 			})
@@ -122,10 +131,10 @@ func TestCheckRunCLs(t *testing.T) {
 
 			Convey("trigger is a committer", func() {
 				setCommitterMembership("tr1@example.org")
-				mustOK()
+				mustAllModeOK()
 			})
 			Convey("trigger is not a committer", func() {
-				mustOK()
+				mustAllModeOK()
 			})
 		})
 
@@ -135,10 +144,10 @@ func TestCheckRunCLs(t *testing.T) {
 
 			Convey("trigger is a committer", func() {
 				setCommitterMembership("tr1@example.org")
-				mustOK()
+				mustAllModeOK()
 			})
 			Convey("trigger is not a committer", func() {
-				res := mustFail()
+				res := mustAllModeFail()
 				checkMsg(res, cl1, "CV cannot continue this run due to errors on the other CL(s)")
 				checkMsg(res, cl2, "neither the CL owner nor a member of the committer groups.")
 			})

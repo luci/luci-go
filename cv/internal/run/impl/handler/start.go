@@ -86,7 +86,7 @@ func (impl *Impl) Start(ctx context.Context, rs *state.RunState) (*Result, error
 		return nil, err
 	}
 
-	switch result, err := acls.CheckRunCreate(ctx, cg, runCLs); {
+	switch result, err := acls.CheckRunCreate(ctx, cg, runCLs, rs.Mode); {
 	case err != nil:
 		return nil, errors.Annotate(err, "CheckRunCreate").Err()
 	case !result.OK():

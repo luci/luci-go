@@ -99,7 +99,7 @@ func (res CheckResult) FailuresSummary() string {
 
 // CheckRunCreate verifies that the user(s) who triggered Run are authorized
 // to create the Run for the CLs.
-func CheckRunCreate(ctx context.Context, cg *prjcfg.ConfigGroup, cls []*run.RunCL) (CheckResult, error) {
+func CheckRunCreate(ctx context.Context, cg *prjcfg.ConfigGroup, cls []*run.RunCL, mode run.Mode) (CheckResult, error) {
 	res := make(CheckResult, len(cls))
 	for _, cl := range cls {
 		triggerer, err := identity.MakeIdentity("user:" + cl.Trigger.Email)
