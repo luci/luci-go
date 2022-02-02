@@ -323,11 +323,6 @@ func (buf *Buffer) ACK(leased *Batch) {
 }
 
 func (buf *Buffer) removeLease(leased *Batch) (live bool) {
-	if leased == nil {
-		// Nil batch. Bail out.
-		return
-	}
-
 	if _, known := buf.unAckedLeases[leased]; !known {
 		panic(errors.New("unknown *Batch; are you ACK/NACK'ing multiple times?"))
 	}

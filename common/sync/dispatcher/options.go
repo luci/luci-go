@@ -114,22 +114,6 @@ type Options struct {
 	// Default: No limit.
 	QPSLimit *rate.Limiter
 
-	// [OPTIONAL] The minimal frequency of invoking SendFn.
-	//
-	// If greater than zero, this Channel will invoke SendFn at least this often.
-	// If there's a period of time longer than this with no work items, Channel
-	// will invoke SendFn with a nil batch.
-	//
-	// Errors returned from these nil SendFn invocations are still processed
-	// normally, and nil batches still count against QPSLimit.
-	//
-	// It is an error to specify a MinQPS value which is
-	// * greater than QPSLimit.Limit(),
-	// * or is rate.Inf.
-	//
-	// Default: No minimum QPS, no nil batches will be sent.
-	MinQPS rate.Limit
-
 	// [OPTIONAL]
 	// Should return the size of the given buffer item (i.e. what you push into
 	// Channel.C) in whatever units you like (see Buffer.BatchSizeMax).
