@@ -131,7 +131,9 @@ func EditRecipeBundle(ctx context.Context, authOpts auth.Options, jd *job.Defini
 		if err != nil {
 			return errors.Annotate(err, "creating temporary recipe bundle directory").Err()
 		}
-		opts.prepBundle(ctx, opts.RepoDir, recipesPy, bundlePath)
+		if err := opts.prepBundle(ctx, opts.RepoDir, recipesPy, bundlePath); err != nil {
+			return err
+		}
 		logging.Infof(ctx, "isolating recipes")
 		casClient, err := newCASClient(ctx, authOpts, jd)
 		if err != nil {
@@ -185,18 +187,19 @@ func logCmd(ctx context.Context, inDir string, arg0 string, args ...string) *exe
 }
 
 func cmdErr(cmd *exec.Cmd, err error, reason string) error {
-	if err != nil {
-		ee, _ := err.(*exec.ExitError)
-		outErr := ""
-		if ee != nil {
-			outErr = strings.TrimSpace(string(ee.Stderr))
-			if len(outErr) > 128 {
-				outErr = outErr[:128] + "..."
-			}
-		}
-		err = errors.Annotate(err, "running %q: %s: %s", strings.Join(cmd.Args, " "), reason, outErr).Err()
+	if err == nil {
+		return nil
 	}
-	return err
+	var outErr string
+	if ee, ok := err.(*exec.ExitError); ok {
+		outErr = strings.TrimSpace(string(ee.Stderr))
+		if len(outErr) > 128 {
+			outErr = outErr[:128] + "..."
+		}
+	} else {
+		outErr = err.Error()
+	}
+	return errors.Annotate(err, "running %q: %s: %s", strings.Join(cmd.Args, " "), reason, outErr).Err()
 }
 
 func appendText(path, fmtStr string, items ...interface{}) error {
