@@ -76,22 +76,16 @@ func (res CheckResult) FailuresSummary() string {
 	if res.OK() {
 		return ""
 	}
-	eids := make([]string, 0, len(res))
-	for cl := range res {
-		eids = append(eids, cl.ExternalID.MustURL())
+	msgs := make([]string, 0, len(res))
+	for cl, reason := range res {
+		msgs = append(msgs, fmt.Sprintf("* %s\n%s", cl.ExternalID.MustURL(), reason))
 	}
-	sort.Strings(eids)
+	sort.Strings(msgs)
 
 	var sb strings.Builder
-	isFirst := true
-	for cl, msg := range res {
-		if !isFirst {
-			sb.WriteString("\n\n")
-		}
-		isFirst = false
-		sb.WriteString("* ")
-		sb.WriteString(cl.ExternalID.MustURL())
-		sb.WriteString("\n")
+	sb.WriteString(msgs[0])
+	for _, msg := range msgs[1:] {
+		sb.WriteString("\n\n")
 		sb.WriteString(msg)
 	}
 	return sb.String()
