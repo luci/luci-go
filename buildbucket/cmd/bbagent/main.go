@@ -32,6 +32,7 @@ import (
 	"path"
 	"path/filepath"
 	"runtime"
+	"strings"
 	"sync/atomic"
 	"time"
 
@@ -273,29 +274,7 @@ func mainImpl() int {
 	check(errors.Annotate(err, "getting cwd").Err())
 	opts.BaseDir = filepath.Join(cwd, "x")
 
-	exeArgs := append(([]string)(nil), input.Build.Exe.Cmd...)
-	payloadPath := input.PayloadPath
-	if len(exeArgs) == 0 {
-		// TODO(iannucci): delete me with ExecutablePath.
-		var exe string
-		payloadPath, exe = path.Split(input.ExecutablePath)
-		exeArgs = []string{exe}
-	}
-	exePath, err := filepath.Abs(filepath.Join(payloadPath, exeArgs[0]))
-	check(errors.Annotate(err, "absoluting exe path %q", input.ExecutablePath).Err())
-	if runtime.GOOS == "windows" {
-		exePath, err = resolveExe(exePath)
-		check(errors.Annotate(err, "resolving %q", input.ExecutablePath).Err())
-	}
-	exeArgs[0] = exePath
-
-	wrapperArgs := append(([]string)(nil), input.Build.Exe.Wrapper...)
-	if len(wrapperArgs) != 0 {
-		wrapperArgs = append(wrapperArgs, "--")
-
-		// TODO(sumakasa): Fix wrapper[0] for relative path
-		exeArgs = append(wrapperArgs, exeArgs...)
-	}
+	exeArgs := processExeArgs(input, check)
 
 	initialJSONPB, err := (&jsonpb.Marshaler{
 		OrigName: true, Indent: "  ",
@@ -505,4 +484,47 @@ func resolveExe(path string) (string, error) {
 
 	me := lme.Get().(errors.MultiError)
 	return path, errors.Reason("cannot find .exe (%q) or .bat (%q)", me[0], me[1]).Err()
+}
+
+// processExeArgs processes the given "Executable" message into a single command
+// which bbagent will invoke as a luciexe.
+//
+// This includes resolving paths relative to the current working directory
+// (expected to be the task's root).
+func processExeArgs(input *bbpb.BBAgentArgs, check func(err error)) []string {
+	exeArgs := make([]string, 0, len(input.Build.Exe.Wrapper) + len(input.Build.Exe.Cmd) + 1)
+
+	if len(input.Build.Exe.Wrapper) != 0 {
+		exeArgs = append(exeArgs, input.Build.Exe.Wrapper...)
+		exeArgs = append(exeArgs, "--")
+
+		if filepath.IsAbs(exeArgs[0]) {
+			// do nothing
+		} else if strings.Contains(exeArgs[0], "/") || strings.Contains(exeArgs[0], "\\") {
+			absPath, err := filepath.Abs(exeArgs[0])
+			check(errors.Annotate(err, "absoluting wrapper path: %q", exeArgs[0]).Err())
+			exeArgs[0] = absPath
+		} else {
+			cmdPath, err := exec.LookPath(exeArgs[0])
+			check(errors.Annotate(err, "resolving wrapper path: %q", exeArgs[0]).Err())
+			exeArgs[0] = cmdPath
+		}
+	}
+
+	exeCmd := input.Build.Exe.Cmd[0]
+	payloadPath := input.PayloadPath
+	if len(input.Build.Exe.Cmd) == 0 {
+		// TODO(iannucci): delete me with ExecutablePath.
+		payloadPath, exeCmd = path.Split(input.ExecutablePath)
+	}
+	exePath, err := filepath.Abs(filepath.Join(payloadPath, exeCmd))
+	check(errors.Annotate(err, "absoluting exe path %q", input.ExecutablePath).Err())
+	if runtime.GOOS == "windows" {
+		exePath, err = resolveExe(exePath)
+		check(errors.Annotate(err, "resolving %q", input.ExecutablePath).Err())
+	}
+	exeArgs = append(exeArgs, exePath)
+	exeArgs = append(exeArgs, input.Build.Exe.Cmd[1:]...)
+
+	return exeArgs
 }
