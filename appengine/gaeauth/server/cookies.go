@@ -17,11 +17,8 @@ package server
 import (
 	"context"
 	"net/http"
-	"strings"
 
 	"go.chromium.org/luci/auth/identity"
-	"go.chromium.org/luci/common/logging"
-	"go.chromium.org/luci/gae/service/info"
 	"go.chromium.org/luci/gae/service/user"
 	"go.chromium.org/luci/server/auth"
 )
@@ -50,30 +47,10 @@ func (m UsersAPIAuthMethod) Authenticate(ctx context.Context, r *http.Request) (
 	}, nil, nil
 }
 
-const (
-	// serviceLoginURL is expected URL prefix for LoginURLs returned by prod GAE.
-	serviceLoginURL = "https://accounts.google.com/ServiceLogin?"
-	// accountChooserURL is what we use instead.
-	accountChooserURL = "https://accounts.google.com/AccountChooser?"
-)
-
 // LoginURL returns a URL that, when visited, prompts the user to sign in,
 // then redirects the user to the URL specified by dest.
 func (m UsersAPIAuthMethod) LoginURL(ctx context.Context, dest string) (string, error) {
-	url, err := user.LoginURL(ctx, dest)
-	if err != nil {
-		return "", err
-	}
-	if !strings.HasPrefix(url, serviceLoginURL) {
-		if !info.IsDevAppServer(ctx) {
-			logging.Warningf(ctx, "Unexpected login URL: %q", url)
-		}
-		return url, nil
-	}
-	// Give the user a choice of existing accounts in their session or the option
-	// to add an account, even if they are currently signed in to exactly one
-	// account.
-	return accountChooserURL + url[len(serviceLoginURL):], nil
+	return user.LoginURL(ctx, dest)
 }
 
 // LogoutURL returns a URL that, when visited, signs the user out,
