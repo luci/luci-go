@@ -194,8 +194,9 @@ func TestCancelTriggers(t *testing.T) {
 			op := makeOp(r)
 			op.CancelConcurrency = clCount
 			op.testAfterTryCancelFn = func() {
-				// advance the clock by 1 min. so that the lease will expire in the next attempt.
-				ct.Clock.Add(1 * time.Minute)
+				// Advance the clock by 1 minute + 1 second so that the lease will
+				// be guaranteed to expire in the next attempt.
+				ct.Clock.Add(1*time.Minute + 1*time.Second)
 			}
 			res, err := op.Do(ctx)
 			So(err, ShouldBeNil)
