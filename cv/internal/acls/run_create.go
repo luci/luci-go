@@ -16,6 +16,8 @@ package acls
 
 import (
 	"context"
+	"fmt"
+	"sort"
 	"strings"
 
 	"go.chromium.org/luci/auth/identity"
@@ -28,41 +30,69 @@ import (
 	cfgpb "go.chromium.org/luci/cv/api/config/v2"
 )
 
+const (
+	okButDueToOthers     = "CV cannot continue this run due to errors on the other CL(s) included in this run."
+	notOwnerNotCommitter = "CV cannot trigger the Run for %q because %q is neither the CL owner nor a member of the committer groups."
+)
+
 // CheckResult tells the result of an ACL check performed.
-type CheckResult struct {
-	// FailuresSummary is a summary of the check failures with the reasons.
-	//
-	// Provides a human friendly summary of the reasons for the decision
-	// when OK == false.
-	// Empty if OK == true.
-	FailuresSummary string
-}
+type CheckResult map[*run.RunCL]string
 
 // OK returns true if the result indicates no failures. False, otherwise.
 func (res CheckResult) OK() bool {
-	return res.FailuresSummary == ""
+	return len(res) == 0
 }
 
-type runCreateFailures struct {
-	neitherCommitterNorOwner []*run.RunCL
-}
-
-func (fs *runCreateFailures) length() int {
-	return len(fs.neitherCommitterNorOwner)
-}
-
-func (fs *runCreateFailures) summary() string {
-	if fs.length() == 0 {
+// Failure returns a failure message for a given RunCL.
+//
+// Returns an empty string, if the result was ok.
+func (res CheckResult) Failure(rcl *run.RunCL) string {
+	if res.OK() {
 		return ""
 	}
-	var sb strings.Builder
-	sb.WriteString("CV run can't continue due to the following CLs\n\n")
-	if cls := fs.neitherCommitterNorOwner; len(cls) > 0 {
-		sb.WriteString("* only the full committers or CL owner can trigger runs.\n")
-		for _, cl := range cls {
-			sb.WriteString(cl.ExternalID.MustURL())
-			sb.WriteString("\n")
+	msg, ok := res[rcl]
+	if !ok {
+		eids := make([]string, 0, len(res))
+		for cl := range res {
+			eids = append(eids, cl.ExternalID.MustURL())
 		}
+		sort.Strings(eids)
+
+		var sb strings.Builder
+		sb.WriteString(okButDueToOthers)
+		for _, eid := range eids {
+			sb.WriteString("\n  - ")
+			sb.WriteString(eid)
+		}
+		return sb.String()
+	}
+	return msg
+}
+
+// FailuresSummary returns a summary of all the failures reported.
+//
+// Returns an empty string, if the result was ok.
+func (res CheckResult) FailuresSummary() string {
+	if res.OK() {
+		return ""
+	}
+	eids := make([]string, 0, len(res))
+	for cl := range res {
+		eids = append(eids, cl.ExternalID.MustURL())
+	}
+	sort.Strings(eids)
+
+	var sb strings.Builder
+	isFirst := true
+	for cl, msg := range res {
+		if !isFirst {
+			sb.WriteString("\n\n")
+		}
+		isFirst = false
+		sb.WriteString("* ")
+		sb.WriteString(cl.ExternalID.MustURL())
+		sb.WriteString("\n")
+		sb.WriteString(msg)
 	}
 	return sb.String()
 }
@@ -70,30 +100,31 @@ func (fs *runCreateFailures) summary() string {
 // CheckRunCreate verifies that the user(s) who triggered Run are authorized
 // to create the Run for the CLs.
 func CheckRunCreate(ctx context.Context, cg *prjcfg.ConfigGroup, cls []*run.RunCL) (CheckResult, error) {
-	failures := &runCreateFailures{}
+	res := make(CheckResult, len(cls))
 	for _, cl := range cls {
 		triggerer, err := identity.MakeIdentity("user:" + cl.Trigger.Email)
 		if err != nil {
-			return CheckResult{}, errors.Annotate(
+			return nil, errors.Annotate(
 				err, "the triggerer identity %q of CL %q is invalid", cl.Trigger.Email, cl.ID).Err()
 		}
 
 		switch yes, err := isCommitter(ctx, triggerer, cg.Content.Verifiers); {
 		case err != nil:
-			return CheckResult{}, errors.Annotate(err, "failed to check committer").Err()
+			return nil, errors.Annotate(err, "failed to check committer").Err()
 		case !yes:
 			// Non-committer must be CL owner.
 			owner, err := cl.Detail.OwnerIdentity()
 			if err != nil {
-				return CheckResult{}, errors.Annotate(
+				return nil, errors.Annotate(
 					err, "the owner identity of CL %q is invalid", cl.ID).Err()
 			}
 			if triggerer != owner {
-				failures.neitherCommitterNorOwner = append(failures.neitherCommitterNorOwner, cl)
+				res[cl] = fmt.Sprintf(notOwnerNotCommitter, triggerer, triggerer)
+				continue
 			}
 		}
 	}
-	return CheckResult{failures.summary()}, nil
+	return res, nil
 }
 
 func isCommitter(ctx context.Context, one identity.Identity, v *cfgpb.Verifiers) (bool, error) {

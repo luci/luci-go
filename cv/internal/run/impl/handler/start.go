@@ -95,9 +95,7 @@ func (impl *Impl) Start(ctx context.Context, rs *state.RunState) (*Result, error
 		//
 		// TODO(crbug/1268574): cancel the Run, once it's verified that
 		// both (CQ and CV) implementations agree with each other.
-		if s := result.FailuresSummary; s != "" {
-			logging.Infof(ctx, "crbug/1268574: %s", s)
-		}
+		logging.Infof(ctx, "crbnug/1268574\n%s", result.FailuresSummary())
 	}
 
 	switch result, err := requirement.Compute(ctx, requirement.Input{

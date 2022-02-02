@@ -15,7 +15,6 @@
 package acls
 
 import (
-	"fmt"
 	"testing"
 
 	"go.chromium.org/luci/auth/identity"
@@ -62,7 +61,7 @@ func TestCheckRunCLs(t *testing.T) {
 
 		// test helpers
 		var rCLs []*run.RunCL
-		addRunCL := func(trigger, owner string) {
+		addRunCL := func(trigger, owner string) *run.RunCL {
 			id := len(rCLs) + 1
 			rCLs = append(rCLs, &run.RunCL{
 				ID:         common.CLID(id),
@@ -82,6 +81,7 @@ func TestCheckRunCLs(t *testing.T) {
 				},
 				Trigger: &run.Trigger{Email: trigger},
 			})
+			return rCLs[len(rCLs)-1]
 		}
 		setCommitterMembership := func(email string) {
 			id, err := identity.MakeIdentity("user:" + email)
@@ -93,26 +93,27 @@ func TestCheckRunCLs(t *testing.T) {
 			So(err, ShouldBeNil)
 			So(res.OK(), ShouldBeTrue)
 		}
-		mustFail := func(format string, args ...interface{}) {
+		mustFail := func() CheckResult {
 			res, err := CheckRunCreate(ctx, &cg, rCLs)
 			So(err, ShouldBeNil)
 			So(res.OK(), ShouldBeFalse)
-
-			if format != "" {
-				msg := fmt.Sprintf(format, args...)
-				So(res.FailuresSummary, ShouldContainSubstring, msg)
-			}
+			return res
+		}
+		checkMsg := func(res CheckResult, rcl *run.RunCL, msg string) {
+			So(res.Failure(rcl), ShouldContainSubstring, msg)
 		}
 
 		Convey("trigger != owner", func() {
-			addRunCL("tr1@example.org", "owner@example.org")
+			cl := addRunCL("tr1@example.org", "owner@example.org")
 
 			Convey("trigger is a committer", func() {
 				setCommitterMembership("tr1@example.org")
 				mustOK()
 			})
 			Convey("trigger is not a committer", func() {
-				mustFail("* only the full committers or CL owner can trigger runs")
+				res := mustFail()
+				So(res.OK(), ShouldBeFalse)
+				checkMsg(res, cl, "neither the CL owner nor a member of the committer groups.")
 			})
 		})
 
@@ -129,16 +130,17 @@ func TestCheckRunCLs(t *testing.T) {
 		})
 
 		Convey("multiple owners", func() {
-			addRunCL("tr1@example.org", "tr1@example.org")
-			addRunCL("tr1@example.org", "ow1@example.org")
+			cl1 := addRunCL("tr1@example.org", "tr1@example.org")
+			cl2 := addRunCL("tr1@example.org", "ow1@example.org")
 
 			Convey("trigger is a committer", func() {
 				setCommitterMembership("tr1@example.org")
 				mustOK()
 			})
 			Convey("trigger is not a committer", func() {
-				mustFail("* only the full committers or CL owner can trigger runs.\n" +
-					rCLs[1].ExternalID.MustURL())
+				res := mustFail()
+				checkMsg(res, cl1, "CV cannot continue this run due to errors on the other CL(s)")
+				checkMsg(res, cl2, "neither the CL owner nor a member of the committer groups.")
 			})
 		})
 	})
