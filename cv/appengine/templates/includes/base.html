@@ -64,6 +64,21 @@ that can be found in the LICENSE file. -->
   </div>
   <script src="/static/jquery/jquery.min.js"></script>
   <script src="/static/bootstrap/js/bootstrap.min.js"></script>
+  <script>
+  $("td.unix-timestamp, span.unix-timestamp, dd.unix-timestamp").each(function (index, elem) {
+    var options = {
+      year: "numeric", month: "numeric", day: "numeric", hour: "numeric",
+      minute: "numeric", second: "numeric", timeZoneName:"short",
+      hour12: false,
+    };
+    if (elem.innerHTML != "") {
+      time = new Date(elem.innerHTML * 1000);
+      if (time instanceof Date && !isNaN(time)) {
+        elem.innerHTML = time.toLocaleDateString(undefined, options)
+      }
+    }
+  })
+  </script>
 </body>
 </html>
 {{end}}

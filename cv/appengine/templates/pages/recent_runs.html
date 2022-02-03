@@ -60,8 +60,8 @@
             <td><a href="/ui/recents/{{$Project}}?mode={{.Mode}}">{{.Mode}}</a></td>
             <td><a href="/ui/recents/{{$Project}}?status={{.Status}}">{{.Status}}</a></td>
             <td>
-              <span title="{{RelTime .CreateTime $Now}}">
-                {{FmTime .CreateTime}}
+              <span title="{{RelTime .CreateTime $Now}}" class="unix-timestamp">
+                {{.CreateTime.Unix}}
               </span>
             </td>
             <td>

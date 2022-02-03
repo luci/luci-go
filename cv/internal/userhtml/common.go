@@ -71,12 +71,6 @@ func prepareTemplates(opts *server.Options, templatesPath string) *templates.Bun
 		DebugMode:       func(context.Context) bool { return !opts.Prod },
 		DefaultTemplate: "base",
 		FuncMap: template.FuncMap{
-			"FmTime": func(ts time.Time) string {
-				if ts.IsZero() {
-					return "N/A"
-				}
-				return ts.UTC().Format("2006-01-02 15:04:05 (MST)")
-			},
 			"RelTime": func(ts, now time.Time) string {
 				return humanize.RelTime(ts, now, "ago", "from now")
 			},

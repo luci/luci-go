@@ -181,7 +181,7 @@ div.clickable {
           {{range .Logs}}
             <tr class="log-entry{{if .GetTryjobsUpdated}}-top{{end}}">
               <td><em>{{LogTypeString .}}</em></td>
-              <td style="white-space: nowrap;">{{FmTime .GetTime.AsTime}} </td>
+              <td style="white-space: nowrap;" class="unix-timestamp">{{.GetTime.AsTime.Unix}}</td>
               <td style="white-space: nowrap;">{{call $RelTime .GetTime.AsTime}} </td>
               <td>
                 {{if (call $LogMessage .)}}
@@ -252,10 +252,32 @@ div.clickable {
   <dt>Id:</dt><dd>{{.ID}}</dd>
   <dt>Mode:</dt><dd>{{.Mode}}</dd>
   <dt>Status:</dt><dd>{{.Status}}</dd>
-  <dt>CreateTime:</dt><dd>{{FmTime .CreateTime}}</dd>
-  <dt>StartTime:</dt><dd>{{FmTime .StartTime}}</dd>
-  <dt>UpdateTime:</dt><dd>{{FmTime .UpdateTime}}</dd>
-  <dt>EndTime:</dt><dd>{{FmTime .EndTime}}</dd>
+  <dt>CreateTime:</dt>
+    <dd class="unix-timestamp">{{.CreateTime.Unix}}</dd>
+  <dt>StartTime:</dt>
+    <dd class="unix-timestamp">
+      {{if .StartTime.IsZero}}
+        Not Started
+      {{else}}
+        {{.StartTime.Unix}}
+      {{end}}
+    </dd>
+  <dt>UpdateTime:</dt>
+    <dd class="unix-timestamp">
+      {{if .UpdateTime.IsZero}}
+        N/A
+      {{else}}
+        {{.UpdateTime.Unix}}
+      {{end}}
+    </dd>
+  <dt>EndTime:</dt>
+    <dd class="unix-timestamp">
+      {{if .EndTime.IsZero}}
+        N/A
+      {{else}}
+        {{.EndTime.Unix}}
+      {{end}}
+    </dd>
   <dt>Owner:</dt><dd>{{.Owner}}</dd>
   <dt>ConfigGroupId:</dt><dd>{{.ConfigGroupID}}</dd>
   </dl>
