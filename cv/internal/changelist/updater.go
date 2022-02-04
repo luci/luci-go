@@ -701,6 +701,8 @@ func makeTQTitleForHumans(t *UpdateCLTask) string {
 	return sb.String()
 }
 
+const maxDepsLoadingBatchSize = 100
+
 func resolveDeps(ctx context.Context, luciProject string, deps map[ExternalID]DepKind) ([]resolvingDep, error) {
 	eids := make([]ExternalID, 0, len(deps))
 	ret := make([]resolvingDep, 0, len(deps))
@@ -713,34 +715,27 @@ func resolveDeps(ctx context.Context, luciProject string, deps map[ExternalID]De
 	if err != nil {
 		return nil, err
 	}
-	cls := make([]*CL, 0, len(deps))
+	depCLs := make([]CL, 0, maxDepsLoadingBatchSize)
+	depCLIndices := make([]int, 0, maxDepsLoadingBatchSize)
 	for i, id := range ids {
 		if id > 0 {
-			cls = append(cls, &CL{ID: id})
+			cl := CL{ID: id}
+			depCLs = append(depCLs, cl)
+			depCLIndices = append(depCLIndices, i)
 			ret[i].resolvedDep = &Dep{Clid: int64(id), Kind: ret[i].kind}
 		}
-	}
-	if len(cls) == 0 {
-		return ret, nil
-	}
-
-	if len(cls) > 500 {
-		// This may need optimizing if CV starts handling CLs with 1k dep to load CLs
-		// in batches and avoid excessive RAM usage.
-		logging.Warningf(ctx, "Loading %d CLs (deps) at once may lead to excessive RAM usage", len(cls))
-	}
-	if _, err := loadCLs(ctx, cls); err != nil {
-		return nil, err
-	}
-	// Must iterate `ids` since not every id has an entry in `cls`.
-	for i, id := range ids {
-		if id == 0 {
-			continue
-		}
-		cl := cls[0]
-		cls = cls[1:]
-		if !depNeedsRefresh(ctx, cl, luciProject) {
-			ret[i].ready = true
+		if len(depCLs) == maxDepsLoadingBatchSize || (len(depCLs) > 0 && i == len(ids)-1) {
+			// cut a batch if max is reached or end of ids.
+			if err := datastore.Get(ctx, depCLs); err != nil {
+				// Mark error as transient because by this time, all CLIDs should have
+				// corresponding CL entities in datastore.
+				return nil, errors.Annotate(err, "failed to load %d CLs", len(depCLs)).Tag(transient.Tag).Err()
+			}
+			for j, depCL := range depCLs {
+				ret[depCLIndices[j]].ready = !depNeedsRefresh(ctx, depCL, luciProject)
+			}
+			depCLs = depCLs[:0]
+			depCLIndices = depCLIndices[:0]
 		}
 	}
 	return ret, nil
@@ -796,10 +791,8 @@ func sortDeps(deps []*Dep) []*Dep {
 
 // depNeedsRefresh returns true if the dependency CL needs a refresh in the
 // context of a specific LUCI project.
-func depNeedsRefresh(ctx context.Context, dep *CL, luciProject string) bool {
+func depNeedsRefresh(ctx context.Context, dep CL, luciProject string) bool {
 	switch {
-	case dep == nil:
-		panic(fmt.Errorf("dep CL must not be nil"))
 	case dep.Snapshot == nil:
 		return true
 	case dep.Snapshot.GetOutdated() != nil:

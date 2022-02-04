@@ -549,6 +549,10 @@ func (f *fetcher) resolveDeps(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
+
+	if depsCnt := len(depsMap); depsCnt > 500 {
+		logging.Warningf(ctx, "CL has high number of dependency CLs. Deps count: %d", depsCnt)
+	}
 	resolved, err := f.resolveAndScheduleDepsUpdate(ctx, f.luciProject, depsMap)
 	if err != nil {
 		return err

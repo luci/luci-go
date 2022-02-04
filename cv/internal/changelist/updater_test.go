@@ -16,6 +16,7 @@ package changelist
 
 import (
 	"context"
+	"fmt"
 	"sort"
 	"testing"
 	"time"
@@ -841,6 +842,28 @@ func TestUpdaterResolveAndScheduleDepsUpdate(t *testing.T) {
 			}))
 			// Update for the `clUpToDate` is not necessary.
 			So(scheduledUpdates(), ShouldResemble, eids(cl1, cl2, clBareBones))
+		})
+
+		Convey("high number of dependency CLs", func() {
+			const clCount = 1024
+			depCLMap := make(map[ExternalID]DepKind, clCount)
+			depCLs := make([]*CL, clCount)
+			for i := 0; i < clCount; i++ {
+				depCLs[i] = ExternalID(fmt.Sprintf("high-dep-cl/%04d", i)).MustCreateIfNotExists(ctx)
+				depCLMap[depCLs[i].ExternalID] = DepKind_HARD
+			}
+
+			deps, err := u.ResolveAndScheduleDepsUpdate(ctx, lProject, depCLMap)
+			So(err, ShouldBeNil)
+			expectedDeps := make([]*Dep, clCount)
+			for i, depCL := range depCLs {
+				expectedDeps[i] = &Dep{
+					Clid: int64(depCL.ID),
+					Kind: DepKind_HARD,
+				}
+			}
+			So(deps, ShouldResembleProto, expectedDeps)
+			So(scheduledUpdates(), ShouldResemble, eids(depCLs...))
 		})
 	})
 }
