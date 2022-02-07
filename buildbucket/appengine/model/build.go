@@ -36,6 +36,15 @@ import (
 const (
 	// BuildKind is a Build entity's kind in the datastore.
 	BuildKind = "Build"
+	// BuildStorageDuration is the maximum lifetime of a Build.
+	//
+	// Lifetime is the time elapsed since the Build creation time.
+	// Cron runs periodically to scan and remove all the Builds of which
+	// lifetime exceeded this duration.
+	BuildStorageDuration = time.Hour * 24 * 30 * 18 // ~18 months
+	// BuildMaxCompletionTime defines the maximum duration that a Build must be
+	// completed within, from the build creation time.
+	BuildMaxCompletionTime = time.Hour * 24 * 2 // 2 days
 )
 
 // isHiddenTag returns whether the given tag should be hidden by ToProto.
