@@ -5,36 +5,35 @@ package buildbucketpb
 
 import (
 	context "context"
-	reflect "reflect"
-
 	gomock "github.com/golang/mock/gomock"
 	grpc "google.golang.org/grpc"
+	reflect "reflect"
 )
 
-// MockBuildersClient is a mock of BuildersClient interface.
+// MockBuildersClient is a mock of BuildersClient interface
 type MockBuildersClient struct {
 	ctrl     *gomock.Controller
 	recorder *MockBuildersClientMockRecorder
 }
 
-// MockBuildersClientMockRecorder is the mock recorder for MockBuildersClient.
+// MockBuildersClientMockRecorder is the mock recorder for MockBuildersClient
 type MockBuildersClientMockRecorder struct {
 	mock *MockBuildersClient
 }
 
-// NewMockBuildersClient creates a new mock instance.
+// NewMockBuildersClient creates a new mock instance
 func NewMockBuildersClient(ctrl *gomock.Controller) *MockBuildersClient {
 	mock := &MockBuildersClient{ctrl: ctrl}
 	mock.recorder = &MockBuildersClientMockRecorder{mock}
 	return mock
 }
 
-// EXPECT returns an object that allows the caller to indicate expected use.
+// EXPECT returns an object that allows the caller to indicate expected use
 func (m *MockBuildersClient) EXPECT() *MockBuildersClientMockRecorder {
 	return m.recorder
 }
 
-// GetBuilder mocks base method.
+// GetBuilder mocks base method
 func (m *MockBuildersClient) GetBuilder(ctx context.Context, in *GetBuilderRequest, opts ...grpc.CallOption) (*BuilderItem, error) {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{ctx, in}
@@ -47,14 +46,14 @@ func (m *MockBuildersClient) GetBuilder(ctx context.Context, in *GetBuilderReque
 	return ret0, ret1
 }
 
-// GetBuilder indicates an expected call of GetBuilder.
+// GetBuilder indicates an expected call of GetBuilder
 func (mr *MockBuildersClientMockRecorder) GetBuilder(ctx, in interface{}, opts ...interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	varargs := append([]interface{}{ctx, in}, opts...)
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetBuilder", reflect.TypeOf((*MockBuildersClient)(nil).GetBuilder), varargs...)
 }
 
-// ListBuilders mocks base method.
+// ListBuilders mocks base method
 func (m *MockBuildersClient) ListBuilders(ctx context.Context, in *ListBuildersRequest, opts ...grpc.CallOption) (*ListBuildersResponse, error) {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{ctx, in}
@@ -67,37 +66,37 @@ func (m *MockBuildersClient) ListBuilders(ctx context.Context, in *ListBuildersR
 	return ret0, ret1
 }
 
-// ListBuilders indicates an expected call of ListBuilders.
+// ListBuilders indicates an expected call of ListBuilders
 func (mr *MockBuildersClientMockRecorder) ListBuilders(ctx, in interface{}, opts ...interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	varargs := append([]interface{}{ctx, in}, opts...)
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListBuilders", reflect.TypeOf((*MockBuildersClient)(nil).ListBuilders), varargs...)
 }
 
-// MockBuildersServer is a mock of BuildersServer interface.
+// MockBuildersServer is a mock of BuildersServer interface
 type MockBuildersServer struct {
 	ctrl     *gomock.Controller
 	recorder *MockBuildersServerMockRecorder
 }
 
-// MockBuildersServerMockRecorder is the mock recorder for MockBuildersServer.
+// MockBuildersServerMockRecorder is the mock recorder for MockBuildersServer
 type MockBuildersServerMockRecorder struct {
 	mock *MockBuildersServer
 }
 
-// NewMockBuildersServer creates a new mock instance.
+// NewMockBuildersServer creates a new mock instance
 func NewMockBuildersServer(ctrl *gomock.Controller) *MockBuildersServer {
 	mock := &MockBuildersServer{ctrl: ctrl}
 	mock.recorder = &MockBuildersServerMockRecorder{mock}
 	return mock
 }
 
-// EXPECT returns an object that allows the caller to indicate expected use.
+// EXPECT returns an object that allows the caller to indicate expected use
 func (m *MockBuildersServer) EXPECT() *MockBuildersServerMockRecorder {
 	return m.recorder
 }
 
-// GetBuilder mocks base method.
+// GetBuilder mocks base method
 func (m *MockBuildersServer) GetBuilder(arg0 context.Context, arg1 *GetBuilderRequest) (*BuilderItem, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetBuilder", arg0, arg1)
@@ -106,13 +105,13 @@ func (m *MockBuildersServer) GetBuilder(arg0 context.Context, arg1 *GetBuilderRe
 	return ret0, ret1
 }
 
-// GetBuilder indicates an expected call of GetBuilder.
+// GetBuilder indicates an expected call of GetBuilder
 func (mr *MockBuildersServerMockRecorder) GetBuilder(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetBuilder", reflect.TypeOf((*MockBuildersServer)(nil).GetBuilder), arg0, arg1)
 }
 
-// ListBuilders mocks base method.
+// ListBuilders mocks base method
 func (m *MockBuildersServer) ListBuilders(arg0 context.Context, arg1 *ListBuildersRequest) (*ListBuildersResponse, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "ListBuilders", arg0, arg1)
@@ -121,7 +120,7 @@ func (m *MockBuildersServer) ListBuilders(arg0 context.Context, arg1 *ListBuilde
 	return ret0, ret1
 }
 
-// ListBuilders indicates an expected call of ListBuilders.
+// ListBuilders indicates an expected call of ListBuilders
 func (mr *MockBuildersServerMockRecorder) ListBuilders(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListBuilders", reflect.TypeOf((*MockBuildersServer)(nil).ListBuilders), arg0, arg1)

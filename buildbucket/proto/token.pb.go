@@ -83,7 +83,7 @@ func (TokenBody_Purpose) EnumDescriptor() ([]byte, []int) {
 	return file_go_chromium_org_luci_buildbucket_proto_token_proto_rawDescGZIP(), []int{0, 0}
 }
 
-// Possible verison of the token.
+// Possible version of the token.
 type TokenEnvelope_Version int32
 
 const (

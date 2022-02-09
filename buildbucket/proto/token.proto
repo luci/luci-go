@@ -42,7 +42,7 @@ message TokenBody {
 // as a token (after being encoded using base64 standard raw encoding).
 message TokenEnvelope {
 
-  // Possible verison of the token.
+  // Possible version of the token.
   enum Version {
     // The default value. This value is used if version is omitted.
     VERSION_UNSPECIFIED = 0;
