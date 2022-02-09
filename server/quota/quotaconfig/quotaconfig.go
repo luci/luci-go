@@ -14,7 +14,8 @@
 
 // Package quotaconfig exports the interface required by the quota library to
 // read *pb.Policy configs. Provides an in-memory implementation of the
-// interface.
+// interface suitable for testing. See quotaconfig subpackages for other
+// implementations.
 package quotaconfig
 
 import (

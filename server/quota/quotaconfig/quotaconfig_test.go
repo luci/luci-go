@@ -26,7 +26,7 @@ import (
 	. "go.chromium.org/luci/common/testing/assertions"
 )
 
-func TestMemory(t *testing.T) {
+func TestQuotaConfig(t *testing.T) {
 	t.Parallel()
 
 	Convey("Memory", t, func() {
@@ -43,6 +43,12 @@ func TestMemory(t *testing.T) {
 				},
 			}
 
+			Convey("policy not found", func() {
+				p, err := m.Get(ctx, "missing")
+				So(err, ShouldErrLike, "not found")
+				So(p, ShouldBeNil)
+			})
+
 			Convey("found", func() {
 				p, err := m.Get(ctx, "name")
 				So(err, ShouldBeNil)
@@ -51,12 +57,6 @@ func TestMemory(t *testing.T) {
 					Resources:     1,
 					Replenishment: 1,
 				})
-			})
-
-			Convey("policy not found", func() {
-				p, err := m.Get(ctx, "missing")
-				So(err, ShouldErrLike, "not found")
-				So(p, ShouldBeNil)
 			})
 
 			Convey("immutable", func() {
@@ -69,11 +69,6 @@ func TestMemory(t *testing.T) {
 				})
 
 				p.Resources++
-				So(p, ShouldResembleProto, &pb.Policy{
-					Name:          "name",
-					Resources:     2,
-					Replenishment: 1,
-				})
 
 				p, err = m.Get(ctx, "name")
 				So(err, ShouldBeNil)
