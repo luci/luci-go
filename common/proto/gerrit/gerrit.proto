@@ -388,7 +388,7 @@ message AccountInfo {
 // Source of truth:
 // https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#change-info
 //
-// Next tag: 18.
+// Next tag: 19.
 message ChangeInfo {
   // The change number.
   int64 number = 1;
@@ -455,6 +455,9 @@ message ChangeInfo {
 
   // The users who have been added in and removed from the change.
   ReviewerStatusMap reviewers = 17;
+
+  // The SHA-1 of the NoteDb meta ref.
+  string metaRevID = 18;
 }
 
 enum ChangeStatus {

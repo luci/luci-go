@@ -87,6 +87,7 @@ type changeInfo struct {
 	Updated     Timestamp `json:"updated"`
 	Submittable bool      `json:"submittable,omitempty"`
 	IsPrivate   bool      `json:"is_private,omitempty"`
+	MetaRevID   string    `json:"meta_rev_id,omitempty"`
 
 	RevertOf           int64 `json:"revert_of,omitempty"`
 	CherryPickOfChange int64 `json:"cherry_pick_of_change,omitempty"`
@@ -107,6 +108,7 @@ func (ci *changeInfo) ToProto() (*gerritpb.ChangeInfo, error) {
 		CurrentRevision:    ci.CurrentRevision,
 		Submittable:        ci.Submittable,
 		IsPrivate:          ci.IsPrivate,
+		MetaRevID:          ci.MetaRevID,
 		Created:            timestamppb.New(ci.Created.Time),
 		Updated:            timestamppb.New(ci.Updated.Time),
 		RevertOf:           ci.RevertOf,

@@ -184,6 +184,7 @@ func TestGetChange(t *testing.T) {
 				CurrentRevision: "deadbeef",
 				Submittable:     true,
 				IsPrivate:       true,
+				MetaRevID:       "cafecafe",
 				Revisions: map[string]*gerritpb.RevisionInfo{
 					"deadbeef": {
 						Number:      1,
@@ -305,6 +306,7 @@ func TestGetChange(t *testing.T) {
 					"current_revision": "deadbeef",
 					"submittable": true,
 					"is_private": true,
+					"meta_rev_id": "cafecafe",
 					"revisions": {
 						"deadbeef": {
 							"_number": 1,
