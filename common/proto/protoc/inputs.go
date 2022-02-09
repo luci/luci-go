@@ -132,8 +132,23 @@ func StageGoInputs(ctx context.Context, inputDir string, mods, protoImportPaths 
 	}
 
 	// Prep import paths: union of GOPATH (if any), staged modules and
-	// relocated `protoImportPaths`. Explicitly requested import paths come first.
+	// relocated `protoImportPaths`.
 	var paths []string
+	paths = append(paths, stagedRoot)
+	paths = append(paths, build.Default.SrcDirs()...)
+
+	// Explicitly requested import paths come last. This is needed to make sure
+	// protoc is not confused if an input *.proto name shows up in one of the
+	// protoImportPaths. It already shows up in the stagedRoot proto path (by
+	// construction). If protoc sees the input proto in another --proto_path
+	// that comes *before* stagedRoot, it spits out this confusing error:
+	//
+	//   Input is shadowed in the --proto_path by "<explicitly requested path>".
+	//   Either use the latter file as your input or reorder the --proto_path so
+	//   that the former file's location comes first.
+	//
+	// By putting protoImportPaths last, we "reorder the --proto_path so that the
+	// former file's location comes first".
 	for _, p := range protoImportPaths {
 		p, err := relocatePath(p)
 		if err != nil {
@@ -141,8 +156,6 @@ func StageGoInputs(ctx context.Context, inputDir string, mods, protoImportPaths 
 		}
 		paths = append(paths, p)
 	}
-	paths = append(paths, stagedRoot)
-	paths = append(paths, build.Default.SrcDirs()...)
 
 	// Include well-known *.proto files vendored into the luci-go repo.
 	for _, p := range paths {
