@@ -16,6 +16,7 @@ package dispatcher
 
 import (
 	"context"
+	"time"
 
 	"golang.org/x/time/rate"
 
@@ -47,5 +48,29 @@ func (o *Options) normalize(ctx context.Context) error {
 			o.QPSLimit.Burst()).Err()
 	}
 
+	if o.MinQPS == rate.Inf {
+		return errors.Reason("MinQPS cannot be infinite").Err()
+	}
+
+	if o.MinQPS > 0 && o.MinQPS > o.QPSLimit.Limit() {
+		return errors.Reason(
+			"MinQPS: %f is greater than QPSLimit: %f",
+			o.MinQPS, o.QPSLimit.Limit()).Err()
+	}
+
 	return nil
+}
+
+// durationFromLimit converts a rate.Limit to a time.Duration.
+func durationFromLimit(limit rate.Limit) time.Duration {
+	switch {
+	case limit == rate.Inf:
+		return 0
+	case limit <= 0:
+		// Reset the duration to 0, instead of returning rate.InfDuration.
+		return 0
+	default:
+		seconds := float64(1) / float64(limit)
+		return time.Duration(float64(time.Second) * seconds)
+	}
 }

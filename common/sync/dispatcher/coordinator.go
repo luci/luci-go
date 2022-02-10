@@ -54,14 +54,28 @@ func (state *coordinatorState) dbg(msg string, args ...interface{}) {
 	}
 }
 
-func (state *coordinatorState) sendBatches(ctx context.Context, now time.Time, send SendFn) time.Duration {
+// sendBatches sends the batches in buffer, or a nil batch if the minimum frequency
+// has reached.
+//
+// It returns the timestamp when the last SendFn is invoked, and a delay if we
+// need to wait for the next send token.
+//
+// TODO(chanli@): Currently we assume sendBatches is very fast, so we use the same
+// now value throughout sendBatches. If it turns out the assumption is false, we
+// may have bellow issues:
+// * it prevents the QPSLimit from replenishing tokens during sendBatches;
+// * it may causes sendBatches to send an additional nil batch after sending
+//   batches, while sendBatches should only try to send a nil batch if it doesn't
+//   have any batch to send.
+func (state *coordinatorState) sendBatches(ctx context.Context, now, prevLastSend time.Time, send SendFn) (lastSend time.Time, delay time.Duration) {
+	lastSend = prevLastSend
 	if state.canceled {
 		for _, batch := range state.buf.ForceLeaseAll() {
 			state.dbg("  >dropping batch: canceled")
 			state.opts.DropFn(batch, false)
 			state.buf.ACK(batch)
 		}
-		return 0
+		return
 	}
 
 	// while the context is not canceled, send stuff batches we're able to send.
@@ -72,17 +86,18 @@ func (state *coordinatorState) sendBatches(ctx context.Context, now time.Time, s
 			panic(errors.New(
 				"impossible; Options.QPSLimit is guaranteed to have Inf rate or burst >= 1"))
 		}
-		if delay := res.DelayFrom(now); delay != 0 {
+		if delay = res.DelayFrom(now); delay != 0 {
 			// We have to wait until the next send token is available. Cancel the
 			// reservation for now, since we're going to wait via getNextTimingEvent.
 			res.CancelAt(now)
-			return delay
+			return
 		}
 
 		// We're allowed to send, see if there's actually anything to send.
 		if batchToSend := state.buf.LeaseOne(now); batchToSend != nil {
 			// got a batch! Send it.
 			state.dbg("  >sending batch")
+			lastSend = now
 			go func() {
 				state.resultCh <- workerResult{
 					batch: batchToSend,
@@ -90,20 +105,38 @@ func (state *coordinatorState) sendBatches(ctx context.Context, now time.Time, s
 				}
 			}()
 		} else {
-			// Otherwise we're done sending batches for now. Cancel the reservation,
-			// since we can't use it.
-			res.CancelAt(now)
+			// No more batches.
+
+			// But before break, check if the minimal frequency has reached, if yes we
+			// need to send a nil batch.
+			minInterval := durationFromLimit(state.opts.MinQPS)
+			if minInterval > 0 && now.Sub(lastSend) >= minInterval {
+				// Send a nil batch.
+				state.dbg("  >sending nil batch")
+				lastSend = now
+				go func() {
+					state.resultCh <- workerResult{
+						batch: nil,
+						err:   send(nil),
+					}
+				}()
+			} else {
+				// Cancel the reservation, since we can't use it.
+				res.CancelAt(now)
+			}
 			break
 		}
 	}
 
-	return 0
+	return
 }
 
 // getNextTimingEvent returns a clock.Timer channel which will activate when the
 // later of the following happen:
-//   * buffer.NextSendTime
+//   * buffer.NextSendTime or MinQPS, whichever is earlier
 //   * nextQPSToken
+//
+// So resetDuration = max(min(MinQPS, nextSendTime), nextQPSToken)
 func (state *coordinatorState) getNextTimingEvent(now time.Time, nextQPSToken time.Duration) <-chan clock.TimerResult {
 	var resetDuration time.Duration
 	var msg string
@@ -111,6 +144,12 @@ func (state *coordinatorState) getNextTimingEvent(now time.Time, nextQPSToken ti
 	if nextSend := state.buf.NextSendTime(); !nextSend.IsZero() && nextSend.After(now) {
 		resetDuration = nextSend.Sub(now)
 		msg = "waiting on batch.NextSendTime"
+	}
+
+	minInterval := durationFromLimit(state.opts.MinQPS)
+	if minInterval > 0 && (resetDuration == 0 || minInterval < resetDuration) {
+		resetDuration = minInterval
+		msg = "waiting on MinQPS"
 	}
 
 	if nextQPSToken > resetDuration {
@@ -191,14 +230,21 @@ func (state *coordinatorState) run(ctx context.Context, send SendFn) {
 	defer close(state.resultCh)
 	defer state.timer.Stop()
 
+	var lastSend time.Time
 loop:
 	for {
 		state.dbg("LOOP (closed: %t, canceled: %t): buf.Stats[%+v]",
 			state.closed, state.canceled, state.buf.Stats())
 
 		now := clock.Now(ctx)
+		if lastSend.IsZero() {
+			// Initiate lastSend to now, otherwise sendBatches will immediately send
+			// a nil batch.
+			lastSend = now
+		}
 
-		resDelay := state.sendBatches(ctx, now, send)
+		var resDelay time.Duration
+		lastSend, resDelay = state.sendBatches(ctx, now, lastSend, send)
 
 		// sendBatches may drain the buf if we're in the canceled state, so pull it
 		// again to see if it's empty.
@@ -276,7 +322,7 @@ loop:
 			// opportunistically attempt to send batches; either a new batch is ready
 			// to be cut or the qps timer is up. This lowers the upper bound variance
 			// and gets a bit closer to the QPS target.
-			state.sendBatches(ctx, result.Time, send)
+			lastSend, _ = state.sendBatches(ctx, result.Time, lastSend, send)
 		}
 	}
 
