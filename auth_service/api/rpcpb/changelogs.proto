@@ -1,0 +1,102 @@
+// Copyright 2022 The LUCI Authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package auth.service;
+
+option go_package = "go.chromium.org/luci/auth_service/api/rpcpb";
+
+import "google/protobuf/timestamp.proto";
+
+// ChangeLogs service contains methods to examine change logs.
+service ChangeLogs {
+  // ListChangeLogs returns all the change logs in Datastore.
+  rpc ListChangeLogs(ListChangeLogsRequest) returns (ListChangeLogsResponse);
+}
+
+// ListChangeLogsRequest is a request to get a list of change logs, which can
+// be filtered by auth_db_rev and/or target.
+message ListChangeLogsRequest {
+  // AuthDB revision that the change log was made.
+  int64 auth_db_rev = 1;
+
+  // Entity that was changed in the change log.
+  string target = 2;
+
+  // The value of next_page_token received in a ListChangeLogsResponse. Used
+  // to get the next page of change logs. If empty, gets the first page.
+  string page_token = 3;
+
+  // The maximum number of change logs to include in the response.
+  int32 page_size = 4;
+}
+
+// ListChangeLogsResponse contains a list of change logs that matched the query.
+message ListChangeLogsResponse {
+  // A list of change logs.
+  repeated AuthDBChange changes = 1;
+
+  // The value to use as the page_token in a ListChangeLogsRequest to get the
+  // next page of change logs. If empty, there are no more change logs.
+  string next_page_token = 2;
+}
+
+// AuthDBChange refers to a change log entry.
+message AuthDBChange {
+  // Fields common across all change types.
+  string change_type = 1;
+  string target = 2;
+  int64 auth_db_rev = 3;
+  string who = 4;
+  google.protobuf.Timestamp when = 5;
+  string comment = 6;
+  string app_version = 7;
+  string description = 8;
+  string old_description = 9;
+
+  // Fields specific to AuthDBGroupChange.
+  string owners = 10;
+  string old_owners = 11;
+  repeated string members = 12;
+  repeated string globs = 13;
+  repeated string nested = 14;
+
+  // Fields specific to AuthDBIPAllowlistChange.
+  repeated string subnets = 15;
+
+  // Fields specific to AuthDBIPAllowlistAssignmentChange.
+  string identity = 16;
+  string ip_allow_list = 17;
+
+  // Fields specific to AuthDBConfigChange.
+  string oauth_client_id = 18;
+  string oauth_client_secret = 19;
+  repeated string oauth_additional_client_ids = 20;
+  string token_server_url_old = 21;
+  string token_server_url_new = 22;
+  string security_config_old = 23;
+  string security_config_new = 24;
+
+  // Fields specific to AuthRealmsGlobalsChange.
+  repeated string permissions_added = 25;
+  repeated string permissions_changed = 26;
+  repeated string permissions_removed = 27;
+
+  // Fields specific to AuthProjectRealmsChange.
+  string config_rev_old = 28;
+  string config_rev_new = 29;
+  string perms_rev_old = 30;
+  string perms_rev_new = 31;
+}
