@@ -424,5 +424,8 @@ func (*Builds) UpdateBuild(ctx context.Context, req *pb.UpdateBuildRequest) (*pb
 		return nil, appstatus.Errorf(codes.Internal, "failed to update the build entity: %s", err)
 	}
 
+	if req.Mask == nil || len(req.Mask.GetFields().GetPaths()) == 0 {
+		return &pb.Build{}, nil
+	}
 	return build.ToProto(ctx, readMask)
 }

@@ -215,8 +215,7 @@ message UpdateBuildRequest {
 
   // What portion of the Build message to return.
   //
-  // If not set, the default mask is used, see Build message comments for the
-  // list of fields returned by default.
+  // If not set, an empty build will be returned.
   BuildMask mask = 101;
 }
 

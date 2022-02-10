@@ -435,8 +435,7 @@ type UpdateBuildRequest struct {
 	Fields *fieldmaskpb.FieldMask `protobuf:"bytes,100,opt,name=fields,proto3" json:"fields,omitempty"`
 	// What portion of the Build message to return.
 	//
-	// If not set, the default mask is used, see Build message comments for the
-	// list of fields returned by default.
+	// If not set, an empty build will be returned.
 	Mask *BuildMask `protobuf:"bytes,101,opt,name=mask,proto3" json:"mask,omitempty"`
 }
 
