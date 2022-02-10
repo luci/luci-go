@@ -22,7 +22,6 @@ import (
 	"time"
 
 	"github.com/golang/protobuf/ptypes"
-	"github.com/gomodule/redigo/redis"
 	"google.golang.org/genproto/protobuf/field_mask"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
@@ -40,7 +39,6 @@ import (
 	"go.chromium.org/luci/milo/common/model"
 	"go.chromium.org/luci/milo/common/model/milostatus"
 	"go.chromium.org/luci/server/auth"
-	"go.chromium.org/luci/server/redisconn"
 	"go.chromium.org/luci/server/router"
 )
 
@@ -230,6 +228,15 @@ func pubSubHandlerImpl(c context.Context, r *http.Request) error {
 		return nil
 	}
 
+	proj, err := common.GetProject(c, build.Builder.Project)
+	if err != nil {
+		return errors.Annotate(err, "could not get project configuration").Err()
+	}
+	if proj.BuilderIsIgnored(build.Builder) {
+		logging.Infof(c, "This is from an ignored builder, ignoring")
+		return nil
+	}
+
 	// TODO(iannucci,nodir): get the bot context too
 	// TODO(iannucci,nodir): support manifests/got_revision
 	bs, err := getSummary(c, event.Hostname, build.Builder.Project, build.Id)
@@ -238,12 +245,6 @@ func pubSubHandlerImpl(c context.Context, r *http.Request) error {
 	}
 	if err := bs.AddManifestKeysFromBuildSets(c); err != nil {
 		return err
-	}
-
-	updateBuilderSummary, err := shouldUpdateBuilderSummary(c, bs)
-	if err != nil {
-		updateBuilderSummary = true
-		logging.WithError(err).Warningf(c, "failed to determine whether the builder summary should be updated. Fallback to always update.")
 	}
 
 	return transient.Tag.Apply(datastore.RunInTransaction(c, func(c context.Context) error {
@@ -267,11 +268,6 @@ func pubSubHandlerImpl(c context.Context, r *http.Request) error {
 			return err
 		}
 
-		if !updateBuilderSummary {
-			logging.Infof(c, "skipping builder summary update for builder: %s, with build status: %s", bs.BuilderID, bs.Summary.Status)
-			return nil
-		}
-
 		return model.UpdateBuilderForBuild(c, bs)
 	}, nil))
 }
@@ -283,106 +279,4 @@ func pubSubHandlerImpl(c context.Context, r *http.Request) error {
 func MakeBuildKey(c context.Context, host, buildAddress string) *datastore.Key {
 	return datastore.MakeKey(c,
 		"buildbucket.Build", fmt.Sprintf("%s:%s", host, buildAddress))
-}
-
-var (
-	// Sustained datastore updates should not be higher than once per second per
-	// entity.
-	// See https://cloud.google.com/datastore/docs/concepts/limits.
-	entityUpdateIntervalInS int64 = 1
-
-	// A Redis LUA script that update the key with the new integer value if and
-	// only if the provided value is greater than the recorded value (0 if none
-	// were recorded). It returns 1 if the value is updated and 0 otherwise.
-	updateIfLargerScript = redis.NewScript(1, `
-local newValueStr = ARGV[1]
-local newValue = tonumber(newValueStr)
-local existingValueStr = redis.call('GET', KEYS[1])
-local existingValue = tonumber(existingValueStr) or 0
-if newValue < existingValue then
-	return 0
-elseif newValue == existingValue then
-	-- large u64/i64 (>2^53) may lose precision after being converted to f64.
-	-- Compare the last 5 digits if the f64 presentation of the integers are the
-	-- same.
-	local newValue = tonumber(string.sub(newValueStr, -5)) or 0
-	local existingValue = tonumber(string.sub(existingValueStr, -5)) or 0
-	if newValue <= existingValue then
-		return 0
-	end
-end
-
-redis.call('SET', KEYS[1], newValueStr, 'EX', ARGV[2])
-return 1
-`)
-)
-
-// shouldUpdateBuilderSummary determines whether the builder summary should be
-// updated with the provided build summary.
-//
-// If the function is called with builds from the same builder multiple times
-// within a time bucket, it will block the function until the start of the next
-// time bucket and only return true for the call with the lastest created build
-// with a terminal status, and return false for other calls occurred within the
-// same time bucket.
-func shouldUpdateBuilderSummary(c context.Context, buildSummary *model.BuildSummary) (bool, error) {
-	if !buildSummary.Summary.Status.Terminal() {
-		return false, nil
-	}
-
-	conn, err := redisconn.Get(c)
-	if err != nil {
-		return true, err
-	}
-
-	createdAt := buildSummary.Created.UnixNano()
-
-	now := time.Now().Unix()
-	thisTimeBucket := time.Unix(now-now%entityUpdateIntervalInS, 0)
-	thisTimeBucketKey := fmt.Sprintf("%s:%v", buildSummary.BuilderID, thisTimeBucket)
-
-	// Check if there's a builder summary update occurred in this time bucket.
-	_, err = redis.String(conn.Do("SET", thisTimeBucketKey, createdAt, "NX", "EX", entityUpdateIntervalInS+1))
-	switch err {
-	case redis.ErrNil:
-		// continue
-	case nil:
-		// There's no builder summary update occurred in this time bucket yet, we
-		// should run the update.
-		return true, nil
-	default:
-		return true, err
-	}
-
-	// There's already a builder summary update occurred in this time bucket. Try
-	// scheduling the update for the next time bucket instead.
-	nextTimeBucket := thisTimeBucket.Add(time.Duration(entityUpdateIntervalInS * int64(time.Second)))
-	nextTimeBucketKey := fmt.Sprintf("%s:%v", buildSummary.BuilderID, nextTimeBucket)
-	replaced, err := redis.Int(updateIfLargerScript.Do(conn, nextTimeBucketKey, createdAt, entityUpdateIntervalInS+1))
-	if err != nil {
-		return true, err
-	}
-
-	if replaced == 0 {
-		// There's already an update with a newer build scheduled for the next time
-		// bucket, skip the update.
-		return false, nil
-	}
-
-	// Wait until the start of the next time bucket.
-	time.Sleep(time.Until(nextTimeBucket))
-	newCreatedAt, err := redis.Int64(conn.Do("GET", nextTimeBucketKey))
-	if err != nil {
-		return true, err
-	}
-
-	// If the update event was not replaced by event by a newer build, we should
-	// run the update with this build.
-	if newCreatedAt == createdAt {
-		return true, nil
-	}
-
-	// Otherwise, skip the update.
-	logging.Infof(c, "skipping BuilderSummary update because a newer build was found")
-	return false, nil
 }

@@ -34,7 +34,6 @@ import (
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
 	bbv1 "go.chromium.org/luci/common/api/buildbucket/buildbucket/v1"
 	"go.chromium.org/luci/common/clock/testclock"
-	"go.chromium.org/luci/common/sync/parallel"
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/milo/common"
 	"go.chromium.org/luci/milo/common/model"
@@ -42,12 +41,9 @@ import (
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
 	"go.chromium.org/luci/server/caching"
-	"go.chromium.org/luci/server/redisconn"
 	"go.chromium.org/luci/server/router"
 
-	"github.com/alicebob/miniredis/v2"
 	"github.com/golang/mock/gomock"
-	"github.com/gomodule/redigo/redis"
 	. "github.com/smartystreets/goconvey/convey"
 )
 
@@ -98,14 +94,13 @@ func TestPubSub(t *testing.T) {
 		builderSummary := &model.BuilderSummary{
 			BuilderID: "buildbucket/luci.fake.bucket/fake_builder",
 		}
-		err := datastore.Put(c, builderSummary)
-		So(err, ShouldBeNil)
+		datastore.Put(c, builderSummary)
 
 		// Initialize the appropriate project config.
-		err = datastore.Put(c, &common.Project{
-			ID: "fake",
+		datastore.Put(c, &common.Project{
+			ID:                "fake",
+			IgnoredBuilderIDs: []string{"bucket/fake_ignored_builder"},
 		})
-		So(err, ShouldBeNil)
 
 		// We'll copy this LegacyApiCommonBuildMessage base for convenience.
 		buildBase := bbv1.LegacyApiCommonBuildMessage{
@@ -297,202 +292,56 @@ func TestPubSub(t *testing.T) {
 				So(blder.LastFinishedBuildID, ShouldEqual, "buildbucket/2234")
 			})
 		})
-	})
-}
 
-func TestShouldUpdateBuilderSummary(t *testing.T) {
-	Convey("TestShouldUpdateBuilderSummary", t, func() {
-		ctx := context.Background()
+		Convey("Builders in IgnoredBuilderIds should be ignored", func() {
+			created := timestamppb.New(RefTime.Add(2 * time.Hour))
+			started := timestamppb.New(RefTime.Add(3 * time.Hour))
+			updated := timestamppb.New(RefTime.Add(5 * time.Hour))
 
-		// Set up a test redis server.
-		s, err := miniredis.Run()
-		So(err, ShouldBeNil)
-		defer s.Close()
-		ctx = redisconn.UsePool(ctx, &redis.Pool{
-			Dial: func() (redis.Conn, error) {
-				return redis.Dial("tcp", s.Addr())
-			},
-		})
-
-		createBuildSummary := func(builderID string, status buildbucketpb.Status, createdAt time.Time) *model.BuildSummary {
-			return &model.BuildSummary{
-				BuilderID: builderID,
-				Summary: model.Summary{
-					Status: milostatus.FromBuildbucket(status),
-				},
-				Created: createdAt,
+			builderID := buildbucketpb.BuilderID{
+				Project: "fake",
+				Bucket:  "bucket",
+				Builder: "fake_ignored_builder",
 			}
-		}
+			mbc.EXPECT().GetBuild(gomock.Any(), gomock.Any()).Return(&buildbucketpb.Build{
+				Id:         3234,
+				Status:     buildbucketpb.Status_SUCCESS,
+				CreateTime: created,
+				StartTime:  started,
+				UpdateTime: updated,
+				Builder:    &builderID,
+			}, nil).AnyTimes()
 
-		Convey("Single call", func() {
-			pivot := time.Unix((time.Now().Unix()/entityUpdateIntervalInS)*entityUpdateIntervalInS, 100)
-			start := time.Now()
-			shouldUpdate, err := shouldUpdateBuilderSummary(ctx, createBuildSummary("test-builder-id-1", buildbucketpb.Status_SUCCESS, pivot))
-			So(err, ShouldBeNil)
-			So(shouldUpdate, ShouldBeTrue)
+			bKey := MakeBuildKey(c, "hostname", "3234")
+			eBuild := bbv1.LegacyApiCommonBuildMessage{
+				Id:        3234,
+				Project:   "fake",
+				Bucket:    "luci.fake.bucket",
+				Tags:      []string{"builder:fake_ignored_builder"},
+				CreatedBy: string(identity.AnonymousIdentity),
+				CreatedTs: bbv1.FormatTimestamp(RefTime.Add(2 * time.Hour)),
+				StartedTs: bbv1.FormatTimestamp(RefTime.Add(3 * time.Hour)),
+				UpdatedTs: bbv1.FormatTimestamp(RefTime.Add(4 * time.Hour)),
+				Status:    "COMPLETED",
+				Result:    "SUCCESS",
+			}
 
-			// If there's no recent updates, the call should return immediately.
-			// So builds from low traffic builders can be processed immediately.
-			So(time.Since(start), ShouldBeLessThan, 10*time.Millisecond)
-		})
-
-		Convey("Single call followed by multiple parallel calls", func() {
-			pivot := time.Unix((time.Now().Unix()/entityUpdateIntervalInS)*entityUpdateIntervalInS, 100)
-
-			shouldUpdates := make([]bool, 4)
-
-			shouldUpdate, err := shouldUpdateBuilderSummary(ctx, createBuildSummary("test-builder-id-2", buildbucketpb.Status_SUCCESS, pivot))
-			So(err, ShouldBeNil)
-			shouldUpdates[0] = shouldUpdate
-
-			err = parallel.FanOutIn(func(tasks chan<- func() error) {
-				tasks <- func() error {
-					createdAt := pivot.Add(5 * time.Millisecond)
-					shouldUpdate, err := shouldUpdateBuilderSummary(ctx, createBuildSummary("test-builder-id-2", buildbucketpb.Status_SUCCESS, createdAt))
-					shouldUpdates[1] = shouldUpdate
-					return err
-				}
-
-				tasks <- func() error {
-					time.Sleep(5 * time.Millisecond)
-					createdAt := pivot.Add(15 * time.Millisecond)
-					shouldUpdate, err := shouldUpdateBuilderSummary(ctx, createBuildSummary("test-builder-id-2", buildbucketpb.Status_SUCCESS, createdAt))
-					shouldUpdates[2] = shouldUpdate
-					return err
-				}
-
-				tasks <- func() error {
-					time.Sleep(10 * time.Millisecond)
-					createdAt := pivot.Add(15 * time.Millisecond)
-					shouldUpdate, err := shouldUpdateBuilderSummary(ctx, createBuildSummary("test-builder-id-2", buildbucketpb.Status_SUCCESS, createdAt))
-					shouldUpdates[3] = shouldUpdate
-					return err
-				}
+			h := httptest.NewRecorder()
+			r := &http.Request{Body: makeReq(eBuild)}
+			PubSubHandler(&router.Context{
+				Context: c,
+				Writer:  h,
+				Request: r,
 			})
-			So(err, ShouldBeNil)
+			So(h.Code, ShouldEqual, 200)
 
-			// The first value should be true because there's no recent updates.
-			So(shouldUpdates[0], ShouldBeTrue)
+			buildAct := model.BuildSummary{BuildKey: bKey}
+			err := datastore.Get(c, &buildAct)
+			So(err, ShouldEqual, datastore.ErrNoSuchEntity)
 
-			// The second value should be false because there's a recent update, so it
-			// moves to the next time bucket, wait for the timebucket to begin.
-			// Then it's replaced by the next shouldUpdateBuilderSummary call.
-			So(shouldUpdates[1], ShouldBeFalse)
-
-			// The third value should be true because it has a newer build than the
-			// current one. And it's not replaced by any new builds.
-			So(shouldUpdates[2], ShouldBeTrue)
-
-			// The forth value should be false because the build is not created earlier
-			// than the build associated with the current pending update in it's pending bucket.
-			So(shouldUpdates[3], ShouldBeFalse)
-		})
-
-		Convey("Single call followed by multiple parallel calls that are nanoseconds apart", func() {
-			// This test ensures that the timestamp percision is not lost.
-
-			pivot := time.Unix((time.Now().Unix()/entityUpdateIntervalInS)*entityUpdateIntervalInS, 100)
-
-			shouldUpdates := make([]bool, 4)
-
-			shouldUpdate, err := shouldUpdateBuilderSummary(ctx, createBuildSummary("test-builder-id-3", buildbucketpb.Status_SUCCESS, pivot))
-			So(err, ShouldBeNil)
-			shouldUpdates[0] = shouldUpdate
-
-			err = parallel.FanOutIn(func(tasks chan<- func() error) {
-				tasks <- func() error {
-					createdAt := pivot.Add(time.Nanosecond)
-					shouldUpdate, err := shouldUpdateBuilderSummary(ctx, createBuildSummary("test-builder-id-3", buildbucketpb.Status_SUCCESS, createdAt))
-					shouldUpdates[1] = shouldUpdate
-					return err
-				}
-
-				tasks <- func() error {
-					time.Sleep(5 * time.Millisecond)
-					createdAt := pivot.Add(2 * time.Nanosecond)
-					shouldUpdate, err := shouldUpdateBuilderSummary(ctx, createBuildSummary("test-builder-id-3", buildbucketpb.Status_SUCCESS, createdAt))
-					shouldUpdates[2] = shouldUpdate
-					return err
-				}
-
-				tasks <- func() error {
-					time.Sleep(10 * time.Millisecond)
-					createdAt := pivot.Add(2 * time.Nanosecond)
-					shouldUpdate, err := shouldUpdateBuilderSummary(ctx, createBuildSummary("test-builder-id-3", buildbucketpb.Status_SUCCESS, createdAt))
-					shouldUpdates[3] = shouldUpdate
-					return err
-				}
-			})
-			So(err, ShouldBeNil)
-
-			// The first value should be true because there's no pending/recent updates.
-			So(shouldUpdates[0], ShouldBeTrue)
-
-			// The second value should be false because there's a recent update, so it
-			// moves to the next time bucket, wait for the timebucket to begin.
-			// Then it's replaced by the next shouldUpdateBuilderSummary call.
-			So(shouldUpdates[1], ShouldBeFalse)
-
-			// The third value should be true because it has a newer build than the
-			// current pending one. And it's not replaced by any new builds.
-			So(shouldUpdates[2], ShouldBeTrue)
-
-			// The forth value should be false because the build is not created earlier
-			// than the build associated with the current pending update in it's pending bucket.
-			So(shouldUpdates[3], ShouldBeFalse)
-		})
-
-		Convey("Single call followed by multiple parallel calls in different time buckets", func() {
-			pivot := time.Unix((time.Now().Unix()/entityUpdateIntervalInS)*entityUpdateIntervalInS, 100)
-
-			shouldUpdates := make([]bool, 4)
-
-			shouldUpdate, err := shouldUpdateBuilderSummary(ctx, createBuildSummary("test-builder-id-4", buildbucketpb.Status_SUCCESS, pivot))
-			So(err, ShouldBeNil)
-			shouldUpdates[0] = shouldUpdate
-
-			time.Sleep(time.Duration(entityUpdateIntervalInS * int64(time.Second)))
-			err = parallel.FanOutIn(func(tasks chan<- func() error) {
-				tasks <- func() error {
-					createdAt := pivot.Add(5 * time.Millisecond)
-					shouldUpdate, err := shouldUpdateBuilderSummary(ctx, createBuildSummary("test-builder-id-4", buildbucketpb.Status_SUCCESS, createdAt))
-					shouldUpdates[1] = shouldUpdate
-					return err
-				}
-
-				tasks <- func() error {
-					time.Sleep(5 * time.Millisecond)
-					createdAt := pivot.Add(15 * time.Millisecond)
-					shouldUpdate, err := shouldUpdateBuilderSummary(ctx, createBuildSummary("test-builder-id-4", buildbucketpb.Status_SUCCESS, createdAt))
-					shouldUpdates[2] = shouldUpdate
-					return err
-				}
-
-				tasks <- func() error {
-					time.Sleep(10 * time.Millisecond)
-					createdAt := pivot.Add(20 * time.Millisecond)
-					shouldUpdate, err := shouldUpdateBuilderSummary(ctx, createBuildSummary("test-builder-id-4", buildbucketpb.Status_SUCCESS, createdAt))
-					shouldUpdates[3] = shouldUpdate
-					return err
-				}
-			})
-			So(err, ShouldBeNil)
-
-			// The first value should be true because there's no pending/recent updates.
-			So(shouldUpdates[0], ShouldBeTrue)
-
-			// The second value should be true because it has move to a new time bucket
-			// and there's no pending/recent updates in that bucket.
-			So(shouldUpdates[1], ShouldBeTrue)
-
-			// The third value should be false because there's a recent update, so it
-			// moves to the next time bucket, wait for the timebucket to begin.
-			// Then it's replaced by the next shouldUpdateBuilderSummary call.
-			So(shouldUpdates[2], ShouldBeFalse)
-
-			// The forth value should be true because it has a newer build than the
-			// current pending one. And it's not replaced by any new builds.
-			So(shouldUpdates[3], ShouldBeTrue)
+			blder := model.BuilderSummary{BuilderID: common.LegacyBuilderIDString(&builderID)}
+			err = datastore.Get(c, &blder)
+			So(err, ShouldEqual, datastore.ErrNoSuchEntity)
 		})
 	})
 }
