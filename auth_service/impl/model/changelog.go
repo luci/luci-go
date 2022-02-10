@@ -21,6 +21,9 @@ import (
 	"strings"
 	"time"
 
+	"google.golang.org/protobuf/types/known/timestamppb"
+
+	"go.chromium.org/luci/auth_service/api/rpcpb"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/gae/service/datastore"
@@ -74,6 +77,47 @@ var (
 	targetRegexp = regexp.MustCompile(`^[0-9a-zA-Z_]{1,40}\$` + // entity kind
 		`[0-9a-zA-Z_\-\./ @]{1,300}` + // entity ID (group, IP allowlist)
 		`(\$[0-9a-zA-Z_@\-\./\:\* ]{1,200})?$`) // optional subentity ID
+
+	changeTypeStringMap = map[ChangeType]string{
+		// AuthDBGroupChange change types.
+		1000: "GROUP_CREATED",
+		1100: "GROUP_DESCRIPTION_CHANGED",
+		1150: "GROUP_OWNERS_CHANGED",
+		1200: "GROUP_MEMBERS_ADDED",
+		1300: "GROUP_MEMBERS_REMOVED",
+		1400: "GROUP_GLOBS_ADDED",
+		1500: "GROUP_GLOBS_REMOVED",
+		1600: "GROUP_NESTED_ADDED",
+		1700: "GROUP_NESTED_REMOVED",
+		1800: "GROUP_DELETED",
+
+		// AuthDBIPWhitelistChange change types.
+		3000: "IPWL_CREATED",
+		3100: "IPWL_DESCRIPTION_CHANGED",
+		3200: "IPWL_SUBNETS_ADDED",
+		3300: "IPWL_SUBNETS_REMOVED",
+		3400: "IPWL_DELETED",
+
+		// AuthDBIPWhitelistAssignmentChange change types.
+		5000: "IPWLASSIGN_SET",
+		5100: "IPWLASSIGN_UNSET",
+
+		// AuthDBConfigChange change types.
+		7000: "CONF_OAUTH_CLIENT_CHANGED",
+		7100: "CONF_CLIENT_IDS_ADDED",
+		7200: "CONF_CLIENT_IDS_REMOVED",
+		7300: "CONF_TOKEN_SERVER_URL_CHANGED",
+		7400: "CONF_SECURITY_CONFIG_CHANGED",
+
+		// AuthRealmsGlobalsChange change types.
+		9000: "REALMS_GLOBALS_CHANGED",
+
+		// AuthProjectRealmsChange change types.
+		10000: "PROJECT_REALMS_CREATED",
+		10100: "PROJECT_REALMS_CHANGED",
+		10200: "PROJECT_REALMS_REEVALUATED",
+		10300: "PROJECT_REALMS_REMOVED",
+	}
 )
 
 // AuthDBChange is the base (embedded) struct for change log entries.
@@ -191,7 +235,7 @@ func ChangeID(ctx context.Context, change *AuthDBChange) (string, error) {
 // target/authDBRev is specified.
 //
 // Returns an annotated error.
-func GetAllAuthDBChange(ctx context.Context, target string, authDBRev int64) ([]*AuthDBChange, error) {
+func GetAllAuthDBChange(ctx context.Context, target string, authDBRev int64, pageSize int32, pageToken string) (changes []*AuthDBChange, nextPageToken string, err error) {
 	var ancestor *datastore.Key
 	if authDBRev != 0 {
 		ancestor = ChangeLogRevisionKey(ctx, authDBRev)
@@ -204,15 +248,82 @@ func GetAllAuthDBChange(ctx context.Context, target string, authDBRev int64) ([]
 	query := datastore.NewQuery("AuthDBChange").Ancestor(ancestor).Order("-__key__")
 	if target != "" {
 		if !targetRegexp.MatchString(target) {
-			return nil, errors.Reason("Invalid target %s", target).Err()
+			return nil, "", errors.Reason("Invalid target %s", target).Err()
 		}
 		query = query.Eq("target", target)
 	}
 
-	var changes []*AuthDBChange
-	err := datastore.GetAll(ctx, query, &changes)
-	if err != nil {
-		return nil, errors.Annotate(err, "error getting all AuthDBChange entities").Err()
+	var cursor datastore.Cursor
+	if pageToken != "" {
+		cursor, err = datastore.DecodeCursor(ctx, pageToken)
+		if err != nil {
+			return nil, "", errors.Annotate(err, "error decoding cursor from pageToken").Err()
+		}
 	}
-	return changes, nil
+	if cursor != nil {
+		query = query.Start(cursor)
+	}
+
+	var nextCur datastore.Cursor
+	err = datastore.Run(ctx, query, func(change *AuthDBChange, cb datastore.CursorCB) error {
+		changes = append(changes, change)
+		if len(changes) >= int(pageSize) {
+			if nextCur, err = cb(); err != nil {
+				return err
+			}
+			return datastore.Stop
+		}
+		return nil
+	})
+	if err != nil {
+		return nil, "", errors.Annotate(err, "error getting all AuthDBChange entities").Err()
+	}
+	if nextCur != nil {
+		nextPageToken = nextCur.String()
+	}
+	return
+}
+
+func (ct ChangeType) ToString() string {
+	val, ok := changeTypeStringMap[ct]
+	if !ok {
+		return "UNDEFINED_CHANGE_TYPE"
+	}
+	return val
+}
+
+func (change *AuthDBChange) ToProto() *rpcpb.AuthDBChange {
+	return &rpcpb.AuthDBChange{
+		ChangeType:               change.ChangeType.ToString(),
+		Target:                   change.Target,
+		AuthDbRev:                change.AuthDBRev,
+		Who:                      change.Who,
+		When:                     timestamppb.New(change.When),
+		Comment:                  change.Comment,
+		AppVersion:               change.AppVersion,
+		Description:              change.Description,
+		OldDescription:           change.OldDescription,
+		Owners:                   change.Owners,
+		OldOwners:                change.OldOwners,
+		Members:                  change.Members,
+		Globs:                    change.Globs,
+		Nested:                   change.Nested,
+		Subnets:                  change.Subnets,
+		Identity:                 change.Identity,
+		IpAllowList:              change.IPAllowlist,
+		OauthClientId:            change.OauthClientID,
+		OauthClientSecret:        change.OauthClientSecret,
+		OauthAdditionalClientIds: change.OauthAdditionalClientIDs,
+		TokenServerUrlOld:        change.TokenServerURLOld,
+		TokenServerUrlNew:        change.TokenServerURLNew,
+		SecurityConfigOld:        string(change.SecurityConfigOld),
+		SecurityConfigNew:        string(change.SecurityConfigNew),
+		PermissionsAdded:         change.PermissionsAdded,
+		PermissionsChanged:       change.PermissionsChanged,
+		PermissionsRemoved:       change.PermissionsRemoved,
+		ConfigRevOld:             change.ConfigRevOld,
+		ConfigRevNew:             change.ConfigRevNew,
+		PermsRevOld:              change.PermsRevOld,
+		PermsRevNew:              change.PermsRevNew,
+	}
 }
