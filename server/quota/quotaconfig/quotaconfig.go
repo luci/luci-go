@@ -78,14 +78,24 @@ func (m *Memory) Refresh(ctx context.Context) error {
 }
 
 // NewMemory returns a new Memory initialized with the given policies.
-func NewMemory(policies []*pb.Policy) Interface {
+func NewMemory(ctx context.Context, policies []*pb.Policy) (Interface, error) {
 	m := &Memory{
 		policies: make(map[string]*pb.Policy, len(policies)),
 	}
-	for _, p := range policies {
-		m.policies[p.Name] = p
+	v := &validation.Context{
+		Context: ctx,
 	}
-	return m
+	for i, p := range policies {
+		p = proto.Clone(p).(*pb.Policy)
+		v.Enter("policy %d", i)
+		ValidatePolicy(v, p)
+		m.policies[p.Name] = p
+		v.Exit()
+	}
+	if err := v.Finalize(); err != nil {
+		return nil, errors.Annotate(err, "policies did not pass validation").Err()
+	}
+	return m, nil
 }
 
 // policyName is a *regexp.Regexp which policy names must match.

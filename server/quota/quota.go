@@ -34,14 +34,20 @@ import (
 
 var cfgKey = "cfg"
 
-// WithConfig returns a context.Context directing this package to use the given
+// Use returns a context.Context directing this package to use the given
 // quotaconfig.Interface.
-func WithConfig(ctx context.Context, cfg quotaconfig.Interface) context.Context {
+func Use(ctx context.Context, cfg quotaconfig.Interface) context.Context {
 	return context.WithValue(ctx, &cfgKey, cfg)
 }
 
-func getConfig(ctx context.Context) quotaconfig.Interface {
-	return ctx.Value(&cfgKey).(quotaconfig.Interface)
+// getInterface returns the quotaconfig.Interface available in the given
+// context.Context. Panics if no quotaconfig.Interface is available (see Use).
+func getInterface(ctx context.Context) quotaconfig.Interface {
+	cfg, ok := ctx.Value(&cfgKey).(quotaconfig.Interface)
+	if !ok {
+		panic(errors.Reason("quotaconfig.Interface implementation not found (ensure quota.Use is called in server.Main)").Err())
+	}
+	return cfg
 }
 
 type Options struct {
@@ -114,7 +120,7 @@ var setEntry = template.Must(template.New("setEntry").Parse(`
 // (see WithConfig).
 func DebitQuota(ctx context.Context, debits map[string]int64, opts *Options) error {
 	now := clock.Now(ctx).Unix()
-	cfg := getConfig(ctx)
+	cfg := getInterface(ctx)
 
 	defs := make(map[string]*pb.Policy, len(debits))
 	adjs := make(map[string]int64, len(debits))

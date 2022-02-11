@@ -36,6 +36,24 @@ import (
 func TestQuota(t *testing.T) {
 	t.Parallel()
 
+	Convey("getInterface", t, func() {
+		ctx := context.Background()
+
+		Convey("panic", func() {
+			shouldPanic := func() {
+				getInterface(ctx)
+			}
+			So(shouldPanic, ShouldPanicLike, "quotaconfig.Interface implementation not found")
+		})
+
+		Convey("ok", func() {
+			m, err := quotaconfig.NewMemory(ctx, nil)
+			So(err, ShouldBeNil)
+			ctx = Use(ctx, m)
+			So(getInterface(ctx), ShouldNotBeNil)
+		})
+	})
+
 	Convey("DebitQuota", t, func() {
 		s, err := miniredis.Run()
 		So(err, ShouldBeNil)
@@ -45,7 +63,7 @@ func TestQuota(t *testing.T) {
 				return redis.Dial("tcp", s.Addr())
 			},
 		})
-		ctx = WithConfig(ctx, quotaconfig.NewMemory([]*pb.Policy{
+		m, err := quotaconfig.NewMemory(ctx, []*pb.Policy{
 			{
 				Name:          "quota",
 				Resources:     5,
@@ -56,8 +74,9 @@ func TestQuota(t *testing.T) {
 				Resources:     2,
 				Replenishment: 1,
 			},
-		}))
-		ctx, tc := testclock.UseTime(ctx, testclock.TestRecentTimeLocal)
+		})
+		So(err, ShouldBeNil)
+		ctx, tc := testclock.UseTime(Use(ctx, m), testclock.TestRecentTimeLocal)
 		now := strconv.FormatInt(tc.Now().Unix(), 10)
 
 		Convey("empty database", func() {

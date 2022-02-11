@@ -21,8 +21,6 @@ import (
 	"go.chromium.org/luci/server/cron"
 	"go.chromium.org/luci/server/module"
 	"go.chromium.org/luci/server/redisconn"
-
-	"go.chromium.org/luci/server/quota/quotaconfig"
 )
 
 // ModuleName is the globally-unique name for this module.
@@ -46,15 +44,34 @@ func (*quotaModule) Dependencies() []module.Dependency {
 	}
 }
 
-// Initialize initializes this module by installing cron routes if configured (see ModuleOptions).
-// Implements module.Module
+// Initialize initializes this module by ensuring a quotaconfig.Interface
+// implementation is available in the serving context, and installing cron
+// routes if configured (see ModuleOptions).
+// Implements module.Module.
 func (m *quotaModule) Initialize(ctx context.Context, host module.Host, opts module.HostOptions) (context.Context, error) {
-	// TODO(crbug/1280055): Ensure m.opts.ConfigInterface is not nil.
-	if m.opts.ConfigRefreshCronHandlerID != "" {
-		cron.RegisterHandler(m.opts.ConfigRefreshCronHandlerID, func(ctx context.Context) error {
-			return m.opts.ConfigInterface.Refresh(ctx)
-		})
-	}
+	// server.Main calls Initialize before calling the user-provided callback where
+	// users of the quota library are likely to provide a quotaconfig.Interface.
+	// Use a warmup callback, which is called after the user-provided callback has
+	// been executed, to run initialization logic requiring quotaconfig.Interface.
+	host.RegisterWarmup(func(ctx context.Context) {
+		// getInterface panics if a quotaconfig.Interface isn't available (see Use).
+		// Intentionally force a panic if one isn't available.
+		cfg := getInterface(ctx)
+
+		// Register the cron handler if specified.
+		if m.opts.ConfigRefreshCronHandlerID != "" {
+			cron.RegisterHandler(m.opts.ConfigRefreshCronHandlerID, func(ctx context.Context) error {
+				// Fetch the quotaconfig.Interface from the context each time
+				// in case the implementation being used changes later on.
+				return getInterface(ctx).Refresh(ctx)
+			})
+		}
+
+		// Attempt to call Refresh so policy configs are available before serving.
+		// This is best-effort, users should ensure they're calling Refresh regularly
+		// (either manually, or by setting m.opts.ConfigRefreshCronHandlerID).
+		_ = cfg.Refresh(ctx)
+	})
 	return ctx, nil
 }
 
@@ -66,16 +83,12 @@ func (*quotaModule) Name() module.Name {
 
 // ModuleOptions is a set of configuration options for the quota module.
 type ModuleOptions struct {
-	// ConfigInterface is the quotaconfig.Interface this module should use to
-	// fetch policy configs. Refresh should be called periodically to ensure
-	// policy configs are up to date (see ConfigRefreshHandler below).
-	ConfigInterface quotaconfig.Interface
-
 	// ConfigRefreshCronHandlerID is the ID for this module's config refresh
-	// handler. The handler will be installed at <serving-prefix>/<ID>. The serving
-	// prefix is controlled by the server/cron module. If unspecified, module users
-	// should refresh policy configs periodically by manually calling
-	// ConfigInterface.Refresh (see ConfigInterface above).
+	// handler. If specified, the module ensures Refresh is called on the
+	// quotaconfig.Interface in the server context. The handler will be installed
+	// at <serving-prefix>/<ID>. The serving prefix is controlled by server/cron.
+	// If unspecified, module users should refresh policy configs periodically by
+	// manually calling Refresh.
 	ConfigRefreshCronHandlerID string
 }
 
