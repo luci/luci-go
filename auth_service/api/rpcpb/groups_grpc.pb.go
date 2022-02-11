@@ -25,6 +25,10 @@ type GroupsClient interface {
 	ListGroups(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*ListGroupsResponse, error)
 	// GetGroup returns information about an individual group, given the name.
 	GetGroup(ctx context.Context, in *GetGroupRequest, opts ...grpc.CallOption) (*AuthGroup, error)
+	// GetSubgraph returns a Subgraph without information about groups that
+	// include a principal (perhaps indirectly or via globs). Here a principal is
+	// either an identity, a group or a glob (see PrincipalKind enum).
+	GetSubgraph(ctx context.Context, in *GetSubgraphRequest, opts ...grpc.CallOption) (*Subgraph, error)
 }
 
 type groupsClient struct {
@@ -53,6 +57,15 @@ func (c *groupsClient) GetGroup(ctx context.Context, in *GetGroupRequest, opts .
 	return out, nil
 }
 
+func (c *groupsClient) GetSubgraph(ctx context.Context, in *GetSubgraphRequest, opts ...grpc.CallOption) (*Subgraph, error) {
+	out := new(Subgraph)
+	err := c.cc.Invoke(ctx, "/auth.service.Groups/GetSubgraph", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // GroupsServer is the server API for Groups service.
 // All implementations must embed UnimplementedGroupsServer
 // for forward compatibility
@@ -63,6 +76,10 @@ type GroupsServer interface {
 	ListGroups(context.Context, *emptypb.Empty) (*ListGroupsResponse, error)
 	// GetGroup returns information about an individual group, given the name.
 	GetGroup(context.Context, *GetGroupRequest) (*AuthGroup, error)
+	// GetSubgraph returns a Subgraph without information about groups that
+	// include a principal (perhaps indirectly or via globs). Here a principal is
+	// either an identity, a group or a glob (see PrincipalKind enum).
+	GetSubgraph(context.Context, *GetSubgraphRequest) (*Subgraph, error)
 	mustEmbedUnimplementedGroupsServer()
 }
 
@@ -75,6 +92,9 @@ func (UnimplementedGroupsServer) ListGroups(context.Context, *emptypb.Empty) (*L
 }
 func (UnimplementedGroupsServer) GetGroup(context.Context, *GetGroupRequest) (*AuthGroup, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetGroup not implemented")
+}
+func (UnimplementedGroupsServer) GetSubgraph(context.Context, *GetSubgraphRequest) (*Subgraph, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetSubgraph not implemented")
 }
 func (UnimplementedGroupsServer) mustEmbedUnimplementedGroupsServer() {}
 
@@ -125,6 +145,24 @@ func _Groups_GetGroup_Handler(srv interface{}, ctx context.Context, dec func(int
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Groups_GetSubgraph_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetSubgraphRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(GroupsServer).GetSubgraph(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/auth.service.Groups/GetSubgraph",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(GroupsServer).GetSubgraph(ctx, req.(*GetSubgraphRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // Groups_ServiceDesc is the grpc.ServiceDesc for Groups service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -139,6 +177,10 @@ var Groups_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetGroup",
 			Handler:    _Groups_GetGroup_Handler,
+		},
+		{
+			MethodName: "GetSubgraph",
+			Handler:    _Groups_GetSubgraph_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

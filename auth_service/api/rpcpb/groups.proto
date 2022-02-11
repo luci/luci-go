@@ -30,6 +30,11 @@ service Groups {
 
   // GetGroup returns information about an individual group, given the name.
   rpc GetGroup(GetGroupRequest) returns (AuthGroup);
+
+  // GetSubgraph returns a Subgraph without information about groups that
+  // include a principal (perhaps indirectly or via globs). Here a principal is
+  // either an identity, a group or a glob (see PrincipalKind enum).
+  rpc GetSubgraph(GetSubgraphRequest) returns (Subgraph);
 }
 
 // ListGroupsResponse is all the groups listed in LUCI Auth Service.
@@ -53,4 +58,49 @@ message AuthGroup {
   string owners = 6;            // e.g: "administrators"
   google.protobuf.Timestamp created_ts = 7;  // e.g: "1972-01-01T10:00:20.021Z"
   string created_by = 8;                     // e.g: "user:test@example.com"
+}
+
+// GetSubgraphRequest contains the Principal that is the basis of the search
+// for inclusion and is the root of the output subgraph.
+message GetSubgraphRequest {
+  Principal principal = 1;
+}
+
+// The Subgraph returned by GetSubgraph RPC.
+//
+// The node representing a principal passed to GetSubgraph is always the
+// first in the list.
+message Subgraph {
+  repeated Node nodes = 1;
+}
+
+// PrincipalKind denotes the type of principal of a specific entity.
+enum PrincipalKind {
+  PRINCIPAL_KIND_UNSPECIFIED = 0;
+  // A single individual identity, e.g. "user:someone@example.com".
+  IDENTITY = 1;
+  // A group name, e.g. "some-group".
+  GROUP = 2;
+  // An identity glob, e.g. "user*@example.com".
+  GLOB = 3;
+}
+
+// Principal is an entity that can be found in the Subgraph. A Principal can
+// represent a group, identity, or glob. See PrincipalKind for clarification on
+// how each Principal kind is represented.
+message Principal {
+  PrincipalKind kind = 1;  // e.g. IDENTITY, GROUP, GLOB
+  string name = 2;  // e.g. "user*@example.com", "some-group", "user:m0@example.com"
+}
+
+// Each Node is a representation of a Principal.
+// Each subgraph will only contain one Node per principal; in other words,
+// a principal uniquely identifies a Node.
+message Node {
+  // The principal represented by this node.
+  Principal principal = 1;
+  // Nodes that directly include this principal.
+  //
+  // Each item is an index of a Node in Subgraph's `nodes` list.
+  repeated int32 included_by = 2;
 }

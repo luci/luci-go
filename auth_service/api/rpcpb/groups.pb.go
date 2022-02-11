@@ -36,6 +36,62 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
+// PrincipalKind denotes the type of principal of a specific entity.
+type PrincipalKind int32
+
+const (
+	PrincipalKind_PRINCIPAL_KIND_UNSPECIFIED PrincipalKind = 0
+	// A single individual identity, e.g. "user:someone@example.com".
+	PrincipalKind_IDENTITY PrincipalKind = 1
+	// A group name, e.g. "some-group".
+	PrincipalKind_GROUP PrincipalKind = 2
+	// An identity glob, e.g. "user*@example.com".
+	PrincipalKind_GLOB PrincipalKind = 3
+)
+
+// Enum value maps for PrincipalKind.
+var (
+	PrincipalKind_name = map[int32]string{
+		0: "PRINCIPAL_KIND_UNSPECIFIED",
+		1: "IDENTITY",
+		2: "GROUP",
+		3: "GLOB",
+	}
+	PrincipalKind_value = map[string]int32{
+		"PRINCIPAL_KIND_UNSPECIFIED": 0,
+		"IDENTITY":                   1,
+		"GROUP":                      2,
+		"GLOB":                       3,
+	}
+)
+
+func (x PrincipalKind) Enum() *PrincipalKind {
+	p := new(PrincipalKind)
+	*p = x
+	return p
+}
+
+func (x PrincipalKind) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (PrincipalKind) Descriptor() protoreflect.EnumDescriptor {
+	return file_go_chromium_org_luci_auth_service_api_rpcpb_groups_proto_enumTypes[0].Descriptor()
+}
+
+func (PrincipalKind) Type() protoreflect.EnumType {
+	return &file_go_chromium_org_luci_auth_service_api_rpcpb_groups_proto_enumTypes[0]
+}
+
+func (x PrincipalKind) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use PrincipalKind.Descriptor instead.
+func (PrincipalKind) EnumDescriptor() ([]byte, []int) {
+	return file_go_chromium_org_luci_auth_service_api_rpcpb_groups_proto_rawDescGZIP(), []int{0}
+}
+
 // ListGroupsResponse is all the groups listed in LUCI Auth Service.
 type ListGroupsResponse struct {
 	state         protoimpl.MessageState
@@ -237,6 +293,226 @@ func (x *AuthGroup) GetCreatedBy() string {
 	return ""
 }
 
+// GetSubgraphRequest contains the Principal that is the basis of the search
+// for inclusion and is the root of the output subgraph.
+type GetSubgraphRequest struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	Principal *Principal `protobuf:"bytes,1,opt,name=principal,proto3" json:"principal,omitempty"`
+}
+
+func (x *GetSubgraphRequest) Reset() {
+	*x = GetSubgraphRequest{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_go_chromium_org_luci_auth_service_api_rpcpb_groups_proto_msgTypes[3]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *GetSubgraphRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetSubgraphRequest) ProtoMessage() {}
+
+func (x *GetSubgraphRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_go_chromium_org_luci_auth_service_api_rpcpb_groups_proto_msgTypes[3]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetSubgraphRequest.ProtoReflect.Descriptor instead.
+func (*GetSubgraphRequest) Descriptor() ([]byte, []int) {
+	return file_go_chromium_org_luci_auth_service_api_rpcpb_groups_proto_rawDescGZIP(), []int{3}
+}
+
+func (x *GetSubgraphRequest) GetPrincipal() *Principal {
+	if x != nil {
+		return x.Principal
+	}
+	return nil
+}
+
+// The Subgraph returned by GetSubgraph RPC.
+//
+// The node representing a principal passed to GetSubgraph is always the
+// first in the list.
+type Subgraph struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	Nodes []*Node `protobuf:"bytes,1,rep,name=nodes,proto3" json:"nodes,omitempty"`
+}
+
+func (x *Subgraph) Reset() {
+	*x = Subgraph{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_go_chromium_org_luci_auth_service_api_rpcpb_groups_proto_msgTypes[4]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *Subgraph) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*Subgraph) ProtoMessage() {}
+
+func (x *Subgraph) ProtoReflect() protoreflect.Message {
+	mi := &file_go_chromium_org_luci_auth_service_api_rpcpb_groups_proto_msgTypes[4]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use Subgraph.ProtoReflect.Descriptor instead.
+func (*Subgraph) Descriptor() ([]byte, []int) {
+	return file_go_chromium_org_luci_auth_service_api_rpcpb_groups_proto_rawDescGZIP(), []int{4}
+}
+
+func (x *Subgraph) GetNodes() []*Node {
+	if x != nil {
+		return x.Nodes
+	}
+	return nil
+}
+
+// Principal is an entity that can be found in the Subgraph. A Principal can
+// represent a group, identity, or glob. See PrincipalKind for clarification on
+// how each Principal kind is represented.
+type Principal struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	Kind PrincipalKind `protobuf:"varint,1,opt,name=kind,proto3,enum=auth.service.PrincipalKind" json:"kind,omitempty"` // e.g. IDENTITY, GROUP, GLOB
+	Name string        `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`                                  // e.g. "user*@example.com", "some-group", "user:m0@example.com"
+}
+
+func (x *Principal) Reset() {
+	*x = Principal{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_go_chromium_org_luci_auth_service_api_rpcpb_groups_proto_msgTypes[5]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *Principal) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*Principal) ProtoMessage() {}
+
+func (x *Principal) ProtoReflect() protoreflect.Message {
+	mi := &file_go_chromium_org_luci_auth_service_api_rpcpb_groups_proto_msgTypes[5]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use Principal.ProtoReflect.Descriptor instead.
+func (*Principal) Descriptor() ([]byte, []int) {
+	return file_go_chromium_org_luci_auth_service_api_rpcpb_groups_proto_rawDescGZIP(), []int{5}
+}
+
+func (x *Principal) GetKind() PrincipalKind {
+	if x != nil {
+		return x.Kind
+	}
+	return PrincipalKind_PRINCIPAL_KIND_UNSPECIFIED
+}
+
+func (x *Principal) GetName() string {
+	if x != nil {
+		return x.Name
+	}
+	return ""
+}
+
+// Each Node is a representation of a Principal.
+// Each subgraph will only contain one Node per principal; in other words,
+// a principal uniquely identifies a Node.
+type Node struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	// The principal represented by this node.
+	Principal *Principal `protobuf:"bytes,1,opt,name=principal,proto3" json:"principal,omitempty"`
+	// Nodes that directly include this principal.
+	//
+	// Each item is an index of a Node in Subgraph's `nodes` list.
+	IncludedBy []int32 `protobuf:"varint,2,rep,packed,name=included_by,json=includedBy,proto3" json:"included_by,omitempty"`
+}
+
+func (x *Node) Reset() {
+	*x = Node{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_go_chromium_org_luci_auth_service_api_rpcpb_groups_proto_msgTypes[6]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *Node) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*Node) ProtoMessage() {}
+
+func (x *Node) ProtoReflect() protoreflect.Message {
+	mi := &file_go_chromium_org_luci_auth_service_api_rpcpb_groups_proto_msgTypes[6]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use Node.ProtoReflect.Descriptor instead.
+func (*Node) Descriptor() ([]byte, []int) {
+	return file_go_chromium_org_luci_auth_service_api_rpcpb_groups_proto_rawDescGZIP(), []int{6}
+}
+
+func (x *Node) GetPrincipal() *Principal {
+	if x != nil {
+		return x.Principal
+	}
+	return nil
+}
+
+func (x *Node) GetIncludedBy() []int32 {
+	if x != nil {
+		return x.IncludedBy
+	}
+	return nil
+}
+
 var File_go_chromium_org_luci_auth_service_api_rpcpb_groups_proto protoreflect.FileDescriptor
 
 var file_go_chromium_org_luci_auth_service_api_rpcpb_groups_proto_rawDesc = []byte{
@@ -271,19 +547,49 @@ var file_go_chromium_org_luci_auth_service_api_rpcpb_groups_proto_rawDesc = []by
 	0x69, 0x6d, 0x65, 0x73, 0x74, 0x61, 0x6d, 0x70, 0x52, 0x09, 0x63, 0x72, 0x65, 0x61, 0x74, 0x65,
 	0x64, 0x54, 0x73, 0x12, 0x1d, 0x0a, 0x0a, 0x63, 0x72, 0x65, 0x61, 0x74, 0x65, 0x64, 0x5f, 0x62,
 	0x79, 0x18, 0x08, 0x20, 0x01, 0x28, 0x09, 0x52, 0x09, 0x63, 0x72, 0x65, 0x61, 0x74, 0x65, 0x64,
-	0x42, 0x79, 0x32, 0x94, 0x01, 0x0a, 0x06, 0x47, 0x72, 0x6f, 0x75, 0x70, 0x73, 0x12, 0x46, 0x0a,
-	0x0a, 0x4c, 0x69, 0x73, 0x74, 0x47, 0x72, 0x6f, 0x75, 0x70, 0x73, 0x12, 0x16, 0x2e, 0x67, 0x6f,
-	0x6f, 0x67, 0x6c, 0x65, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x62, 0x75, 0x66, 0x2e, 0x45, 0x6d,
-	0x70, 0x74, 0x79, 0x1a, 0x20, 0x2e, 0x61, 0x75, 0x74, 0x68, 0x2e, 0x73, 0x65, 0x72, 0x76, 0x69,
-	0x63, 0x65, 0x2e, 0x4c, 0x69, 0x73, 0x74, 0x47, 0x72, 0x6f, 0x75, 0x70, 0x73, 0x52, 0x65, 0x73,
-	0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x42, 0x0a, 0x08, 0x47, 0x65, 0x74, 0x47, 0x72, 0x6f, 0x75,
-	0x70, 0x12, 0x1d, 0x2e, 0x61, 0x75, 0x74, 0x68, 0x2e, 0x73, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65,
-	0x2e, 0x47, 0x65, 0x74, 0x47, 0x72, 0x6f, 0x75, 0x70, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74,
-	0x1a, 0x17, 0x2e, 0x61, 0x75, 0x74, 0x68, 0x2e, 0x73, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x2e,
-	0x41, 0x75, 0x74, 0x68, 0x47, 0x72, 0x6f, 0x75, 0x70, 0x42, 0x2d, 0x5a, 0x2b, 0x67, 0x6f, 0x2e,
-	0x63, 0x68, 0x72, 0x6f, 0x6d, 0x69, 0x75, 0x6d, 0x2e, 0x6f, 0x72, 0x67, 0x2f, 0x6c, 0x75, 0x63,
-	0x69, 0x2f, 0x61, 0x75, 0x74, 0x68, 0x5f, 0x73, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x2f, 0x61,
-	0x70, 0x69, 0x2f, 0x72, 0x70, 0x63, 0x70, 0x62, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
+	0x42, 0x79, 0x22, 0x4b, 0x0a, 0x12, 0x47, 0x65, 0x74, 0x53, 0x75, 0x62, 0x67, 0x72, 0x61, 0x70,
+	0x68, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x12, 0x35, 0x0a, 0x09, 0x70, 0x72, 0x69, 0x6e,
+	0x63, 0x69, 0x70, 0x61, 0x6c, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x17, 0x2e, 0x61, 0x75,
+	0x74, 0x68, 0x2e, 0x73, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x2e, 0x50, 0x72, 0x69, 0x6e, 0x63,
+	0x69, 0x70, 0x61, 0x6c, 0x52, 0x09, 0x70, 0x72, 0x69, 0x6e, 0x63, 0x69, 0x70, 0x61, 0x6c, 0x22,
+	0x34, 0x0a, 0x08, 0x53, 0x75, 0x62, 0x67, 0x72, 0x61, 0x70, 0x68, 0x12, 0x28, 0x0a, 0x05, 0x6e,
+	0x6f, 0x64, 0x65, 0x73, 0x18, 0x01, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x12, 0x2e, 0x61, 0x75, 0x74,
+	0x68, 0x2e, 0x73, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x2e, 0x4e, 0x6f, 0x64, 0x65, 0x52, 0x05,
+	0x6e, 0x6f, 0x64, 0x65, 0x73, 0x22, 0x50, 0x0a, 0x09, 0x50, 0x72, 0x69, 0x6e, 0x63, 0x69, 0x70,
+	0x61, 0x6c, 0x12, 0x2f, 0x0a, 0x04, 0x6b, 0x69, 0x6e, 0x64, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0e,
+	0x32, 0x1b, 0x2e, 0x61, 0x75, 0x74, 0x68, 0x2e, 0x73, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x2e,
+	0x50, 0x72, 0x69, 0x6e, 0x63, 0x69, 0x70, 0x61, 0x6c, 0x4b, 0x69, 0x6e, 0x64, 0x52, 0x04, 0x6b,
+	0x69, 0x6e, 0x64, 0x12, 0x12, 0x0a, 0x04, 0x6e, 0x61, 0x6d, 0x65, 0x18, 0x02, 0x20, 0x01, 0x28,
+	0x09, 0x52, 0x04, 0x6e, 0x61, 0x6d, 0x65, 0x22, 0x5e, 0x0a, 0x04, 0x4e, 0x6f, 0x64, 0x65, 0x12,
+	0x35, 0x0a, 0x09, 0x70, 0x72, 0x69, 0x6e, 0x63, 0x69, 0x70, 0x61, 0x6c, 0x18, 0x01, 0x20, 0x01,
+	0x28, 0x0b, 0x32, 0x17, 0x2e, 0x61, 0x75, 0x74, 0x68, 0x2e, 0x73, 0x65, 0x72, 0x76, 0x69, 0x63,
+	0x65, 0x2e, 0x50, 0x72, 0x69, 0x6e, 0x63, 0x69, 0x70, 0x61, 0x6c, 0x52, 0x09, 0x70, 0x72, 0x69,
+	0x6e, 0x63, 0x69, 0x70, 0x61, 0x6c, 0x12, 0x1f, 0x0a, 0x0b, 0x69, 0x6e, 0x63, 0x6c, 0x75, 0x64,
+	0x65, 0x64, 0x5f, 0x62, 0x79, 0x18, 0x02, 0x20, 0x03, 0x28, 0x05, 0x52, 0x0a, 0x69, 0x6e, 0x63,
+	0x6c, 0x75, 0x64, 0x65, 0x64, 0x42, 0x79, 0x2a, 0x52, 0x0a, 0x0d, 0x50, 0x72, 0x69, 0x6e, 0x63,
+	0x69, 0x70, 0x61, 0x6c, 0x4b, 0x69, 0x6e, 0x64, 0x12, 0x1e, 0x0a, 0x1a, 0x50, 0x52, 0x49, 0x4e,
+	0x43, 0x49, 0x50, 0x41, 0x4c, 0x5f, 0x4b, 0x49, 0x4e, 0x44, 0x5f, 0x55, 0x4e, 0x53, 0x50, 0x45,
+	0x43, 0x49, 0x46, 0x49, 0x45, 0x44, 0x10, 0x00, 0x12, 0x0c, 0x0a, 0x08, 0x49, 0x44, 0x45, 0x4e,
+	0x54, 0x49, 0x54, 0x59, 0x10, 0x01, 0x12, 0x09, 0x0a, 0x05, 0x47, 0x52, 0x4f, 0x55, 0x50, 0x10,
+	0x02, 0x12, 0x08, 0x0a, 0x04, 0x47, 0x4c, 0x4f, 0x42, 0x10, 0x03, 0x32, 0xdd, 0x01, 0x0a, 0x06,
+	0x47, 0x72, 0x6f, 0x75, 0x70, 0x73, 0x12, 0x46, 0x0a, 0x0a, 0x4c, 0x69, 0x73, 0x74, 0x47, 0x72,
+	0x6f, 0x75, 0x70, 0x73, 0x12, 0x16, 0x2e, 0x67, 0x6f, 0x6f, 0x67, 0x6c, 0x65, 0x2e, 0x70, 0x72,
+	0x6f, 0x74, 0x6f, 0x62, 0x75, 0x66, 0x2e, 0x45, 0x6d, 0x70, 0x74, 0x79, 0x1a, 0x20, 0x2e, 0x61,
+	0x75, 0x74, 0x68, 0x2e, 0x73, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x2e, 0x4c, 0x69, 0x73, 0x74,
+	0x47, 0x72, 0x6f, 0x75, 0x70, 0x73, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x42,
+	0x0a, 0x08, 0x47, 0x65, 0x74, 0x47, 0x72, 0x6f, 0x75, 0x70, 0x12, 0x1d, 0x2e, 0x61, 0x75, 0x74,
+	0x68, 0x2e, 0x73, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x2e, 0x47, 0x65, 0x74, 0x47, 0x72, 0x6f,
+	0x75, 0x70, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x17, 0x2e, 0x61, 0x75, 0x74, 0x68,
+	0x2e, 0x73, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x2e, 0x41, 0x75, 0x74, 0x68, 0x47, 0x72, 0x6f,
+	0x75, 0x70, 0x12, 0x47, 0x0a, 0x0b, 0x47, 0x65, 0x74, 0x53, 0x75, 0x62, 0x67, 0x72, 0x61, 0x70,
+	0x68, 0x12, 0x20, 0x2e, 0x61, 0x75, 0x74, 0x68, 0x2e, 0x73, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65,
+	0x2e, 0x47, 0x65, 0x74, 0x53, 0x75, 0x62, 0x67, 0x72, 0x61, 0x70, 0x68, 0x52, 0x65, 0x71, 0x75,
+	0x65, 0x73, 0x74, 0x1a, 0x16, 0x2e, 0x61, 0x75, 0x74, 0x68, 0x2e, 0x73, 0x65, 0x72, 0x76, 0x69,
+	0x63, 0x65, 0x2e, 0x53, 0x75, 0x62, 0x67, 0x72, 0x61, 0x70, 0x68, 0x42, 0x2d, 0x5a, 0x2b, 0x67,
+	0x6f, 0x2e, 0x63, 0x68, 0x72, 0x6f, 0x6d, 0x69, 0x75, 0x6d, 0x2e, 0x6f, 0x72, 0x67, 0x2f, 0x6c,
+	0x75, 0x63, 0x69, 0x2f, 0x61, 0x75, 0x74, 0x68, 0x5f, 0x73, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65,
+	0x2f, 0x61, 0x70, 0x69, 0x2f, 0x72, 0x70, 0x63, 0x70, 0x62, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74,
+	0x6f, 0x33,
 }
 
 var (
@@ -298,26 +604,38 @@ func file_go_chromium_org_luci_auth_service_api_rpcpb_groups_proto_rawDescGZIP()
 	return file_go_chromium_org_luci_auth_service_api_rpcpb_groups_proto_rawDescData
 }
 
-var file_go_chromium_org_luci_auth_service_api_rpcpb_groups_proto_msgTypes = make([]protoimpl.MessageInfo, 3)
+var file_go_chromium_org_luci_auth_service_api_rpcpb_groups_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
+var file_go_chromium_org_luci_auth_service_api_rpcpb_groups_proto_msgTypes = make([]protoimpl.MessageInfo, 7)
 var file_go_chromium_org_luci_auth_service_api_rpcpb_groups_proto_goTypes = []interface{}{
-	(*ListGroupsResponse)(nil),    // 0: auth.service.ListGroupsResponse
-	(*GetGroupRequest)(nil),       // 1: auth.service.GetGroupRequest
-	(*AuthGroup)(nil),             // 2: auth.service.AuthGroup
-	(*timestamppb.Timestamp)(nil), // 3: google.protobuf.Timestamp
-	(*emptypb.Empty)(nil),         // 4: google.protobuf.Empty
+	(PrincipalKind)(0),            // 0: auth.service.PrincipalKind
+	(*ListGroupsResponse)(nil),    // 1: auth.service.ListGroupsResponse
+	(*GetGroupRequest)(nil),       // 2: auth.service.GetGroupRequest
+	(*AuthGroup)(nil),             // 3: auth.service.AuthGroup
+	(*GetSubgraphRequest)(nil),    // 4: auth.service.GetSubgraphRequest
+	(*Subgraph)(nil),              // 5: auth.service.Subgraph
+	(*Principal)(nil),             // 6: auth.service.Principal
+	(*Node)(nil),                  // 7: auth.service.Node
+	(*timestamppb.Timestamp)(nil), // 8: google.protobuf.Timestamp
+	(*emptypb.Empty)(nil),         // 9: google.protobuf.Empty
 }
 var file_go_chromium_org_luci_auth_service_api_rpcpb_groups_proto_depIdxs = []int32{
-	2, // 0: auth.service.ListGroupsResponse.groups:type_name -> auth.service.AuthGroup
-	3, // 1: auth.service.AuthGroup.created_ts:type_name -> google.protobuf.Timestamp
-	4, // 2: auth.service.Groups.ListGroups:input_type -> google.protobuf.Empty
-	1, // 3: auth.service.Groups.GetGroup:input_type -> auth.service.GetGroupRequest
-	0, // 4: auth.service.Groups.ListGroups:output_type -> auth.service.ListGroupsResponse
-	2, // 5: auth.service.Groups.GetGroup:output_type -> auth.service.AuthGroup
-	4, // [4:6] is the sub-list for method output_type
-	2, // [2:4] is the sub-list for method input_type
-	2, // [2:2] is the sub-list for extension type_name
-	2, // [2:2] is the sub-list for extension extendee
-	0, // [0:2] is the sub-list for field type_name
+	3, // 0: auth.service.ListGroupsResponse.groups:type_name -> auth.service.AuthGroup
+	8, // 1: auth.service.AuthGroup.created_ts:type_name -> google.protobuf.Timestamp
+	6, // 2: auth.service.GetSubgraphRequest.principal:type_name -> auth.service.Principal
+	7, // 3: auth.service.Subgraph.nodes:type_name -> auth.service.Node
+	0, // 4: auth.service.Principal.kind:type_name -> auth.service.PrincipalKind
+	6, // 5: auth.service.Node.principal:type_name -> auth.service.Principal
+	9, // 6: auth.service.Groups.ListGroups:input_type -> google.protobuf.Empty
+	2, // 7: auth.service.Groups.GetGroup:input_type -> auth.service.GetGroupRequest
+	4, // 8: auth.service.Groups.GetSubgraph:input_type -> auth.service.GetSubgraphRequest
+	1, // 9: auth.service.Groups.ListGroups:output_type -> auth.service.ListGroupsResponse
+	3, // 10: auth.service.Groups.GetGroup:output_type -> auth.service.AuthGroup
+	5, // 11: auth.service.Groups.GetSubgraph:output_type -> auth.service.Subgraph
+	9, // [9:12] is the sub-list for method output_type
+	6, // [6:9] is the sub-list for method input_type
+	6, // [6:6] is the sub-list for extension type_name
+	6, // [6:6] is the sub-list for extension extendee
+	0, // [0:6] is the sub-list for field type_name
 }
 
 func init() { file_go_chromium_org_luci_auth_service_api_rpcpb_groups_proto_init() }
@@ -362,19 +680,68 @@ func file_go_chromium_org_luci_auth_service_api_rpcpb_groups_proto_init() {
 				return nil
 			}
 		}
+		file_go_chromium_org_luci_auth_service_api_rpcpb_groups_proto_msgTypes[3].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*GetSubgraphRequest); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_go_chromium_org_luci_auth_service_api_rpcpb_groups_proto_msgTypes[4].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*Subgraph); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_go_chromium_org_luci_auth_service_api_rpcpb_groups_proto_msgTypes[5].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*Principal); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_go_chromium_org_luci_auth_service_api_rpcpb_groups_proto_msgTypes[6].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*Node); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: file_go_chromium_org_luci_auth_service_api_rpcpb_groups_proto_rawDesc,
-			NumEnums:      0,
-			NumMessages:   3,
+			NumEnums:      1,
+			NumMessages:   7,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
 		GoTypes:           file_go_chromium_org_luci_auth_service_api_rpcpb_groups_proto_goTypes,
 		DependencyIndexes: file_go_chromium_org_luci_auth_service_api_rpcpb_groups_proto_depIdxs,
+		EnumInfos:         file_go_chromium_org_luci_auth_service_api_rpcpb_groups_proto_enumTypes,
 		MessageInfos:      file_go_chromium_org_luci_auth_service_api_rpcpb_groups_proto_msgTypes,
 	}.Build()
 	File_go_chromium_org_luci_auth_service_api_rpcpb_groups_proto = out.File
