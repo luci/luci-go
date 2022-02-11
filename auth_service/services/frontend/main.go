@@ -113,6 +113,9 @@ func main() {
 		srv.Routes.GET("/ip_allowlists", mw, func(ctx *router.Context) {
 			templates.MustRender(ctx.Context, ctx.Writer, "pages/ip_allowlists.html", nil)
 		})
+		srv.Routes.GET("/lookup", mw, func(ctx *router.Context) {
+			templates.MustRender(ctx.Context, ctx.Writer, "pages/lookup.html", nil)
+		})
 		return nil
 	})
 }
