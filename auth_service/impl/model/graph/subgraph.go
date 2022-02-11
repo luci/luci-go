@@ -18,10 +18,7 @@ import "sort"
 
 type EdgeTag string
 
-const (
-	Owns EdgeTag = "OWNS"
-	In   EdgeTag = "IN"
-)
+const In EdgeTag = "IN"
 
 type NodeKind string
 
@@ -79,7 +76,8 @@ func (s *Subgraph) addNode(kind NodeKind, value string) (int, bool) {
 }
 
 // addEdge adds an edge from(nodeID) to(nodeID) with the relation
-// denoting whether the from node owns or is in the to node.
+// denoting whether the from node owns or is in the to node. Owns
+// relationship is currently not supported.
 //
 // returns true if the edge was successfully added. returns false
 // if the edge was not added.

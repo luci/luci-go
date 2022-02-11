@@ -125,7 +125,7 @@ func TestSubgraphOperations(t *testing.T) {
 
 		Convey("Testing basic edge adding.", func() {
 			subgraph.addEdge(0, In, 1)
-			subgraph.addEdge(2, Owns, 1)
+			subgraph.addEdge(2, In, 1)
 
 			expectedSubgraph := &Subgraph{
 				Nodes: []*SubgraphNode{
@@ -150,7 +150,7 @@ func TestSubgraphOperations(t *testing.T) {
 							Value: testUser,
 						},
 						Edges: map[EdgeTag][]int{
-							Owns: {1},
+							In: {1},
 						},
 					},
 					{ // 3
@@ -175,10 +175,10 @@ func TestSubgraphOperations(t *testing.T) {
 			subgraph.addEdge(0, In, 4)
 			subgraph.addEdge(0, In, 2)
 			subgraph.addEdge(0, In, 3)
-			subgraph.addEdge(2, Owns, 4)
-			subgraph.addEdge(2, Owns, 3)
-			subgraph.addEdge(2, Owns, 0)
-			subgraph.addEdge(2, Owns, 1)
+			subgraph.addEdge(2, In, 4)
+			subgraph.addEdge(2, In, 3)
+			subgraph.addEdge(2, In, 0)
+			subgraph.addEdge(2, In, 1)
 			expectedSubgraph := &Subgraph{
 				Nodes: []*SubgraphNode{
 					{ // 0
@@ -202,7 +202,7 @@ func TestSubgraphOperations(t *testing.T) {
 							Value: testUser,
 						},
 						Edges: map[EdgeTag][]int{
-							Owns: {0, 1, 3, 4},
+							In: {0, 1, 3, 4},
 						},
 					},
 					{ // 3
