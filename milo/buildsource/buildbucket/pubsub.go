@@ -240,13 +240,16 @@ func pubSubHandlerImpl(c context.Context, r *http.Request) error {
 		return err
 	}
 
+	now := time.Now()
 	updateBuilderSummary, err := shouldUpdateBuilderSummary(c, bs)
 	if err != nil {
 		updateBuilderSummary = true
-		logging.WithError(err).Warningf(c, "failed to determine whether the builder summary should be updated. Fallback to always update.")
+		logging.WithError(err).Warningf(c, "failed to determine whether the builder summary from %s should be updated. Fallback to always update.", bs.BuilderID)
 	}
+	logging.Infof(c, "took %v to determine whether the builder summary from %s should be updated", time.Since(now), bs.BuilderID)
 
-	return transient.Tag.Apply(datastore.RunInTransaction(c, func(c context.Context) error {
+	now = time.Now()
+	err = transient.Tag.Apply(datastore.RunInTransaction(c, func(c context.Context) error {
 		curBS := &model.BuildSummary{BuildKey: bs.BuildKey}
 		switch err := datastore.Get(c, curBS); err {
 		case datastore.ErrNoSuchEntity:
@@ -274,6 +277,9 @@ func pubSubHandlerImpl(c context.Context, r *http.Request) error {
 
 		return model.UpdateBuilderForBuild(c, bs)
 	}, nil))
+
+	logging.Infof(c, "took %v to update builder summary from %s", time.Since(now), bs.BuilderID)
+	return err
 }
 
 // MakeBuildKey returns a new datastore Key for a buildbucket.Build.
@@ -289,7 +295,7 @@ var (
 	// Sustained datastore updates should not be higher than once per second per
 	// entity.
 	// See https://cloud.google.com/datastore/docs/concepts/limits.
-	entityUpdateIntervalInS int64 = 1
+	entityUpdateIntervalInS int64 = 2
 
 	// A Redis LUA script that update the key with the new integer value if and
 	// only if the provided value is greater than the recorded value (0 if none
@@ -384,6 +390,6 @@ func shouldUpdateBuilderSummary(c context.Context, buildSummary *model.BuildSumm
 	}
 
 	// Otherwise, skip the update.
-	logging.Infof(c, "skipping BuilderSummary update because a newer build was found")
+	logging.Infof(c, "skipping BuilderSummary update from builder %s because a newer build was found", buildSummary.BuilderID)
 	return false, nil
 }
