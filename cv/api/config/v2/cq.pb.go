@@ -1087,7 +1087,8 @@ type Verifiers_Tryjob struct {
 	// Builders on which tryjobs should be triggered.
 	//
 	// CQ won't allow adding any builder via `CQ-Include-Trybots:` in CL
-	// description except those in this list.
+	// description except those in this list (including the equivalent
+	// builders).
 	Builders []*Verifiers_Tryjob_Builder `protobuf:"bytes,1,rep,name=builders,proto3" json:"builders,omitempty"`
 	// Optional, defaulting to no retries whatsoever.
 	RetryConfig *Verifiers_Tryjob_RetryConfig `protobuf:"bytes,2,opt,name=retry_config,json=retryConfig,proto3" json:"retry_config,omitempty"`
@@ -1367,17 +1368,21 @@ type Verifiers_Tryjob_Builder struct {
 	// required based purely on given CL and CL's owner and **regardless** of
 	// the possibly already completed tryjobs.
 	//
-	// Note: none of the equivalent builders should be part of triggered_by
-	// chain, although CQ may eventually relax this requirement.
+	// Note:
+	//  * None of the equivalent builders should be part of triggered_by
+	//    chain, although CQ may eventually relax this requirement.
+	//  * The equivalent builders can be included using `CQ-Include-Trybots:`
+	//    footer. In this case, CQ will always try to trigger the equivalent
+	//    builders regardless of the equivalent percentage.
 	EquivalentTo *Verifiers_Tryjob_EquivalentBuilder `protobuf:"bytes,5,opt,name=equivalent_to,json=equivalentTo,proto3" json:"equivalent_to,omitempty"`
 	// Optional. Require this builder only if location_regexp matches a file
 	// in this CL.
 	//
 	// This means:
-	//   * If specified and no file in a CL matches any of the location_regexp,
-	//   then CQ will not care about this builder.
-	//   * If a file in a CL matches any location_regexp_exclude, then this file
-	//   won't be considered when matching location_regexp.
+	//   * If specified and no file in a CL matches any of the
+	//     location_regexp, then CQ will not care about this builder.
+	//   * If a file in a CL matches any location_regexp_exclude, then this
+	//     file won't be considered when matching location_regexp.
 	//
 	// If location_regexp is not specified (default), builder will be used
 	// on all CLs.
@@ -1395,7 +1400,8 @@ type Verifiers_Tryjob_Builder struct {
 	//
 	// Touching a file means either adding, modifying or removing it.
 	//
-	// These options currently can not be combined with the following other options:
+	// These options currently can not be combined with the following other
+	// options:
 	//   * triggered_by
 	//   * GerritCQAbility.allow_submit_with_open_deps
 	// If you need to combine them, please talk to CQ owners.
