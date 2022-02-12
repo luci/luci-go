@@ -213,8 +213,23 @@ type Config struct {
 	//
 	// Deprecated: Do not use.
 	DrainingStartTime string `protobuf:"bytes,1,opt,name=draining_start_time,json=drainingStartTime,proto3" json:"draining_start_time,omitempty"`
-	// Optional and deprecated.
-	// URL of the CQ status app to push updates to.
+	// Optional.
+	//
+	// Originally, this was used to specify the URL of the CQ status app where
+	// users have access to their Run details. Currently, with the migration
+	// from CQ to LUCI CV, this field no longer serves as the same meaning,
+	// but is used to decide the visibility of the Run details via LUCI CV UI at
+	// https://luci-change-verifier.appspot.com/ui/recents
+	//
+	// This field accepts the following values:
+	//   * "chromium-cq-status.appspot.com": all Runs in this Project are public.
+	//   * "internal-cq-status.appspot.com": all Runs in this Project are visible
+	//     to Googler only.
+	//
+	// Note that the Run details page contains the name of the builders launched
+	// to verify CL(s). Therefore, if this Project launches internal builders for
+	// public repos and the builder names are confidential, please don't
+	// use public host.
 	//
 	// Deprecated: Do not use.
 	CqStatusHost string `protobuf:"bytes,2,opt,name=cq_status_host,json=cqStatusHost,proto3" json:"cq_status_host,omitempty"`

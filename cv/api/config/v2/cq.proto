@@ -40,8 +40,23 @@ message Config {
   // See also https://crbug.com/1208569 to implement an alternative.
   string draining_start_time = 1 [deprecated = true];
 
-  // Optional and deprecated.
-  // URL of the CQ status app to push updates to.
+  // Optional.
+  //
+  // Originally, this was used to specify the URL of the CQ status app where
+  // users have access to their Run details. Currently, with the migration
+  // from CQ to LUCI CV, this field no longer serves as the same meaning,
+  // but is used to decide the visibility of the Run details via LUCI CV UI at
+  // https://luci-change-verifier.appspot.com/ui/recents
+  //
+  // This field accepts the following values:
+  //   * "chromium-cq-status.appspot.com": all Runs in this Project are public.
+  //   * "internal-cq-status.appspot.com": all Runs in this Project are visible
+  //     to Googler only.
+  //
+  // Note that the Run details page contains the name of the builders launched
+  // to verify CL(s). Therefore, if this Project launches internal builders for
+  // public repos and the builder names are confidential, please don't
+  // use public host.
   string cq_status_host = 2 [deprecated = true];
 
   // Optional options for how CLs should be submitted.
