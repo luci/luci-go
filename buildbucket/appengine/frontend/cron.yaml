@@ -23,7 +23,7 @@ cron:
   schedule: every 1 minutes
 
 - description: delete builds
-  target: backend
+  target: default-go
   url: /internal/cron/buildbucket/delete_builds
   schedule: every 1 minutes
 

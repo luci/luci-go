@@ -36,6 +36,7 @@ import (
 	// Enable datastore transactional tasks support.
 	_ "go.chromium.org/luci/server/tq/txn/datastore"
 
+	"go.chromium.org/luci/buildbucket/appengine/internal/buildcron"
 	"go.chromium.org/luci/buildbucket/appengine/internal/config"
 	"go.chromium.org/luci/buildbucket/appengine/internal/metrics"
 	"go.chromium.org/luci/buildbucket/appengine/rpc"
@@ -82,6 +83,8 @@ func main() {
 		pb.RegisterBuildersServer(srv.PRPC, rpc.NewBuilders())
 		// TODO(crbug/1082369): Remove this workaround once field masks can be decoded.
 		srv.PRPC.HackFixFieldMasksForJSON = true
+
+		cron.RegisterHandler("delete_builds", buildcron.DeleteOldBuilds)
 		cron.RegisterHandler("update_config", config.UpdateSettingsCfg)
 		return nil
 	})
