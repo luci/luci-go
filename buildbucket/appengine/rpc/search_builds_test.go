@@ -179,6 +179,15 @@ func TestValidateSearchBuilds(t *testing.T) {
 				So(validatePredicate(pr), ShouldBeNil)
 			})
 		})
+
+		Convey("descendant_of and child_of mutual exclusion", func() {
+			pr := &pb.BuildPredicate{
+				DescendantOf: 1,
+				ChildOf:      1,
+			}
+			err := validatePredicate(pr)
+			So(err, ShouldErrLike, "descendant_of is mutually exclusive with child_of")
+		})
 	})
 
 	Convey("validatePageToken", t, func() {

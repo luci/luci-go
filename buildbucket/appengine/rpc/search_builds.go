@@ -86,6 +86,9 @@ func validatePredicate(pr *pb.BuildPredicate) error {
 	if pr.GetBuild() != nil && pr.CreateTime != nil {
 		return errors.Reason("build is mutually exclusive with create_time").Err()
 	}
+	if pr.GetDescendantOf() != 0 && pr.GetChildOf() != 0 {
+		return errors.Reason("descendant_of is mutually exclusive with child_of").Err()
+	}
 	expMap := make(map[string]bool, len(pr.GetExperiments()))
 	for i, exp := range pr.GetExperiments() {
 		plusMinus, expName, err := validateExperiment(exp, pr.GetCanary(), pr.GetIncludeExperimental())

@@ -17,6 +17,7 @@ package search
 import (
 	"container/heap"
 	"context"
+	"sort"
 	"testing"
 	"time"
 
@@ -85,7 +86,8 @@ func TestNewSearchQuery(t *testing.T) {
 						StartBuildId: 200,
 						EndBuildId:   100,
 					},
-					Canary: pb.Trinary_YES,
+					Canary:       pb.Trinary_YES,
+					DescendantOf: 2,
 				},
 			}
 			query := NewQuery(req)
@@ -113,10 +115,11 @@ func TestNewSearchQuery(t *testing.T) {
 					"+"+bb.ExperimentBBCanarySoftware,
 					"-"+bb.ExperimentNonProduction,
 				),
-				BuildIDHigh: 201,
-				BuildIDLow:  99,
-				PageSize:    100,
-				PageToken:   "",
+				BuildIDHigh:  201,
+				BuildIDLow:   99,
+				DescendantOf: 2,
+				PageSize:     100,
+				PageToken:    "",
 			})
 		})
 
@@ -885,6 +888,85 @@ func TestFetchOnBuild(t *testing.T) {
 
 			So(err, ShouldBeNil)
 			So(actualRsp, ShouldResembleProto, expectedRsp)
+		})
+		Convey("found by ancestors", func() {
+			bIDs := func(rsp *pb.SearchBuildsResponse) []int {
+				ids := make([]int, 0, len(rsp.Builds))
+				for _, b := range rsp.Builds {
+					ids = append(ids, int(b.Id))
+				}
+				sort.Ints(ids)
+				return ids
+			}
+			So(datastore.Put(ctx, &model.Build{
+				ID: 1,
+				Proto: &pb.Build{
+					Id: 1,
+					Builder: &pb.BuilderID{
+						Project: "project",
+						Bucket:  "bucket",
+						Builder: "builder",
+					},
+				},
+			}), ShouldBeNil)
+			So(datastore.Put(ctx, &model.Build{
+				ID: 2,
+				Proto: &pb.Build{
+					Id: 2,
+					Builder: &pb.BuilderID{
+						Project: "project",
+						Bucket:  "bucket",
+						Builder: "builder",
+					},
+					AncestorIds: []int64{1},
+				},
+			}), ShouldBeNil)
+			So(datastore.Put(ctx, &model.Build{
+				ID: 3,
+				Proto: &pb.Build{
+					Id: 3,
+					Builder: &pb.BuilderID{
+						Project: "project",
+						Bucket:  "bucket",
+						Builder: "builder",
+					},
+					AncestorIds: []int64{1},
+				},
+			}), ShouldBeNil)
+			So(datastore.Put(ctx, &model.Build{
+				ID: 4,
+				Proto: &pb.Build{
+					Id: 4,
+					Builder: &pb.BuilderID{
+						Project: "project",
+						Bucket:  "bucket",
+						Builder: "builder",
+					},
+					AncestorIds: []int64{1, 2},
+				},
+			}), ShouldBeNil)
+			Convey("by ancestor_ids", func() {
+				req := &pb.SearchBuildsRequest{
+					Predicate: &pb.BuildPredicate{
+						DescendantOf: 1,
+					},
+				}
+				query := NewQuery(req)
+				actualRsp, err := query.fetchOnBuild(ctx)
+				So(err, ShouldBeNil)
+				So(bIDs(actualRsp), ShouldResemble, []int{2, 3, 4})
+			})
+			Convey("by parent_id", func() {
+				req := &pb.SearchBuildsRequest{
+					Predicate: &pb.BuildPredicate{
+						ChildOf: 1,
+					},
+				}
+				query := NewQuery(req)
+				actualRsp, err := query.fetchOnBuild(ctx)
+				So(err, ShouldBeNil)
+				So(bIDs(actualRsp), ShouldResemble, []int{2, 3})
+			})
 		})
 		Convey("empty request", func() {
 			req := &pb.SearchBuildsRequest{

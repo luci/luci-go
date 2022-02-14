@@ -535,6 +535,21 @@ message BuildPredicate {
   //   `ScheduleBuildRequest.experiments`). Well-known experiments are always
   //   considered to be available.
   repeated string experiments = 11;
+
+  // A build id.
+  //
+  // Returned builds will be descendants of this build (e.g. "100" means
+  // "any build transitively scheduled starting from build 100").
+  //
+  // Mutually exclusive with `child_of`.
+  int64 descendant_of = 12;
+
+  // A build id.
+  //
+  // Returned builds will be only the immediate children of this build.
+  //
+  // Mutually exclusive with `descendant_of`.
+  int64 child_of = 13;
 }
 
 // Open build range.

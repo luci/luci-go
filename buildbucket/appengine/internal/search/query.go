@@ -63,6 +63,8 @@ type Query struct {
 	ExperimentFilters stringset.Set
 	BuildIDHigh       int64
 	BuildIDLow        int64
+	DescendantOf      int64
+	ChildOf           int64
 	PageSize          int32
 	PageToken         string
 }
@@ -86,6 +88,8 @@ func NewQuery(req *pb.SearchBuildsRequest) *Query {
 		StartTime:         mustTimestamp(p.CreateTime.GetStartTime()),
 		EndTime:           mustTimestamp(p.CreateTime.GetEndTime()),
 		ExperimentFilters: stringset.NewFromSlice(p.Experiments...),
+		DescendantOf:      p.DescendantOf,
+		ChildOf:           p.ChildOf,
 		PageSize:          fixPageSize(req.PageSize),
 		PageToken:         req.PageToken,
 	}
@@ -247,6 +251,14 @@ func (q *Query) fetchOnBuild(ctx context.Context) (*pb.SearchBuildsResponse, err
 	}
 	if idHigh != 0 {
 		dq = dq.Lt("__key__", datastore.KeyForObj(ctx, &model.Build{ID: idHigh}))
+	}
+
+	if q.DescendantOf != 0 {
+		dq = dq.Eq("ancestor_ids", q.DescendantOf)
+	}
+
+	if q.ChildOf != 0 {
+		dq = dq.Eq("parent_id", q.ChildOf)
 	}
 
 	var queries []*datastore.Query

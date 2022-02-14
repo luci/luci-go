@@ -233,12 +233,12 @@ type Build struct {
 	// build.
 	UpdateTime *timestamppb.Timestamp `protobuf:"bytes,9,opt,name=update_time,json=updateTime,proto3" json:"update_time,omitempty"`
 	// When the cancel process of the build started.
-	// Note it's not the time the build was canceled, which would be tracked by
-	// end_time.
+	// Note it's not the time that the cancellation completed, which would be
+	// tracked by end_time.
 	//
 	// During the cancel process, the build still accepts updates.
 	// A delayed task will be executed after the build's grace period to finally
-	// cancel the build.
+	// terminate the build.
 	CancelTime *timestamppb.Timestamp `protobuf:"bytes,32,opt,name=cancel_time,json=cancelTime,proto3" json:"cancel_time,omitempty"`
 	// Status of the build.
 	// Must be specified, i.e. not STATUS_UNSPECIFIED.
