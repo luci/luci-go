@@ -40,7 +40,7 @@ import "go.chromium.org/luci/swarming/proto/api/swarming.proto";
 // represents a state of a build at completion time and does not change after
 // that. All fields are included.
 //
-// Next id: 32.
+// Next id: 33.
 message Build {
   // Defines what to build/test.
   //
@@ -174,6 +174,14 @@ message Build {
   // RPC: can be > end_time if, e.g. new tags were attached to a completed
   // build.
   google.protobuf.Timestamp update_time = 9;
+  // When the cancel process of the build started.
+  // Note it's not the time that the cancellation completed, which would be
+  // tracked by end_time.
+  //
+  // During the cancel process, the build still accepts updates.
+  // A delayed task will be executed after the build's grace period to finally
+  // terminate the build.
+  google.protobuf.Timestamp cancel_time = 32;
 
   // Status of the build.
   // Must be specified, i.e. not STATUS_UNSPECIFIED.

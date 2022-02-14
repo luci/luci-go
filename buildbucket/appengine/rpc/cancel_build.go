@@ -65,7 +65,7 @@ func (*Builds) CancelBuild(ctx context.Context, req *pb.CancelBuildRequest) (*pb
 		return bld.ToProto(ctx, m)
 	}
 
-	bld, err = cancel.Do(ctx, req.Id, req.SummaryMarkdown)
+	bld, err = cancel.Start(ctx, req.Id, req.SummaryMarkdown)
 	if err != nil {
 		return nil, err
 	}
