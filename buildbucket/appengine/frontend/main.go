@@ -84,7 +84,7 @@ func main() {
 		// TODO(crbug/1082369): Remove this workaround once field masks can be decoded.
 		srv.PRPC.HackFixFieldMasksForJSON = true
 
-		cron.RegisterHandler("delete_builds", buildcron.DeleteOldBuilds)
+		cron.RegisterHandler("buildbucket/delete_builds", buildcron.DeleteOldBuilds)
 		cron.RegisterHandler("update_config", config.UpdateSettingsCfg)
 		return nil
 	})
