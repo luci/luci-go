@@ -669,39 +669,3 @@ func TestSizeBasedChannel(t *testing.T) {
 		So(out[len(out)-1], ShouldResemble, "extra string")
 	})
 }
-
-func TestMinQPS(t *testing.T) {
-	Convey(`send w/ minimal frequency`, t, func() {
-		ctx := context.Background() // uses real time!
-		ctx, dbg := dbgIfVerbose(ctx)
-
-		sentNilBatch := false
-
-		ch, err := NewChannel(ctx, &Options{
-			MinQPS: rate.Every(10 * time.Millisecond),
-			DropFn: noDrop,
-			Buffer: buffer.Options{
-				MaxLeases:     1,
-				BatchItemsMax: 1,
-				FullBehavior:  &buffer.BlockNewItems{MaxItems: 20},
-			},
-			testingDbg: dbg,
-		}, func(batch *buffer.Batch) (err error) {
-			if batch == nil {
-				sentNilBatch = true
-			}
-			return
-		})
-		So(err, ShouldBeNil)
-
-		for i := 0; i < 20; i++ {
-			switch i {
-			case 9:
-				time.Sleep(30 * time.Millisecond) // to make a gap that ch is empty.
-			}
-			ch.C <- i
-		}
-		ch.CloseAndDrain(ctx)
-		So(sentNilBatch, ShouldBeTrue)
-	})
-}
