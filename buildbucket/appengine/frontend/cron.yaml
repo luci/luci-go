@@ -24,7 +24,7 @@ cron:
 
 - description: delete builds
   target: default-go
-  url: /internal/cron/buildbucket/delete_builds
+  url: /internal/cron/delete_builds
   schedule: every 1 minutes
 
 - description: update buckets
