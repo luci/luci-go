@@ -13,16 +13,7 @@
 // limitations under the License.
 
 // Package main contains a binary demonstrating how to use the server/quota
-// module to implement rate limiting for requests. To try it locally:
-//	$ go run .&
-//	<observe logs, wait for the server to start>
-//	$ curl http://localhost:8800/global-rate-limit-endpoint
-//	<observe logs, expected 200 OK>
-//	$ curl http://localhost:8800/global-rate-limit-endpoint
-//	<observe logs, expected 429 Rate Limit Exceeded>
-//	<wait 60 seconds>
-//	$ curl http://localhost:8800/global-rate-limit-endpoint
-//	<observe logs, expected 200 OK>
+// module to implement rate limiting for requests.
 package main
 
 import (
@@ -61,7 +52,10 @@ func main() {
 			// /global-rate-limit-endpoint handler. 60 resources are available and
 			// the handler consumes 60 resources every time it's called (see below),
 			// while the policy is configured to automatically replenish one resource
-			// every second.
+			// every second. This quota can be reset by sending a request to the
+			// /global-rate-limit-reset handler. 60 resources are replenished every time
+			// it's called (see below), and the default 60 resources also functions as a
+			// cap.
 			{
 				Name:          "global-rate-limit",
 				Resources:     60,
@@ -79,17 +73,31 @@ func main() {
 			},
 		})
 
-		// Set up a rate-limited endpoint.
+		// Set up a rate-limited endpoint by debiting 60 resources every time.
+		// Returns an error if enough resources aren't available.
 		srv.Routes.GET("/global-rate-limit-endpoint", nil, func(c *router.Context) {
-			if err := quota.DebitQuota(c.Context, map[string]int64{
-				"global-rate-limit": 60,
+			if err := quota.UpdateQuota(c.Context, map[string]int64{
+				"global-rate-limit": -60,
 			}, nil); err != nil {
 				errors.Log(c.Context, errors.Annotate(err, "debit quota").Err())
 				// TODO(crbug/1280055): Differentiate between errors.
 				http.Error(c.Writer, "rate limit exceeded", http.StatusTooManyRequests)
 				return
 			}
+			if _, err := c.Writer.Write([]byte("OK\n")); err != nil {
+				errors.Log(c.Context, errors.Annotate(err, "writer").Err())
+			}
+		})
 
+		// Set up a quota reset endpoint by restoring 60 resources every time.
+		// The total resources cap at 60, so repeated calls are fine.
+		srv.Routes.GET("/global-rate-limit-reset", nil, func(c *router.Context) {
+			if err := quota.UpdateQuota(c.Context, map[string]int64{
+				"global-rate-limit": 60,
+			}, nil); err != nil {
+				errors.Log(c.Context, errors.Annotate(err, "credit quota").Err())
+				http.Error(c.Writer, "internal server error", http.StatusInternalServerError)
+			}
 			if _, err := c.Writer.Write([]byte("OK\n")); err != nil {
 				errors.Log(c.Context, errors.Annotate(err, "writer").Err())
 			}

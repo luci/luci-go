@@ -56,23 +56,23 @@ type Options struct {
 	User string
 }
 
-// debitEntry is a *template.Template for a Lua script which fetches the given
+// updateEntry is a *template.Template for a Lua script which fetches the given
 // quota entry from Redis, initializing it if it doesn't exist, replenishes
-// quota since the last update, and debits the specified amount. Does not modify
-// the entry in the database, instead entries must explicitly be stored by
-// concatenating this script with setEntry. This enables atomic debiting of
-// multiple entries by running a script which concatenates multiple debitEntry
+// quota since the last update, and updates the amount. Does not modify the
+// entry in the database, instead entries must explicitly be stored by
+// concatenating this script with setEntry. This enables atomic updates of
+// multiple entries by running a script which concatenates multiple updateEntry
 // calls followed by corresponding setEntry calls. Such a script updates entries
-// in the database iff all debits would succeed.
+// in the database iff all updates would succeed.
 //
 // Template variables:
 // Var: Name of a Lua variable to store the quota entry in memory.
-// Name: Name of the quota entry to debit.
+// Name: Name of the quota entry to update.
 // Default: Default number of resources to initialize new entries with.
 // Now: Update time in seconds since epoch.
 // Replenishment: Amount of resources to replenish every second.
-// Amount: Amount of resources to debit.
-var debitEntry = template.Must(template.New("debitEntry").Parse(`
+// Amount: Amount by which to update resources.
+var updateEntry = template.Must(template.New("updateEntry").Parse(`
 	{{.Var}} = {}
 	{{.Var}}["name"] = "{{.Name}}"
 
@@ -90,13 +90,13 @@ var debitEntry = template.Must(template.New("debitEntry").Parse(`
 		{{.Var}}["resources"] = redis.call("HINCRBY", "{{.Name}}", "resources", 0)
 	end
 
-	-- Replenish resources before debiting.
+	-- Replenish resources before updating.
 	{{.Var}}["resources"] = {{.Var}}["resources"] + ({{.Now}} - {{.Var}}["updated"]) * {{.Replenishment}}
 	{{.Var}}["updated"] = {{.Now}}
-	if {{.Var}}["resources"] - {{.Amount}} < 0 then
+	if {{.Var}}["resources"] + {{.Amount}} < 0 then
 		return redis.error_reply("\"{{.Name}}\" has insufficient resources")
 	end
-	{{.Var}}["resources"] = {{.Var}}["resources"] - {{.Amount}}
+	{{.Var}}["resources"] = {{.Var}}["resources"] + {{.Amount}}
 	{{.Var}}["updated"] = {{.Now}}
 
 	-- Cap resources at the default amount.
@@ -106,7 +106,7 @@ var debitEntry = template.Must(template.New("debitEntry").Parse(`
 `))
 
 // setEntry is a *template.Template for a Lua script which sets the given quota
-// entry in Redis. Should be used after debitEntry.
+// entry in Redis. Should be used after updateEntry.
 //
 // Template variables:
 // Var: Name of a Lua variable holding the quota entry in memory.
@@ -114,19 +114,20 @@ var setEntry = template.Must(template.New("setEntry").Parse(`
 	redis.call("HMSET", {{.Var}}["name"], "resources", {{.Var}}["resources"], "updated", {{.Var}}["updated"])
 `))
 
-// DebitQuota debits the given quota entries atomically.
+// UpdateQuota atomically adjusts the given quota entries using the given map of
+// policy names to numeric update amounts as well as the given *Options.
 //
 // Panics if quotaconfig.Interface is not available in the given context.Context
 // (see WithConfig).
-func DebitQuota(ctx context.Context, debits map[string]int64, opts *Options) error {
+func UpdateQuota(ctx context.Context, updates map[string]int64, opts *Options) error {
 	now := clock.Now(ctx).Unix()
 	cfg := getInterface(ctx)
 
-	defs := make(map[string]*pb.Policy, len(debits))
-	adjs := make(map[string]int64, len(debits))
+	defs := make(map[string]*pb.Policy, len(updates))
+	adjs := make(map[string]int64, len(updates))
 
 	i := 0
-	for pol, val := range debits {
+	for pol, val := range updates {
 		name := pol
 		if strings.Contains(pol, "${user}") {
 			if opts == nil || opts.User == "" {
@@ -153,7 +154,7 @@ func DebitQuota(ctx context.Context, debits map[string]int64, opts *Options) err
 	s := bytes.NewBufferString("local entries = {}\n")
 	i = 0
 	for name, adj := range adjs {
-		if err := debitEntry.Execute(s, map[string]interface{}{
+		if err := updateEntry.Execute(s, map[string]interface{}{
 			"Var":           fmt.Sprintf("entries[%d]", i),
 			"Name":          name,
 			"Default":       defs[name].Resources,
@@ -161,7 +162,7 @@ func DebitQuota(ctx context.Context, debits map[string]int64, opts *Options) err
 			"Replenishment": defs[name].Replenishment,
 			"Amount":        adj,
 		}); err != nil {
-			return errors.Annotate(err, "rendering template %q", debitEntry.Name()).Err()
+			return errors.Annotate(err, "rendering template %q", updateEntry.Name()).Err()
 		}
 		i++
 	}

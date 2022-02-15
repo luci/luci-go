@@ -54,7 +54,7 @@ func TestQuota(t *testing.T) {
 		})
 	})
 
-	Convey("DebitQuota", t, func() {
+	Convey("UpdateQuota", t, func() {
 		s, err := miniredis.Run()
 		So(err, ShouldBeNil)
 		defer s.Close()
@@ -85,7 +85,7 @@ func TestQuota(t *testing.T) {
 					"fake": 0,
 				}
 
-				So(DebitQuota(ctx, up, nil), ShouldErrLike, "not found")
+				So(UpdateQuota(ctx, up, nil), ShouldErrLike, "not found")
 				So(s.Keys(), ShouldBeEmpty)
 			})
 
@@ -94,19 +94,19 @@ func TestQuota(t *testing.T) {
 					"quota/${user}": 0,
 				}
 
-				So(DebitQuota(ctx, up, nil), ShouldErrLike, "user unspecified")
+				So(UpdateQuota(ctx, up, nil), ShouldErrLike, "user unspecified")
 				So(s.Keys(), ShouldBeEmpty)
 			})
 
 			Convey("capped", func() {
 				up := map[string]int64{
-					"quota/${user}": -1,
+					"quota/${user}": 1,
 				}
 				opts := &Options{
 					User: "user@example.com",
 				}
 
-				So(DebitQuota(ctx, up, opts), ShouldBeNil)
+				So(UpdateQuota(ctx, up, opts), ShouldBeNil)
 				So(s.Keys(), ShouldResemble, []string{
 					"entry:f20c860d2ea007ea2360c6ebe2d943acc8a531412c18ff3bd47ab1449988aa6d",
 				})
@@ -122,7 +122,7 @@ func TestQuota(t *testing.T) {
 					User: "user@example.com",
 				}
 
-				So(DebitQuota(ctx, up, opts), ShouldBeNil)
+				So(UpdateQuota(ctx, up, opts), ShouldBeNil)
 				So(s.Keys(), ShouldResemble, []string{
 					"entry:f20c860d2ea007ea2360c6ebe2d943acc8a531412c18ff3bd47ab1449988aa6d",
 				})
@@ -130,15 +130,15 @@ func TestQuota(t *testing.T) {
 				So(s.HGet("entry:f20c860d2ea007ea2360c6ebe2d943acc8a531412c18ff3bd47ab1449988aa6d", "updated"), ShouldEqual, now)
 			})
 
-			Convey("one", func() {
+			Convey("debit one", func() {
 				up := map[string]int64{
-					"quota/${user}": 1,
+					"quota/${user}": -1,
 				}
 				opts := &Options{
 					User: "user@example.com",
 				}
 
-				So(DebitQuota(ctx, up, opts), ShouldBeNil)
+				So(UpdateQuota(ctx, up, opts), ShouldBeNil)
 				So(s.Keys(), ShouldResemble, []string{
 					"entry:f20c860d2ea007ea2360c6ebe2d943acc8a531412c18ff3bd47ab1449988aa6d",
 				})
@@ -146,15 +146,15 @@ func TestQuota(t *testing.T) {
 				So(s.HGet("entry:f20c860d2ea007ea2360c6ebe2d943acc8a531412c18ff3bd47ab1449988aa6d", "updated"), ShouldEqual, now)
 			})
 
-			Convey("all", func() {
+			Convey("debit all", func() {
 				up := map[string]int64{
-					"quota/${user}": 2,
+					"quota/${user}": -2,
 				}
 				opts := &Options{
 					User: "user@example.com",
 				}
 
-				So(DebitQuota(ctx, up, opts), ShouldBeNil)
+				So(UpdateQuota(ctx, up, opts), ShouldBeNil)
 				So(s.Keys(), ShouldResemble, []string{
 					"entry:f20c860d2ea007ea2360c6ebe2d943acc8a531412c18ff3bd47ab1449988aa6d",
 				})
@@ -162,30 +162,30 @@ func TestQuota(t *testing.T) {
 				So(s.HGet("entry:f20c860d2ea007ea2360c6ebe2d943acc8a531412c18ff3bd47ab1449988aa6d", "updated"), ShouldEqual, now)
 			})
 
-			Convey("excessive", func() {
+			Convey("debit excessive", func() {
 				up := map[string]int64{
-					"quota/${user}": 3,
+					"quota/${user}": -3,
 				}
 				opts := &Options{
 					User: "user@example.com",
 				}
 
-				So(DebitQuota(ctx, up, opts), ShouldErrLike, "insufficient resources")
+				So(UpdateQuota(ctx, up, opts), ShouldErrLike, "insufficient resources")
 
 				So(s.Keys(), ShouldBeEmpty)
 			})
 
-			Convey("multiple", func() {
+			Convey("debit multiple", func() {
 				up := map[string]int64{
-					"quota/${user}": 1,
+					"quota/${user}": -1,
 				}
 				opts := &Options{
 					User: "user@example.com",
 				}
 
-				So(DebitQuota(ctx, up, opts), ShouldBeNil)
-				So(DebitQuota(ctx, up, opts), ShouldBeNil)
-				So(DebitQuota(ctx, up, opts), ShouldErrLike, "insufficient resources")
+				So(UpdateQuota(ctx, up, opts), ShouldBeNil)
+				So(UpdateQuota(ctx, up, opts), ShouldBeNil)
+				So(UpdateQuota(ctx, up, opts), ShouldErrLike, "insufficient resources")
 				So(s.Keys(), ShouldResemble, []string{
 					"entry:f20c860d2ea007ea2360c6ebe2d943acc8a531412c18ff3bd47ab1449988aa6d",
 				})
@@ -204,7 +204,7 @@ func TestQuota(t *testing.T) {
 						User: "user@example.com",
 					}
 
-					So(DebitQuota(ctx, up, opts), ShouldErrLike, "not found")
+					So(UpdateQuota(ctx, up, opts), ShouldErrLike, "not found")
 					So(s.Keys(), ShouldBeEmpty)
 				})
 
@@ -215,20 +215,20 @@ func TestQuota(t *testing.T) {
 					}
 					opts := &Options{}
 
-					So(DebitQuota(ctx, up, opts), ShouldErrLike, "user unspecified")
+					So(UpdateQuota(ctx, up, opts), ShouldErrLike, "user unspecified")
 					So(s.Keys(), ShouldBeEmpty)
 				})
 
-				Convey("one", func() {
+				Convey("debit one", func() {
 					up := map[string]int64{
-						"quota":         1,
-						"quota/${user}": 1,
+						"quota":         -1,
+						"quota/${user}": -1,
 					}
 					opts := &Options{
 						User: "user@example.com",
 					}
 
-					So(DebitQuota(ctx, up, opts), ShouldBeNil)
+					So(UpdateQuota(ctx, up, opts), ShouldBeNil)
 					So(s.Keys(), ShouldResemble, []string{
 						"entry:b878a6801d9a9e68b30ed63430bb5e0bddcd984a37a3ee385abc27ff031c7fe7",
 						"entry:f20c860d2ea007ea2360c6ebe2d943acc8a531412c18ff3bd47ab1449988aa6d",
@@ -239,16 +239,16 @@ func TestQuota(t *testing.T) {
 					So(s.HGet("entry:f20c860d2ea007ea2360c6ebe2d943acc8a531412c18ff3bd47ab1449988aa6d", "updated"), ShouldEqual, now)
 				})
 
-				Convey("excessive", func() {
+				Convey("debit excessive", func() {
 					up := map[string]int64{
-						"quota":         1,
-						"quota/${user}": 3,
+						"quota":         -1,
+						"quota/${user}": -3,
 					}
 					opts := &Options{
 						User: "user@example.com",
 					}
 
-					So(DebitQuota(ctx, up, opts), ShouldErrLike, "insufficient resources")
+					So(UpdateQuota(ctx, up, opts), ShouldErrLike, "insufficient resources")
 					So(s.Keys(), ShouldBeEmpty)
 				})
 			})
@@ -264,13 +264,13 @@ func TestQuota(t *testing.T) {
 
 			Convey("capped", func() {
 				up := map[string]int64{
-					"quota": -10,
+					"quota": 10,
 				}
 				opts := &Options{
 					User: "user@example.com",
 				}
 
-				So(DebitQuota(ctx, up, opts), ShouldBeNil)
+				So(UpdateQuota(ctx, up, opts), ShouldBeNil)
 				So(s.Keys(), ShouldResemble, []string{
 					"entry:b878a6801d9a9e68b30ed63430bb5e0bddcd984a37a3ee385abc27ff031c7fe7",
 				})
@@ -278,15 +278,15 @@ func TestQuota(t *testing.T) {
 				So(s.HGet("entry:b878a6801d9a9e68b30ed63430bb5e0bddcd984a37a3ee385abc27ff031c7fe7", "updated"), ShouldEqual, now)
 			})
 
-			Convey("negative", func() {
+			Convey("credit one", func() {
 				up := map[string]int64{
-					"quota": -1,
+					"quota": 1,
 				}
 				opts := &Options{
 					User: "user@example.com",
 				}
 
-				So(DebitQuota(ctx, up, opts), ShouldBeNil)
+				So(UpdateQuota(ctx, up, opts), ShouldBeNil)
 				So(s.Keys(), ShouldResemble, []string{
 					"entry:b878a6801d9a9e68b30ed63430bb5e0bddcd984a37a3ee385abc27ff031c7fe7",
 				})
@@ -294,13 +294,13 @@ func TestQuota(t *testing.T) {
 				So(s.HGet("entry:b878a6801d9a9e68b30ed63430bb5e0bddcd984a37a3ee385abc27ff031c7fe7", "updated"), ShouldEqual, now)
 			})
 
-			Convey("one", func() {
+			Convey("debit one", func() {
 				up := map[string]int64{
-					"quota": 1,
+					"quota": -1,
 				}
 				opts := &Options{}
 
-				So(DebitQuota(ctx, up, opts), ShouldBeNil)
+				So(UpdateQuota(ctx, up, opts), ShouldBeNil)
 				So(s.Keys(), ShouldResemble, []string{
 					"entry:b878a6801d9a9e68b30ed63430bb5e0bddcd984a37a3ee385abc27ff031c7fe7",
 				})
@@ -308,13 +308,13 @@ func TestQuota(t *testing.T) {
 				So(s.HGet("entry:b878a6801d9a9e68b30ed63430bb5e0bddcd984a37a3ee385abc27ff031c7fe7", "updated"), ShouldEqual, now)
 			})
 
-			Convey("excessive", func() {
+			Convey("debit excessive", func() {
 				up := map[string]int64{
-					"quota": 3,
+					"quota": -3,
 				}
 				opts := &Options{}
 
-				So(DebitQuota(ctx, up, opts), ShouldErrLike, "insufficient resources")
+				So(UpdateQuota(ctx, up, opts), ShouldErrLike, "insufficient resources")
 				So(s.Keys(), ShouldResemble, []string{
 					"entry:b878a6801d9a9e68b30ed63430bb5e0bddcd984a37a3ee385abc27ff031c7fe7",
 				})
@@ -333,7 +333,7 @@ func TestQuota(t *testing.T) {
 						User: "user@example.com",
 					}
 
-					So(DebitQuota(ctx, up, opts), ShouldErrLike, "not found")
+					So(UpdateQuota(ctx, up, opts), ShouldErrLike, "not found")
 					So(s.Keys(), ShouldResemble, []string{
 						"entry:b878a6801d9a9e68b30ed63430bb5e0bddcd984a37a3ee385abc27ff031c7fe7",
 					})
@@ -348,7 +348,7 @@ func TestQuota(t *testing.T) {
 					}
 					opts := &Options{}
 
-					So(DebitQuota(ctx, up, opts), ShouldErrLike, "user unspecified")
+					So(UpdateQuota(ctx, up, opts), ShouldErrLike, "user unspecified")
 					So(s.Keys(), ShouldResemble, []string{
 						"entry:b878a6801d9a9e68b30ed63430bb5e0bddcd984a37a3ee385abc27ff031c7fe7",
 					})
@@ -356,16 +356,16 @@ func TestQuota(t *testing.T) {
 					So(s.HGet("entry:b878a6801d9a9e68b30ed63430bb5e0bddcd984a37a3ee385abc27ff031c7fe7", "updated"), ShouldEqual, now)
 				})
 
-				Convey("one", func() {
+				Convey("debit one", func() {
 					up := map[string]int64{
-						"quota":         1,
-						"quota/${user}": 1,
+						"quota":         -1,
+						"quota/${user}": -1,
 					}
 					opts := &Options{
 						User: "user@example.com",
 					}
 
-					So(DebitQuota(ctx, up, opts), ShouldBeNil)
+					So(UpdateQuota(ctx, up, opts), ShouldBeNil)
 					So(s.Keys(), ShouldResemble, []string{
 						"entry:b878a6801d9a9e68b30ed63430bb5e0bddcd984a37a3ee385abc27ff031c7fe7",
 						"entry:f20c860d2ea007ea2360c6ebe2d943acc8a531412c18ff3bd47ab1449988aa6d",
@@ -376,16 +376,16 @@ func TestQuota(t *testing.T) {
 					So(s.HGet("entry:f20c860d2ea007ea2360c6ebe2d943acc8a531412c18ff3bd47ab1449988aa6d", "updated"), ShouldEqual, now)
 				})
 
-				Convey("excessive", func() {
+				Convey("debit excessive", func() {
 					up := map[string]int64{
-						"quota":         1,
-						"quota/${user}": 3,
+						"quota":         -1,
+						"quota/${user}": -3,
 					}
 					opts := &Options{
 						User: "user@example.com",
 					}
 
-					So(DebitQuota(ctx, up, opts), ShouldErrLike, "insufficient resources")
+					So(UpdateQuota(ctx, up, opts), ShouldErrLike, "insufficient resources")
 					So(s.Keys(), ShouldResemble, []string{
 						"entry:b878a6801d9a9e68b30ed63430bb5e0bddcd984a37a3ee385abc27ff031c7fe7",
 					})
@@ -404,7 +404,7 @@ func TestQuota(t *testing.T) {
 						"quota": 1,
 					}
 
-					So(DebitQuota(ctx, up, nil), ShouldErrLike, "last updated in the future")
+					So(UpdateQuota(ctx, up, nil), ShouldErrLike, "last updated in the future")
 					So(s.Keys(), ShouldResemble, []string{
 						"entry:b878a6801d9a9e68b30ed63430bb5e0bddcd984a37a3ee385abc27ff031c7fe7",
 					})
@@ -414,10 +414,10 @@ func TestQuota(t *testing.T) {
 
 				Convey("cap", func() {
 					up := map[string]int64{
-						"quota": -10,
+						"quota": 10,
 					}
 
-					So(DebitQuota(ctx, up, nil), ShouldBeNil)
+					So(UpdateQuota(ctx, up, nil), ShouldBeNil)
 					So(s.Keys(), ShouldResemble, []string{
 						"entry:b878a6801d9a9e68b30ed63430bb5e0bddcd984a37a3ee385abc27ff031c7fe7",
 					})
@@ -425,12 +425,12 @@ func TestQuota(t *testing.T) {
 					So(s.HGet("entry:b878a6801d9a9e68b30ed63430bb5e0bddcd984a37a3ee385abc27ff031c7fe7", "updated"), ShouldEqual, now)
 				})
 
-				Convey("negative", func() {
+				Convey("credit one", func() {
 					up := map[string]int64{
-						"quota": -1,
+						"quota": 1,
 					}
 
-					So(DebitQuota(ctx, up, nil), ShouldBeNil)
+					So(UpdateQuota(ctx, up, nil), ShouldBeNil)
 					So(s.Keys(), ShouldResemble, []string{
 						"entry:b878a6801d9a9e68b30ed63430bb5e0bddcd984a37a3ee385abc27ff031c7fe7",
 					})
@@ -443,7 +443,7 @@ func TestQuota(t *testing.T) {
 						"quota": 0,
 					}
 
-					So(DebitQuota(ctx, up, nil), ShouldBeNil)
+					So(UpdateQuota(ctx, up, nil), ShouldBeNil)
 					So(s.Keys(), ShouldResemble, []string{
 						"entry:b878a6801d9a9e68b30ed63430bb5e0bddcd984a37a3ee385abc27ff031c7fe7",
 					})
@@ -451,12 +451,12 @@ func TestQuota(t *testing.T) {
 					So(s.HGet("entry:b878a6801d9a9e68b30ed63430bb5e0bddcd984a37a3ee385abc27ff031c7fe7", "updated"), ShouldEqual, now)
 				})
 
-				Convey("one", func() {
+				Convey("debit one", func() {
 					up := map[string]int64{
-						"quota": 1,
+						"quota": -1,
 					}
 
-					So(DebitQuota(ctx, up, nil), ShouldBeNil)
+					So(UpdateQuota(ctx, up, nil), ShouldBeNil)
 					So(s.Keys(), ShouldResemble, []string{
 						"entry:b878a6801d9a9e68b30ed63430bb5e0bddcd984a37a3ee385abc27ff031c7fe7",
 					})
@@ -464,12 +464,12 @@ func TestQuota(t *testing.T) {
 					So(s.HGet("entry:b878a6801d9a9e68b30ed63430bb5e0bddcd984a37a3ee385abc27ff031c7fe7", "updated"), ShouldEqual, now)
 				})
 
-				Convey("all", func() {
+				Convey("debit all", func() {
 					up := map[string]int64{
-						"quota": 3,
+						"quota": -3,
 					}
 
-					So(DebitQuota(ctx, up, nil), ShouldBeNil)
+					So(UpdateQuota(ctx, up, nil), ShouldBeNil)
 					So(s.Keys(), ShouldResemble, []string{
 						"entry:b878a6801d9a9e68b30ed63430bb5e0bddcd984a37a3ee385abc27ff031c7fe7",
 					})
@@ -477,12 +477,12 @@ func TestQuota(t *testing.T) {
 					So(s.HGet("entry:b878a6801d9a9e68b30ed63430bb5e0bddcd984a37a3ee385abc27ff031c7fe7", "updated"), ShouldEqual, now)
 				})
 
-				Convey("excessive", func() {
+				Convey("debit excessive", func() {
 					up := map[string]int64{
-						"quota": 4,
+						"quota": -4,
 					}
 
-					So(DebitQuota(ctx, up, nil), ShouldErrLike, "insufficient resources")
+					So(UpdateQuota(ctx, up, nil), ShouldErrLike, "insufficient resources")
 					So(s.Keys(), ShouldResemble, []string{
 						"entry:b878a6801d9a9e68b30ed63430bb5e0bddcd984a37a3ee385abc27ff031c7fe7",
 					})
@@ -494,14 +494,14 @@ func TestQuota(t *testing.T) {
 					Convey("time travel", func() {
 						ctx, _ := testclock.UseTime(ctx, testclock.TestRecentTimeLocal.Add(-1*time.Second))
 						up := map[string]int64{
-							"quota":         1,
-							"quota/${user}": 1,
+							"quota":         -1,
+							"quota/${user}": -1,
 						}
 						opts := &Options{
 							User: "user@example.com",
 						}
 
-						So(DebitQuota(ctx, up, opts), ShouldErrLike, "last updated in the future")
+						So(UpdateQuota(ctx, up, opts), ShouldErrLike, "last updated in the future")
 						So(s.Keys(), ShouldResemble, []string{
 							"entry:b878a6801d9a9e68b30ed63430bb5e0bddcd984a37a3ee385abc27ff031c7fe7",
 						})
@@ -509,16 +509,16 @@ func TestQuota(t *testing.T) {
 						So(s.HGet("entry:b878a6801d9a9e68b30ed63430bb5e0bddcd984a37a3ee385abc27ff031c7fe7", "updated"), ShouldEqual, strconv.FormatInt(testclock.TestRecentTimeLocal.Unix(), 10))
 					})
 
-					Convey("one", func() {
+					Convey("debit one", func() {
 						up := map[string]int64{
-							"quota":         1,
-							"quota/${user}": 1,
+							"quota":         -1,
+							"quota/${user}": -1,
 						}
 						opts := &Options{
 							User: "user@example.com",
 						}
 
-						So(DebitQuota(ctx, up, opts), ShouldBeNil)
+						So(UpdateQuota(ctx, up, opts), ShouldBeNil)
 						So(s.Keys(), ShouldResemble, []string{
 							"entry:b878a6801d9a9e68b30ed63430bb5e0bddcd984a37a3ee385abc27ff031c7fe7",
 							"entry:f20c860d2ea007ea2360c6ebe2d943acc8a531412c18ff3bd47ab1449988aa6d",
@@ -529,16 +529,16 @@ func TestQuota(t *testing.T) {
 						So(s.HGet("entry:f20c860d2ea007ea2360c6ebe2d943acc8a531412c18ff3bd47ab1449988aa6d", "updated"), ShouldEqual, now)
 					})
 
-					Convey("excessive", func() {
+					Convey("debit excessive", func() {
 						up := map[string]int64{
-							"quota":         1,
-							"quota/${user}": 3,
+							"quota":         -1,
+							"quota/${user}": -3,
 						}
 						opts := &Options{
 							User: "user@example.com",
 						}
 
-						So(DebitQuota(ctx, up, opts), ShouldErrLike, "insufficient resources")
+						So(UpdateQuota(ctx, up, opts), ShouldErrLike, "insufficient resources")
 						So(s.Keys(), ShouldResemble, []string{
 							"entry:b878a6801d9a9e68b30ed63430bb5e0bddcd984a37a3ee385abc27ff031c7fe7",
 						})
