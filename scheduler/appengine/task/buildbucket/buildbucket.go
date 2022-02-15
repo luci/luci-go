@@ -545,11 +545,20 @@ func builderID(cfg *messages.BuildbucketTask, realmID string) (*bbpb.BuilderID, 
 
 	case strings.HasPrefix(cfg.Bucket, "luci."):
 		// Legacy v1 bucket that matches a v2 bucket: "luci.<project>.<bucket>".
+		// No longer allowed.
 		chunks := strings.SplitN(cfg.Bucket, ".", 3)
 		if len(chunks) != 3 {
 			return nil, fmt.Errorf("bad legacy v1 'bucket' %q, need 3 components", cfg.Bucket)
 		}
 		project, bucket = chunks[1], chunks[2]
+
+		var full string
+		if curProject, _ := realms.Split(realmID); project != curProject {
+			full = fmt.Sprintf("%s:%s", project, bucket)
+		} else {
+			full = bucket
+		}
+		return nil, fmt.Errorf("legacy v1 bucket names like %q are no longer allowed, use %q instead", cfg.Bucket, full)
 
 	default:
 		// A v2 bucket name within the current project.

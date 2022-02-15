@@ -201,8 +201,8 @@ func TestBuilderID(t *testing.T) {
 		{"proj:realm", "abc.def.123", "proj:abc.def.123", ""},
 		{"proj:@legacy", "buck", "proj:buck", ""},
 
-		{"proj:realm", "luci.another-proj.buck", "another-proj:buck", ""},
-		{"proj:realm", "luci.another-proj.buck.more", "another-proj:buck.more", ""},
+		{"proj:realm", "luci.proj.buck", "", `use "buck" instead`},
+		{"proj:realm", "luci.another-proj.buck", "", `use "another-proj:buck" instead`},
 		{"proj:realm", "luci.another-proj", "", "need 3 components"},
 	}
 
