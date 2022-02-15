@@ -115,7 +115,7 @@ func (s *SchemaApplyer) EnsureTable(ctx context.Context, t Table, spec *bigquery
 
 		// Table exists and is accessible.
 		// Ensure its schema is up to date and remember that for 5 minutes.
-		err = ensureBQTableFields(ctx, t, spec.Schema)
+		err = EnsureBQTableFields(ctx, t, spec.Schema)
 		return nil, 5 * time.Minute, errors.Annotate(err, "ensure bq table fields").Err()
 	})
 	if err != nil {
@@ -145,8 +145,8 @@ func createBQTable(ctx context.Context, t Table, spec *bigquery.TableMetadata) e
 	}
 }
 
-// ensureBQTableFields adds missing fields to t.
-func ensureBQTableFields(ctx context.Context, t Table, newSchema bigquery.Schema) error {
+// EnsureBQTableFields adds missing fields to t.
+func EnsureBQTableFields(ctx context.Context, t Table, newSchema bigquery.Schema) error {
 	err := retry.Retry(ctx, transient.Only(retry.Default), func() error {
 		// We should retrieve Metadata in a retry loop because of the ETag check
 		// below.
