@@ -202,9 +202,9 @@ func mainImpl() int {
 				UpdateMask: &fieldmaskpb.FieldMask{Paths: []string{"build.status"}},
 			})
 
-		// Attach transient tag to NotFound error.
-		// The other transient errors should have had the tag attached at prpc layer.
-		if status.Code(err) == codes.NotFound {
+		// Attach transient tag to internal transient error and NotFound.
+		code := status.Code(err)
+		if grpcutil.IsTransientCode(code) || code == codes.NotFound || code == codes.DeadlineExceeded {
 			err = transient.Tag.Apply(err)
 		}
 		return err
@@ -492,7 +492,7 @@ func resolveExe(path string) (string, error) {
 // This includes resolving paths relative to the current working directory
 // (expected to be the task's root).
 func processExeArgs(input *bbpb.BBAgentArgs, check func(err error)) []string {
-	exeArgs := make([]string, 0, len(input.Build.Exe.Wrapper) + len(input.Build.Exe.Cmd) + 1)
+	exeArgs := make([]string, 0, len(input.Build.Exe.Wrapper)+len(input.Build.Exe.Cmd)+1)
 
 	if len(input.Build.Exe.Wrapper) != 0 {
 		exeArgs = append(exeArgs, input.Build.Exe.Wrapper...)
