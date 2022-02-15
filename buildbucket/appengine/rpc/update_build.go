@@ -328,9 +328,7 @@ func updateEntities(ctx context.Context, req *pb.UpdateBuildRequest, updateMask 
 				return nil
 			}
 		case isEndedStatus:
-			b.Leasee = nil
-			b.LeaseExpirationDate = time.Time{}
-			b.LeaseKey = 0
+			b.ClearLease()
 			bqTask := &taskdefs.ExportBigQuery{BuildId: b.ID}
 			invTask := &taskdefs.FinalizeResultDB{BuildId: b.ID}
 			err := parallel.FanOutIn(func(tks chan<- func() error) {

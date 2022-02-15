@@ -85,6 +85,7 @@ func main() {
 		srv.PRPC.HackFixFieldMasksForJSON = true
 
 		cron.RegisterHandler("delete_builds", buildcron.DeleteOldBuilds)
+		cron.RegisterHandler("expire_builds", buildcron.TimeoutExpiredBuilds)
 		cron.RegisterHandler("update_config", config.UpdateSettingsCfg)
 		return nil
 	})

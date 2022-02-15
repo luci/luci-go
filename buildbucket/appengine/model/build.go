@@ -339,6 +339,13 @@ func (b *Build) ToSimpleBuildProto(ctx context.Context) *pb.Build {
 	return p
 }
 
+// ClearLease clears the lease by resetting the LeaseProperties.
+//
+// NeverLeased is kept unchanged.
+func (b *Build) ClearLease() {
+	b.LeaseProperties = LeaseProperties{NeverLeased: b.LeaseProperties.NeverLeased}
+}
+
 // LoadBuildDetails loads the details of the given builds, trimming them
 // according to the mask.
 func LoadBuildDetails(ctx context.Context, m *BuildMask, builds ...*pb.Build) error {

@@ -18,8 +18,8 @@ cron:
   schedule: every 1 minutes
 
 - description: expire builds
-  target: backend
-  url: /internal/cron/buildbucket/expire_builds
+  target: default-go
+  url: /internal/cron/expire_builds
   schedule: every 1 minutes
 
 - description: delete builds
