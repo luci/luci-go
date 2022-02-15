@@ -180,3 +180,17 @@ func (s *Snapshot) OwnerIdentity() (identity.Identity, error) {
 	}
 	return identity.MakeIdentity("user:" + email)
 }
+
+// IsSubmittable returns whether the change has been approved
+// by the project submit rules.
+func (s *Snapshot) IsSubmittable() (bool, error) {
+	if s == nil {
+		panic("Snapshot is nil")
+	}
+
+	g := s.GetGerrit()
+	if g == nil {
+		return false, errors.New("non-Gerrit CLs not supported")
+	}
+	return g.GetInfo().GetSubmittable(), nil
+}

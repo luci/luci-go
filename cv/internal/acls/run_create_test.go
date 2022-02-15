@@ -15,6 +15,7 @@
 package acls
 
 import (
+	"fmt"
 	"testing"
 
 	"go.chromium.org/luci/auth/identity"
@@ -40,27 +41,42 @@ func TestCheckRunCLs(t *testing.T) {
 	const (
 		lProject   = "chromium"
 		gerritHost = "chromium-review.googlesource.com"
+		committers = "committer-group"
+		dryRunners = "dry-runner-group"
 	)
 
 	Convey("CheckRunCreate", t, func() {
 		ct := cvtesting.Test{}
 		ctx, cancel := ct.SetUp()
 		defer cancel()
-		authState := &authtest.FakeState{}
-		ctx = auth.WithState(ctx, authState)
 		cg := prjcfg.ConfigGroup{
 			Content: &cfgpb.ConfigGroup{
 				Verifiers: &cfgpb.Verifiers{
 					GerritCqAbility: &cfgpb.Verifiers_GerritCQAbility{
-						CommitterList: []string{"grp1"},
+						CommitterList:    []string{committers},
+						DryRunAccessList: []string{dryRunners},
 					},
 				},
 			},
 		}
-		rid := common.MakeRunID(lProject, ct.Clock.Now(), 1, []byte("deadbeef"))
+
+		authState := &authtest.FakeState{FakeDB: authtest.NewFakeDB()}
+		ctx = auth.WithState(ctx, authState)
+		addMember := func(email, grp string) {
+			id, err := identity.MakeIdentity("user:" + email)
+			So(err, ShouldBeNil)
+			authState.FakeDB.(*authtest.FakeDB).AddMocks(authtest.MockMembership(id, grp))
+		}
+		addCommitter := func(email string) {
+			addMember(email, committers)
+		}
+		addDryRunner := func(email string) {
+			addMember(email, dryRunners)
+		}
 
 		// test helpers
 		var rCLs []*run.RunCL
+		rid := common.MakeRunID(lProject, ct.Clock.Now(), 1, []byte("deadbeef"))
 		addRunCL := func(trigger, owner string) *run.RunCL {
 			id := len(rCLs) + 1
 			rCLs = append(rCLs, &run.RunCL{
@@ -83,73 +99,198 @@ func TestCheckRunCLs(t *testing.T) {
 			})
 			return rCLs[len(rCLs)-1]
 		}
-		setCommitterMembership := func(email string) {
-			id, err := identity.MakeIdentity("user:" + email)
-			So(err, ShouldBeNil)
-			authState.FakeDB = authtest.NewFakeDB(authtest.MockMembership(id, "grp1"))
-		}
-		mustOK := func(mode run.Mode) {
-			res, err := CheckRunCreate(ctx, &cg, rCLs, mode)
+		mustOK := func(m run.Mode) {
+			res, err := CheckRunCreate(ctx, &cg, rCLs, m)
 			So(err, ShouldBeNil)
 			So(res.OK(), ShouldBeTrue)
 		}
-		mustFail := func(mode run.Mode) CheckResult {
-			res, err := CheckRunCreate(ctx, &cg, rCLs, mode)
+		mustFailWith := func(m run.Mode, cl *run.RunCL, format string, args ...interface{}) {
+			res, err := CheckRunCreate(ctx, &cg, rCLs, m)
 			So(err, ShouldBeNil)
 			So(res.OK(), ShouldBeFalse)
-			return res
+			So(res.Failure(cl), ShouldContainSubstring, fmt.Sprintf(format, args...))
 		}
-		mustAllModeOK := func() {
-			mustOK(run.DryRun)
-			mustOK(run.QuickDryRun)
-			mustOK(run.FullRun)
+		approveCL := func(cl *run.RunCL) {
+			cl.Detail.GetGerrit().GetInfo().Submittable = true
 		}
-		mustAllModeFail := func() CheckResult {
-			mustFail(run.DryRun)
-			mustFail(run.QuickDryRun)
-			return mustFail(run.FullRun)
-		}
-		checkMsg := func(res CheckResult, rcl *run.RunCL, msg string) {
-			So(res.Failure(rcl), ShouldContainSubstring, msg)
+		setAllowOwner := func(action cfgpb.Verifiers_GerritCQAbility_CQAction) {
+			cg.Content.Verifiers.GerritCqAbility.AllowOwnerIfSubmittable = action
 		}
 
-		Convey("trigger != owner", func() {
-			cl := addRunCL("tr1@example.org", "owner@example.org")
+		Convey("mode == FullRun", func() {
+			m := run.FullRun
 
-			Convey("trigger is a committer", func() {
-				setCommitterMembership("tr1@example.org")
+			Convey("triggerer == owner", func() {
+				owner := "o@example.org"
+				cl := addRunCL(owner, owner)
+
+				Convey("triggerer is a committer", func() {
+					addCommitter(owner)
+
+					// Should succeed w/ approval.
+					mustFailWith(m, cl, noLGTM)
+					approveCL(cl)
+					mustOK(m)
+				})
+				Convey("triggerer is a dry-runner", func() {
+					addDryRunner(owner)
+
+					// Dry-runner can trigger a full-run for own CL w/ approval.
+					mustFailWith(m, cl, noLGTM)
+					approveCL(cl)
+					mustOK(m)
+				})
+				Convey("triggerer is neither dry-runner nor committer", func() {
+					Convey("CL approved", func() {
+						// Should fail, even if it was approved.
+						approveCL(cl)
+						mustFailWith(m, cl, "%q is not a committer", "user:"+owner)
+						// unless AllowOwnerIfSubmittable == COMMIT
+						setAllowOwner(cfgpb.Verifiers_GerritCQAbility_COMMIT)
+						mustOK(m)
+					})
+					Convey("CL not approved", func() {
+						// Should fail always.
+						mustFailWith(m, cl, "%q is not a committer", "user:"+owner)
+						setAllowOwner(cfgpb.Verifiers_GerritCQAbility_COMMIT)
+						mustFailWith(m, cl, noLGTM)
+					})
+				})
 			})
-			Convey("trigger is not a committer", func() {
-				res := mustAllModeFail()
-				So(res.OK(), ShouldBeFalse)
-				checkMsg(res, cl, "neither the CL owner nor a member of the committer groups.")
+
+			Convey("triggerer != owner", func() {
+				owner, triggerer := "o@exmaple.org", "t@example.org"
+				cl := addRunCL(triggerer, owner)
+
+				Convey("triggerer is a committer", func() {
+					addCommitter(triggerer)
+
+					// Should succeed w/ approval.
+					mustFailWith(m, cl, noLGTM)
+					approveCL(cl)
+					mustOK(m)
+				})
+				Convey("triggerer is a dry-runner", func() {
+					addDryRunner(triggerer)
+
+					// Dry-runner cannot trigger a full-run for someone else' CL,
+					// w/ or w/o approval.
+					mustFailWith(m, cl, "neither the CL owner nor a committer")
+					approveCL(cl)
+					mustFailWith(m, cl, "neither the CL owner nor a committer")
+
+					// AllowOwnerIfSubmittable doesn't change the decision, either.
+					setAllowOwner(cfgpb.Verifiers_GerritCQAbility_COMMIT)
+					mustFailWith(m, cl, "neither the CL owner nor a committer")
+				})
+				Convey("triggerer is neither dry-runner nor committer", func() {
+					// Should fail always.
+					mustFailWith(m, cl, "neither the CL owner nor a committer")
+					approveCL(cl)
+					setAllowOwner(cfgpb.Verifiers_GerritCQAbility_COMMIT)
+					mustFailWith(m, cl, "neither the CL owner nor a committer")
+				})
 			})
 		})
 
-		Convey("trigger == owner", func() {
-			addRunCL("tr1@example.org", "tr1@example.org")
+		Convey("mode == DryRun", func() {
+			m := run.DryRun
 
-			Convey("trigger is a committer", func() {
-				setCommitterMembership("tr1@example.org")
-				mustAllModeOK()
+			Convey("triggerer == owner", func() {
+				owner := "o@example.org"
+				cl := addRunCL(owner, owner)
+
+				Convey("triggerer is a committer", func() {
+					// Committers can trigger a dry-run for someone else' CL
+					// w/o approval.
+					addCommitter(owner)
+					mustOK(m)
+				})
+				Convey("triggerer is a dry-runner", func() {
+					// Should succeed w/o approval.
+					addDryRunner(owner)
+					mustOK(m)
+				})
+				Convey("triggerer is neither dry-runner nor committer", func() {
+					Convey("CL approved", func() {
+						// Should fail, even if it was approved.
+						approveCL(cl)
+						mustFailWith(m, cl, "%q is not a dry-runner", "user:"+owner)
+						// Unless AllowOwnerIfSubmittable == DRY_RUN
+						setAllowOwner(cfgpb.Verifiers_GerritCQAbility_DRY_RUN)
+						mustOK(m)
+						// Or, COMMIT
+						setAllowOwner(cfgpb.Verifiers_GerritCQAbility_COMMIT)
+						mustOK(m)
+					})
+					Convey("CL not approved", func() {
+						// Should fail always.
+						mustFailWith(m, cl, "%q is not a dry-runner", "user:"+owner)
+						setAllowOwner(cfgpb.Verifiers_GerritCQAbility_COMMIT)
+						mustFailWith(m, cl, noLGTM)
+					})
+				})
 			})
-			Convey("trigger is not a committer", func() {
-				mustAllModeOK()
+
+			Convey("triggerer != owner", func() {
+				owner, triggerer := "o@exmaple.org", "t@example.org"
+				cl := addRunCL(triggerer, owner)
+
+				Convey("triggerer is a committer", func() {
+					addCommitter(triggerer)
+
+					// Should suceed w/ or w/o approval.
+					mustOK(m)
+					approveCL(cl)
+					mustOK(m)
+				})
+				Convey("triggerer is a dry-runner", func() {
+					addDryRunner(triggerer)
+
+					// Only committers can trigger a dry-run for someone else' CL.
+					mustFailWith(m, cl, "neither the CL owner nor a committer")
+					approveCL(cl)
+					mustFailWith(m, cl, "neither the CL owner nor a committer")
+					// AllowOwnerIfSubmittable doesn't change the decision, either.
+					setAllowOwner(cfgpb.Verifiers_GerritCQAbility_COMMIT)
+					mustFailWith(m, cl, "neither the CL owner nor a committer")
+					setAllowOwner(cfgpb.Verifiers_GerritCQAbility_DRY_RUN)
+					mustFailWith(m, cl, "neither the CL owner nor a committer")
+				})
+				Convey("triggerer is neither dry-runner nor committer", func() {
+					// Only committers can trigger a dry-run for someone else' CL.
+					mustFailWith(m, cl, "neither the CL owner nor a committer")
+					approveCL(cl)
+					mustFailWith(m, cl, "neither the CL owner nor a committer")
+					// AllowOwnerIfSubmittable doesn't change the decision, either.
+					setAllowOwner(cfgpb.Verifiers_GerritCQAbility_COMMIT)
+					mustFailWith(m, cl, "neither the CL owner nor a committer")
+					setAllowOwner(cfgpb.Verifiers_GerritCQAbility_DRY_RUN)
+					mustFailWith(m, cl, "neither the CL owner nor a committer")
+				})
 			})
 		})
 
-		Convey("multiple owners", func() {
-			cl1 := addRunCL("tr1@example.org", "tr1@example.org")
-			cl2 := addRunCL("tr1@example.org", "ow1@example.org")
+		Convey("multiple CLs", func() {
+			owner := "o@example.org"
+			cl1 := addRunCL(owner, owner)
+			cl2 := addRunCL(owner, owner)
+			setAllowOwner(cfgpb.Verifiers_GerritCQAbility_DRY_RUN)
+			m := run.DryRun
 
-			Convey("trigger is a committer", func() {
-				setCommitterMembership("tr1@example.org")
-				mustAllModeOK()
+			Convey("all CLs passed", func() {
+				approveCL(cl1)
+				approveCL(cl2)
+				mustOK(m)
 			})
-			Convey("trigger is not a committer", func() {
-				res := mustAllModeFail()
-				checkMsg(res, cl1, "CV cannot continue this run due to errors on the other CL(s)")
-				checkMsg(res, cl2, "neither the CL owner nor a member of the committer groups.")
+			Convey("all CLs failed", func() {
+				mustFailWith(m, cl1, noLGTM)
+				mustFailWith(m, cl2, noLGTM)
+			})
+			Convey("Some CLs failed", func() {
+				approveCL(cl1)
+				mustFailWith(m, cl1, "CV cannot continue this run due to errors on the other CL(s)")
+				mustFailWith(m, cl2, noLGTM)
 			})
 		})
 	})

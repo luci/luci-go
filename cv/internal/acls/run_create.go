@@ -32,7 +32,10 @@ import (
 
 const (
 	okButDueToOthers     = "CV cannot continue this run due to errors on the other CL(s) included in this run."
-	notOwnerNotCommitter = "CV cannot trigger the Run for %q because %q is neither the CL owner nor a member of the committer groups."
+	ownerNotCommitter    = "CV cannot trigger the Run for %q because %q is not a committer."
+	ownerNotDryRunner    = "CV cannot trigger the Run for %q because %q is not a dry-runner."
+	notOwnerNotCommitter = "CV cannot trigger the Run for %q because %q is neither the CL owner nor a committer."
+	noLGTM               = "This CL needs to be approved first to trigger a Run."
 )
 
 // CheckResult tells the result of an ACL check performed.
@@ -91,39 +94,150 @@ func (res CheckResult) FailuresSummary() string {
 	return sb.String()
 }
 
+type clInfo struct {
+	owner     identity.Identity
+	triggerer identity.Identity
+
+	isApproved  bool // if the CL has been approved (LGTMed) in Gerrit
+	isCommitter bool // if the triggerer is a committer
+	isDryRunner bool // if the triggerer is a dry runner
+
+	allowOwnerIfSubmittable cfgpb.Verifiers_GerritCQAbility_CQAction
+}
+
+func evaluateRunCL(ctx context.Context, cg *prjcfg.ConfigGroup, cl *run.RunCL, mode run.Mode) (clInfo, error) {
+	var info clInfo
+	var err error
+
+	if info.triggerer, err = identity.MakeIdentity("user:" + cl.Trigger.Email); err != nil {
+		return info, errors.Annotate(err, "triggerer %q", cl.Trigger.Email).Err()
+	}
+	if info.owner, err = cl.Detail.OwnerIdentity(); err != nil {
+		return info, errors.Annotate(err, "CL owner identity").Err()
+	}
+	if info.isApproved, err = cl.Detail.IsSubmittable(); err != nil {
+		return info, errors.Annotate(err, "checking if CL is submittable").Err()
+	}
+
+	gVerifier := cg.Content.Verifiers.GetGerritCqAbility()
+	if grps := gVerifier.GetCommitterList(); len(grps) > 0 {
+		if info.isCommitter, err = auth.GetState(ctx).DB().IsMember(ctx, info.triggerer, grps); err != nil {
+			return info, errors.Annotate(err, "checking if triggerer %q is committer", info.triggerer).Err()
+		}
+	}
+	if grps := gVerifier.GetDryRunAccessList(); len(grps) > 0 {
+		if info.isDryRunner, err = auth.GetState(ctx).DB().IsMember(ctx, info.triggerer, grps); err != nil {
+			return info, errors.Annotate(err, "checking if triggerer %q is dry-runner", info.triggerer).Err()
+		}
+	}
+	info.allowOwnerIfSubmittable = gVerifier.GetAllowOwnerIfSubmittable()
+	return info, nil
+}
+
+func canCreateFullRun(info clInfo) (bool, string) {
+	// A committer can run a full run, as long as the CL has been approved.
+	if info.isCommitter {
+		if info.isApproved {
+			return true, ""
+		}
+		return false, noLGTM
+	}
+
+	// A non-committer can trigger a full-run,
+	// if all of the following conditions are met.
+	//
+	// 1) triggerer == owner
+	// 2) triggerer is a dry-runner OR cg.AllowOwnerIfSubmittable == COMMIT
+	// 3) the CL has been approved in Gerrit.
+	//
+	// Note that a dry-runner can trigger a full-run for own CLs that
+	// have been approved in Gerrit.
+	//
+	// For more context, crbug.com/692611 and go/cq-after-lgtm.
+	if info.triggerer != info.owner {
+		return false, fmt.Sprintf(notOwnerNotCommitter, info.triggerer, info.triggerer)
+	}
+	if !info.isDryRunner && info.allowOwnerIfSubmittable != cfgpb.Verifiers_GerritCQAbility_COMMIT {
+		return false, fmt.Sprintf(ownerNotCommitter, info.triggerer, info.triggerer)
+	}
+	if !info.isApproved {
+		return false, noLGTM
+	}
+	return true, ""
+}
+
+func canCreateDryRun(info clInfo) (bool, string) {
+	// A committer can trigger a [Quick]DryRun w/o approval for own CLs.
+	if info.isCommitter {
+		if info.triggerer == info.owner {
+			return true, ""
+		}
+		// In order for a committer to trigger a dry-run for
+		// someone else' CL, all the dependencies, of which owner
+		// is not a committer, must be approved in Gerrit.
+		//
+		// TODO(ddoman): return false if there is an unapproved dependeny
+		// of which owner is not a committer.
+		return true, ""
+	}
+
+	// A non-committer can trigger a dry-run,
+	// if all of the following conditions are met.
+	//
+	// 1) triggerer == owner
+	// 2) triggerer is a dry-runner
+	//    OR
+	//    cg.AllowOwnerIfSubmittable in [COMMIT, DRY_RUN] AND
+	//    the CL has been approved in Gerrit.
+	// 3) all the dependencies of which owner is not a committer
+	// have beeen approved in Gerrit.
+	//
+	// Note that AllowOwnerIfSubmittable == COMMIT doesn't allow non-dry-runners
+	// to trigger a dry-run for own CLs.
+	//
+	// For more context, crbug.com/692611 and go/cq-after-lgtm.
+	if info.triggerer != info.owner {
+		return false, fmt.Sprintf(notOwnerNotCommitter, info.triggerer, info.triggerer)
+	}
+	if !info.isDryRunner {
+		switch info.allowOwnerIfSubmittable {
+		case cfgpb.Verifiers_GerritCQAbility_DRY_RUN:
+		case cfgpb.Verifiers_GerritCQAbility_COMMIT:
+		default:
+			return false, fmt.Sprintf(ownerNotDryRunner, info.triggerer, info.triggerer)
+		}
+		if !info.isApproved {
+			return false, noLGTM
+		}
+	}
+	// TODO(ddoman): return false if there is an unapproved dependeny
+	// of which owner is not a committer.
+	return true, ""
+}
+
 // CheckRunCreate verifies that the user(s) who triggered Run are authorized
 // to create the Run for the CLs.
 func CheckRunCreate(ctx context.Context, cg *prjcfg.ConfigGroup, cls []*run.RunCL, mode run.Mode) (CheckResult, error) {
 	res := make(CheckResult, len(cls))
 	for _, cl := range cls {
-		triggerer, err := identity.MakeIdentity("user:" + cl.Trigger.Email)
+		info, err := evaluateRunCL(ctx, cg, cl, mode)
 		if err != nil {
-			return nil, errors.Annotate(
-				err, "the triggerer identity %q of CL %q is invalid", cl.Trigger.Email, cl.ID).Err()
+			return nil, errors.Annotate(err, "CL(%d)", cl.ID).Err()
 		}
 
-		switch yes, err := isCommitter(ctx, triggerer, cg.Content.Verifiers); {
-		case err != nil:
-			return nil, errors.Annotate(err, "failed to check committer").Err()
-		case !yes:
-			// Non-committer must be CL owner.
-			owner, err := cl.Detail.OwnerIdentity()
-			if err != nil {
-				return nil, errors.Annotate(
-					err, "the owner identity of CL %q is invalid", cl.ID).Err()
-			}
-			if triggerer != owner {
-				res[cl] = fmt.Sprintf(notOwnerNotCommitter, triggerer, triggerer)
-				continue
-			}
+		ok, msg := false, ""
+		switch mode {
+		case run.FullRun:
+			ok, msg = canCreateFullRun(info)
+		case run.DryRun, run.QuickDryRun:
+			ok, msg = canCreateDryRun(info)
+		default:
+			panic(fmt.Errorf("unknown mode %q", mode))
+		}
+		if !ok {
+			res[cl] = msg
+			continue
 		}
 	}
 	return res, nil
-}
-
-func isCommitter(ctx context.Context, one identity.Identity, v *cfgpb.Verifiers) (bool, error) {
-	if groups := v.GetGerritCqAbility().GetCommitterList(); len(groups) > 0 {
-		return auth.GetState(ctx).DB().IsMember(ctx, one, groups)
-	}
-	return false, nil
 }
