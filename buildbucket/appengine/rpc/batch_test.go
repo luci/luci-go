@@ -22,7 +22,6 @@ import (
 	"github.com/golang/mock/gomock"
 	spb "google.golang.org/genproto/googleapis/rpc/status"
 	"google.golang.org/protobuf/encoding/protojson"
-	"google.golang.org/protobuf/types/known/fieldmaskpb"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/common/clock/testclock"
@@ -352,18 +351,6 @@ func TestBatch(t *testing.T) {
 						CancelBuild: &pb.CancelBuildRequest{
 							Id:              1,
 							SummaryMarkdown: "summary",
-							Mask: &pb.BuildMask{
-								Fields: &fieldmaskpb.FieldMask{
-									Paths: []string{
-										"id",
-										"builder",
-										"update_time",
-										"cancel_time",
-										"status",
-										"summary_markdown",
-									},
-								},
-							},
 						},
 					}},
 				},
@@ -379,9 +366,10 @@ func TestBatch(t *testing.T) {
 								Bucket:  "bucket",
 								Builder: "builder1",
 							},
-							UpdateTime:      timestamppb.New(now),
-							CancelTime:      timestamppb.New(now),
-							SummaryMarkdown: "summary",
+							UpdateTime: timestamppb.New(now),
+							EndTime:    timestamppb.New(now),
+							Input:      &pb.Build_Input{},
+							Status:     pb.Status_CANCELED,
 						},
 					}},
 				},

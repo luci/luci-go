@@ -42,11 +42,6 @@ func rejectionHandler(tq string) tq.Handler {
 	}
 }
 
-// CancelBuildTask describes how to route cancel build tasks.
-//
-// The handler is implemented in internal/cancel.
-var CancelBuildTask tq.TaskClassRef
-
 func init() {
 	tq.RegisterTaskClass(tq.TaskClass{
 		ID: "cancel-swarming-task",
@@ -163,13 +158,6 @@ func init() {
 		Handler:   rejectionHandler("notify-pubsub"),
 		Kind:      tq.Transactional,
 		Prototype: (*taskdefs.NotifyPubSub)(nil),
-		Queue:     "backend-default",
-	})
-
-	CancelBuildTask = tq.RegisterTaskClass(tq.TaskClass{
-		ID:        "cancel-build",
-		Kind:      tq.Transactional,
-		Prototype: (*taskdefs.CancelBuildTask)(nil),
 		Queue:     "backend-default",
 	})
 }

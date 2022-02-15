@@ -23,19 +23,14 @@ package cancel
 
 import (
 	"context"
-	"fmt"
 	"time"
 
-	"google.golang.org/protobuf/proto"
-	"google.golang.org/protobuf/types/known/durationpb"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
-	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/server/auth"
-	"go.chromium.org/luci/server/tq"
 
 	"go.chromium.org/luci/buildbucket/appengine/internal/notify"
 	"go.chromium.org/luci/buildbucket/appengine/internal/perm"
@@ -46,56 +41,8 @@ import (
 	"go.chromium.org/luci/buildbucket/protoutil"
 )
 
-func init() {
-	tasks.CancelBuildTask.AttachHandler(func(ctx context.Context, payload proto.Message) error {
-		t := payload.(*taskdefs.CancelBuildTask)
-		_, err := Do(ctx, t.BuildId)
-		return err
-	})
-}
-
-// Start starts canceling a build and schedules the delayed task to finally cancel it
-func Start(ctx context.Context, bID int64, summary string) (*model.Build, error) {
-	bld := &model.Build{ID: bID}
-	err := datastore.RunInTransaction(ctx, func(ctx context.Context) error {
-		switch err := datastore.Get(ctx, bld); {
-		case err == datastore.ErrNoSuchEntity:
-			return perm.NotFoundErr(ctx)
-		case err != nil:
-			return errors.Annotate(err, "failed to fetch build: %d", bld.ID).Err()
-		case protoutil.IsEnded(bld.Proto.Status):
-			return nil
-		case bld.Proto.CancelTime != nil:
-			return nil
-		}
-		now := timestamppb.New(clock.Now(ctx).UTC())
-		bld.Proto.CancelTime = now
-		bld.Proto.UpdateTime = now
-		bld.Proto.SummaryMarkdown = summary
-		canceledBy := "buildbucket"
-		if auth.CurrentIdentity(ctx) != identity.AnonymousIdentity {
-			canceledBy = string(auth.CurrentIdentity(ctx))
-		}
-
-		bld.Proto.CanceledBy = canceledBy
-		if err := datastore.Put(ctx, bld); err != nil {
-			return errors.Annotate(err, "failed to store build: %d", bld.ID).Err()
-		}
-		// Enqueue the task to finally cancel the build.
-		if err := ScheduleCancelBuildTask(ctx, bID, bld.Proto.GracePeriod); err != nil {
-			return errors.Annotate(err, "failed to enqueue cancel task for build: %d", bld.ID).Err()
-		}
-		return nil
-	}, nil)
-	if err != nil {
-		return bld, errors.Annotate(err, "failed to set the build to CANCELING: %d", bID).Err()
-	}
-
-	return bld, err
-}
-
 // Do cancels a build.
-func Do(ctx context.Context, bID int64) (*model.Build, error) {
+func Do(ctx context.Context, bID int64, summary string) (*model.Build, error) {
 	bld := &model.Build{ID: bID}
 	err := datastore.RunInTransaction(ctx, func(ctx context.Context) error {
 		inf := &model.BuildInfra{Build: datastore.KeyForObj(ctx, bld)}
@@ -151,7 +98,9 @@ func Do(ctx context.Context, bID int64) (*model.Build, error) {
 		bld.LeaseExpirationDate = time.Time{}
 		bld.LeaseKey = 0
 
+		bld.Proto.CanceledBy = string(auth.CurrentIdentity(ctx))
 		protoutil.SetStatus(now, bld.Proto, pb.Status_CANCELED)
+		bld.Proto.SummaryMarkdown = summary
 
 		toPut := []interface{}{bld}
 
@@ -174,15 +123,4 @@ func Do(ctx context.Context, bID int64) (*model.Build, error) {
 	}
 
 	return bld, nil
-}
-
-// ScheduleCancelBuildTask enqueues a CancelBuildTask.
-func ScheduleCancelBuildTask(ctx context.Context, bID int64, delay *durationpb.Duration) error {
-	return tq.AddTask(ctx, &tq.Task{
-		Title: fmt.Sprintf("cancel-%d", bID),
-		Payload: &taskdefs.CancelBuildTask{
-			BuildId: bID,
-		},
-		Delay: delay.AsDuration(),
-	})
 }

@@ -18,7 +18,6 @@ import (
 	"context"
 	"testing"
 
-	"google.golang.org/protobuf/types/known/fieldmaskpb"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/common/clock/testclock"
@@ -146,24 +145,11 @@ func TestCancelBuild(t *testing.T) {
 							Bucket:  "bucket",
 							Builder: "builder",
 						},
-						Status: pb.Status_STARTED,
 					},
 				}), ShouldBeNil)
 				req := &pb.CancelBuildRequest{
 					Id:              1,
 					SummaryMarkdown: "summary",
-					Mask: &pb.BuildMask{
-						Fields: &fieldmaskpb.FieldMask{
-							Paths: []string{
-								"id",
-								"builder",
-								"update_time",
-								"cancel_time",
-								"status",
-								"summary_markdown",
-							},
-						},
-					},
 				}
 				rsp, err := srv.CancelBuild(ctx, req)
 				So(err, ShouldBeNil)
@@ -174,12 +160,174 @@ func TestCancelBuild(t *testing.T) {
 						Bucket:  "bucket",
 						Builder: "builder",
 					},
-					UpdateTime:      timestamppb.New(now),
-					CancelTime:      timestamppb.New(now),
-					Status:          pb.Status_STARTED,
-					SummaryMarkdown: "summary",
+					UpdateTime: timestamppb.New(now),
+					EndTime:    timestamppb.New(now),
+					Input:      &pb.Build_Input{},
+					Status:     pb.Status_CANCELED,
 				})
-				So(sch.Tasks(), ShouldHaveLength, 1)
+				So(sch.Tasks(), ShouldHaveLength, 2)
+			})
+
+			Convey("ended", func() {
+				ctx = auth.WithState(ctx, &authtest.FakeState{
+					Identity: "user:user",
+				})
+				So(datastore.Put(ctx, &model.Bucket{
+					ID:     "bucket",
+					Parent: model.ProjectKey(ctx, "project"),
+					Proto: &pb.Bucket{
+						Acls: []*pb.Acl{
+							{
+								Identity: "user:user",
+								Role:     pb.Acl_SCHEDULER,
+							},
+						},
+					},
+				}), ShouldBeNil)
+				So(datastore.Put(ctx, &model.Build{
+					Proto: &pb.Build{
+						Id: 1,
+						Builder: &pb.BuilderID{
+							Project: "project",
+							Bucket:  "bucket",
+							Builder: "builder",
+						},
+						Status: pb.Status_SUCCESS,
+					},
+				}), ShouldBeNil)
+				req := &pb.CancelBuildRequest{
+					Id:              1,
+					SummaryMarkdown: "summary",
+				}
+				rsp, err := srv.CancelBuild(ctx, req)
+				So(err, ShouldBeNil)
+				So(rsp, ShouldResembleProto, &pb.Build{
+					Id: 1,
+					Builder: &pb.BuilderID{
+						Project: "project",
+						Bucket:  "bucket",
+						Builder: "builder",
+					},
+					Input:  &pb.Build_Input{},
+					Status: pb.Status_SUCCESS,
+				})
+				So(sch.Tasks(), ShouldBeEmpty)
+			})
+
+			Convey("task cancellation", func() {
+				ctx = auth.WithState(ctx, &authtest.FakeState{
+					Identity: "user:user",
+				})
+				now := testclock.TestRecentTimeLocal
+				ctx, _ = testclock.UseTime(ctx, now)
+				So(datastore.Put(ctx, &model.Bucket{
+					ID:     "bucket",
+					Parent: model.ProjectKey(ctx, "project"),
+					Proto: &pb.Bucket{
+						Acls: []*pb.Acl{
+							{
+								Identity: "user:user",
+								Role:     pb.Acl_SCHEDULER,
+							},
+						},
+					},
+				}), ShouldBeNil)
+				So(datastore.Put(ctx, &model.Build{
+					Proto: &pb.Build{
+						Id: 1,
+						Builder: &pb.BuilderID{
+							Project: "project",
+							Bucket:  "bucket",
+							Builder: "builder",
+						},
+					},
+				}), ShouldBeNil)
+				So(datastore.Put(ctx, &model.BuildInfra{
+					Build: datastore.MakeKey(ctx, "Build", 1),
+					Proto: &pb.BuildInfra{
+						Swarming: &pb.BuildInfra_Swarming{
+							Hostname: "example.com",
+							TaskId:   "id",
+						},
+					},
+				}), ShouldBeNil)
+				req := &pb.CancelBuildRequest{
+					Id:              1,
+					SummaryMarkdown: "summary",
+				}
+				rsp, err := srv.CancelBuild(ctx, req)
+				So(err, ShouldBeNil)
+				So(rsp, ShouldResembleProto, &pb.Build{
+					Id: 1,
+					Builder: &pb.BuilderID{
+						Project: "project",
+						Bucket:  "bucket",
+						Builder: "builder",
+					},
+					UpdateTime: timestamppb.New(now),
+					EndTime:    timestamppb.New(now),
+					Input:      &pb.Build_Input{},
+					Status:     pb.Status_CANCELED,
+				})
+				So(sch.Tasks(), ShouldHaveLength, 3)
+			})
+
+			Convey("resultdb finalization", func() {
+				ctx = auth.WithState(ctx, &authtest.FakeState{
+					Identity: "user:user",
+				})
+				now := testclock.TestRecentTimeLocal
+				ctx, _ = testclock.UseTime(ctx, now)
+				So(datastore.Put(ctx, &model.Bucket{
+					ID:     "bucket",
+					Parent: model.ProjectKey(ctx, "project"),
+					Proto: &pb.Bucket{
+						Acls: []*pb.Acl{
+							{
+								Identity: "user:user",
+								Role:     pb.Acl_SCHEDULER,
+							},
+						},
+					},
+				}), ShouldBeNil)
+				So(datastore.Put(ctx, &model.Build{
+					Proto: &pb.Build{
+						Id: 1,
+						Builder: &pb.BuilderID{
+							Project: "project",
+							Bucket:  "bucket",
+							Builder: "builder",
+						},
+					},
+				}), ShouldBeNil)
+				So(datastore.Put(ctx, &model.BuildInfra{
+					Build: datastore.MakeKey(ctx, "Build", 1),
+					Proto: &pb.BuildInfra{
+						Resultdb: &pb.BuildInfra_ResultDB{
+							Hostname:   "example.com",
+							Invocation: "id",
+						},
+					},
+				}), ShouldBeNil)
+				req := &pb.CancelBuildRequest{
+					Id:              1,
+					SummaryMarkdown: "summary",
+				}
+				rsp, err := srv.CancelBuild(ctx, req)
+				So(err, ShouldBeNil)
+				So(rsp, ShouldResembleProto, &pb.Build{
+					Id: 1,
+					Builder: &pb.BuilderID{
+						Project: "project",
+						Bucket:  "bucket",
+						Builder: "builder",
+					},
+					UpdateTime: timestamppb.New(now),
+					EndTime:    timestamppb.New(now),
+					Input:      &pb.Build_Input{},
+					Status:     pb.Status_CANCELED,
+				})
+				So(sch.Tasks(), ShouldHaveLength, 3)
 			})
 		})
 	})
