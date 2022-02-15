@@ -177,7 +177,8 @@ func TestCancelTriggers(t *testing.T) {
 		testHappyPath("serial", 4, 1)
 		testHappyPath("concurrent", 80, 8)
 
-		Convey("Retry on alreadyInLease failure", func() {
+		// TODO(crbug/1297723): re-enable this test after fixing the flake.
+		SkipConvey("Retry on alreadyInLease failure", func() {
 			// Creating changes from 1 to `clCount`, lease the CL with duration ==
 			// change number * time.Minute.
 			clCount := 6
