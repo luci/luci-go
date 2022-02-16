@@ -17,6 +17,7 @@ package dispatcher
 import (
 	"context"
 	"testing"
+	"time"
 
 	"golang.org/x/time/rate"
 
@@ -117,6 +118,22 @@ func TestOptionValidationBad(t *testing.T) {
 				opts := Options{Buffer: buffer.Defaults}
 				opts.Buffer.BatchSizeMax = 1000
 				So(opts.normalize(ctx), ShouldErrLike, "Buffer.BatchSizeMax > 0")
+			})
+		})
+
+		Convey(`MinQPS`, func() {
+			Convey(`MinQPS == rate.Inf`, func() {
+				opts := Options{
+					MinQPS: rate.Inf,
+					Buffer: buffer.Defaults}
+				So(opts.normalize(ctx), ShouldErrLike, "MinQPS cannot be infinite")
+			})
+			Convey(`MinQPS greater than QPSLimit`, func() {
+				opts := Options{
+					QPSLimit: rate.NewLimiter(100, 1),
+					MinQPS:   rate.Every(time.Millisecond),
+					Buffer:   buffer.Defaults}
+				So(opts.normalize(ctx), ShouldErrLike, "MinQPS: 1000.000000 is greater than QPSLimit: 100.000000")
 			})
 		})
 	})
