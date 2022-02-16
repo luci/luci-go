@@ -51,8 +51,13 @@ def _cq(
         on which CQ was triggered after the specified time. This is an UTC
         RFC3339 string representing the time, e.g. `2017-12-23T15:47:58Z` and Z
         is mandatory.
-      status_host: hostname of the CQ status app to push updates to. Optional
-        and deprecated.
+      status_host: Optional. Decide whether user has access to the details of
+        runs in this Project in LUCI CV UI. Currently, only the following
+        hosts are accepted: 1) "chromium-cq-status.appspot.com" where everyone
+        can access run details. 2) "internal-cq-status.appspot.com" where only
+        Googlers can access run details. Please don't use the public host if
+        the Project launches internal builders for public repos. It can leak
+        the builder names, which may be confidential.
     """
     submit_max_burst = validate.int("submit_max_burst", submit_max_burst, required = False)
     submit_burst_delay = validate.duration("submit_burst_delay", submit_burst_delay, required = False)

@@ -2254,7 +2254,7 @@ This optional rule can be used to set global CQ parameters that apply to all
 * **submit_max_burst**: maximum number of successful CQ attempts completed by submitting corresponding Gerrit CL(s) before waiting `submit_burst_delay`. This feature today applies to all attempts processed by CQ, across all [luci.cq_group(...)](#luci.cq_group) instances. Optional, by default there's no limit. If used, requires `submit_burst_delay` to be set too.
 * **submit_burst_delay**: how long to wait between bursts of submissions of CQ attempts. Required if `submit_max_burst` is used.
 * **draining_start_time**: **Temporarily not supported, see https://crbug.com/1208569. Reach out to LUCI team oncall if you need urgent help.**. If present, the CQ will refrain from processing any CLs, on which CQ was triggered after the specified time. This is an UTC RFC3339 string representing the time, e.g. `2017-12-23T15:47:58Z` and Z is mandatory.
-* **status_host**: hostname of the CQ status app to push updates to. Optional and deprecated.
+* **status_host**: Optional. Decide whether user has access to the details of runs in this Project in LUCI CV UI. Currently, only the following hosts are accepted: 1) "chromium-cq-status.appspot.com" where everyone can access run details. 2) "internal-cq-status.appspot.com" where only Googlers can access run details. Please don't use the public host if the Project launches internal builders for public repos. It can leak the builder names, which may be confidential.
 
 
 
