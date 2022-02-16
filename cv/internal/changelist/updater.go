@@ -99,6 +99,10 @@ type UpdaterBackend interface {
 	// consistency.
 	Fetch(ctx context.Context, cl *CL, luciProject string, updatedHint time.Time) (UpdateFields, error)
 
+	// HasChanged decides whether the CL in the backend has changed from existing
+	// snapshot in LUCI CV.
+	HasChanged(cvCurrent, backendCurrent *Snapshot) bool
+
 	// TQErrorSpec allows customizing logging and error TQ-specific handling.
 	//
 	// For example, Gerrit backend may wish to retry out of quota errors without
@@ -134,7 +138,7 @@ func (u UpdateFields) IsEmpty() bool {
 		len(u.DelAccess) == 0)
 }
 
-func (u UpdateFields) shouldUpdateSnapshot(cl *CL) bool {
+func (u UpdateFields) shouldUpdateSnapshot(cl *CL, backend UpdaterBackend) bool {
 	switch {
 	case u.Snapshot == nil:
 		return false
@@ -142,22 +146,22 @@ func (u UpdateFields) shouldUpdateSnapshot(cl *CL) bool {
 		return true
 	case cl.Snapshot.GetOutdated() != nil:
 		return true
-	case u.Snapshot.GetExternalUpdateTime().AsTime().After(cl.Snapshot.GetExternalUpdateTime().AsTime()):
-		return true
 	case cl.Snapshot.GetLuciProject() != u.Snapshot.GetLuciProject():
+		return true
+	case backend.HasChanged(cl.Snapshot, u.Snapshot):
 		return true
 	default:
 		return false
 	}
 }
 
-func (u UpdateFields) Apply(cl *CL) (changed bool) {
+func (u UpdateFields) Apply(cl *CL, backend UpdaterBackend) (changed bool) {
 	if u.ApplicableConfig != nil && !cl.ApplicableConfig.SemanticallyEqual(u.ApplicableConfig) {
 		cl.ApplicableConfig = u.ApplicableConfig
 		changed = true
 	}
 
-	if u.shouldUpdateSnapshot(cl) {
+	if u.shouldUpdateSnapshot(cl, backend) {
 		cl.Snapshot = u.Snapshot
 		changed = true
 	}
@@ -451,7 +455,7 @@ func (u *Updater) handleCLWithBackend(ctx context.Context, task *UpdateCLTask, c
 
 	// Transactionally update the CL.
 	transClbk := func(latest *CL) error {
-		if changed := updateFields.Apply(latest); !changed {
+		if changed := updateFields.Apply(latest, backend); !changed {
 			// Someone, possibly even us in case of Datastore transaction retry, has
 			// already updated this CL.
 			return ErrStopMutation

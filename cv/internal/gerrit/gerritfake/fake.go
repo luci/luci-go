@@ -579,6 +579,13 @@ func U(username string) *gerritpb.AccountInfo {
 	}
 }
 
+// MetaRevID sets .MetaRevID for the given change.
+func MetaRevID(metaRevID string) CIModifier {
+	return func(ci *gerritpb.ChangeInfo) {
+		ci.MetaRevID = metaRevID
+	}
+}
+
 ///////////////////////////////////////////////////////////////////////////////
 // Getters / Mutators
 

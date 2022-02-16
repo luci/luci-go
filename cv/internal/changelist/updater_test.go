@@ -330,6 +330,31 @@ func TestUpdaterHappyPath(t *testing.T) {
 		So(rm.byRun, ShouldResemble, map[common.RunID]map[common.CLID]int64{
 			runID: {cl.ID: cl2.EVersion},
 		})
+
+		///////////////////////////////////////////////////
+		// Phase 3: update if backend detect a change    //
+		///////////////////////////////////////////////////
+		b.reset()
+		b.fetchResult.Snapshot = proto.Clone(cl.Snapshot).(*Snapshot) // unchanged
+		b.lookupACfgResult = cl.ApplicableConfig                      // unchanged
+		b.backendSnapshotUpdated = true
+
+		// Actually run the Updater.
+		So(u.handleCL(ctx, &UpdateCLTask{
+			LuciProject: "luci-project",
+			ExternalId:  "fake/123",
+		}), ShouldBeNil)
+		cl3 := reloadCL(ctx, cl)
+
+		// The CL entity have been updated
+		So(cl3.EVersion, ShouldBeGreaterThan, cl2.EVersion)
+		ct.TQ.Run(ctx, tqtesting.StopWhenDrained())
+		So(pm.byProject, ShouldResemble, map[string]map[common.CLID]int64{
+			"luci-project": {cl.ID: cl3.EVersion},
+		})
+		So(rm.byRun, ShouldResemble, map[common.RunID]map[common.CLID]int64{
+			runID: {cl.ID: cl3.EVersion},
+		})
 	})
 }
 
@@ -888,6 +913,8 @@ type fakeUpdaterBackend struct {
 	fetchUpdatedHint time.Time
 	fetchResult      UpdateFields
 	fetchError       error
+
+	backendSnapshotUpdated bool
 }
 
 func (f *fakeUpdaterBackend) Kind() string {
@@ -934,6 +961,23 @@ func (f *fakeUpdaterBackend) Fetch(ctx context.Context, cl *CL, luciProject stri
 	f.fetchLUCIProject = luciProject
 	f.fetchUpdatedHint = updatedHint
 	return f.fetchResult, f.fetchError
+}
+
+func (f *fakeUpdaterBackend) HasChanged(cvCurrent, backendCurrent *Snapshot) bool {
+	switch {
+	case backendCurrent == nil:
+		panic("impossible. Backend must have a non-nil snapshot")
+	case cvCurrent == nil:
+		return true
+	case backendCurrent.GetExternalUpdateTime().AsTime().After(cvCurrent.GetExternalUpdateTime().AsTime()):
+		return true
+	case backendCurrent.GetPatchset() > cvCurrent.GetPatchset():
+		return true
+	case f.backendSnapshotUpdated:
+		return true
+	default:
+		return false
+	}
 }
 
 // reset resets the fake for the next use.

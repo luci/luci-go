@@ -89,6 +89,26 @@ func (u *updaterBackend) Fetch(ctx context.Context, cl *changelist.CL, luciProje
 	return f.toUpdate, nil
 }
 
+// HasChanged implements the changelist.UpdaterBackend.
+func (u *updaterBackend) HasChanged(cvCurrent, backendCurrent *changelist.Snapshot) bool {
+	cvInfo := cvCurrent.GetGerrit().GetInfo()
+	backendInfo := backendCurrent.GetGerrit().GetInfo()
+	switch {
+	case backendInfo.GetUpdated().AsTime().After(cvInfo.GetUpdated().AsTime()):
+		return true
+	case cvInfo.GetUpdated().AsTime().After(backendInfo.GetUpdated().AsTime()):
+		// LUCI CV has more recent data. Most likely Gerrit is returning stale data.
+		return false
+	default:
+		// Gerrit doesn't support fractional second precision. Therefore, even if
+		// two change info have the exact same update timestamp. They could still
+		// be different. See a real example in https://crbug.com/1294440.
+		// Use meta_rev_id which is the sha1 of go/NoteDB to detect whether the
+		// snapshot has changed in the Gerrit backend.
+		return cvInfo.GetMetaRevID() != backendInfo.GetMetaRevID()
+	}
+}
+
 // TQErrorSpec implements the changelist.UpdaterBackend.
 func (u *updaterBackend) TQErrorSpec() common.TQIfy {
 	return common.TQIfy{

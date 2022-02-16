@@ -120,6 +120,42 @@ func TestUpdaterBackend(t *testing.T) {
 				So(acfg.GetProjects(), ShouldHaveLength, 2)
 			})
 		})
+
+		Convey("HasChanged", func() {
+			ciInCV := gf.CI(1, gf.Updated(ct.Clock.Now()), gf.MetaRevID("deadbeef"))
+			ciInGerrit := proto.Clone(ciInCV).(*gerritpb.ChangeInfo)
+			snapshotInCV := &changelist.Snapshot{
+				Kind: &changelist.Snapshot_Gerrit{
+					Gerrit: &changelist.Gerrit{
+						Info: ciInCV,
+					},
+				},
+			}
+			snapshotInGerrit := &changelist.Snapshot{
+				Kind: &changelist.Snapshot_Gerrit{
+					Gerrit: &changelist.Gerrit{
+						Info: ciInGerrit,
+					},
+				},
+			}
+			Convey("Returns false for exact same snapshot", func() {
+				So(gu.HasChanged(snapshotInCV, snapshotInGerrit), ShouldBeFalse)
+			})
+			Convey("Returns true for greater update time at backend", func() {
+				ct.Clock.Add(1 * time.Minute)
+				gf.Updated(ct.Clock.Now())(ciInGerrit)
+				So(gu.HasChanged(snapshotInCV, snapshotInGerrit), ShouldBeTrue)
+			})
+			Convey("Returns false for greater update time in CV", func() {
+				ct.Clock.Add(1 * time.Minute)
+				gf.Updated(ct.Clock.Now())(ciInCV)
+				So(gu.HasChanged(snapshotInCV, snapshotInGerrit), ShouldBeFalse)
+			})
+			Convey("Returns true if meta rev id is different", func() {
+				gf.MetaRevID("cafecafe")(ciInGerrit)
+				So(gu.HasChanged(snapshotInCV, snapshotInGerrit), ShouldBeTrue)
+			})
+		})
 	})
 }
 
