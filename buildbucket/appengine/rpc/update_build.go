@@ -35,7 +35,6 @@ import (
 	"go.chromium.org/luci/server/auth"
 
 	"go.chromium.org/luci/buildbucket/appengine/internal/metrics"
-	"go.chromium.org/luci/buildbucket/appengine/internal/notify"
 	"go.chromium.org/luci/buildbucket/appengine/internal/perm"
 	"go.chromium.org/luci/buildbucket/appengine/model"
 	"go.chromium.org/luci/buildbucket/appengine/tasks"
@@ -324,7 +323,7 @@ func updateEntities(ctx context.Context, req *pb.UpdateBuildRequest, updateMask 
 		switch {
 		case origStatus == b.Proto.Status:
 		case b.Proto.Status == pb.Status_STARTED:
-			if err := notify.NotifyPubSub(ctx, b); err != nil {
+			if err := tasks.NotifyPubSub(ctx, b); err != nil {
 				return nil
 			}
 		case isEndedStatus:
@@ -332,7 +331,7 @@ func updateEntities(ctx context.Context, req *pb.UpdateBuildRequest, updateMask 
 			bqTask := &taskdefs.ExportBigQuery{BuildId: b.ID}
 			invTask := &taskdefs.FinalizeResultDB{BuildId: b.ID}
 			err := parallel.FanOutIn(func(tks chan<- func() error) {
-				tks <- func() error { return notify.NotifyPubSub(ctx, b) }
+				tks <- func() error { return tasks.NotifyPubSub(ctx, b) }
 				tks <- func() error { return tasks.ExportBigQuery(ctx, bqTask) }
 				tks <- func() error { return tasks.FinalizeResultDB(ctx, invTask) }
 			})

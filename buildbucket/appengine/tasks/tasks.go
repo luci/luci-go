@@ -160,6 +160,18 @@ func init() {
 		Prototype: (*taskdefs.NotifyPubSub)(nil),
 		Queue:     "backend-default",
 	})
+
+	tq.RegisterTaskClass(tq.TaskClass{
+		ID:        "cancel-build",
+		Kind:      tq.Transactional,
+		Prototype: (*taskdefs.CancelBuildTask)(nil),
+		Queue:     "backend-default",
+		Handler: func(ctx context.Context, payload proto.Message) error {
+			t := payload.(*taskdefs.CancelBuildTask)
+			_, err := Cancel(ctx, t.BuildId)
+			return err
+		},
+	})
 }
 
 // CancelSwarmingTask enqueues a task queue task to cancel the given Swarming
@@ -201,17 +213,6 @@ func ExportBigQuery(ctx context.Context, task *taskdefs.ExportBigQuery) error {
 // FinalizeResultDB enqueues a task queue task to finalize the invocation for
 // the given build in ResultDB.
 func FinalizeResultDB(ctx context.Context, task *taskdefs.FinalizeResultDB) error {
-	if task.GetBuildId() == 0 {
-		return errors.Reason("build_id is required").Err()
-	}
-	return tq.AddTask(ctx, &tq.Task{
-		Payload: task,
-	})
-}
-
-// NotifyPubSub enqueues a task queue task to notify Pub/Sub about the given
-// build.
-func NotifyPubSub(ctx context.Context, task *taskdefs.NotifyPubSub) error {
 	if task.GetBuildId() == 0 {
 		return errors.Reason("build_id is required").Err()
 	}

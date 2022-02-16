@@ -200,13 +200,13 @@ func TestTasks(t *testing.T) {
 		Convey("NotifyPubSub", func() {
 			Convey("invalid", func() {
 				Convey("nil", func() {
-					So(NotifyPubSub(ctx, nil), ShouldErrLike, "build_id is required")
+					So(notifyPubSub(ctx, nil), ShouldErrLike, "build_id is required")
 					So(sch.Tasks(), ShouldBeEmpty)
 				})
 
 				Convey("empty", func() {
 					task := &taskdef.NotifyPubSub{}
-					So(NotifyPubSub(ctx, task), ShouldErrLike, "build_id is required")
+					So(notifyPubSub(ctx, task), ShouldErrLike, "build_id is required")
 					So(sch.Tasks(), ShouldBeEmpty)
 				})
 
@@ -214,7 +214,7 @@ func TestTasks(t *testing.T) {
 					task := &taskdef.NotifyPubSub{
 						BuildId: 0,
 					}
-					So(NotifyPubSub(ctx, task), ShouldErrLike, "build_id is required")
+					So(notifyPubSub(ctx, task), ShouldErrLike, "build_id is required")
 					So(sch.Tasks(), ShouldBeEmpty)
 				})
 			})
@@ -225,7 +225,7 @@ func TestTasks(t *testing.T) {
 					Callback: true,
 				}
 				So(datastore.RunInTransaction(ctx, func(ctx context.Context) error {
-					return NotifyPubSub(ctx, task)
+					return notifyPubSub(ctx, task)
 				}, nil), ShouldBeNil)
 				So(sch.Tasks(), ShouldHaveLength, 1)
 			})

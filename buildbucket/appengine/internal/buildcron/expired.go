@@ -24,7 +24,6 @@ import (
 	"go.chromium.org/luci/gae/service/datastore"
 
 	"go.chromium.org/luci/buildbucket/appengine/internal/metrics"
-	"go.chromium.org/luci/buildbucket/appengine/internal/notify"
 	"go.chromium.org/luci/buildbucket/appengine/model"
 	"go.chromium.org/luci/buildbucket/appengine/tasks"
 	taskdefs "go.chromium.org/luci/buildbucket/appengine/tasks/defs"
@@ -66,7 +65,7 @@ func expireBuilds(ctx context.Context, bs []*model.Build, mr parallel.MultiRunne
 		return mr.RunMulti(func(workC chan<- func() error) {
 			for _, b := range toUpdate {
 				b := b
-				workC <- func() error { return notify.NotifyPubSub(ctx, b) }
+				workC <- func() error { return tasks.NotifyPubSub(ctx, b) }
 				workC <- func() error {
 					return tasks.ExportBigQuery(ctx, &taskdefs.ExportBigQuery{BuildId: b.ID})
 				}
