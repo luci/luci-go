@@ -43,10 +43,10 @@ type UpdateTryjobTask struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// id is the Tryjob entity datastore id. Internal to CV.
+	// id is the Tryjob entity datastore ID. Internal to CV.
 	Id int64 `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
-	// external_id is the id that identifies the tryjob in the backend.
-	// e.g. in the case of buildbucket, it's the build id.
+	// external_id is the ID that identifies the Tryjob in the backend.
+	// e.g. in the case of buildbucket, it's the build ID.
 	ExternalId string `protobuf:"bytes,2,opt,name=external_id,json=externalId,proto3" json:"external_id,omitempty"`
 }
 

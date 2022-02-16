@@ -23,10 +23,10 @@ option go_package = "go.chromium.org/luci/cv/internal/tryjob;tryjob";
 //
 // Queue: "tryjob-update".
 message UpdateTryjobTask {
-  // id is the Tryjob entity datastore id. Internal to CV.
+  // id is the Tryjob entity datastore ID. Internal to CV.
   int64 id = 1;
 
-  // external_id is the id that identifies the tryjob in the backend.
-  // e.g. in the case of buildbucket, it's the build id.
+  // external_id is the ID that identifies the Tryjob in the backend.
+  // e.g. in the case of buildbucket, it's the build ID.
   string external_id = 2;
 }

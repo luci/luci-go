@@ -26,14 +26,14 @@ import (
 	"go.chromium.org/luci/cv/internal/tryjob"
 )
 
-// DiffResult reports the diff between two tryjob requirements
+// DiffResult contains a diff between two Tryjob requirements.
 type DiffResult struct {
 	ExtraDefs          []*tryjob.Definition
 	RemovedDefs        []*tryjob.Definition
 	RetryConfigChanged bool
 }
 
-// Diff computes the diff between two tryjob requirements.
+// Diff computes the diff between two Tryjob requirements.
 func Diff(base, target *tryjob.Requirement) DiffResult {
 	sortedBaseDefs := toSortedTryjobDefs(base.GetDefinitions())
 	sortedTargetDefs := toSortedTryjobDefs(target.GetDefinitions())
@@ -52,7 +52,7 @@ func Diff(base, target *tryjob.Requirement) DiffResult {
 			sortedTargetDefs = sortedTargetDefs[1:]
 		}
 	}
-	// add the remaining definitions
+	// Add the remaining definitions.
 	for _, def := range sortedBaseDefs {
 		res.RemovedDefs = append(res.RemovedDefs, def.def)
 	}
@@ -68,13 +68,13 @@ func Diff(base, target *tryjob.Requirement) DiffResult {
 
 type comparableTryjobDef struct {
 	def *tryjob.Definition
-	// sortKey is comparable binary encoding of `def`
+	// sortKey is comparable binary encoding of `def`.
 	sortKey []byte
 }
 
 func toSortedTryjobDefs(defs []*tryjob.Definition) []comparableTryjobDef {
 	if len(defs) == 0 {
-		return nil // optimization: avoid initialize empty slice
+		return nil // Optimization: avoid initialize empty slice.
 	}
 	ret := make([]comparableTryjobDef, len(defs))
 	for i, def := range defs {
@@ -83,8 +83,8 @@ func toSortedTryjobDefs(defs []*tryjob.Definition) []comparableTryjobDef {
 		}
 		buf := &bytes.Buffer{}
 		encodeBuildbucketDef(buf, def.GetBuildbucket())
-		// If this tryjob definition has equivalent tryjob defined, append the
-		// encoded equivalent tryjob definition to the buffer.
+		// If this Tryjob definition has equivalent Tryjob defined, append the
+		// encoded equivalent Tryjob definition to the buffer.
 		if equiDef := def.GetEquivalentTo(); equiDef != nil {
 			if equiDef.GetBuildbucket() == nil {
 				panic(fmt.Errorf("only support buildbucket backend for equivalent tryjob; got %T", equiDef.GetBackend()))

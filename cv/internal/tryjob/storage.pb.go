@@ -44,28 +44,28 @@ type Status int32
 const (
 	// STATUS_UNSPECIFIED is never used.
 	Status_STATUS_UNSPECIFIED Status = 0
-	// PENDING means TryJob is being triggered by CV.
+	// PENDING means Tryjob is being triggered by CV.
 	//
 	// *may* not yet have an external ID.
 	// *must* have no Result.
 	Status_PENDING Status = 1
-	// TRIGGERED means tryjob was triggered.
+	// TRIGGERED means Tryjob was triggered.
 	//
 	// *must* have an External ID.
-	// *may* have been triggered by not CV but another user, service, etc.
+	// *may* have been triggered not by CV, but by another user, service, etc.
 	// *may* have a Result, which *may* still change.
 	Status_TRIGGERED Status = 2
-	// ENDED is a completed tryjob. Final status.
+	// ENDED means the Tryjob completed. Final status.
 	//
 	// *must* have an External ID.
 	// *must* have a Result, whose Status is not UNKNOWN.
 	Status_ENDED Status = 3
-	// CANCELLED is Tryjob cancelled by CV. Final status.
+	// CANCELLED imeans Tryjob was cancelled by CV. Final status.
 	//
 	// *must* have an External ID.
 	// *must* have no Result.
 	Status_CANCELLED Status = 4
-	// UNTRIGGERED is tryjob which didn't actually happen. Final state.
+	// UNTRIGGERED means Tryjob was never triggered. Final state.
 	//
 	// *must* have no External ID.
 	// *must* have no Result.
@@ -288,7 +288,7 @@ type Requirement struct {
 	//
 	// No retry allowed if nil.
 	RetryConfig *v2.Verifiers_Tryjob_RetryConfig `protobuf:"bytes,2,opt,name=retry_config,json=retryConfig,proto3" json:"retry_config,omitempty"`
-	// Version increments by 1 everytime this requirement changes.
+	// Version increments by 1 every time this requirement changes.
 	//
 	// Starts with 1.
 	Version int32 `protobuf:"varint,3,opt,name=version,proto3" json:"version,omitempty"`
@@ -371,17 +371,18 @@ type Result struct {
 	//
 	// This is the verdict of verification of Run's CLs by this Tryjob.
 	Status Result_Status `protobuf:"varint,1,opt,name=status,proto3,enum=cv.internal.tryjob.Result_Status" json:"status,omitempty"`
-	// When the tryjob was created in the backend.
+	// Time when the Tryjob was created in the backend.
 	//
-	// This is used by CV to determine if tryjob is fresh enough to be used to
-	// verify a Run.
+	// This is used by CV to determine if the Tryjob is fresh enough to be used
+	// to verify a Run.
 	CreateTime *timestamppb.Timestamp `protobuf:"bytes,2,opt,name=create_time,json=createTime,proto3" json:"create_time,omitempty"`
-	// When the tryjob was last updated in the backend.
+	// Time when the tryjob was last updated in the backend.
 	//
-	// This is used by CV to determine if it needs to refresh Tryjob's Result
-	// by querying its backend.
+	// This is used by CV to determine if it needs to refresh Tryjob's Result by
+	// querying its backend.
 	UpdateTime *timestamppb.Timestamp `protobuf:"bytes,3,opt,name=update_time,json=updateTime,proto3" json:"update_time,omitempty"`
-	// Output is a rich result of a tryjob.
+	// Output is a rich result of a Tryjob.
+	// This includes details related to retry and reuse.
 	//
 	// It's typically set by LUCI recipes.
 	Output *v1.Output `protobuf:"bytes,4,opt,name=output,proto3" json:"output,omitempty"`

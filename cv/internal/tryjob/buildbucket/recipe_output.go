@@ -75,7 +75,7 @@ func parseBuildResult(ctx context.Context, b *bbpb.Build) *parsingResult {
 		case !ok:
 			vc.Errorf("expected a boolean value for field do_not_retry; got %+v", dnr)
 		case pr.output.Retry != recipe.Output_OUTPUT_RETRY_UNSPECIFIED:
-			// if it has been set by the protobuf field, do not change it.
+			// If it has been set by the protobuf field, do not change it.
 		case v.BoolValue:
 			pr.output.Retry = recipe.Output_OUTPUT_RETRY_DENIED
 		default:
@@ -88,7 +88,7 @@ func parseBuildResult(ctx context.Context, b *bbpb.Build) *parsingResult {
 		pr.isTransFailure = true
 	}
 
-	// if this has been set by the protobuf field (there's at least one
+	// If this has been set by the protobuf field (there's at least one
 	// triggered build id already), do not change it.
 	if triggeredBuilds, ok := props.GetFields()["triggered_build_ids"]; ok && len(pr.output.TriggeredBuildIds) == 0 {
 		vc.Enter("triggered_build_ids")

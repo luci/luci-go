@@ -12,6 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package requirement computes tryjob requirement and provides various utility
-// functions related to tryjob requirement.
+// Package requirement computes Tryjob Requirements and provides various
+// utility functions related to Tryjob Requirements.
 package requirement

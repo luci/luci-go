@@ -150,7 +150,7 @@ func (u *Updater) handleTask(ctx context.Context, task *UpdateTryjobTask) error 
 	case status == tj.Status && proto.Equal(tj.Result, result):
 		return nil
 	}
-	// Captures the error that may cause the transaction to commit, and any relevant tags.
+	// Capture the error that may cause the transaction to commit, and any relevant tags.
 	var innerErr error
 	err = datastore.RunInTransaction(ctx, func(ctx context.Context) (err error) {
 		defer func() {
@@ -161,7 +161,7 @@ func (u *Updater) handleTask(ctx context.Context, task *UpdateTryjobTask) error 
 			return errors.Annotate(err, "failed to load Tryjob %d", tj.ID).Tag(transient.Tag).Err()
 		}
 		if loadedEVer != tj.EVersion {
-			// A parallel task must have already updated this tryjob, retry.
+			// A parallel task must have already updated this Tryjob; retry.
 			return errors.Reason("the tryjob data has changed").Tag(transient.Tag).Err()
 		}
 		tj.EntityUpdateTime = datastore.RoundTime(clock.Now(ctx).UTC())

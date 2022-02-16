@@ -12,6 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package buildbucket contains buildbucket-specific implementation details of
-// CV Tryjobs support.
+// Package buildbucket contains Buildbucket-specific implementation details of
+// CV Tryjob support.
 package buildbucket

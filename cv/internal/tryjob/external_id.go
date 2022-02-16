@@ -28,7 +28,7 @@ import (
 	"go.chromium.org/luci/cv/internal/common"
 )
 
-// ExternalID is a unique ID deterministically constructed to identify tryjobs.
+// ExternalID is a unique ID deterministically constructed to identify Tryjobs.
 //
 // Currently, only Buildbucket is supported.
 type ExternalID string
@@ -54,7 +54,7 @@ func MustBuildbucketID(host string, build int64) ExternalID {
 	return ret
 }
 
-// ParseBuildbucketID returns Buildbucket host and build if this is a
+// ParseBuildbucketID returns the Buildbucket host and build if this is a
 // BuildbucketID.
 func (e ExternalID) ParseBuildbucketID() (host string, build int64, err error) {
 	parts := strings.Split(string(e), "/")
@@ -70,7 +70,7 @@ func (e ExternalID) ParseBuildbucketID() (host string, build int64, err error) {
 	return
 }
 
-// URL returns URL of the Tryjob.
+// URL returns the Buildbucket URL of the Tryjob.
 func (e ExternalID) URL() (string, error) {
 	switch kind, err := e.kind(); {
 	case err != nil:
@@ -86,7 +86,7 @@ func (e ExternalID) URL() (string, error) {
 	}
 }
 
-// MustURL is like `URL()` but panic on err.
+// MustURL is like `URL()` but panics on err.
 func (e ExternalID) MustURL() string {
 	ret, err := e.URL()
 	if err != nil {
@@ -104,7 +104,7 @@ func (e ExternalID) kind() (string, error) {
 	return s[:idx], nil
 }
 
-// Load looks up a Tryjob entity
+// Load looks up a Tryjob entity.
 //
 // If an entity referred to by the ExternalID does not exist in CV,
 // `nil, nil` will be returned.
@@ -132,8 +132,9 @@ func (e ExternalID) Load(ctx context.Context) (*Tryjob, error) {
 
 // MustCreateIfNotExists is intended for testing only.
 //
-// If a Tryjob with this ExternalID exists, it loads it from datastore.
-// If it does not, it is created, saved and returned.
+// If a Tryjob with this ExternalID exists, the Tryjob is loaded from
+// datastore. If it does not, it is created, saved and returned.
+//
 // Panics on error.
 func (eid ExternalID) MustCreateIfNotExists(ctx context.Context) *Tryjob {
 	// Quick read-only path.

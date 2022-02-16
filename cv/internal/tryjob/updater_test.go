@@ -112,7 +112,7 @@ func TestHandleTask(t *testing.T) {
 			So(updater.handleTask(ctx, &UpdateTryjobTask{ExternalId: string(eid)}), ShouldBeNil)
 			So(rn.notifiedRuns, ShouldHaveLength, 0)
 
-			// Reload to ensure no changes took place
+			// Reload to ensure no changes took place.
 			tryjob = eid.MustCreateIfNotExists(ctx)
 			So(tryjob.EVersion, ShouldEqual, originalEVersion)
 		})
@@ -135,7 +135,7 @@ func TestHandleTask(t *testing.T) {
 				So(rn.notifiedRuns, ShouldHaveLength, 1)
 				So(rn.notifiedRuns[0], ShouldEqual, tryjob.TriggeredBy)
 
-				// Ensure status updated
+				// Ensure status updated.
 				tryjob = tryjob.ExternalID.MustCreateIfNotExists(ctx)
 				So(tryjob.EVersion, ShouldEqual, originalEVersion+1)
 				So(tryjob.Status, ShouldEqual, Status_ENDED)

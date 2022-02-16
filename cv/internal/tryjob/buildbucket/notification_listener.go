@@ -38,10 +38,10 @@ type scheduler interface {
 	Schedule(context.Context, common.TryjobID, tryjob.ExternalID) error
 }
 
-// NewListener creates a pullig batch processor that pulls BB build
-// notifications from the pubsub subscription specified by projectID and subID,
-// and when they concern a tryjob corresponding to one of our Runs, schedules
-// tasks to notify the appropriate run manager.
+// NewListener creates a pulling batch processor that pulls Buildbucket build
+// notifications from the PubSub subscription specified by projectID and subID,
+// and when they concern a Tryjob corresponding to one of our Runs, schedules
+// tasks to notify the appropriate Run Manager.
 func NewListener(updater scheduler, projectID, subID string) (*pubsubutils.PullingBatchProcessor, error) {
 	listener := &pubsubutils.PullingBatchProcessor{
 		ProcessBatch: func(ctx context.Context, msgs []*pubsub.Message) error {

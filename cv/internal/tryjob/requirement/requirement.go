@@ -25,7 +25,7 @@ import (
 	"go.chromium.org/luci/cv/internal/tryjob"
 )
 
-// Input contains all info needed to compute the tryjob requirement.
+// Input contains all info needed to compute the Tryjob Requirement.
 type Input struct {
 	ConfigGroup *prjcfg.ConfigGroup
 	RunOwner    identity.Identity
@@ -33,7 +33,7 @@ type Input struct {
 	RunOptions  *run.Options
 }
 
-// ComputationFailure is what fails the tryjob requirement computation.
+// ComputationFailure is what fails the Tryjob Requirement computation.
 type ComputationFailure interface {
 	// Reason returns a human-readable string that explains what fails the
 	// requirement computation.
@@ -43,27 +43,27 @@ type ComputationFailure interface {
 	Reason() string
 }
 
-// ComputationResult is the result of tryjob requirement computation.
+// ComputationResult is the result of Tryjob Requirement computation.
 type ComputationResult struct {
-	// Requirement is the derived tryjob requirement to verify the Run.
+	// Requirement is the derived Tryjob Requirement to verify the Run.
 	//
 	// Mutually exclusive with `ComputationFailure`.
 	Requirement *tryjob.Requirement
 	// ComputationFailure is what fails the requirement computation.
 	//
-	// This is different from the returning error in `Compute` function.
-	// This failure is typically caused by invalid directive from users or Project
-	// Config (e.g. including a builder that is not defined in Project config via
-	// git-footer). It should be reported back to user to decide the next step.
-	// On the other hand, the returning error in `Compute` function is typically
-	// caused by internal error like remote rpc call failure and should generally
-	// be retried upon.
+	// This is different from the returned error from the `Compute` function.
+	// This failure is typically caused by invalid directive from users or
+	// Project Config (e.g. including a builder that is not defined in Project
+	// config via git-footer). It should be reported back to the user to decide
+	// the next step. On the other hand, the returned error from the `Compute`
+	// function is typically caused by internal errors, like remote RPC call
+	// failure, and should generally be retried.
 	//
 	// Mutually exclusive with `Requirement`.
 	ComputationFailure ComputationFailure
 }
 
-// OK returns true if successfully computed tryjob requirement.
+// OK returns true if successfully computed Tryjob requirement.
 //
 // `ComputationFailure` MUST be present if returns false.
 func (r ComputationResult) OK() bool {
@@ -80,7 +80,7 @@ func (r ComputationResult) OK() bool {
 	}
 }
 
-// Compute computes the tryjob requirement to verify the run.
+// Compute computes the Tryjob requirement to verify the run.
 func Compute(ctx context.Context, in Input) (ComputationResult, error) {
 	// TODO(crbug/1257922): implement
 	return ComputationResult{Requirement: &tryjob.Requirement{}}, nil
