@@ -43,7 +43,6 @@ import (
 	"go.chromium.org/luci/server/auth/authtest"
 
 	api "go.chromium.org/luci/scheduler/api/scheduler/v1"
-	"go.chromium.org/luci/scheduler/appengine/acl"
 	"go.chromium.org/luci/scheduler/appengine/catalog"
 	"go.chromium.org/luci/scheduler/appengine/engine/cron"
 	"go.chromium.org/luci/scheduler/appengine/internal"
@@ -55,18 +54,6 @@ import (
 	. "github.com/smartystreets/goconvey/convey"
 
 	. "go.chromium.org/luci/common/testing/assertions"
-)
-
-var (
-	aclPublic = acl.GrantsByRole{Readers: []string{"group:all"}, Owners: []string{"group:administrators"}}
-	aclSome   = acl.GrantsByRole{Readers: []string{"group:some"}}
-	aclOne    = acl.GrantsByRole{Owners: []string{"one@example.com"}}
-	aclAdmin  = acl.GrantsByRole{Readers: []string{"group:administrators"}, Owners: []string{"group:administrators"}}
-
-	asUserOne = &authtest.FakeState{
-		Identity:       "user:one@example.com",
-		IdentityGroups: []string{"all"},
-	}
 )
 
 func TestGetAllProjects(t *testing.T) {
@@ -110,7 +97,6 @@ func TestUpdateProjectJobs(t *testing.T) {
 			RealmID:          "proj:testing",
 			Revision:         "rev1",
 			Schedule:         "*/5 * * * * * *",
-			Acls:             acl.GrantsByRole{Readers: []string{"group:r"}, Owners: []string{"groups:o"}},
 			Task:             []uint8{1, 2, 3}, // note: this is actually gibberish, but we don't care here
 			TriggeringPolicy: []uint8{4, 5, 6}, // same
 		}
@@ -132,7 +118,6 @@ func TestUpdateProjectJobs(t *testing.T) {
 					RealmID:   "proj:testing",
 					Revision:  "rev1",
 					Enabled:   true,
-					Acls:      acl.GrantsByRole{Readers: []string{"group:r"}, Owners: []string{"groups:o"}},
 					Schedule:  "*/5 * * * * * *",
 					Cron: cron.State{
 						Enabled:    true,
@@ -172,7 +157,6 @@ func TestUpdateProjectJobs(t *testing.T) {
 					RealmID:   "proj:testing",
 					Revision:  "rev1",
 					Enabled:   true,
-					Acls:      acl.GrantsByRole{Readers: []string{"group:r"}, Owners: []string{"groups:o"}},
 					Schedule:  "59 23 31 12 *",
 					Cron: cron.State{
 						Enabled:    true,
@@ -236,7 +220,6 @@ func TestUpdateProjectJobs(t *testing.T) {
 					RealmID:   "proj:testing",
 					Revision:  "rev1",
 					Enabled:   true,
-					Acls:      acl.GrantsByRole{Readers: []string{"group:r"}, Owners: []string{"groups:o"}},
 					Schedule:  "*/30 * * * * * *",
 					Cron: cron.State{
 						Enabled:    true,
@@ -280,7 +263,6 @@ func TestUpdateProjectJobs(t *testing.T) {
 					RealmID:   "proj:testing",
 					Revision:  "rev1",
 					Enabled:   true,
-					Acls:      acl.GrantsByRole{Readers: []string{"group:r"}, Owners: []string{"groups:o"}},
 					Schedule:  "triggered",
 					Cron: cron.State{
 						Enabled:    true,
@@ -318,7 +300,6 @@ func TestUpdateProjectJobs(t *testing.T) {
 					RealmID:   "proj:testing",
 					Revision:  "rev1",
 					Enabled:   false,
-					Acls:      acl.GrantsByRole{Readers: []string{"group:r"}, Owners: []string{"groups:o"}},
 					Schedule:  "*/5 * * * * * *",
 					Cron: cron.State{
 						Enabled:    false,
@@ -370,36 +351,24 @@ func TestQueries(t *testing.T) {
 		c := newTestContext(epoch)
 		e, _ := newTestEngine()
 
-		// TODO(vadimsh): Simplify this test when old ACLs are gone.
 		db := authtest.NewFakeDB(
 			authtest.MockMembership("user:admin@example.com", adminGroup),
-		)
 
-		mockRealm := func(realm string, readers ...string) {
-			db.AddMocks(mockEnforceRealmACL(realm))
-			for _, r := range readers {
-				db.AddMocks(authtest.MockPermission(identity.Identity(r), realm, permJobsGet))
-			}
-		}
+			authtest.MockPermission("user:one@example.com", "abc:one", permJobsGet),
+			authtest.MockPermission("user:some@example.com", "abc:some", permJobsGet),
 
-		// Mock jobs.get permission.
-		mockRealm("abc:one", "user:one@example.com")
-		mockRealm("abc:some", "user:some@example.com")
-		mockRealm("abc:public",
-			"anonymous:anonymous",
-			"user:one@example.com",
-			"user:some@example.com",
-			"user:admin@example.com",
-		)
+			authtest.MockPermission("anonymous:anonymous", "abc:public", permJobsGet),
+			authtest.MockPermission("user:one@example.com", "abc:public", permJobsGet),
+			authtest.MockPermission("user:some@example.com", "abc:public", permJobsGet),
+			authtest.MockPermission("user:admin@example.com", "abc:public", permJobsGet),
 
-		mockRealm("abc:secret")
-		db.AddMocks(
 			authtest.MockPermission(
 				"user:some@example.com",
 				"abc:secret",
 				permJobsGet,
 				authtest.RestrictAttribute("scheduler.job.name", "restricted"),
-			))
+			),
+		)
 
 		ctxAnon := auth.WithState(c, &authtest.FakeState{
 			Identity: "anonymous:anonymous",
@@ -464,7 +433,7 @@ func TestQueries(t *testing.T) {
 			}
 
 			Convey("Anonymous users see only public jobs", func() {
-				// Only 3 jobs with default ACLs granting READER access to everyone, but
+				// Only 3 jobs with default ACLs granting read access to everyone, but
 				// def/2 is disabled and so shouldn't be returned.
 				So(get(ctxAnon), ShouldResemble, []string{"abc/3", "def/1"})
 			})
@@ -480,7 +449,7 @@ func TestQueries(t *testing.T) {
 					"secret/restricted", // via the conditional permission
 				})
 			})
-			Convey("Admins have implicit READER access to all jobs", func() {
+			Convey("Admins have implicit read access to all jobs", func() {
 				So(get(ctxAdmin), ShouldResemble, []string{
 					"abc/1",
 					"abc/2",
@@ -501,7 +470,7 @@ func TestQueries(t *testing.T) {
 			Convey("Anonymous can still see public jobs", func() {
 				So(get(ctxAnon, "def"), ShouldResemble, []string{"def/1"})
 			})
-			Convey("Admin have implicit READER access to all jobs", func() {
+			Convey("Admin have implicit read access to all jobs", func() {
 				So(get(ctxAdmin, "abc"), ShouldResemble, []string{"abc/1", "abc/2", "abc/3"})
 			})
 			Convey("Owners can still see their jobs", func() {
@@ -516,7 +485,7 @@ func TestQueries(t *testing.T) {
 			_, err := e.GetVisibleJob(ctxAdmin, "missing/job")
 			So(err, ShouldEqual, ErrNoSuchJob)
 
-			_, err = e.GetVisibleJob(ctxAnon, "abc/1") // no READER permission.
+			_, err = e.GetVisibleJob(ctxAnon, "abc/1") // no "scheduler.jobs.get" permission.
 			So(err, ShouldEqual, ErrNoSuchJob)
 
 			_, err = e.GetVisibleJob(ctxAnon, "def/2") // not enabled, hence not visible.
@@ -920,7 +889,6 @@ func TestLaunchInvocationTask(t *testing.T) {
 				Revision: "rev1",
 				Schedule: "triggered",
 				Task:     noopTaskBytes(),
-				Acls:     aclOne,
 			},
 		}), ShouldBeNil)
 
@@ -1050,12 +1018,11 @@ func TestAbortJob(t *testing.T) {
 
 	Convey("with fake env", t, func() {
 		const jobID = "project/job"
+		const realmID = "project:testing"
 		const expectedInvID int64 = 9200093523825193008
 
 		c := newTestContext(epoch)
 		e, mgr := newTestEngine()
-
-		asOne := auth.WithState(c, asUserOne)
 
 		tq := tqtesting.GetTestable(c, e.cfg.Dispatcher)
 		tq.CreateQueues()
@@ -1063,10 +1030,10 @@ func TestAbortJob(t *testing.T) {
 		So(e.UpdateProjectJobs(c, "project", []catalog.Definition{
 			{
 				JobID:    jobID,
+				RealmID:  realmID,
 				Revision: "rev1",
 				Schedule: "triggered",
 				Task:     noopTaskBytes(),
-				Acls:     aclOne,
 			},
 		}), ShouldBeNil)
 
@@ -1079,7 +1046,7 @@ func TestAbortJob(t *testing.T) {
 
 		Convey("inv aborted before it starts", func() {
 			// Kill it right away before it had a chance to start.
-			So(e.AbortJob(asOne, job), ShouldBeNil)
+			So(e.AbortJob(mockOwnerCtx(c, realmID), job), ShouldBeNil)
 
 			// It is dead right away.
 			inv, err := e.getInvocation(c, jobID, invID)
@@ -1087,6 +1054,7 @@ func TestAbortJob(t *testing.T) {
 			So(inv, ShouldResemble, &Invocation{
 				ID:             expectedInvID,
 				JobID:          jobID,
+				RealmID:        realmID,
 				IndexedJobID:   jobID,
 				Started:        epoch,
 				Finished:       epoch,
@@ -1095,7 +1063,7 @@ func TestAbortJob(t *testing.T) {
 				Status:         task.StatusAborted,
 				MutationsCount: 1,
 				DebugLog: "[22:42:00.000] New invocation is queued and will start shortly\n" +
-					"[22:42:00.000] Invocation is manually aborted by user:one@example.com\n" +
+					"[22:42:00.000] Invocation is manually aborted by user:owner@example.com\n" +
 					"[22:42:00.000] Invocation finished in 0s with status ABORTED\n",
 			})
 
@@ -1133,7 +1101,7 @@ func TestAbortJob(t *testing.T) {
 
 			// The invocation is now in the list of finished invocations.
 			datastore.GetTestable(c).CatchupIndexes()
-			invs, _, _ := e.ListInvocations(asOne, job, ListInvocationsOpts{
+			invs, _, _ := e.ListInvocations(mockOwnerCtx(c, realmID), job, ListInvocationsOpts{
 				PageSize:     100,
 				FinishedOnly: true,
 			})
@@ -1172,7 +1140,7 @@ func TestAbortJob(t *testing.T) {
 				ctl.DebugLog("Really aborted!")
 				return nil
 			}
-			So(e.AbortJob(asOne, job), ShouldBeNil)
+			So(e.AbortJob(mockOwnerCtx(c, realmID), job), ShouldBeNil)
 
 			// It is dead right away.
 			inv, err := e.getInvocation(c, jobID, invID)
@@ -1221,6 +1189,7 @@ func TestEmitTriggers(t *testing.T) {
 
 	Convey("with fake env", t, func() {
 		const testingJob = "project/job"
+		const realmID = "project:testing"
 
 		c := newTestContext(epoch)
 		e, mgr := newTestEngine()
@@ -1231,10 +1200,10 @@ func TestEmitTriggers(t *testing.T) {
 		So(e.UpdateProjectJobs(c, "project", []catalog.Definition{
 			{
 				JobID:    testingJob,
+				RealmID:  realmID,
 				Revision: "rev1",
 				Schedule: "triggered",
 				Task:     noopTaskBytes(),
-				Acls:     aclOne, // owned by one@example.com
 			},
 		}), ShouldBeNil)
 
@@ -1265,8 +1234,7 @@ func TestEmitTriggers(t *testing.T) {
 					OrderInBatch: 2,
 				},
 			}
-			asOne := auth.WithState(c, &authtest.FakeState{Identity: "user:one@example.com"})
-			err = e.EmitTriggers(asOne, map[*Job][]*internal.Trigger{job: emittedTriggers})
+			err = e.EmitTriggers(mockOwnerCtx(c, realmID), map[*Job][]*internal.Trigger{job: emittedTriggers})
 			So(err, ShouldBeNil)
 
 			// Run TQ until all activities stop.
@@ -1288,12 +1256,11 @@ func TestEmitTriggers(t *testing.T) {
 			So(incomingTriggers, ShouldResembleProto, emittedTriggers)
 		})
 
-		Convey("no TRIGGERER permission", func() {
+		Convey("no scheduler.jobs.trigger permission", func() {
 			job, err := e.getJob(c, testingJob)
 			So(err, ShouldBeNil)
 
-			asTwo := auth.WithState(c, &authtest.FakeState{Identity: "user:two@example.com"})
-			err = e.EmitTriggers(asTwo, map[*Job][]*internal.Trigger{
+			err = e.EmitTriggers(mockReaderCtx(c, realmID), map[*Job][]*internal.Trigger{
 				job: {
 					{Id: "t1"},
 				},
@@ -1315,8 +1282,7 @@ func TestEmitTriggers(t *testing.T) {
 			So(tasks.Payloads(), ShouldResembleProto, expect.Tasks)
 
 			// Make the RPC, which succeeds.
-			asOne := auth.WithState(c, &authtest.FakeState{Identity: "user:one@example.com"})
-			err = e.EmitTriggers(asOne, map[*Job][]*internal.Trigger{
+			err = e.EmitTriggers(mockOwnerCtx(c, realmID), map[*Job][]*internal.Trigger{
 				job: {
 					{Id: "t1"},
 				},
@@ -1347,18 +1313,18 @@ func TestOneJobTriggersAnother(t *testing.T) {
 		So(e.UpdateProjectJobs(c, "project", []catalog.Definition{
 			{
 				JobID:           triggeringJob,
+				RealmID:         "project:testing",
 				TriggeredJobIDs: []string{triggeredJob},
 				Revision:        "rev1",
 				Schedule:        "triggered",
 				Task:            noopTaskBytes(),
-				Acls:            aclOne,
 			},
 			{
 				JobID:    triggeredJob,
+				RealmID:  "project:testing",
 				Revision: "rev1",
 				Schedule: "triggered",
 				Task:     noopTaskBytes(),
-				Acls:     aclOne,
 			},
 		}), ShouldBeNil)
 
@@ -1516,10 +1482,10 @@ func TestInvocationTimers(t *testing.T) {
 		So(e.UpdateProjectJobs(c, "project", []catalog.Definition{
 			{
 				JobID:    testJobID,
+				RealmID:  "project:testing",
 				Revision: "rev1",
 				Schedule: "triggered",
 				Task:     noopTaskBytes(),
-				Acls:     aclOne,
 			},
 		}), ShouldBeNil)
 
@@ -1638,10 +1604,10 @@ func TestCron(t *testing.T) {
 			So(e.UpdateProjectJobs(c, "project", []catalog.Definition{
 				{
 					JobID:    testJobID,
+					RealmID:  "project:testing",
 					Revision: "rev1",
 					Schedule: schedule,
 					Task:     noopTaskBytes(),
-					Acls:     aclOne,
 				},
 			}), ShouldBeNil)
 			datastore.GetTestable(c).CatchupIndexes()

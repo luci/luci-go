@@ -25,26 +25,38 @@ import "go.chromium.org/luci/scheduler/api/scheduler/v1/triggers.proto";
 // Scheduler exposes public API of the Scheduler service.
 service Scheduler {
   // GetJobs fetches all jobs satisfying JobsRequest and visibility ACLs.
+  //
   // If JobsRequest.project is specified but the project doesn't exist, empty
   // list of Jobs is returned.
+  //
+  // A job is visible if the caller has "scheduler.jobs.get" permission.
   rpc GetJobs(JobsRequest) returns (JobsReply);
 
   // GetInvocations fetches invocations of a given job, most recent first.
+  //
+  // Requires "scheduler.jobs.get" permission.
   rpc GetInvocations(InvocationsRequest) returns (InvocationsReply);
 
   // GetInvocation fetches a single invocation.
+  //
+  // Requires "scheduler.jobs.get" permission.
   rpc GetInvocation(InvocationRef) returns (Invocation);
 
-  // PauseJob will prevent automatic triggering of a job. Manual triggering such
-  // as through this API is still allowed. Any pending or running invocations
-  // are still executed. PauseJob does nothing if job is already paused.
+  // PauseJob will prevent automatic triggering of a job.
   //
-  // Requires OWNER Job permission.
+  // Manual triggering (e.g. via EmitTriggers RPC) is still allowed. Any pending
+  // or running invocations are still executed.
+  //
+  // PauseJob does nothing if job is already paused.
+  //
+  // Requires "scheduler.jobs.pause" permission.
   rpc PauseJob(JobRef) returns (google.protobuf.Empty);
 
-  // ResumeJob resumes paused job. ResumeJob does nothing if job is not paused.
+  // ResumeJob resumes paused job.
   //
-  // Requires OWNER Job permission.
+  // ResumeJob does nothing if job is not paused.
+  //
+  // Requires "scheduler.jobs.resume" permission.
   rpc ResumeJob(JobRef) returns (google.protobuf.Empty);
 
   // AbortJob resets the job to scheduled state, aborting a currently pending or
@@ -54,16 +66,17 @@ service Scheduler {
   // requires invocation ID and doesn't ensure that the invocation aborted is
   // actually latest triggered for the job.
   //
-  // Requires OWNER Job permission.
+  // Requires "scheduler.jobs.abort" permission.
   rpc AbortJob(JobRef) returns (google.protobuf.Empty);
 
   // AbortInvocation aborts a given job invocation.
-  // If an invocation is final, AbortInvocation does nothing.
+  //
+  // If an invocation is finalized, AbortInvocation does nothing.
   //
   // If you want to abort a specific hung invocation, use this request instead
   // of AbortJob.
   //
-  // Requires OWNER Job permission.
+  // Requires "scheduler.jobs.abort" permission.
   rpc AbortInvocation(InvocationRef) returns (google.protobuf.Empty);
 
   // EmitTriggers puts one or more triggers into pending trigger queues of the
@@ -80,7 +93,7 @@ service Scheduler {
   // the call, supplying the same trigger IDs. Triggers with the same IDs will
   // be deduplicated. See Trigger message for more details.
   //
-  // Requires TRIGGERER Job permission.
+  // Requires "scheduler.jobs.trigger" permission.
   rpc EmitTriggers(EmitTriggersRequest) returns (google.protobuf.Empty);
 }
 

@@ -61,8 +61,7 @@ import (
 
 var (
 	// ErrNoPermission indicates the caller doesn't not have permission to perform
-	// desired action, depending on which either either OWNERS or TRIGGERER
-	// permission is required.
+	// desired action.
 	ErrNoPermission = errors.New("insufficient rights on a job")
 	// ErrNoSuchJob indicates the job doesn't exist or not visible.
 	ErrNoSuchJob = errors.New("no such job")
@@ -77,13 +76,15 @@ var (
 // should be retried later. Any other error means that retry won't help.
 //
 // The general pattern for doing something to a job is to get a reference to
-// it via GetVisibleJob() (this call checks READER access), and then pass *Job
-// to desired methods (which may additionally check for more permissions).
+// it via GetVisibleJob() (this call checks "scheduler.jobs.get" permission),
+// and then pass *Job to desired methods (which may additionally check for more
+// permissions).
 //
 // ACLs are enforced with the following implication:
-//  * if caller lacks READER access to Jobs, methods behave as if Jobs do not
-//    exist.
-//  * if caller lacks TRIGGERER or OWNER access to Jobs, but has READER access,
+//  * if a caller lacks "scheduler.jobs.get" permission for a job, methods
+//    behave as if the job doesn't exist.
+//  * if a caller has "scheduler.jobs.get" permission but lacks some other
+//    permission required to execute an action (e.g. "scheduler.jobs.abort"),
 //    ErrNoPermission will be returned.
 //
 // Use EngineInternal if you need to skip ACL checks.
@@ -103,7 +104,7 @@ type Engine interface {
 	// ErrNoSuchJob error is returned if either:
 	//   * job doesn't exist,
 	//   * job is disabled (i.e. was removed from its project config),
-	//   * job isn't visible due to lack of READER access.
+	//   * job isn't visible due to lack of "scheduler.jobs.get" permission.
 	GetVisibleJob(c context.Context, jobID string) (*Job, error)
 
 	// GetVisibleJobBatch is like GetVisibleJob, except it operates on a batch of

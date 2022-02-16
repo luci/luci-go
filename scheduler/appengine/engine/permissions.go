@@ -17,12 +17,9 @@ package engine
 import (
 	"context"
 
-	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/realms"
-
-	"go.chromium.org/luci/scheduler/appengine/acl"
 )
 
 const adminGroup = "administrators"
@@ -35,24 +32,10 @@ var (
 	permJobsTrigger = realms.RegisterPermission("scheduler.jobs.trigger")
 )
 
-// Mapping from Realms permissions to legacy roles.
-//
-// Will be removed once legacy ACLs are gone.
-var permToRole = map[realms.Permission]acl.Role{
-	permJobsGet:     acl.Reader,
-	permJobsPause:   acl.Owner,
-	permJobsResume:  acl.Owner,
-	permJobsAbort:   acl.Owner,
-	permJobsTrigger: acl.Triggerer,
-}
-
 // checkPermission returns nil if the caller has the given permission for the
 // job or ErrNoPermission otherwise.
 //
 // May also return transient errors.
-//
-// Currently checks both legacy ACLs and Realm ACLs, compares them (logging
-// the differences) and picks an outcome of legacy ACLs check as the result.
 func checkPermission(ctx context.Context, job *Job, perm realms.Permission) error {
 	ctx = logging.SetField(ctx, "JobID", job.JobID)
 
@@ -62,65 +45,27 @@ func checkPermission(ctx context.Context, job *Job, perm realms.Permission) erro
 		realm = realms.Join(job.ProjectID, realms.LegacyRealm)
 	}
 
-	// Inputs to condition checks in conditional bindings.
+	// Check realm's bindings (including conditional ones).
 	attrs := realms.Attrs{
 		"scheduler.job.name": job.JobName(),
 	}
-
-	switch enforce, err := auth.ShouldEnforceRealmACL(ctx, realm); {
-	case err != nil:
-		return err
-	case enforce:
-		return checkRealmACL(ctx, perm, realm, attrs)
-	default:
-		return checkLegacyACL(ctx, job, perm, realm, attrs)
-	}
-}
-
-// checkRealmACL uses Realms ACLs, totally ignoring legacy ACLs.
-func checkRealmACL(ctx context.Context, perm realms.Permission, realm string, attrs realms.Attrs) error {
-	// Admins have implicit access to everything.
-	// TODO(vadimsh): We should probably remove this.
-	switch yes, err := auth.IsMember(ctx, adminGroup); {
+	switch yes, err := auth.HasPermission(ctx, perm, realm, attrs); {
 	case err != nil:
 		return err
 	case yes:
 		return nil
 	}
 
-	// Else fallback to checking permissions.
-	switch yes, err := auth.HasPermission(ctx, perm, realm, attrs); {
+	// Admins have implicit access to everything.
+	// TODO(vadimsh): We should probably remove this.
+	switch yes, err := auth.IsMember(ctx, adminGroup); {
 	case err != nil:
 		return err
-	case !yes:
-		return ErrNoPermission
-	default:
+	case yes:
+		logging.Warningf(ctx, "ADMIN_FALLBACK: perm=%q job=%q caller=%q",
+			perm, job.JobID, auth.CurrentIdentity(ctx))
 		return nil
-	}
-}
-
-// checkLegacyACL uses legacy ACLs, but also compares them to realm ACLs.
-func checkLegacyACL(ctx context.Context, job *Job, perm realms.Permission, realm string, attrs realms.Attrs) error {
-	// Convert the permission to a legacy role and check job's AclSet for it.
-	role, ok := permToRole[perm]
-	if !ok {
-		return errors.Reason("unknown job permission %q", perm).Err()
-	}
-	legacyResult, err := job.Acls.CallerHasRole(ctx, role)
-	if err != nil {
-		return err
-	}
-
-	// Check realms ACL and compare it to `legacyResult`. The result and errors
-	// (if any) are recorded inside.
-	auth.HasPermissionDryRun{
-		ExpectedResult: legacyResult,
-		TrackingBug:    "crbug.com/1070761",
-		AdminGroup:     adminGroup,
-	}.Execute(ctx, perm, realm, attrs)
-
-	if !legacyResult {
+	default:
 		return ErrNoPermission
 	}
-	return nil
 }

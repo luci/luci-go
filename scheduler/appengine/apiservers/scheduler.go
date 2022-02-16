@@ -192,7 +192,7 @@ func (s *SchedulerServer) EmitTriggers(ctx context.Context, in *scheduler.EmitTr
 		}
 	}
 
-	// Check jobs presence and READER ACLs.
+	// Check jobs presence and "scheduler.jobs.get" permission.
 	jobIDs := make([]string, 0, len(triggersPerJobID))
 	for id := range triggersPerJobID {
 		jobIDs = append(jobIDs, id)
@@ -209,7 +209,7 @@ func (s *SchedulerServer) EmitTriggers(ctx context.Context, in *scheduler.EmitTr
 			}
 		}
 		return nil, status.Errorf(codes.NotFound,
-			"no such job or no READ permission: %s", strings.Join(missing, ", "))
+			"no such job or no permission to see it: %s", strings.Join(missing, ", "))
 	}
 
 	// Submit the request to the Engine.
@@ -229,7 +229,7 @@ func (s *SchedulerServer) EmitTriggers(ctx context.Context, in *scheduler.EmitTr
 
 //// Private helpers.
 
-// getJob fetches a job, checking READER ACL.
+// getJob fetches a job, checking "scheduler.jobs.get" permission.
 //
 // Returns grpc errors that can be returned as is.
 func (s *SchedulerServer) getJob(ctx context.Context, ref *scheduler.JobRef) (*engine.Job, error) {
@@ -238,7 +238,7 @@ func (s *SchedulerServer) getJob(ctx context.Context, ref *scheduler.JobRef) (*e
 	case err == nil:
 		return job, nil
 	case err == engine.ErrNoSuchJob:
-		return nil, status.Errorf(codes.NotFound, "no such job or no READ permission")
+		return nil, status.Errorf(codes.NotFound, "no such job or no permission to see it")
 	default:
 		return nil, status.Errorf(codes.Internal, "internal error when fetching job: %s", err)
 	}
@@ -253,7 +253,7 @@ func (s *SchedulerServer) runAction(ctx context.Context, ref *scheduler.JobRef, 
 	case err == nil:
 		return &emptypb.Empty{}, nil
 	case err == engine.ErrNoSuchJob:
-		return nil, status.Errorf(codes.NotFound, "no such job or no READ permission")
+		return nil, status.Errorf(codes.NotFound, "no such job or no permission to see it")
 	case err == engine.ErrNoPermission:
 		return nil, status.Errorf(codes.PermissionDenied, "no permission to execute the action")
 	case err == engine.ErrNoSuchInvocation:

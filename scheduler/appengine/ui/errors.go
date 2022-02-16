@@ -25,7 +25,7 @@ import (
 var (
 	uiErrNoJobOrNoPerm = presentableError{
 		Status:         http.StatusNotFound,
-		Message:        "No such job or no READER permission to view it.",
+		Message:        "No such job or no permission to view it.",
 		ReloginMayHelp: true,
 	}
 

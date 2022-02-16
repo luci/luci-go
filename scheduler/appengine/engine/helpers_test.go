@@ -41,7 +41,6 @@ import (
 	"go.chromium.org/luci/config/validation"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
-	"go.chromium.org/luci/server/auth/service/protocol"
 	"go.chromium.org/luci/server/auth/signing"
 	"go.chromium.org/luci/server/auth/signing/signingtest"
 	"go.chromium.org/luci/server/secrets"
@@ -128,9 +127,25 @@ func newTestEngine() (*engineImpl, *fakeTaskManager) {
 	}).(*engineImpl), mgr
 }
 
-func mockEnforceRealmACL(realm string) authtest.MockedDatum {
-	return authtest.MockRealmData(realm, &protocol.RealmData{
-		EnforceInService: []string{fakeAppID},
+func mockOwnerCtx(ctx context.Context, realm string) context.Context {
+	return auth.WithState(ctx, &authtest.FakeState{
+		Identity: "user:owner@example.com",
+		FakeDB: authtest.NewFakeDB(
+			authtest.MockPermission("user:owner@example.com", realm, permJobsGet),
+			authtest.MockPermission("user:owner@example.com", realm, permJobsPause),
+			authtest.MockPermission("user:owner@example.com", realm, permJobsResume),
+			authtest.MockPermission("user:owner@example.com", realm, permJobsAbort),
+			authtest.MockPermission("user:owner@example.com", realm, permJobsTrigger),
+		),
+	})
+}
+
+func mockReaderCtx(ctx context.Context, realm string) context.Context {
+	return auth.WithState(ctx, &authtest.FakeState{
+		Identity: "user:reader@example.com",
+		FakeDB: authtest.NewFakeDB(
+			authtest.MockPermission("user:reader@example.com", realm, permJobsGet),
+		),
 	})
 }
 
