@@ -87,9 +87,6 @@ func validateUpdate(req *pb.UpdateBuildRequest, bs *model.BuildSteps) error {
 	if req.GetBuild().GetId() == 0 {
 		return errors.Reason("build.id: required").Err()
 	}
-	if len(req.UpdateMask.GetPaths()) == 0 {
-		return errors.Reason("build.update_mask: required").Err()
-	}
 
 	buildStatus := pb.Status_STATUS_UNSPECIFIED
 	hasStepsMask := false
@@ -338,6 +335,8 @@ func updateEntities(ctx context.Context, req *pb.UpdateBuildRequest, updateMask 
 			if err != nil {
 				return err
 			}
+		case len(req.UpdateMask.GetPaths()) == 0:
+			// empty request
 		default:
 			// var `updateBuildStatuses` should contain only STARTED and terminal
 			// statuses. If this happens, it must be a bug.

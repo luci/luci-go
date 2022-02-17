@@ -413,7 +413,7 @@ type UpdateBuildRequest struct {
 
 	// Build to update, with new field values.
 	Build *Build `protobuf:"bytes,1,opt,name=build,proto3" json:"build,omitempty"`
-	// Required. Build fields to update.
+	// Build fields to update.
 	// See also
 	// https://developers.google.com/protocol-buffers/docs/reference/google.protobuf#fieldmask
 	//
@@ -426,6 +426,8 @@ type UpdateBuildRequest struct {
 	// - build.steps
 	// - build.summary_markdown
 	// - build.tags
+	//
+	// If omitted, Buildbucket will update the Build's update_time, but nothing else.
 	UpdateMask *fieldmaskpb.FieldMask `protobuf:"bytes,2,opt,name=update_mask,json=updateMask,proto3" json:"update_mask,omitempty"`
 	// Fields to include in the response. See also GetBuildRequest.fields.
 	//

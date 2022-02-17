@@ -73,15 +73,6 @@ func TestValidateUpdate(t *testing.T) {
 		})
 
 		Convey("fails", func() {
-			Convey("with nil mask", func() {
-				So(validateUpdate(req, nil), ShouldErrLike, "build.update_mask: required")
-			})
-
-			Convey("without paths", func() {
-				req.UpdateMask = &field_mask.FieldMask{}
-				So(validateUpdate(req, nil), ShouldErrLike, "build.update_mask: required")
-			})
-
 			Convey("with nil request", func() {
 				So(validateUpdate(nil, nil), ShouldErrLike, "build.id: required")
 			})

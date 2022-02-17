@@ -193,7 +193,7 @@ message UpdateBuildRequest {
   // Build to update, with new field values.
   Build build = 1;
 
-  // Required. Build fields to update.
+  // Build fields to update.
   // See also
   // https://developers.google.com/protocol-buffers/docs/reference/google.protobuf#fieldmask
   //
@@ -206,6 +206,8 @@ message UpdateBuildRequest {
   // - build.steps
   // - build.summary_markdown
   // - build.tags
+  //
+  // If omitted, Buildbucket will update the Build's update_time, but nothing else.
   google.protobuf.FieldMask update_mask = 2;
 
   // Fields to include in the response. See also GetBuildRequest.fields.
