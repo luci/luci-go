@@ -27,7 +27,7 @@ require (
 	github.com/aws/aws-sdk-go v1.40.42 // indirect
 	github.com/bazelbuild/buildtools v0.0.0-20210911013817-37179d5767a1
 	github.com/bazelbuild/remote-apis v0.0.0-20210812183132-3e816456ee28
-	github.com/bazelbuild/remote-apis-sdks v0.0.0-20220217001615-912d78baf676
+	github.com/bazelbuild/remote-apis-sdks v0.0.0-20220217034055-0a5630b7051c
 	github.com/cespare/xxhash/v2 v2.1.2 // indirect
 	github.com/danjacques/gofslock v0.0.0-20220131014315-6e321f4509c8
 	github.com/dgraph-io/badger/v3 v3.2103.1
