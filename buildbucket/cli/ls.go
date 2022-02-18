@@ -99,6 +99,7 @@ func cmdLS(p Params) *subcommands.Command {
 				  * `+bb.ExperimentBackendAlt+`
 				  * `+bb.ExperimentBBCanarySoftware+`
 				  * `+bb.ExperimentBBAgent+`
+					* `+bb.ExperimentBBAgentDownloadCipd+`
 				  * `+bb.ExperimentBBAgentGetBuild+`
 				  * `+bb.ExperimentRecipePY3+`
 			`))
