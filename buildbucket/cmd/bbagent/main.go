@@ -189,10 +189,11 @@ func mainImpl() int {
 	}
 	defer cancel()
 
+	var updatedBuild *bbpb.Build
 	// We send a single status=STARTED here, and will send the final build status
 	// after the user executable completes.
 	err = retry.Retry(cctx, transient.Only(retry.Default), func() (err error) {
-		_, err = bbclient.UpdateBuild(
+		updatedBuild, err = bbclient.UpdateBuild(
 			cctx,
 			&bbpb.UpdateBuildRequest{
 				Build: &bbpb.Build{
@@ -200,6 +201,7 @@ func mainImpl() int {
 					Status: bbpb.Status_STARTED,
 				},
 				UpdateMask: &fieldmaskpb.FieldMask{Paths: []string{"build.status"}},
+				Mask:       readMask,
 			})
 
 		// Attach transient tag to internal transient error and NotFound.
@@ -218,9 +220,15 @@ func mainImpl() int {
 		logging.Errorf(cctx, "Failed to report status STARTED to Buildbucket due to %s", err)
 		return 1
 	}
+	// The build has been canceled, bail out early.
+	if updatedBuild.CancelTime != nil {
+		logging.Infof(ctx, "The build is in the cancel process, cancel time is %s.", updatedBuild.CancelTime.AsTime().String())
+		return 0
+	}
 
 	dispatcherOpts, dispatcherErrCh := channelOpts(cctx)
-	buildsCh, err := dispatcher.NewChannel(cctx, dispatcherOpts, mkSendFn(cctx, bbclient))
+	canceledBuildCh := make(chan struct{})
+	buildsCh, err := dispatcher.NewChannel(cctx, dispatcherOpts, mkSendFn(cctx, bbclient, canceledBuildCh))
 	check(errors.Annotate(err, "could not create builds dispatcher channel").Err())
 	defer buildsCh.CloseAndDrain(cctx)
 
@@ -333,10 +341,13 @@ func mainImpl() int {
 	)
 
 	go func() {
-		// Monitors the `dispatcherErrCh` and checks for fatal error.
-		//
-		// Stops the build shuttling and shuts down the luciexe if a fatal error is
-		// received.
+		// Monitors events that cause the build to stop.
+		// * Monitors the `dispatcherErrCh` and checks for fatal error.
+		//   * Stops the build shuttling and shuts down the luciexe if a fatal error
+		//     is received.
+		// * Monitors the returned build from UpdateBuild rpcs and checks if the
+		//   build has been canceled.
+		//   * Shuts down the luciexe if the build is canceled.
 		stopped := false
 		for {
 			select {
@@ -346,6 +357,9 @@ func mainImpl() int {
 					fatalUpdateBuildErrorSlot.Store(err)
 					stopped = true
 				}
+			case <-canceledBuildCh:
+				// The build has been canceled, bail out early.
+				close(shutdownCh)
 			case <-cctx.Done():
 				return
 			}
@@ -378,6 +392,8 @@ func mainImpl() int {
 		// output from the final push to minimize potential issues.
 		retcode = 1
 	}
+	// No need to check the returned build here because it's already finalizing
+	// the build.
 	bbclientRetriesEnabled = true
 	_, bbErr := bbclient.UpdateBuild(
 		cctx,

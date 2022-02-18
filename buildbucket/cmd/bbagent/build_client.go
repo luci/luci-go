@@ -23,6 +23,7 @@ import (
 	"google.golang.org/genproto/protobuf/field_mask"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/metadata"
+	"google.golang.org/protobuf/types/known/fieldmaskpb"
 
 	"go.chromium.org/luci/auth"
 	"go.chromium.org/luci/common/errors"
@@ -50,6 +51,14 @@ type BuildsClient interface {
 }
 
 var _ BuildsClient = dummyBBClient{}
+
+var readMask = &bbpb.BuildMask{
+	Fields: &fieldmaskpb.FieldMask{
+		Paths: []string{
+			"cancel_time",
+		},
+	},
+}
 
 type dummyBBClient struct{}
 
@@ -160,7 +169,7 @@ func channelOpts(ctx context.Context) (*dispatcher.Options, <-chan error) {
 	return opts, errCh
 }
 
-func mkSendFn(ctx context.Context, client BuildsClient) dispatcher.SendFn {
+func mkSendFn(ctx context.Context, client BuildsClient, canceledBuildCh chan<- struct{}) dispatcher.SendFn {
 	return func(b *buffer.Batch) error {
 		var req *bbpb.UpdateBuildRequest
 
@@ -178,6 +187,7 @@ func mkSendFn(ctx context.Context, client BuildsClient) dispatcher.SendFn {
 						"build.summary_markdown",
 					},
 				},
+				Mask: readMask,
 			}
 			if len(build.Tags) > 0 {
 				req.UpdateMask.Paths = append(req.UpdateMask.Paths, "build.tags")
@@ -186,7 +196,14 @@ func mkSendFn(ctx context.Context, client BuildsClient) dispatcher.SendFn {
 			b.Data[0].Item = nil
 		}
 
-		_, err := client.UpdateBuild(ctx, req)
-		return err
+		updatedBuild, err := client.UpdateBuild(ctx, req)
+		if err != nil {
+			return err
+		}
+		if updatedBuild.CancelTime != nil {
+			logging.Infof(ctx, "The build is in the cancel process, cancel time is %s.", updatedBuild.CancelTime.AsTime().String())
+			close(canceledBuildCh)
+		}
+		return nil
 	}
 }
