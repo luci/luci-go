@@ -31,6 +31,7 @@ import (
 	"go.chromium.org/luci/common/lhttp"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/grpc/prpc"
+	"go.chromium.org/luci/lucictx"
 
 	pb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/buildbucket/protoutil"
@@ -49,10 +50,11 @@ func doc(doc string) string {
 // All bb subcommands must embed it directly or indirectly.
 type baseCommandRun struct {
 	subcommands.CommandRunBase
-	authFlags authcli.Flags
-	host      string
-	json      bool
-	noColor   bool
+	authFlags          authcli.Flags
+	host               string
+	json               bool
+	noColor            bool
+	scheduleBuildToken string
 
 	httpClient     *http.Client
 	buildsClient   pb.BuildsClient
@@ -94,8 +96,21 @@ func (r *baseCommandRun) initClients(ctx context.Context) error {
 	}
 
 	// Validate -host
+	hostFromCtx := ""
+	bbCtx := lucictx.GetBuildbucket(ctx)
+	if bbCtx != nil {
+		if bbCtx.GetHostname() != "" {
+			hostFromCtx = bbCtx.Hostname
+		}
+		if bbCtx.GetScheduleBuildToken() != "" {
+			r.scheduleBuildToken = bbCtx.ScheduleBuildToken
+		}
+	}
 	if r.host == "" {
-		return fmt.Errorf("a host for the buildbucket service must be provided")
+		if hostFromCtx == "" {
+			return fmt.Errorf("a host for the buildbucket service must be provided")
+		}
+		r.host = hostFromCtx
 	}
 	if strings.ContainsRune(r.host, '/') {
 		return fmt.Errorf("invalid host %q", r.host)

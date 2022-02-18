@@ -30,6 +30,12 @@ import (
 // https://chromium.googlesource.com/infra/infra/+/c189064/appengine/cr-buildbucket/v2/api.py#35
 const BuildTokenHeader = "x-build-token"
 
+// BuildbucketTokenHeader is the new name of gRPC metadata header indicating the
+// build token.
+// Currently it's used by ScheduleBuild (and batch request for ScheduleBuild) RPC.
+// TODO(crbug.com/1031205) Replace BuildTokenHeader with this.
+const BuildbucketTokenHeader = "x-buildbucket-token"
+
 // Well-known experiment strings.
 //
 // See the Builder.experiments field documentation.

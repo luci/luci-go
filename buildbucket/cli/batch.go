@@ -26,6 +26,7 @@ import (
 	"github.com/golang/protobuf/jsonpb"
 	"github.com/maruel/subcommands"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
 
 	"go.chromium.org/luci/common/cli"
@@ -36,6 +37,7 @@ import (
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/grpc/grpcutil"
 
+	"go.chromium.org/luci/buildbucket"
 	pb "go.chromium.org/luci/buildbucket/proto"
 )
 
@@ -84,6 +86,10 @@ func (r *batchRun) Run(a subcommands.Application, args []string, env subcommands
 	req := &pb.BatchRequest{}
 	if err := jsonpb.Unmarshal(bytes.NewReader(requestBytes), req); err != nil {
 		return r.done(ctx, errors.Annotate(err, "failed to parse BatchRequest from stdin").Err())
+	}
+
+	if r.scheduleBuildToken != "" {
+		ctx = metadata.NewOutgoingContext(ctx, metadata.Pairs(buildbucket.BuildbucketTokenHeader, r.scheduleBuildToken))
 	}
 
 	res, err := sendBatchReq(ctx, req, r.buildsClient)
