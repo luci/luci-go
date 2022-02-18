@@ -165,7 +165,7 @@ func init() {
 		ID:        "cancel-build",
 		Kind:      tq.Transactional,
 		Prototype: (*taskdefs.CancelBuildTask)(nil),
-		Queue:     "backend-default",
+		Queue:     "backend-go-default",
 		Handler: func(ctx context.Context, payload proto.Message) error {
 			t := payload.(*taskdefs.CancelBuildTask)
 			_, err := Cancel(ctx, t.BuildId)

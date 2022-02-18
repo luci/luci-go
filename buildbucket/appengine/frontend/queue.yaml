@@ -19,3 +19,7 @@ queue:
   max_concurrent_requests: 128
 - name: bq-export
   mode: pull
+- name: backend-go-default
+  # TODO(crbug/1042991): Target backend-go once it exists.
+  target: default-go
+  rate: 500/s
