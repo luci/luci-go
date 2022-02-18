@@ -25,6 +25,7 @@ import '../../components/build_tag_row';
 import '../../components/link';
 import '../../components/log';
 import '../../components/property_viewer';
+import '../../components/relative_timestamp';
 import '../../components/test_variants_table/test_variant_entry';
 import '../../components/timestamp';
 import './steps_tab/step_list';
@@ -90,7 +91,6 @@ export class OverviewTabElement extends MobxLitElement {
     const build = this.buildState.build!;
 
     const canRetry = this.buildState.permittedActions.has('ADD_BUILD');
-    const canCancel = this.buildState.permittedActions.has('CANCEL_BUILD');
 
     if (build.endTime) {
       return html`
@@ -103,9 +103,18 @@ export class OverviewTabElement extends MobxLitElement {
       `;
     }
 
+    const canCancel = build.cancelTime === null && this.buildState.permittedActions.has('CANCEL_BUILD');
+    let tooltip = '';
+    if (!canCancel) {
+      tooltip =
+        build.cancelTime === null
+          ? 'You have no permission to cancel this build.'
+          : 'The build is already scheduled to be canceled.';
+    }
+
     return html`
       <h3>Actions</h3>
-      <div title=${canCancel ? '' : 'You have no permission to cancel this build.'}>
+      <div title=${tooltip}>
         <mwc-button dense unelevated @click=${() => (this.showCancelDialog = true)} ?disabled=${!canCancel}>
           Cancel Build
         </mwc-button>
@@ -124,6 +133,26 @@ export class OverviewTabElement extends MobxLitElement {
       <div id="canary-warning" class="warning">
         WARNING: This build ran on a canary version of LUCI. If you suspect it failed due to infra, retry the build.
         Next time it may use the non-canary version.
+      </div>
+    `;
+  }
+
+  private renderCancelSchedule() {
+    const build = this.buildState.build!;
+    if (!build?.cancelTime || build?.endTime) {
+      return html``;
+    }
+
+    // We have gracePeriod since Feb 2021. It's safe to use ! since all new
+    // (not-terminated) builds should have gracePeriod defined.
+    // TODO(weiweilin): refresh the build automatically once we reached
+    // scheduledCancelTime.
+    const scheduledCancelTime = build.cancelTime!.plus(build.gracePeriod!);
+
+    return html`
+      <div id="scheduled-cancel">
+        This build was scheduled to be canceled by ${build.canceledBy || 'unknown'}
+        <milo-relative-timestamp .timestamp=${scheduledCancelTime}></milo-relative-timestamp>.
       </div>
     `;
   }
@@ -504,7 +533,8 @@ export class OverviewTabElement extends MobxLitElement {
       </mwc-dialog>
       <div id="main">
         <div class="first-column">
-          ${this.renderCanaryWarning()}${this.renderSummary()}${this.renderFailedTests()}${this.renderSteps()}
+          ${this.renderCanaryWarning()}${this.renderCancelSchedule()}
+          ${this.renderSummary()}${this.renderFailedTests()}${this.renderSteps()}
         </div>
         <div class="second-column">
           ${this.renderBuilderDescription()} ${this.renderInput()} ${this.renderOutput()} ${this.renderInfra()}
@@ -588,6 +618,12 @@ export class OverviewTabElement extends MobxLitElement {
       .warning {
         background-color: var(--warning-color);
         font-weight: 500;
+      }
+
+      #scheduled-cancel {
+        background-color: var(--canceled-bg-color);
+        font-weight: 500;
+        padding: 5px;
       }
 
       td:nth-child(2) {

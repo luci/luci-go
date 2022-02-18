@@ -43,6 +43,7 @@ export class BuildExt {
   readonly createTime: DateTime;
   readonly startTime: DateTime | null;
   readonly endTime: DateTime | null;
+  readonly cancelTime: DateTime | null;
   readonly status: BuildStatus;
   readonly summaryMarkdown?: string | undefined;
   readonly input?: BuildInput;
@@ -53,6 +54,7 @@ export class BuildExt {
   readonly exe: Executable;
   readonly schedulingTimeout: Duration | null;
   readonly executionTimeout: Duration | null;
+  readonly gracePeriod: Duration | null;
 
   readonly rootSteps: readonly StepExt[];
   private readonly renderTime: IObservableValue<DateTime>;
@@ -67,6 +69,7 @@ export class BuildExt {
     this.createTime = DateTime.fromISO(build.createTime);
     this.startTime = build.startTime ? DateTime.fromISO(build.startTime) : null;
     this.endTime = build.endTime ? DateTime.fromISO(build.endTime) : null;
+    this.cancelTime = build.cancelTime ? DateTime.fromISO(build.cancelTime) : null;
     this.status = build.status;
     this.summaryMarkdown = build.summaryMarkdown;
     this.input = build.input;
@@ -80,6 +83,7 @@ export class BuildExt {
     this.executionTimeout = build.executionTimeout
       ? Duration.fromMillis(parseProtoDuration(build.executionTimeout))
       : null;
+    this.gracePeriod = build.gracePeriod ? Duration.fromMillis(parseProtoDuration(build.gracePeriod)) : null;
 
     // Build the step-tree.
     const steps: StepExt[] = [];

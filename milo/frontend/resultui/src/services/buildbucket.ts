@@ -31,8 +31,8 @@ export const TEST_PRESENTATION_KEY = '$recipe_engine/resultdb/test_presentation'
 export const BLAMELIST_PIN_KEY = '$recipe_engine/milo/blamelist_pins';
 
 export const BUILD_FIELD_MASK =
-  'id,builder,number,canceledBy,createTime,startTime,endTime,status,summaryMarkdown,input,output,steps,' +
-  'infra.swarming,infra.resultdb,tags,exe,schedulingTimeout,executionTimeout';
+  'id,builder,number,canceledBy,createTime,startTime,endTime,cancelTime,status,summaryMarkdown,input,output,steps,' +
+  'infra.swarming,infra.resultdb,tags,exe,schedulingTimeout,executionTimeout,gracePeriod';
 
 // Includes: id, builder, number, createTime, startTime, endTime, status, summaryMarkdown.
 export const SEARCH_BUILD_FIELD_MASK =
@@ -98,6 +98,7 @@ export interface Build {
   readonly createTime: string;
   readonly startTime?: string;
   readonly endTime?: string;
+  readonly cancelTime?: string;
   readonly status: BuildStatus;
   readonly summaryMarkdown?: string;
   readonly input?: BuildInput;
@@ -108,6 +109,7 @@ export interface Build {
   readonly exe: Executable;
   readonly schedulingTimeout?: string;
   readonly executionTimeout?: string;
+  readonly gracePeriod?: string;
 }
 
 // This is from https://chromium.googlesource.com/infra/luci/luci-go/+/HEAD/buildbucket/proto/common.proto#25
