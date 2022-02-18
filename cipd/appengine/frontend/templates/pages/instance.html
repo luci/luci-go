@@ -53,9 +53,8 @@
         <td class="md-table-key" title="Attached by {{.User}}">
           <a href="#"
              title="View"
-             class="metadata-modal-opener"
-             data-toggle="modal"
-             data-target="#view-metadata-modal"
+             data-bs-toggle="modal"
+             data-bs-target="#view-metadata-modal"
              data-md-fingerprint="{{.Fingerprint}}"
              data-md-key="{{.Key}}"
              data-md-user="{{.User}}"
@@ -81,8 +80,8 @@
   </div>
   {{end}}
 
-  <div class="row bordered-row">
-    <div class="col-sm-6 border-right">
+  <div class="row">
+    <div class="col-sm-6 border-end">
       {{template "tags-table" .Tags}}
     </div>
     <div class="col-sm-6">
@@ -97,9 +96,7 @@
     <div class="modal-content">
       <div class="modal-header">
         <h5 class="modal-title">Metadata</h5>
-        <button type="button" class="close" data-dismiss="modal">
-          &times;
-        </button>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
       </div>
       <div class="modal-body">
         <div class="container-fluid">
@@ -144,7 +141,7 @@
       <div class="modal-footer">
         <p id="md-alert-copied">Copied!</p>
         <button type="button" class="btn btn-secondary" id="md-button-copy">Copy value to clipboard</button>
-        <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
       </div>
     </div>
   </div>

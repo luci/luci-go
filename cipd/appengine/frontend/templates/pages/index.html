@@ -3,9 +3,9 @@
 {{template "breadcrumbs" .}}
 
 <div class="container">
-  <div class="row bordered-row mb-3">
+  <div class="row mb-3">
 
-    <div class="col-sm-6 border-right">
+    <div class="col-sm-6 border-end">
       <h4 class="mb-3">Packages</h4>
       <table class="table table-striped table-sm">
       {{range $item := .Prefixes}}
@@ -27,7 +27,7 @@
             {{if $item.Active}}
               <b>{{$item.Title}}</b>
               {{if $.Instances}}
-                <a href="#instances" class="pull-right mr-2">{{template "arrow-down-icon" .}}</a>
+                <a href="#instances" class="float-end me-2">{{template "arrow-down-icon" .}}</a>
               {{end}}
             {{else}}
               <a href="{{$item.Href}}">{{$item.Title}}</a>
@@ -90,9 +90,9 @@
     </div>
   </div>
 
-  <div class="row bordered-row mt-2">
+  <div class="row mt-2">
 
-    <div class="col-sm-6 border-right">
+    <div class="col-sm-6 border-end">
       <h4 class="mb-3">Instances</h4>
       <div class="table-responsive">
         <table class="table table-striped table-sm">

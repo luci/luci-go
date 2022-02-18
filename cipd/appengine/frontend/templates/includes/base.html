@@ -17,9 +17,6 @@ that can be found in the LICENSE file. -->
     a {
       text-decoration: none!important;
     }
-    .pull-right {
-      float: right!important;
-    }
     .info-table-key {
       width: 1px;
       white-space: nowrap;
@@ -39,10 +36,6 @@ that can be found in the LICENSE file. -->
       font-family: monospace;
       width: 100%;
       height: 250px;
-    }
-    .bordered-row {
-      min-height: 100%;
-      overflow: hidden;
     }
     .age-td {
       width: 6em;
@@ -92,9 +85,9 @@ that can be found in the LICENSE file. -->
 
     <footer style="color: #cccccc;">
       <hr class="mt-1 mb-1">
-      <p class="text-right small">
+      <p class="float-end small">
         Handled in {{call .HandlerDuration}}
-        <span class="ml-2">Version: {{.AppVersion}}</span>
+        <span class="ms-2">Version: {{.AppVersion}}</span>
       </p>
     </footer>
   </div>
@@ -124,7 +117,7 @@ that can be found in the LICENSE file. -->
 
 {{define "breadcrumbs"}}
 <nav aria-label="breadcrumb">
-  <ol class="breadcrumb bg-light">
+  <ol class="breadcrumb bg-light p-2">
     {{range $crumb := .Breadcrumbs }}
       {{if $crumb.Last}}
       <li class="breadcrumb-item active" aria-current="page">{{$crumb.Title}}</li>
@@ -149,7 +142,7 @@ that can be found in the LICENSE file. -->
           <a class="btn btn-secondary ref-btn" href="{{.Href}}" title="Set by {{.User}}">
             {{.Title}}
           </a>
-          <span class="ml-1">by {{.User}}</span>
+          <span class="ms-1">by {{.User}}</span>
         </td>
       </tr>
     {{end}}
