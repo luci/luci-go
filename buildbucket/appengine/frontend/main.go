@@ -87,6 +87,7 @@ func main() {
 		cron.RegisterHandler("delete_builds", buildcron.DeleteOldBuilds)
 		cron.RegisterHandler("expire_builds", buildcron.TimeoutExpiredBuilds)
 		cron.RegisterHandler("update_config", config.UpdateSettingsCfg)
+		cron.RegisterHandler("reset_expired_leases", buildcron.ResetExpiredLeases)
 		return nil
 	})
 }

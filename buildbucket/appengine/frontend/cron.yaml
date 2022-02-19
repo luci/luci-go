@@ -13,8 +13,8 @@ cron:
   schedule: every 10 minutes
 
 - description: expire build leases
-  target: backend
-  url: /internal/cron/buildbucket/expire_build_leases
+  target: default-go
+  url: /internal/cron/reset_expired_leases
   schedule: every 1 minutes
 
 - description: expire builds

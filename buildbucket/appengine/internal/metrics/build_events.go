@@ -72,7 +72,7 @@ func BuildCompleted(ctx context.Context, b *model.Build) {
 
 	// v1
 	legacyBucket := legacyBucketName(bpb.Project, bpb.Bucket)
-	reason, failReason, cancelReason := getLegacyMetricFields(b)
+	_, reason, failReason, cancelReason := getLegacyMetricFields(b)
 	V1.BuildCountCompleted.Add(
 		ctx, 1, legacyBucket, bpb.Builder,
 		reason, failReason, cancelReason, bp.Canary)
@@ -95,4 +95,11 @@ func BuildCompleted(ctx context.Context, b *model.Build) {
 	if b.Proto.StartTime != nil {
 		V2.BuildDurationRun.Add(ctx, runD, status, exps)
 	}
+}
+
+// ExpiredLeaseReset updates metrics for an expired lease reset.
+func ExpiredLeaseReset(ctx context.Context, b *model.Build) {
+	legacyBucket := legacyBucketName(b.Proto.Builder.Project, b.Proto.Builder.Bucket)
+	status, _, _, _ := getLegacyMetricFields(b)
+	V1.ExpiredLeaseReset.Add(ctx, 1, legacyBucket, b.Proto.Builder.Builder, status)
 }

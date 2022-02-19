@@ -49,6 +49,7 @@ var (
 		BuildDurationCycle      metric.CumulativeDistribution
 		BuildDurationRun        metric.CumulativeDistribution
 		BuildDurationScheduling metric.CumulativeDistribution
+		ExpiredLeaseReset       metric.Counter
 		MaxAgeScheduled         metric.Float
 	}{
 		BuildCount: metric.NewInt(
@@ -83,6 +84,11 @@ var (
 			"buildbucket/builds/scheduling_durations",
 			"Duration between build creation and start",
 		),
+		ExpiredLeaseReset: metric.NewCounter(
+			"buildbucket/builds/lease_expired",
+			"Build lease expirations", nil,
+			bFields("status")...,
+		),
 		MaxAgeScheduled: metric.NewFloat(
 			"buildbucket/builds/max_age_scheduled",
 			"Age of the oldest SCHEDULED build",
@@ -115,17 +121,22 @@ func newbuildDurationMetric(name, description string, extraFields ...string) met
 	)
 }
 
-func getLegacyMetricFields(b *model.Build) (result, failureR, cancelationR string) {
+func getLegacyMetricFields(b *model.Build) (legacyStatus, result, failureR, cancelationR string) {
 	// The default values are "" instead of UNSET for backwards compatibility.
 	switch b.Status {
 	case pb.Status_SCHEDULED:
+		legacyStatus = model.Scheduled.String()
 	case pb.Status_STARTED:
+		legacyStatus = model.Started.String()
 	case pb.Status_SUCCESS:
+		legacyStatus = model.Completed.String()
 		result = model.Success.String()
 	case pb.Status_FAILURE:
+		legacyStatus = model.Completed.String()
 		result = model.Failure.String()
 		failureR = model.BuildFailure.String()
 	case pb.Status_INFRA_FAILURE:
+		legacyStatus = model.Completed.String()
 		if b.Proto.StatusDetails.GetTimeout() != nil {
 			result = model.Canceled.String()
 			cancelationR = model.TimeoutCanceled.String()
@@ -134,6 +145,7 @@ func getLegacyMetricFields(b *model.Build) (result, failureR, cancelationR strin
 			failureR = model.InfraFailure.String()
 		}
 	case pb.Status_CANCELED:
+		legacyStatus = model.Completed.String()
 		result = model.Canceled.String()
 		cancelationR = model.ExplicitlyCanceled.String()
 	default:

@@ -201,5 +201,11 @@ func TestBuildEvents(t *testing.T) {
 				So(val.(*distribution.Distribution).Sum(), ShouldEqual, 30)
 			})
 		})
+
+		Convey("ExpiredLeaseReset", func() {
+			b.Status = pb.Status_SCHEDULED
+			ExpiredLeaseReset(ctx, b)
+			So(store.Get(ctx, V1.ExpiredLeaseReset, time.Time{}, lfv("SCHEDULED")), ShouldEqual, 1)
+		})
 	})
 }

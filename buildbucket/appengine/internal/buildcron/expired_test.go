@@ -22,10 +22,12 @@ import (
 
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/tsmon"
+	"go.chromium.org/luci/common/tsmon/store"
 	"go.chromium.org/luci/gae/filter/txndefer"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/server/tq"
+	"go.chromium.org/luci/server/tq/tqtesting"
 
 	"go.chromium.org/luci/buildbucket/appengine/internal/buildid"
 	"go.chromium.org/luci/buildbucket/appengine/internal/metrics"
@@ -37,44 +39,143 @@ import (
 	. "go.chromium.org/luci/common/testing/assertions"
 )
 
+// now needs to be further fresh enough from buildid.beginningOfTheWorld
+var now = time.Date(2020, 01, 01, 0, 0, 0, 0, time.UTC)
+
+func setUp() (context.Context, store.Store, *tqtesting.Scheduler) {
+	ctx := memory.Use(context.Background())
+	datastore.GetTestable(ctx).AutoIndex(true)
+	datastore.GetTestable(ctx).Consistent(true)
+	ctx = txndefer.FilterRDS(ctx)
+
+	ctx, _ = tsmon.WithDummyInMemory(ctx)
+	ctx = metrics.WithServiceInfo(ctx, "svc", "job", "ins")
+	ctx = metrics.WithBuilder(ctx, "project", "bucket", "builder")
+	store := tsmon.Store(ctx)
+	ctx, sch := tq.TestingContext(ctx, nil)
+
+	ctx, _ = testclock.UseTime(ctx, now)
+	return ctx, store, sch
+}
+
+func newBuild(ctx context.Context, st pb.Status, t time.Time) *model.Build {
+	id := buildid.NewBuildIDs(ctx, t, 1)[0]
+	return &model.Build{
+		ID: id,
+		Proto: &pb.Build{
+			Id: id,
+			Builder: &pb.BuilderID{
+				Project: "project",
+				Bucket:  "bucket",
+				Builder: "builder",
+			},
+			Status: st,
+		},
+	}
+}
+
+func TestResetExpiredLeases(t *testing.T) {
+	t.Parallel()
+
+	getBuild := func(ctx context.Context, bid int64) *model.Build {
+		b := &model.Build{ID: bid}
+		So(datastore.Get(ctx, b), ShouldBeNil)
+		return b
+	}
+
+	Convey("ResetExpiredLeases", t, func() {
+		ctx, store, sch := setUp()
+		createTime := now.Add(-time.Hour)
+		_, _ = store, sch
+		Convey("skips non-expired builds", func() {
+			b1 := newBuild(ctx, pb.Status_SCHEDULED, createTime)
+			b2 := newBuild(ctx, pb.Status_STARTED, createTime)
+			b2.IsLeased = true
+			b2.LeaseExpirationDate = now.Add(time.Hour)
+
+			So(datastore.Put(ctx, b1, b2), ShouldBeNil)
+			So(ResetExpiredLeases(ctx), ShouldBeNil)
+
+			b1 = getBuild(ctx, b1.ID)
+			So(b1.IsLeased, ShouldBeFalse)
+			So(b1.LeaseExpirationDate.IsZero(), ShouldBeTrue)
+			b2 = getBuild(ctx, b2.ID)
+			So(b2.IsLeased, ShouldBeTrue)
+			So(b2.LeaseExpirationDate, ShouldEqual, now.Add(time.Hour))
+		})
+
+		Convey("resets expired, terminated builds", func() {
+			b := newBuild(ctx, pb.Status_INFRA_FAILURE, createTime)
+			b.IsLeased = true
+			b.LeaseExpirationDate = now.Add(-time.Hour)
+
+			So(datastore.Put(ctx, b), ShouldBeNil)
+			So(ResetExpiredLeases(ctx), ShouldBeNil)
+
+			b = getBuild(ctx, b.ID)
+			So(b.IsLeased, ShouldBeFalse)
+			So(b.LeaseExpirationDate.IsZero(), ShouldBeTrue)
+			So(b.Status, ShouldEqual, pb.Status_INFRA_FAILURE)
+
+			Convey("reports metrics", func() {
+				fv := []interface{}{
+					"luci.project.bucket",    /* metric:bucket */
+					"builder",                /* metric:builder */
+					model.Completed.String(), /* metric:status */
+				}
+				So(store.Get(ctx, metrics.V1.ExpiredLeaseReset, time.Time{}, fv), ShouldEqual, 1)
+			})
+		})
+
+		Convey("resets expired, non-terminated builds", func() {
+			b := newBuild(ctx, pb.Status_STARTED, createTime)
+			b.IsLeased = true
+			b.LeaseExpirationDate = now.Add(-time.Hour)
+
+			So(datastore.Put(ctx, b), ShouldBeNil)
+			So(ResetExpiredLeases(ctx), ShouldBeNil)
+
+			b = getBuild(ctx, b.ID)
+			So(b.IsLeased, ShouldBeFalse)
+			So(b.LeaseExpirationDate.IsZero(), ShouldBeTrue)
+			So(b.Status, ShouldEqual, pb.Status_SCHEDULED)
+
+			Convey("reports metrics", func() {
+				fv := []interface{}{
+					"luci.project.bucket",    /* metric:bucket */
+					"builder",                /* metric:builder */
+					model.Scheduled.String(), /* metric:status */
+				}
+				So(store.Get(ctx, metrics.V1.ExpiredLeaseReset, time.Time{}, fv), ShouldEqual, 1)
+			})
+
+			Convey("adds TQ tasks", func() {
+				tasks := sch.Tasks()
+				notifyIDs := []int64{}
+
+				for _, task := range tasks {
+					switch v := task.Payload.(type) {
+					case *taskdefs.NotifyPubSub:
+						notifyIDs = append(notifyIDs, v.GetBuildId())
+					default:
+						panic("invalid task payload")
+					}
+				}
+				So(notifyIDs, ShouldResemble, []int64{b.ID})
+			})
+		})
+	})
+}
+
 func TestTimeoutExpiredBuilds(t *testing.T) {
 	t.Parallel()
 
 	Convey("TimeoutExpiredBuilds", t, func() {
-		ctx := memory.Use(context.Background())
-		datastore.GetTestable(ctx).AutoIndex(true)
-		datastore.GetTestable(ctx).Consistent(true)
-		ctx = txndefer.FilterRDS(ctx)
-
-		ctx, _ = tsmon.WithDummyInMemory(ctx)
-		ctx = metrics.WithServiceInfo(ctx, "svc", "job", "ins")
-		ctx = metrics.WithBuilder(ctx, "project", "bucket", "builder")
-		store := tsmon.Store(ctx)
-		ctx, sch := tq.TestingContext(ctx, nil)
-
-		// now needs to be further fresh enough from buildid.beginningOfTheWorld
-		now := time.Date(2020, 01, 01, 0, 0, 0, 0, time.UTC)
-		ctx, _ = testclock.UseTime(ctx, now)
-
-		newBuild := func(st pb.Status, t time.Time) *model.Build {
-			id := buildid.NewBuildIDs(ctx, t, 1)[0]
-			return &model.Build{
-				ID: id,
-				Proto: &pb.Build{
-					Id: id,
-					Builder: &pb.BuilderID{
-						Project: "project",
-						Bucket:  "bucket",
-						Builder: "builder",
-					},
-					Status: st,
-				},
-			}
-		}
+		ctx, store, sch := setUp()
 
 		Convey("skips young, running builds", func() {
-			b1 := newBuild(pb.Status_SCHEDULED, now.Add(-model.BuildMaxCompletionTime))
-			b2 := newBuild(pb.Status_STARTED, now.Add(-model.BuildMaxCompletionTime))
+			b1 := newBuild(ctx, pb.Status_SCHEDULED, now.Add(-model.BuildMaxCompletionTime))
+			b2 := newBuild(ctx, pb.Status_STARTED, now.Add(-model.BuildMaxCompletionTime))
 			So(datastore.Put(ctx, b1, b2), ShouldBeNil)
 			So(TimeoutExpiredBuilds(ctx), ShouldBeNil)
 
@@ -88,8 +189,8 @@ func TestTimeoutExpiredBuilds(t *testing.T) {
 		})
 
 		Convey("skips old, completed builds", func() {
-			b1 := newBuild(pb.Status_SUCCESS, now.Add(-model.BuildMaxCompletionTime))
-			b2 := newBuild(pb.Status_FAILURE, now.Add(-model.BuildMaxCompletionTime))
+			b1 := newBuild(ctx, pb.Status_SUCCESS, now.Add(-model.BuildMaxCompletionTime))
+			b2 := newBuild(ctx, pb.Status_FAILURE, now.Add(-model.BuildMaxCompletionTime))
 			So(datastore.Put(ctx, b1, b2), ShouldBeNil)
 			So(TimeoutExpiredBuilds(ctx), ShouldBeNil)
 
@@ -103,9 +204,9 @@ func TestTimeoutExpiredBuilds(t *testing.T) {
 		})
 
 		Convey("marks old, running builds w/ infra_failure", func() {
-			b1 := newBuild(pb.Status_SCHEDULED, now.Add(-model.BuildMaxCompletionTime-time.Minute))
+			b1 := newBuild(ctx, pb.Status_SCHEDULED, now.Add(-model.BuildMaxCompletionTime-time.Minute))
 			b1.LegacyProperties.LeaseProperties.IsLeased = true
-			b2 := newBuild(pb.Status_STARTED, now.Add(-model.BuildMaxCompletionTime-time.Minute))
+			b2 := newBuild(ctx, pb.Status_STARTED, now.Add(-model.BuildMaxCompletionTime-time.Minute))
 			So(datastore.Put(ctx, b1, b2), ShouldBeNil)
 			So(TimeoutExpiredBuilds(ctx), ShouldBeNil)
 
