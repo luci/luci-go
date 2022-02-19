@@ -33,6 +33,7 @@ import (
 	"path/filepath"
 	"runtime"
 	"strings"
+	"sync"
 	"sync/atomic"
 	"time"
 
@@ -291,6 +292,7 @@ func mainImpl() int {
 	logging.Infof(ctx, "Input args:\n%s", initialJSONPB)
 
 	shutdownCh := make(chan struct{})
+	shutdownOnce := sync.Once{}
 	var statusDetails *bbpb.StatusDetails
 	var subprocErr error
 	builds, err := host.Run(cctx, opts, func(ctx context.Context, hostOpts host.Options) error {
@@ -353,13 +355,13 @@ func mainImpl() int {
 			select {
 			case err := <-dispatcherErrCh:
 				if !stopped && grpcutil.Code(err) == codes.InvalidArgument {
-					close(shutdownCh)
+					shutdownOnce.Do(func() {close(shutdownCh)})
 					fatalUpdateBuildErrorSlot.Store(err)
 					stopped = true
 				}
 			case <-canceledBuildCh:
 				// The build has been canceled, bail out early.
-				close(shutdownCh)
+				shutdownOnce.Do(func() {close(shutdownCh)})
 			case <-cctx.Done():
 				return
 			}
