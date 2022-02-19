@@ -231,23 +231,33 @@ func validateStep(step *pb.Step, parent *pb.Step, buildStatus pb.Status) error {
 	return nil
 }
 
+// mustIncludes checks the inclusiveness of a path.
+// Unlike updateMask.MustIncludes, here we treat empty updateMask as it excludes
+// every path.
+func mustIncludes(updateMask *mask.Mask, req *pb.UpdateBuildRequest, path string) mask.Inclusiveness {
+	if len(req.UpdateMask.GetPaths()) == 0 {
+		return mask.Exclude
+	}
+	return updateMask.MustIncludes(path)
+}
+
 func checkBuildForUpdate(updateMask *mask.Mask, req *pb.UpdateBuildRequest, build *model.Build) error {
 	if protoutil.IsEnded(build.Status) {
 		return appstatus.Errorf(codes.FailedPrecondition, "cannot update an ended build")
 	}
 
 	finalStatus := build.Proto.Status
-	if updateMask.MustIncludes("status") == mask.IncludeEntirely {
+	if mustIncludes(updateMask, req, "status") == mask.IncludeEntirely {
 		finalStatus = req.Build.Status
 	}
 
 	// ensure that a SCHEDULED build does not have steps or output.
 	if finalStatus == pb.Status_SCHEDULED {
-		if updateMask.MustIncludes("steps") != mask.Exclude {
+		if mustIncludes(updateMask, req, "steps") != mask.Exclude {
 			return appstatus.Errorf(codes.InvalidArgument, "cannot update steps of a SCHEDULED build; either set status to non-SCHEDULED or do not update steps")
 		}
 
-		if updateMask.MustIncludes("output") != mask.Exclude {
+		if mustIncludes(updateMask, req, "output") != mask.Exclude {
 			return appstatus.Errorf(codes.InvalidArgument, "cannot update build output fields of a SCHEDULED build; either set status to non-SCHEDULED or do not update build output")
 		}
 	}
@@ -275,7 +285,7 @@ func updateEntities(ctx context.Context, req *pb.UpdateBuildRequest, updateMask 
 		bk := datastore.KeyForObj(ctx, b)
 
 		// output.properties
-		if updateMask.MustIncludes("output.properties") == mask.IncludeEntirely {
+		if mustIncludes(updateMask, req, "output.properties") == mask.IncludeEntirely {
 			prop := model.DSStruct{}
 			if req.Build.Output.GetProperties() != nil {
 				prop = model.DSStruct{*req.Build.Output.Properties}
@@ -292,7 +302,7 @@ func updateEntities(ctx context.Context, req *pb.UpdateBuildRequest, updateMask 
 		b.Proto.UpdateTime = timestamppb.New(now)
 
 		// merge the tags of the build entity with the request.
-		if len(req.Build.GetTags()) > 0 && updateMask.MustIncludes("tags") == mask.IncludeEntirely {
+		if len(req.Build.GetTags()) > 0 && mustIncludes(updateMask, req, "tags") == mask.IncludeEntirely {
 			tags := stringset.NewFromSlice(b.Tags...)
 			for _, tag := range req.Build.GetTags() {
 				tags.Add(strpair.Format(tag.Key, tag.Value))
@@ -307,7 +317,7 @@ func updateEntities(ctx context.Context, req *pb.UpdateBuildRequest, updateMask 
 		defer nilifyReqBuildDetails(req.Build)()
 		origStatus = b.Proto.Status
 
-		if updateMask.MustIncludes("status") == mask.IncludeEntirely {
+		if mustIncludes(updateMask, req, "status") == mask.IncludeEntirely {
 			protoutil.SetStatus(now, b.Proto, req.Build.Status)
 		}
 		if err := updateMask.Merge(req.Build, b.Proto); err != nil {
@@ -344,7 +354,7 @@ func updateEntities(ctx context.Context, req *pb.UpdateBuildRequest, updateMask 
 		}
 
 		// steps
-		if updateMask.MustIncludes("steps") == mask.IncludeEntirely {
+		if mustIncludes(updateMask, req, "steps") == mask.IncludeEntirely {
 			steps.Build = bk
 			toSave = append(toSave, steps)
 		} else if isEndedStatus {

@@ -466,10 +466,12 @@ func TestUpdateBuild(t *testing.T) {
 		})
 
 		Convey("build.update_time is always updated", func() {
+			req.UpdateMask = nil
 			So(updateBuild(ctx, req), ShouldBeNil)
 			b, err := getBuild(ctx, req.Build.Id)
 			So(err, ShouldBeNil)
 			So(b.Proto.UpdateTime, ShouldResembleProto, timestamppb.New(t0))
+			So(b.Proto.Status, ShouldEqual, pb.Status_STARTED)
 
 			tclock.Add(time.Second)
 
