@@ -19,7 +19,6 @@ import (
 	"fmt"
 	"time"
 
-	"google.golang.org/protobuf/types/known/durationpb"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/auth/identity"
@@ -29,6 +28,7 @@ import (
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/tq"
 
+	"go.chromium.org/luci/buildbucket"
 	"go.chromium.org/luci/buildbucket/appengine/internal/perm"
 	"go.chromium.org/luci/buildbucket/appengine/model"
 	taskdefs "go.chromium.org/luci/buildbucket/appengine/tasks/defs"
@@ -64,7 +64,7 @@ func StartCancel(ctx context.Context, bID int64, summary string) (*model.Build, 
 			return errors.Annotate(err, "failed to store build: %d", bld.ID).Err()
 		}
 		// Enqueue the task to finally cancel the build.
-		if err := ScheduleCancelBuildTask(ctx, bID, bld.Proto.GracePeriod); err != nil {
+		if err := ScheduleCancelBuildTask(ctx, bID, buildbucket.MinUpdateBuildInterval + bld.Proto.GracePeriod.AsDuration()); err != nil {
 			return errors.Annotate(err, "failed to enqueue cancel task for build: %d", bld.ID).Err()
 		}
 		return nil
@@ -159,12 +159,12 @@ func Cancel(ctx context.Context, bID int64) (*model.Build, error) {
 }
 
 // ScheduleCancelBuildTask enqueues a CancelBuildTask.
-func ScheduleCancelBuildTask(ctx context.Context, bID int64, delay *durationpb.Duration) error {
+func ScheduleCancelBuildTask(ctx context.Context, bID int64, delay time.Duration) error {
 	return tq.AddTask(ctx, &tq.Task{
 		Title: fmt.Sprintf("cancel-%d", bID),
 		Payload: &taskdefs.CancelBuildTask{
 			BuildId: bID,
 		},
-		Delay: delay.AsDuration(),
+		Delay: delay,
 	})
 }

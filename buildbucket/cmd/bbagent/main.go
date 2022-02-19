@@ -228,7 +228,7 @@ func mainImpl() int {
 
 	dispatcherOpts, dispatcherErrCh := channelOpts(cctx)
 	canceledBuildCh := make(chan struct{})
-	buildsCh, err := dispatcher.NewChannel(cctx, dispatcherOpts, mkSendFn(cctx, bbclient, canceledBuildCh))
+	buildsCh, err := dispatcher.NewChannel(cctx, dispatcherOpts, mkSendFn(cctx, bbclient, input.Build.Id, canceledBuildCh))
 	check(errors.Annotate(err, "could not create builds dispatcher channel").Err())
 	defer buildsCh.CloseAndDrain(cctx)
 

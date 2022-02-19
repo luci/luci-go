@@ -15,6 +15,8 @@
 package buildbucket
 
 import (
+	"time"
+
 	"go.chromium.org/luci/common/data/stringset"
 
 	pb "go.chromium.org/luci/buildbucket/proto"
@@ -35,6 +37,9 @@ const BuildTokenHeader = "x-build-token"
 // Currently it's used by ScheduleBuild (and batch request for ScheduleBuild) RPC.
 // TODO(crbug.com/1031205) Replace BuildTokenHeader with this.
 const BuildbucketTokenHeader = "x-buildbucket-token"
+
+// MinUpdateBuildInterval is the minimum interval bbagent should call UpdateBuild.
+const MinUpdateBuildInterval = 30 * time.Second
 
 // Well-known experiment strings.
 //

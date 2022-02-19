@@ -147,6 +147,7 @@ func channelOpts(ctx context.Context) (*dispatcher.Options, <-chan error) {
 	})
 	opts := &dispatcher.Options{
 		QPSLimit: rate.NewLimiter(rate.Every(3*time.Second), 1),
+		MinQPS:   rate.Every(buildbucket.MinUpdateBuildInterval),
 		Buffer: buffer.Options{
 			MaxLeases:     1,
 			BatchItemsMax: 1,
@@ -169,11 +170,19 @@ func channelOpts(ctx context.Context) (*dispatcher.Options, <-chan error) {
 	return opts, errCh
 }
 
-func mkSendFn(ctx context.Context, client BuildsClient, canceledBuildCh chan<- struct{}) dispatcher.SendFn {
+func mkSendFn(ctx context.Context, client BuildsClient, bID int64, canceledBuildCh chan<- struct{}) dispatcher.SendFn {
 	return func(b *buffer.Batch) error {
 		var req *bbpb.UpdateBuildRequest
 
-		if b.Meta != nil {
+		// Nil batch. Synthesize a UpdateBuild request.
+		if b == nil {
+			req = &bbpb.UpdateBuildRequest{
+				Build: &bbpb.Build{
+					Id: bID,
+				},
+				Mask: readMask,
+			}
+		} else if b.Meta != nil {
 			req = b.Meta.(*bbpb.UpdateBuildRequest)
 		} else {
 			build := b.Data[0].Item.(*bbpb.Build)
