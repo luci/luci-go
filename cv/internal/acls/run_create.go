@@ -24,6 +24,7 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/server/auth"
 
+	"go.chromium.org/luci/cv/internal/changelist"
 	"go.chromium.org/luci/cv/internal/configs/prjcfg"
 	"go.chromium.org/luci/cv/internal/run"
 
@@ -39,7 +40,7 @@ const (
 )
 
 // CheckResult tells the result of an ACL check performed.
-type CheckResult map[*run.RunCL]string
+type CheckResult map[*changelist.CL]string
 
 // OK returns true if the result indicates no failures. False, otherwise.
 func (res CheckResult) OK() bool {
@@ -49,11 +50,11 @@ func (res CheckResult) OK() bool {
 // Failure returns a failure message for a given RunCL.
 //
 // Returns an empty string, if the result was ok.
-func (res CheckResult) Failure(rcl *run.RunCL) string {
+func (res CheckResult) Failure(cl *changelist.CL) string {
 	if res.OK() {
 		return ""
 	}
-	msg, ok := res[rcl]
+	msg, ok := res[cl]
 	if !ok {
 		eids := make([]string, 0, len(res))
 		for cl := range res {
@@ -80,8 +81,8 @@ func (res CheckResult) FailuresSummary() string {
 		return ""
 	}
 	msgs := make([]string, 0, len(res))
-	for cl, reason := range res {
-		msgs = append(msgs, fmt.Sprintf("* %s\n%s", cl.ExternalID.MustURL(), reason))
+	for cl, msg := range res {
+		msgs = append(msgs, fmt.Sprintf("* %s\n%s", cl.ExternalID.MustURL(), msg))
 	}
 	sort.Strings(msgs)
 
@@ -105,17 +106,16 @@ type clInfo struct {
 	allowOwnerIfSubmittable cfgpb.Verifiers_GerritCQAbility_CQAction
 }
 
-func evaluateRunCL(ctx context.Context, cg *prjcfg.ConfigGroup, cl *run.RunCL, mode run.Mode) (clInfo, error) {
+func evaluateCL(ctx context.Context, cg *prjcfg.ConfigGroup, tr *run.Trigger, cl *changelist.CL) (clInfo, error) {
 	var info clInfo
 	var err error
-
-	if info.triggerer, err = identity.MakeIdentity("user:" + cl.Trigger.Email); err != nil {
-		return info, errors.Annotate(err, "triggerer %q", cl.Trigger.Email).Err()
+	if info.triggerer, err = identity.MakeIdentity("user:" + tr.Email); err != nil {
+		return info, errors.Annotate(err, "triggerer %q", tr.Email).Err()
 	}
-	if info.owner, err = cl.Detail.OwnerIdentity(); err != nil {
+	if info.owner, err = cl.Snapshot.OwnerIdentity(); err != nil {
 		return info, errors.Annotate(err, "CL owner identity").Err()
 	}
-	if info.isApproved, err = cl.Detail.IsSubmittable(); err != nil {
+	if info.isApproved, err = cl.Snapshot.IsSubmittable(); err != nil {
 		return info, errors.Annotate(err, "checking if CL is submittable").Err()
 	}
 
@@ -217,22 +217,22 @@ func canCreateDryRun(info clInfo) (bool, string) {
 
 // CheckRunCreate verifies that the user(s) who triggered Run are authorized
 // to create the Run for the CLs.
-func CheckRunCreate(ctx context.Context, cg *prjcfg.ConfigGroup, cls []*run.RunCL, mode run.Mode) (CheckResult, error) {
+func CheckRunCreate(ctx context.Context, cg *prjcfg.ConfigGroup, trs []*run.Trigger, cls []*changelist.CL) (CheckResult, error) {
 	res := make(CheckResult, len(cls))
-	for _, cl := range cls {
-		info, err := evaluateRunCL(ctx, cg, cl, mode)
+	for i, cl := range cls {
+		info, err := evaluateCL(ctx, cg, trs[i], cl)
 		if err != nil {
 			return nil, errors.Annotate(err, "CL(%d)", cl.ID).Err()
 		}
 
 		ok, msg := false, ""
-		switch mode {
+		switch run.Mode(trs[i].Mode) {
 		case run.FullRun:
 			ok, msg = canCreateFullRun(info)
 		case run.DryRun, run.QuickDryRun:
 			ok, msg = canCreateDryRun(info)
 		default:
-			panic(fmt.Errorf("unknown mode %q", mode))
+			panic(fmt.Errorf("unknown mode %q", trs[i].Mode))
 		}
 		if !ok {
 			res[cl] = msg

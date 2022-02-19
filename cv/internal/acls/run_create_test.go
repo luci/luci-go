@@ -19,7 +19,6 @@ import (
 	"testing"
 
 	"go.chromium.org/luci/auth/identity"
-	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
 
@@ -75,15 +74,14 @@ func TestCheckRunCLs(t *testing.T) {
 		}
 
 		// test helpers
-		var rCLs []*run.RunCL
-		rid := common.MakeRunID(lProject, ct.Clock.Now(), 1, []byte("deadbeef"))
-		addRunCL := func(trigger, owner string) *run.RunCL {
-			id := len(rCLs) + 1
-			rCLs = append(rCLs, &run.RunCL{
+		var cls []*changelist.CL
+		var trs []*run.Trigger
+		addCL := func(triggerer, owner string, m run.Mode) *changelist.CL {
+			id := len(cls) + 1
+			cls = append(cls, &changelist.CL{
 				ID:         common.CLID(id),
-				Run:        datastore.MakeKey(ctx, run.RunKind, string(rid)),
 				ExternalID: changelist.MustGobID(gerritHost, int64(id)),
-				Detail: &changelist.Snapshot{
+				Snapshot: &changelist.Snapshot{
 					Kind: &changelist.Snapshot_Gerrit{
 						Gerrit: &changelist.Gerrit{
 							Host: gerritHost,
@@ -95,23 +93,27 @@ func TestCheckRunCLs(t *testing.T) {
 						},
 					},
 				},
-				Trigger: &run.Trigger{Email: trigger},
 			})
-			return rCLs[len(rCLs)-1]
+			trs = append(trs, &run.Trigger{
+				Email: triggerer,
+				Mode:  string(m),
+			})
+			return cls[len(cls)-1]
 		}
-		mustOK := func(m run.Mode) {
-			res, err := CheckRunCreate(ctx, &cg, rCLs, m)
+
+		mustOK := func() {
+			res, err := CheckRunCreate(ctx, &cg, trs, cls)
 			So(err, ShouldBeNil)
 			So(res.OK(), ShouldBeTrue)
 		}
-		mustFailWith := func(m run.Mode, cl *run.RunCL, format string, args ...interface{}) {
-			res, err := CheckRunCreate(ctx, &cg, rCLs, m)
+		mustFailWith := func(cl *changelist.CL, format string, args ...interface{}) {
+			res, err := CheckRunCreate(ctx, &cg, trs, cls)
 			So(err, ShouldBeNil)
 			So(res.OK(), ShouldBeFalse)
 			So(res.Failure(cl), ShouldContainSubstring, fmt.Sprintf(format, args...))
 		}
-		approveCL := func(cl *run.RunCL) {
-			cl.Detail.GetGerrit().GetInfo().Submittable = true
+		approveCL := func(cl *changelist.CL) {
+			cl.Snapshot.GetGerrit().GetInfo().Submittable = true
 		}
 		setAllowOwner := func(action cfgpb.Verifiers_GerritCQAbility_CQAction) {
 			cg.Content.Verifiers.GerritCqAbility.AllowOwnerIfSubmittable = action
@@ -121,74 +123,75 @@ func TestCheckRunCLs(t *testing.T) {
 			m := run.FullRun
 
 			Convey("triggerer == owner", func() {
-				owner := "o@example.org"
-				cl := addRunCL(owner, owner)
+				tr, owner := "t@example.org", "t@example.org"
+				cl := addCL(tr, owner, m)
 
 				Convey("triggerer is a committer", func() {
-					addCommitter(owner)
+					addCommitter(tr)
 
 					// Should succeed w/ approval.
-					mustFailWith(m, cl, noLGTM)
+					mustFailWith(cl, noLGTM)
 					approveCL(cl)
-					mustOK(m)
+					mustOK()
 				})
 				Convey("triggerer is a dry-runner", func() {
-					addDryRunner(owner)
+					addDryRunner(tr)
 
 					// Dry-runner can trigger a full-run for own CL w/ approval.
-					mustFailWith(m, cl, noLGTM)
+					mustFailWith(cl, noLGTM)
 					approveCL(cl)
-					mustOK(m)
+					mustOK()
 				})
 				Convey("triggerer is neither dry-runner nor committer", func() {
 					Convey("CL approved", func() {
 						// Should fail, even if it was approved.
 						approveCL(cl)
-						mustFailWith(m, cl, "%q is not a committer", "user:"+owner)
+						mustFailWith(cl, "%q is not a committer", "user:"+tr)
 						// unless AllowOwnerIfSubmittable == COMMIT
 						setAllowOwner(cfgpb.Verifiers_GerritCQAbility_COMMIT)
-						mustOK(m)
+						mustOK()
 					})
 					Convey("CL not approved", func() {
 						// Should fail always.
-						mustFailWith(m, cl, "%q is not a committer", "user:"+owner)
+						mustFailWith(cl, "%q is not a committer", "user:"+tr)
 						setAllowOwner(cfgpb.Verifiers_GerritCQAbility_COMMIT)
-						mustFailWith(m, cl, noLGTM)
+						mustFailWith(cl, noLGTM)
 					})
 				})
 			})
 
 			Convey("triggerer != owner", func() {
-				owner, triggerer := "o@exmaple.org", "t@example.org"
-				cl := addRunCL(triggerer, owner)
+				tr, owner := "t@example.org", "o@example.org"
+				cl := addCL(tr, owner, m)
 
 				Convey("triggerer is a committer", func() {
-					addCommitter(triggerer)
+					addCommitter(tr)
 
 					// Should succeed w/ approval.
-					mustFailWith(m, cl, noLGTM)
+					mustFailWith(cl, noLGTM)
 					approveCL(cl)
-					mustOK(m)
+					mustOK()
 				})
 				Convey("triggerer is a dry-runner", func() {
-					addDryRunner(triggerer)
+					addDryRunner(tr)
 
 					// Dry-runner cannot trigger a full-run for someone else' CL,
 					// w/ or w/o approval.
-					mustFailWith(m, cl, "neither the CL owner nor a committer")
+					mustFailWith(cl, "neither the CL owner nor a committer")
 					approveCL(cl)
-					mustFailWith(m, cl, "neither the CL owner nor a committer")
+					mustFailWith(cl, "neither the CL owner nor a committer")
 
 					// AllowOwnerIfSubmittable doesn't change the decision, either.
 					setAllowOwner(cfgpb.Verifiers_GerritCQAbility_COMMIT)
-					mustFailWith(m, cl, "neither the CL owner nor a committer")
+					mustFailWith(cl, "neither the CL owner nor a committer")
 				})
+
 				Convey("triggerer is neither dry-runner nor committer", func() {
 					// Should fail always.
-					mustFailWith(m, cl, "neither the CL owner nor a committer")
+					mustFailWith(cl, "neither the CL owner nor a committer")
 					approveCL(cl)
 					setAllowOwner(cfgpb.Verifiers_GerritCQAbility_COMMIT)
-					mustFailWith(m, cl, "neither the CL owner nor a committer")
+					mustFailWith(cl, "neither the CL owner nor a committer")
 				})
 			})
 		})
@@ -197,100 +200,98 @@ func TestCheckRunCLs(t *testing.T) {
 			m := run.DryRun
 
 			Convey("triggerer == owner", func() {
-				owner := "o@example.org"
-				cl := addRunCL(owner, owner)
+				tr, owner := "t@example.org", "t@example.org"
+				cl := addCL(tr, owner, m)
 
 				Convey("triggerer is a committer", func() {
 					// Committers can trigger a dry-run for someone else' CL
 					// w/o approval.
-					addCommitter(owner)
-					mustOK(m)
+					addCommitter(tr)
+					mustOK()
 				})
 				Convey("triggerer is a dry-runner", func() {
 					// Should succeed w/o approval.
-					addDryRunner(owner)
-					mustOK(m)
+					addDryRunner(tr)
+					mustOK()
 				})
 				Convey("triggerer is neither dry-runner nor committer", func() {
 					Convey("CL approved", func() {
 						// Should fail, even if it was approved.
 						approveCL(cl)
-						mustFailWith(m, cl, "%q is not a dry-runner", "user:"+owner)
+						mustFailWith(cl, "%q is not a dry-runner", "user:"+owner)
 						// Unless AllowOwnerIfSubmittable == DRY_RUN
 						setAllowOwner(cfgpb.Verifiers_GerritCQAbility_DRY_RUN)
-						mustOK(m)
+						mustOK()
 						// Or, COMMIT
 						setAllowOwner(cfgpb.Verifiers_GerritCQAbility_COMMIT)
-						mustOK(m)
+						mustOK()
 					})
 					Convey("CL not approved", func() {
 						// Should fail always.
-						mustFailWith(m, cl, "%q is not a dry-runner", "user:"+owner)
+						mustFailWith(cl, "%q is not a dry-runner", "user:"+owner)
 						setAllowOwner(cfgpb.Verifiers_GerritCQAbility_COMMIT)
-						mustFailWith(m, cl, noLGTM)
+						mustFailWith(cl, noLGTM)
 					})
 				})
 			})
 
 			Convey("triggerer != owner", func() {
-				owner, triggerer := "o@exmaple.org", "t@example.org"
-				cl := addRunCL(triggerer, owner)
+				tr, owner := "t@example.org", "o@example.org"
+				cl := addCL(tr, owner, m)
 
 				Convey("triggerer is a committer", func() {
-					addCommitter(triggerer)
-
 					// Should suceed w/ or w/o approval.
-					mustOK(m)
+					addCommitter(tr)
+					mustOK()
 					approveCL(cl)
-					mustOK(m)
+					mustOK()
 				})
 				Convey("triggerer is a dry-runner", func() {
-					addDryRunner(triggerer)
-
 					// Only committers can trigger a dry-run for someone else' CL.
-					mustFailWith(m, cl, "neither the CL owner nor a committer")
+					addDryRunner(tr)
+					mustFailWith(cl, "neither the CL owner nor a committer")
 					approveCL(cl)
-					mustFailWith(m, cl, "neither the CL owner nor a committer")
+					mustFailWith(cl, "neither the CL owner nor a committer")
 					// AllowOwnerIfSubmittable doesn't change the decision, either.
 					setAllowOwner(cfgpb.Verifiers_GerritCQAbility_COMMIT)
-					mustFailWith(m, cl, "neither the CL owner nor a committer")
+					mustFailWith(cl, "neither the CL owner nor a committer")
 					setAllowOwner(cfgpb.Verifiers_GerritCQAbility_DRY_RUN)
-					mustFailWith(m, cl, "neither the CL owner nor a committer")
+					mustFailWith(cl, "neither the CL owner nor a committer")
 				})
 				Convey("triggerer is neither dry-runner nor committer", func() {
 					// Only committers can trigger a dry-run for someone else' CL.
-					mustFailWith(m, cl, "neither the CL owner nor a committer")
+					mustFailWith(cl, "neither the CL owner nor a committer")
 					approveCL(cl)
-					mustFailWith(m, cl, "neither the CL owner nor a committer")
+					mustFailWith(cl, "neither the CL owner nor a committer")
 					// AllowOwnerIfSubmittable doesn't change the decision, either.
 					setAllowOwner(cfgpb.Verifiers_GerritCQAbility_COMMIT)
-					mustFailWith(m, cl, "neither the CL owner nor a committer")
+					mustFailWith(cl, "neither the CL owner nor a committer")
 					setAllowOwner(cfgpb.Verifiers_GerritCQAbility_DRY_RUN)
-					mustFailWith(m, cl, "neither the CL owner nor a committer")
+					mustFailWith(cl, "neither the CL owner nor a committer")
 				})
 			})
 		})
 
 		Convey("multiple CLs", func() {
-			owner := "o@example.org"
-			cl1 := addRunCL(owner, owner)
-			cl2 := addRunCL(owner, owner)
-			setAllowOwner(cfgpb.Verifiers_GerritCQAbility_DRY_RUN)
 			m := run.DryRun
+			tr, owner := "t@example.org", "t@example.org"
+			cl1 := addCL(tr, owner, m)
+			cl2 := addCL(tr, owner, m)
+			setAllowOwner(cfgpb.Verifiers_GerritCQAbility_DRY_RUN)
 
 			Convey("all CLs passed", func() {
 				approveCL(cl1)
 				approveCL(cl2)
-				mustOK(m)
+				mustOK()
 			})
 			Convey("all CLs failed", func() {
-				mustFailWith(m, cl1, noLGTM)
-				mustFailWith(m, cl2, noLGTM)
+				mustFailWith(cl1, noLGTM)
+				mustFailWith(cl2, noLGTM)
 			})
 			Convey("Some CLs failed", func() {
 				approveCL(cl1)
-				mustFailWith(m, cl1, "CV cannot continue this run due to errors on the other CL(s)")
-				mustFailWith(m, cl2, noLGTM)
+				mustFailWith(cl1, "CV cannot continue this run due to errors on the other CL(s)")
+				mustFailWith(cl2, noLGTM)
 			})
 		})
 	})
