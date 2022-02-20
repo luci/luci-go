@@ -147,7 +147,11 @@ export class OverviewTabElement extends MobxLitElement {
     // (not-terminated) builds should have gracePeriod defined.
     // TODO(weiweilin): refresh the build automatically once we reached
     // scheduledCancelTime.
-    const scheduledCancelTime = build.cancelTime!.plus(build.gracePeriod!);
+    const scheduledCancelTime = build
+      .cancelTime!.plus(build.gracePeriod!)
+      // Add min_update_interval (currently always 30s).
+      // TODO(crbug/1299302): read min_update_interval from buildbucket.
+      .plus({ seconds: 30 });
 
     return html`
       <div id="scheduled-cancel">
