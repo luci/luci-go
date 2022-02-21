@@ -19,7 +19,6 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"runtime"
 
 	"go.chromium.org/luci/vpython/api/vpython"
 	"go.chromium.org/luci/vpython/python"
@@ -198,18 +197,7 @@ func (o *Options) ResolveSpec(c context.Context) (err error) {
 
 	// If it's a script, try resolving from filesystem first.
 	if isScriptTarget {
-		// Use evaluatedScriptPath only for searching the spec. We should use the
-		// spec located near the real path of the script instead of the one near
-		// the symbol link.
-		// Skip EvalSymlinks for windows because it is broken:
-		// https://github.com/golang/go/issues/40180
-		evaluatedScriptPath := script.Path
-		if runtime.GOOS != "windows" {
-			if evaluatedScriptPath, err = filepath.EvalSymlinks(script.Path); err != nil {
-				return errors.Annotate(err, "failed to get real path for script: %s", script.Path).Err()
-			}
-		}
-		spec, _, err := o.SpecLoader.LoadForScript(c, evaluatedScriptPath, isModule)
+		spec, _, err := o.SpecLoader.LoadForScript(c, script.Path, isModule)
 		if err != nil {
 			return errors.Annotate(err, "failed to load spec for script: %s", target).
 				InternalReason("isModule(%v)", isModule).Err()

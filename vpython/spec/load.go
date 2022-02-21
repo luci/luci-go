@@ -20,6 +20,7 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 
 	"go.chromium.org/luci/vpython/api/vpython"
@@ -176,11 +177,31 @@ type Loader struct {
 // one, it will use that as the specification file. This enables scripts to
 // implicitly share an specification.
 func (l *Loader) LoadForScript(c context.Context, path string, isModule bool) (*vpython.Spec, string, error) {
+	// Spec search order:
+	// 1. Partner File of the symbolic link (if exist)
+	// 2. Partner File of the real file
+	// 3. Inline specification in the script
+	// 4. Common specification file from the real file
+
 	// Partner File: Try loading the spec from an adjacent file.
 	specPath, err := l.findForScript(path, isModule)
 	if err != nil {
 		return nil, "", errors.Annotate(err, "failed to scan for filesystem spec").Err()
 	}
+
+	// Partner File: Try loading the spec from an adjacent file to the evaluated path.
+	if specPath == "" && runtime.GOOS != "windows" {
+		// Skip EvalSymlinks for windows because it is broken:
+		// https://github.com/golang/go/issues/40180
+		if path, err = filepath.EvalSymlinks(path); err != nil {
+			return nil, "", errors.Annotate(err, "failed to get real path for script: %s", path).Err()
+		}
+		specPath, err = l.findForScript(path, isModule)
+		if err != nil {
+			return nil, "", errors.Annotate(err, "failed to scan for filesystem spec").Err()
+		}
+	}
+
 	if specPath != "" {
 		var spec vpython.Spec
 		if err := Load(specPath, &spec); err != nil {
