@@ -75,6 +75,22 @@ func main() {
 	os.Exit(mainImpl())
 }
 
+type closeOnceCh struct {
+	ch chan struct{}
+	once sync.Once
+}
+
+func newCloseOnceCh() *closeOnceCh {
+	return &closeOnceCh{
+		ch: make(chan struct{}),
+		once: sync.Once{},
+	}
+}
+
+func (c *closeOnceCh) close() {
+	c.once.Do(func() {close(c.ch)})
+}
+
 func mainImpl() int {
 	ctx := logging.SetLevel(gologger.StdConfig.Use(context.Background()), logging.Info)
 
@@ -228,7 +244,7 @@ func mainImpl() int {
 	}
 
 	dispatcherOpts, dispatcherErrCh := channelOpts(cctx)
-	canceledBuildCh := make(chan struct{})
+	canceledBuildCh := newCloseOnceCh()
 	buildsCh, err := dispatcher.NewChannel(cctx, dispatcherOpts, mkSendFn(cctx, bbclient, input.Build.Id, canceledBuildCh))
 	check(errors.Annotate(err, "could not create builds dispatcher channel").Err())
 	defer buildsCh.CloseAndDrain(cctx)
@@ -291,8 +307,7 @@ func mainImpl() int {
 	check(errors.Annotate(err, "marshalling input args").Err())
 	logging.Infof(ctx, "Input args:\n%s", initialJSONPB)
 
-	shutdownCh := make(chan struct{})
-	shutdownOnce := sync.Once{}
+	shutdownCh := newCloseOnceCh()
 	var statusDetails *bbpb.StatusDetails
 	var subprocErr error
 	builds, err := host.Run(cctx, opts, func(ctx context.Context, hostOpts host.Options) error {
@@ -318,7 +333,7 @@ func mainImpl() int {
 		dctx, shutdown := lucictx.TrackSoftDeadline(ctx, toReserve)
 		go func() {
 			select {
-			case <-shutdownCh:
+			case <-shutdownCh.ch:
 				shutdown()
 			case <-dctx.Done():
 			}
@@ -355,13 +370,13 @@ func mainImpl() int {
 			select {
 			case err := <-dispatcherErrCh:
 				if !stopped && grpcutil.Code(err) == codes.InvalidArgument {
-					shutdownOnce.Do(func() {close(shutdownCh)})
+					shutdownCh.close()
 					fatalUpdateBuildErrorSlot.Store(err)
 					stopped = true
 				}
-			case <-canceledBuildCh:
+			case <-canceledBuildCh.ch:
 				// The build has been canceled, bail out early.
-				shutdownOnce.Do(func() {close(shutdownCh)})
+				shutdownCh.close()
 			case <-cctx.Done():
 				return
 			}

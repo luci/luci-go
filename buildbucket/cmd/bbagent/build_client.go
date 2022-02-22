@@ -170,7 +170,7 @@ func channelOpts(ctx context.Context) (*dispatcher.Options, <-chan error) {
 	return opts, errCh
 }
 
-func mkSendFn(ctx context.Context, client BuildsClient, bID int64, canceledBuildCh chan<- struct{}) dispatcher.SendFn {
+func mkSendFn(ctx context.Context, client BuildsClient, bID int64, canceledBuildCh *closeOnceCh) dispatcher.SendFn {
 	return func(b *buffer.Batch) error {
 		var req *bbpb.UpdateBuildRequest
 
@@ -211,7 +211,7 @@ func mkSendFn(ctx context.Context, client BuildsClient, bID int64, canceledBuild
 		}
 		if updatedBuild.CancelTime != nil {
 			logging.Infof(ctx, "The build is in the cancel process, cancel time is %s.", updatedBuild.CancelTime.AsTime().String())
-			close(canceledBuildCh)
+			canceledBuildCh.close()
 		}
 		return nil
 	}
