@@ -115,7 +115,7 @@ func (impl *Impl) Start(ctx context.Context, rs *state.RunState) (*Result, error
 		logging.Infof(ctx, "crbnug/1268574\n%s", result.FailuresSummary())
 	}
 
-	switch result, err := requirement.Compute(ctx, requirement.Input{
+	switch _, err := requirement.Compute(ctx, requirement.Input{
 		ConfigGroup: cg,
 		RunOwner:    rs.Owner,
 		CLs:         runCLs,
@@ -123,25 +123,31 @@ func (impl *Impl) Start(ctx context.Context, rs *state.RunState) (*Result, error
 	}); {
 	case err != nil:
 		return nil, err
-	case result.OK():
+
+	// TODO(crbug.com/1257922): Uncomment the blocks below once the
+	// requirement computation is fully implemented.
+	default: // case result.OK():
 		rs.EnqueueLongOp(&run.OngoingLongOps_Op{
 			Deadline: timestamppb.New(clock.Now(ctx).Add(maxPostStartMessageDuration)),
 			Work: &run.OngoingLongOps_Op_PostStartMessage{
 				PostStartMessage: true,
 			},
 		})
-		rs.Tryjobs = &run.Tryjobs{
-			Requirement: result.Requirement,
-		}
-		// TODO(crbug/1227363): enqueue long op to execute requirement.
-	default:
-		rs.LogInfof(ctx, "tryjob requirement computation", "failed to compute tryjob requirement. Reason: %s", result.ComputationFailure.Reason())
-		scheduleTriggersCancellation(ctx, rs, rs.CLs, reviewInputMeta{
-			message:        fmt.Sprintf("LUCI CV failed to compute tryjob requirement. Reason:\n\n  %s", result.ComputationFailure.Reason()),
-			notify:         gerrit.Whoms{gerrit.Owner, gerrit.CQVoters},
-			addToAttention: gerrit.Whoms{gerrit.Owner, gerrit.CQVoters},
-			reason:         "failed to compute tryjob requirement",
-		}, run.Status_FAILED)
+		/*
+				rs.Tryjobs = &run.Tryjobs{
+					Requirement: result.Requirement,
+				}
+
+				// TODO(crbug/1227363): enqueue long op to execute requirement.
+			default:
+				rs.LogInfof(ctx, "tryjob requirement computation", "failed to compute tryjob requirement. Reason: %s", result.ComputationFailure.Reason())
+				scheduleTriggersCancellation(ctx, rs, rs.CLs, reviewInputMeta{
+					message:        fmt.Sprintf("LUCI CV failed to compute tryjob requirement. Reason:\n\n  %s", result.ComputationFailure.Reason()),
+					notify:         gerrit.Whoms{gerrit.Owner, gerrit.CQVoters},
+					addToAttention: gerrit.Whoms{gerrit.Owner, gerrit.CQVoters},
+					reason:         "failed to compute tryjob requirement",
+				}, run.Status_FAILED)
+		*/
 	}
 	// Note that it is inevitable that duplicate pickup latency metric maybe
 	// emitted for the same Run if the state transition fails later that
