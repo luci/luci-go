@@ -8,7 +8,6 @@ package buildbucket.v2;
 
 option go_package = "go.chromium.org/luci/buildbucket/proto;buildbucketpb";
 
-import "google/api/field_behavior.proto";
 import "go.chromium.org/luci/buildbucket/proto/builder.proto";
 
 // Provides preconfigured builders.
@@ -28,10 +27,14 @@ message GetBuilderRequest {
 
 // A request message for ListBuilders.
 message ListBuildersRequest {
-  // LUCI project, e.g. "chromium".
-  string project = 1  [ (google.api.field_behavior) = REQUIRED ];
+  // LUCI project, e.g. "chromium". Omit to list all builders.
+  //
+  // Required when bucket is specifed.
+  string project = 1;
 
   // A bucket in the project, e.g. "try".
+  //
+  // Omit to list all builders or all builders in a project.
   string bucket = 2;
 
   // The maximum number of builders to return.

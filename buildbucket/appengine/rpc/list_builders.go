@@ -35,9 +35,15 @@ var listBuildersCursorVault = dscursor.NewVault([]byte("buildbucket.v2.Builders.
 
 // validateListBuildersReq validates the given request.
 func validateListBuildersReq(ctx context.Context, req *pb.ListBuildersRequest) error {
-	err := protoutil.ValidateBuilderID(&pb.BuilderID{Project: req.Project, Bucket: req.Bucket})
-	if err != nil {
-		return err
+	if req.Project == "" {
+		if req.Bucket != "" {
+			return errors.Reason("project must be specified when bucket is specified").Err()
+		}
+	} else {
+		err := protoutil.ValidateBuilderID(&pb.BuilderID{Project: req.Project, Bucket: req.Bucket})
+		if err != nil {
+			return err
+		}
 	}
 
 	return validatePageSize(req.PageSize)
@@ -64,7 +70,9 @@ func (*Builders) ListBuilders(ctx context.Context, req *pb.ListBuildersRequest) 
 	var key *datastore.Key
 	var allowedBuckets []string
 	if req.Bucket == "" {
-		key = model.ProjectKey(ctx, req.Project)
+		if req.Project != "" {
+			key = model.ProjectKey(ctx, req.Project)
+		}
 
 		var err error
 		if allowedBuckets, err = perm.BucketsByPerm(ctx, perm.BuildersList, req.Project); err != nil {

@@ -54,9 +54,9 @@ func TestListBuilders(t *testing.T) {
 		datastore.GetTestable(ctx).Consistent(true)
 
 		Convey(`Request validation`, func() {
-			Convey(`No project`, func() {
-				_, err := srv.ListBuilders(ctx, &pb.ListBuildersRequest{})
-				So(err, ShouldHaveAppStatus, codes.InvalidArgument, "project must match")
+			Convey(`No project when bucket is specified`, func() {
+				_, err := srv.ListBuilders(ctx, &pb.ListBuildersRequest{Bucket: "bucket"})
+				So(err, ShouldHaveAppStatus, codes.InvalidArgument, "project must be specified")
 			})
 
 			Convey(`Invalid bucket`, func() {
@@ -164,6 +164,37 @@ func TestListBuilders(t *testing.T) {
 					ID:     "builder1",
 					Config: &pb.Builder{Name: "builder1"},
 				},
+
+				// Bucket in another project.
+				&model.Bucket{
+					Parent: model.ProjectKey(ctx, "project2"),
+					ID:     "bucket1",
+					Proto: &pb.Bucket{
+						Acls: []*pb.Acl{
+							{
+								Identity: "user:user",
+								Role:     pb.Acl_READER,
+							},
+						},
+					},
+				},
+				&model.Builder{
+					Parent: model.BucketKey(ctx, "project2", "bucket1"),
+					ID:     "builder1",
+					Config: &pb.Builder{Name: "builder1"},
+				},
+
+				// Bucket in another project without permission.
+				&model.Bucket{
+					Parent: model.ProjectKey(ctx, "project2"),
+					ID:     "bucket2",
+					Proto:  &pb.Bucket{},
+				},
+				&model.Builder{
+					Parent: model.BucketKey(ctx, "project2", "bucket2"),
+					ID:     "builder1",
+					Config: &pb.Builder{Name: "builder1"},
+				},
 			), ShouldBeNil)
 
 			Convey(`List all builders in bucket`, func() {
@@ -264,6 +295,53 @@ func TestListBuilders(t *testing.T) {
 				})
 			})
 
+			Convey(`List all builders`, func() {
+				res, err := srv.ListBuilders(ctx, &pb.ListBuildersRequest{})
+				So(err, ShouldBeNil)
+				So(res.NextPageToken, ShouldEqual, "")
+				So(res.GetBuilders(), ShouldResembleProto, []*pb.BuilderItem{
+					{
+						Id: &pb.BuilderID{
+							Project: "project",
+							Bucket:  "bucket1",
+							Builder: "builder1",
+						},
+						Config: &pb.Builder{Name: "builder1"},
+					},
+					{
+						Id: &pb.BuilderID{
+							Project: "project",
+							Bucket:  "bucket1",
+							Builder: "builder2",
+						},
+						Config: &pb.Builder{Name: "builder2"},
+					},
+					{
+						Id: &pb.BuilderID{
+							Project: "project",
+							Bucket:  "bucket1",
+							Builder: "builder3",
+						},
+						Config: &pb.Builder{Name: "builder3"},
+					},
+					{
+						Id: &pb.BuilderID{
+							Project: "project",
+							Bucket:  "bucket3",
+							Builder: "builder1",
+						},
+						Config: &pb.Builder{Name: "builder1"},
+					},
+					{
+						Id: &pb.BuilderID{
+							Project: "project2",
+							Bucket:  "bucket1",
+							Builder: "builder1",
+						},
+						Config: &pb.Builder{Name: "builder1"},
+					},
+				})
+			})
 		})
 	})
 }
