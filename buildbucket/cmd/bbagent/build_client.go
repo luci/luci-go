@@ -45,6 +45,9 @@ import (
 //
 // The live implementation automatically binds the "X-Build-Token" key with
 // a token where necessary.
+//
+// Note: The dummy implementation will always return an EMPTY Build message;
+// Make sure any code using BuildsClient can handle this scenario.
 type BuildsClient interface {
 	GetBuild(ctx context.Context, in *bbpb.GetBuildRequest, opts ...grpc.CallOption) (*bbpb.Build, error)
 	UpdateBuild(ctx context.Context, in *bbpb.UpdateBuildRequest, opts ...grpc.CallOption) (*bbpb.Build, error)
@@ -63,11 +66,11 @@ var readMask = &bbpb.BuildMask{
 type dummyBBClient struct{}
 
 func (dummyBBClient) GetBuild(ctx context.Context, in *bbpb.GetBuildRequest, opts ...grpc.CallOption) (*bbpb.Build, error) {
-	return nil, nil
+	return &bbpb.Build{}, nil
 }
 
 func (dummyBBClient) UpdateBuild(ctx context.Context, in *bbpb.UpdateBuildRequest, opts ...grpc.CallOption) (*bbpb.Build, error) {
-	return nil, nil
+	return &bbpb.Build{}, nil
 }
 
 type liveBBClient struct {

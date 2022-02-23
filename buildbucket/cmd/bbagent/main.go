@@ -76,19 +76,19 @@ func main() {
 }
 
 type closeOnceCh struct {
-	ch chan struct{}
+	ch   chan struct{}
 	once sync.Once
 }
 
 func newCloseOnceCh() *closeOnceCh {
 	return &closeOnceCh{
-		ch: make(chan struct{}),
+		ch:   make(chan struct{}),
 		once: sync.Once{},
 	}
 }
 
 func (c *closeOnceCh) close() {
-	c.once.Do(func() {close(c.ch)})
+	c.once.Do(func() { close(c.ch) })
 }
 
 func mainImpl() int {
