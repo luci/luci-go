@@ -77,7 +77,7 @@ func ExtractOptions(snapshot *changelist.Snapshot) *Options {
 	if isTrue("No-Presubmit", "NOPRESUBMIT") {
 		o.SkipPresubmit = true
 	}
-	// TODO(tandrii): parse CQ-IncludeTrybots.
+	o.IncludedTryjobs = append(o.IncludedTryjobs, valuesOf("Cq-Include-Trybots", "CQ_INCLUDE_TRYBOTS")...)
 	return o
 }
 
@@ -97,5 +97,6 @@ func MergeOptions(a, b *Options) *Options {
 		SkipPresubmit:          a.SkipPresubmit || b.SkipPresubmit,
 		SkipEquivalentBuilders: a.SkipEquivalentBuilders || b.SkipEquivalentBuilders,
 		SkipTreeChecks:         a.SkipTreeChecks || b.SkipTreeChecks,
+		IncludedTryjobs:        append(a.IncludedTryjobs, b.IncludedTryjobs...),
 	}
 }

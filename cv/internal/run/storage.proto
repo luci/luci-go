@@ -153,7 +153,14 @@ message Options {
   // See skip_tryjobs doc.
   bool skip_presubmit = 5;
 
-  // TODO(tandrii): add CQ_INCLUDE_TRYBOTS / Cq-Include-Trybots.
+  // Contains the directives to include specific builder in the Run.
+  //
+  // Its elements are strings of the form:
+  // project/bucket:builder1,builder2;project2/bucket:builder3
+  //
+  // Note that there may be duplication in the directives, it's up to the
+  // consumer of this information to handle it.
+  repeated string included_tryjobs = 6;
 }
 
 // LogEntries contains 1+ LogEntry ordered from logically oldest to newest.

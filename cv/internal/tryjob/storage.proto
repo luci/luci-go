@@ -46,6 +46,10 @@ message Definition {
   // Note that recurisve `equivalent_to` is not supported. Also, this doesn't
   // affect triggering a new tryjob.
   Definition equivalent_to = 2;
+
+  // If set, trigger a new tryjob using this definition regardless of whether
+  // reusable tryjobs exist.
+  bool disable_reuse = 3;
 }
 
 // Requirement is what has to happen to verify a specific Run.
