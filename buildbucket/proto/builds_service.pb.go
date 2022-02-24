@@ -426,6 +426,7 @@ type UpdateBuildRequest struct {
 	// - build.steps
 	// - build.summary_markdown
 	// - build.tags
+	// - build.infra.buildbucket.agent.output
 	//
 	// If omitted, Buildbucket will update the Build's update_time, but nothing else.
 	UpdateMask *fieldmaskpb.FieldMask `protobuf:"bytes,2,opt,name=update_mask,json=updateMask,proto3" json:"update_mask,omitempty"`

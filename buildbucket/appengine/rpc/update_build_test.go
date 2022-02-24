@@ -192,6 +192,81 @@ func TestValidateUpdate(t *testing.T) {
 			})
 		})
 	})
+
+	Convey("validate agent output", t, func() {
+		req := &pb.UpdateBuildRequest{
+			Build: &pb.Build{
+				Id: 1,
+				Input: &pb.Build_Input{
+					Experiments: []string{"luci.buildbucket.agent.cipd_installation"},
+				},
+				Infra: &pb.BuildInfra{
+					Buildbucket: &pb.BuildInfra_Buildbucket{
+						Agent: &pb.BuildInfra_Buildbucket_Agent{},
+					},
+				},
+			},
+		}
+		req.UpdateMask = &field_mask.FieldMask{Paths: []string{"build.infra.buildbucket.agent.output"}}
+
+		Convey("empty", func() {
+			So(validateUpdate(req, nil), ShouldErrLike, "agent output is not set while its field path appears in update_mask")
+		})
+
+		Convey("invalid cipd", func() {
+			// wrong or unresolved version
+			req.Build.Infra.Buildbucket.Agent.Output = &pb.BuildInfra_Buildbucket_Agent_Output{
+				ResolvedData: map[string]*pb.ResolvedDataRef{
+					"cipd": {
+						DataType: &pb.ResolvedDataRef_Cipd{
+							Cipd: &pb.ResolvedDataRef_CIPD{
+								Specs: []*pb.ResolvedDataRef_CIPD_PkgSpec{{Package: "package", Version: "unresolved_v"}},
+							},
+						},
+					},
+				},
+			}
+			So(validateUpdate(req, nil), ShouldErrLike, `build.infra.buildbucket.agent.output: cipd.version: not a valid package instance ID "unresolved_v"`)
+
+			// wrong or unresolved package name
+			req.Build.Infra.Buildbucket.Agent.Output = &pb.BuildInfra_Buildbucket_Agent_Output{
+				ResolvedData: map[string]*pb.ResolvedDataRef{
+					"cipd": {
+						DataType: &pb.ResolvedDataRef_Cipd{
+							Cipd: &pb.ResolvedDataRef_CIPD{
+								Specs: []*pb.ResolvedDataRef_CIPD_PkgSpec{{Package: "infra/${platform}", Version: "GwXmwYBjad-WzXEyWWn8HkDsizOPFSH_gjJ35zQaA8IC"}},
+							},
+						},
+					},
+				},
+			}
+			So(validateUpdate(req, nil), ShouldErrLike, `cipd.package: invalid package name: "infra/${platform}"`)
+
+			// build.status and agent.output.status conflicts
+			req.Build.Status = pb.Status_CANCELED
+			req.Build.Infra.Buildbucket.Agent.Output.Status = pb.Status_STARTED
+			So(validateUpdate(req, nil), ShouldErrLike, "build is in an ended status while agent output status is not ended")
+		})
+
+		Convey("valid", func() {
+			req.Build.Infra.Buildbucket.Agent.Output = &pb.BuildInfra_Buildbucket_Agent_Output{
+				Status:        pb.Status_SUCCESS,
+				AgentPlatform: "linux-amd64",
+				ResolvedData: map[string]*pb.ResolvedDataRef{
+					"cipd": {
+						DataType: &pb.ResolvedDataRef_Cipd{
+							Cipd: &pb.ResolvedDataRef_CIPD{
+								Specs: []*pb.ResolvedDataRef_CIPD_PkgSpec{
+									{Package: "infra/tools/git/linux-amd64", Version: "GwXmwYBjad-WzXEyWWn8HkDsizOPFSH_gjJ35zQaA8IC"}},
+							},
+						},
+					},
+				},
+			}
+			So(validateUpdate(req, nil), ShouldBeNil)
+		})
+
+	})
 }
 
 func TestValidateStep(t *testing.T) {
@@ -361,6 +436,13 @@ func TestCheckBuildForUpdate(t *testing.T) {
 				err = checkBuildForUpdate(updateMask(req), req, b)
 				So(err, ShouldBeRPCInvalidArgument, "cannot update build output fields of a SCHEDULED build")
 			})
+			Convey("with build.infra.buildbucket.agent.output", func() {
+				req.UpdateMask = &field_mask.FieldMask{Paths: []string{"build.infra.buildbucket.agent.output"}}
+				b, err := getBuild(ctx, 1)
+				So(err, ShouldBeNil)
+				err = checkBuildForUpdate(updateMask(req), req, b)
+				So(err, ShouldBeRPCInvalidArgument, "cannot update agent output of a SCHEDULED build")
+			})
 		})
 	})
 }
@@ -378,7 +460,7 @@ func TestUpdateBuild(t *testing.T) {
 		if b.Proto.Output != nil {
 			So(b.Proto.Output.Properties, ShouldBeNil)
 		}
-		m := model.HardcodedBuildMask("output.properties", "steps", "tags")
+		m := model.HardcodedBuildMask("output.properties", "steps", "tags", "infra.buildbucket.agent.output")
 		So(model.LoadBuildDetails(ctx, m, b.Proto), ShouldBeNil)
 		return b
 	}
@@ -425,7 +507,17 @@ func TestUpdateBuild(t *testing.T) {
 			CreateTime:  t0,
 			UpdateToken: tk,
 		}
-		So(datastore.Put(ctx, build), ShouldBeNil)
+		bk := datastore.KeyForObj(ctx, build)
+		infra := &model.BuildInfra{
+			Build: bk,
+			Proto: &pb.BuildInfra{
+				Buildbucket: &pb.BuildInfra_Buildbucket{
+					Hostname: "bbhost",
+					Agent:    &pb.BuildInfra_Buildbucket_Agent{},
+				},
+			},
+		}
+		So(datastore.Put(ctx, build, infra), ShouldBeNil)
 		req := &pb.UpdateBuildRequest{
 			Build: &pb.Build{Id: 1, SummaryMarkdown: "summary"},
 			UpdateMask: &field_mask.FieldMask{Paths: []string{
@@ -596,6 +688,46 @@ func TestUpdateBuild(t *testing.T) {
 				b := getBuildWithDetails(ctx, req.Build.Id)
 				So(b.Tags, ShouldBeNil)
 			})
+		})
+
+		Convey("build.infra.buildbucket.agent.output", func() {
+			agentOutput := &pb.BuildInfra_Buildbucket_Agent_Output{
+				Status:        pb.Status_SUCCESS,
+				AgentPlatform: "linux-amd64",
+				ResolvedData: map[string]*pb.ResolvedDataRef{
+					"cipd": {
+						DataType: &pb.ResolvedDataRef_Cipd{
+							Cipd: &pb.ResolvedDataRef_CIPD{
+								Specs: []*pb.ResolvedDataRef_CIPD_PkgSpec{{Package: "infra/tools/git/linux-amd64", Version: "GwXmwYBjad-WzXEyWWn8HkDsizOPFSH_gjJ35zQaA8IC"}},
+							},
+						},
+					},
+				},
+			}
+			req.Build.Infra = &pb.BuildInfra{
+				Buildbucket: &pb.BuildInfra_Buildbucket{
+					Agent: &pb.BuildInfra_Buildbucket_Agent{
+						Output: agentOutput,
+					},
+				},
+			}
+			req.Build.Input = &pb.Build_Input{
+				Experiments: []string{"luci.buildbucket.agent.cipd_installation"},
+			}
+
+			Convey("with mask", func() {
+				req.UpdateMask.Paths[0] = "build.infra.buildbucket.agent.output"
+				So(updateBuild(ctx, req), ShouldBeRPCOK)
+				b := getBuildWithDetails(ctx, req.Build.Id)
+				So(b.Proto.Infra.Buildbucket.Agent.Output, ShouldResembleProto, agentOutput)
+			})
+
+			Convey("without mask", func() {
+				So(updateBuild(ctx, req), ShouldBeRPCOK)
+				b := getBuildWithDetails(ctx, req.Build.Id)
+				So(b.Proto.Infra.Buildbucket.Agent.Output, ShouldBeNil)
+			})
+
 		})
 
 		Convey("build-start event", func() {

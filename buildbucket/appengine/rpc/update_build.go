@@ -23,6 +23,7 @@ import (
 	"google.golang.org/protobuf/types/known/structpb"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
+	cipdCommon "go.chromium.org/luci/cipd/common"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/data/strpair"
@@ -34,6 +35,7 @@ import (
 	"go.chromium.org/luci/grpc/appstatus"
 	"go.chromium.org/luci/server/auth"
 
+	"go.chromium.org/luci/buildbucket"
 	"go.chromium.org/luci/buildbucket/appengine/internal/metrics"
 	"go.chromium.org/luci/buildbucket/appengine/internal/perm"
 	"go.chromium.org/luci/buildbucket/appengine/model"
@@ -120,6 +122,10 @@ func validateUpdate(req *pb.UpdateBuildRequest, bs *model.BuildSteps) error {
 			if err := validateTags(req.Build.Tags, TagAppend); err != nil {
 				return errors.Annotate(err, "build.tags").Err()
 			}
+		case "build.infra.buildbucket.agent.output":
+			if err := validateAgentOutput(req); err != nil {
+				return errors.Annotate(err, "build.infra.buildbucket.agent.output").Err()
+			}
 		default:
 			return errors.Reason("unsupported path %q", p).Err()
 		}
@@ -128,6 +134,32 @@ func validateUpdate(req *pb.UpdateBuildRequest, bs *model.BuildSteps) error {
 	if hasStepsMask {
 		if err := validateSteps(bs, req.Build.Steps, buildStatus); err != nil {
 			return errors.Annotate(err, "build.steps").Err()
+		}
+	}
+	return nil
+}
+
+// validateAgentOutput validates the agent output of the Build.
+func validateAgentOutput(req *pb.UpdateBuildRequest) error {
+	// TODO(crbug/1297809): Remove the experiment check once all builds migrate to use bbagent for cipd installation.
+	if !stringset.NewFromSlice(req.Build.Input.Experiments...).Has(buildbucket.ExperimentBBAgentDownloadCipd) {
+		return errors.Reason("cannot update agent output; build doesn't have %s experiment", buildbucket.ExperimentBBAgentDownloadCipd).Err()
+	}
+	output := req.Build.Infra.Buildbucket.Agent.Output
+	if output == nil {
+		return errors.Reason("agent output is not set while its field path appears in update_mask").Err()
+	}
+	if protoutil.IsEnded(req.Build.Status) && !protoutil.IsEnded(output.Status) {
+		return errors.Reason("build is in an ended status while agent output status is not ended").Err()
+	}
+	for _, resolved := range output.ResolvedData {
+		for _, spec := range resolved.GetCipd().GetSpecs() {
+			if err := cipdCommon.ValidatePackageName(spec.Package); err != nil {
+				return errors.Annotate(err, "cipd.package").Err()
+			}
+			if err := cipdCommon.ValidateInstanceID(spec.Version, cipdCommon.AnyHash); err != nil {
+				return errors.Annotate(err, "cipd.version").Err()
+			}
 		}
 	}
 	return nil
@@ -251,7 +283,7 @@ func checkBuildForUpdate(updateMask *mask.Mask, req *pb.UpdateBuildRequest, buil
 		finalStatus = req.Build.Status
 	}
 
-	// ensure that a SCHEDULED build does not have steps or output.
+	// ensure that a SCHEDULED build does not have steps, output or agent.output.
 	if finalStatus == pb.Status_SCHEDULED {
 		if mustIncludes(updateMask, req, "steps") != mask.Exclude {
 			return appstatus.Errorf(codes.InvalidArgument, "cannot update steps of a SCHEDULED build; either set status to non-SCHEDULED or do not update steps")
@@ -259,6 +291,10 @@ func checkBuildForUpdate(updateMask *mask.Mask, req *pb.UpdateBuildRequest, buil
 
 		if mustIncludes(updateMask, req, "output") != mask.Exclude {
 			return appstatus.Errorf(codes.InvalidArgument, "cannot update build output fields of a SCHEDULED build; either set status to non-SCHEDULED or do not update build output")
+		}
+
+		if mustIncludes(updateMask, req, "infra.buildbucket.agent.output") != mask.Exclude {
+			return appstatus.Errorf(codes.InvalidArgument, "cannot update agent output of a SCHEDULED build; either set status to non-SCHEDULED or do not update agent output")
 		}
 	}
 
@@ -370,6 +406,18 @@ func updateEntities(ctx context.Context, req *pb.UpdateBuildRequest, updateMask 
 			case changed:
 				toSave = append(toSave, existingSteps)
 			}
+		}
+
+		// infra.buildbucket.agent.output
+		if mustIncludes(updateMask, req, "infra.buildbucket.agent.output") == mask.IncludeEntirely {
+			infra := &model.BuildInfra{
+				Build: bk,
+			}
+			if err := datastore.Get(ctx, infra); err != nil {
+				return err
+			}
+			infra.Proto.Buildbucket.Agent.Output = req.Build.Infra.Buildbucket.Agent.Output
+			toSave = append(toSave, infra)
 		}
 
 		return datastore.Put(ctx, toSave)

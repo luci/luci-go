@@ -206,6 +206,7 @@ message UpdateBuildRequest {
   // - build.steps
   // - build.summary_markdown
   // - build.tags
+  // - build.infra.buildbucket.agent.output
   //
   // If omitted, Buildbucket will update the Build's update_time, but nothing else.
   google.protobuf.FieldMask update_mask = 2;
