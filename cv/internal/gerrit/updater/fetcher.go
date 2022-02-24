@@ -483,19 +483,29 @@ func (f *fetcher) countRelatedWhichAreParents(this *gerritpb.GetRelatedChangesRe
 // fetchFiles fetches files for the current revision of the new Snapshot.
 func (f *fetcher) fetchFiles(ctx context.Context) error {
 	return f.gFactory.MakeMirrorIterator(ctx).RetryIfStale(func(opt grpc.CallOption) error {
-		resp, err := f.g.ListFiles(ctx, &gerritpb.ListFilesRequest{
+		curRev := f.mustHaveCurrentRevision()
+		req := &gerritpb.ListFilesRequest{
 			Number:     f.change,
 			Project:    f.gerritProjectIfKnown(),
-			RevisionId: f.mustHaveCurrentRevision(),
-			// For CLs with >1 parent commit (aka merge commits), this relies on Gerrit
-			// ensuring that such a CL always has first parent from the target branch.
-			Parent: 1, // Request a diff against the first parent.
-		}, opt)
+			RevisionId: curRev,
+		}
+		switch revInfo, ok := f.toUpdate.Snapshot.GetGerrit().GetInfo().GetRevisions()[curRev]; {
+		case !ok:
+			return errors.Reason("missing RevisionInfo for current revision: %s", curRev).Err()
+		case len(revInfo.GetCommit().GetParents()) == 0:
+			// Occasionally, CL doesn't have parent commit. See: crbug.com/1295817.
+		default:
+			// For CLs with >1 parent commit (aka merge commits), this relies on
+			// Gerrit ensuring that such a CL always has first parent from the
+			// target branch.
+			req.Parent = 1 // Request a diff against the first parent.
+		}
+		resp, err := f.g.ListFiles(ctx, req, opt)
 		switch code := grpcutil.Code(err); code {
 		case codes.OK:
-			// Iterate files map and take keys only. CV treats all files "touched" in a
-			// Change to be interesting, including chmods. Skip special /COMMIT_MSG and
-			// /MERGE_LIST entries, which aren't files. For example output, see
+			// Iterate files map and take keys only. CV treats all files "touched" in
+			// a Change to be interesting, including chmods. Skip special /COMMIT_MSG
+			// and /MERGE_LIST entries, which aren't files. For example output, see
 			// https://chromium-review.googlesource.com/changes/1817639/revisions/1/files?parent=1
 			fs := make([]string, 0, len(resp.GetFiles()))
 			for f := range resp.GetFiles() {

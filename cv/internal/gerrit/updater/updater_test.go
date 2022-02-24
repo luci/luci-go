@@ -208,7 +208,7 @@ func TestUpdaterBackendFetch(t *testing.T) {
 
 		Convey("happy path: fetches CL which has no deps and produces correct Snapshot", func() {
 			expUpdateTime := ct.Clock.Now().Add(-time.Minute)
-			ct.GFake.AddFrom(gf.WithCIs(gHost, gf.ACLPublic(), gf.CI(
+			ci := gf.CI(
 				gChange,
 				gf.Project(gRepo),
 				gf.Ref("refs/heads/main"),
@@ -216,7 +216,14 @@ func TestUpdaterBackendFetch(t *testing.T) {
 				gf.Updated(expUpdateTime),
 				gf.Desc("Title\n\nMeta: data\nNo-Try: true\nChange-Id: Ideadbeef"),
 				gf.Files("z.cpp", "dir/a.py"),
-			)))
+			)
+			ct.GFake.AddFrom(gf.WithCIs(gHost, gf.ACLPublic(), ci))
+
+			Convey("works if parent commits are empty", func() {
+				ct.GFake.MutateChange(gHost, gChange, func(c *gf.Change) {
+					gf.ParentCommits(nil)(c.Info)
+				})
+			})
 
 			res, err := gu.Fetch(ctx, &newCL, lProject, time.Time{})
 			So(err, ShouldBeNil)
@@ -238,7 +245,7 @@ func TestUpdaterBackendFetch(t *testing.T) {
 			So(res.Snapshot, ShouldNotBeNil)
 			backedupSnapshot := proto.Clone(res.Snapshot).(*changelist.Snapshot)
 			// save Gerrit CI portion for later check and check high-level fields first.
-			ci := res.Snapshot.GetGerrit().GetInfo()
+			ci = res.Snapshot.GetGerrit().GetInfo()
 			res.Snapshot.GetGerrit().Info = nil
 			So(res.Snapshot, ShouldResembleProto, &changelist.Snapshot{
 				Deps:                  nil,

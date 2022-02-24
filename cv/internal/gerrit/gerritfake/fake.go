@@ -239,9 +239,11 @@ func RevInfo(ps int) *gerritpb.RevisionInfo {
 			"shared/s.py":                   {Status: gerritpb.FileInfo_W},
 		},
 		Commit: &gerritpb.CommitInfo{
-			Id:      "",  // Id isn't set by Gerrit. It's set as a key in the revisions map.
-			Parents: nil, // Intentionally omitting parents. CV doesn't read them.
-			Message: "Commit.\n\nDecription.",
+			Id: "", // Id isn't set by Gerrit. It's set as a key in the revisions map.
+			Parents: []*gerritpb.CommitInfo_Parent{
+				{Id: "fake_parent_commit"},
+			},
+			Message: "Commit.\n\nDescription.",
 		},
 	}
 }
@@ -583,6 +585,26 @@ func U(username string) *gerritpb.AccountInfo {
 func MetaRevID(metaRevID string) CIModifier {
 	return func(ci *gerritpb.ChangeInfo) {
 		ci.MetaRevID = metaRevID
+	}
+}
+
+// ParentCommits sets the parent commits for the current revision.
+func ParentCommits(parents []string) CIModifier {
+	return func(ci *gerritpb.ChangeInfo) {
+		if ci.GetCurrentRevision() == "" {
+			panic("missing current revision")
+		}
+		revInfo, ok := ci.GetRevisions()[ci.GetCurrentRevision()]
+		if !ok {
+			panic("missing revision info for current revision")
+		}
+
+		revInfo.GetCommit().Parents = make([]*gerritpb.CommitInfo_Parent, len(parents))
+		for i, parent := range parents {
+			revInfo.GetCommit().Parents[i] = &gerritpb.CommitInfo_Parent{
+				Id: parent,
+			}
+		}
 	}
 }
 

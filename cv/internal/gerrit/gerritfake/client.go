@@ -156,14 +156,20 @@ func (client *Client) GetRelatedChanges(ctx context.Context, in *gerritpb.GetRel
 			Number:          change.Info.GetNumber(),
 			Patchset:        int64(ri.GetNumber()),
 			CurrentPatchset: int64(change.Info.GetRevisions()[change.Info.GetCurrentRevision()].GetNumber()),
-			Commit:          &gerritpb.CommitInfo{Id: rev},
+			Commit: &gerritpb.CommitInfo{
+				Id:      rev,
+				Parents: change.Info.GetRevisions()[change.Info.GetCurrentRevision()].GetCommit().GetParents(),
+			},
 		}
-		for _, parentPSkey := range client.f.parentsOf[psk] {
-			_, parentRev, _, err := client.f.resolvePSKeyLocked(parentPSkey)
-			if err != nil {
-				return err
+		if parentsPSKeys := client.f.parentsOf[psk]; len(parentsPSKeys) > 0 {
+			cc.GetCommit().Parents = make([]*gerritpb.CommitInfo_Parent, len(parentsPSKeys))
+			for i, parentPSkey := range parentsPSKeys {
+				_, parentRev, _, err := client.f.resolvePSKeyLocked(parentPSkey)
+				if err != nil {
+					return err
+				}
+				cc.GetCommit().Parents[i] = &gerritpb.CommitInfo_Parent{Id: parentRev}
 			}
-			cc.GetCommit().Parents = append(cc.GetCommit().Parents, &gerritpb.CommitInfo_Parent{Id: parentRev})
 		}
 		res.Changes = append(res.Changes, cc)
 		return nil
@@ -199,6 +205,9 @@ func (client *Client) ListFiles(ctx context.Context, in *gerritpb.ListFilesReque
 	_, ri, err := change.resolveRevision(in.GetRevisionId())
 	if err != nil {
 		return nil, err
+	}
+	if in.Parent != 0 && len(ri.GetCommit().GetParents()) == 0 {
+		return nil, status.Errorf(codes.InvalidArgument, "invalid parent number: %d", in.Parent)
 	}
 	// Note: for simplicity of fake, use files inside a revision, even though it
 	// differs from what ListFiles may return for merge commit in Gerrit.

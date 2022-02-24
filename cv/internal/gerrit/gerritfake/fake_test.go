@@ -87,7 +87,8 @@ func TestRelationship(t *testing.T) {
 						{
 							Project: "infra/infra",
 							Commit: &gerritpb.CommitInfo{
-								Id: "rev-000002-001",
+								Id:      "rev-000002-001",
+								Parents: []*gerritpb.CommitInfo_Parent{{Id: "fake_parent_commit"}},
 							},
 							Number:          2,
 							Patchset:        1,
@@ -129,7 +130,8 @@ func TestRelationship(t *testing.T) {
 						{
 							Project: "infra/infra",
 							Commit: &gerritpb.CommitInfo{
-								Id: "rev-000001-001",
+								Id:      "rev-000001-001",
+								Parents: []*gerritpb.CommitInfo_Parent{{Id: "fake_parent_commit"}},
 							},
 							Number:          1,
 							Patchset:        1,
@@ -184,7 +186,8 @@ func TestRelationship(t *testing.T) {
 						{
 							Project: "infra/infra",
 							Commit: &gerritpb.CommitInfo{
-								Id: "rev-000001-001",
+								Id:      "rev-000001-001",
+								Parents: []*gerritpb.CommitInfo_Parent{{Id: "fake_parent_commit"}},
 							},
 							Number:          1,
 							Patchset:        1,
