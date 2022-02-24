@@ -114,6 +114,19 @@ func TestRunReadChecker(t *testing.T) {
 				So(r, cvtesting.SafeShouldResemble, internalRun)
 			})
 
+			Convey("OK v0 API users", func() {
+				ctx = auth.WithState(ctx, &authtest.FakeState{
+					Identity:       "user:v0-api-users@example.com",
+					IdentityGroups: []string{V0APIAllowGroup},
+				})
+				r, err := run.LoadRun(ctx, publicRun.ID, NewRunReadChecker())
+				So(err, ShouldBeNil)
+				So(r, cvtesting.SafeShouldResemble, publicRun)
+				r, err = run.LoadRun(ctx, internalRun.ID, NewRunReadChecker())
+				So(err, ShouldBeNil)
+				So(r, cvtesting.SafeShouldResemble, internalRun)
+			})
+
 			Convey("PermissionDenied", func() {
 				ctx = auth.WithState(ctx, &authtest.FakeState{
 					Identity:       "user:public-user@example.com",

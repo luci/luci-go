@@ -30,6 +30,7 @@ import (
 
 	cfgpb "go.chromium.org/luci/cv/api/config/v2"
 	apiv0pb "go.chromium.org/luci/cv/api/v0"
+	"go.chromium.org/luci/cv/internal/acls"
 	"go.chromium.org/luci/cv/internal/changelist"
 	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/configs/prjcfg/prjcfgtest"
@@ -62,7 +63,7 @@ func TestGetRun(t *testing.T) {
 
 		ctx = auth.WithState(ctx, &authtest.FakeState{
 			Identity:       "user:admin@example.com",
-			IdentityGroups: []string{allowGroup},
+			IdentityGroups: []string{acls.V0APIAllowGroup},
 		})
 
 		saveAndGet := func(r *run.Run) *apiv0pb.Run {

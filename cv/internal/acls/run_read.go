@@ -20,15 +20,19 @@ import (
 	"google.golang.org/grpc/codes"
 
 	"go.chromium.org/luci/grpc/appstatus"
+	"go.chromium.org/luci/server/auth"
 
 	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/run"
 )
 
-// CheckRunRead verifies that the calling user has read access to the Run.
+// V0APIAllowGroup is a CRIA group with users that may make requests to v0 API.
+const V0APIAllowGroup = "service-luci-change-verifier-v0-api-users"
+
+// checkRunRead verifies that the calling user has read access to the Run.
 //
 // Returns true if user has. False, otherwise.
-func CheckRunRead(ctx context.Context, r *run.Run) (bool, error) {
+func checkRunRead(ctx context.Context, r *run.Run) (bool, error) {
 	// TODO(https://crbug.com/1233963): design & implement & test.
 	switch yes, err := checkLegacyCQStatusAccess(ctx, r.ID.LUCIProject()); {
 	case err != nil:
@@ -37,6 +41,12 @@ func CheckRunRead(ctx context.Context, r *run.Run) (bool, error) {
 		return true, nil
 	}
 
+	switch yes, err := auth.IsMember(ctx, V0APIAllowGroup); {
+	case err != nil:
+		return false, err
+	case yes:
+		return true, nil
+	}
 	// Default to no access.
 	return false, nil
 }
@@ -71,7 +81,7 @@ func (c runReadChecker) After(ctx context.Context, r *run.Run) error {
 	if r == nil {
 		return appstatus.Error(codes.NotFound, runNotFoundMsg)
 	}
-	switch yes, err := CheckRunRead(ctx, r); {
+	switch yes, err := checkRunRead(ctx, r); {
 	case err != nil:
 		return err
 	case yes:

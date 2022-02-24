@@ -25,13 +25,11 @@ import (
 	"go.chromium.org/luci/server/auth"
 
 	apiv0pb "go.chromium.org/luci/cv/api/v0"
+	"go.chromium.org/luci/cv/internal/acls"
 	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/rpc/versioning"
 	"go.chromium.org/luci/cv/internal/run"
 )
-
-// allowGroup is a CRIA group with users that may make requests to v0 API.
-const allowGroup = "service-luci-change-verifier-v0-api-users"
 
 // RunsServer implements the v0 API.
 type RunsServer struct {
@@ -41,11 +39,11 @@ type RunsServer struct {
 // checkCanUseAPI ensures that calling user is granted permission to use
 // unstable v0 API.
 func checkCanUseAPI(ctx context.Context, name string) error {
-	switch yes, err := auth.IsMember(ctx, allowGroup); {
+	switch yes, err := auth.IsMember(ctx, acls.V0APIAllowGroup); {
 	case err != nil:
 		return appstatus.Errorf(codes.Internal, "failed to check ACL")
 	case !yes:
-		return appstatus.Errorf(codes.PermissionDenied, "not a member of %s", allowGroup)
+		return appstatus.Errorf(codes.PermissionDenied, "not a member of %s", acls.V0APIAllowGroup)
 	default:
 		logging.Debugf(ctx, "%s is calling %s", auth.CurrentIdentity(ctx), name)
 		return nil
