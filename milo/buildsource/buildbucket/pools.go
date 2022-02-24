@@ -18,12 +18,10 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"strings"
 	"time"
 
-	"go.chromium.org/luci/buildbucket/deprecated"
-
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
-	swarmbucketAPI "go.chromium.org/luci/common/api/buildbucket/swarmbucket/v1"
 	swarmingAPI "go.chromium.org/luci/common/api/swarming/swarming/v1"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/data/stringset"
@@ -65,54 +63,47 @@ func getPool(c context.Context, bid *buildbucketpb.BuilderID) (*ui.MachinePool, 
 	return ui.NewMachinePool(c, botPool), nil
 }
 
-// stripEmptyDimensions removes dimensions that are empty, such as "cores:".
-func stripEmptyDimensions(dims []string) []string {
-	source := strpair.ParseMap(dims)
+// stripDimensionExpiration removes dimension expiration if it exists.
+// e.g. "60:key:value" -> "key:value".
+func stripDimensionExpiration(dims []string) []string {
 	result := strpair.Map{}
-	for k, ds := range source {
-		for _, dim := range ds {
-			if dim != "" {
-				result.Add(k, dim)
-			}
+	for _, dim := range dims {
+		splitted := strings.Split(dim, ":")
+
+		key := splitted[0]
+		value := splitted[1]
+		if len(splitted) == 3 {
+			key = splitted[1]
+			value = splitted[2]
 		}
+
+		result.Add(key, value)
 	}
 	return result.Format()
 }
 
-// processBuilders parses out all of the builder pools from the Swarmbucket get_builders response,
-// and saves the BuilderPool information into the datastore.
-// It returns a list of PoolDescriptors that needs to be fetched and saved.
-func processBuilders(c context.Context, r *swarmbucketAPI.LegacySwarmbucketApiGetBuildersResponseMessage) ([]model.PoolDescriptor, error) {
+// processBuilders saves the builder information into the datastore then returns
+// a list of PoolDescriptors that needs to be fetched and saved.
+func processBuilders(c context.Context, builders []*buildbucketpb.BuilderItem) ([]model.PoolDescriptor, error) {
 	var builderPools []model.BuilderPool
 	var descriptors []model.PoolDescriptor
 	seen := stringset.New(0)
-	for _, bucket := range r.Buckets {
-		project, bucketName := deprecated.BucketNameToV2(bucket.Name)
-		if project == "" {
-			// This may happen if the bucket or builder does not fulfill the LUCI
-			// naming convention.
-			logging.Warningf(c, "invalid bucket/builder %q/, skipping", bucket.Name)
-			continue
-		}
 
-		for _, builder := range bucket.Builders {
-			id := common.LegacyBuilderIDString(&buildbucketpb.BuilderID{
-				Project: project,
-				Bucket:  bucketName,
-				Builder: builder.Name,
-			})
-			dimensions := stripEmptyDimensions(builder.SwarmingDimensions)
-			descriptor := model.NewPoolDescriptor(builder.SwarmingHostname, dimensions)
-			dID := descriptor.PoolID()
-			builderPools = append(builderPools, model.BuilderPool{
-				BuilderID: datastore.MakeKey(c, model.BuilderSummaryKind, id),
-				PoolKey:   datastore.MakeKey(c, model.BotPoolKind, dID),
-			})
-			if added := seen.Add(dID); added {
-				descriptors = append(descriptors, descriptor)
-			}
+	for _, builder := range builders {
+
+		id := common.LegacyBuilderIDString(builder.Id)
+		dimensions := stripDimensionExpiration(builder.Config.Dimensions)
+		descriptor := model.NewPoolDescriptor(builder.Config.SwarmingHost, dimensions)
+		dID := descriptor.PoolID()
+		builderPools = append(builderPools, model.BuilderPool{
+			BuilderID: datastore.MakeKey(c, model.BuilderSummaryKind, id),
+			PoolKey:   datastore.MakeKey(c, model.BotPoolKind, dID),
+		})
+		if added := seen.Add(dID); added {
+			descriptors = append(descriptors, descriptor)
 		}
 	}
+
 	return descriptors, datastore.Put(c, builderPools)
 }
 
@@ -221,17 +212,31 @@ func UpdatePools(c context.Context) error {
 	if err != nil {
 		return err
 	}
-	sc, err := newSwarmbucketClient(c, host)
+
+	buildersClient, err := ProdBuildersClientFactory(c, host, auth.AsSelf)
 	if err != nil {
 		return err
 	}
-	r, err := sc.GetBuilders().Do()
-	if err != nil {
-		return err
+
+	// Get all the builders from buildbucket.
+	builders := make([]*buildbucketpb.BuilderItem, 0)
+	req := &buildbucketpb.ListBuildersRequest{PageSize: 1000}
+	for {
+		r, err := buildersClient.ListBuilders(c, req)
+		if err != nil {
+			return err
+		}
+		builders = append(builders, r.Builders...)
+		if r.NextPageToken == "" {
+			break
+		}
+		req.PageToken = r.NextPageToken
 	}
+	logging.Infof(c, "got %d builders from buildbucket", len(builders))
+
 	// Process builders and save them.  We get back the descriptors that we have
 	// to fetch next.
-	descriptors, err := processBuilders(c, r)
+	descriptors, err := processBuilders(c, builders)
 	if err != nil {
 		return errors.Annotate(err, "processing builders").Err()
 	}

@@ -19,7 +19,7 @@ import (
 
 	"go.chromium.org/luci/appengine/gaetesting"
 	"go.chromium.org/luci/auth/identity"
-	swarmbucket "go.chromium.org/luci/common/api/buildbucket/swarmbucket/v1"
+	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
 	sv1 "go.chromium.org/luci/common/api/swarming/swarming/v1"
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/gae/service/datastore"
@@ -43,44 +43,54 @@ func TestPools(t *testing.T) {
 			Identity:       identity.AnonymousIdentity,
 			IdentityGroups: []string{"all"},
 		})
-		dim1 := []string{"egg:white", "pants:green"}
-		dim2 := []string{"egg:blue", "pants:green"}
-		getBuilderMsg := &swarmbucket.LegacySwarmbucketApiGetBuildersResponseMessage{
-			Buckets: []*swarmbucket.LegacySwarmbucketApiBucketMessage{
-				{
-					Name: "luci.infra.foobucket",
-					Builders: []*swarmbucket.LegacySwarmbucketApiBuilderMessage{
-						{
-							SwarmingHostname:   "swarming.example.com",
-							Name:               "foobuilder",
-							SwarmingDimensions: dim1,
-						},
-						{
-							SwarmingHostname:   "swarming.example.com",
-							Name:               "foobuilder2",
-							SwarmingDimensions: dim1,
-						},
-						{
-							SwarmingHostname:   "swarming.example.com",
-							Name:               "foobuilder3",
-							SwarmingDimensions: dim2,
-						},
-					},
+		dim1 := []string{"egg:white", "60:pants:green"}
+		dim2 := []string{"120:egg:blue", "pants:green"}
+		builders := []*buildbucketpb.BuilderItem{
+			{
+				Id: &buildbucketpb.BuilderID{
+					Project: "infra",
+					Bucket:  "foobucket",
+					Builder: "foobuilder",
+				},
+				Config: &buildbucketpb.Builder{
+					SwarmingHost: "swarming.example.com",
+					Dimensions:   dim1,
+				},
+			},
+			{
+				Id: &buildbucketpb.BuilderID{
+					Project: "infra",
+					Bucket:  "foobucket",
+					Builder: "foobuilder2",
+				},
+				Config: &buildbucketpb.Builder{
+					SwarmingHost: "swarming.example.com",
+					Dimensions:   dim1,
+				},
+			}, {
+				Id: &buildbucketpb.BuilderID{
+					Project: "infra",
+					Bucket:  "foobucket",
+					Builder: "foobuilder3",
+				},
+				Config: &buildbucketpb.Builder{
+					SwarmingHost: "swarming.example.com",
+					Dimensions:   dim2,
 				},
 			},
 		}
 
-		md1 := model.NewPoolDescriptor("swarming.example.com", dim1)
-		md2 := model.NewPoolDescriptor("swarming.example.com", dim2)
+		md1 := model.NewPoolDescriptor("swarming.example.com", []string{"egg:white", "pants:green"})
+		md2 := model.NewPoolDescriptor("swarming.example.com", []string{"egg:blue", "pants:green"})
 		c = caching.WithRequestCache(c)
 		Convey(`Unit Tests`, func() {
-			Convey(`Strip empty dimensions`, func() {
-				dims := []string{"foo", "foo:", "bar:baz"}
-				newDims := stripEmptyDimensions(dims)
-				So(newDims, ShouldResemble, []string{"bar:baz"})
+			Convey(`Strip dimension expiration`, func() {
+				dims := []string{"60:foo:bar", "bar:baz"}
+				newDims := stripDimensionExpiration(dims)
+				So(newDims, ShouldResemble, []string{"bar:baz", "foo:bar"})
 			})
 			Convey(`Parsing Builders`, func() {
-				descriptors, err := processBuilders(c, getBuilderMsg)
+				descriptors, err := processBuilders(c, builders)
 				So(err, ShouldBeNil)
 				So(len(descriptors), ShouldEqual, 2)
 				Convey(`And builders should be there`, func() {
