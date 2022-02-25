@@ -531,17 +531,15 @@ func processExeArgs(input *bbpb.BBAgentArgs, check func(err error)) []string {
 		exeArgs = append(exeArgs, input.Build.Exe.Wrapper...)
 		exeArgs = append(exeArgs, "--")
 
-		if filepath.IsAbs(exeArgs[0]) {
-			// do nothing
-		} else if strings.Contains(exeArgs[0], "/") || strings.Contains(exeArgs[0], "\\") {
+		if strings.Contains(exeArgs[0], "/") || strings.Contains(exeArgs[0], "\\") {
 			absPath, err := filepath.Abs(exeArgs[0])
 			check(errors.Annotate(err, "absoluting wrapper path: %q", exeArgs[0]).Err())
 			exeArgs[0] = absPath
-		} else {
-			cmdPath, err := exec.LookPath(exeArgs[0])
-			check(errors.Annotate(err, "resolving wrapper path: %q", exeArgs[0]).Err())
-			exeArgs[0] = cmdPath
 		}
+
+		cmdPath, err := exec.LookPath(exeArgs[0])
+		check(errors.Annotate(err, "wrapper not found: %q", exeArgs[0]).Err())
+		exeArgs[0] = cmdPath
 	}
 
 	exeCmd := input.Build.Exe.Cmd[0]
