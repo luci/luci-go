@@ -102,9 +102,12 @@ message Output {
     // If false, then reuse is allowed. It's useful to stop the matching in case
     // of several Reuse messages.
     bool deny = 2;
-    // TODO(crbug/753103): add reuse duration or deadline.
   }
   // Reuse restricts potential reuse of this build by a later CQ run.
+  //
+  // DEPRECATED in favor of `reusability`.
+  // TODO(crbug/1225047): Remove this after CQDaemon is decommissioned. For now,
+  // CQDaemon will still use this field to decide reusability.
   //
   // NOTE: even if reuse is not restricted here, reuse is still subject to other
   // restrictions in applicable project's CQ config.
@@ -123,5 +126,23 @@ message Output {
   //
   //  2. To prohibit reuse for everything except Dry Runs, do:
   //     {mode_regexp: "dryrun"}
-  repeated Reuse reuse = 3;
+  repeated Reuse reuse = 3 [deprecated=true];
+
+  message Reusability {
+    // mode_allowlist specifies modes of LUCI CV Runs that can reuse this build.
+    //
+    // If not provided (or empty), all modes are *allowed* for reuse.
+    repeated string mode_allowlist = 4;
+
+    // TODO(yiwzhang): Consider adding mode_denylist if necessary.
+    // TODO(crbug/753103): add reuse duration or deadline.
+  }
+
+  // Reusability restricts potential reuse of this build by a later LUCI CV run.
+  //
+  // NOTE: even if reuse is not restricted here, reuse is still subject to other
+  // restrictions in applicable project's CQ config.
+  //
+  // If not specified, reuse is *allowed*.
+  Reusability reusability = 4;
 }
