@@ -20,6 +20,11 @@ import (
 
 	"go.chromium.org/luci/auth/identity"
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
+	"go.chromium.org/luci/common/proto/gerrit"
+	"go.chromium.org/luci/server/auth"
+	"go.chromium.org/luci/server/auth/authtest"
+	"google.golang.org/protobuf/types/known/timestamppb"
+
 	"go.chromium.org/luci/cv/api/config/v2"
 	"go.chromium.org/luci/cv/internal/changelist"
 	"go.chromium.org/luci/cv/internal/common"
@@ -27,10 +32,8 @@ import (
 	"go.chromium.org/luci/cv/internal/cvtesting"
 	"go.chromium.org/luci/cv/internal/run"
 	"go.chromium.org/luci/cv/internal/tryjob"
-	"google.golang.org/protobuf/types/known/timestamppb"
 
 	. "github.com/smartystreets/goconvey/convey"
-	"go.chromium.org/luci/common/proto/gerrit"
 	. "go.chromium.org/luci/common/testing/assertions"
 )
 
@@ -115,15 +118,57 @@ func TestMakeDefinition(t *testing.T) {
 	})
 }
 
+var (
+	group1 = "group-one"
+	userA  = identity.Identity("user:usera@example.com")
+	userB  = identity.Identity("user:userb@example.com")
+	group2 = "group-two"
+	userD  = identity.Identity("user:userd@example.com")
+)
+
+func makeFakeAuthState(ctx context.Context) context.Context {
+	return auth.WithState(ctx, &authtest.FakeState{
+		FakeDB: authtest.NewFakeDB(
+			authtest.MockMembership(userA, group1),
+			authtest.MockMembership(userB, group1),
+			authtest.MockMembership(userD, group2),
+		),
+	})
+}
+
+func TestGetDisallowedOwners(t *testing.T) {
+	ctx := makeFakeAuthState(context.Background())
+	Convey("GetDisallowedOwners", t, func() {
+		Convey("works", func() {
+			Convey("with no allowlists", func() {
+				disallowed, err := getDisallowedOwners(ctx, []string{userA.Email()})
+				So(err, ShouldBeNil)
+				So(disallowed, ShouldHaveLength, 0)
+			})
+		})
+		Convey("panics", func() {
+			Convey("with nil users", func() {
+				So(func() { _, _ = getDisallowedOwners(ctx, nil, group1) }, ShouldPanicLike, "nil user")
+			})
+			Convey("with zero users", func() {
+				So(func() { _, _ = getDisallowedOwners(ctx, []string{}, group1) }, ShouldPanicLike, "nil user")
+			})
+		})
+	})
+}
+
 func TestCompute(t *testing.T) {
 	Convey("Compute works", t, func() {
 		ct := cvtesting.Test{}
 		ctx, cancel := ct.SetUp()
 		defer cancel()
+		ctx = makeFakeAuthState(ctx)
 
 		Convey("with a minimal test case", func() {
 			in := makeInput(ctx, []*config.Verifiers_Tryjob_Builder{builderConfigGenerator{Name: "luci/test/builder1"}.generate()})
-			res, err := Compute(ctx, in)
+			Convey("with a single CL", func() {})
+			Convey("with multiple CLs", func() { in.addCL(userB.Email()) })
+			res, err := Compute(ctx, *in)
 
 			So(err, ShouldBeNil)
 			So(res.ComputationFailure, ShouldBeNil)
@@ -150,7 +195,7 @@ func TestCompute(t *testing.T) {
 			in := makeInput(ctx, []*config.Verifiers_Tryjob_Builder{builderConfigGenerator{Name: "luci/test/builder1"}.generate()})
 			in.RunOptions.IncludedTryjobs = append(in.RunOptions.IncludedTryjobs, "luci/test:unlisted")
 
-			res, err := Compute(ctx, in)
+			res, err := Compute(ctx, *in)
 			So(err, ShouldBeNil)
 			So(res.OK(), ShouldBeFalse)
 			So(res, ShouldResemble, &ComputationResult{
@@ -165,7 +210,7 @@ func TestCompute(t *testing.T) {
 				builderConfigGenerator{Name: "luci/test/indirect", TriggeredBy: "luci/test/builder1"}.generate(),
 			})
 			in.RunOptions.IncludedTryjobs = append(in.RunOptions.IncludedTryjobs, "luci/test:indirect")
-			res, err := Compute(ctx, in)
+			res, err := Compute(ctx, *in)
 
 			So(err, ShouldBeNil)
 			So(res.OK(), ShouldBeFalse)
@@ -176,21 +221,43 @@ func TestCompute(t *testing.T) {
 			})
 		})
 		Convey("includes unauthorized builder", func() {
-			in := makeInput(ctx, []*config.Verifiers_Tryjob_Builder{
-				builderConfigGenerator{
-					Name:      "luci/test/builder1",
-					Allowlist: "secret-group",
-				}.generate()})
-			in.RunOptions.IncludedTryjobs = append(in.RunOptions.IncludedTryjobs, "luci/test:builder1")
+			Convey("with single unauthorized user", func() {
+				in := makeInput(ctx, []*config.Verifiers_Tryjob_Builder{
+					builderConfigGenerator{
+						Name:      "luci/test/builder1",
+						Allowlist: group2,
+					}.generate()})
+				in.RunOptions.IncludedTryjobs = append(in.RunOptions.IncludedTryjobs, "luci/test:builder1")
 
-			res, err := Compute(ctx, in)
-			So(err, ShouldBeNil)
-			So(res.OK(), ShouldBeFalse)
-			So(res, ShouldResemble, &ComputationResult{
-				ComputationFailure: &unauthorizedIncludedTryjob{
-					Users:   []string{"someuser@example.com"},
-					Builder: "luci/test/builder1",
-				},
+				res, err := Compute(ctx, *in)
+				So(err, ShouldBeNil)
+				So(res.OK(), ShouldBeFalse)
+				So(res, ShouldResemble, &ComputationResult{
+					ComputationFailure: &unauthorizedIncludedTryjob{
+						Users:   []string{userA.Email()},
+						Builder: "luci/test/builder1",
+					},
+				})
+			})
+			Convey("with multiple users, one of which is unauthorized", func() {
+				in := makeInput(ctx, []*config.Verifiers_Tryjob_Builder{
+					builderConfigGenerator{
+						Name:      "luci/test/builder1",
+						Allowlist: group1,
+					}.generate()})
+				in.RunOptions.IncludedTryjobs = append(in.RunOptions.IncludedTryjobs, "luci/test:builder1")
+				// Add a second CL, the owner of which is not authorized to trigger builder1
+				in.addCL(userD.Email())
+
+				res, err := Compute(ctx, *in)
+				So(err, ShouldBeNil)
+				So(res.OK(), ShouldBeFalse)
+				So(res, ShouldResemble, &ComputationResult{
+					ComputationFailure: &unauthorizedIncludedTryjob{
+						Users:   []string{userD.Email()},
+						Builder: "luci/test/builder1",
+					},
+				})
 			})
 		})
 		Convey("with includable-only builder", func() {
@@ -200,7 +267,7 @@ func TestCompute(t *testing.T) {
 			})
 
 			Convey("skips by default", func() {
-				res, err := Compute(ctx, in)
+				res, err := Compute(ctx, *in)
 				So(err, ShouldBeNil)
 				So(res.ComputationFailure, ShouldBeNil)
 				So(res.Requirement, ShouldResembleProto, &tryjob.Requirement{
@@ -225,7 +292,7 @@ func TestCompute(t *testing.T) {
 
 			Convey("included", func() {
 				in.RunOptions.IncludedTryjobs = append(in.RunOptions.IncludedTryjobs, "luci/test:builder2")
-				res, err := Compute(ctx, in)
+				res, err := Compute(ctx, *in)
 				So(err, ShouldBeNil)
 				So(res.ComputationFailure, ShouldBeNil)
 				So(res.Requirement, ShouldResembleProto, &tryjob.Requirement{
@@ -273,12 +340,12 @@ func TestCompute(t *testing.T) {
 				}.generate()})
 				in.RunOptions.IncludedTryjobs = append(in.RunOptions.IncludedTryjobs, "luci/test:equibuilder")
 
-				res, err := Compute(ctx, in)
+				res, err := Compute(ctx, *in)
 				So(err, ShouldBeNil)
 				So(res.OK(), ShouldBeFalse)
 				So(res, ShouldResemble, &ComputationResult{
 					ComputationFailure: &unauthorizedIncludedTryjob{
-						Users:   []string{"someuser@example.com"},
+						Users:   []string{userA.Email()},
 						Builder: "luci/test/equibuilder",
 					},
 				})
@@ -293,7 +360,7 @@ func TestCompute(t *testing.T) {
 				}.generate()})
 				in.RunOptions.IncludedTryjobs = append(in.RunOptions.IncludedTryjobs, "luci/test:equibuilder")
 
-				res, err := Compute(ctx, in)
+				res, err := Compute(ctx, *in)
 				So(err, ShouldBeNil)
 				So(res.ComputationFailure, ShouldBeNil)
 				So(res.Requirement, ShouldResembleProto, &tryjob.Requirement{
@@ -324,7 +391,7 @@ func TestCompute(t *testing.T) {
 				builderConfigGenerator{Name: "luci/test/expbuilder-notselected", ExperimentPercentage: 1}.generate(),
 			})
 
-			res, err := Compute(ctx, in)
+			res, err := Compute(ctx, *in)
 			So(err, ShouldBeNil)
 			So(res.ComputationFailure, ShouldBeNil)
 			So(res.Requirement, ShouldResembleProto, &tryjob.Requirement{
@@ -380,8 +447,8 @@ func (bcg builderConfigGenerator) generate() *config.Verifiers_Tryjob_Builder {
 	return ret
 }
 
-func makeInput(ctx context.Context, builders []*config.Verifiers_Tryjob_Builder) Input {
-	return Input{
+func makeInput(ctx context.Context, builders []*config.Verifiers_Tryjob_Builder) *Input {
+	ret := &Input{
 		ConfigGroup: &prjcfg.ConfigGroup{
 			Content: &config.ConfigGroup{
 				Verifiers: &config.Verifiers{
@@ -395,7 +462,7 @@ func makeInput(ctx context.Context, builders []*config.Verifiers_Tryjob_Builder)
 				},
 			},
 		},
-		RunOwner:   identity.Identity("user:someuser@example.com"),
+		RunOwner:   userA,
 		RunMode:    run.DryRun,
 		RunOptions: &run.Options{},
 		CLs: []*run.RunCL{
@@ -410,7 +477,7 @@ func makeInput(ctx context.Context, builders []*config.Verifiers_Tryjob_Builder)
 						Gerrit: &changelist.Gerrit{
 							Info: &gerrit.ChangeInfo{
 								Owner: &gerrit.AccountInfo{
-									Email: "someuser@example.com",
+									Email: userA.Email(),
 								},
 							},
 						},
@@ -419,4 +486,28 @@ func makeInput(ctx context.Context, builders []*config.Verifiers_Tryjob_Builder)
 			},
 		},
 	}
+	return ret
+}
+
+func (in *Input) addCL(user string) {
+	last := in.CLs[len(in.CLs)-1]
+	host, id, _ := last.ExternalID.ParseGobID()
+	in.CLs = append(in.CLs, &run.RunCL{
+		ID:         last.ID + common.CLID(1),
+		ExternalID: changelist.MustGobID(host, id+int64(1)),
+		Trigger: &run.Trigger{
+			Time: &timestamppb.Timestamp{Seconds: last.Trigger.Time.Seconds + int64(1)},
+		},
+		Detail: &changelist.Snapshot{
+			Kind: &changelist.Snapshot_Gerrit{
+				Gerrit: &changelist.Gerrit{
+					Info: &gerrit.ChangeInfo{
+						Owner: &gerrit.AccountInfo{
+							Email: user,
+						},
+					},
+				},
+			},
+		},
+	})
 }

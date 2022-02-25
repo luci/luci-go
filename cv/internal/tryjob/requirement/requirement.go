@@ -27,6 +27,7 @@ import (
 	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/hardcoded/chromeinfra"
+	"go.chromium.org/luci/server/auth"
 
 	"go.chromium.org/luci/cv/api/config/v2"
 	"go.chromium.org/luci/cv/internal/configs/prjcfg"
@@ -106,8 +107,20 @@ func getDisallowedOwners(ctx context.Context, allOwnerEmails []string, allowList
 	case len(allowLists) == 0:
 		return nil, nil
 	}
-	return allOwnerEmails, nil
-	// TODO(crbug/1257922): implement actual check.
+	var disallowed []string
+	for _, userEmail := range allOwnerEmails {
+		id, err := identity.MakeIdentity(fmt.Sprintf("user:%s", userEmail))
+		if err != nil {
+			return nil, err
+		}
+		switch allowed, err := auth.GetState(ctx).DB().IsMember(ctx, id, allowLists); {
+		case err != nil:
+			return nil, err
+		case !allowed:
+			disallowed = append(disallowed, userEmail)
+		}
+	}
+	return disallowed, nil
 }
 
 // https://chromium.googlesource.com/infra/luci/luci-go/+/b829424977f4752c8f5e2d3451ec2d7f1a7dc9e2/buildbucket/proto/project_config.proto#220
