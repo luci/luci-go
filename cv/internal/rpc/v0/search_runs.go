@@ -66,12 +66,12 @@ func (s *RunsServer) SearchRuns(ctx context.Context, req *apiv0pb.SearchRunsRequ
 	case err != nil:
 		return nil, err
 	case !ok:
-		// Return NotFound error in the case of access denied.
+		// Return empty response error in the case of access denied.
 		//
 		// Rationale: the caller shouldn't be able to distinguish between
-		// project not existing and not having access to the project, because
-		// it may leak the existence of the project.
-		return nil, appstatus.Errorf(codes.NotFound, "Project %q not found", project)
+		// not having access to the project, and project not existing.
+		// This is similar to the case of when a CL is not found.
+		return &apiv0pb.SearchRunsResponse{}, nil
 	}
 
 	var qb interface {

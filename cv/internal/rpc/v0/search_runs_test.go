@@ -90,10 +90,12 @@ func TestSearchRuns(t *testing.T) {
 		})
 
 		Convey("with nonexistent project", func() {
-			_, err := srv.SearchRuns(ctx, &apiv0pb.SearchRunsRequest{
+			resp, err := srv.SearchRuns(ctx, &apiv0pb.SearchRunsRequest{
 				Predicate: &apiv0pb.RunPredicate{Project: "bogus"},
 			})
-			So(err, ShouldBeRPCNotFound)
+			So(err, ShouldBeNil)
+			So(resp.Runs, ShouldBeEmpty)
+			So(resp.NextPageToken, ShouldBeEmpty)
 		})
 
 		Convey("with no runs", func() {
