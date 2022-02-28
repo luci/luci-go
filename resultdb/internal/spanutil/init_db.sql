@@ -335,4 +335,14 @@ CREATE TABLE UniqueTestVariants (
 -- The following DDL query needs to be uncommented when applied to real Spanner
 -- instances. But it is commented out for Cloud Spanner Emulator:
 -- https://github.com/GoogleCloudPlatform/cloud-spanner-emulator/issues/32
--- ALTER TABLE UniqueTestVariants ADD ROW DELETION POLICY (OLDER_THAN(LastRecordTime, INTERVAL 60 DAY));
+
+-- Add TTL for 2 months to UniqueTestVariants table.
+-- ALTER TABLE UniqueTestVariants
+--     ADD ROW DELETION POLICY (OLDER_THAN(LastRecordTime, INTERVAL 60 DAY));
+
+-- Add TTL for 1.5 years to Invocations table. The row deletion policy
+-- configured in the parent table will also take effect on the interleaved child
+-- tables (Artifacts, IncludedInvocations, TestExonerations, TestResults,
+-- TestResultCounts).
+-- ALTER TABLE Invocations
+--     ADD ROW DELETION POLICY (OLDER_THAN(CreateTime, INTERVAL 540 DAY));
