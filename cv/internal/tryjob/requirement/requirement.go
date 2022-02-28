@@ -175,8 +175,51 @@ func getIncludedTryjobs(directives []string) (stringset.Set, ComputationFailure)
 //
 // Panincs if any regex is invalid.
 func locationMatch(ctx context.Context, locationRegexp, locationRegexpExclude []string, cls []*run.RunCL) (bool, error) {
-	// TODO(crbug/1257922): implement
-	return true, nil
+	if len(locationRegexp) == 0 {
+		locationRegexp = append(locationRegexp, ".*")
+	}
+	changedLocations := make(stringset.Set)
+	for _, cl := range cls {
+		host, project := cl.Detail.GetGerrit().GetHost(), cl.Detail.GetGerrit().GetInfo().GetProject()
+		for _, f := range cl.Detail.GetGerrit().GetFiles() {
+			changedLocations.Add(fmt.Sprintf("https://%s/%s/+/%s", host, project, f))
+		}
+	}
+	if changedLocations.Len() == 0 {
+		// Gerrit treats CLs representing merged commits (i.e. CL's git commit has
+		// >2 parents) as having 0 filediff. Therefore, assume that the CL matches
+		// all location(files)-conditioned builders. See also crbug/1006534.
+		return true, nil
+	}
+	for _, lre := range locationRegexpExclude {
+		re := regexp.MustCompile(fmt.Sprintf("^%s$", lre))
+		changedLocations.Iter(func(loc string) bool {
+			if re.MatchString(loc) {
+				changedLocations.Del(loc)
+			}
+			return true
+		})
+	}
+	if changedLocations.Len() == 0 {
+		// Any locations touched by the change have been excluded by the
+		// builder's config.
+		return false, nil
+	}
+	for _, lri := range locationRegexp {
+		re := regexp.MustCompile(fmt.Sprintf("^%s$", lri))
+		found := false
+		changedLocations.Iter(func(loc string) bool {
+			if re.MatchString(loc) {
+				found = true
+				return false
+			}
+			return true
+		})
+		if found {
+			return true, nil
+		}
+	}
+	return false, nil
 }
 
 // makeBuildbucketDefinition converts a builder name to a minimal Definition.

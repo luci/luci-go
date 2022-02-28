@@ -413,24 +413,194 @@ func TestCompute(t *testing.T) {
 				},
 			})
 		})
+		Convey("with location matching", func() {
+			Convey("empty change after location exclusions skips builder", func() {
+				in := makeInput(ctx, []*config.Verifiers_Tryjob_Builder{builderConfigGenerator{
+					Name:                  "luci/test/builder1",
+					LocationRegexpExclude: []string{"https://example.com/repo/[+]/some/.+"},
+				}.generate()})
+
+				in.CLs[0].Detail.GetGerrit().Files = []string{
+					"some/directory/contains/some/file",
+				}
+				res, err := Compute(ctx, *in)
+				So(err, ShouldBeNil)
+				So(res.ComputationFailure, ShouldBeNil)
+				So(res.Requirement, ShouldResembleProto, &tryjob.Requirement{
+					RetryConfig: &config.Verifiers_Tryjob_RetryConfig{
+						SingleQuota: 2,
+						GlobalQuota: 8,
+					},
+				})
+			})
+			Convey("with location regex", func() {
+				in := makeInput(ctx, []*config.Verifiers_Tryjob_Builder{builderConfigGenerator{
+					Name:           "luci/test/builder1",
+					LocationRegexp: []string{"https://example.com/repo/[+]/some/.+"},
+				}.generate()})
+
+				Convey("matching CL", func() {
+					in.CLs[0].Detail.GetGerrit().Files = []string{
+						"some/directory/contains/some/file",
+					}
+					res, err := Compute(ctx, *in)
+					So(err, ShouldBeNil)
+					So(res.ComputationFailure, ShouldBeNil)
+					So(err, ShouldBeNil)
+					So(res.ComputationFailure, ShouldBeNil)
+					So(res.Requirement, ShouldResembleProto, &tryjob.Requirement{
+						RetryConfig: &config.Verifiers_Tryjob_RetryConfig{
+							SingleQuota: 2,
+							GlobalQuota: 8,
+						},
+						Definitions: []*tryjob.Definition{{
+							Backend: &tryjob.Definition_Buildbucket_{
+								Buildbucket: &tryjob.Definition_Buildbucket{
+									Host: "cr-buildbucket.appspot.com",
+									Builder: &buildbucketpb.BuilderID{
+										Project: "luci",
+										Bucket:  "test",
+										Builder: "builder1",
+									},
+								},
+							}},
+						},
+					})
+				})
+				Convey("non-matching CL", func() {
+					in.CLs[0].Detail.GetGerrit().Files = []string{
+						"other/directory/contains/some/file",
+					}
+					res, err := Compute(ctx, *in)
+					So(err, ShouldBeNil)
+					So(res.ComputationFailure, ShouldBeNil)
+					So(res.Requirement, ShouldResembleProto, &tryjob.Requirement{
+						RetryConfig: &config.Verifiers_Tryjob_RetryConfig{
+							SingleQuota: 2,
+							GlobalQuota: 8,
+						},
+					})
+				})
+				Convey("CL with empty filediff", func() {
+					// No files changed. See crbug/1006534
+					in.CLs[0].Detail.GetGerrit().Files = []string{}
+					res, err := Compute(ctx, *in)
+					So(err, ShouldBeNil)
+					So(res.ComputationFailure, ShouldBeNil)
+					So(err, ShouldBeNil)
+					So(res.ComputationFailure, ShouldBeNil)
+					So(res.Requirement, ShouldResembleProto, &tryjob.Requirement{
+						RetryConfig: &config.Verifiers_Tryjob_RetryConfig{
+							SingleQuota: 2,
+							GlobalQuota: 8,
+						},
+						Definitions: []*tryjob.Definition{{
+							Backend: &tryjob.Definition_Buildbucket_{
+								Buildbucket: &tryjob.Definition_Buildbucket{
+									Host: "cr-buildbucket.appspot.com",
+									Builder: &buildbucketpb.BuilderID{
+										Project: "luci",
+										Bucket:  "test",
+										Builder: "builder1",
+									},
+								},
+							}},
+						},
+					})
+				})
+			})
+			Convey("with location regex and exclusion", func() {
+				in := makeInput(ctx, []*config.Verifiers_Tryjob_Builder{
+					builderConfigGenerator{
+						Name:                  "luci/test/builder1",
+						LocationRegexp:        []string{"https://example.com/repo/[+]/some/.+"},
+						LocationRegexpExclude: []string{"https://example.com/repo/[+]/some/excluded/.*"},
+					}.generate()},
+				)
+				Convey("matching CL skipping builder", func() {
+					in.CLs[0].Detail.GetGerrit().Files = []string{
+						"some/excluded/file",
+					}
+					res, err := Compute(ctx, *in)
+
+					So(err, ShouldBeNil)
+					So(res.ComputationFailure, ShouldBeNil)
+					So(res.Requirement, ShouldResembleProto, &tryjob.Requirement{
+						RetryConfig: &config.Verifiers_Tryjob_RetryConfig{
+							SingleQuota: 2,
+							GlobalQuota: 8,
+						},
+					})
+				})
+				Convey("partially matching CL skipping builder", func() {
+					in.CLs[0].Detail.GetGerrit().Files = []string{
+						"some/excluded/file",
+						"unknown/path",
+					}
+					res, err := Compute(ctx, *in)
+
+					So(err, ShouldBeNil)
+					So(res.ComputationFailure, ShouldBeNil)
+					So(res.Requirement, ShouldResembleProto, &tryjob.Requirement{
+						RetryConfig: &config.Verifiers_Tryjob_RetryConfig{
+							SingleQuota: 2,
+							GlobalQuota: 8,
+						},
+					})
+				})
+				Convey("matching CL not skipping builder", func() {
+					in.CLs[0].Detail.GetGerrit().Files = []string{
+						"some/excluded/file",
+						"some/readme.md",
+					}
+					res, err := Compute(ctx, *in)
+					So(err, ShouldBeNil)
+					So(res.ComputationFailure, ShouldBeNil)
+					So(err, ShouldBeNil)
+					So(res.ComputationFailure, ShouldBeNil)
+					So(res.Requirement, ShouldResembleProto, &tryjob.Requirement{
+						RetryConfig: &config.Verifiers_Tryjob_RetryConfig{
+							SingleQuota: 2,
+							GlobalQuota: 8,
+						},
+						Definitions: []*tryjob.Definition{{
+							Backend: &tryjob.Definition_Buildbucket_{
+								Buildbucket: &tryjob.Definition_Buildbucket{
+									Host: "cr-buildbucket.appspot.com",
+									Builder: &buildbucketpb.BuilderID{
+										Project: "luci",
+										Bucket:  "test",
+										Builder: "builder1",
+									},
+								},
+							}},
+						},
+					})
+				})
+			})
+		})
 	})
 }
 
 type builderConfigGenerator struct {
-	Name                 string
-	Allowlist            string
-	IncludableOnly       bool
-	EquiName             string
-	EquiAllowlist        string
-	ExperimentPercentage float32
-	TriggeredBy          string
+	Name                  string
+	Allowlist             string
+	IncludableOnly        bool
+	EquiName              string
+	EquiAllowlist         string
+	ExperimentPercentage  float32
+	LocationRegexp        []string
+	LocationRegexpExclude []string
+	TriggeredBy           string
 }
 
 func (bcg builderConfigGenerator) generate() *config.Verifiers_Tryjob_Builder {
 	ret := &config.Verifiers_Tryjob_Builder{
-		Name:           bcg.Name,
-		IncludableOnly: bcg.IncludableOnly,
-		TriggeredBy:    bcg.TriggeredBy,
+		Name:                  bcg.Name,
+		IncludableOnly:        bcg.IncludableOnly,
+		LocationRegexp:        bcg.LocationRegexp,
+		LocationRegexpExclude: bcg.LocationRegexpExclude,
+		TriggeredBy:           bcg.TriggeredBy,
 	}
 	if bcg.Allowlist != "" {
 		ret.OwnerWhitelistGroup = []string{bcg.Allowlist}
@@ -468,7 +638,7 @@ func makeInput(ctx context.Context, builders []*config.Verifiers_Tryjob_Builder)
 		CLs: []*run.RunCL{
 			{
 				ID:         common.CLID(65566771212885957),
-				ExternalID: changelist.MustGobID("test.googlesource.com", 123456789),
+				ExternalID: changelist.MustGobID("example.com", 123456789),
 				Trigger: &run.Trigger{
 					Time: &timestamppb.Timestamp{Seconds: 1645080386},
 				},
@@ -479,7 +649,10 @@ func makeInput(ctx context.Context, builders []*config.Verifiers_Tryjob_Builder)
 								Owner: &gerrit.AccountInfo{
 									Email: userA.Email(),
 								},
+								Project: "repo",
 							},
+							Host:  "example.com",
+							Files: []string{"readme.md"},
 						},
 					},
 				},
