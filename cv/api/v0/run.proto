@@ -131,9 +131,9 @@ message Run {
 
   // The tryjobs of the Run.
   //
-  // Note that this data is a snapshot at the time Run is ended. Therefore,
-  // some tryjobs may be in open status. If you need fresh data, query the
-  // corresponding backend system using the returned id.
+  // Note that this data is a snapshot at the time Run has ended. Therefore,
+  // some tryjobs may not have ended yet. If you need fresh data, query the
+  // corresponding backend system using the returned ID.
   //
   // It may also contain tryjobs that are no longer required.
   // TODO(yiwzhang): Re-evalute whether the statement above is true after
