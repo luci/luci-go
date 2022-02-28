@@ -1,0 +1,8 @@
+name: luci-go/luci-deploy
+extends: ../gae.yaml
+
+inputsdir: ../../deploy
+
+build:
+  - go_gae_bundle: ${inputsdir}/service/app.yaml
+    dest: ${contextdir}/service

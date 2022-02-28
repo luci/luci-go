@@ -1,0 +1,4 @@
+queue:
+
+- name: tq-sweep
+  rate: 500/s

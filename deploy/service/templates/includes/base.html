@@ -1,0 +1,52 @@
+{{define "base"}}
+<!DOCTYPE html>
+<html lang="en">
+
+<!-- Copyright 2022 The LUCI Authors. All rights reserved.
+Use of this source code is governed under the Apache License, Version 2.0
+that can be found in the LICENSE file. -->
+<head>
+  <meta http-equiv="Content-type" content="text/html; charset=UTF-8">
+  <link href="/static/bootstrap/css/bootstrap.min.css" rel="stylesheet">
+  <title>{{block "title" .}}LUCI Deploy{{end}}</title>
+  <script src="/static/bootstrap/js/bootstrap.bundle.min.js"></script>
+  <style>
+    body {
+      font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+      font-size: 14px;
+    }
+    .user-avatar {
+      width: 30;
+      height: 30px;
+      border-radius: 5px;
+    }
+  </style>
+</head>
+
+<body class="pt-2">
+  <div class="container">
+    <nav class="navbar navbar-expand-md navbar-light bg-light rounded border mb-2">
+      <div class="container-fluid">
+        <a class="navbar-brand" href="/">LUCI Deploy</a>
+        <span class="navbar-text">
+          {{if .User.Picture}}<img class="user-avatar" src="{{.User.Picture}}">{{end}}
+          {{.User.Email}} | <a href="{{.LogoutURL}}">Logout</a>
+        </span>
+      </div>
+    </nav>
+
+    <div id="content-box">
+      {{block "content" .}}{{end}}
+    </div>
+
+    <footer style="color: #cccccc;">
+      <hr class="mt-1 mb-1">
+      <p class="float-end small">
+        <span class="ms-2">Version: {{.AppVersion}}</span>
+      </p>
+    </footer>
+  </div>
+</body>
+
+</html>
+{{end}}
