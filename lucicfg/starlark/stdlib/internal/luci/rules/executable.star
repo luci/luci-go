@@ -25,7 +25,8 @@ def _executable_props(
         cipd_version = None,
         recipe = None,
         recipes_py3 = None,
-        cmd = None):
+        cmd = None,
+        wrapper = None):
     """Defines an executable's properties. See luci.executable(...).
 
     Args:
@@ -39,6 +40,11 @@ def _executable_props(
       cmd: a list of strings to use as the executable command. If None
         (or empty), Buildbucket will fill this in on the server side to either
         `['luciexe']` or `['recipes']`, depending on its global configuration.
+      wrapper: an optional list of strings which are a command and its arguments
+        to wrap around `cmd`. If set, the builder will run `<wrapper> -- <cmd>`.
+        The 0th argument of the wrapper may be an absolute path. It is up to the
+        owner of the builder to ensure that the wrapper executable is distributed
+        to whatever machines this executable may run on.
     """
     return {
         "cipd_package": validate.string(
@@ -68,6 +74,11 @@ def _executable_props(
             cmd,
             required = False,
         ),
+        "wrapper": validate.str_list(
+            "wrapper",
+            wrapper,
+            required = False,
+        ),
     }
 
 def _executable(
@@ -75,7 +86,8 @@ def _executable(
         name = None,
         cipd_package = None,
         cipd_version = None,
-        cmd = None):
+        cmd = None,
+        wrapper = None):
     """Defines an executable.
 
     Builders refer to such executables in their `executable` field, see
@@ -106,6 +118,11 @@ def _executable(
         value of `('recipes',)` indicates that this executable should be run
         under the legacy kitchen runtime. All other values will be executed
         under the go.chromium.org/luci/luciexe protocol.
+      wrapper: an optional list of strings which are a command and its arguments
+        to wrap around `cmd`. If set, the builder will run `<wrapper> -- <cmd>`.
+        The 0th argument of the wrapper may be an absolute path. It is up to the
+        owner of the builder to ensure that the wrapper executable is distributed
+        to whatever machines this executable may run on.
     """
     name = validate.string("name", name)
     key = keys.executable(name)
@@ -114,6 +131,7 @@ def _executable(
         cipd_package = cipd_package,
         cipd_version = cipd_version,
         cmd = cmd,
+        wrapper = wrapper,
     )
     graph.add_node(key, idempotent = True, props = props)
     return graph.keyset(key)

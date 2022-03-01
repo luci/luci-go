@@ -412,6 +412,8 @@ def _handle_executable(node):
             cipd_version = executable.props.cipd_version,
             cmd = executable.props.cmd,
         )
+        if executable.props.wrapper:
+            executable_def.wrapper = executable.props.wrapper
         recipe_def = None
         props_dict = node.props.properties
         if executable.props.recipe:

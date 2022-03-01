@@ -321,6 +321,17 @@ luci.builder(
     triggered_by = [inline_poller()],
 )
 
+luci.builder(
+    name = "executable builder wrapper",
+    bucket = "inline",
+    executable = luci.executable(
+        name = "wrapped executable",
+        cipd_package = "executable/bundles/inline",
+        wrapper = ["/path/to/wrapper"],
+    ),
+    service_account = "builder@example.com",
+)
+
 # List views.
 
 luci.list_view(
@@ -879,6 +890,17 @@ lucicfg.emit(
 #       exe {
 #         cipd_package: "executable/bundles/inline"
 #         cipd_version: "refs/heads/main"
+#       }
+#       properties: '{}'
+#       service_account: "builder@example.com"
+#     }
+#     builders {
+#       name: "executable builder wrapper"
+#       swarming_host: "chromium-swarm.appspot.com"
+#       exe {
+#         cipd_package: "executable/bundles/inline"
+#         cipd_version: "refs/heads/main"
+#         wrapper: "/path/to/wrapper"
 #       }
 #       properties: '{}'
 #       service_account: "builder@example.com"

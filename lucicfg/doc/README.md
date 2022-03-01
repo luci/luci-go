@@ -1321,6 +1321,7 @@ luci.executable(
     cipd_package = None,
     cipd_version = None,
     cmd = None,
+    wrapper = None,
 )
 ```
 
@@ -1348,6 +1349,7 @@ once declares a builder and an executable needed for this builder.
 * **cipd_package**: a cipd package name with the executable. Supports the module-scoped default.
 * **cipd_version**: a version of the executable package to fetch, default is `refs/heads/main`. Supports the module-scoped default.
 * **cmd**: a list of strings which are the command line to use for this executable. If omitted, either `('recipes',)` or `('luciexe',)` will be used by Buildbucket, according to its global configuration. The special value of `('recipes',)` indicates that this executable should be run under the legacy kitchen runtime. All other values will be executed under the go.chromium.org/luci/luciexe protocol.
+* **wrapper**: an optional list of strings which are a command and its arguments to wrap around `cmd`. If set, the builder will run `<wrapper> -- <cmd>`. The 0th argument of the wrapper may be an absolute path. It is up to the owner of the builder to ensure that the wrapper executable is distributed to whatever machines this executable may run on.
 
 
 
