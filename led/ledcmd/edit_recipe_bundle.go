@@ -224,7 +224,17 @@ func (opts *EditRecipeBundleOpts) prepBundle(ctx context.Context, inDir, recipes
 		args = append(args, "-O", fmt.Sprintf("%s=%s", projID, path))
 	}
 	args = append(args, "bundle", "--destination", filepath.Join(toDirectory))
-	cmd := logCmd(ctx, inDir, "python", args...)
+
+	// Always prefer python3 to python
+	python, err := exec.LookPath("python3")
+	if err != nil {
+		python, err = exec.LookPath("python")
+	}
+	if err != nil {
+		return errors.Annotate(err, "unable to find python3 or python in $PATH").Err()
+	}
+
+	cmd := logCmd(ctx, inDir, python, args...)
 	if logging.GetLevel(ctx) < logging.Info {
 		cmd.Stdout = os.Stdout
 		cmd.Stderr = os.Stderr
