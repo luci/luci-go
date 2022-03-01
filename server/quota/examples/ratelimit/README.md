@@ -1,6 +1,8 @@
 # Quota Library Rate Limit Example
 
 This example shows how to integrate the quota library into a GAE service.
+Not intended to be run on App Engine. A GAE demo can be found under
+[examples/appengine/quota](../../../../examples/appengine/quota).
 
 ## Usage
 

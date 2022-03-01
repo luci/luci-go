@@ -1,0 +1,25 @@
+runtime: go116
+
+automatic_scaling:
+  min_idle_instances: 1
+
+# Note: this is interpreted by gae.py, it maps the app ID being deployed to
+# values of ${...} vars.
+luci_gae_vars:
+  luci-quota-library-sample:
+    AUTH_SERVICE_HOST: chrome-infra-auth.appspot.com
+    REDIS_DATABASE_HOST: 10.249.61.228:6379
+    VPC_CONNECTOR: projects/luci-quota-library-sample/locations/us-central1/connectors/connector
+
+entrypoint: >
+  main
+  -config-service-host luci-config.appspot.com
+  -redis-addr ${REDIS_DATABASE_HOST}
+
+handlers:
+- url: /.*
+  script: auto
+  secure: always
+
+vpc_access_connector:
+  name: ${VPC_CONNECTOR}
