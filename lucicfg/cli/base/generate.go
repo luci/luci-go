@@ -91,7 +91,7 @@ You may also optionally set +x flag on it, but this is not required.
 	root, main := filepath.Split(abs)
 
 	// Generate everything, storing the result in memory.
-	logging.Infof(ctx, "Generating configs...")
+	logging.Infof(ctx, "Generating configs using %s...", lucicfg.UserAgent)
 	state, err := lucicfg.Generate(ctx, lucicfg.Inputs{
 		Code:  interpreter.FileSystemLoader(root),
 		Path:  root,
