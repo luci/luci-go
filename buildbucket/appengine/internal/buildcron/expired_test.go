@@ -87,7 +87,7 @@ func TestResetExpiredLeases(t *testing.T) {
 		ctx, store, sch := setUp()
 		createTime := now.Add(-time.Hour)
 		_, _ = store, sch
-		Convey("skips non-expired builds", func() {
+		Convey("skips non-expired leases", func() {
 			b1 := newBuild(ctx, pb.Status_SCHEDULED, createTime)
 			b2 := newBuild(ctx, pb.Status_STARTED, createTime)
 			b2.IsLeased = true
@@ -104,7 +104,18 @@ func TestResetExpiredLeases(t *testing.T) {
 			So(b2.LeaseExpirationDate, ShouldEqual, now.Add(time.Hour))
 		})
 
-		Convey("resets expired, terminated builds", func() {
+		Convey("works w/ a large number of expired leases", func() {
+			bs := make([]*model.Build, 128)
+			for i := 0; i < len(bs); i++ {
+				bs[i] = newBuild(ctx, pb.Status_INFRA_FAILURE, createTime)
+				bs[i].IsLeased = true
+				bs[i].LeaseExpirationDate = now.Add(-time.Hour)
+			}
+			So(datastore.Put(ctx, bs), ShouldBeNil)
+			So(ResetExpiredLeases(ctx), ShouldBeNil)
+		})
+
+		Convey("resets expired, terminated leases", func() {
 			b := newBuild(ctx, pb.Status_INFRA_FAILURE, createTime)
 			b.IsLeased = true
 			b.LeaseExpirationDate = now.Add(-time.Hour)
@@ -127,7 +138,7 @@ func TestResetExpiredLeases(t *testing.T) {
 			})
 		})
 
-		Convey("resets expired, non-terminated builds", func() {
+		Convey("resets expired, non-terminated leases", func() {
 			b := newBuild(ctx, pb.Status_STARTED, createTime)
 			b.IsLeased = true
 			b.LeaseExpirationDate = now.Add(-time.Hour)
@@ -201,6 +212,16 @@ func TestTimeoutExpiredBuilds(t *testing.T) {
 			b = &model.Build{ID: b2.ID}
 			So(datastore.Get(ctx, b), ShouldBeNil)
 			So(b.Proto, ShouldResembleProto, b2.Proto)
+		})
+
+		Convey("works w/ a large number of expired builds", func() {
+			bs := make([]*model.Build, 128)
+			createTime := now.Add(-model.BuildMaxCompletionTime - time.Minute)
+			for i := 0; i < len(bs); i++ {
+				bs[i] = newBuild(ctx, pb.Status_SCHEDULED, createTime)
+			}
+			So(datastore.Put(ctx, bs), ShouldBeNil)
+			So(TimeoutExpiredBuilds(ctx), ShouldBeNil)
 		})
 
 		Convey("marks old, running builds w/ infra_failure", func() {

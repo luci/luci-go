@@ -91,7 +91,12 @@ func expireBuilds(ctx context.Context, bs []*model.Build, mr parallel.MultiRunne
 // TimeoutExpiredBuilds marks incomplete builds that were created longer than
 // model.BuildMaxCompletionTime w/ INFRA_FAILURE.
 func TimeoutExpiredBuilds(ctx context.Context) error {
-	const batchSize = 32
+	// expireBuilds() updates 4 entities for each of the given builds within
+	// a single transaction, and a ds transaction can update at most
+	// 25 entities.
+	//
+	// Hence, this batchSize must be 6 or lower.
+	const batchSize = 25 / 4
 	// Processing each batch requires at most 5 goroutines.
 	// - 1 for ds.RunTransaction()
 	// - 4 for add tasks into TQ and ds.Put()
@@ -195,7 +200,12 @@ func resetLeases(ctx context.Context, bs []*model.Build, mr parallel.MultiRunner
 
 // ResetExpiredLeases resets expired leases.
 func ResetExpiredLeases(ctx context.Context) error {
-	const batchSize = 32
+	// resetLeases() updates 2 entities for each of the given builds within
+	// a single transaction, and a ds transaction can update at most
+	// 25 entities.
+	//
+	// Hence, this batchSize must be 12 or lower.
+	const batchSize = 25 / 2
 	const nWorkers = 12
 	q := datastore.NewQuery(model.BuildKind).
 		Eq("is_leased", true).
