@@ -35,6 +35,7 @@ import (
 	"go.chromium.org/luci/client/casclient"
 	"go.chromium.org/luci/common/cli"
 	"go.chromium.org/luci/common/data/caching/cache"
+	"go.chromium.org/luci/common/data/text/units"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/system/filesystem"
@@ -346,6 +347,14 @@ func (r *downloadRun) doDownload(ctx context.Context) (rerr error) {
 
 	var diskcache *cache.Cache
 	if r.cacheDir != "" {
+		// Increase free space with to be downloaded file size.
+		for _, output := range outputs {
+			if output.IsEmptyDirectory || output.SymlinkTarget != "" {
+				continue
+			}
+			r.cachePolicies.MinFreeSpace += units.Size(output.Digest.Size)
+		}
+
 		diskcache, err = cache.New(r.cachePolicies, r.cacheDir, crypto.SHA256)
 		if err != nil {
 			return errors.Annotate(err, "failed to create initialize cache").Err()
