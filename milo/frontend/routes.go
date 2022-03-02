@@ -15,7 +15,6 @@
 package frontend
 
 import (
-	"context"
 	"fmt"
 	"html/template"
 	"net/http"
@@ -169,18 +168,6 @@ func handleError(handler func(c *router.Context) error) func(c *router.Context) 
 		if err := handler(c); err != nil {
 			ErrorHandler(c, err)
 		}
-	}
-}
-
-// cronHandler is a wrapper for cron handlers which do not require template rendering.
-func cronHandler(handler func(c context.Context) error) func(c *router.Context) {
-	return func(ctx *router.Context) {
-		if err := handler(ctx.Context); err != nil {
-			logging.WithError(err).Errorf(ctx.Context, "failed to run")
-			ctx.Writer.WriteHeader(http.StatusInternalServerError)
-			return
-		}
-		ctx.Writer.WriteHeader(http.StatusOK)
 	}
 }
 
