@@ -18,10 +18,10 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"strings"
 	"time"
 
-	"go.chromium.org/luci/common/api/buildbucket/swarmbucket/v1"
+	"go.chromium.org/luci/auth/identity"
+	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/caching"
 	"go.chromium.org/luci/server/caching/layered"
@@ -30,19 +30,19 @@ import (
 	"go.chromium.org/luci/milo/frontend/ui"
 )
 
-var swarmbucketBuildersCache = layered.Cache{
+var buildbucketBuildersCache = layered.Cache{
 	ProcessLRUCache: caching.RegisterLRUCache(65536),
-	GlobalNamespace: "swambucket-builders",
+	GlobalNamespace: "buildbucket-builders",
 	Marshal:         common.JSONMarshalCompressed,
 	Unmarshal: func(blob []byte) (interface{}, error) {
-		res := &swarmbucket.LegacySwarmbucketApiGetBuildersResponseMessage{}
+		res := make([]*buildbucketpb.BuilderItem, 0)
 		err := common.JSONUnmarshalCompressed(blob, res)
 		return res, err
 	},
 }
 
-// GetBuilders returns all Swarmbucket builders, cached for current identity.
-func GetBuilders(c context.Context) (*swarmbucket.LegacySwarmbucketApiGetBuildersResponseMessage, error) {
+// GetBuilders returns all buildbucket builders, cached for current identity.
+func GetBuilders(c context.Context) ([]*buildbucketpb.BuilderItem, error) {
 	host := common.GetSettings(c).GetBuildbucket().GetHost()
 	if host == "" {
 		return nil, errors.New("buildbucket host is missing in config")
@@ -50,26 +50,47 @@ func GetBuilders(c context.Context) (*swarmbucket.LegacySwarmbucketApiGetBuilder
 	return getBuilders(c, host)
 }
 
-func getBuilders(c context.Context, host string) (*swarmbucket.LegacySwarmbucketApiGetBuildersResponseMessage, error) {
+func getBuilders(c context.Context, host string) ([]*buildbucketpb.BuilderItem, error) {
 	key := fmt.Sprintf("%q-%q", host, auth.CurrentIdentity(c))
-	res, err := swarmbucketBuildersCache.GetOrCreate(c, key, func() (v interface{}, exp time.Duration, err error) {
-		client, err := newSwarmbucketClient(c, host)
-		if err != nil {
-			return nil, 0, err
+	builders, err := buildbucketBuildersCache.GetOrCreate(c, key, func() (v interface{}, exp time.Duration, err error) {
+		authOpt := auth.AsSessionUser
+		// Use NoAuth when user is not signed in so RPC calls won't return
+		// ErrNotConfigured.
+		if auth.CurrentIdentity(c) == identity.AnonymousIdentity {
+			authOpt = auth.NoAuth
 		}
-		// TODO(hinoka): Retries for transient errors
-		res, err := client.GetBuilders().Do()
+		buildersClient, err := ProdBuildersClientFactory(c, host, authOpt)
 		if err != nil {
 			return nil, 0, err
 		}
 
-		// Large expiration is unfortunate as this slows down propagation of ACL
-		// changes limiting builder's visibility.
-		// TODO(crbug/1071316): switch to faster V2 Buildbucket API once available
-		// and reduce expiration to 10 minutes.
-		return res, 12 * time.Hour, nil
+		// Get all the buildItems from buildbucket.
+		buildItems := make([]*buildbucketpb.BuilderItem, 0)
+		req := &buildbucketpb.ListBuildersRequest{PageSize: 1000}
+		for {
+			r, err := buildersClient.ListBuilders(c, req)
+			if err != nil {
+				return nil, 0, err
+			}
+			buildItems = append(buildItems, r.Builders...)
+			if r.NextPageToken == "" {
+				break
+			}
+			req.PageToken = r.NextPageToken
+		}
+
+		// Keep the builders in cache for 10 mins to speed up repeated page loads
+		// and reduce stress on buildbucket side.
+		// But this also means builder visibility ACL changes would take 10 mins to
+		// propagate.
+		// Cache duration can be adjusted if needed.
+		return buildItems, 10 * time.Minute, nil
 	})
-	return res.(*swarmbucket.LegacySwarmbucketApiGetBuildersResponseMessage), err
+	if err != nil {
+		return nil, err
+	}
+
+	return builders.([]*buildbucketpb.BuilderItem), err
 }
 
 // CIService returns a *ui.CIService containing all known buckets and builders.
@@ -85,29 +106,30 @@ func CIService(c context.Context) (*ui.CIService, error) {
 			fmt.Sprintf("buildbucket settings for %s", bucketSettings.Name)),
 	}
 
-	r, err := getBuilders(c, host)
+	builders, err := getBuilders(c, host)
 	if err != nil {
 		return nil, err
 	}
 
-	result.BuilderGroups = make([]ui.BuilderGroup, len(r.Buckets))
-	for i, bucket := range r.Buckets {
-		// TODO(nodir): instead of assuming luci.<project>. bucket prefix,
-		// expect project explicitly in bucket struct.
-		if !strings.HasPrefix(bucket.Name, "luci.") {
-			continue
+	builderGroups := make(map[string]*ui.BuilderGroup)
+
+	for _, builder := range builders {
+		bucketID := builder.Id.Project + "/" + builder.Id.Bucket
+		group, ok := builderGroups[bucketID]
+		if !ok {
+			group = &ui.BuilderGroup{Name: bucketID}
+			builderGroups[bucketID] = group
 		}
-		// buildbucket guarantees that buckets that start with "luci.",
-		// start with "luci.<project id>." prefix.
-		project := strings.Split(bucket.Name, ".")[1]
-		result.BuilderGroups[i].Name = bucket.Name
-		result.BuilderGroups[i].Builders = make([]ui.Link, len(bucket.Builders))
-		for j, builder := range bucket.Builders {
-			result.BuilderGroups[i].Builders[j] = *ui.NewLink(
-				builder.Name, fmt.Sprintf("/p/%s/builders/%s/%s", project, bucket.Name, builder.Name),
-				fmt.Sprintf("buildbucket builder %s in bucket %s", builder.Name, bucket.Name))
-		}
-		result.BuilderGroups[i].Sort()
+
+		group.Builders = append(group.Builders, *ui.NewLink(
+			builder.Id.Builder, fmt.Sprintf("/p/%s/builders/%s/%s", builder.Id.Project, builder.Id.Bucket, builder.Id.Builder),
+			fmt.Sprintf("buildbucket builder %s in bucket %s", builder.Id.Builder, bucketID)))
+	}
+
+	result.BuilderGroups = make([]ui.BuilderGroup, 0, len(builderGroups))
+	for _, builderGroup := range builderGroups {
+		builderGroup.Sort()
+		result.BuilderGroups = append(result.BuilderGroups, *builderGroup)
 	}
 	result.Sort()
 	return result, nil
