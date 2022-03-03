@@ -29,6 +29,7 @@ import (
 	"go.chromium.org/luci/server/tq"
 
 	"go.chromium.org/luci/buildbucket"
+	"go.chromium.org/luci/buildbucket/appengine/internal/metrics"
 	"go.chromium.org/luci/buildbucket/appengine/internal/perm"
 	"go.chromium.org/luci/buildbucket/appengine/model"
 	taskdefs "go.chromium.org/luci/buildbucket/appengine/tasks/defs"
@@ -79,7 +80,9 @@ func StartCancel(ctx context.Context, bID int64, summary string) (*model.Build, 
 // Cancel actually cancels a build.
 func Cancel(ctx context.Context, bID int64) (*model.Build, error) {
 	bld := &model.Build{ID: bID}
+	canceled := false
 	err := datastore.RunInTransaction(ctx, func(ctx context.Context) error {
+		canceled = false // reset canceled in case of retries.
 		inf := &model.BuildInfra{Build: datastore.KeyForObj(ctx, bld)}
 		stp := &model.BuildSteps{Build: inf.Build}
 
@@ -96,12 +99,14 @@ func Cancel(ctx context.Context, bID int64) (*model.Build, error) {
 				return errors.Annotate(merr[1], "failed to fetch build infra: %d", bld.ID).Err()
 			case merr[2] != nil && merr[2] != datastore.ErrNoSuchEntity:
 				return errors.Annotate(merr[2], "failed to fetch build steps: %d", bld.ID).Err()
-			case protoutil.IsEnded(bld.Proto.Status):
-				return nil
 			case merr[2] == datastore.ErrNoSuchEntity:
 				cancelSteps = false
 			}
 		}
+		if protoutil.IsEnded(bld.Proto.Status) {
+			return nil
+		}
+
 		if sw := inf.Proto.GetSwarming(); sw.GetHostname() != "" && sw.TaskId != "" {
 			if err := CancelSwarmingTask(ctx, &taskdefs.CancelSwarmingTask{
 				Hostname: sw.Hostname,
@@ -134,6 +139,7 @@ func Cancel(ctx context.Context, bID int64) (*model.Build, error) {
 		bld.LeaseKey = 0
 
 		protoutil.SetStatus(now, bld.Proto, pb.Status_CANCELED)
+		canceled = true
 
 		toPut := []interface{}{bld}
 
@@ -153,6 +159,9 @@ func Cancel(ctx context.Context, bID int64) (*model.Build, error) {
 	}, nil)
 	if err != nil {
 		return nil, err
+	}
+	if protoutil.IsEnded(bld.Status) && canceled {
+		metrics.BuildCompleted(ctx, bld)
 	}
 
 	return bld, nil

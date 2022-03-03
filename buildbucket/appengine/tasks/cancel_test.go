@@ -30,6 +30,7 @@ import (
 	// TODO(crbug/1242998): Remove once safe get becomes datastore default.
 	_ "go.chromium.org/luci/gae/service/datastore/crbug1242998safeget"
 
+	"go.chromium.org/luci/buildbucket/appengine/internal/metrics"
 	"go.chromium.org/luci/buildbucket/appengine/model"
 	pb "go.chromium.org/luci/buildbucket/proto"
 
@@ -40,6 +41,7 @@ import (
 func TestCancelBuild(t *testing.T) {
 	Convey("CancelBuild", t, func() {
 		ctx := txndefer.FilterRDS(memory.Use(context.Background()))
+		ctx = metrics.WithServiceInfo(ctx, "svc", "job", "ins")
 		datastore.GetTestable(ctx).AutoIndex(true)
 		datastore.GetTestable(ctx).Consistent(true)
 		ctx, sch := tq.TestingContext(ctx, nil)
