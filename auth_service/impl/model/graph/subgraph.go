@@ -14,11 +14,11 @@
 
 package graph
 
-import "sort"
+import (
+	"sort"
 
-type EdgeTag string
-
-const In EdgeTag = "IN"
+	"go.chromium.org/luci/auth_service/api/rpcpb"
+)
 
 type NodeKind string
 
@@ -35,14 +35,15 @@ type Subgraph struct {
 	// All nodes in Subgraph.
 	Nodes []*SubgraphNode
 	// Mapping of node to its id within the list of all nodes.
-	nodesToID map[NodeKey]int
+	nodesToID map[NodeKey]int32
 }
 
 // SubgraphNode represents individual Nodes inside the Subgraph
 type SubgraphNode struct {
 	NodeKey
-	// Contains edge connections to this node.
-	Edges map[EdgeTag][]int
+
+	// InculdedBy represents nodes that include this node.
+	IncludedBy []int32
 }
 
 // NodeKey represents a key to identify Nodes.
@@ -56,7 +57,7 @@ type NodeKey struct {
 // addNode adds the given node if not present.
 //
 // returns nodeID and a bool representing whether it was added.
-func (s *Subgraph) addNode(kind NodeKind, value string) (int, bool) {
+func (s *Subgraph) addNode(kind NodeKind, value string) (int32, bool) {
 	key := NodeKey{kind, value}
 
 	// If Node is already present.
@@ -69,41 +70,39 @@ func (s *Subgraph) addNode(kind NodeKind, value string) (int, bool) {
 	}
 
 	s.Nodes = append(s.Nodes, node)
-	nodeID := len(s.Nodes) - 1
+	nodeID := int32(len(s.Nodes) - 1)
 	s.nodesToID[key] = nodeID
 
 	return nodeID, true
 }
 
-// addEdge adds an edge from(nodeID) to(nodeID) with the relation
-// denoting whether the from node owns or is in the to node. Owns
-// relationship is currently not supported.
+// addEdge adds an edge from(nodeID) to(nodeID).
 //
 // returns true if the edge was successfully added. returns false
 // if the edge was not added.
-func (s *Subgraph) addEdge(from int, relation EdgeTag, to int) {
-	if from < 0 || from >= len(s.Nodes) {
+func (s *Subgraph) addEdge(from int32, to int32) {
+	if from < 0 || from >= int32(len(s.Nodes)) {
 		panic("from is out of bounds")
 	}
 
-	if to < 0 || to >= len(s.Nodes) {
+	if to < 0 || to >= int32(len(s.Nodes)) {
 		panic("to is out of bounds")
 	}
 
 	// Specific node edges map.
-	if s.Nodes[from].Edges == nil {
-		s.Nodes[from].Edges = map[EdgeTag][]int{}
+	if s.Nodes[from].IncludedBy == nil {
+		s.Nodes[from].IncludedBy = []int32{}
 	}
 
 	// Insert node in sorted order to maintain stability.
-	s.Nodes[from].Edges[relation] = sortedInsert(s.Nodes[from].Edges[relation], to)
+	s.Nodes[from].IncludedBy = sortedInsert(s.Nodes[from].IncludedBy, to)
 }
 
 // sortedInsert inserts an element (v) into a slice in sorted
 // order and returns a new slice with the element inserted.
 // Does NOT allow duplicates. A helper function to addEdge().
 // See https://stackoverflow.com/questions/42746972/golang-insert-to-a-sorted-slice.
-func sortedInsert(data []int, v int) []int {
+func sortedInsert(data []int32, v int32) []int32 {
 	i := sort.Search(len(data), func(i int) bool { return data[i] >= v })
 	switch {
 	case i < len(data) && data[i] == v:
@@ -114,5 +113,47 @@ func sortedInsert(data []int, v int) []int {
 		data = append(data[:i+1], data[i:]...)
 		data[i] = v
 		return data
+	}
+}
+
+// ToProto converts the SubgraphNode to the protobuffer
+// equivalent Node for rpc.
+func (sn *SubgraphNode) ToProto() *rpcpb.Node {
+	return &rpcpb.Node{
+		Principal:  sn.NodeKey.ToProto(),
+		IncludedBy: sn.IncludedBy,
+	}
+}
+
+// ToProto converts the NodeKey for the internal subgraph representation
+// to the protobuffer equivalent Principal for rpc.
+func (nk *NodeKey) ToProto() *rpcpb.Principal {
+	return &rpcpb.Principal{
+		Kind: func() rpcpb.PrincipalKind {
+			switch nk.Kind {
+			case Identity:
+				return rpcpb.PrincipalKind_IDENTITY
+			case Glob:
+				return rpcpb.PrincipalKind_GLOB
+			case Group:
+				return rpcpb.PrincipalKind_GROUP
+			default:
+				return rpcpb.PrincipalKind_PRINCIPAL_KIND_UNSPECIFIED
+			}
+		}(),
+		Name: nk.Value,
+	}
+}
+
+// ToProto converts the Subgraph to the protobuffer
+// equivalent Subgraph for rpc.
+func (s *Subgraph) ToProto() *rpcpb.Subgraph {
+	nodes := make([]*rpcpb.Node, len(s.Nodes))
+	for idx, val := range s.Nodes {
+		nodes[idx] = val.ToProto()
+	}
+
+	return &rpcpb.Subgraph{
+		Nodes: nodes,
 	}
 }

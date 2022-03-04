@@ -28,7 +28,7 @@ func TestSubgraphOperations(t *testing.T) {
 	Convey("Testing addNode", t, func() {
 		subgraph := &Subgraph{
 			Nodes:     []*SubgraphNode{},
-			nodesToID: map[NodeKey]int{},
+			nodesToID: map[NodeKey]int32{},
 		}
 
 		Convey("Testing adding group.", func() {
@@ -70,7 +70,7 @@ func TestSubgraphOperations(t *testing.T) {
 			subgraph.addNode(Glob, testGlob)
 			subgraph.addNode(Identity, testUser)
 
-			expectedNodeMap := map[NodeKey]int{
+			expectedNodeMap := map[NodeKey]int32{
 				{Group, testGroup}:   0,
 				{Glob, testGlob}:     1,
 				{Identity, testUser}: 2,
@@ -124,8 +124,8 @@ func TestSubgraphOperations(t *testing.T) {
 		}
 
 		Convey("Testing basic edge adding.", func() {
-			subgraph.addEdge(0, In, 1)
-			subgraph.addEdge(2, In, 1)
+			subgraph.addEdge(0, 1)
+			subgraph.addEdge(2, 1)
 
 			expectedSubgraph := &Subgraph{
 				Nodes: []*SubgraphNode{
@@ -134,9 +134,7 @@ func TestSubgraphOperations(t *testing.T) {
 							Kind:  Glob,
 							Value: testGlob,
 						},
-						Edges: map[EdgeTag][]int{
-							In: {1},
-						},
+						IncludedBy: []int32{1},
 					},
 					{ // 1
 						NodeKey: NodeKey{
@@ -149,9 +147,7 @@ func TestSubgraphOperations(t *testing.T) {
 							Kind:  Identity,
 							Value: testUser,
 						},
-						Edges: map[EdgeTag][]int{
-							In: {1},
-						},
+						IncludedBy: []int32{1},
 					},
 					{ // 3
 						NodeKey: NodeKey{
@@ -172,13 +168,13 @@ func TestSubgraphOperations(t *testing.T) {
 
 		// Make sure that the order that of the edges stays consistent and is predictable.
 		Convey("Testing stability.", func() {
-			subgraph.addEdge(0, In, 4)
-			subgraph.addEdge(0, In, 2)
-			subgraph.addEdge(0, In, 3)
-			subgraph.addEdge(2, In, 4)
-			subgraph.addEdge(2, In, 3)
-			subgraph.addEdge(2, In, 0)
-			subgraph.addEdge(2, In, 1)
+			subgraph.addEdge(0, 4)
+			subgraph.addEdge(0, 2)
+			subgraph.addEdge(0, 3)
+			subgraph.addEdge(2, 4)
+			subgraph.addEdge(2, 3)
+			subgraph.addEdge(2, 0)
+			subgraph.addEdge(2, 1)
 			expectedSubgraph := &Subgraph{
 				Nodes: []*SubgraphNode{
 					{ // 0
@@ -186,9 +182,7 @@ func TestSubgraphOperations(t *testing.T) {
 							Kind:  Glob,
 							Value: testGlob,
 						},
-						Edges: map[EdgeTag][]int{
-							In: {2, 3, 4},
-						},
+						IncludedBy: []int32{2, 3, 4},
 					},
 					{ // 1
 						NodeKey: NodeKey{
@@ -201,9 +195,7 @@ func TestSubgraphOperations(t *testing.T) {
 							Kind:  Identity,
 							Value: testUser,
 						},
-						Edges: map[EdgeTag][]int{
-							In: {0, 1, 3, 4},
-						},
+						IncludedBy: []int32{0, 1, 3, 4},
 					},
 					{ // 3
 						NodeKey: NodeKey{

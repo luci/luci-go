@@ -17,19 +17,20 @@ package graph
 
 import (
 	"errors"
-	"fmt"
 	"sort"
 
 	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/auth_service/impl/model"
 )
 
+// ErrNoSuchGroup is returned when a group is not found in the groups graph.
+var ErrNoSuchGroup = errors.New("no such group")
+
 // Graph represents a traversable group graph.
 type Graph struct {
 	// All graph nodes, key is group name.
 	groups map[string]*groupNode
 	// All known globs sorted alphabetically.
-	// TODO(cjacomet): Sort globs alphabetically
 	globs []identity.Glob
 	// Group names that directly include the given identity.
 	membersIndex map[identity.Identity][]string
@@ -86,7 +87,7 @@ func (g *Graph) initializeNodes(groups []*model.AuthGroup) {
 ////////////////////////////////////////////////////////////////////////////////////////
 
 // NewGraph creates all groupNode(s) that are available in the graph.
-func NewGraph(groups []*model.AuthGroup) (*Graph, error) {
+func NewGraph(groups []*model.AuthGroup) *Graph {
 	graph := &Graph{
 		groups:       make(map[string]*groupNode, len(groups)),
 		membersIndex: map[identity.Identity][]string{},
@@ -95,17 +96,17 @@ func NewGraph(groups []*model.AuthGroup) (*Graph, error) {
 
 	graph.initializeNodes(groups)
 
-	return graph, nil
+	return graph
 }
 
 // GetRelevantSubgraph returns a Subgraph of groups that
-// include the principal and are owned by the principal.
+// include the principal.
 //
 // Subgraph is represented as series of nodes connected by labeled edges
-// representing inclusion or ownership.
+// representing inclusion.
 func (g *Graph) GetRelevantSubgraph(principal NodeKey) (*Subgraph, error) {
 	subgraph := &Subgraph{
-		nodesToID: map[NodeKey]int{},
+		nodesToID: map[NodeKey]int32{},
 	}
 
 	// Find the leaves of the graph. It's the only part that depends on the
@@ -122,28 +123,28 @@ func (g *Graph) GetRelevantSubgraph(principal NodeKey) (*Subgraph, error) {
 			// belong to all the groups that the glob belongs to.
 			if glob.Match(ident) {
 				globID, _ := subgraph.addNode(Glob, string(glob))
-				subgraph.addEdge(rootID, In, globID)
+				subgraph.addEdge(rootID, globID)
 				for _, group := range g.globsIndex[glob] {
-					subgraph.addEdge(globID, In, g.traverse(group, subgraph))
+					subgraph.addEdge(globID, g.traverse(group, subgraph))
 				}
 			}
 		}
 
 		// Find all the groups that directly mention the identity.
 		for _, group := range g.membersIndex[identity.Identity(principal.Value)] {
-			subgraph.addEdge(rootID, In, g.traverse(group, subgraph))
+			subgraph.addEdge(rootID, g.traverse(group, subgraph))
 		}
 	case Glob:
 		rootID, _ := subgraph.addNode(principal.Kind, principal.Value)
 
 		// Find all groups that directly mention the glob.
 		for _, group := range g.globsIndex[identity.Glob(principal.Value)] {
-			subgraph.addEdge(rootID, In, g.traverse(group, subgraph))
+			subgraph.addEdge(rootID, g.traverse(group, subgraph))
 		}
 	case Group:
 		// Return an error if principal value is non existant in groups graph.
 		if _, ok := g.groups[principal.Value]; !ok {
-			return nil, fmt.Errorf("group: %s not found in groups graph", principal.Value)
+			return nil, ErrNoSuchGroup
 		}
 		g.traverse(principal.Value, subgraph)
 	default:
@@ -153,16 +154,15 @@ func (g *Graph) GetRelevantSubgraph(principal NodeKey) (*Subgraph, error) {
 	return subgraph, nil
 }
 
-// traverse adds the given group and all groups that include it
-// and owned by it (perhaps indirectly) to the subgraph s. Traverses
-// the group graph g from leaves (most nested groups) to
+// traverse adds the given group and all groups that include it to the subgraph s.
+// Traverses the group graph g from leaves (most nested groups) to
 // roots (least nested groups). Returns the node id of the last visited node.
-func (g *Graph) traverse(group string, s *Subgraph) int {
+func (g *Graph) traverse(group string, s *Subgraph) int32 {
 	groupID, added := s.addNode(Group, group)
 	if added {
 		groupNode := g.groups[group]
 		for _, supergroup := range groupNode.included {
-			s.addEdge(groupID, In, g.traverse(supergroup.group.ID, s))
+			s.addEdge(groupID, g.traverse(supergroup.group.ID, s))
 		}
 	}
 	return groupID

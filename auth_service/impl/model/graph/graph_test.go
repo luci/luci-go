@@ -61,9 +61,7 @@ func TestGraphBuilding(t *testing.T) {
 			testAuthGroup("group-2", "user:*@example.com"),
 		}
 
-		actualGraph, err := NewGraph(authGroups)
-
-		So(err, ShouldBeNil)
+		actualGraph := NewGraph(authGroups)
 
 		expectedGraph := &Graph{
 			groups: map[string]*groupNode{
@@ -99,9 +97,7 @@ func TestGraphBuilding(t *testing.T) {
 			testAuthGroup("group-2", "group-1"),
 		}
 
-		actualGraph, err := NewGraph(authGroups)
-
-		So(err, ShouldBeNil)
+		actualGraph := NewGraph(authGroups)
 
 		So(actualGraph.groups["group-0"].included[0].group, ShouldResemble, authGroups[1])
 		So(actualGraph.groups["group-1"].included[0].group, ShouldResemble, authGroups[2])
@@ -127,8 +123,7 @@ func TestGetRelevantSubgraph(t *testing.T) {
 			testAuthGroup(testGroup2, testGlob),
 		}
 
-		graph, err := NewGraph(authGroups)
-		So(err, ShouldBeNil)
+		graph := NewGraph(authGroups)
 
 		Convey("Testing Group Principal.", func() {
 			principal := NodeKey{Group, testGroup1}
@@ -145,7 +140,7 @@ func TestGetRelevantSubgraph(t *testing.T) {
 						},
 					},
 				},
-				nodesToID: map[NodeKey]int{
+				nodesToID: map[NodeKey]int32{
 					{Group, testGroup1}: 0,
 				},
 			}
@@ -166,27 +161,21 @@ func TestGetRelevantSubgraph(t *testing.T) {
 							Kind:  Identity,
 							Value: testUser0,
 						},
-						Edges: map[EdgeTag][]int{
-							In: {1, 2, 3},
-						},
+						IncludedBy: []int32{1, 2, 3},
 					},
 					{ // 1
 						NodeKey: NodeKey{
 							Kind:  Glob,
 							Value: testGlob,
 						},
-						Edges: map[EdgeTag][]int{
-							In: {2, 4},
-						},
+						IncludedBy: []int32{2, 4},
 					},
 					{ // 2
 						NodeKey: NodeKey{
 							Kind:  Group,
 							Value: testGroup0,
 						},
-						Edges: map[EdgeTag][]int{
-							In: {3},
-						},
+						IncludedBy: []int32{3},
 					},
 					{ // 3
 						NodeKey: NodeKey{
@@ -201,7 +190,7 @@ func TestGetRelevantSubgraph(t *testing.T) {
 						},
 					},
 				},
-				nodesToID: map[NodeKey]int{
+				nodesToID: map[NodeKey]int32{
 					{Identity, testUser0}: 0,
 					{Glob, testGlob}:      1,
 					{Group, testGroup0}:   2,
@@ -226,18 +215,14 @@ func TestGetRelevantSubgraph(t *testing.T) {
 							Kind:  Glob,
 							Value: testGlob,
 						},
-						Edges: map[EdgeTag][]int{
-							In: {1, 3},
-						},
+						IncludedBy: []int32{1, 3},
 					},
 					{ // 1
 						NodeKey: NodeKey{
 							Kind:  Group,
 							Value: testGroup0,
 						},
-						Edges: map[EdgeTag][]int{
-							In: {2},
-						},
+						IncludedBy: []int32{2},
 					},
 					{ // 2
 						NodeKey: NodeKey{
@@ -252,7 +237,7 @@ func TestGetRelevantSubgraph(t *testing.T) {
 						},
 					},
 				},
-				nodesToID: map[NodeKey]int{
+				nodesToID: map[NodeKey]int32{
 					{Glob, testGlob}:    0,
 					{Group, testGroup0}: 1,
 					{Group, testGroup1}: 2,
@@ -277,8 +262,7 @@ func TestGetRelevantSubgraph(t *testing.T) {
 				testAuthGroup("group-3", testGlob3),
 				testAuthGroup("group-4", testGlob4),
 			}
-			graph2, err := NewGraph(authGroups2)
-			So(err, ShouldBeNil)
+			graph2 := NewGraph(authGroups2)
 
 			subgraph, err := graph2.GetRelevantSubgraph(principal)
 			So(err, ShouldBeNil)
@@ -290,18 +274,14 @@ func TestGetRelevantSubgraph(t *testing.T) {
 							Kind:  Identity,
 							Value: testUser0,
 						},
-						Edges: map[EdgeTag][]int{
-							In: {1, 3, 5},
-						},
+						IncludedBy: []int32{1, 3, 5},
 					},
 					{ // 1
 						NodeKey: NodeKey{
 							Kind:  Glob,
 							Value: testGlob,
 						},
-						Edges: map[EdgeTag][]int{
-							In: {2},
-						},
+						IncludedBy: []int32{2},
 					},
 					{ // 2
 						NodeKey: NodeKey{
@@ -314,9 +294,7 @@ func TestGetRelevantSubgraph(t *testing.T) {
 							Kind:  Glob,
 							Value: testGlob2,
 						},
-						Edges: map[EdgeTag][]int{
-							In: {4},
-						},
+						IncludedBy: []int32{4},
 					},
 					{ // 4
 						NodeKey: NodeKey{
@@ -329,9 +307,7 @@ func TestGetRelevantSubgraph(t *testing.T) {
 							Kind:  Glob,
 							Value: testGlob4,
 						},
-						Edges: map[EdgeTag][]int{
-							In: {6},
-						},
+						IncludedBy: []int32{6},
 					},
 					{ // 6
 						NodeKey: NodeKey{
@@ -340,7 +316,7 @@ func TestGetRelevantSubgraph(t *testing.T) {
 						},
 					},
 				},
-				nodesToID: map[NodeKey]int{
+				nodesToID: map[NodeKey]int32{
 					{Identity, testUser0}: 0,
 					{Glob, testGlob}:      1,
 					{Group, testGroup0}:   2,

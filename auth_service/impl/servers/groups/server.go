@@ -24,6 +24,7 @@ import (
 
 	"go.chromium.org/luci/auth_service/api/rpcpb"
 	"go.chromium.org/luci/auth_service/impl/model"
+	"go.chromium.org/luci/auth_service/impl/model/graph"
 	"go.chromium.org/luci/gae/service/datastore"
 )
 
@@ -59,5 +60,50 @@ func (*Server) GetGroup(ctx context.Context, request *rpcpb.GetGroupRequest) (*r
 		return nil, status.Errorf(codes.NotFound, "no such group %q", request.Name)
 	default:
 		return nil, status.Errorf(codes.Internal, "failed to fetch group %q: %s", request.Name, err)
+	}
+}
+
+// GetSubgraph implements the corresponding RPC method.
+//
+// Possible Errors:
+//  Internal error for datastore access issues.
+//  NotFound error wrapping a graph.ErrNoSuchGroup if group is not present in groups graph.
+//  InvalidArgument error if the PrincipalKind is unspecified.
+//  Annotated error if the subgraph building fails, this may be an InvalidArgument or NotFound error.
+func (*Server) GetSubgraph(ctx context.Context, request *rpcpb.GetSubgraphRequest) (*rpcpb.Subgraph, error) {
+	// Get groups from datastore.
+	groups, err := model.GetAllAuthGroups(ctx)
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "failed to fetch groups %s", err)
+	}
+
+	// Build groups graph from groups in datastore.
+	groupsGraph := graph.NewGraph(groups)
+
+	principal, err := convertPrincipal(request.Principal)
+	if err != nil {
+		return nil, err
+	}
+
+	subgraph, err := groupsGraph.GetRelevantSubgraph(principal)
+	if err != nil {
+		return nil, err
+	}
+
+	subgraphProto := subgraph.ToProto()
+	return subgraphProto, nil
+}
+
+// convertPrincipal handles the conversion of rpcpb.Principal -> graph.NodeKey
+func convertPrincipal(p *rpcpb.Principal) (graph.NodeKey, error) {
+	switch p.Kind {
+	case rpcpb.PrincipalKind_GLOB:
+		return graph.NodeKey{Kind: graph.Glob, Value: p.Name}, nil
+	case rpcpb.PrincipalKind_IDENTITY:
+		return graph.NodeKey{Kind: graph.Identity, Value: p.Name}, nil
+	case rpcpb.PrincipalKind_GROUP:
+		return graph.NodeKey{Kind: graph.Group, Value: p.Name}, nil
+	default:
+		return graph.NodeKey{}, status.Errorf(codes.InvalidArgument, "invalid principal kind")
 	}
 }
