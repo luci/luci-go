@@ -72,6 +72,7 @@ var (
 		pb.Status_SUCCESS:       {},
 		pb.Status_FAILURE:       {},
 		pb.Status_INFRA_FAILURE: {},
+		pb.Status_CANCELED:      {},
 	}
 
 	// statusesWithStartTime is a set of step statuses that requires the step to have
