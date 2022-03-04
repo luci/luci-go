@@ -305,7 +305,9 @@ func checkBuildForUpdate(updateMask *mask.Mask, req *pb.UpdateBuildRequest, buil
 func updateEntities(ctx context.Context, req *pb.UpdateBuildRequest, updateMask *mask.Mask, steps *model.BuildSteps) (*model.Build, error) {
 	var b *model.Build
 	var origStatus pb.Status
+	buildCanceled := false // Flag for if the cancel process starts for the build.
 	txErr := datastore.RunInTransaction(ctx, func(ctx context.Context) error {
+		buildCanceled = false
 		var err error
 		b, err = getBuild(ctx, req.Build.Id)
 		if err != nil {
@@ -314,8 +316,7 @@ func updateEntities(ctx context.Context, req *pb.UpdateBuildRequest, updateMask 
 			}
 			return appstatus.Errorf(codes.Internal, "failed to get build %d: %s", req.Build.Id, err)
 		}
-		err = checkBuildForUpdate(updateMask, req, b)
-		if err != nil {
+		if err = checkBuildForUpdate(updateMask, req, b); err != nil {
 			return err
 		}
 		toSave := []interface{}{b}
@@ -390,6 +391,28 @@ func updateEntities(ctx context.Context, req *pb.UpdateBuildRequest, updateMask 
 			panic(fmt.Sprintf("invalid status %q for UpdateBuild", b.Proto.Status))
 		}
 
+		// Check parent.
+		parentID := b.GetParentID()
+		if !isEndedStatus && b.Proto.CancelTime == nil && parentID != 0 && !b.Proto.CanOutliveParent {
+			parent, err := getBuild(ctx, parentID)
+			if err != nil || protoutil.IsEnded(parent.Status) {
+				// Start the cancel process.
+				b.Proto.CancelTime = timestamppb.New(now)
+				// Buildbucket internal logic decides to cancel this build, so set
+				// CanceledBy as "buildbucket".
+				b.Proto.CanceledBy = "buildbucket"
+				if err != nil {
+					b.Proto.SummaryMarkdown = fmt.Sprintf("canceled because its parent %d is missing", parentID)
+				} else {
+					b.Proto.SummaryMarkdown = fmt.Sprintf("canceled because its parent %d has terminated", parentID)
+				}
+				if err := tasks.ScheduleCancelBuildTask(ctx, b.ID, b.Proto.GracePeriod.AsDuration()); err != nil {
+					return appstatus.Errorf(codes.Internal, "failed to schedule CancelBuildTask for build %d: %s", b.ID, err)
+				}
+				buildCanceled = true
+			}
+		}
+
 		// steps
 		if mustIncludes(updateMask, req, "steps") == mask.IncludeEntirely {
 			steps.Build = bk
@@ -424,9 +447,12 @@ func updateEntities(ctx context.Context, req *pb.UpdateBuildRequest, updateMask 
 		return datastore.Put(ctx, toSave)
 	}, nil)
 
+	if txErr != nil {
+		return b, txErr
+	}
+
 	// send pubsub notifications and update metrics.
 	switch {
-	case txErr != nil: // skip, if the txn failed.
 	case origStatus == b.Status: // skip, if no status changed.
 	case protoutil.IsEnded(b.Status):
 		logging.Infof(ctx, "Build %d: completed by %q with status %q", b.ID, auth.CurrentIdentity(ctx), b.Status)
@@ -435,7 +461,16 @@ func updateEntities(ctx context.Context, req *pb.UpdateBuildRequest, updateMask 
 		logging.Infof(ctx, "Build %d: started", b.ID)
 		metrics.BuildStarted(ctx, b)
 	}
-	return b, txErr
+
+	// Cancel children.
+	if buildCanceled {
+		if err := tasks.CancelChildren(ctx, b.ID); err != nil {
+			// Failures of canceling children should not block updating parent.
+			logging.Debugf(ctx, "failed to cancel children of %d: %s", b.ID, err)
+		}
+	}
+
+	return b, nil
 }
 
 // UpdateBuild handles a request to update a build. Implements pb.UpdateBuild.

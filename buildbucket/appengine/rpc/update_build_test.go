@@ -836,5 +836,227 @@ func TestUpdateBuild(t *testing.T) {
 				So(b, ShouldResembleProto, &pb.Build{})
 			})
 		})
+
+		Convey("update build with parent", func() {
+			parent := &model.Build{
+				ID: 10,
+				Proto: &pb.Build{
+					Id: 10,
+					Builder: &pb.BuilderID{
+						Project: "project",
+						Bucket:  "bucket",
+						Builder: "builder",
+					},
+					Status: pb.Status_SUCCESS,
+				},
+				CreateTime:  t0,
+				UpdateToken: tk,
+			}
+			So(datastore.Put(ctx, parent), ShouldBeNil)
+
+			Convey("child can outlive parent", func() {
+				child := &model.Build{
+					ID: 11,
+					Proto: &pb.Build{
+						Id: 11,
+						Builder: &pb.BuilderID{
+							Project: "project",
+							Bucket:  "bucket",
+							Builder: "builder",
+						},
+						Status:           pb.Status_SCHEDULED,
+						AncestorIds:      []int64{10},
+						CanOutliveParent: true,
+					},
+					CreateTime:  t0,
+					UpdateToken: tk,
+				}
+				So(datastore.Put(ctx, child), ShouldBeNil)
+				req.UpdateMask.Paths[0] = "build.status"
+				req.Build.Status = pb.Status_STARTED
+				So(updateBuild(ctx, req), ShouldBeRPCOK)
+			})
+
+			Convey("child cannot outlive parent", func() {
+				child := &model.Build{
+					ID: 11,
+					Proto: &pb.Build{
+						Id: 11,
+						Builder: &pb.BuilderID{
+							Project: "project",
+							Bucket:  "bucket",
+							Builder: "builder",
+						},
+						Status:           pb.Status_SCHEDULED,
+						AncestorIds:      []int64{10},
+						CanOutliveParent: false,
+					},
+					CreateTime:  t0,
+					UpdateToken: tk,
+				}
+				So(datastore.Put(ctx, child), ShouldBeNil)
+
+				Convey("request is to terminate the child", func() {
+					req.UpdateMask.Paths[0] = "build.status"
+					req.Build.Id = 11
+					req.Build.Status = pb.Status_SUCCESS
+					req.Mask = &pb.BuildMask{
+						Fields: &fieldmaskpb.FieldMask{
+							Paths: []string{
+								"status",
+								"cancel_time",
+							},
+						},
+					}
+					build, err := srv.UpdateBuild(ctx, req)
+					So(err, ShouldBeRPCOK)
+					So(build.Status, ShouldEqual, pb.Status_SUCCESS)
+					So(build.CancelTime, ShouldBeNil)
+
+					tasks := sch.Tasks()
+					So(tasks, ShouldHaveLength, 3)
+					sum := 0
+					for _, task := range tasks {
+						switch v := task.Payload.(type) {
+						case *taskdefs.NotifyPubSub:
+							sum++
+							So(v.GetBuildId(), ShouldEqual, req.Build.Id)
+						case *taskdefs.ExportBigQuery:
+							sum += 2
+							So(v.GetBuildId(), ShouldEqual, req.Build.Id)
+						case *taskdefs.FinalizeResultDB:
+							sum += 4
+							So(v.GetBuildId(), ShouldEqual, req.Build.Id)
+						default:
+							panic("invalid task payload")
+						}
+					}
+					So(sum, ShouldEqual, 7)
+
+					// BuildCompleted metric should be set to 1 with SUCCESS.
+					fvs := fv(model.Success.String(), "", "", false)
+					So(store.Get(ctx, metrics.V1.BuildCountCompleted, time.Time{}, fvs), ShouldEqual, 1)
+				})
+
+				Convey("start the cancel process if parent has ended", func() {
+					// Child of the requested build.
+					So(datastore.Put(ctx, &model.Build{
+						ID: 12,
+						Proto: &pb.Build{
+							Id: 12,
+							Builder: &pb.BuilderID{
+								Project: "project",
+								Bucket:  "bucket",
+								Builder: "builder",
+							},
+							AncestorIds:      []int64{11},
+							CanOutliveParent: false,
+						},
+					}), ShouldBeNil)
+					req.Build.Id = 11
+					req.Build.Status = pb.Status_STARTED
+					req.UpdateMask.Paths[0] = "build.status"
+					req.Mask = &pb.BuildMask{
+						Fields: &fieldmaskpb.FieldMask{
+							Paths: []string{
+								"cancel_time",
+								"summary_markdown",
+							},
+						},
+					}
+					build, err := srv.UpdateBuild(ctx, req)
+					So(err, ShouldBeRPCOK)
+					So(build.CancelTime.AsTime(), ShouldEqual, t0)
+					So(build.SummaryMarkdown, ShouldEqual, "canceled because its parent 10 has terminated")
+					// One pubsub notification for the status update in the request,
+					// one CancelBuildTask for the requested build,
+					// one CancelBuildTask for the child build.
+					So(sch.Tasks(), ShouldHaveLength, 3)
+
+				})
+
+				Convey("start the cancel process if parent is missing", func() {
+					So(datastore.Put(ctx, &model.Build{
+						ID: 15,
+						Proto: &pb.Build{
+							Id: 15,
+							Builder: &pb.BuilderID{
+								Project: "project",
+								Bucket:  "bucket",
+								Builder: "builder",
+							},
+							AncestorIds:      []int64{3000000},
+							CanOutliveParent: false,
+						},
+						UpdateToken: tk,
+					}), ShouldBeNil)
+					req.Build.Id = 15
+					req.Build.Status = pb.Status_STARTED
+					req.UpdateMask.Paths[0] = "build.status"
+					req.Mask = &pb.BuildMask{
+						Fields: &fieldmaskpb.FieldMask{
+							Paths: []string{
+								"cancel_time",
+								"summary_markdown",
+							},
+						},
+					}
+					build, err := srv.UpdateBuild(ctx, req)
+					So(err, ShouldBeRPCOK)
+					So(build.CancelTime.AsTime(), ShouldEqual, t0)
+					So(build.SummaryMarkdown, ShouldEqual, "canceled because its parent 3000000 is missing")
+					So(sch.Tasks(), ShouldHaveLength, 2)
+
+				})
+
+				Convey("build is being canceled", func() {
+					// Child of the requested build.
+					So(datastore.Put(ctx, &model.Build{
+						ID: 13,
+						Proto: &pb.Build{
+							Id: 13,
+							Builder: &pb.BuilderID{
+								Project: "project",
+								Bucket:  "bucket",
+								Builder: "builder",
+							},
+							CancelTime:      timestamppb.New(t0.Add(-time.Minute)),
+							SummaryMarkdown: "original summary",
+						},
+						UpdateToken: tk,
+					}), ShouldBeNil)
+					// Child of the requested build.
+					So(datastore.Put(ctx, &model.Build{
+						ID: 14,
+						Proto: &pb.Build{
+							Id: 14,
+							Builder: &pb.BuilderID{
+								Project: "project",
+								Bucket:  "bucket",
+								Builder: "builder",
+							},
+							AncestorIds:      []int64{13},
+							CanOutliveParent: false,
+						},
+					}), ShouldBeNil)
+					req.Build.Id = 13
+					req.Build.SummaryMarkdown = "new summary"
+					req.UpdateMask.Paths[0] = "build.summary_markdown"
+					req.Mask = &pb.BuildMask{
+						Fields: &fieldmaskpb.FieldMask{
+							Paths: []string{
+								"cancel_time",
+								"summary_markdown",
+							},
+						},
+					}
+					build, err := srv.UpdateBuild(ctx, req)
+					So(err, ShouldBeRPCOK)
+					So(build.CancelTime.AsTime(), ShouldEqual, t0.Add(-time.Minute))
+					So(build.SummaryMarkdown, ShouldEqual, "new summary")
+					So(sch.Tasks(), ShouldBeEmpty)
+				})
+			})
+		})
 	})
 }

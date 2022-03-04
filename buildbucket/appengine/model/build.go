@@ -339,6 +339,13 @@ func (b *Build) ToSimpleBuildProto(ctx context.Context) *pb.Build {
 	return p
 }
 
+func (b *Build) GetParentID() int64 {
+	if len(b.Proto.AncestorIds) > 0 {
+		return b.Proto.AncestorIds[len(b.Proto.AncestorIds)-1]
+	}
+	return 0
+}
+
 // ClearLease clears the lease by resetting the LeaseProperties.
 //
 // NeverLeased is kept unchanged.
