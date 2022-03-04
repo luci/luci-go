@@ -89,34 +89,15 @@ func (s *SchemaApplyer) EnsureTable(ctx context.Context, t Table, spec *bigquery
 	// Note: creating/updating the table inside GetOrCreate ensures that different
 	// goroutines do not attempt to create/update the same table concurrently.
 	cachedErr, err := s.cache.LRU(ctx).GetOrCreate(ctx, t.FullyQualifiedName(), func() (interface{}, time.Duration, error) {
-		_, err := t.Metadata(ctx)
-		apiErr, ok := err.(*googleapi.Error)
-		switch {
-		case ok && apiErr.Code == http.StatusNotFound:
-			// Table doesn't exist. Create it and cache its existence for 5 minutes.
-			err = createBQTable(ctx, t, spec)
-			if err != nil {
-				err = errors.Annotate(err, "create bq table").Err()
-				if !transient.Tag.In(err) {
-					// Cache the fatal error for one minute.
-					return err, time.Minute, nil
-				}
-				return nil, 0, err
+		if err := EnsureTable(ctx, t, spec); err != nil {
+			if !transient.Tag.In(err) {
+				// Cache the fatal error for one minute.
+				return err, time.Minute, nil
 			}
-			return nil, 5 * time.Minute, nil
-
-		case ok && apiErr.Code == http.StatusForbidden:
-			// No read table permission.
-			return err, time.Minute, nil
-
-		case err != nil:
-			return nil, 0, transient.Tag.Apply(err)
+			return nil, 0, err
 		}
-
-		// Table exists and is accessible.
-		// Ensure its schema is up to date and remember that for 5 minutes.
-		err = EnsureBQTableFields(ctx, t, spec.Schema)
-		return nil, 5 * time.Minute, errors.Annotate(err, "ensure bq table fields").Err()
+		// Table is successfully ensured, remember for 5 minutes.
+		return nil, 5 * time.Minute, nil
 	})
 	if err != nil {
 		return err
@@ -125,6 +106,37 @@ func (s *SchemaApplyer) EnsureTable(ctx context.Context, t Table, spec *bigquery
 		return cachedErr.(error)
 	}
 	return nil
+}
+
+// EnsureTable creates a BigQuery table if it doesn't exist and updates its
+// schema if it is stale. Non-schema options, like Partitioning and Clustering
+// settings, will be applied if the table is being created but will not be
+// synchronised after creation.
+//
+// Existing fields will not be deleted.
+func EnsureTable(ctx context.Context, t Table, spec *bigquery.TableMetadata) error {
+		_, err := t.Metadata(ctx)
+		apiErr, ok := err.(*googleapi.Error)
+		switch {
+		case ok && apiErr.Code == http.StatusNotFound:
+			// Table doesn't exist. Create it now.
+			if err = createBQTable(ctx, t, spec); err != nil {
+				return errors.Annotate(err, "create bq table").Err()
+			}
+			return nil
+		case ok && apiErr.Code == http.StatusForbidden:
+			// No read table permission.
+			return err
+		case err != nil:
+			return transient.Tag.Apply(err)
+		}
+
+		// Table exists and is accessible.
+		// Ensure its schema is up to date.
+		if err = ensureBQTableFields(ctx, t, spec.Schema); err != nil {
+			return errors.Annotate(err, "ensure bq table fields").Err()
+		}
+		return nil
 }
 
 func createBQTable(ctx context.Context, t Table, spec *bigquery.TableMetadata) error {
@@ -145,8 +157,8 @@ func createBQTable(ctx context.Context, t Table, spec *bigquery.TableMetadata) e
 	}
 }
 
-// EnsureBQTableFields adds missing fields to t.
-func EnsureBQTableFields(ctx context.Context, t Table, newSchema bigquery.Schema) error {
+// ensureBQTableFields adds missing fields to t.
+func ensureBQTableFields(ctx context.Context, t Table, newSchema bigquery.Schema) error {
 	err := retry.Retry(ctx, transient.Only(retry.Default), func() error {
 		// We should retrieve Metadata in a retry loop because of the ETag check
 		// below.
