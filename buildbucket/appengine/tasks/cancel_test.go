@@ -16,6 +16,7 @@ package tasks
 
 import (
 	"context"
+	"sort"
 	"testing"
 	"time"
 
@@ -32,6 +33,7 @@ import (
 
 	"go.chromium.org/luci/buildbucket/appengine/internal/metrics"
 	"go.chromium.org/luci/buildbucket/appengine/model"
+	taskdefs "go.chromium.org/luci/buildbucket/appengine/tasks/defs"
 	pb "go.chromium.org/luci/buildbucket/proto"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -39,12 +41,14 @@ import (
 )
 
 func TestCancelBuild(t *testing.T) {
-	Convey("CancelBuild", t, func() {
+	Convey("Do", t, func() {
 		ctx := txndefer.FilterRDS(memory.Use(context.Background()))
 		ctx = metrics.WithServiceInfo(ctx, "svc", "job", "ins")
 		datastore.GetTestable(ctx).AutoIndex(true)
 		datastore.GetTestable(ctx).Consistent(true)
 		ctx, sch := tq.TestingContext(ctx, nil)
+		now := testclock.TestRecentTimeLocal
+		ctx, _ = testclock.UseTime(ctx, now)
 
 		Convey("not found", func() {
 			bld, err := Cancel(ctx, 1)
@@ -54,8 +58,6 @@ func TestCancelBuild(t *testing.T) {
 		})
 
 		Convey("found", func() {
-			now := testclock.TestRecentTimeLocal
-			ctx, _ = testclock.UseTime(ctx, now)
 			So(datastore.Put(ctx, &model.Build{
 				Proto: &pb.Build{
 					Id: 1,
@@ -109,8 +111,6 @@ func TestCancelBuild(t *testing.T) {
 		})
 
 		Convey("task cancellation", func() {
-			now := testclock.TestRecentTimeLocal
-			ctx, _ = testclock.UseTime(ctx, now)
 			So(datastore.Put(ctx, &model.Build{
 				Proto: &pb.Build{
 					Id: 1,
@@ -147,8 +147,6 @@ func TestCancelBuild(t *testing.T) {
 		})
 
 		Convey("resultdb finalization", func() {
-			now := testclock.TestRecentTimeLocal
-			ctx, _ = testclock.UseTime(ctx, now)
 			So(datastore.Put(ctx, &model.Build{
 				Proto: &pb.Build{
 					Id: 1,
@@ -281,6 +279,88 @@ func TestCancelBuild(t *testing.T) {
 				CancelTime: timestamppb.New(now.Add(-time.Minute)),
 			})
 			So(sch.Tasks(), ShouldBeEmpty)
+		})
+
+		Convey("w/ decedents", func() {
+			So(datastore.Put(ctx, &model.Build{
+				ID: 1,
+				Proto: &pb.Build{
+					Id: 1,
+					Builder: &pb.BuilderID{
+						Project: "project",
+						Bucket:  "bucket",
+						Builder: "builder",
+					},
+				},
+			}), ShouldBeNil)
+			// Child can outlive parent.
+			So(datastore.Put(ctx, &model.Build{
+				ID: 2,
+				Proto: &pb.Build{
+					Id: 2,
+					Builder: &pb.BuilderID{
+						Project: "project",
+						Bucket:  "bucket",
+						Builder: "builder",
+					},
+					AncestorIds:      []int64{1},
+					CanOutliveParent: true,
+				},
+			}), ShouldBeNil)
+			// Child cannot outlive parent.
+			So(datastore.Put(ctx, &model.Build{
+				ID: 3,
+				Proto: &pb.Build{
+					Id: 3,
+					Builder: &pb.BuilderID{
+						Project: "project",
+						Bucket:  "bucket",
+						Builder: "builder",
+					},
+					AncestorIds:      []int64{1},
+					CanOutliveParent: false,
+				},
+			}), ShouldBeNil)
+			// Grandchild.
+			So(datastore.Put(ctx, &model.Build{
+				ID: 4,
+				Proto: &pb.Build{
+					Id: 3,
+					Builder: &pb.BuilderID{
+						Project: "project",
+						Bucket:  "bucket",
+						Builder: "builder",
+					},
+					AncestorIds:      []int64{1, 3},
+					CanOutliveParent: false,
+				},
+			}), ShouldBeNil)
+			bld, err := StartCancel(ctx, 1, "summary")
+			So(err, ShouldBeNil)
+			So(bld.Proto, ShouldResembleProto, &pb.Build{
+				Id: 1,
+				Builder: &pb.BuilderID{
+					Project: "project",
+					Bucket:  "bucket",
+					Builder: "builder",
+				},
+				UpdateTime:      timestamppb.New(now),
+				CancelTime:      timestamppb.New(now),
+				SummaryMarkdown: "summary",
+				CanceledBy:      "buildbucket",
+			})
+			ids := make([]int, len(sch.Tasks()))
+			for i, task := range sch.Tasks() {
+				switch v := task.Payload.(type) {
+				case *taskdefs.CancelBuildTask:
+					ids[i] = int(v.BuildId)
+				default:
+					panic("unexpected task payload")
+				}
+			}
+			So(sch.Tasks(), ShouldHaveLength, 3)
+			sort.Ints(ids)
+			So(ids, ShouldResemble, []int{1, 3, 4})
 		})
 	})
 }

@@ -19,11 +19,13 @@ import (
 	"fmt"
 	"time"
 
+	"golang.org/x/sync/errgroup"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/tq"
@@ -65,7 +67,7 @@ func StartCancel(ctx context.Context, bID int64, summary string) (*model.Build, 
 			return errors.Annotate(err, "failed to store build: %d", bld.ID).Err()
 		}
 		// Enqueue the task to finally cancel the build.
-		if err := ScheduleCancelBuildTask(ctx, bID, buildbucket.MinUpdateBuildInterval + bld.Proto.GracePeriod.AsDuration()); err != nil {
+		if err := ScheduleCancelBuildTask(ctx, bID, buildbucket.MinUpdateBuildInterval+bld.Proto.GracePeriod.AsDuration()); err != nil {
 			return errors.Annotate(err, "failed to enqueue cancel task for build: %d", bld.ID).Err()
 		}
 		return nil
@@ -74,7 +76,63 @@ func StartCancel(ctx context.Context, bID int64, summary string) (*model.Build, 
 		return bld, errors.Annotate(err, "failed to set the build to CANCELING: %d", bID).Err()
 	}
 
+	// TODO(crbug.com/1031205): alternatively, we could just map out the entire
+	// cancellation tree and then feed those build IDs into a pool to do bulk
+	// cancel. We could add a bool argument to StartCancel to control if the
+	// function should cancel the entire tree or just the build itself.
+	// Discussion: https://chromium-review.googlesource.com/c/infra/luci/luci-go/+/3402796/comments/8aba3108_b4ca9f76
+	if err := CancelChildren(ctx, bID); err != nil {
+		// Failures of canceling children should not block canceling parent.
+		logging.Debugf(ctx, "failed to cancel children of %d: %s", bID, err)
+	}
+
 	return bld, err
+}
+
+// CancelChildren cancels a build's children.
+// NOTE: This process is best-effort; Builds call UpdateBuild at a minimum
+// frequency and Buildbucket will inform them if they should start the cancel
+// process (by checking the parent build, if any).
+// So, even if this fails, the next UpdateBuild will catch it.
+func CancelChildren(ctx context.Context, bID int64) error {
+	// Look for the build's children to cancel.
+	children, err := childrenToCancel(ctx, bID)
+	if err != nil {
+		return err
+	}
+	if len(children) == 0 {
+		return nil
+	}
+
+	eg, ctx := errgroup.WithContext(ctx)
+	summary := fmt.Sprintf("cancel since the parent %d is canceled", bID)
+
+	for _, child := range children {
+		child := child
+		eg.Go(func() error {
+			_, err := StartCancel(ctx, child.ID, summary)
+			return err
+		})
+	}
+	return eg.Wait()
+}
+
+//childrenToCancel returns the child build ids that should be canceled with
+// the parent.
+func childrenToCancel(ctx context.Context, bID int64) (children []*model.Build, err error) {
+	q := datastore.NewQuery(model.BuildKind).Eq("parent_id", bID)
+	err = datastore.Run(ctx, q, func(bld *model.Build) error {
+		switch {
+		case protoutil.IsEnded(bld.Proto.Status):
+			return nil
+		case bld.Proto.CanOutliveParent:
+			return nil
+		default:
+			children = append(children, bld)
+			return nil
+		}
+	})
+	return
 }
 
 // Cancel actually cancels a build.
