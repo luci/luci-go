@@ -24,9 +24,6 @@ import (
 
 	"github.com/golang/protobuf/proto"
 
-	// Import to register {appid} in validation.Rules
-	_ "go.chromium.org/luci/config/appengine/gaeconfig"
-
 	"go.chromium.org/luci/common/api/gitiles"
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/config/validation"
@@ -170,7 +167,11 @@ func validateSettings(ctx *validation.Context, settings *notifypb.Settings) {
 // its filename and contents.
 func validateEmailTemplateFile(ctx *validation.Context, configSet, path string, content []byte) error {
 	// Validate file name.
-	rgx := emailTemplateFilenameRegexp(ctx.Context)
+	rgx, err := emailTemplateFilenameRegexp(ctx.Context)
+	if err != nil {
+		return err
+	}
+
 	if !rgx.MatchString(path) {
 		ctx.Errorf("filename does not match %q", rgx.String())
 	}

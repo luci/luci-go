@@ -17,7 +17,6 @@ package config
 import (
 	"context"
 	"fmt"
-	"net/http"
 	"time"
 
 	"github.com/golang/protobuf/proto"
@@ -25,13 +24,13 @@ import (
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/common/sync/parallel"
 	"go.chromium.org/luci/config/cfgclient"
 	"go.chromium.org/luci/config/validation"
 	"go.chromium.org/luci/gae/service/datastore"
-	"go.chromium.org/luci/gae/service/info"
 	notifypb "go.chromium.org/luci/luci_notify/api/config"
-	"go.chromium.org/luci/server/router"
+	"go.chromium.org/luci/luci_notify/common"
 )
 
 // parsedProjectConfigSet contains all configurations of a project.
@@ -195,7 +194,11 @@ func deleteProject(c context.Context, projectID string) error {
 
 // updateProjects updates all Projects and their Notifiers in the datastore.
 func updateProjects(c context.Context) error {
-	cfgName := info.AppID(c) + ".cfg"
+	appID, err := common.GetAppID(c)
+	if err != nil {
+		return errors.Annotate(err, "failed to get app ID").Err()
+	}
+	cfgName := appID + ".cfg"
 	logging.Debugf(c, "fetching configs for %s", cfgName)
 	lucicfg := cfgclient.Client(c)
 	configs, err := lucicfg.GetProjectConfigs(c, cfgName, false)
@@ -278,21 +281,15 @@ func updateProjects(c context.Context) error {
 
 // UpdateHandler is the HTTP router handler for handling cron-triggered
 // configuration update requests.
-func UpdateHandler(c *router.Context) {
-	ctx, h := c.Context, c.Writer
+func UpdateHandler(ctx context.Context) error {
 	ctx, cancel := context.WithTimeout(ctx, time.Minute)
 	defer cancel()
+
 	if err := updateProjects(ctx); err != nil {
-		logging.WithError(err).Errorf(ctx, "error while updating project configs")
-		h.WriteHeader(http.StatusInternalServerError)
-		return
+		return transient.Tag.Apply(err)
 	}
-	if err := updateSettings(ctx); err != nil {
-		logging.WithError(err).Errorf(ctx, "error while updating settings")
-		h.WriteHeader(http.StatusInternalServerError)
-		return
-	}
-	h.WriteHeader(http.StatusOK)
+
+	return transient.Tag.Apply(updateSettings(ctx))
 }
 
 // removeDescedants deletes all entities of a given kind under the ancestor.

@@ -23,11 +23,12 @@ import (
 	"testing"
 	"time"
 
-	"go.chromium.org/luci/appengine/gaetesting"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/logging/memlogger"
+	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
 	notifypb "go.chromium.org/luci/luci_notify/api/config"
+	"go.chromium.org/luci/luci_notify/common"
 	"go.chromium.org/luci/luci_notify/config"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -81,7 +82,9 @@ func (ts *fakeTreeStatusClient) postStatus(c context.Context, host, message stri
 
 func TestUpdateTrees(t *testing.T) {
 	Convey("Test environment", t, func() {
-		c := gaetesting.TestingContextWithAppID("luci-notify-test")
+		c := memory.Use(context.Background())
+		c = common.SetAppIDForTest(c, "luci-notify-test")
+
 		datastore.GetTestable(c).Consistent(true)
 		c = memlogger.Use(c)
 		log := logging.Get(c).(*memlogger.MemLogger)
@@ -577,7 +580,8 @@ func TestUpdateTrees(t *testing.T) {
 
 func TestHttpTreeStatusClient(t *testing.T) {
 	Convey("Test environment for httpTreeStatusClient", t, func() {
-		c := gaetesting.TestingContextWithAppID("luci-notify-test")
+		c := memory.Use(context.Background())
+		c = common.SetAppIDForTest(c, "luci-notify-test")
 
 		// Real responses, with usernames redacted and readable formatting applied.
 		responses := map[string]string{

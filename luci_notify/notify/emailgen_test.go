@@ -15,14 +15,17 @@
 package notify
 
 import (
+	"context"
 	"testing"
 
+	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
+	"go.chromium.org/luci/server/caching"
 
-	"go.chromium.org/luci/appengine/gaetesting"
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
 
 	notifypb "go.chromium.org/luci/luci_notify/api/config"
+	"go.chromium.org/luci/luci_notify/common"
 	"go.chromium.org/luci/luci_notify/config"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -32,7 +35,9 @@ func TestEmailGen(t *testing.T) {
 	t.Parallel()
 
 	Convey(`bundle`, t, func() {
-		c := gaetesting.TestingContextWithAppID("luci-config")
+		c := memory.Use(context.Background())
+		c = common.SetAppIDForTest(c, "luci-config")
+		c = caching.WithEmptyProcessCache(c)
 
 		chromium := &config.Project{Name: "chromium", Revision: "deadbeef"}
 		chromiumKey := datastore.KeyForObj(c, chromium)

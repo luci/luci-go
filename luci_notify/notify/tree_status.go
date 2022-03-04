@@ -34,7 +34,6 @@ import (
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/luci_notify/config"
 	"go.chromium.org/luci/server/auth"
-	"go.chromium.org/luci/server/router"
 )
 
 const botUsername = "luci-notify@appspot.gserviceaccount.com"
@@ -168,17 +167,12 @@ func makeHttpRequest(c context.Context, url, method string) (*http.Response, err
 
 // UpdateTreeStatus is the HTTP handler triggered by cron when it's time to
 // check tree closers and update tree status if necessary.
-func UpdateTreeStatus(c *router.Context) {
-	ctx, w := c.Context, c.Writer
+func UpdateTreeStatus(ctx context.Context) error {
 	ctx, cancel := context.WithTimeout(ctx, time.Minute)
 	defer cancel()
 
-	if err := updateTrees(ctx, &httpTreeStatusClient{getHttp, postHttp}); err != nil {
-		logging.WithError(err).Errorf(ctx, "error while updating tree status")
-		w.WriteHeader(http.StatusInternalServerError)
-	} else {
-		w.WriteHeader(http.StatusOK)
-	}
+	return transient.Tag.Apply(
+		updateTrees(ctx, &httpTreeStatusClient{getHttp, postHttp}))
 }
 
 // updateTrees fetches all TreeClosers from datastore, uses this to determine if

@@ -20,22 +20,27 @@ import (
 	"regexp"
 
 	"go.chromium.org/luci/gae/service/datastore"
-	"go.chromium.org/luci/gae/service/info"
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	configInterface "go.chromium.org/luci/config"
+	"go.chromium.org/luci/luci_notify/common"
 	"go.chromium.org/luci/luci_notify/mailtmpl"
 )
 
 // emailTemplateFilenameRegexp returns a regular expression for email template
 // file names.
-func emailTemplateFilenameRegexp(c context.Context) *regexp.Regexp {
+func emailTemplateFilenameRegexp(c context.Context) (*regexp.Regexp, error) {
+	appID, err := common.GetAppID(c)
+	if err != nil {
+		return nil, errors.Annotate(err, "failed to get app ID").Err()
+	}
+
 	return regexp.MustCompile(fmt.Sprintf(
 		`^%s+/email-templates/([a-z][a-z0-9_]*)%s$`,
-		regexp.QuoteMeta(info.AppID(c)),
+		regexp.QuoteMeta(appID),
 		regexp.QuoteMeta(mailtmpl.FileExt),
-	))
+	)), nil
 }
 
 // EmailTemplate is a Datastore entity directly under Project entity that
@@ -83,7 +88,10 @@ func fetchAllEmailTemplates(c context.Context, configService configInterface.Int
 
 	// This runs in a cron job. It is not performance critical, so we don't have
 	// to fetch files concurrently.
-	filenameRegexp := emailTemplateFilenameRegexp(c)
+	filenameRegexp, err := emailTemplateFilenameRegexp(c)
+	if err != nil {
+		return nil, err
+	}
 	for _, f := range files {
 		m := filenameRegexp.FindStringSubmatch(f)
 		if m == nil {

@@ -15,13 +15,15 @@
 package mailtmpl
 
 import (
+	"context"
 	"testing"
 
+	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
 
-	"go.chromium.org/luci/appengine/gaetesting"
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/luci_notify/api/config"
+	"go.chromium.org/luci/luci_notify/common"
 
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
@@ -31,7 +33,8 @@ func TestBundle(t *testing.T) {
 	t.Parallel()
 
 	Convey(`bundle`, t, func() {
-		c := gaetesting.TestingContextWithAppID("luci-config")
+		c := memory.Use(context.Background())
+		c = common.SetAppIDForTest(c, "luci-config")
 
 		templates := []*Template{
 			{

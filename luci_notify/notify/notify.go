@@ -18,8 +18,6 @@ import (
 	"bytes"
 	"compress/gzip"
 	"context"
-	"crypto/sha256"
-	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -30,10 +28,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/golang/protobuf/proto"
 	"github.com/golang/protobuf/ptypes"
 
-	"go.chromium.org/luci/appengine/tq"
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
@@ -41,46 +37,19 @@ import (
 	gitpb "go.chromium.org/luci/common/proto/git"
 	"go.chromium.org/luci/common/sync/parallel"
 	"go.chromium.org/luci/gae/service/datastore"
-	"go.chromium.org/luci/gae/service/info"
-	"go.chromium.org/luci/gae/service/mail"
 	"go.chromium.org/luci/server/auth"
+	"go.chromium.org/luci/server/mailer"
+	"go.chromium.org/luci/server/tq"
 
 	notifypb "go.chromium.org/luci/luci_notify/api/config"
 	"go.chromium.org/luci/luci_notify/config"
 	"go.chromium.org/luci/luci_notify/internal"
 	"go.chromium.org/luci/luci_notify/mailtmpl"
 
-	taskspb "google.golang.org/genproto/googleapis/cloud/tasks/v2"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/proto"
 )
 
 var validRecipientSuffixes = []string{"@chromium.org", "@grotations.appspotmail.com", "@google.com"}
-
-type CloudTasksClient interface {
-	CreateTask(ctx context.Context, queue string, task *taskspb.Task) (*taskspb.Task, error)
-	ProjectID() string
-	LocationID() string
-}
-
-// Generates a task name that will dedup by email address.
-func taskName(task *internal.EmailTask, ct CloudTasksClient, dedupKey string) string {
-	if dedupKey == "" {
-		return ""
-	}
-
-	// There's some weird restrictions on what characters are allowed inside task
-	// names. Lexicographically close names also cause hot spot problems in the
-	// Task Queues backend. To avoid these two issues, we always use SHA256 hashes
-	// as task names. Also each task kind owns its own namespace of deduplication
-	// keys, so add task type to the digest as well.
-	h := sha256.New()
-	h.Write([]byte(proto.MessageName(task)))
-	h.Write([]byte{0})
-	h.Write([]byte(dedupKey))
-	return fmt.Sprintf("projects/%s/locations/%s/queues/email/tasks/%s",
-		ct.ProjectID(), ct.LocationID(), hex.EncodeToString(h.Sum(nil)))
-}
 
 // createEmailTasks constructs EmailTasks to be dispatched onto the task queue.
 func createEmailTasks(c context.Context, recipients []EmailNotify, input *notifypb.TemplateInput) (map[string]*internal.EmailTask, error) {
@@ -457,7 +426,7 @@ func UpdateTreeClosers(c context.Context, build *Build, oldStatus buildbucketpb.
 // and 'email_notify' properties, then dispatches notifications if necessary.
 // Does not dispatch a notification for same email, template and build more than
 // once. Ignores current transaction in c, if any.
-func Notify(c context.Context, ct CloudTasksClient, recipients []EmailNotify, templateParams *notifypb.TemplateInput) error {
+func Notify(c context.Context, recipients []EmailNotify, templateParams *notifypb.TemplateInput) error {
 	c = datastore.WithoutTransaction(c)
 
 	// Remove unallowed recipients.
@@ -478,31 +447,15 @@ func Notify(c context.Context, ct CloudTasksClient, recipients []EmailNotify, te
 		return errors.Annotate(err, "failed to create email tasks").Err()
 	}
 
-	// Cloud Tasks limits requests to a 30-second deadline.
-	c, cancel := context.WithTimeout(c, 30*time.Second)
-	defer cancel()
-
 	for emailKey, task := range tasks {
-		blob, err := serializePayload(task)
-		if err != nil {
+		task := &tq.Task{
+			Payload:          task,
+			Title:            emailKey,
+			DeduplicationKey: emailKey,
+		}
+
+		if err := tq.AddTask(c, task); err != nil {
 			return err
-		}
-		task := &taskspb.Task{
-			Name: taskName(task, ct, emailKey),
-			MessageType: &taskspb.Task_AppEngineHttpRequest{
-				AppEngineHttpRequest: &taskspb.AppEngineHttpRequest{
-					RelativeUri: "/internal/tasks/email/internal.EmailTask",
-					HttpMethod:  taskspb.HttpMethod_POST,
-					Body:        blob,
-				},
-			},
-		}
-		if _, err := ct.CreateTask(c, "email", task); err != nil {
-			// AlreadyExists should be ignored since these tasks
-			// were already processed recently.
-			if status.Code(err) != codes.AlreadyExists {
-				return err
-			}
 		}
 	}
 	return nil
@@ -510,14 +463,17 @@ func Notify(c context.Context, ct CloudTasksClient, recipients []EmailNotify, te
 
 // InitDispatcher registers the send email task with the given dispatcher.
 func InitDispatcher(d *tq.Dispatcher) {
-	d.RegisterTask(&internal.EmailTask{}, SendEmail, "email", nil)
+	d.RegisterTaskClass(tq.TaskClass{
+		ID:        "send-email",
+		Kind:      tq.NonTransactional,
+		Prototype: &internal.EmailTask{},
+		Handler:   SendEmail,
+		Queue:     "email",
+	})
 }
 
 // SendEmail is a push queue handler that attempts to send an email.
 func SendEmail(c context.Context, task proto.Message) error {
-	appID := info.AppID(c)
-	sender := fmt.Sprintf("%s <noreply@%s.appspotmail.com>", appID, appID)
-
 	// TODO(mknyszek): Query Milo for additional build information.
 	emailTask := task.(*internal.EmailTask)
 
@@ -534,8 +490,7 @@ func SendEmail(c context.Context, task proto.Message) error {
 		body = string(buf)
 	}
 
-	return mail.Send(c, &mail.Message{
-		Sender:   sender,
+	return mailer.Send(c, &mailer.Mail{
 		To:       emailTask.Recipients,
 		Subject:  emailTask.Subject,
 		HTMLBody: body,

@@ -16,24 +16,20 @@ package main
 
 import (
 	"context"
-	"fmt"
 	"net/http"
-	"os"
-	"strings"
 
-	cloudtasks "cloud.google.com/go/cloudtasks/apiv2"
-	"google.golang.org/appengine"
-	taskspb "google.golang.org/genproto/googleapis/cloud/tasks/v2"
-
-	"go.chromium.org/luci/appengine/gaemiddleware"
-	"go.chromium.org/luci/appengine/gaemiddleware/standard"
-	"go.chromium.org/luci/appengine/tq"
-	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/common/tsmon/field"
 	"go.chromium.org/luci/common/tsmon/metric"
+	"go.chromium.org/luci/config/server/cfgmodule"
+	"go.chromium.org/luci/server"
+	"go.chromium.org/luci/server/cron"
+	"go.chromium.org/luci/server/gaeemulation"
+	"go.chromium.org/luci/server/mailer"
+	"go.chromium.org/luci/server/module"
 	"go.chromium.org/luci/server/router"
+	"go.chromium.org/luci/server/tq"
 
 	"go.chromium.org/luci/luci_notify/config"
 	"go.chromium.org/luci/luci_notify/notify"
@@ -47,92 +43,48 @@ var buildbucketPubSub = metric.NewCounter(
 	field.String("status"),
 )
 
-type ProdCloudTasksClient struct {
-	ct         *cloudtasks.Client
-	projectID  string
-	locationID string
-}
-
-func (c ProdCloudTasksClient) CreateTask(ctx context.Context, queue string, task *taskspb.Task) (*taskspb.Task, error) {
-	req := &taskspb.CreateTaskRequest{
-		Parent: fmt.Sprintf("projects/%s/locations/%s/queues/%s", c.projectID, c.locationID, queue),
-		Task:   task,
-	}
-	return c.ct.CreateTask(ctx, req)
-}
-
-func (c ProdCloudTasksClient) ProjectID() string {
-	return c.projectID
-}
-
-func (c ProdCloudTasksClient) LocationID() string {
-	return c.locationID
-}
-
-func newProdCloudTasksClient(ctx context.Context, projectID string, locationID string) (*ProdCloudTasksClient, error) {
-	ct, err := cloudtasks.NewClient(ctx)
-	if err != nil {
-		return nil, err
-	}
-	return &ProdCloudTasksClient{
-		ct:         ct,
-		projectID:  projectID,
-		locationID: locationID,
-	}, nil
-}
-
 func main() {
-	r := router.New()
-	standard.InstallHandlers(r)
-
-	basemw := standard.Base()
-
-	taskDispatcher := tq.Dispatcher{BaseURL: "/internal/tasks/"}
-	notify.InitDispatcher(&taskDispatcher)
-	taskDispatcher.InstallRoutes(r, basemw)
-
-	// Cron endpoints.
-	r.GET("/internal/cron/update-config", basemw.Extend(gaemiddleware.RequireCron), config.UpdateHandler)
-	r.GET("/internal/cron/update-tree-status", basemw.Extend(gaemiddleware.RequireCron), notify.UpdateTreeStatus)
-
-	// Pub/Sub endpoint.
-	appID := os.Getenv("GAE_APPLICATION")
-	// This can be extended to handle other region codes if needed.
-	if len(appID) < 3 || !strings.HasPrefix(appID, "s~") {
-		panic("Expected GAE_APPLICATION to be set and of the form s~appid.")
-	}
-	projectID := strings.TrimPrefix(appID, "s~")
-	ct, err := newProdCloudTasksClient(context.Background(), projectID, "us-central1")
-	if err != nil {
-		panic(fmt.Sprintf("Unable to create cloud tasks client: %s", err.Error()))
+	modules := []module.Module{
+		cfgmodule.NewModuleFromFlags(),
+		cron.NewModuleFromFlags(),
+		gaeemulation.NewModuleFromFlags(),
+		mailer.NewModuleFromFlags(),
+		tq.NewModuleFromFlags(),
 	}
 
-	defer ct.ct.Close()
-	r.POST("/_ah/push-handlers/buildbucket", basemw,
-		func(c *router.Context) {
-			ctx, cancel := context.WithTimeout(c.Context, notify.PUBSUB_POST_REQUEST_TIMEOUT)
-			defer cancel()
-			c.Context = ctx
+	notify.InitDispatcher(&tq.Default)
 
-			status := ""
-			switch err := notify.BuildbucketPubSubHandler(c, ct); {
-			case transient.Tag.In(err) || appengine.IsTimeoutError(errors.Unwrap(err)):
-				status = "transient-failure"
-				logging.Errorf(ctx, "transient failure: %s", err)
-				// Retry the message.
-				c.Writer.WriteHeader(http.StatusInternalServerError)
+	server.Main(nil, modules, func(srv *server.Server) error {
+		// Cron endpoints.
+		cron.RegisterHandler("read-config", config.UpdateHandler)
+		cron.RegisterHandler("update-tree-status", notify.UpdateTreeStatus)
 
-			case err != nil:
-				status = "permanent-failure"
-				logging.Errorf(ctx, "permanent failure: %s", err)
+		// Buildbucket Pub/Sub endpoint.
+		srv.Routes.POST("/_ah/push-handlers/buildbucket", nil,
+			func(c *router.Context) {
+				ctx, cancel := context.WithTimeout(c.Context, notify.PUBSUB_POST_REQUEST_TIMEOUT)
+				defer cancel()
+				c.Context = ctx
 
-			default:
-				status = "success"
-			}
+				status := ""
+				switch err := notify.BuildbucketPubSubHandler(c); {
+				case transient.Tag.In(err):
+					status = "transient-failure"
+					logging.Errorf(ctx, "transient failure: %s", err)
+					// Retry the message.
+					c.Writer.WriteHeader(http.StatusInternalServerError)
 
-			buildbucketPubSub.Add(ctx, 1, status)
-		})
+				case err != nil:
+					status = "permanent-failure"
+					logging.Errorf(ctx, "permanent failure: %s", err)
 
-	http.Handle("/", r)
-	appengine.Main()
+				default:
+					status = "success"
+				}
+
+				buildbucketPubSub.Add(ctx, 1, status)
+			})
+
+		return nil
+	})
 }

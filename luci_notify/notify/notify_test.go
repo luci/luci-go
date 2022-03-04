@@ -22,9 +22,10 @@ import (
 	"sort"
 	"testing"
 
+	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
+	"go.chromium.org/luci/server/caching"
 
-	"go.chromium.org/luci/appengine/gaetesting"
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
@@ -33,6 +34,7 @@ import (
 	"go.chromium.org/luci/common/logging/gologger"
 
 	notifypb "go.chromium.org/luci/luci_notify/api/config"
+	"go.chromium.org/luci/luci_notify/common"
 	"go.chromium.org/luci/luci_notify/config"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -338,7 +340,9 @@ func TestNotify(t *testing.T) {
 	})
 
 	Convey("Notify", t, func() {
-		c := gaetesting.TestingContextWithAppID("luci-notify")
+		c := memory.Use(context.Background())
+		c = common.SetAppIDForTest(c, "luci-notify")
+		c = caching.WithEmptyProcessCache(c)
 		c = clock.Set(c, testclock.New(testclock.TestRecentTimeUTC))
 		c = gologger.StdConfig.Use(c)
 		c = logging.SetLevel(c, logging.Debug)
@@ -454,7 +458,9 @@ func TestNotify(t *testing.T) {
 
 func TestComputeRecipients(t *testing.T) {
 	Convey("ComputeRecipients", t, func() {
-		c := gaetesting.TestingContextWithAppID("luci-notify")
+		c := memory.Use(context.Background())
+		c = common.SetAppIDForTest(c, "luci-notify")
+		c = caching.WithEmptyProcessCache(c)
 		c = clock.Set(c, testclock.New(testclock.TestRecentTimeUTC))
 		c = gologger.StdConfig.Use(c)
 		c = logging.SetLevel(c, logging.Debug)

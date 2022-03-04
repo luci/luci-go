@@ -118,7 +118,7 @@ func extractEmailNotifyValues(build *buildbucketpb.Build, parametersJSON string)
 // history is a function that contacts gitiles to obtain the git history for
 // revision ordering purposes. It's passed in as a parameter in order to mock it
 // for testing.
-func handleBuild(c context.Context, ct CloudTasksClient, build *Build, getCheckout CheckoutFunc, history HistoryFunc) error {
+func handleBuild(c context.Context, build *Build, getCheckout CheckoutFunc, history HistoryFunc) error {
 	gCommit := build.Input.GetGitilesCommit()
 	if gCommit != nil && gCommit.Id == "" {
 		// Ignore builds without an associated commit ID. We can't order them,
@@ -168,7 +168,7 @@ func handleBuild(c context.Context, ct CloudTasksClient, build *Build, getChecko
 		notifications := Filter(&b.Notifications, oldStatus, &build.Build)
 		recipients = append(recipients, ComputeRecipients(c, notifications, nil, nil)...)
 		templateInput.OldStatus = oldStatus
-		return Notify(c, ct, recipients, templateInput)
+		return Notify(c, recipients, templateInput)
 	}
 	notifyAndUpdateTrees := func(c context.Context, b config.Builder, oldStatus buildbucketpb.Status) error {
 		return parallel.FanOutIn(func(ch chan<- func() error) {
@@ -185,7 +185,7 @@ func handleBuild(c context.Context, ct CloudTasksClient, build *Build, getChecko
 			// Even if the builder isn't found, we may still want to notify if the build
 			// specifies email addresses to notify.
 			logging.Infof(c, "No builder %q found for project %q", builderID, luciProject)
-			return Notify(c, ct, recipients, templateInput)
+			return Notify(c, recipients, templateInput)
 		case err != nil:
 			return errors.Annotate(err, "failed to get builder").Tag(transient.Tag).Err()
 		}
@@ -321,7 +321,7 @@ func handleBuild(c context.Context, ct CloudTasksClient, build *Build, getChecko
 		templateInput.OldStatus = builder.Status
 
 		return parallel.FanOutIn(func(ch chan<- func() error) {
-			ch <- func() error { return Notify(c, ct, recipients, templateInput) }
+			ch <- func() error { return Notify(c, recipients, templateInput) }
 			ch <- func() error { return datastore.Put(c, &updatedBuilder) }
 			ch <- func() error { return UpdateTreeClosers(c, build, 0) }
 		})
@@ -344,7 +344,7 @@ func newBuildsClient(c context.Context, host, project string) (buildbucketpb.Bui
 //
 // This handler delegates the actual processing of the build to handleBuild.
 // Its primary purpose is to unwrap context boilerplate and deal with progress-stopping errors.
-func BuildbucketPubSubHandler(ctx *router.Context, ct CloudTasksClient) error {
+func BuildbucketPubSubHandler(ctx *router.Context) error {
 	c := ctx.Context
 	build, err := extractBuild(c, ctx.Request)
 	switch {
@@ -356,7 +356,7 @@ func BuildbucketPubSubHandler(ctx *router.Context, ct CloudTasksClient) error {
 		return nil
 
 	default:
-		return handleBuild(c, ct, build, srcmanCheckout, gitilesHistory)
+		return handleBuild(c, build, srcmanCheckout, gitilesHistory)
 	}
 }
 

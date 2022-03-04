@@ -15,20 +15,21 @@
 package config
 
 import (
+	"context"
 	"testing"
 	"time"
 
 	"go.chromium.org/luci/gae/service/datastore"
 
-	"go.chromium.org/luci/appengine/gaetesting"
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/logging"
-	"go.chromium.org/luci/common/logging/gologger"
 	"go.chromium.org/luci/config"
 	"go.chromium.org/luci/config/cfgclient"
 	"go.chromium.org/luci/config/impl/memory"
+	mem_ds "go.chromium.org/luci/gae/impl/memory"
 
 	notifypb "go.chromium.org/luci/luci_notify/api/config"
+	"go.chromium.org/luci/luci_notify/common"
 
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
@@ -38,9 +39,10 @@ func TestConfigIngestion(t *testing.T) {
 	t.Parallel()
 
 	Convey(`updateProjects`, t, func() {
-		c := gaetesting.TestingContextWithAppID("luci-notify")
-		c = gologger.StdConfig.Use(c)
+		c := mem_ds.Use(context.Background())
 		c = logging.SetLevel(c, logging.Debug)
+		c = common.SetAppIDForTest(c, "luci-notify")
+
 		cfg := map[config.Set]memory.Files{
 			"projects/chromium": {
 				"luci-notify.cfg": `

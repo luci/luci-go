@@ -15,13 +15,14 @@
 package config
 
 import (
+	"context"
 	"testing"
 
-	"go.chromium.org/luci/appengine/gaetesting"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/logging/gologger"
 	"go.chromium.org/luci/config"
 	"go.chromium.org/luci/config/impl/memory"
+	"go.chromium.org/luci/luci_notify/common"
 
 	. "github.com/smartystreets/goconvey/convey"
 )
@@ -30,9 +31,9 @@ func TestEmailTemplate(t *testing.T) {
 	t.Parallel()
 
 	Convey("fetchAllEmailTemplates", t, func() {
-		c := gaetesting.TestingContextWithAppID("luci-notify")
-		c = gologger.StdConfig.Use(c)
+		c := gologger.StdConfig.Use(context.Background())
 		c = logging.SetLevel(c, logging.Debug)
+		c = common.SetAppIDForTest(c, "luci-notify")
 
 		cfgService := memory.New(map[config.Set]memory.Files{
 			"projects/x": {

@@ -19,10 +19,10 @@ import (
 	"fmt"
 	"testing"
 
-	"go.chromium.org/luci/appengine/gaetesting"
 	"go.chromium.org/luci/common/testing/assertions"
 	"go.chromium.org/luci/config/validation"
 
+	"go.chromium.org/luci/luci_notify/common"
 	"go.chromium.org/luci/luci_notify/testutil"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -247,7 +247,8 @@ func TestValidation(t *testing.T) {
 	})
 
 	Convey("email template filename validation", t, func() {
-		ctx := &validation.Context{Context: gaetesting.TestingContextWithAppID("luci-notify")}
+		c := common.SetAppIDForTest(context.Background(), "luci-notify")
+		ctx := &validation.Context{Context: c}
 		validFileContent := []byte("a\n\nb")
 
 		Convey("valid", func() {
