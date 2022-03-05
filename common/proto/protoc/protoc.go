@@ -53,7 +53,7 @@ func Compile(ctx context.Context, p *CompileParams) error {
 	if p.GoEnabled {
 		// protoc-gen-go plugin arguments.
 		var params []string
-		for k, v := range packageMap(p.GoPackageMap) {
+		for k, v := range p.GoPackageMap {
 			params = append(params, fmt.Sprintf("M%s=%s", k, v))
 		}
 		sort.Strings(params)

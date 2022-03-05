@@ -157,9 +157,9 @@ func StageGoInputs(ctx context.Context, inputDir string, mods, protoImportPaths 
 		paths = append(paths, p)
 	}
 
-	// Include well-known *.proto files vendored into the luci-go repo.
+	// Include googleapis proto files vendored into the luci-go repo.
 	for _, p := range paths {
-		abs := filepath.Join(p, "go.chromium.org", "luci", "grpc", "proto")
+		abs := filepath.Join(p, "go.chromium.org", "luci", "common", "proto", "googleapis")
 		if _, err := os.Stat(abs); err == nil {
 			paths = append(paths, abs)
 			break
