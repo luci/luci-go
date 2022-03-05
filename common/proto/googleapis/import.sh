@@ -20,6 +20,13 @@ PROTOS_TO_IMPORT=(
   google/type/money.proto
   google/type/postal_address.proto
   google/type/timeofday.proto
+
+  google/appengine/v1/app_yaml.proto
+  google/appengine/v1/application.proto
+  google/appengine/v1/deploy.proto
+  google/appengine/v1/network_settings.proto
+  google/appengine/v1/service.proto
+  google/appengine/v1/version.proto
 )
 
 cd $(dirname "${BASH_SOURCE[0]}")
