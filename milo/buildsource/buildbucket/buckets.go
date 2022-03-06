@@ -22,6 +22,7 @@ import (
 
 	"go.chromium.org/luci/auth/identity"
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
+	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/caching"
 	"go.chromium.org/luci/server/caching/layered"
@@ -53,6 +54,8 @@ func GetBuilders(c context.Context) ([]*buildbucketpb.BuilderItem, error) {
 func getBuilders(c context.Context, host string) ([]*buildbucketpb.BuilderItem, error) {
 	key := fmt.Sprintf("%q-%q", host, auth.CurrentIdentity(c))
 	builders, err := buildbucketBuildersCache.GetOrCreate(c, key, func() (v interface{}, exp time.Duration, err error) {
+		start := time.Now()
+
 		authOpt := auth.AsSessionUser
 		// Use NoAuth when user is not signed in so RPC calls won't return
 		// ErrNotConfigured.
@@ -79,12 +82,14 @@ func getBuilders(c context.Context, host string) ([]*buildbucketpb.BuilderItem, 
 			req.PageToken = r.NextPageToken
 		}
 
-		// Keep the builders in cache for 10 mins to speed up repeated page loads
+		logging.Infof(c, "listing all builders from buildbucket took %v", time.Since(start))
+
+		// Keep the builders in cache for 12 hours to speed up repeated page loads
 		// and reduce stress on buildbucket side.
-		// But this also means builder visibility ACL changes would take 10 mins to
+		// But this also means builder visibility ACL changes would take 12 hours to
 		// propagate.
 		// Cache duration can be adjusted if needed.
-		return buildItems, 10 * time.Minute, nil
+		return buildItems, 12 * time.Hour, nil
 	})
 	if err != nil {
 		return nil, err
