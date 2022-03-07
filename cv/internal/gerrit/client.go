@@ -76,5 +76,5 @@ func NewFactory(ctx context.Context, mirrorHostPrefixes ...string) (Factory, err
 	if err != nil {
 		return nil, err
 	}
-	return CachingFactory(64, InstrumentedFactory(TimeLimitedFactory(f))), nil
+	return CachingFactory(64, InstrumentedFactory(TimeLimitedFactory(PSSAMigrationFactory(f)))), nil
 }

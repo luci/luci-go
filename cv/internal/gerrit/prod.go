@@ -16,7 +16,6 @@ package gerrit
 
 import (
 	"context"
-	"encoding/base64"
 	"net/http"
 	"strings"
 	"time"
@@ -25,40 +24,21 @@ import (
 
 	luciauth "go.chromium.org/luci/auth"
 	"go.chromium.org/luci/common/api/gerrit"
-	"go.chromium.org/luci/common/data/caching/lru"
 	"go.chromium.org/luci/common/errors"
-	"go.chromium.org/luci/common/retry/transient"
-	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/server/auth"
 )
 
 // prodFactory knows how to construct Gerrit clients and hop over Gerrit
 // mirrors.
-//
-// CV must use project-scoped credentials, but not every project has configured
-// project-scoped service account (PSSA). The alternative and legacy
-// authentication is based on per GerritHost auth tokens from ~/.netrc shared by
-// all LUCI projects. CQDaemon logic is roughly:
-//
-//   try:
-//     token = token_server.MintToken(project)
-//   except 404: # not configured
-//     return use_legacy_netrc
-//   return use_pssa(token)
-//
-// For smooth migration from CQDaemon to CV, CV re-implements the same logic.
-//
-// Caveat: for smooth migration of other LUCI services in Go to PSSA,
-// auth.GetRPCTransport(ctx, auth.AsProject, ...) helpfully and transparently
-// defaults to auth.AsSelf if LUCI project doesn't have PSSA configured.
-// Thus CV can't rely on the above method as is.
 type prodFactory struct {
-	baseTransport      http.RoundTripper
-	legacyCache        *lru.Cache // caches legacy tokens and lack thereof per gerritHost.
+	baseTransport http.RoundTripper
+
 	mirrorHostPrefixes []string
 
 	mockMintProjectToken func(context.Context, auth.ProjectTokenParams) (*auth.Token, error)
 }
+
+var errEmptyProjectToken = errors.New("Project token is empty")
 
 func newProd(ctx context.Context, mirrorHostPrefixes ...string) (*prodFactory, error) {
 	t, err := auth.GetRPCTransport(ctx, auth.NoAuth)
@@ -66,9 +46,7 @@ func newProd(ctx context.Context, mirrorHostPrefixes ...string) (*prodFactory, e
 		return nil, err
 	}
 	return &prodFactory{
-		baseTransport: t,
-		// CV supports <20 legacy hosts. New ones shouldn't be added.
-		legacyCache:        lru.New(20),
+		baseTransport:      t,
 		mirrorHostPrefixes: mirrorHostPrefixes,
 	}, nil
 }
@@ -83,6 +61,9 @@ func (f *prodFactory) MakeClient(ctx context.Context, gerritHost, luciProject st
 	if strings.ContainsRune(luciProject, '.') {
 		panic(errors.Reason("swapped host %q with luciProject %q", gerritHost, luciProject).Err())
 	}
+	// TODO(crbug/824492): use auth.GetRPCTransport(ctx, auth.AsProject, ...)
+	// directly after pssa migration is over. Currently, we need a special
+	// error to detect whether pssa is configured or not.
 	t, err := f.transport(gerritHost, luciProject)
 	if err != nil {
 		return nil, err
@@ -91,9 +72,6 @@ func (f *prodFactory) MakeClient(ctx context.Context, gerritHost, luciProject st
 }
 
 func (f *prodFactory) transport(gerritHost, luciProject string) (http.RoundTripper, error) {
-	// Do what auth.GetRPCTransport(ctx, auth.AsProject, ...) would do,
-	// except default to legacy ~/.netrc creds if PSSA is not configured.
-	// See factory doc for more details.
 	return luciauth.NewModifyingTransport(f.baseTransport, func(req *http.Request) error {
 		tok, err := f.token(req.Context(), gerritHost, luciProject)
 		if err != nil {
@@ -117,52 +95,12 @@ func (f *prodFactory) token(ctx context.Context, gerritHost, luciProject string)
 	switch token, err := mintToken(ctx, req); {
 	case err != nil:
 		return nil, err
-	case token != nil:
+	case token == nil:
+		return nil, errors.Annotate(errEmptyProjectToken, "LUCI project: %q", luciProject).Err()
+	default:
 		return &oauth2.Token{
 			AccessToken: token.Token,
 			TokenType:   "Bearer",
 		}, nil
 	}
-
-	value, err := f.legacyCache.GetOrCreate(ctx, gerritHost, func() (value interface{}, ttl time.Duration, err error) {
-		nt := netrcToken{GerritHost: gerritHost}
-		switch err = datastore.Get(ctx, &nt); {
-		case err == datastore.ErrNoSuchEntity:
-			// While not expected in practice, speed up rollout of a fix by caching
-			// for a short time only.
-			ttl = 1 * time.Minute
-			value = ""
-			err = nil
-		case err != nil:
-			err = errors.Annotate(err, "failed to get legacy creds").Tag(transient.Tag).Err()
-		default:
-			value = nt.AccessToken
-			ttl = 10 * time.Minute
-		}
-		return
-	})
-
-	switch {
-	case err != nil:
-		return nil, err
-	case value.(string) == "":
-		return nil, errors.Reason("No legacy credentials for host %q", gerritHost).Err()
-	default:
-		return &oauth2.Token{
-			AccessToken: base64.StdEncoding.EncodeToString([]byte(value.(string))),
-			TokenType:   "Basic",
-		}, nil
-	}
-}
-
-// netrcToken stores ~/.netrc access tokens of CQDaemon.
-type netrcToken struct {
-	GerritHost  string `gae:"$id"`
-	AccessToken string `gae:",noindex"`
-}
-
-// SaveLegacyNetrcToken creates or updates legacy netrc token.
-func SaveLegacyNetrcToken(ctx context.Context, host, token string) error {
-	err := datastore.Put(ctx, &netrcToken{host, token})
-	return errors.Annotate(err, "failed to save legacy netrc token").Err()
 }
