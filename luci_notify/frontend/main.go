@@ -56,7 +56,7 @@ func main() {
 
 	server.Main(nil, modules, func(srv *server.Server) error {
 		// Cron endpoints.
-		cron.RegisterHandler("read-config", config.UpdateHandler)
+		cron.RegisterHandler("update-config", config.UpdateHandler)
 		cron.RegisterHandler("update-tree-status", notify.UpdateTreeStatus)
 
 		// Buildbucket Pub/Sub endpoint.
