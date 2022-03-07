@@ -22,19 +22,8 @@ import (
 // Collection of structs to describe how to lay out the overview pages of Milo.
 // There is an implicit hierarchy of Builder Group -> Builder.
 
-type Search struct {
-	// CIServices is a backing service for a Continuous Integration system,
-	// such as "buildbot", "swarmbucket", or "dm".
-	CIServices []CIService
-}
-
-// CIService is a backing service for a Continuous Integration system,
-// such as "buildbot", "swarmbucket", or "dm".
+// CIService is a backing service for a Continuous Integration system.
 type CIService struct {
-	// Name is the display name of the service, which could be "Buildbot",
-	// or "SwarmBucket"
-	Name string
-
 	// Host points to the specific instance of this CI Service.
 	Host *Link
 

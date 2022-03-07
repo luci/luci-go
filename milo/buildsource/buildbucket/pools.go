@@ -204,7 +204,7 @@ func processBots(c context.Context, descriptors []model.PoolDescriptor) error {
 }
 
 // UpdatePools is a cron job endpoint that:
-// 1. Fetches all the builders from our associated Swarmbucket instance.
+// 1. Fetches all the builders from our associated buildbucket instance.
 // 2. Consolidates all known descriptors (host+dimensions), saves BuilderPool.
 // 3. Fetches and saves BotPool data from swarming for all known descriptors.
 func UpdatePools(c context.Context) error {

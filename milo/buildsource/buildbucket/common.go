@@ -15,28 +15,7 @@
 package buildbucket
 
 import (
-	"context"
-	"fmt"
-	"net/http"
 	"time"
-
-	"go.chromium.org/luci/common/api/buildbucket/swarmbucket/v1"
-	"go.chromium.org/luci/server/auth"
 )
 
 const bbRPCTimeout = time.Minute - time.Second
-
-func newSwarmbucketClient(ctx context.Context, server string) (*swarmbucket.Service, error) {
-	// TODO(crbug/1006920): Do not leak the cancel context.
-	ctx, _ = context.WithTimeout(ctx, bbRPCTimeout)
-	t, err := auth.GetRPCTransport(ctx, auth.AsUser)
-	if err != nil {
-		return nil, err
-	}
-	client, err := swarmbucket.New(&http.Client{Transport: t})
-	if err != nil {
-		return nil, err
-	}
-	client.BasePath = fmt.Sprintf("https://%s/_ah/api/swarmbucket/v1/", server)
-	return client, nil
-}

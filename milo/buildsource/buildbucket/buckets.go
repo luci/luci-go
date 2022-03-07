@@ -106,7 +106,6 @@ func CIService(c context.Context) (*ui.CIService, error) {
 		return nil, errors.New("buildbucket host is missing in config")
 	}
 	result := &ui.CIService{
-		Name: "LUCI",
 		Host: ui.NewLink(bucketSettings.Name, "https://"+host,
 			fmt.Sprintf("buildbucket settings for %s", bucketSettings.Name)),
 	}

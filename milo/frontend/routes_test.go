@@ -298,18 +298,13 @@ func Frontpage() []TestBundle {
 
 func Search() []TestBundle {
 	data := templates.Args{
-		"search": ui.Search{
-			CIServices: []ui.CIService{
+		"ciService": ui.CIService{
+			BuilderGroups: []ui.BuilderGroup{
 				{
-					Name: "Module 1",
-					BuilderGroups: []ui.BuilderGroup{
-						{
-							Name: "Example main A",
-							Builders: []ui.Link{
-								*ui.NewLink("Example builder", "/main1/buildera", "Example label"),
-								*ui.NewLink("Example builder 2", "/main1/builderb", "Example label 2"),
-							},
-						},
+					Name: "Example main A",
+					Builders: []ui.Link{
+						*ui.NewLink("Example builder", "/main1/buildera", "Example label"),
+						*ui.NewLink("Example builder 2", "/main1/builderb", "Example label 2"),
 					},
 				},
 			},

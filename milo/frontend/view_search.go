@@ -18,11 +18,12 @@ import (
 	"fmt"
 	"net/http"
 
+	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/grpc/grpcutil"
 	"go.chromium.org/luci/server/router"
 	"go.chromium.org/luci/server/templates"
 
 	"go.chromium.org/luci/milo/buildsource/buildbucket"
-	"go.chromium.org/luci/milo/frontend/ui"
 )
 
 // openSearchXML is the template used to serve the OpenSearch Description Document.
@@ -38,22 +39,17 @@ var openSearchXML = `<?xml version="1.0" encoding="UTF-8"?>
   <Url type="text/html" template="https://%s/search/?q={searchTerms}" />
 </OpenSearchDescription>`
 
-func searchHandler(c *router.Context) {
+func searchHandler(c *router.Context) error {
 	buildbucketService, err := buildbucket.CIService(c.Context)
-	errMsg := ""
 	if err != nil {
-		errMsg = err.Error()
+		return errors.Annotate(err, "error when creating CI service").Tag(grpcutil.InternalTag).Err()
 	}
-	// TODO(crbug.com/998337): Now that we only have one service, simplify this code
-	// to not use a slice.
-	services := make([]ui.CIService, 0, 1)
-	if buildbucketService != nil {
-		services = append(services, *buildbucketService)
-	}
+
 	templates.MustRender(c.Context, c.Writer, "pages/search.html", templates.Args{
-		"search": &ui.Search{CIServices: services},
-		"error":  errMsg,
+		"ciService": buildbucketService,
 	})
+
+	return nil
 }
 
 // searchXMLHandler returns the opensearch document for this domain.
