@@ -1,0 +1,52 @@
+// Copyright 2022 The LUCI Authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package auth.service;
+
+option go_package = "go.chromium.org/luci/auth_service/api/rpcpb";
+
+import "google/protobuf/timestamp.proto";
+
+// AuthDB contains methods to work with AuthDB.
+service AuthDB {
+  // GetSnapshot serves the deflated AuthDB proto
+  // message with snapshot of all groups.
+  rpc GetSnapshot(GetSnapshotRequest) returns (Snapshot);
+}
+
+// GetSnapshotRequest is passed to GetSnapshot rpc.
+message GetSnapshotRequest {
+  // Version of the snapshot to get or 0 to get the latest one.
+  // Not all versions may be available (i.e. there may be gaps in revision
+  // numbers).
+  int64 revision = 1;
+  // If true response will not return actual snapshot, just its SHA256
+  // hash, revision number and timestamp.
+  bool skip_body = 2;
+}
+
+// Snapshot contains information about a specific AuthDB revision.
+// The revision number is used to identify this snapshot.
+message Snapshot {
+  // Revision number of this Snapshot.
+  int64 auth_db_rev = 1;
+  // SHA256 hash for this Snapshot.
+  string auth_db_sha256 = 2;
+  // Deflated AuthDB proto message, omitted if skip_body is true.
+  bytes auth_db_deflated = 3;
+  // Time that this Snapshot was created.
+  google.protobuf.Timestamp created_ts = 4;
+}
