@@ -15,7 +15,7 @@
   <h2> LUCI
     {{ if .Host }} ({{ .Host.HTML }}) {{ end }}
   </h2>
-  {{ range ciService.BuilderGroups }}
+  {{ range .ciService.BuilderGroups }}
     <div class="builder-group" data-filterable="{{ .Name | toLower }}">
       <h3 class="builder-group-name"> {{ .Name }} </h3>
       <ul>
