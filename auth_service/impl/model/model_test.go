@@ -16,6 +16,7 @@ package model
 
 import (
 	"context"
+	"crypto/sha256"
 	"fmt"
 	"testing"
 	"time"
@@ -124,6 +125,45 @@ func testIPAllowlist(ctx context.Context, name string, subnets []string) *AuthIP
 		CreatedTS:                testCreatedTS,
 		CreatedBy:                "user:test-creator@example.com",
 	}
+}
+
+func testAuthDBSnapshot(ctx context.Context, rev int64) *AuthDBSnapshot {
+	return &AuthDBSnapshot{
+		Kind:           "AuthDBSnapshot",
+		ID:             rev,
+		AuthDBDeflated: []byte("test-db-deflated"),
+		AuthDBSha256:   "test-sha-256",
+		CreatedTS:      testCreatedTS,
+	}
+}
+
+func testAuthDBSnapshotSharded(ctx context.Context, rev int64, shardCount int) (*AuthDBSnapshot, []byte, error) {
+	snapshot := &AuthDBSnapshot{
+		Kind:         "AuthDBSnapshot",
+		ID:           rev,
+		ShardIDs:     make([]string, 0, shardCount),
+		AuthDBSha256: "test-sha-256",
+		CreatedTS:    testCreatedTS,
+	}
+
+	var expectedBlob []byte
+
+	for i := 0; i < shardCount; i++ {
+		blobShard := []byte(fmt.Sprintf("test-authdb-shard-%v", i))
+		expectedBlob = append(expectedBlob, blobShard...)
+		hash := sha256.Sum256(blobShard)
+		shardID := fmt.Sprintf("%v:%s", rev, hash)
+		shard := &AuthDBShard{
+			Kind: "AuthDBShard",
+			ID:   shardID,
+			Blob: blobShard,
+		}
+		if err := datastore.Put(ctx, shard); err != nil {
+			return nil, nil, err
+		}
+		snapshot.ShardIDs = append(snapshot.ShardIDs, shardID)
+	}
+	return snapshot, expectedBlob, nil
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -257,5 +297,85 @@ func TestGetAuthGlobalConfig(t *testing.T) {
 		actual, err := GetAuthGlobalConfig(ctx)
 		So(err, ShouldBeNil)
 		So(actual, ShouldResemble, cfg)
+	})
+}
+
+func TestGetAuthDBSnapshot(t *testing.T) {
+	t.Parallel()
+	ctx := memory.Use(context.Background())
+
+	Convey("Testing GetAuthDBSnapshot", t, func() {
+		_, err := GetAuthDBSnapshot(ctx, 42)
+		So(err, ShouldEqual, datastore.ErrNoSuchEntity)
+
+		snapshot := testAuthDBSnapshot(ctx, 42)
+
+		err = datastore.Put(ctx, snapshot)
+		So(err, ShouldBeNil)
+
+		actual, err := GetAuthDBSnapshot(ctx, 42)
+		So(err, ShouldBeNil)
+		So(actual, ShouldResemble, snapshot)
+
+		err = datastore.Put(ctx, snapshot)
+		So(err, ShouldBeNil)
+
+		actual, err = GetAuthDBSnapshot(ctx, 42)
+		So(err, ShouldBeNil)
+		So(actual, ShouldResemble, snapshot)
+	})
+
+	Convey("Testing GetAuthDBSnapshotLatest", t, func() {
+		_, err := GetAuthDBSnapshotLatest(ctx)
+		So(err, ShouldEqual, datastore.ErrNoSuchEntity)
+
+		snapshot := testAuthDBSnapshot(ctx, 42)
+
+		authDBSnapshotLatest := &AuthDBSnapshotLatest{
+			Kind:         "AuthDBSnapshotLatest",
+			ID:           "latest",
+			AuthDBRev:    snapshot.ID,
+			AuthDBSha256: snapshot.AuthDBSha256,
+			ModifiedTS:   testModifiedTS,
+		}
+		err = datastore.Put(ctx, authDBSnapshotLatest)
+
+		So(err, ShouldBeNil)
+
+		actual, err := GetAuthDBSnapshotLatest(ctx)
+		So(err, ShouldBeNil)
+		So(actual, ShouldResemble, authDBSnapshotLatest)
+	})
+
+	Convey("Testing unshardAuthDB", t, func() {
+		authDBShard1 := &AuthDBShard{
+			Kind: "AuthDBShard",
+			ID:   "42:7F404D83A3F440591C25A09B0A471EC4BB7D4EA3B50C081BCE37AA879E15EB69",
+			Blob: []byte("half-1"),
+		}
+		authDBShard2 := &AuthDBShard{
+			Kind: "AuthDBShard",
+			ID:   "42:55915DB56DAD50F22BD882DACEE545FEFCA583CB8B3DACC4E5D9CAC9A4A2460C",
+			Blob: []byte("half-2"),
+		}
+		shardIDs := []string{authDBShard1.ID, authDBShard2.ID}
+
+		expectedBlob := []byte("half-1half-2")
+		So(datastore.Put(ctx, authDBShard1), ShouldBeNil)
+		So(datastore.Put(ctx, authDBShard2), ShouldBeNil)
+
+		actualBlob, err := unshardAuthDB(ctx, shardIDs)
+		So(err, ShouldBeNil)
+		So(actualBlob, ShouldResemble, expectedBlob)
+	})
+
+	Convey("Testing GetAuthDBSnapshot with sharded DB", t, func() {
+		snapshot, expectedAuthDB, err := testAuthDBSnapshotSharded(ctx, 42, 3)
+		So(err, ShouldBeNil)
+		So(datastore.Put(ctx, snapshot), ShouldBeNil)
+
+		actualSnapshot, err := GetAuthDBSnapshot(ctx, 42)
+		So(err, ShouldBeNil)
+		So(actualSnapshot.AuthDBDeflated, ShouldResemble, expectedAuthDB)
 	})
 }

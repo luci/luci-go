@@ -157,6 +157,51 @@ type AuthIPAllowlist struct {
 	CreatedBy string `gae:"created_by"`
 }
 
+// AuthDBSnapshot Contains deflated serialized ReplicationPushRequest for some revision.
+// Root entity. ID is corresponding revision number (as integer). Immutable.
+type AuthDBSnapshot struct {
+	Kind string `gae:"$kind,AuthDBSnapshot"`
+	ID   int64  `gae:"$id"`
+
+	// AuthDBDeflated is the deflated serialized ReplicationPushRequest proto message.
+	AuthDBDeflated []byte `gae:"auth_db_deflated,noindex"`
+
+	// ShardIDs is a list of shard IDs if sharded or empty if auth_db_deflated should be used.
+	ShardIDs []string `gae:"shard_ids,noindex"`
+
+	// AuthDBSha256 is the SHA256 hex digest of auth_db (before compression).
+	AuthDBSha256 string `gae:"auth_db_sha256,noindex"`
+
+	// CreatedTS is when this snapshot was created.
+	CreatedTS time.Time `gae:"created_ts"`
+}
+
+// AuthDBShard is a shard of deflated serialized ReplicationPushRequest.
+// Root entity. ID is "<auth_db_revision:<blob hash>
+type AuthDBShard struct {
+	Kind string `gae:"$kind,AuthDBShard"`
+	ID   string `gae:"$id"`
+
+	// Blob represents a sharded part of the full AuthDB blob.
+	Blob []byte `gae:"blob,noindex"`
+}
+
+// AuthDBSnapshotLatest is a Pointer to latest stored AuthDBSnapshot entity.
+// Exists in single instance with key ('AuthDBSnapshotLatest', 'latest').
+type AuthDBSnapshotLatest struct {
+	Kind string `gae:"$kind,AuthDBSnapshotLatest"`
+	ID   string `gae:"$id"`
+
+	// AuthDBRev is the revision number of latest stored AuthDBSnaphost. Monotonically increases.
+	AuthDBRev int64 `gae:"auth_db_rev,noindex"`
+
+	// AuthDBSha256 is the SHA256 hex digest of auth_db (before compression).
+	AuthDBSha256 string `gae:"auth_db_sha256,noindex"`
+
+	// CreatedTS is when this snapshot was created.
+	ModifiedTS time.Time `gae:"modified_ts,noindex"`
+}
+
 // RootKey gets the root key of the entity group with all AuthDB entities.
 func RootKey(ctx context.Context) *datastore.Key {
 	return datastore.NewKey(ctx, "AuthGlobalConfig", "root", 0, nil)
@@ -269,6 +314,85 @@ func GetAuthGlobalConfig(ctx context.Context) (*AuthGlobalConfig, error) {
 	default:
 		return nil, errors.Annotate(err, "error getting AuthGlobalConfig").Err()
 	}
+}
+
+// GetAuthDBSnapshot returns the AuthDBSnapshot datastore entity.
+//
+// Returns datastore.ErrNoSuchEntity if the AuthDBSnapshot is not present.
+// Returns an annotated error for other errors.
+func GetAuthDBSnapshot(ctx context.Context, rev int64) (*AuthDBSnapshot, error) {
+	authDBSnapshot := &AuthDBSnapshot{
+		Kind: "AuthDBSnapshot",
+		ID:   rev,
+	}
+	switch err := datastore.Get(ctx, authDBSnapshot); {
+	case err == nil:
+		if len(authDBSnapshot.ShardIDs) != 0 {
+			authDBSnapshot.AuthDBDeflated, err = unshardAuthDB(ctx, authDBSnapshot.ShardIDs)
+			if err != nil {
+				return nil, err
+			}
+		}
+		return authDBSnapshot, nil
+	case err == datastore.ErrNoSuchEntity:
+		return nil, err
+	default:
+		return nil, errors.Annotate(err, "error getting AuthDBSnapshot %d", rev).Err()
+	}
+}
+
+// GetAuthDBSnapshotLatest returns the AuthDBSnapshotLatest datastore entity.
+//
+// Returns datastore.ErrNoSuchEntity if the AuthDBSnapshotLatest is not present.
+// Returns an annotated error for other errors.
+func GetAuthDBSnapshotLatest(ctx context.Context) (*AuthDBSnapshotLatest, error) {
+	authDBSnapshotLatest := &AuthDBSnapshotLatest{
+		Kind: "AuthDBSnapshotLatest",
+		ID:   "latest",
+	}
+
+	switch err := datastore.Get(ctx, authDBSnapshotLatest); {
+	case err == nil:
+		return authDBSnapshotLatest, nil
+	case err == datastore.ErrNoSuchEntity:
+		return nil, err
+	default:
+		return nil, errors.Annotate(err, "error getting AuthDBSnapshotLatest").Err()
+	}
+}
+
+// Fetches a list of AuthDBShard entities and merges their payload.
+//
+// shardIDs:
+// 	a list of shard IDs as produced by shard_authdb.
+// 	comes in format "authdb_rev:sha256hash(blob)", e.g. 42:7F404D83A3F4405...
+//
+// Returns datastore.ErrNoSuchEntity if an AuthDBShard is not present.
+// Returns an annotated error for other errors.
+// Returns the merged AuthDB blob on success.
+func unshardAuthDB(ctx context.Context, shardIDs []string) ([]byte, error) {
+	shards := make([]*AuthDBShard, len(shardIDs))
+	for index, id := range shardIDs {
+		shards[index] = &AuthDBShard{
+			Kind: "AuthDBShard",
+			ID:   id,
+		}
+	}
+
+	if err := datastore.Get(ctx, shards); err != nil {
+		return nil, errors.Annotate(err, "error getting AuthDBShards").Err()
+	}
+
+	authDBBlobSize := 0
+	for _, shard := range shards {
+		authDBBlobSize += len(shard.Blob)
+	}
+
+	authDBBlob := make([]byte, 0, authDBBlobSize)
+	for _, shard := range shards {
+		authDBBlob = append(authDBBlob, shard.Blob...)
+	}
+	return authDBBlob, nil
 }
 
 // ToProto converts the AuthGroup entity to the protobuffer
