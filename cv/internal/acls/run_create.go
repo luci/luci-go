@@ -102,46 +102,15 @@ type runCreateChecker struct {
 	runMode                 run.Mode
 	allowOwnerIfSubmittable cfgpb.Verifiers_GerritCQAbility_CQAction
 
-	eval struct {
-		owner     identity.Identity
-		triggerer identity.Identity
+	// fields to hold the evaluation results of the CL.
+	// -----------------------------------------------
 
-		isApproved  bool // if the CL has been approved (LGTMed) in Gerrit
-		isCommitter bool // if the triggerer is a committer
-		isDryRunner bool // if the triggerer is a dry runner
+	owner     identity.Identity
+	triggerer identity.Identity
 
-	}
-}
-
-func evaluateCL(ctx context.Context, cg *prjcfg.ConfigGroup, tr *run.Trigger, cl *changelist.CL) (runCreateChecker, error) {
-	gVerifier := cg.Content.Verifiers.GetGerritCqAbility()
-	ck := runCreateChecker{
-		cl:                      cl,
-		runMode:                 run.Mode(tr.Mode),
-		allowOwnerIfSubmittable: gVerifier.GetAllowOwnerIfSubmittable(),
-	}
-
-	var err error
-	if ck.eval.triggerer, err = identity.MakeIdentity("user:" + tr.Email); err != nil {
-		return ck, errors.Annotate(err, "triggerer %q", tr.Email).Err()
-	}
-	if ck.eval.owner, err = cl.Snapshot.OwnerIdentity(); err != nil {
-		return ck, errors.Annotate(err, "CL owner identity").Err()
-	}
-	if ck.eval.isApproved, err = cl.Snapshot.IsSubmittable(); err != nil {
-		return ck, errors.Annotate(err, "checking if CL is submittable").Err()
-	}
-	if grps := gVerifier.GetCommitterList(); len(grps) > 0 {
-		if ck.eval.isCommitter, err = auth.GetState(ctx).DB().IsMember(ctx, ck.eval.triggerer, grps); err != nil {
-			return ck, errors.Annotate(err, "checking if triggerer %q is committer", ck.eval.triggerer).Err()
-		}
-	}
-	if grps := gVerifier.GetDryRunAccessList(); len(grps) > 0 {
-		if ck.eval.isDryRunner, err = auth.GetState(ctx).DB().IsMember(ctx, ck.eval.triggerer, grps); err != nil {
-			return ck, errors.Annotate(err, "checking if triggerer %q is dry-runner", ck.eval.triggerer).Err()
-		}
-	}
-	return ck, nil
+	isApproved  bool // if the CL has been approved (LGTMed) in Gerrit
+	isCommitter bool // if the triggerer is a committer
+	isDryRunner bool // if the triggerer is a dry runner
 }
 
 func (ck runCreateChecker) canCreateRun() (bool, string) {
@@ -157,8 +126,8 @@ func (ck runCreateChecker) canCreateRun() (bool, string) {
 
 func (ck runCreateChecker) canCreateFullRun() (bool, string) {
 	// A committer can run a full run, as long as the CL has been approved.
-	if ck.eval.isCommitter {
-		if ck.eval.isApproved {
+	if ck.isCommitter {
+		if ck.isApproved {
 			return true, ""
 		}
 		return false, noLGTM
@@ -175,13 +144,13 @@ func (ck runCreateChecker) canCreateFullRun() (bool, string) {
 	// have been approved in Gerrit.
 	//
 	// For more context, crbug.com/692611 and go/cq-after-lgtm.
-	if ck.eval.triggerer != ck.eval.owner {
-		return false, fmt.Sprintf(notOwnerNotCommitter, ck.eval.triggerer, ck.eval.triggerer)
+	if ck.triggerer != ck.owner {
+		return false, fmt.Sprintf(notOwnerNotCommitter, ck.triggerer, ck.triggerer)
 	}
-	if !ck.eval.isDryRunner && ck.allowOwnerIfSubmittable != cfgpb.Verifiers_GerritCQAbility_COMMIT {
-		return false, fmt.Sprintf(ownerNotCommitter, ck.eval.triggerer, ck.eval.triggerer)
+	if !ck.isDryRunner && ck.allowOwnerIfSubmittable != cfgpb.Verifiers_GerritCQAbility_COMMIT {
+		return false, fmt.Sprintf(ownerNotCommitter, ck.triggerer, ck.triggerer)
 	}
-	if !ck.eval.isApproved {
+	if !ck.isApproved {
 		return false, noLGTM
 	}
 	return true, ""
@@ -189,8 +158,8 @@ func (ck runCreateChecker) canCreateFullRun() (bool, string) {
 
 func (ck runCreateChecker) canCreateDryRun() (bool, string) {
 	// A committer can trigger a [Quick]DryRun w/o approval for own CLs.
-	if ck.eval.isCommitter {
-		if ck.eval.triggerer == ck.eval.owner {
+	if ck.isCommitter {
+		if ck.triggerer == ck.owner {
 			return true, ""
 		}
 		// In order for a committer to trigger a dry-run for
@@ -217,17 +186,17 @@ func (ck runCreateChecker) canCreateDryRun() (bool, string) {
 	// to trigger a dry-run for own CLs.
 	//
 	// For more context, crbug.com/692611 and go/cq-after-lgtm.
-	if ck.eval.triggerer != ck.eval.owner {
-		return false, fmt.Sprintf(notOwnerNotCommitter, ck.eval.triggerer, ck.eval.triggerer)
+	if ck.triggerer != ck.owner {
+		return false, fmt.Sprintf(notOwnerNotCommitter, ck.triggerer, ck.triggerer)
 	}
-	if !ck.eval.isDryRunner {
+	if !ck.isDryRunner {
 		switch ck.allowOwnerIfSubmittable {
 		case cfgpb.Verifiers_GerritCQAbility_DRY_RUN:
 		case cfgpb.Verifiers_GerritCQAbility_COMMIT:
 		default:
-			return false, fmt.Sprintf(ownerNotDryRunner, ck.eval.triggerer, ck.eval.triggerer)
+			return false, fmt.Sprintf(ownerNotDryRunner, ck.triggerer, ck.triggerer)
 		}
-		if !ck.eval.isApproved {
+		if !ck.isApproved {
 			return false, noLGTM
 		}
 	}
@@ -240,15 +209,55 @@ func (ck runCreateChecker) canCreateDryRun() (bool, string) {
 // to create the Run for the CLs.
 func CheckRunCreate(ctx context.Context, cg *prjcfg.ConfigGroup, trs []*run.Trigger, cls []*changelist.CL) (CheckResult, error) {
 	res := make(CheckResult, len(cls))
-	for i, cl := range cls {
-		ck, err := evaluateCL(ctx, cg, trs[i], cl)
-		if err != nil {
-			return nil, errors.Annotate(err, "CL(%d)", cl.ID).Err()
-		}
+	cks, err := evaluateCLs(ctx, cg, trs, cls)
+	if err != nil {
+		return nil, err
+	}
+	for _, ck := range cks {
 		if ok, msg := ck.canCreateRun(); !ok {
-			res[cl] = msg
+			res[ck.cl] = msg
 			continue
 		}
 	}
 	return res, nil
+}
+
+func evaluateCLs(ctx context.Context, cg *prjcfg.ConfigGroup, trs []*run.Trigger, cls []*changelist.CL) ([]*runCreateChecker, error) {
+	gVerifier := cg.Content.Verifiers.GetGerritCqAbility()
+	commGroups := gVerifier.GetCommitterList()
+	dryGroups := gVerifier.GetDryRunAccessList()
+
+	var err error
+	cks := make([]*runCreateChecker, len(cls))
+	for i, cl := range cls {
+		tr := trs[i]
+		ck := &runCreateChecker{
+			cl:                      cl,
+			runMode:                 run.Mode(tr.Mode),
+			allowOwnerIfSubmittable: gVerifier.GetAllowOwnerIfSubmittable(),
+		}
+
+		ck.triggerer, err = identity.MakeIdentity("user:" + tr.Email)
+		if err != nil {
+			return nil, errors.Annotate(err, "CL(%d): triggerer %q", cl.ID, tr.Email).Err()
+		}
+		if len(commGroups) > 0 {
+			if ck.isCommitter, err = auth.GetState(ctx).DB().IsMember(ctx, ck.triggerer, commGroups); err != nil {
+				return nil, errors.Annotate(err, "CL(%d)", cl.ID).Err()
+			}
+		}
+		if len(dryGroups) > 0 {
+			if ck.isDryRunner, err = auth.GetState(ctx).DB().IsMember(ctx, ck.triggerer, dryGroups); err != nil {
+				return nil, errors.Annotate(err, "CL(%d)", cl.ID).Err()
+			}
+		}
+		if ck.owner, err = cl.Snapshot.OwnerIdentity(); err != nil {
+			return nil, errors.Annotate(err, "CL(%d)", cl.ID).Err()
+		}
+		if ck.isApproved, err = cl.Snapshot.IsSubmittable(); err != nil {
+			return nil, errors.Annotate(err, "CL(%d)", cl.ID).Err()
+		}
+		cks[i] = ck
+	}
+	return cks, nil
 }
