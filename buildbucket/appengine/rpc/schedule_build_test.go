@@ -4872,6 +4872,71 @@ func TestScheduleBuild(t *testing.T) {
 					So(sch.Tasks(), ShouldHaveLength, 1)
 				})
 
+				Convey("dry_run", func() {
+					So(datastore.Put(ctx, &model.Builder{
+						Parent: model.BucketKey(ctx, "project", "bucket"),
+						ID:     "builder",
+						Config: &pb.Builder{
+							BuildNumbers: pb.Toggle_YES,
+							Name:         "builder",
+						},
+					}), ShouldBeNil)
+
+					req.DryRun = true
+					rsp, err := srv.ScheduleBuild(ctx, req)
+					So(err, ShouldBeNil)
+					So(rsp, ShouldResembleProto, &pb.Build{
+						Builder: &pb.BuilderID{
+							Project: "project",
+							Bucket:  "bucket",
+							Builder: "builder",
+						},
+						Input: &pb.Build_Input{
+							Properties: &structpb.Struct{},
+						},
+						Tags: []*pb.StringPair{
+							{
+								Key:   "builder",
+								Value: "builder",
+							},
+						},
+						Infra: &pb.BuildInfra{
+							Bbagent: &pb.BuildInfra_BBAgent{
+								CacheDir:    "cache",
+								PayloadPath: "kitchen-checkout",
+							},
+							Buildbucket: &pb.BuildInfra_Buildbucket{
+								Agent: &pb.BuildInfra_Buildbucket_Agent{
+									Input: &pb.BuildInfra_Buildbucket_Agent_Input{},
+								},
+							},
+							Logdog: &pb.BuildInfra_LogDog{
+								Project: "project",
+							},
+							Resultdb: &pb.BuildInfra_ResultDB{
+								Hostname: "rdbHost",
+							},
+							Swarming: &pb.BuildInfra_Swarming{
+								Caches: []*pb.BuildInfra_Swarming_CacheEntry{
+									{
+										Name: "builder_1809c38861a9996b1748e4640234fbd089992359f6f23f62f68deb98528f5f2b_v2",
+										Path: "builder",
+										WaitForWarmCache: &durationpb.Duration{
+											Seconds: 240,
+										},
+									},
+								},
+								Priority: 30,
+							},
+						},
+						Exe:               &pb.Executable{Cmd: []string{"recipes"}},
+						SchedulingTimeout: &durationpb.Duration{Seconds: 21600},
+						ExecutionTimeout:  &durationpb.Duration{Seconds: 10800},
+						GracePeriod:       &durationpb.Duration{Seconds: 30},
+					})
+					So(sch.Tasks(), ShouldBeEmpty)
+				})
+
 				Convey("request ID", func() {
 					req := &pb.ScheduleBuildRequest{
 						Builder: &pb.BuilderID{

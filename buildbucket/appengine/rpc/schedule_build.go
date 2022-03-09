@@ -1400,6 +1400,10 @@ func (*Builds) ScheduleBuild(ctx context.Context, req *pb.ScheduleBuildRequest) 
 		}
 		return nil, err
 	}
+	if req.DryRun {
+		// Dry run build is not saved in datastore, return the proto right away.
+		return blds[0].Proto, nil
+	}
 	return blds[0].ToProto(ctx, m)
 }
 
