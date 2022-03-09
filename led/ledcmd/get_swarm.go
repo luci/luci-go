@@ -18,6 +18,7 @@ import (
 	"context"
 	"net/http"
 
+	bbpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/api/swarming/swarming/v1"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
@@ -59,7 +60,7 @@ type GetFromSwarmingTaskOpts struct {
 
 // GetFromSwarmingTask retrieves and renders a JobDefinition from the given
 // swarming task, printing it to stdout and returning an error.
-func GetFromSwarmingTask(ctx context.Context, authClient *http.Client, opts GetFromSwarmingTaskOpts) (*job.Definition, error) {
+func GetFromSwarmingTask(ctx context.Context, authClient *http.Client, bld *bbpb.Build, opts GetFromSwarmingTaskOpts) (*job.Definition, error) {
 	if opts.KitchenSupport == nil {
 		opts.KitchenSupport = job.NoKitchenSupport()
 	}
@@ -74,7 +75,7 @@ func GetFromSwarmingTask(ctx context.Context, authClient *http.Client, opts GetF
 
 	jd, err := jobcreate.FromNewTaskRequest(
 		ctx, taskRequestToNewTaskRequest(req), opts.Name,
-		opts.SwarmingHost, opts.KitchenSupport, opts.PriorityDiff)
+		opts.SwarmingHost, opts.KitchenSupport, opts.PriorityDiff, bld)
 	if err != nil {
 		return nil, err
 	}

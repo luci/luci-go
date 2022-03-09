@@ -19,11 +19,12 @@ import (
 	"fmt"
 	"net/http"
 
+	"google.golang.org/protobuf/types/known/fieldmaskpb"
+
 	bbpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/led/job"
-	"google.golang.org/genproto/protobuf/field_mask"
 )
 
 // GetBuildOpts are the options for GetBuild.
@@ -42,8 +43,19 @@ func GetBuild(ctx context.Context, authClient *http.Client, opts GetBuildOpts) (
 
 	answer, err := bbucket.GetBuild(ctx, &bbpb.GetBuildRequest{
 		Id: opts.BuildID,
-		Fields: &field_mask.FieldMask{
-			Paths: []string{"infra"},
+		Mask: &bbpb.BuildMask{
+			Fields: &fieldmaskpb.FieldMask{
+				Paths: []string{
+					"builder",
+					"infra",
+					"input",
+					"scheduling_timeout",
+					"execution_timeout",
+					"grace_period",
+					"exe",
+					"tags",
+				},
+			},
 		},
 	})
 	if err != nil {
@@ -62,7 +74,7 @@ func GetBuild(ctx context.Context, authClient *http.Client, opts GetBuildOpts) (
 		return nil, errors.New("unable to find swarming hostname on buildbucket task")
 	}
 
-	return GetFromSwarmingTask(ctx, authClient, GetFromSwarmingTaskOpts{
+	return GetFromSwarmingTask(ctx, authClient, answer, GetFromSwarmingTaskOpts{
 		SwarmingHost:   swarmingHostname,
 		TaskID:         swarmingTaskID,
 		PinBotID:       opts.PinBotID,

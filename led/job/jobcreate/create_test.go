@@ -23,10 +23,13 @@ import (
 	"io/ioutil"
 	"os"
 	"testing"
+	"time"
 
 	"github.com/golang/protobuf/jsonpb"
 	. "github.com/smartystreets/goconvey/convey"
+	"google.golang.org/protobuf/types/known/durationpb"
 
+	bbpb "go.chromium.org/luci/buildbucket/proto"
 	swarming "go.chromium.org/luci/common/api/swarming/swarming/v1"
 	. "go.chromium.org/luci/common/testing/assertions"
 
@@ -45,7 +48,7 @@ func readTestFixture(fixtureBaseName string) *job.Definition {
 	jd, err := FromNewTaskRequest(
 		context.Background(), req,
 		"test_name", "swarming.example.com",
-		job.NoKitchenSupport(), 10)
+		job.NoKitchenSupport(), 10, nil)
 	So(err, ShouldBeNil)
 	So(jd, ShouldNotBeNil)
 
@@ -108,5 +111,53 @@ func TestCreateBBagent(t *testing.T) {
 		So(jd.GetBuildbucket(), ShouldNotBeNil)
 		So(jd.Info().SwarmingHostname(), ShouldEqual, "chromium-swarm-dev.appspot.com")
 		So(jd.Info().TaskName(), ShouldEqual, "led: test_name")
+	})
+
+	Convey(`consume bbagent buildbucket swarming task with build`, t, func() {
+		bld := &bbpb.Build{
+			Builder: &bbpb.BuilderID{
+				Project: "project",
+				Bucket:  "bucket",
+				Builder: "builder",
+			},
+			Infra: &bbpb.BuildInfra{
+				Bbagent: &bbpb.BuildInfra_BBAgent{
+					PayloadPath:            "path",
+					CacheDir:               "dir",
+					KnownPublicGerritHosts: []string{"host"},
+				},
+				Swarming: &bbpb.BuildInfra_Swarming{
+					Priority: 25,
+				},
+				Buildbucket: &bbpb.BuildInfra_Buildbucket{},
+				Logdog:      &bbpb.BuildInfra_LogDog{},
+			},
+			Input:             &bbpb.Build_Input{},
+			Exe:               &bbpb.Executable{},
+			SchedulingTimeout: durationpb.New(time.Hour),
+			ExecutionTimeout:  durationpb.New(2 * time.Hour),
+			GracePeriod:       durationpb.New(time.Minute),
+		}
+		data, err := ioutil.ReadFile(fmt.Sprintf("testdata/%s.json", "bbagent_cas"))
+		So(err, ShouldBeNil)
+
+		req := &swarming.SwarmingRpcsNewTaskRequest{}
+		So(json.NewDecoder(bytes.NewReader(data)).Decode(req), ShouldBeNil)
+
+		jd, err := FromNewTaskRequest(
+			context.Background(), req,
+			"test_name", "swarming.example.com",
+			job.NoKitchenSupport(), 10, bld)
+		So(err, ShouldBeNil)
+		So(jd, ShouldNotBeNil)
+
+		So(jd.GetBuildbucket(), ShouldNotBeNil)
+		So(jd.Info().TaskName(), ShouldEqual, "led: test_name")
+		So(jd.GetBuildbucket().BbagentArgs, ShouldResembleProto, &bbpb.BBAgentArgs{
+			PayloadPath:            bld.Infra.Bbagent.PayloadPath,
+			CacheDir:               bld.Infra.Bbagent.CacheDir,
+			KnownPublicGerritHosts: bld.Infra.Bbagent.KnownPublicGerritHosts,
+			Build:                  bld,
+		})
 	})
 }

@@ -16,10 +16,12 @@ package jobcreate
 
 import (
 	"context"
+	"fmt"
 	"path"
 	"strings"
 
 	"go.chromium.org/luci/buildbucket/cmd/bbagent/bbinput"
+	bbpb "go.chromium.org/luci/buildbucket/proto"
 	swarming "go.chromium.org/luci/common/api/swarming/swarming/v1"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/led/job"
@@ -50,7 +52,7 @@ func detectMode(r *swarming.SwarmingRpcsNewTaskRequest) string {
 // If the task's first slice looks like either a bbagent or kitchen-based
 // Buildbucket task, the returned Definition will have the `buildbucket`
 // field populated, otherwise the `swarming` field will be populated.
-func FromNewTaskRequest(ctx context.Context, r *swarming.SwarmingRpcsNewTaskRequest, name, swarmingHost string, ks job.KitchenSupport, priorityDiff int) (ret *job.Definition, err error) {
+func FromNewTaskRequest(ctx context.Context, r *swarming.SwarmingRpcsNewTaskRequest, name, swarmingHost string, ks job.KitchenSupport, priorityDiff int, bld *bbpb.Build) (ret *job.Definition, err error) {
 	if len(r.TaskSlices) == 0 {
 		return nil, errors.New("swarming tasks without task slices are not supported")
 	}
@@ -67,8 +69,21 @@ func FromNewTaskRequest(ctx context.Context, r *swarming.SwarmingRpcsNewTaskRequ
 		bb := &job.Buildbucket{}
 		ret.JobType = &job.Definition_Buildbucket{Buildbucket: bb}
 		bbCommonFromTaskRequest(bb, r)
+		if bld != nil {
+			bb.BbagentArgs = bbagentArgsFromBuild(bld)
+		} else {
+			cmd := r.TaskSlices[0].Properties.Command
+			bb.BbagentArgs, err = bbinput.Parse(cmd[len(cmd)-1])
+		}
 		cmd := r.TaskSlices[0].Properties.Command
-		bb.BbagentArgs, err = bbinput.Parse(cmd[len(cmd)-1])
+		switch {
+		case bld != nil:
+			bb.BbagentArgs = bbagentArgsFromBuild(bld)
+		case len(cmd) == 2:
+			bb.BbagentArgs, err = bbinput.Parse(cmd[len(cmd)-1])
+		default:
+			err = fmt.Errorf("bbagent constant length arg is not supported by get-swarm")
+		}
 
 	case "kitchen":
 		bb := &job.Buildbucket{LegacyKitchen: true}
@@ -173,4 +188,14 @@ func populateCasPayload(cas *swarmingpb.CASReference, cir *swarming.SwarmingRpcs
 	}
 
 	return nil
+}
+
+// TODO(crbug.com/1098551): Invert this and make led use the build proto directly.
+func bbagentArgsFromBuild(bld *bbpb.Build) *bbpb.BBAgentArgs {
+	return &bbpb.BBAgentArgs{
+		PayloadPath:            bld.Infra.Bbagent.PayloadPath,
+		CacheDir:               bld.Infra.Bbagent.CacheDir,
+		KnownPublicGerritHosts: bld.Infra.Bbagent.KnownPublicGerritHosts,
+		Build:                  bld,
+	}
 }
