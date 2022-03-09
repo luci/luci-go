@@ -84,7 +84,7 @@ func GetBuilder(ctx context.Context, authClient *http.Client, opts GetBuildersOp
 
 	jd, err := jobcreate.FromNewTaskRequest(
 		ctx, newTask, fmt.Sprintf(`get-builder %s:%s`, opts.Bucket, opts.Builder),
-		answer.SwarmingHost, opts.KitchenSupport, opts.PriorityDiff, nil)
+		answer.SwarmingHost, opts.KitchenSupport, opts.PriorityDiff, nil, authClient)
 	if err != nil {
 		return nil, err
 	}

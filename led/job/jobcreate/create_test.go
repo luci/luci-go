@@ -48,7 +48,7 @@ func readTestFixture(fixtureBaseName string) *job.Definition {
 	jd, err := FromNewTaskRequest(
 		context.Background(), req,
 		"test_name", "swarming.example.com",
-		job.NoKitchenSupport(), 10, nil)
+		job.NoKitchenSupport(), 10, nil, nil)
 	So(err, ShouldBeNil)
 	So(jd, ShouldNotBeNil)
 
@@ -147,7 +147,7 @@ func TestCreateBBagent(t *testing.T) {
 		jd, err := FromNewTaskRequest(
 			context.Background(), req,
 			"test_name", "swarming.example.com",
-			job.NoKitchenSupport(), 10, bld)
+			job.NoKitchenSupport(), 10, bld, nil)
 		So(err, ShouldBeNil)
 		So(jd, ShouldNotBeNil)
 

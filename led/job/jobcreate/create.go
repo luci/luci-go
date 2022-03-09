@@ -16,14 +16,18 @@ package jobcreate
 
 import (
 	"context"
-	"fmt"
+	"net/http"
 	"path"
+	"strconv"
 	"strings"
+
+	"google.golang.org/protobuf/types/known/fieldmaskpb"
 
 	"go.chromium.org/luci/buildbucket/cmd/bbagent/bbinput"
 	bbpb "go.chromium.org/luci/buildbucket/proto"
 	swarming "go.chromium.org/luci/common/api/swarming/swarming/v1"
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/grpc/prpc"
 	"go.chromium.org/luci/led/job"
 	swarmingpb "go.chromium.org/luci/swarming/proto/api"
 )
@@ -52,7 +56,7 @@ func detectMode(r *swarming.SwarmingRpcsNewTaskRequest) string {
 // If the task's first slice looks like either a bbagent or kitchen-based
 // Buildbucket task, the returned Definition will have the `buildbucket`
 // field populated, otherwise the `swarming` field will be populated.
-func FromNewTaskRequest(ctx context.Context, r *swarming.SwarmingRpcsNewTaskRequest, name, swarmingHost string, ks job.KitchenSupport, priorityDiff int, bld *bbpb.Build) (ret *job.Definition, err error) {
+func FromNewTaskRequest(ctx context.Context, r *swarming.SwarmingRpcsNewTaskRequest, name, swarmingHost string, ks job.KitchenSupport, priorityDiff int, bld *bbpb.Build, authClient *http.Client) (ret *job.Definition, err error) {
 	if len(r.TaskSlices) == 0 {
 		return nil, errors.New("swarming tasks without task slices are not supported")
 	}
@@ -68,13 +72,10 @@ func FromNewTaskRequest(ctx context.Context, r *swarming.SwarmingRpcsNewTaskRequ
 	case "bbagent":
 		bb := &job.Buildbucket{}
 		ret.JobType = &job.Definition_Buildbucket{Buildbucket: bb}
+		// TODO(crbug.com/1219018): use bbCommonFromTaskRequest only in the long
+		// bbagent arg case.
+		// Discussion: https://chromium-review.googlesource.com/c/infra/luci/luci-go/+/3511002/comments/0daf496b_2c8ba5a2
 		bbCommonFromTaskRequest(bb, r)
-		if bld != nil {
-			bb.BbagentArgs = bbagentArgsFromBuild(bld)
-		} else {
-			cmd := r.TaskSlices[0].Properties.Command
-			bb.BbagentArgs, err = bbinput.Parse(cmd[len(cmd)-1])
-		}
 		cmd := r.TaskSlices[0].Properties.Command
 		switch {
 		case bld != nil:
@@ -82,7 +83,7 @@ func FromNewTaskRequest(ctx context.Context, r *swarming.SwarmingRpcsNewTaskRequ
 		case len(cmd) == 2:
 			bb.BbagentArgs, err = bbinput.Parse(cmd[len(cmd)-1])
 		default:
-			err = fmt.Errorf("bbagent constant length arg is not supported by get-swarm")
+			bb.BbagentArgs, err = getBbagentArgsFromCMD(ctx, cmd, authClient)
 		}
 
 	case "kitchen":
@@ -188,6 +189,53 @@ func populateCasPayload(cas *swarmingpb.CASReference, cir *swarming.SwarmingRpcs
 	}
 
 	return nil
+}
+
+func getBbagentArgsFromCMD(ctx context.Context, cmd []string, authClient *http.Client) (*bbpb.BBAgentArgs, error) {
+	var hostname string
+	var bID int64
+	for i, s := range cmd {
+		switch {
+		case s == "-host" && i < len(cmd)-1:
+			hostname = cmd[i+1]
+		case s == "-build-id" && i < len(cmd)-1:
+			var err error
+			if bID, err = strconv.ParseInt(cmd[i+1], 10, 64); err != nil {
+				return nil, errors.Annotate(err, "cmd -build-id").Err()
+			}
+		}
+	}
+	if hostname == "" {
+		return nil, errors.New("host is required in cmd")
+	}
+	if bID == 0 {
+		return nil, errors.New("build-id is required in cmd")
+	}
+	bbclient := bbpb.NewBuildsPRPCClient(&prpc.Client{
+		C:    authClient,
+		Host: hostname,
+	})
+	bld, err := bbclient.GetBuild(ctx, &bbpb.GetBuildRequest{
+		Id: bID,
+		Mask: &bbpb.BuildMask{
+			Fields: &fieldmaskpb.FieldMask{
+				Paths: []string{
+					"builder",
+					"infra",
+					"input",
+					"scheduling_timeout",
+					"execution_timeout",
+					"grace_period",
+					"exe",
+					"tags",
+				},
+			},
+		},
+	})
+	if err != nil {
+		return nil, err
+	}
+	return bbagentArgsFromBuild(bld), nil
 }
 
 // TODO(crbug.com/1098551): Invert this and make led use the build proto directly.
