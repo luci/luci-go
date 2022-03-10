@@ -172,6 +172,18 @@ func mainImpl() int {
 		check(errors.Reason("-host and -build-id are required").Err())
 	}
 
+	// Set `buildbucket` in the context.
+	bbCtx := lucictx.GetBuildbucket(ctx)
+	if bbCtx == nil || bbCtx.Hostname != *hostname || bbCtx.ScheduleBuildToken != secrets.BuildToken {
+		ctx = lucictx.SetBuildbucket(ctx, &lucictx.Buildbucket{
+			Hostname:           *hostname,
+			ScheduleBuildToken: secrets.BuildToken,
+		})
+		if bbCtx != nil {
+			logging.Warningf(ctx, "buildbucket context is overwritten.")
+		}
+	}
+
 	// Populate `realm` in the context based on the build's bucket if there's no
 	// realm there already.
 	if lucictx.GetRealm(ctx).GetName() == "" {
