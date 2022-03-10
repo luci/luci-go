@@ -18,9 +18,11 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"math/rand"
 	"net/http"
 	"sort"
 	"strings"
+	"time"
 
 	"google.golang.org/genproto/protobuf/field_mask"
 	"google.golang.org/grpc/codes"
@@ -31,6 +33,7 @@ import (
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
 	bbv1 "go.chromium.org/luci/common/api/buildbucket/buildbucket/v1"
 	"go.chromium.org/luci/common/api/gitiles"
+	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry/transient"
@@ -103,6 +106,42 @@ func extractEmailNotifyValues(build *buildbucketpb.Build, parametersJSON string)
 		return nil, errors.Annotate(err, "invalid msg.ParametersJson").Err()
 	}
 	return output.EmailNotify, nil
+}
+
+func randInRange(upper, lower float64) float64 {
+	return lower + rand.Float64()*(upper-lower)
+}
+
+func putWithRetry(c context.Context, entity interface{}) error {
+	// Retry with exponential backoff. The limit we care about here is the limit
+	// on writes to entities within an entity group, which is once per second.
+	//
+	// By waiting for 1 second we'll guarantee not to conflict with the write
+	// that caused contention the first time we failed. We double the delay each
+	// time, and randomly shift over the interval to avoid clustering.
+
+	delay := 1.0
+	var err error
+
+	// Retry up to 4 times. Past that point the delay is becoming too long to be
+	// reasonable.
+	for i := 0; i < 4; i++ {
+		err = datastore.Put(c, entity)
+		if err == nil {
+			return nil
+		} else if status.Code(err) != codes.Aborted {
+			// Datastore documentation says that Aborted is returned in the case
+			// of contention, which is the only case we want to retry on.
+			// TODO: Perhaps also retry on some others like Unavailable or
+			// DeadlineExceeded?
+			return err
+		}
+
+		clock.Sleep(c, time.Duration(float64(time.Second)*randInRange(delay, delay*2)))
+		delay *= 2
+	}
+
+	return err
 }
 
 // handleBuild processes a Build and sends appropriate notifications.
@@ -206,7 +245,7 @@ func handleBuild(c context.Context, build *Build, getCheckout CheckoutFunc, hist
 				if err := notifyAndUpdateTrees(c, builder, builder.Status); err != nil {
 					return err
 				}
-				return datastore.Put(c, &updatedBuilder)
+				return putWithRetry(c, &updatedBuilder)
 			}
 			logging.Infof(c, "Found build with old time")
 
@@ -229,7 +268,7 @@ func handleBuild(c context.Context, build *Build, getCheckout CheckoutFunc, hist
 			if err := notifyAndUpdateTrees(c, builder, 0); err != nil {
 				return err
 			}
-			return datastore.Put(c, &updatedBuilder)
+			return putWithRetry(c, &updatedBuilder)
 		}
 		keepGoing = true
 		return nil
@@ -322,7 +361,7 @@ func handleBuild(c context.Context, build *Build, getCheckout CheckoutFunc, hist
 
 		return parallel.FanOutIn(func(ch chan<- func() error) {
 			ch <- func() error { return Notify(c, recipients, templateInput) }
-			ch <- func() error { return datastore.Put(c, &updatedBuilder) }
+			ch <- func() error { return putWithRetry(c, &updatedBuilder) }
 			ch <- func() error { return UpdateTreeClosers(c, build, 0) }
 		})
 	}, nil)
