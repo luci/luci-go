@@ -1,0 +1,29 @@
+// Copyright 2022 The LUCI Authors. All rights reserved.
+// Use of this source code is governed under the Apache License, Version 2.0
+// that can be found in the LICENSE file.
+
+syntax = "proto3";
+
+option go_package = "go.chromium.org/luci/examples/appengine/quota/proto";
+
+package rpc;
+
+import "google/protobuf/empty.proto";
+
+// A service for demonstrating quota library functionality.
+service Demo {
+  // GlobalRateLimit is an endpoint globally limited to one request every 60
+  // seconds. This quota can be reset at any time by calling GlobalQuotaReset.
+  rpc GlobalRateLimit(google.protobuf.Empty) returns (google.protobuf.Empty);
+
+  // GlobalQuotaReset resets quota for calling GlobalRateLimit.
+  rpc GlobalQuotaReset(google.protobuf.Empty) returns (google.protobuf.Empty);
+
+  // PerUserRateLimit is an endpoint limited to two requests every 60 seconds
+  // from any given user. Users can reset their own quota at any time by calling
+  // PerUserQuotaReset.
+  rpc PerUserRateLimit(google.protobuf.Empty) returns (google.protobuf.Empty);
+
+  // PerUserQuotaReset resets the caller's quota for calling PerUserRateLimit.
+  rpc PerUserQuotaReset(google.protobuf.Empty) returns (google.protobuf.Empty);
+}

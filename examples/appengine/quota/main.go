@@ -13,24 +13,25 @@
 // limitations under the License.
 
 // Package main contains a GAE app demonstrating how to use the server/quota
-// module to implement rate limiting for requests.
+// module to implement rate limiting for requests. Navigate to /rpcexplorer
+// to try out quota operations.
 //
 // Not intended to be run locally. A local demo can be found under
 // server/quota/example.
 package main
 
 import (
-	"net/http"
-
 	"go.chromium.org/luci/config/server/cfgmodule"
-	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/server"
+	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/module"
 	"go.chromium.org/luci/server/quota"
-	pb "go.chromium.org/luci/server/quota/proto"
+	quotapb "go.chromium.org/luci/server/quota/proto"
 	"go.chromium.org/luci/server/quota/quotaconfig"
 	"go.chromium.org/luci/server/redisconn"
-	"go.chromium.org/luci/server/router"
+
+	pb "go.chromium.org/luci/examples/appengine/quota/proto"
+	"go.chromium.org/luci/examples/appengine/quota/rpc"
 )
 
 func main() {
@@ -42,17 +43,16 @@ func main() {
 
 	server.Main(nil, modules, func(srv *server.Server) error {
 		// Initialize a static, in-memory implementation of quotaconfig.Interface.
-		m, err := quotaconfig.NewMemory(srv.Context, []*pb.Policy{
-			// Policy governing a global rate limit of one request per minute to the
-			// /global-rate-limit-endpoint handler. 60 resources are available and
-			// the handler consumes 60 resources every time it's called (see below),
-			// while the policy is configured to automatically replenish one resource
-			// every second. This quota can be reset by sending a request to the
-			// /global-rate-limit-reset handler. 60 resources are replenished every time
-			// it's called (see below), and the default 60 resources also functions as a
-			// cap.
+		// See the quota/rpc package for how these quotas are used.
+		// TODO(crbug/1280055): Fetch from the config service.
+		m, err := quotaconfig.NewMemory(srv.Context, []*quotapb.Policy{
 			{
 				Name:          "global-rate-limit",
+				Resources:     60,
+				Replenishment: 1,
+			},
+			{
+				Name:          "per-user-rate-limit/${user}",
 				Resources:     60,
 				Replenishment: 1,
 			},
@@ -64,35 +64,17 @@ func main() {
 		// Register the quotaconfig.Interface.
 		srv.Context = quota.Use(srv.Context, m)
 
-		// Set up a rate-limited endpoint by debiting 60 resources every time.
-		// Returns an error if enough resources aren't available.
-		srv.Routes.GET("/global-rate-limit-endpoint", nil, func(c *router.Context) {
-			if err := quota.UpdateQuota(c.Context, map[string]int64{
-				"global-rate-limit": -60,
-			}, nil); err != nil {
-				errors.Log(c.Context, errors.Annotate(err, "debit quota").Err())
-				// TODO(crbug/1280055): Differentiate between errors.
-				http.Error(c.Writer, "rate limit exceeded", http.StatusTooManyRequests)
-				return
-			}
-			if _, err := c.Writer.Write([]byte("OK\n")); err != nil {
-				errors.Log(c.Context, errors.Annotate(err, "writer").Err())
-			}
-		})
+		// Support authentication for per-user rate limit demo.
+		srv.PRPC.Authenticator = &auth.Authenticator{
+			Methods: []auth.Method{
+				&auth.GoogleOAuth2Method{
+					Scopes: []string{"https://www.googleapis.com/auth/userinfo.email"},
+				},
+			},
+		}
 
-		// Set up a quota reset endpoint by restoring 60 resources every time.
-		// The total resources cap at 60, so repeated calls are fine.
-		srv.Routes.GET("/global-rate-limit-reset", nil, func(c *router.Context) {
-			if err := quota.UpdateQuota(c.Context, map[string]int64{
-				"global-rate-limit": 60,
-			}, nil); err != nil {
-				errors.Log(c.Context, errors.Annotate(err, "credit quota").Err())
-				http.Error(c.Writer, "internal server error", http.StatusInternalServerError)
-			}
-			if _, err := c.Writer.Write([]byte("OK\n")); err != nil {
-				errors.Log(c.Context, errors.Annotate(err, "writer").Err())
-			}
-		})
+		// Register the demo pRPC service.
+		pb.RegisterDemoServer(srv.PRPC, rpc.New())
 		return nil
 	})
 }
