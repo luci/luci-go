@@ -185,6 +185,7 @@ func TestGetChange(t *testing.T) {
 				Submittable:     true,
 				IsPrivate:       true,
 				MetaRevID:       "cafecafe",
+				Hashtags:        []string{"example_tag"},
 				Revisions: map[string]*gerritpb.RevisionInfo{
 					"deadbeef": {
 						Number:      1,
@@ -307,6 +308,7 @@ func TestGetChange(t *testing.T) {
 					"submittable": true,
 					"is_private": true,
 					"meta_rev_id": "cafecafe",
+					"hashtags": ["example_tag"],
 					"revisions": {
 						"deadbeef": {
 							"_number": 1,

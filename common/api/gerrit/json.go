@@ -72,6 +72,7 @@ type changeInfo struct {
 	Branch    string                    `json:"branch"`
 	ChangeID  string                    `json:"change_id"`
 	Reviewers map[string][]*accountInfo `json:"reviewers"`
+	Hashtags  []string                  `json:"hashtags"`
 
 	// json.Unmarshal cannot convert enum string to value,
 	// so this field is handled specially in ToProto.
@@ -105,6 +106,7 @@ func (ci *changeInfo) ToProto() (*gerritpb.ChangeInfo, error) {
 		Project:            ci.Project,
 		Ref:                branchToRef(ci.Branch),
 		Status:             gerritpb.ChangeStatus(gerritpb.ChangeStatus_value[ci.Status]),
+		Hashtags:           ci.Hashtags,
 		CurrentRevision:    ci.CurrentRevision,
 		Submittable:        ci.Submittable,
 		IsPrivate:          ci.IsPrivate,

@@ -388,7 +388,7 @@ message AccountInfo {
 // Source of truth:
 // https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#change-info
 //
-// Next tag: 19.
+// Next tag: 20.
 message ChangeInfo {
   // The change number.
   int64 number = 1;
@@ -440,6 +440,9 @@ message ChangeInfo {
 
   // Whether change is private.
   bool is_private = 13;
+
+  // List of hashtags that are set on the change.
+  repeated string hashtags = 19;
 
   // Timestamp of when the change was created
   google.protobuf.Timestamp created = 11;
