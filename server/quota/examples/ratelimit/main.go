@@ -76,30 +76,32 @@ func main() {
 		// Set up a rate-limited endpoint by debiting 60 resources every time.
 		// Returns an error if enough resources aren't available.
 		srv.Routes.GET("/global-rate-limit-endpoint", nil, func(c *router.Context) {
-			if err := quota.UpdateQuota(c.Context, map[string]int64{
+			updates := map[string]int64{
 				"global-rate-limit": -60,
-			}, nil); err != nil {
-				errors.Log(c.Context, errors.Annotate(err, "debit quota").Err())
-				// TODO(crbug/1280055): Differentiate between errors.
-				http.Error(c.Writer, "rate limit exceeded", http.StatusTooManyRequests)
-				return
 			}
-			if _, err := c.Writer.Write([]byte("OK\n")); err != nil {
-				errors.Log(c.Context, errors.Annotate(err, "writer").Err())
+			switch err := quota.UpdateQuota(c.Context, updates, nil); err {
+			case nil:
+				_, _ = c.Writer.Write([]byte("OK\n"))
+			case quota.ErrInsufficientQuota:
+				http.Error(c.Writer, "rate limit exceeded", http.StatusTooManyRequests)
+			default:
+				errors.Log(c.Context, errors.Annotate(err, "debit quota").Err())
+				http.Error(c.Writer, err.Error(), http.StatusInternalServerError)
 			}
 		})
 
 		// Set up a quota reset endpoint by restoring 60 resources every time.
 		// The total resources cap at 60, so repeated calls are fine.
 		srv.Routes.GET("/global-rate-limit-reset", nil, func(c *router.Context) {
-			if err := quota.UpdateQuota(c.Context, map[string]int64{
+			updates := map[string]int64{
 				"global-rate-limit": 60,
-			}, nil); err != nil {
-				errors.Log(c.Context, errors.Annotate(err, "credit quota").Err())
-				http.Error(c.Writer, "internal server error", http.StatusInternalServerError)
 			}
-			if _, err := c.Writer.Write([]byte("OK\n")); err != nil {
-				errors.Log(c.Context, errors.Annotate(err, "writer").Err())
+			switch err := quota.UpdateQuota(c.Context, updates, nil); err {
+			case nil:
+				_, _ = c.Writer.Write([]byte("OK\n"))
+			default:
+				errors.Log(c.Context, errors.Annotate(err, "credit quota").Err())
+				http.Error(c.Writer, err.Error(), http.StatusInternalServerError)
 			}
 		})
 		return nil

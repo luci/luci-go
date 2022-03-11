@@ -170,7 +170,7 @@ func TestQuota(t *testing.T) {
 					User: "user@example.com",
 				}
 
-				So(UpdateQuota(ctx, up, opts), ShouldErrLike, "insufficient resources")
+				So(UpdateQuota(ctx, up, opts), ShouldEqual, ErrInsufficientQuota)
 
 				So(s.Keys(), ShouldBeEmpty)
 			})
@@ -185,7 +185,7 @@ func TestQuota(t *testing.T) {
 
 				So(UpdateQuota(ctx, up, opts), ShouldBeNil)
 				So(UpdateQuota(ctx, up, opts), ShouldBeNil)
-				So(UpdateQuota(ctx, up, opts), ShouldErrLike, "insufficient resources")
+				So(UpdateQuota(ctx, up, opts), ShouldEqual, ErrInsufficientQuota)
 				So(s.Keys(), ShouldResemble, []string{
 					"entry:f20c860d2ea007ea2360c6ebe2d943acc8a531412c18ff3bd47ab1449988aa6d",
 				})
@@ -248,7 +248,7 @@ func TestQuota(t *testing.T) {
 						User: "user@example.com",
 					}
 
-					So(UpdateQuota(ctx, up, opts), ShouldErrLike, "insufficient resources")
+					So(UpdateQuota(ctx, up, opts), ShouldEqual, ErrInsufficientQuota)
 					So(s.Keys(), ShouldBeEmpty)
 				})
 			})
@@ -314,7 +314,7 @@ func TestQuota(t *testing.T) {
 				}
 				opts := &Options{}
 
-				So(UpdateQuota(ctx, up, opts), ShouldErrLike, "insufficient resources")
+				So(UpdateQuota(ctx, up, opts), ShouldEqual, ErrInsufficientQuota)
 				So(s.Keys(), ShouldResemble, []string{
 					"entry:b878a6801d9a9e68b30ed63430bb5e0bddcd984a37a3ee385abc27ff031c7fe7",
 				})
@@ -385,7 +385,7 @@ func TestQuota(t *testing.T) {
 						User: "user@example.com",
 					}
 
-					So(UpdateQuota(ctx, up, opts), ShouldErrLike, "insufficient resources")
+					So(UpdateQuota(ctx, up, opts), ShouldEqual, ErrInsufficientQuota)
 					So(s.Keys(), ShouldResemble, []string{
 						"entry:b878a6801d9a9e68b30ed63430bb5e0bddcd984a37a3ee385abc27ff031c7fe7",
 					})
@@ -482,7 +482,7 @@ func TestQuota(t *testing.T) {
 						"quota": -4,
 					}
 
-					So(UpdateQuota(ctx, up, nil), ShouldErrLike, "insufficient resources")
+					So(UpdateQuota(ctx, up, nil), ShouldEqual, ErrInsufficientQuota)
 					So(s.Keys(), ShouldResemble, []string{
 						"entry:b878a6801d9a9e68b30ed63430bb5e0bddcd984a37a3ee385abc27ff031c7fe7",
 					})
@@ -538,7 +538,7 @@ func TestQuota(t *testing.T) {
 							User: "user@example.com",
 						}
 
-						So(UpdateQuota(ctx, up, opts), ShouldErrLike, "insufficient resources")
+						So(UpdateQuota(ctx, up, opts), ShouldEqual, ErrInsufficientQuota)
 						So(s.Keys(), ShouldResemble, []string{
 							"entry:b878a6801d9a9e68b30ed63430bb5e0bddcd984a37a3ee385abc27ff031c7fe7",
 						})

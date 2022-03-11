@@ -32,6 +32,10 @@ import (
 	"go.chromium.org/luci/server/quota/quotaconfig"
 )
 
+// ErrInsufficientQuota is returned by UpdateQuota when the updates were not
+// applied due to insufficient quota.
+var ErrInsufficientQuota = errors.New("insufficient quota")
+
 var cfgKey = "cfg"
 
 // Use returns a context.Context directing this package to use the given
@@ -115,7 +119,9 @@ var setEntry = template.Must(template.New("setEntry").Parse(`
 `))
 
 // UpdateQuota atomically adjusts the given quota entries using the given map of
-// policy names to numeric update amounts as well as the given *Options.
+// policy names to numeric update amounts as well as the given *Options. Returns
+// ErrInsufficientQuota when the adjustments were not made due to insufficient
+// quota.
 //
 // Panics if quotaconfig.Interface is not available in the given context.Context
 // (see WithConfig).
@@ -175,6 +181,9 @@ func UpdateQuota(ctx context.Context, updates map[string]int64, opts *Options) e
 	}
 
 	if _, err := redis.NewScript(0, s.String()).Do(conn); err != nil {
+		if strings.HasSuffix(err.Error(), "insufficient resources") {
+			return ErrInsufficientQuota
+		}
 		return err
 	}
 	return nil

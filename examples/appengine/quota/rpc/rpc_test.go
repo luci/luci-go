@@ -75,6 +75,11 @@ func TestDemo(t *testing.T) {
 		srv := &Demo{}
 
 		Convey("GlobalRateLimit", func() {
+			Convey("error", func() {
+				_, err := srv.GlobalRateLimit(quota.Use(context.Background(), m), nil)
+				So(err, ShouldErrLike, "connection pool is not configured")
+			})
+
 			Convey("ok", func() {
 				_, err := srv.GlobalRateLimit(ctx, nil)
 				So(err, ShouldBeNil)
@@ -120,6 +125,11 @@ func TestDemo(t *testing.T) {
 		})
 
 		Convey("GlobalQuotaReset", func() {
+			Convey("error", func() {
+				_, err := srv.GlobalQuotaReset(quota.Use(context.Background(), m), nil)
+				So(err, ShouldErrLike, "connection pool is not configured")
+			})
+
 			Convey("ok", func() {
 				// Ensure quota is exhausted.
 				_, err := srv.GlobalRateLimit(ctx, nil)
@@ -156,6 +166,11 @@ func TestDemo(t *testing.T) {
 		})
 
 		Convey("PerUserRateLimit", func() {
+			Convey("error", func() {
+				_, err := srv.PerUserRateLimit(quota.Use(context.Background(), m), nil)
+				So(err, ShouldErrLike, "connection pool is not configured")
+			})
+
 			Convey("ok", func() {
 				_, err := srv.PerUserRateLimit(ctx, nil)
 				So(err, ShouldBeNil)
@@ -265,6 +280,11 @@ func TestDemo(t *testing.T) {
 		})
 
 		Convey("PerUserQuotaReset", func() {
+			Convey("error", func() {
+				_, err := srv.PerUserQuotaReset(quota.Use(context.Background(), m), nil)
+				So(err, ShouldErrLike, "connection pool is not configured")
+			})
+
 			Convey("ok", func() {
 				// Ensure quota is exhausted.
 				_, err := srv.PerUserRateLimit(ctx, nil)

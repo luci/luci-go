@@ -23,6 +23,7 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/protobuf/types/known/emptypb"
 
+	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/grpc/appstatus"
 	"go.chromium.org/luci/server/auth"
@@ -51,11 +52,14 @@ func (*Demo) GlobalRateLimit(ctx context.Context, _ *emptypb.Empty) (*emptypb.Em
 	updates := map[string]int64{
 		"global-rate-limit": -60,
 	}
-	if err := quota.UpdateQuota(ctx, updates, nil); err != nil {
-		// TODO(crbug/1280055): Differentiate between errors.
+	switch err := quota.UpdateQuota(ctx, updates, nil); err {
+	case nil:
+		return &emptypb.Empty{}, nil
+	case quota.ErrInsufficientQuota:
 		return nil, appstatus.Errorf(codes.ResourceExhausted, "global rate limit exceeded")
+	default:
+		return nil, errors.Annotate(err, "quota.UpdateQuota").Err()
 	}
-	return &emptypb.Empty{}, nil
 }
 
 // GlobalQuotaReset resets quota for calling GlobalRateLimit. Always succeeds,
@@ -65,10 +69,12 @@ func (*Demo) GlobalQuotaReset(ctx context.Context, _ *emptypb.Empty) (*emptypb.E
 	updates := map[string]int64{
 		"global-rate-limit": 60,
 	}
-	if err := quota.UpdateQuota(ctx, updates, nil); err != nil {
-		return nil, err
+	switch err := quota.UpdateQuota(ctx, updates, nil); err {
+	case nil:
+		return &emptypb.Empty{}, nil
+	default:
+		return nil, errors.Annotate(err, "quota.UpdateQuota").Err()
 	}
-	return &emptypb.Empty{}, nil
 }
 
 // PerUserRateLimit is limited to two requests every 60 seconds for a given user.
@@ -86,12 +92,14 @@ func (*Demo) PerUserRateLimit(ctx context.Context, _ *emptypb.Empty) (*emptypb.E
 	opts := &quota.Options{
 		User: string(auth.CurrentIdentity(ctx)),
 	}
-
-	if err := quota.UpdateQuota(ctx, updates, opts); err != nil {
-		// TODO(crbug/1280055): Differentiate between errors.
+	switch err := quota.UpdateQuota(ctx, updates, opts); err {
+	case nil:
+		return &emptypb.Empty{}, nil
+	case quota.ErrInsufficientQuota:
 		return nil, appstatus.Errorf(codes.ResourceExhausted, "per-user rate limit exceeded")
+	default:
+		return nil, errors.Annotate(err, "quota.UpdateQuota").Err()
 	}
-	return &emptypb.Empty{}, nil
 }
 
 // PerUserQuotaReset resets the caller's own quota for calling PerUserRateLimit.
@@ -104,10 +112,12 @@ func (*Demo) PerUserQuotaReset(ctx context.Context, _ *emptypb.Empty) (*emptypb.
 	opts := &quota.Options{
 		User: string(auth.CurrentIdentity(ctx)),
 	}
-	if err := quota.UpdateQuota(ctx, updates, opts); err != nil {
-		return nil, err
+	switch err := quota.UpdateQuota(ctx, updates, opts); err {
+	case nil:
+		return &emptypb.Empty{}, nil
+	default:
+		return nil, errors.Annotate(err, "quota.UpdateQuota").Err()
 	}
-	return &emptypb.Empty{}, nil
 }
 
 // New returns a new pb.DemoServer.
