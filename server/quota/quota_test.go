@@ -398,7 +398,7 @@ func TestQuota(t *testing.T) {
 				ctx, tc := testclock.UseTime(ctx, testclock.TestRecentTimeLocal.Add(time.Second))
 				now := strconv.FormatInt(tc.Now().Unix(), 10)
 
-				Convey("time travel", func() {
+				Convey("future update", func() {
 					ctx, _ := testclock.UseTime(ctx, testclock.TestRecentTimeLocal.Add(-1*time.Second))
 					up := map[string]int64{
 						"quota": 1,
@@ -410,6 +410,21 @@ func TestQuota(t *testing.T) {
 					})
 					So(s.HGet("entry:b878a6801d9a9e68b30ed63430bb5e0bddcd984a37a3ee385abc27ff031c7fe7", "resources"), ShouldEqual, "2")
 					So(s.HGet("entry:b878a6801d9a9e68b30ed63430bb5e0bddcd984a37a3ee385abc27ff031c7fe7", "updated"), ShouldEqual, strconv.FormatInt(testclock.TestRecentTimeLocal.Unix(), 10))
+				})
+
+				Convey("distant past update", func() {
+					ctx, tc := testclock.UseTime(ctx, testclock.TestRecentTimeLocal.Add(60*time.Second))
+					now := strconv.FormatInt(tc.Now().Unix(), 10)
+					up := map[string]int64{
+						"quota": -1,
+					}
+
+					So(UpdateQuota(ctx, up, nil), ShouldBeNil)
+					So(s.Keys(), ShouldResemble, []string{
+						"entry:b878a6801d9a9e68b30ed63430bb5e0bddcd984a37a3ee385abc27ff031c7fe7",
+					})
+					So(s.HGet("entry:b878a6801d9a9e68b30ed63430bb5e0bddcd984a37a3ee385abc27ff031c7fe7", "resources"), ShouldEqual, "4")
+					So(s.HGet("entry:b878a6801d9a9e68b30ed63430bb5e0bddcd984a37a3ee385abc27ff031c7fe7", "updated"), ShouldEqual, now)
 				})
 
 				Convey("cap", func() {
@@ -491,7 +506,7 @@ func TestQuota(t *testing.T) {
 				})
 
 				Convey("atomicity", func() {
-					Convey("time travel", func() {
+					Convey("future update", func() {
 						ctx, _ := testclock.UseTime(ctx, testclock.TestRecentTimeLocal.Add(-1*time.Second))
 						up := map[string]int64{
 							"quota":         -1,

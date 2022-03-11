@@ -94,15 +94,22 @@ var updateEntry = template.Must(template.New("updateEntry").Parse(`
 		{{.Var}}["resources"] = redis.call("HINCRBY", "{{.Name}}", "resources", 0)
 	end
 
-	-- Replenish resources before updating.
+	-- Replenish resources up to the cap before updating.
 	{{.Var}}["resources"] = {{.Var}}["resources"] + ({{.Now}} - {{.Var}}["updated"]) * {{.Replenishment}}
 	{{.Var}}["updated"] = {{.Now}}
+	-- Cap resources at the default amount.
+	if {{.Var}}["resources"] > {{.Default}} then
+		{{.Var}}["resources"] = {{.Default}}
+	end
+
+	-- Check that the update would succeed before updating.
 	if {{.Var}}["resources"] + {{.Amount}} < 0 then
 		return redis.error_reply("\"{{.Name}}\" has insufficient resources")
 	end
+
+	-- Update resources up to the cap.
 	{{.Var}}["resources"] = {{.Var}}["resources"] + {{.Amount}}
 	{{.Var}}["updated"] = {{.Now}}
-
 	-- Cap resources at the default amount.
 	if {{.Var}}["resources"] > {{.Default}} then
 		{{.Var}}["resources"] = {{.Default}}

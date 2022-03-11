@@ -108,6 +108,21 @@ func TestDemo(t *testing.T) {
 				So(err, ShouldErrLike, "global rate limit exceeded")
 			})
 
+			Convey("replenish excess", func() {
+				// Ensure quota is exhausted.
+				_, err := srv.GlobalRateLimit(ctx, nil)
+				So(err, ShouldBeNil)
+				_, err = srv.GlobalRateLimit(ctx, nil)
+				So(err, ShouldErrLike, "global rate limit exceeded")
+
+				// Ensure quota is replenished only up to the cap.
+				ctx, _ = testclock.UseTime(ctx, testclock.TestRecentTimeLocal.Add(time.Hour))
+				_, err = srv.GlobalRateLimit(ctx, nil)
+				So(err, ShouldBeNil)
+				_, err = srv.GlobalRateLimit(ctx, nil)
+				So(err, ShouldErrLike, "global rate limit exceeded")
+			})
+
 			Convey("per-user", func() {
 				// Ensure quota is exhausted.
 				_, err := srv.GlobalRateLimit(ctx, nil)
