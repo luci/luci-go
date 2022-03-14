@@ -201,8 +201,8 @@ func mainImpl() int {
 	logdogOutput, err := mkLogdogOutput(ctx, input.Build.Infra.Logdog)
 	check(errors.Annotate(err, "could not create logdog output").Err())
 
-	// We retry on more return codes for the single status=STARTED update.
-	// Also dispatcher.Channel will handle retries.
+	// Disable it temporarily as we retry on more return codes for the single
+	// status=STARTED update.
 	bbclientRetriesEnabled = false
 
 	var (
@@ -255,23 +255,24 @@ func mainImpl() int {
 		return 0
 	}
 
-	dispatcherOpts, dispatcherErrCh := channelOpts(cctx)
-	canceledBuildCh := newCloseOnceCh()
-	buildsCh, err := dispatcher.NewChannel(cctx, dispatcherOpts, mkSendFn(cctx, bbclient, input.Build.Id, canceledBuildCh))
-	check(errors.Annotate(err, "could not create builds dispatcher channel").Err())
-	defer buildsCh.CloseAndDrain(cctx)
-
+	bbclientRetriesEnabled = true
 	// from this point forward we want to try to report errors to buildbucket,
 	// too.
 	check = func(err error) {
 		if err != nil {
 			logging.Errorf(cctx, err.Error())
-			buildsCh.C <- &bbpb.Build{
-				Id:              input.Build.Id,
-				Status:          bbpb.Status_INFRA_FAILURE,
-				SummaryMarkdown: fmt.Sprintf("fatal error in startup: %s", err),
+			if _, bbErr := bbclient.UpdateBuild(
+				cctx,
+				&bbpb.UpdateBuildRequest{
+					Build: &bbpb.Build{
+						Id:              input.Build.Id,
+						Status:          bbpb.Status_INFRA_FAILURE,
+						SummaryMarkdown: fmt.Sprintf("fatal error in startup: %s", err),
+					},
+					UpdateMask: &fieldmaskpb.FieldMask{Paths: []string{"build.status", "build.summaryMarkdown"}},
+				}); bbErr != nil {
+				logging.Errorf(cctx, "Failed to report INFRA_FAILURE status to Buildbucket: %s", bbErr)
 			}
-			buildsCh.CloseAndDrain(cctx)
 			os.Exit(1)
 		}
 	}
@@ -319,6 +320,13 @@ func mainImpl() int {
 	check(errors.Annotate(err, "marshalling input args").Err())
 	logging.Infof(ctx, "Input args:\n%s", initialJSONPB)
 
+	dispatcherOpts, dispatcherErrCh := channelOpts(cctx)
+	canceledBuildCh := newCloseOnceCh()
+	buildsCh, err := dispatcher.NewChannel(cctx, dispatcherOpts, mkSendFn(cctx, bbclient, input.Build.Id, canceledBuildCh))
+	check(errors.Annotate(err, "could not create builds dispatcher channel").Err())
+	defer buildsCh.CloseAndDrain(cctx)
+
+	bbclientRetriesEnabled = false // dispatcher.Channel will handle retries.
 	shutdownCh := newCloseOnceCh()
 	var statusDetails *bbpb.StatusDetails
 	var subprocErr error
