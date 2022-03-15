@@ -29,7 +29,6 @@ import (
 	gs "cloud.google.com/go/storage"
 
 	"google.golang.org/api/googleapi"
-	"google.golang.org/api/iterator"
 	"google.golang.org/api/option"
 )
 
@@ -52,9 +51,6 @@ type Client interface {
 
 	// Attrs retrieves Object attributes for a given path.
 	Attrs(p Path) (*gs.ObjectAttrs, error)
-
-	// Objects retrieves all object attributes for a given path.
-	Objects(p Path) ([]*gs.ObjectAttrs, error)
 
 	// NewReader instantiates a new Reader instance for the named bucket/path.
 	//
@@ -133,25 +129,6 @@ func (c *prodClient) Attrs(p Path) (*gs.ObjectAttrs, error) {
 		return nil, err
 	}
 	return obj.Attrs(c)
-}
-
-func (c *prodClient) Objects(p Path) ([]*gs.ObjectAttrs, error) {
-	bkt := c.baseClient.Bucket(p.Bucket())
-	query := &gs.Query{Prefix: p.Filename()}
-
-	var attrs []*gs.ObjectAttrs
-	it := bkt.Objects(c.Context, query)
-	for {
-		attr, err := it.Next()
-		if err == iterator.Done {
-			break
-		}
-		if err != nil {
-			return nil, err
-		}
-		attrs = append(attrs, attr)
-	}
-	return attrs, nil
 }
 
 func (c *prodClient) NewReader(p Path, offset, length int64) (io.ReadCloser, error) {
