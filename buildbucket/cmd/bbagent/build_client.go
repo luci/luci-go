@@ -49,7 +49,6 @@ import (
 // Note: The dummy implementation will always return an EMPTY Build message;
 // Make sure any code using BuildsClient can handle this scenario.
 type BuildsClient interface {
-	GetBuild(ctx context.Context, in *bbpb.GetBuildRequest, opts ...grpc.CallOption) (*bbpb.Build, error)
 	UpdateBuild(ctx context.Context, in *bbpb.UpdateBuildRequest, opts ...grpc.CallOption) (*bbpb.Build, error)
 }
 
@@ -65,10 +64,6 @@ var readMask = &bbpb.BuildMask{
 
 type dummyBBClient struct{}
 
-func (dummyBBClient) GetBuild(ctx context.Context, in *bbpb.GetBuildRequest, opts ...grpc.CallOption) (*bbpb.Build, error) {
-	return &bbpb.Build{}, nil
-}
-
 func (dummyBBClient) UpdateBuild(ctx context.Context, in *bbpb.UpdateBuildRequest, opts ...grpc.CallOption) (*bbpb.Build, error) {
 	return &bbpb.Build{}, nil
 }
@@ -76,10 +71,6 @@ func (dummyBBClient) UpdateBuild(ctx context.Context, in *bbpb.UpdateBuildReques
 type liveBBClient struct {
 	tok string
 	c   bbpb.BuildsClient
-}
-
-func (bb *liveBBClient) GetBuild(ctx context.Context, in *bbpb.GetBuildRequest, opts ...grpc.CallOption) (*bbpb.Build, error) {
-	return bb.c.GetBuild(ctx, in, opts...)
 }
 
 func (bb *liveBBClient) UpdateBuild(ctx context.Context, in *bbpb.UpdateBuildRequest, opts ...grpc.CallOption) (*bbpb.Build, error) {

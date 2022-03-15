@@ -157,9 +157,23 @@ func mainImpl() int {
 		logging.Debugf(ctx, "fetching build %d", *buildID)
 		bbclient, secrets, err = newBuildsClient(ctx, *hostname, &bbclientRetriesEnabled)
 		check(errors.Annotate(err, "could not connect to Buildbucket").Err())
-		build, err := bbclient.GetBuild(ctx, &bbpb.GetBuildRequest{
-			Id:     *buildID,
-			Fields: &fieldmaskpb.FieldMask{Paths: []string{"*"}},
+		// Get everything from the build.
+		// Here we use UpdateBuild instead of GetBuild, so that
+		// * bbagent can always get the build because of the build token.
+		//   * This was not guaranteed for GetBuild, because it's possible that a
+		//     service account has permission to run a build but doesn't have
+		//     permission to view the build.
+		//   * bbagent could tear down the build earlier if the parent build is canceled.
+		// TODO(crbug.com/1019272):  we should also use this RPC to set the initial
+		// status of the build to STARTED (and also be prepared to quit in the case
+		// that this build got double-scheduled).
+		build, err := bbclient.UpdateBuild(ctx, &bbpb.UpdateBuildRequest{
+			Build: &bbpb.Build{
+				Id: *buildID,
+			},
+			Mask: &bbpb.BuildMask{
+				AllFields: true,
+			},
 		})
 		check(errors.Annotate(err, "failed to fetch build").Err())
 		input = &bbpb.BBAgentArgs{
