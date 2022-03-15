@@ -269,7 +269,7 @@ func mainImpl() int {
 						Status:          bbpb.Status_INFRA_FAILURE,
 						SummaryMarkdown: fmt.Sprintf("fatal error in startup: %s", err),
 					},
-					UpdateMask: &fieldmaskpb.FieldMask{Paths: []string{"build.status", "build.summaryMarkdown"}},
+					UpdateMask: &fieldmaskpb.FieldMask{Paths: []string{"build.status", "build.summary_markdown"}},
 				}); bbErr != nil {
 				logging.Errorf(cctx, "Failed to report INFRA_FAILURE status to Buildbucket: %s", bbErr)
 			}
