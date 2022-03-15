@@ -61,10 +61,11 @@ var DefaultBuildMask = HardcodedBuildMask(defaultFieldMask.Paths...)
 
 // BuildMask knows how to filter pb.Build proto messages.
 type BuildMask struct {
-	m   *mask.Mask         // the overall field mask
-	in  *structmask.Filter // "input.properties" filter
-	out *structmask.Filter // "output.properties" filter
-	req *structmask.Filter // "infra.buildbucket.requested_properties" filter
+	m         *mask.Mask         // the overall field mask
+	in        *structmask.Filter // "input.properties" filter
+	out       *structmask.Filter // "output.properties" filter
+	req       *structmask.Filter // "infra.buildbucket.requested_properties" filter
+	allFields bool               // Flag for including all fields.
 }
 
 // NewBuildMask constructs a build mask either using a legacy `fields` FieldMask
@@ -74,6 +75,7 @@ type BuildMask struct {
 // the legacy field mask (used by SearchBuilds API).
 //
 // If the mask is empty, returns DefaultBuildMask.
+// if mask.AllFields==true, returns BuildMask{allFields:true}.
 func NewBuildMask(legacyPrefix string, legacy *fieldmaskpb.FieldMask, bm *pb.BuildMask) (*BuildMask, error) {
 	switch {
 	case legacy == nil && bm == nil:
@@ -82,6 +84,14 @@ func NewBuildMask(legacyPrefix string, legacy *fieldmaskpb.FieldMask, bm *pb.Bui
 		return nil, errors.Reason("`mask` and `fields` can't be used together, prefer `mask` since `fields` is deprecated").Err()
 	case legacy != nil:
 		return newLegacyBuildMask(legacyPrefix, legacy)
+	}
+
+	if bm.GetAllFields() {
+		// All fields should be included.
+		if len(bm.GetFields().GetPaths()) > 0 || len(bm.GetInputProperties()) > 0 || len(bm.GetOutputProperties()) > 0 || len(bm.GetRequestedProperties()) > 0 {
+			return nil, errors.New("mask.AllFields is mutually exclusive with other mask fields")
+		}
+		return &BuildMask{allFields: true}, nil
 	}
 
 	fm := bm.Fields
@@ -187,10 +197,13 @@ func HardcodedBuildMask(fields ...string) *BuildMask {
 }
 
 // Includes returns true if the given field path is included in the mask
-// (either partially or entirely).
+// (either partially or entirely), or the mask includes all fields.
 //
 // Panics if the fieldPath is invalid.
 func (m *BuildMask) Includes(fieldPath string) bool {
+	if m.allFields {
+		return true
+	}
 	inc, err := m.m.Includes(fieldPath)
 	if err != nil {
 		panic(errors.Annotate(err, "bad field path %q", fieldPath).Err())

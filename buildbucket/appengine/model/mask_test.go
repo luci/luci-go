@@ -336,6 +336,25 @@ func TestBuildMask(t *testing.T) {
 		_, err := NewBuildMask("", &fieldmaskpb.FieldMask{}, &pb.BuildMask{})
 		So(err, ShouldErrLike, "can't be used together")
 	})
+
+	Convey("all_fields", t, func() {
+		Convey("fail", func() {
+			_, err := NewBuildMask("", nil, &pb.BuildMask{
+				AllFields: true,
+				Fields: &fieldmaskpb.FieldMask{
+					Paths: []string{"status"},
+				},
+			})
+			So(err, ShouldErrLike, "mask.AllFields is mutually exclusive with other mask fields")
+		})
+		Convey("pass", func() {
+			m, err := NewBuildMask("", nil, &pb.BuildMask{AllFields: true})
+			So(err, ShouldBeNil)
+			b, err := apply(m)
+			So(err, ShouldBeNil)
+			So(b, ShouldResembleProto, &build)
+		})
+	})
 }
 
 func asStructPb(v interface{}) *structpb.Struct {

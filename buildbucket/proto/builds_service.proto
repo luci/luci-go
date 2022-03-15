@@ -468,6 +468,11 @@ message BuildMask {
   //
   // When not empty, implicitly adds the corresponding field to `fields`.
   repeated structmask.StructMask requested_properties = 4;
+
+  // Flag for including all fields.
+  //
+  // Mutually exclusive with all other BuildMask fields.
+  bool all_fields = 5;
 }
 
 // A build predicate.
