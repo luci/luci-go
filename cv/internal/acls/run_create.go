@@ -17,8 +17,6 @@ package acls
 import (
 	"context"
 	"fmt"
-	"sort"
-	"strings"
 
 	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/common/errors"
@@ -38,62 +36,6 @@ const (
 	notOwnerNotCommitter = "CV cannot trigger the Run for %q because %q is neither the CL owner nor a committer."
 	noLGTM               = "This CL needs to be approved first to trigger a Run."
 )
-
-// CheckResult tells the result of an ACL check performed.
-type CheckResult map[*changelist.CL]string
-
-// OK returns true if the result indicates no failures. False, otherwise.
-func (res CheckResult) OK() bool {
-	return len(res) == 0
-}
-
-// Failure returns a failure message for a given RunCL.
-//
-// Returns an empty string, if the result was ok.
-func (res CheckResult) Failure(cl *changelist.CL) string {
-	if res.OK() {
-		return ""
-	}
-	msg, ok := res[cl]
-	if !ok {
-		eids := make([]string, 0, len(res))
-		for cl := range res {
-			eids = append(eids, cl.ExternalID.MustURL())
-		}
-		sort.Strings(eids)
-
-		var sb strings.Builder
-		sb.WriteString(okButDueToOthers)
-		for _, eid := range eids {
-			sb.WriteString("\n  - ")
-			sb.WriteString(eid)
-		}
-		return sb.String()
-	}
-	return msg
-}
-
-// FailuresSummary returns a summary of all the failures reported.
-//
-// Returns an empty string, if the result was ok.
-func (res CheckResult) FailuresSummary() string {
-	if res.OK() {
-		return ""
-	}
-	msgs := make([]string, 0, len(res))
-	for cl, msg := range res {
-		msgs = append(msgs, fmt.Sprintf("* %s\n%s", cl.ExternalID.MustURL(), msg))
-	}
-	sort.Strings(msgs)
-
-	var sb strings.Builder
-	sb.WriteString(msgs[0])
-	for _, msg := range msgs[1:] {
-		sb.WriteString("\n\n")
-		sb.WriteString(msg)
-	}
-	return sb.String()
-}
 
 // runCreateChecker holds the evaluation results of a CL Run, and checks
 // if the Run can be created.
