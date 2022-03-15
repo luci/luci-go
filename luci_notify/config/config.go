@@ -42,86 +42,59 @@ type parsedProjectConfigSet struct {
 	ViewURL        string
 }
 
-// updateProject updates all relevant entities corresponding to a particular project in
-// a single datastore transaction.
+// updateProject updates all relevant entities corresponding to a particular
+// project.
 //
-// Returns the set of notifiers that were updated.
+// To support large projects with many entities, updates occur over multiple
+// transactions:
+// - In the first transaction(s), the builders and tree closers configured in
+//   the provided project configset are created/updated. Old builders and
+//   tree closers will be retained.
+// - In the last transaction, the stored project revision, and project-level
+//   properties (e.g. TreeClosingEnabled) will be updated. Old builders and
+//   tree closers are deleted.
+//
+// Between the first and last transactions, a configuration that is a mix of
+// the old and the new configuration will be in effect. This could take the
+// form of (possibly created/updated) builders with old tree closers still
+// present, or old builders and all their old tree closers, all in conjunction
+// with a (possibly old) tree closure enabled setting. The user impact of this
+// is expected to be benign (and transient). This interim config will be valid.
+//
+// In case of an error before all transactions complete, config application
+// will be retried by the cron job because the revision is not updated until
+// all updates are applied.
+//
+// This method should not be called concurrently for the same project,
+// especially with different config versions, as the result is undefined.
+// It is assumed this will be guaranteed by the fact the config cron runs
+// run sequentially and will not overrun eachother.
 func updateProject(c context.Context, cs *parsedProjectConfigSet) error {
-	return datastore.RunInTransaction(c, func(c context.Context) error {
-		project := &Project{
-			Name:               cs.ProjectID,
-			Revision:           cs.Revision,
-			URL:                cs.ViewURL,
-			TreeClosingEnabled: cs.ProjectConfig.TreeClosingEnabled,
-		}
-		parentKey := datastore.KeyForObj(c, project)
+	project := &Project{
+		Name:               cs.ProjectID,
+		Revision:           cs.Revision,
+		URL:                cs.ViewURL,
+		TreeClosingEnabled: cs.ProjectConfig.TreeClosingEnabled,
+	}
+	parentKey := datastore.KeyForObj(c, project)
 
+	// The set of builders and tree closers which should be kept.
+	liveBuilders := stringset.New(0)
+	liveTreeClosers := stringset.New(0)
+
+	partitions := partitionNotifiers(cs.ProjectConfig.Notifiers)
+	for i, partition := range partitions {
+		r, err := updateProjectNotifiers(c, parentKey, partition)
+		if err != nil {
+			return errors.Annotate(err, "applying partition %v", i).Err()
+		}
+		liveBuilders = r.LiveBuilders.Union(liveBuilders)
+		liveTreeClosers = r.LiveTreeClosers.Union(liveTreeClosers)
+	}
+
+	return datastore.RunInTransaction(c, func(c context.Context) error {
 		toSave := make([]interface{}, 0, 1+len(cs.ProjectConfig.Notifiers)+len(cs.EmailTemplates))
 		toSave = append(toSave, project)
-
-		// Collect the list of builders and tree closers we want to update or create.
-		liveBuilders := stringset.New(len(cs.ProjectConfig.Notifiers))
-		builders := make([]*Builder, 0, len(cs.ProjectConfig.Notifiers))
-
-		// 1/4 the number of notifiers is guess at how many tree closers we'll have.
-		// Completely made up, but ultimately this is just a hint for the initial
-		// size of the set, and hence doesn't need to be perfect (or even very good).
-		sizeHint := len(cs.ProjectConfig.Notifiers) / 4
-		liveTreeClosers := stringset.New(sizeHint)
-		treeClosers := make([]*TreeCloser, 0, sizeHint)
-
-		for _, cfgNotifier := range cs.ProjectConfig.Notifiers {
-			for _, cfgBuilder := range cfgNotifier.Builders {
-				builder := &Builder{
-					ProjectKey: parentKey,
-					ID:         fmt.Sprintf("%s/%s", cfgBuilder.Bucket, cfgBuilder.Name),
-				}
-				builders = append(builders, builder)
-				liveBuilders.Add(datastore.KeyForObj(c, builder).String())
-
-				builderKey := datastore.KeyForObj(c, builder)
-				for _, cfgTreeCloser := range cfgNotifier.TreeClosers {
-					tc := &TreeCloser{
-						BuilderKey:     builderKey,
-						TreeStatusHost: cfgTreeCloser.TreeStatusHost,
-					}
-					treeClosers = append(treeClosers, tc)
-					liveTreeClosers.Add(datastore.KeyForObj(c, tc).String())
-				}
-			}
-		}
-
-		// Lookup the builders and tree closers in the datastore, if they're not
-		// found that's OK since there could be new entities being initialized.
-		datastore.Get(c, builders, treeClosers)
-
-		builderIndex := 0
-		treeCloserIndex := 0
-		for _, cfgNotifier := range cs.ProjectConfig.Notifiers {
-			for _, cfgBuilder := range cfgNotifier.Builders {
-				builder := builders[builderIndex]
-				builder.Repository = cfgBuilder.Repository
-				builder.Notifications = notifypb.Notifications{
-					Notifications: cfgNotifier.Notifications,
-				}
-				toSave = append(toSave, builder)
-				builderIndex++
-
-				for _, cfgTreeCloser := range cfgNotifier.TreeClosers {
-					treeCloser := treeClosers[treeCloserIndex]
-					treeCloser.TreeCloser = *cfgTreeCloser
-
-					// Default the status to "Open" for new TreeClosers that we haven't
-					// yet seen any builds for.
-					if treeCloser.Status == "" {
-						treeCloser.Status = Open
-					}
-
-					toSave = append(toSave, treeCloser)
-					treeCloserIndex++
-				}
-			}
-		}
 
 		for _, et := range cs.EmailTemplates {
 			et.ProjectKey = parentKey
@@ -150,6 +123,131 @@ func updateProject(c context.Context, cs *parsedProjectConfigSet) error {
 			}
 		})
 	}, nil)
+}
+
+type updatedNotifiers struct {
+	// BuilderKeys contains the keys of the builders which were specified in
+	// the project configuration.
+	LiveBuilders stringset.Set
+	// TreeCloserKeys contains the keys of the tree closers which were
+	// specified in the project configuration.
+	LiveTreeClosers stringset.Set
+}
+
+// updateProjectNotifiers puts a partition of project notifiers in a single
+// datastore transaction.
+func updateProjectNotifiers(ctx context.Context, parentKey *datastore.Key, notifiers []*notifypb.Notifier) (updatedNotifiers, error) {
+	var result updatedNotifiers
+
+	f := func(ctx context.Context) error {
+		// Collect the list of builders and tree closers we want to update or create.
+		liveBuilders := stringset.New(len(notifiers))
+		builders := make([]*Builder, 0, len(notifiers))
+
+		// 1/4 the number of notifiers is guess at how many tree closers we'll have.
+		// Completely made up, but ultimately this is just a hint for the initial
+		// size of the set, and hence doesn't need to be perfect (or even very good).
+		sizeHint := len(notifiers) / 4
+		liveTreeClosers := stringset.New(sizeHint)
+		treeClosers := make([]*TreeCloser, 0, sizeHint)
+
+		for _, cfgNotifier := range notifiers {
+			for _, cfgBuilder := range cfgNotifier.Builders {
+				builder := &Builder{
+					ProjectKey: parentKey,
+					ID:         fmt.Sprintf("%s/%s", cfgBuilder.Bucket, cfgBuilder.Name),
+				}
+				builders = append(builders, builder)
+				liveBuilders.Add(datastore.KeyForObj(ctx, builder).String())
+
+				builderKey := datastore.KeyForObj(ctx, builder)
+				for _, cfgTreeCloser := range cfgNotifier.TreeClosers {
+					tc := &TreeCloser{
+						BuilderKey:     builderKey,
+						TreeStatusHost: cfgTreeCloser.TreeStatusHost,
+					}
+					treeClosers = append(treeClosers, tc)
+					liveTreeClosers.Add(datastore.KeyForObj(ctx, tc).String())
+				}
+			}
+		}
+
+		// Lookup the builders and tree closers in the datastore, if they're not
+		// found that's OK since there could be new entities being initialized.
+		datastore.Get(ctx, builders, treeClosers)
+
+		toSave := make([]interface{}, 0, 1+len(notifiers))
+		builderIndex := 0
+		treeCloserIndex := 0
+		for _, cfgNotifier := range notifiers {
+			for _, cfgBuilder := range cfgNotifier.Builders {
+				builder := builders[builderIndex]
+				builder.Repository = cfgBuilder.Repository
+				builder.Notifications = notifypb.Notifications{
+					Notifications: cfgNotifier.Notifications,
+				}
+				toSave = append(toSave, builder)
+				builderIndex++
+
+				for _, cfgTreeCloser := range cfgNotifier.TreeClosers {
+					treeCloser := treeClosers[treeCloserIndex]
+					treeCloser.TreeCloser = *cfgTreeCloser
+
+					// Default the status to "Open" for new TreeClosers that we haven't
+					// yet seen any builds for.
+					if treeCloser.Status == "" {
+						treeCloser.Status = Open
+					}
+
+					toSave = append(toSave, treeCloser)
+					treeCloserIndex++
+				}
+			}
+		}
+		err := datastore.Put(ctx, toSave)
+		if err != nil {
+			return err
+		}
+		result = updatedNotifiers{
+			LiveBuilders:    liveBuilders,
+			LiveTreeClosers: liveTreeClosers,
+		}
+		return nil
+	}
+
+	err := datastore.RunInTransaction(ctx, f, nil)
+	if err != nil {
+		return updatedNotifiers{}, err
+	}
+	return result, err
+}
+
+func partitionNotifiers(notifiers []*notifypb.Notifier) [][]*notifypb.Notifier {
+	// Datastore allows max. 500 entity updates per transaction.
+	// https://cloud.google.com/datastore/docs/concepts/limits#limits
+	const maxPartitionSize = 500
+
+	var result [][]*notifypb.Notifier
+	var partition []*notifypb.Notifier
+	partitionSize := 0
+	for _, cfgNotifier := range notifiers {
+		// Calculate the number of datastore entities that would be put
+		// for this notifier.
+		size := len(cfgNotifier.Builders) * (1 + len(cfgNotifier.TreeClosers))
+
+		// Try to stay within the max partition size.
+		if partitionSize+size > maxPartitionSize && len(partition) > 0 {
+			result = append(result, partition)
+			partition = nil
+			partitionSize = 0
+		}
+		partition = append(partition, cfgNotifier)
+		partitionSize += size
+	}
+	if len(partition) > 0 {
+		result = append(result, partition)
+	}
+	return result
 }
 
 // clearDeadProjects calls deleteProject for all projects in the datastore

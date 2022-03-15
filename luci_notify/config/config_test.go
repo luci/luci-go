@@ -16,23 +16,23 @@ package config
 
 import (
 	"context"
+	"fmt"
+	"strings"
 	"testing"
 	"time"
 
-	"go.chromium.org/luci/gae/service/datastore"
+	. "github.com/smartystreets/goconvey/convey"
 
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/logging"
+	. "go.chromium.org/luci/common/testing/assertions"
 	"go.chromium.org/luci/config"
 	"go.chromium.org/luci/config/cfgclient"
 	"go.chromium.org/luci/config/impl/memory"
 	mem_ds "go.chromium.org/luci/gae/impl/memory"
-
+	"go.chromium.org/luci/gae/service/datastore"
 	notifypb "go.chromium.org/luci/luci_notify/api/config"
 	"go.chromium.org/luci/luci_notify/common"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestConfigIngestion(t *testing.T) {
@@ -252,6 +252,10 @@ func TestConfigIngestion(t *testing.T) {
 
 			datastore.GetTestable(c).CatchupIndexes()
 
+			// Force a new config revision by slightly changing the config.
+			cfg["projects/chromium"]["luci-notify.cfg"] += " "
+			c := cfgclient.Use(c, memory.New(cfg))
+
 			So(updateProjects(c), ShouldBeNil)
 
 			chromium := &Project{Name: "chromium"}
@@ -274,7 +278,55 @@ func TestConfigIngestion(t *testing.T) {
 			µs, _ := time.ParseDuration("1µs")
 			So(newTreeClosers[0].Timestamp, ShouldEqual, treeCloser.Timestamp.Round(µs))
 		})
+		Convey("Large project", func() {
+			const configTemplate = `notifiers {
+				name: "%v-notifier"
+				notifications {
+					on_new_status: SUCCESS
+					on_new_status: FAILURE
+					on_new_status: INFRA_FAILURE
+					email {
+						recipients: "johndoe@v8.org"
+						recipients: "janedoe@v8.org"
+					}
+				}
+				builders {
+					bucket: "ci"
+					name: "builder-%v"
+				}
+				tree_closers {
+				  tree_status_host: "chromeos-status.appspot.com"
+				}
+			}
+			`
+			var config strings.Builder
+			config.WriteString("tree_closing_enabled: true\n")
+			for i := 0; i < 1000; i++ {
+				config.WriteString(fmt.Sprintf(configTemplate, i, i))
+			}
 
+			cfg["projects/chromeos"] = memory.Files{
+				"luci-notify.cfg": config.String(),
+			}
+			c := cfgclient.Use(c, memory.New(cfg))
+
+			So(updateProjects(c), ShouldBeNil)
+
+			chromeos := &Project{Name: "chromeos"}
+			chromeosKey := datastore.KeyForObj(c, chromeos)
+
+			So(datastore.Get(c, chromeos), ShouldBeNil)
+			So(chromeos.Name, ShouldEqual, "chromeos")
+			So(chromeos.TreeClosingEnabled, ShouldBeTrue)
+
+			var builders []*Builder
+			So(datastore.GetAll(c, datastore.NewQuery("Builder").Ancestor(chromeosKey), &builders), ShouldBeNil)
+			So(len(builders), ShouldEqual, 1000)
+
+			var treeClosers []*TreeCloser
+			So(datastore.GetAll(c, datastore.NewQuery("TreeCloser").Ancestor(chromeosKey), &treeClosers), ShouldBeNil)
+			So(len(treeClosers), ShouldEqual, 1000)
+		})
 		Convey("delete project", func() {
 			delete(cfg, "projects/v8")
 			So(updateProjects(c), ShouldBeNil)
