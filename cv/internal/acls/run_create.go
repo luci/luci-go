@@ -178,12 +178,13 @@ func (ck runCreateChecker) canCreateDryRun() (bool, string) {
 	// 2) triggerer is a dry-runner
 	//    OR
 	//    cg.AllowOwnerIfSubmittable in [COMMIT, DRY_RUN] AND
-	//    the CL has been approved in Gerrit.
-	// 3) all the dependencies of which owner is not a committer
-	// have beeen approved in Gerrit.
+	//      the CL has been approved in Gerrit.
+	// 3) all the deps are trusted.
 	//
-	// Note that AllowOwnerIfSubmittable == COMMIT doesn't allow non-dry-runners
-	// to trigger a dry-run for own CLs.
+	// A dep is trusted, if at least one of the following conditions are met.
+	// - the dep is one of the CLs included in the Run
+	// - the owner of the dep is a committer
+	// - the dep has been approved in Gerrit
 	//
 	// For more context, crbug.com/692611 and go/cq-after-lgtm.
 	if ck.triggerer != ck.owner {
@@ -199,9 +200,12 @@ func (ck runCreateChecker) canCreateDryRun() (bool, string) {
 		if !ck.isApproved {
 			return false, noLGTM
 		}
+		// TODO(ddoman): return false if there is an unapproved dependeny
+		// of which owner is not a committer.
+		return true, ""
 	}
-	// TODO(ddoman): return false if there is an unapproved dependeny
-	// of which owner is not a committer.
+
+	// A dry-runner doesn't need an approval to trigger a dry run for own CLs.
 	return true, ""
 }
 
