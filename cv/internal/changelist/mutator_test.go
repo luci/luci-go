@@ -317,7 +317,7 @@ func TestMutatorBatch(t *testing.T) {
 			verify := func(resCLs []*CL) {
 				// Ensure the returned CLs are exactly what was stored in Datastore,
 				// and compute eversion map at the same time.
-				dsCLs, err := LoadCLs(ctx, clids)
+				dsCLs, err := LoadCLsByIDs(ctx, clids)
 				So(err, ShouldBeNil)
 				eversions := make(map[common.CLID]int64, len(dsCLs))
 				for i := range dsCLs {

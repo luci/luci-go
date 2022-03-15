@@ -57,13 +57,19 @@ func LoadCLsMap(ctx context.Context, m map[common.CLID]*CL) ([]*CL, error) {
 	return loadCLs(ctx, cls)
 }
 
-// LoadCLs loads `CL` entities of the provided list of clids.
-func LoadCLs(ctx context.Context, clids common.CLIDs) ([]*CL, error) {
+// LoadCLsByIDs loads `CL` entities of the provided list of clids.
+func LoadCLsByIDs(ctx context.Context, clids common.CLIDs) ([]*CL, error) {
 	cls := make([]*CL, len(clids))
 	for i, clid := range clids {
 		cls[i] = &CL{ID: clid}
 	}
 	return loadCLs(ctx, cls)
+}
+
+// LoadCLs loads given `CL` entities.
+func LoadCLs(ctx context.Context, cls []*CL) error {
+	_, err := loadCLs(ctx, cls)
+	return err
 }
 
 func loadCLs(ctx context.Context, cls []*CL) ([]*CL, error) {

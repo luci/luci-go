@@ -130,7 +130,7 @@ func (impl *Impl) cancelCLTriggers(ctx context.Context, runID common.RunID, toCa
 	for i, runCL := range toCancel {
 		clids[i] = runCL.ID
 	}
-	cls, err := changelist.LoadCLs(ctx, clids)
+	cls, err := changelist.LoadCLsByIDs(ctx, clids)
 	if err != nil {
 		return err
 	}

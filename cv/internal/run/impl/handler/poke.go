@@ -51,7 +51,7 @@ func (impl *Impl) Poke(ctx context.Context, rs *state.RunState) (*Result, error)
 	}
 
 	if shouldRefreshCLs(ctx, rs) {
-		switch cls, err := changelist.LoadCLs(ctx, rs.CLs); {
+		switch cls, err := changelist.LoadCLsByIDs(ctx, rs.CLs); {
 		case err != nil:
 			return nil, err
 		default:

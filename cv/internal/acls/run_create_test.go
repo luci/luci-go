@@ -19,6 +19,7 @@ import (
 	"testing"
 
 	"go.chromium.org/luci/auth/identity"
+	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
 
@@ -76,11 +77,12 @@ func TestCheckRunCLs(t *testing.T) {
 		// test helpers
 		var cls []*changelist.CL
 		var trs []*run.Trigger
+		var clid int64
 		addCL := func(triggerer, owner string, m run.Mode) *changelist.CL {
-			id := len(cls) + 1
-			cls = append(cls, &changelist.CL{
-				ID:         common.CLID(id),
-				ExternalID: changelist.MustGobID(gerritHost, int64(id)),
+			clid++
+			cl := &changelist.CL{
+				ID:         common.CLID(clid),
+				ExternalID: changelist.MustGobID(gerritHost, clid),
 				Snapshot: &changelist.Snapshot{
 					Kind: &changelist.Snapshot_Gerrit{
 						Gerrit: &changelist.Gerrit{
@@ -93,12 +95,36 @@ func TestCheckRunCLs(t *testing.T) {
 						},
 					},
 				},
-			})
+			}
+			So(datastore.Put(ctx, cl), ShouldBeNil)
+			cls = append(cls, cl)
 			trs = append(trs, &run.Trigger{
 				Email: triggerer,
 				Mode:  string(m),
 			})
-			return cls[len(cls)-1]
+			return cl
+		}
+		addDep := func(base *changelist.CL, owner string) *changelist.CL {
+			clid++
+			dep := &changelist.CL{
+				ID:         common.CLID(clid),
+				ExternalID: changelist.MustGobID(gerritHost, clid),
+				Snapshot: &changelist.Snapshot{
+					Kind: &changelist.Snapshot_Gerrit{
+						Gerrit: &changelist.Gerrit{
+							Host: gerritHost,
+							Info: &gerritpb.ChangeInfo{
+								Owner: &gerritpb.AccountInfo{
+									Email: owner,
+								},
+							},
+						},
+					},
+				},
+			}
+			So(datastore.Put(ctx, dep), ShouldBeNil)
+			base.Snapshot.Deps = append(base.Snapshot.Deps, &changelist.Dep{Clid: clid})
+			return dep
 		}
 
 		mustOK := func() {
@@ -106,14 +132,16 @@ func TestCheckRunCLs(t *testing.T) {
 			So(err, ShouldBeNil)
 			So(res.OK(), ShouldBeTrue)
 		}
-		mustFailWith := func(cl *changelist.CL, format string, args ...interface{}) {
+		mustFailWith := func(cl *changelist.CL, format string, args ...interface{}) CheckResult {
 			res, err := CheckRunCreate(ctx, &cg, trs, cls)
 			So(err, ShouldBeNil)
 			So(res.OK(), ShouldBeFalse)
 			So(res.Failure(cl), ShouldContainSubstring, fmt.Sprintf(format, args...))
+			return res
 		}
 		approveCL := func(cl *changelist.CL) {
 			cl.Snapshot.GetGerrit().GetInfo().Submittable = true
+			So(datastore.Put(ctx, cl), ShouldBeNil)
 		}
 		setAllowOwner := func(action cfgpb.Verifiers_GerritCQAbility_CQAction) {
 			cg.Content.Verifiers.GerritCqAbility.AllowOwnerIfSubmittable = action
@@ -268,6 +296,45 @@ func TestCheckRunCLs(t *testing.T) {
 					mustFailWith(cl, "neither the CL owner nor a committer")
 					setAllowOwner(cfgpb.Verifiers_GerritCQAbility_DRY_RUN)
 					mustFailWith(cl, "neither the CL owner nor a committer")
+				})
+			})
+
+			Convey("w/ dependencies", func() {
+				// if triggerer is not the owner, but a committer, then
+				// untrusted deps should be checked.
+				tr, owner := "t@example.org", "o@example.org"
+				cl := addCL(tr, owner, m)
+				addCommitter(tr)
+
+				dep1 := addDep(cl, "dep_owner1@example.org")
+				dep2 := addDep(cl, "dep_owner2@example.org")
+
+				Convey("untrusted", func() {
+					res := mustFailWith(cl, untrustedDeps)
+					So(res.Failure(cl), ShouldContainSubstring, dep1.ExternalID.MustURL())
+					So(res.Failure(cl), ShouldContainSubstring, dep2.ExternalID.MustURL())
+				})
+				Convey("trusted because it's apart of the Run", func() {
+					cls = append(cls, dep1, dep2)
+					trs = append(trs, &run.Trigger{Email: tr, Mode: string(m)})
+					trs = append(trs, &run.Trigger{Email: tr, Mode: string(m)})
+					mustOK()
+				})
+				Convey("trusted because of an approval", func() {
+					approveCL(dep1)
+					approveCL(dep2)
+					mustOK()
+				})
+				Convey("trusted because the owner is a committer", func() {
+					addCommitter("dep_owner1@example.org")
+					addCommitter("dep_owner2@example.org")
+					mustOK()
+				})
+				Convey("a mix of untrusted and trusted deps", func() {
+					addCommitter("dep_owner1@example.org")
+					res := mustFailWith(cl, untrustedDeps)
+					So(res.Failure(cl), ShouldNotContainSubstring, dep1.ExternalID.MustURL())
+					So(res.Failure(cl), ShouldContainSubstring, dep2.ExternalID.MustURL())
 				})
 			})
 		})

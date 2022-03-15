@@ -77,3 +77,20 @@ func (res CheckResult) FailuresSummary() string {
 	}
 	return sb.String()
 }
+
+// evalResult represents the result of an evaluation function.
+//
+// reason is the reason explaining why ok == false.
+type evalResult struct {
+	ok     bool
+	reason string
+}
+
+var (
+	yes = evalResult{ok: true}
+	no  = evalResult{}
+)
+
+func noWithReason(r string) evalResult {
+	return evalResult{reason: r}
+}

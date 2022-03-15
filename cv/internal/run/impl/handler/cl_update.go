@@ -56,7 +56,7 @@ func (impl *Impl) OnCLsUpdated(ctx context.Context, rs *state.RunState, clids co
 	var runCLs []*run.RunCL
 	eg, ectx := errgroup.WithContext(ctx)
 	eg.Go(func() (err error) {
-		cls, err = changelist.LoadCLs(ectx, clids)
+		cls, err = changelist.LoadCLsByIDs(ectx, clids)
 		return err
 	})
 	eg.Go(func() (err error) {

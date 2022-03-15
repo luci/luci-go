@@ -96,7 +96,7 @@ func (impl *Impl) Start(ctx context.Context, rs *state.RunState) (*Result, error
 		// fetch the latest snapshots of the Changelist(s) to let
 		// acls.CheckRunCreate() make a decision, based on the freshest
 		// data.
-		cls, err = changelist.LoadCLs(ctx, rs.CLs)
+		cls, err = changelist.LoadCLsByIDs(ctx, rs.CLs)
 		return err
 	})
 	if err := eg.Wait(); err != nil {

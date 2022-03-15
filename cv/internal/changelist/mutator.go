@@ -370,7 +370,7 @@ func (m *Mutator) BeginBatch(ctx context.Context, project string, ids common.CLI
 	if trans == nil {
 		panic(fmt.Errorf("changelist.Mutator.BeginBatch must be called inside an existing Datastore transaction"))
 	}
-	cls, err := LoadCLs(ctx, ids)
+	cls, err := LoadCLsByIDs(ctx, ids)
 	if err != nil {
 		return nil, err
 	}

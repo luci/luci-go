@@ -158,7 +158,7 @@ func (op *CancelTriggersOp) loadInputs(ctx context.Context) error {
 		for i, req := range requests {
 			clids[i] = common.CLID(req.Clid)
 		}
-		clsToCancel, err = changelist.LoadCLs(ctx, clids)
+		clsToCancel, err = changelist.LoadCLsByIDs(ctx, clids)
 		return err
 	})
 	eg.Go(func() error {
