@@ -52,8 +52,14 @@ func TestBatchGetTestVariants(t *testing.T) {
 			},
 		})
 
-		testutil.MustApply(ctx, insert.Invocation("i0", pb.Invocation_ACTIVE, map[string]interface{}{"Realm": "testproject:testrealm"}))
-		testutil.MustApply(ctx, insert.Invocation("i1", pb.Invocation_ACTIVE, map[string]interface{}{"Realm": "testproject:testrealm"}))
+		testutil.MustApply(
+			ctx,
+			insert.InvocationWithInclusions("i0", pb.Invocation_ACTIVE, map[string]interface{}{"Realm": "testproject:testrealm"}, "i0")...,
+		)
+		testutil.MustApply(
+			ctx,
+			insert.Invocation("i1", pb.Invocation_ACTIVE, map[string]interface{}{"Realm": "testproject:testrealm"}),
+		)
 		testutil.MustApply(ctx, testutil.CombineMutations(
 			insert.TestResults("i0", "test1", pbutil.Variant("a", "b"), pb.TestStatus_PASS),
 			insert.TestResults("i0", "test2", pbutil.Variant("c", "d"), pb.TestStatus_PASS),
@@ -65,7 +71,7 @@ func TestBatchGetTestVariants(t *testing.T) {
 
 		srv := &resultDBServer{}
 
-		Convey(`Valid request`, func() {
+		Convey(`Valid request with included invocation`, func() {
 			res, err := srv.BatchGetTestVariants(ctx, &pb.BatchGetTestVariantsRequest{
 				Invocation: "invocations/i0",
 				TestVariants: []*pb.BatchGetTestVariantsRequest_TestVariantIdentifier{
@@ -82,6 +88,24 @@ func TestBatchGetTestVariants(t *testing.T) {
 				fmt.Sprintf("10/test3/%s", variantHash("a", "b")),
 				fmt.Sprintf("20/test4/%s", variantHash("g", "h")),
 				fmt.Sprintf("50/test1/%s", variantHash("a", "b")),
+			})
+		})
+
+		Convey(`Valid request without included invocation`, func() {
+			res, err := srv.BatchGetTestVariants(ctx, &pb.BatchGetTestVariantsRequest{
+				Invocation: "invocations/i1",
+				TestVariants: []*pb.BatchGetTestVariantsRequest_TestVariantIdentifier{
+					{TestId: "test1", VariantHash: variantHash("e", "f")},
+					{TestId: "test3", VariantHash: variantHash("c", "d")},
+				},
+			})
+			So(err, ShouldBeNil)
+
+			// NOTE: The order isn't important here, we just don't have a
+			// matcher that does an unordered comparison.
+			So(getTvStrings(res.TestVariants), ShouldResemble, []string{
+				fmt.Sprintf("50/test1/%s", variantHash("e", "f")),
+				fmt.Sprintf("50/test3/%s", variantHash("c", "d")),
 			})
 		})
 

@@ -90,7 +90,8 @@ func TestQueryTestResults(t *testing.T) {
 			insertInv("x", map[string]interface{}{"Realm": "secretproject:testrealm"}, "a"),
 			insertInv("a", map[string]interface{}{"Realm": "testproject:testrealm"}, "b"),
 			insertInv("b", map[string]interface{}{"Realm": "otherproject:testrealm"}, "c"),
-			insertInv("c", map[string]interface{}{"Realm": "otherproject:testrealm"}),
+			// The invocation c doesn't have any included invocation.
+			insertInv("c", map[string]interface{}{"Realm": "testproject:testrealm"}),
 			insertTRs("a", "A", nil, pb.TestStatus_FAIL, pb.TestStatus_PASS),
 			insertTRs("b", "B", nil, pb.TestStatus_CRASH, pb.TestStatus_PASS),
 			insertTRs("c", "C", nil, pb.TestStatus_PASS),
@@ -114,7 +115,7 @@ func TestQueryTestResults(t *testing.T) {
 			So(err, ShouldHaveAppStatus, codes.PermissionDenied)
 		})
 
-		Convey(`Valid`, func() {
+		Convey(`Valid with included invocation`, func() {
 			res, err := srv.QueryTestResults(ctx, &pb.QueryTestResultsRequest{
 				Invocations: []string{"invocations/a"},
 			})
@@ -140,6 +141,21 @@ func TestQueryTestResults(t *testing.T) {
 
 			So(res.TestResults[4].Name, ShouldEqual, "invocations/c/tests/C/results/0")
 			So(res.TestResults[4].Status, ShouldEqual, pb.TestStatus_PASS)
+		})
+
+		Convey(`Valid without included invocation`, func() {
+			res, err := srv.QueryTestResults(ctx, &pb.QueryTestResultsRequest{
+				Invocations: []string{"invocations/c"},
+			})
+			So(err, ShouldBeNil)
+			So(res.TestResults, ShouldHaveLength, 1)
+
+			sort.Slice(res.TestResults, func(i, j int) bool {
+				return res.TestResults[i].Name < res.TestResults[j].Name
+			})
+
+			So(res.TestResults[0].Name, ShouldEqual, "invocations/c/tests/C/results/0")
+			So(res.TestResults[0].Status, ShouldEqual, pb.TestStatus_PASS)
 		})
 
 		Convey(`With readMask`, func() {

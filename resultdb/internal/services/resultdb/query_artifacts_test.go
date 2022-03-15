@@ -71,9 +71,14 @@ func TestQueryArtifacts(t *testing.T) {
 
 		testutil.MustApply(
 			ctx,
-			insert.Invocation("inv1", pb.Invocation_ACTIVE, map[string]interface{}{"Realm": "testproject:testrealm"}),
+			insert.InvocationWithInclusions("inv1", pb.Invocation_ACTIVE, map[string]interface{}{"Realm": "testproject:testrealm"}, "inv2")...,
+		)
+		testutil.MustApply(
+			ctx,
+			insert.Invocation("inv2", pb.Invocation_ACTIVE, map[string]interface{}{"Realm": "testproject:testrealm"}),
 			insert.Invocation("invx", pb.Invocation_ACTIVE, map[string]interface{}{"Realm": "secretproject:testrealm"}),
 		)
+
 		req := &pb.QueryArtifactsRequest{
 			Invocations: []string{"invocations/inv1"},
 			PageSize:    100,
@@ -105,15 +110,32 @@ func TestQueryArtifacts(t *testing.T) {
 			So(err, ShouldHaveAppStatus, codes.PermissionDenied)
 		})
 
-		Convey(`Reads both invocation and test result artifacts`, func() {
+		Convey(`Reads test result artifacts by invocation with included invocation`, func() {
 			testutil.MustApply(ctx,
 				insert.Artifact("inv1", "", "a", nil),
 				insert.Artifact("inv1", "tr/t t/r", "a", nil),
+				insert.Artifact("inv2", "", "b", nil),
+				insert.Artifact("inv2", "tr/t t/r", "b", nil),
 			)
 			actual := mustFetchNames(req)
 			So(actual, ShouldResemble, []string{
 				"invocations/inv1/artifacts/a",
 				"invocations/inv1/tests/t%20t/results/r/artifacts/a",
+				"invocations/inv2/artifacts/b",
+				"invocations/inv2/tests/t%20t/results/r/artifacts/b",
+			})
+		})
+
+		Convey(`Reads test result artifacts by invocation without included invocation`, func() {
+			req.Invocations = []string{"invocations/inv2"}
+			testutil.MustApply(ctx,
+				insert.Artifact("inv2", "", "b", nil),
+				insert.Artifact("inv2", "tr/t t/r", "b", nil),
+			)
+			actual := mustFetchNames(req)
+			So(actual, ShouldResemble, []string{
+				"invocations/inv2/artifacts/b",
+				"invocations/inv2/tests/t%20t/results/r/artifacts/b",
 			})
 		})
 

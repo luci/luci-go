@@ -64,8 +64,9 @@ func TestQueryTestExonerations(t *testing.T) {
 		testutil.MustApply(ctx, testutil.CombineMutations(
 			insertInv("x", map[string]interface{}{"Realm": "secretproject:testrealm"}, "a"),
 			insertInv("a", map[string]interface{}{"Realm": "testproject:testrealm"}, "b"),
-			insertInv("b", nil, "c"),
-			insertInv("c", nil),
+			insertInv("b", map[string]interface{}{"Realm": "otherproject:testrealm"}, "c"),
+			// The invocation c doesn't have any included invocation.
+			insertInv("c", map[string]interface{}{"Realm": "testproject:testrealm"}),
 			insertEx("a", "A", pbutil.Variant("v", "a"), 2),
 			insertEx("c", "C", pbutil.Variant("v", "c"), 1),
 		)...)
@@ -79,7 +80,7 @@ func TestQueryTestExonerations(t *testing.T) {
 			So(err, ShouldHaveAppStatus, codes.PermissionDenied)
 		})
 
-		Convey(`Valid`, func() {
+		Convey(`Valid with included invocation`, func() {
 			res, err := srv.QueryTestExonerations(ctx, &pb.QueryTestExonerationsRequest{
 				Invocations: []string{"invocations/a"},
 			})
@@ -105,6 +106,27 @@ func TestQueryTestExonerations(t *testing.T) {
 					ExonerationId:   "1",
 					ExplanationHtml: "explanation 1",
 				},
+				{
+					Name:            "invocations/c/tests/C/exonerations/0",
+					TestId:          "C",
+					Variant:         pbutil.Variant("v", "c"),
+					VariantHash:     pbutil.VariantHash(pbutil.Variant("v", "c")),
+					ExonerationId:   "0",
+					ExplanationHtml: "explanation 0",
+				},
+			})
+		})
+
+		Convey(`Valid without included invocation`, func() {
+			res, err := srv.QueryTestExonerations(ctx, &pb.QueryTestExonerationsRequest{
+				Invocations: []string{"invocations/c"},
+			})
+			So(err, ShouldBeNil)
+			actual := res.TestExonerations
+			sort.Slice(actual, func(i, j int) bool {
+				return actual[i].Name < actual[j].Name
+			})
+			So(actual, ShouldResembleProto, []*pb.TestExoneration{
 				{
 					Name:            "invocations/c/tests/C/exonerations/0",
 					TestId:          "C",

@@ -67,9 +67,10 @@ func TestQueryTestResultStatistics(t *testing.T) {
 				"c", pb.Invocation_FINALIZED, map[string]interface{}{
 					"Realm": "otherproject:testrealm",
 				}),
+			// The invocation d doesn't have any included invocation.
 			insert.Invocation(
 				"d", pb.Invocation_FINALIZED, map[string]interface{}{
-					"Realm": "otherproject:testrealm",
+					"Realm": "testproject:testrealm",
 				}),
 			insert.Inclusion("a", "b"),
 			insert.Inclusion("a", "c"),
@@ -92,12 +93,20 @@ func TestQueryTestResultStatistics(t *testing.T) {
 			So(err, ShouldHaveAppStatus, codes.PermissionDenied)
 		})
 
-		Convey(`Valid`, func() {
+		Convey(`Valid with included invocation`, func() {
 			res, err := srv.QueryTestResultStatistics(ctx, &pb.QueryTestResultStatisticsRequest{
 				Invocations: []string{"invocations/a"},
 			})
 			So(err, ShouldBeNil)
 			So(res.TotalTestResults, ShouldEqual, 35)
+		})
+
+		Convey(`Valid without included invocation`, func() {
+			res, err := srv.QueryTestResultStatistics(ctx, &pb.QueryTestResultStatisticsRequest{
+				Invocations: []string{"invocations/d"},
+			})
+			So(err, ShouldBeNil)
+			So(res.TotalTestResults, ShouldEqual, 20)
 		})
 	})
 

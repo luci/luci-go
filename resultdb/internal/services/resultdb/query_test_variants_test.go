@@ -42,8 +42,14 @@ func TestQueryTestVariants(t *testing.T) {
 			},
 		})
 
-		testutil.MustApply(ctx, insert.Invocation("inv0", pb.Invocation_ACTIVE, map[string]interface{}{"Realm": "testproject:testrealm"}))
-		testutil.MustApply(ctx, insert.Invocation("inv1", pb.Invocation_ACTIVE, map[string]interface{}{"Realm": "testproject:testrealm"}))
+		testutil.MustApply(
+			ctx,
+			insert.InvocationWithInclusions("inv0", pb.Invocation_ACTIVE, map[string]interface{}{"Realm": "testproject:testrealm"}, "inv1")...,
+		)
+		testutil.MustApply(
+			ctx,
+			insert.Invocation("inv1", pb.Invocation_ACTIVE, map[string]interface{}{"Realm": "testproject:testrealm"}),
+		)
 		testutil.MustApply(ctx, testutil.CombineMutations(
 			insert.TestResults("inv0", "T1", nil, pb.TestStatus_FAIL),
 			insert.TestResults("inv0", "T2", nil, pb.TestStatus_FAIL),
@@ -62,9 +68,9 @@ func TestQueryTestVariants(t *testing.T) {
 			So(err, ShouldHaveAppStatus, codes.PermissionDenied)
 		})
 
-		Convey(`Valid`, func() {
+		Convey(`Valid with included invocation`, func() {
 			res, err := srv.QueryTestVariants(ctx, &pb.QueryTestVariantsRequest{
-				Invocations: []string{"invocations/inv0", "invocations/inv1"},
+				Invocations: []string{"invocations/inv0"},
 			})
 			So(err, ShouldBeNil)
 			So(res.NextPageToken, ShouldEqual, pagination.Token("EXPECTED", "", ""))
@@ -81,6 +87,26 @@ func TestQueryTestVariants(t *testing.T) {
 				"10/T2/e3b0c44298fc1c14",
 				"30/T1/c467ccce5a16dc72",
 				"40/T1/e3b0c44298fc1c14",
+			})
+		})
+
+		Convey(`Valid without included invocation`, func() {
+			res, err := srv.QueryTestVariants(ctx, &pb.QueryTestVariantsRequest{
+				Invocations: []string{"invocations/inv1"},
+			})
+			So(err, ShouldBeNil)
+			So(res.NextPageToken, ShouldEqual, pagination.Token("EXPECTED", "", ""))
+
+			So(len(res.TestVariants), ShouldEqual, 1)
+			getTVStrings := func(tvs []*pb.TestVariant) []string {
+				tvStrings := make([]string, len(tvs))
+				for i, tv := range tvs {
+					tvStrings[i] = fmt.Sprintf("%d/%s/%s", int32(tv.Status), tv.TestId, tv.VariantHash)
+				}
+				return tvStrings
+			}
+			So(getTVStrings(res.TestVariants), ShouldResemble, []string{
+				"30/T1/c467ccce5a16dc72",
 			})
 		})
 
