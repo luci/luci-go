@@ -38,6 +38,9 @@ func (c GSClient) Get(path gs.Path) []byte {
 // Attrs implements gs.Client.
 func (c GSClient) Attrs(path gs.Path) (*storage.ObjectAttrs, error) { return nil, nil }
 
+// Objects implements gs.Client.
+func (c GSClient) Objects(path gs.Path) ([]*storage.ObjectAttrs, error) { return nil, nil }
+
 // Close implements gs.Client.
 func (c GSClient) Close() error { return nil }
 
