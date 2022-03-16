@@ -333,6 +333,15 @@ func validateBuildToken(ctx context.Context, bID int64, requireToken bool) (*pb.
 	md, _ := metadata.FromIncomingContext(ctx)
 	buildToks := md.Get(BuildTokenKey)
 	if len(buildToks) == 0 {
+		// TODO(crbug.com/1031205): remove BuildTokenKey.
+		buildToks = md.Get(buildbucket.BuildbucketTokenHeader)
+		if len(buildToks) > 0 {
+			// TODO(crbug.com/1031205): remove the logging after confirming
+			// buildbucket token works.
+			logging.Infof(ctx, "got buildbucket-token for %d", bID)
+		}
+	}
+	if len(buildToks) == 0 {
 		if !requireToken {
 			return nil, nil, nil
 		}
