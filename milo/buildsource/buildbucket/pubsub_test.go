@@ -301,7 +301,8 @@ func TestPubSub(t *testing.T) {
 }
 
 func TestShouldUpdateBuilderSummary(t *testing.T) {
-	Convey("TestShouldUpdateBuilderSummary", t, func() {
+	// Skip due to https://crbug.com/1304383
+	SkipConvey("TestShouldUpdateBuilderSummary", t, func() {
 		ctx := context.Background()
 
 		// Set up a test redis server.
