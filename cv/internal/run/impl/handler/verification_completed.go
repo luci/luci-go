@@ -93,6 +93,14 @@ func (impl *Impl) OnCQDVerificationCompleted(ctx context.Context, rs *state.RunS
 			return nil, err
 		}
 		rs.LogInfo(ctx, logEntryCQDVerificationFailed, meta.message)
+		if vr.Payload.FailedVerifier == "gerrit_cq_ability" {
+			switch rs.CreationAllowed {
+			case run.CreationAllowedYes:
+				logging.Infof(ctx, "crbug/1268574 - %d: CV allowed creation but CQ didn't", rs.ID)
+			case run.CreationAllowedUnset:
+				logging.Infof(ctx, "crbug/1268574 - %d: CreationAllowed was unset.", rs.ID)
+			}
+		}
 		se := impl.endRun(ctx, rs, run.Status_FAILED)
 		return &Result{State: rs, SideEffectFn: se}, nil
 	default:

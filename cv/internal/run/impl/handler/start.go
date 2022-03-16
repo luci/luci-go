@@ -106,13 +106,16 @@ func (impl *Impl) Start(ctx context.Context, rs *state.RunState) (*Result, error
 	switch result, err := acls.CheckRunCreate(ctx, cg, trs, cls); {
 	case err != nil:
 		return nil, errors.Annotate(err, "CheckRunCreate").Err()
+	case result.OK():
+		rs.CreationAllowed = run.CreationAllowedYes
 	case !result.OK():
 		// Let the Run move forwards.
 		// CQD should reject the Run via the migration steps.
 		//
 		// TODO(crbug/1268574): cancel the Run, once it's verified that
 		// both (CQ and CV) implementations agree with each other.
-		logging.Infof(ctx, "crbnug/1268574\n%s", result.FailuresSummary())
+		logging.Debugf(ctx, "crbug/1268574\n%s", result.FailuresSummary())
+		rs.CreationAllowed = run.CreationAllowedNo
 	}
 
 	switch _, err := requirement.Compute(ctx, requirement.Input{

@@ -30,7 +30,7 @@ import (
 const (
 	// RunKind is the Datastore entity kind for Run.
 	RunKind = "Run"
-	// RunKind is the Datastore entity kind for RunCL.
+	// RunCLKind is the Datastore entity kind for RunCL.
 	RunCLKind = "RunCL"
 	// RunLogKind is the Datastore entity kind for RunLog.
 	RunLogKind = "RunLog"
@@ -46,6 +46,19 @@ const (
 	//     they should be highly compressible, so even at 1KiB each,
 	//     1024 tryjob results should amount to much less than 1 MiB.
 	MaxTryjobs = 1024
+)
+
+// CreationAllowedResult tells whether acls.CheckRunCreate
+// allowed a given Run to be created.
+type CreationAllowedResult int
+
+const (
+	// CreationAllowedUnset indicates that the result was unset
+	CreationAllowedUnset CreationAllowedResult = iota
+	// CreationAllowedYes indicates that the creation was allowed.
+	CreationAllowedYes
+	// CreationAllowedNo indicates that the creation was disallowed.
+	CreationAllowedNo
 )
 
 // Run is an entity that contains high-level information about a CV Run.
@@ -120,6 +133,9 @@ type Run struct {
 	// LatestCLsRefresh is the latest time when Run Manager scheduled async
 	// refresh of CLs.
 	LatestCLsRefresh time.Time `gae:",noindex"`
+
+	// CreationAllowed tells if the Run was allowed to be created.
+	CreationAllowed CreationAllowedResult `gae:",noindex"`
 }
 
 // Mutate mutates the Run by executing `mut`.
