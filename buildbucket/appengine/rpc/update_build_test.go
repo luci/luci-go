@@ -816,25 +816,6 @@ func TestUpdateBuild(t *testing.T) {
 					Status: pb.Status_SUCCESS,
 				})
 			})
-			Convey("nil read mask", func() {
-				req.UpdateMask.Paths[0] = "build.status"
-				req.Build.Status = pb.Status_SUCCESS
-				b, err := srv.UpdateBuild(ctx, req)
-				So(err, ShouldBeNil)
-				So(b, ShouldResembleProto, &pb.Build{})
-			})
-			Convey("empty read mask", func() {
-				req.UpdateMask.Paths[0] = "build.status"
-				req.Build.Status = pb.Status_SUCCESS
-				req.Mask = &pb.BuildMask{
-					Fields: &fieldmaskpb.FieldMask{
-						Paths: []string{},
-					},
-				}
-				b, err := srv.UpdateBuild(ctx, req)
-				So(err, ShouldBeNil)
-				So(b, ShouldResembleProto, &pb.Build{})
-			})
 		})
 
 		Convey("update build with parent", func() {
