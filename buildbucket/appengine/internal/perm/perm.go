@@ -40,6 +40,7 @@ import (
 	"go.chromium.org/luci/server/caching/layered"
 
 	"go.chromium.org/luci/buildbucket/appengine/model"
+	"go.chromium.org/luci/buildbucket/bbperms"
 	pb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/buildbucket/protoutil"
 )
@@ -54,33 +55,17 @@ const (
 	Administrators = "administrators"
 )
 
-var (
-	// BuildsAdd allows to schedule new builds in a bucket.
-	BuildsAdd = realms.RegisterPermission("buildbucket.builds.add")
-	// BuildsGet allows to see all information about a build.
-	BuildsGet = realms.RegisterPermission("buildbucket.builds.get")
-	// BuildsList allows to list and search builds in a bucket.
-	BuildsList = realms.RegisterPermission("buildbucket.builds.list")
-	// BuildsCancel allows to cancel a build.
-	BuildsCancel = realms.RegisterPermission("buildbucket.builds.cancel")
-
-	// BuildersGet allows to see details of a builder (but not its builds).
-	BuildersGet = realms.RegisterPermission("buildbucket.builders.get")
-	// BuildersList allows to list and search builders (but not builds).
-	BuildersList = realms.RegisterPermission("buildbucket.builders.list")
-)
-
 // Permission -> a minimal legacy role it requires.
 var minRolePerPerm = map[realms.Permission]pb.Acl_Role{
 	// Builds.
-	BuildsAdd:    pb.Acl_SCHEDULER,
-	BuildsGet:    pb.Acl_READER,
-	BuildsList:   pb.Acl_READER,
-	BuildsCancel: pb.Acl_SCHEDULER,
+	bbperms.BuildsAdd:    pb.Acl_SCHEDULER,
+	bbperms.BuildsGet:    pb.Acl_READER,
+	bbperms.BuildsList:   pb.Acl_READER,
+	bbperms.BuildsCancel: pb.Acl_SCHEDULER,
 
 	// Builders.
-	BuildersGet:  pb.Acl_READER,
-	BuildersList: pb.Acl_READER,
+	bbperms.BuildersGet:  pb.Acl_READER,
+	bbperms.BuildersList: pb.Acl_READER,
 }
 
 // Cache "<project>/<bucket>" => wirepb-serialized pb.Bucket.
@@ -194,8 +179,8 @@ func HasInBucket(ctx context.Context, perm realms.Permission, project, bucket st
 	// The user doesn't have the requested permission. Give a detailed error
 	// message only if the caller is allowed to see the builder. Otherwise return
 	// generic "Not found or no permission" error.
-	if perm != BuildersGet {
-		switch visible, err := hasPerm(ctx, bucketPB, BuildersGet, project, bucket); {
+	if perm != bbperms.BuildersGet {
+		switch visible, err := hasPerm(ctx, bucketPB, bbperms.BuildersGet, project, bucket); {
 		case err != nil:
 			return err
 		case visible:

@@ -39,6 +39,7 @@ import (
 	"go.chromium.org/luci/buildbucket/appengine/internal/buildid"
 	"go.chromium.org/luci/buildbucket/appengine/internal/perm"
 	"go.chromium.org/luci/buildbucket/appengine/model"
+	"go.chromium.org/luci/buildbucket/bbperms"
 	pb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/buildbucket/protoutil"
 )
@@ -192,7 +193,7 @@ func (q *Query) Fetch(ctx context.Context) (*pb.SearchBuildsResponse, error) {
 
 	// Verify bucket ACL permission.
 	if q.Builder != nil && q.Builder.Bucket != "" {
-		if err := perm.HasInBuilder(ctx, perm.BuildsList, q.Builder); err != nil {
+		if err := perm.HasInBuilder(ctx, bbperms.BuildsList, q.Builder); err != nil {
 			return nil, err
 		}
 	}
@@ -270,7 +271,7 @@ func (q *Query) fetchOnBuild(ctx context.Context) (*pb.SearchBuildsResponse, err
 	case q.Builder.GetBucket() != "":
 		buckets = []string{protoutil.FormatBucketID(q.Builder.Project, q.Builder.Bucket)}
 	default:
-		switch buckets, err = perm.BucketsByPerm(ctx, perm.BuildersList, q.Builder.GetProject()); {
+		switch buckets, err = perm.BucketsByPerm(ctx, bbperms.BuildersList, q.Builder.GetProject()); {
 		case err != nil:
 			return nil, errors.Annotate(err, "error fetching accessible buckets").Err()
 		case len(buckets) == 0:
@@ -455,7 +456,7 @@ func (q *Query) filterEntries(ctx context.Context, entries []*model.TagIndexEntr
 			has, ok := hasAccessCache[e.BucketID]
 			if !ok {
 				proj, bkt, _ := protoutil.ParseBucketID(e.BucketID)
-				if err := perm.HasInBucket(ctx, perm.BuildsList, proj, bkt); err == nil {
+				if err := perm.HasInBucket(ctx, bbperms.BuildsList, proj, bkt); err == nil {
 					has = true
 				} else {
 					status, ok := appstatus.Get(err)

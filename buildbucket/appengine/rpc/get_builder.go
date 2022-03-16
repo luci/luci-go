@@ -24,6 +24,7 @@ import (
 
 	"go.chromium.org/luci/buildbucket/appengine/internal/perm"
 	"go.chromium.org/luci/buildbucket/appengine/model"
+	"go.chromium.org/luci/buildbucket/bbperms"
 	pb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/buildbucket/protoutil"
 )
@@ -43,7 +44,7 @@ func (*Builders) GetBuilder(ctx context.Context, req *pb.GetBuilderRequest) (*pb
 		return nil, appstatus.BadRequest(err)
 	}
 
-	if err := perm.HasInBuilder(ctx, perm.BuildersGet, req.Id); err != nil {
+	if err := perm.HasInBuilder(ctx, bbperms.BuildersGet, req.Id); err != nil {
 		return nil, err
 	}
 

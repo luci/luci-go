@@ -33,6 +33,7 @@ import (
 	_ "go.chromium.org/luci/gae/service/datastore/crbug1242998safeget"
 
 	"go.chromium.org/luci/buildbucket/appengine/model"
+	"go.chromium.org/luci/buildbucket/bbperms"
 	pb "go.chromium.org/luci/buildbucket/proto"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -89,20 +90,20 @@ func TestHasInBucketLegacy(t *testing.T) {
 		}
 
 		Convey("Missing bucket", func() {
-			So(check(BuildsGet, anon), ShouldEqual, codes.NotFound)
-			So(check(BuildsGet, admin), ShouldEqual, codes.NotFound)
-			So(check(BuildsGet, sameProject), ShouldEqual, codes.NotFound)
-			So(check(BuildsGet, reader), ShouldEqual, codes.NotFound)
+			So(check(bbperms.BuildsGet, anon), ShouldEqual, codes.NotFound)
+			So(check(bbperms.BuildsGet, admin), ShouldEqual, codes.NotFound)
+			So(check(bbperms.BuildsGet, sameProject), ShouldEqual, codes.NotFound)
+			So(check(bbperms.BuildsGet, reader), ShouldEqual, codes.NotFound)
 		})
 
 		Convey("Existing bucket, no ACLs in it", func() {
 			makeBucket(nil)
 
-			So(check(BuildsGet, anon), ShouldEqual, codes.NotFound)
-			So(check(BuildsGet, admin), ShouldEqual, codes.OK)
-			So(check(BuildsGet, sameProject), ShouldEqual, codes.OK)
-			So(check(BuildsGet, anotherProject), ShouldEqual, codes.NotFound)
-			So(check(BuildsGet, reader), ShouldEqual, codes.NotFound)
+			So(check(bbperms.BuildsGet, anon), ShouldEqual, codes.NotFound)
+			So(check(bbperms.BuildsGet, admin), ShouldEqual, codes.OK)
+			So(check(bbperms.BuildsGet, sameProject), ShouldEqual, codes.OK)
+			So(check(bbperms.BuildsGet, anotherProject), ShouldEqual, codes.NotFound)
+			So(check(bbperms.BuildsGet, reader), ShouldEqual, codes.NotFound)
 		})
 
 		Convey("Existing bucket, with ACLs", func() {
@@ -112,21 +113,21 @@ func TestHasInBucketLegacy(t *testing.T) {
 			})
 
 			Convey("Read perm", func() {
-				So(check(BuildsGet, anon), ShouldEqual, codes.NotFound)
-				So(check(BuildsGet, admin), ShouldEqual, codes.OK)
-				So(check(BuildsGet, sameProject), ShouldEqual, codes.OK)
-				So(check(BuildsGet, anotherProject), ShouldEqual, codes.NotFound)
-				So(check(BuildsGet, reader), ShouldEqual, codes.OK)
-				So(check(BuildsGet, writer), ShouldEqual, codes.OK)
+				So(check(bbperms.BuildsGet, anon), ShouldEqual, codes.NotFound)
+				So(check(bbperms.BuildsGet, admin), ShouldEqual, codes.OK)
+				So(check(bbperms.BuildsGet, sameProject), ShouldEqual, codes.OK)
+				So(check(bbperms.BuildsGet, anotherProject), ShouldEqual, codes.NotFound)
+				So(check(bbperms.BuildsGet, reader), ShouldEqual, codes.OK)
+				So(check(bbperms.BuildsGet, writer), ShouldEqual, codes.OK)
 			})
 
 			Convey("Write perm", func() {
-				So(check(BuildsCancel, anon), ShouldEqual, codes.NotFound)
-				So(check(BuildsCancel, admin), ShouldEqual, codes.OK)
-				So(check(BuildsCancel, sameProject), ShouldEqual, codes.OK)
-				So(check(BuildsCancel, anotherProject), ShouldEqual, codes.NotFound)
-				So(check(BuildsCancel, reader), ShouldEqual, codes.PermissionDenied)
-				So(check(BuildsCancel, writer), ShouldEqual, codes.OK)
+				So(check(bbperms.BuildsCancel, anon), ShouldEqual, codes.NotFound)
+				So(check(bbperms.BuildsCancel, admin), ShouldEqual, codes.OK)
+				So(check(bbperms.BuildsCancel, sameProject), ShouldEqual, codes.OK)
+				So(check(bbperms.BuildsCancel, anotherProject), ShouldEqual, codes.NotFound)
+				So(check(bbperms.BuildsCancel, reader), ShouldEqual, codes.PermissionDenied)
+				So(check(bbperms.BuildsCancel, writer), ShouldEqual, codes.OK)
 			})
 		})
 	})
@@ -189,68 +190,68 @@ func TestHasInBucketRealms(t *testing.T) {
 		}
 
 		Convey("No realm ACLs", func() {
-			So(check(existingBucketID, BuildsGet, anon), ShouldEqual, codes.NotFound)
-			So(check(existingBucketID, BuildsGet, admin), ShouldEqual, codes.OK)
-			So(check(existingBucketID, BuildsGet, reader), ShouldEqual, codes.NotFound)
-			So(check(existingBucketID, BuildsGet, writer), ShouldEqual, codes.NotFound)
-			So(check(existingBucketID, BuildsGet, legacyReader), ShouldEqual, codes.OK)
-			So(check(existingBucketID, BuildsGet, legacyWriter), ShouldEqual, codes.OK)
+			So(check(existingBucketID, bbperms.BuildsGet, anon), ShouldEqual, codes.NotFound)
+			So(check(existingBucketID, bbperms.BuildsGet, admin), ShouldEqual, codes.OK)
+			So(check(existingBucketID, bbperms.BuildsGet, reader), ShouldEqual, codes.NotFound)
+			So(check(existingBucketID, bbperms.BuildsGet, writer), ShouldEqual, codes.NotFound)
+			So(check(existingBucketID, bbperms.BuildsGet, legacyReader), ShouldEqual, codes.OK)
+			So(check(existingBucketID, bbperms.BuildsGet, legacyWriter), ShouldEqual, codes.OK)
 
-			So(check(missingBucketID, BuildsGet, anon), ShouldEqual, codes.NotFound)
-			So(check(missingBucketID, BuildsGet, admin), ShouldEqual, codes.NotFound)
-			So(check(missingBucketID, BuildsGet, reader), ShouldEqual, codes.NotFound)
-			So(check(missingBucketID, BuildsGet, writer), ShouldEqual, codes.NotFound)
-			So(check(missingBucketID, BuildsGet, legacyReader), ShouldEqual, codes.NotFound)
-			So(check(missingBucketID, BuildsGet, legacyWriter), ShouldEqual, codes.NotFound)
+			So(check(missingBucketID, bbperms.BuildsGet, anon), ShouldEqual, codes.NotFound)
+			So(check(missingBucketID, bbperms.BuildsGet, admin), ShouldEqual, codes.NotFound)
+			So(check(missingBucketID, bbperms.BuildsGet, reader), ShouldEqual, codes.NotFound)
+			So(check(missingBucketID, bbperms.BuildsGet, writer), ShouldEqual, codes.NotFound)
+			So(check(missingBucketID, bbperms.BuildsGet, legacyReader), ShouldEqual, codes.NotFound)
+			So(check(missingBucketID, bbperms.BuildsGet, legacyWriter), ShouldEqual, codes.NotFound)
 		})
 
 		Convey("With realm ACLs", func() {
 			s.FakeDB.(*authtest.FakeDB).AddMocks(
-				authtest.MockPermission(reader, existingRealmID, BuildersGet),
-				authtest.MockPermission(reader, existingRealmID, BuildsGet),
-				authtest.MockPermission(writer, existingRealmID, BuildersGet),
-				authtest.MockPermission(writer, existingRealmID, BuildsGet),
-				authtest.MockPermission(writer, existingRealmID, BuildsCancel),
+				authtest.MockPermission(reader, existingRealmID, bbperms.BuildersGet),
+				authtest.MockPermission(reader, existingRealmID, bbperms.BuildsGet),
+				authtest.MockPermission(writer, existingRealmID, bbperms.BuildersGet),
+				authtest.MockPermission(writer, existingRealmID, bbperms.BuildsGet),
+				authtest.MockPermission(writer, existingRealmID, bbperms.BuildsCancel),
 
-				authtest.MockPermission(reader, missingRealmID, BuildersGet),
-				authtest.MockPermission(reader, missingRealmID, BuildsGet),
-				authtest.MockPermission(writer, missingRealmID, BuildersGet),
-				authtest.MockPermission(writer, missingRealmID, BuildsGet),
-				authtest.MockPermission(writer, missingRealmID, BuildsCancel),
+				authtest.MockPermission(reader, missingRealmID, bbperms.BuildersGet),
+				authtest.MockPermission(reader, missingRealmID, bbperms.BuildsGet),
+				authtest.MockPermission(writer, missingRealmID, bbperms.BuildersGet),
+				authtest.MockPermission(writer, missingRealmID, bbperms.BuildsGet),
+				authtest.MockPermission(writer, missingRealmID, bbperms.BuildsCancel),
 			)
 
 			Convey("Read perm", func() {
-				So(check(existingBucketID, BuildsGet, anon), ShouldEqual, codes.NotFound)
-				So(check(existingBucketID, BuildsGet, admin), ShouldEqual, codes.OK)
-				So(check(existingBucketID, BuildsGet, reader), ShouldEqual, codes.OK)
-				So(check(existingBucketID, BuildsGet, writer), ShouldEqual, codes.OK)
-				So(check(existingBucketID, BuildsGet, legacyReader), ShouldEqual, codes.OK)
-				So(check(existingBucketID, BuildsGet, legacyWriter), ShouldEqual, codes.OK)
+				So(check(existingBucketID, bbperms.BuildsGet, anon), ShouldEqual, codes.NotFound)
+				So(check(existingBucketID, bbperms.BuildsGet, admin), ShouldEqual, codes.OK)
+				So(check(existingBucketID, bbperms.BuildsGet, reader), ShouldEqual, codes.OK)
+				So(check(existingBucketID, bbperms.BuildsGet, writer), ShouldEqual, codes.OK)
+				So(check(existingBucketID, bbperms.BuildsGet, legacyReader), ShouldEqual, codes.OK)
+				So(check(existingBucketID, bbperms.BuildsGet, legacyWriter), ShouldEqual, codes.OK)
 			})
 
 			Convey("Write perm", func() {
-				So(check(existingBucketID, BuildsCancel, anon), ShouldEqual, codes.NotFound)
-				So(check(existingBucketID, BuildsCancel, admin), ShouldEqual, codes.OK)
-				So(check(existingBucketID, BuildsCancel, reader), ShouldEqual, codes.PermissionDenied)
-				So(check(existingBucketID, BuildsCancel, writer), ShouldEqual, codes.OK)
-				So(check(existingBucketID, BuildsCancel, legacyReader), ShouldEqual, codes.PermissionDenied)
-				So(check(existingBucketID, BuildsCancel, legacyWriter), ShouldEqual, codes.OK)
+				So(check(existingBucketID, bbperms.BuildsCancel, anon), ShouldEqual, codes.NotFound)
+				So(check(existingBucketID, bbperms.BuildsCancel, admin), ShouldEqual, codes.OK)
+				So(check(existingBucketID, bbperms.BuildsCancel, reader), ShouldEqual, codes.PermissionDenied)
+				So(check(existingBucketID, bbperms.BuildsCancel, writer), ShouldEqual, codes.OK)
+				So(check(existingBucketID, bbperms.BuildsCancel, legacyReader), ShouldEqual, codes.PermissionDenied)
+				So(check(existingBucketID, bbperms.BuildsCancel, legacyWriter), ShouldEqual, codes.OK)
 			})
 
 			Convey("Missing bucket", func() {
-				So(check(missingBucketID, BuildsGet, anon), ShouldEqual, codes.NotFound)
-				So(check(missingBucketID, BuildsGet, admin), ShouldEqual, codes.NotFound)
-				So(check(missingBucketID, BuildsGet, reader), ShouldEqual, codes.NotFound)
-				So(check(missingBucketID, BuildsGet, writer), ShouldEqual, codes.NotFound)
-				So(check(missingBucketID, BuildsGet, legacyReader), ShouldEqual, codes.NotFound)
-				So(check(missingBucketID, BuildsGet, legacyWriter), ShouldEqual, codes.NotFound)
+				So(check(missingBucketID, bbperms.BuildsGet, anon), ShouldEqual, codes.NotFound)
+				So(check(missingBucketID, bbperms.BuildsGet, admin), ShouldEqual, codes.NotFound)
+				So(check(missingBucketID, bbperms.BuildsGet, reader), ShouldEqual, codes.NotFound)
+				So(check(missingBucketID, bbperms.BuildsGet, writer), ShouldEqual, codes.NotFound)
+				So(check(missingBucketID, bbperms.BuildsGet, legacyReader), ShouldEqual, codes.NotFound)
+				So(check(missingBucketID, bbperms.BuildsGet, legacyWriter), ShouldEqual, codes.NotFound)
 
-				So(check(missingBucketID, BuildsCancel, anon), ShouldEqual, codes.NotFound)
-				So(check(missingBucketID, BuildsCancel, admin), ShouldEqual, codes.NotFound)
-				So(check(missingBucketID, BuildsCancel, reader), ShouldEqual, codes.NotFound)
-				So(check(missingBucketID, BuildsCancel, writer), ShouldEqual, codes.NotFound)
-				So(check(missingBucketID, BuildsCancel, legacyReader), ShouldEqual, codes.NotFound)
-				So(check(missingBucketID, BuildsCancel, legacyWriter), ShouldEqual, codes.NotFound)
+				So(check(missingBucketID, bbperms.BuildsCancel, anon), ShouldEqual, codes.NotFound)
+				So(check(missingBucketID, bbperms.BuildsCancel, admin), ShouldEqual, codes.NotFound)
+				So(check(missingBucketID, bbperms.BuildsCancel, reader), ShouldEqual, codes.NotFound)
+				So(check(missingBucketID, bbperms.BuildsCancel, writer), ShouldEqual, codes.NotFound)
+				So(check(missingBucketID, bbperms.BuildsCancel, legacyReader), ShouldEqual, codes.NotFound)
+				So(check(missingBucketID, bbperms.BuildsCancel, legacyWriter), ShouldEqual, codes.NotFound)
 			})
 		})
 	})
@@ -386,22 +387,22 @@ func TestBucketsByPerm(t *testing.T) {
 			},
 		}), ShouldBeNil)
 
-		buckets1, err := BucketsByPerm(ctx, BuildersList, "")
+		buckets1, err := BucketsByPerm(ctx, bbperms.BuildersList, "")
 		So(err, ShouldBeNil)
 		So(buckets1, ShouldResemble, []string{"project/bucket1", "project/bucket2", "project2/bucket1"})
 
-		buckets2, err := BucketsByPerm(ctx, BuildsCancel, "")
+		buckets2, err := BucketsByPerm(ctx, bbperms.BuildsCancel, "")
 		So(err, ShouldBeNil)
 		So(buckets2, ShouldResemble, []string{"project/bucket2"})
 
-		buckets3, err := BucketsByPerm(ctx, BuildersList, "project2")
+		buckets3, err := BucketsByPerm(ctx, bbperms.BuildersList, "project2")
 		So(err, ShouldBeNil)
 		So(buckets3, ShouldResemble, []string{"project2/bucket1"})
 
 		ctx = auth.WithState(ctx, &authtest.FakeState{
 			Identity: identity.Identity("user:no_any_permission"),
 		})
-		buckets4, err := BucketsByPerm(ctx, BuildersList, "")
+		buckets4, err := BucketsByPerm(ctx, bbperms.BuildersList, "")
 		So(err, ShouldBeNil)
 		So(buckets4, ShouldBeNil)
 	})

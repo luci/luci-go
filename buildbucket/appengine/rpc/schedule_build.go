@@ -54,6 +54,7 @@ import (
 	"go.chromium.org/luci/buildbucket/appengine/model"
 	"go.chromium.org/luci/buildbucket/appengine/tasks"
 	taskdefs "go.chromium.org/luci/buildbucket/appengine/tasks/defs"
+	"go.chromium.org/luci/buildbucket/bbperms"
 	pb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/buildbucket/protoutil"
 )
@@ -275,7 +276,7 @@ func scheduleRequestFromTemplate(ctx context.Context, req *pb.ScheduleBuildReque
 	if err != nil {
 		return nil, err
 	}
-	if err := perm.HasInBuilder(ctx, perm.BuildsGet, bld.Proto.Builder); err != nil {
+	if err := perm.HasInBuilder(ctx, bbperms.BuildsGet, bld.Proto.Builder); err != nil {
 		return nil, err
 	}
 
@@ -1369,7 +1370,7 @@ func validateScheduleBuild(ctx context.Context, wellKnownExperiments stringset.S
 	if req, err = scheduleRequestFromTemplate(ctx, req); err != nil {
 		return nil, nil, err
 	}
-	if err = perm.HasInBucket(ctx, perm.BuildsAdd, req.Builder.Project, req.Builder.Bucket); err != nil {
+	if err = perm.HasInBucket(ctx, bbperms.BuildsAdd, req.Builder.Project, req.Builder.Bucket); err != nil {
 		return nil, nil, err
 	}
 	return req, m, nil

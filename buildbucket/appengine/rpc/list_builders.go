@@ -27,6 +27,7 @@ import (
 
 	"go.chromium.org/luci/buildbucket/appengine/internal/perm"
 	"go.chromium.org/luci/buildbucket/appengine/model"
+	"go.chromium.org/luci/buildbucket/bbperms"
 	pb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/buildbucket/protoutil"
 )
@@ -75,13 +76,13 @@ func (*Builders) ListBuilders(ctx context.Context, req *pb.ListBuildersRequest) 
 		}
 
 		var err error
-		if allowedBuckets, err = perm.BucketsByPerm(ctx, perm.BuildersList, req.Project); err != nil {
+		if allowedBuckets, err = perm.BucketsByPerm(ctx, bbperms.BuildersList, req.Project); err != nil {
 			return nil, err
 		}
 	} else {
 		key = model.BucketKey(ctx, req.Project, req.Bucket)
 
-		if err := perm.HasInBucket(ctx, perm.BuildersList, req.Project, req.Bucket); err != nil {
+		if err := perm.HasInBucket(ctx, bbperms.BuildersList, req.Project, req.Bucket); err != nil {
 			return nil, err
 		}
 		allowedBuckets = []string{protoutil.FormatBucketID(req.Project, req.Bucket)}
