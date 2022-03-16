@@ -69,17 +69,6 @@ func TestTagGRPC(t *testing.T) {
 		})
 	})
 
-	Convey("JSON(Un)MarshalCompressed works", t, func() {
-		data := &TestStruct{Prop: "prop"}
-		bytes, err := JSONMarshalCompressed(data)
-		So(err, ShouldBeNil)
-
-		var parsed TestStruct
-		err = JSONUnmarshalCompressed(bytes, &parsed)
-		So(err, ShouldBeNil)
-		So(parsed.Prop, ShouldEqual, data.Prop)
-	})
-
 	Convey("ParseLegacyBuilderID", t, func() {
 		Convey("For valid ID", func() {
 			builderID, err := ParseLegacyBuilderID("buildbucket/luci.test project.test bucket/test builder")

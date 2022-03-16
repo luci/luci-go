@@ -15,8 +15,6 @@
 package common
 
 import (
-	"bytes"
-	"compress/zlib"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -190,37 +188,6 @@ func ParseLegacyBuildbucketBuildID(bid string) (builderID *buildbucketpb.Builder
 		return nil, 0, ErrInvalidLegacyBuildID
 	}
 	return builderID, int32(buildNum), nil
-}
-
-// JSONMarshalCompressed converts a message into compressed JSON form, suitable for storing in memcache.
-func JSONMarshalCompressed(message interface{}) ([]byte, error) {
-	// Compress using zlib.
-	b := bytes.Buffer{}
-	w := zlib.NewWriter(&b)
-	enc := json.NewEncoder(w)
-
-	if err := enc.Encode(message); err != nil {
-		return nil, err
-	}
-
-	// Flush remaining bytes in the zlib writer.
-	if err := w.Close(); err != nil {
-		return nil, err
-	}
-
-	return b.Bytes(), nil
-}
-
-// JSONUnmarshalCompressed converts a message back from compressed JSON form.
-func JSONUnmarshalCompressed(serialized []byte, out interface{}) error {
-	// Decompress using zlib.
-	r, err := zlib.NewReader(bytes.NewReader(serialized))
-	if err != nil {
-		return err
-	}
-
-	dec := json.NewDecoder(r)
-	return dec.Decode(out)
 }
 
 // GetJSONData fetches data from the given URL, parses the response body to `out`.

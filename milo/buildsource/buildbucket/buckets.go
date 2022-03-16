@@ -16,6 +16,7 @@ package buildbucket
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"time"
@@ -33,27 +34,19 @@ import (
 
 var buildbucketBuildersCache = layered.Cache{
 	ProcessLRUCache: caching.RegisterLRUCache(65536),
-	GlobalNamespace: "buildbucket-builders",
-	Marshal:         common.JSONMarshalCompressed,
+	GlobalNamespace: "buildbucket-builders-v2",
+	Marshal:         json.Marshal,
 	Unmarshal: func(blob []byte) (interface{}, error) {
-		res := make([]*buildbucketpb.BuilderItem, 0)
-		err := common.JSONUnmarshalCompressed(blob, res)
+		res := make([]*buildbucketpb.BuilderID, 0)
+		err := json.Unmarshal(blob, &res)
 		return res, err
 	},
 }
 
-// GetBuilders returns all buildbucket builders, cached for current identity.
-func GetBuilders(c context.Context) ([]*buildbucketpb.BuilderItem, error) {
-	host := common.GetSettings(c).GetBuildbucket().GetHost()
-	if host == "" {
-		return nil, errors.New("buildbucket host is missing in config")
-	}
-	return getBuilders(c, host)
-}
-
-func getBuilders(c context.Context, host string) ([]*buildbucketpb.BuilderItem, error) {
+// getBuilders returns all buildbucket builders, cached for current identity.
+func getBuilders(c context.Context, host string) ([]*buildbucketpb.BuilderID, error) {
 	key := fmt.Sprintf("%q-%q", host, auth.CurrentIdentity(c))
-	builders, err := buildbucketBuildersCache.GetOrCreate(c, key, func() (v interface{}, exp time.Duration, err error) {
+	builderIds, err := buildbucketBuildersCache.GetOrCreate(c, key, func() (v interface{}, exp time.Duration, err error) {
 		start := time.Now()
 
 		authOpt := auth.AsSessionUser
@@ -67,15 +60,19 @@ func getBuilders(c context.Context, host string) ([]*buildbucketpb.BuilderItem, 
 			return nil, 0, err
 		}
 
-		// Get all the buildItems from buildbucket.
-		buildItems := make([]*buildbucketpb.BuilderItem, 0)
+		// Get all the Builder IDs from buildbucket.
+		bids := make([]*buildbucketpb.BuilderID, 0)
 		req := &buildbucketpb.ListBuildersRequest{PageSize: 1000}
 		for {
 			r, err := buildersClient.ListBuilders(c, req)
 			if err != nil {
 				return nil, 0, err
 			}
-			buildItems = append(buildItems, r.Builders...)
+
+			for _, builder := range r.Builders {
+				bids = append(bids, builder.Id)
+			}
+
 			if r.NextPageToken == "" {
 				break
 			}
@@ -89,13 +86,13 @@ func getBuilders(c context.Context, host string) ([]*buildbucketpb.BuilderItem, 
 		// But this also means builder visibility ACL changes would take 12 hours to
 		// propagate.
 		// Cache duration can be adjusted if needed.
-		return buildItems, 12 * time.Hour, nil
+		return bids, 12 * time.Hour, nil
 	})
 	if err != nil {
 		return nil, err
 	}
 
-	return builders.([]*buildbucketpb.BuilderItem), err
+	return builderIds.([]*buildbucketpb.BuilderID), nil
 }
 
 // CIService returns a *ui.CIService containing all known buckets and builders.
@@ -118,7 +115,7 @@ func CIService(c context.Context) (*ui.CIService, error) {
 	builderGroups := make(map[string]*ui.BuilderGroup)
 
 	for _, builder := range builders {
-		bucketID := builder.Id.Project + "/" + builder.Id.Bucket
+		bucketID := builder.Project + "/" + builder.Bucket
 		group, ok := builderGroups[bucketID]
 		if !ok {
 			group = &ui.BuilderGroup{Name: bucketID}
@@ -126,8 +123,8 @@ func CIService(c context.Context) (*ui.CIService, error) {
 		}
 
 		group.Builders = append(group.Builders, *ui.NewLink(
-			builder.Id.Builder, fmt.Sprintf("/p/%s/builders/%s/%s", builder.Id.Project, builder.Id.Bucket, builder.Id.Builder),
-			fmt.Sprintf("buildbucket builder %s in bucket %s", builder.Id.Builder, bucketID)))
+			builder.Builder, fmt.Sprintf("/p/%s/builders/%s/%s", builder.Project, builder.Bucket, builder.Builder),
+			fmt.Sprintf("buildbucket builder %s in bucket %s", builder.Builder, bucketID)))
 	}
 
 	result.BuilderGroups = make([]ui.BuilderGroup, 0, len(builderGroups))
