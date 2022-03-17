@@ -22,6 +22,7 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
+	"go.chromium.org/luci/buildbucket"
 	"go.chromium.org/luci/common/proto"
 
 	pb "go.chromium.org/luci/buildbucket/proto"
@@ -153,6 +154,48 @@ func TestSendBatchReq(t *testing.T) {
 			res, err := sendBatchReq(ctx, req, mockBBClient)
 			So(err, ShouldBeNil)
 			So(res, ShouldResembleProto, expectedRes)
+		})
+	})
+	Convey("updateRequest", t, func() {
+		ctx := context.Background()
+		Convey("updateRequest if dummy token", func() {
+			req := &pb.BatchRequest{
+				Requests: []*pb.BatchRequest_Request{
+					{Request: &pb.BatchRequest_Request_ScheduleBuild{
+						ScheduleBuild: &pb.ScheduleBuildRequest{
+							CanOutliveParent: pb.Trinary_YES,
+						},
+					}},
+				},
+			}
+			updateRequest(ctx, req, buildbucket.DummyBuildbucketToken)
+			So(req.Requests[0].GetScheduleBuild().CanOutliveParent, ShouldEqual, pb.Trinary_UNSET)
+		})
+		Convey("updateRequest if empty token", func() {
+			req := &pb.BatchRequest{
+				Requests: []*pb.BatchRequest_Request{
+					{Request: &pb.BatchRequest_Request_ScheduleBuild{
+						ScheduleBuild: &pb.ScheduleBuildRequest{
+							CanOutliveParent: pb.Trinary_YES,
+						},
+					}},
+				},
+			}
+			updateRequest(ctx, req, "")
+			So(req.Requests[0].GetScheduleBuild().CanOutliveParent, ShouldEqual, pb.Trinary_YES)
+		})
+		Convey("updateRequest if real token", func() {
+			req := &pb.BatchRequest{
+				Requests: []*pb.BatchRequest_Request{
+					{Request: &pb.BatchRequest_Request_ScheduleBuild{
+						ScheduleBuild: &pb.ScheduleBuildRequest{
+							CanOutliveParent: pb.Trinary_YES,
+						},
+					}},
+				},
+			}
+			updateRequest(ctx, req, "real token")
+			So(req.Requests[0].GetScheduleBuild().CanOutliveParent, ShouldEqual, pb.Trinary_YES)
 		})
 	})
 }

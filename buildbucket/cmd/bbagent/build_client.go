@@ -85,7 +85,7 @@ func (bb *liveBBClient) UpdateBuild(ctx context.Context, in *bbpb.UpdateBuildReq
 func newBuildsClient(ctx context.Context, hostname string, retryEnabled *bool) (BuildsClient, *bbpb.BuildSecrets, error) {
 	if hostname == "" {
 		logging.Infof(ctx, "No buildbucket hostname set; making dummy buildbucket client.")
-		return dummyBBClient{}, &bbpb.BuildSecrets{BuildToken: "dummy token"}, nil
+		return dummyBBClient{}, &bbpb.BuildSecrets{BuildToken: buildbucket.DummyBuildbucketToken}, nil
 	}
 	opts := prpc.DefaultOptions()
 	opts.Insecure = lhttp.IsLocalHost(hostname)

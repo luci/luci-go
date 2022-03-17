@@ -88,9 +88,16 @@ func (r *batchRun) Run(a subcommands.Application, args []string, env subcommands
 		return r.done(ctx, errors.Annotate(err, "failed to parse BatchRequest from stdin").Err())
 	}
 
-	if r.scheduleBuildToken != "" {
+	// Do not attach the buildbucket token if it's empty or the build is a led build.
+	// Because led builds are not real Buildbucket builds and they don't have
+	// real buildbucket tokens, so we cannot make them  any builds's parent,
+	// even for the builds they scheduled.
+	if r.scheduleBuildToken != "" && r.scheduleBuildToken != buildbucket.DummyBuildbucketToken {
 		ctx = metadata.NewOutgoingContext(ctx, metadata.Pairs(buildbucket.BuildbucketTokenHeader, r.scheduleBuildToken))
 	}
+
+	// For led build, also clear out the canOutliveParent fields.
+	updateRequest(ctx, req, r.scheduleBuildToken)
 
 	res, err := sendBatchReq(ctx, req, r.buildsClient)
 	if err != nil {
@@ -152,4 +159,25 @@ func sendBatchReq(ctx context.Context, req *pb.BatchRequest, buildsClient pb.Bui
 	})
 
 	return res, globalErr
+}
+
+// updateRequest makes changes to the batch request.
+// Currently it unsets each sub ScheduleBuild request's CanOutliveParent
+// if the token is a dummy token (meaning the build is a led build).
+func updateRequest(ctx context.Context, req *pb.BatchRequest, tok string) {
+	updated := false
+	if tok == buildbucket.DummyBuildbucketToken {
+		for _, r := range req.Requests {
+			switch r.Request.(type) {
+			case *pb.BatchRequest_Request_ScheduleBuild:
+				r.GetScheduleBuild().CanOutliveParent = pb.Trinary_UNSET
+				updated = true
+			default:
+				continue
+			}
+		}
+	}
+	if updated {
+		logging.Infof(ctx, "ScheduleBuildRequest.CanOutliveParent is unset for led build")
+	}
 }

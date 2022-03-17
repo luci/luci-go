@@ -38,6 +38,9 @@ const BuildTokenHeader = "x-build-token"
 // TODO(crbug.com/1031205) Replace BuildTokenHeader with this.
 const BuildbucketTokenHeader = "x-buildbucket-token"
 
+// DummyBuildbucketToken is the dummy token for led builds.
+const DummyBuildbucketToken = "dummy token"
+
 // MinUpdateBuildInterval is the minimum interval bbagent should call UpdateBuild.
 const MinUpdateBuildInterval = 30 * time.Second
 
