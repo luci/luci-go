@@ -33,12 +33,17 @@ import (
 	"go.chromium.org/luci/milo/frontend/ui"
 )
 
-// Keep the builders in cache for 10 mins to speed up repeated page loads and
-// reduce stress on buildbucket side.
-// But this also means newly added/removed builders would take 10 mins to
-// propagate.
-// Cache duration can be adjusted if needed.
-const cacheDuration = 10 * time.Minute
+const (
+	// Keep the builders in cache for 10 mins to speed up repeated page loads and
+	// reduce stress on buildbucket side.
+	// But this also means newly added/removed builders would take 10 mins to
+	// propagate.
+	// Cache duration can be adjusted if needed.
+	cacheDuration = 10 * time.Minute
+
+	// Refresh the builders cache if the cache TTL falls below this threshold.
+	cacheRefreshThreshold = cacheDuration - time.Minute
+)
 
 var buildbucketBuildersCache = layered.Cache{
 	ProcessLRUCache: caching.RegisterLRUCache(64),
@@ -53,7 +58,7 @@ var buildbucketBuildersCache = layered.Cache{
 
 // getAllBuilders returns all cached buildbucket builders. If the cache expired,
 // refresh it with Milo's credential.
-func getAllBuilders(c context.Context, host string) ([]*buildbucketpb.BuilderID, error) {
+func getAllBuilders(c context.Context, host string, opt ...layered.Option) ([]*buildbucketpb.BuilderID, error) {
 	builders, err := buildbucketBuildersCache.GetOrCreate(c, host, func() (v interface{}, exp time.Duration, err error) {
 		start := time.Now()
 
@@ -120,6 +125,18 @@ func filterVisibleBuilders(c context.Context, builders []*buildbucketpb.BuilderI
 	}
 
 	return filteredBuilders, nil
+}
+
+// UpdateBuilders updates the builders cache if the cache TTL falls below
+// cacheRefreshThreshold.
+func UpdateBuilders(c context.Context) error {
+	bucketSettings := common.GetSettings(c).GetBuildbucket()
+	host := bucketSettings.GetHost()
+	if host == "" {
+		return errors.New("buildbucket host is missing in config")
+	}
+	_, err := getAllBuilders(c, host, layered.WithMinTTL(cacheRefreshThreshold))
+	return err
 }
 
 // CIService returns a *ui.CIService containing all known buckets and builders.

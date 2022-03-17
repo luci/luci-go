@@ -62,6 +62,7 @@ func main() {
 		frontend.Run(srv, "templates")
 		cron.RegisterHandler("update-config", frontend.UpdateConfigHandler)
 		cron.RegisterHandler("update-pools", buildbucket.UpdatePools)
+		cron.RegisterHandler("update-builders", buildbucket.UpdateBuilders)
 		milopb.RegisterMiloInternalServer(srv.PRPC, &backend.MiloInternalService{
 			GetGitClient: func(c context.Context) (git.Client, error) {
 				acls, err := gitacls.FromConfig(c, common.GetSettings(c).SourceAcls)
