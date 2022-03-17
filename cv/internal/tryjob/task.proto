@@ -30,3 +30,20 @@ message UpdateTryjobTask {
   // e.g. in the case of buildbucket, it's the build ID.
   string external_id = 2;
 }
+
+// CancelStaleTryjobs cancels all tryjobs that are intended to verify the given
+// CL, that are now stale because a new non-trivial patchset has been uploaded.
+//
+// Queue: "cancel-stale-tryjobs"
+message CancelStaleTryjobsTask {
+  // clid is the ID that identifies a CL entity. Internal to CV.
+  int64 clid = 1;
+
+  // previous_min_equiv_patchset is the patchset that stale tryjobs will be
+  // running at.
+  int64 previous_min_equiv_patchset = 2;
+
+  // current_min_equiv_patchset is the patchset at or after which the
+  // associated tryjobs are no longer considered stale.
+  int64 current_min_equiv_patchset = 3;
+}
