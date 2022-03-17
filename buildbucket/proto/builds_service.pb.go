@@ -665,6 +665,11 @@ type ScheduleBuildRequest struct {
 	// A build that can outlive its parent can also outlive its parent's ancestors.
 	//
 	// If schedule a build without parent, this field must be UNSET.
+	//
+	// If schedule a build with parent, this field should be YES or NO.
+	// But UNSET is also accepted for now, and it has the same effect as YES.
+	// TODO(crbug.com/1031205): after the parent tracking feature is stable,
+	// require this field to be set when scheduling a build with parent.
 	CanOutliveParent Trinary `protobuf:"varint,21,opt,name=can_outlive_parent,json=canOutliveParent,proto3,enum=buildbucket.v2.Trinary" json:"can_outlive_parent,omitempty"`
 }
 

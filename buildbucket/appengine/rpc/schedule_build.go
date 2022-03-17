@@ -973,10 +973,9 @@ func setTimeouts(req *pb.ScheduleBuildRequest, cfg *pb.Builder, build *pb.Build)
 // determined at creation time.
 func buildFromScheduleRequest(ctx context.Context, req *pb.ScheduleBuildRequest, ancestors []int64, cfg *pb.Builder, globalCfg *pb.SettingsCfg) (b *pb.Build) {
 	b = &pb.Build{
-		Builder:          req.Builder,
-		Critical:         cfg.GetCritical(),
-		WaitForCapacity:  cfg.GetWaitForCapacity() == pb.Trinary_YES,
-		CanOutliveParent: req.GetCanOutliveParent() == pb.Trinary_YES,
+		Builder:         req.Builder,
+		Critical:        cfg.GetCritical(),
+		WaitForCapacity: cfg.GetWaitForCapacity() == pb.Trinary_YES,
 	}
 
 	if req.Critical != pb.Trinary_UNSET {
@@ -985,6 +984,13 @@ func buildFromScheduleRequest(ctx context.Context, req *pb.ScheduleBuildRequest,
 
 	if len(ancestors) > 0 {
 		b.AncestorIds = ancestors
+		// Temporarily accept req.CanOutliveParent to be unset, and treat it
+		// the same as pb.Trinary_YES.
+		// This is to prevent breakage due to unmatched timelines of deployments
+		// (for example recipes rolls and bb CLI rolls).
+		// TODO(crbug.com/1031205): after the parent tracking feature is stabled,
+		// we should require req.CanOutliveParent to be set.
+		b.CanOutliveParent = req.GetCanOutliveParent() != pb.Trinary_NO
 	}
 
 	setExecutable(req, cfg, b)
