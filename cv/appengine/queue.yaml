@@ -64,6 +64,9 @@ queue:
 - name: update-tryjob
   rate: 30/s
 
+- name: cancel-stale-tryjobs
+  rate: 30/s
+
 ###############################################################################
 # Special queues not critical for production.
 # They aren't alerted upon.
