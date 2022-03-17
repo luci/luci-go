@@ -21,10 +21,11 @@ import (
 	"fmt"
 	"time"
 
-	"go.chromium.org/luci/auth/identity"
+	"go.chromium.org/luci/buildbucket/bbperms"
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/server/auth"
+	"go.chromium.org/luci/server/auth/realms"
 	"go.chromium.org/luci/server/caching"
 	"go.chromium.org/luci/server/caching/layered"
 
@@ -32,9 +33,16 @@ import (
 	"go.chromium.org/luci/milo/frontend/ui"
 )
 
+// Keep the builders in cache for 10 mins to speed up repeated page loads and
+// reduce stress on buildbucket side.
+// But this also means newly added/removed builders would take 10 mins to
+// propagate.
+// Cache duration can be adjusted if needed.
+const cacheDuration = 10 * time.Minute
+
 var buildbucketBuildersCache = layered.Cache{
-	ProcessLRUCache: caching.RegisterLRUCache(65536),
-	GlobalNamespace: "buildbucket-builders-v2",
+	ProcessLRUCache: caching.RegisterLRUCache(64),
+	GlobalNamespace: "buildbucket-builders-v3",
 	Marshal:         json.Marshal,
 	Unmarshal: func(blob []byte) (interface{}, error) {
 		res := make([]*buildbucketpb.BuilderID, 0)
@@ -43,19 +51,13 @@ var buildbucketBuildersCache = layered.Cache{
 	},
 }
 
-// getBuilders returns all buildbucket builders, cached for current identity.
-func getBuilders(c context.Context, host string) ([]*buildbucketpb.BuilderID, error) {
-	key := fmt.Sprintf("%q-%q", host, auth.CurrentIdentity(c))
-	builderIds, err := buildbucketBuildersCache.GetOrCreate(c, key, func() (v interface{}, exp time.Duration, err error) {
+// getAllBuilders returns all cached buildbucket builders. If the cache expired,
+// refresh it with Milo's credential.
+func getAllBuilders(c context.Context, host string) ([]*buildbucketpb.BuilderID, error) {
+	builders, err := buildbucketBuildersCache.GetOrCreate(c, host, func() (v interface{}, exp time.Duration, err error) {
 		start := time.Now()
 
-		authOpt := auth.AsSessionUser
-		// Use NoAuth when user is not signed in so RPC calls won't return
-		// ErrNotConfigured.
-		if auth.CurrentIdentity(c) == identity.AnonymousIdentity {
-			authOpt = auth.NoAuth
-		}
-		buildersClient, err := ProdBuildersClientFactory(c, host, authOpt)
+		buildersClient, err := ProdBuildersClientFactory(c, host, auth.AsSelf)
 		if err != nil {
 			return nil, 0, err
 		}
@@ -81,18 +83,43 @@ func getBuilders(c context.Context, host string) ([]*buildbucketpb.BuilderID, er
 
 		logging.Infof(c, "listing all builders from buildbucket took %v", time.Since(start))
 
-		// Keep the builders in cache for 12 hours to speed up repeated page loads
-		// and reduce stress on buildbucket side.
-		// But this also means builder visibility ACL changes would take 12 hours to
-		// propagate.
-		// Cache duration can be adjusted if needed.
-		return bids, 12 * time.Hour, nil
+		return bids, cacheDuration, nil
 	})
 	if err != nil {
 		return nil, err
 	}
 
-	return builderIds.([]*buildbucketpb.BuilderID), nil
+	return builders.([]*buildbucketpb.BuilderID), nil
+}
+
+// filterVisibleBuilders returns a list of builders that are visible to the
+// current user.
+func filterVisibleBuilders(c context.Context, builders []*buildbucketpb.BuilderID) ([]*buildbucketpb.BuilderID, error) {
+	filteredBuilders := make([]*buildbucketpb.BuilderID, 0)
+
+	bucketPermissions := make(map[string]bool)
+
+	for _, builder := range builders {
+		realm := realms.Join(builder.Project, builder.Bucket)
+
+		allowed, ok := bucketPermissions[realm]
+		if !ok {
+			var err error
+			allowed, err = auth.HasPermission(c, bbperms.BuildersList, realm, nil)
+			if err != nil {
+				return nil, err
+			}
+			bucketPermissions[realm] = allowed
+		}
+
+		if !allowed {
+			continue
+		}
+
+		filteredBuilders = append(filteredBuilders, builder)
+	}
+
+	return filteredBuilders, nil
 }
 
 // CIService returns a *ui.CIService containing all known buckets and builders.
@@ -107,7 +134,12 @@ func CIService(c context.Context) (*ui.CIService, error) {
 			fmt.Sprintf("buildbucket settings for %s", bucketSettings.Name)),
 	}
 
-	builders, err := getBuilders(c, host)
+	builders, err := getAllBuilders(c, host)
+	if err != nil {
+		return nil, err
+	}
+
+	builders, err = filterVisibleBuilders(c, builders)
 	if err != nil {
 		return nil, err
 	}
