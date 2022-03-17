@@ -158,6 +158,39 @@ func TestQueryTestResults(t *testing.T) {
 			So(res.TestResults[0].Status, ShouldEqual, pb.TestStatus_PASS)
 		})
 
+		Convey(`Valid with missing included invocation`, func() {
+			testutil.MustApply(
+				ctx,
+				// The invocation missinginv is missing in Invocations table.
+				insert.Inclusion("a", "missinginv"),
+			)
+			res, err := srv.QueryTestResults(ctx, &pb.QueryTestResultsRequest{
+				Invocations: []string{"invocations/a"},
+			})
+			So(err, ShouldBeNil)
+			So(res.TestResults, ShouldHaveLength, 5)
+
+			sort.Slice(res.TestResults, func(i, j int) bool {
+				return res.TestResults[i].Name < res.TestResults[j].Name
+			})
+
+			So(res.TestResults[0].Name, ShouldEqual, "invocations/a/tests/A/results/0")
+			So(res.TestResults[0].Status, ShouldEqual, pb.TestStatus_FAIL)
+			So(res.TestResults[0].SummaryHtml, ShouldEqual, "")
+
+			So(res.TestResults[1].Name, ShouldEqual, "invocations/a/tests/A/results/1")
+			So(res.TestResults[1].Status, ShouldEqual, pb.TestStatus_PASS)
+
+			So(res.TestResults[2].Name, ShouldEqual, "invocations/b/tests/B/results/0")
+			So(res.TestResults[2].Status, ShouldEqual, pb.TestStatus_CRASH)
+
+			So(res.TestResults[3].Name, ShouldEqual, "invocations/b/tests/B/results/1")
+			So(res.TestResults[3].Status, ShouldEqual, pb.TestStatus_PASS)
+
+			So(res.TestResults[4].Name, ShouldEqual, "invocations/c/tests/C/results/0")
+			So(res.TestResults[4].Status, ShouldEqual, pb.TestStatus_PASS)
+		})
+
 		Convey(`With readMask`, func() {
 			res, err := srv.QueryTestResults(ctx, &pb.QueryTestResultsRequest{
 				Invocations: []string{"invocations/a"},

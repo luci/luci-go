@@ -137,5 +137,47 @@ func TestQueryTestExonerations(t *testing.T) {
 				},
 			})
 		})
+
+		Convey(`Valid with missing included invocation`, func() {
+			testutil.MustApply(
+				ctx,
+				// The invocation missinginv is missing in Invocations table.
+				insert.Inclusion("a", "missinginv"),
+			)
+			res, err := srv.QueryTestExonerations(ctx, &pb.QueryTestExonerationsRequest{
+				Invocations: []string{"invocations/a"},
+			})
+			So(err, ShouldBeNil)
+			actual := res.TestExonerations
+			sort.Slice(actual, func(i, j int) bool {
+				return actual[i].Name < actual[j].Name
+			})
+			So(actual, ShouldResembleProto, []*pb.TestExoneration{
+				{
+					Name:            "invocations/a/tests/A/exonerations/0",
+					TestId:          "A",
+					Variant:         pbutil.Variant("v", "a"),
+					VariantHash:     pbutil.VariantHash(pbutil.Variant("v", "a")),
+					ExonerationId:   "0",
+					ExplanationHtml: "explanation 0",
+				},
+				{
+					Name:            "invocations/a/tests/A/exonerations/1",
+					TestId:          "A",
+					Variant:         pbutil.Variant("v", "a"),
+					VariantHash:     pbutil.VariantHash(pbutil.Variant("v", "a")),
+					ExonerationId:   "1",
+					ExplanationHtml: "explanation 1",
+				},
+				{
+					Name:            "invocations/c/tests/C/exonerations/0",
+					TestId:          "C",
+					Variant:         pbutil.Variant("v", "c"),
+					VariantHash:     pbutil.VariantHash(pbutil.Variant("v", "c")),
+					ExonerationId:   "0",
+					ExplanationHtml: "explanation 0",
+				},
+			})
+		})
 	})
 }

@@ -139,6 +139,21 @@ func TestQueryArtifacts(t *testing.T) {
 			})
 		})
 
+		Convey(`Reads test result artifacts by invocation with missing included invocation`, func() {
+			testutil.MustApply(ctx,
+				// The invocation missinginv is missing in Invocations table.
+				insert.Inclusion("inv1", "missinginv"),
+				insert.Artifact("inv1", "", "a", nil),
+				insert.Artifact("inv1", "tr/t t/r", "a", nil),
+			)
+			req.Invocations = []string{"invocations/inv1"}
+			actual := mustFetchNames(req)
+			So(actual, ShouldResemble, []string{
+				"invocations/inv1/artifacts/a",
+				"invocations/inv1/tests/t%20t/results/r/artifacts/a",
+			})
+		})
+
 		Convey(`Fetch URL`, func() {
 			testutil.MustApply(ctx,
 				insert.Artifact("inv1", "", "a", nil),

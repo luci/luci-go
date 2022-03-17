@@ -108,6 +108,18 @@ func TestQueryTestResultStatistics(t *testing.T) {
 			So(err, ShouldBeNil)
 			So(res.TotalTestResults, ShouldEqual, 20)
 		})
-	})
 
+		Convey(`Valid with missing included invocation`, func() {
+			testutil.MustApply(
+				ctx,
+				// The invocation missinginv is missing in Invocations table.
+				insert.Inclusion("a", "missinginv"),
+			)
+			res, err := srv.QueryTestResultStatistics(ctx, &pb.QueryTestResultStatisticsRequest{
+				Invocations: []string{"invocations/a"},
+			})
+			So(err, ShouldBeNil)
+			So(res.TotalTestResults, ShouldEqual, 35)
+		})
+	})
 }

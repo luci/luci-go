@@ -109,6 +109,31 @@ func TestBatchGetTestVariants(t *testing.T) {
 			})
 		})
 
+		Convey(`Valid request with missing included invocation`, func() {
+			testutil.MustApply(
+				ctx,
+				// The invocation missinginv is missing in Invocations table.
+				insert.Inclusion("i0", "missinginv"),
+			)
+			res, err := srv.BatchGetTestVariants(ctx, &pb.BatchGetTestVariantsRequest{
+				Invocation: "invocations/i0",
+				TestVariants: []*pb.BatchGetTestVariantsRequest_TestVariantIdentifier{
+					{TestId: "test1", VariantHash: variantHash("a", "b")},
+					{TestId: "test3", VariantHash: variantHash("a", "b")},
+					{TestId: "test4", VariantHash: variantHash("g", "h")},
+				},
+			})
+			So(err, ShouldBeNil)
+
+			// NOTE: The order isn't important here, we just don't have a
+			// matcher that does an unordered comparison.
+			So(getTvStrings(res.TestVariants), ShouldResemble, []string{
+				fmt.Sprintf("10/test3/%s", variantHash("a", "b")),
+				fmt.Sprintf("20/test4/%s", variantHash("g", "h")),
+				fmt.Sprintf("50/test1/%s", variantHash("a", "b")),
+			})
+		})
+
 		Convey(`Requesting > 500 variants fails`, func() {
 			req := pb.BatchGetTestVariantsRequest{
 				Invocation:   "invocations/i0",
