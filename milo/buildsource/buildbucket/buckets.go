@@ -89,7 +89,7 @@ func getAllBuilders(c context.Context, host string, opt ...layered.Option) ([]*b
 		logging.Infof(c, "listing all builders from buildbucket took %v", time.Since(start))
 
 		return bids, cacheDuration, nil
-	})
+	}, opt...)
 	if err != nil {
 		return nil, err
 	}
