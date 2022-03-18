@@ -300,16 +300,9 @@ func TestPubSub(t *testing.T) {
 	})
 }
 
-// sleepUntilStartOfNextTimeBucket puts the current goroutine to sleep until the
-// start of the next time bucket.
-func sleepUntilStartOfNextTimeBucket() {
-	now := time.Now().Unix()
-	nextTimeBucket := time.Unix(now-now%entityUpdateIntervalInS+entityUpdateIntervalInS, 0)
-	time.Sleep(time.Until(nextTimeBucket))
-}
-
 func TestShouldUpdateBuilderSummary(t *testing.T) {
-	Convey("TestShouldUpdateBuilderSummary", t, func() {
+	// Skip due to https://crbug.com/1304383
+	SkipConvey("TestShouldUpdateBuilderSummary", t, func() {
 		ctx := context.Background()
 
 		// Set up a test redis server.
@@ -344,9 +337,6 @@ func TestShouldUpdateBuilderSummary(t *testing.T) {
 		})
 
 		Convey("Single call followed by multiple parallel calls", func() {
-			// Ensures all `shouldUpdateBuilderSummary` calls are in the same time bucket.
-			sleepUntilStartOfNextTimeBucket()
-
 			pivot := time.Now()
 
 			shouldUpdates := make([]bool, 4)
@@ -400,9 +390,6 @@ func TestShouldUpdateBuilderSummary(t *testing.T) {
 
 		Convey("Single call followed by multiple parallel calls that are nanoseconds apart", func() {
 			// This test ensures that the timestamp percision is not lost.
-
-			// Ensures all `shouldUpdateBuilderSummary` calls are in the same time bucket.
-			sleepUntilStartOfNextTimeBucket()
 
 			pivot := time.Now()
 
@@ -464,10 +451,7 @@ func TestShouldUpdateBuilderSummary(t *testing.T) {
 			So(err, ShouldBeNil)
 			shouldUpdates[0] = shouldUpdate
 
-			// Ensures the following `shouldUpdateBuilderSummary` calls are in a
-			// different time bucket.
-			sleepUntilStartOfNextTimeBucket()
-
+			time.Sleep(time.Duration(entityUpdateIntervalInS * int64(time.Second)))
 			err = parallel.FanOutIn(func(tasks chan<- func() error) {
 				tasks <- func() error {
 					createdAt := pivot.Add(5 * time.Millisecond)
