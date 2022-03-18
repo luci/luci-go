@@ -49,6 +49,7 @@ import (
 
 	"go.chromium.org/luci/auth"
 	"go.chromium.org/luci/auth/authctx"
+	"go.chromium.org/luci/buildbucket"
 	"go.chromium.org/luci/buildbucket/cmd/bbagent/bbinput"
 	bbpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/clock"
@@ -333,6 +334,57 @@ func mainImpl() int {
 	}).MarshalToString(input)
 	check(errors.Annotate(err, "marshalling input args").Err())
 	logging.Infof(ctx, "Input args:\n%s", initialJSONPB)
+
+	// Downloading cipd packages if any.
+	if stringset.NewFromSlice(input.Build.Input.Experiments...).Has(buildbucket.ExperimentBBAgentDownloadCipd) {
+		// Most likely happens in `led get-build` process where it creates from an old build
+		// before new Agent field was there. This new feature shouldn't work for those builds.
+		if input.Build.Infra.Buildbucket.Agent == nil {
+			check(errors.New("Cannot enable downloading cipd pkgs feature; Build Agent field is not set"))
+		}
+
+		bldForCipd := &bbpb.UpdateBuildRequest{
+			Build: &bbpb.Build{
+				Id: input.Build.Id,
+				Infra: &bbpb.BuildInfra{
+					Buildbucket: &bbpb.BuildInfra_Buildbucket{
+						Agent: &bbpb.BuildInfra_Buildbucket_Agent{
+							Output: &bbpb.BuildInfra_Buildbucket_Agent_Output{Status: bbpb.Status_STARTED},
+						},
+					},
+				},
+			},
+			UpdateMask: &fieldmaskpb.FieldMask{Paths: []string{"build.infra.buildbucket.agent.output"}},
+		}
+		if _, err := bbclient.UpdateBuild(cctx, bldForCipd); err != nil {
+			// Carry on and bear the non-fatal update failure.
+			logging.Warningf(ctx, "Failed to report build agent STARTED status: %s", err)
+		}
+
+		agenOutput := bldForCipd.Build.Infra.Buildbucket.Agent.Output
+		// TODO(crbug/1297809): Record the total downloading duration after the
+		// duration field is added into agent.Output proto.
+		agenOutput.AgentPlatform = runtime.GOOS + "-" + runtime.GOARCH
+		resolved, err := installCipdPackages(ctx, input.Build, cwd)
+		if err != nil {
+			logging.Errorf(ctx, " Failure in installing cipd packages: %s", err)
+			agenOutput.Status = bbpb.Status_FAILURE
+			agenOutput.SummaryHtml = err.Error()
+			bldForCipd.Build.Status = bbpb.Status_INFRA_FAILURE
+			bldForCipd.Build.SummaryMarkdown = "Failed to install cipd packages for this build"
+			bldForCipd.UpdateMask.Paths = append(bldForCipd.UpdateMask.Paths, "build.status", "build.summary_markdown")
+		} else {
+			agenOutput.ResolvedData = resolved
+			agenOutput.Status = bbpb.Status_SUCCESS
+		}
+		if _, bbErr := bbclient.UpdateBuild(cctx, bldForCipd); bbErr != nil {
+			logging.Warningf(ctx, "Failed to report build agent output status: %s", err)
+		}
+		if err != nil {
+			os.Exit(1)
+		}
+		input.Build.Infra.Buildbucket.Agent.Output = bldForCipd.Build.Infra.Buildbucket.Agent.Output
+	}
 
 	dispatcherOpts, dispatcherErrCh := channelOpts(cctx)
 	canceledBuildCh := newCloseOnceCh()
