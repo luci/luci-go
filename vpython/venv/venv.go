@@ -80,7 +80,6 @@ var pipIsolateOptions = []pipOption{
 	// Enforce that all packages must be installed with wheels.
 	{"PIP_ONLY_BINARY=:all:", "--only-binary=:all:"},
 }
-var useWheelOption = pipOption{"PIP_USE_WHEEL=1", "--use-wheel"}
 
 // blocker is an fslock.Blocker implementation that sleeps lockHeldDelay in
 // between attempts.
@@ -764,9 +763,6 @@ func (e *Env) installWheels(c context.Context, bootstrapDir, pkgDir string, env 
 	for _, opt := range pipIsolateOptions {
 		pythonCmd = append(pythonCmd, opt.installFlag)
 	}
-	if !e.Config.OmitUseWheel {
-		pythonCmd = append(pythonCmd, useWheelOption.installFlag)
-	}
 
 	cmd := e.Interpreter().MkIsolatedCommand(c,
 		python.ModuleTarget{Module: "pip"},
@@ -877,9 +873,6 @@ func (e *Env) isolatedSetupEnvironment(bootstrapDir string) environ.Env {
 	// internally, we are stuck overriding it with our own preferred defaults.
 	for _, opt := range pipIsolateOptions {
 		env.SetEntry(opt.env)
-	}
-	if !e.Config.OmitUseWheel {
-		env.SetEntry(useWheelOption.env)
 	}
 
 	return env

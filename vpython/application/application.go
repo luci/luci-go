@@ -95,9 +95,8 @@ type Config struct {
 	// VENVPackage is the VirtualEnv package to use for bootstrap generation.
 	VENVPackage vpythonAPI.Spec_Package
 
-	// Set to true if the VirtualEnv package has a newer version of pip that no
-	// longer supports the --use-wheel option.
-	// TODO(bryner): Remove once the corresponding infra code is updated.
+	// OBSOLETE: This is always enabled. Will be removed once all call
+	// sites have stopped setting the field.
 	VENVOmitUseWheel bool
 
 	// BaseWheels is the set of wheels to include in the spec. These will always
@@ -398,7 +397,6 @@ func (cfg *Config) Main(c context.Context, argv []string, env environ.Env) int {
 				PruneThreshold:    cfg.PruneThreshold,
 				MaxPrunesPerSweep: cfg.MaxPrunesPerSweep,
 				Loader:            cfg.PackageLoader,
-				OmitUseWheel:      cfg.VENVOmitUseWheel,
 			},
 			BaseWheels:   cfg.BaseWheels,
 			WaitForEnv:   true,
