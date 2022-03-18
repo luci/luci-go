@@ -84,7 +84,7 @@ func (ck runCreateChecker) canTrustDeps(ctx context.Context) (evalResult, error)
 		// Dep is trusted, if
 		// - it has been approved in Gerrit, OR
 		// - the owner is a committer
-		switch isApproved, err := d.Snapshot.IsSubmittable(); {
+		switch isApproved, err := checkApproval(d.Snapshot); {
 		case err != nil:
 			return no, errors.Annotate(err, "dep-CL(%d)", d.ID).Err()
 		case isApproved:
@@ -255,6 +255,20 @@ func CheckRunCreate(ctx context.Context, cg *prjcfg.ConfigGroup, trs []*run.Trig
 	return res, nil
 }
 
+func checkApproval(snap *changelist.Snapshot) (bool, error) {
+	switch isSubmitted, err := snap.IsSubmitted(); {
+	case err != nil:
+		return false, err
+	case isSubmitted:
+		return true, nil
+	}
+	isSubmittable, err := snap.IsSubmittable()
+	if err != nil {
+		return false, err
+	}
+	return isSubmittable, nil
+}
+
 func evaluateCLs(ctx context.Context, cg *prjcfg.ConfigGroup, trs []*run.Trigger, cls []*changelist.CL) ([]*runCreateChecker, error) {
 	gVerifier := cg.Content.Verifiers.GetGerritCqAbility()
 
@@ -270,7 +284,7 @@ func evaluateCLs(ctx context.Context, cg *prjcfg.ConfigGroup, trs []*run.Trigger
 		if err != nil {
 			return nil, errors.Annotate(err, "CL(%d)", cl.ID).Err()
 		}
-		isApproved, err := cl.Snapshot.IsSubmittable()
+		isApproved, err := checkApproval(cl.Snapshot)
 		if err != nil {
 			return nil, errors.Annotate(err, "CL(%d)", cl.ID).Err()
 		}

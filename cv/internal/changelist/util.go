@@ -200,3 +200,16 @@ func (s *Snapshot) IsSubmittable() (bool, error) {
 	}
 	return g.GetInfo().GetSubmittable(), nil
 }
+
+// IsSubmitted returns whether the change has been submitted.
+func (s *Snapshot) IsSubmitted() (bool, error) {
+	if s == nil {
+		panic("Snapshot is nil")
+	}
+
+	g := s.GetGerrit()
+	if g == nil {
+		return false, errors.New("non-Gerrit CLs not supported")
+	}
+	return g.GetInfo().GetStatus() == gerritpb.ChangeStatus_MERGED, nil
+}

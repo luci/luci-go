@@ -130,6 +130,7 @@ func TestCheckRunCLs(t *testing.T) {
 		mustOK := func() {
 			res, err := CheckRunCreate(ctx, &cg, trs, cls)
 			So(err, ShouldBeNil)
+			So(res.FailuresSummary(), ShouldBeEmpty)
 			So(res.OK(), ShouldBeTrue)
 		}
 		mustFailWith := func(cl *changelist.CL, format string, args ...interface{}) CheckResult {
@@ -141,6 +142,10 @@ func TestCheckRunCLs(t *testing.T) {
 		}
 		approveCL := func(cl *changelist.CL) {
 			cl.Snapshot.GetGerrit().GetInfo().Submittable = true
+			So(datastore.Put(ctx, cl), ShouldBeNil)
+		}
+		submitCL := func(cl *changelist.CL) {
+			cl.Snapshot.GetGerrit().GetInfo().Status = gerritpb.ChangeStatus_MERGED
 			So(datastore.Put(ctx, cl), ShouldBeNil)
 		}
 		setAllowOwner := func(action cfgpb.Verifiers_GerritCQAbility_CQAction) {
@@ -323,6 +328,11 @@ func TestCheckRunCLs(t *testing.T) {
 				Convey("trusted because of an approval", func() {
 					approveCL(dep1)
 					approveCL(dep2)
+					mustOK()
+				})
+				Convey("trusterd because they have been merged already", func() {
+					submitCL(dep1)
+					submitCL(dep2)
 					mustOK()
 				})
 				Convey("trusted because the owner is a committer", func() {
