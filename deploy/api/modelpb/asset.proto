@@ -1,0 +1,110 @@
+// Copyright 2022 The LUCI Authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package deploy.model;
+
+option go_package = "go.chromium.org/luci/deploy/api/modelpb";
+
+import "google/protobuf/timestamp.proto";
+import "google/rpc/status.proto";
+
+import "go.chromium.org/luci/deploy/api/modelpb/actuation.proto";
+import "go.chromium.org/luci/deploy/api/modelpb/deployment.proto";
+
+
+// Asset represents a Cloud resource (or a bunch of resources) actuated as
+// a single unit.
+message Asset {
+  // Unique ID of this asset.
+  //
+  // Defines the asset type (in particular what oneof branch is expected to
+  // be populated in AssetState).
+  //
+  // Matches full resource name of the asset's root resource per Google Cloud
+  // API conventions. For now only Appengine services are supported with asset
+  // ID being "apps/<app-id>".
+  string id = 1;
+
+  // The snapshot of the most recent actuation (may still be in-flight).
+  //
+  // Also contains the Deployment associated with this asset.
+  Actuation last_actuation = 2;
+
+  // Asset configuration as defined in the IaC repo.
+  //
+  // It's the configuration consumed the the deployment system itself. Actuated
+  // resources are configured via `intended_state`.
+  AssetConfig config = 3;
+
+  // The intended state of the asset as defined in the IaC repo.
+  //
+  // This state is derived purely from the committed configuration. The actuator
+  // will try to move the asset into this state.
+  AssetState intended_state = 4;
+
+  // The actual state of the asset as reported by the actuator most recently.
+  //
+  // Always matches some real observed state of the asset, regardless how this
+  // state came to be.
+  AssetState reported_state = 5;
+
+  // The last state applied by the actuator itself.
+  //
+  // For up-to-date assets it matches `intended_state` and `reported_state`.
+  //
+  // If during an actuation cycle the actuator partially updates some resources
+  // and then fails, `actuated_state` may be some intermediate state between
+  // the intended and the initial pre-actuation states.
+  //
+  // If some external entity (not the actuator) messes with the asset,
+  // `reported_state` may be different from `actuated_state`.
+  AssetState actuated_state = 6;
+}
+
+
+// Asset configuration as defined in the IaC repo.
+message AssetConfig {
+  // True to actuate the asset, false to leave it alone.
+  bool enable_automation = 1;
+}
+
+
+// A snapshot of the intended or captured state of an asset.
+//
+// Also contains information about the actuator and the deployment at the time
+// the state was captured. This is useful for the historical log of states.
+message AssetState {
+  // When this state was captured.
+  google.protobuf.Timestamp timestamp = 1;
+  // The deployment configuration at the time the state was captured.
+  Deployment deployment = 2;
+  // The actuator that performed the capture.
+  ActuatorInfo actuator = 3;
+  // Error details if the asset state could not be captured.
+  google.rpc.Status status = 4;
+
+  // The intended or captured state of the asset.
+  oneof state {
+    // For assets with ID "apps/<app-id>".
+    AppengineState appengine = 10;
+  }
+}
+
+
+// Intended or captured state of an Appengine service.
+message AppengineState {
+  // TODO
+}

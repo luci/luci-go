@@ -1,0 +1,139 @@
+// Copyright 2022 The LUCI Authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package deploy.service;
+
+option go_package = "go.chromium.org/luci/deploy/api/rpcpb";
+
+import "google/rpc/status.proto";
+
+import "go.chromium.org/luci/deploy/api/modelpb/actuation.proto";
+import "go.chromium.org/luci/deploy/api/modelpb/artifact.proto";
+import "go.chromium.org/luci/deploy/api/modelpb/asset.proto";
+
+
+// Actuations service is used exclusively by the actuator agents.
+//
+// For each deployment the actuator first calls BeginActuation to report the
+// state of assets there and to get a decision from the backend if it should
+// perform the actuation.
+//
+// Once the actuation is complete (successfully or not), the actuator calls
+// EndActuation to notify the backend about the results.
+service Actuations {
+  // Called by the actuator before it starts updating a deployment.
+  //
+  // The request contains the intended and current states of all assets in the
+  // deployment. For each asset the backend responds if it should be actuated
+  // or skipped.
+  rpc BeginActuation(BeginActuationRequest) returns (BeginActuationResponse);
+
+  // Called by the actuator after it updated all assets it was asked to actuate.
+  //
+  // If there were no assets that needed actuation, this call is skipped.
+  rpc EndActuation(EndActuationRequest) returns (EndActuationResponse);
+}
+
+
+// Sent the actuator before it starts updating a deployment.
+message BeginActuationRequest {
+  // A new actuation to perform.
+  //
+  // Must have a new unique ID and be in EXECUTING state. If an actuation with
+  // such ID already exists, this request is assumed to be a retry and handled
+  // as such (perhaps producing FAILED_PRECONDITION response if something
+  // doesn't add up).
+  deploy.model.Actuation actuation = 1;
+
+  // Assets to be actuated as a map asset_id => AssetToActuate.
+  //
+  // For each asset the BeginActuationResponse would contain the corresponding
+  // ActuationDecision.
+  map<string, AssetToActuate> assets = 2;
+
+  // Metadata of all artifacts referenced in `assets`.
+  repeated deploy.model.Artifact artifacts = 3;
+}
+
+
+// AssetToActuate describes an asset the actuator is considering for actuation.
+//
+// Meaning of fields matches deploy.model.Asset message, see its doc for
+// details.
+//
+// Fields `deployment` and `actuator` of AssetState will be populated based on
+// corresponding fields in BeginActuationRequest and can be omitted here.
+message AssetToActuate {
+  // Asset configuration as defined in the IaC repo.
+  deploy.model.AssetConfig config = 1;
+  // The intended state of the asset as defined in the IaC repo.
+  deploy.model.AssetState intended_state = 2;
+  // The actual state of the asset (as scanned by the actuator).
+  deploy.model.AssetState reported_state = 3;
+}
+
+
+// Describes what to to with assets reported in BeginActuationRequest.
+message BeginActuationResponse {
+  // Per-asset decision whether to proceed with the actuation or to skip it.
+  map<string, ActuationDecision> decisions = 1;
+}
+
+
+// Defines what the actuator should do with an asset.
+message ActuationDecision {
+  // What to do with an asset.
+  enum Decision {
+    DECISION_UNSPECIFIED = 0;
+
+    ACTUATE_STALE = 1;  // the asset appears to be stale and must be actuated
+    ACTUATE_FORCE = 2;  // the asset must be actuated even if it is up-to-date
+
+    SKIP_UPTODATE = 3;  // the asset is up-to-date and should not be actuated
+    SKIP_DISABLED = 4;  // the actuation is disabled in the config
+    SKIP_LOCKED   = 5;  // the actuation of this asset is locked
+  }
+  Decision decision = 1;
+
+  // The list of active locks for this asset (if any).
+  repeated deploy.model.ActuationLock locks = 2;
+}
+
+
+// Reports the outcome of an actuation.
+message EndActuationRequest {
+  // ID of the actuation that was passed to BeginActuation RPC previously.
+  string actuation_id = 1;
+  // Error details if the actuation failed (perhaps partially).
+  google.rpc.Status status = 2;
+  // Link to a human-readable actuation log (if available).
+  string log_url = 3;
+  // The state of the actuated (non-skipped) assets post-actuation.
+  map<string, ActuatedAsset> assets = 4;
+}
+
+
+// The state of the actuated asset post-actuation.
+message ActuatedAsset {
+  // The actual state of the asset post actuation (as scanned by the actuator).
+  deploy.model.AssetState state = 1;
+}
+
+
+// EndActuation RPC response.
+message EndActuationResponse {
+  // Empty for now.
+}

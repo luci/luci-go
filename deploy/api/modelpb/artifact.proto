@@ -1,0 +1,86 @@
+// Copyright 2022 The LUCI Authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package deploy.model;
+
+option go_package = "go.chromium.org/luci/deploy/api/modelpb";
+
+import "google/protobuf/timestamp.proto";
+
+
+// Identifier of an artifact version.
+message ArtifactID {
+  // Artifact kind.
+  enum Kind {
+    KIND_UNSPECIFIED = 0;
+
+    GAE_TARBALL  = 1;  // a tarball with GAE code built by cloudbuildhelper
+    DOCKER_IMAGE = 2;  // a docker image
+  }
+  Kind kind = 1;
+  // Name of the artifact, e.g. a tarball path or container image name.
+  string name = 2;
+  // Its version label, e.g. "47712-fe5d339".
+  string version = 3;
+}
+
+
+// Metadata about an artifact version.
+//
+// Immutable.
+message Artifact {
+  // Its full ID (including version).
+  ArtifactID id = 1;
+  // Artifact URL in the storage, the format depends on the artifact kind.
+  string location = 2;
+  // Its digest as "<algo>:<hex>".
+  string digest = 3;
+  // When it was published to the IaC repository the first time.
+  google.protobuf.Timestamp published = 4;
+  // Reference to the source code the artifact was built from, for change logs.
+  repeated ArtifactSource sources = 5;
+  // Links to logs and UI pages related to the artifact.
+  ArtifactLinks links = 6;
+}
+
+
+// Reference to the source code to calculate change logs.
+//
+// It is not a full manifest, just "interesting" directories worthy of inclusion
+// in the change log.
+message ArtifactSource {
+  // Full git repository URL.
+  string repository = 1;
+  // Git revision.
+  string revision = 2;
+  // List of the directories inside this repo with sources to include.
+  repeated string sources = 3;
+}
+
+
+// Links to human-readable logs and UI pages related to the artifact.
+//
+// All are optional.
+message ArtifactLinks {
+  // Link to where the artifact is defined (e.g. its build configs).
+  string definition = 1;
+  // Link to view the artifact via its storage UI (e.g. GCR Cloud Console link).
+  string view = 2;
+  // Link to the buildbucket build that produced this artifact.
+  string buildbucket = 3;
+  // Link to the cloudbuild build that produced this artifact.
+  string cloudbuild = 4;
+}

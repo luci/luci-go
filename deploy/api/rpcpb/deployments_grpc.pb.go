@@ -100,5 +100,5 @@ var Deployments_ServiceDesc = grpc.ServiceDesc{
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
-	Metadata: "go.chromium.org/luci/deploy/api/rpcpb/deploy.proto",
+	Metadata: "go.chromium.org/luci/deploy/api/rpcpb/deployments.proto",
 }

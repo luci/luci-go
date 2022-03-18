@@ -12,25 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package rpcs
+//go:generate cproto
 
-import (
-	"context"
-
-	"google.golang.org/protobuf/types/known/emptypb"
-
-	"go.chromium.org/luci/common/logging"
-	"go.chromium.org/luci/server/auth"
-
-	"go.chromium.org/luci/deploy/api/rpcpb"
-)
-
-// Deployments is an implementation of deploy.service.Deployments service.
-type Deployments struct {
-	rpcpb.UnimplementedDeploymentsServer
-}
-
-func (*Deployments) SayHi(ctx context.Context, _ *emptypb.Empty) (*emptypb.Empty, error) {
-	logging.Infof(ctx, "Hello %s", auth.CurrentIdentity(ctx))
-	return &emptypb.Empty{}, nil
-}
+// Package modelpb contains LUCI Deploy data model messages.
+package modelpb

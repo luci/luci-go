@@ -1,0 +1,67 @@
+// Copyright 2022 The LUCI Authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package deploy.model;
+
+option go_package = "go.chromium.org/luci/deploy/api/modelpb";
+
+
+// Identifier of a deployment: a reference to its config location.
+//
+// A deployment is located in some directory of a git repository on `HEAD` ref.
+//
+// The directory path has two segments: the path to the root of the
+// configuration tree, and the path to the particular configuration within this
+// tree.
+message DeploymentID {
+  // Hostname of the GoB server with the IaC repository, e.g. "chrome-internal".
+  string repo_host = 1;
+  // Name of the IaC repository relative to the host, e.g. "infradata/gae".
+  string repo_name = 2;
+  // Path to the root of the IaC config tree in the repository, e.g. ".".
+  string repo_path = 3;
+  // Path to the directory inside the IaC configs, e.g. "apps/luci-deploy/prod".
+  string config_path = 4;
+}
+
+
+// Deployment as defined in the IaC repo.
+message Deployment {
+  // The stable identifier of the deployment based on the config location.
+  DeploymentID id = 1;
+
+  // The revision of the HEAD of IaC repository with the deployment.
+  //
+  // Can be obtained with `git rev-parse HEAD`. Moves frequently.
+  string repo_rev = 2;
+
+  // The revision of the deployment config directory.
+  //
+  // Can be obtained `git log --pretty=tformat:"%H" -n1 <config_path>`. If it
+  // changes, the deployment most like is changing too.
+  string config_rev = 3;
+
+  // Configuration for the deployment system itself, as defined in the IaC repo.
+  //
+  // Applies to all assets associated with this deployment.
+  DeploymentConfig config = 4;
+}
+
+
+// Deployment configuration, as defined in the IaC repo.
+message DeploymentConfig {
+  // Empty for now.
+}

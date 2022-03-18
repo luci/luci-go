@@ -17,20 +17,22 @@ package rpcs
 import (
 	"context"
 
-	"google.golang.org/protobuf/types/known/emptypb"
-
-	"go.chromium.org/luci/common/logging"
-	"go.chromium.org/luci/server/auth"
-
 	"go.chromium.org/luci/deploy/api/rpcpb"
 )
 
-// Deployments is an implementation of deploy.service.Deployments service.
-type Deployments struct {
-	rpcpb.UnimplementedDeploymentsServer
+// Actuations is an implementation of deploy.service.Actuations service.
+type Actuations struct {
+	rpcpb.UnimplementedActuationsServer
 }
 
-func (*Deployments) SayHi(ctx context.Context, _ *emptypb.Empty) (*emptypb.Empty, error) {
-	logging.Infof(ctx, "Hello %s", auth.CurrentIdentity(ctx))
-	return &emptypb.Empty{}, nil
+// BeginActuation implements the corresponding RPC method.
+func (srv *Actuations) BeginActuation(ctx context.Context, req *rpcpb.BeginActuationRequest) (*rpcpb.BeginActuationResponse, error) {
+	// TODO: implemented.
+	return &rpcpb.BeginActuationResponse{}, nil
+}
+
+// EndActuation implements the corresponding RPC method.
+func (srv *Actuations) EndActuation(ctx context.Context, req *rpcpb.EndActuationRequest) (*rpcpb.EndActuationResponse, error) {
+	// TODO: implemented.
+	return &rpcpb.EndActuationResponse{}, nil
 }

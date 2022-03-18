@@ -46,7 +46,9 @@ func main() {
 	}
 
 	server.Main(nil, modules, func(srv *server.Server) error {
+		actuations := rpcs.Actuations{}
 		deployments := rpcs.Deployments{}
+		rpcpb.RegisterActuationsServer(srv.PRPC, &actuations)
 		rpcpb.RegisterDeploymentsServer(srv.PRPC, &deployments)
 		ui.RegisterRoutes(srv, &deployments)
 		return nil
