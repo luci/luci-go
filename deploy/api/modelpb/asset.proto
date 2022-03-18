@@ -80,6 +80,8 @@ message Asset {
 message AssetConfig {
   // True to actuate the asset, false to leave it alone.
   bool enable_automation = 1;
+  // How many inactive GAE versions to keep.
+  int32 inactive_versions_to_keep = 2;
 }
 
 
