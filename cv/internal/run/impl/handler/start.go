@@ -114,7 +114,7 @@ func (impl *Impl) Start(ctx context.Context, rs *state.RunState) (*Result, error
 		//
 		// TODO(crbug/1268574): cancel the Run, once it's verified that
 		// both (CQ and CV) implementations agree with each other.
-		logging.Debugf(ctx, "crbug/1268574\n%s", result.FailuresSummary())
+		logging.Debugf(ctx, "crbug/1268574 - %s\n%s", rs.ID, result.FailuresSummary())
 		rs.CreationAllowed = run.CreationAllowedNo
 	}
 
