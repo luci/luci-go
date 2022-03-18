@@ -22,6 +22,7 @@ import "google/protobuf/timestamp.proto";
 import "google/rpc/status.proto";
 
 import "go.chromium.org/luci/deploy/api/modelpb/actuation.proto";
+import "go.chromium.org/luci/deploy/api/modelpb/artifact.proto";
 import "go.chromium.org/luci/deploy/api/modelpb/deployment.proto";
 
 
@@ -106,5 +107,110 @@ message AssetState {
 
 // Intended or captured state of an Appengine service.
 message AppengineState {
-  // TODO
+  // A list of services (sorted by name) with intended or captured state.
+  message Service {
+    // Name of the service e.g. "default".
+    string name = 1;
+
+    // A list of service versions sorted by name.
+    message Version {
+      // Name of the version e.g. "11120-9f81d82".
+      string name = 1;
+
+      // State which is defined in the config and which can't be easily captured
+      // using Cloud APIs.
+      //
+      // This field is populated in `intended_state`.
+      message IntendedState {
+        // The artifact (GAE tarball) that should be running there.
+        ArtifactID artifact = 1;
+        // Path to the service YAML within the tarball.
+        string yaml_path = 2;
+        // Vars passed to `gaedeploy` for substitution in the YAML.
+        map<string, string> luci_vars = 3;
+      }
+      IntendedState intended_state = 2;
+
+      // State which is captured using Cloud APIs and which can't be defined
+      // in the config (at least not directly).
+      //
+      // This field is populated in `reported_state` and `actuated_state`.
+      //
+      // See https://cloud.google.com/appengine/docs/admin-api/reference/rpc/google.appengine.v1#google.appengine.v1.Version
+      message CapturedState {
+        // E.g. "F4".
+        string instance_class = 1;
+        // E.g. "standard".
+        string env = 2;
+        // E.g. "go116"
+        string runtime = 3;
+        // Some runtimes have channels.
+        string runtime_channel = 4;
+        // Some runtimes have API versions.
+        string runtime_api_version = 5;
+        // Email of who uploaded this version.
+        string created_by = 6;
+        // When it was uploaded.
+        google.protobuf.Timestamp create_time = 7;
+        // Serving URL of this version specifically.
+        string version_url = 8;
+      }
+      CapturedState captured_state = 3;
+    }
+    repeated Version versions = 2;
+
+    // Traffic splitting method.
+    enum TrafficSplitting {
+      TRAFFIC_SPLITTING_UNSPECIFIED = 0;
+
+      COOKIE = 1;
+      IP     = 2;
+      RANDOM = 3;
+    }
+    TrafficSplitting traffic_splitting = 3;
+
+    // Traffic allocation as a map from version name to [0, 1000].
+    map<string, int32> traffic_allocation = 4;
+  }
+  repeated Service services = 1;
+
+  // State which is defined in the config and which can't be easily captured
+  // using Cloud APIs.
+  //
+  // This field is populated in `intended_state`.
+  message IntendedState {
+    // The list of deployable YAMLs (such as "cron.yaml").
+    message DeployableYaml {
+      // The artifact (GAE tarball) with the YAML.
+      ArtifactID artifact = 1;
+      // Path to the YAML within the tarball.
+      string yaml_path = 2;
+    }
+    repeated DeployableYaml deployable_yamls = 1;
+  }
+  IntendedState intended_state = 2;
+
+  // State which is captured using Cloud APIs and which can't be defined
+  // in the config (at least not directly).
+  //
+  // This field is populated in `reported_state` and `actuated_state`.
+  //
+  // See https://cloud.google.com/appengine/docs/admin-api/reference/rpc/google.appengine.v1#google.appengine.v1.Application
+  message CapturedState {
+    // E.g. "us-central".
+    string location_id = 1;
+    // Default service hostname.
+    string default_hostname = 2;
+
+    // What kind of a database is associated with the app.
+    enum DatabaseType {
+      DATABASE_TYPE_UNSPECIFIED = 0;
+
+      CLOUD_DATASTORE               = 1;
+      CLOUD_FIRESTORE               = 2;
+      CLOUD_DATASTORE_COMPATIBILITY = 3;
+    }
+    DatabaseType database_type = 3;
+  }
+  CapturedState captured_state = 3;
 }
