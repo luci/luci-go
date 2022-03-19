@@ -21,6 +21,7 @@ import (
 	"time"
 
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/protobuf/types/known/emptypb"
 
 	snooperpb "go.chromium.org/luci/provenance/api/snooperpb/v1"
@@ -47,7 +48,7 @@ func MakeSnooperClient(ctx context.Context, addr string) (*client, error) {
 	ctx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
 
-	conn, err := grpc.DialContext(ctx, parsedAddr.Host, grpc.WithInsecure())
+	conn, err := grpc.DialContext(ctx, parsedAddr.Host, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
 		return nil, fmt.Errorf("failed to open grpc conn: %v", err)
 	}

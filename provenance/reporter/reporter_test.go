@@ -36,22 +36,34 @@ func TestReportCipdAdmission(t *testing.T) {
 		reporter := Report{sClient: &fakeClient{}}
 
 		Convey("cipd admission works", func() {
-			So(reporter.ReportCipdAdmission(ctx, "package", "deadbeef"), ShouldBeNil)
+			ok, err := reporter.ReportCipdAdmission(ctx, "package", "deadbeef")
+			So(ok, ShouldEqual, true)
+			So(err, ShouldBeNil)
 		})
 		Convey("git checkout works", func() {
-			So(reporter.ReportGitCheckout(ctx, "https://repo.git", "deadbeef", "refs/branch"), ShouldBeNil)
+			ok, err := reporter.ReportGitCheckout(ctx, "https://repo.git", "deadbeef", "refs/branch")
+			So(ok, ShouldEqual, true)
+			So(err, ShouldBeNil)
 		})
 		Convey("report stage works", func() {
-			So(reporter.ReportStage(ctx, snooperpb.TaskStage_FETCH, ""), ShouldBeNil)
+			ok, err := reporter.ReportStage(ctx, snooperpb.TaskStage_FETCH, "")
+			So(ok, ShouldEqual, true)
+			So(err, ShouldBeNil)
 		})
 		Convey("report stage fails", func() {
-			So(reporter.ReportStage(ctx, snooperpb.TaskStage_STARTED, ""), ShouldErrLike, "need to report recipe when task starts")
+			ok, err := reporter.ReportStage(ctx, snooperpb.TaskStage_STARTED, "")
+			So(ok, ShouldEqual, false)
+			So(err, ShouldErrLike, "a recipe must be provided when task starts")
 		})
 		Convey("report cipd digest works", func() {
-			So(reporter.ReportCipdDigest(ctx, "deadbeef", "package", "iid"), ShouldBeNil)
+			ok, err := reporter.ReportCipdDigest(ctx, "deadbeef", "package", "iid")
+			So(ok, ShouldEqual, true)
+			So(err, ShouldBeNil)
 		})
 		Convey("report gcs digest works", func() {
-			So(reporter.ReportGcsDigest(ctx, "deadbeef", "gs://bucket/example/1.2.3/app"), ShouldBeNil)
+			ok, err := reporter.ReportGcsDigest(ctx, "deadbeef", "gs://bucket/example/1.2.3/app")
+			So(ok, ShouldEqual, true)
+			So(err, ShouldBeNil)
 		})
 	})
 }
