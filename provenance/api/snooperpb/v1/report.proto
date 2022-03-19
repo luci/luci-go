@@ -1,0 +1,198 @@
+// Copyright 2022 The LUCI Authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package provenance.snooperpb;
+
+option go_package = "go.chromium.org/luci/provenance/api/snooperpb/v1;snooperpb";
+
+import "google/protobuf/empty.proto";
+import "google/protobuf/timestamp.proto";
+import "go.chromium.org/luci/cipd/api/cipd/v1/repo.proto";
+
+service SelfReport {
+    // Interface to report cipd packages admitted on the local machine. This
+    // should be used by Admission plugin only.
+    rpc ReportCipd(ReportCipdRequest) returns (google.protobuf.Empty);
+
+    // Interface to report git repos checked out  on the local machine. This
+    // should be used by git plugin only.
+    rpc ReportGit(ReportGitRequest) returns (google.protobuf.Empty);
+
+    // Reports running task's stage. A task is typically a collection of
+    // workflows/statements. Some of these statements can be grouped together
+    // to define a stage, e.g. when a task is downloading sources/deps, it is
+    // known as `FETCH` stage. For details read go/snoopy-design.
+    rpc ReportTaskStage(ReportTaskStageRequest) returns (google.protobuf.Empty);
+
+    // Reports digest of produced artifact from a task.
+    rpc ReportArtifactDigest(ReportArtifactDigestRequest) returns (google.protobuf.Empty);
+}
+
+// Indicator to task status. This is used to annotate logs when a task starts
+// ends or reaches a certain "interesting" stage.
+//
+// This is crucial to enforce security policies based on current state of the
+// task. For example, more restrictive network connections can be applied when a
+// task reaches `compile` stage.
+//
+// Below is a brief rationale behind each steps:
+//   * STARTED: provenance of an artifact captures sources that goes into a
+//              build. A single compute resource typically outlives a task, in
+//              other words, a single machine can run multiple tasks in it's
+//              lifetime. Task start indicates the capturing time window began.
+//   * FETCH: typically a task depends on a bunch of dependencies that are
+//            fetched to set up the environment before compiling the artifact.
+//            Fetch indicates that the task is currently installing these deps.
+//   * COMPILE: ideally in compile step, there shouldn't be any new fetching.
+//   * UPLOAD: after finishing compilation, this step indicates built artifacts
+//             are being uploaded to its destination. A single task can have
+//             multiple produced artifacts.
+//   * UPLOAD_COMPLETE: it indicates all produced artifacts have been uploaded.
+//                      This is crucial to closing the capturing time window for
+//                      provenance generation.
+//   * TEST: often a task runs regression tests after an artifact has been
+//           produced. Some times requirements around this tests is an open
+//           environment which might not be safe for other task phases. To
+//           support effective tests, some policies can be lifted at this stage.
+//           (Although it is highly encouraged to schedule tests on a separate
+//           machine when possible to minimize risks of cross-contamination).
+enum TaskStage {
+    STAGE_UNSPECIFIED = 0;
+    STARTED = 1;
+    FETCH = 2;
+    COMPILE = 3;
+    UPLOAD = 4;
+    UPLOAD_COMPLETE = 5;
+    TEST = 6;
+}
+
+// Identifies storage location of a particular artifact. This will be used to
+// attach provenance:
+//      * GCS: provenance will be uploaded alongside the artifact.
+//      * CIPD: provenance will be added to package metadata.
+// Currently we support provenance for two types of artifacts (gcs, cipd).
+message Artifact {
+    // Artifacts stored on CIPD. This defaults to prod instance of CIPD.
+    message CIPD {
+        // Identifies a hierarchical package. This will be the absolute name
+        // of a package (including path).
+        string package_name = 1;
+        // Unique identifier of an instance of a package.
+        string instance_id = 2;
+        // CIPD backend host (dev/prod) where the artifact is stored.
+        // If not provided, default is CIPD prod host.
+        string host = 3;
+    }
+    oneof kind {
+        // Artifacts stored on Google Cloud Storage, e.g. Chrome binaries.
+        // Identifier of artifact's storage location, e.g.
+        // gs://example-bucket/app/1.2.3.4/mac64/bin.dmg
+        string gcs = 1;
+        CIPD cipd = 2;
+    }
+}
+
+message CipdReport {
+    // An identifier to map multiple reports to a machine/task. This is
+    // going to be the hash(access_token) used by bots to make requests
+    // to luci services.
+    string requestor_id = 1;
+
+    // CIPD package name requested/installed on the machine.
+    string package_name = 2;
+
+    // Unique identifier of the package instance, a.k.a. instance_id.
+    string iid = 3;
+
+    // CIPD tags attached to the deployed package.
+    repeated cipd.Tag tags = 4;
+
+    // CIPD refs attached to the deployed package.
+    repeated cipd.Ref refs = 5;
+
+    // Event timestamp. This is local to the service, not necessarily same as
+    // the reflected recorded timestamp on the logs.
+    google.protobuf.Timestamp event_ts = 6;
+}
+
+message GitReport {
+    // An identifier to map multiple reports to a machine/task. Reporter do not
+    // need to set this. It is used by the server to group reports together and
+    // bind them to a single task.
+    string requestor_id = 1;
+
+    // Git repository URL.
+    string repo = 2;
+    // Commit that was fetched for this repo.
+    string commit = 3;
+    // This is coming from an upstream dependency, although a checkout can be
+    // uniquely attributed by a repo and a commit, they don't often produce
+    // measurable inputs for security policy.
+    // For example, a git repo may have multiple refs/branches and only some of
+    // them may have `Code Review` required.
+    //
+    // To make a security policy decision about a particular commit, sometimes
+    // it is useful to know which branch/ref the commit is associated with, note
+    // a single commit can be associated with multiple branches, but the highest
+    // security policy will always be enforced.
+    // Scenario:
+    // Git repo: "http://repo.git"
+    // Commit  : "deadbeef"
+    // Refs    : ["refs/heads/main", "refs/feature/experimental"]
+    // In this example, the particular commit belongs to two branches, one does
+    // not have mandatory code review (experimental) but the other does.
+    //
+    // Irrespective of the order of where the commit belonged first, it is
+    // certain that the change was reviewed as this was merged to main branch.
+    string refs = 4;
+
+    // Event timestamp. This is local to the service, not necessarily same as
+    // the reflected recorded timestamp on the logs.
+    google.protobuf.Timestamp event_ts = 5;
+}
+
+message ReportTaskStageRequest {
+    TaskStage task_stage = 1;
+    google.protobuf.Timestamp timestamp = 2;
+
+    // Recipe is essentially the entry point for the given task, it can be a
+    // `build_rule` or a custom executable (like `luci recipes`) that dictates
+    // workflow of a task.
+    //
+    // (Required) when reporting a task start.
+    string recipe = 3;
+}
+
+message ReportArtifactDigestRequest {
+    // SHA256 digest of artifact.
+    string digest = 1;
+
+    // Identifies storage location of a particular artifact. This will be used
+    // by Spike to attach provenance:
+    //      * GCS: provenance will be uploaded alongside the artifact.
+    //      * CIPD: provenance will be added to package metadata.
+    Artifact artifact = 2;
+}
+
+message ReportCipdRequest {
+    // cipd_report will consist of package name, instance_id of a cipd package.
+    CipdReport cipd_report = 1;
+}
+
+message ReportGitRequest {
+    // git_report will consist of repo name, git hash of checked out repo.
+    GitReport git_report = 1;
+}
