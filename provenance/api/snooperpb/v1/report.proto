@@ -34,7 +34,8 @@ service SelfReport {
     // Reports running task's stage. A task is typically a collection of
     // workflows/statements. Some of these statements can be grouped together
     // to define a stage, e.g. when a task is downloading sources/deps, it is
-    // known as `FETCH` stage. For details read go/snoopy-design.
+    // known as `FETCH` stage.
+    // For details read go/snoopy-design (Google-internal).
     rpc ReportTaskStage(ReportTaskStageRequest) returns (google.protobuf.Empty);
 
     // Reports digest of produced artifact from a task.
