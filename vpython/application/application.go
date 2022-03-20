@@ -95,10 +95,6 @@ type Config struct {
 	// VENVPackage is the VirtualEnv package to use for bootstrap generation.
 	VENVPackage vpythonAPI.Spec_Package
 
-	// OBSOLETE: This is always enabled. Will be removed once all call
-	// sites have stopped setting the field.
-	VENVOmitUseWheel bool
-
 	// BaseWheels is the set of wheels to include in the spec. These will always
 	// be merged into the runtime spec and normalized, such that any duplicate
 	// wheels will be deduplicated.
