@@ -52,6 +52,7 @@ import (
 	"go.chromium.org/luci/buildbucket"
 	"go.chromium.org/luci/buildbucket/cmd/bbagent/bbinput"
 	bbpb "go.chromium.org/luci/buildbucket/proto"
+	"go.chromium.org/luci/cipd/client/cipd/platform"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
@@ -361,21 +362,21 @@ func mainImpl() int {
 			logging.Warningf(ctx, "Failed to report build agent STARTED status: %s", err)
 		}
 
-		agenOutput := bldForCipd.Build.Infra.Buildbucket.Agent.Output
+		agentOutput := bldForCipd.Build.Infra.Buildbucket.Agent.Output
 		// TODO(crbug/1297809): Record the total downloading duration after the
 		// duration field is added into agent.Output proto.
-		agenOutput.AgentPlatform = runtime.GOOS + "-" + runtime.GOARCH
+		agentOutput.AgentPlatform = platform.CurrentPlatform()
 		resolved, err := installCipdPackages(ctx, input.Build, cwd)
 		if err != nil {
-			logging.Errorf(ctx, " Failure in installing cipd packages: %s", err)
-			agenOutput.Status = bbpb.Status_FAILURE
-			agenOutput.SummaryHtml = err.Error()
+			logging.Errorf(ctx, "Failure in installing cipd packages: %s", err)
+			agentOutput.Status = bbpb.Status_FAILURE
+			agentOutput.SummaryHtml = err.Error()
 			bldForCipd.Build.Status = bbpb.Status_INFRA_FAILURE
 			bldForCipd.Build.SummaryMarkdown = "Failed to install cipd packages for this build"
 			bldForCipd.UpdateMask.Paths = append(bldForCipd.UpdateMask.Paths, "build.status", "build.summary_markdown")
 		} else {
-			agenOutput.ResolvedData = resolved
-			agenOutput.Status = bbpb.Status_SUCCESS
+			agentOutput.ResolvedData = resolved
+			agentOutput.Status = bbpb.Status_SUCCESS
 		}
 		if _, bbErr := bbclient.UpdateBuild(cctx, bldForCipd); bbErr != nil {
 			logging.Warningf(ctx, "Failed to report build agent output status: %s", err)

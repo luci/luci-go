@@ -21,6 +21,7 @@ import (
 	"io/ioutil"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"strings"
 	"testing"
 
@@ -48,7 +49,8 @@ func fakeExecCommand(_ context.Context, command string, args ...string) *exec.Cm
 	cs = append(cs, args...)
 	cmd := exec.Command(os.Args[0], cs...)
 	tc := "TEST_CASE=" + testCase
-	cmd.Env = []string{"GO_WANT_HELPER_PROCESS=1", tc}
+	fakeResultsFilePath := "RESULTS_FILE=" + resultsFilePath
+	cmd.Env = []string{"GO_WANT_HELPER_PROCESS=1", tc, fakeResultsFilePath}
 	return cmd
 }
 
@@ -81,7 +83,7 @@ func TestHelperProcess(t *testing.T) {
 	case "success":
 		// Mock the generated json file of `cipd ensure` command.
 		jsonRs, _ := json.Marshal(successResult)
-		if err := ioutil.WriteFile("cipd_ensure_results.json", jsonRs, 0666); err != nil {
+		if err := ioutil.WriteFile(os.Getenv("RESULTS_FILE"), jsonRs, 0666); err != nil {
 			fmt.Fprintf(os.Stderr, "Errors in preparing data for tests\n")
 		}
 
@@ -93,6 +95,7 @@ func TestHelperProcess(t *testing.T) {
 }
 
 func TestInstallCipdPackages(t *testing.T) {
+	resultsFilePath = filepath.Join(t.TempDir(), "cipd_ensure_results.json")
 	Convey("installCipdPackages", t, func() {
 		ctx := memory.Use(context.Background())
 		ctx = memlogger.Use(ctx)
@@ -133,14 +136,14 @@ func TestInstallCipdPackages(t *testing.T) {
 		}
 
 		originalPathEnv := os.Getenv("PATH")
-
 		Convey("success", func() {
 			defer func() {
 				_ = os.Setenv("PATH", originalPathEnv)
 			}()
 			testCase = "success"
-			resultsFilePath = "cipd_ensure_results.json"
-			resolvedDataMap, err := installCipdPackages(ctx, build, ".")
+			cwd, err := os.Getwd()
+			So(err, ShouldBeNil)
+			resolvedDataMap, err := installCipdPackages(ctx, build, cwd)
 			So(err, ShouldBeNil)
 			So(resolvedDataMap["path_a"], ShouldResembleProto, &pb.ResolvedDataRef{
 				DataType: &pb.ResolvedDataRef_Cipd{
@@ -157,8 +160,8 @@ func TestInstallCipdPackages(t *testing.T) {
 				},
 			})
 			pathEnv := os.Getenv("PATH")
-			So(strings.Contains(pathEnv, "path_a/bin"), ShouldBeTrue)
-			So(strings.Contains(pathEnv, "path_b/bin"), ShouldBeTrue)
+			So(strings.Contains(pathEnv, filepath.Join(cwd, "path_a/bin")), ShouldBeTrue)
+			So(strings.Contains(pathEnv, filepath.Join(cwd, "path_b/bin")), ShouldBeTrue)
 		})
 
 		Convey("failure", func() {
