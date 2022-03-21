@@ -109,13 +109,8 @@ func main() {
 		clMutator := changelist.NewMutator(&tq.Default, pmNotifier, runNotifier)
 		clUpdater := changelist.NewUpdater(&tq.Default, clMutator)
 		gerritupdater.RegisterUpdater(clUpdater, gFactory)
-
-		buildbucketBackend := &buildbucket.Backend{}
 		tryjobUpdater := tryjob.NewUpdater(&tq.Default, runNotifier)
-		tryjobUpdater.RegisterBackend(buildbucketBackend)
-		tryjobCancellator := tryjob.NewCancellator(&tq.Default)
-		tryjobCancellator.RegisterBackend(buildbucketBackend)
-
+		tryjobUpdater.RegisterBackend(&buildbucket.Updater{})
 		_ = pmimpl.New(pmNotifier, runNotifier, clMutator, gFactory, clUpdater)
 		tc, err := tree.NewClient(srv.Context)
 		if err != nil {

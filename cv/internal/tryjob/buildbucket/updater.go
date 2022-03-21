@@ -40,12 +40,13 @@ import (
 // build updates.
 const SubscriptionID = "buildbucket-builds"
 
-// Backend implements updaterBackend and cancellatorBackend interfaces.
+// Updater implements updaterBackend interface.
 //
-// It can talk to Buildbucket to get Tryjobs' details and to cancel them.
-type Backend struct{}
+// It knows how to get a Tryjob from Buildbucket and interpret its build
+// details into valid CV Tryjob status and result.
+type Updater struct{}
 
-func (b *Backend) Kind() string {
+func (u *Updater) Kind() string {
 	return "buildbucket"
 }
 
@@ -67,7 +68,7 @@ var TryjobBuildMask = &bbpb.BuildMask{
 // parses its output and returns its current Status and Result.
 //
 // It does not modify the given Tryjob.
-func (b *Backend) Update(ctx context.Context, saved *tryjob.Tryjob) (tryjob.Status, *tryjob.Result, error) {
+func (u *Updater) Update(ctx context.Context, saved *tryjob.Tryjob) (tryjob.Status, *tryjob.Result, error) {
 	host, buildID, err := saved.ExternalID.ParseBuildbucketID()
 	if err != nil {
 		return 0, nil, err
@@ -87,13 +88,6 @@ func (b *Backend) Update(ctx context.Context, saved *tryjob.Tryjob) (tryjob.Stat
 	default:
 		return 0, nil, err
 	}
-}
-
-// CancelTryjob asks buildbucket to cancel a running tryjob.
-//
-// It does not error out if the tryjob is already cancelled.
-func (b *Backend) CancelTryjob(ctx context.Context, tj *tryjob.Tryjob) error {
-	return errors.Reason("Not implemented").Err()
 }
 
 func toTryjobStatusAndResult(ctx context.Context, b *bbpb.Build) (tryjob.Status, *tryjob.Result, error) {
