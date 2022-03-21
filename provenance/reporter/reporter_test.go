@@ -33,7 +33,7 @@ func TestReportCipdAdmission(t *testing.T) {
 	Convey("testing self reports", t, func() {
 		ctx := context.Background()
 		ctx, _ = testclock.UseTime(ctx, testclock.TestRecentTimeUTC)
-		reporter := Report{sClient: &fakeClient{}}
+		reporter := Report{RClient: &fakeClient{}}
 
 		Convey("cipd admission works", func() {
 			ok, err := reporter.ReportCipdAdmission(ctx, "package", "deadbeef")

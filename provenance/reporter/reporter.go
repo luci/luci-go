@@ -39,7 +39,7 @@ var ErrServiceUnavailable = errors.New("local provenance service unavailable")
 // transient. In this application, `ErrServiceUnavailable` is a permanent but
 // acceptable error code.
 type Report struct {
-	sClient snooperpb.SelfReportClient
+	RClient snooperpb.SelfReportClient
 }
 
 // ReportCipdAdmission reports a local cipd admission to provenance.
@@ -59,7 +59,7 @@ func (r *Report) ReportCipdAdmission(ctx context.Context, pkgName, iid string) (
 		},
 	}
 
-	_, err := r.sClient.ReportCipd(ctx, req)
+	_, err := r.RClient.ReportCipd(ctx, req)
 	switch errS, _ := status.FromError(err); errS.Code() {
 	case codes.OK:
 		logging.Infof(ctx, "success to report cipd admission")
@@ -91,7 +91,7 @@ func (r *Report) ReportGitCheckout(ctx context.Context, repo, commit, ref string
 		},
 	}
 
-	_, err := r.sClient.ReportGit(ctx, req)
+	_, err := r.RClient.ReportGit(ctx, req)
 	switch errS, _ := status.FromError(err); errS.Code() {
 	case codes.OK:
 		logging.Infof(ctx, "success to report git checkout")
@@ -127,7 +127,7 @@ func (r *Report) ReportStage(ctx context.Context, stage snooperpb.TaskStage, rec
 		Recipe: recipe,
 	}
 
-	_, err := r.sClient.ReportTaskStage(ctx, req)
+	_, err := r.RClient.ReportTaskStage(ctx, req)
 	switch errS, _ := status.FromError(err); errS.Code() {
 	case codes.OK:
 		logging.Infof(ctx, "success to report task stage")
@@ -162,7 +162,7 @@ func (r *Report) ReportCipdDigest(ctx context.Context, digest, pkgName, iid stri
 		},
 	}
 
-	_, err := r.sClient.ReportArtifactDigest(ctx, req)
+	_, err := r.RClient.ReportArtifactDigest(ctx, req)
 	switch errS, _ := status.FromError(err); errS.Code() {
 	case codes.OK:
 		logging.Infof(ctx, "success to report cipd digest")
@@ -194,7 +194,7 @@ func (r *Report) ReportGcsDigest(ctx context.Context, digest, gcsURI string) (bo
 		},
 	}
 
-	_, err := r.sClient.ReportArtifactDigest(ctx, req)
+	_, err := r.RClient.ReportArtifactDigest(ctx, req)
 	switch errS, _ := status.FromError(err); errS.Code() {
 	case codes.OK:
 		logging.Infof(ctx, "success to report cipd digest")
