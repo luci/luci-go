@@ -44,6 +44,7 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/types/known/durationpb"
 	"google.golang.org/protobuf/types/known/fieldmaskpb"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
@@ -363,9 +364,8 @@ func mainImpl() int {
 		}
 
 		agentOutput := bldForCipd.Build.Infra.Buildbucket.Agent.Output
-		// TODO(crbug/1297809): Record the total downloading duration after the
-		// duration field is added into agent.Output proto.
 		agentOutput.AgentPlatform = platform.CurrentPlatform()
+		start := clock.Now(ctx)
 		resolved, err := installCipdPackages(ctx, input.Build, cwd)
 		if err != nil {
 			logging.Errorf(ctx, "Failure in installing cipd packages: %s", err)
@@ -377,6 +377,9 @@ func mainImpl() int {
 		} else {
 			agentOutput.ResolvedData = resolved
 			agentOutput.Status = bbpb.Status_SUCCESS
+		}
+		agentOutput.TotalDuration = &durationpb.Duration{
+			Seconds: int64(clock.Since(ctx, start).Round(time.Second).Seconds()),
 		}
 		if _, bbErr := bbclient.UpdateBuild(cctx, bldForCipd); bbErr != nil {
 			logging.Warningf(ctx, "Failed to report build agent output status: %s", err)

@@ -477,6 +477,10 @@ message BuildInfra {
         // will give the mapping from `agent_platform` to a precise instance_id
         // which was used.
         string agent_platform = 5;
+
+        // Total installation duration for all input data. Currently only record
+        // cipd packages installation time.
+        google.protobuf.Duration total_duration = 6;
       }
 
       Input input = 1;
