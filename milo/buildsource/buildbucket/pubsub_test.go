@@ -300,9 +300,16 @@ func TestPubSub(t *testing.T) {
 	})
 }
 
+// sleepUntilStartOfNextTimeBucket puts the current goroutine to sleep until the
+// start of the next time bucket.
+func sleepUntilStartOfNextTimeBucket() {
+	now := time.Now().Unix()
+	nextTimeBucket := time.Unix(now-now%entityUpdateIntervalInS+entityUpdateIntervalInS, 0)
+	time.Sleep(time.Until(nextTimeBucket))
+}
+
 func TestShouldUpdateBuilderSummary(t *testing.T) {
-	// Skip due to https://crbug.com/1304383
-	SkipConvey("TestShouldUpdateBuilderSummary", t, func() {
+	Convey("TestShouldUpdateBuilderSummary", t, func() {
 		ctx := context.Background()
 
 		// Set up a test redis server.
@@ -326,17 +333,24 @@ func TestShouldUpdateBuilderSummary(t *testing.T) {
 		}
 
 		Convey("Single call", func() {
+			// Ensures `shouldUpdateBuilderSummary` is called at the start of the time bucket.
+			sleepUntilStartOfNextTimeBucket()
+
 			start := time.Now()
 			shouldUpdate, err := shouldUpdateBuilderSummary(ctx, createBuildSummary("test-builder-id-1", buildbucketpb.Status_SUCCESS, start))
 			So(err, ShouldBeNil)
 			So(shouldUpdate, ShouldBeTrue)
 
-			// If there's no recent updates, the call should return immediately.
+			// If there's no recent updates, the call should return immediately
+			// (before the start of the next time bucket).
 			// So builds from low traffic builders can be processed immediately.
-			So(time.Since(start), ShouldBeLessThan, 20*time.Millisecond)
+			So(time.Since(start), ShouldBeLessThan, time.Duration(entityUpdateIntervalInS)*time.Second-50*time.Millisecond)
 		})
 
 		Convey("Single call followed by multiple parallel calls", func() {
+			// Ensures all `shouldUpdateBuilderSummary` calls are in the same time bucket.
+			sleepUntilStartOfNextTimeBucket()
+
 			pivot := time.Now()
 
 			shouldUpdates := make([]bool, 4)
@@ -390,6 +404,9 @@ func TestShouldUpdateBuilderSummary(t *testing.T) {
 
 		Convey("Single call followed by multiple parallel calls that are nanoseconds apart", func() {
 			// This test ensures that the timestamp percision is not lost.
+
+			// Ensures all `shouldUpdateBuilderSummary` calls are in the same time bucket.
+			sleepUntilStartOfNextTimeBucket()
 
 			pivot := time.Now()
 
@@ -451,7 +468,10 @@ func TestShouldUpdateBuilderSummary(t *testing.T) {
 			So(err, ShouldBeNil)
 			shouldUpdates[0] = shouldUpdate
 
-			time.Sleep(time.Duration(entityUpdateIntervalInS * int64(time.Second)))
+			// Ensures the following `shouldUpdateBuilderSummary` calls are in a
+			// different time bucket.
+			sleepUntilStartOfNextTimeBucket()
+
 			err = parallel.FanOutIn(func(tasks chan<- func() error) {
 				tasks <- func() error {
 					createdAt := pivot.Add(5 * time.Millisecond)
