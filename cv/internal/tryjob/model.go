@@ -165,6 +165,17 @@ func (t *Tryjob) AllWatchingRuns() common.RunIDs {
 	return append(ret, t.ReusedBy...)
 }
 
+func (t *Tryjob) IsEnded() bool {
+	switch t.Status {
+	case Status_CANCELLED, Status_ENDED, Status_UNTRIGGERED:
+		return true
+	case Status_PENDING, Status_TRIGGERED:
+		return false
+	default:
+		panic(fmt.Errorf("unexpected tryjob status %s", t.Status.String()))
+	}
+}
+
 // CLPatchset is a value computed combining a CL's ID and a patchset number.
 //
 // This is intended to efficiently query Tryjob entities associated with a

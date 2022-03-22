@@ -72,7 +72,7 @@ func (e ExternalID) ParseBuildbucketID() (host string, build int64, err error) {
 
 // URL returns the Buildbucket URL of the Tryjob.
 func (e ExternalID) URL() (string, error) {
-	switch kind, err := e.kind(); {
+	switch kind, err := e.Kind(); {
 	case err != nil:
 		return "", err
 	case kind == "buildbucket":
@@ -95,7 +95,9 @@ func (e ExternalID) MustURL() string {
 	return ret
 }
 
-func (e ExternalID) kind() (string, error) {
+// Kind identifies the backend that corresponds to the tryjob this ExternalID
+// applies to.
+func (e ExternalID) Kind() (string, error) {
 	s := string(e)
 	idx := strings.IndexRune(s, '/')
 	if idx <= 0 {
@@ -136,15 +138,15 @@ func (e ExternalID) Load(ctx context.Context) (*Tryjob, error) {
 // datastore. If it does not, it is created, saved and returned.
 //
 // Panics on error.
-func (eid ExternalID) MustCreateIfNotExists(ctx context.Context) *Tryjob {
+func (e ExternalID) MustCreateIfNotExists(ctx context.Context) *Tryjob {
 	// Quick read-only path.
-	if tryjob, err := eid.Load(ctx); err == nil && tryjob != nil {
+	if tryjob, err := e.Load(ctx); err == nil && tryjob != nil {
 		return tryjob
 	}
 	// Transaction path.
 	var tryjob *Tryjob
 	err := datastore.RunInTransaction(ctx, func(ctx context.Context) (err error) {
-		tryjob, err = eid.Load(ctx)
+		tryjob, err = e.Load(ctx)
 		switch {
 		case err != nil:
 			return err
@@ -152,14 +154,14 @@ func (eid ExternalID) MustCreateIfNotExists(ctx context.Context) *Tryjob {
 			return nil
 		}
 		tryjob = &Tryjob{
-			ExternalID:       eid,
+			ExternalID:       e,
 			EVersion:         1,
 			EntityUpdateTime: datastore.RoundTime(clock.Now(ctx).UTC()),
 		}
 		if err := datastore.AllocateIDs(ctx, tryjob); err != nil {
 			return err
 		}
-		m := tryjobMap{ExternalID: eid, InternalID: tryjob.ID}
+		m := tryjobMap{ExternalID: e, InternalID: tryjob.ID}
 		return datastore.Put(ctx, &m, tryjob)
 	}, nil)
 	if err != nil {

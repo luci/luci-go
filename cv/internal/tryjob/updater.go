@@ -191,7 +191,7 @@ func (u *Updater) handleTask(ctx context.Context, task *UpdateTryjobTask) error 
 }
 
 func (u *Updater) backendFor(t *Tryjob) (updaterBackend, error) {
-	kind, err := t.ExternalID.kind()
+	kind, err := t.ExternalID.Kind()
 	if err != nil {
 		return nil, err
 	}

@@ -41,9 +41,9 @@ message CancelStaleTryjobsTask {
 
   // previous_min_equiv_patchset is the patchset that stale tryjobs will be
   // running at.
-  int64 previous_min_equiv_patchset = 2;
+  int32 previous_min_equiv_patchset = 2;
 
   // current_min_equiv_patchset is the patchset at or after which the
   // associated tryjobs are no longer considered stale.
-  int64 current_min_equiv_patchset = 3;
+  int32 current_min_equiv_patchset = 3;
 }

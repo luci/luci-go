@@ -26,6 +26,7 @@ import (
 
 	"google.golang.org/protobuf/proto"
 
+	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/server/tq"
@@ -80,10 +81,55 @@ func (c *Cancellator) RegisterBackend(b cancellatorBackend) {
 }
 
 func (c *Cancellator) handleTask(ctx context.Context, task *tryjob.CancelStaleTryjobsTask) error {
-	// TODO(crbug/1301244): Implement.
-	// Should get the tryjobs to cancel, and if unwatched cancel them using the
-	// appropriate backend, also save the new status to datastore.
-	return nil
+	if task.PreviousMinEquivPatchset >= task.CurrentMinEquivPatchset {
+		panic(fmt.Errorf("patchset numbers expected to increase monotonically"))
+	}
+	atOrAfter := tryjob.MakeCLPatchset(common.CLID(task.GetClid()), task.GetPreviousMinEquivPatchset())
+	before := tryjob.MakeCLPatchset(common.CLID(task.GetClid()), task.GetCurrentMinEquivPatchset())
+	q := datastore.NewQuery(tryjob.TryjobKind).Gte("CLPatchsets", atOrAfter).Lt("CLPatchsets", before)
+	// The task should be safe to re-run even if it makes partial progress.
+	// If the cancellation succeeded but the entity was not successfully
+	// updated, on the next run the cancellation should be a no-op and the
+	// entity update will be tried again.
+	// Any tryjobs that are successfully cancelled and their entities updated
+	// will not appear in subsequent runs of the query, ensuring progress.
+	return datastore.Run(ctx, q, func(tj *tryjob.Tryjob) error {
+		if tj.IsEnded() {
+			return nil
+		}
+		switch ended, err := c.allWatchingRunsEnded(ctx, tj); {
+		case err != nil:
+			return err
+		// External ID is required to cancel tryjob.
+		// It may be unset for a few reasons:
+		//   - The task triggering the tryjob is stuck.
+		//   - The transaction saving the external id got rolled back and is
+		//     waiting to retry.
+		//   - RM has a bug.
+		case ended && tj.ExternalID != "":
+			be, err := c.backendFor(tj)
+			if err != nil {
+				return err
+			}
+			err = be.CancelTryjob(ctx, tj)
+			if err != nil {
+				return err
+			}
+			return datastore.RunInTransaction(ctx, func(ctx context.Context) error {
+				if err := datastore.Get(ctx, tj); err != nil {
+					return err
+				}
+				if tj.IsEnded() {
+					return nil
+				}
+				tj.Status = tryjob.Status_CANCELLED
+				tj.EVersion++
+				tj.EntityUpdateTime = datastore.RoundTime(clock.Now(ctx).UTC())
+				return datastore.Put(ctx, tj)
+			}, nil)
+		}
+		return nil
+	})
 }
 
 // cancellatorBackend is implemented by tryjobs backends, e.g. buildbucket.
@@ -116,4 +162,17 @@ func (c *Cancellator) allWatchingRunsEnded(ctx context.Context, tryjob *tryjob.T
 		}
 	}
 	return true, nil
+}
+
+func (c *Cancellator) backendFor(t *tryjob.Tryjob) (cancellatorBackend, error) {
+	kind, err := t.ExternalID.Kind()
+	if err != nil {
+		return nil, err
+	}
+	c.rwmutex.RLock()
+	defer c.rwmutex.RUnlock()
+	if b, exists := c.backends[kind]; exists {
+		return b, nil
+	}
+	return nil, errors.Reason("%q backend is not supported", kind).Err()
 }
