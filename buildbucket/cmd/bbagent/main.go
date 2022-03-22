@@ -329,8 +329,6 @@ func mainImpl() int {
 	check(errors.Annotate(err, "getting cwd").Err())
 	opts.BaseDir = filepath.Join(cwd, "x")
 
-	exeArgs := processExeArgs(input, check)
-
 	initialJSONPB, err := (&jsonpb.Marshaler{
 		OrigName: true, Indent: "  ",
 	}).MarshalToString(input)
@@ -390,6 +388,7 @@ func mainImpl() int {
 		input.Build.Infra.Buildbucket.Agent.Output = bldForCipd.Build.Infra.Buildbucket.Agent.Output
 	}
 
+	exeArgs := processExeArgs(input, check)
 	dispatcherOpts, dispatcherErrCh := channelOpts(cctx)
 	canceledBuildCh := newCloseOnceCh()
 	buildsCh, err := dispatcher.NewChannel(cctx, dispatcherOpts, mkSendFn(cctx, bbclient, input.Build.Id, canceledBuildCh))
@@ -638,11 +637,12 @@ func processExeArgs(input *bbpb.BBAgentArgs, check func(err error)) []string {
 		// TODO(iannucci): delete me with ExecutablePath.
 		payloadPath, exeCmd = path.Split(input.ExecutablePath)
 	}
-	exePath, err := filepath.Abs(filepath.Join(payloadPath, exeCmd))
-	check(errors.Annotate(err, "absoluting exe path %q", input.ExecutablePath).Err())
+	exeRelPath := filepath.Join(payloadPath, exeCmd)
+	exePath, err := filepath.Abs(exeRelPath)
+	check(errors.Annotate(err, "absoluting exe path %q", exeRelPath).Err())
 	if runtime.GOOS == "windows" {
 		exePath, err = resolveExe(exePath)
-		check(errors.Annotate(err, "resolving %q", input.ExecutablePath).Err())
+		check(errors.Annotate(err, "resolving %q", exePath).Err())
 	}
 	exeArgs = append(exeArgs, exePath)
 	exeArgs = append(exeArgs, input.Build.Exe.Cmd[1:]...)
