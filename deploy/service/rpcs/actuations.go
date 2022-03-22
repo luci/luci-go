@@ -17,7 +17,11 @@ package rpcs
 import (
 	"context"
 
+	"google.golang.org/protobuf/encoding/prototext"
+
+	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/deploy/api/rpcpb"
+	"go.chromium.org/luci/server/auth"
 )
 
 // Actuations is an implementation of deploy.service.Actuations service.
@@ -27,12 +31,34 @@ type Actuations struct {
 
 // BeginActuation implements the corresponding RPC method.
 func (srv *Actuations) BeginActuation(ctx context.Context, req *rpcpb.BeginActuationRequest) (*rpcpb.BeginActuationResponse, error) {
-	// TODO: implemented.
-	return &rpcpb.BeginActuationResponse{}, nil
+	blob, err := (prototext.MarshalOptions{
+		Multiline: true,
+		Indent:    "  ",
+	}).Marshal(req)
+	if err != nil {
+		return nil, err
+	}
+	logging.Infof(ctx, "BeginActuation from %q:\n%s", auth.CurrentIdentity(ctx), blob)
+
+	decisions := map[string]*rpcpb.ActuationDecision{}
+	for name := range req.Assets {
+		decisions[name] = &rpcpb.ActuationDecision{
+			Decision: rpcpb.ActuationDecision_ACTUATE_FORCE,
+		}
+	}
+
+	return &rpcpb.BeginActuationResponse{Decisions: decisions}, nil
 }
 
 // EndActuation implements the corresponding RPC method.
 func (srv *Actuations) EndActuation(ctx context.Context, req *rpcpb.EndActuationRequest) (*rpcpb.EndActuationResponse, error) {
-	// TODO: implemented.
+	blob, err := (prototext.MarshalOptions{
+		Multiline: true,
+		Indent:    "  ",
+	}).Marshal(req)
+	if err != nil {
+		return nil, err
+	}
+	logging.Infof(ctx, "EndActuation from %q:\n%s", auth.CurrentIdentity(ctx), blob)
 	return &rpcpb.EndActuationResponse{}, nil
 }

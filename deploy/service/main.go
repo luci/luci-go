@@ -17,6 +17,9 @@ package main
 
 import (
 	"go.chromium.org/luci/server"
+	"go.chromium.org/luci/server/auth"
+	"go.chromium.org/luci/server/auth/openid"
+	"go.chromium.org/luci/server/auth/rpcacl"
 	"go.chromium.org/luci/server/cron"
 	"go.chromium.org/luci/server/encryptedcookies"
 	"go.chromium.org/luci/server/gaeemulation"
@@ -36,6 +39,12 @@ import (
 	_ "go.chromium.org/luci/gae/service/datastore/crbug1242998safeget"
 )
 
+// RPC-level ACLs.
+var rpcACL = rpcacl.Map{
+	"/discovery.Discovery/*":       rpcacl.All,
+	"/deploy.service.Actuations/*": "luci-deploy-actuators",
+}
+
 func main() {
 	modules := []module.Module{
 		cron.NewModuleFromFlags(),
@@ -48,9 +57,32 @@ func main() {
 	server.Main(nil, modules, func(srv *server.Server) error {
 		actuations := rpcs.Actuations{}
 		deployments := rpcs.Deployments{}
+
+		// All pRPC APIs.
 		rpcpb.RegisterActuationsServer(srv.PRPC, &actuations)
 		rpcpb.RegisterDeploymentsServer(srv.PRPC, &deployments)
+
+		// Authentication methods for pRPC APIs.
+		srv.PRPC.Authenticator = &auth.Authenticator{
+			Methods: []auth.Method{
+				// The preferred authentication method.
+				&openid.GoogleIDTokenAuthMethod{
+					AudienceCheck: openid.AudienceMatchesHost,
+					SkipNonJWT:    true, // pass OAuth2 access tokens through
+				},
+				// Backward compatibility for the RPC Explorer and old clients.
+				&auth.GoogleOAuth2Method{
+					Scopes: []string{"https://www.googleapis.com/auth/userinfo.email"},
+				},
+			},
+		}
+
+		// Per-RPC authorization interceptor.
+		srv.PRPC.UnaryServerInterceptor = rpcacl.Interceptor(rpcACL)
+
+		// Web UI routes.
 		ui.RegisterRoutes(srv, &deployments)
+
 		return nil
 	})
 }
