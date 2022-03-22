@@ -56,12 +56,6 @@ const (
 	// Find more details at https://godoc.org/go.chromium.org/luci/buildbucket/proto#Build
 	summaryMarkdownMaxLength = 4 * 1000
 
-	// BuildTokenKey is the key of the gRPC request header where the auth token should be
-	// specified.
-	//
-	// It's used to authenticate build messages, such as UpdateBuild request,
-	BuildTokenKey = "x-build-token"
-
 	// Sanity length limitation for build tokens to allow us to quickly reject
 	// potentially abusive inputs.
 	buildTokenMaxLength = 200
@@ -331,21 +325,19 @@ func tokenBody(bldTok string) (*pb.TokenBody, error) {
 // error.
 func validateBuildToken(ctx context.Context, bID int64, requireToken bool) (*pb.TokenBody, *model.Build, error) {
 	md, _ := metadata.FromIncomingContext(ctx)
-	buildToks := md.Get(BuildTokenKey)
+	buildToks := md.Get(buildbucket.BuildbucketTokenHeader)
 	if len(buildToks) == 0 {
-		// TODO(crbug.com/1031205): remove BuildTokenKey.
-		buildToks = md.Get(buildbucket.BuildbucketTokenHeader)
+		// TODO(crbug.com/1031205): remove buildbucket.BuildTokenHeader.
+		buildToks = md.Get(buildbucket.BuildTokenHeader)
 		if len(buildToks) > 0 {
-			// TODO(crbug.com/1031205): remove the logging after confirming
-			// buildbucket token works.
-			logging.Infof(ctx, "got buildbucket-token for %d", bID)
+			logging.Infof(ctx, "got build-token for %d", bID)
 		}
 	}
 	if len(buildToks) == 0 {
 		if !requireToken {
 			return nil, nil, nil
 		}
-		return nil, nil, appstatus.Errorf(codes.Unauthenticated, "missing header %q", BuildTokenKey)
+		return nil, nil, appstatus.Errorf(codes.Unauthenticated, "missing header %q", buildbucket.BuildbucketTokenHeader)
 	}
 
 	if len(buildToks) > 1 {

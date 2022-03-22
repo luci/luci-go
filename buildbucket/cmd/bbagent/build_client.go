@@ -42,7 +42,7 @@ import (
 // BuildsClient is a trimmed version of `bbpb.BuildsClient` which only
 // contains the required RPC methods for bbagent.
 //
-// The live implementation automatically binds the "X-Build-Token" key with
+// The live implementation automatically binds the "x-buildbucket-token" key with
 // a token where necessary.
 //
 // Note: The dummy implementation will always return an EMPTY Build message;
@@ -73,7 +73,7 @@ type liveBBClient struct {
 }
 
 func (bb *liveBBClient) UpdateBuild(ctx context.Context, in *bbpb.UpdateBuildRequest, opts ...grpc.CallOption) (*bbpb.Build, error) {
-	ctx = metadata.NewOutgoingContext(ctx, metadata.Pairs(buildbucket.BuildTokenHeader, bb.tok))
+	ctx = metadata.NewOutgoingContext(ctx, metadata.Pairs(buildbucket.BuildbucketTokenHeader, bb.tok))
 	return bb.c.UpdateBuild(ctx, in, opts...)
 }
 

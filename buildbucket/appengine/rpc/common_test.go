@@ -299,20 +299,20 @@ func TestValidateBuildToken(t *testing.T) {
 		So(datastore.Put(ctx, build), ShouldBeNil)
 
 		Convey("Works", func() {
-			ctx = metadata.NewIncomingContext(ctx, metadata.Pairs(BuildTokenKey, tk1))
+			ctx = metadata.NewIncomingContext(ctx, metadata.Pairs(buildbucket.BuildbucketTokenHeader, tk1))
 			_, _, err := validateBuildToken(ctx, 1, true)
 			So(err, ShouldBeNil)
 		})
 
-		Convey("BuildbucketToken", func() {
-			ctx = metadata.NewIncomingContext(ctx, metadata.Pairs(buildbucket.BuildbucketTokenHeader, tk1))
+		Convey("BuildTokenHeader", func() {
+			ctx = metadata.NewIncomingContext(ctx, metadata.Pairs(buildbucket.BuildTokenHeader, tk1))
 			_, _, err := validateBuildToken(ctx, 1, true)
 			So(err, ShouldBeNil)
 		})
 
 		Convey("Fails", func() {
 			Convey("if unmatched", func() {
-				ctx = metadata.NewIncomingContext(ctx, metadata.Pairs(BuildTokenKey, tk2))
+				ctx = metadata.NewIncomingContext(ctx, metadata.Pairs(buildbucket.BuildbucketTokenHeader, tk2))
 				_, _, err := validateBuildToken(ctx, 1, true)
 				So(err, ShouldNotBeNil)
 			})

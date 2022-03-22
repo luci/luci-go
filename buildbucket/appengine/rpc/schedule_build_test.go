@@ -1399,7 +1399,7 @@ func TestScheduleBuild(t *testing.T) {
 				},
 				CanOutliveParent: pb.Trinary_NO,
 			}
-			ctx := metadata.NewIncomingContext(ctx, metadata.Pairs(BuildTokenKey, tk))
+			ctx := metadata.NewIncomingContext(ctx, metadata.Pairs(bb.BuildbucketTokenHeader, tk))
 			blds, err := scheduleBuilds(ctx, globalCfg, req)
 			So(err, ShouldBeNil)
 			So(store.Get(ctx, metrics.V1.BuildCountCreated, time.Time{}, fv("gerrit")), ShouldEqual, 1)
@@ -5722,7 +5722,7 @@ func TestScheduleBuild(t *testing.T) {
 						UpdateToken: tk,
 					}), ShouldBeNil)
 
-					ctx := metadata.NewIncomingContext(ctx, metadata.Pairs(BuildTokenKey, tk))
+					ctx := metadata.NewIncomingContext(ctx, metadata.Pairs(bb.BuildbucketTokenHeader, tk))
 					_, err := validateParent(ctx)
 					So(err, ShouldErrLike, "1 has ended, cannot add child to it")
 				})
@@ -5753,7 +5753,7 @@ func TestScheduleBuild(t *testing.T) {
 						UpdateToken: tk,
 					}), ShouldBeNil)
 
-					ctx := metadata.NewIncomingContext(ctx, metadata.Pairs(BuildTokenKey, tk))
+					ctx := metadata.NewIncomingContext(ctx, metadata.Pairs(bb.BuildbucketTokenHeader, tk))
 					b, err := validateParent(ctx)
 					So(err, ShouldBeNil)
 					So(b.Proto.Id, ShouldEqual, 1)

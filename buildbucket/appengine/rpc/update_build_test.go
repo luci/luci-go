@@ -28,6 +28,7 @@ import (
 	"google.golang.org/protobuf/types/known/structpb"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
+	"go.chromium.org/luci/buildbucket"
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/data/strpair"
 	"go.chromium.org/luci/common/proto/mask"
@@ -472,7 +473,7 @@ func TestUpdateBuild(t *testing.T) {
 		}
 		ctx := auth.WithState(memory.Use(context.Background()), s)
 		ctx = metrics.WithServiceInfo(ctx, "svc", "job", "ins")
-		ctx = metadata.NewIncomingContext(ctx, metadata.Pairs(BuildTokenKey, tk))
+		ctx = metadata.NewIncomingContext(ctx, metadata.Pairs(buildbucket.BuildbucketTokenHeader, tk))
 		datastore.GetTestable(ctx).AutoIndex(true)
 		datastore.GetTestable(ctx).Consistent(true)
 		ctx, _ = tsmon.WithDummyInMemory(ctx)
