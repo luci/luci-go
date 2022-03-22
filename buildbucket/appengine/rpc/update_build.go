@@ -35,7 +35,6 @@ import (
 	"go.chromium.org/luci/grpc/appstatus"
 	"go.chromium.org/luci/server/auth"
 
-	"go.chromium.org/luci/buildbucket"
 	"go.chromium.org/luci/buildbucket/appengine/internal/metrics"
 	"go.chromium.org/luci/buildbucket/appengine/internal/perm"
 	"go.chromium.org/luci/buildbucket/appengine/model"
@@ -142,10 +141,6 @@ func validateUpdate(req *pb.UpdateBuildRequest, bs *model.BuildSteps) error {
 
 // validateAgentOutput validates the agent output of the Build.
 func validateAgentOutput(req *pb.UpdateBuildRequest) error {
-	// TODO(crbug/1297809): Remove the experiment check once all builds migrate to use bbagent for cipd installation.
-	if !stringset.NewFromSlice(req.Build.Input.Experiments...).Has(buildbucket.ExperimentBBAgentDownloadCipd) {
-		return errors.Reason("cannot update agent output; build doesn't have %s experiment", buildbucket.ExperimentBBAgentDownloadCipd).Err()
-	}
 	output := req.Build.Infra.Buildbucket.Agent.Output
 	if output == nil {
 		return errors.Reason("agent output is not set while its field path appears in update_mask").Err()

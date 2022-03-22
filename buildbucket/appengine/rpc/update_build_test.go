@@ -197,9 +197,6 @@ func TestValidateUpdate(t *testing.T) {
 		req := &pb.UpdateBuildRequest{
 			Build: &pb.Build{
 				Id: 1,
-				Input: &pb.Build_Input{
-					Experiments: []string{"luci.buildbucket.agent.cipd_installation"},
-				},
 				Infra: &pb.BuildInfra{
 					Buildbucket: &pb.BuildInfra_Buildbucket{
 						Agent: &pb.BuildInfra_Buildbucket_Agent{},
