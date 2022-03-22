@@ -15,8 +15,12 @@
 package tryjob
 
 import (
+	"fmt"
+	"strconv"
+	"strings"
 	"time"
 
+	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/gae/service/datastore"
 
 	"go.chromium.org/luci/cv/internal/common"
@@ -98,6 +102,15 @@ type Tryjob struct {
 
 	// ReusedBy are the Runs that are interested in the result of this Tryjob.
 	ReusedBy common.RunIDs
+
+	// CLPatchsets is an array of CLPatchset that each identify a specific
+	// patchset in a specific CL.
+	//
+	// The values are to be computed by MakeCLPatchset().
+	// See its documentation for details.
+	//
+	// Sorted and Indexed.
+	CLPatchsets []CLPatchset
 }
 
 // tryjobMap is intended to quickly determine if a given ExternalID is
@@ -150,4 +163,56 @@ func (t *Tryjob) AllWatchingRuns() common.RunIDs {
 		ret = append(ret, t.TriggeredBy)
 	}
 	return append(ret, t.ReusedBy...)
+}
+
+// CLPatchset is a value computed combining a CL's ID and a patchset number.
+//
+// This is intended to efficiently query Tryjob entities associated with a
+// patchset.
+// The values are hex string encoded and padded so that lexicographical
+// sorting will put the patchsets for a given CL together.
+type CLPatchset string
+
+const clPatchsetEncodingVersion = 1
+
+// MakeCLPatchset computes a new CLPatchset value.
+func MakeCLPatchset(cl common.CLID, patchset int32) CLPatchset {
+	return CLPatchset(fmt.Sprintf("%02x/%016x/%08x", clPatchsetEncodingVersion, cl, patchset))
+}
+
+// Parse extracts CLID and Patchset number from a valid CLPatchset value.
+//
+// Errors out if the format is unexpected.
+func (cp CLPatchset) Parse() (common.CLID, int32, error) {
+	var clid, patchset int64
+	values := strings.Split(string(cp), "/")
+	// If any valid encoding versions require a different number of values,
+	// check it here.
+	switch len(values) {
+	case 3:
+		// Version 1 requires three slash-separated values.
+	default:
+		return 0, 0, errors.Reason("CLPatchset in unexpected format %q", cp).Err()
+	}
+
+	ver, err := strconv.ParseInt(values[0], 16, 32)
+	switch {
+	case err != nil:
+		return 0, 0, errors.Annotate(err, "version segment in unexpected format %q", values[0]).Err()
+	case ver == clPatchsetEncodingVersion:
+		if len(values) != 3 {
+			panic(fmt.Errorf("impossible: number of values is not 3"))
+		}
+		clid, err = strconv.ParseInt(values[1], 16, 64)
+		if err != nil {
+			return 0, 0, errors.Annotate(err, "clid segment in unexpected format %q", values[1]).Err()
+		}
+		patchset, err = strconv.ParseInt(values[2], 16, 32)
+		if err != nil {
+			return 0, 0, errors.Annotate(err, "patchset segment in unexpected format %q", values[2]).Err()
+		}
+		return common.CLID(clid), int32(patchset), nil
+	default:
+		return 0, 0, errors.Reason("unsupported version %d", ver).Err()
+	}
 }
