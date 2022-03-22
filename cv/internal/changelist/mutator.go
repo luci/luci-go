@@ -245,9 +245,10 @@ type CLMutation struct {
 	id         common.CLID
 	externalID ExternalID
 
-	priorEversion   int64
-	priorUpdateTime time.Time
-	priorProject    string
+	priorEversion              int64
+	priorUpdateTime            time.Time
+	priorProject               string
+	priorMinEquivalentPatchset int32
 }
 
 func (m *Mutator) beginInsert(ctx context.Context, project string, eid ExternalID) (*CLMutation, error) {
@@ -320,6 +321,7 @@ func (clm *CLMutation) backup() {
 	if p := clm.CL.Snapshot.GetLuciProject(); p != "" {
 		clm.priorProject = p
 	}
+	clm.priorMinEquivalentPatchset = clm.CL.Snapshot.GetMinEquivalentPatchset()
 }
 
 // Finalize finalizes CL mutation.
