@@ -554,10 +554,18 @@ type ScheduleBuildRequest struct {
 	// replaced with null.
 	//
 	// Reserved property paths:
-	// * ["buildbucket"]
-	// * ["buildername"]
-	// * ["blamelist""]
-	// * ["$recipe_engine/runtime", "is_experimental"]
+	//   ["$recipe_engine/buildbucket"]
+	//   ["$recipe_engine/runtime", "is_experimental"]
+	//   ["$recipe_engine/runtime", "is_luci"]
+	//   ["branch"]
+	//   ["buildbucket"]
+	//   ["buildername"]
+	//   ["repository"]
+	//
+	// The Builder configuration specifies which top-level property names are
+	// overridable via the `allowed_property_overrides` field. ScheduleBuild
+	// requests which attempt to override a property which isn't allowed will
+	// fail with InvalidArgument.
 	//
 	// V1 equivalent: corresponds to "properties" key in "parameters_json".
 	Properties *structpb.Struct `protobuf:"bytes,6,opt,name=properties,proto3" json:"properties,omitempty"`

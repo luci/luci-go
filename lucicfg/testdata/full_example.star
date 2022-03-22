@@ -109,6 +109,7 @@ luci.builder(
         "prop2": ["val2", 123],
         "prop1": "val1",
     },
+    allowed_property_overrides = ["prop1"],
     service_account = "builder@example.com",
     caches = [
         swarming.cache("path1"),
@@ -185,6 +186,7 @@ luci.builder(
         "prop2": ["val2", 123],
         "prop1": "val1",
     },
+    allowed_property_overrides = ["*"],
     triggered_by = ["main-poller"],
 )
 
@@ -731,6 +733,7 @@ lucicfg.emit(
 #         '    123'
 #         '  ]'
 #         '}'
+#       allowed_property_overrides: "*"
 #     }
 #     builders {
 #       name: "linux ci builder"
@@ -764,6 +767,7 @@ lucicfg.emit(
 #         '  ],'
 #         '  "recipe": "main/recipe"'
 #         '}'
+#       allowed_property_overrides: "prop1"
 #       priority: 80
 #       execution_timeout_secs: 10800
 #       expiration_secs: 3600

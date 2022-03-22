@@ -351,6 +351,7 @@ def _buildbucket_builders(bucket):
             exe = exe,
             recipe = recipe,
             properties = properties,
+            allowed_property_overrides = sorted(node.props.allowed_property_overrides),
             service_account = node.props.service_account,
             caches = _buildbucket_caches(node.props.caches),
             execution_timeout_secs = optional_sec(node.props.execution_timeout),

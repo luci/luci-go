@@ -2,6 +2,7 @@ luci.builder.defaults.properties.set({
     "base": "base val",
     "overridden": "original",
 })
+luci.builder.defaults.allowed_property_overrides.set(["overridden"])
 luci.builder.defaults.service_account.set("default@example.com")
 luci.builder.defaults.caches.set([swarming.cache("base")])
 luci.builder.defaults.execution_timeout.set(time.hour)
@@ -54,6 +55,7 @@ luci.builder(
         "overridden": "new",
         "extra": "extra",
     },
+    allowed_property_overrides = ["extra"],
     caches = [swarming.cache("new")],
     dimensions = {
         "base": None,  # won't override the default
@@ -131,6 +133,7 @@ luci.builder(
 #         '  "overridden": "original",'
 #         '  "recipe": "recipe1"'
 #         '}'
+#       allowed_property_overrides: "overridden"
 #       priority: 30
 #       execution_timeout_secs: 3600
 #       expiration_secs: 7200
@@ -190,6 +193,8 @@ luci.builder(
 #         '  "overridden": "new",'
 #         '  "recipe": "recipe1"'
 #         '}'
+#       allowed_property_overrides: "extra"
+#       allowed_property_overrides: "overridden"
 #       priority: 30
 #       execution_timeout_secs: 3600
 #       expiration_secs: 7200
@@ -255,6 +260,7 @@ luci.builder(
 #         '  "overridden": "original",'
 #         '  "recipe": "recipe2"'
 #         '}'
+#       allowed_property_overrides: "overridden"
 #       priority: 1
 #       execution_timeout_secs: 1800
 #       expiration_secs: 1200
@@ -305,6 +311,7 @@ luci.builder(
 #         '  "overridden": "original",'
 #         '  "recipe": "recipe1"'
 #         '}'
+#       allowed_property_overrides: "overridden"
 #       priority: 30
 #       execution_timeout_secs: 3600
 #       expiration_secs: 7200

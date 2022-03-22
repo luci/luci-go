@@ -36,7 +36,7 @@ import (
 
 // maximumExpiration is the maximum allowed expiration_secs for a builder
 // dimensions field.
-const maximumExpiration = 21*(24*time.Hour)
+const maximumExpiration = 21 * (24 * time.Hour)
 
 var (
 	authGroupNameRegex = regexp.MustCompile(`^([a-z\-]+/)?[0-9a-z_\-\.@]{1,100}$`)
@@ -175,6 +175,9 @@ func validateAcls(ctx *validation.Context, acls []*pb.Acl) {
 
 // validateBuilderCfg validate a Builder config message.
 func validateBuilderCfg(ctx *validation.Context, b *pb.Builder, wellKnownExperiments stringset.Set) {
+	// TODO(iannucci): also validate builder allowed_property_overrides field. See
+	// //lucicfg/starlark/stdlib/internal/luci/rules/builder.star
+
 	// name
 	if !builderRegex.MatchString(b.Name) {
 		ctx.Errorf("name must match %s", builderRegex)
@@ -254,7 +257,7 @@ func validateBuilderRecipe(ctx *validation.Context, recipe *pb.Builder_Recipe) {
 	if recipe.Name == "" {
 		ctx.Errorf("name: unspecified")
 	}
-	if recipe.CipdPackage == ""{
+	if recipe.CipdPackage == "" {
 		ctx.Errorf("cipd_package: unspecified")
 	}
 
@@ -262,7 +265,7 @@ func validateBuilderRecipe(ctx *validation.Context, recipe *pb.Builder_Recipe) {
 	validateProps := func(field string, props []string, isJson bool) {
 		for i, prop := range props {
 			ctx.Enter("%s #%d - %s", field, i, prop)
-			if !strings.Contains(prop,":") {
+			if !strings.Contains(prop, ":") {
 				ctx.Errorf("doesn't have a colon")
 				ctx.Exit()
 				continue
@@ -318,7 +321,7 @@ func validateDimensions(ctx *validation.Context, dimensions []string) {
 		if expiration, err := strconv.ParseInt(key, 10, 64); err == nil {
 			key, value = strpair.Parse(value)
 			switch {
-			case expiration < 0 || time.Duration(expiration) > maximumExpiration / time.Second:
+			case expiration < 0 || time.Duration(expiration) > maximumExpiration/time.Second:
 				ctx.Errorf("expiration_secs is outside valid range; up to %s", maximumExpiration)
 			case expiration%60 != 0:
 				ctx.Errorf("expiration_secs must be a multiple of 60 seconds")

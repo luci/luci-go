@@ -1425,6 +1425,7 @@ luci.builder(
     # Optional arguments.
     description_html = None,
     properties = None,
+    allowed_property_overrides = None,
     service_account = None,
     caches = None,
     execution_timeout = None,
@@ -1504,6 +1505,7 @@ Buildbucket.
 * **description_html**: description of the builder, will show up in UIs.
 * **executable**: an executable to run, e.g. a [luci.recipe(...)](#luci.recipe) or [luci.executable(...)](#luci.executable). Required.
 * **properties**: a dict with string keys and JSON-serializable values, defining properties to pass to the executable. Supports the module-scoped defaults. They are merged (non-recursively) with the explicitly passed properties.
+* **allowed_property_overrides**: a list of top-level property keys that can be overridden by users calling the buildbucket ScheduleBuild RPC. If this is set exactly to ['*'], ScheduleBuild is allowed to override any properties. Only property keys which are populated via the `properties` parameter here (or via the module-scoped defaults) are allowed.
 * **service_account**: an email of a service account to run the executable under: the executable (and various tools it calls, e.g. gsutil) will be able to make outbound HTTP calls that have an OAuth access token belonging to this service account (provided it is registered with LUCI). Supports the module-scoped default.
 * **caches**: a list of [swarming.cache(...)](#swarming.cache) objects describing Swarming named caches that should be present on the bot. See [swarming.cache(...)](#swarming.cache) doc for more details. Supports the module-scoped defaults. They are joined with the explicitly passed caches.
 * **execution_timeout**: how long to wait for a running build to finish before forcefully aborting it and marking the build as timed out. If None, defer the decision to Buildbucket service. Supports the module-scoped default.

@@ -33,6 +33,7 @@ def _builder(
 
         # Execution environment parameters.
         properties = None,
+        allowed_property_overrides = None,
         service_account = None,
         caches = None,
         execution_timeout = None,
@@ -122,6 +123,11 @@ def _builder(
         properties to pass to the executable. Supports the module-scoped
         defaults. They are merged (non-recursively) with the explicitly passed
         properties.
+      allowed_property_overrides: a list of top-level property keys that can
+        be overridden by users calling the buildbucket ScheduleBuild RPC. If
+        this is set exactly to ['*'], ScheduleBuild is allowed to override
+        any properties. Only property keys which are populated via the `properties`
+        parameter here (or via the module-scoped defaults) are allowed.
       service_account: an email of a service account to run the executable
         under: the executable (and various tools it calls, e.g. gsutil) will be
         able to make outbound HTTP calls that have an OAuth access token
@@ -229,6 +235,7 @@ def _builder(
         "description_html": validate.string("description_html", description_html, required = False),
         "project": "",  # means "whatever is being defined right now"
         "properties": validate.str_dict("properties", properties),
+        "allowed_property_overrides": validate.str_list("allowed_property_overrides", allowed_property_overrides),
         "service_account": validate.string("service_account", service_account, required = False),
         "caches": swarming.validate_caches("caches", caches),
         "execution_timeout": validate.duration("execution_timeout", execution_timeout, required = False),
@@ -258,10 +265,21 @@ def _builder(
             continue
         if k in ("properties", "dimensions", "experiments"):
             props[k] = _merge_dicts(def_val, prop_val)
-        elif k in ("caches", "swarming_tags"):
+        elif k in ("allowed_property_overrides", "caches", "swarming_tags"):
             props[k] = _merge_lists(def_val, prop_val)
         elif prop_val == None:
             props[k] = def_val
+
+    # Check to see if allowed_property_overrides is allowing override for
+    # properties not supplied.
+    if props["allowed_property_overrides"] and props["allowed_property_overrides"] != ["*"]:
+        # Do a de-duplication pass
+        props["allowed_property_overrides"] = sorted(set(props["allowed_property_overrides"]))
+        for override in props["allowed_property_overrides"]:
+            if "*" in override:
+                fail("allowed_property_overrides does not support wildcards: %r" % override)
+            elif override not in props["properties"]:
+                fail("%r listed in allowed_property_overrides but not in properties" % override)
 
     test_presentation = props.pop("test_presentation")
 
@@ -375,6 +393,7 @@ builder = lucicfg.rule(
     impl = _builder,
     defaults = validate.vars_with_validators({
         "properties": validate.str_dict,
+        "allowed_property_overrides": validate.str_list,
         "service_account": validate.string,
         "caches": swarming.validate_caches,
         "execution_timeout": validate.duration,
