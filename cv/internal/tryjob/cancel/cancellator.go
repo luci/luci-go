@@ -12,7 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package tryjob
+// Package cancel contains code in charge of cancelling stale tryjobs.
+//
+// Cancellator responds to tasks scheduled when a new patch is uploaded,
+// looking for and cancelling stale tryjobs.
+package cancel
 
 import (
 	"context"
@@ -22,9 +26,13 @@ import (
 
 	"google.golang.org/protobuf/proto"
 
+	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/server/tq"
 
 	"go.chromium.org/luci/cv/internal/common"
+	"go.chromium.org/luci/cv/internal/run"
+	"go.chromium.org/luci/cv/internal/tryjob"
 )
 
 const CancelStaleTaskClass = "cancel-stale-tryjobs"
@@ -45,11 +53,11 @@ func NewCancellator(tqd *tq.Dispatcher) *Cancellator {
 	}
 	c.tqd.RegisterTaskClass(tq.TaskClass{
 		ID:        CancelStaleTaskClass,
-		Prototype: &CancelStaleTryjobsTask{},
+		Prototype: &tryjob.CancelStaleTryjobsTask{},
 		Queue:     "cancel-stale-tryjobs",
 		Kind:      tq.Transactional,
 		Handler: func(ctx context.Context, payload proto.Message) error {
-			return common.TQifyError(ctx, c.handleTask(ctx, payload.(*CancelStaleTryjobsTask)))
+			return common.TQifyError(ctx, c.handleTask(ctx, payload.(*tryjob.CancelStaleTryjobsTask)))
 		},
 	})
 	return c
@@ -71,7 +79,7 @@ func (c *Cancellator) RegisterBackend(b cancellatorBackend) {
 	c.backends[kind] = b
 }
 
-func (c *Cancellator) handleTask(ctx context.Context, task *CancelStaleTryjobsTask) error {
+func (c *Cancellator) handleTask(ctx context.Context, task *tryjob.CancelStaleTryjobsTask) error {
 	// TODO(crbug/1301244): Implement.
 	// Should get the tryjobs to cancel, and if unwatched cancel them using the
 	// appropriate backend, also save the new status to datastore.
@@ -89,5 +97,23 @@ type cancellatorBackend interface {
 	//
 	// MUST not modify the given Tryjob object.
 	// If the tryjob was already cancelled, it should not return an error.
-	CancelTryjob(ctx context.Context, tj *Tryjob) error
+	CancelTryjob(ctx context.Context, tj *tryjob.Tryjob) error
+}
+
+// allWatchingRunsEnded checks if all of the runs that are watching the given
+// tryjob have ended.
+func (c *Cancellator) allWatchingRunsEnded(ctx context.Context, tryjob *tryjob.Tryjob) (bool, error) {
+	runIds := tryjob.AllWatchingRuns()
+	runs, errs := run.LoadRunsFromIDs(runIds...).Do(ctx)
+	for i, r := range runs {
+		switch {
+		case errs[i] == datastore.ErrNoSuchEntity:
+			return false, errors.Reason("Tryjob %s is associated with a non-existent Run %s", tryjob.ExternalID, runIds[i]).Err()
+		case errs[i] != nil:
+			return false, errors.Annotate(errs[i], "failed to load run %s", runIds[i]).Err()
+		case !run.IsEnded(r.Status):
+			return false, nil
+		}
+	}
+	return true, nil
 }

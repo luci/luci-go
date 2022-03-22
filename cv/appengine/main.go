@@ -64,6 +64,7 @@ import (
 	runimpl "go.chromium.org/luci/cv/internal/run/impl"
 	"go.chromium.org/luci/cv/internal/tryjob"
 	"go.chromium.org/luci/cv/internal/tryjob/buildbucket"
+	"go.chromium.org/luci/cv/internal/tryjob/cancel"
 	"go.chromium.org/luci/cv/internal/userhtml"
 )
 
@@ -113,7 +114,7 @@ func main() {
 		buildbucketBackend := &buildbucket.Backend{}
 		tryjobUpdater := tryjob.NewUpdater(&tq.Default, runNotifier)
 		tryjobUpdater.RegisterBackend(buildbucketBackend)
-		tryjobCancellator := tryjob.NewCancellator(&tq.Default)
+		tryjobCancellator := cancel.NewCancellator(&tq.Default)
 		tryjobCancellator.RegisterBackend(buildbucketBackend)
 
 		_ = pmimpl.New(pmNotifier, runNotifier, clMutator, gFactory, clUpdater)
