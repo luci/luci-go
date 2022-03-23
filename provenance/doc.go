@@ -36,7 +36,7 @@
 // package and is Google-internal.
 //
 // A local git checkout can be reported by:
-//  pClient, _ := client.MakeSnooperClient(ctx, "http://localhost:port")
+//  pClient, _ := client.MakeProvenanceClient(ctx, "http://localhost:port")
 //  reporter := &reporter.Report{RClient: pClient}
 //  ok, err := reporter.ReportGitCheckout(ctx, "https://repo.git", "deadbeef", "refs/heads/example")
 //  if err != nil & !ok {
@@ -60,6 +60,6 @@
 // status when local server isn't configured/unreachable. This is particularly
 // helpful for flexible workloads.
 //
-// Similarly other interfaces of thi API can be used to report a variety of
+// Similarly other interfaces of this API can be used to report a variety of
 // interesting things.
 package provenance

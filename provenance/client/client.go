@@ -34,7 +34,32 @@ type client struct {
 	client snooperpb.SelfReportClient
 }
 
+// MakeProvenanceClient creates a client to interact with Self-report server.
+func MakeProvenanceClient(ctx context.Context, addr string) (*client, error) {
+	parsedAddr, err := url.Parse(addr)
+	if err != nil {
+		return nil, fmt.Errorf("invalid server address, got: %s, err: %v", addr, err)
+	}
+
+	if parsedAddr.Scheme != "http" {
+		return nil, fmt.Errorf("invalid address url, expecting http, got: %v", parsedAddr.Scheme)
+	}
+
+	ctx, cancel := context.WithTimeout(ctx, timeout)
+	defer cancel()
+
+	conn, err := grpc.DialContext(ctx, parsedAddr.Host, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	if err != nil {
+		return nil, fmt.Errorf("failed to open grpc conn: %v", err)
+	}
+
+	return &client{
+		client: snooperpb.NewSelfReportClient(conn),
+	}, nil
+}
+
 // MakeSnooperClient creates a client to interact with Self-report server.
+// Deprecated. Will be removed soon.
 func MakeSnooperClient(ctx context.Context, addr string) (*client, error) {
 	parsedAddr, err := url.Parse(addr)
 	if err != nil {
