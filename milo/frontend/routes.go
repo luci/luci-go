@@ -24,7 +24,7 @@ import (
 
 	"github.com/julienschmidt/httprouter"
 	"go.chromium.org/luci/auth/identity"
-	"go.chromium.org/luci/buildbucket/deprecated"
+	bbv1 "go.chromium.org/luci/common/api/buildbucket/buildbucket/v1"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/server"
 	"go.chromium.org/luci/server/auth"
@@ -251,7 +251,7 @@ func redirectFromProjectlessBuilder(c *router.Context) {
 	bucket := c.Params.ByName("bucket")
 	builder := c.Params.ByName("builder")
 
-	project, _ := deprecated.BucketNameToV2(bucket)
+	project, _ := bbv1.BucketNameToV2(bucket)
 	u := *c.Request.URL
 	u.Path = fmt.Sprintf("/p/%s/builders/%s/%s", project, bucket, builder)
 	http.Redirect(c.Writer, c.Request, u.String(), http.StatusMovedPermanently)

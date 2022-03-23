@@ -1,6 +1,16 @@
-// Copyright 2017 The LUCI Authors. All rights reserved.
-// Use of this source code is governed under the Apache License, Version 2.0
-// that can be found in the LICENSE file.
+// Copyright 2017 The LUCI Authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
 
 package frontend
 
@@ -10,8 +20,8 @@ import (
 
 	"go.chromium.org/luci/milo/buildsource/buildbucket"
 
-	"go.chromium.org/luci/buildbucket/deprecated"
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
+	bbv1 "go.chromium.org/luci/common/api/buildbucket/buildbucket/v1"
 	"go.chromium.org/luci/server/router"
 	"go.chromium.org/luci/server/templates"
 )
@@ -31,7 +41,7 @@ func BuilderHandler(c *router.Context) error {
 	pageToken := c.Request.FormValue("cursor")
 
 	// Redirect to short bucket names.
-	if _, v2Bucket := deprecated.BucketNameToV2(bid.Bucket); v2Bucket != "" {
+	if _, v2Bucket := bbv1.BucketNameToV2(bid.Bucket); v2Bucket != "" {
 		// Parameter "bucket" is v1, e.g. "luci.chromium.try".
 		u := *c.Request.URL
 		u.Path = fmt.Sprintf("/p/%s/builders/%s/%s", bid.Project, v2Bucket, bid.Builder)

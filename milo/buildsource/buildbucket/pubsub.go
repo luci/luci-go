@@ -26,7 +26,6 @@ import (
 	"google.golang.org/genproto/protobuf/field_mask"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
-	"go.chromium.org/luci/buildbucket/deprecated"
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/buildbucket/protoutil"
 	bbv1 "go.chromium.org/luci/common/api/buildbucket/buildbucket/v1"
@@ -108,8 +107,8 @@ var summaryBuildMask = &field_mask.FieldMask{
 }
 
 // getSummary returns a model.BuildSummary representing a buildbucket build.
-func getSummary(c context.Context, host string, project string, id int64) (*model.BuildSummary, error) {
-	client, err := buildbucketBuildsClient(c, host, auth.AsProject, auth.WithProject(project))
+func getSummary(c context.Context, host string, id int64) (*model.BuildSummary, error) {
+	client, err := buildbucketBuildsClient(c, host, auth.AsSelf)
 	if err != nil {
 		return nil, err
 	}
@@ -215,30 +214,18 @@ func pubSubHandlerImpl(c context.Context, r *http.Request) error {
 		return errors.Annotate(err, "could not parse pubsub message data").Err()
 	}
 
-	build, err := deprecated.BuildToV2(&event.Build)
-	if err != nil {
-		return errors.Annotate(err, "could not parse deprecated.Build").Err()
-	}
-
-	status = build.Status.String()
-
-	logging.Debugf(c, "Received from %s: build %s/%s/%s/%d (%s)\n%v",
-		event.Hostname, build.Builder.Project, build.Builder.Bucket, build.Builder.Builder, build.Id, status, build)
-
-	if build.Builder.Bucket == "" {
-		logging.Infof(c, "This is not an ingestable build, ignoring")
-		return nil
-	}
-
 	// TODO(iannucci,nodir): get the bot context too
 	// TODO(iannucci,nodir): support manifests/got_revision
-	bs, err := getSummary(c, event.Hostname, build.Builder.Project, build.Id)
+	bs, err := getSummary(c, event.Hostname, event.Build.Id)
 	if err != nil {
 		return err
 	}
 	if err := bs.AddManifestKeysFromBuildSets(c); err != nil {
 		return err
 	}
+
+	logging.Debugf(c, "Received from %s: build %s (%s)\n%v",
+		event.Hostname, bs.ProjectID, bs.BuildID, bs.Summary.Status, bs)
 
 	now := time.Now()
 	updateBuilderSummary, err := shouldUpdateBuilderSummary(c, bs)

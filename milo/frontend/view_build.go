@@ -22,8 +22,8 @@ import (
 	"strconv"
 	"strings"
 
-	"go.chromium.org/luci/buildbucket/deprecated"
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
+	bbv1 "go.chromium.org/luci/common/api/buildbucket/buildbucket/v1"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/grpc/grpcutil"
@@ -49,7 +49,7 @@ func handleLUCIBuild(c *router.Context) error {
 	}
 
 	// Redirect to short bucket names.
-	if _, v2Bucket := deprecated.BucketNameToV2(bid.Bucket); v2Bucket != "" {
+	if _, v2Bucket := bbv1.BucketNameToV2(bid.Bucket); v2Bucket != "" {
 		// Parameter "bucket" is v1, e.g. "luci.chromium.try".
 		u := *c.Request.URL
 		u.Path = fmt.Sprintf("/p/%s/builders/%s/%s/%s", bid.Project, v2Bucket, bid.Builder, numberOrID)

@@ -57,6 +57,21 @@ func ParseBuildAddress(address string) (id int64, project, bucket, builder strin
 	return
 }
 
+// BucketNameToV2 converts a v1 Bucket name to the v2 constituent parts.
+// The difference between the bucket name is that v2 uses short names, for example:
+// v1: luci.chromium.try
+// v2: try
+// "luci" is dropped, "chromium" is recorded as the project, "try" is the name.
+// If the bucket does not conform to this convention, or if it is not a luci bucket,
+// then this return and empty string for both project and bucket.
+func BucketNameToV2(v1Bucket string) (project string, bucket string) {
+	p := strings.SplitN(v1Bucket, ".", 3)
+	if len(p) != 3 || p[0] != "luci" {
+		return "", ""
+	}
+	return p[1], p[2]
+}
+
 // ValidateBuildAddress returns an error if the build address is invalid.
 func ValidateBuildAddress(address string) error {
 	_, _, _, _, _, err := ParseBuildAddress(address)
