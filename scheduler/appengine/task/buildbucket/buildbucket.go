@@ -790,6 +790,16 @@ func schedulerProperty(ctx context.Context, ctl task.Controller) (*structpb.Valu
 							StringValue: info.DefaultVersionHostname(ctx),
 						},
 					},
+					"job": {
+						Kind: &structpb.Value_StringValue{
+							StringValue: ctl.JobID(),
+						},
+					},
+					"invocation": {
+						Kind: &structpb.Value_StringValue{
+							StringValue: fmt.Sprintf("%d", ctl.InvocationID()),
+						},
+					},
 					"triggers": {
 						Kind: &structpb.Value_ListValue{ListValue: triggerList},
 					},

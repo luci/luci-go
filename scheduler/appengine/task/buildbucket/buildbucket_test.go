@@ -286,6 +286,8 @@ func TestFullFlow(t *testing.T) {
 			Properties: structFromJSON(`{
 				"$recipe_engine/scheduler": {
 					"hostname": "app.example.com",
+					"job": "some-project/some-job",
+					"invocation": "1",
 					"triggers": [
 						{
 							"id": "trigger",
