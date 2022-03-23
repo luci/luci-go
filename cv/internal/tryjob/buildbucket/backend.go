@@ -91,9 +91,22 @@ func (b *Backend) Update(ctx context.Context, saved *tryjob.Tryjob) (tryjob.Stat
 
 // CancelTryjob asks buildbucket to cancel a running tryjob.
 //
-// It does not error out if the tryjob is already cancelled.
+// It returns nil error if the buildbucket build is ended.
 func (b *Backend) CancelTryjob(ctx context.Context, tj *tryjob.Tryjob) error {
-	return errors.Reason("Not implemented").Err()
+	host, buildID, err := tj.ExternalID.ParseBuildbucketID()
+	if err != nil {
+		return err
+	}
+
+	bbClient, err := newClient(ctx, host, tj.LUCIProject())
+	if err != nil {
+		return err
+	}
+
+	_, err = bbClient.CancelBuild(ctx, &bbpb.CancelBuildRequest{
+		Id: buildID,
+	})
+	return err
 }
 
 func toTryjobStatusAndResult(ctx context.Context, b *bbpb.Build) (tryjob.Status, *tryjob.Result, error) {
