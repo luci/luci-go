@@ -211,9 +211,8 @@ message ExecutionState {
   //
   // It is one to one mapped to `requirement.definitions`
   repeated Execution executions = 1;
-  // RequirementsVersion is the version of the requirements this executor is
-  // currently executing.
-  int32 requirements_version = 2;
+  // Requirement is the requirement that is currently being worked on.
+  Requirement requirement = 2;
 }
 
 // TryjobUpdatedEvent describes which Tryjob entity is updated.
