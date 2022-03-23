@@ -60,15 +60,6 @@ func (impl *Impl) Start(ctx context.Context, rs *state.RunState) (*Result, error
 	}
 
 	rs = rs.ShallowCopy()
-	rs.Status = run.Status_RUNNING
-	rs.StartTime = datastore.RoundTime(clock.Now(ctx).UTC())
-	rs.LogEntries = append(rs.LogEntries, &run.LogEntry{
-		Time: timestamppb.New(rs.StartTime),
-		Kind: &run.LogEntry_Started_{
-			Started: &run.LogEntry_Started{},
-		},
-	})
-
 	var cg *prjcfg.ConfigGroup
 	var runCLs []*run.RunCL
 	var cls []*changelist.CL
@@ -155,6 +146,14 @@ func (impl *Impl) Start(ctx context.Context, rs *state.RunState) (*Result, error
 	// Note that it is inevitable that duplicate pickup latency metric maybe
 	// emitted for the same Run if the state transition fails later that
 	// causes a retry.
+	rs.Status = run.Status_RUNNING
+	rs.StartTime = datastore.RoundTime(clock.Now(ctx).UTC())
+	rs.LogEntries = append(rs.LogEntries, &run.LogEntry{
+		Time: timestamppb.New(rs.StartTime),
+		Kind: &run.LogEntry_Started_{
+			Started: &run.LogEntry_Started{},
+		},
+	})
 	recordPickupLatency(ctx, &(rs.Run), cg)
 	return &Result{State: rs}, nil
 }

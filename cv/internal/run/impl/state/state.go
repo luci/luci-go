@@ -199,9 +199,9 @@ func validateLongOp(op *run.OngoingLongOps_Op) error {
 		return errors.New("deadline is required")
 	case op.GetWork() == nil:
 		return errors.New("work is required")
-	case op.GetCancelTriggers() != nil && run.IsEnded(op.GetCancelTriggers().GetRunStatusIfSucceeded()):
-		if targetStatus := op.GetCancelTriggers().GetRunStatusIfSucceeded(); run.IsEnded(targetStatus) {
-			return errors.Reason("expect terminal run status; got %s", targetStatus).Err()
+	case op.GetCancelTriggers() != nil:
+		if st := op.GetCancelTriggers().GetRunStatusIfSucceeded(); !run.IsEnded(st) {
+			return errors.Reason("expect terminal run status; got %s", st).Err()
 		}
 	}
 	return nil
