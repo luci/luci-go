@@ -27,6 +27,7 @@ import (
 
 	"google.golang.org/protobuf/types/known/durationpb"
 
+	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/logging"
@@ -69,6 +70,8 @@ const (
 	tqConcurrentFlagName = "cv.tqparallel"
 	extraVerboseFlagName = "cv.verbose"
 	fastClockFlagName    = "cv.fastclock"
+	committers           = "committer-group"
+	dryRunners           = "dry-runner-group"
 )
 
 var (
@@ -115,6 +118,8 @@ type Test struct {
 	cqdsMu sync.Mutex
 	// cqds are fake CQDaemons indexed by LUCI project name.
 	cqds map[string]*cqdfake.CQDFake
+
+	authDB *authtest.FakeDB
 }
 
 // SetUp sets up the end to end test.
@@ -168,6 +173,7 @@ func (t *Test) SetUp() (ctx context.Context, deferme func()) {
 		GFactory:    gFactory,
 	}
 	t.AdminServer = admin.New(t.TQDispatcher, &dsmapper.Controller{}, clUpdater, t.PMNotifier, t.RunNotifier)
+	t.authDB = auth.GetState(ctx).(*authtest.FakeState).FakeDB.(*authtest.FakeDB)
 	return ctx, deferme
 }
 
@@ -327,7 +333,7 @@ func (t *Test) LoadGerritRuns(ctx context.Context, gHost string, gChange int64) 
 	return runs
 }
 
-// EarliestCreatedRun returns the earliest created Run in a project.
+// EarliestCreatedRunOf returns the earliest created Run in a project.
 //
 // If there are several such runs, may return any one of them.
 //
@@ -342,7 +348,7 @@ func (t *Test) EarliestCreatedRunOf(ctx context.Context, lProject string) *run.R
 	return earliest
 }
 
-// LatestRunWithCL returns the latest created Run containing given CL.
+// LatestRunWithGerritCL returns the latest created Run containing given CL.
 //
 // If there are several, returns the one with latest .StartTime.
 // Returns nil if there is such Runs, including if Gerrit CL isn't yet in DS.
@@ -422,6 +428,7 @@ func (t *Test) ExportedBQAttemptsCount() int {
 	return t.BQFake.RowsCount("", runbq.CVDataset, runbq.CVTable)
 }
 
+// MigrationFetchActiveRuns fetches active Run(s).
 func (t *Test) MigrationFetchActiveRuns(ctx context.Context, project string) []*migrationpb.ActiveRun {
 	req := &migrationpb.FetchActiveRunsRequest{LuciProject: project}
 	res, err := t.MigrationServer.FetchActiveRuns(t.MigrationContext(ctx), req)
@@ -437,6 +444,27 @@ func (t *Test) MigrationContext(ctx context.Context) context.Context {
 		Identity:       "user:e2e-test@example.com",
 		IdentityGroups: []string{migration.AllowGroup},
 	})
+}
+
+// AddMember adds a given member into a given luci auth group.
+//
+// The email must not include the domain.
+func (t *Test) AddMember(email, group string) {
+	id, err := identity.MakeIdentity(fmt.Sprintf("user:%s@example.com", email))
+	if err != nil {
+		panic(err)
+	}
+	t.authDB.AddMocks(authtest.MockMembership(id, group))
+}
+
+// AddCommitter adds a given member into the committer group.
+func (t *Test) AddCommitter(email string) {
+	t.AddMember(email, committers)
+}
+
+// AddDryRunner adds a given member into the dry-runner group.
+func (t *Test) AddDryRunner(email string) {
+	t.AddMember(email, dryRunners)
 }
 
 // LogPhase emits easy to recognize log like
@@ -467,7 +495,10 @@ func MakeCfgSingular(cgName, gHost, gRepo, gRef string) *cfgpb.Config {
 					},
 				},
 				Verifiers: &cfgpb.Verifiers{
-					GerritCqAbility: &cfgpb.Verifiers_GerritCQAbility{},
+					GerritCqAbility: &cfgpb.Verifiers_GerritCQAbility{
+						CommitterList:    []string{committers},
+						DryRunAccessList: []string{dryRunners},
+					},
 				},
 			},
 		},
@@ -495,7 +526,10 @@ func MakeCfgCombinable(cgName, gHost, gRepo, gRef string) *cfgpb.Config {
 					StabilizationDelay: durationpb.New(5 * time.Minute),
 				},
 				Verifiers: &cfgpb.Verifiers{
-					GerritCqAbility: &cfgpb.Verifiers_GerritCQAbility{},
+					GerritCqAbility: &cfgpb.Verifiers_GerritCQAbility{
+						CommitterList:    []string{committers},
+						DryRunAccessList: []string{dryRunners},
+					},
 				},
 			},
 		},

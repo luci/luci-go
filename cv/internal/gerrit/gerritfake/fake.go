@@ -121,7 +121,7 @@ const (
 	// NOTE: The actual Gerrit service has per-label ACLs for voting, but CV
 	// doesn't vote on its own.
 	OpReview
-	// OpVote gates altering votes of behalf of others.
+	// OpAlterVotesOfOthers gates altering votes of behalf of others.
 	OpAlterVotesOfOthers
 	// OpSubmit gates submitting.
 	OpSubmit
@@ -548,6 +548,20 @@ func Vote(label string, value int, timeAndUser ...interface{}) CIModifier {
 // CQ is a shorthand for Vote("Commit-Queue", ...).
 func CQ(value int, timeAndUser ...interface{}) CIModifier {
 	return Vote("Commit-Queue", value, timeAndUser...)
+}
+
+// Approve sets Submittable to true.
+func Approve() CIModifier {
+	return func(ci *gerritpb.ChangeInfo) {
+		ci.Submittable = true
+	}
+}
+
+// Disapprove sets Submittable to false.
+func Disapprove() CIModifier {
+	return func(ci *gerritpb.ChangeInfo) {
+		ci.Submittable = false
+	}
 }
 
 // Reviewer sets the reviewers of the CL.

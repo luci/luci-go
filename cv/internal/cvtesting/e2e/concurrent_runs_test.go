@@ -73,7 +73,10 @@ func TestConcurentRunsSingular(t *testing.T) {
 				a.gChange, gf.Project(gRepo), gf.Ref(gRef), gf.PS(1), gf.Owner(a.user),
 				gf.Updated(ct.Clock.Now()),
 			)))
+			// DryRunner(s) can trigger a DryRun w/o an approval and
+			// a FullRun w/ approval.
 			a.mode = run.DryRun
+			ct.AddDryRunner(a.user)
 			if i%3 == 0 {
 				a.mode = run.FullRun
 			}
@@ -128,6 +131,8 @@ func TestConcurentRunsSingular(t *testing.T) {
 				val := 1
 				if a.mode == run.FullRun {
 					val = 2
+					// FullRun requires an approval; self-stamp it
+					gf.Approve()(c.Info)
 				}
 				gf.CQ(val, a.triggerTime, gf.U(a.user))(c.Info)
 				gf.Updated(a.triggerTime)(c.Info)

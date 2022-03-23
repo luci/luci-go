@@ -67,8 +67,12 @@ func TestCreatesSingularRun(t *testing.T) {
 		ct.GFake.AddFrom(gf.WithCIs(gHost, gf.ACLRestricted(lProject), gf.CI(
 			gChange, gf.Project(gRepo), gf.Ref(gRef),
 			gf.Owner("user-1"),
-			gf.Updated(tStart), gf.CQ(+2, tStart, gf.U("user-2")),
+			gf.Updated(tStart),
+			gf.CQ(+2, tStart, gf.U("user-2")),
+			gf.Approve(),
 		)))
+		// Only a committer can trigger a FullRun for someone else' CL.
+		ct.AddCommitter("user-2")
 
 		/////////////////////////    Run CV   ////////////////////////////////
 		ct.LogPhase(ctx, "CV notices CL and starts the Run")
@@ -155,6 +159,8 @@ func TestCreatesSingularQuickDryRunSuccess(t *testing.T) {
 			// Spurious vote from user-3.
 			gf.Vote(quickLabel, +5, tStart.Add(-10*time.Second), gf.U("user-3")),
 		)))
+		// Only a committer can trigger a DryRun for someone else' CL.
+		ct.AddCommitter("user-2")
 
 		/////////////////////////    Run CV   ////////////////////////////////
 		ct.LogPhase(ctx, "CV notices CL and starts the Run")
@@ -249,6 +255,8 @@ func TestCreatesSingularQuickDryRunThenUpgradeToFullRunFailed(t *testing.T) {
 			gf.CQ(+1, tStart, gf.U("user-2")),
 			gf.Vote(quickLabel, +1, tStart, gf.U("user-2")),
 		)))
+		// Only a committer can trigger a DryRun for someone else' CL.
+		ct.AddCommitter("user-2")
 
 		/////////////////////////    Run CV   ////////////////////////////////
 		ct.LogPhase(ctx, "CV notices CL and starts the Run")
@@ -264,6 +272,7 @@ func TestCreatesSingularQuickDryRunThenUpgradeToFullRunFailed(t *testing.T) {
 		tStart2 := ct.Clock.Now()
 		ct.GFake.MutateChange(gHost, gChange, func(c *gf.Change) {
 			gf.CQ(+2, tStart2, gf.U("user-2"))(c.Info)
+			gf.Approve()(c.Info)
 			gf.Updated(tStart2)(c.Info)
 		})
 		So(ct.MaxVote(ctx, gHost, gChange, quickLabel), ShouldEqual, 1) // vote stays
@@ -363,7 +372,10 @@ func TestCreatesSingularFullRunSuccess(t *testing.T) {
 			gf.Owner("user-1"),
 			gf.Updated(tStart),
 			gf.CQ(+2, tStart, gf.U("user-2")),
+			gf.Approve(),
 		)))
+		// Only a committer can trigger a FullRun for someone else' CL.
+		ct.AddCommitter("user-2")
 
 		/////////////////////////    Run CV   ////////////////////////////////
 		ct.LogPhase(ctx, "CV notices CL and starts the Run")
@@ -449,6 +461,8 @@ func TestCreatesSingularDryRunAborted(t *testing.T) {
 			gf.Updated(tStart),
 			gf.CQ(+1, tStart, gf.U("user-2")),
 		)))
+		// Only a committer can trigger a DryRun for someone else' CL.
+		ct.AddCommitter("user-2")
 
 		/////////////////////////    Run CV   ////////////////////////////////
 		ct.LogPhase(ctx, "CV notices CL and starts the Run")
@@ -512,13 +526,15 @@ func TestCreatesSingularRunWithDeps(t *testing.T) {
 
 		ct.LogPhase(ctx, "Set Git chain of 13 depends on 12, and vote CQ+1 on 13")
 		ct.GFake.AddFrom(gf.WithCIs(gHost, gf.ACLRestricted(lProject), gf.CI(
-			12, gf.Project(gRepo), gf.Ref(gRef), gf.PS(2),
+			12, gf.Project(gRepo), gf.Ref(gRef), gf.PS(2), gf.Owner("user-1"),
 		)))
 		ct.GFake.AddFrom(gf.WithCIs(gHost, gf.ACLRestricted(lProject), gf.CI(
 			13, gf.Project(gRepo), gf.Ref(gRef), gf.PS(3),
-			gf.Updated(tStart),
+			gf.Owner("user-1"),
 			gf.CQ(+1, tStart, gf.U("user-1")),
+			gf.Updated(tStart),
 		)))
+		ct.AddDryRunner("user-1")
 		ct.GFake.SetDependsOn(gHost, "13_3", "12_2")
 
 		ct.LogPhase(ctx, "CV starts dry Run on just the 13")
@@ -534,7 +550,9 @@ func TestCreatesSingularRunWithDeps(t *testing.T) {
 		ct.LogPhase(ctx, "User votes CQ+2 on 12, CV starts Run on just 12 and doesn't touch 13")
 		ct.Clock.Add(time.Minute)
 		ct.GFake.MutateChange(gHost, 12, func(c *gf.Change) {
-			gf.CQ(+2, ct.Clock.Now(), "user-1")(c.Info)
+			now := ct.Clock.Now()
+			gf.CQ(+2, now, "user-1")(c.Info)
+			gf.Approve()(c.Info)
 			gf.Updated(ct.Clock.Now())(c.Info)
 		})
 		ct.RunUntil(ctx, func() bool {
@@ -593,6 +611,7 @@ func TestCreatesMultiCLsFullRunSuccess(t *testing.T) {
 			gf.Owner("user-1"),
 			gf.Updated(tStart),
 			gf.CQ(+2, tStart, gf.U("user-2")),
+			gf.Approve(),
 			gf.Desc(fmt.Sprintf("This is the first CL\nCq-Depend: %d", gChange3)),
 		)
 		ci2 := gf.CI(
@@ -601,6 +620,7 @@ func TestCreatesMultiCLsFullRunSuccess(t *testing.T) {
 			gf.Owner("user-1"),
 			gf.Updated(tStart),
 			gf.CQ(+2, tStart, gf.U("user-2")),
+			gf.Approve(),
 		)
 		ci3 := gf.CI(
 			gChange3, gf.Project(gRepo), gf.Ref(gRef),
@@ -608,7 +628,10 @@ func TestCreatesMultiCLsFullRunSuccess(t *testing.T) {
 			gf.Owner("user-1"),
 			gf.Updated(tStart),
 			gf.CQ(+2, tStart, gf.U("user-2")),
+			gf.Approve(),
 		)
+		// Only a committer can trigger a FullRun for someone else' CL(s).
+		ct.AddCommitter("user-2")
 		ct.GFake.AddFrom(gf.WithCIs(gHost, gf.ACLRestricted(lProject), ci1, ci2, ci3))
 		ct.GFake.SetDependsOn(gHost, ci3, ci2)
 		ct.GFake.SetDependsOn(gHost, ci1, ci3)
@@ -722,11 +745,7 @@ func TestCreatesSingularFullRunWithAllowOpenDeps(t *testing.T) {
 		ct.MustCQD(ctx, lProject)
 
 		cfg := MakeCfgSingular("cg0", gHost, gRepo, gRef)
-		cfg.GetConfigGroups()[0].Verifiers = &cfgpb.Verifiers{
-			GerritCqAbility: &cfgpb.Verifiers_GerritCQAbility{
-				AllowSubmitWithOpenDeps: true,
-			},
-		}
+		cfg.GetConfigGroups()[0].Verifiers.GerritCqAbility.AllowSubmitWithOpenDeps = true
 		prjcfgtest.Create(ctx, lProject, cfg)
 
 		tStart := ct.Clock.Now()
@@ -753,6 +772,7 @@ func TestCreatesSingularFullRunWithAllowOpenDeps(t *testing.T) {
 			gf.Updated(tStart),
 			gf.Desc("This is the 3rd CL of the stack, which was CQ-ed"),
 			gf.CQ(+2, tStart, gf.U("user-2")),
+			gf.Approve(),
 		)
 		ci4 := gf.CI(
 			gChange4, gf.Project(gRepo), gf.Ref(gRef),
@@ -761,6 +781,8 @@ func TestCreatesSingularFullRunWithAllowOpenDeps(t *testing.T) {
 			gf.Updated(tStart),
 			gf.Desc("This is the top of the stack, not CQ-ed"),
 		)
+		// Only a committer can trigger a FullRun for someone else' CL(s).
+		ct.AddCommitter("user-2")
 		ct.GFake.AddFrom(gf.WithCIs(gHost, gf.ACLRestricted(lProject), ci1, ci2, ci3, ci4))
 		ct.GFake.SetDependsOn(gHost, ci2, ci1)
 		ct.GFake.SetDependsOn(gHost, ci3, ci2)
@@ -852,6 +874,7 @@ func TestCreatesMultiCLsFailPostStartMessage(t *testing.T) {
 			gf.Owner("user-1"),
 			gf.Updated(tStart),
 			gf.CQ(+2, tStart, gf.U("user-1")),
+			gf.Approve(),
 			gf.Desc(fmt.Sprintf("This is the first CL\n\nCq-Depend: %d", gChange2)),
 		)
 		ci2 := gf.CI(
@@ -859,8 +882,11 @@ func TestCreatesMultiCLsFailPostStartMessage(t *testing.T) {
 			gf.Owner("user-1"),
 			gf.Updated(tStart),
 			gf.CQ(+2, tStart, gf.U("user-1")),
+			gf.Approve(),
 			gf.Desc(fmt.Sprintf("This is the second CL\n\nCq-Depend: %d", gChange1)),
 		)
+		// A DryRunner can trigger a FullRun w/ an approval.
+		ct.AddDryRunner("user-1")
 		ct.GFake.AddFrom(gf.WithCIs(gHost, gf.ACLRestricted(lProject), ci1, ci2))
 		ct.LogPhase(ctx, "Set up gChange2 with no permission to post messages")
 		ct.GFake.MutateChange(gHost, gChange2, func(c *gf.Change) {

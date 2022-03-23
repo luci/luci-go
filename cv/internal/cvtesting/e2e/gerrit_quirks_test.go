@@ -44,10 +44,13 @@ func TestGerritCLDeleted(t *testing.T) {
 		So(ct.PMNotifier.UpdateConfig(ctx, lProject), ShouldBeNil)
 
 		ct.GFake.AddFrom(gf.WithCIs(gHost, gf.ACLRestricted(lProject), gf.CI(
-			gChange, gf.Project(gRepo), gf.Ref(gRef), gf.Owner("user-1"),
-			gf.CQ(+1, ct.Clock.Now(), gf.U("user-2")), gf.Updated(ct.Clock.Now()),
+			gChange, gf.Project(gRepo), gf.Ref(gRef),
+			gf.Owner("user-1"),
+			gf.CQ(+1, ct.Clock.Now(), gf.U("user-2")),
+			gf.Updated(ct.Clock.Now()),
 		)))
-
+		// Only a committer can trigger a DryRun for someone else' CL.
+		ct.AddCommitter("user-2")
 		ct.LogPhase(ctx, "CV starts a Run")
 		var r *run.Run
 		ct.RunUntil(ctx, func() bool {

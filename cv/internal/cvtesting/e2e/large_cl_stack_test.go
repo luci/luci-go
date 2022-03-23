@@ -59,9 +59,14 @@ func TestHandleLargeCLStack(t *testing.T) {
 		for i := range cis {
 			cis[i] = gf.CI(
 				gChangeFirst+i,
-				gf.Project(gRepo), gf.Ref(gRef), gf.Owner("user-1"), gf.PS(1),
-				gf.CQ(+2, ct.Clock.Now(), gf.U("user-1")), gf.Updated(ct.Clock.Now()))
+				gf.Project(gRepo), gf.Ref(gRef),
+				gf.Owner("user-1"), gf.PS(1),
+				gf.CQ(+2, ct.Clock.Now(), gf.U("user-1")),
+				gf.Approve(),
+				gf.Updated(ct.Clock.Now()))
 		}
+		// A DryRuner can trigger a FullRun w/ an approval.
+		ct.AddDryRunner("user-1")
 		ct.GFake.AddFrom(gf.WithCIs(gHost, gf.ACLRestricted(lProject), cis...))
 		for i, child := range cis {
 			for _, parent := range cis[:i] {

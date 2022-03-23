@@ -468,6 +468,7 @@ func TestPurgesOnTriggerReuse(t *testing.T) {
 			gf.Owner("user-1"),
 			gf.CQ(+1, tStart, gf.U("user-1")),
 		)))
+		ct.AddDryRunner("user-1")
 
 		var first *run.Run
 		ct.RunUntil(ctx, func() bool {

@@ -51,15 +51,38 @@ func TestConfigChangeStartsAndStopsRuns(t *testing.T) {
 		now := ct.Clock.Now()
 		ct.GFake.AddFrom(gf.WithCIs(gHost, gf.ACLRestricted(lProject),
 			// One CL in each repo can run standalone.
-			gf.CI(gChangeFirstSingle, gf.Project(gRepoFirst), gf.CQ(+1, now, gf.U("user-1")), gf.Updated(now)),
-			gf.CI(gChangeSecondSingle, gf.Project(gRepoSecond), gf.CQ(+1, now, gf.U("user-2")), gf.Updated(now)),
+			gf.CI(
+				gChangeFirstSingle, gf.Project(gRepoFirst),
+				gf.Owner("user-1"),
+				gf.CQ(+1, now, gf.U("user-1")),
+				gf.Updated(now),
+			),
+			gf.CI(
+				gChangeSecondSingle, gf.Project(gRepoSecond),
+				gf.Owner("user-2"),
+				gf.CQ(+1, now, gf.U("user-2")),
+				gf.Updated(now),
+			),
 
 			// First combo CL, when CV isn't watching gRepoSecond, can run standalone,
 			// but not the second combo which explicitly depends on the first.
-			gf.CI(gChangeFirstCombo, gf.Project(gRepoFirst), gf.CQ(+1, now, gf.U("user-12")), gf.Updated(now)),
-			gf.CI(gChangeSecondCombo, gf.Project(gRepoSecond), gf.CQ(+1, now, gf.U("user-12")), gf.Updated(now),
-				gf.Desc(fmt.Sprintf("Second Combo\n\nCq-Depend: %d", gChangeFirstCombo))),
+			gf.CI(
+				gChangeFirstCombo, gf.Project(gRepoFirst),
+				gf.Owner("user-12"),
+				gf.CQ(+1, now, gf.U("user-12")),
+				gf.Updated(now),
+			),
+			gf.CI(
+				gChangeSecondCombo, gf.Project(gRepoSecond),
+				gf.Owner("user-12"),
+				gf.CQ(+1, now, gf.U("user-12")),
+				gf.Updated(now),
+				gf.Desc(fmt.Sprintf("Second Combo\n\nCq-Depend: %d", gChangeFirstCombo)),
+			),
 		))
+		ct.AddDryRunner("user-1")
+		ct.AddDryRunner("user-2")
+		ct.AddDryRunner("user-12")
 
 		ct.LogPhase(ctx, "CV starts 2 runs while watching first repo only")
 		prjcfgtest.Create(ctx, lProject, cfgFirst)

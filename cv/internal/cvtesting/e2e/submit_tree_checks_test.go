@@ -64,10 +64,14 @@ func TestSubmissionDuringClosedTree(t *testing.T) {
 			ct.GFake.AddFrom(gf.WithCIs(gHost, gf.ACLRestricted(lProject), gf.CI(
 				gChange, gf.Project(gRepo), gf.Ref(gRef),
 				gf.Owner("user-1"),
-				gf.CQ(+2, ct.Clock.Now(), gf.U("user-2")), gf.Updated(ct.Clock.Now()),
+				gf.CQ(+2, ct.Clock.Now(), gf.U("user-2")),
+				gf.Approve(),
+				gf.Updated(ct.Clock.Now()),
 				gf.Desc(descriptions[gChange]),
 			)))
 		}
+		// Only a committer can trigger a FullRun for someone else' CL.
+		ct.AddCommitter("user-2")
 
 		// Start CQDaemon and make it succeed the Run immediately.
 		ct.MustCQD(ctx, lProject).SetVerifyClbk(
