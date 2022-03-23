@@ -203,20 +203,38 @@ func saveVerifiedCQDRun(ctx context.Context, req *migrationpb.ReportVerifiedRunR
 }
 
 // pruneInactiveRuns removes Runs for which VerifiedCQDRun have already been
-// written or iff the run is about to be cancelled.
+// written or it has been scheduled to cancel the Run trigger.
 //
 // Modifies the Runs slice in place, but also returns it for readability.
 func pruneInactiveRuns(ctx context.Context, in []*run.Run) ([]*run.Run, error) {
-	out := in[:0]
-	keys := make([]*datastore.Key, len(in))
-	for i, r := range in {
-		keys[i] = datastore.MakeKey(ctx, "migration.VerifiedCQDRun", string(r.ID))
+	activeRuns := in[:0]
+
+	// filter out Runs w/ CancelTrigger long ops, so that
+	// CQD won't process events for the Run.
+	for _, r := range in {
+		isBeingCancelled := false
+		for _, op := range r.OngoingLongOps.GetOps() {
+			if op.GetCancelTriggers() != nil {
+				isBeingCancelled = true
+				break
+			}
+		}
+		if !isBeingCancelled {
+			activeRuns = append(activeRuns, r)
+		}
+	}
+
+	// filter out Runs for which VerifiedCQDRun exists.
+	keys := make([]*datastore.Key, 0, len(activeRuns))
+	for _, r := range activeRuns {
+		keys = append(keys, datastore.MakeKey(ctx, "migration.VerifiedCQDRun", string(r.ID)))
 	}
 	exists, err := datastore.Exists(ctx, keys)
 	if err != nil {
 		return nil, errors.Annotate(err, "failed to check VerifiedCQDRun existence").Tag(transient.Tag).Err()
 	}
-	for i, r := range in {
+	out := activeRuns[:0]
+	for i, r := range activeRuns {
 		if !exists.Get(0, i) {
 			out = append(out, r)
 		}
