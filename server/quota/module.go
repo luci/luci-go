@@ -21,6 +21,8 @@ import (
 	"go.chromium.org/luci/server/cron"
 	"go.chromium.org/luci/server/module"
 	"go.chromium.org/luci/server/redisconn"
+
+	pb "go.chromium.org/luci/server/quota/proto"
 )
 
 // ModuleName is the globally-unique name for this module.
@@ -72,6 +74,10 @@ func (m *quotaModule) Initialize(ctx context.Context, host module.Host, opts mod
 		// (either manually, or by setting m.opts.ConfigRefreshCronHandlerID).
 		_ = cfg.Refresh(ctx)
 	})
+
+	if m.opts.AdminServiceReaders != "" && m.opts.AdminServiceWriters != "" {
+		pb.RegisterQuotaAdminServer(host.ServiceRegistrar(), NewQuotaAdminServer(m.opts.AdminServiceReaders, m.opts.AdminServiceWriters))
+	}
 	return ctx, nil
 }
 
@@ -83,6 +89,16 @@ func (*quotaModule) Name() module.Name {
 
 // ModuleOptions is a set of configuration options for the quota module.
 type ModuleOptions struct {
+	// AdminServerReaders is a Chrome Infra Auth group authorized to use read-only
+	// methods of the quota admin pRPC service. If unspecified, the service will
+	// not be exposed.
+	AdminServiceReaders string
+
+	// AdminServerWriters is a Chrome Infra Auth group authorized to use all
+	// methods of the quota admin pRPC service. If unspecified, the service will
+	// not be exposed.
+	AdminServiceWriters string
+
 	// ConfigRefreshCronHandlerID is the ID for this module's config refresh
 	// handler. If specified, the module ensures Refresh is called on the
 	// quotaconfig.Interface in the server context. The handler will be installed
@@ -95,6 +111,8 @@ type ModuleOptions struct {
 // Register adds command line flags for these module options to the given
 // *flag.FlagSet. Mutates module options by initializing defaults.
 func (o *ModuleOptions) Register(f *flag.FlagSet) {
+	f.StringVar(&o.AdminServiceReaders, "quota-admin-service-readers", "", "Chrome Infra Auth group authorized to use read-only admin methods.")
+	f.StringVar(&o.AdminServiceWriters, "quota-admin-service-writers", "", "Chrome Infra Auth group authorized to use all admin methods.")
 	f.StringVar(&o.ConfigRefreshCronHandlerID, "quota-cron-handler-id", "", "Config refresh handler ID.")
 }
 

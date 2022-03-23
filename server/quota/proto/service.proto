@@ -1,0 +1,40 @@
+// Copyright 2022 The LUCI Authors. All rights reserved.
+// Use of this source code is governed under the Apache License, Version 2.0
+// that can be found in the LICENSE file.
+
+syntax = "proto3";
+
+option go_package = "go.chromium.org/luci/server/quota/proto";
+
+package proto;
+
+// A GetRequest is a request to fetch the quota entry for a specfic policy.
+message GetRequest {
+  // The named policy. Valid names depend on the policies enumerated in this
+  // service's config.proto.
+  //
+  // Required.
+  string policy = 1;
+
+  // The user to fetch the named quota policy for. Must be specified when the
+  // policy contains the substring "${user}".
+  string user = 2;
+}
+
+// A QuotaEntry represents a database entry for the named quota entry.
+message QuotaEntry {
+  // The name of this quota entry.
+  string name = 1;
+
+  // The raw name of this entry in the redis database.
+  string db_name = 2;
+
+  // The amount of resources available.
+  int64 resources = 3;
+}
+
+// QuotaAdmin exposes admin endpoints for the quota library.
+service QuotaAdmin {
+  // Get returns the available resources for the given policy.
+  rpc Get(GetRequest) returns (QuotaEntry);
+}

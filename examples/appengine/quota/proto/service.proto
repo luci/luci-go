@@ -10,7 +10,7 @@ package rpc;
 
 import "google/protobuf/empty.proto";
 
-// A service for demonstrating quota library functionality.
+// Demo is a service for demonstrating quota library functionality.
 service Demo {
   // GlobalRateLimit is an endpoint globally limited to one request every 60
   // seconds. This quota can be reset at any time by calling GlobalQuotaReset.

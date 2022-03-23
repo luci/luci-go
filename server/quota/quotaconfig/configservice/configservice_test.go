@@ -28,6 +28,7 @@ import (
 	"go.chromium.org/luci/server/caching/cachingtest"
 
 	pb "go.chromium.org/luci/server/quota/proto"
+	"go.chromium.org/luci/server/quota/quotaconfig"
 
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
@@ -73,7 +74,7 @@ func TestConfigService(t *testing.T) {
 
 			Convey("policy not found", func() {
 				p, err := c.Get(ctx, "missing")
-				So(err, ShouldErrLike, "cache miss")
+				So(err, ShouldEqual, quotaconfig.ErrNotFound)
 				So(p, ShouldBeNil)
 			})
 
@@ -153,7 +154,7 @@ func TestConfigService(t *testing.T) {
 				So(c.Refresh(ctx), ShouldErrLike, "did not pass validation")
 
 				p, err := c.Get(ctx, "name")
-				So(err, ShouldErrLike, "cache miss")
+				So(err, ShouldEqual, quotaconfig.ErrNotFound)
 				So(p, ShouldBeNil)
 			})
 

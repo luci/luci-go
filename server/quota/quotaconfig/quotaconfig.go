@@ -31,11 +31,15 @@ import (
 	pb "go.chromium.org/luci/server/quota/proto"
 )
 
+// ErrNotFound must be returned by Interface.Get implementations when the named
+// *pb.Policy is not found.
+var ErrNotFound = errors.New("policy not found")
+
 // Interface encapsulates the functionality needed to implement a configuration
 // layer usable by the quota library. Implementations should ensure returned
 // *pb.Policies are valid (see ValidatePolicy).
 type Interface interface {
-	// Get returns the named *pb.Policy.
+	// Get returns the named *pb.Policy or ErrNotFound if it doesn't exist.
 	//
 	// Called by the quota library every time quota is manipulated,
 	// so implementations should return relatively quickly.
@@ -61,13 +65,13 @@ type Memory struct {
 	policies map[string]*pb.Policy
 }
 
-// Get returns a copy of the named *pb.Policy if it exists.
+// Get returns a copy of the named *pb.Policy if it exists, or else ErrNotFound.
 func (m *Memory) Get(ctx context.Context, name string) (*pb.Policy, error) {
 	m.lock.RLock()
 	defer m.lock.RUnlock()
 	p, ok := m.policies[name]
 	if !ok {
-		return nil, errors.Reason("policy %q not found", name).Err()
+		return nil, ErrNotFound
 	}
 	return proto.Clone(p).(*pb.Policy), nil
 }

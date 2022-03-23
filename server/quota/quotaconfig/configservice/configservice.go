@@ -64,12 +64,15 @@ func New(ctx context.Context, cfgSet config.Set, path string) quotaconfig.Interf
 	}
 }
 
-// Get returns a cached copy of the named *pb.Policy if it exists.
-// Errs if the context doesn't contain a cfgclient.Interface (usually installed
-// by config/service/cfgmodule).
+// Get returns a cached copy of the named *pb.Policy if it exists, or
+// quotaconfig.ErrNotFound if it doesn't. Errs if the context doesn't contain a
+// cfgclient.Interface (usually installed by config/service/cfgmodule).
 func (c *configService) Get(ctx context.Context, name string) (*pb.Policy, error) {
 	b, err := c.cache.Get(ctx, name)
-	if err != nil {
+	switch {
+	case err == caching.ErrCacheMiss:
+		return nil, quotaconfig.ErrNotFound
+	case err != nil:
 		return nil, errors.Annotate(err, "retrieving cached policy %q", name).Err()
 	}
 	p := &pb.Policy{}

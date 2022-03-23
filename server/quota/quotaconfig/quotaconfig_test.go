@@ -45,7 +45,7 @@ func TestQuotaConfig(t *testing.T) {
 
 			Convey("policy not found", func() {
 				p, err := m.Get(ctx, "missing")
-				So(err, ShouldErrLike, "not found")
+				So(err, ShouldEqual, ErrNotFound)
 				So(p, ShouldBeNil)
 			})
 

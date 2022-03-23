@@ -19,6 +19,8 @@ entrypoint: >
   -config-service-host ${CONFIG_SERVICE_HOST}
   -frontend-client-id ${FRONTEND_CLIENT_ID}
   -redis-addr ${REDIS_DATABASE_HOST}
+  -quota-admin-service-readers "all"
+  -quota-admin-service-writers "administrators"
 
 handlers:
 - url: /.*
