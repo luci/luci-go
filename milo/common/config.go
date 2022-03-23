@@ -291,9 +291,7 @@ func ReplaceNSEWith(err errors.MultiError, replacement error) error {
 // if none is found.
 // TODO(hinoka): Use process cache to cache configs.
 func GetSettings(c context.Context) *config.Settings {
-	settings := config.Settings{
-		Buildbot: &config.Settings_Buildbot{},
-	}
+	settings := config.Settings{}
 
 	msg, err := GetCurrentServiceConfig(c)
 	if err != nil {
@@ -311,7 +309,7 @@ func GetSettings(c context.Context) *config.Settings {
 		logging.WithError(err).Errorf(c,
 			"Encountered error while unmarshalling service config, using empty config.")
 		// Zero out the message just in case something got written in.
-		settings = config.Settings{Buildbot: &config.Settings_Buildbot{}}
+		settings = config.Settings{}
 	}
 
 	return &settings

@@ -10,20 +10,7 @@ option go_package = "go.chromium.org/luci/milo/api/config";
 
 // Settings represents the format for the global (service) config for Milo.
 message Settings {
-  message Buildbot {
-    // internal_reader is the infra-auth group that is allowed to read internal
-    // buildbot data.
-    string internal_reader = 1;
-
-    // public_subscription is the name of the pubsub topic where public builds come in
-    // from
-    string public_subscription = 2;
-
-    // internal_subscription is the name of the pubsub topic where internal builds
-    // come in from
-    string internal_subscription = 3;
-  }
-  Buildbot buildbot = 1;
+  reserved 1; // buildbot
 
   message Buildbucket {
     // name is the user friendly name of the Buildbucket instance we're pointing to.

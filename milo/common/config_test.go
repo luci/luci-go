@@ -111,7 +111,7 @@ func TestConfig(t *testing.T) {
 				_, err := UpdateServiceConfig(c)
 				So(err.Error(), ShouldResemble, "could not load settings.cfg from luci-config: no such config")
 				settings := GetSettings(c)
-				So(settings.Buildbot.InternalReader, ShouldEqual, "")
+				So(settings.Buildbucket, ShouldEqual, nil)
 			})
 			Convey("Read a config", func() {
 				mockedConfigs["services/${appid}"] = memcfg.Files{
@@ -122,7 +122,8 @@ func TestConfig(t *testing.T) {
 				So(err, ShouldBeNil)
 				settings := GetSettings(c)
 				So(rSettings, ShouldResembleProto, settings)
-				So(settings.Buildbot.InternalReader, ShouldEqual, "googlers")
+				So(settings.Buildbucket.Name, ShouldEqual, "dev")
+				So(settings.Buildbucket.Host, ShouldEqual, "cr-buildbucket-dev.appspot.com")
 			})
 		})
 
@@ -542,8 +543,9 @@ consoles: {
 `
 
 var settingsCfg = `
-buildbot: {
-	internal_reader: "googlers"
+buildbucket: {
+	name: "dev"
+	host: "cr-buildbucket-dev.appspot.com"
 }
 `
 
