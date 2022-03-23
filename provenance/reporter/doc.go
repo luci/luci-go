@@ -12,6 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package reporter provide simple interfaces for reporting provenance
-// information.
+// Package reporter provides interface implementation for reporting provenance
+// information as useful library.
 package reporter
