@@ -19,6 +19,7 @@ import (
 	"context"
 	"crypto/sha1"
 	"encoding/hex"
+	"encoding/json"
 	"fmt"
 	"sort"
 	"strings"
@@ -34,6 +35,7 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/milo/common"
+	"go.chromium.org/luci/milo/common/model/milostatus"
 )
 
 // ManifestKey is an index entry for BuildSummary, which looks like
@@ -308,6 +310,77 @@ func (bs *BuildSummary) GitilesCommit() *buildbucketpb.GitilesCommit {
 // and <buildid> otherwise.
 func (bs *BuildSummary) SelfLink() string {
 	return buildIDLink(bs.BuildID, bs.ProjectID)
+}
+
+// MakeBuildKey returns a new datastore Key for a buildbucket.Build.
+//
+// There's currently no model associated with this key, but it's used as
+// a parent for a model.BuildSummary.
+func MakeBuildKey(c context.Context, host, buildAddress string) *datastore.Key {
+	return datastore.MakeKey(c,
+		"buildbucket.Build", fmt.Sprintf("%s:%s", host, buildAddress))
+}
+
+// BuildSummaryFromBuild converts a buildbucketpb.Build to BuildSummary.
+func BuildSummaryFromBuild(c context.Context, host string, build *buildbucketpb.Build) (*BuildSummary, error) {
+	buildAddress := fmt.Sprintf("%d", build.Id)
+	if build.Number != 0 {
+		buildAddress = fmt.Sprintf("luci.%s.%s/%s/%d", build.Builder.Project, build.Builder.Bucket, build.Builder.Builder, build.Number)
+	}
+
+	buildKey := MakeBuildKey(c, host, buildAddress)
+	swarming := build.GetInfra().GetSwarming()
+
+	type OutputProperties struct {
+		BlamelistPins []*buildbucketpb.GitilesCommit `json:"$recipe_engine/milo/blamelist_pins"`
+	}
+	var outputProperties OutputProperties
+	propertiesJSON, err := build.GetOutput().GetProperties().MarshalJSON()
+	if err != nil {
+		logging.Warningf(c, "failed to marshal properties to JSON")
+		return nil, err
+	}
+	err = json.Unmarshal(propertiesJSON, &outputProperties)
+	if err != nil {
+		logging.Warningf(c, "failed to decode test build set")
+		return nil, err
+	}
+
+	var blamelistPins []string
+	if len(outputProperties.BlamelistPins) > 0 {
+		blamelistPins = make([]string, len(outputProperties.BlamelistPins))
+		for i, gc := range outputProperties.BlamelistPins {
+			blamelistPins[i] = protoutil.GitilesBuildSet(gc)
+		}
+	} else if gc := build.GetInput().GetGitilesCommit(); gc != nil {
+		// Fallback to Input.GitilesCommit when there are no blamelist pins.
+		blamelistPins = []string{protoutil.GitilesBuildSet(gc)}
+	}
+
+	bs := &BuildSummary{
+		ProjectID:     build.Builder.Project,
+		BuildKey:      buildKey,
+		BuilderID:     common.LegacyBuilderIDString(build.Builder),
+		BuildID:       "buildbucket/" + buildAddress,
+		BuildSet:      protoutil.BuildSets(build),
+		BlamelistPins: blamelistPins,
+		ContextURI:    []string{fmt.Sprintf("buildbucket://%s/build/%d", host, build.Id)},
+		Created:       build.CreateTime.AsTime(),
+		Summary: Summary{
+			Start:  build.StartTime.AsTime(),
+			End:    build.EndTime.AsTime(),
+			Status: milostatus.FromBuildbucket(build.Status),
+		},
+		Version:      build.UpdateTime.AsTime().UnixNano(),
+		Experimental: build.GetInput().GetExperimental(),
+		Critical:     build.GetCritical(),
+	}
+	if task := swarming.GetTaskId(); task != "" {
+		bs.ContextURI = append(
+			bs.ContextURI,
+			fmt.Sprintf("swarming://%s/task/%s", swarming.GetHostname(), swarming.GetTaskId()))
+	}
+	return bs, nil
 }
 
 func buildIDLink(b string, project string) string {

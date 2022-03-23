@@ -21,44 +21,20 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/golang/protobuf/ptypes"
 	"github.com/gomodule/redigo/redis"
 	"google.golang.org/genproto/protobuf/field_mask"
-	"google.golang.org/protobuf/types/known/timestamppb"
 
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
-	"go.chromium.org/luci/buildbucket/protoutil"
 	bbv1 "go.chromium.org/luci/common/api/buildbucket/buildbucket/v1"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry/transient"
-	"go.chromium.org/luci/common/tsmon/field"
-	"go.chromium.org/luci/common/tsmon/metric"
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/milo/common"
 	"go.chromium.org/luci/milo/common/model"
-	"go.chromium.org/luci/milo/common/model/milostatus"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/redisconn"
 	"go.chromium.org/luci/server/router"
-)
-
-var (
-	buildCounter = metric.NewCounter(
-		"luci/milo/buildbucket_pubsub/builds",
-		"The number of buildbucket builds received by Milo from PubSub",
-		nil,
-		field.String("bucket"),
-		// True for luci builds; should always be true.
-		field.Bool("luci"),
-		// Status can be "COMPLETED", "SCHEDULED", or "STARTED"
-		field.String("status"),
-		// Action can be one of 3 options.
-		//   * "Created" - This is the first time Milo heard about this build
-		//   * "Modified" - Milo updated some information about this build vs. what
-		//     it knew before.
-		//   * "Rejected" - Milo was unable to accept this build.
-		field.String("action"))
 )
 
 // PubSubHandler is a webhook that stores the builds coming in from pubsub.
@@ -77,13 +53,6 @@ func PubSubHandler(ctx *router.Context) {
 	// No errors or non-transient errors are 200s so that PubSub does not retry
 	// them.
 	ctx.Writer.WriteHeader(http.StatusOK)
-}
-
-func mustTimestamp(ts *timestamppb.Timestamp) time.Time {
-	if t, err := ptypes.Timestamp(ts); err == nil {
-		return t
-	}
-	return time.Time{}
 }
 
 var summaryBuildMask = &field_mask.FieldMask{
@@ -106,90 +75,10 @@ var summaryBuildMask = &field_mask.FieldMask{
 	},
 }
 
-// getSummary returns a model.BuildSummary representing a buildbucket build.
-func getSummary(c context.Context, host string, id int64) (*model.BuildSummary, error) {
-	client, err := buildbucketBuildsClient(c, host, auth.AsSelf)
-	if err != nil {
-		return nil, err
-	}
-	b, err := client.GetBuild(c, &buildbucketpb.GetBuildRequest{
-		Id:     id,
-		Fields: summaryBuildMask,
-	})
-	if err != nil {
-		return nil, err
-	}
-	buildAddress := fmt.Sprintf("%d", b.Id)
-	if b.Number != 0 {
-		buildAddress = fmt.Sprintf("luci.%s.%s/%s/%d", b.Builder.Project, b.Builder.Bucket, b.Builder.Builder, b.Number)
-	}
-
-	// Note: The parent for buildbucket build summaries is currently a fake entity.
-	// In the future, builds can be cached here, but we currently don't do that.
-	buildKey := datastore.MakeKey(c, "buildbucket.Build", fmt.Sprintf("%s:%s", host, buildAddress))
-	swarming := b.GetInfra().GetSwarming()
-
-	type OutputProperties struct {
-		BlamelistPins []*buildbucketpb.GitilesCommit `json:"$recipe_engine/milo/blamelist_pins"`
-	}
-	var outputProperties OutputProperties
-	propertiesJSON, err := b.GetOutput().GetProperties().MarshalJSON()
-	err = json.Unmarshal(propertiesJSON, &outputProperties)
-	if err != nil {
-		logging.Warningf(c, "failed to decode test build set")
-		return nil, err
-	}
-
-	var blamelistPins []string
-	if len(outputProperties.BlamelistPins) > 0 {
-		blamelistPins = make([]string, len(outputProperties.BlamelistPins))
-		for i, gc := range outputProperties.BlamelistPins {
-			blamelistPins[i] = protoutil.GitilesBuildSet(gc)
-		}
-	} else if gc := b.GetInput().GetGitilesCommit(); gc != nil {
-		// Fallback to Input.GitilesCommit when there are no blamelist pins.
-		blamelistPins = []string{protoutil.GitilesBuildSet(gc)}
-	}
-
-	bs := &model.BuildSummary{
-		ProjectID:     b.Builder.Project,
-		BuildKey:      buildKey,
-		BuilderID:     common.LegacyBuilderIDString(b.Builder),
-		BuildID:       "buildbucket/" + buildAddress,
-		BuildSet:      protoutil.BuildSets(b),
-		BlamelistPins: blamelistPins,
-		ContextURI:    []string{fmt.Sprintf("buildbucket://%s/build/%d", host, id)},
-		Created:       mustTimestamp(b.CreateTime),
-		Summary: model.Summary{
-			Start:  mustTimestamp(b.StartTime),
-			End:    mustTimestamp(b.EndTime),
-			Status: milostatus.FromBuildbucket(b.Status),
-		},
-		Version:      mustTimestamp(b.UpdateTime).UnixNano(),
-		Experimental: b.GetInput().GetExperimental(),
-		Critical:     b.GetCritical(),
-	}
-	if task := swarming.GetTaskId(); task != "" {
-		bs.ContextURI = append(
-			bs.ContextURI,
-			fmt.Sprintf("swarming://%s/task/%s", swarming.GetHostname(), swarming.GetTaskId()))
-	}
-	return bs, nil
-}
-
 // pubSubHandlerImpl takes the http.Request, expects to find
 // a common.PubSubSubscription JSON object in the Body, containing a bbPSEvent,
 // and handles the contents with generateSummary.
 func pubSubHandlerImpl(c context.Context, r *http.Request) error {
-	// This is the default action. The code below will modify the values of some
-	// or all of these parameters.
-	isLUCI, bucket, status, action := false, "UNKNOWN", "UNKNOWN", "Rejected"
-
-	defer func() {
-		// closure for late binding
-		buildCounter.Add(c, 1, bucket, isLUCI, status, action)
-	}()
-
 	msg := common.PubSubSubscription{}
 	if err := json.NewDecoder(r.Body).Decode(&msg); err != nil {
 		// This might be a transient error, e.g. when the json format changes
@@ -214,9 +103,21 @@ func pubSubHandlerImpl(c context.Context, r *http.Request) error {
 		return errors.Annotate(err, "could not parse pubsub message data").Err()
 	}
 
+	client, err := buildbucketBuildsClient(c, event.Hostname, auth.AsSelf)
+	if err != nil {
+		return err
+	}
+	build, err := client.GetBuild(c, &buildbucketpb.GetBuildRequest{
+		Id:     event.Build.Id,
+		Fields: summaryBuildMask,
+	})
+	if err != nil {
+		return err
+	}
+
 	// TODO(iannucci,nodir): get the bot context too
 	// TODO(iannucci,nodir): support manifests/got_revision
-	bs, err := getSummary(c, event.Hostname, event.Build.Id)
+	bs, err := model.BuildSummaryFromBuild(c, event.Hostname, build)
 	if err != nil {
 		return err
 	}
@@ -227,6 +128,10 @@ func pubSubHandlerImpl(c context.Context, r *http.Request) error {
 	logging.Debugf(c, "Received from %s: build %s (%s)\n%v",
 		event.Hostname, bs.ProjectID, bs.BuildID, bs.Summary.Status, bs)
 
+	return updateBuild(c, bs)
+}
+
+func updateBuild(c context.Context, bs *model.BuildSummary) error {
 	now := time.Now()
 	updateBuilderSummary, err := shouldUpdateBuilderSummary(c, bs)
 	if err != nil {
@@ -240,9 +145,7 @@ func pubSubHandlerImpl(c context.Context, r *http.Request) error {
 		curBS := &model.BuildSummary{BuildKey: bs.BuildKey}
 		switch err := datastore.Get(c, curBS); err {
 		case datastore.ErrNoSuchEntity:
-			action = "Created"
-		case nil:
-			action = "Modified"
+			// continue
 		default:
 			return errors.Annotate(err, "reading current BuildSummary").Err()
 		}
@@ -267,15 +170,6 @@ func pubSubHandlerImpl(c context.Context, r *http.Request) error {
 
 	logging.Infof(c, "took %v to update builder summary from %s", time.Since(now), bs.BuilderID)
 	return err
-}
-
-// MakeBuildKey returns a new datastore Key for a buildbucket.Build.
-//
-// There's currently no model associated with this key, but it's used as
-// a parent for a model.BuildSummary.
-func MakeBuildKey(c context.Context, host, buildAddress string) *datastore.Key {
-	return datastore.MakeKey(c,
-		"buildbucket.Build", fmt.Sprintf("%s:%s", host, buildAddress))
 }
 
 var (

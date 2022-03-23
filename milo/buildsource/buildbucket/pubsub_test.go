@@ -117,7 +117,7 @@ func TestPubSub(t *testing.T) {
 		}
 
 		Convey("New in-process build", func() {
-			bKey := MakeBuildKey(c, "hostname", "1234")
+			bKey := model.MakeBuildKey(c, "hostname", "1234")
 			buildExp := buildBase
 			buildExp.Id = 1234
 			created := timestamppb.New(RefTime.Add(2 * time.Hour))
@@ -195,7 +195,7 @@ func TestPubSub(t *testing.T) {
 		})
 
 		Convey("Completed build", func() {
-			bKey := MakeBuildKey(c, "hostname", "2234")
+			bKey := model.MakeBuildKey(c, "hostname", "2234")
 			buildExp := buildBase
 			buildExp.Id = 2234
 			created := timestamppb.New(RefTime.Add(2 * time.Hour))
