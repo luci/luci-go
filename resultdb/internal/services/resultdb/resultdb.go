@@ -21,6 +21,7 @@ import (
 	"time"
 
 	"google.golang.org/genproto/googleapis/bytestream"
+	sppb "google.golang.org/genproto/googleapis/spanner/v1"
 
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
@@ -31,6 +32,7 @@ import (
 	"go.chromium.org/luci/resultdb/internal"
 	"go.chromium.org/luci/resultdb/internal/artifactcontent"
 	uipb "go.chromium.org/luci/resultdb/internal/proto/ui"
+	"go.chromium.org/luci/resultdb/internal/spanutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
 
@@ -108,6 +110,8 @@ func InitServer(srv *server.Server, opts Options) error {
 
 	// TODO(crbug/1082369): Remove this workaround once field masks can be decoded.
 	srv.PRPC.HackFixFieldMasksForJSON = true
+
+	srv.RegisterUnaryServerInterceptor(spanutil.SpannerDefaultsInterceptor(sppb.RequestOptions_PRIORITY_MEDIUM))
 	return nil
 }
 

@@ -3,7 +3,7 @@ module go.chromium.org/luci
 go 1.16
 
 require (
-	cloud.google.com/go v0.94.1
+	cloud.google.com/go v0.99.0
 	cloud.google.com/go/bigquery v1.22.0
 	cloud.google.com/go/bigtable v1.10.1
 	cloud.google.com/go/cloudtasks v0.1.0
@@ -15,8 +15,8 @@ require (
 	cloud.google.com/go/profiler v0.1.0
 	cloud.google.com/go/pubsub v1.17.0
 	cloud.google.com/go/secretmanager v0.1.0
-	cloud.google.com/go/spanner v1.25.0
-	cloud.google.com/go/storage v1.16.1
+	cloud.google.com/go/spanner v1.29.0
+	cloud.google.com/go/storage v1.18.2
 	cloud.google.com/go/trace v0.1.0 // indirect
 	contrib.go.opencensus.io/exporter/stackdriver v0.13.8
 	github.com/DATA-DOG/go-sqlmock v1.5.0
@@ -44,7 +44,7 @@ require (
 	github.com/google/pprof v0.0.0-20210827144239-02619b876842 // indirect
 	github.com/google/tink/go v1.6.1
 	github.com/google/uuid v1.3.0
-	github.com/googleapis/gax-go/v2 v2.1.0
+	github.com/googleapis/gax-go/v2 v2.1.1
 	github.com/gopherjs/gopherjs v0.0.0-20210901121439-eee08aaf2717 // indirect
 	github.com/gorhill/cronexpr v0.0.0-20180427100037-88b0669f7d75
 	github.com/jordan-wright/email v4.0.1-0.20210109023952-943e75fe5223+incompatible
@@ -77,17 +77,17 @@ require (
 	golang.org/x/crypto v0.0.0-20210817164053-32db794688a5
 	golang.org/x/mod v0.5.0 // indirect
 	golang.org/x/net v0.0.0-20210614182718-04defd469f4e
-	golang.org/x/oauth2 v0.0.0-20210819190943-2bc19b11175f
+	golang.org/x/oauth2 v0.0.0-20211104180415-d3ed0bb246c8
 	golang.org/x/sync v0.0.0-20210220032951-036812b2e83c
 	golang.org/x/sys v0.0.0-20220128215802-99c3d69c2c27
 	golang.org/x/term v0.0.0-20210615171337-6886f2dfbf5b // indirect
 	golang.org/x/text v0.3.7 // indirect
 	golang.org/x/time v0.0.0-20210723032227-1f47c861a9ac
 	golang.org/x/tools v0.1.5
-	google.golang.org/api v0.56.0
+	google.golang.org/api v0.63.0
 	google.golang.org/appengine v1.6.7
-	google.golang.org/genproto v0.0.0-20210909211513-a8c4777a87af
-	google.golang.org/grpc v1.40.0
+	google.golang.org/genproto v0.0.0-20220216160803-4663080d8bc8
+	google.golang.org/grpc v1.40.1
 	google.golang.org/grpc/cmd/protoc-gen-go-grpc v1.1.0
 	google.golang.org/protobuf v1.27.1
 	gopkg.in/yaml.v2 v2.4.0
@@ -95,3 +95,7 @@ require (
 
 // The next version uses errors.Is(...) and no longer works on GAE go113.
 replace golang.org/x/net => golang.org/x/net v0.0.0-20210503060351-7fd8e65b6420
+
+// The following requirements were added on 2022-03-22 to prevent blocking deployment of
+// go111 applications.
+exclude google.golang.org/grpc v1.44.0

@@ -20,6 +20,7 @@ import (
 
 	repb "github.com/bazelbuild/remote-apis/build/bazel/remote/execution/v2"
 	"google.golang.org/genproto/googleapis/bytestream"
+	sppb "google.golang.org/genproto/googleapis/spanner/v1"
 	"google.golang.org/grpc"
 
 	"go.chromium.org/luci/common/errors"
@@ -27,6 +28,7 @@ import (
 
 	"go.chromium.org/luci/resultdb/internal"
 	"go.chromium.org/luci/resultdb/internal/artifactcontent"
+	"go.chromium.org/luci/resultdb/internal/spanutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
 
@@ -70,6 +72,7 @@ func InitServer(srv *server.Server, opt Options) error {
 		},
 		Postlude: internal.CommonPostlude,
 	})
+	srv.RegisterUnaryServerInterceptor(spanutil.SpannerDefaultsInterceptor(sppb.RequestOptions_PRIORITY_HIGH))
 	return installArtifactCreationHandler(srv, &opt, conn)
 }
 
