@@ -113,6 +113,7 @@ func (impl *Impl) removeRunFromCLs(ctx context.Context, runID common.RunID, clid
 }
 
 type reviewInputMeta struct {
+
 	// notify is whom to notify.
 	notify gerrit.Whoms
 	// message provides the reason and details of the review change performed.
@@ -185,21 +186,22 @@ func (impl *Impl) cancelCLTriggers(ctx context.Context, runID common.RunID, toCa
 	return nil
 }
 
-func scheduleTriggersCancellation(ctx context.Context, rs *state.RunState, cls common.CLIDs, meta reviewInputMeta, statusIfSucceeded run.Status) {
+// scheduleTriggersCancellation enqueues a CancelTrigger long op for a given Run.
+//
+// `cls` is a list of CLs to cancel the trigger of.
+func scheduleTriggersCancellation(ctx context.Context, rs *state.RunState, metas map[common.CLID]reviewInputMeta, statusIfSucceeded run.Status) {
 	if !run.IsEnded(statusIfSucceeded) {
 		panic(fmt.Errorf("expected a terminal status; got %s", statusIfSucceeded))
 	}
-	reqs := make([]*run.OngoingLongOps_Op_TriggersCancellation_Request, len(cls))
-	notify := fromGerritWhoms(meta.notify)
-	addToAttention := fromGerritWhoms(meta.addToAttention)
-	for i, cl := range cls {
-		reqs[i] = &run.OngoingLongOps_Op_TriggersCancellation_Request{
-			Clid:                 int64(cl),
-			Notify:               notify,
+	reqs := make([]*run.OngoingLongOps_Op_TriggersCancellation_Request, 0, len(rs.CLs))
+	for clid, meta := range metas {
+		reqs = append(reqs, &run.OngoingLongOps_Op_TriggersCancellation_Request{
+			Clid:                 int64(clid),
+			Notify:               fromGerritWhoms(meta.notify),
 			Message:              meta.message,
-			AddToAttention:       addToAttention,
+			AddToAttention:       fromGerritWhoms(meta.addToAttention),
 			AddToAttentionReason: meta.reason,
-		}
+		})
 	}
 	rs.EnqueueLongOp(&run.OngoingLongOps_Op{
 		Deadline: timestamppb.New(clock.Now(ctx).Add(maxTriggersCancellationDuration)),

@@ -17,6 +17,7 @@ package handler
 import (
 	"context"
 	"fmt"
+	"strings"
 	"time"
 
 	"golang.org/x/sync/errgroup"
@@ -94,19 +95,30 @@ func (impl *Impl) Start(ctx context.Context, rs *state.RunState) (*Result, error
 		return nil, err
 	}
 
-	switch result, err := acls.CheckRunCreate(ctx, cg, trs, cls); {
+	switch aclResult, err := acls.CheckRunCreate(ctx, cg, trs, cls); {
 	case err != nil:
 		return nil, errors.Annotate(err, "CheckRunCreate").Err()
-	case result.OK():
+	case aclResult.OK():
 		rs.CreationAllowed = run.CreationAllowedYes
-	case !result.OK():
-		// Let the Run move forwards.
-		// CQD should reject the Run via the migration steps.
-		//
-		// TODO(crbug/1268574): cancel the Run, once it's verified that
-		// both (CQ and CV) implementations agree with each other.
-		logging.Debugf(ctx, "crbug/1268574 - %s\n%s", rs.ID, result.FailuresSummary())
+	case !aclResult.OK():
+		var b strings.Builder
+		fmt.Fprintf(&b, "failed to start the Run due to eligibility checks. See reasons at:")
+		for cl := range aclResult {
+			fmt.Fprintf(&b, "\n  * %s", cl.ExternalID.MustURL())
+		}
+		rs.LogInfof(ctx, "Start failed", b.String())
+		metas := make(map[common.CLID]reviewInputMeta, len(cls))
+		for _, cl := range cls {
+			metas[cl.ID] = reviewInputMeta{
+				message:        aclResult.Failure(cl),
+				notify:         gerrit.Whoms{gerrit.Owner, gerrit.CQVoters},
+				addToAttention: gerrit.Whoms{gerrit.Owner, gerrit.CQVoters},
+				reason:         "Couldn't start the CQ/CV Run.",
+			}
+		}
+		scheduleTriggersCancellation(ctx, rs, metas, run.Status_FAILED)
 		rs.CreationAllowed = run.CreationAllowedNo
+		return &Result{State: rs}, nil
 	}
 
 	switch _, err := requirement.Compute(ctx, requirement.Input{

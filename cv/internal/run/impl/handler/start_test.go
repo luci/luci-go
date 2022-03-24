@@ -23,8 +23,11 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/common/clock"
+	gerritpb "go.chromium.org/luci/common/proto/gerrit"
+	"go.chromium.org/luci/gae/service/datastore"
 
 	cfgpb "go.chromium.org/luci/cv/api/config/v2"
+	"go.chromium.org/luci/cv/internal/changelist"
 	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/configs/prjcfg/prjcfgtest"
 	"go.chromium.org/luci/cv/internal/cvtesting"
@@ -46,6 +49,9 @@ func TestStart(t *testing.T) {
 
 		const (
 			lProject           = "chromium"
+			gerritHost         = "chromium-review.googlesource.com"
+			committers         = "committer-group"
+			dryRunners         = "dry-runner-group"
 			stabilizationDelay = time.Minute
 			startLatency       = 2 * time.Minute
 		)
@@ -55,6 +61,12 @@ func TestStart(t *testing.T) {
 			CombineCls: &cfgpb.CombineCLs{
 				StabilizationDelay: durationpb.New(stabilizationDelay),
 			},
+			Verifiers: &cfgpb.Verifiers{
+				GerritCqAbility: &cfgpb.Verifiers_GerritCQAbility{
+					CommitterList:    []string{committers},
+					DryRunAccessList: []string{dryRunners},
+				},
+			},
 		}}})
 
 		rs := &state.RunState{
@@ -63,9 +75,41 @@ func TestStart(t *testing.T) {
 				Status:        run.Status_PENDING,
 				CreateTime:    clock.Now(ctx).UTC().Add(-startLatency),
 				ConfigGroupID: prjcfgtest.MustExist(ctx, lProject).ConfigGroupIDs[0],
+				Mode:          run.FullRun,
 			},
 		}
 		h, _ := makeTestHandler(&ct)
+
+		var clid int64
+		addCL := func(triggerer, owner string) *changelist.CL {
+			clid++
+			cl := &changelist.CL{
+				ID:         common.CLID(clid),
+				ExternalID: changelist.MustGobID(gerritHost, clid),
+				Snapshot: &changelist.Snapshot{
+					Kind: &changelist.Snapshot_Gerrit{
+						Gerrit: &changelist.Gerrit{
+							Host: gerritHost,
+							Info: &gerritpb.ChangeInfo{
+								Owner: &gerritpb.AccountInfo{
+									Email: owner,
+								},
+							},
+						},
+					},
+				},
+			}
+			rCL := &run.RunCL{
+				ID:  common.CLID(clid),
+				Run: datastore.MakeKey(ctx, run.RunKind, string(rs.Run.ID)),
+				Trigger: &run.Trigger{
+					Email: triggerer,
+					Mode:  string(rs.Run.Mode),
+				},
+			}
+			So(datastore.Put(ctx, cl, rCL), ShouldBeNil)
+			return cl
+		}
 
 		Convey("Starts when Run is PENDING", func() {
 			res, err := h.Start(ctx, rs)
@@ -82,7 +126,6 @@ func TestStart(t *testing.T) {
 			So(res.State.NewLongOpIDs, ShouldHaveLength, 1)
 			longOp := res.State.OngoingLongOps.GetOps()[res.State.NewLongOpIDs[0]]
 			So(longOp.GetPostStartMessage(), ShouldBeTrue)
-			So(longOp.GetDeadline().AsTime(), ShouldHappenOnOrAfter, clock.Now(ctx).Add(maxPostStartMessageDuration))
 
 			So(ct.TSMonSentDistr(ctx, metricPickupLatencyS, lProject).Sum(),
 				ShouldAlmostEqual, startLatency.Seconds())
@@ -120,7 +163,54 @@ func TestStart(t *testing.T) {
 				cancelledCLs = append(cancelledCLs, common.CLID(req.Clid))
 			}
 			So(cancelledCLs, ShouldResemble, res.State.CLs)
-			So(longOp.GetDeadline().AsTime(), ShouldHappenOnOrAfter, clock.Now(ctx).Add(maxTriggersCancellationDuration))
+		})
+
+		Convey("Fail the Run if acls.CheckRunCreate fails", func() {
+			const (
+				owner     = "owner@example.org"
+				triggerer = owner
+			)
+			cl1 := addCL(triggerer, owner)
+			rs.CLs = append(rs.CLs, cl1.ID)
+
+			res, err := h.Start(ctx, rs)
+			So(err, ShouldBeNil)
+			So(res.SideEffectFn, ShouldBeNil)
+			So(res.PreserveEvents, ShouldBeFalse)
+
+			So(res.State.Status, ShouldEqual, run.Status_PENDING)
+			So(res.State.LogEntries, ShouldHaveLength, 1)
+			So(res.State.LogEntries[0].GetInfo(), ShouldResembleProto, &run.LogEntry_Info{
+				Label: "Start failed",
+				Message: "" +
+					"failed to start the Run due to eligibility checks. See reasons at:" +
+					"\n  * " + cl1.ExternalID.MustURL(),
+			})
+
+			So(res.State.NewLongOpIDs, ShouldHaveLength, 1)
+			longOp := res.State.OngoingLongOps.GetOps()[res.State.NewLongOpIDs[0]]
+			cancelOp := longOp.GetCancelTriggers()
+			So(cancelOp.Requests, ShouldHaveLength, 1)
+			So(cancelOp.Requests[0], ShouldResembleProto,
+				&run.OngoingLongOps_Op_TriggersCancellation_Request{
+					Clid: int64(cl1.ID),
+					Message: fmt.Sprintf(
+						"CV cannot trigger the Run for \"user:%s\" because \"user:%s\" "+
+							"is not a committer.",
+						triggerer, triggerer,
+					),
+					Notify: []run.OngoingLongOps_Op_TriggersCancellation_Whom{
+						run.OngoingLongOps_Op_TriggersCancellation_OWNER,
+						run.OngoingLongOps_Op_TriggersCancellation_CQ_VOTERS,
+					},
+					AddToAttention: []run.OngoingLongOps_Op_TriggersCancellation_Whom{
+						run.OngoingLongOps_Op_TriggersCancellation_OWNER,
+						run.OngoingLongOps_Op_TriggersCancellation_CQ_VOTERS,
+					},
+					AddToAttentionReason: "Couldn't start the CQ/CV Run.",
+				},
+			)
+			So(cancelOp.RunStatusIfSucceeded, ShouldEqual, run.Status_FAILED)
 		})
 
 		statuses := []run.Status{
