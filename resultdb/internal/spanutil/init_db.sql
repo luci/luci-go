@@ -167,9 +167,12 @@ CREATE TABLE TestResults (
   -- See also TestResult.variant in test_result.proto.
   Variant ARRAY<STRING(MAX)>,
 
-  -- A hex-encoded sha256 of concatenated "<key>:<value>\n" variant pairs.
+  -- A hash of the key:variant pairs in the test variant.
+  -- Computed as hex(sha256(<concatenated_key_value_pairs>)[:8]),
+  -- where concatenated_key_value_pairs is the result of concatenating
+  -- variant pairs formatted as "<key>:<value>\n" in ascending key order.
   -- Used to filter test results by variant.
-  VariantHash STRING(64) NOT NULL,
+  VariantHash STRING(16) NOT NULL,
 
   -- Last time this row was modified.
   -- Given that we only create and delete row, for an existing row this equals
@@ -277,9 +280,12 @@ CREATE TABLE TestExonerations (
   -- The exoneration applies only to test results with this exact test variant.
   Variant ARRAY<STRING(MAX)> NOT NULL,
 
-  -- A hex-encoded sha256 of concatenated "<key>:<value>\n" variant pairs.
+  -- A hash of the key:variant pairs in the test variant.
+  -- Computed as hex(sha256(<concatenated_key_value_pairs>)[:8]),
+  -- where concatenated_key_value_pairs is the result of concatenating
+  -- variant pairs formatted as "<key>:<value>\n" in ascending key order.
   -- Used in conjunction with TestResults.VariantHash column.
-  VariantHash STRING(64) NOT NULL,
+  VariantHash STRING(16) NOT NULL,
 
   -- Compressed explanation of the exoneration for humans, in HTML.
   -- See span.Compress type for details of compression.
@@ -318,7 +324,7 @@ CREATE TABLE TestResultCounts (
 CREATE TABLE UniqueTestVariants (
   Realm STRING(64) NOT NULL,
   TestId STRING(MAX) NOT NULL,
-  VariantHash STRING(64) NOT NULL,
+  VariantHash STRING(16) NOT NULL,
   Variant ARRAY<STRING(MAX)>,
 
   -- When the last test result in the same Realm with the same TestId and
