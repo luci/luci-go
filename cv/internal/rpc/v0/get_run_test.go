@@ -179,6 +179,8 @@ func TestGetRun(t *testing.T) {
 								},
 							},
 						},
+						Critical: true,
+						Reused:   false,
 					},
 					// but the next one was succeeded.
 					{
@@ -195,6 +197,8 @@ func TestGetRun(t *testing.T) {
 								},
 							},
 						},
+						Critical: false,
+						Reused:   true,
 					},
 				}}
 				So(saveAndGet(r).Tryjobs, ShouldResembleProto, []*apiv0pb.Tryjob{
@@ -206,6 +210,8 @@ func TestGetRun(t *testing.T) {
 								Buildbucket: &apiv0pb.Tryjob_Result_Buildbucket{Id: 11},
 							},
 						},
+						Critical: true,
+						Reuse:    false,
 					},
 					{
 						Status: apiv0pb.Tryjob_ENDED,
@@ -215,6 +221,8 @@ func TestGetRun(t *testing.T) {
 								Buildbucket: &apiv0pb.Tryjob_Result_Buildbucket{Id: 12},
 							},
 						},
+						Critical: false,
+						Reuse:    true,
 					},
 				})
 			})

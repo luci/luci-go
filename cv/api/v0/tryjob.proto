@@ -18,23 +18,23 @@ package cv.v0;
 
 option go_package = "go.chromium.org/luci/cv/api/v0;cvpb";
 
-// Tryjob represents a Run's view of a tryjob.
+// Tryjob represents a Run's view of a Tryjob.
 message Tryjob {
   // Status is a high level status of a Tryjob.
   enum Status {
     // STATUS_UNSPECIFIED is never used.
     STATUS_UNSPECIFIED = 0;
 
-    // PENDING means TryJob is being triggered by CV.
+    // PENDING means Tryjob is being triggered by CV.
     //
     // *must* have no Result.
     PENDING = 1;
-    // TRIGGERED means tryjob was triggered.
+    // TRIGGERED means Tryjob was triggered.
     //
     // *may* have been triggered by not CV but another user, service, etc.
     // *may* have a Result, which *may* still change.
     TRIGGERED = 2;
-    // ENDED is a completed tryjob. Final status.
+    // ENDED is a completed Tryjob. Final status.
     //
     // *must* have a Result, whose Status is not UNKNOWN.
     ENDED = 3;
@@ -42,7 +42,7 @@ message Tryjob {
     //
     // *must* have no Result.
     CANCELLED = 4;
-    // UNTRIGGERED means tryjob was not triggered. Final status.
+    // UNTRIGGERED means Tryjob was not triggered. Final status.
     //
     // *must* have no Result.
     UNTRIGGERED = 5;
@@ -86,6 +86,19 @@ message Tryjob {
   // Status of the Tryjob.
   Status status = 2;
 
-  // Result of the tryjob.
+  // Result of the Tryjob.
   Result result = 3;
+
+  // Indicates whether this Tryjob is considered critical to a Run's final
+  // status. If true, failure of this Tryjob will fail the Run immediately.
+  // Run is considered SUCCEEDED iff all critical Tryjobs have passed.
+  //
+  // As of Mar. 2022, a Tryjob is considered critical if it is not experimental
+  // or it is triggered directly by `Cq-Include-Trybots` footer.
+  bool critical = 4;
+
+  // Indicates whether a Run is reusing this Tryjob rather than triggering
+  // its own Tryjob. A Run may reuse Tryjobs triggered by some previous Runs or
+  // maually by users as long as CV sees fit.
+  bool reuse = 5;
 }

@@ -85,6 +85,12 @@ func populateRunResponse(ctx context.Context, r *run.Run) (resp *apiv0pb.Run, er
 		tryjobs[i] = &apiv0pb.Tryjob{
 			Status: versioning.TryjobStatusV0(tj.Status),
 		}
+		if tj.Critical {
+			tryjobs[i].Critical = true
+		}
+		if tj.Reused {
+			tryjobs[i].Reuse = true
+		}
 		if result := tj.GetResult(); result != nil {
 			tryjobs[i].Result = &apiv0pb.Tryjob_Result{
 				Status: versioning.TryjobResultStatusV0(result.Status),
