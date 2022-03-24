@@ -16,6 +16,7 @@
 package main
 
 import (
+	"go.chromium.org/luci/hardcoded/chromeinfra"
 	"go.chromium.org/luci/server"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/openid"
@@ -67,6 +68,10 @@ func main() {
 			Methods: []auth.Method{
 				// The preferred authentication method.
 				&openid.GoogleIDTokenAuthMethod{
+					Audience: []string{
+						// Used by `prpc` binary.
+						chromeinfra.DefaultAuthOptions().ClientID,
+					},
 					AudienceCheck: openid.AudienceMatchesHost,
 					SkipNonJWT:    true, // pass OAuth2 access tokens through
 				},
