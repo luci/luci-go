@@ -60,15 +60,20 @@ type Tryjob struct {
 	// which is stored in .Result.UpdateTime.
 	EntityUpdateTime time.Time `gae:",noindex"`
 
-	// CLPSs are all (CL, PS) referenced by this Tryjob.
+	// ReuseKey is used to quickly decide if this Tryjob can be reused by a run.
 	//
-	// Immutable.
-	// Indexed.
-	// Sorted.
-	// TODO(crbug/1227363): define efficient encoding of (CL, PS) tuple
-	// such it can be efficiently searched for during cancelation
-	// and other CV needs.
-	// CLPSs  common.CLPSs.
+	// Note that, even if reuse is allowed here, reuse is still subjected to
+	// other restrictions (for example, Tryjob is not fresh enough for the run).
+	//
+	// reusekey is currently computed in the following way:
+	//  base64(
+	//    sha256(
+	//      '\0'.join(sorted('%d/%d' % (cl.ID, cl.minEquiPatchSet) for cl in cls))
+	//    )
+	//  )
+	//
+	// Indexed
+	ReuseKey string
 
 	// Definition of the tryjob.
 	//
@@ -84,7 +89,7 @@ type Tryjob struct {
 	//
 	// This is used for cancelation, since CV shouldn't cancel tryjobs it didn't
 	// trigger.
-	TriggeredByCV bool
+	TriggeredByCV bool `gae:",noindex"`
 
 	// Result of the Tryjob.
 	//
@@ -98,9 +103,13 @@ type Tryjob struct {
 	//
 	// May be unset if the Tryjob was not triggered by CV, in which case
 	// ReusedBy has at least one Run.
+	//
+	// Indexed.
 	TriggeredBy common.RunID
 
 	// ReusedBy are the Runs that are interested in the result of this Tryjob.
+	//
+	// Indexed.
 	ReusedBy common.RunIDs
 
 	// CLPatchsets is an array of CLPatchset that each identify a specific

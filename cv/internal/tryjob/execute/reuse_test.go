@@ -22,6 +22,7 @@ import (
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
 
 	recipe "go.chromium.org/luci/cv/api/recipe/v1"
+	"go.chromium.org/luci/cv/internal/changelist"
 	"go.chromium.org/luci/cv/internal/cvtesting"
 	"go.chromium.org/luci/cv/internal/run"
 	"go.chromium.org/luci/cv/internal/tryjob"
@@ -175,5 +176,29 @@ func TestReuse(t *testing.T) {
 			So(err, ShouldBeNil)
 			So(reuse, ShouldBeFalse)
 		})
+	})
+}
+
+func TestComputeReuseKey(t *testing.T) {
+	t.Parallel()
+
+	Convey("computeReuseKey works", t, func() {
+		cls := []*run.RunCL{
+			{
+				ID: 22222,
+				Detail: &changelist.Snapshot{
+					MinEquivalentPatchset: 22,
+				},
+			},
+			{
+				ID: 11111,
+				Detail: &changelist.Snapshot{
+					MinEquivalentPatchset: 11,
+				},
+			},
+		}
+		// Should yield the same result as
+		// > python3 -c 'import base64;from hashlib import sha256;print(base64.b64encode(sha256(b"\0".join(sorted(b"%d/%d"%(x[0], x[1]) for x in [[22222,22],[11111,11]]))).digest()))'
+		So(computeReuseKey(cls), ShouldEqual, "2Yh+hI8zJZFe8ac1TrrFjATWGjhiV9aXsKjNJIhzATk=")
 	})
 }

@@ -15,7 +15,12 @@
 package execute
 
 import (
+	"bytes"
 	"context"
+	"crypto/sha256"
+	"encoding/base64"
+	"fmt"
+	"sort"
 	"time"
 
 	"go.chromium.org/luci/common/clock"
@@ -73,4 +78,19 @@ func canReuseForMode(output *recipe.Output, mode run.Mode) bool {
 	}
 	// No modes matched, so reuse is disallowed for the target mode.
 	return false
+}
+
+// computeReuseKey computes the reuse key for a tryjob based on the CLs it
+// involves.
+func computeReuseKey(cls []*run.RunCL) string {
+	clPatchsets := make([][]byte, len(cls))
+	for i, cl := range cls {
+		clPatchsets[i] = []byte(fmt.Sprintf("%d/%d", cl.ID, cl.Detail.GetMinEquivalentPatchset()))
+	}
+	sort.Slice(clPatchsets, func(i, j int) bool {
+		return bytes.Compare(clPatchsets[i], clPatchsets[j]) < 0
+	})
+	h := sha256.New()
+	h.Write(bytes.Join(clPatchsets, []byte{0}))
+	return base64.StdEncoding.EncodeToString(h.Sum(nil))
 }
