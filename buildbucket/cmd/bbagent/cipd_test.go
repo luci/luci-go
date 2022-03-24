@@ -88,8 +88,6 @@ func TestHelperProcess(t *testing.T) {
 		}
 
 	case "failure":
-		fmt.Fprintf(os.Stdout, "failed to resolve a package")
-		fmt.Fprintf(os.Stderr, "exit status 1")
 		os.Exit(1)
 	}
 }
@@ -168,7 +166,7 @@ func TestInstallCipdPackages(t *testing.T) {
 			testCase = "failure"
 			resolvedDataMap, err := installCipdPackages(ctx, build, ".")
 			So(resolvedDataMap, ShouldBeNil)
-			So(err, ShouldErrLike, "failed to resolve a package")
+			So(err, ShouldErrLike, "Failed to run cipd ensure command")
 			So(os.Getenv("PATH"), ShouldEqual, originalPathEnv)
 		})
 

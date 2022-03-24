@@ -83,13 +83,13 @@ func installCipdPackages(ctx context.Context, build *bbpb.Build, workDir string)
 
 	// Install packages
 	cmd := execCommandContext(ctx, "cipd", "ensure", "-root", workDir, "-ensure-file", "-", "-json-output", resultsFilePath)
-	cmd.Stdin = strings.NewReader(ensureFileBuilder.String())
 	logging.Infof(ctx, "Running command: %s", cmd.String())
-	out, err := cmd.CombinedOutput()
-	if err != nil {
-		return nil, errors.Annotate(err, "Errors in running command: %s\nOutput: %s", cmd.String(), string(out)).Err()
+	cmd.Stdin = strings.NewReader(ensureFileBuilder.String())
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	if err := cmd.Run(); err != nil {
+		return nil, errors.Annotate(err, "Failed to run cipd ensure command").Err()
 	}
-	logging.Debugf(ctx, "Output of the cipd ensure command:\n%s", string(out))
 
 	resultsFile, err := os.Open(resultsFilePath)
 	if err != nil {
