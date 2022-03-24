@@ -19,6 +19,7 @@ import (
 	"context"
 	"encoding/base64"
 	"encoding/json"
+	"fmt"
 	"io"
 	"io/ioutil"
 	"net/http"
@@ -35,6 +36,7 @@ import (
 	bbv1 "go.chromium.org/luci/common/api/buildbucket/buildbucket/v1"
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/sync/parallel"
+	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/milo/common"
 	"go.chromium.org/luci/milo/common/model"
@@ -49,6 +51,7 @@ import (
 	"github.com/golang/mock/gomock"
 	"github.com/gomodule/redigo/redis"
 	. "github.com/smartystreets/goconvey/convey"
+	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func newMockClient(c context.Context, t *testing.T) (context.Context, *gomock.Controller, *buildbucketpb.MockBuildsClient) {
@@ -513,6 +516,57 @@ func TestShouldUpdateBuilderSummary(t *testing.T) {
 			// The forth value should be true because it has a newer build than the
 			// current pending one. And it's not replaced by any new builds.
 			So(shouldUpdates[3], ShouldBeTrue)
+		})
+	})
+}
+
+func TestDeleteOldBuilds(t *testing.T) {
+	t.Parallel()
+
+	Convey("DeleteOldBuilds", t, func() {
+		now := time.Date(2020, 01, 01, 0, 0, 0, 0, time.UTC)
+
+		ctx, _ := testclock.UseTime(memory.Use(context.Background()), now)
+		datastore.GetTestable(ctx).AutoIndex(true)
+		datastore.GetTestable(ctx).Consistent(true)
+
+		createBuild := func(id string, t time.Time) *model.BuildSummary {
+			b := &model.BuildSummary{
+				BuildKey: model.MakeBuildKey(ctx, "host", id),
+				Created:  t,
+			}
+			So(datastore.Put(ctx, b), ShouldBeNil)
+			return b
+		}
+
+		Convey("keeps builds", func() {
+			Convey("as old as BuildSummaryStorageDuration", func() {
+				build := createBuild("1", now.Add(-BuildSummaryStorageDuration))
+				So(DeleteOldBuilds(ctx), ShouldBeNil)
+				So(datastore.Get(ctx, build), ShouldBeNil)
+			})
+			Convey("younger than BuildSummaryStorageDuration", func() {
+				build := createBuild("2", now.Add(-BuildSummaryStorageDuration+time.Minute))
+				So(DeleteOldBuilds(ctx), ShouldBeNil)
+				So(datastore.Get(ctx, build), ShouldBeNil)
+			})
+		})
+
+		Convey("deletes builds older than BuildSummaryStorageDuration", func() {
+			build := createBuild("3", now.Add(-BuildSummaryStorageDuration-time.Minute))
+			So(DeleteOldBuilds(ctx), ShouldBeNil)
+			So(datastore.Get(ctx, build), ShouldEqual, datastore.ErrNoSuchEntity)
+		})
+
+		Convey("removes many builds", func() {
+			bs := make([]*model.BuildSummary, 234)
+			old := now.Add(-BuildSummaryStorageDuration - time.Minute)
+			for i := range bs {
+				bs[i] = createBuild(fmt.Sprintf("4-%d", i), old)
+			}
+			So(DeleteOldBuilds(ctx), ShouldBeNil)
+			So(datastore.Get(ctx, bs), ShouldErrLike,
+				"datastore: no such entity (and 233 other errors)")
 		})
 	})
 }

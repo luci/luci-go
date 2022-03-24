@@ -8,3 +8,6 @@ cron:
  - description: Update buildbucket builders cache
    url: /internal/cron/update-builders
    schedule: every 5 minutes
+ - description: Delete old cached builds
+   url: /internal/cron/delete-builds
+   schedule: every 1 minutes

@@ -26,15 +26,39 @@ import (
 
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
 	bbv1 "go.chromium.org/luci/common/api/buildbucket/buildbucket/v1"
+	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry/transient"
+	"go.chromium.org/luci/common/tsmon/metric"
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/milo/common"
 	"go.chromium.org/luci/milo/common/model"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/redisconn"
 	"go.chromium.org/luci/server/router"
+)
+
+// BuildSummaryStorageDuration is the maximum lifetime of a BuildSummary.
+//
+// Lifetime is the time elapsed since the Build creation time.
+// Cron runs periodically to scan and remove all the Builds of which lifetime
+// exceeded this duration.
+//
+// BuildSummaries are kept alive longer than builds in buildbuckets. So we can
+// compute blamelist for builds that are at the end of their lifetime.
+//
+// TODO(weiweilin): expose BuildStorageDuration from buildbucket and compute
+// BuildSummaryStorageDuration base on that (e.g. add two months). So we can
+// ensure BuildSummaries are kept alive longer than builds.
+const BuildSummaryStorageDuration = time.Hour * 24 * 30 * 20 // ~20 months
+
+var (
+	deletedBuildsCounter = metric.NewCounter(
+		"luci/milo/cron/delete-builds/delete-count",
+		"The number of BuildSummaries deleted by Milo delete-builds cron job",
+		nil,
+	)
 )
 
 // PubSubHandler is a webhook that stores the builds coming in from pubsub.
@@ -53,6 +77,37 @@ func PubSubHandler(ctx *router.Context) {
 	// No errors or non-transient errors are 200s so that PubSub does not retry
 	// them.
 	ctx.Writer.WriteHeader(http.StatusOK)
+}
+
+// DeleteOldBuilds is a cron job that deletes BuildSummaries that are older than
+// BuildSummaryStorageDuration.
+func DeleteOldBuilds(c context.Context) error {
+	buildPurgeCutoffTime := clock.Now(c).Add(-BuildSummaryStorageDuration)
+	q := datastore.NewQuery("BuildSummary").
+		Lt("Created", buildPurgeCutoffTime).
+		Order("Created").
+		KeysOnly(true).
+		// Delete at most 10000 builds at a time, so we won't run into performance
+		// issues. On average, less than 1000 builds are created per minute.
+		// https://viceroy.corp.google.com/chrome_infra/Appengine/cr-buildbucket
+		Limit(10000)
+
+	buildsToDelete := make([]*datastore.Key, 0)
+	err := datastore.GetAll(c, q, &buildsToDelete)
+	if err != nil {
+		return err
+	}
+
+	logging.Infof(c, "%d build summaries to be deleted", len(buildsToDelete))
+
+	err = datastore.Delete(c, buildsToDelete)
+	if err != nil {
+		return err
+	}
+
+	deletedBuildsCounter.Add(c, int64(len(buildsToDelete)))
+
+	return nil
 }
 
 var summaryBuildMask = &field_mask.FieldMask{
