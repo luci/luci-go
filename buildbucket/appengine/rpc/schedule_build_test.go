@@ -4297,6 +4297,11 @@ func TestScheduleBuild(t *testing.T) {
 			req := &pb.ScheduleBuildRequest{
 				Properties: &structpb.Struct{
 					Fields: map[string]*structpb.Value{
+						"allowed": {
+							Kind: &structpb.Value_StringValue{
+								StringValue: "I'm alright",
+							},
+						},
 						"override": {
 							Kind: &structpb.Value_StringValue{
 								StringValue: "req value",
@@ -4311,7 +4316,8 @@ func TestScheduleBuild(t *testing.T) {
 				},
 			}
 			cfg := &pb.Builder{
-				Properties: "{\"override\": \"cfg value\", \"cfg key\": \"cfg value\"}",
+				Properties:               "{\"override\": \"cfg value\", \"allowed\": \"stuff\", \"cfg key\": \"cfg value\"}",
+				AllowedPropertyOverrides: []string{"allowed"},
 			}
 			b := &pb.Build{
 				Builder: &pb.BuilderID{
@@ -4325,6 +4331,11 @@ func TestScheduleBuild(t *testing.T) {
 			So(b.Input, ShouldResembleProto, &pb.Build_Input{
 				Properties: &structpb.Struct{
 					Fields: map[string]*structpb.Value{
+						"allowed": {
+							Kind: &structpb.Value_StringValue{
+								StringValue: "I'm alright",
+							},
+						},
 						"cfg key": {
 							Kind: &structpb.Value_StringValue{
 								StringValue: "cfg value",
@@ -4343,9 +4354,10 @@ func TestScheduleBuild(t *testing.T) {
 					},
 				},
 			})
-			So(ctx, memlogger.ShouldHaveLog, logging.Warning, "ScheduleBuild: Overriding property \"override\"")
-			So(ctx, memlogger.ShouldNotHaveLog, logging.Warning, "ScheduleBuild: Overriding property \"cfg key\"")
-			So(ctx, memlogger.ShouldNotHaveLog, logging.Warning, "ScheduleBuild: Overriding property \"req key\"")
+			So(ctx, memlogger.ShouldHaveLog, logging.Warning, "ScheduleBuild: Unpermitted Override for property \"override\"")
+			So(ctx, memlogger.ShouldNotHaveLog, logging.Warning, "ScheduleBuild: Unpermitted Override for property \"allowed\"")
+			So(ctx, memlogger.ShouldNotHaveLog, logging.Warning, "ScheduleBuild: Unpermitted Override for property \"cfg key\"")
+			So(ctx, memlogger.ShouldNotHaveLog, logging.Warning, "ScheduleBuild: Unpermitted Override for property \"req key\"")
 		})
 	})
 
