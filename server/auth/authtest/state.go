@@ -54,7 +54,6 @@ import (
 //       ...
 //     ),
 //   })
-
 type FakeState struct {
 	// Identity is main identity associated with the request.
 	//
