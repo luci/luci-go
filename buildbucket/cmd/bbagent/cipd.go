@@ -25,6 +25,7 @@ import (
 	"strings"
 
 	bbpb "go.chromium.org/luci/buildbucket/proto"
+	cipdVersion "go.chromium.org/luci/cipd/version"
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
@@ -55,7 +56,10 @@ type cipdOut struct {
 // installCipdPackages installs cipd packages defined in build.Infra.Buildbucket.Agent.Input
 // and build exe. It also prepends desired value to $PATH env var.
 //
-// Note: It assumes `cipd` client tool binary is already in path.
+// Note:
+//   1. It assumes `cipd` client tool binary is already in path.
+//   2. Hack: it includes bbagent version in the ensure file if it's called from
+//   a cipd installed bbagent.
 func installCipdPackages(ctx context.Context, build *bbpb.Build, workDir string) (map[string]*bbpb.ResolvedDataRef, error) {
 	logging.Infof(ctx, "Installing cipd packages into %s", workDir)
 	inputData := build.Infra.Buildbucket.Agent.Input.Data
@@ -63,6 +67,17 @@ func installCipdPackages(ctx context.Context, build *bbpb.Build, workDir string)
 	ensureFileBuilder := strings.Builder{}
 	ensureFileBuilder.WriteString(ensureFileHeader)
 	extraPathEnv := stringset.Set{}
+
+	// TODO(crbug.com/1297809): Remove it once we decide to have a subfolder for
+	// non-bbagent packages in the post-migration stage.
+	switch ver, err := cipdVersion.GetStartupVersion(); {
+	case err != nil:
+		// If the binary is not installed via CIPD, err == nil && ver.InstanceID == "".
+		return nil, errors.Annotate(err, "Failed to get the current executable startup version").Err()
+	default:
+		fmt.Fprintf(&ensureFileBuilder, "%s %s\n", ver.PackageName, ver.InstanceID)
+	}
+
 	for dir, pkgs := range inputData {
 		if pkgs.GetCipd() == nil {
 			continue

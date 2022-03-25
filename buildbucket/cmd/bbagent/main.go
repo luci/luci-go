@@ -368,11 +368,7 @@ func mainImpl() int {
 		agentOutput := bldForCipd.Build.Infra.Buildbucket.Agent.Output
 		agentOutput.AgentPlatform = platform.CurrentPlatform()
 		start := clock.Now(ctx)
-		cipdDir := cwd
-		if protoutil.FormatBuilderID(input.Build.Builder) == "chromium/ci/mac-rel-swarming" {
-			cipdDir = filepath.Join(cwd, "cipd_pkgs")
-		}
-		resolved, err := installCipdPackages(ctx, input.Build, cipdDir)
+		resolved, err := installCipdPackages(ctx, input.Build, cwd)
 		if err != nil {
 			logging.Errorf(ctx, "Failure in installing cipd packages: %s", err)
 			agentOutput.Status = bbpb.Status_FAILURE
