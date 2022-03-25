@@ -89,27 +89,7 @@ message AssetToActuate {
 // Describes what to to with assets reported in BeginActuationRequest.
 message BeginActuationResponse {
   // Per-asset decision whether to proceed with the actuation or to skip it.
-  map<string, ActuationDecision> decisions = 1;
-}
-
-
-// Defines what the actuator should do with an asset.
-message ActuationDecision {
-  // What to do with an asset.
-  enum Decision {
-    DECISION_UNSPECIFIED = 0;
-
-    ACTUATE_STALE = 1;  // the asset appears to be stale and must be actuated
-    ACTUATE_FORCE = 2;  // the asset must be actuated even if it is up-to-date
-
-    SKIP_UPTODATE = 3;  // the asset is up-to-date and should not be actuated
-    SKIP_DISABLED = 4;  // the actuation is disabled in the config
-    SKIP_LOCKED   = 5;  // the actuation of this asset is locked
-  }
-  Decision decision = 1;
-
-  // The list of active locks for this asset (if any).
-  repeated deploy.model.ActuationLock locks = 2;
+  map<string, deploy.model.ActuationDecision> decisions = 1;
 }
 
 

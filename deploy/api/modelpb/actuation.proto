@@ -70,18 +70,20 @@ message Actuation {
 
 // Information about the agent that performs the actuation.
 message ActuatorInfo {
+  // The RPC identity of the actuator.
+  string identity = 1;
   // Buildbucket host hosting the builder.
-  string buildbucket = 1;
+  string buildbucket = 2;
   // Buildbucket builder running the actuation, as "project/bucket/name".
-  string buildbucket_builder = 2;
+  string buildbucket_builder = 3;
   // Buildbucket build ID of the build running the actuation.
-  int64 buildbucket_build = 3;
+  int64 buildbucket_build = 4;
   // Scheduler host hosting the job.
-  string scheduler = 4;
+  string scheduler = 5;
   // Scheduler job ID that triggered the build, as "project/name".
-  string scheduler_job = 5;
+  string scheduler_job = 6;
   // Scheduler invocation ID that triggered the build.
-  int64 scheduler_invocation = 6;
+  int64 scheduler_invocation = 7;
 }
 
 
@@ -134,4 +136,35 @@ message ActuationLock {
   string created_by = 9;
   // User that removed the lock (if any).
   string removed_by = 10;
+}
+
+
+// Defines what the actuator should do with an asset.
+message ActuationDecision {
+  // What to do with an asset.
+  enum Decision {
+    DECISION_UNSPECIFIED = 0;
+
+    ACTUATE_STALE = 1;  // the asset appears to be stale and must be actuated
+    ACTUATE_FORCE = 2;  // the asset must be actuated even if it is up-to-date
+
+    SKIP_UPTODATE = 3;  // the asset is up-to-date and should not be actuated
+    SKIP_DISABLED = 4;  // the actuation is disabled in the config
+    SKIP_LOCKED   = 5;  // the actuation of this asset is locked
+    SKIP_BROKEN   = 6;  // something is broken, the asset should not be touched
+  }
+  Decision decision = 1;
+
+  // Error details for SKIP_BROKEN decision.
+  google.rpc.Status status = 2;
+
+  // The list of active locks for this asset (if any).
+  repeated ActuationLock locks = 3;
+}
+
+
+// Records the decisions made when the actuation was started.
+message ActuationDecisions {
+  // Per-asset decision whether to proceed with the actuation or to skip it.
+  map<string, ActuationDecision> decisions = 1;
 }

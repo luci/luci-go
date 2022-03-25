@@ -20,6 +20,7 @@ import (
 	"google.golang.org/protobuf/encoding/prototext"
 
 	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/deploy/api/modelpb"
 	"go.chromium.org/luci/deploy/api/rpcpb"
 	"go.chromium.org/luci/server/auth"
 )
@@ -40,10 +41,10 @@ func (srv *Actuations) BeginActuation(ctx context.Context, req *rpcpb.BeginActua
 	}
 	logging.Infof(ctx, "BeginActuation from %q:\n%s", auth.CurrentIdentity(ctx), blob)
 
-	decisions := map[string]*rpcpb.ActuationDecision{}
+	decisions := map[string]*modelpb.ActuationDecision{}
 	for name := range req.Assets {
-		decisions[name] = &rpcpb.ActuationDecision{
-			Decision: rpcpb.ActuationDecision_ACTUATE_FORCE,
+		decisions[name] = &modelpb.ActuationDecision{
+			Decision: modelpb.ActuationDecision_ACTUATE_FORCE,
 		}
 	}
 
