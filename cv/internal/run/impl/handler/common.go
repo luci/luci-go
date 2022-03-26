@@ -20,6 +20,7 @@ import (
 	"sync"
 	"time"
 
+	"golang.org/x/sync/errgroup"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/common/clock"
@@ -239,4 +240,27 @@ func min(i, j int) int {
 		return i
 	}
 	return j
+}
+
+func loadCLsAndConfig(ctx context.Context, rs *state.RunState, clids common.CLIDs) (*prjcfg.ConfigGroup, []*run.RunCL, []*changelist.CL, error) {
+	var cg *prjcfg.ConfigGroup
+	var runCLs []*run.RunCL
+	var cls []*changelist.CL
+	eg, ectx := errgroup.WithContext(ctx)
+	eg.Go(func() (err error) {
+		cg, err = prjcfg.GetConfigGroup(ectx, rs.ID.LUCIProject(), rs.ConfigGroupID)
+		return err
+	})
+	eg.Go(func() (err error) {
+		cls, err = changelist.LoadCLsByIDs(ectx, clids)
+		return err
+	})
+	eg.Go(func() (err error) {
+		runCLs, err = run.LoadRunCLs(ectx, rs.ID, clids)
+		return err
+	})
+	if err := eg.Wait(); err != nil {
+		return nil, nil, nil, err
+	}
+	return cg, runCLs, cls, nil
 }

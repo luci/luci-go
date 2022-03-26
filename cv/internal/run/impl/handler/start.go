@@ -20,7 +20,6 @@ import (
 	"strings"
 	"time"
 
-	"golang.org/x/sync/errgroup"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/common/clock"
@@ -29,7 +28,6 @@ import (
 	"go.chromium.org/luci/gae/service/datastore"
 
 	"go.chromium.org/luci/cv/internal/acls"
-	"go.chromium.org/luci/cv/internal/changelist"
 	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/configs/prjcfg"
 	"go.chromium.org/luci/cv/internal/gerrit"
@@ -61,40 +59,14 @@ func (impl *Impl) Start(ctx context.Context, rs *state.RunState) (*Result, error
 	}
 
 	rs = rs.ShallowCopy()
-	var cg *prjcfg.ConfigGroup
-	var runCLs []*run.RunCL
-	var cls []*changelist.CL
-	var trs []*run.Trigger
-	eg, ectx := errgroup.WithContext(ctx)
-	eg.Go(func() (err error) {
-		cg, err = prjcfg.GetConfigGroup(ectx, rs.ID.LUCIProject(), rs.ConfigGroupID)
-		if err != nil {
-			return err
-		}
-		return nil
-	})
-	eg.Go(func() (err error) {
-		runCLs, err = run.LoadRunCLs(ectx, rs.ID, rs.CLs)
-		if err != nil {
-			return err
-		}
-		trs = make([]*run.Trigger, len(runCLs))
-		for i, r := range runCLs {
-			trs[i] = r.Trigger
-		}
-		return nil
-	})
-	eg.Go(func() (err error) {
-		// fetch the latest snapshots of the Changelist(s) to let
-		// acls.CheckRunCreate() make a decision, based on the freshest
-		// data.
-		cls, err = changelist.LoadCLsByIDs(ctx, rs.CLs)
-		return err
-	})
-	if err := eg.Wait(); err != nil {
+	cg, runCLs, cls, err := loadCLsAndConfig(ctx, rs, rs.CLs)
+	if err != nil {
 		return nil, err
 	}
-
+	trs := make([]*run.Trigger, len(runCLs))
+	for i, r := range runCLs {
+		trs[i] = r.Trigger
+	}
 	switch aclResult, err := acls.CheckRunCreate(ctx, cg, trs, cls); {
 	case err != nil:
 		return nil, errors.Annotate(err, "CheckRunCreate").Err()

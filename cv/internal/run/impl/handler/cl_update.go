@@ -19,8 +19,6 @@ import (
 	"fmt"
 	"time"
 
-	"golang.org/x/sync/errgroup"
-
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
@@ -52,22 +50,7 @@ func (impl *Impl) OnCLsUpdated(ctx context.Context, rs *state.RunState, clids co
 	}
 	clids.Dedupe()
 
-	var cls []*changelist.CL
-	var runCLs []*run.RunCL
-	eg, ectx := errgroup.WithContext(ctx)
-	eg.Go(func() (err error) {
-		cls, err = changelist.LoadCLsByIDs(ectx, clids)
-		return err
-	})
-	eg.Go(func() (err error) {
-		runCLs, err = run.LoadRunCLs(ectx, rs.ID, clids)
-		return err
-	})
-	if err := eg.Wait(); err != nil {
-		return nil, err
-	}
-
-	cg, err := prjcfg.GetConfigGroup(ctx, rs.ID.LUCIProject(), rs.ConfigGroupID)
+	cg, runCLs, cls, err := loadCLsAndConfig(ctx, rs, clids)
 	if err != nil {
 		return nil, err
 	}
