@@ -30,6 +30,7 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry/transient"
+	"go.chromium.org/luci/common/sync/parallel"
 	"go.chromium.org/luci/common/tsmon/metric"
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/milo/common"
@@ -82,32 +83,90 @@ func PubSubHandler(ctx *router.Context) {
 // DeleteOldBuilds is a cron job that deletes BuildSummaries that are older than
 // BuildSummaryStorageDuration.
 func DeleteOldBuilds(c context.Context) error {
+	const (
+		batchSize = 128
+		nWorkers  = 8
+	)
+
 	buildPurgeCutoffTime := clock.Now(c).Add(-BuildSummaryStorageDuration)
 	q := datastore.NewQuery("BuildSummary").
 		Lt("Created", buildPurgeCutoffTime).
 		Order("Created").
-		KeysOnly(true).
-		// Delete at most 10000 builds at a time, so we won't run into performance
-		// issues. On average, less than 1000 builds are created per minute.
-		// https://viceroy.corp.google.com/chrome_infra/Appengine/cr-buildbucket
-		Limit(10000)
+		// Apply a limit so the call won't timeout.
+		Limit(batchSize * nWorkers * 512).
+		KeysOnly(true)
 
-	buildsToDelete := make([]*datastore.Key, 0)
-	err := datastore.GetAll(c, q, &buildsToDelete)
-	if err != nil {
-		return err
-	}
+	return parallel.FanOutIn(func(taskC chan<- func() error) {
+		buildsC := make(chan []*datastore.Key, nWorkers)
+		statsC := make(chan int, nWorkers)
 
-	logging.Infof(c, "%d build summaries to be deleted", len(buildsToDelete))
+		// Collect and log stats.
+		taskC <- func() error {
+			start := clock.Now(c)
+			totalDeletedCount := 0
+			for deletedCount := range statsC {
+				totalDeletedCount += deletedCount
+				deletedBuildsCounter.Add(c, int64(totalDeletedCount))
+			}
 
-	err = datastore.Delete(c, buildsToDelete)
-	if err != nil {
-		return err
-	}
+			logging.Infof(c, "took %v to delete %d build summaries", clock.Since(c, start), totalDeletedCount)
+			return nil
+		}
 
-	deletedBuildsCounter.Add(c, int64(len(buildsToDelete)))
+		// Find builds to delete.
+		taskC <- func() error {
+			defer close(buildsC)
 
-	return nil
+			bsKeys := make([]*datastore.Key, 0, batchSize)
+			err := datastore.RunBatch(c, batchSize, q, func(key *datastore.Key) error {
+				bsKeys = append(bsKeys, key)
+				if len(bsKeys) == batchSize {
+					buildsC <- bsKeys
+					bsKeys = make([]*datastore.Key, 0, batchSize)
+				}
+				return nil
+			})
+			if err != nil {
+				return err
+			}
+
+			if len(bsKeys) > 0 {
+				buildsC <- bsKeys
+			}
+			return nil
+		}
+
+		// Spawn workers to delete builds.
+		taskC <- func() error {
+			defer close(statsC)
+
+			return parallel.WorkPool(nWorkers, func(workC chan<- func() error) {
+				for bks := range buildsC {
+					// Bind to a local variable so each worker can have their own copy.
+					bks := bks
+					workC <- func() error {
+						// Flatten first w/o filtering to calculate how many builds were
+						// actually removed.
+						err := errors.Flatten(datastore.Delete(c, bks))
+
+						allErrs := 0
+						badErrs := 0
+						if err != nil {
+							allErrs = len(err.(errors.MultiError))
+							err = errors.Flatten(errors.Filter(err, datastore.ErrNoSuchEntity))
+							badErrs = len(err.(errors.MultiError))
+						}
+
+						logging.Infof(c, "Removed %d out of %d build summaries (%d errors, %d already gone)",
+							len(bks)-allErrs, len(bks), badErrs, allErrs-badErrs)
+						statsC <- len(bks) - allErrs
+
+						return err
+					}
+				}
+			})
+		}
+	})
 }
 
 var summaryBuildMask = &field_mask.FieldMask{
