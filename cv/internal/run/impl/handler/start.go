@@ -17,7 +17,6 @@ package handler
 import (
 	"context"
 	"fmt"
-	"strings"
 	"time"
 
 	"google.golang.org/protobuf/types/known/timestamppb"
@@ -27,7 +26,6 @@ import (
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/gae/service/datastore"
 
-	"go.chromium.org/luci/cv/internal/acls"
 	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/configs/prjcfg"
 	"go.chromium.org/luci/cv/internal/gerrit"
@@ -63,32 +61,13 @@ func (impl *Impl) Start(ctx context.Context, rs *state.RunState) (*Result, error
 	if err != nil {
 		return nil, err
 	}
-	trs := make([]*run.Trigger, len(runCLs))
-	for i, r := range runCLs {
-		trs[i] = r.Trigger
-	}
-	switch aclResult, err := acls.CheckRunCreate(ctx, cg, trs, cls); {
+	rs = rs.ShallowCopy()
+	switch ok, err := checkRunCreate(ctx, rs, cg, runCLs, cls); {
 	case err != nil:
-		return nil, errors.Annotate(err, "CheckRunCreate").Err()
-	case aclResult.OK():
+		return nil, err
+	case ok:
 		rs.CreationAllowed = run.CreationAllowedYes
-	case !aclResult.OK():
-		var b strings.Builder
-		fmt.Fprintf(&b, "failed to start the Run due to eligibility checks. See reasons at:")
-		for cl := range aclResult {
-			fmt.Fprintf(&b, "\n  * %s", cl.ExternalID.MustURL())
-		}
-		rs.LogInfof(ctx, "Start failed", b.String())
-		metas := make(map[common.CLID]reviewInputMeta, len(cls))
-		for _, cl := range cls {
-			metas[cl.ID] = reviewInputMeta{
-				message:        aclResult.Failure(cl),
-				notify:         gerrit.Whoms{gerrit.Owner, gerrit.CQVoters},
-				addToAttention: gerrit.Whoms{gerrit.Owner, gerrit.CQVoters},
-				reason:         "Couldn't start the CQ/CV Run.",
-			}
-		}
-		scheduleTriggersCancellation(ctx, rs, metas, run.Status_FAILED)
+	default:
 		rs.CreationAllowed = run.CreationAllowedNo
 		return &Result{State: rs}, nil
 	}

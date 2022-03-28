@@ -181,9 +181,9 @@ func TestStart(t *testing.T) {
 			So(res.State.Status, ShouldEqual, run.Status_PENDING)
 			So(res.State.LogEntries, ShouldHaveLength, 1)
 			So(res.State.LogEntries[0].GetInfo(), ShouldResembleProto, &run.LogEntry_Info{
-				Label: "Start failed",
+				Label: "Run failed",
 				Message: "" +
-					"failed to start the Run due to eligibility checks. See reasons at:" +
+					"the Run does not pass eligibility checks. See reasons at:" +
 					"\n  * " + cl1.ExternalID.MustURL(),
 			})
 
@@ -207,7 +207,7 @@ func TestStart(t *testing.T) {
 						run.OngoingLongOps_Op_TriggersCancellation_OWNER,
 						run.OngoingLongOps_Op_TriggersCancellation_CQ_VOTERS,
 					},
-					AddToAttentionReason: "Couldn't start the CQ/CV Run.",
+					AddToAttentionReason: "CQ/CV Run failed",
 				},
 			)
 			So(cancelOp.RunStatusIfSucceeded, ShouldEqual, run.Status_FAILED)

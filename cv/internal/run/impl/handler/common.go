@@ -17,6 +17,7 @@ package handler
 import (
 	"context"
 	"fmt"
+	"strings"
 	"sync"
 	"time"
 
@@ -29,6 +30,7 @@ import (
 	"go.chromium.org/luci/common/sync/parallel"
 	"go.chromium.org/luci/gae/filter/txndefer"
 
+	"go.chromium.org/luci/cv/internal/acls"
 	"go.chromium.org/luci/cv/internal/changelist"
 	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/common/eventbox"
@@ -263,4 +265,37 @@ func loadCLsAndConfig(ctx context.Context, rs *state.RunState, clids common.CLID
 		return nil, nil, nil, err
 	}
 	return cg, runCLs, cls, nil
+}
+
+func checkRunCreate(ctx context.Context, rs *state.RunState, cg *prjcfg.ConfigGroup, runCLs []*run.RunCL, cls []*changelist.CL) (ok bool, err error) {
+	if len(runCLs) == 0 {
+		return true, nil
+	}
+	trs := make([]*run.Trigger, len(runCLs))
+	for i, r := range runCLs {
+		trs[i] = r.Trigger
+	}
+	switch aclResult, err := acls.CheckRunCreate(ctx, cg, trs, cls); {
+	case err != nil:
+		return false, errors.Annotate(err, "acls.CheckRunCreate").Err()
+	case !aclResult.OK():
+		var b strings.Builder
+		b.WriteString("the Run does not pass eligibility checks. See reasons at:")
+		for cl := range aclResult {
+			fmt.Fprintf(&b, "\n  * %s", cl.ExternalID.MustURL())
+		}
+		rs.LogInfof(ctx, "Run failed", b.String())
+		metas := make(map[common.CLID]reviewInputMeta, len(cls))
+		for _, cl := range cls {
+			metas[cl.ID] = reviewInputMeta{
+				message:        aclResult.Failure(cl),
+				notify:         gerrit.Whoms{gerrit.Owner, gerrit.CQVoters},
+				addToAttention: gerrit.Whoms{gerrit.Owner, gerrit.CQVoters},
+				reason:         "CQ/CV Run failed",
+			}
+		}
+		scheduleTriggersCancellation(ctx, rs, metas, run.Status_FAILED)
+		return false, nil
+	}
+	return true, nil
 }
