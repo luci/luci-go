@@ -21,6 +21,7 @@
 CREATE TABLE Invocations (
   -- Identifies an invocation.
   -- Format: "${hex(sha256(user_provided_id)[:8])}:${user_provided_id}".
+  -- SQL query construction: "CONCAT(SUBSTR(TO_HEX(SHA256(${user_provided_id})), 0, 8), ':', ${user_provided_id})"
   InvocationId STRING(MAX) NOT NULL,
 
   -- A random value in [0, Shards) where Shards constant is
