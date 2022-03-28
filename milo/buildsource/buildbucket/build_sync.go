@@ -62,24 +62,6 @@ var (
 	)
 )
 
-// PubSubHandler is a webhook that stores the builds coming in from pubsub.
-func PubSubHandler(ctx *router.Context) {
-	err := pubSubHandlerImpl(ctx.Context, ctx.Request)
-	if err != nil {
-		logging.Errorf(ctx.Context, "error while handling pubsub event")
-		errors.Log(ctx.Context, err)
-	}
-	if transient.Tag.In(err) {
-		// Transient errors are 4xx so that PubSub retries them.
-		// TODO(crbug.com/1099036): Address High traffic builders causing errors.
-		ctx.Writer.WriteHeader(http.StatusTooEarly)
-		return
-	}
-	// No errors or non-transient errors are 200s so that PubSub does not retry
-	// them.
-	ctx.Writer.WriteHeader(http.StatusOK)
-}
-
 // DeleteOldBuilds is a cron job that deletes BuildSummaries that are older than
 // BuildSummaryStorageDuration.
 func DeleteOldBuilds(c context.Context) error {
@@ -100,16 +82,12 @@ func DeleteOldBuilds(c context.Context) error {
 		buildsC := make(chan []*datastore.Key, nWorkers)
 		statsC := make(chan int, nWorkers)
 
-		// Collect and log stats.
+		// Collect stats.
 		taskC <- func() error {
-			start := clock.Now(c)
-			totalDeletedCount := 0
 			for deletedCount := range statsC {
-				totalDeletedCount += deletedCount
-				deletedBuildsCounter.Add(c, int64(totalDeletedCount))
+				deletedBuildsCounter.Add(c, int64(deletedCount))
 			}
 
-			logging.Infof(c, "took %v to delete %d build summaries", clock.Since(c, start), totalDeletedCount)
 			return nil
 		}
 
@@ -150,15 +128,10 @@ func DeleteOldBuilds(c context.Context) error {
 						err := errors.Flatten(datastore.Delete(c, bks))
 
 						allErrs := 0
-						badErrs := 0
 						if err != nil {
 							allErrs = len(err.(errors.MultiError))
-							err = errors.Flatten(errors.Filter(err, datastore.ErrNoSuchEntity))
-							badErrs = len(err.(errors.MultiError))
 						}
 
-						logging.Infof(c, "Removed %d out of %d build summaries (%d errors, %d already gone)",
-							len(bks)-allErrs, len(bks), badErrs, allErrs-badErrs)
 						statsC <- len(bks) - allErrs
 
 						return err
@@ -187,6 +160,24 @@ var summaryBuildMask = &field_mask.FieldMask{
 		"output.properties",
 		"critical",
 	},
+}
+
+// PubSubHandler is a webhook that stores the builds coming in from pubsub.
+func PubSubHandler(ctx *router.Context) {
+	err := pubSubHandlerImpl(ctx.Context, ctx.Request)
+	if err != nil {
+		logging.Errorf(ctx.Context, "error while handling pubsub event")
+		errors.Log(ctx.Context, err)
+	}
+	if transient.Tag.In(err) {
+		// Transient errors are 4xx so that PubSub retries them.
+		// TODO(crbug.com/1099036): Address High traffic builders causing errors.
+		ctx.Writer.WriteHeader(http.StatusTooEarly)
+		return
+	}
+	// No errors or non-transient errors are 200s so that PubSub does not retry
+	// them.
+	ctx.Writer.WriteHeader(http.StatusOK)
 }
 
 // pubSubHandlerImpl takes the http.Request, expects to find
@@ -246,21 +237,14 @@ func pubSubHandlerImpl(c context.Context, r *http.Request) error {
 }
 
 func updateBuild(c context.Context, bs *model.BuildSummary) error {
-	now := time.Now()
 	updateBuilderSummary, err := shouldUpdateBuilderSummary(c, bs)
 	if err != nil {
 		updateBuilderSummary = true
 		logging.WithError(err).Warningf(c, "failed to determine whether the builder summary from %s should be updated. Fallback to always update.", bs.BuilderID)
 	}
-	logging.Infof(c, "took %v to determine whether the builder summary from %s should be updated", time.Since(now), bs.BuilderID)
-
-	now = time.Now()
 	err = transient.Tag.Apply(datastore.RunInTransaction(c, func(c context.Context) error {
 		curBS := &model.BuildSummary{BuildKey: bs.BuildKey}
-		switch err := datastore.Get(c, curBS); err {
-		case datastore.ErrNoSuchEntity:
-			// continue
-		default:
+		if err := datastore.Get(c, curBS); err != nil && err != datastore.ErrNoSuchEntity {
 			return errors.Annotate(err, "reading current BuildSummary").Err()
 		}
 
@@ -275,14 +259,12 @@ func updateBuild(c context.Context, bs *model.BuildSummary) error {
 		}
 
 		if !updateBuilderSummary {
-			logging.Infof(c, "skipping builder summary update for builder: %s, with build status: %s", bs.BuilderID, bs.Summary.Status)
 			return nil
 		}
 
 		return model.UpdateBuilderForBuild(c, bs)
 	}, nil))
 
-	logging.Infof(c, "took %v to update builder summary from %s", time.Since(now), bs.BuilderID)
 	return err
 }
 
@@ -339,9 +321,9 @@ func shouldUpdateBuilderSummary(c context.Context, buildSummary *model.BuildSumm
 
 	createdAt := buildSummary.Created.UnixNano()
 
-	now := time.Now().Unix()
+	now := clock.Now(c).Unix()
 	thisTimeBucket := time.Unix(now-now%entityUpdateIntervalInS, 0)
-	thisTimeBucketKey := fmt.Sprintf("%s:%v", buildSummary.BuilderID, thisTimeBucket)
+	thisTimeBucketKey := fmt.Sprintf("%s:%v", buildSummary.BuilderID, thisTimeBucket.Unix())
 
 	// Check if there's a builder summary update occurred in this time bucket.
 	_, err = redis.String(conn.Do("SET", thisTimeBucketKey, createdAt, "NX", "EX", entityUpdateIntervalInS+1))
@@ -359,7 +341,7 @@ func shouldUpdateBuilderSummary(c context.Context, buildSummary *model.BuildSumm
 	// There's already a builder summary update occurred in this time bucket. Try
 	// scheduling the update for the next time bucket instead.
 	nextTimeBucket := thisTimeBucket.Add(time.Duration(entityUpdateIntervalInS * int64(time.Second)))
-	nextTimeBucketKey := fmt.Sprintf("%s:%v", buildSummary.BuilderID, nextTimeBucket)
+	nextTimeBucketKey := fmt.Sprintf("%s:%v", buildSummary.BuilderID, nextTimeBucket.Unix())
 	replaced, err := redis.Int(updateIfLargerScript.Do(conn, nextTimeBucketKey, createdAt, entityUpdateIntervalInS+1))
 	if err != nil {
 		return true, err
@@ -372,7 +354,7 @@ func shouldUpdateBuilderSummary(c context.Context, buildSummary *model.BuildSumm
 	}
 
 	// Wait until the start of the next time bucket.
-	time.Sleep(time.Until(nextTimeBucket))
+	clock.Sleep(c, clock.Until(c, nextTimeBucket))
 	newCreatedAt, err := redis.Int64(conn.Do("GET", nextTimeBucketKey))
 	if err != nil {
 		return true, err

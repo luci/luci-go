@@ -34,6 +34,7 @@ import (
 	"go.chromium.org/luci/auth/identity"
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
 	bbv1 "go.chromium.org/luci/common/api/buildbucket/buildbucket/v1"
+	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/sync/parallel"
 	"go.chromium.org/luci/gae/impl/memory"
@@ -303,23 +304,17 @@ func TestPubSub(t *testing.T) {
 	})
 }
 
-// sleepUntilStartOfNextTimeBucket puts the current goroutine to sleep until the
-// start of the next time bucket.
-func sleepUntilStartOfNextTimeBucket() {
-	now := time.Now().Unix()
-	nextTimeBucket := time.Unix(now-now%entityUpdateIntervalInS+entityUpdateIntervalInS, 0)
-	time.Sleep(time.Until(nextTimeBucket))
-}
-
 func TestShouldUpdateBuilderSummary(t *testing.T) {
 	Convey("TestShouldUpdateBuilderSummary", t, func() {
-		ctx := context.Background()
+		c := context.Background()
+		startTime := time.Date(2020, time.January, 1, 0, 0, 0, 0, time.UTC).
+			Truncate(time.Duration(entityUpdateIntervalInS) * time.Second)
 
 		// Set up a test redis server.
 		s, err := miniredis.Run()
 		So(err, ShouldBeNil)
 		defer s.Close()
-		ctx = redisconn.UsePool(ctx, &redis.Pool{
+		c = redisconn.UsePool(c, &redis.Pool{
 			Dial: func() (redis.Conn, error) {
 				return redis.Dial("tcp", s.Addr())
 			},
@@ -337,54 +332,64 @@ func TestShouldUpdateBuilderSummary(t *testing.T) {
 
 		Convey("Single call", func() {
 			// Ensures `shouldUpdateBuilderSummary` is called at the start of the time bucket.
-			sleepUntilStartOfNextTimeBucket()
+			c, _ := testclock.UseTime(c, startTime)
 
-			start := time.Now()
-			shouldUpdate, err := shouldUpdateBuilderSummary(ctx, createBuildSummary("test-builder-id-1", buildbucketpb.Status_SUCCESS, start))
+			start := clock.Now(c)
+			// Should return without advancing the clock.
+			shouldUpdate, err := shouldUpdateBuilderSummary(c, createBuildSummary("test-builder-id-1", buildbucketpb.Status_SUCCESS, start))
 			So(err, ShouldBeNil)
 			So(shouldUpdate, ShouldBeTrue)
-
-			// If there's no recent updates, the call should return immediately
-			// (before the start of the next time bucket).
-			// So builds from low traffic builders can be processed immediately.
-			So(time.Since(start), ShouldBeLessThan, time.Duration(entityUpdateIntervalInS)*time.Second-50*time.Millisecond)
 		})
 
-		Convey("Single call followed by multiple parallel calls", func() {
+		Convey("Single call followed by multiple parallel calls", func(tc C) {
 			// Ensures all `shouldUpdateBuilderSummary` calls are in the same time bucket.
-			sleepUntilStartOfNextTimeBucket()
+			c, tClock := testclock.UseTime(c, startTime)
 
-			pivot := time.Now()
+			pivot := clock.Now(c).Add(-time.Hour)
 
 			shouldUpdates := make([]bool, 4)
 
-			shouldUpdate, err := shouldUpdateBuilderSummary(ctx, createBuildSummary("test-builder-id-2", buildbucketpb.Status_SUCCESS, pivot))
+			shouldUpdate, err := shouldUpdateBuilderSummary(c, createBuildSummary("test-builder-id-2", buildbucketpb.Status_SUCCESS, pivot))
 			So(err, ShouldBeNil)
 			shouldUpdates[0] = shouldUpdate
 
 			err = parallel.FanOutIn(func(tasks chan<- func() error) {
+				eventC := make(chan string)
+				defer close(eventC)
+				tClock.SetTimerCallback(func(d time.Duration, t clock.Timer) {
+					eventC <- "timer"
+				})
+
 				tasks <- func() error {
 					createdAt := pivot.Add(5 * time.Millisecond)
-					shouldUpdate, err := shouldUpdateBuilderSummary(ctx, createBuildSummary("test-builder-id-2", buildbucketpb.Status_SUCCESS, createdAt))
+					shouldUpdate, err := shouldUpdateBuilderSummary(c, createBuildSummary("test-builder-id-2", buildbucketpb.Status_SUCCESS, createdAt))
 					shouldUpdates[1] = shouldUpdate
 					return err
 				}
 
+				// Wait until the previous call reaches a blocking point.
+				tc.So(<-eventC, ShouldEqual, "timer")
 				tasks <- func() error {
-					time.Sleep(5 * time.Millisecond)
 					createdAt := pivot.Add(15 * time.Millisecond)
-					shouldUpdate, err := shouldUpdateBuilderSummary(ctx, createBuildSummary("test-builder-id-2", buildbucketpb.Status_SUCCESS, createdAt))
+					shouldUpdate, err := shouldUpdateBuilderSummary(c, createBuildSummary("test-builder-id-2", buildbucketpb.Status_SUCCESS, createdAt))
 					shouldUpdates[2] = shouldUpdate
 					return err
 				}
 
+				// Wait until the previous call reaches a blocking point.
+				tc.So(<-eventC, ShouldEqual, "timer")
 				tasks <- func() error {
-					time.Sleep(10 * time.Millisecond)
 					createdAt := pivot.Add(10 * time.Millisecond)
-					shouldUpdate, err := shouldUpdateBuilderSummary(ctx, createBuildSummary("test-builder-id-2", buildbucketpb.Status_SUCCESS, createdAt))
+					shouldUpdate, err := shouldUpdateBuilderSummary(c, createBuildSummary("test-builder-id-2", buildbucketpb.Status_SUCCESS, createdAt))
 					shouldUpdates[3] = shouldUpdate
+					eventC <- "return"
 					return err
 				}
+
+				// Wait until the last shouldUpdateBuilderSummary call returns then
+				// advance the clock to the next time bucket.
+				tc.So(<-eventC, ShouldEqual, "return")
+				tClock.Add(time.Duration(entityUpdateIntervalInS) * time.Second)
 			})
 			So(err, ShouldBeNil)
 
@@ -405,43 +410,57 @@ func TestShouldUpdateBuilderSummary(t *testing.T) {
 			So(shouldUpdates[3], ShouldBeFalse)
 		})
 
-		Convey("Single call followed by multiple parallel calls that are nanoseconds apart", func() {
+		Convey("Single call followed by multiple parallel calls that are nanoseconds apart", func(tc C) {
 			// This test ensures that the timestamp percision is not lost.
 
 			// Ensures all `shouldUpdateBuilderSummary` calls are in the same time bucket.
-			sleepUntilStartOfNextTimeBucket()
+			c, tClock := testclock.UseTime(c, startTime)
 
-			pivot := time.Now()
+			pivot := clock.Now(c).Add(-time.Hour)
 
 			shouldUpdates := make([]bool, 4)
 
-			shouldUpdate, err := shouldUpdateBuilderSummary(ctx, createBuildSummary("test-builder-id-3", buildbucketpb.Status_SUCCESS, pivot))
+			shouldUpdate, err := shouldUpdateBuilderSummary(c, createBuildSummary("test-builder-id-3", buildbucketpb.Status_SUCCESS, pivot))
 			So(err, ShouldBeNil)
 			shouldUpdates[0] = shouldUpdate
 
 			err = parallel.FanOutIn(func(tasks chan<- func() error) {
+				eventC := make(chan string)
+				defer close(eventC)
+				tClock.SetTimerCallback(func(d time.Duration, t clock.Timer) {
+					eventC <- "timer"
+				})
+
 				tasks <- func() error {
 					createdAt := pivot.Add(time.Nanosecond)
-					shouldUpdate, err := shouldUpdateBuilderSummary(ctx, createBuildSummary("test-builder-id-3", buildbucketpb.Status_SUCCESS, createdAt))
+					shouldUpdate, err := shouldUpdateBuilderSummary(c, createBuildSummary("test-builder-id-3", buildbucketpb.Status_SUCCESS, createdAt))
 					shouldUpdates[1] = shouldUpdate
 					return err
 				}
 
+				// Wait until the previous call reaches a blocking point.
+				tc.So(<-eventC, ShouldEqual, "timer")
 				tasks <- func() error {
-					time.Sleep(5 * time.Millisecond)
 					createdAt := pivot.Add(3 * time.Nanosecond)
-					shouldUpdate, err := shouldUpdateBuilderSummary(ctx, createBuildSummary("test-builder-id-3", buildbucketpb.Status_SUCCESS, createdAt))
+					shouldUpdate, err := shouldUpdateBuilderSummary(c, createBuildSummary("test-builder-id-3", buildbucketpb.Status_SUCCESS, createdAt))
 					shouldUpdates[2] = shouldUpdate
 					return err
 				}
 
+				// Wait until the previous call reaches a blocking point.
+				tc.So(<-eventC, ShouldEqual, "timer")
 				tasks <- func() error {
-					time.Sleep(10 * time.Millisecond)
 					createdAt := pivot.Add(2 * time.Nanosecond)
-					shouldUpdate, err := shouldUpdateBuilderSummary(ctx, createBuildSummary("test-builder-id-3", buildbucketpb.Status_SUCCESS, createdAt))
+					shouldUpdate, err := shouldUpdateBuilderSummary(c, createBuildSummary("test-builder-id-3", buildbucketpb.Status_SUCCESS, createdAt))
 					shouldUpdates[3] = shouldUpdate
+					eventC <- "return"
 					return err
 				}
+
+				// Wait until the last shouldUpdateBuilderSummary call returns then
+				// advance the clock to the next time bucket.
+				tc.So(<-eventC, ShouldEqual, "return")
+				tClock.Add(time.Duration(entityUpdateIntervalInS) * time.Second)
 			})
 			So(err, ShouldBeNil)
 
@@ -462,42 +481,57 @@ func TestShouldUpdateBuilderSummary(t *testing.T) {
 			So(shouldUpdates[3], ShouldBeFalse)
 		})
 
-		Convey("Single call followed by multiple parallel calls in different time buckets", func() {
-			pivot := time.Now()
+		Convey("Single call followed by multiple parallel calls in different time buckets", func(tc C) {
+			c, tClock := testclock.UseTime(c, startTime)
 
+			pivot := clock.Now(c).Add(-time.Hour)
 			shouldUpdates := make([]bool, 4)
 
-			shouldUpdate, err := shouldUpdateBuilderSummary(ctx, createBuildSummary("test-builder-id-4", buildbucketpb.Status_SUCCESS, pivot))
+			shouldUpdate, err := shouldUpdateBuilderSummary(c, createBuildSummary("test-builder-id-4", buildbucketpb.Status_SUCCESS, pivot))
 			So(err, ShouldBeNil)
 			shouldUpdates[0] = shouldUpdate
 
 			// Ensures the following `shouldUpdateBuilderSummary` calls are in a
 			// different time bucket.
-			sleepUntilStartOfNextTimeBucket()
+			tClock.Add(time.Duration(entityUpdateIntervalInS) * time.Second)
 
 			err = parallel.FanOutIn(func(tasks chan<- func() error) {
+				eventC := make(chan string)
+				defer close(eventC)
+				tClock.SetTimerCallback(func(d time.Duration, t clock.Timer) {
+					eventC <- "timer"
+				})
+
 				tasks <- func() error {
 					createdAt := pivot.Add(5 * time.Millisecond)
-					shouldUpdate, err := shouldUpdateBuilderSummary(ctx, createBuildSummary("test-builder-id-4", buildbucketpb.Status_SUCCESS, createdAt))
+					shouldUpdate, err := shouldUpdateBuilderSummary(c, createBuildSummary("test-builder-id-4", buildbucketpb.Status_SUCCESS, createdAt))
 					shouldUpdates[1] = shouldUpdate
+					eventC <- "return"
 					return err
 				}
 
+				// Wait until the previous shouldUpdateBuilderSummary call returns.
+				tc.So(<-eventC, ShouldEqual, "return")
 				tasks <- func() error {
-					time.Sleep(5 * time.Millisecond)
 					createdAt := pivot.Add(15 * time.Millisecond)
-					shouldUpdate, err := shouldUpdateBuilderSummary(ctx, createBuildSummary("test-builder-id-4", buildbucketpb.Status_SUCCESS, createdAt))
+					shouldUpdate, err := shouldUpdateBuilderSummary(c, createBuildSummary("test-builder-id-4", buildbucketpb.Status_SUCCESS, createdAt))
 					shouldUpdates[2] = shouldUpdate
 					return err
 				}
 
+				// Wait until the previous call reaches a blocking point.
+				tc.So(<-eventC, ShouldEqual, "timer")
 				tasks <- func() error {
-					time.Sleep(10 * time.Millisecond)
 					createdAt := pivot.Add(20 * time.Millisecond)
-					shouldUpdate, err := shouldUpdateBuilderSummary(ctx, createBuildSummary("test-builder-id-4", buildbucketpb.Status_SUCCESS, createdAt))
+					shouldUpdate, err := shouldUpdateBuilderSummary(c, createBuildSummary("test-builder-id-4", buildbucketpb.Status_SUCCESS, createdAt))
 					shouldUpdates[3] = shouldUpdate
 					return err
 				}
+
+				// Wait until the last shouldUpdateBuilderSummary call returns then
+				// advance the clock to the next time bucket.
+				tc.So(<-eventC, ShouldEqual, "timer")
+				tClock.Add(time.Duration(entityUpdateIntervalInS) * time.Second)
 			})
 			So(err, ShouldBeNil)
 
