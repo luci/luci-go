@@ -27,7 +27,6 @@ import (
 
 	"google.golang.org/protobuf/types/known/durationpb"
 
-	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/logging"
@@ -118,8 +117,6 @@ type Test struct {
 	cqdsMu sync.Mutex
 	// cqds are fake CQDaemons indexed by LUCI project name.
 	cqds map[string]*cqdfake.CQDFake
-
-	authDB *authtest.FakeDB
 }
 
 // SetUp sets up the end to end test.
@@ -173,7 +170,6 @@ func (t *Test) SetUp() (ctx context.Context, deferme func()) {
 		GFactory:    gFactory,
 	}
 	t.AdminServer = admin.New(t.TQDispatcher, &dsmapper.Controller{}, clUpdater, t.PMNotifier, t.RunNotifier)
-	t.authDB = auth.GetState(ctx).(*authtest.FakeState).FakeDB.(*authtest.FakeDB)
 	return ctx, deferme
 }
 
@@ -444,17 +440,6 @@ func (t *Test) MigrationContext(ctx context.Context) context.Context {
 		Identity:       "user:e2e-test@example.com",
 		IdentityGroups: []string{migration.AllowGroup},
 	})
-}
-
-// AddMember adds a given member into a given luci auth group.
-//
-// The email must not include the domain.
-func (t *Test) AddMember(email, group string) {
-	id, err := identity.MakeIdentity(fmt.Sprintf("user:%s@example.com", email))
-	if err != nil {
-		panic(err)
-	}
-	t.authDB.AddMocks(authtest.MockMembership(id, group))
 }
 
 // AddCommitter adds a given member into the committer group.

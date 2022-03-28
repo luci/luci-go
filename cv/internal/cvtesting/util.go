@@ -34,6 +34,7 @@ import (
 	"google.golang.org/protobuf/proto"
 
 	"go.chromium.org/luci/auth"
+	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/data/stringset"
@@ -119,6 +120,9 @@ type Test struct {
 
 	// cleanupFuncs are executed in reverse order in cleanup().
 	cleanupFuncs []func()
+
+	// authDB is used to mock CrIA memberships.
+	authDB *authtest.FakeDB
 }
 
 func (t *Test) SetUp() (context.Context, func()) {
@@ -183,7 +187,8 @@ func (t *Test) SetUp() (context.Context, func()) {
 
 	ctx = t.installDS(ctx)
 	ctx = txndefer.FilterRDS(ctx)
-	ctx = serverauth.WithState(ctx, &authtest.FakeState{FakeDB: authtest.NewFakeDB()})
+	t.authDB = authtest.NewFakeDB()
+	ctx = serverauth.WithState(ctx, &authtest.FakeState{FakeDB: t.authDB})
 
 	ctx, _, _ = tsmon.WithFakes(ctx)
 	t.TSMonStore = store.NewInMemory(&target.Task{})
@@ -505,6 +510,17 @@ func (t *Test) setTestClockTimerCB(ctx context.Context) context.Context {
 		}
 	})
 	return ctx
+}
+
+// AddMember adds a given member into a given luci auth group.
+//
+// The email must not include the domain.
+func (t *Test) AddMember(email, group string) {
+	id, err := identity.MakeIdentity(fmt.Sprintf("user:%s@example.com", email))
+	if err != nil {
+		panic(err)
+	}
+	t.authDB.AddMocks(authtest.MockMembership(id, group))
 }
 
 // SetUpSecrets initializes server/secrets with AEAD crypto key.

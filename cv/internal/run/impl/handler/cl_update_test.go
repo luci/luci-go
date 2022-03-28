@@ -38,6 +38,7 @@ import (
 	"go.chromium.org/luci/cv/internal/run/impl/state"
 
 	. "github.com/smartystreets/goconvey/convey"
+	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestOnCLsUpdated(t *testing.T) {
@@ -46,12 +47,24 @@ func TestOnCLsUpdated(t *testing.T) {
 		ctx, cancel := ct.SetUp()
 		defer cancel()
 
-		const lProject = "chromium"
-		const gHost = "x-review.example.com"
+		const (
+			lProject   = "chromium"
+			gHost      = "x-review.example.com"
+			committers = "committer-group"
+			dryRunners = "dry-runner-group"
+		)
 
 		cfg := &cfgpb.Config{
 			ConfigGroups: []*cfgpb.ConfigGroup{
-				{Name: "main"},
+				{
+					Name: "main",
+					Verifiers: &cfgpb.Verifiers{
+						GerritCqAbility: &cfgpb.Verifiers_GerritCQAbility{
+							CommitterList:    []string{committers},
+							DryRunAccessList: []string{dryRunners},
+						},
+					},
+				},
 			},
 		}
 		prjcfgtest.Create(ctx, lProject, cfg)
@@ -97,7 +110,13 @@ func TestOnCLsUpdated(t *testing.T) {
 		const gChange = 1
 		const gPatchSet = 5
 
-		ci := gf.CI(gChange, gf.PS(gPatchSet), gf.CQ(+2, triggerTime, gf.U("foo")))
+		ci := gf.CI(
+			gChange, gf.PS(gPatchSet),
+			gf.Owner("foo"),
+			gf.CQ(+2, triggerTime, gf.U("foo")),
+			gf.Approve(),
+		)
+		ct.AddMember("foo", committers)
 		cl := updateCL(ci, aplConfigOK, accessOK)
 		rcl := run.RunCL{
 			ID:      1,
@@ -111,7 +130,7 @@ func TestOnCLsUpdated(t *testing.T) {
 		ensureNoop := func() {
 			res, err := h.OnCLsUpdated(ctx, rs, common.CLIDs{1})
 			So(err, ShouldBeNil)
-			So(res.State, ShouldEqual, rs)
+			So(res.State, ShouldResemble, rs)
 			So(res.SideEffectFn, ShouldBeNil)
 			So(res.PreserveEvents, ShouldBeFalse)
 		}
@@ -139,7 +158,11 @@ func TestOnCLsUpdated(t *testing.T) {
 				})
 
 				Convey("is triggered by different user at the exact same time", func() {
-					updateCL(gf.CI(gChange, gf.PS(gPatchSet), gf.CQ(+2, triggerTime, gf.U("bar"))), aplConfigOK, accessOK)
+					updateCL(gf.CI(
+						gChange, gf.PS(gPatchSet),
+						gf.CQ(+2, triggerTime, gf.U("bar")),
+						gf.Approve(),
+					), aplConfigOK, accessOK)
 					ensureNoop()
 				})
 			})
@@ -148,7 +171,7 @@ func TestOnCLsUpdated(t *testing.T) {
 			rs.Status = run.Status_SUBMITTING
 			res, err := h.OnCLsUpdated(ctx, rs, common.CLIDs{1})
 			So(err, ShouldBeNil)
-			So(res.State, ShouldEqual, rs)
+			So(res.State, ShouldResemble, rs)
 			So(res.SideEffectFn, ShouldBeNil)
 			So(res.PreserveEvents, ShouldBeTrue)
 		})
@@ -172,7 +195,7 @@ func TestOnCLsUpdated(t *testing.T) {
 			}
 			res, err := h.OnCLsUpdated(ctx, rs, common.CLIDs{1})
 			So(err, ShouldBeNil)
-			So(res.State, ShouldEqual, rs)
+			So(res.State, ShouldResemble, rs)
 			So(res.SideEffectFn, ShouldBeNil)
 			So(res.PreserveEvents, ShouldBeTrue)
 		})
@@ -184,6 +207,37 @@ func TestOnCLsUpdated(t *testing.T) {
 			So(res.State.CancellationReasons, ShouldResemble, []string{reason})
 			So(res.SideEffectFn, ShouldNotBeNil)
 			So(res.PreserveEvents, ShouldBeFalse)
+		}
+		runAndVerifyCancelScheduled := func(reason string) {
+			clid := common.CLID(1)
+			res, err := h.OnCLsUpdated(ctx, rs, common.CLIDs{clid})
+			So(err, ShouldBeNil)
+			// The status should be still RUNNING,
+			// because it has not been cancelled yet.
+			// It's scheduled to be cancelled.
+			So(res.State.Status, ShouldEqual, run.Status_RUNNING)
+			So(res.SideEffectFn, ShouldBeNil)
+			So(res.PreserveEvents, ShouldBeFalse)
+
+			longOp := res.State.OngoingLongOps.GetOps()[res.State.NewLongOpIDs[0]]
+			cancelOp := longOp.GetCancelTriggers()
+			So(cancelOp.Requests, ShouldHaveLength, 1)
+			So(cancelOp.Requests[0], ShouldResembleProto,
+				&run.OngoingLongOps_Op_TriggersCancellation_Request{
+					Clid:    int64(clid),
+					Message: reason,
+					Notify: []run.OngoingLongOps_Op_TriggersCancellation_Whom{
+						run.OngoingLongOps_Op_TriggersCancellation_OWNER,
+						run.OngoingLongOps_Op_TriggersCancellation_CQ_VOTERS,
+					},
+					AddToAttention: []run.OngoingLongOps_Op_TriggersCancellation_Whom{
+						run.OngoingLongOps_Op_TriggersCancellation_OWNER,
+						run.OngoingLongOps_Op_TriggersCancellation_CQ_VOTERS,
+					},
+					AddToAttentionReason: "CQ/CV Run failed",
+				},
+			)
+			So(cancelOp.RunStatusIfSucceeded, ShouldEqual, run.Status_FAILED)
 		}
 
 		Convey("Cancels Run on new Patchset", func() {
@@ -228,7 +282,7 @@ func TestOnCLsUpdated(t *testing.T) {
 				updateCL(ci, aplConfigOK, acc)
 				res, err := h.OnCLsUpdated(ctx, rs, common.CLIDs{1})
 				So(err, ShouldBeNil)
-				So(res.State, ShouldEqual, rs)
+				So(res.State, ShouldResemble, rs)
 				So(res.SideEffectFn, ShouldBeNil)
 				// Event must be preserved, s.t. the same CL is re-visited later.
 				So(res.PreserveEvents, ShouldBeTrue)
@@ -251,6 +305,12 @@ func TestOnCLsUpdated(t *testing.T) {
 				So(datastore.Put(ctx, &cl), ShouldBeNil)
 				ensureNoop()
 			})
+		})
+		Convey("Schedules a CancelTrigger long op if the approval was revoked", func() {
+			updateCL(gf.CI(
+				gChange, gf.PS(gPatchSet), gf.CQ(+2, triggerTime, gf.U("foo")), gf.Disapprove(),
+			), aplConfigOK, accessOK)
+			runAndVerifyCancelScheduled("This CL needs to be approved first to trigger a Run.")
 		})
 	})
 }

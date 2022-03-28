@@ -55,12 +55,18 @@ func (impl *Impl) OnCLsUpdated(ctx context.Context, rs *state.RunState, clids co
 		return nil, err
 	}
 
-	preserveEvents := false
+	hasNilSnapshot := false
 	var earliestReconsiderAt time.Time
 	for i := range clids {
+		if cls[i].Snapshot == nil {
+			// This doesn't necessarily assume that shouldCancel() would
+			// or would not return a cancelReason for nil Snapshot; hence,
+			// let it decide. hasNilSnapshot is to decide whether
+			// runs.CheckRunCreate() should be checked or not.
+			hasNilSnapshot = true
+		}
 		switch reconsiderAt, cancellationReason := shouldCancel(ctx, cls[i], runCLs[i], cg); {
 		case !reconsiderAt.IsZero():
-			preserveEvents = true
 			if earliestReconsiderAt.IsZero() || earliestReconsiderAt.After(reconsiderAt) {
 				earliestReconsiderAt = reconsiderAt
 			}
@@ -68,13 +74,30 @@ func (impl *Impl) OnCLsUpdated(ctx context.Context, rs *state.RunState, clids co
 			return impl.Cancel(ctx, rs, []string{cancellationReason})
 		}
 	}
-	if preserveEvents {
+	if !earliestReconsiderAt.IsZero() {
 		logging.Debugf(ctx, "Will reconsider OnCLUpdated event(s) after %s", earliestReconsiderAt.Sub(clock.Now(ctx)))
 		if err := impl.RM.Invoke(ctx, rs.ID, earliestReconsiderAt); err != nil {
 			return nil, err
 		}
+		return &Result{State: rs, PreserveEvents: true}, nil
 	}
-	return &Result{State: rs, PreserveEvents: preserveEvents}, nil
+
+	// If any of the CLs has a nil snapshot, skip acls.CheckRunCreate().
+	// It needs snapshots for the entire CL set.
+	if hasNilSnapshot {
+		return &Result{State: rs}, nil
+	}
+
+	// Check the Run creation, in case the Run is no longer valid
+	// with the newly updated CL info.
+	rs = rs.ShallowCopy()
+	switch ok, err := checkRunCreate(ctx, rs, cg, runCLs, cls); {
+	case err != nil:
+		return nil, err
+	case !ok:
+		rs.CreationAllowed = run.CreationAllowedNo
+	}
+	return &Result{State: rs}, nil
 }
 
 func shouldCancel(ctx context.Context, cl *changelist.CL, rcl *run.RunCL, cg *prjcfg.ConfigGroup) (time.Time, string) {
