@@ -27,9 +27,11 @@ import (
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/server/tq/tqtesting"
 
+	cfgpb "go.chromium.org/luci/cv/api/config/v2"
 	"go.chromium.org/luci/cv/internal/changelist"
 	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/common/eventbox"
+	"go.chromium.org/luci/cv/internal/configs/prjcfg/prjcfgtest"
 	"go.chromium.org/luci/cv/internal/cvtesting"
 	"go.chromium.org/luci/cv/internal/prjmanager"
 	"go.chromium.org/luci/cv/internal/run"
@@ -386,14 +388,33 @@ func TestRunManager(t *testing.T) {
 		ct := cvtesting.Test{}
 		ctx, cancel := ct.SetUp()
 		defer cancel()
-		const runID = "chromium/222-1-deadbeef"
+		const (
+			lProject   = "chromium"
+			dryRunners = "dry-runner-group"
+			runID      = lProject + "/222-1-deadbeef"
+		)
+		cfg := &cfgpb.Config{
+			ConfigGroups: []*cfgpb.ConfigGroup{
+				{
+					Name: "main",
+					Verifiers: &cfgpb.Verifiers{
+						GerritCqAbility: &cfgpb.Verifiers_GerritCQAbility{
+							DryRunAccessList: []string{dryRunners},
+						},
+					},
+				},
+			},
+		}
+		prjcfgtest.Create(ctx, lProject, cfg)
+
 		tCreate := ct.Clock.Now().UTC().Add(-2 * time.Minute)
 		So(datastore.Put(ctx, &run.Run{
-			ID:         runID,
-			Status:     run.Status_RUNNING,
-			CreateTime: tCreate,
-			StartTime:  tCreate.Add(1 * time.Minute),
-			EVersion:   10,
+			ID:            runID,
+			Status:        run.Status_RUNNING,
+			CreateTime:    tCreate,
+			StartTime:     tCreate.Add(1 * time.Minute),
+			EVersion:      10,
+			ConfigGroupID: prjcfgtest.MustExist(ctx, lProject).ConfigGroupIDs[0],
 		}), ShouldBeNil)
 
 		notifier := run.NewNotifier(ct.TQDispatcher)

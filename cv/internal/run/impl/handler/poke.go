@@ -23,7 +23,6 @@ import (
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/gae/service/datastore"
 
-	"go.chromium.org/luci/cv/internal/changelist"
 	"go.chromium.org/luci/cv/internal/run"
 	"go.chromium.org/luci/cv/internal/run/impl/state"
 )
@@ -35,8 +34,8 @@ const (
 
 // Poke implements Handler interface.
 func (impl *Impl) Poke(ctx context.Context, rs *state.RunState) (*Result, error) {
+	rs = rs.ShallowCopy()
 	if shouldCheckTree(ctx, rs.Status, rs.Submission) {
-		rs = rs.ShallowCopy()
 		rs.Submission = proto.Clone(rs.Submission).(*run.Submission)
 		switch open, err := rs.CheckTree(ctx, impl.TreeClient); {
 		case err != nil:
@@ -50,19 +49,26 @@ func (impl *Impl) Poke(ctx context.Context, rs *state.RunState) (*Result, error)
 		}
 	}
 
-	if shouldRefreshCLs(ctx, rs) {
-		switch cls, err := changelist.LoadCLsByIDs(ctx, rs.CLs); {
+	// If it's scheduled to be cancelled, skip the refresh.
+	// The long op might have been expired, but it should be removed at the end
+	// of this call first, and then the next Poke() will run this check again.
+	if !isTriggersCancellationOngoing(rs) && shouldRefreshCLs(ctx, rs) {
+		cg, runCLs, cls, err := loadCLsAndConfig(ctx, rs, rs.CLs)
+		if err != nil {
+			return nil, err
+		}
+		switch ok, err := checkRunCreate(ctx, rs, cg, runCLs, cls); {
 		case err != nil:
 			return nil, err
-		default:
+		case ok:
 			if err := impl.CLUpdater.ScheduleBatch(ctx, rs.ID.LUCIProject(), cls); err != nil {
 				return nil, err
 			}
-			rs = rs.ShallowCopy()
 			rs.LatestCLsRefresh = datastore.RoundTime(clock.Now(ctx).UTC())
+		default:
+			rs.CreationAllowed = run.CreationAllowedNo
 		}
 	}
-
 	return impl.processExpiredLongOps(ctx, rs)
 }
 

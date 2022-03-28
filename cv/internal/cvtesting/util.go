@@ -523,6 +523,11 @@ func (t *Test) AddMember(email, group string) {
 	t.authDB.AddMocks(authtest.MockMembership(id, group))
 }
 
+func (t *Test) ResetMockedAuthDB(ctx context.Context) {
+	t.authDB = authtest.NewFakeDB()
+	serverauth.GetState(ctx).(*authtest.FakeState).FakeDB = t.authDB
+}
+
 // SetUpSecrets initializes server/secrets with AEAD crypto key.
 func SetUpSecrets(ctx context.Context) context.Context {
 	kh, err := keyset.NewHandle(aead.AES256GCMKeyTemplate())

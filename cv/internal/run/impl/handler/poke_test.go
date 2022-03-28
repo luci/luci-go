@@ -21,16 +21,17 @@ import (
 
 	"google.golang.org/protobuf/types/known/timestamppb"
 
+	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/gae/service/datastore"
 
 	cfgpb "go.chromium.org/luci/cv/api/config/v2"
 	"go.chromium.org/luci/cv/internal/changelist"
 	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/common/tree"
-	"go.chromium.org/luci/cv/internal/configs/prjcfg"
 	"go.chromium.org/luci/cv/internal/configs/prjcfg/prjcfgtest"
 	"go.chromium.org/luci/cv/internal/cvtesting"
 	gf "go.chromium.org/luci/cv/internal/gerrit/gerritfake"
+	"go.chromium.org/luci/cv/internal/gerrit/trigger"
 	"go.chromium.org/luci/cv/internal/run"
 	"go.chromium.org/luci/cv/internal/run/impl/state"
 	"go.chromium.org/luci/cv/internal/run/runtest"
@@ -47,43 +48,70 @@ func TestPokeRecheckTree(t *testing.T) {
 		ctx, cancel := ct.SetUp()
 		defer cancel()
 
-		const lProject = "infra"
-		rid := common.MakeRunID(lProject, ct.Clock.Now(), 1, []byte("deadbeef"))
-		rs := &state.RunState{
-			Run: run.Run{
-				ID:         rid,
-				CreateTime: ct.Clock.Now().UTC().Add(-2 * time.Minute),
-				StartTime:  ct.Clock.Now().UTC().Add(-1 * time.Minute),
-				CLs:        common.CLIDs{1},
+		const (
+			lProject   = "infra"
+			gHost      = "x-review.example.com"
+			dryRunners = "dry-runner-group"
+			gChange    = 1
+			gPatchSet  = 5
+		)
+
+		cfg := &cfgpb.Config{
+			ConfigGroups: []*cfgpb.ConfigGroup{
+				{
+					Name: "main",
+					Verifiers: &cfgpb.Verifiers{
+						TreeStatus: &cfgpb.Verifiers_TreeStatus{
+							Url: "tree.example.com",
+						},
+						GerritCqAbility: &cfgpb.Verifiers_GerritCQAbility{
+							DryRunAccessList: []string{dryRunners},
+						},
+					},
+				},
 			},
 		}
-		So(datastore.Put(ctx,
-			&run.RunCL{
-				ID:  1,
-				Run: datastore.MakeKey(ctx, run.RunKind, string(rid)),
-				Detail: &changelist.Snapshot{
-					Kind: &changelist.Snapshot_Gerrit{
-						Gerrit: &changelist.Gerrit{
-							Host: "example.com",
-							Info: gf.CI(1),
-						},
-					},
-				},
-			},
-			&changelist.CL{
-				ID: 1,
-				Snapshot: &changelist.Snapshot{
-					Kind: &changelist.Snapshot_Gerrit{
-						Gerrit: &changelist.Gerrit{
-							Host: "example.com",
-							Info: gf.CI(1),
-						},
-					},
-				},
-			},
-		), ShouldBeNil)
-
+		prjcfgtest.Create(ctx, lProject, cfg)
 		h, deps := makeTestHandler(&ct)
+
+		rid := common.MakeRunID(lProject, ct.Clock.Now(), gChange, []byte("deadbeef"))
+		rs := &state.RunState{
+			Run: run.Run{
+				ID:            rid,
+				CreateTime:    ct.Clock.Now().UTC().Add(-2 * time.Minute),
+				StartTime:     ct.Clock.Now().UTC().Add(-1 * time.Minute),
+				CLs:           common.CLIDs{gChange},
+				ConfigGroupID: prjcfgtest.MustExist(ctx, lProject).ConfigGroupIDs[0],
+			},
+		}
+
+		ci := gf.CI(
+			gChange, gf.PS(gPatchSet),
+			gf.Owner("foo"),
+			gf.CQ(+1, clock.Now(ctx).UTC(), gf.U("foo")),
+		)
+		ct.AddMember("foo", dryRunners)
+		cl := &changelist.CL{
+			ID:         gChange,
+			ExternalID: changelist.MustGobID(gHost, ci.GetNumber()),
+			Snapshot: &changelist.Snapshot{
+				LuciProject: lProject,
+				Patchset:    ci.GetRevisions()[ci.GetCurrentRevision()].GetNumber(),
+				Kind: &changelist.Snapshot_Gerrit{
+					Gerrit: &changelist.Gerrit{
+						Host: gHost,
+						Info: ci,
+					},
+				},
+			},
+		}
+		rcl := &run.RunCL{
+			ID:      gChange,
+			Run:     datastore.MakeKey(ctx, run.RunKind, string(rid)),
+			Detail:  cl.Snapshot,
+			Trigger: trigger.Find(ci, cfg.GetConfigGroups()[0]),
+		}
+		So(datastore.Put(ctx, cl, rcl), ShouldBeNil)
 
 		now := ct.Clock.Now()
 		ctx = context.WithValue(ctx, &fakeTaskIDKey, "task-foo")
@@ -91,7 +119,7 @@ func TestPokeRecheckTree(t *testing.T) {
 		verifyNoOp := func() {
 			res, err := h.Poke(ctx, rs)
 			So(err, ShouldBeNil)
-			So(res.State, ShouldEqual, rs)
+			So(res.State, cvtesting.SafeShouldResemble, rs)
 			So(res.SideEffectFn, ShouldBeNil)
 			So(res.PreserveEvents, ShouldBeFalse)
 			So(res.PostProcessFn, ShouldBeNil)
@@ -105,23 +133,6 @@ func TestPokeRecheckTree(t *testing.T) {
 					TreeOpen:          false,
 					LastTreeCheckTime: timestamppb.New(now.Add(-1 * time.Minute)),
 				}
-				cfg := &cfgpb.Config{
-					ConfigGroups: []*cfgpb.ConfigGroup{
-						{
-							Name: "main",
-							Verifiers: &cfgpb.Verifiers{
-								TreeStatus: &cfgpb.Verifiers_TreeStatus{
-									Url: "tree.example.com",
-								},
-							},
-						},
-					},
-				}
-				prjcfgtest.Create(ctx, lProject, cfg)
-				meta, err := prjcfg.GetLatestMeta(ctx, lProject)
-				So(err, ShouldBeNil)
-				So(meta.ConfigGroupIDs, ShouldHaveLength, 1)
-				rs.ConfigGroupID = meta.ConfigGroupIDs[0]
 
 				Convey("Open", func() {
 					res, err := h.Poke(ctx, rs)
@@ -133,7 +144,7 @@ func TestPokeRecheckTree(t *testing.T) {
 					So(res.State.Status, ShouldEqual, run.Status_SUBMITTING)
 					So(res.State.Submission, ShouldResembleProto, &run.Submission{
 						Deadline:          timestamppb.New(now.Add(submissionDuration)),
-						Cls:               []int64{1},
+						Cls:               []int64{gChange},
 						TaskId:            "task-foo",
 						TreeOpen:          true,
 						LastTreeCheckTime: timestamppb.New(now),
@@ -217,6 +228,40 @@ func TestPokeRecheckTree(t *testing.T) {
 					rs.LatestCLsRefresh = ct.Clock.Now().Add(-clRefreshInterval - time.Second)
 					verifyScheduled()
 				})
+			})
+			Convey("Run fails if no longer eligible", func() {
+				rs.LatestCLsRefresh = ct.Clock.Now().Add(-clRefreshInterval - time.Second)
+				ct.ResetMockedAuthDB(ctx)
+
+				// verify that it did not schedule refresh but CancelTrigger.
+				res, err := h.Poke(ctx, rs)
+				So(err, ShouldBeNil)
+				So(res.SideEffectFn, ShouldBeNil)
+				So(res.PreserveEvents, ShouldBeFalse)
+				So(res.PostProcessFn, ShouldBeNil)
+				So(res.State.CreationAllowed, ShouldEqual, run.CreationAllowedNo)
+				So(res.State.Status, ShouldEqual, rs.Status)
+				So(deps.clUpdater.refreshedCLs, ShouldBeEmpty)
+
+				longOp := res.State.OngoingLongOps.GetOps()[res.State.NewLongOpIDs[0]]
+				cancelOp := longOp.GetCancelTriggers()
+				So(cancelOp.Requests, ShouldHaveLength, 1)
+				So(cancelOp.Requests[0], ShouldResembleProto,
+					&run.OngoingLongOps_Op_TriggersCancellation_Request{
+						Clid:    int64(gChange),
+						Message: "CV cannot trigger the Run for \"user:foo@example.com\" because \"user:foo@example.com\" is not a dry-runner.",
+						Notify: []run.OngoingLongOps_Op_TriggersCancellation_Whom{
+							run.OngoingLongOps_Op_TriggersCancellation_OWNER,
+							run.OngoingLongOps_Op_TriggersCancellation_CQ_VOTERS,
+						},
+						AddToAttention: []run.OngoingLongOps_Op_TriggersCancellation_Whom{
+							run.OngoingLongOps_Op_TriggersCancellation_OWNER,
+							run.OngoingLongOps_Op_TriggersCancellation_CQ_VOTERS,
+						},
+						AddToAttentionReason: "CQ/CV Run failed",
+					},
+				)
+				So(cancelOp.RunStatusIfSucceeded, ShouldEqual, run.Status_FAILED)
 			})
 		})
 	})
