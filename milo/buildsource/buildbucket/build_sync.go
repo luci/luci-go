@@ -66,7 +66,7 @@ var (
 // BuildSummaryStorageDuration.
 func DeleteOldBuilds(c context.Context) error {
 	const (
-		batchSize = 128
+		batchSize = 1024
 		nWorkers  = 8
 	)
 
@@ -75,7 +75,7 @@ func DeleteOldBuilds(c context.Context) error {
 		Lt("Created", buildPurgeCutoffTime).
 		Order("Created").
 		// Apply a limit so the call won't timeout.
-		Limit(batchSize * nWorkers * 512).
+		Limit(batchSize * nWorkers * 32).
 		KeysOnly(true)
 
 	return parallel.FanOutIn(func(taskC chan<- func() error) {
