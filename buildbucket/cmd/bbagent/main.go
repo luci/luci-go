@@ -42,7 +42,6 @@ import (
 
 	"github.com/golang/protobuf/jsonpb"
 	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/durationpb"
 	"google.golang.org/protobuf/types/known/fieldmaskpb"
@@ -60,8 +59,6 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/logging/gologger"
-	"go.chromium.org/luci/common/retry"
-	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/common/sync/dispatcher"
 	"go.chromium.org/luci/common/system/environ"
 	"go.chromium.org/luci/grpc/grpcutil"
@@ -222,10 +219,6 @@ func mainImpl() int {
 	logdogOutput, err := mkLogdogOutput(ctx, input.Build.Infra.Logdog)
 	check(errors.Annotate(err, "could not create logdog output").Err())
 
-	// Disable it temporarily as we retry on more return codes for the single
-	// status=STARTED update.
-	bbclientRetriesEnabled = false
-
 	var (
 		cctx   context.Context
 		cancel func()
@@ -242,33 +235,18 @@ func mainImpl() int {
 	var updatedBuild *bbpb.Build
 	// We send a single status=STARTED here, and will send the final build status
 	// after the user executable completes.
-	err = retry.Retry(cctx, transient.Only(retry.Default), func() (err error) {
-		updatedBuild, err = bbclient.UpdateBuild(
-			cctx,
-			&bbpb.UpdateBuildRequest{
-				Build: &bbpb.Build{
-					Id:     input.Build.Id,
-					Status: bbpb.Status_STARTED,
-				},
-				UpdateMask: &fieldmaskpb.FieldMask{Paths: []string{"build.status"}},
-				Mask:       readMask,
-			})
-
-		// Attach transient tag to internal transient error and NotFound.
-		code := status.Code(err)
-		if grpcutil.IsTransientCode(code) || code == codes.NotFound || code == codes.DeadlineExceeded {
-			err = transient.Tag.Apply(err)
-		}
-		return err
-	}, func(err error, sleepTime time.Duration) {
-		logging.Fields{
-			logging.ErrorKey: err,
-			"sleepTime":      sleepTime,
-		}.Warningf(ctx, "Transient error to report status STARTED to Buildbucket. Will retry in %s", sleepTime)
-	})
+	updatedBuild, err = bbclient.UpdateBuild(
+		cctx,
+		&bbpb.UpdateBuildRequest{
+			Build: &bbpb.Build{
+				Id:     input.Build.Id,
+				Status: bbpb.Status_STARTED,
+			},
+			UpdateMask: &fieldmaskpb.FieldMask{Paths: []string{"build.status"}},
+			Mask:       readMask,
+		})
 	if err != nil {
-		logging.Errorf(cctx, "Failed to report status STARTED to Buildbucket due to %s", err)
-		return 1
+		check(errors.Annotate(err, "failed to report status STARTED to Buildbucket").Err())
 	}
 	// The build has been canceled, bail out early.
 	if updatedBuild.CancelTime != nil {
@@ -276,7 +254,6 @@ func mainImpl() int {
 		return 0
 	}
 
-	bbclientRetriesEnabled = true
 	// from this point forward we want to try to report errors to buildbucket,
 	// too.
 	check = func(err error) {

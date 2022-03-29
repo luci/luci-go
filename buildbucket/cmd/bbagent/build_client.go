@@ -21,7 +21,9 @@ import (
 	"golang.org/x/time/rate"
 	"google.golang.org/genproto/protobuf/field_mask"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
+	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/fieldmaskpb"
 
 	"go.chromium.org/luci/auth"
@@ -74,7 +76,12 @@ type liveBBClient struct {
 
 func (bb *liveBBClient) UpdateBuild(ctx context.Context, in *bbpb.UpdateBuildRequest, opts ...grpc.CallOption) (*bbpb.Build, error) {
 	ctx = metadata.NewOutgoingContext(ctx, metadata.Pairs(buildbucket.BuildbucketTokenHeader, bb.tok))
-	return bb.c.UpdateBuild(ctx, in, opts...)
+	bld, err := bb.c.UpdateBuild(ctx, in, opts...)
+	code := status.Code(err)
+	if code == codes.NotFound {
+		err = transient.Tag.Apply(err)
+	}
+	return bld, err
 }
 
 // Reads the build secrets from the environment and constructs a BuildsClient
