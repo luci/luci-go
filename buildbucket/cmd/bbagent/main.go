@@ -52,7 +52,6 @@ import (
 	"go.chromium.org/luci/buildbucket"
 	"go.chromium.org/luci/buildbucket/cmd/bbagent/bbinput"
 	bbpb "go.chromium.org/luci/buildbucket/proto"
-	"go.chromium.org/luci/buildbucket/protoutil"
 	"go.chromium.org/luci/cipd/client/cipd/platform"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/data/stringset"
@@ -187,9 +186,6 @@ func mainImpl() int {
 		check(errors.Reason("-host and -build-id are required").Err())
 	}
 
-	if protoutil.FormatBuilderID(input.Build.Builder) == "chromium/ci/mac-rel-swarming" {
-		ctx = logging.SetLevel(gologger.StdConfig.Use(context.Background()), logging.Debug)
-	}
 	// Set `buildbucket` in the context.
 	bbCtx := lucictx.GetBuildbucket(ctx)
 	if bbCtx == nil || bbCtx.Hostname != *hostname || bbCtx.ScheduleBuildToken != secrets.BuildToken {
@@ -391,7 +387,6 @@ func mainImpl() int {
 		if stringset.NewFromSlice(input.Build.Input.Experiments...).Has("luci.recipes.use_python3") {
 			invokeOpts.Env.Set("RECIPES_USE_PY3", "true")
 		}
-		logging.Debugf(ctx, "PATH env is %s", invokeOpts.Env.String())
 		// Buildbucket assigns some grace period to the surrounding task which is
 		// more than what the user requested in `input.Build.GracePeriod`. We
 		// reserve the difference here so the user task only gets what they asked
@@ -496,10 +491,6 @@ func mainImpl() int {
 
 	if retcode == 0 && subprocErr != nil {
 		errors.Walk(subprocErr, func(err error) bool {
-			if protoutil.FormatBuilderID(input.Build.Builder) == "chromium/ci/mac-rel-swarming" {
-				logging.Infof(cctx, "subprocErr: %s", err)
-				return true
-			}
 			exit, ok := err.(*exec.ExitError)
 			if ok {
 				retcode = exit.ExitCode()
