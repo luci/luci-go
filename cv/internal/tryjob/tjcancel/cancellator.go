@@ -12,11 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package cancel contains code in charge of cancelling stale tryjobs.
+// Package tjcancel contains code in charge of cancelling stale tryjobs.
 //
 // Cancellator responds to tasks scheduled when a new patch is uploaded,
 // looking for and cancelling stale tryjobs.
-package cancel
+package tjcancel
 
 import (
 	"context"
@@ -38,8 +38,6 @@ import (
 	"go.chromium.org/luci/cv/internal/tryjob"
 )
 
-const CancelStaleTaskClass = "cancel-stale-tryjobs"
-
 // Cancellator is patterned after Updater to support multiple tryjob backends.
 type Cancellator struct {
 	tqd *tq.Dispatcher
@@ -49,19 +47,12 @@ type Cancellator struct {
 	backends map[string]cancellatorBackend
 }
 
-func NewCancellator(tqd *tq.Dispatcher) *Cancellator {
+func NewCancellator(tn *tryjob.Notifier) *Cancellator {
 	c := &Cancellator{
-		tqd:      tqd,
 		backends: make(map[string]cancellatorBackend),
 	}
-	c.tqd.RegisterTaskClass(tq.TaskClass{
-		ID:        CancelStaleTaskClass,
-		Prototype: &tryjob.CancelStaleTryjobsTask{},
-		Queue:     "cancel-stale-tryjobs",
-		Kind:      tq.Transactional,
-		Handler: func(ctx context.Context, payload proto.Message) error {
-			return common.TQifyError(ctx, c.handleTask(ctx, payload.(*tryjob.CancelStaleTryjobsTask)))
-		},
+	tn.Bindings.CancelStale.AttachHandler(func(ctx context.Context, payload proto.Message) error {
+		return common.TQifyError(ctx, c.handleTask(ctx, payload.(*tryjob.CancelStaleTryjobsTask)))
 	})
 	return c
 }

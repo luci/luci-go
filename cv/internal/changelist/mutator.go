@@ -56,10 +56,11 @@ type Mutator struct {
 	tqd *tq.Dispatcher
 	pm  pmNotifier
 	rm  rmNotifier
+	tj  tjNotifier
 }
 
-func NewMutator(tqd *tq.Dispatcher, pm pmNotifier, rm rmNotifier) *Mutator {
-	m := &Mutator{tqd, pm, rm}
+func NewMutator(tqd *tq.Dispatcher, pm pmNotifier, rm rmNotifier, tj tjNotifier) *Mutator {
+	m := &Mutator{tqd, pm, rm, tj}
 	tqd.RegisterTaskClass(tq.TaskClass{
 		ID:           BatchOnCLUpdatedTaskClass,
 		Queue:        "notify-on-cl-updated",
@@ -88,6 +89,10 @@ type pmNotifier interface {
 // In production, implemented by run.Notifier.
 type rmNotifier interface {
 	NotifyCLsUpdated(ctx context.Context, rid common.RunID, events *CLUpdatedEvents) error
+}
+
+type tjNotifier interface {
+	NotifyCancelStale(ctx context.Context, clid common.CLID, prevMinEquivalentPatchset, currentMinEquivalentPatchset int32) error
 }
 
 // ErrStopMutation is a special error used by MutateCallback to signal that no
@@ -395,6 +400,9 @@ func (m *Mutator) BeginBatch(ctx context.Context, project string, ids common.CLI
 // The given mutations can originate from either Begin or BeginBatch calls.
 // The only requirement is that they must all originate within the current
 // Datastore transaction.
+//
+// It also transactionally schedules tasks to cancel stale tryjobs for any
+// CLs in the batch whose minEquivPatchset has changed.
 func (m *Mutator) FinalizeBatch(ctx context.Context, muts []*CLMutation) ([]*CL, error) {
 	cls := make([]*CL, len(muts))
 	for i, mut := range muts {
@@ -434,6 +442,11 @@ func (m *Mutator) dispatchBatchNotify(ctx context.Context, muts ...*CLMutation) 
 		}
 		for _, r := range mut.CL.IncompleteRuns {
 			batch.Runs[string(r)] = batch.Runs[string(r)].append(e)
+		}
+		if mut.CL.Snapshot != nil && mut.priorMinEquivalentPatchset != 0 {
+			if err := m.tj.NotifyCancelStale(ctx, mut.id, mut.priorMinEquivalentPatchset, mut.CL.Snapshot.GetMinEquivalentPatchset()); err != nil {
+				return err
+			}
 		}
 	}
 	err := m.tqd.AddTask(ctx, &tq.Task{

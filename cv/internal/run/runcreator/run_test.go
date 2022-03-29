@@ -41,6 +41,7 @@ import (
 	"go.chromium.org/luci/cv/internal/run"
 	"go.chromium.org/luci/cv/internal/run/eventpb"
 	"go.chromium.org/luci/cv/internal/run/runtest"
+	"go.chromium.org/luci/cv/internal/tryjob"
 
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
@@ -101,7 +102,8 @@ func TestRunBuilder(t *testing.T) {
 		defer cancel()
 		pmNotifier := prjmanager.NewNotifier(ct.TQDispatcher)
 		runNotifier := run.NewNotifier(ct.TQDispatcher)
-		clMutator := changelist.NewMutator(ct.TQDispatcher, pmNotifier, runNotifier)
+		tjNotifier := tryjob.NewNotifier(ct.TQDispatcher)
+		clMutator := changelist.NewMutator(ct.TQDispatcher, pmNotifier, runNotifier, tjNotifier)
 
 		const lProject = "infra"
 		const gHost = "x-review.example.com"

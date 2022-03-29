@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package cancel
+package tjcancel
 
 import (
 	"context"
@@ -50,7 +50,8 @@ func TestTaskHandler(t *testing.T) {
 			cvt := &cvtesting.Test{}
 			ctx, cancel := cvt.SetUp()
 			defer cancel()
-			c := NewCancellator(cvt.TQDispatcher)
+			n := tryjob.NewNotifier(cvt.TQDispatcher)
+			c := NewCancellator(n)
 			mb := &mockBackend{}
 			c.RegisterBackend(mb)
 			Convey("no tryjobs", func() {

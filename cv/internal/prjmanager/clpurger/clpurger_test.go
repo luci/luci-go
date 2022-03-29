@@ -35,6 +35,8 @@ import (
 	"go.chromium.org/luci/cv/internal/prjmanager"
 	"go.chromium.org/luci/cv/internal/prjmanager/pmtest"
 	"go.chromium.org/luci/cv/internal/prjmanager/prjpb"
+	"go.chromium.org/luci/cv/internal/tryjob"
+	"go.chromium.org/luci/cv/internal/tryjob/tjcancel"
 
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
@@ -50,7 +52,9 @@ func TestPurgeCL(t *testing.T) {
 		ctx, pmDispatcher := pmtest.MockDispatch(ctx)
 
 		pmNotifier := prjmanager.NewNotifier(ct.TQDispatcher)
-		clMutator := changelist.NewMutator(ct.TQDispatcher, pmNotifier, nil)
+		tjNotifier := tryjob.NewNotifier(ct.TQDispatcher)
+		_ = tjcancel.NewCancellator(tjNotifier)
+		clMutator := changelist.NewMutator(ct.TQDispatcher, pmNotifier, nil, tjNotifier)
 		fakeCLUpdater := clUpdaterMock{}
 		purger := New(pmNotifier, ct.GFactory(), &fakeCLUpdater)
 

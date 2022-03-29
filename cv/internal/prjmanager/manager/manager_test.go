@@ -59,7 +59,7 @@ func TestProjectTQLateTasks(t *testing.T) {
 
 		pmNotifier := prjmanager.NewNotifier(ct.TQDispatcher)
 		runNotifier := runNotifierMock{}
-		clMutator := changelist.NewMutator(ct.TQDispatcher, pmNotifier, &runNotifier)
+		clMutator := changelist.NewMutator(ct.TQDispatcher, pmNotifier, &runNotifier, &tjMock{})
 		clUpdater := changelist.NewUpdater(ct.TQDispatcher, clMutator)
 		gerritupdater.RegisterUpdater(clUpdater, ct.GFactory())
 		_ = New(pmNotifier, &runNotifier, clMutator, ct.GFactory(), clUpdater)
@@ -104,7 +104,7 @@ func TestProjectLifeCycle(t *testing.T) {
 
 		pmNotifier := prjmanager.NewNotifier(ct.TQDispatcher)
 		runNotifier := runNotifierMock{}
-		clMutator := changelist.NewMutator(ct.TQDispatcher, pmNotifier, &runNotifier)
+		clMutator := changelist.NewMutator(ct.TQDispatcher, pmNotifier, &runNotifier, &tjMock{})
 		clUpdater := changelist.NewUpdater(ct.TQDispatcher, clMutator)
 		gerritupdater.RegisterUpdater(clUpdater, ct.GFactory())
 		_ = New(pmNotifier, &runNotifier, clMutator, ct.GFactory(), clUpdater)
@@ -235,7 +235,7 @@ func TestProjectHandlesManyEvents(t *testing.T) {
 		recipient := prjmanager.EventboxRecipient(ctx, lProject)
 		pmNotifier := prjmanager.NewNotifier(ct.TQDispatcher)
 		runNotifier := runNotifierMock{}
-		clMutator := changelist.NewMutator(ct.TQDispatcher, pmNotifier, &runNotifier)
+		clMutator := changelist.NewMutator(ct.TQDispatcher, pmNotifier, &runNotifier, &tjMock{})
 		clUpdater := changelist.NewUpdater(ct.TQDispatcher, clMutator)
 		gerritupdater.RegisterUpdater(clUpdater, ct.GFactory())
 		pm := New(pmNotifier, &runNotifier, clMutator, ct.GFactory(), clUpdater)
@@ -472,4 +472,10 @@ func (r *runNotifierMock) popCancel() []cancellationRequest {
 		return out[i].id < out[j].id
 	})
 	return out
+}
+
+type tjMock struct{}
+
+func (t *tjMock) NotifyCancelStale(ctx context.Context, clid common.CLID, prevMinEquivalentPatchset, currentMinEquivalentPatchset int32) error {
+	return nil
 }

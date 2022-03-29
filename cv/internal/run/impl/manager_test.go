@@ -68,7 +68,8 @@ func TestRunManager(t *testing.T) {
 
 		notifier := run.NewNotifier(ct.TQDispatcher)
 		pm := prjmanager.NewNotifier(ct.TQDispatcher)
-		clMutator := changelist.NewMutator(ct.TQDispatcher, pm, notifier)
+		tj := tryjob.NewNotifier(ct.TQDispatcher)
+		clMutator := changelist.NewMutator(ct.TQDispatcher, pm, notifier, tj)
 		clUpdater := changelist.NewUpdater(ct.TQDispatcher, clMutator)
 		_ = New(notifier, pm, clMutator, clUpdater, ct.GFactory(), ct.TreeFake.Client(), ct.BQFake, ct.Env)
 
@@ -419,7 +420,8 @@ func TestRunManager(t *testing.T) {
 
 		notifier := run.NewNotifier(ct.TQDispatcher)
 		pm := prjmanager.NewNotifier(ct.TQDispatcher)
-		clMutator := changelist.NewMutator(ct.TQDispatcher, pm, notifier)
+		tj := tryjob.NewNotifier(ct.TQDispatcher)
+		clMutator := changelist.NewMutator(ct.TQDispatcher, pm, notifier, tj)
 		clUpdater := changelist.NewUpdater(ct.TQDispatcher, clMutator)
 		_ = New(notifier, pm, clMutator, clUpdater, ct.GFactory(), ct.TreeFake.Client(), ct.BQFake, ct.Env)
 

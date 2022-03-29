@@ -41,6 +41,7 @@ import (
 	"go.chromium.org/luci/cv/internal/prjmanager/prjpb"
 	"go.chromium.org/luci/cv/internal/run"
 	"go.chromium.org/luci/cv/internal/run/runcreator"
+	"go.chromium.org/luci/cv/internal/tryjob"
 
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
@@ -107,10 +108,11 @@ func TestComponentsActions(t *testing.T) {
 		meta := prjcfgtest.MustExist(ctx, lProject)
 		pmNotifier := prjmanager.NewNotifier(ct.TQDispatcher)
 		runNotifier := run.NewNotifier(ct.TQDispatcher)
+		tjNotifier := tryjob.NewNotifier(ct.TQDispatcher)
 		h := Handler{
 			PMNotifier:  pmNotifier,
 			RunNotifier: runNotifier,
-			CLMutator:   changelist.NewMutator(ct.TQDispatcher, pmNotifier, runNotifier),
+			CLMutator:   changelist.NewMutator(ct.TQDispatcher, pmNotifier, runNotifier, tjNotifier),
 		}
 		state := &State{
 			PB: &prjpb.PState{

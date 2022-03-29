@@ -62,6 +62,8 @@ import (
 	runbq "go.chromium.org/luci/cv/internal/run/bq"
 	runimpl "go.chromium.org/luci/cv/internal/run/impl"
 	"go.chromium.org/luci/cv/internal/run/pubsub"
+	"go.chromium.org/luci/cv/internal/tryjob"
+	"go.chromium.org/luci/cv/internal/tryjob/tjcancel"
 )
 
 const (
@@ -159,11 +161,13 @@ func (t *Test) SetUp() (ctx context.Context, deferme func()) {
 	gFactory := t.GFactory()
 	t.PMNotifier = prjmanager.NewNotifier(t.TQDispatcher)
 	t.RunNotifier = run.NewNotifier(t.TQDispatcher)
-	clMutator := changelist.NewMutator(t.TQDispatcher, t.PMNotifier, t.RunNotifier)
+	tjNotifier := tryjob.NewNotifier(t.TQDispatcher)
+	clMutator := changelist.NewMutator(t.TQDispatcher, t.PMNotifier, t.RunNotifier, tjNotifier)
 	clUpdater := changelist.NewUpdater(t.TQDispatcher, clMutator)
 	gerritupdater.RegisterUpdater(clUpdater, gFactory)
 	_ = pmimpl.New(t.PMNotifier, t.RunNotifier, clMutator, gFactory, clUpdater)
 	_ = runimpl.New(t.RunNotifier, t.PMNotifier, clMutator, clUpdater, gFactory, t.TreeFake.Client(), t.BQFake, t.Env)
+	_ = tjcancel.NewCancellator(tjNotifier)
 
 	t.MigrationServer = &migration.MigrationServer{
 		RunNotifier: t.RunNotifier,

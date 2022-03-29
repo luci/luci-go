@@ -57,7 +57,8 @@ func TestMutatorSingleCL(t *testing.T) {
 
 		pm := pmMock{}
 		rm := rmMock{}
-		m := NewMutator(ct.TQDispatcher, &pm, &rm)
+		tj := tjMock{}
+		m := NewMutator(ct.TQDispatcher, &pm, &rm, &tj)
 
 		execBatchOnCLUpdatedTask := func() {
 			So(ct.TQ.Tasks(), ShouldHaveLength, 1)
@@ -68,6 +69,7 @@ func TestMutatorSingleCL(t *testing.T) {
 			So(ct.TQ.Tasks(), ShouldHaveLength, 0)
 			So(pm.byProject, ShouldBeEmpty)
 			So(rm.byRun, ShouldBeEmpty)
+			So(tj.clsNotified, ShouldBeEmpty)
 		}
 
 		Convey("Upsert method", func() {
@@ -88,6 +90,7 @@ func TestMutatorSingleCL(t *testing.T) {
 					lProject: {cl.ID: cl.EVersion},
 				})
 				So(rm.byRun, ShouldBeEmpty)
+				So(tj.clsNotified, ShouldBeEmpty)
 			})
 
 			Convey("skips creation", func() {
@@ -126,6 +129,7 @@ func TestMutatorSingleCL(t *testing.T) {
 				So(cl.EVersion, ShouldEqual, 2)
 				So(cl.UpdateTime, ShouldEqual, ct.Clock.Now().UTC())
 				So(cl.Snapshot, ShouldResembleProto, s2)
+				So(tj.clsNotified[0], ShouldEqual, cl.ID)
 
 				execBatchOnCLUpdatedTask()
 				So(pm.byProject, ShouldResemble, map[string]map[common.CLID]int64{
@@ -152,6 +156,7 @@ func TestMutatorSingleCL(t *testing.T) {
 
 				So(pm.byProject, ShouldBeEmpty)
 				So(rm.byRun, ShouldBeEmpty)
+				So(tj.clsNotified, ShouldBeEmpty)
 			})
 
 			Convey("propagates error without wrapping", func() {
@@ -191,6 +196,7 @@ func TestMutatorSingleCL(t *testing.T) {
 					lProject:        {cl.ID: cl.EVersion},
 				})
 				So(rm.byRun, ShouldBeEmpty)
+				So(tj.clsNotified[0], ShouldEqual, cl.ID)
 			})
 
 			Convey("skips an actual update", func() {
@@ -284,7 +290,8 @@ func TestMutatorBatch(t *testing.T) {
 
 		pm := pmMock{}
 		rm := rmMock{}
-		m := NewMutator(ct.TQDispatcher, &pm, &rm)
+		tj := tjMock{}
+		m := NewMutator(ct.TQDispatcher, &pm, &rm, &tj)
 
 		Convey(fmt.Sprintf("with %d CLs already in Datastore", N), func() {
 			var clids common.CLIDs
@@ -346,6 +353,7 @@ func TestMutatorBatch(t *testing.T) {
 				assertNotified(pm.byProject[lProjectAlt], expectedAltProject)
 				assertNotified(rm.byRun[run1], expectedRun1)
 				assertNotified(rm.byRun[run2], expectedRun2)
+				So(tj.clsNotified.Set(), ShouldResemble, clids.Set())
 			}
 
 			Convey("BeginBatch + FinalizeBatch", func() {
@@ -461,7 +469,8 @@ func TestMutatorConcurrent(t *testing.T) {
 
 		pm := pmMock{}
 		rm := rmMock{}
-		m := NewMutator(ct.TQDispatcher, &pm, &rm)
+		tj := tjMock{}
+		m := NewMutator(ct.TQDispatcher, &pm, &rm, &tj)
 
 		ctx, fb := featureBreaker.FilterRDS(ctx, nil)
 		// Use a single random source for all flaky.Errors(...) instances. Otherwise
@@ -597,6 +606,18 @@ func (r *rmMock) NotifyCLsUpdated(ctx context.Context, rid common.RunID, events 
 		clid := common.CLID(e.GetClid())
 		m[clid] = max(m[clid], e.GetEversion())
 	}
+	return nil
+}
+
+type tjMock struct {
+	clsNotified common.CLIDs
+	mutex       sync.Mutex
+}
+
+func (t *tjMock) NotifyCancelStale(ctx context.Context, clid common.CLID, prevMinEquivalentPatchset, currentMinEquivalentPatchset int32) error {
+	t.mutex.Lock()
+	defer t.mutex.Unlock()
+	t.clsNotified = append(t.clsNotified, clid)
 	return nil
 }
 

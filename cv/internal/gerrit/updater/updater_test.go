@@ -53,7 +53,7 @@ func TestUpdaterBackend(t *testing.T) {
 		defer cancel()
 
 		gu := &updaterBackend{
-			clUpdater: changelist.NewUpdater(ct.TQDispatcher, changelist.NewMutator(ct.TQDispatcher, &pmMock{}, &rmMock{})),
+			clUpdater: changelist.NewUpdater(ct.TQDispatcher, changelist.NewMutator(ct.TQDispatcher, &pmMock{}, &rmMock{}, &tjMock{})),
 			gFactory:  ct.GFactory(),
 		}
 
@@ -183,7 +183,7 @@ func TestUpdaterBackendFetch(t *testing.T) {
 		// provided because they are used by the changelist.Updater to process deps
 		// on our (backend's) behalf.
 		gu := &updaterBackend{
-			clUpdater: changelist.NewUpdater(ct.TQDispatcher, changelist.NewMutator(ct.TQDispatcher, &pmMock{}, &rmMock{})),
+			clUpdater: changelist.NewUpdater(ct.TQDispatcher, changelist.NewMutator(ct.TQDispatcher, &pmMock{}, &rmMock{}, &tjMock{})),
 			gFactory:  ct.GFactory(),
 		}
 		gu.clUpdater.RegisterBackend(gu)
@@ -621,5 +621,11 @@ type rmMock struct {
 }
 
 func (*rmMock) NotifyCLsUpdated(ctx context.Context, rid common.RunID, cls *changelist.CLUpdatedEvents) error {
+	return nil
+}
+
+type tjMock struct{}
+
+func (t *tjMock) NotifyCancelStale(ctx context.Context, clid common.CLID, prevMinEquivalentPatchset, currentMinEquivalentPatchset int32) error {
 	return nil
 }

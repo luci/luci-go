@@ -42,6 +42,7 @@ import (
 	"go.chromium.org/luci/cv/internal/run/eventpb"
 	"go.chromium.org/luci/cv/internal/run/impl/state"
 	"go.chromium.org/luci/cv/internal/run/pubsub"
+	"go.chromium.org/luci/cv/internal/tryjob"
 
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
@@ -194,6 +195,7 @@ func TestCancelTriggers(t *testing.T) {
 type dependencies struct {
 	pm        *prjmanager.Notifier
 	rm        *run.Notifier
+	tj        *tryjob.Notifier
 	clUpdater *clUpdaterMock
 }
 
@@ -354,12 +356,13 @@ func makeImpl(ct *cvtesting.Test) (*Impl, dependencies) {
 	deps := dependencies{
 		pm:        prjmanager.NewNotifier(ct.TQDispatcher),
 		rm:        run.NewNotifier(ct.TQDispatcher),
+		tj:        tryjob.NewNotifier(ct.TQDispatcher),
 		clUpdater: &clUpdaterMock{},
 	}
 	impl := &Impl{
 		PM:         deps.pm,
 		RM:         deps.rm,
-		CLMutator:  changelist.NewMutator(ct.TQDispatcher, deps.pm, deps.rm),
+		CLMutator:  changelist.NewMutator(ct.TQDispatcher, deps.pm, deps.rm, deps.tj),
 		CLUpdater:  deps.clUpdater,
 		TreeClient: ct.TreeFake.Client(),
 		GFactory:   ct.GFactory(),

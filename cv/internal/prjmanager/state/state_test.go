@@ -45,6 +45,7 @@ import (
 	"go.chromium.org/luci/cv/internal/prjmanager"
 	"go.chromium.org/luci/cv/internal/prjmanager/prjpb"
 	"go.chromium.org/luci/cv/internal/run"
+	"go.chromium.org/luci/cv/internal/tryjob"
 
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
@@ -62,7 +63,7 @@ type ctest struct {
 func (ct *ctest) SetUp() (context.Context, func()) {
 	ctx, cancel := ct.Test.SetUp()
 	ct.pm = prjmanager.NewNotifier(ct.TQDispatcher)
-	ct.clUpdater = changelist.NewUpdater(ct.TQDispatcher, changelist.NewMutator(ct.TQDispatcher, ct.pm, nil))
+	ct.clUpdater = changelist.NewUpdater(ct.TQDispatcher, changelist.NewMutator(ct.TQDispatcher, ct.pm, nil, tryjob.NewNotifier(ct.TQDispatcher)))
 	gerritupdater.RegisterUpdater(ct.clUpdater, ct.GFactory())
 	return ctx, cancel
 }

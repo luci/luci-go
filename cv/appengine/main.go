@@ -64,7 +64,7 @@ import (
 	runimpl "go.chromium.org/luci/cv/internal/run/impl"
 	"go.chromium.org/luci/cv/internal/tryjob"
 	"go.chromium.org/luci/cv/internal/tryjob/buildbucket"
-	"go.chromium.org/luci/cv/internal/tryjob/cancel"
+	"go.chromium.org/luci/cv/internal/tryjob/tjcancel"
 	"go.chromium.org/luci/cv/internal/userhtml"
 )
 
@@ -107,14 +107,15 @@ func main() {
 		// Register TQ handlers.
 		pmNotifier := prjmanager.NewNotifier(&tq.Default)
 		runNotifier := run.NewNotifier(&tq.Default)
-		clMutator := changelist.NewMutator(&tq.Default, pmNotifier, runNotifier)
+		tryjobNotifier := tryjob.NewNotifier(&tq.Default)
+		clMutator := changelist.NewMutator(&tq.Default, pmNotifier, runNotifier, tryjobNotifier)
 		clUpdater := changelist.NewUpdater(&tq.Default, clMutator)
 		gerritupdater.RegisterUpdater(clUpdater, gFactory)
 
 		buildbucketBackend := &buildbucket.Backend{}
 		tryjobUpdater := tryjob.NewUpdater(&tq.Default, runNotifier)
 		tryjobUpdater.RegisterBackend(buildbucketBackend)
-		tryjobCancellator := cancel.NewCancellator(&tq.Default)
+		tryjobCancellator := tjcancel.NewCancellator(tryjobNotifier)
 		tryjobCancellator.RegisterBackend(buildbucketBackend)
 
 		_ = pmimpl.New(pmNotifier, runNotifier, clMutator, gFactory, clUpdater)

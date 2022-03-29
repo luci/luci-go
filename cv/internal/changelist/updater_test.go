@@ -251,8 +251,8 @@ func TestUpdaterHappyPath(t *testing.T) {
 		ctx, cancel := ct.SetUp()
 		defer cancel()
 
-		pm, rm := pmMock{}, rmMock{}
-		u := NewUpdater(ct.TQDispatcher, NewMutator(ct.TQDispatcher, &pm, &rm))
+		pm, rm, tj := pmMock{}, rmMock{}, tjMock{}
+		u := NewUpdater(ct.TQDispatcher, NewMutator(ct.TQDispatcher, &pm, &rm, &tj))
 		b := &fakeUpdaterBackend{}
 		u.RegisterBackend(b)
 
@@ -366,8 +366,8 @@ func TestUpdaterFetchedNoNewData(t *testing.T) {
 		ctx, cancel := ct.SetUp()
 		defer cancel()
 
-		pm, rm := pmMock{}, rmMock{}
-		u := NewUpdater(ct.TQDispatcher, NewMutator(ct.TQDispatcher, &pm, &rm))
+		pm, rm, tj := pmMock{}, rmMock{}, tjMock{}
+		u := NewUpdater(ct.TQDispatcher, NewMutator(ct.TQDispatcher, &pm, &rm, &tj))
 		b := &fakeUpdaterBackend{}
 		u.RegisterBackend(b)
 
@@ -425,8 +425,8 @@ func TestUpdaterAccessRestriction(t *testing.T) {
 		ctx, cancel := ct.SetUp()
 		defer cancel()
 
-		pm, rm := pmMock{}, rmMock{}
-		u := NewUpdater(ct.TQDispatcher, NewMutator(ct.TQDispatcher, &pm, &rm))
+		pm, rm, tj := pmMock{}, rmMock{}, tjMock{}
+		u := NewUpdater(ct.TQDispatcher, NewMutator(ct.TQDispatcher, &pm, &rm, &tj))
 		b := &fakeUpdaterBackend{}
 		u.RegisterBackend(b)
 
@@ -614,7 +614,7 @@ func TestUpdaterAvoidsFetchWhenPossible(t *testing.T) {
 		ctx, cancel := ct.SetUp()
 		defer cancel()
 
-		u := NewUpdater(ct.TQDispatcher, NewMutator(ct.TQDispatcher, &pmMock{}, &rmMock{}))
+		u := NewUpdater(ct.TQDispatcher, NewMutator(ct.TQDispatcher, &pmMock{}, &rmMock{}, &tjMock{}))
 		b := &fakeUpdaterBackend{}
 		u.RegisterBackend(b)
 
@@ -761,7 +761,7 @@ func TestUpdaterResolveAndScheduleDepsUpdate(t *testing.T) {
 		ctx, cancel := ct.SetUp()
 		defer cancel()
 
-		u := NewUpdater(ct.TQDispatcher, NewMutator(ct.TQDispatcher, &pmMock{}, &rmMock{}))
+		u := NewUpdater(ct.TQDispatcher, NewMutator(ct.TQDispatcher, &pmMock{}, &rmMock{}, &tjMock{}))
 
 		scheduledUpdates := func() (out []string) {
 			for _, p := range ct.TQ.Tasks().Payloads() {
