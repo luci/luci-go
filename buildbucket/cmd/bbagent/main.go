@@ -376,7 +376,7 @@ func mainImpl() int {
 	shutdownCh := newCloseOnceCh()
 	var statusDetails *bbpb.StatusDetails
 	var subprocErr error
-	builds, err := host.Run(cctx, opts, func(ctx context.Context, hostOpts host.Options) error {
+	builds, errCh, err := host.Run(cctx, opts, func(ctx context.Context, hostOpts host.Options) error {
 		logging.Infof(ctx, "running luciexe: %q", exeArgs)
 		logging.Infof(ctx, "  (cache dir): %q", input.CacheDir)
 		invokeOpts := &invoke.Options{
@@ -416,6 +416,10 @@ func mainImpl() int {
 	})
 	if err != nil {
 		check(errors.Annotate(err, "could not start luciexe host environment").Err())
+	}
+
+	for err := range errCh {
+		check(errors.Annotate(err, "host environment callback failed").Err())
 	}
 
 	var (

@@ -27,7 +27,6 @@ import (
 
 	bbpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/clock"
-	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 )
 
@@ -36,12 +35,16 @@ var maxLogFlushWaitTime = 30 * time.Second
 // Run executes `cb` in a "luciexe" host environment.
 //
 // The merged Build objects collected from the host environment (i.e. generated
-// within `cb`) will be pushed to the returned channel as `cb` executes.
+// within `cb`) will be pushed to the returned build channel as `cb` executes.
+//
+// Error during starting up the host environment will be directly returned. But
+// Except the error returned by `cb`, which will be pushed to the returned error
+// channel.
 //
 // The context should be used for cancellation of the callback function; It's up
 // to the `cb` implementation to respect the cancelled context.
 //
-// When the callback function completes, Run closes the returned channel.
+// When the callback function completes, Run closes the returned channels.
 //
 // Blocking the returned channel may block the execution of `cb`.
 //
@@ -49,13 +52,13 @@ var maxLogFlushWaitTime = 30 * time.Second
 // running. Be careful when using Run concurrently with other code. You MUST
 // completely drain the returned channel in order to be guaranteed that all
 // side-effects of Run have been unwound.
-func Run(ctx context.Context, options *Options, cb func(context.Context, Options) error) (<-chan *bbpb.Build, error) {
+func Run(ctx context.Context, options *Options, cb func(context.Context, Options) error) (<-chan *bbpb.Build, <-chan error, error) {
 	var opts Options
 	if options != nil {
 		opts = *options
 	}
 	if err := opts.initialize(); err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	logging.Infof(ctx, "starting luciexe host env with: %+v", opts)
 
@@ -77,13 +80,13 @@ func Run(ctx context.Context, options *Options, cb func(context.Context, Options
 
 	logging.Infof(ctx, "starting auth services")
 	if err := cleanup.concat(startAuthServices(ctx, &opts)); err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	logging.Infof(ctx, "starting butler")
 	butler, err := startButler(ctx, &opts)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	cleanup.add("butler", func() error {
 		butler.Activate()
@@ -93,7 +96,7 @@ func Run(ctx context.Context, options *Options, cb func(context.Context, Options
 	logging.Infof(ctx, "starting build.proto merging agent")
 	agent, err := spyOn(ctx, butler, opts.BaseBuild)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	cleanup.add("buildmerge spy", func() error {
 		agent.Close()
@@ -136,17 +139,18 @@ func Run(ctx context.Context, options *Options, cb func(context.Context, Options
 	})
 	cleanup = nil
 
+	errCh := make(chan error)
 	go func() {
 		defer userCleanup.run(ctx)
 		logging.Infof(ctx, "invoking host environment callback")
 
+		defer close(errCh)
 		if err := cb(ctx, opts); err != nil {
-			logging.Errorf(ctx, "host environment callback failed:")
-			errors.Log(ctx, err)
+			errCh <- err
 		}
 	}()
 
-	return buildCh, nil
+	return buildCh, errCh, nil
 }
 
 // If ctx has the deadline set, waitTime is min(half of the remaining time
