@@ -42,7 +42,7 @@ func TestButler(t *testing.T) {
 		defer closer()
 
 		Convey(`butler active within Run`, func(c C) {
-			ch, _, err := Run(ctx, nil, func(ctx context.Context, _ Options) error {
+			ch, err := Run(ctx, nil, func(ctx context.Context, _ Options) error {
 				bs, err := bootstrap.Get()
 				c.So(err, ShouldBeNil)
 				c.So(bs.Client, ShouldNotBeNil)
