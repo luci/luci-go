@@ -305,7 +305,7 @@ func TestGetAuthDBSnapshot(t *testing.T) {
 	ctx := memory.Use(context.Background())
 
 	Convey("Testing GetAuthDBSnapshot", t, func() {
-		_, err := GetAuthDBSnapshot(ctx, 42)
+		_, err := GetAuthDBSnapshot(ctx, 42, false)
 		So(err, ShouldEqual, datastore.ErrNoSuchEntity)
 
 		snapshot := testAuthDBSnapshot(ctx, 42)
@@ -313,14 +313,14 @@ func TestGetAuthDBSnapshot(t *testing.T) {
 		err = datastore.Put(ctx, snapshot)
 		So(err, ShouldBeNil)
 
-		actual, err := GetAuthDBSnapshot(ctx, 42)
+		actual, err := GetAuthDBSnapshot(ctx, 42, false)
 		So(err, ShouldBeNil)
 		So(actual, ShouldResemble, snapshot)
 
 		err = datastore.Put(ctx, snapshot)
 		So(err, ShouldBeNil)
 
-		actual, err = GetAuthDBSnapshot(ctx, 42)
+		actual, err = GetAuthDBSnapshot(ctx, 42, false)
 		So(err, ShouldBeNil)
 		So(actual, ShouldResemble, snapshot)
 	})
@@ -374,8 +374,12 @@ func TestGetAuthDBSnapshot(t *testing.T) {
 		So(err, ShouldBeNil)
 		So(datastore.Put(ctx, snapshot), ShouldBeNil)
 
-		actualSnapshot, err := GetAuthDBSnapshot(ctx, 42)
+		actualSnapshot, err := GetAuthDBSnapshot(ctx, 42, false)
 		So(err, ShouldBeNil)
 		So(actualSnapshot.AuthDBDeflated, ShouldResemble, expectedAuthDB)
+
+		actualSnapshot, err = GetAuthDBSnapshot(ctx, 42, true)
+		So(err, ShouldBeNil)
+		So(actualSnapshot.AuthDBDeflated, ShouldBeNil)
 	})
 }

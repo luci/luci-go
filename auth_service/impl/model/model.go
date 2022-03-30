@@ -320,19 +320,22 @@ func GetAuthGlobalConfig(ctx context.Context) (*AuthGlobalConfig, error) {
 //
 // Returns datastore.ErrNoSuchEntity if the AuthDBSnapshot is not present.
 // Returns an annotated error for other errors.
-func GetAuthDBSnapshot(ctx context.Context, rev int64) (*AuthDBSnapshot, error) {
+func GetAuthDBSnapshot(ctx context.Context, rev int64, skipBody bool) (*AuthDBSnapshot, error) {
 	authDBSnapshot := &AuthDBSnapshot{
 		Kind: "AuthDBSnapshot",
 		ID:   rev,
 	}
 	switch err := datastore.Get(ctx, authDBSnapshot); {
 	case err == nil:
-		if len(authDBSnapshot.ShardIDs) != 0 {
+		if skipBody {
+			authDBSnapshot.AuthDBDeflated = nil
+		} else if len(authDBSnapshot.ShardIDs) != 0 {
 			authDBSnapshot.AuthDBDeflated, err = unshardAuthDB(ctx, authDBSnapshot.ShardIDs)
 			if err != nil {
 				return nil, err
 			}
 		}
+
 		return authDBSnapshot, nil
 	case err == datastore.ErrNoSuchEntity:
 		return nil, err
@@ -419,5 +422,16 @@ func (allowlist *AuthIPAllowlist) ToProto() *rpcpb.Allowlist {
 		Description: allowlist.Description,
 		CreatedTs:   timestamppb.New(allowlist.CreatedTS),
 		CreatedBy:   allowlist.CreatedBy,
+	}
+}
+
+// ToProto converts the AuthDBSnapshot entity to the protobuffer
+// equivalent Snapshot.
+func (snapshot *AuthDBSnapshot) ToProto() *rpcpb.Snapshot {
+	return &rpcpb.Snapshot{
+		AuthDbRev:      snapshot.ID,
+		AuthDbSha256:   snapshot.AuthDBSha256,
+		AuthDbDeflated: snapshot.AuthDBDeflated,
+		CreatedTs:      timestamppb.New(snapshot.CreatedTS),
 	}
 }

@@ -42,6 +42,9 @@ var AuthorizeRPCAccess = rpcacl.Interceptor(rpcacl.Map{
 	// All methods to work with allowlists require authorization.
 	"/auth.service.Allowlists/*": ServiceAccessGroup,
 
+	// All methods to work with AuthDB require authorization.
+	"/auth.service.AuthDB/*": ServiceAccessGroup,
+
 	// Internals are used by the UI which is accessible only to authorized users.
 	"/auth.internals.Internals/*": ServiceAccessGroup,
 })
