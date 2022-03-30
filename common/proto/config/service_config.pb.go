@@ -255,6 +255,9 @@ type Project struct {
 	unknownFields protoimpl.UnknownFields
 
 	// Globally unique id of the project.
+	//
+	// The id MUST contain only lowercase alphanumeric characters and hyphens.
+	// The id MUST NOT be empty or exceed 30 characters.
 	Id string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
 	// Where to import "projects/<id>" config set from.
 	//
