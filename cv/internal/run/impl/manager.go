@@ -345,11 +345,15 @@ func (tr *triageResult) triage(ctx context.Context, item eventbox.Event, eventLo
 		tr.clSubmittedEvents.events = append(tr.clSubmittedEvents.events, item)
 		tr.clSubmittedEvents.cls = append(tr.clSubmittedEvents.cls, common.CLID(e.GetClSubmitted().GetClid()))
 	case *eventpb.Event_SubmissionCompleted:
-		if tr.submissionCompletedEvent.sc != nil {
-			panic("received more than 1 SubmissionCompleted result")
+		existing, new := tr.submissionCompletedEvent.sc, e.GetSubmissionCompleted()
+		if existing != nil {
+			logging.Errorf(ctx, "crbug/1289448: multiple submission completed events received.\nexisting: %s\nnew: %s", existing, new)
 		}
-		tr.submissionCompletedEvent.event = item
-		tr.submissionCompletedEvent.sc = e.GetSubmissionCompleted()
+		if existing == nil || new.GetResult() > existing.GetResult() {
+			// only override if the new result is worse than the existing one.
+			tr.submissionCompletedEvent.event = item
+			tr.submissionCompletedEvent.sc = new
+		}
 	case *eventpb.Event_CqdVerificationCompleted:
 		tr.cqdVerificationCompletedEvents = append(tr.cqdVerificationCompletedEvents, item)
 	case *eventpb.Event_CqdTryjobsUpdated:
