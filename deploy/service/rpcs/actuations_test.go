@@ -57,8 +57,8 @@ func TestActuationsRPC(t *testing.T) {
 						Config: &modelpb.AssetConfig{
 							EnableAutomation: true,
 						},
-						IntendedState: &modelpb.AssetState{},
-						ReportedState: &modelpb.AssetState{},
+						IntendedState: intendedState(),
+						ReportedState: reportedState(),
 					},
 				},
 			}
@@ -69,7 +69,7 @@ func TestActuationsRPC(t *testing.T) {
 				ActuationId: "some-actuation",
 				Assets: map[string]*rpcpb.ActuatedAsset{
 					"apps/app": {
-						State: &modelpb.AssetState{},
+						State: reportedState(),
 					},
 				},
 			}
@@ -148,7 +148,7 @@ func TestActuationsRPC(t *testing.T) {
 
 			req := endReq()
 			req.Assets["apps/another"] = &rpcpb.ActuatedAsset{
-				State: &modelpb.AssetState{},
+				State: reportedState(),
 			}
 
 			_, err = srv.EndActuation(ctx, req)
@@ -168,8 +168,20 @@ func TestActuationsValidation(t *testing.T) {
 				Actuator:   &modelpb.ActuatorInfo{Identity: "mocked-actuator"},
 			},
 			Assets: map[string]*rpcpb.AssetToActuate{
-				"apps/app1": {},
-				"apps/app2": {},
+				"apps/app1": {
+					Config: &modelpb.AssetConfig{
+						EnableAutomation: true,
+					},
+					IntendedState: intendedState(),
+					ReportedState: reportedState(),
+				},
+				"apps/app2": {
+					Config: &modelpb.AssetConfig{
+						EnableAutomation: true,
+					},
+					IntendedState: intendedState(),
+					ReportedState: reportedState(),
+				},
 			},
 		}
 
@@ -209,10 +221,10 @@ func TestActuationsValidation(t *testing.T) {
 			ActuationId: "some-actuation",
 			Assets: map[string]*rpcpb.ActuatedAsset{
 				"apps/app1": {
-					State: &modelpb.AssetState{},
+					State: reportedState(),
 				},
 				"apps/app2": {
-					State: &modelpb.AssetState{},
+					State: reportedState(),
 				},
 			},
 		}
@@ -235,4 +247,53 @@ func TestActuationsValidation(t *testing.T) {
 			So(err, ShouldHaveGRPCStatus, codes.InvalidArgument)
 		})
 	})
+}
+
+func intendedState() *modelpb.AssetState {
+	return &modelpb.AssetState{
+		State: &modelpb.AssetState_Appengine{
+			Appengine: &modelpb.AppengineState{
+				IntendedState: &modelpb.AppengineState_IntendedState{},
+				Services: []*modelpb.AppengineState_Service{
+					{
+						Name: "default",
+						TrafficAllocation: map[string]int32{
+							"1234-version": 1000,
+						},
+						TrafficSplitting: modelpb.AppengineState_Service_COOKIE,
+						Versions: []*modelpb.AppengineState_Service_Version{
+							{
+								Name:          "1234-version",
+								IntendedState: &modelpb.AppengineState_Service_Version_IntendedState{},
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+}
+
+func reportedState() *modelpb.AssetState {
+	return &modelpb.AssetState{
+		State: &modelpb.AssetState_Appengine{
+			Appengine: &modelpb.AppengineState{
+				CapturedState: &modelpb.AppengineState_CapturedState{},
+				Services: []*modelpb.AppengineState_Service{
+					{
+						Name: "default",
+						TrafficAllocation: map[string]int32{
+							"1234-version": 1000,
+						},
+						Versions: []*modelpb.AppengineState_Service_Version{
+							{
+								Name:          "1234-version",
+								CapturedState: &modelpb.AppengineState_Service_Version_CapturedState{},
+							},
+						},
+					},
+				},
+			},
+		},
+	}
 }
