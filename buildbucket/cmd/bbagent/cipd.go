@@ -122,7 +122,7 @@ func installCipdPackages(ctx context.Context, build *bbpb.Build, workDir string)
 
 	// Prepend to $PATH
 	var extraAbsPaths []string
-	for p := range extraPathEnv {
+	for _, p := range extraPathEnv.ToSortedSlice() {
 		extraAbsPaths = append(extraAbsPaths, filepath.Join(workDir, p))
 	}
 	original := os.Getenv("PATH")

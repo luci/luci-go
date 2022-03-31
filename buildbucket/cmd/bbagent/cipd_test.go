@@ -113,7 +113,7 @@ func TestInstallCipdPackages(t *testing.T) {
 											Specs: []*pb.InputDataRef_CIPD_PkgSpec{{Package: "pkg_a", Version: "latest"}},
 										},
 									},
-									OnPath: []string{"path_a/bin"},
+									OnPath: []string{"path_a/bin", "path_a"},
 								},
 								"path_b": {
 									DataType: &pb.InputDataRef_Cipd{
@@ -121,7 +121,7 @@ func TestInstallCipdPackages(t *testing.T) {
 											Specs: []*pb.InputDataRef_CIPD_PkgSpec{{Package: "pkg_b", Version: "latest"}},
 										},
 									},
-									OnPath: []string{"path_b/bin"},
+									OnPath: []string{"path_b/bin", "path_b"},
 								},
 							},
 						},
@@ -158,8 +158,11 @@ func TestInstallCipdPackages(t *testing.T) {
 				},
 			})
 			pathEnv := os.Getenv("PATH")
-			So(strings.Contains(pathEnv, filepath.Join(cwd, "path_a/bin")), ShouldBeTrue)
-			So(strings.Contains(pathEnv, filepath.Join(cwd, "path_b/bin")), ShouldBeTrue)
+			var expectedPath []string
+			for _, p := range []string{"path_a", "path_a/bin", "path_b", "path_b/bin"} {
+				expectedPath = append(expectedPath, filepath.Join(cwd, p))
+			}
+			So(strings.Contains(pathEnv, strings.Join(expectedPath, string(os.PathListSeparator))), ShouldBeTrue)
 		})
 
 		Convey("failure", func() {

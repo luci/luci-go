@@ -2113,6 +2113,14 @@ type BuildInfra_Buildbucket_Agent struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
+	// TODO(crbug.com/1297809): for a long-term solution, we may need to add
+	// a top-level `on_path` array field in the input and read the value from
+	// configuration files (eg.settings.cfg, builder configs). So it can store
+	// the intended order of PATH env var. Then the per-inputDataRef level
+	// `on_path` field will be deprecated.
+	// Currently, the new BBagent flow merges all inputDataRef-level `on_path`
+	// values and sort. This mimics the same behavior of PyBB backend in order
+	// to have the cipd_installation migration to roll out first under a minimal risk.
 	Input  *BuildInfra_Buildbucket_Agent_Input  `protobuf:"bytes,1,opt,name=input,proto3" json:"input,omitempty"`
 	Output *BuildInfra_Buildbucket_Agent_Output `protobuf:"bytes,2,opt,name=output,proto3" json:"output,omitempty"`
 	Source *BuildInfra_Buildbucket_Agent_Source `protobuf:"bytes,3,opt,name=source,proto3" json:"source,omitempty"`

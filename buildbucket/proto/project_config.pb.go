@@ -344,8 +344,8 @@ type Builder struct {
 	// A list of top-level property names which can be overridden in
 	// ScheduleBuildRequest.
 	//
-	// If this field is the EXACT value ["*"] then all properties are permitted to
-	// be overridden.
+	// If this field is the EXACT value `["*"]` then all properties are permitted
+	// to be overridden.
 	//
 	// NOTE: Some executables (such as the recipe engine) can have drastic
 	// behavior differences based on some properties (for example, the "recipe"

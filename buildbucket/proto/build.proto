@@ -483,6 +483,14 @@ message BuildInfra {
         google.protobuf.Duration total_duration = 6;
       }
 
+      // TODO(crbug.com/1297809): for a long-term solution, we may need to add
+      // a top-level `on_path` array field in the input and read the value from
+      // configuration files (eg.settings.cfg, builder configs). So it can store
+      // the intended order of PATH env var. Then the per-inputDataRef level
+      // `on_path` field will be deprecated.
+      // Currently, the new BBagent flow merges all inputDataRef-level `on_path`
+      // values and sort. This mimics the same behavior of PyBB backend in order
+      // to have the cipd_installation migration to roll out first under a minimal risk.
       Input input = 1;
       Output output = 2;
       Source source = 3;
