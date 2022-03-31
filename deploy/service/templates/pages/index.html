@@ -1,5 +1,30 @@
+{{define "style"}}
+#assets-table {
+  table-layout: fixed;
+}
+{{end}}
+
 {{define "content"}}
 
-<h2>Hello</h2>
+{{template "breadcrumbs" .}}
+
+<div class="container">
+  <div class="row">
+    <div class="col">
+      <table class="table table-borderless" id="assets-table">
+        <tbody>
+        {{range .Assets}}
+          <tr>
+            <td>
+              <a href="{{.Ref.Href}}">{{template "assetTitle" .Ref}}</a>
+            </td>
+            <td style="width: 160px;">TODO: State</td>
+          </tr>
+        {{end}}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
 
 {{end}}

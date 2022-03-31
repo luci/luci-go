@@ -15,18 +15,36 @@
 package ui
 
 import (
-	"google.golang.org/protobuf/types/known/emptypb"
-
 	"go.chromium.org/luci/server/router"
 	"go.chromium.org/luci/server/templates"
+
+	"go.chromium.org/luci/deploy/api/rpcpb"
 )
+
+// assetOverview is a subset of asset data passed to the index HTML template.
+type assetOverview struct {
+	Ref assetRef
+	// TODO: add more
+}
 
 // indexPage renders the index page.
 func (ui *UI) indexPage(ctx *router.Context) error {
-	_, err := ui.deployments.SayHi(ctx.Context, &emptypb.Empty{})
+	listing, err := ui.assets.ListAssets(ctx.Context, &rpcpb.ListAssetsRequest{})
 	if err != nil {
 		return err
 	}
-	templates.MustRender(ctx.Context, ctx.Writer, "pages/index.html", nil)
+
+	assets := make([]assetOverview, len(listing.Assets))
+	for i, asset := range listing.Assets {
+		assets[i] = assetOverview{
+			Ref: assetRefFromID(asset.Id),
+			// TODO: add more
+		}
+	}
+
+	templates.MustRender(ctx.Context, ctx.Writer, "pages/index.html", map[string]interface{}{
+		"Breadcrumbs": rootBreadcrumbs(),
+		"Assets":      assets,
+	})
 	return nil
 }

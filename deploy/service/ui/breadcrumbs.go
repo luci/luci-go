@@ -12,25 +12,36 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package rpcs
+package ui
 
-import (
-	"context"
-
-	"google.golang.org/protobuf/types/known/emptypb"
-
-	"go.chromium.org/luci/common/logging"
-	"go.chromium.org/luci/server/auth"
-
-	"go.chromium.org/luci/deploy/api/rpcpb"
-)
-
-// Deployments is an implementation of deploy.service.Deployments service.
-type Deployments struct {
-	rpcpb.UnimplementedDeploymentsServer
+type breadcrumb struct {
+	Icon  string
+	Title string
+	Href  string
+	Last  bool
 }
 
-func (*Deployments) SayHi(ctx context.Context, _ *emptypb.Empty) (*emptypb.Empty, error) {
-	logging.Infof(ctx, "Hello %s", auth.CurrentIdentity(ctx))
-	return &emptypb.Empty{}, nil
+func rootBreadcrumbs() []breadcrumb {
+	return []breadcrumb{
+		{
+			Title: "All assets",
+			Href:  "/",
+			Last:  true,
+		},
+	}
+}
+
+func assetBreadcrumbs(ref assetRef) []breadcrumb {
+	return []breadcrumb{
+		{
+			Title: "All assets",
+			Href:  "/",
+		},
+		{
+			Icon:  ref.Icon,
+			Title: ref.Name,
+			Href:  ref.Href,
+			Last:  true,
+		},
+	}
 }

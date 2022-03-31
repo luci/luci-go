@@ -15,11 +15,15 @@ that can be found in the LICENSE file. -->
       font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
       font-size: 14px;
     }
+    a {
+      text-decoration: none!important;
+    }
     .user-avatar {
       width: 30;
       height: 30px;
       border-radius: 5px;
     }
+    {{block "style" .}}{{end}}
   </style>
 </head>
 
@@ -29,7 +33,9 @@ that can be found in the LICENSE file. -->
       <div class="container-fluid">
         <a class="navbar-brand" href="/">LUCI Deploy</a>
         <span class="navbar-text">
-          {{if .User.Picture}}<img class="user-avatar" src="{{.User.Picture}}">{{end}}
+          {{if .User.Picture}}
+          <img class="user-avatar" referrerpolicy="no-referrer" src="{{.User.Picture}}">
+          {{end}}
           {{.User.Email}} | <a href="{{.LogoutURL}}">Logout</a>
         </span>
       </div>
@@ -49,4 +55,36 @@ that can be found in the LICENSE file. -->
 </body>
 
 </html>
+{{end}}
+
+
+{{define "assetTitle"}}
+<img src="/static/icons/{{.Icon}}" title="{{.Kind}}"> {{.Name}}
+{{end}}
+
+
+{{define "breadcrumbs"}}
+<nav aria-label="breadcrumb">
+  <ol class="breadcrumb bg-light p-2">
+    {{range $crumb := .Breadcrumbs }}
+      {{if $crumb.Last}}
+      <li class="breadcrumb-item active" aria-current="page">
+        {{if $crumb.Icon}}
+        <img src="/static/icons/{{$crumb.Icon}}">
+        {{end}}
+        {{$crumb.Title}}
+      </li>
+      {{else}}
+      <li class="breadcrumb-item">
+        <a href="{{$crumb.Href}}">
+          {{if $crumb.Icon}}
+          <img src="/static/icons/{{$crumb.Icon}}">
+          {{end}}
+          {{$crumb.Title}}
+        </a>
+      </li>
+      {{end}}
+    {{end}}
+  </ol>
+</nav>
 {{end}}

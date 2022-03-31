@@ -1,0 +1,30 @@
+{{define "style"}}
+
+#asset-title {
+  margin-bottom: 0px;
+}
+
+#asset-title img {
+  width: 40px;
+  height: 40px;
+}
+
+{{end}}
+
+{{define "content"}}
+
+{{template "breadcrumbs" .}}
+
+<div class="container">
+  <div class="row">
+    <div class="col">
+      <h2 id="asset-title">{{template "assetTitle" .Ref}}</h2>
+      <hr>
+      <b>TODO: actual UI</b>
+      <hr>
+      <pre>{{.Dump}}</pre>
+    </div>
+  </div>
+</div>
+
+{{end}}

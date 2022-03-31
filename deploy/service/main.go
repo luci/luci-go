@@ -40,10 +40,18 @@ import (
 	_ "go.chromium.org/luci/gae/service/datastore/crbug1242998safeget"
 )
 
+const (
+	// Members are actuation agents running actual deployments.
+	actuatorsGroup = "luci-deploy-actuators"
+	// Members have read-only access to the UI and API.
+	accessGroup = "luci-deploy-access"
+)
+
 // RPC-level ACLs.
 var rpcACL = rpcacl.Map{
 	"/discovery.Discovery/*":       rpcacl.All,
-	"/deploy.service.Actuations/*": "luci-deploy-actuators",
+	"/deploy.service.Actuations/*": actuatorsGroup,
+	"/deploy.service.Assets/*":     accessGroup,
 }
 
 func main() {
@@ -57,11 +65,11 @@ func main() {
 
 	server.Main(nil, modules, func(srv *server.Server) error {
 		actuations := rpcs.Actuations{}
-		deployments := rpcs.Deployments{}
+		assets := rpcs.Assets{}
 
 		// All pRPC APIs.
 		rpcpb.RegisterActuationsServer(srv.PRPC, &actuations)
-		rpcpb.RegisterDeploymentsServer(srv.PRPC, &deployments)
+		rpcpb.RegisterAssetsServer(srv.PRPC, &assets)
 
 		// Authentication methods for pRPC APIs.
 		srv.PRPC.Authenticator = &auth.Authenticator{
@@ -86,7 +94,7 @@ func main() {
 		srv.PRPC.UnaryServerInterceptor = rpcacl.Interceptor(rpcACL)
 
 		// Web UI routes.
-		ui.RegisterRoutes(srv, &deployments)
+		ui.RegisterRoutes(srv, accessGroup, &assets)
 
 		return nil
 	})

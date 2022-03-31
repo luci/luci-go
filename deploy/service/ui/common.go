@@ -22,6 +22,7 @@ import (
 	"unicode"
 	"unicode/utf8"
 
+	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
 	"go.chromium.org/luci/auth/identity"
@@ -40,11 +41,11 @@ type UI struct {
 	prod    bool   // true when running on GAE
 	version string // e.g. "434535-abcdef"
 
-	deployments *rpcs.Deployments
+	assets *rpcs.Assets
 }
 
 // RegisterRoutes installs UI HTTP routes.
-func RegisterRoutes(srv *server.Server, deployments *rpcs.Deployments) {
+func RegisterRoutes(srv *server.Server, accessGroup string, assets *rpcs.Assets) {
 	if !srv.Options.Prod {
 		srv.Routes.Static("/static", nil, http.Dir("./static"))
 	}
@@ -55,18 +56,19 @@ func RegisterRoutes(srv *server.Server, deployments *rpcs.Deployments) {
 	}
 
 	ui := UI{
-		prod:        srv.Options.Prod,
-		version:     version,
-		deployments: deployments,
+		prod:    srv.Options.Prod,
+		version: version,
+		assets:  assets,
 	}
 
 	mw := router.NewMiddlewareChain(
 		templates.WithTemplates(ui.prepareTemplates()),
 		auth.Authenticate(srv.CookieAuth),
-		requireLogin,
+		checkAccess(accessGroup),
 	)
 
 	srv.Routes.GET("/", mw, wrapErr(ui.indexPage))
+	srv.Routes.GET("/a/*AssetID", mw, wrapErr(ui.assetPage))
 }
 
 // prepareTemplates loads HTML page templates.
@@ -94,20 +96,33 @@ func (ui *UI) prepareTemplates() *templates.Bundle {
 	}
 }
 
-// requireLogin redirect anonymous users to the login page.
-func requireLogin(ctx *router.Context, next router.Handler) {
-	if auth.CurrentIdentity(ctx.Context) != identity.AnonymousIdentity {
-		next(ctx) // already logged in
-		return
+// checkAccess checks users are authorized to see the UI.
+//
+// Redirect anonymous users to the login page.
+func checkAccess(accessGroup string) router.Middleware {
+	return func(ctx *router.Context, next router.Handler) {
+		// Redirect anonymous users to login first.
+		if auth.CurrentIdentity(ctx.Context) == identity.AnonymousIdentity {
+			loginURL, err := auth.LoginURL(ctx.Context, ctx.Request.URL.RequestURI())
+			if err != nil {
+				replyErr(ctx, err)
+			} else {
+				http.Redirect(ctx.Writer, ctx.Request, loginURL, http.StatusFound)
+			}
+			return
+		}
+		// Check they are in the access group.
+		switch yes, err := auth.IsMember(ctx.Context, accessGroup); {
+		case err != nil:
+			replyErr(ctx, err)
+		case !yes:
+			replyErr(ctx, status.Errorf(codes.PermissionDenied,
+				"Access denied. Not a member of %q group. Try to login with a different email.",
+				accessGroup))
+		default:
+			next(ctx)
+		}
 	}
-
-	loginURL, err := auth.LoginURL(ctx.Context, ctx.Request.URL.RequestURI())
-	if err != nil {
-		replyErr(ctx, err)
-		return
-	}
-
-	http.Redirect(ctx.Writer, ctx.Request, loginURL, http.StatusFound)
 }
 
 // wrapErr is a handler wrapper that converts gRPC errors into HTML pages.
