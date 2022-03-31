@@ -17,8 +17,8 @@ inbound_services:
 - warmup
 
 handlers:
-- url: /static/bootstrap
-  static_dir: static/bootstrap
+- url: /static
+  static_dir: static
   secure: always
 - url: /.*
   script: auto
