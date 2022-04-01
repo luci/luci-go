@@ -42,7 +42,6 @@ import (
 
 	"github.com/golang/protobuf/jsonpb"
 	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/durationpb"
 	"google.golang.org/protobuf/types/known/fieldmaskpb"
@@ -60,7 +59,6 @@ import (
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/logging/gologger"
 	"go.chromium.org/luci/common/retry"
-	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/common/sync/dispatcher"
 	"go.chromium.org/luci/common/system/environ"
 	"go.chromium.org/luci/grpc/grpcutil"
@@ -135,31 +133,17 @@ func mainImpl() int {
 	var secrets *bbpb.BuildSecrets
 	var err error
 
-	// bbclientRetriesEnabled is a passed-py-pointer value which we use to turn
-	// retries on and off during the build.
-	//
-	// * We start with retries disabled to fetch the build from Buildbucekt and
-	//   send the initial status==STARTED update.
-	// * Then enable it to update the build if there's any fatal error in startup.
-	// * We then disable it again for the main build updates because the
-	//   dispatcher.Channel will handle them during the execution of the user
-	//   process; In particular we want dispatcher.Channel to be able to move on
-	//   to a newer version of the Build if it encounters transient errors, rather
-	//   than retrying a potentially stale Build state.
-	// * We then enable it again after the user process has finished.
-	bbclientRetriesEnabled := false
-
 	switch {
 	case len(args) == 1:
 		// TODO(crbug/1219018): Remove CLI BBAgentArgs mode in favor of -host + -build-id.
 		logging.Debugf(ctx, "parsing BBAgentArgs")
 		input, err = bbinput.Parse(args[0])
 		check(errors.Annotate(err, "could not unmarshal BBAgentArgs").Err())
-		bbclient, secrets, err = newBuildsClient(ctx, input.Build.Infra.Buildbucket.GetHostname(), &bbclientRetriesEnabled)
+		bbclient, secrets, err = newBuildsClient(ctx, input.Build.Infra.Buildbucket.GetHostname(), retry.Default)
 		check(errors.Annotate(err, "could not connect to Buildbucket").Err())
 	case *hostname != "" && *buildID > 0:
 		logging.Debugf(ctx, "fetching build %d", *buildID)
-		bbclient, secrets, err = newBuildsClient(ctx, *hostname, &bbclientRetriesEnabled)
+		bbclient, secrets, err = newBuildsClient(ctx, *hostname, retry.Default)
 		check(errors.Annotate(err, "could not connect to Buildbucket").Err())
 		// Get everything from the build.
 		// Here we use UpdateBuild instead of GetBuild, so that
@@ -171,8 +155,8 @@ func mainImpl() int {
 		// TODO(crbug.com/1019272):  we should also use this RPC to set the initial
 		// status of the build to STARTED (and also be prepared to quit in the case
 		// that this build got double-scheduled).
-		build, err := retryUpdateBuild(
-			ctx, bbclient,
+		build, err := bbclient.UpdateBuild(
+			ctx,
 			&bbpb.UpdateBuildRequest{
 				Build: &bbpb.Build{
 					Id: *buildID,
@@ -180,8 +164,7 @@ func mainImpl() int {
 				Mask: &bbpb.BuildMask{
 					AllFields: true,
 				},
-			},
-			"Transient error to fetch build.")
+			})
 
 		check(errors.Annotate(err, "failed to fetch build").Err())
 		input = &bbpb.BBAgentArgs{
@@ -238,8 +221,8 @@ func mainImpl() int {
 
 	// We send a single status=STARTED here, and will send the final build status
 	// after the user executable completes.
-	updatedBuild, err := retryUpdateBuild(
-		cctx, bbclient,
+	updatedBuild, err := bbclient.UpdateBuild(
+		cctx,
 		&bbpb.UpdateBuildRequest{
 			Build: &bbpb.Build{
 				Id:     input.Build.Id,
@@ -247,8 +230,7 @@ func mainImpl() int {
 			},
 			UpdateMask: &fieldmaskpb.FieldMask{Paths: []string{"build.status"}},
 			Mask:       readMask,
-		},
-		"Transient error to report status STARTED to Buildbucket.")
+		})
 	check(errors.Annotate(err, "failed to report status STARTED to Buildbucket").Err())
 	// The build has been canceled, bail out early.
 	if updatedBuild.CancelTime != nil {
@@ -379,11 +361,16 @@ func mainImpl() int {
 	exeArgs := processExeArgs(input, check)
 	dispatcherOpts, dispatcherErrCh := channelOpts(cctx)
 	canceledBuildCh := newCloseOnceCh()
-	buildsCh, err := dispatcher.NewChannel(cctx, dispatcherOpts, mkSendFn(cctx, bbclient, input.Build.Id, canceledBuildCh))
+	// Use a dedicated BuildsClient for dispatcher, which turns off retries.
+	// dispatcher.Channel will handle retries instead.
+	bbclientForDispatcher, _, err := newBuildsClient(cctx, input.Build.Infra.Buildbucket.GetHostname(), func() retry.Iterator { return nil })
+	if err != nil {
+		check(errors.Annotate(err, "could not connect to Buildbucket").Err())
+	}
+	buildsCh, err := dispatcher.NewChannel(cctx, dispatcherOpts, mkSendFn(cctx, bbclientForDispatcher, input.Build.Id, canceledBuildCh))
 	check(errors.Annotate(err, "could not create builds dispatcher channel").Err())
 	defer buildsCh.CloseAndDrain(cctx)
 
-	bbclientRetriesEnabled = false // dispatcher.Channel will handle retries.
 	shutdownCh := newCloseOnceCh()
 	var statusDetails *bbpb.StatusDetails
 	var subprocErr error
@@ -488,7 +475,6 @@ func mainImpl() int {
 	}
 	// No need to check the returned build here because it's already finalizing
 	// the build.
-	bbclientRetriesEnabled = true
 	_, bbErr := bbclient.UpdateBuild(
 		cctx,
 		&bbpb.UpdateBuildRequest{
@@ -636,25 +622,6 @@ func processExeArgs(input *bbpb.BBAgentArgs, check func(err error)) []string {
 	exeArgs = append(exeArgs, input.Build.Exe.Cmd[1:]...)
 
 	return exeArgs
-}
-
-func retryUpdateBuild(ctx context.Context, bbclient BuildsClient, req *bbpb.UpdateBuildRequest, logMsg string) (build *bbpb.Build, err error) {
-	err = retry.Retry(ctx, transient.Only(retry.Default), func() (err error) {
-		build, err = bbclient.UpdateBuild(ctx, req)
-
-		// Attach transient tag to internal transient error and NotFound.
-		code := status.Code(err)
-		if grpcutil.IsTransientCode(code) || code == codes.NotFound || code == codes.DeadlineExceeded {
-			err = transient.Tag.Apply(err)
-		}
-		return err
-	}, func(err error, sleepTime time.Duration) {
-		logging.Fields{
-			logging.ErrorKey: err,
-			"sleepTime":      sleepTime,
-		}.Warningf(ctx, "%s Will retry in %s", logMsg, sleepTime)
-	})
-	return
 }
 
 func cancelBuild(ctx context.Context, bbclient BuildsClient, bld *bbpb.Build) (retCode int) {

@@ -21,7 +21,9 @@ import (
 	"golang.org/x/time/rate"
 	"google.golang.org/genproto/protobuf/field_mask"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
+	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/fieldmaskpb"
 
 	"go.chromium.org/luci/auth"
@@ -32,6 +34,7 @@ import (
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/common/sync/dispatcher"
 	"go.chromium.org/luci/common/sync/dispatcher/buffer"
+	"go.chromium.org/luci/grpc/grpcutil"
 	"go.chromium.org/luci/grpc/prpc"
 	"go.chromium.org/luci/lucictx"
 
@@ -68,41 +71,49 @@ func (dummyBBClient) UpdateBuild(ctx context.Context, in *bbpb.UpdateBuildReques
 }
 
 type liveBBClient struct {
-	tok string
-	c   bbpb.BuildsClient
+	tok    string
+	c      bbpb.BuildsClient
+	retryF retry.Factory
 }
 
-func (bb *liveBBClient) UpdateBuild(ctx context.Context, in *bbpb.UpdateBuildRequest, opts ...grpc.CallOption) (*bbpb.Build, error) {
+func (bb *liveBBClient) UpdateBuild(ctx context.Context, in *bbpb.UpdateBuildRequest, opts ...grpc.CallOption) (build *bbpb.Build, err error) {
 	ctx = metadata.NewOutgoingContext(ctx, metadata.Pairs(buildbucket.BuildbucketTokenHeader, bb.tok))
-	return bb.c.UpdateBuild(ctx, in, opts...)
+	err = retry.Retry(ctx, transient.Only(bb.retryF), func() (err error) {
+		build, err = bb.c.UpdateBuild(ctx, in)
+
+		// Attach transient tag to internal transient error and NotFound.
+		code := status.Code(err)
+		if grpcutil.IsTransientCode(code) || code == codes.NotFound || code == codes.DeadlineExceeded {
+			err = transient.Tag.Apply(err)
+		}
+		return err
+	}, func(err error, sleepTime time.Duration) {
+		logging.Fields{
+			logging.ErrorKey: err,
+			"sleepTime":      sleepTime,
+		}.Warningf(ctx, "UpdateBuild will retry in %s", sleepTime)
+	})
+	return
 }
 
 // Reads the build secrets from the environment and constructs a BuildsClient
 // which can be used to update the build state.
 //
 // retryEnabled allows us to switch retries for this client on and off
-func newBuildsClient(ctx context.Context, hostname string, retryEnabled *bool) (BuildsClient, *bbpb.BuildSecrets, error) {
+func newBuildsClient(ctx context.Context, hostname string, retryF retry.Factory) (BuildsClient, *bbpb.BuildSecrets, error) {
 	if hostname == "" {
 		logging.Infof(ctx, "No buildbucket hostname set; making dummy buildbucket client.")
 		return dummyBBClient{}, &bbpb.BuildSecrets{BuildToken: buildbucket.DummyBuildbucketToken}, nil
 	}
-	opts := prpc.DefaultOptions()
-	opts.Insecure = lhttp.IsLocalHost(hostname)
-	originalRetry := opts.Retry
-	opts.Retry = func() retry.Iterator {
-		if *retryEnabled {
-			return originalRetry()
-		}
-		return nil
-	}
-
-	// As of 2021-06-28, the P99 of UpdateBuild latency is ~2.1s.
-	// So 5s should be long enough for the most of requests.
-	opts.PerRPCTimeout = 5 * time.Second
 
 	prpcClient := &prpc.Client{
-		Host:    hostname,
-		Options: opts,
+		Host: hostname,
+		Options: &prpc.Options{
+			Insecure: lhttp.IsLocalHost(hostname),
+			// As of 2021-06-28, the P99 of UpdateBuild latency is ~2.1s.
+			// So 5s should be long enough for the most of requests.
+			PerRPCTimeout: 5 * time.Second,
+		},
 	}
 	secrets, err := readBuildSecrets(ctx)
 	if err != nil {
@@ -130,6 +141,7 @@ func newBuildsClient(ctx context.Context, hostname string, retryEnabled *bool) (
 	return &liveBBClient{
 		secrets.BuildToken,
 		bbpb.NewBuildsPRPCClient(prpcClient),
+		retryF,
 	}, secrets, nil
 }
 
