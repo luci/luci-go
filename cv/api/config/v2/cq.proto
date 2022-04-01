@@ -363,7 +363,7 @@ message Verifiers {
 
   // Tryjob configures builders which CQ may trigger and/or use to verify CL(s).
   message Tryjob {
-    // Next field number: 4
+    // Next field number: 15
 
     // Builders on which tryjobs should be triggered.
     //
@@ -401,6 +401,7 @@ message Verifiers {
       //
       // Not combinable with:
       //   * location_regexp[_exclude]
+      //   * location_filters
       //   * experiment_percentage
       //   * triggered_by
       bool includable_only = 9;
@@ -481,8 +482,8 @@ message Verifiers {
       // experimental. It is only triggered on a given percentage of the CLs
       // and the outcome does not affect the decision of whether a CL can land
       // or not. This is typically used to test new builders and estimate their
-      // capacity requirements.  May be combined with location_regexp and
-      // location_regexp_exclude.
+      // capacity requirements. May be combined with location_regexp and
+      // location_regexp_exclude or location_filters.
       float experiment_percentage = 4;
 
       // Optionally specified alternative builder for CQ to choose instead.
@@ -500,6 +501,8 @@ message Verifiers {
 
       // Optional. Require this builder only if location_regexp matches a file
       // in this CL.
+      //
+      // Replaced by location_filters. See crbug.com/1171945.
       //
       // This means:
       //   * If specified and no file in a CL matches any of the
@@ -546,8 +549,81 @@ message Verifiers {
       //     will match a CL which touches at least one file other than
       //     'one.txt' in any repository OR belongs to any other Gerrit server.
       //     Note, in this case location_regexp defaults to ".*".
-      repeated string location_regexp = 6;
-      repeated string location_regexp_exclude = 7;
+      repeated string location_regexp = 6 [deprecated = true];
+      repeated string location_regexp_exclude = 7 [deprecated = true];
+
+      // Optional. Require this builder only if a file in the CL is included
+      // by location_filters.
+      //
+      // location_filters is an ordered list of LocationFilter messages, where
+      // each message includes regular expressions for the matching Gerrit
+      // host, Gerrit project and file path, as well as a boolean field to
+      // specify whether the filter is an exclude filter or not.
+      //
+      // Files "in the CL" means all files touched, i.e. added, modified or
+      // deleted.
+      //
+      // The Gerrit host, Gerrit project and file path are matched against the
+      // respective patterns in the LocationFilter. The last LocationFilter
+      // that match all patterns (host, project, and path) determines whether
+      // the the file is considered included, i.e. if the last matching
+      // LocationFilter has exclude set to false, then it's included; else
+      // included.
+      //
+      // If none of the LocationFilters match, then the file is considered
+      // included if the first rule is an exclude rule; else the file is
+      // excluded.
+      //
+      // If host, project or path are empty, then they will match anything
+      // (".*") by default. The syntax for regular expressions is Google's re2
+      // syntax for regexp, documented here:
+      // https://github.com/google/re2/wiki/Syntax.
+      //
+      // If location_filters is non-empty, and no file in a CL is included by
+      // location_filters, then this builder will not be triggered. If
+      // location_filters is empty or not specified, then the builder will be
+      // triggered by default, subject to other conditions, e.g.
+      // mode_allowlist.
+      //
+      // These options currently can not be combined with the following other
+      // options:
+      //   * triggered_by
+      //   * GerritCQAbility.allow_submit_with_open_deps
+      // If you need to combine them, please talk to LUCI CV owners.
+      // (https://chromium.googlesource.com/infra/luci/luci-go/+/HEAD/cv/OWNERS)
+      //
+      // Examples:
+      //
+      //   location_filters: {path_regexp: "/excluded/.+", exclude: true}
+      //   location_filters: {path_regexp: "/excluded/exception", exclude: false}
+      //
+      //     Result: files outside of the "excluded" directory will be
+      //     included, and so will "excluded/exception" will, but other files
+      //     in the "excluded" directory will not match.
+      //
+      //   location_filters: {path_regexp: ".*", exclude: false} // include all by default
+      //   location_filters: {host_regexp: "https://example.com",
+      //                      project_regexp: "repo",
+      //                      exclude: true}
+      //   location_filters: {host_regexp: "https://example.com",
+      //                      project_regexp: "repo",
+      //                      path_regexp: "/all/one.txt",
+      //                      exclude: false}
+      //
+      //     Result: files in the specified host and repo will not be included,
+      //     except all/one.txt which will be included; files outside of the
+      //     given host/repo will be included.
+      message LocationFilter {
+        // Regexes to match host, repo, or path string.
+        // Default for each is ".*", matching anything.
+        string gerrit_host_regexp = 1;
+        string gerrit_project_regexp = 2;
+        string path_regexp = 3;
+        // If true, then when a file matches the above patterns
+        // then this filter doesn't match the file.
+        bool exclude = 4;
+      }
+      repeated LocationFilter location_filters = 15;
 
       // If set, this builder will only be triggered if the CL owner (who first
       // uploaded the CL) is a member of at least one of these groups.
