@@ -65,10 +65,7 @@ func (impl *Impl) Start(ctx context.Context, rs *state.RunState) (*Result, error
 	switch ok, err := checkRunCreate(ctx, rs, cg, runCLs, cls); {
 	case err != nil:
 		return nil, err
-	case ok:
-		rs.CreationAllowed = run.CreationAllowedYes
-	default:
-		rs.CreationAllowed = run.CreationAllowedNo
+	case !ok:
 		return &Result{State: rs}, nil
 	}
 

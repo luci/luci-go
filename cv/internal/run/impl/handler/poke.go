@@ -65,8 +65,6 @@ func (impl *Impl) Poke(ctx context.Context, rs *state.RunState) (*Result, error)
 				return nil, err
 			}
 			rs.LatestCLsRefresh = datastore.RoundTime(clock.Now(ctx).UTC())
-		default:
-			rs.CreationAllowed = run.CreationAllowedNo
 		}
 	}
 	return impl.processExpiredLongOps(ctx, rs)

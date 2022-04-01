@@ -239,7 +239,6 @@ func TestPokeRecheckTree(t *testing.T) {
 				So(res.SideEffectFn, ShouldBeNil)
 				So(res.PreserveEvents, ShouldBeFalse)
 				So(res.PostProcessFn, ShouldBeNil)
-				So(res.State.CreationAllowed, ShouldEqual, run.CreationAllowedNo)
 				So(res.State.Status, ShouldEqual, rs.Status)
 				So(deps.clUpdater.refreshedCLs, ShouldBeEmpty)
 

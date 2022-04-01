@@ -91,11 +91,8 @@ func (impl *Impl) OnCLsUpdated(ctx context.Context, rs *state.RunState, clids co
 	// Check the Run creation, in case the Run is no longer valid
 	// with the newly updated CL info.
 	rs = rs.ShallowCopy()
-	switch ok, err := checkRunCreate(ctx, rs, cg, runCLs, cls); {
-	case err != nil:
+	if _, err := checkRunCreate(ctx, rs, cg, runCLs, cls); err != nil {
 		return nil, err
-	case !ok:
-		rs.CreationAllowed = run.CreationAllowedNo
 	}
 	return &Result{State: rs}, nil
 }

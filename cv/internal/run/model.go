@@ -48,19 +48,6 @@ const (
 	MaxTryjobs = 1024
 )
 
-// CreationAllowedResult tells whether acls.CheckRunCreate
-// allowed a given Run to be created.
-type CreationAllowedResult int
-
-const (
-	// CreationAllowedUnset indicates that the result was unset
-	CreationAllowedUnset CreationAllowedResult = iota
-	// CreationAllowedYes indicates that the creation was allowed.
-	CreationAllowedYes
-	// CreationAllowedNo indicates that the creation was disallowed.
-	CreationAllowedNo
-)
-
 // Run is an entity that contains high-level information about a CV Run.
 //
 // In production, Run entities are created only by the "runcreator" package.
@@ -133,9 +120,6 @@ type Run struct {
 	// LatestCLsRefresh is the latest time when Run Manager scheduled async
 	// refresh of CLs.
 	LatestCLsRefresh time.Time `gae:",noindex"`
-
-	// CreationAllowed tells if the Run was allowed to be created.
-	CreationAllowed CreationAllowedResult `gae:",noindex"`
 }
 
 // Mutate mutates the Run by executing `mut`.

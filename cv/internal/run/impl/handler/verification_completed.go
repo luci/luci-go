@@ -60,10 +60,6 @@ func (impl *Impl) OnCQDVerificationCompleted(ctx context.Context, rs *state.RunS
 		return nil, errors.Annotate(err, "failed to load VerifiedRun").Tag(transient.Tag).Err()
 	}
 
-	// TODO(crbug/1268574): Delete after we are confident that CV and CQ make
-	// the same decision.
-	compareRunCreationResult(ctx, rs, vr.Payload.GetFailedVerifier())
-
 	rs = rs.ShallowCopy()
 	switch vr.Payload.Action {
 	case migrationpb.ReportVerifiedRunRequest_ACTION_SUBMIT:
@@ -118,23 +114,4 @@ func (impl *Impl) cancelTriggers(ctx context.Context, rs *state.RunState, meta r
 		return err
 	}
 	return impl.cancelCLTriggers(ctx, rs.ID, runCLs, runCLExternalIDs, cg, meta)
-}
-
-func compareRunCreationResult(ctx context.Context, rs *state.RunState, cqdFailedVerifier string) {
-	if rs.CreationAllowed == run.CreationAllowedUnset {
-		logging.Warningf(ctx, "crbug/1268574 - %s: CreationAllowed was unset.", rs.ID)
-		return
-	}
-	cqAllowed := cqdFailedVerifier != "gerrit_cq_ability"
-	cvAllowed := rs.CreationAllowed == run.CreationAllowedYes
-	switch {
-	case cvAllowed && cqAllowed:
-		logging.Debugf(ctx, "crbug/1268574 - %s: Both CV and CQDaemon allowed run creation", rs.ID)
-	case cvAllowed && !cqAllowed:
-		logging.Warningf(ctx, "crbug/1268574 - %s: CV allowed creation but CQ didn't. Triggering time: %s all CLs: %v", rs.ID, rs.CreateTime, rs.CLs)
-	case !cvAllowed && !cqAllowed:
-		logging.Debugf(ctx, "crbug/1268574 - %s: Both CV and CQDaemon denied run creation", rs.ID)
-	case !cvAllowed && cqAllowed:
-		logging.Warningf(ctx, "crbug/1268574 - %s: CV denied creation but CQ allowed. Triggering time: %s. All CLs: %v", rs.ID, rs.CreateTime, rs.CLs)
-	}
 }
