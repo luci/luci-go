@@ -15,6 +15,7 @@
 package model
 
 import (
+	"fmt"
 	"strings"
 
 	"google.golang.org/grpc/codes"
@@ -79,6 +80,9 @@ func IsActuationEnabed(cfg *modelpb.AssetConfig, dep *modelpb.DeploymentConfig) 
 }
 
 // IsUpToDate is true if the intended state matches the reported state.
+//
+// States must be non-erroneous and be valid per ValidateIntendedState and
+// ValidateReportedState.
 func IsUpToDate(intended *modelpb.AssetState, reported *modelpb.AssetState) bool {
 	if intended := intended.GetAppengine(); intended != nil {
 		if reported := reported.GetAppengine(); reported != nil {
@@ -101,9 +105,9 @@ func validateAppengineIntendedState(state *modelpb.AppengineState) error {
 		return errors.Reason("no intended_state field").Err()
 	}
 
-	err := visitServices(state, func(svc *modelpb.AppengineState_Service) error {
-		if len(svc.TrafficAllocation) == 0 {
-			return errors.Reason("no traffic_allocation field").Err()
+	err := visitServices(state, true, func(svc *modelpb.AppengineState_Service) error {
+		if err := validateTrafficAllocation(svc.TrafficAllocation); err != nil {
+			return err
 		}
 		if svc.TrafficSplitting == 0 {
 			return errors.Reason("no traffic_splitting field").Err()
@@ -114,7 +118,7 @@ func validateAppengineIntendedState(state *modelpb.AppengineState) error {
 		return err
 	}
 
-	return visitVersions(state, func(ver *modelpb.AppengineState_Service_Version) error {
+	return visitVersions(state, true, func(ver *modelpb.AppengineState_Service_Version) error {
 		if ver.IntendedState == nil {
 			return errors.Reason("no intended_state field").Err()
 		}
@@ -127,9 +131,11 @@ func validateAppengineReportedState(state *modelpb.AppengineState) error {
 		return errors.Reason("no captured_state field").Err()
 	}
 
-	err := visitServices(state, func(svc *modelpb.AppengineState_Service) error {
-		if len(svc.TrafficAllocation) == 0 {
-			return errors.Reason("no traffic_allocation field").Err()
+	// Note: the list of reported services may be empty for a completely new GAE
+	// app.
+	err := visitServices(state, true, func(svc *modelpb.AppengineState_Service) error {
+		if err := validateTrafficAllocation(svc.TrafficAllocation); err != nil {
+			return err
 		}
 		// Sadly, GAE Admin API doesn't report traffic_splitting method, so we skip
 		// validating it.
@@ -139,7 +145,9 @@ func validateAppengineReportedState(state *modelpb.AppengineState) error {
 		return err
 	}
 
-	return visitVersions(state, func(ver *modelpb.AppengineState_Service_Version) error {
+	// Note: it is not possible to have a GAE service running without any
+	// versions.
+	return visitVersions(state, false, func(ver *modelpb.AppengineState_Service_Version) error {
 		if ver.CapturedState == nil {
 			return errors.Reason("no captured_state field").Err()
 		}
@@ -147,9 +155,23 @@ func validateAppengineReportedState(state *modelpb.AppengineState) error {
 	})
 }
 
+func validateTrafficAllocation(t map[string]int32) error {
+	if len(t) == 0 {
+		return errors.Reason("no traffic_allocation field").Err()
+	}
+	total := 0
+	for _, p := range t {
+		total += int(p)
+	}
+	if total != 1000 {
+		return errors.Reason("traffic_allocation: total traffic %d != 1000", total).Err()
+	}
+	return nil
+}
+
 // visitServices calls the callback for each Service proto.
-func visitServices(state *modelpb.AppengineState, cb func(*modelpb.AppengineState_Service) error) error {
-	if len(state.Services) == 0 {
+func visitServices(state *modelpb.AppengineState, allowEmpty bool, cb func(*modelpb.AppengineState_Service) error) error {
+	if len(state.Services) == 0 && !allowEmpty {
 		return errors.Reason("services list is empty").Err()
 	}
 	for _, svc := range state.Services {
@@ -164,9 +186,9 @@ func visitServices(state *modelpb.AppengineState, cb func(*modelpb.AppengineStat
 }
 
 // visitVersions calls the callback for each Version proto across all Services.
-func visitVersions(state *modelpb.AppengineState, cb func(*modelpb.AppengineState_Service_Version) error) error {
+func visitVersions(state *modelpb.AppengineState, allowEmpty bool, cb func(*modelpb.AppengineState_Service_Version) error) error {
 	for _, svc := range state.Services {
-		if len(svc.Versions) == 0 {
+		if len(svc.Versions) == 0 && !allowEmpty {
 			return errors.Reason("in service %q: no versions", svc.Name).Err()
 		}
 		for _, ver := range svc.Versions {
@@ -181,7 +203,55 @@ func visitVersions(state *modelpb.AppengineState, cb func(*modelpb.AppengineStat
 	return nil
 }
 
+// isAppengineUpToDate returns true if all intended versions are deployed and
+// receive the intended percent of traffic.
+//
+// It is OK if more versions or services are deployed as long as they don't get
+// any traffic.
+//
+// Note that Appengine Admin API doesn't provide visibility into what versions
+// of "special" YAMLs (like queue.yaml and index.yaml) are deployed. They are
+// ignored by this function. Same applies to the traffic splitting method.
 func isAppengineUpToDate(intended *modelpb.AppengineState, reported *modelpb.AppengineState) bool {
-	// TODO
-	return false
+	if err := validateAppengineIntendedState(intended); err != nil {
+		panic(fmt.Sprintf("got invalid intended state (%s): %q", err, intended))
+	}
+	if err := validateAppengineReportedState(reported); err != nil {
+		panic(fmt.Sprintf("got invalid reported state (%s): %s", err, reported))
+	}
+
+	want := trafficMap(intended)
+	have := trafficMap(reported)
+
+	for svc, wantTraffic := range want {
+		// Note: `wantTraffic` may be 0 if we want to deploy a version, but don't
+		// route any traffic to it yet.
+		switch currentTraffic, ok := have[svc]; {
+		case !ok:
+			// No such version deployed at all.
+			return false
+		case currentTraffic != wantTraffic:
+			// Deployed, but receives wrong portion of traffic.
+			return false
+		}
+	}
+
+	return true
+}
+
+type serviceVersion struct {
+	service string // e.g. "default"
+	version string // e.g. "24344-abcedfa"
+}
+
+// trafficMap returns a mapping from a concrete version to the portion of
+// traffic assigned to it within its service.
+func trafficMap(s *modelpb.AppengineState) map[serviceVersion]int {
+	out := make(map[serviceVersion]int)
+	for _, svc := range s.Services {
+		for _, ver := range svc.Versions {
+			out[serviceVersion{svc.Name, ver.Name}] = int(svc.TrafficAllocation[ver.Name])
+		}
+	}
+	return out
 }

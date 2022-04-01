@@ -45,7 +45,7 @@ func TestActuationsRPC(t *testing.T) {
 			Identity: "user:actuator-1@example.com",
 		})
 
-		beginReq := func() *rpcpb.BeginActuationRequest {
+		beginReq := func(want, have int32) *rpcpb.BeginActuationRequest {
 			return &rpcpb.BeginActuationRequest{
 				Actuation: &modelpb.Actuation{
 					Id:         "some-actuation",
@@ -57,19 +57,19 @@ func TestActuationsRPC(t *testing.T) {
 						Config: &modelpb.AssetConfig{
 							EnableAutomation: true,
 						},
-						IntendedState: intendedState(),
-						ReportedState: reportedState(),
+						IntendedState: intendedState(want),
+						ReportedState: reportedState(have),
 					},
 				},
 			}
 		}
 
-		endReq := func() *rpcpb.EndActuationRequest {
+		endReq := func(have int32) *rpcpb.EndActuationRequest {
 			return &rpcpb.EndActuationRequest{
 				ActuationId: "some-actuation",
 				Assets: map[string]*rpcpb.ActuatedAsset{
 					"apps/app": {
-						State: reportedState(),
+						State: reportedState(have),
 					},
 				},
 			}
@@ -78,7 +78,7 @@ func TestActuationsRPC(t *testing.T) {
 		srv := &Actuations{}
 
 		Convey("Begin + End", func() {
-			beginResp, err := srv.BeginActuation(ctx, beginReq())
+			beginResp, err := srv.BeginActuation(ctx, beginReq(0, 1000))
 			So(err, ShouldBeNil)
 
 			So(beginResp, ShouldResembleProto, &rpcpb.BeginActuationResponse{
@@ -87,14 +87,14 @@ func TestActuationsRPC(t *testing.T) {
 				},
 			})
 
-			_, err = srv.EndActuation(ctx, endReq())
+			_, err = srv.EndActuation(ctx, endReq(1000))
 			So(err, ShouldBeNil)
 		})
 
 		Convey("Begin retry", func() {
-			_, err := srv.BeginActuation(ctx, beginReq())
+			_, err := srv.BeginActuation(ctx, beginReq(0, 1000))
 			So(err, ShouldBeNil)
-			beginResp, err := srv.BeginActuation(ctx, beginReq())
+			beginResp, err := srv.BeginActuation(ctx, beginReq(0, 1000))
 			So(err, ShouldBeNil)
 
 			So(beginResp, ShouldResembleProto, &rpcpb.BeginActuationResponse{
@@ -105,50 +105,50 @@ func TestActuationsRPC(t *testing.T) {
 		})
 
 		Convey("End retry", func() {
-			_, err := srv.BeginActuation(ctx, beginReq())
+			_, err := srv.BeginActuation(ctx, beginReq(0, 1000))
 			So(err, ShouldBeNil)
-			_, err = srv.EndActuation(ctx, endReq())
+			_, err = srv.EndActuation(ctx, endReq(1000))
 			So(err, ShouldBeNil)
-			_, err = srv.EndActuation(ctx, endReq())
+			_, err = srv.EndActuation(ctx, endReq(1000))
 			So(err, ShouldBeNil)
 		})
 
 		Convey("Begin retry: wrong caller", func() {
-			_, err := srv.BeginActuation(ctx, beginReq())
+			_, err := srv.BeginActuation(ctx, beginReq(0, 1000))
 			So(err, ShouldBeNil)
 
 			ctx = auth.WithState(ctx, &authtest.FakeState{
 				Identity: "user:another-actuator@example.com",
 			})
 
-			_, err = srv.BeginActuation(ctx, beginReq())
+			_, err = srv.BeginActuation(ctx, beginReq(0, 1000))
 			So(err, ShouldHaveGRPCStatus, codes.FailedPrecondition)
 		})
 
 		Convey("End: missing actuation", func() {
-			_, err := srv.EndActuation(ctx, endReq())
+			_, err := srv.EndActuation(ctx, endReq(1000))
 			So(err, ShouldHaveGRPCStatus, codes.NotFound)
 		})
 
 		Convey("End wrong caller", func() {
-			_, err := srv.BeginActuation(ctx, beginReq())
+			_, err := srv.BeginActuation(ctx, beginReq(0, 1000))
 			So(err, ShouldBeNil)
 
 			ctx = auth.WithState(ctx, &authtest.FakeState{
 				Identity: "user:another-actuator@example.com",
 			})
 
-			_, err = srv.EndActuation(ctx, endReq())
+			_, err = srv.EndActuation(ctx, endReq(1000))
 			So(err, ShouldHaveGRPCStatus, codes.FailedPrecondition)
 		})
 
 		Convey("End wrong asset list", func() {
-			_, err := srv.BeginActuation(ctx, beginReq())
+			_, err := srv.BeginActuation(ctx, beginReq(0, 1000))
 			So(err, ShouldBeNil)
 
-			req := endReq()
+			req := endReq(1000)
 			req.Assets["apps/another"] = &rpcpb.ActuatedAsset{
-				State: reportedState(),
+				State: reportedState(1000),
 			}
 
 			_, err = srv.EndActuation(ctx, req)
@@ -172,15 +172,15 @@ func TestActuationsValidation(t *testing.T) {
 					Config: &modelpb.AssetConfig{
 						EnableAutomation: true,
 					},
-					IntendedState: intendedState(),
-					ReportedState: reportedState(),
+					IntendedState: intendedState(0),
+					ReportedState: reportedState(0),
 				},
 				"apps/app2": {
 					Config: &modelpb.AssetConfig{
 						EnableAutomation: true,
 					},
-					IntendedState: intendedState(),
-					ReportedState: reportedState(),
+					IntendedState: intendedState(0),
+					ReportedState: reportedState(0),
 				},
 			},
 		}
@@ -221,10 +221,10 @@ func TestActuationsValidation(t *testing.T) {
 			ActuationId: "some-actuation",
 			Assets: map[string]*rpcpb.ActuatedAsset{
 				"apps/app1": {
-					State: reportedState(),
+					State: reportedState(1000),
 				},
 				"apps/app2": {
-					State: reportedState(),
+					State: reportedState(1000),
 				},
 			},
 		}
@@ -249,7 +249,7 @@ func TestActuationsValidation(t *testing.T) {
 	})
 }
 
-func intendedState() *modelpb.AssetState {
+func intendedState(traffic int32) *modelpb.AssetState {
 	return &modelpb.AssetState{
 		State: &modelpb.AssetState_Appengine{
 			Appengine: &modelpb.AppengineState{
@@ -258,12 +258,17 @@ func intendedState() *modelpb.AssetState {
 					{
 						Name: "default",
 						TrafficAllocation: map[string]int32{
-							"1234-version": 1000,
+							"version1": traffic,
+							"version2": 1000 - traffic,
 						},
 						TrafficSplitting: modelpb.AppengineState_Service_COOKIE,
 						Versions: []*modelpb.AppengineState_Service_Version{
 							{
-								Name:          "1234-version",
+								Name:          "version1",
+								IntendedState: &modelpb.AppengineState_Service_Version_IntendedState{},
+							},
+							{
+								Name:          "version2",
 								IntendedState: &modelpb.AppengineState_Service_Version_IntendedState{},
 							},
 						},
@@ -274,7 +279,7 @@ func intendedState() *modelpb.AssetState {
 	}
 }
 
-func reportedState() *modelpb.AssetState {
+func reportedState(traffic int32) *modelpb.AssetState {
 	return &modelpb.AssetState{
 		State: &modelpb.AssetState_Appengine{
 			Appengine: &modelpb.AppengineState{
@@ -283,11 +288,16 @@ func reportedState() *modelpb.AssetState {
 					{
 						Name: "default",
 						TrafficAllocation: map[string]int32{
-							"1234-version": 1000,
+							"version1": traffic,
+							"version2": 1000 - traffic,
 						},
 						Versions: []*modelpb.AppengineState_Service_Version{
 							{
-								Name:          "1234-version",
+								Name:          "version1",
+								CapturedState: &modelpb.AppengineState_Service_Version_CapturedState{},
+							},
+							{
+								Name:          "version2",
 								CapturedState: &modelpb.AppengineState_Service_Version_CapturedState{},
 							},
 						},

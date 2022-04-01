@@ -59,12 +59,12 @@ func TestActuationEndOp(t *testing.T) {
 						},
 						ReportedState: &modelpb.AssetState{
 							State: &modelpb.AssetState_Appengine{
-								Appengine: mockedReportedState("old reported"),
+								Appengine: mockedReportedState("old reported", 0),
 							},
 						},
 						ActuatedState: &modelpb.AssetState{
 							State: &modelpb.AssetState_Appengine{
-								Appengine: mockedReportedState("old actuated"),
+								Appengine: mockedReportedState("old actuated", 0),
 							},
 						},
 					},
@@ -98,14 +98,14 @@ func TestActuationEndOp(t *testing.T) {
 				op.HandleActuatedState(ctx, "apps/app1", &rpcpb.ActuatedAsset{
 					State: &modelpb.AssetState{
 						State: &modelpb.AssetState_Appengine{
-							Appengine: mockedReportedState("new actuated"),
+							Appengine: mockedReportedState("new actuated", 0),
 						},
 					},
 				})
 				op.HandleActuatedState(ctx, "apps/app2", &rpcpb.ActuatedAsset{
 					State: &modelpb.AssetState{
 						State: &modelpb.AssetState_Appengine{
-							Appengine: mockedReportedState("new actuated"),
+							Appengine: mockedReportedState("new actuated", 0),
 						},
 					},
 				})
@@ -137,7 +137,7 @@ func TestActuationEndOp(t *testing.T) {
 						Deployment: storedActuation.Actuation.Deployment,
 						Actuator:   storedActuation.Actuation.Actuator,
 						State: &modelpb.AssetState_Appengine{
-							Appengine: mockedReportedState("new actuated"),
+							Appengine: mockedReportedState("new actuated", 0),
 						},
 					},
 					ActuatedState: &modelpb.AssetState{
@@ -145,7 +145,7 @@ func TestActuationEndOp(t *testing.T) {
 						Deployment: storedActuation.Actuation.Deployment,
 						Actuator:   storedActuation.Actuation.Actuator,
 						State: &modelpb.AssetState_Appengine{
-							Appengine: mockedReportedState("new actuated"),
+							Appengine: mockedReportedState("new actuated", 0),
 						},
 					},
 				})
@@ -209,12 +209,12 @@ func TestActuationEndOp(t *testing.T) {
 					LastActuation: storedActuation.Actuation,
 					ReportedState: &modelpb.AssetState{
 						State: &modelpb.AssetState_Appengine{
-							Appengine: mockedReportedState("old reported"),
+							Appengine: mockedReportedState("old reported", 0),
 						},
 					},
 					ActuatedState: &modelpb.AssetState{
 						State: &modelpb.AssetState_Appengine{
-							Appengine: mockedReportedState("old actuated"),
+							Appengine: mockedReportedState("old actuated", 0),
 						},
 					},
 					PostActuationStatus: &statuspb.Status{

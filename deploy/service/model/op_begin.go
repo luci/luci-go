@@ -69,7 +69,7 @@ func NewActuationBeginOp(ctx context.Context, assets []string, actuation *modelp
 //
 // Must be called once for every asset passed to NewActuationBeginOp. Takes
 // ownership of `asset` mutating it. AssetToActuate fields must already be
-// validates at this point.
+// validated at this point.
 func (op *ActuationBeginOp) MakeDecision(ctx context.Context, assetID string, asset *rpcpb.AssetToActuate) {
 	// TODO: Implement AssetState history.
 	// TODO: Implement locks.

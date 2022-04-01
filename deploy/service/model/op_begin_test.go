@@ -40,20 +40,59 @@ var (
 	mockedTriggers   = []*modelpb.ActuationTrigger{{}, {}}
 )
 
-func mockedIntendedState(payload string) *modelpb.AppengineState {
+func mockedIntendedState(payload string, traffic int32) *modelpb.AppengineState {
 	return &modelpb.AppengineState{
 		IntendedState: &modelpb.AppengineState_IntendedState{
 			DeployableYamls: []*modelpb.AppengineState_IntendedState_DeployableYaml{
 				{YamlPath: payload},
 			},
 		},
+		Services: []*modelpb.AppengineState_Service{
+			{
+				Name:             "default",
+				TrafficSplitting: modelpb.AppengineState_Service_COOKIE,
+				TrafficAllocation: map[string]int32{
+					"ver1": traffic,
+					"ver2": 1000 - traffic,
+				},
+				Versions: []*modelpb.AppengineState_Service_Version{
+					{
+						Name:          "ver1",
+						IntendedState: &modelpb.AppengineState_Service_Version_IntendedState{},
+					},
+					{
+						Name:          "ver2",
+						IntendedState: &modelpb.AppengineState_Service_Version_IntendedState{},
+					},
+				},
+			},
+		},
 	}
 }
 
-func mockedReportedState(payload string) *modelpb.AppengineState {
+func mockedReportedState(payload string, traffic int32) *modelpb.AppengineState {
 	return &modelpb.AppengineState{
 		CapturedState: &modelpb.AppengineState_CapturedState{
 			LocationId: payload,
+		},
+		Services: []*modelpb.AppengineState_Service{
+			{
+				Name: "default",
+				TrafficAllocation: map[string]int32{
+					"ver1": traffic,
+					"ver2": 1000 - traffic,
+				},
+				Versions: []*modelpb.AppengineState_Service_Version{
+					{
+						Name:          "ver1",
+						CapturedState: &modelpb.AppengineState_Service_Version_CapturedState{},
+					},
+					{
+						Name:          "ver2",
+						CapturedState: &modelpb.AppengineState_Service_Version_CapturedState{},
+					},
+				},
+			},
 		},
 	}
 }
@@ -79,12 +118,12 @@ func TestActuationBeginOp(t *testing.T) {
 				Config: &modelpb.AssetConfig{EnableAutomation: false},
 				IntendedState: &modelpb.AssetState{
 					State: &modelpb.AssetState_Appengine{
-						Appengine: mockedIntendedState("app1"),
+						Appengine: mockedIntendedState("app1", 0),
 					},
 				},
 				ReportedState: &modelpb.AssetState{
 					State: &modelpb.AssetState_Appengine{
-						Appengine: mockedReportedState("app1"),
+						Appengine: mockedReportedState("app1", 200),
 					},
 				},
 			})
@@ -93,12 +132,12 @@ func TestActuationBeginOp(t *testing.T) {
 				Config: &modelpb.AssetConfig{EnableAutomation: true},
 				IntendedState: &modelpb.AssetState{
 					State: &modelpb.AssetState_Appengine{
-						Appengine: mockedIntendedState("app2"),
+						Appengine: mockedIntendedState("app2", 0),
 					},
 				},
 				ReportedState: &modelpb.AssetState{
 					State: &modelpb.AssetState_Appengine{
-						Appengine: mockedReportedState("app2"),
+						Appengine: mockedReportedState("app2", 200),
 					},
 				},
 			})
@@ -150,7 +189,7 @@ func TestActuationBeginOp(t *testing.T) {
 					Deployment: storedActuation.Actuation.Deployment,
 					Actuator:   storedActuation.Actuation.Actuator,
 					State: &modelpb.AssetState_Appengine{
-						Appengine: mockedIntendedState("app1"),
+						Appengine: mockedIntendedState("app1", 0),
 					},
 				},
 				ReportedState: &modelpb.AssetState{
@@ -158,7 +197,7 @@ func TestActuationBeginOp(t *testing.T) {
 					Deployment: storedActuation.Actuation.Deployment,
 					Actuator:   storedActuation.Actuation.Actuator,
 					State: &modelpb.AssetState_Appengine{
-						Appengine: mockedReportedState("app1"),
+						Appengine: mockedReportedState("app1", 200),
 					},
 				},
 			})
@@ -173,7 +212,7 @@ func TestActuationBeginOp(t *testing.T) {
 					Deployment: storedActuation.Actuation.Deployment,
 					Actuator:   storedActuation.Actuation.Actuator,
 					State: &modelpb.AssetState_Appengine{
-						Appengine: mockedIntendedState("app2"),
+						Appengine: mockedIntendedState("app2", 0),
 					},
 				},
 				ReportedState: &modelpb.AssetState{
@@ -181,13 +220,13 @@ func TestActuationBeginOp(t *testing.T) {
 					Deployment: storedActuation.Actuation.Deployment,
 					Actuator:   storedActuation.Actuation.Actuator,
 					State: &modelpb.AssetState_Appengine{
-						Appengine: mockedReportedState("app2"),
+						Appengine: mockedReportedState("app2", 200),
 					},
 				},
 			})
 		})
 
-		Convey("Skipping", func() {
+		Convey("Skipping disabled", func() {
 			op, err := NewActuationBeginOp(ctx, []string{"apps/app1"}, &modelpb.Actuation{
 				Id:         "actuation-id",
 				Deployment: mockedDeployment,
@@ -200,12 +239,12 @@ func TestActuationBeginOp(t *testing.T) {
 				Config: &modelpb.AssetConfig{EnableAutomation: false},
 				IntendedState: &modelpb.AssetState{
 					State: &modelpb.AssetState_Appengine{
-						Appengine: mockedIntendedState("app1"),
+						Appengine: mockedIntendedState("app1", 0),
 					},
 				},
 				ReportedState: &modelpb.AssetState{
 					State: &modelpb.AssetState_Appengine{
-						Appengine: mockedReportedState("app1"),
+						Appengine: mockedReportedState("app1", 200),
 					},
 				},
 			})
@@ -228,6 +267,54 @@ func TestActuationBeginOp(t *testing.T) {
 			So(storedActuation.Decisions, ShouldResembleProto, &modelpb.ActuationDecisions{
 				Decisions: map[string]*modelpb.ActuationDecision{
 					"apps/app1": {Decision: modelpb.ActuationDecision_SKIP_DISABLED},
+				},
+			})
+			So(storedActuation.State, ShouldEqual, modelpb.Actuation_SUCCEEDED)
+			So(storedActuation.Created.Equal(now), ShouldBeTrue)
+			So(storedActuation.Expiry.IsZero(), ShouldBeTrue)
+		})
+
+		Convey("Skipping up-to-date", func() {
+			op, err := NewActuationBeginOp(ctx, []string{"apps/app1"}, &modelpb.Actuation{
+				Id:         "actuation-id",
+				Deployment: mockedDeployment,
+				Actuator:   mockedActuator,
+				Triggers:   mockedTriggers,
+			})
+			So(err, ShouldBeNil)
+
+			op.MakeDecision(ctx, "apps/app1", &rpcpb.AssetToActuate{
+				Config: &modelpb.AssetConfig{EnableAutomation: true},
+				IntendedState: &modelpb.AssetState{
+					State: &modelpb.AssetState_Appengine{
+						Appengine: mockedIntendedState("app1", 0),
+					},
+				},
+				ReportedState: &modelpb.AssetState{
+					State: &modelpb.AssetState_Appengine{
+						Appengine: mockedReportedState("app1", 0),
+					},
+				},
+			})
+
+			_, err = op.Apply(ctx)
+			So(err, ShouldBeNil)
+
+			// Stored Actuation entity is correct.
+			storedActuation := &Actuation{ID: "actuation-id"}
+			So(datastore.Get(ctx, storedActuation), ShouldBeNil)
+			So(storedActuation.Actuation, ShouldResembleProto, &modelpb.Actuation{
+				Id:         "actuation-id",
+				State:      modelpb.Actuation_SUCCEEDED,
+				Deployment: mockedDeployment,
+				Actuator:   mockedActuator,
+				Triggers:   mockedTriggers,
+				Created:    timestamppb.New(now),
+				Finished:   timestamppb.New(now),
+			})
+			So(storedActuation.Decisions, ShouldResembleProto, &modelpb.ActuationDecisions{
+				Decisions: map[string]*modelpb.ActuationDecision{
+					"apps/app1": {Decision: modelpb.ActuationDecision_SKIP_UPTODATE},
 				},
 			})
 			So(storedActuation.State, ShouldEqual, modelpb.Actuation_SUCCEEDED)
