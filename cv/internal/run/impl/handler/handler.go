@@ -81,7 +81,7 @@ type Handler interface {
 	// to retry submission or fail the run depending on the submission result.
 	OnSubmissionCompleted(ctx context.Context, rs *state.RunState, sc *eventpb.SubmissionCompleted) (*Result, error)
 
-	// OnLongOpCompleted proceses results of the completed long operation.
+	// OnLongOpCompleted processes results of the completed long operation.
 	OnLongOpCompleted(ctx context.Context, rs *state.RunState, result *eventpb.LongOpCompleted) (*Result, error)
 
 	// OnTryjobsUpdated decides the next step for the given tryjobs and the run.

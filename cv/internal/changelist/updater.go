@@ -394,7 +394,7 @@ func (u *Updater) handleBatch(ctx context.Context, batch *BatchUpdateCLTask) err
 // For use in tests only. Production code should use Schedule() to benefit from
 // task de-duplication.
 //
-// TODO(crbug/1284393): revisit the usefullness of the sync refresh after
+// TODO(crbug/1284393): revisit the usefulness of the sync refresh after
 // consistency-on-demand is provided by Gerrit.
 func (u *Updater) TestingForceUpdate(ctx context.Context, task *UpdateCLTask) error {
 	return u.handleCL(ctx, task)
@@ -629,7 +629,7 @@ func makeTaskDeduplicationKey(ctx context.Context, t *UpdateCLTask, delay time.D
 	// |            ... | epoch (N-1, CL-B) | epoch (N, CL-B) | ...           |
 	// +----------------------------------------------------------------------+
 	//
-	// Furthermore, de-dup window differs based on wheter updatedHint is given
+	// Furthermore, de-dup window differs based on whether updatedHint is given
 	// or it's a blind refresh.
 	interval := blindRefreshInterval
 	if t.GetUpdatedHint() != nil {
@@ -662,8 +662,8 @@ func makeTaskDeduplicationKey(ctx context.Context, t *UpdateCLTask, delay time.D
 //
 // WARNING: do not use for anything else. Doesn't guarantee uniqueness.
 //
-// It'll be visible in logs as the suffix of URL in Cloud Tasks console
-// and in the GAE requests log.
+// It will be visible in logs as the suffix of URL in Cloud Tasks console and
+// in the GAE requests log.
 //
 // The primary purpose is that quick search for specific CL in the GAE request
 // log alone, as opposed to searching through much larger and separate stderr

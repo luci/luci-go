@@ -247,7 +247,7 @@ func putConfigGroups(ctx context.Context, cfg *cfgpb.Config, project, hash strin
 		ent := entities[i]
 		switch {
 		case err == datastore.ErrNoSuchEntity:
-			// proceeed to put below.
+			// proceed to put below.
 		case err != nil:
 			return errors.Annotate(err, "failed to check the existence of one of ConfigGroups").Tag(transient.Tag).Err()
 		case ent.SchemaVersion != schemaVersion:

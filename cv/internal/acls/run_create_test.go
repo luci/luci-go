@@ -273,7 +273,7 @@ func TestCheckRunCLs(t *testing.T) {
 				cl := addCL(tr, owner, m)
 
 				Convey("triggerer is a committer", func() {
-					// Should suceed w/ or w/o approval.
+					// Should succeed w/ or w/o approval.
 					addCommitter(tr)
 					mustOK()
 					approveCL(cl)

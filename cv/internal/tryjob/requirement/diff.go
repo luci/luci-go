@@ -26,14 +26,14 @@ import (
 	"go.chromium.org/luci/cv/internal/tryjob"
 )
 
-// DiffResult contains a diff between two Tryjob requirements.
+// DiffResult contains a diff between two Tryjob Requirements.
 type DiffResult struct {
 	ExtraDefs          []*tryjob.Definition
 	RemovedDefs        []*tryjob.Definition
 	RetryConfigChanged bool
 }
 
-// Diff computes the diff between two Tryjob requirements.
+// Diff computes the diff between two Tryjob Requirements.
 func Diff(base, target *tryjob.Requirement) DiffResult {
 	sortedBaseDefs := toSortedTryjobDefs(base.GetDefinitions())
 	sortedTargetDefs := toSortedTryjobDefs(target.GetDefinitions())

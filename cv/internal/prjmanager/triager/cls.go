@@ -146,7 +146,7 @@ func (info *clInfo) triageInPurge(pm pmState) {
 	// than completion of purge.
 	//
 	// Thus, consider these CLs in potential Run Creation, but don't mark them
-	// ready in oder to avoid creating new Runs.
+	// ready in order to avoid creating new Runs.
 	pcl := info.pcl
 	switch s := pcl.GetStatus(); s {
 	case prjpb.PCL_DELETED, prjpb.PCL_UNWATCHED, prjpb.PCL_UNKNOWN:

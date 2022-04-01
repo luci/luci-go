@@ -198,7 +198,7 @@ type Trigger struct {
 	// Additional label is recorded in case applicable ConfigGroup had additional
 	// modes, e.g. for QUICK_DRY_RUN mode.
 	AdditionalLabel string `protobuf:"bytes,5,opt,name=additional_label,json=additionalLabel,proto3" json:"additional_label,omitempty"`
-	// Triggering user email. Always known for Runs creaeted since July 2021.
+	// Triggering user email. Always known for Runs created since July 2021.
 	//
 	// Gerrit doesn't guarantee that every user has set their preferred email,
 	// but LUCI ACLs are based entirely on user emails. Thus, Project Manager will
@@ -929,7 +929,7 @@ type Tryjob struct {
 	unknownFields protoimpl.UnknownFields
 
 	Definition *tryjob.Definition `protobuf:"bytes,1,opt,name=definition,proto3" json:"definition,omitempty"`
-	// ID is a CV internal Tryjob ID, correponding to a Datastore entity.
+	// ID is a CV internal Tryjob ID, corresponding to a Datastore entity.
 	//
 	// During migration from CQDaemon, the ID may be not set but then ExternalID
 	// is set.

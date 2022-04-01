@@ -204,7 +204,7 @@ type LongOpCompleted_PostStartMessage struct {
 
 	// CLIDs on which the message was posted.
 	Posted []int64 `protobuf:"varint,1,rep,packed,name=posted,proto3" json:"posted,omitempty"`
-	// Maps CLID to the permenant error.
+	// Maps CLID to the permanent error.
 	PermanentErrors map[int64]string `protobuf:"bytes,2,rep,name=permanent_errors,json=permanentErrors,proto3" json:"permanent_errors,omitempty" protobuf_key:"varint,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`
 	// Approximate time when CV became certain that the message was posted on
 	// the last CL.

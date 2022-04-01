@@ -252,8 +252,8 @@ func TestDiscoversCLs(t *testing.T) {
 			})
 
 			Convey("When previously known changes are no longer found, forces their refresh, too", func() {
-				// Test common occurence of CL no longer appearing in query results due
-				// to user or even CV action.
+				// Test common occurrence of CL no longer appearing in query
+				// results due to user or even CV action.
 				ct.GFake.AddFrom(gf.WithCIs(gHost, gf.ACLPublic(),
 					// No CQ vote.
 					gf.CI(25, gf.Project(gRepo), gf.Updated(ct.Clock.Now().Add(-time.Minute))),
@@ -279,7 +279,7 @@ func TestDiscoversCLs(t *testing.T) {
 			})
 
 			Convey("On config change, force notifies PM and runs a full query", func() {
-				// Strictly speaking, this test isn't just a full pull, but also a
+				// Strictly speaking, this test isn't just a full poll, but also a
 				// config change.
 
 				// Simulate prior full fetch has just happened.

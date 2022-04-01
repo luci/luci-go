@@ -637,11 +637,12 @@ func loadRunsFromQuery(ctx context.Context, q runKeysQuery, checkers ...LoadRunC
 		if err != nil {
 			return nil, nil, err
 		}
-		// Even for queries which can do everything using native Datastore query,
-		// there is a window of time bewteen the Datastore query fetching keys of
-		// satisfying Runs and actual Runs being fetched.
-		// During this window, the Runs ultimately fetched could have been modified,
-		// so check again and skip all fetched Runs which no longer satisfy the query.
+		// Even for queries which can do everything using native Datastore
+		// query, there is a window of time between the Datastore query
+		// fetching keys of satisfying Runs and actual Runs being fetched.
+		// During this window, the Runs ultimately fetched could have been
+		// modified, so check again and skip all fetched Runs which no longer
+		// satisfy the query.
 		for _, r := range runs {
 			if q.isSatisfied(r) {
 				out = append(out, r)
@@ -657,9 +658,10 @@ func loadRunsFromQuery(ctx context.Context, q runKeysQuery, checkers ...LoadRunC
 			pt := &PageToken{Run: keys[len(keys)-1].StringID()}
 			q = q.qPageToken(pt)
 			if iteration >= queryStopAfterIterations && clock.Since(ctx, startTime) > queryStopAfterDuration {
-				// Avoid excessive looping when most Runs are filtered out by returning
-				// an incomplete page of results earlier with a valid page token s.t.
-				// if necessary the caller can continue later.
+				// Avoid excessive looping when most Runs are filtered out by
+				// returning an incomplete page of results earlier with a valid
+				// page token, so that if necessary, the caller can continue
+				// later.
 				logging.Debugf(ctx, "loadRunsFromQuery stops after %d iterations and %s time, returning %d out of %d requested Runs [query: %s]",
 					iteration, clock.Since(ctx, startTime), len(out), limit, originalQuery)
 				return out, pt, nil
@@ -681,6 +683,7 @@ func loadRunsFromQuery(ctx context.Context, q runKeysQuery, checkers ...LoadRunC
 			// *inclusive* PageToken was supported. But since we need an *exclusive*
 			// page token, find a key preceding the key corresponding to
 			// firstNotReturnedID.
+			//
 			// NOTE: the keys themselves aren't necessarily ordered by ASC Run ID,
 			// e.g. in case of RecentQueryBuilder. Therefore, we must iterate them in
 			// order and can't do binary search.

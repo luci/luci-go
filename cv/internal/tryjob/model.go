@@ -51,13 +51,13 @@ type Tryjob struct {
 	EVersion int64 `gae:",noindex"`
 	// EntityCreateTime is the timestamp when this entity was created.
 	//
-	// NOTE: this is not the backend's tryjob creation time,
-	// which is stored in .Result.CreateTime.
+	// NOTE: this is not the backend's tryjob creation time, which is stored in
+	// .Result.CreateTime.
 	EntityCreateTime time.Time `gae:",noindex"`
 	// UpdateTime is the timestamp when this entity was last updated.
 	//
-	// NOTE: this is not the backend's tryjob update time,
-	// which is stored in .Result.UpdateTime.
+	// NOTE: this is not the backend's tryjob update time, which is stored in
+	// .Result.UpdateTime.
 	EntityUpdateTime time.Time `gae:",noindex"`
 
 	// ReuseKey is used to quickly decide if this Tryjob can be reused by a run.
@@ -87,8 +87,8 @@ type Tryjob struct {
 
 	// TriggeredByCV is true if it was triggered by CV.
 	//
-	// This is used for cancelation, since CV shouldn't cancel tryjobs it didn't
-	// trigger.
+	// This is used for cancelation, since CV shouldn't cancel tryjobs it
+	// didn't trigger.
 	TriggeredByCV bool `gae:",noindex"`
 
 	// Result of the Tryjob.
@@ -143,11 +143,10 @@ type tryjobMap struct {
 // updated, and which is thus allowed to "read" the Tryjob.
 //
 // In the case of Buildbucket, this may be different from the LUCI project to
-// which the corresponding build belongs.
-// For example, consider a "v8" project with configuration saying to trigger
-// "chromium/try/linux_rel" builder: when CV triggers a new tryjob T for a "v8"
-// Run, T.LUCIProject() will be "v8" even though the build itself will be in
-// the "chromium/try" Buildbucket bucket.
+// which the corresponding build belongs. For example, consider a "v8" project
+// with configuration saying to trigger "chromium/try/linux_rel" builder: when
+// CV triggers a new tryjob T for a "v8" Run, T.LUCIProject() will be "v8" even
+// though the build itself will be in the "chromium/try" Buildbucket bucket.
 //
 // In general, a Run of project P must not re-use tryjob T if
 // T.LUCIProject() != P, until it has been verified with the tryjob backend
@@ -189,8 +188,9 @@ func (t *Tryjob) IsEnded() bool {
 //
 // This is intended to efficiently query Tryjob entities associated with a
 // patchset.
-// The values are hex string encoded and padded so that lexicographical
-// sorting will put the patchsets for a given CL together.
+//
+// The values are hex string encoded and padded so that lexicographical sorting
+// will put the patchsets for a given CL together.
 type CLPatchset string
 
 const clPatchsetEncodingVersion = 1
@@ -202,7 +202,7 @@ func MakeCLPatchset(cl common.CLID, patchset int32) CLPatchset {
 
 // Parse extracts CLID and Patchset number from a valid CLPatchset value.
 //
-// Errors out if the format is unexpected.
+// Returns an error if the format is unexpected.
 func (cp CLPatchset) Parse() (common.CLID, int32, error) {
 	var clid, patchset int64
 	values := strings.Split(string(cp), "/")

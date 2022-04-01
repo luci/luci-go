@@ -73,7 +73,7 @@ func (ck runCreateChecker) canTrustDeps(ctx context.Context) (evalResult, error)
 		return yes, nil
 	}
 
-	// fetch the CL entitiy of the deps and examine if they are trustable.
+	// Fetch the CL entity of the deps and examine if they are trustable.
 	// CV never removes CL entities. Hence, this handles transient and
 	// datastore.ErrNoSuchEntity in the same way.
 	if err := changelist.LoadCLs(ctx, deps); err != nil {

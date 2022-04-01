@@ -28,7 +28,7 @@ import (
 // maxAllowedDeps limits how many non-submitted deps a CL may have for CV to
 // consider it.
 //
-// This applies to both singlular and combinable modes.
+// This applies to both singular and combinable modes.
 // See also https://crbug.com/1217100.
 const maxAllowedDeps = 240
 

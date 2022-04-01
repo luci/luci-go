@@ -42,7 +42,7 @@ import (
 // info while low values increase load on Gerrit.
 const StaleCLAgeThreshold = 10 * time.Second
 
-// ActionTakeEvalFn is the function signature to evalute whether certain
+// ActionTakeEvalFn is the function signature to evaluate whether certain
 // action has already been taken on the given Gerrit Change.
 //
 // Returns the time when action is taken. Otherwise, returns zero time.
@@ -51,7 +51,7 @@ type ActionTakeEvalFn func(rcl *run.RunCL, ci *gerritpb.ChangeInfo) time.Time
 // IsActionTakenOnGerritCL checks whether an action specified by `evalFn` has
 // been take on a Gerrit CL.
 //
-// Checks against CV's  own cache (CL entity in Datastore) first. If the action
+// Checks against CV's own cache (CL entity in Datastore) first. If the action
 // is not taken and cache is too old (before `now-StaleCLAgeThreshold``),
 // then fetch the latest change info from Gerrit and check.
 func IsActionTakenOnGerritCL(ctx context.Context, gf gerrit.Factory, rcl *run.RunCL, gerritQueryOpts []gerritpb.QueryOption, evalFn ActionTakeEvalFn) (time.Time, error) {

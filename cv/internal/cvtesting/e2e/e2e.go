@@ -79,7 +79,7 @@ var (
 	dsFlakinessFlag    = flag.Float64(dsFlakinessFlagName, 0, "DS flakiness probability between 0(default) and 1.0 (always fails)")
 	tqParallelFlag     = flag.Bool(tqConcurrentFlagName, false, "Runs TQ tasks in parallel")
 	extraVerbosityFlag = flag.Bool(extraVerboseFlagName, false, "Extra verbose mode. Use in combination with -v")
-	fastClockFlag      = flag.Int(fastClockFlagName, 0, "Use FastClock running at this multipler over physical clock")
+	fastClockFlag      = flag.Int(fastClockFlagName, 0, "Use FastClock running at this multiplier over physical clock")
 )
 
 func init() {

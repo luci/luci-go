@@ -77,7 +77,7 @@ message Trigger {
   // Additional label is recorded in case applicable ConfigGroup had additional
   // modes, e.g. for QUICK_DRY_RUN mode.
   string additional_label = 5;
-  // Triggering user email. Always known for Runs creaeted since July 2021.
+  // Triggering user email. Always known for Runs created since July 2021.
   //
   // Gerrit doesn't guarantee that every user has set their preferred email,
   // but LUCI ACLs are based entirely on user emails. Thus, Project Manager will
@@ -289,7 +289,7 @@ message Tryjobs {
 message Tryjob {
   cv.internal.tryjob.Definition definition = 1;
 
-  // ID is a CV internal Tryjob ID, correponding to a Datastore entity.
+  // ID is a CV internal Tryjob ID, corresponding to a Datastore entity.
   //
   // During migration from CQDaemon, the ID may be not set but then ExternalID
   // is set.

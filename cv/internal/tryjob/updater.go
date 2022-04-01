@@ -39,7 +39,7 @@ type updaterBackend interface {
 	// It's also the first part of the Tryjob's ExternalID, e.g. "buildbucket".
 	// Must not contain a slash.
 	Kind() string
-	// Update should fetch the tryjob given the current entity in Datastore.
+	// Update should fetch the Tryjob given the current entity in Datastore.
 	//
 	// MUST not modify the given Tryjob object.
 	Update(ctx context.Context, saved *Tryjob) (Status, *Result, error)
@@ -61,7 +61,7 @@ type Updater struct {
 
 // NewUpdater creates a new Updater.
 //
-// Starts without backends, but they ought to be added via RegisterBackend().
+// Starts without backends, but they should be added via RegisterBackend().
 func NewUpdater(tqd *tq.Dispatcher, rm rmNotifier) *Updater {
 	u := &Updater{
 		tqd:        tqd,
@@ -150,7 +150,8 @@ func (u *Updater) handleTask(ctx context.Context, task *UpdateTryjobTask) error 
 	case status == tj.Status && proto.Equal(tj.Result, result):
 		return nil
 	}
-	// Capture the error that may cause the transaction to commit, and any relevant tags.
+	// Capture the error that may cause the transaction to commit, and any
+	// relevant tags.
 	var innerErr error
 	err = datastore.RunInTransaction(ctx, func(ctx context.Context) (err error) {
 		defer func() {

@@ -61,7 +61,7 @@ type ComputationResult struct {
 	//
 	// Mutually exclusive with `ComputationFailure`.
 	Requirement *tryjob.Requirement
-	// ComputationFailure is what fails the requirement computation.
+	// ComputationFailure is what fails the Requirement computation.
 	//
 	// This is different from the returned error from the `Compute` function.
 	// This failure is typically caused by invalid directive from users or
@@ -75,9 +75,9 @@ type ComputationResult struct {
 	ComputationFailure ComputationFailure
 }
 
-// OK returns true if successfully computed Tryjob requirement.
+// OK returns true if the Tryjob Requirement is successfully computed.
 //
-// `ComputationFailure` MUST be present if returns false.
+// `ComputationFailure` MUST be present if false is returned.
 func (r ComputationResult) OK() bool {
 	switch {
 	case r.ComputationFailure != nil:
@@ -95,11 +95,11 @@ func (r ComputationResult) OK() bool {
 // getDisallowedOwners checks which of the owner emails given belong
 // to none of the given allowLists.
 //
-// NOTE: if no allowLists are given, the return value defaults to nil.
-//       This may be unexpected, and has security implications.
-//       This behavior is valid in regards to checking whether the owners are
-//       allowed to use a certain builder, if no allowList groups are defined,
-//       then the expectation is that the action is allowed by default.
+// NOTE: If no allowLists are given, the return value defaults to nil. This may
+// be unexpected, and has security implications. This behavior is valid in
+// regards to checking whether the owners are allowed to use a certain builder,
+// if no allowList groups are defined, then the expectation is that the action
+// is allowed by default.
 func getDisallowedOwners(ctx context.Context, allOwnerEmails []string, allowLists ...string) ([]string, error) {
 	switch {
 	case len(allOwnerEmails) == 0:
@@ -123,7 +123,8 @@ func getDisallowedOwners(ctx context.Context, allOwnerEmails []string, allowList
 	return disallowed, nil
 }
 
-// https://chromium.googlesource.com/infra/luci/luci-go/+/b829424977f4752c8f5e2d3451ec2d7f1a7dc9e2/buildbucket/proto/project_config.proto#220
+// The regexes are based on Buildbucket documentation:
+// https://chromium.googlesource.com/infra/luci/luci-go/+/6b8fdd66/buildbucket/proto/project_config.proto#220
 var builderRE = `[a-zA-Z0-9\-_.\(\) ]+`
 var projectRE = `[a-z0-9\-_.]+`
 var bucketRE = `[a-z0-9\-_.]+`
@@ -164,16 +165,17 @@ func getIncludedTryjobs(directives []string) (stringset.Set, ComputationFailure)
 	return ret, nil
 }
 
-// locationMatch checks the list of files affected by the given CLs against the
-// given regexes.
+// locationMatch returns true if the builder should be included given the
+// location regexp fields and CLs.
 //
-// First removing from the list the files that match locationRegexpExclude, and
-// then matching the remainder against locationRegexp, returning true if
-// there's a match.
+// The builder is included if at least one file from at least one CL matches
+// a locationRegexp pattern and does not match any locationRegexpExclude
+// patterns.
+//
 //
 // Note that an empty locationRegexp is treated equivalently to a `.*` value.
 //
-// Panincs if any regex is invalid.
+// Panics if any regex is invalid.
 func locationMatch(ctx context.Context, locationRegexp, locationRegexpExclude []string, cls []*run.RunCL) (bool, error) {
 	if len(locationRegexp) == 0 {
 		locationRegexp = append(locationRegexp, ".*")
@@ -186,11 +188,12 @@ func locationMatch(ctx context.Context, locationRegexp, locationRegexpExclude []
 		}
 	}
 	if changedLocations.Len() == 0 {
-		// Gerrit treats CLs representing merged commits (i.e. CL's git commit has
-		// >2 parents) as having 0 filediff. Therefore, assume that the CL matches
-		// all location(files)-conditioned builders. See also crbug/1006534.
+		// Gerrit treats CLs representing merged commits (i.e. CL's git commit
+		// has >2 parents) as having 0 filediff. Therefore, assume that the CL
+		// matches all location(files)-conditioned builders. See crbug/1006534.
 		return true, nil
 	}
+	// First remove from the list the files that match locationRegexpExclude, and
 	for _, lre := range locationRegexpExclude {
 		re := regexp.MustCompile(fmt.Sprintf("^%s$", lre))
 		changedLocations.Iter(func(loc string) bool {
@@ -205,6 +208,8 @@ func locationMatch(ctx context.Context, locationRegexp, locationRegexpExclude []
 		// builder's config.
 		return false, nil
 	}
+	// Matching the remainder against locationRegexp, returning true if there's
+	// a match.
 	for _, lri := range locationRegexp {
 		re := regexp.MustCompile(fmt.Sprintf("^%s$", lri))
 		found := false
@@ -321,8 +326,8 @@ const (
 	includeEquivalentExplicitly
 )
 
-// shouldInclude decides based on the configuration whether a given builder should
-// be skipped in generating the requirement.
+// shouldInclude decides based on the configuration whether a given builder
+// should be skipped in generating the requirement.
 func shouldInclude(ctx context.Context, in Input, er *rand.Rand, b *config.Verifiers_Tryjob_Builder, incl stringset.Set, owners []string) (inclusionResult, ComputationFailure, error) {
 	switch ps := isPresubmit(b); {
 	case in.RunOptions.SkipTryjobs && !ps:
