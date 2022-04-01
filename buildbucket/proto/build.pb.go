@@ -237,8 +237,30 @@ type Build struct {
 	// tracked by end_time.
 	//
 	// During the cancel process, the build still accepts updates.
-	// A delayed task will be executed after the build's grace period to finally
-	// terminate the build.
+	//
+	// bbagent checks this field at the frequency of
+	// buildbucket.MinUpdateBuildInterval. When bbagent sees the build is in
+	// cancel process, there are two states:
+	//  * it has NOT yet started the exe payload,
+	//  * it HAS started the exe payload.
+	//
+	// In the first state, bbagent will immediately terminate the build without
+	// invoking the exe payload at all.
+	//
+	// In the second state, bbagent will send SIGTERM/CTRL-BREAK to the exe
+	// (according to the deadline protocol described in
+	// https://chromium.googlesource.com/infra/luci/luci-py/+/HEAD/client/LUCI_CONTEXT.md).
+	// After grace_period it will then try to kill the exe.
+	//
+	// NOTE: There is a race condition here; If bbagent starts the luciexe and
+	// then immediately notices that the build is canceled, it's possible that
+	// bbagent can send SIGTERM/CTRL-BREAK to the exe before that exe sets up
+	// interrupt handlers. There is a bug on file (crbug.com/1311821)
+	// which we plan to implement at some point as a mitigation for this.
+	//
+	//Additionally, the Buildbucket service itself will launch an asynchronous
+	// task to terminate the build via the backend API (e.g. Swarming cancelation)
+	// if bbagent cannot successfully terminate the exe in time.
 	CancelTime *timestamppb.Timestamp `protobuf:"bytes,32,opt,name=cancel_time,json=cancelTime,proto3" json:"cancel_time,omitempty"`
 	// Status of the build.
 	// Must be specified, i.e. not STATUS_UNSPECIFIED.

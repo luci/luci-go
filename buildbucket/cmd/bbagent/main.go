@@ -252,8 +252,7 @@ func mainImpl() int {
 	check(errors.Annotate(err, "failed to report status STARTED to Buildbucket").Err())
 	// The build has been canceled, bail out early.
 	if updatedBuild.CancelTime != nil {
-		logging.Infof(ctx, "The build is in the cancel process, cancel time is %s.", updatedBuild.CancelTime.AsTime().String())
-		return 0
+		return cancelBuild(ctx, bbclient, updatedBuild)
 	}
 
 	// from this point forward we want to try to report errors to buildbucket,
@@ -338,10 +337,16 @@ func mainImpl() int {
 				},
 			},
 			UpdateMask: &fieldmaskpb.FieldMask{Paths: []string{"build.infra.buildbucket.agent.output"}},
+			Mask:       readMask,
 		}
-		if _, err := bbclient.UpdateBuild(cctx, bldForCipd); err != nil {
+		bldAfterCipd, err := bbclient.UpdateBuild(cctx, bldForCipd)
+		if err != nil {
 			// Carry on and bear the non-fatal update failure.
 			logging.Warningf(ctx, "Failed to report build agent STARTED status: %s", err)
+		}
+		// The build has been canceled, bail out early.
+		if bldAfterCipd.CancelTime != nil {
+			return cancelBuild(cctx, bbclient, bldAfterCipd)
 		}
 
 		agentOutput := bldForCipd.Build.Infra.Buildbucket.Agent.Output
@@ -650,4 +655,22 @@ func retryUpdateBuild(ctx context.Context, bbclient BuildsClient, req *bbpb.Upda
 		}.Warningf(ctx, "%s Will retry in %s", logMsg, sleepTime)
 	})
 	return
+}
+
+func cancelBuild(ctx context.Context, bbclient BuildsClient, bld *bbpb.Build) (retCode int) {
+	logging.Infof(ctx, "The build is in the cancel process, cancel time is %s. Actually cancel it now.", bld.CancelTime.AsTime())
+	_, err := bbclient.UpdateBuild(
+		ctx,
+		&bbpb.UpdateBuildRequest{
+			Build: &bbpb.Build{
+				Id:     bld.Id,
+				Status: bbpb.Status_CANCELED,
+			},
+			UpdateMask: &fieldmaskpb.FieldMask{Paths: []string{"build.status"}},
+		})
+	if err != nil {
+		logging.Errorf(ctx, "failed to actually cancel the build: %s", err)
+		return 1
+	}
+	return 0
 }
