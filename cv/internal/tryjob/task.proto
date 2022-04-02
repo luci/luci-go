@@ -47,3 +47,24 @@ message CancelStaleTryjobsTask {
   // associated tryjobs are no longer considered stale.
   int32 current_min_equiv_patchset = 3;
 }
+
+// ExecuteTryjobsPayload is the payload of the long op task that invokes
+// the Tryjob Executor.
+//
+// The payload contains the event happens outside so that Tryjob Executor could
+// react on the event.
+//
+// Exactly one event should be provided. Not using oneof for the sake of
+// simplicity.
+message ExecuteTryjobsPayload {
+  // RequirementChanged indicates the tryjobs requirement of the run has
+  // changed.
+  bool requirement_changed = 1;
+  // TryjobsUpdated contains ids of all tryjobs that have status update.
+  repeated int64 tryjobs_updated = 2;
+}
+
+// ExecuteTryjobsResult is the result of Tryjob executor.
+message ExecuteTryjobsResult {
+  // TODO(yiwzhang): define
+}

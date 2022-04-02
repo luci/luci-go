@@ -19,7 +19,6 @@ import (
 	"fmt"
 
 	"go.chromium.org/luci/common/errors"
-	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/gae/service/datastore"
 
@@ -52,30 +51,19 @@ func loadExecutionState(ctx context.Context, rid common.RunID) (*tryjob.Executio
 // Do executes the tryjob requirement for a run.
 //
 // This function is idempotent so it is safe to retry.
-func Do(ctx context.Context, r *run.Run, shouldStop func() bool) error {
-	reqmt := r.Tryjobs.GetRequirement()
-	switch {
-	case reqmt == nil:
-		return errors.New("tryjob executor is invoked without requirement")
-	case len(reqmt.GetDefinitions()) == 0:
-		return errors.New("tryjob executor is invoked without any definitions in requirement")
-	}
-
+func Do(ctx context.Context, r *run.Run, t *tryjob.ExecuteTryjobsPayload, shouldStop func() bool) error {
 	execState, stateVer, err := loadExecutionState(ctx, r.ID)
 	switch {
 	case err != nil:
 		return err
-	case execState.GetRequirement().GetVersion() > reqmt.GetVersion():
-		panic(fmt.Errorf("impossible; tryjob executor is executing requirement with version %d which is larger than the requirement version in run %d",
-			execState.GetRequirement().GetVersion(), reqmt.GetVersion()))
-	case execState.GetRequirement().GetVersion() == reqmt.GetVersion():
-		logging.Warningf(ctx, "tryjob executor is already executing requirement v%d which is current in run", reqmt.GetVersion())
-		return nil
 	case execState == nil:
 		execState = &tryjob.ExecutionState{}
 	}
 
-	plan := prepExecutionPlan(reqmt, execState)
+	plan, err := prepExecutionPlan(ctx, execState, r, t.GetTryjobsUpdated(), t.GetRequirementChanged())
+	if err != nil {
+		return err
+	}
 	if err := plan.execute(ctx, r, execState); err != nil {
 		return err
 	}
@@ -109,21 +97,33 @@ func Do(ctx context.Context, r *run.Run, shouldStop func() bool) error {
 }
 
 type plan struct {
-	// New tryjob to launch.
-	launchNew []*tryjob.Definition
+	// new tryjob to trigger due to new builder in requirement.
+	trigger []*tryjob.Definition
 
-	// The indices of the tryjob execution in the existing execution state that
-	// should be discarded.
-	//
-	// This is typically due to the builder is deleted in the Project Config.
-	discardIndices intSet
-	// TODO(yiwzhang): Consider supporting the use case where a builder changes
-	// `disable_reuse` from false to true, then if this builder is currently
-	// reusing a build, it should stop reusing it and launch a new build.
+	// retry the existing tryjob due to transient failure.
+	retry map[*tryjob.Definition]*tryjob.ExecutionState_Execution
+
+	// discard the tryjob due to the builder is removed in the Project Config.
+	discarded map[*tryjob.Definition]*tryjob.ExecutionState_Execution
 }
 
-func prepExecutionPlan(newReqmt *tryjob.Requirement, execState *tryjob.ExecutionState) plan {
-	panic("implement")
+func prepExecutionPlan(ctx context.Context, execState *tryjob.ExecutionState, r *run.Run, tryjobsUpdated []int64, reqmtChanged bool) (*plan, error) {
+	switch {
+	case len(tryjobsUpdated) > 0 && reqmtChanged:
+		panic(fmt.Errorf("the executor can't handle requirement update and tryjobs update at the same time"))
+	case len(tryjobsUpdated) > 0:
+		tryjobs := make([]*tryjob.Tryjob, len(tryjobsUpdated))
+		if err := datastore.Get(ctx, tryjobs); err != nil {
+			return nil, errors.Annotate(err, "failed to load tryjobs").Tag(transient.Tag).Err()
+		}
+		// TODO(robertocn): update the state and compute the plan
+		return &plan{}, nil
+	case reqmtChanged:
+		// TODO(yiwzhang): compute the plan
+		return &plan{}, nil
+	default:
+		panic(fmt.Errorf("the executor is called without any update on either tryjobs or requirement"))
+	}
 }
 
 // execute executes the plan and mutate the state.
