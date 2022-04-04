@@ -118,6 +118,7 @@ func (op *ActuationBeginOp) MakeDecision(ctx context.Context, assetID string, as
 		decision = modelpb.ActuationDecision_SKIP_BROKEN
 	case IsUpToDate(asset.IntendedState, asset.ReportedState):
 		decision = modelpb.ActuationDecision_SKIP_UPTODATE
+		stored.AppliedState = stored.IntendedState
 	default:
 		op.actuating = true
 		decision = modelpb.ActuationDecision_ACTUATE_STALE

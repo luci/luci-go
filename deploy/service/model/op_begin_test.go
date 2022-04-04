@@ -322,6 +322,40 @@ func TestActuationBeginOp(t *testing.T) {
 			So(storedActuation.State, ShouldEqual, modelpb.Actuation_SUCCEEDED)
 			So(storedActuation.Created.Equal(now), ShouldBeTrue)
 			So(storedActuation.Expiry.IsZero(), ShouldBeTrue)
+
+			// Stored Asset entity is correct.
+			assets, err := fetchAssets(ctx, []string{"apps/app1"}, true)
+			So(err, ShouldBeNil)
+			So(assets["apps/app1"].Asset, ShouldResembleProto, &modelpb.Asset{
+				Id:            "apps/app1",
+				LastActuation: storedActuation.Actuation,
+				LastDecision:  storedActuation.Decisions.Decisions["apps/app1"],
+				Config:        &modelpb.AssetConfig{EnableAutomation: true},
+				IntendedState: &modelpb.AssetState{
+					Timestamp:  timestamppb.New(now),
+					Deployment: storedActuation.Actuation.Deployment,
+					Actuator:   storedActuation.Actuation.Actuator,
+					State: &modelpb.AssetState_Appengine{
+						Appengine: mockedIntendedState("app1", 0),
+					},
+				},
+				ReportedState: &modelpb.AssetState{
+					Timestamp:  timestamppb.New(now),
+					Deployment: storedActuation.Actuation.Deployment,
+					Actuator:   storedActuation.Actuation.Actuator,
+					State: &modelpb.AssetState_Appengine{
+						Appengine: mockedReportedState("app1", 0),
+					},
+				},
+				AppliedState: &modelpb.AssetState{
+					Timestamp:  timestamppb.New(now),
+					Deployment: storedActuation.Actuation.Deployment,
+					Actuator:   storedActuation.Actuation.Actuator,
+					State: &modelpb.AssetState_Appengine{
+						Appengine: mockedIntendedState("app1", 0),
+					},
+				},
+			})
 		})
 
 		Convey("Broken", func() {

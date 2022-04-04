@@ -107,6 +107,9 @@ func (op *ActuationEndOp) Apply(ctx context.Context) error {
 		if ent.Asset.LastActuateActuation.GetId() == op.actuation.ID {
 			ent.Asset.LastActuateActuation = op.actuation.Actuation
 		}
+		if op.actuation.Actuation.State == modelpb.Actuation_SUCCEEDED {
+			ent.Asset.AppliedState = ent.Asset.IntendedState
+		}
 		toPut = append(toPut, ent)
 	}
 

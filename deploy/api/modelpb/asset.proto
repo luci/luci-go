@@ -75,8 +75,9 @@ message Asset {
 
   // The intended state of the asset as defined in the IaC repo.
   //
-  // This state is derived purely from the committed configuration. The actuator
-  // will try to move the asset into this state.
+  // It is the intended asset state reported by the actuator during its most
+  // recent BeginActuation call. This state is derived purely from the committed
+  // configuration. The actuator will try to move the asset into this state.
   //
   // Has its `state` oneof populated according to the asset kind using
   // IntendedState sub-fields. Never contains an erroneous AssetState.
@@ -84,16 +85,28 @@ message Asset {
   // May be missing for new assets if they are misconfigured in the IaC repo.
   AssetState intended_state = 7;
 
+  // The last successfully applied intended state.
+  //
+  // May be different from `intended_state` for assets being actuated right now
+  // of for disabled, locked or broken assets.
+  //
+  // Has its `state` oneof populated according to the asset kind using
+  // IntendedState sub-fields. Never contains an erroneous AssetState.
+  //
+  // May be missing for new assets if they never had successful actuations.
+  AssetState applied_state = 8;
+
   // The actual state of the asset as reported by the actuator most recently.
   //
-  // Matches some real observed state of the asset, regardless how this state
-  // came to be.
+  // It is the captured asset state reported by the actuator during its most
+  // BeginActuation or EndActuation calls. Matches some real most recently
+  // observed state of the asset, regardless how this state came to be.
   //
   // Has its `state` oneof populated according to the asset kind using
   // CapturedState sub-fields. Never contains an erroneous AssetState.
   //
   // May be missing for new assets if the actuator fails to capture their state.
-  AssetState reported_state = 8;
+  AssetState reported_state = 9;
 
   // The last state applied by the actuator itself.
   //
@@ -111,14 +124,14 @@ message Asset {
   //
   // May be missing for new assets while they are being actuated or if the
   // actuator fails to capture their post-actuation state.
-  AssetState actuated_state = 9;
+  AssetState actuated_state = 10;
 
   // Populated if the actuator failed to capture the post-actuation state.
   //
   // If this field is set then `actuated_state` likely doesn't match reality
   // and the next actuation attempt will likely trigger the anti-stomp
   // protection.
-  google.rpc.Status post_actuation_status = 10;
+  google.rpc.Status post_actuation_status = 11;
 }
 
 
