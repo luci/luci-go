@@ -113,6 +113,9 @@ func prepExecutionPlan(ctx context.Context, execState *tryjob.ExecutionState, r 
 		panic(fmt.Errorf("the executor can't handle requirement update and tryjobs update at the same time"))
 	case len(tryjobsUpdated) > 0:
 		tryjobs := make([]*tryjob.Tryjob, len(tryjobsUpdated))
+		for i, tjid := range tryjobsUpdated {
+			tryjobs[i] = &tryjob.Tryjob{ID: common.TryjobID(tjid)}
+		}
 		if err := datastore.Get(ctx, tryjobs); err != nil {
 			return nil, errors.Annotate(err, "failed to load tryjobs").Tag(transient.Tag).Err()
 		}
