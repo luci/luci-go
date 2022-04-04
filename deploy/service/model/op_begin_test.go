@@ -203,10 +203,12 @@ func TestActuationBeginOp(t *testing.T) {
 			})
 
 			So(assets["apps/app2"].Asset, ShouldResembleProto, &modelpb.Asset{
-				Id:            "apps/app2",
-				LastActuation: storedActuation.Actuation,
-				LastDecision:  decisions["apps/app2"],
-				Config:        &modelpb.AssetConfig{EnableAutomation: true},
+				Id:                   "apps/app2",
+				LastActuation:        storedActuation.Actuation,
+				LastDecision:         decisions["apps/app2"],
+				LastActuateActuation: storedActuation.Actuation,
+				LastActuateDecision:  decisions["apps/app2"],
+				Config:               &modelpb.AssetConfig{EnableAutomation: true},
 				IntendedState: &modelpb.AssetState{
 					Timestamp:  timestamppb.New(now),
 					Deployment: storedActuation.Actuation.Deployment,

@@ -160,6 +160,10 @@ func (op *ActuationBeginOp) Apply(ctx context.Context) (map[string]*modelpb.Actu
 	// Embed this Actuation snapshot into Asset entities.
 	for _, ent := range op.assets {
 		ent.Asset.LastActuation = op.actuation
+		if isActuateDecision(ent.Asset.LastDecision.Decision) {
+			ent.Asset.LastActuateActuation = ent.Asset.LastActuation
+			ent.Asset.LastActuateDecision = ent.Asset.LastDecision
+		}
 		toPut = append(toPut, ent)
 	}
 

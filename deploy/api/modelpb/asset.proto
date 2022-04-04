@@ -39,9 +39,13 @@ message Asset {
   // ID being "apps/<app-id>".
   string id = 1;
 
-  // The snapshot of the most recent actuation (may still be in-flight).
+  // The snapshot of the most recent actuation.
   //
-  // Also contains the Deployment associated with this asset.
+  // This is the most recent actuation. Most of the time it will be an actuation
+  // that made SKIP_UPTODATE decision (since most of the time assets are
+  // up-to-date).
+  //
+  // May still be in-flight.
   Actuation last_actuation = 2;
 
   // The last actuation decision regarding this asset.
@@ -49,11 +53,25 @@ message Asset {
   // It is the decision that was made by the `last_actuation` when it started.
   ActuationDecision last_decision = 3;
 
+  // The snapshot of the most recent actuation with ACTUATE_* decision.
+  //
+  // It is the actuation that changed (or attempted to change) this asset the
+  // last time.
+  //
+  // May still be in-flight.
+  Actuation last_actuate_actuation = 4;
+
+  // The last ACTUATE_* actuation decision regarding this asset.
+  //
+  // It is the decision that was made by the `last_actuate_actuation` when it
+  // started.
+  ActuationDecision last_actuate_decision = 5;
+
   // Asset configuration as defined in the IaC repo.
   //
   // It's the configuration consumed the the deployment system itself. Actuated
   // resources are configured via `intended_state`.
-  AssetConfig config = 4;
+  AssetConfig config = 6;
 
   // The intended state of the asset as defined in the IaC repo.
   //
@@ -64,7 +82,7 @@ message Asset {
   // IntendedState sub-fields. Never contains an erroneous AssetState.
   //
   // May be missing for new assets if they are misconfigured in the IaC repo.
-  AssetState intended_state = 5;
+  AssetState intended_state = 7;
 
   // The actual state of the asset as reported by the actuator most recently.
   //
@@ -75,7 +93,7 @@ message Asset {
   // CapturedState sub-fields. Never contains an erroneous AssetState.
   //
   // May be missing for new assets if the actuator fails to capture their state.
-  AssetState reported_state = 6;
+  AssetState reported_state = 8;
 
   // The last state applied by the actuator itself.
   //
@@ -93,14 +111,14 @@ message Asset {
   //
   // May be missing for new assets while they are being actuated or if the
   // actuator fails to capture their post-actuation state.
-  AssetState actuated_state = 7;
+  AssetState actuated_state = 9;
 
   // Populated if the actuator failed to capture the post-actuation state.
   //
   // If this field is set then `actuated_state` likely doesn't match reality
   // and the next actuation attempt will likely trigger the anti-stomp
   // protection.
-  google.rpc.Status post_actuation_status = 8;
+  google.rpc.Status post_actuation_status = 10;
 }
 
 

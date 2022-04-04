@@ -57,6 +57,10 @@ func TestActuationEndOp(t *testing.T) {
 							Id:    "actuation-id",
 							State: modelpb.Actuation_EXECUTING,
 						},
+						LastActuateActuation: &modelpb.Actuation{
+							Id:    "actuation-id",
+							State: modelpb.Actuation_EXECUTING,
+						},
 						ReportedState: &modelpb.AssetState{
 							State: &modelpb.AssetState_Appengine{
 								Appengine: mockedReportedState("old reported", 0),
@@ -74,6 +78,9 @@ func TestActuationEndOp(t *testing.T) {
 					Asset: &modelpb.Asset{
 						Id: "apps/app2",
 						LastActuation: &modelpb.Actuation{
+							Id: "another-actuation",
+						},
+						LastActuateActuation: &modelpb.Actuation{
 							Id: "another-actuation",
 						},
 					},
@@ -130,8 +137,9 @@ func TestActuationEndOp(t *testing.T) {
 				So(err, ShouldBeNil)
 
 				So(assets["apps/app1"].Asset, ShouldResembleProto, &modelpb.Asset{
-					Id:            "apps/app1",
-					LastActuation: storedActuation.Actuation,
+					Id:                   "apps/app1",
+					LastActuation:        storedActuation.Actuation,
+					LastActuateActuation: storedActuation.Actuation,
 					ReportedState: &modelpb.AssetState{
 						Timestamp:  timestamppb.New(now),
 						Deployment: storedActuation.Actuation.Deployment,
@@ -154,6 +162,9 @@ func TestActuationEndOp(t *testing.T) {
 				So(assets["apps/app2"].Asset, ShouldResembleProto, &modelpb.Asset{
 					Id: "apps/app2",
 					LastActuation: &modelpb.Actuation{
+						Id: "another-actuation",
+					},
+					LastActuateActuation: &modelpb.Actuation{
 						Id: "another-actuation",
 					},
 				})
@@ -205,8 +216,9 @@ func TestActuationEndOp(t *testing.T) {
 				So(err, ShouldBeNil)
 
 				So(assets["apps/app1"].Asset, ShouldResembleProto, &modelpb.Asset{
-					Id:            "apps/app1",
-					LastActuation: storedActuation.Actuation,
+					Id:                   "apps/app1",
+					LastActuation:        storedActuation.Actuation,
+					LastActuateActuation: storedActuation.Actuation,
 					ReportedState: &modelpb.AssetState{
 						State: &modelpb.AssetState_Appengine{
 							Appengine: mockedReportedState("old reported", 0),
@@ -227,6 +239,9 @@ func TestActuationEndOp(t *testing.T) {
 				So(assets["apps/app2"].Asset, ShouldResembleProto, &modelpb.Asset{
 					Id: "apps/app2",
 					LastActuation: &modelpb.Actuation{
+						Id: "another-actuation",
+					},
+					LastActuateActuation: &modelpb.Actuation{
 						Id: "another-actuation",
 					},
 				})

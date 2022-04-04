@@ -104,6 +104,9 @@ func (op *ActuationEndOp) Apply(ctx context.Context) error {
 	// Embed the Actuation snapshot into the affected Asset entities.
 	for _, ent := range op.affected {
 		ent.Asset.LastActuation = op.actuation.Actuation
+		if ent.Asset.LastActuateActuation.GetId() == op.actuation.ID {
+			ent.Asset.LastActuateActuation = op.actuation.Actuation
+		}
 		toPut = append(toPut, ent)
 	}
 
