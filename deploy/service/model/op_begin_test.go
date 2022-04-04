@@ -277,6 +277,18 @@ func TestActuationBeginOp(t *testing.T) {
 		})
 
 		Convey("Skipping up-to-date", func() {
+			datastore.Put(ctx, &Asset{
+				ID: "apps/app1",
+				Asset: &modelpb.Asset{
+					Id: "apps/app1",
+					AppliedState: &modelpb.AssetState{
+						State: &modelpb.AssetState_Appengine{
+							Appengine: mockedIntendedState("app1", 0),
+						},
+					},
+				},
+			})
+
 			op, err := NewActuationBeginOp(ctx, []string{"apps/app1"}, &modelpb.Actuation{
 				Id:         "actuation-id",
 				Deployment: mockedDeployment,

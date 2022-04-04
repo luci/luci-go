@@ -25,7 +25,7 @@ import (
 // service name => version name => traffic portion it gets
 type serviceMap map[string]map[string]int32
 
-func TestIsUpToDate(t *testing.T) {
+func TestIntendedMatchesReported(t *testing.T) {
 	t.Parallel()
 
 	Convey("GAE", t, func() {
@@ -34,7 +34,7 @@ func TestIsUpToDate(t *testing.T) {
 			reported serviceMap
 		}
 		check := func(tc testCase) bool {
-			return isAppengineUpToDate(stateProto(true, tc.intended), stateProto(false, tc.reported))
+			return appengineIntendedMatchesReported(stateProto(true, tc.intended), stateProto(false, tc.reported))
 		}
 
 		So(check(testCase{}), ShouldBeTrue)

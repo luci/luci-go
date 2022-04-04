@@ -19,6 +19,7 @@ import (
 	"strings"
 
 	"google.golang.org/grpc/codes"
+	"google.golang.org/protobuf/proto"
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/deploy/api/modelpb"
@@ -79,18 +80,51 @@ func IsActuationEnabed(cfg *modelpb.AssetConfig, dep *modelpb.DeploymentConfig) 
 	return cfg.GetEnableAutomation()
 }
 
-// IsUpToDate is true if the intended state matches the reported state.
+// IntendedMatchesReported is true if the intended state matches the reported
+// state.
 //
 // States must be non-erroneous and be valid per ValidateIntendedState and
 // ValidateReportedState.
-func IsUpToDate(intended *modelpb.AssetState, reported *modelpb.AssetState) bool {
+func IntendedMatchesReported(intended, reported *modelpb.AssetState) bool {
 	if intended := intended.GetAppengine(); intended != nil {
 		if reported := reported.GetAppengine(); reported != nil {
-			return isAppengineUpToDate(intended, reported)
+			return appengineIntendedMatchesReported(intended, reported)
 		}
 		return false
 	}
 	return false
+}
+
+// IsSameState compares `state` portion of AssetState.
+//
+// Ignores all other fields. If any of the states is erroneous (with no `state`
+// field), returns false.
+func IsSameState(a, b *modelpb.AssetState) bool {
+	// Note that `state` is a oneof field and there's no way to compare such
+	// fields without examining "arms" first.
+	concrete := func(s *modelpb.AssetState) proto.Message {
+		switch v := s.GetState().(type) {
+		case *modelpb.AssetState_Appengine:
+			return v.Appengine
+		default:
+			return nil
+		}
+	}
+	if a, b := concrete(a), concrete(b); a != nil && b != nil {
+		return proto.Equal(a, b)
+	}
+	return false
+}
+
+// IsUpToDate returns true if an asset is up-to-date and should not be actuated.
+//
+// An asset is considered up-to-date if its reported state matches the intended
+// state, and the intended state hasn't changed since the last successful
+// actuation.
+func IsUpToDate(inteded, reported, applied *modelpb.AssetState) bool {
+	return applied != nil &&
+		IntendedMatchesReported(inteded, reported) &&
+		IsSameState(inteded, applied)
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -203,8 +237,8 @@ func visitVersions(state *modelpb.AppengineState, allowEmpty bool, cb func(*mode
 	return nil
 }
 
-// isAppengineUpToDate returns true if all intended versions are deployed and
-// receive the intended percent of traffic.
+// appengineIntendedMatchesReported returns true if all intended versions are
+// deployed and receive the intended percent of traffic.
 //
 // It is OK if more versions or services are deployed as long as they don't get
 // any traffic.
@@ -212,7 +246,7 @@ func visitVersions(state *modelpb.AppengineState, allowEmpty bool, cb func(*mode
 // Note that Appengine Admin API doesn't provide visibility into what versions
 // of "special" YAMLs (like queue.yaml and index.yaml) are deployed. They are
 // ignored by this function. Same applies to the traffic splitting method.
-func isAppengineUpToDate(intended *modelpb.AppengineState, reported *modelpb.AppengineState) bool {
+func appengineIntendedMatchesReported(intended, reported *modelpb.AppengineState) bool {
 	if err := validateAppengineIntendedState(intended); err != nil {
 		panic(fmt.Sprintf("got invalid intended state (%s): %q", err, intended))
 	}
