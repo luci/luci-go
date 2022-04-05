@@ -21,13 +21,15 @@ import (
 	"time"
 
 	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	gerritutil "go.chromium.org/luci/common/api/gerrit"
 	"go.chromium.org/luci/common/clock"
+	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	gerritpb "go.chromium.org/luci/common/proto/gerrit"
-	"go.chromium.org/luci/grpc/grpcutil"
+	"go.chromium.org/luci/common/retry/transient"
 
 	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/gerrit"
@@ -169,12 +171,18 @@ func (q singleQuery) fetch(ctx context.Context, after time.Time, query string) (
 		Query: query,
 	}
 	resp, err := gerritutil.PagingListChanges(ctx, q.client, &req, opts)
-	switch grpcutil.Code(err) {
-	case codes.OK:
+	grpcStatus, _ := status.FromError(errors.Unwrap(err))
+	switch grpcCode := grpcStatus.Code(); {
+	case grpcCode == codes.OK:
 		if resp.GetMoreChanges() {
 			logging.Errorf(ctx, "Ignoring oldest changes because reached max (%d) allowed to process per poll", changesPerPoll)
 		}
 		return resp.GetChanges(), nil
+	case grpcCode == codes.InvalidArgument && strings.Contains(grpcStatus.Message(), "Invalid authentication credentials. Please generate a new identifier:"):
+		logging.Errorf(ctx, "crbug/1286454: got invalid authentication credential"+
+			" error when paging changes. Mark it as transient so that it will be"+
+			" retried.")
+		return nil, transient.Tag.Apply(err)
 	// TODO(tandrii): handle 403 and 404 if CV lacks access to entire host.
 	default:
 		// NOTE: resp may be set if there was partial success in fetching changes
