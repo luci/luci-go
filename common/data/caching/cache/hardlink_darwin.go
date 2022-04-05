@@ -27,7 +27,7 @@ import (
 var cachedMajorVersion int
 var cachedMajorVersionOnce sync.Once
 
-func mustGetMajorVersion() int {
+func mustGetDarwinMajorVersion() int {
 	cachedMajorVersionOnce.Do(func() {
 		var utsname unix.Utsname
 		if err := unix.Uname(&utsname); err != nil {
@@ -51,9 +51,9 @@ func mustGetMajorVersion() int {
 
 func makeHardLinkOrClone(src, dst string) error {
 	// Hardlinked executables don't work well with dyld.
-	// Use clonefile instead on macOS 12 or newer to workaround that.
+	// Use clonefile instead on macOS 12 (Darwin 21) or newer to workaround that.
 	// ref: https://crbug.com/1296318#c54
-	if mustGetMajorVersion() >= 12 {
+	if mustGetDarwinMajorVersion() >= 21 {
 		return unix.Clonefile(src, dst, unix.CLONE_NOFOLLOW|unix.CLONE_NOOWNERCOPY)
 	}
 	return os.Link(src, dst)

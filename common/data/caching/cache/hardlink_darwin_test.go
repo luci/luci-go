@@ -21,9 +21,9 @@ import (
 	"testing"
 )
 
-func TestMustGetMajorVersion(t *testing.T) {
-	ver := mustGetMajorVersion()
-	if ver < 10 {
+func TestMustGetDarwinMajorVersion(t *testing.T) {
+	ver := mustGetDarwinMajorVersion()
+	if ver < 14 {
 		t.Errorf("major version is too small compared to version supported by infra go toolchain: %d", ver)
 	}
 }
