@@ -85,7 +85,7 @@ var (
 )
 
 // validateUpdate validates the given request.
-func validateUpdate(req *pb.UpdateBuildRequest, bs *model.BuildSteps) error {
+func validateUpdate(ctx context.Context, req *pb.UpdateBuildRequest, bs *model.BuildSteps) error {
 	if req.GetBuild().GetId() == 0 {
 		return errors.Reason("build.id: required").Err()
 	}
@@ -126,6 +126,10 @@ func validateUpdate(req *pb.UpdateBuildRequest, bs *model.BuildSteps) error {
 			if err := validateAgentOutput(req); err != nil {
 				return errors.Annotate(err, "build.infra.buildbucket.agent.output").Err()
 			}
+		case "build.infra.buildbucket.agent.purposes":
+			if err := validateAgentDataPurposes(ctx, req); err != nil {
+				return errors.Annotate(err, "build.infra.buildbucket.agent.purposes").Err()
+			}
 		default:
 			return errors.Reason("unsupported path %q", p).Err()
 		}
@@ -139,12 +143,44 @@ func validateUpdate(req *pb.UpdateBuildRequest, bs *model.BuildSteps) error {
 	return nil
 }
 
+// validateAgentDataPurposes validates the agent.purposes of the Build.
+func validateAgentDataPurposes(ctx context.Context, req *pb.UpdateBuildRequest) error {
+	if req.Build.Infra.GetBuildbucket().GetAgent().GetPurposes() == nil {
+		return errors.New("not set")
+	}
+	agent := req.Build.Infra.Buildbucket.Agent
+	if len(agent.Purposes) == 0 {
+		return nil
+	}
+
+	infra := &model.BuildInfra{Build: datastore.KeyForObj(ctx, &model.Build{ID: req.Build.Id})}
+	if err := datastore.Get(ctx, infra); err != nil {
+		return err
+	}
+
+	inputDataRef := infra.Proto.Buildbucket.Agent.Input.Data
+	outputDataRef := infra.Proto.Buildbucket.Agent.Output.GetResolvedData()
+	if stringset.NewFromSlice(req.UpdateMask.GetPaths()...).Has("build.infra.buildbucket.agent.output") {
+		outputDataRef = agent.Output.GetResolvedData()
+	}
+	if outputDataRef == nil {
+		outputDataRef = map[string]*pb.ResolvedDataRef{}
+	}
+
+	for path := range agent.Purposes {
+		if d1, d2 := inputDataRef[path], outputDataRef[path]; d1 == nil && d2 == nil {
+			return errors.Reason("Invalid path %s - not in either input or output dataRef", path).Err()
+		}
+	}
+	return nil
+}
+
 // validateAgentOutput validates the agent output of the Build.
 func validateAgentOutput(req *pb.UpdateBuildRequest) error {
-	output := req.Build.Infra.Buildbucket.Agent.Output
-	if output == nil {
+	if req.Build.Infra.GetBuildbucket().GetAgent().GetOutput() == nil {
 		return errors.Reason("agent output is not set while its field path appears in update_mask").Err()
 	}
+	output := req.Build.Infra.Buildbucket.Agent.Output
 	if protoutil.IsEnded(req.Build.Status) && !protoutil.IsEnded(output.Status) {
 		return errors.Reason("build is in an ended status while agent output status is not ended").Err()
 	}
@@ -427,15 +463,20 @@ func updateEntities(ctx context.Context, req *pb.UpdateBuildRequest, updateMask 
 			}
 		}
 
-		// infra.buildbucket.agent.output
-		if mustIncludes(updateMask, req, "infra.buildbucket.agent.output") == mask.IncludeEntirely {
+		// infra.buildbucket.agent
+		if mustIncludes(updateMask, req, "infra.buildbucket.agent") == mask.IncludePartially {
 			infra := &model.BuildInfra{
 				Build: bk,
 			}
 			if err := datastore.Get(ctx, infra); err != nil {
 				return err
 			}
-			infra.Proto.Buildbucket.Agent.Output = req.Build.Infra.Buildbucket.Agent.Output
+			if mustIncludes(updateMask, req, "infra.buildbucket.agent.output") == mask.IncludeEntirely {
+				infra.Proto.Buildbucket.Agent.Output = req.Build.Infra.Buildbucket.Agent.Output
+			}
+			if mustIncludes(updateMask, req, "infra.buildbucket.agent.purposes") == mask.IncludeEntirely {
+				infra.Proto.Buildbucket.Agent.Purposes = req.Build.Infra.Buildbucket.Agent.Purposes
+			}
 			toSave = append(toSave, infra)
 		}
 
@@ -479,7 +520,7 @@ func (*Builds) UpdateBuild(ctx context.Context, req *pb.UpdateBuildRequest) (*pb
 	logging.Infof(ctx, "Received an UpdateBuild request for build-%d", req.GetBuild().GetId())
 
 	var bs model.BuildSteps
-	if err := validateUpdate(req, &bs); err != nil {
+	if err := validateUpdate(ctx, req, &bs); err != nil {
 		return nil, appstatus.Errorf(codes.InvalidArgument, "%s", err)
 	}
 	um, err := mask.FromFieldMask(req.UpdateMask, req, false, true)

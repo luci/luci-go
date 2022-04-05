@@ -56,7 +56,7 @@ import (
 
 func TestValidateUpdate(t *testing.T) {
 	t.Parallel()
-
+	ctx := memory.Use(context.Background())
 	Convey("validate UpdateMask", t, func() {
 		req := &pb.UpdateBuildRequest{Build: &pb.Build{Id: 1}}
 
@@ -69,20 +69,20 @@ func TestValidateUpdate(t *testing.T) {
 					"build.summary_markdown",
 				}}
 				req.Build.SummaryMarkdown = "this is a string"
-				So(validateUpdate(req, nil), ShouldBeNil)
+				So(validateUpdate(ctx, req, nil), ShouldBeNil)
 			})
 		})
 
 		Convey("fails", func() {
 			Convey("with nil request", func() {
-				So(validateUpdate(nil, nil), ShouldErrLike, "build.id: required")
+				So(validateUpdate(ctx, nil, nil), ShouldErrLike, "build.id: required")
 			})
 
 			Convey("with an invalid path", func() {
 				req.UpdateMask = &field_mask.FieldMask{Paths: []string{
 					"bucket.name",
 				}}
-				So(validateUpdate(req, nil), ShouldErrLike, `unsupported path "bucket.name"`)
+				So(validateUpdate(ctx, req, nil), ShouldErrLike, `unsupported path "bucket.name"`)
 			})
 
 			Convey("with a mix of valid and invalid paths", func() {
@@ -91,7 +91,7 @@ func TestValidateUpdate(t *testing.T) {
 					"bucket.name",
 					"build.output",
 				}}
-				So(validateUpdate(req, nil), ShouldErrLike, `unsupported path "bucket.name"`)
+				So(validateUpdate(ctx, req, nil), ShouldErrLike, `unsupported path "bucket.name"`)
 			})
 		})
 	})
@@ -102,12 +102,12 @@ func TestValidateUpdate(t *testing.T) {
 
 		Convey("succeeds", func() {
 			req.Build.Status = pb.Status_SUCCESS
-			So(validateUpdate(req, nil), ShouldBeNil)
+			So(validateUpdate(ctx, req, nil), ShouldBeNil)
 		})
 
 		Convey("fails", func() {
 			req.Build.Status = pb.Status_SCHEDULED
-			So(validateUpdate(req, nil), ShouldErrLike, "build.status: invalid status SCHEDULED for UpdateBuild")
+			So(validateUpdate(ctx, req, nil), ShouldErrLike, "build.status: invalid status SCHEDULED for UpdateBuild")
 		})
 	})
 
@@ -115,14 +115,14 @@ func TestValidateUpdate(t *testing.T) {
 		req := &pb.UpdateBuildRequest{Build: &pb.Build{Id: 1}}
 		req.UpdateMask = &field_mask.FieldMask{Paths: []string{"build.tags"}}
 		req.Build.Tags = []*pb.StringPair{{Key: "ci:builder", Value: ""}}
-		So(validateUpdate(req, nil), ShouldErrLike, `tag key "ci:builder" cannot have a colon`)
+		So(validateUpdate(ctx, req, nil), ShouldErrLike, `tag key "ci:builder" cannot have a colon`)
 	})
 
 	Convey("validate summary_markdown", t, func() {
 		req := &pb.UpdateBuildRequest{Build: &pb.Build{Id: 1}}
 		req.UpdateMask = &field_mask.FieldMask{Paths: []string{"build.summary_markdown"}}
 		req.Build.SummaryMarkdown = strings.Repeat("☕", summaryMarkdownMaxLength)
-		So(validateUpdate(req, nil), ShouldErrLike, "too big to accept")
+		So(validateUpdate(ctx, req, nil), ShouldErrLike, "too big to accept")
 	})
 
 	Convey("validate output.gitiles_ommit", t, func() {
@@ -133,7 +133,7 @@ func TestValidateUpdate(t *testing.T) {
 			Host:    "host",
 			Id:      "id",
 		}}
-		So(validateUpdate(req, nil), ShouldErrLike, "ref is required")
+		So(validateUpdate(ctx, req, nil), ShouldErrLike, "ref is required")
 	})
 
 	Convey("validate output.properties", t, func() {
@@ -143,13 +143,13 @@ func TestValidateUpdate(t *testing.T) {
 		Convey("succeeds", func() {
 			props, _ := structpb.NewStruct(map[string]interface{}{"key": "value"})
 			req.Build.Output = &pb.Build_Output{Properties: props}
-			So(validateUpdate(req, nil), ShouldBeNil)
+			So(validateUpdate(ctx, req, nil), ShouldBeNil)
 		})
 
 		Convey("fails", func() {
 			props, _ := structpb.NewStruct(map[string]interface{}{"key": nil})
 			req.Build.Output = &pb.Build_Output{Properties: props}
-			So(validateUpdate(req, nil), ShouldErrLike, "value is not set")
+			So(validateUpdate(ctx, req, nil), ShouldErrLike, "value is not set")
 		})
 	})
 
@@ -164,7 +164,7 @@ func TestValidateUpdate(t *testing.T) {
 				{Name: "step1", Status: pb.Status_SUCCESS, StartTime: t, EndTime: t},
 				{Name: "step2", Status: pb.Status_SUCCESS, StartTime: t, EndTime: t},
 			}
-			So(validateUpdate(req, bs), ShouldBeNil)
+			So(validateUpdate(ctx, req, bs), ShouldBeNil)
 		})
 
 		Convey("fails with duplicates", func() {
@@ -173,7 +173,7 @@ func TestValidateUpdate(t *testing.T) {
 				{Name: "step1", Status: pb.Status_SUCCESS, StartTime: t, EndTime: t},
 				{Name: "step1", Status: pb.Status_SUCCESS, StartTime: t, EndTime: t},
 			}
-			So(validateUpdate(req, bs), ShouldErrLike, `duplicate: "step1"`)
+			So(validateUpdate(ctx, req, bs), ShouldErrLike, `duplicate: "step1"`)
 		})
 
 		Convey("with a parent step", func() {
@@ -182,14 +182,14 @@ func TestValidateUpdate(t *testing.T) {
 					{Name: "parent", Status: pb.Status_SUCCESS, StartTime: t, EndTime: t},
 					{Name: "parent|child", Status: pb.Status_SUCCESS, StartTime: t, EndTime: t},
 				}
-				So(validateUpdate(req, bs), ShouldBeNil)
+				So(validateUpdate(ctx, req, bs), ShouldBeNil)
 			})
 			Convey("after child", func() {
 				req.Build.Steps = []*pb.Step{
 					{Name: "parent|child", Status: pb.Status_SUCCESS, StartTime: t, EndTime: t},
 					{Name: "parent", Status: pb.Status_SUCCESS, StartTime: t, EndTime: t},
 				}
-				So(validateUpdate(req, bs), ShouldErrLike, `parent of "parent|child" must precede`)
+				So(validateUpdate(ctx, req, bs), ShouldErrLike, `parent of "parent|child" must precede`)
 			})
 		})
 	})
@@ -208,7 +208,7 @@ func TestValidateUpdate(t *testing.T) {
 		req.UpdateMask = &field_mask.FieldMask{Paths: []string{"build.infra.buildbucket.agent.output"}}
 
 		Convey("empty", func() {
-			So(validateUpdate(req, nil), ShouldErrLike, "agent output is not set while its field path appears in update_mask")
+			So(validateUpdate(ctx, req, nil), ShouldErrLike, "agent output is not set while its field path appears in update_mask")
 		})
 
 		Convey("invalid cipd", func() {
@@ -224,7 +224,7 @@ func TestValidateUpdate(t *testing.T) {
 					},
 				},
 			}
-			So(validateUpdate(req, nil), ShouldErrLike, `build.infra.buildbucket.agent.output: cipd.version: not a valid package instance ID "unresolved_v"`)
+			So(validateUpdate(ctx, req, nil), ShouldErrLike, `build.infra.buildbucket.agent.output: cipd.version: not a valid package instance ID "unresolved_v"`)
 
 			// wrong or unresolved package name
 			req.Build.Infra.Buildbucket.Agent.Output = &pb.BuildInfra_Buildbucket_Agent_Output{
@@ -238,12 +238,12 @@ func TestValidateUpdate(t *testing.T) {
 					},
 				},
 			}
-			So(validateUpdate(req, nil), ShouldErrLike, `cipd.package: invalid package name: "infra/${platform}"`)
+			So(validateUpdate(ctx, req, nil), ShouldErrLike, `cipd.package: invalid package name: "infra/${platform}"`)
 
 			// build.status and agent.output.status conflicts
 			req.Build.Status = pb.Status_CANCELED
 			req.Build.Infra.Buildbucket.Agent.Output.Status = pb.Status_STARTED
-			So(validateUpdate(req, nil), ShouldErrLike, "build is in an ended status while agent output status is not ended")
+			So(validateUpdate(ctx, req, nil), ShouldErrLike, "build is in an ended status while agent output status is not ended")
 		})
 
 		Convey("valid", func() {
@@ -261,9 +261,68 @@ func TestValidateUpdate(t *testing.T) {
 					},
 				},
 			}
-			So(validateUpdate(req, nil), ShouldBeNil)
+			So(validateUpdate(ctx, req, nil), ShouldBeNil)
 		})
 
+	})
+
+	Convey("validate agent purpose", t, func() {
+		req := &pb.UpdateBuildRequest{
+			Build: &pb.Build{
+				Id: 1,
+				Infra: &pb.BuildInfra{
+					Buildbucket: &pb.BuildInfra_Buildbucket{
+						Agent: &pb.BuildInfra_Buildbucket_Agent{},
+					},
+				},
+			},
+		}
+		req.UpdateMask = &field_mask.FieldMask{Paths: []string{"build.infra.buildbucket.agent.purposes"}}
+
+		datastore.GetTestable(ctx).AutoIndex(true)
+		datastore.GetTestable(ctx).Consistent(true)
+		So(datastore.Put(ctx, &model.BuildInfra{
+			Build: datastore.KeyForObj(ctx, &model.Build{ID: req.Build.Id}),
+			Proto: &pb.BuildInfra{
+				Buildbucket: &pb.BuildInfra_Buildbucket{
+					Agent: &pb.BuildInfra_Buildbucket_Agent{
+						Input: &pb.BuildInfra_Buildbucket_Agent_Input{
+							Data: map[string]*pb.InputDataRef{"p1": {}},
+						},
+					},
+				},
+			},
+		}), ShouldBeNil)
+
+		Convey("nil", func() {
+			So(validateUpdate(ctx, req, nil), ShouldErrLike, "build.infra.buildbucket.agent.purposes: not set")
+		})
+
+		Convey("invalid agent purpose", func() {
+			req.Build.Infra.Buildbucket.Agent.Purposes = map[string]pb.BuildInfra_Buildbucket_Agent_Purpose{
+				"random_p": pb.BuildInfra_Buildbucket_Agent_PURPOSE_RECIPE_BUNDLE,
+			}
+			So(validateUpdate(ctx, req, nil), ShouldErrLike, "build.infra.buildbucket.agent.purposes: Invalid path random_p - not in either input or output dataRef")
+		})
+
+		Convey("valid", func() {
+			// in input data.
+			req.Build.Infra.Buildbucket.Agent.Purposes = map[string]pb.BuildInfra_Buildbucket_Agent_Purpose{
+				"p1": pb.BuildInfra_Buildbucket_Agent_PURPOSE_RECIPE_BUNDLE,
+			}
+			So(validateUpdate(ctx, req, nil), ShouldBeNil)
+
+			// in output data
+			req.UpdateMask.Paths = append(req.UpdateMask.Paths, "build.infra.buildbucket.agent.output")
+			req.Build.Infra.Buildbucket.Agent.Output = &pb.BuildInfra_Buildbucket_Agent_Output{
+				ResolvedData: map[string]*pb.ResolvedDataRef{
+					"output_p1": {}},
+			}
+			req.Build.Infra.Buildbucket.Agent.Purposes = map[string]pb.BuildInfra_Buildbucket_Agent_Purpose{
+				"output_p1": pb.BuildInfra_Buildbucket_Agent_PURPOSE_RECIPE_BUNDLE,
+			}
+			So(validateUpdate(ctx, req, nil), ShouldBeNil)
+		})
 	})
 }
 
@@ -458,7 +517,7 @@ func TestUpdateBuild(t *testing.T) {
 		if b.Proto.Output != nil {
 			So(b.Proto.Output.Properties, ShouldBeNil)
 		}
-		m := model.HardcodedBuildMask("output.properties", "steps", "tags", "infra.buildbucket.agent.output")
+		m := model.HardcodedBuildMask("output.properties", "steps", "tags", "infra")
 		So(model.LoadBuildDetails(ctx, m, b.Proto), ShouldBeNil)
 		return b
 	}
@@ -511,7 +570,11 @@ func TestUpdateBuild(t *testing.T) {
 			Proto: &pb.BuildInfra{
 				Buildbucket: &pb.BuildInfra_Buildbucket{
 					Hostname: "bbhost",
-					Agent:    &pb.BuildInfra_Buildbucket_Agent{},
+					Agent: &pb.BuildInfra_Buildbucket_Agent{
+						Input: &pb.BuildInfra_Buildbucket_Agent_Input{
+							Data: map[string]*pb.InputDataRef{},
+						},
+					},
 				},
 			},
 		}
@@ -726,6 +789,39 @@ func TestUpdateBuild(t *testing.T) {
 				So(b.Proto.Infra.Buildbucket.Agent.Output, ShouldBeNil)
 			})
 
+		})
+
+		Convey("build.infra.buildbucket.agent.purposes", func() {
+			req.Build.Infra = &pb.BuildInfra{
+				Buildbucket: &pb.BuildInfra_Buildbucket{
+					Agent: &pb.BuildInfra_Buildbucket_Agent{
+						Purposes: map[string]pb.BuildInfra_Buildbucket_Agent_Purpose{
+							"p1": pb.BuildInfra_Buildbucket_Agent_PURPOSE_RECIPE_BUNDLE,
+						},
+						Output: &pb.BuildInfra_Buildbucket_Agent_Output{
+							ResolvedData: map[string]*pb.ResolvedDataRef{
+								"p1": {},
+							},
+						},
+					},
+				},
+			}
+
+			Convey("with mask", func() {
+				req.UpdateMask = &field_mask.FieldMask{Paths: []string{
+					"build.infra.buildbucket.agent.output",
+					"build.infra.buildbucket.agent.purposes",
+				}}
+				So(updateBuild(ctx, req), ShouldBeRPCOK)
+				b := getBuildWithDetails(ctx, req.Build.Id)
+				So(b.Proto.Infra.Buildbucket.Agent.Purposes["p1"], ShouldEqual, pb.BuildInfra_Buildbucket_Agent_PURPOSE_RECIPE_BUNDLE)
+			})
+
+			Convey("without mask", func() {
+				So(updateBuild(ctx, req), ShouldBeRPCOK)
+				b := getBuildWithDetails(ctx, req.Build.Id)
+				So(b.Proto.Infra.Buildbucket.Agent.Purposes, ShouldBeNil)
+			})
 		})
 
 		Convey("build-start event", func() {

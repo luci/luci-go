@@ -207,6 +207,7 @@ message UpdateBuildRequest {
   // - build.summary_markdown
   // - build.tags
   // - build.infra.buildbucket.agent.output
+  // - build.infra.buildbucket.agent.purposes
   //
   // If omitted, Buildbucket will update the Build's update_time, but nothing else.
   google.protobuf.FieldMask update_mask = 2;
@@ -275,13 +276,13 @@ message ScheduleBuildRequest {
   // replaced with null.
   //
   // Reserved property paths:
-	//   ["$recipe_engine/buildbucket"]
-	//   ["$recipe_engine/runtime", "is_experimental"]
-	//   ["$recipe_engine/runtime", "is_luci"]
-	//   ["branch"]
-	//   ["buildbucket"]
-	//   ["buildername"]
-	//   ["repository"]
+  //   ["$recipe_engine/buildbucket"]
+  //   ["$recipe_engine/runtime", "is_experimental"]
+  //   ["$recipe_engine/runtime", "is_luci"]
+  //   ["branch"]
+  //   ["buildbucket"]
+  //   ["buildername"]
+  //   ["repository"]
   //
   // The Builder configuration specifies which top-level property names are
   // overridable via the `allowed_property_overrides` field. ScheduleBuild
