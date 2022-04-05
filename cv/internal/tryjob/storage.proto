@@ -58,6 +58,10 @@ message Definition {
   // in effect it's assumed true. I.e. we don't cancel tryjobs not triggered
   // by CV.
   bool skip_stale_check = 4;
+
+  // If true, this tryjob is deemed critical for the Run to succeed, i.e.
+  // the Run will fail unless one of the attempts of this tryjob is successful.
+  bool critical = 5;
 }
 
 // Requirement is what has to happen to verify a specific Run.

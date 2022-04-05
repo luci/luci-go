@@ -57,7 +57,7 @@ func TestMakeDefinition(t *testing.T) {
 
 		empty := ""
 
-		def := makeDefinition(valid, empty, false)
+		def := makeDefinition(valid, empty, false, nonCritical)
 		So(def, ShouldResembleProto, &tryjob.Definition{
 			Backend: &tryjob.Definition_Buildbucket_{
 				Buildbucket: &tryjob.Definition_Buildbucket{
@@ -71,9 +71,10 @@ func TestMakeDefinition(t *testing.T) {
 			},
 		})
 
-		def = makeDefinition(valid, empty, true)
+		def = makeDefinition(valid, empty, true, critical)
 		So(def, ShouldResembleProto, &tryjob.Definition{
 			DisableReuse: true,
+			Critical:     true,
 			Backend: &tryjob.Definition_Buildbucket_{
 				Buildbucket: &tryjob.Definition_Buildbucket{
 					Host: "cr-buildbucket.appspot.com",
@@ -86,7 +87,7 @@ func TestMakeDefinition(t *testing.T) {
 			},
 		})
 
-		def = makeDefinition(valid, alternateValid, false)
+		def = makeDefinition(valid, alternateValid, false, nonCritical)
 		So(def, ShouldResembleProto, &tryjob.Definition{
 			Backend: &tryjob.Definition_Buildbucket_{
 				Buildbucket: &tryjob.Definition_Buildbucket{
@@ -111,8 +112,8 @@ func TestMakeDefinition(t *testing.T) {
 				},
 			},
 		})
-		So(func() { makeDefinition(empty, empty, false) }, ShouldPanicLike, "unexpectedly empty")
-		So(func() { makeDefinition(empty, valid, false) }, ShouldPanicLike, "unexpectedly empty")
+		So(func() { makeDefinition(empty, empty, false, nonCritical) }, ShouldPanicLike, "unexpectedly empty")
+		So(func() { makeDefinition(empty, valid, false, nonCritical) }, ShouldPanicLike, "unexpectedly empty")
 		So(func() { makeBuildbucketDefinition(invalidShort) }, ShouldPanicLike, "unexpected format")
 		So(func() { makeBuildbucketDefinition(invalidLong) }, ShouldPanicLike, "unexpected format")
 	})
@@ -187,8 +188,9 @@ func TestCompute(t *testing.T) {
 								Builder: "builder1",
 							},
 						},
-					}},
-				},
+					},
+					Critical: true,
+				}},
 			})
 		})
 		Convey("includes undefined builder", func() {
@@ -285,8 +287,9 @@ func TestCompute(t *testing.T) {
 									Builder: "builder1",
 								},
 							},
-						}},
-					},
+						},
+						Critical: true,
+					}},
 				})
 			})
 
@@ -312,6 +315,7 @@ func TestCompute(t *testing.T) {
 									},
 								},
 							},
+							Critical: true,
 						},
 						{
 							Backend: &tryjob.Definition_Buildbucket_{
@@ -324,6 +328,7 @@ func TestCompute(t *testing.T) {
 									},
 								},
 							},
+							Critical: true,
 						},
 					},
 				})
@@ -378,8 +383,9 @@ func TestCompute(t *testing.T) {
 									Builder: "equibuilder",
 								},
 							},
-						}},
-					},
+						},
+						Critical: true,
+					}},
 				})
 			})
 		})
@@ -463,8 +469,8 @@ func TestCompute(t *testing.T) {
 										Builder: "builder1",
 									},
 								},
-							}},
-						},
+							}, Critical: true,
+						}},
 					})
 				})
 				Convey("non-matching CL", func() {
@@ -504,8 +510,9 @@ func TestCompute(t *testing.T) {
 										Builder: "builder1",
 									},
 								},
-							}},
-						},
+							},
+							Critical: true,
+						}},
 					})
 				})
 			})
@@ -573,8 +580,9 @@ func TestCompute(t *testing.T) {
 										Builder: "builder1",
 									},
 								},
-							}},
-						},
+							},
+							Critical: true,
+						}},
 					})
 				})
 			})

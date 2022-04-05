@@ -247,15 +247,23 @@ func makeBuildbucketDefinition(builderName string) *tryjob.Definition {
 	}
 }
 
+type criticality bool
+
+const (
+	critical    criticality = true
+	nonCritical criticality = false
+)
+
 // makeDefinition creates a Tryjob Definition for the given builder names and
 // reuse flag.
-func makeDefinition(builderName, equivalentBuilderName string, disableReuse bool) *tryjob.Definition {
+func makeDefinition(builderName, equivalentBuilderName string, disableReuse bool, isCritical criticality) *tryjob.Definition {
 	definition := makeBuildbucketDefinition(builderName)
 
 	definition.DisableReuse = disableReuse
 	if equivalentBuilderName != "" {
 		definition.EquivalentTo = makeBuildbucketDefinition(equivalentBuilderName)
 	}
+	definition.Critical = bool(isCritical)
 	return definition
 }
 
@@ -460,10 +468,10 @@ func Compute(ctx context.Context, in Input) (*ComputationResult, error) {
 		case r == skipBuilder:
 		case r == includeBuilderExplicitly:
 			// The builder was explicitly included.
-			ret.Requirement.Definitions = append(ret.Requirement.Definitions, makeDefinition(builder.Name, "", builder.DisableReuse))
+			ret.Requirement.Definitions = append(ret.Requirement.Definitions, makeDefinition(builder.Name, "", builder.DisableReuse, critical))
 		case r == includeEquivalentExplicitly:
 			// The equivalent builder was explicitly included.
-			ret.Requirement.Definitions = append(ret.Requirement.Definitions, makeDefinition(builder.EquivalentTo.Name, "", builder.DisableReuse))
+			ret.Requirement.Definitions = append(ret.Requirement.Definitions, makeDefinition(builder.EquivalentTo.Name, "", builder.DisableReuse, critical))
 		default:
 			triggerBuilder := builder.Name
 			equiBuilder := ""
@@ -479,7 +487,7 @@ func Compute(ctx context.Context, in Input) (*ComputationResult, error) {
 					}
 				}
 			}
-			ret.Requirement.Definitions = append(ret.Requirement.Definitions, makeDefinition(triggerBuilder, equiBuilder, builder.DisableReuse))
+			ret.Requirement.Definitions = append(ret.Requirement.Definitions, makeDefinition(triggerBuilder, equiBuilder, builder.DisableReuse, builder.ExperimentPercentage == 0))
 		}
 	}
 	return ret, nil
