@@ -21,12 +21,6 @@ import (
 	"go.chromium.org/luci/deploy/api/rpcpb"
 )
 
-// assetOverview is a subset of asset data passed to the index HTML template.
-type assetOverview struct {
-	Ref assetRef
-	// TODO: add more
-}
-
 // indexPage renders the index page.
 func (ui *UI) indexPage(ctx *router.Context) error {
 	listing, err := ui.assets.ListAssets(ctx.Context, &rpcpb.ListAssetsRequest{})
@@ -36,10 +30,7 @@ func (ui *UI) indexPage(ctx *router.Context) error {
 
 	assets := make([]assetOverview, len(listing.Assets))
 	for i, asset := range listing.Assets {
-		assets[i] = assetOverview{
-			Ref: assetRefFromID(asset.Id),
-			// TODO: add more
-		}
+		assets[i] = deriveAssetOverview(asset)
 	}
 
 	templates.MustRender(ctx.Context, ctx.Writer, "pages/index.html", map[string]interface{}{

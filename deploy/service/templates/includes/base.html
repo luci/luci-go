@@ -15,6 +15,9 @@ that can be found in the LICENSE file. -->
       font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
       font-size: 14px;
     }
+    .tooltip {
+      font-size: 12px;
+    }
     a {
       text-decoration: none!important;
     }
@@ -25,9 +28,21 @@ that can be found in the LICENSE file. -->
     }
     {{block "style" .}}{{end}}
   </style>
+
+  <script type="text/javascript">
+    function onPageLoaded() {
+      // Activate all fancy Bootstrap popovers and tooltips.
+      document.querySelectorAll('[data-bs-toggle="popover"]').forEach(
+          elem => new bootstrap.Popover(elem, {container: 'body'})
+      );
+      document.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(
+          elem => new bootstrap.Tooltip(elem, {container: 'body'})
+      );
+    }
+  </script>
 </head>
 
-<body class="pt-2">
+<body class="pt-2" onload="onPageLoaded()">
   <div class="container">
     <nav class="navbar navbar-expand-md navbar-light bg-light rounded border mb-2">
       <div class="container-fluid">
@@ -60,6 +75,23 @@ that can be found in the LICENSE file. -->
 
 {{define "assetTitle"}}
 <img src="/static/icons/{{.Icon}}" title="{{.Kind}}"> {{.Name}}
+{{end}}
+
+
+{{define "linkHref"}}
+{{if .Href}}
+<a
+  href="{{.Href}}" target="_blank"
+  {{if .Tooltip}}
+  data-bs-toggle="tooltip"
+  data-bs-placement="top"
+  data-bs-trigger="hover"
+  title="{{.Tooltip}}"
+  {{end}}
+>{{if .Text}}{{.Text}}{{else}}-{{end}}</a>
+{{else}}
+<span>{{if .Text}}{{.Text}}{{else}}-{{end}}</span>
+{{end}}
 {{end}}
 
 

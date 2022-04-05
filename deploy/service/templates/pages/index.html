@@ -12,13 +12,59 @@
   <div class="row">
     <div class="col">
       <table class="table table-borderless" id="assets-table">
+        <thead>
+          <tr>
+            <th class="col-4">Asset</th>
+            <th class="col-2"
+                data-bs-toggle="popover"
+                data-bs-placement="top"
+                data-bs-trigger="hover"
+                data-bs-content="
+                    The last time the actuator reported the current observed
+                    state and Infrastructure-as-Code (IaC) configuration of
+                    this asset.
+                ">
+              Last check in
+            </th>
+            <th class="col-2"
+                data-bs-toggle="popover"
+                data-bs-placement="top"
+                data-bs-trigger="hover"
+                data-bs-content="
+                    The last time the actuator tried to update the asset
+                    to match the Infrastructure-as-Code (IaC) configuration
+                    (successfully or not).
+                ">
+              Last actuation
+            </th>
+            <th class="col-2"
+                data-bs-toggle="popover"
+                data-bs-placement="top"
+                data-bs-trigger="hover"
+                data-bs-content="
+                    The revision of the Infrastructure-as-Code (IaC)
+                    configuration the actuator successfully applied most
+                    recently.
+                ">
+              Applied revision
+            </th>
+            <th class="col-2">State</th>
+          </tr>
+        </thead>
         <tbody>
         {{range .Assets}}
-          <tr>
+          <tr class="{{.TableClass}}">
             <td>
               <a href="{{.Ref.Href}}">{{template "assetTitle" .Ref}}</a>
             </td>
-            <td style="width: 160px;">TODO: State</td>
+            <td>{{template "linkHref" .LastCheckIn}}</td>
+            <td>{{template "linkHref" .LastActuation}}</td>
+            <td>{{template "linkHref" .Revision}}</td>
+            <td>
+              <a href="{{.Ref.Href}}">
+                <span class="badge {{.BadgeClass}}">{{.State}}</span>
+              </a>
+            </td>
           </tr>
         {{end}}
         </tbody>
