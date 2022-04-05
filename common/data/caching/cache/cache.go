@@ -426,7 +426,7 @@ func (d *Cache) hardlinkUnlocked(digest HexDigest, dest string, perm os.FileMode
 	//  In short, nobody ain't got time for that.
 	//
 	// - On any other (sane) OS, if dest exists, it is silently overwritten.
-	if err := os.Link(src, dest); err != nil {
+	if err := makeHardLinkOrClone(src, dest); err != nil {
 		if _, serr := os.Stat(src); errors.Contains(serr, os.ErrNotExist) {
 			// In Windows, os.Link may fail with access denied error even if |src| isn't there.
 			// And this is to normalize returned error in such case.
