@@ -158,7 +158,7 @@ message AssetState {
   // Error details if the asset state could not be captured.
   google.rpc.Status status = 4;
 
-  // The intended or captured state of the asset.
+  // The intended or captured state of the asset if `status` is OK.
   oneof state {
     // For assets with ID "apps/<app-id>".
     AppengineState appengine = 10;

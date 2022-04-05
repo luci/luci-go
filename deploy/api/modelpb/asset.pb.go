@@ -428,7 +428,7 @@ type AssetState struct {
 	Actuator *ActuatorInfo `protobuf:"bytes,3,opt,name=actuator,proto3" json:"actuator,omitempty"`
 	// Error details if the asset state could not be captured.
 	Status *status.Status `protobuf:"bytes,4,opt,name=status,proto3" json:"status,omitempty"`
-	// The intended or captured state of the asset.
+	// The intended or captured state of the asset if `status` is OK.
 	//
 	// Types that are assignable to State:
 	//	*AssetState_Appengine

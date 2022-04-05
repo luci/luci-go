@@ -62,8 +62,10 @@ func validateState(assetID string, state *modelpb.AssetState, cb func(state inte
 	case state == nil:
 		// AssetState itself should be populated.
 		return errors.Reason("no state populated").Err()
-	case state.Status.GetCode() != int32(codes.OK) && state.State == nil:
-		// A state with just an error code is valid regardless of asset ID.
+	case state.Status.GetCode() != int32(codes.OK):
+		if state.State != nil {
+			return errors.Reason("if `status` is not OK, `state` should be absent").Err()
+		}
 		return nil
 	case isAppengineAssetID(assetID):
 		if s := state.GetAppengine(); s != nil {
