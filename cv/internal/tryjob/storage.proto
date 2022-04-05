@@ -47,9 +47,17 @@ message Definition {
   // affect triggering a new tryjob.
   Definition equivalent_to = 2;
 
-  // If set, trigger a new tryjob using this definition regardless of whether
+  // If true, trigger a new tryjob using this definition regardless of whether
   // reusable tryjobs exist.
   bool disable_reuse = 3;
+
+  // If true, CV should let this tryjob run even if it becomes stale,
+  // e.g. by a new non-trivial patchset on one of this tryjob's CLs.
+  //
+  // If the Tryjob is not triggered by CV, then this is value is ignored and
+  // in effect it's assumed true. I.e. we don't cancel tryjobs not triggered
+  // by CV.
+  bool skip_stale_check = 4;
 }
 
 // Requirement is what has to happen to verify a specific Run.

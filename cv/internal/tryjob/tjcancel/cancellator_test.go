@@ -64,8 +64,8 @@ func TestTaskHandler(t *testing.T) {
 				So(mb.calledWith, ShouldHaveLength, 0)
 			})
 			Convey("all tryjobs ended", func() {
-				tj1 := putTryjob(ctx, 200, 2, tryjob.Status_ENDED, 1, run.Status_FAILED)
-				tj2 := putTryjob(ctx, 200, 2, tryjob.Status_ENDED, 2, run.Status_CANCELLED)
+				tj1 := putTryjob(ctx, 200, 2, tryjob.Status_ENDED, 1, run.Status_FAILED, nil)
+				tj2 := putTryjob(ctx, 200, 2, tryjob.Status_ENDED, 2, run.Status_CANCELLED, nil)
 				err := c.handleTask(ctx, &tryjob.CancelStaleTryjobsTask{
 					Clid:                     200,
 					PreviousMinEquivPatchset: 2,
@@ -81,8 +81,8 @@ func TestTaskHandler(t *testing.T) {
 				So(tj2.EVersion, ShouldEqual, 1)
 			})
 			Convey("some tryjobs ended, others cancellable", func() {
-				tj11 := putTryjob(ctx, 300, 2, tryjob.Status_ENDED, 11, run.Status_FAILED)
-				tj12 := putTryjob(ctx, 300, 2, tryjob.Status_TRIGGERED, 12, run.Status_CANCELLED)
+				tj11 := putTryjob(ctx, 300, 2, tryjob.Status_ENDED, 11, run.Status_FAILED, nil)
+				tj12 := putTryjob(ctx, 300, 2, tryjob.Status_TRIGGERED, 12, run.Status_CANCELLED, nil)
 				err := c.handleTask(ctx, &tryjob.CancelStaleTryjobsTask{
 					Clid:                     300,
 					PreviousMinEquivPatchset: 2,
@@ -100,7 +100,7 @@ func TestTaskHandler(t *testing.T) {
 				So(tj12.Status, ShouldEqual, tryjob.Status_CANCELLED)
 			})
 			Convey("tryjob still watched", func() {
-				tj21 := putTryjob(ctx, 400, 2, tryjob.Status_TRIGGERED, 21, run.Status_RUNNING)
+				tj21 := putTryjob(ctx, 400, 2, tryjob.Status_TRIGGERED, 21, run.Status_RUNNING, nil)
 				err := c.handleTask(ctx, &tryjob.CancelStaleTryjobsTask{
 					Clid:                     400,
 					PreviousMinEquivPatchset: 2,
@@ -115,6 +115,40 @@ func TestTaskHandler(t *testing.T) {
 				So(tj21.EVersion, ShouldEqual, 1)
 				So(tj21.Status, ShouldEqual, tryjob.Status_TRIGGERED)
 			})
+			Convey("tryjob not triggered by cv", func() {
+				tj31 := putTryjob(ctx, 500, 2, tryjob.Status_TRIGGERED, 31, run.Status_CANCELLED, func(tj *tryjob.Tryjob) {
+					tj.TriggeredByCV = false
+				})
+				err := c.handleTask(ctx, &tryjob.CancelStaleTryjobsTask{
+					Clid:                     500,
+					PreviousMinEquivPatchset: 2,
+					CurrentMinEquivPatchset:  5,
+				})
+				So(err, ShouldBeNil)
+				// Should not call backend.
+				So(mb.calledWith, ShouldHaveLength, 0)
+				So(datastore.Get(ctx, tj31), ShouldBeNil)
+				// Should not modify the entity.
+				So(tj31.EVersion, ShouldEqual, 1)
+				So(tj31.Status, ShouldNotEqual, tryjob.Status_CANCELLED)
+			})
+			Convey("tryjob configured to skip stale check", func() {
+				tj41 := putTryjob(ctx, 600, 2, tryjob.Status_TRIGGERED, 41, run.Status_CANCELLED, func(tj *tryjob.Tryjob) {
+					tj.Definition.SkipStaleCheck = true
+				})
+				err := c.handleTask(ctx, &tryjob.CancelStaleTryjobsTask{
+					Clid:                     600,
+					PreviousMinEquivPatchset: 2,
+					CurrentMinEquivPatchset:  5,
+				})
+				So(err, ShouldBeNil)
+				// Should not call backend.
+				So(mb.calledWith, ShouldHaveLength, 0)
+				So(datastore.Get(ctx, tj41), ShouldBeNil)
+				// Should not modify the entity.
+				So(tj41.EVersion, ShouldEqual, 1)
+				So(tj41.Status, ShouldNotEqual, tryjob.Status_CANCELLED)
+			})
 		})
 	})
 }
@@ -123,7 +157,7 @@ func TestTaskHandler(t *testing.T) {
 //
 // It must be called inside a Convey() context as it contains
 // assertions.
-func putTryjob(ctx context.Context, clid common.CLID, patchset int32, tjStatus tryjob.Status, buildNumber int64, runStatus run.Status) *tryjob.Tryjob {
+func putTryjob(ctx context.Context, clid common.CLID, patchset int32, tjStatus tryjob.Status, buildNumber int64, runStatus run.Status, modify func(*tryjob.Tryjob)) *tryjob.Tryjob {
 	now := datastore.RoundTime(clock.Now(ctx).UTC())
 	tjID := tryjob.MustBuildbucketID("test.com", buildNumber)
 	digest := mockDigest(string(tjID))
@@ -140,6 +174,11 @@ func putTryjob(ctx context.Context, clid common.CLID, patchset int32, tjStatus t
 		EntityCreateTime: now,
 		EntityUpdateTime: now,
 		TriggeredBy:      r.ID,
+		TriggeredByCV:    true,
+		Definition:       &tryjob.Definition{},
+	}
+	if modify != nil {
+		modify(tj)
 	}
 	So(datastore.Put(ctx, tj), ShouldBeNil)
 	return tj

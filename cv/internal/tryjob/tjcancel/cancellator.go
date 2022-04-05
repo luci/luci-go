@@ -88,8 +88,9 @@ func (c *Cancellator) handleTask(ctx context.Context, task *tryjob.CancelStaleTr
 	// entity update will be tried again.
 	// Any tryjobs that are successfully cancelled and their entities updated
 	// will not appear in subsequent runs of the query, ensuring progress.
+
 	dsErr := datastore.Run(ctx, q, func(tj *tryjob.Tryjob) error {
-		if tj.IsEnded() {
+		if tj.IsEnded() || !tj.TriggeredByCV || tj.Definition.SkipStaleCheck {
 			return nil
 		}
 		switch ended, err := c.allWatchingRunsEnded(ctx, tj); {
