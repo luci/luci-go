@@ -345,6 +345,13 @@ func mainImpl() int {
 		} else {
 			agentOutput.ResolvedData = resolved
 			agentOutput.Status = bbpb.Status_SUCCESS
+			if input.Build.Exe.GetCipdVersion() != "" {
+				if bldForCipd.Build.Infra.Buildbucket.Agent.Purposes == nil {
+					bldForCipd.Build.Infra.Buildbucket.Agent.Purposes = make(map[string]bbpb.BuildInfra_Buildbucket_Agent_Purpose, 1)
+				}
+				bldForCipd.Build.Infra.Buildbucket.Agent.Purposes[kitchenCheckout] = bbpb.BuildInfra_Buildbucket_Agent_PURPOSE_RECIPE_BUNDLE
+				bldForCipd.UpdateMask.Paths = append(bldForCipd.UpdateMask.Paths, "build.infra.buildbucket.agent.purposes")
+			}
 		}
 		agentOutput.TotalDuration = &durationpb.Duration{
 			Seconds: int64(clock.Since(ctx, start).Round(time.Second).Seconds()),
