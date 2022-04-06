@@ -91,7 +91,18 @@ func (impl *Impl) OnCLsUpdated(ctx context.Context, rs *state.RunState, clids co
 	// Check the Run creation, in case the Run is no longer valid
 	// with the newly updated CL info.
 	rs = rs.ShallowCopy()
-	if _, err := checkRunCreate(ctx, rs, cg, runCLs, cls); err != nil {
+	allRunCLs, allCLs := runCLs, cls
+	remainingCLIDs := rs.CLs.Set()
+	remainingCLIDs.DelAll(clids)
+	if len(remainingCLIDs) > 0 {
+		remainingRunCLs, remainingCLs, err := loadRunCLsAndCLs(ctx, rs.ID, remainingCLIDs.ToCLIDs())
+		if err != nil {
+			return nil, err
+		}
+		allRunCLs = append(allRunCLs, remainingRunCLs...)
+		allCLs = append(allCLs, remainingCLs...)
+	}
+	if _, err := checkRunCreate(ctx, rs, cg, allRunCLs, allCLs); err != nil {
 		return nil, err
 	}
 	return &Result{State: rs}, nil

@@ -38,7 +38,7 @@ import (
 	"go.chromium.org/luci/cv/internal/run/impl/state"
 
 	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
+	// . "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestOnCLsUpdated(t *testing.T) {
@@ -78,11 +78,12 @@ func TestOnCLsUpdated(t *testing.T) {
 				StartTime:     triggerTime.Add(1 * time.Minute),
 				Status:        run.Status_RUNNING,
 				ConfigGroupID: prjcfgtest.MustExist(ctx, lProject).ConfigGroupIDs[0],
+				CLs:           common.CLIDs{1, 2},
 			},
 		}
-		updateCL := func(ci *gerritpb.ChangeInfo, ap *changelist.ApplicableConfig, acc *changelist.Access) changelist.CL {
+		updateCL := func(clID common.CLID, ci *gerritpb.ChangeInfo, ap *changelist.ApplicableConfig, acc *changelist.Access) changelist.CL {
 			cl := changelist.CL{
-				ID:         1,
+				ID:         clID,
 				ExternalID: changelist.MustGobID(gHost, ci.GetNumber()),
 				Snapshot: &changelist.Snapshot{
 					LuciProject: lProject,
@@ -107,28 +108,46 @@ func TestOnCLsUpdated(t *testing.T) {
 		}}
 		accessOK := (*changelist.Access)(nil)
 
-		const gChange = 1
-		const gPatchSet = 5
+		const gChange1 = 1
+		const gChange2 = 2
+		const gPatchSet1 = 5
+		const gPatchSet2 = 7
 
-		ci := gf.CI(
-			gChange, gf.PS(gPatchSet),
+		ci1 := gf.CI(
+			gChange1, gf.PS(gPatchSet1),
+			gf.Owner("foo"),
+			gf.CQ(+2, triggerTime, gf.U("foo")),
+			gf.Approve(),
+		)
+		ci2 := gf.CI(
+			gChange2, gf.PS(gPatchSet2),
 			gf.Owner("foo"),
 			gf.CQ(+2, triggerTime, gf.U("foo")),
 			gf.Approve(),
 		)
 		ct.AddMember("foo", committers)
-		cl := updateCL(ci, aplConfigOK, accessOK)
-		rcl := run.RunCL{
-			ID:      1,
-			Run:     datastore.MakeKey(ctx, run.RunKind, string(rs.ID)),
-			Detail:  cl.Snapshot,
-			Trigger: trigger.Find(ci, cfg.GetConfigGroups()[0]),
+		cl1 := updateCL(1, ci1, aplConfigOK, accessOK)
+		cl2 := updateCL(2, ci2, aplConfigOK, accessOK)
+		runCLs := []*run.RunCL{
+			{
+				ID:      1,
+				Run:     datastore.MakeKey(ctx, run.RunKind, string(rs.ID)),
+				Detail:  cl1.Snapshot,
+				Trigger: trigger.Find(ci1, cfg.GetConfigGroups()[0]),
+			},
+			{
+				ID:      2,
+				Run:     datastore.MakeKey(ctx, run.RunKind, string(rs.ID)),
+				Detail:  cl2.Snapshot,
+				Trigger: trigger.Find(ci2, cfg.GetConfigGroups()[0]),
+			},
 		}
-		So(rcl.Trigger, ShouldNotBeNil) // ensure trigger find is working fine.
-		So(datastore.Put(ctx, &rcl), ShouldBeNil)
+		So(runCLs[0].Trigger, ShouldNotBeNil) // ensure trigger find is working fine.
+		So(runCLs[1].Trigger, ShouldNotBeNil) // ensure trigger find is working fine.
+		So(datastore.Put(ctx, runCLs), ShouldBeNil)
 
 		ensureNoop := func() {
-			res, err := h.OnCLsUpdated(ctx, rs, common.CLIDs{1})
+			res, err := h.OnCLsUpdated(ctx, rs, common.CLIDs{1, 2})
 			So(err, ShouldBeNil)
 			So(res.State, ShouldResemble, rs)
 			So(res.SideEffectFn, ShouldBeNil)
@@ -149,17 +168,17 @@ func TestOnCLsUpdated(t *testing.T) {
 
 			Convey("When new CL Version", func() {
 				Convey("is a message update", func() {
-					newCI := proto.Clone(ci).(*gerritpb.ChangeInfo)
+					newCI1 := proto.Clone(ci1).(*gerritpb.ChangeInfo)
 					gf.Messages(&gerritpb.ChangeMessageInfo{
 						Message: "This is a message",
-					})(newCI)
-					updateCL(newCI, aplConfigOK, accessOK)
+					})(newCI1)
+					updateCL(1, newCI1, aplConfigOK, accessOK)
 					ensureNoop()
 				})
 
 				Convey("is triggered by different user at the exact same time", func() {
-					updateCL(gf.CI(
-						gChange, gf.PS(gPatchSet),
+					updateCL(1, gf.CI(
+						gChange1, gf.PS(gPatchSet1),
 						gf.CQ(+2, triggerTime, gf.U("bar")),
 						gf.Approve(),
 					), aplConfigOK, accessOK)
@@ -208,58 +227,27 @@ func TestOnCLsUpdated(t *testing.T) {
 			So(res.SideEffectFn, ShouldNotBeNil)
 			So(res.PreserveEvents, ShouldBeFalse)
 		}
-		runAndVerifyCancelScheduled := func(reason string) {
-			clid := common.CLID(1)
-			res, err := h.OnCLsUpdated(ctx, rs, common.CLIDs{clid})
-			So(err, ShouldBeNil)
-			// The status should be still RUNNING,
-			// because it has not been cancelled yet.
-			// It's scheduled to be cancelled.
-			So(res.State.Status, ShouldEqual, run.Status_RUNNING)
-			So(res.SideEffectFn, ShouldBeNil)
-			So(res.PreserveEvents, ShouldBeFalse)
-
-			longOp := res.State.OngoingLongOps.GetOps()[res.State.NewLongOpIDs[0]]
-			cancelOp := longOp.GetCancelTriggers()
-			So(cancelOp.Requests, ShouldHaveLength, 1)
-			So(cancelOp.Requests[0], ShouldResembleProto,
-				&run.OngoingLongOps_Op_TriggersCancellation_Request{
-					Clid:    int64(clid),
-					Message: reason,
-					Notify: []run.OngoingLongOps_Op_TriggersCancellation_Whom{
-						run.OngoingLongOps_Op_TriggersCancellation_OWNER,
-						run.OngoingLongOps_Op_TriggersCancellation_CQ_VOTERS,
-					},
-					AddToAttention: []run.OngoingLongOps_Op_TriggersCancellation_Whom{
-						run.OngoingLongOps_Op_TriggersCancellation_OWNER,
-						run.OngoingLongOps_Op_TriggersCancellation_CQ_VOTERS,
-					},
-					AddToAttentionReason: "CQ/CV Run failed",
-				},
-			)
-			So(cancelOp.RunStatusIfSucceeded, ShouldEqual, run.Status_FAILED)
-		}
 
 		Convey("Cancels Run on new Patchset", func() {
-			updateCL(gf.CI(gChange, gf.PS(gPatchSet+1), gf.CQ(+2, triggerTime, gf.U("foo"))), aplConfigOK, accessOK)
+			updateCL(1, gf.CI(gChange1, gf.PS(gPatchSet1+1), gf.CQ(+2, triggerTime, gf.U("foo"))), aplConfigOK, accessOK)
 			runAndVerifyCancelled("the patchset of https://x-review.example.com/c/1 has changed from 5 to 6")
 		})
 		Convey("Cancels Run on moved Ref", func() {
-			updateCL(gf.CI(gChange, gf.PS(gPatchSet), gf.CQ(+2, triggerTime, gf.U("foo")), gf.Ref("refs/heads/new")), aplConfigOK, accessOK)
+			updateCL(1, gf.CI(gChange1, gf.PS(gPatchSet1), gf.CQ(+2, triggerTime, gf.U("foo")), gf.Ref("refs/heads/new")), aplConfigOK, accessOK)
 			runAndVerifyCancelled("the ref of https://x-review.example.com/c/1 has moved from refs/heads/main to refs/heads/new")
 		})
 		Convey("Cancels Run on removed trigger", func() {
-			newCI := gf.CI(gChange, gf.PS(gPatchSet), gf.CQ(0, triggerTime.Add(1*time.Minute), gf.U("foo")))
-			So(trigger.Find(newCI, cfg.GetConfigGroups()[0]), ShouldBeNil)
-			updateCL(newCI, aplConfigOK, accessOK)
+			newCI1 := gf.CI(gChange1, gf.PS(gPatchSet1), gf.CQ(0, triggerTime.Add(1*time.Minute), gf.U("foo")))
+			So(trigger.Find(newCI1, cfg.GetConfigGroups()[0]), ShouldBeNil)
+			updateCL(1, newCI1, aplConfigOK, accessOK)
 			runAndVerifyCancelled("the trigger on https://x-review.example.com/c/1 has been removed")
 		})
 		Convey("Cancels Run on changed mode", func() {
-			updateCL(gf.CI(gChange, gf.PS(gPatchSet), gf.CQ(+1, triggerTime.Add(1*time.Minute), gf.U("foo"))), aplConfigOK, accessOK)
+			updateCL(1, gf.CI(gChange1, gf.PS(gPatchSet1), gf.CQ(+1, triggerTime.Add(1*time.Minute), gf.U("foo"))), aplConfigOK, accessOK)
 			runAndVerifyCancelled("the triggering vote on https://x-review.example.com/c/1 has requested a different run mode: DRY_RUN")
 		})
 		Convey("Cancels Run on change of triggering time", func() {
-			updateCL(gf.CI(gChange, gf.PS(gPatchSet), gf.CQ(+2, triggerTime.Add(2*time.Minute), gf.U("foo"))), aplConfigOK, accessOK)
+			updateCL(1, gf.CI(gChange1, gf.PS(gPatchSet1), gf.CQ(+2, triggerTime.Add(2*time.Minute), gf.U("foo"))), aplConfigOK, accessOK)
 			runAndVerifyCancelled(fmt.Sprintf("the timestamp of the triggering vote on https://x-review.example.com/c/1 has changed from %s to %s", triggerTime, triggerTime.Add(2*time.Minute)))
 		})
 
@@ -269,7 +257,7 @@ func TestOnCLsUpdated(t *testing.T) {
 				ac.Projects = append(ac.Projects, &changelist.ApplicableConfig_Project{
 					Name: "other-project", ConfigGroupIds: []string{"other-group"},
 				})
-				updateCL(ci, ac, accessOK)
+				updateCL(1, ci1, ac, accessOK)
 				runAndVerifyCancelled(fmt.Sprintf("no longer have access to https://x-review.example.com/c/1: watched not only by LUCI Project %q", lProject))
 			})
 			Convey("wait if code review access was just lost, potentially due to eventual consistency", func() {
@@ -279,7 +267,7 @@ func TestOnCLsUpdated(t *testing.T) {
 					// recover.
 					lProject: {NoAccessTime: timestamppb.New(noAccessAt)},
 				}}
-				updateCL(ci, aplConfigOK, acc)
+				updateCL(1, ci1, aplConfigOK, acc)
 				res, err := h.OnCLsUpdated(ctx, rs, common.CLIDs{1})
 				So(err, ShouldBeNil)
 				So(res.State, ShouldResemble, rs)
@@ -296,21 +284,65 @@ func TestOnCLsUpdated(t *testing.T) {
 				acc := &changelist.Access{ByProject: map[string]*changelist.Access_Project{
 					lProject: {NoAccessTime: timestamppb.New(ct.Clock.Now())},
 				}}
-				updateCL(ci, aplConfigOK, acc)
+				updateCL(1, ci1, aplConfigOK, acc)
 				runAndVerifyCancelled("no longer have access to https://x-review.example.com/c/1: code review site denied access")
 			})
 			Convey("wait if access level is unknown", func() {
-				cl.Snapshot = nil
-				cl.EVersion++
-				So(datastore.Put(ctx, &cl), ShouldBeNil)
+				cl1.Snapshot = nil
+				cl1.EVersion++
+				So(datastore.Put(ctx, &cl1), ShouldBeNil)
 				ensureNoop()
 			})
 		})
+
+		verifyHasCancelTriggerLongOpScheduled := func(res *Result, expect map[common.CLID]string) {
+			// The status should be still RUNNING,
+			// because it has not been cancelled yet.
+			// It's scheduled to be cancelled.
+			So(res.State.Status, ShouldEqual, run.Status_RUNNING)
+			So(res.SideEffectFn, ShouldBeNil)
+			So(res.PreserveEvents, ShouldBeFalse)
+
+			longOp := res.State.OngoingLongOps.GetOps()[res.State.NewLongOpIDs[0]]
+			cancelOp := longOp.GetCancelTriggers()
+			So(cancelOp.Requests, ShouldHaveLength, len(expect))
+			for _, req := range cancelOp.Requests {
+				clid := common.CLID(req.Clid)
+				So(expect, ShouldContainKey, clid)
+				So(req.Message, ShouldContainSubstring, expect[clid])
+				delete(expect, clid)
+			}
+			So(expect, ShouldBeEmpty)
+			So(cancelOp.RunStatusIfSucceeded, ShouldEqual, run.Status_FAILED)
+		}
+
 		Convey("Schedules a CancelTrigger long op if the approval was revoked", func() {
-			updateCL(gf.CI(
-				gChange, gf.PS(gPatchSet), gf.CQ(+2, triggerTime, gf.U("foo")), gf.Disapprove(),
-			), aplConfigOK, accessOK)
-			runAndVerifyCancelScheduled("This CL needs to be approved first to trigger a Run.")
+			Convey("Single CL", func() {
+				updateCL(1, gf.CI(
+					gChange1, gf.PS(gPatchSet1), gf.CQ(+2, triggerTime, gf.U("foo")), gf.Disapprove(),
+				), aplConfigOK, accessOK)
+				res, err := h.OnCLsUpdated(ctx, rs, common.CLIDs{1})
+				So(err, ShouldBeNil)
+				verifyHasCancelTriggerLongOpScheduled(res, map[common.CLID]string{
+					1: "This CL needs to be approved first to trigger a Run.",
+					2: "CV cannot continue this run",
+				})
+			})
+			Convey("Both CLs", func() {
+				updateCL(1, gf.CI(
+					gChange1, gf.PS(gPatchSet1), gf.CQ(+2, triggerTime, gf.U("foo")), gf.Disapprove(),
+				), aplConfigOK, accessOK)
+				updateCL(2, gf.CI(
+					gChange2, gf.PS(gPatchSet2), gf.CQ(+2, triggerTime, gf.U("foo")), gf.Disapprove(),
+				), aplConfigOK, accessOK)
+				res, err := h.OnCLsUpdated(ctx, rs, common.CLIDs{1, 2})
+				So(err, ShouldBeNil)
+				verifyHasCancelTriggerLongOpScheduled(res, map[common.CLID]string{
+					1: "This CL needs to be approved first to trigger a Run.",
+					2: "This CL needs to be approved first to trigger a Run.",
+				})
+			})
+
 		})
 	})
 }

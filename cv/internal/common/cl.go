@@ -144,6 +144,19 @@ func (s CLIDsSet) Has(clid CLID) bool {
 func (s CLIDsSet) Del(id CLID) {
 	delete(s, id)
 }
+func (s CLIDsSet) DelAll(ids CLIDs) {
+	for _, id := range ids {
+		s.Del(id)
+	}
+}
+
+func (s CLIDsSet) ToCLIDs() CLIDs {
+	ret := make(CLIDs, 0, len(s))
+	for id := range s {
+		ret = append(ret, id)
+	}
+	return ret
+}
 
 func (s CLIDsSet) AddI64(id int64)      { s.Add(CLID(id)) }
 func (s CLIDsSet) HasI64(id int64) bool { return s.Has(CLID(id)) }

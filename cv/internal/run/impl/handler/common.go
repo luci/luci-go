@@ -267,6 +267,24 @@ func loadCLsAndConfig(ctx context.Context, rs *state.RunState, clids common.CLID
 	return cg, runCLs, cls, nil
 }
 
+func loadRunCLsAndCLs(ctx context.Context, rid common.RunID, clids common.CLIDs) ([]*run.RunCL, []*changelist.CL, error) {
+	var runCLs []*run.RunCL
+	var cls []*changelist.CL
+	eg, ectx := errgroup.WithContext(ctx)
+	eg.Go(func() (err error) {
+		cls, err = changelist.LoadCLsByIDs(ectx, clids)
+		return err
+	})
+	eg.Go(func() (err error) {
+		runCLs, err = run.LoadRunCLs(ectx, rid, clids)
+		return err
+	})
+	if err := eg.Wait(); err != nil {
+		return nil, nil, err
+	}
+	return runCLs, cls, nil
+}
+
 func checkRunCreate(ctx context.Context, rs *state.RunState, cg *prjcfg.ConfigGroup, runCLs []*run.RunCL, cls []*changelist.CL) (ok bool, err error) {
 	if len(runCLs) == 0 {
 		return true, nil
