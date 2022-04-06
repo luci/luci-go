@@ -64,6 +64,7 @@ func main() {
 		cron.RegisterHandler("update-pools", buildbucket.UpdatePools)
 		cron.RegisterHandler("update-builders", buildbucket.UpdateBuilders)
 		cron.RegisterHandler("delete-builds", buildbucket.DeleteOldBuilds)
+		cron.RegisterHandler("sync-builds", buildbucket.SyncBuilds)
 		milopb.RegisterMiloInternalServer(srv.PRPC, &backend.MiloInternalService{
 			GetGitClient: func(c context.Context) (git.Client, error) {
 				acls, err := gitacls.FromConfig(c, common.GetSettings(c).SourceAcls)

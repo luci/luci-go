@@ -604,3 +604,68 @@ func TestDeleteOldBuilds(t *testing.T) {
 		})
 	})
 }
+
+func TestSyncBuilds(t *testing.T) {
+	t.Parallel()
+
+	Convey("SyncBuilds", t, func() {
+		now := time.Date(2020, 01, 01, 0, 0, 0, 0, time.UTC)
+
+		c, _ := testclock.UseTime(memory.Use(context.Background()), now)
+		datastore.GetTestable(c).AutoIndex(true)
+		datastore.GetTestable(c).Consistent(true)
+
+		createBuild := func(id string, t time.Time, status milostatus.Status) *model.BuildSummary {
+			b := &model.BuildSummary{
+				BuildKey:  model.MakeBuildKey(c, "host", id),
+				BuilderID: "buildbucket/luci.proj.bucket/builder",
+				BuildID:   "buildbucket/" + id,
+				Created:   t,
+				Summary: model.Summary{
+					Status: status,
+				},
+				Version: t.UnixNano(),
+			}
+			So(datastore.Put(c, b), ShouldBeNil)
+			return b
+		}
+
+		Convey("don't update builds", func() {
+			Convey("as old as BuildSummaryStorageDuration", func() {
+				build := createBuild("luci.proj.bucket/builder/1234", now.Add(-BuildSummarySyncThreshold), milostatus.Running)
+				So(syncBuildsImpl(c), ShouldBeNil)
+				So(datastore.Get(c, build), ShouldBeNil)
+				So(build.Summary.Status, ShouldEqual, milostatus.Running)
+			})
+
+			Convey("younger than BuildSummaryStorageDuration", func() {
+				build := createBuild("luci.proj.bucket/builder/1234", now.Add(-BuildSummarySyncThreshold+time.Minute), milostatus.NotRun)
+				So(syncBuildsImpl(c), ShouldBeNil)
+				So(datastore.Get(c, build), ShouldBeNil)
+				So(build.Summary.Status, ShouldEqual, milostatus.NotRun)
+			})
+		})
+
+		Convey("update builds older than BuildSummaryStorageDuration", func() {
+			build := createBuild("luci.proj.bucket/builder/1234", now.Add(-BuildSummarySyncThreshold-time.Minute), milostatus.NotRun)
+
+			c, ctrl, mbc := newMockClient(c, t)
+			defer ctrl.Finish()
+			mbc.EXPECT().GetBuild(gomock.Any(), gomock.Any()).Return(&buildbucketpb.Build{
+				Number: 1234,
+				Builder: &buildbucketpb.BuilderID{
+					Project: "proj",
+					Bucket:  "bucket",
+					Builder: "builder",
+				},
+				Status:     buildbucketpb.Status_SUCCESS,
+				CreateTime: timestamppb.New(build.Created),
+				UpdateTime: timestamppb.New(build.Created.Add(time.Hour)),
+			}, nil).AnyTimes()
+
+			So(syncBuildsImpl(c), ShouldBeNil)
+			So(datastore.Get(c, build), ShouldBeNil)
+			So(build.Summary.Status, ShouldEqual, milostatus.Success)
+		})
+	})
+}

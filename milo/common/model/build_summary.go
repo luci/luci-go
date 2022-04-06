@@ -312,6 +312,18 @@ func (bs *BuildSummary) SelfLink() string {
 	return buildIDLink(bs.BuildID, bs.ProjectID)
 }
 
+// GetHost parses the buildbucket hostname from the BuildKey.
+//
+// BuildKey's format must be "<host>:<build_address>".
+func (bs *BuildSummary) GetHost() (string, error) {
+	s := bs.BuildKey.StringID()
+	parts := strings.SplitN(s, ":", 2)
+	if len(parts) != 2 {
+		return "", errors.New(fmt.Sprintf("failed to parse host from BuildKey: %s", s))
+	}
+	return parts[0], nil
+}
+
 // MakeBuildKey returns a new datastore Key for a buildbucket.Build.
 //
 // There's currently no model associated with this key, but it's used as

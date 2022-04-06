@@ -23,6 +23,8 @@ import (
 
 	"github.com/gomodule/redigo/redis"
 	"google.golang.org/genproto/protobuf/field_mask"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
 	bbv1 "go.chromium.org/luci/common/api/buildbucket/buildbucket/v1"
@@ -31,10 +33,12 @@ import (
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/common/sync/parallel"
+	"go.chromium.org/luci/common/tsmon/field"
 	"go.chromium.org/luci/common/tsmon/metric"
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/milo/common"
 	"go.chromium.org/luci/milo/common/model"
+	"go.chromium.org/luci/milo/common/model/milostatus"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/redisconn"
 	"go.chromium.org/luci/server/router"
@@ -54,11 +58,29 @@ import (
 // ensure BuildSummaries are kept alive longer than builds.
 const BuildSummaryStorageDuration = time.Hour * 24 * 30 * 20 // ~20 months
 
+// BuildSummarySyncThreshold is the maximum duration before Milo attempts to
+// sync non-terminal builds with buildbucket.
+//
+// Cron runs periodically to scan and sync all the non-terminal Builds of
+// that was updated more than `BuildSummarySyncThreshold` ago.
+const BuildSummarySyncThreshold = time.Hour * 24 * 2 // 2 days
+
 var (
 	deletedBuildsCounter = metric.NewCounter(
 		"luci/milo/cron/delete-builds/delete-count",
 		"The number of BuildSummaries deleted by Milo delete-builds cron job",
 		nil,
+	)
+
+	updatedBuildsCounter = metric.NewCounter(
+		"luci/milo/cron/sync-builds/updated-count",
+		"The number of BuildSummaries that are out of sync and updated by Milo sync-builds cron job",
+		nil,
+		field.String("project"),
+		field.String("bucket"),
+		field.String("builder"),
+		field.Int("number"),
+		field.Int("ID"),
 	)
 )
 
@@ -233,10 +255,6 @@ func pubSubHandlerImpl(c context.Context, r *http.Request) error {
 	logging.Debugf(c, "Received from %s: build %s (%s)\n%v",
 		event.Hostname, bs.ProjectID, bs.BuildID, bs.Summary.Status, bs)
 
-	return updateBuild(c, bs)
-}
-
-func updateBuild(c context.Context, bs *model.BuildSummary) error {
 	updateBuilderSummary, err := shouldUpdateBuilderSummary(c, bs)
 	if err != nil {
 		updateBuilderSummary = true
@@ -369,4 +387,152 @@ func shouldUpdateBuilderSummary(c context.Context, buildSummary *model.BuildSumm
 	// Otherwise, skip the update.
 	logging.Infof(c, "skipping BuilderSummary update from builder %s because a newer build was found", buildSummary.BuilderID)
 	return false, nil
+}
+
+// SyncBuilds is a cron job that sync BuildSummaries that are not in terminal
+// state and haven't been updated recently.
+func SyncBuilds(c context.Context) error {
+	c = WithBuildsClientFactory(c, ProdBuildsClientFactory)
+	return syncBuildsImpl(c)
+}
+
+func syncBuildsImpl(c context.Context) error {
+	const (
+		batchSize = 16
+		nWorkers  = 64
+	)
+
+	buildSyncCutoffTime := clock.Now(c).Add(-BuildSummarySyncThreshold)
+
+	return parallel.FanOutIn(func(taskC chan<- func() error) {
+		buildsC := make(chan []*model.BuildSummary, nWorkers)
+		updatedBuildC := make(chan *buildbucketpb.Build, nWorkers)
+
+		// Collect stats.
+		taskC <- func() error {
+			for b := range updatedBuildC {
+				updatedBuildsCounter.Add(c, 1, b.Builder.Project, b.Builder.Bucket, b.Builder.Builder, b.Number, b.Id)
+			}
+			return nil
+		}
+
+		// Find builds to update.
+		taskC <- func() error {
+			defer close(buildsC)
+
+			batch := make([]*model.BuildSummary, 0, batchSize)
+			findBuilds := func(q *datastore.Query) error {
+				return datastore.RunBatch(c, batchSize, q, func(bs *model.BuildSummary) error {
+					batch = append(batch, bs)
+					if len(batch) == batchSize {
+						buildsC <- batch
+						batch = make([]*model.BuildSummary, 0, batchSize)
+					}
+					return nil
+				})
+			}
+
+			pendingBuildsQuery := datastore.NewQuery("BuildSummary").
+				Eq("Summary.Status", milostatus.NotRun).
+				Lt("Version", buildSyncCutoffTime.UnixNano()).
+				// Apply a limit so the call won't timeout.
+				Limit(batchSize * nWorkers * 16)
+			err := findBuilds(pendingBuildsQuery)
+			if err != nil {
+				return err
+			}
+
+			runningBuildsQuery := datastore.NewQuery("BuildSummary").
+				Eq("Summary.Status", milostatus.Running).
+				Lt("Version", buildSyncCutoffTime.UnixNano()).
+				// Apply a limit so the call won't timeout.
+				Limit(batchSize * nWorkers * 16)
+			err = findBuilds(runningBuildsQuery)
+			if err != nil {
+				return err
+			}
+
+			if len(batch) > 0 {
+				buildsC <- batch
+			}
+			return nil
+		}
+
+		// Spawn workers to update builds.
+		taskC <- func() error {
+			defer close(updatedBuildC)
+
+			return parallel.WorkPool(nWorkers, func(workC chan<- func() error) {
+				for builds := range buildsC {
+					// Bind to a local variable so each worker can have their own copy.
+					builds := builds
+					workC <- func() error {
+						for _, bs := range builds {
+							host, err := bs.GetHost()
+							if err != nil {
+								logging.WithError(err).Errorf(c, "failed to get host for build summary %v, skipping", bs.BuildKey)
+								continue
+							}
+
+							client, err := buildbucketBuildsClient(c, host, auth.AsSelf)
+							if err != nil {
+								return err
+							}
+
+							var buildID int64 = 0
+							builder, buildNum, err := common.ParseLegacyBuildbucketBuildID(bs.BuildID)
+							if err != nil {
+								// If the BuildID is not the legacy build ID, trying parsing it as
+								// the new build ID.
+								buildID, err = common.ParseBuildbucketBuildID(bs.BuildID)
+								if err != nil {
+									return err
+								}
+							}
+
+							req := &buildbucketpb.GetBuildRequest{
+								Id:          buildID,
+								BuildNumber: buildNum,
+								Builder:     builder,
+								Fields:      summaryBuildMask,
+							}
+							newBuild, err := client.GetBuild(c, req)
+							if status.Code(err) == codes.NotFound {
+								logging.Warningf(c, "build %v not found on buildbucket. deleting it.\nrequest: %v", bs.BuildKey, req)
+								err := datastore.Delete(c, bs)
+								if err != nil {
+									err = errors.Annotate(err, "failed to delete build %v", bs.BuildKey).Err()
+									return err
+								}
+								continue
+							} else if err != nil {
+								err = errors.Annotate(err, "could not fetch build %v from buildbucket.\nrequest: %v", bs.BuildKey, req).Err()
+								return err
+							}
+
+							newBS, err := model.BuildSummaryFromBuild(c, host, newBuild)
+							if err != nil {
+								return err
+							}
+							if err := newBS.AddManifestKeysFromBuildSets(c); err != nil {
+								return err
+							}
+
+							if !newBS.Summary.Status.Terminal() {
+								continue
+							}
+
+							if err := datastore.Put(c, newBS); err != nil {
+								return err
+							}
+
+							updatedBuildC <- newBuild
+						}
+
+						return nil
+					}
+				}
+			})
+		}
+	})
 }

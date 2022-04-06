@@ -11,3 +11,6 @@ cron:
  - description: Delete old cached builds
    url: /internal/cron/delete-builds
    schedule: every 1 minutes
+ - description: Sync old non-terminal builds
+   url: /internal/cron/sync-builds
+   schedule: every 24 hours

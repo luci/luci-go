@@ -16,3 +16,8 @@ indexes:
   properties:
   - name: BuilderID
   - name: Summary.Status
+
+- kind: BuildSummary
+  properties:
+  - name: Summary.Status
+  - name: Version
