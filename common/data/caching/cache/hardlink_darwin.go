@@ -22,6 +22,8 @@ import (
 	"sync"
 
 	"golang.org/x/sys/unix"
+
+	"go.chromium.org/luci/common/errors"
 )
 
 var cachedMajorVersion int
@@ -54,7 +56,13 @@ func makeHardLinkOrClone(src, dst string) error {
 	// Use clonefile instead on macOS 12 (Darwin 21) or newer to workaround that.
 	// ref: https://crbug.com/1296318#c54
 	if mustGetDarwinMajorVersion() >= 21 {
-		return unix.Clonefile(src, dst, unix.CLONE_NOFOLLOW|unix.CLONE_NOOWNERCOPY)
+		if err := unix.Clonefile(src, dst, unix.CLONE_NOFOLLOW|unix.CLONE_NOOWNERCOPY); err != nil {
+			return errors.Annotate(err, "failed to call clonefile(%s, %s, CLONE_NOFOLLOW|CLONE_NOOWNERCOPY)", src, dst).Err()
+		}
+		return nil
 	}
-	return os.Link(src, dst)
+	if err := os.Link(src, dst); err != nil {
+		return errors.Annotate(err, "failed to call os.Link(%s, %s)", src, dst).Err()
+	}
+	return nil
 }

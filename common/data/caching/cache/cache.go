@@ -262,7 +262,7 @@ func (d *Cache) AddFileWithoutValidation(ctx context.Context, digest HexDigest, 
 	defer d.mu.Unlock()
 	start := time.Now()
 	dest := d.itemPath(digest)
-	if err := os.Link(src, dest); err != nil && !os.IsExist(err) {
+	if err := makeHardLinkOrClone(src, dest); err != nil && !errors.Contains(err, os.ErrExist) {
 		terr := func() error {
 			if runtime.GOOS == "darwin" {
 				// TODO(crbug.com/1140864): Fallback to Copy in macOS, this is mitigation for strange `operation not permitted` error.
@@ -434,7 +434,7 @@ func (d *Cache) hardlinkUnlocked(digest HexDigest, dest string, perm os.FileMode
 			err = errors.Annotate(serr, "%s doesn't exist and os.Link failed: %v\nlogs:\n%s", src, err, d.log.String()).Err()
 		}
 		debugInfo := fmt.Sprintf("Stats:\n*  src: %s\n*  dest: %s\n*  destDir: %s\nUID=%d GID=%d", statsStr(src), statsStr(dest), statsStr(filepath.Dir(dest)), os.Getuid(), os.Getgid())
-		return errors.Annotate(err, "failed to call os.Link(%s, %s)\n%s", src, dest, debugInfo).Err()
+		return errors.Annotate(err, "failed to call makeHardLinkOrClone(%s, %s)\n%s", src, dest, debugInfo).Err()
 	}
 
 	if err := os.Chmod(dest, perm); err != nil {
