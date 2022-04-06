@@ -646,7 +646,7 @@ func TestSyncBuilds(t *testing.T) {
 			})
 		})
 
-		Convey("update builds older than BuildSummaryStorageDuration", func() {
+		Convey("update builds older than BuildSummarySyncThreshold", func() {
 			build := createBuild("luci.proj.bucket/builder/1234", now.Add(-BuildSummarySyncThreshold-time.Minute), milostatus.NotRun)
 
 			c, ctrl, mbc := newMockClient(c, t)
@@ -666,6 +666,34 @@ func TestSyncBuilds(t *testing.T) {
 			So(syncBuildsImpl(c), ShouldBeNil)
 			So(datastore.Get(c, build), ShouldBeNil)
 			So(build.Summary.Status, ShouldEqual, milostatus.Success)
+		})
+
+		Convey("ensure BuildKey stays the same", func() {
+			build := createBuild("123456", now.Add(-BuildSummarySyncThreshold-time.Minute), milostatus.NotRun)
+
+			c, ctrl, mbc := newMockClient(c, t)
+			defer ctrl.Finish()
+			mbc.EXPECT().GetBuild(gomock.Any(), gomock.Any()).Return(&buildbucketpb.Build{
+				Id:     123456,
+				Number: 1234,
+				Builder: &buildbucketpb.BuilderID{
+					Project: "proj",
+					Bucket:  "bucket",
+					Builder: "builder",
+				},
+				Status:     buildbucketpb.Status_SUCCESS,
+				CreateTime: timestamppb.New(build.Created),
+				UpdateTime: timestamppb.New(build.Created.Add(time.Hour)),
+			}, nil).AnyTimes()
+
+			So(syncBuildsImpl(c), ShouldBeNil)
+			So(datastore.Get(c, build), ShouldBeNil)
+			So(build.Summary.Status, ShouldEqual, milostatus.Success)
+
+			buildWithNewKey := &model.BuildSummary{
+				BuildKey: model.MakeBuildKey(c, "host", "luci.proj.bucket/builder/1234"),
+			}
+			So(datastore.Get(c, buildWithNewKey), ShouldEqual, datastore.ErrNoSuchEntity)
 		})
 	})
 }

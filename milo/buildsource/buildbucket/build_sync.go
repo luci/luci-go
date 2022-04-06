@@ -518,6 +518,12 @@ func syncBuildsImpl(c context.Context) error {
 								return err
 							}
 
+							// Ensure the new BuildSummary has the same key as the old
+							// BuildSummary, so we won't ends up having two copies of the same
+							// BuildSummary in the datastore.
+							newBS.BuildKey = bs.BuildKey
+							newBS.BuildID = bs.BuildID
+
 							if !newBS.Summary.Status.Terminal() {
 								continue
 							}
