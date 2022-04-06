@@ -307,13 +307,17 @@ func mainImpl() int {
 			check(errors.New("Cannot enable downloading cipd pkgs feature; Build Agent field is not set"))
 		}
 
-		bldForCipd := &bbpb.UpdateBuildRequest{
+		agent := input.Build.Infra.Buildbucket.Agent
+		agent.Output = &bbpb.BuildInfra_Buildbucket_Agent_Output{
+			Status: bbpb.Status_STARTED,
+		}
+		updateReq := &bbpb.UpdateBuildRequest{
 			Build: &bbpb.Build{
 				Id: input.Build.Id,
 				Infra: &bbpb.BuildInfra{
 					Buildbucket: &bbpb.BuildInfra_Buildbucket{
 						Agent: &bbpb.BuildInfra_Buildbucket_Agent{
-							Output: &bbpb.BuildInfra_Buildbucket_Agent_Output{Status: bbpb.Status_STARTED},
+							Output: agent.Output,
 						},
 					},
 				},
@@ -321,7 +325,7 @@ func mainImpl() int {
 			UpdateMask: &fieldmaskpb.FieldMask{Paths: []string{"build.infra.buildbucket.agent.output"}},
 			Mask:       readMask,
 		}
-		bldAfterCipd, err := bbclient.UpdateBuild(cctx, bldForCipd)
+		bldAfterCipd, err := bbclient.UpdateBuild(cctx, updateReq)
 		if err != nil {
 			// Carry on and bear the non-fatal update failure.
 			logging.Warningf(ctx, "Failed to report build agent STARTED status: %s", err)
@@ -331,38 +335,41 @@ func mainImpl() int {
 			return cancelBuild(cctx, bbclient, bldAfterCipd)
 		}
 
-		agentOutput := bldForCipd.Build.Infra.Buildbucket.Agent.Output
-		agentOutput.AgentPlatform = platform.CurrentPlatform()
-		start := clock.Now(ctx)
-		resolved, err := installCipdPackages(ctx, input.Build, cwd)
+		agent.Output.AgentPlatform = platform.CurrentPlatform()
+
+		// Encapsulate all the installation logic with a defer to set the
+		// TotalDuration. As we add more installation logic (e.g. RBE-CAS),
+		// TotalDuration should continue to surround that logic.
+		err = func() error {
+			start := clock.Now(ctx)
+			defer func() {
+				agent.Output.TotalDuration = &durationpb.Duration{
+					Seconds: int64(clock.Since(ctx, start).Round(time.Second).Seconds()),
+				}
+			}()
+			return installCipdPackages(ctx, input.Build, cwd)
+		}()
+
 		if err != nil {
 			logging.Errorf(ctx, "Failure in installing cipd packages: %s", err)
-			agentOutput.Status = bbpb.Status_FAILURE
-			agentOutput.SummaryHtml = err.Error()
-			bldForCipd.Build.Status = bbpb.Status_INFRA_FAILURE
-			bldForCipd.Build.SummaryMarkdown = "Failed to install cipd packages for this build"
-			bldForCipd.UpdateMask.Paths = append(bldForCipd.UpdateMask.Paths, "build.status", "build.summary_markdown")
+			agent.Output.Status = bbpb.Status_FAILURE
+			agent.Output.SummaryHtml = err.Error()
+			updateReq.Build.Status = bbpb.Status_INFRA_FAILURE
+			updateReq.Build.SummaryMarkdown = "Failed to install cipd packages for this build"
+			updateReq.UpdateMask.Paths = append(updateReq.UpdateMask.Paths, "build.status", "build.summary_markdown")
 		} else {
-			agentOutput.ResolvedData = resolved
-			agentOutput.Status = bbpb.Status_SUCCESS
-			if input.Build.Exe.GetCipdVersion() != "" {
-				if bldForCipd.Build.Infra.Buildbucket.Agent.Purposes == nil {
-					bldForCipd.Build.Infra.Buildbucket.Agent.Purposes = make(map[string]bbpb.BuildInfra_Buildbucket_Agent_Purpose, 1)
-				}
-				bldForCipd.Build.Infra.Buildbucket.Agent.Purposes[kitchenCheckout] = bbpb.BuildInfra_Buildbucket_Agent_PURPOSE_RECIPE_BUNDLE
-				bldForCipd.UpdateMask.Paths = append(bldForCipd.UpdateMask.Paths, "build.infra.buildbucket.agent.purposes")
+			agent.Output.Status = bbpb.Status_SUCCESS
+			if input.Build.Exe != nil {
+				updateReq.UpdateMask.Paths = append(updateReq.UpdateMask.Paths, "build.infra.buildbucket.agent.purposes")
 			}
 		}
-		agentOutput.TotalDuration = &durationpb.Duration{
-			Seconds: int64(clock.Since(ctx, start).Round(time.Second).Seconds()),
-		}
-		if _, bbErr := bbclient.UpdateBuild(cctx, bldForCipd); bbErr != nil {
-			logging.Warningf(ctx, "Failed to report build agent output status: %s", err)
+
+		if _, bbErr := bbclient.UpdateBuild(cctx, updateReq); bbErr != nil {
+			logging.Warningf(ctx, "Failed to report build agent output status: %s", bbErr)
 		}
 		if err != nil {
-			os.Exit(1)
+			os.Exit(-1)
 		}
-		input.Build.Infra.Buildbucket.Agent.Output = bldForCipd.Build.Infra.Buildbucket.Agent.Output
 	}
 
 	exeArgs := processExeArgs(input, check)

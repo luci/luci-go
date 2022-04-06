@@ -56,11 +56,15 @@ type cipdOut struct {
 // installCipdPackages installs cipd packages defined in build.Infra.Buildbucket.Agent.Input
 // and build exe. It also prepends desired value to $PATH env var.
 //
+// This will update the following fields in build:
+//   * Infra.Buidlbucket.Agent.Output.ResolvedData
+//   * Infra.Buildbucket.Agent.Purposes
+//
 // Note:
 //   1. It assumes `cipd` client tool binary is already in path.
 //   2. Hack: it includes bbagent version in the ensure file if it's called from
 //   a cipd installed bbagent.
-func installCipdPackages(ctx context.Context, build *bbpb.Build, workDir string) (map[string]*bbpb.ResolvedDataRef, error) {
+func installCipdPackages(ctx context.Context, build *bbpb.Build, workDir string) error {
 	logging.Infof(ctx, "Installing cipd packages into %s", workDir)
 	inputData := build.Infra.Buildbucket.Agent.Input.Data
 
@@ -73,7 +77,7 @@ func installCipdPackages(ctx context.Context, build *bbpb.Build, workDir string)
 	switch ver, err := cipdVersion.GetStartupVersion(); {
 	case err != nil:
 		// If the binary is not installed via CIPD, err == nil && ver.InstanceID == "".
-		return nil, errors.Annotate(err, "Failed to get the current executable startup version").Err()
+		return errors.Annotate(err, "Failed to get the current executable startup version").Err()
 	default:
 		fmt.Fprintf(&ensureFileBuilder, "%s %s\n", ver.PackageName, ver.InstanceID)
 	}
@@ -91,6 +95,10 @@ func installCipdPackages(ctx context.Context, build *bbpb.Build, workDir string)
 	if build.Exe != nil {
 		fmt.Fprintf(&ensureFileBuilder, "@Subdir %s\n", kitchenCheckout)
 		fmt.Fprintf(&ensureFileBuilder, "%s %s\n", build.Exe.CipdPackage, build.Exe.CipdVersion)
+		if build.Infra.Buildbucket.Agent.Purposes == nil {
+			build.Infra.Buildbucket.Agent.Purposes = make(map[string]bbpb.BuildInfra_Buildbucket_Agent_Purpose, 1)
+		}
+		build.Infra.Buildbucket.Agent.Purposes[kitchenCheckout] = bbpb.BuildInfra_Buildbucket_Agent_PURPOSE_EXE_PAYLOAD
 	}
 
 	// TODO(crbug.com/1297809): Remove this redundant log once this feature development is done.
@@ -103,21 +111,21 @@ func installCipdPackages(ctx context.Context, build *bbpb.Build, workDir string)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	if err := cmd.Run(); err != nil {
-		return nil, errors.Annotate(err, "Failed to run cipd ensure command").Err()
+		return errors.Annotate(err, "Failed to run cipd ensure command").Err()
 	}
 
 	resultsFile, err := os.Open(resultsFilePath)
 	if err != nil {
-		return nil, err
+		return err
 	}
 	defer resultsFile.Close()
 	cipdOutputs := cipdOut{}
 	jsonResults, err := ioutil.ReadAll(resultsFile)
 	if err != nil {
-		return nil, err
+		return err
 	}
 	if err := json.Unmarshal(jsonResults, &cipdOutputs); err != nil {
-		return nil, err
+		return err
 	}
 
 	// Prepend to $PATH
@@ -127,10 +135,11 @@ func installCipdPackages(ctx context.Context, build *bbpb.Build, workDir string)
 	}
 	original := os.Getenv("PATH")
 	if err := os.Setenv("PATH", strings.Join(append(extraAbsPaths, original), string(os.PathListSeparator))); err != nil {
-		return nil, err
+		return err
 	}
 
-	resolvedDataMap := map[string]*bbpb.ResolvedDataRef{}
+	resolved := make(map[string]*bbpb.ResolvedDataRef, len(inputData)+1)
+	build.Infra.Buildbucket.Agent.Output.ResolvedData = resolved
 	for p, pkgs := range cipdOutputs.Result {
 		resolvedPkgs := make([]*bbpb.ResolvedDataRef_CIPD_PkgSpec, 0, len(pkgs))
 		for _, pkg := range pkgs {
@@ -139,12 +148,12 @@ func installCipdPackages(ctx context.Context, build *bbpb.Build, workDir string)
 				Version: pkg.InstanceID,
 			})
 		}
-		resolvedDataMap[p] = &bbpb.ResolvedDataRef{
+		resolved[p] = &bbpb.ResolvedDataRef{
 			DataType: &bbpb.ResolvedDataRef_Cipd{Cipd: &bbpb.ResolvedDataRef_CIPD{
 				Specs: resolvedPkgs,
 			}},
 		}
 	}
 
-	return resolvedDataMap, nil
+	return nil
 }

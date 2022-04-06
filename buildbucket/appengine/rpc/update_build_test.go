@@ -300,7 +300,7 @@ func TestValidateUpdate(t *testing.T) {
 
 		Convey("invalid agent purpose", func() {
 			req.Build.Infra.Buildbucket.Agent.Purposes = map[string]pb.BuildInfra_Buildbucket_Agent_Purpose{
-				"random_p": pb.BuildInfra_Buildbucket_Agent_PURPOSE_RECIPE_BUNDLE,
+				"random_p": pb.BuildInfra_Buildbucket_Agent_PURPOSE_EXE_PAYLOAD,
 			}
 			So(validateUpdate(ctx, req, nil), ShouldErrLike, "build.infra.buildbucket.agent.purposes: Invalid path random_p - not in either input or output dataRef")
 		})
@@ -308,7 +308,7 @@ func TestValidateUpdate(t *testing.T) {
 		Convey("valid", func() {
 			// in input data.
 			req.Build.Infra.Buildbucket.Agent.Purposes = map[string]pb.BuildInfra_Buildbucket_Agent_Purpose{
-				"p1": pb.BuildInfra_Buildbucket_Agent_PURPOSE_RECIPE_BUNDLE,
+				"p1": pb.BuildInfra_Buildbucket_Agent_PURPOSE_EXE_PAYLOAD,
 			}
 			So(validateUpdate(ctx, req, nil), ShouldBeNil)
 
@@ -319,7 +319,7 @@ func TestValidateUpdate(t *testing.T) {
 					"output_p1": {}},
 			}
 			req.Build.Infra.Buildbucket.Agent.Purposes = map[string]pb.BuildInfra_Buildbucket_Agent_Purpose{
-				"output_p1": pb.BuildInfra_Buildbucket_Agent_PURPOSE_RECIPE_BUNDLE,
+				"output_p1": pb.BuildInfra_Buildbucket_Agent_PURPOSE_EXE_PAYLOAD,
 			}
 			So(validateUpdate(ctx, req, nil), ShouldBeNil)
 		})
@@ -796,7 +796,7 @@ func TestUpdateBuild(t *testing.T) {
 				Buildbucket: &pb.BuildInfra_Buildbucket{
 					Agent: &pb.BuildInfra_Buildbucket_Agent{
 						Purposes: map[string]pb.BuildInfra_Buildbucket_Agent_Purpose{
-							"p1": pb.BuildInfra_Buildbucket_Agent_PURPOSE_RECIPE_BUNDLE,
+							"p1": pb.BuildInfra_Buildbucket_Agent_PURPOSE_EXE_PAYLOAD,
 						},
 						Output: &pb.BuildInfra_Buildbucket_Agent_Output{
 							ResolvedData: map[string]*pb.ResolvedDataRef{
@@ -814,7 +814,7 @@ func TestUpdateBuild(t *testing.T) {
 				}}
 				So(updateBuild(ctx, req), ShouldBeRPCOK)
 				b := getBuildWithDetails(ctx, req.Build.Id)
-				So(b.Proto.Infra.Buildbucket.Agent.Purposes["p1"], ShouldEqual, pb.BuildInfra_Buildbucket_Agent_PURPOSE_RECIPE_BUNDLE)
+				So(b.Proto.Infra.Buildbucket.Agent.Purposes["p1"], ShouldEqual, pb.BuildInfra_Buildbucket_Agent_PURPOSE_EXE_PAYLOAD)
 			})
 
 			Convey("without mask", func() {

@@ -487,26 +487,6 @@ message BuildInfra {
         google.protobuf.Duration total_duration = 6;
       }
 
-      enum Purpose {
-        PURPOSE_UNSPECIFIED = 0;
-
-        // Can be set to indicate that a path associated with this purpose holds
-        // a recipe bundle.
-        //
-        // This could be used to clue-in tools like `led edit-recipe-bundle`
-        // that this DataRef is the one holding the recipes. Useful in situations
-        // where the `Build.exe` field is used for a bootstrapper application.
-        PURPOSE_RECIPE_BUNDLE = 1;
-
-        // Can be set to indicate that a path associated with this purpose holds
-        // data specifically for bbagent's own use.
-        //
-        // There's a proposal currently to add `nsjail` support to bbagent, and it
-        // would need to bring a copy of `nsjail` in order to run the user binary
-        // but we wouldn't necessarily want to expose it to the user binary.
-        PURPOSE_BBAGENT_UTILITY = 2;
-      }
-
       // TODO(crbug.com/1297809): for a long-term solution, we may need to add
       // a top-level `on_path` array field in the input and read the value from
       // configuration files (eg.settings.cfg, builder configs). So it can store
@@ -519,9 +499,25 @@ message BuildInfra {
       Output output = 2;
       Source source = 3;
 
-      // maps the relative-to-root directory path in input and output to the
-      // purpose of its data. If a path is not listed here, it means its purpose
-      // is unspecified.
+      enum Purpose {
+        // No categorized/known purpose.
+        PURPOSE_UNSPECIFIED = 0;
+
+        // This path contains the contents of the build's `exe.cipd_package`.
+        PURPOSE_EXE_PAYLOAD = 1;
+
+        // This path contains data specifically for bbagent's own use.
+        //
+        // There's a proposal currently to add `nsjail` support to bbagent, and it
+        // would need to bring a copy of `nsjail` in order to run the user binary
+        // but we wouldn't necessarily want to expose it to the user binary.
+        PURPOSE_BBAGENT_UTILITY = 2;
+      }
+
+      // Maps the relative-to-root directory path in both `input` and `output`
+      // to the Purpose of the software in that directory.
+      //
+      // If a path is not listed here, it is the same as PURPOSE_UNSPECIFIED.
       map<string, Purpose> purposes = 4;
     }
 

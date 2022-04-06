@@ -125,6 +125,7 @@ func TestInstallCipdPackages(t *testing.T) {
 								},
 							},
 						},
+						Output: &pb.BuildInfra_Buildbucket_Agent_Output{},
 					},
 				},
 			},
@@ -141,16 +142,15 @@ func TestInstallCipdPackages(t *testing.T) {
 			testCase = "success"
 			cwd, err := os.Getwd()
 			So(err, ShouldBeNil)
-			resolvedDataMap, err := installCipdPackages(ctx, build, cwd)
-			So(err, ShouldBeNil)
-			So(resolvedDataMap["path_a"], ShouldResembleProto, &pb.ResolvedDataRef{
+			So(installCipdPackages(ctx, build, cwd), ShouldBeNil)
+			So(build.Infra.Buildbucket.Agent.Output.ResolvedData["path_a"], ShouldResembleProto, &pb.ResolvedDataRef{
 				DataType: &pb.ResolvedDataRef_Cipd{
 					Cipd: &pb.ResolvedDataRef_CIPD{
 						Specs: []*pb.ResolvedDataRef_CIPD_PkgSpec{{Package: successResult.Result["path_a"][0].Package, Version: successResult.Result["path_a"][0].InstanceID}},
 					},
 				},
 			})
-			So(resolvedDataMap["path_b"], ShouldResembleProto, &pb.ResolvedDataRef{
+			So(build.Infra.Buildbucket.Agent.Output.ResolvedData["path_b"], ShouldResembleProto, &pb.ResolvedDataRef{
 				DataType: &pb.ResolvedDataRef_Cipd{
 					Cipd: &pb.ResolvedDataRef_CIPD{
 						Specs: []*pb.ResolvedDataRef_CIPD_PkgSpec{{Package: successResult.Result["path_b"][0].Package, Version: successResult.Result["path_b"][0].InstanceID}},
@@ -167,8 +167,8 @@ func TestInstallCipdPackages(t *testing.T) {
 
 		Convey("failure", func() {
 			testCase = "failure"
-			resolvedDataMap, err := installCipdPackages(ctx, build, ".")
-			So(resolvedDataMap, ShouldBeNil)
+			err := installCipdPackages(ctx, build, ".")
+			So(build.Infra.Buildbucket.Agent.Output.ResolvedData, ShouldBeNil)
 			So(err, ShouldErrLike, "Failed to run cipd ensure command")
 			So(os.Getenv("PATH"), ShouldEqual, originalPathEnv)
 		})
