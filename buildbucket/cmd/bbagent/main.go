@@ -316,9 +316,7 @@ func mainImpl() int {
 				Id: input.Build.Id,
 				Infra: &bbpb.BuildInfra{
 					Buildbucket: &bbpb.BuildInfra_Buildbucket{
-						Agent: &bbpb.BuildInfra_Buildbucket_Agent{
-							Output: agent.Output,
-						},
+						Agent: agent,
 					},
 				},
 			},
