@@ -323,14 +323,14 @@ func mainImpl() int {
 			UpdateMask: &fieldmaskpb.FieldMask{Paths: []string{"build.infra.buildbucket.agent.output"}},
 			Mask:       readMask,
 		}
-		bldAfterCipd, err := bbclient.UpdateBuild(cctx, updateReq)
+		bldStartCipd, err := bbclient.UpdateBuild(cctx, updateReq)
 		if err != nil {
 			// Carry on and bear the non-fatal update failure.
 			logging.Warningf(ctx, "Failed to report build agent STARTED status: %s", err)
 		}
 		// The build has been canceled, bail out early.
-		if bldAfterCipd.CancelTime != nil {
-			return cancelBuild(cctx, bbclient, bldAfterCipd)
+		if bldStartCipd.CancelTime != nil {
+			return cancelBuild(cctx, bbclient, bldStartCipd)
 		}
 
 		agent.Output.AgentPlatform = platform.CurrentPlatform()
@@ -362,11 +362,16 @@ func mainImpl() int {
 			}
 		}
 
-		if _, bbErr := bbclient.UpdateBuild(cctx, updateReq); bbErr != nil {
+		bldCompleteCipd, bbErr := bbclient.UpdateBuild(cctx, updateReq)
+		if bbErr != nil {
 			logging.Warningf(ctx, "Failed to report build agent output status: %s", bbErr)
 		}
 		if err != nil {
 			os.Exit(-1)
+		}
+		// The build has been canceled, bail out early.
+		if bldCompleteCipd.CancelTime != nil {
+			return cancelBuild(cctx, bbclient, bldCompleteCipd)
 		}
 	}
 
