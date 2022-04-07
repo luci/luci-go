@@ -88,6 +88,11 @@ func (r *DownloadDiffRequest) Validate() error {
 	if err := requireCommittish("committish", r.GetCommittish()); err != nil {
 		return err
 	}
+	if base := r.GetBase(); base != "" {
+		if err := requireCommittish("base", base); err != nil {
+			return err
+		}
+	}
 	if strings.HasPrefix(r.Path, "/") {
 		return errors.New("path must not start with /")
 	}

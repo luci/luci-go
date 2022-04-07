@@ -210,6 +210,15 @@ message DownloadDiffRequest {
     // Required.
     string committish = 2;
 
+    // The git revision to compute the diff against.
+    // The value can be:
+    //   - a git revision as 40-char string or its prefix so long as its unique in repo.
+    //   - a ref such as "refs/heads/branch"
+    //   - a ref defined as n-th parent of R in the form "R~n".
+    //     For example, "main~2" or "deadbeef~1".
+    // Optional. If not specified, the diff will be against the parent of committish.
+    string base = 4;
+
     // Path relative to the project root to the file to limit the diff to.
     // Optional.
     string path = 3;
