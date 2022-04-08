@@ -60,7 +60,7 @@ const (
 	// *must* have an External ID.
 	// *must* have a Result, whose Status is not UNKNOWN.
 	Status_ENDED Status = 3
-	// CANCELLED imeans Tryjob was cancelled by CV. Final status.
+	// CANCELLED means Tryjob was cancelled by CV. Final status.
 	//
 	// *must* have an External ID.
 	// *must* have no Result.
@@ -73,7 +73,7 @@ const (
 	// This status is an implementation detail of CV, used for Tryjobs which
 	// weren't actually triggered.
 	//
-	// TODO(cbrug/1227363): add a field to the Tryjob model to record reason for
+	// TODO(crbug/1227363): add a field to the Tryjob model to record reason for
 	// this status, notably to record permission denied errors.
 	Status_UNTRIGGERED Status = 5
 )
@@ -204,7 +204,7 @@ type Definition struct {
 	// If set, existing tryjob matching this definition is deemed equivalent
 	// to the primary Definition.
 	//
-	// Note that recurisve `equivalent_to` is not supported. Also, this doesn't
+	// Note that recursive `equivalent_to` is not supported. Also, this doesn't
 	// affect triggering a new tryjob.
 	EquivalentTo *Definition `protobuf:"bytes,2,opt,name=equivalent_to,json=equivalentTo,proto3" json:"equivalent_to,omitempty"`
 	// If true, trigger a new tryjob using this definition regardless of whether

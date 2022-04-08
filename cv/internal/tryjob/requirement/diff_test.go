@@ -52,7 +52,8 @@ func TestDiff(t *testing.T) {
 		Convey("Compare definitions", func() {
 			Convey("Empty base and empty target", func() {
 				res := Diff(&tryjob.Requirement{}, &tryjob.Requirement{})
-				So(res.ExtraDefs, ShouldBeEmpty)
+				So(res.AddedDefs, ShouldBeEmpty)
+				So(res.ChangedDefs, ShouldBeEmpty)
 				So(res.RemovedDefs, ShouldBeEmpty)
 			})
 			Convey("Empty base", func() {
@@ -62,7 +63,9 @@ func TestDiff(t *testing.T) {
 					&tryjob.Requirement{
 						Definitions: []*tryjob.Definition{def},
 					})
-				So(res.ExtraDefs, ShouldResembleProto, []*tryjob.Definition{def})
+				So(res.AddedDefs, ShouldHaveLength, 1)
+				So(res.AddedDefs, ShouldContainKey, def)
+				So(res.ChangedDefs, ShouldBeEmpty)
 				So(res.RemovedDefs, ShouldBeEmpty)
 			})
 			Convey("Empty target", func() {
@@ -72,8 +75,10 @@ func TestDiff(t *testing.T) {
 						Definitions: []*tryjob.Definition{def},
 					},
 					&tryjob.Requirement{})
-				So(res.ExtraDefs, ShouldBeEmpty)
-				So(res.RemovedDefs, ShouldResembleProto, []*tryjob.Definition{def})
+				So(res.AddedDefs, ShouldBeEmpty)
+				So(res.ChangedDefs, ShouldBeEmpty)
+				So(res.RemovedDefs, ShouldHaveLength, 1)
+				So(res.RemovedDefs, ShouldContainKey, def)
 			})
 			Convey("Target has one extra", func() {
 				shared := makeBBTryjobDefinition("a.example.com", "infra", "try", "someBuilder")
@@ -85,7 +90,9 @@ func TestDiff(t *testing.T) {
 					&tryjob.Requirement{
 						Definitions: []*tryjob.Definition{shared, extra},
 					})
-				So(res.ExtraDefs, ShouldResembleProto, []*tryjob.Definition{extra})
+				So(res.AddedDefs, ShouldHaveLength, 1)
+				So(res.AddedDefs, ShouldContainKey, extra)
+				So(res.ChangedDefs, ShouldBeEmpty)
 				So(res.RemovedDefs, ShouldBeEmpty)
 			})
 			Convey("Target has one removed", func() {
@@ -98,12 +105,20 @@ func TestDiff(t *testing.T) {
 					&tryjob.Requirement{
 						Definitions: []*tryjob.Definition{shared},
 					})
-				So(res.ExtraDefs, ShouldBeEmpty)
-				So(res.RemovedDefs, ShouldResembleProto, []*tryjob.Definition{removed})
+				So(res.AddedDefs, ShouldBeEmpty)
+				So(res.ChangedDefs, ShouldBeEmpty)
+				So(res.RemovedDefs, ShouldHaveLength, 1)
+				So(res.RemovedDefs, ShouldContainKey, removed)
 			})
 			Convey("Target has one changed", func() {
 				baseDef := makeBBTryjobDefinition("a.example.com", "infra", "try", "someBuilder")
-				targetDef := makeBBTryjobDefinition("a.example.com", "infra", "ci", "anotherBuilder")
+				targetDef := proto.Clone(baseDef).(*tryjob.Definition)
+				Convey("Change in equivalent", func() {
+					targetDef.EquivalentTo = makeBBTryjobDefinition("a.example.com", "infra", "try", "equiBuilder")
+				})
+				Convey("Change in disable_reuse", func() {
+					targetDef.DisableReuse = !baseDef.GetDisableReuse()
+				})
 				res := Diff(
 					&tryjob.Requirement{
 						Definitions: []*tryjob.Definition{baseDef},
@@ -111,22 +126,27 @@ func TestDiff(t *testing.T) {
 					&tryjob.Requirement{
 						Definitions: []*tryjob.Definition{targetDef},
 					})
-				So(res.ExtraDefs, ShouldResembleProto, []*tryjob.Definition{targetDef})
-				So(res.RemovedDefs, ShouldResembleProto, []*tryjob.Definition{baseDef})
+				So(res.AddedDefs, ShouldBeEmpty)
+				So(res.ChangedDefs, ShouldHaveLength, 1)
+				So(res.ChangedDefs[baseDef], ShouldResembleProto, targetDef)
+				So(res.RemovedDefs, ShouldBeEmpty)
 			})
 			Convey("Multiple Definitions", func() {
 				builder1 := makeBBTryjobDefinition("a.example.com", "infra", "try", "builder1")
 				builder2 := makeBBTryjobDefinition("a.example.com", "infra", "try", "builder2")
 				builder3 := makeBBTryjobDefinition("a.example.com", "infra", "try", "builder3")
+				builder3Changed := proto.Clone(builder3).(*tryjob.Definition)
+				builder3Changed.DisableReuse = !builder3.GetDisableReuse()
 				builder4 := makeBBTryjobDefinition("a.example.com", "infra", "try", "builder4")
-				builderDiffProj := makeBBTryjobDefinition("a.example.com", "chrome", "try", "builder")
-				builderDiffHost1 := makeBBTryjobDefinition("b.example.com", "infra", "try", "builder1")
-				builderDiffHost2 := makeBBTryjobDefinition("b.example.com", "infra", "try", "builder2")
+				builderDiffProj := makeBBTryjobDefinition("a.example.com", "chrome", "try", "builder1")
+				builderDiffProjChanged := proto.Clone(builderDiffProj).(*tryjob.Definition)
+				builderDiffProjChanged.EquivalentTo = makeBBTryjobDefinition("a.example.com", "chrome", "try", "equi-builder1")
+
 				base := &tryjob.Requirement{
-					Definitions: []*tryjob.Definition{builder1, builder2, builder3, builderDiffHost1},
+					Definitions: []*tryjob.Definition{builder1, builder2, builder3, builderDiffProj},
 				}
 				target := &tryjob.Requirement{
-					Definitions: []*tryjob.Definition{builder1, builder3, builder4, builderDiffProj, builderDiffHost2},
+					Definitions: []*tryjob.Definition{builder1, builder3Changed, builder4, builderDiffProjChanged},
 				}
 				rand.Seed(testclock.TestRecentTimeUTC.Unix())
 				rand.Shuffle(len(base.Definitions), func(i, j int) {
@@ -136,22 +156,13 @@ func TestDiff(t *testing.T) {
 					target.Definitions[i], target.Definitions[j] = target.Definitions[j], target.Definitions[i]
 				})
 				res := Diff(base, target)
-				So(res.ExtraDefs, ShouldResembleProto, []*tryjob.Definition{builderDiffProj, builder4, builderDiffHost2})
-				So(res.RemovedDefs, ShouldResembleProto, []*tryjob.Definition{builder2, builderDiffHost1})
-			})
-			Convey("With equivalent Tryjob definition", func() {
-				baseDef := makeBBTryjobDefinition("a.example.com", "infra", "try", "builder")
-				targetDef := proto.Clone(baseDef).(*tryjob.Definition)
-				targetDef.EquivalentTo = makeBBTryjobDefinition("a.example.com", "infra", "try", "equi_builder")
-				res := Diff(
-					&tryjob.Requirement{
-						Definitions: []*tryjob.Definition{baseDef},
-					},
-					&tryjob.Requirement{
-						Definitions: []*tryjob.Definition{targetDef},
-					})
-				So(res.ExtraDefs, ShouldResembleProto, []*tryjob.Definition{targetDef})
-				So(res.RemovedDefs, ShouldResembleProto, []*tryjob.Definition{baseDef})
+				So(res.AddedDefs, ShouldHaveLength, 1)
+				So(res.AddedDefs, ShouldContainKey, builder4)
+				So(res.RemovedDefs, ShouldHaveLength, 1)
+				So(res.RemovedDefs, ShouldContainKey, builder2)
+				So(res.ChangedDefs, ShouldHaveLength, 2)
+				So(res.ChangedDefs[builder3], ShouldResembleProto, builder3Changed)
+				So(res.ChangedDefs[builderDiffProj], ShouldResembleProto, builderDiffProjChanged)
 			})
 		})
 
