@@ -45,9 +45,7 @@ func main() {
 		UnaryServerInterceptor: grpcmon.UnaryServerInterceptor,
 	}
 	servicesPb.RegisterServicesServer(&svr, services.New(services.ServerSettings{
-		// 4 is very likely overkill. Until 2020Q3, Logdog was essentially fine
-		// running on a single queue.
-		NumQueues: 4,
+		NumQueues: 6,
 	}))
 	registrationPb.RegisterRegistrationServer(&svr, registration.New())
 
