@@ -55,12 +55,14 @@ func makeHardLinkOrClone(src, dst string) error {
 	// Hardlinked executables don't work well with dyld.
 	// Use clonefile instead on macOS 12 (Darwin 21) or newer to workaround that.
 	// ref: https://crbug.com/1296318#c54
-	if mustGetDarwinMajorVersion() >= 21 {
-		if err := unix.Clonefile(src, dst, unix.CLONE_NOFOLLOW|unix.CLONE_NOOWNERCOPY); err != nil {
-			return errors.Annotate(err, "failed to call clonefile(%s, %s, CLONE_NOFOLLOW|CLONE_NOOWNERCOPY)", src, dst).Err()
-		}
-		return nil
-	}
+	// TODO(https://crbug.com/1296318#c68): uncomment here.
+	// if mustGetDarwinMajorVersion() >= 21 {
+	// 	if err := unix.Clonefile(src, dst, unix.CLONE_NOFOLLOW|unix.CLONE_NOOWNERCOPY); err != nil {
+	// 		return errors.Annotate(err, "failed to call clonefile(%s, %s, CLONE_NOFOLLOW|CLONE_NOOWNERCOPY)", src, dst).Err()
+	// 	}
+	// 	return nil
+	// }
+
 	if err := os.Link(src, dst); err != nil {
 		return errors.Annotate(err, "failed to call os.Link(%s, %s)", src, dst).Err()
 	}
