@@ -114,7 +114,7 @@ func TestActuationBeginOp(t *testing.T) {
 			})
 			So(err, ShouldBeNil)
 
-			op.MakeDecision(ctx, "apps/app1", &rpcpb.AssetToActuate{
+			app1Call := &rpcpb.AssetToActuate{
 				Config: &modelpb.AssetConfig{EnableAutomation: false},
 				IntendedState: &modelpb.AssetState{
 					State: &modelpb.AssetState_Appengine{
@@ -126,9 +126,10 @@ func TestActuationBeginOp(t *testing.T) {
 						Appengine: mockedReportedState("app1", 200),
 					},
 				},
-			})
+			}
+			op.MakeDecision(ctx, "apps/app1", app1Call)
 
-			op.MakeDecision(ctx, "apps/app2", &rpcpb.AssetToActuate{
+			app2Call := &rpcpb.AssetToActuate{
 				Config: &modelpb.AssetConfig{EnableAutomation: true},
 				IntendedState: &modelpb.AssetState{
 					State: &modelpb.AssetState_Appengine{
@@ -140,7 +141,8 @@ func TestActuationBeginOp(t *testing.T) {
 						Appengine: mockedReportedState("app2", 200),
 					},
 				},
-			})
+			}
+			op.MakeDecision(ctx, "apps/app2", app2Call)
 
 			decisions, err := op.Apply(ctx)
 			So(err, ShouldBeNil)
@@ -226,6 +228,34 @@ func TestActuationBeginOp(t *testing.T) {
 					},
 				},
 			})
+
+			// Made correct history records.
+			So(assets["apps/app1"].LastHistoryID, ShouldEqual, 1)
+			So(assets["apps/app1"].HistoryEntry, ShouldResembleProto, &modelpb.AssetHistory{
+				AssetId:       "apps/app1",
+				HistoryId:     1,
+				Decision:      decisions["apps/app1"],
+				Actuation:     storedActuation.Actuation,
+				Config:        app1Call.Config,
+				IntendedState: app1Call.IntendedState,
+				ReportedState: app1Call.ReportedState,
+			})
+			rec := AssetHistory{ID: 1, Parent: datastore.KeyForObj(ctx, assets["apps/app1"])}
+			So(datastore.Get(ctx, &rec), ShouldBeNil)
+			So(rec.Entry, ShouldResembleProto, assets["apps/app1"].HistoryEntry)
+
+			So(assets["apps/app2"].LastHistoryID, ShouldEqual, 0)
+			So(assets["apps/app2"].HistoryEntry, ShouldResembleProto, &modelpb.AssetHistory{
+				AssetId:       "apps/app2",
+				HistoryId:     1,
+				Decision:      decisions["apps/app2"],
+				Actuation:     storedActuation.Actuation,
+				Config:        app2Call.Config,
+				IntendedState: app2Call.IntendedState,
+				ReportedState: app2Call.ReportedState,
+			})
+			rec = AssetHistory{ID: 1, Parent: datastore.KeyForObj(ctx, assets["apps/app2"])}
+			So(datastore.Get(ctx, &rec), ShouldEqual, datastore.ErrNoSuchEntity)
 		})
 
 		Convey("Skipping disabled", func() {

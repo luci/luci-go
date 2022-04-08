@@ -33,6 +33,32 @@ type Asset struct {
 	ID string `gae:"$id"`
 	// Asset contains all details about the asset.
 	Asset *modelpb.Asset
+
+	// LastHistoryID is ID of the last committed AssetHistory entity.
+	LastHistoryID int64 `gae:",noindex"`
+
+	// HistoryEntry is data of the last committed or currently recording entry.
+	//
+	// If its ID matches LastHistoryID, then it was already committed and it is
+	// the latest entry. Otherwise it is the currently recording one and its ID
+	// is LastHistoryID+1.
+	HistoryEntry *modelpb.AssetHistory
+}
+
+// AssetHistory is an entry in an asset history log.
+type AssetHistory struct {
+	_kind  string                `gae:"$kind,AssetHistory"`
+	_extra datastore.PropertyMap `gae:"-,extra"`
+
+	// ID is monotonically increasing ID, starting with 1.
+	ID int64 `gae:"$id"`
+	// Parent is the key of the parent Asset entity.
+	Parent *datastore.Key `gae:"$parent"`
+	// Entry contains all details.
+	Entry *modelpb.AssetHistory
+
+	// Created matches Entry.Actuation.Created, exposed for indexing.
+	Created time.Time
 }
 
 // Actuation is an inflight or finished actuation of some deployment.

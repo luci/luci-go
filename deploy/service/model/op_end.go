@@ -35,6 +35,7 @@ import (
 type ActuationEndOp struct {
 	actuation *Actuation
 	assets    map[string]*Asset
+	history   []*modelpb.AssetHistory
 	now       time.Time
 
 	affected []*Asset // assets that were modified
@@ -95,6 +96,14 @@ func (op *ActuationEndOp) HandleActuatedState(ctx context.Context, assetID strin
 		ent.Asset.ReportedState = reported
 		ent.Asset.ActuatedState = reported
 	}
+
+	// If was recording a history entry, close and commit it.
+	if ent.HistoryEntry != nil && ent.HistoryEntry.HistoryId == ent.LastHistoryID+1 {
+		ent.HistoryEntry.Actuation = op.actuation.Actuation
+		ent.HistoryEntry.PostActuationState = reported
+		ent.LastHistoryID = ent.HistoryEntry.HistoryId
+		op.history = append(op.history, ent.HistoryEntry)
+	}
 }
 
 // Apply stores all updated or created datastore entities.
@@ -116,6 +125,14 @@ func (op *ActuationEndOp) Apply(ctx context.Context) error {
 	// Update the actuation entity to match Actuation proto.
 	op.actuation.State = op.actuation.Actuation.State
 	toPut = append(toPut, op.actuation)
+
+	// Prepare AssetHistory entities. Note they refer to op.actuation by pointer
+	// inside already and will pick up all changes made to the Actuation proto.
+	history, err := commitHistory(ctx, op.history)
+	if err != nil {
+		return err
+	}
+	toPut = append(toPut, history...)
 
 	return datastore.Put(ctx, toPut...)
 }

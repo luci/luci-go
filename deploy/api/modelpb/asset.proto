@@ -135,6 +135,33 @@ message Asset {
 }
 
 
+// AssetHistory captures an actuation decision made by the backend regarding
+// some asset along with all data that led to it, as well as the corresponding
+// actuation outcome.
+message AssetHistory {
+  // The parent asset ID.
+  string asset_id = 1;
+  // Index in the asset's history log, monotonically increasing starting with 1.
+  int64 history_id = 2;
+
+  // The decision made by the backend.
+  ActuationDecision decision = 3;
+  // The snapshot of the associated actuation.
+  Actuation actuation = 4;
+
+  // Reported asset configuration as defined in the IaC repo.
+  AssetConfig config = 5;
+  // Reported intended state of the asset as defined in the IaC repo.
+  AssetState intended_state = 6;
+  // Reported actual state of the asset (as scanned by the actuator).
+  AssetState reported_state = 7;
+  // The last successfully applied intended state **prior** to the actuation.
+  AssetState last_applied_state = 8;
+  // The reported state **after** the actuation, if it was performed.
+  AssetState post_actuation_state = 9;
+}
+
+
 // Asset configuration as defined in the IaC repo.
 message AssetConfig {
   // True to actuate the asset, false to leave it alone.

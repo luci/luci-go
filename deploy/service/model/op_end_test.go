@@ -77,6 +77,14 @@ func TestActuationEndOp(t *testing.T) {
 							},
 						},
 					},
+					LastHistoryID: 123,
+					HistoryEntry: &modelpb.AssetHistory{
+						AssetId:   "apps/app1",
+						HistoryId: 124, // i.e. being recorded now
+						Actuation: &modelpb.Actuation{
+							Id: "phony-to-be-overridden",
+						},
+					},
 				},
 				{
 					ID: "apps/app2",
@@ -92,6 +100,14 @@ func TestActuationEndOp(t *testing.T) {
 						},
 						LastActuateActuation: &modelpb.Actuation{
 							Id: "another-actuation",
+						},
+					},
+					LastHistoryID: 123,
+					HistoryEntry: &modelpb.AssetHistory{
+						AssetId:   "apps/app2",
+						HistoryId: 123,
+						Actuation: &modelpb.Actuation{
+							Id: "phony-to-be-untouched",
 						},
 					},
 				},
@@ -177,6 +193,25 @@ func TestActuationEndOp(t *testing.T) {
 						},
 					},
 				})
+				So(assets["apps/app1"].LastHistoryID, ShouldEqual, 124)
+				So(assets["apps/app1"].HistoryEntry, ShouldResembleProto, &modelpb.AssetHistory{
+					AssetId:   "apps/app1",
+					HistoryId: 124,
+					Actuation: storedActuation.Actuation,
+					PostActuationState: &modelpb.AssetState{
+						Timestamp:  timestamppb.New(now),
+						Deployment: storedActuation.Actuation.Deployment,
+						Actuator:   storedActuation.Actuation.Actuator,
+						State: &modelpb.AssetState_Appengine{
+							Appengine: mockedReportedState("new actuated", 0),
+						},
+					},
+				})
+
+				// Created the history entity.
+				rec := AssetHistory{ID: 124, Parent: datastore.KeyForObj(ctx, assets["apps/app1"])}
+				So(datastore.Get(ctx, &rec), ShouldBeNil)
+				So(rec.Entry, ShouldResembleProto, assets["apps/app1"].HistoryEntry)
 
 				// Wasn't touched.
 				So(assets["apps/app2"].Asset, ShouldResembleProto, &modelpb.Asset{
@@ -191,6 +226,14 @@ func TestActuationEndOp(t *testing.T) {
 					},
 					LastActuateActuation: &modelpb.Actuation{
 						Id: "another-actuation",
+					},
+				})
+				So(assets["apps/app2"].LastHistoryID, ShouldEqual, 123)
+				So(assets["apps/app2"].HistoryEntry, ShouldResembleProto, &modelpb.AssetHistory{
+					AssetId:   "apps/app2",
+					HistoryId: 123,
+					Actuation: &modelpb.Actuation{
+						Id: "phony-to-be-untouched",
 					},
 				})
 			})

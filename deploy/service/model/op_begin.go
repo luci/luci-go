@@ -43,6 +43,7 @@ type ActuationBeginOp struct {
 	actuation *modelpb.Actuation
 	decisions map[string]*modelpb.ActuationDecision
 	assets    map[string]*Asset
+	history   []*modelpb.AssetHistory
 	now       time.Time
 
 	actuating bool     // true if have at least one ACTUATE_* decision
@@ -71,7 +72,6 @@ func NewActuationBeginOp(ctx context.Context, assets []string, actuation *modelp
 // ownership of `asset` mutating it. AssetToActuate fields must already be
 // validated at this point.
 func (op *ActuationBeginOp) MakeDecision(ctx context.Context, assetID string, asset *rpcpb.AssetToActuate) {
-	// TODO: Implement AssetState history.
 	// TODO: Implement locks.
 	// TODO: Implement anti-stomp protection.
 	// TODO: Implement forced actuation.
@@ -108,6 +108,9 @@ func (op *ActuationBeginOp) MakeDecision(ctx context.Context, assetID string, as
 		stored.ReportedState = asset.ReportedState
 	}
 
+	// Preserve for the AssetHistory.
+	lastAppliedState := stored.AppliedState
+
 	// Make the actual decision.
 	var decision modelpb.ActuationDecision_Decision
 	switch {
@@ -131,7 +134,40 @@ func (op *ActuationBeginOp) MakeDecision(ctx context.Context, assetID string, as
 	}
 	op.decisions[assetID] = stored.LastDecision
 
-	// TODO: Put `asset` and `stored.LastDecision` into the history log.
+	op.maybeUpdateHistory(&modelpb.AssetHistory{
+		AssetId:          assetID,
+		HistoryId:        0, // will be populated in maybeUpdateHistory
+		Decision:         stored.LastDecision,
+		Actuation:        op.actuation,
+		Config:           asset.Config,
+		IntendedState:    asset.IntendedState,
+		ReportedState:    asset.ReportedState,
+		LastAppliedState: lastAppliedState,
+	})
+}
+
+func (op *ActuationBeginOp) maybeUpdateHistory(entry *modelpb.AssetHistory) {
+	asset := op.assets[entry.AssetId]
+
+	// Skip repeating uninteresting decisions e.g. a series of UPTODATE decisions.
+	// Otherwise the log would be full of them and it will be hard to find
+	// interesting ones.
+	if asset.HistoryEntry != nil && !shouldRecordHistory(entry, asset.HistoryEntry) {
+		return
+	}
+
+	// The new history entry is noteworthy and should be recorded.
+	entry.HistoryId = asset.LastHistoryID + 1
+	asset.HistoryEntry = entry
+
+	// If the decision is final, then the actuation is done with this asset and
+	// we can emit the log record right now. Otherwise we'll keep the prepared log
+	// record cached in the Asset entity and commit it in EndActuation when we
+	// know the actuation outcome.
+	if !isActuateDecision(entry.Decision.Decision) {
+		asset.LastHistoryID = entry.HistoryId
+		op.history = append(op.history, entry)
+	}
 }
 
 // Apply stores all updated or created datastore entities.
@@ -177,6 +213,14 @@ func (op *ActuationBeginOp) Apply(ctx context.Context) (map[string]*modelpb.Actu
 		Created:   asTime(op.actuation.Created),
 		Expiry:    asTime(op.actuation.Expiry),
 	})
+
+	// Prepare AssetHistory entities. Note they refer to op.actuation by pointer
+	// inside already and will pick up all changes made to the Actuation proto.
+	history, err := commitHistory(ctx, op.history)
+	if err != nil {
+		return nil, err
+	}
+	toPut = append(toPut, history...)
 
 	if err := datastore.Put(ctx, toPut...); err != nil {
 		return nil, err
