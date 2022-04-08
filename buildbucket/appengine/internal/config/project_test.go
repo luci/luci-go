@@ -123,8 +123,7 @@ func TestProject(t *testing.T) {
 			So(ve.Errors[6].Error(), ShouldContainSubstring, "(buckets #1 - a): acl_sets: deprecated (use go/lucicfg)")
 			So(ve.Errors[7].Error(), ShouldContainSubstring, "(buckets #2 - ): invalid name \"\": bucket name is not specified")
 			So(ve.Errors[8].Error(), ShouldContainSubstring, "(buckets #3 - luci.x): invalid name \"luci.x\": must start with 'luci.test.' because it starts with 'luci.' and is defined in the \"test\" project")
-			})
-
+		})
 
 		Convey("buckets unsorted", func() {
 			badCfg := `
@@ -229,7 +228,7 @@ func TestProject(t *testing.T) {
 			ve, ok := vctx.Finalize().(*validation.Error)
 			So(ok, ShouldEqual, true)
 			So(len(ve.Errors), ShouldEqual, 3)
-			So(ve.Errors[0].Error(), ShouldContainSubstring, "(swarming / builders #0 - ): name must match " + builderRegex.String())
+			So(ve.Errors[0].Error(), ShouldContainSubstring, "(swarming / builders #0 - ): name must match "+builderRegex.String())
 			So(ve.Errors[1].Error(), ShouldContainSubstring, "(swarming / builders #0 - ): swarming_host unspecified")
 			So(ve.Errors[2].Error(), ShouldContainSubstring, "(swarming / builders #0 - ): exactly one of exe or recipe must be specified")
 		})
@@ -351,7 +350,7 @@ func TestProject(t *testing.T) {
 				}
 				builder_defaults {name: "x"}
 				builders {
-					name: "has mixins"
+					name: "another"
 					swarming_host: "example.com"
 					service_account: "not an email"
 					recipe {
@@ -359,20 +358,18 @@ func TestProject(t *testing.T) {
 						name: "foo"
 					}
 					priority: 300
-					mixins: ["a"]
 				}
 			`
 			validateProjectSwarming(vctx, toBBSwarmingCfg(content), wellKnownExperiments)
 			ve, ok := vctx.Finalize().(*validation.Error)
 			So(ok, ShouldEqual, true)
-			So(len(ve.Errors), ShouldEqual, 7)
+			So(len(ve.Errors), ShouldEqual, 6)
 			So(ve.Errors[0].Error(), ShouldContainSubstring, "task_template_canary_percentage.value must must be in [0, 100]")
 			So(ve.Errors[1].Error(), ShouldContainSubstring, "builder_defaults: deprecated (use go/lucicfg)")
 			So(ve.Errors[2].Error(), ShouldContainSubstring, "(swarming / builders #1 - meep / swarming_tags #0): Deprecated. Used only to enable \"vpython:native-python-wrapper\"")
 			So(ve.Errors[3].Error(), ShouldContainSubstring, "(swarming / builders #1 - meep): name: duplicate")
 			So(ve.Errors[4].Error(), ShouldContainSubstring, "priority: must be in [20, 255] range; got 300")
 			So(ve.Errors[5].Error(), ShouldContainSubstring, `service_account "not an email" doesn't match "^[0-9a-zA-Z_\\-\\.\\+\\%]+@[0-9a-zA-Z_\\-\\.]+$"`)
-			So(ve.Errors[6].Error(), ShouldContainSubstring, "(swarming / builders #2 - has mixins): mixins: deprecated (use go/lucicfg)")
 		})
 
 		Convey("bad caches in builders cfg", func() {
@@ -499,29 +496,27 @@ func TestProject(t *testing.T) {
 				Context: context.Background(),
 			}
 			validateDimensions(vctx, dimensions)
-			if strings.HasPrefix(expectedErr,"ok") {
+			if strings.HasPrefix(expectedErr, "ok") {
 				So(vctx.Finalize(), ShouldBeNil)
 			} else {
 				So(vctx.Finalize().Error(), ShouldContainSubstring, expectedErr)
 			}
 		}
 
-		testData := map[string][]string {
+		testData := map[string][]string{
 			"ok1": {"a:b"},
 			"ok2": {"a:b1", "a:b2", "60:a:b3"},
 			`ok3`: {"1814400:a:1"}, // 21*24*60*6
-			`expiration_secs is outside valid range; up to 504h0m0s`: {"1814401:a:1"}, // 21*24*60*60+
-			`(dimensions #0 - ""): "" does not have ':'`: {""},
-			`(dimensions #0 - "caches:a"): dimension key must not be 'caches'; caches must be declared via caches field`:
-				{"caches:a"},
-			`(dimensions #0 - ":"): missing key`: {":"},
-			`(dimensions #0 - "a.b:c"): key "a.b" does not match pattern "^[a-zA-Z\\_\\-]+$"`: {"a.b:c"},
-			`(dimensions #0 - "0:"): missing key`: {"0:"},
-			`(dimensions #0 - "a:"): missing value`: {"a:", "60:a:b"},
-			`(dimensions #0 - "-1:a:1"): expiration_secs is outside valid range; up to 504h0m0s`: {"-1:a:1"},
-			`(dimensions #0 - "1:a:b"): expiration_secs must be a multiple of 60 seconds`: {"1:a:b"},
-			"at most 6 different expiration_secs values can be used":
-			{
+			`expiration_secs is outside valid range; up to 504h0m0s`:                                                     {"1814401:a:1"}, // 21*24*60*60+
+			`(dimensions #0 - ""): "" does not have ':'`:                                                                 {""},
+			`(dimensions #0 - "caches:a"): dimension key must not be 'caches'; caches must be declared via caches field`: {"caches:a"},
+			`(dimensions #0 - ":"): missing key`:                                                                         {":"},
+			`(dimensions #0 - "a.b:c"): key "a.b" does not match pattern "^[a-zA-Z\\_\\-]+$"`:                            {"a.b:c"},
+			`(dimensions #0 - "0:"): missing key`:                                                                        {"0:"},
+			`(dimensions #0 - "a:"): missing value`:                                                                      {"a:", "60:a:b"},
+			`(dimensions #0 - "-1:a:1"): expiration_secs is outside valid range; up to 504h0m0s`:                         {"-1:a:1"},
+			`(dimensions #0 - "1:a:b"): expiration_secs must be a multiple of 60 seconds`:                                {"1:a:b"},
+			"at most 6 different expiration_secs values can be used": {
 				"60:a:1",
 				"120:a:1",
 				"180:a:1",
@@ -542,11 +537,11 @@ func TestProject(t *testing.T) {
 		}
 
 		Convey("ok", func() {
-			recipe := &pb.Builder_Recipe {
-				Name: "foo",
+			recipe := &pb.Builder_Recipe{
+				Name:        "foo",
 				CipdPackage: "infra/recipe_bundle",
 				CipdVersion: "refs/heads/main",
-				Properties: []string{"a:b"},
+				Properties:  []string{"a:b"},
 				PropertiesJ: []string{"x:null", "y:true", "z:{\"zz\":true}"},
 			}
 			validateBuilderRecipe(vctx, recipe)
@@ -554,8 +549,8 @@ func TestProject(t *testing.T) {
 		})
 
 		Convey("bad", func() {
-			recipe := &pb.Builder_Recipe {
-				Properties: []string{"", ":", "buildbucket:foobar", "x:y"},
+			recipe := &pb.Builder_Recipe{
+				Properties:  []string{"", ":", "buildbucket:foobar", "x:y"},
 				PropertiesJ: []string{"x:'y'", "y:b", "z"},
 			}
 			validateBuilderRecipe(vctx, recipe)
@@ -573,8 +568,8 @@ func TestProject(t *testing.T) {
 
 		Convey("bad $recipe_engine/runtime props", func() {
 			runtime := `$recipe_engine/runtime:{"is_luci": false,"is_experimental": true, "unrecognized_is_fine": 1}`
-			recipe := &pb.Builder_Recipe {
-				Name: "foo",
+			recipe := &pb.Builder_Recipe{
+				Name:        "foo",
 				CipdPackage: "infra/recipe_bundle",
 				CipdVersion: "refs/heads/main",
 				PropertiesJ: []string{runtime},

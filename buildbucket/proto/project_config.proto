@@ -68,9 +68,8 @@ message AclSet {
 }
 
 
-// Defines a swarmbucket builder or a builder mixin. A builder has a name, a
-// category and specifies what should happen if a build is scheduled to that
-// builder.
+// Defines a swarmbucket builder. A builder has a name, a category and specifies
+// what should happen if a build is scheduled to that builder.
 //
 // SECURITY WARNING: if adding more fields to this message, keep in mind that
 // a user that has permissions to schedule a build to the bucket, can override
@@ -211,7 +210,7 @@ message Builder {
     string config_json = 2;
   }
 
-  // Name of the builder or builder mixin.
+  // Name of the builder.
   //
   // If a builder name, will be propagated to "builder" build tag and
   // "buildername" recipe property.
@@ -233,8 +232,7 @@ message Builder {
   // Required, but defaults to deprecated Swarming.hostname.
   string swarming_host = 21;
 
-  // DEPRECATED.
-  repeated string mixins = 10;
+  reserved 10; // mixins
 
   // Builder category. Will be used for visual grouping, for example in Code Review.
   string category = 6;
@@ -495,8 +493,7 @@ message BuildbucketCfg {
   repeated Bucket buckets = 1;
   // DEPRECATED.
   repeated AclSet acl_sets = 2;
-  // DEPRECATED.
-  repeated Builder builder_mixins = 3;
+  reserved 3; // builder_mixins
 }
 
 // Toggle is a boolean with an extra state UNSET.

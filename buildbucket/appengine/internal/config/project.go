@@ -83,10 +83,6 @@ func validateProjectCfg(ctx *validation.Context, configSet, path string, content
 		ctx.Errorf("acl_sets: deprecated (use go/lucicfg)")
 	}
 
-	if len(cfg.BuilderMixins) != 0 {
-		ctx.Errorf("builder_mixins: deprecated (use go/lucicfg)")
-	}
-
 	// The format of configSet here is "projects/.*"
 	project := strings.Split(configSet, "/")[1]
 	bucketNames := stringset.New(len(cfg.Buckets))
@@ -245,11 +241,6 @@ func validateBuilderCfg(ctx *validation.Context, b *pb.Builder, wellKnownExperim
 			ctx.Errorf("value must be in [0, 100]")
 		}
 		ctx.Exit()
-	}
-
-	// mixins
-	if len(b.Mixins) > 0 {
-		ctx.Errorf("mixins: deprecated (use go/lucicfg)")
 	}
 }
 
