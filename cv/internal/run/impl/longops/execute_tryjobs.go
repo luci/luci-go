@@ -28,12 +28,20 @@ type ExecuteTryjobsOp struct {
 
 // Do actually executes the tryjob requirement.
 func (op *ExecuteTryjobsOp) Do(ctx context.Context) (*eventpb.LongOpCompleted, error) {
-	switch err := execute.Do(ctx, op.Run, op.Op.GetExecuteTryjobs(), op.IsCancelRequested); {
-	case op.IsCancelRequested():
-		return &eventpb.LongOpCompleted{Status: eventpb.LongOpCompleted_CANCELLED}, err
+	switch res, err := execute.Do(ctx, op.Run, op.Op.GetExecuteTryjobs(), op.IsCancelRequested); {
 	case err != nil:
-		return &eventpb.LongOpCompleted{Status: eventpb.LongOpCompleted_FAILED}, err
+		return &eventpb.LongOpCompleted{
+			Status: eventpb.LongOpCompleted_FAILED,
+			Result: &eventpb.LongOpCompleted_ExecuteTryjobs{
+				ExecuteTryjobs: res,
+			},
+		}, err
 	default:
-		return &eventpb.LongOpCompleted{Status: eventpb.LongOpCompleted_SUCCEEDED}, nil
+		return &eventpb.LongOpCompleted{
+			Status: eventpb.LongOpCompleted_SUCCEEDED,
+			Result: &eventpb.LongOpCompleted_ExecuteTryjobs{
+				ExecuteTryjobs: res,
+			},
+		}, nil
 	}
 }

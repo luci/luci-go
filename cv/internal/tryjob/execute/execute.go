@@ -51,21 +51,22 @@ func loadExecutionState(ctx context.Context, rid common.RunID) (*tryjob.Executio
 // Do executes the tryjob requirement for a run.
 //
 // This function is idempotent so it is safe to retry.
-func Do(ctx context.Context, r *run.Run, t *tryjob.ExecuteTryjobsPayload, shouldStop func() bool) error {
+func Do(ctx context.Context, r *run.Run, t *tryjob.ExecuteTryjobsPayload, shouldStop func() bool) (*tryjob.ExecuteTryjobsResult, error) {
 	execState, stateVer, err := loadExecutionState(ctx, r.ID)
 	switch {
 	case err != nil:
-		return err
+		return nil, err
 	case execState == nil:
 		execState = &tryjob.ExecutionState{}
 	}
 
 	plan, err := prepExecutionPlan(ctx, execState, r, t.GetTryjobsUpdated(), t.GetRequirementChanged())
 	if err != nil {
-		return err
+		return nil, err
 	}
-	if err := plan.execute(ctx, r, execState); err != nil {
-		return err
+	result, err := plan.execute(ctx, r, execState)
+	if err != nil {
+		return nil, err
 	}
 
 	var innerErr error
@@ -88,11 +89,11 @@ func Do(ctx context.Context, r *run.Run, t *tryjob.ExecuteTryjobsPayload, should
 
 	switch {
 	case innerErr != nil:
-		return innerErr
+		return nil, innerErr
 	case err != nil:
-		return errors.Annotate(err, "failed to commit transaction").Tag(transient.Tag).Err()
+		return nil, errors.Annotate(err, "failed to commit transaction").Tag(transient.Tag).Err()
 	default:
-		return nil
+		return result, nil
 	}
 }
 
@@ -130,6 +131,6 @@ func prepExecutionPlan(ctx context.Context, execState *tryjob.ExecutionState, r 
 }
 
 // execute executes the plan and mutate the state.
-func (p plan) execute(ctx context.Context, r *run.Run, execState *tryjob.ExecutionState) error {
+func (p plan) execute(ctx context.Context, r *run.Run, execState *tryjob.ExecutionState) (*tryjob.ExecuteTryjobsResult, error) {
 	panic("implement")
 }
