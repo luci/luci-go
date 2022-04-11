@@ -30,10 +30,10 @@ import (
 	"go.chromium.org/luci/server/auth"
 
 	"go.chromium.org/luci/cv/api/config/v2"
+	"go.chromium.org/luci/cv/internal/buildbucket"
 	"go.chromium.org/luci/cv/internal/configs/prjcfg"
 	"go.chromium.org/luci/cv/internal/run"
 	"go.chromium.org/luci/cv/internal/tryjob"
-	"go.chromium.org/luci/cv/internal/tryjob/buildbucket"
 )
 
 // Input contains all info needed to compute the Tryjob Requirement.

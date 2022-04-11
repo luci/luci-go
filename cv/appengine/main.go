@@ -45,6 +45,7 @@ import (
 	migrationpb "go.chromium.org/luci/cv/api/migration"
 	apiv0pb "go.chromium.org/luci/cv/api/v0"
 	"go.chromium.org/luci/cv/internal/aggrmetrics"
+	"go.chromium.org/luci/cv/internal/buildbucket"
 	"go.chromium.org/luci/cv/internal/changelist"
 	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/common/bq"
@@ -63,7 +64,6 @@ import (
 	"go.chromium.org/luci/cv/internal/run"
 	runimpl "go.chromium.org/luci/cv/internal/run/impl"
 	"go.chromium.org/luci/cv/internal/tryjob"
-	"go.chromium.org/luci/cv/internal/tryjob/buildbucket"
 	"go.chromium.org/luci/cv/internal/tryjob/tjcancel"
 	"go.chromium.org/luci/cv/internal/userhtml"
 )

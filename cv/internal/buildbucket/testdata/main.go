@@ -28,7 +28,7 @@ import (
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/grpc/prpc"
 
-	"go.chromium.org/luci/cv/internal/tryjob/buildbucket"
+	"go.chromium.org/luci/cv/internal/buildbucket"
 )
 
 var downloadBuildFlag = flag.Int64("download-build", 0, "Fetches & stores test data for a given build ID.\n\nFor internal builds, run inside luci-auth context, but beware of confidental data.")
