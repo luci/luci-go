@@ -40,7 +40,7 @@ require (
 	github.com/golang/snappy v0.0.4 // indirect
 	github.com/gomodule/redigo v1.8.5
 	github.com/google/flatbuffers v2.0.0+incompatible // indirect
-	github.com/google/go-cmp v0.5.6
+	github.com/google/go-cmp v0.5.7
 	github.com/google/pprof v0.0.0-20210827144239-02619b876842 // indirect
 	github.com/google/tink/go v1.6.1
 	github.com/google/uuid v1.3.0
@@ -67,11 +67,15 @@ require (
 	github.com/rogpeppe/go-internal v1.8.0 // indirect
 	github.com/russross/blackfriday/v2 v2.1.0
 	github.com/sergi/go-diff v1.2.0
+	github.com/shirou/gopsutil v3.21.11+incompatible
 	github.com/smartystreets/assertions v1.2.0
 	github.com/smartystreets/goconvey v1.7.2
+	github.com/stretchr/testify v1.7.0 // indirect
+	github.com/tklauser/go-sysconf v0.3.9 // indirect
 	github.com/xtgo/set v1.0.0
 	github.com/yosuke-furukawa/json5 v0.1.1
 	github.com/yuin/gopher-lua v0.0.0-20210529063254-f4c35e4016d9 // indirect
+	github.com/yusufpapurcu/wmi v1.2.2 // indirect
 	go.opencensus.io v0.23.0
 	go.starlark.net v0.0.0-20210901212718-87f333178d59
 	golang.org/x/crypto v0.0.0-20210817164053-32db794688a5
