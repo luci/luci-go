@@ -219,12 +219,31 @@ message ExecutionState {
     // Tryjob.
     int32 used_quota = 3;
   }
+   // Status describes the summarized status of the overall tryjob execution.
+  enum Status {
+    // Unspecified is never used.
+    UNSPECIFIED = 0;
+    // At least one critical tryjob is not yet finished so its result is
+    // unknown.
+    RUNNING = 1;
+    // At least one critical tryjob in the state failed and cannot be retried.
+    FAILED = 2;
+    // All the critical tryjobs in the execution state succeeded.
+    SUCCEEDED = 3;
+  }
   // Executions track the execution state of all required Tryjobs.
   //
   // It is one to one mapped to `requirement.definitions`
   repeated Execution executions = 1;
   // Requirement is the requirement that is currently being worked on.
   Requirement requirement = 2;
+  // Status will be set to SUCCEEDED if all tryjobs succeed,
+  // FAILED if at least one tryjob fails and cannot be retried,
+  // or RUNNING otherwise.
+  Status status = 3;
+  // FailureReason provides a user-readable explanation of the
+  // failure.
+  string failure_reason = 4;
 }
 
 // TryjobUpdatedEvent describes which Tryjob entity is updated.
