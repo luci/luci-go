@@ -114,6 +114,71 @@ func (*quotaAdmin) Get(ctx context.Context, req *pb.GetRequest) (*pb.QuotaEntry,
 	return rsp, nil
 }
 
+// overwriteEntry is a *template.Template for a Lua script which sets the given
+// quota entry in Redis, overwriting any existing entry.
+//
+// Template variables:
+// Name: Name of the quota entry to update.
+// Resources: Number of resources to set.
+// Now: Update time in seconds since epoch.
+var overwriteEntry = template.Must(template.New("getEntry").Parse(`
+	return redis.call("HMSET", "{{.Name}}", "resources", {{.Resources}}, "updated", {{.Now}})
+`))
+
+// Set updates the available resources for the given policy.
+func (*quotaAdmin) Set(ctx context.Context, req *pb.SetRequest) (*pb.QuotaEntry, error) {
+	switch {
+	case req.GetPolicy() == "":
+		return nil, appstatus.Errorf(codes.InvalidArgument, "policy is required")
+	case req.Resources < 0:
+		return nil, appstatus.Errorf(codes.InvalidArgument, "resources must not be negative")
+	}
+
+	now := clock.Now(ctx).Unix()
+	cfg := getInterface(ctx)
+	rsp := &pb.QuotaEntry{}
+
+	rsp.Name = req.Policy
+	if strings.Contains(req.Policy, "${user}") {
+		if req.User == "" {
+			return nil, appstatus.BadRequest(errors.New("user not specified"))
+		}
+		rsp.Name = strings.ReplaceAll(rsp.Name, "${user}", req.User)
+	}
+	rsp.DbName = fmt.Sprintf("entry:%x", sha256.Sum256([]byte(rsp.Name)))
+	def, err := cfg.Get(ctx, req.Policy)
+	switch {
+	case err == quotaconfig.ErrNotFound:
+		return nil, appstatus.Errorf(codes.NotFound, "policy %q (db name: %s) not found", rsp.Name, rsp.DbName)
+	case err != nil:
+		return nil, errors.Annotate(err, "fetching config").Err()
+	}
+	rsp.Resources = req.Resources
+	if rsp.Resources > def.Resources {
+		rsp.Resources = def.Resources
+	}
+
+	conn, err := redisconn.Get(ctx)
+	if err != nil {
+		return nil, errors.Annotate(err, "establishing connection").Err()
+	}
+	defer conn.Close()
+
+	s := bytes.NewBufferString("")
+	if err := overwriteEntry.Execute(s, map[string]interface{}{
+		"Name":      rsp.DbName,
+		"Resources": rsp.Resources,
+		"Now":       now,
+	}); err != nil {
+		return nil, errors.Annotate(err, "rendering template %q", overwriteEntry.Name()).Err()
+	}
+
+	if _, err := redis.NewScript(0, s.String()).Do(conn); err != nil {
+		return nil, err
+	}
+	return rsp, nil
+}
+
 // NewQuotaAdminServer returns a pb.QuotaAdminServer with ACLs limited to the
 // given groups. Readers have access to Get.
 // TODO(crbug/1280055): Add more admin methods, detail access here.

@@ -21,6 +21,23 @@ message GetRequest {
   string user = 2;
 }
 
+// A SetRequest is a request to set available resources for a specific policy.
+message SetRequest {
+  // The named policy. Valid names depend on the policies enumerated in this
+  // service's config.proto.
+  //
+  // Required.
+  string policy = 1;
+
+  // The user to fetch the named quota policy for. Must be specified when the
+  // policy contains the substring "${user}".
+  string user = 2;
+
+  // The amount of resources that should be available. Must be non-negative.
+  // Values exceeding the max specified in the policy config will be capped.
+  int64 resources = 3;
+}
+
 // A QuotaEntry represents a database entry for the named quota entry.
 message QuotaEntry {
   // The name of this quota entry.
@@ -37,4 +54,6 @@ message QuotaEntry {
 service QuotaAdmin {
   // Get returns the available resources for the given policy.
   rpc Get(GetRequest) returns (QuotaEntry);
+  // Set updates the available resources for the given policy.
+  rpc Set(SetRequest) returns (QuotaEntry);
 }

@@ -168,5 +168,137 @@ func TestQuotaAdmin(t *testing.T) {
 				So(s.HGet("entry:f20c860d2ea007ea2360c6ebe2d943acc8a531412c18ff3bd47ab1449988aa6d", "updated"), ShouldEqual, now)
 			})
 		})
+
+		Convey("Set", func() {
+			Convey("nil", func() {
+				rsp, err := srv.Set(ctx, nil)
+				So(err, ShouldErrLike, "policy is required")
+				So(rsp, ShouldBeNil)
+			})
+
+			Convey("empty", func() {
+				req := &pb.SetRequest{}
+				rsp, err := srv.Set(ctx, req)
+				So(err, ShouldErrLike, "policy is required")
+				So(rsp, ShouldBeNil)
+			})
+
+			Convey("negative", func() {
+				req := &pb.SetRequest{
+					Policy:    "quota",
+					Resources: -1,
+				}
+				rsp, err := srv.Set(ctx, req)
+				So(err, ShouldErrLike, "resources must not be negative")
+				So(rsp, ShouldBeNil)
+			})
+
+			Convey("not found", func() {
+				req := &pb.SetRequest{
+					Policy: "quota/user",
+				}
+
+				rsp, err := srv.Set(ctx, req)
+				So(err, ShouldErrLike, "not found")
+				So(rsp, ShouldBeNil)
+			})
+
+			Convey("user unspecified", func() {
+				req := &pb.SetRequest{
+					Policy: "quota/${user}",
+				}
+
+				rsp, err := srv.Set(ctx, req)
+				So(err, ShouldErrLike, "user not specified")
+				So(rsp, ShouldBeNil)
+			})
+
+			Convey("new", func() {
+				req := &pb.SetRequest{
+					Policy:    "quota",
+					Resources: 2,
+				}
+
+				rsp, err := srv.Set(ctx, req)
+				So(err, ShouldBeNil)
+				So(rsp, ShouldResemble, &pb.QuotaEntry{
+					Name:      "quota",
+					DbName:    "entry:b878a6801d9a9e68b30ed63430bb5e0bddcd984a37a3ee385abc27ff031c7fe7",
+					Resources: 2,
+				})
+
+				So(s.Keys(), ShouldResemble, []string{
+					"entry:b878a6801d9a9e68b30ed63430bb5e0bddcd984a37a3ee385abc27ff031c7fe7",
+					"entry:f20c860d2ea007ea2360c6ebe2d943acc8a531412c18ff3bd47ab1449988aa6d",
+				})
+				So(s.HGet("entry:b878a6801d9a9e68b30ed63430bb5e0bddcd984a37a3ee385abc27ff031c7fe7", "resources"), ShouldEqual, "2")
+				So(s.HGet("entry:b878a6801d9a9e68b30ed63430bb5e0bddcd984a37a3ee385abc27ff031c7fe7", "updated"), ShouldEqual, now)
+			})
+
+			Convey("existing", func() {
+				req := &pb.SetRequest{
+					Policy:    "quota/${user}",
+					User:      "user@example.com",
+					Resources: 2,
+				}
+
+				rsp, err := srv.Set(ctx, req)
+				So(err, ShouldBeNil)
+				So(rsp, ShouldResemble, &pb.QuotaEntry{
+					Name:      "quota/user@example.com",
+					DbName:    "entry:f20c860d2ea007ea2360c6ebe2d943acc8a531412c18ff3bd47ab1449988aa6d",
+					Resources: 2,
+				})
+
+				So(s.Keys(), ShouldResemble, []string{
+					"entry:f20c860d2ea007ea2360c6ebe2d943acc8a531412c18ff3bd47ab1449988aa6d",
+				})
+				So(s.HGet("entry:f20c860d2ea007ea2360c6ebe2d943acc8a531412c18ff3bd47ab1449988aa6d", "resources"), ShouldEqual, "2")
+				So(s.HGet("entry:f20c860d2ea007ea2360c6ebe2d943acc8a531412c18ff3bd47ab1449988aa6d", "updated"), ShouldEqual, now)
+			})
+
+			Convey("zero", func() {
+				req := &pb.SetRequest{
+					Policy: "quota/${user}",
+					User:   "user@example.com",
+				}
+
+				rsp, err := srv.Set(ctx, req)
+				So(err, ShouldBeNil)
+				So(rsp, ShouldResemble, &pb.QuotaEntry{
+					Name:   "quota/user@example.com",
+					DbName: "entry:f20c860d2ea007ea2360c6ebe2d943acc8a531412c18ff3bd47ab1449988aa6d",
+				})
+
+				So(s.Keys(), ShouldResemble, []string{
+					"entry:f20c860d2ea007ea2360c6ebe2d943acc8a531412c18ff3bd47ab1449988aa6d",
+				})
+				So(s.HGet("entry:f20c860d2ea007ea2360c6ebe2d943acc8a531412c18ff3bd47ab1449988aa6d", "resources"), ShouldEqual, "0")
+				So(s.HGet("entry:f20c860d2ea007ea2360c6ebe2d943acc8a531412c18ff3bd47ab1449988aa6d", "updated"), ShouldEqual, now)
+			})
+
+			Convey("excessive", func() {
+				req := &pb.SetRequest{
+					Policy:    "quota",
+					Resources: 10,
+				}
+
+				rsp, err := srv.Set(ctx, req)
+				So(err, ShouldBeNil)
+				So(rsp, ShouldResemble, &pb.QuotaEntry{
+					Name:      "quota",
+					DbName:    "entry:b878a6801d9a9e68b30ed63430bb5e0bddcd984a37a3ee385abc27ff031c7fe7",
+					Resources: 2,
+				})
+
+				// Ensure resources were capped in the database.
+				So(s.Keys(), ShouldResemble, []string{
+					"entry:b878a6801d9a9e68b30ed63430bb5e0bddcd984a37a3ee385abc27ff031c7fe7",
+					"entry:f20c860d2ea007ea2360c6ebe2d943acc8a531412c18ff3bd47ab1449988aa6d",
+				})
+				So(s.HGet("entry:b878a6801d9a9e68b30ed63430bb5e0bddcd984a37a3ee385abc27ff031c7fe7", "resources"), ShouldEqual, "2")
+				So(s.HGet("entry:b878a6801d9a9e68b30ed63430bb5e0bddcd984a37a3ee385abc27ff031c7fe7", "updated"), ShouldEqual, now)
+			})
+		})
 	})
 }

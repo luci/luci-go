@@ -39,3 +39,20 @@ func (s *DecoratedQuotaAdmin) Get(ctx context.Context, req *GetRequest) (rsp *Qu
 	}
 	return
 }
+
+func (s *DecoratedQuotaAdmin) Set(ctx context.Context, req *SetRequest) (rsp *QuotaEntry, err error) {
+	if s.Prelude != nil {
+		var newCtx context.Context
+		newCtx, err = s.Prelude(ctx, "Set", req)
+		if err == nil {
+			ctx = newCtx
+		}
+	}
+	if err == nil {
+		rsp, err = s.Service.Set(ctx, req)
+	}
+	if s.Postlude != nil {
+		err = s.Postlude(ctx, "Set", rsp, err)
+	}
+	return
+}
