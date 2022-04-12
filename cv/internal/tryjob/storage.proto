@@ -180,6 +180,10 @@ message Result {
   message Buildbucket {
     int64 id = 1;
     buildbucket.v2.Status status = 2;
+
+    // SummaryMarkdown is a field containing a human readable summary of the
+    // build's result.
+    string summary_markdown = 3;
   }
 }
 

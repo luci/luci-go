@@ -116,8 +116,9 @@ func toTryjobStatusAndResult(ctx context.Context, b *bbpb.Build) (tryjob.Status,
 		UpdateTime: b.UpdateTime,
 		Backend: &tryjob.Result_Buildbucket_{
 			Buildbucket: &tryjob.Result_Buildbucket{
-				Id:     b.Id,
-				Status: b.Status,
+				Id:              b.Id,
+				Status:          b.Status,
+				SummaryMarkdown: b.SummaryMarkdown,
 			},
 		},
 	}
