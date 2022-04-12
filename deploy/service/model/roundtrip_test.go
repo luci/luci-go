@@ -50,6 +50,17 @@ func TestRoundTrip(t *testing.T) {
 			return ent.Asset
 		}
 
+		history := func(assetID string, historyID int64) *modelpb.AssetHistory {
+			ent := &AssetHistory{
+				ID:     historyID,
+				Parent: datastore.NewKey(ctx, "Asset", assetID, 0, nil),
+			}
+			if datastore.Get(ctx, ent) == datastore.ErrNoSuchEntity {
+				return nil
+			}
+			return ent.Entry
+		}
+
 		intendedState := func(payload string, traffic int32) *modelpb.AssetState {
 			return &modelpb.AssetState{
 				State: &modelpb.AssetState_Appengine{
@@ -137,6 +148,87 @@ func TestRoundTrip(t *testing.T) {
 			So(asset1.LastActuateActuation.Id, ShouldEqual, "old-actuation")
 			So(asset2.LastActuateActuation.Id, ShouldEqual, "new-actuation")
 			So(asset2.LastActuateActuation.State, ShouldEqual, modelpb.Actuation_SUCCEEDED)
+		})
+
+		Convey("Crashing actuation", func() {
+			store(&modelpb.Asset{
+				Id:           "apps/app",
+				AppliedState: intendedState("app", 0),
+			})
+
+			beginOp, err := NewActuationBeginOp(ctx, []string{"apps/app"}, &modelpb.Actuation{
+				Id: "actuation-0",
+			})
+			So(err, ShouldBeNil)
+
+			// ACTUATE_STALE decision.
+			beginOp.MakeDecision(ctx, "apps/app", &rpcpb.AssetToActuate{
+				Config:        &modelpb.AssetConfig{EnableAutomation: true},
+				IntendedState: intendedState("app", 500),
+				ReportedState: reportedState("app", 0),
+			})
+			_, err = beginOp.Apply(ctx)
+			So(err, ShouldBeNil)
+
+			// The asset points to this actuation.
+			asset := fetch("apps/app")
+			So(asset.LastActuation.Id, ShouldEqual, "actuation-0")
+			So(asset.LastActuateActuation.Id, ShouldEqual, "actuation-0")
+
+			// Another actuation starts before the previous one finishes.
+			beginOp, err = NewActuationBeginOp(ctx, []string{"apps/app"}, &modelpb.Actuation{
+				Id: "actuation-1",
+			})
+			So(err, ShouldBeNil)
+
+			// ACTUATE_STALE decision.
+			beginOp.MakeDecision(ctx, "apps/app", &rpcpb.AssetToActuate{
+				Config:        &modelpb.AssetConfig{EnableAutomation: true},
+				IntendedState: intendedState("app", 500),
+				ReportedState: reportedState("app", 0),
+			})
+			_, err = beginOp.Apply(ctx)
+			So(err, ShouldBeNil)
+
+			// The asset points to the new actuation.
+			asset = fetch("apps/app")
+			So(asset.LastActuation.Id, ShouldEqual, "actuation-1")
+			So(asset.LastActuateActuation.Id, ShouldEqual, "actuation-1")
+
+			// There's a history log that points to the crashed actuation.
+			hist := history("apps/app", 1)
+			So(hist.Actuation.Id, ShouldEqual, "actuation-0")
+			So(hist.Actuation.State, ShouldEqual, modelpb.Actuation_EXPIRED)
+
+			// Finish the stale actuation, it should be a noop.
+			actuation := &Actuation{ID: "actuation-0"}
+			So(datastore.Get(ctx, actuation), ShouldBeNil)
+			endOp, err := NewActuationEndOp(ctx, actuation)
+			So(err, ShouldBeNil)
+			endOp.UpdateActuationStatus(ctx, nil, "")
+			endOp.HandleActuatedState(ctx, "apps/app", &rpcpb.ActuatedAsset{
+				State: reportedState("app", 777),
+			})
+			So(endOp.Apply(ctx), ShouldBeNil)
+
+			// No new history entries.
+			So(history("apps/app", 2), ShouldBeNil)
+
+			// Finish the active actuation.
+			actuation = &Actuation{ID: "actuation-1"}
+			So(datastore.Get(ctx, actuation), ShouldBeNil)
+			endOp, err = NewActuationEndOp(ctx, actuation)
+			So(err, ShouldBeNil)
+			endOp.UpdateActuationStatus(ctx, nil, "")
+			endOp.HandleActuatedState(ctx, "apps/app", &rpcpb.ActuatedAsset{
+				State: reportedState("app", 500),
+			})
+			So(endOp.Apply(ctx), ShouldBeNil)
+
+			// Have the new history log entry.
+			hist = history("apps/app", 2)
+			So(hist.Actuation.Id, ShouldEqual, "actuation-1")
+			So(hist.Actuation.State, ShouldEqual, modelpb.Actuation_SUCCEEDED)
 		})
 	})
 }

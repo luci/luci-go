@@ -110,11 +110,10 @@ func (op *ActuationEndOp) HandleActuatedState(ctx context.Context, assetID strin
 	}
 
 	// If was recording a history entry, close and commit it.
-	if ent.HistoryEntry != nil && ent.HistoryEntry.HistoryId == ent.LastHistoryID+1 {
+	if ent.isRecordingHistoryEntry() {
 		ent.HistoryEntry.Actuation = op.actuation.Actuation
 		ent.HistoryEntry.PostActuationState = reported
-		ent.LastHistoryID = ent.HistoryEntry.HistoryId
-		op.history = append(op.history, ent.HistoryEntry)
+		op.history = append(op.history, ent.finalizeHistoryEntry())
 	}
 }
 

@@ -149,6 +149,19 @@ func (op *ActuationBeginOp) MakeDecision(ctx context.Context, assetID string, as
 func (op *ActuationBeginOp) maybeUpdateHistory(entry *modelpb.AssetHistory) {
 	asset := op.assets[entry.AssetId]
 
+	// If had an open history entry, then the previous actuation (that was
+	// supposed to close it) probably crashed, i.e. it didn't call EndActuation.
+	// We should record this observation in the history log.
+	if asset.isRecordingHistoryEntry() {
+		asset.HistoryEntry.Actuation.State = modelpb.Actuation_EXPIRED
+		asset.HistoryEntry.Actuation.Finished = timestamppb.New(op.now)
+		asset.HistoryEntry.Actuation.Status = &statuspb.Status{
+			Code:    int32(codes.Unknown),
+			Message: "the actuation probably crashed: the asset was picked up by another actuation",
+		}
+		op.history = append(op.history, asset.finalizeHistoryEntry())
+	}
+
 	// Skip repeating uninteresting decisions e.g. a series of UPTODATE decisions.
 	// Otherwise the log would be full of them and it will be hard to find
 	// interesting ones.
