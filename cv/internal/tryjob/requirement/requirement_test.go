@@ -55,51 +55,56 @@ func TestMakeDefinition(t *testing.T) {
 		invalidShort := "d/e"
 		invalidLong := "f/g/h/i"
 
-		empty := ""
-
-		def := makeDefinition(valid, empty, false, nonCritical)
-		So(def, ShouldResembleProto, &tryjob.Definition{
-			Backend: &tryjob.Definition_Buildbucket_{
-				Buildbucket: &tryjob.Definition_Buildbucket{
-					Host: "cr-buildbucket.appspot.com",
-					Builder: &buildbucketpb.BuilderID{
-						Project: "a",
-						Bucket:  "b",
-						Builder: "c",
-					},
-				},
+		b := &config.Verifiers_Tryjob_Builder{
+			Name: valid,
+			EquivalentTo: &config.Verifiers_Tryjob_EquivalentBuilder{
+				Name: alternateValid,
 			},
+			ResultVisibility: config.CommentLevel_COMMENT_LEVEL_UNSET,
+		}
+
+		var def *tryjob.Definition
+
+		Convey("main only", func() {
+			Convey("flags off", func() {
+				def := makeDefinition(b, mainOnly, nonCritical)
+				So(def, ShouldResembleProto, &tryjob.Definition{
+					Backend: &tryjob.Definition_Buildbucket_{
+						Buildbucket: &tryjob.Definition_Buildbucket{
+							Host: "cr-buildbucket.appspot.com",
+							Builder: &buildbucketpb.BuilderID{
+								Project: "a",
+								Bucket:  "b",
+								Builder: "c",
+							},
+						},
+					},
+				})
+			})
+			Convey("flags on", func() {
+				b.ResultVisibility = config.CommentLevel_COMMENT_LEVEL_RESTRICTED
+				b.DisableReuse = true
+				def = makeDefinition(b, mainOnly, critical)
+				So(def, ShouldResembleProto, &tryjob.Definition{
+					DisableReuse:     true,
+					Critical:         true,
+					ResultVisibility: config.CommentLevel_COMMENT_LEVEL_RESTRICTED,
+					Backend: &tryjob.Definition_Buildbucket_{
+						Buildbucket: &tryjob.Definition_Buildbucket{
+							Host: "cr-buildbucket.appspot.com",
+							Builder: &buildbucketpb.BuilderID{
+								Project: "a",
+								Bucket:  "b",
+								Builder: "c",
+							},
+						},
+					},
+				})
+			})
 		})
-
-		def = makeDefinition(valid, empty, true, critical)
-		So(def, ShouldResembleProto, &tryjob.Definition{
-			DisableReuse: true,
-			Critical:     true,
-			Backend: &tryjob.Definition_Buildbucket_{
-				Buildbucket: &tryjob.Definition_Buildbucket{
-					Host: "cr-buildbucket.appspot.com",
-					Builder: &buildbucketpb.BuilderID{
-						Project: "a",
-						Bucket:  "b",
-						Builder: "c",
-					},
-				},
-			},
-		})
-
-		def = makeDefinition(valid, alternateValid, false, nonCritical)
-		So(def, ShouldResembleProto, &tryjob.Definition{
-			Backend: &tryjob.Definition_Buildbucket_{
-				Buildbucket: &tryjob.Definition_Buildbucket{
-					Host: "cr-buildbucket.appspot.com",
-					Builder: &buildbucketpb.BuilderID{
-						Project: "a",
-						Bucket:  "b",
-						Builder: "c",
-					},
-				},
-			},
-			EquivalentTo: &tryjob.Definition{
+		Convey("equivalent only", func() {
+			def = makeDefinition(b, equivalentOnly, nonCritical)
+			So(def, ShouldResembleProto, &tryjob.Definition{
 				Backend: &tryjob.Definition_Buildbucket_{
 					Buildbucket: &tryjob.Definition_Buildbucket{
 						Host: "cr-buildbucket.appspot.com",
@@ -110,12 +115,76 @@ func TestMakeDefinition(t *testing.T) {
 						},
 					},
 				},
-			},
+			})
 		})
-		So(func() { makeDefinition(empty, empty, false, nonCritical) }, ShouldPanicLike, "unexpectedly empty")
-		So(func() { makeDefinition(empty, valid, false, nonCritical) }, ShouldPanicLike, "unexpectedly empty")
-		So(func() { makeBuildbucketDefinition(invalidShort) }, ShouldPanicLike, "unexpected format")
-		So(func() { makeBuildbucketDefinition(invalidLong) }, ShouldPanicLike, "unexpected format")
+		Convey("both", func() {
+			def = makeDefinition(b, bothMainAndEquivalent, nonCritical)
+			So(def, ShouldResembleProto, &tryjob.Definition{
+				Backend: &tryjob.Definition_Buildbucket_{
+					Buildbucket: &tryjob.Definition_Buildbucket{
+						Host: "cr-buildbucket.appspot.com",
+						Builder: &buildbucketpb.BuilderID{
+							Project: "a",
+							Bucket:  "b",
+							Builder: "c",
+						},
+					},
+				},
+				EquivalentTo: &tryjob.Definition{
+					Backend: &tryjob.Definition_Buildbucket_{
+						Buildbucket: &tryjob.Definition_Buildbucket{
+							Host: "cr-buildbucket.appspot.com",
+							Builder: &buildbucketpb.BuilderID{
+								Project: "a",
+								Bucket:  "b",
+								Builder: "x",
+							},
+						},
+					},
+				},
+			})
+		})
+		Convey("flipped", func() {
+			def = makeDefinition(b, flipMainAndEquivalent, nonCritical)
+			So(def, ShouldResembleProto, &tryjob.Definition{
+				Backend: &tryjob.Definition_Buildbucket_{
+					Buildbucket: &tryjob.Definition_Buildbucket{
+						Host: "cr-buildbucket.appspot.com",
+						Builder: &buildbucketpb.BuilderID{
+							Project: "a",
+							Bucket:  "b",
+							Builder: "x",
+						},
+					},
+				},
+				EquivalentTo: &tryjob.Definition{
+					Backend: &tryjob.Definition_Buildbucket_{
+						Buildbucket: &tryjob.Definition_Buildbucket{
+							Host: "cr-buildbucket.appspot.com",
+							Builder: &buildbucketpb.BuilderID{
+								Project: "a",
+								Bucket:  "b",
+								Builder: "c",
+							},
+						},
+					},
+				},
+			})
+		})
+		Convey("empty buildername in main", func() {
+			b.Name = ""
+			So(func() { makeDefinition(b, mainOnly, critical) }, ShouldPanicLike, "unexpectedly empty")
+		})
+		Convey("empty buildername in equivalent", func() {
+			b.EquivalentTo.Name = ""
+			So(func() { makeDefinition(b, equivalentOnly, critical) }, ShouldPanicLike, "unexpectedly empty")
+		})
+		Convey("short buildername", func() {
+			So(func() { makeBuildbucketDefinition(invalidShort) }, ShouldPanicLike, "unexpected format")
+		})
+		Convey("long buildername", func() {
+			So(func() { makeBuildbucketDefinition(invalidLong) }, ShouldPanicLike, "unexpected format")
+		})
 	})
 }
 

@@ -62,6 +62,11 @@ message Definition {
   // If true, this tryjob is deemed critical for the Run to succeed, i.e.
   // the Run will fail unless one of the attempts of this tryjob is successful.
   bool critical = 5;
+
+  // If set to restricted, CV should only post generic messages such as
+  //   "Build failed: https://ci.chromium.org/b/1234"
+  // and no summary markdown about tryjobs with this definition.
+  cv.config.CommentLevel result_visibility = 6;
 }
 
 // Requirement is what has to happen to verify a specific Run.

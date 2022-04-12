@@ -254,16 +254,37 @@ const (
 	nonCritical criticality = false
 )
 
+type equivalentUsage int
+
+const (
+	mainOnly equivalentUsage = iota
+	equivalentOnly
+	bothMainAndEquivalent
+	flipMainAndEquivalent
+)
+
 // makeDefinition creates a Tryjob Definition for the given builder names and
 // reuse flag.
-func makeDefinition(builderName, equivalentBuilderName string, disableReuse bool, isCritical criticality) *tryjob.Definition {
-	definition := makeBuildbucketDefinition(builderName)
-
-	definition.DisableReuse = disableReuse
-	if equivalentBuilderName != "" {
-		definition.EquivalentTo = makeBuildbucketDefinition(equivalentBuilderName)
+func makeDefinition(builder *config.Verifiers_Tryjob_Builder, useEquivalent equivalentUsage, isCritical criticality) *tryjob.Definition {
+	var definition *tryjob.Definition
+	switch useEquivalent {
+	case mainOnly:
+		definition = makeBuildbucketDefinition(builder.Name)
+	case equivalentOnly:
+		definition = makeBuildbucketDefinition(builder.EquivalentTo.Name)
+	case bothMainAndEquivalent:
+		definition = makeBuildbucketDefinition(builder.Name)
+		definition.EquivalentTo = makeBuildbucketDefinition(builder.EquivalentTo.Name)
+	case flipMainAndEquivalent:
+		definition = makeBuildbucketDefinition(builder.EquivalentTo.Name)
+		definition.EquivalentTo = makeBuildbucketDefinition(builder.Name)
+	default:
+		panic(fmt.Errorf("unknown useEquivalent(%d)", useEquivalent))
 	}
+	definition.DisableReuse = builder.DisableReuse
 	definition.Critical = bool(isCritical)
+	definition.ResultVisibility = builder.ResultVisibility
+	definition.SkipStaleCheck = builder.GetCancelStale() == config.Toggle_NO
 	return definition
 }
 
@@ -468,26 +489,28 @@ func Compute(ctx context.Context, in Input) (*ComputationResult, error) {
 		case r == skipBuilder:
 		case r == includeBuilderExplicitly:
 			// The builder was explicitly included.
-			ret.Requirement.Definitions = append(ret.Requirement.Definitions, makeDefinition(builder.Name, "", builder.DisableReuse, critical))
+			ret.Requirement.Definitions = append(ret.Requirement.Definitions, makeDefinition(builder, mainOnly, critical))
 		case r == includeEquivalentExplicitly:
 			// The equivalent builder was explicitly included.
-			ret.Requirement.Definitions = append(ret.Requirement.Definitions, makeDefinition(builder.EquivalentTo.Name, "", builder.DisableReuse, critical))
+			ret.Requirement.Definitions = append(ret.Requirement.Definitions, makeDefinition(builder, equivalentOnly, critical))
 		default:
-			triggerBuilder := builder.Name
-			equiBuilder := ""
+			equivalence := mainOnly
 			if builder.EquivalentTo != nil && !in.RunOptions.SkipEquivalentBuilders {
-				equiBuilder = builder.EquivalentTo.Name
+				equivalence = bothMainAndEquivalent
 				switch disallowedOwners, err := getDisallowedOwners(ctx, allOwnerEmails, builder.EquivalentTo.OwnerWhitelistGroup); {
 				case err != nil:
 					return nil, err
 				case len(disallowedOwners) == 0:
 					if equivalentBuilderRand.Float32()*100 <= builder.EquivalentTo.Percentage {
 						// invert equivalence: trigger equivalent, but accept reusing original too.
-						triggerBuilder, equiBuilder = equiBuilder, triggerBuilder
+						equivalence = flipMainAndEquivalent
 					}
+				default:
+					// Not allowed to use equivalent.
+					equivalence = mainOnly
 				}
 			}
-			ret.Requirement.Definitions = append(ret.Requirement.Definitions, makeDefinition(triggerBuilder, equiBuilder, builder.DisableReuse, builder.ExperimentPercentage == 0))
+			ret.Requirement.Definitions = append(ret.Requirement.Definitions, makeDefinition(builder, equivalence, builder.ExperimentPercentage == 0))
 		}
 	}
 	return ret, nil
