@@ -372,10 +372,6 @@ message Builder {
   //     auto_builder_dimension: YES
   //   }
   //
-  // We've considered providing interpolation like this
-  //   builder_defaults {
-  //     dimensions: "builder:${BUILDER}"
-  //   }
   // (see also http://docs.buildbot.net/0.8.9/manual/cfg-properties.html#interpolate)
   // but are currently against complicating config with this.
   Toggle auto_builder_dimension = 17;
@@ -449,17 +445,9 @@ message Builder {
 
 // Configuration of buildbucket-swarming integration for one bucket.
 message Swarming {
-  // DEPRECATED. Use builder_defaults.swarming_host instead.
-  // Setting this fields sets builder_defaults.swarming_host.
-  string hostname = 1;
-  // DEPRECATED, IGNORED.
-  // Used to generate a URL for Build, may contain parameters
-  // {swarming_hostname}, {task_id}, {bucket} and {builder}. Defaults to:
-  // https://{swarming_hostname}/user/task/{task_id}
-  string url_format = 2;
-
-  // DEPRECATED.
-  Builder builder_defaults = 3;
+  reserved 1; // hostname
+  reserved 2; // url_format
+  reserved 3; // builder_defaults
 
   // Configuration for each builder.
   // Swarming tasks are created only for builds for builders that are not

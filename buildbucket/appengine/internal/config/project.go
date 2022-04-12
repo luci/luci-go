@@ -117,9 +117,6 @@ func validateProjectSwarming(ctx *validation.Context, s *pb.Swarming, wellKnownE
 	if s.GetTaskTemplateCanaryPercentage().GetValue() > 100 {
 		ctx.Errorf("task_template_canary_percentage.value must must be in [0, 100]")
 	}
-	if builderDefaults := s.BuilderDefaults; builderDefaults != nil {
-		ctx.Errorf("builder_defaults: deprecated (use go/lucicfg)")
-	}
 
 	builderNames := stringset.New(len(s.Builders))
 	for i, b := range s.Builders {

@@ -348,7 +348,6 @@ func TestProject(t *testing.T) {
 					}
 					swarming_tags: "wrong"
 				}
-				builder_defaults {name: "x"}
 				builders {
 					name: "another"
 					swarming_host: "example.com"
@@ -363,13 +362,12 @@ func TestProject(t *testing.T) {
 			validateProjectSwarming(vctx, toBBSwarmingCfg(content), wellKnownExperiments)
 			ve, ok := vctx.Finalize().(*validation.Error)
 			So(ok, ShouldEqual, true)
-			So(len(ve.Errors), ShouldEqual, 6)
+			So(len(ve.Errors), ShouldEqual, 5)
 			So(ve.Errors[0].Error(), ShouldContainSubstring, "task_template_canary_percentage.value must must be in [0, 100]")
-			So(ve.Errors[1].Error(), ShouldContainSubstring, "builder_defaults: deprecated (use go/lucicfg)")
-			So(ve.Errors[2].Error(), ShouldContainSubstring, "(swarming / builders #1 - meep / swarming_tags #0): Deprecated. Used only to enable \"vpython:native-python-wrapper\"")
-			So(ve.Errors[3].Error(), ShouldContainSubstring, "(swarming / builders #1 - meep): name: duplicate")
-			So(ve.Errors[4].Error(), ShouldContainSubstring, "priority: must be in [20, 255] range; got 300")
-			So(ve.Errors[5].Error(), ShouldContainSubstring, `service_account "not an email" doesn't match "^[0-9a-zA-Z_\\-\\.\\+\\%]+@[0-9a-zA-Z_\\-\\.]+$"`)
+			So(ve.Errors[1].Error(), ShouldContainSubstring, "(swarming / builders #1 - meep / swarming_tags #0): Deprecated. Used only to enable \"vpython:native-python-wrapper\"")
+			So(ve.Errors[2].Error(), ShouldContainSubstring, "(swarming / builders #1 - meep): name: duplicate")
+			So(ve.Errors[3].Error(), ShouldContainSubstring, "priority: must be in [20, 255] range; got 300")
+			So(ve.Errors[4].Error(), ShouldContainSubstring, `service_account "not an email" doesn't match "^[0-9a-zA-Z_\\-\\.\\+\\%]+@[0-9a-zA-Z_\\-\\.]+$"`)
 		})
 
 		Convey("bad caches in builders cfg", func() {
