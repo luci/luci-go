@@ -114,7 +114,7 @@ func (op *ActuationBeginOp) MakeDecision(ctx context.Context, assetID string, as
 	// Make the actual decision.
 	var decision modelpb.ActuationDecision_Decision
 	switch {
-	case !IsActuationEnabed(asset.Config, op.actuation.Deployment.Config):
+	case !IsActuationEnabed(asset.Config, op.actuation.Deployment.GetConfig()):
 		decision = modelpb.ActuationDecision_SKIP_DISABLED
 	case len(errors) != 0:
 		op.errors = append(op.errors, errors...)

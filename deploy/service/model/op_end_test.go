@@ -43,7 +43,13 @@ func TestActuationEndOp(t *testing.T) {
 		ctx = memory.Use(ctx)
 
 		Convey("Missing assets", func() {
-			_, err := NewActuationEndOp(ctx, []string{"apps/missing"}, &Actuation{})
+			_, err := NewActuationEndOp(ctx, &Actuation{
+				Decisions: &modelpb.ActuationDecisions{
+					Decisions: map[string]*modelpb.ActuationDecision{
+						"apps/missing": {Decision: modelpb.ActuationDecision_ACTUATE_STALE},
+					},
+				},
+			})
 			So(err, ShouldErrLike, "assets entities unexpectedly missing: apps/missing")
 		})
 
@@ -114,7 +120,7 @@ func TestActuationEndOp(t *testing.T) {
 			}
 			So(datastore.Put(ctx, assets), ShouldBeNil)
 
-			op, err := NewActuationEndOp(ctx, []string{"apps/app1", "apps/app2"}, &Actuation{
+			op, err := NewActuationEndOp(ctx, &Actuation{
 				ID: "actuation-id",
 				Actuation: &modelpb.Actuation{
 					Id:         "actuation-id",
@@ -122,6 +128,12 @@ func TestActuationEndOp(t *testing.T) {
 					Actuator:   mockedActuator,
 					State:      modelpb.Actuation_EXECUTING,
 					LogUrl:     "old-log-url",
+				},
+				Decisions: &modelpb.ActuationDecisions{
+					Decisions: map[string]*modelpb.ActuationDecision{
+						"apps/app1": {Decision: modelpb.ActuationDecision_ACTUATE_STALE},
+						"apps/app2": {Decision: modelpb.ActuationDecision_ACTUATE_STALE},
+					},
 				},
 			})
 			So(err, ShouldBeNil)

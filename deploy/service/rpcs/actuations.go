@@ -128,13 +128,16 @@ func (srv *Actuations) EndActuation(ctx context.Context, req *rpcpb.EndActuation
 			return nil
 		}
 
-		// The set of reported assets must match exactly the set in the actuation.
-		if !model.EqualStrSlice(assetIDs, act.AssetIDs()) {
-			return status.Errorf(codes.InvalidArgument, "the reported set of assets doesn't match the set reported to BeginActuation")
+		// The set of reported assets must match exactly the set of actively
+		// actuated assets as reported by the previous BeginActuation.
+		if expected := act.ActuatedAssetIDs(); !model.EqualStrSlice(assetIDs, expected) {
+			return status.Errorf(codes.InvalidArgument,
+				"the reported set of actuated assets doesn't match the set previously returned by BeginActuation: %q != %q",
+				assetIDs, expected)
 		}
 
 		// Mutate the state of all actuated assets.
-		op, err := model.NewActuationEndOp(ctx, assetIDs, act)
+		op, err := model.NewActuationEndOp(ctx, act)
 		if err != nil {
 			return errors.Annotate(err, "finalizing Actuation").Err()
 		}

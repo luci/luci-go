@@ -81,11 +81,27 @@ type Actuation struct {
 	Expiry time.Time
 }
 
-// AssetIDs is a sorted list of asset IDs actuated by this actuation.
+// AssetIDs is a sorted list of asset IDs reported in this actuation.
+//
+// Returns assets with any actuation decision, including all SKIP_* decisions.
 func (a *Actuation) AssetIDs() []string {
 	ids := make([]string, 0, len(a.Decisions.GetDecisions()))
 	for id := range a.Decisions.GetDecisions() {
 		ids = append(ids, id)
+	}
+	sort.Strings(ids)
+	return ids
+}
+
+// ActuatedAssetIDs is a sorted list of asset IDs that are being actuated.
+//
+// Only returns assets with ACTUATE_* decisions.
+func (a *Actuation) ActuatedAssetIDs() []string {
+	ids := make([]string, 0, len(a.Decisions.GetDecisions()))
+	for id, decision := range a.Decisions.GetDecisions() {
+		if isActuateDecision(decision.Decision) {
+			ids = append(ids, id)
+		}
 	}
 	sort.Strings(ids)
 	return ids

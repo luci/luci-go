@@ -1,0 +1,142 @@
+// Copyright 2022 The LUCI Authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+package model
+
+import (
+	"context"
+	"testing"
+	"time"
+
+	"go.chromium.org/luci/common/clock/testclock"
+	"go.chromium.org/luci/gae/impl/memory"
+	"go.chromium.org/luci/gae/service/datastore"
+
+	"go.chromium.org/luci/deploy/api/modelpb"
+	"go.chromium.org/luci/deploy/api/rpcpb"
+
+	. "github.com/smartystreets/goconvey/convey"
+)
+
+func TestRoundTrip(t *testing.T) {
+	t.Parallel()
+
+	Convey("With datastore", t, func() {
+		now := testclock.TestRecentTimeUTC.Round(time.Millisecond)
+		ctx, _ := testclock.UseTime(context.Background(), now)
+		ctx = memory.Use(ctx)
+
+		store := func(a *modelpb.Asset) {
+			So(datastore.Put(ctx, &Asset{
+				ID:    a.Id,
+				Asset: a,
+			}), ShouldBeNil)
+		}
+
+		fetch := func(assetID string) *modelpb.Asset {
+			ent := &Asset{ID: assetID}
+			So(datastore.Get(ctx, ent), ShouldBeNil)
+			return ent.Asset
+		}
+
+		intendedState := func(payload string, traffic int32) *modelpb.AssetState {
+			return &modelpb.AssetState{
+				State: &modelpb.AssetState_Appengine{
+					Appengine: mockedIntendedState(payload, traffic),
+				},
+			}
+		}
+
+		reportedState := func(payload string, traffic int32) *modelpb.AssetState {
+			return &modelpb.AssetState{
+				State: &modelpb.AssetState_Appengine{
+					Appengine: mockedReportedState(payload, traffic),
+				},
+			}
+		}
+
+		Convey("Two assets, one up-to-date", func() {
+			store(&modelpb.Asset{
+				Id:           "apps/app-1",
+				AppliedState: intendedState("app-1", 0),
+				LastActuateActuation: &modelpb.Actuation{
+					Id: "old-actuation",
+				},
+			})
+			store(&modelpb.Asset{
+				Id:           "apps/app-2",
+				AppliedState: intendedState("app-2", 0),
+				LastActuateActuation: &modelpb.Actuation{
+					Id: "old-actuation",
+				},
+			})
+
+			beginOp, err := NewActuationBeginOp(ctx, []string{"apps/app-1", "apps/app-2"}, &modelpb.Actuation{
+				Id: "new-actuation",
+			})
+			So(err, ShouldBeNil)
+
+			// SKIP_UPTODATE decision.
+			beginOp.MakeDecision(ctx, "apps/app-1", &rpcpb.AssetToActuate{
+				Config:        &modelpb.AssetConfig{EnableAutomation: true},
+				IntendedState: intendedState("app-1", 0),
+				ReportedState: reportedState("app-1", 0),
+			})
+			// ACTUATE_STALE decision.
+			beginOp.MakeDecision(ctx, "apps/app-2", &rpcpb.AssetToActuate{
+				Config:        &modelpb.AssetConfig{EnableAutomation: true},
+				IntendedState: intendedState("app-2", 500),
+				ReportedState: reportedState("app-2", 0),
+			})
+
+			_, err = beginOp.Apply(ctx)
+			So(err, ShouldBeNil)
+
+			asset1 := fetch("apps/app-1")
+			asset2 := fetch("apps/app-2")
+
+			// Both assets are associated with the actuation in EXECUTING state.
+			So(asset1.LastActuation.State, ShouldEqual, modelpb.Actuation_EXECUTING)
+			So(asset2.LastActuation.State, ShouldEqual, modelpb.Actuation_EXECUTING)
+
+			// LastActuateActuation changes only for the stale asset.
+			So(asset1.LastActuateActuation.Id, ShouldEqual, "old-actuation")
+			So(asset2.LastActuateActuation.Id, ShouldEqual, "new-actuation")
+			So(asset2.LastActuateActuation.State, ShouldEqual, modelpb.Actuation_EXECUTING)
+
+			// Finish the executing actuation.
+			actuation := &Actuation{ID: "new-actuation"}
+			So(datastore.Get(ctx, actuation), ShouldBeNil)
+			endOp, err := NewActuationEndOp(ctx, actuation)
+			So(err, ShouldBeNil)
+			endOp.UpdateActuationStatus(ctx, nil, "")
+			endOp.HandleActuatedState(ctx, "apps/app-2", &rpcpb.ActuatedAsset{
+				State: reportedState("app-2", 500),
+			})
+			So(endOp.Apply(ctx), ShouldBeNil)
+
+			asset1 = fetch("apps/app-1")
+			asset2 = fetch("apps/app-2")
+
+			// Both assets are associated with the actuation in SUCCEEDED state.
+			So(asset1.LastActuation.State, ShouldEqual, modelpb.Actuation_SUCCEEDED)
+			So(asset2.LastActuation.State, ShouldEqual, modelpb.Actuation_SUCCEEDED)
+
+			// LastActuateActuation changes only for the stale asset.
+			So(asset1.LastActuateActuation.Id, ShouldEqual, "old-actuation")
+			So(asset2.LastActuateActuation.Id, ShouldEqual, "new-actuation")
+			So(asset2.LastActuateActuation.State, ShouldEqual, modelpb.Actuation_SUCCEEDED)
+		})
+	})
+}

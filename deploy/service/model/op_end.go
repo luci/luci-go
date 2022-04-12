@@ -37,21 +37,34 @@ type ActuationEndOp struct {
 	assets    map[string]*Asset
 	history   []*modelpb.AssetHistory
 	now       time.Time
-
-	affected []*Asset // assets that were modified
 }
 
 // NewActuationEndOp starts a datastore operation to finish an actuation.
 //
 // Takes ownership of `actuation` mutating it.
-func NewActuationEndOp(ctx context.Context, assets []string, actuation *Actuation) (*ActuationEndOp, error) {
-	assetMap, err := fetchAssets(ctx, assets, true)
+func NewActuationEndOp(ctx context.Context, actuation *Actuation) (*ActuationEndOp, error) {
+	// Fetch all assets associated with this actuation in BeginActuation. We'll
+	// need to update their `Actuation` field with the final status of the
+	// actuation.
+	assets, err := fetchAssets(ctx, actuation.AssetIDs(), true)
 	if err != nil {
 		return nil, err
 	}
+
+	// Filter out assets that are already handled by another actuation. Can happen
+	// due to races, crashes, expirations, etc.
+	active := make(map[string]*Asset, len(assets))
+	for assetID, ent := range assets {
+		if ent.Asset.LastActuation.GetId() == actuation.ID {
+			active[assetID] = ent
+		} else {
+			logging.Warningf(ctx, "Skipping asset %q: it was already handled by another actuation %q", assetID, ent.Asset.LastActuation.GetId())
+		}
+	}
+
 	return &ActuationEndOp{
 		actuation: actuation,
-		assets:    assetMap,
+		assets:    active,
 		now:       clock.Now(ctx),
 	}, nil
 }
@@ -72,17 +85,16 @@ func (op *ActuationEndOp) UpdateActuationStatus(ctx context.Context, status *sta
 
 // HandleActuatedState is called to report the post-actuation asset state.
 //
-// Must be called once for every asset passed to NewActuationEndOp. Takes
-// ownership of `asset` mutating it.
+// Ignores assets not associated with this actuation anymore. Takes ownership
+// of `asset` mutating it.
 func (op *ActuationEndOp) HandleActuatedState(ctx context.Context, assetID string, asset *rpcpb.ActuatedAsset) {
-	// Skip assets that are already handled by another actuation. Can happen due
-	// to races, crashes, expirations, etc.
-	ent := op.assets[assetID]
-	if ent.Asset.LastActuation.GetId() != op.actuation.ID {
-		logging.Warningf(ctx, "Skipping asset %q: it was already handled by another actuation %q", assetID, ent.Asset.LastActuation.GetId())
+	// If the asset is not in `op.assets`, then it is already handled by another
+	// actuation and we should not modify it. Such assets were already logged in
+	// NewActuationEndOp.
+	ent, ok := op.assets[assetID]
+	if !ok {
 		return
 	}
-	op.affected = append(op.affected, ent)
 
 	reported := asset.State
 	if reported.Timestamp == nil {
@@ -110,8 +122,8 @@ func (op *ActuationEndOp) HandleActuatedState(ctx context.Context, assetID strin
 func (op *ActuationEndOp) Apply(ctx context.Context) error {
 	var toPut []interface{}
 
-	// Embed the Actuation snapshot into the affected Asset entities.
-	for _, ent := range op.affected {
+	// Embed the up-to-date Actuation snapshot into Asset entities.
+	for _, ent := range op.assets {
 		ent.Asset.LastActuation = op.actuation.Actuation
 		if ent.Asset.LastActuateActuation.GetId() == op.actuation.ID {
 			ent.Asset.LastActuateActuation = op.actuation.Actuation
@@ -122,7 +134,7 @@ func (op *ActuationEndOp) Apply(ctx context.Context) error {
 		toPut = append(toPut, ent)
 	}
 
-	// Update the actuation entity to match Actuation proto.
+	// Update the Actuation entity to match the Actuation proto.
 	op.actuation.State = op.actuation.Actuation.State
 	toPut = append(toPut, op.actuation)
 
