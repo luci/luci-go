@@ -66,7 +66,7 @@ func clonefile(src, dst string) error {
 
 	atFDCwd := unix.AT_FDCWD
 
-	if rv, _, err := unix.Syscall6(unix.SYS_CLONEFILEAT, uintptr(atFDCwd), uintptr(unsafe.Pointer(srcByte)), uintptr(atFDCwd), uintptr(unsafe.Pointer(dstByte)), unix.CLONE_NOFOLLOW|unix.CLONE_NOOWNERCOPY, 0); rv != 0 {
+	if _, _, err := unix.Syscall6(unix.SYS_CLONEFILEAT, uintptr(atFDCwd), uintptr(unsafe.Pointer(srcByte)), uintptr(atFDCwd), uintptr(unsafe.Pointer(dstByte)), unix.CLONE_NOFOLLOW|unix.CLONE_NOOWNERCOPY, 0); err != 0 {
 		return errors.Annotate(err, "failed to call clonefile").Err()
 	}
 	return nil
