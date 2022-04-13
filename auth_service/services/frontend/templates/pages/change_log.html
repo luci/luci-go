@@ -1,0 +1,34 @@
+{{define "title"}}CrIA v2{{end}}
+
+{{define "content"}}
+
+<script type="text/javascript" src="/static/js/change_log.js"></script>
+
+<template id="change-log-row-template">
+  <tr>
+    <td class="change-log-rev"></td>
+    <td class="change-log-type"></td>
+    <td class="change-log-when"></td>
+    <td class="change-log-who"></td>
+    <td class="change-log-target"></td>
+  </tr>
+</template>
+
+<div class="container">
+  <table class="table table-hover">
+    <thead>
+      <tr>
+        <th scope="col" style="width: 80px">Rev</th>
+        <th scope="col" style="width: 250px">Change</th>
+        <th scope="col" style="width: 200px">When</th>
+        <th scope="col" style="width: 280px">Who</th>
+        <th>What</th>
+      </tr>
+    </thead>
+    <tbody id="change-log-content">
+      <!-- Load change-log-row-template -->
+    </tbody>
+  </table>
+</div>
+
+{{end}}

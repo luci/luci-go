@@ -41,6 +41,7 @@ import (
 	"go.chromium.org/luci/auth_service/impl/servers/accounts"
 	"go.chromium.org/luci/auth_service/impl/servers/allowlists"
 	"go.chromium.org/luci/auth_service/impl/servers/authdb"
+	"go.chromium.org/luci/auth_service/impl/servers/changelogs"
 	"go.chromium.org/luci/auth_service/impl/servers/groups"
 	"go.chromium.org/luci/auth_service/impl/servers/internals"
 
@@ -97,6 +98,7 @@ func main() {
 		rpcpb.RegisterGroupsServer(srv.PRPC, &groups.Server{})
 		rpcpb.RegisterAllowlistsServer(srv.PRPC, &allowlists.Server{})
 		rpcpb.RegisterAuthDBServer(srv.PRPC, &authdb.Server{})
+		rpcpb.RegisterChangeLogsServer(srv.PRPC, &changelogs.Server{})
 
 		// The middleware chain applied to all plain HTTP routes.
 		mw := router.MiddlewareChain{
@@ -111,6 +113,9 @@ func main() {
 		})
 		srv.Routes.GET("/groups", mw, func(ctx *router.Context) {
 			templates.MustRender(ctx.Context, ctx.Writer, "pages/groups.html", nil)
+		})
+		srv.Routes.GET("/change_log", mw, func(ctx *router.Context) {
+			templates.MustRender(ctx.Context, ctx.Writer, "pages/change_log.html", nil)
 		})
 		srv.Routes.GET("/ip_allowlists", mw, func(ctx *router.Context) {
 			templates.MustRender(ctx.Context, ctx.Writer, "pages/ip_allowlists.html", nil)

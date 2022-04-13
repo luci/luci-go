@@ -152,6 +152,11 @@ var api = (function() {
     return call('auth.service.Allowlists', 'ListAllowlists');
   };
 
+  // Get all changeLogs.
+  exports.changeLogs = function() {
+    return call('auth.service.ChangeLogs', 'ListChangeLogs')
+  }
+
   //// XSRF token utilities.
 
 
