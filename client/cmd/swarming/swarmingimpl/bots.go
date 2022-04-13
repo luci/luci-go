@@ -57,7 +57,8 @@ func (b *botsRun) Init(authFlags AuthFlags) {
 	b.commonFlags.Init(authFlags)
 	b.Flags.StringVar(&b.outfile, "json", "", "Path to output JSON results. Implies quiet.")
 	b.Flags.Var(&b.dimensions, "dimension", "Dimension to select the right kind of bot. In the form of `key=value`")
-	b.Flags.Var(flag.FieldSlice(&b.fields), "field", "Fields to include in a partial response. May be repeated.")
+	b.Flags.Var(flag.FieldSlice(&b.fields), "field", `Fields to include in a partial response. May be repeated.
+See https://pkg.go.dev/google.golang.org/api/googleapi#Field for more explanation`)
 	b.Flags.BoolVar(&b.count, "count", false, "Report the count of bots instead of listing them.")
 }
 
