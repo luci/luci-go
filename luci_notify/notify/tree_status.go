@@ -500,6 +500,7 @@ var messages = []string{
 	"ヽ(^o^)ノ",
 	"Ahoy all is good!",
 	"All's right with the world!",
+	"Aloha",
 }
 
 func randomMessage(c context.Context) string {
