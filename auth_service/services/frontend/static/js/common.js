@@ -34,5 +34,15 @@ var common = (function () {
     return (new Date(utc)).toLocaleString();
   };
 
+  // Returns URL to a change log page for a given target.
+  exports.getChangeLogTargetURL = (kind, name) => {
+    return '/change_log?target=' + encodeURIComponent(kind + '$' + name);
+  };
+
+  // Returns URL to a change log page for a given revision.
+  exports.getChangeLogRevisionURL = (rev) => {
+    return '/change_log?auth_db_rev=' + encodeURIComponent('' + rev);
+  };
+
   return exports;
 })();

@@ -33,23 +33,63 @@ class ChangeLogContent {
   }
 
   setChangeLogList(logs) {
+    const parseTarget = (t) => {
+      var kind = t.split('$', 1)[0];
+      var name = t.substring(kind.length + 1);
+
+      // Recognize some known targets.
+      var title = name;
+      var targetURL = null;
+      switch (kind) {
+        case 'AuthGroup':
+          targetURL = '/groups/' + name;
+          break;
+        case 'AuthIPWhitelist':
+          targetURL = '/ip_allowlists';
+          break;
+        case 'AuthIPWhitelistAssignments':
+          title = 'IP allowlist assignment';
+          targetURL = '/ip_allowlists';
+          break;
+        case 'AuthGlobalConfig':
+          title = 'Global config';
+          targetURL = '/oauth_config';
+          break;
+        case 'AuthRealmsGlobals':
+          title = 'Realms config';
+          break;
+      }
+
+      return {
+        kind: kind,
+        name: name,
+        title: title,
+        changeLogTargetURL: common.getChangeLogTargetURL(kind, name),
+        targetURL: targetURL
+      };
+    }
+
     const addElement = (log) => {
       if ('content' in document.createElement('template')) {
         var template = document.querySelector('#change-log-row-template')
 
         // Clone and grab elements to modify.
         var clone = template.content.cloneNode(true);
-        var rev = clone.querySelector('td.change-log-rev');
+        var rev = clone.querySelector('td.change-log-rev a');
         var type = clone.querySelector('td.change-log-type');
         var when = clone.querySelector('td.change-log-when');
         var who = clone.querySelector('td.change-log-who');
+        var target = clone.querySelector('td.change-log-target a');
 
         // Modify contents and append to parent.
+        var t = parseTarget(log.target);
+        rev.href = common.getChangeLogRevisionURL(log.authDbRev);
         rev.textContent = 'r' + log.authDbRev;
         type.textContent = log.changeType;
         when.textContent = common.utcTimestampToString(log.when);
         who.textContent = common.stripPrefix('user', log.who);
-        // TODO: modify and append target's content.
+        target.href = t.changeLogTargetURL;
+        target.textContent = t.title;
 
         this.element.appendChild(clone);
       } else {
