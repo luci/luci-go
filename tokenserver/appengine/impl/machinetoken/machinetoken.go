@@ -96,7 +96,7 @@ func (p *MintParams) MachineFQDN() (string, error) {
 	switch {
 	case dns == "":
 		return cn, nil
-	case !strings.HasPrefix(dns, cn+"."):
+	case dns != cn && !strings.HasPrefix(dns, cn+"."):
 		return "", fmt.Errorf("unsupported cert, the CN (%q) should match hostname portion of the SAN DNS (%q)", cn, dns)
 	}
 	return dns, nil

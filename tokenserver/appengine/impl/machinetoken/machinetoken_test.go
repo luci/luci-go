@@ -25,7 +25,7 @@ import (
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/server/auth/signing"
 
-	"go.chromium.org/luci/tokenserver/api"
+	tokenserver "go.chromium.org/luci/tokenserver/api"
 	"go.chromium.org/luci/tokenserver/api/admin/v1"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -49,6 +49,13 @@ func TestMachineFQDN(t *testing.T) {
 		fqdn, err := params.MachineFQDN()
 		So(err, ShouldBeNil)
 		So(fqdn, ShouldEqual, "fuchsia-debian-dev-141242e1-us-central1-f-0psd.c.fuchsia-infra.internal")
+	})
+
+	Convey("MachineFQDN works for cert where CN == SAN", t, func() {
+		params := MintParams{Cert: getTestCert(certWithCNEqualSAN)}
+		fqdn, err := params.MachineFQDN()
+		So(err, ShouldBeNil)
+		So(fqdn, ShouldEqual, "proto-chrome-focal.c.chromecompute.google.com.internal")
 	})
 
 	// Test some synthetic cases.
