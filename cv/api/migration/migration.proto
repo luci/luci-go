@@ -23,7 +23,7 @@ option go_package = "go.chromium.org/luci/cv/api/migration;migrationpb";
 import "google/protobuf/empty.proto";
 import "google/protobuf/timestamp.proto";
 
-import "go.chromium.org/luci/buildbucket/proto/builder.proto";
+import "go.chromium.org/luci/buildbucket/proto/builder_common.proto";
 import "go.chromium.org/luci/common/proto/gerrit/gerrit.proto";
 import "go.chromium.org/luci/cv/api/bigquery/v1/attempt.proto";
 

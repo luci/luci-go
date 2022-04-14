@@ -1831,11 +1831,15 @@ func (x *Verifiers_Tryjob_RetryConfig) GetTimeoutWeight() int32 {
 // deleted.
 //
 // The Gerrit host, Gerrit project and file path are matched against the
-// respective patterns in the LocationFilter. If the last LocationFilter
-// that match all patterns (host, project, and path) is an include rule
-// (i.e. the exclude field is set to false), then the file is considered
-// included; otherwise it's excluded. If at least one file is included,
-// then the builder will be triggered.
+// respective patterns in the LocationFilter. The last LocationFilter
+// that match all patterns (host, project, and path) determines whether
+// the the file is considered included, i.e. if the last matching
+// LocationFilter has exclude set to false, then it's included; else
+// included.
+//
+// If none of the LocationFilters match, then the file is considered
+// included if the first rule is an exclude rule; else the file is
+// excluded.
 //
 // If host, project or path are empty, then they will match anything
 // (".*") by default. The syntax for regular expressions is Google's re2

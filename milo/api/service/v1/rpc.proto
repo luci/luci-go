@@ -18,7 +18,7 @@ package luci.milo.v1;
 
 import "go.chromium.org/luci/common/proto/git/commit.proto";
 import "go.chromium.org/luci/buildbucket/proto/build.proto";
-import "go.chromium.org/luci/buildbucket/proto/builder.proto";
+import "go.chromium.org/luci/buildbucket/proto/builder_common.proto";
 import "go.chromium.org/luci/buildbucket/proto/common.proto";
 import "go.chromium.org/luci/milo/api/config/project.proto";
 
