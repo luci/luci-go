@@ -208,8 +208,8 @@ def _builder(
         the configuration of luci.gitiles_poller(...) that trigger this builder
         if they all poll the same repo.
 
-      resultdb_settings: A buildbucket_pb.Builder.ResultDB, such as one created
-        with resultdb.settings(...). A configuration that defines if
+      resultdb_settings: A buildbucket_pb.BuilderConfig.ResultDB, such as one
+        created with resultdb.settings(...). A configuration that defines if
         Buildbucket:ResultDB integration should be enabled for this builder and
         which results to export to BigQuery.
       test_presentation: A resultdb.test_presentation(...) struct. A

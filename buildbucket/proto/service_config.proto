@@ -49,7 +49,7 @@ message SwarmingSettings {
 
   // These caches are available to all builders implicitly.
   // A builder may override a cache specified here.
-  repeated Builder.CacheEntry global_caches = 4;
+  repeated BuilderConfig.CacheEntry global_caches = 4;
 
   // CIPD package. Does not specify installation path.
   message Package {

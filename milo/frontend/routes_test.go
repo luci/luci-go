@@ -345,7 +345,7 @@ func builderPageData() []TestBundle {
 						Id: &buildbucketpb.BuilderID{
 							Builder: "linux-rel",
 						},
-						Config: &buildbucketpb.Builder{
+						Config: &buildbucketpb.BuilderConfig{
 							DescriptionHtml: "this is a builder",
 						},
 					},

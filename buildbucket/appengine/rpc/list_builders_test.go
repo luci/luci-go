@@ -90,7 +90,7 @@ func TestListBuilders(t *testing.T) {
 				&model.Builder{
 					Parent: model.BucketKey(ctx, "project", "bucket"),
 					ID:     "builder1",
-					Config: &pb.Builder{Name: "builder"},
+					Config: &pb.BuilderConfig{Name: "builder"},
 				},
 			), ShouldBeNil)
 
@@ -122,17 +122,17 @@ func TestListBuilders(t *testing.T) {
 				&model.Builder{
 					Parent: model.BucketKey(ctx, "project", "bucket1"),
 					ID:     "builder1",
-					Config: &pb.Builder{Name: "builder1"},
+					Config: &pb.BuilderConfig{Name: "builder1"},
 				},
 				&model.Builder{
 					Parent: model.BucketKey(ctx, "project", "bucket1"),
 					ID:     "builder2",
-					Config: &pb.Builder{Name: "builder2"},
+					Config: &pb.BuilderConfig{Name: "builder2"},
 				},
 				&model.Builder{
 					Parent: model.BucketKey(ctx, "project", "bucket1"),
 					ID:     "builder3",
-					Config: &pb.Builder{Name: "builder3"},
+					Config: &pb.BuilderConfig{Name: "builder3"},
 				},
 
 				// Bucket without permission
@@ -144,7 +144,7 @@ func TestListBuilders(t *testing.T) {
 				&model.Builder{
 					Parent: model.BucketKey(ctx, "project", "bucket2"),
 					ID:     "builder1",
-					Config: &pb.Builder{Name: "builder1"},
+					Config: &pb.BuilderConfig{Name: "builder1"},
 				},
 
 				&model.Bucket{
@@ -162,7 +162,7 @@ func TestListBuilders(t *testing.T) {
 				&model.Builder{
 					Parent: model.BucketKey(ctx, "project", "bucket3"),
 					ID:     "builder1",
-					Config: &pb.Builder{Name: "builder1"},
+					Config: &pb.BuilderConfig{Name: "builder1"},
 				},
 
 				// Bucket in another project.
@@ -181,7 +181,7 @@ func TestListBuilders(t *testing.T) {
 				&model.Builder{
 					Parent: model.BucketKey(ctx, "project2", "bucket1"),
 					ID:     "builder1",
-					Config: &pb.Builder{Name: "builder1"},
+					Config: &pb.BuilderConfig{Name: "builder1"},
 				},
 
 				// Bucket in another project without permission.
@@ -193,7 +193,7 @@ func TestListBuilders(t *testing.T) {
 				&model.Builder{
 					Parent: model.BucketKey(ctx, "project2", "bucket2"),
 					ID:     "builder1",
-					Config: &pb.Builder{Name: "builder1"},
+					Config: &pb.BuilderConfig{Name: "builder1"},
 				},
 			), ShouldBeNil)
 
@@ -212,7 +212,7 @@ func TestListBuilders(t *testing.T) {
 							Bucket:  "bucket1",
 							Builder: "builder1",
 						},
-						Config: &pb.Builder{Name: "builder1"},
+						Config: &pb.BuilderConfig{Name: "builder1"},
 					},
 					{
 						Id: &pb.BuilderID{
@@ -220,7 +220,7 @@ func TestListBuilders(t *testing.T) {
 							Bucket:  "bucket1",
 							Builder: "builder2",
 						},
-						Config: &pb.Builder{Name: "builder2"},
+						Config: &pb.BuilderConfig{Name: "builder2"},
 					},
 				})
 
@@ -238,7 +238,7 @@ func TestListBuilders(t *testing.T) {
 							Bucket:  "bucket1",
 							Builder: "builder3",
 						},
-						Config: &pb.Builder{Name: "builder3"},
+						Config: &pb.BuilderConfig{Name: "builder3"},
 					},
 				})
 			})
@@ -257,7 +257,7 @@ func TestListBuilders(t *testing.T) {
 							Bucket:  "bucket1",
 							Builder: "builder1",
 						},
-						Config: &pb.Builder{Name: "builder1"},
+						Config: &pb.BuilderConfig{Name: "builder1"},
 					},
 					{
 						Id: &pb.BuilderID{
@@ -265,7 +265,7 @@ func TestListBuilders(t *testing.T) {
 							Bucket:  "bucket1",
 							Builder: "builder2",
 						},
-						Config: &pb.Builder{Name: "builder2"},
+						Config: &pb.BuilderConfig{Name: "builder2"},
 					},
 				})
 
@@ -282,7 +282,7 @@ func TestListBuilders(t *testing.T) {
 							Bucket:  "bucket1",
 							Builder: "builder3",
 						},
-						Config: &pb.Builder{Name: "builder3"},
+						Config: &pb.BuilderConfig{Name: "builder3"},
 					},
 					{
 						Id: &pb.BuilderID{
@@ -290,7 +290,7 @@ func TestListBuilders(t *testing.T) {
 							Bucket:  "bucket3",
 							Builder: "builder1",
 						},
-						Config: &pb.Builder{Name: "builder1"},
+						Config: &pb.BuilderConfig{Name: "builder1"},
 					},
 				})
 			})
@@ -306,7 +306,7 @@ func TestListBuilders(t *testing.T) {
 							Bucket:  "bucket1",
 							Builder: "builder1",
 						},
-						Config: &pb.Builder{Name: "builder1"},
+						Config: &pb.BuilderConfig{Name: "builder1"},
 					},
 					{
 						Id: &pb.BuilderID{
@@ -314,7 +314,7 @@ func TestListBuilders(t *testing.T) {
 							Bucket:  "bucket1",
 							Builder: "builder2",
 						},
-						Config: &pb.Builder{Name: "builder2"},
+						Config: &pb.BuilderConfig{Name: "builder2"},
 					},
 					{
 						Id: &pb.BuilderID{
@@ -322,7 +322,7 @@ func TestListBuilders(t *testing.T) {
 							Bucket:  "bucket1",
 							Builder: "builder3",
 						},
-						Config: &pb.Builder{Name: "builder3"},
+						Config: &pb.BuilderConfig{Name: "builder3"},
 					},
 					{
 						Id: &pb.BuilderID{
@@ -330,7 +330,7 @@ func TestListBuilders(t *testing.T) {
 							Bucket:  "bucket3",
 							Builder: "builder1",
 						},
-						Config: &pb.Builder{Name: "builder1"},
+						Config: &pb.BuilderConfig{Name: "builder1"},
 					},
 					{
 						Id: &pb.BuilderID{
@@ -338,7 +338,7 @@ func TestListBuilders(t *testing.T) {
 							Bucket:  "bucket1",
 							Builder: "builder1",
 						},
-						Config: &pb.Builder{Name: "builder1"},
+						Config: &pb.BuilderConfig{Name: "builder1"},
 					},
 				})
 			})

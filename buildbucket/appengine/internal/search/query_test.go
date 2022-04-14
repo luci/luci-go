@@ -240,7 +240,7 @@ func TestMainFetchFlow(t *testing.T) {
 				&model.Builder{
 					Parent: model.BucketKey(ctx, "project", "bucket"),
 					ID:     "builder",
-					Config: &pb.Builder{Name: "builder"},
+					Config: &pb.BuilderConfig{Name: "builder"},
 				},
 			), ShouldBeNil)
 
@@ -268,7 +268,7 @@ func TestMainFetchFlow(t *testing.T) {
 				&model.Builder{
 					Parent: model.BucketKey(ctx, "project", "bucket"),
 					ID:     "builder",
-					Config: &pb.Builder{Name: "builder"},
+					Config: &pb.BuilderConfig{Name: "builder"},
 				},
 			), ShouldBeNil)
 
@@ -345,7 +345,7 @@ func TestMainFetchFlow(t *testing.T) {
 				&model.Builder{
 					Parent: model.BucketKey(ctx, "project", "bucket"),
 					ID:     "builder",
-					Config: &pb.Builder{Name: "builder"},
+					Config: &pb.BuilderConfig{Name: "builder"},
 				},
 			), ShouldBeNil)
 			So(datastore.Put(ctx, &model.TagIndex{

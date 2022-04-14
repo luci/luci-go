@@ -344,7 +344,7 @@ def _buildbucket_builders(bucket):
         exe, recipe, properties, experiments = _handle_executable(node)
         combined_experiments = dict(node.props.experiments)
         combined_experiments.update(experiments)
-        builders.append(buildbucket_pb.Builder(
+        builders.append(buildbucket_pb.BuilderConfig(
             name = node.props.name,
             description_html = node.props.description_html,
             swarming_host = swarming_host,
@@ -375,8 +375,8 @@ def _handle_executable(node):
     """Handle a builder node's executable node.
 
     Builder node =>
-      buildbucket_pb.Builder.Recipe | common_pb.Executable,
-      buildbucket_pb.Builder.Properties, buildbucket_pb.Builder.Experiments
+      buildbucket_pb.BuilderConfig.Recipe | common_pb.Executable,
+      buildbucket_pb.BuilderConfig.Properties, buildbucket_pb.BuilderConfig.Experiments
 
     This function produces either a Recipe or Executable definition depending on
     whether executable.props.recipe was set. luci.recipe(...) will always set
@@ -396,7 +396,7 @@ def _handle_executable(node):
     executable = executables[0]
     if not executable.props.cmd and executable.props.recipe:
         # old kitchen way
-        recipe_def = buildbucket_pb.Builder.Recipe(
+        recipe_def = buildbucket_pb.BuilderConfig.Recipe(
             name = executable.props.recipe,
             cipd_package = executable.props.cipd_package,
             cipd_version = executable.props.cipd_version,
@@ -426,10 +426,10 @@ def _handle_executable(node):
     return executable_def, recipe_def, properties, experiments
 
 def _buildbucket_caches(caches):
-    """[swarming.cache] => [buildbucket_pb.Builder.CacheEntry]."""
+    """[swarming.cache] => [buildbucket_pb.BuilderConfig.CacheEntry]."""
     out = []
     for c in caches:
-        out.append(buildbucket_pb.Builder.CacheEntry(
+        out.append(buildbucket_pb.BuilderConfig.CacheEntry(
             name = c.name,
             path = c.path,
             wait_for_warm_cache_secs = optional_sec(c.wait_for_warm_cache),

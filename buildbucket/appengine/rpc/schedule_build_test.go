@@ -121,14 +121,14 @@ func TestScheduleBuild(t *testing.T) {
 		So(datastore.Put(ctx, &model.Builder{
 			Parent: model.BucketKey(ctx, "project", "bucket 1"),
 			ID:     "builder 1",
-			Config: &pb.Builder{
+			Config: &pb.BuilderConfig{
 				Name: "builder 1",
 			},
 		}), ShouldBeNil)
 		So(datastore.Put(ctx, &model.Builder{
 			Parent: model.BucketKey(ctx, "project", "bucket 1"),
 			ID:     "builder 2",
-			Config: &pb.Builder{
+			Config: &pb.BuilderConfig{
 				Name: "builder 2",
 			},
 		}), ShouldBeNil)
@@ -201,7 +201,7 @@ func TestScheduleBuild(t *testing.T) {
 			bldrs, err := fetchBuilderConfigs(ctx, reqs)
 			So(err.(errors.MultiError)[1], ShouldErrLike, "builder not found")
 			So(bldrs["project/bucket 3"]["builder 1"], ShouldBeNil)
-			So(bldrs["project/bucket 1"]["builder 1"], ShouldResembleProto, &pb.Builder{
+			So(bldrs["project/bucket 1"]["builder 1"], ShouldResembleProto, &pb.BuilderConfig{
 				Name: "builder 1",
 			})
 		})
@@ -233,7 +233,7 @@ func TestScheduleBuild(t *testing.T) {
 			}
 			bldrs, err := fetchBuilderConfigs(ctx, reqs)
 			So(err, ShouldBeNil)
-			So(bldrs["project/bucket 1"]["builder 1"], ShouldResembleProto, &pb.Builder{
+			So(bldrs["project/bucket 1"]["builder 1"], ShouldResembleProto, &pb.BuilderConfig{
 				Name: "builder 1",
 			})
 		})
@@ -264,10 +264,10 @@ func TestScheduleBuild(t *testing.T) {
 			}
 			bldrs, err := fetchBuilderConfigs(ctx, reqs)
 			So(err, ShouldBeNil)
-			So(bldrs["project/bucket 1"]["builder 1"], ShouldResembleProto, &pb.Builder{
+			So(bldrs["project/bucket 1"]["builder 1"], ShouldResembleProto, &pb.BuilderConfig{
 				Name: "builder 1",
 			})
-			So(bldrs["project/bucket 1"]["builder 2"], ShouldResembleProto, &pb.Builder{
+			So(bldrs["project/bucket 1"]["builder 2"], ShouldResembleProto, &pb.BuilderConfig{
 				Name: "builder 2",
 			})
 			So(bldrs["project/bucket 2"]["builder 1"], ShouldBeNil)
@@ -535,7 +535,7 @@ func TestScheduleBuild(t *testing.T) {
 			So(datastore.Put(ctx, &model.Builder{
 				Parent: model.BucketKey(ctx, "project", "bucket"),
 				ID:     "builder",
-				Config: &pb.Builder{
+				Config: &pb.BuilderConfig{
 					Name: "builder",
 				},
 			}), ShouldBeNil)
@@ -692,7 +692,7 @@ func TestScheduleBuild(t *testing.T) {
 			So(datastore.Put(ctx, &model.Builder{
 				Parent: model.BucketKey(ctx, "project", "bucket"),
 				ID:     "builder",
-				Config: &pb.Builder{
+				Config: &pb.BuilderConfig{
 					Name: "builder",
 				},
 			}), ShouldBeNil)
@@ -852,7 +852,7 @@ func TestScheduleBuild(t *testing.T) {
 			So(datastore.Put(ctx, &model.Builder{
 				Parent: model.BucketKey(ctx, "project", "static bucket"),
 				ID:     "static builder",
-				Config: &pb.Builder{
+				Config: &pb.BuilderConfig{
 					Name: "static builder",
 				},
 			}), ShouldBeNil)
@@ -1190,7 +1190,7 @@ func TestScheduleBuild(t *testing.T) {
 				&model.Builder{
 					Parent: model.BucketKey(ctx, "project", "bucket"),
 					ID:     "builder",
-					Config: &pb.Builder{
+					Config: &pb.BuilderConfig{
 						Name: "builder",
 					},
 				}), ShouldBeNil)
@@ -1348,7 +1348,7 @@ func TestScheduleBuild(t *testing.T) {
 			So(datastore.Put(ctx, &model.Builder{
 				Parent: model.BucketKey(ctx, "project", "bucket"),
 				ID:     "builder",
-				Config: &pb.Builder{
+				Config: &pb.BuilderConfig{
 					Name: "builder",
 				},
 			}), ShouldBeNil)
@@ -2449,7 +2449,7 @@ func TestScheduleBuild(t *testing.T) {
 	Convey("setDimensions", t, func() {
 		Convey("config", func() {
 			Convey("omit", func() {
-				cfg := &pb.Builder{
+				cfg := &pb.BuilderConfig{
 					Dimensions: []string{
 						"key:",
 					},
@@ -2465,7 +2465,7 @@ func TestScheduleBuild(t *testing.T) {
 			})
 
 			Convey("simple", func() {
-				cfg := &pb.Builder{
+				cfg := &pb.BuilderConfig{
 					Dimensions: []string{
 						"key:value",
 					},
@@ -2488,7 +2488,7 @@ func TestScheduleBuild(t *testing.T) {
 			})
 
 			Convey("expiration", func() {
-				cfg := &pb.Builder{
+				cfg := &pb.BuilderConfig{
 					Dimensions: []string{
 						"1:key:value",
 					},
@@ -2514,7 +2514,7 @@ func TestScheduleBuild(t *testing.T) {
 			})
 
 			Convey("many", func() {
-				cfg := &pb.Builder{
+				cfg := &pb.BuilderConfig{
 					Dimensions: []string{
 						"key:",
 						"key:value",
@@ -2591,7 +2591,7 @@ func TestScheduleBuild(t *testing.T) {
 			})
 
 			Convey("auto builder", func() {
-				cfg := &pb.Builder{
+				cfg := &pb.BuilderConfig{
 					AutoBuilderDimension: pb.Toggle_YES,
 					Name:                 "builder",
 				}
@@ -2613,7 +2613,7 @@ func TestScheduleBuild(t *testing.T) {
 			})
 
 			Convey("builder > auto builder", func() {
-				cfg := &pb.Builder{
+				cfg := &pb.BuilderConfig{
 					AutoBuilderDimension: pb.Toggle_YES,
 					Dimensions: []string{
 						"1:builder:cfg builder",
@@ -2641,7 +2641,7 @@ func TestScheduleBuild(t *testing.T) {
 			})
 
 			Convey("omit builder > auto builder", func() {
-				cfg := &pb.Builder{
+				cfg := &pb.BuilderConfig{
 					AutoBuilderDimension: pb.Toggle_YES,
 					Dimensions: []string{
 						"builder:",
@@ -2711,7 +2711,7 @@ func TestScheduleBuild(t *testing.T) {
 					},
 				},
 			}
-			cfg := &pb.Builder{
+			cfg := &pb.BuilderConfig{
 				AutoBuilderDimension: pb.Toggle_YES,
 				Dimensions: []string{
 					"1:cfg only:cfg value",
@@ -2791,7 +2791,7 @@ func TestScheduleBuild(t *testing.T) {
 
 		Convey("config only", func() {
 			Convey("exe", func() {
-				cfg := &pb.Builder{
+				cfg := &pb.BuilderConfig{
 					Exe: &pb.Executable{
 						CipdPackage: "package",
 						CipdVersion: "version",
@@ -2809,13 +2809,13 @@ func TestScheduleBuild(t *testing.T) {
 			})
 
 			Convey("recipe", func() {
-				cfg := &pb.Builder{
+				cfg := &pb.BuilderConfig{
 					Exe: &pb.Executable{
 						CipdPackage: "package 1",
 						CipdVersion: "version 1",
 						Cmd:         []string{"command"},
 					},
-					Recipe: &pb.Builder_Recipe{
+					Recipe: &pb.BuilderConfig_Recipe{
 						CipdPackage: "package 2",
 						CipdVersion: "version 2",
 					},
@@ -2839,7 +2839,7 @@ func TestScheduleBuild(t *testing.T) {
 					Cmd:         []string{"command 1"},
 				},
 			}
-			cfg := &pb.Builder{
+			cfg := &pb.BuilderConfig{
 				Exe: &pb.Executable{
 					CipdPackage: "package 2",
 					CipdVersion: "version 2",
@@ -2867,7 +2867,7 @@ func TestScheduleBuild(t *testing.T) {
 		}
 
 		// builder config
-		cfg := &pb.Builder{
+		cfg := &pb.BuilderConfig{
 			Experiments: map[string]int32{},
 		}
 
@@ -3447,8 +3447,8 @@ func TestScheduleBuild(t *testing.T) {
 
 		Convey("config", func() {
 			Convey("recipe", func() {
-				cfg := &pb.Builder{
-					Recipe: &pb.Builder_Recipe{
+				cfg := &pb.BuilderConfig{
+					Recipe: &pb.BuilderConfig_Recipe{
 						CipdPackage: "package",
 						Name:        "name",
 					},
@@ -3493,7 +3493,7 @@ func TestScheduleBuild(t *testing.T) {
 
 			Convey("swarming", func() {
 				Convey("no dimensions", func() {
-					cfg := &pb.Builder{
+					cfg := &pb.BuilderConfig{
 						Priority:       1,
 						ServiceAccount: "account",
 						SwarmingHost:   "host",
@@ -3580,7 +3580,7 @@ func TestScheduleBuild(t *testing.T) {
 						}
 						s := &pb.SettingsCfg{
 							Swarming: &pb.SwarmingSettings{
-								GlobalCaches: []*pb.Builder_CacheEntry{
+								GlobalCaches: []*pb.BuilderConfig_CacheEntry{
 									{
 										Path: "cache",
 									},
@@ -3619,8 +3619,8 @@ func TestScheduleBuild(t *testing.T) {
 					})
 
 					Convey("config", func() {
-						cfg := &pb.Builder{
-							Caches: []*pb.Builder_CacheEntry{
+						cfg := &pb.BuilderConfig{
+							Caches: []*pb.BuilderConfig_CacheEntry{
 								{
 									Path: "cache",
 								},
@@ -3665,8 +3665,8 @@ func TestScheduleBuild(t *testing.T) {
 					})
 
 					Convey("config > global", func() {
-						cfg := &pb.Builder{
-							Caches: []*pb.Builder_CacheEntry{
+						cfg := &pb.BuilderConfig{
+							Caches: []*pb.BuilderConfig_CacheEntry{
 								{
 									Name: "builder only name",
 									Path: "builder only path",
@@ -3694,7 +3694,7 @@ func TestScheduleBuild(t *testing.T) {
 						}
 						s := &pb.SettingsCfg{
 							Swarming: &pb.SwarmingSettings{
-								GlobalCaches: []*pb.Builder_CacheEntry{
+								GlobalCaches: []*pb.BuilderConfig_CacheEntry{
 									{
 										Name: "global only name",
 										Path: "global only path",
@@ -4034,7 +4034,7 @@ func TestScheduleBuild(t *testing.T) {
 
 		Convey("config", func() {
 			Convey("properties", func() {
-				cfg := &pb.Builder{
+				cfg := &pb.BuilderConfig{
 					Properties: "{\"int\": 1, \"str\": \"value\"}",
 				}
 				b := &pb.Build{
@@ -4066,8 +4066,8 @@ func TestScheduleBuild(t *testing.T) {
 
 			Convey("recipe", func() {
 				Convey("empty", func() {
-					cfg := &pb.Builder{
-						Recipe: &pb.Builder_Recipe{},
+					cfg := &pb.BuilderConfig{
+						Recipe: &pb.BuilderConfig_Recipe{},
 					}
 					b := &pb.Build{
 						Builder: &pb.BuilderID{
@@ -4090,8 +4090,8 @@ func TestScheduleBuild(t *testing.T) {
 				})
 
 				Convey("properties", func() {
-					cfg := &pb.Builder{
-						Recipe: &pb.Builder_Recipe{
+					cfg := &pb.BuilderConfig{
+						Recipe: &pb.BuilderConfig_Recipe{
 							Properties: []string{
 								"key:value",
 							},
@@ -4125,8 +4125,8 @@ func TestScheduleBuild(t *testing.T) {
 				})
 
 				Convey("properties json", func() {
-					cfg := &pb.Builder{
-						Recipe: &pb.Builder_Recipe{
+					cfg := &pb.BuilderConfig{
+						Recipe: &pb.BuilderConfig_Recipe{
 							PropertiesJ: []string{
 								"str:\"value\"",
 								"int:1",
@@ -4164,8 +4164,8 @@ func TestScheduleBuild(t *testing.T) {
 				})
 
 				Convey("recipe", func() {
-					cfg := &pb.Builder{
-						Recipe: &pb.Builder_Recipe{
+					cfg := &pb.BuilderConfig{
+						Recipe: &pb.BuilderConfig_Recipe{
 							Name: "recipe",
 						},
 					}
@@ -4192,8 +4192,8 @@ func TestScheduleBuild(t *testing.T) {
 				})
 
 				Convey("properties json > properties", func() {
-					cfg := &pb.Builder{
-						Recipe: &pb.Builder_Recipe{
+					cfg := &pb.BuilderConfig{
+						Recipe: &pb.BuilderConfig_Recipe{
 							Properties: []string{
 								"key:value",
 							},
@@ -4230,8 +4230,8 @@ func TestScheduleBuild(t *testing.T) {
 				})
 
 				Convey("recipe > properties", func() {
-					cfg := &pb.Builder{
-						Recipe: &pb.Builder_Recipe{
+					cfg := &pb.BuilderConfig{
+						Recipe: &pb.BuilderConfig_Recipe{
 							Name: "recipe",
 							Properties: []string{
 								"recipe:value",
@@ -4261,8 +4261,8 @@ func TestScheduleBuild(t *testing.T) {
 				})
 
 				Convey("recipe > properties json", func() {
-					cfg := &pb.Builder{
-						Recipe: &pb.Builder_Recipe{
+					cfg := &pb.BuilderConfig{
+						Recipe: &pb.BuilderConfig_Recipe{
 							Name: "recipe",
 							PropertiesJ: []string{
 								"recipe:\"value\"",
@@ -4315,7 +4315,7 @@ func TestScheduleBuild(t *testing.T) {
 					},
 				},
 			}
-			cfg := &pb.Builder{
+			cfg := &pb.BuilderConfig{
 				Properties:               "{\"override\": \"cfg value\", \"allowed\": \"stuff\", \"cfg key\": \"cfg value\"}",
 				AllowedPropertyOverrides: []string{"allowed"},
 			}
@@ -4635,7 +4635,7 @@ func TestScheduleBuild(t *testing.T) {
 		})
 
 		Convey("config only", func() {
-			cfg := &pb.Builder{
+			cfg := &pb.BuilderConfig{
 				ExecutionTimeoutSecs: 1,
 				ExpirationSecs:       3,
 				GracePeriod: &durationpb.Duration{
@@ -4669,7 +4669,7 @@ func TestScheduleBuild(t *testing.T) {
 				},
 			}
 			normalizeSchedule(req)
-			cfg := &pb.Builder{
+			cfg := &pb.BuilderConfig{
 				ExecutionTimeoutSecs: 4,
 				ExpirationSecs:       6,
 				GracePeriod: &durationpb.Duration{
@@ -4833,7 +4833,7 @@ func TestScheduleBuild(t *testing.T) {
 					So(datastore.Put(ctx, &model.Builder{
 						Parent: model.BucketKey(ctx, "project", "bucket"),
 						ID:     "builder",
-						Config: &pb.Builder{
+						Config: &pb.BuilderConfig{
 							Name: "builder",
 						},
 					}), ShouldBeNil)
@@ -4859,7 +4859,7 @@ func TestScheduleBuild(t *testing.T) {
 					So(datastore.Put(ctx, &model.Builder{
 						Parent: model.BucketKey(ctx, "project", "bucket"),
 						ID:     "builder",
-						Config: &pb.Builder{
+						Config: &pb.BuilderConfig{
 							BuildNumbers: pb.Toggle_YES,
 							Name:         "builder",
 						},
@@ -4888,7 +4888,7 @@ func TestScheduleBuild(t *testing.T) {
 					So(datastore.Put(ctx, &model.Builder{
 						Parent: model.BucketKey(ctx, "project", "bucket"),
 						ID:     "builder",
-						Config: &pb.Builder{
+						Config: &pb.BuilderConfig{
 							BuildNumbers: pb.Toggle_YES,
 							Name:         "builder",
 						},
@@ -4961,7 +4961,7 @@ func TestScheduleBuild(t *testing.T) {
 					So(datastore.Put(ctx, &model.Builder{
 						Parent: model.BucketKey(ctx, "project", "bucket"),
 						ID:     "builder",
-						Config: &pb.Builder{
+						Config: &pb.BuilderConfig{
 							Name: "builder",
 						},
 					}), ShouldBeNil)
@@ -5114,7 +5114,7 @@ func TestScheduleBuild(t *testing.T) {
 					So(datastore.Put(ctx, &model.Builder{
 						Parent: model.BucketKey(ctx, "project", "bucket"),
 						ID:     "builder",
-						Config: &pb.Builder{
+						Config: &pb.BuilderConfig{
 							BuildNumbers: pb.Toggle_YES,
 							Name:         "builder",
 						},
@@ -5198,7 +5198,7 @@ func TestScheduleBuild(t *testing.T) {
 		So(datastore.Put(ctx, &model.Builder{
 			Parent: model.BucketKey(ctx, "project", "bucket"),
 			ID:     "builder",
-			Config: &pb.Builder{
+			Config: &pb.BuilderConfig{
 				BuildNumbers: pb.Toggle_YES,
 				Name:         "builder",
 			},

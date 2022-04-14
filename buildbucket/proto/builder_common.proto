@@ -36,5 +36,5 @@ message BuilderItem {
 
   // User-supplied configuration after normalization.
   // Does not refer to mixins and has defaults inlined.
-  Builder config = 2;
+  BuilderConfig config = 2;
 }

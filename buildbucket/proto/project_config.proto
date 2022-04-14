@@ -76,7 +76,7 @@ message AclSet {
 // this config.
 //
 // Next tag: 35.
-message Builder {
+message BuilderConfig {
   reserved 8;  // cipd_packages
   reserved 11; // build_numbers of the old format.
   reserved 13; // auto_builder_dimension of the old format.
@@ -129,7 +129,7 @@ message Builder {
     string env_var = 4;
   }
 
-  // DEPRECATED. See Builder.executable and Builder.properties
+  // DEPRECATED. See BuilderConfig.executable and BuilderConfig.properties
   //
   // To specify a recipe name, pass "$recipe_engine" property which is a JSON
   // object having "recipe" property.
@@ -165,7 +165,7 @@ message Builder {
     string cipd_version = 5;
 
     // Colon-separated build properties to set.
-    // Ignored if Builder.properties is set.
+    // Ignored if BuilderConfig.properties is set.
     //
     // Use this field for string properties and use properties_j for other
     // types.
@@ -452,7 +452,7 @@ message Swarming {
   // Configuration for each builder.
   // Swarming tasks are created only for builds for builders that are not
   // explicitly specified.
-  repeated Builder builders = 4;
+  repeated BuilderConfig builders = 4;
 
   // DEPRECATED. Use builder_defaults.task_template_canary_percentage instead.
   // Setting this field sets builder_defaults.task_template_canary_percentage.

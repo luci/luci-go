@@ -1523,7 +1523,7 @@ Buildbucket.
 * **experiments**: a dict that maps experiment name to percentage chance that it will apply to builds generated from this builder. Keys are strings, and values are integers from 0 to 100. This is unrelated to [lucicfg.enable_experiment(...)](#lucicfg.enable_experiment).
 * **task_template_canary_percentage**: int [0-100] or None, indicating percentage of builds that should use a canary swarming task template. If None, defer the decision to Buildbucket service. Supports the module-scoped default.
 * **repo**: URL of a primary git repository (starting with `https://`) associated with the builder, if known. It is in particular important when using [luci.notifier(...)](#luci.notifier) to let LUCI know what git history it should use to chronologically order builds on this builder. If unknown, builds will be ordered by creation time. If unset, will be taken from the configuration of [luci.gitiles_poller(...)](#luci.gitiles_poller) that trigger this builder if they all poll the same repo.
-* **resultdb_settings**: A buildbucket_pb.Builder.ResultDB, such as one created with [resultdb.settings(...)](#resultdb.settings). A configuration that defines if Buildbucket:ResultDB integration should be enabled for this builder and which results to export to BigQuery.
+* **resultdb_settings**: A buildbucket_pb.BuilderConfig.ResultDB, such as one created with [resultdb.settings(...)](#resultdb.settings). A configuration that defines if Buildbucket:ResultDB integration should be enabled for this builder and which results to export to BigQuery.
 * **test_presentation**: A [resultdb.test_presentation(...)](#resultdb.test_presentation) struct. A configuration that defines how tests should be rendered in the UI.
 * **triggers**: builders this builder triggers.
 * **triggered_by**: builders or pollers this builder is triggered by.
@@ -2653,7 +2653,7 @@ Specifies how buildbucket should integrate with ResultDB.
 
 #### Returns  {#resultdb.settings-returns}
 
-A populated buildbucket_pb.Builder.ResultDB() proto.
+A populated buildbucket_pb.BuilderConfig.ResultDB() proto.
 
 
 

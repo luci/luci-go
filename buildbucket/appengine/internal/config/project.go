@@ -167,7 +167,7 @@ func validateAcls(ctx *validation.Context, acls []*pb.Acl) {
 }
 
 // validateBuilderCfg validate a Builder config message.
-func validateBuilderCfg(ctx *validation.Context, b *pb.Builder, wellKnownExperiments stringset.Set) {
+func validateBuilderCfg(ctx *validation.Context, b *pb.BuilderConfig, wellKnownExperiments stringset.Set) {
 	// TODO(iannucci): also validate builder allowed_property_overrides field. See
 	// //lucicfg/starlark/stdlib/internal/luci/rules/builder.star
 
@@ -241,7 +241,7 @@ func validateBuilderCfg(ctx *validation.Context, b *pb.Builder, wellKnownExperim
 	}
 }
 
-func validateBuilderRecipe(ctx *validation.Context, recipe *pb.Builder_Recipe) {
+func validateBuilderRecipe(ctx *validation.Context, recipe *pb.BuilderConfig_Recipe) {
 	if recipe.Name == "" {
 		ctx.Errorf("name: unspecified")
 	}
@@ -336,7 +336,7 @@ func validateDimensions(ctx *validation.Context, dimensions []string) {
 	}
 }
 
-func validateCaches(ctx *validation.Context, caches []*pb.Builder_CacheEntry) {
+func validateCaches(ctx *validation.Context, caches []*pb.BuilderConfig_CacheEntry) {
 	cacheNames := stringset.New(len(caches))
 	cachePaths := stringset.New(len(caches))
 	fallbackSecs := make(map[int32]bool)
@@ -369,7 +369,7 @@ func validateCaches(ctx *validation.Context, caches []*pb.Builder_CacheEntry) {
 	}
 }
 
-func validateCacheEntry(ctx *validation.Context, entry *pb.Builder_CacheEntry) {
+func validateCacheEntry(ctx *validation.Context, entry *pb.BuilderConfig_CacheEntry) {
 	switch name := entry.Name; {
 	case name == "":
 		ctx.Errorf("name: required")

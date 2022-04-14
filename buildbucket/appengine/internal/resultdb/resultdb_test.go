@@ -63,16 +63,16 @@ func TestCreateInvocations(t *testing.T) {
 
 		bqExports := []*rdbPb.BigQueryExport{}
 		historyOptions := &rdbPb.HistoryOptions{UseInvocationTimestamp: true}
-		cfgs := map[string]map[string]*pb.Builder{
-			"proj1/bucket": {"builder": &pb.Builder{
-				Resultdb: &pb.Builder_ResultDB{
+		cfgs := map[string]map[string]*pb.BuilderConfig{
+			"proj1/bucket": {"builder": &pb.BuilderConfig{
+				Resultdb: &pb.BuilderConfig_ResultDB{
 					Enable:         true,
 					HistoryOptions: historyOptions,
 					BqExports:      bqExports,
 				},
 			}},
-			"proj2/bucket": {"builder": &pb.Builder{
-				Resultdb: &pb.Builder_ResultDB{
+			"proj2/bucket": {"builder": &pb.BuilderConfig{
+				Resultdb: &pb.BuilderConfig_ResultDB{
 					Enable:         true,
 					HistoryOptions: historyOptions,
 					BqExports:      bqExports,
@@ -337,9 +337,9 @@ func TestCreateInvocations(t *testing.T) {
 					},
 				},
 			}
-			cfgs = map[string]map[string]*pb.Builder{
-				"proj1/bucket": {"builder": &pb.Builder{
-					Resultdb: &pb.Builder_ResultDB{
+			cfgs = map[string]map[string]*pb.BuilderConfig{
+				"proj1/bucket": {"builder": &pb.BuilderConfig{
+					Resultdb: &pb.BuilderConfig_ResultDB{
 						Enable: false,
 					},
 				}},

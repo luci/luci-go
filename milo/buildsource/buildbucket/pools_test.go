@@ -52,7 +52,7 @@ func TestPools(t *testing.T) {
 					Bucket:  "foobucket",
 					Builder: "foobuilder",
 				},
-				Config: &buildbucketpb.Builder{
+				Config: &buildbucketpb.BuilderConfig{
 					SwarmingHost: "swarming.example.com",
 					Dimensions:   dim1,
 				},
@@ -63,7 +63,7 @@ func TestPools(t *testing.T) {
 					Bucket:  "foobucket",
 					Builder: "foobuilder2",
 				},
-				Config: &buildbucketpb.Builder{
+				Config: &buildbucketpb.BuilderConfig{
 					SwarmingHost: "swarming.example.com",
 					Dimensions:   dim1,
 				},
@@ -73,7 +73,7 @@ func TestPools(t *testing.T) {
 					Bucket:  "foobucket",
 					Builder: "foobuilder3",
 				},
-				Config: &buildbucketpb.Builder{
+				Config: &buildbucketpb.BuilderConfig{
 					SwarmingHost: "swarming.example.com",
 					Dimensions:   dim2,
 				},

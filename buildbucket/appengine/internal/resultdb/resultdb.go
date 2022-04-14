@@ -41,10 +41,10 @@ var mockRecorderClientKey = "used in tests only for setting the mock recorder cl
 // CreateInvocations creates resultdb invocations for each build.
 // build.Proto.Infra.Resultdb must not be nil.
 //
-// cfgs is the builder config map with the struct of Bucket ID -> Builder name -> *pb.Builder.
+// cfgs is the builder config map with the struct of Bucket ID -> Builder name -> *pb.BuilderConfig.
 //
 // Note: it will mutate the value of build.Proto.Infra.Resultdb.Invocation and build.ResultDBUpdateToken.
-func CreateInvocations(ctx context.Context, builds []*model.Build, cfgs map[string]map[string]*pb.Builder, host string) errors.MultiError {
+func CreateInvocations(ctx context.Context, builds []*model.Build, cfgs map[string]map[string]*pb.BuilderConfig, host string) errors.MultiError {
 	bbHost := info.AppID(ctx) + ".appspot.com"
 	merr := make(errors.MultiError, len(builds))
 

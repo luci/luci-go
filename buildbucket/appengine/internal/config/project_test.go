@@ -535,7 +535,7 @@ func TestProject(t *testing.T) {
 		}
 
 		Convey("ok", func() {
-			recipe := &pb.Builder_Recipe{
+			recipe := &pb.BuilderConfig_Recipe{
 				Name:        "foo",
 				CipdPackage: "infra/recipe_bundle",
 				CipdVersion: "refs/heads/main",
@@ -547,7 +547,7 @@ func TestProject(t *testing.T) {
 		})
 
 		Convey("bad", func() {
-			recipe := &pb.Builder_Recipe{
+			recipe := &pb.BuilderConfig_Recipe{
 				Properties:  []string{"", ":", "buildbucket:foobar", "x:y"},
 				PropertiesJ: []string{"x:'y'", "y:b", "z"},
 			}
@@ -566,7 +566,7 @@ func TestProject(t *testing.T) {
 
 		Convey("bad $recipe_engine/runtime props", func() {
 			runtime := `$recipe_engine/runtime:{"is_luci": false,"is_experimental": true, "unrecognized_is_fine": 1}`
-			recipe := &pb.Builder_Recipe{
+			recipe := &pb.BuilderConfig_Recipe{
 				Name:        "foo",
 				CipdPackage: "infra/recipe_bundle",
 				CipdVersion: "refs/heads/main",

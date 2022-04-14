@@ -35,9 +35,9 @@ def _settings(*, enable = False, bq_exports = None, history_options = None):
         to create this value.
 
     Returns:
-      A populated buildbucket_pb.Builder.ResultDB() proto.
+      A populated buildbucket_pb.BuilderConfig.ResultDB() proto.
     """
-    return buildbucket_pb.Builder.ResultDB(
+    return buildbucket_pb.BuilderConfig.ResultDB(
         enable = validate.bool("enable", enable, default = False, required = False),
         bq_exports = bq_exports or [],
         history_options = history_options,
@@ -251,7 +251,7 @@ def _validate_settings(attr, settings):
     return validate.type(
         attr,
         settings,
-        buildbucket_pb.Builder.ResultDB(),
+        buildbucket_pb.BuilderConfig.ResultDB(),
         required = False,
     )
 

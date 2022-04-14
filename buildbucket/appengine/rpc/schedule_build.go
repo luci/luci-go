@@ -322,11 +322,11 @@ func scheduleRequestFromTemplate(ctx context.Context, req *pb.ScheduleBuildReque
 }
 
 // fetchBuilderConfigs returns the Builder configs referenced by the given
-// requests in a map of Bucket ID -> Builder name -> *pb.Builder.
+// requests in a map of Bucket ID -> Builder name -> *pb.BuilderConfig.
 //
 // A single returned error means a global error which applies to every request.
 // Otherwise, it would be a MultiError where len(MultiError) equals to len(reqs).
-func fetchBuilderConfigs(ctx context.Context, reqs []*pb.ScheduleBuildRequest) (map[string]map[string]*pb.Builder, error) {
+func fetchBuilderConfigs(ctx context.Context, reqs []*pb.ScheduleBuildRequest) (map[string]map[string]*pb.BuilderConfig, error) {
 	merr := make(errors.MultiError, len(reqs))
 	var bcks []*model.Bucket
 
@@ -336,13 +336,13 @@ func fetchBuilderConfigs(ctx context.Context, reqs []*pb.ScheduleBuildRequest) (
 	// won't help).
 	bckCfgs := map[string]**pb.Bucket{} // Bucket ID -> **pb.Bucket
 	var bldrs []*model.Builder
-	bldrCfgs := map[string]map[string]**pb.Builder{} // Bucket ID -> Builder name -> **pb.Builder
+	bldrCfgs := map[string]map[string]**pb.BuilderConfig{} // Bucket ID -> Builder name -> **pb.BuilderConfig
 
 	idxMap := map[string]map[string][]int{} // Bucket ID -> Builder name -> a list of index
 	for i, req := range reqs {
 		bucket := protoutil.FormatBucketID(req.Builder.Project, req.Builder.Bucket)
 		if _, ok := bldrCfgs[bucket]; !ok {
-			bldrCfgs[bucket] = make(map[string]**pb.Builder)
+			bldrCfgs[bucket] = make(map[string]**pb.BuilderConfig)
 			idxMap[bucket] = map[string][]int{}
 		}
 		if _, ok := bldrCfgs[bucket][req.Builder.Builder]; ok {
@@ -402,9 +402,9 @@ func fetchBuilderConfigs(ctx context.Context, reqs []*pb.ScheduleBuildRequest) (
 	}
 
 	// deref all the pointers.
-	ret := make(map[string]map[string]*pb.Builder, len(bldrCfgs))
+	ret := make(map[string]map[string]*pb.BuilderConfig, len(bldrCfgs))
 	for bucket, builders := range bldrCfgs {
-		m := make(map[string]*pb.Builder, len(builders))
+		m := make(map[string]*pb.BuilderConfig, len(builders))
 		for builderName, builder := range builders {
 			m[builderName] = *builder
 		}
@@ -486,7 +486,7 @@ func builderMatches(builder string, pred *pb.BuilderPredicate) bool {
 // setDimensions computes the dimensions from the given request and builder
 // config, setting them in the proto. Mutates the given *pb.Build.
 // build.Infra.Swarming must be set (see setInfra).
-func setDimensions(req *pb.ScheduleBuildRequest, cfg *pb.Builder, build *pb.Build) {
+func setDimensions(req *pb.ScheduleBuildRequest, cfg *pb.BuilderConfig, build *pb.Build) {
 	// Requested dimensions override dimensions specified in the builder config by wiping out all
 	// same-key dimensions (regardless of expiration time) in the builder config.
 	//
@@ -573,7 +573,7 @@ func setDimensions(req *pb.ScheduleBuildRequest, cfg *pb.Builder, build *pb.Buil
 
 // setExecutable computes the executable from the given request and builder
 // config, setting it in the proto. Mutates the given *pb.Build.
-func setExecutable(req *pb.ScheduleBuildRequest, cfg *pb.Builder, build *pb.Build) {
+func setExecutable(req *pb.ScheduleBuildRequest, cfg *pb.BuilderConfig, build *pb.Build) {
 	build.Exe = cfg.GetExe()
 	if build.Exe == nil {
 		build.Exe = &pb.Executable{}
@@ -634,7 +634,7 @@ func activeGlobalExpsForBuilder(build *pb.Build, globalCfg *pb.SettingsCfg) (act
 // build.Infra.Swarming, build.Input and build.Exe must not be nil (see
 // setInfra, setInput and setExecutable respectively). The request must not set
 // legacy experiment values (see normalizeSchedule).
-func setExperiments(ctx context.Context, req *pb.ScheduleBuildRequest, cfg *pb.Builder, globalCfg *pb.SettingsCfg, build *pb.Build) {
+func setExperiments(ctx context.Context, req *pb.ScheduleBuildRequest, cfg *pb.BuilderConfig, globalCfg *pb.SettingsCfg, build *pb.Build) {
 	globalExps, ignoredExps := activeGlobalExpsForBuilder(build, globalCfg)
 
 	// Set up the dice-rolling apparatus
@@ -742,8 +742,8 @@ func setExperiments(ctx context.Context, req *pb.ScheduleBuildRequest, cfg *pb.B
 var defBuilderCacheTimeout = durationpb.New(4 * time.Minute)
 
 // configuredCacheToTaskCache returns the equivalent
-// *pb.BuildInfra_Swarming_CacheEntry for the given *pb.Builder_CacheEntry.
-func configuredCacheToTaskCache(builderCache *pb.Builder_CacheEntry) *pb.BuildInfra_Swarming_CacheEntry {
+// *pb.BuildInfra_Swarming_CacheEntry for the given *pb.BuilderConfig_CacheEntry.
+func configuredCacheToTaskCache(builderCache *pb.BuilderConfig_CacheEntry) *pb.BuildInfra_Swarming_CacheEntry {
 	taskCache := &pb.BuildInfra_Swarming_CacheEntry{
 		EnvVar: builderCache.EnvVar,
 		Name:   builderCache.Name,
@@ -764,7 +764,7 @@ func configuredCacheToTaskCache(builderCache *pb.Builder_CacheEntry) *pb.BuildIn
 // setting them in the proto. Mutates the given *pb.Build. build.Builder must be
 // set. Does not set build.Infra.Buildbucket.Hostname or
 // build.Infra.Logdog.Prefix, which can only be determined at creation time.
-func setInfra(req *pb.ScheduleBuildRequest, cfg *pb.Builder, build *pb.Build, globalCfg *pb.SettingsCfg) {
+func setInfra(req *pb.ScheduleBuildRequest, cfg *pb.BuilderConfig, build *pb.Build, globalCfg *pb.SettingsCfg) {
 	build.Infra = &pb.BuildInfra{
 		Bbagent: &pb.BuildInfra_BBAgent{
 			CacheDir:               "cache",
@@ -841,7 +841,7 @@ func setInfra(req *pb.ScheduleBuildRequest, cfg *pb.Builder, build *pb.Build, gl
 // setInput computes the input values from the given request and builder config,
 // setting them in the proto. Mutates the given *pb.Build. May panic if the
 // builder config is invalid.
-func setInput(ctx context.Context, req *pb.ScheduleBuildRequest, cfg *pb.Builder, build *pb.Build) {
+func setInput(ctx context.Context, req *pb.ScheduleBuildRequest, cfg *pb.BuilderConfig, build *pb.Build) {
 	build.Input = &pb.Build_Input{
 		Properties: &structpb.Struct{},
 	}
@@ -936,7 +936,7 @@ var (
 
 // setTimeouts computes the timeouts from the given request and builder config,
 // setting them in the proto. Mutates the given *pb.Build.
-func setTimeouts(req *pb.ScheduleBuildRequest, cfg *pb.Builder, build *pb.Build) {
+func setTimeouts(req *pb.ScheduleBuildRequest, cfg *pb.BuilderConfig, build *pb.Build) {
 	// Timeouts in the request have highest precedence, followed by
 	// values in the builder config, followed by default values.
 	switch {
@@ -974,7 +974,7 @@ func setTimeouts(req *pb.ScheduleBuildRequest, cfg *pb.Builder, build *pb.Build)
 // buildFromScheduleRequest returns a build proto created from the given
 // request and builder config. Sets fields except those which can only be
 // determined at creation time.
-func buildFromScheduleRequest(ctx context.Context, req *pb.ScheduleBuildRequest, ancestors []int64, cfg *pb.Builder, globalCfg *pb.SettingsCfg) (b *pb.Build) {
+func buildFromScheduleRequest(ctx context.Context, req *pb.ScheduleBuildRequest, ancestors []int64, cfg *pb.BuilderConfig, globalCfg *pb.SettingsCfg) (b *pb.Build) {
 	b = &pb.Build{
 		Builder:         req.Builder,
 		Critical:        cfg.GetCritical(),
@@ -1129,7 +1129,7 @@ func scheduleBuilds(ctx context.Context, globalCfg *pb.SettingsCfg, reqs ...*pb.
 	appID := info.AppID(ctx) // e.g. cr-buildbucket
 
 	merr := make(errors.MultiError, len(reqs))
-	// Bucket -> Builder -> *pb.Builder.
+	// Bucket -> Builder -> *pb.BuilderConfig.
 	cfgs, err := fetchBuilderConfigs(ctx, reqs)
 	if me, ok := err.(errors.MultiError); ok {
 		merr = mergeErrs(merr, me, "error fetching builders", func(i int) int { return i })

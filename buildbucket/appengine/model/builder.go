@@ -51,7 +51,7 @@ type Builder struct {
 	Parent *datastore.Key `gae:"$parent"`
 
 	// Config is the builder configuration feched from luci-config.
-	Config *pb.Builder `gae:"config,legacy"`
+	Config *pb.BuilderConfig `gae:"config,legacy"`
 
 	// ConfigHash is used for fast deduplication of configs.
 	ConfigHash string `gae:"config_hash"`
