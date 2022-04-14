@@ -21,6 +21,7 @@ import (
 
 	statuspb "google.golang.org/genproto/googleapis/rpc/status"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/protobuf/types/known/durationpb"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/common/clock/testclock"
@@ -35,9 +36,14 @@ import (
 )
 
 var (
-	mockedDeployment = &modelpb.Deployment{RepoRev: "mocked-deployment"}
-	mockedActuator   = &modelpb.ActuatorInfo{Identity: "mocked-actuator"}
-	mockedTriggers   = []*modelpb.ActuationTrigger{{}, {}}
+	mockedDeployment = &modelpb.Deployment{
+		RepoRev: "mocked-deployment",
+		Config: &modelpb.DeploymentConfig{
+			ActuationTimeout: durationpb.New(3 * time.Minute),
+		},
+	}
+	mockedActuator = &modelpb.ActuatorInfo{Identity: "mocked-actuator"}
+	mockedTriggers = []*modelpb.ActuationTrigger{{}, {}}
 )
 
 func mockedIntendedState(payload string, traffic int32) *modelpb.AppengineState {
@@ -166,7 +172,7 @@ func TestActuationBeginOp(t *testing.T) {
 				Actuator:   mockedActuator,
 				Triggers:   mockedTriggers,
 				Created:    timestamppb.New(now),
-				Expiry:     timestamppb.New(now.Add(ActuationExpiry)),
+				Expiry:     timestamppb.New(now.Add(3 * time.Minute)),
 			})
 			So(storedActuation.Decisions, ShouldResembleProto, &modelpb.ActuationDecisions{
 				Decisions: map[string]*modelpb.ActuationDecision{
@@ -176,7 +182,7 @@ func TestActuationBeginOp(t *testing.T) {
 			})
 			So(storedActuation.State, ShouldEqual, modelpb.Actuation_EXECUTING)
 			So(storedActuation.Created.Equal(now), ShouldBeTrue)
-			So(storedActuation.Expiry.Equal(now.Add(ActuationExpiry)), ShouldBeTrue)
+			So(storedActuation.Expiry.Equal(now.Add(3*time.Minute)), ShouldBeTrue)
 
 			// Stored Asset entities are correct.
 			assets, err := fetchAssets(ctx, []string{"apps/app1", "apps/app2"}, true)

@@ -32,10 +32,11 @@ import (
 	"go.chromium.org/luci/deploy/api/rpcpb"
 )
 
-// ActuationExpiry is how long an actuation can run before considered failed.
+// defaultActuationTimeout is the default value for `actuation_timeout` in
+// DeploymentConfig.
 //
 // TODO: Implement expiration cron job or something.
-const ActuationExpiry = 20 * time.Minute
+const defaultActuationTimeout = 20 * time.Minute
 
 // ActuationBeginOp collects changes to transactionally apply to the datastore
 // to begin a new actuation.
@@ -183,6 +184,15 @@ func (op *ActuationBeginOp) maybeUpdateHistory(entry *modelpb.AssetHistory) {
 	}
 }
 
+// actuationExpiry calculates when this actuation expires.
+func (op *ActuationBeginOp) actuationExpiry() time.Time {
+	timeout := op.actuation.Deployment.GetConfig().GetActuationTimeout()
+	if timeout != nil {
+		return op.now.Add(timeout.AsDuration())
+	}
+	return op.now.Add(defaultActuationTimeout)
+}
+
 // Apply stores all updated or created datastore entities.
 //
 // Must be called only after all per-asset MakeDecision calls. Returns the
@@ -194,7 +204,7 @@ func (op *ActuationBeginOp) Apply(ctx context.Context) (map[string]*modelpb.Actu
 	op.actuation.Created = timestamppb.New(op.now)
 	if op.actuating {
 		op.actuation.State = modelpb.Actuation_EXECUTING
-		op.actuation.Expiry = timestamppb.New(op.now.Add(ActuationExpiry))
+		op.actuation.Expiry = timestamppb.New(op.actuationExpiry())
 	} else if len(op.errors) != 0 {
 		op.actuation.State = modelpb.Actuation_FAILED
 		op.actuation.Finished = timestamppb.New(op.now)

@@ -18,6 +18,7 @@ package deploy.model;
 
 option go_package = "go.chromium.org/luci/deploy/api/modelpb";
 
+import "google/protobuf/duration.proto";
 
 // Identifier of a deployment: a reference to its config location.
 //
@@ -63,5 +64,8 @@ message Deployment {
 
 // Deployment configuration, as defined in the IaC repo.
 message DeploymentConfig {
-  // Empty for now.
+  // How long the actuation can run before it is considered crashed.
+  //
+  // Default is 20 min.
+  google.protobuf.Duration actuation_timeout = 1;
 }
