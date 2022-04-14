@@ -14,9 +14,37 @@
 
 package execute
 
+import (
+	"fmt"
+	"strings"
+
+	"go.chromium.org/luci/cv/api/config/v2"
+	"go.chromium.org/luci/cv/internal/tryjob"
+)
+
 type intSet map[int]struct{}
 
 func (is intSet) has(value int) bool {
 	_, ret := is[value]
 	return ret
+}
+
+// composeReason puts together information about failing tryjobs.
+func composeReason(tryjobs []*tryjob.Tryjob) string {
+	if len(tryjobs) == 0 {
+		panic(fmt.Errorf("composeReason called without tryjobs"))
+	}
+	var sb strings.Builder
+	sb.WriteString("Failed Tryjobs:")
+	for _, tj := range tryjobs {
+		sb.WriteString("\n* ")
+		sb.WriteString(tj.ExternalID.MustURL())
+		if sm := tj.Result.GetBuildbucket().GetSummaryMarkdown(); sm != "" && tj.Definition.ResultVisibility != config.CommentLevel_COMMENT_LEVEL_RESTRICTED {
+			for _, line := range strings.Split(sm, "\n") {
+				sb.WriteString("\n ") // indent.
+				sb.WriteString(line)
+			}
+		}
+	}
+	return sb.String()
 }
