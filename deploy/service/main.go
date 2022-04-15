@@ -29,6 +29,7 @@ import (
 	"go.chromium.org/luci/server/tq"
 
 	"go.chromium.org/luci/deploy/api/rpcpb"
+	"go.chromium.org/luci/deploy/service/model"
 	"go.chromium.org/luci/deploy/service/rpcs"
 	"go.chromium.org/luci/deploy/service/ui"
 
@@ -95,6 +96,9 @@ func main() {
 
 		// Web UI routes.
 		ui.RegisterRoutes(srv, accessGroup, &assets)
+
+		// Cron jobs.
+		cron.RegisterHandler("expire-actuations", model.ExpireActuations)
 
 		return nil
 	})

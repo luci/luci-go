@@ -117,6 +117,24 @@ func (op *ActuationEndOp) HandleActuatedState(ctx context.Context, assetID strin
 	}
 }
 
+// Expire marks the actuation as expired.
+func (op *ActuationEndOp) Expire(ctx context.Context) {
+	op.actuation.Actuation.Finished = timestamppb.New(op.now)
+	op.actuation.Actuation.State = modelpb.Actuation_EXPIRED
+	op.actuation.Actuation.Status = &statuspb.Status{
+		Code:    int32(codes.DeadlineExceeded),
+		Message: "the actuation didn't finish before its expiration timeout",
+	}
+
+	// Append historic records to all assets that were being actuated.
+	for _, asset := range op.assets {
+		if asset.isRecordingHistoryEntry() {
+			asset.HistoryEntry.Actuation = op.actuation.Actuation
+			op.history = append(op.history, asset.finalizeHistoryEntry())
+		}
+	}
+}
+
 // Apply stores all updated or created datastore entities.
 func (op *ActuationEndOp) Apply(ctx context.Context) error {
 	var toPut []interface{}

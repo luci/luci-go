@@ -1,1 +1,6 @@
 indexes:
+
+- kind: Actuation
+  properties:
+  - name: State
+  - name: Expiry
