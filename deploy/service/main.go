@@ -99,6 +99,7 @@ func main() {
 
 		// Cron jobs.
 		cron.RegisterHandler("expire-actuations", model.ExpireActuations)
+		cron.RegisterHandler("cleanup-old-entities", model.CleanupOldEntities)
 
 		return nil
 	})
