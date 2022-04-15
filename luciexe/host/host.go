@@ -27,7 +27,6 @@ import (
 
 	bbpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/clock"
-	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 )
 
@@ -36,7 +35,13 @@ var maxLogFlushWaitTime = 30 * time.Second
 // Run executes `cb` in a "luciexe" host environment.
 //
 // The merged Build objects collected from the host environment (i.e. generated
-// within `cb`) will be pushed to the returned channel as `cb` executes.
+// within `cb`) will be pushed to the returned "<-chan *bbpb.Build" as `cb`
+// executes.
+//
+// Error during starting up the host environment will be directly returned.
+// But `cb` does not return anything to avoid messy semantics because it's run
+// in a goroutine; If `cb` could error out, it's recommended to make your own
+// `chan error` and have `cb` push to that.
 //
 // The context should be used for cancellation of the callback function; It's up
 // to the `cb` implementation to respect the cancelled context.
@@ -49,7 +54,7 @@ var maxLogFlushWaitTime = 30 * time.Second
 // running. Be careful when using Run concurrently with other code. You MUST
 // completely drain the returned channel in order to be guaranteed that all
 // side-effects of Run have been unwound.
-func Run(ctx context.Context, options *Options, cb func(context.Context, Options) error) (<-chan *bbpb.Build, error) {
+func Run(ctx context.Context, options *Options, cb func(context.Context, Options)) (<-chan *bbpb.Build, error) {
 	var opts Options
 	if options != nil {
 		opts = *options
@@ -140,10 +145,7 @@ func Run(ctx context.Context, options *Options, cb func(context.Context, Options
 		defer userCleanup.run(ctx)
 		logging.Infof(ctx, "invoking host environment callback")
 
-		if err := cb(ctx, opts); err != nil {
-			logging.Errorf(ctx, "host environment callback failed:")
-			errors.Log(ctx, err)
-		}
+		cb(ctx, opts)
 	}()
 
 	return buildCh, nil

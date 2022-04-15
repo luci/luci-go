@@ -378,6 +378,7 @@ func mainImpl() int {
 	exeArgs := processExeArgs(input, check)
 	dispatcherOpts, dispatcherErrCh := channelOpts(cctx)
 	canceledBuildCh := newCloseOnceCh()
+	invokeErr := make(chan error)
 	// Use a dedicated BuildsClient for dispatcher, which turns off retries.
 	// dispatcher.Channel will handle retries instead.
 	bbclientForDispatcher, _, err := newBuildsClient(cctx, input.Build.Infra.Buildbucket.GetHostname(), func() retry.Iterator { return nil })
@@ -391,7 +392,7 @@ func mainImpl() int {
 	shutdownCh := newCloseOnceCh()
 	var statusDetails *bbpb.StatusDetails
 	var subprocErr error
-	builds, err := host.Run(cctx, opts, func(ctx context.Context, hostOpts host.Options) error {
+	builds, err := host.Run(cctx, opts, func(ctx context.Context, hostOpts host.Options) {
 		logging.Infof(ctx, "running luciexe: %q", exeArgs)
 		logging.Infof(ctx, "  (cache dir): %q", input.CacheDir)
 		invokeOpts := &invoke.Options{
@@ -419,18 +420,22 @@ func mainImpl() int {
 			case <-dctx.Done():
 			}
 		}()
+		defer close(invokeErr)
 		subp, err := invoke.Start(dctx, exeArgs, input.Build, invokeOpts)
 		if err != nil {
-			return err
+			invokeErr <- err
+			return
 		}
 
 		var build *bbpb.Build
 		build, subprocErr = subp.Wait()
 		statusDetails = build.StatusDetails
-		return nil
 	})
 	if err != nil {
 		check(errors.Annotate(err, "could not start luciexe host environment").Err())
+	}
+	for err := range invokeErr {
+		check(errors.Annotate(err, "could not invoke luciexe").Err())
 	}
 
 	var (

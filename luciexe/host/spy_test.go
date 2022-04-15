@@ -51,7 +51,7 @@ func TestSpy(t *testing.T) {
 		}()
 
 		Convey(`butler active within Run`, func(c C) {
-			ch, err := Run(ctx, nil, func(ctx context.Context, _ Options) error {
+			ch, err := Run(ctx, nil, func(ctx context.Context, _ Options) {
 				bs, err := bootstrap.Get()
 
 				stream, err := bs.Client.NewDatagramStream(
@@ -85,8 +85,6 @@ func TestSpy(t *testing.T) {
 				// Without sawBuildC, it's possible that Run() will close the "u/"
 				// namespace before the butler sees the stream that we just opened.
 				<-sawBuildC
-
-				return nil
 			})
 
 			So(err, ShouldBeNil)

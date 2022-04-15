@@ -87,7 +87,7 @@ func TestAuth(t *testing.T) {
 		defer closer()
 
 		Convey(`default`, func(c C) {
-			ch, err := Run(ctx, nil, func(ctx context.Context, _ Options) error {
+			ch, err := Run(ctx, nil, func(ctx context.Context, _ Options) {
 				c.Convey("Task account is available", func() {
 					a := auth.NewAuthenticator(ctx, auth.SilentLogin, auth.Options{
 						Method: auth.LUCIContextMethod,
@@ -132,8 +132,6 @@ func TestAuth(t *testing.T) {
 					So(json.Unmarshal([]byte(tokBody), &tok), ShouldBeNil)
 					So(tok.AccessToken, tokenShouldStartWith, "task_token_")
 				})
-
-				return nil
 			})
 			So(err, ShouldBeNil)
 			for range ch {
