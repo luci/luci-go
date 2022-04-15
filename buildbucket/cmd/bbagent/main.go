@@ -434,9 +434,6 @@ func mainImpl() int {
 	if err != nil {
 		check(errors.Annotate(err, "could not start luciexe host environment").Err())
 	}
-	for err := range invokeErr {
-		check(errors.Annotate(err, "could not invoke luciexe").Err())
-	}
 
 	var (
 		finalBuild                *bbpb.Build = proto.Clone(input.Build).(*bbpb.Build)
@@ -454,6 +451,8 @@ func mainImpl() int {
 		stopped := false
 		for {
 			select {
+			case err := <-invokeErr:
+				check(errors.Annotate(err, "could not invoke luciexe").Err())
 			case err := <-dispatcherErrCh:
 				if !stopped && grpcutil.Code(err) == codes.InvalidArgument {
 					shutdownCh.close()
