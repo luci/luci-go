@@ -5,6 +5,8 @@ cron:
 
 - url: /internal/cron/expire-actuations
   schedule: every 1 minutes
+  retry_parameters:
+    job_retry_limit: 0
 
 - url: /internal/cron/cleanup-old-entities
   schedule: every 6 hours

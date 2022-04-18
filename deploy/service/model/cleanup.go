@@ -16,11 +16,13 @@ package model
 
 import (
 	"context"
-	"sync"
 	"time"
 
 	"go.chromium.org/luci/common/clock"
+	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/common/retry/transient"
+	"go.chromium.org/luci/common/sync/parallel"
 	"go.chromium.org/luci/gae/service/datastore"
 )
 
@@ -28,45 +30,34 @@ import (
 const retentionPeriod = 365 * 24 * time.Hour // ~1 year
 
 // CleanupOldEntities deletes old entities to keep datastore tidy.
-//
-// Doesn't abort on errors, just logs them.
 func CleanupOldEntities(ctx context.Context) error {
 	ctx, done := clock.WithTimeout(ctx, 8*time.Minute)
 	defer done()
 
 	cutoff := clock.Now(ctx).Add(-retentionPeriod)
 
-	wg := sync.WaitGroup{}
-	defer wg.Wait()
-
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
-		cleanupOld(ctx, "Actuation", cutoff)
-	}()
-
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
-		cleanupOld(ctx, "AssetHistory", cutoff)
-	}()
-
-	return nil
+	err := parallel.FanOutIn(func(work chan<- func() error) {
+		work <- func() error { return cleanupOld(ctx, "Actuation", cutoff) }
+		work <- func() error { return cleanupOld(ctx, "AssetHistory", cutoff) }
+	})
+	return transient.Tag.Apply(err)
 }
 
-func cleanupOld(ctx context.Context, kind string, cutoff time.Time) {
+func cleanupOld(ctx context.Context, kind string, cutoff time.Time) error {
 	q := datastore.NewQuery(kind).
 		Lt("Created", cutoff.UTC()).
 		KeysOnly(true)
 
 	const batchSize = 250
 	var batch []*datastore.Key
+	var errs errors.MultiError
 
 	flushBatch := func() {
 		if len(batch) != 0 {
 			logging.Infof(ctx, "Deleting %d old %s entities", len(batch), kind)
 			if err := datastore.Delete(ctx, batch); err != nil {
 				logging.Errorf(ctx, "Failed to delete some of %d %s entities: %s", len(batch), kind, err)
+				errs = append(errs, err)
 			}
 			batch = batch[:0]
 		}
@@ -78,8 +69,12 @@ func cleanupOld(ctx context.Context, kind string, cutoff time.Time) {
 			flushBatch()
 		}
 	})
-	if err != nil {
-		logging.Errorf(ctx, "Failed to fetch old %s entities: %s", kind, err)
-	}
 	flushBatch()
+
+	if err != nil {
+		logging.Errorf(ctx, "Query to fetch old %s entities failed: %s", kind, err)
+		errs = append(errs, err)
+	}
+
+	return errs.AsError()
 }

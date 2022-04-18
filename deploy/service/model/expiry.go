@@ -21,6 +21,7 @@ import (
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/common/sync/parallel"
 	"go.chromium.org/luci/gae/service/datastore"
 
@@ -28,8 +29,6 @@ import (
 )
 
 // ExpireActuations moves expired actuations into EXPIRED state.
-//
-// Called every minute. Doesn't abort on errors, just logs them.
 func ExpireActuations(ctx context.Context) error {
 	ctx, done := clock.WithTimeout(ctx, time.Minute)
 	defer done()
@@ -39,7 +38,7 @@ func ExpireActuations(ctx context.Context) error {
 		Lt("Expiry", clock.Now(ctx).UTC()).
 		KeysOnly(true)
 
-	parallel.WorkPool(16, func(work chan<- func() error) {
+	err := parallel.WorkPool(16, func(work chan<- func() error) {
 		err := datastore.Run(ctx, q, func(key *datastore.Key) {
 			work <- func() error {
 				ctx := logging.SetField(ctx, "actuation", key.StringID())
@@ -52,10 +51,10 @@ func ExpireActuations(ctx context.Context) error {
 		})
 		if err != nil {
 			logging.Errorf(ctx, "Datastore query failed: %s", err)
+			work <- func() error { return err }
 		}
 	})
-
-	return nil
+	return transient.Tag.Apply(err)
 }
 
 func expireActuation(ctx context.Context, actuationID string) error {
