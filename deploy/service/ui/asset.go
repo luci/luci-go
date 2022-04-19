@@ -16,11 +16,12 @@ package ui
 
 import (
 	"fmt"
+	"html"
+	"sort"
 	"strings"
 	"time"
 
 	"github.com/dustin/go-humanize"
-	"google.golang.org/protobuf/encoding/prototext"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/server/router"
@@ -30,8 +31,12 @@ import (
 	"go.chromium.org/luci/deploy/api/rpcpb"
 )
 
-// Timezone for displaying absolute times.
-var hardcodedTZ = time.FixedZone("UTC-07", -7*60*60)
+var (
+	// Timezone for displaying absolute times.
+	hardcodedTZ = time.FixedZone("UTC-07", -7*60*60)
+	// For sorting, to make sure "missing" timestamps show up first.
+	distantFuture = time.Date(2112, 1, 1, 1, 1, 1, 1, time.UTC)
+)
 
 // assetState is an overall asset state to display in the UI.
 type assetState string
@@ -151,15 +156,21 @@ type linkHref struct {
 }
 
 // timestampHref a link that looks like a timestamp.
-func timestampHref(ts *timestamppb.Timestamp, href string) linkHref {
+func timestampHref(ts *timestamppb.Timestamp, href, tooltipSfx string) linkHref {
 	if ts == nil {
 		return linkHref{Href: href}
 	}
 	t := ts.AsTime()
+
+	tooltip := t.In(hardcodedTZ).Format(time.RFC822)
+	if tooltipSfx != "" {
+		tooltip += " " + tooltipSfx
+	}
+
 	return linkHref{
 		Text:    humanize.RelTime(t, time.Now(), "ago", "from now"),
 		Href:    href,
-		Tooltip: t.In(hardcodedTZ).Format(time.RFC822),
+		Tooltip: tooltip,
 	}
 }
 
@@ -212,6 +223,7 @@ func deriveAssetOverview(asset *modelpb.Asset) assetOverview {
 		out.LastCheckIn = timestampHref(
 			asset.LastActuation.Created,
 			buildbucketHref(asset.LastActuation.Actuator),
+			"",
 		)
 	}
 
@@ -221,6 +233,7 @@ func deriveAssetOverview(asset *modelpb.Asset) assetOverview {
 			out.LastActuation = timestampHref(
 				asset.LastActuateActuation.Finished,
 				asset.LastActuateActuation.LogUrl,
+				"",
 			)
 		} else {
 			out.LastActuation = linkHref{
@@ -244,6 +257,116 @@ func deriveAssetOverview(asset *modelpb.Asset) assetOverview {
 
 ////////////////////////////////////////////////////////////////////////////////
 
+type versionState struct {
+	Service         string   // name of the service e.g. "default"
+	Version         string   // name of the version e.g. "1234-abcedf"
+	Deployed        linkHref // when it was deployed
+	TrafficIntended int32    // intended percent of traffic
+	TrafficReported int32    // reported percent of traffic
+
+	RowSpan int // helper to merge HTML table cells
+
+	sortKey1 string // sorting helper, derived from service name
+	sortKey2 int64  // sorting helper, derived from deployment timestamp
+}
+
+func versionsSummary(asset *modelpb.Asset, active bool) []versionState {
+	type versionID struct {
+		svc string
+		ver string
+	}
+	versions := map[versionID]versionState{}
+
+	serviceSortKey := func(svc string) string {
+		// We want to show services like "default" and "default-go" on top, they
+		// are known to be the most important.
+		if strings.HasPrefix(svc, "default") {
+			return "a " + svc
+		}
+		return "b " + svc
+	}
+
+	// Add all currently running versions to the table.
+	for _, svc := range asset.GetReportedState().GetAppengine().GetServices() {
+		for _, ver := range svc.Versions {
+			// Visit only active or only inactive versions, based on `active` flag.
+			traffic := (svc.TrafficAllocation[ver.Name] * 100) / 1000
+			if active != (traffic != 0) {
+				continue
+			}
+
+			// Trim giant email suffixes of service accounts. There are very few of
+			// service accounts that should be deploying stuff, and they are easily
+			// identified by their name alone.
+			deployer := ver.GetCapturedState().CreatedBy
+			if strings.HasSuffix(deployer, ".gserviceaccount.com") {
+				deployer = strings.Split(deployer, "@")[0]
+			}
+
+			versions[versionID{svc.Name, ver.Name}] = versionState{
+				Service:         svc.Name,
+				Version:         ver.Name,
+				Deployed:        timestampHref(ver.GetCapturedState().CreateTime, "", "<br>by "+html.EscapeString(deployer)),
+				TrafficReported: traffic,
+				sortKey1:        serviceSortKey(svc.Name),
+				sortKey2:        ver.GetCapturedState().CreateTime.AsTime().Unix(),
+			}
+		}
+	}
+
+	// Add all versions that are declared in the configs. They are all considered
+	// active (even when they get 0% intended traffic), since they are "actively"
+	// declared in the configs.
+	if active {
+		for _, svc := range asset.GetIntendedState().GetAppengine().GetServices() {
+			for _, ver := range svc.Versions {
+				key := versionID{svc.Name, ver.Name}
+				val, ok := versions[key]
+				if !ok {
+					val = versionState{
+						Service:  svc.Name,
+						Version:  ver.Name,
+						sortKey1: serviceSortKey(svc.Name),
+						sortKey2: distantFuture.Unix(), // will show up before any currently deployed version
+					}
+				}
+				val.TrafficIntended = (svc.TrafficAllocation[ver.Name] * 100) / 1000
+				versions[key] = val
+			}
+		}
+	}
+
+	// Sort by service, then by version deployment time (most recent on top).
+	versionsList := make([]versionState, 0, len(versions))
+	for _, v := range versions {
+		versionsList = append(versionsList, v)
+	}
+	sort.Slice(versionsList, func(li, ri int) bool {
+		l, r := versionsList[li], versionsList[ri]
+		if l.sortKey1 == r.sortKey1 {
+			return l.sortKey2 > r.sortKey2 // reversed intentionally
+		}
+		return l.sortKey1 < r.sortKey1
+	})
+
+	if len(versionsList) == 0 {
+		return versionsList
+	}
+
+	// Populate RowSpan by "merging" rows with the same Service name.
+	curIdx := 0
+	for i := range versionsList {
+		if versionsList[i].Service != versionsList[curIdx].Service {
+			curIdx = i
+		}
+		versionsList[curIdx].RowSpan += 1
+	}
+
+	return versionsList
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
 // assetPage renders the asset page.
 func (ui *UI) assetPage(ctx *router.Context) error {
 	asset, err := ui.assets.GetAsset(ctx.Context, &rpcpb.GetAssetRequest{
@@ -253,18 +376,14 @@ func (ui *UI) assetPage(ctx *router.Context) error {
 		return err
 	}
 
-	// TODO: this is temporary.
-	dump, err := (prototext.MarshalOptions{Indent: "  "}).Marshal(asset)
-	if err != nil {
-		return err
-	}
-
 	ref := assetRefFromID(asset.Id)
 
 	templates.MustRender(ctx.Context, ctx.Writer, "pages/asset.html", map[string]interface{}{
-		"Breadcrumbs": assetBreadcrumbs(ref),
-		"Ref":         ref,
-		"Dump":        string(dump),
+		"Breadcrumbs":      assetBreadcrumbs(ref),
+		"Ref":              ref,
+		"Overview":         deriveAssetOverview(asset),
+		"ActiveVersions":   versionsSummary(asset, true),
+		"InactiveVersions": versionsSummary(asset, false),
 	})
 	return nil
 }

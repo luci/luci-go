@@ -11,20 +11,192 @@
 
 {{end}}
 
+{{define "versionsTable"}}
+<table class="table table-sm table-borderless">
+  <thead>
+    <tr>
+      <th class="col-2">Service</th>
+      <th class="col-4">Version</th>
+      <th>Deployed</th>
+      <th class="text-center">Intended traffic</th>
+      <th class="text-center">Actual traffic</th>
+    </tr>
+  </thead>
+  <tbody>
+  {{range .}}
+    <tr>
+      {{if .RowSpan}}
+      <td rowspan="{{.RowSpan}}" class="align-middle">{{.Service}}</td>
+      {{end}}
+      <td>{{.Version}}</td>
+      <td>{{template "linkHref" .Deployed}}</td>
+      <td>
+        <div class="text-center percent-widget" data-percent="{{.TrafficIntended}}">
+          {{.TrafficIntended}}%
+        </div>
+      </td>
+      <td>
+        <div class="text-center percent-widget" data-percent="{{.TrafficReported}}">
+          {{.TrafficReported}}%
+        </div>
+      </td>
+    </tr>
+  {{end}}
+  </tbody>
+</table>
+{{end}}
+
+
 {{define "content"}}
 
 {{template "breadcrumbs" .}}
 
 <div class="container">
-  <div class="row">
-    <div class="col">
-      <h2 id="asset-title">{{template "assetTitle" .Ref}}</h2>
-      <hr>
-      <b>TODO: actual UI</b>
-      <hr>
-      <pre>{{.Dump}}</pre>
+  <div class="row align-items-center pb-3">
+    <div class="col-8">
+      <h3 id="asset-title">{{template "assetTitle" .Ref}}</h3>
+    </div>
+
+    <div class="col-4">
+      <div class="row">
+        <div class="col">Status</div>
+        <div class="col"><span class="badge {{.Overview.BadgeClass}}">{{.Overview.State}}</span></div>
+      </div>
+
+      <div class="row">
+        <div class="col">
+          <span data-bs-toggle="popover"
+                data-bs-placement="left"
+                data-bs-trigger="hover"
+                data-bs-content="
+                    The last time the actuator reported the current observed
+                    state and Infrastructure-as-Code (IaC) configuration of
+                    this asset.
+          ">
+          Last check in
+          </span>
+        </div>
+        <div class="col">{{template "linkHref" .Overview.LastCheckIn}}</div>
+      </div>
+
+      <div class="row">
+        <div class="col">
+          <span data-bs-toggle="popover"
+                data-bs-placement="left"
+                data-bs-trigger="hover"
+                data-bs-content="
+                    The last time the actuator tried to update the asset
+                    to match the Infrastructure-as-Code (IaC) configuration
+                    (successfully or not).
+          ">
+          Last actuation
+          </span>
+        </div>
+        <div class="col">{{template "linkHref" .Overview.LastActuation}}</div>
+      </div>
+
+      <div class="row">
+        <div class="col">
+          <span data-bs-toggle="popover"
+                data-bs-placement="left"
+                data-bs-trigger="hover"
+                data-bs-content="
+                    The revision of the Infrastructure-as-Code (IaC)
+                    configuration the actuator successfully applied most
+                    recently.
+          ">
+          Applied revision
+          </span>
+        </div>
+        <div class="col">{{template "linkHref" .Overview.Revision}}</div>
+      </div>
     </div>
   </div>
+
+  <div class="row">
+    <div class="col">
+      <div class="accordion">
+
+        <div class="accordion-item">
+          <h2 class="accordion-header" id="active-versions-heading">
+            <button class="accordion-button" type="button"
+              data-bs-toggle="collapse"
+              data-bs-target="#active-versions-body"
+              aria-expanded="true"
+              aria-controls="active-versions-body">
+              Active versions
+            </button>
+          </h2>
+          <div id="active-versions-body"
+            class="accordion-collapse collapse show"
+            aria-labelledby="active-versions-heading">
+            <div class="accordion-body">
+              {{template "versionsTable" .ActiveVersions}}
+            </div>
+          </div>
+        </div>
+
+        <div class="accordion-item">
+          <h2 class="accordion-header" id="inactive-versions-heading">
+            <button class="accordion-button collapsed" type="button"
+              data-bs-toggle="collapse"
+              data-bs-target="#inactive-versions-body"
+              aria-expanded="true"
+              aria-controls="inactive-versions-body">
+              Inactive versions
+            </button>
+          </h2>
+          <div id="inactive-versions-body"
+            class="accordion-collapse collapse"
+            aria-labelledby="inactive-versions-heading">
+            <div class="accordion-body">
+              {{template "versionsTable" .InactiveVersions}}
+            </div>
+          </div>
+        </div>
+
+        <div class="accordion-item">
+          <h2 class="accordion-header" id="configuration-heading">
+            <button class="accordion-button collapsed" type="button"
+              data-bs-toggle="collapse"
+              data-bs-target="#configuration-body"
+              aria-expanded="true"
+              aria-controls="configuration-body">
+              Configuration
+            </button>
+          </h2>
+          <div id="configuration-body"
+            class="accordion-collapse collapse"
+            aria-labelledby="configuration-heading">
+            <div class="accordion-body">
+              <b>TODO</b>
+            </div>
+          </div>
+        </div>
+
+        <div class="accordion-item">
+          <h2 class="accordion-header" id="history-log-heading">
+            <button class="accordion-button" type="button"
+              data-bs-toggle="collapse"
+              data-bs-target="#history-log-body"
+              aria-expanded="true"
+              aria-controls="history-log-body">
+              History of actuations
+            </button>
+          </h2>
+          <div id="history-log-body"
+            class="accordion-collapse collapse show"
+            aria-labelledby="history-log-heading">
+            <div class="accordion-body">
+              <b>TODO</b>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
 </div>
 
 {{end}}

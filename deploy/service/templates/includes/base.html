@@ -38,6 +38,19 @@ that can be found in the LICENSE file. -->
       document.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(
           elem => new bootstrap.Tooltip(elem, {container: 'body'})
       );
+
+      // Draw percent bars for all elements with "percent-widget" class.
+      document.querySelectorAll('.percent-widget').forEach(
+          elem => {
+            let percent = parseInt(elem.getAttribute('data-percent'), 10);
+            if (percent != 0 && !isNaN(percent)) {
+              elem.style.background = `linear-gradient(\
+                  to right, \
+                  #b8ffce ${percent}%, \
+                  #e3ffec ${percent}% 100%)`;
+            }
+          }
+      );
     }
   </script>
 </head>
@@ -84,13 +97,22 @@ that can be found in the LICENSE file. -->
   href="{{.Href}}" target="_blank"
   {{if .Tooltip}}
   data-bs-toggle="tooltip"
+  data-bs-html="true"
   data-bs-placement="top"
   data-bs-trigger="hover"
   title="{{.Tooltip}}"
   {{end}}
 >{{if .Text}}{{.Text}}{{else}}-{{end}}</a>
 {{else}}
-<span>{{if .Text}}{{.Text}}{{else}}-{{end}}</span>
+<span
+  {{if .Tooltip}}
+  data-bs-toggle="tooltip"
+  data-bs-html="true"
+  data-bs-placement="top"
+  data-bs-trigger="hover"
+  title="{{.Tooltip}}"
+  {{end}}
+>{{if .Text}}{{.Text}}{{else}}-{{end}}</span>
 {{end}}
 {{end}}
 
