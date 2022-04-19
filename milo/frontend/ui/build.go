@@ -87,6 +87,8 @@ func (b *Build) CommitLinkHTML() template.HTML {
 	switch {
 	case c.Position != 0:
 		label = fmt.Sprintf("%s@{#%d}", c.Ref, c.Position)
+	case strings.HasPrefix(c.Ref, "refs/tags/"):
+		label = c.Ref
 	case c.Id != "":
 		label = c.Id
 	case c.Ref != "":
