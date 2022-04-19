@@ -29,7 +29,7 @@ import (
 	"go.chromium.org/luci/hardcoded/chromeinfra"
 	"go.chromium.org/luci/server/auth"
 
-	"go.chromium.org/luci/cv/api/config/v2"
+	cfgpb "go.chromium.org/luci/cv/api/config/v2"
 	"go.chromium.org/luci/cv/internal/buildbucket"
 	"go.chromium.org/luci/cv/internal/configs/prjcfg"
 	"go.chromium.org/luci/cv/internal/run"
@@ -172,7 +172,6 @@ func getIncludedTryjobs(directives []string) (stringset.Set, ComputationFailure)
 // a locationRegexp pattern and does not match any locationRegexpExclude
 // patterns.
 //
-//
 // Note that an empty locationRegexp is treated equivalently to a `.*` value.
 //
 // Panics if any regex is invalid.
@@ -265,7 +264,7 @@ const (
 
 // makeDefinition creates a Tryjob Definition for the given builder names and
 // reuse flag.
-func makeDefinition(builder *config.Verifiers_Tryjob_Builder, useEquivalent equivalentUsage, isCritical criticality) *tryjob.Definition {
+func makeDefinition(builder *cfgpb.Verifiers_Tryjob_Builder, useEquivalent equivalentUsage, isCritical criticality) *tryjob.Definition {
 	var definition *tryjob.Definition
 	switch useEquivalent {
 	case mainOnly:
@@ -284,7 +283,7 @@ func makeDefinition(builder *config.Verifiers_Tryjob_Builder, useEquivalent equi
 	definition.DisableReuse = builder.DisableReuse
 	definition.Critical = bool(isCritical)
 	definition.ResultVisibility = builder.ResultVisibility
-	definition.SkipStaleCheck = builder.GetCancelStale() == config.Toggle_NO
+	definition.SkipStaleCheck = builder.GetCancelStale() == cfgpb.Toggle_NO
 	return definition
 }
 
@@ -340,7 +339,7 @@ func makeRands(in Input, n int) []*rand.Rand {
 	return ret
 }
 
-func isPresubmit(builder *config.Verifiers_Tryjob_Builder) bool {
+func isPresubmit(builder *cfgpb.Verifiers_Tryjob_Builder) bool {
 	// TODO(crbug.com/1292195): Implement a different way of deciding that a
 	// builder is presubmit.
 	return builder.DisableReuse
@@ -357,7 +356,7 @@ const (
 
 // shouldInclude decides based on the configuration whether a given builder
 // should be skipped in generating the requirement.
-func shouldInclude(ctx context.Context, in Input, er *rand.Rand, b *config.Verifiers_Tryjob_Builder, incl stringset.Set, owners []string) (inclusionResult, ComputationFailure, error) {
+func shouldInclude(ctx context.Context, in Input, er *rand.Rand, b *cfgpb.Verifiers_Tryjob_Builder, incl stringset.Set, owners []string) (inclusionResult, ComputationFailure, error) {
 	switch ps := isPresubmit(b); {
 	case in.RunOptions.SkipTryjobs && !ps:
 		return skipBuilder, nil, nil
@@ -428,7 +427,7 @@ func shouldInclude(ctx context.Context, in Input, er *rand.Rand, b *config.Verif
 // getIncludablesAndTriggeredBy computes the set of builders that it is valid to
 // include as trybots in a CL, and those that cannot be included due to their
 // being triggered by another builder.
-func getIncludablesAndTriggeredBy(builders []*config.Verifiers_Tryjob_Builder) (includable, triggeredByOther stringset.Set) {
+func getIncludablesAndTriggeredBy(builders []*cfgpb.Verifiers_Tryjob_Builder) (includable, triggeredByOther stringset.Set) {
 	includable = stringset.New(len(builders))
 	triggeredByOther = stringset.New(len(builders))
 	for _, b := range builders {
@@ -502,7 +501,7 @@ func Compute(ctx context.Context, in Input) (*ComputationResult, error) {
 					return nil, err
 				case len(disallowedOwners) == 0:
 					if equivalentBuilderRand.Float32()*100 <= builder.EquivalentTo.Percentage {
-						// invert equivalence: trigger equivalent, but accept reusing original too.
+						// Invert equivalence: trigger equivalent, but accept reusing original too.
 						equivalence = flipMainAndEquivalent
 					}
 				default:

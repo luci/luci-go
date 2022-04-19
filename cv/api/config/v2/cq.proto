@@ -575,9 +575,10 @@ message Verifiers {
       // excluded.
       //
       // If host, project or path are empty, then they will match anything
-      // (".*") by default. The syntax for regular expressions is Google's re2
-      // syntax for regexp, documented here:
-      // https://github.com/google/re2/wiki/Syntax.
+      // (".*") by default. The comparison is a full match; the pattern is
+      // implicitly anchored with "^" and "$", so there is no need add them.
+      // The syntax for regular expressions is Google's re2 syntax for regexp,
+      // documented here: https://github.com/google/re2/wiki/Syntax.
       //
       // If location_filters is non-empty, and no file in a CL is included by
       // location_filters, then this builder will not be triggered. If
@@ -614,13 +615,15 @@ message Verifiers {
       //     except all/one.txt which will be included; files outside of the
       //     given host/repo will be included.
       message LocationFilter {
-        // Regexes to match host, repo, or path string.
-        // Default for each is ".*", matching anything.
+        // Regular expressions to match host, repo, or path string. Default for
+        // each is ".*", matching anything. These patterns are each implicitly
+        // surrounded with "^...$".
         string gerrit_host_regexp = 1;
         string gerrit_project_regexp = 2;
         string path_regexp = 3;
-        // If true, then when a file matches the above patterns
-        // then this filter doesn't match the file.
+        // If exclude is true, then if this filter matches a file, the file is
+        // considered not included. (If all files are not included, then the
+        // builder is not triggered.)
         bool exclude = 4;
       }
       repeated LocationFilter location_filters = 15;

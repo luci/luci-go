@@ -1842,9 +1842,10 @@ func (x *Verifiers_Tryjob_RetryConfig) GetTimeoutWeight() int32 {
 // excluded.
 //
 // If host, project or path are empty, then they will match anything
-// (".*") by default. The syntax for regular expressions is Google's re2
-// syntax for regexp, documented here:
-// https://github.com/google/re2/wiki/Syntax.
+// (".*") by default. The comparison is a full match; the pattern is
+// implicitly anchored with "^" and "$", so there is no need add them.
+// The syntax for regular expressions is Google's re2 syntax for regexp,
+// documented here: https://github.com/google/re2/wiki/Syntax.
 //
 // If location_filters is non-empty, and no file in a CL is included by
 // location_filters, then this builder will not be triggered. If
@@ -1885,13 +1886,15 @@ type Verifiers_Tryjob_Builder_LocationFilter struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// Regexes to match host, repo, or path string.
-	// Default for each is ".*", matching anything.
+	// Regular expressions to match host, repo, or path string. Default for
+	// each is ".*", matching anything. These patterns are each implicitly
+	// surrounded with "^...$".
 	GerritHostRegexp    string `protobuf:"bytes,1,opt,name=gerrit_host_regexp,json=gerritHostRegexp,proto3" json:"gerrit_host_regexp,omitempty"`
 	GerritProjectRegexp string `protobuf:"bytes,2,opt,name=gerrit_project_regexp,json=gerritProjectRegexp,proto3" json:"gerrit_project_regexp,omitempty"`
 	PathRegexp          string `protobuf:"bytes,3,opt,name=path_regexp,json=pathRegexp,proto3" json:"path_regexp,omitempty"`
-	// If true, then when a file matches the above patterns
-	// then this filter doesn't match the file.
+	// If exclude is true, then if this filter matches a file, the file is
+	// considered not included. (If all files are not included, then the
+	// builder is not triggered.)
 	Exclude bool `protobuf:"varint,4,opt,name=exclude,proto3" json:"exclude,omitempty"`
 }
 

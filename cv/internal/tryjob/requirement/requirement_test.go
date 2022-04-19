@@ -208,7 +208,7 @@ func makeFakeAuthState(ctx context.Context) context.Context {
 
 func TestGetDisallowedOwners(t *testing.T) {
 	ctx := makeFakeAuthState(context.Background())
-	Convey("GetDisallowedOwners", t, func() {
+	Convey("getDisallowedOwners", t, func() {
 		Convey("works", func() {
 			Convey("with no allowlists", func() {
 				disallowed, err := getDisallowedOwners(ctx, []string{userA.Email()})
@@ -493,6 +493,14 @@ func TestCompute(t *testing.T) {
 				in := makeInput(ctx, []*config.Verifiers_Tryjob_Builder{builderConfigGenerator{
 					Name:                  "luci/test/builder1",
 					LocationRegexpExclude: []string{"https://example.com/repo/[+]/some/.+"},
+					LocationFilters: []*config.Verifiers_Tryjob_Builder_LocationFilter{
+						&config.Verifiers_Tryjob_Builder_LocationFilter{
+							GerritHostRegexp:    "https://example.com",
+							GerritProjectRegexp: "repo",
+							PathRegexp:          "some/.+",
+							Exclude:             true,
+						},
+					},
 				}.generate()})
 
 				in.CLs[0].Detail.GetGerrit().Files = []string{
@@ -512,6 +520,13 @@ func TestCompute(t *testing.T) {
 				in := makeInput(ctx, []*config.Verifiers_Tryjob_Builder{builderConfigGenerator{
 					Name:           "luci/test/builder1",
 					LocationRegexp: []string{"https://example.com/repo/[+]/some/.+"},
+					LocationFilters: []*config.Verifiers_Tryjob_Builder_LocationFilter{
+						&config.Verifiers_Tryjob_Builder_LocationFilter{
+							GerritHostRegexp:    "https://example.com",
+							GerritProjectRegexp: "repo",
+							PathRegexp:          "some/.+",
+						},
+					},
 				}.generate()})
 
 				Convey("matching CL", func() {
@@ -591,6 +606,20 @@ func TestCompute(t *testing.T) {
 						Name:                  "luci/test/builder1",
 						LocationRegexp:        []string{"https://example.com/repo/[+]/some/.+"},
 						LocationRegexpExclude: []string{"https://example.com/repo/[+]/some/excluded/.*"},
+						LocationFilters: []*config.Verifiers_Tryjob_Builder_LocationFilter{
+							&config.Verifiers_Tryjob_Builder_LocationFilter{
+								GerritHostRegexp:    "https://example.com",
+								GerritProjectRegexp: "repo",
+								PathRegexp:          "some/.+",
+								Exclude:             false,
+							},
+							&config.Verifiers_Tryjob_Builder_LocationFilter{
+								GerritHostRegexp:    "https://example.com",
+								GerritProjectRegexp: "repo",
+								PathRegexp:          "some/excluded/.*",
+								Exclude:             true,
+							},
+						},
 					}.generate()},
 				)
 				Convey("matching CL skipping builder", func() {
@@ -668,6 +697,7 @@ type builderConfigGenerator struct {
 	ExperimentPercentage  float32
 	LocationRegexp        []string
 	LocationRegexpExclude []string
+	LocationFilters       []*config.Verifiers_Tryjob_Builder_LocationFilter
 	TriggeredBy           string
 }
 
@@ -677,6 +707,7 @@ func (bcg builderConfigGenerator) generate() *config.Verifiers_Tryjob_Builder {
 		IncludableOnly:        bcg.IncludableOnly,
 		LocationRegexp:        bcg.LocationRegexp,
 		LocationRegexpExclude: bcg.LocationRegexpExclude,
+		LocationFilters:       bcg.LocationFilters,
 		TriggeredBy:           bcg.TriggeredBy,
 	}
 	if bcg.Allowlist != "" {
