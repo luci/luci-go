@@ -154,77 +154,87 @@ service Gerrit {
 // Source of truth:
 // https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#query-options
 enum QueryOption {
-  OPTION_UNSPECIFIED = 0;
+  OPTION_UNSPECIFIED = 0x0;
   // A summary of each label required for submit, and approvers that have
   // granted (or rejected) with that label.
-  LABELS = 1;
+  LABELS = 0x1;
   // Detailed label information, including numeric values of all existing
   // approvals, recognized label values, values permitted to be set by the
   // current user, all reviewers by state, and reviewers that may be removed by
   // the current user.
-  DETAILED_LABELS = 2;
+  DETAILED_LABELS = 0x2;
   // Describe the current revision (patch set) of the change, including the
   // commit SHA-1 and URLs to fetch from.
-  CURRENT_REVISION = 4;
+  CURRENT_REVISION = 0x4;
   // Describe all revisions, not just current.
-  ALL_REVISIONS = 8;
+  ALL_REVISIONS = 0x8;
   // Parse and output all header fields from the commit object, including
   // message. Only valid when the CURRENT_REVISION or ALL_REVISIONS option is
   // selected.
-  CURRENT_COMMIT = 16;
+  CURRENT_COMMIT = 0x10;
   // Parse and output all header fields from the output revisions. If only
   // CURRENT_REVISION was requested then only the current revision’s commit data
   // will be output.
-  ALL_COMMITS = 32;
+  ALL_COMMITS = 0x20;
   // List files modified by the commit and magic files, including basic line
   // counts inserted/deleted per file. Only valid when the CURRENT_REVISION or
   // ALL_REVISIONS option is selected.
-  CURRENT_FILES = 64;
+  CURRENT_FILES = 0x40;
   // List files modified by the commit and magic files, including basic line
   // counts inserted/deleted per file. If only the CURRENT_REVISION was
   // requested then only that commit’s modified files will be output.
-  ALL_FILES = 128;
+  ALL_FILES = 0x80;
   // Include _account_id, email and username fields when referencing accounts.
-  DETAILED_ACCOUNTS = 256;
+  DETAILED_ACCOUNTS = 0x100;
   // Include updates to reviewers set as ReviewerUpdateInfo entities.
-  REVIEWER_UPDATES = 512;
+  REVIEWER_UPDATES = 0x200;
   // Include messages associated with the change.
-  MESSAGES = 1024;
+  MESSAGES = 0x400;
   // Include information on available actions for the change and its current
   // revision. Ignored if the caller is not authenticated.
-  CURRENT_ACTIONS = 2048;
+  CURRENT_ACTIONS = 0x800;
   // Include information on available change actions for the change. Ignored if
   // the caller is not authenticated.
-  CHANGE_ACTIONS = 4096;
+  CHANGE_ACTIONS = 0x1000;
   // Include the reviewed field if all of the following are true:
   // - the change is open
   // - the caller is authenticated
   // - the caller has commented on the change more recently than the last update
   //   from the change owner, i.e. this change would show up in the results of
   //   reviewedby:self.
-  REVIEWED = 8192;
+  REVIEWED = 0x2000;
   // Skip the mergeable field in ChangeInfo. For fast moving projects, this
   // field must be recomputed often, which is slow for projects with big trees.
-  SKIP_MERGEABLE = 16384;
+  SKIP_MERGEABLE = 0x4000;
   // Include the submittable field in ChangeInfo, which can be used to tell if
   // the change is reviewed and ready for submit.
-  SUBMITTABLE = 32768;
+  SUBMITTABLE = 0x8000;
   // Include the web_links field in CommitInfo, therefore only valid in
   // combination with CURRENT_COMMIT or ALL_COMMITS.
-  WEB_LINKS = 65536;
+  WEB_LINKS = 0x10000;
   // Include potential problems with the change.
-  CHECK = 131072;
+  CHECK = 0x20000;
   // Include the full commit message with Gerrit-specific commit footers in the
   // RevisionInfo.
-  COMMIT_FOOTERS = 262144;
+  COMMIT_FOOTERS = 0x40000;
   // Include push certificate information in the RevisionInfo. Ignored if signed
   // push is not enabled on the server.
-  PUSH_CERTIFICATES = 524288;
+  PUSH_CERTIFICATES = 0x80000;
   // Include references to external tracking systems as TrackingIdInfo.
-  TRACKING_IDS = 1048576;
+  TRACKING_IDS = 0x100000;
   // Include the commands field in the FetchInfo for revisions. Only valid when
   // the CURRENT_REVISION or ALL_REVISIONS option is selected.
-  DOWNLOAD_COMMANDS = 2097152;
+  DOWNLOAD_COMMANDS = 0x200000;
+
+  // MAX_QUERY_OPTION is the largest possible number in QueryOption.
+  //
+  // This is not meant to be used, but to indicate the upper bound of the valid
+  // enum value set.
+  //
+  // QueryOption is typed as int32, and the largest possible value is
+  // pow(2,31) - 1. MAX_QUERY_OPTION is the largest power of 2 allowed in
+  // QueryOption.
+  MAX_QUERY_OPTION = 0x40000000;
 }
 
 // Specify the notification options for an action.
