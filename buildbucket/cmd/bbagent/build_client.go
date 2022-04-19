@@ -59,6 +59,7 @@ var _ BuildsClient = dummyBBClient{}
 var readMask = &bbpb.BuildMask{
 	Fields: &fieldmaskpb.FieldMask{
 		Paths: []string{
+			"id",
 			"cancel_time",
 		},
 	},
