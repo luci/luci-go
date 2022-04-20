@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package buildbucket
+package bbfacade
 
 import (
 	"context"
@@ -30,21 +30,17 @@ import (
 	"go.chromium.org/luci/grpc/grpcutil"
 
 	"go.chromium.org/luci/cv/api/recipe/v1"
+	"go.chromium.org/luci/cv/internal/buildbucket"
 	"go.chromium.org/luci/cv/internal/tryjob"
 )
 
-// SubscriptionID is the default subscription ID for listening to Buildbucket
-// build updates.
-const SubscriptionID = "buildbucket-builds"
-
-// Backend implements updaterBackend and cancellatorBackend interfaces.
-//
-// It can talk to Buildbucket to get Tryjobs' details and to cancel them.
-type Backend struct {
-	ClientFactory ClientFactory
+// Facade provides APIs that LUCI CV can use to interact with buildbucket
+// tryjobs.
+type Facade struct {
+	ClientFactory buildbucket.ClientFactory
 }
 
-func (b *Backend) Kind() string {
+func (f *Facade) Kind() string {
 	return "buildbucket"
 }
 
@@ -66,13 +62,13 @@ var TryjobBuildMask = &bbpb.BuildMask{
 // parses its output and returns its current Status and Result.
 //
 // It does not modify the given Tryjob.
-func (b *Backend) Update(ctx context.Context, saved *tryjob.Tryjob) (tryjob.Status, *tryjob.Result, error) {
+func (f *Facade) Update(ctx context.Context, saved *tryjob.Tryjob) (tryjob.Status, *tryjob.Result, error) {
 	host, buildID, err := saved.ExternalID.ParseBuildbucketID()
 	if err != nil {
 		return 0, nil, err
 	}
 
-	bbClient, err := b.ClientFactory.MakeClient(ctx, host, saved.LUCIProject())
+	bbClient, err := f.ClientFactory.MakeClient(ctx, host, saved.LUCIProject())
 	if err != nil {
 		return 0, nil, err
 	}
@@ -91,13 +87,13 @@ func (b *Backend) Update(ctx context.Context, saved *tryjob.Tryjob) (tryjob.Stat
 // CancelTryjob asks buildbucket to cancel a running tryjob.
 //
 // It returns nil error if the buildbucket build is ended.
-func (b *Backend) CancelTryjob(ctx context.Context, tj *tryjob.Tryjob) error {
+func (f *Facade) CancelTryjob(ctx context.Context, tj *tryjob.Tryjob) error {
 	host, buildID, err := tj.ExternalID.ParseBuildbucketID()
 	if err != nil {
 		return err
 	}
 
-	bbClient, err := b.ClientFactory.MakeClient(ctx, host, tj.LUCIProject())
+	bbClient, err := f.ClientFactory.MakeClient(ctx, host, tj.LUCIProject())
 	if err != nil {
 		return err
 	}

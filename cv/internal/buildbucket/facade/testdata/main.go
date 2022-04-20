@@ -31,7 +31,7 @@ import (
 	"go.chromium.org/luci/cv/internal/buildbucket"
 )
 
-var downloadBuildFlag = flag.Int64("download-build", 0, "Fetches & stores test data for a given build ID.\n\nFor internal builds, run inside luci-auth context, but beware of confidental data.")
+var downloadBuildFlag = flag.Int64("download-build", 0, "Fetches & stores test data for a given build ID.\n\nFor internal builds, run inside luci-auth context, but beware of confidential data.")
 
 func downloadFixture(ctx context.Context, buildID int64) error {
 	opts := auth.Options{}

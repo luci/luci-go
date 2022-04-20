@@ -12,7 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package buildbucket
+// Package bblistener listens to build updates notification from Buildbucket
+// Pubsub.
+package bblistener
 
 import (
 	"context"
@@ -32,17 +34,21 @@ import (
 	"go.chromium.org/luci/cv/internal/tryjob"
 )
 
+// SubscriptionID is the default subscription ID for listening to Buildbucket
+// build updates.
+const SubscriptionID = "buildbucket-builds"
+
 // This interface is implemented by tryjob.Updater, but can be mocked in this
 // package for testing.
 type scheduler interface {
 	Schedule(context.Context, common.TryjobID, tryjob.ExternalID) error
 }
 
-// NewListener creates a pulling batch processor that pulls Buildbucket build
+// New creates a pulling batch processor that pulls Buildbucket build
 // notifications from the PubSub subscription specified by projectID and subID,
 // and when they concern a Tryjob corresponding to one of our Runs, schedules
 // tasks to notify the appropriate Run Manager.
-func NewListener(updater scheduler, projectID, subID string) (*pubsubutils.PullingBatchProcessor, error) {
+func New(updater scheduler, projectID, subID string) (*pubsubutils.PullingBatchProcessor, error) {
 	listener := &pubsubutils.PullingBatchProcessor{
 		ProcessBatch: func(ctx context.Context, msgs []*pubsub.Message) error {
 			return processNotificationsBatch(ctx, updater, notsFromMsgs(msgs))

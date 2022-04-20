@@ -46,6 +46,8 @@ import (
 	apiv0pb "go.chromium.org/luci/cv/api/v0"
 	"go.chromium.org/luci/cv/internal/aggrmetrics"
 	"go.chromium.org/luci/cv/internal/buildbucket"
+	bbfacade "go.chromium.org/luci/cv/internal/buildbucket/facade"
+	bblistener "go.chromium.org/luci/cv/internal/buildbucket/listener"
 	"go.chromium.org/luci/cv/internal/changelist"
 	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/common/bq"
@@ -112,13 +114,13 @@ func main() {
 		clUpdater := changelist.NewUpdater(&tq.Default, clMutator)
 		gerritupdater.RegisterUpdater(clUpdater, gFactory)
 
-		buildbucketBackend := &buildbucket.Backend{
+		bbFacade := &bbfacade.Facade{
 			ClientFactory: buildbucket.NewClientFactory(),
 		}
 		tryjobUpdater := tryjob.NewUpdater(&tq.Default, runNotifier)
-		tryjobUpdater.RegisterBackend(buildbucketBackend)
+		tryjobUpdater.RegisterBackend(bbFacade)
 		tryjobCancellator := tjcancel.NewCancellator(tryjobNotifier)
-		tryjobCancellator.RegisterBackend(buildbucketBackend)
+		tryjobCancellator.RegisterBackend(bbFacade)
 
 		_ = pmimpl.New(pmNotifier, runNotifier, clMutator, gFactory, clUpdater)
 		tc, err := tree.NewClient(srv.Context)
@@ -172,7 +174,7 @@ func main() {
 		cron.RegisterHandler("aggregate-metrics", func(ctx context.Context) error {
 			return aggregator.Cron(ctx)
 		})
-		buildbucketListener, err := buildbucket.NewListener(tryjobUpdater, srv.Options.CloudProject, buildbucket.SubscriptionID)
+		buildbucketListener, err := bblistener.New(tryjobUpdater, srv.Options.CloudProject, bblistener.SubscriptionID)
 		if err != nil {
 			return err
 		}

@@ -1,4 +1,4 @@
-// Copyright 2021 The LUCI Authors.
+// Copyright 2022 The LUCI Authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,5 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package buildbucket contains Buildbucket related utility functions.
-package buildbucket
+// Package bbfacade provides a facade for CV Tryjob support, hiding
+// Buildbucket-specifc implementation details.
+package bbfacade
