@@ -17,6 +17,7 @@ package ui
 import (
 	"fmt"
 	"html"
+	"net/url"
 	"sort"
 	"strings"
 	"time"
@@ -182,6 +183,32 @@ func buildbucketHref(act *modelpb.ActuatorInfo) string {
 	return fmt.Sprintf("https://%s/build/%d", act.Buildbucket, act.BuildbucketBuild)
 }
 
+// appengineServiceHref returns a link to a GAE service Cloud Console page.
+func appengineServiceHref(project, service string) linkHref {
+	return linkHref{
+		Text: service,
+		Href: "https://console.cloud.google.com/appengine/versions?" + (url.Values{
+			"project":   {project},
+			"serviceId": {service},
+		}).Encode(),
+	}
+}
+
+// appengineVersionHref returns a link to a GAE version Cloud Console logs page.
+func appengineVersionHref(project, service, version string) linkHref {
+	// That's how "TOOLS => Logs" link looks like on GAE Versions list page.
+	return linkHref{
+		Text: version,
+		Href: "https://console.cloud.google.com/logs?" + (url.Values{
+			"project":   {project},
+			"serviceId": {service},
+			"service":   {"appengine.googleapis.com"},
+			"key1":      {service},
+			"key2":      {version},
+		}).Encode(),
+	}
+}
+
 // commitHref returns a link to the commit matching the deployment.
 func commitHref(dep *modelpb.Deployment) linkHref {
 	if dep.GetId().GetRepoHost() == "" || dep.GetConfigRev() == "" {
@@ -258,8 +285,8 @@ func deriveAssetOverview(asset *modelpb.Asset) assetOverview {
 ////////////////////////////////////////////////////////////////////////////////
 
 type versionState struct {
-	Service         string   // name of the service e.g. "default"
-	Version         string   // name of the version e.g. "1234-abcedf"
+	Service         linkHref // name of the service e.g. "default"
+	Version         linkHref // name of the version e.g. "1234-abcedf"
 	Deployed        linkHref // when it was deployed
 	TrafficIntended int32    // intended percent of traffic
 	TrafficReported int32    // reported percent of traffic
@@ -286,6 +313,8 @@ func versionsSummary(asset *modelpb.Asset, active bool) []versionState {
 		return "b " + svc
 	}
 
+	projectID := strings.TrimPrefix(asset.Id, "apps/")
+
 	// Add all currently running versions to the table.
 	for _, svc := range asset.GetReportedState().GetAppengine().GetServices() {
 		for _, ver := range svc.Versions {
@@ -304,8 +333,8 @@ func versionsSummary(asset *modelpb.Asset, active bool) []versionState {
 			}
 
 			versions[versionID{svc.Name, ver.Name}] = versionState{
-				Service:         svc.Name,
-				Version:         ver.Name,
+				Service:         appengineServiceHref(projectID, svc.Name),
+				Version:         appengineVersionHref(projectID, svc.Name, ver.Name),
 				Deployed:        timestampHref(ver.GetCapturedState().CreateTime, "", "<br>by "+html.EscapeString(deployer)),
 				TrafficReported: traffic,
 				sortKey1:        serviceSortKey(svc.Name),
@@ -324,8 +353,8 @@ func versionsSummary(asset *modelpb.Asset, active bool) []versionState {
 				val, ok := versions[key]
 				if !ok {
 					val = versionState{
-						Service:  svc.Name,
-						Version:  ver.Name,
+						Service:  appengineServiceHref(projectID, svc.Name),
+						Version:  appengineVersionHref(projectID, svc.Name, ver.Name),
 						sortKey1: serviceSortKey(svc.Name),
 						sortKey2: distantFuture.Unix(), // will show up before any currently deployed version
 					}

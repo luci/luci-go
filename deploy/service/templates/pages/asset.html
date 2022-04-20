@@ -12,7 +12,7 @@
 {{end}}
 
 {{define "versionsTable"}}
-<table class="table table-sm table-borderless">
+<table class="table table-sm">
   <thead>
     <tr>
       <th class="col-2">Service</th>
@@ -26,9 +26,9 @@
   {{range .}}
     <tr>
       {{if .RowSpan}}
-      <td rowspan="{{.RowSpan}}" class="align-middle">{{.Service}}</td>
+      <td rowspan="{{.RowSpan}}" class="align-middle">{{template "linkHref" .Service}}</td>
       {{end}}
-      <td>{{.Version}}</td>
+      <td>{{template "linkHref" .Version}}</td>
       <td>{{template "linkHref" .Deployed}}</td>
       <td>
         <div class="text-center percent-widget" data-percent="{{.TrafficIntended}}">
