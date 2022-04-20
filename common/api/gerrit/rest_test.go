@@ -268,6 +268,59 @@ func TestGetChange(t *testing.T) {
 						Type:         "alpha-numer1c-type",
 					},
 				},
+				SubmitRequirements: []*gerritpb.SubmitRequirementResultInfo{
+					{
+						Name:        "Verified",
+						Description: "Submit requirement for the 'Verified' label",
+						Status:      gerritpb.SubmitRequirementResultInfo_NOT_APPLICABLE,
+						IsLegacy:    false,
+						ApplicabilityExpressionResult: &gerritpb.SubmitRequirementExpressionInfo{
+							Fulfilled: false,
+						},
+					},
+					{
+						Name:        "Code-Owners",
+						Description: "Code Owners overrides approval",
+						Status:      gerritpb.SubmitRequirementResultInfo_SATISFIED,
+						IsLegacy:    false,
+						ApplicabilityExpressionResult: &gerritpb.SubmitRequirementExpressionInfo{
+							Fulfilled: true,
+						},
+						SubmittabilityExpressionResult: &gerritpb.SubmitRequirementExpressionInfo{
+							Expression:   "has:approval_code-owners",
+							Fulfilled:    true,
+							PassingAtoms: []string{"has:approval_code-owners"},
+							FailingAtoms: []string{},
+						},
+						OverrideExpressionResult: &gerritpb.SubmitRequirementExpressionInfo{
+							Expression:   "label:Owners-Override=+1",
+							Fulfilled:    false,
+							PassingAtoms: []string{},
+							FailingAtoms: []string{"label:Owners-Override=+1"},
+						},
+					},
+					{
+						Name:        "Code-Review",
+						Description: "Submit requirement for the 'Code-Review' label",
+						Status:      gerritpb.SubmitRequirementResultInfo_UNSATISFIED,
+						IsLegacy:    false,
+						SubmittabilityExpressionResult: &gerritpb.SubmitRequirementExpressionInfo{
+							Expression:   "label:Code-Review=MAX,user=non_uploader -label:Code-Review=MIN",
+							Fulfilled:    false,
+							PassingAtoms: []string{},
+							FailingAtoms: []string{
+								"label:Code-Review=MAX,user=non_uploader",
+								"label:Code-Review=MIN",
+							},
+						},
+						OverrideExpressionResult: &gerritpb.SubmitRequirementExpressionInfo{
+							Expression:   "label:Bot-Commit=+1",
+							Fulfilled:    false,
+							PassingAtoms: []string{},
+							FailingAtoms: []string{"label:Bot-Commit=+1"},
+						},
+					},
+				},
 				Reviewers: &gerritpb.ReviewerStatusMap{
 					Reviewers: []*gerritpb.AccountInfo{
 						{
@@ -410,6 +463,59 @@ func TestGetChange(t *testing.T) {
 							"status": "OK",
 							"fallback_text": "nothing more required",
 							"type": "alpha-numer1c-type"
+						}
+					],
+					"submit_requirements": [
+						{
+							"name": "Verified",
+							"description": "Submit requirement for the 'Verified' label",
+							"status": "NOT_APPLICABLE",
+							"is_legacy": false,
+							"applicability_expression_result": {
+								"fulfilled": false
+							}
+						},
+						{
+							"name": "Code-Owners",
+							"description": "Code Owners overrides approval",
+							"status": "SATISFIED",
+							"is_legacy": false,
+							"applicability_expression_result": {
+								"fulfilled": true
+							},
+							"submittability_expression_result": {
+								"expression": "has:approval_code-owners",
+								"fulfilled": true,
+								"passing_atoms": ["has:approval_code-owners"],
+								"failing_atoms": []
+							},
+							"override_expression_result": {
+								"expression": "label:Owners-Override=+1",
+								"fulfilled": false,
+								"passing_atoms": [],
+								"failing_atoms": ["label:Owners-Override=+1"]
+							}
+						},
+						{
+							"name": "Code-Review",
+							"description": "Submit requirement for the 'Code-Review' label",
+							"status": "UNSATISFIED",
+							"is_legacy": false,
+							"submittability_expression_result": {
+								"expression": "label:Code-Review=MAX,user=non_uploader -label:Code-Review=MIN",
+								"fulfilled": false,
+								"passing_atoms": [],
+								"failing_atoms": [
+									"label:Code-Review=MAX,user=non_uploader",
+									"label:Code-Review=MIN"
+								]
+							},
+							"override_expression_result": {
+								"expression": "label:Bot-Commit=+1",
+								"fulfilled": false,
+								"passing_atoms": [],
+								"failing_atoms": ["label:Bot-Commit=+1"]
+							}
 						}
 					],
 					"reviewers": {

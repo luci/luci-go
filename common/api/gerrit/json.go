@@ -78,11 +78,12 @@ type changeInfo struct {
 	// so this field is handled specially in ToProto.
 	Status string `json:"status"`
 
-	CurrentRevision string                   `json:"current_revision"`
-	Revisions       map[string]*revisionInfo `json:"revisions"`
-	Labels          map[string]*labelInfo    `json:"labels"`
-	Messages        []changeMessageInfo      `json:"messages"`
-	Requirements    []requirement            `json:"requirements"`
+	CurrentRevision    string                         `json:"current_revision"`
+	Revisions          map[string]*revisionInfo       `json:"revisions"`
+	Labels             map[string]*labelInfo          `json:"labels"`
+	Messages           []changeMessageInfo            `json:"messages"`
+	Requirements       []requirement                  `json:"requirements"`
+	SubmitRequirements []*submitRequirementResultInfo `json:"submit_requirements"`
 
 	Created     Timestamp `json:"created"`
 	Updated     Timestamp `json:"updated"`
@@ -139,6 +140,15 @@ func (ci *changeInfo) ToProto() (*gerritpb.ChangeInfo, error) {
 		ret.Requirements = make([]*gerritpb.Requirement, len(ci.Requirements))
 		for i, r := range ci.Requirements {
 			if ret.Requirements[i], err = r.ToProto(); err != nil {
+				return nil, err
+			}
+		}
+	}
+	if ci.SubmitRequirements != nil {
+		ret.SubmitRequirements = make([]*gerritpb.SubmitRequirementResultInfo,
+			len(ci.SubmitRequirements))
+		for i, r := range ci.SubmitRequirements {
+			if ret.SubmitRequirements[i], err = r.ToProto(); err != nil {
 				return nil, err
 			}
 		}
@@ -609,5 +619,52 @@ type submitInfo struct {
 func (si *submitInfo) ToProto() *gerritpb.SubmitInfo {
 	return &gerritpb.SubmitInfo{
 		Status: gerritpb.ChangeStatus(gerritpb.ChangeStatus_value[si.Status]),
+	}
+}
+
+type submitRequirementResultInfo struct {
+	Name                           string                           `json:"name"`
+	Description                    string                           `json:"description"`
+	Status                         string                           `json:"status"`
+	IsLegacy                       bool                             `json:"is_legacy"`
+	ApplicabilityExpressionResult  *submitRequirementExpressionInfo `json:"applicability_expression_result"`
+	SubmittabilityExpressionResult *submitRequirementExpressionInfo `json:"submittability_expression_result"`
+	OverrideExpressionResult       *submitRequirementExpressionInfo `json:"override_expression_result"`
+}
+
+func (ri *submitRequirementResultInfo) ToProto() (*gerritpb.SubmitRequirementResultInfo, error) {
+	numVal, found := gerritpb.SubmitRequirementResultInfo_Status_value[ri.Status]
+	if !found {
+		return nil, errors.Reason("no Status enum value for %q", ri.Status).Err()
+	}
+	return &gerritpb.SubmitRequirementResultInfo{
+		Name:                           ri.Name,
+		Description:                    ri.Description,
+		Status:                         gerritpb.SubmitRequirementResultInfo_Status(numVal),
+		IsLegacy:                       ri.IsLegacy,
+		ApplicabilityExpressionResult:  ri.ApplicabilityExpressionResult.ToProto(),
+		SubmittabilityExpressionResult: ri.SubmittabilityExpressionResult.ToProto(),
+		OverrideExpressionResult:       ri.OverrideExpressionResult.ToProto(),
+	}, nil
+}
+
+type submitRequirementExpressionInfo struct {
+	Expression   string   `json:"expression"`
+	Fulfilled    bool     `json:"fulfilled"`
+	PassingAtoms []string `json:"passing_atoms"`
+	FailingAtoms []string `json:"failing_atoms"`
+	ErrorMessage string   `json:"error_message"`
+}
+
+func (ei *submitRequirementExpressionInfo) ToProto() *gerritpb.SubmitRequirementExpressionInfo {
+	if ei == nil {
+		return nil
+	}
+	return &gerritpb.SubmitRequirementExpressionInfo{
+		Expression:   ei.Expression,
+		Fulfilled:    ei.Fulfilled,
+		PassingAtoms: ei.PassingAtoms,
+		FailingAtoms: ei.FailingAtoms,
+		ErrorMessage: ei.ErrorMessage,
 	}
 }
