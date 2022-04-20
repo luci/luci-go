@@ -225,6 +225,8 @@ enum QueryOption {
   // Include the commands field in the FetchInfo for revisions. Only valid when
   // the CURRENT_REVISION or ALL_REVISIONS option is selected.
   DOWNLOAD_COMMANDS = 0x200000;
+  // Include the submit_requirements field in ChangeInfo.
+  SUBMIT_REQUIREMENTS = 0x400000;
 
   // MAX_QUERY_OPTION is the largest possible number in QueryOption.
   //
@@ -398,7 +400,7 @@ message AccountInfo {
 // Source of truth:
 // https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#change-info
 //
-// Next tag: 20.
+// Next tag: 21.
 message ChangeInfo {
   // The change number.
   int64 number = 1;
@@ -440,7 +442,9 @@ message ChangeInfo {
   repeated ChangeMessageInfo messages = 9;
 
   // List of the requirements to be met before this change can be submitted.
-  repeated Requirement requirements = 14;
+  //
+  // Deprecated: use `submit_requirements` instead.
+  repeated Requirement requirements = 14 [deprecated = true];
 
   // Whether the change is approved
   // by the project submit rules.
@@ -471,6 +475,9 @@ message ChangeInfo {
 
   // The SHA-1 of the NoteDb meta ref.
   string metaRevID = 18;
+
+  // The evaluation results of the submit requirements for this change.
+  repeated SubmitRequirementResultInfo submit_requirements = 20;
 }
 
 enum ChangeStatus {
@@ -1397,4 +1404,70 @@ message GetPureRevertRequest {
 message PureRevertInfo {
   // Outcome of the check as boolean.
   bool is_pure_revert = 1;
+}
+
+// The SubmitRequirementResultInfo describes the result of evaluating a submit
+// requirement on a change.
+//
+// Source of truth:
+// https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#submit-requirement-result-info
+message SubmitRequirementResultInfo {
+  // Name of The submit requirement.
+  string name = 1;
+  // Description of the submit requirement.
+  string description = 2;
+  enum Status {
+    SUBMIT_REQUIREMENT_STATUS_UNSPECIFIED = 0;
+    SATISFIED = 1;
+    UNSATISFIED = 2;
+    OVERRIDDEN = 3;
+    NOT_APPLICABLE = 4;
+    ERROR = 5;
+    FORCED = 6;
+  }
+  // Status describing the result of evaluating the submit requirement.
+  Status status = 3;
+  // True if this submit requirement result was created from a legacy
+  // SubmitRecord.
+  bool is_legacy = 4;
+  // SubmitRequirementExpressionInfo containing the result of evaluating
+  // the applicability expression.
+  //
+  // Not set if the submit requirement did not define an applicability
+  // expression. Note that the following fields are always omitted in
+  // `applicability_expression_result`.
+  // - `expression`
+  // - `passing_atoms`
+  // - `failing_atoms`
+  SubmitRequirementExpressionInfo applicability_expression_result = 5;
+  // SubmitRequirementExpressionInfo containing the result of evaluating
+  // the submittability expression.
+  //
+  // Not set if the submit requirement does not apply.
+  SubmitRequirementExpressionInfo submittability_expression_result = 6;
+  // SubmitRequirementExpressionInfo containing the result of evaluating
+  // the override expression.
+  //
+  // Not set if the submit requirement did not define an override expression or
+  // if it does not apply.
+  SubmitRequirementExpressionInfo override_expression_result = 7;
+}
+
+// The SubmitRequirementExpressionInfo describes the result of evaluating
+// a single submit requirement expression, for example label:code-review=+2.
+message SubmitRequirementExpressionInfo {
+  // Expression of the submit requirement.
+  // e.g., branch:refs/heads/foo and label:verified=+1.
+  string expression = 1;
+  // True if the submit requirement is fulfilled for the change.
+  bool fulfilled = 2;
+  // List of passing atoms.
+  // e.g., ["branch:refs/heads/foo"]
+  repeated string passing_atoms = 3;
+  // List of failing atoms. This is similar to passing_atoms except that
+  // it contains a list of the predicates that are not fulfilled for the change.
+  repeated string failing_atoms = 4;
+  // If evaluating the submit requirement failed, this field will contains
+  // an error message describing why it failed.
+  string error_message = 5;
 }
