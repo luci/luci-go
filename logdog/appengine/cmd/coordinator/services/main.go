@@ -45,7 +45,7 @@ func main() {
 		UnaryServerInterceptor: grpcmon.UnaryServerInterceptor,
 	}
 	servicesPb.RegisterServicesServer(&svr, services.New(services.ServerSettings{
-		NumQueues: 6,
+		NumQueues: 10,
 	}))
 	registrationPb.RegisterRegistrationServer(&svr, registration.New())
 
