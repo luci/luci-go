@@ -94,6 +94,7 @@ func (f *fetcher) fetch(ctx context.Context) error {
 		gerritpb.QueryOption_DETAILED_ACCOUNTS,
 		gerritpb.QueryOption_MESSAGES,
 		gerritpb.QueryOption_SUBMITTABLE,
+		gerritpb.QueryOption_SUBMIT_REQUIREMENTS,
 		// Avoid asking Gerrit to perform expensive operation.
 		gerritpb.QueryOption_SKIP_MERGEABLE,
 	)
