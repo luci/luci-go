@@ -25,3 +25,11 @@ queue:
   mode: pull
 - name: "archiveTasks-5"
   mode: pull
+- name: "archiveTasks-6"
+  mode: pull
+- name: "archiveTasks-7"
+  mode: pull
+- name: "archiveTasks-8"
+  mode: pull
+- name: "archiveTasks-9"
+  mode: pull
