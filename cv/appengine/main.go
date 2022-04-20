@@ -112,7 +112,9 @@ func main() {
 		clUpdater := changelist.NewUpdater(&tq.Default, clMutator)
 		gerritupdater.RegisterUpdater(clUpdater, gFactory)
 
-		buildbucketBackend := &buildbucket.Backend{}
+		buildbucketBackend := &buildbucket.Backend{
+			ClientFactory: buildbucket.NewClientFactory(),
+		}
 		tryjobUpdater := tryjob.NewUpdater(&tq.Default, runNotifier)
 		tryjobUpdater.RegisterBackend(buildbucketBackend)
 		tryjobCancellator := tjcancel.NewCancellator(tryjobNotifier)

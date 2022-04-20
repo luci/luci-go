@@ -16,7 +16,6 @@ package buildbucket
 
 import (
 	"context"
-	"net/http"
 
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -29,8 +28,6 @@ import (
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/config/validation"
 	"go.chromium.org/luci/grpc/grpcutil"
-	"go.chromium.org/luci/grpc/prpc"
-	"go.chromium.org/luci/server/auth"
 
 	"go.chromium.org/luci/cv/api/recipe/v1"
 	"go.chromium.org/luci/cv/internal/tryjob"
@@ -43,7 +40,9 @@ const SubscriptionID = "buildbucket-builds"
 // Backend implements updaterBackend and cancellatorBackend interfaces.
 //
 // It can talk to Buildbucket to get Tryjobs' details and to cancel them.
-type Backend struct{}
+type Backend struct {
+	ClientFactory ClientFactory
+}
 
 func (b *Backend) Kind() string {
 	return "buildbucket"
@@ -73,7 +72,7 @@ func (b *Backend) Update(ctx context.Context, saved *tryjob.Tryjob) (tryjob.Stat
 		return 0, nil, err
 	}
 
-	bbClient, err := newClient(ctx, host, saved.LUCIProject())
+	bbClient, err := b.ClientFactory.MakeClient(ctx, host, saved.LUCIProject())
 	if err != nil {
 		return 0, nil, err
 	}
@@ -98,7 +97,7 @@ func (b *Backend) CancelTryjob(ctx context.Context, tj *tryjob.Tryjob) error {
 		return err
 	}
 
-	bbClient, err := newClient(ctx, host, tj.LUCIProject())
+	bbClient, err := b.ClientFactory.MakeClient(ctx, host, tj.LUCIProject())
 	if err != nil {
 		return err
 	}
@@ -154,15 +153,4 @@ func toTryjobStatusAndResult(ctx context.Context, b *bbpb.Build) (tryjob.Status,
 		return s, nil, errors.Reason("unexpected buildbucket status %q", b.Status).Err()
 	}
 	return s, r, nil
-}
-
-func newClient(ctx context.Context, host, project string) (bbpb.BuildsClient, error) {
-	rt, err := auth.GetRPCTransport(ctx, auth.AsProject, auth.WithProject(project))
-	if err != nil {
-		return nil, err
-	}
-	return bbpb.NewBuildsPRPCClient(&prpc.Client{
-		C:    &http.Client{Transport: rt},
-		Host: host,
-	}), nil
 }
