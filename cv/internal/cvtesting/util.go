@@ -61,6 +61,7 @@ import (
 	_ "go.chromium.org/luci/server/tq/txn/datastore"
 
 	migrationpb "go.chromium.org/luci/cv/api/migration"
+	bbfake "go.chromium.org/luci/cv/internal/buildbucket/fake"
 	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/common/bq"
 	"go.chromium.org/luci/cv/internal/common/tree"
@@ -87,6 +88,8 @@ type Test struct {
 	Env *common.Env
 	// GFake is a Gerrit fake. Defaults to an empty one.
 	GFake *gf.Fake
+	// BuildbucketFake is a Buildbucket fake. Defaults to an empty one.
+	BuildbucketFake *bbfake.Fake
 	// TreeFake is a fake Tree. Defaults to an open Tree.
 	TreeFake *treetest.Fake
 	// BQFake is a fake BQ client.
@@ -177,6 +180,9 @@ func (t *Test) SetUp() (context.Context, func()) {
 
 	if t.GFake == nil {
 		t.GFake = &gf.Fake{}
+	}
+	if t.BuildbucketFake == nil {
+		t.BuildbucketFake = &bbfake.Fake{}
 	}
 	if t.TreeFake == nil {
 		t.TreeFake = treetest.NewFake(ctx, tree.Open)
