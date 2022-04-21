@@ -70,6 +70,9 @@ service SelfReport {
 //           support effective tests, some policies can be lifted at this stage.
 //           (Although it is highly encouraged to schedule tests on a separate
 //           machine when possible to minimize risks of cross-contamination).
+//   * COMPLETE: complete indicates whether a task execution finished. This is
+//               crucial for server to set as this creates a clear boundary
+//               between subsequent tasks on a same machine.
 enum TaskStage {
     STAGE_UNSPECIFIED = 0;
     STARTED = 1;
@@ -78,6 +81,7 @@ enum TaskStage {
     UPLOAD = 4;
     UPLOAD_COMPLETE = 5;
     TEST = 6;
+    COMPLETE = 7;
 }
 
 // Identifies storage location of a particular artifact. This will be used to

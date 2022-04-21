@@ -28,7 +28,8 @@ type SelfReportClient interface {
 	// Reports running task's stage. A task is typically a collection of
 	// workflows/statements. Some of these statements can be grouped together
 	// to define a stage, e.g. when a task is downloading sources/deps, it is
-	// known as `FETCH` stage. For details read go/snoopy-design.
+	// known as `FETCH` stage.
+	// For details read go/snoopy-design (Google-internal).
 	ReportTaskStage(ctx context.Context, in *ReportTaskStageRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	// Reports digest of produced artifact from a task.
 	ReportArtifactDigest(ctx context.Context, in *ReportArtifactDigestRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
@@ -91,7 +92,8 @@ type SelfReportServer interface {
 	// Reports running task's stage. A task is typically a collection of
 	// workflows/statements. Some of these statements can be grouped together
 	// to define a stage, e.g. when a task is downloading sources/deps, it is
-	// known as `FETCH` stage. For details read go/snoopy-design.
+	// known as `FETCH` stage.
+	// For details read go/snoopy-design (Google-internal).
 	ReportTaskStage(context.Context, *ReportTaskStageRequest) (*emptypb.Empty, error)
 	// Reports digest of produced artifact from a task.
 	ReportArtifactDigest(context.Context, *ReportArtifactDigestRequest) (*emptypb.Empty, error)
