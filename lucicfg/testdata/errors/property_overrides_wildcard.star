@@ -7,16 +7,17 @@ luci.project(
 luci.bucket(name = "ci")
 
 luci.builder(
-  name = "b",
-  bucket = "ci",
-  properties = {
-    "hello": "world",
-  },
-  allowed_property_overrides = ['thing*'],
-  executable = luci.recipe(
-    name='morp',
-    cipd_package='meep',
-    cipd_version='yes'),
+    name = "b",
+    bucket = "ci",
+    properties = {
+        "hello": "world",
+    },
+    allowed_property_overrides = ["thing*"],
+    executable = luci.recipe(
+        name = "morp",
+        cipd_package = "meep",
+        cipd_version = "yes",
+    ),
 )
 
 # Expect errors like:
@@ -25,4 +26,3 @@ luci.builder(
 #   //testdata/errors/property_overrides_wildcard.star: in <toplevel>
 #   ...
 # Error: allowed_property_overrides does not support wildcards: "thing*"
-

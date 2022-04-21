@@ -29,8 +29,8 @@ def _cq(
     """Defines optional configuration of the CQ service for this project.
 
     CQ is a service that monitors Gerrit CLs in a configured set of Gerrit
-    projects, launches presubmit jobs (aka tryjobs) whenever a CL is marked as
-    ready for CQ, and submits the CL if it passes all checks.
+    projects, and launches tryjobs (which run pre-submit tests etc.) whenever a
+    CL is marked as ready for CQ, and submits the CL if it passes all checks.
 
     This optional rule can be used to set global CQ parameters that apply to all
     luci.cq_group(...) defined in the project.

@@ -1339,7 +1339,7 @@ def _tricium_config(verifiers, cq_group, project):
             watching_gerrit_projects = gerrit_projs
         elif watching_gerrit_projects != gerrit_projs:
             error(
-                "The location_regexp of analyzer %s sepcifies different set of gerrit repos from the other anaylzer; got: %s other: %s" % (
+                "The location_regexp of analyzer %s specifies a different set of Gerrit repos from the other analyzer; got: %s other: %s" % (
                     verifier,
                     ["%s-review.googlesource.com/%s" % (host, proj) for host, proj in gerrit_projs],
                     ["%s-review.googlesource.com/%s" % (host, proj) for host, proj in watching_gerrit_projects],

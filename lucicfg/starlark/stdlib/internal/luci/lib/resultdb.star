@@ -23,7 +23,7 @@ load(
 )
 
 def _settings(*, enable = False, bq_exports = None, history_options = None):
-    """Specifies how buildbucket should integrate with ResultDB.
+    """Specifies how Buildbucket should integrate with ResultDB.
 
     Args:
       enable: boolean, whether to enable ResultDB:Buildbucket integration.
@@ -320,7 +320,7 @@ def _test_presentation_to_dict(config):
     """Converts a test presentation config to a dictionary.
 
     Args:
-      config: a test_presentation.config to be converted to a dictonary.
+      config: a test_presentation.config to be converted to a dictionary.
 
     Returns:
       A dictionary representing the test presentation config.

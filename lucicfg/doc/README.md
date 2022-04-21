@@ -1645,10 +1645,9 @@ variables are available:
   * {{{ milo_build_url }}}
   * {{{ milo_builder_url }}}
 
-All variables are URL component encoded. Additionally, use `{{{ ... }}}`
-to disable HTML escaping.
-If the template does not satify the requirements above, the link is not
-displayed.
+All variables are URL component encoded. Additionally, use `{{{ ... }}}` to
+disable HTML escaping. If the template does not satisfy the requirements
+above, the link is not displayed.
 
 [Project.bug_url_template]: https://chromium.googlesource.com/infra/luci/luci-go/+/refs/heads/main/milo/api/config/project.proto
 [mustache]: https://mustache.github.io
@@ -2247,8 +2246,8 @@ luci.cq(
 Defines optional configuration of the CQ service for this project.
 
 CQ is a service that monitors Gerrit CLs in a configured set of Gerrit
-projects, launches presubmit jobs (aka tryjobs) whenever a CL is marked as
-ready for CQ, and submits the CL if it passes all checks.
+projects, and launches tryjobs (which run pre-submit tests etc.) whenever a
+CL is marked as ready for CQ, and submits the CL if it passes all checks.
 
 This optional rule can be used to set global CQ parameters that apply to all
 [luci.cq_group(...)](#luci.cq_group) defined in the project.
@@ -2369,14 +2368,13 @@ The matches are done against the following string:
 
     <gerrit_url>/<gerrit_project_name>/+/<cl_file_path>
 
-The file path is relative to the repo root, and it uses Unix `/` directory
-separator.
+The file path is relative to the repo root, and it uses the Unix `/`
+directory separator.
 
 The comparison is a full match. The pattern is implicitly anchored with `^`
-and `$`, so there is no need add them.
-
-The pattern must use [Google Re2](https://github.com/google/re2) library
-syntax, [documented here](https://github.com/google/re2/wiki/Syntax).
+and `$`, so there is no need add them. The pattern must use [Google
+Re2](https://github.com/google/re2) library syntax, [documented
+here](https://github.com/google/re2/wiki/Syntax).
 
 This filtering currently cannot be used in any of the following cases:
 
@@ -2456,32 +2454,31 @@ For example:
         luci.builder(name = name, ...)
         luci.cq_tryjob_verifier(builder = name, cq_group = 'Main CQ')
 
-
 #### Declaring a Tricium analyzer
 
 `cq_tryjob_verifier` can be used to declare a [Tricium] analyzer by
 providing the builder and `mode_allowlist=[cq.MODE_ANALYZER_RUN]`. It will
-generate Tricium config as well as CQ config which will work seamlessly
-after Tricium is merged into CV.
+generate the Tricium config as well as CQ config, so that no additional
+changes should be required as Tricium is merged into CV.
 
 However, the following restrictions apply until CV takes on Tricium:
 
 * Most CQ features are not supported except for `location_regexp` and
-`owner_whitelist`. If provided, they must meet the following conditions:
+  `owner_whitelist`. If provided, they must meet the following conditions:
     * `location_regexp` must either start with `.+\.` or
-    `https://{HOST}-review.googlesource.com/{PROJECT}/[+]/.+\.`.
-    They can optionally be followed by a file extension name which
-    instructs Tricium to run this analyzer only on certain type of files.
+      `https://{HOST}-review.googlesource.com/{PROJECT}/[+]/.+\.`.
+      They can optionally be followed by a file extension name which
+      instructs Tricium to run this analyzer only on certain type of files.
         * If the gerrit url one is used, the generated Tricium config will
-        watch the repos specified in location_regexp instead of the one
-        watched by the containing cq_group. Note that, the exact same set
-        of Gerrit repos should be sepcified across all analyzers in this
-        cq_group and across each unique file extension.
+          watch the repos specified in location_regexp instead of the one
+          watched by the containing cq_group. Note that, the exact same set
+          of Gerrit repos should be specified across all analyzers in this
+          cq_group and across each unique file extension.
     * `owner_whitelist` must be the same for all analyzers declared
-    in this cq_group.
+      in this cq_group.
 * Analyzer will run on changes targeting **all refs** of the Gerrit repos
-watched by the containing cq_group (or repos derived from location_regexp,
-see above) even though refs or refs_exclude may be provided.
+  watched by the containing cq_group (or repos derived from location_regexp,
+  see above) even though refs or refs_exclude may be provided.
 * All analyzers must be declared in a single [luci.cq_group(...)](#luci.cq_group).
 
 For example:
@@ -2513,13 +2510,13 @@ to host a single Tricium config today
 ([Example](https://fuchsia.googlesource.com/infra/config/+/HEAD/repositories/infra/recipes/tricium-prod.cfg)):
 
 Due to the restrictions mentioned above, it is not possible to merge those
-auxillary Projects back to the main LUCI Project. It will be unblocked
+auxiliary Projects back to the main LUCI Project. It will be unblocked
 after Tricium is folded into CV. To migrate, users can declare new
-[luci.cq_group(...)](#luci.cq_group)s in those Projects to host Tricium analyzers.
-However, CQ config should not be generated because the config groups will
-overlap with the config group in the main LUCI Project (i.e. watch same
-refs) and break CQ. This can be done by asking lucicfg to track only
-Tricium config: `lucicfg.config(tracked_files=["tricium-prod.cfg"])`.
+[luci.cq_group(...)](#luci.cq_group)s in those Projects to host Tricium analyzers. However,
+CQ config should not be generated because the config groups will overlap
+with the config group in the main LUCI Project (i.e. watch same refs) and
+break CQ. This can be done by asking lucicfg to track only Tricium config:
+`lucicfg.config(tracked_files=["tricium-prod.cfg"])`.
 
 [Tricium]: https://chromium.googlesource.com/infra/infra/+/HEAD/go/src/infra/tricium
 

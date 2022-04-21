@@ -71,14 +71,13 @@ def _cq_tryjob_verifier(
 
         <gerrit_url>/<gerrit_project_name>/+/<cl_file_path>
 
-    The file path is relative to the repo root, and it uses Unix `/` directory
-    separator.
+    The file path is relative to the repo root, and it uses the Unix `/`
+    directory separator.
 
     The comparison is a full match. The pattern is implicitly anchored with `^`
-    and `$`, so there is no need add them.
-
-    The pattern must use [Google Re2](https://github.com/google/re2) library
-    syntax, [documented here](https://github.com/google/re2/wiki/Syntax).
+    and `$`, so there is no need add them. The pattern must use [Google
+    Re2](https://github.com/google/re2) library syntax, [documented
+    here](https://github.com/google/re2/wiki/Syntax).
 
     This filtering currently cannot be used in any of the following cases:
 
@@ -158,32 +157,31 @@ def _cq_tryjob_verifier(
             luci.builder(name = name, ...)
             luci.cq_tryjob_verifier(builder = name, cq_group = 'Main CQ')
 
-
     #### Declaring a Tricium analyzer
 
     `cq_tryjob_verifier` can be used to declare a [Tricium] analyzer by
     providing the builder and `mode_allowlist=[cq.MODE_ANALYZER_RUN]`. It will
-    generate Tricium config as well as CQ config which will work seamlessly
-    after Tricium is merged into CV.
+    generate the Tricium config as well as CQ config, so that no additional
+    changes should be required as Tricium is merged into CV.
 
     However, the following restrictions apply until CV takes on Tricium:
 
     * Most CQ features are not supported except for `location_regexp` and
-    `owner_whitelist`. If provided, they must meet the following conditions:
+      `owner_whitelist`. If provided, they must meet the following conditions:
         * `location_regexp` must either start with `.+\\.` or
-        `https://{HOST}-review.googlesource.com/{PROJECT}/[+]/.+\\.`.
-        They can optionally be followed by a file extension name which
-        instructs Tricium to run this analyzer only on certain type of files.
+          `https://{HOST}-review.googlesource.com/{PROJECT}/[+]/.+\\.`.
+          They can optionally be followed by a file extension name which
+          instructs Tricium to run this analyzer only on certain type of files.
             * If the gerrit url one is used, the generated Tricium config will
-            watch the repos specified in location_regexp instead of the one
-            watched by the containing cq_group. Note that, the exact same set
-            of Gerrit repos should be sepcified across all analyzers in this
-            cq_group and across each unique file extension.
+              watch the repos specified in location_regexp instead of the one
+              watched by the containing cq_group. Note that, the exact same set
+              of Gerrit repos should be specified across all analyzers in this
+              cq_group and across each unique file extension.
         * `owner_whitelist` must be the same for all analyzers declared
-        in this cq_group.
+          in this cq_group.
     * Analyzer will run on changes targeting **all refs** of the Gerrit repos
-    watched by the containing cq_group (or repos derived from location_regexp,
-    see above) even though refs or refs_exclude may be provided.
+      watched by the containing cq_group (or repos derived from location_regexp,
+      see above) even though refs or refs_exclude may be provided.
     * All analyzers must be declared in a single luci.cq_group(...).
 
     For example:
@@ -215,13 +213,13 @@ def _cq_tryjob_verifier(
     ([Example](https://fuchsia.googlesource.com/infra/config/+/HEAD/repositories/infra/recipes/tricium-prod.cfg)):
 
     Due to the restrictions mentioned above, it is not possible to merge those
-    auxillary Projects back to the main LUCI Project. It will be unblocked
+    auxiliary Projects back to the main LUCI Project. It will be unblocked
     after Tricium is folded into CV. To migrate, users can declare new
-    luci.cq_group(...)s in those Projects to host Tricium analyzers.
-    However, CQ config should not be generated because the config groups will
-    overlap with the config group in the main LUCI Project (i.e. watch same
-    refs) and break CQ. This can be done by asking lucicfg to track only
-    Tricium config: `lucicfg.config(tracked_files=["tricium-prod.cfg"])`.
+    luci.cq_group(...)s in those Projects to host Tricium analyzers. However,
+    CQ config should not be generated because the config groups will overlap
+    with the config group in the main LUCI Project (i.e. watch same refs) and
+    break CQ. This can be done by asking lucicfg to track only Tricium config:
+    `lucicfg.config(tracked_files=["tricium-prod.cfg"])`.
 
     [Tricium]: https://chromium.googlesource.com/infra/infra/+/HEAD/go/src/infra/tricium
 
@@ -369,19 +367,22 @@ def _cq_tryjob_verifier(
                 ext_to_gerrit_urls[ext].append(gerrit_url)
                 all_gerrit_urls.append(gerrit_url)
 
-            # Since all analyzers in Tricium config are watching the same set of
-            # Gerrit repos, we need to make sure that for each extension this
-            # analyzer is watching, it MUST specify the same set of Gerrit
+            # Since all analyzers in Tricium config are watching the same set
+            # of Gerrit repos, we need to make sure that for each extension
+            # this analyzer is watching, it MUST specify the same set of Gerrit
             # repos it is watching. It allows lucicfg to derive a homogeneous
-            # set of watching Gerrit repos when generating Tricium config later.
+            # set of watching Gerrit repos when generating Tricium config
+            # later.
             #
-            # For example, location_exgep like
+            # For example, location_rexgep values like:
+            #
             #   https://example-review.googlesource.com/repo1/[+]/.+\.go
             #   https://example-review.googlesource.com/repo2/[+]/.+\.go
             #   https://example-review.googlesource.com/repo1/[+]/.+\.py
-            # is not allowed, because the generated Tricium config has to
+            #
+            # are not allowed, because the generated Tricium config has to
             # watch both repo1 and repo2. If we allow it, Tricium will
-            # implicitly run for python files in repo2 which is not what
+            # implicitly run for Python files in repo2 which is not what
             # user intended. Therefore, user MUST provide
             # https://example-review.googlesource.com/repo2/[+]/.+\.py here
             # as well.
@@ -416,9 +417,9 @@ def _cq_tryjob_verifier(
         if mode_allowlist:
             fail('"includable_only" can not be used together with "mode_allowlist"')
 
-    # Note: name of this node is important only for error messages. It isn't
-    # showing up in any generated files and by construction it can't accidentally
-    # collide with some other name.
+    # Note: The name of this node is important only for error messages. It
+    # doesn't show up in any generated files, and by construction it can't
+    # accidentally collide with some other name.
     key = keys.unique(kinds.CQ_TRYJOB_VERIFIER, builder.id)
     graph.add_node(key, props = {
         "disable_reuse": validate.bool("disable_reuse", disable_reuse, required = False),

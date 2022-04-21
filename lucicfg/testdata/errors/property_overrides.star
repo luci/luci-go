@@ -7,16 +7,17 @@ luci.project(
 luci.bucket(name = "ci")
 
 luci.builder(
-  name = "b",
-  bucket = "ci",
-  properties = {
-    "hello": "world",
-  },
-  allowed_property_overrides = ['other_prop'],
-  executable = luci.recipe(
-    name='morp',
-    cipd_package='meep',
-    cipd_version='yes'),
+    name = "b",
+    bucket = "ci",
+    properties = {
+        "hello": "world",
+    },
+    allowed_property_overrides = ["other_prop"],
+    executable = luci.recipe(
+        name = "morp",
+        cipd_package = "meep",
+        cipd_version = "yes",
+    ),
 )
 
 # Expect errors like:

@@ -46,10 +46,9 @@ def _milo(
       * {{{ milo_build_url }}}
       * {{{ milo_builder_url }}}
 
-    All variables are URL component encoded. Additionally, use `{{{ ... }}}`
-    to disable HTML escaping.
-    If the template does not satify the requirements above, the link is not
-    displayed.
+    All variables are URL component encoded. Additionally, use `{{{ ... }}}` to
+    disable HTML escaping. If the template does not satisfy the requirements
+    above, the link is not displayed.
 
     [Project.bug_url_template]: https://chromium.googlesource.com/infra/luci/luci-go/+/refs/heads/main/milo/api/config/project.proto
     [mustache]: https://mustache.github.io
