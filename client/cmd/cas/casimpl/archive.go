@@ -102,7 +102,7 @@ func getRoot(paths scatterGather) (string, error) {
 	return wd0, nil
 }
 
-// Does the archive by uploading to isolate-server.
+// Does the archive by uploading to RBE-CAS.
 func (c *archiveRun) doArchive(ctx context.Context) error {
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()

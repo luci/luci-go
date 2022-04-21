@@ -237,23 +237,6 @@ func TestTriggerParse_NoIsolated(t *testing.T) {
 	})
 }
 
-func TestTriggerParse_RawNoArgs(t *testing.T) {
-	Convey(`Make sure that Parse handles missing raw-cmd arguments.`, t, func() {
-		c := triggerRun{}
-		c.Init(&testAuthFlags{})
-
-		err := c.GetFlags().Parse([]string{
-			"-server", "http://localhost:9050",
-			"-dimension", "os=Ubuntu",
-			"-isolated", "0123456789012345678901234567890123456789",
-		})
-		So(err, ShouldBeNil)
-
-		err = c.Parse([]string(nil))
-		So(err, ShouldErrLike, "please specify command after '--'")
-	})
-}
-
 func TestTriggerParse_RawArgs(t *testing.T) {
 	Convey(`Make sure that Parse allows both raw-cmd and -isolated`, t, func() {
 		c := triggerRun{}
@@ -262,7 +245,6 @@ func TestTriggerParse_RawArgs(t *testing.T) {
 		err := c.GetFlags().Parse([]string{
 			"-server", "http://localhost:9050",
 			"-dimension", "os=Ubuntu",
-			"-isolated", "0123456789012345678901234567890123456789",
 		})
 		So(err, ShouldBeNil)
 
@@ -276,7 +258,6 @@ func TestProcessTriggerOptions_WithRawArgs(t *testing.T) {
 		c := triggerRun{}
 		c.Init(&testAuthFlags{})
 		c.commonFlags.serverURL = "http://localhost:9050"
-		c.isolateServer = "http://localhost:10050"
 
 		result, err := c.processTriggerOptions([]string{"arg1", "arg2"}, nil)
 		So(err, ShouldBeNil)

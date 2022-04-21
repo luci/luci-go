@@ -170,9 +170,6 @@ type triggerRun struct {
 	commonFlags
 
 	// Task properties.
-	isolateServer             string
-	namespace                 string
-	isolated                  string
 	casInstance               string
 	digest                    string
 	dimensions                stringmapflag.Value
@@ -209,11 +206,6 @@ type triggerRun struct {
 func (c *triggerRun) Init(authFlags AuthFlags) {
 	c.commonFlags.Init(authFlags)
 	// Task properties.
-	c.Flags.StringVar(&c.isolateServer, "isolate-server", "", "URL of the Isolate Server to use.")
-	c.Flags.StringVar(&c.isolateServer, "I", "", "Alias for -isolate-server.")
-	c.Flags.StringVar(&c.namespace, "namespace", "default-gzip", "The namespace to use on the Isolate Server.")
-	c.Flags.StringVar(&c.isolated, "isolated", "", "Hash of the .isolated to grab from the isolate server.")
-	c.Flags.StringVar(&c.isolated, "s", "", "Alias for -isolated.")
 	c.Flags.StringVar(&c.casInstance, "cas-instance", "", "CAS instance (GCP). Format is \"projects/<project_id>/instances/<instance_id>\". Default is constructed from -server.")
 	c.Flags.StringVar(&c.digest, "digest", "", "Digest of root directory uploaded to CAS `<Hash>/<Size>`.")
 	c.Flags.Var(&c.dimensions, "dimension", "Dimension to select the right kind of bot. In the form of `key=value`")
@@ -374,21 +366,8 @@ func (c *triggerRun) createTaskSliceForOptionalDimension(properties *swarming.Sw
 }
 
 func (c *triggerRun) processTriggerOptions(commands []string, env subcommands.Env) (*swarming.SwarmingRpcsNewTaskRequest, error) {
-	var inputsRefs *swarming.SwarmingRpcsFilesRef
-
 	if c.taskName == "" {
 		c.taskName = fmt.Sprintf("%s/%s", c.user, namePartFromDimensions(c.dimensions))
-	}
-
-	if c.isolated != "" {
-		if len(c.taskName) == 0 {
-			c.taskName = fmt.Sprintf("%s/%s", c.taskName, c.isolated)
-		}
-		inputsRefs = &swarming.SwarmingRpcsFilesRef{
-			Isolated:       c.isolated,
-			Isolatedserver: c.isolateServer,
-			Namespace:      c.namespace,
-		}
 	}
 
 	var secretBytesEnc string
@@ -444,7 +423,6 @@ func (c *triggerRun) processTriggerOptions(commands []string, env subcommands.En
 		ExecutionTimeoutSecs: c.hardTimeout,
 		GracePeriodSecs:      30,
 		Idempotent:           c.idempotent,
-		InputsRef:            inputsRefs,
 		CasInputRoot:         CASRef,
 		Outputs:              c.outputs,
 		IoTimeoutSecs:        c.ioTimeout,
