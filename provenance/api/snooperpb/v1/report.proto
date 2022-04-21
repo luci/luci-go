@@ -179,6 +179,16 @@ message ReportTaskStageRequest {
     //
     // (Required) when reporting a task start.
     string recipe = 3;
+    // Process ID of the task that self-reports task stages. It is used by the
+    // server to periodically check health of running task and assert a close
+    // approximation of task end time.
+    //
+    // Accuracy on task end time estimation can vary between implementations, it
+    // directly depends on frequency at which provenance server checks status of
+    // reported pid.
+    //
+    // (Required) when reported a task start.
+    int64 pid = 4;
 }
 
 message ReportArtifactDigestRequest {
