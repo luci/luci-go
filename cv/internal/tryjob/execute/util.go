@@ -18,7 +18,7 @@ import (
 	"fmt"
 	"strings"
 
-	"go.chromium.org/luci/cv/api/config/v2"
+	cfgpb "go.chromium.org/luci/cv/api/config/v2"
 	"go.chromium.org/luci/cv/internal/tryjob"
 )
 
@@ -39,7 +39,7 @@ func composeReason(tryjobs []*tryjob.Tryjob) string {
 	for _, tj := range tryjobs {
 		sb.WriteString("\n* ")
 		sb.WriteString(tj.ExternalID.MustURL())
-		if sm := tj.Result.GetBuildbucket().GetSummaryMarkdown(); sm != "" && tj.Definition.ResultVisibility != config.CommentLevel_COMMENT_LEVEL_RESTRICTED {
+		if sm := tj.Result.GetBuildbucket().GetSummaryMarkdown(); sm != "" && tj.Definition.ResultVisibility != cfgpb.CommentLevel_COMMENT_LEVEL_RESTRICTED {
 			for _, line := range strings.Split(sm, "\n") {
 				sb.WriteString("\n ") // indent.
 				sb.WriteString(line)

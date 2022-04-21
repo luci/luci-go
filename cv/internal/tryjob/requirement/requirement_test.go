@@ -25,7 +25,7 @@ import (
 	"go.chromium.org/luci/server/auth/authtest"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
-	"go.chromium.org/luci/cv/api/config/v2"
+	cfgpb "go.chromium.org/luci/cv/api/config/v2"
 	"go.chromium.org/luci/cv/internal/changelist"
 	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/configs/prjcfg"
@@ -55,12 +55,12 @@ func TestMakeDefinition(t *testing.T) {
 		invalidShort := "d/e"
 		invalidLong := "f/g/h/i"
 
-		b := &config.Verifiers_Tryjob_Builder{
+		b := &cfgpb.Verifiers_Tryjob_Builder{
 			Name: valid,
-			EquivalentTo: &config.Verifiers_Tryjob_EquivalentBuilder{
+			EquivalentTo: &cfgpb.Verifiers_Tryjob_EquivalentBuilder{
 				Name: alternateValid,
 			},
-			ResultVisibility: config.CommentLevel_COMMENT_LEVEL_UNSET,
+			ResultVisibility: cfgpb.CommentLevel_COMMENT_LEVEL_UNSET,
 		}
 
 		var def *tryjob.Definition
@@ -82,13 +82,13 @@ func TestMakeDefinition(t *testing.T) {
 				})
 			})
 			Convey("flags on", func() {
-				b.ResultVisibility = config.CommentLevel_COMMENT_LEVEL_RESTRICTED
+				b.ResultVisibility = cfgpb.CommentLevel_COMMENT_LEVEL_RESTRICTED
 				b.DisableReuse = true
 				def = makeDefinition(b, mainOnly, critical)
 				So(def, ShouldResembleProto, &tryjob.Definition{
 					DisableReuse:     true,
 					Critical:         true,
-					ResultVisibility: config.CommentLevel_COMMENT_LEVEL_RESTRICTED,
+					ResultVisibility: cfgpb.CommentLevel_COMMENT_LEVEL_RESTRICTED,
 					Backend: &tryjob.Definition_Buildbucket_{
 						Buildbucket: &tryjob.Definition_Buildbucket{
 							Host: "cr-buildbucket.appspot.com",
@@ -235,7 +235,7 @@ func TestCompute(t *testing.T) {
 		ctx = makeFakeAuthState(ctx)
 
 		Convey("with a minimal test case", func() {
-			in := makeInput(ctx, []*config.Verifiers_Tryjob_Builder{builderConfigGenerator{Name: "luci/test/builder1"}.generate()})
+			in := makeInput(ctx, []*cfgpb.Verifiers_Tryjob_Builder{builderConfigGenerator{Name: "luci/test/builder1"}.generate()})
 			Convey("with a single CL", func() {})
 			Convey("with multiple CLs", func() { in.addCL(userB.Email()) })
 			res, err := Compute(ctx, *in)
@@ -243,7 +243,7 @@ func TestCompute(t *testing.T) {
 			So(err, ShouldBeNil)
 			So(res.ComputationFailure, ShouldBeNil)
 			So(res.Requirement, ShouldResembleProto, &tryjob.Requirement{
-				RetryConfig: &config.Verifiers_Tryjob_RetryConfig{
+				RetryConfig: &cfgpb.Verifiers_Tryjob_RetryConfig{
 					SingleQuota: 2,
 					GlobalQuota: 8,
 				},
@@ -263,7 +263,7 @@ func TestCompute(t *testing.T) {
 			})
 		})
 		Convey("includes undefined builder", func() {
-			in := makeInput(ctx, []*config.Verifiers_Tryjob_Builder{builderConfigGenerator{Name: "luci/test/builder1"}.generate()})
+			in := makeInput(ctx, []*cfgpb.Verifiers_Tryjob_Builder{builderConfigGenerator{Name: "luci/test/builder1"}.generate()})
 			in.RunOptions.IncludedTryjobs = append(in.RunOptions.IncludedTryjobs, "luci/test:unlisted")
 
 			res, err := Compute(ctx, *in)
@@ -276,7 +276,7 @@ func TestCompute(t *testing.T) {
 			})
 		})
 		Convey("includes triggeredBy builder", func() {
-			in := makeInput(ctx, []*config.Verifiers_Tryjob_Builder{
+			in := makeInput(ctx, []*cfgpb.Verifiers_Tryjob_Builder{
 				builderConfigGenerator{Name: "luci/test/builder1"}.generate(),
 				builderConfigGenerator{Name: "luci/test/indirect", TriggeredBy: "luci/test/builder1"}.generate(),
 			})
@@ -293,7 +293,7 @@ func TestCompute(t *testing.T) {
 		})
 		Convey("includes unauthorized builder", func() {
 			Convey("with single unauthorized user", func() {
-				in := makeInput(ctx, []*config.Verifiers_Tryjob_Builder{
+				in := makeInput(ctx, []*cfgpb.Verifiers_Tryjob_Builder{
 					builderConfigGenerator{
 						Name:      "luci/test/builder1",
 						Allowlist: group2,
@@ -311,7 +311,7 @@ func TestCompute(t *testing.T) {
 				})
 			})
 			Convey("with multiple users, one of which is unauthorized", func() {
-				in := makeInput(ctx, []*config.Verifiers_Tryjob_Builder{
+				in := makeInput(ctx, []*cfgpb.Verifiers_Tryjob_Builder{
 					builderConfigGenerator{
 						Name:      "luci/test/builder1",
 						Allowlist: group1,
@@ -332,7 +332,7 @@ func TestCompute(t *testing.T) {
 			})
 		})
 		Convey("with includable-only builder", func() {
-			in := makeInput(ctx, []*config.Verifiers_Tryjob_Builder{
+			in := makeInput(ctx, []*cfgpb.Verifiers_Tryjob_Builder{
 				builderConfigGenerator{Name: "luci/test/builder1"}.generate(),
 				builderConfigGenerator{Name: "luci/test/builder2", IncludableOnly: true}.generate(),
 			})
@@ -342,7 +342,7 @@ func TestCompute(t *testing.T) {
 				So(err, ShouldBeNil)
 				So(res.ComputationFailure, ShouldBeNil)
 				So(res.Requirement, ShouldResembleProto, &tryjob.Requirement{
-					RetryConfig: &config.Verifiers_Tryjob_RetryConfig{
+					RetryConfig: &cfgpb.Verifiers_Tryjob_RetryConfig{
 						SingleQuota: 2,
 						GlobalQuota: 8,
 					},
@@ -368,7 +368,7 @@ func TestCompute(t *testing.T) {
 				So(err, ShouldBeNil)
 				So(res.ComputationFailure, ShouldBeNil)
 				So(res.Requirement, ShouldResembleProto, &tryjob.Requirement{
-					RetryConfig: &config.Verifiers_Tryjob_RetryConfig{
+					RetryConfig: &cfgpb.Verifiers_Tryjob_RetryConfig{
 						SingleQuota: 2,
 						GlobalQuota: 8,
 					},
@@ -406,7 +406,7 @@ func TestCompute(t *testing.T) {
 		Convey("includes equivalent builder explicitly", func() {
 
 			Convey("unauthorized", func() {
-				in := makeInput(ctx, []*config.Verifiers_Tryjob_Builder{builderConfigGenerator{
+				in := makeInput(ctx, []*cfgpb.Verifiers_Tryjob_Builder{builderConfigGenerator{
 					Name:          "luci/test/builder1",
 					Allowlist:     "secret-group",
 					EquiName:      "luci/test/equibuilder",
@@ -426,7 +426,7 @@ func TestCompute(t *testing.T) {
 			})
 
 			Convey("authorized", func() {
-				in := makeInput(ctx, []*config.Verifiers_Tryjob_Builder{builderConfigGenerator{
+				in := makeInput(ctx, []*cfgpb.Verifiers_Tryjob_Builder{builderConfigGenerator{
 					Name:          "luci/test/builder1",
 					Allowlist:     "secret-group",
 					EquiName:      "luci/test/equibuilder",
@@ -438,7 +438,7 @@ func TestCompute(t *testing.T) {
 				So(err, ShouldBeNil)
 				So(res.ComputationFailure, ShouldBeNil)
 				So(res.Requirement, ShouldResembleProto, &tryjob.Requirement{
-					RetryConfig: &config.Verifiers_Tryjob_RetryConfig{
+					RetryConfig: &cfgpb.Verifiers_Tryjob_RetryConfig{
 						SingleQuota: 2,
 						GlobalQuota: 8,
 					},
@@ -459,7 +459,7 @@ func TestCompute(t *testing.T) {
 			})
 		})
 		Convey("experimental", func() {
-			in := makeInput(ctx, []*config.Verifiers_Tryjob_Builder{
+			in := makeInput(ctx, []*cfgpb.Verifiers_Tryjob_Builder{
 				builderConfigGenerator{Name: "luci/test/expbuilder", ExperimentPercentage: 100}.generate(),
 				// The CLID and timestamp hardcoded in the mockBuilderConfig
 				// generate function make this deterministically not selected.
@@ -470,7 +470,7 @@ func TestCompute(t *testing.T) {
 			So(err, ShouldBeNil)
 			So(res.ComputationFailure, ShouldBeNil)
 			So(res.Requirement, ShouldResembleProto, &tryjob.Requirement{
-				RetryConfig: &config.Verifiers_Tryjob_RetryConfig{
+				RetryConfig: &cfgpb.Verifiers_Tryjob_RetryConfig{
 					SingleQuota: 2,
 					GlobalQuota: 8,
 				},
@@ -490,11 +490,11 @@ func TestCompute(t *testing.T) {
 		})
 		Convey("with location matching", func() {
 			Convey("empty change after location exclusions skips builder", func() {
-				in := makeInput(ctx, []*config.Verifiers_Tryjob_Builder{builderConfigGenerator{
+				in := makeInput(ctx, []*cfgpb.Verifiers_Tryjob_Builder{builderConfigGenerator{
 					Name:                  "luci/test/builder1",
 					LocationRegexpExclude: []string{"https://example.com/repo/[+]/some/.+"},
-					LocationFilters: []*config.Verifiers_Tryjob_Builder_LocationFilter{
-						&config.Verifiers_Tryjob_Builder_LocationFilter{
+					LocationFilters: []*cfgpb.Verifiers_Tryjob_Builder_LocationFilter{
+						&cfgpb.Verifiers_Tryjob_Builder_LocationFilter{
 							GerritHostRegexp:    "https://example.com",
 							GerritProjectRegexp: "repo",
 							PathRegexp:          "some/.+",
@@ -510,18 +510,18 @@ func TestCompute(t *testing.T) {
 				So(err, ShouldBeNil)
 				So(res.ComputationFailure, ShouldBeNil)
 				So(res.Requirement, ShouldResembleProto, &tryjob.Requirement{
-					RetryConfig: &config.Verifiers_Tryjob_RetryConfig{
+					RetryConfig: &cfgpb.Verifiers_Tryjob_RetryConfig{
 						SingleQuota: 2,
 						GlobalQuota: 8,
 					},
 				})
 			})
 			Convey("with location regex", func() {
-				in := makeInput(ctx, []*config.Verifiers_Tryjob_Builder{builderConfigGenerator{
+				in := makeInput(ctx, []*cfgpb.Verifiers_Tryjob_Builder{builderConfigGenerator{
 					Name:           "luci/test/builder1",
 					LocationRegexp: []string{"https://example.com/repo/[+]/some/.+"},
-					LocationFilters: []*config.Verifiers_Tryjob_Builder_LocationFilter{
-						&config.Verifiers_Tryjob_Builder_LocationFilter{
+					LocationFilters: []*cfgpb.Verifiers_Tryjob_Builder_LocationFilter{
+						&cfgpb.Verifiers_Tryjob_Builder_LocationFilter{
 							GerritHostRegexp:    "https://example.com",
 							GerritProjectRegexp: "repo",
 							PathRegexp:          "some/.+",
@@ -539,7 +539,7 @@ func TestCompute(t *testing.T) {
 					So(err, ShouldBeNil)
 					So(res.ComputationFailure, ShouldBeNil)
 					So(res.Requirement, ShouldResembleProto, &tryjob.Requirement{
-						RetryConfig: &config.Verifiers_Tryjob_RetryConfig{
+						RetryConfig: &cfgpb.Verifiers_Tryjob_RetryConfig{
 							SingleQuota: 2,
 							GlobalQuota: 8,
 						},
@@ -565,7 +565,7 @@ func TestCompute(t *testing.T) {
 					So(err, ShouldBeNil)
 					So(res.ComputationFailure, ShouldBeNil)
 					So(res.Requirement, ShouldResembleProto, &tryjob.Requirement{
-						RetryConfig: &config.Verifiers_Tryjob_RetryConfig{
+						RetryConfig: &cfgpb.Verifiers_Tryjob_RetryConfig{
 							SingleQuota: 2,
 							GlobalQuota: 8,
 						},
@@ -580,7 +580,7 @@ func TestCompute(t *testing.T) {
 					So(err, ShouldBeNil)
 					So(res.ComputationFailure, ShouldBeNil)
 					So(res.Requirement, ShouldResembleProto, &tryjob.Requirement{
-						RetryConfig: &config.Verifiers_Tryjob_RetryConfig{
+						RetryConfig: &cfgpb.Verifiers_Tryjob_RetryConfig{
 							SingleQuota: 2,
 							GlobalQuota: 8,
 						},
@@ -601,19 +601,19 @@ func TestCompute(t *testing.T) {
 				})
 			})
 			Convey("with location regex and exclusion", func() {
-				in := makeInput(ctx, []*config.Verifiers_Tryjob_Builder{
+				in := makeInput(ctx, []*cfgpb.Verifiers_Tryjob_Builder{
 					builderConfigGenerator{
 						Name:                  "luci/test/builder1",
 						LocationRegexp:        []string{"https://example.com/repo/[+]/some/.+"},
 						LocationRegexpExclude: []string{"https://example.com/repo/[+]/some/excluded/.*"},
-						LocationFilters: []*config.Verifiers_Tryjob_Builder_LocationFilter{
-							&config.Verifiers_Tryjob_Builder_LocationFilter{
+						LocationFilters: []*cfgpb.Verifiers_Tryjob_Builder_LocationFilter{
+							&cfgpb.Verifiers_Tryjob_Builder_LocationFilter{
 								GerritHostRegexp:    "https://example.com",
 								GerritProjectRegexp: "repo",
 								PathRegexp:          "some/.+",
 								Exclude:             false,
 							},
-							&config.Verifiers_Tryjob_Builder_LocationFilter{
+							&cfgpb.Verifiers_Tryjob_Builder_LocationFilter{
 								GerritHostRegexp:    "https://example.com",
 								GerritProjectRegexp: "repo",
 								PathRegexp:          "some/excluded/.*",
@@ -631,7 +631,7 @@ func TestCompute(t *testing.T) {
 					So(err, ShouldBeNil)
 					So(res.ComputationFailure, ShouldBeNil)
 					So(res.Requirement, ShouldResembleProto, &tryjob.Requirement{
-						RetryConfig: &config.Verifiers_Tryjob_RetryConfig{
+						RetryConfig: &cfgpb.Verifiers_Tryjob_RetryConfig{
 							SingleQuota: 2,
 							GlobalQuota: 8,
 						},
@@ -647,7 +647,7 @@ func TestCompute(t *testing.T) {
 					So(err, ShouldBeNil)
 					So(res.ComputationFailure, ShouldBeNil)
 					So(res.Requirement, ShouldResembleProto, &tryjob.Requirement{
-						RetryConfig: &config.Verifiers_Tryjob_RetryConfig{
+						RetryConfig: &cfgpb.Verifiers_Tryjob_RetryConfig{
 							SingleQuota: 2,
 							GlobalQuota: 8,
 						},
@@ -664,7 +664,7 @@ func TestCompute(t *testing.T) {
 					So(err, ShouldBeNil)
 					So(res.ComputationFailure, ShouldBeNil)
 					So(res.Requirement, ShouldResembleProto, &tryjob.Requirement{
-						RetryConfig: &config.Verifiers_Tryjob_RetryConfig{
+						RetryConfig: &cfgpb.Verifiers_Tryjob_RetryConfig{
 							SingleQuota: 2,
 							GlobalQuota: 8,
 						},
@@ -697,12 +697,12 @@ type builderConfigGenerator struct {
 	ExperimentPercentage  float32
 	LocationRegexp        []string
 	LocationRegexpExclude []string
-	LocationFilters       []*config.Verifiers_Tryjob_Builder_LocationFilter
+	LocationFilters       []*cfgpb.Verifiers_Tryjob_Builder_LocationFilter
 	TriggeredBy           string
 }
 
-func (bcg builderConfigGenerator) generate() *config.Verifiers_Tryjob_Builder {
-	ret := &config.Verifiers_Tryjob_Builder{
+func (bcg builderConfigGenerator) generate() *cfgpb.Verifiers_Tryjob_Builder {
+	ret := &cfgpb.Verifiers_Tryjob_Builder{
 		Name:                  bcg.Name,
 		IncludableOnly:        bcg.IncludableOnly,
 		LocationRegexp:        bcg.LocationRegexp,
@@ -714,7 +714,7 @@ func (bcg builderConfigGenerator) generate() *config.Verifiers_Tryjob_Builder {
 		ret.OwnerWhitelistGroup = []string{bcg.Allowlist}
 	}
 	if bcg.EquiName != "" {
-		ret.EquivalentTo = &config.Verifiers_Tryjob_EquivalentBuilder{
+		ret.EquivalentTo = &cfgpb.Verifiers_Tryjob_EquivalentBuilder{
 			Name:                bcg.EquiName,
 			OwnerWhitelistGroup: bcg.EquiAllowlist,
 		}
@@ -725,13 +725,13 @@ func (bcg builderConfigGenerator) generate() *config.Verifiers_Tryjob_Builder {
 	return ret
 }
 
-func makeInput(ctx context.Context, builders []*config.Verifiers_Tryjob_Builder) *Input {
+func makeInput(ctx context.Context, builders []*cfgpb.Verifiers_Tryjob_Builder) *Input {
 	ret := &Input{
 		ConfigGroup: &prjcfg.ConfigGroup{
-			Content: &config.ConfigGroup{
-				Verifiers: &config.Verifiers{
-					Tryjob: &config.Verifiers_Tryjob{
-						RetryConfig: &config.Verifiers_Tryjob_RetryConfig{
+			Content: &cfgpb.ConfigGroup{
+				Verifiers: &cfgpb.Verifiers{
+					Tryjob: &cfgpb.Verifiers_Tryjob{
+						RetryConfig: &cfgpb.Verifiers_Tryjob_RetryConfig{
 							SingleQuota: 2,
 							GlobalQuota: 8,
 						},

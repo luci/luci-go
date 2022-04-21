@@ -14,5 +14,5 @@
 
 //go:generate cproto
 
-// Package config contains the CQ config schema.
-package config
+// Package cfgpb contains the CQ config schema.
+package cfgpb

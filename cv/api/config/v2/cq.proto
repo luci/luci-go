@@ -16,7 +16,7 @@ syntax = "proto3";
 
 package cv.config;
 
-option go_package = "go.chromium.org/luci/cv/api/config/v2;config";
+option go_package = "go.chromium.org/luci/cv/api/config/v2;cfgpb";
 
 import "google/protobuf/duration.proto";
 

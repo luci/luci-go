@@ -17,7 +17,7 @@ package execute
 import (
 	"testing"
 
-	"go.chromium.org/luci/cv/api/config/v2"
+	cfgpb "go.chromium.org/luci/cv/api/config/v2"
 	"go.chromium.org/luci/cv/internal/tryjob"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -37,7 +37,7 @@ func TestComposeReason(t *testing.T) {
 				{
 					ExternalID: tryjob.MustBuildbucketID("test.com", 123456790),
 					Definition: &tryjob.Definition{
-						ResultVisibility: config.CommentLevel_COMMENT_LEVEL_RESTRICTED,
+						ResultVisibility: cfgpb.CommentLevel_COMMENT_LEVEL_RESTRICTED,
 					},
 					Result: &tryjob.Result{
 						Backend: &tryjob.Result_Buildbucket_{
@@ -51,7 +51,7 @@ func TestComposeReason(t *testing.T) {
 				{
 					ExternalID: tryjob.MustBuildbucketID("test.com", 123456791),
 					Definition: &tryjob.Definition{
-						ResultVisibility: config.CommentLevel_COMMENT_LEVEL_RESTRICTED,
+						ResultVisibility: cfgpb.CommentLevel_COMMENT_LEVEL_RESTRICTED,
 					},
 					Result: &tryjob.Result{},
 				},

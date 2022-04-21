@@ -23,7 +23,7 @@ import (
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/clock/testclock"
 
-	"go.chromium.org/luci/cv/api/config/v2"
+	cfgpb "go.chromium.org/luci/cv/api/config/v2"
 	"go.chromium.org/luci/cv/internal/tryjob"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -175,7 +175,7 @@ func TestDiff(t *testing.T) {
 				res := Diff(
 					&tryjob.Requirement{},
 					&tryjob.Requirement{
-						RetryConfig: &config.Verifiers_Tryjob_RetryConfig{
+						RetryConfig: &cfgpb.Verifiers_Tryjob_RetryConfig{
 							SingleQuota: 1,
 						},
 					})
@@ -184,7 +184,7 @@ func TestDiff(t *testing.T) {
 			Convey("Base non nil, target nil", func() {
 				res := Diff(
 					&tryjob.Requirement{
-						RetryConfig: &config.Verifiers_Tryjob_RetryConfig{
+						RetryConfig: &cfgpb.Verifiers_Tryjob_RetryConfig{
 							SingleQuota: 1,
 						},
 					},
@@ -194,12 +194,12 @@ func TestDiff(t *testing.T) {
 			Convey("Retry config changed", func() {
 				res := Diff(
 					&tryjob.Requirement{
-						RetryConfig: &config.Verifiers_Tryjob_RetryConfig{
+						RetryConfig: &cfgpb.Verifiers_Tryjob_RetryConfig{
 							SingleQuota: 1,
 						},
 					},
 					&tryjob.Requirement{
-						RetryConfig: &config.Verifiers_Tryjob_RetryConfig{
+						RetryConfig: &cfgpb.Verifiers_Tryjob_RetryConfig{
 							SingleQuota: 2,
 						},
 					})
