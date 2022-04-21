@@ -46,12 +46,12 @@ func TestReportCipdAdmission(t *testing.T) {
 			So(err, ShouldBeNil)
 		})
 		Convey("report stage works", func() {
-			ok, err := reporter.ReportStage(ctx, snooperpb.TaskStage_FETCH, "")
+			ok, err := reporter.ReportStage(ctx, snooperpb.TaskStage_FETCH, "", 0)
 			So(ok, ShouldEqual, true)
 			So(err, ShouldBeNil)
 		})
 		Convey("report stage fails", func() {
-			ok, err := reporter.ReportStage(ctx, snooperpb.TaskStage_STARTED, "")
+			ok, err := reporter.ReportStage(ctx, snooperpb.TaskStage_STARTED, "", 0)
 			So(ok, ShouldEqual, false)
 			So(err, ShouldErrLike, "a recipe must be provided when task starts")
 		})
