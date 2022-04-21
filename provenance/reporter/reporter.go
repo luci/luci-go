@@ -113,6 +113,7 @@ func (r *Report) ReportGitCheckout(ctx context.Context, repo, commit, ref string
 // annotated error. This is to indicate, the user should continue normal
 // execution.
 // All other errors are annotated to indicate permanent failures.
+// TODO: Use go struct when a new parameter is added.
 func (r *Report) ReportStage(ctx context.Context, stage snooperpb.TaskStage, recipe string, pid int64) (bool, error) {
 	// Must pass recipe name when reporting task start.
 	if stage == snooperpb.TaskStage_STARTED && recipe == "" {
