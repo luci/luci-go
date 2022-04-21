@@ -23,7 +23,7 @@ import { timeout } from '../libs/utils';
 /**
  * Manually coded type definition and classes for buildbucket services.
  * TODO(weiweilin): To be replaced by code generated version once we have one.
- * source: https://chromium.googlesource.com/infra/luci/luci-go/+/ea9b54c38d87a4813576454fac9ac868bab8d9bc/buildbucket/proto/builds_service.proto
+ * source: https://chromium.googlesource.com/infra/luci/luci-go/+/04a118946d13ad326c44dba9a635116ff7f31c4e/buildbucket/proto/builds_service.proto
  */
 /* eslint-enable max-len */
 
@@ -32,7 +32,7 @@ export const BLAMELIST_PIN_KEY = '$recipe_engine/milo/blamelist_pins';
 
 export const BUILD_FIELD_MASK =
   'id,builder,number,canceledBy,createTime,startTime,endTime,cancelTime,status,summaryMarkdown,input,output,steps,' +
-  'infra.swarming,infra.resultdb,tags,exe,schedulingTimeout,executionTimeout,gracePeriod';
+  'infra.buildbucket.agent,infra.swarming,infra.resultdb,tags,exe,schedulingTimeout,executionTimeout,gracePeriod';
 
 // Includes: id, builder, number, createTime, startTime, endTime, status, summaryMarkdown.
 export const SEARCH_BUILD_FIELD_MASK =
@@ -202,6 +202,7 @@ export interface Step {
 export interface BuildInfra {
   readonly swarming: BuildInfraSwarming;
   readonly resultdb?: BuildInfraResultdb;
+  readonly buildbucket?: BuildInfraBuildbucket;
 }
 
 export interface BuildInfraBuildbucket {
@@ -209,6 +210,43 @@ export interface BuildInfraBuildbucket {
   readonly requestedProperties: { [key: string]: unknown };
   readonly requestedDimensions: RequestedDimension[];
   readonly hostname: string;
+  readonly agent?: BuildAgent;
+}
+
+export interface BuildAgent {
+  readonly input: BuildAgentInput;
+  readonly output?: BuildAgentOutput;
+}
+
+export interface BuildAgentInput {
+  readonly data: {[key:string]: BuildAgentInputDataRef};
+}
+
+
+export interface BuildAgentInputDataRef {
+  readonly cipd: Cipd;
+  readonly onPath: string[];
+}
+
+export interface BuildAgentOutput {
+  readonly resolvedData: {[key:string]: BuildAgentResolvedDataRef};
+  readonly status: BuildStatus;
+  readonly summaryHtml: string;
+  readonly agentPlatform: string;
+  readonly totalDuration: string;
+}
+
+export interface BuildAgentResolvedDataRef {
+  readonly cipd: Cipd;
+}
+
+export interface Cipd {
+  readonly specs: PkgSpec[];
+}
+
+export interface PkgSpec {
+  readonly package: string;
+  readonly version: string;
 }
 
 export interface RequestedDimension {

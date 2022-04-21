@@ -16,6 +16,7 @@ import { assert } from 'chai';
 
 import {
   getBuildbucketLink,
+  getCipdLink,
   getLogdogRawUrl,
   getSafeUrlFromBuildset,
   getURLPathForBuilder,
@@ -169,6 +170,17 @@ describe('Build Utils Tests', () => {
         'https://luci-milo-dev.appspot.com'
       );
       assert.strictEqual(url, '');
+    });
+  });
+
+  describe('Get cipd Link', () => {
+    it('should get correct cipd url', async () => {
+      const cipdLink = getCipdLink('infra/3pp/tools/git/mac-amd64', 'bHf2s_9KYiixd4SlHDugMeMqrngwz2QOGB_7bUcVpUoC');
+      assert.strictEqual(
+          cipdLink.url,
+          // eslint-disable-next-line max-len
+          'https://chrome-infra-packages.appspot.com/p/infra/3pp/tools/git/mac-amd64/+/bHf2s_9KYiixd4SlHDugMeMqrngwz2QOGB_7bUcVpUoC'
+      );
     });
   });
 });

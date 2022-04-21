@@ -22,6 +22,7 @@ import { css, customElement, html, TemplateResult } from 'lit-element';
 import { computed, observable } from 'mobx';
 
 import '../../components/build_tag_row';
+import '../../components/expandable_entry';
 import '../../components/link';
 import '../../components/log';
 import '../../components/property_viewer';
@@ -37,6 +38,7 @@ import { GA_ACTIONS, GA_CATEGORIES, trackEvent } from '../../libs/analytics_util
 import {
   getBotLink,
   getBuildbucketLink,
+  getCipdLink,
   getURLForGerritChange,
   getURLForGitilesCommit,
   getURLForSwarmingTask,
@@ -248,6 +250,86 @@ export class OverviewTabElement extends MobxLitElement {
       <h3>Output</h3>
       <table>
         ${this.renderRevision(output.gitilesCommit)}
+      </table>
+    `;
+  }
+
+  private renderBuildPackages() {
+    const experiments = this.buildState.build?.input?.experiments;
+    const agent = this.buildState.build?.infra?.buildbucket?.agent;
+    if (!experiments?.includes('luci.buildbucket.agent.cipd_installation') || !agent) {
+      return html``;
+    }
+
+    let inputCipdHtml = []
+    for (const dir in agent.input.data) {
+      let specs  = agent.input.data[dir]?.cipd.specs
+      if (!specs?.length) {
+        continue
+      }
+      if (dir) {
+        inputCipdHtml.push(html`<br/>@Subdir ${dir} <br/>`);
+      }
+      for (const pkgSpec of specs) {
+        inputCipdHtml.push(html`${pkgSpec.package} ${pkgSpec.version} <br/>`);
+      }
+    }
+
+    let resolvedCipdHtml = []
+    for (const dir in agent.output?.resolvedData) {
+      let specs  = agent.output?.resolvedData[dir]?.cipd.specs
+      if (!specs?.length) {
+        continue
+      }
+      if (dir) {
+        resolvedCipdHtml.push(html`<br/>@Subdir ${dir} <br/>`);
+      }
+      for (const pkgSpec of specs) {
+        resolvedCipdHtml.push(html`<milo-link .link=${getCipdLink(pkgSpec.package, pkgSpec.version)} target="_blank"></milo-link><br/>`);
+      }
+    }
+
+    // TODO(yuanjunh@): improve the html style in the next CL. e.g:
+    // * Align the version fields within a @Subdir section
+    // * Don't allow wrapping (prefer a horizontal scroll)
+    return html`
+      <h3>Build Packages Info</h3>
+      <table id="build-pkgs-table">
+        ${agent.output?.status == "SUCCESS" ? '' : html`
+          <tr><td>Status</td>${agent.output?.status}<td><br/></td></tr>
+          <tr><td>Summary</td>${agent.output?.summaryHtml}<td><br/></td></tr>
+        `}
+        <tr>
+          <td>Agent Platform</td>
+          <td>${agent.output?.agentPlatform || 'N/A'}</td>
+        </tr>
+
+        <tr>
+          <td>Download Duration</td>
+          <td>${agent.output?.totalDuration || 'N/A'}</td></tr>
+        <tr>
+          <td>Requested CIPD Manifest</td>
+          <td>
+            <milo-expandable-entry contentRuler="none" .expanded=${false}>
+              <div slot="content">
+                $ServiceURL https://chrome-infra-packages.appspot.com/<br/>
+                ${inputCipdHtml}
+              </div>
+            </milo-expandable-entry>
+          </td>
+        </tr>
+
+        ${agent.output? html`<tr>
+          <td>Resolved CIPD Manifest</td>
+          <td>
+            <milo-expandable-entry contentRuler="none" .expanded=${false}>
+              <div slot="content">
+                $ServiceURL https://chrome-infra-packages.appspot.com/<br/>
+                ${resolvedCipdHtml}
+              </div>
+            </milo-expandable-entry>
+          </td>
+        </tr>` : ''}
       </table>
     `;
   }
@@ -554,6 +636,7 @@ export class OverviewTabElement extends MobxLitElement {
             .properties=${build.output?.properties || {}}
             .propLineFoldTime=${this.configsStore.userConfigs.outputPropLineFoldTime}
           ></milo-property-viewer>
+          ${this.renderBuildPackages()}
         </div>
       </div>
     `;
@@ -680,6 +763,17 @@ export class OverviewTabElement extends MobxLitElement {
         vertical-align: bottom;
         width: 16px;
         height: 16px;
+      }
+
+      #build-pkgs-table {
+        width: 100%;
+        text-align: left;
+      }
+      #build-pkgs-table td {
+        padding: 0.1em 1em 0.1em 1em;
+      }
+      #build-pkgs-table tr:nth-child(even) {
+        background-color: var(--block-background-color);
       }
     `,
   ];
