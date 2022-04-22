@@ -30,7 +30,7 @@ import (
 	bbpb "go.chromium.org/luci/buildbucket/proto"
 	gerritapi "go.chromium.org/luci/common/api/gerrit"
 	"go.chromium.org/luci/common/errors"
-	"go.chromium.org/luci/common/proto/gerrit"
+	gerritpb "go.chromium.org/luci/common/proto/gerrit"
 	"go.chromium.org/luci/led/job"
 )
 
@@ -159,10 +159,10 @@ func gerritResolver(ctx context.Context) patchsetResolver {
 		if err != nil {
 			return 0, errors.Annotate(err, "creating new gerrit client").Err()
 		}
-		ci, err := gc.GetChange(ctx, &gerrit.GetChangeRequest{
+		ci, err := gc.GetChange(ctx, &gerritpb.GetChangeRequest{
 			Number: change,
-			Options: []gerrit.QueryOption{
-				gerrit.QueryOption_CURRENT_REVISION,
+			Options: []gerritpb.QueryOption{
+				gerritpb.QueryOption_CURRENT_REVISION,
 			},
 		})
 		if grpc.Code(err) == codes.Unauthenticated {

@@ -29,7 +29,7 @@ import (
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/logging/gologger"
-	"go.chromium.org/luci/common/proto/gerrit"
+	gerritpb "go.chromium.org/luci/common/proto/gerrit"
 	"go.chromium.org/luci/common/tsmon"
 	"go.chromium.org/luci/common/tsmon/distribution"
 	"go.chromium.org/luci/common/tsmon/store"
@@ -90,7 +90,7 @@ func TestInstrumentedFactory(t *testing.T) {
 		So(err, ShouldBeNil)
 
 		mockDelay, mockHTTPCode, mockResp = time.Second, http.StatusOK, ")]}'\n[]" // no changes.
-		r1, err := c1.ListChanges(ctx, &gerrit.ListChangesRequest{})
+		r1, err := c1.ListChanges(ctx, &gerritpb.ListChangesRequest{})
 		So(err, ShouldBeNil)
 		So(r1.GetChanges(), ShouldBeEmpty)
 		So(tsmonSentCounter(ctx, metricCount, "prj1", gHost, "ListChanges", "OK"), ShouldEqual, 1)
@@ -98,7 +98,7 @@ func TestInstrumentedFactory(t *testing.T) {
 		So(d1.Sum(), ShouldEqual, mockDelay.Milliseconds())
 
 		mockDelay, mockHTTPCode, mockResp = time.Millisecond, http.StatusNotFound, ""
-		_, err = c2.GetChange(ctx, &gerrit.GetChangeRequest{Number: 1})
+		_, err = c2.GetChange(ctx, &gerritpb.GetChangeRequest{Number: 1})
 		So(grpc.Code(err), ShouldEqual, codes.NotFound)
 		So(tsmonSentCounter(ctx, metricCount, "prj2", gHost, "GetChange", "NOT_FOUND"), ShouldEqual, 1)
 		d2 := tsmonSentDistr(ctx, metricDurationMS, "prj2", gHost, "GetChange", "NOT_FOUND")

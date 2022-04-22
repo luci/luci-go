@@ -17,7 +17,7 @@ package requirement
 import (
 	"testing"
 
-	"go.chromium.org/luci/common/proto/gerrit"
+	gerritpb "go.chromium.org/luci/common/proto/gerrit"
 
 	cfgpb "go.chromium.org/luci/cv/api/config/v2"
 	"go.chromium.org/luci/cv/internal/changelist"
@@ -41,7 +41,7 @@ func TestLocationFilterMatch(t *testing.T) {
 				ID: common.CLID(1234),
 				Detail: &changelist.Snapshot{
 					Kind: &changelist.Snapshot_Gerrit{
-						Gerrit: &changelist.Gerrit{Info: &gerrit.ChangeInfo{Project: project}, Host: host, Files: paths},
+						Gerrit: &changelist.Gerrit{Info: &gerritpb.ChangeInfo{Project: project}, Host: host, Files: paths},
 					},
 				},
 			}

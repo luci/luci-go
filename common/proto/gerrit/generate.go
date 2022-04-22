@@ -13,7 +13,7 @@
 // limitations under the License.
 
 //go:generate cproto
-//go:generate mockgen -source gerrit.pb.go -destination gerrit.mock.pb.go -package gerrit
+//go:generate mockgen -source gerrit.pb.go -destination gerrit.mock.pb.go -package gerritpb
 
-// Package gerrit contains Gerrit service definition.
-package gerrit
+// Package gerritpb contains Gerrit service definition.
+package gerritpb

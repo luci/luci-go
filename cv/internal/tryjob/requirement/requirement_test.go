@@ -20,7 +20,7 @@ import (
 
 	"go.chromium.org/luci/auth/identity"
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
-	"go.chromium.org/luci/common/proto/gerrit"
+	gerritpb "go.chromium.org/luci/common/proto/gerrit"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
 	"google.golang.org/protobuf/types/known/timestamppb"
@@ -753,8 +753,8 @@ func makeInput(ctx context.Context, builders []*cfgpb.Verifiers_Tryjob_Builder) 
 				Detail: &changelist.Snapshot{
 					Kind: &changelist.Snapshot_Gerrit{
 						Gerrit: &changelist.Gerrit{
-							Info: &gerrit.ChangeInfo{
-								Owner: &gerrit.AccountInfo{
+							Info: &gerritpb.ChangeInfo{
+								Owner: &gerritpb.AccountInfo{
 									Email: userA.Email(),
 								},
 								Project: "repo",
@@ -782,8 +782,8 @@ func (in *Input) addCL(user string) {
 		Detail: &changelist.Snapshot{
 			Kind: &changelist.Snapshot_Gerrit{
 				Gerrit: &changelist.Gerrit{
-					Info: &gerrit.ChangeInfo{
-						Owner: &gerrit.AccountInfo{
+					Info: &gerritpb.ChangeInfo{
+						Owner: &gerritpb.AccountInfo{
 							Email: user,
 						},
 					},

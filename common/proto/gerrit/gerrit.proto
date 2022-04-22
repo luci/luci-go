@@ -19,7 +19,7 @@ package gerrit;
 import "google/protobuf/empty.proto";
 import "google/protobuf/timestamp.proto";
 
-option go_package = "go.chromium.org/luci/common/proto/gerrit;gerrit";
+option go_package = "go.chromium.org/luci/common/proto/gerrit;gerritpb";
 
 service Gerrit {
   /////////////////////////////////////////////////////////////////////////////

@@ -25,7 +25,7 @@ import (
 
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/errors"
-	"go.chromium.org/luci/common/proto/gerrit"
+	gerritpb "go.chromium.org/luci/common/proto/gerrit"
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
@@ -103,7 +103,7 @@ func TestMakeClient(t *testing.T) {
 
 				c, err := f.MakeClient(limitedCtx, u.Host, "lProject")
 				So(err, ShouldBeNil)
-				_, err = c.ListChanges(limitedCtx, &gerrit.ListChangesRequest{})
+				_, err = c.ListChanges(limitedCtx, &gerritpb.ListChangesRequest{})
 				So(err, ShouldBeNil)
 				So(requests, ShouldHaveLength, 1)
 				So(requests[0].Header["Authorization"], ShouldResemble, []string{"Bearer tok-1"})
@@ -113,7 +113,7 @@ func TestMakeClient(t *testing.T) {
 				So(limitedCtx.Err(), ShouldNotBeNil)
 				// force token refresh
 				tclock.Add(3 * time.Minute)
-				_, err = c.ListChanges(ctx, &gerrit.ListChangesRequest{})
+				_, err = c.ListChanges(ctx, &gerritpb.ListChangesRequest{})
 				So(err, ShouldBeNil)
 				So(requests, ShouldHaveLength, 2)
 				So(requests[1].Header["Authorization"], ShouldResemble, []string{"Bearer tok-2"})

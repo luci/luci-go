@@ -23,7 +23,7 @@ import (
 
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/clock/testclock"
-	"go.chromium.org/luci/common/proto/gerrit"
+	gerritpb "go.chromium.org/luci/common/proto/gerrit"
 	"go.chromium.org/luci/gae/service/datastore"
 
 	cvbqpb "go.chromium.org/luci/cv/api/bigquery/v1"
@@ -111,7 +111,7 @@ func TestMakeAttempt(t *testing.T) {
 						Kind: &changelist.Snapshot_Gerrit{
 							Gerrit: &changelist.Gerrit{
 								Host: gHost,
-								Info: &gerrit.ChangeInfo{
+								Info: &gerritpb.ChangeInfo{
 									Number:  int64(changeNum),
 									Project: "gproject",
 									Ref:     "refs/heads/main",

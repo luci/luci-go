@@ -21,7 +21,7 @@ import (
 
 	"google.golang.org/protobuf/types/known/timestamppb"
 
-	"go.chromium.org/luci/common/proto/gerrit"
+	gerritpb "go.chromium.org/luci/common/proto/gerrit"
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/server/tq/tqtesting"
 
@@ -71,7 +71,7 @@ func TestExportRunToBQ(t *testing.T) {
 				Kind: &changelist.Snapshot_Gerrit{
 					Gerrit: &changelist.Gerrit{
 						Host: "foo-review.googlesource.com",
-						Info: &gerrit.ChangeInfo{
+						Info: &gerritpb.ChangeInfo{
 							Number:  111,
 							Project: "gproject",
 							Ref:     "refs/heads/main",
