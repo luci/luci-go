@@ -68,7 +68,7 @@ func New(ctx context.Context, addr string, instance string, opts auth.Options, r
 		}
 	}
 
-	conn, err := client.Dial(ctx, dialParams.Service, dialParams)
+	conn, _, err := client.Dial(ctx, dialParams.Service, dialParams)
 	if err != nil {
 		return nil, errors.Annotate(err, "failed to dial RBE").Err()
 	}
