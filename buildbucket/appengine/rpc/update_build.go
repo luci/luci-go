@@ -333,10 +333,19 @@ func checkBuildForUpdate(updateMask *mask.Mask, req *pb.UpdateBuildRequest, buil
 	return nil
 }
 
-func updateEntities(ctx context.Context, req *pb.UpdateBuildRequest, updateMask *mask.Mask, steps *model.BuildSteps) (*model.Build, error) {
+func updateEntities(ctx context.Context, req *pb.UpdateBuildRequest, parentID int64, updateMask *mask.Mask, steps *model.BuildSteps) (*model.Build, error) {
 	var b *model.Build
 	var origStatus pb.Status
 	buildCanceled := false // Flag for if the cancel process starts for the build.
+
+	// Get parent at the outside of the transaction.
+	// Because if a build has too many children, we may hit "concurrent transaction"
+	// for all the children reading the parent within transactions concurrently.
+	var parent *model.Build
+	if parentID != 0 {
+		parent, _ = getBuild(ctx, parentID)
+	}
+
 	txErr := datastore.RunInTransaction(ctx, func(ctx context.Context) error {
 		buildCanceled = false
 		var err error
@@ -423,16 +432,14 @@ func updateEntities(ctx context.Context, req *pb.UpdateBuildRequest, updateMask 
 		}
 
 		// Check parent.
-		parentID := b.GetParentID()
 		if !isEndedStatus && b.Proto.CancelTime == nil && parentID != 0 && !b.Proto.CanOutliveParent {
-			parent, err := getBuild(ctx, parentID)
-			if err != nil || protoutil.IsEnded(parent.Status) {
+			if parent == nil || protoutil.IsEnded(parent.Status) {
 				// Start the cancel process.
 				b.Proto.CancelTime = timestamppb.New(now)
 				// Buildbucket internal logic decides to cancel this build, so set
 				// CanceledBy as "buildbucket".
 				b.Proto.CanceledBy = "buildbucket"
-				if err != nil {
+				if parent == nil {
 					b.Proto.SummaryMarkdown = fmt.Sprintf("canceled because its parent %d is missing", parentID)
 				} else {
 					b.Proto.SummaryMarkdown = fmt.Sprintf("canceled because its parent %d has terminated", parentID)
@@ -545,7 +552,7 @@ func (*Builds) UpdateBuild(ctx context.Context, req *pb.UpdateBuildRequest) (*pb
 		return nil, err
 	}
 
-	build, err = updateEntities(ctx, req, updateMask, &bs)
+	build, err = updateEntities(ctx, req, build.GetParentID(), updateMask, &bs)
 	if err != nil {
 		return nil, appstatus.Errorf(codes.Internal, "failed to update the build entity: %s", err)
 	}
