@@ -268,10 +268,10 @@ export class OverviewTabElement extends MobxLitElement {
         continue
       }
       if (dir) {
-        inputCipdHtml.push(html`<br/>@Subdir ${dir} <br/>`);
+        inputCipdHtml.push(html`<tr><td colspan=2><br/>@Subdir ${dir}</td></tr>`);
       }
       for (const pkgSpec of specs) {
-        inputCipdHtml.push(html`${pkgSpec.package} ${pkgSpec.version} <br/>`);
+        inputCipdHtml.push(html`<tr><td>${pkgSpec.package}</td><td>${pkgSpec.version}</td></tr>`);
       }
     }
 
@@ -282,54 +282,57 @@ export class OverviewTabElement extends MobxLitElement {
         continue
       }
       if (dir) {
-        resolvedCipdHtml.push(html`<br/>@Subdir ${dir} <br/>`);
+        resolvedCipdHtml.push(html`<tr><td colspan=2><br/>@Subdir ${dir}</td></tr>`);
       }
       for (const pkgSpec of specs) {
-        resolvedCipdHtml.push(html`<milo-link .link=${getCipdLink(pkgSpec.package, pkgSpec.version)} target="_blank"></milo-link><br/>`);
+        resolvedCipdHtml.push(html`<tr><td>${pkgSpec.package}</td><td><milo-link .link=${getCipdLink(pkgSpec.package, pkgSpec.version)} target="_blank"></milo-link></td></tr>`);
       }
     }
 
-    // TODO(yuanjunh@): improve the html style in the next CL. e.g:
-    // * Align the version fields within a @Subdir section
-    // * Don't allow wrapping (prefer a horizontal scroll)
     return html`
       <h3>Build Packages Info</h3>
       <table id="build-pkgs-table">
-        ${agent.output?.status == "SUCCESS" ? '' : html`
-          <tr><td>Status</td>${agent.output?.status}<td><br/></td></tr>
-          <tr><td>Summary</td>${agent.output?.summaryHtml}<td><br/></td></tr>
-        `}
-        <tr>
-          <td>Agent Platform</td>
-          <td>${agent.output?.agentPlatform || 'N/A'}</td>
-        </tr>
+        <tbody>
+          ${agent.output?.status == "SUCCESS" ? '' : html`
+            <tr><td>Status</td>${agent.output?.status}<td><br/></td></tr>
+            <tr><td>Summary</td>${agent.output?.summaryHtml}<td><br/></td></tr>
+          `}
+          <tr>
+            <td>Agent Platform</td>
+            <td>${agent.output?.agentPlatform || 'N/A'}</td>
+          </tr>
 
-        <tr>
-          <td>Download Duration</td>
-          <td>${agent.output?.totalDuration || 'N/A'}</td></tr>
-        <tr>
-          <td>Requested CIPD Manifest</td>
-          <td>
-            <milo-expandable-entry contentRuler="none" .expanded=${false}>
-              <div slot="content">
-                $ServiceURL https://chrome-infra-packages.appspot.com/<br/>
-                ${inputCipdHtml}
-              </div>
-            </milo-expandable-entry>
-          </td>
-        </tr>
+          <tr>
+            <td>Download Duration</td>
+            <td>${agent.output?.totalDuration || 'N/A'}</td></tr>
+          <tr>
+            <td>Requested CIPD Manifest</td>
+            <td>
+              <milo-expandable-entry contentRuler="none" .expanded=${false}>
+                <div slot="content" class="nav-scrollbar">
+                  <table class="nested-manifest-table">
+                    <tr><td>$ServiceURL https://chrome-infra-packages.appspot.com/<br/></td></tr>
+                    ${inputCipdHtml}
+                  </table>
+                </div>
+              </milo-expandable-entry>
+            </td>
+          </tr>
 
-        ${agent.output? html`<tr>
-          <td>Resolved CIPD Manifest</td>
-          <td>
-            <milo-expandable-entry contentRuler="none" .expanded=${false}>
-              <div slot="content">
-                $ServiceURL https://chrome-infra-packages.appspot.com/<br/>
-                ${resolvedCipdHtml}
-              </div>
-            </milo-expandable-entry>
-          </td>
-        </tr>` : ''}
+          ${agent.output? html`<tr>
+            <td>Resolved CIPD Manifest</td>
+            <td>
+              <milo-expandable-entry contentRuler="none" .expanded=${false}>
+                <div slot="content" class="nav-scrollbar">
+                  <table class="nested-manifest-table">
+                    <tr><td>$ServiceURL https://chrome-infra-packages.appspot.com/</td></tr>
+                    ${resolvedCipdHtml}
+                  </table>
+                </div>
+              </milo-expandable-entry>
+            </td>
+          </tr>` : ''}
+        </tbody>
       </table>
     `;
   }
@@ -768,12 +771,28 @@ export class OverviewTabElement extends MobxLitElement {
       #build-pkgs-table {
         width: 100%;
         text-align: left;
+        table-layout: fixed;
       }
       #build-pkgs-table td {
         padding: 0.1em 1em 0.1em 1em;
       }
-      #build-pkgs-table tr:nth-child(even) {
+      #build-pkgs-table>tbody>tr:nth-child(even) {
         background-color: var(--block-background-color);
+      }
+
+      #build-pkgs-table td:first-child {
+        width: 20%;
+        min-width: 10%;
+        max-width: 50%;
+      }
+
+      .nav-scrollbar {
+        overflow-x: scroll;
+        white-space: nowrap;
+      }
+
+      .nested-manifest-table {
+        text-align: left;
       }
     `,
   ];

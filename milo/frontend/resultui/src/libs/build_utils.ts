@@ -160,7 +160,7 @@ export function renderBugUrlTemplate(
 // pkgName and version.
 export function getCipdLink(pkgName: string, version: string): Link {
   return {
-    label: pkgName + " " + version,
+    label: version,
     url: `https://chrome-infra-packages.appspot.com/p/${pkgName}/+/${version}`,
     ariaLabel: `cipd url for ${pkgName}`,
   };
