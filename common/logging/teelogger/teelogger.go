@@ -20,9 +20,13 @@ import (
 	"go.chromium.org/luci/common/logging"
 )
 
+type leveledLogger struct {
+	minLevel logging.Level
+	logger   logging.Logger
+}
+
 type teeImpl struct {
-	c context.Context // for logging level check
-	l []logging.Logger
+	l []leveledLogger
 }
 
 func (t *teeImpl) Debugf(fmt string, args ...interface{}) {
@@ -42,11 +46,10 @@ func (t *teeImpl) Errorf(fmt string, args ...interface{}) {
 }
 
 func (t *teeImpl) LogCall(level logging.Level, calldepth int, f string, args []interface{}) {
-	if t.c != nil && !logging.IsLogging(t.c, level) {
-		return
-	}
-	for _, logger := range t.l {
-		logger.LogCall(level, calldepth+1, f, args)
+	for _, l := range t.l {
+		if level >= l.minLevel {
+			l.logger.LogCall(level, calldepth+1, f, args)
+		}
 	}
 }
 
@@ -61,10 +64,53 @@ func Use(ctx context.Context, factories ...logging.Factory) context.Context {
 		factories = append([]logging.Factory{cur}, factories...)
 	}
 	return logging.SetFactory(ctx, func(ic context.Context) logging.Logger {
-		loggers := make([]logging.Logger, len(factories))
+		ll := make([]leveledLogger, len(factories))
 		for i, f := range factories {
-			loggers[i] = f(ic)
+			logger := f(ic)
+			ll[i] = leveledLogger{
+				logger:   logger,
+				minLevel: logging.GetLevel(ic),
+			}
 		}
-		return &teeImpl{ic, loggers}
+		return &teeImpl{ll}
+	})
+}
+
+// Filtered is a static representation of a single entry to filter messages to
+// loggers by provided level.
+type Filtered struct {
+	Factory logging.Factory
+	Level   logging.Level
+}
+
+// UseFiltered adds a tee logger to the context, using the logger factory in
+// the context, as well as the other provided by given filtereds.
+// Filtered loggers ignore the current logging level in the context.
+//
+// We use factories (instead of logging.Logger instances), since we must be able
+// to produce logging.Logger instances bound to contexts to be able to use
+// logging levels are fields (they are part of the context state).
+// The logger instance bound to context is used with level provided by context.
+func UseFiltered(ctx context.Context, filtereds ...Filtered) context.Context {
+	cur := logging.GetFactory(ctx)
+	count := len(filtereds)
+	if cur != nil {
+		count += 1
+	}
+	return logging.SetFactory(ctx, func(ic context.Context) logging.Logger {
+		ll := make([]leveledLogger, count)
+		for i, f := range filtereds {
+			ll[i] = leveledLogger{
+				logger:   f.Factory(ic),
+				minLevel: f.Level,
+			}
+		}
+		if cur != nil {
+			ll[count-1] = leveledLogger{
+				logger:   cur(ic),
+				minLevel: logging.GetLevel(ic),
+			}
+		}
+		return &teeImpl{ll}
 	})
 }
