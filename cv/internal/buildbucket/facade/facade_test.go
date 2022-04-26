@@ -58,6 +58,15 @@ func TestToTryjobStatusAndResult(t *testing.T) {
 					So(err, ShouldBeNil)
 					So(result.Status, ShouldEqual, tryjob.Result_SUCCEEDED)
 				})
+				Convey("That timed out", func() {
+					b.Status = bbpb.Status_FAILURE
+					b.StatusDetails = &bbpb.StatusDetails{
+						Timeout: &bbpb.StatusDetails_Timeout{},
+					}
+					status, result, err = toTryjobStatusAndResult(ctx, b)
+					So(err, ShouldBeNil)
+					So(result.Status, ShouldEqual, tryjob.Result_TIMEOUT)
+				})
 				Convey("That failed", func() {
 					Convey("Transiently", func() {
 						b.Status = bbpb.Status_INFRA_FAILURE

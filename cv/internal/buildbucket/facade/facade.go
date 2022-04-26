@@ -46,7 +46,7 @@ func (f *Facade) Kind() string {
 
 var TryjobBuildMask = &bbpb.BuildMask{
 	Fields: &fieldmaskpb.FieldMask{
-		Paths: []string{"id", "status", "output.properties", "create_time", "update_time"},
+		Paths: []string{"id", "status", "output.properties", "create_time", "update_time", "status_details"},
 	},
 	OutputProperties: []*structmask.StructMask{
 		// Legacy.
@@ -128,21 +128,35 @@ func toTryjobStatusAndResult(ctx context.Context, b *bbpb.Build) (tryjob.Status,
 		}
 	}
 
-	switch b.Status {
-	case bbpb.Status_FAILURE:
+	switch buildStatus := b.Status; {
+	case buildStatus == bbpb.Status_SUCCESS:
+		s = tryjob.Status_ENDED
+		r.Status = tryjob.Result_SUCCEEDED
+	case b.GetStatusDetails().GetTimeout() != nil:
+		s = tryjob.Status_ENDED
+		r.Status = tryjob.Result_TIMEOUT
+	case buildStatus == bbpb.Status_FAILURE:
 		s = tryjob.Status_ENDED
 		if buildResult.isTransFailure {
 			r.Status = tryjob.Result_FAILED_TRANSIENTLY
 		} else {
 			r.Status = tryjob.Result_FAILED_PERMANENTLY
 		}
-	case bbpb.Status_INFRA_FAILURE, bbpb.Status_CANCELED:
+	case buildStatus == bbpb.Status_CANCELED:
+		// For consistency with existing CQD behavior, non-timeout
+		// cancellations are treated as transient failures.
+		//
+		// This behavior is probably a bug in CQD, but it's become expected.
+		//
+		// TODO(crbug.com/1317392): Revisit the handling of explicitly cancelled
+		// tryjobs.
+		fallthrough
+	case buildStatus == bbpb.Status_INFRA_FAILURE:
 		s = tryjob.Status_ENDED
 		r.Status = tryjob.Result_FAILED_TRANSIENTLY
-	case bbpb.Status_SUCCESS:
-		s = tryjob.Status_ENDED
-		r.Status = tryjob.Result_SUCCEEDED
-	case bbpb.Status_STARTED, bbpb.Status_SCHEDULED:
+	case buildStatus == bbpb.Status_STARTED:
+		fallthrough
+	case buildStatus == bbpb.Status_SCHEDULED:
 		s = tryjob.Status_TRIGGERED
 		r.Status = tryjob.Result_UNKNOWN
 	default:

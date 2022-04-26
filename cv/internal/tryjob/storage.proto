@@ -158,6 +158,9 @@ message Result {
     // for the failure.
     // TODO(crbug/1227363): consider removing transiency aspect if possible.
     FAILED_TRANSIENTLY = 4;
+    // TIMEOUT means the Tryjob ran over some deadline and did not make a
+    // decision about this Run's CLs.
+    TIMEOUT = 5;
   }
 
   // Time when the Tryjob was created in the backend.
