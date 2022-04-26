@@ -152,6 +152,13 @@ func TestCheckRunCLs(t *testing.T) {
 			cg.Content.Verifiers.GerritCqAbility.AllowOwnerIfSubmittable = action
 		}
 
+		addSubmitReq := func(cl *changelist.CL, name string, st gerritpb.SubmitRequirementResultInfo_Status) {
+			ci := cl.Snapshot.Kind.(*changelist.Snapshot_Gerrit).Gerrit.Info
+			ci.SubmitRequirements = append(ci.SubmitRequirements,
+				&gerritpb.SubmitRequirementResultInfo{Name: name, Status: st})
+			So(datastore.Put(ctx, cl), ShouldBeNil)
+		}
+
 		Convey("mode == FullRun", func() {
 			m := run.FullRun
 
@@ -313,11 +320,33 @@ func TestCheckRunCLs(t *testing.T) {
 
 				dep1 := addDep(cl, "dep_owner1@example.org")
 				dep2 := addDep(cl, "dep_owner2@example.org")
+				dep1URL := dep1.ExternalID.MustURL()
+				dep2URL := dep2.ExternalID.MustURL()
 
 				Convey("untrusted", func() {
 					res := mustFailWith(cl, untrustedDeps)
-					So(res.Failure(cl), ShouldContainSubstring, dep1.ExternalID.MustURL())
-					So(res.Failure(cl), ShouldContainSubstring, dep2.ExternalID.MustURL())
+					So(res.Failure(cl), ShouldContainSubstring, dep1URL)
+					So(res.Failure(cl), ShouldContainSubstring, dep2URL)
+					// if the deps have no submit requirements, the rejection message
+					// shouldn't contain a warning for suspicious CLs.
+					So(res.Failure(cl), ShouldNotContainSubstring, suspiciouslyUntrustedDeps)
+
+					Convey("but dep2 satisfies all the SubmitRequirements", func() {
+						addSubmitReq(dep1, "Code-Review", gerritpb.SubmitRequirementResultInfo_NOT_APPLICABLE)
+						addSubmitReq(dep2, "Code-Owner", gerritpb.SubmitRequirementResultInfo_SATISFIED)
+						res := mustFailWith(cl, untrustedDeps)
+						So(res.Failure(cl), ShouldContainSubstring, fmt.Sprintf(
+							"- %s\n- %s Code-Owner satisfied, but the CL is unapproved",
+							dep1URL, dep2URL))
+						So(res.Failure(cl), ShouldContainSubstring, suspiciouslyUntrustedDeps)
+					})
+
+					Convey("dep1 and dep2 have unsatisfied requirements", func() {
+						addSubmitReq(dep1, "Code-Review", gerritpb.SubmitRequirementResultInfo_UNSATISFIED)
+						addSubmitReq(dep1, "Code-Owner", gerritpb.SubmitRequirementResultInfo_UNSATISFIED)
+						res := mustFailWith(cl, untrustedDeps)
+						So(res.Failure(cl), ShouldNotContainSubstring, suspiciouslyUntrustedDeps)
+					})
 				})
 				Convey("trusted because it's apart of the Run", func() {
 					cls = append(cls, dep1, dep2)
@@ -343,8 +372,8 @@ func TestCheckRunCLs(t *testing.T) {
 				Convey("a mix of untrusted and trusted deps", func() {
 					addCommitter("dep_owner1@example.org")
 					res := mustFailWith(cl, untrustedDeps)
-					So(res.Failure(cl), ShouldNotContainSubstring, dep1.ExternalID.MustURL())
-					So(res.Failure(cl), ShouldContainSubstring, dep2.ExternalID.MustURL())
+					So(res.Failure(cl), ShouldNotContainSubstring, dep1URL)
+					So(res.Failure(cl), ShouldContainSubstring, dep2URL)
 				})
 			})
 		})

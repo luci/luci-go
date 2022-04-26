@@ -21,6 +21,8 @@ import (
 
 	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/logging"
+	gerritpb "go.chromium.org/luci/common/proto/gerrit"
 	"go.chromium.org/luci/server/auth"
 
 	"go.chromium.org/luci/cv/internal/changelist"
@@ -41,6 +43,10 @@ const (
 		"CV cannot trigger the Run because of the following dependencies. " +
 		"They must be approved because their owners are not committers. " +
 		"Alternatively, you can ask the owner of this CL to trigger a dry-run."
+	suspiciouslyUntrustedDeps = "" +
+		"The above list contains unapproved CLs that satisfy all the submit requirements. " +
+		"It's likely caused by an issue in Gerrit or Gerrit configuration. " +
+		"Please contact your Git admin."
 )
 
 // runCreateChecker holds the evaluation results of a CL Run, and checks
@@ -109,14 +115,7 @@ func (ck runCreateChecker) canTrustDeps(ctx context.Context) (evalResult, error)
 	if len(untrusted) == 0 {
 		return yes, nil
 	}
-
-	var sb strings.Builder
-	sb.WriteString(untrustedDeps)
-	for _, d := range untrusted {
-		sb.WriteString("\n  - ")
-		sb.WriteString(d.ExternalID.MustURL())
-	}
-	return noWithReason(sb.String()), nil
+	return noWithReason(untrustedDepsReason(ctx, untrusted)), nil
 }
 
 func (ck runCreateChecker) canCreateRun(ctx context.Context) (evalResult, error) {
@@ -312,4 +311,85 @@ func evaluateCLs(ctx context.Context, cg *prjcfg.ConfigGroup, trs []*run.Trigger
 		}
 	}
 	return cks, nil
+}
+
+// untrustedDepsReason generates a RunCreate rejection comment for untrusted deps.
+func untrustedDepsReason(ctx context.Context, udeps []*changelist.CL) string {
+	var sb strings.Builder
+	anySuspicious := false
+	sb.WriteString(untrustedDeps)
+	for _, d := range udeps {
+		fmt.Fprintf(&sb, "\n- %s", d.ExternalID.MustURL())
+		if allSatisfied, msg := strSubmitReqsForUnapprovedCL(ctx, d); len(msg) > 0 {
+			fmt.Fprintf(&sb, " %s", msg)
+			anySuspicious = anySuspicious || allSatisfied
+		}
+	}
+	if anySuspicious {
+		fmt.Fprintf(&sb, "\n\n%s", suspiciouslyUntrustedDeps)
+	}
+	return sb.String()
+}
+
+func strSubmitReqsForUnapprovedCL(ctx context.Context, cl *changelist.CL) (allSatisfied bool, msg string) {
+	reqs := cl.Snapshot.GetGerrit().GetInfo().GetSubmitRequirements()
+	if len(reqs) == 0 {
+		return
+	}
+	switch satisfied, unsatisfied := groupSubmitReqs(ctx, reqs); {
+	case len(satisfied) == 0 && len(unsatisfied) == 0:
+		// all were NOT_APPLICABLE?
+		// just log the occurrence, but consider that
+		// submit requirements agreed with Submittable.
+		logging.Errorf(ctx, "CL(%d): all submit reqs(%d) are NOT_APPLICABLE", cl.ID, len(reqs))
+	case len(unsatisfied) == 0:
+		// all satisfied?
+		// this is the case where submit reqs and submittable DISAGREE with each other.
+		msg = fmt.Sprintf("%s satisfied, but the CL is unapproved", strings.Join(satisfied, ", "))
+		logging.Errorf(ctx, "CL(%d): all submit reqs satisfied; but CL not submittable", cl.ID)
+		allSatisfied = true
+	default:
+		msg = fmt.Sprintf("%s not satisfied", strings.Join(unsatisfied, ", "))
+	}
+	return
+}
+
+func groupSubmitReqs(ctx context.Context, reqs []*gerritpb.SubmitRequirementResultInfo) (satisfied, unsatisfied []string) {
+	if len(reqs) == 0 {
+		return
+	}
+	satisfied = make([]string, 0, len(reqs))
+	unsatisfied = make([]string, 0, len(reqs))
+	for _, req := range reqs {
+		switch req.Status {
+		case gerritpb.SubmitRequirementResultInfo_SUBMIT_REQUIREMENT_STATUS_UNSPECIFIED:
+			panic(errors.New("Unspecified SubmitRequirement.Status; this should never happen"))
+		case gerritpb.SubmitRequirementResultInfo_NOT_APPLICABLE:
+
+		// satisfied stauses
+		case gerritpb.SubmitRequirementResultInfo_SATISFIED,
+			gerritpb.SubmitRequirementResultInfo_OVERRIDDEN,
+			gerritpb.SubmitRequirementResultInfo_FORCED:
+			satisfied = append(satisfied, req.Name)
+
+		// unsatified statuses
+		case gerritpb.SubmitRequirementResultInfo_ERROR:
+			// log the error. It may be helpful for diagnosing the reason of a Run rejection.
+			logging.Warningf(ctx, "Gerrit reported SubmissionRequirement error %s", req)
+			fallthrough
+		case gerritpb.SubmitRequirementResultInfo_UNSATISFIED:
+			unsatisfied = append(unsatisfied, req.Name)
+
+		default:
+			// This must be a bug in CV.
+			//
+			// common/api/gerrit returns an error if it receives a Status of which enum
+			// doesn't exist in common/proto/gerrit. Hence, if a Status is unknown here,
+			// this switch is missing the status, enumerated in common/proto/gerrit.
+			logging.Errorf(ctx, "Unknown SubmitRequirementStatus %q", req.GetStatus())
+			// Unknown enums are considered as a not-satisfied status.
+			unsatisfied = append(unsatisfied, req.Name)
+		}
+	}
+	return
 }
