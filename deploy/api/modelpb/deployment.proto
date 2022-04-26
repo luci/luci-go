@@ -59,6 +59,9 @@ message Deployment {
   //
   // Applies to all assets associated with this deployment.
   DeploymentConfig config = 4;
+
+  // Details of the commit matching `config_rev`.
+  CommitDetails latest_commit = 5;
 }
 
 
@@ -68,4 +71,15 @@ message DeploymentConfig {
   //
   // Default is 20 min.
   google.protobuf.Duration actuation_timeout = 1;
+}
+
+
+// Details of an IaC repo commit, to show in the UI.
+message CommitDetails {
+  // Author name, as git understands it.
+  string author_name = 1;
+  // Author email, as git understands it.
+  string author_email = 2;
+  // Full commit message, including subject and footers.
+  string commit_message = 3;
 }
