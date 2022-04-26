@@ -153,7 +153,7 @@ func (op *ActuationBeginOp) maybeUpdateHistory(entry *modelpb.AssetHistory) {
 	// If had an open history entry, then the previous actuation (that was
 	// supposed to close it) probably crashed, i.e. it didn't call EndActuation.
 	// We should record this observation in the history log.
-	if asset.isRecordingHistoryEntry() {
+	if asset.IsRecordingHistoryEntry() {
 		asset.HistoryEntry.Actuation.State = modelpb.Actuation_EXPIRED
 		asset.HistoryEntry.Actuation.Finished = timestamppb.New(op.now)
 		asset.HistoryEntry.Actuation.Status = &statuspb.Status{

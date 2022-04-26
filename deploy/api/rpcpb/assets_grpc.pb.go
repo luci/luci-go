@@ -23,6 +23,8 @@ type AssetsClient interface {
 	GetAsset(ctx context.Context, in *GetAssetRequest, opts ...grpc.CallOption) (*modelpb.Asset, error)
 	// ListAssets lists assets matching specified filters (if any).
 	ListAssets(ctx context.Context, in *ListAssetsRequest, opts ...grpc.CallOption) (*ListAssetsResponse, error)
+	// ListAssetHistory fetches an asset and its actuation history.
+	ListAssetHistory(ctx context.Context, in *ListAssetHistoryRequest, opts ...grpc.CallOption) (*ListAssetHistoryResponse, error)
 }
 
 type assetsClient struct {
@@ -51,6 +53,15 @@ func (c *assetsClient) ListAssets(ctx context.Context, in *ListAssetsRequest, op
 	return out, nil
 }
 
+func (c *assetsClient) ListAssetHistory(ctx context.Context, in *ListAssetHistoryRequest, opts ...grpc.CallOption) (*ListAssetHistoryResponse, error) {
+	out := new(ListAssetHistoryResponse)
+	err := c.cc.Invoke(ctx, "/deploy.service.Assets/ListAssetHistory", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // AssetsServer is the server API for Assets service.
 // All implementations must embed UnimplementedAssetsServer
 // for forward compatibility
@@ -59,6 +70,8 @@ type AssetsServer interface {
 	GetAsset(context.Context, *GetAssetRequest) (*modelpb.Asset, error)
 	// ListAssets lists assets matching specified filters (if any).
 	ListAssets(context.Context, *ListAssetsRequest) (*ListAssetsResponse, error)
+	// ListAssetHistory fetches an asset and its actuation history.
+	ListAssetHistory(context.Context, *ListAssetHistoryRequest) (*ListAssetHistoryResponse, error)
 	mustEmbedUnimplementedAssetsServer()
 }
 
@@ -71,6 +84,9 @@ func (UnimplementedAssetsServer) GetAsset(context.Context, *GetAssetRequest) (*m
 }
 func (UnimplementedAssetsServer) ListAssets(context.Context, *ListAssetsRequest) (*ListAssetsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ListAssets not implemented")
+}
+func (UnimplementedAssetsServer) ListAssetHistory(context.Context, *ListAssetHistoryRequest) (*ListAssetHistoryResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ListAssetHistory not implemented")
 }
 func (UnimplementedAssetsServer) mustEmbedUnimplementedAssetsServer() {}
 
@@ -121,6 +137,24 @@ func _Assets_ListAssets_Handler(srv interface{}, ctx context.Context, dec func(i
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Assets_ListAssetHistory_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListAssetHistoryRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AssetsServer).ListAssetHistory(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/deploy.service.Assets/ListAssetHistory",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AssetsServer).ListAssetHistory(ctx, req.(*ListAssetHistoryRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // Assets_ServiceDesc is the grpc.ServiceDesc for Assets service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -135,6 +169,10 @@ var Assets_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ListAssets",
 			Handler:    _Assets_ListAssets_Handler,
+		},
+		{
+			MethodName: "ListAssetHistory",
+			Handler:    _Assets_ListAssetHistory_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

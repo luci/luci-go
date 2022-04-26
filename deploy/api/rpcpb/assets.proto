@@ -27,6 +27,8 @@ service Assets {
   rpc GetAsset(GetAssetRequest) returns (deploy.model.Asset);
   // ListAssets lists assets matching specified filters (if any).
   rpc ListAssets(ListAssetsRequest) returns (ListAssetsResponse);
+  // ListAssetHistory fetches an asset and its actuation history.
+  rpc ListAssetHistory(ListAssetHistoryRequest) returns (ListAssetHistoryResponse);
 }
 
 
@@ -47,4 +49,45 @@ message ListAssetsRequest {
 message ListAssetsResponse {
   // Assets in order of their IDs.
   repeated deploy.model.Asset assets = 1;
+}
+
+
+// ListAssetHistoryRequest specifies what historical records to fetch.
+//
+// AssetHistory records have consecutive integer IDs. Newer entries have larger
+// IDs. Oldest entries are periodically trimmed. As a result, possible IDs lie
+// in an interval `[oldest_retained_id, last_recorded_id]`, where both ends can
+// increase any time when older entries are trimmed and newer entries are
+// recorded.
+//
+// ListAssetHistory fetches entries in reverse chronological order (the most
+// recent entries with highest ID come first).
+//
+// If `latest_history_id` is given, it defines a range of records to fetch as
+// `(latest_history_id-limit, latest_history_id]`. The response will contain
+// records from intersection of this interval with interval of all possible
+// IDs (as defined above).
+//
+// If `latest_history_id` is absent, it is assumed to be `last_recorded_id`.
+//
+// If `limit` is absent, it is assumed to be some default page size. It is also
+// silently capped by some largish value.
+message ListAssetHistoryRequest {
+  // ID of an asset to fetch the history of.
+  string asset_id = 1;
+  // ID of the most recent historical entry to fetch (for pagination).
+  int64 latest_history_id = 2;
+  // Limit on the number of entries to fetch.
+  int32 limit = 3;
+}
+
+
+// ListAssetHistoryResponse contains an asset and its actuation history.
+message ListAssetHistoryResponse {
+  // Asset at its current state.
+  deploy.model.Asset asset = 1;
+  // A historical entry being recorded right now, if any.
+  deploy.model.AssetHistory current = 2;
+  // Historical records starting with `latest_history_id`.
+  repeated deploy.model.AssetHistory history = 3;
 }

@@ -4,3 +4,9 @@ indexes:
   properties:
   - name: State
   - name: Expiry
+
+- kind: AssetHistory
+  ancestor: yes
+  properties:
+  - name: __key__
+    direction: desc

@@ -21,6 +21,7 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
+	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/grpc/grpcutil"
 
@@ -38,15 +39,11 @@ type Assets struct {
 func (*Assets) GetAsset(ctx context.Context, req *rpcpb.GetAssetRequest) (resp *modelpb.Asset, err error) {
 	defer func() { err = grpcutil.GRPCifyAndLogErr(ctx, err) }()
 
-	entity := model.Asset{ID: req.AssetId}
-	switch err := datastore.Get(ctx, &entity); {
-	case err == datastore.ErrNoSuchEntity:
-		return nil, status.Errorf(codes.NotFound, "no such asset")
-	case err != nil:
-		return nil, status.Errorf(codes.Internal, "datastore error when fetching the asset: %s", err)
-	default:
-		return checkAssetEntity(&entity)
+	asset, err := fetchAssetEntity(ctx, req.AssetId)
+	if err != nil {
+		return nil, err
 	}
+	return asset.Asset, nil
 }
 
 // ListAssets implements the corresponding RPC method.
@@ -66,6 +63,67 @@ func (*Assets) ListAssets(ctx context.Context, req *rpcpb.ListAssetsRequest) (re
 	}
 
 	return &rpcpb.ListAssetsResponse{Assets: assets}, nil
+}
+
+// ListAssetHistory implements the corresponding RPC method.
+func (*Assets) ListAssetHistory(ctx context.Context, req *rpcpb.ListAssetHistoryRequest) (resp *rpcpb.ListAssetHistoryResponse, err error) {
+	defer func() { err = grpcutil.GRPCifyAndLogErr(ctx, err) }()
+
+	asset, err := fetchAssetEntity(ctx, req.AssetId)
+	if err != nil {
+		return nil, err
+	}
+
+	latestID := req.LatestHistoryId
+	if latestID == 0 || latestID > asset.LastHistoryID {
+		latestID = asset.LastHistoryID
+	}
+
+	if req.Limit == 0 {
+		req.Limit = 20
+	} else if req.Limit > 200 {
+		req.Limit = 200
+	} else if req.Limit < 0 {
+		return nil, status.Errorf(codes.InvalidArgument, "limit can't be negative")
+	}
+
+	assetKey := datastore.KeyForObj(ctx, asset)
+	q := datastore.NewQuery("AssetHistory").
+		Ancestor(assetKey).
+		Lte("__key__", datastore.NewKey(ctx, "AssetHistory", "", latestID, assetKey)).
+		Order("-__key__").
+		Limit(req.Limit)
+
+	var entries []*model.AssetHistory
+	if err := datastore.GetAll(ctx, q, &entries); err != nil {
+		return nil, errors.Annotate(err, "querying AssetHistory").Tag(grpcutil.InternalTag).Err()
+	}
+
+	resp = &rpcpb.ListAssetHistoryResponse{Asset: asset.Asset}
+	if asset.IsRecordingHistoryEntry() {
+		resp.Current = asset.HistoryEntry
+	}
+	resp.History = make([]*modelpb.AssetHistory, len(entries))
+	for i, e := range entries {
+		resp.History[i] = e.Entry
+	}
+	return resp, nil
+}
+
+// fetchAssetEntity fetches Asset entity returning gRPC errors on failures.
+func fetchAssetEntity(ctx context.Context, assetID string) (*model.Asset, error) {
+	entity := &model.Asset{ID: assetID}
+	switch err := datastore.Get(ctx, entity); {
+	case err == datastore.ErrNoSuchEntity:
+		return nil, status.Errorf(codes.NotFound, "no such asset")
+	case err != nil:
+		return nil, status.Errorf(codes.Internal, "datastore error when fetching the asset: %s", err)
+	default:
+		if _, err := checkAssetEntity(entity); err != nil {
+			return nil, err
+		}
+		return entity, nil
+	}
 }
 
 // checkAssetEntity checks the proto payload of the asset entity is correct.

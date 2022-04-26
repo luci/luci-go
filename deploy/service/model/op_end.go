@@ -110,7 +110,7 @@ func (op *ActuationEndOp) HandleActuatedState(ctx context.Context, assetID strin
 	}
 
 	// If was recording a history entry, close and commit it.
-	if ent.isRecordingHistoryEntry() {
+	if ent.IsRecordingHistoryEntry() {
 		ent.HistoryEntry.Actuation = op.actuation.Actuation
 		ent.HistoryEntry.PostActuationState = reported
 		op.history = append(op.history, ent.finalizeHistoryEntry())
@@ -128,7 +128,7 @@ func (op *ActuationEndOp) Expire(ctx context.Context) {
 
 	// Append historic records to all assets that were being actuated.
 	for _, asset := range op.assets {
-		if asset.isRecordingHistoryEntry() {
+		if asset.IsRecordingHistoryEntry() {
 			asset.HistoryEntry.Actuation = op.actuation.Actuation
 			op.history = append(op.history, asset.finalizeHistoryEntry())
 		}

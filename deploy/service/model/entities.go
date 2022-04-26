@@ -45,14 +45,14 @@ type Asset struct {
 	HistoryEntry *modelpb.AssetHistory
 }
 
-// isRecordingHistory is true if HistoryEntry is an uncommitted history record.
-func (a *Asset) isRecordingHistoryEntry() bool {
+// IsRecordingHistoryEntry is true if HistoryEntry is an uncommitted record.
+func (a *Asset) IsRecordingHistoryEntry() bool {
 	return a.HistoryEntry != nil && a.HistoryEntry.HistoryId == a.LastHistoryID+1
 }
 
 // finalizeHistoryEntry marks the recording HistoryEntry as complete.
 func (a *Asset) finalizeHistoryEntry() *modelpb.AssetHistory {
-	if !a.isRecordingHistoryEntry() {
+	if !a.IsRecordingHistoryEntry() {
 		panic("not recording a history entry")
 	}
 	a.LastHistoryID = a.HistoryEntry.HistoryId

@@ -398,21 +398,25 @@ func versionsSummary(asset *modelpb.Asset, active bool) []versionState {
 
 // assetPage renders the asset page.
 func (ui *UI) assetPage(ctx *router.Context) error {
-	asset, err := ui.assets.GetAsset(ctx.Context, &rpcpb.GetAssetRequest{
+	assetHistory, err := ui.assets.ListAssetHistory(ctx.Context, &rpcpb.ListAssetHistoryRequest{
 		AssetId: strings.TrimPrefix(ctx.Params.ByName("AssetID"), "/"),
+		Limit:   20,
 	})
 	if err != nil {
 		return err
 	}
 
-	ref := assetRefFromID(asset.Id)
+	// TODO: Use assetHistory.Current and assetHistory.History to render the
+	// history of actuations.
+
+	ref := assetRefFromID(assetHistory.Asset.Id)
 
 	templates.MustRender(ctx.Context, ctx.Writer, "pages/asset.html", map[string]interface{}{
 		"Breadcrumbs":      assetBreadcrumbs(ref),
 		"Ref":              ref,
-		"Overview":         deriveAssetOverview(asset),
-		"ActiveVersions":   versionsSummary(asset, true),
-		"InactiveVersions": versionsSummary(asset, false),
+		"Overview":         deriveAssetOverview(assetHistory.Asset),
+		"ActiveVersions":   versionsSummary(assetHistory.Asset, true),
+		"InactiveVersions": versionsSummary(assetHistory.Asset, false),
 	})
 	return nil
 }
