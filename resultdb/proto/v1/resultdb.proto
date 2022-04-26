@@ -452,7 +452,7 @@ message GetTestResultHistoryResponse {
 }
 
 // A request message for QueryTestVariants RPC.
-// Next id: 7.
+// Next id: 8.
 message QueryTestVariantsRequest {
   // Retrieve test variants included in these invocations, directly or indirectly
   // (via Invocation.included_invocations).
@@ -477,6 +477,23 @@ message QueryTestVariantsRequest {
   // When paginating, all other parameters provided to `QueryTestVariants` MUST
   // match the call that provided the page token.
   string page_token = 5;
+
+  // Fields to include in the response.
+  // If not set, the default mask is used where all fields are included.
+  //
+  // The following fields in results.*.result will NEVER be included even when
+  // specified:
+  // * test_id
+  // * variant_hash
+  // * variant
+  // * test_metadata
+  // Those values can be found in the parent test variant objects.
+  //
+  // The following fields will ALWAYS be included even when NOT specified:
+  // * test_id
+  // * variant_hash
+  // * status
+  google.protobuf.FieldMask read_mask = 7;
 }
 
 // A response message for QueryTestVariants RPC.

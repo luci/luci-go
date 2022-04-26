@@ -16,12 +16,16 @@ package testvariants
 
 import (
 	"context"
+	"strings"
 	"text/template"
 
 	"cloud.google.com/go/spanner"
+	"google.golang.org/genproto/protobuf/field_mask"
 	"google.golang.org/protobuf/proto"
 
+	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/proto/mask"
 	"go.chromium.org/luci/common/trace"
 
 	"go.chromium.org/luci/resultdb/internal/invocations"
@@ -35,6 +39,18 @@ import (
 // testResultLimit is the limit of test results each test variant includes.
 const testResultLimit = 10
 
+// AllFields is a field mask that selects all TestVariant fields.
+var AllFields = mask.All(&pb.TestVariant{})
+
+// QueryMask returns mask.Mask converted from field_mask.FieldMask.
+// It returns a default mask with all fields if readMask is empty.
+func QueryMask(readMask *field_mask.FieldMask) (*mask.Mask, error) {
+	if len(readMask.GetPaths()) == 0 {
+		return AllFields, nil
+	}
+	return mask.FromFieldMask(readMask, &pb.TestVariant{}, false, false)
+}
+
 // Query specifies test variants to fetch.
 type Query struct {
 	InvocationIDs invocations.IDSet
@@ -42,10 +58,29 @@ type Query struct {
 	PageSize      int // must be positive
 	// Consists of test variant status, test id and variant hash.
 	PageToken string
+	Mask      *mask.Mask
 	TestIDs   []string
 
 	decompressBuf []byte                 // buffer for decompressing blobs
 	params        map[string]interface{} // query parameters
+}
+
+// trim is equivalent to q.Mask.Trim with the exception that "test_id",
+// "variant_hash", and "status" are always kept intact. Those fields are needed
+// to generate page tokens.
+func (q *Query) trim(tv *pb.TestVariant) error {
+	testID := tv.TestId
+	vHash := tv.VariantHash
+	status := tv.Status
+
+	if err := q.Mask.Trim(tv); err != nil {
+		return errors.Annotate(err, "error trimming fields for test variant with ID: %s, variant hash: %s", tv.TestId, tv.VariantHash).Err()
+	}
+
+	tv.TestId = testID
+	tv.VariantHash = vHash
+	tv.Status = status
+	return nil
 }
 
 // tvResult matches the result STRUCT of a test variant from the query.
@@ -59,6 +94,42 @@ type tvResult struct {
 	SummaryHTML     []byte
 	FailureReason   []byte
 	Tags            []string
+}
+
+// resultSelectColumns returns a list of columns needed to fetch `tvResult`s
+// according to the fieldmask. Required columns can be specified to ensure
+// certain columns are always fetched regardless of the fieldmask.
+func (q *Query) resultSelectColumns(requiredColumns ...string) []string {
+	columnSet := stringset.NewFromSlice(requiredColumns...)
+
+	// Select extra columns depending on the mask.
+	readMask := q.Mask
+	if readMask.IsEmpty() {
+		readMask = AllFields
+	}
+	selectIfIncluded := func(column string, fields ...string) {
+		for _, field := range fields {
+			switch inc, err := readMask.Includes(field); {
+			case err != nil:
+				panic(err)
+			case inc != mask.Exclude:
+				columnSet.Add(column)
+				return
+			}
+		}
+	}
+
+	selectIfIncluded("InvocationId", "results.*.result.name", "results.*.result.invocation_id")
+	selectIfIncluded("ResultId", "results.*.result.name", "results.*.result.result_id")
+	selectIfIncluded("IsUnexpected", "results.*.result.expected")
+	selectIfIncluded("Status", "results.*.result.status")
+	selectIfIncluded("StartTime", "results.*.result.start_time")
+	selectIfIncluded("RunDurationUsec", "results.*.result.duration")
+	selectIfIncluded("SummaryHTML", "results.*.result.summary_html")
+	selectIfIncluded("FailureReason", "results.*.result.failure_reason")
+	selectIfIncluded("Tags", "results.*.result.tags")
+
+	return columnSet.ToSortedSlice()
 }
 
 func (q *Query) decompressText(src []byte) (string, error) {
@@ -133,8 +204,9 @@ func (q *Query) queryTestVariantsWithUnexpectedResults(ctx context.Context, f fu
 	}
 
 	st, err := spanutil.GenerateStatement(testVariantsWithUnexpectedResultsSQLTmpl, map[string]interface{}{
-		"HasTestIds":   len(q.TestIDs) > 0,
-		"StatusFilter": q.Predicate.GetStatus() != 0 && q.Predicate.GetStatus() != pb.TestVariantStatus_UNEXPECTED_MASK,
+		"ResultColumns": strings.Join(q.resultSelectColumns(), ", "),
+		"HasTestIds":    len(q.TestIDs) > 0,
+		"StatusFilter":  q.Predicate.GetStatus() != 0 && q.Predicate.GetStatus() != pb.TestVariantStatus_UNEXPECTED_MASK,
 	})
 	if err != nil {
 		return
@@ -191,39 +263,29 @@ func (q *Query) queryTestVariantsWithUnexpectedResults(ctx context.Context, f fu
 	})
 }
 
-func (q *Query) queryTestResults(ctx context.Context, limit int, f func(*pb.TestResult, spanutil.Compressed) error) (err error) {
+func (q *Query) queryTestResults(ctx context.Context, limit int, f func(testId, variantHash string, variant *pb.Variant, tmd spanutil.Compressed, tvr *tvResult) error) (err error) {
 	ctx, ts := trace.StartSpan(ctx, "testvariants.Query.queryTestResults")
 	ts.Attribute("cr.dev/invocations", len(q.InvocationIDs))
 	defer func() { ts.End(err) }()
 	st, err := spanutil.GenerateStatement(allTestResultsSQLTmpl, map[string]interface{}{
-		"HasTestIds": len(q.TestIDs) > 0,
+		"ResultColumns": strings.Join(q.resultSelectColumns("IsUnexpected"), ", "),
+		"HasTestIds":    len(q.TestIDs) > 0,
 	})
 	st.Params = q.params
 	st.Params["limit"] = limit
 
 	var b spanutil.Buffer
-	var summaryHTML spanutil.Compressed
 	return spanutil.Query(ctx, st, func(row *spanner.Row) error {
-		var invID invocations.ID
-		var maybeUnexpected spanner.NullBool
-		var micros spanner.NullInt64
+		var testID string
+		var variantHash string
+		variant := &pb.Variant{}
 		var tmd spanutil.Compressed
-		tr := &pb.TestResult{}
-		err := b.FromSpanner(
-			row, &tr.TestId, &tr.VariantHash, &tr.Variant, &tmd,
-			&invID, &tr.ResultId, &maybeUnexpected, &tr.Status, &tr.StartTime,
-			&micros, &summaryHTML, &tr.Tags,
-		)
-
-		if err != nil {
+		var results []*tvResult
+		if err := b.FromSpanner(row, &testID, &variantHash, &variant, &tmd, &results); err != nil {
 			return err
 		}
-		tr.Name = pbutil.TestResultName(string(invID), tr.TestId, tr.ResultId)
-		tr.SummaryHtml = string(summaryHTML)
-		testresults.PopulateExpectedField(tr, maybeUnexpected)
-		testresults.PopulateDurationField(tr, micros)
 
-		return f(tr, tmd)
+		return f(testID, variantHash, variant, tmd, results[0])
 	})
 }
 
@@ -249,10 +311,15 @@ func (q *Query) fetchTestVariantsWithOnlyExpectedResults(ctx context.Context) (t
 	// expected in that page, we will return q.PageSize test variants instead of
 	// q.PageSize-1.
 	pageSize := q.PageSize + 1
-	err = q.queryTestResults(ctx, pageSize, func(tr *pb.TestResult, tmd spanutil.Compressed) error {
+	err = q.queryTestResults(ctx, pageSize, func(testId, variantHash string, variant *pb.Variant, tmd spanutil.Compressed, tvr *tvResult) error {
+		tr, err := q.toTestResultProto(tvr, testId)
+		if err != nil {
+			return err
+		}
+
 		trLen++
 		if current != nil {
-			if current.TestId == tr.TestId && current.VariantHash == tr.VariantHash {
+			if current.TestId == testId && current.VariantHash == variantHash {
 				if len(current.Results) < testResultLimit {
 					current.Results = append(current.Results, &pb.TestResultBundle{
 						Result: tr,
@@ -267,15 +334,18 @@ func (q *Query) fetchTestVariantsWithOnlyExpectedResults(ctx context.Context) (t
 			lastProcessedTV.TestId = current.TestId
 			lastProcessedTV.VariantHash = current.VariantHash
 			if currentOnlyExpected {
+				if err := q.trim(current); err != nil {
+					return err
+				}
 				tvs = append(tvs, current)
 			}
 		}
 
 		// New test variant.
 		current = &pb.TestVariant{
-			TestId:      tr.TestId,
-			VariantHash: tr.VariantHash,
-			Variant:     tr.Variant,
+			TestId:      testId,
+			VariantHash: variantHash,
+			Variant:     variant,
 			Status:      pb.TestVariantStatus_EXPECTED,
 			Results: []*pb.TestResultBundle{
 				{
@@ -292,9 +362,12 @@ func (q *Query) fetchTestVariantsWithOnlyExpectedResults(ctx context.Context) (t
 
 	switch {
 	case err != nil:
-		tvs = nil
+		return nil, "", err
 	case trLen < pageSize && currentOnlyExpected:
 		// We have exhausted the test results, add current to tvs.
+		if err := q.trim(current); err != nil {
+			return nil, "", err
+		}
 		tvs = append(tvs, current)
 	case trLen == pageSize && !currentOnlyExpected:
 		// Got page size of test results, need to return the next page token.
@@ -306,7 +379,7 @@ func (q *Query) fetchTestVariantsWithOnlyExpectedResults(ctx context.Context) (t
 		nextPageToken = pagination.Token(pb.TestVariantStatus_EXPECTED.String(), lastProcessedTV.TestId, lastProcessedTV.VariantHash)
 	}
 
-	return
+	return tvs, nextPageToken, nil
 }
 
 // Fetch returns a page of test variants matching q.
@@ -366,6 +439,9 @@ func (q *Query) Fetch(ctx context.Context) (tvs []*pb.TestVariant, nextPageToken
 	tvs = make([]*pb.TestVariant, 0, q.PageSize)
 	// Fetch test variants with unexpected results.
 	err = q.queryTestVariantsWithUnexpectedResults(ctx, func(tv *pb.TestVariant) error {
+		if err := q.trim(tv); err != nil {
+			return err
+		}
 		tvs = append(tvs, tv)
 		return nil
 	})
@@ -408,17 +484,7 @@ var testVariantsWithUnexpectedResultsSQLTmpl = template.Must(template.New("testV
 			COUNTIF(IsUnexpected) num_unexpected,
 			COUNTIF(Status=@skipStatus) num_skipped,
 			COUNT(TestId) num_total,
-			ARRAY_AGG(STRUCT(
-				InvocationId,
-				ResultId,
-				IsUnexpected,
-				Status,
-				StartTime,
-				RunDurationUsec,
-				SummaryHTML,
-				FailureReason,
-				Tags
-			)) results,
+			ARRAY_AGG(STRUCT({{.ResultColumns}})) results,
 		FROM unexpectedTestVariants vur
 		JOIN@{FORCE_JOIN_ORDER=TRUE, JOIN_METHOD=HASH_JOIN} TestResults tr USING (TestId, VariantHash)
 		WHERE InvocationId in UNNEST(@invIDs)
@@ -490,14 +556,11 @@ var allTestResultsSQLTmpl = template.Must(template.New("allTestResultsSQL").Pars
 		VariantHash,
 		Variant,
 		TestMetadata,
-		InvocationId,
-		ResultId,
-		IsUnexpected,
-		Status,
-		StartTime,
-		RunDurationUsec,
-		SummaryHTML,
-		Tags,
+
+		-- Spanner doesn't support returning a struct as a column.
+		-- https://cloud.google.com/spanner/docs/reference/standard-sql/query-syntax#using_structs_with_select
+		-- Wrap it in an array instead.
+		ARRAY(SELECT STRUCT({{.ResultColumns}})) AS results,
 	FROM TestResults
 	WHERE InvocationId in UNNEST(@invIDs)
 	{{if .HasTestIds}}

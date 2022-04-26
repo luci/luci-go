@@ -20,6 +20,7 @@ import (
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/grpc/appstatus"
 	"go.chromium.org/luci/server/span"
 
 	"go.chromium.org/luci/resultdb/internal/invocations"
@@ -38,6 +39,10 @@ func (s *resultDBServer) QueryTestVariants(ctx context.Context, in *pb.QueryTest
 	if err := validateQueryRequest(in); err != nil {
 		return nil, err
 	}
+	readMask, err := testvariants.QueryMask(in.GetReadMask())
+	if err != nil {
+		return nil, appstatus.BadRequest(err)
+	}
 
 	// Open a transaction.
 	ctx, cancel := span.ReadOnlyTransaction(ctx)
@@ -55,6 +60,7 @@ func (s *resultDBServer) QueryTestVariants(ctx context.Context, in *pb.QueryTest
 		Predicate:     in.Predicate,
 		PageSize:      pagination.AdjustPageSize(in.PageSize),
 		PageToken:     in.PageToken,
+		Mask:          readMask,
 	}
 
 	var tvs []*pb.TestVariant

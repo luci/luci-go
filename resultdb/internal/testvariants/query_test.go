@@ -26,6 +26,7 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/common/clock/testclock"
+	"go.chromium.org/luci/common/proto/mask"
 	"go.chromium.org/luci/server/span"
 
 	"go.chromium.org/luci/resultdb/internal/invocations"
@@ -174,7 +175,7 @@ func TestQueryTestVariants(t *testing.T) {
 			})
 
 			So(tvs[0].Results, ShouldResembleProto, []*pb.TestResultBundle{
-				&pb.TestResultBundle{
+				{
 					Result: &pb.TestResult{
 						Name:        "invocations/inv1/tests/T4/results/0",
 						ResultId:    "0",
@@ -207,6 +208,61 @@ func TestQueryTestVariants(t *testing.T) {
 				"50/T9/e3b0c44298fc1c14",
 			})
 			So(len(tvs[0].Results), ShouldEqual, 2)
+		})
+
+		Convey(`Field mask works`, func() {
+			q.Mask = mask.MustFromReadMask(
+				&pb.TestVariant{},
+				"results.*.result.name",
+
+				// Result fields that are included in the parent test variant will not
+				// be populated even when specified.
+				"results.*.result.test_id",
+				"results.*.result.variant_hash",
+				"results.*.result.variant",
+				"results.*.result.test_metadata",
+			)
+
+			verifyFields := func(tvs []*pb.TestVariant) {
+				for _, tv := range tvs {
+					for _, result := range tv.Results {
+						// Check all results have and only have .Name populated.
+						So(result.Result.Name, ShouldNotBeEmpty)
+						So(result, ShouldResembleProto, &pb.TestResultBundle{Result: &pb.TestResult{Name: result.Result.Name}})
+					}
+
+					// Check all results have and only have .TestId, .VariantHash,
+					// .Status, and .Results populated.
+					// Those fields should be included even when not specified.
+					So(tv.TestId, ShouldNotBeEmpty)
+					So(tv.VariantHash, ShouldNotBeEmpty)
+					So(tv.Status, ShouldNotBeEmpty)
+					So(tv.Results, ShouldNotBeEmpty)
+					So(tv, ShouldResembleProto, &pb.TestVariant{
+						TestId:      tv.TestId,
+						VariantHash: tv.VariantHash,
+						Status:      tv.Status,
+						Results:     tv.Results,
+					})
+				}
+			}
+
+			Convey(`with non-expected test variants`, func() {
+				tvs, _ := mustFetch(q)
+				verifyFields(tvs)
+			})
+
+			Convey(`with expected test variants`, func() {
+				// Ensure the last test result (ordered by TestId, then by VariantHash)
+				// is expected, so we can verify that the tail is trimmed properly.
+				testutil.MustApply(ctx,
+					insert.TestResults("inv1", "Tz0", nil, pb.TestStatus_PASS)...,
+				)
+				q.PageToken = pagination.Token("EXPECTED", "", "")
+				tvs, _ := mustFetch(q)
+				verifyFields(tvs)
+				So(tvs[len(tvs)-1].TestId, ShouldEqual, "Tz0")
+			})
 		})
 
 		Convey(`paging works`, func() {
