@@ -98,12 +98,6 @@
           }
         ],
         "execution_timeout_secs": "3600",
-        "extra_args": [
-          "--isolated-script-test-output=${ISOLATED_OUTDIR}/output.json",
-          "--isolated-script-test-perf-output=${ISOLATED_OUTDIR}/perftest-output.json",
-          "--jobs=1",
-          "--extra-browser-args=--disable-gpu"
-        ],
         "grace_period_secs": "30",
         "io_timeout_secs": "1200"
       }

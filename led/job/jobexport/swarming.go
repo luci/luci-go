@@ -85,17 +85,13 @@ func ToSwarmingNewTask(sw *job.Swarming, casUserPayload *apipb.CASReference) (*s
 				EnvPrefixes: make([]*swarming.SwarmingRpcsStringListPair, 0, len(props.EnvPaths)),
 
 				Command:     props.Command,
-				ExtraArgs:   props.ExtraArgs,
 				RelativeCwd: props.RelativeCwd,
 			},
 		}
 
 		if con := props.GetContainment(); con.GetContainmentType() != apipb.Containment_NOT_SPECIFIED {
 			toAdd.Properties.Containment = &swarming.SwarmingRpcsContainment{
-				ContainmentType:           con.GetContainmentType().String(),
-				LimitProcesses:            con.GetLimitProcesses(),
-				LimitTotalCommittedMemory: con.GetLimitTotalCommittedMemory(),
-				LowerPriority:             con.GetLowerPriority(),
+				ContainmentType: con.GetContainmentType().String(),
 			}
 		}
 

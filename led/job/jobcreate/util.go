@@ -84,9 +84,6 @@ func containmentFromSwarming(con *swarming.SwarmingRpcsContainment) *swarmingpb.
 		panic(fmt.Sprintf("unknown containment type %q", con.ContainmentType))
 	}
 	return &swarmingpb.Containment{
-		ContainmentType:           swarmingpb.Containment_ContainmentType(conType),
-		LimitProcesses:            con.LimitProcesses,
-		LimitTotalCommittedMemory: con.LimitTotalCommittedMemory,
-		LowerPriority:             con.LowerPriority,
+		ContainmentType: swarmingpb.Containment_ContainmentType(conType),
 	}
 }

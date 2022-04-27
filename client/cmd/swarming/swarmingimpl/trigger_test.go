@@ -266,8 +266,6 @@ func TestProcessTriggerOptions_WithRawArgs(t *testing.T) {
 		So(result.TaskSlices, ShouldHaveLength, 1)
 		properties := result.TaskSlices[0].Properties
 		So(properties.Command, ShouldResemble, []string{"arg1", "arg2"})
-		So(properties.ExtraArgs, ShouldResemble, ([]string)(nil))
-		So(properties.InputsRef, ShouldBeNil)
 	})
 }
 

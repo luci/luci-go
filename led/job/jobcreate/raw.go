@@ -124,7 +124,6 @@ func taskPropertiesFromSwarming(ts *swarming.SwarmingRpcsTaskProperties) *swarmi
 		NamedCaches:  namedCachesFromSwarming(ts.Caches),
 		Command:      ts.Command,
 		RelativeCwd:  ts.RelativeCwd,
-		ExtraArgs:    ts.ExtraArgs,
 		// SecretBytes/HasSecretBytes are not provided by the swarming server.
 		Dimensions:       dimensionsFromSwarming(ts.Dimensions),
 		Env:              envFromSwarming(ts.Env),

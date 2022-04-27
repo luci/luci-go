@@ -170,25 +170,22 @@ type triggerRun struct {
 	commonFlags
 
 	// Task properties.
-	casInstance               string
-	digest                    string
-	dimensions                stringmapflag.Value
-	env                       stringmapflag.Value
-	envPrefix                 stringlistflag.Flag
-	idempotent                bool
-	lowerPriority             bool
-	containmentType           containmentType
-	limitProcesses            int64
-	limitTotalCommittedMemory int64
-	namedCache                stringmapflag.Value
-	hardTimeout               int64
-	ioTimeout                 int64
-	cipdPackage               stringmapflag.Value
-	outputs                   stringlistflag.Flag
-	optionalDimension         optionalDimension
-	serviceAccount            string
-	relativeCwd               string
-	secretBytesPath           string
+	casInstance       string
+	digest            string
+	dimensions        stringmapflag.Value
+	env               stringmapflag.Value
+	envPrefix         stringlistflag.Flag
+	idempotent        bool
+	containmentType   containmentType
+	namedCache        stringmapflag.Value
+	hardTimeout       int64
+	ioTimeout         int64
+	cipdPackage       stringmapflag.Value
+	outputs           stringlistflag.Flag
+	optionalDimension optionalDimension
+	serviceAccount    string
+	relativeCwd       string
+	secretBytesPath   string
 
 	// Task request.
 	taskName       string
@@ -213,11 +210,8 @@ func (c *triggerRun) Init(authFlags AuthFlags) {
 	c.Flags.Var(&c.env, "env", "Environment variables to set.")
 	c.Flags.Var(&c.envPrefix, "env-prefix", "Environment prefixes to set.")
 	c.Flags.BoolVar(&c.idempotent, "idempotent", false, "When set, the server will actively try to find a previous task with the same parameter and return this result instead if possible.")
-	c.Flags.BoolVar(&c.lowerPriority, "lower-priority", false, "When set, the task will run with a lower process priority.")
 	c.containmentType = "NONE"
 	c.Flags.Var(&c.containmentType, "containment-type", "Specify which type of process containment to use. Choices are: "+containmentChoices.Choices())
-	c.Flags.Int64Var(&c.limitProcesses, "limit-processes", 0, "When set, limit the maximum number of concurrent processes the task can create.")
-	c.Flags.Int64Var(&c.limitTotalCommittedMemory, "limit-total-committed-memory", 0, "When set, limit the maximum total amount of memory committed by the processes in the task.")
 	c.Flags.Int64Var(&c.hardTimeout, "hard-timeout", 60*60, "Seconds to allow the task to complete.")
 	c.Flags.Int64Var(&c.ioTimeout, "io-timeout", 20*60, "Seconds to allow the task to be silent.")
 	c.Flags.Var(&c.cipdPackage, "cipd-package",
@@ -427,10 +421,7 @@ func (c *triggerRun) processTriggerOptions(commands []string, env subcommands.En
 		Outputs:              c.outputs,
 		IoTimeoutSecs:        c.ioTimeout,
 		Containment: &swarming.SwarmingRpcsContainment{
-			LowerPriority:             c.lowerPriority,
-			ContainmentType:           string(c.containmentType),
-			LimitProcesses:            c.limitProcesses,
-			LimitTotalCommittedMemory: c.limitTotalCommittedMemory,
+			ContainmentType: string(c.containmentType),
 		},
 		SecretBytes: secretBytesEnc,
 	}

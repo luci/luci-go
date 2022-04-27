@@ -20,25 +20,6 @@
   "id": "swarmbucket:v1",
   "kind": "discovery#restDescription",
   "methods": {
-    "get_builders": {
-      "description": "Returns defined swarmbucket builders. Returns legacy bucket names, e.g. \"luci.chromium.try\", not \"chromium/try\". Can be used to discover builders.",
-      "httpMethod": "GET",
-      "id": "swarmbucket.get_builders",
-      "parameters": {
-        "bucket": {
-          "location": "query",
-          "repeated": true,
-          "type": "string"
-        }
-      },
-      "path": "builders",
-      "response": {
-        "$ref": "LegacySwarmbucketApiGetBuildersResponseMessage"
-      },
-      "scopes": [
-        "https://www.googleapis.com/auth/userinfo.email"
-      ]
-    },
     "get_task_def": {
       "description": "Returns a swarming task definition for a build request.",
       "httpMethod": "POST",
@@ -50,19 +31,6 @@
       },
       "response": {
         "$ref": "LegacySwarmbucketApiGetTaskDefinitionResponseMessage"
-      },
-      "scopes": [
-        "https://www.googleapis.com/auth/userinfo.email"
-      ]
-    },
-    "set_next_build_number": {
-      "description": "Sets the build number that will be used for the next build.",
-      "httpMethod": "POST",
-      "id": "swarmbucket.set_next_build_number",
-      "path": "set_next_build_number",
-      "request": {
-        "$ref": "LegacySwarmbucketApiSetNextBuildNumberRequest",
-        "parameterName": "resource"
       },
       "scopes": [
         "https://www.googleapis.com/auth/userinfo.email"
@@ -179,60 +147,6 @@
       },
       "type": "object"
     },
-    "LegacySwarmbucketApiBucketMessage": {
-      "id": "LegacySwarmbucketApiBucketMessage",
-      "properties": {
-        "builders": {
-          "items": {
-            "$ref": "LegacySwarmbucketApiBuilderMessage"
-          },
-          "type": "array"
-        },
-        "name": {
-          "type": "string"
-        },
-        "swarming_hostname": {
-          "type": "string"
-        }
-      },
-      "type": "object"
-    },
-    "LegacySwarmbucketApiBuilderMessage": {
-      "id": "LegacySwarmbucketApiBuilderMessage",
-      "properties": {
-        "category": {
-          "type": "string"
-        },
-        "name": {
-          "type": "string"
-        },
-        "properties_json": {
-          "type": "string"
-        },
-        "swarming_dimensions": {
-          "items": {
-            "type": "string"
-          },
-          "type": "array"
-        },
-        "swarming_hostname": {
-          "type": "string"
-        }
-      },
-      "type": "object"
-    },
-    "LegacySwarmbucketApiGetBuildersResponseMessage": {
-      "id": "LegacySwarmbucketApiGetBuildersResponseMessage",
-      "properties": {
-        "buckets": {
-          "items": {
-            "$ref": "LegacySwarmbucketApiBucketMessage"
-          },
-          "type": "array"
-        }
-      },
-      "type": "object"
-    },
     "LegacySwarmbucketApiGetTaskDefinitionRequestMessage": {
       "id": "LegacySwarmbucketApiGetTaskDefinitionRequestMessage",
       "properties": {
@@ -250,25 +164,6 @@
           "type": "string"
         },
         "task_definition": {
-          "type": "string"
-        }
-      },
-      "type": "object"
-    },
-    "LegacySwarmbucketApiSetNextBuildNumberRequest": {
-      "id": "LegacySwarmbucketApiSetNextBuildNumberRequest",
-      "properties": {
-        "bucket": {
-          "required": true,
-          "type": "string"
-        },
-        "builder": {
-          "required": true,
-          "type": "string"
-        },
-        "next_number": {
-          "format": "int64",
-          "required": true,
           "type": "string"
         }
       },

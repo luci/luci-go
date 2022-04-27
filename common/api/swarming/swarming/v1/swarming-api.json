@@ -1383,17 +1383,6 @@
             ""
           ],
           "type": "string"
-        },
-        "limit_processes": {
-          "format": "int64",
-          "type": "string"
-        },
-        "limit_total_committed_memory": {
-          "format": "int64",
-          "type": "string"
-        },
-        "lower_priority": {
-          "type": "boolean"
         }
       },
       "type": "object"
@@ -1436,22 +1425,6 @@
           "type": "string"
         },
         "who": {
-          "type": "string"
-        }
-      },
-      "type": "object"
-    },
-    "SwarmingRpcsFilesRef": {
-      "description": "Defines a data tree reference for Swarming task inputs or outputs. It is a reference to an isolated file on an isolate server. DEPRECATED. Isolate server is being migrated to RBE-CAS. Use `CASReference` to specify a reference to RBE-CAS.",
-      "id": "SwarmingRpcsFilesRef",
-      "properties": {
-        "isolated": {
-          "type": "string"
-        },
-        "isolatedserver": {
-          "type": "string"
-        },
-        "namespace": {
           "type": "string"
         }
       },
@@ -1618,15 +1591,6 @@
         "cas_viewer_server": {
           "type": "string"
         },
-        "chops_git_version": {
-          "type": "string"
-        },
-        "default_isolate_namespace": {
-          "type": "string"
-        },
-        "default_isolate_server": {
-          "type": "string"
-        },
         "display_server_url_template": {
           "type": "string"
         },
@@ -1634,9 +1598,6 @@
           "type": "string"
         },
         "machine_provider_template": {
-          "type": "string"
-        },
-        "project_id": {
           "type": "string"
         },
         "server_version": {
@@ -1795,22 +1756,12 @@
           "format": "int64",
           "type": "string"
         },
-        "extra_args": {
-          "items": {
-            "type": "string"
-          },
-          "type": "array"
-        },
         "grace_period_secs": {
           "format": "int64",
           "type": "string"
         },
         "idempotent": {
           "type": "boolean"
-        },
-        "inputs_ref": {
-          "$ref": "SwarmingRpcsFilesRef",
-          "description": "Defines a data tree reference for Swarming task inputs or outputs. It is a reference to an isolated file on an isolate server. DEPRECATED. Isolate server is being migrated to RBE-CAS. Use `CASReference` to specify a reference to RBE-CAS."
         },
         "io_timeout_secs": {
           "format": "int64",
@@ -2062,10 +2013,6 @@
         "name": {
           "type": "string"
         },
-        "outputs_ref": {
-          "$ref": "SwarmingRpcsFilesRef",
-          "description": "Defines a data tree reference for Swarming task inputs or outputs. It is a reference to an isolated file on an isolate server. DEPRECATED. Isolate server is being migrated to RBE-CAS. Use `CASReference` to specify a reference to RBE-CAS."
-        },
         "performance_stats": {
           "$ref": "SwarmingRpcsPerformanceStats",
           "description": "Performance stats of task execution. See task_result.PerformanceStats for details."
@@ -2195,6 +2142,10 @@
         "cursor": {
           "type": "string"
         },
+        "end": {
+          "format": "double",
+          "type": "number"
+        },
         "kill_running": {
           "type": "boolean"
         },
@@ -2202,6 +2153,10 @@
           "default": "100",
           "format": "int64",
           "type": "string"
+        },
+        "start": {
+          "format": "double",
+          "type": "number"
         },
         "tags": {
           "items": {

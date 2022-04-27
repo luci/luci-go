@@ -1,4 +1,4 @@
-// Copyright 2021 The LUCI Authors.
+// Copyright 2022 The LUCI Authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -60,7 +60,6 @@ import (
 	googleapi "google.golang.org/api/googleapi"
 	gensupport "go.chromium.org/luci/common/api/internal/gensupport"
 	option "google.golang.org/api/option"
-	internaloption "google.golang.org/api/option/internaloption"
 	htransport "google.golang.org/api/transport/http"
 )
 
@@ -77,7 +76,6 @@ var _ = googleapi.Version
 var _ = errors.New
 var _ = strings.Replace
 var _ = context.Canceled
-var _ = internaloption.WithDefaultEndpoint
 
 const apiId = "buildbucket:v1"
 const apiName = "buildbucket"
@@ -97,7 +95,6 @@ func NewService(ctx context.Context, opts ...option.ClientOption) (*Service, err
 	)
 	// NOTE: prepend, so we don't override user-specified scopes.
 	opts = append([]option.ClientOption{scopesOption}, opts...)
-	opts = append(opts, internaloption.WithDefaultEndpoint(basePath))
 	client, endpoint, err := htransport.NewClient(ctx, opts...)
 	if err != nil {
 		return nil, err
@@ -138,47 +135,6 @@ func (s *Service) userAgent() string {
 	return googleapi.UserAgent + " " + s.UserAgent
 }
 
-type LegacyApiBucketMessage struct {
-	ConfigFileContent string `json:"config_file_content,omitempty"`
-
-	ConfigFileRev string `json:"config_file_rev,omitempty"`
-
-	ConfigFileUrl string `json:"config_file_url,omitempty"`
-
-	Error *LegacyApiErrorMessage `json:"error,omitempty"`
-
-	Name string `json:"name,omitempty"`
-
-	ProjectId string `json:"project_id,omitempty"`
-
-	// ServerResponse contains the HTTP response code and headers from the
-	// server.
-	googleapi.ServerResponse `json:"-"`
-
-	// ForceSendFields is a list of field names (e.g. "ConfigFileContent")
-	// to unconditionally include in API requests. By default, fields with
-	// empty or default values are omitted from API requests. However, any
-	// non-pointer, non-interface field appearing in ForceSendFields will be
-	// sent to the server regardless of whether the field is empty or not.
-	// This may be used to include empty fields in Patch requests.
-	ForceSendFields []string `json:"-"`
-
-	// NullFields is a list of field names (e.g. "ConfigFileContent") to
-	// include in API requests with the JSON null value. By default, fields
-	// with empty values are omitted from API requests. However, any field
-	// with an empty value appearing in NullFields will be sent to the
-	// server as null. It is an error if a field in this list has a
-	// non-empty value. This may be used to include null fields in Patch
-	// requests.
-	NullFields []string `json:"-"`
-}
-
-func (s *LegacyApiBucketMessage) MarshalJSON() ([]byte, error) {
-	type NoMethod LegacyApiBucketMessage
-	raw := NoMethod(*s)
-	return gensupport.MarshalJSON(raw, s.ForceSendFields, s.NullFields)
-}
-
 type LegacyApiBuildResponseMessage struct {
 	// Build: Describes model.Build, see its docstring.
 	Build *LegacyApiCommonBuildMessage `json:"build,omitempty"`
@@ -191,10 +147,10 @@ type LegacyApiBuildResponseMessage struct {
 
 	// ForceSendFields is a list of field names (e.g. "Build") to
 	// unconditionally include in API requests. By default, fields with
-	// empty or default values are omitted from API requests. However, any
-	// non-pointer, non-interface field appearing in ForceSendFields will be
-	// sent to the server regardless of whether the field is empty or not.
-	// This may be used to include empty fields in Patch requests.
+	// empty values are omitted from API requests. However, any non-pointer,
+	// non-interface field appearing in ForceSendFields will be sent to the
+	// server regardless of whether the field is empty or not. This may be
+	// used to include empty fields in Patch requests.
 	ForceSendFields []string `json:"-"`
 
 	// NullFields is a list of field names (e.g. "Build") to include in API
@@ -212,106 +168,15 @@ func (s *LegacyApiBuildResponseMessage) MarshalJSON() ([]byte, error) {
 	return gensupport.MarshalJSON(raw, s.ForceSendFields, s.NullFields)
 }
 
-type LegacyApiCancelBatchRequestMessage struct {
-	BuildIds googleapi.Int64s `json:"build_ids,omitempty"`
-
-	ResultDetailsJson string `json:"result_details_json,omitempty"`
-
-	// ForceSendFields is a list of field names (e.g. "BuildIds") to
-	// unconditionally include in API requests. By default, fields with
-	// empty or default values are omitted from API requests. However, any
-	// non-pointer, non-interface field appearing in ForceSendFields will be
-	// sent to the server regardless of whether the field is empty or not.
-	// This may be used to include empty fields in Patch requests.
-	ForceSendFields []string `json:"-"`
-
-	// NullFields is a list of field names (e.g. "BuildIds") to include in
-	// API requests with the JSON null value. By default, fields with empty
-	// values are omitted from API requests. However, any field with an
-	// empty value appearing in NullFields will be sent to the server as
-	// null. It is an error if a field in this list has a non-empty value.
-	// This may be used to include null fields in Patch requests.
-	NullFields []string `json:"-"`
-}
-
-func (s *LegacyApiCancelBatchRequestMessage) MarshalJSON() ([]byte, error) {
-	type NoMethod LegacyApiCancelBatchRequestMessage
-	raw := NoMethod(*s)
-	return gensupport.MarshalJSON(raw, s.ForceSendFields, s.NullFields)
-}
-
-type LegacyApiCancelBatchResponseMessage struct {
-	Error *LegacyApiErrorMessage `json:"error,omitempty"`
-
-	Results []*LegacyApiCancelBatchResponseMessageOneResult `json:"results,omitempty"`
-
-	// ServerResponse contains the HTTP response code and headers from the
-	// server.
-	googleapi.ServerResponse `json:"-"`
-
-	// ForceSendFields is a list of field names (e.g. "Error") to
-	// unconditionally include in API requests. By default, fields with
-	// empty or default values are omitted from API requests. However, any
-	// non-pointer, non-interface field appearing in ForceSendFields will be
-	// sent to the server regardless of whether the field is empty or not.
-	// This may be used to include empty fields in Patch requests.
-	ForceSendFields []string `json:"-"`
-
-	// NullFields is a list of field names (e.g. "Error") to include in API
-	// requests with the JSON null value. By default, fields with empty
-	// values are omitted from API requests. However, any field with an
-	// empty value appearing in NullFields will be sent to the server as
-	// null. It is an error if a field in this list has a non-empty value.
-	// This may be used to include null fields in Patch requests.
-	NullFields []string `json:"-"`
-}
-
-func (s *LegacyApiCancelBatchResponseMessage) MarshalJSON() ([]byte, error) {
-	type NoMethod LegacyApiCancelBatchResponseMessage
-	raw := NoMethod(*s)
-	return gensupport.MarshalJSON(raw, s.ForceSendFields, s.NullFields)
-}
-
-type LegacyApiCancelBatchResponseMessageOneResult struct {
-	// Build: Describes model.Build, see its docstring.
-	Build *LegacyApiCommonBuildMessage `json:"build,omitempty"`
-
-	BuildId int64 `json:"build_id,omitempty,string"`
-
-	Error *LegacyApiErrorMessage `json:"error,omitempty"`
-
-	// ForceSendFields is a list of field names (e.g. "Build") to
-	// unconditionally include in API requests. By default, fields with
-	// empty or default values are omitted from API requests. However, any
-	// non-pointer, non-interface field appearing in ForceSendFields will be
-	// sent to the server regardless of whether the field is empty or not.
-	// This may be used to include empty fields in Patch requests.
-	ForceSendFields []string `json:"-"`
-
-	// NullFields is a list of field names (e.g. "Build") to include in API
-	// requests with the JSON null value. By default, fields with empty
-	// values are omitted from API requests. However, any field with an
-	// empty value appearing in NullFields will be sent to the server as
-	// null. It is an error if a field in this list has a non-empty value.
-	// This may be used to include null fields in Patch requests.
-	NullFields []string `json:"-"`
-}
-
-func (s *LegacyApiCancelBatchResponseMessageOneResult) MarshalJSON() ([]byte, error) {
-	type NoMethod LegacyApiCancelBatchResponseMessageOneResult
-	raw := NoMethod(*s)
-	return gensupport.MarshalJSON(raw, s.ForceSendFields, s.NullFields)
-}
-
 type LegacyApiCancelRequestBodyMessage struct {
 	ResultDetailsJson string `json:"result_details_json,omitempty"`
 
 	// ForceSendFields is a list of field names (e.g. "ResultDetailsJson")
 	// to unconditionally include in API requests. By default, fields with
-	// empty or default values are omitted from API requests. However, any
-	// non-pointer, non-interface field appearing in ForceSendFields will be
-	// sent to the server regardless of whether the field is empty or not.
-	// This may be used to include empty fields in Patch requests.
+	// empty values are omitted from API requests. However, any non-pointer,
+	// non-interface field appearing in ForceSendFields will be sent to the
+	// server regardless of whether the field is empty or not. This may be
+	// used to include empty fields in Patch requests.
 	ForceSendFields []string `json:"-"`
 
 	// NullFields is a list of field names (e.g. "ResultDetailsJson") to
@@ -409,10 +274,10 @@ type LegacyApiCommonBuildMessage struct {
 
 	// ForceSendFields is a list of field names (e.g. "Bucket") to
 	// unconditionally include in API requests. By default, fields with
-	// empty or default values are omitted from API requests. However, any
-	// non-pointer, non-interface field appearing in ForceSendFields will be
-	// sent to the server regardless of whether the field is empty or not.
-	// This may be used to include empty fields in Patch requests.
+	// empty values are omitted from API requests. However, any non-pointer,
+	// non-interface field appearing in ForceSendFields will be sent to the
+	// server regardless of whether the field is empty or not. This may be
+	// used to include empty fields in Patch requests.
 	ForceSendFields []string `json:"-"`
 
 	// NullFields is a list of field names (e.g. "Bucket") to include in API
@@ -426,36 +291,6 @@ type LegacyApiCommonBuildMessage struct {
 
 func (s *LegacyApiCommonBuildMessage) MarshalJSON() ([]byte, error) {
 	type NoMethod LegacyApiCommonBuildMessage
-	raw := NoMethod(*s)
-	return gensupport.MarshalJSON(raw, s.ForceSendFields, s.NullFields)
-}
-
-type LegacyApiDeleteManyBuildsResponse struct {
-	Error *LegacyApiErrorMessage `json:"error,omitempty"`
-
-	// ServerResponse contains the HTTP response code and headers from the
-	// server.
-	googleapi.ServerResponse `json:"-"`
-
-	// ForceSendFields is a list of field names (e.g. "Error") to
-	// unconditionally include in API requests. By default, fields with
-	// empty or default values are omitted from API requests. However, any
-	// non-pointer, non-interface field appearing in ForceSendFields will be
-	// sent to the server regardless of whether the field is empty or not.
-	// This may be used to include empty fields in Patch requests.
-	ForceSendFields []string `json:"-"`
-
-	// NullFields is a list of field names (e.g. "Error") to include in API
-	// requests with the JSON null value. By default, fields with empty
-	// values are omitted from API requests. However, any field with an
-	// empty value appearing in NullFields will be sent to the server as
-	// null. It is an error if a field in this list has a non-empty value.
-	// This may be used to include null fields in Patch requests.
-	NullFields []string `json:"-"`
-}
-
-func (s *LegacyApiDeleteManyBuildsResponse) MarshalJSON() ([]byte, error) {
-	type NoMethod LegacyApiDeleteManyBuildsResponse
 	raw := NoMethod(*s)
 	return gensupport.MarshalJSON(raw, s.ForceSendFields, s.NullFields)
 }
@@ -475,10 +310,10 @@ type LegacyApiErrorMessage struct {
 
 	// ForceSendFields is a list of field names (e.g. "Message") to
 	// unconditionally include in API requests. By default, fields with
-	// empty or default values are omitted from API requests. However, any
-	// non-pointer, non-interface field appearing in ForceSendFields will be
-	// sent to the server regardless of whether the field is empty or not.
-	// This may be used to include empty fields in Patch requests.
+	// empty values are omitted from API requests. However, any non-pointer,
+	// non-interface field appearing in ForceSendFields will be sent to the
+	// server regardless of whether the field is empty or not. This may be
+	// used to include empty fields in Patch requests.
 	ForceSendFields []string `json:"-"`
 
 	// NullFields is a list of field names (e.g. "Message") to include in
@@ -515,10 +350,10 @@ type LegacyApiFailRequestBodyMessage struct {
 
 	// ForceSendFields is a list of field names (e.g. "FailureReason") to
 	// unconditionally include in API requests. By default, fields with
-	// empty or default values are omitted from API requests. However, any
-	// non-pointer, non-interface field appearing in ForceSendFields will be
-	// sent to the server regardless of whether the field is empty or not.
-	// This may be used to include empty fields in Patch requests.
+	// empty values are omitted from API requests. However, any non-pointer,
+	// non-interface field appearing in ForceSendFields will be sent to the
+	// server regardless of whether the field is empty or not. This may be
+	// used to include empty fields in Patch requests.
 	ForceSendFields []string `json:"-"`
 
 	// NullFields is a list of field names (e.g. "FailureReason") to include
@@ -541,10 +376,10 @@ type LegacyApiHeartbeatBatchRequestMessage struct {
 
 	// ForceSendFields is a list of field names (e.g. "Heartbeats") to
 	// unconditionally include in API requests. By default, fields with
-	// empty or default values are omitted from API requests. However, any
-	// non-pointer, non-interface field appearing in ForceSendFields will be
-	// sent to the server regardless of whether the field is empty or not.
-	// This may be used to include empty fields in Patch requests.
+	// empty values are omitted from API requests. However, any non-pointer,
+	// non-interface field appearing in ForceSendFields will be sent to the
+	// server regardless of whether the field is empty or not. This may be
+	// used to include empty fields in Patch requests.
 	ForceSendFields []string `json:"-"`
 
 	// NullFields is a list of field names (e.g. "Heartbeats") to include in
@@ -571,10 +406,10 @@ type LegacyApiHeartbeatBatchRequestMessageOneHeartbeat struct {
 
 	// ForceSendFields is a list of field names (e.g. "BuildId") to
 	// unconditionally include in API requests. By default, fields with
-	// empty or default values are omitted from API requests. However, any
-	// non-pointer, non-interface field appearing in ForceSendFields will be
-	// sent to the server regardless of whether the field is empty or not.
-	// This may be used to include empty fields in Patch requests.
+	// empty values are omitted from API requests. However, any non-pointer,
+	// non-interface field appearing in ForceSendFields will be sent to the
+	// server regardless of whether the field is empty or not. This may be
+	// used to include empty fields in Patch requests.
 	ForceSendFields []string `json:"-"`
 
 	// NullFields is a list of field names (e.g. "BuildId") to include in
@@ -603,10 +438,10 @@ type LegacyApiHeartbeatBatchResponseMessage struct {
 
 	// ForceSendFields is a list of field names (e.g. "Error") to
 	// unconditionally include in API requests. By default, fields with
-	// empty or default values are omitted from API requests. However, any
-	// non-pointer, non-interface field appearing in ForceSendFields will be
-	// sent to the server regardless of whether the field is empty or not.
-	// This may be used to include empty fields in Patch requests.
+	// empty values are omitted from API requests. However, any non-pointer,
+	// non-interface field appearing in ForceSendFields will be sent to the
+	// server regardless of whether the field is empty or not. This may be
+	// used to include empty fields in Patch requests.
 	ForceSendFields []string `json:"-"`
 
 	// NullFields is a list of field names (e.g. "Error") to include in API
@@ -633,10 +468,10 @@ type LegacyApiHeartbeatBatchResponseMessageOneHeartbeatResult struct {
 
 	// ForceSendFields is a list of field names (e.g. "BuildId") to
 	// unconditionally include in API requests. By default, fields with
-	// empty or default values are omitted from API requests. However, any
-	// non-pointer, non-interface field appearing in ForceSendFields will be
-	// sent to the server regardless of whether the field is empty or not.
-	// This may be used to include empty fields in Patch requests.
+	// empty values are omitted from API requests. However, any non-pointer,
+	// non-interface field appearing in ForceSendFields will be sent to the
+	// server regardless of whether the field is empty or not. This may be
+	// used to include empty fields in Patch requests.
 	ForceSendFields []string `json:"-"`
 
 	// NullFields is a list of field names (e.g. "BuildId") to include in
@@ -661,10 +496,10 @@ type LegacyApiHeartbeatRequestBodyMessage struct {
 
 	// ForceSendFields is a list of field names (e.g. "LeaseExpirationTs")
 	// to unconditionally include in API requests. By default, fields with
-	// empty or default values are omitted from API requests. However, any
-	// non-pointer, non-interface field appearing in ForceSendFields will be
-	// sent to the server regardless of whether the field is empty or not.
-	// This may be used to include empty fields in Patch requests.
+	// empty values are omitted from API requests. However, any non-pointer,
+	// non-interface field appearing in ForceSendFields will be sent to the
+	// server regardless of whether the field is empty or not. This may be
+	// used to include empty fields in Patch requests.
 	ForceSendFields []string `json:"-"`
 
 	// NullFields is a list of field names (e.g. "LeaseExpirationTs") to
@@ -688,10 +523,10 @@ type LegacyApiLeaseRequestBodyMessage struct {
 
 	// ForceSendFields is a list of field names (e.g. "LeaseExpirationTs")
 	// to unconditionally include in API requests. By default, fields with
-	// empty or default values are omitted from API requests. However, any
-	// non-pointer, non-interface field appearing in ForceSendFields will be
-	// sent to the server regardless of whether the field is empty or not.
-	// This may be used to include empty fields in Patch requests.
+	// empty values are omitted from API requests. However, any non-pointer,
+	// non-interface field appearing in ForceSendFields will be sent to the
+	// server regardless of whether the field is empty or not. This may be
+	// used to include empty fields in Patch requests.
 	ForceSendFields []string `json:"-"`
 
 	// NullFields is a list of field names (e.g. "LeaseExpirationTs") to
@@ -710,12 +545,6 @@ func (s *LegacyApiLeaseRequestBodyMessage) MarshalJSON() ([]byte, error) {
 	return gensupport.MarshalJSON(raw, s.ForceSendFields, s.NullFields)
 }
 
-type LegacyApiPauseResponse struct {
-	// ServerResponse contains the HTTP response code and headers from the
-	// server.
-	googleapi.ServerResponse `json:"-"`
-}
-
 type LegacyApiPubSubCallbackMessage struct {
 	AuthToken string `json:"auth_token,omitempty"`
 
@@ -725,10 +554,10 @@ type LegacyApiPubSubCallbackMessage struct {
 
 	// ForceSendFields is a list of field names (e.g. "AuthToken") to
 	// unconditionally include in API requests. By default, fields with
-	// empty or default values are omitted from API requests. However, any
-	// non-pointer, non-interface field appearing in ForceSendFields will be
-	// sent to the server regardless of whether the field is empty or not.
-	// This may be used to include empty fields in Patch requests.
+	// empty values are omitted from API requests. However, any non-pointer,
+	// non-interface field appearing in ForceSendFields will be sent to the
+	// server regardless of whether the field is empty or not. This may be
+	// used to include empty fields in Patch requests.
 	ForceSendFields []string `json:"-"`
 
 	// NullFields is a list of field names (e.g. "AuthToken") to include in
@@ -742,95 +571,6 @@ type LegacyApiPubSubCallbackMessage struct {
 
 func (s *LegacyApiPubSubCallbackMessage) MarshalJSON() ([]byte, error) {
 	type NoMethod LegacyApiPubSubCallbackMessage
-	raw := NoMethod(*s)
-	return gensupport.MarshalJSON(raw, s.ForceSendFields, s.NullFields)
-}
-
-type LegacyApiPutBatchRequestMessage struct {
-	Builds []*LegacyApiPutRequestMessage `json:"builds,omitempty"`
-
-	// ForceSendFields is a list of field names (e.g. "Builds") to
-	// unconditionally include in API requests. By default, fields with
-	// empty or default values are omitted from API requests. However, any
-	// non-pointer, non-interface field appearing in ForceSendFields will be
-	// sent to the server regardless of whether the field is empty or not.
-	// This may be used to include empty fields in Patch requests.
-	ForceSendFields []string `json:"-"`
-
-	// NullFields is a list of field names (e.g. "Builds") to include in API
-	// requests with the JSON null value. By default, fields with empty
-	// values are omitted from API requests. However, any field with an
-	// empty value appearing in NullFields will be sent to the server as
-	// null. It is an error if a field in this list has a non-empty value.
-	// This may be used to include null fields in Patch requests.
-	NullFields []string `json:"-"`
-}
-
-func (s *LegacyApiPutBatchRequestMessage) MarshalJSON() ([]byte, error) {
-	type NoMethod LegacyApiPutBatchRequestMessage
-	raw := NoMethod(*s)
-	return gensupport.MarshalJSON(raw, s.ForceSendFields, s.NullFields)
-}
-
-type LegacyApiPutBatchResponseMessage struct {
-	Error *LegacyApiErrorMessage `json:"error,omitempty"`
-
-	Results []*LegacyApiPutBatchResponseMessageOneResult `json:"results,omitempty"`
-
-	// ServerResponse contains the HTTP response code and headers from the
-	// server.
-	googleapi.ServerResponse `json:"-"`
-
-	// ForceSendFields is a list of field names (e.g. "Error") to
-	// unconditionally include in API requests. By default, fields with
-	// empty or default values are omitted from API requests. However, any
-	// non-pointer, non-interface field appearing in ForceSendFields will be
-	// sent to the server regardless of whether the field is empty or not.
-	// This may be used to include empty fields in Patch requests.
-	ForceSendFields []string `json:"-"`
-
-	// NullFields is a list of field names (e.g. "Error") to include in API
-	// requests with the JSON null value. By default, fields with empty
-	// values are omitted from API requests. However, any field with an
-	// empty value appearing in NullFields will be sent to the server as
-	// null. It is an error if a field in this list has a non-empty value.
-	// This may be used to include null fields in Patch requests.
-	NullFields []string `json:"-"`
-}
-
-func (s *LegacyApiPutBatchResponseMessage) MarshalJSON() ([]byte, error) {
-	type NoMethod LegacyApiPutBatchResponseMessage
-	raw := NoMethod(*s)
-	return gensupport.MarshalJSON(raw, s.ForceSendFields, s.NullFields)
-}
-
-type LegacyApiPutBatchResponseMessageOneResult struct {
-	// Build: Describes model.Build, see its docstring.
-	Build *LegacyApiCommonBuildMessage `json:"build,omitempty"`
-
-	ClientOperationId string `json:"client_operation_id,omitempty"`
-
-	Error *LegacyApiErrorMessage `json:"error,omitempty"`
-
-	// ForceSendFields is a list of field names (e.g. "Build") to
-	// unconditionally include in API requests. By default, fields with
-	// empty or default values are omitted from API requests. However, any
-	// non-pointer, non-interface field appearing in ForceSendFields will be
-	// sent to the server regardless of whether the field is empty or not.
-	// This may be used to include empty fields in Patch requests.
-	ForceSendFields []string `json:"-"`
-
-	// NullFields is a list of field names (e.g. "Build") to include in API
-	// requests with the JSON null value. By default, fields with empty
-	// values are omitted from API requests. However, any field with an
-	// empty value appearing in NullFields will be sent to the server as
-	// null. It is an error if a field in this list has a non-empty value.
-	// This may be used to include null fields in Patch requests.
-	NullFields []string `json:"-"`
-}
-
-func (s *LegacyApiPutBatchResponseMessageOneResult) MarshalJSON() ([]byte, error) {
-	type NoMethod LegacyApiPutBatchResponseMessageOneResult
 	raw := NoMethod(*s)
 	return gensupport.MarshalJSON(raw, s.ForceSendFields, s.NullFields)
 }
@@ -858,10 +598,10 @@ type LegacyApiPutRequestMessage struct {
 
 	// ForceSendFields is a list of field names (e.g. "Bucket") to
 	// unconditionally include in API requests. By default, fields with
-	// empty or default values are omitted from API requests. However, any
-	// non-pointer, non-interface field appearing in ForceSendFields will be
-	// sent to the server regardless of whether the field is empty or not.
-	// This may be used to include empty fields in Patch requests.
+	// empty values are omitted from API requests. However, any non-pointer,
+	// non-interface field appearing in ForceSendFields will be sent to the
+	// server regardless of whether the field is empty or not. This may be
+	// used to include empty fields in Patch requests.
 	ForceSendFields []string `json:"-"`
 
 	// NullFields is a list of field names (e.g. "Bucket") to include in API
@@ -875,37 +615,6 @@ type LegacyApiPutRequestMessage struct {
 
 func (s *LegacyApiPutRequestMessage) MarshalJSON() ([]byte, error) {
 	type NoMethod LegacyApiPutRequestMessage
-	raw := NoMethod(*s)
-	return gensupport.MarshalJSON(raw, s.ForceSendFields, s.NullFields)
-}
-
-type LegacyApiRetryRequestMessage struct {
-	ClientOperationId string `json:"client_operation_id,omitempty"`
-
-	LeaseExpirationTs int64 `json:"lease_expiration_ts,omitempty,string"`
-
-	PubsubCallback *LegacyApiPubSubCallbackMessage `json:"pubsub_callback,omitempty"`
-
-	// ForceSendFields is a list of field names (e.g. "ClientOperationId")
-	// to unconditionally include in API requests. By default, fields with
-	// empty or default values are omitted from API requests. However, any
-	// non-pointer, non-interface field appearing in ForceSendFields will be
-	// sent to the server regardless of whether the field is empty or not.
-	// This may be used to include empty fields in Patch requests.
-	ForceSendFields []string `json:"-"`
-
-	// NullFields is a list of field names (e.g. "ClientOperationId") to
-	// include in API requests with the JSON null value. By default, fields
-	// with empty values are omitted from API requests. However, any field
-	// with an empty value appearing in NullFields will be sent to the
-	// server as null. It is an error if a field in this list has a
-	// non-empty value. This may be used to include null fields in Patch
-	// requests.
-	NullFields []string `json:"-"`
-}
-
-func (s *LegacyApiRetryRequestMessage) MarshalJSON() ([]byte, error) {
-	type NoMethod LegacyApiRetryRequestMessage
 	raw := NoMethod(*s)
 	return gensupport.MarshalJSON(raw, s.ForceSendFields, s.NullFields)
 }
@@ -924,10 +633,10 @@ type LegacyApiSearchResponseMessage struct {
 
 	// ForceSendFields is a list of field names (e.g. "Builds") to
 	// unconditionally include in API requests. By default, fields with
-	// empty or default values are omitted from API requests. However, any
-	// non-pointer, non-interface field appearing in ForceSendFields will be
-	// sent to the server regardless of whether the field is empty or not.
-	// This may be used to include empty fields in Patch requests.
+	// empty values are omitted from API requests. However, any non-pointer,
+	// non-interface field appearing in ForceSendFields will be sent to the
+	// server regardless of whether the field is empty or not. This may be
+	// used to include empty fields in Patch requests.
 	ForceSendFields []string `json:"-"`
 
 	// NullFields is a list of field names (e.g. "Builds") to include in API
@@ -952,10 +661,10 @@ type LegacyApiStartRequestBodyMessage struct {
 
 	// ForceSendFields is a list of field names (e.g. "LeaseKey") to
 	// unconditionally include in API requests. By default, fields with
-	// empty or default values are omitted from API requests. However, any
-	// non-pointer, non-interface field appearing in ForceSendFields will be
-	// sent to the server regardless of whether the field is empty or not.
-	// This may be used to include empty fields in Patch requests.
+	// empty values are omitted from API requests. However, any non-pointer,
+	// non-interface field appearing in ForceSendFields will be sent to the
+	// server regardless of whether the field is empty or not. This may be
+	// used to include empty fields in Patch requests.
 	ForceSendFields []string `json:"-"`
 
 	// NullFields is a list of field names (e.g. "LeaseKey") to include in
@@ -984,10 +693,10 @@ type LegacyApiSucceedRequestBodyMessage struct {
 
 	// ForceSendFields is a list of field names (e.g. "LeaseKey") to
 	// unconditionally include in API requests. By default, fields with
-	// empty or default values are omitted from API requests. However, any
-	// non-pointer, non-interface field appearing in ForceSendFields will be
-	// sent to the server regardless of whether the field is empty or not.
-	// This may be used to include empty fields in Patch requests.
+	// empty values are omitted from API requests. However, any non-pointer,
+	// non-interface field appearing in ForceSendFields will be sent to the
+	// server regardless of whether the field is empty or not. This may be
+	// used to include empty fields in Patch requests.
 	ForceSendFields []string `json:"-"`
 
 	// NullFields is a list of field names (e.g. "LeaseKey") to include in
@@ -1005,103 +714,6 @@ func (s *LegacyApiSucceedRequestBodyMessage) MarshalJSON() ([]byte, error) {
 	return gensupport.MarshalJSON(raw, s.ForceSendFields, s.NullFields)
 }
 
-// method id "buildbucket.backfill_tag_index":
-
-type BackfillTagIndexCall struct {
-	s          *Service
-	urlParams_ gensupport.URLParams
-	ctx_       context.Context
-	header_    http.Header
-}
-
-// BackfillTagIndex: Backfills TagIndex entities from builds.
-//
-// - tagKey: .
-func (s *Service) BackfillTagIndex(tagKey string) *BackfillTagIndexCall {
-	c := &BackfillTagIndexCall{s: s, urlParams_: make(gensupport.URLParams)}
-	c.urlParams_.Set("tag_key", tagKey)
-	return c
-}
-
-// Fields allows partial responses to be retrieved. See
-// https://developers.google.com/gdata/docs/2.0/basics#PartialResponse
-// for more information.
-func (c *BackfillTagIndexCall) Fields(s ...googleapi.Field) *BackfillTagIndexCall {
-	c.urlParams_.Set("fields", googleapi.CombineFields(s))
-	return c
-}
-
-// Context sets the context to be used in this call's Do method. Any
-// pending HTTP request will be aborted if the provided context is
-// canceled.
-func (c *BackfillTagIndexCall) Context(ctx context.Context) *BackfillTagIndexCall {
-	c.ctx_ = ctx
-	return c
-}
-
-// Header returns an http.Header that can be modified by the caller to
-// add HTTP headers to the request.
-func (c *BackfillTagIndexCall) Header() http.Header {
-	if c.header_ == nil {
-		c.header_ = make(http.Header)
-	}
-	return c.header_
-}
-
-func (c *BackfillTagIndexCall) doRequest(alt string) (*http.Response, error) {
-	reqHeaders := make(http.Header)
-	reqHeaders.Set("x-goog-api-client", "gl-go/"+gensupport.GoVersion()+" gdcl/20210831")
-	for k, v := range c.header_ {
-		reqHeaders[k] = v
-	}
-	reqHeaders.Set("User-Agent", c.s.userAgent())
-	var body io.Reader = nil
-	c.urlParams_.Set("alt", alt)
-	c.urlParams_.Set("prettyPrint", "false")
-	urls := googleapi.ResolveRelative(c.s.BasePath, "backfill_tag_index")
-	urls += "?" + c.urlParams_.Encode()
-	req, err := http.NewRequest("POST", urls, body)
-	if err != nil {
-		return nil, err
-	}
-	req.Header = reqHeaders
-	return gensupport.SendRequest(c.ctx_, c.s.client, req)
-}
-
-// Do executes the "buildbucket.backfill_tag_index" call.
-func (c *BackfillTagIndexCall) Do(opts ...googleapi.CallOption) error {
-	gensupport.SetOptions(c.urlParams_, opts...)
-	res, err := c.doRequest("json")
-	if err != nil {
-		return err
-	}
-	defer googleapi.CloseBody(res)
-	if err := googleapi.CheckResponse(res); err != nil {
-		return err
-	}
-	return nil
-	// {
-	//   "description": "Backfills TagIndex entities from builds.",
-	//   "httpMethod": "POST",
-	//   "id": "buildbucket.backfill_tag_index",
-	//   "parameterOrder": [
-	//     "tag_key"
-	//   ],
-	//   "parameters": {
-	//     "tag_key": {
-	//       "location": "query",
-	//       "required": true,
-	//       "type": "string"
-	//     }
-	//   },
-	//   "path": "backfill_tag_index",
-	//   "scopes": [
-	//     "https://www.googleapis.com/auth/userinfo.email"
-	//   ]
-	// }
-
-}
-
 // method id "buildbucket.cancel":
 
 type CancelCall struct {
@@ -1114,8 +726,6 @@ type CancelCall struct {
 }
 
 // Cancel: Cancels a build.
-//
-// - id: .
 func (s *Service) Cancel(id int64, legacyapicancelrequestbodymessage *LegacyApiCancelRequestBodyMessage) *CancelCall {
 	c := &CancelCall{s: s, urlParams_: make(gensupport.URLParams)}
 	c.id = id
@@ -1150,7 +760,7 @@ func (c *CancelCall) Header() http.Header {
 
 func (c *CancelCall) doRequest(alt string) (*http.Response, error) {
 	reqHeaders := make(http.Header)
-	reqHeaders.Set("x-goog-api-client", "gl-go/"+gensupport.GoVersion()+" gdcl/20210831")
+	reqHeaders.Set("x-goog-api-client", "gl-go/1.13.4 gdcl/20191217")
 	for k, v := range c.header_ {
 		reqHeaders[k] = v
 	}
@@ -1243,301 +853,6 @@ func (c *CancelCall) Do(opts ...googleapi.CallOption) (*LegacyApiBuildResponseMe
 
 }
 
-// method id "buildbucket.cancel_batch":
-
-type CancelBatchCall struct {
-	s                                  *Service
-	legacyapicancelbatchrequestmessage *LegacyApiCancelBatchRequestMessage
-	urlParams_                         gensupport.URLParams
-	ctx_                               context.Context
-	header_                            http.Header
-}
-
-// CancelBatch: Cancels builds.
-func (s *Service) CancelBatch(legacyapicancelbatchrequestmessage *LegacyApiCancelBatchRequestMessage) *CancelBatchCall {
-	c := &CancelBatchCall{s: s, urlParams_: make(gensupport.URLParams)}
-	c.legacyapicancelbatchrequestmessage = legacyapicancelbatchrequestmessage
-	return c
-}
-
-// Fields allows partial responses to be retrieved. See
-// https://developers.google.com/gdata/docs/2.0/basics#PartialResponse
-// for more information.
-func (c *CancelBatchCall) Fields(s ...googleapi.Field) *CancelBatchCall {
-	c.urlParams_.Set("fields", googleapi.CombineFields(s))
-	return c
-}
-
-// Context sets the context to be used in this call's Do method. Any
-// pending HTTP request will be aborted if the provided context is
-// canceled.
-func (c *CancelBatchCall) Context(ctx context.Context) *CancelBatchCall {
-	c.ctx_ = ctx
-	return c
-}
-
-// Header returns an http.Header that can be modified by the caller to
-// add HTTP headers to the request.
-func (c *CancelBatchCall) Header() http.Header {
-	if c.header_ == nil {
-		c.header_ = make(http.Header)
-	}
-	return c.header_
-}
-
-func (c *CancelBatchCall) doRequest(alt string) (*http.Response, error) {
-	reqHeaders := make(http.Header)
-	reqHeaders.Set("x-goog-api-client", "gl-go/"+gensupport.GoVersion()+" gdcl/20210831")
-	for k, v := range c.header_ {
-		reqHeaders[k] = v
-	}
-	reqHeaders.Set("User-Agent", c.s.userAgent())
-	var body io.Reader = nil
-	body, err := googleapi.WithoutDataWrapper.JSONReader(c.legacyapicancelbatchrequestmessage)
-	if err != nil {
-		return nil, err
-	}
-	reqHeaders.Set("Content-Type", "application/json")
-	c.urlParams_.Set("alt", alt)
-	c.urlParams_.Set("prettyPrint", "false")
-	urls := googleapi.ResolveRelative(c.s.BasePath, "builds/cancel")
-	urls += "?" + c.urlParams_.Encode()
-	req, err := http.NewRequest("POST", urls, body)
-	if err != nil {
-		return nil, err
-	}
-	req.Header = reqHeaders
-	return gensupport.SendRequest(c.ctx_, c.s.client, req)
-}
-
-// Do executes the "buildbucket.cancel_batch" call.
-// Exactly one of *LegacyApiCancelBatchResponseMessage or error will be
-// non-nil. Any non-2xx status code is an error. Response headers are in
-// either *LegacyApiCancelBatchResponseMessage.ServerResponse.Header or
-// (if a response was returned at all) in
-// error.(*googleapi.Error).Header. Use googleapi.IsNotModified to check
-// whether the returned error was because http.StatusNotModified was
-// returned.
-func (c *CancelBatchCall) Do(opts ...googleapi.CallOption) (*LegacyApiCancelBatchResponseMessage, error) {
-	gensupport.SetOptions(c.urlParams_, opts...)
-	res, err := c.doRequest("json")
-	if res != nil && res.StatusCode == http.StatusNotModified {
-		if res.Body != nil {
-			res.Body.Close()
-		}
-		return nil, &googleapi.Error{
-			Code:   res.StatusCode,
-			Header: res.Header,
-		}
-	}
-	if err != nil {
-		return nil, err
-	}
-	defer googleapi.CloseBody(res)
-	if err := googleapi.CheckResponse(res); err != nil {
-		return nil, err
-	}
-	ret := &LegacyApiCancelBatchResponseMessage{
-		ServerResponse: googleapi.ServerResponse{
-			Header:         res.Header,
-			HTTPStatusCode: res.StatusCode,
-		},
-	}
-	target := &ret
-	if err := gensupport.DecodeResponse(target, res); err != nil {
-		return nil, err
-	}
-	return ret, nil
-	// {
-	//   "description": "Cancels builds.",
-	//   "httpMethod": "POST",
-	//   "id": "buildbucket.cancel_batch",
-	//   "path": "builds/cancel",
-	//   "request": {
-	//     "$ref": "LegacyApiCancelBatchRequestMessage",
-	//     "parameterName": "resource"
-	//   },
-	//   "response": {
-	//     "$ref": "LegacyApiCancelBatchResponseMessage"
-	//   },
-	//   "scopes": [
-	//     "https://www.googleapis.com/auth/userinfo.email"
-	//   ]
-	// }
-
-}
-
-// method id "buildbucket.delete_many_builds":
-
-type DeleteManyBuildsCall struct {
-	s          *Service
-	bucket     string
-	urlParams_ gensupport.URLParams
-	ctx_       context.Context
-	header_    http.Header
-}
-
-// DeleteManyBuilds: Deletes scheduled or started builds in a bucket.
-//
-// - bucket: .
-// - status: .
-func (s *Service) DeleteManyBuilds(bucket string, status string) *DeleteManyBuildsCall {
-	c := &DeleteManyBuildsCall{s: s, urlParams_: make(gensupport.URLParams)}
-	c.bucket = bucket
-	c.urlParams_.Set("status", status)
-	return c
-}
-
-// CreatedBy sets the optional parameter "created_by":
-func (c *DeleteManyBuildsCall) CreatedBy(createdBy string) *DeleteManyBuildsCall {
-	c.urlParams_.Set("created_by", createdBy)
-	return c
-}
-
-// Tag sets the optional parameter "tag":
-func (c *DeleteManyBuildsCall) Tag(tag ...string) *DeleteManyBuildsCall {
-	c.urlParams_.SetMulti("tag", append([]string{}, tag...))
-	return c
-}
-
-// Fields allows partial responses to be retrieved. See
-// https://developers.google.com/gdata/docs/2.0/basics#PartialResponse
-// for more information.
-func (c *DeleteManyBuildsCall) Fields(s ...googleapi.Field) *DeleteManyBuildsCall {
-	c.urlParams_.Set("fields", googleapi.CombineFields(s))
-	return c
-}
-
-// Context sets the context to be used in this call's Do method. Any
-// pending HTTP request will be aborted if the provided context is
-// canceled.
-func (c *DeleteManyBuildsCall) Context(ctx context.Context) *DeleteManyBuildsCall {
-	c.ctx_ = ctx
-	return c
-}
-
-// Header returns an http.Header that can be modified by the caller to
-// add HTTP headers to the request.
-func (c *DeleteManyBuildsCall) Header() http.Header {
-	if c.header_ == nil {
-		c.header_ = make(http.Header)
-	}
-	return c.header_
-}
-
-func (c *DeleteManyBuildsCall) doRequest(alt string) (*http.Response, error) {
-	reqHeaders := make(http.Header)
-	reqHeaders.Set("x-goog-api-client", "gl-go/"+gensupport.GoVersion()+" gdcl/20210831")
-	for k, v := range c.header_ {
-		reqHeaders[k] = v
-	}
-	reqHeaders.Set("User-Agent", c.s.userAgent())
-	var body io.Reader = nil
-	c.urlParams_.Set("alt", alt)
-	c.urlParams_.Set("prettyPrint", "false")
-	urls := googleapi.ResolveRelative(c.s.BasePath, "bucket/{bucket}/delete")
-	urls += "?" + c.urlParams_.Encode()
-	req, err := http.NewRequest("POST", urls, body)
-	if err != nil {
-		return nil, err
-	}
-	req.Header = reqHeaders
-	googleapi.Expand(req.URL, map[string]string{
-		"bucket": c.bucket,
-	})
-	return gensupport.SendRequest(c.ctx_, c.s.client, req)
-}
-
-// Do executes the "buildbucket.delete_many_builds" call.
-// Exactly one of *LegacyApiDeleteManyBuildsResponse or error will be
-// non-nil. Any non-2xx status code is an error. Response headers are in
-// either *LegacyApiDeleteManyBuildsResponse.ServerResponse.Header or
-// (if a response was returned at all) in
-// error.(*googleapi.Error).Header. Use googleapi.IsNotModified to check
-// whether the returned error was because http.StatusNotModified was
-// returned.
-func (c *DeleteManyBuildsCall) Do(opts ...googleapi.CallOption) (*LegacyApiDeleteManyBuildsResponse, error) {
-	gensupport.SetOptions(c.urlParams_, opts...)
-	res, err := c.doRequest("json")
-	if res != nil && res.StatusCode == http.StatusNotModified {
-		if res.Body != nil {
-			res.Body.Close()
-		}
-		return nil, &googleapi.Error{
-			Code:   res.StatusCode,
-			Header: res.Header,
-		}
-	}
-	if err != nil {
-		return nil, err
-	}
-	defer googleapi.CloseBody(res)
-	if err := googleapi.CheckResponse(res); err != nil {
-		return nil, err
-	}
-	ret := &LegacyApiDeleteManyBuildsResponse{
-		ServerResponse: googleapi.ServerResponse{
-			Header:         res.Header,
-			HTTPStatusCode: res.StatusCode,
-		},
-	}
-	target := &ret
-	if err := gensupport.DecodeResponse(target, res); err != nil {
-		return nil, err
-	}
-	return ret, nil
-	// {
-	//   "description": "Deletes scheduled or started builds in a bucket.",
-	//   "httpMethod": "POST",
-	//   "id": "buildbucket.delete_many_builds",
-	//   "parameterOrder": [
-	//     "bucket",
-	//     "status"
-	//   ],
-	//   "parameters": {
-	//     "bucket": {
-	//       "location": "path",
-	//       "required": true,
-	//       "type": "string"
-	//     },
-	//     "created_by": {
-	//       "location": "query",
-	//       "type": "string"
-	//     },
-	//     "status": {
-	//       "enum": [
-	//         "COMPLETED",
-	//         "SCHEDULED",
-	//         "STARTED",
-	//         "UNSET"
-	//       ],
-	//       "enumDescriptions": [
-	//         "",
-	//         "",
-	//         "",
-	//         ""
-	//       ],
-	//       "location": "query",
-	//       "required": true,
-	//       "type": "string"
-	//     },
-	//     "tag": {
-	//       "location": "query",
-	//       "repeated": true,
-	//       "type": "string"
-	//     }
-	//   },
-	//   "path": "bucket/{bucket}/delete",
-	//   "response": {
-	//     "$ref": "LegacyApiDeleteManyBuildsResponse"
-	//   },
-	//   "scopes": [
-	//     "https://www.googleapis.com/auth/userinfo.email"
-	//   ]
-	// }
-
-}
-
 // method id "buildbucket.fail":
 
 type FailCall struct {
@@ -1550,8 +865,6 @@ type FailCall struct {
 }
 
 // Fail: Marks a build as failed.
-//
-// - id: .
 func (s *Service) Fail(id int64, legacyapifailrequestbodymessage *LegacyApiFailRequestBodyMessage) *FailCall {
 	c := &FailCall{s: s, urlParams_: make(gensupport.URLParams)}
 	c.id = id
@@ -1586,7 +899,7 @@ func (c *FailCall) Header() http.Header {
 
 func (c *FailCall) doRequest(alt string) (*http.Response, error) {
 	reqHeaders := make(http.Header)
-	reqHeaders.Set("x-goog-api-client", "gl-go/"+gensupport.GoVersion()+" gdcl/20210831")
+	reqHeaders.Set("x-goog-api-client", "gl-go/1.13.4 gdcl/20191217")
 	for k, v := range c.header_ {
 		reqHeaders[k] = v
 	}
@@ -1679,90 +992,6 @@ func (c *FailCall) Do(opts ...googleapi.CallOption) (*LegacyApiBuildResponseMess
 
 }
 
-// method id "buildbucket.fix_builds":
-
-type FixBuildsCall struct {
-	s          *Service
-	urlParams_ gensupport.URLParams
-	ctx_       context.Context
-	header_    http.Header
-}
-
-// FixBuilds: Fixes all builds.
-func (s *Service) FixBuilds() *FixBuildsCall {
-	c := &FixBuildsCall{s: s, urlParams_: make(gensupport.URLParams)}
-	return c
-}
-
-// Fields allows partial responses to be retrieved. See
-// https://developers.google.com/gdata/docs/2.0/basics#PartialResponse
-// for more information.
-func (c *FixBuildsCall) Fields(s ...googleapi.Field) *FixBuildsCall {
-	c.urlParams_.Set("fields", googleapi.CombineFields(s))
-	return c
-}
-
-// Context sets the context to be used in this call's Do method. Any
-// pending HTTP request will be aborted if the provided context is
-// canceled.
-func (c *FixBuildsCall) Context(ctx context.Context) *FixBuildsCall {
-	c.ctx_ = ctx
-	return c
-}
-
-// Header returns an http.Header that can be modified by the caller to
-// add HTTP headers to the request.
-func (c *FixBuildsCall) Header() http.Header {
-	if c.header_ == nil {
-		c.header_ = make(http.Header)
-	}
-	return c.header_
-}
-
-func (c *FixBuildsCall) doRequest(alt string) (*http.Response, error) {
-	reqHeaders := make(http.Header)
-	reqHeaders.Set("x-goog-api-client", "gl-go/"+gensupport.GoVersion()+" gdcl/20210831")
-	for k, v := range c.header_ {
-		reqHeaders[k] = v
-	}
-	reqHeaders.Set("User-Agent", c.s.userAgent())
-	var body io.Reader = nil
-	c.urlParams_.Set("alt", alt)
-	c.urlParams_.Set("prettyPrint", "false")
-	urls := googleapi.ResolveRelative(c.s.BasePath, "fix_builds")
-	urls += "?" + c.urlParams_.Encode()
-	req, err := http.NewRequest("POST", urls, body)
-	if err != nil {
-		return nil, err
-	}
-	req.Header = reqHeaders
-	return gensupport.SendRequest(c.ctx_, c.s.client, req)
-}
-
-// Do executes the "buildbucket.fix_builds" call.
-func (c *FixBuildsCall) Do(opts ...googleapi.CallOption) error {
-	gensupport.SetOptions(c.urlParams_, opts...)
-	res, err := c.doRequest("json")
-	if err != nil {
-		return err
-	}
-	defer googleapi.CloseBody(res)
-	if err := googleapi.CheckResponse(res); err != nil {
-		return err
-	}
-	return nil
-	// {
-	//   "description": "Fixes all builds.",
-	//   "httpMethod": "POST",
-	//   "id": "buildbucket.fix_builds",
-	//   "path": "fix_builds",
-	//   "scopes": [
-	//     "https://www.googleapis.com/auth/userinfo.email"
-	//   ]
-	// }
-
-}
-
 // method id "buildbucket.get":
 
 type GetCall struct {
@@ -1775,8 +1004,6 @@ type GetCall struct {
 }
 
 // Get: Returns a build by id.
-//
-// - id: .
 func (s *Service) Get(id int64) *GetCall {
 	c := &GetCall{s: s, urlParams_: make(gensupport.URLParams)}
 	c.id = id
@@ -1820,7 +1047,7 @@ func (c *GetCall) Header() http.Header {
 
 func (c *GetCall) doRequest(alt string) (*http.Response, error) {
 	reqHeaders := make(http.Header)
-	reqHeaders.Set("x-goog-api-client", "gl-go/"+gensupport.GoVersion()+" gdcl/20210831")
+	reqHeaders.Set("x-goog-api-client", "gl-go/1.13.4 gdcl/20191217")
 	for k, v := range c.header_ {
 		reqHeaders[k] = v
 	}
@@ -1907,149 +1134,6 @@ func (c *GetCall) Do(opts ...googleapi.CallOption) (*LegacyApiBuildResponseMessa
 
 }
 
-// method id "buildbucket.get_bucket":
-
-type GetBucketCall struct {
-	s            *Service
-	bucket       string
-	urlParams_   gensupport.URLParams
-	ifNoneMatch_ string
-	ctx_         context.Context
-	header_      http.Header
-}
-
-// GetBucket: Returns bucket information.
-//
-// - bucket: .
-func (s *Service) GetBucket(bucket string) *GetBucketCall {
-	c := &GetBucketCall{s: s, urlParams_: make(gensupport.URLParams)}
-	c.bucket = bucket
-	return c
-}
-
-// Fields allows partial responses to be retrieved. See
-// https://developers.google.com/gdata/docs/2.0/basics#PartialResponse
-// for more information.
-func (c *GetBucketCall) Fields(s ...googleapi.Field) *GetBucketCall {
-	c.urlParams_.Set("fields", googleapi.CombineFields(s))
-	return c
-}
-
-// IfNoneMatch sets the optional parameter which makes the operation
-// fail if the object's ETag matches the given value. This is useful for
-// getting updates only after the object has changed since the last
-// request. Use googleapi.IsNotModified to check whether the response
-// error from Do is the result of In-None-Match.
-func (c *GetBucketCall) IfNoneMatch(entityTag string) *GetBucketCall {
-	c.ifNoneMatch_ = entityTag
-	return c
-}
-
-// Context sets the context to be used in this call's Do method. Any
-// pending HTTP request will be aborted if the provided context is
-// canceled.
-func (c *GetBucketCall) Context(ctx context.Context) *GetBucketCall {
-	c.ctx_ = ctx
-	return c
-}
-
-// Header returns an http.Header that can be modified by the caller to
-// add HTTP headers to the request.
-func (c *GetBucketCall) Header() http.Header {
-	if c.header_ == nil {
-		c.header_ = make(http.Header)
-	}
-	return c.header_
-}
-
-func (c *GetBucketCall) doRequest(alt string) (*http.Response, error) {
-	reqHeaders := make(http.Header)
-	reqHeaders.Set("x-goog-api-client", "gl-go/"+gensupport.GoVersion()+" gdcl/20210831")
-	for k, v := range c.header_ {
-		reqHeaders[k] = v
-	}
-	reqHeaders.Set("User-Agent", c.s.userAgent())
-	if c.ifNoneMatch_ != "" {
-		reqHeaders.Set("If-None-Match", c.ifNoneMatch_)
-	}
-	var body io.Reader = nil
-	c.urlParams_.Set("alt", alt)
-	c.urlParams_.Set("prettyPrint", "false")
-	urls := googleapi.ResolveRelative(c.s.BasePath, "buckets/{bucket}")
-	urls += "?" + c.urlParams_.Encode()
-	req, err := http.NewRequest("GET", urls, body)
-	if err != nil {
-		return nil, err
-	}
-	req.Header = reqHeaders
-	googleapi.Expand(req.URL, map[string]string{
-		"bucket": c.bucket,
-	})
-	return gensupport.SendRequest(c.ctx_, c.s.client, req)
-}
-
-// Do executes the "buildbucket.get_bucket" call.
-// Exactly one of *LegacyApiBucketMessage or error will be non-nil. Any
-// non-2xx status code is an error. Response headers are in either
-// *LegacyApiBucketMessage.ServerResponse.Header or (if a response was
-// returned at all) in error.(*googleapi.Error).Header. Use
-// googleapi.IsNotModified to check whether the returned error was
-// because http.StatusNotModified was returned.
-func (c *GetBucketCall) Do(opts ...googleapi.CallOption) (*LegacyApiBucketMessage, error) {
-	gensupport.SetOptions(c.urlParams_, opts...)
-	res, err := c.doRequest("json")
-	if res != nil && res.StatusCode == http.StatusNotModified {
-		if res.Body != nil {
-			res.Body.Close()
-		}
-		return nil, &googleapi.Error{
-			Code:   res.StatusCode,
-			Header: res.Header,
-		}
-	}
-	if err != nil {
-		return nil, err
-	}
-	defer googleapi.CloseBody(res)
-	if err := googleapi.CheckResponse(res); err != nil {
-		return nil, err
-	}
-	ret := &LegacyApiBucketMessage{
-		ServerResponse: googleapi.ServerResponse{
-			Header:         res.Header,
-			HTTPStatusCode: res.StatusCode,
-		},
-	}
-	target := &ret
-	if err := gensupport.DecodeResponse(target, res); err != nil {
-		return nil, err
-	}
-	return ret, nil
-	// {
-	//   "description": "Returns bucket information.",
-	//   "httpMethod": "GET",
-	//   "id": "buildbucket.get_bucket",
-	//   "parameterOrder": [
-	//     "bucket"
-	//   ],
-	//   "parameters": {
-	//     "bucket": {
-	//       "location": "path",
-	//       "required": true,
-	//       "type": "string"
-	//     }
-	//   },
-	//   "path": "buckets/{bucket}",
-	//   "response": {
-	//     "$ref": "LegacyApiBucketMessage"
-	//   },
-	//   "scopes": [
-	//     "https://www.googleapis.com/auth/userinfo.email"
-	//   ]
-	// }
-
-}
-
 // method id "buildbucket.heartbeat":
 
 type HeartbeatCall struct {
@@ -2062,8 +1146,6 @@ type HeartbeatCall struct {
 }
 
 // Heartbeat: Updates build lease.
-//
-// - id: .
 func (s *Service) Heartbeat(id int64, legacyapiheartbeatrequestbodymessage *LegacyApiHeartbeatRequestBodyMessage) *HeartbeatCall {
 	c := &HeartbeatCall{s: s, urlParams_: make(gensupport.URLParams)}
 	c.id = id
@@ -2098,7 +1180,7 @@ func (c *HeartbeatCall) Header() http.Header {
 
 func (c *HeartbeatCall) doRequest(alt string) (*http.Response, error) {
 	reqHeaders := make(http.Header)
-	reqHeaders.Set("x-goog-api-client", "gl-go/"+gensupport.GoVersion()+" gdcl/20210831")
+	reqHeaders.Set("x-goog-api-client", "gl-go/1.13.4 gdcl/20191217")
 	for k, v := range c.header_ {
 		reqHeaders[k] = v
 	}
@@ -2235,7 +1317,7 @@ func (c *HeartbeatBatchCall) Header() http.Header {
 
 func (c *HeartbeatBatchCall) doRequest(alt string) (*http.Response, error) {
 	reqHeaders := make(http.Header)
-	reqHeaders.Set("x-goog-api-client", "gl-go/"+gensupport.GoVersion()+" gdcl/20210831")
+	reqHeaders.Set("x-goog-api-client", "gl-go/1.13.4 gdcl/20191217")
 	for k, v := range c.header_ {
 		reqHeaders[k] = v
 	}
@@ -2327,8 +1409,6 @@ type LeaseCall struct {
 }
 
 // Lease: Leases a build. Response may contain an error.
-//
-// - id: .
 func (s *Service) Lease(id int64, legacyapileaserequestbodymessage *LegacyApiLeaseRequestBodyMessage) *LeaseCall {
 	c := &LeaseCall{s: s, urlParams_: make(gensupport.URLParams)}
 	c.id = id
@@ -2363,7 +1443,7 @@ func (c *LeaseCall) Header() http.Header {
 
 func (c *LeaseCall) doRequest(alt string) (*http.Response, error) {
 	reqHeaders := make(http.Header)
-	reqHeaders.Set("x-goog-api-client", "gl-go/"+gensupport.GoVersion()+" gdcl/20210831")
+	reqHeaders.Set("x-goog-api-client", "gl-go/1.13.4 gdcl/20191217")
 	for k, v := range c.header_ {
 		reqHeaders[k] = v
 	}
@@ -2456,143 +1536,6 @@ func (c *LeaseCall) Do(opts ...googleapi.CallOption) (*LegacyApiBuildResponseMes
 
 }
 
-// method id "buildbucket.pause":
-
-type PauseCall struct {
-	s          *Service
-	bucket     string
-	urlParams_ gensupport.URLParams
-	ctx_       context.Context
-	header_    http.Header
-}
-
-// Pause: Pauses or unpause a bucket.
-//
-// - bucket: .
-// - isPaused: .
-func (s *Service) Pause(bucket string, isPaused bool) *PauseCall {
-	c := &PauseCall{s: s, urlParams_: make(gensupport.URLParams)}
-	c.bucket = bucket
-	c.urlParams_.Set("is_paused", fmt.Sprint(isPaused))
-	return c
-}
-
-// Fields allows partial responses to be retrieved. See
-// https://developers.google.com/gdata/docs/2.0/basics#PartialResponse
-// for more information.
-func (c *PauseCall) Fields(s ...googleapi.Field) *PauseCall {
-	c.urlParams_.Set("fields", googleapi.CombineFields(s))
-	return c
-}
-
-// Context sets the context to be used in this call's Do method. Any
-// pending HTTP request will be aborted if the provided context is
-// canceled.
-func (c *PauseCall) Context(ctx context.Context) *PauseCall {
-	c.ctx_ = ctx
-	return c
-}
-
-// Header returns an http.Header that can be modified by the caller to
-// add HTTP headers to the request.
-func (c *PauseCall) Header() http.Header {
-	if c.header_ == nil {
-		c.header_ = make(http.Header)
-	}
-	return c.header_
-}
-
-func (c *PauseCall) doRequest(alt string) (*http.Response, error) {
-	reqHeaders := make(http.Header)
-	reqHeaders.Set("x-goog-api-client", "gl-go/"+gensupport.GoVersion()+" gdcl/20210831")
-	for k, v := range c.header_ {
-		reqHeaders[k] = v
-	}
-	reqHeaders.Set("User-Agent", c.s.userAgent())
-	var body io.Reader = nil
-	c.urlParams_.Set("alt", alt)
-	c.urlParams_.Set("prettyPrint", "false")
-	urls := googleapi.ResolveRelative(c.s.BasePath, "buckets/{bucket}/pause")
-	urls += "?" + c.urlParams_.Encode()
-	req, err := http.NewRequest("POST", urls, body)
-	if err != nil {
-		return nil, err
-	}
-	req.Header = reqHeaders
-	googleapi.Expand(req.URL, map[string]string{
-		"bucket": c.bucket,
-	})
-	return gensupport.SendRequest(c.ctx_, c.s.client, req)
-}
-
-// Do executes the "buildbucket.pause" call.
-// Exactly one of *LegacyApiPauseResponse or error will be non-nil. Any
-// non-2xx status code is an error. Response headers are in either
-// *LegacyApiPauseResponse.ServerResponse.Header or (if a response was
-// returned at all) in error.(*googleapi.Error).Header. Use
-// googleapi.IsNotModified to check whether the returned error was
-// because http.StatusNotModified was returned.
-func (c *PauseCall) Do(opts ...googleapi.CallOption) (*LegacyApiPauseResponse, error) {
-	gensupport.SetOptions(c.urlParams_, opts...)
-	res, err := c.doRequest("json")
-	if res != nil && res.StatusCode == http.StatusNotModified {
-		if res.Body != nil {
-			res.Body.Close()
-		}
-		return nil, &googleapi.Error{
-			Code:   res.StatusCode,
-			Header: res.Header,
-		}
-	}
-	if err != nil {
-		return nil, err
-	}
-	defer googleapi.CloseBody(res)
-	if err := googleapi.CheckResponse(res); err != nil {
-		return nil, err
-	}
-	ret := &LegacyApiPauseResponse{
-		ServerResponse: googleapi.ServerResponse{
-			Header:         res.Header,
-			HTTPStatusCode: res.StatusCode,
-		},
-	}
-	target := &ret
-	if err := gensupport.DecodeResponse(target, res); err != nil {
-		return nil, err
-	}
-	return ret, nil
-	// {
-	//   "description": "Pauses or unpause a bucket.",
-	//   "httpMethod": "POST",
-	//   "id": "buildbucket.pause",
-	//   "parameterOrder": [
-	//     "bucket",
-	//     "is_paused"
-	//   ],
-	//   "parameters": {
-	//     "bucket": {
-	//       "location": "path",
-	//       "required": true,
-	//       "type": "string"
-	//     },
-	//     "is_paused": {
-	//       "location": "query",
-	//       "required": true,
-	//       "type": "boolean"
-	//     }
-	//   },
-	//   "path": "buckets/{bucket}/pause",
-	//   "response": {
-	//     "$ref": "LegacyApiPauseResponse"
-	//   },
-	//   "scopes": [
-	//     "https://www.googleapis.com/auth/userinfo.email"
-	//   ]
-	// }
-
-}
-
 // method id "buildbucket.peek":
 
 type PeekCall struct {
@@ -2664,7 +1607,7 @@ func (c *PeekCall) Header() http.Header {
 
 func (c *PeekCall) doRequest(alt string) (*http.Response, error) {
 	reqHeaders := make(http.Header)
-	reqHeaders.Set("x-goog-api-client", "gl-go/"+gensupport.GoVersion()+" gdcl/20210831")
+	reqHeaders.Set("x-goog-api-client", "gl-go/1.13.4 gdcl/20191217")
 	for k, v := range c.header_ {
 		reqHeaders[k] = v
 	}
@@ -2797,7 +1740,7 @@ func (c *PutCall) Header() http.Header {
 
 func (c *PutCall) doRequest(alt string) (*http.Response, error) {
 	reqHeaders := make(http.Header)
-	reqHeaders.Set("x-goog-api-client", "gl-go/"+gensupport.GoVersion()+" gdcl/20210831")
+	reqHeaders.Set("x-goog-api-client", "gl-go/1.13.4 gdcl/20191217")
 	for k, v := range c.header_ {
 		reqHeaders[k] = v
 	}
@@ -2864,400 +1807,6 @@ func (c *PutCall) Do(opts ...googleapi.CallOption) (*LegacyApiBuildResponseMessa
 	//   "path": "builds",
 	//   "request": {
 	//     "$ref": "LegacyApiPutRequestMessage",
-	//     "parameterName": "resource"
-	//   },
-	//   "response": {
-	//     "$ref": "LegacyApiBuildResponseMessage"
-	//   },
-	//   "scopes": [
-	//     "https://www.googleapis.com/auth/userinfo.email"
-	//   ]
-	// }
-
-}
-
-// method id "buildbucket.put_batch":
-
-type PutBatchCall struct {
-	s                               *Service
-	legacyapiputbatchrequestmessage *LegacyApiPutBatchRequestMessage
-	urlParams_                      gensupport.URLParams
-	ctx_                            context.Context
-	header_                         http.Header
-}
-
-// PutBatch: Creates builds.
-func (s *Service) PutBatch(legacyapiputbatchrequestmessage *LegacyApiPutBatchRequestMessage) *PutBatchCall {
-	c := &PutBatchCall{s: s, urlParams_: make(gensupport.URLParams)}
-	c.legacyapiputbatchrequestmessage = legacyapiputbatchrequestmessage
-	return c
-}
-
-// Fields allows partial responses to be retrieved. See
-// https://developers.google.com/gdata/docs/2.0/basics#PartialResponse
-// for more information.
-func (c *PutBatchCall) Fields(s ...googleapi.Field) *PutBatchCall {
-	c.urlParams_.Set("fields", googleapi.CombineFields(s))
-	return c
-}
-
-// Context sets the context to be used in this call's Do method. Any
-// pending HTTP request will be aborted if the provided context is
-// canceled.
-func (c *PutBatchCall) Context(ctx context.Context) *PutBatchCall {
-	c.ctx_ = ctx
-	return c
-}
-
-// Header returns an http.Header that can be modified by the caller to
-// add HTTP headers to the request.
-func (c *PutBatchCall) Header() http.Header {
-	if c.header_ == nil {
-		c.header_ = make(http.Header)
-	}
-	return c.header_
-}
-
-func (c *PutBatchCall) doRequest(alt string) (*http.Response, error) {
-	reqHeaders := make(http.Header)
-	reqHeaders.Set("x-goog-api-client", "gl-go/"+gensupport.GoVersion()+" gdcl/20210831")
-	for k, v := range c.header_ {
-		reqHeaders[k] = v
-	}
-	reqHeaders.Set("User-Agent", c.s.userAgent())
-	var body io.Reader = nil
-	body, err := googleapi.WithoutDataWrapper.JSONReader(c.legacyapiputbatchrequestmessage)
-	if err != nil {
-		return nil, err
-	}
-	reqHeaders.Set("Content-Type", "application/json")
-	c.urlParams_.Set("alt", alt)
-	c.urlParams_.Set("prettyPrint", "false")
-	urls := googleapi.ResolveRelative(c.s.BasePath, "builds/batch")
-	urls += "?" + c.urlParams_.Encode()
-	req, err := http.NewRequest("PUT", urls, body)
-	if err != nil {
-		return nil, err
-	}
-	req.Header = reqHeaders
-	return gensupport.SendRequest(c.ctx_, c.s.client, req)
-}
-
-// Do executes the "buildbucket.put_batch" call.
-// Exactly one of *LegacyApiPutBatchResponseMessage or error will be
-// non-nil. Any non-2xx status code is an error. Response headers are in
-// either *LegacyApiPutBatchResponseMessage.ServerResponse.Header or (if
-// a response was returned at all) in error.(*googleapi.Error).Header.
-// Use googleapi.IsNotModified to check whether the returned error was
-// because http.StatusNotModified was returned.
-func (c *PutBatchCall) Do(opts ...googleapi.CallOption) (*LegacyApiPutBatchResponseMessage, error) {
-	gensupport.SetOptions(c.urlParams_, opts...)
-	res, err := c.doRequest("json")
-	if res != nil && res.StatusCode == http.StatusNotModified {
-		if res.Body != nil {
-			res.Body.Close()
-		}
-		return nil, &googleapi.Error{
-			Code:   res.StatusCode,
-			Header: res.Header,
-		}
-	}
-	if err != nil {
-		return nil, err
-	}
-	defer googleapi.CloseBody(res)
-	if err := googleapi.CheckResponse(res); err != nil {
-		return nil, err
-	}
-	ret := &LegacyApiPutBatchResponseMessage{
-		ServerResponse: googleapi.ServerResponse{
-			Header:         res.Header,
-			HTTPStatusCode: res.StatusCode,
-		},
-	}
-	target := &ret
-	if err := gensupport.DecodeResponse(target, res); err != nil {
-		return nil, err
-	}
-	return ret, nil
-	// {
-	//   "description": "Creates builds.",
-	//   "httpMethod": "PUT",
-	//   "id": "buildbucket.put_batch",
-	//   "path": "builds/batch",
-	//   "request": {
-	//     "$ref": "LegacyApiPutBatchRequestMessage",
-	//     "parameterName": "resource"
-	//   },
-	//   "response": {
-	//     "$ref": "LegacyApiPutBatchResponseMessage"
-	//   },
-	//   "scopes": [
-	//     "https://www.googleapis.com/auth/userinfo.email"
-	//   ]
-	// }
-
-}
-
-// method id "buildbucket.reset":
-
-type ResetCall struct {
-	s          *Service
-	id         int64
-	urlParams_ gensupport.URLParams
-	ctx_       context.Context
-	header_    http.Header
-}
-
-// Reset: Forcibly unleases a build and resets its state to SCHEDULED.
-//
-// - id: .
-func (s *Service) Reset(id int64) *ResetCall {
-	c := &ResetCall{s: s, urlParams_: make(gensupport.URLParams)}
-	c.id = id
-	return c
-}
-
-// Fields allows partial responses to be retrieved. See
-// https://developers.google.com/gdata/docs/2.0/basics#PartialResponse
-// for more information.
-func (c *ResetCall) Fields(s ...googleapi.Field) *ResetCall {
-	c.urlParams_.Set("fields", googleapi.CombineFields(s))
-	return c
-}
-
-// Context sets the context to be used in this call's Do method. Any
-// pending HTTP request will be aborted if the provided context is
-// canceled.
-func (c *ResetCall) Context(ctx context.Context) *ResetCall {
-	c.ctx_ = ctx
-	return c
-}
-
-// Header returns an http.Header that can be modified by the caller to
-// add HTTP headers to the request.
-func (c *ResetCall) Header() http.Header {
-	if c.header_ == nil {
-		c.header_ = make(http.Header)
-	}
-	return c.header_
-}
-
-func (c *ResetCall) doRequest(alt string) (*http.Response, error) {
-	reqHeaders := make(http.Header)
-	reqHeaders.Set("x-goog-api-client", "gl-go/"+gensupport.GoVersion()+" gdcl/20210831")
-	for k, v := range c.header_ {
-		reqHeaders[k] = v
-	}
-	reqHeaders.Set("User-Agent", c.s.userAgent())
-	var body io.Reader = nil
-	c.urlParams_.Set("alt", alt)
-	c.urlParams_.Set("prettyPrint", "false")
-	urls := googleapi.ResolveRelative(c.s.BasePath, "builds/{id}/reset")
-	urls += "?" + c.urlParams_.Encode()
-	req, err := http.NewRequest("POST", urls, body)
-	if err != nil {
-		return nil, err
-	}
-	req.Header = reqHeaders
-	googleapi.Expand(req.URL, map[string]string{
-		"id": strconv.FormatInt(c.id, 10),
-	})
-	return gensupport.SendRequest(c.ctx_, c.s.client, req)
-}
-
-// Do executes the "buildbucket.reset" call.
-// Exactly one of *LegacyApiBuildResponseMessage or error will be
-// non-nil. Any non-2xx status code is an error. Response headers are in
-// either *LegacyApiBuildResponseMessage.ServerResponse.Header or (if a
-// response was returned at all) in error.(*googleapi.Error).Header. Use
-// googleapi.IsNotModified to check whether the returned error was
-// because http.StatusNotModified was returned.
-func (c *ResetCall) Do(opts ...googleapi.CallOption) (*LegacyApiBuildResponseMessage, error) {
-	gensupport.SetOptions(c.urlParams_, opts...)
-	res, err := c.doRequest("json")
-	if res != nil && res.StatusCode == http.StatusNotModified {
-		if res.Body != nil {
-			res.Body.Close()
-		}
-		return nil, &googleapi.Error{
-			Code:   res.StatusCode,
-			Header: res.Header,
-		}
-	}
-	if err != nil {
-		return nil, err
-	}
-	defer googleapi.CloseBody(res)
-	if err := googleapi.CheckResponse(res); err != nil {
-		return nil, err
-	}
-	ret := &LegacyApiBuildResponseMessage{
-		ServerResponse: googleapi.ServerResponse{
-			Header:         res.Header,
-			HTTPStatusCode: res.StatusCode,
-		},
-	}
-	target := &ret
-	if err := gensupport.DecodeResponse(target, res); err != nil {
-		return nil, err
-	}
-	return ret, nil
-	// {
-	//   "description": "Forcibly unleases a build and resets its state to SCHEDULED.",
-	//   "httpMethod": "POST",
-	//   "id": "buildbucket.reset",
-	//   "parameterOrder": [
-	//     "id"
-	//   ],
-	//   "parameters": {
-	//     "id": {
-	//       "format": "int64",
-	//       "location": "path",
-	//       "required": true,
-	//       "type": "string"
-	//     }
-	//   },
-	//   "path": "builds/{id}/reset",
-	//   "response": {
-	//     "$ref": "LegacyApiBuildResponseMessage"
-	//   },
-	//   "scopes": [
-	//     "https://www.googleapis.com/auth/userinfo.email"
-	//   ]
-	// }
-
-}
-
-// method id "buildbucket.retry":
-
-type RetryCall struct {
-	s                            *Service
-	id                           int64
-	legacyapiretryrequestmessage *LegacyApiRetryRequestMessage
-	urlParams_                   gensupport.URLParams
-	ctx_                         context.Context
-	header_                      http.Header
-}
-
-// Retry: Retries an existing build.
-//
-// - id: .
-func (s *Service) Retry(id int64, legacyapiretryrequestmessage *LegacyApiRetryRequestMessage) *RetryCall {
-	c := &RetryCall{s: s, urlParams_: make(gensupport.URLParams)}
-	c.id = id
-	c.legacyapiretryrequestmessage = legacyapiretryrequestmessage
-	return c
-}
-
-// Fields allows partial responses to be retrieved. See
-// https://developers.google.com/gdata/docs/2.0/basics#PartialResponse
-// for more information.
-func (c *RetryCall) Fields(s ...googleapi.Field) *RetryCall {
-	c.urlParams_.Set("fields", googleapi.CombineFields(s))
-	return c
-}
-
-// Context sets the context to be used in this call's Do method. Any
-// pending HTTP request will be aborted if the provided context is
-// canceled.
-func (c *RetryCall) Context(ctx context.Context) *RetryCall {
-	c.ctx_ = ctx
-	return c
-}
-
-// Header returns an http.Header that can be modified by the caller to
-// add HTTP headers to the request.
-func (c *RetryCall) Header() http.Header {
-	if c.header_ == nil {
-		c.header_ = make(http.Header)
-	}
-	return c.header_
-}
-
-func (c *RetryCall) doRequest(alt string) (*http.Response, error) {
-	reqHeaders := make(http.Header)
-	reqHeaders.Set("x-goog-api-client", "gl-go/"+gensupport.GoVersion()+" gdcl/20210831")
-	for k, v := range c.header_ {
-		reqHeaders[k] = v
-	}
-	reqHeaders.Set("User-Agent", c.s.userAgent())
-	var body io.Reader = nil
-	body, err := googleapi.WithoutDataWrapper.JSONReader(c.legacyapiretryrequestmessage)
-	if err != nil {
-		return nil, err
-	}
-	reqHeaders.Set("Content-Type", "application/json")
-	c.urlParams_.Set("alt", alt)
-	c.urlParams_.Set("prettyPrint", "false")
-	urls := googleapi.ResolveRelative(c.s.BasePath, "builds/{id}/retry")
-	urls += "?" + c.urlParams_.Encode()
-	req, err := http.NewRequest("PUT", urls, body)
-	if err != nil {
-		return nil, err
-	}
-	req.Header = reqHeaders
-	googleapi.Expand(req.URL, map[string]string{
-		"id": strconv.FormatInt(c.id, 10),
-	})
-	return gensupport.SendRequest(c.ctx_, c.s.client, req)
-}
-
-// Do executes the "buildbucket.retry" call.
-// Exactly one of *LegacyApiBuildResponseMessage or error will be
-// non-nil. Any non-2xx status code is an error. Response headers are in
-// either *LegacyApiBuildResponseMessage.ServerResponse.Header or (if a
-// response was returned at all) in error.(*googleapi.Error).Header. Use
-// googleapi.IsNotModified to check whether the returned error was
-// because http.StatusNotModified was returned.
-func (c *RetryCall) Do(opts ...googleapi.CallOption) (*LegacyApiBuildResponseMessage, error) {
-	gensupport.SetOptions(c.urlParams_, opts...)
-	res, err := c.doRequest("json")
-	if res != nil && res.StatusCode == http.StatusNotModified {
-		if res.Body != nil {
-			res.Body.Close()
-		}
-		return nil, &googleapi.Error{
-			Code:   res.StatusCode,
-			Header: res.Header,
-		}
-	}
-	if err != nil {
-		return nil, err
-	}
-	defer googleapi.CloseBody(res)
-	if err := googleapi.CheckResponse(res); err != nil {
-		return nil, err
-	}
-	ret := &LegacyApiBuildResponseMessage{
-		ServerResponse: googleapi.ServerResponse{
-			Header:         res.Header,
-			HTTPStatusCode: res.StatusCode,
-		},
-	}
-	target := &ret
-	if err := gensupport.DecodeResponse(target, res); err != nil {
-		return nil, err
-	}
-	return ret, nil
-	// {
-	//   "description": "Retries an existing build.",
-	//   "httpMethod": "PUT",
-	//   "id": "buildbucket.retry",
-	//   "parameterOrder": [
-	//     "id"
-	//   ],
-	//   "parameters": {
-	//     "id": {
-	//       "format": "int64",
-	//       "location": "path",
-	//       "required": true,
-	//       "type": "string"
-	//     }
-	//   },
-	//   "path": "builds/{id}/retry",
-	//   "request": {
-	//     "$ref": "LegacyApiRetryRequestMessage",
 	//     "parameterName": "resource"
 	//   },
 	//   "response": {
@@ -3432,7 +1981,7 @@ func (c *SearchCall) Header() http.Header {
 
 func (c *SearchCall) doRequest(alt string) (*http.Response, error) {
 	reqHeaders := make(http.Header)
-	reqHeaders.Set("x-goog-api-client", "gl-go/"+gensupport.GoVersion()+" gdcl/20210831")
+	reqHeaders.Set("x-goog-api-client", "gl-go/1.13.4 gdcl/20191217")
 	for k, v := range c.header_ {
 		reqHeaders[k] = v
 	}
@@ -3629,8 +2178,6 @@ type StartCall struct {
 }
 
 // Start: Marks a build as started.
-//
-// - id: .
 func (s *Service) Start(id int64, legacyapistartrequestbodymessage *LegacyApiStartRequestBodyMessage) *StartCall {
 	c := &StartCall{s: s, urlParams_: make(gensupport.URLParams)}
 	c.id = id
@@ -3665,7 +2212,7 @@ func (c *StartCall) Header() http.Header {
 
 func (c *StartCall) doRequest(alt string) (*http.Response, error) {
 	reqHeaders := make(http.Header)
-	reqHeaders.Set("x-goog-api-client", "gl-go/"+gensupport.GoVersion()+" gdcl/20210831")
+	reqHeaders.Set("x-goog-api-client", "gl-go/1.13.4 gdcl/20191217")
 	for k, v := range c.header_ {
 		reqHeaders[k] = v
 	}
@@ -3770,8 +2317,6 @@ type SucceedCall struct {
 }
 
 // Succeed: Marks a build as succeeded.
-//
-// - id: .
 func (s *Service) Succeed(id int64, legacyapisucceedrequestbodymessage *LegacyApiSucceedRequestBodyMessage) *SucceedCall {
 	c := &SucceedCall{s: s, urlParams_: make(gensupport.URLParams)}
 	c.id = id
@@ -3806,7 +2351,7 @@ func (c *SucceedCall) Header() http.Header {
 
 func (c *SucceedCall) doRequest(alt string) (*http.Response, error) {
 	reqHeaders := make(http.Header)
-	reqHeaders.Set("x-goog-api-client", "gl-go/"+gensupport.GoVersion()+" gdcl/20210831")
+	reqHeaders.Set("x-goog-api-client", "gl-go/1.13.4 gdcl/20191217")
 	for k, v := range c.header_ {
 		reqHeaders[k] = v
 	}

@@ -44,12 +44,6 @@
                 "dest_path": ".swarming_module_cache/vpython"
               }
             ],
-            "extra_args": [
-              "--isolated-script-test-output=${ISOLATED_OUTDIR}/output.json",
-              "--isolated-script-test-perf-output=${ISOLATED_OUTDIR}/perftest-output.json",
-              "--jobs=1",
-              "--extra-browser-args=--disable-gpu"
-            ],
             "dimensions": [
               {
                 "key": "cpu",

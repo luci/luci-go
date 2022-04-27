@@ -1,4 +1,4 @@
-// Copyright 2021 The LUCI Authors.
+// Copyright 2022 The LUCI Authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -60,7 +60,6 @@ import (
 	googleapi "google.golang.org/api/googleapi"
 	gensupport "go.chromium.org/luci/common/api/internal/gensupport"
 	option "google.golang.org/api/option"
-	internaloption "google.golang.org/api/option/internaloption"
 	htransport "google.golang.org/api/transport/http"
 )
 
@@ -77,7 +76,6 @@ var _ = googleapi.Version
 var _ = errors.New
 var _ = strings.Replace
 var _ = context.Canceled
-var _ = internaloption.WithDefaultEndpoint
 
 const apiId = "swarming:v1"
 const apiName = "swarming"
@@ -97,7 +95,6 @@ func NewService(ctx context.Context, opts ...option.ClientOption) (*Service, err
 	)
 	// NOTE: prepend, so we don't override user-specified scopes.
 	opts = append([]option.ClientOption{scopesOption}, opts...)
-	opts = append(opts, internaloption.WithDefaultEndpoint(basePath))
 	client, endpoint, err := htransport.NewClient(ctx, opts...)
 	if err != nil {
 		return nil, err
@@ -220,10 +217,10 @@ type SwarmingRpcsBootstrapToken struct {
 
 	// ForceSendFields is a list of field names (e.g. "BootstrapToken") to
 	// unconditionally include in API requests. By default, fields with
-	// empty or default values are omitted from API requests. However, any
-	// non-pointer, non-interface field appearing in ForceSendFields will be
-	// sent to the server regardless of whether the field is empty or not.
-	// This may be used to include empty fields in Patch requests.
+	// empty values are omitted from API requests. However, any non-pointer,
+	// non-interface field appearing in ForceSendFields will be sent to the
+	// server regardless of whether the field is empty or not. This may be
+	// used to include empty fields in Patch requests.
 	ForceSendFields []string `json:"-"`
 
 	// NullFields is a list of field names (e.g. "BootstrapToken") to
@@ -268,10 +265,10 @@ type SwarmingRpcsBotEvent struct {
 
 	// ForceSendFields is a list of field names (e.g. "AuthenticatedAs") to
 	// unconditionally include in API requests. By default, fields with
-	// empty or default values are omitted from API requests. However, any
-	// non-pointer, non-interface field appearing in ForceSendFields will be
-	// sent to the server regardless of whether the field is empty or not.
-	// This may be used to include empty fields in Patch requests.
+	// empty values are omitted from API requests. However, any non-pointer,
+	// non-interface field appearing in ForceSendFields will be sent to the
+	// server regardless of whether the field is empty or not. This may be
+	// used to include empty fields in Patch requests.
 	ForceSendFields []string `json:"-"`
 
 	// NullFields is a list of field names (e.g. "AuthenticatedAs") to
@@ -303,10 +300,10 @@ type SwarmingRpcsBotEvents struct {
 
 	// ForceSendFields is a list of field names (e.g. "Cursor") to
 	// unconditionally include in API requests. By default, fields with
-	// empty or default values are omitted from API requests. However, any
-	// non-pointer, non-interface field appearing in ForceSendFields will be
-	// sent to the server regardless of whether the field is empty or not.
-	// This may be used to include empty fields in Patch requests.
+	// empty values are omitted from API requests. However, any non-pointer,
+	// non-interface field appearing in ForceSendFields will be sent to the
+	// server regardless of whether the field is empty or not. This may be
+	// used to include empty fields in Patch requests.
 	ForceSendFields []string `json:"-"`
 
 	// NullFields is a list of field names (e.g. "Cursor") to include in API
@@ -371,10 +368,10 @@ type SwarmingRpcsBotInfo struct {
 
 	// ForceSendFields is a list of field names (e.g. "AuthenticatedAs") to
 	// unconditionally include in API requests. By default, fields with
-	// empty or default values are omitted from API requests. However, any
-	// non-pointer, non-interface field appearing in ForceSendFields will be
-	// sent to the server regardless of whether the field is empty or not.
-	// This may be used to include empty fields in Patch requests.
+	// empty values are omitted from API requests. However, any non-pointer,
+	// non-interface field appearing in ForceSendFields will be sent to the
+	// server regardless of whether the field is empty or not. This may be
+	// used to include empty fields in Patch requests.
 	ForceSendFields []string `json:"-"`
 
 	// NullFields is a list of field names (e.g. "AuthenticatedAs") to
@@ -410,10 +407,10 @@ type SwarmingRpcsBotList struct {
 
 	// ForceSendFields is a list of field names (e.g. "Cursor") to
 	// unconditionally include in API requests. By default, fields with
-	// empty or default values are omitted from API requests. However, any
-	// non-pointer, non-interface field appearing in ForceSendFields will be
-	// sent to the server regardless of whether the field is empty or not.
-	// This may be used to include empty fields in Patch requests.
+	// empty values are omitted from API requests. However, any non-pointer,
+	// non-interface field appearing in ForceSendFields will be sent to the
+	// server regardless of whether the field is empty or not. This may be
+	// used to include empty fields in Patch requests.
 	ForceSendFields []string `json:"-"`
 
 	// NullFields is a list of field names (e.g. "Cursor") to include in API
@@ -446,10 +443,10 @@ type SwarmingRpcsBotTasks struct {
 
 	// ForceSendFields is a list of field names (e.g. "Cursor") to
 	// unconditionally include in API requests. By default, fields with
-	// empty or default values are omitted from API requests. However, any
-	// non-pointer, non-interface field appearing in ForceSendFields will be
-	// sent to the server regardless of whether the field is empty or not.
-	// This may be used to include empty fields in Patch requests.
+	// empty values are omitted from API requests. However, any non-pointer,
+	// non-interface field appearing in ForceSendFields will be sent to the
+	// server regardless of whether the field is empty or not. This may be
+	// used to include empty fields in Patch requests.
 	ForceSendFields []string `json:"-"`
 
 	// NullFields is a list of field names (e.g. "Cursor") to include in API
@@ -487,10 +484,10 @@ type SwarmingRpcsBotsCount struct {
 
 	// ForceSendFields is a list of field names (e.g. "Busy") to
 	// unconditionally include in API requests. By default, fields with
-	// empty or default values are omitted from API requests. However, any
-	// non-pointer, non-interface field appearing in ForceSendFields will be
-	// sent to the server regardless of whether the field is empty or not.
-	// This may be used to include empty fields in Patch requests.
+	// empty values are omitted from API requests. However, any non-pointer,
+	// non-interface field appearing in ForceSendFields will be sent to the
+	// server regardless of whether the field is empty or not. This may be
+	// used to include empty fields in Patch requests.
 	ForceSendFields []string `json:"-"`
 
 	// NullFields is a list of field names (e.g. "Busy") to include in API
@@ -522,10 +519,10 @@ type SwarmingRpcsBotsDimensions struct {
 
 	// ForceSendFields is a list of field names (e.g. "BotsDimensions") to
 	// unconditionally include in API requests. By default, fields with
-	// empty or default values are omitted from API requests. However, any
-	// non-pointer, non-interface field appearing in ForceSendFields will be
-	// sent to the server regardless of whether the field is empty or not.
-	// This may be used to include empty fields in Patch requests.
+	// empty values are omitted from API requests. However, any non-pointer,
+	// non-interface field appearing in ForceSendFields will be sent to the
+	// server regardless of whether the field is empty or not. This may be
+	// used to include empty fields in Patch requests.
 	ForceSendFields []string `json:"-"`
 
 	// NullFields is a list of field names (e.g. "BotsDimensions") to
@@ -565,10 +562,10 @@ type SwarmingRpcsCASOperationStats struct {
 
 	// ForceSendFields is a list of field names (e.g. "Duration") to
 	// unconditionally include in API requests. By default, fields with
-	// empty or default values are omitted from API requests. However, any
-	// non-pointer, non-interface field appearing in ForceSendFields will be
-	// sent to the server regardless of whether the field is empty or not.
-	// This may be used to include empty fields in Patch requests.
+	// empty values are omitted from API requests. However, any non-pointer,
+	// non-interface field appearing in ForceSendFields will be sent to the
+	// server regardless of whether the field is empty or not. This may be
+	// used to include empty fields in Patch requests.
 	ForceSendFields []string `json:"-"`
 
 	// NullFields is a list of field names (e.g. "Duration") to include in
@@ -607,10 +604,10 @@ type SwarmingRpcsCASReference struct {
 
 	// ForceSendFields is a list of field names (e.g. "CasInstance") to
 	// unconditionally include in API requests. By default, fields with
-	// empty or default values are omitted from API requests. However, any
-	// non-pointer, non-interface field appearing in ForceSendFields will be
-	// sent to the server regardless of whether the field is empty or not.
-	// This may be used to include empty fields in Patch requests.
+	// empty values are omitted from API requests. However, any non-pointer,
+	// non-interface field appearing in ForceSendFields will be sent to the
+	// server regardless of whether the field is empty or not. This may be
+	// used to include empty fields in Patch requests.
 	ForceSendFields []string `json:"-"`
 
 	// NullFields is a list of field names (e.g. "CasInstance") to include
@@ -644,10 +641,10 @@ type SwarmingRpcsCacheEntry struct {
 
 	// ForceSendFields is a list of field names (e.g. "Name") to
 	// unconditionally include in API requests. By default, fields with
-	// empty or default values are omitted from API requests. However, any
-	// non-pointer, non-interface field appearing in ForceSendFields will be
-	// sent to the server regardless of whether the field is empty or not.
-	// This may be used to include empty fields in Patch requests.
+	// empty values are omitted from API requests. However, any non-pointer,
+	// non-interface field appearing in ForceSendFields will be sent to the
+	// server regardless of whether the field is empty or not. This may be
+	// used to include empty fields in Patch requests.
 	ForceSendFields []string `json:"-"`
 
 	// NullFields is a list of field names (e.g. "Name") to include in API
@@ -677,10 +674,10 @@ type SwarmingRpcsCancelResponse struct {
 
 	// ForceSendFields is a list of field names (e.g. "Ok") to
 	// unconditionally include in API requests. By default, fields with
-	// empty or default values are omitted from API requests. However, any
-	// non-pointer, non-interface field appearing in ForceSendFields will be
-	// sent to the server regardless of whether the field is empty or not.
-	// This may be used to include empty fields in Patch requests.
+	// empty values are omitted from API requests. However, any non-pointer,
+	// non-interface field appearing in ForceSendFields will be sent to the
+	// server regardless of whether the field is empty or not. This may be
+	// used to include empty fields in Patch requests.
 	ForceSendFields []string `json:"-"`
 
 	// NullFields is a list of field names (e.g. "Ok") to include in API
@@ -713,10 +710,10 @@ type SwarmingRpcsCipdInput struct {
 
 	// ForceSendFields is a list of field names (e.g. "ClientPackage") to
 	// unconditionally include in API requests. By default, fields with
-	// empty or default values are omitted from API requests. However, any
-	// non-pointer, non-interface field appearing in ForceSendFields will be
-	// sent to the server regardless of whether the field is empty or not.
-	// This may be used to include empty fields in Patch requests.
+	// empty values are omitted from API requests. However, any non-pointer,
+	// non-interface field appearing in ForceSendFields will be sent to the
+	// server regardless of whether the field is empty or not. This may be
+	// used to include empty fields in Patch requests.
 	ForceSendFields []string `json:"-"`
 
 	// NullFields is a list of field names (e.g. "ClientPackage") to include
@@ -745,10 +742,10 @@ type SwarmingRpcsCipdPackage struct {
 
 	// ForceSendFields is a list of field names (e.g. "PackageName") to
 	// unconditionally include in API requests. By default, fields with
-	// empty or default values are omitted from API requests. However, any
-	// non-pointer, non-interface field appearing in ForceSendFields will be
-	// sent to the server regardless of whether the field is empty or not.
-	// This may be used to include empty fields in Patch requests.
+	// empty values are omitted from API requests. However, any non-pointer,
+	// non-interface field appearing in ForceSendFields will be sent to the
+	// server regardless of whether the field is empty or not. This may be
+	// used to include empty fields in Patch requests.
 	ForceSendFields []string `json:"-"`
 
 	// NullFields is a list of field names (e.g. "PackageName") to include
@@ -779,10 +776,10 @@ type SwarmingRpcsCipdPins struct {
 
 	// ForceSendFields is a list of field names (e.g. "ClientPackage") to
 	// unconditionally include in API requests. By default, fields with
-	// empty or default values are omitted from API requests. However, any
-	// non-pointer, non-interface field appearing in ForceSendFields will be
-	// sent to the server regardless of whether the field is empty or not.
-	// This may be used to include empty fields in Patch requests.
+	// empty values are omitted from API requests. However, any non-pointer,
+	// non-interface field appearing in ForceSendFields will be sent to the
+	// server regardless of whether the field is empty or not. This may be
+	// used to include empty fields in Patch requests.
 	ForceSendFields []string `json:"-"`
 
 	// NullFields is a list of field names (e.g. "ClientPackage") to include
@@ -828,10 +825,10 @@ type SwarmingRpcsClientPermissions struct {
 
 	// ForceSendFields is a list of field names (e.g. "CancelTask") to
 	// unconditionally include in API requests. By default, fields with
-	// empty or default values are omitted from API requests. However, any
-	// non-pointer, non-interface field appearing in ForceSendFields will be
-	// sent to the server regardless of whether the field is empty or not.
-	// This may be used to include empty fields in Patch requests.
+	// empty values are omitted from API requests. However, any non-pointer,
+	// non-interface field appearing in ForceSendFields will be sent to the
+	// server regardless of whether the field is empty or not. This may be
+	// used to include empty fields in Patch requests.
 	ForceSendFields []string `json:"-"`
 
 	// NullFields is a list of field names (e.g. "CancelTask") to include in
@@ -859,18 +856,12 @@ type SwarmingRpcsContainment struct {
 	//   "NOT_SPECIFIED"
 	ContainmentType string `json:"containment_type,omitempty"`
 
-	LimitProcesses int64 `json:"limit_processes,omitempty,string"`
-
-	LimitTotalCommittedMemory int64 `json:"limit_total_committed_memory,omitempty,string"`
-
-	LowerPriority bool `json:"lower_priority,omitempty"`
-
 	// ForceSendFields is a list of field names (e.g. "ContainmentType") to
 	// unconditionally include in API requests. By default, fields with
-	// empty or default values are omitted from API requests. However, any
-	// non-pointer, non-interface field appearing in ForceSendFields will be
-	// sent to the server regardless of whether the field is empty or not.
-	// This may be used to include empty fields in Patch requests.
+	// empty values are omitted from API requests. However, any non-pointer,
+	// non-interface field appearing in ForceSendFields will be sent to the
+	// server regardless of whether the field is empty or not. This may be
+	// used to include empty fields in Patch requests.
 	ForceSendFields []string `json:"-"`
 
 	// NullFields is a list of field names (e.g. "ContainmentType") to
@@ -899,10 +890,10 @@ type SwarmingRpcsDeletedResponse struct {
 
 	// ForceSendFields is a list of field names (e.g. "Deleted") to
 	// unconditionally include in API requests. By default, fields with
-	// empty or default values are omitted from API requests. However, any
-	// non-pointer, non-interface field appearing in ForceSendFields will be
-	// sent to the server regardless of whether the field is empty or not.
-	// This may be used to include empty fields in Patch requests.
+	// empty values are omitted from API requests. However, any non-pointer,
+	// non-interface field appearing in ForceSendFields will be sent to the
+	// server regardless of whether the field is empty or not. This may be
+	// used to include empty fields in Patch requests.
 	ForceSendFields []string `json:"-"`
 
 	// NullFields is a list of field names (e.g. "Deleted") to include in
@@ -927,10 +918,10 @@ type SwarmingRpcsDigest struct {
 
 	// ForceSendFields is a list of field names (e.g. "Hash") to
 	// unconditionally include in API requests. By default, fields with
-	// empty or default values are omitted from API requests. However, any
-	// non-pointer, non-interface field appearing in ForceSendFields will be
-	// sent to the server regardless of whether the field is empty or not.
-	// This may be used to include empty fields in Patch requests.
+	// empty values are omitted from API requests. However, any non-pointer,
+	// non-interface field appearing in ForceSendFields will be sent to the
+	// server regardless of whether the field is empty or not. This may be
+	// used to include empty fields in Patch requests.
 	ForceSendFields []string `json:"-"`
 
 	// NullFields is a list of field names (e.g. "Hash") to include in API
@@ -964,10 +955,10 @@ type SwarmingRpcsFileContent struct {
 
 	// ForceSendFields is a list of field names (e.g. "Content") to
 	// unconditionally include in API requests. By default, fields with
-	// empty or default values are omitted from API requests. However, any
-	// non-pointer, non-interface field appearing in ForceSendFields will be
-	// sent to the server regardless of whether the field is empty or not.
-	// This may be used to include empty fields in Patch requests.
+	// empty values are omitted from API requests. However, any non-pointer,
+	// non-interface field appearing in ForceSendFields will be sent to the
+	// server regardless of whether the field is empty or not. This may be
+	// used to include empty fields in Patch requests.
 	ForceSendFields []string `json:"-"`
 
 	// NullFields is a list of field names (e.g. "Content") to include in
@@ -981,40 +972,6 @@ type SwarmingRpcsFileContent struct {
 
 func (s *SwarmingRpcsFileContent) MarshalJSON() ([]byte, error) {
 	type NoMethod SwarmingRpcsFileContent
-	raw := NoMethod(*s)
-	return gensupport.MarshalJSON(raw, s.ForceSendFields, s.NullFields)
-}
-
-// SwarmingRpcsFilesRef: Defines a data tree reference for Swarming task
-// inputs or outputs. It is a reference to an isolated file on an
-// isolate server. DEPRECATED. Isolate server is being migrated to
-// RBE-CAS. Use `CASReference` to specify a reference to RBE-CAS.
-type SwarmingRpcsFilesRef struct {
-	Isolated string `json:"isolated,omitempty"`
-
-	Isolatedserver string `json:"isolatedserver,omitempty"`
-
-	Namespace string `json:"namespace,omitempty"`
-
-	// ForceSendFields is a list of field names (e.g. "Isolated") to
-	// unconditionally include in API requests. By default, fields with
-	// empty or default values are omitted from API requests. However, any
-	// non-pointer, non-interface field appearing in ForceSendFields will be
-	// sent to the server regardless of whether the field is empty or not.
-	// This may be used to include empty fields in Patch requests.
-	ForceSendFields []string `json:"-"`
-
-	// NullFields is a list of field names (e.g. "Isolated") to include in
-	// API requests with the JSON null value. By default, fields with empty
-	// values are omitted from API requests. However, any field with an
-	// empty value appearing in NullFields will be sent to the server as
-	// null. It is an error if a field in this list has a non-empty value.
-	// This may be used to include null fields in Patch requests.
-	NullFields []string `json:"-"`
-}
-
-func (s *SwarmingRpcsFilesRef) MarshalJSON() ([]byte, error) {
-	type NoMethod SwarmingRpcsFilesRef
 	raw := NoMethod(*s)
 	return gensupport.MarshalJSON(raw, s.ForceSendFields, s.NullFields)
 }
@@ -1071,8 +1028,8 @@ type SwarmingRpcsNewTaskRequest struct {
 
 	// ForceSendFields is a list of field names (e.g.
 	// "BotPingToleranceSecs") to unconditionally include in API requests.
-	// By default, fields with empty or default values are omitted from API
-	// requests. However, any non-pointer, non-interface field appearing in
+	// By default, fields with empty values are omitted from API requests.
+	// However, any non-pointer, non-interface field appearing in
 	// ForceSendFields will be sent to the server regardless of whether the
 	// field is empty or not. This may be used to include empty fields in
 	// Patch requests.
@@ -1099,10 +1056,10 @@ type SwarmingRpcsOperationStats struct {
 
 	// ForceSendFields is a list of field names (e.g. "Duration") to
 	// unconditionally include in API requests. By default, fields with
-	// empty or default values are omitted from API requests. However, any
-	// non-pointer, non-interface field appearing in ForceSendFields will be
-	// sent to the server regardless of whether the field is empty or not.
-	// This may be used to include empty fields in Patch requests.
+	// empty values are omitted from API requests. However, any non-pointer,
+	// non-interface field appearing in ForceSendFields will be sent to the
+	// server regardless of whether the field is empty or not. This may be
+	// used to include empty fields in Patch requests.
 	ForceSendFields []string `json:"-"`
 
 	// NullFields is a list of field names (e.g. "Duration") to include in
@@ -1155,10 +1112,10 @@ type SwarmingRpcsPerformanceStats struct {
 
 	// ForceSendFields is a list of field names (e.g. "BotOverhead") to
 	// unconditionally include in API requests. By default, fields with
-	// empty or default values are omitted from API requests. However, any
-	// non-pointer, non-interface field appearing in ForceSendFields will be
-	// sent to the server regardless of whether the field is empty or not.
-	// This may be used to include empty fields in Patch requests.
+	// empty values are omitted from API requests. However, any non-pointer,
+	// non-interface field appearing in ForceSendFields will be sent to the
+	// server regardless of whether the field is empty or not. This may be
+	// used to include empty fields in Patch requests.
 	ForceSendFields []string `json:"-"`
 
 	// NullFields is a list of field names (e.g. "BotOverhead") to include
@@ -1197,10 +1154,10 @@ type SwarmingRpcsResultDBCfg struct {
 
 	// ForceSendFields is a list of field names (e.g. "Enable") to
 	// unconditionally include in API requests. By default, fields with
-	// empty or default values are omitted from API requests. However, any
-	// non-pointer, non-interface field appearing in ForceSendFields will be
-	// sent to the server regardless of whether the field is empty or not.
-	// This may be used to include empty fields in Patch requests.
+	// empty values are omitted from API requests. However, any non-pointer,
+	// non-interface field appearing in ForceSendFields will be sent to the
+	// server regardless of whether the field is empty or not. This may be
+	// used to include empty fields in Patch requests.
 	ForceSendFields []string `json:"-"`
 
 	// NullFields is a list of field names (e.g. "Enable") to include in API
@@ -1226,10 +1183,10 @@ type SwarmingRpcsResultDBInfo struct {
 
 	// ForceSendFields is a list of field names (e.g. "Hostname") to
 	// unconditionally include in API requests. By default, fields with
-	// empty or default values are omitted from API requests. However, any
-	// non-pointer, non-interface field appearing in ForceSendFields will be
-	// sent to the server regardless of whether the field is empty or not.
-	// This may be used to include empty fields in Patch requests.
+	// empty values are omitted from API requests. However, any non-pointer,
+	// non-interface field appearing in ForceSendFields will be sent to the
+	// server regardless of whether the field is empty or not. This may be
+	// used to include empty fields in Patch requests.
 	ForceSendFields []string `json:"-"`
 
 	// NullFields is a list of field names (e.g. "Hostname") to include in
@@ -1253,19 +1210,11 @@ type SwarmingRpcsServerDetails struct {
 
 	CasViewerServer string `json:"cas_viewer_server,omitempty"`
 
-	ChopsGitVersion string `json:"chops_git_version,omitempty"`
-
-	DefaultIsolateNamespace string `json:"default_isolate_namespace,omitempty"`
-
-	DefaultIsolateServer string `json:"default_isolate_server,omitempty"`
-
 	DisplayServerUrlTemplate string `json:"display_server_url_template,omitempty"`
 
 	LuciConfig string `json:"luci_config,omitempty"`
 
 	MachineProviderTemplate string `json:"machine_provider_template,omitempty"`
-
-	ProjectId string `json:"project_id,omitempty"`
 
 	ServerVersion string `json:"server_version,omitempty"`
 
@@ -1275,10 +1224,10 @@ type SwarmingRpcsServerDetails struct {
 
 	// ForceSendFields is a list of field names (e.g. "BotVersion") to
 	// unconditionally include in API requests. By default, fields with
-	// empty or default values are omitted from API requests. However, any
-	// non-pointer, non-interface field appearing in ForceSendFields will be
-	// sent to the server regardless of whether the field is empty or not.
-	// This may be used to include empty fields in Patch requests.
+	// empty values are omitted from API requests. However, any non-pointer,
+	// non-interface field appearing in ForceSendFields will be sent to the
+	// server regardless of whether the field is empty or not. This may be
+	// used to include empty fields in Patch requests.
 	ForceSendFields []string `json:"-"`
 
 	// NullFields is a list of field names (e.g. "BotVersion") to include in
@@ -1305,10 +1254,10 @@ type SwarmingRpcsStringListPair struct {
 
 	// ForceSendFields is a list of field names (e.g. "Key") to
 	// unconditionally include in API requests. By default, fields with
-	// empty or default values are omitted from API requests. However, any
-	// non-pointer, non-interface field appearing in ForceSendFields will be
-	// sent to the server regardless of whether the field is empty or not.
-	// This may be used to include empty fields in Patch requests.
+	// empty values are omitted from API requests. However, any non-pointer,
+	// non-interface field appearing in ForceSendFields will be sent to the
+	// server regardless of whether the field is empty or not. This may be
+	// used to include empty fields in Patch requests.
 	ForceSendFields []string `json:"-"`
 
 	// NullFields is a list of field names (e.g. "Key") to include in API
@@ -1334,10 +1283,10 @@ type SwarmingRpcsStringPair struct {
 
 	// ForceSendFields is a list of field names (e.g. "Key") to
 	// unconditionally include in API requests. By default, fields with
-	// empty or default values are omitted from API requests. However, any
-	// non-pointer, non-interface field appearing in ForceSendFields will be
-	// sent to the server regardless of whether the field is empty or not.
-	// This may be used to include empty fields in Patch requests.
+	// empty values are omitted from API requests. However, any non-pointer,
+	// non-interface field appearing in ForceSendFields will be sent to the
+	// server regardless of whether the field is empty or not. This may be
+	// used to include empty fields in Patch requests.
 	ForceSendFields []string `json:"-"`
 
 	// NullFields is a list of field names (e.g. "Key") to include in API
@@ -1361,10 +1310,10 @@ type SwarmingRpcsTaskCancelRequest struct {
 
 	// ForceSendFields is a list of field names (e.g. "KillRunning") to
 	// unconditionally include in API requests. By default, fields with
-	// empty or default values are omitted from API requests. However, any
-	// non-pointer, non-interface field appearing in ForceSendFields will be
-	// sent to the server regardless of whether the field is empty or not.
-	// This may be used to include empty fields in Patch requests.
+	// empty values are omitted from API requests. However, any non-pointer,
+	// non-interface field appearing in ForceSendFields will be sent to the
+	// server regardless of whether the field is empty or not. This may be
+	// used to include empty fields in Patch requests.
 	ForceSendFields []string `json:"-"`
 
 	// NullFields is a list of field names (e.g. "KillRunning") to include
@@ -1398,10 +1347,10 @@ type SwarmingRpcsTaskList struct {
 
 	// ForceSendFields is a list of field names (e.g. "Cursor") to
 	// unconditionally include in API requests. By default, fields with
-	// empty or default values are omitted from API requests. However, any
-	// non-pointer, non-interface field appearing in ForceSendFields will be
-	// sent to the server regardless of whether the field is empty or not.
-	// This may be used to include empty fields in Patch requests.
+	// empty values are omitted from API requests. However, any non-pointer,
+	// non-interface field appearing in ForceSendFields will be sent to the
+	// server regardless of whether the field is empty or not. This may be
+	// used to include empty fields in Patch requests.
 	ForceSendFields []string `json:"-"`
 
 	// NullFields is a list of field names (e.g. "Cursor") to include in API
@@ -1442,10 +1391,10 @@ type SwarmingRpcsTaskOutput struct {
 
 	// ForceSendFields is a list of field names (e.g. "Output") to
 	// unconditionally include in API requests. By default, fields with
-	// empty or default values are omitted from API requests. However, any
-	// non-pointer, non-interface field appearing in ForceSendFields will be
-	// sent to the server regardless of whether the field is empty or not.
-	// This may be used to include empty fields in Patch requests.
+	// empty values are omitted from API requests. However, any non-pointer,
+	// non-interface field appearing in ForceSendFields will be sent to the
+	// server regardless of whether the field is empty or not. This may be
+	// used to include empty fields in Patch requests.
 	ForceSendFields []string `json:"-"`
 
 	// NullFields is a list of field names (e.g. "Output") to include in API
@@ -1497,17 +1446,9 @@ type SwarmingRpcsTaskProperties struct {
 
 	ExecutionTimeoutSecs int64 `json:"execution_timeout_secs,omitempty,string"`
 
-	ExtraArgs []string `json:"extra_args,omitempty"`
-
 	GracePeriodSecs int64 `json:"grace_period_secs,omitempty,string"`
 
 	Idempotent bool `json:"idempotent,omitempty"`
-
-	// InputsRef: Defines a data tree reference for Swarming task inputs or
-	// outputs. It is a reference to an isolated file on an isolate server.
-	// DEPRECATED. Isolate server is being migrated to RBE-CAS. Use
-	// `CASReference` to specify a reference to RBE-CAS.
-	InputsRef *SwarmingRpcsFilesRef `json:"inputs_ref,omitempty"`
 
 	IoTimeoutSecs int64 `json:"io_timeout_secs,omitempty,string"`
 
@@ -1519,10 +1460,10 @@ type SwarmingRpcsTaskProperties struct {
 
 	// ForceSendFields is a list of field names (e.g. "Caches") to
 	// unconditionally include in API requests. By default, fields with
-	// empty or default values are omitted from API requests. However, any
-	// non-pointer, non-interface field appearing in ForceSendFields will be
-	// sent to the server regardless of whether the field is empty or not.
-	// This may be used to include empty fields in Patch requests.
+	// empty values are omitted from API requests. However, any non-pointer,
+	// non-interface field appearing in ForceSendFields will be sent to the
+	// server regardless of whether the field is empty or not. This may be
+	// used to include empty fields in Patch requests.
 	ForceSendFields []string `json:"-"`
 
 	// NullFields is a list of field names (e.g. "Caches") to include in API
@@ -1547,10 +1488,10 @@ type SwarmingRpcsTaskQueue struct {
 
 	// ForceSendFields is a list of field names (e.g. "Dimensions") to
 	// unconditionally include in API requests. By default, fields with
-	// empty or default values are omitted from API requests. However, any
-	// non-pointer, non-interface field appearing in ForceSendFields will be
-	// sent to the server regardless of whether the field is empty or not.
-	// This may be used to include empty fields in Patch requests.
+	// empty values are omitted from API requests. However, any non-pointer,
+	// non-interface field appearing in ForceSendFields will be sent to the
+	// server regardless of whether the field is empty or not. This may be
+	// used to include empty fields in Patch requests.
 	ForceSendFields []string `json:"-"`
 
 	// NullFields is a list of field names (e.g. "Dimensions") to include in
@@ -1581,10 +1522,10 @@ type SwarmingRpcsTaskQueueList struct {
 
 	// ForceSendFields is a list of field names (e.g. "Cursor") to
 	// unconditionally include in API requests. By default, fields with
-	// empty or default values are omitted from API requests. However, any
-	// non-pointer, non-interface field appearing in ForceSendFields will be
-	// sent to the server regardless of whether the field is empty or not.
-	// This may be used to include empty fields in Patch requests.
+	// empty values are omitted from API requests. However, any non-pointer,
+	// non-interface field appearing in ForceSendFields will be sent to the
+	// server regardless of whether the field is empty or not. This may be
+	// used to include empty fields in Patch requests.
 	ForceSendFields []string `json:"-"`
 
 	// NullFields is a list of field names (e.g. "Cursor") to include in API
@@ -1652,10 +1593,10 @@ type SwarmingRpcsTaskRequest struct {
 
 	// ForceSendFields is a list of field names (e.g. "Authenticated") to
 	// unconditionally include in API requests. By default, fields with
-	// empty or default values are omitted from API requests. However, any
-	// non-pointer, non-interface field appearing in ForceSendFields will be
-	// sent to the server regardless of whether the field is empty or not.
-	// This may be used to include empty fields in Patch requests.
+	// empty values are omitted from API requests. However, any non-pointer,
+	// non-interface field appearing in ForceSendFields will be sent to the
+	// server regardless of whether the field is empty or not. This may be
+	// used to include empty fields in Patch requests.
 	ForceSendFields []string `json:"-"`
 
 	// NullFields is a list of field names (e.g. "Authenticated") to include
@@ -1693,10 +1634,10 @@ type SwarmingRpcsTaskRequestMetadata struct {
 
 	// ForceSendFields is a list of field names (e.g. "Request") to
 	// unconditionally include in API requests. By default, fields with
-	// empty or default values are omitted from API requests. However, any
-	// non-pointer, non-interface field appearing in ForceSendFields will be
-	// sent to the server regardless of whether the field is empty or not.
-	// This may be used to include empty fields in Patch requests.
+	// empty values are omitted from API requests. However, any non-pointer,
+	// non-interface field appearing in ForceSendFields will be sent to the
+	// server regardless of whether the field is empty or not. This may be
+	// used to include empty fields in Patch requests.
 	ForceSendFields []string `json:"-"`
 
 	// NullFields is a list of field names (e.g. "Request") to include in
@@ -1731,10 +1672,10 @@ type SwarmingRpcsTaskRequests struct {
 
 	// ForceSendFields is a list of field names (e.g. "Cursor") to
 	// unconditionally include in API requests. By default, fields with
-	// empty or default values are omitted from API requests. However, any
-	// non-pointer, non-interface field appearing in ForceSendFields will be
-	// sent to the server regardless of whether the field is empty or not.
-	// This may be used to include empty fields in Patch requests.
+	// empty values are omitted from API requests. However, any non-pointer,
+	// non-interface field appearing in ForceSendFields will be sent to the
+	// server regardless of whether the field is empty or not. This may be
+	// used to include empty fields in Patch requests.
 	ForceSendFields []string `json:"-"`
 
 	// NullFields is a list of field names (e.g. "Cursor") to include in API
@@ -1798,12 +1739,6 @@ type SwarmingRpcsTaskResult struct {
 
 	Name string `json:"name,omitempty"`
 
-	// OutputsRef: Defines a data tree reference for Swarming task inputs or
-	// outputs. It is a reference to an isolated file on an isolate server.
-	// DEPRECATED. Isolate server is being migrated to RBE-CAS. Use
-	// `CASReference` to specify a reference to RBE-CAS.
-	OutputsRef *SwarmingRpcsFilesRef `json:"outputs_ref,omitempty"`
-
 	// PerformanceStats: Performance stats of task execution. See
 	// task_result.PerformanceStats for details.
 	PerformanceStats *SwarmingRpcsPerformanceStats `json:"performance_stats,omitempty"`
@@ -1844,10 +1779,10 @@ type SwarmingRpcsTaskResult struct {
 
 	// ForceSendFields is a list of field names (e.g. "AbandonedTs") to
 	// unconditionally include in API requests. By default, fields with
-	// empty or default values are omitted from API requests. However, any
-	// non-pointer, non-interface field appearing in ForceSendFields will be
-	// sent to the server regardless of whether the field is empty or not.
-	// This may be used to include empty fields in Patch requests.
+	// empty values are omitted from API requests. However, any non-pointer,
+	// non-interface field appearing in ForceSendFields will be sent to the
+	// server regardless of whether the field is empty or not. This may be
+	// used to include empty fields in Patch requests.
 	ForceSendFields []string `json:"-"`
 
 	// NullFields is a list of field names (e.g. "AbandonedTs") to include
@@ -1894,10 +1829,10 @@ type SwarmingRpcsTaskSlice struct {
 
 	// ForceSendFields is a list of field names (e.g. "ExpirationSecs") to
 	// unconditionally include in API requests. By default, fields with
-	// empty or default values are omitted from API requests. However, any
-	// non-pointer, non-interface field appearing in ForceSendFields will be
-	// sent to the server regardless of whether the field is empty or not.
-	// This may be used to include empty fields in Patch requests.
+	// empty values are omitted from API requests. However, any non-pointer,
+	// non-interface field appearing in ForceSendFields will be sent to the
+	// server regardless of whether the field is empty or not. This may be
+	// used to include empty fields in Patch requests.
 	ForceSendFields []string `json:"-"`
 
 	// NullFields is a list of field names (e.g. "ExpirationSecs") to
@@ -1938,10 +1873,10 @@ type SwarmingRpcsTaskStates struct {
 
 	// ForceSendFields is a list of field names (e.g. "States") to
 	// unconditionally include in API requests. By default, fields with
-	// empty or default values are omitted from API requests. However, any
-	// non-pointer, non-interface field appearing in ForceSendFields will be
-	// sent to the server regardless of whether the field is empty or not.
-	// This may be used to include empty fields in Patch requests.
+	// empty values are omitted from API requests. However, any non-pointer,
+	// non-interface field appearing in ForceSendFields will be sent to the
+	// server regardless of whether the field is empty or not. This may be
+	// used to include empty fields in Patch requests.
 	ForceSendFields []string `json:"-"`
 
 	// NullFields is a list of field names (e.g. "States") to include in API
@@ -1964,19 +1899,23 @@ func (s *SwarmingRpcsTaskStates) MarshalJSON() ([]byte, error) {
 type SwarmingRpcsTasksCancelRequest struct {
 	Cursor string `json:"cursor,omitempty"`
 
+	End float64 `json:"end,omitempty"`
+
 	KillRunning bool `json:"kill_running,omitempty"`
 
 	// Default: 100
 	Limit *int64 `json:"limit,omitempty,string"`
 
+	Start float64 `json:"start,omitempty"`
+
 	Tags []string `json:"tags,omitempty"`
 
 	// ForceSendFields is a list of field names (e.g. "Cursor") to
 	// unconditionally include in API requests. By default, fields with
-	// empty or default values are omitted from API requests. However, any
-	// non-pointer, non-interface field appearing in ForceSendFields will be
-	// sent to the server regardless of whether the field is empty or not.
-	// This may be used to include empty fields in Patch requests.
+	// empty values are omitted from API requests. However, any non-pointer,
+	// non-interface field appearing in ForceSendFields will be sent to the
+	// server regardless of whether the field is empty or not. This may be
+	// used to include empty fields in Patch requests.
 	ForceSendFields []string `json:"-"`
 
 	// NullFields is a list of field names (e.g. "Cursor") to include in API
@@ -1994,6 +1933,22 @@ func (s *SwarmingRpcsTasksCancelRequest) MarshalJSON() ([]byte, error) {
 	return gensupport.MarshalJSON(raw, s.ForceSendFields, s.NullFields)
 }
 
+func (s *SwarmingRpcsTasksCancelRequest) UnmarshalJSON(data []byte) error {
+	type NoMethod SwarmingRpcsTasksCancelRequest
+	var s1 struct {
+		End   gensupport.JSONFloat64 `json:"end"`
+		Start gensupport.JSONFloat64 `json:"start"`
+		*NoMethod
+	}
+	s1.NoMethod = (*NoMethod)(s)
+	if err := json.Unmarshal(data, &s1); err != nil {
+		return err
+	}
+	s.End = float64(s1.End)
+	s.Start = float64(s1.Start)
+	return nil
+}
+
 // SwarmingRpcsTasksCancelResponse: Result of canceling some subset of
 // pending tasks.
 type SwarmingRpcsTasksCancelResponse struct {
@@ -2009,10 +1964,10 @@ type SwarmingRpcsTasksCancelResponse struct {
 
 	// ForceSendFields is a list of field names (e.g. "Cursor") to
 	// unconditionally include in API requests. By default, fields with
-	// empty or default values are omitted from API requests. However, any
-	// non-pointer, non-interface field appearing in ForceSendFields will be
-	// sent to the server regardless of whether the field is empty or not.
-	// This may be used to include empty fields in Patch requests.
+	// empty values are omitted from API requests. However, any non-pointer,
+	// non-interface field appearing in ForceSendFields will be sent to the
+	// server regardless of whether the field is empty or not. This may be
+	// used to include empty fields in Patch requests.
 	ForceSendFields []string `json:"-"`
 
 	// NullFields is a list of field names (e.g. "Cursor") to include in API
@@ -2042,10 +1997,10 @@ type SwarmingRpcsTasksCount struct {
 
 	// ForceSendFields is a list of field names (e.g. "Count") to
 	// unconditionally include in API requests. By default, fields with
-	// empty or default values are omitted from API requests. However, any
-	// non-pointer, non-interface field appearing in ForceSendFields will be
-	// sent to the server regardless of whether the field is empty or not.
-	// This may be used to include empty fields in Patch requests.
+	// empty values are omitted from API requests. However, any non-pointer,
+	// non-interface field appearing in ForceSendFields will be sent to the
+	// server regardless of whether the field is empty or not. This may be
+	// used to include empty fields in Patch requests.
 	ForceSendFields []string `json:"-"`
 
 	// NullFields is a list of field names (e.g. "Count") to include in API
@@ -2074,10 +2029,10 @@ type SwarmingRpcsTerminateResponse struct {
 
 	// ForceSendFields is a list of field names (e.g. "TaskId") to
 	// unconditionally include in API requests. By default, fields with
-	// empty or default values are omitted from API requests. However, any
-	// non-pointer, non-interface field appearing in ForceSendFields will be
-	// sent to the server regardless of whether the field is empty or not.
-	// This may be used to include empty fields in Patch requests.
+	// empty values are omitted from API requests. However, any non-pointer,
+	// non-interface field appearing in ForceSendFields will be sent to the
+	// server regardless of whether the field is empty or not. This may be
+	// used to include empty fields in Patch requests.
 	ForceSendFields []string `json:"-"`
 
 	// NullFields is a list of field names (e.g. "TaskId") to include in API
@@ -2111,8 +2066,6 @@ type BotDeleteCall struct {
 // as historical data is not deleted. It is meant to remove from the DB
 // the presence of a bot that was retired, e.g. the VM was shut down
 // already. Use 'terminate' instead of the bot is still alive.
-//
-// - botId: .
 func (r *BotService) Delete(botId string) *BotDeleteCall {
 	c := &BotDeleteCall{s: r.s, urlParams_: make(gensupport.URLParams)}
 	c.botId = botId
@@ -2146,7 +2099,7 @@ func (c *BotDeleteCall) Header() http.Header {
 
 func (c *BotDeleteCall) doRequest(alt string) (*http.Response, error) {
 	reqHeaders := make(http.Header)
-	reqHeaders.Set("x-goog-api-client", "gl-go/"+gensupport.GoVersion()+" gdcl/20210831")
+	reqHeaders.Set("x-goog-api-client", "gl-go/1.13.4 gdcl/20191217")
 	for k, v := range c.header_ {
 		reqHeaders[k] = v
 	}
@@ -2241,8 +2194,6 @@ type BotEventsCall struct {
 }
 
 // Events: Returns events that happened on a bot.
-//
-// - botId: .
 func (r *BotService) Events(botId string) *BotEventsCall {
 	c := &BotEventsCall{s: r.s, urlParams_: make(gensupport.URLParams)}
 	c.botId = botId
@@ -2310,7 +2261,7 @@ func (c *BotEventsCall) Header() http.Header {
 
 func (c *BotEventsCall) doRequest(alt string) (*http.Response, error) {
 	reqHeaders := make(http.Header)
-	reqHeaders.Set("x-goog-api-client", "gl-go/"+gensupport.GoVersion()+" gdcl/20210831")
+	reqHeaders.Set("x-goog-api-client", "gl-go/1.13.4 gdcl/20191217")
 	for k, v := range c.header_ {
 		reqHeaders[k] = v
 	}
@@ -2429,8 +2380,6 @@ type BotGetCall struct {
 
 // Get: Returns information about a known bot. This includes its state
 // and dimensions, and if it is currently running a task.
-//
-// - botId: .
 func (r *BotService) Get(botId string) *BotGetCall {
 	c := &BotGetCall{s: r.s, urlParams_: make(gensupport.URLParams)}
 	c.botId = botId
@@ -2474,7 +2423,7 @@ func (c *BotGetCall) Header() http.Header {
 
 func (c *BotGetCall) doRequest(alt string) (*http.Response, error) {
 	reqHeaders := make(http.Header)
-	reqHeaders.Set("x-goog-api-client", "gl-go/"+gensupport.GoVersion()+" gdcl/20210831")
+	reqHeaders.Set("x-goog-api-client", "gl-go/1.13.4 gdcl/20191217")
 	for k, v := range c.header_ {
 		reqHeaders[k] = v
 	}
@@ -2576,8 +2525,6 @@ type BotTasksCall struct {
 // individual task tries sent to this specific bot. It is impossible to
 // search by both tags and bot id. If there's a need, TaskRunResult.tags
 // will be added (via a copy from TaskRequest.tags).
-//
-// - botId: .
 func (r *BotService) Tasks(botId string) *BotTasksCall {
 	c := &BotTasksCall{s: r.s, urlParams_: make(gensupport.URLParams)}
 	c.botId = botId
@@ -2687,7 +2634,7 @@ func (c *BotTasksCall) Header() http.Header {
 
 func (c *BotTasksCall) doRequest(alt string) (*http.Response, error) {
 	reqHeaders := make(http.Header)
-	reqHeaders.Set("x-goog-api-client", "gl-go/"+gensupport.GoVersion()+" gdcl/20210831")
+	reqHeaders.Set("x-goog-api-client", "gl-go/1.13.4 gdcl/20191217")
 	for k, v := range c.header_ {
 		reqHeaders[k] = v
 	}
@@ -2871,8 +2818,6 @@ type BotTerminateCall struct {
 // user can trigger a terminate for one of the bot exhibiting the issue,
 // wait for the pseudo-task to run then access the machine with the
 // guarantee that the bot is not running anymore.
-//
-// - botId: .
 func (r *BotService) Terminate(botId string) *BotTerminateCall {
 	c := &BotTerminateCall{s: r.s, urlParams_: make(gensupport.URLParams)}
 	c.botId = botId
@@ -2906,7 +2851,7 @@ func (c *BotTerminateCall) Header() http.Header {
 
 func (c *BotTerminateCall) doRequest(alt string) (*http.Response, error) {
 	reqHeaders := make(http.Header)
-	reqHeaders.Set("x-goog-api-client", "gl-go/"+gensupport.GoVersion()+" gdcl/20210831")
+	reqHeaders.Set("x-goog-api-client", "gl-go/1.13.4 gdcl/20191217")
 	for k, v := range c.header_ {
 		reqHeaders[k] = v
 	}
@@ -3048,7 +2993,7 @@ func (c *BotsCountCall) Header() http.Header {
 
 func (c *BotsCountCall) doRequest(alt string) (*http.Response, error) {
 	reqHeaders := make(http.Header)
-	reqHeaders.Set("x-goog-api-client", "gl-go/"+gensupport.GoVersion()+" gdcl/20210831")
+	reqHeaders.Set("x-goog-api-client", "gl-go/1.13.4 gdcl/20191217")
 	for k, v := range c.header_ {
 		reqHeaders[k] = v
 	}
@@ -3188,7 +3133,7 @@ func (c *BotsDimensionsCall) Header() http.Header {
 
 func (c *BotsDimensionsCall) doRequest(alt string) (*http.Response, error) {
 	reqHeaders := make(http.Header)
-	reqHeaders.Set("x-goog-api-client", "gl-go/"+gensupport.GoVersion()+" gdcl/20210831")
+	reqHeaders.Set("x-goog-api-client", "gl-go/1.13.4 gdcl/20191217")
 	for k, v := range c.header_ {
 		reqHeaders[k] = v
 	}
@@ -3382,7 +3327,7 @@ func (c *BotsListCall) Header() http.Header {
 
 func (c *BotsListCall) doRequest(alt string) (*http.Response, error) {
 	reqHeaders := make(http.Header)
-	reqHeaders.Set("x-goog-api-client", "gl-go/"+gensupport.GoVersion()+" gdcl/20210831")
+	reqHeaders.Set("x-goog-api-client", "gl-go/1.13.4 gdcl/20191217")
 	for k, v := range c.header_ {
 		reqHeaders[k] = v
 	}
@@ -3597,7 +3542,7 @@ func (c *QueuesListCall) Header() http.Header {
 
 func (c *QueuesListCall) doRequest(alt string) (*http.Response, error) {
 	reqHeaders := make(http.Header)
-	reqHeaders.Set("x-goog-api-client", "gl-go/"+gensupport.GoVersion()+" gdcl/20210831")
+	reqHeaders.Set("x-goog-api-client", "gl-go/1.13.4 gdcl/20191217")
 	for k, v := range c.header_ {
 		reqHeaders[k] = v
 	}
@@ -3734,7 +3679,7 @@ func (c *ServerDetailsCall) Header() http.Header {
 
 func (c *ServerDetailsCall) doRequest(alt string) (*http.Response, error) {
 	reqHeaders := make(http.Header)
-	reqHeaders.Set("x-goog-api-client", "gl-go/"+gensupport.GoVersion()+" gdcl/20210831")
+	reqHeaders.Set("x-goog-api-client", "gl-go/1.13.4 gdcl/20191217")
 	for k, v := range c.header_ {
 		reqHeaders[k] = v
 	}
@@ -3860,7 +3805,7 @@ func (c *ServerGetBootstrapCall) Header() http.Header {
 
 func (c *ServerGetBootstrapCall) doRequest(alt string) (*http.Response, error) {
 	reqHeaders := make(http.Header)
-	reqHeaders.Set("x-goog-api-client", "gl-go/"+gensupport.GoVersion()+" gdcl/20210831")
+	reqHeaders.Set("x-goog-api-client", "gl-go/1.13.4 gdcl/20191217")
 	for k, v := range c.header_ {
 		reqHeaders[k] = v
 	}
@@ -3986,7 +3931,7 @@ func (c *ServerGetBotConfigCall) Header() http.Header {
 
 func (c *ServerGetBotConfigCall) doRequest(alt string) (*http.Response, error) {
 	reqHeaders := make(http.Header)
-	reqHeaders.Set("x-goog-api-client", "gl-go/"+gensupport.GoVersion()+" gdcl/20210831")
+	reqHeaders.Set("x-goog-api-client", "gl-go/1.13.4 gdcl/20191217")
 	for k, v := range c.header_ {
 		reqHeaders[k] = v
 	}
@@ -4130,7 +4075,7 @@ func (c *ServerPermissionsCall) Header() http.Header {
 
 func (c *ServerPermissionsCall) doRequest(alt string) (*http.Response, error) {
 	reqHeaders := make(http.Header)
-	reqHeaders.Set("x-goog-api-client", "gl-go/"+gensupport.GoVersion()+" gdcl/20210831")
+	reqHeaders.Set("x-goog-api-client", "gl-go/1.13.4 gdcl/20191217")
 	for k, v := range c.header_ {
 		reqHeaders[k] = v
 	}
@@ -4263,7 +4208,7 @@ func (c *ServerTokenCall) Header() http.Header {
 
 func (c *ServerTokenCall) doRequest(alt string) (*http.Response, error) {
 	reqHeaders := make(http.Header)
-	reqHeaders.Set("x-goog-api-client", "gl-go/"+gensupport.GoVersion()+" gdcl/20210831")
+	reqHeaders.Set("x-goog-api-client", "gl-go/1.13.4 gdcl/20191217")
 	for k, v := range c.header_ {
 		reqHeaders[k] = v
 	}
@@ -4346,8 +4291,6 @@ type TaskCancelCall struct {
 
 // Cancel: Cancels a task. If a bot was running the task, the bot will
 // forcibly cancel the task.
-//
-// - taskId: .
 func (r *TaskService) Cancel(taskId string, swarmingrpcstaskcancelrequest *SwarmingRpcsTaskCancelRequest) *TaskCancelCall {
 	c := &TaskCancelCall{s: r.s, urlParams_: make(gensupport.URLParams)}
 	c.taskId = taskId
@@ -4382,7 +4325,7 @@ func (c *TaskCancelCall) Header() http.Header {
 
 func (c *TaskCancelCall) doRequest(alt string) (*http.Response, error) {
 	reqHeaders := make(http.Header)
-	reqHeaders.Set("x-goog-api-client", "gl-go/"+gensupport.GoVersion()+" gdcl/20210831")
+	reqHeaders.Set("x-goog-api-client", "gl-go/1.13.4 gdcl/20191217")
 	for k, v := range c.header_ {
 		reqHeaders[k] = v
 	}
@@ -4486,8 +4429,6 @@ type TaskRequestCall struct {
 }
 
 // Request: Returns the task request corresponding to a task ID.
-//
-// - taskId: .
 func (r *TaskService) Request(taskId string) *TaskRequestCall {
 	c := &TaskRequestCall{s: r.s, urlParams_: make(gensupport.URLParams)}
 	c.taskId = taskId
@@ -4531,7 +4472,7 @@ func (c *TaskRequestCall) Header() http.Header {
 
 func (c *TaskRequestCall) doRequest(alt string) (*http.Response, error) {
 	reqHeaders := make(http.Header)
-	reqHeaders.Set("x-goog-api-client", "gl-go/"+gensupport.GoVersion()+" gdcl/20210831")
+	reqHeaders.Set("x-goog-api-client", "gl-go/1.13.4 gdcl/20191217")
 	for k, v := range c.header_ {
 		reqHeaders[k] = v
 	}
@@ -4633,8 +4574,6 @@ type TaskResultCall struct {
 // hidding the fact that a task may have been retried transparently,
 // when a bot reports BOT_DIED. A summary ID ends with '0', a run ID
 // ends with '1' or '2'.
-//
-// - taskId: .
 func (r *TaskService) Result(taskId string) *TaskResultCall {
 	c := &TaskResultCall{s: r.s, urlParams_: make(gensupport.URLParams)}
 	c.taskId = taskId
@@ -4685,7 +4624,7 @@ func (c *TaskResultCall) Header() http.Header {
 
 func (c *TaskResultCall) doRequest(alt string) (*http.Response, error) {
 	reqHeaders := make(http.Header)
-	reqHeaders.Set("x-goog-api-client", "gl-go/"+gensupport.GoVersion()+" gdcl/20210831")
+	reqHeaders.Set("x-goog-api-client", "gl-go/1.13.4 gdcl/20191217")
 	for k, v := range c.header_ {
 		reqHeaders[k] = v
 	}
@@ -4787,8 +4726,6 @@ type TaskStdoutCall struct {
 }
 
 // Stdout: Returns the output of the task corresponding to a task ID.
-//
-// - taskId: .
 func (r *TaskService) Stdout(taskId string) *TaskStdoutCall {
 	c := &TaskStdoutCall{s: r.s, urlParams_: make(gensupport.URLParams)}
 	c.taskId = taskId
@@ -4844,7 +4781,7 @@ func (c *TaskStdoutCall) Header() http.Header {
 
 func (c *TaskStdoutCall) doRequest(alt string) (*http.Response, error) {
 	reqHeaders := make(http.Header)
-	reqHeaders.Set("x-goog-api-client", "gl-go/"+gensupport.GoVersion()+" gdcl/20210831")
+	reqHeaders.Set("x-goog-api-client", "gl-go/1.13.4 gdcl/20191217")
 	for k, v := range c.header_ {
 		reqHeaders[k] = v
 	}
@@ -4986,7 +4923,7 @@ func (c *TasksCancelCall) Header() http.Header {
 
 func (c *TasksCancelCall) doRequest(alt string) (*http.Response, error) {
 	reqHeaders := make(http.Header)
-	reqHeaders.Set("x-goog-api-client", "gl-go/"+gensupport.GoVersion()+" gdcl/20210831")
+	reqHeaders.Set("x-goog-api-client", "gl-go/1.13.4 gdcl/20191217")
 	for k, v := range c.header_ {
 		reqHeaders[k] = v
 	}
@@ -5158,7 +5095,7 @@ func (c *TasksCountCall) Header() http.Header {
 
 func (c *TasksCountCall) doRequest(alt string) (*http.Response, error) {
 	reqHeaders := make(http.Header)
-	reqHeaders.Set("x-goog-api-client", "gl-go/"+gensupport.GoVersion()+" gdcl/20210831")
+	reqHeaders.Set("x-goog-api-client", "gl-go/1.13.4 gdcl/20191217")
 	for k, v := range c.header_ {
 		reqHeaders[k] = v
 	}
@@ -5344,7 +5281,7 @@ func (c *TasksGetStatesCall) Header() http.Header {
 
 func (c *TasksGetStatesCall) doRequest(alt string) (*http.Response, error) {
 	reqHeaders := make(http.Header)
-	reqHeaders.Set("x-goog-api-client", "gl-go/"+gensupport.GoVersion()+" gdcl/20210831")
+	reqHeaders.Set("x-goog-api-client", "gl-go/1.13.4 gdcl/20191217")
 	for k, v := range c.header_ {
 		reqHeaders[k] = v
 	}
@@ -5551,7 +5488,7 @@ func (c *TasksListCall) Header() http.Header {
 
 func (c *TasksListCall) doRequest(alt string) (*http.Response, error) {
 	reqHeaders := make(http.Header)
-	reqHeaders.Set("x-goog-api-client", "gl-go/"+gensupport.GoVersion()+" gdcl/20210831")
+	reqHeaders.Set("x-goog-api-client", "gl-go/1.13.4 gdcl/20191217")
 	for k, v := range c.header_ {
 		reqHeaders[k] = v
 	}
@@ -5757,7 +5694,7 @@ func (c *TasksNewCall) Header() http.Header {
 
 func (c *TasksNewCall) doRequest(alt string) (*http.Response, error) {
 	reqHeaders := make(http.Header)
-	reqHeaders.Set("x-goog-api-client", "gl-go/"+gensupport.GoVersion()+" gdcl/20210831")
+	reqHeaders.Set("x-goog-api-client", "gl-go/1.13.4 gdcl/20191217")
 	for k, v := range c.header_ {
 		reqHeaders[k] = v
 	}
@@ -5962,7 +5899,7 @@ func (c *TasksRequestsCall) Header() http.Header {
 
 func (c *TasksRequestsCall) doRequest(alt string) (*http.Response, error) {
 	reqHeaders := make(http.Header)
-	reqHeaders.Set("x-goog-api-client", "gl-go/"+gensupport.GoVersion()+" gdcl/20210831")
+	reqHeaders.Set("x-goog-api-client", "gl-go/1.13.4 gdcl/20191217")
 	for k, v := range c.header_ {
 		reqHeaders[k] = v
 	}

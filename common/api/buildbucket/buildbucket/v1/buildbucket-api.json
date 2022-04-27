@@ -20,25 +20,6 @@
   "id": "buildbucket:v1",
   "kind": "discovery#restDescription",
   "methods": {
-    "backfill_tag_index": {
-      "description": "Backfills TagIndex entities from builds.",
-      "httpMethod": "POST",
-      "id": "buildbucket.backfill_tag_index",
-      "parameterOrder": [
-        "tag_key"
-      ],
-      "parameters": {
-        "tag_key": {
-          "location": "query",
-          "required": true,
-          "type": "string"
-        }
-      },
-      "path": "backfill_tag_index",
-      "scopes": [
-        "https://www.googleapis.com/auth/userinfo.email"
-      ]
-    },
     "cancel": {
       "description": "Cancels a build.",
       "httpMethod": "POST",
@@ -61,71 +42,6 @@
       },
       "response": {
         "$ref": "LegacyApiBuildResponseMessage"
-      },
-      "scopes": [
-        "https://www.googleapis.com/auth/userinfo.email"
-      ]
-    },
-    "cancel_batch": {
-      "description": "Cancels builds.",
-      "httpMethod": "POST",
-      "id": "buildbucket.cancel_batch",
-      "path": "builds/cancel",
-      "request": {
-        "$ref": "LegacyApiCancelBatchRequestMessage",
-        "parameterName": "resource"
-      },
-      "response": {
-        "$ref": "LegacyApiCancelBatchResponseMessage"
-      },
-      "scopes": [
-        "https://www.googleapis.com/auth/userinfo.email"
-      ]
-    },
-    "delete_many_builds": {
-      "description": "Deletes scheduled or started builds in a bucket.",
-      "httpMethod": "POST",
-      "id": "buildbucket.delete_many_builds",
-      "parameterOrder": [
-        "bucket",
-        "status"
-      ],
-      "parameters": {
-        "bucket": {
-          "location": "path",
-          "required": true,
-          "type": "string"
-        },
-        "created_by": {
-          "location": "query",
-          "type": "string"
-        },
-        "status": {
-          "enum": [
-            "COMPLETED",
-            "SCHEDULED",
-            "STARTED",
-            "UNSET"
-          ],
-          "enumDescriptions": [
-            "",
-            "",
-            "",
-            ""
-          ],
-          "location": "query",
-          "required": true,
-          "type": "string"
-        },
-        "tag": {
-          "location": "query",
-          "repeated": true,
-          "type": "string"
-        }
-      },
-      "path": "bucket/{bucket}/delete",
-      "response": {
-        "$ref": "LegacyApiDeleteManyBuildsResponse"
       },
       "scopes": [
         "https://www.googleapis.com/auth/userinfo.email"
@@ -158,15 +74,6 @@
         "https://www.googleapis.com/auth/userinfo.email"
       ]
     },
-    "fix_builds": {
-      "description": "Fixes all builds.",
-      "httpMethod": "POST",
-      "id": "buildbucket.fix_builds",
-      "path": "fix_builds",
-      "scopes": [
-        "https://www.googleapis.com/auth/userinfo.email"
-      ]
-    },
     "get": {
       "description": "Returns a build by id.",
       "httpMethod": "GET",
@@ -185,28 +92,6 @@
       "path": "builds/{id}",
       "response": {
         "$ref": "LegacyApiBuildResponseMessage"
-      },
-      "scopes": [
-        "https://www.googleapis.com/auth/userinfo.email"
-      ]
-    },
-    "get_bucket": {
-      "description": "Returns bucket information.",
-      "httpMethod": "GET",
-      "id": "buildbucket.get_bucket",
-      "parameterOrder": [
-        "bucket"
-      ],
-      "parameters": {
-        "bucket": {
-          "location": "path",
-          "required": true,
-          "type": "string"
-        }
-      },
-      "path": "buckets/{bucket}",
-      "response": {
-        "$ref": "LegacyApiBucketMessage"
       },
       "scopes": [
         "https://www.googleapis.com/auth/userinfo.email"
@@ -282,34 +167,6 @@
         "https://www.googleapis.com/auth/userinfo.email"
       ]
     },
-    "pause": {
-      "description": "Pauses or unpause a bucket.",
-      "httpMethod": "POST",
-      "id": "buildbucket.pause",
-      "parameterOrder": [
-        "bucket",
-        "is_paused"
-      ],
-      "parameters": {
-        "bucket": {
-          "location": "path",
-          "required": true,
-          "type": "string"
-        },
-        "is_paused": {
-          "location": "query",
-          "required": true,
-          "type": "boolean"
-        }
-      },
-      "path": "buckets/{bucket}/pause",
-      "response": {
-        "$ref": "LegacyApiPauseResponse"
-      },
-      "scopes": [
-        "https://www.googleapis.com/auth/userinfo.email"
-      ]
-    },
     "peek": {
       "description": "Returns available builds.",
       "httpMethod": "GET",
@@ -345,72 +202,6 @@
       "path": "builds",
       "request": {
         "$ref": "LegacyApiPutRequestMessage",
-        "parameterName": "resource"
-      },
-      "response": {
-        "$ref": "LegacyApiBuildResponseMessage"
-      },
-      "scopes": [
-        "https://www.googleapis.com/auth/userinfo.email"
-      ]
-    },
-    "put_batch": {
-      "description": "Creates builds.",
-      "httpMethod": "PUT",
-      "id": "buildbucket.put_batch",
-      "path": "builds/batch",
-      "request": {
-        "$ref": "LegacyApiPutBatchRequestMessage",
-        "parameterName": "resource"
-      },
-      "response": {
-        "$ref": "LegacyApiPutBatchResponseMessage"
-      },
-      "scopes": [
-        "https://www.googleapis.com/auth/userinfo.email"
-      ]
-    },
-    "reset": {
-      "description": "Forcibly unleases a build and resets its state to SCHEDULED.",
-      "httpMethod": "POST",
-      "id": "buildbucket.reset",
-      "parameterOrder": [
-        "id"
-      ],
-      "parameters": {
-        "id": {
-          "format": "int64",
-          "location": "path",
-          "required": true,
-          "type": "string"
-        }
-      },
-      "path": "builds/{id}/reset",
-      "response": {
-        "$ref": "LegacyApiBuildResponseMessage"
-      },
-      "scopes": [
-        "https://www.googleapis.com/auth/userinfo.email"
-      ]
-    },
-    "retry": {
-      "description": "Retries an existing build.",
-      "httpMethod": "PUT",
-      "id": "buildbucket.retry",
-      "parameterOrder": [
-        "id"
-      ],
-      "parameters": {
-        "id": {
-          "format": "int64",
-          "location": "path",
-          "required": true,
-          "type": "string"
-        }
-      },
-      "path": "builds/{id}/retry",
-      "request": {
-        "$ref": "LegacyApiRetryRequestMessage",
         "parameterName": "resource"
       },
       "response": {
@@ -648,87 +439,12 @@
   "protocol": "rest",
   "rootUrl": "https://cr-buildbucket.appspot.com/_ah/api/",
   "schemas": {
-    "LegacyApiBucketMessage": {
-      "id": "LegacyApiBucketMessage",
-      "properties": {
-        "config_file_content": {
-          "type": "string"
-        },
-        "config_file_rev": {
-          "type": "string"
-        },
-        "config_file_url": {
-          "type": "string"
-        },
-        "error": {
-          "$ref": "LegacyApiErrorMessage"
-        },
-        "name": {
-          "required": true,
-          "type": "string"
-        },
-        "project_id": {
-          "required": true,
-          "type": "string"
-        }
-      },
-      "type": "object"
-    },
     "LegacyApiBuildResponseMessage": {
       "id": "LegacyApiBuildResponseMessage",
       "properties": {
         "build": {
           "$ref": "LegacyApiCommonBuildMessage",
           "description": "Describes model.Build, see its docstring."
-        },
-        "error": {
-          "$ref": "LegacyApiErrorMessage"
-        }
-      },
-      "type": "object"
-    },
-    "LegacyApiCancelBatchRequestMessage": {
-      "id": "LegacyApiCancelBatchRequestMessage",
-      "properties": {
-        "build_ids": {
-          "items": {
-            "format": "int64",
-            "type": "string"
-          },
-          "type": "array"
-        },
-        "result_details_json": {
-          "type": "string"
-        }
-      },
-      "type": "object"
-    },
-    "LegacyApiCancelBatchResponseMessage": {
-      "id": "LegacyApiCancelBatchResponseMessage",
-      "properties": {
-        "error": {
-          "$ref": "LegacyApiErrorMessage"
-        },
-        "results": {
-          "items": {
-            "$ref": "LegacyApiCancelBatchResponseMessageOneResult"
-          },
-          "type": "array"
-        }
-      },
-      "type": "object"
-    },
-    "LegacyApiCancelBatchResponseMessageOneResult": {
-      "id": "LegacyApiCancelBatchResponseMessageOneResult",
-      "properties": {
-        "build": {
-          "$ref": "LegacyApiCommonBuildMessage",
-          "description": "Describes model.Build, see its docstring."
-        },
-        "build_id": {
-          "format": "int64",
-          "required": true,
-          "type": "string"
         },
         "error": {
           "$ref": "LegacyApiErrorMessage"
@@ -901,15 +617,6 @@
       },
       "type": "object"
     },
-    "LegacyApiDeleteManyBuildsResponse": {
-      "id": "LegacyApiDeleteManyBuildsResponse",
-      "properties": {
-        "error": {
-          "$ref": "LegacyApiErrorMessage"
-        }
-      },
-      "type": "object"
-    },
     "LegacyApiErrorMessage": {
       "id": "LegacyApiErrorMessage",
       "properties": {
@@ -1073,10 +780,6 @@
       },
       "type": "object"
     },
-    "LegacyApiPauseResponse": {
-      "id": "LegacyApiPauseResponse",
-      "type": "object"
-    },
     "LegacyApiPubSubCallbackMessage": {
       "id": "LegacyApiPubSubCallbackMessage",
       "properties": {
@@ -1089,49 +792,6 @@
         },
         "user_data": {
           "type": "string"
-        }
-      },
-      "type": "object"
-    },
-    "LegacyApiPutBatchRequestMessage": {
-      "id": "LegacyApiPutBatchRequestMessage",
-      "properties": {
-        "builds": {
-          "items": {
-            "$ref": "LegacyApiPutRequestMessage"
-          },
-          "type": "array"
-        }
-      },
-      "type": "object"
-    },
-    "LegacyApiPutBatchResponseMessage": {
-      "id": "LegacyApiPutBatchResponseMessage",
-      "properties": {
-        "error": {
-          "$ref": "LegacyApiErrorMessage"
-        },
-        "results": {
-          "items": {
-            "$ref": "LegacyApiPutBatchResponseMessageOneResult"
-          },
-          "type": "array"
-        }
-      },
-      "type": "object"
-    },
-    "LegacyApiPutBatchResponseMessageOneResult": {
-      "id": "LegacyApiPutBatchResponseMessageOneResult",
-      "properties": {
-        "build": {
-          "$ref": "LegacyApiCommonBuildMessage",
-          "description": "Describes model.Build, see its docstring."
-        },
-        "client_operation_id": {
-          "type": "string"
-        },
-        "error": {
-          "$ref": "LegacyApiErrorMessage"
         }
       },
       "type": "object"
@@ -1177,22 +837,6 @@
             "type": "string"
           },
           "type": "array"
-        }
-      },
-      "type": "object"
-    },
-    "LegacyApiRetryRequestMessage": {
-      "id": "LegacyApiRetryRequestMessage",
-      "properties": {
-        "client_operation_id": {
-          "type": "string"
-        },
-        "lease_expiration_ts": {
-          "format": "int64",
-          "type": "string"
-        },
-        "pubsub_callback": {
-          "$ref": "LegacyApiPubSubCallbackMessage"
         }
       },
       "type": "object"
