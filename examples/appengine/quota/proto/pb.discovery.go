@@ -2,10 +2,9 @@
 
 package proto
 
-import (
-	"go.chromium.org/luci/grpc/discovery"
-	"google.golang.org/protobuf/types/descriptorpb"
-)
+import "go.chromium.org/luci/grpc/discovery"
+
+import "google.golang.org/protobuf/types/descriptorpb"
 
 func init() {
 	discovery.RegisterDescriptorSetCompressed(

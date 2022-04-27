@@ -2639,7 +2639,7 @@ resultdb.settings(enable = None, bq_exports = None, history_options = None)
 
 
 
-Specifies how buildbucket should integrate with ResultDB.
+Specifies how Buildbucket should integrate with ResultDB.
 
 #### Arguments {#resultdb.settings-args}
 

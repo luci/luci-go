@@ -5,9 +5,10 @@ package testutil
 
 import (
 	context "context"
+	reflect "reflect"
+
 	gomock "github.com/golang/mock/gomock"
 	reminder "go.chromium.org/luci/server/tq/internal/reminder"
-	reflect "reflect"
 )
 
 // MockDB is a mock of DB interface.
@@ -33,20 +34,6 @@ func (m *MockDB) EXPECT() *MockDBMockRecorder {
 	return m.recorder
 }
 
-// Kind mocks base method.
-func (m *MockDB) Kind() string {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Kind")
-	ret0, _ := ret[0].(string)
-	return ret0
-}
-
-// Kind indicates an expected call of Kind.
-func (mr *MockDBMockRecorder) Kind() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Kind", reflect.TypeOf((*MockDB)(nil).Kind))
-}
-
 // Defer mocks base method.
 func (m *MockDB) Defer(arg0 context.Context, arg1 func(context.Context)) {
 	m.ctrl.T.Helper()
@@ -57,20 +44,6 @@ func (m *MockDB) Defer(arg0 context.Context, arg1 func(context.Context)) {
 func (mr *MockDBMockRecorder) Defer(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Defer", reflect.TypeOf((*MockDB)(nil).Defer), arg0, arg1)
-}
-
-// SaveReminder mocks base method.
-func (m *MockDB) SaveReminder(arg0 context.Context, arg1 *reminder.Reminder) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "SaveReminder", arg0, arg1)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// SaveReminder indicates an expected call of SaveReminder.
-func (mr *MockDBMockRecorder) SaveReminder(arg0, arg1 interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SaveReminder", reflect.TypeOf((*MockDB)(nil).SaveReminder), arg0, arg1)
 }
 
 // DeleteReminder mocks base method.
@@ -85,6 +58,21 @@ func (m *MockDB) DeleteReminder(arg0 context.Context, arg1 *reminder.Reminder) e
 func (mr *MockDBMockRecorder) DeleteReminder(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteReminder", reflect.TypeOf((*MockDB)(nil).DeleteReminder), arg0, arg1)
+}
+
+// FetchReminderRawPayloads mocks base method.
+func (m *MockDB) FetchReminderRawPayloads(arg0 context.Context, arg1 []*reminder.Reminder) ([]*reminder.Reminder, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "FetchReminderRawPayloads", arg0, arg1)
+	ret0, _ := ret[0].([]*reminder.Reminder)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// FetchReminderRawPayloads indicates an expected call of FetchReminderRawPayloads.
+func (mr *MockDBMockRecorder) FetchReminderRawPayloads(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FetchReminderRawPayloads", reflect.TypeOf((*MockDB)(nil).FetchReminderRawPayloads), arg0, arg1)
 }
 
 // FetchRemindersMeta mocks base method.
@@ -102,17 +90,30 @@ func (mr *MockDBMockRecorder) FetchRemindersMeta(ctx, low, high, limit interface
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FetchRemindersMeta", reflect.TypeOf((*MockDB)(nil).FetchRemindersMeta), ctx, low, high, limit)
 }
 
-// FetchReminderRawPayloads mocks base method.
-func (m *MockDB) FetchReminderRawPayloads(arg0 context.Context, arg1 []*reminder.Reminder) ([]*reminder.Reminder, error) {
+// Kind mocks base method.
+func (m *MockDB) Kind() string {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "FetchReminderRawPayloads", arg0, arg1)
-	ret0, _ := ret[0].([]*reminder.Reminder)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
+	ret := m.ctrl.Call(m, "Kind")
+	ret0, _ := ret[0].(string)
+	return ret0
 }
 
-// FetchReminderRawPayloads indicates an expected call of FetchReminderRawPayloads.
-func (mr *MockDBMockRecorder) FetchReminderRawPayloads(arg0, arg1 interface{}) *gomock.Call {
+// Kind indicates an expected call of Kind.
+func (mr *MockDBMockRecorder) Kind() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FetchReminderRawPayloads", reflect.TypeOf((*MockDB)(nil).FetchReminderRawPayloads), arg0, arg1)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Kind", reflect.TypeOf((*MockDB)(nil).Kind))
+}
+
+// SaveReminder mocks base method.
+func (m *MockDB) SaveReminder(arg0 context.Context, arg1 *reminder.Reminder) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SaveReminder", arg0, arg1)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// SaveReminder indicates an expected call of SaveReminder.
+func (mr *MockDBMockRecorder) SaveReminder(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SaveReminder", reflect.TypeOf((*MockDB)(nil).SaveReminder), arg0, arg1)
 }
