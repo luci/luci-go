@@ -39,7 +39,11 @@ const (
 	ownerNotDryRunner    = "CV cannot trigger the Run for %q because %q is not a dry-runner."
 	notOwnerNotCommitter = "CV cannot trigger the Run for %q because %q is neither the CL owner nor a committer."
 	noLGTM               = "This CL needs to be approved first to trigger a Run."
-	untrustedDeps        = "" +
+	suspiciouslyNoLGTM   = noLGTM + " " +
+		"However, all requirements appear to be satisfied. " +
+		"It's likely caused by an issue in Gerrit or Gerrit configuration. " +
+		"Please contact your Git admin."
+	untrustedDeps = "" +
 		"CV cannot trigger the Run because of the following dependencies. " +
 		"They must be approved because their owners are not committers. " +
 		"Alternatively, you can ask the owner of this CL to trigger a dry-run."
@@ -139,7 +143,7 @@ func (ck runCreateChecker) canCreateFullRun(ctx context.Context) (evalResult, er
 		if ck.isApproved {
 			return yes, nil
 		}
-		return noWithReason(noLGTM), nil
+		return noWithReason(noLGTMReason(ctx, ck.cl)), nil
 	}
 
 	// A non-committer can trigger a full-run,
@@ -162,7 +166,7 @@ func (ck runCreateChecker) canCreateFullRun(ctx context.Context) (evalResult, er
 		return noWithReason(fmt.Sprintf(ownerNotCommitter, ck.triggerer, ck.triggerer)), nil
 	}
 	if !ck.isApproved {
-		return noWithReason(noLGTM), nil
+		return noWithReason(noLGTMReason(ctx, ck.cl)), nil
 	}
 	return yes, nil
 }
@@ -214,7 +218,7 @@ func (ck runCreateChecker) canCreateDryRun(ctx context.Context) (evalResult, err
 			return noWithReason(fmt.Sprintf(ownerNotDryRunner, ck.triggerer, ck.triggerer)), nil
 		}
 		if !ck.isApproved {
-			return noWithReason(noLGTM), nil
+			return noWithReason(noLGTMReason(ctx, ck.cl)), nil
 		}
 		return ck.canTrustDeps(ctx)
 	}
@@ -331,6 +335,17 @@ func untrustedDepsReason(ctx context.Context, udeps []*changelist.CL) string {
 	return sb.String()
 }
 
+// noLGTMReason generates a RunCreate rejection comment for unapproved CL.
+func noLGTMReason(ctx context.Context, cl *changelist.CL) string {
+	switch allSatisfied, msg := strSubmitReqsForUnapprovedCL(ctx, cl); {
+	case allSatisfied:
+		return suspiciouslyNoLGTM
+	case len(msg) > 0:
+		return fmt.Sprintf("%s This CL is not approved because requirement %s", noLGTM, msg)
+	}
+	return noLGTM
+}
+
 func strSubmitReqsForUnapprovedCL(ctx context.Context, cl *changelist.CL) (allSatisfied bool, msg string) {
 	reqs := cl.Snapshot.GetGerrit().GetInfo().GetSubmitRequirements()
 	if len(reqs) == 0 {
@@ -345,7 +360,7 @@ func strSubmitReqsForUnapprovedCL(ctx context.Context, cl *changelist.CL) (allSa
 	case len(unsatisfied) == 0:
 		// all satisfied?
 		// this is the case where submit reqs and submittable DISAGREE with each other.
-		msg = fmt.Sprintf("%s satisfied, but the CL is unapproved", strings.Join(satisfied, ", "))
+		msg = fmt.Sprintf("all requirements satisfied (i.e., %s), but the CL is not approved", strings.Join(satisfied, ", "))
 		logging.Errorf(ctx, "CL(%d): all submit reqs satisfied; but CL not submittable", cl.ID)
 		allSatisfied = true
 	default:

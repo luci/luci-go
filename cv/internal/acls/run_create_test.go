@@ -198,6 +198,11 @@ func TestCheckRunCLs(t *testing.T) {
 						mustFailWith(cl, noLGTM)
 					})
 				})
+				Convey("suspiciously noLGTM", func() {
+					addDryRunner(tr)
+					addSubmitReq(cl, "Code-Review", gerritpb.SubmitRequirementResultInfo_SATISFIED)
+					mustFailWith(cl, suspiciouslyNoLGTM)
+				})
 			})
 
 			Convey("triggerer != owner", func() {
@@ -225,13 +230,17 @@ func TestCheckRunCLs(t *testing.T) {
 					setAllowOwner(cfgpb.Verifiers_GerritCQAbility_COMMIT)
 					mustFailWith(cl, "neither the CL owner nor a committer")
 				})
-
 				Convey("triggerer is neither dry-runner nor committer", func() {
 					// Should fail always.
 					mustFailWith(cl, "neither the CL owner nor a committer")
 					approveCL(cl)
 					setAllowOwner(cfgpb.Verifiers_GerritCQAbility_COMMIT)
 					mustFailWith(cl, "neither the CL owner nor a committer")
+				})
+				Convey("suspiciously noLGTM", func() {
+					addCommitter(tr)
+					addSubmitReq(cl, "Code-Review", gerritpb.SubmitRequirementResultInfo_SATISFIED)
+					mustFailWith(cl, suspiciouslyNoLGTM)
 				})
 			})
 		})
@@ -336,7 +345,7 @@ func TestCheckRunCLs(t *testing.T) {
 						addSubmitReq(dep2, "Code-Owner", gerritpb.SubmitRequirementResultInfo_SATISFIED)
 						res := mustFailWith(cl, untrustedDeps)
 						So(res.Failure(cl), ShouldContainSubstring, fmt.Sprintf(
-							"- %s\n- %s Code-Owner satisfied, but the CL is unapproved",
+							"- %s\n- %s all requirements satisfied (i.e., Code-Owner), but the CL is not approved",
 							dep1URL, dep2URL))
 						So(res.Failure(cl), ShouldContainSubstring, suspiciouslyUntrustedDeps)
 					})
