@@ -156,6 +156,9 @@ func TestQueryTestVariants(t *testing.T) {
 				"Status":          pb.TestStatus_SKIP,
 				"RunDurationUsec": pbutil.MustDuration(duration).Microseconds(),
 				"StartTime":       startTime,
+				"SummaryHtml":     spanutil.Compressed("SummaryHtml"),
+				"Tags":            pbutil.StringPairsToStrings(strPairs...),
+				"TestMetadata":    spanutil.Compressed(tmdBytes),
 			}),
 		)
 
@@ -211,57 +214,148 @@ func TestQueryTestVariants(t *testing.T) {
 		})
 
 		Convey(`Field mask works`, func() {
-			q.Mask = mask.MustFromReadMask(
-				&pb.TestVariant{},
-				"results.*.result.name",
-
-				// Result fields that are included in the parent test variant will not
-				// be populated even when specified.
-				"results.*.result.test_id",
-				"results.*.result.variant_hash",
-				"results.*.result.variant",
-				"results.*.result.test_metadata",
-			)
-
-			verifyFields := func(tvs []*pb.TestVariant) {
-				for _, tv := range tvs {
-					for _, result := range tv.Results {
-						// Check all results have and only have .Name populated.
-						So(result.Result.Name, ShouldNotBeEmpty)
-						So(result, ShouldResembleProto, &pb.TestResultBundle{Result: &pb.TestResult{Name: result.Result.Name}})
+			Convey(`with minimum field mask`, func() {
+				verifyFields := func(tvs []*pb.TestVariant) {
+					for _, tv := range tvs {
+						// Check all results have and only have .TestId, .VariantHash,
+						// .Status populated.
+						// Those fields should be included even when not specified.
+						So(tv.TestId, ShouldNotBeEmpty)
+						So(tv.VariantHash, ShouldNotBeEmpty)
+						So(tv.Status, ShouldNotBeEmpty)
+						So(tv, ShouldResembleProto, &pb.TestVariant{
+							TestId:      tv.TestId,
+							VariantHash: tv.VariantHash,
+							Status:      tv.Status,
+						})
 					}
-
-					// Check all results have and only have .TestId, .VariantHash,
-					// .Status, and .Results populated.
-					// Those fields should be included even when not specified.
-					So(tv.TestId, ShouldNotBeEmpty)
-					So(tv.VariantHash, ShouldNotBeEmpty)
-					So(tv.Status, ShouldNotBeEmpty)
-					So(tv.Results, ShouldNotBeEmpty)
-					So(tv, ShouldResembleProto, &pb.TestVariant{
-						TestId:      tv.TestId,
-						VariantHash: tv.VariantHash,
-						Status:      tv.Status,
-						Results:     tv.Results,
-					})
 				}
-			}
 
-			Convey(`with non-expected test variants`, func() {
-				tvs, _ := mustFetch(q)
-				verifyFields(tvs)
+				Convey(`with non-expected test variants`, func() {
+					q.Mask = mask.MustFromReadMask(
+						&pb.TestVariant{},
+						"test_id",
+					)
+					tvs, _ := mustFetch(q)
+					verifyFields(tvs)
+
+					// TestId should still be populated even when not specified.
+					q.Mask = mask.MustFromReadMask(
+						&pb.TestVariant{},
+						"status",
+					)
+					tvs, _ = mustFetch(q)
+					verifyFields(tvs)
+				})
+
+				Convey(`with expected test variants`, func() {
+					// Ensure the last test result (ordered by TestId, then by VariantHash)
+					// is expected, so we can verify that the tail is trimmed properly.
+					testutil.MustApply(ctx,
+						insert.TestResults("inv1", "Tz0", nil, pb.TestStatus_PASS)...,
+					)
+					q.PageToken = pagination.Token("EXPECTED", "", "")
+
+					q.Mask = mask.MustFromReadMask(
+						&pb.TestVariant{},
+						"test_id",
+					)
+					tvs, _ := mustFetch(q)
+					verifyFields(tvs)
+					So(tvs[len(tvs)-1].TestId, ShouldEqual, "Tz0")
+
+					// TestId should still be populated even when not specified.
+					q.Mask = mask.MustFromReadMask(
+						&pb.TestVariant{},
+						"status",
+					)
+					tvs, _ = mustFetch(q)
+					verifyFields(tvs)
+					So(tvs[len(tvs)-1].TestId, ShouldEqual, "Tz0")
+				})
+
 			})
 
-			Convey(`with expected test variants`, func() {
-				// Ensure the last test result (ordered by TestId, then by VariantHash)
-				// is expected, so we can verify that the tail is trimmed properly.
-				testutil.MustApply(ctx,
-					insert.TestResults("inv1", "Tz0", nil, pb.TestStatus_PASS)...,
+			Convey(`with full field mask`, func() {
+				q.Mask = mask.MustFromReadMask(
+					&pb.TestVariant{},
+					"*",
 				)
-				q.PageToken = pagination.Token("EXPECTED", "", "")
-				tvs, _ := mustFetch(q)
-				verifyFields(tvs)
-				So(tvs[len(tvs)-1].TestId, ShouldEqual, "Tz0")
+
+				verifyFields := func(tvs []*pb.TestVariant) {
+					for _, tv := range tvs {
+						So(tv.TestId, ShouldNotBeEmpty)
+						So(tv.VariantHash, ShouldNotBeEmpty)
+						So(tv.Status, ShouldNotBeEmpty)
+						So(tv.Variant, ShouldNotBeEmpty)
+						So(tv.Results, ShouldNotBeEmpty)
+						So(tv.TestMetadata, ShouldNotBeEmpty)
+
+						if tv.Status == pb.TestVariantStatus_EXONERATED {
+							So(tv.Exonerations, ShouldNotBeEmpty)
+						}
+
+						for _, result := range tv.Results {
+							So(result.Result.Name, ShouldNotBeEmpty)
+							So(result.Result.ResultId, ShouldNotBeEmpty)
+							So(result.Result.Expected, ShouldNotBeEmpty)
+							So(result.Result.Status, ShouldNotBeEmpty)
+							So(result.Result.SummaryHtml, ShouldNotBeBlank)
+							So(result.Result.Duration, ShouldNotBeNil)
+							So(result.Result.Tags, ShouldNotBeNil)
+							if tv.TestId == "T4" {
+								So(result.Result.FailureReason, ShouldNotBeNil)
+							}
+							So(result, ShouldResembleProto, &pb.TestResultBundle{
+								Result: &pb.TestResult{
+									Name:          result.Result.Name,
+									ResultId:      result.Result.ResultId,
+									Expected:      result.Result.Expected,
+									Status:        result.Result.Status,
+									SummaryHtml:   result.Result.SummaryHtml,
+									StartTime:     result.Result.StartTime,
+									Duration:      result.Result.Duration,
+									Tags:          result.Result.Tags,
+									FailureReason: result.Result.FailureReason,
+								},
+							})
+						}
+
+						for _, exoneration := range tv.Exonerations {
+							So(exoneration.ExplanationHtml, ShouldNotBeEmpty)
+							So(exoneration, ShouldResembleProto, &pb.TestExoneration{
+								ExplanationHtml: exoneration.ExplanationHtml,
+							})
+						}
+
+						So(tv, ShouldResembleProto, &pb.TestVariant{
+							TestId:       tv.TestId,
+							VariantHash:  tv.VariantHash,
+							Status:       tv.Status,
+							Results:      tv.Results,
+							Exonerations: tv.Exonerations,
+							Variant:      tv.Variant,
+							TestMetadata: tv.TestMetadata,
+						})
+					}
+				}
+
+				Convey(`with non-expected test variants`, func() {
+					tvs, _ := mustFetch(q)
+					verifyFields(tvs)
+				})
+
+				Convey(`with expected test variants`, func() {
+					// Ensure the last test result (ordered by TestId, then by VariantHash)
+					// is expected, so we can verify that the tail is trimmed properly.
+					testutil.MustApply(ctx,
+						insert.TestResults("inv1", "Tz0", nil, pb.TestStatus_PASS)...,
+					)
+					q.PageToken = pagination.Token("EXPECTED", "", "")
+					tvs, _ := mustFetch(q)
+					verifyFields(tvs)
+					So(tvs[len(tvs)-1].TestId, ShouldEqual, "Tz0")
+				})
 			})
 		})
 

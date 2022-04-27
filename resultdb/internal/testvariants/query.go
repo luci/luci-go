@@ -97,10 +97,10 @@ type tvResult struct {
 }
 
 // resultSelectColumns returns a list of columns needed to fetch `tvResult`s
-// according to the fieldmask. Required columns can be specified to ensure
-// certain columns are always fetched regardless of the fieldmask.
-func (q *Query) resultSelectColumns(requiredColumns ...string) []string {
-	columnSet := stringset.NewFromSlice(requiredColumns...)
+// according to the fieldmask. `IsUnexpected` is always selected.
+func (q *Query) resultSelectColumns() []string {
+	columnSet := stringset.New(1)
+	columnSet.Add("IsUnexpected")
 
 	// Select extra columns depending on the mask.
 	readMask := q.Mask
@@ -119,9 +119,8 @@ func (q *Query) resultSelectColumns(requiredColumns ...string) []string {
 		}
 	}
 
-	selectIfIncluded("InvocationId", "results.*.result.name", "results.*.result.invocation_id")
+	selectIfIncluded("InvocationId", "results.*.result.name")
 	selectIfIncluded("ResultId", "results.*.result.name", "results.*.result.result_id")
-	selectIfIncluded("IsUnexpected", "results.*.result.expected")
 	selectIfIncluded("Status", "results.*.result.status")
 	selectIfIncluded("StartTime", "results.*.result.start_time")
 	selectIfIncluded("RunDurationUsec", "results.*.result.duration")
@@ -158,9 +157,11 @@ func (q *Query) decompressProto(src []byte, dest proto.Message) error {
 
 func (q *Query) toTestResultProto(r *tvResult, testID string) (*pb.TestResult, error) {
 	tr := &pb.TestResult{
-		Name:     pbutil.TestResultName(string(invocations.IDFromRowID(r.InvocationID)), testID, r.ResultID),
 		ResultId: r.ResultID,
 		Status:   pb.TestStatus(r.Status),
+	}
+	if r.InvocationID != "" && testID != "" && r.ResultID != "" {
+		tr.Name = pbutil.TestResultName(string(invocations.IDFromRowID(r.InvocationID)), testID, r.ResultID)
 	}
 	if r.StartTime.Valid {
 		tr.StartTime = pbutil.MustTimestampProto(r.StartTime.Time)
@@ -268,7 +269,7 @@ func (q *Query) queryTestResults(ctx context.Context, limit int, f func(testId, 
 	ts.Attribute("cr.dev/invocations", len(q.InvocationIDs))
 	defer func() { ts.End(err) }()
 	st, err := spanutil.GenerateStatement(allTestResultsSQLTmpl, map[string]interface{}{
-		"ResultColumns": strings.Join(q.resultSelectColumns("IsUnexpected"), ", "),
+		"ResultColumns": strings.Join(q.resultSelectColumns(), ", "),
 		"HasTestIds":    len(q.TestIDs) > 0,
 	})
 	st.Params = q.params
