@@ -10,7 +10,7 @@ syntax = "proto3";
 
 package components.auth;
 
-import "components/auth/proto/realms.proto";
+import "go.chromium.org/luci/server/auth/service/protocol/components/auth/proto/realms.proto";
 
 option go_package = "go.chromium.org/luci/server/auth/service/protocol;protocol";
 

@@ -27,7 +27,7 @@ LUCI_PY_PROTOS_DIR=${LUCI_PY}/appengine/components/components/auth/proto
 # Kill all existing files.
 rm -rf components
 mkdir -p components/auth/proto
-rm generate.go
+rm -f generate.go
 
 # Copy fresh files.
 cp \
@@ -37,11 +37,14 @@ cp \
   \
   components/auth/proto
 
+# Make proto import paths relative to the new root.
+sed -i '' 's|import "components/auth/proto/|import "go.chromium.org/luci/server/auth/service/protocol/components/auth/proto/|g' components/auth/proto/*.proto
+
 # Put the revision of copied files into generate.go for posterity.
 luci_py_rev=$(git -C ${LUCI_PY} rev-parse HEAD)
 
 cat <<EOF >> generate.go
-// Copyright 2020 The LUCI Authors.
+// Copyright 2022 The LUCI Authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -55,7 +58,7 @@ cat <<EOF >> generate.go
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//go:generate cproto -disable-grpc -proto-path . components/auth/proto
+//go:generate cproto -disable-grpc components/auth/proto
 
 package protocol
 
@@ -65,7 +68,7 @@ package protocol
 //   appengine/components/components/auth/proto/security_config.proto
 //
 // Commit: ${luci_py_rev}
-// Modifications: None
+// Modifications: see import_luci_py.sh
 EOF
 
 # Generate *.pb.go.
