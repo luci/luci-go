@@ -35,9 +35,9 @@ import (
 
 const (
 	okButDueToOthers     = "CV cannot continue this run due to errors on the other CL(s) included in this run."
-	ownerNotCommitter    = "CV cannot trigger the Run for %q because %q is not a committer."
-	ownerNotDryRunner    = "CV cannot trigger the Run for %q because %q is not a dry-runner."
-	notOwnerNotCommitter = "CV cannot trigger the Run for %q because %q is neither the CL owner nor a committer."
+	ownerNotCommitter    = "CV cannot trigger the Run for `%s` because the user is not a committer."
+	ownerNotDryRunner    = "CV cannot trigger the Run for `%s` because the user is not a dry-runner."
+	notOwnerNotCommitter = "CV cannot trigger the Run for `%s` because the user is neither the CL owner nor a committer."
 	noLGTM               = "This CL needs to be approved first to trigger a Run."
 	suspiciouslyNoLGTM   = noLGTM + " " +
 		"However, all requirements appear to be satisfied. " +
@@ -62,11 +62,12 @@ type runCreateChecker struct {
 	commGroups              []string // committer groups
 	dryGroups               []string // dry-runner groups
 
-	owner         identity.Identity // the CL owner
-	triggerer     identity.Identity // the Run triggerer
-	isApproved    bool              // if the CL has been approved (LGTMed) in Gerrit
-	depsToExamine common.CLIDs      // deps that are possibly untrusted.
-	trustedDeps   common.CLIDsSet   // deps that have been proven to be trustable.
+	owner          identity.Identity // the CL owner
+	triggerer      identity.Identity // the Run triggerer
+	triggererEmail string            // email of the Run triggerer
+	isApproved     bool              // if the CL has been approved (LGTMed) in Gerrit
+	depsToExamine  common.CLIDs      // deps that are possibly untrusted.
+	trustedDeps    common.CLIDsSet   // deps that have been proven to be trustable.
 }
 
 func (ck runCreateChecker) canTrustDeps(ctx context.Context) (evalResult, error) {
@@ -156,14 +157,14 @@ func (ck runCreateChecker) canCreateFullRun(ctx context.Context) (evalResult, er
 	// That is, a dry-runner can trigger a full-run for own CLs w/ an approval.
 	// For more context, crbug.com/692611 and go/cq-after-lgtm.
 	if ck.triggerer != ck.owner {
-		return noWithReason(fmt.Sprintf(notOwnerNotCommitter, ck.triggerer, ck.triggerer)), nil
+		return noWithReason(fmt.Sprintf(notOwnerNotCommitter, ck.triggererEmail)), nil
 	}
 	isDryRunner, err := ck.isDryRunner(ctx, ck.triggerer)
 	if err != nil {
 		return no, err
 	}
 	if !isDryRunner && ck.allowOwnerIfSubmittable != cfgpb.Verifiers_GerritCQAbility_COMMIT {
-		return noWithReason(fmt.Sprintf(ownerNotCommitter, ck.triggerer, ck.triggerer)), nil
+		return noWithReason(fmt.Sprintf(ownerNotCommitter, ck.triggererEmail)), nil
 	}
 	if !ck.isApproved {
 		return noWithReason(noLGTMReason(ctx, ck.cl)), nil
@@ -204,7 +205,7 @@ func (ck runCreateChecker) canCreateDryRun(ctx context.Context) (evalResult, err
 	//
 	// For more context, crbug.com/692611 and go/cq-after-lgtm.
 	if ck.triggerer != ck.owner {
-		return noWithReason(fmt.Sprintf(notOwnerNotCommitter, ck.triggerer, ck.triggerer)), nil
+		return noWithReason(fmt.Sprintf(notOwnerNotCommitter, ck.triggererEmail)), nil
 	}
 	isDryRunner, err := ck.isDryRunner(ctx, ck.triggerer)
 	if err != nil {
@@ -215,7 +216,7 @@ func (ck runCreateChecker) canCreateDryRun(ctx context.Context) (evalResult, err
 		case cfgpb.Verifiers_GerritCQAbility_DRY_RUN:
 		case cfgpb.Verifiers_GerritCQAbility_COMMIT:
 		default:
-			return noWithReason(fmt.Sprintf(ownerNotDryRunner, ck.triggerer, ck.triggerer)), nil
+			return noWithReason(fmt.Sprintf(ownerNotDryRunner, ck.triggererEmail)), nil
 		}
 		if !ck.isApproved {
 			return noWithReason(noLGTMReason(ctx, ck.cl)), nil
@@ -279,7 +280,7 @@ func evaluateCLs(ctx context.Context, cg *prjcfg.ConfigGroup, trs []*run.Trigger
 	trustedDeps := make(common.CLIDsSet, len(cls))
 	for i, cl := range cls {
 		tr := trs[i]
-		triggerer, err := identity.MakeIdentity("user:" + tr.Email)
+		triggerer, err := identity.MakeIdentity(fmt.Sprintf("%s:%s", identity.User, tr.Email))
 		if err != nil {
 			return nil, errors.Annotate(err, "CL(%d): triggerer %q", cl.ID, tr.Email).Err()
 		}
@@ -307,11 +308,12 @@ func evaluateCLs(ctx context.Context, cg *prjcfg.ConfigGroup, trs []*run.Trigger
 			commGroups:              gVerifier.GetCommitterList(),
 			dryGroups:               gVerifier.GetDryRunAccessList(),
 
-			owner:         owner,
-			triggerer:     triggerer,
-			isApproved:    isApproved,
-			depsToExamine: depsToExamine,
-			trustedDeps:   trustedDeps,
+			owner:          owner,
+			triggerer:      triggerer,
+			triggererEmail: tr.Email,
+			isApproved:     isApproved,
+			depsToExamine:  depsToExamine,
+			trustedDeps:    trustedDeps,
 		}
 	}
 	return cks, nil

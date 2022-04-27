@@ -195,9 +195,7 @@ func TestStart(t *testing.T) {
 				&run.OngoingLongOps_Op_TriggersCancellation_Request{
 					Clid: int64(cl1.ID),
 					Message: fmt.Sprintf(
-						"CV cannot trigger the Run for \"user:%s\" because \"user:%s\" "+
-							"is not a committer.",
-						triggerer, triggerer,
+						"CV cannot trigger the Run for `%s` because the user is not a committer.", triggerer,
 					),
 					Notify: []run.OngoingLongOps_Op_TriggersCancellation_Whom{
 						run.OngoingLongOps_Op_TriggersCancellation_OWNER,

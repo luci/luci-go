@@ -63,7 +63,7 @@ func TestCheckRunCLs(t *testing.T) {
 		authState := &authtest.FakeState{FakeDB: authtest.NewFakeDB()}
 		ctx = auth.WithState(ctx, authState)
 		addMember := func(email, grp string) {
-			id, err := identity.MakeIdentity("user:" + email)
+			id, err := identity.MakeIdentity(fmt.Sprintf("%s:%s", identity.User, email))
 			So(err, ShouldBeNil)
 			authState.FakeDB.(*authtest.FakeDB).AddMocks(authtest.MockMembership(id, grp))
 		}
@@ -186,14 +186,14 @@ func TestCheckRunCLs(t *testing.T) {
 					Convey("CL approved", func() {
 						// Should fail, even if it was approved.
 						approveCL(cl)
-						mustFailWith(cl, "%q is not a committer", "user:"+tr)
+						mustFailWith(cl, "CV cannot trigger the Run for `%s` because the user is not a committer", tr)
 						// unless AllowOwnerIfSubmittable == COMMIT
 						setAllowOwner(cfgpb.Verifiers_GerritCQAbility_COMMIT)
 						mustOK()
 					})
 					Convey("CL not approved", func() {
 						// Should fail always.
-						mustFailWith(cl, "%q is not a committer", "user:"+tr)
+						mustFailWith(cl, "CV cannot trigger the Run for `%s` because the user is not a committer", tr)
 						setAllowOwner(cfgpb.Verifiers_GerritCQAbility_COMMIT)
 						mustFailWith(cl, noLGTM)
 					})
@@ -267,7 +267,7 @@ func TestCheckRunCLs(t *testing.T) {
 					Convey("CL approved", func() {
 						// Should fail, even if it was approved.
 						approveCL(cl)
-						mustFailWith(cl, "%q is not a dry-runner", "user:"+owner)
+						mustFailWith(cl, "CV cannot trigger the Run for `%s` because the user is not a dry-runner", owner)
 						// Unless AllowOwnerIfSubmittable == DRY_RUN
 						setAllowOwner(cfgpb.Verifiers_GerritCQAbility_DRY_RUN)
 						mustOK()
@@ -277,7 +277,7 @@ func TestCheckRunCLs(t *testing.T) {
 					})
 					Convey("CL not approved", func() {
 						// Should fail always.
-						mustFailWith(cl, "%q is not a dry-runner", "user:"+owner)
+						mustFailWith(cl, "CV cannot trigger the Run for `%s` because the user is not a dry-runner", owner)
 						setAllowOwner(cfgpb.Verifiers_GerritCQAbility_COMMIT)
 						mustFailWith(cl, noLGTM)
 					})
