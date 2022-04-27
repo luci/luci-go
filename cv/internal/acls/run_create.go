@@ -351,20 +351,41 @@ func strSubmitReqsForUnapprovedCL(ctx context.Context, cl *changelist.CL) (allSa
 	if len(reqs) == 0 {
 		return
 	}
+	join := func(ss []string) string {
+		var sb strings.Builder
+		sb.Grow(len(ss) * 16) // typically, len(submit_requirement.name) is < 16.
+		comma := ""
+		for _, s := range ss {
+			fmt.Fprintf(&sb, "%s`%s`", comma, s)
+			comma = ", "
+		}
+		return sb.String()
+	}
+
 	switch satisfied, unsatisfied := groupSubmitReqs(ctx, reqs); {
+	// all were NOT_APPLICABLE?
+	// just log the occurrence, but consider that
+	// submit requirements agreed with Submittable.
 	case len(satisfied) == 0 && len(unsatisfied) == 0:
-		// all were NOT_APPLICABLE?
-		// just log the occurrence, but consider that
-		// submit requirements agreed with Submittable.
 		logging.Errorf(ctx, "CL(%d): all submit reqs(%d) are NOT_APPLICABLE", cl.ID, len(reqs))
-	case len(unsatisfied) == 0:
-		// all satisfied?
-		// this is the case where submit reqs and submittable DISAGREE with each other.
-		msg = fmt.Sprintf("all requirements satisfied (i.e., %s), but the CL is not approved", strings.Join(satisfied, ", "))
-		logging.Errorf(ctx, "CL(%d): all submit reqs satisfied; but CL not submittable", cl.ID)
+
+	// all satisfied?
+	// These are the cases where submit reqs and submittable DISAGREE with each other.
+	case len(unsatisfied) == 0 && len(satisfied) == 1:
+		msg = fmt.Sprintf("`%s` is satisfied, but the CL is not approved", satisfied[0])
 		allSatisfied = true
+	case len(unsatisfied) == 0 && len(satisfied) > 1:
+		msg = fmt.Sprintf("%s are satisfied, but the CL is not approved", join(satisfied))
+		allSatisfied = true
+
+	case len(unsatisfied) == 1:
+		msg = fmt.Sprintf("`%s` is not satisfied", unsatisfied[0])
 	default:
-		msg = fmt.Sprintf("%s not satisfied", strings.Join(unsatisfied, ", "))
+		msg = fmt.Sprintf("%s are not satisfied", join(unsatisfied))
+	}
+
+	if allSatisfied {
+		logging.Errorf(ctx, "CL(%d): all submit reqs satisfied; but CL not submittable", cl.ID)
 	}
 	return
 }

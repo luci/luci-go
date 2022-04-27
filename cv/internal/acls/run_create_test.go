@@ -345,7 +345,7 @@ func TestCheckRunCLs(t *testing.T) {
 						addSubmitReq(dep2, "Code-Owner", gerritpb.SubmitRequirementResultInfo_SATISFIED)
 						res := mustFailWith(cl, untrustedDeps)
 						So(res.Failure(cl), ShouldContainSubstring, fmt.Sprintf(
-							"- %s\n- %s all requirements satisfied (i.e., Code-Owner), but the CL is not approved",
+							"- %s\n- %s `Code-Owner` is satisfied, but the CL is not approved",
 							dep1URL, dep2URL))
 						So(res.Failure(cl), ShouldContainSubstring, suspiciouslyUntrustedDeps)
 					})
