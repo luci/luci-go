@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # Copyright 2016 The LUCI Authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -53,12 +53,12 @@ class Toolchain(object):
         find_executable('npm'),
     ]
     if not all(node_js):
-      print """\
+      print("""\
   Build requires a "node" and "npm" executables to be installed on your local
   system. Please install Node.js and NPM. Installation instructions can be found
   at:
       https://docs.npmjs.com/getting-started/installing-node
-  """
+  """)
       raise Exception('Unable to locate Node.js installation.')
     tc = cls(web_dir, *node_js)
 
@@ -200,7 +200,7 @@ def _subcommand_gulp(tc, gulp_args, app=None):
 
 def main(args):
   parser = argparse.ArgumentParser()
-  parser.add_argument('-v', '--verbose', action='count',
+  parser.add_argument('-v', '--verbose', action='count', default=0,
       help='Increase verbosity.')
   parser.add_argument('-i', '--force-install', action='store_true',
       help='Install NPM/Bower files even if they are considered up-to-date.')
