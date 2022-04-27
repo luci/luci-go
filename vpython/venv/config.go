@@ -76,6 +76,11 @@ type Config struct {
 	// overriding one.
 	Package vpython.Spec_Package
 
+	// Map of python version (e.g. "3.8") to a CIPD package for the interpreter.
+	// The interpreter will be installed to the vpython root if needed before
+	// executing the virtual environment.
+	PythonPackages map[string]vpython.Spec_Package
+
 	// Python is the set of Python interpreters to use. If empty, one will be
 	// resolved based on the Spec and the current PATH. If more than one, the
 	// first interpreter matching the Spec will be used.

@@ -95,6 +95,11 @@ type Config struct {
 	// VENVPackage is the VirtualEnv package to use for bootstrap generation.
 	VENVPackage vpythonAPI.Spec_Package
 
+	// Map of python version -> CIPD package for the Python interpreter.
+	// If provided, $PATH is not probed for python.
+	// TODO: Make this required and remove probing.
+	PythonPackages map[string]vpythonAPI.Spec_Package
+
 	// BaseWheels is the set of wheels to include in the spec. These will always
 	// be merged into the runtime spec and normalized, such that any duplicate
 	// wheels will be deduplicated.
@@ -390,6 +395,7 @@ func (cfg *Config) Main(c context.Context, argv []string, env environ.Env) int {
 				MaxHashLen:        6,
 				SetupEnv:          env,
 				Package:           cfg.VENVPackage,
+				PythonPackages:    cfg.PythonPackages,
 				PruneThreshold:    cfg.PruneThreshold,
 				MaxPrunesPerSweep: cfg.MaxPrunesPerSweep,
 				Loader:            cfg.PackageLoader,

@@ -18,11 +18,13 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"fmt"
 	"io"
 	"io/ioutil"
 	"os"
 	"os/exec"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"time"
 
@@ -118,6 +120,56 @@ func EnvRootFromStampPath(path string) (string, error) {
 	return filepath.Dir(filepath.Dir(path)), nil
 }
 
+// Installs the Python interpreter for the requested version into a per-version
+// location under the vpython base directory. On success, the path to the
+// installed Python interpreter binary is returned.
+func ensureInterpreterPackage(c context.Context, cfg Config) (string, error) {
+	pkg, present := cfg.PythonPackages[cfg.Spec.PythonVersion]
+	if !present {
+		// TODO: make this an error and remove probing.
+		logging.Debugf(c, "No provided package found for python version %s", cfg.Spec.PythonVersion)
+		return "", nil
+	}
+
+	if err := cfg.Loader.ResolveInterpreter(c, &pkg); err != nil {
+		return "", errors.Annotate(err, "failed to resolve python package version").Err()
+	}
+
+	dirName := "cpython_" + pkg.Version
+
+	// Hold a shared lock on the interpreter for the lifetime of the process, to prevent
+	// it from being pruned.
+	l, err := fslock.LockSharedBlocking(filepath.Join(cfg.BaseDir, fmt.Sprintf(".%s.lock", dirName)), func() error {
+		time.Sleep(10 * time.Millisecond)
+		return nil
+	})
+	if err != nil {
+		return "", errors.Annotate(err, "failed to lock the cpython package").Err()
+	}
+	if err := l.PreserveExec(); err != nil {
+		return "", errors.Annotate(err, "failed to perserve the lock of cpython package").Err()
+	}
+
+	dst := filepath.Join(cfg.BaseDir, dirName)
+	logging.Debugf(c, "Installing python package to %s", dst)
+	if err := cfg.Loader.Ensure(c, dst, []*vpython.Spec_Package{&pkg}); err != nil {
+		return "", errors.Annotate(err, "failed to download interpreter packages").Err()
+	}
+
+	if err := filesystem.Touch(filepath.Join(dst, "complete.flag"), time.Time{}, 0644); err != nil {
+		return "", errors.Annotate(err, "failed to update interpreter timestamp").Err()
+	}
+
+	pythonExec := filepath.Join(dst, "bin", "python")
+	if cfg.Spec.PythonVersion[0] == '3' {
+		pythonExec += "3"
+	}
+	if runtime.GOOS == "windows" {
+		pythonExec += ".exe"
+	}
+	return pythonExec, nil
+}
+
 // With creates a new Env and executes "fn" with assumed ownership of that Env.
 //
 // The Context passed to "fn" will be cancelled if we lose perceived ownership
@@ -134,6 +186,19 @@ func EnvRootFromStampPath(path string) (string, error) {
 func With(c context.Context, cfg Config, fn func(context.Context, *Env) error) error {
 	// Track which VirtualEnv we use so we can exempt them from pruning.
 	usedEnvs := stringset.New(2)
+
+	// Attempt to bootstrap an interpreter, if none was specified.
+	if len(cfg.Python) == 0 {
+		interp, err := ensureInterpreterPackage(c, cfg)
+		if err != nil {
+			return errors.Annotate(err, "failed to install interpreter package").Err()
+		}
+		if interp != "" {
+			if err := cfg.Python.Set(interp); err != nil {
+				return errors.Annotate(err, "failed to set interpreter").Err()
+			}
+		}
+	}
 
 	// Initialized python runtime outside makeEnv to avoid the expense of
 	// finding interpreter twice.
