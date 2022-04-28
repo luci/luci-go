@@ -68,7 +68,32 @@ func RegisterRoutes(srv *server.Server, accessGroup string, assets *rpcs.Assets)
 	)
 
 	srv.Routes.GET("/", mw, wrapErr(ui.indexPage))
-	srv.Routes.GET("/a/*AssetID", mw, wrapErr(ui.assetPage))
+
+	// Help the router to route based on the suffix:
+	//
+	//  /a/<AssetID>                the asset page
+	//  /a/<AssetID>/history        the history listing page
+	//  /a/<AssetID>/history/<ID>   a single history entry
+	//
+	// Note that <AssetID> contains unknown number of path components.
+	srv.Routes.GET("/a/*Path", mw, wrapErr(func(ctx *router.Context) error {
+		path := strings.TrimPrefix(ctx.Params.ByName("Path"), "/")
+		chunks := strings.Split(path, "/")
+		l := len(chunks)
+
+		if l > 1 && chunks[l-1] == "history" {
+			assetID := strings.Join(chunks[:l-1], "/")
+			return ui.historyListingPage(ctx, assetID)
+		}
+
+		if l > 2 && chunks[l-2] == "history" {
+			assetID := strings.Join(chunks[:l-2], "/")
+			historyID := chunks[l-1]
+			return ui.historyEntryPage(ctx, assetID, historyID)
+		}
+
+		return ui.assetPage(ctx, path)
+	}))
 }
 
 // prepareTemplates loads HTML page templates.

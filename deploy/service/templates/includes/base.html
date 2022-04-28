@@ -18,6 +18,9 @@ that can be found in the LICENSE file. -->
     .tooltip {
       font-size: 12px;
     }
+    .font-small {
+      font-size: 12px;
+    }
     a {
       text-decoration: none!important;
     }
@@ -26,6 +29,19 @@ that can be found in the LICENSE file. -->
       height: 30px;
       border-radius: 5px;
     }
+    #asset-title {
+      margin-bottom: 0px;
+    }
+    #asset-title img {
+      width: 40px;
+      height: 40px;
+    }
+    .popover-html-content {
+      display: none;
+    }
+    .popover-big {
+      max-width: 800px;
+    }
     {{block "style" .}}{{end}}
   </style>
 
@@ -33,7 +49,25 @@ that can be found in the LICENSE file. -->
     function onPageLoaded() {
       // Activate all fancy Bootstrap popovers and tooltips.
       document.querySelectorAll('[data-bs-toggle="popover"]').forEach(
-          elem => new bootstrap.Popover(elem, {container: 'body'})
+          elem => {
+            let opts = {container: 'body'};
+            let content = elem.querySelector('.popover-html-content');
+            if (content != null) {
+              content.remove();
+              content.classList.remove('popover-html-content');
+              opts['html'] = true;
+              opts['sanitize'] = false;
+              opts['content'] = content;
+              opts['template'] = `
+              <div class="popover popover-big" role="tooltip">
+                <div class="popover-arrow"></div>
+                <h3 class="popover-header"></h3>
+                <div class="popover-body"></div>
+              </div>
+              `;
+            }
+            return new bootstrap.Popover(elem, opts);
+          }
       );
       document.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(
           elem => new bootstrap.Tooltip(elem, {container: 'body'})
@@ -94,7 +128,7 @@ that can be found in the LICENSE file. -->
 {{define "linkHref"}}
 {{if .Href}}
 <a
-  href="{{.Href}}" target="_blank"
+  href="{{.Href}}" target="{{.Target}}"
   {{if .Tooltip}}
   data-bs-toggle="tooltip"
   data-bs-html="true"

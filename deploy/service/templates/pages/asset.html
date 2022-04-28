@@ -1,16 +1,3 @@
-{{define "style"}}
-
-#asset-title {
-  margin-bottom: 0px;
-}
-
-#asset-title img {
-  width: 40px;
-  height: 40px;
-}
-
-{{end}}
-
 {{define "versionsTable"}}
 <table class="table table-sm">
   <thead>
@@ -188,7 +175,39 @@
             class="accordion-collapse collapse show"
             aria-labelledby="history-log-heading">
             <div class="accordion-body">
-              <b>TODO</b>
+              {{if .History}}
+              <table class="table table-sm">
+                <tbody>
+                {{range .History}}
+                  <tr class="{{.TableClass}}">
+                    <td class="col-2">{{template "linkHref" .Age}}</td>
+                    <td class="col-8">
+                      <span
+                        data-bs-toggle="popover"
+                        data-bs-placement="top"
+                        data-bs-trigger="hover"
+                      >
+                      <div class="popover-html-content font-monospace font-small lh-sm">
+                        <div><b>Commit: </b>{{.Commit.Rev}}</div>
+                        <div><b>Author: </b>{{.Commit.AuthorEmail}}</div>
+                        <hr class="mt-2 mb-3">
+                        <pre>{{.Commit.CommitMessage}}</pre>
+                      </div>
+                      {{template "linkHref" .Commit.Subject}}
+                      </span>
+                    </td>
+                    <td class="col-2">
+                      <a href="{{.Href}}">
+                        <span class="badge {{.BadgeClass}}">{{.Outcome}}</span>
+                      </a>
+                    </td>
+                  </tr>
+                {{end}}
+                </tbody>
+              </table>
+              {{else}}
+              <i>No history yet</i>
+              {{end}}
             </div>
           </div>
         </div>

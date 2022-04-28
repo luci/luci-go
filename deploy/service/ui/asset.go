@@ -102,7 +102,7 @@ func (s assetState) tableClass() string {
 	}
 }
 
-// tableClass is the corresponding Bootstrap CSS badge class.
+// badgeClass is the corresponding Bootstrap CSS badge class.
 func (s assetState) badgeClass() string {
 	switch s {
 	case stateUpToDate:
@@ -154,12 +154,24 @@ type linkHref struct {
 	Text    string
 	Href    string
 	Tooltip string
+	Target  string
+}
+
+// hrefTarget derives "target" attribute for an href.
+func hrefTarget(href string) string {
+	if !strings.HasPrefix(href, "/") {
+		return "_blank"
+	}
+	return ""
 }
 
 // timestampHref a link that looks like a timestamp.
 func timestampHref(ts *timestamppb.Timestamp, href, tooltipSfx string) linkHref {
 	if ts == nil {
-		return linkHref{Href: href}
+		return linkHref{
+			Href:   href,
+			Target: hrefTarget(href),
+		}
 	}
 	t := ts.AsTime()
 
@@ -172,6 +184,7 @@ func timestampHref(ts *timestamppb.Timestamp, href, tooltipSfx string) linkHref 
 		Text:    humanize.RelTime(t, time.Now(), "ago", "from now"),
 		Href:    href,
 		Tooltip: tooltip,
+		Target:  hrefTarget(href),
 	}
 }
 
@@ -191,6 +204,7 @@ func appengineServiceHref(project, service string) linkHref {
 			"project":   {project},
 			"serviceId": {service},
 		}).Encode(),
+		Target: "_blank",
 	}
 }
 
@@ -206,6 +220,7 @@ func appengineVersionHref(project, service, version string) linkHref {
 			"key1":      {service},
 			"key2":      {version},
 		}).Encode(),
+		Target: "_blank",
 	}
 }
 
@@ -218,6 +233,7 @@ func commitHref(dep *modelpb.Deployment) linkHref {
 		Text: dep.ConfigRev[:8],
 		Href: fmt.Sprintf("https://%s.googlesource.com/%s/+/%s",
 			dep.Id.RepoHost, dep.Id.RepoName, dep.ConfigRev),
+		Target: "_blank",
 	}
 }
 
@@ -264,8 +280,9 @@ func deriveAssetOverview(asset *modelpb.Asset) assetOverview {
 			)
 		} else {
 			out.LastActuation = linkHref{
-				Text: "now",
-				Href: asset.LastActuateActuation.LogUrl,
+				Text:   "now",
+				Href:   asset.LastActuateActuation.LogUrl,
+				Target: "_blank",
 			}
 		}
 	}
@@ -397,26 +414,36 @@ func versionsSummary(asset *modelpb.Asset, active bool) []versionState {
 ////////////////////////////////////////////////////////////////////////////////
 
 // assetPage renders the asset page.
-func (ui *UI) assetPage(ctx *router.Context) error {
+func (ui *UI) assetPage(ctx *router.Context, assetID string) error {
+	const historyLimit = 20
+
 	assetHistory, err := ui.assets.ListAssetHistory(ctx.Context, &rpcpb.ListAssetHistoryRequest{
-		AssetId: strings.TrimPrefix(ctx.Params.ByName("AssetID"), "/"),
-		Limit:   20,
+		AssetId: assetID,
+		Limit:   historyLimit,
 	})
 	if err != nil {
 		return err
 	}
 
-	// TODO: Use assetHistory.Current and assetHistory.History to render the
-	// history of actuations.
+	if assetHistory.Current != nil {
+		// TODO: Show detailed UI.
+	}
+
+	history := make([]*historyOverview, len(assetHistory.History))
+	for i, rec := range assetHistory.History {
+		history[i] = deriveHistoryOverview(assetHistory.Asset, rec)
+	}
 
 	ref := assetRefFromID(assetHistory.Asset.Id)
 
 	templates.MustRender(ctx.Context, ctx.Writer, "pages/asset.html", map[string]interface{}{
-		"Breadcrumbs":      assetBreadcrumbs(ref),
-		"Ref":              ref,
-		"Overview":         deriveAssetOverview(assetHistory.Asset),
-		"ActiveVersions":   versionsSummary(assetHistory.Asset, true),
-		"InactiveVersions": versionsSummary(assetHistory.Asset, false),
+		"Breadcrumbs":       assetBreadcrumbs(ref),
+		"Ref":               ref,
+		"Overview":          deriveAssetOverview(assetHistory.Asset),
+		"ActiveVersions":    versionsSummary(assetHistory.Asset, true),
+		"InactiveVersions":  versionsSummary(assetHistory.Asset, false),
+		"History":           history,
+		"LikelyMoreHistory": len(history) == historyLimit,
 	})
 	return nil
 }

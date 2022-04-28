@@ -14,11 +14,21 @@
 
 package ui
 
+import (
+	"fmt"
+)
+
 type breadcrumb struct {
 	Icon  string
 	Title string
 	Href  string
 	Last  bool
+}
+
+func joinBreadcrumbs(path []breadcrumb, last breadcrumb) []breadcrumb {
+	path[len(path)-1].Last = false
+	last.Last = true
+	return append(path, last)
 }
 
 func rootBreadcrumbs() []breadcrumb {
@@ -32,16 +42,23 @@ func rootBreadcrumbs() []breadcrumb {
 }
 
 func assetBreadcrumbs(ref assetRef) []breadcrumb {
-	return []breadcrumb{
-		{
-			Title: "All assets",
-			Href:  "/",
-		},
-		{
-			Icon:  ref.Icon,
-			Title: ref.Name,
-			Href:  ref.Href,
-			Last:  true,
-		},
-	}
+	return joinBreadcrumbs(rootBreadcrumbs(), breadcrumb{
+		Icon:  ref.Icon,
+		Title: ref.Name,
+		Href:  ref.Href,
+	})
+}
+
+func historyListingBreadcrumbs(ref assetRef) []breadcrumb {
+	return joinBreadcrumbs(assetBreadcrumbs(ref), breadcrumb{
+		Title: "Actuations",
+		Href:  fmt.Sprintf("%s/history", ref.Href),
+	})
+}
+
+func historyEntryBreadcrumbs(ref assetRef, historyID int64) []breadcrumb {
+	return joinBreadcrumbs(assetBreadcrumbs(ref), breadcrumb{
+		Title: fmt.Sprintf("Actuation #%d", historyID),
+		Href:  fmt.Sprintf("%s/history/%d", ref.Href, historyID),
+	})
 }
