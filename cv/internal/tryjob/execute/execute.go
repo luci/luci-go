@@ -19,6 +19,7 @@ import (
 	"fmt"
 
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/gae/service/datastore"
 
@@ -120,8 +121,8 @@ func prepExecutionPlan(ctx context.Context, execState *tryjob.ExecutionState, r 
 			return nil, err
 		}
 		updateAttempts(execState, tryjobsByID)
-		// TODO(robertocn) actually compute retries
-		return &plan{}, nil
+
+		return &plan{retry: computeRetries(ctx, execState, tryjobsByID)}, nil
 	case reqmtChanged:
 		// TODO(yiwzhang): compute the plan
 		return &plan{}, nil
@@ -168,7 +169,7 @@ const (
 
 // needsRetry determines if a given execution's most recent attempt needs to
 // be retried, and whether this is allowed, not accounting for retry quota.
-func needsRetry(definition *tryjob.Definition, execution *tryjob.ExecutionState_Execution) retriability {
+func needsRetry(ctx context.Context, definition *tryjob.Definition, execution *tryjob.ExecutionState_Execution) retriability {
 	if len(execution.Attempts) == 0 {
 		panic("Execution has no attempts")
 	}
@@ -184,8 +185,73 @@ func needsRetry(definition *tryjob.Definition, execution *tryjob.ExecutionState_
 		return retryRequiredIgnoreQuota
 	// Check if the tryjob forbids retry.
 	case lastAttempt.Result.GetOutput().GetRetry() == recipe.Output_OUTPUT_RETRY_DENIED:
+		logging.Debugf(ctx, "tryjob %d cannot be retried as per recipe output", lastAttempt.TryjobId)
 		return retryDenied
 	default:
 		return retryRequired
 	}
+}
+
+// computeRetries gets the tryjobs to retry if quotas allow.
+//
+// It updates the execState status if the tryjobs cannot be retried.
+func computeRetries(
+	ctx context.Context,
+	execState *tryjob.ExecutionState,
+	tryjobsByID map[common.TryjobID]*tryjob.Tryjob,
+) map[*tryjob.Definition]*tryjob.ExecutionState_Execution {
+	ret := make(map[*tryjob.Definition]*tryjob.ExecutionState_Execution)
+
+	var totalUsedQuota int32
+	var failedTryjobs []*tryjob.Tryjob
+	for i, execution := range execState.Executions {
+		definition := execState.GetRequirement().GetDefinitions()[i]
+		r := needsRetry(ctx, definition, execution)
+		attempt := execution.Attempts[len(execution.Attempts)-1]
+		totalUsedQuota += execution.UsedQuota
+		switch {
+		case r == retryNotNeeded:
+		case r == retryDenied:
+			failedTryjobs = append(failedTryjobs, tryjobsByID[common.TryjobID(attempt.TryjobId)])
+			execState.Status = tryjob.ExecutionState_FAILED
+		case r == retryRequiredIgnoreQuota:
+			ret[definition] = execution
+		case execState.GetRequirement().GetRetryConfig() == nil:
+			failedTryjobs = append(failedTryjobs, tryjobsByID[common.TryjobID(attempt.TryjobId)])
+			logging.Debugf(ctx, "tryjobs cannot be retried because retries are not configured")
+			execState.Status = tryjob.ExecutionState_FAILED
+		default:
+			// The tryjob is critical and failed, it would need to be retried for
+			// the Run to succeed.
+			ret[definition] = execution
+			failedTryjobs = append(failedTryjobs, tryjobsByID[common.TryjobID(attempt.TryjobId)])
+			var quotaToRetry int32
+			switch attempt.Result.Status {
+			case tryjob.Result_TIMEOUT:
+				quotaToRetry = execState.GetRequirement().GetRetryConfig().GetTimeoutWeight()
+			case tryjob.Result_FAILED_PERMANENTLY:
+				quotaToRetry = execState.GetRequirement().GetRetryConfig().GetFailureWeight()
+			case tryjob.Result_FAILED_TRANSIENTLY:
+				quotaToRetry = execState.GetRequirement().GetRetryConfig().GetTransientFailureWeight()
+			default:
+				logging.Errorf(ctx, "unexpected status %s", attempt.Result.Status)
+				quotaToRetry = execState.GetRequirement().GetRetryConfig().GetFailureWeight()
+			}
+			execution.UsedQuota += quotaToRetry
+			totalUsedQuota += quotaToRetry
+			if execution.UsedQuota > execState.Requirement.RetryConfig.GetSingleQuota() {
+				logging.Debugf(ctx, "tryjob %d cannot be retried due to insufficient quota", attempt.TryjobId)
+				execState.Status = tryjob.ExecutionState_FAILED
+			}
+		}
+	}
+	if totalUsedQuota > execState.GetRequirement().GetRetryConfig().GetGlobalQuota() {
+		logging.Debugf(ctx, "tryjobs cannot be retried due to insufficient global quota")
+		execState.Status = tryjob.ExecutionState_FAILED
+	}
+	if execState.Status == tryjob.ExecutionState_FAILED {
+		execState.FailureReason = composeReason(failedTryjobs)
+		return nil
+	}
+	return ret
 }
