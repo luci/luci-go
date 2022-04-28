@@ -113,11 +113,13 @@ func prepExecutionPlan(ctx context.Context, execState *tryjob.ExecutionState, r 
 	case len(tryjobsUpdated) > 0 && reqmtChanged:
 		panic(fmt.Errorf("the executor can't handle requirement update and tryjobs update at the same time"))
 	case len(tryjobsUpdated) > 0:
-		_, err := tryjob.LoadTryjobsByIDs(ctx, common.MakeTryjobIDs(tryjobsUpdated...))
+		// TODO(robertocn): update the state and compute the plan
+		tryjobsByID, err := tryjob.LoadTryjobsMapByIDs(ctx, common.MakeTryjobIDs(tryjobsUpdated...))
 		if err != nil {
 			return nil, err
 		}
-		// TODO(robertocn): update the state and compute the plan
+		updateAttempts(execState, tryjobsByID)
+		// TODO(robertocn) actually compute retries
 		return &plan{}, nil
 	case reqmtChanged:
 		// TODO(yiwzhang): compute the plan
@@ -130,4 +132,19 @@ func prepExecutionPlan(ctx context.Context, execState *tryjob.ExecutionState, r 
 // execute executes the plan and mutate the state.
 func (p plan) execute(ctx context.Context, r *run.Run, execState *tryjob.ExecutionState) (*tryjob.ExecuteTryjobsResult, error) {
 	panic("implement")
+}
+
+// updateAttempts updates the attempts associated with the given tryjobs.
+func updateAttempts(execState *tryjob.ExecutionState, tryjobsToUpdateByID map[common.TryjobID]*tryjob.Tryjob) {
+	for _, exec := range execState.Executions {
+		if len(exec.Attempts) == 0 {
+			continue
+		}
+		// Only look at the most recent attempt in the execution.
+		lastAttempt := exec.Attempts[len(exec.Attempts)-1]
+		if tj, present := tryjobsToUpdateByID[common.TryjobID(lastAttempt.TryjobId)]; present {
+			lastAttempt.Result = tj.Result
+			lastAttempt.Status = tj.Status
+		}
+	}
 }
