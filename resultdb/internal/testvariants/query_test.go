@@ -47,6 +47,7 @@ func TestQueryTestVariants(t *testing.T) {
 		q := &Query{
 			InvocationIDs: invocations.NewIDSet("inv0", "inv1"),
 			PageSize:      100,
+			ResultLimit:   10,
 		}
 
 		fetch := func(q *Query) (tvs []*pb.TestVariant, token string, err error) {
@@ -475,6 +476,30 @@ func TestQueryTestVariants(t *testing.T) {
 					"40/T2/e3b0c44298fc1c14",
 				})
 			})
+		})
+
+		Convey(`ResultLimit works`, func() {
+			q.ResultLimit = 2
+			tvs, _ := mustFetch(q)
+
+			for _, tv := range tvs {
+				So(len(tv.Results), ShouldBeLessThanOrEqualTo, q.ResultLimit)
+			}
+		})
+	})
+}
+
+func TestAdjustResultLimit(t *testing.T) {
+	t.Parallel()
+	Convey(`AdjustResultLimit`, t, func() {
+		Convey(`OK`, func() {
+			So(AdjustResultLimit(50), ShouldEqual, 50)
+		})
+		Convey(`Too big`, func() {
+			So(AdjustResultLimit(1e6), ShouldEqual, resultLimitMax)
+		})
+		Convey(`Missing or 0`, func() {
+			So(AdjustResultLimit(0), ShouldEqual, resultLimitDefault)
 		})
 	})
 }

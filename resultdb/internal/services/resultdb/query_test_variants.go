@@ -36,8 +36,8 @@ func (s *resultDBServer) QueryTestVariants(ctx context.Context, in *pb.QueryTest
 		return nil, err
 	}
 
-	if err := validateQueryRequest(in); err != nil {
-		return nil, err
+	if err := validateQueryTestVariantsRequest(in); err != nil {
+		return nil, appstatus.BadRequest(err)
 	}
 	readMask, err := testvariants.QueryMask(in.GetReadMask())
 	if err != nil {
@@ -58,6 +58,7 @@ func (s *resultDBServer) QueryTestVariants(ctx context.Context, in *pb.QueryTest
 	q := testvariants.Query{
 		InvocationIDs: invs,
 		Predicate:     in.Predicate,
+		ResultLimit:   testvariants.AdjustResultLimit(in.ResultLimit),
 		PageSize:      pagination.AdjustPageSize(in.PageSize),
 		PageToken:     in.PageToken,
 		Mask:          readMask,
@@ -86,4 +87,18 @@ func (s *resultDBServer) QueryTestVariants(ctx context.Context, in *pb.QueryTest
 func outOfTime(ctx context.Context) bool {
 	dl, ok := ctx.Deadline()
 	return ok && clock.Until(ctx, dl) < 500*time.Millisecond
+}
+
+// validateQueryTestVariantsRequest returns a non-nil error if req is determined
+// to be invalid.
+func validateQueryTestVariantsRequest(in *pb.QueryTestVariantsRequest) error {
+	if err := validateQueryRequest(in); err != nil {
+		return err
+	}
+
+	if err := testvariants.ValidateResultLimit(in.ResultLimit); err != nil {
+		return errors.Annotate(err, "result_limit").Err()
+	}
+
+	return nil
 }

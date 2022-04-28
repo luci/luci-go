@@ -196,3 +196,34 @@ func TestBatchGetTestVariants(t *testing.T) {
 		})
 	})
 }
+
+func TestValidateBatchGetTestVariantsRequest(t *testing.T) {
+	Convey(`validateBatchGetTestVariantsRequest`, t, func() {
+		Convey(`negative result_limit`, func() {
+			err := validateBatchGetTestVariantsRequest(&pb.BatchGetTestVariantsRequest{
+				Invocation: "invocations/i0",
+				TestVariants: []*pb.BatchGetTestVariantsRequest_TestVariantIdentifier{
+					{TestId: "test1", VariantHash: variantHash("a", "b")},
+				},
+				ResultLimit: -1,
+			})
+			So(err, ShouldErrLike, `result_limit: negative`)
+		})
+
+		Convey(`>= 500 test variants`, func() {
+			req := &pb.BatchGetTestVariantsRequest{
+				Invocation:   "invocations/i0",
+				TestVariants: make([]*pb.BatchGetTestVariantsRequest_TestVariantIdentifier, 501),
+			}
+			for i := 0; i < 500; i += 1 {
+				req.TestVariants[i] = &pb.BatchGetTestVariantsRequest_TestVariantIdentifier{
+					TestId:      "test1",
+					VariantHash: variantHash("a", "b"),
+				}
+			}
+
+			err := validateBatchGetTestVariantsRequest(req)
+			So(err, ShouldErrLike, `a maximum of 500 test variants can be requested at once`)
+		})
+	})
+}

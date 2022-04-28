@@ -35,8 +35,13 @@ import (
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
 
-// testResultLimit is the limit of test results each test variant includes.
-const testResultLimit = 10
+const (
+	// resultLimitMax is the maximum number of results can be included in a test
+	// variant when querying test variants. The client may specify a lower limit.
+	// It is required to prevent client-caused OOMs.
+	resultLimitMax     = 100
+	resultLimitDefault = 10
+)
 
 // AllFields is a field mask that selects all TestVariant fields.
 var AllFields = mask.All(&pb.TestVariant{})
@@ -50,10 +55,33 @@ func QueryMask(readMask *field_mask.FieldMask) (*mask.Mask, error) {
 	return mask.FromFieldMask(readMask, &pb.TestVariant{}, false, false)
 }
 
+// AdjustResultLimit takes the given requested resultLimit and adjusts as
+// necessary.
+func AdjustResultLimit(resultLimit int32) int {
+	switch {
+	case resultLimit >= resultLimitMax:
+		return resultLimitMax
+	case resultLimit > 0:
+		return int(resultLimit)
+	default:
+		return resultLimitDefault
+	}
+}
+
+// ValidateResultLimit returns a non-nil error if resultLimit is invalid.
+// Returns nil if resultLimit is 0.
+func ValidateResultLimit(resultLimit int32) error {
+	if resultLimit < 0 {
+		return errors.Reason("negative").Err()
+	}
+	return nil
+}
+
 // Query specifies test variants to fetch.
 type Query struct {
 	InvocationIDs invocations.IDSet
 	Predicate     *pb.TestVariantPredicate
+	ResultLimit   int // must be positive
 	PageSize      int // must be positive
 	// Consists of test variant status, test id and variant hash.
 	PageToken string
@@ -213,7 +241,7 @@ func (q *Query) queryTestVariantsWithUnexpectedResults(ctx context.Context, f fu
 	}
 	st.Params = q.params
 	st.Params["limit"] = q.PageSize
-	st.Params["testResultLimit"] = testResultLimit
+	st.Params["testResultLimit"] = q.ResultLimit
 
 	var b spanutil.Buffer
 	return spanutil.Query(ctx, st, func(row *spanner.Row) error {
@@ -326,7 +354,7 @@ func (q *Query) fetchTestVariantsWithOnlyExpectedResults(ctx context.Context) (t
 		trLen++
 		if current != nil {
 			if current.TestId == testId && current.VariantHash == variantHash {
-				if len(current.Results) < testResultLimit {
+				if len(current.Results) < q.ResultLimit {
 					current.Results = append(current.Results, &pb.TestResultBundle{
 						Result: tr,
 					})

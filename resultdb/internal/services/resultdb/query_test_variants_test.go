@@ -148,3 +148,15 @@ func TestQueryTestVariants(t *testing.T) {
 		})
 	})
 }
+
+func TestValidateQueryTestVariantsRequest(t *testing.T) {
+	Convey(`validateQueryTestVariantsRequest`, t, func() {
+		Convey(`negative result_limit`, func() {
+			err := validateQueryTestVariantsRequest(&pb.QueryTestVariantsRequest{
+				Invocations: []string{"invocations/invx"},
+				ResultLimit: -1,
+			})
+			So(err, ShouldErrLike, `result_limit: negative`)
+		})
+	})
+}

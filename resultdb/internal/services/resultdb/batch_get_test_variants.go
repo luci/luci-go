@@ -44,6 +44,10 @@ func validateBatchGetTestVariantsRequest(in *pb.BatchGetTestVariantsRequest) err
 		}
 	}
 
+	if err := testvariants.ValidateResultLimit(in.ResultLimit); err != nil {
+		return errors.Annotate(err, "result_limit").Err()
+	}
+
 	return nil
 }
 
@@ -83,6 +87,7 @@ func (s *resultDBServer) BatchGetTestVariants(ctx context.Context, in *pb.BatchG
 		InvocationIDs: invs,
 		TestIDs:       testIDs,
 		Predicate:     &pb.TestVariantPredicate{},
+		ResultLimit:   testvariants.AdjustResultLimit(in.ResultLimit),
 		// Number chosen fairly arbitrarily.
 		PageSize:  1000,
 		PageToken: "",
