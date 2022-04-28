@@ -66,8 +66,8 @@ func TestQueryTestExonerations(t *testing.T) {
 			insertInv("b", map[string]interface{}{"Realm": "otherproject:testrealm"}, "c"),
 			// The invocation c doesn't have any included invocation.
 			insertInv("c", map[string]interface{}{"Realm": "testproject:testrealm"}),
-			insertEx("a", "A", pbutil.Variant("v", "a"), pb.ExonerationReason_OCCURS_ON_OTHER_CLS, 2),
-			insertEx("c", "C", pbutil.Variant("v", "c"), pb.ExonerationReason_OCCURS_ON_MAINLINE, 1),
+			insertEx("a", "A", pbutil.Variant("v", "a"), pb.ExonerationReason_OCCURS_ON_OTHER_CLS, pb.ExonerationReason_NOT_CRITICAL),
+			insertEx("c", "C", pbutil.Variant("v", "c"), pb.ExonerationReason_OCCURS_ON_MAINLINE),
 			insertExLegacy("c", "C", pbutil.Variant("v", "c"), 1),
 		)...)
 
@@ -106,7 +106,7 @@ func TestQueryTestExonerations(t *testing.T) {
 					VariantHash:     pbutil.VariantHash(pbutil.Variant("v", "a")),
 					ExonerationId:   "1",
 					ExplanationHtml: "explanation 1",
-					Reason:          pb.ExonerationReason_OCCURS_ON_OTHER_CLS,
+					Reason:          pb.ExonerationReason_NOT_CRITICAL,
 				},
 				{
 					Name:            "invocations/c/tests/C/exonerations/0",
@@ -191,7 +191,7 @@ func TestQueryTestExonerations(t *testing.T) {
 					VariantHash:     pbutil.VariantHash(pbutil.Variant("v", "a")),
 					ExonerationId:   "1",
 					ExplanationHtml: "explanation 1",
-					Reason:          pb.ExonerationReason_OCCURS_ON_OTHER_CLS,
+					Reason:          pb.ExonerationReason_NOT_CRITICAL,
 				},
 				{
 					Name:            "invocations/c/tests/C/exonerations/0",

@@ -36,8 +36,8 @@ func TestQueryTestExonerations(t *testing.T) {
 		testutil.MustApply(ctx, testutil.CombineMutations(
 			insert.FinalizedInvocationWithInclusions("a", nil),
 			insert.FinalizedInvocationWithInclusions("b", nil),
-			insert.TestExonerations("a", "A", pbutil.Variant("v", "a"), pb.ExonerationReason_OCCURS_ON_OTHER_CLS, 2),
-			insert.TestExonerations("b", "C", pbutil.Variant("v", "c"), pb.ExonerationReason_EXONERATION_REASON_UNSPECIFIED, 1),
+			insert.TestExonerations("a", "A", pbutil.Variant("v", "a"), pb.ExonerationReason_OCCURS_ON_OTHER_CLS, pb.ExonerationReason_NOT_CRITICAL),
+			insert.TestExonerations("b", "C", pbutil.Variant("v", "c"), pb.ExonerationReason_EXONERATION_REASON_UNSPECIFIED),
 			insert.TestExonerationsLegacy("b", "C", pbutil.Variant("v", "c"), 1),
 		)...)
 
@@ -67,7 +67,7 @@ func TestQueryTestExonerations(t *testing.T) {
 				ExonerationId:   "1",
 				ExplanationHtml: "explanation 1",
 				VariantHash:     pbutil.VariantHash(pbutil.Variant("v", "a")),
-				Reason:          pb.ExonerationReason_OCCURS_ON_OTHER_CLS,
+				Reason:          pb.ExonerationReason_NOT_CRITICAL,
 			},
 			{
 				Name:            "invocations/b/tests/C/exonerations/0",

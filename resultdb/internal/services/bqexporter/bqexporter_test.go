@@ -69,15 +69,15 @@ func TestExportToBigQuery(t *testing.T) {
 		testutil.MustApply(ctx, testutil.CombineMutations(
 			// Test results and exonerations have the same variants.
 			insert.TestResults("a", "A", pbutil.Variant("k", "v"), pb.TestStatus_FAIL, pb.TestStatus_PASS),
-			insert.TestExonerations("a", "A", pbutil.Variant("k", "v"), pb.ExonerationReason_OCCURS_ON_OTHER_CLS, 1),
+			insert.TestExonerations("a", "A", pbutil.Variant("k", "v"), pb.ExonerationReason_OCCURS_ON_OTHER_CLS),
 			// Test results and exonerations have different variants.
 			insert.TestResults("b", "B", pbutil.Variant("k", "v"), pb.TestStatus_CRASH, pb.TestStatus_PASS),
-			insert.TestExonerations("b", "B", pbutil.Variant("k", "different"), pb.ExonerationReason_OCCURS_ON_MAINLINE, 1),
+			insert.TestExonerations("b", "B", pbutil.Variant("k", "different"), pb.ExonerationReason_OCCURS_ON_MAINLINE),
 			// Passing test result without exoneration.
 			insert.TestResults("a", "C", nil, pb.TestStatus_PASS),
 			// Test results' parent is different from exported.
 			insert.TestResults("b", "D", pbutil.Variant("k", "v"), pb.TestStatus_CRASH, pb.TestStatus_PASS),
-			insert.TestExonerations("b", "D", pbutil.Variant("k", "v"), pb.ExonerationReason_OCCURS_ON_OTHER_CLS, 1),
+			insert.TestExonerations("b", "D", pbutil.Variant("k", "v"), pb.ExonerationReason_OCCURS_ON_OTHER_CLS),
 			// Test result with legacy exoneration.
 			insert.TestResults("a", "E", pbutil.Variant("k", "v"), pb.TestStatus_FAIL, pb.TestStatus_FAIL),
 			insert.TestExonerationsLegacy("a", "E", pbutil.Variant("k", "v"), 1),

@@ -111,7 +111,7 @@ func TestQueryTestResults(t *testing.T) {
 					insert.TestResults("inv1", "T2", nil, pb.TestStatus_FAIL),
 					insert.TestResults("inv1", "T3", nil, pb.TestStatus_PASS),
 					insert.TestResults("inv1", "T4", pbutil.Variant("a", "b"), pb.TestStatus_FAIL),
-					insert.TestExonerations("inv0", "T1", nil, pb.ExonerationReason_OCCURS_ON_OTHER_CLS, 1),
+					insert.TestExonerations("inv0", "T1", nil, pb.ExonerationReason_OCCURS_ON_OTHER_CLS),
 				)...)
 
 				Convey(`Works`, func() {

@@ -122,9 +122,9 @@ func TestResultMessages(trs []*pb.TestResult) []*spanner.Mutation {
 }
 
 // TestExonerations returns Spanner mutations to insert test exonerations.
-func TestExonerations(invID invocations.ID, testID string, variant *pb.Variant, reason pb.ExonerationReason, count int) []*spanner.Mutation {
-	ms := make([]*spanner.Mutation, count)
-	for i := 0; i < count; i++ {
+func TestExonerations(invID invocations.ID, testID string, variant *pb.Variant, reasons ...pb.ExonerationReason) []*spanner.Mutation {
+	ms := make([]*spanner.Mutation, len(reasons))
+	for i := 0; i < len(reasons); i++ {
 		ms[i] = spanutil.InsertMap("TestExonerations", map[string]interface{}{
 			"InvocationId":    invID,
 			"TestId":          testID,
@@ -132,7 +132,7 @@ func TestExonerations(invID invocations.ID, testID string, variant *pb.Variant, 
 			"Variant":         variant,
 			"VariantHash":     pbutil.VariantHash(variant),
 			"ExplanationHTML": spanutil.Compressed(fmt.Sprintf("explanation %d", i)),
-			"Reason":          reason,
+			"Reason":          reasons[i],
 		})
 	}
 	return ms

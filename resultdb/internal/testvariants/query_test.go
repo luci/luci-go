@@ -16,6 +16,7 @@ package testvariants
 
 import (
 	"fmt"
+	"sort"
 	"testing"
 	"time"
 
@@ -98,7 +99,8 @@ func TestQueryTestVariants(t *testing.T) {
 			insert.TestResults("inv1", "Tx", nil, pb.TestStatus_SKIP),
 			insert.TestResults("inv1", "Tz", nil, pb.TestStatus_SKIP, pb.TestStatus_SKIP),
 
-			insert.TestExonerations("inv0", "T1", nil, pb.ExonerationReason_OCCURS_ON_OTHER_CLS, 1),
+			insert.TestExonerations("inv0", "T1", nil, pb.ExonerationReason_OCCURS_ON_OTHER_CLS,
+				pb.ExonerationReason_NOT_CRITICAL, pb.ExonerationReason_OCCURS_ON_MAINLINE),
 			insert.TestExonerationsLegacy("inv0", "T2", nil, 1),
 		)...)
 
@@ -194,9 +196,21 @@ func TestQueryTestVariants(t *testing.T) {
 				},
 			})
 			So(tvs[0].TestMetadata, ShouldResembleProto, tmd)
+			sort.Slice(tvs[7].Exonerations, func(i, j int) bool {
+				return tvs[7].Exonerations[i].ExplanationHtml < tvs[7].Exonerations[j].ExplanationHtml
+			})
 			So(tvs[7].Exonerations[0], ShouldResemble, &pb.TestExoneration{
 				ExplanationHtml: "explanation 0",
 				Reason:          pb.ExonerationReason_OCCURS_ON_OTHER_CLS,
+			})
+
+			So(tvs[7].Exonerations[1], ShouldResemble, &pb.TestExoneration{
+				ExplanationHtml: "explanation 1",
+				Reason:          pb.ExonerationReason_NOT_CRITICAL,
+			})
+			So(tvs[7].Exonerations[2], ShouldResemble, &pb.TestExoneration{
+				ExplanationHtml: "explanation 2",
+				Reason:          pb.ExonerationReason_OCCURS_ON_MAINLINE,
 			})
 			So(tvs[8].Exonerations[0], ShouldResemble, &pb.TestExoneration{
 				ExplanationHtml: "legacy explanation 0",
