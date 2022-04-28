@@ -21,6 +21,7 @@ import (
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
 	"google.golang.org/protobuf/proto"
 
+	"go.chromium.org/luci/cv/api/recipe/v1"
 	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/tryjob"
 
@@ -59,6 +60,68 @@ func TestUpdateAttempts(t *testing.T) {
 					common.TryjobID(201): {ID: 201, Status: tryjob.Status_ENDED, Result: &tryjob.Result{Status: tryjob.Result_FAILED_PERMANENTLY}},
 				})
 				So(execState, ShouldResembleProto, originalState)
+			})
+		})
+	})
+}
+
+func TestNeedsRetry(t *testing.T) {
+	Convey("needsRetry", t, func() {
+		execState := newExecStateBuilder().
+			withDefinition(makeDefinition("critical", true)).appendAttempt(0, 101).
+			withDefinition(makeDefinition("nonCritical", false)).appendAttempt(1, 201).state
+		criticalExecution := execState.Executions[0]
+		criticalDefinition := execState.Requirement.Definitions[0]
+		nonCriticalExecution := execState.Executions[1]
+		nonCriticalDefinition := execState.Requirement.Definitions[1]
+
+		Convey("retry not needed", func() {
+			Convey("non-critical", func() {
+				nonCriticalExecution.Attempts[0].Result = &tryjob.Result{Status: tryjob.Result_FAILED_PERMANENTLY}
+				nonCriticalExecution.Attempts[0].Status = tryjob.Status_ENDED
+				r := needsRetry(nonCriticalDefinition, nonCriticalExecution)
+				So(r, ShouldEqual, retryNotNeeded)
+			})
+			Convey("in progress", func() {
+				criticalExecution.Attempts[0].Status = tryjob.Status_PENDING
+				r := needsRetry(criticalDefinition, criticalExecution)
+				So(r, ShouldEqual, retryNotNeeded)
+			})
+			Convey("succeeded", func() {
+				criticalExecution.Attempts[0].Result = &tryjob.Result{Status: tryjob.Result_SUCCEEDED}
+				criticalExecution.Attempts[0].Status = tryjob.Status_ENDED
+				r := needsRetry(criticalDefinition, criticalExecution)
+				So(r, ShouldEqual, retryNotNeeded)
+			})
+		})
+		Convey("reused tryjob failed", func() {
+			criticalExecution.Attempts[0].Reused = true
+			Convey("returns correct value", func() {
+				criticalExecution.Attempts[0].Result = &tryjob.Result{Status: tryjob.Result_FAILED_PERMANENTLY}
+				criticalExecution.Attempts[0].Status = tryjob.Status_ENDED
+				Convey("with no recipe output", func() {
+					criticalExecution.Attempts[0].Result.Output = nil
+				})
+				Convey("with retry denied property", func() {
+					criticalExecution.Attempts[0].Result.Output = &recipe.Output{Retry: recipe.Output_OUTPUT_RETRY_DENIED}
+				})
+				r := needsRetry(criticalDefinition, criticalExecution)
+				So(r, ShouldEqual, retryRequiredIgnoreQuota)
+			})
+		})
+		Convey("not reused", func() {
+			Convey("retry denied", func() {
+				criticalExecution.Attempts[0].Result = &tryjob.Result{Status: tryjob.Result_FAILED_PERMANENTLY, Output: &recipe.Output{Retry: recipe.Output_OUTPUT_RETRY_DENIED}}
+				criticalExecution.Attempts[0].Status = tryjob.Status_ENDED
+				r := needsRetry(criticalDefinition, criticalExecution)
+				So(r, ShouldEqual, retryDenied)
+			})
+			Convey("retry required", func() {
+				criticalExecution.Attempts[0].Result = &tryjob.Result{Status: tryjob.Result_FAILED_PERMANENTLY}
+				criticalExecution.Attempts[0].Status = tryjob.Status_ENDED
+				r := needsRetry(criticalDefinition, criticalExecution)
+				So(r, ShouldEqual, retryRequired)
+
 			})
 		})
 	})

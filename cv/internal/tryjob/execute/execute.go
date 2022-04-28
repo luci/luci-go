@@ -22,6 +22,7 @@ import (
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/gae/service/datastore"
 
+	"go.chromium.org/luci/cv/api/recipe/v1"
 	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/run"
 	"go.chromium.org/luci/cv/internal/tryjob"
@@ -146,5 +147,45 @@ func updateAttempts(execState *tryjob.ExecutionState, tryjobsToUpdateByID map[co
 			lastAttempt.Result = tj.Result
 			lastAttempt.Status = tj.Status
 		}
+	}
+}
+
+// retriability indicates whether a tryjob can/needs to be retried.
+type retriability int
+
+const (
+	// There is no need to retry this tryjob, it has not failed, or is not
+	// critical.
+	retryNotNeeded retriability = iota
+	// The tryjob cannot be retried, implies failure.
+	retryDenied
+	// The tryjob needs to be retried if quota allows.
+	retryRequired
+	// The tryjob failed, but was not triggered by this run, so trigger with
+	// no regard for retry quota.
+	retryRequiredIgnoreQuota
+)
+
+// needsRetry determines if a given execution's most recent attempt needs to
+// be retried, and whether this is allowed, not accounting for retry quota.
+func needsRetry(definition *tryjob.Definition, execution *tryjob.ExecutionState_Execution) retriability {
+	if len(execution.Attempts) == 0 {
+		panic("Execution has no attempts")
+	}
+	switch lastAttempt := execution.Attempts[len(execution.Attempts)-1]; {
+	// Do not retry non-critical tryjobs regardless of result.
+	case !definition.Critical:
+		return retryNotNeeded
+	case lastAttempt.Status != tryjob.Status_ENDED || lastAttempt.Result.Status == tryjob.Result_SUCCEEDED:
+		return retryNotNeeded
+	// If this run did not trigger the tryjob, do not count its failure
+	// towards retry quota. Also ignores the output_retry_denied property.
+	case lastAttempt.Reused:
+		return retryRequiredIgnoreQuota
+	// Check if the tryjob forbids retry.
+	case lastAttempt.Result.GetOutput().GetRetry() == recipe.Output_OUTPUT_RETRY_DENIED:
+		return retryDenied
+	default:
+		return retryRequired
 	}
 }
