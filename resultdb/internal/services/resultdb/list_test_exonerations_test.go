@@ -17,20 +17,18 @@ package resultdb
 import (
 	"testing"
 
+	. "github.com/smartystreets/goconvey/convey"
 	"google.golang.org/grpc/codes"
 
-	"go.chromium.org/luci/server/auth"
-	"go.chromium.org/luci/server/auth/authtest"
-
+	. "go.chromium.org/luci/common/testing/assertions"
 	"go.chromium.org/luci/resultdb/internal/invocations"
 	"go.chromium.org/luci/resultdb/internal/spanutil"
 	"go.chromium.org/luci/resultdb/internal/testutil"
 	"go.chromium.org/luci/resultdb/internal/testutil/insert"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
+	"go.chromium.org/luci/server/auth"
+	"go.chromium.org/luci/server/auth/authtest"
 )
 
 func TestValidateListTestExonerationsRequest(t *testing.T) {
@@ -74,6 +72,7 @@ func TestListTestExonerations(t *testing.T) {
 				"Variant":         var0,
 				"VariantHash":     "deadbeef",
 				"ExplanationHTML": spanutil.Compressed("broken"),
+				"Reason":          pb.ExonerationReason_OCCURS_ON_OTHER_CLS,
 			}),
 			spanutil.InsertMap("TestExonerations", map[string]interface{}{
 				"InvocationId":  invID,
@@ -99,6 +98,7 @@ func TestListTestExonerations(t *testing.T) {
 				VariantHash:     "deadbeef",
 				ExonerationId:   "0",
 				ExplanationHtml: "broken",
+				Reason:          pb.ExonerationReason_OCCURS_ON_OTHER_CLS,
 			},
 			{
 				Name:          pbutil.TestExonerationName("inv", testID, "1"),

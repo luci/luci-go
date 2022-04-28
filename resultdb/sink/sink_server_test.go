@@ -20,18 +20,16 @@ import (
 	"testing"
 	"time"
 
+	. "github.com/smartystreets/goconvey/convey"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/durationpb"
 
+	. "go.chromium.org/luci/common/testing/assertions"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 	sinkpb "go.chromium.org/luci/resultdb/sink/proto/v1"
-
-	. "github.com/smartystreets/goconvey/convey"
-
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestReportTestResults(t *testing.T) {
@@ -317,6 +315,7 @@ func TestReportTestResults(t *testing.T) {
 				So(sentExoReq.Requests[0].TestExoneration, ShouldResembleProto, &pb.TestExoneration{
 					TestId:          tr.TestId,
 					ExplanationHtml: "Unexpected passes are exonerated",
+					Reason:          pb.ExonerationReason_UNEXPECTED_PASS,
 				})
 			})
 

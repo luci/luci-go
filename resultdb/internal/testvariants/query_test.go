@@ -20,6 +20,7 @@ import (
 	"time"
 
 	"cloud.google.com/go/spanner"
+	. "github.com/smartystreets/goconvey/convey"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/durationpb"
@@ -27,8 +28,7 @@ import (
 
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/proto/mask"
-	"go.chromium.org/luci/server/span"
-
+	. "go.chromium.org/luci/common/testing/assertions"
 	"go.chromium.org/luci/resultdb/internal/invocations"
 	"go.chromium.org/luci/resultdb/internal/pagination"
 	"go.chromium.org/luci/resultdb/internal/spanutil"
@@ -36,9 +36,7 @@ import (
 	"go.chromium.org/luci/resultdb/internal/testutil/insert"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
+	"go.chromium.org/luci/server/span"
 )
 
 func TestQueryTestVariants(t *testing.T) {
@@ -100,7 +98,8 @@ func TestQueryTestVariants(t *testing.T) {
 			insert.TestResults("inv1", "Tx", nil, pb.TestStatus_SKIP),
 			insert.TestResults("inv1", "Tz", nil, pb.TestStatus_SKIP, pb.TestStatus_SKIP),
 
-			insert.TestExonerations("inv0", "T1", nil, 1),
+			insert.TestExonerations("inv0", "T1", nil, pb.ExonerationReason_OCCURS_ON_OTHER_CLS, 1),
+			insert.TestExonerationsLegacy("inv0", "T2", nil, 1),
 		)...)
 
 		// Insert an additional TestResult for comparing TestVariant.Results.Result.
@@ -170,11 +169,11 @@ func TestQueryTestVariants(t *testing.T) {
 				"10/T5/e3b0c44298fc1c14",
 				"10/Ty/e3b0c44298fc1c14",
 				"20/Tz/e3b0c44298fc1c14",
-				"30/T2/e3b0c44298fc1c14",
 				"30/T5/c467ccce5a16dc72",
 				"30/T8/e3b0c44298fc1c14",
 				"30/Tx/e3b0c44298fc1c14",
 				"40/T1/e3b0c44298fc1c14",
+				"40/T2/e3b0c44298fc1c14",
 			})
 
 			So(tvs[0].Results, ShouldResembleProto, []*pb.TestResultBundle{
@@ -195,8 +194,13 @@ func TestQueryTestVariants(t *testing.T) {
 				},
 			})
 			So(tvs[0].TestMetadata, ShouldResembleProto, tmd)
-			So(tvs[8].Exonerations[0], ShouldResemble, &pb.TestExoneration{
+			So(tvs[7].Exonerations[0], ShouldResemble, &pb.TestExoneration{
 				ExplanationHtml: "explanation 0",
+				Reason:          pb.ExonerationReason_OCCURS_ON_OTHER_CLS,
+			})
+			So(tvs[8].Exonerations[0], ShouldResemble, &pb.TestExoneration{
+				ExplanationHtml: "legacy explanation 0",
+				Reason:          pb.ExonerationReason_EXONERATION_REASON_UNSPECIFIED,
 			})
 			So(len(tvs[2].Results), ShouldEqual, 10)
 		})
@@ -323,8 +327,12 @@ func TestQueryTestVariants(t *testing.T) {
 
 						for _, exoneration := range tv.Exonerations {
 							So(exoneration.ExplanationHtml, ShouldNotBeEmpty)
+							if tv.TestId != "T2" {
+								So(exoneration.Reason, ShouldNotBeZeroValue)
+							}
 							So(exoneration, ShouldResembleProto, &pb.TestExoneration{
 								ExplanationHtml: exoneration.ExplanationHtml,
+								Reason:          exoneration.Reason,
 							})
 						}
 
@@ -373,11 +381,11 @@ func TestQueryTestVariants(t *testing.T) {
 				"10/T5/e3b0c44298fc1c14",
 				"10/Ty/e3b0c44298fc1c14",
 				"20/Tz/e3b0c44298fc1c14",
-				"30/T2/e3b0c44298fc1c14",
 				"30/T5/c467ccce5a16dc72",
 				"30/T8/e3b0c44298fc1c14",
 				"30/Tx/e3b0c44298fc1c14",
 				"40/T1/e3b0c44298fc1c14",
+				"40/T2/e3b0c44298fc1c14",
 			})
 			So(nextToken, ShouldEqual, pagination.Token("EXPECTED", "", ""))
 
@@ -446,11 +454,11 @@ func TestQueryTestVariants(t *testing.T) {
 					"10/T5/e3b0c44298fc1c14",
 					"10/Ty/e3b0c44298fc1c14",
 					"20/Tz/e3b0c44298fc1c14",
-					"30/T2/e3b0c44298fc1c14",
 					"30/T5/c467ccce5a16dc72",
 					"30/T8/e3b0c44298fc1c14",
 					"30/Tx/e3b0c44298fc1c14",
 					"40/T1/e3b0c44298fc1c14",
+					"40/T2/e3b0c44298fc1c14",
 				})
 			})
 		})

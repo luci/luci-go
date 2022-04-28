@@ -22,7 +22,6 @@ import (
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/grpc/appstatus"
-
 	"go.chromium.org/luci/resultdb/internal/invocations"
 	"go.chromium.org/luci/resultdb/internal/spanutil"
 	"go.chromium.org/luci/resultdb/pbutil"
@@ -63,6 +62,7 @@ func Read(ctx context.Context, name string) (*pb.TestExoneration, error) {
 		"Variant":         &ret.Variant,
 		"VariantHash":     &ret.VariantHash,
 		"ExplanationHTML": &explanationHTML,
+		"Reason":          &ret.Reason,
 	})
 	switch {
 	case spanner.ErrCode(err) == codes.NotFound:

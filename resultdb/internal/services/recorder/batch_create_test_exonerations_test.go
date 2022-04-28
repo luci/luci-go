@@ -18,19 +18,17 @@ import (
 	"testing"
 
 	"github.com/golang/protobuf/proto"
+	. "github.com/smartystreets/goconvey/convey"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
 
-	"go.chromium.org/luci/server/span"
-
+	. "go.chromium.org/luci/common/testing/assertions"
 	"go.chromium.org/luci/resultdb/internal/exonerations"
 	"go.chromium.org/luci/resultdb/internal/testutil"
 	"go.chromium.org/luci/resultdb/internal/testutil/insert"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
+	"go.chromium.org/luci/server/span"
 )
 
 func TestValidateBatchCreateTestExonerationsRequest(t *testing.T) {
@@ -205,6 +203,7 @@ func TestBatchCreateTestExonerations(t *testing.T) {
 				So(err, ShouldBeNil)
 				So(row.Variant, ShouldResembleProto, expected.Variant)
 				So(row.ExplanationHtml, ShouldEqual, expected.ExplanationHtml)
+				So(row.Reason, ShouldEqual, expected.Reason)
 			}
 
 			if withRequestID {

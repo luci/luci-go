@@ -290,7 +290,11 @@ CREATE TABLE TestExonerations (
 
   -- Compressed explanation of the exoneration for humans, in HTML.
   -- See span.Compress type for details of compression.
-  ExplanationHTML BYTES(MAX)
+  ExplanationHTML BYTES(MAX),
+
+  -- The reason the test was exonerated.
+  -- See resultdb.v1.ExonerationReason.
+  Reason INT64,
 ) PRIMARY KEY (InvocationId, TestId, ExonerationId),
   INTERLEAVE IN PARENT Invocations ON DELETE CASCADE;
 

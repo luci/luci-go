@@ -18,18 +18,16 @@ import (
 	"sort"
 	"testing"
 
-	pb "go.chromium.org/luci/resultdb/proto/v1"
+	. "github.com/smartystreets/goconvey/convey"
 	"google.golang.org/grpc/codes"
 
-	"go.chromium.org/luci/server/auth"
-	"go.chromium.org/luci/server/auth/authtest"
-
+	. "go.chromium.org/luci/common/testing/assertions"
 	"go.chromium.org/luci/resultdb/internal/testutil"
 	"go.chromium.org/luci/resultdb/internal/testutil/insert"
 	"go.chromium.org/luci/resultdb/pbutil"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
+	pb "go.chromium.org/luci/resultdb/proto/v1"
+	"go.chromium.org/luci/server/auth"
+	"go.chromium.org/luci/server/auth/authtest"
 )
 
 func TestValidateQueryTestExonerationsRequest(t *testing.T) {
@@ -61,14 +59,16 @@ func TestQueryTestExonerations(t *testing.T) {
 
 		insertInv := insert.FinalizedInvocationWithInclusions
 		insertEx := insert.TestExonerations
+		insertExLegacy := insert.TestExonerationsLegacy
 		testutil.MustApply(ctx, testutil.CombineMutations(
 			insertInv("x", map[string]interface{}{"Realm": "secretproject:testrealm"}, "a"),
 			insertInv("a", map[string]interface{}{"Realm": "testproject:testrealm"}, "b"),
 			insertInv("b", map[string]interface{}{"Realm": "otherproject:testrealm"}, "c"),
 			// The invocation c doesn't have any included invocation.
 			insertInv("c", map[string]interface{}{"Realm": "testproject:testrealm"}),
-			insertEx("a", "A", pbutil.Variant("v", "a"), 2),
-			insertEx("c", "C", pbutil.Variant("v", "c"), 1),
+			insertEx("a", "A", pbutil.Variant("v", "a"), pb.ExonerationReason_OCCURS_ON_OTHER_CLS, 2),
+			insertEx("c", "C", pbutil.Variant("v", "c"), pb.ExonerationReason_OCCURS_ON_MAINLINE, 1),
+			insertExLegacy("c", "C", pbutil.Variant("v", "c"), 1),
 		)...)
 
 		srv := newTestResultDBService()
@@ -97,6 +97,7 @@ func TestQueryTestExonerations(t *testing.T) {
 					VariantHash:     pbutil.VariantHash(pbutil.Variant("v", "a")),
 					ExonerationId:   "0",
 					ExplanationHtml: "explanation 0",
+					Reason:          pb.ExonerationReason_OCCURS_ON_OTHER_CLS,
 				},
 				{
 					Name:            "invocations/a/tests/A/exonerations/1",
@@ -105,6 +106,7 @@ func TestQueryTestExonerations(t *testing.T) {
 					VariantHash:     pbutil.VariantHash(pbutil.Variant("v", "a")),
 					ExonerationId:   "1",
 					ExplanationHtml: "explanation 1",
+					Reason:          pb.ExonerationReason_OCCURS_ON_OTHER_CLS,
 				},
 				{
 					Name:            "invocations/c/tests/C/exonerations/0",
@@ -113,6 +115,16 @@ func TestQueryTestExonerations(t *testing.T) {
 					VariantHash:     pbutil.VariantHash(pbutil.Variant("v", "c")),
 					ExonerationId:   "0",
 					ExplanationHtml: "explanation 0",
+					Reason:          pb.ExonerationReason_OCCURS_ON_MAINLINE,
+				},
+				{
+					Name:            "invocations/c/tests/C/exonerations/legacy:0",
+					TestId:          "C",
+					Variant:         pbutil.Variant("v", "c"),
+					VariantHash:     pbutil.VariantHash(pbutil.Variant("v", "c")),
+					ExonerationId:   "legacy:0",
+					ExplanationHtml: "legacy explanation 0",
+					Reason:          pb.ExonerationReason_EXONERATION_REASON_UNSPECIFIED,
 				},
 			})
 		})
@@ -134,6 +146,16 @@ func TestQueryTestExonerations(t *testing.T) {
 					VariantHash:     pbutil.VariantHash(pbutil.Variant("v", "c")),
 					ExonerationId:   "0",
 					ExplanationHtml: "explanation 0",
+					Reason:          pb.ExonerationReason_OCCURS_ON_MAINLINE,
+				},
+				{
+					Name:            "invocations/c/tests/C/exonerations/legacy:0",
+					TestId:          "C",
+					Variant:         pbutil.Variant("v", "c"),
+					VariantHash:     pbutil.VariantHash(pbutil.Variant("v", "c")),
+					ExonerationId:   "legacy:0",
+					ExplanationHtml: "legacy explanation 0",
+					Reason:          pb.ExonerationReason_EXONERATION_REASON_UNSPECIFIED,
 				},
 			})
 		})
@@ -160,6 +182,7 @@ func TestQueryTestExonerations(t *testing.T) {
 					VariantHash:     pbutil.VariantHash(pbutil.Variant("v", "a")),
 					ExonerationId:   "0",
 					ExplanationHtml: "explanation 0",
+					Reason:          pb.ExonerationReason_OCCURS_ON_OTHER_CLS,
 				},
 				{
 					Name:            "invocations/a/tests/A/exonerations/1",
@@ -168,6 +191,7 @@ func TestQueryTestExonerations(t *testing.T) {
 					VariantHash:     pbutil.VariantHash(pbutil.Variant("v", "a")),
 					ExonerationId:   "1",
 					ExplanationHtml: "explanation 1",
+					Reason:          pb.ExonerationReason_OCCURS_ON_OTHER_CLS,
 				},
 				{
 					Name:            "invocations/c/tests/C/exonerations/0",
@@ -176,6 +200,16 @@ func TestQueryTestExonerations(t *testing.T) {
 					VariantHash:     pbutil.VariantHash(pbutil.Variant("v", "c")),
 					ExonerationId:   "0",
 					ExplanationHtml: "explanation 0",
+					Reason:          pb.ExonerationReason_OCCURS_ON_MAINLINE,
+				},
+				{
+					Name:            "invocations/c/tests/C/exonerations/legacy:0",
+					TestId:          "C",
+					Variant:         pbutil.Variant("v", "c"),
+					VariantHash:     pbutil.VariantHash(pbutil.Variant("v", "c")),
+					ExonerationId:   "legacy:0",
+					ExplanationHtml: "legacy explanation 0",
+					Reason:          pb.ExonerationReason_EXONERATION_REASON_UNSPECIFIED,
 				},
 			})
 		})

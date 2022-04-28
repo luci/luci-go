@@ -27,7 +27,6 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/proto/mask"
 	"go.chromium.org/luci/common/trace"
-
 	"go.chromium.org/luci/resultdb/internal/invocations"
 	"go.chromium.org/luci/resultdb/internal/pagination"
 	"go.chromium.org/luci/resultdb/internal/spanutil"
@@ -195,6 +194,15 @@ func (q *Query) toTestResultProto(r *tvResult, testID string) (*pb.TestResult, e
 	return tr, nil
 }
 
+// tvResult matches the result STRUCT of a test exoneration from the
+// unexpected test variants query.
+type tvExoneration struct {
+	// ExplanationHTML is the compressed explanation HTML.
+	ExplanationHTML []byte
+	// Reason is the exoneration reason (if any).
+	Reason spanner.NullInt64
+}
+
 func (q *Query) queryTestVariantsWithUnexpectedResults(ctx context.Context, f func(*pb.TestVariant) error) (err error) {
 	ctx, ts := trace.StartSpan(ctx, "testvariants.Query.run")
 	ts.Attribute("cr.dev/invocations", len(q.InvocationIDs))
@@ -221,9 +229,9 @@ func (q *Query) queryTestVariantsWithUnexpectedResults(ctx context.Context, f fu
 		tv := &pb.TestVariant{}
 		var tvStatus int64
 		var results []*tvResult
-		var exoExplanationHtmls [][]byte
+		var exonerations []*tvExoneration
 		var tmd spanutil.Compressed
-		if err := b.FromSpanner(row, &tv.TestId, &tv.VariantHash, &tv.Variant, &tmd, &tvStatus, &results, &exoExplanationHtmls); err != nil {
+		if err := b.FromSpanner(row, &tv.TestId, &tv.VariantHash, &tv.Variant, &tmd, &tvStatus, &results, &exonerations); err != nil {
 			return err
 		}
 
@@ -249,16 +257,18 @@ func (q *Query) queryTestVariantsWithUnexpectedResults(ctx context.Context, f fu
 		}
 
 		// Populate tv.Exonerations
-		if len(exoExplanationHtmls) == 0 {
+		if len(exonerations) == 0 {
 			return f(tv)
 		}
 
-		tv.Exonerations = make([]*pb.TestExoneration, len(exoExplanationHtmls))
-		for i, ex := range exoExplanationHtmls {
-			tv.Exonerations[i] = &pb.TestExoneration{}
-			if tv.Exonerations[i].ExplanationHtml, err = q.decompressText(ex); err != nil {
+		tv.Exonerations = make([]*pb.TestExoneration, len(exonerations))
+		for i, ex := range exonerations {
+			e := &pb.TestExoneration{}
+			if e.ExplanationHtml, err = q.decompressText(ex.ExplanationHTML); err != nil {
 				return err
 			}
+			e.Reason = pb.ExonerationReason(ex.Reason.Int64)
+			tv.Exonerations[i] = e
 		}
 		return f(tv)
 	})
@@ -496,7 +506,10 @@ var testVariantsWithUnexpectedResultsSQLTmpl = template.Must(template.New("testV
 		SELECT
 			TestId,
 			VariantHash,
-			ARRAY_AGG(ExplanationHTML) exonerationExplanations
+			ARRAY_AGG(STRUCT(
+				ExplanationHTML,
+				Reason
+			)) exonerations
 		FROM TestExonerations
 		WHERE InvocationId IN UNNEST(@invIDs)
 		GROUP BY TestId, VariantHash
@@ -519,7 +532,7 @@ var testVariantsWithUnexpectedResultsSQLTmpl = template.Must(template.New("testV
 				SELECT AS STRUCT *
 				FROM UNNEST(tv.results)
 				LIMIT @testResultLimit) results,
-			exonerated.exonerationExplanations
+			exonerated.exonerations
 		FROM test_variants tv
 		LEFT JOIN exonerated USING(TestId, VariantHash)
 		ORDER BY TvStatus, TestId, VariantHash
@@ -532,7 +545,7 @@ var testVariantsWithUnexpectedResultsSQLTmpl = template.Must(template.New("testV
 		TestMetadata,
 		TvStatus,
 		results,
-		exonerationExplanations,
+		exonerations,
 	FROM testVariantsWithUnexpectedResults
 	WHERE
 	{{if .HasTestIds}}

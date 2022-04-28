@@ -23,7 +23,6 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/common/errors"
-
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
@@ -51,6 +50,7 @@ type Ptr interface {
 //   - Value and Ptr
 //   - string
 //   - timestamppb.Timestamp
+//   - pb.ExonerationReason
 //   - pb.InvocationState
 //   - pb.TestStatus
 //   - pb.Variant
@@ -60,6 +60,7 @@ type Ptr interface {
 type Buffer struct {
 	NullString            spanner.NullString
 	NullTime              spanner.NullTime
+	NullInt64             spanner.NullInt64
 	Int64                 int64
 	StringSlice           []string
 	ByteSlice, ByteSlice2 []byte
@@ -99,6 +100,8 @@ func (b *Buffer) fromSpanner(row *spanner.Row, col int, goPtr interface{}) error
 		spanPtr = &b.NullString
 	case **timestamppb.Timestamp:
 		spanPtr = &b.NullTime
+	case *pb.ExonerationReason:
+		spanPtr = &b.NullInt64
 	case *pb.TestStatus:
 		spanPtr = &b.Int64
 	case *pb.Invocation_State:
@@ -139,6 +142,12 @@ func (b *Buffer) fromSpanner(row *spanner.Row, col int, goPtr interface{}) error
 		if b.NullTime.Valid {
 			*goPtr = pbutil.MustTimestampProto(b.NullTime.Time)
 		}
+
+	case *pb.ExonerationReason:
+		// If the value stored is NULL, NullInt64.Int64
+		// will be zero, which maps to EXONERATION_REASON_UNSPECIFIED,
+		// which is correct.
+		*goPtr = pb.ExonerationReason(b.NullInt64.Int64)
 
 	case *pb.Invocation_State:
 		*goPtr = pb.Invocation_State(b.Int64)
@@ -201,6 +210,9 @@ func ToSpanner(v interface{}) interface{} {
 		// Not returning an error here significantly simplifies usage
 		// of this function and functions based on this one.
 		return ret
+
+	case pb.ExonerationReason:
+		return int64(v)
 
 	case pb.Invocation_State:
 		return int64(v)

@@ -17,15 +17,15 @@ package resultdb
 import (
 	"testing"
 
+	. "github.com/smartystreets/goconvey/convey"
+
+	. "go.chromium.org/luci/common/testing/assertions"
 	"go.chromium.org/luci/resultdb/internal/invocations"
 	"go.chromium.org/luci/resultdb/internal/spanutil"
 	"go.chromium.org/luci/resultdb/internal/testutil"
 	"go.chromium.org/luci/resultdb/internal/testutil/insert"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestValidateGetTestExonerationRequest(t *testing.T) {
@@ -60,6 +60,7 @@ func TestGetTestExoneration(t *testing.T) {
 				"Variant":         pbutil.Variant("k1", "v1", "k2", "v2"),
 				"VariantHash":     "deadbeef",
 				"ExplanationHTML": spanutil.Compressed("broken"),
+				"Reason":          pb.ExonerationReason_OCCURS_ON_OTHER_CLS,
 			}))
 
 		req := &pb.GetTestExonerationRequest{Name: "invocations/inv_0/tests/ninja:%2F%2Fchrome%2Ftest:foo_tests%2FBarTest.DoBaz/exonerations/id"}
@@ -72,6 +73,35 @@ func TestGetTestExoneration(t *testing.T) {
 			Variant:         pbutil.Variant("k1", "v1", "k2", "v2"),
 			VariantHash:     "deadbeef",
 			ExplanationHtml: "broken",
+			Reason:          pb.ExonerationReason_OCCURS_ON_OTHER_CLS,
+		})
+
+		Convey("With Legacy Data", func() {
+			// Insert a TestExoneration without reason.
+			testutil.MustApply(ctx,
+				spanutil.InsertMap("TestExonerations", map[string]interface{}{
+					"InvocationId":    invID,
+					"TestId":          "ninja://chrome/test:foo_tests/BarTest.DoFoo",
+					"ExonerationId":   "id",
+					"Variant":         pbutil.Variant("k1", "v1", "k2", "v2"),
+					"VariantHash":     "deadbeef",
+					"ExplanationHTML": spanutil.Compressed("broken"),
+					// Reason field should be left as NULL, to reflect
+					// exonerations inserted prior to ~May 2022.
+				}))
+
+			req := &pb.GetTestExonerationRequest{Name: "invocations/inv_0/tests/ninja:%2F%2Fchrome%2Ftest:foo_tests%2FBarTest.DoFoo/exonerations/id"}
+			tr, err := srv.GetTestExoneration(ctx, req)
+			So(err, ShouldBeNil)
+			So(tr, ShouldResembleProto, &pb.TestExoneration{
+				Name:            "invocations/inv_0/tests/ninja:%2F%2Fchrome%2Ftest:foo_tests%2FBarTest.DoFoo/exonerations/id",
+				ExonerationId:   "id",
+				TestId:          "ninja://chrome/test:foo_tests/BarTest.DoFoo",
+				Variant:         pbutil.Variant("k1", "v1", "k2", "v2"),
+				VariantHash:     "deadbeef",
+				ExplanationHtml: "broken",
+				Reason:          pb.ExonerationReason_EXONERATION_REASON_UNSPECIFIED,
+			})
 		})
 	})
 }

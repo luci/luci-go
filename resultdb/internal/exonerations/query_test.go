@@ -18,17 +18,15 @@ import (
 	"sort"
 	"testing"
 
-	"go.chromium.org/luci/server/span"
+	. "github.com/smartystreets/goconvey/convey"
 
-	pb "go.chromium.org/luci/resultdb/proto/v1"
-
+	. "go.chromium.org/luci/common/testing/assertions"
 	"go.chromium.org/luci/resultdb/internal/invocations"
 	"go.chromium.org/luci/resultdb/internal/testutil"
 	"go.chromium.org/luci/resultdb/internal/testutil/insert"
 	"go.chromium.org/luci/resultdb/pbutil"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
+	pb "go.chromium.org/luci/resultdb/proto/v1"
+	"go.chromium.org/luci/server/span"
 )
 
 func TestQueryTestExonerations(t *testing.T) {
@@ -38,8 +36,9 @@ func TestQueryTestExonerations(t *testing.T) {
 		testutil.MustApply(ctx, testutil.CombineMutations(
 			insert.FinalizedInvocationWithInclusions("a", nil),
 			insert.FinalizedInvocationWithInclusions("b", nil),
-			insert.TestExonerations("a", "A", pbutil.Variant("v", "a"), 2),
-			insert.TestExonerations("b", "C", pbutil.Variant("v", "c"), 1),
+			insert.TestExonerations("a", "A", pbutil.Variant("v", "a"), pb.ExonerationReason_OCCURS_ON_OTHER_CLS, 2),
+			insert.TestExonerations("b", "C", pbutil.Variant("v", "c"), pb.ExonerationReason_EXONERATION_REASON_UNSPECIFIED, 1),
+			insert.TestExonerationsLegacy("b", "C", pbutil.Variant("v", "c"), 1),
 		)...)
 
 		q := &Query{
@@ -59,6 +58,7 @@ func TestQueryTestExonerations(t *testing.T) {
 				ExonerationId:   "0",
 				ExplanationHtml: "explanation 0",
 				VariantHash:     pbutil.VariantHash(pbutil.Variant("v", "a")),
+				Reason:          pb.ExonerationReason_OCCURS_ON_OTHER_CLS,
 			},
 			{
 				Name:            "invocations/a/tests/A/exonerations/1",
@@ -67,6 +67,7 @@ func TestQueryTestExonerations(t *testing.T) {
 				ExonerationId:   "1",
 				ExplanationHtml: "explanation 1",
 				VariantHash:     pbutil.VariantHash(pbutil.Variant("v", "a")),
+				Reason:          pb.ExonerationReason_OCCURS_ON_OTHER_CLS,
 			},
 			{
 				Name:            "invocations/b/tests/C/exonerations/0",
@@ -75,6 +76,16 @@ func TestQueryTestExonerations(t *testing.T) {
 				ExonerationId:   "0",
 				ExplanationHtml: "explanation 0",
 				VariantHash:     pbutil.VariantHash(pbutil.Variant("v", "c")),
+				Reason:          pb.ExonerationReason_EXONERATION_REASON_UNSPECIFIED,
+			},
+			{
+				Name:            "invocations/b/tests/C/exonerations/legacy:0",
+				TestId:          "C",
+				Variant:         pbutil.Variant("v", "c"),
+				ExonerationId:   "legacy:0",
+				ExplanationHtml: "legacy explanation 0",
+				VariantHash:     pbutil.VariantHash(pbutil.Variant("v", "c")),
+				Reason:          pb.ExonerationReason_EXONERATION_REASON_UNSPECIFIED,
 			},
 		})
 	})

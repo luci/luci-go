@@ -18,20 +18,18 @@ import (
 	"testing"
 
 	"github.com/golang/protobuf/proto"
+	. "github.com/smartystreets/goconvey/convey"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
 
-	"go.chromium.org/luci/server/span"
-
+	. "go.chromium.org/luci/common/testing/assertions"
 	"go.chromium.org/luci/resultdb/internal/exonerations"
 	"go.chromium.org/luci/resultdb/internal/invocations"
 	"go.chromium.org/luci/resultdb/internal/testutil"
 	"go.chromium.org/luci/resultdb/internal/testutil/insert"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
+	"go.chromium.org/luci/server/span"
 )
 
 func TestValidateCreateTestExonerationRequest(t *testing.T) {
@@ -182,8 +180,10 @@ func TestCreateTestExoneration(t *testing.T) {
 			e2eTest(&pb.CreateTestExonerationRequest{
 				Invocation: "invocations/inv",
 				TestExoneration: &pb.TestExoneration{
-					TestId:  "a",
-					Variant: pbutil.Variant("a", "1", "b", "2"),
+					TestId:          "a",
+					Variant:         pbutil.Variant("a", "1", "b", "2"),
+					Reason:          pb.ExonerationReason_OCCURS_ON_OTHER_CLS,
+					ExplanationHtml: "Test is known flaky. Similar test failures have been observed in other CLs.",
 				},
 			}, "6408fdc5c36df5df", "")
 		})
@@ -195,6 +195,7 @@ func TestCreateTestExoneration(t *testing.T) {
 				TestExoneration: &pb.TestExoneration{
 					TestId:  "a",
 					Variant: pbutil.Variant("a", "1", "b", "2"),
+					Reason:  pb.ExonerationReason_OCCURS_ON_MAINLINE,
 				},
 			}, "6408fdc5c36df5df", "d:2960f0231ce23039cdf7d4a62e31939ecd897bbf465e0fb2d35bf425ae1c5ae14eb0714d6dd0a0c244eaa66ae2b645b0637f58e91ed1b820bb1f01d8d4a72e67")
 		})
@@ -206,8 +207,19 @@ func TestCreateTestExoneration(t *testing.T) {
 				TestExoneration: &pb.TestExoneration{
 					TestId:      "a",
 					VariantHash: "deadbeefdeadbeef",
+					Reason:      pb.ExonerationReason_UNEXPECTED_PASS,
 				},
 			}, "deadbeefdeadbeef", "")
+		})
+
+		Convey("Without reason, e2e", func() {
+			e2eTest(&pb.CreateTestExonerationRequest{
+				Invocation: "invocations/inv",
+				TestExoneration: &pb.TestExoneration{
+					TestId:  "a",
+					Variant: pbutil.Variant("a", "1", "b", "2"),
+				},
+			}, "6408fdc5c36df5df", "")
 		})
 	})
 }

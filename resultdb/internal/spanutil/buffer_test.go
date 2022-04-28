@@ -59,6 +59,10 @@ func TestTypeConversion(t *testing.T) {
 		)
 	})
 
+	Convey(`pb.ExonerationReason`, t, func() {
+		test(pb.ExonerationReason_OCCURS_ON_OTHER_CLS, int64(2))
+	})
+
 	Convey(`pb.Invocation_State`, t, func() {
 		test(pb.Invocation_FINALIZED, int64(3))
 	})

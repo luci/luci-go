@@ -21,16 +21,14 @@ import (
 	"time"
 
 	"cloud.google.com/go/spanner"
+	. "github.com/smartystreets/goconvey/convey"
 	"google.golang.org/protobuf/proto"
-
 	durpb "google.golang.org/protobuf/types/known/durationpb"
 
 	"go.chromium.org/luci/resultdb/internal/invocations"
 	"go.chromium.org/luci/resultdb/internal/spanutil"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 func updateDict(dest, source map[string]interface{}) {
@@ -124,7 +122,7 @@ func TestResultMessages(trs []*pb.TestResult) []*spanner.Mutation {
 }
 
 // TestExonerations returns Spanner mutations to insert test exonerations.
-func TestExonerations(invID invocations.ID, testID string, variant *pb.Variant, count int) []*spanner.Mutation {
+func TestExonerations(invID invocations.ID, testID string, variant *pb.Variant, reason pb.ExonerationReason, count int) []*spanner.Mutation {
 	ms := make([]*spanner.Mutation, count)
 	for i := 0; i < count; i++ {
 		ms[i] = spanutil.InsertMap("TestExonerations", map[string]interface{}{
@@ -134,6 +132,24 @@ func TestExonerations(invID invocations.ID, testID string, variant *pb.Variant, 
 			"Variant":         variant,
 			"VariantHash":     pbutil.VariantHash(variant),
 			"ExplanationHTML": spanutil.Compressed(fmt.Sprintf("explanation %d", i)),
+			"Reason":          reason,
+		})
+	}
+	return ms
+}
+
+// TestExonerationsLegacy returns Spanner mutations to insert test exonerations
+// without reason (all exonerations inserted prior to ~May 2022).
+func TestExonerationsLegacy(invID invocations.ID, testID string, variant *pb.Variant, count int) []*spanner.Mutation {
+	ms := make([]*spanner.Mutation, count)
+	for i := 0; i < count; i++ {
+		ms[i] = spanutil.InsertMap("TestExonerations", map[string]interface{}{
+			"InvocationId":    invID,
+			"TestId":          testID,
+			"ExonerationId":   "legacy:" + strconv.Itoa(i),
+			"Variant":         variant,
+			"VariantHash":     pbutil.VariantHash(variant),
+			"ExplanationHTML": spanutil.Compressed(fmt.Sprintf("legacy explanation %d", i)),
 		})
 	}
 	return ms

@@ -21,14 +21,13 @@ import (
 	"sync"
 	"testing"
 
+	. "github.com/smartystreets/goconvey/convey"
 	"golang.org/x/sync/semaphore"
 	"golang.org/x/time/rate"
 	"google.golang.org/protobuf/proto"
 
 	"go.chromium.org/luci/common/bq"
-	"go.chromium.org/luci/server/span"
-	"go.chromium.org/luci/server/tq"
-
+	. "go.chromium.org/luci/common/testing/assertions"
 	artifactcontenttest "go.chromium.org/luci/resultdb/internal/artifactcontent/testutil"
 	"go.chromium.org/luci/resultdb/internal/tasks/taskspb"
 	"go.chromium.org/luci/resultdb/internal/testutil"
@@ -36,9 +35,8 @@ import (
 	"go.chromium.org/luci/resultdb/pbutil"
 	bqpb "go.chromium.org/luci/resultdb/proto/bq"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
+	"go.chromium.org/luci/server/span"
+	"go.chromium.org/luci/server/tq"
 )
 
 type mockPassInserter struct {
@@ -71,15 +69,18 @@ func TestExportToBigQuery(t *testing.T) {
 		testutil.MustApply(ctx, testutil.CombineMutations(
 			// Test results and exonerations have the same variants.
 			insert.TestResults("a", "A", pbutil.Variant("k", "v"), pb.TestStatus_FAIL, pb.TestStatus_PASS),
-			insert.TestExonerations("a", "A", pbutil.Variant("k", "v"), 1),
+			insert.TestExonerations("a", "A", pbutil.Variant("k", "v"), pb.ExonerationReason_OCCURS_ON_OTHER_CLS, 1),
 			// Test results and exonerations have different variants.
 			insert.TestResults("b", "B", pbutil.Variant("k", "v"), pb.TestStatus_CRASH, pb.TestStatus_PASS),
-			insert.TestExonerations("b", "B", pbutil.Variant("k", "different"), 1),
+			insert.TestExonerations("b", "B", pbutil.Variant("k", "different"), pb.ExonerationReason_OCCURS_ON_MAINLINE, 1),
 			// Passing test result without exoneration.
 			insert.TestResults("a", "C", nil, pb.TestStatus_PASS),
 			// Test results' parent is different from exported.
 			insert.TestResults("b", "D", pbutil.Variant("k", "v"), pb.TestStatus_CRASH, pb.TestStatus_PASS),
-			insert.TestExonerations("b", "D", pbutil.Variant("k", "v"), 1),
+			insert.TestExonerations("b", "D", pbutil.Variant("k", "v"), pb.ExonerationReason_OCCURS_ON_OTHER_CLS, 1),
+			// Test result with legacy exoneration.
+			insert.TestResults("a", "E", pbutil.Variant("k", "v"), pb.TestStatus_FAIL, pb.TestStatus_FAIL),
+			insert.TestExonerationsLegacy("a", "E", pbutil.Variant("k", "v"), 1),
 		)...)
 
 		bqExport := &pb.BigQueryExport{
@@ -105,9 +106,9 @@ func TestExportToBigQuery(t *testing.T) {
 
 			i.mu.Lock()
 			defer i.mu.Unlock()
-			So(len(i.insertedMessages), ShouldEqual, 7)
+			So(len(i.insertedMessages), ShouldEqual, 9)
 
-			expectedTestIDs := []string{"A", "B", "C", "D"}
+			expectedTestIDs := []string{"A", "B", "C", "D", "E"}
 			for _, m := range i.insertedMessages {
 				tr := m.Message.(*bqpb.TestResultRow)
 				So(tr.TestId, ShouldBeIn, expectedTestIDs)
@@ -115,7 +116,7 @@ func TestExportToBigQuery(t *testing.T) {
 				So(tr.Parent.Realm, ShouldEqual, "testproject:testrealm")
 				So(tr.Exported.Id, ShouldEqual, "a")
 				So(tr.Exported.Realm, ShouldEqual, "testproject:testrealm")
-				So(tr.Exonerated, ShouldEqual, tr.TestId == "A" || tr.TestId == "D")
+				So(tr.Exonerated, ShouldEqual, tr.TestId == "A" || tr.TestId == "D" || tr.TestId == "E")
 				So(tr.Name, ShouldEqual, pbutil.TestResultName(string(tr.Parent.Id), tr.TestId, tr.ResultId))
 			}
 		})

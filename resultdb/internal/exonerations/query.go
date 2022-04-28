@@ -43,7 +43,7 @@ func (q *Query) Fetch(ctx context.Context) (tes []*pb.TestExoneration, nextPageT
 	}
 
 	st := spanner.NewStatement(`
-		SELECT InvocationId, TestId, ExonerationId, Variant, VariantHash, ExplanationHtml
+		SELECT InvocationId, TestId, ExonerationId, Variant, VariantHash, ExplanationHtml, Reason
 		FROM TestExonerations
 		WHERE InvocationId IN UNNEST(@invIDs)
 			# Skip test exonerations after the one specified in the page token.
@@ -71,7 +71,7 @@ func (q *Query) Fetch(ctx context.Context) (tes []*pb.TestExoneration, nextPageT
 	err = spanutil.Query(ctx, st, func(row *spanner.Row) error {
 		var invID invocations.ID
 		ex := &pb.TestExoneration{}
-		err := b.FromSpanner(row, &invID, &ex.TestId, &ex.ExonerationId, &ex.Variant, &ex.VariantHash, &explanationHTML)
+		err := b.FromSpanner(row, &invID, &ex.TestId, &ex.ExonerationId, &ex.Variant, &ex.VariantHash, &explanationHTML, &ex.Reason)
 		if err != nil {
 			return err
 		}

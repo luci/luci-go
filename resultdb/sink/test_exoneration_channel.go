@@ -25,7 +25,6 @@ import (
 
 	"go.chromium.org/luci/common/sync/dispatcher"
 	"go.chromium.org/luci/common/sync/dispatcher/buffer"
-
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 	sinkpb "go.chromium.org/luci/resultdb/sink/proto/v1"
 )
@@ -101,6 +100,7 @@ func (c *unexpectedPassChannel) report(ctx context.Context, b *buffer.Batch) err
 					TestId:          tr.GetTestId(),
 					Variant:         c.cfg.BaseVariant,
 					ExplanationHtml: "Unexpected passes are exonerated",
+					Reason:          pb.ExonerationReason_UNEXPECTED_PASS,
 				},
 			}
 		}

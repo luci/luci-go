@@ -18,19 +18,17 @@ import (
 	"fmt"
 	"testing"
 
+	. "github.com/smartystreets/goconvey/convey"
 	"google.golang.org/grpc/codes"
 
-	"go.chromium.org/luci/server/auth"
-	"go.chromium.org/luci/server/auth/authtest"
-
+	. "go.chromium.org/luci/common/testing/assertions"
 	"go.chromium.org/luci/resultdb/internal/pagination"
 	"go.chromium.org/luci/resultdb/internal/testutil"
 	"go.chromium.org/luci/resultdb/internal/testutil/insert"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
+	"go.chromium.org/luci/server/auth"
+	"go.chromium.org/luci/server/auth/authtest"
 )
 
 func TestQueryTestVariants(t *testing.T) {
@@ -55,7 +53,8 @@ func TestQueryTestVariants(t *testing.T) {
 			insert.TestResults("inv0", "T2", nil, pb.TestStatus_FAIL),
 			insert.TestResults("inv1", "T3", nil, pb.TestStatus_PASS),
 			insert.TestResults("inv1", "T1", pbutil.Variant("a", "b"), pb.TestStatus_FAIL, pb.TestStatus_PASS),
-			insert.TestExonerations("inv0", "T1", nil, 1),
+			insert.TestExonerations("inv0", "T1", nil, pb.ExonerationReason_OCCURS_ON_OTHER_CLS, 1),
+			insert.TestExonerationsLegacy("inv0", "T1", nil, 1),
 		)...)
 
 		srv := &resultDBServer{}
