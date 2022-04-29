@@ -55,6 +55,7 @@ export class BuildExt {
   readonly schedulingTimeout: Duration | null;
   readonly executionTimeout: Duration | null;
   readonly gracePeriod: Duration | null;
+  readonly ancestorIds: number[];
 
   readonly rootSteps: readonly StepExt[];
   private readonly renderTime: IObservableValue<DateTime>;
@@ -84,6 +85,7 @@ export class BuildExt {
       ? Duration.fromMillis(parseProtoDuration(build.executionTimeout))
       : null;
     this.gracePeriod = build.gracePeriod ? Duration.fromMillis(parseProtoDuration(build.gracePeriod)) : null;
+    this.ancestorIds = build.ancestorIds || [];
 
     // Build the step-tree.
     const steps: StepExt[] = [];

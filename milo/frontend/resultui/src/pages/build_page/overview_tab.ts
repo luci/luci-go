@@ -370,6 +370,15 @@ export class OverviewTabElement extends MobxLitElement {
                   <td>Service Account:</td>
                   <td>${build.infra.swarming.taskServiceAccount}</td>
                 </tr>
+                <tr>
+                  <td>Ancestor Builds:</td>
+                  <td>
+                        ${build.ancestorIds.length == 0 ? 'no ancestor builds' :
+                        build.ancestorIds.map(id =>
+                          html`<a href="/b/${id}">${id}</a> `)
+                        }
+                  </td>
+                </tr>
               `
             : ''
         }
