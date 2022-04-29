@@ -1479,6 +1479,14 @@ func TestGerritError(t *testing.T) {
 			_, err := c.SubmitChange(ctx, req)
 			So(grpcutil.Code(err), ShouldEqual, codes.ResourceExhausted)
 		})
+		Convey("HTTP 503 ", func() {
+			srv, c := newMockPbClient(func(w http.ResponseWriter, r *http.Request) {
+				w.WriteHeader(503)
+			})
+			defer srv.Close()
+			_, err := c.SubmitChange(ctx, req)
+			So(grpcutil.Code(err), ShouldEqual, codes.Unavailable)
+		})
 	})
 }
 

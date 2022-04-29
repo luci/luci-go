@@ -558,6 +558,9 @@ func (c *client) callRaw(
 		// Gerrit returns error message in the response body.
 		return res.StatusCode, body, status.Errorf(codes.InvalidArgument, string(body))
 
+	case http.StatusServiceUnavailable:
+		return res.StatusCode, body, status.Errorf(codes.Unavailable, string(body))
+
 	default:
 		logging.Errorf(ctx, "gerrit: unexpected HTTP %d response.\nResponse headers: %v\nResponse body: %s",
 			res.StatusCode,
