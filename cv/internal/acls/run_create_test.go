@@ -158,6 +158,15 @@ func TestCheckRunCLs(t *testing.T) {
 				&gerritpb.SubmitRequirementResultInfo{Name: name, Status: st})
 			So(datastore.Put(ctx, cl), ShouldBeNil)
 		}
+		satisfyReq := func(cl *changelist.CL, name string) {
+			addSubmitReq(cl, name, gerritpb.SubmitRequirementResultInfo_SATISFIED)
+		}
+		unsatisfyReq := func(cl *changelist.CL, name string) {
+			addSubmitReq(cl, name, gerritpb.SubmitRequirementResultInfo_UNSATISFIED)
+		}
+		naReq := func(cl *changelist.CL, name string) {
+			addSubmitReq(cl, name, gerritpb.SubmitRequirementResultInfo_NOT_APPLICABLE)
+		}
 
 		Convey("mode == FullRun", func() {
 			m := run.FullRun
@@ -186,14 +195,14 @@ func TestCheckRunCLs(t *testing.T) {
 					Convey("CL approved", func() {
 						// Should fail, even if it was approved.
 						approveCL(cl)
-						mustFailWith(cl, "CV cannot trigger the Run for `%s` because the user is not a committer", tr)
+						mustFailWith(cl, "CV cannot start a Run for `%s` because the user is not a committer", tr)
 						// unless AllowOwnerIfSubmittable == COMMIT
 						setAllowOwner(cfgpb.Verifiers_GerritCQAbility_COMMIT)
 						mustOK()
 					})
 					Convey("CL not approved", func() {
 						// Should fail always.
-						mustFailWith(cl, "CV cannot trigger the Run for `%s` because the user is not a committer", tr)
+						mustFailWith(cl, "CV cannot start a Run for `%s` because the user is not a committer", tr)
 						setAllowOwner(cfgpb.Verifiers_GerritCQAbility_COMMIT)
 						mustFailWith(cl, noLGTM)
 					})
@@ -201,7 +210,7 @@ func TestCheckRunCLs(t *testing.T) {
 				Convey("suspiciously noLGTM", func() {
 					addDryRunner(tr)
 					addSubmitReq(cl, "Code-Review", gerritpb.SubmitRequirementResultInfo_SATISFIED)
-					mustFailWith(cl, suspiciouslyNoLGTM)
+					mustFailWith(cl, noLGTMSuspicious)
 				})
 			})
 
@@ -240,7 +249,7 @@ func TestCheckRunCLs(t *testing.T) {
 				Convey("suspiciously noLGTM", func() {
 					addCommitter(tr)
 					addSubmitReq(cl, "Code-Review", gerritpb.SubmitRequirementResultInfo_SATISFIED)
-					mustFailWith(cl, suspiciouslyNoLGTM)
+					mustFailWith(cl, noLGTMSuspicious)
 				})
 			})
 		})
@@ -267,7 +276,7 @@ func TestCheckRunCLs(t *testing.T) {
 					Convey("CL approved", func() {
 						// Should fail, even if it was approved.
 						approveCL(cl)
-						mustFailWith(cl, "CV cannot trigger the Run for `%s` because the user is not a dry-runner", owner)
+						mustFailWith(cl, "CV cannot start a Run for `%s` because the user is not a dry-runner", owner)
 						// Unless AllowOwnerIfSubmittable == DRY_RUN
 						setAllowOwner(cfgpb.Verifiers_GerritCQAbility_DRY_RUN)
 						mustOK()
@@ -277,7 +286,7 @@ func TestCheckRunCLs(t *testing.T) {
 					})
 					Convey("CL not approved", func() {
 						// Should fail always.
-						mustFailWith(cl, "CV cannot trigger the Run for `%s` because the user is not a dry-runner", owner)
+						mustFailWith(cl, "CV cannot start a Run for `%s` because the user is not a dry-runner", owner)
 						setAllowOwner(cfgpb.Verifiers_GerritCQAbility_COMMIT)
 						mustFailWith(cl, noLGTM)
 					})
@@ -338,23 +347,40 @@ func TestCheckRunCLs(t *testing.T) {
 					So(res.Failure(cl), ShouldContainSubstring, dep2URL)
 					// if the deps have no submit requirements, the rejection message
 					// shouldn't contain a warning for suspicious CLs.
-					So(res.Failure(cl), ShouldNotContainSubstring, suspiciouslyUntrustedDeps)
+					So(res.Failure(cl), ShouldNotContainSubstring, untrustedDepsSuspicious)
 
 					Convey("but dep2 satisfies all the SubmitRequirements", func() {
-						addSubmitReq(dep1, "Code-Review", gerritpb.SubmitRequirementResultInfo_NOT_APPLICABLE)
-						addSubmitReq(dep2, "Code-Owner", gerritpb.SubmitRequirementResultInfo_SATISFIED)
+						naReq(dep1, "Code-Review")
+						unsatisfyReq(dep1, "Code-Owner")
+						satisfyReq(dep2, "Code-Review")
+						satisfyReq(dep2, "Code-Owner")
 						res := mustFailWith(cl, untrustedDeps)
-						So(res.Failure(cl), ShouldContainSubstring, fmt.Sprintf(
-							"- %s\n- %s `Code-Owner` is satisfied, but the CL is not approved",
-							dep1URL, dep2URL))
-						So(res.Failure(cl), ShouldContainSubstring, suspiciouslyUntrustedDeps)
+						So(res.Failure(cl), ShouldContainSubstring, fmt.Sprintf(""+
+							"- %s `Code-Review` and `Code-Owner` are satisfied, "+
+							"but the CL is not approved", dep2URL,
+						))
+						So(res.Failure(cl), ShouldContainSubstring, untrustedDepsSuspicious)
 					})
 
-					Convey("dep1 and dep2 have unsatisfied requirements", func() {
-						addSubmitReq(dep1, "Code-Review", gerritpb.SubmitRequirementResultInfo_UNSATISFIED)
-						addSubmitReq(dep1, "Code-Owner", gerritpb.SubmitRequirementResultInfo_UNSATISFIED)
+					Convey("because all the deps have unsatisfied requirements", func() {
+						dep3 := addDep(cl, "dep_owner3@example.org")
+						dep3URL := dep3.ExternalID.MustURL()
+
+						unsatisfyReq(dep1, "Code-Review")
+						unsatisfyReq(dep2, "Code-Review")
+						unsatisfyReq(dep2, "Code-Owner")
+						unsatisfyReq(dep3, "Code-Review")
+						unsatisfyReq(dep3, "Code-Owner")
+						unsatisfyReq(dep3, "Code-Quiz")
+
 						res := mustFailWith(cl, untrustedDeps)
-						So(res.Failure(cl), ShouldNotContainSubstring, suspiciouslyUntrustedDeps)
+						So(res.Failure(cl), ShouldNotContainSubstring, untrustedDepsSuspicious)
+						So(res.Failure(cl), ShouldContainSubstring, fmt.Sprintf(""+
+							"- %s `Code-Review` is not satisfied\n"+
+							"- %s `Code-Review` and `Code-Owner` are not satisfied\n"+
+							"- %s `Code-Review`, `Code-Owner`, and `Code-Quiz` are not satisfied",
+							dep1URL, dep2URL, dep3URL,
+						))
 					})
 				})
 				Convey("trusted because it's apart of the Run", func() {
@@ -405,7 +431,7 @@ func TestCheckRunCLs(t *testing.T) {
 			})
 			Convey("Some CLs failed", func() {
 				approveCL(cl1)
-				mustFailWith(cl1, "CV cannot continue this run due to errors on the other CL(s)")
+				mustFailWith(cl1, "CV cannot start a Run due to errors in the following CL(s)")
 				mustFailWith(cl2, noLGTM)
 			})
 		})
