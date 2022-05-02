@@ -324,8 +324,8 @@ func TestOnCLsUpdated(t *testing.T) {
 				res, err := h.OnCLsUpdated(ctx, rs, common.CLIDs{1})
 				So(err, ShouldBeNil)
 				verifyHasCancelTriggerLongOpScheduled(res, map[common.CLID]string{
-					1: "CV cannot start a Run because this CL is missing approval.",
-					2: "CV cannot start a Run due to errors in the following CL(s).",
+					1: "This CL needs to be approved first to trigger a Run.",
+					2: "CV cannot continue this run",
 				})
 			})
 			Convey("Both CLs", func() {
@@ -338,8 +338,8 @@ func TestOnCLsUpdated(t *testing.T) {
 				res, err := h.OnCLsUpdated(ctx, rs, common.CLIDs{1, 2})
 				So(err, ShouldBeNil)
 				verifyHasCancelTriggerLongOpScheduled(res, map[common.CLID]string{
-					1: "CV cannot start a Run because this CL is missing approval.",
-					2: "CV cannot start a Run because this CL is missing approval.",
+					1: "This CL needs to be approved first to trigger a Run.",
+					2: "This CL needs to be approved first to trigger a Run.",
 				})
 			})
 
