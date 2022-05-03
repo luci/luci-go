@@ -19,11 +19,15 @@ import (
 	"strconv"
 	"strings"
 
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
+
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/server/router"
 	"go.chromium.org/luci/server/templates"
 
 	"go.chromium.org/luci/deploy/api/modelpb"
+	"go.chromium.org/luci/deploy/api/rpcpb"
 )
 
 // actuationOutcome is an outcome of an actuation of a single asset.
@@ -134,7 +138,7 @@ func getCommitDetails(dep *modelpb.Deployment) commitDetails {
 }
 
 type historyOverview struct {
-	Href       string           // a link to the dedicate history entry page
+	ID         linkHref         // a link to the dedicate history entry page
 	Age        linkHref         // when it started
 	Commit     commitDetails    // commit subject, commit message, etc.
 	Outcome    actuationOutcome // summary of what happened
@@ -144,7 +148,10 @@ type historyOverview struct {
 
 func deriveHistoryOverview(asset *modelpb.Asset, rec *modelpb.AssetHistory) *historyOverview {
 	out := &historyOverview{
-		Href:    fmt.Sprintf("/a/%s/history/%d", asset.Id, rec.HistoryId),
+		ID: linkHref{
+			Text: fmt.Sprintf("#%d", rec.HistoryId),
+			Href: fmt.Sprintf("/a/%s/history/%d", asset.Id, rec.HistoryId),
+		},
 		Age:     timestampHref(rec.Actuation.Created, "", ""),
 		Commit:  getCommitDetails(rec.Actuation.Deployment),
 		Outcome: deriveOutcome(rec),
@@ -156,13 +163,60 @@ func deriveHistoryOverview(asset *modelpb.Asset, rec *modelpb.AssetHistory) *his
 
 // historyListingPage renders the history listing page.
 func (ui *UI) historyListingPage(ctx *router.Context, assetID string) error {
-	ref := assetRefFromID(assetID)
+	const pageSize = 50
 
-	// TODO: Implement.
+	latest := int64(0)
+	if latestVal := ctx.Request.FormValue("latest"); latestVal != "" {
+		var err error
+		if latest, err = strconv.ParseInt(latestVal, 10, 64); err != nil {
+			return status.Errorf(codes.InvalidArgument, "Bad 'latest' value %q: %s", latestVal, err)
+		}
+		if latest < 0 {
+			return status.Errorf(codes.InvalidArgument, "Bad 'latest' value %q: must be non-negative", latestVal)
+		}
+	}
+
+	assetHistory, err := ui.assets.ListAssetHistory(ctx.Context, &rpcpb.ListAssetHistoryRequest{
+		AssetId:         assetID,
+		LatestHistoryId: latest,
+		Limit:           pageSize,
+	})
+	if err != nil {
+		return err
+	}
+
+	history := make([]*historyOverview, len(assetHistory.History))
+	for i, rec := range assetHistory.History {
+		history[i] = deriveHistoryOverview(assetHistory.Asset, rec)
+	}
+
+	ref := assetRefFromID(assetHistory.Asset.Id)
+
+	newerHref := ""
+	if latest != 0 && assetHistory.LastRecordedHistoryId > latest {
+		newer := latest + pageSize
+		if newer >= assetHistory.LastRecordedHistoryId {
+			newerHref = fmt.Sprintf("/a/%s/history", assetID)
+		} else {
+			newerHref = fmt.Sprintf("/a/%s/history?latest=%d", assetID, newer)
+		}
+	}
+
+	olderHref := ""
+	if len(assetHistory.History) == pageSize {
+		older := assetHistory.History[len(assetHistory.History)-1].HistoryId - 1
+		if older != 0 {
+			olderHref = fmt.Sprintf("/a/%s/history?latest=%d", assetID, older)
+		}
+	}
 
 	templates.MustRender(ctx.Context, ctx.Writer, "pages/history-listing.html", map[string]interface{}{
 		"Breadcrumbs": historyListingBreadcrumbs(ref),
 		"Ref":         ref,
+		"Overview":    deriveAssetOverview(assetHistory.Asset),
+		"History":     history,
+		"NewerHref":   newerHref,
+		"OlderHref":   olderHref,
 	})
 	return nil
 }

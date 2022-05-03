@@ -176,3 +176,107 @@ that can be found in the LICENSE file. -->
   </ol>
 </nav>
 {{end}}
+
+
+{{define "assetOverview"}}
+<div class="row align-items-center pb-3">
+  <div class="col-8">
+    <h3 id="asset-title">{{template "assetTitle" .Ref}}</h3>
+  </div>
+
+  <div class="col-4">
+    <div class="row">
+      <div class="col">Status</div>
+      <div class="col"><span class="badge {{.BadgeClass}}">{{.State}}</span></div>
+    </div>
+
+    <div class="row">
+      <div class="col">
+        <span data-bs-toggle="popover"
+              data-bs-placement="left"
+              data-bs-trigger="hover"
+              data-bs-content="
+                  The last time the actuator reported the current observed
+                  state and Infrastructure-as-Code (IaC) configuration of
+                  this asset.
+        ">
+        Last check in
+        </span>
+      </div>
+      <div class="col">{{template "linkHref" .LastCheckIn}}</div>
+    </div>
+
+    <div class="row">
+      <div class="col">
+        <span data-bs-toggle="popover"
+              data-bs-placement="left"
+              data-bs-trigger="hover"
+              data-bs-content="
+                  The last time the actuator tried to update the asset
+                  to match the Infrastructure-as-Code (IaC) configuration
+                  (successfully or not).
+        ">
+        Last actuation
+        </span>
+      </div>
+      <div class="col">{{template "linkHref" .LastActuation}}</div>
+    </div>
+
+    <div class="row">
+      <div class="col">
+        <span data-bs-toggle="popover"
+              data-bs-placement="left"
+              data-bs-trigger="hover"
+              data-bs-content="
+                  The revision of the Infrastructure-as-Code (IaC)
+                  configuration the actuator successfully applied most
+                  recently.
+        ">
+        Applied revision
+        </span>
+      </div>
+      <div class="col">{{template "linkHref" .Revision}}</div>
+    </div>
+  </div>
+</div>
+{{end}}
+
+
+{{define "historyListing"}}
+<div>
+  {{if .}}
+  <table class="table table-sm">
+    <tbody>
+    {{range .}}
+      <tr class="{{.TableClass}}">
+        <td class="col-1">{{template "linkHref" .ID}}</td>
+        <td class="col-2">{{template "linkHref" .Age}}</td>
+        <td class="col-7">
+          <span
+            data-bs-toggle="popover"
+            data-bs-placement="top"
+            data-bs-trigger="hover"
+          >
+          <div class="popover-html-content font-monospace font-small lh-sm">
+            <div><b>Commit: </b>{{.Commit.Rev}}</div>
+            <div><b>Author: </b>{{.Commit.AuthorEmail}}</div>
+            <hr class="mt-2 mb-3">
+            <pre>{{.Commit.CommitMessage}}</pre>
+          </div>
+          {{template "linkHref" .Commit.Subject}}
+          </span>
+        </td>
+        <td class="col-2">
+          <a href="{{.ID.Href}}">
+            <span class="badge {{.BadgeClass}}">{{.Outcome}}</span>
+          </a>
+        </td>
+      </tr>
+    {{end}}
+    </tbody>
+  </table>
+  {{else}}
+  <i>No history</i>
+  {{end}}
+</div>
+{{end}}

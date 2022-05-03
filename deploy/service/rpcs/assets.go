@@ -103,6 +103,7 @@ func (*Assets) ListAssetHistory(ctx context.Context, req *rpcpb.ListAssetHistory
 	if asset.IsRecordingHistoryEntry() {
 		resp.Current = asset.HistoryEntry
 	}
+	resp.LastRecordedHistoryId = asset.LastHistoryID
 	resp.History = make([]*modelpb.AssetHistory, len(entries))
 	for i, e := range entries {
 		resp.History[i] = e.Entry

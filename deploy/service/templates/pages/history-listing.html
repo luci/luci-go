@@ -3,15 +3,46 @@
 {{template "breadcrumbs" .}}
 
 <div class="container">
-  <div class="row align-items-center pb-3">
+  {{template "assetOverview" .Overview}}
+
+  <div class="row">
     <div class="col">
-      <h3 id="asset-title">{{template "assetTitle" .Ref}}</h3>
+      <div class="accordion">
+
+        <div class="accordion-item">
+          <h2 class="accordion-header" id="history-log-heading">
+            <button class="accordion-button" type="button"
+              data-bs-toggle="collapse"
+              data-bs-target="#history-log-body"
+              aria-expanded="true"
+              aria-controls="history-log-body">
+              History of actuations
+            </button>
+          </h2>
+          <div id="history-log-body"
+            class="accordion-collapse collapse show"
+            aria-labelledby="history-log-heading">
+            <div class="accordion-body">
+              {{template "historyListing" .History}}
+
+              <ul class="pagination justify-content-center">
+                <li class="page-item {{if not .NewerHref}}disabled{{end}}">
+                  <a class="page-link" href="{{.NewerHref}}">Newer</a>
+                </li>
+                <li class="page-item {{if not .OlderHref}}disabled{{end}}">
+                  <a class="page-link" href="{{.OlderHref}}">Older</a>
+                </li>
+              </ul>
+
+            </div>
+          </div>
+        </div>
+
+      </div>
     </div>
   </div>
 
-  <div>
-    TODO
-  </div>
+
 </div>
 
 {{end}}

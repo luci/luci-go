@@ -415,7 +415,7 @@ func versionsSummary(asset *modelpb.Asset, active bool) []versionState {
 
 // assetPage renders the asset page.
 func (ui *UI) assetPage(ctx *router.Context, assetID string) error {
-	const historyLimit = 20
+	const historyLimit = 10
 
 	assetHistory, err := ui.assets.ListAssetHistory(ctx.Context, &rpcpb.ListAssetHistoryRequest{
 		AssetId: assetID,
@@ -444,6 +444,7 @@ func (ui *UI) assetPage(ctx *router.Context, assetID string) error {
 		"InactiveVersions":  versionsSummary(assetHistory.Asset, false),
 		"History":           history,
 		"LikelyMoreHistory": len(history) == historyLimit,
+		"HistoryHref":       fmt.Sprintf("/a/%s/history", assetID),
 	})
 	return nil
 }

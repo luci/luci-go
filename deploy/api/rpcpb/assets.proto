@@ -88,6 +88,8 @@ message ListAssetHistoryResponse {
   deploy.model.Asset asset = 1;
   // A historical entry being recorded right now, if any.
   deploy.model.AssetHistory current = 2;
+  // ID of the most recently recorded and committed entry (for pagination back).
+  int64 last_recorded_history_id = 3;
   // Historical records starting with `latest_history_id`.
-  repeated deploy.model.AssetHistory history = 3;
+  repeated deploy.model.AssetHistory history = 4;
 }

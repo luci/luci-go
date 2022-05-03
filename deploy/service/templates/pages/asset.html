@@ -39,66 +39,7 @@
 {{template "breadcrumbs" .}}
 
 <div class="container">
-  <div class="row align-items-center pb-3">
-    <div class="col-8">
-      <h3 id="asset-title">{{template "assetTitle" .Ref}}</h3>
-    </div>
-
-    <div class="col-4">
-      <div class="row">
-        <div class="col">Status</div>
-        <div class="col"><span class="badge {{.Overview.BadgeClass}}">{{.Overview.State}}</span></div>
-      </div>
-
-      <div class="row">
-        <div class="col">
-          <span data-bs-toggle="popover"
-                data-bs-placement="left"
-                data-bs-trigger="hover"
-                data-bs-content="
-                    The last time the actuator reported the current observed
-                    state and Infrastructure-as-Code (IaC) configuration of
-                    this asset.
-          ">
-          Last check in
-          </span>
-        </div>
-        <div class="col">{{template "linkHref" .Overview.LastCheckIn}}</div>
-      </div>
-
-      <div class="row">
-        <div class="col">
-          <span data-bs-toggle="popover"
-                data-bs-placement="left"
-                data-bs-trigger="hover"
-                data-bs-content="
-                    The last time the actuator tried to update the asset
-                    to match the Infrastructure-as-Code (IaC) configuration
-                    (successfully or not).
-          ">
-          Last actuation
-          </span>
-        </div>
-        <div class="col">{{template "linkHref" .Overview.LastActuation}}</div>
-      </div>
-
-      <div class="row">
-        <div class="col">
-          <span data-bs-toggle="popover"
-                data-bs-placement="left"
-                data-bs-trigger="hover"
-                data-bs-content="
-                    The revision of the Infrastructure-as-Code (IaC)
-                    configuration the actuator successfully applied most
-                    recently.
-          ">
-          Applied revision
-          </span>
-        </div>
-        <div class="col">{{template "linkHref" .Overview.Revision}}</div>
-      </div>
-    </div>
-  </div>
+  {{template "assetOverview" .Overview}}
 
   <div class="row">
     <div class="col">
@@ -175,38 +116,13 @@
             class="accordion-collapse collapse show"
             aria-labelledby="history-log-heading">
             <div class="accordion-body">
-              {{if .History}}
-              <table class="table table-sm">
-                <tbody>
-                {{range .History}}
-                  <tr class="{{.TableClass}}">
-                    <td class="col-2">{{template "linkHref" .Age}}</td>
-                    <td class="col-8">
-                      <span
-                        data-bs-toggle="popover"
-                        data-bs-placement="top"
-                        data-bs-trigger="hover"
-                      >
-                      <div class="popover-html-content font-monospace font-small lh-sm">
-                        <div><b>Commit: </b>{{.Commit.Rev}}</div>
-                        <div><b>Author: </b>{{.Commit.AuthorEmail}}</div>
-                        <hr class="mt-2 mb-3">
-                        <pre>{{.Commit.CommitMessage}}</pre>
-                      </div>
-                      {{template "linkHref" .Commit.Subject}}
-                      </span>
-                    </td>
-                    <td class="col-2">
-                      <a href="{{.Href}}">
-                        <span class="badge {{.BadgeClass}}">{{.Outcome}}</span>
-                      </a>
-                    </td>
-                  </tr>
-                {{end}}
-                </tbody>
-              </table>
-              {{else}}
-              <i>No history yet</i>
+              {{template "historyListing" .History}}
+              {{if .LikelyMoreHistory}}
+              <ul class="pagination pagination-sm justify-content-center">
+                  <li class="page-item">
+                    <a class="page-link" href="{{.HistoryHref}}">View all history</a>
+                  </li>
+              </ul>
               {{end}}
             </div>
           </div>
