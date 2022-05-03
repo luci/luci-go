@@ -248,7 +248,7 @@ func TestPokeRecheckTree(t *testing.T) {
 				So(cancelOp.Requests[0], ShouldResembleProto,
 					&run.OngoingLongOps_Op_TriggersCancellation_Request{
 						Clid:    int64(gChange),
-						Message: "CV cannot trigger the Run for `foo@example.com` because the user is not a dry-runner.",
+						Message: "CV cannot start a Run for `foo@example.com` because the user is not a dry-runner.",
 						Notify: []run.OngoingLongOps_Op_TriggersCancellation_Whom{
 							run.OngoingLongOps_Op_TriggersCancellation_OWNER,
 							run.OngoingLongOps_Op_TriggersCancellation_CQ_VOTERS,

@@ -34,21 +34,24 @@ import (
 )
 
 const (
-	okButDueToOthers     = "CV cannot continue this run due to errors on the other CL(s) included in this run."
-	ownerNotCommitter    = "CV cannot trigger the Run for `%s` because the user is not a committer."
-	ownerNotDryRunner    = "CV cannot trigger the Run for `%s` because the user is not a dry-runner."
-	notOwnerNotCommitter = "CV cannot trigger the Run for `%s` because the user is neither the CL owner nor a committer."
-	noLGTM               = "This CL needs to be approved first to trigger a Run."
-	suspiciouslyNoLGTM   = noLGTM + " " +
+	okButDueToOthers     = "CV cannot start a Run due to errors in the following CL(s)."
+	ownerNotCommitter    = "CV cannot start a Run for `%s` because the user is not a committer."
+	ownerNotDryRunner    = "CV cannot start a Run for `%s` because the user is not a dry-runner."
+	notOwnerNotCommitter = "CV cannot start a Run for `%s` because the user is neither the CL owner nor a committer."
+
+	noLGTM           = "CV cannot start a Run because this CL is missing approval."
+	noLGTMWithReqs   = "CV cannot start a Run because this CL is missing %s"
+	noLGTMSuspicious = noLGTM + " " +
 		"However, all requirements appear to be satisfied. " +
 		"It's likely caused by an issue in Gerrit or Gerrit configuration. " +
 		"Please contact your Git admin."
+
 	untrustedDeps = "" +
-		"CV cannot trigger the Run because of the following dependencies. " +
+		"CV cannot start a Run because of the following dependencies. " +
 		"They must be approved because their owners are not committers. " +
 		"Alternatively, you can ask the owner of this CL to trigger a dry-run."
-	suspiciouslyUntrustedDeps = "" +
-		"The above list contains unapproved CLs that satisfy all the submit requirements. " +
+	untrustedDepsSuspicious = "" +
+		"However, some or all of the dependencies appear to satisfy all the requirements. " +
 		"It's likely caused by an issue in Gerrit or Gerrit configuration. " +
 		"Please contact your Git admin."
 )
@@ -332,7 +335,7 @@ func untrustedDepsReason(ctx context.Context, udeps []*changelist.CL) string {
 		}
 	}
 	if anySuspicious {
-		fmt.Fprintf(&sb, "\n\n%s", suspiciouslyUntrustedDeps)
+		fmt.Fprintf(&sb, "\n\n%s", untrustedDepsSuspicious)
 	}
 	return sb.String()
 }
@@ -341,9 +344,9 @@ func untrustedDepsReason(ctx context.Context, udeps []*changelist.CL) string {
 func noLGTMReason(ctx context.Context, cl *changelist.CL) string {
 	switch allSatisfied, msg := strSubmitReqsForUnapprovedCL(ctx, cl); {
 	case allSatisfied:
-		return suspiciouslyNoLGTM
+		return noLGTMSuspicious
 	case len(msg) > 0:
-		return fmt.Sprintf("%s This CL is not approved because requirement %s", noLGTM, msg)
+		return fmt.Sprintf(noLGTMWithReqs, msg)
 	}
 	return noLGTM
 }
@@ -354,14 +357,17 @@ func strSubmitReqsForUnapprovedCL(ctx context.Context, cl *changelist.CL) (allSa
 		return
 	}
 	join := func(ss []string) string {
-		var sb strings.Builder
-		sb.Grow(len(ss) * 16) // typically, len(submit_requirement.name) is < 16.
-		comma := ""
-		for _, s := range ss {
-			fmt.Fprintf(&sb, "%s`%s`", comma, s)
-			comma = ", "
+		switch len(ss) {
+		case 0:
+			return ""
+		case 1:
+			return fmt.Sprintf("`%s`", ss[0])
+		case 2:
+			return fmt.Sprintf("`%s` and `%s`", ss[0], ss[1])
+		default:
+			last := len(ss) - 1
+			return fmt.Sprintf("`%s`, and `%s`", strings.Join(ss[:last], "`, `"), ss[last])
 		}
-		return sb.String()
 	}
 
 	switch satisfied, unsatisfied := groupSubmitReqs(ctx, reqs); {
