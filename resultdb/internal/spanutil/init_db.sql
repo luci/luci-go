@@ -248,6 +248,10 @@ CREATE TABLE Artifacts (
   -- if this artifact is stored in isolate.
   -- TODO(nodir): remove this when we completely switch to ResultSink.
   IsolateURL STRING(MAX),
+
+  -- A string of format "gs://{bucket}/{path}"
+  -- if this artifact is stored in Google Cloud Storage (GCS).
+  GcsURI STRING(MAX),
 ) PRIMARY KEY (InvocationId, ParentId, ArtifactId),
   INTERLEAVE IN PARENT Invocations ON DELETE CASCADE;
 
