@@ -40,7 +40,7 @@ const (
 	notOwnerNotCommitter = "CV cannot start a Run for `%s` because the user is neither the CL owner nor a committer."
 
 	noLGTM           = "CV cannot start a Run because this CL is missing approval."
-	noLGTMWithReqs   = "CV cannot start a Run because this CL is missing %s"
+	noLGTMWithReqs   = "CV cannot start a Run because this CL is %s"
 	noLGTMSuspicious = noLGTM + " " +
 		"However, all requirements appear to be satisfied. " +
 		"It's likely caused by an issue in Gerrit or Gerrit configuration. " +
@@ -371,27 +371,23 @@ func strSubmitReqsForUnapprovedCL(ctx context.Context, cl *changelist.CL) (allSa
 	}
 
 	switch satisfied, unsatisfied := groupSubmitReqs(ctx, reqs); {
-	// all were NOT_APPLICABLE?
-	// just log the occurrence, but consider that
-	// submit requirements agreed with Submittable.
-	case len(satisfied) == 0 && len(unsatisfied) == 0:
-		logging.Errorf(ctx, "CL(%d): all submit reqs(%d) are NOT_APPLICABLE", cl.ID, len(reqs))
+	case len(unsatisfied) == 0:
+		switch len(satisfied) {
+		case 0:
+			// all were NOT_APPLICABLE?
+			// just log the occurrence, but consider that
+			// submit requirements agreed with Submittable.
+			logging.Errorf(ctx, "CL(%d): all submit reqs(%d) are NOT_APPLICABLE", cl.ID, len(reqs))
+		case 1:
+			msg = fmt.Sprintf("missing approval, although `%s` is satisfied", satisfied[0])
+		default:
+			msg = fmt.Sprintf("missing approval, although %s are satisfied", join(satisfied))
+		}
+		allSatisfied = len(satisfied) != 0
 
-	// all satisfied?
-	// These are the cases where submit reqs and submittable DISAGREE with each other.
-	case len(unsatisfied) == 0 && len(satisfied) == 1:
-		msg = fmt.Sprintf("`%s` is satisfied, but the CL is not approved", satisfied[0])
-		allSatisfied = true
-	case len(unsatisfied) == 0 && len(satisfied) > 1:
-		msg = fmt.Sprintf("%s are satisfied, but the CL is not approved", join(satisfied))
-		allSatisfied = true
-
-	case len(unsatisfied) == 1:
-		msg = fmt.Sprintf("`%s` is not satisfied", unsatisfied[0])
 	default:
-		msg = fmt.Sprintf("%s are not satisfied", join(unsatisfied))
+		msg = fmt.Sprintf("missing %s", join(unsatisfied))
 	}
-
 	if allSatisfied {
 		logging.Errorf(ctx, "CL(%d): all submit reqs satisfied; but CL not submittable", cl.ID)
 	}

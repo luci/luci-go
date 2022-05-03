@@ -187,7 +187,8 @@ func TestCheckRunCLs(t *testing.T) {
 					addDryRunner(tr)
 
 					// Dry-runner can trigger a full-run for own CL w/ approval.
-					mustFailWith(cl, noLGTM)
+					unsatisfyReq(cl, "Code-Review")
+					mustFailWith(cl, fmt.Sprintf(noLGTMWithReqs, "missing `Code-Review`"))
 					approveCL(cl)
 					mustOK()
 				})
@@ -356,8 +357,8 @@ func TestCheckRunCLs(t *testing.T) {
 						satisfyReq(dep2, "Code-Owner")
 						res := mustFailWith(cl, untrustedDeps)
 						So(res.Failure(cl), ShouldContainSubstring, fmt.Sprintf(""+
-							"- %s `Code-Review` and `Code-Owner` are satisfied, "+
-							"but the CL is not approved", dep2URL,
+							"- %s missing approval, although `Code-Review` and `Code-Owner` are satisfied",
+							dep2URL,
 						))
 						So(res.Failure(cl), ShouldContainSubstring, untrustedDepsSuspicious)
 					})
@@ -376,9 +377,9 @@ func TestCheckRunCLs(t *testing.T) {
 						res := mustFailWith(cl, untrustedDeps)
 						So(res.Failure(cl), ShouldNotContainSubstring, untrustedDepsSuspicious)
 						So(res.Failure(cl), ShouldContainSubstring, fmt.Sprintf(""+
-							"- %s `Code-Review` is not satisfied\n"+
-							"- %s `Code-Review` and `Code-Owner` are not satisfied\n"+
-							"- %s `Code-Review`, `Code-Owner`, and `Code-Quiz` are not satisfied",
+							"- %s missing `Code-Review`\n"+
+							"- %s missing `Code-Review` and `Code-Owner`\n"+
+							"- %s missing `Code-Review`, `Code-Owner`, and `Code-Quiz`",
 							dep1URL, dep2URL, dep3URL,
 						))
 					})
