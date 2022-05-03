@@ -24,6 +24,9 @@ import (
 	"github.com/google/uuid"
 
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/tsmon/field"
+	"go.chromium.org/luci/common/tsmon/metric"
+	"go.chromium.org/luci/common/tsmon/types"
 	"go.chromium.org/luci/grpc/appstatus"
 	"go.chromium.org/luci/resultdb/internal/invocations"
 	"go.chromium.org/luci/resultdb/internal/spanutil"
@@ -33,8 +36,18 @@ import (
 	"go.chromium.org/luci/server/span"
 )
 
+var (
+	exonerationFieldPresence = metric.NewCounter(
+		"resultdb/recorder/exoneration_field_presence",
+		"Exonerations by presence of Explanation HTML and Reason fields.",
+		&types.MetricMetadata{Units: "exonerations"},
+		field.Bool("has_explanation_html"),
+		field.Bool("has_reason"),
+	)
+)
+
 // validateCreateTestExonerationRequest returns a non-nil error if req is invalid.
-func validateCreateTestExonerationRequest(req *pb.CreateTestExonerationRequest, requireInvocation bool) error {
+func validateCreateTestExonerationRequest(ctx context.Context, req *pb.CreateTestExonerationRequest, requireInvocation bool) error {
 	if requireInvocation || req.Invocation != "" {
 		if err := pbutil.ValidateInvocationName(req.Invocation); err != nil {
 			return errors.Annotate(err, "invocation").Err()
@@ -61,12 +74,16 @@ func validateCreateTestExonerationRequest(req *pb.CreateTestExonerationRequest, 
 	if err := pbutil.ValidateRequestID(req.RequestId); err != nil {
 		return errors.Annotate(err, "request_id").Err()
 	}
+
+	hasExplanationHTML := ex.ExplanationHtml != ""
+	hasReason := ex.Reason != pb.ExonerationReason_EXONERATION_REASON_UNSPECIFIED
+	exonerationFieldPresence.Add(ctx, 1, hasExplanationHTML, hasReason)
 	return nil
 }
 
 // CreateTestExoneration implements pb.RecorderServer.
 func (s *recorderServer) CreateTestExoneration(ctx context.Context, in *pb.CreateTestExonerationRequest) (*pb.TestExoneration, error) {
-	if err := validateCreateTestExonerationRequest(in, true); err != nil {
+	if err := validateCreateTestExonerationRequest(ctx, in, true); err != nil {
 		return nil, appstatus.BadRequest(err)
 	}
 	invID := invocations.MustParseName(in.Invocation)

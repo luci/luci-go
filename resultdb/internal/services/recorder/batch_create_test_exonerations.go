@@ -21,14 +21,13 @@ import (
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/grpc/appstatus"
-	"go.chromium.org/luci/server/span"
-
 	"go.chromium.org/luci/resultdb/internal/invocations"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
+	"go.chromium.org/luci/server/span"
 )
 
-func validateBatchCreateTestExonerationsRequest(req *pb.BatchCreateTestExonerationsRequest) error {
+func validateBatchCreateTestExonerationsRequest(ctx context.Context, req *pb.BatchCreateTestExonerationsRequest) error {
 	if err := pbutil.ValidateInvocationName(req.Invocation); err != nil {
 		return errors.Annotate(err, "invocation").Err()
 	}
@@ -42,7 +41,7 @@ func validateBatchCreateTestExonerationsRequest(req *pb.BatchCreateTestExonerati
 	}
 
 	for i, sub := range req.Requests {
-		if err := validateCreateTestExonerationRequest(sub, false); err != nil {
+		if err := validateCreateTestExonerationRequest(ctx, sub, false); err != nil {
 			return errors.Annotate(err, "requests[%d]", i).Err()
 		}
 		if sub.Invocation != "" && sub.Invocation != req.Invocation {
@@ -57,7 +56,7 @@ func validateBatchCreateTestExonerationsRequest(req *pb.BatchCreateTestExonerati
 
 // BatchCreateTestExonerations implements pb.RecorderServer.
 func (s *recorderServer) BatchCreateTestExonerations(ctx context.Context, in *pb.BatchCreateTestExonerationsRequest) (rsp *pb.BatchCreateTestExonerationsResponse, err error) {
-	if err := validateBatchCreateTestExonerationsRequest(in); err != nil {
+	if err := validateBatchCreateTestExonerationsRequest(ctx, in); err != nil {
 		return nil, appstatus.BadRequest(err)
 	}
 

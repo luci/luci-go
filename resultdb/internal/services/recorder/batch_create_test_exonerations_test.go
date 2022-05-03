@@ -15,6 +15,7 @@
 package recorder
 
 import (
+	"context"
 	"testing"
 
 	"github.com/golang/protobuf/proto"
@@ -34,20 +35,21 @@ import (
 func TestValidateBatchCreateTestExonerationsRequest(t *testing.T) {
 	t.Parallel()
 	Convey(`TestValidateBatchCreateTestExonerationsRequest`, t, func() {
+		ctx := context.Background()
 		Convey(`Empty`, func() {
-			err := validateBatchCreateTestExonerationsRequest(&pb.BatchCreateTestExonerationsRequest{})
+			err := validateBatchCreateTestExonerationsRequest(ctx, &pb.BatchCreateTestExonerationsRequest{})
 			So(err, ShouldErrLike, `invocation: unspecified`)
 		})
 
 		Convey(`Invalid invocation`, func() {
-			err := validateBatchCreateTestExonerationsRequest(&pb.BatchCreateTestExonerationsRequest{
+			err := validateBatchCreateTestExonerationsRequest(ctx, &pb.BatchCreateTestExonerationsRequest{
 				Invocation: "x",
 			})
 			So(err, ShouldErrLike, `invocation: does not match`)
 		})
 
 		Convey(`Invalid request id`, func() {
-			err := validateBatchCreateTestExonerationsRequest(&pb.BatchCreateTestExonerationsRequest{
+			err := validateBatchCreateTestExonerationsRequest(ctx, &pb.BatchCreateTestExonerationsRequest{
 				Invocation: "invocations/a",
 				RequestId:  "😃",
 			})
@@ -55,7 +57,7 @@ func TestValidateBatchCreateTestExonerationsRequest(t *testing.T) {
 		})
 
 		Convey(`Too many requests`, func() {
-			err := validateBatchCreateTestExonerationsRequest(&pb.BatchCreateTestExonerationsRequest{
+			err := validateBatchCreateTestExonerationsRequest(ctx, &pb.BatchCreateTestExonerationsRequest{
 				Invocation: "invocations/a",
 				Requests:   make([]*pb.CreateTestExonerationRequest, 1000),
 			})
@@ -63,7 +65,7 @@ func TestValidateBatchCreateTestExonerationsRequest(t *testing.T) {
 		})
 
 		Convey(`Invalid sub-request`, func() {
-			err := validateBatchCreateTestExonerationsRequest(&pb.BatchCreateTestExonerationsRequest{
+			err := validateBatchCreateTestExonerationsRequest(ctx, &pb.BatchCreateTestExonerationsRequest{
 				Invocation: "invocations/inv",
 				Requests: []*pb.CreateTestExonerationRequest{
 					{
@@ -77,7 +79,7 @@ func TestValidateBatchCreateTestExonerationsRequest(t *testing.T) {
 		})
 
 		Convey(`Inconsistent invocation`, func() {
-			err := validateBatchCreateTestExonerationsRequest(&pb.BatchCreateTestExonerationsRequest{
+			err := validateBatchCreateTestExonerationsRequest(ctx, &pb.BatchCreateTestExonerationsRequest{
 				Invocation: "invocations/inv",
 				Requests: []*pb.CreateTestExonerationRequest{
 					{
@@ -92,7 +94,7 @@ func TestValidateBatchCreateTestExonerationsRequest(t *testing.T) {
 		})
 
 		Convey(`Inconsistent request_id`, func() {
-			err := validateBatchCreateTestExonerationsRequest(&pb.BatchCreateTestExonerationsRequest{
+			err := validateBatchCreateTestExonerationsRequest(ctx, &pb.BatchCreateTestExonerationsRequest{
 				Invocation: "invocations/inv",
 				RequestId:  "req1",
 				Requests: []*pb.CreateTestExonerationRequest{
@@ -108,7 +110,7 @@ func TestValidateBatchCreateTestExonerationsRequest(t *testing.T) {
 		})
 
 		Convey(`Valid`, func() {
-			err := validateBatchCreateTestExonerationsRequest(&pb.BatchCreateTestExonerationsRequest{
+			err := validateBatchCreateTestExonerationsRequest(ctx, &pb.BatchCreateTestExonerationsRequest{
 				Invocation: "invocations/inv",
 				Requests: []*pb.CreateTestExonerationRequest{
 					{

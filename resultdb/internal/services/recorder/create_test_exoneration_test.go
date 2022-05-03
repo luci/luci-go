@@ -15,6 +15,7 @@
 package recorder
 
 import (
+	"context"
 	"testing"
 
 	"github.com/golang/protobuf/proto"
@@ -35,13 +36,14 @@ import (
 func TestValidateCreateTestExonerationRequest(t *testing.T) {
 	t.Parallel()
 	Convey(`TestValidateCreateTestExonerationRequest`, t, func() {
+		ctx := context.Background()
 		Convey(`Empty`, func() {
-			err := validateCreateTestExonerationRequest(&pb.CreateTestExonerationRequest{}, true)
+			err := validateCreateTestExonerationRequest(ctx, &pb.CreateTestExonerationRequest{}, true)
 			So(err, ShouldErrLike, `invocation: unspecified`)
 		})
 
 		Convey(`NUL in test id`, func() {
-			err := validateCreateTestExonerationRequest(&pb.CreateTestExonerationRequest{
+			err := validateCreateTestExonerationRequest(ctx, &pb.CreateTestExonerationRequest{
 				Invocation: "invocations/inv",
 				TestExoneration: &pb.TestExoneration{
 					TestId: "\x01",
@@ -51,7 +53,7 @@ func TestValidateCreateTestExonerationRequest(t *testing.T) {
 		})
 
 		Convey(`Invalid variant`, func() {
-			err := validateCreateTestExonerationRequest(&pb.CreateTestExonerationRequest{
+			err := validateCreateTestExonerationRequest(ctx, &pb.CreateTestExonerationRequest{
 				Invocation: "invocations/inv",
 				TestExoneration: &pb.TestExoneration{
 					TestId:  "a",
@@ -62,7 +64,7 @@ func TestValidateCreateTestExonerationRequest(t *testing.T) {
 		})
 
 		Convey(`Valid`, func() {
-			err := validateCreateTestExonerationRequest(&pb.CreateTestExonerationRequest{
+			err := validateCreateTestExonerationRequest(ctx, &pb.CreateTestExonerationRequest{
 				Invocation: "invocations/inv",
 				TestExoneration: &pb.TestExoneration{
 					TestId: "ninja://ab/cd.ef",
@@ -76,7 +78,7 @@ func TestValidateCreateTestExonerationRequest(t *testing.T) {
 		})
 
 		Convey(`Mismatching variant hashes`, func() {
-			err := validateCreateTestExonerationRequest(&pb.CreateTestExonerationRequest{
+			err := validateCreateTestExonerationRequest(ctx, &pb.CreateTestExonerationRequest{
 				Invocation: "invocations/inv",
 				TestExoneration: &pb.TestExoneration{
 					TestId:      "a",
@@ -88,7 +90,7 @@ func TestValidateCreateTestExonerationRequest(t *testing.T) {
 		})
 
 		Convey(`Matching variant hashes`, func() {
-			err := validateCreateTestExonerationRequest(&pb.CreateTestExonerationRequest{
+			err := validateCreateTestExonerationRequest(ctx, &pb.CreateTestExonerationRequest{
 				Invocation: "invocations/inv",
 				TestExoneration: &pb.TestExoneration{
 					TestId:      "a",
