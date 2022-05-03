@@ -78,9 +78,6 @@ func TestExportToBigQuery(t *testing.T) {
 			// Test results' parent is different from exported.
 			insert.TestResults("b", "D", pbutil.Variant("k", "v"), pb.TestStatus_CRASH, pb.TestStatus_PASS),
 			insert.TestExonerations("b", "D", pbutil.Variant("k", "v"), pb.ExonerationReason_OCCURS_ON_OTHER_CLS),
-			// Test result with legacy exoneration.
-			insert.TestResults("a", "E", pbutil.Variant("k", "v"), pb.TestStatus_FAIL, pb.TestStatus_FAIL),
-			insert.TestExonerationsLegacy("a", "E", pbutil.Variant("k", "v"), 1),
 		)...)
 
 		bqExport := &pb.BigQueryExport{
@@ -106,9 +103,9 @@ func TestExportToBigQuery(t *testing.T) {
 
 			i.mu.Lock()
 			defer i.mu.Unlock()
-			So(len(i.insertedMessages), ShouldEqual, 9)
+			So(len(i.insertedMessages), ShouldEqual, 7)
 
-			expectedTestIDs := []string{"A", "B", "C", "D", "E"}
+			expectedTestIDs := []string{"A", "B", "C", "D"}
 			for _, m := range i.insertedMessages {
 				tr := m.Message.(*bqpb.TestResultRow)
 				So(tr.TestId, ShouldBeIn, expectedTestIDs)
@@ -116,7 +113,7 @@ func TestExportToBigQuery(t *testing.T) {
 				So(tr.Parent.Realm, ShouldEqual, "testproject:testrealm")
 				So(tr.Exported.Id, ShouldEqual, "a")
 				So(tr.Exported.Realm, ShouldEqual, "testproject:testrealm")
-				So(tr.Exonerated, ShouldEqual, tr.TestId == "A" || tr.TestId == "D" || tr.TestId == "E")
+				So(tr.Exonerated, ShouldEqual, tr.TestId == "A" || tr.TestId == "D")
 				So(tr.Name, ShouldEqual, pbutil.TestResultName(string(tr.Parent.Id), tr.TestId, tr.ResultId))
 			}
 		})

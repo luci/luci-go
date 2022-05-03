@@ -34,61 +34,60 @@ func TestRead(t *testing.T) {
 		ctx := testutil.SpannerTestContext(t)
 
 		invID := invocations.ID("inv")
-		// Insert a TestExoneration.
-		testutil.MustApply(ctx,
-			insert.Invocation("inv", pb.Invocation_ACTIVE, nil),
-			spanutil.InsertMap("TestExonerations", map[string]interface{}{
-				"InvocationId":    invID,
-				"TestId":          "t t",
-				"ExonerationId":   "id",
-				"Variant":         pbutil.Variant("k1", "v1", "k2", "v2"),
-				"VariantHash":     "deadbeef",
-				"ExplanationHTML": spanutil.Compressed("broken"),
-				"Reason":          pb.ExonerationReason_OCCURS_ON_OTHER_CLS,
-			}))
 
-		const name = "invocations/inv/tests/t%20t/exonerations/id"
-		ex, err := Read(span.Single(ctx), name)
-		So(err, ShouldBeNil)
-		So(ex, ShouldResembleProto, &pb.TestExoneration{
-			Name:            name,
-			ExonerationId:   "id",
-			TestId:          "t t",
-			Variant:         pbutil.Variant("k1", "v1", "k2", "v2"),
-			ExplanationHtml: "broken",
-			VariantHash:     "deadbeef",
-			Reason:          pb.ExonerationReason_OCCURS_ON_OTHER_CLS,
+		Convey("Full", func() {
+			// Insert a TestExoneration.
+			testutil.MustApply(ctx,
+				insert.Invocation("inv", pb.Invocation_ACTIVE, nil),
+				spanutil.InsertMap("TestExonerations", map[string]interface{}{
+					"InvocationId":    invID,
+					"TestId":          "t t",
+					"ExonerationId":   "id",
+					"Variant":         pbutil.Variant("k1", "v1", "k2", "v2"),
+					"VariantHash":     "deadbeef",
+					"ExplanationHTML": spanutil.Compressed("broken"),
+					"Reason":          pb.ExonerationReason_OCCURS_ON_OTHER_CLS,
+				}))
+
+			const name = "invocations/inv/tests/t%20t/exonerations/id"
+			ex, err := Read(span.Single(ctx), name)
+			So(err, ShouldBeNil)
+			So(ex, ShouldResembleProto, &pb.TestExoneration{
+				Name:            name,
+				ExonerationId:   "id",
+				TestId:          "t t",
+				Variant:         pbutil.Variant("k1", "v1", "k2", "v2"),
+				ExplanationHtml: "broken",
+				VariantHash:     "deadbeef",
+				Reason:          pb.ExonerationReason_OCCURS_ON_OTHER_CLS,
+			})
 		})
-	})
-	Convey(`Read Legacy`, t, func() {
-		ctx := testutil.SpannerTestContext(t)
+		Convey("Minimal", func() {
+			// Insert a TestExoneration with only mandatory fields populated.
+			testutil.MustApply(ctx,
+				insert.Invocation("inv", pb.Invocation_ACTIVE, nil),
+				spanutil.InsertMap("TestExonerations", map[string]interface{}{
+					"InvocationId":  invID,
+					"TestId":        "t t",
+					"ExonerationId": "id",
+					"Variant":       pbutil.Variant("k1", "v1", "k2", "v2"),
+					"VariantHash":   "deadbeef",
+					"Reason":        pb.ExonerationReason_EXONERATION_REASON_UNSPECIFIED,
+					// Leave ExplanationHTML as null.
+				}))
 
-		invID := invocations.ID("inv")
-		// Insert a TestExoneration.
-		testutil.MustApply(ctx,
-			insert.Invocation("inv", pb.Invocation_ACTIVE, nil),
-			spanutil.InsertMap("TestExonerations", map[string]interface{}{
-				"InvocationId":    invID,
-				"TestId":          "t t",
-				"ExonerationId":   "id",
-				"Variant":         pbutil.Variant("k1", "v1", "k2", "v2"),
-				"VariantHash":     "deadbeef",
-				"ExplanationHTML": spanutil.Compressed("broken"),
-				// Do not populate the Reason field to simulate
-				// TestExonerations inserted before ~May 2022.
-			}))
-
-		const name = "invocations/inv/tests/t%20t/exonerations/id"
-		ex, err := Read(span.Single(ctx), name)
-		So(err, ShouldBeNil)
-		So(ex, ShouldResembleProto, &pb.TestExoneration{
-			Name:            name,
-			ExonerationId:   "id",
-			TestId:          "t t",
-			Variant:         pbutil.Variant("k1", "v1", "k2", "v2"),
-			ExplanationHtml: "broken",
-			VariantHash:     "deadbeef",
-			Reason:          pb.ExonerationReason_EXONERATION_REASON_UNSPECIFIED,
+			const name = "invocations/inv/tests/t%20t/exonerations/id"
+			ex, err := Read(span.Single(ctx), name)
+			So(err, ShouldBeNil)
+			So(ex, ShouldResembleProto, &pb.TestExoneration{
+				Name:            name,
+				ExonerationId:   "id",
+				TestId:          "t t",
+				Variant:         pbutil.Variant("k1", "v1", "k2", "v2"),
+				ExplanationHtml: "",
+				VariantHash:     "deadbeef",
+				Reason:          pb.ExonerationReason_EXONERATION_REASON_UNSPECIFIED,
+			})
 		})
 	})
 }

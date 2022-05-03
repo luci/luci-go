@@ -60,7 +60,6 @@ type Ptr interface {
 type Buffer struct {
 	NullString            spanner.NullString
 	NullTime              spanner.NullTime
-	NullInt64             spanner.NullInt64
 	Int64                 int64
 	StringSlice           []string
 	ByteSlice, ByteSlice2 []byte
@@ -101,7 +100,7 @@ func (b *Buffer) fromSpanner(row *spanner.Row, col int, goPtr interface{}) error
 	case **timestamppb.Timestamp:
 		spanPtr = &b.NullTime
 	case *pb.ExonerationReason:
-		spanPtr = &b.NullInt64
+		spanPtr = &b.Int64
 	case *pb.TestStatus:
 		spanPtr = &b.Int64
 	case *pb.Invocation_State:
@@ -144,10 +143,7 @@ func (b *Buffer) fromSpanner(row *spanner.Row, col int, goPtr interface{}) error
 		}
 
 	case *pb.ExonerationReason:
-		// If the value stored is NULL, NullInt64.Int64
-		// will be zero, which maps to EXONERATION_REASON_UNSPECIFIED,
-		// which is correct.
-		*goPtr = pb.ExonerationReason(b.NullInt64.Int64)
+		*goPtr = pb.ExonerationReason(b.Int64)
 
 	case *pb.Invocation_State:
 		*goPtr = pb.Invocation_State(b.Int64)

@@ -138,23 +138,6 @@ func TestExonerations(invID invocations.ID, testID string, variant *pb.Variant, 
 	return ms
 }
 
-// TestExonerationsLegacy returns Spanner mutations to insert test exonerations
-// without reason (all exonerations inserted prior to ~May 2022).
-func TestExonerationsLegacy(invID invocations.ID, testID string, variant *pb.Variant, count int) []*spanner.Mutation {
-	ms := make([]*spanner.Mutation, count)
-	for i := 0; i < count; i++ {
-		ms[i] = spanutil.InsertMap("TestExonerations", map[string]interface{}{
-			"InvocationId":    invID,
-			"TestId":          testID,
-			"ExonerationId":   "legacy:" + strconv.Itoa(i),
-			"Variant":         variant,
-			"VariantHash":     pbutil.VariantHash(variant),
-			"ExplanationHTML": spanutil.Compressed(fmt.Sprintf("legacy explanation %d", i)),
-		})
-	}
-	return ms
-}
-
 // Artifact returns a Spanner mutation to insert an artifact.
 func Artifact(invID invocations.ID, parentID, artID string, extraValues map[string]interface{}) *spanner.Mutation {
 	values := map[string]interface{}{

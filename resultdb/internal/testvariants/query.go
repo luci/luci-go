@@ -249,7 +249,7 @@ func (q *Query) queryTestVariantsWithUnexpectedResults(ctx context.Context, f fu
 		var tvStatus int64
 		var results []*tvResult
 		var exonerationExplanationHTMLs [][]byte
-		var exonerationReasons []spanner.NullInt64
+		var exonerationReasons []int64
 		var tmd spanutil.Compressed
 		if err := b.FromSpanner(row, &tv.TestId, &tv.VariantHash, &tv.Variant, &tmd, &tvStatus, &results, &exonerationExplanationHTMLs, &exonerationReasons); err != nil {
 			return err
@@ -290,7 +290,7 @@ func (q *Query) queryTestVariantsWithUnexpectedResults(ctx context.Context, f fu
 			if e.ExplanationHtml, err = q.decompressText(ex); err != nil {
 				return err
 			}
-			e.Reason = pb.ExonerationReason(exonerationReasons[i].Int64)
+			e.Reason = pb.ExonerationReason(exonerationReasons[i])
 			tv.Exonerations[i] = e
 		}
 		return f(tv)

@@ -54,7 +54,6 @@ func TestQueryTestVariants(t *testing.T) {
 			insert.TestResults("inv1", "T3", nil, pb.TestStatus_PASS),
 			insert.TestResults("inv1", "T1", pbutil.Variant("a", "b"), pb.TestStatus_FAIL, pb.TestStatus_PASS),
 			insert.TestExonerations("inv0", "T1", nil, pb.ExonerationReason_OCCURS_ON_OTHER_CLS),
-			insert.TestExonerationsLegacy("inv0", "T1", nil, 1),
 		)...)
 
 		srv := &resultDBServer{}
