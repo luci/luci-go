@@ -72,6 +72,10 @@ func InitServer(srv *server.Server, opt Options) error {
 		},
 		Postlude: internal.CommonPostlude,
 	})
+
+	// TODO(crbug/1082369): Remove this workaround once field masks can be decoded.
+	srv.PRPC.HackFixFieldMasksForJSON = true
+
 	srv.RegisterUnaryServerInterceptor(spanutil.SpannerDefaultsInterceptor(sppb.RequestOptions_PRIORITY_HIGH))
 	return installArtifactCreationHandler(srv, &opt, conn)
 }
