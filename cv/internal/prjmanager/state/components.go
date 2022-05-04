@@ -452,6 +452,7 @@ func markForTriageOnChangedPCLs(in []*prjpb.Component, pcls []*prjpb.PCL, change
 				if expanded.HasI64(clid) {
 					c = c.CloneShallow()
 					c.TriageRequired = true
+					break
 				}
 			}
 		}
