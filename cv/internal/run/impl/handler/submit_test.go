@@ -553,8 +553,8 @@ func TestOnSubmissionCompleted(t *testing.T) {
 								},
 							}
 							runAndVerify(func(lastMsg string) {
-								So(lastMsg, ShouldContainSubstring, "CL failed to submit because of transient failure: some transient failure. However, CV is running out of time to retry.")
-								So(lastMsg, ShouldNotContainSubstring, "None of the CLs in the Run were submitted by CV")
+								So(lastMsg, ShouldContainSubstring, "CL failed to submit because of transient failure: some transient failure. However, submission is running out of time to retry.")
+								So(lastMsg, ShouldNotContainSubstring, "None of the CLs in the Run has been submitted")
 							})
 							reqs := selfSetReviewRequests()
 							So(reqs, ShouldHaveLength, 1)
@@ -620,14 +620,14 @@ func TestOnSubmissionCompleted(t *testing.T) {
 							runAndVerify(func(changeNum int64, lastMsg string) {
 								switch changeNum {
 								case ci1.GetNumber():
-									So(lastMsg, ShouldContainSubstring, "CV didn't attempt to submit this CL because CV failed to submit the following CL(s) which this CL depends on:\n  https://x-review.example.com/c/2222")
+									So(lastMsg, ShouldContainSubstring, "Submission of this CL is not attempted because submission of following CL(s) which this CL depends on have failed:\n* https://x-review.example.com/c/2222")
 								case ci2.GetNumber():
-									So(lastMsg, ShouldContainSubstring, "CL failed to submit because of transient failure: some transient failure. However, CV is running out of time to retry.")
+									So(lastMsg, ShouldContainSubstring, "CL failed to submit because of transient failure: some transient failure. However, submission is running out of time to retry.")
 								default:
 									panic(fmt.Errorf("unknown change: %d", changeNum))
 								}
-								So(lastMsg, ShouldContainSubstring, "None of the CLs in the Run were submitted by CV")
-								So(lastMsg, ShouldContainSubstring, "CLs: [https://x-review.example.com/c/2222, https://x-review.example.com/c/1111]")
+								So(lastMsg, ShouldContainSubstring, "None of the CLs in the Run has been submitted")
+								So(lastMsg, ShouldContainSubstring, "CLs:\n* https://x-review.example.com/c/2222\n* https://x-review.example.com/c/1111")
 							})
 							reqs := selfSetReviewRequests()
 							So(reqs, ShouldHaveLength, 2) // each for CL1 and CL2
@@ -641,8 +641,8 @@ func TestOnSubmissionCompleted(t *testing.T) {
 						Convey("Unclassified failure", func() {
 							runAndVerify(func(_ int64, lastMsg string) {
 								So(lastMsg, ShouldContainSubstring, timeoutMsg)
-								So(lastMsg, ShouldContainSubstring, "None of the CLs in the Run were submitted by CV")
-								So(lastMsg, ShouldContainSubstring, "CLs: [https://x-review.example.com/c/2222, https://x-review.example.com/c/1111]")
+								So(lastMsg, ShouldContainSubstring, "None of the CLs in the Run has been submitted")
+								So(lastMsg, ShouldContainSubstring, "CLs:\n* https://x-review.example.com/c/2222\n* https://x-review.example.com/c/1111")
 							})
 						})
 					})
@@ -665,10 +665,10 @@ func TestOnSubmissionCompleted(t *testing.T) {
 							runAndVerify(func(changeNum int64, lastMsg string) {
 								switch changeNum {
 								case ci1.GetNumber():
-									So(lastMsg, ShouldContainSubstring, "CL failed to submit because of transient failure: some transient failure. However, CV is running out of time to retry.")
-									So(lastMsg, ShouldContainSubstring, "CV partially submitted the CLs in the Run")
-									So(lastMsg, ShouldContainSubstring, "Not submitted: [https://x-review.example.com/c/1111]")
-									So(lastMsg, ShouldContainSubstring, "Submitted: [https://x-review.example.com/c/2222]")
+									So(lastMsg, ShouldContainSubstring, "CL failed to submit because of transient failure: some transient failure. However, submission is running out of time to retry.")
+									So(lastMsg, ShouldContainSubstring, "CLs in the Run have be submitted partially.")
+									So(lastMsg, ShouldContainSubstring, "Not submitted:\n* https://x-review.example.com/c/1111")
+									So(lastMsg, ShouldContainSubstring, "Submitted:\n* https://x-review.example.com/c/2222")
 								case ci2.GetNumber():
 								default:
 									panic(fmt.Errorf("unknown change: %d", changeNum))
@@ -684,16 +684,16 @@ func TestOnSubmissionCompleted(t *testing.T) {
 							// the submission failure on the dependent CLs.
 							assertNotify(reqs[1], 99, 100, 101)
 							assertAttentionSet(reqs[1], "failed to submit dependent CLs", 99, 100, 101)
-							So(reqs[1].Message, ShouldContainSubstring, "CV submitted this CL, but failed to submit")
+							So(reqs[1].Message, ShouldContainSubstring, "This CL is submitted. However, submission of following CL(s) which depends on this CL have failed:")
 						})
 						Convey("Unclassified failure", func() {
 							runAndVerify(func(changeNum int64, lastMsg string) {
 								switch changeNum {
 								case ci1.GetNumber():
 									So(lastMsg, ShouldContainSubstring, timeoutMsg)
-									So(lastMsg, ShouldContainSubstring, "CV partially submitted the CLs in the Run")
-									So(lastMsg, ShouldContainSubstring, "Not submitted: [https://x-review.example.com/c/1111]")
-									So(lastMsg, ShouldContainSubstring, "Submitted: [https://x-review.example.com/c/2222]")
+									So(lastMsg, ShouldContainSubstring, "CLs in the Run have be submitted partially")
+									So(lastMsg, ShouldContainSubstring, "Not submitted:\n* https://x-review.example.com/c/1111")
+									So(lastMsg, ShouldContainSubstring, "Submitted:\n* https://x-review.example.com/c/2222")
 								case ci2.GetNumber():
 								default:
 									panic(fmt.Errorf("unknown change: %d", changeNum))
@@ -807,7 +807,7 @@ func TestOnSubmissionCompleted(t *testing.T) {
 								Failures: []*eventpb.SubmissionCompleted_CLSubmissionFailure{
 									{
 										Clid:    2,
-										Message: "CV failed to submit this CL because of merge conflict",
+										Message: "Failed to submit this CL because of merge conflict",
 									},
 								},
 							},
@@ -815,12 +815,12 @@ func TestOnSubmissionCompleted(t *testing.T) {
 						runAndVerify(func(changeNum int64, lastMsg string) {
 							switch changeNum {
 							case 1111:
-								So(lastMsg, ShouldContainSubstring, "CV didn't attempt to submit this CL because CV failed to submit the following CL(s) which this CL depends on:\n  https://x-review.example.com/c/2222")
+								So(lastMsg, ShouldContainSubstring, "Submission of this CL is not attempted because submission of following CL(s) which this CL depends on have failed:\n* https://x-review.example.com/c/2222")
 							case 2222:
-								So(lastMsg, ShouldContainSubstring, "CV failed to submit this CL because of merge conflict")
+								So(lastMsg, ShouldContainSubstring, "Failed to submit this CL because of merge conflict")
 							}
-							So(lastMsg, ShouldContainSubstring, "None of the CLs in the Run were submitted by CV")
-							So(lastMsg, ShouldContainSubstring, "CLs: [https://x-review.example.com/c/2222, https://x-review.example.com/c/1111]")
+							So(lastMsg, ShouldContainSubstring, "None of the CLs in the Run has been submitted")
+							So(lastMsg, ShouldContainSubstring, "CLs:\n* https://x-review.example.com/c/2222\n* https://x-review.example.com/c/1111")
 						})
 						reqs := selfSetReviewRequests()
 						So(reqs, ShouldHaveLength, 2) // each for CL1 and CL2
@@ -835,8 +835,8 @@ func TestOnSubmissionCompleted(t *testing.T) {
 					Convey("Unclassified failure", func() {
 						runAndVerify(func(changeNum int64, lastMsg string) {
 							So(lastMsg, ShouldContainSubstring, defaultMsg)
-							So(lastMsg, ShouldContainSubstring, "None of the CLs in the Run were submitted by CV")
-							So(lastMsg, ShouldContainSubstring, "CLs: [https://x-review.example.com/c/2222, https://x-review.example.com/c/1111]")
+							So(lastMsg, ShouldContainSubstring, "None of the CLs in the Run has been submitted")
+							So(lastMsg, ShouldContainSubstring, "CLs:\n* https://x-review.example.com/c/2222\n* https://x-review.example.com/c/1111")
 						})
 					})
 				})
@@ -854,14 +854,14 @@ func TestOnSubmissionCompleted(t *testing.T) {
 								Failures: []*eventpb.SubmissionCompleted_CLSubmissionFailure{
 									{
 										Clid:    1,
-										Message: "CV failed to submit this CL because of merge conflict",
+										Message: "Failed to submit this CL because of merge conflict",
 									},
 								},
 							},
 						}
 						runAndVerify(func(changeNum int64, lastMsg string) {
 							if changeNum == ci1.GetNumber() {
-								So(lastMsg, ShouldContainSubstring, "CV failed to submit this CL because of merge conflict")
+								So(lastMsg, ShouldContainSubstring, "Failed to submit this CL because of merge conflict")
 							}
 						})
 						reqs := selfSetReviewRequests()
@@ -869,12 +869,12 @@ func TestOnSubmissionCompleted(t *testing.T) {
 						So(reqs[0].GetNumber(), ShouldEqual, ci1.GetNumber())
 						assertNotify(reqs[0], 99, 100, 101)
 						assertAttentionSet(reqs[0], submissionFailureAttentionReason, 99, 100, 101)
-						So(reqs[0].Message, ShouldContainSubstring, "CV failed to submit this CL")
+						So(reqs[0].Message, ShouldContainSubstring, "Failed to submit this CL")
 						// The 2nd Gerrit message should be for the submitted CL to indicate
 						// the submission failure on the dependent CLs.
 						assertNotify(reqs[1], 99, 100, 101)
 						assertAttentionSet(reqs[1], "failed to submit dependent CLs", 99, 100, 101)
-						So(reqs[1].Message, ShouldContainSubstring, "CV submitted this CL, but failed to submit")
+						So(reqs[1].Message, ShouldContainSubstring, "This CL is submitted. However, submission of following CL(s) which depends on this CL have failed:")
 					})
 
 					Convey("don't attempt posting dependent failure message if posted already", func() {

@@ -301,7 +301,7 @@ func (impl *Impl) tryResumeSubmission(ctx context.Context, rs *state.RunState, s
 					rs.Submission.FailedCls[i] = f.GetClid()
 					sc.GetClFailures().Failures[i] = &eventpb.SubmissionCompleted_CLSubmissionFailure{
 						Clid:    f.GetClid(),
-						Message: fmt.Sprintf("CL failed to submit because of transient failure: %s. However, CV is running out of time to retry.", f.GetMessage()),
+						Message: fmt.Sprintf("CL failed to submit because of transient failure: %s. However, submission is running out of time to retry.", f.GetMessage()),
 					}
 				}
 			} else {
@@ -527,7 +527,7 @@ func (impl *Impl) cancelNotSubmittedCLTriggers(ctx context.Context, runID common
 		// the message CV posts on CL D should only include the fact that CV fails
 		// to submit CL B.
 		for _, f := range failed {
-			fmt.Fprintf(&sb, "\n  %s", f.ExternalID.MustURL())
+			fmt.Fprintf(&sb, "\n* %s", f.ExternalID.MustURL())
 		}
 		fmt.Fprint(&sb, "\n\n")
 		fmt.Fprint(&sb, msgSuffix)
@@ -576,11 +576,11 @@ func makeSubmissionMsgSuffix(submitted, failed, pending []*run.RunCL) string {
 	}
 	if len(submittedURLs) > 0 { // partial submission
 		return fmt.Sprintf(partiallySubmittedMsgSuffixFmt,
-			strings.Join(notSubmittedURLs, ", "),
-			strings.Join(submittedURLs, ", "),
+			strings.Join(notSubmittedURLs, "\n* "),
+			strings.Join(submittedURLs, "\n* "),
 		)
 	}
-	return fmt.Sprintf(noneSubmittedMsgSuffixFmt, strings.Join(notSubmittedURLs, ", "))
+	return fmt.Sprintf(noneSubmittedMsgSuffixFmt, strings.Join(notSubmittedURLs, "\n* "))
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -851,36 +851,36 @@ func (s submitter) submitCL(ctx context.Context, cl *run.RunCL) error {
 	return submitErr
 }
 
-// TODO(yiwzhang/tandrii): normalize message with the template function
-// used in clpurger/user_text.go.
+// TODO(crbug/1302119): Replace terms like "Project admin" with dedicated
+// contact sourced from Project Config.
 const (
-	defaultMsg = "CV failed to submit this CL because of " +
-		"unexpected internal error. Please contact LUCI team: " +
-		"https://bit.ly/3sMReYs"
-	failedPreconditionMsgFmt = "Gerrit rejected submission with error: " +
-		"%s\nHint: rebasing CL in Gerrit UI and re-submitting through CV " +
-		"usually works"
-	noneSubmittedMsgSuffixFmt = "None of the CLs in the Run were submitted " +
-		"by CV.\nCLs: [%s]\n"
-	partiallySubmittedMsgForPendingCLs = "CV didn't attempt to submit this CL " +
-		"because CV failed to submit the following CL(s) which this CL depends on:"
-	partiallySubmittedMsgForSubmittedCLs = "CV submitted this CL, " +
-		"but failed to submit the following CLs which depends on it:"
-	partiallySubmittedMsgSuffixFmt = "CV partially submitted the CLs " +
-		"in the Run.\nNot submitted: [%s]\nSubmitted: [%s]\n" +
+	defaultMsg = "Submission of this CL failed due to unexpected internal " +
+		"error. Please contact LUCI team: https://bit.ly/3sMReYs"
+	failedPreconditionMsgFmt = "Gerrit rejected submission of this CL with " +
+		"error: %s\nHint: rebasing CL in Gerrit UI and re-submitting usually " +
+		"works"
+	noneSubmittedMsgSuffixFmt = "None of the CLs in the Run has been " +
+		"submitted. CLs:\n* %s"
+	partiallySubmittedMsgForPendingCLs = "Submission of this CL is not " +
+		"attempted because submission of following CL(s) which this CL depends " +
+		"on have failed:"
+	partiallySubmittedMsgForSubmittedCLs = "This CL is submitted. However, " +
+		"submission of following CL(s) which depends on this CL have failed:"
+	partiallySubmittedMsgSuffixFmt = "CLs in the Run have be submitted " +
+		"partially.\nNot submitted:\n* %s\nSubmitted:\n* %s\n" +
 		"Please, use your judgement to determine if already submitted CLs have " +
 		"to be reverted, or if the remaining CLs could be manually submitted. " +
 		"If you think the partially submitted CLs may have broken the " +
 		"tip-of-tree of your project, consider notifying your infrastructure " +
 		"team/gardeners/sheriffs."
-	permDeniedMsg = "CV couldn't submit your CL because CV is not " +
-		"allowed to do so in your Gerrit project config. Contact your " +
-		"project admin or Chrome Operations team https://goo.gl/f3mzjN"
-	resourceExhaustedMsg = "CV failed to submit this CL because it is " +
-		"throttled by Gerrit."
-	gerritTimeoutMsg = "CV failed to submit this CL because Gerrit took too " +
+	permDeniedMsg = "Failed to submit this CL due to permission denied. " +
+		"Please contact your project admin to grant the submit access to " +
+		"your LUCI project scoped account in Gerrit config."
+	resourceExhaustedMsg = "Failed to submit this CL because Gerrit " +
+		"throttled the submission."
+	gerritTimeoutMsg = "Failed to submit this CL because Gerrit took too " +
 		"long to respond."
-	timeoutMsg = "CV timed out while trying to submit this CL. " +
+	timeoutMsg = "Ran out of time to submit this CL. " +
 		// TODO(yiwzhang): Generally, time out means CV is doing something
 		// wrong and looping over internally, However, timeout could also
 		// happen when submitting large CL stack and Gerrit is slow. In that
@@ -888,7 +888,7 @@ const (
 		// to see under what circumstance it may happen and revise this message
 		// so that CV doesn't get blamed for timeout it isn't responsible for.
 		"Please contact LUCI team https://bit.ly/3sMReYs."
-	unexpectedMsgFmt                 = "CV failed to submit your CL because of unexpected error from Gerrit: %s"
+	unexpectedMsgFmt                 = "Failed to submit your CL because of unexpected error from Gerrit: %s"
 	submissionFailureAttentionReason = "Submission failed."
 )
 
