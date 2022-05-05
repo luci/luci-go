@@ -124,3 +124,20 @@ func (s *DecoratedBuilds) Batch(ctx context.Context, req *BatchRequest) (rsp *Ba
 	}
 	return
 }
+
+func (s *DecoratedBuilds) CreateBuild(ctx context.Context, req *CreateBuildRequest) (rsp *Build, err error) {
+	if s.Prelude != nil {
+		var newCtx context.Context
+		newCtx, err = s.Prelude(ctx, "CreateBuild", req)
+		if err == nil {
+			ctx = newCtx
+		}
+	}
+	if err == nil {
+		rsp, err = s.Service.CreateBuild(ctx, req)
+	}
+	if s.Postlude != nil {
+		err = s.Postlude(ctx, "CreateBuild", rsp, err)
+	}
+	return
+}

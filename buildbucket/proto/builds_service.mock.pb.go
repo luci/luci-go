@@ -144,6 +144,26 @@ func (mr *MockBuildsClientMockRecorder) CancelBuild(ctx, in interface{}, opts ..
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CancelBuild", reflect.TypeOf((*MockBuildsClient)(nil).CancelBuild), varargs...)
 }
 
+// CreateBuild mocks base method.
+func (m *MockBuildsClient) CreateBuild(ctx context.Context, in *CreateBuildRequest, opts ...grpc.CallOption) (*Build, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{ctx, in}
+	for _, a := range opts {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "CreateBuild", varargs...)
+	ret0, _ := ret[0].(*Build)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// CreateBuild indicates an expected call of CreateBuild.
+func (mr *MockBuildsClientMockRecorder) CreateBuild(ctx, in interface{}, opts ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{ctx, in}, opts...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateBuild", reflect.TypeOf((*MockBuildsClient)(nil).CreateBuild), varargs...)
+}
+
 // GetBuild mocks base method.
 func (m *MockBuildsClient) GetBuild(ctx context.Context, in *GetBuildRequest, opts ...grpc.CallOption) (*Build, error) {
 	m.ctrl.T.Helper()
@@ -275,6 +295,21 @@ func (m *MockBuildsServer) CancelBuild(arg0 context.Context, arg1 *CancelBuildRe
 func (mr *MockBuildsServerMockRecorder) CancelBuild(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CancelBuild", reflect.TypeOf((*MockBuildsServer)(nil).CancelBuild), arg0, arg1)
+}
+
+// CreateBuild mocks base method.
+func (m *MockBuildsServer) CreateBuild(arg0 context.Context, arg1 *CreateBuildRequest) (*Build, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CreateBuild", arg0, arg1)
+	ret0, _ := ret[0].(*Build)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// CreateBuild indicates an expected call of CreateBuild.
+func (mr *MockBuildsServerMockRecorder) CreateBuild(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateBuild", reflect.TypeOf((*MockBuildsServer)(nil).CreateBuild), arg0, arg1)
 }
 
 // GetBuild mocks base method.

@@ -67,6 +67,12 @@ service Builds {
   // The response code is always OK.
   // Examples: go/buildbucket-rpc#batch
   rpc Batch(BatchRequest) returns (BatchResponse) {};
+
+  // Creates a new build for the provided build proto.
+  //
+  // If build with the given ID already exists, returns ALREADY_EXISTS
+  // error code.
+  rpc CreateBuild(CreateBuildRequest) returns (Build) {};
 }
 
 // A request message for GetBuild rpc.
@@ -455,6 +461,23 @@ message CancelBuildRequest {
   // If not set, the default mask is used, see Build message comments for the
   // list of fields returned by default.
   BuildMask mask = 101;
+}
+
+// A request message for CreateBuild rpc.
+message CreateBuildRequest {
+  // The Build to be created.
+  Build build = 1;
+
+  // A unique identifier for this request.
+  // A random UUID is recommended.
+  // This request is only idempotent if a `request_id` is provided.
+  string request_id = 2;
+
+  // What portion of the Build message to return.
+  //
+  // If not set, the default mask is used, see Build message comments for the
+  // list of fields returned by default.
+  BuildMask mask = 3;
 }
 
 // Defines a subset of Build fields and properties to return.
