@@ -317,12 +317,21 @@ func (c *client) getRaw(ctx context.Context, urlPath string, query url.Values) (
 	case http.StatusOK:
 		return r.Header, bytes.TrimPrefix(body, jsonPrefix), nil
 
+	case http.StatusBadRequest:
+		return r.Header, body, status.Errorf(codes.InvalidArgument, string(body))
+
+	case http.StatusForbidden:
+		return r.Header, body, status.Errorf(codes.PermissionDenied, "permission denied")
+
+	case http.StatusNotFound:
+		return r.Header, body, status.Errorf(codes.NotFound, "not found")
+
 	case http.StatusTooManyRequests:
 		logging.Errorf(ctx, "Gitiles quota error.\nResponse headers: %v\nResponse body: %s", r.Header, body)
 		return r.Header, body, status.Errorf(codes.ResourceExhausted, "insufficient Gitiles quota")
 
-	case http.StatusNotFound:
-		return r.Header, body, status.Errorf(codes.NotFound, "not found")
+	case http.StatusServiceUnavailable:
+		return r.Header, body, status.Errorf(codes.Unavailable, "service unavailable")
 
 	default:
 		logging.Errorf(ctx, "Gitiles: unexpected HTTP %d response.\nResponse headers: %v\nResponse body: %s", r.StatusCode, r.Header, body)
