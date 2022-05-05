@@ -12,18 +12,18 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package resultdb
+package rdbperms
 
 import (
 	"go.chromium.org/luci/server/auth/realms"
 )
 
 var (
-	permGetInvocation = realms.RegisterPermission("resultdb.invocations.get")
-	permGetTestResult = realms.RegisterPermission("resultdb.testResults.get")
-	permGetArtifact   = realms.RegisterPermission("resultdb.artifacts.get")
+	PermGetInvocation = realms.RegisterPermission("resultdb.invocations.get")
+	PermGetTestResult = realms.RegisterPermission("resultdb.testResults.get")
+	PermGetArtifact   = realms.RegisterPermission("resultdb.artifacts.get")
 
-	permListTestExonerations = realms.RegisterPermission("resultdb.testExonerations.list")
-	permListTestResults      = realms.RegisterPermission("resultdb.testResults.list")
-	permListArtifacts        = realms.RegisterPermission("resultdb.artifacts.list")
+	PermListTestExonerations = realms.RegisterPermission("resultdb.testExonerations.list")
+	PermListTestResults      = realms.RegisterPermission("resultdb.testResults.list")
+	PermListArtifacts        = realms.RegisterPermission("resultdb.artifacts.list")
 )

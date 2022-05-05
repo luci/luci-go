@@ -25,6 +25,7 @@ import (
 	"go.chromium.org/luci/resultdb/internal/permissions"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
+	"go.chromium.org/luci/resultdb/rdbperms"
 )
 
 // validateGetInvocationRequest returns an error if req is invalid.
@@ -42,7 +43,7 @@ func validateGetInvocationRequest(req *pb.GetInvocationRequest) error {
 
 // GetInvocation implements pb.ResultDBServer.
 func (s *resultDBServer) GetInvocation(ctx context.Context, in *pb.GetInvocationRequest) (*pb.Invocation, error) {
-	if err := permissions.VerifyInvNames(ctx, permGetInvocation, in.Name); err != nil {
+	if err := permissions.VerifyInvNames(ctx, rdbperms.PermGetInvocation, in.Name); err != nil {
 		return nil, err
 	}
 

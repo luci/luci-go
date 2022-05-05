@@ -19,6 +19,7 @@ import (
 	"testing"
 
 	pb "go.chromium.org/luci/resultdb/proto/v1"
+	"go.chromium.org/luci/resultdb/rdbperms"
 	"google.golang.org/grpc/codes"
 
 	"go.chromium.org/luci/server/auth"
@@ -39,7 +40,7 @@ func TestQueryTestResultStatistics(t *testing.T) {
 		ctx := auth.WithState(testutil.SpannerTestContext(t), &authtest.FakeState{
 			Identity: "user:someone@example.com",
 			IdentityPermissions: []authtest.RealmPermission{
-				{Realm: "testproject:testrealm", Permission: permListTestResults},
+				{Realm: "testproject:testrealm", Permission: rdbperms.PermListTestResults},
 			},
 		})
 

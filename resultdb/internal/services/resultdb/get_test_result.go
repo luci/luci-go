@@ -26,6 +26,7 @@ import (
 	"go.chromium.org/luci/resultdb/internal/testresults"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
+	"go.chromium.org/luci/resultdb/rdbperms"
 )
 
 func verifyGetTestResultPermission(ctx context.Context, resultName string) error {
@@ -34,7 +35,7 @@ func verifyGetTestResultPermission(ctx context.Context, resultName string) error
 		return appstatus.BadRequest(errors.Annotate(err, "name").Err())
 	}
 
-	return permissions.VerifyInvocation(ctx, permGetTestResult, invocations.ID(invID))
+	return permissions.VerifyInvocation(ctx, rdbperms.PermGetTestResult, invocations.ID(invID))
 }
 
 func validateGetTestResultRequest(req *pb.GetTestResultRequest) error {

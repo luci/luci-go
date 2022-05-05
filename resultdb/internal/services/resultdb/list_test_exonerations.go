@@ -27,6 +27,7 @@ import (
 	"go.chromium.org/luci/resultdb/internal/permissions"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
+	"go.chromium.org/luci/resultdb/rdbperms"
 )
 
 func validateListTestExonerationsRequest(req *pb.ListTestExonerationsRequest) error {
@@ -43,7 +44,7 @@ func validateListTestExonerationsRequest(req *pb.ListTestExonerationsRequest) er
 
 // ListTestExonerations implements pb.ResultDBServer.
 func (s *resultDBServer) ListTestExonerations(ctx context.Context, in *pb.ListTestExonerationsRequest) (*pb.ListTestExonerationsResponse, error) {
-	if err := permissions.VerifyInvNames(ctx, permListTestExonerations, in.Invocation); err != nil {
+	if err := permissions.VerifyInvNames(ctx, rdbperms.PermListTestExonerations, in.Invocation); err != nil {
 		return nil, err
 	}
 

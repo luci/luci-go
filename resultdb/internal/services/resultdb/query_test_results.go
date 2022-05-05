@@ -27,6 +27,7 @@ import (
 	"go.chromium.org/luci/resultdb/internal/testresults"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
+	"go.chromium.org/luci/resultdb/rdbperms"
 )
 
 // queryRequest is implemented by *pb.QueryTestResultsRequest,
@@ -75,7 +76,7 @@ func validateQueryTestResultsRequest(req *pb.QueryTestResultsRequest) error {
 
 // QueryTestResults implements pb.ResultDBServer.
 func (s *resultDBServer) QueryTestResults(ctx context.Context, in *pb.QueryTestResultsRequest) (*pb.QueryTestResultsResponse, error) {
-	if err := permissions.VerifyInvNames(ctx, permListTestResults, in.Invocations...); err != nil {
+	if err := permissions.VerifyInvNames(ctx, rdbperms.PermListTestResults, in.Invocations...); err != nil {
 		return nil, err
 	}
 

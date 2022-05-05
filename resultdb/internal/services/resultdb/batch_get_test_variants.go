@@ -26,6 +26,7 @@ import (
 	"go.chromium.org/luci/resultdb/internal/testvariants"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
+	"go.chromium.org/luci/resultdb/rdbperms"
 )
 
 func validateBatchGetTestVariantsRequest(in *pb.BatchGetTestVariantsRequest) error {
@@ -53,7 +54,7 @@ func validateBatchGetTestVariantsRequest(in *pb.BatchGetTestVariantsRequest) err
 
 // BatchGetTestVariants implements the RPC method of the same name.
 func (s *resultDBServer) BatchGetTestVariants(ctx context.Context, in *pb.BatchGetTestVariantsRequest) (*pb.BatchGetTestVariantsResponse, error) {
-	if err := permissions.VerifyInvNames(ctx, permListTestResults, in.Invocation); err != nil {
+	if err := permissions.VerifyInvNames(ctx, rdbperms.PermListTestResults, in.Invocation); err != nil {
 		return nil, err
 	}
 

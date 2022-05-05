@@ -28,6 +28,7 @@ import (
 	"go.chromium.org/luci/resultdb/internal/history"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
+	"go.chromium.org/luci/resultdb/rdbperms"
 )
 
 // GetTestResultHistory implements pb.ResultDBServer.
@@ -59,11 +60,11 @@ func verifyGetTestResultHistoryPermission(ctx context.Context, realm string) err
 	if realm == "" {
 		return appstatus.BadRequest(errors.Reason("realm is required").Err())
 	}
-	switch allowed, err := auth.HasPermission(ctx, permListTestResults, realm, nil); {
+	switch allowed, err := auth.HasPermission(ctx, rdbperms.PermListTestResults, realm, nil); {
 	case err != nil:
 		return err
 	case !allowed:
-		return appstatus.Errorf(codes.PermissionDenied, `caller does not have permission %s in realm %q`, permListTestResults, realm)
+		return appstatus.Errorf(codes.PermissionDenied, `caller does not have permission %s in realm %q`, rdbperms.PermListTestResults, realm)
 	}
 	return nil
 }

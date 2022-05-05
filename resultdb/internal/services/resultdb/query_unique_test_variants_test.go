@@ -21,6 +21,7 @@ import (
 
 	"go.chromium.org/luci/resultdb/internal/testutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
+	"go.chromium.org/luci/resultdb/rdbperms"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
 
@@ -77,7 +78,7 @@ func TestQueryUniqueTestVariants(t *testing.T) {
 			&authtest.FakeState{
 				Identity: "user:someone@example.com",
 				IdentityPermissions: []authtest.RealmPermission{
-					{Realm: "testproject:testrealm", Permission: permListTestResults},
+					{Realm: "testproject:testrealm", Permission: rdbperms.PermListTestResults},
 				},
 			})
 		srv := newTestResultDBService()

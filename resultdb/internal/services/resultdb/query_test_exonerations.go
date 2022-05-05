@@ -27,6 +27,7 @@ import (
 	"go.chromium.org/luci/resultdb/internal/permissions"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
+	"go.chromium.org/luci/resultdb/rdbperms"
 )
 
 // validateQueryTestExonerationsRequest returns a non-nil error if req is determined
@@ -41,7 +42,7 @@ func validateQueryTestExonerationsRequest(req *pb.QueryTestExonerationsRequest) 
 
 // QueryTestExonerations implements pb.ResultDBServer.
 func (s *resultDBServer) QueryTestExonerations(ctx context.Context, in *pb.QueryTestExonerationsRequest) (*pb.QueryTestExonerationsResponse, error) {
-	if err := permissions.VerifyInvNames(ctx, permListTestExonerations, in.Invocations...); err != nil {
+	if err := permissions.VerifyInvNames(ctx, rdbperms.PermListTestExonerations, in.Invocations...); err != nil {
 		return nil, err
 	}
 

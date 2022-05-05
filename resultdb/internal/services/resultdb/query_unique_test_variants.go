@@ -24,6 +24,7 @@ import (
 	"go.chromium.org/luci/resultdb/internal/pagination"
 	"go.chromium.org/luci/resultdb/internal/uniquetestvariants"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
+	"go.chromium.org/luci/resultdb/rdbperms"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/realms"
 	"go.chromium.org/luci/server/span"
@@ -34,11 +35,11 @@ func (s *resultDBServer) QueryUniqueTestVariants(
 	ctx context.Context,
 	in *pb.QueryUniqueTestVariantsRequest,
 ) (res *pb.QueryUniqueTestVariantsResponse, err error) {
-	switch allowed, err := auth.HasPermission(ctx, permListTestResults, in.Realm, nil); {
+	switch allowed, err := auth.HasPermission(ctx, rdbperms.PermListTestResults, in.Realm, nil); {
 	case err != nil:
 		return nil, err
 	case !allowed:
-		return nil, appstatus.Errorf(codes.PermissionDenied, `caller does not have permission %s in realm %q`, permListTestResults, in.Realm)
+		return nil, appstatus.Errorf(codes.PermissionDenied, `caller does not have permission %s in realm %q`, rdbperms.PermListTestResults, in.Realm)
 	}
 
 	in.PageSize = int32(pagination.AdjustPageSize(in.PageSize))

@@ -28,6 +28,7 @@ import (
 	"go.chromium.org/luci/resultdb/internal/permissions"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
+	"go.chromium.org/luci/resultdb/rdbperms"
 )
 
 // parseParent parses the parent argument as either an invocation name or a
@@ -66,7 +67,7 @@ func (s *resultDBServer) ListArtifacts(ctx context.Context, in *pb.ListArtifacts
 		return nil, err
 	}
 
-	if err := permissions.VerifyInvocation(ctx, permListArtifacts, invID); err != nil {
+	if err := permissions.VerifyInvocation(ctx, rdbperms.PermListArtifacts, invID); err != nil {
 		return nil, err
 	}
 

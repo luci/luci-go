@@ -28,6 +28,7 @@ import (
 	"go.chromium.org/luci/resultdb/internal/permissions"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
+	"go.chromium.org/luci/resultdb/rdbperms"
 )
 
 func verifyReadArtifactPermission(ctx context.Context, name string) error {
@@ -36,7 +37,7 @@ func verifyReadArtifactPermission(ctx context.Context, name string) error {
 		return appstatus.BadRequest(inputErr)
 	}
 
-	return permissions.VerifyInvocation(ctx, permGetArtifact, invocations.ID(invIDStr))
+	return permissions.VerifyInvocation(ctx, rdbperms.PermGetArtifact, invocations.ID(invIDStr))
 }
 
 func validateGetArtifactRequest(req *pb.GetArtifactRequest) error {

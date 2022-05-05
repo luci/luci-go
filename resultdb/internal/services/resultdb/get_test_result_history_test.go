@@ -29,6 +29,7 @@ import (
 	"go.chromium.org/luci/resultdb/internal/testutil"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
+	"go.chromium.org/luci/resultdb/rdbperms"
 
 	. "github.com/smartystreets/goconvey/convey"
 
@@ -115,7 +116,7 @@ func TestGetTestResultHistory(t *testing.T) {
 			&authtest.FakeState{
 				Identity: "user:someone@example.com",
 				IdentityPermissions: []authtest.RealmPermission{
-					{Realm: "testproject:testrealm", Permission: permListTestResults},
+					{Realm: "testproject:testrealm", Permission: rdbperms.PermListTestResults},
 				},
 			})
 		srv := newTestResultDBService()
