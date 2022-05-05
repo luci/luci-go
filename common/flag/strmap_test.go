@@ -34,6 +34,9 @@ func TestStringMap(t *testing.T) {
 			So(m, ShouldResemble, map[string]string{"a": "1", "b": "2"})
 
 			So(f.Set("b:3"), ShouldErrLike, `key "b" is already specified`)
+
+			So(f.Set("c:something:with:colon"), ShouldBeNil)
+			So(m, ShouldResemble, map[string]string{"a": "1", "b": "2", "c": "something:with:colon"})
 		})
 
 		Convey(`String`, func() {

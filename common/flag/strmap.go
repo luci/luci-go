@@ -50,7 +50,7 @@ func (f strMapFlag) String() string {
 }
 
 func (f strMapFlag) Set(s string) error {
-	parts := strings.Split(s, ":")
+	parts := strings.SplitN(s, ":", 2)
 	if len(parts) == 1 {
 		return fmt.Errorf("no colon")
 	}
