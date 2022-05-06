@@ -620,7 +620,7 @@ func TestOnSubmissionCompleted(t *testing.T) {
 							runAndVerify(func(changeNum int64, lastMsg string) {
 								switch changeNum {
 								case ci1.GetNumber():
-									So(lastMsg, ShouldContainSubstring, "Submission of this CL is not attempted because submission of following CL(s) which this CL depends on have failed:\n* https://x-review.example.com/c/2222")
+									So(lastMsg, ShouldContainSubstring, "This CL is not submitted because submission has failed for the following CL(s) which this CL depends on.\n* https://x-review.example.com/c/2222")
 								case ci2.GetNumber():
 									So(lastMsg, ShouldContainSubstring, "CL failed to submit because of transient failure: some transient failure. However, submission is running out of time to retry.")
 								default:
@@ -684,7 +684,7 @@ func TestOnSubmissionCompleted(t *testing.T) {
 							// the submission failure on the dependent CLs.
 							assertNotify(reqs[1], 99, 100, 101)
 							assertAttentionSet(reqs[1], "failed to submit dependent CLs", 99, 100, 101)
-							So(reqs[1].Message, ShouldContainSubstring, "This CL is submitted. However, submission of following CL(s) which depends on this CL have failed:")
+							So(reqs[1].Message, ShouldContainSubstring, "This CL is submitted. However, submission has failed for the following CL(s) which depend on this CL.")
 						})
 						Convey("Unclassified failure", func() {
 							runAndVerify(func(changeNum int64, lastMsg string) {
@@ -815,7 +815,7 @@ func TestOnSubmissionCompleted(t *testing.T) {
 						runAndVerify(func(changeNum int64, lastMsg string) {
 							switch changeNum {
 							case 1111:
-								So(lastMsg, ShouldContainSubstring, "Submission of this CL is not attempted because submission of following CL(s) which this CL depends on have failed:\n* https://x-review.example.com/c/2222")
+								So(lastMsg, ShouldContainSubstring, "This CL is not submitted because submission has failed for the following CL(s) which this CL depends on.\n* https://x-review.example.com/c/2222")
 							case 2222:
 								So(lastMsg, ShouldContainSubstring, "Failed to submit this CL because of merge conflict")
 							}
@@ -874,7 +874,7 @@ func TestOnSubmissionCompleted(t *testing.T) {
 						// the submission failure on the dependent CLs.
 						assertNotify(reqs[1], 99, 100, 101)
 						assertAttentionSet(reqs[1], "failed to submit dependent CLs", 99, 100, 101)
-						So(reqs[1].Message, ShouldContainSubstring, "This CL is submitted. However, submission of following CL(s) which depends on this CL have failed:")
+						So(reqs[1].Message, ShouldContainSubstring, "This CL is submitted. However, submission has failed for the following CL(s) which depend on this CL.")
 					})
 
 					Convey("don't attempt posting dependent failure message if posted already", func() {

@@ -854,18 +854,18 @@ func (s submitter) submitCL(ctx context.Context, cl *run.RunCL) error {
 // TODO(crbug/1302119): Replace terms like "Project admin" with dedicated
 // contact sourced from Project Config.
 const (
+	cvBugLink  = "https://bugs.chromium.org/p/chromium/issues/entry?components=Infra%3ELUCI%3EBuildService%3EPreSubmit%3ECV"
 	defaultMsg = "Submission of this CL failed due to unexpected internal " +
-		"error. Please contact LUCI team: https://bit.ly/3sMReYs"
+		"error. Please contact LUCI team.\n\n" + cvBugLink
 	failedPreconditionMsgFmt = "Gerrit rejected submission of this CL with " +
 		"error: %s\nHint: rebasing CL in Gerrit UI and re-submitting usually " +
 		"works"
 	noneSubmittedMsgSuffixFmt = "None of the CLs in the Run has been " +
 		"submitted. CLs:\n* %s"
-	partiallySubmittedMsgForPendingCLs = "Submission of this CL is not " +
-		"attempted because submission of following CL(s) which this CL depends " +
-		"on have failed:"
+	partiallySubmittedMsgForPendingCLs = "This CL is not submitted because " +
+		"submission has failed for the following CL(s) which this CL depends on."
 	partiallySubmittedMsgForSubmittedCLs = "This CL is submitted. However, " +
-		"submission of following CL(s) which depends on this CL have failed:"
+		"submission has failed for the following CL(s) which depend on this CL."
 	partiallySubmittedMsgSuffixFmt = "CLs in the Run have be submitted " +
 		"partially.\nNot submitted:\n* %s\nSubmitted:\n* %s\n" +
 		"Please, use your judgement to determine if already submitted CLs have " +
@@ -887,8 +887,8 @@ const (
 		// case, CV can't do anything about it. After launching m1, gather data
 		// to see under what circumstance it may happen and revise this message
 		// so that CV doesn't get blamed for timeout it isn't responsible for.
-		"Please contact LUCI team https://bit.ly/3sMReYs."
-	unexpectedMsgFmt                 = "Failed to submit your CL because of unexpected error from Gerrit: %s"
+		"Please contact LUCI team.\n\n" + cvBugLink
+	unexpectedMsgFmt                 = "Failed to submit this CL because of unexpected error from Gerrit: %s"
 	submissionFailureAttentionReason = "Submission failed."
 )
 
