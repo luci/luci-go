@@ -68,6 +68,14 @@ message SwarmingSettings {
     // Subdirectory to install the package into, relative to the installation
     // root. Useful if installing two packages at the same root would conflict.
     string subdir = 5;
+
+    // Omit this package from the build having any of these experiments.
+    repeated string omit_on_experiment = 6;
+
+    // If non-empty, include this package only on builds which have any of these
+    // experiments set. `omit_on_experiment` takes precedence if an experiment
+    // is in both of these lists.
+    repeated string include_on_experiment = 7;
   }
 
   // Packages available to the user executable in $PATH.

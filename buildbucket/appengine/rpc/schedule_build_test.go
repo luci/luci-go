@@ -6103,6 +6103,9 @@ func TestScheduleBuild(t *testing.T) {
 				Infra: &pb.BuildInfra{
 					Buildbucket: &pb.BuildInfra_Buildbucket{},
 				},
+				Input: &pb.Build_Input{
+					Experiments: []string{"omit", "include"},
+				},
 			}
 			cfg := &pb.SettingsCfg{
 				Swarming: &pb.SwarmingSettings{
@@ -6138,6 +6141,21 @@ func TestScheduleBuild(t *testing.T) {
 							Version:       "version",
 							VersionCanary: "canary-version",
 						},
+						{
+							PackageName:         "include_experiment",
+							Version:             "version",
+							IncludeOnExperiment: []string{"include"},
+						},
+						{
+							PackageName:         "not_include_experiment",
+							Version:             "version",
+							IncludeOnExperiment: []string{"not_include"},
+						},
+						{
+							PackageName:      "omit_experiment",
+							Version:          "version",
+							OmitOnExperiment: []string{"omit"},
+						},
 					},
 				},
 				Cipd: &pb.CipdSettings{
@@ -6164,6 +6182,7 @@ func TestScheduleBuild(t *testing.T) {
 									Server: "cipd server",
 									Specs: []*pb.InputDataRef_CIPD_PkgSpec{
 										{Package: "include", Version: "canary-version"},
+										{Package: "include_experiment", Version: "version"},
 									},
 								},
 							},

@@ -483,6 +483,34 @@ func builderMatches(builder string, pred *pb.BuilderPredicate) bool {
 	return false
 }
 
+// experimentsMatch returns whether or not the given experimentSet matches the
+// given includeOnExperiment or omitOnExperiment.
+func experimentsMatch(experimentSet stringset.Set, includeOnExperiment, omitOnExperiment []string) bool {
+	for _, e := range omitOnExperiment {
+		if experimentSet.Has(e) {
+			return false
+		}
+	}
+
+	if len(includeOnExperiment) > 0 {
+		include := false
+
+		for _, e := range includeOnExperiment {
+			if experimentSet.Has(e) {
+				include = true
+				break
+			}
+		}
+
+		if !include {
+			return false
+		}
+
+	}
+
+	return true
+}
+
 // setDimensions computes the dimensions from the given request and builder
 // config, setting them in the proto. Mutates the given *pb.Build.
 // build.Infra.Swarming must be set (see setInfra).
@@ -1037,10 +1065,18 @@ func setInfraAgentInputData(build *pb.Build, globalCfg *pb.SettingsCfg) {
 	}
 	cipdServer := globalCfg.GetCipd().GetServer()
 	id := protoutil.FormatBuilderID(build.Builder)
+
+	experiments := stringset.NewFromSlice(build.GetInput().GetExperiments()...)
+
 	for _, p := range userPackages {
 		if !builderMatches(id, p.Builders) {
 			continue
 		}
+
+		if !experimentsMatch(experiments, p.GetIncludeOnExperiment(), p.GetOmitOnExperiment()) {
+			continue
+		}
+
 		path := UserPackageDir
 		if p.Subdir != "" {
 			path = fmt.Sprintf("%s/%s", path, p.Subdir)
