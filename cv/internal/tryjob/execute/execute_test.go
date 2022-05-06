@@ -296,7 +296,7 @@ func TestComputeRetries(t *testing.T) {
 					So(execState.Status, ShouldNotEqual, tryjob.ExecutionState_FAILED)
 				})
 			})
-			Convey("with retry-denied porperty output", func() {
+			Convey("with retry-denied property output", func() {
 				Convey("on critical", func() {
 					failedTryjobs := makeFailedTryjobs(101)
 					failedTryjobs[101].Result.Output = &recipe.Output{Retry: recipe.Output_OUTPUT_RETRY_DENIED}
@@ -324,42 +324,41 @@ func TestComputeRetries(t *testing.T) {
 				So(execState.Status, ShouldNotEqual, tryjob.ExecutionState_FAILED)
 				So(execState.FailureReason, ShouldEqual, "")
 				So(retries, ShouldHaveLength, 1)
-				for k, v := range retries {
-					So(k, ShouldResembleProto, makeDefinition("builder-one", true))
-					So(v, ShouldResembleProto, &tryjob.ExecutionState_Execution{
-						Attempts: []*tryjob.ExecutionState_Execution_Attempt{
-							{
-								TryjobId: 101,
-								Status:   tryjob.Status_ENDED,
-								Result: &tryjob.Result{
-									Status: tryjob.Result_FAILED_TRANSIENTLY,
-								},
+				retry := retries[0]
+				So(retry.defintion, ShouldResembleProto, makeDefinition("builder-one", true))
+				So(retry.execution, ShouldResembleProto, &tryjob.ExecutionState_Execution{
+					Attempts: []*tryjob.ExecutionState_Execution_Attempt{
+						{
+							TryjobId: 101,
+							Status:   tryjob.Status_ENDED,
+							Result: &tryjob.Result{
+								Status: tryjob.Result_FAILED_TRANSIENTLY,
 							},
 						},
-						UsedQuota: 1,
-					})
-				}
+					},
+					UsedQuota: 1,
+				})
 			})
-			Convey("retries contains expected map", func() {
+			Convey("retries contains expected info", func() {
 				failedTryjobs := makeFailedTryjobs(101)
 				updateAttempts(execState, failedTryjobs)
 				retries := computeRetries(ctx, execState, failedTryjobs)
 				So(retries, ShouldHaveLength, 1)
-				for k, v := range retries {
-					So(k, ShouldResembleProto, makeDefinition("builder-one", true))
-					So(v, ShouldResembleProto, &tryjob.ExecutionState_Execution{
-						Attempts: []*tryjob.ExecutionState_Execution_Attempt{
-							{
-								TryjobId: 101,
-								Status:   tryjob.Status_ENDED,
-								Result: &tryjob.Result{
-									Status: tryjob.Result_FAILED_TRANSIENTLY,
-								},
+				So(retries, ShouldHaveLength, 1)
+				retry := retries[0]
+				So(retry.defintion, ShouldResembleProto, makeDefinition("builder-one", true))
+				So(retry.execution, ShouldResembleProto, &tryjob.ExecutionState_Execution{
+					Attempts: []*tryjob.ExecutionState_Execution_Attempt{
+						{
+							TryjobId: 101,
+							Status:   tryjob.Status_ENDED,
+							Result: &tryjob.Result{
+								Status: tryjob.Result_FAILED_TRANSIENTLY,
 							},
 						},
-						UsedQuota: 1,
-					})
-				}
+					},
+					UsedQuota: 1,
+				})
 			})
 		})
 	})

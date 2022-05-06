@@ -27,6 +27,7 @@ import (
 	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/run"
 	"go.chromium.org/luci/cv/internal/tryjob"
+	"go.chromium.org/luci/cv/internal/tryjob/requirement"
 )
 
 type state struct {
@@ -59,7 +60,9 @@ func Do(ctx context.Context, r *run.Run, t *tryjob.ExecuteTryjobsPayload, should
 	case err != nil:
 		return nil, err
 	case execState == nil:
-		execState = &tryjob.ExecutionState{}
+		execState = &tryjob.ExecutionState{
+			Status: tryjob.ExecutionState_RUNNING,
+		}
 	}
 
 	plan, err := prepExecutionPlan(ctx, execState, r, t.GetTryjobsUpdated(), t.GetRequirementChanged())
@@ -99,33 +102,93 @@ func Do(ctx context.Context, r *run.Run, t *tryjob.ExecuteTryjobsPayload, should
 	}
 }
 
-type plan struct {
-	// new tryjob to trigger due to new builder in requirement.
-	trigger []*tryjob.Definition
-
-	// retry the existing tryjob due to transient failure.
-	retry map[*tryjob.Definition]*tryjob.ExecutionState_Execution
-
-	// discard the tryjob due to the builder is removed in the Project Config.
-	discarded map[*tryjob.Definition]*tryjob.ExecutionState_Execution
+type planItem struct {
+	defintion     *tryjob.Definition
+	execution     *tryjob.ExecutionState_Execution
+	discardReason string // Should be set only for discarded tryjobs.
 }
 
+type plan struct {
+	// Trigger a new attempt for provided execution.
+	//
+	// Typically due to new tryjob definition or retrying failed tryjobs.
+	triggerNewAttempt []planItem
+
+	// Discard the tryjob execution is no longer needed.
+	//
+	// Typically due to tryjob definition is removed in Project Config.
+	discard []planItem
+}
+
+const noLongerRequiredInConfig = "Tryjob is no longer required in Project Config"
+
+// prepExecutionPlan updates the states and computes a plan in order to
+// fulfill the requirement.
 func prepExecutionPlan(ctx context.Context, execState *tryjob.ExecutionState, r *run.Run, tryjobsUpdated []int64, reqmtChanged bool) (*plan, error) {
 	switch {
 	case len(tryjobsUpdated) > 0 && reqmtChanged:
 		panic(fmt.Errorf("the executor can't handle requirement update and tryjobs update at the same time"))
 	case len(tryjobsUpdated) > 0:
-		// TODO(robertocn): update the state and compute the plan
 		tryjobsByID, err := tryjob.LoadTryjobsMapByIDs(ctx, common.MakeTryjobIDs(tryjobsUpdated...))
 		if err != nil {
 			return nil, err
 		}
 		updateAttempts(execState, tryjobsByID)
-
-		return &plan{retry: computeRetries(ctx, execState, tryjobsByID)}, nil
+		ret := &plan{}
+		ret.triggerNewAttempt = computeRetries(ctx, execState, tryjobsByID)
+		return ret, nil
+	case reqmtChanged && execState.Status != tryjob.ExecutionState_RUNNING:
+		// Execution has ended already. No need to react to requirement change.
+		return nil, nil
 	case reqmtChanged:
-		// TODO(yiwzhang): compute the plan
-		return &plan{}, nil
+		curReqmt, targetReqmt := execState.GetRequirement(), r.Tryjobs.GetRequirement()
+		if targetReqmt.GetVersion() <= curReqmt.GetVersion() {
+			logging.Errorf(ctx, "Tryjob executor is executing requirement that is either later or equal to the requested requirement version. current: %d, got: %d ", targetReqmt.GetVersion(), curReqmt.GetVersion())
+			return nil, nil
+		}
+		existingExecutionByDef := make(map[*tryjob.Definition]*tryjob.ExecutionState_Execution, len(curReqmt.GetDefinitions()))
+		for i, def := range curReqmt.GetDefinitions() {
+			existingExecutionByDef[def] = execState.GetExecutions()[i]
+		}
+		reqmtDiff := requirement.Diff(curReqmt, targetReqmt)
+		ret := &plan{}
+		// populate discarded tryjob.
+		for def := range reqmtDiff.RemovedDefs {
+			ret.discard = append(ret.discard, planItem{
+				defintion:     def,
+				execution:     existingExecutionByDef[def],
+				discardReason: noLongerRequiredInConfig,
+			})
+		}
+		// Apply new requirement and figure out which execution requires triggering
+		// new attempt.
+		execState.Requirement = targetReqmt
+		execState.Executions = execState.Executions[:0]
+		for _, def := range targetReqmt.GetDefinitions() {
+			switch {
+			case reqmtDiff.AddedDefs.Has(def):
+				exec := &tryjob.ExecutionState_Execution{}
+				execState.Executions = append(execState.Executions, exec)
+				ret.triggerNewAttempt = append(ret.triggerNewAttempt, planItem{
+					defintion: def,
+					execution: exec,
+				})
+			case reqmtDiff.ChangedDefsReverse.Has(def):
+				existingDef := reqmtDiff.ChangedDefsReverse[def]
+				exec, ok := existingExecutionByDef[existingDef]
+				if !ok {
+					panic(fmt.Errorf("impossible; definition shows up in diff but not in existing execution state. Definition: %s", existingDef))
+				}
+				execState.Executions = append(execState.Executions, exec)
+			default: // Nothing has changed for this definition.
+				exec, ok := existingExecutionByDef[def]
+				if !ok {
+					panic(fmt.Errorf("impossible; definition neither shows up in diff nor in existing execution state. Definition: %s", def))
+				}
+				execState.Executions = append(execState.Executions, exec)
+			}
+		}
+		return ret, nil
 	default:
 		panic(fmt.Errorf("the executor is called without any update on either tryjobs or requirement"))
 	}
@@ -137,14 +200,14 @@ func (p plan) execute(ctx context.Context, r *run.Run, execState *tryjob.Executi
 }
 
 // updateAttempts updates the attempts associated with the given tryjobs.
-func updateAttempts(execState *tryjob.ExecutionState, tryjobsToUpdateByID map[common.TryjobID]*tryjob.Tryjob) {
+func updateAttempts(execState *tryjob.ExecutionState, tryjobsToUpdateByIDs map[common.TryjobID]*tryjob.Tryjob) {
 	for _, exec := range execState.Executions {
 		if len(exec.Attempts) == 0 {
 			continue
 		}
 		// Only look at the most recent attempt in the execution.
 		lastAttempt := exec.Attempts[len(exec.Attempts)-1]
-		if tj, present := tryjobsToUpdateByID[common.TryjobID(lastAttempt.TryjobId)]; present {
+		if tj, present := tryjobsToUpdateByIDs[common.TryjobID(lastAttempt.TryjobId)]; present {
 			lastAttempt.Result = tj.Result
 			lastAttempt.Status = tj.Status
 		}
@@ -199,8 +262,8 @@ func computeRetries(
 	ctx context.Context,
 	execState *tryjob.ExecutionState,
 	tryjobsByID map[common.TryjobID]*tryjob.Tryjob,
-) map[*tryjob.Definition]*tryjob.ExecutionState_Execution {
-	ret := make(map[*tryjob.Definition]*tryjob.ExecutionState_Execution)
+) []planItem {
+	var ret []planItem
 
 	var totalUsedQuota int32
 	var failedTryjobs []*tryjob.Tryjob
@@ -215,7 +278,10 @@ func computeRetries(
 			failedTryjobs = append(failedTryjobs, tryjobsByID[common.TryjobID(attempt.TryjobId)])
 			execState.Status = tryjob.ExecutionState_FAILED
 		case r == retryRequiredIgnoreQuota:
-			ret[definition] = execution
+			ret = append(ret, planItem{
+				defintion: definition,
+				execution: execution,
+			})
 		case execState.GetRequirement().GetRetryConfig() == nil:
 			failedTryjobs = append(failedTryjobs, tryjobsByID[common.TryjobID(attempt.TryjobId)])
 			logging.Debugf(ctx, "tryjobs cannot be retried because retries are not configured")
@@ -223,7 +289,10 @@ func computeRetries(
 		default:
 			// The tryjob is critical and failed, it would need to be retried for
 			// the Run to succeed.
-			ret[definition] = execution
+			ret = append(ret, planItem{
+				defintion: definition,
+				execution: execution,
+			})
 			failedTryjobs = append(failedTryjobs, tryjobsByID[common.TryjobID(attempt.TryjobId)])
 			var quotaToRetry int32
 			switch attempt.Result.Status {

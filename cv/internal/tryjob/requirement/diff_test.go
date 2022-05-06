@@ -129,6 +129,8 @@ func TestDiff(t *testing.T) {
 				So(res.AddedDefs, ShouldBeEmpty)
 				So(res.ChangedDefs, ShouldHaveLength, 1)
 				So(res.ChangedDefs[baseDef], ShouldResembleProto, targetDef)
+				So(res.ChangedDefsReverse, ShouldHaveLength, 1)
+				So(res.ChangedDefsReverse[targetDef], ShouldResembleProto, baseDef)
 				So(res.RemovedDefs, ShouldBeEmpty)
 			})
 			Convey("Multiple Definitions", func() {
@@ -163,6 +165,9 @@ func TestDiff(t *testing.T) {
 				So(res.ChangedDefs, ShouldHaveLength, 2)
 				So(res.ChangedDefs[builder3], ShouldResembleProto, builder3Changed)
 				So(res.ChangedDefs[builderDiffProj], ShouldResembleProto, builderDiffProjChanged)
+				So(res.ChangedDefsReverse, ShouldHaveLength, 2)
+				So(res.ChangedDefsReverse[builder3Changed], ShouldResembleProto, builder3)
+				So(res.ChangedDefsReverse[builderDiffProjChanged], ShouldResembleProto, builderDiffProj)
 			})
 		})
 

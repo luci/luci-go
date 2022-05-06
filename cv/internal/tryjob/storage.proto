@@ -234,7 +234,7 @@ message ExecutionState {
    // Status describes the summarized status of the overall tryjob execution.
   enum Status {
     // Unspecified is never used.
-    UNSPECIFIED = 0;
+    STATUS_UNSPECIFIED = 0;
     // At least one critical tryjob is not yet finished so its result is
     // unknown.
     RUNNING = 1;

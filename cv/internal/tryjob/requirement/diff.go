@@ -50,6 +50,8 @@ type DiffResult struct {
 	// stays the same and other properties like equivalent builder, reuse config
 	// have changed.
 	ChangedDefs DefinitionMapping
+	// ChangedDefsReverse is a reverse mapping of `ChangedDefs`
+	ChangedDefsReverse DefinitionMapping
 	// AddedDefs contains the definitions that are added to `target` but are not
 	// in `base`.
 	//
@@ -65,9 +67,10 @@ func Diff(base, target *tryjob.Requirement) DiffResult {
 	sortedTargetDefs := toSortedTryjobDefs(target.GetDefinitions())
 
 	res := DiffResult{
-		AddedDefs:   make(DefinitionMapping),
-		ChangedDefs: make(DefinitionMapping),
-		RemovedDefs: make(DefinitionMapping),
+		AddedDefs:          make(DefinitionMapping),
+		ChangedDefs:        make(DefinitionMapping),
+		ChangedDefsReverse: make(DefinitionMapping),
+		RemovedDefs:        make(DefinitionMapping),
 	}
 	for len(sortedBaseDefs) > 0 && len(sortedTargetDefs) > 0 {
 		baseDef, targetDef := sortedBaseDefs[0].def, sortedTargetDefs[0].def
@@ -75,6 +78,7 @@ func Diff(base, target *tryjob.Requirement) DiffResult {
 		case 0:
 			if !proto.Equal(baseDef, targetDef) {
 				res.ChangedDefs[baseDef] = targetDef
+				res.ChangedDefsReverse[targetDef] = baseDef
 			}
 			sortedBaseDefs, sortedTargetDefs = sortedBaseDefs[1:], sortedTargetDefs[1:]
 		case -1:
