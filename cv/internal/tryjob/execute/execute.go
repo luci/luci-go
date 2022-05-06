@@ -59,9 +59,7 @@ func Do(ctx context.Context, r *run.Run, t *tryjob.ExecuteTryjobsPayload, should
 	case err != nil:
 		return nil, err
 	case execState == nil:
-		execState = &tryjob.ExecutionState{
-			Status: tryjob.ExecutionState_RUNNING,
-		}
+		execState = initExecutionState()
 	}
 
 	plan, err := prepExecutionPlan(ctx, execState, r, t.GetTryjobsUpdated(), t.GetRequirementChanged())
@@ -101,6 +99,12 @@ func Do(ctx context.Context, r *run.Run, t *tryjob.ExecuteTryjobsPayload, should
 	}
 }
 
+func initExecutionState() *tryjob.ExecutionState {
+	return &tryjob.ExecutionState{
+		Status: tryjob.ExecutionState_RUNNING,
+	}
+}
+
 type planItem struct {
 	defintion     *tryjob.Definition
 	execution     *tryjob.ExecutionState_Execution
@@ -119,6 +123,10 @@ type plan struct {
 	discard []planItem
 }
 
+func (p *plan) isEmpty() bool {
+	return p == nil || (len(p.triggerNewAttempt)+len(p.discard) == 0)
+}
+
 const noLongerRequiredInConfig = "Tryjob is no longer required in Project Config"
 
 // prepExecutionPlan updates the states and computes a plan in order to
@@ -133,11 +141,15 @@ func prepExecutionPlan(ctx context.Context, execState *tryjob.ExecutionState, r 
 			return nil, err
 		}
 		updateAttempts(execState, tryjobsByID)
-		ret := &plan{}
-		ret.triggerNewAttempt = computeRetries(ctx, execState, tryjobsByID)
-		return ret, nil
+		if retry := computeRetries(ctx, execState, tryjobsByID); len(retry) > 0 {
+			return &plan{
+				triggerNewAttempt: retry,
+			}, nil
+		}
+		return nil, nil
 	case reqmtChanged && execState.Status != tryjob.ExecutionState_RUNNING:
 		// Execution has ended already. No need to react to requirement change.
+		logging.Warningf(ctx, "Got requirement changed when execution is no longer running")
 		return nil, nil
 	case reqmtChanged:
 		curReqmt, targetReqmt := execState.GetRequirement(), r.Tryjobs.GetRequirement()

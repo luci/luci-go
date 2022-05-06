@@ -31,8 +31,11 @@ func TestNeedsRetry(t *testing.T) {
 	Convey("needsRetry", t, func() {
 		ctx := context.Background()
 		execState := newExecStateBuilder().
-			appendDefinition(makeDefinition("critical", true)).appendAttempt(0, 101).
-			appendDefinition(makeDefinition("nonCritical", false)).appendAttempt(1, 201).state
+			appendDefinition(makeDefinition("critical", true)).
+			appendAttempt("critical", makeAttempt(101, tryjob.Status_TRIGGERED, tryjob.Result_UNKNOWN)).
+			appendDefinition(makeDefinition("nonCritical", false)).
+			appendAttempt("nonCritical", makeAttempt(201, tryjob.Status_TRIGGERED, tryjob.Result_UNKNOWN)).
+			build()
 		criticalExecution := execState.Executions[0]
 		criticalDefinition := execState.Requirement.Definitions[0]
 		nonCriticalExecution := execState.Executions[1]
@@ -94,9 +97,12 @@ func TestComputeRetries(t *testing.T) {
 	Convey("ComputeRetries", t, func() {
 		ctx := context.Background()
 		execState := newExecStateBuilder().
-			appendDefinition(makeDefinition("builder-one", true)).appendAttempt(0, 101).
-			appendDefinition(makeDefinition("builder-two", true)).appendAttempt(1, 201).
-			appendDefinition(makeDefinition("builder-three", false)).appendAttempt(2, 301).
+			appendDefinition(makeDefinition("builder-one", true)).
+			appendAttempt("builder-one", makeAttempt(101, tryjob.Status_TRIGGERED, tryjob.Result_UNKNOWN)).
+			appendDefinition(makeDefinition("builder-two", true)).
+			appendAttempt("builder-two", makeAttempt(201, tryjob.Status_TRIGGERED, tryjob.Result_UNKNOWN)).
+			appendDefinition(makeDefinition("builder-three", false)).
+			appendAttempt("builder-three", makeAttempt(301, tryjob.Status_TRIGGERED, tryjob.Result_UNKNOWN)).
 			state
 
 		Convey("with no retry config", func() {
