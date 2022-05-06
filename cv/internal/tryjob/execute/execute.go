@@ -132,21 +132,11 @@ const noLongerRequiredInConfig = "Tryjob is no longer required in Project Config
 // prepExecutionPlan updates the states and computes a plan in order to
 // fulfill the requirement.
 func prepExecutionPlan(ctx context.Context, execState *tryjob.ExecutionState, r *run.Run, tryjobsUpdated []int64, reqmtChanged bool) (*plan, error) {
-	switch {
-	case len(tryjobsUpdated) > 0 && reqmtChanged:
+	switch hasTryjobsUpdated := len(tryjobsUpdated) > 0; {
+	case hasTryjobsUpdated && reqmtChanged:
 		panic(fmt.Errorf("the executor can't handle requirement update and tryjobs update at the same time"))
-	case len(tryjobsUpdated) > 0:
-		tryjobsByID, err := tryjob.LoadTryjobsMapByIDs(ctx, common.MakeTryjobIDs(tryjobsUpdated...))
-		if err != nil {
-			return nil, err
-		}
-		updateAttempts(execState, tryjobsByID)
-		if retry := computeRetries(ctx, execState, tryjobsByID); len(retry) > 0 {
-			return &plan{
-				triggerNewAttempt: retry,
-			}, nil
-		}
-		return nil, nil
+	case hasTryjobsUpdated:
+		return handleUpdatedTryjobs(ctx, tryjobsUpdated, execState)
 	case reqmtChanged && execState.Status != tryjob.ExecutionState_RUNNING:
 		// Execution has ended already. No need to react to requirement change.
 		logging.Warningf(ctx, "Got requirement changed when execution is no longer running")
@@ -157,52 +147,25 @@ func prepExecutionPlan(ctx context.Context, execState *tryjob.ExecutionState, r 
 			logging.Errorf(ctx, "Tryjob executor is executing requirement that is either later or equal to the requested requirement version. current: %d, got: %d ", targetReqmt.GetVersion(), curReqmt.GetVersion())
 			return nil, nil
 		}
-		existingExecutionByDef := make(map[*tryjob.Definition]*tryjob.ExecutionState_Execution, len(curReqmt.GetDefinitions()))
-		for i, def := range curReqmt.GetDefinitions() {
-			existingExecutionByDef[def] = execState.GetExecutions()[i]
-		}
-		reqmtDiff := requirement.Diff(curReqmt, targetReqmt)
-		ret := &plan{}
-		// populate discarded tryjob.
-		for def := range reqmtDiff.RemovedDefs {
-			ret.discard = append(ret.discard, planItem{
-				defintion:     def,
-				execution:     existingExecutionByDef[def],
-				discardReason: noLongerRequiredInConfig,
-			})
-		}
-		// Apply new requirement and figure out which execution requires triggering
-		// new attempt.
-		execState.Requirement = targetReqmt
-		execState.Executions = execState.Executions[:0]
-		for _, def := range targetReqmt.GetDefinitions() {
-			switch {
-			case reqmtDiff.AddedDefs.Has(def):
-				exec := &tryjob.ExecutionState_Execution{}
-				execState.Executions = append(execState.Executions, exec)
-				ret.triggerNewAttempt = append(ret.triggerNewAttempt, planItem{
-					defintion: def,
-					execution: exec,
-				})
-			case reqmtDiff.ChangedDefsReverse.Has(def):
-				existingDef := reqmtDiff.ChangedDefsReverse[def]
-				exec, ok := existingExecutionByDef[existingDef]
-				if !ok {
-					panic(fmt.Errorf("impossible; definition shows up in diff but not in existing execution state. Definition: %s", existingDef))
-				}
-				execState.Executions = append(execState.Executions, exec)
-			default: // Nothing has changed for this definition.
-				exec, ok := existingExecutionByDef[def]
-				if !ok {
-					panic(fmt.Errorf("impossible; definition neither shows up in diff nor in existing execution state. Definition: %s", def))
-				}
-				execState.Executions = append(execState.Executions, exec)
-			}
-		}
-		return ret, nil
+		return handleRequirementChange(curReqmt, targetReqmt, execState)
 	default:
 		panic(fmt.Errorf("the executor is called without any update on either tryjobs or requirement"))
 	}
+}
+
+func handleUpdatedTryjobs(ctx context.Context, tryjobs []int64, execState *tryjob.ExecutionState) (*plan, error) {
+	tryjobsByID, err := tryjob.LoadTryjobsMapByIDs(ctx, common.MakeTryjobIDs(tryjobs...))
+	if err != nil {
+		return nil, err
+	}
+	updateAttempts(execState, tryjobsByID)
+	if retry := computeRetries(ctx, execState, tryjobsByID); len(retry) > 0 {
+		return &plan{
+			triggerNewAttempt: retry,
+		}, nil
+	}
+	return nil, nil
+
 }
 
 // updateAttempts updates the attempts associated with the given tryjobs.
@@ -218,6 +181,52 @@ func updateAttempts(execState *tryjob.ExecutionState, tryjobsToUpdateByIDs map[c
 			lastAttempt.Status = tj.Status
 		}
 	}
+}
+
+func handleRequirementChange(curReqmt, targetReqmt *tryjob.Requirement, execState *tryjob.ExecutionState) (*plan, error) {
+	existingExecutionByDef := make(map[*tryjob.Definition]*tryjob.ExecutionState_Execution, len(curReqmt.GetDefinitions()))
+	for i, def := range curReqmt.GetDefinitions() {
+		existingExecutionByDef[def] = execState.GetExecutions()[i]
+	}
+	reqmtDiff := requirement.Diff(curReqmt, targetReqmt)
+	ret := &plan{}
+	// populate discarded tryjob.
+	for def := range reqmtDiff.RemovedDefs {
+		ret.discard = append(ret.discard, planItem{
+			defintion:     def,
+			execution:     existingExecutionByDef[def],
+			discardReason: noLongerRequiredInConfig,
+		})
+	}
+	// Apply new requirement and figure out which execution requires triggering
+	// new attempt.
+	execState.Requirement = targetReqmt
+	execState.Executions = execState.Executions[:0]
+	for _, def := range targetReqmt.GetDefinitions() {
+		switch {
+		case reqmtDiff.AddedDefs.Has(def):
+			exec := &tryjob.ExecutionState_Execution{}
+			execState.Executions = append(execState.Executions, exec)
+			ret.triggerNewAttempt = append(ret.triggerNewAttempt, planItem{
+				defintion: def,
+				execution: exec,
+			})
+		case reqmtDiff.ChangedDefsReverse.Has(def):
+			existingDef := reqmtDiff.ChangedDefsReverse[def]
+			exec, ok := existingExecutionByDef[existingDef]
+			if !ok {
+				panic(fmt.Errorf("impossible; definition shows up in diff but not in existing execution state. Definition: %s", existingDef))
+			}
+			execState.Executions = append(execState.Executions, exec)
+		default: // Nothing has changed for this definition.
+			exec, ok := existingExecutionByDef[def]
+			if !ok {
+				panic(fmt.Errorf("impossible; definition neither shows up in diff nor in existing execution state. Definition: %s", def))
+			}
+			execState.Executions = append(execState.Executions, exec)
+		}
+	}
+	return ret, nil
 }
 
 // execute executes the plan and mutate the state.
