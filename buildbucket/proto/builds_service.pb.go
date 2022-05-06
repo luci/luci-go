@@ -2431,7 +2431,22 @@ type BuildsClient interface {
 	// The requester must have at least SCHEDULER role in the destination bucket.
 	// Note that cancelling a build in ended state (meaning build is not in
 	// STATUS_UNSPECIFIED, SCHEDULED or STARTED status) will be a no-op and
-	// directly return up-to-date Build message
+	// directly return up-to-date Build message.
+	//
+	// When called, Buildbucket will set the build's cancelTime to "now".  It
+	// will also recursively start the cancellation process for any children of
+	// this build which are marked as can_outlive_parent=false.
+	//
+	// The next time the build checks in (which happens periodically in
+	// `bbagent`), bbagent will see the cancelTime, and start the cancellation
+	// process described by the 'deadline' section in
+	// https://chromium.googlesource.com/infra/luci/luci-py/+/HEAD/client/LUCI_CONTEXT.md.
+	//
+	// If the build ends before the build's grace_period, then the final status
+	// reported from the build is accepted; this is considered 'graceful termination'.
+	//
+	// If the build doesn't end within the build's grace_period, Buildbucket will
+	// forcibly cancel the build.
 	CancelBuild(ctx context.Context, in *CancelBuildRequest, opts ...grpc.CallOption) (*Build, error)
 	// Executes multiple requests in a batch.
 	// The response code is always OK.
@@ -2617,7 +2632,22 @@ type BuildsServer interface {
 	// The requester must have at least SCHEDULER role in the destination bucket.
 	// Note that cancelling a build in ended state (meaning build is not in
 	// STATUS_UNSPECIFIED, SCHEDULED or STARTED status) will be a no-op and
-	// directly return up-to-date Build message
+	// directly return up-to-date Build message.
+	//
+	// When called, Buildbucket will set the build's cancelTime to "now".  It
+	// will also recursively start the cancellation process for any children of
+	// this build which are marked as can_outlive_parent=false.
+	//
+	// The next time the build checks in (which happens periodically in
+	// `bbagent`), bbagent will see the cancelTime, and start the cancellation
+	// process described by the 'deadline' section in
+	// https://chromium.googlesource.com/infra/luci/luci-py/+/HEAD/client/LUCI_CONTEXT.md.
+	//
+	// If the build ends before the build's grace_period, then the final status
+	// reported from the build is accepted; this is considered 'graceful termination'.
+	//
+	// If the build doesn't end within the build's grace_period, Buildbucket will
+	// forcibly cancel the build.
 	CancelBuild(context.Context, *CancelBuildRequest) (*Build, error)
 	// Executes multiple requests in a batch.
 	// The response code is always OK.
