@@ -258,6 +258,15 @@ func (s *server) LeaseArchiveTasks(c context.Context, req *logdog.LeaseRequest) 
 					}
 					metricDeleteTask.Add(c, 1, at.Project, queueNumber)
 				} else {
+					// BUG(crbug.com/1323896): This log is here to diagnosis of some weird
+					// metrics we were seeing; Metrics reported retry counts of 70+, but
+					// we weren't able to actually see which tasks those could be.
+					if task.RetryCount > 50 {
+						logging.Warningf(
+							c, "crbug.com/1323896: High retry task encountered: project:%s, queue#:%d, retries:%d, taskName:%s",
+							at.Project, queueNumber, task.RetryCount, task.Name)
+					}
+
 					archiveTasksL.Lock()
 					defer archiveTasksL.Unlock()
 					archiveTasks = append(archiveTasks, at)
