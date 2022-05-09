@@ -83,11 +83,13 @@ func TestMakeDefinition(t *testing.T) {
 			})
 			Convey("flags on", func() {
 				b.ResultVisibility = cfgpb.CommentLevel_COMMENT_LEVEL_RESTRICTED
+				b.ExperimentPercentage = 49.9
 				b.DisableReuse = true
 				def = makeDefinition(b, mainOnly, critical)
 				So(def, ShouldResembleProto, &tryjob.Definition{
 					DisableReuse:     true,
 					Critical:         true,
+					Experimental:     true,
 					ResultVisibility: cfgpb.CommentLevel_COMMENT_LEVEL_RESTRICTED,
 					Backend: &tryjob.Definition_Buildbucket_{
 						Buildbucket: &tryjob.Definition_Buildbucket{
@@ -474,17 +476,20 @@ func TestCompute(t *testing.T) {
 					SingleQuota: 2,
 					GlobalQuota: 8,
 				},
-				Definitions: []*tryjob.Definition{{
-					Backend: &tryjob.Definition_Buildbucket_{
-						Buildbucket: &tryjob.Definition_Buildbucket{
-							Host: "cr-buildbucket.appspot.com",
-							Builder: &buildbucketpb.BuilderID{
-								Project: "luci",
-								Bucket:  "test",
-								Builder: "expbuilder",
+				Definitions: []*tryjob.Definition{
+					{
+						Backend: &tryjob.Definition_Buildbucket_{
+							Buildbucket: &tryjob.Definition_Buildbucket{
+								Host: "cr-buildbucket.appspot.com",
+								Builder: &buildbucketpb.BuilderID{
+									Project: "luci",
+									Bucket:  "test",
+									Builder: "expbuilder",
+								},
 							},
 						},
-					}},
+						Experimental: true,
+					},
 				},
 			})
 		})
@@ -494,7 +499,7 @@ func TestCompute(t *testing.T) {
 					Name:                  "luci/test/builder1",
 					LocationRegexpExclude: []string{"https://example.com/repo/[+]/some/.+"},
 					LocationFilters: []*cfgpb.Verifiers_Tryjob_Builder_LocationFilter{
-						&cfgpb.Verifiers_Tryjob_Builder_LocationFilter{
+						{
 							GerritHostRegexp:    "https://example.com",
 							GerritProjectRegexp: "repo",
 							PathRegexp:          "some/.+",
@@ -521,7 +526,7 @@ func TestCompute(t *testing.T) {
 					Name:           "luci/test/builder1",
 					LocationRegexp: []string{"https://example.com/repo/[+]/some/.+"},
 					LocationFilters: []*cfgpb.Verifiers_Tryjob_Builder_LocationFilter{
-						&cfgpb.Verifiers_Tryjob_Builder_LocationFilter{
+						{
 							GerritHostRegexp:    "https://example.com",
 							GerritProjectRegexp: "repo",
 							PathRegexp:          "some/.+",
@@ -607,13 +612,13 @@ func TestCompute(t *testing.T) {
 						LocationRegexp:        []string{"https://example.com/repo/[+]/some/.+"},
 						LocationRegexpExclude: []string{"https://example.com/repo/[+]/some/excluded/.*"},
 						LocationFilters: []*cfgpb.Verifiers_Tryjob_Builder_LocationFilter{
-							&cfgpb.Verifiers_Tryjob_Builder_LocationFilter{
+							{
 								GerritHostRegexp:    "https://example.com",
 								GerritProjectRegexp: "repo",
 								PathRegexp:          "some/.+",
 								Exclude:             false,
 							},
-							&cfgpb.Verifiers_Tryjob_Builder_LocationFilter{
+							{
 								GerritHostRegexp:    "https://example.com",
 								GerritProjectRegexp: "repo",
 								PathRegexp:          "some/excluded/.*",

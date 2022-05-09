@@ -282,6 +282,7 @@ func makeDefinition(builder *cfgpb.Verifiers_Tryjob_Builder, useEquivalent equiv
 	}
 	definition.DisableReuse = builder.DisableReuse
 	definition.Critical = bool(isCritical)
+	definition.Experimental = builder.ExperimentPercentage > 0
 	definition.ResultVisibility = builder.ResultVisibility
 	definition.SkipStaleCheck = builder.GetCancelStale() == cfgpb.Toggle_NO
 	return definition

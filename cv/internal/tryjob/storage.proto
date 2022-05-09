@@ -63,6 +63,12 @@ message Definition {
   // the Run will fail unless one of the attempts of this tryjob is successful.
   bool critical = 5;
 
+  // If true, this tryjob will be marked as experimental.
+  //
+  // However, experimental tryjob could be critical iff it is requested
+  // explicitly (i.e. via git footer).
+  bool experimental = 7;
+
   // If set to restricted, CV should only post generic messages such as
   //   "Build failed: https://ci.chromium.org/b/1234"
   // and no summary markdown about tryjobs with this definition.
@@ -188,7 +194,6 @@ message Result {
   message Buildbucket {
     int64 id = 1;
     buildbucket.v2.Status status = 2;
-
     // SummaryMarkdown is a field containing a human readable summary of the
     // build's result.
     string summary_markdown = 3;
