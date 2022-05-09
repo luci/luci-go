@@ -180,6 +180,7 @@ type triggerRun struct {
 	namedCache        stringmapflag.Value
 	hardTimeout       int64
 	ioTimeout         int64
+	gracePeriod       int64
 	cipdPackage       stringmapflag.Value
 	outputs           stringlistflag.Flag
 	optionalDimension optionalDimension
@@ -214,6 +215,7 @@ func (c *triggerRun) Init(authFlags AuthFlags) {
 	c.Flags.Var(&c.containmentType, "containment-type", "Specify which type of process containment to use. Choices are: "+containmentChoices.Choices())
 	c.Flags.Int64Var(&c.hardTimeout, "hard-timeout", 60*60, "Seconds to allow the task to complete.")
 	c.Flags.Int64Var(&c.ioTimeout, "io-timeout", 20*60, "Seconds to allow the task to be silent.")
+	c.Flags.Int64Var(&c.gracePeriod, "grace-period", 30, "Seconds to wait after sending SIGBREAK.")
 	c.Flags.Var(&c.cipdPackage, "cipd-package",
 		"(repeatable) CIPD packages to install on the swarming bot. This takes a parameter of `[installdir:]pkgname=version`. "+
 			"Using an empty version will remove the package. The installdir is optional and defaults to '.'.")
@@ -415,7 +417,7 @@ func (c *triggerRun) processTriggerOptions(commands []string, env subcommands.En
 		Env:                  mapToArray(c.env),
 		EnvPrefixes:          listToStringListPairArray(c.envPrefix),
 		ExecutionTimeoutSecs: c.hardTimeout,
-		GracePeriodSecs:      30,
+		GracePeriodSecs:      c.gracePeriod,
 		Idempotent:           c.idempotent,
 		CasInputRoot:         CASRef,
 		Outputs:              c.outputs,
