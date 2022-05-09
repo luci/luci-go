@@ -66,9 +66,12 @@ func Do(ctx context.Context, r *run.Run, t *tryjob.ExecuteTryjobsPayload, should
 	if err != nil {
 		return nil, err
 	}
-	result, err := plan.execute(ctx, r, execState)
-	if err != nil {
-		return nil, err
+	var result *tryjob.ExecuteTryjobsResult
+	if !plan.isEmpty() {
+		var err error
+		if result, err = plan.execute(ctx, r, execState); err != nil {
+			return nil, err
+		}
 	}
 
 	var innerErr error
@@ -136,6 +139,7 @@ func prepExecutionPlan(ctx context.Context, execState *tryjob.ExecutionState, r 
 	case hasTryjobsUpdated && reqmtChanged:
 		panic(fmt.Errorf("the executor can't handle requirement update and tryjobs update at the same time"))
 	case hasTryjobsUpdated:
+		logging.Debugf(ctx, "received update for tryjobs %s", tryjobsUpdated)
 		return handleUpdatedTryjobs(ctx, tryjobsUpdated, execState)
 	case reqmtChanged && execState.Status != tryjob.ExecutionState_RUNNING:
 		// Execution has ended already. No need to react to requirement change.
@@ -154,32 +158,97 @@ func prepExecutionPlan(ctx context.Context, execState *tryjob.ExecutionState, r 
 }
 
 func handleUpdatedTryjobs(ctx context.Context, tryjobs []int64, execState *tryjob.ExecutionState) (*plan, error) {
-	tryjobsByID, err := tryjob.LoadTryjobsMapByIDs(ctx, common.MakeTryjobIDs(tryjobs...))
+	tryjobByID, err := tryjob.LoadTryjobsMapByIDs(ctx, common.MakeTryjobIDs(tryjobs...))
 	if err != nil {
 		return nil, err
 	}
-	updateAttempts(execState, tryjobsByID)
-	if retry := computeRetries(ctx, execState, tryjobsByID); len(retry) > 0 {
-		return &plan{
-			triggerNewAttempt: retry,
-		}, nil
-	}
-	return nil, nil
-
-}
-
-// updateAttempts updates the attempts associated with the given tryjobs.
-func updateAttempts(execState *tryjob.ExecutionState, tryjobsToUpdateByIDs map[common.TryjobID]*tryjob.Tryjob) {
-	for _, exec := range execState.Executions {
-		if len(exec.Attempts) == 0 {
+	var (
+		ret                       plan
+		failedIndices             []int            // critical tryjobs only
+		failedTryjobs             []*tryjob.Tryjob // critical tryjobs only
+		hasNonEndedCriticalTryjob bool
+	)
+	for i, exec := range execState.GetExecutions() {
+		updated := updateLatestAttempt(exec, tryjobByID)
+		definition := execState.GetRequirement().GetDefinitions()[i]
+		switch latestAttemptEnded := hasLatestAttemptEnded(exec); {
+		case !latestAttemptEnded:
+			hasNonEndedCriticalTryjob = definition.GetCritical()
+			continue
+		case !updated:
 			continue
 		}
-		// Only look at the most recent attempt in the execution.
-		lastAttempt := exec.Attempts[len(exec.Attempts)-1]
-		if tj, present := tryjobsToUpdateByIDs[common.TryjobID(lastAttempt.TryjobId)]; present {
-			lastAttempt.Result = tj.Result
-			lastAttempt.Status = tj.Status
+		// Only process the tryjob that has been updated and its latest attempt
+		// has ended.
+		switch attempt := exec.Attempts[len(exec.Attempts)-1]; {
+		case attempt.Status == tryjob.Status_ENDED && attempt.GetResult().GetStatus() == tryjob.Result_SUCCEEDED:
+			// TODO(yiwzhang): emit a log to record successful completion of this
+			// tryjob.
+		case attempt.Status == tryjob.Status_ENDED && definition.GetCritical():
+			// TODO(yiwzhang): emit a log to record failed critical tryjob.
+			failedIndices = append(failedIndices, i)
+			failedTryjobs = append(failedTryjobs, tryjobByID[common.TryjobID(attempt.TryjobId)])
+		case attempt.Status == tryjob.Status_ENDED:
+			// TODO(yiwzhang): emit a log to record failed non critical tryjob.
+		case attempt.Status == tryjob.Status_UNTRIGGERED:
+			// Normally happens when this Run reuses a PENDING Tryjob from another
+			// Run but the Tryjob doesn't end up getting triggered.
+			ret.triggerNewAttempt = append(ret.triggerNewAttempt, planItem{
+				defintion: definition,
+				execution: exec,
+			})
+		default:
+			panic(fmt.Errorf("unexpected attempt status %s for Tryjob %d", attempt.Status, attempt.TryjobId))
 		}
+	}
+
+	switch hasFailed, hasNewAttemptToTrigger := len(failedIndices) > 0, len(ret.triggerNewAttempt) > 0; {
+	case !hasFailed && !hasNewAttemptToTrigger && !hasNonEndedCriticalTryjob:
+		// all critical tryjobs have completed successfully.
+		execState.Status = tryjob.ExecutionState_SUCCEEDED
+		return nil, nil
+	case hasFailed:
+		if ok, _ := canRetryAll(ctx, execState, failedIndices); !ok {
+			// TODO(yiwzhang): log why execution can't be retried
+			execState.Status = tryjob.ExecutionState_FAILED
+			execState.FailureReason = composeReason(failedTryjobs)
+			return nil, nil
+		}
+		for _, idx := range failedIndices {
+			ret.triggerNewAttempt = append(ret.triggerNewAttempt, planItem{
+				defintion: execState.GetRequirement().GetDefinitions()[idx],
+				execution: execState.GetExecutions()[idx],
+			})
+		}
+	}
+	return &ret, nil
+}
+
+func updateLatestAttempt(exec *tryjob.ExecutionState_Execution, tryjobsByIDs map[common.TryjobID]*tryjob.Tryjob) bool {
+	if len(exec.GetAttempts()) == 0 {
+		return false
+	}
+	attempt := exec.Attempts[len(exec.Attempts)-1]
+	if tj, ok := tryjobsByIDs[common.TryjobID(attempt.TryjobId)]; ok {
+		attempt.Status = tj.Status
+		attempt.Result = tj.Result
+		return true
+	}
+	return false
+}
+
+func hasLatestAttemptEnded(exec *tryjob.ExecutionState_Execution) bool {
+	if len(exec.GetAttempts()) == 0 {
+		return false // hasn't launched any new attempt
+	}
+	// only look at the latest attempt
+	switch latestAttempt := exec.GetAttempts()[len(exec.GetAttempts())-1]; latestAttempt.Status {
+	case tryjob.Status_STATUS_UNSPECIFIED:
+		panic(fmt.Errorf("attempt status not specified for Tryjob %d", latestAttempt.TryjobId))
+	case tryjob.Status_PENDING, tryjob.Status_TRIGGERED:
+		return false
+	default:
+		return true
 	}
 }
 

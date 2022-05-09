@@ -45,21 +45,11 @@ func TestPrepExecutionPlan(t *testing.T) {
 
 		Convey("Tryjobs Updated", func() {
 			const builderFoo = "foo"
-			Convey("Updates tryjobs", func() {
-				const tjID = 101
-				execState := newExecStateBuilder().
-					appendDefinition(makeDefinition(builderFoo, true)).
-					appendAttempt(builderFoo, makeAttempt(tjID, tryjob.Status_TRIGGERED, tryjob.Result_UNKNOWN)).
-					build()
-				ensureTryjob(ctx, tjID, tryjob.Status_ENDED, tryjob.Result_SUCCEEDED)
-				plan, err := prepExecutionPlan(ctx, execState, nil, []int64{tjID}, false)
+			prepPlan := func(execState *tryjob.ExecutionState, updatedTryjobs ...int64) *plan {
+				p, err := prepExecutionPlan(ctx, execState, nil, updatedTryjobs, false)
 				So(err, ShouldBeNil)
-				So(plan.isEmpty(), ShouldBeTrue)
-				So(execState.Executions[0].Attempts, ShouldResembleProto, []*tryjob.ExecutionState_Execution_Attempt{
-					makeAttempt(tjID, tryjob.Status_ENDED, tryjob.Result_SUCCEEDED),
-				})
-			})
-
+				return p
+			}
 			Convey("Ignore update", func() {
 				const prevTryjobID = 101
 				const curTryjobID = 102
@@ -71,58 +61,159 @@ func TestPrepExecutionPlan(t *testing.T) {
 				original := proto.Clone(execState).(*tryjob.ExecutionState)
 				Convey("For previous attempts", func() {
 					ensureTryjob(ctx, prevTryjobID, tryjob.Status_ENDED, tryjob.Result_FAILED_TRANSIENTLY)
-					plan, err := prepExecutionPlan(ctx, execState, nil, []int64{prevTryjobID}, false)
-					So(err, ShouldBeNil)
+					plan := prepPlan(execState, prevTryjobID)
 					So(plan.isEmpty(), ShouldBeTrue)
 				})
 				Convey("For not relevant Tryjob", func() {
 					const randomTryjob int64 = 567
 					ensureTryjob(ctx, randomTryjob, tryjob.Status_ENDED, tryjob.Result_FAILED_TRANSIENTLY)
-					plan, err := prepExecutionPlan(ctx, execState, nil, []int64{randomTryjob}, false)
-					So(err, ShouldBeNil)
+					plan := prepPlan(execState, randomTryjob)
 					So(plan.isEmpty(), ShouldBeTrue)
 				})
 				So(execState, ShouldResembleProto, original)
 			})
 
-			Convey("Figure out retries", func() {
+			Convey("Single Tryjob", func() {
 				const tjID = 101
 				execState := newExecStateBuilder().
 					appendDefinition(makeDefinition(builderFoo, true)).
-					appendAttempt(builderFoo, makeAttempt(tjID, tryjob.Status_TRIGGERED, tryjob.Result_UNKNOWN)).
+					appendAttempt(builderFoo, makeAttempt(tjID, tryjob.Status_PENDING, tryjob.Result_UNKNOWN)).
 					withRetryConfig(&cfgpb.Verifiers_Tryjob_RetryConfig{
-						SingleQuota:            10,
+						SingleQuota:            2,
 						GlobalQuota:            10,
-						FailureWeight:          2,
+						FailureWeight:          5,
 						TransientFailureWeight: 1,
 					}).
 					build()
-				ensureTryjob(ctx, tjID, tryjob.Status_ENDED, tryjob.Result_FAILED_PERMANENTLY)
-				plan, err := prepExecutionPlan(ctx, execState, nil, []int64{tjID}, false)
-				So(err, ShouldBeNil)
-				So(plan.triggerNewAttempt, ShouldHaveLength, 1)
-				So(plan.triggerNewAttempt[0].defintion, ShouldResembleProto, makeDefinition(builderFoo, true))
-				So(plan.triggerNewAttempt[0].execution, ShouldResembleProto, &tryjob.ExecutionState_Execution{
-					Attempts: []*tryjob.ExecutionState_Execution_Attempt{
-						makeAttempt(tjID, tryjob.Status_ENDED, tryjob.Result_FAILED_PERMANENTLY),
-					},
-					UsedQuota: 2,
+				Convey("Succeeded", func() {
+					ensureTryjob(ctx, tjID, tryjob.Status_ENDED, tryjob.Result_SUCCEEDED)
+					plan := prepPlan(execState, tjID)
+					So(plan.isEmpty(), ShouldBeTrue)
+					So(execState.Executions[0].Attempts, ShouldResembleProto, []*tryjob.ExecutionState_Execution_Attempt{
+						makeAttempt(tjID, tryjob.Status_ENDED, tryjob.Result_SUCCEEDED),
+					})
+					So(execState.Status, ShouldEqual, tryjob.ExecutionState_SUCCEEDED)
+				})
+
+				Convey("Still Running", func() {
+					ensureTryjob(ctx, tjID, tryjob.Status_TRIGGERED, tryjob.Result_UNKNOWN)
+					Convey("Tryjob is critical", func() {
+						plan := prepPlan(execState, tjID)
+						So(plan.isEmpty(), ShouldBeTrue)
+						So(execState.Status, ShouldEqual, tryjob.ExecutionState_RUNNING)
+					})
+					Convey("Tryjob is not critical", func() {
+						execState.GetRequirement().GetDefinitions()[0].Critical = false
+						plan := prepPlan(execState, tjID)
+						So(plan.isEmpty(), ShouldBeTrue)
+						So(execState.Status, ShouldEqual, tryjob.ExecutionState_SUCCEEDED)
+					})
+					So(execState.Executions[0].Attempts, ShouldResembleProto, []*tryjob.ExecutionState_Execution_Attempt{
+						makeAttempt(tjID, tryjob.Status_TRIGGERED, tryjob.Result_UNKNOWN),
+					})
+				})
+
+				Convey("Failed", func() {
+					Convey("Critical and can retry", func() {
+						// Quota allows retrying transient failure.
+						ensureTryjob(ctx, tjID, tryjob.Status_ENDED, tryjob.Result_FAILED_TRANSIENTLY)
+						plan := prepPlan(execState, tjID)
+						So(plan.isEmpty(), ShouldBeFalse)
+						So(plan.triggerNewAttempt, ShouldHaveLength, 1)
+						So(plan.triggerNewAttempt[0].defintion, ShouldResembleProto, execState.GetRequirement().GetDefinitions()[0])
+						So(execState.Executions[0].Attempts, ShouldResembleProto, []*tryjob.ExecutionState_Execution_Attempt{
+							makeAttempt(tjID, tryjob.Status_ENDED, tryjob.Result_FAILED_TRANSIENTLY),
+						})
+						So(execState.Status, ShouldEqual, tryjob.ExecutionState_RUNNING)
+					})
+					Convey("Critical and can NOT retry", func() {
+						// Quota doesn't allow retrying permanent failure
+						ensureTryjob(ctx, tjID, tryjob.Status_ENDED, tryjob.Result_FAILED_PERMANENTLY)
+						plan := prepPlan(execState, tjID)
+						So(plan.isEmpty(), ShouldBeTrue)
+						So(execState.Executions[0].Attempts, ShouldResembleProto, []*tryjob.ExecutionState_Execution_Attempt{
+							makeAttempt(tjID, tryjob.Status_ENDED, tryjob.Result_FAILED_PERMANENTLY),
+						})
+						So(execState.Status, ShouldEqual, tryjob.ExecutionState_FAILED)
+						So(execState.FailureReason, ShouldContainSubstring, "Failed Tryjobs")
+					})
+					Convey("Tryjob is not critical", func() {
+						ensureTryjob(ctx, tjID, tryjob.Status_ENDED, tryjob.Result_FAILED_PERMANENTLY)
+						execState.GetRequirement().GetDefinitions()[0].Critical = false
+						plan := prepPlan(execState, tjID)
+						So(plan.isEmpty(), ShouldBeTrue)
+						So(execState.Executions[0].Attempts, ShouldResembleProto, []*tryjob.ExecutionState_Execution_Attempt{
+							makeAttempt(tjID, tryjob.Status_ENDED, tryjob.Result_FAILED_PERMANENTLY),
+						})
+						// Still consider execution as succeeded even though non-critical
+						// tryjob has failed.
+						So(execState.Status, ShouldEqual, tryjob.ExecutionState_SUCCEEDED)
+					})
+				})
+
+				Convey("Untriggered", func() {
+					ensureTryjob(ctx, tjID, tryjob.Status_UNTRIGGERED, tryjob.Result_UNKNOWN)
+					plan := prepPlan(execState, tjID)
+					So(plan.isEmpty(), ShouldBeFalse)
+					So(plan.triggerNewAttempt, ShouldHaveLength, 1)
+					So(plan.triggerNewAttempt[0].defintion, ShouldResembleProto, execState.GetRequirement().GetDefinitions()[0])
+					So(execState.Executions[0].Attempts, ShouldResembleProto, []*tryjob.ExecutionState_Execution_Attempt{
+						makeAttempt(tjID, tryjob.Status_UNTRIGGERED, tryjob.Result_UNKNOWN),
+					})
+					So(execState.Status, ShouldEqual, tryjob.ExecutionState_RUNNING)
 				})
 			})
 
-			Convey("Failed Tryjob and no retry allowed", func() {
-				const tjID = 101
+			Convey("Multiple Tryjobs", func() {
 				execState := newExecStateBuilder().
-					appendDefinition(makeDefinition(builderFoo, true)).
-					appendAttempt(builderFoo, makeAttempt(tjID, tryjob.Status_TRIGGERED, tryjob.Result_UNKNOWN)).
-					// No retry config == disable retry
+					appendDefinition(makeDefinition("builder1", true)).
+					appendAttempt("builder1", makeAttempt(101, tryjob.Status_PENDING, tryjob.Result_UNKNOWN)).
+					appendDefinition(makeDefinition("builder2", false)).
+					appendAttempt("builder2", makeAttempt(201, tryjob.Status_PENDING, tryjob.Result_UNKNOWN)).
+					appendDefinition(makeDefinition("builder3", true)).
+					appendAttempt("builder3", makeAttempt(301, tryjob.Status_PENDING, tryjob.Result_UNKNOWN)).
+					withRetryConfig(&cfgpb.Verifiers_Tryjob_RetryConfig{
+						SingleQuota:            2,
+						GlobalQuota:            10,
+						FailureWeight:          5,
+						TransientFailureWeight: 1,
+					}).
 					build()
-				ensureTryjob(ctx, tjID, tryjob.Status_ENDED, tryjob.Result_FAILED_PERMANENTLY)
-				plan, err := prepExecutionPlan(ctx, execState, nil, []int64{tjID}, false)
-				So(err, ShouldBeNil)
-				So(plan.isEmpty(), ShouldBeTrue)
-				So(execState.Status, ShouldEqual, tryjob.ExecutionState_FAILED)
-				So(execState.FailureReason, ShouldNotBeEmpty)
+
+				Convey("Has non ended critical tryjobs", func() {
+					ensureTryjob(ctx, 101, tryjob.Status_ENDED, tryjob.Result_SUCCEEDED)
+					ensureTryjob(ctx, 201, tryjob.Status_ENDED, tryjob.Result_SUCCEEDED)
+					// 301 has not completed
+					plan := prepPlan(execState, 101, 201)
+					So(plan.isEmpty(), ShouldBeTrue)
+					So(execState.Status, ShouldEqual, tryjob.ExecutionState_RUNNING)
+				})
+				Convey("Execution ends when all critical tryjob ended", func() {
+					ensureTryjob(ctx, 101, tryjob.Status_ENDED, tryjob.Result_SUCCEEDED)
+					// 201 (non-critical) has not completed
+					ensureTryjob(ctx, 301, tryjob.Status_ENDED, tryjob.Result_SUCCEEDED)
+					plan := prepPlan(execState, 101, 301)
+					So(plan.isEmpty(), ShouldBeTrue)
+					So(execState.Status, ShouldEqual, tryjob.ExecutionState_SUCCEEDED)
+				})
+				Convey("Failed critical Tryjob fails the execution", func() {
+					ensureTryjob(ctx, 101, tryjob.Status_ENDED, tryjob.Result_FAILED_PERMANENTLY)
+					// one critical tryjob is still running.
+					ensureTryjob(ctx, 301, tryjob.Status_TRIGGERED, tryjob.Result_UNKNOWN)
+					plan := prepPlan(execState, 101, 301)
+					So(plan.isEmpty(), ShouldBeTrue)
+					So(execState.Status, ShouldEqual, tryjob.ExecutionState_FAILED)
+					So(execState.FailureReason, ShouldContainSubstring, "Failed Tryjobs")
+				})
+				Convey("Can retry multiple", func() {
+					ensureTryjob(ctx, 101, tryjob.Status_ENDED, tryjob.Result_FAILED_TRANSIENTLY)
+					// 201 has not completed
+					ensureTryjob(ctx, 301, tryjob.Status_ENDED, tryjob.Result_FAILED_TRANSIENTLY)
+					plan := prepPlan(execState, 101, 301)
+					So(plan.isEmpty(), ShouldBeFalse)
+					So(plan.triggerNewAttempt, ShouldHaveLength, 2)
+					So(execState.Status, ShouldEqual, tryjob.ExecutionState_RUNNING)
+				})
 			})
 		})
 
@@ -295,8 +386,9 @@ func makeDefinition(builder string, critical bool) *tryjob.Definition {
 
 func makeAttempt(tjID int64, status tryjob.Status, resultStatus tryjob.Result_Status) *tryjob.ExecutionState_Execution_Attempt {
 	return &tryjob.ExecutionState_Execution_Attempt{
-		TryjobId: int64(tjID),
-		Status:   status,
+		TryjobId:   int64(tjID),
+		ExternalId: string(tryjob.MustBuildbucketID("buildbucket.example.com", math.MaxInt64-tjID)),
+		Status:     status,
 		Result: &tryjob.Result{
 			Status: resultStatus,
 		},

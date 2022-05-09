@@ -203,19 +203,21 @@ message ExecutionState {
     //
     // Failed attempt will trigger a retry attempt if quota allows.
     message Attempt {
-      // TryjobId is the id of this Tryjob attempt.
+      // TryjobId is the id of this attempt of the Tryjob.
       int64 tryjob_id = 1;
-      // Status is the status of this Tryjob attempt.
-      cv.internal.tryjob.Status status = 2;
-      // Result of this Tryjob attempt.
-      cv.internal.tryjob.Result result = 3;
-      // Reused indicates the current attempt of this Tryjob wasn't triggered
+      // ExternalID is the external ID of this attempt of the Tryjob
+      string external_id = 2;
+      // Status is the status of this attempt of the Tryjob.
+      cv.internal.tryjob.Status status = 3;
+      // Result of this attempt of the Tryjob.
+      cv.internal.tryjob.Result result = 4;
+      // Reused indicates the current attempt of the Tryjob wasn't triggered
       // by CV for this Run specifically.
       //
       // In other words, either:
       //  * tryjob was triggered by CV for a previous Run
       //  * tryjob was triggered by non-CV (e.g. `git cl try`)
-      bool reused = 4;
+      bool reused = 5;
 
       // TODO(yiwzhang): add model for children tryjobs. It could reuse
       // `Attempt` messages, it may also have a trimmed version of `Attempt`
@@ -227,7 +229,7 @@ message ExecutionState {
     // Attempts records all attempts (including retries) to verify the Run with
     // this Tryjob Execution.
     repeated Attempt attempts = 2;
-    // UsedQuota is the quote consumed for retrying the execution of this
+    // UsedQuota is the quota consumed for retrying the execution of this
     // Tryjob.
     int32 used_quota = 3;
   }
