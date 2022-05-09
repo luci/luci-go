@@ -49,13 +49,18 @@ func TestStrPairs(t *testing.T) {
 			Convey("No colon", func() {
 				So(v.Set("a"), ShouldErrLike, "no colon")
 			})
+			Convey("Value has a colon", func() {
+				So(v.Set("a:1:1"), ShouldBeNil)
+				So(m.Format(), ShouldResemble, []string{"a:1:1"})
+			})
 		})
 
 		Convey("String", func() {
 			m.Add("a", "1")
 			m.Add("a", "2")
-			m.Add("b", "1")
-			So(v.String(), ShouldEqual, "a:1, a:2, b:1")
+			// Value has a colon.
+			m.Add("b", "1:1")
+			So(v.String(), ShouldEqual, "a:1, a:2, b:1:1")
 		})
 
 		Convey("Get", func() {

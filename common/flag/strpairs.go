@@ -28,7 +28,9 @@ type stringPairsFlag strpair.Map
 // StringPairs returns a flag.Getter for parsing strpair.Map from a
 // a set of colon-separated strings.
 // Example:
-//   -f a:1 -f a:2 -f b:3
+//   "-f a:1"
+//   "-f a:2"
+//   "-f b:3:3" (The value contains a colon ":")
 // Panics if m is nil.
 func StringPairs(m strpair.Map) flag.Getter {
 	if m == nil {
@@ -44,7 +46,9 @@ func (f stringPairsFlag) String() string {
 
 // Set implements the flag.Value interface.
 func (f stringPairsFlag) Set(s string) error {
-	parts := strings.Split(s, ":")
+	// Splits the string into at most two parts by the first colon ":" because
+	// the value part might contain a colon ":".
+	parts := strings.SplitN(s, ":", 2)
 	if len(parts) == 1 {
 		return fmt.Errorf("no colon")
 	}
