@@ -1,0 +1,4 @@
+{
+    "baseUrl": "{APP_BASE_URL}",
+    "defaultCommandTimeout": 7000
+}

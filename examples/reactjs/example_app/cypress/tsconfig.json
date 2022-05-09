@@ -1,0 +1,22 @@
+{
+    "compilerOptions": {
+        "strict": true,
+        "target": "es5",
+        "noUnusedLocals": true,
+        "noUnusedParameters": true,
+        "noImplicitReturns": true,
+        "noFallthroughCasesInSwitch": true,
+        "noImplicitAny": true,
+        "noImplicitThis": true,
+        "lib": [
+            "es5",
+            "dom"
+        ],
+        "types": [
+            "cypress"
+        ]
+    },
+    "include": [
+        "**/*.ts"
+    ]
+}
