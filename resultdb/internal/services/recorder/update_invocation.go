@@ -22,6 +22,7 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/grpc/appstatus"
 	"go.chromium.org/luci/server/span"
+	"google.golang.org/protobuf/proto"
 
 	"go.chromium.org/luci/resultdb/internal/invocations"
 	"go.chromium.org/luci/resultdb/internal/spanutil"
@@ -47,6 +48,13 @@ func validateUpdateInvocationRequest(req *pb.UpdateInvocationRequest, now time.T
 		case "deadline":
 			if err := validateInvocationDeadline(req.Invocation.GetDeadline(), now); err != nil {
 				return errors.Annotate(err, "invocation: deadline").Err()
+			}
+
+		case "bigquery_exports":
+			for i, bqExport := range req.Invocation.GetBigqueryExports() {
+				if err := pbutil.ValidateBigQueryExport(bqExport); err != nil {
+					return errors.Annotate(err, "bigquery_export[%d]", i).Err()
+				}
 			}
 
 		default:
@@ -84,6 +92,17 @@ func (s *recorderServer) UpdateInvocation(ctx context.Context, in *pb.UpdateInvo
 			case "deadline":
 				values["Deadline"] = in.Invocation.Deadline
 				ret.Deadline = in.Invocation.Deadline
+
+			case "bigquery_exports":
+				bqExports := in.Invocation.BigqueryExports
+				bqExportsBytes := make([][]byte, len(bqExports))
+				for i, bqExport := range bqExports {
+					if bqExportsBytes[i], err = proto.Marshal(bqExport); err != nil {
+						return err
+					}
+				}
+				values["BigQueryExports"] = bqExportsBytes
+				ret.BigqueryExports = bqExports
 
 			default:
 				panic("impossible")

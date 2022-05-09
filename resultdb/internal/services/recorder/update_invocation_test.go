@@ -21,6 +21,7 @@ import (
 	"google.golang.org/genproto/protobuf/field_mask"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
+	"google.golang.org/protobuf/proto"
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
@@ -82,7 +83,25 @@ func TestValidateUpdateInvocationRequest(t *testing.T) {
 			So(err, ShouldErrLike, `invocation: deadline: must be at least 10 seconds in the future`)
 		})
 
-		Convey(`valid`, func() {
+		Convey(`invalid bigquery exports`, func() {
+			err := validateUpdateInvocationRequest(&pb.UpdateInvocationRequest{
+				Invocation: &pb.Invocation{
+					Name: "invocations/inv",
+					BigqueryExports: []*pb.BigQueryExport{{
+						Project: "project",
+						Dataset: "dataset",
+						Table:   "table",
+						// No ResultType.
+					}},
+				},
+				UpdateMask: &field_mask.FieldMask{
+					Paths: []string{"bigquery_exports"},
+				},
+			}, now)
+			So(err, ShouldErrLike, `bigquery_export[0]: result_type: unspecified`)
+		})
+
+		Convey(`valid deadline`, func() {
 			deadline := pbutil.MustTimestampProto(now.Add(time.Hour))
 			err := validateUpdateInvocationRequest(&pb.UpdateInvocationRequest{
 				Invocation: &pb.Invocation{
@@ -90,6 +109,35 @@ func TestValidateUpdateInvocationRequest(t *testing.T) {
 					Deadline: deadline,
 				},
 				UpdateMask: &field_mask.FieldMask{Paths: []string{"deadline"}},
+			}, now)
+			So(err, ShouldBeNil)
+		})
+
+		Convey(`valid bigquery exports`, func() {
+			err := validateUpdateInvocationRequest(&pb.UpdateInvocationRequest{
+				Invocation: &pb.Invocation{
+					Name: "invocations/inv",
+					BigqueryExports: []*pb.BigQueryExport{{
+						Project: "project",
+						Dataset: "dataset",
+						Table:   "table",
+						ResultType: &pb.BigQueryExport_TestResults_{
+							TestResults: &pb.BigQueryExport_TestResults{},
+						},
+					}},
+				},
+				UpdateMask: &field_mask.FieldMask{Paths: []string{"bigquery_exports"}},
+			}, now)
+			So(err, ShouldBeNil)
+		})
+
+		Convey(`empty bigquery export`, func() {
+			err := validateUpdateInvocationRequest(&pb.UpdateInvocationRequest{
+				Invocation: &pb.Invocation{
+					Name:            "invocations/inv",
+					BigqueryExports: []*pb.BigQueryExport{},
+				},
+				UpdateMask: &field_mask.FieldMask{Paths: []string{"bigquery_exports"}},
 			}, now)
 			So(err, ShouldBeNil)
 		})
@@ -108,8 +156,26 @@ func TestUpdateInvocation(t *testing.T) {
 		ctx = metadata.NewIncomingContext(ctx, metadata.Pairs(pb.UpdateTokenMetadataKey, token))
 
 		validDeadline := pbutil.MustTimestampProto(start.Add(day))
+		validBigqueryExports := []*pb.BigQueryExport{
+			{
+				Project: "project",
+				Dataset: "dataset",
+				Table:   "table1",
+				ResultType: &pb.BigQueryExport_TestResults_{
+					TestResults: &pb.BigQueryExport_TestResults{},
+				},
+			},
+			{
+				Project: "project",
+				Dataset: "dataset",
+				Table:   "table2",
+				ResultType: &pb.BigQueryExport_TestResults_{
+					TestResults: &pb.BigQueryExport_TestResults{},
+				},
+			},
+		}
 		updateMask := &field_mask.FieldMask{
-			Paths: []string{"deadline"},
+			Paths: []string{"deadline", "bigquery_exports"},
 		}
 
 		Convey(`invalid request`, func() {
@@ -121,8 +187,9 @@ func TestUpdateInvocation(t *testing.T) {
 		Convey(`no invocation`, func() {
 			req := &pb.UpdateInvocationRequest{
 				Invocation: &pb.Invocation{
-					Name:     "invocations/inv",
-					Deadline: validDeadline,
+					Name:            "invocations/inv",
+					Deadline:        validDeadline,
+					BigqueryExports: validBigqueryExports,
 				},
 				UpdateMask: updateMask,
 			}
@@ -135,8 +202,9 @@ func TestUpdateInvocation(t *testing.T) {
 
 		Convey("e2e", func() {
 			expected := &pb.Invocation{
-				Name:     "invocations/inv",
-				Deadline: validDeadline,
+				Name:            "invocations/inv",
+				Deadline:        validDeadline,
+				BigqueryExports: validBigqueryExports,
 			}
 			req := &pb.UpdateInvocationRequest{
 				Invocation: expected,
@@ -153,9 +221,18 @@ func TestUpdateInvocation(t *testing.T) {
 				Name: expected.Name,
 			}
 			invID := invocations.ID("inv")
+			actualbqExportsBytes := [][]byte{}
 			testutil.MustReadRow(ctx, "Invocations", invID.Key(), map[string]interface{}{
-				"Deadline": &actual.Deadline,
+				"Deadline":        &actual.Deadline,
+				"BigQueryExports": &actualbqExportsBytes,
 			})
+
+			// Decode BigqueryExports from arrary[bytes] to proto.
+			actual.BigqueryExports = make([]*pb.BigQueryExport, len(actualbqExportsBytes))
+			for i, actualBqExport := range actualbqExportsBytes {
+				actual.BigqueryExports[i] = &pb.BigQueryExport{}
+				_ = proto.Unmarshal(actualBqExport, actual.BigqueryExports[i])
+			}
 			So(actual, ShouldResembleProto, expected)
 		})
 	})
