@@ -63,7 +63,8 @@ func TestRead(t *testing.T) {
 			})
 		})
 		Convey("Minimal", func() {
-			// Insert a TestExoneration with only mandatory fields populated.
+			// Insert a TestExoneration without reason. This was only possible
+			// prior to May 2022. This test case can be deleted from November 2023.
 			testutil.MustApply(ctx,
 				insert.Invocation("inv", pb.Invocation_ACTIVE, nil),
 				spanutil.InsertMap("TestExonerations", map[string]interface{}{

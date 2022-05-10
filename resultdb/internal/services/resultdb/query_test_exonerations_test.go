@@ -68,7 +68,7 @@ func TestQueryTestExonerations(t *testing.T) {
 			insertInv("c", map[string]interface{}{"Realm": "testproject:testrealm"}),
 			insertEx("a", "A", pbutil.Variant("v", "a"), pb.ExonerationReason_OCCURS_ON_OTHER_CLS, pb.ExonerationReason_NOT_CRITICAL),
 			insertEx("c", "C", pbutil.Variant("v", "c"), pb.ExonerationReason_OCCURS_ON_MAINLINE),
-			insertEx("c", "D", pbutil.Variant("v", "d"), pb.ExonerationReason_EXONERATION_REASON_UNSPECIFIED),
+			insertEx("c", "D", pbutil.Variant("v", "d"), pb.ExonerationReason_UNEXPECTED_PASS),
 		)...)
 
 		srv := newTestResultDBService()
@@ -125,7 +125,7 @@ func TestQueryTestExonerations(t *testing.T) {
 					VariantHash:     pbutil.VariantHash(pbutil.Variant("v", "d")),
 					ExonerationId:   "0",
 					ExplanationHtml: "explanation 0",
-					Reason:          pb.ExonerationReason_EXONERATION_REASON_UNSPECIFIED,
+					Reason:          pb.ExonerationReason_UNEXPECTED_PASS,
 				},
 			}
 
@@ -175,7 +175,7 @@ func TestQueryTestExonerations(t *testing.T) {
 					VariantHash:     pbutil.VariantHash(pbutil.Variant("v", "d")),
 					ExonerationId:   "0",
 					ExplanationHtml: "explanation 0",
-					Reason:          pb.ExonerationReason_EXONERATION_REASON_UNSPECIFIED,
+					Reason:          pb.ExonerationReason_UNEXPECTED_PASS,
 				},
 			})
 		})

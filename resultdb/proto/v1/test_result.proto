@@ -214,6 +214,9 @@ message TestExoneration {
   string variant_hash = 6 [(google.api.field_behavior) = IMMUTABLE];
 
   // Reasoning behind the exoneration, in machine-readable form.
+  // Used to assist downstream analyses, such as automatic bug-filing.
+  // This allow detection of e.g. critical tests failing in presubmit,
+  // even if they are being exonerated because they fail on other CLs.
   ExonerationReason reason = 7 [(google.api.field_behavior) = IMMUTABLE];
 }
 

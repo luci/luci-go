@@ -102,7 +102,7 @@ func TestQueryTestVariants(t *testing.T) {
 
 			insert.TestExonerations("inv0", "T1", nil, pb.ExonerationReason_OCCURS_ON_OTHER_CLS,
 				pb.ExonerationReason_NOT_CRITICAL, pb.ExonerationReason_OCCURS_ON_MAINLINE),
-			insert.TestExonerations("inv0", "T2", nil, pb.ExonerationReason_EXONERATION_REASON_UNSPECIFIED, 1),
+			insert.TestExonerations("inv0", "T2", nil, pb.ExonerationReason_UNEXPECTED_PASS, 1),
 		)...)
 
 		// Insert an additional TestResult for comparing TestVariant.Results.Result.
@@ -215,7 +215,7 @@ func TestQueryTestVariants(t *testing.T) {
 			})
 			So(tvs[8].Exonerations[0], ShouldResemble, &pb.TestExoneration{
 				ExplanationHtml: "explanation 0",
-				Reason:          pb.ExonerationReason_EXONERATION_REASON_UNSPECIFIED,
+				Reason:          pb.ExonerationReason_UNEXPECTED_PASS,
 			})
 			So(len(tvs[2].Results), ShouldEqual, 10)
 		})

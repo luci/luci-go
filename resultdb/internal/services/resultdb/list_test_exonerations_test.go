@@ -81,7 +81,7 @@ func TestListTestExonerations(t *testing.T) {
 				"ExonerationId": "1",
 				"Variant":       pbutil.Variant(),
 				"VariantHash":   "deadbeef",
-				"Reason":        pb.ExonerationReason_EXONERATION_REASON_UNSPECIFIED,
+				"Reason":        pb.ExonerationReason_UNEXPECTED_PASS,
 			}),
 			spanutil.InsertMap("TestExonerations", map[string]interface{}{
 				"InvocationId":  invID,
@@ -89,7 +89,7 @@ func TestListTestExonerations(t *testing.T) {
 				"ExonerationId": "2",
 				"Variant":       pbutil.Variant(),
 				"VariantHash":   "deadbeef",
-				"Reason":        pb.ExonerationReason_EXONERATION_REASON_UNSPECIFIED,
+				"Reason":        pb.ExonerationReason_UNEXPECTED_PASS,
 			}),
 		)
 
@@ -108,14 +108,14 @@ func TestListTestExonerations(t *testing.T) {
 				TestId:        testID,
 				ExonerationId: "1",
 				VariantHash:   "deadbeef",
-				Reason:        pb.ExonerationReason_EXONERATION_REASON_UNSPECIFIED,
+				Reason:        pb.ExonerationReason_UNEXPECTED_PASS,
 			},
 			{
 				Name:          pbutil.TestExonerationName("inv", testID, "2"),
 				TestId:        testID,
 				ExonerationId: "2",
 				VariantHash:   "deadbeef",
-				Reason:        pb.ExonerationReason_EXONERATION_REASON_UNSPECIFIED,
+				Reason:        pb.ExonerationReason_UNEXPECTED_PASS,
 			},
 		}
 		srv := newTestResultDBService()

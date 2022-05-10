@@ -444,6 +444,9 @@ type TestExoneration struct {
 	// hex(sha256(sorted(''.join('%s:%s\n' for k, v in variant.items())))).
 	VariantHash string `protobuf:"bytes,6,opt,name=variant_hash,json=variantHash,proto3" json:"variant_hash,omitempty"`
 	// Reasoning behind the exoneration, in machine-readable form.
+	// Used to assist downstream analyses, such as automatic bug-filing.
+	// This allow detection of e.g. critical tests failing in presubmit,
+	// even if they are being exonerated because they fail on other CLs.
 	Reason ExonerationReason `protobuf:"varint,7,opt,name=reason,proto3,enum=luci.resultdb.v1.ExonerationReason" json:"reason,omitempty"`
 }
 

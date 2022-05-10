@@ -15,7 +15,6 @@
 package recorder
 
 import (
-	"context"
 	"testing"
 
 	"github.com/golang/protobuf/proto"
@@ -35,21 +34,20 @@ import (
 func TestValidateBatchCreateTestExonerationsRequest(t *testing.T) {
 	t.Parallel()
 	Convey(`TestValidateBatchCreateTestExonerationsRequest`, t, func() {
-		ctx := context.Background()
 		Convey(`Empty`, func() {
-			err := validateBatchCreateTestExonerationsRequest(ctx, &pb.BatchCreateTestExonerationsRequest{})
+			err := validateBatchCreateTestExonerationsRequest(&pb.BatchCreateTestExonerationsRequest{})
 			So(err, ShouldErrLike, `invocation: unspecified`)
 		})
 
 		Convey(`Invalid invocation`, func() {
-			err := validateBatchCreateTestExonerationsRequest(ctx, &pb.BatchCreateTestExonerationsRequest{
+			err := validateBatchCreateTestExonerationsRequest(&pb.BatchCreateTestExonerationsRequest{
 				Invocation: "x",
 			})
 			So(err, ShouldErrLike, `invocation: does not match`)
 		})
 
 		Convey(`Invalid request id`, func() {
-			err := validateBatchCreateTestExonerationsRequest(ctx, &pb.BatchCreateTestExonerationsRequest{
+			err := validateBatchCreateTestExonerationsRequest(&pb.BatchCreateTestExonerationsRequest{
 				Invocation: "invocations/a",
 				RequestId:  "😃",
 			})
@@ -57,7 +55,7 @@ func TestValidateBatchCreateTestExonerationsRequest(t *testing.T) {
 		})
 
 		Convey(`Too many requests`, func() {
-			err := validateBatchCreateTestExonerationsRequest(ctx, &pb.BatchCreateTestExonerationsRequest{
+			err := validateBatchCreateTestExonerationsRequest(&pb.BatchCreateTestExonerationsRequest{
 				Invocation: "invocations/a",
 				Requests:   make([]*pb.CreateTestExonerationRequest, 1000),
 			})
@@ -65,12 +63,14 @@ func TestValidateBatchCreateTestExonerationsRequest(t *testing.T) {
 		})
 
 		Convey(`Invalid sub-request`, func() {
-			err := validateBatchCreateTestExonerationsRequest(ctx, &pb.BatchCreateTestExonerationsRequest{
+			err := validateBatchCreateTestExonerationsRequest(&pb.BatchCreateTestExonerationsRequest{
 				Invocation: "invocations/inv",
 				Requests: []*pb.CreateTestExonerationRequest{
 					{
 						TestExoneration: &pb.TestExoneration{
-							TestId: "\x01",
+							TestId:          "\x01",
+							ExplanationHtml: "Unexpected pass.",
+							Reason:          pb.ExonerationReason_UNEXPECTED_PASS,
 						},
 					},
 				},
@@ -79,13 +79,15 @@ func TestValidateBatchCreateTestExonerationsRequest(t *testing.T) {
 		})
 
 		Convey(`Inconsistent invocation`, func() {
-			err := validateBatchCreateTestExonerationsRequest(ctx, &pb.BatchCreateTestExonerationsRequest{
+			err := validateBatchCreateTestExonerationsRequest(&pb.BatchCreateTestExonerationsRequest{
 				Invocation: "invocations/inv",
 				Requests: []*pb.CreateTestExonerationRequest{
 					{
 						Invocation: "invocations/x",
 						TestExoneration: &pb.TestExoneration{
-							TestId: "ninja://ab/cd.ef",
+							TestId:          "ninja://ab/cd.ef",
+							ExplanationHtml: "Unexpected pass.",
+							Reason:          pb.ExonerationReason_UNEXPECTED_PASS,
 						},
 					},
 				},
@@ -94,14 +96,16 @@ func TestValidateBatchCreateTestExonerationsRequest(t *testing.T) {
 		})
 
 		Convey(`Inconsistent request_id`, func() {
-			err := validateBatchCreateTestExonerationsRequest(ctx, &pb.BatchCreateTestExonerationsRequest{
+			err := validateBatchCreateTestExonerationsRequest(&pb.BatchCreateTestExonerationsRequest{
 				Invocation: "invocations/inv",
 				RequestId:  "req1",
 				Requests: []*pb.CreateTestExonerationRequest{
 					{
 						RequestId: "req2",
 						TestExoneration: &pb.TestExoneration{
-							TestId: "ninja://ab/cd.ef",
+							TestId:          "ninja://ab/cd.ef",
+							ExplanationHtml: "Unexpected pass.",
+							Reason:          pb.ExonerationReason_UNEXPECTED_PASS,
 						},
 					},
 				},
@@ -110,18 +114,22 @@ func TestValidateBatchCreateTestExonerationsRequest(t *testing.T) {
 		})
 
 		Convey(`Valid`, func() {
-			err := validateBatchCreateTestExonerationsRequest(ctx, &pb.BatchCreateTestExonerationsRequest{
+			err := validateBatchCreateTestExonerationsRequest(&pb.BatchCreateTestExonerationsRequest{
 				Invocation: "invocations/inv",
 				Requests: []*pb.CreateTestExonerationRequest{
 					{
 						TestExoneration: &pb.TestExoneration{
-							TestId: "ninja://ab/cd.ef",
+							TestId:          "ninja://ab/cd.ef",
+							ExplanationHtml: "Test failed also when tried without patch.",
+							Reason:          pb.ExonerationReason_OCCURS_ON_MAINLINE,
 						},
 					},
 					{
 						TestExoneration: &pb.TestExoneration{
-							TestId:  "ninja://ab/cd.ef",
-							Variant: pbutil.Variant("a/b", "1", "c", "2"),
+							TestId:          "ninja://ab/cd.ef",
+							Variant:         pbutil.Variant("a/b", "1", "c", "2"),
+							ExplanationHtml: "Test is known to be failing on other CLs.",
+							Reason:          pb.ExonerationReason_OCCURS_ON_OTHER_CLS,
 						},
 					},
 				},
@@ -167,14 +175,18 @@ func TestBatchCreateTestExonerations(t *testing.T) {
 				Requests: []*pb.CreateTestExonerationRequest{
 					{
 						TestExoneration: &pb.TestExoneration{
-							TestId:  "a",
-							Variant: pbutil.Variant("a", "1", "b", "2"),
+							TestId:          "a",
+							Variant:         pbutil.Variant("a", "1", "b", "2"),
+							ExplanationHtml: "Unexpected pass.",
+							Reason:          pb.ExonerationReason_UNEXPECTED_PASS,
 						},
 					},
 					{
 						TestExoneration: &pb.TestExoneration{
-							TestId:  "b/c",
-							Variant: pbutil.Variant("a", "1", "b", "2"),
+							TestId:          "b/c",
+							Variant:         pbutil.Variant("a", "1", "b", "2"),
+							ExplanationHtml: "Unexpected pass.",
+							Reason:          pb.ExonerationReason_UNEXPECTED_PASS,
 						},
 					},
 				},
