@@ -22,7 +22,19 @@ import (
 	"net/http"
 	"strings"
 
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
+
 	"go.chromium.org/luci/auth/identity"
+	"go.chromium.org/luci/auth_service/api/internalspb"
+	"go.chromium.org/luci/auth_service/api/rpcpb"
+	"go.chromium.org/luci/auth_service/impl"
+	"go.chromium.org/luci/auth_service/impl/servers/accounts"
+	"go.chromium.org/luci/auth_service/impl/servers/allowlists"
+	"go.chromium.org/luci/auth_service/impl/servers/authdb"
+	"go.chromium.org/luci/auth_service/impl/servers/changelogs"
+	"go.chromium.org/luci/auth_service/impl/servers/groups"
+	"go.chromium.org/luci/auth_service/impl/servers/internals"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/grpc/grpcutil"
@@ -34,16 +46,6 @@ import (
 	"go.chromium.org/luci/server/module"
 	"go.chromium.org/luci/server/router"
 	"go.chromium.org/luci/server/templates"
-
-	"go.chromium.org/luci/auth_service/api/internalspb"
-	"go.chromium.org/luci/auth_service/api/rpcpb"
-	"go.chromium.org/luci/auth_service/impl"
-	"go.chromium.org/luci/auth_service/impl/servers/accounts"
-	"go.chromium.org/luci/auth_service/impl/servers/allowlists"
-	"go.chromium.org/luci/auth_service/impl/servers/authdb"
-	"go.chromium.org/luci/auth_service/impl/servers/changelogs"
-	"go.chromium.org/luci/auth_service/impl/servers/groups"
-	"go.chromium.org/luci/auth_service/impl/servers/internals"
 
 	// Store auth sessions in the datastore.
 	_ "go.chromium.org/luci/server/encryptedcookies/session/datastore"
@@ -92,12 +94,14 @@ func main() {
 			impl.AuthorizeRPCAccess,
 		)
 
+		authdbServer := &authdb.Server{}
+
 		// Register all pRPC servers.
 		internalspb.RegisterInternalsServer(srv.PRPC, &internals.Server{})
 		rpcpb.RegisterAccountsServer(srv.PRPC, &accounts.Server{})
 		rpcpb.RegisterGroupsServer(srv.PRPC, &groups.Server{})
 		rpcpb.RegisterAllowlistsServer(srv.PRPC, &allowlists.Server{})
-		rpcpb.RegisterAuthDBServer(srv.PRPC, &authdb.Server{})
+		rpcpb.RegisterAuthDBServer(srv.PRPC, authdbServer)
 		rpcpb.RegisterChangeLogsServer(srv.PRPC, &changelogs.Server{})
 
 		// The middleware chain applied to all plain HTTP routes.
@@ -123,6 +127,10 @@ func main() {
 		srv.Routes.GET("/lookup", mw, func(ctx *router.Context) {
 			templates.MustRender(ctx.Context, ctx.Writer, "pages/lookup.html", nil)
 		})
+
+		// Legacy authdbrevision serving.
+		// TODO(cjacomet): Add smoke test for this endpoint
+		srv.Routes.GET("/auth_service/api/v1/authdb/revisions/:revID", mw, adaptGrpcErr(authdbServer.HandleLegacyAuthDBServing))
 		return nil
 	})
 }
@@ -218,4 +226,18 @@ func replyError(ctx *router.Context, err error, message string, code int) {
 		"SimpleHeader": true,
 		"Message":      message,
 	})
+}
+
+// adaptGrpcErr knows how to convert gRPC-style errors to ugly looking HTTP
+// error pages with appropriate HTTP status codes.
+//
+// Recognizes either real gRPC errors (produced with status.Errorf) or
+// grpc-tagged errors produced via grpcutil.
+func adaptGrpcErr(h func(*router.Context) error) router.Handler {
+	return func(ctx *router.Context) {
+		err := grpcutil.GRPCifyAndLogErr(ctx.Context, h(ctx))
+		if code := status.Code(err); code != codes.OK {
+			http.Error(ctx.Writer, status.Convert(err).Message(), grpcutil.CodeStatus(code))
+		}
+	}
 }

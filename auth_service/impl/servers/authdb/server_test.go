@@ -15,6 +15,12 @@ package authdb
 
 import (
 	"context"
+	"encoding/json"
+	"fmt"
+	"net/http"
+	"net/http/httptest"
+	"net/url"
+	"strconv"
 	"testing"
 	"time"
 
@@ -25,13 +31,16 @@ import (
 	"go.chromium.org/luci/auth_service/impl/model"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
+	"go.chromium.org/luci/server/router"
 
+	"github.com/julienschmidt/httprouter"
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestAuthDBServing(t *testing.T) {
 	testTS := time.Date(2021, time.August, 16, 15, 20, 0, 0, time.UTC)
+	testTSMicro := testTS.UnixNano() / 1000
 	testHash := "SHA256-hash"
 	testDeflated := []byte("deflated-groups")
 
@@ -53,6 +62,38 @@ func TestAuthDBServing(t *testing.T) {
 			AuthDBSha256:   testHash,
 			CreatedTS:      testTS,
 		}
+	}
+
+	legacyCall := func(server Server, ctx context.Context, rid int64, skipBody bool) []byte {
+		rw := httptest.NewRecorder()
+		var revIDStr string
+		var sb string
+		if rid == 0 {
+			revIDStr = "latest"
+		} else {
+			revIDStr = strconv.FormatInt(rid, 10)
+		}
+
+		if skipBody {
+			sb = "1"
+		} else {
+			sb = "0"
+		}
+		rctx := &router.Context{
+			Context: ctx,
+			Request: &http.Request{
+				URL: &url.URL{
+					RawQuery: fmt.Sprintf("skip_body=%s", sb),
+				},
+			},
+			Params: []httprouter.Param{
+				{Key: "revID", Value: revIDStr},
+			},
+			Writer: rw,
+		}
+		err := server.HandleLegacyAuthDBServing(rctx)
+		So(err, ShouldBeNil)
+		return rw.Body.Bytes()
 	}
 
 	t.Parallel()
@@ -173,6 +214,72 @@ func TestAuthDBServing(t *testing.T) {
 				AuthDbDeflated: []byte("shard-1-groupsshard-2-groups"),
 				CreatedTs:      timestamppb.New(testTS),
 			})
+		})
+	})
+
+	Convey("Testing legacy API Server with JSON response", t, func() {
+		server := Server{}
+		type TestSnapshotJSON struct {
+			AuthDBRev      int64  `json:"auth_db_rev"`
+			AuthDBDeflated []byte `json:"deflated_body,omitempty"`
+			AuthDBSha256   string `json:"sha256"`
+			CreatedTS      int64  `json:"created_ts"`
+		}
+		expectedJSON := func(rid int64, sb bool) ([]byte, error) {
+			if sb {
+				testDeflated = []byte{}
+			}
+			return json.Marshal(map[string]interface{}{
+				"snapshot": TestSnapshotJSON{
+					AuthDBRev:      rid,
+					AuthDBDeflated: testDeflated,
+					AuthDBSha256:   testHash,
+					CreatedTS:      testTSMicro,
+				},
+			})
+		}
+
+		So(datastore.Put(ctx,
+			testAuthDBSnapshot(1),
+			testAuthDBSnapshot(2),
+			testAuthDBSnapshot(3),
+			testAuthDBSnapshot(4)), ShouldBeNil)
+
+		Convey("Testing GetSnapshotLegacy skipBody=true", func() {
+			rid := int64(3)
+			skipBody := true
+			actualBlob := legacyCall(server, ctx, rid, skipBody)
+			expectedBlob, err := expectedJSON(rid, skipBody)
+			So(err, ShouldBeNil)
+			So(actualBlob, ShouldResemble, expectedBlob)
+		})
+
+		Convey("Testing GetSnapshotLegacy skipBody=false", func() {
+			rid := int64(3)
+			skipBody := false
+			actualBlob := legacyCall(server, ctx, rid, skipBody)
+			expectedBlob, err := expectedJSON(rid, skipBody)
+			So(err, ShouldBeNil)
+			So(actualBlob, ShouldResemble, expectedBlob)
+		})
+
+		Convey("Testing GetSnapshotLatestLegacy skipBody=true", func() {
+			rid := int64(4)
+			skipBody := true
+			actualBlob := legacyCall(server, ctx, rid, skipBody)
+			expectedBlob, err := expectedJSON(rid, skipBody)
+			So(err, ShouldBeNil)
+			So(actualBlob, ShouldResemble, expectedBlob)
+
+		})
+
+		Convey("Testing GetSnapshotLatestLegacy skipBody=false", func() {
+			rid := int64(4)
+			skipBody := false
+			actualBlob := legacyCall(server, ctx, rid, skipBody)
+			expectedBlob, err := expectedJSON(rid, skipBody)
+			So(err, ShouldBeNil)
+			So(actualBlob, ShouldResemble, expectedBlob)
 		})
 	})
 }

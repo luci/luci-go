@@ -17,14 +17,18 @@ package authdb
 
 import (
 	"context"
+	"encoding/json"
+	"strconv"
 
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
 	"go.chromium.org/luci/auth_service/api/rpcpb"
 	"go.chromium.org/luci/auth_service/impl/model"
+	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/gae/service/datastore"
+	"go.chromium.org/luci/server/router"
 )
 
 // Server implements AuthDB server.
@@ -68,4 +72,70 @@ func getLatestRevision(ctx context.Context, request *rpcpb.GetSnapshotRequest) (
 		logging.Errorf(ctx, errStr)
 		return 0, status.Errorf(codes.Internal, errStr)
 	}
+}
+
+// HandleLegacyAuthDBServing handles the AuthDBSnapshot serving for legacy
+// services. Writes the AuthDBSnapshot JSON to the router.Writer. gRPC Error is returned
+// and adapted to HTTP format if operation is unsuccesful.
+func (s *Server) HandleLegacyAuthDBServing(ctx *router.Context) error {
+	c, r, w := ctx.Context, ctx.Request, ctx.Writer
+	var snap *rpcpb.Snapshot
+	var err error
+
+	skipBody := r.URL.Query().Get("skip_body") == "1"
+
+	if revIDStr := ctx.Params.ByName("revID"); revIDStr != "latest" {
+		revID, err := strconv.ParseInt(revIDStr, 10, 64)
+		switch {
+		case err != nil:
+			errors.Log(c, errors.Annotate(err, "issue while parsing revID %s", revIDStr).Err())
+			return status.Errorf(codes.InvalidArgument, "unable to parse revID: %s", revIDStr)
+		case revID < 0:
+			return status.Errorf(codes.InvalidArgument, "Negative revision numbers are not valid")
+		default:
+			snap, err = s.GetSnapshot(c, &rpcpb.GetSnapshotRequest{
+				Revision: revID,
+				SkipBody: skipBody,
+			})
+			if err != nil {
+				return errors.Annotate(err, "Error while getting snapshot %d", revID).Err()
+			}
+		}
+	} else {
+		snap, err = s.GetSnapshot(c, &rpcpb.GetSnapshotRequest{
+			Revision: 0,
+			SkipBody: skipBody,
+		})
+		if err != nil {
+			return errors.Annotate(err, "Error while getting latest snapshot").Err()
+		}
+	}
+
+	type SnapshotJSON struct {
+		AuthDBRev      int64  `json:"auth_db_rev"`
+		AuthDBDeflated []byte `json:"deflated_body,omitempty"`
+		AuthDBSha256   string `json:"sha256"`
+		CreatedTS      int64  `json:"created_ts"`
+	}
+
+	unixMicro := snap.CreatedTs.AsTime().UnixNano() / 1000
+
+	blob, err := json.Marshal(map[string]interface{}{
+		"snapshot": SnapshotJSON{
+			AuthDBRev:      snap.AuthDbRev,
+			AuthDBDeflated: snap.AuthDbDeflated,
+			AuthDBSha256:   snap.AuthDbSha256,
+			CreatedTS:      unixMicro,
+		},
+	})
+
+	if err != nil {
+		return errors.Annotate(err, "Error while marshaling JSON").Err()
+	}
+
+	if _, err = w.Write(blob); err != nil {
+		return errors.Annotate(err, "Error while writing json").Err()
+	}
+
+	return nil
 }
