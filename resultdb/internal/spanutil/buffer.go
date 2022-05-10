@@ -50,6 +50,7 @@ type Ptr interface {
 //   - Value and Ptr
 //   - string
 //   - timestamppb.Timestamp
+//   - pb.BigQueryExport
 //   - pb.ExonerationReason
 //   - pb.InvocationState
 //   - pb.TestStatus
@@ -58,11 +59,12 @@ type Ptr interface {
 //   - proto.Message
 // TODO(nodir): move to buffer.go
 type Buffer struct {
-	NullString            spanner.NullString
-	NullTime              spanner.NullTime
-	Int64                 int64
-	StringSlice           []string
-	ByteSlice, ByteSlice2 []byte
+	NullString  spanner.NullString
+	NullTime    spanner.NullTime
+	Int64       int64
+	StringSlice []string
+	ByteSlice   []byte
+	ByteSlice2  [][]byte
 }
 
 // FromSpanner is a shortcut for (&Buffer{}).FromSpanner.
@@ -90,6 +92,7 @@ func (b *Buffer) FromSpanner(row *spanner.Row, ptrs ...interface{}) error {
 func (b *Buffer) fromSpanner(row *spanner.Row, col int, goPtr interface{}) error {
 	b.StringSlice = b.StringSlice[:0]
 	b.ByteSlice = b.ByteSlice[:0]
+	b.ByteSlice2 = b.ByteSlice2[:0]
 
 	var spanPtr interface{}
 	switch goPtr := goPtr.(type) {
@@ -109,6 +112,8 @@ func (b *Buffer) fromSpanner(row *spanner.Row, col int, goPtr interface{}) error
 		spanPtr = &b.StringSlice
 	case *[]*pb.StringPair:
 		spanPtr = &b.StringSlice
+	case *[]*pb.BigQueryExport:
+		spanPtr = &b.ByteSlice2
 	case proto.Message:
 		spanPtr = &b.ByteSlice
 	default:
@@ -161,6 +166,16 @@ func (b *Buffer) fromSpanner(row *spanner.Row, col int, goPtr interface{}) error
 		*goPtr = make([]*pb.StringPair, len(b.StringSlice))
 		for i, p := range b.StringSlice {
 			if (*goPtr)[i], err = pbutil.StringPairFromString(p); err != nil {
+				// If it was written to Spanner, it should have been validated.
+				panic(err)
+			}
+		}
+
+	case *[]*pb.BigQueryExport:
+		*goPtr = make([]*pb.BigQueryExport, len(b.ByteSlice2))
+		for i, p := range b.ByteSlice2 {
+			(*goPtr)[i] = &pb.BigQueryExport{}
+			if err := proto.Unmarshal(p, (*goPtr)[i]); err != nil {
 				// If it was written to Spanner, it should have been validated.
 				panic(err)
 			}
@@ -221,6 +236,16 @@ func ToSpanner(v interface{}) interface{} {
 
 	case []*pb.StringPair:
 		return pbutil.StringPairsToStrings(v...)
+
+	case []*pb.BigQueryExport:
+		var err error
+		bqExportsBytes := make([][]byte, len(v))
+		for i, bqExport := range v {
+			if bqExportsBytes[i], err = proto.Marshal(bqExport); err != nil {
+				panic(err)
+			}
+		}
+		return bqExportsBytes
 
 	case proto.Message:
 		if isMessageNil(v) {

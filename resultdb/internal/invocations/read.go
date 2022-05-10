@@ -19,7 +19,6 @@ import (
 
 	"cloud.google.com/go/spanner"
 	"google.golang.org/grpc/codes"
-	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/common/errors"
@@ -82,7 +81,6 @@ func readMulti(ctx context.Context, ids IDSet, f func(id ID, inv *pb.Invocation)
 	return spanutil.Query(ctx, st, func(row *spanner.Row) error {
 		var id ID
 		included := IDSet{}
-		var bqExports [][]byte
 		inv := &pb.Invocation{}
 
 		var createdBy spanner.NullString
@@ -96,7 +94,7 @@ func readMulti(ctx context.Context, ids IDSet, f func(id ID, inv *pb.Invocation)
 			&inv.FinalizeTime,
 			&inv.Deadline,
 			&inv.Tags,
-			&bqExports,
+			&inv.BigqueryExports,
 			&included,
 			&producerResource,
 			&realm,
@@ -111,15 +109,6 @@ func readMulti(ctx context.Context, ids IDSet, f func(id ID, inv *pb.Invocation)
 		inv.ProducerResource = producerResource.StringVal
 		inv.Realm = realm.StringVal
 
-		if len(bqExports) > 0 {
-			inv.BigqueryExports = make([]*pb.BigQueryExport, len(bqExports))
-			for i, buf := range bqExports {
-				inv.BigqueryExports[i] = &pb.BigQueryExport{}
-				if err := proto.Unmarshal(buf, inv.BigqueryExports[i]); err != nil {
-					return errors.Annotate(err, "%s: failed to unmarshal BigQuery export", inv.Name).Err()
-				}
-			}
-		}
 		if historyTime != nil {
 			inv.HistoryOptions = &pb.HistoryOptions{
 				UseInvocationTimestamp: true,

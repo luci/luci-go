@@ -121,6 +121,45 @@ func TestTypeConversion(t *testing.T) {
 		So(spValues, ShouldResemble, []interface{}{int64(42), int64(56), int64(3)})
 	})
 
+	Convey(`[]*pb.BigQueryExport`, t, func() {
+		bqExports := []*pb.BigQueryExport{
+			{
+				Project: "project",
+				Dataset: "dataset",
+				Table:   "table1",
+				ResultType: &pb.BigQueryExport_TestResults_{
+					TestResults: &pb.BigQueryExport_TestResults{},
+				},
+			},
+			{
+				Project: "project",
+				Dataset: "dataset",
+				Table:   "table2",
+				ResultType: &pb.BigQueryExport_TestResults_{
+					TestResults: &pb.BigQueryExport_TestResults{},
+				},
+			},
+		}
+
+		var err error
+		expectedBqExportsBytes := make([][]byte, len(bqExports))
+		for i, bqExport := range bqExports {
+			expectedBqExportsBytes[i], err = proto.Marshal(bqExport)
+			So(err, ShouldBeNil)
+		}
+		So(ToSpanner(bqExports), ShouldResemble, expectedBqExportsBytes)
+
+		row, err := spanner.NewRow([]string{"a"}, []interface{}{expectedBqExportsBytes})
+		So(err, ShouldBeNil)
+
+		Convey(`success`, func() {
+			expectedPtr := []*pb.BigQueryExport{}
+			err = b.FromSpanner(row, &expectedPtr)
+			So(err, ShouldBeNil)
+			So(expectedPtr, ShouldResembleProto, bqExports)
+		})
+	})
+
 	Convey(`proto.Message`, t, func() {
 		msg := &pb.Invocation{
 			Name: "a",

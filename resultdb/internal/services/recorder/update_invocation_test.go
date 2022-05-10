@@ -21,7 +21,6 @@ import (
 	"google.golang.org/genproto/protobuf/field_mask"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
-	"google.golang.org/protobuf/proto"
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
@@ -221,18 +220,10 @@ func TestUpdateInvocation(t *testing.T) {
 				Name: expected.Name,
 			}
 			invID := invocations.ID("inv")
-			actualbqExportsBytes := [][]byte{}
 			testutil.MustReadRow(ctx, "Invocations", invID.Key(), map[string]interface{}{
 				"Deadline":        &actual.Deadline,
-				"BigQueryExports": &actualbqExportsBytes,
+				"BigQueryExports": &actual.BigqueryExports,
 			})
-
-			// Decode BigqueryExports from arrary[bytes] to proto.
-			actual.BigqueryExports = make([]*pb.BigQueryExport, len(actualbqExportsBytes))
-			for i, actualBqExport := range actualbqExportsBytes {
-				actual.BigqueryExports[i] = &pb.BigQueryExport{}
-				_ = proto.Unmarshal(actualBqExport, actual.BigqueryExports[i])
-			}
 			So(actual, ShouldResembleProto, expected)
 		})
 	})

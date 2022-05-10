@@ -22,7 +22,6 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/grpc/appstatus"
 	"go.chromium.org/luci/server/span"
-	"google.golang.org/protobuf/proto"
 
 	"go.chromium.org/luci/resultdb/internal/invocations"
 	"go.chromium.org/luci/resultdb/internal/spanutil"
@@ -90,18 +89,13 @@ func (s *recorderServer) UpdateInvocation(ctx context.Context, in *pb.UpdateInvo
 			// similar switch statement in validateUpdateInvocationRequest.
 
 			case "deadline":
-				values["Deadline"] = in.Invocation.Deadline
-				ret.Deadline = in.Invocation.Deadline
+				deadlne := in.Invocation.Deadline
+				values["Deadline"] = deadlne
+				ret.Deadline = deadlne
 
 			case "bigquery_exports":
 				bqExports := in.Invocation.BigqueryExports
-				bqExportsBytes := make([][]byte, len(bqExports))
-				for i, bqExport := range bqExports {
-					if bqExportsBytes[i], err = proto.Marshal(bqExport); err != nil {
-						return err
-					}
-				}
-				values["BigQueryExports"] = bqExportsBytes
+				values["BigQueryExports"] = bqExports
 				ret.BigqueryExports = bqExports
 
 			default:

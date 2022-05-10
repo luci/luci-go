@@ -16,13 +16,11 @@ package recorder
 
 import (
 	"context"
-	"fmt"
 	"time"
 
 	"cloud.google.com/go/spanner"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
-	"google.golang.org/protobuf/proto"
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/data/rand/mathrand"
@@ -137,6 +135,7 @@ func (s *recorderServer) rowOfInvocation(ctx context.Context, inv *pb.Invocation
 
 		"Tags":             inv.Tags,
 		"ProducerResource": inv.ProducerResource,
+		"BigQueryExports":  inv.BigqueryExports,
 	}
 
 	if inv.State == pb.Invocation_FINALIZED {
@@ -151,17 +150,6 @@ func (s *recorderServer) rowOfInvocation(ctx context.Context, inv *pb.Invocation
 
 	if createRequestID != "" {
 		row["CreateRequestId"] = createRequestID
-	}
-
-	if len(inv.BigqueryExports) != 0 {
-		bqExports := make([][]byte, len(inv.BigqueryExports))
-		for i, msg := range inv.BigqueryExports {
-			var err error
-			if bqExports[i], err = proto.Marshal(msg); err != nil {
-				panic(fmt.Sprintf("failed to marshal BigQueryExport to bytes: %s", err))
-			}
-		}
-		row["BigQueryExports"] = bqExports
 	}
 
 	if inv.GetHistoryOptions().GetUseInvocationTimestamp() {
