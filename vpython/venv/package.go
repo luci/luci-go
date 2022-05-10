@@ -32,10 +32,6 @@ type PackageLoader interface {
 	// fingerprint (used for locking and naming).
 	Resolve(c context.Context, e *vpython.Environment) error
 
-	// Resolves a single package for the bootstrapped Python interpreter.
-	// Works similarly to Resolve().
-	ResolveInterpreter(c context.Context, pkg *vpython.Spec_Package) error
-
 	// Ensure installs the supplied packages into root.
 	//
 	// The packages will have been previously resolved via Resolve.

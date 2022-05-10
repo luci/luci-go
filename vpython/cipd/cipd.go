@@ -133,29 +133,6 @@ func (pl *PackageLoader) resolveWithOpts(c context.Context, opts cipd.ClientOpti
 	return nil
 }
 
-// ResolveInterpreter implements venv.PackageLoader.
-func (pl *PackageLoader) ResolveInterpreter(c context.Context, pkg *vpython.Spec_Package) error {
-	client, err := cipd.NewClient(pl.Options)
-	if err != nil {
-		return errors.Annotate(err, "failed to generate CIPD client").Err()
-	}
-	defer client.Close(c)
-
-	pkgName, err := template.DefaultExpander().Expand(pkg.Name)
-	if err != nil {
-		return errors.Annotate(err, "failed to expand python package name").Err()
-	}
-
-	pin, err := client.ResolveVersion(c, pkgName, pkg.Version)
-	if err != nil {
-		return errors.Annotate(err, "failed to reoslve python package version").Err()
-	}
-
-	pkg.Name = pin.PackageName
-	pkg.Version = pin.InstanceID
-	return nil
-}
-
 // Ensure implement venv.PackageLoader.
 //
 // The packages must be valid (PackageIsComplete). If they aren't, Ensure will
