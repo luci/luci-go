@@ -1,17 +1,126 @@
+{{define "style"}}
+.pagination-col-left {
+  width: 40px;
+  font-size: 30px;
+  border-right: 1px solid #e0e0e0;
+}
+
+.pagination-col-right {
+  width: 40px;
+  font-size: 30px;
+  border-left: 1px solid #e0e0e0;
+}
+{{end}}
+
 {{define "content"}}
 
 {{template "breadcrumbs" .}}
 
 <div class="container">
   <div class="row align-items-center pb-3">
+    <div class="pagination-col-left nav" title="Previous actuation">
+      <a class="nav-link {{if .OlderHref}}active{{else}}disabled{{end}}"
+         href="{{.OlderHref}}">&#10094;</a>
+    </div>
+
     <div class="col">
-      <h3 id="asset-title">{{template "assetTitle" .Ref}}</h3>
+      <div class="row align-items-center">
+        <div class="col-9">
+          <h3 id="asset-title">
+            {{template "assetTitle" .Ref}}
+            <small class="text-muted">Actuation {{.Overview.ID.Text}}</small>
+          </h3>
+        </div>
+
+        <div class="col-3">
+          <div class="row">
+            <div class="col">Outcome</div>
+            <div class="col">
+              <span class="badge {{.Overview.BadgeClass}}">{{.Overview.Outcome}}</span>
+            </div>
+          </div>
+
+          <div class="row">
+            <div class="col">Started</div>
+            <div class="col">{{template "linkHref" .Overview.Age}}</div>
+          </div>
+
+          <div class="row">
+            <div class="col">Actuation</div>
+            <div class="col">{{template "linkHref" .Overview.Actuation}}</div>
+          </div>
+
+          <div class="row">
+            <div class="col">Log</div>
+            <div class="col">{{template "linkHref" .Overview.Log}}</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="pagination-col-right nav" title="Next actuation">
+      <a class="nav-link {{if .NewerHref}}active{{else}}disabled{{end}}"
+         href="{{.NewerHref}}">&#10095;</a>
     </div>
   </div>
 
-  <div>
-    TODO
+  <div class="row">
+    <div class="col">
+      <div class="accordion">
+
+        <div class="accordion-item">
+          <h2 class="accordion-header" id="iac-commit-heading">
+            <button class="accordion-button" type="button"
+              data-bs-toggle="collapse"
+              data-bs-target="#iac-commit-body"
+              aria-expanded="true"
+              aria-controls="iac-commit-body">
+              IaC commit
+            </button>
+          </h2>
+          <div id="iac-commit-body"
+            class="accordion-collapse collapse show"
+            aria-labelledby="iac-commit-heading">
+            <div class="accordion-body">
+
+              <div><b>Commit: </b>
+                <a href="{{.Overview.Commit.Subject.Href}}" target="_blank">
+                {{.Overview.Commit.Rev}}
+                </a>
+              </div>
+              <div><b>Author: </b>{{.Overview.Commit.AuthorEmail}}</div>
+              <hr class="mt-2 mb-3">
+              <pre>{{.Overview.Commit.CommitMessage}}</pre>
+
+            </div>
+          </div>
+        </div>
+
+        <div class="accordion-item">
+          <h2 class="accordion-header" id="changes-heading">
+            <button class="accordion-button" type="button"
+              data-bs-toggle="collapse"
+              data-bs-target="#changes-body"
+              aria-expanded="true"
+              aria-controls="changes-body">
+              Traffic shifts
+            </button>
+          </h2>
+          <div id="changes-body"
+            class="accordion-collapse collapse show"
+            aria-labelledby="changes-heading">
+            <div class="accordion-body">
+              TODO
+            </div>
+          </div>
+        </div>
+
+
+      </div>
+    </div>
   </div>
+
+
 </div>
 
 {{end}}

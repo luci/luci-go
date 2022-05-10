@@ -178,7 +178,7 @@ func (op *ActuationBeginOp) maybeUpdateHistory(entry *modelpb.AssetHistory) {
 	// we can emit the log record right now. Otherwise we'll keep the prepared log
 	// record cached in the Asset entity and commit it in EndActuation when we
 	// know the actuation outcome.
-	if !isActuateDecision(entry.Decision.Decision) {
+	if !IsActuateDecision(entry.Decision.Decision) {
 		asset.LastHistoryID = entry.HistoryId
 		op.history = append(op.history, entry)
 	}
@@ -220,7 +220,7 @@ func (op *ActuationBeginOp) Apply(ctx context.Context) (map[string]*modelpb.Actu
 	// Embed this Actuation snapshot into Asset entities.
 	for _, ent := range op.assets {
 		ent.Asset.LastActuation = op.actuation
-		if isActuateDecision(ent.Asset.LastDecision.Decision) {
+		if IsActuateDecision(ent.Asset.LastDecision.Decision) {
 			ent.Asset.LastActuateActuation = ent.Asset.LastActuation
 			ent.Asset.LastActuateDecision = ent.Asset.LastDecision
 		}

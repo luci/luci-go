@@ -31,7 +31,7 @@ func shouldRecordHistory(next, prev *modelpb.AssetHistory) bool {
 	switch {
 	case nextDecision != prevDecision:
 		return true // changes are always interesting
-	case isActuateDecision(nextDecision):
+	case IsActuateDecision(nextDecision):
 		return true // active actuations are also always interesting
 	case nextDecision == modelpb.ActuationDecision_SKIP_UPTODATE:
 		return false // repeating UPTODATE decisions are boring, it is steady state

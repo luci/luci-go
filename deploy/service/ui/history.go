@@ -22,12 +22,12 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
-	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/server/router"
 	"go.chromium.org/luci/server/templates"
 
 	"go.chromium.org/luci/deploy/api/modelpb"
 	"go.chromium.org/luci/deploy/api/rpcpb"
+	"go.chromium.org/luci/deploy/service/model"
 )
 
 // actuationOutcome is an outcome of an actuation of a single asset.
@@ -144,6 +144,8 @@ type historyOverview struct {
 	Outcome    actuationOutcome // summary of what happened
 	TableClass string           // CSS class for the table row
 	BadgeClass string           // CSS class for the state cell
+	Actuation  linkHref         // link to the actuator invocation (e.g. build)
+	Log        linkHref         // link to the concrete actuation log
 }
 
 func deriveHistoryOverview(asset *modelpb.Asset, rec *modelpb.AssetHistory) *historyOverview {
@@ -155,10 +157,35 @@ func deriveHistoryOverview(asset *modelpb.Asset, rec *modelpb.AssetHistory) *his
 		Age:     timestampHref(rec.Actuation.Created, "", ""),
 		Commit:  getCommitDetails(rec.Actuation.Deployment),
 		Outcome: deriveOutcome(rec),
+		Actuation: linkHref{
+			Text:   "link",
+			Href:   buildbucketHref(rec.Actuation.Actuator),
+			Target: "_blank",
+		},
 	}
 	out.TableClass = out.Outcome.tableClass()
 	out.BadgeClass = out.Outcome.badgeClass()
+
+	if model.IsActuateDecision(rec.Decision.GetDecision()) {
+		out.Log = linkHref{
+			Text:   "link",
+			Href:   rec.Actuation.LogUrl,
+			Target: "_blank",
+		}
+	}
+
 	return out
+}
+
+func parseHistoryID(historyID string) (int64, error) {
+	id, err := strconv.ParseInt(historyID, 10, 64)
+	if err != nil {
+		return 0, status.Errorf(codes.InvalidArgument, "Bad history ID %q: %s", historyID, err)
+	}
+	if id <= 0 {
+		return 0, status.Errorf(codes.InvalidArgument, "Bad history ID %q: must be non-negative", historyID)
+	}
+	return id, nil
 }
 
 // historyListingPage renders the history listing page.
@@ -168,11 +195,8 @@ func (ui *UI) historyListingPage(ctx *router.Context, assetID string) error {
 	latest := int64(0)
 	if latestVal := ctx.Request.FormValue("latest"); latestVal != "" {
 		var err error
-		if latest, err = strconv.ParseInt(latestVal, 10, 64); err != nil {
-			return status.Errorf(codes.InvalidArgument, "Bad 'latest' value %q: %s", latestVal, err)
-		}
-		if latest < 0 {
-			return status.Errorf(codes.InvalidArgument, "Bad 'latest' value %q: must be non-negative", latestVal)
+		if latest, err = parseHistoryID(latestVal); err != nil {
+			return err
 		}
 	}
 
@@ -223,18 +247,55 @@ func (ui *UI) historyListingPage(ctx *router.Context, assetID string) error {
 
 // historyEntryPage renders a page with a single actuation history entry.
 func (ui *UI) historyEntryPage(ctx *router.Context, assetID, historyID string) error {
-	entryID, err := strconv.ParseInt(historyID, 10, 64)
+	entryID, err := parseHistoryID(historyID)
 	if err != nil {
-		return errors.Annotate(err, "not a valid history entry ID").Err()
+		return err
+	}
+
+	assetHistory, err := ui.assets.ListAssetHistory(ctx.Context, &rpcpb.ListAssetHistoryRequest{
+		AssetId:         assetID,
+		LatestHistoryId: entryID,
+		Limit:           2, // to see if we have the previous one for the pager
+	})
+	if err != nil {
+		return err
+	}
+
+	// We allow to ask for the current unfinished actuation. That way it is
+	// possible to send a permanent HTTP link to the currently executing actuation
+	// in notifications. It will "transform" into the historical link once the
+	// actuation finishes.
+	var entry *modelpb.AssetHistory
+	switch {
+	case assetHistory.Current != nil && assetHistory.Current.HistoryId == entryID:
+		entry = assetHistory.Current
+	case len(assetHistory.History) > 0 && assetHistory.History[0].HistoryId == entryID:
+		entry = assetHistory.History[0]
+	default:
+		return status.Errorf(codes.NotFound, "Actuation #%d doesn't exist: either it hasn't started yet or it was already deleted.", entryID)
 	}
 
 	ref := assetRefFromID(assetID)
+	overview := deriveHistoryOverview(assetHistory.Asset, entry)
 
-	// TODO: Implement.
+	newerHref := ""
+	if assetHistory.LastRecordedHistoryId > entryID {
+		newerHref = fmt.Sprintf("/a/%s/history/%d", assetID, entryID+1)
+	}
+
+	olderHref := ""
+	if len(assetHistory.History) == 2 {
+		olderHref = fmt.Sprintf("/a/%s/history/%d", assetID, entryID-1)
+	}
+
+	// TODO: Add GAE-specific details.
 
 	templates.MustRender(ctx.Context, ctx.Writer, "pages/history-entry.html", map[string]interface{}{
 		"Breadcrumbs": historyEntryBreadcrumbs(ref, entryID),
 		"Ref":         ref,
+		"Overview":    overview,
+		"NewerHref":   newerHref,
+		"OlderHref":   olderHref,
 	})
 	return nil
 }

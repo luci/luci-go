@@ -113,7 +113,7 @@ func (a *Actuation) AssetIDs() []string {
 func (a *Actuation) ActuatedAssetIDs() []string {
 	ids := make([]string, 0, len(a.Decisions.GetDecisions()))
 	for id, decision := range a.Decisions.GetDecisions() {
-		if isActuateDecision(decision.Decision) {
+		if IsActuateDecision(decision.Decision) {
 			ids = append(ids, id)
 		}
 	}

@@ -136,7 +136,8 @@ func fetchAssets(ctx context.Context, assets []string, shouldExist bool) (map[st
 	return assetMap, nil
 }
 
-func isActuateDecision(d modelpb.ActuationDecision_Decision) bool {
+// IsActuateDecision returns true for ACTUATE_* decisions.
+func IsActuateDecision(d modelpb.ActuationDecision_Decision) bool {
 	return d == modelpb.ActuationDecision_ACTUATE_STALE ||
 		d == modelpb.ActuationDecision_ACTUATE_FORCE
 }
