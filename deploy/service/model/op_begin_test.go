@@ -111,6 +111,16 @@ func TestActuationBeginOp(t *testing.T) {
 		ctx, _ := testclock.UseTime(context.Background(), now)
 		ctx = memory.Use(ctx)
 
+		So(datastore.Put(ctx, &Asset{
+			ID:                  "apps/app1",
+			Asset:               &modelpb.Asset{Id: "apps/app1"},
+			ConsecutiveFailures: 111,
+		}, &Asset{
+			ID:                  "apps/app2",
+			Asset:               &modelpb.Asset{Id: "apps/app2"},
+			ConsecutiveFailures: 222,
+		}), ShouldBeNil)
+
 		Convey("Executing", func() {
 			op, err := NewActuationBeginOp(ctx, []string{"apps/app1", "apps/app2"}, &modelpb.Actuation{
 				Id:         "actuation-id",
@@ -209,6 +219,7 @@ func TestActuationBeginOp(t *testing.T) {
 					},
 				},
 			})
+			So(assets["apps/app1"].ConsecutiveFailures, ShouldEqual, 0) // was reset
 
 			So(assets["apps/app2"].Asset, ShouldResembleProto, &modelpb.Asset{
 				Id:                   "apps/app2",
@@ -234,6 +245,7 @@ func TestActuationBeginOp(t *testing.T) {
 					},
 				},
 			})
+			So(assets["apps/app2"].ConsecutiveFailures, ShouldEqual, 222) // unchanged
 
 			// Made correct history records.
 			So(assets["apps/app1"].LastHistoryID, ShouldEqual, 1)
@@ -310,6 +322,10 @@ func TestActuationBeginOp(t *testing.T) {
 			So(storedActuation.State, ShouldEqual, modelpb.Actuation_SUCCEEDED)
 			So(storedActuation.Created.Equal(now), ShouldBeTrue)
 			So(storedActuation.Expiry.IsZero(), ShouldBeTrue)
+
+			// Reset ConsecutiveFailures counter.
+			assets, _ := fetchAssets(ctx, []string{"apps/app1"}, true)
+			So(assets["apps/app1"].ConsecutiveFailures, ShouldEqual, 0)
 		})
 
 		Convey("Skipping up-to-date", func() {
@@ -404,6 +420,7 @@ func TestActuationBeginOp(t *testing.T) {
 					},
 				},
 			})
+			So(assets["apps/app1"].ConsecutiveFailures, ShouldEqual, 0)
 		})
 
 		Convey("Broken", func() {
@@ -467,6 +484,10 @@ func TestActuationBeginOp(t *testing.T) {
 			So(storedActuation.State, ShouldEqual, modelpb.Actuation_FAILED)
 			So(storedActuation.Created.Equal(now), ShouldBeTrue)
 			So(storedActuation.Expiry.IsZero(), ShouldBeTrue)
+
+			// Incremented ConsecutiveFailures counter.
+			assets, _ := fetchAssets(ctx, []string{"apps/app1"}, true)
+			So(assets["apps/app1"].ConsecutiveFailures, ShouldEqual, 112)
 		})
 	})
 }

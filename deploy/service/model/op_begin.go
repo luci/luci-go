@@ -34,8 +34,6 @@ import (
 
 // defaultActuationTimeout is the default value for `actuation_timeout` in
 // DeploymentConfig.
-//
-// TODO: Implement expiration cron job or something.
 const defaultActuationTimeout = 20 * time.Minute
 
 // ActuationBeginOp collects changes to transactionally apply to the datastore
@@ -154,6 +152,7 @@ func (op *ActuationBeginOp) maybeUpdateHistory(entry *modelpb.AssetHistory) {
 	// supposed to close it) probably crashed, i.e. it didn't call EndActuation.
 	// We should record this observation in the history log.
 	if asset.IsRecordingHistoryEntry() {
+		asset.ConsecutiveFailures += 1
 		asset.HistoryEntry.Actuation.State = modelpb.Actuation_EXPIRED
 		asset.HistoryEntry.Actuation.Finished = timestamppb.New(op.now)
 		asset.HistoryEntry.Actuation.Status = &statuspb.Status{
@@ -161,6 +160,16 @@ func (op *ActuationBeginOp) maybeUpdateHistory(entry *modelpb.AssetHistory) {
 			Message: "the actuation probably crashed: the asset was picked up by another actuation",
 		}
 		op.history = append(op.history, asset.finalizeHistoryEntry())
+	}
+
+	// Update the failure counter if the outcome is already known. For ACTUATE_*
+	// decisions it will be updated in EndActuation.
+	switch {
+	case entry.Decision.Decision == modelpb.ActuationDecision_SKIP_BROKEN:
+		asset.ConsecutiveFailures += 1
+	case !IsActuateDecision(entry.Decision.Decision):
+		// This is SKIP_UPTODATE, SKIP_DISABLED, SKIP_LOCKED.
+		asset.ConsecutiveFailures = 0
 	}
 
 	// Skip repeating uninteresting decisions e.g. a series of UPTODATE decisions.

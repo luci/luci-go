@@ -63,6 +63,12 @@ func TestExpireActuations(t *testing.T) {
 			return ent.Actuation
 		}
 
+		assetEntity := func(assetID string) *Asset {
+			ent := &Asset{ID: assetID}
+			So(datastore.Get(ctx, ent), ShouldBeNil)
+			return ent
+		}
+
 		history := func(assetID string, historyID int64) *modelpb.AssetHistory {
 			ent := &AssetHistory{
 				ID:     historyID,
@@ -76,8 +82,9 @@ func TestExpireActuations(t *testing.T) {
 
 		Convey("Expiry works", func() {
 			So(datastore.Put(ctx, &Asset{
-				ID:    "apps/app-1",
-				Asset: &modelpb.Asset{Id: "apps/app-1"},
+				ID:                  "apps/app-1",
+				Asset:               &modelpb.Asset{Id: "apps/app-1"},
+				ConsecutiveFailures: 111,
 			}), ShouldBeNil)
 
 			// Start the new actuation.
@@ -117,6 +124,9 @@ func TestExpireActuations(t *testing.T) {
 
 			// There's a history record for the asset being actuated.
 			So(history("apps/app-1", 1).Actuation.State, ShouldEqual, modelpb.Actuation_EXPIRED)
+
+			// Failure counter incremented.
+			So(assetEntity("apps/app-1").ConsecutiveFailures, ShouldEqual, 112)
 		})
 	})
 }

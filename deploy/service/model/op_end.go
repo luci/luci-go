@@ -107,6 +107,9 @@ func (op *ActuationEndOp) HandleActuatedState(ctx context.Context, assetID strin
 	if reported.Status.GetCode() == int32(codes.OK) {
 		ent.Asset.ReportedState = reported
 		ent.Asset.ActuatedState = reported
+		ent.ConsecutiveFailures = 0
+	} else {
+		ent.ConsecutiveFailures += 1
 	}
 
 	// If was recording a history entry, close and commit it.
@@ -128,6 +131,7 @@ func (op *ActuationEndOp) Expire(ctx context.Context) {
 
 	// Append historic records to all assets that were being actuated.
 	for _, asset := range op.assets {
+		asset.ConsecutiveFailures += 1
 		if asset.IsRecordingHistoryEntry() {
 			asset.HistoryEntry.Actuation = op.actuation.Actuation
 			op.history = append(op.history, asset.finalizeHistoryEntry())

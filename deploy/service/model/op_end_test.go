@@ -91,6 +91,7 @@ func TestActuationEndOp(t *testing.T) {
 							Id: "phony-to-be-overridden",
 						},
 					},
+					ConsecutiveFailures: 111,
 				},
 				{
 					ID: "apps/app2",
@@ -116,6 +117,7 @@ func TestActuationEndOp(t *testing.T) {
 							Id: "phony-to-be-untouched",
 						},
 					},
+					ConsecutiveFailures: 222,
 				},
 			}
 			So(datastore.Put(ctx, assets), ShouldBeNil)
@@ -219,6 +221,7 @@ func TestActuationEndOp(t *testing.T) {
 						},
 					},
 				})
+				So(assets["apps/app1"].ConsecutiveFailures, ShouldEqual, 0)
 
 				// Created the history entity.
 				rec := AssetHistory{ID: 124, Parent: datastore.KeyForObj(ctx, assets["apps/app1"])}
@@ -248,6 +251,7 @@ func TestActuationEndOp(t *testing.T) {
 						Id: "phony-to-be-untouched",
 					},
 				})
+				So(assets["apps/app2"].ConsecutiveFailures, ShouldEqual, 222)
 			})
 
 			Convey("Failed", func() {
@@ -319,6 +323,7 @@ func TestActuationEndOp(t *testing.T) {
 						Message: "status boom",
 					},
 				})
+				So(assets["apps/app1"].ConsecutiveFailures, ShouldEqual, 112)
 
 				// Wasn't touched.
 				So(assets["apps/app2"].Asset, ShouldResembleProto, &modelpb.Asset{
@@ -335,6 +340,7 @@ func TestActuationEndOp(t *testing.T) {
 						Id: "another-actuation",
 					},
 				})
+				So(assets["apps/app2"].ConsecutiveFailures, ShouldEqual, 222)
 			})
 		})
 	})

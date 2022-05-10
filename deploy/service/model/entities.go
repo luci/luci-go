@@ -43,6 +43,12 @@ type Asset struct {
 	// the latest entry. Otherwise it is the currently recording one and its ID
 	// is LastHistoryID+1.
 	HistoryEntry *modelpb.AssetHistory
+
+	// ConsecutiveFailures counts how many actuations failed in a row.
+	//
+	// It is reset when an actuation succeeds or the asset is determined to be
+	// up-to-date, disabled, or locked.
+	ConsecutiveFailures int64 `gae:",noindex"`
 }
 
 // IsRecordingHistoryEntry is true if HistoryEntry is an uncommitted record.
