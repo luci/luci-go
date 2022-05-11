@@ -153,8 +153,22 @@ var api = (function() {
   };
 
   // Get all changeLogs.
-  exports.changeLogs = function() {
-    return call('auth.service.ChangeLogs', 'ListChangeLogs')
+  exports.changeLogs = function(target, revision, pageSize, pageToken) {
+    var q = {};
+    if (target) {
+      q['target'] = target;
+    }
+    if (revision) {
+      q['auth_db_rev'] = revision;
+    }
+    if (pageSize) {
+      q['page_size'] = pageSize;
+    }
+    if (pageToken) {
+      q['page_token'] = pageToken;
+    }
+
+    return call('auth.service.ChangeLogs', 'ListChangeLogs', q)
   }
 
   //// XSRF token utilities.
