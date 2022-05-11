@@ -257,7 +257,7 @@ func GetClientExtractorResult(c context.Context, inst *api.Instance) (*ClientExt
 	case err != nil:
 		return nil, transient.Tag.Apply(err)
 	case !r.Success:
-		return nil, errors.Reason("client extraction failed - %s", r.Error).Err()
+		return nil, errors.Reason("client extraction failed: %s", r.Error).Err()
 	}
 	out := &ClientExtractorResult{}
 	if err := r.ReadResult(out); err != nil {

@@ -30,6 +30,7 @@ import (
 	statuspb "google.golang.org/genproto/googleapis/rpc/status"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/auth/identity"
@@ -245,9 +246,9 @@ func TestMetadataUpdating(t *testing.T) {
 
 			// Update it a bit later.
 			tc.Add(time.Hour)
-			updated := *expected
+			updated := proto.Clone(expected).(*api.PrefixMetadata)
 			updated.Acls = nil
-			meta, err = callUpdate("user:top-owner@example.com", &updated)
+			meta, err = callUpdate("user:top-owner@example.com", updated)
 			So(err, ShouldBeNil)
 			So(meta, ShouldResembleProto, &api.PrefixMetadata{
 				Prefix:      "a/b",
@@ -1403,7 +1404,7 @@ func TestSearchInstances(t *testing.T) {
 				Package: "a/b",
 			})
 			So(grpc.Code(err), ShouldEqual, codes.InvalidArgument)
-			So(err, ShouldErrLike, "bad 'tags' - cannot be empty")
+			So(err, ShouldErrLike, "bad 'tags': cannot be empty")
 		})
 
 		Convey("Bad tag given", func() {
@@ -1412,7 +1413,7 @@ func TestSearchInstances(t *testing.T) {
 				Tags:    []*api.Tag{{Key: "", Value: "zz"}},
 			})
 			So(grpc.Code(err), ShouldEqual, codes.InvalidArgument)
-			So(err, ShouldErrLike, `bad tag in 'tags' - invalid tag key in ":zz"`)
+			So(err, ShouldErrLike, `bad tag in 'tags': invalid tag key in ":zz"`)
 		})
 
 		Convey("No access", func() {
@@ -2196,7 +2197,7 @@ func TestInstanceMetadata(t *testing.T) {
 					Metadata: md("k:" + strings.Repeat("z", 512*1024+1)),
 				})
 				So(grpc.Code(err), ShouldEqual, codes.InvalidArgument)
-				So(err, ShouldErrLike, `metadata with key "k" - the metadata value is too long`)
+				So(err, ShouldErrLike, `metadata with key "k": the metadata value is too long`)
 			})
 			Convey("DetachMetadata", func() {
 				_, err := impl.DetachMetadata(as("owner@example.com"), &api.DetachMetadataRequest{
@@ -2205,7 +2206,7 @@ func TestInstanceMetadata(t *testing.T) {
 					Metadata: md("k:" + strings.Repeat("z", 512*1024+1)),
 				})
 				So(grpc.Code(err), ShouldEqual, codes.InvalidArgument)
-				So(err, ShouldErrLike, `metadata with key "k" - the metadata value is too long`)
+				So(err, ShouldErrLike, `metadata with key "k": the metadata value is too long`)
 			})
 		})
 
@@ -2218,7 +2219,7 @@ func TestInstanceMetadata(t *testing.T) {
 				Metadata: m,
 			})
 			So(grpc.Code(err), ShouldEqual, codes.InvalidArgument)
-			So(err, ShouldErrLike, `metadata with key "k" - bad content-type "zzz zzz`)
+			So(err, ShouldErrLike, `metadata with key "k": bad content type "zzz zzz`)
 		})
 
 		Convey("Bad fingerprint in DetachMetadata", func() {
@@ -3351,7 +3352,7 @@ func TestClientBootstrap(t *testing.T) {
 				code, body := call(goodPkg, goodIID, "json")
 				So(code, ShouldEqual, http.StatusOK)
 				So(body, ShouldEqual, `{
-  "error_message": "the client binary is not available - some processors failed to process this instance: cipd_client_binary:v1",
+  "error_message": "the client binary is not available: some processors failed to process this instance: cipd_client_binary:v1",
   "status": "ERROR"
 }`)
 			})

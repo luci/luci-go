@@ -512,7 +512,7 @@ func (d *fsDest) CreateFile(ctx context.Context, name string, opts CreateFileOpt
 	defer func() {
 		if !disarm {
 			if clErr := file.Close(); clErr != nil {
-				logging.Warningf(ctx, "Failed to close %s when cleaning up - %s", writeTo, clErr)
+				logging.Warningf(ctx, "Failed to close %s when cleaning up: %s", writeTo, clErr)
 			}
 			if d.atomic {
 				// Nuke the unfinished temp file. The error is logged inside.
@@ -546,7 +546,7 @@ func (d *fsDest) CreateFile(ctx context.Context, name string, opts CreateFileOpt
 
 			if !opts.ModTime.IsZero() {
 				if chErr := os.Chtimes(writeTo, opts.ModTime, opts.ModTime); chErr != nil {
-					logging.Warningf(ctx, "[data-loss] cannot set mtime for %s - %s", path, chErr)
+					logging.Warningf(ctx, "[data-loss] cannot set mtime for %s: %s", path, chErr)
 				}
 			}
 

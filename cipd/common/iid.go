@@ -69,7 +69,7 @@ func ValidateInstanceID(iid string, v HashAlgoValidation) (err error) {
 	if err == nil {
 		return
 	}
-	return fmt.Errorf("not a valid package instance ID %q - %s", iid, err)
+	return fmt.Errorf("not a valid package instance ID %q: %s", iid, err)
 }
 
 // ValidateObjectRef returns a grpc-annotated error if the given object ref is
@@ -146,7 +146,7 @@ func InstanceIDToObjectRef(iid string) *api.ObjectRef {
 	// Legacy SHA1-based instances use hex(sha1) as instance ID, 40 chars.
 	if len(iid) == 40 {
 		if err := checkIsHex(iid); err != nil {
-			panic(fmt.Errorf("not a valid package instance ID %q - %s", iid, err))
+			panic(fmt.Errorf("not a valid package instance ID %q: %s", iid, err))
 		}
 		return &api.ObjectRef{
 			HashAlgo:  api.HashAlgo_SHA1,
@@ -155,7 +155,7 @@ func InstanceIDToObjectRef(iid string) *api.ObjectRef {
 	}
 	ref, err := decodeObjectRef(iid)
 	if err != nil {
-		panic(fmt.Errorf("not a valid package instance ID %q - %s", iid, err))
+		panic(fmt.Errorf("not a valid package instance ID %q: %s", iid, err))
 	}
 	return ref
 }
@@ -187,7 +187,7 @@ func encodeObjectRef(ref *api.ObjectRef) string {
 
 	blob, err := hex.DecodeString(ref.HexDigest)
 	if err != nil {
-		panic(fmt.Errorf("bad hex digest %q - %s", ref.HexDigest, err))
+		panic(fmt.Errorf("bad hex digest %q: %s", ref.HexDigest, err))
 	}
 	blob = append(blob, byte(ref.HashAlgo))
 	return base64.RawURLEncoding.EncodeToString(blob)
@@ -205,7 +205,7 @@ func decodeObjectRef(iid string) (*api.ObjectRef, error) {
 	blob, err := base64.RawURLEncoding.DecodeString(iid)
 	switch {
 	case err != nil:
-		return nil, fmt.Errorf("cannot base64 decode - %s", err)
+		return nil, fmt.Errorf("cannot base64 decode: %s", err)
 	case len(blob) == 0:
 		return nil, fmt.Errorf("empty")
 	case len(blob)%2 != 1: // 1 byte for hashAlgo, the rest is the digest

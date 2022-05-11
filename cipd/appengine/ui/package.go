@@ -34,7 +34,7 @@ func packagePage(c *router.Context, pkg string) error {
 	// Validate the package name and grab a parent prefix to list siblings.
 	pkg = strings.Trim(pkg, "/")
 	if err := common.ValidatePackageName(pkg); err != nil {
-		return status.Errorf(codes.InvalidArgument, "bad package name - %s", err)
+		return status.Errorf(codes.InvalidArgument, "bad package name: %s", err)
 	}
 	pfx := ""
 	if i := strings.LastIndex(pkg, "/"); i != -1 {

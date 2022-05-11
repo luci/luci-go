@@ -31,7 +31,7 @@ import (
 func prefixListingPage(c *router.Context, pfx string) error {
 	pfx, err := common.ValidatePackagePrefix(strings.Trim(pfx, "/"))
 	if err != nil {
-		return status.Errorf(codes.InvalidArgument, "bad prefix - %s", err)
+		return status.Errorf(codes.InvalidArgument, "bad prefix: %s", err)
 	}
 
 	svc := state(c.Context).services

@@ -126,7 +126,7 @@ func (ex *Extractor) Run(ctx context.Context, path string) (*ExtractionResult, e
 		fullReader{reader},
 		make([]byte, bufferSize))
 	if err == nil && copied != size {
-		err = errors.Reason("unexpected file size - expecting %d bytes, read %d bytes", size, copied).Err()
+		err = errors.Reason("unexpected file size: expecting %d bytes, read %d bytes", size, copied).Err()
 	}
 
 	// If asked to rewind to a faraway offset (should be rare), just restart the

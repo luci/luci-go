@@ -137,7 +137,7 @@ func GetBootstrapExtractorResult(ctx context.Context, inst *model.Instance) (*Bo
 	case err != nil:
 		return nil, transient.Tag.Apply(err)
 	case !r.Success:
-		return nil, errors.Reason("bootstrap extraction failed - %s", r.Error).Err()
+		return nil, errors.Reason("bootstrap extraction failed: %s", r.Error).Err()
 	}
 	out := &BootstrapExtractorResult{}
 	if err := r.ReadResult(out); err != nil {

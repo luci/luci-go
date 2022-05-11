@@ -238,7 +238,7 @@ func TestValidateUpdate(t *testing.T) {
 					},
 				},
 			}
-			So(validateUpdate(ctx, req, nil), ShouldErrLike, `cipd.package: invalid package name: "infra/${platform}"`)
+			So(validateUpdate(ctx, req, nil), ShouldErrLike, `cipd.package: invalid package name "infra/${platform}"`)
 
 			// build.status and agent.output.status conflicts
 			req.Build.Status = pb.Status_CANCELED

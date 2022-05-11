@@ -203,13 +203,13 @@ func (f *fsImpl) CaseSensitive() (bool, error) {
 		f.caseSens, f.caseSensErr = func() (sens bool, err error) {
 			tmp, err := ioutil.TempFile(f.root, ".test_case.*.tmp")
 			if err != nil {
-				return false, fmt.Errorf("cannot create a file to test case-sensitivity of %q - %s", f.root, err)
+				return false, fmt.Errorf("cannot create a file to test case-sensitivity of %q: %s", f.root, err)
 			}
 			tmp.Close() // for Windows, it may act funny with open files
 
 			defer func() {
 				if rmErr := os.Remove(tmp.Name()); err == nil && rmErr != nil {
-					err = fmt.Errorf("failed to remove the file during case-sensitivity test of %q - %s", f.root, rmErr)
+					err = fmt.Errorf("failed to remove the file during case-sensitivity test of %q: %s", f.root, rmErr)
 				}
 			}()
 
@@ -220,7 +220,7 @@ func (f *fsImpl) CaseSensitive() (bool, error) {
 			case os.IsNotExist(err):
 				return true, nil // case-sensitive
 			default:
-				return false, fmt.Errorf("cannot stat file when testing case-sensitivity of %q - %s", f.root, err)
+				return false, fmt.Errorf("cannot stat file when testing case-sensitivity of %q: %s", f.root, err)
 			}
 		}()
 	})
@@ -358,7 +358,7 @@ func (f *fsImpl) EnsureFile(ctx context.Context, path string, write func(*os.Fil
 	defer func() {
 		if !ok {
 			if err := os.Remove(temp); err != nil && !os.IsNotExist(err) {
-				logging.Warningf(ctx, "fs: failed to remove %q - %s", temp, err)
+				logging.Warningf(ctx, "fs: failed to remove %q: %s", temp, err)
 			}
 		}
 	}()
@@ -403,7 +403,7 @@ func (f *fsImpl) EnsureSymlink(ctx context.Context, path string, target string) 
 	// by the nuclear version (e.g replacing a non-empty directory).
 	if err := f.Replace(ctx, temp, path); err != nil {
 		if err2 := os.Remove(temp); err2 != nil && !os.IsNotExist(err2) {
-			logging.Warningf(ctx, "fs: failed to remove %q - %s", temp, err2)
+			logging.Warningf(ctx, "fs: failed to remove %q: %s", temp, err2)
 		}
 		return err
 	}
@@ -430,7 +430,7 @@ func (f *fsImpl) EnsureFileGone(ctx context.Context, path string) error {
 		if _, err2 := f.moveToTrash(ctx, path); err2 != nil {
 			return err // prefer the original error
 		}
-		logging.Debugf(ctx, "fs: trashed %q instead of removing - %s", path, err)
+		logging.Debugf(ctx, "fs: trashed %q instead of removing: %s", path, err)
 		return nil
 	}
 }
@@ -446,11 +446,11 @@ func (f *fsImpl) EnsureDirectoryGone(ctx context.Context, path string) error {
 		if os.IsNotExist(err) {
 			return nil
 		}
-		logging.Warningf(ctx, "fs: failed to rename directory %q - %s", path, err)
+		logging.Warningf(ctx, "fs: failed to rename directory %q: %s", path, err)
 		return err
 	}
 	if err = os.RemoveAll(temp); err != nil {
-		logging.Warningf(ctx, "fs: failed to remove directory %q - %s", temp, err)
+		logging.Warningf(ctx, "fs: failed to remove directory %q: %s", temp, err)
 		return err
 	}
 	return nil
@@ -520,7 +520,7 @@ func (f *fsImpl) Replace(ctx context.Context, oldpath, newpath string) error {
 
 		default:
 			// Failing in a weird way.
-			logging.Warningf(ctx, "fs: failed to rename(%q, %q) - %s", oldpath, newpath, err)
+			logging.Warningf(ctx, "fs: failed to rename(%q, %q): %s", oldpath, newpath, err)
 			return err
 		}
 
@@ -528,7 +528,7 @@ func (f *fsImpl) Replace(ctx context.Context, oldpath, newpath string) error {
 		// try again a bit later. This will replace what they have created, screw
 		// them.
 		if err2 := waiter(); err2 != nil {
-			logging.Warningf(ctx, "fs: giving up trying to rename(%q, %q) - %s", oldpath, newpath, err)
+			logging.Warningf(ctx, "fs: giving up trying to rename(%q, %q): %s", oldpath, newpath, err)
 			return err // prefer the original error
 		}
 	}
@@ -540,7 +540,7 @@ func (f *fsImpl) CleanupTrash(ctx context.Context) {
 		if os.IsNotExist(err) {
 			return
 		}
-		logging.Warningf(ctx, "fs: cannot read the trash dir - %s", err)
+		logging.Warningf(ctx, "fs: cannot read the trash dir: %s", err)
 		return
 	}
 
@@ -587,13 +587,13 @@ func (f *fsImpl) moveToTrash(ctx context.Context, path string) (string, error) {
 		}
 	}
 	if err := os.MkdirAll(f.trash, 0777); err != nil {
-		logging.Warningf(ctx, "fs: can't create trash directory %q - %s", f.trash, err)
+		logging.Warningf(ctx, "fs: can't create trash directory %q: %s", f.trash, err)
 		return "", err
 	}
 	trashed := filepath.Join(f.trash, pseudoRand())
 	if err := mostlyAtomicRename(path, trashed); err != nil {
 		if !os.IsNotExist(err) {
-			logging.Warningf(ctx, "fs: failed to rename(%q, %q) when trashing - %s", path, trashed, err)
+			logging.Warningf(ctx, "fs: failed to rename(%q, %q) when trashing: %s", path, trashed, err)
 		}
 		return "", err
 	}
@@ -605,11 +605,11 @@ func (f *fsImpl) moveToTrash(ctx context.Context, path string) (string, error) {
 // Logs errors.
 func (f *fsImpl) cleanupTrashedFile(ctx context.Context, path string) error {
 	if filepath.Dir(path) != f.trash {
-		return fmt.Errorf("not in the trash - %q", path)
+		return fmt.Errorf("not in the trash: %q", path)
 	}
 	err := os.RemoveAll(path)
 	if err != nil {
-		logging.Debugf(ctx, "fs: failed to cleanup trashed file - %s", err)
+		logging.Debugf(ctx, "fs: failed to cleanup trashed file: %s", err)
 	}
 	return err
 }

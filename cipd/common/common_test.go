@@ -187,12 +187,12 @@ func TestValidateSubdir(t *testing.T) {
 		subdir string
 		err    string
 	}{
-		{"windows", "folder\\thing", "backslashes not allowed"},
+		{"windows", "folder\\thing", "backslashes are not allowed"},
 		{"windows drive", "c:/foo/bar", `colons are not allowed`},
-		{"messy", "some/../thing", `"some/../thing" (should be "thing")`},
-		{"relative", "../something", `invalid "."`},
-		{"single relative", "./something", `"./something" (should be "something")`},
-		{"absolute", "/etc", `absolute paths not allowed`},
+		{"messy", "some/../thing", `"some/../thing": should be simplified to "thing"`},
+		{"relative", "../something", `contains disallowed dot-path prefix`},
+		{"single relative", "./something", `"./something": should be simplified to "something"`},
+		{"absolute", "/etc", `absolute paths are not allowed`},
 		{"extra slashes", "//foo/bar", `bad subdir`},
 	}
 
@@ -243,11 +243,11 @@ func TestValidatePrincipalName(t *testing.T) {
 
 	Convey("ValidatePrincipalName not OK", t, func() {
 		cases := []struct{ p, err string }{
-			{"", "doesn't look like principal id"},
-			{":", "doesn't look like principal id"},
-			{":zzz", "doesn't look like principal id"},
-			{"group:", "doesn't look like principal id"},
-			{"user:", "doesn't look like principal id"},
+			{"", "doesn't look like a principal id"},
+			{":", "doesn't look like a principal id"},
+			{":zzz", "doesn't look like a principal id"},
+			{"group:", "doesn't look like a principal id"},
+			{"user:", "doesn't look like a principal id"},
 			{"anonymous:zzz", `bad value "zzz" for identity kind "anonymous"`},
 			{"user:abc", `bad value "abc" for identity kind "user"`},
 		}
@@ -310,7 +310,7 @@ func TestNormalizePrefixMetadata(t *testing.T) {
 			Acls: []*api.PrefixMetadata_ACL{
 				{Role: api.Role_READER, Principals: []string{":"}},
 			},
-		}), ShouldErrLike, `in ACL entry for role READER - ":" doesn't look like principal id`)
+		}), ShouldErrLike, `in ACL entry for role READER: ":" doesn't look like a principal id`)
 	})
 }
 

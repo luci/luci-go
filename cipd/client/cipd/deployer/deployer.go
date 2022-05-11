@@ -319,7 +319,7 @@ func (d *deployerImpl) DeployInstance(ctx context.Context, subdir string, inst p
 	// different packages at the same time is still allowed.
 	unlock, err := d.lockPkg(ctx, pkgPath)
 	if err != nil {
-		return common.Pin{}, fmt.Errorf("failed to acquire FS lock - %s", err)
+		return common.Pin{}, fmt.Errorf("failed to acquire FS lock: %s", err)
 	}
 	defer unlock()
 
@@ -607,7 +607,7 @@ func (d *deployerImpl) RepairDeployed(ctx context.Context, subdir string, pin co
 	// See the comment about locking in DeployInstance.
 	unlock, err := d.lockPkg(ctx, p.packagePath)
 	if err != nil {
-		return fmt.Errorf("failed to acquire FS lock - %s", err)
+		return fmt.Errorf("failed to acquire FS lock: %s", err)
 	}
 	defer unlock()
 
@@ -910,7 +910,7 @@ func (d *deployerImpl) lockPkg(ctx context.Context, pkgPath string) (unlock func
 	}
 	return func() {
 		if uerr := unlocker(); uerr != nil {
-			logging.Warningf(ctx, "Failed to release FS lock - %s", err)
+			logging.Warningf(ctx, "Failed to release FS lock: %s", err)
 		}
 	}, nil
 }
@@ -1542,7 +1542,7 @@ func removeEmptyTrees(ctx context.Context, root string, empty stringset.Set) {
 		if err != nil {
 			// Note: this should never really happen, since there are checks outside
 			// of this function.
-			logging.Warningf(ctx, "Can't compute %q relative to %q - %s", dir, root, err)
+			logging.Warningf(ctx, "Can't compute %q relative to %q: %s", dir, root, err)
 			return true
 		}
 
@@ -1565,7 +1565,7 @@ func removeEmptyTrees(ctx context.Context, root string, empty stringset.Set) {
 		return verboseEmpty.Has(candidate)
 	})
 	if err != nil {
-		logging.Warningf(ctx, "Failed to cleanup empty directories under %q - %s", root, err)
+		logging.Warningf(ctx, "Failed to cleanup empty directories under %q: %s", root, err)
 	}
 }
 

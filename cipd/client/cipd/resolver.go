@@ -153,10 +153,10 @@ func (r *Resolver) ResolveAllPlatforms(ctx context.Context, file *ensure.File) (
 		}
 		if me, ok := err.(errors.MultiError); ok {
 			for _, err := range me {
-				merr = append(merr, fmt.Errorf("when resolving %s - %s", plat, err))
+				merr = append(merr, fmt.Errorf("when resolving %s: %s", plat, err))
 			}
 		} else {
-			merr = append(merr, fmt.Errorf("when resolving %s - %s", plat, err))
+			merr = append(merr, fmt.Errorf("when resolving %s: %s", plat, err))
 		}
 	}
 	if len(merr) != 0 {

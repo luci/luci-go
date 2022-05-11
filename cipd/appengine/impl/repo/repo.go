@@ -176,7 +176,7 @@ func (impl *repoImpl) GetInheritedPrefixMetadata(c context.Context, r *api.Prefi
 
 	r.Prefix, err = common.ValidatePackagePrefix(r.Prefix)
 	if err != nil {
-		return nil, status.Errorf(codes.InvalidArgument, "bad 'prefix' - %s", err)
+		return nil, status.Errorf(codes.InvalidArgument, "bad 'prefix': %s", err)
 	}
 
 	var metas []*api.PrefixMetadata
@@ -209,7 +209,7 @@ func (impl *repoImpl) UpdatePrefixMetadata(c context.Context, r *api.PrefixMetad
 
 	// Normalize and validate format of the PrefixMetadata.
 	if err := common.NormalizePrefixMetadata(r); err != nil {
-		return nil, status.Errorf(codes.InvalidArgument, "bad prefix metadata - %s", err)
+		return nil, status.Errorf(codes.InvalidArgument, "bad prefix metadata: %s", err)
 	}
 
 	// The root metadata is not modifiable through API.
@@ -262,7 +262,7 @@ func (impl *repoImpl) GetRolesInPrefix(c context.Context, r *api.PrefixRequest) 
 
 	r.Prefix, err = common.ValidatePackagePrefix(r.Prefix)
 	if err != nil {
-		return nil, status.Errorf(codes.InvalidArgument, "bad 'prefix' - %s", err)
+		return nil, status.Errorf(codes.InvalidArgument, "bad 'prefix': %s", err)
 	}
 
 	metas, err := impl.meta.GetMetadata(c, r.Prefix)
@@ -353,7 +353,7 @@ func (impl *repoImpl) ListPrefix(c context.Context, r *api.ListPrefixRequest) (r
 
 	r.Prefix, err = common.ValidatePackagePrefix(r.Prefix)
 	if err != nil {
-		return nil, status.Errorf(codes.InvalidArgument, "bad 'prefix' - %s", err)
+		return nil, status.Errorf(codes.InvalidArgument, "bad 'prefix': %s", err)
 	}
 
 	// Discover prefixes the caller is allowed to see. Note that checking only
@@ -511,7 +511,7 @@ func (impl *repoImpl) setPackageHidden(c context.Context, r *api.PackageRequest,
 	defer func() { err = grpcutil.GRPCifyAndLogErr(c, err) }()
 
 	if err := common.ValidatePackageName(r.Package); err != nil {
-		return nil, status.Errorf(codes.InvalidArgument, "bad 'package' - %s", err)
+		return nil, status.Errorf(codes.InvalidArgument, "bad 'package': %s", err)
 	}
 	if _, err := impl.checkRole(c, r.Package, api.Role_OWNER); err != nil {
 		return nil, err
@@ -534,7 +534,7 @@ func (impl *repoImpl) DeletePackage(c context.Context, r *api.PackageRequest) (r
 	defer func() { err = grpcutil.GRPCifyAndLogErr(c, err) }()
 
 	if err := common.ValidatePackageName(r.Package); err != nil {
-		return nil, status.Errorf(codes.InvalidArgument, "bad 'package' - %s", err)
+		return nil, status.Errorf(codes.InvalidArgument, "bad 'package': %s", err)
 	}
 
 	// DeletePackage RPC, due to its potential severity, is limited only to
@@ -564,10 +564,10 @@ func (impl *repoImpl) RegisterInstance(c context.Context, r *api.Instance) (resp
 
 	// Validate the request format.
 	if err := common.ValidatePackageName(r.Package); err != nil {
-		return nil, status.Errorf(codes.InvalidArgument, "bad 'package' - %s", err)
+		return nil, status.Errorf(codes.InvalidArgument, "bad 'package': %s", err)
 	}
 	if err := common.ValidateObjectRef(r.Instance, common.KnownHash); err != nil {
-		return nil, status.Errorf(codes.InvalidArgument, "bad 'instance' - %s", err)
+		return nil, status.Errorf(codes.InvalidArgument, "bad 'instance': %s", err)
 	}
 
 	// Check ACLs.
@@ -826,12 +826,12 @@ type paginatedQueryOpts struct {
 func (impl *repoImpl) paginatedQuery(c context.Context, opts paginatedQueryOpts) (out []*api.Instance, nextTok string, err error) {
 	// Validate the request, decode the cursor.
 	if err := common.ValidatePackageName(opts.Package); err != nil {
-		return nil, "", status.Errorf(codes.InvalidArgument, "bad 'package' - %s", err)
+		return nil, "", status.Errorf(codes.InvalidArgument, "bad 'package': %s", err)
 	}
 
 	switch {
 	case opts.PageSize < 0:
-		return nil, "", status.Errorf(codes.InvalidArgument, "bad 'page_size' %d - it should be non-negative", opts.PageSize)
+		return nil, "", status.Errorf(codes.InvalidArgument, "bad 'page_size' %d: it should be non-negative", opts.PageSize)
 	case opts.PageSize == 0:
 		opts.PageSize = 100
 	}
@@ -839,7 +839,7 @@ func (impl *repoImpl) paginatedQuery(c context.Context, opts paginatedQueryOpts)
 	var cursor datastore.Cursor
 	if opts.PageToken != "" {
 		if cursor, err = datastore.DecodeCursor(c, opts.PageToken); err != nil {
-			return nil, "", status.Errorf(codes.InvalidArgument, "bad 'page_token' - %s", err)
+			return nil, "", status.Errorf(codes.InvalidArgument, "bad 'page_token': %s", err)
 		}
 	}
 
@@ -935,13 +935,13 @@ func (impl *repoImpl) CreateRef(c context.Context, r *api.Ref) (resp *emptypb.Em
 
 	// Validate the request.
 	if err := common.ValidatePackageRef(r.Name); err != nil {
-		return nil, status.Errorf(codes.InvalidArgument, "bad 'name' - %s", err)
+		return nil, status.Errorf(codes.InvalidArgument, "bad 'name': %s", err)
 	}
 	if err := common.ValidatePackageName(r.Package); err != nil {
-		return nil, status.Errorf(codes.InvalidArgument, "bad 'package' - %s", err)
+		return nil, status.Errorf(codes.InvalidArgument, "bad 'package': %s", err)
 	}
 	if err := common.ValidateObjectRef(r.Instance, common.KnownHash); err != nil {
-		return nil, status.Errorf(codes.InvalidArgument, "bad 'instance' - %s", err)
+		return nil, status.Errorf(codes.InvalidArgument, "bad 'instance': %s", err)
 	}
 
 	// Check ACLs.
@@ -967,10 +967,10 @@ func (impl *repoImpl) DeleteRef(c context.Context, r *api.DeleteRefRequest) (res
 
 	// Validate the request.
 	if err := common.ValidatePackageRef(r.Name); err != nil {
-		return nil, status.Errorf(codes.InvalidArgument, "bad 'name' - %s", err)
+		return nil, status.Errorf(codes.InvalidArgument, "bad 'name': %s", err)
 	}
 	if err := common.ValidatePackageName(r.Package); err != nil {
-		return nil, status.Errorf(codes.InvalidArgument, "bad 'package' - %s", err)
+		return nil, status.Errorf(codes.InvalidArgument, "bad 'package': %s", err)
 	}
 
 	// Check ACLs.
@@ -996,7 +996,7 @@ func (impl *repoImpl) ListRefs(c context.Context, r *api.ListRefsRequest) (resp 
 
 	// Validate the request.
 	if err := common.ValidatePackageName(r.Package); err != nil {
-		return nil, status.Errorf(codes.InvalidArgument, "bad 'package' - %s", err)
+		return nil, status.Errorf(codes.InvalidArgument, "bad 'package': %s", err)
 	}
 
 	// Check ACLs.
@@ -1026,12 +1026,12 @@ func (impl *repoImpl) ListRefs(c context.Context, r *api.ListRefsRequest) (resp 
 
 func validateTagList(tags []*api.Tag) error {
 	if len(tags) == 0 {
-		return status.Errorf(codes.InvalidArgument, "bad 'tags' - cannot be empty")
+		return status.Errorf(codes.InvalidArgument, "bad 'tags': cannot be empty")
 	}
 	for _, t := range tags {
 		kv := common.JoinInstanceTag(t)
 		if err := common.ValidateInstanceTag(kv); err != nil {
-			return status.Errorf(codes.InvalidArgument, "bad tag in 'tags' - %s", err)
+			return status.Errorf(codes.InvalidArgument, "bad tag in 'tags': %s", err)
 		}
 	}
 	return nil
@@ -1039,10 +1039,10 @@ func validateTagList(tags []*api.Tag) error {
 
 func validateMultiTagReq(pkg string, inst *api.ObjectRef, tags []*api.Tag) error {
 	if err := common.ValidatePackageName(pkg); err != nil {
-		return status.Errorf(codes.InvalidArgument, "bad 'package' - %s", err)
+		return status.Errorf(codes.InvalidArgument, "bad 'package': %s", err)
 	}
 	if err := common.ValidateObjectRef(inst, common.KnownHash); err != nil {
-		return status.Errorf(codes.InvalidArgument, "bad 'instance' - %s", err)
+		return status.Errorf(codes.InvalidArgument, "bad 'instance': %s", err)
 	}
 	return validateTagList(tags)
 }
@@ -1112,23 +1112,23 @@ func (impl *repoImpl) AttachMetadata(c context.Context, r *api.AttachMetadataReq
 
 	// Validate the request.
 	if err := common.ValidatePackageName(r.Package); err != nil {
-		return nil, status.Errorf(codes.InvalidArgument, "bad 'package' - %s", err)
+		return nil, status.Errorf(codes.InvalidArgument, "bad 'package': %s", err)
 	}
 	if err := common.ValidateObjectRef(r.Instance, common.KnownHash); err != nil {
-		return nil, status.Errorf(codes.InvalidArgument, "bad 'instance' - %s", err)
+		return nil, status.Errorf(codes.InvalidArgument, "bad 'instance': %s", err)
 	}
 	if len(r.Metadata) == 0 {
-		return nil, status.Errorf(codes.InvalidArgument, "bad 'metadata' - cannot be empty")
+		return nil, status.Errorf(codes.InvalidArgument, "bad 'metadata': cannot be empty")
 	}
 	for _, m := range r.Metadata {
 		if err := common.ValidateInstanceMetadataKey(m.Key); err != nil {
-			return nil, status.Errorf(codes.InvalidArgument, "bad 'metadata' key - %s", err)
+			return nil, status.Errorf(codes.InvalidArgument, "bad 'metadata' key: %s", err)
 		}
 		if err := common.ValidateInstanceMetadataLen(len(m.Value)); err != nil {
-			return nil, status.Errorf(codes.InvalidArgument, "metadata with key %q - %s", m.Key, err)
+			return nil, status.Errorf(codes.InvalidArgument, "metadata with key %q: %s", m.Key, err)
 		}
 		if err := common.ValidateContentType(m.ContentType); err != nil {
-			return nil, status.Errorf(codes.InvalidArgument, "metadata with key %q - %s", m.Key, err)
+			return nil, status.Errorf(codes.InvalidArgument, "metadata with key %q: %s", m.Key, err)
 		}
 	}
 
@@ -1155,27 +1155,27 @@ func (impl *repoImpl) DetachMetadata(c context.Context, r *api.DetachMetadataReq
 
 	// Validate the request.
 	if err := common.ValidatePackageName(r.Package); err != nil {
-		return nil, status.Errorf(codes.InvalidArgument, "bad 'package' - %s", err)
+		return nil, status.Errorf(codes.InvalidArgument, "bad 'package': %s", err)
 	}
 	if err := common.ValidateObjectRef(r.Instance, common.KnownHash); err != nil {
-		return nil, status.Errorf(codes.InvalidArgument, "bad 'instance' - %s", err)
+		return nil, status.Errorf(codes.InvalidArgument, "bad 'instance': %s", err)
 	}
 	if len(r.Metadata) == 0 {
-		return nil, status.Errorf(codes.InvalidArgument, "bad 'metadata' - cannot be empty")
+		return nil, status.Errorf(codes.InvalidArgument, "bad 'metadata': cannot be empty")
 	}
 	for _, m := range r.Metadata {
 		// If have a fingerprint, ignore Key and Value. Otherwise we need them
 		// to calculate the fingerprint on the fly in model.DetachMetadata.
 		if m.Fingerprint != "" {
 			if err := common.ValidateInstanceMetadataFingerprint(m.Fingerprint); err != nil {
-				return nil, status.Errorf(codes.InvalidArgument, "bad metadata - %s", err)
+				return nil, status.Errorf(codes.InvalidArgument, "bad metadata: %s", err)
 			}
 		} else {
 			if err := common.ValidateInstanceMetadataKey(m.Key); err != nil {
-				return nil, status.Errorf(codes.InvalidArgument, "bad metadata key - %s", err)
+				return nil, status.Errorf(codes.InvalidArgument, "bad metadata key: %s", err)
 			}
 			if err := common.ValidateInstanceMetadataLen(len(m.Value)); err != nil {
-				return nil, status.Errorf(codes.InvalidArgument, "metadata with key %q - %s", m.Key, err)
+				return nil, status.Errorf(codes.InvalidArgument, "metadata with key %q: %s", m.Key, err)
 			}
 		}
 	}
@@ -1207,18 +1207,18 @@ func (impl *repoImpl) ListMetadata(c context.Context, r *api.ListMetadataRequest
 
 	// Validate the request.
 	if err := common.ValidatePackageName(r.Package); err != nil {
-		return nil, status.Errorf(codes.InvalidArgument, "bad 'package' - %s", err)
+		return nil, status.Errorf(codes.InvalidArgument, "bad 'package': %s", err)
 	}
 	if err := common.ValidateObjectRef(r.Instance, common.KnownHash); err != nil {
-		return nil, status.Errorf(codes.InvalidArgument, "bad 'instance' - %s", err)
+		return nil, status.Errorf(codes.InvalidArgument, "bad 'instance': %s", err)
 	}
 	for _, k := range r.Keys {
 		if err := common.ValidateInstanceMetadataKey(k); err != nil {
-			return nil, status.Errorf(codes.InvalidArgument, "bad metadata key - %s", err)
+			return nil, status.Errorf(codes.InvalidArgument, "bad metadata key: %s", err)
 		}
 	}
 	if r.PageToken != "" {
-		return nil, status.Errorf(codes.InvalidArgument, "bad 'page_token' - not supported yet")
+		return nil, status.Errorf(codes.InvalidArgument, "bad 'page_token': not supported yet")
 	}
 
 	// Check ACLs.
@@ -1263,10 +1263,10 @@ func (impl *repoImpl) ResolveVersion(c context.Context, r *api.ResolveVersionReq
 
 	// Validate the request.
 	if err := common.ValidatePackageName(r.Package); err != nil {
-		return nil, status.Errorf(codes.InvalidArgument, "bad 'package' - %s", err)
+		return nil, status.Errorf(codes.InvalidArgument, "bad 'package': %s", err)
 	}
 	if err := common.ValidateInstanceVersion(r.Version); err != nil {
-		return nil, status.Errorf(codes.InvalidArgument, "bad 'version' - %s", err)
+		return nil, status.Errorf(codes.InvalidArgument, "bad 'version': %s", err)
 	}
 
 	// Check ACLs.
@@ -1289,10 +1289,10 @@ func (impl *repoImpl) GetInstanceURL(c context.Context, r *api.GetInstanceURLReq
 
 	// Validate the request.
 	if err := common.ValidatePackageName(r.Package); err != nil {
-		return nil, status.Errorf(codes.InvalidArgument, "bad 'package' - %s", err)
+		return nil, status.Errorf(codes.InvalidArgument, "bad 'package': %s", err)
 	}
 	if err := common.ValidateObjectRef(r.Instance, common.KnownHash); err != nil {
-		return nil, status.Errorf(codes.InvalidArgument, "bad 'instance' - %s", err)
+		return nil, status.Errorf(codes.InvalidArgument, "bad 'instance': %s", err)
 	}
 
 	// Check ACLs.
@@ -1322,10 +1322,10 @@ func (impl *repoImpl) DescribeInstance(c context.Context, r *api.DescribeInstanc
 
 	// Validate the request.
 	if err := common.ValidatePackageName(r.Package); err != nil {
-		return nil, status.Errorf(codes.InvalidArgument, "bad 'package' - %s", err)
+		return nil, status.Errorf(codes.InvalidArgument, "bad 'package': %s", err)
 	}
 	if err := common.ValidateObjectRef(r.Instance, common.KnownHash); err != nil {
-		return nil, status.Errorf(codes.InvalidArgument, "bad 'instance' - %s", err)
+		return nil, status.Errorf(codes.InvalidArgument, "bad 'instance': %s", err)
 	}
 
 	// Check ACLs.
@@ -1400,13 +1400,13 @@ func (impl *repoImpl) DescribeClient(c context.Context, r *api.DescribeClientReq
 
 	// Validate the request.
 	if err := common.ValidatePackageName(r.Package); err != nil {
-		return nil, status.Errorf(codes.InvalidArgument, "bad 'package' - %s", err)
+		return nil, status.Errorf(codes.InvalidArgument, "bad 'package': %s", err)
 	}
 	if !processing.IsClientPackage(r.Package) {
-		return nil, status.Errorf(codes.InvalidArgument, "bad 'package' - not a CIPD client package")
+		return nil, status.Errorf(codes.InvalidArgument, "bad 'package': not a CIPD client package")
 	}
 	if err := common.ValidateObjectRef(r.Instance, common.KnownHash); err != nil {
-		return nil, status.Errorf(codes.InvalidArgument, "bad 'instance' - %s", err)
+		return nil, status.Errorf(codes.InvalidArgument, "bad 'instance': %s", err)
 	}
 
 	// Check ACLs.
@@ -1477,22 +1477,22 @@ func (impl *repoImpl) DescribeBootstrapBundle(ctx context.Context, r *api.Descri
 	// Validate the request.
 	r.Prefix, err = common.ValidatePackagePrefix(r.Prefix)
 	if err != nil {
-		return nil, status.Errorf(codes.InvalidArgument, "bad 'prefix' - %s", err)
+		return nil, status.Errorf(codes.InvalidArgument, "bad 'prefix': %s", err)
 	}
 	seen := stringset.New(len(r.Variants))
 	for _, v := range r.Variants {
 		if strings.Contains(v, "/") {
-			return nil, status.Errorf(codes.InvalidArgument, "bad 'variant' - %q contains \"/\"", v)
+			return nil, status.Errorf(codes.InvalidArgument, "bad 'variant' %q: contains \"/\"", v)
 		}
 		if err := common.ValidatePackageName(r.Prefix + "/" + v); err != nil {
-			return nil, status.Errorf(codes.InvalidArgument, "bad 'variant' - %s", err)
+			return nil, status.Errorf(codes.InvalidArgument, "bad 'variant': %s", err)
 		}
 		if !seen.Add(v) {
 			return nil, status.Errorf(codes.InvalidArgument, "variant %q was given more than once", v)
 		}
 	}
 	if err := common.ValidateInstanceVersion(r.Version); err != nil {
-		return nil, status.Errorf(codes.InvalidArgument, "bad 'version' - %s", err)
+		return nil, status.Errorf(codes.InvalidArgument, "bad 'version': %s", err)
 	}
 
 	// Check ACLs.
@@ -1798,11 +1798,11 @@ func (impl *repoImpl) handleClientBootstrap(ctx *router.Context) error {
 	case err == datastore.ErrNoSuchEntity:
 		return status.Errorf(codes.NotFound, "the client binary is not extracted yet, try later")
 	case err != nil: // fatal
-		return status.Errorf(codes.NotFound, "the client binary is not available - %s", err)
+		return status.Errorf(codes.NotFound, "the client binary is not available: %s", err)
 	}
 	ref, err := res.ToObjectRef()
 	if err != nil {
-		return status.Errorf(codes.NotFound, "malformed ref to the client binary - %s", err)
+		return status.Errorf(codes.NotFound, "malformed ref to the client binary: %s", err)
 	}
 
 	// Ask CAS for a signed URL to the client binary and redirect there.
@@ -1996,7 +1996,7 @@ func (impl *repoImpl) handleLegacyClientInfo(ctx *router.Context) error {
 	case codes.FailedPrecondition:
 		return replyWithError(w, "NOT_EXTRACTED_YET", "the client binary is not extracted yet, try later")
 	case codes.Aborted:
-		return replyWithError(w, "ERROR", "the client binary is not available - %s", grpc.ErrorDesc(err))
+		return replyWithError(w, "ERROR", "the client binary is not available: %s", grpc.ErrorDesc(err))
 	default:
 		return err // the legacy client recognizes other codes just fine
 	}

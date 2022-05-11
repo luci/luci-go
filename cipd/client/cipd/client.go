@@ -145,7 +145,7 @@ var (
 	// ClientPackage is a package with the CIPD client. Used during self-update.
 	ClientPackage = "infra/tools/cipd/${platform}"
 	// UserAgent is HTTP user agent string for CIPD client.
-	UserAgent = "cipd 2.6.3"
+	UserAgent = "cipd 2.6.4"
 )
 
 func init() {
@@ -427,7 +427,7 @@ func (opts *ClientOptions) LoadFromEnv(getEnv func(string) string) error {
 	if opts.CacheDir == "" {
 		if v := getEnv(EnvCacheDir); v != "" {
 			if !filepath.IsAbs(v) {
-				return fmt.Errorf("bad %s: not an absolute path - %s", EnvCacheDir, v)
+				return fmt.Errorf("bad %s %q: not an absolute path", EnvCacheDir, v)
 			}
 			opts.CacheDir = v
 		}
@@ -436,7 +436,7 @@ func (opts *ClientOptions) LoadFromEnv(getEnv func(string) string) error {
 		if v := getEnv(EnvMaxThreads); v != "" {
 			maxThreads, err := strconv.Atoi(v)
 			if err != nil {
-				return fmt.Errorf("bad %s: not an integer - %s", EnvMaxThreads, v)
+				return fmt.Errorf("bad %s %q: not an integer", EnvMaxThreads, v)
 			}
 			opts.MaxThreads = maxThreads
 		}
@@ -445,7 +445,7 @@ func (opts *ClientOptions) LoadFromEnv(getEnv func(string) string) error {
 		if v := getEnv(EnvParallelDownloads); v != "" {
 			val, err := strconv.Atoi(v)
 			if err != nil {
-				return fmt.Errorf("bad %s: not an integer - %s", EnvParallelDownloads, v)
+				return fmt.Errorf("bad %s %q: not an integer", EnvParallelDownloads, v)
 			}
 			// CIPD_PARALLEL_DOWNLOADS == 0 means "no parallel work at all", this is
 			// conveyed by negatives in opts.ParallelDownloads (because 0 was already
@@ -465,7 +465,7 @@ func (opts *ClientOptions) LoadFromEnv(getEnv func(string) string) error {
 	if opts.PluginHost != nil && len(opts.AdmissionPlugin) == 0 {
 		if v := getEnv(EnvAdmissionPlugin); v != "" {
 			if err := json.Unmarshal([]byte(v), &opts.AdmissionPlugin); err != nil {
-				return fmt.Errorf("bad %s: not a valid JSON - %q", EnvAdmissionPlugin, v)
+				return fmt.Errorf("bad %s %q: not a valid JSON", EnvAdmissionPlugin, v)
 			}
 		}
 	}
@@ -496,7 +496,7 @@ func NewClient(opts ClientOptions) (Client, error) {
 	}
 	parsed, err := url.Parse(opts.ServiceURL)
 	if err != nil {
-		return nil, fmt.Errorf("not a valid URL %q - %s", opts.ServiceURL, err)
+		return nil, fmt.Errorf("not a valid URL %q: %s", opts.ServiceURL, err)
 	}
 	if parsed.Path != "" && parsed.Path != "/" {
 		return nil, fmt.Errorf("expecting a root URL, not %q", opts.ServiceURL)

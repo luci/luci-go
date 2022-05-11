@@ -155,7 +155,7 @@ func (c *TagCache) ResolveExtractedObjectRef(ctx context.Context, pin common.Pin
 
 	ignoreBrokenObjectRef := func(iid string) *api.ObjectRef {
 		if err := common.ValidateInstanceID(iid, common.AnyHash); err != nil {
-			logging.Errorf(ctx, "Stored object_ref %q for %q in %s is invalid, ignoring it - %s", iid, fileName, pin, err)
+			logging.Errorf(ctx, "Stored object_ref %q for %q in %s is invalid, ignoring it: %s", iid, fileName, pin, err)
 			return nil
 		}
 		return common.InstanceIDToObjectRef(iid)

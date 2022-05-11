@@ -216,10 +216,10 @@ func TestResolveAllPlatforms(t *testing.T) {
 			lines = append(lines, err.Error())
 		}
 		So(lines, ShouldResemble, []string{
-			`when resolving windows-amd64 - failed to resolve pkg1/windows-amd64@latest (line 3): no version "latest"`,
-			`when resolving windows-amd64 - failed to resolve pkg2/windows-amd64@latest (line 4): no version "latest"`,
-			`when resolving linux-amd64 - failed to resolve pkg1/linux-amd64@latest (line 3): no version "latest"`,
-			`when resolving linux-amd64 - failed to resolve pkg2/linux-amd64@latest (line 4): no version "latest"`,
+			`when resolving windows-amd64: failed to resolve pkg1/windows-amd64@latest (line 3): no version "latest"`,
+			`when resolving windows-amd64: failed to resolve pkg2/windows-amd64@latest (line 4): no version "latest"`,
+			`when resolving linux-amd64: failed to resolve pkg1/linux-amd64@latest (line 3): no version "latest"`,
+			`when resolving linux-amd64: failed to resolve pkg2/linux-amd64@latest (line 4): no version "latest"`,
 		})
 	})
 }

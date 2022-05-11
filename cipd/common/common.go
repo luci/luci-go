@@ -56,7 +56,8 @@ var (
 	tagValRe    = regexp.MustCompile(tagValReStr)
 
 	// packageRefRe is a regular expression for a ref.
-	packageRefRe = regexp.MustCompile(`^[a-z0-9_./\-]{1,256}$`)
+	packageRefReStr = `^[a-z0-9_./\-]{1,256}$`
+	packageRefRe    = regexp.MustCompile(packageRefReStr)
 
 	// Parameters for instance metadata key-value validation.
 	metadataKeyMaxLen = 400
@@ -102,11 +103,11 @@ func ValidatePackagePrefix(p string) (string, error) {
 // ValidatePackagePrefix.
 func validatePathishString(p, title string) error {
 	if !packageNameRe.MatchString(p) {
-		return fmt.Errorf("invalid %s: %q", title, p)
+		return fmt.Errorf("invalid %s %q: must be a slash-separated path where each component matches \"[a-z0-9_\\-\\.]+\"", title, p)
 	}
 	for _, chunk := range strings.Split(p, "/") {
 		if strings.Count(chunk, ".") == len(chunk) {
-			return fmt.Errorf("invalid %s (dots-only names are forbidden): %q", title, p)
+			return fmt.Errorf("invalid %s %q: dots-only path components are forbidden", title, p)
 		}
 	}
 	return nil
@@ -123,10 +124,10 @@ func ValidatePin(pin Pin, v HashAlgoValidation) error {
 // ValidatePackageRef returns error if a string doesn't look like a valid ref.
 func ValidatePackageRef(r string) error {
 	if ValidateInstanceID(r, AnyHash) == nil {
-		return fmt.Errorf("invalid ref name (looks like an instance ID): %q", r)
+		return fmt.Errorf("invalid ref name %q: it looks like an instance ID causing ambiguities", r)
 	}
 	if !packageRefRe.MatchString(r) {
-		return fmt.Errorf("invalid ref name: %q", r)
+		return fmt.Errorf("invalid ref name %q: must match %q", r, packageRefReStr)
 	}
 	return nil
 }
@@ -145,11 +146,11 @@ func ParseInstanceTag(t string) (*api.Tag, error) {
 	case len(t) > 400:
 		return nil, fmt.Errorf("the tag is too long, should be <=400 chars: %q", t)
 	case !tagKeyRe.MatchString(chunks[0]):
-		return nil, fmt.Errorf("invalid tag key in %q (should match %q)", t, tagKeyReStr)
+		return nil, fmt.Errorf("invalid tag key in %q: should match %q", t, tagKeyReStr)
 	case strings.HasPrefix(chunks[1], " ") || strings.HasSuffix(chunks[1], " "):
-		return nil, fmt.Errorf("invalid tag value in %q (should not start or end with ' ')", t)
+		return nil, fmt.Errorf("invalid tag value in %q: should not start or end with ' '", t)
 	case !tagValRe.MatchString(chunks[1]):
-		return nil, fmt.Errorf("invalid tag value in %q (should match %q)", t, tagValReStr)
+		return nil, fmt.Errorf("invalid tag value in %q: should match %q", t, tagValReStr)
 	default:
 		return &api.Tag{
 			Key:   chunks[0],
@@ -187,7 +188,7 @@ func ValidateInstanceVersion(v string) error {
 		ValidateInstanceTag(v) == nil {
 		return nil
 	}
-	return fmt.Errorf("bad version (not an instance ID, a ref or a tag): %q", v)
+	return fmt.Errorf("bad version %q: not an instance ID, a ref or a tag", v)
 }
 
 // ValidateSubdir returns an error if the string can't be used as an ensure-file
@@ -197,19 +198,19 @@ func ValidateSubdir(subdir string) error {
 		return nil
 	}
 	if strings.Contains(subdir, "\\") {
-		return fmt.Errorf(`bad subdir: backslashes not allowed (use "/"): %q`, subdir)
+		return fmt.Errorf(`bad subdir %q: backslashes are not allowed (use "/")`, subdir)
 	}
 	if strings.Contains(subdir, ":") {
-		return fmt.Errorf(`bad subdir: colons are not allowed: %q`, subdir)
+		return fmt.Errorf(`bad subdir %q: colons are not allowed`, subdir)
 	}
 	if cleaned := path.Clean(subdir); cleaned != subdir {
-		return fmt.Errorf("bad subdir: %q (should be %q)", subdir, cleaned)
+		return fmt.Errorf("bad subdir %q: should be simplified to %q", subdir, cleaned)
 	}
 	if strings.HasPrefix(subdir, "./") || strings.HasPrefix(subdir, "../") || subdir == "." {
-		return fmt.Errorf(`bad subdir: invalid ".": %q`, subdir)
+		return fmt.Errorf(`bad subdir %q: contains disallowed dot-path prefix`, subdir)
 	}
 	if strings.HasPrefix(subdir, "/") {
-		return fmt.Errorf("bad subdir: absolute paths not allowed: %q", subdir)
+		return fmt.Errorf("bad subdir %q: absolute paths are not allowed", subdir)
 	}
 	return nil
 }
@@ -221,7 +222,7 @@ func ValidateSubdir(subdir string) error {
 func ValidatePrincipalName(p string) error {
 	chunks := strings.Split(p, ":")
 	if len(chunks) != 2 || chunks[0] == "" || chunks[1] == "" {
-		return fmt.Errorf("%q doesn't look like principal id (<type>:<id>)", p)
+		return fmt.Errorf("%q doesn't look like a principal id (<type>:<id>)", p)
 	}
 	if chunks[0] == "group" {
 		return nil // any non-empty group name is OK
@@ -261,7 +262,7 @@ func NormalizePrefixMetadata(m *api.PrefixMetadata) error {
 		sort.Strings(acl.Principals)
 		for _, p := range acl.Principals {
 			if err := ValidatePrincipalName(p); err != nil {
-				return fmt.Errorf("in ACL entry for role %s - %s", acl.Role, err)
+				return fmt.Errorf("in ACL entry for role %s: %s", acl.Role, err)
 			}
 		}
 	}
@@ -364,10 +365,10 @@ func (p PinMapBySubdir) ToSlice() PinSliceBySubdir {
 // as an instance metadata key.
 func ValidateInstanceMetadataKey(key string) error {
 	if len(key) > metadataKeyMaxLen {
-		return fmt.Errorf("the metadata key is too long, should be <=%d chars: %q", metadataKeyMaxLen, key)
+		return fmt.Errorf("invalid metadata key %q: too long, should be <=%d chars", key, metadataKeyMaxLen)
 	}
 	if !metadataKeyRe.MatchString(key) {
-		return fmt.Errorf("invalid metadata key (should match %q): %q", metadataKeyReStr, key)
+		return fmt.Errorf("invalid metadata key %q: should match %q", key, metadataKeyReStr)
 	}
 	return nil
 }
@@ -376,7 +377,7 @@ func ValidateInstanceMetadataKey(key string) error {
 // metadata payload is too large.
 func ValidateInstanceMetadataLen(l int) error {
 	if l > MetadataMaxLen {
-		return fmt.Errorf("the metadata value is too long, should be <=%d bytes, got %d", MetadataMaxLen, l)
+		return fmt.Errorf("the metadata value is too long: should be <=%d bytes, got %d", MetadataMaxLen, l)
 	}
 	return nil
 }
@@ -388,11 +389,11 @@ func ValidateContentType(ct string) error {
 		return nil
 	}
 	if len(ct) > 400 {
-		return fmt.Errorf("the content type is too long, should be <=400 bytes, got %d", len(ct))
+		return fmt.Errorf("the content type is too long: should be <=400 bytes, got %d", len(ct))
 	}
 	_, _, err := mime.ParseMediaType(ct)
 	if err != nil {
-		return fmt.Errorf("bad content-type %q - %s", ct, err)
+		return fmt.Errorf("bad content type %q: %s", ct, err)
 	}
 	return nil
 }

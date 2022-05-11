@@ -56,25 +56,25 @@ var badEnsureFiles = []struct {
 	{
 		"windows subdir",
 		"@subdir folder\\thing",
-		`bad subdir: backslashes not allowed`,
+		`bad subdir "folder\\thing": backslashes are not allowed`,
 	},
 
 	{
 		"messy subdir",
 		"@subdir folder/../something",
-		`bad subdir: "folder/../something" (should be "something")`,
+		`bad subdir "folder/../something": should be simplified to "something"`,
 	},
 
 	{
 		"relative subdir",
 		"@subdir ../../something",
-		`bad subdir: invalid ".": "../../something"`,
+		`bad subdir "../../something": contains disallowed dot-path prefix`,
 	},
 
 	{
 		"absolute subdir",
 		"@subdir /etc",
-		`bad subdir: absolute paths not allowed`,
+		`bad subdir "/etc": absolute paths are not allowed`,
 	},
 
 	{

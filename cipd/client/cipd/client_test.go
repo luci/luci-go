@@ -526,7 +526,7 @@ func TestAttachingStuffWhenReady(t *testing.T) {
 		Convey("AttachMetadataWhenReady bad content type", func() {
 			So(client.AttachMetadataWhenReady(ctx, pin, []Metadata{
 				{Key: "k", ContentType: "zzz zzz"},
-			}), ShouldErrLike, "bad content-typ")
+			}), ShouldErrLike, "bad content type")
 		})
 	})
 }
