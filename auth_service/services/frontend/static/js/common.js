@@ -44,5 +44,13 @@ var common = (function () {
     return '/change_log?auth_db_rev=' + encodeURIComponent('' + rev);
   };
 
+  // Returns value of URL query parameter given its name.
+  exports.getQueryParameter = (name) => {
+    // See http://stackoverflow.com/a/5158301.
+    var match = new RegExp(
+      '[?&]' + name + '=([^&]*)').exec(window.location.search);
+    return match && decodeURIComponent(match[1].replace(/\+/g, ' '));
+  };
+
   return exports;
 })();

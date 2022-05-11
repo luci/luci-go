@@ -199,6 +199,12 @@ class ChangeLogContent {
 }
 
 window.onload = () => {
-  var changeLogContent = new ChangeLogContent('change-log-content')
+  var target = common.getQueryParameter('target');
+  var authDbRev = common.getQueryParameter('auth_db_rev');
+  if (authDbRev) {
+    authDbRev = parseInt(authDbRev);
+  }
+
+  var changeLogContent = new ChangeLogContent('change-log-content', target, authDbRev)
   changeLogContent.refresh();
 }
