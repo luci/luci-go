@@ -56,11 +56,13 @@ const parseTarget = (t) => {
 
 ////////////////////////////////////////////////////////////////////////////////
 class ChangeLogTable {
-  constructor(headerElement, contentElement, target, revision) {
+  constructor(headerElement, contentElement, modalElement, target, revision) {
     // Element for change log header.
     this.headerElement = document.getElementById(headerElement);
     // Element for change log table content.
     this.contentElement = document.getElementById(contentElement);
+    // Element for change log popup.
+    this.modalElement = document.getElementById(modalElement);
     // If set, limits change log queries to given target.
     this.target = target;
     // If set, limits change log queries to specific revision only.
@@ -210,7 +212,7 @@ class ChangeLogTable {
         // Clone and grab elements to modify.
         var clone = template.content.cloneNode(true);
         var rev = clone.querySelector('td.change-log-rev a');
-        var type = clone.querySelector('td.change-log-type');
+        var type = clone.querySelector('td.change-log-type span');
         var when = clone.querySelector('td.change-log-when');
         var who = clone.querySelector('td.change-log-who');
         var target = clone.querySelector('td.change-log-target a');
@@ -225,6 +227,10 @@ class ChangeLogTable {
         target.href = t.changeLogTargetURL;
         target.textContent = t.title;
 
+        type.addEventListener('click', ()=>{
+          this.presentChange(log);
+        });
+
         this.contentElement.appendChild(clone);
       } else {
         // TODO: Find another way to add changeLogContent because the
@@ -237,6 +243,65 @@ class ChangeLogTable {
     logs.map((log) => {
       addElement(log);
     });
+  }
+
+  // Shows a popup with details of a single change.
+  presentChange(change) {
+    // Given a change dict, returns text blob to show in "Change details" box.
+    const changeToTextBlob = (change) => {
+      const KNOWN_CHANGE_KEYS = [
+        'changeType',
+        'target',
+        'authDbRev',
+        'who',
+        'when',
+        'comment',
+        'appVersion'
+      ];
+
+      var text = '';
+
+      // First visit known keys present in all changes. That way they are always
+      // in top in the text representation (and in predefined order).
+      KNOWN_CHANGE_KEYS.forEach((key) => {
+        var val = change[key];
+        if (val) {
+          text += key + ': ' + val + '\n';
+        }
+      });
+
+      // Then visit the rest (in stable order).
+      var keys = Object.keys(change);
+      keys.sort();
+      keys.forEach((key) => {
+        if (KNOWN_CHANGE_KEYS.includes(key)) {
+          return;
+        }
+        var val = change[key];
+        if (val instanceof Array) {
+          if (val.length) {
+            text += key + ':\n';
+            val.forEach((item) => {
+              text += '  ' + item + '\n';
+            })
+          }
+        } else if (val) {
+          text += key + ': ' + val + '\n';
+        }
+      });
+
+      return text;
+    }
+
+    if (this.locked) {
+      return;
+    }
+
+    var details = this.modalElement.querySelector('#details-text');
+    details.textContent = changeToTextBlob(change);
+
+    var myModal = new bootstrap.Modal(this.modalElement);
+    myModal.show();
   }
 
   // Locks UI actions before AJAX.
@@ -257,7 +322,7 @@ window.onload = () => {
     authDbRev = parseInt(authDbRev);
   }
 
-  var changeLogTable = new ChangeLogTable('change-log-header', 'change-log-content', target, authDbRev)
+  var changeLogTable = new ChangeLogTable('change-log-header', 'change-log-content', 'change-log-details', target, authDbRev)
   changeLogTable.refresh();
   changeLogTable.updateHeader();
 }

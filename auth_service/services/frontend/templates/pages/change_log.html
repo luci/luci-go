@@ -9,7 +9,10 @@
     <td class="change-log-rev">
       <a href="#"></a>
     </td>
-    <td class="change-log-type"></td>
+    <td class="change-log-type">
+      <span class="view-change" style="cursor: pointer;">
+      </span>
+    </td>
     <td class="change-log-when"></td>
     <td class="change-log-who"></td>
     <td class="change-log-target">
@@ -57,6 +60,25 @@
       </li>
     </ul>
   </nav>
+</div>
+
+<div class="modal fade" id="change-log-details" tabindex="-1" role="dialog" aria-labelledby="title-label"
+  aria-hidden="true">
+  <dic class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h4 class="modal-title" id="title-label">Change Details</h4>
+      </div>
+      <div class="modal-body">
+        <pre id="details-text"></pre>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+          Close
+        </button>
+      </div>
+    </div>
+  </dic>
 </div>
 
 {{end}}
