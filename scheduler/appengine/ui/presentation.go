@@ -32,6 +32,7 @@ import (
 	"go.chromium.org/luci/common/data/sortby"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/server/auth/realms"
 
 	"go.chromium.org/luci/scheduler/appengine/catalog"
 	"go.chromium.org/luci/scheduler/appengine/engine"
@@ -61,6 +62,11 @@ type schedulerJob struct {
 	LabelClass     string
 	JobFlavorIcon  string
 	JobFlavorTitle string
+
+	CanPause   bool
+	CanResume  bool
+	CanAbort   bool
+	CanTrigger bool
 
 	TriageLog struct {
 		Available  bool
@@ -141,6 +147,17 @@ func makeJob(c context.Context, j *engine.Job, log *engine.JobTriageLog) *schedu
 		sortGroup = "B"
 	}
 
+	can := func(perm realms.Permission) bool {
+		switch err := engine.CheckPermission(c, j, perm); {
+		case err == nil:
+			return true
+		case err == engine.ErrNoPermission:
+			return false
+		default:
+			panic(fmt.Sprintf("error when checking permission %s: %s", perm, err))
+		}
+	}
+
 	out := &schedulerJob{
 		ProjectID:      j.ProjectID,
 		JobName:        j.JobName(),
@@ -158,6 +175,11 @@ func makeJob(c context.Context, j *engine.Job, log *engine.JobTriageLog) *schedu
 		LabelClass:     labelClass,
 		JobFlavorIcon:  flavorToIconClass[j.Flavor],
 		JobFlavorTitle: flavorToTitle[j.Flavor],
+
+		CanPause:   can(engine.PermJobsPause),
+		CanResume:  can(engine.PermJobsResume),
+		CanAbort:   can(engine.PermJobsAbort),
+		CanTrigger: can(engine.PermJobsTrigger),
 
 		sortGroup: sortGroup,
 		now:       now,
@@ -240,6 +262,7 @@ type invocation struct {
 	RowClass         string
 	LabelClass       string
 	ViewURL          string
+	CanAbort         bool
 }
 
 var statusToRowClass = map[task.Status]string{
@@ -319,6 +342,7 @@ func makeInvocation(j *schedulerJob, i *engine.Invocation) *invocation {
 		RowClass:         statusToRowClass[status],
 		LabelClass:       statusToLabelClass[status],
 		ViewURL:          i.ViewURL,
+		CanAbort:         j.CanAbort,
 	}
 }
 

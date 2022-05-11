@@ -301,7 +301,7 @@ func (e *engineImpl) GetVisibleJob(c context.Context, jobID string) (*Job, error
 	case job == nil || !job.Enabled:
 		return nil, ErrNoSuchJob
 	}
-	if err := checkPermission(c, job, permJobsGet); err != nil {
+	if err := CheckPermission(c, job, PermJobsGet); err != nil {
 		if err == ErrNoPermission {
 			err = ErrNoSuchJob // pretend protected jobs don't exist
 		}
@@ -410,7 +410,7 @@ func (e *engineImpl) GetInvocation(c context.Context, job *Job, invID int64) (*I
 //
 // Part of the public interface, checks ACLs.
 func (e *engineImpl) PauseJob(c context.Context, job *Job, reason string) error {
-	if err := checkPermission(c, job, permJobsPause); err != nil {
+	if err := CheckPermission(c, job, PermJobsPause); err != nil {
 		return err
 	}
 	return e.setJobPausedFlag(c, job, true, auth.CurrentIdentity(c), reason)
@@ -420,7 +420,7 @@ func (e *engineImpl) PauseJob(c context.Context, job *Job, reason string) error 
 //
 // Part of the public interface, checks ACLs.
 func (e *engineImpl) ResumeJob(c context.Context, job *Job, reason string) error {
-	if err := checkPermission(c, job, permJobsResume); err != nil {
+	if err := CheckPermission(c, job, PermJobsResume); err != nil {
 		return err
 	}
 	return e.setJobPausedFlag(c, job, false, auth.CurrentIdentity(c), reason)
@@ -430,7 +430,7 @@ func (e *engineImpl) ResumeJob(c context.Context, job *Job, reason string) error
 //
 // Part of the public interface, checks ACLs.
 func (e *engineImpl) AbortJob(c context.Context, job *Job) error {
-	if err := checkPermission(c, job, permJobsAbort); err != nil {
+	if err := CheckPermission(c, job, PermJobsAbort); err != nil {
 		return err
 	}
 	jobID := job.JobID
@@ -476,7 +476,7 @@ func (e *engineImpl) AbortJob(c context.Context, job *Job) error {
 //
 // Part of the public interface, checks ACLs.
 func (e *engineImpl) AbortInvocation(c context.Context, job *Job, invID int64) error {
-	if err := checkPermission(c, job, permJobsAbort); err != nil {
+	if err := CheckPermission(c, job, PermJobsAbort); err != nil {
 		return err
 	}
 	return e.abortInvocation(c, job.JobID, invID)
@@ -490,7 +490,7 @@ func (e *engineImpl) EmitTriggers(c context.Context, perJob map[*Job][]*internal
 	for j := range perJob {
 		jobs = append(jobs, j)
 	}
-	switch filtered, err := e.filterByPerm(c, jobs, permJobsTrigger); {
+	switch filtered, err := e.filterByPerm(c, jobs, PermJobsTrigger); {
 	case err != nil:
 		return errors.Annotate(err, "transient error when checking permissions").Err()
 	case len(filtered) != len(jobs):
@@ -858,7 +858,7 @@ func (e *engineImpl) queryEnabledVisibleJobs(c context.Context, q *ds.Query) ([]
 		}
 	}
 	// Keep only ones visible to the caller.
-	return e.filterByPerm(c, enabled, permJobsGet)
+	return e.filterByPerm(c, enabled, PermJobsGet)
 }
 
 // filterByPerm returns jobs for which caller has the given permission.
@@ -869,7 +869,7 @@ func (e *engineImpl) filterByPerm(c context.Context, jobs []*Job, perm realms.Pe
 	// shared ACLs between most jobs of the same project.
 	filtered := make([]*Job, 0, len(jobs))
 	for _, job := range jobs {
-		switch err := checkPermission(c, job, perm); {
+		switch err := CheckPermission(c, job, perm); {
 		case err == nil:
 			filtered = append(filtered, job)
 		case err != ErrNoPermission:

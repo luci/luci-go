@@ -131,11 +131,11 @@ func mockOwnerCtx(ctx context.Context, realm string) context.Context {
 	return auth.WithState(ctx, &authtest.FakeState{
 		Identity: "user:owner@example.com",
 		FakeDB: authtest.NewFakeDB(
-			authtest.MockPermission("user:owner@example.com", realm, permJobsGet),
-			authtest.MockPermission("user:owner@example.com", realm, permJobsPause),
-			authtest.MockPermission("user:owner@example.com", realm, permJobsResume),
-			authtest.MockPermission("user:owner@example.com", realm, permJobsAbort),
-			authtest.MockPermission("user:owner@example.com", realm, permJobsTrigger),
+			authtest.MockPermission("user:owner@example.com", realm, PermJobsGet),
+			authtest.MockPermission("user:owner@example.com", realm, PermJobsPause),
+			authtest.MockPermission("user:owner@example.com", realm, PermJobsResume),
+			authtest.MockPermission("user:owner@example.com", realm, PermJobsAbort),
+			authtest.MockPermission("user:owner@example.com", realm, PermJobsTrigger),
 		),
 	})
 }
@@ -144,7 +144,7 @@ func mockReaderCtx(ctx context.Context, realm string) context.Context {
 	return auth.WithState(ctx, &authtest.FakeState{
 		Identity: "user:reader@example.com",
 		FakeDB: authtest.NewFakeDB(
-			authtest.MockPermission("user:reader@example.com", realm, permJobsGet),
+			authtest.MockPermission("user:reader@example.com", realm, PermJobsGet),
 		),
 	})
 }

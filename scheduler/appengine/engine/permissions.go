@@ -25,18 +25,18 @@ import (
 const adminGroup = "administrators"
 
 var (
-	permJobsGet     = realms.RegisterPermission("scheduler.jobs.get")
-	permJobsPause   = realms.RegisterPermission("scheduler.jobs.pause")
-	permJobsResume  = realms.RegisterPermission("scheduler.jobs.resume")
-	permJobsAbort   = realms.RegisterPermission("scheduler.jobs.abort")
-	permJobsTrigger = realms.RegisterPermission("scheduler.jobs.trigger")
+	PermJobsGet     = realms.RegisterPermission("scheduler.jobs.get")
+	PermJobsPause   = realms.RegisterPermission("scheduler.jobs.pause")
+	PermJobsResume  = realms.RegisterPermission("scheduler.jobs.resume")
+	PermJobsAbort   = realms.RegisterPermission("scheduler.jobs.abort")
+	PermJobsTrigger = realms.RegisterPermission("scheduler.jobs.trigger")
 )
 
-// checkPermission returns nil if the caller has the given permission for the
+// CheckPermission returns nil if the caller has the given permission for the
 // job or ErrNoPermission otherwise.
 //
 // May also return transient errors.
-func checkPermission(ctx context.Context, job *Job, perm realms.Permission) error {
+func CheckPermission(ctx context.Context, job *Job, perm realms.Permission) error {
 	ctx = logging.SetField(ctx, "JobID", job.JobID)
 
 	// Fallback to the @legacy realm if the job entity isn't updated yet.

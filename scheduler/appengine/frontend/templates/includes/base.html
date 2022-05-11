@@ -217,20 +217,27 @@ that can be found in the LICENSE file. -->
   <input type="hidden" id="reason" name="reason" value="">
   <div class="btn-group btn-group-xs" style="width: 160px" role="group">
     {{if .Paused}}
-      <button type="button" class="btn btn-primary" onclick="postJobAction(this, 'resumeJob')">
+      <button {{if not .CanResume}}disabled{{end}} type="button"
+              class="btn btn-primary"
+              onclick="postJobAction(this, 'resumeJob')">
         Resume
       </button>
     {{else}}
-      <button type="button" class="btn btn-primary"
+      <button {{if not .CanPause}}disabled{{end}} type="button"
+              class="btn btn-primary"
               data-toggle="modal" data-backdrop="static"
               data-target="#pause-job-modal">
         Pause
       </button>
     {{end}}
-    <button type="button" class="btn btn-danger" onclick="postJobAction(this, 'abortJob')">
+    <button {{if not .CanAbort}}disabled{{end}} type="button"
+            class="btn btn-danger"
+            onclick="postJobAction(this, 'abortJob')">
       Abort
     </button>
-    <button type="button" class="btn btn-success" onclick="postJobAction(this, 'triggerJob')">
+    <button {{if not .CanTrigger}}disabled{{end}} type="button"
+            class="btn btn-success"
+            onclick="postJobAction(this, 'triggerJob')">
       Trigger
     </button>
   </div>
@@ -245,7 +252,9 @@ that can be found in the LICENSE file. -->
   <input type="hidden" id="jobName" value="{{.JobName}}">
   <input type="hidden" id="invID" value="{{.InvID}}">
   <div class="btn-group btn-group-xs" role="group">
-    <button type="button" class="btn btn-danger" onclick="postInvocationAction(this, 'abortInvocation')">
+    <button {{if not .CanAbort}}disabled{{end}} type="button"
+            class="btn btn-danger"
+            onclick="postInvocationAction(this, 'abortInvocation')">
       Abort
     </button>
   </div>

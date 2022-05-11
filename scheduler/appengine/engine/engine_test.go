@@ -354,18 +354,18 @@ func TestQueries(t *testing.T) {
 		db := authtest.NewFakeDB(
 			authtest.MockMembership("user:admin@example.com", adminGroup),
 
-			authtest.MockPermission("user:one@example.com", "abc:one", permJobsGet),
-			authtest.MockPermission("user:some@example.com", "abc:some", permJobsGet),
+			authtest.MockPermission("user:one@example.com", "abc:one", PermJobsGet),
+			authtest.MockPermission("user:some@example.com", "abc:some", PermJobsGet),
 
-			authtest.MockPermission("anonymous:anonymous", "abc:public", permJobsGet),
-			authtest.MockPermission("user:one@example.com", "abc:public", permJobsGet),
-			authtest.MockPermission("user:some@example.com", "abc:public", permJobsGet),
-			authtest.MockPermission("user:admin@example.com", "abc:public", permJobsGet),
+			authtest.MockPermission("anonymous:anonymous", "abc:public", PermJobsGet),
+			authtest.MockPermission("user:one@example.com", "abc:public", PermJobsGet),
+			authtest.MockPermission("user:some@example.com", "abc:public", PermJobsGet),
+			authtest.MockPermission("user:admin@example.com", "abc:public", PermJobsGet),
 
 			authtest.MockPermission(
 				"user:some@example.com",
 				"abc:secret",
-				permJobsGet,
+				PermJobsGet,
 				authtest.RestrictAttribute("scheduler.job.name", "restricted"),
 			),
 		)
