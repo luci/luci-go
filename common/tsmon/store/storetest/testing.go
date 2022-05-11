@@ -581,20 +581,16 @@ func RunStoreImplementationTests(t *testing.T, ctx context.Context, opts TestOpt
 
 		s := opts.Factory()
 		foo := &FakeMetric{
-			types.MetricInfo{Name: "foo", Description: "", Fields: []field.Field{},
-				ValueType: types.NonCumulativeIntType, TargetType: target.NilType},
-			types.MetricMetadata{Units: types.Seconds}}
+			types.MetricInfo{"foo", "", []field.Field{}, types.NonCumulativeIntType, target.NilType},
+			types.MetricMetadata{}}
 		bar := &FakeMetric{
-			types.MetricInfo{Name: "bar", Description: "", Fields: []field.Field{field.String("f")},
-				ValueType: types.StringType, TargetType: target.NilType},
-			types.MetricMetadata{Units: types.Bytes}}
+			types.MetricInfo{"bar", "", []field.Field{field.String("f")}, types.StringType, target.NilType},
+			types.MetricMetadata{}}
 		baz := &FakeMetric{
-			types.MetricInfo{Name: "baz", Description: "", Fields: []field.Field{field.String("f")},
-				ValueType: types.NonCumulativeFloatType, TargetType: target.NilType},
+			types.MetricInfo{"baz", "", []field.Field{field.String("f")}, types.NonCumulativeFloatType, target.NilType},
 			types.MetricMetadata{}}
 		qux := &FakeMetric{
-			types.MetricInfo{Name: "qux", Description: "", Fields: []field.Field{field.String("f")},
-				ValueType: types.CumulativeDistributionType, TargetType: target.NilType},
+			types.MetricInfo{"qux", "", []field.Field{field.String("f")}, types.CumulativeDistributionType, target.NilType},
 			types.MetricMetadata{}}
 		opts.RegistrationFinished(s)
 
@@ -631,7 +627,7 @@ func RunStoreImplementationTests(t *testing.T, ctx context.Context, opts TestOpt
 					ValueType:  types.NonCumulativeIntType,
 					TargetType: target.NilType,
 				},
-				types.MetricMetadata{Units: types.Seconds},
+				types.MetricMetadata{},
 				types.CellData{
 					FieldVals: []interface{}{},
 					Value:     int64(42),
@@ -644,7 +640,7 @@ func RunStoreImplementationTests(t *testing.T, ctx context.Context, opts TestOpt
 					ValueType:  types.StringType,
 					TargetType: target.NilType,
 				},
-				types.MetricMetadata{Units: types.Bytes},
+				types.MetricMetadata{},
 				types.CellData{
 					FieldVals: makeInterfaceSlice("one"),
 					Value:     "hello",
@@ -657,7 +653,7 @@ func RunStoreImplementationTests(t *testing.T, ctx context.Context, opts TestOpt
 					ValueType:  types.StringType,
 					TargetType: target.NilType,
 				},
-				types.MetricMetadata{Units: types.Bytes},
+				types.MetricMetadata{},
 				types.CellData{
 					FieldVals: makeInterfaceSlice("two"),
 					Value:     "world",
@@ -714,7 +710,6 @@ func RunStoreImplementationTests(t *testing.T, ctx context.Context, opts TestOpt
 				So(g.ValueType, ShouldEqual, w.ValueType)
 				So(g.FieldVals, ShouldResemble, w.FieldVals)
 				So(g.Value, ShouldResemble, w.Value)
-				So(g.Units, ShouldEqual, w.Units)
 			})
 		}
 	})
