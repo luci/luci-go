@@ -12,10 +12,55 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-class ChangeLogContent {
-  constructor(element, target, revision) {
-    // Root element for change log table.
-    this.element = document.getElementById(element);
+////////////////////////////////////////////////////////////////////////////////
+// Utility functions.
+
+// Parse target string (e.g. 'AuthGroup$name') into components, adds a readable
+// title and URL to a change log for the target.
+const parseTarget = (t) => {
+  var kind = t.split('$', 1)[0];
+  var name = t.substring(kind.length + 1);
+
+  // Recognize some known targets.
+  var title = name;
+  var targetURL = null;
+  switch (kind) {
+    case 'AuthGroup':
+      // TODO: support this url.
+      targetURL = '/groups/' + name;
+      break;
+    case 'AuthIPWhitelist':
+      targetURL = '/ip_allowlists';
+      break;
+    case 'AuthIPWhitelistAssignments':
+      title = 'IP allowlist assignment';
+      targetURL = '/ip_allowlists';
+      break;
+    case 'AuthGlobalConfig':
+      title = 'Global config';
+      targetURL = '/oauth_config';
+      break;
+    case 'AuthRealmsGlobals':
+      title = 'Realms config';
+      break;
+  }
+
+  return {
+    kind: kind,
+    name: name,
+    title: title,
+    changeLogTargetURL: common.getChangeLogTargetURL(kind, name),
+    targetURL: targetURL
+  };
+}
+
+////////////////////////////////////////////////////////////////////////////////
+class ChangeLogTable {
+  constructor(headerElement, contentElement, target, revision) {
+    // Element for change log header.
+    this.headerElement = document.getElementById(headerElement);
+    // Element for change log table content.
+    this.contentElement = document.getElementById(contentElement);
     // If set, limits change log queries to given target.
     this.target = target;
     // If set, limits change log queries to specific revision only.
@@ -94,6 +139,48 @@ class ChangeLogContent {
     pager.style.display = (hasPrev || this.nextPageToken) ? 'block' : 'none';
   }
 
+  // Update change log page header.
+  updateHeader() {
+    if ('content' in document.createElement('template')) {
+      var template = document.querySelector('#change-log-header-template')
+
+      // Clone and grab elements to modify.
+      var clone = template.content.cloneNode(true);
+      var title = clone.querySelector('h3');
+      var targetURL = clone.querySelector('a');
+      var kind = clone.querySelector('small');
+
+      // Modify contents and append to parent.
+      var t;
+      if (this.target) {
+        t = parseTarget(this.target);
+      } else {
+        t = { title: 'Global Log' };
+      }
+
+      if (t.targetURL) {
+        targetURL.href = t.targetURL;
+        targetURL.textContent = t.title;
+      } else {
+        title.textContent = t.title;
+      }
+
+      if (this.revision) {
+        title.textContent += ' for revision ' + this.revision;
+      }
+
+      if (t.kind) {
+        kind.textContent = t.kind;
+      }
+
+      this.headerElement.appendChild(clone);
+    } else {
+      // TODO: Find another way to add changeLogContent because the
+      // HTML template element is not supported.
+      console.error('Unable to load HTML template element, not supported.');
+    }
+  }
+
   // Loads list of change logs from a server.
   // Updates change log list UI. Returns deferred.
   refetchChangeLogs(pageToken, callback) {
@@ -114,43 +201,8 @@ class ChangeLogContent {
     return defer;
   }
 
+  // Update change log table content.
   setChangeLogList(logs) {
-    const parseTarget = (t) => {
-      var kind = t.split('$', 1)[0];
-      var name = t.substring(kind.length + 1);
-
-      // Recognize some known targets.
-      var title = name;
-      var targetURL = null;
-      switch (kind) {
-        case 'AuthGroup':
-          targetURL = '/groups/' + name;
-          break;
-        case 'AuthIPWhitelist':
-          targetURL = '/ip_allowlists';
-          break;
-        case 'AuthIPWhitelistAssignments':
-          title = 'IP allowlist assignment';
-          targetURL = '/ip_allowlists';
-          break;
-        case 'AuthGlobalConfig':
-          title = 'Global config';
-          targetURL = '/oauth_config';
-          break;
-        case 'AuthRealmsGlobals':
-          title = 'Realms config';
-          break;
-      }
-
-      return {
-        kind: kind,
-        name: name,
-        title: title,
-        changeLogTargetURL: common.getChangeLogTargetURL(kind, name),
-        targetURL: targetURL
-      };
-    }
-
     const addElement = (log) => {
       if ('content' in document.createElement('template')) {
         var template = document.querySelector('#change-log-row-template')
@@ -173,7 +225,7 @@ class ChangeLogContent {
         target.href = t.changeLogTargetURL;
         target.textContent = t.title;
 
-        this.element.appendChild(clone);
+        this.contentElement.appendChild(clone);
       } else {
         // TODO: Find another way to add changeLogContent because the
         // HTML template element is not supported.
@@ -181,7 +233,7 @@ class ChangeLogContent {
       }
     }
 
-    this.element.replaceChildren();
+    this.contentElement.replaceChildren();
     logs.map((log) => {
       addElement(log);
     });
@@ -205,6 +257,7 @@ window.onload = () => {
     authDbRev = parseInt(authDbRev);
   }
 
-  var changeLogContent = new ChangeLogContent('change-log-content', target, authDbRev)
-  changeLogContent.refresh();
+  var changeLogTable = new ChangeLogTable('change-log-header', 'change-log-content', target, authDbRev)
+  changeLogTable.refresh();
+  changeLogTable.updateHeader();
 }
