@@ -189,8 +189,9 @@ func (s *inMemoryStore) getOrCreateData(m types.Metric) *metricData {
 	}
 
 	d = &metricData{
-		MetricInfo: m.Info(),
-		cells:      map[cellKey][]*types.CellData{},
+		MetricInfo:     m.Info(),
+		MetricMetadata: m.Metadata(),
+		cells:          map[cellKey][]*types.CellData{},
 	}
 
 	s.data[dk] = d
