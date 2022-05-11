@@ -45,6 +45,7 @@ import (
 	"go.chromium.org/luci/cv/internal/run/impl/handler"
 	"go.chromium.org/luci/cv/internal/run/impl/longops"
 	"go.chromium.org/luci/cv/internal/run/impl/state"
+	"go.chromium.org/luci/cv/internal/run/impl/submit"
 	"go.chromium.org/luci/cv/internal/run/pubsub"
 )
 
@@ -106,7 +107,7 @@ func New(
 			// already scheduled for the next second.
 			return common.TQIfy{
 				KnownRetry: []error{
-					handler.ErrTransientSubmissionFailure,
+					submit.ErrTransientSubmissionFailure,
 				},
 				KnownIgnoreTags: []errors.BoolTag{
 					cancel.ErrPreconditionFailedTag,

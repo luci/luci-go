@@ -23,9 +23,6 @@ import (
 	"sync"
 	"time"
 
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
@@ -33,7 +30,6 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	gerritpb "go.chromium.org/luci/common/proto/gerrit"
-	"go.chromium.org/luci/common/retry"
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/common/sync/parallel"
 	"go.chromium.org/luci/gae/service/datastore"
@@ -123,11 +119,11 @@ func (impl *Impl) OnReadyForSubmission(ctx context.Context, rs *state.RunState) 
 			if err := markSubmitting(ctx, rs); err != nil {
 				return nil, err
 			}
-			s := newSubmitter(ctx, rs.ID, rs.Submission, impl.RM, impl.GFactory)
+			s := submit.NewSubmitter(ctx, rs.ID, rs.Submission, impl.RM, impl.GFactory)
 			rs.SubmissionScheduled = true
 			return &Result{
 				State:         rs,
-				PostProcessFn: s.submit,
+				PostProcessFn: s.Submit,
 			}, nil
 		}
 	default:
@@ -333,11 +329,11 @@ func (impl *Impl) tryResumeSubmission(ctx context.Context, rs *state.RunState, s
 		// Matching taskID indicates current task is the retry of a previous
 		// submitting task that has failed transiently. Continue the submission.
 		rs = rs.ShallowCopy()
-		s := newSubmitter(ctx, rs.ID, rs.Submission, impl.RM, impl.GFactory)
+		s := submit.NewSubmitter(ctx, rs.ID, rs.Submission, impl.RM, impl.GFactory)
 		rs.SubmissionScheduled = true
 		return &Result{
 			State:         rs,
-			PostProcessFn: s.submit,
+			PostProcessFn: s.Submit,
 		}, nil
 	default:
 		// Presumably another task is working on the submission at this time.
@@ -644,222 +640,12 @@ func splitRunCLs(cls []*run.RunCL, submission *run.Submission, sc *eventpb.Submi
 	return submitted, failed, pending
 }
 
-////////////////////////////////////////////////////////////////////////////////
-// Submitter Implementation
-
-type submitter struct {
-	// All fields are immutable.
-
-	// runID is the ID of the Run to be submitted.
-	runID common.RunID
-	// deadline is when this submission should be stopped.
-	deadline time.Time
-	// clids contains ids of cls to be submitted in submission order.
-	clids common.CLIDs
-	// rm is used to interact with Run Manager.
-	rm RM
-	// gFactory is used to interact with Gerrit.
-	gFactory gerrit.Factory
-}
-
-func newSubmitter(ctx context.Context, runID common.RunID, submission *run.Submission, rm RM, g gerrit.Factory) *submitter {
-	notSubmittedCLs := make(common.CLIDs, 0, len(submission.GetCls())-len(submission.GetSubmittedCls()))
-	submitted := common.MakeCLIDs(submission.GetSubmittedCls()...).Set()
-	for _, cl := range submission.GetCls() {
-		clid := common.CLID(cl)
-		if _, ok := submitted[clid]; !ok {
-			notSubmittedCLs = append(notSubmittedCLs, clid)
-		}
-	}
-	return &submitter{
-		runID:    runID,
-		deadline: submission.GetDeadline().AsTime(),
-		clids:    notSubmittedCLs,
-		rm:       rm,
-		gFactory: g,
-	}
-}
-
-// ErrTransientSubmissionFailure indicates that the submission has failed
-// transiently and the same task should be retried.
-var ErrTransientSubmissionFailure = errors.New("submission failed transiently", transient.Tag)
-
-func (s submitter) submit(ctx context.Context) error {
-	switch cur, err := submit.CurrentRun(ctx, s.runID.LUCIProject()); {
-	case err != nil:
-		return s.endSubmission(ctx, classifyErr(ctx, err))
-	case cur != s.runID:
-		logging.Errorf(ctx, "BUG: run no longer holds submit queue, currently held by %q", cur)
-		return s.endSubmission(ctx, &eventpb.SubmissionCompleted{
-			Result: eventpb.SubmissionResult_FAILED_PERMANENT,
-		})
-	}
-
-	cls, err := run.LoadRunCLs(ctx, s.runID, s.clids)
-	if err != nil {
-		return s.endSubmission(ctx, classifyErr(ctx, err))
-	}
-	dctx, cancel := clock.WithDeadline(ctx, s.deadline)
-	defer cancel()
-	sc := s.submitCLs(dctx, cls)
-	return s.endSubmission(ctx, sc)
-}
-
-// endSubmission notifies RM about submission result and release Submit Queue
-// if necessary.
-func (s submitter) endSubmission(ctx context.Context, sc *eventpb.SubmissionCompleted) error {
-	if sc.GetResult() == eventpb.SubmissionResult_FAILED_TRANSIENT {
-		// Do not release queue for transient failure.
-		if err := s.rm.NotifySubmissionCompleted(ctx, s.runID, sc, true); err != nil {
-			return err
-		}
-		return ErrTransientSubmissionFailure
-	}
-	var innerErr error
-	now := clock.Now(ctx)
-	err := datastore.RunInTransaction(ctx, func(ctx context.Context) error {
-		if sc.Result == eventpb.SubmissionResult_SUCCEEDED {
-			if innerErr = submit.ReleaseOnSuccess(ctx, s.rm.NotifyReadyForSubmission, s.runID, now); innerErr != nil {
-				return innerErr
-			}
-		} else {
-			if innerErr = submit.Release(ctx, s.rm.NotifyReadyForSubmission, s.runID); innerErr != nil {
-				return innerErr
-			}
-		}
-		sc.QueueReleaseTimestamp = timestamppb.New(now)
-		if innerErr = s.rm.NotifySubmissionCompleted(ctx, s.runID, sc, false); innerErr != nil {
-			return innerErr
-		}
-		return nil
-	}, nil)
-	switch {
-	case innerErr != nil:
-		return innerErr
-	case err != nil:
-		return errors.Annotate(err, "failed to release submit queue and notify RM").Tag(transient.Tag).Err()
-	}
-	// TODO(yiwzhang): optimization for happy path: for successful submission,
-	// invoke the RM within the same task to reduce latency.
-	return s.rm.Invoke(ctx, s.runID, time.Time{})
-}
-
-var perCLRetryFactory retry.Factory = transient.Only(func() retry.Iterator {
-	return &retry.ExponentialBackoff{
-		Limited: retry.Limited{
-			Delay:   200 * time.Millisecond,
-			Retries: 10,
-		},
-		Multiplier: 2,
-	}
-})
-
-// submitCLs sequentially submits the provided CLs.
-//
-// Retries on transient failure of submitting individual CL based on
-// `perCLRetryFactory`.
-func (s submitter) submitCLs(ctx context.Context, cls []*run.RunCL) *eventpb.SubmissionCompleted {
-	for _, cl := range cls {
-		if clock.Now(ctx).After(s.deadline) {
-			return &eventpb.SubmissionCompleted{
-				Result: eventpb.SubmissionResult_FAILED_PERMANENT,
-				FailureReason: &eventpb.SubmissionCompleted_Timeout{
-					Timeout: true,
-				},
-			}
-		}
-		var submitted bool
-		var msg string
-		err := retry.Retry(ctx, perCLRetryFactory, func() error {
-			if !submitted {
-				switch err := s.submitCL(ctx, cl); {
-				case err == nil:
-					submitted = true
-				default:
-					var isTransient bool
-					msg, isTransient = classifyGerritErr(ctx, err)
-					if isTransient {
-						return transient.Tag.Apply(err)
-					}
-					// Ensure err is not tagged with transient.
-					return transient.Tag.Off().Apply(err)
-				}
-			}
-			return s.rm.NotifyCLSubmitted(ctx, s.runID, cl.ID)
-		}, retry.LogCallback(ctx, fmt.Sprintf("submit cl [id=%d, external_id=%q]", cl.ID, cl.ExternalID)))
-
-		if err != nil {
-			evt := classifyErr(ctx, err)
-			if !submitted {
-				evt.FailureReason = &eventpb.SubmissionCompleted_ClFailures{
-					ClFailures: &eventpb.SubmissionCompleted_CLSubmissionFailures{
-						Failures: []*eventpb.SubmissionCompleted_CLSubmissionFailure{
-							{Clid: int64(cl.ID), Message: msg},
-						},
-					},
-				}
-			}
-			return evt
-		}
-	}
-	return &eventpb.SubmissionCompleted{
-		Result: eventpb.SubmissionResult_SUCCEEDED,
-	}
-}
-
-func (s submitter) submitCL(ctx context.Context, cl *run.RunCL) error {
-	gc, err := s.gFactory.MakeClient(ctx, cl.Detail.GetGerrit().GetHost(), s.runID.LUCIProject())
-	if err != nil {
-		return err
-	}
-	ci := cl.Detail.GetGerrit().GetInfo()
-	_, submitErr := gc.SubmitRevision(ctx, &gerritpb.SubmitRevisionRequest{
-		Number:     ci.GetNumber(),
-		RevisionId: ci.GetCurrentRevision(),
-		Project:    ci.GetProject(),
-	})
-	if submitErr == nil {
-		return nil
-	}
-	// Sometimes, Gerrit may return error but change is actually merged.
-	// Load the change again to check whether it is actually merged.
-	merged := false
-	_ = s.gFactory.MakeMirrorIterator(ctx).RetryIfStale(func(opt grpc.CallOption) error {
-		latest, err := gc.GetChange(ctx, &gerritpb.GetChangeRequest{
-			Number:  ci.GetNumber(),
-			Project: ci.GetProject(),
-		}, opt)
-		switch {
-		case err != nil:
-			return err
-		case latest.GetStatus() == gerritpb.ChangeStatus_MERGED:
-			// It is possible that somebody else submitted the change, but this is
-			// unlikely enough that we presume CV did it. If necessary, it's possible
-			// to examine Change messages to see who actually did it.
-			merged = true
-			return nil
-		case latest.GetUpdated().AsTime().Before(ci.GetUpdated().AsTime()):
-			return gerrit.ErrStaleData
-		default:
-			merged = false
-			return nil
-		}
-	})
-	if merged {
-		return nil
-	}
-	return submitErr
-}
-
 // TODO(crbug/1302119): Replace terms like "Project admin" with dedicated
 // contact sourced from Project Config.
 const (
 	cvBugLink  = "https://bugs.chromium.org/p/chromium/issues/entry?components=Infra%3ELUCI%3EBuildService%3EPreSubmit%3ECV"
 	defaultMsg = "Submission of this CL failed due to unexpected internal " +
 		"error. Please contact LUCI team.\n\n" + cvBugLink
-	failedPreconditionMsgFmt = "Gerrit rejected submission of this CL with " +
-		"error: %s\nHint: rebasing CL in Gerrit UI and re-submitting usually " +
-		"works"
 	noneSubmittedMsgSuffixFmt = "None of the CLs in the Run has been " +
 		"submitted. CLs:\n* %s"
 	partiallySubmittedMsgForPendingCLs = "This CL is not submitted because " +
@@ -873,13 +659,6 @@ const (
 		"If you think the partially submitted CLs may have broken the " +
 		"tip-of-tree of your project, consider notifying your infrastructure " +
 		"team/gardeners/sheriffs."
-	permDeniedMsg = "Failed to submit this CL due to permission denied. " +
-		"Please contact your project admin to grant the submit access to " +
-		"your LUCI project scoped account in Gerrit config."
-	resourceExhaustedMsg = "Failed to submit this CL because Gerrit " +
-		"throttled the submission."
-	gerritTimeoutMsg = "Failed to submit this CL because Gerrit took too " +
-		"long to respond."
 	timeoutMsg = "Ran out of time to submit this CL. " +
 		// TODO(yiwzhang): Generally, time out means CV is doing something
 		// wrong and looping over internally, However, timeout could also
@@ -888,54 +667,8 @@ const (
 		// to see under what circumstance it may happen and revise this message
 		// so that CV doesn't get blamed for timeout it isn't responsible for.
 		"Please contact LUCI team.\n\n" + cvBugLink
-	unexpectedMsgFmt                 = "Failed to submit this CL because of unexpected error from Gerrit: %s"
 	submissionFailureAttentionReason = "Submission failed."
 )
-
-// classifyGerritErr returns message to be posted on the CL for the given
-// submission error and whether the error is transient.
-func classifyGerritErr(ctx context.Context, err error) (msg string, isTransient bool) {
-	grpcStatus, ok := status.FromError(errors.Unwrap(err))
-	if !ok {
-		return fmt.Sprintf(unexpectedMsgFmt, err), transient.Tag.In(err)
-	}
-	switch code, msg := grpcStatus.Code(), grpcStatus.Message(); code {
-	case codes.PermissionDenied:
-		return permDeniedMsg, false
-	case codes.FailedPrecondition:
-		// Gerrit returns 409. Either because change can't be merged, or
-		// this revision isn't the latest.
-		return fmt.Sprintf(failedPreconditionMsgFmt, msg), false
-	case codes.ResourceExhausted:
-		return resourceExhaustedMsg, true
-	case codes.Internal:
-		return fmt.Sprintf(unexpectedMsgFmt, msg), true
-	case codes.DeadlineExceeded:
-		return gerritTimeoutMsg, true
-	default:
-		logging.Warningf(ctx, "unclassified grpc code [%s] received from Gerrit. Full error: %s", code, err)
-		return fmt.Sprintf(unexpectedMsgFmt, msg), false
-	}
-}
-
-func classifyErr(ctx context.Context, err error) *eventpb.SubmissionCompleted {
-	switch {
-	case err == nil:
-		return &eventpb.SubmissionCompleted{
-			Result: eventpb.SubmissionResult_SUCCEEDED,
-		}
-	case transient.Tag.In(err):
-		logging.Warningf(ctx, "Submission ended with FAILED_TRANSIENT: %s", err)
-		return &eventpb.SubmissionCompleted{
-			Result: eventpb.SubmissionResult_FAILED_TRANSIENT,
-		}
-	default:
-		logging.Warningf(ctx, "Submission ended with FAILED_PERMANENT: %s", err)
-		return &eventpb.SubmissionCompleted{
-			Result: eventpb.SubmissionResult_FAILED_PERMANENT,
-		}
-	}
-}
 
 // postMsgForDependentFailures posts a review message to
 // a given CL to notify submission failures of the dependent CLs.
