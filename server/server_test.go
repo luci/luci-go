@@ -455,14 +455,19 @@ func TestOptions(t *testing.T) {
 	})
 }
 
+var (
+	// These vars are used in TestResolveDependencies().
+	//
+	// If go test runs with -count > 1, module.RegisterName() panics with
+	// "already registered", because the registry is a global variable.
+	// Hence, these are declared out of TestResolveDepenencies().
+	a = module.RegisterName("a")
+	b = module.RegisterName("b")
+	c = module.RegisterName("c")
+	d = module.RegisterName("d")
+)
+
 func TestResolveDependencies(t *testing.T) {
-	t.Parallel()
-
-	a := module.RegisterName("a")
-	b := module.RegisterName("b")
-	c := module.RegisterName("c")
-	d := module.RegisterName("d")
-
 	mod := func(n module.Name, deps ...module.Dependency) module.Module {
 		return &testModule{name: n, deps: deps}
 	}

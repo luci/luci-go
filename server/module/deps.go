@@ -68,7 +68,7 @@ type Dependency struct {
 	required bool
 }
 
-// Required declares a required dependency.
+// RequiredDependency declares a required dependency.
 func RequiredDependency(dep Name) Dependency {
 	return Dependency{name: dep, required: true}
 }
