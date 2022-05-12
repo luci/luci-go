@@ -197,7 +197,7 @@ func TestCertificateForKey(t *testing.T) {
 			},
 		}
 		cert, err := certs.CertificateForKey("abc")
-		So(err, ShouldErrLike, "structure error")
+		So(err, ShouldNotBeNil)
 		So(cert, ShouldBeNil)
 	})
 
