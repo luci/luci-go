@@ -17,6 +17,7 @@ package spec
 import (
 	"context"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"testing"
 
@@ -49,6 +50,16 @@ func TestLoadForScript(t *testing.T) {
 	Convey(`Test LoadForScript`, t, func() {
 		tdir := t.TempDir()
 		c := context.Background()
+
+		// On OSX and Linux the temp dir may be in a symlinked directory (and on OSX
+		// it most often is). LoadForScript expands symlinks, so we need to expand
+		// them here too to make path string comparisons below pass.
+		if runtime.GOOS != "windows" {
+			var err error
+			if tdir, err = filepath.EvalSymlinks(tdir); err != nil {
+				panic(err)
+			}
+		}
 
 		makePath := func(path string) string {
 			return filepath.Join(tdir, filepath.FromSlash(path))
