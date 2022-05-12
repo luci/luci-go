@@ -126,7 +126,7 @@ const (
 	// Similar unexpected results were observed on a mainline branch
 	// (i.e. against a build without unsubmitted changes applied).
 	// (For avoidance of doubt, this includes both flakily and
-	// deterministically occuring unexpected results.)
+	// deterministically occurring unexpected results.)
 	// Applies to unexpected results in presubmit/CQ runs only.
 	ExonerationReason_OCCURS_ON_MAINLINE ExonerationReason = 1
 	// Similar unexpected results were observed in presubmit run(s) for other,

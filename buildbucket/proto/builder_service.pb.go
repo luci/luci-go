@@ -87,7 +87,7 @@ type ListBuildersRequest struct {
 
 	// LUCI project, e.g. "chromium". Omit to list all builders.
 	//
-	// Required when bucket is specifed.
+	// Required when bucket is specified.
 	Project string `protobuf:"bytes,1,opt,name=project,proto3" json:"project,omitempty"`
 	// A bucket in the project, e.g. "try".
 	//

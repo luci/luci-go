@@ -29,7 +29,7 @@ message GetBuilderRequest {
 message ListBuildersRequest {
   // LUCI project, e.g. "chromium". Omit to list all builders.
   //
-  // Required when bucket is specifed.
+  // Required when bucket is specified.
   string project = 1;
 
   // A bucket in the project, e.g. "try".
