@@ -42,6 +42,15 @@ const (
 
 // IsSpecified returns true if a unit annotation has been specified for a given
 // metric.
-func (units MetricDataUnits) IsSpecified() bool {
-	return units != ""
+func (u MetricDataUnits) IsSpecified() bool {
+	return u != ""
+}
+
+// IsTime returns true if the unit is time.
+func (u MetricDataUnits) IsTime() bool {
+	switch u {
+	case Seconds, Milliseconds, Microseconds, Nanoseconds:
+		return true
+	}
+	return false
 }

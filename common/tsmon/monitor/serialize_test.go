@@ -121,7 +121,7 @@ func TestSerializeCell(t *testing.T) {
 				Fields:      []field.Field{},
 				ValueType:   types.NonCumulativeIntType,
 			},
-			types.MetricMetadata{},
+			types.MetricMetadata{Units: types.Seconds},
 			types.CellData{
 				FieldVals: []interface{}{},
 				Target:    &target.Task{},
@@ -143,6 +143,10 @@ func TestSerializeCell(t *testing.T) {
 					StartTimestamp: nowTS,
 					EndTimestamp:   nowTS,
 				}},
+				Annotations: &pb.Annotations{
+					Unit:      proto.String(string(types.Seconds)),
+					Timestamp: proto.Bool(true),
+				},
 			}},
 		}})
 	})
@@ -155,7 +159,7 @@ func TestSerializeCell(t *testing.T) {
 				Fields:      []field.Field{},
 				ValueType:   types.CumulativeIntType,
 			},
-			types.MetricMetadata{},
+			types.MetricMetadata{Units: types.Bytes},
 			types.CellData{
 				FieldVals: []interface{}{},
 				Target:    &target.Task{},
@@ -177,6 +181,10 @@ func TestSerializeCell(t *testing.T) {
 					StartTimestamp: resetTS,
 					EndTimestamp:   nowTS,
 				}},
+				Annotations: &pb.Annotations{
+					Unit:      proto.String(string(types.Bytes)),
+					Timestamp: proto.Bool(false),
+				},
 			}},
 		}})
 	})

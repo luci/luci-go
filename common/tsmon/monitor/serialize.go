@@ -102,7 +102,10 @@ func SerializeDataSet(c types.Cell) *pb.MetricsDataSet {
 	}
 
 	if c.Units.IsSpecified() {
-		d.Annotations.Unit = proto.String(string(c.Units))
+		d.Annotations = &pb.Annotations{
+			Unit:      proto.String(string(c.Units)),
+			Timestamp: proto.Bool(c.Units.IsTime()),
+		}
 	}
 	return &d
 }
