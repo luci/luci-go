@@ -116,9 +116,9 @@ func TestSubmitter(t *testing.T) {
 		Convey("Submit successfully", func() {
 			So(s.Submit(ctx), ShouldBeNil)
 			verifyRunReleased(s.runID)
-			runtest.AssertReceivedCLSubmitted(ctx, s.runID, 1)
+			runtest.AssertReceivedCLsSubmitted(ctx, s.runID, 1)
 			So(ct.GFake.GetChange(gHost1, 1).Info.GetStatus(), ShouldEqual, gerritpb.ChangeStatus_MERGED)
-			runtest.AssertReceivedCLSubmitted(ctx, s.runID, 2)
+			runtest.AssertReceivedCLsSubmitted(ctx, s.runID, 2)
 			So(ct.GFake.GetChange(gHost2, 2).Info.GetStatus(), ShouldEqual, gerritpb.ChangeStatus_MERGED)
 			So(ct.GFake.Requests(), ShouldHaveLength, len(s.clids)) // len(s.clids) SubmitRevision calls
 			runtest.AssertReceivedSubmissionCompleted(ctx, s.runID,
@@ -159,9 +159,9 @@ func TestSubmitter(t *testing.T) {
 				})
 				So(s.Submit(ctx), ShouldBeNil)
 				verifyRunReleased(s.runID)
-				runtest.AssertReceivedCLSubmitted(ctx, s.runID, 1)
+				runtest.AssertReceivedCLsSubmitted(ctx, s.runID, 1)
 				So(ct.GFake.GetChange(gHost1, 1).Info.GetStatus(), ShouldEqual, gerritpb.ChangeStatus_MERGED)
-				runtest.AssertNotReceivedCLSubmitted(ctx, s.runID, 2)
+				runtest.AssertNotReceivedCLsSubmitted(ctx, s.runID, 2)
 				So(ct.GFake.GetChange(gHost2, 2).Info.GetStatus(), ShouldEqual, gerritpb.ChangeStatus_NEW)
 				runtest.AssertReceivedSubmissionCompleted(ctx, s.runID,
 					&eventpb.SubmissionCompleted{
@@ -187,7 +187,7 @@ func TestSubmitter(t *testing.T) {
 				So(s.Submit(ctx), ShouldBeNil)
 				verifyRunReleased(s.runID)
 				So(ct.GFake.GetChange(gHost1, 1).Info.GetStatus(), ShouldEqual, gerritpb.ChangeStatus_MERGED)
-				runtest.AssertNotReceivedCLSubmitted(ctx, s.runID, 2)
+				runtest.AssertNotReceivedCLsSubmitted(ctx, s.runID, 2)
 				So(ct.GFake.GetChange(gHost2, 2).Info.GetStatus(), ShouldEqual, gerritpb.ChangeStatus_NEW)
 				runtest.AssertReceivedSubmissionCompleted(ctx, s.runID,
 					&eventpb.SubmissionCompleted{
@@ -219,7 +219,7 @@ func TestSubmitter(t *testing.T) {
 			// as a success.
 			So(s.Submit(ctx), ShouldBeNil)
 			verifyRunReleased(s.runID)
-			runtest.AssertReceivedCLSubmitted(ctx, s.runID, 1)
+			runtest.AssertReceivedCLsSubmitted(ctx, s.runID, 1)
 			So(ct.GFake.GetChange(gHost1, 1).Info.GetStatus(), ShouldEqual, gerritpb.ChangeStatus_MERGED)
 			So(ct.GFake.Requests(), ShouldHaveLength, len(s.clids)+1) // 1 extra getChange call
 			runtest.AssertReceivedSubmissionCompleted(ctx, s.runID,

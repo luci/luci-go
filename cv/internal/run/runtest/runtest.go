@@ -144,26 +144,26 @@ func AssertReceivedReadyForSubmission(ctx context.Context, runID common.RunID, e
 	AssertInEventbox(ctx, runID, target)
 }
 
-// AssertReceivedCLSubmitted asserts Run has received CLSubmitted event for
+// AssertReceivedCLsSubmitted asserts Run has received CLsSubmitted event for
 // the provided CL.
-func AssertReceivedCLSubmitted(ctx context.Context, runID common.RunID, cl common.CLID) {
+func AssertReceivedCLsSubmitted(ctx context.Context, runID common.RunID, clids ...common.CLID) {
 	target := &eventpb.Event{
-		Event: &eventpb.Event_ClSubmitted{
-			ClSubmitted: &eventpb.CLSubmitted{
-				Clid: int64(cl),
+		Event: &eventpb.Event_ClsSubmitted{
+			ClsSubmitted: &eventpb.CLsSubmitted{
+				Clids: common.CLIDsAsInt64s(common.CLIDs(clids)),
 			},
 		},
 	}
 	AssertInEventbox(ctx, runID, target)
 }
 
-// AssertNotReceivedCLSubmitted asserts Run has NOT received CLSubmitted event
+// AssertNotReceivedCLsSubmitted asserts Run has NOT received CLsSubmitted event
 // for the provided CL.
-func AssertNotReceivedCLSubmitted(ctx context.Context, runID common.RunID, cl common.CLID) {
+func AssertNotReceivedCLsSubmitted(ctx context.Context, runID common.RunID, clids ...common.CLID) {
 	target := &eventpb.Event{
-		Event: &eventpb.Event_ClSubmitted{
-			ClSubmitted: &eventpb.CLSubmitted{
-				Clid: int64(cl),
+		Event: &eventpb.Event_ClsSubmitted{
+			ClsSubmitted: &eventpb.CLsSubmitted{
+				Clids: common.CLIDsAsInt64s(common.CLIDs(clids)),
 			},
 		},
 	}

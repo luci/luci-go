@@ -42,7 +42,7 @@ import (
 type RM interface {
 	Invoke(ctx context.Context, runID common.RunID, eta time.Time) error
 	NotifyReadyForSubmission(ctx context.Context, runID common.RunID, eta time.Time) error
-	NotifyCLSubmitted(ctx context.Context, runID common.RunID, clid common.CLID) error
+	NotifyCLsSubmitted(ctx context.Context, runID common.RunID, clids common.CLIDs) error
 	NotifySubmissionCompleted(ctx context.Context, runID common.RunID, sc *eventpb.SubmissionCompleted, invokeRM bool) error
 }
 
@@ -197,7 +197,7 @@ func (s RunCLsSubmitter) submitCLs(ctx context.Context, cls []*run.RunCL) *event
 					return transient.Tag.Off().Apply(err)
 				}
 			}
-			return s.rm.NotifyCLSubmitted(ctx, s.runID, cl.ID)
+			return s.rm.NotifyCLsSubmitted(ctx, s.runID, common.CLIDs{cl.ID})
 		}, retry.LogCallback(ctx, fmt.Sprintf("submit cl [id=%d, external_id=%q]", cl.ID, cl.ExternalID)))
 
 		if err != nil {
