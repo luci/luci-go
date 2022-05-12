@@ -107,10 +107,11 @@ func TestCertChecker(t *testing.T) {
 		_, err = checker.CheckCertificate(ctx, parsedCert)
 		So(err, ShouldErrLike, "certificate has expired")
 
-		// Generate some cert with wrong signature (use different private key).
-		phonyCAKey, err := rsa.GenerateKey(cryptorand.Get(ctx), 512)
+		// Generate a cert signed by a CA with the same name, but with different
+		// unexpected CA keys.
+		phonyCAKey, phonyCACert, err := generateCA(ctx, "Some CA: ca-name.fake")
 		So(err, ShouldBeNil)
-		certDer, err = generateCert(ctx, 3, "some-name", caCert, phonyCAKey)
+		certDer, err = generateCert(ctx, 3, "some-name", phonyCACert, phonyCAKey)
 		So(err, ShouldBeNil)
 
 		// CertChecker rejects it.
@@ -147,7 +148,7 @@ func generateCA(c context.Context, name string) (*rsa.PrivateKey, []byte, error)
 func generateCert(c context.Context, sn int64, name string, caCert []byte, caKey *rsa.PrivateKey) ([]byte, error) {
 	parent, err := x509.ParseCertificate(caCert)
 	if err != nil {
-		return nil, nil
+		return nil, err
 	}
 	rand := cryptorand.Get(c)
 	privKey, err := rsa.GenerateKey(rand, 512) // use short key in tests
