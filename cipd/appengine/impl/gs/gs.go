@@ -21,6 +21,7 @@ import (
 	"net/http"
 	"net/url"
 	"sync"
+	"time"
 
 	"golang.org/x/net/context/ctxhttp"
 	"google.golang.org/api/googleapi"
@@ -374,7 +375,13 @@ func (gs *impl) Reader(ctx context.Context, path string, gen int64) (Reader, err
 	// Carry on reading from the resolved generation. That way we are not
 	// concerned with concurrent changes that may be happening to the file while
 	// we are reading it.
-	return &readerImpl{ctx, gs, path, int64(obj.Size), obj.Generation}, nil
+	return &readerImpl{
+		ctx:  ctx,
+		gs:   gs,
+		path: path,
+		size: int64(obj.Size),
+		gen:  obj.Generation,
+	}, nil
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -386,6 +393,9 @@ type readerImpl struct {
 	path string
 	size int64
 	gen  int64
+
+	m     sync.Mutex
+	speed float64 // moving average, bytes per sec
 }
 
 func (r *readerImpl) Size() int64       { return r.size }
@@ -405,28 +415,62 @@ func (r *readerImpl) ReadAt(p []byte, off int64) (n int, err error) {
 		return 0, err
 	}
 
-	call := r.gs.srv.Objects.Get(SplitPath(r.path)).Context(r.ctx).Generation(r.gen)
-	call.Header().Set("Range", fmt.Sprintf("bytes=%d-%d", off, off+toRead-1))
+	started := time.Now()
 
 	err = withRetry(r.ctx, func() error {
 		n = 0
+
+		// TODO(crbug.com/1261988): Add a context timeout derived from `toRead` and
+		// the tolerated download speed.
+		ctx := r.ctx
+
 		// 'Download' is magic. Unlike regular call.Do(), it will append alt=media
 		// to the request string, thus asking GS to return the object body instead
 		// of its metadata.
+		call := r.gs.srv.Objects.Get(SplitPath(r.path)).Context(ctx).Generation(r.gen)
+		call.Header().Set("Range", fmt.Sprintf("bytes=%d-%d", off, off+toRead-1))
 		resp, err := call.Download()
 		if err != nil {
 			return err
 		}
 		defer googleapi.CloseBody(resp)
+
 		n, err = io.ReadFull(resp.Body, p[:int(toRead)])
 		if err != nil {
 			return errors.Annotate(err, "failed to read the response").Tag(transient.Tag).Err()
 		}
+
 		return nil
 	})
 
 	if err == nil && off+toRead == r.size {
 		err = io.EOF
 	}
+
+	if err == nil {
+		r.trackSpeed(toRead, time.Since(started))
+	}
+
 	return
+}
+
+func (r *readerImpl) trackSpeed(size int64, dt time.Duration) {
+	// Ignore small reads, their speed is dominated by noise.
+	if size < 64*1024 {
+		return
+	}
+
+	v := float64(size) / dt.Seconds()
+
+	// Exponential moving average with some arbitrary chosen factor.
+	r.m.Lock()
+	if r.speed == 0 {
+		r.speed = v
+	} else {
+		r.speed = 0.07*v + 0.93*r.speed
+	}
+	speed := r.speed
+	r.m.Unlock()
+
+	logging.Debugf(r.ctx, "gs: download speed %.2f MB/sec", speed/1e6)
 }
