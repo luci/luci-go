@@ -33,8 +33,9 @@ import (
 	"go.chromium.org/luci/common/logging/gologger"
 	"go.chromium.org/luci/hardcoded/chromeinfra"
 
-	// Replace clock_gettime for OSX 10.11.
+	// Hacks for OSX 10.11.
 	_ "go.chromium.org/luci/hacks/osx_clock_gettime_fix"
+	_ "go.chromium.org/luci/hacks/osx_crypto_rand_entropy"
 )
 
 func main() {

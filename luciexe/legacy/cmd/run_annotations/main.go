@@ -34,8 +34,9 @@ import (
 	"go.chromium.org/luci/luciexe/legacy/annotee/annotation"
 	annopb "go.chromium.org/luci/luciexe/legacy/annotee/proto"
 
-	// Replace clock_gettime for OSX 10.11.
+	// Hacks for OSX 10.11.
 	_ "go.chromium.org/luci/hacks/osx_clock_gettime_fix"
+	_ "go.chromium.org/luci/hacks/osx_crypto_rand_entropy"
 )
 
 const warningMsg = `WARNING: This step is launched using deprecated allow_subannotation feature
