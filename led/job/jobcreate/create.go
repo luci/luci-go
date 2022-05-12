@@ -243,7 +243,7 @@ func bbagentArgsFromBuild(bld *bbpb.Build) *bbpb.BBAgentArgs {
 	return &bbpb.BBAgentArgs{
 		PayloadPath:            bld.Infra.Bbagent.PayloadPath,
 		CacheDir:               bld.Infra.Bbagent.CacheDir,
-		KnownPublicGerritHosts: bld.Infra.Bbagent.KnownPublicGerritHosts,
+		KnownPublicGerritHosts: bld.Infra.Buildbucket.KnownPublicGerritHosts,
 		Build:                  bld,
 	}
 }

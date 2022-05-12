@@ -782,7 +782,9 @@ message BuildInfra {
     // By default public hosts are accessed anonymously, and the anonymous access
     // has very low quota. Context needs to know all such hostnames in advance to
     // be able to force authenticated access to them.
-    repeated string known_public_gerrit_hosts = 3;
+    //
+    // DEPRECATED: Use build.Infra.Buildbucket.KnownPublicGerritHosts instead.
+    repeated string known_public_gerrit_hosts = 3 [deprecated = true];
 
     // DEPRECATED: Use build.Infra.Buildbucket.Agent.Input instead.
     Input input = 4 [deprecated = true];

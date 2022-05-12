@@ -795,7 +795,10 @@ func configuredCacheToTaskCache(builderCache *pb.BuilderConfig_CacheEntry) *pb.B
 func setInfra(req *pb.ScheduleBuildRequest, cfg *pb.BuilderConfig, build *pb.Build, globalCfg *pb.SettingsCfg) {
 	build.Infra = &pb.BuildInfra{
 		Bbagent: &pb.BuildInfra_BBAgent{
-			CacheDir:               "cache",
+			CacheDir: "cache",
+			// TODO(crbug.com/): stop set build.Infra.Bbagent.KnownPublicGerritHosts
+			// after https://chromium-review.googlesource.com/c/infra/luci/luci-go/+/3646037
+			// is released for bbagent and led.
 			KnownPublicGerritHosts: globalCfg.GetKnownPublicGerritHosts(),
 			PayloadPath:            "kitchen-checkout",
 		},

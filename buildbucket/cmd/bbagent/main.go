@@ -170,7 +170,7 @@ func mainImpl() int {
 		input = &bbpb.BBAgentArgs{
 			Build:                  build,
 			CacheDir:               build.Infra.Bbagent.CacheDir,
-			KnownPublicGerritHosts: build.Infra.Bbagent.KnownPublicGerritHosts,
+			KnownPublicGerritHosts: build.Infra.Buildbucket.KnownPublicGerritHosts,
 			PayloadPath:            build.Infra.Bbagent.PayloadPath,
 		}
 	default:

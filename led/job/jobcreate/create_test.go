@@ -26,14 +26,14 @@ import (
 	"time"
 
 	"github.com/golang/protobuf/jsonpb"
-	. "github.com/smartystreets/goconvey/convey"
 	"google.golang.org/protobuf/types/known/durationpb"
 
 	bbpb "go.chromium.org/luci/buildbucket/proto"
 	swarming "go.chromium.org/luci/common/api/swarming/swarming/v1"
-	. "go.chromium.org/luci/common/testing/assertions"
-
 	"go.chromium.org/luci/led/job"
+
+	. "github.com/smartystreets/goconvey/convey"
+	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 var train = flag.Bool("train", false, "If set, write testdata/*out.json")
@@ -129,8 +129,10 @@ func TestCreateBBagent(t *testing.T) {
 				Swarming: &bbpb.BuildInfra_Swarming{
 					Priority: 25,
 				},
-				Buildbucket: &bbpb.BuildInfra_Buildbucket{},
-				Logdog:      &bbpb.BuildInfra_LogDog{},
+				Buildbucket: &bbpb.BuildInfra_Buildbucket{
+					KnownPublicGerritHosts: []string{"host"},
+				},
+				Logdog: &bbpb.BuildInfra_LogDog{},
 			},
 			Input:             &bbpb.Build_Input{},
 			Exe:               &bbpb.Executable{},
