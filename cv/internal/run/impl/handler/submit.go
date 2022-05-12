@@ -131,8 +131,8 @@ func (impl *Impl) OnReadyForSubmission(ctx context.Context, rs *state.RunState) 
 	}
 }
 
-// OnCLSubmitted implements Handler interface.
-func (*Impl) OnCLSubmitted(ctx context.Context, rs *state.RunState, clids common.CLIDs) (*Result, error) {
+// OnCLsSubmitted implements Handler interface.
+func (*Impl) OnCLsSubmitted(ctx context.Context, rs *state.RunState, clids common.CLIDs) (*Result, error) {
 	switch status := rs.Status; {
 	case run.IsEnded(status):
 		logging.Warningf(ctx, "received CLSubmitted event when Run is %s", status)

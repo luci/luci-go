@@ -189,22 +189,22 @@ func TestRunManager(t *testing.T) {
 			},
 			{
 				&eventpb.Event{
-					Event: &eventpb.Event_ClSubmitted{
-						ClSubmitted: &eventpb.CLSubmitted{
-							Clid: 1,
+					Event: &eventpb.Event_ClsSubmitted{
+						ClsSubmitted: &eventpb.CLsSubmitted{
+							Clids: []int64{1, 2},
 						},
 					},
 				},
 				func(ctx context.Context) error {
 					return notifier.SendNow(ctx, runID, &eventpb.Event{
-						Event: &eventpb.Event_ClSubmitted{
-							ClSubmitted: &eventpb.CLSubmitted{
-								Clid: 1,
+						Event: &eventpb.Event_ClsSubmitted{
+							ClsSubmitted: &eventpb.CLsSubmitted{
+								Clids: []int64{1, 2},
 							},
 						},
 					})
 				},
-				"OnCLSubmitted",
+				"OnCLsSubmitted",
 			},
 			{
 				&eventpb.Event{
@@ -522,9 +522,9 @@ func (fh *fakeHandler) OnReadyForSubmission(ctx context.Context, rs *state.RunSt
 	}, nil
 }
 
-// OnCLSubmitted records provided CLs have been submitted.
-func (fh *fakeHandler) OnCLSubmitted(ctx context.Context, rs *state.RunState, clids common.CLIDs) (*handler.Result, error) {
-	fh.addInvocation("OnCLSubmitted")
+// OnCLsSubmitted records provided CLs have been submitted.
+func (fh *fakeHandler) OnCLsSubmitted(ctx context.Context, rs *state.RunState, clids common.CLIDs) (*handler.Result, error) {
+	fh.addInvocation("OnCLsSubmitted")
 	return &handler.Result{
 		State:          rs.ShallowCopy(),
 		PreserveEvents: fh.preserveEvents,

@@ -905,10 +905,10 @@ func TestOnSubmissionCompleted(t *testing.T) {
 	})
 }
 
-func TestOnCLSubmitted(t *testing.T) {
+func TestOnCLsSubmitted(t *testing.T) {
 	t.Parallel()
 
-	Convey("OnCLSubmitted", t, func() {
+	Convey("OnCLsSubmitted", t, func() {
 		ct := cvtesting.Test{}
 		ctx, cancel := ct.SetUp()
 		defer cancel()
@@ -926,43 +926,43 @@ func TestOnCLSubmitted(t *testing.T) {
 
 		h, _ := makeTestHandler(&ct)
 		Convey("Single", func() {
-			res, err := h.OnCLSubmitted(ctx, rs, common.CLIDs{3})
+			res, err := h.OnCLsSubmitted(ctx, rs, common.CLIDs{3})
 			So(err, ShouldBeNil)
 			So(res.State.Submission.SubmittedCls, ShouldResemble, []int64{3})
 
 		})
 		Convey("Duplicate", func() {
-			res, err := h.OnCLSubmitted(ctx, rs, common.CLIDs{3, 3, 3, 3, 1, 1, 1})
+			res, err := h.OnCLsSubmitted(ctx, rs, common.CLIDs{3, 3, 3, 3, 1, 1, 1})
 			So(err, ShouldBeNil)
 			So(res.State.Submission.SubmittedCls, ShouldResemble, []int64{3, 1})
 		})
 		Convey("Obey Submission order", func() {
-			res, err := h.OnCLSubmitted(ctx, rs, common.CLIDs{1, 3, 5, 7})
+			res, err := h.OnCLsSubmitted(ctx, rs, common.CLIDs{1, 3, 5, 7})
 			So(err, ShouldBeNil)
 			So(res.State.Submission.SubmittedCls, ShouldResemble, []int64{3, 1, 7, 5})
 		})
 		Convey("Merge to existing", func() {
 			rs.Submission.SubmittedCls = []int64{3, 1}
 			// 1 should be deduped
-			res, err := h.OnCLSubmitted(ctx, rs, common.CLIDs{1, 7})
+			res, err := h.OnCLsSubmitted(ctx, rs, common.CLIDs{1, 7})
 			So(err, ShouldBeNil)
 			So(res.State.Submission.SubmittedCls, ShouldResemble, []int64{3, 1, 7})
 		})
 		Convey("Last cl arrives first", func() {
-			res, err := h.OnCLSubmitted(ctx, rs, common.CLIDs{5})
+			res, err := h.OnCLsSubmitted(ctx, rs, common.CLIDs{5})
 			So(err, ShouldBeNil)
 			So(res.State.Submission.SubmittedCls, ShouldResemble, []int64{5})
 			rs = res.State
-			res, err = h.OnCLSubmitted(ctx, rs, common.CLIDs{1, 3})
+			res, err = h.OnCLsSubmitted(ctx, rs, common.CLIDs{1, 3})
 			So(err, ShouldBeNil)
 			So(res.State.Submission.SubmittedCls, ShouldResemble, []int64{3, 1, 5})
 			rs = res.State
-			res, err = h.OnCLSubmitted(ctx, rs, common.CLIDs{7})
+			res, err = h.OnCLsSubmitted(ctx, rs, common.CLIDs{7})
 			So(err, ShouldBeNil)
 			So(res.State.Submission.SubmittedCls, ShouldResemble, []int64{3, 1, 7, 5})
 		})
 		Convey("Error for unknown CLs", func() {
-			res, err := h.OnCLSubmitted(ctx, rs, common.CLIDs{1, 3, 5, 7, 9, 11})
+			res, err := h.OnCLsSubmitted(ctx, rs, common.CLIDs{1, 3, 5, 7, 9, 11})
 			So(err, ShouldErrLike, "received CLSubmitted event for cls not belonging to this Run: [9 11]")
 			So(res, ShouldBeNil)
 		})

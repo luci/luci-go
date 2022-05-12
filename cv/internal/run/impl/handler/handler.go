@@ -72,8 +72,8 @@ type Handler interface {
 	// returns a PostProcessFn for submission.
 	OnReadyForSubmission(context.Context, *state.RunState) (*Result, error)
 
-	// OnCLSubmitted records provided CLs have been submitted.
-	OnCLSubmitted(context.Context, *state.RunState, common.CLIDs) (*Result, error)
+	// OnCLsSubmitted records provided CLs have been submitted.
+	OnCLsSubmitted(context.Context, *state.RunState, common.CLIDs) (*Result, error)
 
 	// OnSubmissionCompleted acts on the submission result.
 	//
@@ -108,7 +108,9 @@ type RM interface {
 	Invoke(ctx context.Context, runID common.RunID, eta time.Time) error
 	PokeAfter(ctx context.Context, runID common.RunID, after time.Duration) error
 	NotifyReadyForSubmission(ctx context.Context, runID common.RunID, eta time.Time) error
+	// TODO(yiwzhang): Remove NotifyCLSubmitted
 	NotifyCLSubmitted(ctx context.Context, runID common.RunID, clid common.CLID) error
+	NotifyCLsSubmitted(ctx context.Context, runID common.RunID, clids common.CLIDs) error
 	NotifySubmissionCompleted(ctx context.Context, runID common.RunID, sc *eventpb.SubmissionCompleted, invokeRM bool) error
 }
 

@@ -280,7 +280,7 @@ type triageResult struct {
 		cls    common.CLIDs
 	}
 	readyForSubmissionEvents eventbox.Events
-	clSubmittedEvents        struct {
+	clsSubmittedEvents       struct {
 		events eventbox.Events
 		cls    common.CLIDs
 	}
@@ -342,9 +342,14 @@ func (tr *triageResult) triage(ctx context.Context, item eventbox.Event, eventLo
 		}
 	case *eventpb.Event_ReadyForSubmission:
 		tr.readyForSubmissionEvents = append(tr.readyForSubmissionEvents, item)
-	case *eventpb.Event_ClSubmitted:
-		tr.clSubmittedEvents.events = append(tr.clSubmittedEvents.events, item)
-		tr.clSubmittedEvents.cls = append(tr.clSubmittedEvents.cls, common.CLID(e.GetClSubmitted().GetClid()))
+	case *eventpb.Event_ClSubmitted: // TODO(yiwzhang): delete
+		tr.clsSubmittedEvents.events = append(tr.clsSubmittedEvents.events, item)
+		tr.clsSubmittedEvents.cls = append(tr.clsSubmittedEvents.cls, common.CLID(e.GetClSubmitted().GetClid()))
+	case *eventpb.Event_ClsSubmitted:
+		tr.clsSubmittedEvents.events = append(tr.clsSubmittedEvents.events, item)
+		for _, clid := range e.GetClsSubmitted().GetClids() {
+			tr.clsSubmittedEvents.cls = append(tr.clsSubmittedEvents.cls, common.CLID(clid))
+		}
 	case *eventpb.Event_SubmissionCompleted:
 		existing, new := tr.submissionCompletedEvent.sc, e.GetSubmissionCompleted()
 		if existing != nil {
@@ -433,12 +438,12 @@ func (rp *runProcessor) processTriageResults(ctx context.Context, tr *triageResu
 		}
 		rs, transitions = applyResult(res, tr.cqdVerificationCompletedEvents, transitions)
 	}
-	if len(tr.clSubmittedEvents.events) > 0 {
-		res, err := rp.handler.OnCLSubmitted(ctx, rs, tr.clSubmittedEvents.cls)
+	if len(tr.clsSubmittedEvents.events) > 0 {
+		res, err := rp.handler.OnCLsSubmitted(ctx, rs, tr.clsSubmittedEvents.cls)
 		if err != nil {
 			return nil, err
 		}
-		rs, transitions = applyResult(res, tr.clSubmittedEvents.events, transitions)
+		rs, transitions = applyResult(res, tr.clsSubmittedEvents.events, transitions)
 	}
 	if sc := tr.submissionCompletedEvent.sc; sc != nil {
 		res, err := rp.handler.OnSubmissionCompleted(ctx, rs, sc)

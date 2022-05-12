@@ -285,9 +285,9 @@ func (t *testHandler) OnReadyForSubmission(ctx context.Context, rs *state.RunSta
 	return res, err
 }
 
-func (t *testHandler) OnCLSubmitted(ctx context.Context, rs *state.RunState, cls common.CLIDs) (*Result, error) {
+func (t *testHandler) OnCLsSubmitted(ctx context.Context, rs *state.RunState, cls common.CLIDs) (*Result, error) {
 	initialCopy := rs.DeepCopy()
-	res, err := t.inner.OnCLSubmitted(ctx, rs, cls)
+	res, err := t.inner.OnCLsSubmitted(ctx, rs, cls)
 	if err != nil {
 		return nil, err
 	}

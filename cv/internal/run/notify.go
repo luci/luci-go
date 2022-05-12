@@ -187,6 +187,23 @@ func (n *Notifier) NotifyCLSubmitted(ctx context.Context, runID common.RunID, cl
 	})
 }
 
+// NotifyCLsSubmitted informs RunManager that the provided CLs are submitted.
+//
+// Unlike other event-sending funcs, this function only delivers the event
+// to Run's eventbox, but does not dispatch the task. This is because it is
+// okay to process all events of this kind together to record the submission
+// result for each individual CLs after submission completes.
+// Waking up RM unnecessarily may increase the contention of Run entity.
+func (n *Notifier) NotifyCLsSubmitted(ctx context.Context, runID common.RunID, clids common.CLIDs) error {
+	return n.sendWithoutDispatch(ctx, runID, &eventpb.Event{
+		Event: &eventpb.Event_ClsSubmitted{
+			ClsSubmitted: &eventpb.CLsSubmitted{
+				Clids: common.CLIDsAsInt64s(clids),
+			},
+		},
+	})
+}
+
 // NotifySubmissionCompleted informs RunManager that the submission of the
 // provided Run has completed.
 func (n *Notifier) NotifySubmissionCompleted(ctx context.Context, runID common.RunID, sc *eventpb.SubmissionCompleted, invokeRM bool) error {
