@@ -4,8 +4,8 @@
 
 
 import {
-    TextDecoder,
-    TextEncoder
+  TextDecoder,
+  TextEncoder,
 } from 'util';
 
 import fetch from 'node-fetch';

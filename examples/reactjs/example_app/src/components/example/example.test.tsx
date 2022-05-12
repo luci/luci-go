@@ -17,28 +17,27 @@ import 'node-fetch';
  * if you run it in a constructor of a class), your mocks will fail.
  */
 import fetchMock from 'fetch-mock-jest';
-import React from 'react';
 
 import {
-    render,
-    screen
+  render,
+  screen,
 } from '@testing-library/react';
 
 import Example from './example';
 
 describe('<Example />', () => {
-    afterEach(() => {
-        fetchMock.mockClear();
-        fetchMock.reset();
-    });
+  afterEach(() => {
+    fetchMock.mockClear();
+    fetchMock.reset();
+  });
 
-    it('Wait for component to load', async () => {
-        render(
-          <Example exampleProp='test'/>
-        );
+  it('Wait for component to load', async () => {
+    render(
+        <Example exampleProp='test'/>,
+    );
 
-        await screen.findByRole('article');
+    await screen.findByRole('article');
 
-        expect(screen.getByText('test')).toBeInTheDocument();
-    });
+    expect(screen.getByText('test')).toBeInTheDocument();
+  });
 });

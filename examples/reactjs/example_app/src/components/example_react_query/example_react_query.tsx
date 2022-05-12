@@ -2,7 +2,6 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-import React from 'react';
 import { useQuery } from 'react-query';
 
 import Grid from '@mui/material/Grid';
@@ -11,24 +10,23 @@ import Alert from '@mui/material/Alert';
 import { getData } from '../../services/example_service';
 
 const ExampleReactQuery = () => {
+  const { data, error, isLoading } = useQuery('example', () => getData());
 
-    const { data, error, isLoading } = useQuery('example', () => getData());
+  if (isLoading) {
+    return <CircularProgress />;
+  }
 
-    if(isLoading) {
-        return <CircularProgress />;
-    }
+  if (error) {
+    return <Alert severity='error'> Failed to load data: {error}</Alert>;
+  }
 
-    if(error) {
-        return <Alert severity='error'> Failed to load data: {error}</Alert>;
-    }
-
-     return (
-       <Grid container>
-         <Grid item>
-           {data}
-         </Grid>
-       </Grid>
-     );
+  return (
+    <Grid container>
+      <Grid item>
+        {data}
+      </Grid>
+    </Grid>
+  );
 };
 
 export default ExampleReactQuery;

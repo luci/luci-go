@@ -2,17 +2,14 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-
-import React from 'react';
-
 import Example from '../components/example/example';
 
 const HomePage = () => {
-    return (
-      <>
-        <Example  exampleProp='example'/>
-      </>
-    );
+  return (
+    <>
+      <Example exampleProp='example'/>
+    </>
+  );
 };
 
 export default HomePage;

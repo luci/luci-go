@@ -5,13 +5,13 @@
 
 import './example.css';
 
-import React from 'react';
-
 import Grid from '@mui/material/Grid';
 
 import CircularProgress from '@mui/material/CircularProgress';
 import Alert from '@mui/material/Alert';
-import { useGetExampleByNameQuery } from '../../services/example_service_rtkquery';
+import {
+  useGetExampleByNameQuery,
+} from '../../services/example_service_rtkquery';
 import { useAppSelector } from '../../store/custom_hooks';
 
 interface Props {
@@ -19,31 +19,31 @@ interface Props {
 }
 
 const Example = ({
-    exampleProp
+  exampleProp,
 }: Props) => {
-    const count = useAppSelector((state) => state.counter.value);
+  const count = useAppSelector((state) => state.counter.value);
 
-    const { data, error, isLoading } = useGetExampleByNameQuery('user');
+  const { data, error, isLoading } = useGetExampleByNameQuery('user');
 
-    if(isLoading) {
-        return <CircularProgress />;
-    }
+  if (isLoading) {
+    return <CircularProgress />;
+  }
 
-    if(error) {
-        return <Alert severity='error'> Failed to load data: {error}</Alert>;
-    }
+  if (error) {
+    return <Alert severity='error'> Failed to load data: {error}</Alert>;
+  }
 
-    return (
-      <div className="example" role="article">
-        {exampleProp}
-        <Grid>
-          {count}
-        </Grid>
-        <Grid>
-          {data}
-        </Grid>
-      </div>
-    );
+  return (
+    <div className="example" role="article">
+      {exampleProp}
+      <Grid>
+        {count}
+      </Grid>
+      <Grid>
+        {data}
+      </Grid>
+    </div>
+  );
 };
 
 export default Example;

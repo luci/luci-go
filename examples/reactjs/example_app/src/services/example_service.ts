@@ -8,8 +8,8 @@
  * @return {Promise} a promise that fulfills with the requested data.
  */
 export const getData = async (): Promise<ExampleModel> => {
-    const response = await fetch('/path/to/api');
-    return await response.json();
+  const response = await fetch('/path/to/api');
+  return await response.json();
 };
 
 /**

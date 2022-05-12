@@ -12,9 +12,10 @@ module.exports = {
     'extends': [
         'eslint:recommended',
         'plugin:react/recommended',
+        'plugin:react-hooks/recommended',
+        'prettier',
         'google',
         'plugin:@typescript-eslint/recommended',
-        'prettier',
         'plugin:jest/recommended',
         'plugin:import/recommended',
         'plugin:import/typescript',
@@ -42,21 +43,14 @@ module.exports = {
     ],
     'rules': {
         'quotes': ['error', 'single'],
-        'react/jsx-indent': [
-            2,
-            2,
-            {
-                checkAttributes: true,
-                indentLogicalExpressions: true
-            }
-        ],
-        'react/jsx-indent-props': ['error'],
         'semi': ['error', 'always'],
         'object-curly-spacing': ['error', 'always', { 'objectsInObjects': true }],
         'require-jsdoc': 0,
         'import/order': ['error'],
         'no-trailing-spaces': 'error',
         'no-console': ['error', { allow: ['error'] }],
-        'eol-last': ['error', 'always']
+        'eol-last': ['error', 'always'],
+        'react/jsx-uses-react': 'off',
+        'react/react-in-jsx-scope': 'off',
     },
 };

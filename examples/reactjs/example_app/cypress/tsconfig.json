@@ -9,7 +9,7 @@
         "noImplicitAny": true,
         "noImplicitThis": true,
         "lib": [
-            "es5",
+            "esnext",
             "dom"
         ],
         "types": [
