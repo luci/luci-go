@@ -28,6 +28,8 @@ import "go.chromium.org/luci/cv/internal/run/eventpb/submission.proto";
 // Event is a container for all kinds of events a Run Manager can receive.
 message Event {
   // Next tag: 13
+  reserved 7; // cl_submitted
+
   oneof event {
     // On Start event, Run Manager will start the Run.
     //
@@ -52,10 +54,6 @@ message Event {
     // On ReadyForSubmission event, Run Manager will try to submit CLs in
     // this Run.
     ReadyForSubmission ready_for_submission = 6;
-    // On CLSubmitted event, Run Manager will mark this CL as submitted.
-    //
-    // Deprecated in favor of `cls_submitted`.
-    CLSubmitted cl_submitted = 7 [deprecated=true];
     // On CLSubmitted event, Run Manager will mark this CL as submitted.
     CLsSubmitted cls_submitted = 12;
     // On SubmissionCompleted event, Run Manager will look at the submission
@@ -114,11 +112,6 @@ message NewConfig {
 }
 
 message ReadyForSubmission {
-}
-
-message CLSubmitted {
-  // Internal ID of a CL that was submitted successfully.
-  int64 clid = 1;
 }
 
 message CLsSubmitted {

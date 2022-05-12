@@ -135,7 +135,7 @@ func (impl *Impl) OnReadyForSubmission(ctx context.Context, rs *state.RunState) 
 func (*Impl) OnCLsSubmitted(ctx context.Context, rs *state.RunState, clids common.CLIDs) (*Result, error) {
 	switch status := rs.Status; {
 	case run.IsEnded(status):
-		logging.Warningf(ctx, "received CLSubmitted event when Run is %s", status)
+		logging.Warningf(ctx, "received CLsSubmitted event when Run is %s", status)
 		return &Result{State: rs}, nil
 	case status != run.Status_SUBMITTING:
 		return nil, errors.Reason("expected SUBMITTING status; got %s", status).Err()
@@ -170,7 +170,7 @@ func (*Impl) OnCLsSubmitted(ctx context.Context, rs *state.RunState, clids commo
 			unexpected = append(unexpected, int(clid))
 		}
 		unexpected.Sort()
-		return nil, errors.Reason("received CLSubmitted event for cls not belonging to this Run: %v", unexpected).Err()
+		return nil, errors.Reason("received CLsSubmitted event for cls not belonging to this Run: %v", unexpected).Err()
 	}
 	return &Result{State: rs}, nil
 }

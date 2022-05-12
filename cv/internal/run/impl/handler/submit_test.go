@@ -963,7 +963,7 @@ func TestOnCLsSubmitted(t *testing.T) {
 		})
 		Convey("Error for unknown CLs", func() {
 			res, err := h.OnCLsSubmitted(ctx, rs, common.CLIDs{1, 3, 5, 7, 9, 11})
-			So(err, ShouldErrLike, "received CLSubmitted event for cls not belonging to this Run: [9 11]")
+			So(err, ShouldErrLike, "received CLsSubmitted event for cls not belonging to this Run: [9 11]")
 			So(res, ShouldBeNil)
 		})
 	})

@@ -342,9 +342,6 @@ func (tr *triageResult) triage(ctx context.Context, item eventbox.Event, eventLo
 		}
 	case *eventpb.Event_ReadyForSubmission:
 		tr.readyForSubmissionEvents = append(tr.readyForSubmissionEvents, item)
-	case *eventpb.Event_ClSubmitted: // TODO(yiwzhang): delete
-		tr.clsSubmittedEvents.events = append(tr.clsSubmittedEvents.events, item)
-		tr.clsSubmittedEvents.cls = append(tr.clsSubmittedEvents.cls, common.CLID(e.GetClSubmitted().GetClid()))
 	case *eventpb.Event_ClsSubmitted:
 		tr.clsSubmittedEvents.events = append(tr.clsSubmittedEvents.events, item)
 		for _, clid := range e.GetClsSubmitted().GetClids() {
