@@ -61,11 +61,12 @@ var DefaultBuildMask = HardcodedBuildMask(defaultFieldMask.Paths...)
 
 // BuildMask knows how to filter pb.Build proto messages.
 type BuildMask struct {
-	m         *mask.Mask         // the overall field mask
-	in        *structmask.Filter // "input.properties" filter
-	out       *structmask.Filter // "output.properties" filter
-	req       *structmask.Filter // "infra.buildbucket.requested_properties" filter
-	allFields bool               // Flag for including all fields.
+	m            *mask.Mask             // the overall field mask
+	in           *structmask.Filter     // "input.properties" filter
+	out          *structmask.Filter     // "output.properties" filter
+	req          *structmask.Filter     // "infra.buildbucket.requested_properties" filter
+	stepStatuses map[pb.Status]struct{} // "steps.status" filter
+	allFields    bool                   // Flag for including all fields.
 }
 
 // NewBuildMask constructs a build mask either using a legacy `fields` FieldMask
@@ -75,7 +76,6 @@ type BuildMask struct {
 // the legacy field mask (used by SearchBuilds API).
 //
 // If the mask is empty, returns DefaultBuildMask.
-// if mask.AllFields==true, returns BuildMask{allFields:true}.
 func NewBuildMask(legacyPrefix string, legacy *fieldmaskpb.FieldMask, bm *pb.BuildMask) (*BuildMask, error) {
 	switch {
 	case legacy == nil && bm == nil:
@@ -86,12 +86,18 @@ func NewBuildMask(legacyPrefix string, legacy *fieldmaskpb.FieldMask, bm *pb.Bui
 		return newLegacyBuildMask(legacyPrefix, legacy)
 	}
 
+	// Filter unique statuses.
+	stepStatuses := make(map[pb.Status]struct{}, len(pb.Status_name))
+	for _, st := range bm.StepStatus {
+		stepStatuses[st] = struct{}{}
+	}
+
 	if bm.GetAllFields() {
 		// All fields should be included.
 		if len(bm.GetFields().GetPaths()) > 0 || len(bm.GetInputProperties()) > 0 || len(bm.GetOutputProperties()) > 0 || len(bm.GetRequestedProperties()) > 0 {
 			return nil, errors.New("mask.AllFields is mutually exclusive with other mask fields")
 		}
-		return &BuildMask{allFields: true}, nil
+		return &BuildMask{allFields: true, stepStatuses: stepStatuses}, nil
 	}
 
 	fm := bm.Fields
@@ -157,10 +163,11 @@ func NewBuildMask(legacyPrefix string, legacy *fieldmaskpb.FieldMask, bm *pb.Bui
 	}
 
 	return &BuildMask{
-		m:   m,
-		in:  in,
-		out: out,
-		req: req,
+		m:            m,
+		in:           in,
+		out:          out,
+		req:          req,
+		stepStatuses: stepStatuses,
 	}, nil
 }
 
@@ -224,6 +231,15 @@ func (m *BuildMask) Trim(b *pb.Build) error {
 	}
 	if m.req != nil && b.Infra != nil && b.Infra.Buildbucket != nil {
 		b.Infra.Buildbucket.RequestedProperties = m.req.Apply(b.Infra.Buildbucket.RequestedProperties)
+	}
+	if len(m.stepStatuses) > 0 && len(b.Steps) > 0 {
+		steps := make([]*pb.Step, 0, len(b.Steps))
+		for _, s := range b.Steps {
+			if _, ok := m.stepStatuses[s.Status]; ok {
+				steps = append(steps, s)
+			}
+		}
+		b.Steps = steps
 	}
 	return nil
 }

@@ -102,8 +102,9 @@ func TestBuildMask(t *testing.T) {
 			GitilesCommit: &pb.GitilesCommit{Host: "ohost"},
 		},
 		Steps: []*pb.Step{
-			{Name: "s1", SummaryMarkdown: "md1"},
-			{Name: "s2", SummaryMarkdown: "md2"},
+			{Name: "s1", Status: pb.Status_SUCCESS, SummaryMarkdown: "md1"},
+			{Name: "s2", Status: pb.Status_SUCCESS, SummaryMarkdown: "md2"},
+			{Name: "s3", Status: pb.Status_FAILURE, SummaryMarkdown: "md3"},
 		},
 		Infra: &pb.BuildInfra{
 			Buildbucket: &pb.BuildInfra_Buildbucket{
@@ -205,6 +206,7 @@ func TestBuildMask(t *testing.T) {
 			Steps: []*pb.Step{
 				{Name: "s1"},
 				{Name: "s2"},
+				{Name: "s3"},
 			},
 		})
 	})
@@ -226,8 +228,9 @@ func TestBuildMask(t *testing.T) {
 		So(b, ShouldResembleProto, &pb.Build{
 			Builder: build.Builder,
 			Steps: []*pb.Step{
-				{Name: "s1", SummaryMarkdown: "md1"},
-				{Name: "s2", SummaryMarkdown: "md2"},
+				{Name: "s1", Status: pb.Status_SUCCESS, SummaryMarkdown: "md1"},
+				{Name: "s2", Status: pb.Status_SUCCESS, SummaryMarkdown: "md2"},
+				{Name: "s3", Status: pb.Status_FAILURE, SummaryMarkdown: "md3"},
 			},
 			Input: &pb.Build_Input{
 				Properties: build.Input.Properties,
@@ -301,6 +304,73 @@ func TestBuildMask(t *testing.T) {
 		expected := proto.Clone(afterDefaultMask).(*pb.Build)
 		expected.Output = &pb.Build_Output{
 			Properties: asStructPb(testStruct{Str: "output"}),
+		}
+		So(b, ShouldResembleProto, expected)
+	})
+
+	Convey("Step status with steps", t, func() {
+		m, err := NewBuildMask("", nil, &pb.BuildMask{
+			Fields: &fieldmaskpb.FieldMask{
+				Paths: []string{
+					"steps",
+				},
+			},
+			StepStatus: []pb.Status{
+				pb.Status_FAILURE,
+			},
+		})
+		So(err, ShouldBeNil)
+
+		b, err := apply(m)
+		So(err, ShouldBeNil)
+
+		expected := &pb.Build{
+			Steps: []*pb.Step{
+				{
+					Name:            "s3",
+					Status:          pb.Status_FAILURE,
+					SummaryMarkdown: "md3",
+				},
+			},
+		}
+		So(b, ShouldResembleProto, expected)
+	})
+
+	Convey("Step status no steps", t, func() {
+		m, err := NewBuildMask("", nil, &pb.BuildMask{
+			StepStatus: []pb.Status{
+				pb.Status_FAILURE,
+			},
+		})
+		So(err, ShouldBeNil)
+
+		b, err := apply(m)
+		So(err, ShouldBeNil)
+
+		expected := proto.Clone(afterDefaultMask).(*pb.Build)
+		expected.Steps = nil
+		So(b, ShouldResembleProto, expected)
+	})
+
+	Convey("Step status all fields", t, func() {
+		m, err := NewBuildMask("", nil, &pb.BuildMask{
+			AllFields: true,
+			StepStatus: []pb.Status{
+				pb.Status_FAILURE,
+			},
+		})
+		So(err, ShouldBeNil)
+
+		b, err := apply(m)
+		So(err, ShouldBeNil)
+
+		expected := proto.Clone(&build).(*pb.Build)
+		expected.Steps = []*pb.Step{
+			{
+				Name:            "s3",
+				Status:          pb.Status_FAILURE,
+				SummaryMarkdown: "md3",
+			},
 		}
 		So(b, ShouldResembleProto, expected)
 	})

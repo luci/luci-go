@@ -523,8 +523,16 @@ message BuildMask {
 
   // Flag for including all fields.
   //
-  // Mutually exclusive with all other BuildMask fields.
+  // Mutually exclusive with `fields`, `input_properties`, `output_properties`,
+  // and `requested_properties`.
   bool all_fields = 5;
+
+  // A status to filter returned `steps` by. If unspecified, no filter is
+  // applied. Otherwise filters by the union of the given statuses.
+  //
+  // No effect unless `fields` specifies that `steps` should be returned or
+  // `all_fields` is true.
+  repeated Status step_status = 6;
 }
 
 // A build predicate.
