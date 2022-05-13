@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//go:generate cproto
-//go:generate mockgen -source gerrit.pb.go -destination gerrit.mock.pb.go -package gerritpb
+//go:generate cproto -use-grpc-plugin
+//go:generate mockgen -source gerrit_grpc.pb.go -destination gerrit.mock.pb.go -package gerritpb
 
 // Package gerritpb contains Gerrit service definition.
 package gerritpb
