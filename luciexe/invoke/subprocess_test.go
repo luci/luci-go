@@ -45,9 +45,10 @@ const (
 	unexpectedErrorExitCode = 97
 )
 
-func init() {
+func TestMain(m *testing.M) {
 	switch os.Getenv(selfTestEnvvar) {
 	case "":
+		m.Run()
 	case "exiterr":
 		os.Exit(unexpectedErrorExitCode)
 	case "hang":
