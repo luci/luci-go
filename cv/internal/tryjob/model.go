@@ -119,7 +119,7 @@ type Tryjob struct {
 	// See its documentation for details.
 	//
 	// Sorted and Indexed.
-	CLPatchsets []CLPatchset
+	CLPatchsets CLPatchsets
 }
 
 // tryjobMap is intended to quickly determine if a given ExternalID is
@@ -182,6 +182,26 @@ func (t *Tryjob) IsEnded() bool {
 	default:
 		panic(fmt.Errorf("unexpected tryjob status %s", t.Status.String()))
 	}
+}
+
+// CLPatchsets is a slice of `CLPatchset`s.
+//
+// Implements sort.Interface
+type CLPatchsets []CLPatchset
+
+// Len implements sort.Interface.
+func (c CLPatchsets) Len() int {
+	return len(c)
+}
+
+// Less implements sort.Interface.
+func (c CLPatchsets) Less(i int, j int) bool {
+	return c[i] < c[j]
+}
+
+// Swap implements sort.Interface.
+func (c CLPatchsets) Swap(i int, j int) {
+	c[i], c[j] = c[j], c[i]
 }
 
 // CLPatchset is a value computed combining a CL's ID and a patchset number.
