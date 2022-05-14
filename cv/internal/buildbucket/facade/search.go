@@ -63,30 +63,22 @@ func init() {
 	}
 }
 
-// SearchCallback is invoked for each Tryjob converted from matching Buildbucket
-// build.
-//
-// Returns a boolean indicating whether the search should continue. For example,
-// the caller can return false after collecting enough matching Tryjobs.
-// This function will never be invoked again after `false` is returned.
-//
-// Tryjob only populates following fields:
-//   * ExternalID
-//   * Definition
-//   * Status
-//   * Result
-type SearchCallback func(*tryjob.Tryjob) bool
-
 // Search searches Buildbucket for builds that match all provided CLs and
 // any of the provided definitions.
 //
 // Also filters out builds that specify extra properties. See:
 // `AcceptedAdditionalPropKeys`.
 //
-// `cb` is invoked for each matching build/Tryjob until all matching Tryjobs
-// are exhausted or error occurs. The Tryjobs are guaranteed to have
-// descreasing build ID (in other word, from newest to oldest) ONLY within the
-// same host.
+// `cb` is invoked for each matching Tryjob converted from Buildbucket build
+// until `cb` returns false or all matching Tryjobs are exhausted or error
+// occurs. The Tryjob `cb` receives only populates following fields:
+//   * ExternalID
+//   * Definition
+//   * Status
+//   * Result
+//
+// Also, the Tryjobs are guaranteed to have descreasing build ID (in other
+// word, from newest to oldest) ONLY within the same host.
 // For example, for following matching builds:
 //   * host: A, build: 100, create time: now
 //   * host: A, build: 101, create time: now - 2min
@@ -104,7 +96,7 @@ type SearchCallback func(*tryjob.Tryjob) bool
 // definitions defines builder from other LUCI Project, this other LUCI Project
 // should grant bucket READ permission to the provided `luciProject`.
 // Otherwise, the builds won't show up in the search result.
-func (f *Facade) Search(ctx context.Context, cls []*run.RunCL, definitions []*tryjob.Definition, luciProject string, cb SearchCallback) error {
+func (f *Facade) Search(ctx context.Context, cls []*run.RunCL, definitions []*tryjob.Definition, luciProject string, cb func(*tryjob.Tryjob) bool) error {
 	shouldStop, stop := makeStopFunction()
 	workers, err := f.makeSearchWorkers(ctx, cls, definitions, luciProject, shouldStop)
 	if err != nil {
