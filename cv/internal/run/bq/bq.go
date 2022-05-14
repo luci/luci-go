@@ -16,11 +16,7 @@ package bq
 
 import (
 	"context"
-	"crypto/sha256"
-	"encoding/hex"
 	"fmt"
-	"sort"
-	"strconv"
 
 	"golang.org/x/sync/errgroup"
 	"google.golang.org/protobuf/types/known/timestamppb"
@@ -129,8 +125,8 @@ func makeAttempt(ctx context.Context, r *run.Run) (*cvbqpb.Attempt, error) {
 		Key:                  r.ID.AttemptKey(),
 		LuciProject:          r.ID.LUCIProject(),
 		ConfigGroup:          r.ConfigGroupID.Name(),
-		ClGroupKey:           computeCLGroupKey(runCLs, false),
-		EquivalentClGroupKey: computeCLGroupKey(runCLs, true),
+		ClGroupKey:           run.ComputeCLGroupKey(runCLs, false),
+		EquivalentClGroupKey: run.ComputeCLGroupKey(runCLs, true),
 		// Run.CreateTime is trigger time, which corresponds to what CQD sends for
 		// StartTime.
 		StartTime:     timestamppb.New(r.CreateTime),
@@ -247,46 +243,6 @@ func attemptStatus(ctx context.Context, r *run.Run) cvbqpb.AttemptStatus {
 		logging.Errorf(ctx, "Unexpected attempt status %q", r.Status)
 		return cvbqpb.AttemptStatus_ATTEMPT_STATUS_UNSPECIFIED
 	}
-}
-
-// computeCLGroupKey constructs keys for ClGroupKey and the related
-// EquivalentClGroupKey.
-//
-// These are meant to be opaque keys unique to particular set of CLs and
-// patchsets for the purpose of grouping together runs for the same sets of
-// patchsets. if isEquivalent is true, then the "min equivalent patchset" is
-// used instead of the latest patchset, so that trivial patchsets such as minor
-// rebases and CL description updates don't change the key.
-func computeCLGroupKey(cls []*run.RunCL, isEquivalent bool) string {
-	sort.Slice(cls, func(i, j int) bool {
-		// ExternalID includes host and change number but not patchset; but
-		// different patchsets of the same CL will never be included in the
-		// same list, so sorting on only ExternalID is sufficient.
-		return cls[i].ExternalID < cls[j].ExternalID
-	})
-	h := sha256.New()
-	// CL group keys are meant to be opaque keys. We'd like to avoid people
-	// depending on CL group key and equivalent CL group key sometimes being
-	// equal. We can do this by adding a salt to the hash.
-	if isEquivalent {
-		h.Write([]byte("equivalent_cl_group_key"))
-	}
-	separator := []byte{0}
-	for i, cl := range cls {
-		if i > 0 {
-			h.Write(separator)
-		}
-		h.Write([]byte(cl.Detail.GetGerrit().GetHost()))
-		h.Write(separator)
-		h.Write([]byte(strconv.FormatInt(cl.Detail.GetGerrit().GetInfo().GetNumber(), 10)))
-		h.Write(separator)
-		if isEquivalent {
-			h.Write([]byte(strconv.FormatInt(int64(cl.Detail.GetMinEquivalentPatchset()), 10)))
-		} else {
-			h.Write([]byte(strconv.FormatInt(int64(cl.Detail.GetPatchset()), 10)))
-		}
-	}
-	return hex.EncodeToString(h.Sum(nil)[:8])
 }
 
 func computeAttemptBuilds(ctx context.Context, r *run.Run) ([]*cvbqpb.Build, error) {

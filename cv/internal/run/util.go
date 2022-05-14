@@ -14,7 +14,14 @@
 
 package run
 
-import "go.chromium.org/luci/gae/service/datastore"
+import (
+	"crypto/sha256"
+	"encoding/hex"
+	"sort"
+	"strconv"
+
+	"go.chromium.org/luci/gae/service/datastore"
+)
 
 // runHeapKey facilitates heap-based merge of multiple consistently sorted
 // ranges of Datastore keys, each range identified by its index.
@@ -47,6 +54,46 @@ func (r *runHeap) Pop() interface{} {
 	(*r)[idx].dsKey = nil // free memory as a good habit.
 	*r = (*r)[:idx]
 	return v
+}
+
+// ComputeCLGroupKey constructs keys for ClGroupKey and the related
+// EquivalentClGroupKey.
+//
+// These are meant to be opaque keys unique to particular set of CLs and
+// patchsets for the purpose of grouping together Runs for the same sets of
+// patchsets. if isEquivalent is true, then the "min equivalent patchset" is
+// used instead of the latest patchset, so that trivial patchsets such as minor
+// rebases and CL description updates don't change the key.
+func ComputeCLGroupKey(cls []*RunCL, isEquivalent bool) string {
+	sort.Slice(cls, func(i, j int) bool {
+		// ExternalID includes host and change number but not patchset; but
+		// different patchsets of the same CL will never be included in the
+		// same list, so sorting on only ExternalID is sufficient.
+		return cls[i].ExternalID < cls[j].ExternalID
+	})
+	h := sha256.New()
+	// CL group keys are meant to be opaque keys. We'd like to avoid people
+	// depending on CL group key and equivalent CL group key sometimes being
+	// equal. We can do this by adding a salt to the hash.
+	if isEquivalent {
+		h.Write([]byte("equivalent_cl_group_key"))
+	}
+	separator := []byte{0}
+	for i, cl := range cls {
+		if i > 0 {
+			h.Write(separator)
+		}
+		h.Write([]byte(cl.Detail.GetGerrit().GetHost()))
+		h.Write(separator)
+		h.Write([]byte(strconv.FormatInt(cl.Detail.GetGerrit().GetInfo().GetNumber(), 10)))
+		h.Write(separator)
+		if isEquivalent {
+			h.Write([]byte(strconv.FormatInt(int64(cl.Detail.GetMinEquivalentPatchset()), 10)))
+		} else {
+			h.Write([]byte(strconv.FormatInt(int64(cl.Detail.GetPatchset()), 10)))
+		}
+	}
+	return hex.EncodeToString(h.Sum(nil)[:8])
 }
 
 func min(i, j int) int {
