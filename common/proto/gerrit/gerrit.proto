@@ -769,6 +769,8 @@ message CreateChangeRequest {
   // newly created change. If set, it must be a merged commit on the destination
   // branch.
   string base_commit = 4;
+
+  Notify notify = 5;
 }
 
 // Information to submit a change.
