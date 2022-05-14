@@ -101,3 +101,19 @@ func MakeTryjobIDs(ids ...int64) TryjobIDs {
 	}
 	return ret
 }
+
+// TryjobIDSet is convenience type to reduce the boilerplate.
+type TryjobIDSet map[TryjobID]struct{}
+
+// Add adds the provided Tryjob ID to the set.
+func (s TryjobIDSet) Add(tjID TryjobID) {
+	s[tjID] = struct{}{}
+}
+
+// Has returns true if the provided Tryjob ID is in the set.
+//
+// Otherwise, returns false.
+func (s TryjobIDSet) Has(tjID TryjobID) bool {
+	_, exists := s[tjID]
+	return exists
+}
