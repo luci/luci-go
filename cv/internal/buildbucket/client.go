@@ -34,10 +34,10 @@ type Client interface {
 	GetBuild(ctx context.Context, in *bbpb.GetBuildRequest, opts ...grpc.CallOption) (*bbpb.Build, error)
 	// SearchBuilds searches for builds.
 	SearchBuilds(ctx context.Context, in *bbpb.SearchBuildsRequest, opts ...grpc.CallOption) (*bbpb.SearchBuildsResponse, error)
-	// ScheduleBuild schedules a new build.
-	ScheduleBuild(ctx context.Context, in *bbpb.ScheduleBuildRequest, opts ...grpc.CallOption) (*bbpb.Build, error)
 	// CancelBuild cancels a build.
 	CancelBuild(ctx context.Context, in *bbpb.CancelBuildRequest, opts ...grpc.CallOption) (*bbpb.Build, error)
+	// Executes multiple requests in a batch.
+	Batch(ctx context.Context, in *bbpb.BatchRequest, opts ...grpc.CallOption) (*bbpb.BatchResponse, error)
 }
 
 // ClientFactory creates Client tied to Buildbucket host and LUCI project.

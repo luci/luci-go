@@ -155,13 +155,13 @@ func (c *Client) shouldIncludeBuild(ctx context.Context, b *bbpb.Build, pred *bb
 	return true
 }
 
-// ScheduleBuild implements buildbucket.Client.
-func (c *Client) ScheduleBuild(ctx context.Context, in *bbpb.ScheduleBuildRequest, opts ...grpc.CallOption) (*bbpb.Build, error) {
+// CancelBuild implements buildbucket.Client.
+func (c *Client) CancelBuild(ctx context.Context, in *bbpb.CancelBuildRequest, opts ...grpc.CallOption) (*bbpb.Build, error) {
 	panic("not implemented")
 }
 
-// CancelBuild implements buildbucket.Client.
-func (c *Client) CancelBuild(ctx context.Context, in *bbpb.CancelBuildRequest, opts ...grpc.CallOption) (*bbpb.Build, error) {
+// Batch implements buildbucket.Client.
+func (c *Client) Batch(ctx context.Context, in *bbpb.BatchRequest, opts ...grpc.CallOption) (*bbpb.BatchResponse, error) {
 	panic("not implemented")
 }
 
