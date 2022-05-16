@@ -311,7 +311,6 @@ type CleanupDatabase func(ctx context.Context, client *spanner.Client) error
 // tested Spanner database.
 type FindInitScript func() (string, error)
 
-
 // runIntegrationTests returns true if integration tests should run.
 func runIntegrationTests() bool {
 	return os.Getenv(IntegrationTestEnvVar) == "1"

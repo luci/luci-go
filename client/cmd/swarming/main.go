@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+//go:build !copybara
 // +build !copybara
 
 // Package main is a client to a Swarming server.

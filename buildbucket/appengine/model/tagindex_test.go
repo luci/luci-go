@@ -323,14 +323,14 @@ func TestTagIndex(t *testing.T) {
 
 		Convey("searchTagIndex", func() {
 			So(datastore.Put(ctx, &TagIndex{
-				ID:":1:buildset:patch/gerrit/chromium-review.googlesource.com/123/1",
-				Entries: []TagIndexEntry{{BuildID:123, BucketID: "proj/bkt"}},
+				ID:      ":1:buildset:patch/gerrit/chromium-review.googlesource.com/123/1",
+				Entries: []TagIndexEntry{{BuildID: 123, BucketID: "proj/bkt"}},
 			}), ShouldBeNil)
 			Convey("found", func() {
 				entries, err := SearchTagIndex(ctx, "buildset", "patch/gerrit/chromium-review.googlesource.com/123/1")
 				So(err, ShouldBeNil)
 				So(entries, ShouldResembleProto, []*TagIndexEntry{
-					{BuildID:123, BucketID: "proj/bkt"},
+					{BuildID: 123, BucketID: "proj/bkt"},
 				})
 			})
 
@@ -342,8 +342,8 @@ func TestTagIndex(t *testing.T) {
 
 			Convey("bad TagIndexEntry", func() {
 				So(datastore.Put(ctx, &TagIndex{
-					ID:"key:val",
-					Entries: []TagIndexEntry{{BuildID:123, BucketID: "/"}},
+					ID:      "key:val",
+					Entries: []TagIndexEntry{{BuildID: 123, BucketID: "/"}},
 				}), ShouldBeNil)
 				entries, err := SearchTagIndex(ctx, "key", "val")
 				So(err, ShouldBeNil)

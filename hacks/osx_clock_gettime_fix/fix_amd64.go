@@ -12,7 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//+build darwin,amd64,go1.16
+//go:build darwin && amd64 && go1.16
+// +build darwin,amd64,go1.16
 
 package osx_clock_gettime_fix
 

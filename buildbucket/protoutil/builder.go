@@ -88,13 +88,13 @@ func FormatBucketID(project, bucket string) string {
 // ParseBucketID parses a "{project}/{bucket}" string.
 // Opposite of FormatBucketID.
 func ParseBucketID(s string) (string, string, error) {
-	switch parts := strings.Split(s, "/");{
+	switch parts := strings.Split(s, "/"); {
 	case len(parts) != 2:
 		return "", "", errors.New("invalid bucket id; must have 1 slash")
 	case strings.TrimSpace(parts[0]) == "":
-		return "", "",  errors.New("invalid bucket id; project is empty")
+		return "", "", errors.New("invalid bucket id; project is empty")
 	case strings.TrimSpace(parts[1]) == "":
-		return "", "",  errors.New("invalid bucket id; bucket is empty")
+		return "", "", errors.New("invalid bucket id; bucket is empty")
 	default:
 		return parts[0], parts[1], nil
 	}

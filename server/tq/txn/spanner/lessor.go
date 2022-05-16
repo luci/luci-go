@@ -95,10 +95,10 @@ func (*spanLessor) acquire(ctx context.Context, sectionID string, desired *parti
 }
 
 type lease struct {
-	SectionID string
-	LeaseID int64
+	SectionID       string
+	LeaseID         int64
 	SerializedParts []string
-	ExpiresAt time.Time
+	ExpiresAt       time.Time
 
 	// Set only when lease object is created in save().
 	parts partition.SortedPartitions
@@ -126,7 +126,7 @@ func save(ctx context.Context, sectionID string, expiresAt time.Time, parts part
 	// go back and increase from 1 again.
 	var leaseID int64
 	switch {
-	case max< math.MaxInt64:
+	case max < math.MaxInt64:
 		leaseID = max + 1
 	default:
 		leaseID = 1
@@ -134,10 +134,10 @@ func save(ctx context.Context, sectionID string, expiresAt time.Time, parts part
 
 	l.LeaseID = leaseID
 	m := spanner.InsertMap("TQLeases", map[string]interface{}{
-		"SectionID": l.SectionID,
-		"LeaseID": leaseID,
+		"SectionID":       l.SectionID,
+		"LeaseID":         leaseID,
 		"SerializedParts": l.SerializedParts,
-		"ExpiresAt": l.ExpiresAt,
+		"ExpiresAt":       l.ExpiresAt,
 	})
 	span.BufferWrite(ctx, m)
 
@@ -167,7 +167,7 @@ func query(ctx context.Context, sectionID string) ([]*lease, error) {
 		WHERE SectionID = @sectionID
 	`)
 	st.Params = map[string]interface{}{
-		"sectionID":    sectionID,
+		"sectionID": sectionID,
 	}
 
 	var all []*lease
@@ -208,7 +208,7 @@ func activeAndExpired(ctx context.Context, all []*lease) (active, expired []*lea
 }
 
 func maxLeaseID(all []*lease) int64 {
-  var max int64 = 0
+	var max int64 = 0
 	for _, l := range all {
 		if l.LeaseID > max {
 			max = l.LeaseID

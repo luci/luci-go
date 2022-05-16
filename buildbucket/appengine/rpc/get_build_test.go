@@ -173,11 +173,11 @@ func TestGetBuild(t *testing.T) {
 						ID: ":2:build_address:luci.project.bucket/builder/1",
 						Entries: []model.TagIndexEntry{
 							{
-								BuildID: 1,
+								BuildID:  1,
 								BucketID: "proj/bucket",
 							},
 							{
-								BuildID: 2,
+								BuildID:  2,
 								BucketID: "proj/bucket",
 							},
 						},
@@ -212,7 +212,7 @@ func TestGetBuild(t *testing.T) {
 					ID: ":2:build_address:luci.project.bucket/builder/1",
 					Entries: []model.TagIndexEntry{
 						{
-							BuildID: 1,
+							BuildID:  1,
 							BucketID: "project/bucket",
 						},
 					},

@@ -34,8 +34,8 @@ func New(b *Bucketer) *Distribution {
 		b = DefaultBucketer
 	}
 	return &Distribution{
-		b: b,
-		buckets: make([]int64, 0),
+		b:                 b,
+		buckets:           make([]int64, 0),
 		lastNonZeroBucket: -1}
 }
 

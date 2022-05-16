@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+//go:build include_profiler
 // +build include_profiler
 
 package cli

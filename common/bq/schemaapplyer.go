@@ -115,28 +115,28 @@ func (s *SchemaApplyer) EnsureTable(ctx context.Context, t Table, spec *bigquery
 //
 // Existing fields will not be deleted.
 func EnsureTable(ctx context.Context, t Table, spec *bigquery.TableMetadata) error {
-		_, err := t.Metadata(ctx)
-		apiErr, ok := err.(*googleapi.Error)
-		switch {
-		case ok && apiErr.Code == http.StatusNotFound:
-			// Table doesn't exist. Create it now.
-			if err = createBQTable(ctx, t, spec); err != nil {
-				return errors.Annotate(err, "create bq table").Err()
-			}
-			return nil
-		case ok && apiErr.Code == http.StatusForbidden:
-			// No read table permission.
-			return err
-		case err != nil:
-			return transient.Tag.Apply(err)
-		}
-
-		// Table exists and is accessible.
-		// Ensure its schema is up to date.
-		if err = ensureBQTableFields(ctx, t, spec.Schema); err != nil {
-			return errors.Annotate(err, "ensure bq table fields").Err()
+	_, err := t.Metadata(ctx)
+	apiErr, ok := err.(*googleapi.Error)
+	switch {
+	case ok && apiErr.Code == http.StatusNotFound:
+		// Table doesn't exist. Create it now.
+		if err = createBQTable(ctx, t, spec); err != nil {
+			return errors.Annotate(err, "create bq table").Err()
 		}
 		return nil
+	case ok && apiErr.Code == http.StatusForbidden:
+		// No read table permission.
+		return err
+	case err != nil:
+		return transient.Tag.Apply(err)
+	}
+
+	// Table exists and is accessible.
+	// Ensure its schema is up to date.
+	if err = ensureBQTableFields(ctx, t, spec.Schema); err != nil {
+		return errors.Annotate(err, "ensure bq table fields").Err()
+	}
+	return nil
 }
 
 func createBQTable(ctx context.Context, t Table, spec *bigquery.TableMetadata) error {

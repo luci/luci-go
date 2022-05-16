@@ -12,7 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//+build darwin,amd64,go1.17
+//go:build darwin && amd64 && go1.17
+// +build darwin,amd64,go1.17
 
 package osx_crypto_rand_entropy
 

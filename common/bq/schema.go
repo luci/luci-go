@@ -186,15 +186,15 @@ func (c *SchemaConverter) description(file *descriptorpb.FileDescriptorProto, pt
 		if trimSize > 0 && len(lines[i]) >= trimSize {
 			lines[i] = lines[i][trimSize:]
 		}
-		lineLen := len(lines[i]) + 1  // add 1 for the ending "\n".
-		if totalSize + lineLen > fieldDescriptionMaxlength {
+		lineLen := len(lines[i]) + 1 // add 1 for the ending "\n".
+		if totalSize+lineLen > fieldDescriptionMaxlength {
 			// description is too long, discard the rest of it.
 			end = i
 			break
 		}
 		totalSize += lineLen
 	}
-	description = strings.Join(lines[0: end], "\n")
+	description = strings.Join(lines[0:end], "\n")
 	description = strings.TrimSpace(description)
 	if end < len(lines) {
 		description += truncMsg
