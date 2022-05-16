@@ -20,7 +20,6 @@ import (
 	"testing"
 	"time"
 
-	"google.golang.org/grpc/codes"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/fieldmaskpb"
 
@@ -90,7 +89,7 @@ func TestSearchBuild(t *testing.T) {
 					CreatedBy: "foo",
 				},
 			})
-			So(err, ShouldHaveAppStatus, codes.InvalidArgument)
+			So(err, ShouldBeRPCInvalidArgument)
 		})
 
 		Convey("Can apply Gerrit Change predicate", func() {

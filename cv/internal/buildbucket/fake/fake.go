@@ -18,18 +18,20 @@ import (
 	"fmt"
 	"sync"
 
-	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
+	bbpb "go.chromium.org/luci/buildbucket/proto"
+	"google.golang.org/protobuf/proto"
 
 	"go.chromium.org/luci/cv/internal/buildbucket"
 )
 
-type buildID struct {
-	host string
-	id   int64
+type fakeApp struct {
+	buildStoreMu sync.RWMutex
+	buildStore   map[int64]*bbpb.Build // build ID -> build
 }
+
 type Fake struct {
-	storeMu sync.RWMutex
-	store   map[buildID]*buildbucketpb.Build
+	hostsMu sync.Mutex
+	hosts   map[string]*fakeApp // hostname -> fakeApp
 }
 
 func (f *Fake) NewClientFactory() buildbucket.ClientFactory {
@@ -38,15 +40,39 @@ func (f *Fake) NewClientFactory() buildbucket.ClientFactory {
 	}
 }
 
-func (f *Fake) AddBuild(build *buildbucketpb.Build) {
+// AddBuild adds a build to fake Buildbucket host.
+//
+// Reads Buildbucket hostname from `infra.buildbucket.hostname`.
+// Overwrites the existing build if the build with same ID already exists.
+func (f *Fake) AddBuild(build *bbpb.Build) {
 	host := build.GetInfra().GetBuildbucket().GetHostname()
 	if host == "" {
 		panic(fmt.Errorf("missing host for build %d", build.Id))
 	}
-	f.storeMu.Lock()
-	defer f.storeMu.Unlock()
-	if f.store == nil {
-		f.store = make(map[buildID]*buildbucketpb.Build)
+	fa := f.ensureApp(host)
+	fa.buildStoreMu.Lock()
+	fa.buildStore[build.GetId()] = build
+	fa.buildStoreMu.Unlock()
+}
+
+func (f *Fake) ensureApp(host string) *fakeApp {
+	f.hostsMu.Lock()
+	defer f.hostsMu.Unlock()
+	if _, ok := f.hosts[host]; !ok {
+		if f.hosts == nil {
+			f.hosts = make(map[string]*fakeApp)
+		}
+		f.hosts[host] = &fakeApp{
+			buildStore: make(map[int64]*bbpb.Build),
+		}
 	}
-	f.store[buildID{host, build.GetId()}] = build
+	return f.hosts[host]
+}
+
+func (fa *fakeApp) iterBuildStore(cb func(*bbpb.Build)) {
+	fa.buildStoreMu.RLock()
+	defer fa.buildStoreMu.RUnlock()
+	for _, build := range fa.buildStore {
+		cb(proto.Clone(build).(*bbpb.Build))
+	}
 }

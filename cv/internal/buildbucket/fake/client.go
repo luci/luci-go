@@ -23,13 +23,13 @@ import (
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/reflect/protoreflect"
 
 	"go.chromium.org/luci/buildbucket/appengine/model"
 	bbpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/data/stringset"
-	"go.chromium.org/luci/grpc/appstatus"
 
 	"go.chromium.org/luci/cv/internal/buildbucket"
 )
@@ -41,18 +41,16 @@ type clientFactory struct {
 // MakeClient implements buildbucket.ClientFactory.
 func (factory clientFactory) MakeClient(ctx context.Context, host, luciProject string) (buildbucket.Client, error) {
 	return &Client{
-		fake:        factory.fake,
+		fa:          factory.fake.ensureApp(host),
 		luciProject: luciProject,
-		bbHost:      host,
 	}, nil
 }
 
 // Client connects a Buildbucket Fake and scope to a certain LUCI Project +
 // Buildbucket host.
 type Client struct {
-	fake        *Fake
+	fa          *fakeApp
 	luciProject string
-	bbHost      string
 }
 
 // GetBuild implements buildbucket.Client.
@@ -84,7 +82,7 @@ func (c *Client) SearchBuilds(ctx context.Context, in *bbpb.SearchBuildsRequest,
 			return true
 		})
 		if len(notSupportedPredicates) > 0 {
-			return nil, appstatus.Errorf(codes.InvalidArgument, "predicates [%s] are not supported", strings.Join(notSupportedPredicates, ", "))
+			return nil, status.Errorf(codes.InvalidArgument, "predicates [%s] are not supported", strings.Join(notSupportedPredicates, ", "))
 		}
 	}
 	var lastReturnedBuildID int64
@@ -92,17 +90,13 @@ func (c *Client) SearchBuilds(ctx context.Context, in *bbpb.SearchBuildsRequest,
 		var err error
 		lastReturnedBuildID, err = strconv.ParseInt(token, 10, 64)
 		if err != nil {
-			return nil, appstatus.Errorf(codes.InvalidArgument, "invalid token %q, expecting a build ID", token)
+			return nil, status.Errorf(codes.InvalidArgument, "invalid token %q, expecting a build ID", token)
 		}
 	}
-	c.fake.storeMu.RLock()
-	candidates := make([]*bbpb.Build, 0, len(c.fake.store))
-	for id, b := range c.fake.store {
-		if id.host == c.bbHost {
-			candidates = append(candidates, b)
-		}
-	}
-	c.fake.storeMu.RUnlock()
+	candidates := make([]*bbpb.Build, 0, len(c.fa.buildStore))
+	c.fa.iterBuildStore(func(build *bbpb.Build) {
+		candidates = append(candidates, build)
+	})
 	sort.Slice(candidates, func(i, j int) bool {
 		return candidates[i].Id < candidates[j].Id
 	})
@@ -112,14 +106,14 @@ func (c *Client) SearchBuilds(ctx context.Context, in *bbpb.SearchBuildsRequest,
 	}
 	resBuilds := make([]*bbpb.Build, 0, pageSize)
 	for _, b := range candidates {
-		if c.shouldIncludeBuild(ctx, b, in.GetPredicate(), lastReturnedBuildID) {
+		if c.shouldIncludeBuild(b, in.GetPredicate(), lastReturnedBuildID) {
 			clone := proto.Clone(b).(*bbpb.Build)
 			mask, err := model.NewBuildMask("", nil, in.GetMask())
 			if err != nil {
-				return nil, appstatus.Errorf(codes.Internal, "error while constructing BuildMask: %s", err)
+				return nil, status.Errorf(codes.Internal, "error while constructing BuildMask: %s", err)
 			}
 			if err := mask.Trim(clone); err != nil {
-				return nil, appstatus.Errorf(codes.Internal, "error while applying field mask: %s", err)
+				return nil, status.Errorf(codes.Internal, "error while applying field mask: %s", err)
 			}
 			resBuilds = append(resBuilds, clone)
 			if len(resBuilds) == int(pageSize) {
@@ -133,11 +127,11 @@ func (c *Client) SearchBuilds(ctx context.Context, in *bbpb.SearchBuildsRequest,
 	return &bbpb.SearchBuildsResponse{Builds: resBuilds}, nil
 }
 
-func (c *Client) shouldIncludeBuild(ctx context.Context, b *bbpb.Build, pred *bbpb.BuildPredicate, lastReturnedBuildID int64) bool {
+func (c *Client) shouldIncludeBuild(b *bbpb.Build, pred *bbpb.BuildPredicate, lastReturnedBuildID int64) bool {
 	switch {
 	case b.GetId() <= lastReturnedBuildID:
 		return false
-	case !c.canAccessBuild(ctx, b):
+	case !c.canAccessBuild(b):
 		return false
 	case !pred.GetIncludeExperimental() && b.GetInput().GetExperimental():
 		return false
@@ -165,7 +159,7 @@ func (c *Client) Batch(ctx context.Context, in *bbpb.BatchRequest, opts ...grpc.
 	panic("not implemented")
 }
 
-func (c *Client) canAccessBuild(ctx context.Context, build *bbpb.Build) bool {
+func (c *Client) canAccessBuild(build *bbpb.Build) bool {
 	// TODO(yiwzhang): implement proper ACL
 	return c.luciProject == build.GetBuilder().GetProject()
 }
