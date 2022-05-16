@@ -30,6 +30,7 @@ import (
 	cvbqpb "go.chromium.org/luci/cv/api/bigquery/v1"
 	cfgpb "go.chromium.org/luci/cv/api/config/v2"
 	migrationpb "go.chromium.org/luci/cv/api/migration"
+	"go.chromium.org/luci/cv/internal/changelist"
 	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/configs/prjcfg/prjcfgtest"
 	"go.chromium.org/luci/cv/internal/configs/validation"
@@ -706,8 +707,13 @@ func TestCreatesMultiCLsFullRunSuccess(t *testing.T) {
 			So(ci.GetRevisions()[ci.GetCurrentRevision()].GetNumber(), ShouldEqual, int32(gPatchSet+1))
 		}
 		// verify submission order: [ci2, ci3, ci1]
-		So(ci2.GetUpdated().AsTime(), ShouldHappenBefore, ci3.GetUpdated().AsTime())
-		So(ci3.GetUpdated().AsTime(), ShouldHappenBefore, ci1.GetUpdated().AsTime())
+		expectedSubmittedCls, err := changelist.Lookup(ctx, []changelist.ExternalID{
+			changelist.MustGobID(gHost, gChange2),
+			changelist.MustGobID(gHost, gChange3),
+			changelist.MustGobID(gHost, gChange1),
+		})
+		So(err, ShouldBeNil)
+		So(finalRun.Submission.GetCls(), ShouldResemble, common.CLIDsAsInt64s(expectedSubmittedCls))
 
 		ct.LogPhase(ctx, "BQ export must complete")
 		ct.RunUntil(ctx, func() bool { return ct.ExportedBQAttemptsCount() == 1 })

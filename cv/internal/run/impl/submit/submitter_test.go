@@ -39,7 +39,6 @@ import (
 	"go.chromium.org/luci/cv/internal/run/runtest"
 
 	. "github.com/smartystreets/goconvey/convey"
-	// . "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestSubmitter(t *testing.T) {
@@ -52,19 +51,61 @@ func TestSubmitter(t *testing.T) {
 			lProject = "test_proj"
 			gHost1   = "gerrit-1.example.com"
 			gHost2   = "gerrit-2.example.com"
+			gHost3   = "gerrit-3.example.com"
 		)
 		ci1 := gf.CI(1, gf.PS(3), gf.AllRevs(), gf.CQ(2))
 		ci2 := gf.CI(2, gf.PS(5), gf.AllRevs(), gf.CQ(2))
+		ci3 := gf.CI(3, gf.PS(7), gf.AllRevs(), gf.CQ(2))
 		ct.GFake.AddFrom(gf.WithCIs(gHost1, gf.ACLRestricted(lProject), ci1))
 		ct.GFake.AddFrom(gf.WithCIs(gHost2, gf.ACLRestricted(lProject), ci2))
+		ct.GFake.AddFrom(gf.WithCIs(gHost3, gf.ACLRestricted(lProject), ci3))
 
 		now := ct.Clock.Now().UTC()
 		s := RunCLsSubmitter{
 			runID:    common.MakeRunID(lProject, now, 1, []byte("deadbeef")),
 			deadline: now.Add(1 * time.Minute),
-			clids:    common.CLIDs{1, 2},
+			clids:    common.CLIDs{1, 2, 3},
 			rm:       run.NewNotifier(ct.TQDispatcher),
 			gFactory: ct.GFactory(),
+		}
+		cl1 := &run.RunCL{
+			ID:         1,
+			ExternalID: changelist.MustGobID(gHost1, ci1.GetNumber()),
+			Run:        datastore.MakeKey(ctx, run.RunKind, string(s.runID)),
+			Detail: &changelist.Snapshot{
+				Kind: &changelist.Snapshot_Gerrit{
+					Gerrit: &changelist.Gerrit{
+						Host: gHost1,
+						Info: ci1,
+					},
+				},
+			},
+		}
+		cl2 := &run.RunCL{
+			ID:         2,
+			ExternalID: changelist.MustGobID(gHost2, ci2.GetNumber()),
+			Run:        datastore.MakeKey(ctx, run.RunKind, string(s.runID)),
+			Detail: &changelist.Snapshot{
+				Kind: &changelist.Snapshot_Gerrit{
+					Gerrit: &changelist.Gerrit{
+						Host: gHost2,
+						Info: ci2,
+					},
+				},
+			},
+		}
+		cl3 := &run.RunCL{
+			ID:         3,
+			ExternalID: changelist.MustGobID(gHost3, ci3.GetNumber()),
+			Run:        datastore.MakeKey(ctx, run.RunKind, string(s.runID)),
+			Detail: &changelist.Snapshot{
+				Kind: &changelist.Snapshot_Gerrit{
+					Gerrit: &changelist.Gerrit{
+						Host: gHost3,
+						Info: ci3,
+					},
+				},
+			},
 		}
 		So(datastore.Put(ctx,
 			&run.Run{
@@ -74,30 +115,7 @@ func TestSubmitter(t *testing.T) {
 				StartTime:  now,
 				CLs:        s.clids,
 			},
-			&run.RunCL{
-				ID:  1,
-				Run: datastore.MakeKey(ctx, run.RunKind, string(s.runID)),
-				Detail: &changelist.Snapshot{
-					Kind: &changelist.Snapshot_Gerrit{
-						Gerrit: &changelist.Gerrit{
-							Host: gHost1,
-							Info: ci1,
-						},
-					},
-				},
-			},
-			&run.RunCL{
-				ID:  2,
-				Run: datastore.MakeKey(ctx, run.RunKind, string(s.runID)),
-				Detail: &changelist.Snapshot{
-					Kind: &changelist.Snapshot_Gerrit{
-						Gerrit: &changelist.Gerrit{
-							Host: gHost2,
-							Info: ci2,
-						},
-					},
-				},
-			},
+			cl1, cl2, cl3,
 		), ShouldBeNil)
 		So(datastore.RunInTransaction(ctx, func(ctx context.Context) error {
 			waitlisted, err := TryAcquire(ctx, s.rm.NotifyReadyForSubmission, s.runID, nil)
@@ -120,6 +138,8 @@ func TestSubmitter(t *testing.T) {
 			So(ct.GFake.GetChange(gHost1, 1).Info.GetStatus(), ShouldEqual, gerritpb.ChangeStatus_MERGED)
 			runtest.AssertReceivedCLsSubmitted(ctx, s.runID, 2)
 			So(ct.GFake.GetChange(gHost2, 2).Info.GetStatus(), ShouldEqual, gerritpb.ChangeStatus_MERGED)
+			runtest.AssertReceivedCLsSubmitted(ctx, s.runID, 3)
+			So(ct.GFake.GetChange(gHost3, 3).Info.GetStatus(), ShouldEqual, gerritpb.ChangeStatus_MERGED)
 			So(ct.GFake.Requests(), ShouldHaveLength, len(s.clids)) // len(s.clids) SubmitRevision calls
 			runtest.AssertReceivedSubmissionCompleted(ctx, s.runID,
 				&eventpb.SubmissionCompleted{
@@ -163,6 +183,8 @@ func TestSubmitter(t *testing.T) {
 				So(ct.GFake.GetChange(gHost1, 1).Info.GetStatus(), ShouldEqual, gerritpb.ChangeStatus_MERGED)
 				runtest.AssertNotReceivedCLsSubmitted(ctx, s.runID, 2)
 				So(ct.GFake.GetChange(gHost2, 2).Info.GetStatus(), ShouldEqual, gerritpb.ChangeStatus_NEW)
+				runtest.AssertNotReceivedCLsSubmitted(ctx, s.runID, 3)
+				So(ct.GFake.GetChange(gHost3, 3).Info.GetStatus(), ShouldEqual, gerritpb.ChangeStatus_NEW) // 3 not attempted
 				runtest.AssertReceivedSubmissionCompleted(ctx, s.runID,
 					&eventpb.SubmissionCompleted{
 						Result: eventpb.SubmissionResult_FAILED_PERMANENT,
@@ -188,7 +210,9 @@ func TestSubmitter(t *testing.T) {
 				verifyRunReleased(s.runID)
 				So(ct.GFake.GetChange(gHost1, 1).Info.GetStatus(), ShouldEqual, gerritpb.ChangeStatus_MERGED)
 				runtest.AssertNotReceivedCLsSubmitted(ctx, s.runID, 2)
-				So(ct.GFake.GetChange(gHost2, 2).Info.GetStatus(), ShouldEqual, gerritpb.ChangeStatus_NEW)
+				So(ct.GFake.GetChange(gHost2, 2).Info.GetStatus(), ShouldEqual, gerritpb.ChangeStatus_NEW) // 3 not attempted
+				runtest.AssertNotReceivedCLsSubmitted(ctx, s.runID, 3)
+				So(ct.GFake.GetChange(gHost3, 3).Info.GetStatus(), ShouldEqual, gerritpb.ChangeStatus_NEW)
 				runtest.AssertReceivedSubmissionCompleted(ctx, s.runID,
 					&eventpb.SubmissionCompleted{
 						Result: eventpb.SubmissionResult_FAILED_PERMANENT,
@@ -228,6 +252,80 @@ func TestSubmitter(t *testing.T) {
 					QueueReleaseTimestamp: timestamppb.New(clock.Now(ctx)),
 				},
 			)
+		})
+
+		Convey("CL with dependencies", func() {
+			Convey("optmize submission of stack CLs", func() {
+				cl2.Detail.Deps = append(cl2.Detail.Deps, &changelist.Dep{
+					Clid: int64(cl1.ID),
+					Kind: changelist.DepKind_HARD,
+				})
+				So(datastore.Put(ctx, cl2), ShouldBeNil)
+				So(s.Submit(ctx), ShouldBeNil)
+				verifyRunReleased(s.runID)
+				runtest.AssertReceivedCLsSubmitted(ctx, s.runID, 1, 2) // submitted together
+				runtest.AssertReceivedCLsSubmitted(ctx, s.runID, 3)
+				So(ct.GFake.Requests(), ShouldHaveLength, len(s.clids)-1) // no submit call for 1
+			})
+
+			Convey("not optimize if cls don't form a chain", func() {
+				cl2.Detail.Deps = append(cl2.Detail.Deps, &changelist.Dep{
+					Clid: int64(cl1.ID),
+					Kind: changelist.DepKind_SOFT,
+				})
+				cl3.Detail.Deps = append(cl3.Detail.Deps, &changelist.Dep{
+					Clid: int64(cl1.ID),
+					Kind: changelist.DepKind_HARD,
+				})
+				So(datastore.Put(ctx, cl2, cl3), ShouldBeNil)
+				// 1 is parent of 3 and 2 is not. However, 2 need to be submitted before
+				// 3 but after 1. Therefore, optimization for stack shouldn't take
+				// effect. CLs have to be submitted one by one.
+				So(s.Submit(ctx), ShouldBeNil)
+				verifyRunReleased(s.runID)
+				runtest.AssertReceivedCLsSubmitted(ctx, s.runID, 1)
+				runtest.AssertReceivedCLsSubmitted(ctx, s.runID, 2)
+				runtest.AssertReceivedCLsSubmitted(ctx, s.runID, 3)
+				So(ct.GFake.Requests(), ShouldHaveLength, len(s.clids))
+			})
+
+			Convey("failed to submit top cl in the stack", func() {
+				cl2.Detail.Deps = append(cl2.Detail.Deps, &changelist.Dep{
+					Clid: int64(cl1.ID),
+					Kind: changelist.DepKind_HARD,
+				})
+				So(datastore.Put(ctx, cl2), ShouldBeNil)
+				ct.GFake.MutateChange(gHost2, 2, func(c *gf.Change) {
+					c.ACLs = gf.ACLGrant(gf.OpSubmit, codes.PermissionDenied, "another_project")
+				})
+				So(s.Submit(ctx), ShouldBeNil)
+				verifyRunReleased(s.runID)
+				runtest.AssertNotReceivedCLsSubmitted(ctx, s.runID, 1, 2)
+				So(ct.GFake.GetChange(gHost1, 1).Info.GetStatus(), ShouldEqual, gerritpb.ChangeStatus_NEW)
+				So(ct.GFake.GetChange(gHost2, 2).Info.GetStatus(), ShouldEqual, gerritpb.ChangeStatus_NEW)
+				runtest.AssertNotReceivedCLsSubmitted(ctx, s.runID, 3)
+				So(ct.GFake.GetChange(gHost3, 3).Info.GetStatus(), ShouldEqual, gerritpb.ChangeStatus_NEW)
+				runtest.AssertReceivedSubmissionCompleted(ctx, s.runID,
+					&eventpb.SubmissionCompleted{
+						Result: eventpb.SubmissionResult_FAILED_PERMANENT,
+						FailureReason: &eventpb.SubmissionCompleted_ClFailures{
+							ClFailures: &eventpb.SubmissionCompleted_CLSubmissionFailures{
+								Failures: []*eventpb.SubmissionCompleted_CLSubmissionFailure{
+									{
+										Clid:    1,
+										Message: fmt.Sprintf(topOfStackFailureMsgFmt, cl2.ExternalID.MustURL()),
+									},
+									{
+										Clid:    2,
+										Message: permDeniedMsg,
+									},
+								},
+							},
+						},
+						QueueReleaseTimestamp: timestamppb.New(clock.Now(ctx)),
+					},
+				)
+			})
 		})
 	})
 }
