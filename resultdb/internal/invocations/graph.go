@@ -37,7 +37,7 @@ import (
 
 // MaxNodes is the maximum number of invocation nodes that ResultDB
 // can operate on at a time.
-const MaxNodes = 10000
+const MaxNodes = 20000
 
 // reachCacheExpiration is expiration duration of ReachCache.
 // It is more important to have *some* expiration; the value itself matters less
