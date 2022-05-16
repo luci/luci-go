@@ -211,9 +211,22 @@ func TestBuilderConversion(t *testing.T) {
 	})
 
 	Convey("ParseBucketID", t, func() {
-		p, b, err := ParseBucketID("proj/bucket")
-		So(err, ShouldBeNil)
-		So(p, ShouldEqual, "proj")
-		So(b, ShouldEqual, "bucket")
+		Convey("valid", func() {
+			p, b, err := ParseBucketID("proj/bucket")
+			So(err, ShouldBeNil)
+			So(p, ShouldEqual, "proj")
+			So(b, ShouldEqual, "bucket")
+		})
+
+		Convey("invalid", func() {
+			_, _, err := ParseBucketID("proj/bucket/bldr")
+			So(err, ShouldErrLike, "invalid bucket id; must have 1 slash")
+
+			_, _, err = ParseBucketID(" / ")
+			So(err, ShouldErrLike, "invalid bucket id; project is empty")
+
+			_, _, err = ParseBucketID("proj/ ")
+			So(err, ShouldErrLike, "invalid bucket id; bucket is empty")
+		})
 	})
 }

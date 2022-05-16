@@ -19,6 +19,7 @@ import (
 	"fmt"
 	"time"
 
+	"go.chromium.org/luci/buildbucket/protoutil"
 	"go.chromium.org/luci/common/data/rand/mathrand"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
@@ -111,6 +112,11 @@ func SearchTagIndex(ctx context.Context, key, val string) ([]*TagIndexEntry, err
 			return nil, errors.Reason("tag index incomplete for %q", fmt.Sprintf("%s:%s", key, val)).Tag(TagIndexIncomplete).Err()
 		}
 		for i := range s.Entries {
+			// check in case the tagIndexEntry is corrupted.
+			if _, _, err := protoutil.ParseBucketID(s.Entries[i].BucketID); err != nil {
+				logging.Warningf(ctx, "Bad TagIndexEntry(%+v): %s in TagIndex %s", s.Entries[i], err, s.ID)
+				continue
+			}
 			ents = append(ents, &s.Entries[i])
 		}
 	}

@@ -174,9 +174,11 @@ func TestGetBuild(t *testing.T) {
 						Entries: []model.TagIndexEntry{
 							{
 								BuildID: 1,
+								BucketID: "proj/bucket",
 							},
 							{
 								BuildID: 2,
+								BucketID: "proj/bucket",
 							},
 						},
 					}), ShouldBeNil)
@@ -211,6 +213,7 @@ func TestGetBuild(t *testing.T) {
 					Entries: []model.TagIndexEntry{
 						{
 							BuildID: 1,
+							BucketID: "project/bucket",
 						},
 					},
 				}), ShouldBeNil)

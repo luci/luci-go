@@ -28,7 +28,7 @@ import (
 	. "go.chromium.org/luci/common/testing/assertions"
 )
 
-func TestABC(t *testing.T) {
+func TestTagIndex(t *testing.T) {
 	t.Parallel()
 
 	Convey("TagIndex", t, func() {
@@ -318,6 +318,36 @@ func TestABC(t *testing.T) {
 						Incomplete: true,
 					})
 				})
+			})
+		})
+
+		Convey("searchTagIndex", func() {
+			So(datastore.Put(ctx, &TagIndex{
+				ID:":1:buildset:patch/gerrit/chromium-review.googlesource.com/123/1",
+				Entries: []TagIndexEntry{{BuildID:123, BucketID: "proj/bkt"}},
+			}), ShouldBeNil)
+			Convey("found", func() {
+				entries, err := SearchTagIndex(ctx, "buildset", "patch/gerrit/chromium-review.googlesource.com/123/1")
+				So(err, ShouldBeNil)
+				So(entries, ShouldResembleProto, []*TagIndexEntry{
+					{BuildID:123, BucketID: "proj/bkt"},
+				})
+			})
+
+			Convey("not found", func() {
+				entries, err := SearchTagIndex(ctx, "buildset", "not exist")
+				So(err, ShouldBeNil)
+				So(entries, ShouldBeNil)
+			})
+
+			Convey("bad TagIndexEntry", func() {
+				So(datastore.Put(ctx, &TagIndex{
+					ID:"key:val",
+					Entries: []TagIndexEntry{{BuildID:123, BucketID: "/"}},
+				}), ShouldBeNil)
+				entries, err := SearchTagIndex(ctx, "key", "val")
+				So(err, ShouldBeNil)
+				So(entries, ShouldBeNil)
 			})
 		})
 	})
