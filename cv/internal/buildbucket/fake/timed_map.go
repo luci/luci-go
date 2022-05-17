@@ -54,6 +54,8 @@ func (rc *timedMap) set(ctx context.Context, key string, value interface{}, expi
 
 func (rc *timedMap) get(ctx context.Context, key string) (interface{}, bool) {
 	defer func() {
+		// TODO(yiwzhang): Once move to go 1.18, use Trylock for best effort clean
+		// up.
 		rc.mu.Lock()
 		rc.cleanupLocked(ctx)
 		rc.mu.Unlock()
