@@ -20,6 +20,7 @@ import (
 	"testing"
 	"time"
 
+	"google.golang.org/grpc/codes"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/fieldmaskpb"
 
@@ -30,6 +31,99 @@ import (
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
 )
+
+func TestGetBuild(t *testing.T) {
+	Convey("GetBuild", t, func() {
+		fake := &Fake{}
+		ctx := context.Background()
+		const (
+			bbHost   = "buildbucket.example.com"
+			lProject = "testProj"
+			buildID  = 12344
+		)
+
+		client, err := fake.NewClientFactory().MakeClient(ctx, bbHost, lProject)
+		So(err, ShouldBeNil)
+
+		epoch := clock.Now(ctx)
+		builderID := &bbpb.BuilderID{
+			Project: lProject,
+			Bucket:  "testBucket",
+			Builder: "testBuilder",
+		}
+		build := NewBuildConstructor().
+			WithID(buildID).
+			WithHost(bbHost).
+			WithBuilderID(builderID).
+			WithStatus(bbpb.Status_SUCCESS).
+			WithCreateTime(epoch).
+			WithStartTime(epoch.Add(1 * time.Minute)).
+			WithEndTime(epoch.Add(2 * time.Minute)).
+			Construct()
+		fake.AddBuild(build)
+
+		Convey("Can get", func() {
+			Convey("Without mask", func() {
+				expected := proto.Clone(build).(*bbpb.Build)
+				res, err := client.GetBuild(ctx, &bbpb.GetBuildRequest{
+					Id: buildID,
+				})
+				So(err, ShouldBeNil)
+				So(res, ShouldResembleProto, trimmedBuildWithDefaultMask(expected))
+			})
+			Convey("With mask", func() {
+				res, err := client.GetBuild(ctx, &bbpb.GetBuildRequest{
+					Id: buildID,
+					Mask: &bbpb.BuildMask{
+						Fields: &fieldmaskpb.FieldMask{
+							Paths: []string{"id", "builder"},
+						},
+					},
+				})
+				So(err, ShouldBeNil)
+				So(res, ShouldResembleProto, &bbpb.Build{
+					Id:      buildID,
+					Builder: builderID,
+				})
+			})
+		})
+
+		Convey("No ACL", func() {
+			client, err := fake.NewClientFactory().MakeClient(ctx, bbHost, "anotherProj")
+			So(err, ShouldBeNil)
+			res, err := client.GetBuild(ctx, &bbpb.GetBuildRequest{
+				Id: buildID,
+			})
+			So(err, ShouldBeRPCNotFound)
+			So(res, ShouldBeNil)
+		})
+		Convey("Build not exist", func() {
+			res, err := client.GetBuild(ctx, &bbpb.GetBuildRequest{
+				Id: 777,
+			})
+			So(err, ShouldBeRPCNotFound)
+			So(res, ShouldBeNil)
+		})
+
+		Convey("Invalid input", func() {
+			Convey("Zero build id", func() {
+				res, err := client.GetBuild(ctx, &bbpb.GetBuildRequest{
+					Id: 0,
+				})
+				So(err, ShouldBeRPCInvalidArgument)
+				So(res, ShouldBeNil)
+			})
+			Convey("Builder + build number", func() {
+				res, err := client.GetBuild(ctx, &bbpb.GetBuildRequest{
+					Id:      buildID,
+					Builder: builderID,
+				})
+				So(err, ShouldHaveRPCCode, codes.Unimplemented)
+				So(res, ShouldBeNil)
+			})
+		})
+	})
+}
 
 func TestSearchBuild(t *testing.T) {
 	Convey("Search", t, func() {

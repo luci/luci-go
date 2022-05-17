@@ -69,6 +69,15 @@ func (f *Fake) ensureApp(host string) *fakeApp {
 	return f.hosts[host]
 }
 
+func (fa *fakeApp) getBuild(id int64) *bbpb.Build {
+	fa.buildStoreMu.RLock()
+	defer fa.buildStoreMu.RUnlock()
+	if build, ok := fa.buildStore[id]; ok {
+		return proto.Clone(build).(*bbpb.Build)
+	}
+	return nil
+}
+
 func (fa *fakeApp) iterBuildStore(cb func(*bbpb.Build)) {
 	fa.buildStoreMu.RLock()
 	defer fa.buildStoreMu.RUnlock()

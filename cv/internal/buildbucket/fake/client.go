@@ -24,9 +24,9 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
-	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/reflect/protoreflect"
 
+	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/buildbucket/appengine/model"
 	bbpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/data/stringset"
@@ -55,7 +55,25 @@ type Client struct {
 
 // GetBuild implements buildbucket.Client.
 func (c *Client) GetBuild(ctx context.Context, in *bbpb.GetBuildRequest, opts ...grpc.CallOption) (*bbpb.Build, error) {
-	panic("not implemented")
+	switch {
+	case in.GetBuilder() != nil || in.GetBuildNumber() != 0:
+		return nil, status.Errorf(codes.Unimplemented, "GetBuild by builder+number is not supported")
+	case in.GetId() == 0:
+		return nil, status.Errorf(codes.InvalidArgument, "requested build id is 0")
+	}
+
+	switch build := c.fa.getBuild(in.GetId()); {
+	case build == nil:
+		fallthrough
+	case !c.canAccessBuild(build):
+		projIdentity := identity.Identity(fmt.Sprintf("%s:%s", identity.Project, c.luciProject))
+		return nil, status.Errorf(codes.NotFound, "requested resource not found or %q does not have permission to view it", projIdentity)
+	default:
+		if err := applyMask(build, in.GetMask()); err != nil {
+			return nil, err
+		}
+		return build, nil
+	}
 }
 
 var supportedPredicates = stringset.NewFromSlice(
@@ -107,15 +125,11 @@ func (c *Client) SearchBuilds(ctx context.Context, in *bbpb.SearchBuildsRequest,
 	resBuilds := make([]*bbpb.Build, 0, pageSize)
 	for _, b := range candidates {
 		if c.shouldIncludeBuild(b, in.GetPredicate(), lastReturnedBuildID) {
-			clone := proto.Clone(b).(*bbpb.Build)
-			mask, err := model.NewBuildMask("", nil, in.GetMask())
+			err := applyMask(b, in.GetMask())
 			if err != nil {
-				return nil, status.Errorf(codes.Internal, "error while constructing BuildMask: %s", err)
+				return nil, err
 			}
-			if err := mask.Trim(clone); err != nil {
-				return nil, status.Errorf(codes.Internal, "error while applying field mask: %s", err)
-			}
-			resBuilds = append(resBuilds, clone)
+			resBuilds = append(resBuilds, b)
 			if len(resBuilds) == int(pageSize) {
 				return &bbpb.SearchBuildsResponse{
 					Builds:        resBuilds,
@@ -162,4 +176,15 @@ func (c *Client) Batch(ctx context.Context, in *bbpb.BatchRequest, opts ...grpc.
 func (c *Client) canAccessBuild(build *bbpb.Build) bool {
 	// TODO(yiwzhang): implement proper ACL
 	return c.luciProject == build.GetBuilder().GetProject()
+}
+
+func applyMask(build *bbpb.Build, bm *bbpb.BuildMask) error {
+	mask, err := model.NewBuildMask("", nil, bm)
+	if err != nil {
+		return status.Errorf(codes.Internal, "error while constructing BuildMask: %s", err)
+	}
+	if err := mask.Trim(build); err != nil {
+		return status.Errorf(codes.Internal, "error while applying field mask: %s", err)
+	}
+	return nil
 }
