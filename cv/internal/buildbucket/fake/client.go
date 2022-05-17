@@ -24,6 +24,7 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+
 	"google.golang.org/protobuf/reflect/protoreflect"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
@@ -202,9 +203,58 @@ func (c *Client) CancelBuild(ctx context.Context, in *bbpb.CancelBuildRequest, o
 	}
 }
 
+func (c *Client) scheduleBuild(ctx context.Context, in *bbpb.ScheduleBuildRequest) (*bbpb.Build, error) {
+	return nil, status.Errorf(codes.Unimplemented, "not implemented yet")
+}
+
 // Batch implements buildbucket.Client.
+//
+// Supports:
+//  * CancelBuild
+//  * GetBuild
 func (c *Client) Batch(ctx context.Context, in *bbpb.BatchRequest, opts ...grpc.CallOption) (*bbpb.BatchResponse, error) {
-	panic("not implemented")
+	responses := make([]*bbpb.BatchResponse_Response, len(in.GetRequests()))
+	for i, req := range in.GetRequests() {
+		res := &bbpb.BatchResponse_Response{}
+		switch req.GetRequest().(type) {
+		case *bbpb.BatchRequest_Request_CancelBuild:
+			if b, err := c.CancelBuild(ctx, req.GetCancelBuild()); err != nil {
+				res.Response = &bbpb.BatchResponse_Response_Error{
+					Error: status.Convert(err).Proto(),
+				}
+			} else {
+				res.Response = &bbpb.BatchResponse_Response_CancelBuild{
+					CancelBuild: b,
+				}
+			}
+		case *bbpb.BatchRequest_Request_GetBuild:
+			if b, err := c.GetBuild(ctx, req.GetGetBuild()); err != nil {
+				res.Response = &bbpb.BatchResponse_Response_Error{
+					Error: status.Convert(err).Proto(),
+				}
+			} else {
+				res.Response = &bbpb.BatchResponse_Response_GetBuild{
+					GetBuild: b,
+				}
+			}
+		case *bbpb.BatchRequest_Request_ScheduleBuild:
+			if b, err := c.scheduleBuild(ctx, req.GetScheduleBuild()); err != nil {
+				res.Response = &bbpb.BatchResponse_Response_Error{
+					Error: status.Convert(err).Proto(),
+				}
+			} else {
+				res.Response = &bbpb.BatchResponse_Response_ScheduleBuild{
+					ScheduleBuild: b,
+				}
+			}
+		default:
+			return nil, status.Errorf(codes.Unimplemented, "batch request type: %T is not supported", req.GetRequest())
+		}
+		responses[i] = res
+	}
+	return &bbpb.BatchResponse{
+		Responses: responses,
+	}, nil
 }
 
 func (c *Client) canAccessBuild(build *bbpb.Build) bool {

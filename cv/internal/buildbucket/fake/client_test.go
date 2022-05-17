@@ -21,6 +21,7 @@ import (
 	"time"
 
 	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/fieldmaskpb"
 	"google.golang.org/protobuf/types/known/timestamppb"
@@ -451,6 +452,143 @@ func TestCancelBuild(t *testing.T) {
 
 				})
 			}
+		})
+	})
+}
+
+func TestBatch(t *testing.T) {
+	Convey("Batch", t, func() {
+		fake := &Fake{}
+		ctx, tc := testclock.UseTime(context.Background(), testclock.TestRecentTimeUTC)
+		const (
+			bbHost   = "buildbucket.example.com"
+			lProject = "testProj"
+		)
+
+		client, err := fake.NewClientFactory().MakeClient(ctx, bbHost, lProject)
+		So(err, ShouldBeNil)
+
+		epoch := tc.Now()
+		tc.Add(1 * time.Minute)
+		buildFoo := NewBuildConstructor().
+			WithID(986).
+			WithHost(bbHost).
+			WithBuilderID(&bbpb.BuilderID{
+				Project: lProject,
+				Bucket:  "testBucket",
+				Builder: "builderFoo",
+			}).
+			WithStatus(bbpb.Status_SCHEDULED).
+			WithCreateTime(epoch).
+			Construct()
+		buildBar := NewBuildConstructor().
+			WithID(867).
+			WithHost(bbHost).
+			WithBuilderID(&bbpb.BuilderID{
+				Project: lProject,
+				Bucket:  "testBucket",
+				Builder: "builderFoo",
+			}).
+			WithStatus(bbpb.Status_SUCCESS).
+			WithCreateTime(epoch).
+			WithStartTime(epoch.Add(30 * time.Second)).
+			WithEndTime(epoch.Add(1 * time.Minute)).
+			Construct()
+
+		Convey("Batch succeeds", func() {
+			fake.AddBuild(buildFoo)
+			fake.AddBuild(buildBar)
+			res, err := client.Batch(ctx, &bbpb.BatchRequest{
+				Requests: []*bbpb.BatchRequest_Request{
+					{
+						Request: &bbpb.BatchRequest_Request_CancelBuild{
+							CancelBuild: &bbpb.CancelBuildRequest{
+								Id:              buildFoo.GetId(),
+								SummaryMarkdown: "no longer needed",
+								Mask: &bbpb.BuildMask{
+									Fields: &fieldmaskpb.FieldMask{
+										Paths: []string{"id", "status", "summary_markdown"},
+									},
+								},
+							},
+						},
+					},
+					{
+						Request: &bbpb.BatchRequest_Request_GetBuild{
+							GetBuild: &bbpb.GetBuildRequest{
+								Id: buildBar.GetId(),
+							},
+						},
+					},
+				},
+			})
+			So(err, ShouldBeNil)
+			So(res, ShouldResembleProto, &bbpb.BatchResponse{
+				Responses: []*bbpb.BatchResponse_Response{
+					{
+						Response: &bbpb.BatchResponse_Response_CancelBuild{
+							CancelBuild: &bbpb.Build{
+								Id:              buildFoo.Id,
+								Status:          bbpb.Status_CANCELED,
+								SummaryMarkdown: "no longer needed",
+							},
+						},
+					},
+					{
+						Response: &bbpb.BatchResponse_Response_GetBuild{
+							GetBuild: trimmedBuildWithDefaultMask(buildBar),
+						},
+					},
+				},
+			})
+		})
+
+		Convey("Batch fails", func() {
+			fake.AddBuild(buildFoo)
+			// buildBar does not exist
+			res, err := client.Batch(ctx, &bbpb.BatchRequest{
+				Requests: []*bbpb.BatchRequest_Request{
+					{
+						Request: &bbpb.BatchRequest_Request_CancelBuild{
+							CancelBuild: &bbpb.CancelBuildRequest{
+								Id:              buildFoo.GetId(),
+								SummaryMarkdown: "no longer needed",
+								Mask: &bbpb.BuildMask{
+									Fields: &fieldmaskpb.FieldMask{
+										Paths: []string{"id", "status", "summary_markdown"},
+									},
+								},
+							},
+						},
+					},
+					{
+						Request: &bbpb.BatchRequest_Request_GetBuild{
+							GetBuild: &bbpb.GetBuildRequest{
+								Id: buildBar.GetId(),
+							},
+						},
+					},
+				},
+			})
+			So(err, ShouldBeNil)
+			So(res, ShouldResembleProto, &bbpb.BatchResponse{
+				Responses: []*bbpb.BatchResponse_Response{
+					{
+						Response: &bbpb.BatchResponse_Response_CancelBuild{
+							CancelBuild: &bbpb.Build{
+								Id:              buildFoo.Id,
+								Status:          bbpb.Status_CANCELED,
+								SummaryMarkdown: "no longer needed",
+							},
+						},
+					},
+					{
+						Response: &bbpb.BatchResponse_Response_Error{
+							Error: status.Newf(codes.NotFound, "requested resource not found or \"project:%s\" does not have permission to view it", lProject).Proto(),
+						},
+					},
+				},
+			})
 		})
 	})
 }
