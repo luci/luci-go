@@ -15,6 +15,7 @@
 package bbfake
 
 import (
+	"encoding/json"
 	"fmt"
 	"sync"
 
@@ -25,8 +26,10 @@ import (
 )
 
 type fakeApp struct {
-	buildStoreMu sync.RWMutex
-	buildStore   map[int64]*bbpb.Build // build ID -> build
+	buildStoreMu  sync.RWMutex
+	buildStore    map[int64]*bbpb.Build // build ID -> build
+	configStoreMu sync.RWMutex
+	configStore   map[string]*bbpb.BuildbucketCfg // project name -> config
 }
 
 type Fake struct {
@@ -38,6 +41,53 @@ func (f *Fake) NewClientFactory() buildbucket.ClientFactory {
 	return clientFactory{
 		fake: f,
 	}
+}
+
+// AddBuilder adds a new builder configuration to fake Buildbucket host.
+//
+// Overwrites the existing builder if the same builder already exists.
+// `properties` should be marshallable by `encoding/json`.
+func (f *Fake) AddBuilder(host string, builder *bbpb.BuilderID, properties interface{}) *Fake {
+	fa := f.ensureApp(host)
+	fa.configStoreMu.Lock()
+	defer fa.configStoreMu.Unlock()
+	if _, ok := fa.configStore[builder.GetProject()]; !ok {
+		fa.configStore[builder.GetProject()] = &bbpb.BuildbucketCfg{}
+	}
+	cfg := fa.configStore[builder.GetProject()]
+	var bucket *bbpb.Bucket
+	for _, b := range cfg.GetBuckets() {
+		if b.Name == builder.GetBucket() {
+			bucket = b
+			break
+		}
+	}
+	if bucket == nil {
+		bucket = &bbpb.Bucket{
+			Name:     builder.GetBucket(),
+			Swarming: &bbpb.Swarming{},
+		}
+		cfg.Buckets = append(cfg.GetBuckets(), bucket)
+	}
+
+	builderCfg := &bbpb.BuilderConfig{
+		Name: builder.GetBuilder(),
+	}
+	if properties != nil {
+		bProperties, err := json.Marshal(properties)
+		if err != nil {
+			panic(err)
+		}
+		builderCfg.Properties = string(bProperties)
+	}
+	for i, b := range bucket.GetSwarming().GetBuilders() {
+		if b.Name == builder.GetBuilder() {
+			bucket.GetSwarming().GetBuilders()[i] = builderCfg
+			return f
+		}
+	}
+	bucket.GetSwarming().Builders = append(bucket.GetSwarming().GetBuilders(), builderCfg)
+	return f
 }
 
 // AddBuild adds a build to fake Buildbucket host.
