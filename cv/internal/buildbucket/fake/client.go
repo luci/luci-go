@@ -228,7 +228,10 @@ func (c *Client) scheduleBuild(ctx context.Context, in *bbpb.ScheduleBuildReques
 	}
 
 	if build := c.fa.findDupRequest(ctx, in.GetRequestId()); build != nil {
-		return applyMask(build, in.GetMask())
+		if err := applyMask(build, in.GetMask()); err != nil {
+			return nil, err
+		}
+		return build, nil
 	}
 
 	builderID := in.GetBuilder()
@@ -260,7 +263,10 @@ func (c *Client) scheduleBuild(ctx context.Context, in *bbpb.ScheduleBuildReques
 		Tags: in.GetTags(),
 	}
 	c.fa.insertBuild(ctx, build, in.GetRequestId())
-	return applyMask(build, in.GetMask())
+	if err := applyMask(build, in.GetMask()); err != nil {
+		return nil, err
+	}
+	return build, nil
 }
 
 func mkInputProps(builderCfg *bbpb.BuilderConfig, requestedProps *structpb.Struct) (*structpb.Struct, error) {
