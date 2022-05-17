@@ -25,7 +25,10 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
+	"google.golang.org/protobuf/encoding/protojson"
+	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/reflect/protoreflect"
+	"google.golang.org/protobuf/types/known/structpb"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/auth/identity"
@@ -203,8 +206,73 @@ func (c *Client) CancelBuild(ctx context.Context, in *bbpb.CancelBuildRequest, o
 	}
 }
 
+var supportedScheduleArguments = stringset.NewFromSlice(
+	"builder",
+	"properties",
+	"gerrit_changes",
+	"tags",
+	"mask",
+)
+
 func (c *Client) scheduleBuild(ctx context.Context, in *bbpb.ScheduleBuildRequest) (*bbpb.Build, error) {
-	return nil, status.Errorf(codes.Unimplemented, "not implemented yet")
+	var notSupportedArguments []string
+	in.ProtoReflect().Range(func(fd protoreflect.FieldDescriptor, v protoreflect.Value) bool {
+		if v.IsValid() && !supportedScheduleArguments.Has(string(fd.Name())) {
+			notSupportedArguments = append(notSupportedArguments, string(fd.Name()))
+		}
+		return true
+	})
+	if len(notSupportedArguments) > 0 {
+		return nil, status.Errorf(codes.InvalidArgument, "schedule arguments [%s] are not supported", strings.Join(notSupportedArguments, ", "))
+	}
+
+	builderID := in.GetBuilder()
+	if builderID == nil {
+		return nil, status.Errorf(codes.InvalidArgument, "requested builder is empty")
+	}
+	builderCfg := c.fa.loadBuilderCfg(builderID)
+	if builderCfg == nil {
+		return nil, status.Errorf(codes.NotFound, "builder %s not found", bbutil.FormatBuilderID(builderID))
+	}
+	inputProps, err := mkInputProps(builderCfg, in.GetProperties())
+	if err != nil {
+		return nil, err
+	}
+	build := &bbpb.Build{
+		Builder:    builderID,
+		Status:     bbpb.Status_SCHEDULED,
+		CreateTime: timestamppb.New(clock.Now(ctx)),
+		Input: &bbpb.Build_Input{
+			Properties:    inputProps,
+			GerritChanges: in.GetGerritChanges(),
+		},
+		Infra: &bbpb.BuildInfra{
+			Buildbucket: &bbpb.BuildInfra_Buildbucket{
+				RequestedProperties: in.GetProperties(),
+				Hostname:            c.fa.hostname,
+			},
+		},
+		Tags: in.GetTags(),
+	}
+	c.fa.insertBuild(build)
+	return applyMask(build, in.GetMask())
+}
+
+func mkInputProps(builderCfg *bbpb.BuilderConfig, requestedProps *structpb.Struct) (*structpb.Struct, error) {
+	var ret *structpb.Struct
+	if builderProps := builderCfg.GetProperties(); builderProps != "" {
+		ret = &structpb.Struct{}
+		if err := protojson.Unmarshal([]byte(builderProps), ret); err != nil {
+			return nil, status.Errorf(codes.Internal, "failed to unmarshal properties: %s", builderProps)
+		}
+	}
+	if requestedProps != nil {
+		if ret == nil {
+			return requestedProps, nil
+		}
+		proto.Merge(ret, requestedProps)
+	}
+	return ret, nil
 }
 
 // Batch implements buildbucket.Client.
@@ -212,6 +280,7 @@ func (c *Client) scheduleBuild(ctx context.Context, in *bbpb.ScheduleBuildReques
 // Supports:
 //  * CancelBuild
 //  * GetBuild
+//  * ScheduleBuild
 func (c *Client) Batch(ctx context.Context, in *bbpb.BatchRequest, opts ...grpc.CallOption) (*bbpb.BatchResponse, error) {
 	responses := make([]*bbpb.BatchResponse_Response, len(in.GetRequests()))
 	for i, req := range in.GetRequests() {

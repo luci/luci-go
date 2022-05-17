@@ -17,6 +17,7 @@ package bbfake
 import (
 	"context"
 	"fmt"
+	"math"
 	"testing"
 	"time"
 
@@ -24,6 +25,7 @@ import (
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/fieldmaskpb"
+	"google.golang.org/protobuf/types/known/structpb"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/buildbucket/appengine/model"
@@ -456,6 +458,166 @@ func TestCancelBuild(t *testing.T) {
 	})
 }
 
+func TestScheduleBuild(t *testing.T) {
+	Convey("ScheduleBuild", t, func() {
+		fake := &Fake{}
+		ctx, tc := testclock.UseTime(context.Background(), testclock.TestRecentTimeUTC)
+		const (
+			bbHost   = "buildbucket.example.com"
+			lProject = "testProj"
+		)
+		builderNoProp := &bbpb.BuilderID{
+			Project: lProject,
+			Bucket:  "testBucket",
+			Builder: "builderNoProp",
+		}
+		builderWithProp := &bbpb.BuilderID{
+			Project: lProject,
+			Bucket:  "testBucket",
+			Builder: "builderWithProp",
+		}
+		fake.AddBuilder(bbHost, builderNoProp, nil)
+		fake.AddBuilder(bbHost, builderWithProp,
+			map[string]interface{}{"foo": "bar"},
+		)
+
+		c, err := fake.NewClientFactory().MakeClient(ctx, bbHost, lProject)
+		So(err, ShouldBeNil)
+		client := c.(*Client)
+
+		Convey("Can schedule", func() {
+			Convey("Simple", func() {
+				res, err := client.scheduleBuild(ctx, &bbpb.ScheduleBuildRequest{
+					Builder: builderNoProp,
+				})
+				So(err, ShouldBeNil)
+				So(res, ShouldResembleProto, trimmedBuildWithDefaultMask(&bbpb.Build{
+					Id:         res.Id,
+					Builder:    builderNoProp,
+					Status:     bbpb.Status_SCHEDULED,
+					CreateTime: timestamppb.New(tc.Now()),
+					Input:      &bbpb.Build_Input{},
+					Infra: &bbpb.BuildInfra{
+						Buildbucket: &bbpb.BuildInfra_Buildbucket{
+							Hostname: bbHost,
+						},
+					},
+				}))
+			})
+			Convey("With additional args", func() {
+				props, err := structpb.NewStruct(map[string]interface{}{
+					"coolKey": "coolVal",
+				})
+				So(err, ShouldBeNil)
+				gc := &bbpb.GerritChange{
+					Host:     "example-review.com",
+					Project:  "testProj",
+					Change:   1,
+					Patchset: 2,
+				}
+				res, err := client.scheduleBuild(ctx, &bbpb.ScheduleBuildRequest{
+					Builder:       builderNoProp,
+					Properties:    props,
+					GerritChanges: []*bbpb.GerritChange{gc},
+					Tags: []*bbpb.StringPair{
+						{Key: "tagKey", Value: "tagValue"},
+					},
+				})
+				So(err, ShouldBeNil)
+				So(res, ShouldResembleProto, trimmedBuildWithDefaultMask(&bbpb.Build{
+					Id:         res.Id,
+					Builder:    builderNoProp,
+					Status:     bbpb.Status_SCHEDULED,
+					CreateTime: timestamppb.New(tc.Now()),
+					Input: &bbpb.Build_Input{
+						Properties:    props,
+						GerritChanges: []*bbpb.GerritChange{gc},
+					},
+					Infra: &bbpb.BuildInfra{
+						Buildbucket: &bbpb.BuildInfra_Buildbucket{
+							RequestedProperties: props,
+							Hostname:            bbHost,
+						},
+					},
+					Tags: []*bbpb.StringPair{
+						{Key: "tagKey", Value: "tagValue"},
+					},
+				}))
+			})
+			Convey("Override builder properties", func() {
+				props, err := structpb.NewStruct(map[string]interface{}{
+					"foo":  "not_bar",
+					"cool": "awesome",
+				})
+				So(err, ShouldBeNil)
+				res, err := client.scheduleBuild(ctx, &bbpb.ScheduleBuildRequest{
+					Builder:    builderWithProp,
+					Properties: props,
+				})
+				So(err, ShouldBeNil)
+				So(res, ShouldResembleProto, trimmedBuildWithDefaultMask(&bbpb.Build{
+					Id:         res.Id,
+					Builder:    builderWithProp,
+					Status:     bbpb.Status_SCHEDULED,
+					CreateTime: timestamppb.New(tc.Now()),
+					Input: &bbpb.Build_Input{
+						Properties: props,
+					},
+					Infra: &bbpb.BuildInfra{
+						Buildbucket: &bbpb.BuildInfra_Buildbucket{
+							RequestedProperties: props,
+							Hostname:            bbHost,
+						},
+					},
+				}))
+			})
+			Convey("With mask", func() {
+				res, err := client.scheduleBuild(ctx, &bbpb.ScheduleBuildRequest{
+					Builder: builderNoProp,
+					Mask: &bbpb.BuildMask{
+						Fields: &fieldmaskpb.FieldMask{
+							Paths: []string{"id", "status"},
+						},
+					},
+				})
+				So(err, ShouldBeNil)
+				So(res, ShouldResembleProto, &bbpb.Build{
+					Id:     res.Id,
+					Status: bbpb.Status_SCHEDULED,
+				})
+			})
+			Convey("Decreasing build ID", func() {
+				const N = 10
+				var prevBuildID int64 = math.MaxInt64
+				for i := 0; i < N; i++ {
+					builder := builderNoProp
+					if i%2 == 1 {
+						builder = builderWithProp
+					}
+					res, err := client.scheduleBuild(ctx, &bbpb.ScheduleBuildRequest{
+						Builder: builder,
+					})
+					So(err, ShouldBeNil)
+					So(res.Id, ShouldBeLessThan, prevBuildID)
+					prevBuildID = res.Id
+				}
+			})
+		})
+
+		Convey("Builder not found", func() {
+			res, err := client.scheduleBuild(ctx, &bbpb.ScheduleBuildRequest{
+				Builder: &bbpb.BuilderID{
+					Project: lProject,
+					Bucket:  "testBucket",
+					Builder: "non-existent-builder",
+				},
+			})
+			So(err, ShouldBeRPCNotFound)
+			So(res, ShouldBeNil)
+		})
+	})
+}
+
 func TestBatch(t *testing.T) {
 	Convey("Batch", t, func() {
 		fake := &Fake{}
@@ -494,6 +656,12 @@ func TestBatch(t *testing.T) {
 			WithStartTime(epoch.Add(30 * time.Second)).
 			WithEndTime(epoch.Add(1 * time.Minute)).
 			Construct()
+		builderBaz := &bbpb.BuilderID{
+			Project: lProject,
+			Bucket:  "testBucket",
+			Builder: "baz",
+		}
+		fake.AddBuilder(bbHost, builderBaz, nil)
 
 		Convey("Batch succeeds", func() {
 			fake.AddBuild(buildFoo)
@@ -520,6 +688,18 @@ func TestBatch(t *testing.T) {
 							},
 						},
 					},
+					{
+						Request: &bbpb.BatchRequest_Request_ScheduleBuild{
+							ScheduleBuild: &bbpb.ScheduleBuildRequest{
+								Builder: builderBaz,
+								Mask: &bbpb.BuildMask{
+									Fields: &fieldmaskpb.FieldMask{
+										Paths: []string{"id", "builder", "status"},
+									},
+								},
+							},
+						},
+					},
 				},
 			})
 			So(err, ShouldBeNil)
@@ -537,6 +717,15 @@ func TestBatch(t *testing.T) {
 					{
 						Response: &bbpb.BatchResponse_Response_GetBuild{
 							GetBuild: trimmedBuildWithDefaultMask(buildBar),
+						},
+					},
+					{
+						Response: &bbpb.BatchResponse_Response_ScheduleBuild{
+							ScheduleBuild: &bbpb.Build{
+								Id:      math.MaxInt64 - 1,
+								Builder: builderBaz,
+								Status:  bbpb.Status_SCHEDULED,
+							},
 						},
 					},
 				},

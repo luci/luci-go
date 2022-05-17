@@ -17,6 +17,7 @@ package bbfake
 import (
 	"encoding/json"
 	"fmt"
+	"math"
 	"sync"
 
 	bbpb "go.chromium.org/luci/buildbucket/proto"
@@ -26,6 +27,8 @@ import (
 )
 
 type fakeApp struct {
+	hostname      string
+	nextBuildID   int64 // for generating monotonically decreasing build ID
 	buildStoreMu  sync.RWMutex
 	buildStore    map[int64]*bbpb.Build // build ID -> build
 	configStoreMu sync.RWMutex
@@ -94,6 +97,10 @@ func (f *Fake) AddBuilder(host string, builder *bbpb.BuilderID, properties inter
 //
 // Reads Buildbucket hostname from `infra.buildbucket.hostname`.
 // Overwrites the existing build if the build with same ID already exists.
+//
+// TODO(yiwzhang): make it private so that external package should
+// always use schedule build to create new build s.t. the build ID
+// will be monotically decreasing.
 func (f *Fake) AddBuild(build *bbpb.Build) {
 	host := build.GetInfra().GetBuildbucket().GetHostname()
 	if host == "" {
@@ -113,7 +120,10 @@ func (f *Fake) ensureApp(host string) *fakeApp {
 			f.hosts = make(map[string]*fakeApp)
 		}
 		f.hosts[host] = &fakeApp{
-			buildStore: make(map[int64]*bbpb.Build),
+			hostname:    host,
+			nextBuildID: math.MaxInt64 - 1,
+			buildStore:  make(map[int64]*bbpb.Build),
+			configStore: make(map[string]*bbpb.BuildbucketCfg),
 		}
 	}
 	return f.hosts[host]
@@ -145,6 +155,38 @@ func (fa *fakeApp) updateBuild(id int64, cb func(*bbpb.Build)) *bbpb.Build {
 		// later.
 		fa.buildStore[id] = proto.Clone(build).(*bbpb.Build)
 		return build
+	}
+	return nil
+}
+
+// insertBuild also generates a monotically decreasing build ID.
+func (fa *fakeApp) insertBuild(build *bbpb.Build) {
+	fa.buildStoreMu.Lock()
+	defer fa.buildStoreMu.Unlock()
+	build.Id = fa.nextBuildID
+	fa.nextBuildID--
+	if _, ok := fa.buildStore[build.Id]; ok {
+		panic(fmt.Sprintf("build %d already exists", build.Id))
+	}
+	fa.buildStore[build.Id] = proto.Clone(build).(*bbpb.Build)
+}
+
+func (fa *fakeApp) loadBuilderCfg(builderID *bbpb.BuilderID) *bbpb.BuilderConfig {
+	fa.configStoreMu.RLock()
+	defer fa.configStoreMu.RUnlock()
+	cfg, ok := fa.configStore[builderID.GetProject()]
+	if !ok {
+		return nil
+	}
+	for _, bucket := range cfg.GetBuckets() {
+		if bucket.GetName() != builderID.GetBucket() {
+			continue
+		}
+		for _, builder := range bucket.GetSwarming().GetBuilders() {
+			if builder.GetName() == builderID.GetBuilder() {
+				return proto.Clone(builder).(*bbpb.BuilderConfig)
+			}
+		}
 	}
 	return nil
 }
