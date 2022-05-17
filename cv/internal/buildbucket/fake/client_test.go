@@ -602,6 +602,28 @@ func TestScheduleBuild(t *testing.T) {
 					prevBuildID = res.Id
 				}
 			})
+			Convey("Use requestID for deduplication", func() {
+				first, err := client.scheduleBuild(ctx, &bbpb.ScheduleBuildRequest{
+					RequestId: "foo",
+					Builder:   builderNoProp,
+				})
+				So(err, ShouldBeNil)
+				tc.Add(requestDeduplicationWindow / 2)
+				dup, err := client.scheduleBuild(ctx, &bbpb.ScheduleBuildRequest{
+					RequestId: "foo",
+					Builder:   builderNoProp,
+				})
+				So(err, ShouldBeNil)
+				So(dup.Id, ShouldEqual, first.Id)
+				// Passes the deduplication window, should generate new build.
+				tc.Add(requestDeduplicationWindow)
+				newBuild, err := client.scheduleBuild(ctx, &bbpb.ScheduleBuildRequest{
+					RequestId: "foo",
+					Builder:   builderNoProp,
+				})
+				So(err, ShouldBeNil)
+				So(newBuild.Id, ShouldNotEqual, first.Id)
+			})
 		})
 
 		Convey("Builder not found", func() {

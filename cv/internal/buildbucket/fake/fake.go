@@ -15,10 +15,12 @@
 package bbfake
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"math"
 	"sync"
+	"time"
 
 	bbpb "go.chromium.org/luci/buildbucket/proto"
 	"google.golang.org/protobuf/proto"
@@ -26,9 +28,12 @@ import (
 	"go.chromium.org/luci/cv/internal/buildbucket"
 )
 
+const requestDeduplicationWindow = 1 * time.Minute
+
 type fakeApp struct {
 	hostname      string
 	nextBuildID   int64 // for generating monotonically decreasing build ID
+	requestCache  timedMap
 	buildStoreMu  sync.RWMutex
 	buildStore    map[int64]*bbpb.Build // build ID -> build
 	configStoreMu sync.RWMutex
@@ -160,7 +165,10 @@ func (fa *fakeApp) updateBuild(id int64, cb func(*bbpb.Build)) *bbpb.Build {
 }
 
 // insertBuild also generates a monotically decreasing build ID.
-func (fa *fakeApp) insertBuild(build *bbpb.Build) {
+//
+// Caches the build for `requestDeduplicationWindow` to deduplicate request
+// with same request ID later.
+func (fa *fakeApp) insertBuild(ctx context.Context, build *bbpb.Build, requestID string) *bbpb.Build {
 	fa.buildStoreMu.Lock()
 	defer fa.buildStoreMu.Unlock()
 	build.Id = fa.nextBuildID
@@ -168,7 +176,22 @@ func (fa *fakeApp) insertBuild(build *bbpb.Build) {
 	if _, ok := fa.buildStore[build.Id]; ok {
 		panic(fmt.Sprintf("build %d already exists", build.Id))
 	}
-	fa.buildStore[build.Id] = proto.Clone(build).(*bbpb.Build)
+	cloned := proto.Clone(build).(*bbpb.Build)
+	fa.buildStore[build.Id] = cloned
+	if requestID != "" {
+		fa.requestCache.set(ctx, requestID, cloned, requestDeduplicationWindow)
+	}
+	return build
+}
+
+func (fa *fakeApp) findDupRequest(ctx context.Context, requestID string) *bbpb.Build {
+	if requestID == "" {
+		return nil
+	}
+	if b, ok := fa.requestCache.get(ctx, requestID); ok {
+		return proto.Clone(b.(*bbpb.Build)).(*bbpb.Build)
+	}
+	return nil
 }
 
 func (fa *fakeApp) loadBuilderCfg(builderID *bbpb.BuilderID) *bbpb.BuilderConfig {

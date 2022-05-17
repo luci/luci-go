@@ -207,6 +207,7 @@ func (c *Client) CancelBuild(ctx context.Context, in *bbpb.CancelBuildRequest, o
 }
 
 var supportedScheduleArguments = stringset.NewFromSlice(
+	"request_id",
 	"builder",
 	"properties",
 	"gerrit_changes",
@@ -224,6 +225,10 @@ func (c *Client) scheduleBuild(ctx context.Context, in *bbpb.ScheduleBuildReques
 	})
 	if len(notSupportedArguments) > 0 {
 		return nil, status.Errorf(codes.InvalidArgument, "schedule arguments [%s] are not supported", strings.Join(notSupportedArguments, ", "))
+	}
+
+	if build := c.fa.findDupRequest(ctx, in.GetRequestId()); build != nil {
+		return applyMask(build, in.GetMask())
 	}
 
 	builderID := in.GetBuilder()
@@ -254,7 +259,7 @@ func (c *Client) scheduleBuild(ctx context.Context, in *bbpb.ScheduleBuildReques
 		},
 		Tags: in.GetTags(),
 	}
-	c.fa.insertBuild(build)
+	c.fa.insertBuild(ctx, build, in.GetRequestId())
 	return applyMask(build, in.GetMask())
 }
 
