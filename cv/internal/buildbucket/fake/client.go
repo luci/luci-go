@@ -25,10 +25,13 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/reflect/protoreflect"
+	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/buildbucket/appengine/model"
 	bbpb "go.chromium.org/luci/buildbucket/proto"
+	bbutil "go.chromium.org/luci/buildbucket/protoutil"
+	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/data/stringset"
 
 	"go.chromium.org/luci/cv/internal/buildbucket"
@@ -125,8 +128,7 @@ func (c *Client) SearchBuilds(ctx context.Context, in *bbpb.SearchBuildsRequest,
 	resBuilds := make([]*bbpb.Build, 0, pageSize)
 	for _, b := range candidates {
 		if c.shouldIncludeBuild(b, in.GetPredicate(), lastReturnedBuildID) {
-			err := applyMask(b, in.GetMask())
-			if err != nil {
+			if err := applyMask(b, in.GetMask()); err != nil {
 				return nil, err
 			}
 			resBuilds = append(resBuilds, b)
@@ -165,7 +167,39 @@ func (c *Client) shouldIncludeBuild(b *bbpb.Build, pred *bbpb.BuildPredicate, la
 
 // CancelBuild implements buildbucket.Client.
 func (c *Client) CancelBuild(ctx context.Context, in *bbpb.CancelBuildRequest, opts ...grpc.CallOption) (*bbpb.Build, error) {
-	panic("not implemented")
+	if in.GetId() == 0 {
+		return nil, status.Errorf(codes.InvalidArgument, "requested build id is 0")
+	}
+	var noAccess bool
+	updatedBuild := c.fa.updateBuild(in.GetId(), func(build *bbpb.Build) {
+		switch {
+		case !c.canAccessBuild(build):
+			noAccess = true
+		case bbutil.IsEnded(build.GetStatus()):
+			// noop on ended build
+		default:
+			build.Status = bbpb.Status_CANCELED
+			now := timestamppb.New(clock.Now(ctx).UTC())
+			if build.GetStartTime() == nil {
+				build.StartTime = now
+			}
+			build.EndTime = now
+			build.SummaryMarkdown = in.GetSummaryMarkdown()
+		}
+	})
+
+	switch {
+	case updatedBuild == nil: // build not found
+		fallthrough
+	case noAccess:
+		projIdentity := identity.Identity(fmt.Sprintf("%s:%s", identity.Project, c.luciProject))
+		return nil, status.Errorf(codes.NotFound, "requested resource not found or %q does not have permission to modify it", projIdentity)
+	default:
+		if err := applyMask(updatedBuild, in.GetMask()); err != nil {
+			return nil, err
+		}
+		return updatedBuild, nil
+	}
 }
 
 // Batch implements buildbucket.Client.

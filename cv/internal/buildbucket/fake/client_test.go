@@ -23,10 +23,12 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/fieldmaskpb"
+	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/buildbucket/appengine/model"
 	bbpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/clock"
+	"go.chromium.org/luci/common/clock/testclock"
 
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
@@ -321,6 +323,132 @@ func TestSearchBuild(t *testing.T) {
 						}
 						req.PageToken = res.NextPageToken
 					}
+				})
+			}
+		})
+	})
+}
+
+func TestCancelBuild(t *testing.T) {
+	Convey("CancelBuild", t, func() {
+		fake := &Fake{}
+		ctx, tc := testclock.UseTime(context.Background(), testclock.TestRecentTimeUTC)
+		const (
+			bbHost   = "buildbucket.example.com"
+			lProject = "testProj"
+			buildID  = 12344
+		)
+
+		client, err := fake.NewClientFactory().MakeClient(ctx, bbHost, lProject)
+		So(err, ShouldBeNil)
+
+		epoch := tc.Now()
+		tc.Add(1 * time.Minute)
+		builderID := &bbpb.BuilderID{
+			Project: lProject,
+			Bucket:  "testBucket",
+			Builder: "testBuilder",
+		}
+		build := NewBuildConstructor().
+			WithID(buildID).
+			WithHost(bbHost).
+			WithBuilderID(builderID).
+			WithStatus(bbpb.Status_SCHEDULED).
+			WithCreateTime(epoch).
+			Construct()
+		fake.AddBuild(build)
+
+		Convey("Can cancel", func() {
+			Convey("Without mask", func() {
+				res, err := client.CancelBuild(ctx, &bbpb.CancelBuildRequest{
+					Id:              buildID,
+					SummaryMarkdown: "no longer needed",
+				})
+				So(err, ShouldBeNil)
+				So(res, ShouldResembleProto, trimmedBuildWithDefaultMask(NewBuildConstructor().
+					WithID(buildID).
+					WithHost(bbHost).
+					WithBuilderID(builderID).
+					WithStatus(bbpb.Status_CANCELED).
+					WithCreateTime(epoch).
+					WithStartTime(tc.Now()).
+					WithEndTime(tc.Now()).
+					WithSummaryMarkdown("no longer needed").
+					Construct()))
+			})
+			Convey("With mask", func() {
+				res, err := client.CancelBuild(ctx, &bbpb.CancelBuildRequest{
+					Id:              buildID,
+					SummaryMarkdown: "no longer needed",
+					Mask: &bbpb.BuildMask{
+						Fields: &fieldmaskpb.FieldMask{
+							Paths: []string{"id", "status"},
+						},
+					},
+				})
+				So(err, ShouldBeNil)
+				So(res, ShouldResembleProto, &bbpb.Build{
+					Id:     buildID,
+					Status: bbpb.Status_CANCELED,
+				})
+			})
+		})
+
+		Convey("No ACL", func() {
+			client, err := fake.NewClientFactory().MakeClient(ctx, bbHost, "anotherProj")
+			So(err, ShouldBeNil)
+			res, err := client.CancelBuild(ctx, &bbpb.CancelBuildRequest{
+				Id:              buildID,
+				SummaryMarkdown: "no longer needed",
+			})
+			So(err, ShouldBeRPCNotFound)
+			So(res, ShouldBeNil)
+		})
+
+		Convey("Build not exist", func() {
+			res, err := client.CancelBuild(ctx, &bbpb.CancelBuildRequest{
+				Id: 777,
+			})
+			So(err, ShouldBeRPCNotFound)
+			So(res, ShouldBeNil)
+		})
+
+		Convey("Noop for build end with", func() {
+			for i, status := range []bbpb.Status{
+				bbpb.Status_SUCCESS,
+				bbpb.Status_FAILURE,
+				bbpb.Status_INFRA_FAILURE,
+				bbpb.Status_CANCELED,
+			} {
+				Convey(status.String(), func() {
+					endAt := tc.Now()
+					id := buildID + int64(i)
+					build = NewConstructorFromBuild(build).
+						WithID(id).
+						WithStatus(status).
+						WithSummaryMarkdown("ended already").
+						WithStartTime(endAt.Add(-10 * time.Second)).
+						WithEndTime(endAt).
+						Construct()
+					fake.AddBuild(build)
+					tc.Add(2 * time.Minute)
+					res, err := client.CancelBuild(ctx, &bbpb.CancelBuildRequest{
+						Id:              id,
+						SummaryMarkdown: "no longer needed",
+						Mask: &bbpb.BuildMask{
+							Fields: &fieldmaskpb.FieldMask{
+								Paths: []string{"id", "status", "summary_markdown", "end_time"},
+							},
+						},
+					})
+					So(err, ShouldBeNil)
+					So(res, ShouldResembleProto, &bbpb.Build{
+						Id:              id,
+						Status:          status,
+						EndTime:         timestamppb.New(endAt),
+						SummaryMarkdown: "ended already",
+					})
+
 				})
 			}
 		})

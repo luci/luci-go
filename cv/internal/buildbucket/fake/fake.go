@@ -85,3 +85,16 @@ func (fa *fakeApp) iterBuildStore(cb func(*bbpb.Build)) {
 		cb(proto.Clone(build).(*bbpb.Build))
 	}
 }
+
+func (fa *fakeApp) updateBuild(id int64, cb func(*bbpb.Build)) *bbpb.Build {
+	fa.buildStoreMu.Lock()
+	defer fa.buildStoreMu.Unlock()
+	if build, ok := fa.buildStore[id]; ok {
+		cb(build)
+		// store a copy to avoid cb keeps the reference to the build and mutate it
+		// later.
+		fa.buildStore[id] = proto.Clone(build).(*bbpb.Build)
+		return build
+	}
+	return nil
+}
