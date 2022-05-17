@@ -3330,10 +3330,7 @@ func TestScheduleBuild(t *testing.T) {
 			setInfra(nil, nil, b, s)
 			So(b.Infra, ShouldResembleProto, &pb.BuildInfra{
 				Bbagent: &pb.BuildInfra_BBAgent{
-					CacheDir: "cache",
-					KnownPublicGerritHosts: []string{
-						"host",
-					},
+					CacheDir:    "cache",
 					PayloadPath: "kitchen-checkout",
 				},
 				Buildbucket: &pb.BuildInfra_Buildbucket{
