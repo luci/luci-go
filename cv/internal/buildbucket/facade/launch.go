@@ -120,7 +120,7 @@ func (f *Facade) schedule(ctx context.Context, host string, r *run.Run, cls []*r
 		switch res.GetResponse().(type) {
 		case *bbpb.BatchResponse_Response_ScheduleBuild:
 			build := res.GetScheduleBuild()
-			status, result, err := toTryjobStatusAndResult(ctx, build)
+			status, result, err := parseStatusAndResult(ctx, build)
 			if err != nil {
 				ret.Assign(i, err)
 			}

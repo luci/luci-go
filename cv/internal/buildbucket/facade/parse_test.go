@@ -25,10 +25,95 @@ import (
 	bbpb "go.chromium.org/luci/buildbucket/proto"
 
 	"go.chromium.org/luci/cv/api/recipe/v1"
+	"go.chromium.org/luci/cv/internal/tryjob"
 
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
 )
+
+func TestParseStatusAndResult(t *testing.T) {
+	Convey("Parse Status and Result", t, func() {
+		b := &bbpb.Build{}
+		So(protojson.Unmarshal([]byte(`{
+			"id": "8831742013603886929",
+			"createTime": "2021-11-01T18:31:34Z",
+			"updateTime": "2021-11-01T18:32:01Z",
+			"status": "SUCCESS"
+		}`), b), ShouldBeNil)
+
+		var status tryjob.Status
+		var result *tryjob.Result
+		var err error
+
+		ctx := context.Background()
+
+		Convey("Returns an error", func() {
+			Convey("On an invalid build status", func() {
+				b.Status = bbpb.Status_ENDED_MASK
+				_, _, err := parseStatusAndResult(ctx, b)
+				So(err, ShouldErrLike, "unexpected buildbucket status")
+			})
+		})
+		Convey("Parses a valid build proto", func() {
+			Convey("For a finished build", func() {
+				Convey("That succeeded", func() {
+					status, result, err = parseStatusAndResult(ctx, b)
+					So(err, ShouldBeNil)
+					So(result.Status, ShouldEqual, tryjob.Result_SUCCEEDED)
+				})
+				Convey("That timed out", func() {
+					b.Status = bbpb.Status_FAILURE
+					b.StatusDetails = &bbpb.StatusDetails{
+						Timeout: &bbpb.StatusDetails_Timeout{},
+					}
+					status, result, err = parseStatusAndResult(ctx, b)
+					So(err, ShouldBeNil)
+					So(result.Status, ShouldEqual, tryjob.Result_TIMEOUT)
+				})
+				Convey("That failed", func() {
+					Convey("Transiently", func() {
+						b.Status = bbpb.Status_INFRA_FAILURE
+						status, result, err = parseStatusAndResult(ctx, b)
+						So(err, ShouldBeNil)
+						So(result.Status, ShouldEqual, tryjob.Result_FAILED_TRANSIENTLY)
+					})
+					Convey("Permanently", func() {
+						b.Status = bbpb.Status_FAILURE
+						status, result, err = parseStatusAndResult(ctx, b)
+						So(err, ShouldBeNil)
+						So(result.Status, ShouldEqual, tryjob.Result_FAILED_PERMANENTLY)
+					})
+				})
+				So(status, ShouldEqual, tryjob.Status_ENDED)
+			})
+			Convey("For a pending build", func() {
+				Convey("That is still scheduled", func() {
+					b.Status = bbpb.Status_SCHEDULED
+				})
+				Convey("That is already running", func() {
+					b.Status = bbpb.Status_STARTED
+				})
+				status, result, err = parseStatusAndResult(ctx, b)
+				So(err, ShouldBeNil)
+				So(status, ShouldEqual, tryjob.Status_TRIGGERED)
+				So(result.Status, ShouldEqual, tryjob.Result_UNKNOWN)
+			})
+			Convey("For a build that has been cancelled", func() {
+				b.Status = bbpb.Status_CANCELED
+				status, result, err = parseStatusAndResult(ctx, b)
+				So(err, ShouldBeNil)
+				So(status, ShouldEqual, tryjob.Status_ENDED)
+				So(result.Status, ShouldEqual, tryjob.Result_FAILED_TRANSIENTLY)
+			})
+			// Fields copied without change.
+			So(result.CreateTime.Seconds, ShouldEqual, 1635791494)
+			So(result.UpdateTime.Seconds, ShouldEqual, 1635791521)
+			So(result.GetBuildbucket().Id, ShouldEqual, 8831742013603886929)
+			So(result.GetBuildbucket().Status, ShouldEqual, b.Status)
+		})
+
+	})
+}
 
 func TestParseOutput(t *testing.T) {
 	ctx := context.Background()

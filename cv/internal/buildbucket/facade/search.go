@@ -327,7 +327,7 @@ func formatChangeID(host string, changeNum int64) string {
 }
 
 func (sw *searchWorker) toTryjob(ctx context.Context, build *bbpb.Build, def *tryjob.Definition) (*tryjob.Tryjob, error) {
-	status, result, err := toTryjobStatusAndResult(ctx, build)
+	status, result, err := parseStatusAndResult(ctx, build)
 	if err != nil {
 		return nil, err
 	}

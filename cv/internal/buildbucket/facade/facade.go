@@ -22,14 +22,10 @@ import (
 	"google.golang.org/protobuf/types/known/fieldmaskpb"
 
 	bbpb "go.chromium.org/luci/buildbucket/proto"
-	"go.chromium.org/luci/common/errors"
-	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/proto/structmask"
 	"go.chromium.org/luci/common/retry/transient"
-	"go.chromium.org/luci/config/validation"
 	"go.chromium.org/luci/grpc/grpcutil"
 
-	"go.chromium.org/luci/cv/api/recipe/v1"
 	"go.chromium.org/luci/cv/internal/buildbucket"
 	"go.chromium.org/luci/cv/internal/tryjob"
 )
@@ -84,7 +80,7 @@ func (f *Facade) Update(ctx context.Context, saved *tryjob.Tryjob) (tryjob.Statu
 	build, err := bbClient.GetBuild(ctx, &bbpb.GetBuildRequest{Id: buildID, Mask: defaultMask})
 	switch code := status.Code(err); {
 	case code == codes.OK:
-		return toTryjobStatusAndResult(ctx, build)
+		return parseStatusAndResult(ctx, build)
 	case grpcutil.IsTransientCode(code) || code == codes.DeadlineExceeded:
 		return 0, nil, transient.Tag.Apply(err)
 	default:
@@ -110,65 +106,4 @@ func (f *Facade) CancelTryjob(ctx context.Context, tj *tryjob.Tryjob) error {
 		Id: buildID,
 	})
 	return err
-}
-
-func toTryjobStatusAndResult(ctx context.Context, b *bbpb.Build) (tryjob.Status, *tryjob.Result, error) {
-	s := tryjob.Status_STATUS_UNSPECIFIED
-	r := &tryjob.Result{
-		CreateTime: b.CreateTime,
-		UpdateTime: b.UpdateTime,
-		Backend: &tryjob.Result_Buildbucket_{
-			Buildbucket: &tryjob.Result_Buildbucket{
-				Id:              b.Id,
-				Status:          b.Status,
-				SummaryMarkdown: b.SummaryMarkdown,
-			},
-		},
-	}
-
-	buildResult := parseBuildResult(ctx, b)
-	r.Output = buildResult.output
-	if buildResult.err != nil {
-		logging.Debugf(ctx, "errors parsing recipe output: %s", buildResult.err)
-		if buildResult.err.WithSeverity(validation.Blocking) != nil {
-			r.Output = &recipe.Output{}
-			logging.Debugf(ctx, "ignoring recipe output due to blocking parsing errors")
-		}
-	}
-
-	switch buildStatus := b.Status; {
-	case buildStatus == bbpb.Status_SUCCESS:
-		s = tryjob.Status_ENDED
-		r.Status = tryjob.Result_SUCCEEDED
-	case b.GetStatusDetails().GetTimeout() != nil:
-		s = tryjob.Status_ENDED
-		r.Status = tryjob.Result_TIMEOUT
-	case buildStatus == bbpb.Status_FAILURE:
-		s = tryjob.Status_ENDED
-		if buildResult.isTransFailure {
-			r.Status = tryjob.Result_FAILED_TRANSIENTLY
-		} else {
-			r.Status = tryjob.Result_FAILED_PERMANENTLY
-		}
-	case buildStatus == bbpb.Status_CANCELED:
-		// For consistency with existing CQD behavior, non-timeout
-		// cancellations are treated as transient failures.
-		//
-		// This behavior is probably a bug in CQD, but it's become expected.
-		//
-		// TODO(crbug.com/1317392): Revisit the handling of explicitly cancelled
-		// tryjobs.
-		fallthrough
-	case buildStatus == bbpb.Status_INFRA_FAILURE:
-		s = tryjob.Status_ENDED
-		r.Status = tryjob.Result_FAILED_TRANSIENTLY
-	case buildStatus == bbpb.Status_STARTED:
-		fallthrough
-	case buildStatus == bbpb.Status_SCHEDULED:
-		s = tryjob.Status_TRIGGERED
-		r.Status = tryjob.Result_UNKNOWN
-	default:
-		return s, nil, errors.Reason("unexpected buildbucket status %q", b.Status).Err()
-	}
-	return s, r, nil
 }
