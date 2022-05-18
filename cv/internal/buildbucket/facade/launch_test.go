@@ -25,7 +25,6 @@ import (
 	"go.chromium.org/luci/common/errors"
 	gerritpb "go.chromium.org/luci/common/proto/gerrit"
 
-	"go.chromium.org/luci/cv/api/recipe/v1"
 	"go.chromium.org/luci/cv/internal/changelist"
 	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/cvtesting"
@@ -149,7 +148,6 @@ func TestLaunch(t *testing.T) {
 				So(tj.Result, ShouldResembleProto, &tryjob.Result{
 					Status:     tryjob.Result_UNKNOWN,
 					CreateTime: timestamppb.New(ct.Clock.Now()),
-					Output:     &recipe.Output{},
 					Backend: &tryjob.Result_Buildbucket_{
 						Buildbucket: &tryjob.Result_Buildbucket{
 							Id:     id,

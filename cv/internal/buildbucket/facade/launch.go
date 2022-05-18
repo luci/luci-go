@@ -158,7 +158,7 @@ func prepareBatchRequest(tryjobs []*tryjob.Tryjob, r *run.Run, cls []*run.RunCL)
 			Properties:    nonExpProp,
 			GerritChanges: gcs,
 			Tags:          nonExpTags,
-			Mask:          TryjobBuildMask,
+			Mask:          defaultMask,
 		}
 		if def.GetExperimental() {
 			req.Properties = expProp

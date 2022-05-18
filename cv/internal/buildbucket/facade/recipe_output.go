@@ -36,28 +36,38 @@ type parsingResult struct {
 	// failure should be treated as transient.
 	isTransFailure bool
 
-	// error indicates issues parsing the build output properties.
-	error *validation.Error
+	// err indicates issues parsing the build output properties.
+	err *validation.Error
 }
 
 const transientFailureType = "TRANSIENT_FAILURE"
+
+// outputPropKeys are the keys in the output properties that CV is interested
+// in.
+var outputPropKeys = []string{
+	// New protobuf-based property.
+	"$recipe_engine/cq/output",
+	// Legacy.
+	"do_not_retry",
+	"failure_type",
+	"triggered_build_ids",
+}
 
 func parseBuildResult(ctx context.Context, b *bbpb.Build) *parsingResult {
 	pr := &parsingResult{}
 	vc := validation.Context{Context: ctx}
 	defer func() {
 		if err := vc.Finalize(); err != nil {
-			pr.error = err.(*validation.Error)
+			pr.err = err.(*validation.Error)
 		}
 	}()
 
-	pr.output = &recipe.Output{}
-
 	props := b.GetOutput().GetProperties()
-	if props == nil {
+	if !hasCVRelatedPropKey(props) {
 		return pr
 	}
 
+	pr.output = &recipe.Output{}
 	if outputVal, ok := props.GetFields()["$recipe_engine/cq/output"]; ok {
 		vc.Enter("parsing $recipe_engine/cq/output")
 		if output, err := protojson.Marshal(outputVal); err != nil {
@@ -118,4 +128,13 @@ func parseBuildResult(ctx context.Context, b *bbpb.Build) *parsingResult {
 	}
 	vc.Exit()
 	return pr
+}
+
+func hasCVRelatedPropKey(props *structpb.Struct) bool {
+	for _, key := range outputPropKeys {
+		if _, ok := props.GetFields()[key]; ok {
+			return true
+		}
+	}
+	return false
 }

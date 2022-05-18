@@ -40,7 +40,7 @@ func TestParseOutput(t *testing.T) {
 					Reuse: []*recipe.Output_Reuse{{ModeRegexp: "FULL_RUN"}},
 				})
 				So(result.isTransFailure, ShouldBeFalse)
-				So(result.error, ShouldBeNil)
+				So(result.err, ShouldBeNil)
 			})
 			Convey("For dry runs", func() {
 				result := parseBuildResult(ctx, loadTestBuild("reuse_dry"))
@@ -48,7 +48,7 @@ func TestParseOutput(t *testing.T) {
 					Reuse: []*recipe.Output_Reuse{{ModeRegexp: "DRY_RUN"}},
 				})
 				So(result.isTransFailure, ShouldBeFalse)
-				So(result.error, ShouldBeNil)
+				So(result.err, ShouldBeNil)
 			})
 		})
 		Convey("Triggered ids", func() {
@@ -58,7 +58,7 @@ func TestParseOutput(t *testing.T) {
 					TriggeredBuildIds: []int64{8832715138311111281},
 				})
 				So(result.isTransFailure, ShouldBeFalse)
-				So(result.error, ShouldBeNil)
+				So(result.err, ShouldBeNil)
 			})
 			Convey("Proto property only", func() {
 				result := parseBuildResult(ctx, loadTestBuild("triggered_builds_new"))
@@ -76,7 +76,7 @@ func TestParseOutput(t *testing.T) {
 					TriggeredBuildIds: []int64{8832715138311111281},
 				})
 				So(result.isTransFailure, ShouldBeFalse)
-				So(result.error, ShouldBeNil)
+				So(result.err, ShouldBeNil)
 			})
 		})
 		Convey("Do not retry", func() {
@@ -84,13 +84,13 @@ func TestParseOutput(t *testing.T) {
 				result := parseBuildResult(ctx, loadTestBuild("retry_denied_legacy"))
 				So(result.output, ShouldResembleProto, &recipe.Output{Retry: recipe.Output_OUTPUT_RETRY_DENIED})
 				So(result.isTransFailure, ShouldBeFalse)
-				So(result.error, ShouldBeNil)
+				So(result.err, ShouldBeNil)
 			})
 			Convey("Proto property only", func() {
 				result := parseBuildResult(ctx, loadTestBuild("retry_denied_new"))
 				So(result.output, ShouldResembleProto, &recipe.Output{Retry: recipe.Output_OUTPUT_RETRY_DENIED})
 				So(result.isTransFailure, ShouldBeFalse)
-				So(result.error, ShouldBeNil)
+				So(result.err, ShouldBeNil)
 			})
 			Convey("Proto overrides legacy", func() {
 				// In this test, the protobuf-based property allows retry and
@@ -99,26 +99,26 @@ func TestParseOutput(t *testing.T) {
 				result := parseBuildResult(ctx, loadTestBuild("retry_denied_conflict"))
 				So(result.output, ShouldResembleProto, &recipe.Output{Retry: recipe.Output_OUTPUT_RETRY_ALLOWED})
 				So(result.isTransFailure, ShouldBeFalse)
-				So(result.error, ShouldBeNil)
+				So(result.err, ShouldBeNil)
 			})
 		})
 		Convey("Transient failure", func() {
 			result := parseBuildResult(ctx, loadTestBuild("transient_failure"))
 			So(result.output, ShouldResembleProto, &recipe.Output{})
 			So(result.isTransFailure, ShouldBeTrue)
-			So(result.error, ShouldBeNil)
+			So(result.err, ShouldBeNil)
 		})
 		Convey("No properties", func() {
 			result := parseBuildResult(ctx, loadTestBuild("no_props"))
-			So(result.output, ShouldResembleProto, &recipe.Output{})
+			So(result.output, ShouldBeNil)
 			So(result.isTransFailure, ShouldBeFalse)
-			So(result.error, ShouldBeNil)
+			So(result.err, ShouldBeNil)
 		})
 		Convey("Bad data", func() {
 			result := parseBuildResult(ctx, loadTestBuild("bad_data"))
 			So(result.output, ShouldResembleProto, &recipe.Output{})
 			So(result.isTransFailure, ShouldBeFalse)
-			So(result.error.Errors, ShouldHaveLength, 3)
+			So(result.err.Errors, ShouldHaveLength, 3)
 		})
 	})
 }

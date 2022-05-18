@@ -53,7 +53,7 @@ var AcceptedAdditionalPropKeys = stringset.NewFromSlice(
 var searchBuildsMask *bbpb.BuildMask
 
 func init() {
-	searchBuildsMask = proto.Clone(TryjobBuildMask).(*bbpb.BuildMask)
+	searchBuildsMask = proto.Clone(defaultMask).(*bbpb.BuildMask)
 	if err := searchBuildsMask.Fields.Append((*bbpb.Build)(nil),
 		"builder",
 		"input.gerrit_changes",

@@ -44,18 +44,26 @@ func (f *Facade) Kind() string {
 	return "buildbucket"
 }
 
-var TryjobBuildMask = &bbpb.BuildMask{
-	Fields: &fieldmaskpb.FieldMask{
-		Paths: []string{"id", "status", "output.properties", "create_time", "update_time", "status_details"},
-	},
-	OutputProperties: []*structmask.StructMask{
-		// Legacy.
-		{Path: []string{"do_not_retry"}},
-		{Path: []string{"failure_type"}},
-		{Path: []string{"triggered_build_ids"}},
-		// New protobuf-based property.
-		{Path: []string{"$recipe_engine/cq/output"}},
-	},
+var defaultMask *bbpb.BuildMask
+
+func init() {
+	defaultMask = &bbpb.BuildMask{
+		Fields: &fieldmaskpb.FieldMask{
+			Paths: []string{
+				"create_time",
+				"id",
+				"output.properties",
+				"status",
+				"status_details",
+				"update_time",
+			},
+		},
+	}
+	for _, key := range outputPropKeys {
+		defaultMask.OutputProperties = append(defaultMask.OutputProperties, &structmask.StructMask{
+			Path: []string{key},
+		})
+	}
 }
 
 // Update retrieves the Buildbucket build corresponding to the given Tryjob,
@@ -73,7 +81,7 @@ func (f *Facade) Update(ctx context.Context, saved *tryjob.Tryjob) (tryjob.Statu
 		return 0, nil, err
 	}
 
-	build, err := bbClient.GetBuild(ctx, &bbpb.GetBuildRequest{Id: buildID, Mask: TryjobBuildMask})
+	build, err := bbClient.GetBuild(ctx, &bbpb.GetBuildRequest{Id: buildID, Mask: defaultMask})
 	switch code := status.Code(err); {
 	case code == codes.OK:
 		return toTryjobStatusAndResult(ctx, build)
@@ -120,9 +128,9 @@ func toTryjobStatusAndResult(ctx context.Context, b *bbpb.Build) (tryjob.Status,
 
 	buildResult := parseBuildResult(ctx, b)
 	r.Output = buildResult.output
-	if buildResult.error != nil {
-		logging.Debugf(ctx, "errors parsing recipe output: %s", buildResult.error)
-		if buildResult.error.WithSeverity(validation.Blocking) != nil {
+	if buildResult.err != nil {
+		logging.Debugf(ctx, "errors parsing recipe output: %s", buildResult.err)
+		if buildResult.err.WithSeverity(validation.Blocking) != nil {
 			r.Output = &recipe.Output{}
 			logging.Debugf(ctx, "ignoring recipe output due to blocking parsing errors")
 		}
