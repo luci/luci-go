@@ -37,8 +37,7 @@ type StagedInputs struct {
 	OutputDir    string   // a directory with Go package root to put *.pb.go under
 	ProtoFiles   []string // names of proto files in InputDir
 	ProtoPackage string   // proto package path matching InputDir
-
-	tmp string // if not empty, should be deleted (recursively) when done
+	tmp          string   // if not empty, should be deleted (recursively) when done
 }
 
 // Cleanup removes the temporary staging directory.
@@ -56,7 +55,7 @@ func (s *StagedInputs) Cleanup() error {
 // directories being staged, changes their paths to be rooted in the staged
 // directory root. Such paths still point to the exact same directories, just
 // through symlinks in the staging area.
-func StageGoInputs(ctx context.Context, inputDir string, mods, protoImportPaths []string) (inputs *StagedInputs, err error) {
+func StageGoInputs(ctx context.Context, inputDir string, mods, rootMods, protoImportPaths []string) (inputs *StagedInputs, err error) {
 	// Try to find the main module (if running in modules mode). We'll put
 	// generated files there.
 	var mainMod *moduleInfo
@@ -73,6 +72,7 @@ func StageGoInputs(ctx context.Context, inputDir string, mods, protoImportPaths 
 	// If running in Go Modules mode, always put the main module and luci-go
 	// modules into the proto path.
 	modules := stringset.NewFromSlice(mods...)
+	modules.AddAll(rootMods)
 	if mainMod != nil {
 		modules.Add(mainMod.Path)
 		if luciInfo, err := getModuleInfo("go.chromium.org/luci"); err == nil {
@@ -135,6 +135,9 @@ func StageGoInputs(ctx context.Context, inputDir string, mods, protoImportPaths 
 	// relocated `protoImportPaths`.
 	var paths []string
 	paths = append(paths, stagedRoot)
+	for _, mod := range rootMods {
+		paths = append(paths, filepath.Join(stagedRoot, mod))
+	}
 	paths = append(paths, build.Default.SrcDirs()...)
 
 	// Explicitly requested import paths come last. This is needed to make sure
@@ -191,7 +194,7 @@ func StageGoInputs(ctx context.Context, inputDir string, mods, protoImportPaths 
 		return nil, err
 	}
 	if len(protoFiles) == 0 {
-		return nil, errors.Reason(".proto files not found").Err()
+		return nil, errors.Reason("%s: no .proto files found", inputDir).Err()
 	}
 
 	// Discover the proto package path by locating `inputDir` among import paths.

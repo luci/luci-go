@@ -36,6 +36,7 @@ type CompileParams struct {
 	GoPackageMap           map[string]string // maps a proto path to a go package name
 	GoDeprecatedGRPCPlugin bool              // true to use deprecated grpc protoc-gen-go plugin
 	GoGRPCEnabled          bool              // true to use protoc-gen-go-grpc
+	GoPGVEnabled           bool              // enable protoc-gen-validate support
 }
 
 // Compile runs protoc over staged inputs.
@@ -65,6 +66,10 @@ func Compile(ctx context.Context, p *CompileParams) error {
 		// protoc-gen-go-grpc plugin arguments.
 		if p.GoGRPCEnabled {
 			args = append(args, fmt.Sprintf("--go-grpc_out=%s", p.Inputs.OutputDir))
+		}
+
+		if p.GoPGVEnabled {
+			args = append(args, fmt.Sprintf("--validate_out=lang=go:%s", p.Inputs.OutputDir))
 		}
 	}
 

@@ -297,7 +297,7 @@ func prepInputs(ctx context.Context, dir string, goModules, importPaths []string
 	}
 	if useGo {
 		logging.Infof(ctx, "Running in Go mode: importing *.proto from Go source tree")
-		return protoc.StageGoInputs(ctx, dir, goModules, importPaths)
+		return protoc.StageGoInputs(ctx, dir, goModules, nil, importPaths)
 	}
 	logging.Infof(ctx, "Running in generic mode: importing *.proto from explicitly given paths only")
 	return protoc.StageGenericInputs(ctx, dir, importPaths)

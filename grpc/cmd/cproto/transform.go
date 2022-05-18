@@ -109,7 +109,7 @@ func (t *transformer) transformRegisterServerFuncs(s *service) {
 	registrarName := ast.NewIdent("Registrar")
 	var registrarType ast.Expr = registrarName
 	if !t.inPRPCPackage {
-		registrarType = &ast.SelectorExpr{serverPrpcPkg, registrarName}
+		registrarType = &ast.SelectorExpr{X: serverPrpcPkg, Sel: registrarName}
 	}
 	s.registerServerFunc.Params.List[0].Type = registrarType
 }

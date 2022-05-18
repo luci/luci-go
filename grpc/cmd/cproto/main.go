@@ -37,10 +37,13 @@ import (
 	"go.chromium.org/luci/common/system/exitcode"
 )
 
+const protocGenValidatePkg = "github.com/envoyproxy/protoc-gen-validate"
+
 var (
 	verbose          = flag.Bool("verbose", false, "print debug messages to stderr")
 	protoImportPaths = stringlistflag.Flag{}
 	goModules        = stringlistflag.Flag{}
+	goRootModules    = stringlistflag.Flag{}
 	pathMap          = stringmapflag.Value{}
 	withDiscovery    = flag.Bool(
 		"discovery", true,
@@ -58,11 +61,29 @@ var (
 		"use-grpc-plugin", false,
 		"use protoc-gen-go-grpc to generate gRPC stubs instead of protoc-gen-go",
 	)
+	enablePGV = flag.Bool(
+		"enable-pgv", false,
+		"enable protoc-gen-validate generation. Makes 'validate/validate.proto' and annotations available.",
+	)
 )
 
 func run(ctx context.Context, inputDir string) error {
+	if *enablePGV {
+		needAddPkg := true
+		for _, mod := range goRootModules {
+			if mod == protocGenValidatePkg {
+				needAddPkg = false
+				break
+			}
+		}
+		if needAddPkg {
+			logging.Infof(ctx, "adding -go-root-module %s", goRootModules)
+			goRootModules = append(goRootModules, protocGenValidatePkg)
+		}
+	}
+
 	// Stage all requested Go modules under a single root.
-	inputs, err := protoc.StageGoInputs(ctx, inputDir, goModules, protoImportPaths)
+	inputs, err := protoc.StageGoInputs(ctx, inputDir, goModules, goRootModules, protoImportPaths)
 	if err != nil {
 		return err
 	}
@@ -87,6 +108,7 @@ func run(ctx context.Context, inputDir string) error {
 		GoPackageMap:           pathMap,
 		GoDeprecatedGRPCPlugin: !*disableGRPC && !*useGRPCPlugin,
 		GoGRPCEnabled:          !*disableGRPC && *useGRPCPlugin,
+		GoPGVEnabled:           *enablePGV,
 	})
 	if err != nil {
 		return err
@@ -211,8 +233,12 @@ func setupLogging(ctx context.Context) context.Context {
 
 func usage() {
 	fmt.Fprintln(os.Stderr,
-		`Compiles all .proto files in a directory to .go with grpc+prpc support.
+		`Compiles all .proto files in a directory to .go with grpc+prpc+validate support.
 usage: cproto [flags] [dir]
+
+This also has support for github.com/envoyproxy/protoc-gen-validate. Have your
+proto files import "validate/validate.proto" and then add '-enable-pgv' to your
+cproto invocation to generate Validate() calls for your proto library.
 
 Flags:`)
 	flag.PrintDefaults()
@@ -229,6 +255,11 @@ func main() {
 		&goModules,
 		"go-module",
 		"make protos in the given module available in proto import path. "+
+			"May be specified multiple times.")
+	flag.Var(
+		&goRootModules,
+		"go-root-module",
+		"make protos relative to the root of the given module available in proto import path. "+
 			"May be specified multiple times.")
 	flag.Var(
 		&pathMap,
