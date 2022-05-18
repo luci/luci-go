@@ -148,6 +148,7 @@ func TestLaunch(t *testing.T) {
 				So(tj.Result, ShouldResembleProto, &tryjob.Result{
 					Status:     tryjob.Result_UNKNOWN,
 					CreateTime: timestamppb.New(ct.Clock.Now()),
+					UpdateTime: timestamppb.New(ct.Clock.Now()),
 					Backend: &tryjob.Result_Buildbucket_{
 						Buildbucket: &tryjob.Result_Buildbucket{
 							Id:     id,

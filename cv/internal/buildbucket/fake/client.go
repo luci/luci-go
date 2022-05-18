@@ -188,6 +188,7 @@ func (c *Client) CancelBuild(ctx context.Context, in *bbpb.CancelBuildRequest, o
 				build.StartTime = now
 			}
 			build.EndTime = now
+			build.UpdateTime = now
 			build.SummaryMarkdown = in.GetSummaryMarkdown()
 		}
 	})
@@ -246,10 +247,12 @@ func (c *Client) scheduleBuild(ctx context.Context, in *bbpb.ScheduleBuildReques
 	if err != nil {
 		return nil, err
 	}
+	now := timestamppb.New(clock.Now(ctx))
 	build := &bbpb.Build{
 		Builder:    builderID,
 		Status:     bbpb.Status_SCHEDULED,
-		CreateTime: timestamppb.New(clock.Now(ctx)),
+		CreateTime: now,
+		UpdateTime: now,
 		Input: &bbpb.Build_Input{
 			Properties:    inputProps,
 			GerritChanges: in.GetGerritChanges(),

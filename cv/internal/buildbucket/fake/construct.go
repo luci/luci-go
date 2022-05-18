@@ -37,6 +37,7 @@ type BuildConstructor struct {
 	createTime          time.Time
 	startTime           time.Time
 	endTime             time.Time
+	updateTime          time.Time
 	summaryMarkdown     string
 	gerritChanges       []*bbpb.GerritChange
 	experimental        bool
@@ -66,6 +67,7 @@ func NewConstructorFromBuild(build *bbpb.Build) *BuildConstructor {
 		createTime:          build.GetCancelTime().AsTime(),
 		startTime:           build.GetStartTime().AsTime(),
 		endTime:             build.GetEndTime().AsTime(),
+		updateTime:          build.GetUpdateTime().AsTime(),
 		summaryMarkdown:     build.GetSummaryMarkdown(),
 		gerritChanges:       make([]*bbpb.GerritChange, len(build.GetInput().GetGerritChanges())),
 		experimental:        build.GetInput().GetExperimental(),
@@ -118,6 +120,12 @@ func (bc *BuildConstructor) WithStartTime(startTime time.Time) *BuildConstructor
 // WithEndTime specifies the end time. Required if status is ended.
 func (bc *BuildConstructor) WithEndTime(endTime time.Time) *BuildConstructor {
 	bc.endTime = endTime.UTC()
+	return bc
+}
+
+// WithUpdateTime specifies the update time. Optional.
+func (bc *BuildConstructor) WithUpdateTime(updateTime time.Time) *BuildConstructor {
+	bc.updateTime = updateTime.UTC()
 	return bc
 }
 
@@ -203,6 +211,9 @@ func (bc *BuildConstructor) Construct() *bbpb.Build {
 	}
 	if !bc.endTime.IsZero() {
 		ret.EndTime = timestamppb.New(bc.endTime)
+	}
+	if !bc.updateTime.IsZero() {
+		ret.UpdateTime = timestamppb.New(bc.updateTime)
 	}
 	ret.SummaryMarkdown = bc.summaryMarkdown
 	// Input

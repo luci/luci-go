@@ -64,6 +64,7 @@ func TestGetBuild(t *testing.T) {
 			WithCreateTime(epoch).
 			WithStartTime(epoch.Add(1 * time.Minute)).
 			WithEndTime(epoch.Add(2 * time.Minute)).
+			WithUpdateTime(epoch.Add(2 * time.Minute)).
 			Construct()
 		fake.AddBuild(build)
 
@@ -170,6 +171,7 @@ func TestSearchBuild(t *testing.T) {
 			WithCreateTime(epoch).
 			WithStartTime(epoch.Add(1 * time.Minute)).
 			WithEndTime(epoch.Add(2 * time.Minute)).
+			WithUpdateTime(epoch.Add(2 * time.Minute)).
 			AppendGerritChanges(gc).
 			Construct()
 
@@ -358,6 +360,7 @@ func TestCancelBuild(t *testing.T) {
 			WithBuilderID(builderID).
 			WithStatus(bbpb.Status_SCHEDULED).
 			WithCreateTime(epoch).
+			WithUpdateTime(epoch).
 			Construct()
 		fake.AddBuild(build)
 
@@ -376,6 +379,7 @@ func TestCancelBuild(t *testing.T) {
 					WithCreateTime(epoch).
 					WithStartTime(tc.Now()).
 					WithEndTime(tc.Now()).
+					WithUpdateTime(tc.Now()).
 					WithSummaryMarkdown("no longer needed").
 					Construct()))
 			})
@@ -496,6 +500,7 @@ func TestScheduleBuild(t *testing.T) {
 					Builder:    builderNoProp,
 					Status:     bbpb.Status_SCHEDULED,
 					CreateTime: timestamppb.New(tc.Now()),
+					UpdateTime: timestamppb.New(tc.Now()),
 					Input:      &bbpb.Build_Input{},
 					Infra: &bbpb.BuildInfra{
 						Buildbucket: &bbpb.BuildInfra_Buildbucket{
@@ -529,6 +534,7 @@ func TestScheduleBuild(t *testing.T) {
 					Builder:    builderNoProp,
 					Status:     bbpb.Status_SCHEDULED,
 					CreateTime: timestamppb.New(tc.Now()),
+					UpdateTime: timestamppb.New(tc.Now()),
 					Input: &bbpb.Build_Input{
 						Properties:    props,
 						GerritChanges: []*bbpb.GerritChange{gc},
@@ -560,6 +566,7 @@ func TestScheduleBuild(t *testing.T) {
 					Builder:    builderWithProp,
 					Status:     bbpb.Status_SCHEDULED,
 					CreateTime: timestamppb.New(tc.Now()),
+					UpdateTime: timestamppb.New(tc.Now()),
 					Input: &bbpb.Build_Input{
 						Properties: props,
 					},
