@@ -1,0 +1,372 @@
+// Copyright 2021 The LUCI Authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+package bbfacade
+
+import (
+	"testing"
+	"time"
+
+	"google.golang.org/protobuf/types/known/structpb"
+	"google.golang.org/protobuf/types/known/timestamppb"
+
+	bbpb "go.chromium.org/luci/buildbucket/proto"
+	"go.chromium.org/luci/common/errors"
+	gerritpb "go.chromium.org/luci/common/proto/gerrit"
+
+	"go.chromium.org/luci/cv/api/recipe/v1"
+	"go.chromium.org/luci/cv/internal/changelist"
+	"go.chromium.org/luci/cv/internal/common"
+	"go.chromium.org/luci/cv/internal/cvtesting"
+	"go.chromium.org/luci/cv/internal/run"
+	"go.chromium.org/luci/cv/internal/tryjob"
+
+	. "github.com/smartystreets/goconvey/convey"
+	. "go.chromium.org/luci/common/testing/assertions"
+)
+
+func TestLaunch(t *testing.T) {
+	Convey("Launch", t, func() {
+		ct := cvtesting.Test{}
+		ctx, cancel := ct.SetUp()
+		defer cancel()
+		f := &Facade{
+			ClientFactory: ct.BuildbucketFake.NewClientFactory(),
+		}
+
+		const (
+			gHost    = "example-review.googlesource.com"
+			gRepo    = "repo/example"
+			gChange1 = 11
+			gChange2 = 22
+
+			bbHost  = "buildbucket.example.com"
+			bbHost2 = "buildbucket-2.example.com"
+
+			lProject     = "testProj"
+			owner1Email  = "owner1@example.com"
+			owner2Email  = "owner2@example.com"
+			triggerEmail = "triggerer@example.com"
+		)
+		builderID := &bbpb.BuilderID{
+			Project: lProject,
+			Bucket:  "testBucket",
+			Builder: "testBuilder",
+		}
+		ct.BuildbucketFake.AddBuilder(bbHost, builderID, map[string]interface{}{
+			"foo": "bar",
+		})
+		bbClient, err := ct.BuildbucketFake.NewClientFactory().MakeClient(ctx, bbHost, lProject)
+		So(err, ShouldBeNil)
+
+		epoch := ct.Clock.Now().UTC()
+		cl1 := &run.RunCL{
+			ID:         1,
+			ExternalID: changelist.MustGobID(gHost, gChange1),
+			Detail: &changelist.Snapshot{
+				Patchset:              4,
+				MinEquivalentPatchset: 3,
+				Kind: &changelist.Snapshot_Gerrit{
+					Gerrit: &changelist.Gerrit{
+						Host: gHost,
+						Info: &gerritpb.ChangeInfo{
+							Project: gRepo,
+							Number:  gChange1,
+							Owner: &gerritpb.AccountInfo{
+								Email: owner1Email,
+							},
+						},
+					},
+				},
+			},
+			Trigger: &run.Trigger{
+				Email: triggerEmail,
+			},
+		}
+		cl2 := &run.RunCL{
+			ID:         2,
+			ExternalID: changelist.MustGobID(gHost, gChange2),
+			Detail: &changelist.Snapshot{
+				Patchset:              10,
+				MinEquivalentPatchset: 10,
+				Kind: &changelist.Snapshot_Gerrit{
+					Gerrit: &changelist.Gerrit{
+						Host: gHost,
+						Info: &gerritpb.ChangeInfo{
+							Project: gRepo,
+							Number:  gChange2,
+							Owner: &gerritpb.AccountInfo{
+								Email: owner2Email,
+							},
+						},
+					},
+				},
+			},
+			Trigger: &run.Trigger{
+				Email: triggerEmail,
+			},
+		}
+		cls := []*run.RunCL{cl1, cl2}
+		r := &run.Run{
+			ID:   common.MakeRunID(lProject, epoch, 1, []byte("cafe")),
+			CLs:  common.CLIDs{cl1.ID, cl2.ID},
+			Mode: run.DryRun,
+		}
+
+		Convey("Single Tryjob", func() {
+			definition := &tryjob.Definition{
+				Backend: &tryjob.Definition_Buildbucket_{
+					Buildbucket: &tryjob.Definition_Buildbucket{
+						Host:    bbHost,
+						Builder: builderID,
+					},
+				},
+			}
+			Convey("NonExperimental", func() {
+				tj := &tryjob.Tryjob{
+					ID:         65535,
+					Definition: definition,
+					Status:     tryjob.Status_PENDING,
+				}
+				err := f.Launch(ctx, []*tryjob.Tryjob{tj}, r, cls)
+				So(err, ShouldBeNil)
+				So(tj.ExternalID, ShouldNotBeEmpty)
+				host, id, err := tj.ExternalID.ParseBuildbucketID()
+				So(err, ShouldBeNil)
+				So(host, ShouldEqual, bbHost)
+				So(tj.Status, ShouldEqual, tryjob.Status_TRIGGERED)
+				So(tj.Result, ShouldResembleProto, &tryjob.Result{
+					Status:     tryjob.Result_UNKNOWN,
+					CreateTime: timestamppb.New(ct.Clock.Now()),
+					Output:     &recipe.Output{},
+					Backend: &tryjob.Result_Buildbucket_{
+						Buildbucket: &tryjob.Result_Buildbucket{
+							Id:     id,
+							Status: bbpb.Status_SCHEDULED,
+						},
+					},
+				})
+				build, err := bbClient.GetBuild(ctx, &bbpb.GetBuildRequest{
+					Id: id,
+					Mask: &bbpb.BuildMask{
+						AllFields: true,
+					},
+				})
+				So(err, ShouldBeNil)
+				So(build.GetBuilder(), ShouldResembleProto, builderID)
+				So(build.GetInput().GetProperties(), ShouldResembleProto, &structpb.Struct{
+					Fields: map[string]*structpb.Value{
+						"foo": structpb.NewStringValue("bar"),
+						propertyKey: structpb.NewStructValue(&structpb.Struct{
+							Fields: map[string]*structpb.Value{
+								"active":   structpb.NewBoolValue(true),
+								"dryRun":   structpb.NewBoolValue(true),
+								"topLevel": structpb.NewBoolValue(true),
+								"runMode":  structpb.NewStringValue(string(run.DryRun)),
+							},
+						}),
+					},
+				})
+				So(build.GetInput().GetGerritChanges(), ShouldResembleProto, []*bbpb.GerritChange{
+					{Host: gHost, Project: gRepo, Change: gChange1, Patchset: 4},
+					{Host: gHost, Project: gRepo, Change: gChange2, Patchset: 10},
+				})
+				So(build.GetTags(), ShouldResembleProto, []*bbpb.StringPair{
+					{Key: "cq_attempt_key", Value: "63616665"},
+					{Key: "cq_cl_group_key", Value: "42497728aa4b5097"},
+					{Key: "cq_cl_owner", Value: owner1Email},
+					{Key: "cq_cl_owner", Value: owner2Email},
+					{Key: "cq_equivalent_cl_group_key", Value: "1aac15146c0bc164"},
+					{Key: "cq_experimental", Value: "false"},
+					{Key: "cq_triggerer", Value: triggerEmail},
+					{Key: "user_agent", Value: "cq"},
+				})
+			})
+
+			Convey("Experimental Tryjob", func() {
+				definition.Experimental = true
+				tj := &tryjob.Tryjob{
+					ID:         65535,
+					Definition: definition,
+					Status:     tryjob.Status_PENDING,
+				}
+				err := f.Launch(ctx, []*tryjob.Tryjob{tj}, r, cls)
+				So(err, ShouldBeNil)
+				So(tj.ExternalID, ShouldNotBeEmpty)
+				_, id, err := tj.ExternalID.ParseBuildbucketID()
+				So(err, ShouldBeNil)
+				build, err := bbClient.GetBuild(ctx, &bbpb.GetBuildRequest{
+					Id: id,
+					Mask: &bbpb.BuildMask{
+						AllFields: true,
+					},
+				})
+				So(err, ShouldBeNil)
+				So(build.GetInput().GetProperties().GetFields()[propertyKey].GetStructValue().GetFields()["experimental"].GetBoolValue(), ShouldBeTrue)
+				var experimentalTag *bbpb.StringPair
+				for _, tag := range build.GetTags() {
+					if tag.GetKey() == "cq_experimental" {
+						experimentalTag = tag
+						break
+					}
+				}
+				So(experimentalTag, ShouldNotBeNil)
+				So(experimentalTag.GetValue(), ShouldEqual, "true")
+			})
+		})
+
+		Convey("Multiple across hosts", func() {
+			tryjobs := []*tryjob.Tryjob{
+				{
+					ID: 65533,
+					Definition: &tryjob.Definition{
+						Backend: &tryjob.Definition_Buildbucket_{
+							Buildbucket: &tryjob.Definition_Buildbucket{
+								Host: bbHost,
+								Builder: &bbpb.BuilderID{
+									Project: lProject,
+									Bucket:  "bucketFoo",
+									Builder: "builderFoo",
+								},
+							},
+						},
+					},
+					Status: tryjob.Status_PENDING,
+				},
+				{
+					ID: 65534,
+					Definition: &tryjob.Definition{
+						Backend: &tryjob.Definition_Buildbucket_{
+							Buildbucket: &tryjob.Definition_Buildbucket{
+								Host: bbHost,
+								Builder: &bbpb.BuilderID{
+									Project: lProject,
+									Bucket:  "bucketBar",
+									Builder: "builderBar",
+								},
+							},
+						},
+						Experimental: true,
+					},
+					Status: tryjob.Status_PENDING,
+				},
+				{
+					ID: 65535,
+					Definition: &tryjob.Definition{
+						Backend: &tryjob.Definition_Buildbucket_{
+							Buildbucket: &tryjob.Definition_Buildbucket{
+								Host: bbHost2,
+								Builder: &bbpb.BuilderID{
+									Project: lProject,
+									Bucket:  "bucketBaz",
+									Builder: "builderBaz",
+								},
+							},
+						},
+					},
+					Status: tryjob.Status_PENDING,
+				},
+			}
+			ct.BuildbucketFake.AddBuilder(bbHost, tryjobs[0].Definition.GetBuildbucket().GetBuilder(), nil)
+			ct.BuildbucketFake.AddBuilder(bbHost, tryjobs[1].Definition.GetBuildbucket().GetBuilder(), nil)
+			ct.BuildbucketFake.AddBuilder(bbHost2, tryjobs[2].Definition.GetBuildbucket().GetBuilder(), nil)
+			err := f.Launch(ctx, tryjobs, r, cls)
+			So(err, ShouldBeNil)
+			for i, tj := range tryjobs {
+				So(tj.ExternalID, ShouldNotBeEmpty)
+				host, id, err := tj.ExternalID.ParseBuildbucketID()
+				So(err, ShouldBeNil)
+				switch i {
+				case 0, 1:
+					So(host, ShouldEqual, bbHost)
+				default:
+					So(host, ShouldEqual, bbHost2)
+				}
+				bbClient, err := ct.BuildbucketFake.NewClientFactory().MakeClient(ctx, host, lProject)
+				So(err, ShouldBeNil)
+				build, err := bbClient.GetBuild(ctx, &bbpb.GetBuildRequest{
+					Id: id,
+					Mask: &bbpb.BuildMask{
+						AllFields: true,
+					},
+				})
+				So(err, ShouldBeNil)
+				So(build, ShouldNotBeNil)
+			}
+		})
+
+		Convey("Failure", func() {
+			tryjobs := []*tryjob.Tryjob{
+				{
+					ID: 65534,
+					Definition: &tryjob.Definition{
+						Backend: &tryjob.Definition_Buildbucket_{
+							Buildbucket: &tryjob.Definition_Buildbucket{
+								Host:    bbHost,
+								Builder: builderID,
+							},
+						},
+					},
+					Status: tryjob.Status_PENDING,
+				},
+				{
+					ID: 65535,
+					Definition: &tryjob.Definition{
+						Backend: &tryjob.Definition_Buildbucket_{
+							Buildbucket: &tryjob.Definition_Buildbucket{
+								Host: bbHost,
+								Builder: &bbpb.BuilderID{
+									Project: lProject,
+									Bucket:  "testBucket",
+									Builder: "anotherBuilder",
+								},
+							},
+						},
+					},
+					Status: tryjob.Status_PENDING,
+				},
+			}
+			err := f.Launch(ctx, tryjobs, r, cls)
+			So(err, ShouldNotBeNil)
+			So(err, ShouldHaveSameTypeAs, errors.MultiError{})
+			merrs := err.(errors.MultiError)
+			So(merrs[0], ShouldBeNil) // First Tryjob launched successfully
+			So(tryjobs[0].ExternalID, ShouldNotBeEmpty)
+			So(merrs[1], ShouldBeRPCNotFound)
+			So(tryjobs[1].ExternalID, ShouldBeEmpty)
+		})
+
+		Convey("Deduplicate", func() {
+			first := &tryjob.Tryjob{
+				ID: 655365,
+				Definition: &tryjob.Definition{
+					Backend: &tryjob.Definition_Buildbucket_{
+						Buildbucket: &tryjob.Definition_Buildbucket{
+							Host:    bbHost,
+							Builder: builderID,
+						},
+					},
+				},
+				Status: tryjob.Status_PENDING,
+			}
+			second := *first // make a copy
+			err := f.Launch(ctx, []*tryjob.Tryjob{first}, r, cls)
+			So(err, ShouldBeNil)
+			ct.Clock.Add(10 * time.Second)
+			err = f.Launch(ctx, []*tryjob.Tryjob{&second}, r, cls)
+			So(err, ShouldBeNil)
+			So(second.ExternalID, ShouldEqual, first.ExternalID)
+		})
+	})
+}
