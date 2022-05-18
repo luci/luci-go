@@ -44,16 +44,10 @@ var defaultMask *bbpb.BuildMask
 
 func init() {
 	defaultMask = &bbpb.BuildMask{
-		Fields: &fieldmaskpb.FieldMask{
-			Paths: []string{
-				"create_time",
-				"id",
-				"output.properties",
-				"status",
-				"status_details",
-				"update_time",
-			},
-		},
+		Fields: &fieldmaskpb.FieldMask{},
+	}
+	if err := defaultMask.Fields.Append((*bbpb.Build)(nil), fieldsToParse...); err != nil {
+		panic(err)
 	}
 	for _, key := range outputPropKeys {
 		defaultMask.OutputProperties = append(defaultMask.OutputProperties, &structmask.StructMask{

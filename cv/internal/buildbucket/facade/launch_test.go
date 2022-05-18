@@ -151,8 +151,9 @@ func TestLaunch(t *testing.T) {
 					UpdateTime: timestamppb.New(ct.Clock.Now()),
 					Backend: &tryjob.Result_Buildbucket_{
 						Buildbucket: &tryjob.Result_Buildbucket{
-							Id:     id,
-							Status: bbpb.Status_SCHEDULED,
+							Id:      id,
+							Status:  bbpb.Status_SCHEDULED,
+							Builder: builderID,
 						},
 					},
 				})

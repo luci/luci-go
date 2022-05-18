@@ -19,32 +19,41 @@ import (
 	"fmt"
 	"io/ioutil"
 	"testing"
+	"time"
 
 	"google.golang.org/protobuf/encoding/protojson"
+	"google.golang.org/protobuf/types/known/timestamppb"
 
 	bbpb "go.chromium.org/luci/buildbucket/proto"
 
 	"go.chromium.org/luci/cv/api/recipe/v1"
+	bbfake "go.chromium.org/luci/cv/internal/buildbucket/fake"
 	"go.chromium.org/luci/cv/internal/tryjob"
 
 	. "github.com/smartystreets/goconvey/convey"
+	"go.chromium.org/luci/common/clock/testclock"
 	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestParseStatusAndResult(t *testing.T) {
 	Convey("Parse Status and Result", t, func() {
-		b := &bbpb.Build{}
-		So(protojson.Unmarshal([]byte(`{
-			"id": "8831742013603886929",
-			"createTime": "2021-11-01T18:31:34Z",
-			"updateTime": "2021-11-01T18:32:01Z",
-			"status": "SUCCESS"
-		}`), b), ShouldBeNil)
+		const buildID = 12345
+		const buildSummary = "foo"
+		builder := &bbpb.BuilderID{
+			Project: "aProject",
+			Bucket:  "aBucket",
+			Builder: "aBuilder",
+		}
+		createTime := testclock.TestRecentTimeUTC
 
-		var status tryjob.Status
-		var result *tryjob.Result
-		var err error
-
+		b := bbfake.NewBuildConstructor().
+			WithHost("example.buildbucket.com").
+			WithID(buildID).
+			WithBuilderID(builder).
+			WithCreateTime(createTime).
+			WithStatus(bbpb.Status_SCHEDULED).
+			WithSummaryMarkdown(buildSummary).
+			Construct()
 		ctx := context.Background()
 
 		Convey("Returns an error", func() {
@@ -55,63 +64,87 @@ func TestParseStatusAndResult(t *testing.T) {
 			})
 		})
 		Convey("Parses a valid build proto", func() {
-			Convey("For a finished build", func() {
+			Convey("For an ended build", func() {
+				startTime := createTime.Add(1 * time.Minute)
+				endTime := createTime.Add(2 * time.Minute)
+				b = bbfake.NewConstructorFromBuild(b).
+					WithStartTime(startTime).
+					WithEndTime(endTime).
+					WithUpdateTime(endTime).
+					Construct()
 				Convey("That succeeded", func() {
-					status, result, err = parseStatusAndResult(ctx, b)
+					b = bbfake.NewConstructorFromBuild(b).WithStatus(bbpb.Status_SUCCESS).Construct()
+					status, result, err := parseStatusAndResult(ctx, b)
 					So(err, ShouldBeNil)
+					So(status, ShouldEqual, tryjob.Status_ENDED)
 					So(result.Status, ShouldEqual, tryjob.Result_SUCCEEDED)
+					So(result, ShouldResembleProto, &tryjob.Result{
+						Status:     tryjob.Result_SUCCEEDED,
+						CreateTime: timestamppb.New(createTime),
+						UpdateTime: timestamppb.New(endTime),
+						Backend: &tryjob.Result_Buildbucket_{
+							Buildbucket: &tryjob.Result_Buildbucket{
+								Id:              buildID,
+								Builder:         builder,
+								Status:          bbpb.Status_SUCCESS,
+								SummaryMarkdown: buildSummary,
+							},
+						},
+					})
 				})
 				Convey("That timed out", func() {
-					b.Status = bbpb.Status_FAILURE
-					b.StatusDetails = &bbpb.StatusDetails{
-						Timeout: &bbpb.StatusDetails_Timeout{},
-					}
-					status, result, err = parseStatusAndResult(ctx, b)
+					b = bbfake.NewConstructorFromBuild(b).
+						WithStatus(bbpb.Status_FAILURE).
+						WithTimeout(true).
+						Construct()
+					status, result, err := parseStatusAndResult(ctx, b)
 					So(err, ShouldBeNil)
-					So(result.Status, ShouldEqual, tryjob.Result_TIMEOUT)
+					So(status, ShouldEqual, tryjob.Status_ENDED)
+					So(result.GetStatus(), ShouldEqual, tryjob.Result_TIMEOUT)
 				})
 				Convey("That failed", func() {
 					Convey("Transiently", func() {
-						b.Status = bbpb.Status_INFRA_FAILURE
-						status, result, err = parseStatusAndResult(ctx, b)
+						b = bbfake.NewConstructorFromBuild(b).WithStatus(bbpb.Status_INFRA_FAILURE).Construct()
+						status, result, err := parseStatusAndResult(ctx, b)
 						So(err, ShouldBeNil)
-						So(result.Status, ShouldEqual, tryjob.Result_FAILED_TRANSIENTLY)
+						So(status, ShouldEqual, tryjob.Status_ENDED)
+						So(result.GetStatus(), ShouldEqual, tryjob.Result_FAILED_TRANSIENTLY)
 					})
 					Convey("Permanently", func() {
 						b.Status = bbpb.Status_FAILURE
-						status, result, err = parseStatusAndResult(ctx, b)
+						status, result, err := parseStatusAndResult(ctx, b)
+						So(status, ShouldEqual, tryjob.Status_ENDED)
 						So(err, ShouldBeNil)
-						So(result.Status, ShouldEqual, tryjob.Result_FAILED_PERMANENTLY)
+						So(result.GetStatus(), ShouldEqual, tryjob.Result_FAILED_PERMANENTLY)
 					})
 				})
-				So(status, ShouldEqual, tryjob.Status_ENDED)
+				Convey("That cancelled", func() {
+					b = bbfake.NewConstructorFromBuild(b).WithStatus(bbpb.Status_INFRA_FAILURE).Construct()
+					status, result, err := parseStatusAndResult(ctx, b)
+					So(err, ShouldBeNil)
+					So(status, ShouldEqual, tryjob.Status_ENDED)
+					So(result.GetStatus(), ShouldEqual, tryjob.Result_FAILED_TRANSIENTLY)
+				})
 			})
 			Convey("For a pending build", func() {
 				Convey("That is still scheduled", func() {
-					b.Status = bbpb.Status_SCHEDULED
+					status, result, err := parseStatusAndResult(ctx, b)
+					So(err, ShouldBeNil)
+					So(status, ShouldEqual, tryjob.Status_TRIGGERED)
+					So(result.Status, ShouldEqual, tryjob.Result_UNKNOWN)
 				})
 				Convey("That is already running", func() {
-					b.Status = bbpb.Status_STARTED
+					b = bbfake.NewConstructorFromBuild(b).
+						WithStatus(bbpb.Status_STARTED).
+						WithStartTime(createTime.Add(1 * time.Minute)).
+						Construct()
+					status, result, err := parseStatusAndResult(ctx, b)
+					So(err, ShouldBeNil)
+					So(status, ShouldEqual, tryjob.Status_TRIGGERED)
+					So(result.Status, ShouldEqual, tryjob.Result_UNKNOWN)
 				})
-				status, result, err = parseStatusAndResult(ctx, b)
-				So(err, ShouldBeNil)
-				So(status, ShouldEqual, tryjob.Status_TRIGGERED)
-				So(result.Status, ShouldEqual, tryjob.Result_UNKNOWN)
 			})
-			Convey("For a build that has been cancelled", func() {
-				b.Status = bbpb.Status_CANCELED
-				status, result, err = parseStatusAndResult(ctx, b)
-				So(err, ShouldBeNil)
-				So(status, ShouldEqual, tryjob.Status_ENDED)
-				So(result.Status, ShouldEqual, tryjob.Result_FAILED_TRANSIENTLY)
-			})
-			// Fields copied without change.
-			So(result.CreateTime.Seconds, ShouldEqual, 1635791494)
-			So(result.UpdateTime.Seconds, ShouldEqual, 1635791521)
-			So(result.GetBuildbucket().Id, ShouldEqual, 8831742013603886929)
-			So(result.GetBuildbucket().Status, ShouldEqual, b.Status)
 		})
-
 	})
 }
 

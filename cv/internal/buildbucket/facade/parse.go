@@ -30,16 +30,28 @@ import (
 	"go.chromium.org/luci/cv/internal/tryjob"
 )
 
+var fieldsToParse = []string{
+	"builder",
+	"create_time",
+	"id",
+	"output.properties",
+	"status",
+	"status_details",
+	"summary_markdown",
+	"update_time",
+}
+
 func parseStatusAndResult(ctx context.Context, b *bbpb.Build) (tryjob.Status, *tryjob.Result, error) {
 	s := tryjob.Status_STATUS_UNSPECIFIED
 	r := &tryjob.Result{
-		CreateTime: b.CreateTime,
-		UpdateTime: b.UpdateTime,
+		CreateTime: b.GetCreateTime(),
+		UpdateTime: b.GetUpdateTime(),
 		Backend: &tryjob.Result_Buildbucket_{
 			Buildbucket: &tryjob.Result_Buildbucket{
-				Id:              b.Id,
-				Status:          b.Status,
-				SummaryMarkdown: b.SummaryMarkdown,
+				Id:              b.GetId(),
+				Builder:         b.GetBuilder(),
+				Status:          b.GetStatus(),
+				SummaryMarkdown: b.GetSummaryMarkdown(),
 			},
 		},
 	}
@@ -49,7 +61,7 @@ func parseStatusAndResult(ctx context.Context, b *bbpb.Build) (tryjob.Status, *t
 	if buildResult.err != nil {
 		logging.Debugf(ctx, "errors parsing recipe output: %s", buildResult.err)
 		if buildResult.err.WithSeverity(validation.Blocking) != nil {
-			r.Output = &recipe.Output{}
+			r.Output = nil
 			logging.Debugf(ctx, "ignoring recipe output due to blocking parsing errors")
 		}
 	}

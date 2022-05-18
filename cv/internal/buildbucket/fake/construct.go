@@ -38,6 +38,7 @@ type BuildConstructor struct {
 	startTime           time.Time
 	endTime             time.Time
 	updateTime          time.Time
+	timeout             bool
 	summaryMarkdown     string
 	gerritChanges       []*bbpb.GerritChange
 	experimental        bool
@@ -64,10 +65,11 @@ func NewConstructorFromBuild(build *bbpb.Build) *BuildConstructor {
 		id:                  build.GetId(),
 		builderID:           proto.Clone(build.GetBuilder()).(*bbpb.BuilderID),
 		status:              build.GetStatus(),
-		createTime:          build.GetCancelTime().AsTime(),
+		createTime:          build.GetCreateTime().AsTime(),
 		startTime:           build.GetStartTime().AsTime(),
 		endTime:             build.GetEndTime().AsTime(),
 		updateTime:          build.GetUpdateTime().AsTime(),
+		timeout:             build.GetStatusDetails().GetTimeout() != nil,
 		summaryMarkdown:     build.GetSummaryMarkdown(),
 		gerritChanges:       make([]*bbpb.GerritChange, len(build.GetInput().GetGerritChanges())),
 		experimental:        build.GetInput().GetExperimental(),
@@ -126,6 +128,12 @@ func (bc *BuildConstructor) WithEndTime(endTime time.Time) *BuildConstructor {
 // WithUpdateTime specifies the update time. Optional.
 func (bc *BuildConstructor) WithUpdateTime(updateTime time.Time) *BuildConstructor {
 	bc.updateTime = updateTime.UTC()
+	return bc
+}
+
+// WithTimeout sets the timeout bit of this build. Optional.
+func (bc *BuildConstructor) WithTimeout(isTimeout bool) *BuildConstructor {
+	bc.timeout = isTimeout
 	return bc
 }
 
@@ -214,6 +222,12 @@ func (bc *BuildConstructor) Construct() *bbpb.Build {
 	}
 	if !bc.updateTime.IsZero() {
 		ret.UpdateTime = timestamppb.New(bc.updateTime)
+	}
+	if bc.timeout {
+		if ret.GetStatusDetails() == nil {
+			ret.StatusDetails = &bbpb.StatusDetails{}
+		}
+		ret.GetStatusDetails().Timeout = &bbpb.StatusDetails_Timeout{}
 	}
 	ret.SummaryMarkdown = bc.summaryMarkdown
 	// Input
