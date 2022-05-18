@@ -13,6 +13,7 @@
 // limitations under the License.
 
 import 'cypress';
+import 'webpack-dev-server';
 import fs from 'fs';
 import { createProxyMiddleware } from 'http-proxy-middleware';
 import path from 'path';
@@ -30,23 +31,27 @@ export default merge(common, {
   devtool: 'eval-source-map',
   // Service workers makes live/hot reload harder, so it should be disabled by
   // default in dev mode.
-  plugins: DEBUG_SW
-    ? [
-        new DefinePlugin({ ENABLE_UI_SW: JSON.stringify(true) }),
-
-        new Workbox.GenerateSW({
-          // Without this, new release will not take effect until users close
-          // all build page tabs.
-          skipWaiting: true,
-          navigateFallback: '/ui/index.html',
-          sourcemap: true,
-          importScriptsViaChunks: ['service-worker-ext'],
-          // Set to 5 MB to suppress the warning in dev mode.
-          // Dev bundles are naturally larger as they have inline source maps.
-          maximumFileSizeToCacheInBytes: 5242880,
-        }),
-      ]
-    : [new DefinePlugin({ ENABLE_UI_SW: JSON.stringify(false) })],
+  plugins: [
+    new DefinePlugin({
+      IS_DEV: JSON.stringify(true),
+      ENABLE_UI_SW: JSON.stringify(DEBUG_SW),
+    }),
+    ...(DEBUG_SW
+      ? [
+          new Workbox.GenerateSW({
+            // Without this, new release will not take effect until users close
+            // all build page tabs.
+            skipWaiting: true,
+            navigateFallback: '/ui/index.html',
+            sourcemap: true,
+            importScriptsViaChunks: ['service-worker-ext'],
+            // Set to 5 MB to suppress the warning in dev mode.
+            // Dev bundles are naturally larger as they have inline source maps.
+            maximumFileSizeToCacheInBytes: 5242880,
+          }),
+        ]
+      : []),
+  ],
 
   devServer: {
     hot: false,
@@ -62,14 +67,12 @@ export default merge(common, {
       index: '/ui/index.html',
     },
     port: Number(new URL(cypressConfig.baseUrl || 'https://localhost:8080').port),
-    server: {
-      type: 'https',
-      options: {
-        key: fs.readFileSync(path.join(__dirname, 'dev-configs/cert.key')),
-        cert: fs.readFileSync(path.join(__dirname, 'dev-configs/cert.pem')),
-      },
-    },
-    onBeforeSetupMiddleware: (devServer) => {
+    setupMiddlewares: (middlewares, devServer) => {
+      // This won't happen, but it helps TSC infer the type.
+      if (!devServer.app) {
+        throw new Error('app not initialized');
+      }
+
       devServer.app.use((req, _res, next) => {
         // Host root-sw.js at root so it can have root scope.
         if (/^\/(root-sw\.js(\.map)?)$/.test(req.path)) {
@@ -101,8 +104,11 @@ export default merge(common, {
             return localDevConfigs.milo.url;
           },
           changeOrigin: true,
+          secure: false,
         })
       );
+
+      return middlewares;
     },
   },
 });

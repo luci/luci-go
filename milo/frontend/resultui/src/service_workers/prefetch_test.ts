@@ -24,24 +24,25 @@ import { getInvIdFromBuildId, getInvIdFromBuildNum, ResultDb } from '../services
 import { Prefetcher } from './prefetch';
 
 describe('prefetch', () => {
-  let fetchStub: sinon.SinonStub<[RequestInfo, RequestInit | undefined], Promise<Response>>;
-  let respondWithStub: sinon.SinonStub<[Response | Promise<Response>], void>;
+  let fetchStub: sinon.SinonStub<Parameters<typeof fetch>, ReturnType<typeof fetch>>;
+  let respondWithStub: sinon.SinonStub<[Response | ReturnType<typeof fetch>], void>;
   let prefetcher: Prefetcher;
 
   // Helps generate fetch requests that are identical to the ones generated
   // by the pRPC Clients.
-  let fetchInterceptor: sinon.SinonStub<[RequestInfo, RequestInit | undefined], Promise<Response>>;
+  let fetchInterceptor: sinon.SinonStub<Parameters<typeof fetch>, ReturnType<typeof fetch>>;
   let buildsService: BuildsService;
   let resultdb: ResultDb;
 
   beforeEach(async () => {
     await setAuthStateCache({ accessToken: 'access-token', identity: 'user:user-id' });
 
-    fetchStub = sinon.stub<[RequestInfo, RequestInit | undefined], Promise<Response>>();
-    respondWithStub = sinon.stub<[Response | Promise<Response>], void>();
+    fetchStub = sinon.stub<Parameters<typeof fetch>, ReturnType<typeof fetch>>();
+    respondWithStub = sinon.stub<[Response | ReturnType<typeof fetch>], void>();
     prefetcher = new Prefetcher(CONFIGS, fetchStub);
 
-    fetchInterceptor = sinon.stub<[RequestInfo, RequestInit | undefined], Promise<Response>>();
+    fetchInterceptor = sinon.stub<Parameters<typeof fetch>, ReturnType<typeof fetch>>();
+    fetchInterceptor.resolves(new Response(''));
     buildsService = new BuildsService(
       new PrpcClientExt({ host: CONFIGS.BUILDBUCKET.HOST, fetchImpl: fetchInterceptor }, () => 'access-token')
     );
@@ -81,14 +82,14 @@ describe('prefetch', () => {
     const requestedUrls = fetchStub.getCalls().map((c) => new Request(...c.args).url);
     assert.strictEqual(requestedUrls.length, 4);
     assert.includeMembers(requestedUrls, [
-      `https://${self.location.host}/auth-state`,
+      `http://${self.location.host}/auth-state`,
       `https://${CONFIGS.BUILDBUCKET.HOST}/prpc/buildbucket.v2.Builds/GetBuild`,
       `https://${CONFIGS.RESULT_DB.HOST}/prpc/luci.resultdb.v1.ResultDB/GetInvocation`,
       `https://${CONFIGS.RESULT_DB.HOST}/prpc/luci.resultdb.v1.ResultDB/QueryTestVariants`,
     ]);
 
     // Check whether the auth state was prefetched.
-    queryAuthState(fetchInterceptor);
+    await queryAuthState(fetchInterceptor).catch((_e) => {});
     let cacheHit = prefetcher.respondWithPrefetched({
       request: new Request(...fetchInterceptor.getCall(0).args),
       respondWith: respondWithStub,
@@ -164,14 +165,14 @@ describe('prefetch', () => {
     const requestedUrls = fetchStub.getCalls().map((c) => new Request(...c.args).url);
     assert.strictEqual(requestedUrls.length, 4);
     assert.includeMembers(requestedUrls, [
-      `https://${self.location.host}/auth-state`,
+      `http://${self.location.host}/auth-state`,
       `https://${CONFIGS.BUILDBUCKET.HOST}/prpc/buildbucket.v2.Builds/GetBuild`,
       `https://${CONFIGS.RESULT_DB.HOST}/prpc/luci.resultdb.v1.ResultDB/GetInvocation`,
       `https://${CONFIGS.RESULT_DB.HOST}/prpc/luci.resultdb.v1.ResultDB/QueryTestVariants`,
     ]);
 
     // Check whether the auth state was prefetched.
-    queryAuthState(fetchInterceptor);
+    await queryAuthState(fetchInterceptor).catch((_e) => {});
     let cacheHit = prefetcher.respondWithPrefetched({
       request: new Request(...fetchInterceptor.getCall(0).args),
       respondWith: respondWithStub,
@@ -246,12 +247,12 @@ describe('prefetch', () => {
     const requestedUrls = fetchStub.getCalls().map((c) => new Request(...c.args).url);
     assert.strictEqual(requestedUrls.length, 2);
     assert.includeMembers(requestedUrls, [
-      `https://${self.location.host}/auth-state`,
+      `http://${self.location.host}/auth-state`,
       `https://${CONFIGS.RESULT_DB.HOST}/prpc/luci.resultdb.v1.ResultDB/GetArtifact`,
     ]);
 
     // Check whether the auth state was prefetched.
-    queryAuthState(fetchInterceptor);
+    await queryAuthState(fetchInterceptor).catch((_e) => {});
     let cacheHit = prefetcher.respondWithPrefetched({
       request: new Request(...fetchInterceptor.getCall(0).args),
       respondWith: respondWithStub,

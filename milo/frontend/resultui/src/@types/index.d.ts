@@ -41,6 +41,12 @@ declare const CONFIGS: {
 };
 
 /**
+ * Whether the mode is running in dev mode.
+ * Injected by webpack.
+ */
+declare const IS_DEV: boolean;
+
+/**
  * Whether GA tracking should be enabled.
  * Injected by webpack.
  */

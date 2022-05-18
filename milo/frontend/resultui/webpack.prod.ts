@@ -22,7 +22,10 @@ export default merge(common, {
   devtool: 'source-map',
   mode: 'production',
   plugins: [
-    new DefinePlugin({ ENABLE_UI_SW: JSON.stringify(true) }),
+    new DefinePlugin({
+      ENABLE_UI_SW: JSON.stringify(true),
+      IS_DEV: JSON.stringify(false),
+    }),
     new Workbox.GenerateSW({
       // Setting this to true means the old assets will be purged when a new
       // version is detected, causing existing clients to break.

@@ -14,7 +14,6 @@
 
 import fs from 'fs';
 import { Config } from 'karma';
-import path from 'path';
 import { DefinePlugin, ProvidePlugin } from 'webpack';
 
 import webpackConfig from './webpack.common';
@@ -22,12 +21,6 @@ import webpackConfig from './webpack.common';
 module.exports = (config: Config) => {
   const isDebug = process.argv.some((arg) => arg === '--debug');
   config.set({
-    protocol: 'https:',
-    httpsServerOptions: {
-      key: fs.readFileSync(path.join(__dirname, 'dev-configs/cert.key')),
-      cert: fs.readFileSync(path.join(__dirname, 'dev-configs/cert.pem')),
-    },
-
     // base path that will be used to resolve all patterns (eg. files, exclude)
     basePath: '',
 
@@ -70,6 +63,7 @@ module.exports = (config: Config) => {
           CONFIGS: fs.readFileSync('./dev-configs/configs.json', 'utf-8'),
           WORKBOX_PROMISE: 'Promise.race([])',
           // JS values need to be converted to JSON notation.
+          IS_DEV: JSON.stringify(true),
           ENABLE_GA: JSON.stringify(false),
           VISIT_ID: JSON.stringify('0'),
           CACHED_AUTH_STATE: JSON.stringify(null),

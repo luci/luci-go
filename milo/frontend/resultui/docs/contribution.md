@@ -27,11 +27,7 @@ Follow the steps below to run a local instance.
 }
 ```
 
-### 3. Create & trust a Self-signed certificate.
-1. Run `make gen_cert`.
-2. Trust `dev-configs/cert.pem`.
-
-### 4. Start the local instance.
+### 3. Start the local instance.
 Run the following command to start a local instance.
 ```sh
 npm install  # install node modules

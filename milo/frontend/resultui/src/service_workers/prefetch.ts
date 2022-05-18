@@ -48,7 +48,7 @@ const CACHE_DURATION = 5000;
 const CACHE_OPTION = { acceptCache: false, skipUpdate: true };
 
 export class Prefetcher {
-  private readonly authStateUrl = `https://${_self.location.host}/auth-state`;
+  private readonly authStateUrl = `${IS_DEV ? 'http' : 'https'}://${_self.location.host}/auth-state`;
   private readonly cachedUrls: readonly string[] = [
     this.authStateUrl,
     `https://${this.configs.BUILDBUCKET.HOST}/prpc/buildbucket.v2.Builds/GetBuild`,
@@ -61,7 +61,7 @@ export class Prefetcher {
     // _cacheKey and _expiresIn are not used here but are used in the expire
     // and key functions below.
     // they are listed here to help TSC generate the correct type definition.
-    (info: RequestInfo, init: RequestInit | undefined, _cacheKey: unknown, _expiresIn: number) =>
+    (info: Parameters<typeof fetch>[0], init: Parameters<typeof fetch>[1], _cacheKey: unknown, _expiresIn: number) =>
       this.fetchImpl(info, init),
     {
       key: (_info, _init, cacheKey) => cacheKey,
@@ -78,7 +78,7 @@ export class Prefetcher {
     return new PrpcClientExt(
       {
         host,
-        fetchImpl: async (info: RequestInfo, init?: RequestInit) => {
+        fetchImpl: async (info, init?) => {
           const req = new Request(info, init);
           await this.cachedFetch(
             {},

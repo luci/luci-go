@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { RpcCode } from '@chopsui/prpc-client';
+import { PrpcClientOptions, RpcCode } from '@chopsui/prpc-client';
 import stableStringify from 'fast-json-stable-stringify';
 import { computed, observable, untracked } from 'mobx';
 
@@ -114,7 +114,7 @@ export class AppState {
     if (this.isDisposed || this.userIdentity === null) {
       return null;
     }
-    return new ResultDb(this.makeClient(CONFIGS.RESULT_DB.HOST));
+    return new ResultDb(this.makeClient({ host: CONFIGS.RESULT_DB.HOST }));
   }
 
   @computed({ keepAlive: true })
@@ -130,7 +130,7 @@ export class AppState {
     if (this.isDisposed || this.userIdentity === null) {
       return null;
     }
-    return new MiloInternal(this.makeClient(''));
+    return new MiloInternal(this.makeClient({ host: '', insecure: IS_DEV }));
   }
 
   @computed({ keepAlive: true })
@@ -138,7 +138,7 @@ export class AppState {
     if (this.isDisposed || this.userIdentity === null) {
       return null;
     }
-    return new BuildsService(this.makeClient(CONFIGS.BUILDBUCKET.HOST));
+    return new BuildsService(this.makeClient({ host: CONFIGS.BUILDBUCKET.HOST }));
   }
 
   @computed({ keepAlive: true })
@@ -146,7 +146,7 @@ export class AppState {
     if (this.isDisposed || this.userIdentity === null) {
       return null;
     }
-    return new BuildersService(this.makeClient(CONFIGS.BUILDBUCKET.HOST));
+    return new BuildersService(this.makeClient({ host: CONFIGS.BUILDBUCKET.HOST }));
   }
 
   @computed({ keepAlive: true })
@@ -154,7 +154,7 @@ export class AppState {
     if (this.isDisposed || this.userIdentity === null) {
       return null;
     }
-    return new AccessService(this.makeClient(CONFIGS.BUILDBUCKET.HOST));
+    return new AccessService(this.makeClient({ host: CONFIGS.BUILDBUCKET.HOST }));
   }
 
   /**
@@ -173,11 +173,11 @@ export class AppState {
     this.accessService;
   }
 
-  private makeClient(host: string) {
+  private makeClient(opts: PrpcClientOptions) {
     // Don't track the access token so services won't be refreshed when the
     // access token is updated.
     return new PrpcClientExt(
-      { host },
+      opts,
       () => untracked(() => this.authState?.accessToken || ''),
       (e) => {
         if (MAY_REQUIRE_SIGNIN_ERROR_CODE.includes(e.code)) {
