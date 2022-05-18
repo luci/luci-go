@@ -330,6 +330,9 @@ func (c *client) getRaw(ctx context.Context, urlPath string, query url.Values) (
 		logging.Errorf(ctx, "Gitiles quota error.\nResponse headers: %v\nResponse body: %s", r.Header, body)
 		return r.Header, body, status.Errorf(codes.ResourceExhausted, "insufficient Gitiles quota")
 
+	case http.StatusBadGateway:
+		return r.Header, body, status.Errorf(codes.Unavailable, "bad gateway")
+
 	case http.StatusServiceUnavailable:
 		return r.Header, body, status.Errorf(codes.Unavailable, "service unavailable")
 
