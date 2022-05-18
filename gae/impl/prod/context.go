@@ -37,12 +37,12 @@ func getAEContext(c context.Context) context.Context {
 	return ps.context(c)
 }
 
-func setupAECtx(c, aeCtx context.Context) context.Context {
+func setupAECtx(c, aeCtx context.Context, r *http.Request) context.Context {
 	c = withProdState(c, prodState{
 		ctx:      aeCtx,
 		noTxnCtx: aeCtx,
 	})
-	return useModule(useMail(useUser(useURLFetch(useRDS(useMC(useTQ(useGI(useLogging(c)))))))))
+	return useModule(useMail(useUser(useURLFetch(useRDS(useMC(useTQ(useGI(useLogging(c, r)))))))))
 }
 
 // Use adds production implementations for all the gae services to the
@@ -70,7 +70,7 @@ func setupAECtx(c, aeCtx context.Context) context.Context {
 // Users who wish to access the raw AppEngine SDK must derive their own
 // AppEngine Context at their own risk.
 func Use(c context.Context, r *http.Request) context.Context {
-	return setupAECtx(c, appengine.NewContext(r))
+	return setupAECtx(c, appengine.NewContext(r), r)
 }
 
 // prodState is the current production state.

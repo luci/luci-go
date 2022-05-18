@@ -65,7 +65,7 @@ require (
 	golang.org/x/time v0.0.0-20210723032227-1f47c861a9ac
 	golang.org/x/tools v0.1.5
 	google.golang.org/api v0.63.0
-	google.golang.org/appengine v1.6.7
+	google.golang.org/appengine v1.6.8-0.20220404170424-ca3835e9b4d6
 	google.golang.org/genproto v0.0.0-20220216160803-4663080d8bc8
 	google.golang.org/grpc v1.40.1
 	google.golang.org/grpc/cmd/protoc-gen-go-grpc v1.1.0

@@ -12,6 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+//go:build !go1.12
+// +build !go1.12
+
 package prod
 
 import (
@@ -25,7 +28,7 @@ import (
 
 // useLogging adds a logging.Logger implementation to the context which logs to
 // appengine's log handler.
-func useLogging(c context.Context) context.Context {
+func useLogging(c context.Context, req *http.Request) context.Context {
 	return logging.SetFactory(c, func(ic context.Context) logging.Logger {
 		return &loggerImpl{getAEContext(ic), ic}
 	})
