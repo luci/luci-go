@@ -87,7 +87,8 @@ export default merge(common, {
         const configsTemplate = fs.readFileSync(path.join(__dirname, 'assets/configs.template.js'), 'utf8');
         const config = configsTemplate
           .replace('{{.ResultDB.Host}}', appConfigs.RESULT_DB.HOST)
-          .replace('{{.Buildbucket.Host}}', appConfigs.BUILDBUCKET.HOST);
+          .replace('{{.Buildbucket.Host}}', appConfigs.BUILDBUCKET.HOST)
+          .replace('{{.Weetbix.Host}}', appConfigs.WEETBIX.HOST);
         res.send(config);
       });
 

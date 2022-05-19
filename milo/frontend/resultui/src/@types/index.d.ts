@@ -38,6 +38,9 @@ declare const CONFIGS: {
   readonly BUILDBUCKET: {
     readonly HOST: string;
   };
+  readonly WEETBIX: {
+    readonly HOST: string;
+  };
 };
 
 /**

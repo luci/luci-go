@@ -281,6 +281,9 @@ func configsJSHandler(c *router.Context) error {
 		"Buildbucket": map[string]string{
 			"Host": settings.GetBuildbucket().GetHost(),
 		},
+		"Weetbix": map[string]string{
+			"Host": settings.GetWeetbix().GetHost(),
+		},
 	})
 
 	if err != nil {
