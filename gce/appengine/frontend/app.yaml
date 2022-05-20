@@ -1,5 +1,6 @@
 service: default
-runtime: go111
+runtime: go116
+app_engine_apis: true
 
 instance_class: F4
 automatic_scaling:
