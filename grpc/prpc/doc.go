@@ -21,14 +21,6 @@
 //  - supports HTTP 1.x and AppEngine 1.x.
 //  - does not support streams.
 //
-// Server
-//
-// Type Server implements a pRPC server.
-//
-// Example of usage: https://github.com/luci/luci-go/tree/master/examples/appengine/helloworld_standard
-//
-// Package discovery implements service discovery.
-//
 // Compile service definitions
 //
 // Use cproto tool to compile .proto files to .go files with gRPC and pRPC support.

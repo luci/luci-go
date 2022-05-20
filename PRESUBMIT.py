@@ -67,7 +67,6 @@ def source_file_filter(input_api):
     r'.+gae\.py$',  # symlinks from outside
     r'common/api/internal/gensupport/.*', # third party
     r'common/goroutine/goroutine_id.go',
-    r'common/prpc/talk/.*',
     r'common/terminal/.*', # third party
     r'server/static/bower_components/.*',  # third party
     r'server/static/upload/bower_components/.*',  # third party
