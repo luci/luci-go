@@ -53,7 +53,6 @@ require (
 	github.com/sergi/go-diff v1.2.0
 	github.com/smartystreets/assertions v1.2.0
 	github.com/smartystreets/goconvey v1.7.2
-	github.com/xtgo/set v1.0.0
 	github.com/yosuke-furukawa/json5 v0.1.1
 	go.opencensus.io v0.23.0
 	go.starlark.net v0.0.0-20210901212718-87f333178d59
