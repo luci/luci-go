@@ -53,7 +53,7 @@ func toInternalRunID(id string) (common.RunID, error) {
 	}
 	internalID, err := common.FromPublicRunID(id)
 	if err != nil {
-		return "", appstatus.Errorf(codes.InvalidArgument, err.Error())
+		return "", appstatus.Errorf(codes.InvalidArgument, "%s", err)
 	}
 	return internalID, nil
 }

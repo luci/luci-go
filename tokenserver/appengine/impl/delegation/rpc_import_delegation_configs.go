@@ -36,7 +36,7 @@ func (r *ImportDelegationConfigsRPC) ImportDelegationConfigs(c context.Context, 
 	rev, err := r.RulesCache.ImportConfigs(c)
 	if err != nil {
 		logging.WithError(err).Errorf(c, "Failed to fetch delegation configs")
-		return nil, status.Errorf(codes.Internal, err.Error())
+		return nil, status.Errorf(codes.Internal, "%s", err)
 	}
 	return &admin.ImportedConfigs{Revision: rev}, nil
 }

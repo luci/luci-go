@@ -39,7 +39,7 @@ type InspectDelegationTokenRPC struct {
 func (r *InspectDelegationTokenRPC) InspectDelegationToken(c context.Context, req *admin.InspectDelegationTokenRequest) (*admin.InspectDelegationTokenResponse, error) {
 	inspection, err := InspectToken(c, r.Signer, req.Token)
 	if err != nil {
-		return nil, status.Errorf(codes.Internal, err.Error())
+		return nil, status.Errorf(codes.Internal, "%s", err)
 	}
 	resp := &admin.InspectDelegationTokenResponse{
 		Valid:            inspection.Signed && inspection.NonExpired,

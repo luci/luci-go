@@ -64,9 +64,9 @@ func toStatus(err error) error {
 	case err == dsmapper.ErrNoSuchJob:
 		return status.Errorf(codes.NotFound, "no such mapping job")
 	case transient.Tag.In(err):
-		return status.Errorf(codes.Internal, err.Error())
+		return status.Errorf(codes.Internal, "%s", err.Error())
 	case err != nil:
-		return status.Errorf(codes.InvalidArgument, err.Error())
+		return status.Errorf(codes.InvalidArgument, "%s", err.Error())
 	default:
 		return nil
 	}

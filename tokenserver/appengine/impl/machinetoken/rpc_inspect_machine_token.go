@@ -60,7 +60,7 @@ func (r *InspectMachineTokenRPC) InspectMachineToken(c context.Context, req *adm
 	// Deserialize the token, check its signature.
 	inspection, err := InspectToken(c, r.Signer, req.Token)
 	if err != nil {
-		return nil, status.Errorf(codes.Internal, err.Error())
+		return nil, status.Errorf(codes.Internal, "%s", err)
 	}
 	resp := &admin.InspectMachineTokenResponse{
 		Signed:           inspection.Signed,

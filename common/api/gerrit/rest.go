@@ -552,17 +552,17 @@ func (c *client) callRaw(
 
 	case http.StatusConflict:
 		// Gerrit returns error message in the response body.
-		return res.StatusCode, body, status.Errorf(codes.FailedPrecondition, string(body))
+		return res.StatusCode, body, status.Errorf(codes.FailedPrecondition, "%s", string(body))
 
 	case http.StatusBadRequest:
 		// Gerrit returns error message in the response body.
-		return res.StatusCode, body, status.Errorf(codes.InvalidArgument, string(body))
+		return res.StatusCode, body, status.Errorf(codes.InvalidArgument, "%s", string(body))
 
 	case http.StatusBadGateway:
 		return res.StatusCode, body, status.Errorf(codes.Unavailable, "bad gateway")
 
 	case http.StatusServiceUnavailable:
-		return res.StatusCode, body, status.Errorf(codes.Unavailable, string(body))
+		return res.StatusCode, body, status.Errorf(codes.Unavailable, "%s", string(body))
 
 	default:
 		logging.Errorf(ctx, "gerrit: unexpected HTTP %d response.\nResponse headers: %v\nResponse body: %s",

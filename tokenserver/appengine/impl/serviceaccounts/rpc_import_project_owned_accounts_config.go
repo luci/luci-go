@@ -36,7 +36,7 @@ func (r *ImportProjectOwnedAccountsConfigsRPC) ImportProjectOwnedAccountsConfigs
 	rev, err := r.MappingCache.ImportConfigs(ctx)
 	if err != nil {
 		logging.WithError(err).Errorf(ctx, "Failed to fetch service accounts configs")
-		return nil, status.Errorf(codes.Internal, "%s", err.Error())
+		return nil, status.Errorf(codes.Internal, "%s", err)
 	}
 	return &admin.ImportedConfigs{Revision: rev}, nil
 }

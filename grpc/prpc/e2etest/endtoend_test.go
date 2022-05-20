@@ -51,7 +51,7 @@ func (s *service) Greet(c context.Context, req *HelloRequest) (*HelloReply, erro
 
 	if s.outgoingMD != nil {
 		if err := prpc.SetHeader(c, s.outgoingMD); err != nil {
-			return nil, status.Errorf(codes.Internal, err.Error())
+			return nil, status.Errorf(codes.Internal, "%s", err)
 		}
 	}
 

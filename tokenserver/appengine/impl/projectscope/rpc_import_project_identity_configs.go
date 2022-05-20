@@ -36,7 +36,7 @@ func (r *ImportProjectIdentityConfigsRPC) ImportProjectIdentityConfigs(c context
 	rev, err := ImportConfigs(c)
 	if err != nil {
 		logging.WithError(err).Errorf(c, "Failed to fetch projects configs")
-		return nil, status.Errorf(codes.Internal, err.Error())
+		return nil, status.Errorf(codes.Internal, "%s", err)
 	}
 	return &admin.ImportedConfigs{Revision: rev}, nil
 }

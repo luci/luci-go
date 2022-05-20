@@ -136,7 +136,7 @@ func (r *MintServiceAccountTokenRPC) MintServiceAccountToken(ctx context.Context
 	// Validate the format of the request (e.g. check required fields and so on).
 	validated, err := r.validateRequest(req)
 	if err != nil {
-		return nil, status.Errorf(codes.InvalidArgument, err.Error())
+		return nil, status.Errorf(codes.InvalidArgument, "%s", err)
 	}
 
 	// Check it passes ACLs as described in the comment for this function.

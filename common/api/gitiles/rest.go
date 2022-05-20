@@ -304,7 +304,7 @@ func (c *client) getRaw(ctx context.Context, urlPath string, query url.Values) (
 	}
 	r, err := ctxhttp.Get(ctx, c.Client, u)
 	if err != nil {
-		return http.Header{}, nil, status.Errorf(codes.Unknown, err.Error())
+		return http.Header{}, nil, status.Errorf(codes.Unknown, "%s", err)
 	}
 
 	defer r.Body.Close()
@@ -318,7 +318,7 @@ func (c *client) getRaw(ctx context.Context, urlPath string, query url.Values) (
 		return r.Header, bytes.TrimPrefix(body, jsonPrefix), nil
 
 	case http.StatusBadRequest:
-		return r.Header, body, status.Errorf(codes.InvalidArgument, string(body))
+		return r.Header, body, status.Errorf(codes.InvalidArgument, "%s", string(body))
 
 	case http.StatusForbidden:
 		return r.Header, body, status.Errorf(codes.PermissionDenied, "permission denied")
