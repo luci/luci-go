@@ -198,6 +198,9 @@ func TestDiscoversCLs(t *testing.T) {
 		ct.Clock.Add(10 * fullPollInterval)
 
 		ct.GFake.AddFrom(gf.WithCIs(gHost, gf.ACLPublic(),
+			// No CQ vote.
+			gf.CI(11, gf.Project(gRepo), gf.Updated(ct.Clock.Now().Add(-time.Minute))),
+
 			// These CLs ordered from oldest to newest by .Updated.
 			gf.CI(31, gf.CQ(+2), gf.Project(gRepo), gf.Updated(ct.Clock.Now().Add(-2*fullPollInterval))),
 			gf.CI(32, gf.CQ(+1), gf.Project(gRepo), gf.Updated(ct.Clock.Now().Add(-1*fullPollInterval))),
@@ -221,12 +224,12 @@ func TestDiscoversCLs(t *testing.T) {
 				qs := mustLoadState().QueryStates.GetStates()[0]
 				So(qs.GetLastFullTime().AsTime(), ShouldResemble, ct.Clock.Now().UTC())
 				So(qs.GetLastIncrTime(), ShouldBeNil)
-				So(qs.GetChanges(), ShouldResemble, []int64{31, 32, 33, 34, 35})
+				So(qs.GetChanges(), ShouldResemble, []int64{11, 31, 32, 33, 34, 35})
 			}
 
 			Convey("On project start, just creates CLUpdater tasks with forceNotify", func() {
 				So(p.poll(ctx, lProject, ct.Clock.Now()), ShouldBeNil)
-				So(clUpdater.peekScheduledChanges(), ShouldResemble, []int{31, 32, 33, 34, 35})
+				So(clUpdater.peekScheduledChanges(), ShouldResemble, []int{11, 31, 32, 33, 34, 35})
 				postFullQueryVerify()
 			})
 
@@ -247,7 +250,7 @@ func TestDiscoversCLs(t *testing.T) {
 				// PM must be notified in "bulk".
 				So(pm.popNotifiedCLs(lProject), ShouldResemble, sortedCLIDs(knownCLIDs...))
 				// All CLs must have clUpdater tasks.
-				So(clUpdater.peekScheduledChanges(), ShouldResemble, []int{31, 32, 33, 34, 35})
+				So(clUpdater.peekScheduledChanges(), ShouldResemble, []int{11, 31, 32, 33, 34, 35})
 				postFullQueryVerify()
 			})
 
@@ -255,14 +258,12 @@ func TestDiscoversCLs(t *testing.T) {
 				// Test common occurrence of CL no longer appearing in query
 				// results due to user or even CV action.
 				ct.GFake.AddFrom(gf.WithCIs(gHost, gf.ACLPublic(),
-					// No CQ vote.
-					gf.CI(25, gf.Project(gRepo), gf.Updated(ct.Clock.Now().Add(-time.Minute))),
 					// Abandoned.
 					gf.CI(26, gf.Status(gerritpb.ChangeStatus_ABANDONED), gf.CQ(+2), gf.Project(gRepo), gf.Updated(ct.Clock.Now().Add(-time.Minute))),
 					// Submitted.
-					gf.CI(27, gf.Status(gerritpb.ChangeStatus_ABANDONED), gf.CQ(+2), gf.Project(gRepo), gf.Updated(ct.Clock.Now().Add(-time.Minute))),
+					gf.CI(27, gf.Status(gerritpb.ChangeStatus_MERGED), gf.CQ(+2), gf.Project(gRepo), gf.Updated(ct.Clock.Now().Add(-time.Minute))),
 				))
-				s.QueryStates.GetStates()[0].Changes = []int64{25, 26, 27, 31, 32, 33, 34}
+				s.QueryStates.GetStates()[0].Changes = []int64{11, 26, 27, 31, 32, 33, 34}
 				So(datastore.Put(ctx, s), ShouldBeNil)
 				var knownCLIDs common.CLIDs
 				for _, c := range s.QueryStates.GetStates()[0].Changes {
@@ -274,7 +275,7 @@ func TestDiscoversCLs(t *testing.T) {
 				// PM must be notified in "bulk" for all previously known CLs.
 				So(pm.popNotifiedCLs(lProject), ShouldResemble, sortedCLIDs(knownCLIDs...))
 				// All current and prior CLs must have clUpdater tasks.
-				So(clUpdater.peekScheduledChanges(), ShouldResemble, []int{25, 26, 27, 31, 32, 33, 34, 35})
+				So(clUpdater.peekScheduledChanges(), ShouldResemble, []int{11, 26, 27, 31, 32, 33, 34, 35})
 				postFullQueryVerify()
 			})
 
@@ -303,7 +304,7 @@ func TestDiscoversCLs(t *testing.T) {
 				// NOTE: the code isn't optimized for this use case, so there will be
 				// multiple tasks for changes 31..34. While this is unfortunte, it's
 				// rare enough that it doesn't really matter.
-				So(clUpdater.peekScheduledChanges(), ShouldResemble, []int{30, 31, 31, 32, 32, 33, 33, 34, 34, 35})
+				So(clUpdater.peekScheduledChanges(), ShouldResemble, []int{11, 30, 31, 31, 32, 32, 33, 33, 34, 34, 35})
 				postFullQueryVerify()
 
 				qs := mustLoadState().QueryStates.GetStates()[0]
@@ -321,21 +322,21 @@ func TestDiscoversCLs(t *testing.T) {
 				So(datastore.Put(ctx, s), ShouldBeNil)
 				So(p.poll(ctx, lProject, ct.Clock.Now()), ShouldBeNil)
 
-				So(clUpdater.peekScheduledChanges(), ShouldResemble, []int{34, 35})
+				So(clUpdater.peekScheduledChanges(), ShouldResemble, []int{11, 34, 35})
 
 				qs := mustLoadState().QueryStates.GetStates()[0]
 				So(qs.GetLastIncrTime().AsTime(), ShouldResemble, ct.Clock.Now().UTC())
-				So(qs.GetChanges(), ShouldResemble, []int64{31, 32, 33, 34, 35})
+				So(qs.GetChanges(), ShouldResemble, []int64{11, 31, 32, 33, 34, 35})
 			})
 
 			Convey("Even if CL is already known, schedules update tasks", func() {
-				s.QueryStates.GetStates()[0].Changes = []int64{31, 32, 33, 34, 35}
+				s.QueryStates.GetStates()[0].Changes = []int64{11, 31, 32, 33, 34, 35}
 				So(datastore.Put(ctx, s), ShouldBeNil)
 				So(p.poll(ctx, lProject, ct.Clock.Now()), ShouldBeNil)
 
 				qs := mustLoadState().QueryStates.GetStates()[0]
 				So(qs.GetLastIncrTime().AsTime(), ShouldResemble, ct.Clock.Now().UTC())
-				So(qs.GetChanges(), ShouldResemble, []int64{31, 32, 33, 34, 35})
+				So(qs.GetChanges(), ShouldResemble, []int64{11, 31, 32, 33, 34, 35})
 			})
 		})
 	})

@@ -206,8 +206,6 @@ func (qs *QueryState) gerritString(kind queryKind) string {
 	switch kind {
 	case queryLimited:
 		buf.WriteString("status:NEW ")
-		// TODO(tandrii): make label optional to support Tricium use-case.
-		buf.WriteString("label:Commit-Queue>0 ")
 	case queryAll:
 	default:
 		panic(fmt.Errorf("unknown queryKind %d", kind))
