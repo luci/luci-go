@@ -13,7 +13,8 @@
 # limitations under the License.
 
 service: static
-runtime: go111
+runtime: go116
+app_engine_apis: true
 
 # This is necessary for "switch" command. There is no corresponding support in
 # the static app.
