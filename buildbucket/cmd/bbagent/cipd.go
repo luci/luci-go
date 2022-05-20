@@ -26,7 +26,6 @@ import (
 
 	bbpb "go.chromium.org/luci/buildbucket/proto"
 	cipdVersion "go.chromium.org/luci/cipd/version"
-	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 )
@@ -54,7 +53,7 @@ type cipdOut struct {
 }
 
 // installCipdPackages installs cipd packages defined in build.Infra.Buildbucket.Agent.Input
-// and build exe. It also prepends desired value to $PATH env var.
+// and build exe.
 //
 // This will update the following fields in build:
 //   * Infra.Buidlbucket.Agent.Output.ResolvedData
@@ -70,7 +69,6 @@ func installCipdPackages(ctx context.Context, build *bbpb.Build, workDir string)
 
 	ensureFileBuilder := strings.Builder{}
 	ensureFileBuilder.WriteString(ensureFileHeader)
-	extraPathEnv := stringset.Set{}
 
 	// TODO(crbug.com/1297809): Remove it once we decide to have a subfolder for
 	// non-bbagent packages in the post-migration stage.
@@ -86,7 +84,6 @@ func installCipdPackages(ctx context.Context, build *bbpb.Build, workDir string)
 		if pkgs.GetCipd() == nil {
 			continue
 		}
-		extraPathEnv.AddAll(pkgs.OnPath)
 		fmt.Fprintf(&ensureFileBuilder, "@Subdir %s\n", dir)
 		for _, spec := range pkgs.GetCipd().Specs {
 			fmt.Fprintf(&ensureFileBuilder, "%s %s\n", spec.Package, spec.Version)
@@ -125,16 +122,6 @@ func installCipdPackages(ctx context.Context, build *bbpb.Build, workDir string)
 		return err
 	}
 	if err := json.Unmarshal(jsonResults, &cipdOutputs); err != nil {
-		return err
-	}
-
-	// Prepend to $PATH
-	var extraAbsPaths []string
-	for _, p := range extraPathEnv.ToSortedSlice() {
-		extraAbsPaths = append(extraAbsPaths, filepath.Join(workDir, p))
-	}
-	original := os.Getenv("PATH")
-	if err := os.Setenv("PATH", strings.Join(append(extraAbsPaths, original), string(os.PathListSeparator))); err != nil {
 		return err
 	}
 

@@ -22,7 +22,6 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
-	"strings"
 	"testing"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -134,11 +133,7 @@ func TestInstallCipdPackages(t *testing.T) {
 			},
 		}
 
-		originalPathEnv := os.Getenv("PATH")
 		Convey("success", func() {
-			defer func() {
-				_ = os.Setenv("PATH", originalPathEnv)
-			}()
 			testCase = "success"
 			cwd, err := os.Getwd()
 			So(err, ShouldBeNil)
@@ -157,12 +152,6 @@ func TestInstallCipdPackages(t *testing.T) {
 					},
 				},
 			})
-			pathEnv := os.Getenv("PATH")
-			var expectedPath []string
-			for _, p := range []string{"path_a", "path_a/bin", "path_b", "path_b/bin"} {
-				expectedPath = append(expectedPath, filepath.Join(cwd, p))
-			}
-			So(strings.Contains(pathEnv, strings.Join(expectedPath, string(os.PathListSeparator))), ShouldBeTrue)
 		})
 
 		Convey("failure", func() {
@@ -170,10 +159,6 @@ func TestInstallCipdPackages(t *testing.T) {
 			err := installCipdPackages(ctx, build, ".")
 			So(build.Infra.Buildbucket.Agent.Output.ResolvedData, ShouldBeNil)
 			So(err, ShouldErrLike, "Failed to run cipd ensure command")
-			So(os.Getenv("PATH"), ShouldEqual, originalPathEnv)
 		})
-
-		// Make sure the original $PATH env var is restored after running all tests.
-		So(os.Getenv("PATH"), ShouldEqual, originalPathEnv)
 	})
 }

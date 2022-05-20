@@ -345,6 +345,9 @@ func mainImpl() int {
 					Seconds: int64(clock.Since(ctx, start).Round(time.Second).Seconds()),
 				}
 			}()
+			if err := prependPath(input.Build, cwd); err != nil {
+				return err
+			}
 			return installCipdPackages(ctx, input.Build, cwd)
 		}()
 
@@ -661,4 +664,21 @@ func cancelBuild(ctx context.Context, bbclient BuildsClient, bld *bbpb.Build) (r
 		return 1
 	}
 	return 0
+}
+
+func prependPath(bld *bbpb.Build, workDir string) error {
+	extraPathEnv := stringset.Set{}
+	for _, ref := range bld.Infra.Buildbucket.Agent.Input.Data {
+		extraPathEnv.AddAll(ref.OnPath)
+	}
+
+	var extraAbsPaths []string
+	for _, p := range extraPathEnv.ToSortedSlice() {
+		extraAbsPaths = append(extraAbsPaths, filepath.Join(workDir, p))
+	}
+	original := os.Getenv("PATH")
+	if err := os.Setenv("PATH", strings.Join(append(extraAbsPaths, original), string(os.PathListSeparator))); err != nil {
+		return err
+	}
+	return nil
 }
