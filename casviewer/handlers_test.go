@@ -20,7 +20,6 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
-	"os"
 	"testing"
 
 	"github.com/bazelbuild/remote-apis-sdks/go/pkg/digest"
@@ -40,15 +39,13 @@ func TestHandlers(t *testing.T) {
 	t.Parallel()
 
 	ctx := context.Background()
-	os.Setenv("GAE_VERSION", "test-version-1")
-	os.Setenv("GAE_DEPLOYMENT_ID", "111")
 
 	// Basic template rendering tests.
 	Convey("Templates", t, func() {
 		c := &router.Context{
 			Context: auth.WithState(ctx, fakeAuthState()),
 		}
-		templateBundleMW := templates.WithTemplates(getTemplateBundle())
+		templateBundleMW := templates.WithTemplates(getTemplateBundle("test-version-1"))
 		templateBundleMW(c, func(c *router.Context) {
 			top, err := templates.Render(c.Context, "pages/index.html", nil)
 			So(err, ShouldBeNil)
@@ -71,7 +68,7 @@ func TestHandlers(t *testing.T) {
 		t.Cleanup(cc.Clear)
 		cc.clients[testInstance] = cl
 
-		InstallHandlers(r, cc)
+		InstallHandlers(r, cc, "test-version-1")
 
 		srv := httptest.NewServer(r)
 		t.Cleanup(srv.Close)

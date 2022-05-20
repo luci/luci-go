@@ -41,11 +41,6 @@ import (
 
 // Run sets up all the routes and runs the server.
 func Run(srv *server.Server, templatePath string) {
-	appVersionID := "unknown"
-	if idx := strings.LastIndex(srv.Options.ContainerImageID, ":"); idx != -1 {
-		appVersionID = srv.Options.ContainerImageID[idx+1:]
-	}
-
 	// Register plain ol' http handlers.
 	r := srv.Routes
 
@@ -59,7 +54,7 @@ func Run(srv *server.Server, templatePath string) {
 		withGitMiddleware,
 		withBuildbucketBuildsClient,
 		withBuildbucketBuildersClient,
-		templates.WithTemplates(getTemplateBundle(templatePath, appVersionID, srv.Options.Prod)),
+		templates.WithTemplates(getTemplateBundle(templatePath, srv.Options.ImageVersion(), srv.Options.Prod)),
 	)
 	xsrfMW := htmlMW.Extend(xsrf.WithTokenCheck)
 	projectMW := htmlMW.Extend(buildProjectACLMiddleware(false))

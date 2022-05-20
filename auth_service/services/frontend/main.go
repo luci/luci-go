@@ -20,7 +20,6 @@ package main
 import (
 	"context"
 	"net/http"
-	"strings"
 
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -161,10 +160,6 @@ func (m *prpcCookieAuth) Authenticate(ctx context.Context, req *http.Request) (*
 }
 
 func prepareTemplates(opts *server.Options) *templates.Bundle {
-	versionID := "unknown"
-	if idx := strings.LastIndex(opts.ContainerImageID, ":"); idx != -1 {
-		versionID = opts.ContainerImageID[idx+1:]
-	}
 	return &templates.Bundle{
 		Loader:          templates.FileSystemLoader("templates"),
 		DebugMode:       func(context.Context) bool { return !opts.Prod },
@@ -179,7 +174,7 @@ func prepareTemplates(opts *server.Options) *templates.Bundle {
 				return nil, err
 			}
 			return templates.Args{
-				"AppVersion": versionID,
+				"AppVersion": opts.ImageVersion(),
 				"User":       auth.CurrentUser(ctx),
 				"LogoutURL":  logoutURL,
 				"XSRFToken":  token,

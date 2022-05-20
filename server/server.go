@@ -577,12 +577,16 @@ func uniqueGAEHostname() string {
 	)
 }
 
-// imageVersion extracts image tag or digest from ContainerImageID.
+// ImageVersion extracts image tag or digest from ContainerImageID.
 //
 // This is eventually reported as a value of 'server/version' metric.
 //
+// On GAE it would return the service version name based on GAE_VERSION env var,
+// since ContainerImageID is artificially constructed to look like
+// "appengine/${CLOUD_PROJECT}/${GAE_SERVICE}:${GAE_VERSION}".
+//
 // Returns "unknown" if ContainerImageID is empty or malformed.
-func (o *Options) imageVersion() string {
+func (o *Options) ImageVersion() string {
 	// Recognize "<path>@sha256:<digest>" and "<path>:<tag>".
 	idx := strings.LastIndex(o.ContainerImageID, "@")
 	if idx == -1 {
@@ -596,7 +600,7 @@ func (o *Options) imageVersion() string {
 
 // userAgent derives a user-agent like string identifying the server.
 func (o *Options) userAgent() string {
-	return fmt.Sprintf("LUCI-Server (service: %s; job: %s; ver: %s);", o.TsMonServiceName, o.TsMonJobName, o.imageVersion())
+	return fmt.Sprintf("LUCI-Server (service: %s; job: %s; ver: %s);", o.TsMonServiceName, o.TsMonJobName, o.ImageVersion())
 }
 
 // shouldEnableTracing is true if options indicate we should enable tracing.
@@ -1886,7 +1890,7 @@ func (s *Server) initTSMon() error {
 
 	// Report our image version as a metric, useful to monitor rollouts.
 	tsmoncommon.RegisterCallbackIn(s.Context, func(ctx context.Context) {
-		versionMetric.Set(ctx, s.Options.imageVersion())
+		versionMetric.Set(ctx, s.Options.ImageVersion())
 	})
 
 	// Periodically flush metrics.
@@ -1978,7 +1982,7 @@ func (s *Server) initProfiling() error {
 	cfg := profiler.Config{
 		ProjectID:      s.Options.CloudProject,
 		Service:        s.getServiceID(),
-		ServiceVersion: s.Options.imageVersion(),
+		ServiceVersion: s.Options.ImageVersion(),
 		Instance:       s.Options.Hostname,
 		// Note: these two options may potentially have impact on performance, but
 		// it is likely small enough not to bother.
@@ -2113,7 +2117,7 @@ func (s *Server) initErrorReporting() error {
 	var err error
 	s.errRptClient, err = errorreporting.NewClient(s.Context, s.Options.CloudProject, errorreporting.Config{
 		ServiceName:    s.getServiceID(),
-		ServiceVersion: s.Options.imageVersion(),
+		ServiceVersion: s.Options.ImageVersion(),
 		OnError: func(err error) {
 			// TODO(crbug/1204640): s/Warningf/Errorf once "Error Reporting" is itself
 			// more reliable.
@@ -2208,7 +2212,7 @@ func (s *signerImpl) ServiceInfo(ctx context.Context) (*signing.ServiceInfo, err
 		AppID:              s.srv.Options.CloudProject,
 		AppRuntime:         "go",
 		AppRuntimeVersion:  runtime.Version(),
-		AppVersion:         s.srv.Options.imageVersion(),
+		AppVersion:         s.srv.Options.ImageVersion(),
 		ServiceAccountName: s.srv.runningAs,
 	}, nil
 }

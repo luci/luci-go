@@ -50,14 +50,9 @@ func RegisterRoutes(srv *server.Server, accessGroup string, assets *rpcs.Assets)
 		srv.Routes.Static("/static", nil, http.Dir("./static"))
 	}
 
-	version := "unknown"
-	if idx := strings.LastIndex(srv.Options.ContainerImageID, ":"); idx != -1 {
-		version = srv.Options.ContainerImageID[idx+1:]
-	}
-
 	ui := UI{
 		prod:    srv.Options.Prod,
-		version: version,
+		version: srv.Options.ImageVersion(),
 		assets:  assets,
 	}
 

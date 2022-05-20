@@ -36,7 +36,7 @@ func TestBlobs(t *testing.T) {
 	t.Parallel()
 
 	ctx := context.Background()
-	ctx = templates.Use(ctx, getTemplateBundle(), nil)
+	ctx = templates.Use(ctx, getTemplateBundle("test-version-1"), nil)
 
 	w := httptest.NewRecorder()
 

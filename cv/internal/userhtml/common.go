@@ -62,10 +62,6 @@ func InstallHandlers(srv *server.Server) {
 //
 // In particular it includes a set of default arguments passed to all templates.
 func prepareTemplates(opts *server.Options, templatesPath string) *templates.Bundle {
-	versionID := "unknown"
-	if idx := strings.LastIndex(opts.ContainerImageID, ":"); idx != -1 {
-		versionID = opts.ContainerImageID[idx+1:]
-	}
 	return &templates.Bundle{
 		Loader:          templates.FileSystemLoader(templatesPath),
 		DebugMode:       func(context.Context) bool { return !opts.Prod },
@@ -117,7 +113,7 @@ func prepareTemplates(opts *server.Options, templatesPath string) *templates.Bun
 				return nil, err
 			}
 			return templates.Args{
-				"AppVersion":  versionID,
+				"AppVersion":  opts.ImageVersion(),
 				"IsAnonymous": auth.CurrentIdentity(ctx) == identity.AnonymousIdentity,
 				"User":        auth.CurrentUser(ctx),
 				"LoginURL":    loginURL,

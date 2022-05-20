@@ -39,7 +39,7 @@ func main() {
 		srv.Routes.Use(router.NewMiddlewareChain(
 			authMW,
 		))
-		casviewer.InstallHandlers(srv.Routes, cc)
+		casviewer.InstallHandlers(srv.Routes, cc, srv.Options.ImageVersion())
 		return nil
 	})
 }

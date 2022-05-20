@@ -20,12 +20,10 @@ import (
 	"html/template"
 	"net/http"
 	"strconv"
-	"strings"
 
 	"github.com/bazelbuild/remote-apis-sdks/go/pkg/digest"
 	"github.com/dustin/go-humanize"
 	"github.com/julienschmidt/httprouter"
-	"google.golang.org/appengine"
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/grpc/grpcutil"
@@ -41,9 +39,9 @@ const templatePath = "templates"
 var permMintToken = realms.RegisterPermission("luci.serviceAccounts.mintToken")
 
 // InstallHandlers install CAS Viewer handlers to the router.
-func InstallHandlers(r *router.Router, cc *ClientCache) {
+func InstallHandlers(r *router.Router, cc *ClientCache, appVersion string) {
 	baseMW := router.NewMiddlewareChain(
-		templates.WithTemplates(getTemplateBundle()),
+		templates.WithTemplates(getTemplateBundle(appVersion)),
 	)
 	blobMW := baseMW.Extend(
 		checkPermission,
@@ -56,13 +54,13 @@ func InstallHandlers(r *router.Router, cc *ClientCache) {
 }
 
 // getTemplateBundles returns template Bundle with base args.
-func getTemplateBundle() *templates.Bundle {
+func getTemplateBundle(appVersion string) *templates.Bundle {
 	return &templates.Bundle{
 		Loader:          templates.FileSystemLoader(templatePath),
 		DefaultTemplate: "base",
 		DefaultArgs: func(c context.Context, e *templates.Extra) (templates.Args, error) {
 			return templates.Args{
-				"AppVersion": strings.Split(appengine.VersionID(c), ".")[0],
+				"AppVersion": appVersion,
 				"User":       auth.CurrentUser(c),
 			}, nil
 		},
