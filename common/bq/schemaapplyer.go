@@ -35,7 +35,7 @@ type Table interface {
 	FullyQualifiedName() string
 	Metadata(ctx context.Context) (md *bigquery.TableMetadata, err error)
 	Create(ctx context.Context, md *bigquery.TableMetadata) error
-	Update(ctx context.Context, md bigquery.TableMetadataToUpdate, etag string) (*bigquery.TableMetadata, error)
+	Update(ctx context.Context, md bigquery.TableMetadataToUpdate, etag string, opts ...bigquery.TableUpdateOption) (*bigquery.TableMetadata, error)
 }
 
 // SchemaApplyer provides methods to synchronise BigQuery schema
@@ -55,14 +55,14 @@ func NewSchemaApplyer(cache caching.LRUHandle) *SchemaApplyer {
 // EnsureTable creates a BigQuery table if it doesn't exist and updates its
 // schema if it is stale. Non-schema options, like Partitioning and Clustering
 // settings, will be applied if the table is being created but will not be
-// synchronised after creation.
+// synchronized after creation.
 //
 // Existing fields will not be deleted.
 //
 // Example usage:
 // // At top of file
 // var schemaApplyer = bq.NewSchemaApplyer(
-//	 caching.RegisterLRUCache(50) // depending on how many different
+//   caching.RegisterLRUCache(50) // depending on how many different
 //                                // tables will be used.
 // )
 //
@@ -71,18 +71,18 @@ func NewSchemaApplyer(cache caching.LRUHandle) *SchemaApplyer {
 // table := client.Dataset("my_dataset").Table("my_table")
 // schema := ... // e.g. from SchemaConverter.
 // spec := &bigquery.TableMetadata{
-//		TimePartitioning: &bigquery.TimePartitioning{
-//			Field:      "partition_time",
-//			Expiration: 540 * time.Day,
-//		},
-//		Schema: schema.Relax(), // Ensure no mandatory fields.
+//    TimePartitioning: &bigquery.TimePartitioning{
+//      Field:      "partition_time",
+//      Expiration: 540 * time.Day,
+//    },
+//    Schema: schema.Relax(), // Ensure no mandatory fields.
 // }
 // err := schemaApplyer.EnsureBQTable(ctx, table, spec)
 // if err != nil {
 //    if transient.Tag.In(err) {
 //       // Handle retriable error.
 //    } else {
-//	     // Handle fatal error.
+//       // Handle fatal error.
 //    }
 // }
 func (s *SchemaApplyer) EnsureTable(ctx context.Context, t Table, spec *bigquery.TableMetadata) error {

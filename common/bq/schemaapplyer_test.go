@@ -57,7 +57,7 @@ func (t *tableMock) Create(ctx context.Context, md *bigquery.TableMetadata) erro
 	return t.createErr
 }
 
-func (t *tableMock) Update(ctx context.Context, md bigquery.TableMetadataToUpdate, etag string) (*bigquery.TableMetadata, error) {
+func (t *tableMock) Update(ctx context.Context, md bigquery.TableMetadataToUpdate, etag string, opts ...bigquery.TableUpdateOption) (*bigquery.TableMetadata, error) {
 	t.updateMD = &md
 	return t.md, t.updateErr
 }
