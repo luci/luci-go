@@ -50,56 +50,82 @@ func loadExecutionState(ctx context.Context, rid common.RunID) (*tryjob.Executio
 	}
 }
 
+// Executor reacts to changes in external world and tries to fulfills the tryjob
+// requirement.
+type Executor struct {
+	// Backend is the Tryjob backend that executor will search reusable Tryjobs
+	// from and launch new Tryjobs.
+	Backend TryjobBackend
+	// RM is used to notify Run for changes in Tryjob states.
+	RM rm
+	// ShouldStop is returns whether executor should stop the execution.
+	ShouldStop func() bool
+}
+
+// TryjobBackend encapsulates the interactions with a Tryjob backend.
+type TryjobBackend interface {
+	Kind() string
+	Search(ctx context.Context, cls []*run.RunCL, definitions []*tryjob.Definition, luciProject string, cb func(*tryjob.Tryjob) bool) error
+	Launch(ctx context.Context, tryjobs []*tryjob.Tryjob, r *run.Run, cls []*run.RunCL) error
+}
+
+// TryjobBackend encapsulates the interactions with Run manager.
+type rm interface {
+	NotifyTryjobsUpdated(ctx context.Context, runID common.RunID, tryjobs *tryjob.TryjobUpdatedEvents) error
+}
+
 // Do executes the tryjob requirement for a run.
 //
 // This function is idempotent so it is safe to retry.
-func Do(ctx context.Context, r *run.Run, t *tryjob.ExecuteTryjobsPayload, shouldStop func() bool) (*tryjob.ExecuteTryjobsResult, error) {
+func (e *Executor) Do(ctx context.Context, r *run.Run, payload *tryjob.ExecuteTryjobsPayload) error {
 	execState, stateVer, err := loadExecutionState(ctx, r.ID)
 	switch {
 	case err != nil:
-		return nil, err
+		return err
 	case execState == nil:
 		execState = initExecutionState()
 	}
 
-	plan, err := prepExecutionPlan(ctx, execState, r, t.GetTryjobsUpdated(), t.GetRequirementChanged())
+	plan, err := prepExecutionPlan(ctx, execState, r, payload.GetTryjobsUpdated(), payload.GetRequirementChanged())
 	if err != nil {
-		return nil, err
+		return err
 	}
-	var result *tryjob.ExecuteTryjobsResult
-	if !plan.isEmpty() {
-		var err error
-		if result, err = plan.execute(ctx, r, execState); err != nil {
-			return nil, err
-		}
+	sideEffect, err := e.executePlan(ctx, plan, r, execState)
+	if err != nil {
+		return err
 	}
-
 	var innerErr error
-	err = datastore.RunInTransaction(ctx, func(c context.Context) (err error) {
+	err = datastore.RunInTransaction(ctx, func(ctx context.Context) (err error) {
 		defer func() { innerErr = err }()
+		var newState *state
 		switch _, latestStateVer, err := loadExecutionState(ctx, r.ID); {
 		case err != nil:
 			return err
 		case latestStateVer != stateVer:
 			return errors.Reason("execution state has changed. before: %d, current: %d", stateVer, latestStateVer).Tag(transient.Tag).Err()
 		default:
-			s := &state{
+			newState = &state{
 				Run:      datastore.MakeKey(ctx, run.RunKind, string(r.ID)),
 				EVersion: latestStateVer + 1,
 				State:    execState,
 			}
-			return errors.Annotate(datastore.Put(ctx, s), "failed to save execution state").Tag(transient.Tag).Err()
 		}
+		if err := datastore.Put(ctx, newState); err != nil {
+			return errors.Annotate(err, "failed to save execution state").Tag(transient.Tag).Err()
+		}
+		if sideEffect != nil {
+			return sideEffect(ctx)
+		}
+		return nil
 	}, nil)
 
 	switch {
 	case innerErr != nil:
-		return nil, innerErr
+		return innerErr
 	case err != nil:
-		return nil, errors.Annotate(err, "failed to commit transaction").Tag(transient.Tag).Err()
-	default:
-		return result, nil
+		return errors.Annotate(err, "failed to commit transaction").Tag(transient.Tag).Err()
 	}
+	return nil
 }
 
 func initExecutionState() *tryjob.ExecutionState {
@@ -299,6 +325,12 @@ func handleRequirementChange(curReqmt, targetReqmt *tryjob.Requirement, execStat
 }
 
 // execute executes the plan and mutate the state.
-func (p plan) execute(ctx context.Context, r *run.Run, execState *tryjob.ExecutionState) (*tryjob.ExecuteTryjobsResult, error) {
-	panic("implement")
+//
+// Returns side effect that should be executed in the same transaction to save
+// the new state.
+func (e *Executor) executePlan(ctx context.Context, p *plan, r *run.Run, execState *tryjob.ExecutionState) (func(context.Context) error, error) {
+	if p.isEmpty() {
+		return nil, nil
+	}
+	return nil, errors.New("not implemented")
 }

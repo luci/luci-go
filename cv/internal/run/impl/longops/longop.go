@@ -15,11 +15,18 @@
 package longops
 
 import (
+	"context"
 	"fmt"
 	"sync/atomic"
 
 	"go.chromium.org/luci/cv/internal/run"
+	"go.chromium.org/luci/cv/internal/run/eventpb"
 )
+
+// Operation defines the interface for long operation implementation.
+type Operation interface {
+	Do(context.Context) (*eventpb.LongOpCompleted, error)
+}
 
 // Base houses shared bits of all long operations.
 //

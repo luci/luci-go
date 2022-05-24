@@ -127,26 +127,25 @@ func (rm *RunManager) doLongOperation(ctx context.Context, task *eventpb.ManageR
 }
 
 func (rm *RunManager) doLongOperationWithDeadline(ctx context.Context, opBase *longops.Base) (*eventpb.LongOpCompleted, error) {
-	var action interface {
-		Do(context.Context) (*eventpb.LongOpCompleted, error)
-	}
-
+	var op longops.Operation
 	switch w := opBase.Op.GetWork().(type) {
 	case *run.OngoingLongOps_Op_PostStartMessage:
-		action = &longops.PostStartMessageOp{
+		op = &longops.PostStartMessageOp{
 			Base:     opBase,
 			Env:      rm.env,
 			GFactory: rm.gFactory,
 		}
 	case *run.OngoingLongOps_Op_CancelTriggers:
-		action = &longops.CancelTriggersOp{
+		op = &longops.CancelTriggersOp{
 			Base:              opBase,
 			GFactory:          rm.gFactory,
 			CancelConcurrency: 8,
 		}
 	case *run.OngoingLongOps_Op_ExecuteTryjobs:
-		action = &longops.ExecuteTryjobsOp{
-			Base: opBase,
+		op = &longops.ExecuteTryjobsOp{
+			Base:        opBase,
+			RunNotifier: rm.runNotifier,
+			// TODO(yiwzhang): Pass backend
 		}
 	default:
 		logging.Errorf(ctx, "unknown LongOp work %T", w)
@@ -154,7 +153,7 @@ func (rm *RunManager) doLongOperationWithDeadline(ctx context.Context, opBase *l
 		// future deployment.
 		return nil, errors.Reason("Skipping %T", opBase.Op.GetWork()).Tag(tq.Fatal).Err()
 	}
-	return action.Do(ctx)
+	return op.Do(ctx)
 }
 
 // longOpCancellationChecker asynchronously checks whether the given operation

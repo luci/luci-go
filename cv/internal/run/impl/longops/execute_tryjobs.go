@@ -17,6 +17,10 @@ package longops
 import (
 	"context"
 
+	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/retry/transient"
+
+	"go.chromium.org/luci/cv/internal/run"
 	"go.chromium.org/luci/cv/internal/run/eventpb"
 	"go.chromium.org/luci/cv/internal/tryjob/execute"
 )
@@ -24,24 +28,26 @@ import (
 // ExecuteTryjobsOp executes the tryjob requirement for the given run.
 type ExecuteTryjobsOp struct {
 	*Base
+	RunNotifier *run.Notifier
+	Backend     execute.TryjobBackend
 }
 
-// Do actually executes the tryjob requirement.
+// Do implements Operation interface.
 func (op *ExecuteTryjobsOp) Do(ctx context.Context) (*eventpb.LongOpCompleted, error) {
-	switch res, err := execute.Do(ctx, op.Run, op.Op.GetExecuteTryjobs(), op.IsCancelRequested); {
-	case err != nil:
-		return &eventpb.LongOpCompleted{
-			Status: eventpb.LongOpCompleted_FAILED,
-			Result: &eventpb.LongOpCompleted_ExecuteTryjobs{
-				ExecuteTryjobs: res,
-			},
-		}, err
-	default:
+	executor := &execute.Executor{
+		Backend:    op.Backend,
+		RM:         op.RunNotifier,
+		ShouldStop: op.IsCancelRequested,
+	}
+	switch err := executor.Do(ctx, op.Run, op.Op.GetExecuteTryjobs()); {
+	case err == nil:
 		return &eventpb.LongOpCompleted{
 			Status: eventpb.LongOpCompleted_SUCCEEDED,
-			Result: &eventpb.LongOpCompleted_ExecuteTryjobs{
-				ExecuteTryjobs: res,
-			},
 		}, nil
+	case !transient.Tag.In(err):
+		errors.Log(ctx, errors.Annotate(err, "tryjob executor permanently failed").Err())
+		fallthrough
+	default:
+		return nil, err
 	}
 }
