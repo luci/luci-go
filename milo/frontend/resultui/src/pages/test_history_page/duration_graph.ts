@@ -20,7 +20,7 @@ import { MiloBaseElement } from '../../components/milo_base';
 import { consumeTestHistoryPageState, TestHistoryPageState } from '../../context/test_history_page_state';
 import { consumer } from '../../libs/context';
 import { displayDuration, parseProtoDuration } from '../../libs/time_utils';
-import { TestVariantHistoryEntry } from '../../services/test_history_service';
+import { TestVerdict } from '../../services/weetbix';
 import commonStyle from '../../styles/common_style.css';
 import { CELL_PADDING, CELL_SIZE, INNER_CELL_SIZE } from './constants';
 
@@ -54,7 +54,7 @@ export class TestHistoryDurationGraphElement extends MiloBaseElement {
     const ret: SVGTemplateResult[] = [];
 
     for (const [i, date] of this.pageState.dates.entries()) {
-      const entries = this.pageState.testHistoryLoader!.getEntries(vHash, date)?.filter(this.pageState.tvhEntryFilter);
+      const entries = this.pageState.testHistoryLoader!.getEntries(vHash, date);
       if (!entries) {
         ret.push(svg`
           <foreignObject x=${CELL_SIZE * i} width=${CELL_SIZE} height=${CELL_SIZE}>
@@ -77,10 +77,8 @@ export class TestHistoryDurationGraphElement extends MiloBaseElement {
     return ret;
   }
 
-  private renderEntries(entries: readonly TestVariantHistoryEntry[]) {
-    const durations = this.pageState.passOnlyDuration
-      ? entries.filter((e) => e.avgDurationPass).map((e) => e.avgDurationPass!)
-      : entries.filter((e) => e.avgDuration).map((e) => e.avgDuration!);
+  private renderEntries(entries: readonly TestVerdict[]) {
+    const durations = entries.filter((e) => e.passedAvgDuration).map((e) => e.passedAvgDuration!);
     if (durations.length === 0) {
       return null;
     }

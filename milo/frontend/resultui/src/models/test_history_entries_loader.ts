@@ -14,8 +14,8 @@
 
 import { computed, observable } from 'mobx';
 
-import { TestVariant } from '../services/resultdb';
-import { TestHistoryService, TestVariantHistoryEntry } from '../services/test_history_service';
+import { ResultDb, TestVariant } from '../services/resultdb';
+import { TestVerdict } from '../services/weetbix';
 
 /**
  * A utility class that helps loading test history entry details.
@@ -23,8 +23,8 @@ import { TestHistoryService, TestVariantHistoryEntry } from '../services/test_hi
 export class TestHistoryEntriesLoader {
   constructor(
     readonly testId: string,
-    readonly tvhEntries: readonly TestVariantHistoryEntry[],
-    readonly testHistoryService: TestHistoryService,
+    readonly testVerdicts: readonly TestVerdict[],
+    readonly resultDb: ResultDb,
     readonly pageSize = 10
   ) {}
 
@@ -41,7 +41,7 @@ export class TestHistoryEntriesLoader {
     return this.loadingReqCount !== 0;
   }
   @computed get loadedAllTestVariants() {
-    return this.tvhEntries.length === this._testVariants.length;
+    return this.testVerdicts.length === this._testVariants.length;
   }
   @computed get loadedFirstPage() {
     return this._testVariants.length > 0;
@@ -54,21 +54,28 @@ export class TestHistoryEntriesLoader {
    * this.loadNextPage
    */
   private async loadNextPageImpl() {
-    const loadCount = Math.min(this.tvhEntries.length - this._testVariants.length, this.pageSize);
+    const loadCount = Math.min(this.testVerdicts.length - this._testVariants.length, this.pageSize);
 
     // Load all new entries in parallel.
     const newVariants = await Promise.all(
       Array(loadCount)
         .fill(0)
-        .map((_, i) => {
-          const entry = this.tvhEntries[this._testVariants.length + i];
-          return this.testHistoryService.getTestVariant({
-            testId: this.testId,
-            invocationIds: entry.invocationIds,
-            variant: entry.variant || { def: {} },
-            variantHash: entry.variantHash,
-            invocationTimestamp: entry.invocationTimestamp,
+        .map(async (_, i) => {
+          const entry = this.testVerdicts[this._testVariants.length + i];
+          const res = await this.resultDb.batchGetTestVariants({
+            invocation: 'invocations/' + entry.invocationId,
+            testVariants: [
+              {
+                testId: entry.testId,
+                variantHash: entry.variantHash,
+              },
+            ],
+            resultLimit: 100,
           });
+          return {
+            ...res.testVariants![0],
+            partitionTime: entry.partitionTime,
+          };
         })
     );
 
