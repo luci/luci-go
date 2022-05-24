@@ -49,7 +49,7 @@ queue:
   rate: 20/s
 
 - name: update-cl
-  rate: 50/s
+  rate: 500/s
   retry_parameters:
     min_backoff_seconds: 1
     max_backoff_seconds: 300
