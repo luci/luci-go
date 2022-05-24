@@ -634,7 +634,15 @@ func processExeArgs(input *bbpb.BBAgentArgs, check func(err error)) []string {
 	if len(input.Build.Exe.Cmd) == 0 {
 		// TODO(iannucci): delete me with ExecutablePath.
 		payloadPath, exeCmd = path.Split(input.ExecutablePath)
+	} else {
+		for p, purpose := range input.Build.Infra.Buildbucket.Agent.Purposes {
+			if purpose == bbpb.BuildInfra_Buildbucket_Agent_PURPOSE_EXE_PAYLOAD {
+				payloadPath = p
+				break
+			}
+		}
 	}
+
 	exeRelPath := filepath.Join(payloadPath, exeCmd)
 	exePath, err := filepath.Abs(exeRelPath)
 	check(errors.Annotate(err, "absoluting exe path %q", exeRelPath).Err())
