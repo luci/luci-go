@@ -658,6 +658,38 @@ func TestVM(t *testing.T) {
 		})
 	})
 
+	Convey("GetLabels", t, func() {
+		Convey("zero", func() {
+			Convey("nil", func() {
+				v := &VM{}
+				l := v.getLabels()
+				So(l, ShouldBeEmpty)
+			})
+
+			Convey("empty", func() {
+				v := &VM{
+					Attributes: config.VM{
+						Label: map[string]string{},
+					},
+				}
+				l := v.getLabels()
+				So(l, ShouldBeEmpty)
+			})
+		})
+
+		Convey("non-zero", func() {
+			v := &VM{
+				Attributes: config.VM{
+					Label: map[string]string{"key1": "value1"},
+				},
+			}
+			l := v.getLabels()
+			So(l, ShouldHaveLength, 1)
+			So(l, ShouldContainKey, "key1")
+			So(l["key1"], ShouldEqual, "value1")
+		})
+	})
+
 	Convey("GetInstance", t, func() {
 		Convey("empty", func() {
 			v := &VM{}
@@ -670,6 +702,7 @@ func TestVM(t *testing.T) {
 			So(i.Scheduling, ShouldBeNil)
 			So(i.ServiceAccounts, ShouldBeNil)
 			So(i.Tags, ShouldBeNil)
+			So(i.Labels, ShouldBeNil)
 		})
 
 		Convey("non-empty", func() {
@@ -708,6 +741,7 @@ func TestVM(t *testing.T) {
 			So(i.Scheduling, ShouldNotBeNil)
 			So(i.Scheduling.NodeAffinities, ShouldHaveLength, 1)
 			So(i.Tags, ShouldBeNil)
+			So(i.Labels, ShouldBeNil)
 		})
 	})
 }

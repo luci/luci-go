@@ -248,6 +248,10 @@ func (vm *VM) getTags() *compute.Tags {
 	return tags
 }
 
+func (vm *VM) getLabels() map[string]string {
+	return vm.Attributes.GetLabel()
+}
+
 // getScheduling returns a *compute.Scheduling representation of this VM's
 // scheduling options.
 func (vm *VM) getScheduling() *compute.Scheduling {
@@ -285,6 +289,7 @@ func (vm *VM) GetInstance() *compute.Instance {
 		ServiceAccounts:   vm.getServiceAccounts(),
 		Scheduling:        vm.getScheduling(),
 		Tags:              vm.getTags(),
+		Labels:            vm.getLabels(),
 	}
 	return inst
 }

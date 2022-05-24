@@ -151,6 +151,9 @@ message VM {
 
   // The scheduling options for this VM.
   Scheduling scheduling = 10;
+
+  // The labels to attach to this VM.
+  map<string, string> label = 11;
 }
 
 // A length of time.
