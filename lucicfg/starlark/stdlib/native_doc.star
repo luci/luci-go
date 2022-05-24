@@ -44,7 +44,7 @@ def __load(module, *args, **kwargs):
 
     A load statement within a function is a static error.
 
-    See also [Modules and packages](#modules_and_packages) for how load(...)
+    See also [Modules and packages](#modules-and-packages) for how load(...)
     interacts with exec(...).
 
     Args:

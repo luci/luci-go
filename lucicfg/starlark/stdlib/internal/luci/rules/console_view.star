@@ -100,7 +100,7 @@ def _console_view(
         )
 
     Note that consoles support builders defined in other projects. See
-    [Referring to builders in other projects](#external_builders) for more
+    [Referring to builders in other projects](#external-builders) for more
     details.
 
     #### Console headers

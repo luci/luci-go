@@ -113,7 +113,7 @@ def _retry_config(
     can be passed as `retry_config` field to luci.cq_group(...).
 
     Some commonly used presents are available as `cq.RETRY_*` constants. See
-    [CQ](#cq_doc) for more info.
+    [CQ](#cq-doc) for more info.
 
     Args:
       single_quota: retry quota for a single tryjob.

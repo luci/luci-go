@@ -227,7 +227,7 @@ def _cq_tryjob_verifier(
       ctx: the implicit rule context, see lucicfg.rule(...).
       builder: a builder to launch when verifying a CL, see luci.builder(...).
         Can also be a reference to a builder defined in another project. See
-        [Referring to builders in other projects](#external_builders) for more
+        [Referring to builders in other projects](#external-builders) for more
         details. Required.
       cq_group: a CQ group to add the verifier to. Can be omitted if
         `cq_tryjob_verifier` is used inline inside some luci.cq_group(...)

@@ -184,7 +184,7 @@ Starlark interpreter. Also this is **advanced stuff**. Its full understanding is
 not required to use `lucicfg` effectively.
 ***
 
-### Modules and packages {#modules_and_packages}
+### Modules and packages {#modules-and-packages}
 
 Each individual Starlark file is called a module. Several modules under the same
 root directory form a package. Modules within a single package can refer to each
@@ -322,7 +322,7 @@ repurposing `lucicfg` for generating non-LUCI conifgs.
 
 ## Common tasks
 
-### Resolving naming ambiguities {#resolving_ambiguities}
+### Resolving naming ambiguities {#resolving-ambiguities}
 
 Builder names are scoped to buckets. For example, it is possible to have the
 following definition:
@@ -369,7 +369,7 @@ name if the resulting reference is non-ambiguous. In the example above, if we
 remove one of the builders, `builder = 'Linux'` reference becomes valid.
 
 
-### Referring to builders in other projects {#external_builders}
+### Referring to builders in other projects {#external-builders}
 
 *** note
 **Experimental.** This feature is not yet supported in all contexts. If you want
@@ -396,7 +396,7 @@ luci.console_view_entry(
 )
 ```
 
-### Defining cron schedules {#schedules_doc}
+### Defining cron schedules {#schedules-doc}
 
 {{$builder_ref}} and {{$gitiles_poller_ref}} rules have `schedule` field that
 defines how often the builder or poller should run. Schedules are given as
@@ -437,7 +437,7 @@ strings. Supported kinds of schedules (illustrated via examples):
         only on manual requests, not periodically.
 
 
-## Formatting and linting Starlark code {#formatting_linting}
+## Formatting and linting Starlark code {#formatting-linting}
 
 lucicfg uses [buildifier] internally to format and lint Starlark code.
 Buildifier is primarily intended for Bazel BUILD and \*.bzl files, but it works
@@ -493,7 +493,7 @@ docs nor can it be disabled via `buildifier: disable=...`.
 [buildifier warnings list]: https://github.com/bazelbuild/buildtools/blob/master/WARNINGS.md
 
 
-### Examples {#linter_config}
+### Examples {#linter-config}
 
 To apply all default checks when running `lucicfg validate` use:
 
@@ -567,7 +567,7 @@ To suppress formatting changes (and thus formatting check) use
 
 ## ACLs
 
-### Roles {#roles_doc}
+### Roles {#roles-doc}
 
 Below is the table with role constants that can be passed as `roles` in
 {{$acl_entry_ref}}.
@@ -598,7 +598,7 @@ Similarly some roles can be assigned to individual users, other only to groups.
 ## Scheduler
 {{template "gen-funcs-doc" $scheduler}}
 
-## CQ  {#cq_doc}
+## CQ  {#cq-doc}
 {{template "gen-funcs-doc" $cq}}
 
 ## Built-in constants and functions

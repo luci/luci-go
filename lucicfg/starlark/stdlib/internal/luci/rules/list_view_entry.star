@@ -45,7 +45,7 @@ def _list_view_entry(ctx, builder = None, *, list_view = None):
       ctx: the implicit rule context, see lucicfg.rule(...).
       builder: a builder to add, see luci.builder(...). Can also be a reference
         to a builder defined in another project. See [Referring to builders in
-        other projects](#external_builders) for more details.
+        other projects](#external-builders) for more details.
       list_view: a list view to add the builder to. Can be omitted if
         `list_view_entry` is used inline inside some luci.list_view(...)
         declaration.

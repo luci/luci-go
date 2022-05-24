@@ -52,7 +52,7 @@ def _list_view(
         )
 
     Note that list views support builders defined in other projects. See
-    [Referring to builders in other projects](#external_builders) for more
+    [Referring to builders in other projects](#external-builders) for more
     details.
 
     Args:

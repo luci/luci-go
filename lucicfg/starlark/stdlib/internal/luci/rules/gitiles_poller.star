@@ -104,7 +104,7 @@ def _gitiles_poller(
         *ignore* when watching for changes. `^` and `$` are implied and should
         not be specified manually. See the explanation above for all details.
       schedule: string with a schedule that describes when to run one iteration
-        of the poller. See [Defining cron schedules](#schedules_doc) for the
+        of the poller. See [Defining cron schedules](#schedules-doc) for the
         expected format of this field. Note that it is rare to use custom
         schedules for pollers. By default, the poller will run each 30 sec.
       triggers: builders to trigger whenever the poller detects a new git commit

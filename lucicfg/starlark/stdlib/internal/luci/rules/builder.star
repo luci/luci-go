@@ -172,7 +172,7 @@ def _builder(
         are mutated dynamically. Supports the module-scoped default.
 
       schedule: string with a cron schedule that describes when to run this
-        builder. See [Defining cron schedules](#schedules_doc) for the expected
+        builder. See [Defining cron schedules](#schedules-doc) for the expected
         format of this field. If None, the builder will not be running
         periodically.
       triggering_policy: scheduler.policy(...) struct with a configuration that

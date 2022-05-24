@@ -118,7 +118,7 @@ def _config(
         first entry defines what group of checks to use as a base and it can
         be one of `none`, `default` or `all`. The following entries either
         add checks to the set (`+<name>`) or remove them (`-<name>`). See
-        [Formatting and linting Starlark code](#formatting_linting) for more
+        [Formatting and linting Starlark code](#formatting-linting) for more
         info. Default is `['none']` for now.
     """
     if config_service_host != None:

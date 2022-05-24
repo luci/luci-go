@@ -46,7 +46,7 @@ internal consistency of all low-level configs.
 
 Using Starlark allows further reducing duplication and enforcing invariants in
 the configs. A common pattern is to use Starlark functions that wrap one or
-more basic rules (e.g. [luci.builder(...)](#luci.builder) and [luci.console_view_entry(...)](#luci.console_view_entry)) to
+more basic rules (e.g. [luci.builder(...)](#luci.builder) and [luci.console_view_entry(...)](#luci.console-view-entry)) to
 define more "concrete" entities (for example "a CI builder" or "a Try builder").
 The rest of the config script then uses such functions to build up the actual
 configuration.
@@ -143,7 +143,7 @@ Starlark interpreter. Also this is **advanced stuff**. Its full understanding is
 not required to use `lucicfg` effectively.
 ***
 
-### Modules and packages {#modules_and_packages}
+### Modules and packages {#modules-and-packages}
 
 Each individual Starlark file is called a module. Several modules under the same
 root directory form a package. Modules within a single package can refer to each
@@ -186,7 +186,7 @@ a builder name to refer to the builder). Rules' implementation usually have
 enough context to construct correct node keys from such strings. Sometimes they
 need some help, see [Resolving naming ambiguities](#resolving_ambiguities).
 Other times entities have no meaningful global names at all (for example,
-[luci.console_view_entry(...)](#luci.console_view_entry)). For such cases, one uses a return value of the
+[luci.console_view_entry(...)](#luci.console-view-entry)). For such cases, one uses a return value of the
 corresponding rule: rules return opaque pointer-like objects that can be passed
 to other rules as an input in place of a string identifiers. This allows to
 "chain" definitions, e.g.
@@ -278,7 +278,7 @@ repurposing `lucicfg` for generating non-LUCI conifgs.
 
 ## Common tasks
 
-### Resolving naming ambiguities {#resolving_ambiguities}
+### Resolving naming ambiguities {#resolving-ambiguities}
 
 Builder names are scoped to buckets. For example, it is possible to have the
 following definition:
@@ -325,7 +325,7 @@ name if the resulting reference is non-ambiguous. In the example above, if we
 remove one of the builders, `builder = 'Linux'` reference becomes valid.
 
 
-### Referring to builders in other projects {#external_builders}
+### Referring to builders in other projects {#external-builders}
 
 *** note
 **Experimental.** This feature is not yet supported in all contexts. If you want
@@ -335,7 +335,7 @@ builders support, then the rule doesn't support it.
 ***
 
 Some LUCI Services allow one project to refer to resources in another project.
-For example, a [luci.console_view(...)](#luci.console_view) can display builders that belong to another
+For example, a [luci.console_view(...)](#luci.console-view) can display builders that belong to another
 LUCI project, side-by-side with the builders from the project the console
 belongs to.
 
@@ -352,9 +352,9 @@ luci.console_view_entry(
 )
 ```
 
-### Defining cron schedules {#schedules_doc}
+### Defining cron schedules {#schedules-doc}
 
-[luci.builder(...)](#luci.builder) and [luci.gitiles_poller(...)](#luci.gitiles_poller) rules have `schedule` field that
+[luci.builder(...)](#luci.builder) and [luci.gitiles_poller(...)](#luci.gitiles-poller) rules have `schedule` field that
 defines how often the builder or poller should run. Schedules are given as
 strings. Supported kinds of schedules (illustrated via examples):
 
@@ -389,11 +389,11 @@ strings. Supported kinds of schedules (illustrated via examples):
         scheduler job associated with the builder (even if the builder is not
         triggered by anything else in the configs). This exposes the builder in
         LUCI Scheduler API.
-      - in [luci.gitiles_poller(...)](#luci.gitiles_poller) this is useful to setup a poller that polls
+      - in [luci.gitiles_poller(...)](#luci.gitiles-poller) this is useful to setup a poller that polls
         only on manual requests, not periodically.
 
 
-## Formatting and linting Starlark code {#formatting_linting}
+## Formatting and linting Starlark code {#formatting-linting}
 
 lucicfg uses [buildifier] internally to format and lint Starlark code.
 Buildifier is primarily intended for Bazel BUILD and \*.bzl files, but it works
@@ -449,7 +449,7 @@ docs nor can it be disabled via `buildifier: disable=...`.
 [buildifier warnings list]: https://github.com/bazelbuild/buildtools/blob/master/WARNINGS.md
 
 
-### Examples {#linter_config}
+### Examples {#linter-config}
 
 To apply all default checks when running `lucicfg validate` use:
 
@@ -531,7 +531,7 @@ Returns a triple with lucicfg version: `(major, minor, revision)`.
 
 
 
-### lucicfg.check_version {#lucicfg.check_version}
+### lucicfg.check_version {#lucicfg.check-version}
 
 ```python
 lucicfg.check_version(min, message = None)
@@ -542,7 +542,7 @@ lucicfg.check_version(min, message = None)
 Fails if lucicfg version is below the requested minimal one.
 
 Useful when a script depends on some lucicfg feature that may not be
-available in earlier versions. [lucicfg.check_version(...)](#lucicfg.check_version) can be used at
+available in earlier versions. [lucicfg.check_version(...)](#lucicfg.check-version) can be used at
 the start of the script to fail right away with a clean error message:
 
 ```python
@@ -558,7 +558,7 @@ Or even
 lucicfg.check_version('1.5.5')
 ```
 
-#### Arguments {#lucicfg.check_version-args}
+#### Arguments {#lucicfg.check-version-args}
 
 * **min**: a string `major.minor.revision` with minimally accepted version. Required.
 * **message**: a custom failure message to show.
@@ -601,12 +601,12 @@ assigning to a variable.
 * **config_dir**: a directory to place generated configs into, relative to the directory that contains the entry point \*.star file. `..` is allowed. If set via `-config-dir` command line flag, it is relative to the current working directory. Will be created if absent. If `-`, the configs are just printed to stdout in a format useful for debugging. Default is "generated".
 * **tracked_files**: a list of glob patterns that define a subset of files under `config_dir` that are considered generated. Each entry is either `<glob pattern>` (a "positive" glob) or `!<glob pattern>` (a "negative" glob). A file under `config_dir` is considered tracked if its slash-separated path matches any of the positive globs and none of the negative globs. If a pattern starts with `**/`, the rest of it is applied to the base name of the file (not the whole path). If only negative globs are given, single positive `**/*` glob is implied as well. `tracked_files` can be used to limit what files are actually emitted: if this set is not empty, only files that are in this set will be actually written to the disk (and all other files are discarded). This is beneficial when `lucicfg` is used to generate only a subset of config files, e.g. during the migration from handcrafted to generated configs. Knowing the tracked files set is also important when some generated file disappears from `lucicfg` output: it must be deleted from the disk as well. To do this, `lucicfg` needs to know what files are safe to delete. If `tracked_files` is empty (default), `lucicfg` will save all generated files and will never delete any file in this case it is responsibility of the caller to make sure no stale output remains).
 * **fail_on_warnings**: if set to True treat validation warnings as errors. Default is False (i.e. warnings do not cause the validation to fail). If set to True via `lucicfg.config` and you want to override it to False via command line flags use `-fail-on-warnings=false`.
-* **lint_checks**: a list of linter checks to apply in `lucicfg validate`. The first entry defines what group of checks to use as a base and it can be one of `none`, `default` or `all`. The following entries either add checks to the set (`+<name>`) or remove them (`-<name>`). See [Formatting and linting Starlark code](#formatting_linting) for more info. Default is `['none']` for now.
+* **lint_checks**: a list of linter checks to apply in `lucicfg validate`. The first entry defines what group of checks to use as a base and it can be one of `none`, `default` or `all`. The following entries either add checks to the set (`+<name>`) or remove them (`-<name>`). See [Formatting and linting Starlark code](#formatting-linting) for more info. Default is `['none']` for now.
 
 
 
 
-### lucicfg.enable_experiment {#lucicfg.enable_experiment}
+### lucicfg.enable_experiment {#lucicfg.enable-experiment}
 
 ```python
 lucicfg.enable_experiment(experiment)
@@ -627,7 +627,7 @@ Enabling an experiment that doesn't exist logs a warning, but doesn't fail
 the execution. Refer to the documentation and the source code for the list
 of available experiments.
 
-#### Arguments {#lucicfg.enable_experiment-args}
+#### Arguments {#lucicfg.enable-experiment-args}
 
 * **experiment**: a string ID of the experimental feature to enable. Required.
 
@@ -680,7 +680,7 @@ lucicfg.emit(dest, data)
 
 Tells lucicfg to write given data to some output file.
 
-In particular useful in conjunction with [io.read_file(...)](#io.read_file) to copy files
+In particular useful in conjunction with [io.read_file(...)](#io.read-file) to copy files
 into the generated output:
 
 ```python
@@ -701,7 +701,7 @@ Note that [lucicfg.emit(...)](#lucicfg.emit) cannot be used to override generate
 
 
 
-### lucicfg.current_module {#lucicfg.current_module}
+### lucicfg.current_module {#lucicfg.current-module}
 
 ```python
 lucicfg.current_module()
@@ -714,9 +714,9 @@ Returns the location of a module being currently executed.
 This is the module being processed by a current load(...) or [exec(...)](#exec)
 statement. It has no relation to the module that holds the top-level stack
 frame. For example, if a currently loading module `A` calls a function in
-a module `B` and this function calls [lucicfg.current_module(...)](#lucicfg.current_module), the result
+a module `B` and this function calls [lucicfg.current_module(...)](#lucicfg.current-module), the result
 would be the module `A`, even though the call goes through code in the
-module `B` (i.e. [lucicfg.current_module(...)](#lucicfg.current_module) invocation itself resided in
+module `B` (i.e. [lucicfg.current_module(...)](#lucicfg.current-module) invocation itself resided in
 a function in module `B`).
 
 Fails if called from inside a generator callback. Threads executing such
@@ -724,7 +724,7 @@ callbacks are not running any load(...) or [exec(...)](#exec).
 
 
 
-#### Returns  {#lucicfg.current_module-returns}
+#### Returns  {#lucicfg.current-module-returns}
 
 A `struct(package='...', path='...')` with the location of the module.
 
@@ -964,7 +964,7 @@ Truncated time.duration value.
 
 
 
-### time.days_of_week {#time.days_of_week}
+### time.days_of_week {#time.days-of-week}
 
 ```python
 time.days_of_week(spec)
@@ -977,12 +977,12 @@ Parses e.g. `Tue,Fri-Sun` into a list of day indexes, e.g. `[2, 5, 6, 7]`.
 Monday is 1, Sunday is 7. The returned list is sorted and has no duplicates.
 An empty string results in the empty list.
 
-#### Arguments {#time.days_of_week-args}
+#### Arguments {#time.days-of-week-args}
 
 * **spec**: a case-insensitive string with 3-char abbreviated days of the week. Multiple terms are separated by a comma and optional spaces. Each term is either a day (e.g. `Tue`), or a range (e.g. `Wed-Sun`). Required.
 
 
-#### Returns  {#time.days_of_week-returns}
+#### Returns  {#time.days-of-week-returns}
 
 A list of 1-based day indexes. Monday is 1.
 
@@ -1177,7 +1177,7 @@ A role can either be predefined (if its name starts with `role/`) or custom
 Predefined roles are declared in the LUCI deployment configs, see **TODO**
 for the up-to-date list of available predefined roles and their meaning.
 
-Custom roles are defined in the project configs via [luci.custom_role(...)](#luci.custom_role).
+Custom roles are defined in the project configs via [luci.custom_role(...)](#luci.custom-role).
 They can be used if none of the predefined roles represent the desired set
 of permissions.
 
@@ -1188,12 +1188,12 @@ of permissions.
 * **groups**: a single group name or a list of groups to assign the role to.
 * **users**: a single user email or a list of emails to assign the role to.
 * **projects**: a single LUCI project name or a list of project names to assign the role to.
-* **conditions**: a list of conditions (ANDed together) that define when this binding is active. Currently only a list of [luci.restrict_attribute(...)](#luci.restrict_attribute) conditions is supported. See [luci.restrict_attribute(...)](#luci.restrict_attribute) for more details. This is an experimental feature.
+* **conditions**: a list of conditions (ANDed together) that define when this binding is active. Currently only a list of [luci.restrict_attribute(...)](#luci.restrict-attribute) conditions is supported. See [luci.restrict_attribute(...)](#luci.restrict-attribute) for more details. This is an experimental feature.
 
 
 
 
-### luci.restrict_attribute {#luci.restrict_attribute}
+### luci.restrict_attribute {#luci.restrict-attribute}
 
 ```python
 luci.restrict_attribute(attribute = None, values = None)
@@ -1213,26 +1213,26 @@ permission check. It contains things like the name of the resource being
 accessed, or parameters of the incoming RPC request that triggered the
 check.
 
-[luci.restrict_attribute(...)](#luci.restrict_attribute) condition makes the binding active only if
+[luci.restrict_attribute(...)](#luci.restrict-attribute) condition makes the binding active only if
 the value of the given attribute is in the given set of allowed values.
 
 A list of available attributes and meaning of their values depends on the
 permission being checked and is documented in the corresponding service
 documentation.
 
-#### Arguments {#luci.restrict_attribute-args}
+#### Arguments {#luci.restrict-attribute-args}
 
 * **attribute**: name of the attribute to restrict.
 * **values**: a list of strings with allowed values of the attribute.
 
 
-#### Returns  {#luci.restrict_attribute-returns}
+#### Returns  {#luci.restrict-attribute-returns}
 
 An opaque struct that can be passed to [luci.binding(...)](#luci.binding) as a condition.
 
 
 
-### luci.custom_role {#luci.custom_role}
+### luci.custom_role {#luci.custom-role}
 
 ```python
 luci.custom_role(name, extends = None, permissions = None)
@@ -1248,10 +1248,10 @@ not map well to the desired set of permissions.
 Custom roles are scoped to the project (i.e. different projects may have
 identically named, but semantically different custom roles).
 
-#### Arguments {#luci.custom_role-args}
+#### Arguments {#luci.custom-role-args}
 
 * **name**: name of the custom role. Must start with `customRole/`. Required.
-* **extends**: optional list of roles whose permissions will be included in this role. Each entry can either be a predefined role (if it is a string that starts with `role/`) or another custom role (if it is a string that starts with `customRole/` or a [luci.custom_role(...)](#luci.custom_role) key).
+* **extends**: optional list of roles whose permissions will be included in this role. Each entry can either be a predefined role (if it is a string that starts with `role/`) or another custom role (if it is a string that starts with `customRole/` or a [luci.custom_role(...)](#luci.custom-role) key).
 * **permissions**: optional list of permissions to include in the role. Each permission is a symbol that has form `<service>.<subject>.<verb>`, which describes some elementary action (`<verb>`) that can be done to some category of resources (`<subject>`), managed by some particular kind of LUCI service (`<service>`). See **TODO** for the up-to-date list of available permissions and their meaning.
 
 
@@ -1515,23 +1515,23 @@ Buildbucket.
 * **swarming_tags**: Deprecated. Used only to enable "vpython:native-python-wrapper" and does not actually propagate to Swarming. A list of tags (`k:v` strings).
 * **expiration_timeout**: how long to wait for a build to be picked up by a matching bot (based on `dimensions`) before canceling the build and marking it as expired. If None, defer the decision to Buildbucket service. Supports the module-scoped default.
 * **wait_for_capacity**: tell swarming to wait for `expiration_timeout` even if it has never seen a bot whose dimensions are a superset of the requested dimensions. This is useful if this builder has bots whose dimensions are mutated dynamically. Supports the module-scoped default.
-* **schedule**: string with a cron schedule that describes when to run this builder. See [Defining cron schedules](#schedules_doc) for the expected format of this field. If None, the builder will not be running periodically.
-* **triggering_policy**: [scheduler.policy(...)](#scheduler.policy) struct with a configuration that defines when and how LUCI Scheduler should launch new builds in response to triggering requests from [luci.gitiles_poller(...)](#luci.gitiles_poller) or from EmitTriggers API. Does not apply to builds started directly through Buildbucket. By default, only one concurrent build is allowed and while it runs, triggering requests accumulate in a queue. Once the build finishes, if the queue is not empty, a new build starts right away, "consuming" all pending requests. See [scheduler.policy(...)](#scheduler.policy) doc for more details. Supports the module-scoped default.
+* **schedule**: string with a cron schedule that describes when to run this builder. See [Defining cron schedules](#schedules-doc) for the expected format of this field. If None, the builder will not be running periodically.
+* **triggering_policy**: [scheduler.policy(...)](#scheduler.policy) struct with a configuration that defines when and how LUCI Scheduler should launch new builds in response to triggering requests from [luci.gitiles_poller(...)](#luci.gitiles-poller) or from EmitTriggers API. Does not apply to builds started directly through Buildbucket. By default, only one concurrent build is allowed and while it runs, triggering requests accumulate in a queue. Once the build finishes, if the queue is not empty, a new build starts right away, "consuming" all pending requests. See [scheduler.policy(...)](#scheduler.policy) doc for more details. Supports the module-scoped default.
 * **build_numbers**: if True, generate monotonically increasing contiguous numbers for each build, unique within the builder. If None, defer the decision to Buildbucket service. Supports the module-scoped default.
 * **experimental**: if True, by default a new build in this builder will be marked as experimental. This is seen from the executable and it may behave differently (e.g. avoiding any side-effects). If None, defer the decision to Buildbucket service. Supports the module-scoped default.
-* **experiments**: a dict that maps experiment name to percentage chance that it will apply to builds generated from this builder. Keys are strings, and values are integers from 0 to 100. This is unrelated to [lucicfg.enable_experiment(...)](#lucicfg.enable_experiment).
+* **experiments**: a dict that maps experiment name to percentage chance that it will apply to builds generated from this builder. Keys are strings, and values are integers from 0 to 100. This is unrelated to [lucicfg.enable_experiment(...)](#lucicfg.enable-experiment).
 * **task_template_canary_percentage**: int [0-100] or None, indicating percentage of builds that should use a canary swarming task template. If None, defer the decision to Buildbucket service. Supports the module-scoped default.
-* **repo**: URL of a primary git repository (starting with `https://`) associated with the builder, if known. It is in particular important when using [luci.notifier(...)](#luci.notifier) to let LUCI know what git history it should use to chronologically order builds on this builder. If unknown, builds will be ordered by creation time. If unset, will be taken from the configuration of [luci.gitiles_poller(...)](#luci.gitiles_poller) that trigger this builder if they all poll the same repo.
+* **repo**: URL of a primary git repository (starting with `https://`) associated with the builder, if known. It is in particular important when using [luci.notifier(...)](#luci.notifier) to let LUCI know what git history it should use to chronologically order builds on this builder. If unknown, builds will be ordered by creation time. If unset, will be taken from the configuration of [luci.gitiles_poller(...)](#luci.gitiles-poller) that trigger this builder if they all poll the same repo.
 * **resultdb_settings**: A buildbucket_pb.BuilderConfig.ResultDB, such as one created with [resultdb.settings(...)](#resultdb.settings). A configuration that defines if Buildbucket:ResultDB integration should be enabled for this builder and which results to export to BigQuery.
-* **test_presentation**: A [resultdb.test_presentation(...)](#resultdb.test_presentation) struct. A configuration that defines how tests should be rendered in the UI.
+* **test_presentation**: A [resultdb.test_presentation(...)](#resultdb.test-presentation) struct. A configuration that defines how tests should be rendered in the UI.
 * **triggers**: builders this builder triggers.
 * **triggered_by**: builders or pollers this builder is triggered by.
-* **notifies**: list of [luci.notifier(...)](#luci.notifier) or [luci.tree_closer(...)](#luci.tree_closer) the builder notifies when it changes its status. This relation can also be defined via `notified_by` field in [luci.notifier(...)](#luci.notifier) or [luci.tree_closer(...)](#luci.tree_closer).
+* **notifies**: list of [luci.notifier(...)](#luci.notifier) or [luci.tree_closer(...)](#luci.tree-closer) the builder notifies when it changes its status. This relation can also be defined via `notified_by` field in [luci.notifier(...)](#luci.notifier) or [luci.tree_closer(...)](#luci.tree-closer).
 
 
 
 
-### luci.gitiles_poller {#luci.gitiles_poller}
+### luci.gitiles_poller {#luci.gitiles-poller}
 
 ```python
 luci.gitiles_poller(
@@ -1598,12 +1598,12 @@ matched by some `path_regexps`, subject to following caveats:
   * As mentioned above, if a ref fast-forwards >=50 commits, only the last
     50 commits are checked. The rest are ignored.
 
-A [luci.gitiles_poller(...)](#luci.gitiles_poller) with some particular name can be redeclared many
+A [luci.gitiles_poller(...)](#luci.gitiles-poller) with some particular name can be redeclared many
 times as long as all fields in all declaration are identical. This is
-helpful when [luci.gitiles_poller(...)](#luci.gitiles_poller) is used inside a helper function that
+helpful when [luci.gitiles_poller(...)](#luci.gitiles-poller) is used inside a helper function that
 at once declares a builder and a poller that triggers this builder.
 
-#### Arguments {#luci.gitiles_poller-args}
+#### Arguments {#luci.gitiles-poller-args}
 
 * **name**: name of the poller, to refer to it from other rules. Required.
 * **bucket**: a bucket the poller is in, see [luci.bucket(...)](#luci.bucket) rule. Required.
@@ -1611,7 +1611,7 @@ at once declares a builder and a poller that triggers this builder.
 * **refs**: a list of regular expressions that define the watched set of refs, e.g. `refs/heads/[^/]+` or `refs/branch-heads/\d+\.\d+`. The regular expression should have a literal prefix with at least two slashes present, e.g. `refs/release-\d+/foobar` is *not allowed*, because the literal prefix `refs/release-` contains only one slash. The regexp should not start with `^` or end with `$` as they will be added automatically. Each supplied regexp must match at least one ref in the gitiles output, e.g. specifying `refs/tags/v.+` for a repo that doesn't have tags starting with `v` causes a runtime error. If empty, defaults to `['refs/heads/main']`.
 * **path_regexps**: a list of regexps that define a set of files to watch for changes. `^` and `$` are implied and should not be specified manually. See the explanation above for all details.
 * **path_regexps_exclude**: a list of regexps that define a set of files to *ignore* when watching for changes. `^` and `$` are implied and should not be specified manually. See the explanation above for all details.
-* **schedule**: string with a schedule that describes when to run one iteration of the poller. See [Defining cron schedules](#schedules_doc) for the expected format of this field. Note that it is rare to use custom schedules for pollers. By default, the poller will run each 30 sec.
+* **schedule**: string with a schedule that describes when to run one iteration of the poller. See [Defining cron schedules](#schedules-doc) for the expected format of this field. Note that it is rare to use custom schedules for pollers. By default, the poller will run each 30 sec.
 * **triggers**: builders to trigger whenever the poller detects a new git commit on any ref in the watched ref set.
 
 
@@ -1628,8 +1628,8 @@ luci.milo(logo = None, favicon = None, bug_url_template = None)
 Defines optional configuration of the Milo service for this project.
 
 Milo service is a public user interface for displaying (among other things)
-builds, builders, builder lists (see [luci.list_view(...)](#luci.list_view)) and consoles
-(see [luci.console_view(...)](#luci.console_view)).
+builds, builders, builder lists (see [luci.list_view(...)](#luci.list-view)) and consoles
+(see [luci.console_view(...)](#luci.console-view)).
 
 Can optionally be configured with a bug_url_template for filing bugs via
 custom bug links on build pages.
@@ -1660,7 +1660,7 @@ above, the link is not displayed.
 
 
 
-### luci.list_view {#luci.list_view}
+### luci.list_view {#luci.list-view}
 
 ```python
 luci.list_view(
@@ -1689,7 +1689,7 @@ Builders that belong to this view can be specified either right here:
         ],
     )
 
-Or separately one by one via [luci.list_view_entry(...)](#luci.list_view_entry) declarations:
+Or separately one by one via [luci.list_view_entry(...)](#luci.list-view-entry) declarations:
 
     luci.list_view(name = 'Try builders')
     luci.list_view_entry(
@@ -1702,20 +1702,20 @@ Or separately one by one via [luci.list_view_entry(...)](#luci.list_view_entry) 
     )
 
 Note that list views support builders defined in other projects. See
-[Referring to builders in other projects](#external_builders) for more
+[Referring to builders in other projects](#external-builders) for more
 details.
 
-#### Arguments {#luci.list_view-args}
+#### Arguments {#luci.list-view-args}
 
-* **name**: a name of this view, will show up in URLs. Note that names of [luci.list_view(...)](#luci.list_view) and [luci.console_view(...)](#luci.console_view) are in the same namespace i.e. defining a list view with the same name as some console view (and vice versa) causes an error. Required.
+* **name**: a name of this view, will show up in URLs. Note that names of [luci.list_view(...)](#luci.list-view) and [luci.console_view(...)](#luci.console-view) are in the same namespace i.e. defining a list view with the same name as some console view (and vice versa) causes an error. Required.
 * **title**: a title of this view, will show up in UI. Defaults to `name`.
 * **favicon**: optional https URL to the favicon for this view, must be hosted on `storage.googleapis.com`. Defaults to `favicon` in [luci.milo(...)](#luci.milo).
-* **entries**: a list of builders or [luci.list_view_entry(...)](#luci.list_view_entry) entities to include into this view.
+* **entries**: a list of builders or [luci.list_view_entry(...)](#luci.list-view-entry) entities to include into this view.
 
 
 
 
-### luci.list_view_entry {#luci.list_view_entry}
+### luci.list_view_entry {#luci.list-view-entry}
 
 ```python
 luci.list_view_entry(builder = None, list_view = None)
@@ -1723,7 +1723,7 @@ luci.list_view_entry(builder = None, list_view = None)
 
 
 
-A builder entry in some [luci.list_view(...)](#luci.list_view).
+A builder entry in some [luci.list_view(...)](#luci.list-view).
 
 Can be used to declare that a builder belongs to a list view outside of
 the list view declaration. In particular useful in functions. For example:
@@ -1734,8 +1734,8 @@ the list view declaration. In particular useful in functions. For example:
         luci.builder(name = name, ...)
         luci.list_view_entry(list_view = 'Try builders', builder = name)
 
-Can also be used inline in [luci.list_view(...)](#luci.list_view) declarations, for consistency
-with corresponding [luci.console_view_entry(...)](#luci.console_view_entry) usage. `list_view` argument
+Can also be used inline in [luci.list_view(...)](#luci.list-view) declarations, for consistency
+with corresponding [luci.console_view_entry(...)](#luci.console-view-entry) usage. `list_view` argument
 can be omitted in this case:
 
     luci.list_view(
@@ -1746,15 +1746,15 @@ can be omitted in this case:
         ],
     )
 
-#### Arguments {#luci.list_view_entry-args}
+#### Arguments {#luci.list-view-entry-args}
 
-* **builder**: a builder to add, see [luci.builder(...)](#luci.builder). Can also be a reference to a builder defined in another project. See [Referring to builders in other projects](#external_builders) for more details.
-* **list_view**: a list view to add the builder to. Can be omitted if `list_view_entry` is used inline inside some [luci.list_view(...)](#luci.list_view) declaration.
-
-
+* **builder**: a builder to add, see [luci.builder(...)](#luci.builder). Can also be a reference to a builder defined in another project. See [Referring to builders in other projects](#external-builders) for more details.
+* **list_view**: a list view to add the builder to. Can be omitted if `list_view_entry` is used inline inside some [luci.list_view(...)](#luci.list-view) declaration.
 
 
-### luci.console_view {#luci.console_view}
+
+
+### luci.console_view {#luci.console-view}
 
 ```python
 luci.console_view(
@@ -1828,7 +1828,7 @@ Builders that belong to the console can be specified either right here:
         ],
     )
 
-Or separately one by one via [luci.console_view_entry(...)](#luci.console_view_entry) declarations:
+Or separately one by one via [luci.console_view_entry(...)](#luci.console-view-entry) declarations:
 
     luci.console_view(name = 'CI builders')
     luci.console_view_entry(
@@ -1839,7 +1839,7 @@ Or separately one by one via [luci.console_view_entry(...)](#luci.console_view_e
     )
 
 Note that consoles support builders defined in other projects. See
-[Referring to builders in other projects](#external_builders) for more
+[Referring to builders in other projects](#external-builders) for more
 details.
 
 #### Console headers
@@ -1880,24 +1880,24 @@ There are two way to supply this message via `header` field:
 
 [project.proto]: https://chromium.googlesource.com/infra/luci/luci-go/+/refs/heads/main/milo/api/config/project.proto
 
-#### Arguments {#luci.console_view-args}
+#### Arguments {#luci.console-view-args}
 
-* **name**: a name of this console, will show up in URLs. Note that names of [luci.console_view(...)](#luci.console_view) and [luci.list_view(...)](#luci.list_view) are in the same namespace i.e. defining a console view with the same name as some list view (and vice versa) causes an error. Required.
+* **name**: a name of this console, will show up in URLs. Note that names of [luci.console_view(...)](#luci.console-view) and [luci.list_view(...)](#luci.list-view) are in the same namespace i.e. defining a console view with the same name as some list view (and vice versa) causes an error. Required.
 * **title**: a title of this console, will show up in UI. Defaults to `name`.
 * **repo**: URL of a git repository whose commits are displayed as rows in the console. Must start with `https://`. Required.
 * **refs**: a list of regular expressions that define the set of refs to pull commits from when displaying the console, e.g. `refs/heads/[^/]+` or `refs/branch-heads/\d+\.\d+`. The regular expression should have a literal prefix with at least two slashes present, e.g. `refs/release-\d+/foobar` is *not allowed*, because the literal prefix `refs/release-` contains only one slash. The regexp should not start with `^` or end with `$` as they will be added automatically. If empty, defaults to `['refs/heads/main']`.
 * **exclude_ref**: a single ref, commits from which are ignored even when they are reachable from refs specified via `refs` and `refs_regexps`. Note that force pushes to this ref are not supported. Milo uses caching assuming set of commits reachable from this ref may only grow, never lose some commits.
-* **header**: either a string with a path to the file with the header definition (see [io.read_file(...)](#io.read_file) for the acceptable path format), or a dict with the header definition.
+* **header**: either a string with a path to the file with the header definition (see [io.read_file(...)](#io.read-file) for the acceptable path format), or a dict with the header definition.
 * **include_experimental_builds**: if True, this console will not filter out builds marked as Experimental. By default consoles only show production builds.
 * **favicon**: optional https URL to the favicon for this console, must be hosted on `storage.googleapis.com`. Defaults to `favicon` in [luci.milo(...)](#luci.milo).
 * **default_commit_limit**: if set, will change the default number of commits to display on a single page.
 * **default_expand**: if set, will default the console page to expanded view.
-* **entries**: a list of [luci.console_view_entry(...)](#luci.console_view_entry) entities specifying builders to show on the console.
+* **entries**: a list of [luci.console_view_entry(...)](#luci.console-view-entry) entities specifying builders to show on the console.
 
 
 
 
-### luci.console_view_entry {#luci.console_view_entry}
+### luci.console_view_entry {#luci.console-view-entry}
 
 ```python
 luci.console_view_entry(
@@ -1911,9 +1911,9 @@ luci.console_view_entry(
 
 
 
-A builder entry in some [luci.console_view(...)](#luci.console_view).
+A builder entry in some [luci.console_view(...)](#luci.console-view).
 
-Used inline in [luci.console_view(...)](#luci.console_view) declarations to provide `category` and
+Used inline in [luci.console_view(...)](#luci.console-view) declarations to provide `category` and
 `short_name` for a builder. `console_view` argument can be omitted in this
 case:
 
@@ -1939,17 +1939,17 @@ the console declaration. In particular useful in functions. For example:
       luci.builder(name = name, ...)
       luci.console_view_entry(console_view = 'CI builders', builder = name)
 
-#### Arguments {#luci.console_view_entry-args}
+#### Arguments {#luci.console-view-entry-args}
 
-* **builder**: a builder to add, see [luci.builder(...)](#luci.builder). Can also be a reference to a builder defined in another project. See [Referring to builders in other projects](#external_builders) for more details.
+* **builder**: a builder to add, see [luci.builder(...)](#luci.builder). Can also be a reference to a builder defined in another project. See [Referring to builders in other projects](#external-builders) for more details.
 * **short_name**: a shorter name of the builder. The recommendation is to keep this name as short as reasonable, as longer names take up more horizontal space.
 * **category**: a string of the form `term1|term2|...` that describes the hierarchy of the builder columns. Neighboring builders with common ancestors will have their column headers merged. In expanded view, each leaf category or builder under a non-leaf category will have it's own column. The recommendation for maximum density is not to mix subcategories and builders for children of each category.
-* **console_view**: a console view to add the builder to. Can be omitted if `console_view_entry` is used inline inside some [luci.console_view(...)](#luci.console_view) declaration.
+* **console_view**: a console view to add the builder to. Can be omitted if `console_view_entry` is used inline inside some [luci.console_view(...)](#luci.console-view) declaration.
 
 
 
 
-### luci.external_console_view {#luci.external_console_view}
+### luci.external_console_view {#luci.external-console-view}
 
 ```python
 luci.external_console_view(name, source, title = None)
@@ -1972,7 +1972,7 @@ called 'main', and we give it a local name of 'cr-main' and title of
         source = 'chromium:main'
     )
 
-#### Arguments {#luci.external_console_view-args}
+#### Arguments {#luci.external-console-view-args}
 
 * **name**: a local name for this console. Will be used for sorting consoles on the project page. Note that the name must not clash with existing consoles or list views in this project. Required.
 * **title**: a title for this console, will show up in UI. Defaults to `name`.
@@ -2039,11 +2039,11 @@ finishes, the builder "notifies" all [luci.notifier(...)](#luci.notifier) object
 to it, and in turn each notifier filters and forwards this event to
 corresponding recipients.
 
-Note that [luci.notifier(...)](#luci.notifier) and [luci.tree_closer(...)](#luci.tree_closer) are both flavors of
+Note that [luci.notifier(...)](#luci.notifier) and [luci.tree_closer(...)](#luci.tree-closer) are both flavors of
 a `luci.notifiable` object, i.e. both are something that "can be notified"
 when a build finishes. They both are valid targets for `notifies` field in
 [luci.builder(...)](#luci.builder). For that reason they share the same namespace, i.e. it is
-not allowed to have a [luci.notifier(...)](#luci.notifier) and a [luci.tree_closer(...)](#luci.tree_closer) with
+not allowed to have a [luci.notifier(...)](#luci.notifier) and a [luci.tree_closer(...)](#luci.tree-closer) with
 the same name.
 
 #### Arguments {#luci.notifier-args}
@@ -2061,13 +2061,13 @@ the same name.
 * **notify_rotation_urls**: an optional list of URLs from which to fetch rotation members. For each URL, an email will be sent to the currently active member of that rotation. The URL must contain a JSON object, with a field named 'emails' containing a list of email address strings.
 * **notify_blamelist**: if True, send notifications to everyone in the computed blamelist for the build. Works only if the builder has a repository associated with it, see `repo` field in [luci.builder(...)](#luci.builder). Default is False.
 * **blamelist_repos_whitelist**: an optional list of repository URLs (e.g. `https://host/repo`) to restrict the blamelist calculation to. If empty (default), only the primary repository associated with the builder is considered, see `repo` field in [luci.builder(...)](#luci.builder).
-* **template**: a [luci.notifier_template(...)](#luci.notifier_template) to use to format notification emails. If not specified, and a template `default` is defined in the project somewhere, it is used implicitly by the notifier.
+* **template**: a [luci.notifier_template(...)](#luci.notifier-template) to use to format notification emails. If not specified, and a template `default` is defined in the project somewhere, it is used implicitly by the notifier.
 * **notified_by**: builders to receive status notifications from. This relation can also be defined via `notifies` field in [luci.builder(...)](#luci.builder).
 
 
 
 
-### luci.tree_closer {#luci.tree_closer}
+### luci.tree_closer {#luci.tree-closer}
 
 ```python
 luci.tree_closer(
@@ -2090,29 +2090,29 @@ Defines a rule for closing or opening a tree via a tree status app.
 The set of builders that are being observed is defined through `notified_by`
 field here or `notifies` field in [luci.builder(...)](#luci.builder). Whenever a build
 finishes, the builder "notifies" all (but usually none or just one)
-[luci.tree_closer(...)](#luci.tree_closer) objects subscribed to it, so they can decide whether
+[luci.tree_closer(...)](#luci.tree-closer) objects subscribed to it, so they can decide whether
 to close or open the tree in reaction to the new builder state.
 
-Note that [luci.notifier(...)](#luci.notifier) and [luci.tree_closer(...)](#luci.tree_closer) are both flavors of
+Note that [luci.notifier(...)](#luci.notifier) and [luci.tree_closer(...)](#luci.tree-closer) are both flavors of
 a `luci.notifiable` object, i.e. both are something that "can be notified"
 when a build finishes. They both are valid targets for `notifies` field in
 [luci.builder(...)](#luci.builder). For that reason they share the same namespace, i.e. it is
-not allowed to have a [luci.notifier(...)](#luci.notifier) and a [luci.tree_closer(...)](#luci.tree_closer) with
+not allowed to have a [luci.notifier(...)](#luci.notifier) and a [luci.tree_closer(...)](#luci.tree-closer) with
 the same name.
 
-#### Arguments {#luci.tree_closer-args}
+#### Arguments {#luci.tree-closer-args}
 
 * **name**: name of this tree closer to reference it from other rules. Required.
-* **tree_status_host**: a hostname of the project tree status app (if any) that this rule will use to open and close the tree. Tree status affects how CQ lands CLs. See `tree_status_host` in [luci.cq_group(...)](#luci.cq_group). Required.
+* **tree_status_host**: a hostname of the project tree status app (if any) that this rule will use to open and close the tree. Tree status affects how CQ lands CLs. See `tree_status_host` in [luci.cq_group(...)](#luci.cq-group). Required.
 * **failed_step_regexp**: close the tree only on builds which had a failing step matching this regex, or list of regexes.
 * **failed_step_regexp_exclude**: close the tree only on builds which don't have a failing step matching this regex or list of regexes. May be combined with `failed_step_regexp`, in which case it must also have a failed step matching that regular expression.
-* **template**: a [luci.notifier_template(...)](#luci.notifier_template) to use to format tree closure notifications. If not specified, and a template `default_tree_status` is defined in the project somewhere, it is used implicitly by the tree closer.
+* **template**: a [luci.notifier_template(...)](#luci.notifier-template) to use to format tree closure notifications. If not specified, and a template `default_tree_status` is defined in the project somewhere, it is used implicitly by the tree closer.
 * **notified_by**: builders to receive status notifications from. This relation can also be defined via `notifies` field in [luci.builder(...)](#luci.builder).
 
 
 
 
-### luci.notifier_template {#luci.notifier_template}
+### luci.notifier_template {#luci.notifier-template}
 
 ```python
 luci.notifier_template(name, body)
@@ -2123,12 +2123,12 @@ luci.notifier_template(name, body)
 Defines a template to use for notifications from LUCI.
 
 Such template can be referenced by [luci.notifier(...)](#luci.notifier) and
-[luci.tree_closer(...)](#luci.tree_closer) rules.
+[luci.tree_closer(...)](#luci.tree-closer) rules.
 
 The main template body should have format `<subject>\n\n<body>` where
 subject is one line of [text/template] and body is an [html/template]. The
 body can either be specified inline right in the starlark script or loaded
-from an external file via [io.read_file(...)](#io.read_file).
+from an external file via [io.read_file(...)](#io.read-file).
 
 [text/template]: https://godoc.org/text/template
 [html/template]: https://godoc.org/html/template
@@ -2164,7 +2164,7 @@ on `{{.Build.EndTime | time}}`
 #### Template sharing
 
 A template can "import" subtemplates defined in all other
-[luci.notifier_template(...)](#luci.notifier_template). When rendering, *all* templates defined in the
+[luci.notifier_template(...)](#luci.notifier-template). When rendering, *all* templates defined in the
 project are merged into one. Example:
 
 ```python
@@ -2220,10 +2220,10 @@ If a user-defined template fails to render, a built-in template is used to
 generate a very short email with a link to the build and details about the
 failure.
 
-#### Arguments {#luci.notifier_template-args}
+#### Arguments {#luci.notifier-template-args}
 
-* **name**: name of this template to reference it from [luci.notifier(...)](#luci.notifier) or [luci.tree_closer(...)](#luci.tree_closer) rules. Must match `^[a-z][a-z0-9\_]*$`. Required.
-* **body**: string with the template body. Use [io.read_file(...)](#io.read_file) to load it from an external file, if necessary. Required.
+* **name**: name of this template to reference it from [luci.notifier(...)](#luci.notifier) or [luci.tree_closer(...)](#luci.tree-closer) rules. Must match `^[a-z][a-z0-9\_]*$`. Required.
+* **body**: string with the template body. Use [io.read_file(...)](#io.read-file) to load it from an external file, if necessary. Required.
 
 
 
@@ -2249,11 +2249,11 @@ projects, and launches tryjobs (which run pre-submit tests etc.) whenever a
 CL is marked as ready for CQ, and submits the CL if it passes all checks.
 
 This optional rule can be used to set global CQ parameters that apply to all
-[luci.cq_group(...)](#luci.cq_group) defined in the project.
+[luci.cq_group(...)](#luci.cq-group) defined in the project.
 
 #### Arguments {#luci.cq-args}
 
-* **submit_max_burst**: maximum number of successful CQ attempts completed by submitting corresponding Gerrit CL(s) before waiting `submit_burst_delay`. This feature today applies to all attempts processed by CQ, across all [luci.cq_group(...)](#luci.cq_group) instances. Optional, by default there's no limit. If used, requires `submit_burst_delay` to be set too.
+* **submit_max_burst**: maximum number of successful CQ attempts completed by submitting corresponding Gerrit CL(s) before waiting `submit_burst_delay`. This feature today applies to all attempts processed by CQ, across all [luci.cq_group(...)](#luci.cq-group) instances. Optional, by default there's no limit. If used, requires `submit_burst_delay` to be set too.
 * **submit_burst_delay**: how long to wait between bursts of submissions of CQ attempts. Required if `submit_max_burst` is used.
 * **draining_start_time**: **Temporarily not supported, see https://crbug.com/1208569. Reach out to LUCI team oncall if you need urgent help.**. If present, the CQ will refrain from processing any CLs, on which CQ was triggered after the specified time. This is an UTC RFC3339 string representing the time, e.g. `2017-12-23T15:47:58Z` and Z is mandatory.
 * **status_host**: Optional. Decide whether user has access to the details of runs in this Project in LUCI CV UI. Currently, only the following hosts are accepted: 1) "chromium-cq-status.appspot.com" where everyone can access run details. 2) "internal-cq-status.appspot.com" where only Googlers can access run details. Please don't use the public host if the Project launches internal builders for public repos. It can leak the builder names, which may be confidential.
@@ -2261,7 +2261,7 @@ This optional rule can be used to set global CQ parameters that apply to all
 
 
 
-### luci.cq_group {#luci.cq_group}
+### luci.cq_group {#luci.cq-group}
 
 ```python
 luci.cq_group(
@@ -2292,7 +2292,7 @@ Pro-tip: a command line tool exists to validate a locally generated .cfg
 file and verify that it matches arbitrary given CLs as expected.
 See https://chromium.googlesource.com/infra/luci/luci-go/+/refs/heads/main/cv/#luci-cv-command-line-utils
 
-#### Arguments {#luci.cq_group-args}
+#### Arguments {#luci.cq-group-args}
 
 * **name**: a human- and machine-readable name this CQ group. Must be unique within this project. This is used in messages posted to users and in monitoring data. Must match regex `^[a-zA-Z][a-zA-Z0-9_-]*$`.
 * **watch**: either a single [cq.refset(...)](#cq.refset) or a list of [cq.refset(...)](#cq.refset) (one per repo), defining what set of refs the CQ should monitor for pending CLs. Required.
@@ -2300,15 +2300,15 @@ See https://chromium.googlesource.com/infra/luci/luci-go/+/refs/heads/main/cv/#l
 * **allow_submit_with_open_deps**: controls how a CQ full run behaves when the current Gerrit CL has open dependencies (not yet submitted CLs on which *this* CL depends). If set to False (default), the CQ will abort a full run attempt immediately if open dependencies are detected. If set to True, then the CQ will not abort a full run, and upon passing all other verifiers, the CQ will attempt to submit the CL regardless of open dependencies and whether the CQ verified those open dependencies. In turn, if the Gerrit project config allows this, Gerrit will submit all dependent CLs first and then this CL.
 * **allow_owner_if_submittable**: allow CL owner to trigger CQ after getting `Code-Review` and other approvals regardless of `acl.CQ_COMMITTER` or `acl.CQ_DRY_RUNNER` roles. Only `cq.ACTION_*` are allowed here. Default is `cq.ACTION_NONE` which grants no additional permissions. CL owner is user owning a CL, i.e. its first patchset uploader, not to be confused with OWNERS files. **WARNING**: using this option is not recommended if you have sticky `Code-Review` label because this allows a malicious developer to upload a good looking patchset at first, get code review approval, and then upload a bad patchset and CQ it right away.
 * **tree_status_host**: a hostname of the project tree status app (if any). It is used by the CQ to check the tree status before committing a CL. If the tree is closed, then the CQ will wait until it is reopened.
-* **retry_config**: a new [cq.retry_config(...)](#cq.retry_config) struct or one of `cq.RETRY_*` constants that define how CQ should retry failed builds. See [CQ](#cq_doc) for more info. Default is `cq.RETRY_TRANSIENT_FAILURES`.
+* **retry_config**: a new [cq.retry_config(...)](#cq.retry-config) struct or one of `cq.RETRY_*` constants that define how CQ should retry failed builds. See [CQ](#cq-doc) for more info. Default is `cq.RETRY_TRANSIENT_FAILURES`.
 * **cancel_stale_tryjobs**: unused anymore, but kept for backward compatibility.
-* **verifiers**: a list of [luci.cq_tryjob_verifier(...)](#luci.cq_tryjob_verifier) specifying what checks to run on a pending CL. See [luci.cq_tryjob_verifier(...)](#luci.cq_tryjob_verifier) for all details. As a shortcut, each entry can also either be a dict or a string. A dict is an alias for `luci.cq_tryjob_verifier(**entry)` and a string is an alias for `luci.cq_tryjob_verifier(builder = entry)`.
-* **additional_modes**: either a single [cq.run_mode(...)](#cq.run_mode) or a list of [cq.run_mode(...)](#cq.run_mode) defining additional run modes supported by this CQ group apart from standard DRY_RUN and FULL_RUN. If specified, CQ will create the Run with the first mode for which triggering conditions are fulfilled. If there is no such mode, CQ will fallback to standard DRY_RUN or FULL_RUN.
+* **verifiers**: a list of [luci.cq_tryjob_verifier(...)](#luci.cq-tryjob-verifier) specifying what checks to run on a pending CL. See [luci.cq_tryjob_verifier(...)](#luci.cq-tryjob-verifier) for all details. As a shortcut, each entry can also either be a dict or a string. A dict is an alias for `luci.cq_tryjob_verifier(**entry)` and a string is an alias for `luci.cq_tryjob_verifier(builder = entry)`.
+* **additional_modes**: either a single [cq.run_mode(...)](#cq.run-mode) or a list of [cq.run_mode(...)](#cq.run-mode) defining additional run modes supported by this CQ group apart from standard DRY_RUN and FULL_RUN. If specified, CQ will create the Run with the first mode for which triggering conditions are fulfilled. If there is no such mode, CQ will fallback to standard DRY_RUN or FULL_RUN.
 
 
 
 
-### luci.cq_tryjob_verifier {#luci.cq_tryjob_verifier}
+### luci.cq_tryjob_verifier {#luci.cq-tryjob-verifier}
 
 ```python
 luci.cq_tryjob_verifier(
@@ -2334,7 +2334,7 @@ luci.cq_tryjob_verifier(
 
 
 
-A verifier in a [luci.cq_group(...)](#luci.cq_group) that triggers tryjobs to verify CLs.
+A verifier in a [luci.cq_group(...)](#luci.cq-group) that triggers tryjobs to verify CLs.
 
 When processing a CL, the CQ examines a list of registered verifiers and
 launches new corresponding builds (called "tryjobs") if it decides this is
@@ -2342,7 +2342,7 @@ necessary (per the configuration of the verifier and the previous history
 of this CL).
 
 The CQ automatically retries failed tryjobs (per configured `retry_config`
-in [luci.cq_group(...)](#luci.cq_group)) and only allows CL to land if each builder has
+in [luci.cq_group(...)](#luci.cq-group)) and only allows CL to land if each builder has
 succeeded in the latest retry. If a given tryjob result is too old (>1 day)
 it is ignored.
 
@@ -2426,7 +2426,7 @@ level assertions, but for coverage of such assertions one may add slower
 
 #### Declaring verifiers
 
-`cq_tryjob_verifier` is used inline in [luci.cq_group(...)](#luci.cq_group) declarations to
+`cq_tryjob_verifier` is used inline in [luci.cq_group(...)](#luci.cq-group) declarations to
 provide per-builder verifier parameters. `cq_group` argument can be omitted
 in this case:
 
@@ -2443,8 +2443,8 @@ in this case:
     )
 
 
-It can also be associated with a [luci.cq_group(...)](#luci.cq_group) outside of
-[luci.cq_group(...)](#luci.cq_group) declaration. This is in particular useful in functions.
+It can also be associated with a [luci.cq_group(...)](#luci.cq-group) outside of
+[luci.cq_group(...)](#luci.cq-group) declaration. This is in particular useful in functions.
 For example:
 
     luci.cq_group(name = 'Main CQ')
@@ -2478,7 +2478,7 @@ However, the following restrictions apply until CV takes on Tricium:
 * Analyzer will run on changes targeting **all refs** of the Gerrit repos
   watched by the containing cq_group (or repos derived from location_regexp,
   see above) even though refs or refs_exclude may be provided.
-* All analyzers must be declared in a single [luci.cq_group(...)](#luci.cq_group).
+* All analyzers must be declared in a single [luci.cq_group(...)](#luci.cq-group).
 
 For example:
 
@@ -2511,7 +2511,7 @@ to host a single Tricium config today
 Due to the restrictions mentioned above, it is not possible to merge those
 auxiliary Projects back to the main LUCI Project. It will be unblocked
 after Tricium is folded into CV. To migrate, users can declare new
-[luci.cq_group(...)](#luci.cq_group)s in those Projects to host Tricium analyzers. However,
+[luci.cq_group(...)](#luci.cq-group)s in those Projects to host Tricium analyzers. However,
 CQ config should not be generated because the config groups will overlap
 with the config group in the main LUCI Project (i.e. watch same refs) and
 break CQ. This can be done by asking lucicfg to track only Tricium config:
@@ -2519,10 +2519,10 @@ break CQ. This can be done by asking lucicfg to track only Tricium config:
 
 [Tricium]: https://chromium.googlesource.com/infra/infra/+/HEAD/go/src/infra/tricium
 
-#### Arguments {#luci.cq_tryjob_verifier-args}
+#### Arguments {#luci.cq-tryjob-verifier-args}
 
-* **builder**: a builder to launch when verifying a CL, see [luci.builder(...)](#luci.builder). Can also be a reference to a builder defined in another project. See [Referring to builders in other projects](#external_builders) for more details. Required.
-* **cq_group**: a CQ group to add the verifier to. Can be omitted if `cq_tryjob_verifier` is used inline inside some [luci.cq_group(...)](#luci.cq_group) declaration.
+* **builder**: a builder to launch when verifying a CL, see [luci.builder(...)](#luci.builder). Can also be a reference to a builder defined in another project. See [Referring to builders in other projects](#external-builders) for more details. Required.
+* **cq_group**: a CQ group to add the verifier to. Can be omitted if `cq_tryjob_verifier` is used inline inside some [luci.cq_group(...)](#luci.cq-group) declaration.
 * **result_visibility**: can be used to restrict the visibility of the tryjob results in comments on Gerrit. Valid values are `cq.COMMENT_LEVEL_FULL` and `cq.COMMENT_LEVEL_RESTRICTED` constants. Default is to give full visibility: builder name and full summary markdown are included in the Gerrit comment.
 * **cancel_stale**: Controls whether not yet finished builds previously triggered by CQ will be cancelled as soon as a substantially different patchset is uploaded to a CL. Default is True, meaning CQ will cancel. In LUCI Change Verifier (aka CV, successor of CQ), changing this option will only take effect on newly-created Runs once config propagates to CV. Ongoing Runs will retain the old behavior. (TODO(crbug/1127991): refactor this doc after migration. As of 09/2020, CV implementation is WIP)
 * **includable_only**: if True, this builder will only be triggered by CQ if it is also specified via `CQ-Include-Trybots:` on CL description. Default is False. See the explanation above for all details. For builders with `experiment_percentage` or `location_regexp` or `location_regexp_exclude`, don't specify `includable_only`. Such builders can already be forcefully added via `CQ-Include-Trybots:` in the CL description.
@@ -2543,14 +2543,14 @@ break CQ. This can be done by asking lucicfg to track only Tricium config:
 
 ## ACLs
 
-### Roles {#roles_doc}
+### Roles {#roles-doc}
 
 Below is the table with role constants that can be passed as `roles` in
 [acl.entry(...)](#acl.entry).
 
 Due to some inconsistencies in how LUCI service are currently implemented, some
 roles can be assigned only in [luci.project(...)](#luci.project) rule, but some also in individual
-[luci.bucket(...)](#luci.bucket) or [luci.cq_group(...)](#luci.cq_group) rules.
+[luci.bucket(...)](#luci.bucket) or [luci.cq_group(...)](#luci.cq-group) rules.
 
 Similarly some roles can be assigned to individual users, other only to groups.
 
@@ -2643,8 +2643,8 @@ Specifies how Buildbucket should integrate with ResultDB.
 #### Arguments {#resultdb.settings-args}
 
 * **enable**: boolean, whether to enable ResultDB:Buildbucket integration.
-* **bq_exports**: list of resultdb_pb.BigQueryExport() protos, configurations for exporting specific subsets of test results to a designated BigQuery table, use [resultdb.export_test_results(...)](#resultdb.export_test_results) to create these.
-* **history_options**: Configuration for indexing test results from this builder's builds for history queries, use [resultdb.history_options(...)](#resultdb.history_options) to create this value.
+* **bq_exports**: list of resultdb_pb.BigQueryExport() protos, configurations for exporting specific subsets of test results to a designated BigQuery table, use [resultdb.export_test_results(...)](#resultdb.export-test-results) to create these.
+* **history_options**: Configuration for indexing test results from this builder's builds for history queries, use [resultdb.history_options(...)](#resultdb.history-options) to create this value.
 
 
 #### Returns  {#resultdb.settings-returns}
@@ -2653,7 +2653,7 @@ A populated buildbucket_pb.BuilderConfig.ResultDB() proto.
 
 
 
-### resultdb.export_test_results {#resultdb.export_test_results}
+### resultdb.export_test_results {#resultdb.export-test-results}
 
 ```python
 resultdb.export_test_results(bq_table = None, predicate = None)
@@ -2663,19 +2663,19 @@ resultdb.export_test_results(bq_table = None, predicate = None)
 
 Defines a mapping between a test results and a BigQuery table for them.
 
-#### Arguments {#resultdb.export_test_results-args}
+#### Arguments {#resultdb.export-test-results-args}
 
 * **bq_table**: string of the form `<project>.<dataset>.<table>` where the parts respresent the BigQuery-enabled gcp project, dataset and table to export results.
-* **predicate**: A predicate_pb.TestResultPredicate() proto. If given, specifies the subset of test results to export to the above table, instead of all. Use [resultdb.test_result_predicate(...)](#resultdb.test_result_predicate) to generate this, if needed.
+* **predicate**: A predicate_pb.TestResultPredicate() proto. If given, specifies the subset of test results to export to the above table, instead of all. Use [resultdb.test_result_predicate(...)](#resultdb.test-result-predicate) to generate this, if needed.
 
 
-#### Returns  {#resultdb.export_test_results-returns}
+#### Returns  {#resultdb.export-test-results-returns}
 
 A populated resultdb_pb.BigQueryExport() proto.
 
 
 
-### resultdb.test_result_predicate {#resultdb.test_result_predicate}
+### resultdb.test_result_predicate {#resultdb.test-result-predicate}
 
 ```python
 resultdb.test_result_predicate(
@@ -2691,7 +2691,7 @@ resultdb.test_result_predicate(
 
 Represents a predicate of test results.
 
-#### Arguments {#resultdb.test_result_predicate-args}
+#### Arguments {#resultdb.test-result-predicate-args}
 
 * **test_id_regexp**: string, regular expression that a test result must fully match to be considered covered by this definition.
 * **variant**: string dict, defines the test variant to match. E.g. `{"test_suite": "not_site_per_process_webkit_layout_tests"}`
@@ -2699,13 +2699,13 @@ Represents a predicate of test results.
 * **unexpected_only**: bool, if true only export test results of test variants that had unexpected results.
 
 
-#### Returns  {#resultdb.test_result_predicate-returns}
+#### Returns  {#resultdb.test-result-predicate-returns}
 
 A populated predicate_pb.TestResultPredicate() proto.
 
 
 
-### resultdb.validate_settings {#resultdb.validate_settings}
+### resultdb.validate_settings {#resultdb.validate-settings}
 
 ```python
 resultdb.validate_settings(attr, settings = None)
@@ -2715,19 +2715,19 @@ resultdb.validate_settings(attr, settings = None)
 
 Validates the type of a ResultDB settings proto.
 
-#### Arguments {#resultdb.validate_settings-args}
+#### Arguments {#resultdb.validate-settings-args}
 
 * **attr**: field name with settings, for error messages. Required.
 * **settings**: A proto such as the one returned by [resultdb.settings(...)](#resultdb.settings).
 
 
-#### Returns  {#resultdb.validate_settings-returns}
+#### Returns  {#resultdb.validate-settings-returns}
 
 A validated proto, if it's the correct type.
 
 
 
-### resultdb.history_options {#resultdb.history_options}
+### resultdb.history_options {#resultdb.history-options}
 
 ```python
 resultdb.history_options(by_timestamp = None)
@@ -2737,18 +2737,18 @@ resultdb.history_options(by_timestamp = None)
 
 Defines a history indexing configuration.
 
-#### Arguments {#resultdb.history_options-args}
+#### Arguments {#resultdb.history-options-args}
 
 * **by_timestamp**: bool, indicates whether the build's test results will be indexed by their creation timestamp for the purposes of retrieving the history of a given set of tests/variants.
 
 
-#### Returns  {#resultdb.history_options-returns}
+#### Returns  {#resultdb.history-options-returns}
 
 A populated resultdb_pb.HistoryOptions() proto.
 
 
 
-### resultdb.export_text_artifacts {#resultdb.export_text_artifacts}
+### resultdb.export_text_artifacts {#resultdb.export-text-artifacts}
 
 ```python
 resultdb.export_text_artifacts(bq_table = None, predicate = None)
@@ -2758,19 +2758,19 @@ resultdb.export_text_artifacts(bq_table = None, predicate = None)
 
 Defines a mapping between text artifacts and a BigQuery table for them.
 
-#### Arguments {#resultdb.export_text_artifacts-args}
+#### Arguments {#resultdb.export-text-artifacts-args}
 
 * **bq_table**: string of the form `<project>.<dataset>.<table>` where the parts respresent the BigQuery-enabled gcp project, dataset and table to export results.
-* **predicate**: A predicate_pb.ArtifactPredicate() proto. If given, specifies the subset of text artifacts to export to the above table, instead of all. Use [resultdb.artifact_predicate(...)](#resultdb.artifact_predicate) to generate this, if needed.
+* **predicate**: A predicate_pb.ArtifactPredicate() proto. If given, specifies the subset of text artifacts to export to the above table, instead of all. Use [resultdb.artifact_predicate(...)](#resultdb.artifact-predicate) to generate this, if needed.
 
 
-#### Returns  {#resultdb.export_text_artifacts-returns}
+#### Returns  {#resultdb.export-text-artifacts-returns}
 
 A populated resultdb_pb.BigQueryExport() proto.
 
 
 
-### resultdb.artifact_predicate {#resultdb.artifact_predicate}
+### resultdb.artifact_predicate {#resultdb.artifact-predicate}
 
 ```python
 resultdb.artifact_predicate(
@@ -2786,7 +2786,7 @@ resultdb.artifact_predicate(
 
 Represents a predicate of text artifacts.
 
-#### Arguments {#resultdb.artifact_predicate-args}
+#### Arguments {#resultdb.artifact-predicate-args}
 
 * **test_result_predicate**: predicate_pb.TestResultPredicate(), a predicate of test results.
 * **included_invocations**: bool, if true, invocation level artifacts are included.
@@ -2794,13 +2794,13 @@ Represents a predicate of text artifacts.
 * **content_type_regexp**: string, an artifact must have a content type matching this regular expression entirely, i.e. the expression is implicitly wrapped with ^ and $.
 
 
-#### Returns  {#resultdb.artifact_predicate-returns}
+#### Returns  {#resultdb.artifact-predicate-returns}
 
 A populated predicate_pb.ArtifactPredicate() proto.
 
 
 
-### resultdb.test_presentation {#resultdb.test_presentation}
+### resultdb.test_presentation {#resultdb.test-presentation}
 
 ```python
 resultdb.test_presentation(column_keys = None, grouping_keys = None)
@@ -2810,20 +2810,20 @@ resultdb.test_presentation(column_keys = None, grouping_keys = None)
 
 Specifies how test should be rendered.
 
-#### Arguments {#resultdb.test_presentation-args}
+#### Arguments {#resultdb.test-presentation-args}
 
 * **column_keys**: list of string keys that will be rendered as 'columns'. status is always the first column and name is always the last column (you don't need to specify them). A key must be one of the following:   1. 'v.{variant_key}': variant.def[variant_key] of the test variant     (e.g. v.gpu). If None, defaults to [].
 * **grouping_keys**: list of string keys that will be used for grouping tests. A key must be one of the following:   1. 'status': status of the test variant.   2. 'name': name of the test variant.   3. 'v.{variant_key}': variant.def[variant_key] of the test variant     (e.g. v.gpu). If None, defaults to ['status']. Caveat: test variants with only expected results are not affected by   this setting and are always in their own group.
 
 
-#### Returns  {#resultdb.test_presentation-returns}
+#### Returns  {#resultdb.test-presentation-returns}
 
 test_presentation.config struct with fields `column_keys` and
 `grouping_keys`.
 
 
 
-### resultdb.validate_test_presentation {#resultdb.validate_test_presentation}
+### resultdb.validate_test_presentation {#resultdb.validate-test-presentation}
 
 ```python
 resultdb.validate_test_presentation(attr, config = None, required = None)
@@ -2833,14 +2833,14 @@ resultdb.validate_test_presentation(attr, config = None, required = None)
 
 Validates a test presentation config.
 
-#### Arguments {#resultdb.validate_test_presentation-args}
+#### Arguments {#resultdb.validate-test-presentation-args}
 
 * **attr**: field name with caches, for error messages. Required.
 * **config**: a test_presentation.config to validate.
 * **required**: if False, allow 'config' to be None, return None in this case.
 
 
-#### Returns  {#resultdb.validate_test_presentation-returns}
+#### Returns  {#resultdb.validate-test-presentation-returns}
 
 A validated test_presentation.config.
 
@@ -2958,7 +2958,7 @@ swarming.dimension struct with fields `value` and `expiration`.
 
 
 
-### swarming.validate_caches {#swarming.validate_caches}
+### swarming.validate_caches {#swarming.validate-caches}
 
 ```python
 swarming.validate_caches(attr, caches)
@@ -2975,19 +2975,19 @@ Validates a list of caches.
 Ensures each entry is swarming.cache struct, and no two entries use same
 name or path.
 
-#### Arguments {#swarming.validate_caches-args}
+#### Arguments {#swarming.validate-caches-args}
 
 * **attr**: field name with caches, for error messages. Required.
 * **caches**: a list of [swarming.cache(...)](#swarming.cache) entries to validate. Required.
 
 
-#### Returns  {#swarming.validate_caches-returns}
+#### Returns  {#swarming.validate-caches-returns}
 
 Validates list of caches (may be an empty list, never None).
 
 
 
-### swarming.validate_dimensions {#swarming.validate_dimensions}
+### swarming.validate_dimensions {#swarming.validate-dimensions}
 
 ```python
 swarming.validate_dimensions(attr, dimensions, allow_none = None)
@@ -3004,20 +3004,20 @@ Validates and normalizes a dict with dimensions.
 The dict should have string keys and values are swarming.dimension, a string
 or a list of thereof (for repeated dimensions).
 
-#### Arguments {#swarming.validate_dimensions-args}
+#### Arguments {#swarming.validate-dimensions-args}
 
 * **attr**: field name with dimensions, for error messages. Required.
 * **dimensions**: a dict `{string: string|swarming.dimension}`. Required.
 * **allow_none**: if True, allow None values (indicates absence of the dimension).
 
 
-#### Returns  {#swarming.validate_dimensions-returns}
+#### Returns  {#swarming.validate-dimensions-returns}
 
 Validated and normalized dict in form `{string: [swarming.dimension]}`.
 
 
 
-### swarming.validate_tags {#swarming.validate_tags}
+### swarming.validate_tags {#swarming.validate-tags}
 
 ```python
 swarming.validate_tags(attr, tags)
@@ -3031,13 +3031,13 @@ swarming.validate_tags(attr, tags)
 
 Validates a list of `k:v` pairs with Swarming tags.
 
-#### Arguments {#swarming.validate_tags-args}
+#### Arguments {#swarming.validate-tags-args}
 
 * **attr**: field name with tags, for error messages. Required.
 * **tags**: a list of tags to validate. Required.
 
 
-#### Returns  {#swarming.validate_tags-returns}
+#### Returns  {#swarming.validate-tags-returns}
 
 Validated list of tags in same order, with duplicates removed.
 
@@ -3069,7 +3069,7 @@ scheduler.policy(
 Policy for how LUCI Scheduler should handle incoming triggering requests.
 
 This policy defines when and how LUCI Scheduler should launch new builds in
-response to triggering requests from [luci.gitiles_poller(...)](#luci.gitiles_poller) or from
+response to triggering requests from [luci.gitiles_poller(...)](#luci.gitiles-poller) or from
 EmitTriggers RPC call.
 
 The following batching strategies are supported:
@@ -3088,7 +3088,7 @@ The following batching strategies are supported:
 
 * **kind**: one of `*_BATCHING_KIND` values above. Required.
 * **max_concurrent_invocations**: limit on a number of builds running at the same time. If the number of currently running builds launched through LUCI Scheduler is more than or equal to this setting, LUCI Scheduler will keep queuing up triggering requests, waiting for some running build to finish before starting a new one. Default is 1.
-* **max_batch_size**: limit on how many pending triggering requests to "collapse" into a new single build. For example, setting this to 1 will make each triggering request result in a separate build. When multiple triggering request are collapsed into a single build, properties of the most recent triggering request are used to derive properties for the build. For example, when triggering requests come from a [luci.gitiles_poller(...)](#luci.gitiles_poller), only a git revision from the latest triggering request (i.e. the latest commit) will end up in the build properties. Default is 1000 (effectively unlimited).
+* **max_batch_size**: limit on how many pending triggering requests to "collapse" into a new single build. For example, setting this to 1 will make each triggering request result in a separate build. When multiple triggering request are collapsed into a single build, properties of the most recent triggering request are used to derive properties for the build. For example, when triggering requests come from a [luci.gitiles_poller(...)](#luci.gitiles-poller), only a git revision from the latest triggering request (i.e. the latest commit) will end up in the build properties. Default is 1000 (effectively unlimited).
 * **log_base**: base of the logarithm operation during logarithmic batching. For example, setting this to 2, will cause 3 out of 8 pending triggering requests to be combined into a single build. Required when using `LOGARITHMIC_BATCHING_KIND`, ignored otherwise. Must be larger or equal to 1.0001 for numerical stability reasons.
 
 
@@ -3098,7 +3098,7 @@ An opaque triggering policy object.
 
 
 
-### scheduler.greedy_batching {#scheduler.greedy_batching}
+### scheduler.greedy_batching {#scheduler.greedy-batching}
 
 ```python
 scheduler.greedy_batching(max_concurrent_invocations = None, max_batch_size = None)
@@ -3110,7 +3110,7 @@ Shortcut for `scheduler.policy(scheduler.GREEDY_BATCHING_KIND, ...).`
 
 See [scheduler.policy(...)](#scheduler.policy) for all details.
 
-#### Arguments {#scheduler.greedy_batching-args}
+#### Arguments {#scheduler.greedy-batching-args}
 
 * **max_concurrent_invocations**: see [scheduler.policy(...)](#scheduler.policy).
 * **max_batch_size**: see [scheduler.policy(...)](#scheduler.policy).
@@ -3118,7 +3118,7 @@ See [scheduler.policy(...)](#scheduler.policy) for all details.
 
 
 
-### scheduler.logarithmic_batching {#scheduler.logarithmic_batching}
+### scheduler.logarithmic_batching {#scheduler.logarithmic-batching}
 
 ```python
 scheduler.logarithmic_batching(log_base, max_concurrent_invocations = None, max_batch_size = None)
@@ -3130,7 +3130,7 @@ Shortcut for `scheduler.policy(scheduler.LOGARITHMIC_BATCHING_KIND, ...)`.
 
 See [scheduler.policy(...)](#scheduler.policy) for all details.
 
-#### Arguments {#scheduler.logarithmic_batching-args}
+#### Arguments {#scheduler.logarithmic-batching-args}
 
 * **log_base**: see [scheduler.policy(...)](#scheduler.policy). Required.
 * **max_concurrent_invocations**: see [scheduler.policy(...)](#scheduler.policy).
@@ -3141,13 +3141,13 @@ See [scheduler.policy(...)](#scheduler.policy) for all details.
 
 
 
-## CQ  {#cq_doc}
+## CQ  {#cq-doc}
 
-CQ module exposes structs and enums useful when defining [luci.cq_group(...)](#luci.cq_group)
+CQ module exposes structs and enums useful when defining [luci.cq_group(...)](#luci.cq-group)
 entities.
 
 `cq.ACTION_*` constants define possible values for
-`allow_owner_if_submittable` field of [luci.cq_group(...)](#luci.cq_group):
+`allow_owner_if_submittable` field of [luci.cq_group(...)](#luci.cq-group):
 
   * **cq.ACTION_NONE**: don't grant additional rights to CL owners beyond
     permissions granted based on owner's roles `CQ_COMMITTER` or
@@ -3158,7 +3158,7 @@ entities.
     even if they don't have `CQ_COMMITTER` role.
 
 `cq.RETRY_*` constants define some commonly used values for `retry_config`
-field of [luci.cq_group(...)](#luci.cq_group):
+field of [luci.cq_group(...)](#luci.cq-group):
 
   * **cq.RETRY_NONE**: never retry any failures.
   * **cq.RETRY_TRANSIENT_FAILURES**: retry only transient (aka "infra")
@@ -3173,7 +3173,7 @@ field of [luci.cq_group(...)](#luci.cq_group):
     This is to avoid adding more requests to an already overloaded system.
 
 `cq.COMMENT_LEVEL_*` constants define possible values for `result_visibility`
-field of [luci.cq_group(...)](#luci.cq_group):
+field of [luci.cq_group(...)](#luci.cq-group):
   * **cq.COMMENT_LEVEL_UNSET**: Equivalent to cq.COMMENT_LEVEL_FULL for now.
   * **cq.COMMENT_LEVEL_FULL**: The CQ reports the summary markdown and a link
     to the buildbucket build id in Milo with the builder name in the URL in a
@@ -3203,7 +3203,7 @@ cq.refset(repo, refs = None, refs_exclude = None)
 
 Defines a repository and a subset of its refs.
 
-Used in `watch` field of [luci.cq_group(...)](#luci.cq_group) to specify what refs the CQ
+Used in `watch` field of [luci.cq_group(...)](#luci.cq-group) to specify what refs the CQ
 should be monitoring.
 
 *** note
@@ -3221,11 +3221,11 @@ forever.
 
 #### Returns  {#cq.refset-returns}
 
-An opaque struct to be passed to `watch` field of [luci.cq_group(...)](#luci.cq_group).
+An opaque struct to be passed to `watch` field of [luci.cq_group(...)](#luci.cq-group).
 
 
 
-### cq.retry_config {#cq.retry_config}
+### cq.retry_config {#cq.retry-config}
 
 ```python
 cq.retry_config(
@@ -3243,12 +3243,12 @@ cq.retry_config(
 Collection of parameters for deciding whether to retry a single build.
 
 All parameters are integers, with default value of 0. The returned struct
-can be passed as `retry_config` field to [luci.cq_group(...)](#luci.cq_group).
+can be passed as `retry_config` field to [luci.cq_group(...)](#luci.cq-group).
 
 Some commonly used presents are available as `cq.RETRY_*` constants. See
-[CQ](#cq_doc) for more info.
+[CQ](#cq-doc) for more info.
 
-#### Arguments {#cq.retry_config-args}
+#### Arguments {#cq.retry-config-args}
 
 * **single_quota**: retry quota for a single tryjob.
 * **global_quota**: retry quota for all tryjobs in a CL.
@@ -3257,13 +3257,13 @@ Some commonly used presents are available as `cq.RETRY_*` constants. See
 * **timeout_weight**: weight assigned to tryjob timeouts.
 
 
-#### Returns  {#cq.retry_config-returns}
+#### Returns  {#cq.retry-config-returns}
 
 cq.retry_config struct.
 
 
 
-### cq.run_mode {#cq.run_mode}
+### cq.run_mode {#cq.run-mode}
 
 ```python
 cq.run_mode(
@@ -3279,7 +3279,7 @@ cq.run_mode(
 
 Defines a CQ Run mode and how it can be triggered.
 
-#### Arguments {#cq.run_mode-args}
+#### Arguments {#cq.run-mode-args}
 
 * **name**: name of this mode. Must match regex "^[a-zA-Z][a-zA-Z0-9_-]{0,39}$". Required.
 * **cq_label_value**: the value of Commit-Queue label that MUST be set to when triggering a CQ Run in this mode. Required.
@@ -3287,7 +3287,7 @@ Defines a CQ Run mode and how it can be triggered.
 * **triggering_value**: the value of the `triggering_label` that MUST be set to when triggering a CQ Run in this mode. Required.
 
 
-#### Returns  {#cq.run_mode-returns}
+#### Returns  {#cq.run-mode-returns}
 
 cq.run_mode struct.
 
@@ -3308,7 +3308,7 @@ In addition, `lucicfg` exposes the following functions.
 
 
 
-### __load {#__load}
+### __load {#load}
 
 ```python
 __load(module, *args, **kwargs)
@@ -3338,10 +3338,10 @@ load('//module.star', 'x', y2='y', 'z')    # assigns x, y2, and z
 
 A load statement within a function is a static error.
 
-See also [Modules and packages](#modules_and_packages) for how load(...)
+See also [Modules and packages](#modules-and-packages) for how load(...)
 interacts with [exec(...)](#exec).
 
-#### Arguments {#__load-args}
+#### Arguments {#load-args}
 
 * **module**: module to load, i.e. `//path/within/current/package.star` or `@<pkg>//path/within/pkg.star` or `./relative/path.star`. Required.
 * **\*args**: what values to import under their original names.
@@ -3446,7 +3446,7 @@ Then `_func1` can be called as `exported.func1()`.
 
 
 
-### to_json {#to_json}
+### to_json {#to-json}
 
 ```python
 to_json(value)
@@ -3461,11 +3461,11 @@ cycles.
 
 *** note
 **Deprecated.** Use [json.encode(...)](#json.encode) instead. Note that [json.encode(...)](#json.encode)
-will retain the order of dict keys, unlike [to_json(...)](#to_json) that always sorts
+will retain the order of dict keys, unlike [to_json(...)](#to-json) that always sorts
 them alphabetically.
 ***
 
-#### Arguments {#to_json-args}
+#### Arguments {#to-json-args}
 
 * **value**: a primitive Starlark value: a scalar, or a list/tuple/dict containing only primitive Starlark values. Required.
 
@@ -3569,7 +3569,7 @@ The indented form of `str`.
 
 
 
-### proto.to_textpb {#proto.to_textpb}
+### proto.to_textpb {#proto.to-textpb}
 
 ```python
 proto.to_textpb(msg)
@@ -3579,14 +3579,14 @@ proto.to_textpb(msg)
 
 Serializes a protobuf message to a string using ASCII proto serialization.
 
-#### Arguments {#proto.to_textpb-args}
+#### Arguments {#proto.to-textpb-args}
 
 * **msg**: a proto message to serialize. Required.
 
 
 
 
-### proto.to_jsonpb {#proto.to_jsonpb}
+### proto.to_jsonpb {#proto.to-jsonpb}
 
 ```python
 proto.to_jsonpb(msg, use_proto_names = None)
@@ -3596,7 +3596,7 @@ proto.to_jsonpb(msg, use_proto_names = None)
 
 Serializes a protobuf message to a string using JSONPB serialization.
 
-#### Arguments {#proto.to_jsonpb-args}
+#### Arguments {#proto.to-jsonpb-args}
 
 * **msg**: a proto message to serialize. Required.
 * **use_proto_names**: boolean, whether to use snake_case in field names instead of camelCase. The default is False.
@@ -3604,7 +3604,7 @@ Serializes a protobuf message to a string using JSONPB serialization.
 
 
 
-### proto.to_wirepb {#proto.to_wirepb}
+### proto.to_wirepb {#proto.to-wirepb}
 
 ```python
 proto.to_wirepb(msg)
@@ -3614,14 +3614,14 @@ proto.to_wirepb(msg)
 
 Serializes a protobuf message to a string using binary wire encoding.
 
-#### Arguments {#proto.to_wirepb-args}
+#### Arguments {#proto.to-wirepb-args}
 
 * **msg**: a proto message to serialize. Required.
 
 
 
 
-### proto.from_textpb {#proto.from_textpb}
+### proto.from_textpb {#proto.from-textpb}
 
 ```python
 proto.from_textpb(ctor, text)
@@ -3631,19 +3631,19 @@ proto.from_textpb(ctor, text)
 
 Deserializes a protobuf message given its ASCII proto serialization.
 
-#### Arguments {#proto.from_textpb-args}
+#### Arguments {#proto.from-textpb-args}
 
 * **ctor**: a message constructor function, the same one you would normally use to create a new message. Required.
 * **text**: a string with the serialized message. Required.
 
 
-#### Returns  {#proto.from_textpb-returns}
+#### Returns  {#proto.from-textpb-returns}
 
 Deserialized message constructed via `ctor`.
 
 
 
-### proto.from_jsonpb {#proto.from_jsonpb}
+### proto.from_jsonpb {#proto.from-jsonpb}
 
 ```python
 proto.from_jsonpb(ctor, text)
@@ -3653,19 +3653,19 @@ proto.from_jsonpb(ctor, text)
 
 Deserializes a protobuf message given its JSONPB serialization.
 
-#### Arguments {#proto.from_jsonpb-args}
+#### Arguments {#proto.from-jsonpb-args}
 
 * **ctor**: a message constructor function, the same one you would normally use to create a new message. Required.
 * **text**: a string with the serialized message. Required.
 
 
-#### Returns  {#proto.from_jsonpb-returns}
+#### Returns  {#proto.from-jsonpb-returns}
 
 Deserialized message constructed via `ctor`.
 
 
 
-### proto.from_wirepb {#proto.from_wirepb}
+### proto.from_wirepb {#proto.from-wirepb}
 
 ```python
 proto.from_wirepb(ctor, blob)
@@ -3675,19 +3675,19 @@ proto.from_wirepb(ctor, blob)
 
 Deserializes a protobuf message given its wire serialization.
 
-#### Arguments {#proto.from_wirepb-args}
+#### Arguments {#proto.from-wirepb-args}
 
 * **ctor**: a message constructor function, the same one you would normally use to create a new message. Required.
 * **blob**: a string with the serialized message. Required.
 
 
-#### Returns  {#proto.from_wirepb-returns}
+#### Returns  {#proto.from-wirepb-returns}
 
 Deserialized message constructed via `ctor`.
 
 
 
-### proto.struct_to_textpb {#proto.struct_to_textpb}
+### proto.struct_to_textpb {#proto.struct-to-textpb}
 
 ```python
 proto.struct_to_textpb(s = None)
@@ -3697,12 +3697,12 @@ proto.struct_to_textpb(s = None)
 
 Converts a struct to a text proto string.
 
-#### Arguments {#proto.struct_to_textpb-args}
+#### Arguments {#proto.struct-to-textpb-args}
 
 * **s**: a struct object. May not contain dicts.
 
 
-#### Returns  {#proto.struct_to_textpb-returns}
+#### Returns  {#proto.struct-to-textpb-returns}
 
 A str containing a text format protocol buffer message.
 
@@ -3768,7 +3768,7 @@ True if the message has the field set.
 
 
 
-### io.read_file {#io.read_file}
+### io.read_file {#io.read-file}
 
 ```python
 io.read_file(path)
@@ -3781,19 +3781,19 @@ Reads a file and returns its contents as a string.
 Useful for rules that accept large chunks of free form text. By using
 `io.read_file` such text can be kept in a separate file.
 
-#### Arguments {#io.read_file-args}
+#### Arguments {#io.read-file-args}
 
 * **path**: either a path relative to the currently executing Starlark script, or (if starts with `//`) an absolute path within the currently executing package. If it is a relative path, it must point somewhere inside the current package directory. Required.
 
 
-#### Returns  {#io.read_file-returns}
+#### Returns  {#io.read-file-returns}
 
 The contents of the file as a string. Fails if there's no such file, it
 can't be read, or it is outside of the current package directory.
 
 
 
-### io.read_proto {#io.read_proto}
+### io.read_proto {#io.read-proto}
 
 ```python
 io.read_proto(ctor, path, encoding = None)
@@ -3803,14 +3803,14 @@ io.read_proto(ctor, path, encoding = None)
 
 Reads a serialized proto message from a file, deserializes and returns it.
 
-#### Arguments {#io.read_proto-args}
+#### Arguments {#io.read-proto-args}
 
 * **ctor**: a constructor function that defines the message type. Required.
 * **path**: either a path relative to the currently executing Starlark script, or (if starts with `//`) an absolute path within the currently executing package. If it is a relative path, it must point somewhere inside the current package directory. Required.
 * **encoding**: either `jsonpb` or `textpb` or `auto` to detect based on the file extension. Default is `auto`.
 
 
-#### Returns  {#io.read_proto-returns}
+#### Returns  {#io.read-proto-returns}
 
 Deserialized proto message constructed via `ctor`.
 

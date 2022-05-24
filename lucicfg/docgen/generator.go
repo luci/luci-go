@@ -268,7 +268,20 @@ func (s *symbol) Symbols(flavors ...string) (out []*symbol, err error) {
 // Anchor returns a markdown anchor name that can be used to link to some part
 // of this symbol's documentation from other parts of the doc.
 func (s *symbol) Anchor(sub ...string) string {
-	return strings.Join(append([]string{s.FullName}, sub...), "-")
+	// Gitiles markdown doesn't like '_' in explicitly defined anchors for some
+	// reason. It also doesn't like runs of hyphens.
+	name := strings.ReplaceAll(s.FullName, "_", "-")
+	anchor := strings.Join(append([]string{name}, sub...), "-")
+	filtered := ""
+	last := '\x00'
+	for _, ch := range strings.Trim(anchor, "-") {
+		if ch == '-' && last == '-' {
+			continue
+		}
+		last = ch
+		filtered += string(ch)
+	}
+	return filtered
 }
 
 // InvocationSnippet returns a snippet showing how a function represented by

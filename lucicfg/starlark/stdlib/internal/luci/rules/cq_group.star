@@ -79,7 +79,7 @@ def _cq_group(
         the tree is closed, then the CQ will wait until it is reopened.
       retry_config: a new cq.retry_config(...) struct or one of `cq.RETRY_*`
         constants that define how CQ should retry failed builds. See
-        [CQ](#cq_doc) for more info. Default is `cq.RETRY_TRANSIENT_FAILURES`.
+        [CQ](#cq-doc) for more info. Default is `cq.RETRY_TRANSIENT_FAILURES`.
       cancel_stale_tryjobs: unused anymore, but kept for backward compatibility.
       verifiers: a list of luci.cq_tryjob_verifier(...) specifying what checks
         to run on a pending CL. See luci.cq_tryjob_verifier(...) for all
