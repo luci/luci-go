@@ -1,4 +1,4 @@
-// Copyright 2015 The LUCI Authors.
+// Copyright 2022 The LUCI Authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,12 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//go:generate cproto -discovery=false -desc util_test.desc
+//go:generate cproto -discovery=false -desc util.desc
 
-package descutil
-
-import (
-	"github.com/golang/protobuf/proto"
-)
-
-var _ = proto.Marshal
+// Package internal is used exclusively for descutil own tests.
+package internal

@@ -26,6 +26,7 @@ import (
 	"go.chromium.org/luci/auth"
 	"go.chromium.org/luci/common/cli"
 	"go.chromium.org/luci/common/proto/google/descutil"
+	"go.chromium.org/luci/common/proto/google/descutil/printer"
 	"go.chromium.org/luci/grpc/prpc"
 )
 
@@ -97,7 +98,7 @@ func show(c context.Context, client *prpc.Client, name string) error {
 		return fmt.Errorf("name %q could not resolved", name)
 	}
 
-	printer := descutil.NewPrinter(os.Stdout)
+	printer := printer.NewPrinter(os.Stdout)
 	if err := printer.SetFile(file); err != nil {
 		return err
 	}

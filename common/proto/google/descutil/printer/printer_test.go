@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package descutil
+package printer
 
 import (
 	"bytes"
@@ -24,6 +24,11 @@ import (
 	"google.golang.org/protobuf/types/descriptorpb"
 	"google.golang.org/protobuf/types/known/structpb"
 
+	"go.chromium.org/luci/common/proto/google/descutil"
+
+	// Register proto extensions defined in util.proto.
+	_ "go.chromium.org/luci/common/proto/google/descutil/internal"
+
 	. "github.com/smartystreets/goconvey/convey"
 )
 
@@ -31,11 +36,11 @@ func TestPrinter(t *testing.T) {
 	t.Parallel()
 
 	Convey("Printer", t, func() {
-		protoFile, err := ioutil.ReadFile("util_test.proto")
+		protoFile, err := ioutil.ReadFile("../internal/util.proto")
 		So(err, ShouldBeNil)
 		protoFileLines := strings.Split(string(protoFile), "\n")
 
-		descFileBytes, err := ioutil.ReadFile("util_test.desc")
+		descFileBytes, err := ioutil.ReadFile("../internal/util.desc")
 		So(err, ShouldBeNil)
 
 		var desc descriptorpb.FileDescriptorSet
@@ -44,7 +49,7 @@ func TestPrinter(t *testing.T) {
 
 		var file *descriptorpb.FileDescriptorProto
 		for _, filePb := range desc.File {
-			if filePb.GetName() == "go.chromium.org/luci/common/proto/google/descutil/util_test.proto" {
+			if filePb.GetName() == "go.chromium.org/luci/common/proto/google/descutil/internal/util.proto" {
 				file = filePb
 				break
 			}
@@ -52,7 +57,7 @@ func TestPrinter(t *testing.T) {
 		// we must find the util_test.proto file in `desc`
 		So(file, ShouldNotBeNil)
 
-		sourceCodeInfo, err := IndexSourceCodeInfo(file)
+		sourceCodeInfo, err := descutil.IndexSourceCodeInfo(file)
 		So(err, ShouldBeNil)
 
 		getExpectedDef := func(ptr interface{}, unindent int) string {

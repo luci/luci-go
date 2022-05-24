@@ -29,7 +29,7 @@ func TestUtil(t *testing.T) {
 	t.Parallel()
 
 	Convey("Util", t, func() {
-		descFileBytes, err := ioutil.ReadFile("util_test.desc")
+		descFileBytes, err := ioutil.ReadFile("./internal/util.desc")
 		So(err, ShouldBeNil)
 
 		var desc pb.FileDescriptorSet
@@ -39,7 +39,7 @@ func TestUtil(t *testing.T) {
 		So(desc.File, ShouldHaveLength, 2)
 		So(desc.File[0].GetName(), ShouldEqual, "google/protobuf/descriptor.proto")
 		file := desc.File[1]
-		So(file.GetName(), ShouldEqual, "go.chromium.org/luci/common/proto/google/descutil/util_test.proto")
+		So(file.GetName(), ShouldEqual, "go.chromium.org/luci/common/proto/google/descutil/internal/util.proto")
 
 		Convey("Resolve works", func() {
 			names := []string{

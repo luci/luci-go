@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package descutil
+package printer
 
 import (
 	"fmt"
@@ -27,6 +27,7 @@ import (
 	"google.golang.org/protobuf/types/descriptorpb"
 
 	"go.chromium.org/luci/common/data/text/indented"
+	"go.chromium.org/luci/common/proto/google/descutil"
 )
 
 // Printer prints a proto3 definition from a description.
@@ -51,7 +52,7 @@ func NewPrinter(out io.Writer) *Printer {
 func (p *Printer) SetFile(f *descriptorpb.FileDescriptorProto) error {
 	p.file = f
 	var err error
-	p.sourceCodeInfo, err = IndexSourceCodeInfo(f)
+	p.sourceCodeInfo, err = descutil.IndexSourceCodeInfo(f)
 	return err
 }
 
@@ -189,7 +190,7 @@ var fieldTypeName = map[descriptorpb.FieldDescriptorProto_Type]string{
 // Field prints a field definition.
 func (p *Printer) Field(field *descriptorpb.FieldDescriptorProto) {
 	p.MaybeLeadingComments(field)
-	if Repeated(field) {
+	if descutil.Repeated(field) {
 		p.Printf("repeated ")
 	}
 

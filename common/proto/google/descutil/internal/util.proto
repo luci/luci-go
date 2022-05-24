@@ -6,7 +6,7 @@ package descutil;
 
 import "google/protobuf/descriptor.proto";
 
-option go_package = "go.chromium.org/luci/common/proto/google/descutil;descutil";
+option go_package = "go.chromium.org/luci/common/proto/google/descutil/internal";
 
 message SuperExt {
 	string a = 1;
