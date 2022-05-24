@@ -5,7 +5,7 @@ var CONFIGS = Object.freeze({
   BUILDBUCKET: Object.freeze({
     HOST: "{{.Buildbucket.Host}}",
   }),
-  OAUTH2: Object.freeze({
-    CLIENT_ID: "{{.OAuth2.ClientID}}",
+  WEETBIX: Object.freeze({
+    HOST: "{{.Weetbix.Host}}",
   }),
 });
