@@ -135,7 +135,7 @@ func initExecutionState() *tryjob.ExecutionState {
 }
 
 type planItem struct {
-	defintion     *tryjob.Definition
+	definition    *tryjob.Definition
 	execution     *tryjob.ExecutionState_Execution
 	discardReason string // Should be set only for discarded tryjobs.
 }
@@ -220,8 +220,8 @@ func handleUpdatedTryjobs(ctx context.Context, tryjobs []int64, execState *tryjo
 			// Normally happens when this Run reuses a PENDING Tryjob from another
 			// Run but the Tryjob doesn't end up getting triggered.
 			ret.triggerNewAttempt = append(ret.triggerNewAttempt, planItem{
-				defintion: definition,
-				execution: exec,
+				definition: definition,
+				execution:  exec,
 			})
 		default:
 			panic(fmt.Errorf("unexpected attempt status %s for Tryjob %d", attempt.Status, attempt.TryjobId))
@@ -242,8 +242,8 @@ func handleUpdatedTryjobs(ctx context.Context, tryjobs []int64, execState *tryjo
 		}
 		for _, idx := range failedIndices {
 			ret.triggerNewAttempt = append(ret.triggerNewAttempt, planItem{
-				defintion: execState.GetRequirement().GetDefinitions()[idx],
-				execution: execState.GetExecutions()[idx],
+				definition: execState.GetRequirement().GetDefinitions()[idx],
+				execution:  execState.GetExecutions()[idx],
 			})
 		}
 	}
@@ -288,7 +288,7 @@ func handleRequirementChange(curReqmt, targetReqmt *tryjob.Requirement, execStat
 	// populate discarded tryjob.
 	for def := range reqmtDiff.RemovedDefs {
 		ret.discard = append(ret.discard, planItem{
-			defintion:     def,
+			definition:    def,
 			execution:     existingExecutionByDef[def],
 			discardReason: noLongerRequiredInConfig,
 		})
@@ -303,8 +303,8 @@ func handleRequirementChange(curReqmt, targetReqmt *tryjob.Requirement, execStat
 			exec := &tryjob.ExecutionState_Execution{}
 			execState.Executions = append(execState.Executions, exec)
 			ret.triggerNewAttempt = append(ret.triggerNewAttempt, planItem{
-				defintion: def,
-				execution: exec,
+				definition: def,
+				execution:  exec,
 			})
 		case reqmtDiff.ChangedDefsReverse.Has(def):
 			existingDef := reqmtDiff.ChangedDefsReverse[def]

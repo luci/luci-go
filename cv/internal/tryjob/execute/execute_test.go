@@ -120,7 +120,7 @@ func TestPrepExecutionPlan(t *testing.T) {
 						plan := prepPlan(execState, tjID)
 						So(plan.isEmpty(), ShouldBeFalse)
 						So(plan.triggerNewAttempt, ShouldHaveLength, 1)
-						So(plan.triggerNewAttempt[0].defintion, ShouldResembleProto, execState.GetRequirement().GetDefinitions()[0])
+						So(plan.triggerNewAttempt[0].definition, ShouldResembleProto, execState.GetRequirement().GetDefinitions()[0])
 						So(execState.Executions[0].Attempts, ShouldResembleProto, []*tryjob.ExecutionState_Execution_Attempt{
 							makeAttempt(tjID, tryjob.Status_ENDED, tryjob.Result_FAILED_TRANSIENTLY),
 						})
@@ -156,7 +156,7 @@ func TestPrepExecutionPlan(t *testing.T) {
 					plan := prepPlan(execState, tjID)
 					So(plan.isEmpty(), ShouldBeFalse)
 					So(plan.triggerNewAttempt, ShouldHaveLength, 1)
-					So(plan.triggerNewAttempt[0].defintion, ShouldResembleProto, execState.GetRequirement().GetDefinitions()[0])
+					So(plan.triggerNewAttempt[0].definition, ShouldResembleProto, execState.GetRequirement().GetDefinitions()[0])
 					So(execState.Executions[0].Attempts, ShouldResembleProto, []*tryjob.ExecutionState_Execution_Attempt{
 						makeAttempt(tjID, tryjob.Status_UNTRIGGERED, tryjob.Result_UNKNOWN),
 					})
@@ -259,7 +259,7 @@ func TestPrepExecutionPlan(t *testing.T) {
 				So(err, ShouldBeNil)
 				So(execState.Requirement, ShouldResembleProto, latestReqmt)
 				So(plan.triggerNewAttempt, ShouldHaveLength, 1)
-				So(plan.triggerNewAttempt[0].defintion, ShouldResembleProto, builderFooDef)
+				So(plan.triggerNewAttempt[0].definition, ShouldResembleProto, builderFooDef)
 			})
 
 			Convey("Removed Tryjob", func() {
@@ -273,7 +273,7 @@ func TestPrepExecutionPlan(t *testing.T) {
 				So(execState.Requirement, ShouldResembleProto, latestReqmt)
 				So(plan.triggerNewAttempt, ShouldBeEmpty)
 				So(plan.discard, ShouldHaveLength, 1)
-				So(plan.discard[0].defintion, ShouldResembleProto, removedDef)
+				So(plan.discard[0].definition, ShouldResembleProto, removedDef)
 				So(execState.Executions, ShouldHaveLength, 1)
 				So(plan.discard[0].discardReason, ShouldEqual, noLongerRequiredInConfig)
 			})
