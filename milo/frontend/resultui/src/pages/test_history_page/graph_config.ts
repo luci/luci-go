@@ -56,15 +56,7 @@ export class TestHistoryGraphConfigElement extends MiloBaseElement {
         class="filter"
         style=${styleMap({ display: this.pageState.graphType === GraphType.DURATION ? '' : 'none' })}
       >
-        <input
-          id="pass-only-toggle"
-          type="checkbox"
-          ?checked=${this.pageState.passOnlyDuration}
-          @change=${(e: Event) => {
-            this.pageState.passOnlyDuration = (e.target as HTMLInputElement).checked;
-            this.pageState.resetDurations();
-          }}
-        />
+        <input id="pass-only-toggle" type="checkbox" checked disabled />
         <label for="pass-only-toggle"
           >Pass Only<mwc-icon class="inline-icon" title="Only include durations from passed results"
             >info</mwc-icon

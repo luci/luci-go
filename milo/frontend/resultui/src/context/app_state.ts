@@ -23,7 +23,7 @@ import { attachTags } from '../libs/tag';
 import { AccessService, BuilderID, BuildersService, BuildsService } from '../services/buildbucket';
 import { AuthState, MiloInternal } from '../services/milo_internal';
 import { ResultDb } from '../services/resultdb';
-import { TestHistoryService } from '../services/test_history_service';
+import { TestHistoryService } from '../services/weetbix';
 
 const MAY_REQUIRE_SIGNIN_ERROR_CODE = [RpcCode.NOT_FOUND, RpcCode.PERMISSION_DENIED, RpcCode.UNAUTHENTICATED];
 
@@ -119,10 +119,10 @@ export class AppState {
 
   @computed({ keepAlive: true })
   get testHistoryService(): TestHistoryService | null {
-    if (this.isDisposed || this.resultDb === null) {
+    if (this.isDisposed || this.userIdentity === null) {
       return null;
     }
-    return new TestHistoryService(this.resultDb);
+    return new TestHistoryService(this.makeClient({ host: CONFIGS.WEETBIX.HOST }));
   }
 
   @computed({ keepAlive: true })

@@ -18,11 +18,11 @@ import { autorun, comparer, computed, observable, reaction } from 'mobx';
 
 import { TestVariantTableState, VariantGroup } from '../components/test_variants_table/context';
 import { createContextLink } from '../libs/context';
-import { parseTVHFilterQuery, parseVariantFilter } from '../libs/queries/th_filter_query';
+import { parseVariantFilter } from '../libs/queries/th_filter_query';
 import { TestHistoryEntriesLoader } from '../models/test_history_entries_loader';
 import { TestHistoryLoader } from '../models/test_history_loader';
 import { createTVCmpFn, getCriticalVariantKeys, ResultDb, Variant } from '../services/resultdb';
-import { TestHistoryService, TestVariantHistoryEntry } from '../services/test_history_service';
+import { TestHistoryService, TestVerdict } from '../services/weetbix';
 
 export const enum GraphType {
   STATUS = 'STATUS',
@@ -57,7 +57,6 @@ export class TestHistoryPageState implements TestVariantTableState {
   }
 
   @observable.ref filterText = '';
-  @observable.ref tvhEntryFilter = (_v: TestVariantHistoryEntry) => true;
   @observable.ref private variantFilter = (_v: Variant, _hash: string) => true;
   @computed get filteredVariants() {
     return this.testHistoryLoader.variants.filter(([hash, v]) => this.variantFilter(v, hash));
@@ -74,11 +73,6 @@ export class TestHistoryPageState implements TestVariantTableState {
 
   @observable.ref graphType = GraphType.STATUS;
   @observable.ref xAxisType = XAxisType.DATE;
-
-  /**
-   * Only include durations from passed results.
-   */
-  @observable.ref passOnlyDuration = true;
 
   @observable.ref countUnexpected = true;
   @observable.ref countUnexpectedlySkipped = true;
@@ -167,11 +161,9 @@ export class TestHistoryPageState implements TestVariantTableState {
     this.disposers.push(
       autorun(() => {
         try {
-          const newEntryFilter = parseTVHFilterQuery(this.filterText);
           const newVariantFilter = parseVariantFilter(this.filterText);
 
           // Only update the filters after the query is successfully parsed.
-          this.tvhEntryFilter = newEntryFilter;
           this.variantFilter = newVariantFilter;
         } catch (e) {
           //TODO(weiweilin): display the error to the user.
@@ -194,10 +186,10 @@ export class TestHistoryPageState implements TestVariantTableState {
     if (this.isDisposed) {
       return null;
     }
-    return new TestHistoryEntriesLoader(this.testId, this.selectedTvhEntries, this.testHistoryService);
+    return new TestHistoryEntriesLoader(this.testId, this.selectedTvhEntries, this.resultDb);
   }
 
-  @observable.ref selectedTvhEntries: readonly TestVariantHistoryEntry[] = [];
+  @observable.ref selectedTvhEntries: readonly TestVerdict[] = [];
 
   @computed get variantGroups(): readonly VariantGroup[] {
     if (this.entriesLoader!.testVariants.length === 0) {

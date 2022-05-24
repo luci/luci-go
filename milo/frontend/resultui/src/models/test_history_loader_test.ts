@@ -16,22 +16,17 @@ import { assert } from 'chai';
 import sinon from 'sinon';
 
 import { CacheOption } from '../libs/cached_fn';
-import {
-  QueryUniqueTestVariantsRequest,
-  QueryUniqueTestVariantsResponse,
-  ResultDb,
-  UniqueTestVariant,
-} from '../services/resultdb';
+import { ResultDb } from '../services/resultdb';
 import {
   QueryTestHistoryRequest,
   QueryTestHistoryResponse,
+  QueryVariantsRequest,
+  QueryVariantsResponse,
   TestHistoryService,
-} from '../services/test_history_service';
+} from '../services/weetbix';
 import { TestHistoryLoader } from './test_history_loader';
 
-const utv1: UniqueTestVariant = {
-  realm: 'test-realm',
-  testId: 'test-id',
+const utv1 = {
   variantHash: 'key1:val1',
   variant: {
     def: {
@@ -40,9 +35,7 @@ const utv1: UniqueTestVariant = {
   },
 };
 
-const utv2: UniqueTestVariant = {
-  realm: 'test-realm',
-  testId: 'test-id',
+const utv2 = {
   variantHash: 'key1:val2',
   variant: {
     def: {
@@ -58,32 +51,29 @@ describe('TestHistoryLoader', () => {
       [QueryTestHistoryRequest, CacheOption],
       Promise<QueryTestHistoryResponse>
     >();
-    const queryUniqueTestVariantsStub = sinon.stub<
-      [QueryUniqueTestVariantsRequest, CacheOption],
-      Promise<QueryUniqueTestVariantsResponse>
-    >();
+    const queryVariantsStub = sinon.stub<[QueryVariantsRequest, CacheOption], Promise<QueryVariantsResponse>>();
     const testHistoryLoader = new TestHistoryLoader(
-      'test-realm',
+      'project:realm',
       'test-id',
       (resolve) => resolve.toFormat('yyyy-MM-dd'),
       {
-        queryTestHistory: queryTestHistoryStub,
+        query: queryTestHistoryStub,
+        queryVariants: queryVariantsStub,
       } as Partial<TestHistoryService> as TestHistoryService,
-      {
-        queryUniqueTestVariants: queryUniqueTestVariantsStub,
-      } as Partial<ResultDb> as ResultDb
+      {} as Partial<ResultDb> as ResultDb
     );
 
     // Before loading.
     assert.strictEqual(testHistoryLoader.variants.length, 0);
 
     // Discover variants from the first page.
-    queryUniqueTestVariantsStub.onCall(0).resolves({ variants: [utv1], nextPageToken: 'page2' });
+    queryVariantsStub.onCall(0).resolves({ variants: [utv1], nextPageToken: 'page2' });
     let done = await testHistoryLoader.discoverVariants();
     assert.isFalse(done);
-    assert.deepEqual(queryUniqueTestVariantsStub.getCalls().length, 1);
-    assert.deepIncludeProperties(queryUniqueTestVariantsStub.getCall(0).args[0], {
-      realm: 'test-realm',
+    assert.deepEqual(queryVariantsStub.getCalls().length, 1);
+    assert.deepIncludeProperties(queryVariantsStub.getCall(0).args[0], {
+      project: 'project',
+      subRealm: 'realm',
       testId: 'test-id',
       pageToken: '',
     });
@@ -92,12 +82,13 @@ describe('TestHistoryLoader', () => {
     assert.deepEqual(testHistoryLoader.variants, [['key1:val1', { def: { key1: 'val1' } }]]);
 
     // Discover variants from the second page.
-    queryUniqueTestVariantsStub.onCall(1).resolves({ variants: [utv2] });
+    queryVariantsStub.onCall(1).resolves({ variants: [utv2] });
     done = await testHistoryLoader.discoverVariants();
     assert.isTrue(done);
-    assert.deepEqual(queryUniqueTestVariantsStub.getCalls().length, 2);
-    assert.deepIncludeProperties(queryUniqueTestVariantsStub.getCall(1).args[0], {
-      realm: 'test-realm',
+    assert.deepEqual(queryVariantsStub.getCalls().length, 2);
+    assert.deepIncludeProperties(queryVariantsStub.getCall(1).args[0], {
+      project: 'project',
+      subRealm: 'realm',
       testId: 'test-id',
       pageToken: 'page2',
     });

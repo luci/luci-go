@@ -20,20 +20,20 @@ import '../../components/dot_spinner';
 import './graph_config';
 import { MiloBaseElement } from '../../components/milo_base';
 import { consumeTestHistoryPageState, TestHistoryPageState } from '../../context/test_history_page_state';
-import { VARIANT_STATUS_CLASS_MAP } from '../../libs/constants';
+import { VARIANT_STATUS_CLASS_MAP, VERDICT_VARIANT_STATUS_MAP } from '../../libs/constants';
 import { consumer } from '../../libs/context';
 import { TestVariantStatus } from '../../services/resultdb';
-import { TestVariantHistoryEntry } from '../../services/test_history_service';
+import { TestVerdict, TestVerdictStatus } from '../../services/weetbix';
 import commonStyle from '../../styles/common_style.css';
 import { CELL_PADDING, CELL_SIZE, INNER_CELL_SIZE } from './constants';
 
 const ICON_PADDING = (CELL_SIZE - 24) / 2;
 
 const STATUS_ORDER = [
-  TestVariantStatus.EXPECTED,
-  TestVariantStatus.FLAKY,
-  TestVariantStatus.UNEXPECTEDLY_SKIPPED,
-  TestVariantStatus.UNEXPECTED,
+  TestVerdictStatus.EXPECTED,
+  TestVerdictStatus.FLAKY,
+  TestVerdictStatus.UNEXPECTEDLY_SKIPPED,
+  TestVerdictStatus.UNEXPECTED,
 ];
 
 @customElement('milo-th-status-graph')
@@ -66,7 +66,7 @@ export class TestHistoryStatusGraphElement extends MiloBaseElement {
     const ret: SVGTemplateResult[] = [];
 
     for (const [i, date] of this.pageState.dates.entries()) {
-      const entries = this.pageState.testHistoryLoader!.getEntries(vHash, date)?.filter(this.pageState.tvhEntryFilter);
+      const entries = this.pageState.testHistoryLoader!.getEntries(vHash, date);
       if (!entries) {
         ret.push(svg`
           <foreignObject x=${CELL_SIZE * i} width=${CELL_SIZE} height=${CELL_SIZE}>
@@ -89,14 +89,14 @@ export class TestHistoryStatusGraphElement extends MiloBaseElement {
     return ret;
   }
 
-  private renderEntries(entries: TestVariantHistoryEntry[]) {
+  private renderEntries(entries: readonly TestVerdict[]) {
     const counts = {
-      [TestVariantStatus.EXPECTED]: 0,
-      [TestVariantStatus.EXONERATED]: 0,
-      [TestVariantStatus.FLAKY]: 0,
-      [TestVariantStatus.UNEXPECTEDLY_SKIPPED]: 0,
-      [TestVariantStatus.UNEXPECTED]: 0,
-      [TestVariantStatus.TEST_VARIANT_STATUS_UNSPECIFIED]: 0,
+      [TestVerdictStatus.EXPECTED]: 0,
+      [TestVerdictStatus.EXONERATED]: 0,
+      [TestVerdictStatus.FLAKY]: 0,
+      [TestVerdictStatus.UNEXPECTEDLY_SKIPPED]: 0,
+      [TestVerdictStatus.UNEXPECTED]: 0,
+      [TestVerdictStatus.TEST_VERDICT_STATUS_UNSPECIFIED]: 0,
     };
 
     for (const entry of entries) {
@@ -144,7 +144,7 @@ Click to view test details.</title>`;
         const height = (INNER_CELL_SIZE * counts[status]) / entries.length;
         const ele = svg`
           <rect
-            class="${VARIANT_STATUS_CLASS_MAP[status]}"
+            class="${VARIANT_STATUS_CLASS_MAP[VERDICT_VARIANT_STATUS_MAP[status]]}"
             y=${previousHeight}
             width=${INNER_CELL_SIZE}
             height=${height}

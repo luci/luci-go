@@ -280,7 +280,7 @@ export class TestHistoryService {
       variantHash: req.variantHash,
       results: results.map((result) => ({ result })),
       status: computedTestVariantStatus(results, []),
-      timestamp: req.invocationTimestamp,
+      partitionTime: req.invocationTimestamp,
     };
   };
 

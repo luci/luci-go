@@ -16,7 +16,7 @@ import { assert } from 'chai';
 
 import { TestVariantStatus, Variant } from '../../services/resultdb';
 import { TestVariantHistoryEntry } from '../../services/test_history_service';
-import { parseTVHFilterQuery, parseVariantFilter, suggestTestHistoryFilterQuery } from './th_filter_query';
+import { parseVariantFilter, suggestTestHistoryFilterQuery } from './th_filter_query';
 
 const entry1: TestVariantHistoryEntry = {
   variant: { def: { key1: 'val1' } },
@@ -75,62 +75,6 @@ const entry7: TestVariantHistoryEntry = {
 };
 
 const variants = [entry1, entry2, entry3, entry4, entry5, entry6, entry7];
-
-describe('parseTVHFilterQuery', () => {
-  describe('V query', () => {
-    it('should filter out variants with no matching variant key-value pair', () => {
-      const filter = parseTVHFilterQuery('v:key1=val1');
-      const filtered = variants.filter(filter);
-      assert.deepEqual(filtered, [entry1]);
-    });
-
-    it("should support variant value with '=' in it", () => {
-      const filter = parseTVHFilterQuery('v:key2=val3%3Dval');
-      const filtered = variants.filter(filter);
-      assert.deepEqual(filtered, [entry7]);
-    });
-
-    it('should support filter with only variant key', () => {
-      const filter = parseTVHFilterQuery('v:key2');
-      const filtered = variants.filter(filter);
-      assert.deepEqual(filtered, [entry5, entry6, entry7]);
-    });
-
-    it('should work with negation', () => {
-      const filter = parseTVHFilterQuery('-v:key1=val1');
-      const filtered = variants.filter(filter);
-      assert.deepEqual(filtered, [entry2, entry3, entry4, entry5, entry6, entry7]);
-    });
-  });
-
-  describe('VHASH query', () => {
-    it('should filter out variants with no matching variant key-value pair', () => {
-      const filter = parseTVHFilterQuery('vhash:key1:val1');
-      const filtered = variants.filter(filter);
-      assert.deepEqual(filtered, [entry1]);
-    });
-
-    it('should work with negation', () => {
-      const filter = parseTVHFilterQuery('-vhash:key1:val1');
-      const filtered = variants.filter(filter);
-      assert.deepEqual(filtered, [entry2, entry3, entry4, entry5, entry6, entry7]);
-    });
-  });
-
-  describe('multiple queries', () => {
-    it('should be able to combine different types of query', () => {
-      const filter = parseTVHFilterQuery('status:expected v:key1=val2');
-      const filtered = variants.filter(filter);
-      assert.deepEqual(filtered, [entry5, entry6, entry7]);
-    });
-
-    it('should be able to combine normal and negative queries', () => {
-      const filter = parseTVHFilterQuery('status:unexpected -v:key1=val2');
-      const filtered = variants.filter(filter);
-      assert.deepEqual(filtered, [entry1]);
-    });
-  });
-});
 
 describe('parseVariantFilterFromQuery', () => {
   it('should filter out variants with no matching variant key-value pair', () => {
