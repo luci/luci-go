@@ -152,10 +152,10 @@ export class TestVariantEntryElement extends MobxLitElement implements RenderPla
   }
 
   @computed private get dateTime() {
-    if (!this.variant.partitionTime) {
+    if (!this.variant.timestamp) {
       return null;
     }
-    return DateTime.fromISO(this.variant.partitionTime);
+    return DateTime.fromISO(this.variant.timestamp);
   }
 
   private trackInteraction = () => {

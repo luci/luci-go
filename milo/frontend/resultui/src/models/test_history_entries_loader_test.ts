@@ -16,23 +16,17 @@ import { assert } from 'chai';
 import sinon from 'sinon';
 
 import { CacheOption } from '../libs/cached_fn';
-import {
-  BatchGetTestVariantsRequest,
-  BatchGetTestVariantsResponse,
-  ResultDb,
-  TestVariantStatus,
-} from '../services/resultdb';
-import { TestVerdictStatus } from '../services/weetbix';
+import { TestVariant, TestVariantStatus } from '../services/resultdb';
+import { GetTestVariantRequest, TestHistoryService } from '../services/test_history_service';
 import { TestHistoryEntriesLoader } from './test_history_entries_loader';
 
 const entry1 = {
-  testId: 'test',
-  invocationId: 'inv1',
-  partitionTime: '2021-11-05T00:00:01Z',
+  invocationIds: ['inv1'],
+  invocationTimestamp: '2021-11-05T00:00:01Z',
   variant: { def: { key: 'val1' } },
   variantHash: 'hash1',
-  status: TestVerdictStatus.EXPECTED,
-  passedAvgDuration: '1s',
+  status: TestVariantStatus.EXPECTED,
+  averageDuration: '1s',
 };
 const tv1 = {
   testId: 'test-id',
@@ -41,13 +35,12 @@ const tv1 = {
 };
 
 const entry2 = {
-  testId: 'test',
-  invocationId: 'inv2',
-  partitionTime: '2021-11-05T00:00:01Z',
+  invocationIds: ['inv2'],
+  invocationTimestamp: '2021-11-05T00:00:01Z',
   variant: { def: { key: 'val2' } },
   variantHash: 'hash2',
-  status: TestVerdictStatus.EXPECTED,
-  passedAvgDuration: '1s',
+  status: TestVariantStatus.EXPECTED,
+  averageDuration: '1s',
 };
 const tv2 = {
   testId: 'test-id',
@@ -56,13 +49,12 @@ const tv2 = {
 };
 
 const entry3 = {
-  testId: 'test',
-  invocationId: 'inv3',
-  partitionTime: '2021-11-05T00:00:01Z',
+  invocationIds: ['inv3'],
+  invocationTimestamp: '2021-11-05T00:00:01Z',
   variant: { def: { key: 'val3' } },
   variantHash: 'hash3',
-  status: TestVerdictStatus.EXPECTED,
-  passedAvgDuration: '1s',
+  status: TestVariantStatus.EXPECTED,
+  averageDuration: '1s',
 };
 const tv3 = {
   testId: 'test-id',
@@ -71,13 +63,12 @@ const tv3 = {
 };
 
 const entry4 = {
-  testId: 'test',
-  invocationId: 'inv4',
-  partitionTime: '2021-11-05T00:00:01Z',
+  invocationIds: ['inv4'],
+  invocationTimestamp: '2021-11-05T00:00:01Z',
   variant: { def: { key: 'val4' } },
   variantHash: 'hash4',
-  status: TestVerdictStatus.EXPECTED,
-  passedAvgDuration: '1s',
+  status: TestVariantStatus.EXPECTED,
+  averageDuration: '1s',
 };
 const tv4 = {
   testId: 'test-id',
@@ -86,13 +77,12 @@ const tv4 = {
 };
 
 const entry5 = {
-  testId: 'test',
-  invocationId: 'inv5',
-  partitionTime: '2021-11-05T00:00:01Z',
+  invocationIds: ['inv5'],
+  invocationTimestamp: '2021-11-05T00:00:01Z',
   variant: { def: { key: 'val5' } },
   variantHash: 'hash5',
-  status: TestVerdictStatus.EXPECTED,
-  passedAvgDuration: '1s',
+  status: TestVariantStatus.EXPECTED,
+  averageDuration: '1s',
 };
 const tv5 = {
   testId: 'test-id',
@@ -102,21 +92,21 @@ const tv5 = {
 
 describe('TestHistoryEntriesLoader', () => {
   let entriesLoader: TestHistoryEntriesLoader;
-  let stub = sinon.stub<[BatchGetTestVariantsRequest, CacheOption], Promise<BatchGetTestVariantsResponse>>();
+  let stub = sinon.stub<[GetTestVariantRequest, CacheOption], Promise<TestVariant>>();
 
   beforeEach(() => {
     stub = sinon.stub();
-    stub.onCall(0).resolves({ testVariants: [tv1] });
-    stub.onCall(1).resolves({ testVariants: [tv2] });
-    stub.onCall(2).resolves({ testVariants: [tv3] });
-    stub.onCall(3).resolves({ testVariants: [tv4] });
-    stub.onCall(4).resolves({ testVariants: [tv5] });
+    stub.onCall(0).resolves(tv1);
+    stub.onCall(1).resolves(tv2);
+    stub.onCall(2).resolves(tv3);
+    stub.onCall(3).resolves(tv4);
+    stub.onCall(4).resolves(tv5);
     entriesLoader = new TestHistoryEntriesLoader(
-      'test',
+      'test-id',
       [entry1, entry2, entry3, entry4, entry5],
       {
-        batchGetTestVariants: stub,
-      } as Partial<ResultDb> as ResultDb,
+        getTestVariant: stub,
+      } as Partial<TestHistoryService> as TestHistoryService,
       2
     );
   });
@@ -134,29 +124,17 @@ describe('TestHistoryEntriesLoader', () => {
     assert.strictEqual(entriesLoader.isLoading, false);
     assert.strictEqual(entriesLoader.loadedFirstPage, true);
     assert.strictEqual(entriesLoader.loadedAllTestVariants, false);
-    assert.deepEqual(entriesLoader.testVariants, [
-      { ...tv1, partitionTime: entry1.partitionTime },
-      { ...tv2, partitionTime: entry2.partitionTime },
-    ]);
+    assert.deepEqual(entriesLoader.testVariants, [tv1, tv2]);
     assert.strictEqual(stub.callCount, 2);
-    assert.deepIncludeProperties(stub.getCall(0).args[0], {
-      invocation: 'invocations/inv1',
-      testVariants: [{ testId: 'test', variantHash: 'hash1' }],
-    });
-    assert.deepIncludeProperties(stub.getCall(1).args[0], {
-      invocation: 'invocations/inv2',
-      testVariants: [{ testId: 'test', variantHash: 'hash2' }],
-    });
+    assert.deepIncludeProperties(stub.getCall(0).args[0], { invocationIds: ['inv1'] });
+    assert.deepIncludeProperties(stub.getCall(1).args[0], { invocationIds: ['inv2'] });
 
     // The 2nd loading call should be a no-op.
     await loadPromise2;
     assert.strictEqual(entriesLoader.isLoading, false);
     assert.strictEqual(entriesLoader.loadedFirstPage, true);
     assert.strictEqual(entriesLoader.loadedAllTestVariants, false);
-    assert.deepEqual(entriesLoader.testVariants, [
-      { ...tv1, partitionTime: entry1.partitionTime },
-      { ...tv2, partitionTime: entry2.partitionTime },
-    ]);
+    assert.deepEqual(entriesLoader.testVariants, [tv1, tv2]);
     assert.strictEqual(stub.callCount, 2);
   });
 
@@ -173,22 +151,14 @@ describe('TestHistoryEntriesLoader', () => {
     assert.strictEqual(entriesLoader.isLoading, true);
     assert.strictEqual(entriesLoader.loadedFirstPage, true);
     assert.strictEqual(entriesLoader.loadedAllTestVariants, false);
-    assert.deepEqual(entriesLoader.testVariants, [
-      { ...tv1, partitionTime: entry1.partitionTime },
-      { ...tv2, partitionTime: entry2.partitionTime },
-    ]);
+    assert.deepEqual(entriesLoader.testVariants, [tv1, tv2]);
 
     // The 2nd loading call should load extra entries.
     await loadPromise2;
     assert.strictEqual(entriesLoader.isLoading, false);
     assert.strictEqual(entriesLoader.loadedFirstPage, true);
     assert.strictEqual(entriesLoader.loadedAllTestVariants, false);
-    assert.deepEqual(entriesLoader.testVariants, [
-      { ...tv1, partitionTime: entry1.partitionTime },
-      { ...tv2, partitionTime: entry2.partitionTime },
-      { ...tv3, partitionTime: entry3.partitionTime },
-      { ...tv4, partitionTime: entry4.partitionTime },
-    ]);
+    assert.deepEqual(entriesLoader.testVariants, [tv1, tv2, tv3, tv4]);
   });
 
   it('e2e', async () => {
@@ -208,19 +178,10 @@ describe('TestHistoryEntriesLoader', () => {
     assert.strictEqual(entriesLoader.isLoading, false);
     assert.strictEqual(entriesLoader.loadedFirstPage, true);
     assert.strictEqual(entriesLoader.loadedAllTestVariants, false);
-    assert.deepEqual(entriesLoader.testVariants, [
-      { ...tv1, partitionTime: entry1.partitionTime },
-      { ...tv2, partitionTime: entry2.partitionTime },
-    ]);
+    assert.deepEqual(entriesLoader.testVariants, [tv1, tv2]);
     assert.strictEqual(stub.callCount, 2);
-    assert.deepIncludeProperties(stub.getCall(0).args[0], {
-      invocation: 'invocations/inv1',
-      testVariants: [{ testId: 'test', variantHash: 'hash1' }],
-    });
-    assert.deepIncludeProperties(stub.getCall(1).args[0], {
-      invocation: 'invocations/inv2',
-      testVariants: [{ testId: 'test', variantHash: 'hash2' }],
-    });
+    assert.deepIncludeProperties(stub.getCall(0).args[0], { invocationIds: ['inv1'] });
+    assert.deepIncludeProperties(stub.getCall(1).args[0], { invocationIds: ['inv2'] });
 
     // Calling loadFirstPage again shouldn't trigger loading again.
     loadPromise = entriesLoader.loadFirstPage();
@@ -231,10 +192,7 @@ describe('TestHistoryEntriesLoader', () => {
     assert.strictEqual(entriesLoader.isLoading, false);
     assert.strictEqual(entriesLoader.loadedFirstPage, true);
     assert.strictEqual(entriesLoader.loadedAllTestVariants, false);
-    assert.deepEqual(entriesLoader.testVariants, [
-      { ...tv1, partitionTime: entry1.partitionTime },
-      { ...tv2, partitionTime: entry2.partitionTime },
-    ]);
+    assert.deepEqual(entriesLoader.testVariants, [tv1, tv2]);
     assert.strictEqual(stub.callCount, 2);
 
     // Load the second page.
@@ -248,21 +206,10 @@ describe('TestHistoryEntriesLoader', () => {
     assert.strictEqual(entriesLoader.isLoading, false);
     assert.strictEqual(entriesLoader.loadedFirstPage, true);
     assert.strictEqual(entriesLoader.loadedAllTestVariants, false);
-    assert.deepEqual(entriesLoader.testVariants, [
-      { ...tv1, partitionTime: entry1.partitionTime },
-      { ...tv2, partitionTime: entry2.partitionTime },
-      { ...tv3, partitionTime: entry3.partitionTime },
-      { ...tv4, partitionTime: entry4.partitionTime },
-    ]);
+    assert.deepEqual(entriesLoader.testVariants, [tv1, tv2, tv3, tv4]);
     assert.strictEqual(stub.callCount, 4);
-    assert.deepIncludeProperties(stub.getCall(2).args[0], {
-      invocation: 'invocations/inv3',
-      testVariants: [{ testId: 'test', variantHash: 'hash3' }],
-    });
-    assert.deepIncludeProperties(stub.getCall(3).args[0], {
-      invocation: 'invocations/inv4',
-      testVariants: [{ testId: 'test', variantHash: 'hash4' }],
-    });
+    assert.deepIncludeProperties(stub.getCall(2).args[0], { invocationIds: ['inv3'] });
+    assert.deepIncludeProperties(stub.getCall(3).args[0], { invocationIds: ['inv4'] });
 
     // Load the third page.
     loadPromise = entriesLoader.loadNextPage();
@@ -275,18 +222,9 @@ describe('TestHistoryEntriesLoader', () => {
     assert.strictEqual(entriesLoader.isLoading, false);
     assert.strictEqual(entriesLoader.loadedFirstPage, true);
     assert.strictEqual(entriesLoader.loadedAllTestVariants, true);
-    assert.deepEqual(entriesLoader.testVariants, [
-      { ...tv1, partitionTime: entry1.partitionTime },
-      { ...tv2, partitionTime: entry2.partitionTime },
-      { ...tv3, partitionTime: entry3.partitionTime },
-      { ...tv4, partitionTime: entry4.partitionTime },
-      { ...tv5, partitionTime: entry5.partitionTime },
-    ]);
+    assert.deepEqual(entriesLoader.testVariants, [tv1, tv2, tv3, tv4, tv5]);
     assert.strictEqual(stub.callCount, 5);
-    assert.deepIncludeProperties(stub.getCall(4).args[0], {
-      invocation: 'invocations/inv5',
-      testVariants: [{ testId: 'test', variantHash: 'hash5' }],
-    });
+    assert.deepIncludeProperties(stub.getCall(4).args[0], { invocationIds: ['inv5'] });
 
     // Calling loadNextPage when all variants are again shouldn't trigger
     // loading again.
@@ -298,13 +236,7 @@ describe('TestHistoryEntriesLoader', () => {
     assert.strictEqual(entriesLoader.isLoading, false);
     assert.strictEqual(entriesLoader.loadedFirstPage, true);
     assert.strictEqual(entriesLoader.loadedAllTestVariants, true);
-    assert.deepEqual(entriesLoader.testVariants, [
-      { ...tv1, partitionTime: entry1.partitionTime },
-      { ...tv2, partitionTime: entry2.partitionTime },
-      { ...tv3, partitionTime: entry3.partitionTime },
-      { ...tv4, partitionTime: entry4.partitionTime },
-      { ...tv5, partitionTime: entry5.partitionTime },
-    ]);
+    assert.deepEqual(entriesLoader.testVariants, [tv1, tv2, tv3, tv4, tv5]);
     assert.strictEqual(stub.callCount, 5);
   });
 });

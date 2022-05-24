@@ -18,8 +18,53 @@ import { html } from 'lit-html';
 
 import { Suggestion } from '../../components/auto_complete';
 import { Variant } from '../../services/resultdb';
+import { TestVariantHistoryEntry } from '../../services/test_history_service';
 import { highlight } from '../lit_utils';
 import { KV_SYNTAX_EXPLANATION, parseKeyValue } from './utils';
+
+const FILTER_QUERY_RE = /^(-?)([a-zA-Z]+):(.+)$/;
+
+export type TVHEntryFilter = (v: TestVariantHistoryEntry) => boolean;
+
+export function parseTVHFilterQuery(filterQuery: string): TVHEntryFilter {
+  const filters = filterQuery
+    .split(' ')
+    .filter((s) => s !== '')
+    .map((query) => {
+      const match = query.match(FILTER_QUERY_RE);
+      if (!match) {
+        throw new Error(`invalid query. the query should have the format of ${FILTER_QUERY_RE}`);
+      }
+
+      const [, neg, queryType, value] = match;
+      const valueUpper = value.toUpperCase();
+      const negate = neg === '-';
+      switch (queryType.toUpperCase()) {
+        // Whether the test variant has the specified status.
+        case 'STATUS': {
+          const statuses = valueUpper.split(',');
+          return (v: TestVariantHistoryEntry) => negate !== statuses.includes(v.status);
+        }
+        // Whether the test variant has a matching variant key-value pair.
+        case 'V': {
+          const [vKey, vValue] = parseKeyValue(value);
+
+          // If the variant value is unspecified, accept any value.
+          // Otherwise, the value must match the specified value (case sensitive).
+          return vValue === null
+            ? (v: TestVariantHistoryEntry) => negate !== (v.variant?.def?.[vKey] !== undefined)
+            : (v: TestVariantHistoryEntry) => negate !== (v.variant?.def?.[vKey] === vValue);
+        }
+        case 'VHASH': {
+          return (v: TestVariantHistoryEntry) => negate !== (v.variantHash.toUpperCase() === valueUpper);
+        }
+        default: {
+          throw new Error(`invalid query type: ${queryType}`);
+        }
+      }
+    });
+  return (v) => filters.every((f) => f(v));
+}
 
 const VARIANT_FILTER_RE = /(-?)V:(.+)$/i;
 const VARIANT_HASH_FILTER_RE = /(-?)VHASH:(.+)$/i;

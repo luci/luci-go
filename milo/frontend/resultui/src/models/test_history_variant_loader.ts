@@ -16,7 +16,7 @@ import { DateTime } from 'luxon';
 import { comparer, computed, observable, untracked } from 'mobx';
 
 import { Variant } from '../services/resultdb';
-import { TestHistoryService, TestVerdict } from '../services/weetbix';
+import { TestHistoryService, TestVariantHistoryEntry } from '../services/test_history_service';
 
 /**
  * Test history loader for a specific variant.
@@ -25,7 +25,7 @@ export class TestHistoryVariantLoader {
   /**
    * datetime str -> test variant history entries
    */
-  private readonly cache = new Map<string, TestVerdict[]>();
+  private readonly cache = new Map<string, TestVariantHistoryEntry[]>();
 
   private worker: AsyncIterableIterator<null>;
 
@@ -86,21 +86,20 @@ export class TestHistoryVariantLoader {
         yield null;
       }
 
-      const [project, subRealm] = this.realm.split(':', 2);
-
-      const res = await this.testHistoryService.query({
-        project,
+      const res = await this.testHistoryService.queryTestHistory({
+        realm: this.realm,
         testId: this.testId,
-        predicate: {
-          subRealm,
-          variantPredicate: { equals: this.variant },
-          partitionTimeRange: {},
-        },
+        variantPredicate: { equals: this.variant },
+        timeRange: {},
         pageToken: pageToken,
-        pageSize: 1000,
+        // TODO(weiweilin): the RPC is currently implemented in the frontend.
+        // Use a small page size so we don't need to wait for several
+        // GetTestResultHistory calls to gather 1 page. Adjust the value once
+        // we have the actual RPC implemented on the server side.
+        pageSize: 5,
       });
 
-      for (const entry of res.verdicts || []) {
+      for (const entry of res.entries) {
         this.addEntry(entry);
       }
 
@@ -115,11 +114,34 @@ export class TestHistoryVariantLoader {
     }
   }
 
+  private earliestEntryIdentifiers = new Set<string>();
+
   /**
-   * Adds the entry to the cache.
+   * Adds the entry to the cache. If the entry was already added, ignore it.
    */
-  private addEntry(entry: TestVerdict) {
-    this.loadedTime = DateTime.fromISO(entry.partitionTime);
+  private addEntry(entry: TestVariantHistoryEntry) {
+    const entryTime = DateTime.fromISO(entry.invocationTimestamp);
+
+    // Compare the timestamp and see if the entry was already loaded.
+    if (entryTime > this.loadedTime) {
+      return;
+    }
+
+    // Join invocations IDs as entry IDs. Once the improve test history RPC is
+    // implemented, we could use the root invocation ID instead.
+    const entryId = entry.invocationIds.join(' ');
+
+    // Compare the entry identifier if we can't tell whether the entry was
+    // already loaded from the timestamp alone.
+    if (entryTime.toMillis() === this.loadedTime.toMillis()) {
+      if (this.earliestEntryIdentifiers.has(entryId)) {
+        return;
+      }
+      this.earliestEntryIdentifiers.add(entryId);
+    } else {
+      this.earliestEntryIdentifiers = new Set([entryId]);
+      this.loadedTime = entryTime;
+    }
 
     let dateCache = this.cache.get(this.loadedTimeGroupId);
     if (!dateCache) {
@@ -149,7 +171,7 @@ export class TestHistoryVariantLoader {
    * If the entries associated with the time slot hasn't been loaded yet, return
    * null.
    */
-  getEntries(time: DateTime, noLoading = false): readonly TestVerdict[] | null {
+  getEntries(time: DateTime, noLoading = false): readonly TestVariantHistoryEntry[] | null {
     const timeStr = this.resolve(time);
     const loaded = computed(() => time > this.loadedTime && this.loadedTimeGroupId !== timeStr).get();
     if (!loaded) {

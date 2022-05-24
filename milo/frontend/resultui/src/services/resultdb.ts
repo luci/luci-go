@@ -210,7 +210,7 @@ export interface TestVariant {
   readonly testMetadata?: TestMetadata;
 
   // Populate in the frontend for now.
-  readonly partitionTime?: string;
+  readonly timestamp?: string;
 }
 
 export const enum TestVariantStatus {
@@ -465,8 +465,8 @@ export function createTVPropGetter(propKey: string): (v: TestVariant) => ToStrin
       return (v) => v.testMetadata?.name || v.testId;
     case 'status':
       return (v) => v.status;
-    case 'partitionTime':
-      return (v) => v.partitionTime || '';
+    case 'timestamp':
+      return (v) => v.timestamp || '';
     default:
       console.warn('invalid property key', propKey);
       return () => '';

@@ -14,7 +14,6 @@
 
 import { BuildStatus } from '../services/buildbucket';
 import { InvocationState, TestStatus, TestVariantStatus } from '../services/resultdb';
-import { TestVerdictStatus } from '../services/weetbix';
 
 export const NEW_MILO_VERSION_EVENT_TYPE = 'new-milo-version';
 
@@ -60,15 +59,6 @@ export const VARIANT_STATUS_ICON_MAP = Object.freeze({
   [TestVariantStatus.FLAKY]: 'warning',
   [TestVariantStatus.EXONERATED]: 'remove_circle',
   [TestVariantStatus.EXPECTED]: 'check_circle',
-});
-
-export const VERDICT_VARIANT_STATUS_MAP = Object.freeze({
-  [TestVerdictStatus.TEST_VERDICT_STATUS_UNSPECIFIED]: TestVariantStatus.TEST_VARIANT_STATUS_UNSPECIFIED,
-  [TestVerdictStatus.UNEXPECTED]: TestVariantStatus.UNEXPECTED,
-  [TestVerdictStatus.UNEXPECTEDLY_SKIPPED]: TestVariantStatus.UNEXPECTEDLY_SKIPPED,
-  [TestVerdictStatus.FLAKY]: TestVariantStatus.FLAKY,
-  [TestVerdictStatus.EXONERATED]: TestVariantStatus.EXONERATED,
-  [TestVerdictStatus.EXPECTED]: TestVariantStatus.EXPECTED,
 });
 
 export const TEST_STATUS_DISPLAY_MAP = Object.freeze({

@@ -234,8 +234,8 @@ export class TestVariantsTableElement extends MiloBaseElement {
           ${this.showTimestamp
             ? html`
                 <milo-tvt-column-header
-                  .propKey=${'partitionTime'}
-                  .label=${'Timestamp'}
+                  .propKey=${'timestamp'}
+                  .label=${'Date Time'}
                   .canHide=${false}
                 ></milo-tvt-column-header>
               `

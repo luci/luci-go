@@ -16,7 +16,7 @@ import { DateTime } from 'luxon';
 import { computed, observable } from 'mobx';
 
 import { ResultDb, Variant } from '../services/resultdb';
-import { TestHistoryService, TestVerdict } from '../services/weetbix';
+import { TestHistoryService, TestVariantHistoryEntry } from '../services/test_history_service';
 import { TestHistoryVariantLoader } from './test_history_variant_loader';
 
 export class TestHistoryLoader {
@@ -60,11 +60,9 @@ export class TestHistoryLoader {
    */
   private async *workerGen() {
     let pageToken = '';
-    const [project, subRealm] = this.realm.split(':', 2);
     for (;;) {
-      const res = await this.testHistoryService.queryVariants({
-        project,
-        subRealm,
+      const res = await this.resultDb.queryUniqueTestVariants({
+        realm: this.realm,
         testId: this.testId,
         pageToken,
       });
@@ -115,7 +113,7 @@ export class TestHistoryLoader {
    * If the entries associated with the specified variant hash and time slot
    * hasn't been loaded yet, return null.
    */
-  getEntries(variantHash: string, time: DateTime, noLoading = false): readonly TestVerdict[] | null {
+  getEntries(variantHash: string, time: DateTime, noLoading = false): readonly TestVariantHistoryEntry[] | null {
     const vLoader = computed(() => this.loaders.get(variantHash)).get();
     if (!vLoader) {
       return null;

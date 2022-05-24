@@ -17,25 +17,24 @@ import { DateTime } from 'luxon';
 import sinon from 'sinon';
 
 import { CacheOption } from '../libs/cached_fn';
+import { TestVariantStatus } from '../services/resultdb';
 import {
   QueryTestHistoryRequest,
   QueryTestHistoryResponse,
   TestHistoryService,
-  TestVerdictStatus,
-} from '../services/weetbix';
+} from '../services/test_history_service';
 import { TestHistoryVariantLoader } from './test_history_variant_loader';
 
 const variant = { def: { key1: 'val1' } };
 
 function createEntry(timestamp: string, invId: string) {
   return {
-    testId: 'test',
-    invocationId: invId,
-    partitionTime: timestamp,
+    invocationIds: [invId],
+    invocationTimestamp: timestamp,
     variant,
     variantHash: 'key1:val1',
-    status: TestVerdictStatus.UNEXPECTED,
-    passedAvgDuration: '1s',
+    status: TestVariantStatus.UNEXPECTED,
+    averageDuration: '1s',
   };
 }
 
@@ -49,16 +48,16 @@ describe('TestHistoryVariantLoader', () => {
   it('loadUntil should work correctly', async () => {
     // Set up.
     const stub = sinon.stub<[QueryTestHistoryRequest, CacheOption], Promise<QueryTestHistoryResponse>>();
-    stub.onCall(0).resolves({ verdicts: [entry1, entry2], nextPageToken: 'page2' });
-    stub.onCall(1).resolves({ verdicts: [entry3, entry4], nextPageToken: 'page3' });
-    stub.onCall(2).resolves({ verdicts: [entry5] });
+    stub.onCall(0).resolves({ entries: [entry1, entry2], nextPageToken: 'page2' });
+    stub.onCall(1).resolves({ entries: [entry3, entry4], nextPageToken: 'page3' });
+    stub.onCall(2).resolves({ entries: [entry5] });
     const thvLoader = new TestHistoryVariantLoader(
-      'project:realm',
+      'test-realm',
       'test-id',
       variant,
       (resolve) => resolve.toFormat('yyyy-MM-dd'),
       {
-        query: stub,
+        queryTestHistory: stub,
       } as Partial<TestHistoryService> as TestHistoryService
     );
 
@@ -73,20 +72,14 @@ describe('TestHistoryVariantLoader', () => {
     // entries from 2021-11-05 had been loaded after getting the first page.
     assert.deepEqual(stub.getCalls().length, 2);
     assert.deepIncludeProperties(stub.getCall(0).args[0], {
-      project: 'project',
+      realm: 'test-realm',
       testId: 'test-id',
-      predicate: {
-        subRealm: 'realm',
-        variantPredicate: { equals: variant },
-      },
+      variantPredicate: { equals: variant },
     });
     assert.deepIncludeProperties(stub.getCall(1).args[0], {
-      project: 'project',
+      realm: 'test-realm',
       testId: 'test-id',
-      predicate: {
-        subRealm: 'realm',
-        variantPredicate: { equals: variant },
-      },
+      variantPredicate: { equals: variant },
       pageToken: 'page2',
     });
 
@@ -106,12 +99,9 @@ describe('TestHistoryVariantLoader', () => {
     await thvLoader.loadUntil(DateTime.fromISO('2021-11-04T00:00:00Z'));
     assert.deepEqual(stub.getCalls().length, 3);
     assert.deepIncludeProperties(stub.getCall(2).args[0], {
-      project: 'project',
+      realm: 'test-realm',
       testId: 'test-id',
-      predicate: {
-        subRealm: 'realm',
-        variantPredicate: { equals: variant },
-      },
+      variantPredicate: { equals: variant },
       pageToken: 'page3',
     });
 
