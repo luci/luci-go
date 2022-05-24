@@ -265,10 +265,10 @@ func configsJSHandler(c *router.Context) error {
 	header := c.Writer.Header()
 	header.Set("content-type", "application/javascript")
 
-	// The configs file rarely changes, and may block other scripts from running.
-	// Set max-age to one hour, stale-while-revalidate to 7 days to improve
-	// performance.
-	header.Set("cache-control", "max-age=3600,stale-while-revalidate=604800")
+	// Set max-age to 10 mins, stale-while-revalidate to 1 hour to reduce traffic.
+	// We don't need a long cache duration because the configs file is fetched and
+	// re-served by the service worker.
+	header.Set("cache-control", "max-age=600,stale-while-revalidate=3600")
 	err = template.Execute(c.Writer, map[string]interface{}{
 		"ResultDB": map[string]string{
 			"Host": settings.GetResultdb().GetHost(),
