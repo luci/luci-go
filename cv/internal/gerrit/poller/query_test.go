@@ -29,19 +29,19 @@ func TestGerritQueryString(t *testing.T) {
 		Convey("single project", func() {
 			qs.OrProjects = []string{"inf/ra"}
 			So(qs.gerritString(queryLimited), ShouldEqual,
-				`status:NEW project:"inf/ra"`)
+				`status:NEW label:Commit-Queue>0 project:"inf/ra"`)
 		})
 
 		Convey("many projects", func() {
 			qs.OrProjects = []string{"inf/ra", "second"}
 			So(qs.gerritString(queryLimited), ShouldEqual,
-				`status:NEW (project:"inf/ra" OR project:"second")`)
+				`status:NEW label:Commit-Queue>0 (project:"inf/ra" OR project:"second")`)
 		})
 
 		Convey("shared prefix", func() {
 			qs.CommonProjectPrefix = "shared"
 			So(qs.gerritString(queryLimited), ShouldEqual,
-				`status:NEW projects:"shared"`)
+				`status:NEW label:Commit-Queue>0 projects:"shared"`)
 		})
 
 		Convey("unlimited", func() {
