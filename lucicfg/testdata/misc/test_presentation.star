@@ -36,7 +36,7 @@ luci.builder(
     bucket = "ci",
     executable = luci.recipe(
         name = "recipe",
-        cipd_package = "cipd/pacakge",
+        cipd_package = "cipd/package",
         cipd_version = "refs/version",
     ),
     properties = shared_immutable_properties,
@@ -53,7 +53,7 @@ luci.builder(
     bucket = "ci",
     executable = luci.recipe(
         name = "recipe",
-        cipd_package = "cipd/pacakge",
+        cipd_package = "cipd/package",
         cipd_version = "refs/version",
     ),
     properties = shared_immutable_properties,
@@ -71,7 +71,7 @@ luci.builder(
 #       swarming_host: "chromium-swarm.appspot.com"
 #       recipe {
 #         name: "recipe"
-#         cipd_package: "cipd/pacakge"
+#         cipd_package: "cipd/package"
 #         cipd_version: "refs/version"
 #         properties_j: "$recipe_engine/resultdb/test_presentation:{\"column_keys\":[\"v.os\"],\"grouping_keys\":[\"v.test_suite\",\"status\"]}"
 #       }
@@ -81,7 +81,7 @@ luci.builder(
 #       swarming_host: "chromium-swarm.appspot.com"
 #       recipe {
 #         name: "recipe"
-#         cipd_package: "cipd/pacakge"
+#         cipd_package: "cipd/package"
 #         cipd_version: "refs/version"
 #         properties_j: "$recipe_engine/resultdb/test_presentation:{\"column_keys\":[\"v.gpu\"],\"grouping_keys\":[\"status\"]}"
 #       }

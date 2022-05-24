@@ -353,9 +353,9 @@ def _triggerer_add(owner, idempotent = False):
 
     We need this indirection to make 'triggered_by' relation work: when a
     builder 'B' is triggered by something named 'T', we don't know whether 'T'
-    is another builder or a gitiles poller ('T' may not even be defined yet). So
-    instead all things that can trigger builders have an associated 'triggerer'
-    node and 'T' names such a node.
+    is another builder or a gitiles poller ('T' may not even be defined yet).
+    So instead all things that can trigger builders have an associated
+    'triggerer' node and 'T' names such a node.
 
     To allow omitting bucket name when it is not important, each triggering
     entity actually defines two 'triggerer' nodes: a bucket-scoped one and a
@@ -382,7 +382,7 @@ def _triggerer_add(owner, idempotent = False):
     name = owner.id  # name of the builder or poller, as string
 
     # Short (not scoped to a bucket) keys are not unique, even for nodes that
-    # are marked as idempotent=False. Make sure it is OK to readd them by
+    # are marked as idempotent=False. Make sure it is OK to re-add them by
     # marking them as idempotent. Dups are checked in triggerer.targets(...).
     short = keys.triggerer(name)
     graph.add_node(short, idempotent = True)
@@ -400,16 +400,16 @@ def _triggerer_targets(root):
     Enumerates all TRIGGERER children of 'root', and collects all BUILDER nodes
     they refer to, following BUILDER_REF references.
 
-    Various ambiguities are reported as errors (which marks the generation phase
-    as failed). Corresponding nodes are skipped, to collect as many errors as
-    possible before giving up.
+    Various ambiguities are reported as errors (which marks the generation
+    phase as failed). Corresponding nodes are skipped, to collect as many
+    errors as possible before giving up.
 
     Args:
       root: a graph.node that represents the triggering entity: something that
-        has a triggerer as a child.
+            has a triggerer as a child.
 
     Returns:
-      List of graph.node of BUILDER kind, sorted by keys.
+      List of graph.node of BUILDER kind, sorted by key.
     """
     out = set()
 

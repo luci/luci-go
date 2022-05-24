@@ -23,17 +23,18 @@ by the kernel is pretty generic:
 *   Implementation of `lucicfg generate` and `lucicfg validate` logic.
 *   Various utilities (regexp, hashes, Go templates, etc.)
 
-The builtins are wrapped in two layers of Starlark code: *
-[starlark/stdlib/internal], excluding `.../luci`: generic (not LUCI specific)
-Starlark standard library that documents and exposes the builtins via a nicer
-API. It can be used to build all kinds of config generators ([1], [2], [3]), as
-well as extend the LUCI config generator. This API surface is currently marked
-as "internal" (meaning there's no backward compatibility guarantees for it), but
-it will some day become a part of lucicfg's public interface, so it should be
-treated as such (no hacks, no undocumented functions, adequate test coverage,
-etc). * [starlark/stdlib/internal/luci]: all LUCI-specific APIs and
-declarations, implementing the logic of generating LUCI configs specifically. It
-is built entirely on top of the standard library.
+The builtins are wrapped in two layers of Starlark code:
+
+  * [starlark/stdlib/internal], excluding `.../luci`: generic (not LUCI
+    specific) Starlark standard library that documents and exposes the builtins
+    via a nicer API. It can be used to build all kinds of config generators
+    ([1], [2], [3]), as well as extend the LUCI config generator. This API
+    surface is currently marked as "internal" (meaning there's no backward
+    compatibility guarantees for it), but it will some day become a part of
+    lucicfg's public interface, so it should be treated as such (no hacks, no
+    undocumented functions, adequate test coverage, etc).
+  * [starlark/stdlib/internal/luci]: all LUCI-specific APIs and declarations,
+    implementing the logic of generating LUCI configs specifically. It is built
 
 The standard library and LUCI configs library are bundled with `lucicfg` binary
 via starlark/assets.gen.go file generated from the contents of
@@ -48,7 +49,7 @@ via starlark/assets.gen.go file generated from the contents of
 ## Making changes to the Starlark portion of the code
 
 1.  Modify a `*.star` file.
-2.  In the `lucicfg` directory (where this README.md file is) run
+2.  In the `lucicfg` directory, where this README.md file is, run
     `./fmt-lint.sh` to auto-format and lint new code. Fix all linter warnings.
 3.  In the same directory run `go generate ./...` to regenerate
     `examples/.../generated` and [doc/README.md].
@@ -126,11 +127,11 @@ to use it. See [starlark/stdlib/internal/experiments.star] for more info.
 5.  Modify [cr-buildbucket/settings.cfg] like [so] to release the change to
     bots. This step is necessary since bots don't use depot_tools.
 
-Steps 2 and 3 usually take about 30 minutes total, and steps 4 and 5 verify CIPD
-packages actually exist. So in practice it is OK to just land a lucicfg CL, go
-do other things, then come back >30 min later, look up the revision of the
-necessary infra.git DEPS roll (or just use the latest one) and proceed to steps
-4 and 5.
+Steps 2 and 3 usually take about 30 minutes total, and steps 4 and 5 verify
+CIPD packages actually exist. So in practice it is OK to just land a lucicfg
+CL, go do other things, then come back >30 min later, look up the revision of
+the necessary infra.git DEPS roll (or just use the latest one) and proceed to
+steps 4 and 5.
 
 [infra.git]: https://chromium.googlesource.com/infra/infra/
 [luci-go commit]: https://chromium.googlesource.com/infra/luci/luci-go.git/+/7ac4bfbe5a282766ea2e8afa5a6a06e8b71879f3

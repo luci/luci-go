@@ -31,21 +31,20 @@
 
 
 
-
 [TOC]
 
 ## Overview
 
 `lucicfg` is a tool for generating low-level LUCI configuration files based on a
 high-level configuration given as a [Starlark] script that uses APIs exposed by
-`lucicfg`. In other words, it takes a \*.star file (or files) as input and
-spits out a bunch of \*.cfg files (such us `cr-buildbucket.cfg` and
+`lucicfg`. In other words, it takes a `*.star` file (or files) as input and
+spits out a bunch of `*.cfg` files (such us `cr-buildbucket.cfg` and
 `luci-scheduler.cfg`) as outputs. A single entity (such as a [luci.builder(...)](#luci.builder)
 definition) in the input is translated into multiple entities (such as
-Buildbucket's builder{...} and Scheduler's job{...}) in the output. This ensures
+Buildbucket's `builder{...}` and Scheduler's `job{...})` in the output. This ensures
 internal consistency of all low-level configs.
 
-Using Starlark allows to further reduce duplication and enforce invariants in
+Using Starlark allows further reducing duplication and enforcing invariants in
 the configs. A common pattern is to use Starlark functions that wrap one or
 more basic rules (e.g. [luci.builder(...)](#luci.builder) and [luci.console_view_entry(...)](#luci.console_view_entry)) to
 define more "concrete" entities (for example "a CI builder" or "a Try builder").
@@ -56,10 +55,10 @@ configuration.
 
 `lucicfg` is distributed as a single self-contained binary as part of
 [depot_tools], so if you use them, you already have it. Additionally it is
-available in PATH on all LUCI builders. The rest of this doc also assumes that
-`lucicfg` is in PATH.
+available in `PATH` on all LUCI builders. The rest of this doc also assumes that
+`lucicfg` is in `PATH`.
 
-If you don't use depot_tools, `lucicfg` can be installed through CIPD. The
+If you don't use [depot_tools], `lucicfg` can be installed through CIPD. The
 package is [infra/tools/luci/lucicfg/${platform}], and the canonical stable
 version can be looked up in the depot_tools [CIPD manifest].
 
@@ -95,9 +94,10 @@ luci.builder(
 )
 ```
 
-Now run `lucicfg generate main.star`. It will create a new directory `generated`
-side-by-side with `main.star` file. This directory contains `project.cfg` and
-`cr-buildbucket.cfg` files, generated based on the script above.
+Now run `lucicfg generate main.star`. It will create a new directory
+`generated` side-by-side with `main.star` file. This directory contains the
+`project.cfg` and `cr-buildbucket.cfg` files, generated based on the script
+above.
 
 Equivalently, make the script executable (`chmod a+x main.star`) and then just
 execute it (`./main.star`). This is the exact same thing as running `generate`
@@ -134,7 +134,6 @@ directory (how to do it is outside the scope of this doc).
 [infra/tools/luci/lucicfg/${platform}]: https://chrome-infra-packages.appspot.com/p/infra/tools/luci/lucicfg
 [CIPD manifest]: https://chromium.googlesource.com/chromium/tools/depot_tools/+/refs/heads/master/cipd_manifest.txt
 [canned check]: https://chromium.googlesource.com/chromium/tools/depot_tools/+/39b0b8e32a4ed0675a38d97799e8a219cc549910/presubmit_canned_checks.py#1437
-
 
 ## Concepts
 
