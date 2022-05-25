@@ -63,20 +63,6 @@ export function parseVariantFilter(filterQuery: string): VariantFilter {
   return (v, hash) => filters.every((f) => f(v, hash));
 }
 
-// Queries with predefined value.
-const QUERY_SUGGESTIONS = [
-  { value: 'Status:UNEXPECTED', explanation: 'Include only tests with unexpected status' },
-  { value: '-Status:UNEXPECTED', explanation: 'Exclude tests with unexpected status' },
-  { value: 'Status:UNEXPECTEDLY_SKIPPED', explanation: 'Include only tests with unexpectedly skipped status' },
-  { value: '-Status:UNEXPECTEDLY_SKIPPED', explanation: 'Exclude tests with unexpectedly skipped status' },
-  { value: 'Status:FLAKY', explanation: 'Include only tests with flaky status' },
-  { value: '-Status:FLAKY', explanation: 'Exclude tests with flaky status' },
-  { value: 'Status:EXONERATED', explanation: 'Include only tests with exonerated status' },
-  { value: '-Status:EXONERATED', explanation: 'Exclude tests with exonerated status' },
-  { value: 'Status:EXPECTED', explanation: 'Include only tests with expected status' },
-  { value: '-Status:EXPECTED', explanation: 'Exclude tests with expected status' },
-];
-
 // Queries with arbitrary value.
 const QUERY_TYPE_SUGGESTIONS = [
   {
@@ -86,6 +72,14 @@ const QUERY_TYPE_SUGGESTIONS = [
   {
     type: '-V:',
     explanation: `Exclude tests with a matching variant key-value pair (${KV_SYNTAX_EXPLANATION})`,
+  },
+  {
+    type: 'VHash:',
+    explanation: 'Include only tests with the specified variant hash (case insensitive)',
+  },
+  {
+    type: '-VHash:',
+    explanation: 'Exclude tests with the specified variant hash (case insensitive)',
   },
 ];
 
@@ -98,12 +92,12 @@ export function suggestTestHistoryFilterQuery(query: string): readonly Suggestio
         display: html`<strong>Advanced Syntax</strong>`,
       },
       {
-        value: '-Status:EXPECTED',
+        value: '-V:test_suite=browser_test',
         explanation: "Use '-' prefix to negate the filter",
       },
       {
-        value: 'Status:UNEXPECTED -V:test_suite=browser_test',
-        explanation: 'Use space to separate filters. Filters are logically joined with AND',
+        value: 'V:os=MacOS -V:test_suite=browser_test',
+        explanation: 'Specify multiple variant filters.',
       },
 
       // Put this section behind `Advanced Syntax` so `Advanced Syntax` won't
@@ -117,12 +111,8 @@ export function suggestTestHistoryFilterQuery(query: string): readonly Suggestio
         explanation: 'Include only tests with a matching test variant key-value pair (case sensitive)',
       },
       {
-        value: 'V:uri-encoded-variant-key',
-        explanation: 'Include only tests with the specified variant key (case sensitive)',
-      },
-      {
-        value: 'Status:UNEXPECTED,UNEXPECTEDLY_SKIPPED,FLAKY,EXONERATED,EXPECTED',
-        explanation: 'Include only tests with the specified status',
+        value: 'VHash:variant-hash',
+        explanation: 'Include only tests with the specified variant hash (case insensitive)',
       },
     ];
   }
@@ -133,10 +123,6 @@ export function suggestTestHistoryFilterQuery(query: string): readonly Suggestio
   }
 
   const suggestions: Suggestion[] = [];
-
-  // Suggest queries with predefined value.
-  const subQueryUpper = subQuery.toUpperCase();
-  suggestions.push(...QUERY_SUGGESTIONS.filter(({ value }) => value.toUpperCase().includes(subQueryUpper)));
 
   // Suggest queries with arbitrary value.
   const match = subQuery.match(/^([^:]*:?)(.*)$/);

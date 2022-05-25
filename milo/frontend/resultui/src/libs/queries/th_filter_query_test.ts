@@ -162,36 +162,8 @@ describe('suggestTestHistoryFilterQuery', () => {
   });
 
   it('should not give suggestions when the sub-query is empty', () => {
-    const suggestions1 = suggestTestHistoryFilterQuery('Status:UNEXPECTED ');
+    const suggestions1 = suggestTestHistoryFilterQuery('VHash:abcd ');
     assert.strictEqual(suggestions1.length, 0);
-  });
-
-  it('should suggest variant status query with matching status', () => {
-    const suggestions1 = suggestTestHistoryFilterQuery('unexpected');
-    assert.isDefined(suggestions1.find((s) => s.value === 'Status:UNEXPECTED'));
-    assert.isDefined(suggestions1.find((s) => s.value === '-Status:UNEXPECTED'));
-
-    const suggestions2 = suggestTestHistoryFilterQuery('flaky');
-    assert.isDefined(suggestions2.find((s) => s.value === 'Status:FLAKY'));
-    assert.isDefined(suggestions2.find((s) => s.value === '-Status:FLAKY'));
-
-    const suggestions3 = suggestTestHistoryFilterQuery('exonerated');
-    assert.isDefined(suggestions3.find((s) => s.value === 'Status:EXONERATED'));
-    assert.isDefined(suggestions3.find((s) => s.value === '-Status:EXONERATED'));
-
-    const suggestions4 = suggestTestHistoryFilterQuery('expected');
-    assert.isDefined(suggestions4.find((s) => s.value === 'Status:EXPECTED'));
-    assert.isDefined(suggestions4.find((s) => s.value === '-Status:EXPECTED'));
-  });
-
-  it('should not suggest variant status query with a different status', () => {
-    const suggestions1 = suggestTestHistoryFilterQuery('UNEXPECTED');
-    assert.isUndefined(suggestions1.find((s) => s.value === 'Status:FLAKY'));
-    assert.isUndefined(suggestions1.find((s) => s.value === '-Status:FLAKY'));
-    assert.isUndefined(suggestions1.find((s) => s.value === 'Status:EXONERATED'));
-    assert.isUndefined(suggestions1.find((s) => s.value === '-Status:EXONERATED'));
-    assert.isUndefined(suggestions1.find((s) => s.value === 'Status:EXPECTED'));
-    assert.isUndefined(suggestions1.find((s) => s.value === '-Status:EXPECTED'));
   });
 
   it('should suggest V query when the query prefix is V:', () => {
