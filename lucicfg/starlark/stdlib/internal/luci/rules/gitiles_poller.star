@@ -20,7 +20,7 @@ load("@stdlib//internal/validate.star", "validate")
 load("@stdlib//internal/luci/common.star", "keys", "triggerer")
 
 def _gitiles_poller(
-        ctx,
+        ctx,  # @unused
         *,
         name = None,
         bucket = None,

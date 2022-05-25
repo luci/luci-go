@@ -5,6 +5,7 @@
 {{.Doc.Description | LinkifySymbols }}
 
 {{range $sym := .Symbols "func"}}
+{{- if not ($sym.HasDocTag "hidden")}}
 ### {{.FullName}} {#{{$sym.Anchor}}}
 
 ```python
@@ -37,6 +38,7 @@
 {{end}}
 
 {{end}}
+{{- end}}
 {{end}}
 
 {{/*

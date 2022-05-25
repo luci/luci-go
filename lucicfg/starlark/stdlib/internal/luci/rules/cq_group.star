@@ -23,7 +23,7 @@ load("@stdlib//internal/luci/lib/cq.star", "cq", "cqimpl")
 load("@stdlib//internal/luci/rules/cq_tryjob_verifier.star", "cq_tryjob_verifier")
 
 def _cq_group(
-        ctx,
+        ctx,  # @unused
         *,
         name = None,
         watch = None,
@@ -32,7 +32,7 @@ def _cq_group(
         allow_owner_if_submittable = None,
         tree_status_host = None,
         retry_config = None,
-        cancel_stale_tryjobs = None,
+        cancel_stale_tryjobs = None,  # @unused
         verifiers = None,
         additional_modes = None):
     """Defines a set of refs to watch and a set of verifier to run.

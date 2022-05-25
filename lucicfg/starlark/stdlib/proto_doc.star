@@ -25,6 +25,7 @@ def _to_textpb(msg):
     Args:
       msg: a proto message to serialize. Required.
     """
+    _unused(msg)
 
 def _to_jsonpb(msg, use_proto_names = None):
     """Serializes a protobuf message to a string using JSONPB serialization.
@@ -34,6 +35,7 @@ def _to_jsonpb(msg, use_proto_names = None):
       use_proto_names: boolean, whether to use snake_case in field names
         instead of camelCase. The default is False.
     """
+    _unused(msg, use_proto_names)
 
 def _to_wirepb(msg):
     """Serializes a protobuf message to a string using binary wire encoding.
@@ -41,6 +43,7 @@ def _to_wirepb(msg):
     Args:
       msg: a proto message to serialize. Required.
     """
+    _unused(msg)
 
 def _from_textpb(ctor, text):
     """Deserializes a protobuf message given its ASCII proto serialization.
@@ -53,6 +56,7 @@ def _from_textpb(ctor, text):
     Returns:
       Deserialized message constructed via `ctor`.
     """
+    _unused(ctor, text)
 
 def _from_jsonpb(ctor, text):
     """Deserializes a protobuf message given its JSONPB serialization.
@@ -65,6 +69,7 @@ def _from_jsonpb(ctor, text):
     Returns:
       Deserialized message constructed via `ctor`.
     """
+    _unused(ctor, text)
 
 def _from_wirepb(ctor, blob):
     """Deserializes a protobuf message given its wire serialization.
@@ -77,6 +82,7 @@ def _from_wirepb(ctor, blob):
     Returns:
       Deserialized message constructed via `ctor`.
     """
+    _unused(ctor, blob)
 
 def _struct_to_textpb(s):
     """Converts a struct to a text proto string.
@@ -87,6 +93,7 @@ def _struct_to_textpb(s):
     Returns:
       A str containing a text format protocol buffer message.
     """
+    _unused(s)
 
 def _clone(msg):
     """Returns a deep copy of a given proto message.
@@ -97,6 +104,7 @@ def _clone(msg):
     Returns:
       A deep copy of the message.
     """
+    _unused(msg)
 
 def _has(msg, field):
     """Checks if a proto message has the given optional field set.
@@ -119,6 +127,14 @@ def _has(msg, field):
 
     Returns:
       True if the message has the field set.
+    """
+    _unused(msg, field)
+
+def _unused(*args):  # @unused
+    """Used exclusively to shut up `unused-variable` lint.
+
+    DocTags:
+      Hidden.
     """
 
 proto = struct(

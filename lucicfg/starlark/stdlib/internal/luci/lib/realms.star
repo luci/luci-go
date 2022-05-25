@@ -377,7 +377,7 @@ def _append_binding_pb(realms_cfg, realm, binding):
         bindings = [binding],
     ))
 
-def _generate_custom_role(impl, role):
+def _generate_custom_role(_impl, role):
     """Given a CUSTOM_ROLE node returns realms_pb.CustomRole."""
     return realms_pb.CustomRole(
         name = role.props.name,

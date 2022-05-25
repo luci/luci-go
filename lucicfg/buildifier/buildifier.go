@@ -63,7 +63,7 @@ type Finding struct {
 // Position indicates a position within a file.
 type Position struct {
 	Line   int `json:"line"`   // starting from 1
-	Column int `json:"column`  // in runes, starting from 1
+	Column int `json:"column"` // in runes, starting from 1
 	Offset int `json:"offset"` // absolute offset in bytes
 }
 

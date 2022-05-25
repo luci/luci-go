@@ -12,5 +12,4 @@ go build -o ${LUCICFG} go.chromium.org/luci/lucicfg/cmd/lucicfg
 ${LUCICFG} fmt "${MYPATH}"
 
 # Lint only stdlib and examples, but not tests, no one cares.
-${LUCICFG} lint "${MYPATH}/starlark" "${MYPATH}/starlark"
 ${LUCICFG} lint "${MYPATH}/starlark" "${MYPATH}/examples"

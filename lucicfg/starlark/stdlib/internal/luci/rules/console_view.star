@@ -25,7 +25,7 @@ load("@stdlib//internal/luci/rules/console_view_entry.star", "console_view_entry
 # inclusion into a console.
 
 def _console_view(
-        ctx,
+        ctx,  # @unused
         *,
         name = None,
         title = None,

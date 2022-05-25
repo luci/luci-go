@@ -20,7 +20,7 @@ load("@stdlib//internal/validate.star", "validate")
 load("@stdlib//internal/luci/common.star", "keys")
 
 def _cq(
-        ctx,
+        ctx,  # @unused
         *,
         submit_max_burst = None,
         submit_burst_delay = None,

@@ -20,7 +20,7 @@ load("@stdlib//internal/validate.star", "validate")
 load("@stdlib//internal/luci/common.star", "keys")
 
 def _notifier_template(
-        ctx,
+        ctx,  # @unused
         *,
         name = None,
         body = None):

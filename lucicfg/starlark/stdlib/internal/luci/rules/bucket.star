@@ -22,7 +22,13 @@ load("@stdlib//internal/luci/lib/acl.star", "aclimpl")
 load("@stdlib//internal/luci/rules/binding.star", "binding")
 load("@stdlib//internal/luci/rules/realm.star", "realm")
 
-def _bucket(ctx, *, name = None, acls = None, extends = None, bindings = None):
+def _bucket(
+        ctx,  # @unused
+        *,
+        name = None,
+        acls = None,
+        extends = None,
+        bindings = None):
     """Defines a bucket: a container for LUCI builds.
 
     This rule also implicitly defines the realm to use for the builds in this

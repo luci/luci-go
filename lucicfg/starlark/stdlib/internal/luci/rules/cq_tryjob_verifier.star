@@ -22,7 +22,7 @@ load("@stdlib//internal/luci/common.star", "keys", "kinds")
 load("@stdlib//internal/luci/lib/cq.star", "cq")
 
 def _cq_tryjob_verifier(
-        ctx,
+        ctx,  # @unused
         builder = None,
         *,
         cq_group = None,

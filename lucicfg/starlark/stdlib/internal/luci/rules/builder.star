@@ -24,7 +24,7 @@ load("@stdlib//internal/luci/lib/swarming.star", "swarming")
 load("@stdlib//internal/luci/rules/binding.star", "binding")
 
 def _builder(
-        ctx,
+        ctx,  # @unused
         *,
         name = None,
         bucket = None,
@@ -294,7 +294,7 @@ def _builder(
     # Properties should be JSON-serializable. The only way to check is to try to
     # serialize. We do it here (instead of generators.star) to get a more
     # informative stack trace.
-    _ = to_json(props["properties"])
+    _ = to_json(props["properties"])  # @unused
 
     # There should be no dimensions and experiments with value None after
     # merging.

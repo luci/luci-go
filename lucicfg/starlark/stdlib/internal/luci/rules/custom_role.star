@@ -18,7 +18,7 @@ load("@stdlib//internal/luci/lib/realms.star", "realms")
 load("@stdlib//internal/lucicfg.star", "lucicfg")
 
 def _custom_role(
-        ctx,
+        ctx,  # @unused
         *,
         name,
         extends = None,

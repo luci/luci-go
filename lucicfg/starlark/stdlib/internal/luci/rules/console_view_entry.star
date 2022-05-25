@@ -19,7 +19,7 @@ load("@stdlib//internal/validate.star", "validate")
 load("@stdlib//internal/luci/common.star", "keys", "kinds", "view")
 
 def _console_view_entry(
-        ctx,
+        ctx,  # @unused
         builder = None,
         *,
         short_name = None,

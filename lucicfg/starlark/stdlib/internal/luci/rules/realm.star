@@ -19,7 +19,7 @@ load("@stdlib//internal/lucicfg.star", "lucicfg")
 load("@stdlib//internal/validate.star", "validate")
 
 def _realm(
-        ctx,
+        ctx,  # @unused
         *,
         name,
         extends = None,

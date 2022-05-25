@@ -45,6 +45,7 @@ def _json_encode(value):
     Args:
       value: a value to encode. Required.
     """
+    _unused(value)
 
 def _json_decode(str):
     """Decodes a JSON string.
@@ -62,6 +63,7 @@ def _json_decode(str):
     Args:
       str: a JSON string to decode. Required.
     """
+    _unused(str)
 
 def _json_indent(str, *, prefix = "", indent = "\t"):
     """Pretty-prints a valid JSON encoding.
@@ -73,6 +75,14 @@ def _json_indent(str, *, prefix = "", indent = "\t"):
 
     Returns:
       The indented form of `str`.
+    """
+    _unused(str, prefix, indent)
+
+def _unused(*args):  # @unused
+    """Used exclusively to shut up `unused-variable` lint.
+
+    DocTags:
+      Hidden.
     """
 
 json = struct(

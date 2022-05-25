@@ -20,7 +20,7 @@ load("@stdlib//internal/luci/common.star", "notifiable")
 load("@proto//go.chromium.org/luci/buildbucket/proto/common.proto", buildbucket_common_pb = "buildbucket.v2")
 
 def _notifier(
-        ctx,
+        ctx,  # @unused
         *,
         name = None,
 

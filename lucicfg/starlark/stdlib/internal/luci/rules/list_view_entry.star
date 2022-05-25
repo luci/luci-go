@@ -17,7 +17,11 @@
 load("@stdlib//internal/lucicfg.star", "lucicfg")
 load("@stdlib//internal/luci/common.star", "keys", "kinds", "view")
 
-def _list_view_entry(ctx, builder = None, *, list_view = None):
+def _list_view_entry(
+        ctx,  # @unused
+        builder = None,
+        *,
+        list_view = None):
     """A builder entry in some luci.list_view(...).
 
     Can be used to declare that a builder belongs to a list view outside of

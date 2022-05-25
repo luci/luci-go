@@ -772,10 +772,10 @@ def _milo_console_pb(view, opts, project_name):
     if view.key.kind == kinds.CONSOLE_VIEW:
         return _milo_console_view(view, opts, project_name)
     if view.key.kind == kinds.EXTERNAL_CONSOLE_VIEW:
-        return _milo_external_console_view(view, opts, project_name)
+        return _milo_external_console_view(view)
     fail("impossible: %s" % (view,))
 
-def _milo_external_console_view(view, opts, project_name):
+def _milo_external_console_view(view):
     """Given an EXTERNAL_CONSOLE_VIEW node returns milo_pb.Console."""
     return milo_pb.Console(
         id = view.props.name,

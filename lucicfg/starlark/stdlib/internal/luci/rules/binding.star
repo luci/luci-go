@@ -18,7 +18,7 @@ load("@stdlib//internal/luci/lib/realms.star", "realms")
 load("@stdlib//internal/lucicfg.star", "lucicfg")
 
 def _binding(
-        ctx,
+        ctx,  # @unused
         *,
         realm = None,
         roles = None,

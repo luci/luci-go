@@ -48,13 +48,12 @@ def _string(attr, val, *, regexp = None, allow_empty = False, default = None, re
 
     return val
 
-def _hostname(attr, val, *, allow_empty = False, default = None, required = True):
+def _hostname(attr, val, *, default = None, required = True):
     """Validates that the value is a string RFC 1123 hostname and returns it.
 
     Args:
       attr: field name with this value, for error messages.
       val: a value to validate.
-      allow_empty: if True, accept empty string as valid.
       default: a value to use if 'val' is None, ignored if required is True.
       required: if False, allow 'val' to be None, return 'default' in this case.
 

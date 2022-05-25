@@ -22,7 +22,7 @@ load("@stdlib//internal/luci/common.star", "keys")
 _ALLOWED_STORAGE_RE = r"https://storage\.googleapis\.com/.+"
 
 def _milo(
-        ctx,
+        ctx,  # @unused
         *,
         logo = None,
         favicon = None,

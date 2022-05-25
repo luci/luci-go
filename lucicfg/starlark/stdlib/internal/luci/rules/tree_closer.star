@@ -19,7 +19,7 @@ load("@stdlib//internal/validate.star", "validate")
 load("@stdlib//internal/luci/common.star", "notifiable")
 
 def _tree_closer(
-        ctx,
+        ctx,  # @unused
         *,
         name = None,
         tree_status_host = None,

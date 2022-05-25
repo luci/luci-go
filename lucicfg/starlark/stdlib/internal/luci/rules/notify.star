@@ -19,7 +19,10 @@ load("@stdlib//internal/lucicfg.star", "lucicfg")
 load("@stdlib//internal/validate.star", "validate")
 load("@stdlib//internal/luci/common.star", "keys")
 
-def _notify(ctx, *, tree_closing_enabled = False):
+def _notify(
+        ctx,  # @unused
+        *,
+        tree_closing_enabled = False):
     """Defines configuration of the LUCI-Notify service for this project.
 
     Args:

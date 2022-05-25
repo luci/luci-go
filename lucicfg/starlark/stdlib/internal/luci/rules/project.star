@@ -24,7 +24,7 @@ load("@stdlib//internal/luci/rules/binding.star", "binding")
 load("@stdlib//internal/luci/rules/realm.star", "realm")
 
 def _project(
-        ctx,
+        ctx,  # @unused
         *,
         name = None,
         config_dir = None,

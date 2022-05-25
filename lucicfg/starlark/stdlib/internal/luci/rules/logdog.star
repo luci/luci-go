@@ -19,7 +19,11 @@ load("@stdlib//internal/lucicfg.star", "lucicfg")
 load("@stdlib//internal/validate.star", "validate")
 load("@stdlib//internal/luci/common.star", "keys")
 
-def _logdog(ctx, *, gs_bucket = None, cloud_logging_project = None):
+def _logdog(
+        ctx,  # @unused
+        *,
+        gs_bucket = None,
+        cloud_logging_project = None):
     """Defines configuration of the LogDog service for this project.
 
     Usually required for any non-trivial project.

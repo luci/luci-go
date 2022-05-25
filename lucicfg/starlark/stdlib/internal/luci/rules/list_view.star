@@ -20,7 +20,7 @@ load("@stdlib//internal/luci/common.star", "keys", "kinds", "view")
 load("@stdlib//internal/luci/rules/list_view_entry.star", "list_view_entry")
 
 def _list_view(
-        ctx,
+        ctx,  # @unused
         *,
         name = None,
         title = None,
