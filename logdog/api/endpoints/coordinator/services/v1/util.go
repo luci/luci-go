@@ -47,18 +47,24 @@ func (ar *ArchiveStreamRequest) Complete() bool {
 	return (ar.LogEntryCount == (tidx + 1))
 }
 
-// MakeError returns an Error object for err. If err is a wrapped gRPC error,
-// its code will be extracted and embedded in the returned Error.
+// MakeError returns an Error object for err to return as part of RPC response.
+//
+// If err is a wrapped gRPC error, its code will be extracted and embedded in
+// the returned Error.
+//
+// Following codes are considered transient: codes.Internal, codes.Unknown,
+// codes.Unavailable, codes.DeadlineExceeded. Additionally any error tagged with
+// transient.Tag is also considered transient.
 //
 // The Msg field will not be populated.
 func MakeError(err error) *Error {
 	if err == nil {
 		return nil
 	}
-
+	code := grpcutil.Code(err)
 	return &Error{
-		GrpcCode:  int32(grpcutil.Code(err)),
-		Transient: transient.Tag.In(err),
+		GrpcCode:  int32(code),
+		Transient: transient.Tag.In(err) || grpcutil.IsTransientCode(code) || code == codes.DeadlineExceeded,
 	}
 }
 
