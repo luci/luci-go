@@ -28,6 +28,7 @@ import (
 
 	"github.com/golang/protobuf/jsonpb"
 	"github.com/golang/protobuf/proto"
+	"google.golang.org/grpc/codes"
 	"google.golang.org/protobuf/types/known/structpb"
 
 	"google.golang.org/api/pubsub/v1"
@@ -292,7 +293,7 @@ func (m TaskManager) LaunchTask(c context.Context, ctl task.Controller) error {
 	})
 	if err != nil {
 		ctl.DebugLog("Failed to schedule Buildbucket build - %s", err)
-		return grpcutil.WrapIfTransient(err)
+		return grpcutil.WrapIfTransientOr(err, codes.DeadlineExceeded)
 	}
 
 	// Dump the response in full to the debug log. It doesn't contain any secrets.
@@ -345,13 +346,14 @@ func (m TaskManager) AbortTask(c context.Context, ctl task.Controller) error {
 	}
 
 	// Ask Buildbucket to cancel this build.
-	return grpcutil.WrapIfTransient(m.withBuildbucket(c, ctl, func(ctx context.Context, bb bbpb.BuildsClient) error {
+	err = m.withBuildbucket(c, ctl, func(ctx context.Context, bb bbpb.BuildsClient) error {
 		_, err := bb.CancelBuild(ctx, &bbpb.CancelBuildRequest{
 			Id:              taskData.BuildID,
 			SummaryMarkdown: "Canceled via LUCI Scheduler",
 		})
 		return err
-	}))
+	})
+	return grpcutil.WrapIfTransientOr(err, codes.DeadlineExceeded)
 }
 
 // ExamineNotification is part of Manager interface.
@@ -485,7 +487,7 @@ func (m TaskManager) checkBuildStatus(c context.Context, ctl task.Controller) er
 	})
 	if err != nil {
 		ctl.DebugLog("Failed to fetch build - %s", err)
-		err = grpcutil.WrapIfTransient(err)
+		err = grpcutil.WrapIfTransientOr(err, codes.DeadlineExceeded)
 		if !transient.Tag.In(err) {
 			ctl.State().Status = task.StatusFailed
 		}

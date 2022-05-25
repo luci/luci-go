@@ -19,6 +19,7 @@ import (
 	"testing"
 
 	lucierr "go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/retry/transient"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
@@ -71,5 +72,24 @@ func TestCode(t *testing.T) {
 			errMulti2 := lucierr.NewMultiError(errMulti1)
 			So(Code(errMulti2), ShouldEqual, codes.InvalidArgument)
 		})
+	})
+}
+
+func TestWrapIfTransient(t *testing.T) {
+	t.Parallel()
+
+	Convey("Works", t, func() {
+		newErr := func(code codes.Code) error { return status.Errorf(code, "...") }
+		check := func(err error) bool { return transient.Tag.In(err) }
+
+		So(check(WrapIfTransient(newErr(codes.Internal))), ShouldBeTrue)
+		So(check(WrapIfTransient(newErr(codes.Unknown))), ShouldBeTrue)
+		So(check(WrapIfTransient(newErr(codes.Unavailable))), ShouldBeTrue)
+
+		So(check(WrapIfTransient(nil)), ShouldBeFalse)
+		So(check(WrapIfTransient(newErr(codes.FailedPrecondition))), ShouldBeFalse)
+
+		So(check(WrapIfTransientOr(newErr(codes.DeadlineExceeded))), ShouldBeFalse)
+		So(check(WrapIfTransientOr(newErr(codes.DeadlineExceeded), codes.DeadlineExceeded)), ShouldBeTrue)
 	})
 }

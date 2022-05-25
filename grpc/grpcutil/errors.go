@@ -84,20 +84,49 @@ var (
 )
 
 // WrapIfTransient wraps the supplied gRPC error with a transient wrapper if
-// it has a transient gRPC code, as determined by IsTransientCode.
+// its gRPC code is transient as determined by IsTransientCode.
 //
 // If the supplied error is nil, nil will be returned.
 //
-// Note that non-gRPC errors will have code grpc.Unknown, which is considered
+// Note that non-gRPC errors will have code codes.Unknown, which is considered
 // transient, and be wrapped. This function should only be used on gRPC errors.
+//
+// Also note that codes.DeadlineExceeded is not considered a transient error,
+// since it is often non-retriable (e.g. if the root context has expired, no
+// amount of retries will resolve codes.DeadlineExceeded error).
 func WrapIfTransient(err error) error {
 	if err == nil {
 		return nil
 	}
 
 	if IsTransientCode(Code(err)) {
-		err = transient.Tag.Apply(err)
+		return transient.Tag.Apply(err)
 	}
+
+	return err
+}
+
+// WrapIfTransientOr wraps the supplied gRPC error with a transient wrapper if
+// its gRPC code is transient as determined by IsTransientCode or matches any
+// of given `extra` codes.
+//
+// See WrapIfTransient for other caveats.
+func WrapIfTransientOr(err error, extra ...codes.Code) error {
+	if err == nil {
+		return nil
+	}
+
+	code := Code(err)
+	if IsTransientCode(code) {
+		return transient.Tag.Apply(err)
+	}
+
+	for _, c := range extra {
+		if code == c {
+			return transient.Tag.Apply(err)
+		}
+	}
+
 	return err
 }
 
@@ -209,8 +238,8 @@ func ToGRPCErr(err error) error {
 	return Errf(Code(err), "%s", err)
 }
 
-// IsTransientCode returns true if a given gRPC code is associated with a
-// transient gRPC error type.
+// IsTransientCode returns true if a given gRPC code is codes.Internal,
+// codes.Unknown or codes.Unavailable.
 func IsTransientCode(code codes.Code) bool {
 	switch code {
 	case codes.Internal, codes.Unknown, codes.Unavailable:
