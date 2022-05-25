@@ -19,6 +19,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"time"
 
 	"google.golang.org/protobuf/proto"
 
@@ -67,6 +68,7 @@ func init() {
 		Queue:     "backend-default",
 	})
 
+	// TODO(crbug.com/1328646): Delete it after swarming-build-create migration is done.
 	tq.RegisterTaskClass(tq.TaskClass{
 		ID: "create-swarming-task",
 		Custom: func(ctx context.Context, m proto.Message) (*tq.CustomPayload, error) {
@@ -172,6 +174,32 @@ func init() {
 			return err
 		},
 	})
+
+	tq.RegisterTaskClass(tq.TaskClass{
+		ID:        "create-swarming-task-go",
+		Kind:      tq.Transactional,
+		Prototype: (*taskdefs.CreateSwarmingBuildTask)(nil),
+		Queue:     "swarming-build-create-go",
+		Handler: func(ctx context.Context, payload proto.Message) error {
+			t := payload.(*taskdefs.CreateSwarmingBuildTask)
+			// TODO(crbug.com/1328646): implement the handler in follow-up CLs.
+			logging.Warningf(ctx, "swarming-build-create-go handler isn't ready. Drop the message for build %d", t.BuildId)
+			return nil
+		},
+	})
+
+	tq.RegisterTaskClass(tq.TaskClass{
+		ID:        "sync-swarming-task-go",
+		Kind:      tq.NonTransactional,
+		Prototype: (*taskdefs.SyncSwarmingBuildTask)(nil),
+		Queue:     "swarming-build-sync-go",
+		Handler: func(ctx context.Context, payload proto.Message) error {
+			t := payload.(*taskdefs.CreateSwarmingBuildTask)
+			// TODO(crbug.com/1328646): implement the handler in follow-up CLs.
+			logging.Warningf(ctx, "swarming-build-sync-go handler isn't ready. Drop the message for build %d", t.BuildId)
+			return nil
+		},
+	})
 }
 
 // CancelSwarmingTask enqueues a task queue task to cancel the given Swarming
@@ -196,6 +224,35 @@ func CreateSwarmingTask(ctx context.Context, task *taskdefs.CreateSwarmingTask) 
 	}
 	return tq.AddTask(ctx, &tq.Task{
 		Payload: task,
+	})
+}
+
+// CreateSwarmingBuildTask enqueues a Cloud Tasks task to create a Swarming task
+// from the given build.
+func CreateSwarmingBuildTask(ctx context.Context, task *taskdefs.CreateSwarmingBuildTask) error {
+	if task.GetBuildId() == 0 {
+		return errors.Reason("build_id is required").Err()
+	}
+	return tq.AddTask(ctx, &tq.Task{
+		Title:   fmt.Sprintf("create-swarming-task-%d", task.BuildId),
+		Payload: task,
+	})
+}
+
+// SyncSwarmingBuildTask enqueues a Cloud Tasks task to sync the Swarming task
+// with the given build.
+func SyncSwarmingBuildTask(ctx context.Context, task *taskdefs.SyncSwarmingBuildTask) error {
+	switch {
+	case task.GetBuildId() == 0:
+		return errors.Reason("build_id is required").Err()
+	case task.GetGeneration() == 0:
+		return errors.Reason("generation should be larger than 0").Err()
+	}
+	return tq.AddTask(ctx, &tq.Task{
+		Title:            fmt.Sprintf("sync-swarming-task-%d", task.BuildId),
+		Payload:          task,
+		Delay:            300 * time.Second, // Run the continuation task in 5m.
+		DeduplicationKey: fmt.Sprintf("%d-%d", task.BuildId, task.Generation),
 	})
 }
 

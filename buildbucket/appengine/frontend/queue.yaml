@@ -23,3 +23,11 @@ queue:
   # TODO(crbug/1042991): Target backend-go once it exists.
   target: default-go
   rate: 500/s
+- name: swarming-build-create-go
+  # TODO(crbug/1042991): Target backend-go once it exists.
+  target: default-go
+  rate: 500/s
+- name: swarming-build-sync-go
+  # TODO(crbug/1328646): Switch to backend-go once it exists.
+  target: default-go
+  rate: 500/s

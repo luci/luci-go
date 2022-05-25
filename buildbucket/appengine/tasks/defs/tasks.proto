@@ -20,9 +20,25 @@ message CancelSwarmingTask {
 }
 
 // A task to create a Swarming task.
+// TODO(crbug.com/1328646): Delete it after swarming-build-create migration is done.
 message CreateSwarmingTask {
   // ID of a build in the datastore. See model.Build.
   int64 build_id = 1;
+}
+
+// A task to create a Swarming task.
+message CreateSwarmingBuildTask {
+  // ID of a build in the datastore. See model.Build.
+  int64 build_id = 1;
+}
+
+// A task to create a Swarming task.
+message SyncSwarmingBuildTask {
+  // ID of a build in the datastore. See model.Build.
+  int64 build_id = 1;
+  // Generation indicates how many times this build has been put back into the
+  // swarming sync queue.
+  int64 generation = 2;
 }
 
 // A task to export a build to BigQuery.

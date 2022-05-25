@@ -230,5 +230,71 @@ func TestTasks(t *testing.T) {
 				So(sch.Tasks(), ShouldHaveLength, 1)
 			})
 		})
+
+		Convey("CreateSwarmingBuildTask", func() {
+			Convey("invalid", func() {
+				Convey("nil", func() {
+					So(CreateSwarmingBuildTask(ctx, nil), ShouldErrLike, "build_id is required")
+					So(sch.Tasks(), ShouldBeEmpty)
+				})
+
+				Convey("empty", func() {
+					task := &taskdef.CreateSwarmingBuildTask{}
+					So(CreateSwarmingBuildTask(ctx, task), ShouldErrLike, "build_id is required")
+					So(sch.Tasks(), ShouldBeEmpty)
+				})
+
+				Convey("zero", func() {
+					task := &taskdef.CreateSwarmingBuildTask{
+						BuildId: 0,
+					}
+					So(CreateSwarmingBuildTask(ctx, task), ShouldErrLike, "build_id is required")
+					So(sch.Tasks(), ShouldBeEmpty)
+				})
+			})
+
+			Convey("valid", func() {
+				task := &taskdef.CreateSwarmingBuildTask{
+					BuildId: 1,
+				}
+				So(datastore.RunInTransaction(ctx, func(ctx context.Context) error {
+					return CreateSwarmingBuildTask(ctx, task)
+				}, nil), ShouldBeNil)
+				So(sch.Tasks(), ShouldHaveLength, 1)
+			})
+		})
+
+		Convey("SyncSwarmingBuildTask", func() {
+			Convey("invalid", func() {
+				Convey("nil", func() {
+					So(SyncSwarmingBuildTask(ctx, nil), ShouldErrLike, "build_id is required")
+					So(sch.Tasks(), ShouldBeEmpty)
+				})
+
+				Convey("empty", func() {
+					task := &taskdef.SyncSwarmingBuildTask{}
+					So(SyncSwarmingBuildTask(ctx, task), ShouldErrLike, "build_id is required")
+					So(sch.Tasks(), ShouldBeEmpty)
+				})
+
+				Convey("zero generation", func() {
+					task := &taskdef.SyncSwarmingBuildTask{
+						BuildId:    123,
+						Generation: 0,
+					}
+					So(SyncSwarmingBuildTask(ctx, task), ShouldErrLike, "generation should be larger than 0")
+					So(sch.Tasks(), ShouldBeEmpty)
+				})
+			})
+
+			Convey("valid", func() {
+				task := &taskdef.SyncSwarmingBuildTask{
+					BuildId:    123,
+					Generation: 1,
+				}
+				So(SyncSwarmingBuildTask(ctx, task), ShouldBeNil)
+				So(sch.Tasks(), ShouldHaveLength, 1)
+			})
+		})
 	})
 }
