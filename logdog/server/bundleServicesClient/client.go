@@ -49,15 +49,11 @@ type Client struct {
 
 	// Starting from the time that the first message is added to a bundle, once
 	// this delay has passed, handle the bundle.
-	//
-	// The default is bundler.DefaultDelayThreshold.
 	DelayThreshold time.Duration
 
 	// Once a bundle has this many items, handle the bundle. Since only one
 	// item at a time is added to a bundle, no bundle will exceed this
 	// threshold, so it also serves as a limit.
-	//
-	// The default is bundler.DefaultBundleCountThreshold.
 	BundleCountThreshold int
 
 	initBundlerOnce sync.Once

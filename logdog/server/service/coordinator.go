@@ -69,6 +69,6 @@ func coordinator(ctx context.Context, f *coordinatorFlags) (*bundleServicesClien
 	return &bundleServicesClient.Client{
 		ServicesClient:       logdog.NewServicesPRPCClient(prpcClient),
 		DelayThreshold:       time.Second,
-		BundleCountThreshold: 100,
+		BundleCountThreshold: 20,
 	}, nil
 }
