@@ -15,6 +15,7 @@
 """Core lucicfg-related functions."""
 
 load("@stdlib//internal/error.star", "error")
+load("@stdlib//internal/strutil.star", "strutil")
 
 def _version():
     """Returns a triple with lucicfg version: `(major, minor, revision)`."""
@@ -45,16 +46,12 @@ def _check_version(min, message = None):
         Required.
       message: a custom failure message to show.
     """
-    min_ver = [int(x) for x in min.split(".")][:3]
-    if len(min_ver) < 3:
-        min_ver += [0] * (3 - len(min_ver))
-    min_ver = tuple(min_ver)
-
-    ver = _version()
-    if ver < min_ver:
+    min_ver = strutil.parse_version(min)
+    cur_ver = _version()
+    if cur_ver < min_ver:
         fail(
             "Your lucicfg version v%s is older than required v%s. %s." % (
-                "%d.%d.%d" % ver,
+                "%d.%d.%d" % cur_ver,
                 "%d.%d.%d" % min_ver,
                 message or "Please update",
             ),

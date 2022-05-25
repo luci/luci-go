@@ -14,6 +14,8 @@
 
 """Utilities for working with strings."""
 
+load("@stdlib//internal/re.star", "re")
+
 def _expand_int_set(s):
     """Expands string with sets into a list of strings.
 
@@ -150,6 +152,31 @@ def _join_path(base, rel, allow_dots = False):
         fail(err)
     return res
 
+def _parse_version(ver):
+    """Parses `major.minor.revision` version string.
+
+    Empty version components are assumed to be zeroes, e.g. `1.1` is the same
+    as `1.1.0`. Extra components are ignored, e.g. `1.2.3.4` is the same as
+    `1.2.3`. All components must be positive integers (fails otherwise), in
+    particular versions like e.g. `1.2.3-rc1` aren't accepted.
+
+    Args:
+      ver: a version string to parse. Required.
+
+    Returns:
+      A triple of ints `(major, minor, revision)`.
+    """
+    if ver == None:
+        fail("a version string is required")
+    if type(ver) != "string":
+        fail("bad version: got %s, want string" % type(ver))
+    if not re.submatches(r"^\d+(\.\d+)*$", ver):
+        fail("bad version string: should be `major.minor.revision`, got %r" % ver)
+    val = [int(x) for x in ver.split(".")][:3]
+    if len(val) < 3:
+        val += [0] * (3 - len(val))
+    return tuple(val)
+
 strutil = struct(
     expand_int_set = _expand_int_set,
     json_to_yaml = _json_to_yaml,
@@ -160,4 +187,5 @@ strutil = struct(
     hex_decode = _hex_decode,
     template = _template,
     join_path = _join_path,
+    parse_version = _parse_version,
 )
