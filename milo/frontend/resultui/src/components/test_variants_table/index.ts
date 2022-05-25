@@ -63,10 +63,7 @@ export class TestVariantsTableElement extends MiloBaseElement {
 
   private getTvtColumns(columnWidths: readonly number[]) {
     return (
-      '--tvt-columns: 24px ' +
-      (this.showTimestamp ? '135px ' : '') +
-      columnWidths.map((width) => width + 'px').join(' ') +
-      ' 1fr'
+      '24px ' + (this.showTimestamp ? '135px ' : '') + columnWidths.map((width) => width + 'px').join(' ') + ' 1fr'
     );
   }
 
@@ -223,7 +220,7 @@ export class TestVariantsTableElement extends MiloBaseElement {
 
   protected render() {
     return html`
-      <div style=${this.getTvtColumns(this.columnWidths)}>
+      <div style="--tvt-columns: ${this.getTvtColumns(this.columnWidths)}">
         <div id="table-header">
           <div><!-- Expand toggle --></div>
           <milo-tvt-column-header
