@@ -32,7 +32,6 @@ import (
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/gae/service/datastore"
 
-	"go.chromium.org/luci/cv/internal/changelist"
 	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/gerrit"
 	"go.chromium.org/luci/cv/internal/run"
@@ -172,11 +171,7 @@ var perCLRetryFactory retry.Factory = transient.Only(func() retry.Iterator {
 // Retries on transient failure of submitting individual CL based on
 // `perCLRetryFactory`.
 func (s RunCLsSubmitter) submitCLs(ctx context.Context, cls []*run.RunCL) *eventpb.SubmissionCompleted {
-	// optimization: If some or all CLs in the list form a chain (i.e. previous CL
-	// is a hard dependency of the next CL), directly submit the last CL in the
-	// chain. Gerrit will merge all its parent CLs atomically.
-	var parentCLs common.CLIDs
-	for i, cl := range cls {
+	for _, cl := range cls {
 		if clock.Now(ctx).After(s.deadline) {
 			return &eventpb.SubmissionCompleted{
 				Result: eventpb.SubmissionResult_FAILED_PERMANENT,
@@ -184,11 +179,6 @@ func (s RunCLsSubmitter) submitCLs(ctx context.Context, cls []*run.RunCL) *event
 					Timeout: true,
 				},
 			}
-		}
-		if i+1 < len(cls) && changelist.HasHardDep(cls[i+1].Detail, cl.ID) {
-			// Skip. This CL will be submitted by submitting its child CL (next CL).
-			parentCLs = append(parentCLs, cl.ID)
-			continue
 		}
 		var submitted bool
 		var msg string
@@ -207,33 +197,22 @@ func (s RunCLsSubmitter) submitCLs(ctx context.Context, cls []*run.RunCL) *event
 					return transient.Tag.Off().Apply(err)
 				}
 			}
-			return s.rm.NotifyCLsSubmitted(ctx, s.runID, append(parentCLs, cl.ID))
+			return s.rm.NotifyCLsSubmitted(ctx, s.runID, common.CLIDs{cl.ID})
 		}, retry.LogCallback(ctx, fmt.Sprintf("submit cl [id=%d, external_id=%q]", cl.ID, cl.ExternalID)))
 
 		if err != nil {
 			evt := classifyErr(ctx, err)
 			if !submitted {
-				failures := make([]*eventpb.SubmissionCompleted_CLSubmissionFailure, len(parentCLs)+1)
-				parentMsg := fmt.Sprintf(topOfStackFailureMsgFmt, cl.ExternalID.MustURL())
-				for i, parentCLID := range parentCLs {
-					failures[i] = &eventpb.SubmissionCompleted_CLSubmissionFailure{
-						Clid: int64(parentCLID), Message: parentMsg,
-					}
-				}
-				failures[len(parentCLs)] = &eventpb.SubmissionCompleted_CLSubmissionFailure{
-					Clid: int64(cl.ID), Message: msg,
-				}
 				evt.FailureReason = &eventpb.SubmissionCompleted_ClFailures{
 					ClFailures: &eventpb.SubmissionCompleted_CLSubmissionFailures{
-						Failures: failures,
+						Failures: []*eventpb.SubmissionCompleted_CLSubmissionFailure{
+							{Clid: int64(cl.ID), Message: msg},
+						},
 					},
 				}
 			}
 			return evt
 		}
-		// Parent CLs must have been submitted along with the submission of
-		// current CL. Clean it up.
-		parentCLs = parentCLs[:0]
 	}
 	return &eventpb.SubmissionCompleted{
 		Result: eventpb.SubmissionResult_SUCCEEDED,
@@ -314,9 +293,8 @@ const (
 		"your LUCI project scoped account in Gerrit config."
 	resourceExhaustedMsg = "Failed to submit this CL because Gerrit " +
 		"throttled the submission."
-	topOfStackFailureMsgFmt = "Cannot submit this CL because submission of its child CL has failed: %s"
-	unexpectedMsgFmt        = "Failed to submit this CL because of unexpected " +
-		"error from Gerrit: %s"
+	unexpectedMsgFmt = "Failed to submit this CL because of unexpected error " +
+		"from Gerrit: %s"
 )
 
 // classifyGerritErr returns message to be posted on the CL for the given

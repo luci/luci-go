@@ -213,13 +213,3 @@ func (s *Snapshot) IsSubmitted() (bool, error) {
 	}
 	return g.GetInfo().GetStatus() == gerritpb.ChangeStatus_MERGED, nil
 }
-
-// HasHardDep returns true if the snaphot has `depCLID` as hard dependency.
-func HasHardDep(from *Snapshot, depCLID common.CLID) bool {
-	for _, dep := range from.GetDeps() {
-		if common.CLID(dep.GetClid()) == depCLID && dep.Kind == DepKind_HARD {
-			return true
-		}
-	}
-	return false
-}
