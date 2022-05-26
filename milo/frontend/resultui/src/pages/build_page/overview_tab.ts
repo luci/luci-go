@@ -261,31 +261,49 @@ export class OverviewTabElement extends MobxLitElement {
       return html``;
     }
 
-    let inputCipdHtml = []
+    const inputCipdHtml = [];
     for (const dir in agent.input.data) {
-      let specs  = agent.input.data[dir]?.cipd.specs
+      const specs = agent.input.data[dir]?.cipd.specs;
       if (!specs?.length) {
-        continue
+        continue;
       }
       if (dir) {
-        inputCipdHtml.push(html`<tr><td colspan=2><br/>@Subdir ${dir}</td></tr>`);
+        inputCipdHtml.push(
+          html`<tr>
+            <td colspan="2"><br />@Subdir ${dir}</td>
+          </tr>`
+        );
       }
       for (const pkgSpec of specs) {
-        inputCipdHtml.push(html`<tr><td>${pkgSpec.package}</td><td>${pkgSpec.version}</td></tr>`);
+        inputCipdHtml.push(
+          html`<tr>
+            <td>${pkgSpec.package}</td>
+            <td>${pkgSpec.version}</td>
+          </tr>`
+        );
       }
     }
 
-    let resolvedCipdHtml = []
+    const resolvedCipdHtml = [];
     for (const dir in agent.output?.resolvedData) {
-      let specs  = agent.output?.resolvedData[dir]?.cipd.specs
+      const specs = agent.output?.resolvedData[dir]?.cipd.specs;
       if (!specs?.length) {
-        continue
+        continue;
       }
       if (dir) {
-        resolvedCipdHtml.push(html`<tr><td colspan=2><br/>@Subdir ${dir}</td></tr>`);
+        resolvedCipdHtml.push(
+          html`<tr>
+            <td colspan="2"><br />@Subdir ${dir}</td>
+          </tr>`
+        );
       }
       for (const pkgSpec of specs) {
-        resolvedCipdHtml.push(html`<tr><td>${pkgSpec.package}</td><td><milo-link .link=${getCipdLink(pkgSpec.package, pkgSpec.version)} target="_blank"></milo-link></td></tr>`);
+        resolvedCipdHtml.push(
+          html`<tr>
+            <td>${pkgSpec.package}</td>
+            <td><milo-link .link=${getCipdLink(pkgSpec.package, pkgSpec.version)} target="_blank"></milo-link></td>
+          </tr>`
+        );
       }
     }
 
@@ -293,10 +311,20 @@ export class OverviewTabElement extends MobxLitElement {
       <h3>Build Packages Info</h3>
       <table id="build-pkgs-table">
         <tbody>
-          ${agent.output?.status == "SUCCESS" ? '' : html`
-            <tr><td>Status</td>${agent.output?.status}<td><br/></td></tr>
-            <tr><td>Summary</td>${agent.output?.summaryHtml}<td><br/></td></tr>
-          `}
+          ${agent.output?.status === BuildStatus.Success
+            ? ''
+            : html`
+                <tr>
+                  <td>Status</td>
+                  ${agent.output?.status}
+                  <td><br /></td>
+                </tr>
+                <tr>
+                  <td>Summary</td>
+                  ${agent.output?.summaryHtml}
+                  <td><br /></td>
+                </tr>
+              `}
           <tr>
             <td>Agent Platform</td>
             <td>${agent.output?.agentPlatform || 'N/A'}</td>
@@ -304,14 +332,17 @@ export class OverviewTabElement extends MobxLitElement {
 
           <tr>
             <td>Download Duration</td>
-            <td>${agent.output?.totalDuration || 'N/A'}</td></tr>
+            <td>${agent.output?.totalDuration || 'N/A'}</td>
+          </tr>
           <tr>
             <td>Requested CIPD Manifest</td>
             <td>
               <milo-expandable-entry contentRuler="none" .expanded=${false}>
                 <div slot="content" class="nav-scrollbar">
                   <table class="nested-manifest-table">
-                    <tr><td>$ServiceURL https://chrome-infra-packages.appspot.com/<br/></td></tr>
+                    <tr>
+                      <td>$ServiceURL https://chrome-infra-packages.appspot.com/<br /></td>
+                    </tr>
                     ${inputCipdHtml}
                   </table>
                 </div>
@@ -319,19 +350,23 @@ export class OverviewTabElement extends MobxLitElement {
             </td>
           </tr>
 
-          ${agent.output? html`<tr>
-            <td>Resolved CIPD Manifest</td>
-            <td>
-              <milo-expandable-entry contentRuler="none" .expanded=${false}>
-                <div slot="content" class="nav-scrollbar">
-                  <table class="nested-manifest-table">
-                    <tr><td>$ServiceURL https://chrome-infra-packages.appspot.com/</td></tr>
-                    ${resolvedCipdHtml}
-                  </table>
-                </div>
-              </milo-expandable-entry>
-            </td>
-          </tr>` : ''}
+          ${agent.output
+            ? html`<tr>
+                <td>Resolved CIPD Manifest</td>
+                <td>
+                  <milo-expandable-entry contentRuler="none" .expanded=${false}>
+                    <div slot="content" class="nav-scrollbar">
+                      <table class="nested-manifest-table">
+                        <tr>
+                          <td>$ServiceURL https://chrome-infra-packages.appspot.com/</td>
+                        </tr>
+                        ${resolvedCipdHtml}
+                      </table>
+                    </div>
+                  </milo-expandable-entry>
+                </td>
+              </tr>`
+            : ''}
         </tbody>
       </table>
     `;
@@ -373,10 +408,9 @@ export class OverviewTabElement extends MobxLitElement {
                 <tr>
                   <td>Ancestor Builds:</td>
                   <td>
-                        ${build.ancestorIds.length == 0 ? 'no ancestor builds' :
-                        build.ancestorIds.map(id =>
-                          html`<a href="/b/${id}">${id}</a> `)
-                        }
+                    ${build.ancestorIds.length === 0
+                      ? 'no ancestor builds'
+                      : build.ancestorIds.map((id) => html`<a href="/b/${id}">${id}</a> `)}
                   </td>
                 </tr>
               `
@@ -785,7 +819,7 @@ export class OverviewTabElement extends MobxLitElement {
       #build-pkgs-table td {
         padding: 0.1em 1em 0.1em 1em;
       }
-      #build-pkgs-table>tbody>tr:nth-child(even) {
+      #build-pkgs-table > tbody > tr:nth-child(even) {
         background-color: var(--block-background-color);
       }
 

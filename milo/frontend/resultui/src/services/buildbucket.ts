@@ -32,7 +32,8 @@ export const BLAMELIST_PIN_KEY = '$recipe_engine/milo/blamelist_pins';
 
 export const BUILD_FIELD_MASK =
   'id,builder,number,canceledBy,createTime,startTime,endTime,cancelTime,status,summaryMarkdown,input,output,steps,' +
-  'infra.buildbucket.agent,infra.swarming,infra.resultdb,tags,exe,schedulingTimeout,executionTimeout,gracePeriod,ancestorIds';
+  'infra.buildbucket.agent,infra.swarming,infra.resultdb,tags,exe,schedulingTimeout,executionTimeout,gracePeriod,' +
+  'ancestorIds';
 
 // Includes: id, builder, number, createTime, startTime, endTime, status, summaryMarkdown.
 export const SEARCH_BUILD_FIELD_MASK =
@@ -220,9 +221,8 @@ export interface BuildAgent {
 }
 
 export interface BuildAgentInput {
-  readonly data: {[key:string]: BuildAgentInputDataRef};
+  readonly data: { [key: string]: BuildAgentInputDataRef };
 }
-
 
 export interface BuildAgentInputDataRef {
   readonly cipd: Cipd;
@@ -230,7 +230,7 @@ export interface BuildAgentInputDataRef {
 }
 
 export interface BuildAgentOutput {
-  readonly resolvedData: {[key:string]: BuildAgentResolvedDataRef};
+  readonly resolvedData: { [key: string]: BuildAgentResolvedDataRef };
   readonly status: BuildStatus;
   readonly summaryHtml: string;
   readonly agentPlatform: string;
