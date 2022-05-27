@@ -19,6 +19,7 @@ import (
 	"testing"
 
 	"go.chromium.org/luci/cipd/client/cipd/deployer"
+	"go.chromium.org/luci/cipd/client/cipd/pkg"
 	"go.chromium.org/luci/cipd/client/cipd/template"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -45,15 +46,23 @@ var fileSerializationTests = []struct {
 
 	{
 		"ServiceURL",
-		&File{"https://something.example.com", "", "", nil, nil},
+		&File{"https://something.example.com", "", "", "", nil, nil},
 		f(
 			"$ServiceURL https://something.example.com",
 		),
 	},
 
 	{
+		"OverrideInstallMode",
+		&File{"", "", "", pkg.InstallModeCopy, nil, nil},
+		f(
+			"$OverrideInstallMode copy",
+		),
+	},
+
+	{
 		"simple packages",
-		&File{"", "", "", map[string]PackageSlice{
+		&File{"", "", "", "", map[string]PackageSlice{
 			"": {
 				PackageDef{"some/thing", "version", 0},
 				PackageDef{"some/other_thing", "latest", 0},

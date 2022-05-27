@@ -77,11 +77,12 @@ import (
 // ToRedeploy is populated only when CheckDeployed is called in a paranoid mode,
 // and the package needs repairs.
 type DeployedPackage struct {
-	Deployed    bool            // true if the package is deployed (perhaps partially)
-	Pin         common.Pin      // the currently installed pin
-	Subdir      string          // the site subdirectory where the package is installed
-	Manifest    *pkg.Manifest   // instance's manifest, if available
-	InstallMode pkg.InstallMode // validated install mode, if available
+	Deployed          bool            // true if the package is deployed (perhaps partially)
+	Pin               common.Pin      // the currently installed pin
+	Subdir            string          // the site subdirectory where the package is installed
+	Manifest          *pkg.Manifest   // instance's manifest, if available
+	InstallMode       pkg.InstallMode // validated non-empty install mode requested by instance, if available
+	ActualInstallMode pkg.InstallMode // validated non-empty install mode of actual deployment, if available
 
 	// ToRedeploy is a list of files that needs to be reextracted from the
 	// original package and relinked into the site root.
@@ -136,7 +137,7 @@ type Deployer interface {
 	// Due to a historical bug, if inst contains any files which are intended to
 	// be deployed to `.cipd/*`, they will not be extracted and you'll see
 	// warnings logged.
-	DeployInstance(ctx context.Context, subdir string, inst pkg.Instance, maxThreads int) (common.Pin, error)
+	DeployInstance(ctx context.Context, subdir string, inst pkg.Instance, overrideInstallMode pkg.InstallMode, maxThreads int) (common.Pin, error)
 
 	// CheckDeployed checks whether a given package is deployed at the given
 	// subdir.
@@ -172,7 +173,7 @@ type Deployer interface {
 	// 'pin' indicates an instances that is supposed to be installed in the given
 	// subdir. If there's no such package there or its version is different from
 	// the one specified in the pin, returns an error.
-	RepairDeployed(ctx context.Context, subdir string, pin common.Pin, maxThreads int, params RepairParams) error
+	RepairDeployed(ctx context.Context, subdir string, pin common.Pin, overrideInstallMode pkg.InstallMode, maxThreads int, params RepairParams) error
 
 	// FS returns an fs.FileSystem rooted at the deployer root dir.
 	FS() fs.FileSystem
@@ -198,7 +199,7 @@ func New(root string) Deployer {
 
 type errDeployer struct{ err error }
 
-func (d errDeployer) DeployInstance(context.Context, string, pkg.Instance, int) (common.Pin, error) {
+func (d errDeployer) DeployInstance(context.Context, string, pkg.Instance, pkg.InstallMode, int) (common.Pin, error) {
 	return common.Pin{}, d.err
 }
 
@@ -212,7 +213,7 @@ func (d errDeployer) FindDeployed(context.Context) (out common.PinSliceBySubdir,
 
 func (d errDeployer) RemoveDeployed(context.Context, string, string) error { return d.err }
 
-func (d errDeployer) RepairDeployed(context.Context, string, common.Pin, int, RepairParams) error {
+func (d errDeployer) RepairDeployed(context.Context, string, common.Pin, pkg.InstallMode, int, RepairParams) error {
 	return d.err
 }
 
@@ -284,7 +285,7 @@ type deployerImpl struct {
 	fs fs.FileSystem
 }
 
-func (d *deployerImpl) DeployInstance(ctx context.Context, subdir string, inst pkg.Instance, maxThreads int) (pin common.Pin, err error) {
+func (d *deployerImpl) DeployInstance(ctx context.Context, subdir string, inst pkg.Instance, overrideInstallMode pkg.InstallMode, maxThreads int) (pin common.Pin, err error) {
 	if err = common.ValidateSubdir(subdir); err != nil {
 		return common.Pin{}, err
 	}
@@ -292,7 +293,11 @@ func (d *deployerImpl) DeployInstance(ctx context.Context, subdir string, inst p
 	startTS := clock.Now(ctx)
 
 	pin = inst.Pin()
-	logging.Infof(ctx, "Deploying %s into %s(/%s)", pin, d.fs.Root(), subdir)
+	copyOverrideMsg := ""
+	if overrideInstallMode != "" {
+		copyOverrideMsg = fmt.Sprintf(" (%s-mode override)", overrideInstallMode)
+	}
+	logging.Infof(ctx, "Deploying %s into %s(/%s)%s", pin, d.fs.Root(), subdir, copyOverrideMsg)
 
 	// Be paranoid (but not too much).
 	if err = common.ValidatePin(pin, common.AnyHash); err != nil {
@@ -336,7 +341,7 @@ func (d *deployerImpl) DeployInstance(ctx context.Context, subdir string, inst p
 
 	// Unzip the package into the final destination inside .cipd/* guts.
 	destPath := filepath.Join(pkgPath, pin.InstanceID)
-	if _, err := reader.ExtractFilesTxn(ctx, files, fs.NewDestination(destPath, d.fs), maxThreads, pkg.WithManifest); err != nil {
+	if _, err := reader.ExtractFilesTxn(ctx, files, fs.NewDestination(destPath, d.fs), maxThreads, pkg.WithManifest, overrideInstallMode); err != nil {
 		return common.Pin{}, err
 	}
 
@@ -354,8 +359,9 @@ func (d *deployerImpl) DeployInstance(ctx context.Context, subdir string, inst p
 	if err != nil {
 		return common.Pin{}, err
 	}
-	installMode, err := pkg.PickInstallMode(newManifest.InstallMode)
-	if err != nil {
+
+	installMode := newManifest.ActualInstallMode
+	if installMode, err = pkg.PickInstallMode(installMode); err != nil {
 		return common.Pin{}, err
 	}
 
@@ -494,6 +500,18 @@ func (d *deployerImpl) CheckDeployed(ctx context.Context, subdir, pkgname string
 		if err != nil {
 			return nil, err // this is fatal, the manifest has unrecognized mode
 		}
+		if manifest.ActualInstallMode == "" {
+			// this manifest is from an earlier version of cipd which didn't record
+			// actual install mode; these versions of cipd always used the mode
+			// specified by manifest.InstallMode or the platform default, so
+			// PickInstallMode already did all the work for us.
+			out.ActualInstallMode = out.InstallMode
+		} else {
+			out.ActualInstallMode, err = pkg.PickInstallMode(manifest.ActualInstallMode)
+			if err != nil {
+				return nil, err // this is fatal, the manifest has unrecognized mode
+			}
+		}
 	}
 
 	// Yay, found something in a pretty healthy state.
@@ -573,7 +591,7 @@ func (d *deployerImpl) RemoveDeployed(ctx context.Context, subdir, packageName s
 	return d.fs.EnsureDirectoryGone(ctx, deployed.packagePath)
 }
 
-func (d *deployerImpl) RepairDeployed(ctx context.Context, subdir string, pin common.Pin, maxThreads int, params RepairParams) error {
+func (d *deployerImpl) RepairDeployed(ctx context.Context, subdir string, pin common.Pin, overrideInstallMode pkg.InstallMode, maxThreads int, params RepairParams) error {
 	switch {
 	case len(params.ToRedeploy) != 0 && params.Instance == nil:
 		return errors.Reason("if ToRedeploy is not empty, Instance must be given too").Err()
@@ -602,6 +620,11 @@ func (d *deployerImpl) RepairDeployed(ctx context.Context, subdir string, pin co
 		panic("impossible, packagePath cannot be empty for deployed pkg")
 	case p.instancePath == "":
 		panic("impossible, instancePath cannot be empty for deployed pkg")
+	}
+
+	installMode := p.InstallMode
+	if overrideInstallMode != "" {
+		installMode = overrideInstallMode
 	}
 
 	// See the comment about locking in DeployInstance.
@@ -668,7 +691,7 @@ func (d *deployerImpl) RepairDeployed(ctx context.Context, subdir string, pin co
 	if len(repair) != 0 {
 		logging.Infof(ctx, "Repairing %d files...", len(repair))
 		dest := fs.ExistingDestination(p.instancePath, d.fs)
-		if _, err := reader.ExtractFiles(ctx, repair, dest, maxThreads, pkg.WithoutManifest); err != nil {
+		if _, err := reader.ExtractFiles(ctx, repair, dest, maxThreads, pkg.WithoutManifest, overrideInstallMode); err != nil {
 			return err
 		}
 	}
@@ -690,14 +713,14 @@ func (d *deployerImpl) RepairDeployed(ctx context.Context, subdir string, pin co
 		add(name)
 	}
 	logging.Infof(ctx, "Relinking %d files...", len(infos))
-	if _, err := d.addToSiteRoot(ctx, p.Subdir, infos, p.InstallMode, p.packagePath, p.instancePath); err != nil {
+	if _, err := d.addToSiteRoot(ctx, p.Subdir, infos, installMode, p.packagePath, p.instancePath); err != nil {
 		return err
 	}
 
 	// Cleanup empty directories left in the guts after files have been moved
 	// away, just like DeployInstance does. Best effort.
-	if p.InstallMode == pkg.InstallModeCopy {
-		removeEmptyTree(p.instancePath, func(string) bool { return true })
+	if installMode == pkg.InstallModeCopy {
+		_, _ = removeEmptyTree(p.instancePath, func(string) bool { return true })
 	}
 
 	if failed {

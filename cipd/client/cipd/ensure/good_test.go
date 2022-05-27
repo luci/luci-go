@@ -21,6 +21,7 @@ import (
 	"testing"
 
 	"go.chromium.org/luci/cipd/client/cipd/deployer"
+	"go.chromium.org/luci/cipd/client/cipd/pkg"
 	"go.chromium.org/luci/cipd/client/cipd/template"
 	"go.chromium.org/luci/cipd/common"
 
@@ -57,7 +58,7 @@ var goodEnsureFiles = []struct {
 			"path/to/other_package some_tag:version",
 			"path/to/yet_another a_ref",
 		),
-		&ResolvedFile{"", deployer.NotParanoid, common.PinSliceBySubdir{
+		&ResolvedFile{"", deployer.NotParanoid, "", common.PinSliceBySubdir{
 			"": {
 				p("path/to/package", "deadbeefdeadbeefdeadbeefdeadbeefdeadbeef"),
 				p("path/to/other_package", "some_tag:version"),
@@ -72,7 +73,7 @@ var goodEnsureFiles = []struct {
 			"path/to/package/${os}-${arch} latest",
 			"path/to/other/${platform} latest",
 		),
-		&ResolvedFile{"", deployer.NotParanoid, common.PinSliceBySubdir{
+		&ResolvedFile{"", deployer.NotParanoid, "", common.PinSliceBySubdir{
 			"": {
 				p("path/to/package/test_os-test_arch", "latest"),
 				p("path/to/other/test_os-test_arch", "latest"),
@@ -86,7 +87,7 @@ var goodEnsureFiles = []struct {
 			"path/to/package/${os}-${arch=neep,test_arch} latest",
 			"path/to/other/${platform=test_os-test_arch} latest",
 		),
-		&ResolvedFile{"", deployer.NotParanoid, common.PinSliceBySubdir{
+		&ResolvedFile{"", deployer.NotParanoid, "", common.PinSliceBySubdir{
 			"": {
 				p("path/to/package/test_os-test_arch", "latest"),
 				p("path/to/other/test_os-test_arch", "latest"),
@@ -100,7 +101,7 @@ var goodEnsureFiles = []struct {
 			"path/to/package/${os=spaz}-${arch=neep,test_arch} latest",
 			"path/to/package/${platform=neep-foo} latest",
 		),
-		&ResolvedFile{"", deployer.NotParanoid, common.PinSliceBySubdir{}},
+		&ResolvedFile{"", deployer.NotParanoid, "", common.PinSliceBySubdir{}},
 	},
 
 	{
@@ -125,7 +126,7 @@ var goodEnsureFiles = []struct {
 			"@Subdir something/${os=test_os,other}",
 			"some/os_specific/package canary",
 		),
-		&ResolvedFile{"", deployer.NotParanoid, common.PinSliceBySubdir{
+		&ResolvedFile{"", deployer.NotParanoid, "", common.PinSliceBySubdir{
 			"": {
 				p("some/package", "latest"),
 				p("cool/package", "beef"),
@@ -153,7 +154,7 @@ var goodEnsureFiles = []struct {
 			"",
 			"some/package version",
 		),
-		&ResolvedFile{"https://cipd.example.com/path/to/thing", deployer.NotParanoid, common.PinSliceBySubdir{
+		&ResolvedFile{"https://cipd.example.com/path/to/thing", deployer.NotParanoid, "", common.PinSliceBySubdir{
 			"": {
 				p("some/package", "version"),
 			},
@@ -169,7 +170,7 @@ var goodEnsureFiles = []struct {
 			"",
 			"some/package version",
 		),
-		&ResolvedFile{"", deployer.NotParanoid, common.PinSliceBySubdir{
+		&ResolvedFile{"", deployer.NotParanoid, "", common.PinSliceBySubdir{
 			"": {
 				p("some/package", "version"),
 			},
@@ -183,7 +184,7 @@ var goodEnsureFiles = []struct {
 			"",
 			"some/package version",
 		),
-		&ResolvedFile{"", deployer.CheckPresence, common.PinSliceBySubdir{
+		&ResolvedFile{"", deployer.CheckPresence, "", common.PinSliceBySubdir{
 			"": {
 				p("some/package", "version"),
 			},
@@ -202,9 +203,23 @@ var goodEnsureFiles = []struct {
 	},
 
 	{
+		"OverrideInstallMode setting",
+		f(
+			"$OverrideInstallMode copy",
+			"",
+			"some/package version",
+		),
+		&ResolvedFile{"", deployer.NotParanoid, pkg.InstallModeCopy, common.PinSliceBySubdir{
+			"": {
+				p("some/package", "version"),
+			},
+		}},
+	},
+
+	{
 		"empty",
 		"",
-		&ResolvedFile{"", deployer.NotParanoid, nil},
+		&ResolvedFile{"", deployer.NotParanoid, "", nil},
 	},
 
 	{
@@ -214,7 +229,7 @@ var goodEnsureFiles = []struct {
 			"tabs/to/package\t\t\t\tlatest",
 			"\ttabs/and/spaces  \t  \t  \tlatest   \t",
 		),
-		&ResolvedFile{"", deployer.NotParanoid, common.PinSliceBySubdir{
+		&ResolvedFile{"", deployer.NotParanoid, "", common.PinSliceBySubdir{
 			"": {
 				p("path/to/package", "latest"),
 				p("tabs/to/package", "latest"),

@@ -29,15 +29,17 @@ import (
 	"go.chromium.org/luci/common/sync/parallel"
 
 	"go.chromium.org/luci/cipd/client/cipd/deployer"
+	"go.chromium.org/luci/cipd/client/cipd/pkg"
 	"go.chromium.org/luci/cipd/client/cipd/template"
 	"go.chromium.org/luci/cipd/common"
 )
 
 // File is an in-process representation of the 'ensure file' format.
 type File struct {
-	ServiceURL       string
-	ParanoidMode     deployer.ParanoidMode
-	ResolvedVersions string
+	ServiceURL          string
+	ParanoidMode        deployer.ParanoidMode
+	ResolvedVersions    string
+	OverrideInstallMode pkg.InstallMode
 
 	PackagesBySubdir map[string]PackageSlice
 	VerifyPlatforms  []template.Platform
@@ -129,8 +131,9 @@ type VersionResolver func(pkg, vers string) (common.Pin, error)
 // ResolvedFile only contains valid, fully-resolved information and is the
 // result of calling File.Resolve.
 type ResolvedFile struct {
-	ServiceURL   string
-	ParanoidMode deployer.ParanoidMode
+	ServiceURL          string
+	ParanoidMode        deployer.ParanoidMode
+	OverrideInstallMode pkg.InstallMode
 
 	PackagesBySubdir common.PinSliceBySubdir
 }
@@ -150,9 +153,10 @@ func (f *ResolvedFile) Serialize(w io.Writer) error {
 		packagesBySubdir[k] = slc
 	}
 	return (&File{
-		ServiceURL:       f.ServiceURL,
-		ParanoidMode:     f.ParanoidMode,
-		PackagesBySubdir: packagesBySubdir,
+		ServiceURL:          f.ServiceURL,
+		ParanoidMode:        f.ParanoidMode,
+		OverrideInstallMode: f.OverrideInstallMode,
+		PackagesBySubdir:    packagesBySubdir,
 	}).Serialize(w)
 }
 
@@ -165,7 +169,7 @@ func (f *ResolvedFile) Serialize(w io.Writer) error {
 // or a multi-error with all resolution errors, sorted by definition line
 // numbers.
 func (f *File) Resolve(rslv VersionResolver, expander template.Expander) (*ResolvedFile, error) {
-	ret := &ResolvedFile{}
+	ret := &ResolvedFile{OverrideInstallMode: f.OverrideInstallMode}
 
 	if f.ServiceURL != "" {
 		// double check the url
@@ -320,6 +324,11 @@ func (f *File) Serialize(w io.Writer) error {
 		if f.ResolvedVersions != "" {
 			maybeAddNL()
 			fmt.Fprintf(w, "$ResolvedVersions %s", f.ResolvedVersions)
+			needsNLs = 1
+		}
+		if f.OverrideInstallMode != "" {
+			maybeAddNL()
+			fmt.Fprintf(w, "$OverrideInstallMode %s", f.OverrideInstallMode)
 			needsNLs = 1
 		}
 

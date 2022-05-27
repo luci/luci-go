@@ -114,6 +114,18 @@ var badEnsureFiles = []struct {
 	},
 
 	{
+		"bad override mode",
+		"$overrideinstallmode not_athing",
+		"invalid install mode",
+	},
+
+	{
+		"symlink override mode",
+		"$overrideinstallmode symlink",
+		"only copy mode is allowed",
+	},
+
+	{
 		"too many urls",
 		f(
 			"$serviceurl https://something.example.com",

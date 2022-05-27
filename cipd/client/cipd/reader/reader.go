@@ -152,7 +152,7 @@ func OpenInstanceFile(ctx context.Context, path string, opts OpenInstanceOpts) (
 //
 // If withManifest is WithoutManifest, the function will fail if the manifest is
 // among 'files' (as a precaution against unintended override of manifests).
-func ExtractFiles(ctx context.Context, files []fs.File, dest fs.Destination, maxThreads int, withManifest pkg.ManifestMode) (extracted []pkg.FileInfo, err error) {
+func ExtractFiles(ctx context.Context, files []fs.File, dest fs.Destination, maxThreads int, withManifest pkg.ManifestMode, overrideInstallMode pkg.InstallMode) (extracted []pkg.FileInfo, err error) {
 	if !withManifest {
 		for _, f := range files {
 			if f.Name() == pkg.ManifestName {
@@ -296,9 +296,8 @@ func ExtractFiles(ctx context.Context, files []fs.File, dest fs.Destination, max
 				defer progress.advance(f.Size())
 				if f.Symlink() {
 					return extractSymlinkFile(f)
-				} else {
-					return extractRegularFile(f)
 				}
+				return extractRegularFile(f)
 			}
 			select {
 			case tasks <- task:
@@ -325,6 +324,11 @@ func ExtractFiles(ctx context.Context, files []fs.File, dest fs.Destination, max
 		return extracted, err
 	}
 	manifest.Files = extracted
+	if overrideInstallMode != "" {
+		manifest.ActualInstallMode = overrideInstallMode
+	} else {
+		manifest.ActualInstallMode = manifest.InstallMode
+	}
 
 	// And place it into the destination.
 	out, err := dest.CreateFile(ctx, pkg.ManifestName, fs.CreateFileOptions{})
@@ -346,7 +350,7 @@ func ExtractFiles(ctx context.Context, files []fs.File, dest fs.Destination, max
 //
 // It guarantees that if extraction fails for some reason, there'll be no
 // garbage laying around.
-func ExtractFilesTxn(ctx context.Context, files []fs.File, dest fs.TransactionalDestination, maxThreads int, withManifest pkg.ManifestMode) (extracted []pkg.FileInfo, err error) {
+func ExtractFilesTxn(ctx context.Context, files []fs.File, dest fs.TransactionalDestination, maxThreads int, withManifest pkg.ManifestMode, overrideInstallMode pkg.InstallMode) (extracted []pkg.FileInfo, err error) {
 	if err := dest.Begin(ctx); err != nil {
 		return nil, err
 	}
@@ -362,7 +366,7 @@ func ExtractFilesTxn(ctx context.Context, files []fs.File, dest fs.Transactional
 		}
 	}()
 
-	return ExtractFiles(ctx, files, dest, maxThreads, withManifest)
+	return ExtractFiles(ctx, files, dest, maxThreads, withManifest, overrideInstallMode)
 }
 
 // progressReporter logs progress of the extraction.

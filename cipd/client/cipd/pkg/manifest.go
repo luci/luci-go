@@ -38,7 +38,11 @@ type Manifest struct {
 	PackageName   string      `json:"package_name"`
 	VersionFile   string      `json:"version_file,omitempty"` // where to put JSON with info about deployed package
 	InstallMode   InstallMode `json:"install_mode,omitempty"` // how to install: "copy" or "symlink"
-	Files         []FileInfo  `json:"files,omitempty"`        // present only in deployed manifests
+
+	// The following fields are present only in deployed manifests:
+
+	ActualInstallMode InstallMode `json:"actual_install_mode,omitempty"` // how this specific package was actually installed
+	Files             []FileInfo  `json:"files,omitempty"`
 }
 
 // FileInfo describes a file that was extracted from a CIPD package.

@@ -129,7 +129,7 @@ func TestDeployHelperProcess(t *testing.T) {
 
 		d := New(tempDir)
 		maxThreads := 16
-		_, err = d.DeployInstance(ctx, "", inst, maxThreads)
+		_, err = d.DeployInstance(ctx, "", inst, "", maxThreads)
 		if err != nil {
 			t.Fatalf("DeployInstance failed on round %d: %s", r, err)
 		}

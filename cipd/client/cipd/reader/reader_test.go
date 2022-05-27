@@ -254,7 +254,7 @@ func TestPackageReading(t *testing.T) {
 		defer inst.Close(ctx, false)
 
 		dest := &testDestination{}
-		_, err = ExtractFilesTxn(ctx, inst.Files(), dest, 16, pkg.WithManifest)
+		_, err = ExtractFilesTxn(ctx, inst.Files(), dest, 16, pkg.WithManifest, "")
 		So(err, ShouldBeNil)
 		So(dest.beginCalls, ShouldEqual, 1)
 		So(dest.endCalls, ShouldEqual, 1)
@@ -421,7 +421,7 @@ func TestPackageReading(t *testing.T) {
 		defer inst.Close(ctx, false)
 
 		dest := &testDestination{}
-		_, err = ExtractFilesTxn(ctx, inst.Files(), dest, 16, pkg.WithManifest)
+		_, err = ExtractFilesTxn(ctx, inst.Files(), dest, 16, pkg.WithManifest, "")
 		So(err, ShouldBeNil)
 		So(dest.beginCalls, ShouldEqual, 1)
 		So(dest.endCalls, ShouldEqual, 1)

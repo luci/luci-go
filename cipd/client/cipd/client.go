@@ -145,7 +145,7 @@ var (
 	// ClientPackage is a package with the CIPD client. Used during self-update.
 	ClientPackage = "infra/tools/cipd/${platform}"
 	// UserAgent is HTTP user agent string for CIPD client.
-	UserAgent = "cipd 2.6.4"
+	UserAgent = "cipd 2.6.5"
 )
 
 func init() {
@@ -328,6 +328,12 @@ type EnsureOptions struct {
 
 	// Silent, if true, suppresses all logging output from EnsurePackages.
 	Silent bool
+
+	// OverrideInstallMode, if set, will be the install mode used for all
+	// packages installed or repaired by this ensure operation. Note that
+	// Paranoia needs to be at least CheckDeployed to change the install
+	// mode of an already-deployed package.
+	OverrideInstallMode pkg.InstallMode
 }
 
 // ClientOptions is passed to NewClient factory function.
@@ -1647,7 +1653,7 @@ func (c *clientImpl) EnsurePackages(ctx context.Context, allPins common.PinSlice
 	}
 
 	// Figure out what needs to be updated and deleted, log it.
-	aMap = buildActionPlan(allPins, existing, c.makeRepairChecker(ctx, realOpts.Paranoia))
+	aMap = buildActionPlan(allPins, existing, c.makeRepairChecker(ctx, realOpts.OverrideInstallMode, realOpts.Paranoia))
 	if len(aMap) == 0 {
 		if !realOpts.Silent {
 			logging.Debugf(ctx, "Everything is up-to-date.")
@@ -1745,7 +1751,7 @@ func (c *clientImpl) EnsurePackages(ctx context.Context, allPins common.PinSlice
 			case ActionRemove:
 				err = c.deployer.RemoveDeployed(ctx, a.subdir, a.pin.PackageName)
 			case ActionRelink:
-				err = c.deployer.RepairDeployed(ctx, a.subdir, a.pin, c.MaxThreads, deployer.RepairParams{
+				err = c.deployer.RepairDeployed(ctx, a.subdir, a.pin, realOpts.OverrideInstallMode, c.MaxThreads, deployer.RepairParams{
 					ToRelink: a.repairPlan.ToRelink,
 				})
 			default:
@@ -1789,9 +1795,9 @@ func (c *clientImpl) EnsurePackages(ctx context.Context, allPins common.PinSlice
 		for deployErr == nil && actionIdx < len(state.updates) {
 			switch a := state.updates[actionIdx]; a.action {
 			case ActionInstall:
-				_, deployErr = c.deployer.DeployInstance(unzipCtx, a.subdir, res.Instance, c.MaxThreads)
+				_, deployErr = c.deployer.DeployInstance(unzipCtx, a.subdir, res.Instance, realOpts.OverrideInstallMode, c.MaxThreads)
 			case ActionRepair:
-				deployErr = c.deployer.RepairDeployed(unzipCtx, a.subdir, state.pin, c.MaxThreads, deployer.RepairParams{
+				deployErr = c.deployer.RepairDeployed(unzipCtx, a.subdir, state.pin, realOpts.OverrideInstallMode, c.MaxThreads, deployer.RepairParams{
 					Instance:   res.Instance,
 					ToRedeploy: a.repairPlan.ToRedeploy,
 					ToRelink:   a.repairPlan.ToRelink,
@@ -1868,7 +1874,7 @@ func (c *clientImpl) EnsurePackages(ctx context.Context, allPins common.PinSlice
 // to repair an already installed package.
 //
 // The implementation depends on selected paranoia mode.
-func (c *clientImpl) makeRepairChecker(ctx context.Context, paranoia ParanoidMode) repairCB {
+func (c *clientImpl) makeRepairChecker(ctx context.Context, OverrideInstallMode pkg.InstallMode, paranoia ParanoidMode) repairCB {
 	if paranoia == NotParanoid {
 		return func(string, common.Pin) *RepairPlan { return nil }
 	}
@@ -1894,6 +1900,20 @@ func (c *clientImpl) makeRepairChecker(ctx context.Context, paranoia ParanoidMod
 			return &RepairPlan{
 				NeedsReinstall:  true,
 				ReinstallReason: fmt.Sprintf("expected to see instance %q, but saw %q", pin.InstanceID, state.Pin.InstanceID),
+			}
+		case OverrideInstallMode != "" && state.ActualInstallMode != OverrideInstallMode:
+			// This package is installed at the right version, but not with the
+			// requested override install mode.
+			return &RepairPlan{
+				NeedsReinstall:  true,
+				ReinstallReason: fmt.Sprintf("the package is not deployed in %s-mode (override)", OverrideInstallMode),
+			}
+		case OverrideInstallMode == "" && state.ActualInstallMode != state.InstallMode:
+			// This package is installed at the right version, but not with its
+			// native install mode (and we haven't been provided with an override).
+			return &RepairPlan{
+				NeedsReinstall:  true,
+				ReinstallReason: fmt.Sprintf("the package is not deployed in %s-mode (intended)", state.InstallMode),
 			}
 		case len(state.ToRedeploy) != 0 || len(state.ToRelink) != 0:
 			// Have some corrupted files that need to be repaired.

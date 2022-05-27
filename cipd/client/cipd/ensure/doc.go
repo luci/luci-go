@@ -62,6 +62,12 @@
 //     commit, since all hashes of all packages become part of the git commit
 //     object. Use this if you want to reduce trust in the CIPD backend and root
 //     in the git server instead.
+//   - `$OverrideInstallMode copy` forces all packages in this ensure-file to be
+//     installed with copy mode, regardless of what the package manifests list.
+//     `symlink` mode only works on mac/linux, and causes more problems than it
+//     solves. We recommend that all ensure files have this setting, and in the
+//     future this will become automatically set. See crbug.com/1329641 for
+//     additional discussion.
 //
 //
 // Package Definitions

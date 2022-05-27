@@ -1411,8 +1411,9 @@ func ensurePackages(ctx context.Context, ef *ensure.File, ensureFileOut string, 
 	}
 
 	actions, err := client.EnsurePackages(ctx, resolved.PackagesBySubdir, &cipd.EnsureOptions{
-		Paranoia: resolved.ParanoidMode,
-		DryRun:   dryRun,
+		Paranoia:            resolved.ParanoidMode,
+		DryRun:              dryRun,
+		OverrideInstallMode: resolved.OverrideInstallMode,
 	})
 	if err != nil {
 		return nil, actions, err
@@ -1655,6 +1656,84 @@ func resolveVersion(ctx context.Context, packagePrefix, version string, clientOp
 			return client.ResolveVersion(ctx, pkg, version)
 		},
 	})
+}
+
+////////////////////////////////////////////////////////////////////////////////
+// 'export' subcommand.
+
+func cmdExport(params Parameters) *subcommands.Command {
+	return &subcommands.Command{
+		UsageLine: "export [options]",
+		ShortDesc: "writes packages to disk as a 'one-off'",
+		LongDesc: `Writes packages to disk as a 'one-off'.
+
+This writes packages to disk and discards any CIPD-related tracking data.  The
+result is an installation of the specified packages on disk in a form you could
+use to re-package them elsewhere (e.g. to create a tarball, zip, etc.), or for
+some 'one time' use (where you don't need any of the guarantees provided by
+"ensure").
+
+In particular:
+  * Export will blindly overwrite files in the target directory.
+  * If a package removes a file(s) in some newer version, using "export"
+    to write over an old version with the new version will not clean
+    up the file(s).
+
+Prepare an 'ensure file' as you would pass to the "ensure" subcommand.
+This command implies "$OverrideInstallMode copy" in the ensure file.
+
+    cipd export -root a/directory -ensure-file ensure_file
+
+For the full syntax of the ensure file, see:
+
+   https://go.chromium.org/luci/cipd/client/cipd/ensure
+`,
+		CommandRun: func() subcommands.CommandRun {
+			c := &exportRun{}
+			c.registerBaseFlags()
+			c.clientOptions.registerFlags(&c.Flags, params, withRootDir, withMaxThreads)
+			c.ensureFileOptions.registerFlags(&c.Flags, withEnsureOutFlag, withLegacyListFlag)
+
+			return c
+		},
+	}
+}
+
+type exportRun struct {
+	cipdSubcommand
+	clientOptions
+	ensureFileOptions
+}
+
+func (c *exportRun) Run(a subcommands.Application, args []string, env subcommands.Env) int {
+	if !c.checkArgs(args, 0, 0) {
+		return 1
+	}
+	ctx := cli.GetContext(a, c, env)
+
+	ef, err := c.loadEnsureFile(ctx, &c.clientOptions, ignoreVerifyPlatforms, parseVersionsFile)
+	if err != nil {
+		return c.done(nil, err)
+	}
+	ef.OverrideInstallMode = pkg.InstallModeCopy
+
+	pins, _, err := ensurePackages(ctx, ef, c.ensureFileOut, false, c.clientOptions)
+	if err != nil {
+		return c.done(pins, err)
+	}
+
+	logging.Infof(ctx, "Removing cipd metadata")
+	fsystem := fs.NewFileSystem(c.rootDir, "")
+	ssd, err := fsystem.RootRelToAbs(fs.SiteServiceDir)
+	if err != nil {
+		logging.Errorf(ctx, "Unable to resolve service dir: %s", err)
+		return c.done(pins, err)
+	}
+	if err = fsystem.EnsureDirectoryGone(ctx, ssd); err != nil {
+		logging.Errorf(ctx, "Unable to purge service dir: %s", err)
+	}
+
+	return c.done(pins, err)
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -2583,6 +2662,8 @@ func cmdDeploy() *subcommands.Command {
 			c.hashOptions.registerFlags(&c.Flags)
 			c.maxThreadsOption.registerFlags(&c.Flags)
 			c.Flags.StringVar(&c.rootDir, "root", "<path>", "Path to an installation site root directory.")
+			c.Flags.Var(&c.overrideInstallMode, "install-mode",
+				"Deploy using this mode instead, even if the instance manifest specifies otherwise.")
 			return c
 		},
 	}
@@ -2593,7 +2674,8 @@ type deployRun struct {
 	hashOptions
 	maxThreadsOption
 
-	rootDir string
+	rootDir             string
+	overrideInstallMode pkg.InstallMode
 }
 
 func (c *deployRun) Run(a subcommands.Application, args []string, env subcommands.Env) int {
@@ -2605,10 +2687,10 @@ func (c *deployRun) Run(a subcommands.Application, args []string, env subcommand
 	if err != nil {
 		return c.done(nil, err)
 	}
-	return c.done(deployInstanceFile(ctx, c.rootDir, args[0], c.hashAlgo(), maxThreads))
+	return c.done(deployInstanceFile(ctx, c.rootDir, args[0], c.hashAlgo(), maxThreads, c.overrideInstallMode))
 }
 
-func deployInstanceFile(ctx context.Context, root, instanceFile string, hashAlgo api.HashAlgo, maxThreads int) (common.Pin, error) {
+func deployInstanceFile(ctx context.Context, root, instanceFile string, hashAlgo api.HashAlgo, maxThreads int, overrideInstallMode pkg.InstallMode) (common.Pin, error) {
 	inst, err := reader.OpenInstanceFile(ctx, instanceFile, reader.OpenInstanceOpts{
 		VerificationMode: reader.CalculateHash,
 		HashAlgo:         hashAlgo,
@@ -2625,7 +2707,7 @@ func deployInstanceFile(ctx context.Context, root, instanceFile string, hashAlgo
 
 	// TODO(iannucci): add subdir arg to deployRun
 
-	return d.DeployInstance(ctx, "", inst, maxThreads)
+	return d.DeployInstance(ctx, "", inst, overrideInstallMode, maxThreads)
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -3394,6 +3476,7 @@ func GetApplication(params Parameters) *cli.Application {
 			// High level local write commands.
 			{},
 			cmdEnsure(params),
+			cmdExport(params),
 			cmdSelfUpdate(params),
 			cmdSelfUpdateRoll(params),
 

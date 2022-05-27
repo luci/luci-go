@@ -22,6 +22,7 @@ import (
 	"go.chromium.org/luci/common/errors"
 
 	"go.chromium.org/luci/cipd/client/cipd/deployer"
+	"go.chromium.org/luci/cipd/client/cipd/pkg"
 	"go.chromium.org/luci/cipd/client/cipd/template"
 	"go.chromium.org/luci/cipd/common"
 )
@@ -89,13 +90,26 @@ func resolvedVersionsParser(_ *itemParserState, f *File, val string) error {
 	return nil
 }
 
+func overrideInstallModeParser(_ *itemParserState, f *File, val string) error {
+	im := pkg.InstallMode(val)
+	if err := pkg.ValidateInstallMode(im); err != nil {
+		return err
+	}
+	if im != pkg.InstallModeCopy {
+		return errors.New("only copy mode is allowed")
+	}
+	f.OverrideInstallMode = im
+	return nil
+}
+
 // itemParsers is the main way that the ensure file format is extended. If you
 // need to add a new setting or directive, please add an appropriate function
 // above and then add it to this map.
 var itemParsers = map[string]itemParser{
-	"@subdir":           subdirParser,
-	"$serviceurl":       serviceURLParser,
-	"$verifiedplatform": verifyParser,
-	"$paranoidmode":     paranoidModeParser,
-	"$resolvedversions": resolvedVersionsParser,
+	"@subdir":              subdirParser,
+	"$serviceurl":          serviceURLParser,
+	"$verifiedplatform":    verifyParser,
+	"$paranoidmode":        paranoidModeParser,
+	"$resolvedversions":    resolvedVersionsParser,
+	"$overrideinstallmode": overrideInstallModeParser,
 }

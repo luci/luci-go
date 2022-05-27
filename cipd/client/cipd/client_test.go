@@ -1080,6 +1080,35 @@ func TestEnsurePackage(t *testing.T) {
 			So(string(body), ShouldEqual, testFileBody)
 		})
 
+		// on windows the ONLY install mode is copy, so this is pointless.
+		if platform.CurrentOS() != "windows" {
+			Convey("EnsurePackages works with OverrideInstallMode", func() {
+				pins := common.PinSliceBySubdir{"": {pin}}
+				eo := &EnsureOptions{
+					Paranoia:            CheckPresence,
+					OverrideInstallMode: pkg.InstallModeCopy,
+				}
+				_, err := client.EnsurePackages(ctx, pins, eo)
+				So(err, ShouldBeNil)
+
+				testFile := filepath.Join(client.Root, "test_name")
+				fi, err := os.Lstat(testFile)
+				So(err, ShouldBeNil)
+				So(fi.Mode().IsRegular(), ShouldBeTrue) // it's a file
+
+				// and can reverse the override
+				// setupRemoteInstance adds another mock call to GetInstanceURL
+				setupRemoteInstance(body, pin, repo, storage)
+				eo.OverrideInstallMode = ""
+				_, err = client.EnsurePackages(ctx, pins, eo)
+				So(err, ShouldBeNil)
+
+				fi, err = os.Lstat(testFile)
+				So(err, ShouldBeNil)
+				So(fi.Mode().IsRegular(), ShouldBeFalse) // it's a symlink
+			})
+		}
+
 		Convey("EnsurePackages uses instance cache", func() {
 			cacheDir := setupInstanceCache(client, c)
 
