@@ -78,6 +78,8 @@ message Settings {
   //
   // Multiple records are allowed, but each host and project must appear only in
   // one record.
+  //
+  // See go/milo-git-acls for design rationales.
   repeated SourceAcls source_acls = 4;
 
   message ResultDB {

@@ -39,6 +39,8 @@ type Settings struct {
 	//
 	// Multiple records are allowed, but each host and project must appear only in
 	// one record.
+	//
+	// See go/milo-git-acls for design rationales.
 	SourceAcls []*Settings_SourceAcls `protobuf:"bytes,4,rep,name=source_acls,json=sourceAcls,proto3" json:"source_acls,omitempty"`
 	Resultdb   *Settings_ResultDB     `protobuf:"bytes,5,opt,name=resultdb,proto3" json:"resultdb,omitempty"`
 	Weetbix    *Settings_Weetbix      `protobuf:"bytes,6,opt,name=weetbix,proto3" json:"weetbix,omitempty"`
