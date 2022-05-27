@@ -233,7 +233,7 @@ export class PageLayoutElement extends MiloBaseElement implements BeforeEnterObs
       }
       .banner-container {
         width: 100%;
-        bix-sizing: border-box;
+        box-sizing: border-box;
         background-color: #feb;
         padding: 3px;
         text-align: center;
