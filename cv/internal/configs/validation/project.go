@@ -328,7 +328,7 @@ func validateVerifiers(ctx *validation.Context, v *cfgpb.Verifiers, supportedMod
 		}
 		ctx.Exit()
 	}
-	if v.Tryjob != nil {
+	if v.Tryjob != nil && len(v.Tryjob.Builders) > 0 {
 		ctx.Enter("tryjob")
 		validateTryjobVerifier(ctx, v.Tryjob, supportedModes)
 		ctx.Exit()
@@ -349,11 +349,6 @@ func validateTryjobVerifier(ctx *validation.Context, v *cfgpb.Verifiers_Tryjob, 
 		ctx.Errorf("`cancel_stale_tryjobs: NO` is no longer supported, use per-builder `cancel_stale` instead")
 	case cfgpb.Toggle_UNSET:
 		// OK
-	}
-
-	if len(v.Builders) == 0 {
-		ctx.Errorf("at least 1 builder required")
-		return
 	}
 
 	// Validation of builders is done in two passes: local and global.

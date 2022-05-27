@@ -503,7 +503,7 @@ func TestTryjobValidation(t *testing.T) {
 			return vctx.Finalize()
 		}
 
-		So(validate(``), ShouldErrLike, "at least 1 builder required")
+		So(validate(``), ShouldBeNil) // allow empty builders.
 
 		So(mustError(validate(`
 			cancel_stale_tryjobs: YES
