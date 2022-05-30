@@ -12,18 +12,23 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import { DateTime } from 'luxon';
 import { computed, observable } from 'mobx';
 
 import { ResultDb, TestVariant } from '../services/resultdb';
-import { TestVerdict } from '../services/weetbix';
+import { TestHistoryService, Variant } from '../services/weetbix';
 
 /**
  * A utility class that helps loading test history entry details.
  */
 export class TestHistoryEntriesLoader {
   constructor(
+    readonly project: string,
+    readonly subRealm: string,
     readonly testId: string,
-    readonly testVerdicts: readonly TestVerdict[],
+    readonly date: DateTime,
+    readonly variant: Variant,
+    readonly testHistoryService: TestHistoryService,
     readonly resultDb: ResultDb,
     readonly pageSize = 10
   ) {}
@@ -41,11 +46,28 @@ export class TestHistoryEntriesLoader {
     return this.loadingReqCount !== 0;
   }
   @computed get loadedAllTestVariants() {
-    return this.testVerdicts.length === this._testVariants.length;
+    return this.pageToken === null;
   }
   @computed get loadedFirstPage() {
     return this._testVariants.length > 0;
   }
+
+  private pageToken: string | null = '';
+  private readonly historyReq = {
+    project: this.project,
+    testId: this.testId,
+    predicate: {
+      subRealm: this.subRealm,
+      variantPredicate: {
+        equals: this.variant,
+      },
+      partitionTimeRange: {
+        earliest: this.date.toISO(),
+        latest: this.date.minus({ days: -1 }).toISO(),
+      },
+    },
+    pageSize: this.pageSize,
+  };
 
   /**
    * Loads the next batch of tests.
@@ -54,34 +76,38 @@ export class TestHistoryEntriesLoader {
    * this.loadNextPage
    */
   private async loadNextPageImpl() {
-    const loadCount = Math.min(this.testVerdicts.length - this._testVariants.length, this.pageSize);
+    if (this.pageToken === null) {
+      return;
+    }
 
-    // Load all new entries in parallel.
-    const newVariants = await Promise.all(
-      Array(loadCount)
-        .fill(0)
-        .map(async (_, i) => {
-          const entry = this.testVerdicts[this._testVariants.length + i];
-          const res = await this.resultDb.batchGetTestVariants({
-            invocation: 'invocations/' + entry.invocationId,
-            testVariants: [
-              {
-                testId: entry.testId,
-                variantHash: entry.variantHash,
-              },
-            ],
-            resultLimit: 100,
-          });
-          return {
-            ...res.testVariants![0],
-            partitionTime: entry.partitionTime,
-          };
-        })
-    );
+    const historyRes = await this.testHistoryService.query({
+      ...this.historyReq,
+      pageToken: this.pageToken,
+    });
 
-    this._testVariants.push(...newVariants);
+    const verdicts = historyRes.verdicts || [];
+
+    const variants = verdicts.map(async (v) => {
+      const variantRes = await this.resultDb.batchGetTestVariants({
+        invocation: 'invocations/' + v.invocationId,
+        testVariants: [
+          {
+            testId: v.testId,
+            variantHash: v.variantHash,
+          },
+        ],
+        resultLimit: 100,
+      });
+      return {
+        ...variantRes.testVariants![0],
+        partitionTime: v.partitionTime,
+      };
+    });
+
+    this._testVariants.push(...(await Promise.all(variants)));
+
+    this.pageToken = historyRes.nextPageToken || null;
   }
-
   // Don't mark as async so loadingReqCount and firstLoadPromise can be updated
   // immediately.
   loadNextPage(): Promise<void> {

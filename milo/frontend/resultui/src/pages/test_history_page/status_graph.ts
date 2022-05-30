@@ -85,13 +85,13 @@ export class TestHistoryStatusGraphElement extends MiloBaseElement {
     return ret;
   }
 
-  private renderEntries(entries: QueryTestHistoryStatsResponseGroup) {
+  private renderEntries(group: QueryTestHistoryStatsResponseGroup) {
     const counts = {
-      [TestVerdictStatus.EXPECTED]: entries.expectedCount || 0,
-      [TestVerdictStatus.EXONERATED]: entries.exoneratedCount || 0,
-      [TestVerdictStatus.FLAKY]: entries.flakyCount || 0,
-      [TestVerdictStatus.UNEXPECTEDLY_SKIPPED]: entries.unexpectedlySkippedCount || 0,
-      [TestVerdictStatus.UNEXPECTED]: entries.unexpectedCount || 0,
+      [TestVerdictStatus.EXPECTED]: group.expectedCount || 0,
+      [TestVerdictStatus.EXONERATED]: group.exoneratedCount || 0,
+      [TestVerdictStatus.FLAKY]: group.flakyCount || 0,
+      [TestVerdictStatus.UNEXPECTEDLY_SKIPPED]: group.unexpectedlySkippedCount || 0,
+      [TestVerdictStatus.UNEXPECTED]: group.unexpectedCount || 0,
       [TestVerdictStatus.TEST_VERDICT_STATUS_UNSPECIFIED]: 0,
     };
     const totalCount = Object.values(counts).reduce((sum, count) => sum + count, 0);
@@ -123,8 +123,7 @@ Click to view test details.</title>`;
           width="24"
           style="cursor: pointer;"
           @click=${() => {
-            // TODO(weiweilin): implemented selected entries.
-            // this.pageState.selectedTvhEntries = entries;
+            this.pageState.selectedGroup = group;
           }}
         >
           ${title}
@@ -162,8 +161,7 @@ Click to view test details.</title>`;
         fill="transparent"
         style="cursor: pointer;"
         @click=${() => {
-          // TODO(weiweilin): implemented selected entries.
-          // this.pageState.selectedTvhEntries = entries;
+          this.pageState.selectedGroup = group;
         }}
       >
         ${title}

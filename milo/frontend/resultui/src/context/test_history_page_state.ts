@@ -23,7 +23,7 @@ import { TestHistoryStatsLoader } from '../models/test_history_stats_loader';
 import { VariantLoader } from '../models/variant_loader';
 import { VariantGroup } from '../pages/test_history_page/test_history_details_table';
 import { createTVCmpFn, getCriticalVariantKeys, ResultDb, Variant } from '../services/resultdb';
-import { TestHistoryService, TestVerdict } from '../services/weetbix';
+import { QueryTestHistoryStatsResponseGroup, TestHistoryService } from '../services/weetbix';
 
 export const enum GraphType {
   STATUS = 'STATUS',
@@ -166,16 +166,25 @@ export class TestHistoryPageState {
 
   @computed({ keepAlive: true })
   private get entriesLoader() {
-    if (this.isDisposed) {
+    if (this.isDisposed || !this.selectedGroup) {
       return null;
     }
-    return new TestHistoryEntriesLoader(this.testId, this.selectedTvhEntries, this.resultDb);
+    const [project, subRealm] = this.realm.split(':', 2);
+    return new TestHistoryEntriesLoader(
+      project,
+      subRealm,
+      this.testId,
+      DateTime.fromISO(this.selectedGroup.partitionTime),
+      this.variantLoader.getVariant(this.selectedGroup.variantHash)!,
+      this.testHistoryService,
+      this.resultDb
+    );
   }
 
-  @observable.ref selectedTvhEntries: readonly TestVerdict[] = [];
+  @observable.ref selectedGroup: QueryTestHistoryStatsResponseGroup | null = null;
 
   @computed get variantGroups(): readonly VariantGroup[] {
-    if (this.entriesLoader!.testVariants.length === 0) {
+    if (!this.entriesLoader?.testVariants.length) {
       return [];
     }
 
@@ -183,35 +192,35 @@ export class TestHistoryPageState {
     return [
       {
         def: [],
-        variants: [...this.entriesLoader!.testVariants].sort(cmpFn),
+        variants: [...this.entriesLoader.testVariants].sort(cmpFn),
       },
     ];
   }
 
   @computed
   get testVariantCount() {
-    return this.entriesLoader!.testVariants.length;
+    return this.entriesLoader?.testVariants.length || 0;
   }
   @computed get unfilteredTestVariantCount() {
-    return this.entriesLoader!.testVariants.length;
+    return this.entriesLoader?.testVariants.length || 0;
   }
 
   readonly readyToLoad = true;
   @computed get isLoading() {
-    return this.entriesLoader!.isLoading;
+    return this.entriesLoader?.isLoading ?? false;
   }
   get loadedAllTestVariants() {
-    return this.entriesLoader!.loadedAllTestVariants;
+    return this.entriesLoader?.loadedAllTestVariants ?? true;
   }
   get loadedFirstPage() {
-    return this.entriesLoader!.loadedFirstPage;
+    return this.entriesLoader?.loadedFirstPage ?? true;
   }
 
-  loadFirstPage() {
-    return this.entriesLoader!.loadFirstPage();
+  async loadFirstPage() {
+    await this.entriesLoader?.loadFirstPage();
   }
-  loadNextPage() {
-    return this.entriesLoader!.loadNextPage();
+  async loadNextPage() {
+    await this.entriesLoader?.loadNextPage();
   }
 
   // Don't display history URL when the user is already on the history page.

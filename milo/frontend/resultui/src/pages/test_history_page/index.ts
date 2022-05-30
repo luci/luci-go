@@ -218,8 +218,8 @@ export class TestHistoryPageElement extends MiloBaseElement implements BeforeEnt
 
     return html`
       <milo-overlay
-        ?show=${this.pageState.selectedTvhEntries.length !== 0}
-        @dismiss=${() => (this.pageState.selectedTvhEntries = [])}
+        ?show=${this.pageState.selectedGroup !== null}
+        @dismiss=${() => (this.pageState.selectedGroup = null)}
       >
         <div id="thdt-container">
           <div id="thdt-header">
@@ -235,19 +235,16 @@ export class TestHistoryPageElement extends MiloBaseElement implements BeforeEnt
             </milo-hotkey>
             <milo-hotkey
               key="esc"
-              .handler=${() => (this.pageState.selectedTvhEntries = [])}
+              .handler=${() => (this.pageState.selectedGroup = null)}
               title="press esc to close the test variant details table"
             >
-              <mwc-icon id="close-tvt" @click=${() => (this.pageState.selectedTvhEntries = [])}>close</mwc-icon>
+              <mwc-icon id="close-tvt" @click=${() => (this.pageState.selectedGroup = null)}>close</mwc-icon>
             </milo-hotkey>
           </div>
           <milo-test-history-details-table></milo-test-history-details-table>
         </div>
       </milo-overlay>
-      <div
-        id="free-scroll-padding"
-        style=${styleMap({ display: this.pageState.selectedTvhEntries.length === 0 ? 'none' : '' })}
-      ></div>
+      <div id="free-scroll-padding" style=${styleMap({ display: this.pageState.selectedGroup ? 'none' : '' })}></div>
     `;
   }
 

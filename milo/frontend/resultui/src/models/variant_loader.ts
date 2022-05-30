@@ -14,8 +14,7 @@
 
 import { computed, observable } from 'mobx';
 
-import { Variant } from '../services/resultdb';
-import { TestHistoryService } from '../services/weetbix';
+import { TestHistoryService, Variant } from '../services/weetbix';
 
 export class VariantLoader {
   /**
@@ -78,5 +77,9 @@ export class VariantLoader {
   async discoverVariants() {
     const next = await this.worker.next();
     return Boolean(next.done);
+  }
+
+  getVariant(variantHash: string): Variant | null {
+    return this.variants.find(([vHash]) => vHash === variantHash)?.[1] || null;
   }
 }

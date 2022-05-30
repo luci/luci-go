@@ -64,7 +64,7 @@ export interface TestVerdict {
   readonly invocationId: string;
   readonly status: TestVerdictStatus;
   readonly partitionTime: string;
-  readonly passedAvgDuration: string;
+  readonly passedAvgDuration?: string;
 }
 
 export interface QueryTestHistoryResponse {

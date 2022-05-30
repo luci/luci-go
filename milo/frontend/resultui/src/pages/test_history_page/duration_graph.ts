@@ -20,6 +20,7 @@ import { MiloBaseElement } from '../../components/milo_base';
 import { consumeTestHistoryPageState, TestHistoryPageState } from '../../context/test_history_page_state';
 import { consumer } from '../../libs/context';
 import { displayDuration, parseProtoDuration } from '../../libs/time_utils';
+import { QueryTestHistoryStatsResponseGroup } from '../../services/weetbix';
 import commonStyle from '../../styles/common_style.css';
 import { CELL_PADDING, CELL_SIZE, INNER_CELL_SIZE } from './constants';
 
@@ -53,8 +54,8 @@ export class TestHistoryDurationGraphElement extends MiloBaseElement {
     const ret: SVGTemplateResult[] = [];
 
     for (let i = 0; i < this.pageState.days; ++i) {
-      const stats = this.pageState.statsLoader!.getStats(vHash, i);
-      if (!stats) {
+      const group = this.pageState.statsLoader!.getStats(vHash, i);
+      if (!group) {
         ret.push(svg`
           <foreignObject x=${CELL_SIZE * i} width=${CELL_SIZE} height=${CELL_SIZE}>
             <milo-dot-spinner></milo-dot-spinner>
@@ -63,20 +64,21 @@ export class TestHistoryDurationGraphElement extends MiloBaseElement {
         break;
       }
 
-      if (!stats?.passedAvgDuration) {
+      if (!group?.passedAvgDuration) {
         continue;
       }
 
       ret.push(svg`
         <g transform="translate(${i * CELL_SIZE}, 0)">
-          ${this.renderEntries(parseProtoDuration(stats.passedAvgDuration))}
+          ${this.renderEntries(group)}
         </g>
       `);
     }
     return ret;
   }
 
-  private renderEntries(averageDurationMs: number) {
+  private renderEntries(group: QueryTestHistoryStatsResponseGroup) {
+    const averageDurationMs = parseProtoDuration(group.passedAvgDuration!);
     if (!this.pageState.durationInitialized) {
       this.pageState.maxDurationMs = averageDurationMs;
       this.pageState.minDurationMs = averageDurationMs;
@@ -99,8 +101,7 @@ export class TestHistoryDurationGraphElement extends MiloBaseElement {
         fill=${this.pageState.scaleDurationColor(averageDurationMs)}
         style="cursor: pointer;"
         @click=${() => {
-          // TODO(weiweilin): implemented selected entries.
-          // this.pageState.selectedTvhEntries = entries!;
+          this.pageState.selectedGroup = group;
         }}
       >
         <title>Average Duration: ${displayDuration(
