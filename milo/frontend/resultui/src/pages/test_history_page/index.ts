@@ -17,8 +17,7 @@ import '@material/mwc-icon';
 import { BeforeEnterObserver, PreventAndRedirectCommands, RouterLocation } from '@vaadin/router';
 import { css, customElement, html } from 'lit-element';
 import { styleMap } from 'lit-html/directives/style-map';
-import { DateTime } from 'luxon';
-import { observable, reaction, when } from 'mobx';
+import { observable, reaction } from 'mobx';
 
 import '../../components/dot_spinner';
 import '../../components/overlay';
@@ -36,7 +35,6 @@ import './variant_def_table';
 import { MiloBaseElement } from '../../components/milo_base';
 import { AppState, consumeAppState } from '../../context/app_state';
 import { GraphType, provideTestHistoryPageState, TestHistoryPageState } from '../../context/test_history_page_state';
-import { GA_ACTIONS, GA_CATEGORIES, generateRandomLabel, trackEvent } from '../../libs/analytics_utils';
 import { consumer, provider } from '../../libs/context';
 import { NOT_FOUND_URL } from '../../routes';
 import commonStyle from '../../styles/common_style.css';
@@ -129,35 +127,6 @@ export class TestHistoryPageElement extends MiloBaseElement implements BeforeEnt
         { fireImmediately: true }
       )
     );
-
-    // Track the time it takes to load all the test history in the past week.
-    // The rendering time is not record. But it should be negligible.
-    const oneWeekAgo = DateTime.now().minus({ weeks: 1 });
-    this.addDisposer(
-      when(
-        () => {
-          if (!this.pageState) {
-            return false;
-          }
-          const loader = this.pageState.testHistoryLoader;
-          if (loader.variants.length === 0) {
-            return false;
-          }
-          return Boolean(loader.getEntries(loader.variants[0][0], oneWeekAgo));
-        },
-        () =>
-          trackEvent(
-            GA_CATEGORIES.HISTORY_PAGE,
-            GA_ACTIONS.LOADING_TIME,
-            generateRandomLabel(VISIT_ID + '_'),
-            // TODO(weiweilin): this is only accurate when the test history page
-            // is opened in a new tab. We should add a mechanism to consistently
-            // record page selection time. (The first selected page should still
-            // use TIME_ORIGIN as page selection time).
-            Date.now() - TIME_ORIGIN
-          )
-      )
-    );
   }
 
   private allVariantsWereExpanded = false;
@@ -223,7 +192,7 @@ export class TestHistoryPageElement extends MiloBaseElement implements BeforeEnt
         <i>${this.pageState.filteredVariants.length}</i>
         variant${this.pageState.filteredVariants.length === 1 ? '' : 's'} that
         <i>match${this.pageState.filteredVariants.length === 1 ? '' : 'es'} the filter</i>, out of
-        <i>${this.pageState.testHistoryLoader.variants.length}+</i> variants.
+        <i>${this.pageState.variantLoader.variants.length}+</i> variants.
         <span>
           ${
             !this.pageState.isDiscoveringVariants && !this.pageState.loadedAllVariants

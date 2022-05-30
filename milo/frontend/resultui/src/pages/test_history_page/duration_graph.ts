@@ -20,7 +20,6 @@ import { MiloBaseElement } from '../../components/milo_base';
 import { consumeTestHistoryPageState, TestHistoryPageState } from '../../context/test_history_page_state';
 import { consumer } from '../../libs/context';
 import { displayDuration, parseProtoDuration } from '../../libs/time_utils';
-import { TestVerdict } from '../../services/weetbix';
 import commonStyle from '../../styles/common_style.css';
 import { CELL_PADDING, CELL_SIZE, INNER_CELL_SIZE } from './constants';
 
@@ -53,9 +52,9 @@ export class TestHistoryDurationGraphElement extends MiloBaseElement {
   private renderRow(vHash: string) {
     const ret: SVGTemplateResult[] = [];
 
-    for (const [i, date] of this.pageState.dates.entries()) {
-      const entries = this.pageState.testHistoryLoader!.getEntries(vHash, date);
-      if (!entries) {
+    for (let i = 0; i < this.pageState.days; ++i) {
+      const stats = this.pageState.statsLoader!.getStats(vHash, i);
+      if (!stats) {
         ret.push(svg`
           <foreignObject x=${CELL_SIZE * i} width=${CELL_SIZE} height=${CELL_SIZE}>
             <milo-dot-spinner></milo-dot-spinner>
@@ -64,29 +63,20 @@ export class TestHistoryDurationGraphElement extends MiloBaseElement {
         break;
       }
 
-      if (entries.length === 0) {
+      if (!stats?.passedAvgDuration) {
         continue;
       }
 
       ret.push(svg`
         <g transform="translate(${i * CELL_SIZE}, 0)">
-          ${this.renderEntries(entries)}
+          ${this.renderEntries(parseProtoDuration(stats.passedAvgDuration))}
         </g>
       `);
     }
     return ret;
   }
 
-  private renderEntries(entries: readonly TestVerdict[]) {
-    const durations = entries.filter((e) => e.passedAvgDuration).map((e) => e.passedAvgDuration!);
-    if (durations.length === 0) {
-      return null;
-    }
-
-    const averageDurationMs =
-      durations.map((duration) => parseProtoDuration(duration)).reduce((duration, total) => total + duration, 0) /
-      durations.length;
-
+  private renderEntries(averageDurationMs: number) {
     if (!this.pageState.durationInitialized) {
       this.pageState.maxDurationMs = averageDurationMs;
       this.pageState.minDurationMs = averageDurationMs;
@@ -109,7 +99,8 @@ export class TestHistoryDurationGraphElement extends MiloBaseElement {
         fill=${this.pageState.scaleDurationColor(averageDurationMs)}
         style="cursor: pointer;"
         @click=${() => {
-          this.pageState.selectedTvhEntries = entries!;
+          // TODO(weiweilin): implemented selected entries.
+          // this.pageState.selectedTvhEntries = entries!;
         }}
       >
         <title>Average Duration: ${displayDuration(

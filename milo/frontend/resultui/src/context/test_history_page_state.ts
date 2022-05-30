@@ -19,8 +19,9 @@ import { autorun, comparer, computed, observable, reaction } from 'mobx';
 import { createContextLink } from '../libs/context';
 import { parseVariantFilter } from '../libs/queries/th_filter_query';
 import { TestHistoryEntriesLoader } from '../models/test_history_entries_loader';
-import { TestHistoryLoader } from '../models/test_history_loader';
-import { VariantGroup } from '../pages/test_results_tab/test_variants_table';
+import { TestHistoryStatsLoader } from '../models/test_history_stats_loader';
+import { VariantLoader } from '../models/variant_loader';
+import { VariantGroup } from '../pages/test_history_page/test_history_details_table';
 import { createTVCmpFn, getCriticalVariantKeys, ResultDb, Variant } from '../services/resultdb';
 import { TestHistoryService, TestVerdict } from '../services/weetbix';
 
@@ -42,24 +43,15 @@ const SCALE_COLOR = scaleLinear().range([0.1, 1]).domain([0, 1]);
  * Records the test history page state.
  */
 export class TestHistoryPageState {
-  readonly testHistoryLoader: TestHistoryLoader;
-  readonly now = DateTime.now().startOf('day').plus({ hours: 12 });
+  readonly statsLoader: TestHistoryStatsLoader;
+  readonly variantLoader: VariantLoader;
+  readonly latestDate = DateTime.now().toUTC().startOf('day');
   @observable.ref days = 14;
-
-  @computed get endDate() {
-    return this.now.minus({ days: this.days });
-  }
-
-  @computed get dates() {
-    return Array(this.days)
-      .fill(0)
-      .map((_, i) => this.now.minus({ days: i }));
-  }
 
   @observable.ref filterText = '';
   @observable.ref private variantFilter = (_v: Variant, _hash: string) => true;
   @computed get filteredVariants() {
-    return this.testHistoryLoader.variants.filter(([hash, v]) => this.variantFilter(v, hash));
+    return this.variantLoader.variants.filter(([hash, v]) => this.variantFilter(v, hash));
   }
 
   @observable.ref private discoverVariantReqCount = 0;
@@ -94,7 +86,7 @@ export class TestHistoryPageState {
   }
 
   @computed({ equals: comparer.shallow }) get criticalVariantKeys(): readonly string[] {
-    return getCriticalVariantKeys(this.testHistoryLoader.variants.map(([_, v]) => v));
+    return getCriticalVariantKeys(this.variantLoader.variants.map(([_, v]) => v));
   }
 
   @observable.ref private customColumnKeys?: readonly string[];
@@ -133,13 +125,9 @@ export class TestHistoryPageState {
     readonly testHistoryService: TestHistoryService,
     readonly resultDb: ResultDb
   ) {
-    this.testHistoryLoader = new TestHistoryLoader(
-      realm,
-      testId,
-      (datetime) => datetime.toFormat('yyyy-MM-dd'),
-      testHistoryService,
-      resultDb
-    );
+    const [project, subRealm] = realm.split(':', 2);
+    this.statsLoader = new TestHistoryStatsLoader(project, subRealm, testId, this.latestDate, testHistoryService);
+    this.variantLoader = new VariantLoader(project, subRealm, testId, testHistoryService);
     this.discoverVariants();
 
     // Ensure the first page of test history entry details are loaded / being
@@ -170,7 +158,7 @@ export class TestHistoryPageState {
 
   async discoverVariants() {
     this.discoverVariantReqCount++;
-    const req = this.testHistoryLoader.discoverVariants();
+    const req = this.variantLoader.discoverVariants();
     req.finally(() => this.discoverVariantReqCount--);
     this._loadedAllVariants = await req;
     return this._loadedAllVariants;

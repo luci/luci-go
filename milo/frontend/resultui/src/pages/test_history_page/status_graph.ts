@@ -23,7 +23,7 @@ import { consumeTestHistoryPageState, TestHistoryPageState } from '../../context
 import { VARIANT_STATUS_CLASS_MAP, VERDICT_VARIANT_STATUS_MAP } from '../../libs/constants';
 import { consumer } from '../../libs/context';
 import { TestVariantStatus } from '../../services/resultdb';
-import { TestVerdict, TestVerdictStatus } from '../../services/weetbix';
+import { QueryTestHistoryStatsResponseGroup, TestVerdictStatus } from '../../services/weetbix';
 import commonStyle from '../../styles/common_style.css';
 import { CELL_PADDING, CELL_SIZE, INNER_CELL_SIZE } from './constants';
 
@@ -65,9 +65,9 @@ export class TestHistoryStatusGraphElement extends MiloBaseElement {
   private renderRow(vHash: string) {
     const ret: SVGTemplateResult[] = [];
 
-    for (const [i, date] of this.pageState.dates.entries()) {
-      const entries = this.pageState.testHistoryLoader!.getEntries(vHash, date);
-      if (!entries) {
+    for (let i = 0; i < this.pageState.days; ++i) {
+      const stats = this.pageState.statsLoader!.getStats(vHash, i);
+      if (!stats) {
         ret.push(svg`
           <foreignObject x=${CELL_SIZE * i} width=${CELL_SIZE} height=${CELL_SIZE}>
             <milo-dot-spinner></milo-dot-spinner>
@@ -76,31 +76,28 @@ export class TestHistoryStatusGraphElement extends MiloBaseElement {
         break;
       }
 
-      if (entries.length === 0) {
-        continue;
-      }
-
       ret.push(svg`
         <g transform="translate(${i * CELL_SIZE}, 0)">
-          ${this.renderEntries(entries)}
+          ${this.renderEntries(stats)}
         </g>
       `);
     }
     return ret;
   }
 
-  private renderEntries(entries: readonly TestVerdict[]) {
+  private renderEntries(entries: QueryTestHistoryStatsResponseGroup) {
     const counts = {
-      [TestVerdictStatus.EXPECTED]: 0,
-      [TestVerdictStatus.EXONERATED]: 0,
-      [TestVerdictStatus.FLAKY]: 0,
-      [TestVerdictStatus.UNEXPECTEDLY_SKIPPED]: 0,
-      [TestVerdictStatus.UNEXPECTED]: 0,
+      [TestVerdictStatus.EXPECTED]: entries.expectedCount || 0,
+      [TestVerdictStatus.EXONERATED]: entries.exoneratedCount || 0,
+      [TestVerdictStatus.FLAKY]: entries.flakyCount || 0,
+      [TestVerdictStatus.UNEXPECTEDLY_SKIPPED]: entries.unexpectedlySkippedCount || 0,
+      [TestVerdictStatus.UNEXPECTED]: entries.unexpectedCount || 0,
       [TestVerdictStatus.TEST_VERDICT_STATUS_UNSPECIFIED]: 0,
     };
+    const totalCount = Object.values(counts).reduce((sum, count) => sum + count, 0);
 
-    for (const entry of entries) {
-      counts[entry.status]++;
+    if (totalCount === 0) {
+      return;
     }
 
     const title = svg`<title>Unexpected: ${counts[TestVariantStatus.UNEXPECTED]}
@@ -112,9 +109,9 @@ Click to view test details.</title>`;
 
     let previousHeight = 0;
 
-    if (counts[TestVariantStatus.EXPECTED] === entries.length) {
+    if (counts[TestVariantStatus.EXPECTED] === totalCount) {
       const img =
-        entries.length > 1
+        totalCount > 1
           ? '/ui/immutable/svgs/check_circle_stacked_24dp.svg'
           : '/ui/immutable/svgs/check_circle_24dp.svg';
       return svg`
@@ -126,7 +123,8 @@ Click to view test details.</title>`;
           width="24"
           style="cursor: pointer;"
           @click=${() => {
-            this.pageState.selectedTvhEntries = entries;
+            // TODO(weiweilin): implemented selected entries.
+            // this.pageState.selectedTvhEntries = entries;
           }}
         >
           ${title}
@@ -141,7 +139,7 @@ Click to view test details.</title>`;
 
     return svg`
       ${STATUS_ORDER.map((status) => {
-        const height = (INNER_CELL_SIZE * counts[status]) / entries.length;
+        const height = (INNER_CELL_SIZE * counts[status]) / totalCount;
         const ele = svg`
           <rect
             class="${VARIANT_STATUS_CLASS_MAP[VERDICT_VARIANT_STATUS_MAP[status]]}"
@@ -164,7 +162,8 @@ Click to view test details.</title>`;
         fill="transparent"
         style="cursor: pointer;"
         @click=${() => {
-          this.pageState.selectedTvhEntries = entries;
+          // TODO(weiweilin): implemented selected entries.
+          // this.pageState.selectedTvhEntries = entries;
         }}
       >
         ${title}

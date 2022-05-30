@@ -43,8 +43,8 @@ export class TestHistoryDateAxisElement extends MiloBaseElement {
 
   @computed private get scaleTime() {
     return scaleTime()
-      .domain([this.pageState.now, this.pageState.now.minus({ days: this.pageState.days })])
-      .range([0, this.pageState.dates.length * CELL_SIZE]) as AxisScale<Date>;
+      .domain([this.pageState.latestDate, this.pageState.latestDate.minus({ days: this.pageState.days })])
+      .range([0, this.pageState.days * CELL_SIZE]) as AxisScale<Date>;
   }
 
   @computed private get axisTime() {

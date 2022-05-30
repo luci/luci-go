@@ -88,7 +88,7 @@ export interface QueryTestHistoryStatsResponseGroup {
   readonly flakyCount?: number;
   readonly exoneratedCount?: number;
   readonly expectedCount?: number;
-  readonly avgPassedAvgDuration?: string;
+  readonly passedAvgDuration?: string;
 }
 
 export interface QueryTestHistoryStatsResponse {
