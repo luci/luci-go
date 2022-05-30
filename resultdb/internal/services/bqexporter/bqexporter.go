@@ -30,6 +30,7 @@ import (
 	"google.golang.org/api/googleapi"
 	"google.golang.org/api/option"
 	"google.golang.org/genproto/googleapis/bytestream"
+	sppb "google.golang.org/genproto/googleapis/spanner/v1"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/runtime/protoiface"
 
@@ -269,11 +270,18 @@ func (b *bqExporter) insertRowsWithRetries(ctx context.Context, ins inserter, ro
 func (b *bqExporter) exportResultsToBigQuery(ctx context.Context, invID invocations.ID, bqExport *pb.BigQueryExport) error {
 	ctx, cancel := context.WithTimeout(ctx, 10*time.Minute)
 	defer cancel()
+	ctx = span.ModifyRequestOptions(ctx, func(opts *span.RequestOptions) {
+		opts.Priority = sppb.RequestOptions_PRIORITY_MEDIUM
+		opts.Tag = "bqexporter"
+	})
 
 	luciProject, err := getLUCIProject(ctx, invID)
 	if err != nil {
 		return err
 	}
+	ctx = span.ModifyRequestOptions(ctx, func(opts *span.RequestOptions) {
+		opts.Tag = "bqexporter,proj=" + luciProject
+	})
 
 	client, err := getBQClient(ctx, luciProject, bqExport)
 	if err != nil {
