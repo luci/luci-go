@@ -26,7 +26,6 @@ import '../test_results_tab/count_indicator';
 import { OPTIONAL_RESOURCE } from '../../common_tags';
 import { MiloBaseElement } from '../../components/milo_base';
 import { TabDef } from '../../components/tab_bar';
-import { provideTestVariantTableState } from '../../components/test_variants_table/context';
 import { AppState, consumeAppState } from '../../context/app_state';
 import { BuildState, GetBuildError, provideBuildState } from '../../context/build_state';
 import { InvocationState, provideInvocationState, QueryInvocationError } from '../../context/invocation_state';
@@ -54,6 +53,7 @@ import { NOT_FOUND_URL, router } from '../../routes';
 import { BuilderID, BuildStatus, TEST_PRESENTATION_KEY } from '../../services/buildbucket';
 import colorClasses from '../../styles/color_classes.css';
 import commonStyle from '../../styles/common_style.css';
+import { provideTestVariantTableState } from '../test_results_tab/test_variants_table/context';
 
 const STATUS_FAVICON_MAP = Object.freeze({
   [BuildStatus.Scheduled]: 'gray',

@@ -18,11 +18,10 @@ import { observable, reaction } from 'mobx';
 
 import '../../components/dot_spinner';
 import '../../components/hotkey';
-import '../../components/test_variants_table';
-import '../../components/test_variants_table/tvt_config_widget';
+import './test_variants_table';
+import './test_variants_table/config_widget';
 import './search_box';
 import { MiloBaseElement } from '../../components/milo_base';
-import { TestVariantsTableElement } from '../../components/test_variants_table';
 import { AppState, consumeAppState } from '../../context/app_state';
 import { consumeInvocationState, InvocationState } from '../../context/invocation_state';
 import { consumeConfigsStore, UserConfigsStore } from '../../context/user_configs';
@@ -30,6 +29,7 @@ import { GA_ACTIONS, GA_CATEGORIES, trackEvent } from '../../libs/analytics_util
 import { consumer } from '../../libs/context';
 import { errorHandler, forwardWithoutMsg, reportRenderError } from '../../libs/error_handler';
 import commonStyle from '../../styles/common_style.css';
+import { TestVariantsTableElement } from './test_variants_table';
 
 /**
  * Display test results.

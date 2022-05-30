@@ -16,11 +16,11 @@ import { interpolateOranges, scaleLinear, scaleSequential } from 'd3';
 import { DateTime } from 'luxon';
 import { autorun, comparer, computed, observable, reaction } from 'mobx';
 
-import { TestVariantTableState, VariantGroup } from '../components/test_variants_table/context';
 import { createContextLink } from '../libs/context';
 import { parseVariantFilter } from '../libs/queries/th_filter_query';
 import { TestHistoryEntriesLoader } from '../models/test_history_entries_loader';
 import { TestHistoryLoader } from '../models/test_history_loader';
+import { TestVariantTableState, VariantGroup } from '../pages/test_results_tab/test_variants_table/context';
 import { createTVCmpFn, getCriticalVariantKeys, ResultDb, Variant } from '../services/resultdb';
 import { TestHistoryService, TestVerdict } from '../services/weetbix';
 

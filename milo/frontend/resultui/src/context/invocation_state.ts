@@ -17,12 +17,12 @@ import { html } from 'lit-html';
 import { autorun, comparer, computed, observable } from 'mobx';
 import { fromPromise, IPromiseBasedObservable } from 'mobx-utils';
 
-import { TestVariantTableState, VariantGroup } from '../components/test_variants_table/context';
 import { createContextLink } from '../libs/context';
 import { parseTestResultSearchQuery } from '../libs/queries/tr_search_query';
 import { InnerTag, TAG_SOURCE } from '../libs/tag';
 import { unwrapObservable } from '../libs/unwrap_observable';
 import { TestLoader } from '../models/test_loader';
+import { TestVariantTableState, VariantGroup } from '../pages/test_results_tab/test_variants_table/context';
 import { router } from '../routes';
 import { TestPresentationConfig } from '../services/buildbucket';
 import { createTVCmpFn, createTVPropGetter, Invocation, TestVariant, TestVariantStatus } from '../services/resultdb';

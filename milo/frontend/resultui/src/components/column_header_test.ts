@@ -15,10 +15,10 @@
 import { fixture, fixtureCleanup, html } from '@open-wc/testing/index-no-side-effects';
 import { assert } from 'chai';
 
-import './tvt_column_header';
-import { AppState } from '../../context/app_state';
-import { InvocationState } from '../../context/invocation_state';
-import { TestVariantsTableColumnHeader } from './tvt_column_header';
+import './column_header';
+import { AppState } from '../context/app_state';
+import { InvocationState } from '../context/invocation_state';
+import { TestVariantsTableColumnHeader } from './column_header';
 
 describe('tvt_column_header', () => {
   let invState: InvocationState;

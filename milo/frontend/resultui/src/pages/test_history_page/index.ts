@@ -23,8 +23,8 @@ import { observable, reaction, when } from 'mobx';
 import '../../components/dot_spinner';
 import '../../components/overlay';
 import '../../components/status_bar';
-import '../../components/test_variants_table';
-import '../../components/test_variants_table/tvt_config_widget';
+import '../test_results_tab/test_variants_table';
+import '../test_results_tab/test_variants_table/config_widget';
 import '../../components/hotkey';
 import './date_axis';
 import './duration_graph';
@@ -34,14 +34,14 @@ import './filter_box';
 import './status_graph';
 import './variant_def_table';
 import { MiloBaseElement } from '../../components/milo_base';
-import { TestVariantsTableElement } from '../../components/test_variants_table';
-import { provideTestVariantTableState } from '../../components/test_variants_table/context';
 import { AppState, consumeAppState } from '../../context/app_state';
 import { GraphType, provideTestHistoryPageState, TestHistoryPageState } from '../../context/test_history_page_state';
 import { GA_ACTIONS, GA_CATEGORIES, generateRandomLabel, trackEvent } from '../../libs/analytics_utils';
 import { consumer, provider } from '../../libs/context';
 import { NOT_FOUND_URL } from '../../routes';
 import commonStyle from '../../styles/common_style.css';
+import { TestVariantsTableElement } from '../test_results_tab/test_variants_table';
+import { provideTestVariantTableState } from '../test_results_tab/test_variants_table/context';
 
 const LOADING_VARIANT_INFO_TOOLTIP =
   'It may take several clicks to find any new variant. ' +

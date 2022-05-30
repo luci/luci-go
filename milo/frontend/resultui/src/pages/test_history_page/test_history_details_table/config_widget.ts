@@ -19,8 +19,8 @@ import { MobxLitElement } from '@adobe/lit-mobx';
 import { css, customElement, html } from 'lit-element';
 import { observable } from 'mobx';
 
-import { consumer } from '../../libs/context';
-import commonStyle from '../../styles/common_style.css';
+import { consumer } from '../../../libs/context';
+import commonStyle from '../../../styles/common_style.css';
 import { consumeTestVariantTableState, TestVariantTableState } from './context';
 
 @customElement('milo-tvt-config-widget')

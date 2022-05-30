@@ -19,9 +19,9 @@ import { repeat } from 'lit-html/directives/repeat';
 import { DateTime } from 'luxon';
 import { computed, observable } from 'mobx';
 
-import '../../expandable_entry';
-import '../../copy_to_clipboard';
-import './result_entry';
+import '../../../components/expandable_entry';
+import '../../../components/copy_to_clipboard';
+import '../../../components/result_entry';
 import { AppState, consumeAppState } from '../../../context/app_state';
 import { GA_ACTIONS, GA_CATEGORIES, trackEvent } from '../../../libs/analytics_utils';
 import { VARIANT_STATUS_CLASS_MAP, VARIANT_STATUS_ICON_MAP } from '../../../libs/constants';

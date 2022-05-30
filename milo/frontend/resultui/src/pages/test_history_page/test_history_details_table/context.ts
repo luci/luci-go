@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { createContextLink } from '../../libs/context';
-import { TestVariant } from '../../services/resultdb';
+import { createContextLink } from '../../../libs/context';
+import { TestVariant } from '../../../services/resultdb';
 
 export interface VariantGroup {
   readonly def: ReadonlyArray<readonly [string, unknown]>;

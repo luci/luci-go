@@ -17,10 +17,10 @@ import { MobxLitElement } from '@adobe/lit-mobx';
 import { customElement, html } from 'lit-element';
 import { computed, observable } from 'mobx';
 
-import '../../expandable_entry';
-import '../../image_diff_viewer';
-import { router } from '../../../routes';
-import { Artifact } from '../../../services/resultdb';
+import '../expandable_entry';
+import '../image_diff_viewer';
+import { router } from '../../routes';
+import { Artifact } from '../../services/resultdb';
 
 /**
  * Renders an image diff artifact entry.

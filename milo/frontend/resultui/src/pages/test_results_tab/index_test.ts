@@ -18,7 +18,6 @@ import { customElement, html, LitElement, property } from 'lit-element';
 import sinon, { SinonStub } from 'sinon';
 
 import '.';
-import { provideTestVariantTableState } from '../../components/test_variants_table/context';
 import { AppState, provideAppState } from '../../context/app_state';
 import { InvocationState, provideInvocationState } from '../../context/invocation_state';
 import { provideConfigsStore, UserConfigsStore } from '../../context/user_configs';
@@ -30,6 +29,7 @@ import {
   TestVariantStatus,
 } from '../../services/resultdb';
 import { TestResultsTabElement } from '.';
+import { provideTestVariantTableState } from './test_variants_table/context';
 
 const variant1 = {
   testId: 'a',

@@ -22,7 +22,6 @@ import '../../components/tab_bar';
 import '../test_results_tab/count_indicator';
 import { MiloBaseElement } from '../../components/milo_base';
 import { TabDef } from '../../components/tab_bar';
-import { provideTestVariantTableState } from '../../components/test_variants_table/context';
 import { AppState, consumeAppState } from '../../context/app_state';
 import { InvocationState, provideInvocationState } from '../../context/invocation_state';
 import { consumeConfigsStore, UserConfigsStore } from '../../context/user_configs';
@@ -31,6 +30,7 @@ import { consumer, provider } from '../../libs/context';
 import { reportRenderError } from '../../libs/error_handler';
 import { NOT_FOUND_URL, router } from '../../routes';
 import commonStyle from '../../styles/common_style.css';
+import { provideTestVariantTableState } from '../test_results_tab/test_variants_table/context';
 
 /**
  * Main test results page.

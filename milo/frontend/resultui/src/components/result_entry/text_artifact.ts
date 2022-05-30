@@ -18,15 +18,15 @@ import { css, customElement, html, property } from 'lit-element';
 import { computed, observable } from 'mobx';
 import { fromPromise, IPromiseBasedObservable } from 'mobx-utils';
 
-import '../../dot_spinner';
-import { consumeArtifacts, consumeArtifactsFinalized } from '../../../context/artifact_provider';
-import { ARTIFACT_LENGTH_LIMIT } from '../../../libs/constants';
-import { consumer } from '../../../libs/context';
-import { reportRenderError } from '../../../libs/error_handler';
-import { unwrapObservable } from '../../../libs/unwrap_observable';
-import { urlSetSearchQueryParam } from '../../../libs/utils';
-import { Artifact } from '../../../services/resultdb';
-import commonStyle from '../../../styles/common_style.css';
+import '../dot_spinner';
+import { consumeArtifacts, consumeArtifactsFinalized } from '../../context/artifact_provider';
+import { ARTIFACT_LENGTH_LIMIT } from '../../libs/constants';
+import { consumer } from '../../libs/context';
+import { reportRenderError } from '../../libs/error_handler';
+import { unwrapObservable } from '../../libs/unwrap_observable';
+import { urlSetSearchQueryParam } from '../../libs/utils';
+import { Artifact } from '../../services/resultdb';
+import commonStyle from '../../styles/common_style.css';
 
 /**
  * Renders a text artifact.

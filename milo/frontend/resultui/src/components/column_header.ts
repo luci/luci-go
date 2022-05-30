@@ -18,11 +18,14 @@ import { css, customElement, html } from 'lit-element';
 import { styleMap } from 'lit-html/directives/style-map';
 import { observable } from 'mobx';
 
-import '../drag_tracker';
-import { consumer } from '../../libs/context';
-import commonStyle from '../../styles/common_style.css';
-import { DragEvent } from '../drag_tracker';
-import { consumeTestVariantTableState, TestVariantTableState } from './context';
+import './drag_tracker';
+import { consumer } from '../libs/context';
+import {
+  consumeTestVariantTableState,
+  TestVariantTableState,
+} from '../pages/test_results_tab/test_variants_table/context';
+import commonStyle from '../styles/common_style.css';
+import { DragEvent } from './drag_tracker';
 
 @customElement('milo-tvt-column-header')
 @consumer

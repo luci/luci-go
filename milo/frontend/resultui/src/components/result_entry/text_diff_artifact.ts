@@ -19,15 +19,15 @@ import { css, customElement, html } from 'lit-element';
 import { computed, observable } from 'mobx';
 import { fromPromise, IPromiseBasedObservable } from 'mobx-utils';
 
-import '../../expandable_entry';
-import { ARTIFACT_LENGTH_LIMIT } from '../../../libs/constants';
-import { reportRenderError } from '../../../libs/error_handler';
-import { sanitizeHTML } from '../../../libs/sanitize_html';
-import { unwrapObservable } from '../../../libs/unwrap_observable';
-import { urlSetSearchQueryParam } from '../../../libs/utils';
-import { getRawArtifactUrl, router } from '../../../routes';
-import { Artifact } from '../../../services/resultdb';
-import commonStyle from '../../../styles/common_style.css';
+import '../expandable_entry';
+import { ARTIFACT_LENGTH_LIMIT } from '../../libs/constants';
+import { reportRenderError } from '../../libs/error_handler';
+import { sanitizeHTML } from '../../libs/sanitize_html';
+import { unwrapObservable } from '../../libs/unwrap_observable';
+import { urlSetSearchQueryParam } from '../../libs/utils';
+import { getRawArtifactUrl, router } from '../../routes';
+import { Artifact } from '../../services/resultdb';
+import commonStyle from '../../styles/common_style.css';
 
 /**
  * Renders a text diff artifact.

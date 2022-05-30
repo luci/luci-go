@@ -27,7 +27,7 @@ import '../../components/link';
 import '../../components/log';
 import '../../components/property_viewer';
 import '../../components/relative_timestamp';
-import '../../components/test_variants_table/test_variant_entry';
+import '../test_results_tab/test_variants_table/test_variant_entry';
 import '../../components/timestamp';
 import './steps_tab/step_list';
 import { AppState, consumeAppState } from '../../context/app_state';
