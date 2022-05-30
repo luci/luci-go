@@ -20,7 +20,7 @@ import { createContextLink } from '../libs/context';
 import { parseVariantFilter } from '../libs/queries/th_filter_query';
 import { TestHistoryEntriesLoader } from '../models/test_history_entries_loader';
 import { TestHistoryLoader } from '../models/test_history_loader';
-import { TestVariantTableState, VariantGroup } from '../pages/test_results_tab/test_variants_table/context';
+import { VariantGroup } from '../pages/test_results_tab/test_variants_table';
 import { createTVCmpFn, getCriticalVariantKeys, ResultDb, Variant } from '../services/resultdb';
 import { TestHistoryService, TestVerdict } from '../services/weetbix';
 
@@ -41,7 +41,7 @@ const SCALE_COLOR = scaleLinear().range([0.1, 1]).domain([0, 1]);
 /**
  * Records the test history page state.
  */
-export class TestHistoryPageState implements TestVariantTableState {
+export class TestHistoryPageState {
   readonly testHistoryLoader: TestHistoryLoader;
   readonly now = DateTime.now().startOf('day').plus({ hours: 12 });
   @observable.ref days = 14;
@@ -115,11 +115,6 @@ export class TestHistoryPageState implements TestVariantTableState {
   setColumnWidths(v: { readonly [key: string]: number }): void {
     this.customColumnWidths = v;
   }
-
-  readonly enablesGrouping = false;
-  readonly defaultGroupingKeys = [];
-  readonly groupingKeys: readonly string[] = [];
-  setGroupingKeys() {}
 
   @observable.ref private customSortingKeys?: readonly string[];
   readonly defaultSortingKeys: readonly string[] = [];

@@ -16,98 +16,82 @@ import '@material/mwc-menu';
 import { MobxLitElement } from '@adobe/lit-mobx';
 import { css, customElement, html } from 'lit-element';
 import { styleMap } from 'lit-html/directives/style-map';
-import { observable } from 'mobx';
+import { computed, observable } from 'mobx';
 
 import './drag_tracker';
-import { consumer } from '../libs/context';
-import {
-  consumeTestVariantTableState,
-  TestVariantTableState,
-} from '../pages/test_results_tab/test_variants_table/context';
 import commonStyle from '../styles/common_style.css';
 import { DragEvent } from './drag_tracker';
 
-@customElement('milo-tvt-column-header')
-@consumer
-export class TestVariantsTableColumnHeader extends MobxLitElement {
-  @observable.ref
-  @consumeTestVariantTableState()
-  tableState!: TestVariantTableState;
-
-  // Setting the colIndex also makes the column resizable.
-  @observable.ref colIndex?: number;
-  // finalized is set to true when the user stopped dragging.
-  @observable.ref resizeTo = (_newWidth: number, _finalized: boolean) => {};
-
-  @observable.ref propKey!: string;
+@customElement('milo-column-header')
+export class ColumnHeaderElement extends MobxLitElement {
   @observable.ref label!: string;
-  @observable.ref canGroup = true;
-  @observable.ref canHide = true;
+  @observable.ref tooltip!: string;
+
+  // finalized is set to true when the user stopped dragging.
+  @observable.ref resizeColumn?: (delta: number, finalized: boolean) => void;
+  @observable.ref sortByColumn?: (ascending: boolean) => void;
+  @observable.ref groupByColumn?: () => void;
+  @observable.ref hideColumn?: () => void;
 
   @observable.ref private menuIsOpen = false;
 
-  private removeKey(oldKeys: readonly string[]): string[] {
-    const keys = oldKeys.slice();
-    const i = keys.findIndex((k) => k === this.propKey || k === '-' + this.propKey);
-    if (i > -1) {
-      keys.splice(i, 1);
-    }
-    return keys;
+  @computed private get canResize() {
+    return Boolean(this.resizeColumn);
   }
-
-  sortColumn(ascending: boolean) {
-    const newSortingKeys = this.removeKey(this.tableState.sortingKeys);
-    newSortingKeys.unshift((ascending ? '' : '-') + this.propKey);
-    this.tableState.setSortingKeys(newSortingKeys);
+  @computed private get canSort() {
+    return Boolean(this.sortByColumn);
   }
-
-  groupRows() {
-    this.hideColumn();
-    const newGroupingKeys = this.removeKey(this.tableState.groupingKeys);
-    newGroupingKeys.push(this.propKey);
-    this.tableState.setGroupingKeys(newGroupingKeys);
+  @computed private get canGroup() {
+    return Boolean(this.groupByColumn);
   }
-
-  hideColumn() {
-    const newColumnKeys = this.removeKey(this.tableState.columnKeys);
-    this.tableState.setColumnKeys(newColumnKeys);
+  @computed private get canHide() {
+    return Boolean(this.hideColumn);
   }
 
   private renderResizer() {
-    if (this.colIndex === undefined) {
+    if (!this.canResize) {
       return html``;
     }
-    const startWidth = this.tableState.columnWidths[this.colIndex];
-    let currentWidth = startWidth;
+    let widthDiff = 0;
     return html`
       <milo-drag-tracker
         id="resizer"
         @drag=${(e: DragEvent) => {
-          currentWidth = Math.max(startWidth + e.detail.dx, 24);
-          this.resizeTo(currentWidth, false);
+          widthDiff = e.detail.dx;
+          this.resizeColumn!(widthDiff, false);
         }}
-        @dragend=${() => this.resizeTo(currentWidth, true)}
+        @dragend=${() => this.resizeColumn!(widthDiff, true)}
       ></milo-drag-tracker>
     `;
   }
 
   protected render() {
     return html`
-      <div id="prop-label" title=${this.propKey} @click=${() => (this.menuIsOpen = !this.menuIsOpen)}>
+      <div id="prop-label" title=${this.tooltip} @click=${() => (this.menuIsOpen = !this.menuIsOpen)}>
         ${this.label}
       </div>
       <div id="padding"></div>
       ${this.renderResizer()}
       <mwc-menu x="0" y="20" ?open=${this.menuIsOpen} @closed=${() => (this.menuIsOpen = false)}>
-        <mwc-list-item @click=${() => this.sortColumn(true)}>Sort in ascending order</mwc-list-item>
-        <mwc-list-item @click=${() => this.sortColumn(false)}>Sort in descending order</mwc-list-item>
         <mwc-list-item
-          style=${styleMap({ display: this.tableState.enablesGrouping && this.canGroup ? '' : 'none' })}
-          @click=${() => this.groupRows()}
+          style=${styleMap({ display: this.canSort ? '' : 'none' })}
+          @click=${() => this.sortByColumn?.(true)}
         >
-          Group by ${this.label}
+          Sort in ascending order
         </mwc-list-item>
-        <mwc-list-item style=${styleMap({ display: this.canHide ? '' : 'none' })} @click=${() => this.hideColumn()}>
+        <mwc-list-item
+          style=${styleMap({ display: this.canSort ? '' : 'none' })}
+          @click=${() => this.sortByColumn?.(false)}
+        >
+          Sort in descending order
+        </mwc-list-item>
+        <mwc-list-item
+          style=${styleMap({ display: this.canGroup ? '' : 'none' })}
+          @click=${() => this.groupByColumn?.()}
+        >
+          Group by this column
+        </mwc-list-item>
+        <mwc-list-item style=${styleMap({ display: this.canHide ? '' : 'none' })} @click=${() => this.hideColumn?.()}>
           Hide column
         </mwc-list-item>
       </mwc-menu>

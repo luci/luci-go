@@ -53,7 +53,6 @@ import { NOT_FOUND_URL, router } from '../../routes';
 import { BuilderID, BuildStatus, TEST_PRESENTATION_KEY } from '../../services/buildbucket';
 import colorClasses from '../../styles/color_classes.css';
 import commonStyle from '../../styles/common_style.css';
-import { provideTestVariantTableState } from '../test_results_tab/test_variants_table/context';
 
 const STATUS_FAVICON_MAP = Object.freeze({
   [BuildStatus.Scheduled]: 'gray',
@@ -154,7 +153,6 @@ export class BuildPageElement extends MiloBaseElement implements BeforeEnterObse
 
   @observable.ref
   @provideInvocationState({ global: true })
-  @provideTestVariantTableState({ global: true })
   invocationState!: InvocationState;
 
   @observable private readonly uncommittedConfigs: UserConfigs = merge({}, DEFAULT_USER_CONFIGS);

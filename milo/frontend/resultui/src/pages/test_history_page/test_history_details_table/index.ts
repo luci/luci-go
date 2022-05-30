@@ -15,7 +15,6 @@
 import '@material/mwc-button';
 import '@material/mwc-icon';
 import { css, customElement, html } from 'lit-element';
-import { classMap } from 'lit-html/directives/class-map';
 import { repeat } from 'lit-html/directives/repeat';
 import { styleMap } from 'lit-html/directives/style-map';
 import { computed, observable, reaction } from 'mobx';
@@ -25,50 +24,50 @@ import '../../../components/column_header';
 import './test_history_details_entry';
 import { MiloBaseElement } from '../../../components/milo_base';
 import { AppState, consumeAppState } from '../../../context/app_state';
+import { consumeTestHistoryPageState, TestHistoryPageState } from '../../../context/test_history_page_state';
 import { consumeConfigsStore, UserConfigsStore } from '../../../context/user_configs';
-import { VARIANT_STATUS_CLASS_MAP } from '../../../libs/constants';
 import { consumer } from '../../../libs/context';
 import { reportErrorAsync } from '../../../libs/error_handler';
-import { createTVPropGetter, getPropKeyLabel, TestVariantStatus } from '../../../services/resultdb';
+import { createTVPropGetter, getPropKeyLabel, TestVariant } from '../../../services/resultdb';
 import colorClasses from '../../../styles/color_classes.css';
 import commonStyle from '../../../styles/common_style.css';
-import { consumeTestVariantTableState, TestVariantTableState, VariantGroup } from './context';
-import { TestVariantEntryElement } from './test_history_details_entry';
+import { TestHistoryDetailsEntryElement } from './test_history_details_entry';
+
+export interface VariantGroup {
+  readonly def: ReadonlyArray<readonly [string, unknown]>;
+  readonly variants: readonly TestVariant[];
+  readonly note?: unknown;
+}
 
 /**
  * Displays test variants in a table.
  */
-@customElement('milo-test-variants-table')
+@customElement('milo-test-history-details-table')
 @consumer
-export class TestVariantsTableElement extends MiloBaseElement {
+export class TestHistoryDetailsTableElement extends MiloBaseElement {
   @observable.ref @consumeAppState() appState!: AppState;
   @observable.ref @consumeConfigsStore() configsStore!: UserConfigsStore;
-  @observable.ref @consumeTestVariantTableState() tableState!: TestVariantTableState;
-
-  @observable.ref hideTestName = false;
-  @observable.ref showTimestamp = false;
+  @observable.ref @consumeTestHistoryPageState() pageState!: TestHistoryPageState;
 
   @computed private get columnGetters() {
-    return this.tableState.columnKeys.map((col) => createTVPropGetter(col));
+    return this.pageState.columnKeys.map((col) => createTVPropGetter(col));
   }
 
   @computed private get columnWidths() {
-    if (this.hideTestName && this.tableState.columnWidths.length > 0) {
-      const ret = this.tableState.columnWidths.slice();
+    if (this.pageState.columnWidths.length > 0) {
+      const ret = this.pageState.columnWidths.slice();
       ret.pop();
       return ret;
     }
-    return this.tableState.columnWidths;
+    return this.pageState.columnWidths;
   }
 
-  private getTvtColumns(columnWidths: readonly number[]) {
-    return (
-      '24px ' + (this.showTimestamp ? '135px ' : '') + columnWidths.map((width) => width + 'px').join(' ') + ' 1fr'
-    );
+  private getThdtColumns(columnWidths: readonly number[]) {
+    return '24px 135px ' + columnWidths.map((width) => width + 'px').join(' ') + ' 1fr';
   }
 
   toggleAllVariants(expand: boolean) {
-    this.shadowRoot!.querySelectorAll<TestVariantEntryElement>('milo-test-variant-entry').forEach(
+    this.shadowRoot!.querySelectorAll<TestHistoryDetailsEntryElement>('milo-test-history-details-entry').forEach(
       (e) => (e.expanded = expand)
     );
   }
@@ -79,12 +78,12 @@ export class TestVariantsTableElement extends MiloBaseElement {
     // When a new test loader is received, load the first page.
     this.addDisposer(
       reaction(
-        () => this.tableState.loadedFirstPage,
+        () => this.pageState.loadedFirstPage,
         () => {
-          if (this.tableState.loadedFirstPage) {
+          if (this.pageState.loadedFirstPage) {
             return;
           }
-          reportErrorAsync(this, () => this.tableState.loadFirstPage())();
+          reportErrorAsync(this, () => this.pageState.loadFirstPage())();
         },
         { fireImmediately: true }
       )
@@ -94,35 +93,24 @@ export class TestVariantsTableElement extends MiloBaseElement {
     this.addDisposer(
       reaction(
         () => this.configsStore.userConfigs.testResults.columnWidths,
-        (columnWidths) => this.tableState.setColumnWidths(columnWidths),
+        (columnWidths) => this.pageState.setColumnWidths(columnWidths),
         { fireImmediately: true }
       )
     );
   }
 
-  private loadMore = reportErrorAsync(this, () => this.tableState.loadNextPage());
+  private loadMore = reportErrorAsync(this, () => this.pageState.loadNextPage());
 
   private renderAllVariants() {
     return html`
-      ${this.tableState.variantGroups.map((group) => this.renderVariantGroup(group))}
+      ${this.pageState.variantGroups.map((group) => this.renderVariantGroup(group))}
       <div id="variant-list-tail">
-        ${this.tableState.testVariantCount === this.tableState.unfilteredTestVariantCount
-          ? html`
-              Showing ${this.tableState.testVariantCount} /
-              ${this.tableState.unfilteredTestVariantCount}${this.tableState.loadedAllTestVariants ? '' : '+'} tests.
-            `
-          : html`
-              Showing
-              <i>${this.tableState.testVariantCount}</i>
-              test${this.tableState.testVariantCount === 1 ? '' : 's'} that
-              <i>match${this.tableState.testVariantCount === 1 ? 'es' : ''} the filter</i>, out of
-              <i>${this.tableState.unfilteredTestVariantCount}${this.tableState.loadedAllTestVariants ? '' : '+'}</i>
-              tests.
-            `}
+        Showing ${this.pageState.testVariantCount} /
+        ${this.pageState.unfilteredTestVariantCount}${this.pageState.loadedAllTestVariants ? '' : '+'} tests.
         <span
           class="active-text"
           style=${styleMap({
-            display: !this.tableState.loadedAllTestVariants && this.tableState.readyToLoad ? '' : 'none',
+            display: !this.pageState.loadedAllTestVariants && this.pageState.readyToLoad ? '' : 'none',
           })}
           >${this.renderLoadMore()}</span
         >
@@ -130,74 +118,22 @@ export class TestVariantsTableElement extends MiloBaseElement {
     `;
   }
 
-  @observable private collapsedVariantGroups = new Set<string>();
   private renderVariantGroup(group: VariantGroup) {
-    if (!this.tableState.enablesGrouping) {
-      return repeat(
-        group.variants,
-        (v) => `${v.testId} ${v.variantHash}`,
-        (v) => html`
-          <milo-test-variant-entry
-            .variant=${v}
-            .columnGetters=${this.columnGetters}
-            .expanded=${this.tableState.testVariantCount === 1}
-            .hideTestName=${this.hideTestName}
-            .showTimestamp=${this.showTimestamp}
-            .historyUrl=${this.tableState.getHistoryUrl(v.testId, v.variantHash)}
-          ></milo-test-variant-entry>
-        `
-      );
-    }
-
-    const groupId = JSON.stringify(group.def);
-    const expanded = !this.collapsedVariantGroups.has(groupId);
-    return html`
-      <div
-        class=${classMap({
-          expanded,
-          empty: group.variants.length === 0,
-          'group-header': true,
-        })}
-        @click=${() => {
-          if (expanded) {
-            this.collapsedVariantGroups.add(groupId);
-          } else {
-            this.collapsedVariantGroups.delete(groupId);
-          }
-        }}
-      >
-        <mwc-icon class="group-icon">${expanded ? 'expand_more' : 'chevron_right'}</mwc-icon>
-        <div>
-          <b>${group.variants.length} test variant${group.variants.length === 1 ? '' : 's'}:</b>
-          ${group.def.map(
-            ([k, v]) =>
-              html`<span class="group-kv"
-                ><span>${getPropKeyLabel(k)}=</span
-                ><span class=${k === 'status' ? VARIANT_STATUS_CLASS_MAP[v as TestVariantStatus] : ''}>${v}</span></span
-              >`
-          )}
-          ${group.note || ''}
-        </div>
-      </div>
-      ${repeat(
-        expanded ? group.variants : [],
-        (v) => `${v.testId} ${v.variantHash}`,
-        (v) => html`
-          <milo-test-variant-entry
-            .variant=${v}
-            .columnGetters=${this.columnGetters}
-            .expanded=${this.tableState.testVariantCount === 1}
-            .hideTestName=${this.hideTestName}
-            .showTimestamp=${this.showTimestamp}
-            .historyUrl=${this.tableState.getHistoryUrl(v.testId, v.variantHash)}
-          ></milo-test-variant-entry>
-        `
-      )}
-    `;
+    return repeat(
+      group.variants,
+      (v) => `${v.testId} ${v.variantHash}`,
+      (v) => html`
+        <milo-test-history-details-entry
+          .variant=${v}
+          .columnGetters=${this.columnGetters}
+          .expanded=${this.pageState.testVariantCount === 1}
+        ></milo-test-history-details-entry>
+      `
+    );
   }
 
   private renderLoadMore() {
-    const state = this.tableState;
+    const state = this.pageState;
     return html`
       <span style=${styleMap({ display: state.isLoading ?? true ? 'none' : '' })} @click=${() => this.loadMore()}>
         [load more]
@@ -218,57 +154,57 @@ export class TestVariantsTableElement extends MiloBaseElement {
     this.tableHeaderEle = this.shadowRoot!.getElementById('table-header')!;
   }
 
+  /**
+   * Generate a sortByColumn callback for the given column.
+   */
+  private sortByColumnFn(col: string) {
+    return (ascending: boolean) => {
+      const matchingKeys = [col, `-${col}`];
+      const newKeys = this.pageState.sortingKeys.filter((key) => !matchingKeys.includes(key));
+      newKeys.unshift((ascending ? '' : '-') + col);
+      this.pageState.setSortingKeys(newKeys);
+    };
+  }
+
   protected render() {
     return html`
-      <div style="--tvt-columns: ${this.getTvtColumns(this.columnWidths)}">
+      <div style="--thdt-columns: ${this.getThdtColumns(this.columnWidths)}">
         <div id="table-header">
           <div><!-- Expand toggle --></div>
-          <milo-tvt-column-header
-            .propKey=${'status'}
+          <milo-column-header
             .label=${/* invis char */ '\u2002' + 'S'}
-            .canHide=${false}
-          ></milo-tvt-column-header>
-          ${this.showTimestamp
-            ? html`
-                <milo-tvt-column-header
-                  .propKey=${'partitionTime'}
-                  .label=${'Timestamp'}
-                  .canHide=${false}
-                ></milo-tvt-column-header>
-              `
-            : ''}
-          ${this.tableState.columnKeys.map(
-            (col, i) => html`<milo-tvt-column-header
-              .colIndex=${
-                // When hiding test name, don't make the last column resizable.
-                this.tableState.columnKeys.length - 1 === i && this.hideTestName ? undefined : i
-              }
-              .resizeTo=${(newWidth: number, finalized: boolean) => {
-                if (!finalized) {
-                  const newColWidths = this.columnWidths.slice();
-                  newColWidths[i] = newWidth;
-                  // Update the style directly so lit-element doesn't need to
-                  // re-render the component frequently.
-                  // Live updating the width of the entire column can cause a bit
-                  // of lag when there are many rows. Live updating just the
-                  // column header is good enough.
-                  this.tableHeaderEle?.style.setProperty('--tvt-columns', this.getTvtColumns(newColWidths));
-                  return;
-                }
-
-                this.tableHeaderEle?.style.removeProperty('--tvt-columns');
-                this.configsStore.userConfigs.testResults.columnWidths[col] = newWidth;
-              }}
-              .propKey=${col}
+            .tooltip=${'status'}
+            .sortByColumn=${this.sortByColumnFn('status')}
+          ></milo-column-header>
+          <milo-column-header .label=${'Timestamp'} .tooltip=${'partitionTime'}></milo-column-header>
+          ${this.pageState.columnKeys.map(
+            (col, i) => html`<milo-column-header
               .label=${getPropKeyLabel(col)}
-            ></milo-tvt-column-header>`
+              .tooltip=${col}
+              .resizeColumn=${
+                // Don't make the last column resizable.
+                this.pageState.columnKeys.length - 1 === i
+                  ? undefined
+                  : (delta: number, finalized: boolean) => {
+                      if (!finalized) {
+                        const newColWidths = this.columnWidths.slice();
+                        newColWidths[i] += delta;
+                        // Update the style directly so lit-element doesn't need to
+                        // re-render the component frequently.
+                        // Live updating the width of the entire column can cause a bit
+                        // of lag when there are many rows. Live updating just the
+                        // column header is good enough.
+                        this.tableHeaderEle?.style.setProperty('--thdt-columns', this.getThdtColumns(newColWidths));
+                        return;
+                      }
+
+                      this.tableHeaderEle?.style.removeProperty('--thdt-columns');
+                      this.configsStore.userConfigs.testResults.columnWidths[col] = this.columnWidths[i] + delta;
+                    }
+              }
+              .sortByColumn=${this.sortByColumnFn(col)}
+            ></milo-column-header>`
           )}
-          ${this.hideTestName
-            ? ''
-            : html`
-                <milo-tvt-column-header .propKey=${'name'} .label=${'Name'} .canHide=${false} .canGroup=${false}>
-                </milo-tvt-column-header>
-              `}
         </div>
         <div id="test-variant-list" tabindex="0">${this.renderAllVariants()}</div>
       </div>
@@ -281,74 +217,29 @@ export class TestVariantsTableElement extends MiloBaseElement {
     css`
       :host {
         display: block;
-        --tvt-top-offset: 0px;
+        --thdt-top-offset: 0px;
       }
 
       #table-header {
         display: grid;
-        grid-template-columns: 24px var(--tvt-columns);
+        grid-template-columns: 24px var(--thdt-columns);
         grid-gap: 5px;
         line-height: 24px;
         padding: 2px 2px 2px 10px;
         font-weight: bold;
         position: sticky;
-        top: var(--tvt-top-offset);
+        top: var(--thdt-top-offset);
         border-top: 1px solid var(--divider-color);
         border-bottom: 1px solid var(--divider-color);
         background-color: var(--block-background-color);
         z-index: 2;
       }
 
-      #no-invocation {
-        padding: 10px;
-      }
       #test-variant-list > * {
         padding-left: 10px;
       }
-      milo-test-variant-entry {
+      milo-test-history-details-entry {
         margin: 2px 0px;
-      }
-
-      #integration-hint {
-        border-bottom: 1px solid var(--divider-color);
-        padding: 0 0 5px 15px;
-      }
-
-      .group-header {
-        display: grid;
-        grid-template-columns: auto auto 1fr;
-        grid-gap: 5px;
-        padding: 2px 2px 2px 10px;
-        position: sticky;
-        top: calc(var(--tvt-top-offset) + 29px);
-        font-size: 14px;
-        background-color: var(--block-background-color);
-        border-top: 1px solid var(--divider-color);
-        cursor: pointer;
-        line-height: 24px;
-        z-index: 1;
-      }
-      .group-header:first-child {
-        top: calc(var(--tvt-top-offset) + 30px);
-        border-top: none;
-      }
-      .group-header.expanded:not(.empty) {
-        border-bottom: 1px solid var(--divider-color);
-      }
-      .group-kv:not(:last-child)::after {
-        content: ', ';
-      }
-      .group-kv > span:first-child {
-        color: var(--light-text-color);
-      }
-      .group-kv > span:nth-child(2) {
-        font-weight: 500;
-        font-style: italic;
-      }
-
-      .inline-icon {
-        --mdc-icon-size: 1.2em;
-        vertical-align: bottom;
       }
 
       #variant-list-tail {

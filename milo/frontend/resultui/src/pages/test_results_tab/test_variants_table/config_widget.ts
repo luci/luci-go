@@ -19,16 +19,16 @@ import { MobxLitElement } from '@adobe/lit-mobx';
 import { css, customElement, html } from 'lit-element';
 import { observable } from 'mobx';
 
+import { consumeInvocationState, InvocationState } from '../../../context/invocation_state';
 import { consumer } from '../../../libs/context';
 import commonStyle from '../../../styles/common_style.css';
-import { consumeTestVariantTableState, TestVariantTableState } from './context';
 
 @customElement('milo-tvt-config-widget')
 @consumer
 export class TestVariantsTableConfigWidgetElement extends MobxLitElement {
   @observable.ref
-  @consumeTestVariantTableState()
-  tableState!: TestVariantTableState;
+  @consumeInvocationState()
+  invState!: InvocationState;
 
   // These properties are frequently updated.
   // Don't set them as observables so updating them won't have big performance
@@ -66,9 +66,9 @@ export class TestVariantsTableConfigWidgetElement extends MobxLitElement {
         id="configure-table"
         class="filters-container"
         @click=${() => {
-          this.uncommittedColumnKeys = this.tableState.columnKeys;
-          this.uncommittedSortingKeys = this.tableState.sortingKeys;
-          this.uncommittedGroupingKeys = this.tableState.groupingKeys;
+          this.uncommittedColumnKeys = this.invState.columnKeys;
+          this.uncommittedSortingKeys = this.invState.sortingKeys;
+          this.uncommittedGroupingKeys = this.invState.groupingKeys;
           this.showTableConfigDialog = true;
         }}
       >
@@ -81,9 +81,9 @@ export class TestVariantsTableConfigWidgetElement extends MobxLitElement {
         ?open=${this.showTableConfigDialog}
         @closed=${(event: CustomEvent<{ action: string }>) => {
           if (event.detail.action === 'apply') {
-            this.tableState.setColumnKeys(this.uncommittedColumnKeys);
-            this.tableState.setSortingKeys(this.uncommittedSortingKeys);
-            this.tableState.setGroupingKeys(this.uncommittedGroupingKeys);
+            this.invState.setColumnKeys(this.uncommittedColumnKeys);
+            this.invState.setSortingKeys(this.uncommittedSortingKeys);
+            this.invState.setGroupingKeys(this.uncommittedGroupingKeys);
           }
           this.showTableConfigDialog = false;
         }}
@@ -99,15 +99,11 @@ export class TestVariantsTableConfigWidgetElement extends MobxLitElement {
             this.uncommittedSortingKeys,
             (newKeys) => (this.uncommittedSortingKeys = newKeys)
           )}
-          ${
-            this.tableState.enablesGrouping
-              ? this.renderPropKeysConfigRow(
-                  'Group by',
-                  this.uncommittedGroupingKeys,
-                  (newKeys) => (this.uncommittedGroupingKeys = newKeys)
-                )
-              : ''
-          }
+          ${this.renderPropKeysConfigRow(
+            'Group by',
+            this.uncommittedGroupingKeys,
+            (newKeys) => (this.uncommittedGroupingKeys = newKeys)
+          )}
           </tr>
         </table>
         <mwc-button
@@ -115,9 +111,9 @@ export class TestVariantsTableConfigWidgetElement extends MobxLitElement {
           dense
           unelevated
           @click=${() => {
-            this.uncommittedColumnKeys = this.tableState.defaultColumnKeys;
-            this.uncommittedSortingKeys = this.tableState.defaultSortingKeys;
-            this.uncommittedGroupingKeys = this.tableState.defaultGroupingKeys;
+            this.uncommittedColumnKeys = this.invState.defaultColumnKeys;
+            this.uncommittedSortingKeys = this.invState.defaultSortingKeys;
+            this.uncommittedGroupingKeys = this.invState.defaultGroupingKeys;
 
             // this.uncommittedXXXKeys are not observables.
             // Manually trigger an updated.

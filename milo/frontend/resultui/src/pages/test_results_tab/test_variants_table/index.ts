@@ -25,15 +25,21 @@ import '../../../components/column_header';
 import './test_variant_entry';
 import { MiloBaseElement } from '../../../components/milo_base';
 import { AppState, consumeAppState } from '../../../context/app_state';
+import { consumeInvocationState, InvocationState } from '../../../context/invocation_state';
 import { consumeConfigsStore, UserConfigsStore } from '../../../context/user_configs';
 import { VARIANT_STATUS_CLASS_MAP } from '../../../libs/constants';
 import { consumer } from '../../../libs/context';
 import { reportErrorAsync } from '../../../libs/error_handler';
-import { createTVPropGetter, getPropKeyLabel, TestVariantStatus } from '../../../services/resultdb';
+import { createTVPropGetter, getPropKeyLabel, TestVariant, TestVariantStatus } from '../../../services/resultdb';
 import colorClasses from '../../../styles/color_classes.css';
 import commonStyle from '../../../styles/common_style.css';
-import { consumeTestVariantTableState, TestVariantTableState, VariantGroup } from './context';
 import { TestVariantEntryElement } from './test_variant_entry';
+
+export interface VariantGroup {
+  readonly def: ReadonlyArray<readonly [string, unknown]>;
+  readonly variants: readonly TestVariant[];
+  readonly note?: unknown;
+}
 
 /**
  * Displays test variants in a table.
@@ -43,28 +49,18 @@ import { TestVariantEntryElement } from './test_variant_entry';
 export class TestVariantsTableElement extends MiloBaseElement {
   @observable.ref @consumeAppState() appState!: AppState;
   @observable.ref @consumeConfigsStore() configsStore!: UserConfigsStore;
-  @observable.ref @consumeTestVariantTableState() tableState!: TestVariantTableState;
-
-  @observable.ref hideTestName = false;
-  @observable.ref showTimestamp = false;
+  @observable.ref @consumeInvocationState() invState!: InvocationState;
 
   @computed private get columnGetters() {
-    return this.tableState.columnKeys.map((col) => createTVPropGetter(col));
+    return this.invState.columnKeys.map((col) => createTVPropGetter(col));
   }
 
   @computed private get columnWidths() {
-    if (this.hideTestName && this.tableState.columnWidths.length > 0) {
-      const ret = this.tableState.columnWidths.slice();
-      ret.pop();
-      return ret;
-    }
-    return this.tableState.columnWidths;
+    return this.invState.columnWidths;
   }
 
   private getTvtColumns(columnWidths: readonly number[]) {
-    return (
-      '24px ' + (this.showTimestamp ? '135px ' : '') + columnWidths.map((width) => width + 'px').join(' ') + ' 1fr'
-    );
+    return '24px ' + columnWidths.map((width) => width + 'px').join(' ') + ' 1fr';
   }
 
   toggleAllVariants(expand: boolean) {
@@ -79,12 +75,12 @@ export class TestVariantsTableElement extends MiloBaseElement {
     // When a new test loader is received, load the first page.
     this.addDisposer(
       reaction(
-        () => this.tableState.loadedFirstPage,
+        () => this.invState.loadedFirstPage,
         () => {
-          if (this.tableState.loadedFirstPage) {
+          if (this.invState.loadedFirstPage) {
             return;
           }
-          reportErrorAsync(this, () => this.tableState.loadFirstPage())();
+          reportErrorAsync(this, () => this.invState.loadFirstPage())();
         },
         { fireImmediately: true }
       )
@@ -94,35 +90,35 @@ export class TestVariantsTableElement extends MiloBaseElement {
     this.addDisposer(
       reaction(
         () => this.configsStore.userConfigs.testResults.columnWidths,
-        (columnWidths) => this.tableState.setColumnWidths(columnWidths),
+        (columnWidths) => this.invState.setColumnWidths(columnWidths),
         { fireImmediately: true }
       )
     );
   }
 
-  private loadMore = reportErrorAsync(this, () => this.tableState.loadNextPage());
+  private loadMore = reportErrorAsync(this, () => this.invState.loadNextPage());
 
   private renderAllVariants() {
     return html`
-      ${this.tableState.variantGroups.map((group) => this.renderVariantGroup(group))}
+      ${this.invState.variantGroups.map((group) => this.renderVariantGroup(group))}
       <div id="variant-list-tail">
-        ${this.tableState.testVariantCount === this.tableState.unfilteredTestVariantCount
+        ${this.invState.testVariantCount === this.invState.unfilteredTestVariantCount
           ? html`
-              Showing ${this.tableState.testVariantCount} /
-              ${this.tableState.unfilteredTestVariantCount}${this.tableState.loadedAllTestVariants ? '' : '+'} tests.
+              Showing ${this.invState.testVariantCount} /
+              ${this.invState.unfilteredTestVariantCount}${this.invState.loadedAllTestVariants ? '' : '+'} tests.
             `
           : html`
               Showing
-              <i>${this.tableState.testVariantCount}</i>
-              test${this.tableState.testVariantCount === 1 ? '' : 's'} that
-              <i>match${this.tableState.testVariantCount === 1 ? 'es' : ''} the filter</i>, out of
-              <i>${this.tableState.unfilteredTestVariantCount}${this.tableState.loadedAllTestVariants ? '' : '+'}</i>
+              <i>${this.invState.testVariantCount}</i>
+              test${this.invState.testVariantCount === 1 ? '' : 's'} that
+              <i>match${this.invState.testVariantCount === 1 ? 'es' : ''} the filter</i>, out of
+              <i>${this.invState.unfilteredTestVariantCount}${this.invState.loadedAllTestVariants ? '' : '+'}</i>
               tests.
             `}
         <span
           class="active-text"
           style=${styleMap({
-            display: !this.tableState.loadedAllTestVariants && this.tableState.readyToLoad ? '' : 'none',
+            display: !this.invState.loadedAllTestVariants && this.invState.readyToLoad ? '' : 'none',
           })}
           >${this.renderLoadMore()}</span
         >
@@ -132,23 +128,6 @@ export class TestVariantsTableElement extends MiloBaseElement {
 
   @observable private collapsedVariantGroups = new Set<string>();
   private renderVariantGroup(group: VariantGroup) {
-    if (!this.tableState.enablesGrouping) {
-      return repeat(
-        group.variants,
-        (v) => `${v.testId} ${v.variantHash}`,
-        (v) => html`
-          <milo-test-variant-entry
-            .variant=${v}
-            .columnGetters=${this.columnGetters}
-            .expanded=${this.tableState.testVariantCount === 1}
-            .hideTestName=${this.hideTestName}
-            .showTimestamp=${this.showTimestamp}
-            .historyUrl=${this.tableState.getHistoryUrl(v.testId, v.variantHash)}
-          ></milo-test-variant-entry>
-        `
-      );
-    }
-
     const groupId = JSON.stringify(group.def);
     const expanded = !this.collapsedVariantGroups.has(groupId);
     return html`
@@ -186,10 +165,8 @@ export class TestVariantsTableElement extends MiloBaseElement {
           <milo-test-variant-entry
             .variant=${v}
             .columnGetters=${this.columnGetters}
-            .expanded=${this.tableState.testVariantCount === 1}
-            .hideTestName=${this.hideTestName}
-            .showTimestamp=${this.showTimestamp}
-            .historyUrl=${this.tableState.getHistoryUrl(v.testId, v.variantHash)}
+            .expanded=${this.invState.testVariantCount === 1}
+            .historyUrl=${this.invState.getHistoryUrl(v.testId, v.variantHash)}
           ></milo-test-variant-entry>
         `
       )}
@@ -197,7 +174,7 @@ export class TestVariantsTableElement extends MiloBaseElement {
   }
 
   private renderLoadMore() {
-    const state = this.tableState;
+    const state = this.invState;
     return html`
       <span style=${styleMap({ display: state.isLoading ?? true ? 'none' : '' })} @click=${() => this.loadMore()}>
         [load more]
@@ -218,35 +195,49 @@ export class TestVariantsTableElement extends MiloBaseElement {
     this.tableHeaderEle = this.shadowRoot!.getElementById('table-header')!;
   }
 
+  /**
+   * Generate a sortByColumn callback for the given column.
+   */
+  private sortByColumnFn(col: string) {
+    return (ascending: boolean) => {
+      const matchingKeys = [col, `-${col}`];
+      const newKeys = this.invState.sortingKeys.filter((key) => !matchingKeys.includes(key));
+      newKeys.unshift((ascending ? '' : '-') + col);
+      this.invState.setSortingKeys(newKeys);
+    };
+  }
+
+  /**
+   * Generate a groupByColumn callback for the given column.
+   */
+  private groupByColumnFn(col: string) {
+    return () => {
+      this.invState.setColumnKeys(this.invState.columnKeys.filter((key) => key !== col));
+      const newKeys = this.invState.groupingKeys.filter((key) => key !== col);
+      newKeys.unshift(col);
+      this.invState.setGroupingKeys(newKeys);
+    };
+  }
+
   protected render() {
     return html`
       <div style="--tvt-columns: ${this.getTvtColumns(this.columnWidths)}">
         <div id="table-header">
           <div><!-- Expand toggle --></div>
-          <milo-tvt-column-header
-            .propKey=${'status'}
+          <milo-column-header
             .label=${/* invis char */ '\u2002' + 'S'}
-            .canHide=${false}
-          ></milo-tvt-column-header>
-          ${this.showTimestamp
-            ? html`
-                <milo-tvt-column-header
-                  .propKey=${'partitionTime'}
-                  .label=${'Timestamp'}
-                  .canHide=${false}
-                ></milo-tvt-column-header>
-              `
-            : ''}
-          ${this.tableState.columnKeys.map(
-            (col, i) => html`<milo-tvt-column-header
-              .colIndex=${
-                // When hiding test name, don't make the last column resizable.
-                this.tableState.columnKeys.length - 1 === i && this.hideTestName ? undefined : i
-              }
-              .resizeTo=${(newWidth: number, finalized: boolean) => {
+            .tooltip=${'status'}
+            .sortByColumn=${this.sortByColumnFn('status')}
+            .groupByColumn=${this.groupByColumnFn('status')}
+          ></milo-column-header>
+          ${this.invState.columnKeys.map(
+            (col, i) => html`<milo-column-header
+              .label=${getPropKeyLabel(col)}
+              .tooltip=${col}
+              .resizeColumn=${(delta: number, finalized: boolean) => {
                 if (!finalized) {
                   const newColWidths = this.columnWidths.slice();
-                  newColWidths[i] = newWidth;
+                  newColWidths[i] += delta;
                   // Update the style directly so lit-element doesn't need to
                   // re-render the component frequently.
                   // Live updating the width of the entire column can cause a bit
@@ -257,18 +248,20 @@ export class TestVariantsTableElement extends MiloBaseElement {
                 }
 
                 this.tableHeaderEle?.style.removeProperty('--tvt-columns');
-                this.configsStore.userConfigs.testResults.columnWidths[col] = newWidth;
+                this.configsStore.userConfigs.testResults.columnWidths[col] = this.columnWidths[i] + delta;
               }}
-              .propKey=${col}
-              .label=${getPropKeyLabel(col)}
-            ></milo-tvt-column-header>`
+              .sortByColumn=${this.sortByColumnFn(col)}
+              .groupByColumn=${this.groupByColumnFn(col)}
+              .hideColumn=${() => {
+                this.invState.setColumnKeys(this.invState.columnKeys.filter((key) => key !== col));
+              }}
+            ></milo-column-header>`
           )}
-          ${this.hideTestName
-            ? ''
-            : html`
-                <milo-tvt-column-header .propKey=${'name'} .label=${'Name'} .canHide=${false} .canGroup=${false}>
-                </milo-tvt-column-header>
-              `}
+          <milo-column-header
+            .label=${'Name'}
+            .tooltip=${'name'}
+            .sortByColumn=${this.sortByColumnFn('name')}
+          ></milo-column-header>
         </div>
         <div id="test-variant-list" tabindex="0">${this.renderAllVariants()}</div>
       </div>

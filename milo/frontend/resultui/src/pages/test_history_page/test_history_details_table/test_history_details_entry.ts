@@ -20,15 +20,13 @@ import { DateTime } from 'luxon';
 import { computed, observable } from 'mobx';
 
 import '../../../components/expandable_entry';
-import '../../../components/copy_to_clipboard';
 import '../../../components/result_entry';
 import { AppState, consumeAppState } from '../../../context/app_state';
-import { GA_ACTIONS, GA_CATEGORIES, trackEvent } from '../../../libs/analytics_utils';
 import { VARIANT_STATUS_CLASS_MAP, VARIANT_STATUS_ICON_MAP } from '../../../libs/constants';
 import { lazyRendering, RenderPlaceHolder } from '../../../libs/observer_element';
 import { sanitizeHTML } from '../../../libs/sanitize_html';
 import { LONG_TIME_FORMAT, SHORT_TIME_FORMAT } from '../../../libs/time_utils';
-import { TestVariant, TestVariantStatus } from '../../../services/resultdb';
+import { TestVariant } from '../../../services/resultdb';
 import colorClasses from '../../../styles/color_classes.css';
 import commonStyle from '../../../styles/common_style.css';
 
@@ -36,22 +34,16 @@ import commonStyle from '../../../styles/common_style.css';
 // Any unrecognized keys will be listed after the ones defined below.
 const ORDERED_VARIANT_DEF_KEYS = Object.freeze(['bucket', 'builder', 'test_suite']);
 
-// Only track test variants with unexpected, non-exonerated test results.
-const TRACKED_STATUS = [TestVariantStatus.UNEXPECTED, TestVariantStatus.UNEXPECTEDLY_SKIPPED, TestVariantStatus.FLAKY];
-
 /**
  * Renders an expandable entry of the given test variant.
  */
-@customElement('milo-test-variant-entry')
+@customElement('milo-test-history-details-entry')
 @lazyRendering
-export class TestVariantEntryElement extends MobxLitElement implements RenderPlaceHolder {
+export class TestHistoryDetailsEntryElement extends MobxLitElement implements RenderPlaceHolder {
   @observable.ref @consumeAppState() appState!: AppState;
 
   @observable.ref variant!: TestVariant;
   @observable.ref columnGetters: Array<(v: TestVariant) => unknown> = [];
-  @observable.ref hideTestName = false;
-  @observable.ref historyUrl = '';
-  @observable.ref showTimestamp = false;
 
   @observable.ref private _expanded = false;
   @computed get expanded() {
@@ -62,42 +54,9 @@ export class TestVariantEntryElement extends MobxLitElement implements RenderPla
     // Always render the content once it was expanded so the descendants' states
     // don't get reset after the node is collapsed.
     this.shouldRenderContent = this.shouldRenderContent || newVal;
-
-    if (newVal) {
-      trackEvent(GA_CATEGORIES.TEST_RESULTS_TAB, GA_ACTIONS.EXPAND_ENTRY, VISIT_ID, 1);
-    }
   }
 
   @observable.ref private shouldRenderContent = false;
-
-  @computed
-  private get shortName() {
-    if (this.variant.testMetadata?.name) {
-      return this.variant.testMetadata.name;
-    }
-
-    // Generate a good enough short name base on the test ID.
-    const suffix = this.variant.testId.match(/^.*[./]([^./]*?.{40})$/);
-    if (suffix) {
-      return '...' + suffix[1];
-    }
-    return this.variant.testId;
-  }
-
-  @computed
-  private get longName() {
-    if (this.variant.testMetadata?.name) {
-      return this.variant.testMetadata.name;
-    }
-    return this.variant.testId;
-  }
-
-  private genTestLink() {
-    const location = window.location;
-    const query = new URLSearchParams(location.search);
-    query.set('q', `ExactID:${this.variant.testId} VHash:${this.variant.variantHash}`);
-    return `${location.protocol}//${location.host}${location.pathname}?${query}`;
-  }
 
   @computed
   private get sourceUrl() {
@@ -158,41 +117,13 @@ export class TestVariantEntryElement extends MobxLitElement implements RenderPla
     return DateTime.fromISO(this.variant.partitionTime);
   }
 
-  private trackInteraction = () => {
-    if (TRACKED_STATUS.includes(this.variant.status)) {
-      trackEvent(GA_CATEGORIES.TEST_VARIANT_WITH_UNEXPECTED_RESULTS, GA_ACTIONS.INSPECT_TEST, VISIT_ID);
-    }
-  };
-
-  connectedCallback() {
-    super.connectedCallback();
-    this.addEventListener('click', this.trackInteraction);
-  }
-
-  disconnectedCallback() {
-    this.removeEventListener('click', this.trackInteraction);
-    super.disconnectedCallback();
-  }
-
   private renderBody() {
     if (!this.shouldRenderContent) {
       return html``;
     }
     return html`
       <div id="basic-info">
-        ${this.historyUrl ? html`<a href=${this.historyUrl} target="_blank">history</a> |` : ''}
-        ${this.sourceUrl ? html`<a href=${this.sourceUrl} target="_blank">source</a> |` : ''}
-        <div id="test-id">
-          <span class="greyed-out" title=${this.variant.testId}>ID: ${this.variant.testId}</span>
-          <milo-copy-to-clipboard
-            .textToCopy=${this.variant.testId}
-            @click=${(e: Event) => {
-              e.stopPropagation();
-              this.trackInteraction();
-            }}
-            title="copy test ID to clipboard"
-          ></milo-copy-to-clipboard>
-        </div>
+        ${this.sourceUrl ? html`<a href=${this.sourceUrl} target="_blank">source</a>` : ''}
         ${this.variantDef.length !== 0 ? '|' : ''}
         <span class="greyed-out">
           ${this.variantDef.map(
@@ -241,40 +172,10 @@ export class TestVariantEntryElement extends MobxLitElement implements RenderPla
           <mwc-icon class=${VARIANT_STATUS_CLASS_MAP[this.variant.status]}>
             ${VARIANT_STATUS_ICON_MAP[this.variant.status]}
           </mwc-icon>
-          ${this.showTimestamp
-            ? html`
-                <div title=${this.dateTime?.toFormat(LONG_TIME_FORMAT) || ''}>
-                  ${this.dateTime?.toFormat(SHORT_TIME_FORMAT) || ''}
-                </div>
-              `
-            : ''}
+          <div title=${this.dateTime?.toFormat(LONG_TIME_FORMAT) || ''}>
+            ${this.dateTime?.toFormat(SHORT_TIME_FORMAT) || ''}
+          </div>
           ${this.columnValues.map((v) => html`<div title=${v}>${v}</div>`)}
-          ${this.hideTestName
-            ? ''
-            : html`
-                <div id="test-name">
-                  <span title=${this.longName}>${this.shortName}</span>
-                  <milo-copy-to-clipboard
-                    .textToCopy=${this.longName}
-                    @click=${(e: Event) => {
-                      e.stopPropagation();
-                      this.trackInteraction();
-                    }}
-                    title="copy test name to clipboard"
-                  ></milo-copy-to-clipboard>
-                  <milo-copy-to-clipboard
-                    id="link-copy-button"
-                    .textToCopy=${() => this.genTestLink()}
-                    @click=${(e: Event) => {
-                      e.stopPropagation();
-                      this.trackInteraction();
-                    }}
-                    title="copy link to the test"
-                  >
-                    <mwc-icon slot="copy-icon">link</mwc-icon>
-                  </milo-copy-to-clipboard>
-                </div>
-              `}
         </div>
         <div id="body" slot="content">${this.renderBody()}</div>
       </milo-expandable-entry>
@@ -292,22 +193,12 @@ export class TestVariantEntryElement extends MobxLitElement implements RenderPla
 
       #header {
         display: grid;
-        grid-template-columns: var(--tvt-columns);
+        grid-template-columns: var(--thdt-columns);
         grid-gap: 5px;
         font-size: 16px;
         line-height: 24px;
       }
       #header > * {
-        overflow: hidden;
-        text-overflow: ellipsis;
-      }
-
-      #test-name {
-        display: flex;
-        font-size: 16px;
-        line-height: 24px;
-      }
-      #test-name > span {
         overflow: hidden;
         text-overflow: ellipsis;
       }
@@ -322,17 +213,6 @@ export class TestVariantEntryElement extends MobxLitElement implements RenderPla
         margin-left: 5px;
       }
 
-      #test-id {
-        display: inline-flex;
-        max-width: 300px;
-        overflow: hidden;
-        white-space: nowrap;
-      }
-      #test-id > span {
-        display: inline-block;
-        overflow: hidden;
-        text-overflow: ellipsis;
-      }
       .kv-key::after {
         content: ':';
       }
@@ -353,15 +233,6 @@ export class TestVariantEntryElement extends MobxLitElement implements RenderPla
       .explanation-html {
         background-color: var(--block-background-color);
         padding: 5px;
-      }
-
-      milo-copy-to-clipboard {
-        flex: 0 0 16px;
-        margin-left: 2px;
-        display: none;
-      }
-      :hover > milo-copy-to-clipboard {
-        display: inline-block;
       }
     `,
   ];

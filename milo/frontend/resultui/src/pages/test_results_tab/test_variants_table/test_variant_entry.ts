@@ -16,28 +16,22 @@ import '@material/mwc-icon';
 import { MobxLitElement } from '@adobe/lit-mobx';
 import { css, customElement, html } from 'lit-element';
 import { repeat } from 'lit-html/directives/repeat';
-import { DateTime } from 'luxon';
 import { computed, observable } from 'mobx';
 
 import '../../../components/expandable_entry';
 import '../../../components/copy_to_clipboard';
 import '../../../components/result_entry';
 import { AppState, consumeAppState } from '../../../context/app_state';
-import { GA_ACTIONS, GA_CATEGORIES, trackEvent } from '../../../libs/analytics_utils';
 import { VARIANT_STATUS_CLASS_MAP, VARIANT_STATUS_ICON_MAP } from '../../../libs/constants';
 import { lazyRendering, RenderPlaceHolder } from '../../../libs/observer_element';
 import { sanitizeHTML } from '../../../libs/sanitize_html';
-import { LONG_TIME_FORMAT, SHORT_TIME_FORMAT } from '../../../libs/time_utils';
-import { TestVariant, TestVariantStatus } from '../../../services/resultdb';
+import { TestVariant } from '../../../services/resultdb';
 import colorClasses from '../../../styles/color_classes.css';
 import commonStyle from '../../../styles/common_style.css';
 
 // This list defines the order in which variant def keys should be displayed.
 // Any unrecognized keys will be listed after the ones defined below.
 const ORDERED_VARIANT_DEF_KEYS = Object.freeze(['bucket', 'builder', 'test_suite']);
-
-// Only track test variants with unexpected, non-exonerated test results.
-const TRACKED_STATUS = [TestVariantStatus.UNEXPECTED, TestVariantStatus.UNEXPECTEDLY_SKIPPED, TestVariantStatus.FLAKY];
 
 /**
  * Renders an expandable entry of the given test variant.
@@ -49,9 +43,7 @@ export class TestVariantEntryElement extends MobxLitElement implements RenderPla
 
   @observable.ref variant!: TestVariant;
   @observable.ref columnGetters: Array<(v: TestVariant) => unknown> = [];
-  @observable.ref hideTestName = false;
   @observable.ref historyUrl = '';
-  @observable.ref showTimestamp = false;
 
   @observable.ref private _expanded = false;
   @computed get expanded() {
@@ -62,10 +54,6 @@ export class TestVariantEntryElement extends MobxLitElement implements RenderPla
     // Always render the content once it was expanded so the descendants' states
     // don't get reset after the node is collapsed.
     this.shouldRenderContent = this.shouldRenderContent || newVal;
-
-    if (newVal) {
-      trackEvent(GA_CATEGORIES.TEST_RESULTS_TAB, GA_ACTIONS.EXPAND_ENTRY, VISIT_ID, 1);
-    }
   }
 
   @observable.ref private shouldRenderContent = false;
@@ -151,29 +139,6 @@ export class TestVariantEntryElement extends MobxLitElement implements RenderPla
     return this.columnGetters.map((fn) => fn(this.variant));
   }
 
-  @computed private get dateTime() {
-    if (!this.variant.partitionTime) {
-      return null;
-    }
-    return DateTime.fromISO(this.variant.partitionTime);
-  }
-
-  private trackInteraction = () => {
-    if (TRACKED_STATUS.includes(this.variant.status)) {
-      trackEvent(GA_CATEGORIES.TEST_VARIANT_WITH_UNEXPECTED_RESULTS, GA_ACTIONS.INSPECT_TEST, VISIT_ID);
-    }
-  };
-
-  connectedCallback() {
-    super.connectedCallback();
-    this.addEventListener('click', this.trackInteraction);
-  }
-
-  disconnectedCallback() {
-    this.removeEventListener('click', this.trackInteraction);
-    super.disconnectedCallback();
-  }
-
   private renderBody() {
     if (!this.shouldRenderContent) {
       return html``;
@@ -186,10 +151,7 @@ export class TestVariantEntryElement extends MobxLitElement implements RenderPla
           <span class="greyed-out" title=${this.variant.testId}>ID: ${this.variant.testId}</span>
           <milo-copy-to-clipboard
             .textToCopy=${this.variant.testId}
-            @click=${(e: Event) => {
-              e.stopPropagation();
-              this.trackInteraction();
-            }}
+            @click=${(e: Event) => e.stopPropagation()}
             title="copy test ID to clipboard"
           ></milo-copy-to-clipboard>
         </div>
@@ -241,40 +203,23 @@ export class TestVariantEntryElement extends MobxLitElement implements RenderPla
           <mwc-icon class=${VARIANT_STATUS_CLASS_MAP[this.variant.status]}>
             ${VARIANT_STATUS_ICON_MAP[this.variant.status]}
           </mwc-icon>
-          ${this.showTimestamp
-            ? html`
-                <div title=${this.dateTime?.toFormat(LONG_TIME_FORMAT) || ''}>
-                  ${this.dateTime?.toFormat(SHORT_TIME_FORMAT) || ''}
-                </div>
-              `
-            : ''}
           ${this.columnValues.map((v) => html`<div title=${v}>${v}</div>`)}
-          ${this.hideTestName
-            ? ''
-            : html`
-                <div id="test-name">
-                  <span title=${this.longName}>${this.shortName}</span>
-                  <milo-copy-to-clipboard
-                    .textToCopy=${this.longName}
-                    @click=${(e: Event) => {
-                      e.stopPropagation();
-                      this.trackInteraction();
-                    }}
-                    title="copy test name to clipboard"
-                  ></milo-copy-to-clipboard>
-                  <milo-copy-to-clipboard
-                    id="link-copy-button"
-                    .textToCopy=${() => this.genTestLink()}
-                    @click=${(e: Event) => {
-                      e.stopPropagation();
-                      this.trackInteraction();
-                    }}
-                    title="copy link to the test"
-                  >
-                    <mwc-icon slot="copy-icon">link</mwc-icon>
-                  </milo-copy-to-clipboard>
-                </div>
-              `}
+          <div id="test-name">
+            <span title=${this.longName}>${this.shortName}</span>
+            <milo-copy-to-clipboard
+              .textToCopy=${this.longName}
+              @click=${(e: Event) => e.stopPropagation()}
+              title="copy test name to clipboard"
+            ></milo-copy-to-clipboard>
+            <milo-copy-to-clipboard
+              id="link-copy-button"
+              .textToCopy=${() => this.genTestLink()}
+              @click=${(e: Event) => e.stopPropagation()}
+              title="copy link to the test"
+            >
+              <mwc-icon slot="copy-icon">link</mwc-icon>
+            </milo-copy-to-clipboard>
+          </div>
         </div>
         <div id="body" slot="content">${this.renderBody()}</div>
       </milo-expandable-entry>

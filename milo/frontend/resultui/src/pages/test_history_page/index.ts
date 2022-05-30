@@ -23,8 +23,8 @@ import { observable, reaction, when } from 'mobx';
 import '../../components/dot_spinner';
 import '../../components/overlay';
 import '../../components/status_bar';
-import '../test_results_tab/test_variants_table';
-import '../test_results_tab/test_variants_table/config_widget';
+import './test_history_details_table';
+import './test_history_details_table/config_widget';
 import '../../components/hotkey';
 import './date_axis';
 import './duration_graph';
@@ -40,8 +40,7 @@ import { GA_ACTIONS, GA_CATEGORIES, generateRandomLabel, trackEvent } from '../.
 import { consumer, provider } from '../../libs/context';
 import { NOT_FOUND_URL } from '../../routes';
 import commonStyle from '../../styles/common_style.css';
-import { TestVariantsTableElement } from '../test_results_tab/test_variants_table';
-import { provideTestVariantTableState } from '../test_results_tab/test_variants_table/context';
+import { TestHistoryDetailsTableElement } from './test_history_details_table';
 
 const LOADING_VARIANT_INFO_TOOLTIP =
   'It may take several clicks to find any new variant. ' +
@@ -53,7 +52,7 @@ const LOADING_VARIANT_INFO_TOOLTIP =
 @consumer
 export class TestHistoryPageElement extends MiloBaseElement implements BeforeEnterObserver {
   @observable.ref @consumeAppState() appState!: AppState;
-  @observable.ref @provideTestHistoryPageState() @provideTestVariantTableState() pageState!: TestHistoryPageState;
+  @observable.ref @provideTestHistoryPageState() pageState!: TestHistoryPageState;
 
   @observable.ref private realm!: string;
   @observable.ref private testId!: string;
@@ -164,7 +163,9 @@ export class TestHistoryPageElement extends MiloBaseElement implements BeforeEnt
   private allVariantsWereExpanded = false;
   private toggleAllVariants(expand: boolean) {
     this.allVariantsWereExpanded = expand;
-    this.shadowRoot!.querySelector<TestVariantsTableElement>('milo-test-variants-table')!.toggleAllVariants(expand);
+    this.shadowRoot!.querySelector<TestHistoryDetailsTableElement>(
+      'milo-test-history-details-table'
+    )!.toggleAllVariants(expand);
   }
   private readonly toggleAllVariantsByHotkey = () => this.toggleAllVariants(!this.allVariantsWereExpanded);
 
@@ -251,9 +252,9 @@ export class TestHistoryPageElement extends MiloBaseElement implements BeforeEnt
         ?show=${this.pageState.selectedTvhEntries.length !== 0}
         @dismiss=${() => (this.pageState.selectedTvhEntries = [])}
       >
-        <div id="tvt-container">
-          <div id="tvt-header">
-            <milo-tvt-config-widget id="tvt-config-widget"></milo-tvt-config-widget>
+        <div id="thdt-container">
+          <div id="thdt-header">
+            <milo-thdt-config-widget id="thdt-config-widget"></milo-thdt-config-widget>
             <div><!-- GAP --></div>
             <milo-hotkey
               key="x"
@@ -271,7 +272,7 @@ export class TestHistoryPageElement extends MiloBaseElement implements BeforeEnt
               <mwc-icon id="close-tvt" @click=${() => (this.pageState.selectedTvhEntries = [])}>close</mwc-icon>
             </milo-hotkey>
           </div>
-          <milo-test-variants-table .hideTestName=${true} .showTimestamp=${true}></milo-test-variants-table>
+          <milo-test-history-details-table></milo-test-history-details-table>
         </div>
       </milo-overlay>
       <div
@@ -320,7 +321,7 @@ export class TestHistoryPageElement extends MiloBaseElement implements BeforeEnt
           'v-table graph extra';
       }
 
-      #tvt-container {
+      #thdt-container {
         background-color: white;
         position: absolute;
         bottom: 0px;
@@ -329,7 +330,7 @@ export class TestHistoryPageElement extends MiloBaseElement implements BeforeEnt
         overflow-y: scroll;
       }
 
-      #tvt-header {
+      #thdt-header {
         display: grid;
         grid-template-columns: auto 1fr auto auto;
         grid-gap: 5px;
@@ -341,7 +342,7 @@ export class TestHistoryPageElement extends MiloBaseElement implements BeforeEnt
         z-index: 3;
       }
 
-      #tvt-config-widget {
+      #thdt-config-widget {
         padding: 4px 5px 0px;
       }
 
@@ -355,8 +356,8 @@ export class TestHistoryPageElement extends MiloBaseElement implements BeforeEnt
         padding-top: 2px;
       }
 
-      milo-test-variants-table {
-        --tvt-top-offset: 38px;
+      milo-test-history-details-table {
+        --thdt-top-offset: 38px;
       }
 
       #free-scroll-padding {
