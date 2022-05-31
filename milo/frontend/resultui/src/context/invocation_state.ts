@@ -25,7 +25,14 @@ import { TestLoader } from '../models/test_loader';
 import { VariantGroup } from '../pages/test_results_tab/test_variants_table';
 import { router } from '../routes';
 import { TestPresentationConfig } from '../services/buildbucket';
-import { createTVCmpFn, createTVPropGetter, Invocation, TestVariant, TestVariantStatus } from '../services/resultdb';
+import {
+  createTVCmpFn,
+  createTVPropGetter,
+  Invocation,
+  RESULT_LIMIT,
+  TestVariant,
+  TestVariantStatus,
+} from '../services/resultdb';
 import { AppState } from './app_state';
 
 export class QueryInvocationError extends Error implements InnerTag {
@@ -196,7 +203,7 @@ export class InvocationState {
     if (this.isDisposed || !this.invocationName || !this.appState.resultDb) {
       return null;
     }
-    return new TestLoader({ invocations: [this.invocationName] }, this.appState.resultDb);
+    return new TestLoader({ invocations: [this.invocationName], resultLimit: RESULT_LIMIT }, this.appState.resultDb);
   }
 
   @computed get variantGroups() {

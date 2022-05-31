@@ -193,6 +193,7 @@ export interface QueryTestVariantsRequest {
   readonly invocations: readonly string[];
   readonly pageSize?: number;
   readonly pageToken?: string;
+  readonly resultLimit?: number;
 }
 
 export interface QueryTestVariantsResponse {
@@ -310,6 +311,10 @@ export interface BatchGetTestVariantsRequest {
 export interface BatchGetTestVariantsResponse {
   readonly testVariants?: readonly TestVariant[];
 }
+
+// The maximum number of results that can be included in a test variant returned
+// from the RPC.
+export const RESULT_LIMIT = 100;
 
 export class ResultDb {
   private static SERVICE = 'luci.resultdb.v1.ResultDB';

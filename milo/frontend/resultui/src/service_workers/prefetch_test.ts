@@ -20,7 +20,7 @@ import { setAuthStateCache } from '../auth_state_cache';
 import { PrpcClientExt } from '../libs/prpc_client_ext';
 import { BUILD_FIELD_MASK, BuildsService } from '../services/buildbucket';
 import { queryAuthState } from '../services/milo_internal';
-import { getInvIdFromBuildId, getInvIdFromBuildNum, ResultDb } from '../services/resultdb';
+import { getInvIdFromBuildId, getInvIdFromBuildNum, RESULT_LIMIT, ResultDb } from '../services/resultdb';
 import { Prefetcher } from './prefetch';
 
 describe('prefetch', () => {
@@ -133,7 +133,7 @@ describe('prefetch', () => {
     assert.strictEqual(fetchStub.callCount, 4);
 
     // Check whether the test variants was prefetched.
-    resultdb.queryTestVariants({ invocations: [invName] });
+    resultdb.queryTestVariants({ invocations: [invName], resultLimit: RESULT_LIMIT });
     cacheHit = prefetcher.respondWithPrefetched({
       request: new Request(...fetchInterceptor.getCall(3).args),
       respondWith: respondWithStub,
@@ -211,7 +211,7 @@ describe('prefetch', () => {
     assert.strictEqual(fetchStub.callCount, 4);
 
     // Check whether the test variants was prefetched.
-    resultdb.queryTestVariants({ invocations: [invName] });
+    resultdb.queryTestVariants({ invocations: [invName], resultLimit: RESULT_LIMIT });
     cacheHit = prefetcher.respondWithPrefetched({
       request: new Request(...fetchInterceptor.getCall(3).args),
       respondWith: respondWithStub,

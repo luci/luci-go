@@ -25,7 +25,7 @@ import { AppState, consumeAppState } from '../../../context/app_state';
 import { VARIANT_STATUS_CLASS_MAP, VARIANT_STATUS_ICON_MAP } from '../../../libs/constants';
 import { lazyRendering, RenderPlaceHolder } from '../../../libs/observer_element';
 import { sanitizeHTML } from '../../../libs/sanitize_html';
-import { TestVariant } from '../../../services/resultdb';
+import { RESULT_LIMIT, TestVariant } from '../../../services/resultdb';
 import colorClasses from '../../../styles/color_classes.css';
 import commonStyle from '../../../styles/common_style.css';
 
@@ -167,6 +167,9 @@ export class TestVariantEntryElement extends MobxLitElement implements RenderPla
           )}
         </span>
       </div>
+      ${this.variant.results?.length === RESULT_LIMIT
+        ? html`<div id="result-limit-warning">Only the first ${RESULT_LIMIT} results are displayed.</div>`
+        : ''}
       ${repeat(
         this.variant.exonerations || [],
         (e) => e.exonerationId,
@@ -307,6 +310,12 @@ export class TestVariantEntryElement extends MobxLitElement implements RenderPla
       }
       :hover > milo-copy-to-clipboard {
         display: inline-block;
+      }
+
+      #result-limit-warning {
+        padding: 5px;
+        background-color: var(--warning-color);
+        font-weight: 500;
       }
     `,
   ];

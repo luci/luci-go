@@ -28,6 +28,7 @@ import { lazyRendering, RenderPlaceHolder } from '../../../libs/observer_element
 import { sanitizeHTML } from '../../../libs/sanitize_html';
 import { LONG_TIME_FORMAT, SHORT_TIME_FORMAT } from '../../../libs/time_utils';
 import { unwrapObservable } from '../../../libs/unwrap_observable';
+import { RESULT_LIMIT } from '../../../services/resultdb';
 import { TestVerdictBundle } from '../../../services/weetbix';
 import colorClasses from '../../../styles/color_classes.css';
 import commonStyle from '../../../styles/common_style.css';
@@ -75,7 +76,7 @@ export class TestHistoryDetailsEntryElement extends MobxLitElement implements Re
             variantHash: verdict.variantHash,
           },
         ],
-        resultLimit: 100,
+        resultLimit: RESULT_LIMIT,
       })
       .then((res) => res.testVariants![0]);
     return fromPromise(testVariant);
@@ -180,6 +181,9 @@ export class TestHistoryDetailsEntryElement extends MobxLitElement implements Re
           </div>
         `
       )}
+      ${this.testVariant.results?.length === RESULT_LIMIT
+        ? html`<div id="result-limit-warning">Only the first ${RESULT_LIMIT} results are displayed.</div>`
+        : ''}
       ${repeat(
         this.testVariant.results || [],
         (r) => r.result.resultId,
@@ -269,6 +273,12 @@ export class TestHistoryDetailsEntryElement extends MobxLitElement implements Re
 
       milo-dot-spinner {
         color: var(--active-text-color);
+      }
+
+      #result-limit-warning {
+        padding: 5px;
+        background-color: var(--warning-color);
+        font-weight: 500;
       }
     `,
   ];
