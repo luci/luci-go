@@ -21,9 +21,14 @@ import { parseVariantFilter } from '../libs/queries/th_filter_query';
 import { TestHistoryEntriesLoader } from '../models/test_history_entries_loader';
 import { TestHistoryStatsLoader } from '../models/test_history_stats_loader';
 import { VariantLoader } from '../models/variant_loader';
-import { VariantGroup } from '../pages/test_history_page/test_history_details_table';
-import { createTVCmpFn, getCriticalVariantKeys, ResultDb, Variant } from '../services/resultdb';
-import { QueryTestHistoryStatsResponseGroup, TestHistoryService } from '../services/weetbix';
+import { getCriticalVariantKeys, ResultDb } from '../services/resultdb';
+import {
+  QueryTestHistoryStatsResponseGroup,
+  TestHistoryService,
+  TestVerdictBundle,
+  TestVerdictStatus,
+  Variant,
+} from '../services/weetbix';
 
 export const enum GraphType {
   STATUS = 'STATUS',
@@ -176,41 +181,41 @@ export class TestHistoryPageState {
       this.testId,
       DateTime.fromISO(this.selectedGroup.partitionTime),
       this.variantLoader.getVariant(this.selectedGroup.variantHash)!,
-      this.testHistoryService,
-      this.resultDb
+      this.testHistoryService
     );
   }
 
   @observable.ref selectedGroup: QueryTestHistoryStatsResponseGroup | null = null;
 
-  @computed get variantGroups(): readonly VariantGroup[] {
-    if (!this.entriesLoader?.testVariants.length) {
+  @computed get verdictBundles(): ReadonlyArray<TestVerdictBundle> {
+    if (!this.entriesLoader?.verdictBundles.length) {
       return [];
     }
 
     const cmpFn = createTVCmpFn(this.sortingKeys);
-    return [
-      {
-        def: [],
-        variants: [...this.entriesLoader.testVariants].sort(cmpFn),
-      },
-    ];
+    return [...this.entriesLoader?.verdictBundles].sort(cmpFn);
   }
 
   @computed
-  get testVariantCount() {
-    return this.entriesLoader?.testVariants.length || 0;
+  get loadedTestVerdictCount() {
+    return this.entriesLoader?.verdictBundles.length || 0;
   }
-  @computed get unfilteredTestVariantCount() {
-    return this.entriesLoader?.testVariants.length || 0;
+  @computed
+  get selectedTestVerdictCount() {
+    return (
+      (this.selectedGroup?.unexpectedCount || 0) +
+      (this.selectedGroup?.unexpectedlySkippedCount || 0) +
+      (this.selectedGroup?.flakyCount || 0) +
+      (this.selectedGroup?.exoneratedCount || 0) +
+      (this.selectedGroup?.expectedCount || 0)
+    );
   }
 
-  readonly readyToLoad = true;
   @computed get isLoading() {
     return this.entriesLoader?.isLoading ?? false;
   }
-  get loadedAllTestVariants() {
-    return this.entriesLoader?.loadedAllTestVariants ?? true;
+  get loadedAllTestVerdicts() {
+    return this.entriesLoader?.loadedAllTestVerdicts ?? true;
   }
   get loadedFirstPage() {
     return this.entriesLoader?.loadedFirstPage ?? true;
@@ -245,3 +250,71 @@ export class TestHistoryPageState {
 }
 
 export const [provideTestHistoryPageState, consumeTestHistoryPageState] = createContextLink<TestHistoryPageState>();
+
+// Note: once we have more than 9 statuses, we need to add '0' prefix so '10'
+// won't appear before '2' after sorting.
+export const TEST_VERDICT_STATUS_CMP_STRING = {
+  [TestVerdictStatus.TEST_VERDICT_STATUS_UNSPECIFIED]: '0',
+  [TestVerdictStatus.UNEXPECTED]: '1',
+  [TestVerdictStatus.UNEXPECTEDLY_SKIPPED]: '2',
+  [TestVerdictStatus.FLAKY]: '3',
+  [TestVerdictStatus.EXONERATED]: '4',
+  [TestVerdictStatus.EXPECTED]: '5',
+};
+/**
+ * Create a test variant compare function for the given sorting key list.
+ *
+ * A sorting key must be one of the following:
+ * 1. '{property_key}': sort by property_key in ascending order.
+ * 2. '-{property_key}': sort by property_key in descending order.
+ */
+export function createTVCmpFn(
+  sortingKeys: readonly string[]
+): (v1: TestVerdictBundle, v2: TestVerdictBundle) => number {
+  const sorters: Array<[number, (v: TestVerdictBundle) => { toString(): string }]> = sortingKeys.map((key) => {
+    const [mul, propKey] = key.startsWith('-') ? [-1, key.slice(1)] : [1, key];
+    const propGetter = createTVPropGetter(propKey);
+
+    // Status should be be sorted by their significance not by their string
+    // representation.
+    if (propKey.toLowerCase() === 'status') {
+      return [mul, (v) => TEST_VERDICT_STATUS_CMP_STRING[propGetter(v) as TestVerdictStatus]];
+    }
+    return [mul, propGetter];
+  });
+  return (v1, v2) => {
+    for (const [mul, propGetter] of sorters) {
+      const cmp = propGetter(v1).toString().localeCompare(propGetter(v2).toString()) * mul;
+      if (cmp !== 0) {
+        return cmp;
+      }
+    }
+    return 0;
+  };
+}
+
+/**
+ * Create a test verdict property getter for the given property key.
+ *
+ * A property key must be one of the following:
+ * 1. 'status': status of the test verdict.
+ * 2. 'partitionTime': partition time of the test verdict.
+ * 3. 'v.{variant_key}': def[variant_key] of associated variant of the test
+ * verdict (e.g. v.gpu).
+ */
+export function createTVPropGetter(propKey: string): (v: TestVerdictBundle) => ToString {
+  if (propKey.match(/^v[.]/i)) {
+    const variantKey = propKey.slice(2);
+    return ({ variant }) => variant.def[variantKey] || '';
+  }
+  propKey = propKey.toLowerCase();
+  switch (propKey) {
+    case 'status':
+      return ({ verdict }) => verdict.status;
+    case 'patitiontime':
+      return ({ verdict }) => verdict.partitionTime;
+    default:
+      console.warn('invalid property key', propKey);
+      return () => '';
+  }
+}

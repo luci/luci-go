@@ -18,15 +18,17 @@ import { css, customElement, html } from 'lit-element';
 import { repeat } from 'lit-html/directives/repeat';
 import { DateTime } from 'luxon';
 import { computed, observable } from 'mobx';
+import { fromPromise } from 'mobx-utils';
 
 import '../../../components/expandable_entry';
 import '../../../components/result_entry';
 import { AppState, consumeAppState } from '../../../context/app_state';
-import { VARIANT_STATUS_CLASS_MAP, VARIANT_STATUS_ICON_MAP } from '../../../libs/constants';
+import { VARIANT_STATUS_CLASS_MAP, VARIANT_STATUS_ICON_MAP, VERDICT_VARIANT_STATUS_MAP } from '../../../libs/constants';
 import { lazyRendering, RenderPlaceHolder } from '../../../libs/observer_element';
 import { sanitizeHTML } from '../../../libs/sanitize_html';
 import { LONG_TIME_FORMAT, SHORT_TIME_FORMAT } from '../../../libs/time_utils';
-import { TestVariant } from '../../../services/resultdb';
+import { unwrapObservable } from '../../../libs/unwrap_observable';
+import { TestVerdictBundle } from '../../../services/weetbix';
 import colorClasses from '../../../styles/color_classes.css';
 import commonStyle from '../../../styles/common_style.css';
 
@@ -42,8 +44,8 @@ const ORDERED_VARIANT_DEF_KEYS = Object.freeze(['bucket', 'builder', 'test_suite
 export class TestHistoryDetailsEntryElement extends MobxLitElement implements RenderPlaceHolder {
   @observable.ref @consumeAppState() appState!: AppState;
 
-  @observable.ref variant!: TestVariant;
-  @observable.ref columnGetters: Array<(v: TestVariant) => unknown> = [];
+  @observable.ref verdictBundle!: TestVerdictBundle;
+  @observable.ref columnGetters: Array<(v: TestVerdictBundle) => unknown> = [];
 
   @observable.ref private _expanded = false;
   @computed get expanded() {
@@ -59,8 +61,34 @@ export class TestHistoryDetailsEntryElement extends MobxLitElement implements Re
   @observable.ref private shouldRenderContent = false;
 
   @computed
+  private get testVariant$() {
+    if (!this.appState.resultDb) {
+      return fromPromise(Promise.race([]));
+    }
+    const verdict = this.verdictBundle.verdict;
+    const testVariant = this.appState.resultDb
+      .batchGetTestVariants({
+        invocation: 'invocations/' + verdict.invocationId,
+        testVariants: [
+          {
+            testId: verdict.testId,
+            variantHash: verdict.variantHash,
+          },
+        ],
+        resultLimit: 100,
+      })
+      .then((res) => res.testVariants![0]);
+    return fromPromise(testVariant);
+  }
+
+  @computed
+  private get testVariant() {
+    return unwrapObservable(this.testVariant$, null);
+  }
+
+  @computed
   private get sourceUrl() {
-    const testLocation = this.variant.testMetadata?.location;
+    const testLocation = this.testVariant?.testMetadata?.location;
     if (!testLocation) {
       return null;
     }
@@ -74,12 +102,12 @@ export class TestHistoryDetailsEntryElement extends MobxLitElement implements Re
 
   @computed
   private get hasSingleChild() {
-    return (this.variant.results?.length ?? 0) + (this.variant.exonerations?.length ?? 0) === 1;
+    return (this.testVariant?.results?.length ?? 0) + (this.testVariant?.exonerations?.length ?? 0) === 1;
   }
 
   @computed
   private get variantDef() {
-    const def = this.variant!.variant?.def || {};
+    const def = this.verdictBundle.variant.def || {};
     const res: Array<[string, string]> = [];
     const seen = new Set();
     for (const key of ORDERED_VARIANT_DEF_KEYS) {
@@ -103,24 +131,29 @@ export class TestHistoryDetailsEntryElement extends MobxLitElement implements Re
       return 0;
     }
     // Otherwise expand the first failed result, or -1 if there aren't any.
-    return this.variant.results?.findIndex((e) => !e.result.expected) ?? -1;
+    return this.testVariant?.results?.findIndex((e) => !e.result.expected) ?? -1;
   }
 
   @computed private get columnValues() {
-    return this.columnGetters.map((fn) => fn(this.variant));
+    return this.columnGetters.map((fn) => fn(this.verdictBundle));
   }
 
   @computed private get dateTime() {
-    if (!this.variant.partitionTime) {
+    if (!this.verdictBundle.verdict.partitionTime) {
       return null;
     }
-    return DateTime.fromISO(this.variant.partitionTime);
+    return DateTime.fromISO(this.verdictBundle.verdict.partitionTime);
   }
 
   private renderBody() {
     if (!this.shouldRenderContent) {
       return html``;
     }
+
+    if (!this.testVariant) {
+      return html`Loading <milo-dot-spinner></milo-dot-spinner>`;
+    }
+
     return html`
       <div id="basic-info">
         ${this.sourceUrl ? html`<a href=${this.sourceUrl} target="_blank">source</a>` : ''}
@@ -137,7 +170,7 @@ export class TestHistoryDetailsEntryElement extends MobxLitElement implements Re
         </span>
       </div>
       ${repeat(
-        this.variant.exonerations || [],
+        this.testVariant.exonerations || [],
         (e) => e.exonerationId,
         (e) => html`
           <div class="explanation-html">
@@ -148,7 +181,7 @@ export class TestHistoryDetailsEntryElement extends MobxLitElement implements Re
         `
       )}
       ${repeat(
-        this.variant.results || [],
+        this.testVariant.results || [],
         (r) => r.result.resultId,
         (r, i) => html`
           <milo-result-entry
@@ -166,12 +199,11 @@ export class TestHistoryDetailsEntryElement extends MobxLitElement implements Re
   }
 
   protected render() {
+    const status = VERDICT_VARIANT_STATUS_MAP[this.verdictBundle.verdict.status];
     return html`
       <milo-expandable-entry .expanded=${this.expanded} .onToggle=${(expanded: boolean) => (this.expanded = expanded)}>
         <div id="header" slot="header">
-          <mwc-icon class=${VARIANT_STATUS_CLASS_MAP[this.variant.status]}>
-            ${VARIANT_STATUS_ICON_MAP[this.variant.status]}
-          </mwc-icon>
+          <mwc-icon class=${VARIANT_STATUS_CLASS_MAP[status]}>${VARIANT_STATUS_ICON_MAP[status]}</mwc-icon>
           <div title=${this.dateTime?.toFormat(LONG_TIME_FORMAT) || ''}>
             ${this.dateTime?.toFormat(SHORT_TIME_FORMAT) || ''}
           </div>
@@ -233,6 +265,10 @@ export class TestHistoryDetailsEntryElement extends MobxLitElement implements Re
       .explanation-html {
         background-color: var(--block-background-color);
         padding: 5px;
+      }
+
+      milo-dot-spinner {
+        color: var(--active-text-color);
       }
     `,
   ];

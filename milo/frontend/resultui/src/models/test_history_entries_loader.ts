@@ -15,8 +15,7 @@
 import { DateTime } from 'luxon';
 import { computed, observable } from 'mobx';
 
-import { ResultDb, TestVariant } from '../services/resultdb';
-import { TestHistoryService, Variant } from '../services/weetbix';
+import { TestHistoryService, TestVerdict, TestVerdictBundle, Variant } from '../services/weetbix';
 
 /**
  * A utility class that helps loading test history entry details.
@@ -29,13 +28,14 @@ export class TestHistoryEntriesLoader {
     readonly date: DateTime,
     readonly variant: Variant,
     readonly testHistoryService: TestHistoryService,
-    readonly resultDb: ResultDb,
     readonly pageSize = 10
   ) {}
 
-  @observable.shallow private _testVariants: TestVariant[] = [];
-  @computed get testVariants(): readonly TestVariant[] {
-    return this._testVariants;
+  @observable.shallow private _testVerdicts: TestVerdict[] = [];
+  @computed get verdictBundles(): readonly TestVerdictBundle[] {
+    // Return variant definition for convenience. In the future, the loader will
+    // support loading test verdicts of different variants.
+    return this._testVerdicts.map((verdict) => ({ verdict, variant: this.variant }));
   }
 
   private loadPromise = Promise.resolve();
@@ -45,11 +45,11 @@ export class TestHistoryEntriesLoader {
   get isLoading() {
     return this.loadingReqCount !== 0;
   }
-  @computed get loadedAllTestVariants() {
+  @computed get loadedAllTestVerdicts() {
     return this.pageToken === null;
   }
   @computed get loadedFirstPage() {
-    return this._testVariants.length > 0;
+    return this._testVerdicts.length > 0;
   }
 
   private pageToken: string | null = '';
@@ -86,32 +86,15 @@ export class TestHistoryEntriesLoader {
     });
 
     const verdicts = historyRes.verdicts || [];
-
-    const variants = verdicts.map(async (v) => {
-      const variantRes = await this.resultDb.batchGetTestVariants({
-        invocation: 'invocations/' + v.invocationId,
-        testVariants: [
-          {
-            testId: v.testId,
-            variantHash: v.variantHash,
-          },
-        ],
-        resultLimit: 100,
-      });
-      return {
-        ...variantRes.testVariants![0],
-        partitionTime: v.partitionTime,
-      };
-    });
-
-    this._testVariants.push(...(await Promise.all(variants)));
+    this._testVerdicts.push(...verdicts);
 
     this.pageToken = historyRes.nextPageToken || null;
   }
+
   // Don't mark as async so loadingReqCount and firstLoadPromise can be updated
   // immediately.
   loadNextPage(): Promise<void> {
-    if (this.loadedAllTestVariants) {
+    if (this.loadedAllTestVerdicts) {
       return this.loadPromise;
     }
 

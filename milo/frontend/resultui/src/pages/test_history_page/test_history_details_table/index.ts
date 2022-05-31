@@ -28,16 +28,10 @@ import { consumeTestHistoryPageState, TestHistoryPageState } from '../../../cont
 import { consumeConfigsStore, UserConfigsStore } from '../../../context/user_configs';
 import { consumer } from '../../../libs/context';
 import { reportErrorAsync } from '../../../libs/error_handler';
-import { createTVPropGetter, getPropKeyLabel, TestVariant } from '../../../services/resultdb';
+import { createTVPropGetter, getPropKeyLabel } from '../../../services/resultdb';
 import colorClasses from '../../../styles/color_classes.css';
 import commonStyle from '../../../styles/common_style.css';
 import { TestHistoryDetailsEntryElement } from './test_history_details_entry';
-
-export interface VariantGroup {
-  readonly def: ReadonlyArray<readonly [string, unknown]>;
-  readonly variants: readonly TestVariant[];
-  readonly note?: unknown;
-}
 
 /**
  * Displays test variants in a table.
@@ -103,35 +97,30 @@ export class TestHistoryDetailsTableElement extends MiloBaseElement {
 
   private renderAllVariants() {
     return html`
-      ${this.pageState.variantGroups.map((group) => this.renderVariantGroup(group))}
+      ${repeat(
+        this.pageState.verdictBundles,
+        ({ verdict }) => `${verdict.testId} ${verdict.variantHash} ${verdict.invocationId}`,
+        (v) => html`
+          <milo-test-history-details-entry
+            .verdictBundle=${v}
+            .columnGetters=${this.columnGetters}
+            .expanded=${this.pageState.loadedTestVerdictCount === 1}
+          ></milo-test-history-details-entry>
+        `
+      )}
       <div id="variant-list-tail">
-        Showing ${this.pageState.testVariantCount} /
-        ${this.pageState.unfilteredTestVariantCount}${this.pageState.loadedAllTestVariants ? '' : '+'} tests.
+        Showing ${this.pageState.loadedTestVerdictCount} /
+        ${this.pageState.selectedTestVerdictCount}${this.pageState.loadedAllTestVerdicts ? '' : '+'} tests.
         <span
           class="active-text"
           style=${styleMap({
-            display: !this.pageState.loadedAllTestVariants && this.pageState.readyToLoad ? '' : 'none',
+            display: !this.pageState.loadedAllTestVerdicts ? '' : 'none',
           })}
           >${this.renderLoadMore()}</span
         >
       </div>
     `;
   }
-
-  private renderVariantGroup(group: VariantGroup) {
-    return repeat(
-      group.variants,
-      (v) => `${v.testId} ${v.variantHash}`,
-      (v) => html`
-        <milo-test-history-details-entry
-          .variant=${v}
-          .columnGetters=${this.columnGetters}
-          .expanded=${this.pageState.testVariantCount === 1}
-        ></milo-test-history-details-entry>
-      `
-    );
-  }
-
   private renderLoadMore() {
     const state = this.pageState;
     return html`

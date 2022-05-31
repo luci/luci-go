@@ -114,6 +114,11 @@ export interface QueryVariantsResponse {
   readonly nextPageToken?: string;
 }
 
+export interface TestVerdictBundle {
+  readonly verdict: TestVerdict;
+  readonly variant: Variant;
+}
+
 export class TestHistoryService {
   private static SERVICE = 'weetbix.v1.TestHistory';
 
