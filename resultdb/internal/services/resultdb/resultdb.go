@@ -31,7 +31,6 @@ import (
 
 	"go.chromium.org/luci/resultdb/internal"
 	"go.chromium.org/luci/resultdb/internal/artifactcontent"
-	uipb "go.chromium.org/luci/resultdb/internal/proto/ui"
 	"go.chromium.org/luci/resultdb/internal/rpcutil"
 	"go.chromium.org/luci/resultdb/internal/spanutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
@@ -82,11 +81,6 @@ func InitServer(srv *server.Server, opts Options) error {
 		generateArtifactURL: contentServer.GenerateSignedURL,
 	}
 	pb.RegisterResultDBServer(srv.PRPC, &pb.DecoratedResultDB{
-		Service:  rdbSvr,
-		Postlude: internal.CommonPostlude,
-	})
-
-	uipb.RegisterUIServer(srv.PRPC, &uipb.DecoratedUI{
 		Service:  rdbSvr,
 		Postlude: internal.CommonPostlude,
 	})
