@@ -24,13 +24,12 @@ import (
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/grpc/appstatus"
-	"go.chromium.org/luci/server/span"
-
 	"go.chromium.org/luci/resultdb/internal/invocations"
 	"go.chromium.org/luci/resultdb/internal/permissions"
 	"go.chromium.org/luci/resultdb/internal/spanutil"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
+	"go.chromium.org/luci/server/span"
 )
 
 // validateUpdateIncludedInvocationsRequest returns a non-nil error if req is
@@ -73,7 +72,7 @@ func (s *recorderServer) UpdateIncludedInvocations(ctx context.Context, in *pb.U
 	// To include invocation A into invocation B, in addition to checking the
 	// update token for B in mutateInvocation below, verify that the caller has
 	// permission 'resultdb.invocation.include' on A's realm.
-	if err := permissions.VerifyBatch(ctx, permIncludeInvocation, add); err != nil {
+	if err := permissions.VerifyInvocations(ctx, add, permIncludeInvocation); err != nil {
 		return nil, err
 	}
 

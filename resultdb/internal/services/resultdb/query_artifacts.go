@@ -19,8 +19,6 @@ import (
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/grpc/appstatus"
-	"go.chromium.org/luci/server/span"
-
 	"go.chromium.org/luci/resultdb/internal/artifacts"
 	"go.chromium.org/luci/resultdb/internal/invocations"
 	"go.chromium.org/luci/resultdb/internal/pagination"
@@ -28,6 +26,7 @@ import (
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 	"go.chromium.org/luci/resultdb/rdbperms"
+	"go.chromium.org/luci/server/span"
 )
 
 // validateQueryArtifactsRequest returns a non-nil error if req is determined
@@ -41,7 +40,7 @@ func validateQueryArtifactsRequest(req *pb.QueryArtifactsRequest) error {
 
 // QueryArtifacts implements pb.ResultDBServer.
 func (s *resultDBServer) QueryArtifacts(ctx context.Context, in *pb.QueryArtifactsRequest) (*pb.QueryArtifactsResponse, error) {
-	if err := permissions.VerifyInvNames(ctx, rdbperms.PermListArtifacts, in.Invocations...); err != nil {
+	if err := permissions.VerifyInvocationsByName(ctx, in.Invocations, rdbperms.PermListArtifacts); err != nil {
 		return nil, err
 	}
 

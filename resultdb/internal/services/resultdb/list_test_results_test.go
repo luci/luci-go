@@ -19,14 +19,12 @@ import (
 	"strconv"
 	"testing"
 
-	"google.golang.org/grpc/codes"
-
 	"cloud.google.com/go/spanner"
+	. "github.com/smartystreets/goconvey/convey"
+	"google.golang.org/grpc/codes"
 	durpb "google.golang.org/protobuf/types/known/durationpb"
 
-	"go.chromium.org/luci/server/auth"
-	"go.chromium.org/luci/server/auth/authtest"
-
+	. "go.chromium.org/luci/common/testing/assertions"
 	"go.chromium.org/luci/resultdb/internal/invocations"
 	"go.chromium.org/luci/resultdb/internal/spanutil"
 	"go.chromium.org/luci/resultdb/internal/testutil"
@@ -34,10 +32,8 @@ import (
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 	"go.chromium.org/luci/resultdb/rdbperms"
-
-	. "github.com/smartystreets/goconvey/convey"
-
-	. "go.chromium.org/luci/common/testing/assertions"
+	"go.chromium.org/luci/server/auth"
+	"go.chromium.org/luci/server/auth/authtest"
 )
 
 func TestValidateListTestResultsRequest(t *testing.T) {

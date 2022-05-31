@@ -18,8 +18,10 @@ import (
 	"fmt"
 	"testing"
 
+	. "github.com/smartystreets/goconvey/convey"
 	"google.golang.org/grpc/codes"
 
+	. "go.chromium.org/luci/common/testing/assertions"
 	"go.chromium.org/luci/resultdb/internal/testutil"
 	"go.chromium.org/luci/resultdb/internal/testutil/insert"
 	"go.chromium.org/luci/resultdb/pbutil"
@@ -27,9 +29,6 @@ import (
 	"go.chromium.org/luci/resultdb/rdbperms"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func variantHash(pairs ...string) string {
@@ -50,6 +49,7 @@ func TestBatchGetTestVariants(t *testing.T) {
 			Identity: "user:someone@example.com",
 			IdentityPermissions: []authtest.RealmPermission{
 				{Realm: "testproject:testrealm", Permission: rdbperms.PermListTestResults},
+				{Realm: "testproject:testrealm", Permission: rdbperms.PermListTestExonerations},
 			},
 		})
 
@@ -72,6 +72,36 @@ func TestBatchGetTestVariants(t *testing.T) {
 
 		srv := &resultDBServer{}
 
+		Convey(`Access denied`, func() {
+			req := &pb.BatchGetTestVariantsRequest{
+				Invocation: "invocations/i0",
+				TestVariants: []*pb.BatchGetTestVariantsRequest_TestVariantIdentifier{
+					{TestId: "test1", VariantHash: variantHash("a", "b")},
+				},
+			}
+
+			// Verify missing ListTestResults permission results in an error.
+			ctx = auth.WithState(ctx, &authtest.FakeState{
+				Identity: "user:someone@example.com",
+				IdentityPermissions: []authtest.RealmPermission{
+					{Realm: "testproject:testrealm", Permission: rdbperms.PermListTestExonerations},
+				},
+			})
+			_, err := srv.BatchGetTestVariants(ctx, req)
+			So(err, ShouldHaveAppStatus, codes.PermissionDenied)
+			So(err, ShouldErrLike, "resultdb.testResults.list")
+
+			// Verify missing ListTestExonerations permission results in an error.
+			ctx := auth.WithState(ctx, &authtest.FakeState{
+				Identity: "user:someone@example.com",
+				IdentityPermissions: []authtest.RealmPermission{
+					{Realm: "testproject:testrealm", Permission: rdbperms.PermListTestResults},
+				},
+			})
+			_, err = srv.BatchGetTestVariants(ctx, req)
+			So(err, ShouldHaveAppStatus, codes.PermissionDenied)
+			So(err, ShouldErrLike, "resultdb.testExonerations.list")
+		})
 		Convey(`Valid request with included invocation`, func() {
 			res, err := srv.BatchGetTestVariants(ctx, &pb.BatchGetTestVariantsRequest{
 				Invocation: "invocations/i0",

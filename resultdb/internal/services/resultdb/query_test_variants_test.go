@@ -38,6 +38,7 @@ func TestQueryTestVariants(t *testing.T) {
 			Identity: "user:someone@example.com",
 			IdentityPermissions: []authtest.RealmPermission{
 				{Realm: "testproject:testrealm", Permission: rdbperms.PermListTestResults},
+				{Realm: "testproject:testrealm", Permission: rdbperms.PermListTestExonerations},
 			},
 		})
 
@@ -60,11 +61,30 @@ func TestQueryTestVariants(t *testing.T) {
 		srv := &resultDBServer{}
 
 		Convey(`Permission denied`, func() {
-			testutil.MustApply(ctx, insert.Invocation("invx", pb.Invocation_ACTIVE, map[string]interface{}{"Realm": "randomproject:testrealm"}))
-			_, err := srv.QueryTestVariants(ctx, &pb.QueryTestVariantsRequest{
-				Invocations: []string{"invocations/invx"},
+			req := &pb.QueryTestVariantsRequest{
+				Invocations: []string{"invocations/inv0"},
+			}
+			// Test PermListTestResults is required.
+			ctx = auth.WithState(ctx, &authtest.FakeState{
+				Identity: "user:someone@example.com",
+				IdentityPermissions: []authtest.RealmPermission{
+					{Realm: "testproject:testrealm", Permission: rdbperms.PermListTestExonerations},
+				},
 			})
+			_, err := srv.QueryTestVariants(ctx, req)
 			So(err, ShouldHaveAppStatus, codes.PermissionDenied)
+			So(err, ShouldErrLike, "resultdb.testResults.list")
+
+			// Test PermListTestExonerations is required.
+			ctx = auth.WithState(ctx, &authtest.FakeState{
+				Identity: "user:someone@example.com",
+				IdentityPermissions: []authtest.RealmPermission{
+					{Realm: "testproject:testrealm", Permission: rdbperms.PermListTestResults},
+				},
+			})
+			_, err = srv.QueryTestVariants(ctx, req)
+			So(err, ShouldHaveAppStatus, codes.PermissionDenied)
+			So(err, ShouldErrLike, "resultdb.testExonerations.list")
 		})
 
 		Convey(`Valid with included invocation`, func() {

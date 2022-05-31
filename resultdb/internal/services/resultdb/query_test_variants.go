@@ -21,19 +21,18 @@ import (
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/grpc/appstatus"
-	"go.chromium.org/luci/server/span"
-
 	"go.chromium.org/luci/resultdb/internal/invocations"
 	"go.chromium.org/luci/resultdb/internal/pagination"
 	"go.chromium.org/luci/resultdb/internal/permissions"
 	"go.chromium.org/luci/resultdb/internal/testvariants"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 	"go.chromium.org/luci/resultdb/rdbperms"
+	"go.chromium.org/luci/server/span"
 )
 
 // QueryTestVariants implements pb.ResultDBServer.
 func (s *resultDBServer) QueryTestVariants(ctx context.Context, in *pb.QueryTestVariantsRequest) (*pb.QueryTestVariantsResponse, error) {
-	if err := permissions.VerifyInvNames(ctx, rdbperms.PermListTestResults, in.Invocations...); err != nil {
+	if err := permissions.VerifyInvocationsByName(ctx, in.Invocations, rdbperms.PermListTestResults, rdbperms.PermListTestExonerations); err != nil {
 		return nil, err
 	}
 

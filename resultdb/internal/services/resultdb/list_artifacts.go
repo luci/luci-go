@@ -20,8 +20,6 @@ import (
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/grpc/appstatus"
-	"go.chromium.org/luci/server/span"
-
 	"go.chromium.org/luci/resultdb/internal/artifacts"
 	"go.chromium.org/luci/resultdb/internal/invocations"
 	"go.chromium.org/luci/resultdb/internal/pagination"
@@ -29,6 +27,7 @@ import (
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 	"go.chromium.org/luci/resultdb/rdbperms"
+	"go.chromium.org/luci/server/span"
 )
 
 // parseParent parses the parent argument as either an invocation name or a
@@ -67,7 +66,7 @@ func (s *resultDBServer) ListArtifacts(ctx context.Context, in *pb.ListArtifacts
 		return nil, err
 	}
 
-	if err := permissions.VerifyInvocation(ctx, rdbperms.PermListArtifacts, invID); err != nil {
+	if err := permissions.VerifyInvocation(ctx, invID, rdbperms.PermListArtifacts); err != nil {
 		return nil, err
 	}
 

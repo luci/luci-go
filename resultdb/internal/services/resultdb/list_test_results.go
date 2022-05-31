@@ -19,8 +19,6 @@ import (
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/grpc/appstatus"
-	"go.chromium.org/luci/server/span"
-
 	"go.chromium.org/luci/resultdb/internal/invocations"
 	"go.chromium.org/luci/resultdb/internal/pagination"
 	"go.chromium.org/luci/resultdb/internal/permissions"
@@ -28,6 +26,7 @@ import (
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 	"go.chromium.org/luci/resultdb/rdbperms"
+	"go.chromium.org/luci/server/span"
 )
 
 func validateListTestResultsRequest(req *pb.ListTestResultsRequest) error {
@@ -44,7 +43,7 @@ func validateListTestResultsRequest(req *pb.ListTestResultsRequest) error {
 
 // ListTestResults implements pb.ResultDBServer.
 func (s *resultDBServer) ListTestResults(ctx context.Context, in *pb.ListTestResultsRequest) (*pb.ListTestResultsResponse, error) {
-	if err := permissions.VerifyInvNames(ctx, rdbperms.PermListTestResults, in.Invocation); err != nil {
+	if err := permissions.VerifyInvocationByName(ctx, in.Invocation, rdbperms.PermListTestResults); err != nil {
 		return nil, err
 	}
 
