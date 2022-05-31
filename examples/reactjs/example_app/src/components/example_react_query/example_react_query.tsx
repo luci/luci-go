@@ -17,13 +17,19 @@ const ExampleReactQuery = () => {
   }
 
   if (error) {
-    return <Alert severity='error'> Failed to load data: {error}</Alert>;
+    return (
+      <Alert severity='error'>
+        <>Failed to load data: {error}</>
+      </Alert>
+    );
   }
 
   return (
     <Grid container>
       <Grid item>
-        {data}
+        <>
+          {data}
+        </>
       </Grid>
     </Grid>
   );

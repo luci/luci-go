@@ -30,7 +30,11 @@ const Example = ({
   }
 
   if (error) {
-    return <Alert severity='error'> Failed to load data: {error}</Alert>;
+    return (
+      <Alert severity='error'>
+        <>Failed to load data: {error}</>
+      </Alert>
+    );
   }
 
   return (
@@ -40,7 +44,9 @@ const Example = ({
         {count}
       </Grid>
       <Grid>
-        {data}
+        <>
+          {data}
+        </>
       </Grid>
     </div>
   );

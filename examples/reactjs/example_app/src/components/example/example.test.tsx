@@ -17,12 +17,14 @@ import 'node-fetch';
  * if you run it in a constructor of a class), your mocks will fail.
  */
 import fetchMock from 'fetch-mock-jest';
+import { Provider } from 'react-redux';
 
 import {
   render,
   screen,
 } from '@testing-library/react';
 
+import { store } from '../../store/store';
 import Example from './example';
 
 describe('<Example />', () => {
@@ -33,7 +35,9 @@ describe('<Example />', () => {
 
   it('Wait for component to load', async () => {
     render(
-        <Example exampleProp='test'/>,
+        <Provider store={store}>
+          <Example exampleProp='test'/>,
+        </Provider>,
     );
 
     await screen.findByRole('article');
