@@ -14,64 +14,42 @@
 
 import { assert } from 'chai';
 
-import { TestVariantStatus, Variant } from '../../services/resultdb';
-import { TestVariantHistoryEntry } from '../../services/test_history_service';
+import { Variant } from '../../services/weetbix';
 import { parseVariantFilter, suggestTestHistoryFilterQuery } from './th_filter_query';
 
-const entry1: TestVariantHistoryEntry = {
+const entry1 = {
   variant: { def: { key1: 'val1' } },
   variantHash: 'key1:val1',
-  status: TestVariantStatus.UNEXPECTED,
-  invocationIds: [],
-  invocationTimestamp: '2021-01-01T00:00:00Z',
 };
 
-const entry2: TestVariantHistoryEntry = {
+const entry2 = {
   variant: { def: { key1: 'val2' } },
   variantHash: 'key1:val2',
-  status: TestVariantStatus.UNEXPECTED,
-  invocationIds: [],
-  invocationTimestamp: '2021-01-01T00:00:00Z',
 };
 
-const entry3: TestVariantHistoryEntry = {
+const entry3 = {
   variant: { def: { key1: 'val3' } },
   variantHash: 'key1:val3',
-  status: TestVariantStatus.FLAKY,
-  invocationIds: [],
-  invocationTimestamp: '2021-01-01T00:00:00Z',
 };
 
-const entry4: TestVariantHistoryEntry = {
+const entry4 = {
   variant: { def: { key1: 'val2' } },
   variantHash: 'key1:val2',
-  status: TestVariantStatus.EXONERATED,
-  invocationIds: [],
-  invocationTimestamp: '2021-01-01T00:00:00Z',
 };
 
-const entry5: TestVariantHistoryEntry = {
+const entry5 = {
   variant: { def: { key1: 'val2', key2: 'val1' } },
   variantHash: 'key1:val2|key2:val1',
-  status: TestVariantStatus.EXPECTED,
-  invocationIds: [],
-  invocationTimestamp: '2021-01-01T00:00:00Z',
 };
 
-const entry6: TestVariantHistoryEntry = {
+const entry6 = {
   variant: { def: { key1: 'val2', key2: 'val3' } },
   variantHash: 'key1:val2|key2:val3',
-  status: TestVariantStatus.EXPECTED,
-  invocationIds: [],
-  invocationTimestamp: '2021-01-01T00:00:00Z',
 };
 
-const entry7: TestVariantHistoryEntry = {
+const entry7 = {
   variant: { def: { key1: 'val2', key2: 'val3=val' } },
   variantHash: 'key1:val2|key2:val3=val',
-  status: TestVariantStatus.EXPECTED,
-  invocationIds: [],
-  invocationTimestamp: '2021-01-01T00:00:00Z',
 };
 
 const variants = [entry1, entry2, entry3, entry4, entry5, entry6, entry7];

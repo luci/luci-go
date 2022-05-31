@@ -29,7 +29,6 @@ import {
   TestVariantStatus,
 } from '../../services/resultdb';
 import { TestResultsTabElement } from '.';
-import { provideTestVariantTableState } from './test_variants_table/context';
 
 const variant1 = {
   testId: 'a',
@@ -79,7 +78,6 @@ class ContextProvider extends LitElement {
 
   @property()
   @provideInvocationState()
-  @provideTestVariantTableState()
   invocationState!: InvocationState;
 }
 
