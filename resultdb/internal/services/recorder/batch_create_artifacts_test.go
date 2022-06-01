@@ -97,9 +97,17 @@ func TestNewArtifactCreationRequestsFromProto(t *testing.T) {
 			So(arts[1].contentType, ShouldEqual, "image/png")
 		})
 
-		Convey("ignores size_bytes", func() {
+		Convey("mismatched size_bytes", func() {
 			bReq.Requests = append(bReq.Requests, trArt)
 			trArt.Artifact.SizeBytes = 123
+			trArt.Artifact.Contents = make([]byte, 10249)
+			_, _, err := parseBatchCreateArtifactsRequest(bReq)
+			So(err, ShouldErrLike, `sizeBytes and contents are specified but don't match`)
+		})
+
+		Convey("ignored size_bytes", func() {
+			bReq.Requests = append(bReq.Requests, trArt)
+			trArt.Artifact.SizeBytes = 0
 			trArt.Artifact.Contents = make([]byte, 10249)
 			_, arts, err := parseBatchCreateArtifactsRequest(bReq)
 			So(err, ShouldBeNil)
@@ -150,13 +158,23 @@ func TestBatchCreateArtifacts(t *testing.T) {
 				},
 			})
 		}
-		fetchState := func(aID string) (size int64, hash string, contentType string) {
+		appendGcsArtReq := func(aID string, cSize int64, cType string, gcsURI string) {
+			bReq.Requests = append(bReq.Requests, &pb.CreateArtifactRequest{
+				Parent: "invocations/inv",
+				Artifact: &pb.Artifact{
+					ArtifactId: aID, SizeBytes: cSize, ContentType: cType, GcsUri: gcsURI,
+				},
+			})
+		}
+
+		fetchState := func(aID string) (size int64, hash string, contentType string, gcsURI string) {
 			testutil.MustReadRow(
 				ctx, "Artifacts", invocations.ID("inv").Key("", aID),
 				map[string]interface{}{
 					"Size":        &size,
 					"RBECASHash":  &hash,
 					"ContentType": &contentType,
+					"GcsURI":      &gcsURI,
 				},
 			)
 			return
@@ -170,6 +188,9 @@ func TestBatchCreateArtifacts(t *testing.T) {
 			testutil.MustApply(ctx, insert.Invocation("inv", pb.Invocation_ACTIVE, nil))
 			appendArtReq("art1", "c0ntent", "text/plain")
 			appendArtReq("art2", "c1ntent", "text/richtext")
+			appendGcsArtReq("art3", 0, "text/plain", "gs://testbucket/art3")
+			appendGcsArtReq("art4", 500, "text/richtext", "gs://testbucket/art4")
+
 			casClient.mockResp(nil, codes.OK, codes.OK)
 
 			resp, err := recorder.BatchCreateArtifacts(ctx, bReq)
@@ -187,6 +208,18 @@ func TestBatchCreateArtifacts(t *testing.T) {
 						ArtifactId:  "art2",
 						ContentType: "text/richtext",
 						SizeBytes:   7,
+					},
+					{
+						Name:        "invocations/inv/artifacts/art3",
+						ArtifactId:  "art3",
+						ContentType: "text/plain",
+						SizeBytes:   0,
+					},
+					{
+						Name:        "invocations/inv/artifacts/art4",
+						ArtifactId:  "art4",
+						ContentType: "text/richtext",
+						SizeBytes:   500,
 					},
 				},
 			})
@@ -211,18 +244,32 @@ func TestBatchCreateArtifacts(t *testing.T) {
 				},
 			})
 			// verify the Spanner states
-			size, hash, cType := fetchState("art1")
+			size, hash, cType, gcsURI := fetchState("art1")
 			So(size, ShouldEqual, int64(len("c0ntent")))
 			So(hash, ShouldEqual, artifacts.AddHashPrefix(compHash("c0ntent")))
 			So(cType, ShouldEqual, "text/plain")
+			So(gcsURI, ShouldEqual, "")
 
-			size, hash, cType = fetchState("art2")
+			size, hash, cType, gcsURI = fetchState("art2")
 			So(size, ShouldEqual, int64(len("c1ntent")))
 			So(hash, ShouldEqual, artifacts.AddHashPrefix(compHash("c1ntent")))
 			So(cType, ShouldEqual, "text/richtext")
+			So(gcsURI, ShouldEqual, "")
 
-			// RowCount metric should be increaed by 2.
-			So(store.Get(ctx, spanutil.RowCounter, time.Time{}, artMFVs), ShouldEqual, 2)
+			size, hash, cType, gcsURI = fetchState("art3")
+			So(size, ShouldEqual, 0)
+			So(hash, ShouldEqual, artifacts.AddHashPrefix(compHash("")))
+			So(cType, ShouldEqual, "text/plain")
+			So(gcsURI, ShouldEqual, "gs://testbucket/art3")
+
+			size, hash, cType, gcsURI = fetchState("art4")
+			So(size, ShouldEqual, 500)
+			So(hash, ShouldEqual, artifacts.AddHashPrefix(compHash("")))
+			So(cType, ShouldEqual, "text/richtext")
+			So(gcsURI, ShouldEqual, "gs://testbucket/art4")
+
+			// RowCount metric should be increased by 4.
+			So(store.Get(ctx, spanutil.RowCounter, time.Time{}, artMFVs), ShouldEqual, 4)
 		})
 
 		Convey("BatchUpdateBlobs fails", func() {

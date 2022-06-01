@@ -47,9 +47,10 @@ type artifactCreationRequest struct {
 	artifactID  string
 	contentType string
 
-	hash string
-	size int64
-	data []byte
+	hash   string
+	size   int64
+	data   []byte
+	gcsURI string
 }
 
 // name returns the artifact name.
@@ -88,13 +89,28 @@ func parseCreateArtifactRequest(req *pb.CreateArtifactRequest) (invocations.ID, 
 			return "", nil, errors.Reason("parent: neither valid invocation name nor valid test result name").Err()
 		}
 	}
+
+	sizeBytes := int64(len(req.Artifact.Contents))
+
+	if sizeBytes != 0 && req.Artifact.SizeBytes != 0 && sizeBytes != req.Artifact.SizeBytes {
+		return "", nil, errors.Reason("sizeBytes and contents are specified but don't match").Err()
+	}
+
+	// If contents field is empty, try to set size from the request instead.
+	if sizeBytes == 0 {
+		if req.Artifact.SizeBytes != 0 {
+			sizeBytes = req.Artifact.SizeBytes
+		}
+	}
+
 	return invocations.ID(invIDStr), &artifactCreationRequest{
 		artifactID:  req.Artifact.ArtifactId,
 		contentType: req.Artifact.ContentType,
 		data:        req.Artifact.Contents,
-		size:        int64(len(req.Artifact.Contents)),
+		size:        sizeBytes,
 		testID:      testID,
 		resultID:    resultID,
+		gcsURI:      req.Artifact.GcsUri,
 	}, nil
 }
 
@@ -242,6 +258,7 @@ func createArtifactStates(ctx context.Context, realm string, invID invocations.I
 				"ContentType":  a.contentType,
 				"Size":         a.size,
 				"RBECASHash":   a.hash,
+				"GcsURI":       a.gcsURI,
 			}))
 		}
 		return nil
@@ -315,7 +332,15 @@ func (s *recorderServer) BatchCreateArtifacts(ctx context.Context, in *pb.BatchC
 		return &pb.BatchCreateArtifactsResponse{}, nil
 	}
 
-	if err := uploadArtifactBlobs(ctx, s.ArtifactRBEInstance, s.casClient, invID, artsToCreate); err != nil {
+	artsToUpload := make([]*artifactCreationRequest, 0, len(artsToCreate))
+	for _, a := range artsToCreate {
+		// Only upload to RBE CAS the ones that are not in GCS
+		if a.gcsURI == "" {
+			artsToUpload = append(artsToUpload, a)
+		}
+	}
+
+	if err := uploadArtifactBlobs(ctx, s.ArtifactRBEInstance, s.casClient, invID, artsToUpload); err != nil {
 		return nil, err
 	}
 	if err := createArtifactStates(ctx, realm, invID, artsToCreate); err != nil {

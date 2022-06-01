@@ -27,6 +27,7 @@ option go_package = "go.chromium.org/luci/resultdb/proto/v1;resultpb";
 // An invocation-level artifact might be related to tests, or it might not, for
 // example it may be used to store build step logs when streaming support is
 // added.
+// Next id: 9.
 message Artifact {
   // Can be used to refer to this artifact.
   // Format:
@@ -68,4 +69,7 @@ message Artifact {
   // All getter RPCs, such as ListArtifacts(), do not populate values into
   // the field in the response.
   bytes contents = 7 [ (google.api.field_behavior) = INPUT_ONLY ];
+
+  // The GCS URI of the artifact if it's stored in GCS.
+  string gcs_uri = 8;
 }
