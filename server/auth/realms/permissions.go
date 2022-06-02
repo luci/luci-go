@@ -76,6 +76,32 @@ func RegisterPermission(name string) Permission {
 	return Permission{name: name}
 }
 
+// GetPermissions returns the permissions with the matching names. The order of
+// the permission is the same as the provided names.
+//
+// Returns an error if any of the permission isn't registered.
+func GetPermissions(names ...string) ([]Permission, error) {
+	mu.RLock()
+	var err error
+	for _, name := range names {
+		if !perms.Has(name) {
+			err = errors.Reason("permission not registered: %q", name).Err()
+			break
+		}
+	}
+	mu.RUnlock()
+
+	if err != nil {
+		return nil, err
+	}
+
+	perms := make([]Permission, 0, len(names))
+	for _, name := range names {
+		perms = append(perms, Permission{name})
+	}
+	return perms, nil
+}
+
 // RegisteredPermissions returns a snapshot of all registered permissions.
 //
 // Permissions in the slice are ordered by their name.

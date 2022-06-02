@@ -19,6 +19,7 @@ import (
 	"testing"
 
 	. "github.com/smartystreets/goconvey/convey"
+	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestValidatePermissionName(t *testing.T) {
@@ -37,24 +38,78 @@ func TestValidatePermissionName(t *testing.T) {
 }
 
 func TestRegister(t *testing.T) {
-	t.Parallel()
+	// This test interacts with the global `perms` cache.
+	// t.Parallel()
 
-	// Make sure the test succeeds when using `go test . -count=2`.
-	clearPermissions()
+	Convey("TestRegister", t, func() {
+		// Make sure the test succeeds when using `go test . -count=2`.
+		clearPermissions()
 
-	Convey("Works", t, func() {
-		p1 := RegisterPermission("luci.dev.testing1")
-		So(p1.Name(), ShouldEqual, "luci.dev.testing1")
-		So(fmt.Sprintf("%s", p1), ShouldEqual, "luci.dev.testing1")
-		So(fmt.Sprintf("%q", p1), ShouldEqual, `"luci.dev.testing1"`)
+		Convey("Works", func() {
+			p1 := RegisterPermission("luci.dev.testing1")
+			So(p1.Name(), ShouldEqual, "luci.dev.testing1")
+			So(p1.String(), ShouldEqual, "luci.dev.testing1")
+			So(fmt.Sprintf("%q", p1), ShouldEqual, `"luci.dev.testing1"`)
 
-		So(RegisteredPermissions(), ShouldResemble, []Permission{p1})
+			So(RegisteredPermissions(), ShouldResemble, []Permission{p1})
 
-		p2 := RegisterPermission("luci.dev.testing2")
-		So(RegisteredPermissions(), ShouldResemble, []Permission{p1, p2})
+			p2 := RegisterPermission("luci.dev.testing2")
+			So(RegisteredPermissions(), ShouldResemble, []Permission{p1, p2})
+		})
+
+		Convey("Panics on bad name", func() {
+			So(func() { RegisterPermission(".bad.name") }, ShouldPanic)
+		})
 	})
+}
 
-	Convey("Panics on bad name", t, func() {
-		So(func() { RegisterPermission(".bad.name") }, ShouldPanic)
+func TestGetPermissions(t *testing.T) {
+	// This test interacts with the global `perms` cache.
+	// t.Parallel()
+
+	Convey("TestGetPermissions", t, func() {
+		clearPermissions()
+		RegisterPermission("luci.dev.testing1")
+		RegisterPermission("luci.dev.testing2")
+
+		Convey("Get single permission works", func() {
+			perms, err := GetPermissions("luci.dev.testing1")
+			So(err, ShouldBeNil)
+			So(perms, ShouldHaveLength, 1)
+			So(perms[0].Name(), ShouldEqual, "luci.dev.testing1")
+		})
+
+		Convey("Get multiple permissions works", func() {
+			perms, err := GetPermissions("luci.dev.testing1", "luci.dev.testing2")
+			So(err, ShouldBeNil)
+			So(perms, ShouldHaveLength, 2)
+			So(perms[0].Name(), ShouldEqual, "luci.dev.testing1")
+			So(perms[1].Name(), ShouldEqual, "luci.dev.testing2")
+
+			// Get in a different order.
+			perms, err = GetPermissions("luci.dev.testing2", "luci.dev.testing1")
+			So(err, ShouldBeNil)
+			So(perms, ShouldHaveLength, 2)
+			So(perms[0].Name(), ShouldEqual, "luci.dev.testing2")
+			So(perms[1].Name(), ShouldEqual, "luci.dev.testing1")
+
+			// Get duplicates.
+			perms, err = GetPermissions("luci.dev.testing1", "luci.dev.testing1")
+			So(err, ShouldBeNil)
+			So(perms, ShouldHaveLength, 2)
+			So(perms[0].Name(), ShouldEqual, "luci.dev.testing1")
+			So(perms[1].Name(), ShouldEqual, "luci.dev.testing1")
+		})
+
+		Convey("Get unregistered permission returns error", func() {
+			perms, err := GetPermissions("luci.dev.unregistered")
+			So(err, ShouldErrLike, "permission not registered", "luci.dev.unregistered")
+			So(perms, ShouldBeNil)
+
+			// Mixed with registered permission.
+			perms, err = GetPermissions("luci.dev.testing1", "luci.dev.unregistered")
+			So(err, ShouldErrLike, "permission not registered", "luci.dev.unregistered")
+			So(perms, ShouldBeNil)
+		})
 	})
 }
