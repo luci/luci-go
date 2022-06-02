@@ -28,7 +28,7 @@ export class TestHistoryEntriesLoader {
     readonly date: DateTime,
     readonly variant: Variant,
     readonly testHistoryService: TestHistoryService,
-    readonly pageSize = 10
+    readonly pageSize = 100
   ) {}
 
   @observable.shallow private _testVerdicts: TestVerdict[] = [];
@@ -52,7 +52,7 @@ export class TestHistoryEntriesLoader {
     return this._testVerdicts.length > 0;
   }
 
-  private pageToken: string | null = '';
+  @observable.ref private pageToken: string | null = '';
   private readonly historyReq = {
     project: this.project,
     testId: this.testId,
