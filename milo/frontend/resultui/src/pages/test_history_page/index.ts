@@ -191,8 +191,7 @@ export class TestHistoryPageElement extends MiloBaseElement implements BeforeEnt
         Showing
         <i>${this.pageState.filteredVariants.length}</i>
         variant${this.pageState.filteredVariants.length === 1 ? '' : 's'} that
-        <i>match${this.pageState.filteredVariants.length === 1 ? '' : 'es'} the filter</i>, out of
-        <i>${this.pageState.variantLoader.variants.length}+</i> variants.
+        <i>match${this.pageState.filteredVariants.length === 1 ? '' : 'es'} the filter</i>.
         <span>
           ${
             !this.pageState.isDiscoveringVariants && !this.pageState.loadedAllVariants

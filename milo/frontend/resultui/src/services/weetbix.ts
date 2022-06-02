@@ -21,7 +21,10 @@ export interface Variant {
   readonly def: { [key: string]: string };
 }
 
-export type VariantPredicate = { readonly equals: Variant } | { readonly contains: Variant };
+export type VariantPredicate =
+  | { readonly equals: Variant }
+  | { readonly contains: Variant }
+  | { readonly hashEquals: string };
 
 export const enum SubmittedFilter {
   SUBMITTED_FILTER_UNSPECIFIED = 'SUBMITTED_FILTER_UNSPECIFIED',
@@ -100,6 +103,7 @@ export interface QueryVariantsRequest {
   readonly project: string;
   readonly testId: string;
   readonly subRealm?: string;
+  readonly variantPredicate?: VariantPredicate;
   readonly pageSize?: number;
   readonly pageToken?: string;
 }

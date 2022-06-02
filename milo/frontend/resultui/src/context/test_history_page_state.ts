@@ -17,7 +17,7 @@ import { DateTime } from 'luxon';
 import { autorun, comparer, computed, observable, reaction } from 'mobx';
 
 import { createContextLink } from '../libs/context';
-import { parseVariantFilter } from '../libs/queries/th_filter_query';
+import { parseVariantFilter, parseVariantPredicate } from '../libs/queries/th_filter_query';
 import { TestHistoryEntriesLoader } from '../models/test_history_entries_loader';
 import { TestHistoryStatsLoader } from '../models/test_history_stats_loader';
 import { VariantLoader } from '../models/variant_loader';
@@ -28,6 +28,7 @@ import {
   TestVerdictBundle,
   TestVerdictStatus,
   Variant,
+  VariantPredicate,
 } from '../services/weetbix';
 
 export const enum GraphType {
@@ -48,15 +49,42 @@ const SCALE_COLOR = scaleLinear().range([0.1, 1]).domain([0, 1]);
  * Records the test history page state.
  */
 export class TestHistoryPageState {
-  readonly statsLoader: TestHistoryStatsLoader;
-  readonly variantLoader: VariantLoader;
+  readonly project: string;
+  readonly subRealm: string;
+
   readonly latestDate = DateTime.now().toUTC().startOf('day');
   @observable.ref days = 14;
 
   @observable.ref filterText = '';
   @observable.ref private variantFilter = (_v: Variant, _hash: string) => true;
+  @observable.struct private variantPredicate: VariantPredicate = { contains: { def: {} } };
+
+  @computed({ keepAlive: true })
+  get statsLoader() {
+    if (this.isDisposed) {
+      return null;
+    }
+
+    return new TestHistoryStatsLoader(
+      this.project,
+      this.subRealm,
+      this.testId,
+      this.latestDate,
+      this.variantPredicate,
+      this.testHistoryService
+    );
+  }
+
+  @computed({ keepAlive: true })
+  get variantLoader() {
+    if (this.isDisposed) {
+      return null;
+    }
+    return new VariantLoader(this.project, this.subRealm, this.testId, this.variantPredicate, this.testHistoryService);
+  }
+
   @computed get filteredVariants() {
-    return this.variantLoader.variants.filter(([hash, v]) => this.variantFilter(v, hash));
+    return this.variantLoader!.variants.filter(([hash, v]) => this.variantFilter(v, hash));
   }
 
   @observable.ref private discoverVariantReqCount = 0;
@@ -90,8 +118,9 @@ export class TestHistoryPageState {
     return scaleSequential((x) => interpolateOranges(SCALE_COLOR(x))).domain([this.minDurationMs, this.maxDurationMs]);
   }
 
-  @computed({ equals: comparer.shallow }) get criticalVariantKeys(): readonly string[] {
-    return getCriticalVariantKeys(this.variantLoader.variants.map(([_, v]) => v));
+  @computed({ equals: comparer.shallow })
+  get criticalVariantKeys(): readonly string[] {
+    return getCriticalVariantKeys(this.variantLoader!.variants.map(([_, v]) => v));
   }
 
   @observable.ref private customColumnKeys?: readonly string[];
@@ -130,10 +159,7 @@ export class TestHistoryPageState {
     readonly testHistoryService: TestHistoryService,
     readonly resultDb: ResultDb
   ) {
-    const [project, subRealm] = realm.split(':', 2);
-    this.statsLoader = new TestHistoryStatsLoader(project, subRealm, testId, this.latestDate, testHistoryService);
-    this.variantLoader = new VariantLoader(project, subRealm, testId, testHistoryService);
-    this.discoverVariants();
+    [this.project, this.subRealm] = realm.split(':', 2);
 
     // Ensure the first page of test history entry details are loaded / being
     // loaded.
@@ -145,14 +171,25 @@ export class TestHistoryPageState {
       )
     );
 
+    // Ensure the first page of variants are loaded / being loaded.
+    this.disposers.push(
+      reaction(
+        () => this.variantLoader,
+        () => this.discoverVariants(),
+        { fireImmediately: true }
+      )
+    );
+
     // Keep the filters in sync.
     this.disposers.push(
       autorun(() => {
         try {
           const newVariantFilter = parseVariantFilter(this.filterText);
+          const newVariantPredicate = parseVariantPredicate(this.filterText);
 
           // Only update the filters after the query is successfully parsed.
           this.variantFilter = newVariantFilter;
+          this.variantPredicate = newVariantPredicate;
         } catch (e) {
           //TODO(weiweilin): display the error to the user.
           console.error(e);
@@ -163,7 +200,7 @@ export class TestHistoryPageState {
 
   async discoverVariants() {
     this.discoverVariantReqCount++;
-    const req = this.variantLoader.discoverVariants();
+    const req = this.variantLoader!.discoverVariants();
     req.finally(() => this.discoverVariantReqCount--);
     this._loadedAllVariants = await req;
     return this._loadedAllVariants;
@@ -180,7 +217,7 @@ export class TestHistoryPageState {
       subRealm,
       this.testId,
       DateTime.fromISO(this.selectedGroup.partitionTime),
-      this.variantLoader.getVariant(this.selectedGroup.variantHash)!,
+      this.variantLoader!.getVariant(this.selectedGroup.variantHash)!,
       this.testHistoryService
     );
   }

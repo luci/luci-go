@@ -52,6 +52,7 @@ describe('TestHistoryStatsLoader', () => {
       'realm',
       'test-id',
       DateTime.fromISO('2021-11-05T11:00:00Z'),
+      { contains: { def: {} } },
       {
         queryStats: stub,
       } as Partial<TestHistoryService> as TestHistoryService

@@ -41,7 +41,7 @@ describe('TestHistoryLoader', () => {
   it('discoverVariants should work correctly', async () => {
     // Set up.
     const queryVariantsStub = sinon.stub<[QueryVariantsRequest, CacheOption], Promise<QueryVariantsResponse>>();
-    const variantLoader = new VariantLoader('project', 'realm', 'test-id', {
+    const variantLoader = new VariantLoader('project', 'realm', 'test-id', { contains: { def: {} } }, {
       queryVariants: queryVariantsStub,
     } as Partial<TestHistoryService> as TestHistoryService);
 

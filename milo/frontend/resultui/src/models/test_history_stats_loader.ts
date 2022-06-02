@@ -15,7 +15,12 @@
 import { DateTime } from 'luxon';
 import { observable } from 'mobx';
 
-import { QueryTestHistoryStatsResponseGroup, TestHistoryService } from '../services/weetbix';
+import {
+  QueryTestHistoryStatsRequest,
+  QueryTestHistoryStatsResponseGroup,
+  TestHistoryService,
+  VariantPredicate,
+} from '../services/weetbix';
 
 /**
  * A helper class that facilitate loading the test history stats and retrieving
@@ -59,6 +64,7 @@ export class TestHistoryStatsLoader {
     readonly subRealm: string,
     readonly testId: string,
     latestDate: DateTime,
+    readonly variantPredicate: VariantPredicate,
     readonly testHistoryService: TestHistoryService
   ) {
     this.latestDate = latestDate.toUTC().startOf('day');
@@ -66,7 +72,7 @@ export class TestHistoryStatsLoader {
   }
 
   private async *workerGen() {
-    const req = {
+    const req: QueryTestHistoryStatsRequest = {
       project: this.project,
       predicate: {
         subRealm: this.subRealm,
@@ -75,7 +81,7 @@ export class TestHistoryStatsLoader {
           // `latestDate` will be included.
           latest: this.latestDate.minus({ day: -1 }).toISO(),
         },
-        // TODO(weiweilin): support variant predicate.
+        variantPredicate: this.variantPredicate,
       },
       testId: this.testId,
     };

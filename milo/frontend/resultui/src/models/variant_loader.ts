@@ -14,7 +14,7 @@
 
 import { computed, observable } from 'mobx';
 
-import { TestHistoryService, Variant } from '../services/weetbix';
+import { TestHistoryService, Variant, VariantPredicate } from '../services/weetbix';
 
 export class VariantLoader {
   /**
@@ -35,6 +35,7 @@ export class VariantLoader {
     readonly project: string,
     readonly subRealm: string,
     readonly testId: string,
+    readonly variantPredicate: VariantPredicate,
     readonly testHistoryService: TestHistoryService
   ) {
     this.worker = this.workerGen();
@@ -50,6 +51,7 @@ export class VariantLoader {
         project: this.project,
         subRealm: this.subRealm,
         testId: this.testId,
+        variantPredicate: this.variantPredicate,
         pageToken,
       });
 

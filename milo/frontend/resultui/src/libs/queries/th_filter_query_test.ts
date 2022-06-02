@@ -15,7 +15,7 @@
 import { assert } from 'chai';
 
 import { Variant } from '../../services/weetbix';
-import { parseVariantFilter, suggestTestHistoryFilterQuery } from './th_filter_query';
+import { parseVariantFilter, parseVariantPredicate, suggestTestHistoryFilterQuery } from './th_filter_query';
 
 const entry1 = {
   variant: { def: { key1: 'val1' } },
@@ -54,7 +54,7 @@ const entry7 = {
 
 const variants = [entry1, entry2, entry3, entry4, entry5, entry6, entry7];
 
-describe('parseVariantFilterFromQuery', () => {
+describe('parseVariantFilter', () => {
   it('should filter out variants with no matching variant key-value pair', () => {
     const filter = parseVariantFilter('v:key1=val1');
 
@@ -153,5 +153,27 @@ describe('suggestTestHistoryFilterQuery', () => {
     // When user explicitly typed negative query, don't suggest positive query.
     assert.isUndefined(suggestions2.find((s) => s.value === 'V:test_suite'));
     assert.isDefined(suggestions2.find((s) => s.value === '-V:test_suite'));
+  });
+});
+
+describe('parseVariantPredicate', () => {
+  it('should work with multiple variant key-value filters', () => {
+    const predicate = parseVariantPredicate('v:key1=val1 v:key2=val2');
+    assert.deepEqual(predicate, { contains: { def: { key1: 'val1', key2: 'val2' } } });
+  });
+
+  it('should ignore negative filters', () => {
+    const predicate = parseVariantPredicate('v:key1=val1 -v:key2=val2 -vhash:902690735d13f8bd');
+    assert.deepEqual(predicate, { contains: { def: { key1: 'val1' } } });
+  });
+
+  it('should prioritize variant hash filter', () => {
+    const predicate = parseVariantPredicate('v:key1=val1 vhash:0123456789AbCdEf');
+    assert.deepEqual(predicate, { hashEquals: '0123456789abcdef' });
+  });
+
+  it('should ignore invalid filters', () => {
+    const predicate = parseVariantPredicate('v:key1=val1 vhash:invalidhash other:hash');
+    assert.deepEqual(predicate, { contains: { def: { key1: 'val1' } } });
   });
 });

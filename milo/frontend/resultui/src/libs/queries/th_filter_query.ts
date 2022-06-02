@@ -18,17 +18,21 @@ import { html } from 'lit-html';
 
 import { Suggestion } from '../../components/auto_complete';
 import { Variant } from '../../services/resultdb';
+import { VariantPredicate } from '../../services/weetbix';
 import { highlight } from '../lit_utils';
 import { KV_SYNTAX_EXPLANATION, parseKeyValue } from './utils';
 
-const VARIANT_FILTER_RE = /(-?)V:(.+)$/i;
-const VARIANT_HASH_FILTER_RE = /(-?)VHASH:(.+)$/i;
+const VARIANT_FILTER_RE = /^(-?)V:(.+)$/i;
+const VARIANT_HASH_FILTER_RE = /^(-?)VHASH:(.+)$/i;
+const VARIANT_KEY_RE = /^[a-z][a-z0-9_]*(\/[a-z][a-z0-9_]*)*$/;
+const VARIANT_HASH_RE = /^[0-9a-f]{16}$/;
+const VARIANT_KEY_MAX_LEN = 64;
+const VARIANT_VALUE_MAX_LEN = 256;
 
 export type VariantFilter = (v: Variant, hash: string) => boolean;
 
 /**
- * Parses the variant predicate and variant filter from the query string. They
- * are useful for constructing RPC requests and filtering variant rows/groups.
+ * Parses the variant filter from the query string.
  *
  * The returned VariantPredicate and VariantFilter may result in false
  * positives, so it should be used in conjunction of the TestVariantFilter
@@ -61,6 +65,66 @@ export function parseVariantFilter(filterQuery: string): VariantFilter {
   }
 
   return (v, hash) => filters.every((f) => f(v, hash));
+}
+
+/**
+ * Parses the variant predicate from the query string. This is useful for
+ * constructing RPC requests.
+ *
+ * Invalid and unsupported filters (e.g. negative filters) are ignored because
+ * they may trigger server-side errors. As a result, the returned
+ * VariantPredicate may lead to false positives. It should be used in
+ * conjunction of the VariantFilter parsed from the same query.
+ *
+ * This can be changed once we have better error rendering and/or more
+ * complete server-side filter support.
+ */
+export function parseVariantPredicate(filterQuery: string): VariantPredicate {
+  const containPredicate: Mutable<VariantPredicate> = {
+    contains: {
+      def: {},
+    },
+  };
+  for (const subQuery of filterQuery.split(' ')) {
+    let match = subQuery.match(VARIANT_HASH_FILTER_RE);
+    if (match) {
+      const [, neg, vHash] = match;
+      if (neg === '-') {
+        continue;
+      }
+      const vHashLower = vHash.toLowerCase();
+      if (!VARIANT_HASH_RE.test(vHashLower)) {
+        continue;
+      }
+
+      return {
+        hashEquals: vHashLower,
+      };
+    }
+
+    match = subQuery.match(VARIANT_FILTER_RE);
+    if (!match) {
+      continue;
+    }
+
+    const [, neg, value] = match;
+    if (neg) {
+      continue;
+    }
+
+    const [vKey, vValue] = parseKeyValue(value);
+    if (!vKey || vKey.length > VARIANT_KEY_MAX_LEN || !VARIANT_KEY_RE.test(vKey)) {
+      continue;
+    }
+    if (!vValue || vValue.length > VARIANT_VALUE_MAX_LEN) {
+      continue;
+    }
+
+    containPredicate.contains.def[vKey] = vValue;
+    continue;
+  }
+
+  return containPredicate;
 }
 
 // Queries with arbitrary value.
