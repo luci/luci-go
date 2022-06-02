@@ -161,6 +161,23 @@ export class TestHistoryPageState {
   ) {
     [this.project, this.subRealm] = realm.split(':', 2);
 
+    // Keep the filters in sync.
+    this.disposers.push(
+      autorun(() => {
+        try {
+          const newVariantFilter = parseVariantFilter(this.filterText);
+          const newVariantPredicate = parseVariantPredicate(this.filterText);
+
+          // Only update the filters after the query is successfully parsed.
+          this.variantFilter = newVariantFilter;
+          this.variantPredicate = newVariantPredicate;
+        } catch (e) {
+          //TODO(weiweilin): display the error to the user.
+          console.error(e);
+        }
+      })
+    );
+
     // Ensure the first page of test history entry details are loaded / being
     // loaded.
     this.disposers.push(
@@ -178,23 +195,6 @@ export class TestHistoryPageState {
         () => this.discoverVariants(),
         { fireImmediately: true }
       )
-    );
-
-    // Keep the filters in sync.
-    this.disposers.push(
-      autorun(() => {
-        try {
-          const newVariantFilter = parseVariantFilter(this.filterText);
-          const newVariantPredicate = parseVariantPredicate(this.filterText);
-
-          // Only update the filters after the query is successfully parsed.
-          this.variantFilter = newVariantFilter;
-          this.variantPredicate = newVariantPredicate;
-        } catch (e) {
-          //TODO(weiweilin): display the error to the user.
-          console.error(e);
-        }
-      })
     );
   }
 
