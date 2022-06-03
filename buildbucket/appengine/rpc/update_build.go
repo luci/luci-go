@@ -20,6 +20,7 @@ import (
 	"time"
 
 	"google.golang.org/grpc/codes"
+	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/structpb"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
@@ -101,6 +102,13 @@ func validateUpdate(ctx context.Context, req *pb.UpdateBuildRequest, bs *model.B
 				if v == nil {
 					return errors.Reason("build.output.properties[%q]: value is not set; if necessary, use null_value instead", k).Err()
 				}
+			}
+			propBytes, err := proto.Marshal(req.Build.Output.GetProperties())
+			if err != nil {
+				return errors.Reason("failed to marshal build.output.properties to byte: %s", err).Err()
+			}
+			if len(propBytes) > buildOutputPropertiesMaxBytes {
+				return errors.Reason("build.output.properties: too large to accept. It has %d bytes while the maximum allowed is %d bytes.", len(propBytes), buildOutputPropertiesMaxBytes).Err()
 			}
 		case "build.output.gitiles_commit":
 			if err := validateCommitWithRef(req.Build.Output.GetGitilesCommit()); err != nil {

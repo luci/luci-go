@@ -59,6 +59,10 @@ const (
 	// Sanity length limitation for build tokens to allow us to quickly reject
 	// potentially abusive inputs.
 	buildTokenMaxLength = 200
+
+	// buildOutputPropertiesMaxBytes is the maximum length of build.output.properties.
+	// If bytes exceeds this maximum, Buildbucket will reject this request.
+	buildOutputPropertiesMaxBytes = 1024 * 1024
 )
 
 const UserPackageDir = "cipd_bin_packages"

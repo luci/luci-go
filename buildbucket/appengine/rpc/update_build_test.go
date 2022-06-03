@@ -17,6 +17,7 @@ package rpc
 import (
 	"context"
 	"encoding/base64"
+	"strconv"
 	"strings"
 	"testing"
 	"time"
@@ -150,6 +151,21 @@ func TestValidateUpdate(t *testing.T) {
 			props, _ := structpb.NewStruct(map[string]interface{}{"key": nil})
 			req.Build.Output = &pb.Build_Output{Properties: props}
 			So(validateUpdate(ctx, req, nil), ShouldErrLike, "value is not set")
+		})
+
+		Convey("too large", func() {
+			largeProps, _ := structpb.NewStruct(map[string]interface{}{})
+			k := "laaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaarge_key"
+			v := "laaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaarge_value"
+			for i := 0; i < 10000; i++ {
+				largeProps.Fields[k+strconv.Itoa(i)] = &structpb.Value{
+					Kind: &structpb.Value_StringValue{
+						StringValue: v,
+					},
+				}
+			}
+			req.Build.Output = &pb.Build_Output{Properties: largeProps}
+			So(validateUpdate(ctx, req, nil), ShouldErrLike, "build.output.properties: too large to accept")
 		})
 	})
 

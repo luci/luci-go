@@ -143,7 +143,7 @@ func mainImpl() int {
 		check(errors.Annotate(err, "could not connect to Buildbucket").Err())
 	case *hostname != "" && *buildID > 0:
 		logging.Debugf(ctx, "fetching build %d", *buildID)
-		bbclient, secrets, err = newBuildsClient(ctx, *hostname, retry.Default)
+		bbclient, secrets, err = newBuildsClient(ctx, *hostname, defaultRetryStrategy)
 		check(errors.Annotate(err, "could not connect to Buildbucket").Err())
 		// Get everything from the build.
 		// Here we use UpdateBuild instead of GetBuild, so that

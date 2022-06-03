@@ -222,3 +222,15 @@ func mkSendFn(ctx context.Context, client BuildsClient, bID int64, canceledBuild
 		return nil
 	}
 }
+
+// defaultRetryStrategy defines a default build client retry strategy in bbagent.
+func defaultRetryStrategy() retry.Iterator {
+	return &retry.ExponentialBackoff{
+		Limited: retry.Limited{
+			Delay:   200 * time.Millisecond,
+			Retries: 10,
+		},
+		MaxDelay:   80 * time.Second,
+		Multiplier: 2,
+	}
+}
