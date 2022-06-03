@@ -55,10 +55,45 @@ func getInterface(ctx context.Context) quotaconfig.Interface {
 }
 
 type Options struct {
+	// RequestID is a string to use for deduplication of successful quota
+	// adjustments, valid for one hour. Only successful updates are deduplicated,
+	// mainly for the case where time has passed and quota has replenished
+	// enough for a previously failed adjustment to succeed.
+	//
+	// Callers should ensure the same Options and function parameters are provided
+	// each time a request ID is reused, since any reuse within a one hour period
+	// is subject to deduplication regardless of other Options and parameters.
+	RequestID string
 	// User is a value to substitute for ${user} in policy names.
 	// Policy defaults are sourced from the unsubstituted name.
 	User string
 }
+
+// dedupePrefix is a *template.Template for a Lua script which fetches the given
+// deduplication key from Redis, returning if it exists and is temporally valid.
+// Prefix to other scripts to create a script which exits early when the
+// deduplication key is valid. Scripts should be suffixed with dedupeSuffix to
+// save the deduplication key.
+//
+// Template variables:
+// Key: A string to use for deduplication.
+// Now: Current time in seconds since epoch.
+var dedupePrefix = template.Must(template.New("dedupePrefix").Parse(`
+	local deadline = redis.call("HINCRBY", "deduplicationKeys", "{{.Key}}", 0)
+	if deadline >= {{.Now}} then
+		return
+	end
+`))
+
+// dedupeSuffix is a *template.Template for a Lua script which writes the given
+// deduplication key to Redis. Should be used with dedupePrefix.
+//
+// Template variables:
+// Key: A string to use for deduplication.
+// Deadline: Time in seconds since epoch after which the key no longer dedupes.
+var dedupeSuffix = template.Must(template.New("dedupeSuffix").Parse(`
+	redis.call("HMSET", "deduplicationKeys", "{{.Key}}", {{.Deadline}})
+`))
 
 // updateEntry is a *template.Template for a Lua script which fetches the given
 // quota entry from Redis, initializing it if it doesn't exist, replenishes
@@ -165,6 +200,15 @@ func UpdateQuota(ctx context.Context, updates map[string]int64, opts *Options) e
 	defer conn.Close()
 
 	s := bytes.NewBufferString("local entries = {}\n")
+	if opts != nil && opts.RequestID != "" {
+		if err := dedupePrefix.Execute(s, map[string]interface{}{
+			"Key": opts.RequestID,
+			"Now": now,
+		}); err != nil {
+			return errors.Annotate(err, "rendering template %q", dedupePrefix.Name()).Err()
+		}
+	}
+
 	i = 0
 	for name, adj := range adjs {
 		if err := updateEntry.Execute(s, map[string]interface{}{
@@ -184,6 +228,15 @@ func UpdateQuota(ctx context.Context, updates map[string]int64, opts *Options) e
 			"Var": fmt.Sprintf("entries[%d]", i),
 		}); err != nil {
 			return errors.Annotate(err, "rendering template %q", setEntry.Name()).Err()
+		}
+	}
+
+	if opts != nil && opts.RequestID != "" {
+		if err := dedupeSuffix.Execute(s, map[string]interface{}{
+			"Key":      opts.RequestID,
+			"Deadline": now + 3600,
+		}); err != nil {
+			return errors.Annotate(err, "rendering template %q", dedupeSuffix.Name()).Err()
 		}
 	}
 

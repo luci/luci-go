@@ -70,9 +70,8 @@ func TestQuota(t *testing.T) {
 				Replenishment: 1,
 			},
 			{
-				Name:          "quota/${user}",
-				Resources:     2,
-				Replenishment: 1,
+				Name:      "quota/${user}",
+				Resources: 2,
 			},
 		})
 		So(err, ShouldBeNil)
@@ -250,6 +249,97 @@ func TestQuota(t *testing.T) {
 
 					So(UpdateQuota(ctx, up, opts), ShouldEqual, ErrInsufficientQuota)
 					So(s.Keys(), ShouldBeEmpty)
+				})
+			})
+
+			Convey("idempotence", func() {
+				Convey("deduplication", func() {
+					up := map[string]int64{
+						"quota/${user}": -1,
+					}
+					opts := &Options{
+						RequestID: "request-id",
+						User:      "user@example.com",
+					}
+
+					So(UpdateQuota(ctx, up, opts), ShouldBeNil)
+					So(s.Keys(), ShouldResemble, []string{
+						"deduplicationKeys",
+						"entry:f20c860d2ea007ea2360c6ebe2d943acc8a531412c18ff3bd47ab1449988aa6d",
+					})
+					So(s.HGet("deduplicationKeys", "request-id"), ShouldEqual, strconv.FormatInt(testclock.TestRecentTimeLocal.Add(time.Hour).Unix(), 10))
+					So(s.HGet("entry:f20c860d2ea007ea2360c6ebe2d943acc8a531412c18ff3bd47ab1449988aa6d", "resources"), ShouldEqual, "1")
+					So(s.HGet("entry:f20c860d2ea007ea2360c6ebe2d943acc8a531412c18ff3bd47ab1449988aa6d", "updated"), ShouldEqual, now)
+
+					// Ensure update succeeds without modifying the database again.
+					ctx, _ := testclock.UseTime(ctx, testclock.TestRecentTimeLocal.Add(30*time.Minute))
+					So(UpdateQuota(ctx, up, opts), ShouldBeNil)
+					So(s.Keys(), ShouldResemble, []string{
+						"deduplicationKeys",
+						"entry:f20c860d2ea007ea2360c6ebe2d943acc8a531412c18ff3bd47ab1449988aa6d",
+					})
+					So(s.HGet("deduplicationKeys", "request-id"), ShouldEqual, strconv.FormatInt(testclock.TestRecentTimeLocal.Add(time.Hour).Unix(), 10))
+					So(s.HGet("entry:f20c860d2ea007ea2360c6ebe2d943acc8a531412c18ff3bd47ab1449988aa6d", "resources"), ShouldEqual, "1")
+					So(s.HGet("entry:f20c860d2ea007ea2360c6ebe2d943acc8a531412c18ff3bd47ab1449988aa6d", "updated"), ShouldEqual, now)
+				})
+
+				Convey("expired", func() {
+					up := map[string]int64{
+						"quota/${user}": -1,
+					}
+					opts := &Options{
+						RequestID: "request-id",
+						User:      "user@example.com",
+					}
+
+					So(UpdateQuota(ctx, up, opts), ShouldBeNil)
+					So(s.Keys(), ShouldResemble, []string{
+						"deduplicationKeys",
+						"entry:f20c860d2ea007ea2360c6ebe2d943acc8a531412c18ff3bd47ab1449988aa6d",
+					})
+					So(s.HGet("deduplicationKeys", "request-id"), ShouldEqual, strconv.FormatInt(testclock.TestRecentTimeLocal.Add(time.Hour).Unix(), 10))
+					So(s.HGet("entry:f20c860d2ea007ea2360c6ebe2d943acc8a531412c18ff3bd47ab1449988aa6d", "resources"), ShouldEqual, "1")
+					So(s.HGet("entry:f20c860d2ea007ea2360c6ebe2d943acc8a531412c18ff3bd47ab1449988aa6d", "updated"), ShouldEqual, now)
+
+					// Ensure update modifies the database after the deduplication deadline.
+					ctx, tc := testclock.UseTime(ctx, testclock.TestRecentTimeLocal.Add(2*time.Hour))
+					So(UpdateQuota(ctx, up, opts), ShouldBeNil)
+					So(s.Keys(), ShouldResemble, []string{
+						"deduplicationKeys",
+						"entry:f20c860d2ea007ea2360c6ebe2d943acc8a531412c18ff3bd47ab1449988aa6d",
+					})
+					So(s.HGet("deduplicationKeys", "request-id"), ShouldEqual, strconv.FormatInt(tc.Now().Add(time.Hour).Unix(), 10))
+					So(s.HGet("entry:f20c860d2ea007ea2360c6ebe2d943acc8a531412c18ff3bd47ab1449988aa6d", "resources"), ShouldEqual, "0")
+					So(s.HGet("entry:f20c860d2ea007ea2360c6ebe2d943acc8a531412c18ff3bd47ab1449988aa6d", "updated"), ShouldEqual, strconv.FormatInt(tc.Now().Unix(), 10))
+				})
+
+				Convey("error", func() {
+					up := map[string]int64{
+						"quota/${user}": -10,
+					}
+					opts := &Options{
+						RequestID: "request-id",
+						User:      "user@example.com",
+					}
+
+					So(UpdateQuota(ctx, up, opts), ShouldErrLike, "insufficient quota")
+					So(s.Keys(), ShouldResemble, []string{
+						"deduplicationKeys",
+					})
+					So(s.HGet("deduplicationKeys", "request-id"), ShouldEqual, "0")
+
+					up = map[string]int64{
+						"quota/${user}": -1,
+					}
+
+					So(UpdateQuota(ctx, up, opts), ShouldBeNil)
+					So(s.Keys(), ShouldResemble, []string{
+						"deduplicationKeys",
+						"entry:f20c860d2ea007ea2360c6ebe2d943acc8a531412c18ff3bd47ab1449988aa6d",
+					})
+					So(s.HGet("deduplicationKeys", "request-id"), ShouldEqual, strconv.FormatInt(testclock.TestRecentTimeLocal.Add(time.Hour).Unix(), 10))
+					So(s.HGet("entry:f20c860d2ea007ea2360c6ebe2d943acc8a531412c18ff3bd47ab1449988aa6d", "resources"), ShouldEqual, "1")
+					So(s.HGet("entry:f20c860d2ea007ea2360c6ebe2d943acc8a531412c18ff3bd47ab1449988aa6d", "updated"), ShouldEqual, now)
 				})
 			})
 		})
