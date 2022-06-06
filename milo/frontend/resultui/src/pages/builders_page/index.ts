@@ -24,17 +24,20 @@ import './row';
 import { MiloBaseElement } from '../../components/milo_base';
 import { AppState, consumeAppState } from '../../context/app_state';
 import { getURLPathForProject } from '../../libs/build_utils';
-import { consumer } from '../../libs/context';
+import { consumer, provider } from '../../libs/context';
 import { reportError, reportErrorAsync } from '../../libs/error_handler';
+import { IntersectionNotifier, provideNotifier } from '../../libs/observer_element';
 import { NOT_FOUND_URL } from '../../routes';
 import { BuilderID } from '../../services/buildbucket';
 import { ListBuildersRequest, ListBuildersResponse } from '../../services/milo_internal';
 import commonStyle from '../../styles/common_style.css';
 
 @customElement('milo-builders-page')
+@provider
 @consumer
 export class BuildersPageElement extends MiloBaseElement implements BeforeEnterObserver {
   @observable.ref @consumeAppState() appState!: AppState;
+  @provideNotifier() notifier = new IntersectionNotifier({ rootMargin: '1000px' });
 
   private project!: string;
   private group!: string;
@@ -42,7 +45,6 @@ export class BuildersPageElement extends MiloBaseElement implements BeforeEnterO
   @observable.ref private numOfBuilds = 25;
   @observable.ref private builders: readonly BuilderID[] = [];
   @observable.ref private isLoading = false;
-  @observable.ref private endOfPage = true;
 
   @computed private get listBuildersResIter(): AsyncIterableIterator<ListBuildersResponse> {
     if (!this.appState.milo) {
@@ -92,21 +94,16 @@ export class BuildersPageElement extends MiloBaseElement implements BeforeEnterO
       () => this.listBuildersResIter,
       () => {
         this.builders = [];
-        this.loadNextPage();
+        this.loadAllPages();
       },
       { fireImmediately: true }
     );
   }
 
-  private loadNextPage = reportErrorAsync(this, async () => {
+  private loadAllPages = reportErrorAsync(this, async () => {
     this.isLoading = true;
-    this.endOfPage = false;
-    const next = await this.listBuildersResIter.next();
-    if (next.done) {
-      this.endOfPage = true;
-    } else {
-      this.builders = this.builders.concat(next.value.builders?.map((v) => v.id) || []);
-      this.endOfPage = !next.value.nextPageToken;
+    for await (const buildersRes of this.listBuildersResIter) {
+      this.builders = this.builders.concat(buildersRes.builders?.map((v) => v.id) || []);
     }
     this.isLoading = false;
   });
@@ -115,14 +112,16 @@ export class BuildersPageElement extends MiloBaseElement implements BeforeEnterO
     return html`
       <div id="builders-group-id">
         <a href=${getURLPathForProject(this.project)}>${this.project}</a>
-        ${this.group
-          ? html`
-              <span>&nbsp;/&nbsp;</span>
-              <span>group</span>
-              <span>&nbsp;/&nbsp;</span>
-              <span>${this.group}</span>
-            `
-          : ''}
+        ${
+          this.group
+            ? html`
+                <span>&nbsp;/&nbsp;</span>
+                <span>group</span>
+                <span>&nbsp;/&nbsp;</span>
+                <span>${this.group}</span>
+              `
+            : ''
+        }
         <span>&nbsp;/&nbsp;</span><span>builders</span>
       </div>
       <milo-status-bar
@@ -143,17 +142,9 @@ export class BuildersPageElement extends MiloBaseElement implements BeforeEnterO
 
         <div id="loading-row">
           <span>Showing ${this.builders.length} builders.</span>
-          <span id="load" style=${styleMap({ display: this.endOfPage ? 'none' : '' })}>
-            <span
-              id="load-more"
-              style=${styleMap({ display: this.isLoading ? 'none' : '' })}
-              @click=${this.loadNextPage}
-            >
-              Load More
-            </span>
-            <span style=${styleMap({ display: this.isLoading ? '' : 'none' })}>
-              Loading <milo-dot-spinner></milo-dot-spinner>
-            </span>
+          <span style=${styleMap({ display: this.isLoading ? '' : 'none' })}>
+            Loading <milo-dot-spinner></milo-dot-spinner>
+          </span>
           </span>
           <br />
           <span>
@@ -207,6 +198,10 @@ export class BuildersPageElement extends MiloBaseElement implements BeforeEnterO
       #load-more {
         color: var(--active-text-color);
         cursor: pointer;
+      }
+
+      milo-dot-spinner {
+        color: var(--active-text-color);
       }
     `,
   ];

@@ -21,15 +21,15 @@ import { MiloBaseElement } from '../../components/milo_base';
 import { AppState, consumeAppState } from '../../context/app_state';
 import { getURLPathForBuild, getURLPathForBuilder } from '../../libs/build_utils';
 import { BUILD_STATUS_CLASS_MAP } from '../../libs/constants';
-import { consumer } from '../../libs/context';
 import { reportRenderError } from '../../libs/error_handler';
+import { lazyRendering } from '../../libs/observer_element';
 import { unwrapObservable } from '../../libs/unwrap_observable';
 import { Build, BuilderID } from '../../services/buildbucket';
 import { BuilderStats } from '../../services/milo_internal';
 import commonStyle from '../../styles/common_style.css';
 
 @customElement('milo-builders-page-row')
-@consumer
+@lazyRendering
 export class BuildersPageRowElement extends MiloBaseElement {
   @observable.ref @consumeAppState() appState!: AppState;
 
@@ -75,15 +75,29 @@ export class BuildersPageRowElement extends MiloBaseElement {
     return unwrapObservable<BuilderStats | null>(this.builderStats$, null);
   }
 
-  protected render = reportRenderError(this, () => {
+  renderPlaceHolder() {
     return html`
       <td class="shrink-to-fit">
         <a href=${this.builderLink}>${this.builder.project}/${this.builder.bucket}/${this.builder.builder}</a>
       </td>
-      <td class="shrink-to-fit">${this.renderBuilderStats()}</td>
-      <td>${this.renderRecentBuilds()}</td>
+      <td class="shrink-to-fit"></td>
+      <td></td>
     `;
-  });
+  }
+
+  // Do not use the `protected render = reportRenderError(this, () => {...}`
+  // shorthand because this method will be overridden by the `@lazyRendering`.
+  protected render() {
+    return reportRenderError(this, () => {
+      return html`
+        <td class="shrink-to-fit">
+          <a href=${this.builderLink}>${this.builder.project}/${this.builder.bucket}/${this.builder.builder}</a>
+        </td>
+        <td class="shrink-to-fit">${this.renderBuilderStats()}</td>
+        <td>${this.renderRecentBuilds()}</td>
+      `;
+    })();
+  }
 
   private renderBuilderStats() {
     if (!this.builderStats) {
