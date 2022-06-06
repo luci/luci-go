@@ -83,6 +83,7 @@ export class TestHistoryStatsLoader {
         },
         variantPredicate: this.variantPredicate,
       },
+      pageSize: 1000,
       testId: this.testId,
     };
     let pageToken = '';
