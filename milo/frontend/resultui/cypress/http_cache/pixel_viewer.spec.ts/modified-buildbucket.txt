@@ -26,7 +26,7 @@
             "builder": "linux_layout_tests_composite_after_paint"
           },
           "buildNumber": 51472,
-          "fields": "id,builder,number,canceledBy,createTime,startTime,endTime,status,summaryMarkdown,input,output,steps,infra.swarming,infra.resultdb,tags,exe,schedulingTimeout,executionTimeout"
+          "fields": "id,builder,number,canceledBy,createTime,startTime,endTime,cancelTime,status,summaryMarkdown,input,output,steps,infra.buildbucket.agent,infra.swarming,infra.resultdb,tags,exe,schedulingTimeout,executionTimeout,gracePeriod,ancestorIds"
         }
       }
     },

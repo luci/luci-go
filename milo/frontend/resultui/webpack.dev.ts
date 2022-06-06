@@ -33,7 +33,6 @@ export default merge(common, {
   // default in dev mode.
   plugins: [
     new DefinePlugin({
-      IS_DEV: JSON.stringify(true),
       ENABLE_UI_SW: JSON.stringify(DEBUG_SW),
     }),
     ...(DEBUG_SW
@@ -55,6 +54,7 @@ export default merge(common, {
 
   devServer: {
     hot: false,
+    https: true,
     // Live reload causes the page to enter refresh loop when debugging SW.
     liveReload: !DEBUG_SW,
     client: {

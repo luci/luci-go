@@ -26,7 +26,7 @@
             "builder": "linux-rel-swarming"
           },
           "buildNumber": 15252,
-          "fields": "id,builder,number,canceledBy,createTime,startTime,endTime,status,summaryMarkdown,input,output,steps,infra.swarming,infra.resultdb,tags,exe,schedulingTimeout,executionTimeout"
+          "fields": "id,builder,number,canceledBy,createTime,startTime,endTime,cancelTime,status,summaryMarkdown,input,output,steps,infra.buildbucket.agent,infra.swarming,infra.resultdb,tags,exe,schedulingTimeout,executionTimeout,gracePeriod,ancestorIds"
         }
       }
     },
@@ -178,7 +178,7 @@
             "builder": "not-found-builder"
           },
           "buildNumber": 12479,
-          "fields": "id,builder,number,canceledBy,createTime,startTime,endTime,status,summaryMarkdown,input,output,steps,infra.swarming,infra.resultdb,tags,exe,schedulingTimeout,executionTimeout"
+          "fields": "id,builder,number,canceledBy,createTime,startTime,endTime,cancelTime,status,summaryMarkdown,input,output,steps,infra.buildbucket.agent,infra.swarming,infra.resultdb,tags,exe,schedulingTimeout,executionTimeout,gracePeriod,ancestorIds"
         }
       }
     },
@@ -225,7 +225,7 @@
         "type": "json",
         "data": {
           "id": "8845866669318458401",
-          "fields": "id,builder,number,canceledBy,createTime,startTime,endTime,status,summaryMarkdown,input,output,steps,infra.swarming,infra.resultdb,tags,exe,schedulingTimeout,executionTimeout"
+          "fields": "id,builder,number,canceledBy,createTime,startTime,endTime,cancelTime,status,summaryMarkdown,input,output,steps,infra.buildbucket.agent,infra.swarming,infra.resultdb,tags,exe,schedulingTimeout,executionTimeout,gracePeriod,ancestorIds"
         }
       }
     },
@@ -272,7 +272,7 @@
         "type": "json",
         "data": {
           "id": "8845863326460499505",
-          "fields": "id,builder,number,canceledBy,createTime,startTime,endTime,status,summaryMarkdown,input,output,steps,infra.swarming,infra.resultdb,tags,exe,schedulingTimeout,executionTimeout"
+          "fields": "id,builder,number,canceledBy,createTime,startTime,endTime,cancelTime,status,summaryMarkdown,input,output,steps,infra.buildbucket.agent,infra.swarming,infra.resultdb,tags,exe,schedulingTimeout,executionTimeout,gracePeriod,ancestorIds"
         }
       }
     },

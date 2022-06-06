@@ -60,6 +60,6 @@ describe('Builders Page', () => {
   it('should be able to configure the number of builds', () => {
     cy.visit('/ui/p/chromium/builders');
     cy.get('#num-of-builds').clear().type('15{enter}', { force: true });
-    cy.get('milo-builders-page-row:first-child').shadow().get('#builds > a').should('have.length', 15);
+    cy.get('milo-builders-page-row:first-child').shadow().find('#builds > a').should('have.length', 15);
   });
 });

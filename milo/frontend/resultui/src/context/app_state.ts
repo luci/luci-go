@@ -130,7 +130,7 @@ export class AppState {
     if (this.isDisposed || this.userIdentity === null) {
       return null;
     }
-    return new MiloInternal(this.makeClient({ host: '', insecure: IS_DEV }));
+    return new MiloInternal(this.makeClient({ host: '' }));
   }
 
   @computed({ keepAlive: true })
