@@ -103,10 +103,11 @@ export interface CtxProviderOption {
    * This flag enables the provider to provide the context to all consumers
    * rather than only to the provider's descendants. It can also improve
    * performance because context consumers no longer need to dispatch events in
-   * a DoM tree.
+   * a DoM tree (only if there's no registered local providers for the same
+   * context).
    *
    * Caveats:
-   *  1. There can be at most one provider for this context.
+   *  1. There can be at most one global provider for this context.
    *  2. The provider should be connected before any consumer is connected.
    *  3. The provider should not be disconnected unless all consumers are
    * either disconnected or about to be disconnected.
@@ -128,6 +129,7 @@ const providerMetaSymbol = Symbol('provider');
 const consumerMetaSymbol = Symbol('consumer');
 
 const globalContextProviders = new Map<string, EventListener>();
+const localContextProviderCounter = new Map<string, number>();
 
 /**
  * Marks a component as a context provider.
@@ -204,6 +206,9 @@ export function provider<Cls extends Constructor<LitElement>>(cls: Cls) {
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           onCtxUpdate((this as any)[propKey]);
           event.stopImmediatePropagation();
+          // Signals that the consumer should not fallback to global context
+          // provider.
+          event.preventDefault();
         }) as EventListener;
 
         this.addEventListener(eventType, eventCB);
@@ -219,6 +224,11 @@ export function provider<Cls extends Constructor<LitElement>>(cls: Cls) {
             if (globalContextProviders.get(eventType) === eventCB) {
               globalContextProviders.delete(eventType);
             }
+          });
+        } else {
+          localContextProviderCounter.set(eventType, (localContextProviderCounter.get(eventType) || 0) + 1);
+          this[disconnectedCBsSymbol].push(() => {
+            localContextProviderCounter.set(eventType, localContextProviderCounter.get(eventType)! - 1);
           });
         }
       }
@@ -284,10 +294,16 @@ export function consumer<Cls extends Constructor<LitElement>>(cls: Cls) {
         });
 
         const globalHandler = globalContextProviders.get(eventType);
-        if (globalHandler) {
+        // Use the global handler directly if no local handlers are registered.
+        // This bypasses event dispatch therefore improves performance.
+        if (globalHandler && !localContextProviderCounter.get(eventType)) {
           globalHandler(subscribeEvent);
         } else {
-          this.dispatchEvent(subscribeEvent);
+          const shouldFallback = this.dispatchEvent(subscribeEvent);
+          // Fallback to the global handler if a local handler is not found.
+          if (shouldFallback && globalHandler) {
+            globalHandler(subscribeEvent);
+          }
         }
       }
       super.connectedCallback();

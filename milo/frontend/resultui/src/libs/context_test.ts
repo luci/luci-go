@@ -168,8 +168,10 @@ export class ContextConsumerWrapper extends LitElement {
 // DOM then reconnected to DOM.
 describe('context', () => {
   describe('ContextProvider', () => {
+    beforeEach(fixtureCleanup);
+    after(fixtureCleanup);
+
     it('should provide context to descendent context consumers', async () => {
-      after(fixtureCleanup);
       const outerProvider = await fixture<OuterContextProvider>(html`
         <milo-outer-context-provider-test>
           <milo-inner-context-provider-test>
@@ -252,10 +254,10 @@ describe('context', () => {
     });
 
     it('should provide context to any context consumers if global is set to true', async () => {
-      after(fixtureCleanup);
       const rootEle = await fixture<HTMLDivElement>(html`
         <div>
-          <milo-global-context-provider-test> </milo-global-context-provider-test>
+          <milo-outer-context-provider-test></milo-outer-context-provider-test>
+          <milo-global-context-provider-test></milo-global-context-provider-test>
           <milo-context-consumer-wrapper-test></milo-context-consumer-wrapper-test>
         </div>
       `);
@@ -267,12 +269,37 @@ describe('context', () => {
 
       assert.strictEqual(consumer.providerKey, 'global_provider-provider-val0');
 
-      // Update inner provider.
+      // Update global provider.
       globalProvider.providerKey = 'global_provider-provider-val1';
       await globalProvider.updateComplete;
 
       // consumer.providerKey updated
       assert.strictEqual(consumer.providerKey, 'global_provider-provider-val1');
+    });
+
+    it('global context should not override local context', async () => {
+      const rootEle = await fixture<HTMLDivElement>(html`
+        <div>
+          <milo-global-context-provider-test></milo-global-context-provider-test>
+          <milo-outer-context-provider-test>
+            <milo-context-consumer-wrapper-test></milo-context-consumer-wrapper-test>
+          </milo-outer-context-provider-test>
+        </div>
+      `);
+      const globalProvider = rootEle.querySelector('milo-global-context-provider-test')!.shadowRoot!
+        .host as GlobalContextProvider;
+      const consumer = rootEle
+        .querySelector('milo-context-consumer-wrapper-test')!
+        .shadowRoot!.querySelector('milo-context-consumer-test')!.shadowRoot!.host as ContextConsumer;
+
+      assert.strictEqual(consumer.providerKey, 'outer_provider-provider-val0');
+
+      // Update global provider.
+      globalProvider.providerKey = 'global_provider-provider-val1';
+      await globalProvider.updateComplete;
+
+      // consumer.providerKey not updated.
+      assert.strictEqual(consumer.providerKey, 'outer_provider-provider-val0');
     });
   });
 });
