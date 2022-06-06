@@ -138,9 +138,15 @@ Click to view test details.</title>`;
       (this.pageState.countFlaky ? counts[TestVariantStatus.FLAKY] : 0) +
       (this.pageState.countExonerated ? counts[TestVariantStatus.EXONERATED] : 0);
 
+    const nonEmptyStatusCount = STATUS_ORDER.reduce((c, status) => (counts[status] ? c + 1 : c), 0);
+
     return svg`
       ${STATUS_ORDER.map((status) => {
-        const height = (INNER_CELL_SIZE * counts[status]) / totalCount;
+        if (!counts[status]) {
+          return;
+        }
+        // Ensures each non-empty section is at least 1px tall.
+        const height = ((INNER_CELL_SIZE - nonEmptyStatusCount) * counts[status]) / totalCount + 1;
         const ele = svg`
           <rect
             class="${VARIANT_STATUS_CLASS_MAP[VERDICT_VARIANT_STATUS_MAP[status]]}"
