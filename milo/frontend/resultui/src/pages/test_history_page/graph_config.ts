@@ -106,6 +106,15 @@ export class TestHistoryGraphConfigElement extends MiloBaseElement {
           />
           <label for="flaky-toggle" style="color: var(--warning-color);">Flaky</label>
         </div>
+        <div class="filter">
+          <input
+            id="exonerated-toggle"
+            type="checkbox"
+            ?checked=${this.pageState.countExonerated}
+            @change=${(e: Event) => (this.pageState.countExonerated = (e.target as HTMLInputElement).checked)}
+          />
+          <label for="exonerated-toggle" style="color: var(--exonerated-color);">Exonerated</label>
+        </div>
       </div>
     `;
   }
@@ -140,7 +149,7 @@ export class TestHistoryGraphConfigElement extends MiloBaseElement {
 
       #count-filter {
         display: grid;
-        grid-template-columns: auto auto auto 1fr;
+        grid-template-columns: auto auto auto auto 1fr;
         grid-gap: 8px;
         height: 100%;
         line-height: 32px;

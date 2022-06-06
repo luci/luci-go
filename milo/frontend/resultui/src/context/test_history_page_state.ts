@@ -102,6 +102,7 @@ export class TestHistoryPageState {
   @observable.ref countUnexpected = true;
   @observable.ref countUnexpectedlySkipped = true;
   @observable.ref countFlaky = true;
+  @observable.ref countExonerated = true;
 
   // Keep track of the max and min duration to render the duration graph.
   @observable.ref durationInitialized = false;

@@ -31,6 +31,7 @@ const ICON_PADDING = (CELL_SIZE - 24) / 2;
 
 const STATUS_ORDER = [
   TestVerdictStatus.EXPECTED,
+  TestVerdictStatus.EXONERATED,
   TestVerdictStatus.FLAKY,
   TestVerdictStatus.UNEXPECTEDLY_SKIPPED,
   TestVerdictStatus.UNEXPECTED,
@@ -134,7 +135,8 @@ Click to view test details.</title>`;
     const count =
       (this.pageState.countUnexpected ? counts[TestVariantStatus.UNEXPECTED] : 0) +
       (this.pageState.countUnexpectedlySkipped ? counts[TestVariantStatus.UNEXPECTEDLY_SKIPPED] : 0) +
-      (this.pageState.countFlaky ? counts[TestVariantStatus.FLAKY] : 0);
+      (this.pageState.countFlaky ? counts[TestVariantStatus.FLAKY] : 0) +
+      (this.pageState.countExonerated ? counts[TestVariantStatus.EXONERATED] : 0);
 
     return svg`
       ${STATUS_ORDER.map((status) => {
