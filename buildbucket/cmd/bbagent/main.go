@@ -635,7 +635,7 @@ func processExeArgs(input *bbpb.BBAgentArgs, check func(err error)) []string {
 		// TODO(iannucci): delete me with ExecutablePath.
 		payloadPath, exeCmd = path.Split(input.ExecutablePath)
 	} else {
-		for p, purpose := range input.Build.Infra.Buildbucket.Agent.Purposes {
+		for p, purpose := range input.Build.GetInfra().GetBuildbucket().GetAgent().GetPurposes() {
 			if purpose == bbpb.BuildInfra_Buildbucket_Agent_PURPOSE_EXE_PAYLOAD {
 				payloadPath = p
 				break
