@@ -52,6 +52,9 @@ service MiloInternal {
 
   // Get the statistics associated with a builder.
   rpc QueryBuilderStats(QueryBuilderStatsRequest) returns (BuilderStats) {};
+
+  // Check whether the users has the specified permissions in the given realm.
+  rpc BatchCheckPermissions(BatchCheckPermissionsRequest) returns (BatchCheckPermissionsResponse) {};
 }
 
 // A request message for `QueryBlamelist` RPC.
@@ -231,4 +234,24 @@ message BuilderStats {
 
   // The number of running builds associated with the builder.
   int32 running_builds_count = 3;
+}
+
+// A request message for `BatchCheckPermissions` RPC.
+message BatchCheckPermissionsRequest {
+  // Required. The realm to check the permissions against.
+  string realm = 1;
+
+  // String representation of the permissions.
+  //
+  // Permissions must have the following format: `<service>.<subject>.<verb>`.
+  repeated string permissions = 2;
+}
+
+// A response message for `BatchCheckPermissions` RPC.
+message BatchCheckPermissionsResponse {
+  // A map of permission check results.
+  //
+  // The key is the permission name and the value is whether the user has the
+  // permission.
+  map<string, bool> results = 1;
 }
