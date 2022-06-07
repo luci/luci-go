@@ -169,20 +169,26 @@ func runForever(ctx context.Context, ar *archivist.Archivist, flags *CommandLine
 		nc, cancel := context.WithDeadline(ctx, job.deadline)
 		defer cancel()
 
-		startTime := clock.Now(ctx)
+		nc = logging.SetFields(nc, logging.Fields{
+			"project": job.task.Project,
+			"id":      job.task.Id,
+		})
+
+		startTime := clock.Now(nc)
 		err := ar.ArchiveTask(nc, job.task)
-		duration := clock.Now(ctx).Sub(startTime)
+		duration := clock.Now(nc).Sub(startTime)
+
 		tsTaskProcessingTime.Add(ctx, float64(duration.Nanoseconds())/1000000, err == nil)
 
 		if err == nil {
 			select {
 			case ackChan.C <- job.task:
 			case <-ctx.Done():
-				logging.Errorf(ctx, "Failed to ACK task %v due to context: %s", job.task, ctx.Err())
+				logging.Errorf(nc, "Failed to ACK task %v due to context: %s", job.task, ctx.Err())
 			}
 		} else {
 			tsNackCount.Add(ctx, 1)
-			logging.Errorf(ctx, "Failed to archive task %v: %s", job.task, err)
+			logging.Errorf(nc, "Failed to archive task %v: %s", job.task, err)
 		}
 
 		return nil
@@ -254,6 +260,7 @@ func runForever(ctx context.Context, ar *archivist.Archivist, flags *CommandLine
 func googleStorageClient(ctx context.Context, luciProject string) (gs.Client, error) {
 	// TODO(vadimsh): Switch to AsProject + WithProject(project) once
 	// we are ready to roll out project scoped service accounts in Logdog.
+	logging.Debugf(ctx, "Creating new GCS client")
 	tr, err := auth.GetRPCTransport(ctx, auth.AsSelf, auth.WithScopes(auth.CloudOAuthScopes...))
 	if err != nil {
 		return nil, errors.Annotate(err, "failed to get the authenticating transport").Err()

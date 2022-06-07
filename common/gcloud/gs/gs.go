@@ -48,7 +48,8 @@ var (
 //
 // Non-production implementations are used primarily for testing.
 type Client interface {
-	io.Closer
+	// Close closes the connection to Google Storage.
+	Close() error
 
 	// Attrs retrieves Object attributes for a given path.
 	Attrs(p Path) (*gs.ObjectAttrs, error)
@@ -61,9 +62,13 @@ type Client interface {
 	// The supplied offset must be >= 0, or else this function will panic.
 	//
 	// If the supplied length is <0, no upper byte bound will be set.
+	//
+	// The reader inherits the context of the client.
 	NewReader(p Path, offset, length int64) (io.ReadCloser, error)
 
 	// NewWriter instantiates a new Writer instance for the named bucket/path.
+	//
+	// The writer inherits the context of the client.
 	NewWriter(p Path) (Writer, error)
 
 	// Delete deletes the object at the specified path.
@@ -82,8 +87,8 @@ type Client interface {
 // prodGSObject is an implementation of Client interface using the production
 // Google Storage client.
 type prodClient struct {
-	context.Context
-
+	// ctx is used for deadlines and logging. Also referenced by prodWriter.
+	ctx context.Context
 	// rt is the RoundTripper to use, or nil for the cloud service default.
 	rt http.RoundTripper
 	// baseClient is a basic Google Storage client instance. It is used for
@@ -96,10 +101,13 @@ type prodClient struct {
 //
 // The supplied RoundTripper will be used to make connections. If nil, the
 // default HTTP client will be used.
+//
+// The given context is used for all logging and for overall deadline and
+// cancellation. The client is no longer usable when this context is canceled.
 func NewProdClient(ctx context.Context, rt http.RoundTripper) (Client, error) {
 	c := prodClient{
-		Context: ctx,
-		rt:      rt,
+		ctx: ctx,
+		rt:  rt,
 	}
 	var err error
 	c.baseClient, err = c.newClient()
@@ -120,7 +128,6 @@ func (c *prodClient) NewWriter(p Path) (Writer, error) {
 	}
 
 	return &prodWriter{
-		Context: c,
 		client:  c,
 		bucket:  bucket,
 		relpath: filename,
@@ -132,7 +139,7 @@ func (c *prodClient) Attrs(p Path) (*gs.ObjectAttrs, error) {
 	if err != nil {
 		return nil, err
 	}
-	return obj.Attrs(c)
+	return obj.Attrs(c.ctx)
 }
 
 func (c *prodClient) Objects(p Path) ([]*gs.ObjectAttrs, error) {
@@ -140,7 +147,7 @@ func (c *prodClient) Objects(p Path) ([]*gs.ObjectAttrs, error) {
 	query := &gs.Query{Prefix: p.Filename()}
 
 	var attrs []*gs.ObjectAttrs
-	it := bkt.Objects(c.Context, query)
+	it := bkt.Objects(c.ctx, query)
 	for {
 		attr, err := it.Next()
 		if err == iterator.Done {
@@ -163,7 +170,7 @@ func (c *prodClient) NewReader(p Path, offset, length int64) (io.ReadCloser, err
 	if err != nil {
 		return nil, err
 	}
-	return obj.NewRangeReader(c, offset, length)
+	return obj.NewRangeReader(c.ctx, offset, length)
 }
 
 func (c *prodClient) Rename(src, dst Path) error {
@@ -178,8 +185,8 @@ func (c *prodClient) Rename(src, dst Path) error {
 	}
 
 	// First stage: CopyTo
-	err = retry.Retry(c, transient.Only(retry.Default), func() error {
-		if _, err := dstObj.CopierFrom(srcObj).Run(c); err != nil {
+	err = retry.Retry(c.ctx, transient.Only(retry.Default), func() error {
+		if _, err := dstObj.CopierFrom(srcObj).Run(c.ctx); err != nil {
 			// The storage library doesn't return gs.ErrObjectNotExist when Delete
 			// returns a 404. Catch that explicitly.
 			// 403 errors are non-transient.
@@ -197,7 +204,7 @@ func (c *prodClient) Rename(src, dst Path) error {
 			"delay":      d,
 			"src":        src,
 			"dst":        dst,
-		}.Warningf(c, "Transient error copying GS file. Retrying...")
+		}.Warningf(c.ctx, "Transient error copying GS file. Retrying...")
 	})
 	if err != nil {
 		return err
@@ -208,7 +215,7 @@ func (c *prodClient) Rename(src, dst Path) error {
 		log.Fields{
 			log.ErrorKey: err,
 			"path":       src,
-		}.Warningf(c, "(Non-fatal) Failed to delete source during rename.")
+		}.Warningf(c.ctx, "(Non-fatal) Failed to delete source during rename.")
 	}
 	return nil
 }
@@ -223,8 +230,8 @@ func (c *prodClient) Delete(p Path) error {
 }
 
 func (c *prodClient) deleteObject(o *gs.ObjectHandle) error {
-	return retry.Retry(c, transient.Only(retry.Default), func() error {
-		if err := o.Delete(c); err != nil {
+	return retry.Retry(c.ctx, transient.Only(retry.Default), func() error {
+		if err := o.Delete(c.ctx); err != nil {
 			// The storage library doesn't return gs.ErrObjectNotExist when Delete
 			// returns a 404. Catch that explicitly.
 			if isNotFoundError(err) {
@@ -245,19 +252,18 @@ func (c *prodClient) deleteObject(o *gs.ObjectHandle) error {
 		log.Fields{
 			log.ErrorKey: err,
 			"delay":      d,
-		}.Warningf(c, "Transient error deleting file. Retrying...")
+		}.Warningf(c.ctx, "Transient error deleting file. Retrying...")
 	})
 }
 
 func (c *prodClient) newClient() (*gs.Client, error) {
-	var optsArray [1]option.ClientOption
-	opts := optsArray[:0]
+	var opts []option.ClientOption
 	if c.rt != nil {
-		opts = append(opts, option.WithHTTPClient(&http.Client{
-			Transport: c.rt,
-		}))
+		opts = []option.ClientOption{
+			option.WithHTTPClient(&http.Client{Transport: c.rt}),
+		}
 	}
-	return gs.NewClient(c, opts...)
+	return gs.NewClient(c.ctx, opts...)
 }
 
 func (c *prodClient) handleForPath(p Path) (*gs.ObjectHandle, error) {

@@ -15,7 +15,6 @@
 package gs
 
 import (
-	"context"
 	"io"
 	"time"
 
@@ -34,11 +33,9 @@ type Writer interface {
 }
 
 type prodWriter struct {
-	context.Context
-
 	// Writer is the active Writer instance. It will be nil until the first Write
 	// invocation.
-	*gs.Writer
+	writer *gs.Writer
 
 	client  *prodClient
 	bucket  string
@@ -48,14 +45,14 @@ type prodWriter struct {
 
 var _ Writer = (*prodWriter)(nil)
 
-// Write writes data with exponenital backoff/retry.
+// Write writes data with exponential backoff/retry.
 func (w *prodWriter) Write(d []byte) (a int, err error) {
-	if w.Writer == nil {
-		w.Writer = w.client.baseClient.Bucket(w.bucket).Object(w.relpath).NewWriter(w)
+	if w.writer == nil {
+		w.writer = w.client.baseClient.Bucket(w.bucket).Object(w.relpath).NewWriter(w.client.ctx)
 	}
 
-	err = retry.Retry(w, transient.Only(retry.Default), func() (ierr error) {
-		a, ierr = w.Writer.Write(d)
+	err = retry.Retry(w.client.ctx, transient.Only(retry.Default), func() (ierr error) {
+		a, ierr = w.writer.Write(d)
 
 		// Assume all Write errors are transient.
 		ierr = transient.Tag.Apply(ierr)
@@ -66,7 +63,7 @@ func (w *prodWriter) Write(d []byte) (a int, err error) {
 			"delay":      d,
 			"bucket":     w.bucket,
 			"path":       w.relpath,
-		}.Warningf(w, "Transient error on GS write. Retrying...")
+		}.Warningf(w.client.ctx, "Transient error on GS write. Retrying...")
 	})
 
 	w.count += int64(a)
@@ -74,19 +71,19 @@ func (w *prodWriter) Write(d []byte) (a int, err error) {
 }
 
 func (w *prodWriter) Close() error {
-	if w.Writer == nil {
+	if w.writer == nil {
 		return nil
 	}
 
-	return retry.Retry(w, transient.Only(retry.Default),
-		w.Writer.Close,
+	return retry.Retry(w.client.ctx, transient.Only(retry.Default),
+		w.writer.Close,
 		func(err error, d time.Duration) {
 			log.Fields{
 				log.ErrorKey: err,
 				"delay":      d,
 				"bucket":     w.bucket,
 				"path":       w.relpath,
-			}.Warningf(w, "Transient error closing GS Writer. Retrying...")
+			}.Warningf(w.client.ctx, "Transient error closing GS Writer. Retrying...")
 		})
 }
 
