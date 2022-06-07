@@ -16,8 +16,6 @@ import stableStringify from 'fast-json-stable-stringify';
 
 import { cached, CacheOption } from '../libs/cached_fn';
 import { PrpcClientExt } from '../libs/prpc_client_ext';
-import { parseProtoDuration } from '../libs/time_utils';
-import { timeout } from '../libs/utils';
 
 /* eslint-disable max-len */
 /**
@@ -26,6 +24,9 @@ import { timeout } from '../libs/utils';
  * source: https://chromium.googlesource.com/infra/luci/luci-go/+/04a118946d13ad326c44dba9a635116ff7f31c4e/buildbucket/proto/builds_service.proto
  */
 /* eslint-enable max-len */
+
+export const CANCEL_BUILD_PERM = 'buildbucket.builds.cancel';
+export const ADD_BUILD_PERM = 'buildbucket.builds.add';
 
 export const TEST_PRESENTATION_KEY = '$recipe_engine/resultdb/test_presentation';
 export const BLAMELIST_PIN_KEY = '$recipe_engine/milo/blamelist_pins';
@@ -301,20 +302,6 @@ export interface Executable {
   readonly cmd: readonly string[];
 }
 
-export interface PermittedActionsRequest {
-  readonly resourceKind: string;
-  readonly resourceIds: readonly string[];
-}
-
-export interface PermittedActionsResponse {
-  permitted: { [key: string]: ResourcePermissions };
-  validityDuration: string;
-}
-
-export interface ResourcePermissions {
-  readonly actions?: readonly string[];
-}
-
 export interface CancelBuildRequest {
   id: string;
   summaryMarkdown: string;
@@ -398,36 +385,5 @@ export class BuildersService {
 
   async getBuilder(req: GetBuilderRequest, cacheOpt: CacheOption = {}) {
     return (await this.cachedCallFn(cacheOpt, 'GetBuilder', req)) as BuilderItem;
-  }
-}
-
-export class AccessService {
-  private static SERVICE = 'access.Access';
-
-  private readonly cachedPermittedActionsFn: (
-    cacheOpt: CacheOption,
-    req: PermittedActionsRequest
-  ) => Promise<PermittedActionsResponse>;
-
-  constructor(client: PrpcClientExt) {
-    // TODO(weiweilin): access service can be unreliable.
-    // Try to cache this in service worker or localStorage.
-    this.cachedPermittedActionsFn = cached(
-      async (req: PermittedActionsRequest) => {
-        return (await client.call(AccessService.SERVICE, 'PermittedActions', req)) as PermittedActionsResponse;
-      },
-      {
-        key: (req) => stableStringify(req),
-        expire: async (_req, resPromise) => {
-          const res = await resPromise;
-          await timeout(parseProtoDuration(res.validityDuration));
-          return;
-        },
-      }
-    );
-  }
-
-  async permittedActions(req: PermittedActionsRequest, cacheOpt: CacheOption = {}) {
-    return this.cachedPermittedActionsFn(cacheOpt, req);
   }
 }

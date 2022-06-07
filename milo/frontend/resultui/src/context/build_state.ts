@@ -24,10 +24,12 @@ import { attachTags, InnerTag, TAG_SOURCE } from '../libs/tag';
 import { unwrapObservable } from '../libs/unwrap_observable';
 import { BuildExt } from '../models/build_ext';
 import {
+  ADD_BUILD_PERM,
   Build,
   BUILD_FIELD_MASK,
   BuilderID,
   BuilderItem,
+  CANCEL_BUILD_PERM,
   GetBuildRequest,
   GitilesCommit,
   SEARCH_BUILD_FIELD_MASK,
@@ -308,16 +310,16 @@ export class BuildState {
     return unwrapObservable(this.builder$, null);
   }
 
-  @computed private get bucketResourceId() {
+  @computed private get realm() {
     if (!this.builderId) {
       return null;
     }
-    return `luci.${this.builderId.project}.${this.builderId.bucket}`;
+    return `${this.builderId.project}:${this.builderId.bucket}`;
   }
 
   @computed({ keepAlive: true })
   private get permittedActions$() {
-    if (this.isDisposed || !this.appState.accessService || !this.bucketResourceId) {
+    if (this.isDisposed || !this.appState.milo || !this.realm) {
       // Returns a promise that never resolves when the dependencies aren't
       // ready.
       return fromPromise(Promise.race([]));
@@ -327,17 +329,17 @@ export class BuildState {
     this.appState.timestamp;
 
     return fromPromise(
-      this.appState.accessService?.permittedActions({
-        resourceKind: 'bucket',
-        resourceIds: [this.bucketResourceId],
+      this.appState.milo.batchCheckPermissions({
+        realm: this.realm,
+        permissions: [CANCEL_BUILD_PERM, ADD_BUILD_PERM],
       })
     );
   }
 
   @computed
-  get permittedActions(): Set<string> {
+  get permittedActions(): { readonly [key: string]: boolean } {
     const permittedActionRes = unwrapObservable(this.permittedActions$, null);
-    return new Set(permittedActionRes?.permitted[this.bucketResourceId!].actions || []);
+    return permittedActionRes?.results || {};
   }
 
   @computed({ keepAlive: true })

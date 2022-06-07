@@ -20,7 +20,7 @@ import { MAY_REQUIRE_SIGNIN } from '../common_tags';
 import { createContextLink } from '../libs/context';
 import { PrpcClientExt } from '../libs/prpc_client_ext';
 import { attachTags } from '../libs/tag';
-import { AccessService, BuilderID, BuildersService, BuildsService } from '../services/buildbucket';
+import { BuilderID, BuildersService, BuildsService } from '../services/buildbucket';
 import { AuthState, MiloInternal } from '../services/milo_internal';
 import { ResultDb } from '../services/resultdb';
 import { TestHistoryService } from '../services/weetbix';
@@ -149,14 +149,6 @@ export class AppState {
     return new BuildersService(this.makeClient({ host: CONFIGS.BUILDBUCKET.HOST }));
   }
 
-  @computed({ keepAlive: true })
-  get accessService(): AccessService | null {
-    if (this.isDisposed || this.userIdentity === null) {
-      return null;
-    }
-    return new AccessService(this.makeClient({ host: CONFIGS.BUILDBUCKET.HOST }));
-  }
-
   /**
    * Perform cleanup.
    * Must be called before the object is GCed.
@@ -170,7 +162,6 @@ export class AppState {
     this.milo;
     this.buildsService;
     this.buildersService;
-    this.accessService;
   }
 
   private makeClient(opts: PrpcClientOptions) {

@@ -121,6 +121,15 @@ export interface BuilderStats {
   readonly runningBuildsCount?: number;
 }
 
+export interface BatchCheckPermissionsRequest {
+  readonly realm: string;
+  readonly permissions: readonly string[];
+}
+
+export interface BatchCheckPermissionsResponse {
+  readonly results: { readonly [key: string]: boolean };
+}
+
 export class MiloInternal {
   private static SERVICE = 'luci.milo.v1.MiloInternal';
   private readonly cachedCallFn: (opt: CacheOption, method: string, message: object) => Promise<unknown>;
@@ -152,6 +161,10 @@ export class MiloInternal {
 
   async queryBuilderStats(req: QueryBuilderStatsRequest, cacheOpt: CacheOption = {}) {
     return (await this.cachedCallFn(cacheOpt, 'QueryBuilderStats', req)) as BuilderStats;
+  }
+
+  async batchCheckPermissions(req: BatchCheckPermissionsRequest, cacheOpt: CacheOption = {}) {
+    return (await this.cachedCallFn(cacheOpt, 'BatchCheckPermissions', req)) as BatchCheckPermissionsResponse;
   }
 }
 

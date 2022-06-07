@@ -50,7 +50,7 @@ import { renderMarkdown } from '../../libs/markdown_utils';
 import { sanitizeHTML } from '../../libs/sanitize_html';
 import { displayDuration } from '../../libs/time_utils';
 import { router } from '../../routes';
-import { BuildStatus, GitilesCommit } from '../../services/buildbucket';
+import { ADD_BUILD_PERM, BuildStatus, CANCEL_BUILD_PERM, GitilesCommit } from '../../services/buildbucket';
 import { createTVPropGetter, getPropKeyLabel } from '../../services/resultdb';
 import colorClasses from '../../styles/color_classes.css';
 import commonStyle from '../../styles/common_style.css';
@@ -92,7 +92,7 @@ export class OverviewTabElement extends MobxLitElement {
   private renderActionButtons() {
     const build = this.buildState.build!;
 
-    const canRetry = this.buildState.permittedActions.has('ADD_BUILD');
+    const canRetry = this.buildState.permittedActions[ADD_BUILD_PERM] ?? false;
 
     if (build.endTime) {
       return html`
@@ -105,7 +105,7 @@ export class OverviewTabElement extends MobxLitElement {
       `;
     }
 
-    const canCancel = build.cancelTime === null && this.buildState.permittedActions.has('CANCEL_BUILD');
+    const canCancel = build.cancelTime === null && this.buildState.permittedActions[CANCEL_BUILD_PERM];
     let tooltip = '';
     if (!canCancel) {
       tooltip =
