@@ -14,6 +14,7 @@
 
 // Package reflectutil has an arbitrary assortment of helpers for dealing with
 // protobuf reflection including:
-//   * Path for describing paths within proto Messages.
-//   * MapRangeSorted for deterministically iterating over proto Maps.
+//   * `Path` for describing paths within proto Messages.
+//   * `MapRangeSorted` for deterministically iterating over proto Maps.
+//   * `ShallowCopy` to safely make shallow copies of messages.
 package reflectutil
