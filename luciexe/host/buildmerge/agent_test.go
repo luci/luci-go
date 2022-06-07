@@ -25,6 +25,7 @@ import (
 
 	bbpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/clock/testclock"
+	"go.chromium.org/luci/common/proto/reflectutil"
 	"go.chromium.org/luci/logdog/api/logpb"
 	"go.chromium.org/luci/logdog/common/types"
 	"go.chromium.org/luci/luciexe"
@@ -176,11 +177,11 @@ func TestAgent(t *testing.T) {
 			}))
 
 			mergedBuild := <-merger.MergedBuildC
-			expect := *base
+			expect := reflectutil.ShallowCopy(base).(*bbpb.Build)
 			expect.Steps = append(expect.Steps, &bbpb.Step{Name: "Hello"})
 			expect.UpdateTime = now
 			expect.Output.Logs[0].Url = "url://u/stdout"
-			So(mergedBuild, ShouldResembleProto, &expect)
+			So(mergedBuild, ShouldResembleProto, expect)
 
 			merger.Close()
 			<-merger.MergedBuildC // final build
@@ -201,11 +202,11 @@ func TestAgent(t *testing.T) {
 					{Name: "Hello"},
 				},
 			}))
-			expect := *base
+			expect := reflectutil.ShallowCopy(base).(*bbpb.Build)
 			expect.Steps = append(expect.Steps, &bbpb.Step{Name: "Hello"})
 			expect.UpdateTime = now
 			expect.Output.Logs[0].Url = "url://u/stdout"
-			So(<-merger.MergedBuildC, ShouldResembleProto, &expect)
+			So(<-merger.MergedBuildC, ShouldResembleProto, expect)
 
 			// order of updates doesn't matter, so we'll update the sub build first
 			subTrack.handleNewData(mkDgram(&bbpb.Build{
@@ -214,7 +215,7 @@ func TestAgent(t *testing.T) {
 				},
 			}))
 			// the root stream doesn't have the merge step yet, so it doesn't show up.
-			So(<-merger.MergedBuildC, ShouldResembleProto, &expect)
+			So(<-merger.MergedBuildC, ShouldResembleProto, expect)
 
 			// Ok, now add the merge step
 			rootTrack.handleNewData(mkDgram(&bbpb.Build{
@@ -233,7 +234,7 @@ func TestAgent(t *testing.T) {
 			})
 			expect.Steps = append(expect.Steps, &bbpb.Step{Name: "Merge|SubStep"})
 			expect.UpdateTime = now
-			So(<-merger.MergedBuildC, ShouldResembleProto, &expect)
+			So(<-merger.MergedBuildC, ShouldResembleProto, expect)
 
 			Convey(`and shut down`, func() {
 				merger.Close()
@@ -250,7 +251,7 @@ func TestAgent(t *testing.T) {
 						step.SummaryMarkdown = "\n\nError in build protocol: Expected a terminal build status, got STATUS_UNSPECIFIED."
 					}
 				}
-				So(getFinal(), ShouldResembleProto, &expect)
+				So(getFinal(), ShouldResembleProto, expect)
 			})
 
 			Convey(`can handle recursive merge steps`, func() {
@@ -283,7 +284,7 @@ func TestAgent(t *testing.T) {
 						Name: "Merge|SuperDeep|Hi!",
 					},
 				)
-				So(<-merger.MergedBuildC, ShouldResembleProto, &expect)
+				So(<-merger.MergedBuildC, ShouldResembleProto, expect)
 
 				Convey(`and shut down`, func() {
 					merger.Close()
@@ -302,7 +303,7 @@ func TestAgent(t *testing.T) {
 							step.SummaryMarkdown = "step was never finalized; did the build crash?"
 						}
 					}
-					So(getFinal(), ShouldResembleProto, &expect)
+					So(getFinal(), ShouldResembleProto, expect)
 				})
 			})
 
@@ -359,7 +360,7 @@ func TestAgent(t *testing.T) {
 							SummaryMarkdown: "bad log url \"emoji 💩 is not a valid url\": illegal character ( ) at index 5",
 						},
 					)
-					So(getFinal(), ShouldResembleProto, &expect)
+					So(getFinal(), ShouldResembleProto, expect)
 				})
 			})
 		})

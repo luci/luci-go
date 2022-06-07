@@ -65,6 +65,7 @@ func (e *Executor) Run(ctx context.Context, command []string) error {
 	}
 
 	ctx, cancelFunc := context.WithCancel(ctx)
+	defer cancelFunc()
 	cmd := exec.CommandContext(ctx, command[0], command[1:]...)
 
 	// STDOUT
@@ -123,7 +124,6 @@ func (e *Executor) Run(ctx context.Context, command []string) error {
 	defer proc.Finish()
 
 	if err := proc.RunStreams(streams); err != nil {
-		cancelFunc()
 		return fmt.Errorf("failed to process bootstrapped I/O: %v", err)
 	}
 

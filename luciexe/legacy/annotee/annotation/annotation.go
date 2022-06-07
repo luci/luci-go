@@ -906,7 +906,7 @@ func (as *Step) SetNestLevel(l int) bool {
 // AddLogdogStreamLink adds a LogDog stream link to this Step's links list.
 func (as *Step) AddLogdogStreamLink(server, label string, prefix, name types.StreamName) {
 	link := as.getOrCreateLinkForLabel(label)
-	link.Value = &annopb.AnnotationLink_LogdogStream{&annopb.LogdogStream{
+	link.Value = &annopb.AnnotationLink_LogdogStream{LogdogStream: &annopb.LogdogStream{
 		Name:   string(name),
 		Server: server,
 		Prefix: string(prefix),
@@ -917,7 +917,7 @@ func (as *Step) AddLogdogStreamLink(server, label string, prefix, name types.Str
 func (as *Step) AddURLLink(label, alias, url string) {
 	link := as.getOrCreateLinkForLabel(label)
 	link.AliasLabel = alias
-	link.Value = &annopb.AnnotationLink_Url{url}
+	link.Value = &annopb.AnnotationLink_Url{Url: url}
 }
 
 func (as *Step) getOrCreateLinkForLabel(label string) *annopb.AnnotationLink {

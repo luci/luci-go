@@ -25,6 +25,7 @@ import (
 
 	bbpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/proto/reflectutil"
 	"go.chromium.org/luci/common/sync/dispatcher"
 	"go.chromium.org/luci/common/sync/dispatcher/buffer"
 	"go.chromium.org/luci/logdog/api/logpb"
@@ -135,9 +136,7 @@ func (t *buildStateTracker) processDataUnlocked(state *buildState, data []byte) 
 			if state.build == nil {
 				parsedBuild = &bbpb.Build{}
 			} else {
-				// make a shallow copy of the latest build
-				buildVal := *state.build
-				parsedBuild = &buildVal
+				parsedBuild = reflectutil.ShallowCopy(state.build).(*bbpb.Build)
 			}
 		}
 		setErrorOnBuild(parsedBuild, err)
@@ -228,8 +227,7 @@ func (t *buildStateTracker) finalize() {
 			Status:          bbpb.Status_INFRA_FAILURE,
 		}
 	} else {
-		buildVal := *state.build
-		state.build = &buildVal
+		state.build = reflectutil.ShallowCopy(state.build).(*bbpb.Build)
 	}
 	processFinalBuild(t.merger.clockNow(), state.build)
 
@@ -254,8 +252,7 @@ func (t *buildStateTracker) parseAndSend(data *buffer.Batch) error {
 
 	// if we didn't update state.build, make a shallow copy.
 	if oldBuild == state.build {
-		buildVal := *state.build
-		state.build = &buildVal
+		state.build = reflectutil.ShallowCopy(state.build).(*bbpb.Build)
 	}
 
 	if state.closed {

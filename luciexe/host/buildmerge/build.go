@@ -23,6 +23,7 @@ import (
 	bbpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/buildbucket/protoutil"
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/proto/reflectutil"
 	"go.chromium.org/luci/luciexe"
 )
 
@@ -80,19 +81,18 @@ func processFinalBuild(now *timestamppb.Timestamp, build *bbpb.Build) {
 			copy(newSteps, build.Steps)
 		}
 
-		// make a shallow copy of the step
-		sVal := *s
+		s = reflectutil.ShallowCopy(s).(*bbpb.Step)
 		if !terminalStatus {
-			sVal.Status = bbpb.Status_CANCELED
-			if sVal.SummaryMarkdown != "" {
-				sVal.SummaryMarkdown += "\n"
+			s.Status = bbpb.Status_CANCELED
+			if s.SummaryMarkdown != "" {
+				s.SummaryMarkdown += "\n"
 			}
-			sVal.SummaryMarkdown += "step was never finalized; did the build crash?"
+			s.SummaryMarkdown += "step was never finalized; did the build crash?"
 		}
-		if sVal.EndTime == nil {
-			sVal.EndTime = now
+		if s.EndTime == nil {
+			s.EndTime = now
 		}
-		newSteps[i] = &sVal
+		newSteps[i] = s
 	}
 	build.Steps = newSteps
 	build.UpdateTime = now

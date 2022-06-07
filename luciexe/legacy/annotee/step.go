@@ -327,7 +327,7 @@ func (p *stepConverter) convertLinks(c context.Context, ann *annotpb.Step) ([]*p
 		aLinks = append(aLinks,
 			&annotpb.AnnotationLink{
 				Label: "stdout",
-				Value: &annotpb.AnnotationLink_LogdogStream{ann.StdoutStream},
+				Value: &annotpb.AnnotationLink_LogdogStream{LogdogStream: ann.StdoutStream},
 			},
 		)
 	}
@@ -335,7 +335,7 @@ func (p *stepConverter) convertLinks(c context.Context, ann *annotpb.Step) ([]*p
 		aLinks = append(aLinks,
 			&annotpb.AnnotationLink{
 				Label: "stderr",
-				Value: &annotpb.AnnotationLink_LogdogStream{ann.StderrStream},
+				Value: &annotpb.AnnotationLink_LogdogStream{LogdogStream: ann.StderrStream},
 			},
 		)
 	}

@@ -47,6 +47,7 @@ import (
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/proto/reflectutil"
 	"go.chromium.org/luci/common/sync/dispatcher"
 	"go.chromium.org/luci/common/sync/dispatcher/buffer"
 	"go.chromium.org/luci/logdog/api/logpb"
@@ -293,7 +294,7 @@ func (a *Agent) sendMerge(_ *buffer.Batch) error {
 		builds[k] = build
 	}
 
-	base := *a.baseBuild // shallow copy; we only assign to top level fields
+	base := reflectutil.ShallowCopy(a.baseBuild).(*bbpb.Build)
 	base.Steps = nil
 	if stepCount > 0 {
 		base.Steps = make([]*bbpb.Step, 0, stepCount)
@@ -308,9 +309,7 @@ func (a *Agent) sendMerge(_ *buffer.Batch) error {
 		for _, step := range build.GetSteps() {
 			isMergeStep := luciexe.IsMergeStep(step)
 			if isMergeStep || len(stepNS) > 0 {
-				// make a shallow copy, much cheaper than proto.Clone
-				stepVal := *step
-				step = &stepVal
+				step = reflectutil.ShallowCopy(step).(*bbpb.Step)
 			}
 			baseName := step.Name
 			if len(stepNS) > 0 {
@@ -341,10 +340,10 @@ func (a *Agent) sendMerge(_ *buffer.Batch) error {
 		}
 		return build
 	}
-	updateBaseFromUserBuild(&base, insertSteps(nil, a.userRootURL))
+	updateBaseFromUserBuild(base, insertSteps(nil, a.userRootURL))
 
 	select {
-	case a.mergedBuildC <- &base:
+	case a.mergedBuildC <- base:
 	case <-a.ctx.Done():
 		a.Close()
 	}
