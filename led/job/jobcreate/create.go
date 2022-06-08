@@ -205,6 +205,11 @@ func getBbagentArgsFromCMD(ctx context.Context, cmd []string, authClient *http.C
 			}
 		}
 	}
+	if hostname == "" && bID == 0 {
+		// This could happen if the cmd was for a led build like
+		// `bbagent${EXECUTABLE_SUFFIX} --output ${ISOLATED_OUTDIR}/build.proto.json <encoded bbinput>`
+		return bbinput.Parse(cmd[len(cmd)-1])
+	}
 	if hostname == "" {
 		return nil, errors.New("host is required in cmd")
 	}

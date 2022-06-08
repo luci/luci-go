@@ -162,4 +162,12 @@ func TestCreateBBagent(t *testing.T) {
 			Build:                  bld,
 		})
 	})
+
+	Convey(`consume bbagent buildbucket swarming task led job`, t, func() {
+		jd := readTestFixture("bbagent_led")
+
+		So(jd.GetBuildbucket(), ShouldNotBeNil)
+		So(jd.Info().SwarmingHostname(), ShouldEqual, "chromium-swarm-dev.appspot.com")
+		So(jd.Info().TaskName(), ShouldEqual, "led: test_name")
+	})
 }
