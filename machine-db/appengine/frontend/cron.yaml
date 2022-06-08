@@ -1,8 +1,0 @@
-cron:
-- description: "Config importer"
-  url: /internal/cron/import-config
-  schedule: every 10 minutes
-
-- description: "tsmon housekeeping task"
-  url: /internal/cron/ts_mon/housekeeping
-  schedule: every 1 minutes

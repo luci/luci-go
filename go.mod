@@ -18,10 +18,7 @@ require (
 	cloud.google.com/go/spanner v1.32.0
 	cloud.google.com/go/storage v1.22.1
 	contrib.go.opencensus.io/exporter/stackdriver v0.13.12
-	github.com/DATA-DOG/go-sqlmock v1.5.0
-	github.com/Masterminds/squirrel v1.5.3
 	github.com/Microsoft/go-winio v0.5.2
-	github.com/VividCortex/mysqlerr v1.0.0
 	github.com/alicebob/miniredis/v2 v2.21.0
 	github.com/bazelbuild/buildtools v0.0.0-20220510163207-df8cabe96863
 	github.com/bazelbuild/remote-apis v0.0.0-20220510175640-3b4b64021035
@@ -30,7 +27,6 @@ require (
 	github.com/dgraph-io/badger/v3 v3.2103.2
 	github.com/dustin/go-humanize v1.0.0
 	github.com/envoyproxy/protoc-gen-validate v0.6.7
-	github.com/go-sql-driver/mysql v1.6.0
 	github.com/golang/mock v1.6.0
 	github.com/golang/protobuf v1.5.2
 	github.com/gomodule/redigo v1.8.8
@@ -98,8 +94,6 @@ require (
 	github.com/jmespath/go-jmespath v0.4.0 // indirect
 	github.com/jtolds/gls v4.20.0+incompatible // indirect
 	github.com/kr/pretty v0.3.0 // indirect
-	github.com/lann/builder v0.0.0-20180802200727-47ae307949d0 // indirect
-	github.com/lann/ps v0.0.0-20150810152359-62de8c46ede0 // indirect
 	github.com/lyft/protoc-gen-star v0.6.0 // indirect
 	github.com/mattn/go-colorable v0.1.12 // indirect
 	github.com/mattn/go-isatty v0.0.14 // indirect
