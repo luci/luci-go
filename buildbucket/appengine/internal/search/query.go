@@ -253,6 +253,9 @@ func (q *Query) fetchOnBuild(ctx context.Context) (*pb.SearchBuildsResponse, err
 	if idHigh != 0 {
 		dq = dq.Lt("__key__", datastore.KeyForObj(ctx, &model.Build{ID: idHigh}))
 	}
+	if idLow != 0 && idHigh != 0 && idLow >= idHigh {
+		return &pb.SearchBuildsResponse{}, nil
+	}
 
 	if q.DescendantOf != 0 {
 		dq = dq.Eq("ancestor_ids", q.DescendantOf)

@@ -1093,6 +1093,22 @@ func TestFetchOnBuild(t *testing.T) {
 			So(actualRsp.Builds, ShouldResembleProto, expectedBuilds)
 			So(actualRsp.NextPageToken, ShouldBeEmpty)
 		})
+		Convey("found by start build id and pagination", func() {
+			req := &pb.SearchBuildsRequest{
+				Predicate: &pb.BuildPredicate{
+					Build: &pb.BuildRange{
+						StartBuildId: 199,
+					},
+				},
+				PageToken: "id>199",
+			}
+			query := NewQuery(req)
+			actualRsp, err := query.fetchOnBuild(ctx)
+			expectedRsp := &pb.SearchBuildsResponse{}
+
+			So(err, ShouldBeNil)
+			So(actualRsp, ShouldResembleProto, expectedRsp)
+		})
 	})
 }
 
