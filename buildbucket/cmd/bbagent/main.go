@@ -348,7 +348,10 @@ func mainImpl() int {
 			if err := prependPath(input.Build, cwd); err != nil {
 				return err
 			}
-			return installCipdPackages(ctx, input.Build, cwd)
+			if err = installCipdPackages(ctx, input.Build, cwd); err != nil {
+				return err
+			}
+			return downloadCasFiles(ctx, input.Build, cwd)
 		}()
 
 		if err != nil {
@@ -606,6 +609,23 @@ func resolveExe(path string) (string, error) {
 	return path, errors.Reason("cannot find .exe (%q) or .bat (%q)", me[0], me[1]).Err()
 }
 
+// processCmd resolves the cmd by constructing the absolute path and resolving
+// the exe suffix.
+func processCmd(path, cmd string) (string, error) {
+	relPath := filepath.Join(path, cmd)
+	absPath, err := filepath.Abs(relPath)
+	if err != nil {
+		return "", errors.Annotate(err, "absoluting %q", relPath).Err()
+	}
+	if runtime.GOOS == "windows" {
+		absPath, err = resolveExe(absPath)
+		if err != nil {
+			return "", errors.Annotate(err, "resolving %q", absPath).Err()
+		}
+	}
+	return absPath, nil
+}
+
 // processExeArgs processes the given "Executable" message into a single command
 // which bbagent will invoke as a luciexe.
 //
@@ -642,14 +662,8 @@ func processExeArgs(input *bbpb.BBAgentArgs, check func(err error)) []string {
 			}
 		}
 	}
-
-	exeRelPath := filepath.Join(payloadPath, exeCmd)
-	exePath, err := filepath.Abs(exeRelPath)
-	check(errors.Annotate(err, "absoluting exe path %q", exeRelPath).Err())
-	if runtime.GOOS == "windows" {
-		exePath, err = resolveExe(exePath)
-		check(errors.Annotate(err, "resolving %q", exePath).Err())
-	}
+	exePath, err := processCmd(payloadPath, exeCmd)
+	check(err)
 	exeArgs = append(exeArgs, exePath)
 	exeArgs = append(exeArgs, input.Build.Exe.Cmd[1:]...)
 
