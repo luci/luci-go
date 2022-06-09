@@ -595,31 +595,33 @@ message Verifiers {
       //
       // Examples:
       //
-      //   location_filters: {path_regexp: "/excluded/.+", exclude: true}
-      //   location_filters: {path_regexp: "/excluded/exception", exclude: false}
+      //   location_filters: {path_regexp: "excluded/.+", exclude: true}
+      //   location_filters: {path_regexp: "excluded/exception", exclude: false}
       //
       //     Result: files outside of the "excluded" directory will be
       //     included, and so will "excluded/exception" will, but other files
       //     in the "excluded" directory will not match.
       //
       //   location_filters: {path_regexp: ".*", exclude: false} // include all by default
-      //   location_filters: {host_regexp: "https://example.com",
+      //   location_filters: {host_regexp: "example.com",
       //                      project_regexp: "repo",
       //                      exclude: true}
-      //   location_filters: {host_regexp: "https://example.com",
+      //   location_filters: {host_regexp: "example.com",
       //                      project_regexp: "repo",
-      //                      path_regexp: "/all/one.txt",
+      //                      path_regexp: "all/one.txt",
       //                      exclude: false}
       //
       //     Result: files in the specified host and repo will not be included,
       //     except all/one.txt which will be included; files outside of the
       //     given host/repo will be included.
       message LocationFilter {
-        // Regular expressions to match host, repo, or path string. Default for
-        // each is ".*", matching anything. These patterns are each implicitly
-        // surrounded with "^...$".
+        // Pattern to match Gerrit host. Does not include scheme, which is
+        // always assumed to be "https://".
         string gerrit_host_regexp = 1;
+        // Pattern to match Gerrit project, e.g. "infra/luci/luci-go".
         string gerrit_project_regexp = 2;
+        // Pattern to match file path. This is a relative path from repo root
+        // (no starting slash).
         string path_regexp = 3;
         // If exclude is true, then if this filter matches a file, the file is
         // considered not included. (If all files are not included, then the

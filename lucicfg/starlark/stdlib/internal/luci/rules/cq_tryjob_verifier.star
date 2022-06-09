@@ -55,7 +55,7 @@ def _cq_tryjob_verifier(
     The CQ can examine a set of files touched by the CL and decide to skip this
     verifier. Touching a file means either adding, modifying or removing it.
 
-    This is controlled by `location_regexp` and `location_regexp_exclude`
+    This is controlled by the `location_regexp` and `location_regexp_exclude`
     fields:
 
       * If `location_regexp` is specified and no file in a CL matches any of the
@@ -82,6 +82,10 @@ def _cq_tryjob_verifier(
     This filtering currently cannot be used in any of the following cases:
 
       * For verifiers in CQ groups with `allow_submit_with_open_deps = True`.
+
+    NOTE: location_regexp and location_regexp_exclude are deprecated in favor
+    of location_filters.
+    TODO(crbug.com/1171945): Update this after location_filters is used.
 
     Please talk to CQ owners if these restrictions are limiting you.
 
@@ -340,7 +344,7 @@ def _cq_tryjob_verifier(
         validate.string("mode_allowlist", m)
 
     if cq.MODE_ANALYZER_RUN in mode_allowlist:
-        # TODO(crbug/1202952): Remove all following restrictions after tricium
+        # TODO(crbug/1202952): Remove all following restrictions after Tricium
         # is folded into CV.
         if location_regexp:
             re_for_gerrit_url_re = r"https://([a-z\-]+)\-review\.googlesource\.com/([a-z0-9_\-/]+)+/\[\+\]/"
@@ -367,10 +371,10 @@ def _cq_tryjob_verifier(
                 ext_to_gerrit_urls[ext].append(gerrit_url)
                 all_gerrit_urls.append(gerrit_url)
 
-            # Since all analyzers in Tricium config are watching the same set
+            # Since all analyzers in a Tricium config are watching the same set
             # of Gerrit repos, we need to make sure that for each extension
             # this analyzer is watching, it MUST specify the same set of Gerrit
-            # repos it is watching. It allows lucicfg to derive a homogeneous
+            # repos it is watching. This allows lucicfg to derive a homogeneous
             # set of watching Gerrit repos when generating Tricium config
             # later.
             #
@@ -400,6 +404,14 @@ def _cq_tryjob_verifier(
                          ))
         if location_regexp_exclude:
             fail('"analyzer currently can not be used together with  "location_regexp_exclude"')
+
+    # Fill location_filters in based on location_regexp and
+    # location_regexp_exclude.
+    location_filters = []
+    for r in location_regexp:
+        location_filters.append(_make_location_filter(r, exclude = False))
+    for r in location_regexp_exclude:
+        location_filters.append(_make_location_filter(r, exclude = True))
 
     if not equivalent_builder:
         if equivalent_builder_percentage != None:
@@ -440,6 +452,7 @@ def _cq_tryjob_verifier(
         ),
         "location_regexp": location_regexp,
         "location_regexp_exclude": location_regexp_exclude,
+        "location_filters": location_filters,
         "owner_whitelist": owner_whitelist,
         "mode_allowlist": mode_allowlist,
     })
@@ -471,5 +484,56 @@ def _cq_tryjob_verifier(
     graph.add_edge(parent = keys.cq_verifiers_root(), child = key)
 
     return graph.keyset(key)
+
+def _make_location_filter(regexp, exclude = False):
+    """Helper method to convert a location regexp to a location filter.
+
+    Note that this is not foolproof and is only meant to work with location
+    regexps have been found in actual configs; in theory, location regexps can
+    be any valid regular expression and could come in many different variations,
+    but in practice only some types of patterns have been found.
+
+    For example, the host/project + path separator is "/+/" and could be matched
+    by various different regexps but but in actual configs, "/[+]/" is always used.
+
+    Args:
+      regexp: A location_regexp string, which is a regexp that's meant to match
+        a string of the format: <gerrit_url>/<gerrit_project>/+/path>.
+      exclude: Whether this is an exclude rule.
+    """
+    if regexp == ".*" or regexp == ".+":
+        # Match everything.
+        return cq.location_filter(exclude = exclude)
+
+    # Pattern matching path but not at root directory, e.g ".*OWNERS".
+    if "[+]" not in regexp and (regexp.startswith(".*") or regexp.startswith(".+")):
+        return cq.location_filter(path_regexp = regexp, exclude = exclude)
+
+    # The most common case: match only path, starting at root directory, e.g.
+    # ".+/[+]/gpu/.+" or ".+[+]/dashboard/.+".
+    if regexp.startswith(".+/[+]/"):
+        return cq.location_filter(path_regexp = regexp[len(".+/[+]/"):], exclude = exclude)
+    if regexp.startswith(".+[+]/"):
+        return cq.location_filter(path_regexp = regexp[len(".+[+]/"):], exclude = exclude)
+
+    # Pattern matching exact host and project with path pattern, e.g.
+    # "https://chromium-review.googlesource.com/chromiumos/config/[+]/.+"
+    groups = re.submatches(r"(https?://[^/]+)/([/a-z0-9_/\-]+)/\[\+\]/(.*)", regexp)
+    if groups:
+        return cq.location_filter(
+            gerrit_host_regexp = groups[1],
+            gerrit_project_regexp = groups[2],
+            path_regexp = groups[3],
+            exclude = exclude,
+        )
+
+    # Pattern matching only project, like ".*manifest/[+].*"
+    groups = re.submatches(r"(.+)/\[\+\]/?\.[+*]", regexp)
+    if groups and not regexp.startswith("https://"):
+        return cq.location_filter(gerrit_project_regexp = groups[1], exclude = exclude)
+
+    # None of our possible cases above matched. Shouldn't happen.
+    fail("'location_regexp' didn't match any expected patterns, " +
+         "failed to convert to location_filters. Got %s." % regexp)
 
 cq_tryjob_verifier = lucicfg.rule(impl = _cq_tryjob_verifier)

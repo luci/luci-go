@@ -2351,7 +2351,7 @@ it is ignored.
 The CQ can examine a set of files touched by the CL and decide to skip this
 verifier. Touching a file means either adding, modifying or removing it.
 
-This is controlled by `location_regexp` and `location_regexp_exclude`
+This is controlled by the `location_regexp` and `location_regexp_exclude`
 fields:
 
   * If `location_regexp` is specified and no file in a CL matches any of the
@@ -2378,6 +2378,10 @@ here](https://github.com/google/re2/wiki/Syntax).
 This filtering currently cannot be used in any of the following cases:
 
   * For verifiers in CQ groups with `allow_submit_with_open_deps = True`.
+
+NOTE: location_regexp and location_regexp_exclude are deprecated in favor
+of location_filters.
+TODO(crbug.com/1171945): Update this after location_filters is used.
 
 Please talk to CQ owners if these restrictions are limiting you.
 
@@ -3290,6 +3294,40 @@ Defines a CQ Run mode and how it can be triggered.
 #### Returns  {#cq.run-mode-returns}
 
 cq.run_mode struct.
+
+
+
+### cq.location_filter {#cq.location-filter}
+
+```python
+cq.location_filter(
+    # Optional arguments.
+    gerrit_host_regexp = None,
+    gerrit_project_regexp = None,
+    path_regexp = None,
+    exclude = None,
+)
+```
+
+
+
+Defines a location filter for the builder location_filters field.
+
+All regexp fields can be empty, which is treated the same as ".*", i.e. a
+wildcard which should match anything. Patterns are implicitly wrapped with
+"^...$". They are allowed to contain these anchors, but it's redundant.
+
+#### Arguments {#cq.location-filter-args}
+
+* **gerrit_host_regexp**: Gerrit host regex. Must be a valid regex.
+* **gerrit_project_regexp**: Gerrit project pattern. Must be a valid regex.
+* **path_regexp**: File path pattern. Must be a valid regex.
+* **exclude**: Whether this is an "exclude" pattern.
+
+
+#### Returns  {#cq.location-filter-returns}
+
+cq.location_filter struct.
 
 
 

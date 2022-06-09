@@ -37,6 +37,9 @@ _retry_config_ctor = __native__.genstruct("cq.retry_config")
 # A struct returned by cq.run_mode(...).
 _run_mode_ctor = __native__.genstruct("cq.run_mode")
 
+# A struct returned by cq.location_filter(...).
+_location_filter_ctor = __native__.genstruct("cq.location_filter")
+
 def _refset(repo = None, *, refs = None, refs_exclude = None):
     """Defines a repository and a subset of its refs.
 
@@ -188,6 +191,59 @@ def _validate_run_mode(attr, val, *, default = None, required = True):
     """Validates that `val` was constructed via cq.run_mode(...)."""
     return validate.struct(attr, val, _run_mode_ctor, default = default, required = required)
 
+def _location_filter(
+        gerrit_host_regexp = None,
+        gerrit_project_regexp = None,
+        path_regexp = None,
+        exclude = False):
+    """Defines a location filter for the builder location_filters field.
+
+    All regexp fields can be empty, which is treated the same as ".*", i.e. a
+    wildcard which should match anything. Patterns are implicitly wrapped with
+    "^...$". They are allowed to contain these anchors, but it's redundant.
+
+    Args:
+      gerrit_host_regexp: Gerrit host regex. Must be a valid regex.
+      gerrit_project_regexp: Gerrit project pattern. Must be a valid regex.
+      path_regexp: File path pattern. Must be a valid regex.
+      exclude: Whether this is an "exclude" pattern.
+
+    Returns:
+      cq.location_filter struct.
+    """
+    return _location_filter_ctor(
+        gerrit_host_regexp = validate.string(
+            "gerrit_host_regexp",
+            gerrit_host_regexp,
+            default = "",
+            allow_empty = True,
+            required = False,
+        ),
+        gerrit_project_regexp = validate.string(
+            "gerrit_project_regexp",
+            gerrit_project_regexp,
+            default = "",
+            allow_empty = True,
+            required = False,
+        ),
+        path_regexp = validate.string(
+            "path_regexp",
+            path_regexp,
+            default = "",
+            allow_empty = True,
+            required = False,
+        ),
+        exclude = validate.bool(
+            "exclude",
+            exclude,
+            default = False,
+        ),
+    )
+
+def _validate_location_filter(attr, val, *, default = None, required = True):
+    """Validates location_filter."""
+    return validate.struct(attr, val, _location_filter_ctor, default = default, required = required)
+
 # CQ module exposes structs and enums useful when defining luci.cq_group(...)
 # entities.
 #
@@ -240,6 +296,7 @@ cq = struct(
     refset = _refset,
     retry_config = _retry_config,
     run_mode = _run_mode,
+    location_filter = _location_filter,
     ACTION_NONE = cq_pb.Verifiers.GerritCQAbility.UNSET,
     ACTION_DRY_RUN = cq_pb.Verifiers.GerritCQAbility.DRY_RUN,
     ACTION_COMMIT = cq_pb.Verifiers.GerritCQAbility.COMMIT,
@@ -271,4 +328,5 @@ cqimpl = struct(
     validate_refset = _validate_refset,
     validate_retry_config = _validate_retry_config,
     validate_run_mode = _validate_run_mode,
+    validate_location_filter = _validate_location_filter,
 )
