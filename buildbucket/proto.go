@@ -48,13 +48,13 @@ const MinUpdateBuildInterval = 30 * time.Second
 //
 // See the Builder.experiments field documentation.
 const (
-	ExperimentBBCanarySoftware = "luci.buildbucket.canary_software"
-	ExperimentNonProduction    = "luci.non_production"
-
 	ExperimentBackendAlt          = "luci.buildbucket.backend_alt"
 	ExperimentBBAgent             = "luci.buildbucket.use_bbagent"
 	ExperimentBBAgentDownloadCipd = "luci.buildbucket.agent.cipd_installation"
 	ExperimentBBAgentGetBuild     = "luci.buildbucket.bbagent_getbuild"
+	ExperimentBBCanarySoftware    = "luci.buildbucket.canary_software"
+	ExperimentNonProduction       = "luci.non_production"
+	ExperimentParentTracking      = "luci.buildbucket.parent_tracking"
 	ExperimentRecipePY3           = "luci.recipes.use_python3"
 )
 

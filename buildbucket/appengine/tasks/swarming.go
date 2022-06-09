@@ -15,18 +15,28 @@
 package tasks
 
 import (
+	"context"
+	"encoding/base64"
 	"encoding/json"
+	"fmt"
 	"path/filepath"
 	"sort"
 	"strconv"
 	"strings"
 
+	"github.com/google/tink/go/subtle/random"
+	"google.golang.org/protobuf/proto"
+
+	"go.chromium.org/luci/common/api/swarming/swarming/v1"
+	"go.chromium.org/luci/common/clock"
+	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/gae/service/info"
+
 	"go.chromium.org/luci/buildbucket"
+	"go.chromium.org/luci/buildbucket/appengine/internal/clients"
 	"go.chromium.org/luci/buildbucket/appengine/model"
 	"go.chromium.org/luci/buildbucket/cmd/bbagent/bbinput"
 	pb "go.chromium.org/luci/buildbucket/proto"
-	"go.chromium.org/luci/common/api/swarming/swarming/v1"
-	"go.chromium.org/luci/common/errors"
 )
 
 const (
@@ -40,7 +50,139 @@ const (
 	// contains the mounted swarming named caches. It will be prepended to paths of
 	// caches defined in global or builder configs.
 	cacheDir = "cache"
+
+	// pubsubTopicTemplate is the topic template where Swarming publishes
+	// notifications on the task update.
+	pubsubTopicTemplate = "projects/%s/topics/swarming"
+
+	// pubSubUserDataTemplate is the Swarming topic user data template.
+	pubSubUserDataTemplate = `{
+		"build_id": %d,
+		"created_ts": %d,
+		"swarming_hostname": %s
+}`
 )
+
+func createSwarmingTask(ctx context.Context, build *model.Build, swarm clients.SwarmingClient) error {
+	taskReq, err := computeSwarmingNewTaskReq(ctx, build)
+	if err != nil {
+		return err
+	}
+
+	// Insert secret bytes.
+	token, err := generateBuildToken(build.ID)
+	if err != nil {
+		return err
+	}
+	secrets := &pb.BuildSecrets{
+		BuildToken:                    token,
+		ResultdbInvocationUpdateToken: build.ResultDBUpdateToken,
+	}
+	secretsBytes, err := proto.Marshal(secrets)
+	if err != nil {
+		return err
+	}
+	for _, t := range taskReq.TaskSlices {
+		t.Properties.SecretBytes = base64.RawURLEncoding.EncodeToString(secretsBytes)
+	}
+
+	// TODO(crbug.com/1328646): call swarming and update Build entity with token
+	// and new task id.
+	return nil
+}
+
+func computeSwarmingNewTaskReq(ctx context.Context, build *model.Build) (*swarming.SwarmingRpcsNewTaskRequest, error) {
+	sw := build.Proto.GetInfra().GetSwarming()
+	if sw == nil {
+		return nil, errors.New("build.Proto.Infra.Swarming isn't set")
+	}
+	taskReq := &swarming.SwarmingRpcsNewTaskRequest{
+		// to prevent accidental multiple task creation
+		RequestUuid: strconv.FormatInt(build.ID, 10),
+		Name:        fmt.Sprintf("bb-%d-%s", build.ID, build.BuilderID),
+		Realm:       build.Realm(),
+		Tags:        computeTags(ctx, build),
+		Priority:    int64(sw.Priority),
+	}
+
+	if build.Proto.Number > 0 {
+		taskReq.Name = fmt.Sprintf("%s-%d", taskReq.Name, build.Proto.Number)
+	}
+
+	taskSlices, err := computeTaskSlice(build)
+	if err != nil {
+		errors.Annotate(err, "failed to computing task slices").Err()
+	}
+	taskReq.TaskSlices = taskSlices
+
+	// Only makes swarming to track the build's parent if Buildbucket doesn't
+	// track.
+	// Buildbucket should track the parent/child build relationships for all
+	// Buildbucket Builds.
+	// Except for children of led builds, whose parents are still tracked by
+	// swarming using sw.parent_run_id.
+	// TODO(crbug.com/1031205): remove the check on
+	// luci.buildbucket.parent_tracking after this experiment is on globally and
+	// we're ready to remove it.
+	if sw.ParentRunId != "" && (len(build.Proto.AncestorIds) == 0 ||
+		strings.Contains(build.ExperimentsString(), buildbucket.ExperimentParentTracking)) {
+		taskReq.ParentTaskId = sw.ParentRunId
+	}
+
+	if sw.TaskServiceAccount != "" {
+		taskReq.ServiceAccount = sw.TaskServiceAccount
+	}
+
+	taskReq.PubsubTopic = fmt.Sprintf(pubsubTopicTemplate, info.AppID(ctx))
+	taskReq.PubsubUserdata = fmt.Sprintf(pubSubUserDataTemplate, build.ID, clock.Now(ctx).UnixMicro(), sw.Hostname)
+
+	return taskReq, err
+}
+
+// computeTags computes the Swarming task request tags to use.
+// Note it doesn't compute kitchen related tags.
+func computeTags(ctx context.Context, build *model.Build) []string {
+	tags := []string{
+		"buildbucket_bucket:" + build.BucketID,
+		fmt.Sprintf("buildbucket_build_id:%d", build.ID),
+		fmt.Sprintf("buildbucket_hostname:%s.appspot.com", info.AppID(ctx)),
+		"luci_project:" + build.Project,
+	}
+	if build.Canary {
+		tags = append(tags, "buildbucket_template_canary:1")
+	} else {
+		tags = append(tags, "buildbucket_template_canary:0")
+	}
+
+	tags = append(tags, build.Tags...)
+	sort.Strings(tags)
+	return tags
+}
+
+// generateBuildToken generates base64 encoded byte string token.
+// In the future, it will be replaced by a self-verifiable token.
+func generateBuildToken(buildID int64) (string, error) {
+	tkBody := &pb.TokenBody{
+		BuildId: buildID,
+		Purpose: pb.TokenBody_BUILD,
+		State:   random.GetRandomBytes(16),
+	}
+
+	tkBytes, err := proto.Marshal(tkBody)
+	if err != nil {
+		return "", err
+	}
+	tkEnvelop := &pb.TokenEnvelope{
+		Version: pb.TokenEnvelope_UNENCRYPTED_PASSWORD_LIKE,
+		Payload: tkBytes,
+	}
+	tkeBytes, err := proto.Marshal(tkEnvelop)
+	if err != nil {
+		return "", err
+	}
+	token := base64.RawURLEncoding.EncodeToString(tkeBytes)
+	return token, nil
+}
 
 // computeTaskSlice computes swarming task slices.
 // build.Proto.Infra must be set.

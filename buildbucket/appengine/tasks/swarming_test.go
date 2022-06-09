@@ -15,12 +15,17 @@
 package tasks
 
 import (
+	"context"
+	"fmt"
 	"path/filepath"
 	"testing"
+	"time"
 
 	"google.golang.org/protobuf/types/known/durationpb"
 
 	"go.chromium.org/luci/common/api/swarming/swarming/v1"
+	"go.chromium.org/luci/common/clock/testclock"
+	"go.chromium.org/luci/gae/impl/memory"
 
 	"go.chromium.org/luci/buildbucket/appengine/model"
 	"go.chromium.org/luci/buildbucket/cmd/bbagent/bbinput"
@@ -232,5 +237,63 @@ func TestTaskDef(t *testing.T) {
 				{Key: "VPYTHON_VIRTUALENV_ROOT", Value: []string{filepath.Join("cache", "vpython")}},
 			})
 		})
+	})
+
+	Convey("compute swarming new task req", t, func() {
+		now := time.Unix(1444945245, 0).UTC()
+		ctx := memory.UseWithAppID(context.Background(), "dev~app-id")
+		ctx, _ = testclock.UseTime(ctx, now)
+		b := &model.Build{
+			ID:        123,
+			Project:   "project",
+			BucketID:  "bucket",
+			BuilderID: "builder",
+			Proto: &pb.Build{
+				Id:     123,
+				Number: 1,
+				Builder: &pb.BuilderID{
+					Project: "project",
+					Bucket:  "bucket",
+					Builder: "builder",
+				},
+				Infra: &pb.BuildInfra{
+					Swarming: &pb.BuildInfra_Swarming{
+						Priority:           20,
+						TaskServiceAccount: "abc",
+						Hostname:           "swarm.com",
+					},
+					Bbagent: &pb.BuildInfra_BBAgent{},
+					Buildbucket: &pb.BuildInfra_Buildbucket{
+						Agent: &pb.BuildInfra_Buildbucket_Agent{
+							Source: &pb.BuildInfra_Buildbucket_Agent_Source{
+								DataType: &pb.BuildInfra_Buildbucket_Agent_Source_Cipd{
+									Cipd: &pb.BuildInfra_Buildbucket_Agent_Source_CIPD{
+										Package: "infra/tools/luci/bbagent/${platform}",
+										Version: "canary-version",
+										Server:  "cipd server",
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		}
+
+		req, err := computeSwarmingNewTaskReq(ctx, b)
+		// Strip out TaskSlices. It has been tested in other tests
+		req.TaskSlices = []*swarming.SwarmingRpcsTaskSlice(nil)
+		So(err, ShouldBeNil)
+		expected := &swarming.SwarmingRpcsNewTaskRequest{
+			RequestUuid:    "123",
+			Name:           "bb-123-builder-1",
+			Realm:          "project:bucket",
+			Tags:           []string{"buildbucket_bucket:bucket", "buildbucket_build_id:123", "buildbucket_hostname:app-id.appspot.com", "buildbucket_template_canary:0", "luci_project:project"},
+			Priority:       int64(20),
+			PubsubTopic:    "projects/app-id/topics/swarming",
+			PubsubUserdata: fmt.Sprintf(pubSubUserDataTemplate, 123, now.UnixMicro(), "swarm.com"),
+			ServiceAccount: "abc",
+		}
+		So(req, ShouldResemble, expected)
 	})
 }
