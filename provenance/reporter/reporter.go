@@ -203,13 +203,13 @@ func (r *Report) ReportGcsDigest(ctx context.Context, digest, gcsURI string) (bo
 	_, err := r.RClient.ReportArtifactDigest(ctx, req)
 	switch errS, _ := status.FromError(err); errS.Code() {
 	case codes.OK:
-		logging.Infof(ctx, "success to report cipd digest")
+		logging.Infof(ctx, "success to report gcs digest")
 		return true, nil
 	case codes.Unavailable:
-		logging.Errorf(ctx, "failed to report cipd digest: %v", ErrServiceUnavailable)
+		logging.Errorf(ctx, "failed to report gcs digest: %v", ErrServiceUnavailable)
 		return true, ErrServiceUnavailable
 	default:
-		logging.Errorf(ctx, "failed to report cipd digest: %v", err)
+		logging.Errorf(ctx, "failed to report gcs digest: %v", err)
 		return false, err
 	}
 }
