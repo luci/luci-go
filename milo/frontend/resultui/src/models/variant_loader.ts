@@ -57,7 +57,7 @@ export class VariantLoader {
 
       const variantInfos = res.variants || [];
       for (const info of variantInfos) {
-        this.cache.push([info.variantHash, info.variant]);
+        this.cache.push([info.variantHash, info.variant || { def: {} }]);
       }
 
       if (!res.nextPageToken) {

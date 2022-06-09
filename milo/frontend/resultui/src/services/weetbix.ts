@@ -110,7 +110,7 @@ export interface QueryVariantsRequest {
 
 export interface QueryVariantsResponseVariantInfo {
   readonly variantHash: string;
-  readonly variant: Variant;
+  readonly variant?: Variant;
 }
 
 export interface QueryVariantsResponse {
