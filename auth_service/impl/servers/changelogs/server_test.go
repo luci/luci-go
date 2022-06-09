@@ -27,7 +27,6 @@ import (
 	. "go.chromium.org/luci/common/testing/assertions"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
-	_ "go.chromium.org/luci/gae/service/datastore/crbug1242998safeget"
 )
 
 func TestChangeLogsServer(t *testing.T) {

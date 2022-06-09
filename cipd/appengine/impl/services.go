@@ -22,9 +22,6 @@ package impl
 import (
 	"flag"
 
-	// TODO(crbug/1242998): enable safe Get in Datastore.
-	_ "go.chromium.org/luci/gae/service/datastore/crbug1242998safeget"
-
 	"go.chromium.org/luci/config/server/cfgmodule"
 	"go.chromium.org/luci/server"
 	"go.chromium.org/luci/server/cron"

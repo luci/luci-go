@@ -17,8 +17,6 @@ package graph
 import (
 	"testing"
 
-	_ "go.chromium.org/luci/gae/service/datastore/crbug1242998safeget"
-
 	. "github.com/smartystreets/goconvey/convey"
 )
 

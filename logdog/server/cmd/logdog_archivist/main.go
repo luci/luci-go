@@ -36,7 +36,6 @@ import (
 	"go.chromium.org/luci/common/tsmon/field"
 	"go.chromium.org/luci/common/tsmon/metric"
 	"go.chromium.org/luci/common/tsmon/types"
-	_ "go.chromium.org/luci/gae/service/datastore/crbug1242998safeget"
 	"go.chromium.org/luci/grpc/grpcmon"
 	"go.chromium.org/luci/server"
 	"go.chromium.org/luci/server/auth"

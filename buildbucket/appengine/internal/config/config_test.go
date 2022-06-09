@@ -21,9 +21,6 @@ import (
 	"go.chromium.org/luci/config/validation"
 	"go.chromium.org/luci/gae/impl/memory"
 
-	// TODO(crbug/1242998): Remove once safe get becomes datastore default.
-	_ "go.chromium.org/luci/gae/service/datastore/crbug1242998safeget"
-
 	pb "go.chromium.org/luci/buildbucket/proto"
 
 	. "github.com/smartystreets/goconvey/convey"

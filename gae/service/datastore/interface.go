@@ -355,8 +355,6 @@ func RunInTransaction(c context.Context, f func(c context.Context) error, opts *
 // due to flakiness, timeout, etc. If it encounters such an error, it will
 // be returned.
 func Run(c context.Context, q *Query, cb interface{}) error {
-	logErrorIfSafeGetIsDisabled(c)
-
 	rcb, isKey, mat, _ := parseRunCallback(cb)
 
 	if isKey {
@@ -396,8 +394,6 @@ func Run(c context.Context, q *Query, cb interface{}) error {
 // Note: projection queries and cursors in callback function are not supported,
 // as they are non-trivial in complexity and haven't been needed yet.
 func RunMulti(c context.Context, queries []*Query, cb interface{}) error {
-	logErrorIfSafeGetIsDisabled(c)
-
 	c, cancel := context.WithCancel(c)
 	defer cancel()
 
@@ -487,7 +483,6 @@ func DecodeCursor(c context.Context, s string) (Cursor, error) {
 //     PropertyLoadSaver
 //   - *[]*Key implies a keys-only query.
 func GetAll(c context.Context, q *Query, dst interface{}) error {
-	logErrorIfSafeGetIsDisabled(c)
 	return getAllRaw(Raw(c), q, dst)
 }
 
@@ -630,8 +625,6 @@ func Exists(c context.Context, ent ...interface{}) (*ExistsResult, error) {
 // values, do a Get, and on an ErrNoSuchEntity, do a Put (inside a transaction,
 // of course :)).
 func Get(c context.Context, dst ...interface{}) error {
-	logErrorIfSafeGetIsDisabled(c)
-
 	if len(dst) == 0 {
 		return nil
 	}

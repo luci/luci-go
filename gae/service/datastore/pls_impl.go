@@ -84,9 +84,7 @@ func typeMismatchReason(val interface{}, v reflect.Value) string {
 func (p *structPLS) Load(propMap PropertyMap) error {
 	convFailures := errors.MultiError(nil)
 
-	if getSafeGetEnabled() {
-		p.resetBeforeLoad()
-	}
+	p.resetBeforeLoad()
 
 	useExtra := false
 	extra := (*PropertyMap)(nil)

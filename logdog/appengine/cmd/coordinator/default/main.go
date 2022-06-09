@@ -30,7 +30,6 @@ import (
 	"go.chromium.org/luci/logdog/server/config"
 
 	"go.chromium.org/luci/appengine/gaemiddleware/standard"
-	_ "go.chromium.org/luci/gae/service/datastore/crbug1242998safeget"
 	"go.chromium.org/luci/grpc/discovery"
 	"go.chromium.org/luci/grpc/grpcmon"
 	"go.chromium.org/luci/grpc/prpc"

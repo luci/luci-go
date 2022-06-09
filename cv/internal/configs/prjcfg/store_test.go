@@ -24,7 +24,6 @@ import (
 
 	gaememory "go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
-	_ "go.chromium.org/luci/gae/service/datastore/crbug1242998safeget"
 
 	cfgpb "go.chromium.org/luci/cv/api/config/v2"
 

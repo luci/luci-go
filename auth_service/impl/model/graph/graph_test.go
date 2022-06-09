@@ -20,7 +20,6 @@ import (
 
 	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/auth_service/impl/model"
-	_ "go.chromium.org/luci/gae/service/datastore/crbug1242998safeget"
 
 	. "github.com/smartystreets/goconvey/convey"
 )

@@ -26,7 +26,6 @@ import (
 	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/trace"
-	"go.chromium.org/luci/gae/service/datastore"
 
 	"go.chromium.org/luci/server"
 	"go.chromium.org/luci/server/analytics"
@@ -48,12 +47,6 @@ import (
 	_ "go.chromium.org/luci/server/encryptedcookies/session/datastore"
 	_ "go.chromium.org/luci/server/tq/txn/datastore"
 )
-
-func init() {
-	// Temporary fix for Datastore behavior.
-	// TODO(crbug/1242998): remove after it is default.
-	datastore.EnableSafeGet()
-}
 
 func main() {
 	// Additional modules that extend the server functionality.

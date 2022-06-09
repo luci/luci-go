@@ -22,7 +22,6 @@ import (
 	"golang.org/x/sync/errgroup"
 
 	"go.chromium.org/luci/config/server/cfgmodule"
-	_ "go.chromium.org/luci/gae/service/datastore/crbug1242998safeget"
 	"go.chromium.org/luci/grpc/prpc"
 	"go.chromium.org/luci/server"
 	"go.chromium.org/luci/server/analytics"

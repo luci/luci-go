@@ -30,7 +30,6 @@ import (
 
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
-	_ "go.chromium.org/luci/gae/service/datastore/crbug1242998safeget"
 )
 
 func TestAllowlistsServer(t *testing.T) {

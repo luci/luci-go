@@ -35,7 +35,6 @@ import (
 	"go.chromium.org/luci/auth_service/impl/servers/groups"
 	"go.chromium.org/luci/auth_service/impl/servers/internals"
 	"go.chromium.org/luci/common/logging"
-	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/grpc/grpcutil"
 	"go.chromium.org/luci/server"
 	"go.chromium.org/luci/server/auth"
@@ -61,9 +60,6 @@ func main() {
 		if !srv.Options.Prod {
 			srv.Routes.Static("/static", nil, http.Dir("./static"))
 		}
-
-		// https://crbug.com/1242998
-		datastore.EnableSafeGet()
 
 		// Cookie auth and pRPC have some rough edges, see prpcCookieAuth comment.
 		prpcAuth := &prpcCookieAuth{cookieAuth: srv.CookieAuth}

@@ -20,8 +20,6 @@ import (
 	"os"
 	"time"
 
-	_ "go.chromium.org/luci/gae/service/datastore/crbug1242998safeget"
-
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/grpc/prpc"
 	"go.chromium.org/luci/server"

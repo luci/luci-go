@@ -37,8 +37,6 @@ import (
 	_ "go.chromium.org/luci/server/encryptedcookies/session/datastore"
 	// Using datastore for transactional tasks.
 	_ "go.chromium.org/luci/server/tq/txn/datastore"
-	// Shut up error message.
-	_ "go.chromium.org/luci/gae/service/datastore/crbug1242998safeget"
 )
 
 const (

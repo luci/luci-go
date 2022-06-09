@@ -27,9 +27,6 @@ import (
 	"go.chromium.org/luci/gae/service/datastore"
 
 	"go.chromium.org/luci/deploy/api/modelpb"
-
-	// Shut up the error message.
-	_ "go.chromium.org/luci/gae/service/datastore/crbug1242998safeget"
 )
 
 // Txn runs the callback in a datastore transaction.

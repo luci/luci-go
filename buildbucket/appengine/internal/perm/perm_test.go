@@ -29,9 +29,6 @@ import (
 	"go.chromium.org/luci/server/auth/realms"
 	"go.chromium.org/luci/server/caching"
 
-	// TODO(crbug/1242998): Remove once safe get becomes datastore default.
-	_ "go.chromium.org/luci/gae/service/datastore/crbug1242998safeget"
-
 	"go.chromium.org/luci/buildbucket/appengine/model"
 	"go.chromium.org/luci/buildbucket/bbperms"
 	pb "go.chromium.org/luci/buildbucket/proto"

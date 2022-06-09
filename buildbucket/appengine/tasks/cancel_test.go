@@ -28,9 +28,6 @@ import (
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/server/tq"
 
-	// TODO(crbug/1242998): Remove once safe get becomes datastore default.
-	_ "go.chromium.org/luci/gae/service/datastore/crbug1242998safeget"
-
 	"go.chromium.org/luci/buildbucket/appengine/internal/metrics"
 	"go.chromium.org/luci/buildbucket/appengine/model"
 	taskdefs "go.chromium.org/luci/buildbucket/appengine/tasks/defs"

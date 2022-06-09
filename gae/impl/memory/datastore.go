@@ -20,7 +20,6 @@ import (
 	"fmt"
 
 	ds "go.chromium.org/luci/gae/service/datastore"
-	_ "go.chromium.org/luci/gae/service/datastore/crbug1242998safeget"
 	"go.chromium.org/luci/gae/service/info"
 )
 

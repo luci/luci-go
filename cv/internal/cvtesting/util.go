@@ -50,7 +50,6 @@ import (
 	"go.chromium.org/luci/gae/impl/cloud"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
-	_ "go.chromium.org/luci/gae/service/datastore/crbug1242998safeget"
 	"go.chromium.org/luci/gae/service/info"
 	serverauth "go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"

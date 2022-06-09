@@ -18,11 +18,6 @@ import (
 	"context"
 	"flag"
 
-	// This import changes the behavior of datastore within this application
-	// to make datastore.Get always zero-out all struct fields prior to
-	// populating them from datastore.
-	_ "go.chromium.org/luci/gae/service/datastore/crbug1242998safeget"
-
 	"go.chromium.org/luci/server"
 	"go.chromium.org/luci/server/gaeemulation"
 	"go.chromium.org/luci/server/module"

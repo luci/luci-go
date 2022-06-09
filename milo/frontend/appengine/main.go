@@ -23,7 +23,6 @@ import (
 
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/config/server/cfgmodule"
-	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/grpc/prpc"
 	milopb "go.chromium.org/luci/milo/api/service/v1"
 	"go.chromium.org/luci/milo/backend"
@@ -57,7 +56,6 @@ func main() {
 		redisconn.NewModuleFromFlags(),
 		analytics.NewModuleFromFlags(),
 	}
-	datastore.EnableSafeGet()
 	server.Main(nil, modules, func(srv *server.Server) error {
 		frontend.Run(srv, "templates")
 		cron.RegisterHandler("update-config", frontend.UpdateConfigHandler)
