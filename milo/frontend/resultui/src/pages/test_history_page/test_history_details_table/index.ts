@@ -57,7 +57,7 @@ export class TestHistoryDetailsTableElement extends MiloBaseElement {
   }
 
   private getThdtColumns(columnWidths: readonly number[]) {
-    return '24px 135px ' + columnWidths.map((width) => width + 'px').join(' ') + ' 1fr';
+    return '24px 135px 250px ' + columnWidths.map((width) => width + 'px').join(' ') + ' 1fr';
   }
 
   toggleAllVariants(expand: boolean) {
@@ -166,6 +166,7 @@ export class TestHistoryDetailsTableElement extends MiloBaseElement {
             .sortByColumn=${this.sortByColumnFn('status')}
           ></milo-column-header>
           <milo-column-header .label=${'Timestamp'} .tooltip=${'partitionTime'}></milo-column-header>
+          <milo-column-header .label=${'Invocation'} .tooltip=${'invocationId'}></milo-column-header>
           ${this.pageState.columnKeys.map(
             (col, i) => html`<milo-column-header
               .label=${getPropKeyLabel(col)}

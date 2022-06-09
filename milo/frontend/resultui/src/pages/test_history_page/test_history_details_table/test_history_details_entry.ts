@@ -28,6 +28,7 @@ import { lazyRendering, RenderPlaceHolder } from '../../../libs/observer_element
 import { sanitizeHTML } from '../../../libs/sanitize_html';
 import { LONG_TIME_FORMAT, SHORT_TIME_FORMAT } from '../../../libs/time_utils';
 import { unwrapObservable } from '../../../libs/unwrap_observable';
+import { router } from '../../../routes';
 import { RESULT_LIMIT } from '../../../services/resultdb';
 import { TestVerdictBundle } from '../../../services/weetbix';
 import colorClasses from '../../../styles/color_classes.css';
@@ -146,6 +147,15 @@ export class TestHistoryDetailsEntryElement extends MobxLitElement implements Re
     return DateTime.fromISO(this.verdictBundle.verdict.partitionTime);
   }
 
+  @computed private get invocationUrl() {
+    const invId = this.verdictBundle.verdict.invocationId;
+    const match = invId.match(/^build-(?<id>\d+)/);
+    if (!match) {
+      return router.urlForName('invocation', { invocation_id: invId });
+    }
+    return router.urlForName('build-short-link', { build_id: match.groups!['id'] });
+  }
+
   private renderBody() {
     if (!this.shouldRenderContent) {
       return html``;
@@ -211,6 +221,9 @@ export class TestHistoryDetailsEntryElement extends MobxLitElement implements Re
           <div title=${this.dateTime?.toFormat(LONG_TIME_FORMAT) || ''}>
             ${this.dateTime?.toFormat(SHORT_TIME_FORMAT) || ''}
           </div>
+          <a href=${this.invocationUrl} @click=${(e: Event) => e.stopImmediatePropagation()} target="_blank">
+            ${this.verdictBundle.verdict.invocationId}
+          </a>
           ${this.columnValues.map((v) => html`<div title=${v}>${v}</div>`)}
         </div>
         <div id="body" slot="content">${this.renderBody()}</div>
