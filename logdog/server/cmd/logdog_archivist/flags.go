@@ -28,9 +28,6 @@ type CommandLineFlags struct {
 	// StagingBucket is the name of the Google Storage bucket to use for staging
 	// logs.
 	//
-	// All projects will share the same staging bucket. Logs for a project will be
-	// staged under `gs://<StagingBucket>/<AppID>/<ProjectName>/...`.
-	//
 	// Required.
 	StagingBucket string
 

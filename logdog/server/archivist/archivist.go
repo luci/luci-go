@@ -17,8 +17,7 @@ package archivist
 import (
 	"context"
 	"crypto/sha256"
-	"encoding/hex"
-	"fmt"
+	"encoding/base64"
 	"io"
 	"regexp"
 
@@ -26,7 +25,6 @@ import (
 	"github.com/golang/protobuf/proto"
 	mrpb "google.golang.org/genproto/googleapis/api/monitoredres"
 
-	"go.chromium.org/luci/common/data/rand/mathrand"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/gcloud"
 	"go.chromium.org/luci/common/gcloud/gs"
@@ -128,15 +126,9 @@ var (
 type Settings struct {
 	// GSBase is the base Google Storage path. This includes the bucket name
 	// and any associated path.
-	//
-	// This must be unique to this archival project. In practice, it will be
-	// composed of the project's archival bucket and project ID.
 	GSBase gs.Path
 	// GSStagingBase is the base Google Storage path for archive staging. This
 	// includes the bucket name and any associated path.
-	//
-	// This must be unique to this archival project. In practice, it will be
-	// composed of the project's staging archival bucket and project ID.
 	GSStagingBase gs.Path
 
 	// IndexStreamRange is the maximum number of stream indexes in between index
@@ -280,8 +272,7 @@ func (a *Archivist) archiveTaskImpl(ctx context.Context, task *logdog.ArchiveTas
 	}
 
 	// Build our staged archival plan. This doesn't actually do any archiving.
-	uid := fmt.Sprintf("%d", mathrand.Int63(ctx))
-	staged, err := a.makeStagedArchival(ctx, task.Project, task.Realm, settings, ls, uid)
+	staged, err := a.makeStagedArchival(ctx, task.Project, task.Realm, settings, ls)
 	if err != nil {
 		logging.WithError(err).Errorf(ctx, "Failed to create staged archival plan.")
 		return err
@@ -417,7 +408,7 @@ func (a *Archivist) loadSettings(ctx context.Context, project string) (*Settings
 }
 
 func (a *Archivist) makeStagedArchival(ctx context.Context, project string, realm string,
-	st *Settings, ls *logdog.LoadStreamResponse, uid string) (*stagedArchival, error) {
+	st *Settings, ls *logdog.LoadStreamResponse) (*stagedArchival, error) {
 
 	gsClient, err := a.GSClientFactory(ctx, project)
 	if err != nil {
@@ -451,8 +442,9 @@ func (a *Archivist) makeStagedArchival(ctx context.Context, project string, real
 	}
 	sa.path = sa.desc.Path()
 
-	// Construct staged archival paths sa.stream and sa.index.
-	if err = sa.makeStagingPaths(uid); err != nil {
+	// Construct staged archival paths sa.stream and sa.index. The path length
+	// must not exceed 1024 bytes, it is GCS limit.
+	if err = sa.makeStagingPaths(1024); err != nil {
 		return nil, err
 	}
 
@@ -501,57 +493,75 @@ type stagedArchival struct {
 	clclient CLClient
 }
 
-// makeStagingPaths returns a stagingPaths instance for the given path and
-// file name. It incorporates a unique ID into the staging name to differentiate
-// it from other staging paths for the same path/name.
+func base64Hash(p types.StreamName) string {
+	hasher := sha256.New()
+	hasher.Write([]byte(p))
+	return base64.RawURLEncoding.EncodeToString(hasher.Sum(nil))
+}
+
+// makeStagingPaths populates `staged` and `final` fields in sa.stream and
+// sa.index.
+//
+// It prefixes the staging GCS paths with a hash of stream's Logdog prefix to
+// make sure we spread the load across GCS namespace to avoid hotspotting its
+// metadata server.
 //
 // These paths may be shared between projects. To enforce an absence of
 // conflicts, we will insert the project name as part of the path.
-func (sa *stagedArchival) makeStagingPaths(uid string) error {
+func (sa *stagedArchival) makeStagingPaths(maxGSFilenameLength int) error {
+	// "<prefix>/+/<name>" => (<prefix>, <name>).
+	prefix, name := sa.path.Split()
+	if name == "" {
+		return errors.Reason("got prefix-only path %q, don't know how to stage it", sa.path).Err()
+	}
+
+	// base64 encoded SHA256 hash of the prefix.
+	prefixHash := "p/" + base64Hash(prefix)
+
+	// GCS paths we need to generate are:
+	//   <GSStagingBase>/<project>/<prefixHash>/+/<name>/logstream.entries
+	//   <GSStagingBase>/<project>/<prefixHash>/+/<name>/logstream.index
+	//   <GSBase>/<project>/<prefix>/+/<name>/logstream.entries
+	//   <GSBase>/<project>/<prefix>/+/<name>/logstream.index
+	//
+	// Each path length must be less than maxGSFilenameLength bytes. And we want
+	// <name> component in all paths to be identical. If some path doesn't fit
+	// the limit, we replace <name> with "<name-prefix>-TRUNCATED-<hash>"
+	// everywhere, making it fit the limit.
+
+	// Note: len("logstream.entries") > len("logstream.index"), use it for max len.
+	maxStagingLen := len(sa.GSStagingBase.Concat(sa.project, prefixHash, "+", string(name), "logstream.entries").Filename())
+	maxFinalLen := len(sa.GSBase.Concat(sa.project, string(prefix), "+", string(name), "logstream.entries").Filename())
+
+	// See if we need to truncate <name> to fit GCS paths into limits.
+	//
+	// The sa.path is user-provided and is unlimited. It is known to be large
+	// enough to exceed max ID length (https://crbug.com/1138017).
+	// So, truncate it if needed while avoiding overwrites by using crypto hash.
+	maxPathLen := maxStagingLen
+	if maxFinalLen > maxStagingLen {
+		maxPathLen = maxFinalLen
+	}
+	if bytesToCut := maxPathLen - maxGSFilenameLength; bytesToCut > 0 {
+		nameSuffix := types.StreamName("-TRUNCATED-" + base64Hash(name)[:16])
+		// Replace last len(nameSuffix)+bytesToCut bytes with nameSuffix. It will
+		// reduce the overall name size by `bytesToCut` bytes, as we need.
+		if len(nameSuffix)+bytesToCut > len(name) {
+			// There's no enough space even to fit nameSuffix. The prefix is too
+			// huge. This should be rare, abort.
+			return errors.Reason("can't stage %q of project %q, prefix is too long", sa.path, sa.project).Err()
+		}
+		name = name[:len(name)-len(nameSuffix)-bytesToCut] + nameSuffix
+	}
+
+	// Everything should fit into the limits now.
 	nameMap := map[string]*stagingPaths{
 		"logstream.entries": &sa.stream,
 		"logstream.index":   &sa.index,
 	}
-
-	const maxGSFilenameLength = 1024
-	// The sa.path is user-provided and is unlimited. It is known to be large
-	// enough to exceed max ID length (https://crbug.com/1138017).
-	// So, truncate it if needed while avoiding overwrites by using crypto hash.
-	longestFilenameLen := 0
-	updateLongestFilenameLen := func(paths ...gs.Path) {
-		for _, p := range paths {
-			if l := len(p.Filename()); l > longestFilenameLen {
-				longestFilenameLen = l
-			}
-		}
-	}
-
-	for name, spaths := range nameMap {
-		spaths.staged = sa.GSStagingBase.Concat(sa.project, string(sa.path), uid, name)
-		spaths.final = sa.GSBase.Concat(sa.project, string(sa.path), name)
-		updateLongestFilenameLen(spaths.staged, spaths.final)
-	}
-
-	excess := longestFilenameLen - maxGSFilenameLength
-	if excess <= 0 {
-		return nil
-	}
-
-	const truncated = "-TRUNCATED-"
-	const hashBytes = 8 // collision chance is 1 in 2^(8*8).
-	if len(sa.path) <= excess+len(truncated)+hashBytes*2 /* hexdigest */ {
-		// TODO(tandrii): this should be handled via project config validation.
-		return errors.Reason("GSStagingBase %q or GSBase %q too long", sa.GSStagingBase, sa.GSBase).Err()
-	}
-
-	hasher := sha256.New()
-	hasher.Write([]byte(sa.path))
-	h := hex.EncodeToString(hasher.Sum(nil)[:hashBytes]) // len(h) == 2*hashBytes
-	sapath := string(sa.path)[:len(sa.path)-excess-len(truncated)-len(h)] + truncated + h
-
-	for name, spaths := range nameMap {
-		spaths.staged = sa.GSStagingBase.Concat(sa.project, sapath, uid, name)
-		spaths.final = sa.GSBase.Concat(sa.project, sapath, name)
+	for file, spaths := range nameMap {
+		spaths.staged = sa.GSStagingBase.Concat(sa.project, prefixHash, "+", string(name), file)
+		spaths.final = sa.GSBase.Concat(sa.project, string(prefix), "+", string(name), file)
 	}
 	return nil
 }

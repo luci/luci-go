@@ -65,20 +65,17 @@ func GetSettingsLoader(serviceID string, flags *CommandLineFlags) archivist.Sett
 		// Load our base settings.
 		//
 		// Archival bases are:
-		// Staging: gs://<services:gs_staging_bucket>/<project-id>/...
-		// Archive: gs://<project:archive_gs_bucket>/<project-id>/...
-		st := archivist.Settings{
-			GSBase:        gs.MakePath(pcfg.ArchiveGsBucket, "").Concat(serviceID),
+		// Staging: gs://<staging-bucket>/<logdog-service-id>/...
+		// Archive: gs://<project:archive_gs_bucket>/<logdog-service-id>/...
+		return &archivist.Settings{
 			GSStagingBase: gs.MakePath(flags.StagingBucket, "").Concat(serviceID),
+			GSBase:        gs.MakePath(pcfg.ArchiveGsBucket, "").Concat(serviceID),
 
 			IndexStreamRange: indexParam(func(ic *svcconfig.ArchiveIndexConfig) int32 { return ic.StreamRange }),
 			IndexPrefixRange: indexParam(func(ic *svcconfig.ArchiveIndexConfig) int32 { return ic.PrefixRange }),
 			IndexByteRange:   indexParam(func(ic *svcconfig.ArchiveIndexConfig) int32 { return ic.ByteRange }),
 
 			CloudLoggingProjectID: pcfg.CloudLoggingConfig.GetDestination(),
-		}
-
-		// Fold project settings into loaded ones.
-		return &st, nil
+		}, nil
 	}
 }
