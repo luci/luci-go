@@ -153,7 +153,7 @@ type ConfigHashInfo struct {
 //   - `name` is the value of `ConfigGroup.Name`.
 type ConfigGroupID string
 
-// Returns Hash of the corresponding project config.
+// Hash returns Hash of the corresponding project config.
 func (c ConfigGroupID) Hash() string {
 	s := string(c)
 	if i := strings.IndexRune(s, '/'); i >= 0 {
@@ -162,7 +162,7 @@ func (c ConfigGroupID) Hash() string {
 	panic(fmt.Errorf("invalid ConfigGroupID %q", c))
 }
 
-// Returns name component only.
+// Name returns name component only.
 func (c ConfigGroupID) Name() string {
 	s := string(c)
 	if i := strings.IndexRune(s, '/'); i >= 0 {
@@ -171,6 +171,7 @@ func (c ConfigGroupID) Name() string {
 	panic(fmt.Errorf("invalid ConfigGroupID %q", c))
 }
 
+// MakeConfigGroupID creates ConfigGroupID.
 func MakeConfigGroupID(hash, name string) ConfigGroupID {
 	if name == "" {
 		panic(fmt.Errorf("name must be given"))
@@ -188,7 +189,7 @@ type ConfigGroup struct {
 	// It is used to force-update old entities to newest format.
 	// See schemaVersion const.
 	SchemaVersion int `gae:",noindex"`
-	// DrainingStartTime represents `draining_start_time` field in the CV config.
+	// DrainingStartTime represents `draining_start_time` in the CV config.
 	//
 	// Note that this is a project-level field. Therefore, all ConfigGroups in a
 	// single version of config should have the same value.
@@ -251,9 +252,9 @@ func putConfigGroups(ctx context.Context, cfg *cfgpb.Config, project, hash strin
 		case err != nil:
 			return errors.Annotate(err, "failed to check the existence of one of ConfigGroups").Tag(transient.Tag).Err()
 		case ent.SchemaVersion != schemaVersion:
-			// Intentionally using != here s.t. rollbacks result in downgrading of the
-			// schema. Given that project configs are checked and potentially updated
-			// every ~1 minute, this if OK.
+			// Intentionally using != here s.t. rollbacks result in downgrading
+			// of the schema. Given that project configs are checked and
+			// potentially updated every ~1 minute, this if OK.
 		default:
 			continue // up to date
 		}
