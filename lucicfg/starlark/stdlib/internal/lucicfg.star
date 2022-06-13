@@ -30,16 +30,21 @@ def _check_version(min, message = None):
 
     ```python
     lucicfg.check_version(
-        min = '1.5.5',
-        message = 'Update depot_tools',
+        min = "1.30.14",
+        message = "Update depot_tools",
     )
     ```
 
     Or even
 
     ```python
-    lucicfg.check_version('1.5.5')
+    lucicfg.check_version("1.30.14")
     ```
+
+    Additionally implicitly auto-enables not-yet-default lucicfg functionality
+    released with the given version. That way lucicfg changes can be gradually
+    rolled out project-by-project by bumping the version string passed to
+    lucicfg.check_version(...) in project configs.
 
     Args:
       min: a string `major.minor.revision` with minimally accepted version.
@@ -56,6 +61,7 @@ def _check_version(min, message = None):
                 message or "Please update",
             ),
         )
+    __native__.set_min_version_for_experiments(min_ver)
 
 def _config(
         *,
@@ -132,12 +138,10 @@ def _config(
 def _enable_experiment(experiment):
     """Enables an experimental feature.
 
-    Can be used to experiment with not yet released features that may later
+    Can be used to experiment with non-default features that may later
     change in a non-backwards compatible way or even be removed completely.
     Primarily intended for lucicfg developers to test their features before they
-    are "frozen" to be backward compatible. If you rely on an experimental
-    feature and a lucicfg update breaks your config, this is a problem in your
-    config, not in lucicfg.
+    are "frozen" to be backward compatible.
 
     Enabling an experiment that doesn't exist logs a warning, but doesn't fail
     the execution. Refer to the documentation and the source code for the list
@@ -182,8 +186,8 @@ def _emit(*, dest = None, data = None):
 
     ```python
     lucicfg.emit(
-        dest = 'foo.cfg',
-        data = io.read_file('//foo.cfg'),
+        dest = "foo.cfg",
+        data = io.read_file("//foo.cfg"),
     )
     ```
 

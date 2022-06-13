@@ -14,7 +14,9 @@
 
 """Internal API for registering and checking experiments."""
 
-def _register(experiment_id):
+load("@stdlib//internal/strutil.star", "strutil")
+
+def _register(experiment_id, enable_on_min_version = None):
     """Register an experiment with the given ID.
 
     This ID becomes a valid target for lucicfg.enable_experiment(...) call.
@@ -36,14 +38,31 @@ def _register(experiment_id):
     exact same experiment.
 
     Args:
-      experiment_id: an ID of the experiment to register.
+      experiment_id: an ID of the experiment to register. Required.
+      enable_on_min_version: if present, should be a lucicfg version string (as
+        `major.minor.revision`) indicating when to auto-enable this experiment:
+        calling lucicfg.check_version(...) with some version `X` will implicitly
+        enable all experiments with `enable_on_min_version >= X`. Experiments
+        that don't have `enable_on_min_version` can only be enabled explicitly
+        via lucicfg.enable_experiment(...). Be careful when using this
+        mechanism. Once an experiment gated by a min lucicfg version is
+        released, it is not really an experiment anymore, but a stable (albeit
+        non-default) functionality. It must remain backward compatible. Projects
+        that opt-in into it using lucicfg.check_version(...) don't expect the
+        generated files to change if a newer lucicfg version is released. If you
+        need to change an already released auto-enabled experiment, you'll need
+        to create a new experiment that "mutates" the behavior of the old one,
+        and gets auto-enabled in a newer lucicfg version.
 
     Returns:
       A struct with methods `require()` and `is_enabled()`:
         `is_enabled()` returns True if the experiment is enabled.
         `require()` fails the execution if the experiment is not enabled.
     """
-    __native__.register_experiment(experiment_id)
+    min_ver = ()
+    if enable_on_min_version != None:
+        min_ver = strutil.parse_version(enable_on_min_version)
+    __native__.register_experiment(experiment_id, min_ver)
     return struct(
         is_enabled = lambda: _is_enabled(experiment_id),
         require = lambda: _require(experiment_id),

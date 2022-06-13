@@ -1,4 +1,5 @@
 load("@stdlib//internal/experiments.star", "experiments")
+load("@stdlib//internal/lucicfg.star", "lucicfg")
 
 def test_happy_path():
     exp1 = experiments.register("unittest.exp_id1")
@@ -43,6 +44,44 @@ def test_bad_types():
     assert.fails(lambda: experiments.register(None), "got NoneType, want string")
     assert.fails(lambda: lucicfg.enable_experiment(None), "got NoneType, want string")
 
+def test_auto_enable():
+    # Note: in tests lucicfg has phony version "1.1.1" (see starlark_test.go),
+    # so all check_version checks below should not exceed it.
+
+    experiments.register("unitest.new1", "1.1.1")
+    experiments.register("unitest.old1", "1.0.0")
+    experiments.register("unitest.manual1")
+    assert.eq(__native__.list_enabled_experiments(), [])
+
+    lucicfg.check_version("1.0.5")
+    assert.eq(__native__.list_enabled_experiments(), ["unitest.old1"])
+
+    experiments.register("unitest.new2", "1.1.1")
+    experiments.register("unitest.old2", "1.0.0")
+    experiments.register("unitest.manual2")
+    assert.eq(__native__.list_enabled_experiments(), ["unitest.old1", "unitest.old2"])
+
+    lucicfg.check_version("1.1.1")
+    assert.eq(__native__.list_enabled_experiments(), [
+        "unitest.new1",
+        "unitest.new2",
+        "unitest.old1",
+        "unitest.old2",
+    ])
+
+    # No "rollbacks" to enabled experiments.
+    lucicfg.check_version("1.0.5")
+    assert.eq(__native__.list_enabled_experiments(), [
+        "unitest.new1",
+        "unitest.new2",
+        "unitest.old1",
+        "unitest.old2",
+    ])
+
+    # Remembers highest version ever passed to check_version.
+    exp = experiments.register("unitest.new3", "1.1.1")
+    assert.true(exp.is_enabled())
+
 def with_clean_state(cb):
     __native__.clear_state()
     cb()
@@ -52,3 +91,4 @@ with_clean_state(test_happy_path)
 with_clean_state(test_double_registration)
 with_clean_state(test_unknown_id)
 with_clean_state(test_bad_types)
+with_clean_state(test_auto_enable)
