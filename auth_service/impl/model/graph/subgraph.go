@@ -42,7 +42,7 @@ type Subgraph struct {
 type SubgraphNode struct {
 	NodeKey
 
-	// InculdedBy represents nodes that include this node.
+	// IncludedBy represents nodes that include this node.
 	IncludedBy []int32
 }
 

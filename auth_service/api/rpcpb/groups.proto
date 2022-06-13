@@ -39,7 +39,9 @@ service Groups {
 
 // ListGroupsResponse is all the groups listed in LUCI Auth Service.
 message ListGroupsResponse {
-  // List of all groups.
+  // List of all groups. In order to keep the response lightweight, each
+  // AuthGroup will contain only metadata, i.e. the membership list fields will
+  // be left empty.
   repeated AuthGroup groups = 1;
 }
 

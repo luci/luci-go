@@ -43,7 +43,7 @@ func (*Server) ListGroups(ctx context.Context, _ *emptypb.Empty) (*rpcpb.ListGro
 
 	var groupList = make([]*rpcpb.AuthGroup, len(groups))
 	for idx, entity := range groups {
-		groupList[idx] = entity.ToProto()
+		groupList[idx] = entity.ToProto(false)
 	}
 
 	return &rpcpb.ListGroupsResponse{
@@ -55,7 +55,7 @@ func (*Server) ListGroups(ctx context.Context, _ *emptypb.Empty) (*rpcpb.ListGro
 func (*Server) GetGroup(ctx context.Context, request *rpcpb.GetGroupRequest) (*rpcpb.AuthGroup, error) {
 	switch group, err := model.GetAuthGroup(ctx, request.Name); {
 	case err == nil:
-		return group.ToProto(), nil
+		return group.ToProto(true), nil
 	case err == datastore.ErrNoSuchEntity:
 		return nil, status.Errorf(codes.NotFound, "no such group %q", request.Name)
 	default:

@@ -92,13 +92,10 @@ func TestGroupsServer(t *testing.T) {
 			}), ShouldBeNil)
 
 		// What expected response should be, built with pb.
-		responseGroups := &rpcpb.ListGroupsResponse{
+		expectedResp := &rpcpb.ListGroupsResponse{
 			Groups: []*rpcpb.AuthGroup{
 				{
 					Name:        "test-group-2",
-					Members:     []string{"user:test-user-2"},
-					Globs:       []string{"test-user-2@example.com"},
-					Nested:      []string{"group/test-group"},
 					Description: "This is another test group.",
 					Owners:      "test-group",
 					CreatedTs:   timestamppb.New(createdTime),
@@ -106,9 +103,6 @@ func TestGroupsServer(t *testing.T) {
 				},
 				{
 					Name:        "test-group-3",
-					Members:     []string{},
-					Globs:       []string{},
-					Nested:      []string{"group/tester"},
 					Description: "This is yet another test group.",
 					Owners:      "testers",
 					CreatedTs:   timestamppb.New(createdTime),
@@ -116,9 +110,6 @@ func TestGroupsServer(t *testing.T) {
 				},
 				{
 					Name:        "z-test-group",
-					Members:     []string{"user:test-user-1", "user:test-user-2"},
-					Globs:       []string{"test-user-1@example.com", "test-user-2@example.com"},
-					Nested:      []string{"group/tester"},
 					Description: "This is a test group.",
 					Owners:      "testers",
 					CreatedTs:   timestamppb.New(createdTime),
@@ -129,7 +120,7 @@ func TestGroupsServer(t *testing.T) {
 
 		resp, err := srv.ListGroups(ctx, &emptypb.Empty{})
 		So(err, ShouldBeNil)
-		So(responseGroups.Groups, ShouldResembleProto, resp.Groups)
+		So(resp.Groups, ShouldResembleProto, expectedResp.Groups)
 	})
 
 	Convey("GetGroup RPC call", t, func() {

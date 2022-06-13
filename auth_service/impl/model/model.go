@@ -398,19 +398,24 @@ func unshardAuthDB(ctx context.Context, shardIDs []string) ([]byte, error) {
 	return authDBBlob, nil
 }
 
-// ToProto converts the AuthGroup entity to the protobuffer
-// equivalent.
-func (group *AuthGroup) ToProto() *rpcpb.AuthGroup {
-	return &rpcpb.AuthGroup{
+// ToProto converts the AuthGroup entity to the protobuffer equivalent.
+//
+// Set includeMemberships to true if we also want to include the group members, or false
+// if we only want the metadata (e.g. if we're just listing groups).
+func (group *AuthGroup) ToProto(includeMemberships bool) *rpcpb.AuthGroup {
+	authGroup := &rpcpb.AuthGroup{
 		Name:        group.ID,
-		Members:     group.Members,
-		Globs:       group.Globs,
-		Nested:      group.Nested,
 		Description: group.Description,
 		Owners:      group.Owners,
 		CreatedTs:   timestamppb.New(group.CreatedTS),
 		CreatedBy:   group.CreatedBy,
 	}
+	if includeMemberships {
+		authGroup.Members = group.Members
+		authGroup.Globs = group.Globs
+		authGroup.Nested = group.Nested
+	}
+	return authGroup
 }
 
 // ToProto converts the AuthIPAllowlist entity to the protobuffer
