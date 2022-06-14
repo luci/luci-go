@@ -240,9 +240,8 @@ func TestTaskDef(t *testing.T) {
 	})
 
 	Convey("compute swarming new task req", t, func() {
-		now := time.Unix(1444945245, 0).UTC()
 		ctx := memory.UseWithAppID(context.Background(), "dev~app-id")
-		ctx, _ = testclock.UseTime(ctx, now)
+		ctx, _ = testclock.UseTime(ctx, time.Unix(1444945245, 0).UTC())
 		b := &model.Build{
 			ID:        123,
 			Project:   "project",
@@ -291,7 +290,7 @@ func TestTaskDef(t *testing.T) {
 			Tags:           []string{"buildbucket_bucket:bucket", "buildbucket_build_id:123", "buildbucket_hostname:app-id.appspot.com", "buildbucket_template_canary:0", "luci_project:project"},
 			Priority:       int64(20),
 			PubsubTopic:    "projects/app-id/topics/swarming",
-			PubsubUserdata: fmt.Sprintf(pubSubUserDataTemplate, 123, now.UnixMicro(), "swarm.com"),
+			PubsubUserdata: fmt.Sprintf(pubSubUserDataTemplate, 123, 1444945245000000, "swarm.com"),
 			ServiceAccount: "abc",
 		}
 		So(req, ShouldResemble, expected)

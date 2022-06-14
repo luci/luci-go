@@ -134,7 +134,7 @@ func computeSwarmingNewTaskReq(ctx context.Context, build *model.Build) (*swarmi
 	}
 
 	taskReq.PubsubTopic = fmt.Sprintf(pubsubTopicTemplate, info.AppID(ctx))
-	taskReq.PubsubUserdata = fmt.Sprintf(pubSubUserDataTemplate, build.ID, clock.Now(ctx).UnixMicro(), sw.Hostname)
+	taskReq.PubsubUserdata = fmt.Sprintf(pubSubUserDataTemplate, build.ID, clock.Now(ctx).UnixNano()/1000, sw.Hostname)
 
 	return taskReq, err
 }
