@@ -33,7 +33,7 @@ import { sanitizeHTML } from '../../libs/sanitize_html';
 import { displayCompactDuration, parseProtoDuration } from '../../libs/time_utils';
 import { unwrapObservable } from '../../libs/unwrap_observable';
 import { getRawArtifactUrl, router } from '../../routes';
-import { Artifact, ListArtifactsResponse, parseTestResultName, TestResult } from '../../services/resultdb';
+import { Artifact, ListArtifactsResponse, parseTestResultName, Tag, TestResult } from '../../services/resultdb';
 import colorClasses from '../../styles/color_classes.css';
 import commonStyle from '../../styles/common_style.css';
 
@@ -193,16 +193,26 @@ export class ResultEntryElement extends MobxLitElement {
           </span>
         </span>
         <table id="tag-table" slot="content" border="0">
-          ${this.testResult.tags?.map(
-            (tag) => html`
-              <tr>
-                <td>${tag.key}:</td>
-                <td>${tag.value}</td>
-              </tr>
-            `
-          )}
+          ${this.testResult.tags?.map((tag) => this.renderTag(tag))}
         </table>
       </milo-expandable-entry>
+    `;
+  }
+
+  private renderTag(tag: Tag) {
+    if (tag.value?.match(/^https?:\/\//i)) {
+      return html`
+        <tr>
+          <td>${tag.key}:</td>
+          <td><a href=${tag.value} target="_blank">${tag.value}</a></td>
+        </tr>
+      `;
+    }
+    return html`
+      <tr>
+        <td>${tag.key}:</td>
+        <td>${tag.value}</td>
+      </tr>
     `;
   }
 

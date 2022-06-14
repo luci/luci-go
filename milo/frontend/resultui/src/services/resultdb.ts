@@ -101,7 +101,7 @@ export interface Variant {
 
 export interface Tag {
   readonly key: string;
-  readonly value: string;
+  readonly value?: string;
 }
 
 export interface FailureReason {
