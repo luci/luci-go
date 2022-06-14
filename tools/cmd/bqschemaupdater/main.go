@@ -61,6 +61,7 @@ type tableDef struct {
 	PartitioningDisabled   bool
 	PartitioningExpiration time.Duration
 	PartitioningField      string
+	PartitioningType       string
 	Schema                 bigquery.Schema
 	ClusteringFields       []string
 }
@@ -95,6 +96,7 @@ func updateFromTableDef(ctx context.Context, force bool, ts tableStore, td table
 			md.TimePartitioning = &bigquery.TimePartitioning{
 				Expiration: td.PartitioningExpiration,
 				Field:      td.PartitioningField,
+				Type:       bigquery.TimePartitioningType(td.PartitioningType),
 			}
 		}
 		if len(td.ClusteringFields) > 0 {
@@ -157,6 +159,8 @@ func parseFlags() (*flags, error) {
 	table := flag.String("table", "", `Table name with format "<project id>.<dataset id>.<table id>"`)
 	flag.StringVar(&f.FriendlyName, "friendly-name", "", "Friendly name for the table.")
 	flag.StringVar(&f.PartitioningField, "partitioning-field", "", "Name of a timestamp field to use for table partitioning (beta).")
+	// See: https://pkg.go.dev/cloud.google.com/go/bigquery#TimePartitioning
+	flag.StringVar(&f.PartitioningType, "partitioning-type", "DAY", "One of HOUR, DAY, MONTH and YEAR.")
 	flag.BoolVar(&f.PartitioningDisabled, "disable-partitioning", false, "Makes the table not time-partitioned.")
 	flag.DurationVar(&f.PartitioningExpiration, "partitioning-expiration", 0, "Expiration for partitions. 0 for no expiration.")
 	flag.Var(luciflag.StringSlice(&f.ClusteringFields), "clustering-field", "Optional, one or more clustering fields. Can be specified multiple times and order is significant.")
