@@ -663,7 +663,7 @@ func TestOnSubmissionCompleted(t *testing.T) {
 								switch changeNum {
 								case ci1.GetNumber():
 									So(lastMsg, ShouldContainSubstring, "CL failed to submit because of transient failure: some transient failure. However, submission is running out of time to retry.")
-									So(lastMsg, ShouldContainSubstring, "CLs in the Run have be submitted partially.")
+									So(lastMsg, ShouldContainSubstring, "CLs in the Run have been submitted partially.")
 									So(lastMsg, ShouldContainSubstring, "Not submitted:\n* https://x-review.example.com/c/1111")
 									So(lastMsg, ShouldContainSubstring, "Submitted:\n* https://x-review.example.com/c/2222")
 								case ci2.GetNumber():
@@ -688,7 +688,7 @@ func TestOnSubmissionCompleted(t *testing.T) {
 								switch changeNum {
 								case ci1.GetNumber():
 									So(lastMsg, ShouldContainSubstring, timeoutMsg)
-									So(lastMsg, ShouldContainSubstring, "CLs in the Run have be submitted partially")
+									So(lastMsg, ShouldContainSubstring, "CLs in the Run have been submitted partially")
 									So(lastMsg, ShouldContainSubstring, "Not submitted:\n* https://x-review.example.com/c/1111")
 									So(lastMsg, ShouldContainSubstring, "Submitted:\n* https://x-review.example.com/c/2222")
 								case ci2.GetNumber():

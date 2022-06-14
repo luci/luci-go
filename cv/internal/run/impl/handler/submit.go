@@ -652,7 +652,7 @@ const (
 		"submission has failed for the following CL(s) which this CL depends on."
 	partiallySubmittedMsgForSubmittedCLs = "This CL is submitted. However, " +
 		"submission has failed for the following CL(s) which depend on this CL."
-	partiallySubmittedMsgSuffixFmt = "CLs in the Run have be submitted " +
+	partiallySubmittedMsgSuffixFmt = "CLs in the Run have been submitted " +
 		"partially.\nNot submitted:\n* %s\nSubmitted:\n* %s\n" +
 		"Please, use your judgement to determine if already submitted CLs have " +
 		"to be reverted, or if the remaining CLs could be manually submitted. " +
