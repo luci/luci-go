@@ -875,7 +875,7 @@ def _milo_builder_pb(entry, view, project_name, seen):
 ## commit-queue.cfg.
 
 # Enables generation of the location_filters field.
-_cq_generate_location_filters = experiments.register("crbug.com/1171945")
+_cq_generate_location_filters = experiments.register("crbug.com/1171945", "1.31.1")
 
 def gen_cq_cfg(ctx):
     """Generates commit-queue.cfg.
