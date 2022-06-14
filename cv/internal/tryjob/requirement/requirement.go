@@ -26,6 +26,7 @@ import (
 
 	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/common/data/stringset"
+	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/hardcoded/chromeinfra"
 	"go.chromium.org/luci/server/auth"
 
@@ -412,10 +413,34 @@ func shouldInclude(ctx context.Context, in Input, er *rand.Rand, b *cfgpb.Verifi
 		return skipBuilder, nil, nil
 	}
 
-	switch matched, err := locationMatch(ctx, b.LocationRegexp, b.LocationRegexpExclude, in.CLs); {
-	case err != nil:
+	// Check for LocationRegexp match to decide whether to skip the builder.
+	// Also evaluate with LocationFilter (if it is set) to assess the
+	// correctness of LocationFilter matching.
+	matched, err := locationMatch(ctx, b.LocationRegexp, b.LocationRegexpExclude, in.CLs)
+	if err != nil {
+
 		return skipBuilder, nil, err
-	case !matched:
+	}
+
+	if len(b.LocationFilters) > 0 {
+		locationFilterMatched, err := locationFilterMatch(ctx, b.LocationFilters, in.CLs)
+		if err != nil {
+			return skipBuilder, nil, err
+		} else if matched != locationFilterMatched {
+			// If the result using LocationRegexp is not the same as LocationFilter,
+			// we want to know about it because this means that locationFilterMatch
+			// is not correct.
+			logging.Fields{
+				"location_regexp":         b.LocationRegexp,
+				"location_regexp_exclude": b.LocationRegexpExclude,
+				"location_filters":        b.LocationFilters,
+				"location_regexp result":  matched,
+				"location_filters result": locationFilterMatched,
+			}.Errorf(ctx, "LocationFilters and LocationRegexp did not give the same result.")
+		}
+	}
+
+	if !matched {
 		return skipBuilder, nil, nil
 	}
 

@@ -18,12 +18,15 @@ import (
 	"context"
 	"testing"
 
+	"google.golang.org/protobuf/types/known/timestamppb"
+
 	"go.chromium.org/luci/auth/identity"
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
+	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/common/logging/memlogger"
 	gerritpb "go.chromium.org/luci/common/proto/gerrit"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
-	"google.golang.org/protobuf/types/known/timestamppb"
 
 	cfgpb "go.chromium.org/luci/cv/api/config/v2"
 	"go.chromium.org/luci/cv/internal/changelist"
@@ -687,6 +690,47 @@ func TestCompute(t *testing.T) {
 							Critical: true,
 						}},
 					})
+				})
+			})
+
+			// TODO(crbug/1171945): This can be removed after migrating to location_filters.
+			Convey("location_filters and location_regexp result mismatch", func() {
+				ctx = memlogger.Use(ctx)
+				log := logging.Get(ctx).(*memlogger.MemLogger)
+
+				in := makeInput(ctx, []*cfgpb.Verifiers_Tryjob_Builder{
+					builderConfigGenerator{
+						Name: "luci/test/builder1",
+						// Include those in some/ but not in some/excluded/..
+						LocationRegexp:        []string{".*/[+]/some/.+"},
+						LocationRegexpExclude: []string{".*/[+]/some/excluded/.*"},
+						LocationFilters: []*cfgpb.Verifiers_Tryjob_Builder_LocationFilter{
+							{
+								PathRegexp: "some/.+",
+								Exclude:    false,
+							},
+							{
+								PathRegexp: "some/OTHER/.*",
+								Exclude:    true,
+							},
+						},
+					}.generate()},
+				)
+				Convey("matching CL skipping builder but location_filters doesn't match", func() {
+					in.CLs[0].Detail.GetGerrit().Files = []string{
+						"some/excluded/file",
+					}
+					res, err := Compute(ctx, *in)
+
+					So(err, ShouldBeNil)
+					So(res.ComputationFailure, ShouldBeNil)
+					So(res.Requirement, ShouldResembleProto, &tryjob.Requirement{
+						RetryConfig: &cfgpb.Verifiers_Tryjob_RetryConfig{
+							SingleQuota: 2,
+							GlobalQuota: 8,
+						},
+					})
+					So(log, memlogger.ShouldHaveLog, logging.Error, "LocationFilters and LocationRegexp did not give the same result")
 				})
 			})
 		})
