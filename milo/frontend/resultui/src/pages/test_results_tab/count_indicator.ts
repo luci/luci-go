@@ -97,7 +97,11 @@ export class TestResultsTabCountIndicatorElement extends MiloBaseElement {
       </div>`;
     }
 
-    return html`<mwc-icon id="expected" title="all tests passed">check_circle</mwc-icon>`;
+    if (testLoader.unfilteredTestVariantCount > 0) {
+      return html`<mwc-icon id="expected" title="all tests passed">check_circle</mwc-icon>`;
+    }
+
+    return;
   }
 
   static styles = css`
