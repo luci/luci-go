@@ -12,7 +12,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { axisRight, NumberValue, scaleTime, select as d3Select, timeHour, timeMillisecond, timeMinute } from 'd3';
+import {
+  axisRight,
+  NumberValue,
+  scaleTime,
+  select as d3Select,
+  timeHour,
+  timeMillisecond,
+  timeMinute,
+  timeSecond,
+} from 'd3';
 import { css, customElement, html } from 'lit-element';
 import { computed, observable } from 'mobx';
 
@@ -58,7 +67,7 @@ export class TestHistoryDurationLegendElement extends MiloBaseElement {
       return timeMinute.every(this.tickStepSizeMs / MINUTE_MS);
     }
     if (this.tickStepSizeMs >= SECOND_MS) {
-      return timeMinute.every(this.tickStepSizeMs / SECOND_MS);
+      return timeSecond.every(this.tickStepSizeMs / SECOND_MS);
     }
     return timeMillisecond.every(this.tickStepSizeMs);
   }
