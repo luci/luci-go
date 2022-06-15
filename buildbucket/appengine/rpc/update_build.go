@@ -562,7 +562,11 @@ func (*Builds) UpdateBuild(ctx context.Context, req *pb.UpdateBuildRequest) (*pb
 
 	build, err = updateEntities(ctx, req, build.GetParentID(), updateMask, &bs)
 	if err != nil {
-		return nil, appstatus.Errorf(codes.Internal, "failed to update the build entity: %s", err)
+		if _, isAppStatusErr := appstatus.Get(err); isAppStatusErr {
+			return nil, err
+		} else {
+			return nil, appstatus.Errorf(codes.Internal, "failed to update the build entity: %s", err)
+		}
 	}
 
 	return build.ToProto(ctx, readMask)
