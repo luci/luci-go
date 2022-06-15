@@ -24,7 +24,6 @@ import (
 	"google.golang.org/protobuf/proto"
 
 	"go.chromium.org/luci/auth/identity"
-	"go.chromium.org/luci/buildbucket/access"
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/api/gitiles"
 	"go.chromium.org/luci/common/data/stringset"
@@ -39,6 +38,7 @@ import (
 	"go.chromium.org/luci/config/validation"
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/grpc/grpcutil"
+	"go.chromium.org/luci/server/auth/realms"
 	"go.chromium.org/luci/server/caching"
 
 	"go.chromium.org/luci/milo/api/config"
@@ -150,13 +150,12 @@ func (c *Console) ProjectID() string {
 	return c.Parent.StringID()
 }
 
-// FilterBuilders uses an access.Permissions to filter out builder IDs and builders
-// from the definition, and builders in the definition's header, which are not
-// allowed by the permissions.
-func (c *Console) FilterBuilders(perms access.Permissions) {
+// FilterBuilders filters out builder IDs and builders with realms not listed
+// in `allowedRealms`.
+func (c *Console) FilterBuilders(allowedRealms stringset.Set) {
 	okBuilderIDs := make([]string, 0, len(c.Builders))
 	for _, id := range c.Builders {
-		if bucket := extractBucket(id); bucket != "" && !perms.Can(bucket, access.AccessBucket) {
+		if realm := extractRealm(id); realm != "" && !allowedRealms.Has(realm) {
 			continue
 		}
 		okBuilderIDs = append(okBuilderIDs, id)
@@ -164,7 +163,7 @@ func (c *Console) FilterBuilders(perms access.Permissions) {
 	c.Builders = okBuilderIDs
 	okBuilders := make([]*config.Builder, 0, len(c.Def.Builders))
 	for _, b := range c.Def.Builders {
-		if bucket := extractBucket(b.Name); bucket != "" && !perms.Can(bucket, access.AccessBucket) {
+		if realm := extractRealm(b.Name); realm != "" && !allowedRealms.Has(realm) {
 			continue
 		}
 		okBuilders = append(okBuilders, b)
@@ -172,31 +171,30 @@ func (c *Console) FilterBuilders(perms access.Permissions) {
 	c.Def.Builders = okBuilders
 }
 
-// Buckets returns all buckets referenced by this Console's Builders.
-func (c *Console) Buckets() stringset.Set {
+// BuilderRealms returns all realms referenced by this Console's Builders.
+func (c *Console) BuilderRealms() stringset.Set {
 	buckets := stringset.New(1)
 	for _, id := range c.Builders {
-		if bucket := extractBucket(id); bucket != "" {
+		if bucket := extractRealm(id); bucket != "" {
 			buckets.Add(bucket)
 		}
 	}
 	return buckets
 }
 
-// extractBucket extracts bucket from a builder ID if possible.
-//
-// TODO(mknyszek): Get rid of this by either moving the logic above
-// or somehow getting access to BuilderID otherwise without an import
-// cycle.
-func extractBucket(id string) string {
-	if !strings.HasPrefix(id, "buildbucket/") {
-		return ""
-	}
+// extractRealm extracts realm from a builder ID if possible.
+func extractRealm(id string) string {
 	toks := strings.SplitN(id, "/", 3)
-	if len(toks) != 3 {
+	if len(toks) != 3 || toks[0] != "buildbucket" {
 		return ""
 	}
-	return toks[1]
+
+	toks = strings.SplitN(toks[1], ".", 3)
+	if len(toks) != 3 || toks[0] != "luci" {
+		return ""
+	}
+
+	return realms.Join(toks[1], toks[2])
 }
 
 // ConsoleID is a reference to a console.

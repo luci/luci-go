@@ -17,11 +17,8 @@ package common
 import (
 	"context"
 	"testing"
-	"time"
 
 	"go.chromium.org/luci/auth/identity"
-	"go.chromium.org/luci/buildbucket/access"
-	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/logging/gologger"
 	"go.chromium.org/luci/config"
 	"go.chromium.org/luci/config/cfgclient"
@@ -29,14 +26,9 @@ import (
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
-	"go.chromium.org/luci/server/caching"
 
 	. "github.com/smartystreets/goconvey/convey"
 )
-
-func newTestAccessClient(c context.Context, client *access.TestClient) *CachedAccessClient {
-	return NewTestCachedAccessClient(client, caching.GlobalCache(c, "buildbucket-access-buildbucket.example.com"))
-}
 
 func TestACL(t *testing.T) {
 	t.Parallel()
@@ -117,107 +109,6 @@ func TestACL(t *testing.T) {
 					So(ok, ShouldEqual, false)
 					So(err, ShouldBeNil)
 				})
-			})
-		})
-
-		Convey("Set up buildbucket client", func() {
-			client := access.TestClient{}
-			helloPermissions := access.Permissions{
-				"hello": access.AccessBucket,
-			}
-
-			Convey("With anonymous identity", func() {
-				c = auth.WithState(c, &authtest.FakeState{
-					Identity:       identity.AnonymousIdentity,
-					IdentityGroups: []string{"all"},
-				})
-
-				Convey("Get bucket permissions uncached", func() {
-					cachedAccessClient := newTestAccessClient(c, &client)
-
-					// Uncached call.
-					client.PermittedActionsResponse = helloPermissions.ToProto(0)
-					perms, err := cachedAccessClient.BucketPermissions(c, "hello")
-					So(err, ShouldBeNil)
-					So(perms, ShouldResemble, helloPermissions)
-
-					// Cached call. Since perms is nil and we haven't advanced the clock,
-					// this would error if the value isn't cached.
-					client.PermittedActionsResponse = (access.Permissions{}).ToProto(0)
-					perms, err = cachedAccessClient.BucketPermissions(c, "hello")
-					So(err, ShouldBeNil)
-					So(perms["hello"], ShouldEqual, access.AccessBucket)
-				})
-
-				Convey("Get bucket permissions cache duration", func() {
-					cachedAccessClient := newTestAccessClient(c, &client)
-					c, clk := testclock.UseTime(c, testclock.TestRecentTimeLocal)
-
-					// Uncached call.
-					client.PermittedActionsResponse = helloPermissions.ToProto(1 * time.Second)
-					perms, err := cachedAccessClient.BucketPermissions(c, "hello")
-					So(err, ShouldBeNil)
-					So(perms, ShouldResemble, helloPermissions)
-
-					// Move time forward.
-					clk.Add(2 * time.Second)
-
-					// Also uncached call.
-					expectPermissions := access.Permissions{
-						"hello": access.ViewBuild,
-					}
-					client.PermittedActionsResponse = expectPermissions.ToProto(0)
-					perms, err = cachedAccessClient.BucketPermissions(c, "hello")
-					So(err, ShouldBeNil)
-					So(perms, ShouldResemble, expectPermissions)
-				})
-
-				Convey("Get bucket permissions for cached and uncached buckets", func() {
-					cachedAccessClient := newTestAccessClient(c, &client)
-
-					// Uncached call.
-					client.PermittedActionsResponse = helloPermissions.ToProto(0)
-					perms, err := cachedAccessClient.BucketPermissions(c, "hello")
-					So(err, ShouldBeNil)
-					So(perms, ShouldResemble, helloPermissions)
-
-					// Cached call for hello, but uncached call for goodbye.
-					// Since perms is nil and we haven't advanced the clock,
-					// this should fail if there's no caching happening.
-					goodbyePermissions := access.Permissions{
-						"goodbye": access.AccessBucket,
-					}
-					client.PermittedActionsResponse = goodbyePermissions.ToProto(0)
-					perms, err = cachedAccessClient.BucketPermissions(c, "hello", "goodbye")
-					So(err, ShouldBeNil)
-					So(perms["hello"], ShouldEqual, access.AccessBucket)
-					So(perms["goodbye"], ShouldEqual, access.AccessBucket)
-				})
-			})
-
-			Convey("Make sure cache doesn't share identity", func() {
-				cachedAccessClient := newTestAccessClient(c, &client)
-
-				cABob := auth.WithState(c, &authtest.FakeState{
-					Identity:       "user:alicebob@google.com",
-					IdentityGroups: []string{"googlers", "all"},
-				})
-				cEve := auth.WithState(c, &authtest.FakeState{
-					Identity:       "user:eve@notgoogle.com",
-					IdentityGroups: []string{"all"},
-				})
-				// Uncached call.
-				client.PermittedActionsResponse = helloPermissions.ToProto(0)
-				perms, err := cachedAccessClient.BucketPermissions(cEve, "hello")
-				So(err, ShouldBeNil)
-				So(perms, ShouldResemble, helloPermissions)
-
-				// Eve's result should now be cached, but anon should make an RPC
-				// for themselves, and Eve's result should not be used.
-				client.PermittedActionsResponse = (access.Permissions{}).ToProto(0)
-				perms, err = cachedAccessClient.BucketPermissions(cABob, "hello")
-				So(err, ShouldBeNil)
-				So(len(perms), ShouldEqual, 0)
 			})
 		})
 	})

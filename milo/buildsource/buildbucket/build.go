@@ -29,7 +29,7 @@ import (
 	"google.golang.org/grpc/status"
 
 	"go.chromium.org/luci/auth/identity"
-	"go.chromium.org/luci/buildbucket/access"
+	"go.chromium.org/luci/buildbucket/bbperms"
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/buildbucket/protoutil"
 	"go.chromium.org/luci/common/clock"
@@ -46,6 +46,7 @@ import (
 	"go.chromium.org/luci/milo/frontend/ui"
 	"go.chromium.org/luci/milo/git"
 	"go.chromium.org/luci/server/auth"
+	"go.chromium.org/luci/server/auth/realms"
 	"go.chromium.org/luci/server/router"
 )
 
@@ -383,12 +384,16 @@ func GetBuildPage(ctx *router.Context, br *buildbucketpb.GetBuildRequest, blamel
 		blameErr = errors.Reason("invalid blamelist option").Err()
 	}
 
-	bucketID := b.Builder.Project + "/" + b.Builder.Bucket
-	accessClient := common.GetCachedAccessClient(c)
-	permissions, err := accessClient.BucketPermissions(c, bucketID)
+	realm := realms.Join(b.Builder.Project, b.Builder.Bucket)
+	canCancel, err := auth.HasPermission(c, bbperms.BuildsCancel, realm, nil)
 	if err != nil {
 		return nil, err
 	}
+	canRetry, err := auth.HasPermission(c, bbperms.BuildsAdd, realm, nil)
+	if err != nil {
+		return nil, err
+	}
+
 	logging.Infof(c, "Got all the things")
 	return &ui.BuildPage{
 		Build: ui.Build{
@@ -399,8 +404,8 @@ func GetBuildPage(ctx *router.Context, br *buildbucketpb.GetBuildRequest, blamel
 		BuildbucketHost: host,
 		BlamelistError:  blameErr,
 		ForcedBlamelist: blamelistOpt == ForceBlamelist,
-		CanCancel:       permissions.Can(bucketID, access.CancelBuild),
-		CanRetry:        permissions.Can(bucketID, access.AddBuild),
+		CanCancel:       canCancel,
+		CanRetry:        canRetry,
 	}, nil
 }
 

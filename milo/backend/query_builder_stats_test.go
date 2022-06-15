@@ -22,7 +22,7 @@ import (
 
 	. "github.com/smartystreets/goconvey/convey"
 	"go.chromium.org/luci/auth/identity"
-	"go.chromium.org/luci/buildbucket/access"
+	"go.chromium.org/luci/buildbucket/bbperms"
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
@@ -32,7 +32,6 @@ import (
 	"go.chromium.org/luci/milo/common/model/milostatus"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
-	"go.chromium.org/luci/server/caching"
 )
 
 func TestQueryBuilderStats(t *testing.T) {
@@ -50,12 +49,7 @@ func TestQueryBuilderStats(t *testing.T) {
 		})
 		datastore.GetTestable(ctx).Consistent(true)
 
-		accessClient := access.TestClient{}
-		srv := &MiloInternalService{
-			GetCachedAccessClient: func(c context.Context) (*common.CachedAccessClient, error) {
-				return common.NewTestCachedAccessClient(&accessClient, caching.GlobalCache(c, "TestQueryBuilderStats")), nil
-			},
-		}
+		srv := &MiloInternalService{}
 
 		builder1 := &buildbucketpb.BuilderID{
 			Project: "fake_project",
@@ -105,14 +99,17 @@ func TestQueryBuilderStats(t *testing.T) {
 		So(err, ShouldBeNil)
 
 		Convey(`get build stats`, func() {
-			c := auth.WithState(ctx, &authtest.FakeState{Identity: "user"})
+			ctx := auth.WithState(ctx, &authtest.FakeState{
+				Identity: "user",
+				IdentityPermissions: []authtest.RealmPermission{
+					{
+						Realm:      "fake_project:fake_bucket",
+						Permission: bbperms.BuildsList,
+					},
+				},
+			})
 
-			// Mock the access client response.
-			accessClient.PermittedActionsResponse = access.Permissions{
-				"luci.fake_project.fake_bucket": access.AccessBucket,
-			}.ToProto(time.Hour)
-
-			res, err := srv.QueryBuilderStats(c, &milopb.QueryBuilderStatsRequest{
+			res, err := srv.QueryBuilderStats(ctx, &milopb.QueryBuilderStatsRequest{
 				Builder: builder1,
 			})
 			So(err, ShouldBeNil)
@@ -121,8 +118,9 @@ func TestQueryBuilderStats(t *testing.T) {
 		})
 
 		Convey(`reject users with no access`, func() {
-			accessClient.PermittedActionsResponse = access.Permissions{}.ToProto(time.Hour)
-
+			ctx := auth.WithState(ctx, &authtest.FakeState{
+				Identity: "user",
+			})
 			_, err := srv.QueryBuilderStats(ctx, &milopb.QueryBuilderStatsRequest{
 				Builder: builder1,
 			})

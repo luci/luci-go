@@ -18,7 +18,6 @@ import (
 	"context"
 
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
-	"go.chromium.org/luci/milo/common"
 	"go.chromium.org/luci/milo/git"
 	"go.chromium.org/luci/server/auth"
 )
@@ -31,7 +30,4 @@ type MiloInternalService struct {
 	// GetBuildersClient returns a buildbucket builders service for the given
 	// context.
 	GetBuildersClient func(c context.Context, as auth.RPCAuthorityKind) (buildbucketpb.BuildersClient, error)
-
-	// GetCachedAccessClient returns a cached access client for the given context.
-	GetCachedAccessClient func(c context.Context) (*common.CachedAccessClient, error)
 }

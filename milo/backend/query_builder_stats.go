@@ -18,7 +18,7 @@ import (
 	"context"
 
 	"go.chromium.org/luci/auth/identity"
-	"go.chromium.org/luci/buildbucket/access"
+	"go.chromium.org/luci/buildbucket/bbperms"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/sync/parallel"
 	"go.chromium.org/luci/gae/service/datastore"
@@ -27,6 +27,7 @@ import (
 	"go.chromium.org/luci/milo/common"
 	"go.chromium.org/luci/milo/common/model/milostatus"
 	"go.chromium.org/luci/server/auth"
+	"go.chromium.org/luci/server/auth/realms"
 	"google.golang.org/grpc/codes"
 )
 
@@ -41,16 +42,12 @@ func (s *MiloInternalService) QueryBuilderStats(ctx context.Context, req *milopb
 	}
 
 	// Perform ACL check.
-	bucketResourceID := common.BucketResourceID(req.Builder.Project, req.Builder.Bucket)
-	accessClient, err := s.GetCachedAccessClient(ctx)
+	realm := realms.Join(req.Builder.Project, req.Builder.Bucket)
+	allowed, err := auth.HasPermission(ctx, bbperms.BuildsList, realm, nil)
 	if err != nil {
 		return nil, err
 	}
-	perms, err := accessClient.BucketPermissions(ctx, bucketResourceID)
-	if err != nil {
-		return nil, err
-	}
-	if !perms.Can(bucketResourceID, access.AccessBucket) {
+	if !allowed {
 		if auth.CurrentIdentity(ctx) == identity.AnonymousIdentity {
 			return nil, appstatus.Error(codes.Unauthenticated, "not logged in")
 		}

@@ -17,12 +17,11 @@ package backend
 import (
 	"context"
 	"testing"
-	"time"
 
 	"github.com/golang/mock/gomock"
 	. "github.com/smartystreets/goconvey/convey"
 	"go.chromium.org/luci/auth/identity"
-	"go.chromium.org/luci/buildbucket/access"
+	"go.chromium.org/luci/buildbucket/bbperms"
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
@@ -30,7 +29,6 @@ import (
 	"go.chromium.org/luci/milo/common"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
-	"go.chromium.org/luci/server/caching"
 )
 
 func TestListBuilders(t *testing.T) {
@@ -48,76 +46,80 @@ func TestListBuilders(t *testing.T) {
 		})
 		datastore.GetTestable(ctx).Consistent(true)
 		mockBuildersClient := buildbucketpb.NewMockBuildersClient(gomock.NewController(t))
-		accessClient := access.TestClient{}
 		srv := &MiloInternalService{
 			GetBuildersClient: func(c context.Context, as auth.RPCAuthorityKind) (buildbucketpb.BuildersClient, error) {
 				return mockBuildersClient, nil
-			},
-			GetCachedAccessClient: func(c context.Context) (*common.CachedAccessClient, error) {
-				return common.NewTestCachedAccessClient(&accessClient, caching.GlobalCache(c, "TestListBuilders")), nil
 			},
 		}
 
 		err := datastore.Put(ctx, []*common.Project{
 			{
-				ID:  "this project",
+				ID:  "this_project",
 				ACL: common.ACL{Identities: []identity.Identity{"user"}},
 				ExternalBuilderIDs: []string{
-					"other project/bucket without.access/fake.builder 1",
-					"other project/fake.bucket 2/fake.builder 1",
-					"other project/fake.bucket 2/fake.builder 2",
+					"other_project/bucket_without.access/fake.builder 1",
+					"other_project/fake.bucket_2/fake.builder 1",
+					"other_project/fake.bucket_2/fake.builder 2",
 				},
 			},
 			{
-				ID: "other project",
+				ID: "other_project",
 			},
 		})
 		So(err, ShouldBeNil)
 
 		err = datastore.Put(ctx, []*common.Console{
 			{
-				Parent: datastore.MakeKey(ctx, "Project", "this project"),
+				Parent: datastore.MakeKey(ctx, "Project", "this_project"),
 				ID:     "console1",
 				Builders: []string{
-					"buildbucket/luci.other project.fake.bucket 2/fake.builder 2",
-					"buildbucket/luci.other project.bucket without.access/fake.builder 1",
-					"buildbucket/luci.this project.fake.bucket 2/fake.builder 1",
-					"buildbucket/luci.this project.fake.bucket 1/fake.builder 1",
+					"buildbucket/luci.other_project.fake.bucket_2/fake.builder 2",
+					"buildbucket/luci.other_project.bucket_without.access/fake.builder 1",
+					"buildbucket/luci.this_project.fake.bucket_2/fake.builder 1",
+					"buildbucket/luci.this_project.fake.bucket_1/fake.builder 1",
 				},
 			},
 			{
-				Parent: datastore.MakeKey(ctx, "Project", "this project"),
+				Parent: datastore.MakeKey(ctx, "Project", "this_project"),
 				ID:     "console2",
 				Builders: []string{
-					"buildbucket/luci.other project.fake.bucket 2/fake.builder 1",
-					"buildbucket/luci.this project.fake.bucket 2/fake.builder 1",
-					"buildbucket/luci.this project.fake.bucket 1/fake.builder 2",
+					"buildbucket/luci.other_project.fake.bucket_2/fake.builder 1",
+					"buildbucket/luci.this_project.fake.bucket_2/fake.builder 1",
+					"buildbucket/luci.this_project.fake.bucket_1/fake.builder 2",
 				},
 			},
 		})
 		So(err, ShouldBeNil)
 
 		Convey(`list project builders E2E`, func() {
-			c := auth.WithState(ctx, &authtest.FakeState{Identity: "user"})
+			c := auth.WithState(ctx, &authtest.FakeState{
+				Identity: "user",
+				IdentityPermissions: []authtest.RealmPermission{
+					{
+						Realm:      "other_project:fake.bucket_2",
+						Permission: bbperms.BuildersList,
+					},
+				},
+			})
 
 			// Mock the first buildbucket ListBuilders response.
 			expectedReq := &buildbucketpb.ListBuildersRequest{
-				Project:  "this project",
+				Project:  "this_project",
 				PageSize: 2,
 			}
 			mockBuildersClient.EXPECT().ListBuilders(gomock.Any(), common.NewShouldResemberMatcher(expectedReq)).Return(&buildbucketpb.ListBuildersResponse{
 				Builders: []*buildbucketpb.BuilderItem{
 					{
 						Id: &buildbucketpb.BuilderID{
-							Project: "this project",
-							Bucket:  "fake.bucket 1",
+							Project: "this_project",
+							Bucket:  "fake.bucket_1",
 							Builder: "fake.builder 1",
 						},
 					},
 					{
 						Id: &buildbucketpb.BuilderID{
-							Project: "this project",
-							Bucket:  "fake.bucket 1",
+							Project: "this_project",
+							Bucket:  "fake.bucket_1",
 							Builder: "fake.builder 2",
 						},
 					},
@@ -128,22 +130,22 @@ func TestListBuilders(t *testing.T) {
 			// Test the first page.
 			// It should return builders from the first page of the buildbucket.ListBuilders Response.
 			res, err := srv.ListBuilders(c, &milopb.ListBuildersRequest{
-				Project:  "this project",
+				Project:  "this_project",
 				PageSize: 2,
 			})
 			So(err, ShouldBeNil)
 			So(res.Builders, ShouldResemble, []*buildbucketpb.BuilderItem{
 				{
 					Id: &buildbucketpb.BuilderID{
-						Project: "this project",
-						Bucket:  "fake.bucket 1",
+						Project: "this_project",
+						Bucket:  "fake.bucket_1",
 						Builder: "fake.builder 1",
 					},
 				},
 				{
 					Id: &buildbucketpb.BuilderID{
-						Project: "this project",
-						Bucket:  "fake.bucket 1",
+						Project: "this_project",
+						Bucket:  "fake.bucket_1",
 						Builder: "fake.builder 2",
 					},
 				},
@@ -152,7 +154,7 @@ func TestListBuilders(t *testing.T) {
 
 			// Mock the second buildbucket ListBuilders response.
 			expectedReq = &buildbucketpb.ListBuildersRequest{
-				Project:   "this project",
+				Project:   "this_project",
 				PageSize:  2,
 				PageToken: "page 2",
 			}
@@ -160,24 +162,19 @@ func TestListBuilders(t *testing.T) {
 				Builders: []*buildbucketpb.BuilderItem{
 					{
 						Id: &buildbucketpb.BuilderID{
-							Project: "this project",
-							Bucket:  "fake.bucket 2",
+							Project: "this_project",
+							Bucket:  "fake.bucket_2",
 							Builder: "fake.builder 1",
 						},
 					},
 				},
 			}, nil)
 
-			// Mock the access client response.
-			accessClient.PermittedActionsResponse = access.Permissions{
-				"luci.other project.fake.bucket 2": access.AccessBucket,
-			}.ToProto(time.Hour)
-
 			// Test the second page.
 			// It should return builders from the second page of the buildbucket.ListBuilders Response.
 			// with accessable external builders filling the rest of the page.
 			res, err = srv.ListBuilders(c, &milopb.ListBuildersRequest{
-				Project:   "this project",
+				Project:   "this_project",
 				PageSize:  2,
 				PageToken: res.NextPageToken,
 			})
@@ -185,15 +182,15 @@ func TestListBuilders(t *testing.T) {
 			So(res.Builders, ShouldResemble, []*buildbucketpb.BuilderItem{
 				{
 					Id: &buildbucketpb.BuilderID{
-						Project: "this project",
-						Bucket:  "fake.bucket 2",
+						Project: "this_project",
+						Bucket:  "fake.bucket_2",
 						Builder: "fake.builder 1",
 					},
 				},
 				{
 					Id: &buildbucketpb.BuilderID{
-						Project: "other project",
-						Bucket:  "fake.bucket 2",
+						Project: "other_project",
+						Bucket:  "fake.bucket_2",
 						Builder: "fake.builder 1",
 					},
 				},
@@ -203,7 +200,7 @@ func TestListBuilders(t *testing.T) {
 			// Test the third page.
 			// It should return the remaining accessible external builders.
 			res, err = srv.ListBuilders(c, &milopb.ListBuildersRequest{
-				Project:   "this project",
+				Project:   "this_project",
 				PageSize:  2,
 				PageToken: res.NextPageToken,
 			})
@@ -211,8 +208,8 @@ func TestListBuilders(t *testing.T) {
 			So(res.Builders, ShouldResemble, []*buildbucketpb.BuilderItem{
 				{
 					Id: &buildbucketpb.BuilderID{
-						Project: "other project",
-						Bucket:  "fake.bucket 2",
+						Project: "other_project",
+						Bucket:  "fake.bucket_2",
 						Builder: "fake.builder 2",
 					},
 				},
@@ -221,19 +218,28 @@ func TestListBuilders(t *testing.T) {
 		})
 
 		Convey(`list group builders E2E`, func() {
-			c := auth.WithState(ctx, &authtest.FakeState{Identity: "user"})
-
-			// Mock the access client response.
-			accessClient.PermittedActionsResponse = access.Permissions{
-				"luci.other project.fake.bucket 2": access.AccessBucket,
-				"luci.this project.fake.bucket 1":  access.AccessBucket,
-				"luci.this project.fake.bucket 2":  access.AccessBucket,
-			}.ToProto(time.Hour)
+			c := auth.WithState(ctx, &authtest.FakeState{
+				Identity: "user",
+				IdentityPermissions: []authtest.RealmPermission{
+					{
+						Realm:      "other_project:fake.bucket_2",
+						Permission: bbperms.BuildersList,
+					},
+					{
+						Realm:      "this_project:fake.bucket_1",
+						Permission: bbperms.BuildersList,
+					},
+					{
+						Realm:      "this_project:fake.bucket_2",
+						Permission: bbperms.BuildersList,
+					},
+				},
+			})
 
 			// Test the first page.
 			// It should return accessible internal builders first.
 			res, err := srv.ListBuilders(c, &milopb.ListBuildersRequest{
-				Project:  "this project",
+				Project:  "this_project",
 				Group:    "console1",
 				PageSize: 2,
 			})
@@ -241,15 +247,15 @@ func TestListBuilders(t *testing.T) {
 			So(res.Builders, ShouldResemble, []*buildbucketpb.BuilderItem{
 				{
 					Id: &buildbucketpb.BuilderID{
-						Project: "this project",
-						Bucket:  "fake.bucket 1",
+						Project: "this_project",
+						Bucket:  "fake.bucket_1",
 						Builder: "fake.builder 1",
 					},
 				},
 				{
 					Id: &buildbucketpb.BuilderID{
-						Project: "this project",
-						Bucket:  "fake.bucket 2",
+						Project: "this_project",
+						Bucket:  "fake.bucket_2",
 						Builder: "fake.builder 1",
 					},
 				},
@@ -259,7 +265,7 @@ func TestListBuilders(t *testing.T) {
 			// Test the second page.
 			// It should return the remaining accessible external builders.
 			res, err = srv.ListBuilders(c, &milopb.ListBuildersRequest{
-				Project:   "this project",
+				Project:   "this_project",
 				PageSize:  2,
 				PageToken: res.NextPageToken,
 			})
@@ -267,8 +273,8 @@ func TestListBuilders(t *testing.T) {
 			So(res.Builders, ShouldResemble, []*buildbucketpb.BuilderItem{
 				{
 					Id: &buildbucketpb.BuilderID{
-						Project: "other project",
-						Bucket:  "fake.bucket 2",
+						Project: "other_project",
+						Bucket:  "fake.bucket_2",
 						Builder: "fake.builder 2",
 					},
 				},
@@ -280,7 +286,7 @@ func TestListBuilders(t *testing.T) {
 			c := auth.WithState(ctx, &authtest.FakeState{Identity: "user2"})
 
 			_, err := srv.ListBuilders(c, &milopb.ListBuildersRequest{
-				Project:  "this project",
+				Project:  "this_project",
 				Group:    "console1",
 				PageSize: 2,
 			})

@@ -50,7 +50,6 @@ func Run(srv *server.Server, templatePath string) {
 		auth.Authenticate(srv.CookieAuth),
 	)
 	htmlMW := baseAuthMW.Extend(
-		withAccessClientMiddleware, // This must be called after the auth.Authenticate middleware.
 		withGitMiddleware,
 		withBuildbucketBuildsClient,
 		withBuildbucketBuildersClient,

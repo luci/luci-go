@@ -27,12 +27,14 @@ import (
 
 	"google.golang.org/grpc/codes"
 
+	"go.chromium.org/luci/buildbucket/bbperms"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/sync/parallel"
 	"go.chromium.org/luci/grpc/grpcutil"
+	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/caching"
 	"go.chromium.org/luci/server/caching/layered"
 	"go.chromium.org/luci/server/router"
@@ -515,17 +517,24 @@ func consoleHeaderGroupIDs(project string, config []*config.ConsoleSummaryGroup)
 
 // filterUnauthorizedBuildersFromConsoles filters out builders the user does not have access to.
 func filterUnauthorizedBuildersFromConsoles(c context.Context, cons []*common.Console) error {
-	buckets := stringset.New(0)
+	allRealms := stringset.New(0)
 	for _, con := range cons {
-		buckets = buckets.Union(con.Buckets())
+		allRealms = allRealms.Union(con.BuilderRealms())
 	}
-	accessClient := common.GetCachedAccessClient(c)
-	perms, err := accessClient.BucketPermissions(c, buckets.ToSlice()...)
-	if err != nil {
-		return err
+
+	allowedRealms := stringset.New(0)
+	for realm := range allRealms {
+		allowed, err := auth.HasPermission(c, bbperms.BuildsList, realm, nil)
+		if err != nil {
+			return err
+		}
+		if allowed {
+			allowedRealms.Add(realm)
+		}
 	}
+
 	for _, con := range cons {
-		con.FilterBuilders(perms)
+		con.FilterBuilders(allowedRealms)
 	}
 	return nil
 }

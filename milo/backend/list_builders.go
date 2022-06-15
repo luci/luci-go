@@ -21,15 +21,15 @@ import (
 	"strings"
 
 	"go.chromium.org/luci/auth/identity"
-	"go.chromium.org/luci/buildbucket/access"
+	"go.chromium.org/luci/buildbucket/bbperms"
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
-	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/grpc/appstatus"
 	milopb "go.chromium.org/luci/milo/api/service/v1"
 	"go.chromium.org/luci/milo/common"
 	"go.chromium.org/luci/server/auth"
+	"go.chromium.org/luci/server/auth/realms"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/protobuf/proto"
 )
@@ -116,6 +116,7 @@ func (s *MiloInternalService) listProjectBuilders(ctx context.Context, project s
 	}
 
 	// Then, return external builders referenced in the project consoles.
+	cachedPerms := make(map[string]bool)
 	remaining := pageSize - len(res.Builders)
 	if remaining > 0 {
 		project := &common.Project{ID: project}
@@ -131,24 +132,22 @@ func (s *MiloInternalService) listProjectBuilders(ctx context.Context, project s
 			}
 		}
 
-		accessClient, err := s.GetCachedAccessClient(ctx)
-		if err != nil {
-			return nil, err
-		}
-		externalBucketResourceIDs := stringset.New(0)
-		for _, builder := range externalBuilders {
-			externalBucketResourceIDs.Add(common.BucketResourceID(builder.Project, builder.Bucket))
-		}
-		perms, err := accessClient.BucketPermissions(ctx, externalBucketResourceIDs.ToSlice()...)
-		if err != nil {
-			return nil, err
-		}
-
 		// Append up to `remaining` external builders to `res.Builders`.
 		i := int(pageToken.GetNextMiloBuilderIndex())
 		for ; i < len(project.ExternalBuilderIDs) && remaining > 0; i++ {
 			bid := externalBuilders[i]
-			if perms.Can(common.BucketResourceID(bid.Project, bid.Bucket), access.AccessBucket) {
+
+			realm := realms.Join(bid.Project, bid.Bucket)
+			allowed, ok := cachedPerms[realm]
+			if !ok {
+				allowed, err = auth.HasPermission(ctx, bbperms.BuildersList, realm, nil)
+				if err != nil {
+					return nil, err
+				}
+				cachedPerms[realm] = allowed
+			}
+
+			if allowed {
 				res.Builders = append(res.Builders, &buildbucketpb.BuilderItem{Id: bid})
 				remaining--
 			}
@@ -210,25 +209,23 @@ func (s *MiloInternalService) listGroupBuilders(ctx context.Context, project str
 		}
 	}
 
-	accessClient, err := s.GetCachedAccessClient(ctx)
-	if err != nil {
-		return nil, err
-	}
-	bucketsResourceIDs := stringset.New(0)
-	for _, builder := range builders {
-		bucketsResourceIDs.Add(common.BucketResourceID(builder.Project, builder.Bucket))
-	}
-	perms, err := accessClient.BucketPermissions(ctx, bucketsResourceIDs.ToSlice()...)
-	if err != nil {
-		return nil, err
-	}
-
 	// Populate `res.Builders`.
+	cachedPerms := make(map[string]bool)
 	i := int(pageToken.GetNextMiloBuilderIndex())
 	remaining := pageSize
 	for ; i < len(con.Builders) && remaining > 0; i++ {
 		bid := builders[i]
-		if perms.Can(common.BucketResourceID(bid.Project, bid.Bucket), access.AccessBucket) {
+		realm := realms.Join(bid.Project, bid.Bucket)
+		allowed, ok := cachedPerms[realm]
+		if !ok {
+			allowed, err = auth.HasPermission(ctx, bbperms.BuildersList, realm, nil)
+			if err != nil {
+				return nil, err
+			}
+			cachedPerms[realm] = allowed
+		}
+
+		if allowed {
 			res.Builders = append(res.Builders, &buildbucketpb.BuilderItem{Id: bid})
 			remaining--
 		}

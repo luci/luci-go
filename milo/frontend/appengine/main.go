@@ -17,7 +17,6 @@ package main
 import (
 	"context"
 	"errors"
-	"fmt"
 	"net/http"
 	"time"
 
@@ -34,7 +33,6 @@ import (
 	"go.chromium.org/luci/server"
 	"go.chromium.org/luci/server/analytics"
 	"go.chromium.org/luci/server/auth"
-	"go.chromium.org/luci/server/caching"
 	"go.chromium.org/luci/server/cron"
 	"go.chromium.org/luci/server/encryptedcookies"
 	"go.chromium.org/luci/server/gaeemulation"
@@ -90,20 +88,6 @@ func main() {
 					Host:    host,
 					Options: rpcOpts,
 				}), nil
-			},
-			GetCachedAccessClient: func(c context.Context) (*common.CachedAccessClient, error) {
-				settings := common.GetSettings(c)
-				host := settings.GetBuildbucket().GetHost()
-				if host == "" {
-					return nil, errors.New("missing buildbucket host in settings")
-				}
-
-				cache := caching.GlobalCache(c, fmt.Sprintf("buildbucket-access-%s", settings.Buildbucket.Host))
-				if cache == nil {
-					return nil, errors.New("no global cache configured")
-				}
-
-				return common.NewCachedAccessClient(c, settings.Buildbucket.Host, cache)
 			},
 		})
 		return nil
