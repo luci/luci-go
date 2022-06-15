@@ -155,7 +155,13 @@ func (c *Console) ProjectID() string {
 func (c *Console) FilterBuilders(allowedRealms stringset.Set) {
 	okBuilderIDs := make([]string, 0, len(c.Builders))
 	for _, id := range c.Builders {
-		if realm := extractRealm(id); realm != "" && !allowedRealms.Has(realm) {
+		bid, err := ParseLegacyBuilderID(id)
+		if err != nil {
+			// The config is validated when ingested by milo, so this should never
+			// happen.
+			panic(err)
+		}
+		if !allowedRealms.Has(realms.Join(bid.Project, bid.Bucket)) {
 			continue
 		}
 		okBuilderIDs = append(okBuilderIDs, id)
@@ -163,7 +169,13 @@ func (c *Console) FilterBuilders(allowedRealms stringset.Set) {
 	c.Builders = okBuilderIDs
 	okBuilders := make([]*config.Builder, 0, len(c.Def.Builders))
 	for _, b := range c.Def.Builders {
-		if realm := extractRealm(b.Name); realm != "" && !allowedRealms.Has(realm) {
+		bid, err := ParseLegacyBuilderID(b.Name)
+		if err != nil {
+			// The config is validated when ingested by milo, so this should never
+			// happen.
+			panic(err)
+		}
+		if !allowedRealms.Has(realms.Join(bid.Project, bid.Bucket)) {
 			continue
 		}
 		okBuilders = append(okBuilders, b)
@@ -173,28 +185,17 @@ func (c *Console) FilterBuilders(allowedRealms stringset.Set) {
 
 // BuilderRealms returns all realms referenced by this Console's Builders.
 func (c *Console) BuilderRealms() stringset.Set {
-	buckets := stringset.New(1)
+	builderRealms := stringset.New(1)
 	for _, id := range c.Builders {
-		if bucket := extractRealm(id); bucket != "" {
-			buckets.Add(bucket)
+		bid, err := ParseLegacyBuilderID(id)
+		if err != nil {
+			// The config is validated when ingested by milo, so this should never
+			// happen.
+			panic(err)
 		}
+		builderRealms.Add(realms.Join(bid.Project, bid.Bucket))
 	}
-	return buckets
-}
-
-// extractRealm extracts realm from a builder ID if possible.
-func extractRealm(id string) string {
-	toks := strings.SplitN(id, "/", 3)
-	if len(toks) != 3 || toks[0] != "buildbucket" {
-		return ""
-	}
-
-	toks = strings.SplitN(toks[1], ".", 3)
-	if len(toks) != 3 || toks[0] != "luci" {
-		return ""
-	}
-
-	return realms.Join(toks[1], toks[2])
+	return builderRealms
 }
 
 // ConsoleID is a reference to a console.
@@ -1001,13 +1002,13 @@ func validateLocalConsole(ctx *validation.Context, knownHeaders *stringset.Set, 
 	}
 	for j, b := range console.Builders {
 		ctx.Enter("builders #%d", j+1)
-		switch {
-		case b.Name == "":
+		if b.Name == "" {
 			ctx.Errorf("name must be non-empty")
-		case strings.HasPrefix(b.Name, "buildbucket/"):
-			// OK
-		default:
-			ctx.Errorf(`name must be in the form of "buildbucket/<bucket>/<builder>"`)
+		} else {
+			_, err := ParseLegacyBuilderID(b.Name)
+			if err != nil {
+				ctx.Errorf(`name: %v`, err)
+			}
 		}
 		ctx.Exit()
 	}
