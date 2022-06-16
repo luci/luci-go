@@ -40,7 +40,7 @@ message GitilesLocation {
   //     refs/heads/infra/config
   //     refs/branch-heads/beta
   //   Not OK:
-  //     master
+  //     main
   //     HEAD
   //     origin/main
   //     tags/123
@@ -233,6 +233,8 @@ message ServiceDynamicMetadata {
   string version = 1;
   // What configs this service can validate and how to validate them.
   Validator validation = 2;
+  // True if the server recognizes "Content-Encoding: gzip" in requests.
+  bool supports_gzip_compression = 3;
 }
 
 // Schema of services.cfg
@@ -247,23 +249,50 @@ message ServicesCfg {
 
 
 // Schema of acl.cfg file.
-// Next tag: 8.
+// Next tag: 13.
 message AclCfg {
-  reserved 4;
+  reserved 3, 4, 5, 6, 12;
   reserved 'config_get_by_hash_group';
+  reserved 'admin_group';
+  reserved 'validation_group';
+  reserved 'reimport_group';
+  reserved 'legacy_project_access_group';
 
-  // Name of the group that has access to all projects/* config sets.
-  // Only trusted services should be in this group.
+  // Name of the group that has global access to all "projects/*" config sets.
+  //
+  // Should contain only members that really need read access to multiple
+  // projects. Access to an individual project can be granted through
+  // "role/configs.reader" role in the "@root" realm of the project.
   string project_access_group = 2;
-  // Name of the group that has access to all services/* config sets.
-  // Only trusted services should be in this group.
+
+  // Name of the group that can call validation API for any accessible project.
+  //
+  // Should contain only members that really need to use validation API in
+  // multiple projects. Permission to validate an individual project can be
+  // granted through "role/configs.developer" role in the "@root" realm of
+  // the project.
+  string project_validation_group = 8;
+
+  // Name of the group that can call reimport API for any accessible project.
+  //
+  // Should contain only members that really need to use reimport API in
+  // multiple projects. Permission to reimport an individual project can be
+  // granted through "role/configs.developer" role in the "@root" realm of
+  // the project.
+  string project_reimport_group = 9;
+
+  // Name of the group that has global access to all "services/*" config sets.
+  //
+  // Should contain only members that really need read access to multiple
+  // services. Access to an individual service can be granted via "access" field
+  // in its entry in services.cfg config.
   string service_access_group = 7;
-  // Name of the group that has admin access to the app.
-  string admin_group = 3;
-  // Name of the group that may call validation API.
-  string validation_group = 5;
-  // Name of the group that may call reimport API.
-  string reimport_group = 6;
+
+  // Name of the group that can call validation API for any accessible service.
+  string service_validation_group = 10;
+
+  // Name of the group that can call reimport API for any accessible service.
+  string service_reimport_group = 11;
 }
 
 // Schema for import.cfg. It specified how to import configuration files from
