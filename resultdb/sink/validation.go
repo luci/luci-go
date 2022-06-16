@@ -46,8 +46,8 @@ func validateTestResult(now time.Time, msg *sinkpb.TestResult) (err error) {
 
 // validateArtifact returns a non-nil error if art is invalid.
 func validateArtifact(art *sinkpb.Artifact) error {
-	if art.GetFilePath() == "" && art.GetContents() == nil {
-		return errors.Reason("body: either file_path or contents must be provided").Err()
+	if art.GetFilePath() == "" && art.GetContents() == nil && art.GetGcsUri() == "" {
+		return errors.Reason("body: one of file_path or contents or gcs_uri must be provided").Err()
 	}
 	if art.GetContentType() != "" {
 		_, _, err := mime.ParseMediaType(art.ContentType)

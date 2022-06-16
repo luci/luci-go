@@ -74,7 +74,12 @@ message TestResult {
 // See its comments for details.
 // Does not have a name or artifact_id because they are represented by the
 // TestResult.artifacts map key.
+// Next id: 5
 message Artifact {
+  // Body should be only one of the following:
+  // - file_path (file should exist. contents & gcs_uri should not be set)
+  // - contents (file_path & gcs_uri should not be set)
+  // - gcs_uri for GCS artifact (file_path & contents should not be set)
   oneof body {
     // Absolute path to the artifact file on the same machine as the
     // ResultSink server.
@@ -84,6 +89,9 @@ message Artifact {
     // machine.
     // TODO(nodir, sajjadm): allow sending contents in chunks.
     bytes contents = 2;
+
+    // The GCS URI of the artifact if it's stored in GCS.
+    string gcs_uri = 4;
   }
 
   // Equivalent of luci.resultdb.v1.Artifact.content_type.

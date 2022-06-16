@@ -22,7 +22,10 @@ import (
 	"testing"
 
 	. "github.com/smartystreets/goconvey/convey"
+	"go.chromium.org/luci/common/sync/dispatcher/buffer"
 	. "go.chromium.org/luci/common/testing/assertions"
+
+	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
 
 type mockTransport func(*http.Request) (*http.Response, error)
@@ -40,6 +43,7 @@ func TestArtifactUploader(t *testing.T) {
 	contentType := "test/output"
 	// the hash of "the test passed"
 	hash := "sha256:e5d2956e29776b1bca33ff1572bf5ca457cabfb8c370852dbbfcea29953178d2"
+	gcsURI := "gs://bucket/foo"
 
 	Convey("ArtifactUploader", t, func() {
 		ctx := context.Background()
@@ -48,10 +52,16 @@ func TestArtifactUploader(t *testing.T) {
 			reqCh <- req
 			return &http.Response{StatusCode: http.StatusNoContent}, nil
 		}
+		batchReqCh := make(chan *pb.BatchCreateArtifactsRequest, 1)
+		keepBatchReq := func(ctx context.Context, in *pb.BatchCreateArtifactsRequest) (*pb.BatchCreateArtifactsResponse, error) {
+			batchReqCh <- in
+			return nil, nil
+		}
 		uploader := &artifactUploader{
-			Recorder:     &mockRecorder{},
+			Recorder:     &mockRecorder{batchCreateArtifacts: keepBatchReq},
 			StreamClient: &http.Client{Transport: mockTransport(keepReq)},
 			StreamHost:   "example.org",
+			MaxBatchable: 10 * 1024 * 1024,
 		}
 
 		Convey("Upload w/ file", func() {
@@ -101,5 +111,96 @@ func TestArtifactUploader(t *testing.T) {
 			So(sent.Header.Get("Content-Type"), ShouldEqual, contentType)
 			So(sent.Header.Get("Update-Token"), ShouldEqual, token)
 		})
+
+		Convey("Upload w/ gcs not supported by stream upload", func() {
+			art := testArtifactWithGcs(gcsURI)
+			art.ContentType = contentType
+			ut, err := newUploadTask(name, art)
+			So(err, ShouldBeNil)
+
+			// StreamUpload does not support gcsUri upload
+			So(uploader.StreamUpload(ctx, ut, token), ShouldErrLike, "StreamUpload does not support gcsUri upload")
+		})
+
+		Convey("Batch Upload w/ gcs", func() {
+			art := testArtifactWithGcs(gcsURI)
+			art.ContentType = contentType
+			ut, err := newUploadTask(name, art)
+			ut.size = 5 * 1024 * 1024
+			So(err, ShouldBeNil)
+
+			b := &buffer.Batch{
+				Data: []buffer.BatchItem{{Item: ut}},
+			}
+
+			So(uploader.BatchUpload(ctx, b), ShouldBeNil)
+			sent := <-batchReqCh
+
+			So(sent.Requests[0].Artifact.ContentType, ShouldEqual, contentType)
+			So(sent.Requests[0].Artifact.Contents, ShouldBeNil)
+			So(sent.Requests[0].Artifact.SizeBytes, ShouldEqual, 5*1024*1024)
+			So(sent.Requests[0].Artifact.GcsUri, ShouldEqual, gcsURI)
+		})
+
+		Convey("Batch Upload w/ gcs with artifact size greater than max batch",
+			func() {
+				art := testArtifactWithGcs(gcsURI)
+				art.ContentType = contentType
+				ut, err := newUploadTask(name, art)
+				ut.size = 15 * 1024 * 1024
+				So(err, ShouldBeNil)
+
+				b := &buffer.Batch{
+					Data: []buffer.BatchItem{{Item: ut}},
+				}
+
+				So(uploader.BatchUpload(ctx, b), ShouldErrLike, "an artifact is greater than")
+
+			})
+
+		Convey("Batch Upload w/ mixed artifacts",
+			func() {
+				art1 := testArtifactWithFile(func(f *os.File) {
+					_, err := f.Write([]byte(content))
+					So(err, ShouldBeNil)
+				})
+				art1.ContentType = contentType
+				defer os.Remove(art1.GetFilePath())
+				ut1, err := newUploadTask(name, art1)
+				So(err, ShouldBeNil)
+
+				art2 := testArtifactWithContents([]byte(content))
+				art2.ContentType = contentType
+				ut2, err := newUploadTask(name, art2)
+				So(err, ShouldBeNil)
+
+				art3 := testArtifactWithGcs(gcsURI)
+				art3.ContentType = contentType
+				ut3, err := newUploadTask(name, art3)
+				ut3.size = 5 * 1024 * 1024
+				So(err, ShouldBeNil)
+
+				b := &buffer.Batch{
+					Data: []buffer.BatchItem{{Item: ut1}, {Item: ut2}, {Item: ut3}},
+				}
+
+				So(uploader.BatchUpload(ctx, b), ShouldBeNil)
+				sent := <-batchReqCh
+
+				So(sent.Requests[0].Artifact.ContentType, ShouldEqual, contentType)
+				So(sent.Requests[0].Artifact.Contents, ShouldResemble, []byte(content))
+				So(sent.Requests[0].Artifact.SizeBytes, ShouldEqual, len(content))
+				So(sent.Requests[0].Artifact.GcsUri, ShouldEqual, "")
+
+				So(sent.Requests[1].Artifact.ContentType, ShouldEqual, contentType)
+				So(sent.Requests[1].Artifact.Contents, ShouldResemble, []byte(content))
+				So(sent.Requests[1].Artifact.SizeBytes, ShouldEqual, len(content))
+				So(sent.Requests[1].Artifact.GcsUri, ShouldEqual, "")
+
+				So(sent.Requests[2].Artifact.ContentType, ShouldEqual, contentType)
+				So(sent.Requests[2].Artifact.Contents, ShouldBeNil)
+				So(sent.Requests[2].Artifact.SizeBytes, ShouldEqual, 5*1024*1024)
+				So(sent.Requests[2].Artifact.GcsUri, ShouldEqual, gcsURI)
+			})
 	})
 }

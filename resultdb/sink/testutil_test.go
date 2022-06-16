@@ -81,6 +81,13 @@ func testArtifactWithContents(contents []byte) *sinkpb.Artifact {
 	}
 }
 
+func testArtifactWithGcs(gcsURI string) *sinkpb.Artifact {
+	return &sinkpb.Artifact{
+		Body:        &sinkpb.Artifact_GcsUri{GcsUri: gcsURI},
+		ContentType: "text/plain",
+	}
+}
+
 // validTestResult returns a valid sinkpb.TestResult sample message.
 func validTestResult() (*sinkpb.TestResult, func()) {
 	now := testclock.TestRecentTimeUTC

@@ -269,7 +269,7 @@ func TestReportTestResults(t *testing.T) {
 			Convey("returns an error if the artifact req is invalid", func() {
 				tr.Artifacts["art2"] = &sinkpb.Artifact{}
 				So(report(tr), ShouldHaveRPCCode, codes.InvalidArgument,
-					"either file_path or contents must be provided")
+					"one of file_path or contents or gcs_uri must be provided")
 			})
 
 			Convey("with an inaccesible artifact file", func() {
@@ -363,15 +363,17 @@ func TestReportInvocationLevelArtifacts(t *testing.T) {
 		So(err, ShouldBeNil)
 		defer closeSinkServer(ctx, sink)
 
-		art := &sinkpb.Artifact{Body: &sinkpb.Artifact_Contents{Contents: []byte("123")}}
+		art1 := &sinkpb.Artifact{Body: &sinkpb.Artifact_Contents{Contents: []byte("123")}}
+		art2 := &sinkpb.Artifact{Body: &sinkpb.Artifact_GcsUri{GcsUri: "gs://bucket/foo"}}
+
 		req := &sinkpb.ReportInvocationLevelArtifactsRequest{
-			Artifacts: map[string]*sinkpb.Artifact{"art1": art},
+			Artifacts: map[string]*sinkpb.Artifact{"art1": art1, "art2": art2},
 		}
 		_, err = sink.ReportInvocationLevelArtifacts(ctx, req)
 		So(err, ShouldBeNil)
 
 		// Duplicated artifact will be rejected.
 		_, err = sink.ReportInvocationLevelArtifacts(ctx, req)
-		So(err, ShouldErrLike, `artifact "art1" has already been uploaded`)
+		So(err, ShouldErrLike, ` has already been uploaded`)
 	})
 }

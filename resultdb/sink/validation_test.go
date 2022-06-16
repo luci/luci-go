@@ -63,6 +63,10 @@ func TestValidateArtifacts(t *testing.T) {
 			Body:        &sinkpb.Artifact_Contents{Contents: []byte("contents")},
 			ContentType: "text/plain",
 		},
+		"art3": {
+			Body:        &sinkpb.Artifact_GcsUri{GcsUri: "gs://bucket/bar"},
+			ContentType: "text/plain",
+		},
 	}
 	// invalid artifacts
 	invalidArts := map[string]*sinkpb.Artifact{
@@ -80,7 +84,7 @@ func TestValidateArtifacts(t *testing.T) {
 	})
 
 	Convey("Fails", t, func() {
-		expected := "body: either file_path or contents must be provided"
+		expected := "body: one of file_path or contents or gcs_uri must be provided"
 
 		Convey("with invalid artifacts", func() {
 			So(validateArtifacts(invalidArts), ShouldErrLike, expected)

@@ -52,6 +52,11 @@ type artifactUploader struct {
 func (u *artifactUploader) StreamUpload(ctx context.Context, t *uploadTask, updateToken string) error {
 	var body io.ReadSeeker
 	var err error
+
+	if t.art.GetGcsUri() != "" {
+		return errors.Reason("StreamUpload does not support gcsUri upload").Err()
+	}
+
 	if fp := t.art.GetFilePath(); fp == "" {
 		body = bytes.NewReader(t.art.GetContents())
 	} else {

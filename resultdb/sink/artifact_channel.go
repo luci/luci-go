@@ -84,13 +84,14 @@ func (t *uploadTask) CreateRequest() (*pb.CreateArtifactRequest, error) {
 			ContentType: t.art.GetContentType(),
 			SizeBytes:   t.size,
 			Contents:    t.art.GetContents(),
+			GcsUri:      t.art.GetGcsUri(),
 		},
 	}
 
 	// parent
 	switch {
 	case err != nil:
-		// This should not happend.
+		// This should not happen.
 		// uploadTask should be created with validated artifacts only.
 		panic(fmt.Sprintf("invalid uploadTask.artName %q: %s", t.artName, err))
 	case tID == "":
@@ -106,14 +107,19 @@ func (t *uploadTask) CreateRequest() (*pb.CreateArtifactRequest, error) {
 			return nil, err
 		}
 	}
-	// If the size of the read content is different to what stat claimed initially, then
-	// return an error, so that the batching logic can be kept simple. Test frameworks
-	// should send finalized artifacts only.
-	if int64(len(req.Artifact.Contents)) != t.size {
-		return nil, errors.Reason(
-			"the size of the artifact contents changed from %d to %d",
-			t.size, len(req.Artifact.Contents)).Err()
+
+	// Perform size check only for non gcs artifact.
+	if req.Artifact.GcsUri == "" {
+		// If the size of the read content is different to what stat claimed initially, then
+		// return an error, so that the batching logic can be kept simple. Test frameworks
+		// should send finalized artifacts only.
+		if int64(len(req.Artifact.Contents)) != t.size {
+			return nil, errors.Reason(
+				"the size of the artifact contents changed from %d to %d",
+				t.size, len(req.Artifact.Contents)).Err()
+		}
 	}
+
 	return req, nil
 }
 
