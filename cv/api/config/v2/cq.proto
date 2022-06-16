@@ -168,6 +168,14 @@ message ConfigGroup {
   // mode for which triggering conditions are fulfilled. If there is no such
   // mode, CQ will fallback to standard DRY_RUN or FULL_RUN.
   repeated Mode additional_modes = 7;
+
+  // Per-user quota config.
+  //
+  // Runs triggered under this ConfigGroup will be affected by the per-user
+  // quota configs, if there is a QuotaPolicy applicable to a given user.
+  //
+  // If not specified, no quota policy will be enforced.
+  UserQuotaConfig user_quota_config = 8;
 }
 
 
@@ -753,4 +761,54 @@ enum Toggle {
   UNSET = 0;
   YES = 1;
   NO = 2;
+}
+
+// QuotaPolicy specifies the quota policy limits.
+message QuotaPolicy {
+    oneof apply_to {
+      // Email of the Gerrit user to apply the quota policy to.
+      string user = 1;
+      // CrIA group to apply the quota policy to.
+      string cria_group = 2;
+    }
+    // Maximum number of active Runs allowed at any given moment.
+    //
+    // Active Run is a Run that has started but not ended yet.
+    int32 max_active_runs = 3;
+    // Maximum number of active Tryjobs allowed at any given moment.
+    //
+    // Active TryJob is a tryjob that CV has successfully launched, and has not
+    // ended yet from CV's point of view. Also, optional tryjobs, which are
+    // experimental tryjobs that were not explicitly requested via the git
+    // footer, are not counted as active tryjobs.
+    //
+    // Note that counting active tryjobs and launching tryjobs are not atomic
+    // operations. So, # of active tryjobs may not match # of the successfully
+    // launched tryjobs for a short period, but will match eventually.
+    int32 max_active_tryjobs = 4;
+}
+
+// UserQuotaConfig specifies per-user quota configs.
+message UserQuotaConfig {
+    // A list of QuotaPolicy(s) for Gerrit users.
+    //
+    // * Always pick the first matching QuotaPolicy
+    // If there are more than one applicable QuotaPolicy(s) for a given user,
+    // CV will pick the left-most applicable QuotaPolicy.
+    //
+    // * No QuotaPolicy, no quota enforcement.
+    // If there is no QuotaPolicy applicable to a given Gerrit user, no quota
+    // policy will be enforced, i.e., unlimited quota.
+    repeated QuotaPolicy policies = 2;
+    // Payer tells whose quotas should be consumed for the Run.
+    // If omitted, the CL owner pays the quota charges.
+    enum Payer {
+        // CL owner pays the charged amount.
+        PAYER_CL_OWNER = 0;
+        // Run triggerer, who is the first voter with a CQ label for the Run,
+        // pays the charged amount.
+        PAYER_RUN_TRIGGERER = 1;
+    }
+    Payer payer = 3;
+    bool include_optional = 4;
 }
