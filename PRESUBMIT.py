@@ -84,7 +84,7 @@ def CheckGoModTidy(input_api, output_api):
     input_api.Command(
       name='go mod tidy',
       cmd=[
-        input_api.python_executable,
+        input_api.python3_executable,
         os.path.join(root, 'scripts', 'check_go_mod_tidy.py'),
         root,
       ],
