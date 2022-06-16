@@ -21,6 +21,8 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/klauspost/compress/gzip"
+
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/proto/config"
@@ -72,8 +74,19 @@ func validationRequestHandler(rules *validation.RuleSet) router.Handler {
 	return func(ctx *router.Context) {
 		c, w, r := ctx.Context, ctx.Writer, ctx.Request
 
+		raw := r.Body
+		if r.Header.Get("Content-Encoding") == "gzip" {
+			logging.Infof(c, "The request is gzip compressed")
+			var err error
+			if raw, err = gzip.NewReader(r.Body); err != nil {
+				badRequestStatus(c, w, "Failed to start decompressing gzip request body", err)
+				return
+			}
+			defer raw.Close()
+		}
+
 		var reqBody config.ValidationRequestMessage
-		switch err := json.NewDecoder(r.Body).Decode(&reqBody); {
+		switch err := json.NewDecoder(raw).Decode(&reqBody); {
 		case err != nil:
 			badRequestStatus(c, w, "Validation: error decoding request body", err)
 			return
@@ -148,7 +161,8 @@ func metadataRequestHandler(rules *validation.RuleSet) router.Handler {
 		}
 
 		meta := config.ServiceDynamicMetadata{
-			Version: metaDataFormatVersion,
+			Version:                 metaDataFormatVersion,
+			SupportsGzipCompression: true,
 			Validation: &config.Validator{
 				Url: fmt.Sprintf("https://%s%s", ctx.Request.Host, validationPath),
 			},

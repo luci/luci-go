@@ -73,7 +73,8 @@ func TestInstallHandlers(t *testing.T) {
 		Convey("Basic metadataHandler call", func() {
 			So(rr.Code, ShouldEqual, http.StatusOK)
 			So(metaCall(), ShouldResemble, &config.ServiceDynamicMetadata{
-				Version: metaDataFormatVersion,
+				Version:                 metaDataFormatVersion,
+				SupportsGzipCompression: true,
 				Validation: &config.Validator{
 					Url: fmt.Sprintf("https://%s%s", host, validationPath),
 				},
@@ -85,7 +86,8 @@ func TestInstallHandlers(t *testing.T) {
 			meta := metaCall()
 			So(rr.Code, ShouldEqual, http.StatusOK)
 			So(meta, ShouldResemble, &config.ServiceDynamicMetadata{
-				Version: metaDataFormatVersion,
+				Version:                 metaDataFormatVersion,
+				SupportsGzipCompression: true,
 				Validation: &config.Validator{
 					Url: fmt.Sprintf("https://%s%s", host, validationPath),
 					Patterns: []*config.ConfigPattern{
