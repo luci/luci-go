@@ -124,6 +124,8 @@ type Client struct {
 	// Olders servers would fail to parse the request.
 	//
 	// The response message compression is configured on the server.
+	//
+	// TODO(crbug.com/1336810): This is currently broken, do not use.
 	EnableRequestCompression bool
 
 	// PathPrefix is the prefix of the URL path, "<PathPrefix>/<service>/<method>"

@@ -16,6 +16,8 @@ package e2etest
 
 import (
 	"context"
+	"encoding/hex"
+	"math/rand"
 	"strings"
 	"sync"
 	"testing"
@@ -79,12 +81,30 @@ func TestEndToEnd(t *testing.T) {
 		if err != nil {
 			panic(err)
 		}
+
+		// TODO(crbug.com/1336810): Request compression is broken now. Uncommenting
+		// this will break the test.
+		//
+		// prpcClient.EnableRequestCompression = true
+
 		client := NewHelloClient(prpcClient)
 
 		Convey(`Can round-trip a hello message`, func() {
 			svc.R = &HelloReply{Message: "sup"}
 
 			resp, err := client.Greet(c, &HelloRequest{Name: "round-trip"})
+			So(err, ShouldBeRPCOK)
+			So(resp, ShouldResembleProto, svc.R)
+		})
+
+		Convey(`Can send a giant message with compression`, func() {
+			svc.R = &HelloReply{Message: "sup"}
+
+			msg := make([]byte, 10*1024*1024)
+			_, err := rand.Read(msg)
+			So(err, ShouldBeNil)
+
+			resp, err := client.Greet(c, &HelloRequest{Name: hex.EncodeToString(msg)})
 			So(err, ShouldBeRPCOK)
 			So(resp, ShouldResembleProto, svc.R)
 		})

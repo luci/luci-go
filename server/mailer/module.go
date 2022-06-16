@@ -172,9 +172,8 @@ func (m *mailerModule) initRPCMailer(ctx context.Context, host string, insecure 
 	}
 
 	mailerClient := mailer.NewMailerClient(&prpc.Client{
-		C:                        &http.Client{Transport: tr},
-		Host:                     host,
-		EnableRequestCompression: true,
+		C:    &http.Client{Transport: tr},
+		Host: host,
 		Options: &prpc.Options{
 			Insecure:      insecure,
 			PerRPCTimeout: 10 * time.Second,
