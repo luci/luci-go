@@ -63,7 +63,7 @@ func getCommandEnv(ctx context.Context, tmpDir string, cipdInfo *cipdInfo, runDi
 		return nil
 	})
 	if err != nil {
-		return nil, err
+		return environ.Env{}, err
 	}
 
 	if cipdInfo != nil {

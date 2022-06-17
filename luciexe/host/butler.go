@@ -59,7 +59,7 @@ func startButler(ctx context.Context, opts *Options) (*butler.Butler, error) {
 
 	toExport := opts.LogdogOutput.URLConstructionEnv()
 	toExport.StreamServerURI = sserv.Address()
-	env := environ.Env{}
+	env := environ.New(nil)
 	toExport.Augment(env)
 
 	return butler, env.Iter(os.Setenv)

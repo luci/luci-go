@@ -30,11 +30,19 @@ import (
 // Env contains system environment variables. It preserves each environment
 // variable verbatim (even if invalid).
 //
-// Internally env is represented by a map of environment key to its "KEY=VALUE"
-// value. Note that the value here is the full "KEY=VALUE", not just the VALUE
-// part. This allows us to reconstitute the original environment string slice
-// without reallocating all of its composite strings.
-type Env map[string]string
+// Treat it as a map[...] (i.e. pass by value, but assume this value is
+// actually a reference and the object can be mutated through it).
+//
+// An empty value can be read or cloned, but should not be written to. If you
+// want to get an empty modifiable Env use New(nil).
+type Env struct {
+	// Env is a map of environment key to its "KEY=VALUE" value.
+	//
+	// Note that the value here is the full "KEY=VALUE", not just the VALUE
+	// part. This allows us to reconstitute the original environment string slice
+	// without reallocating all of its composite strings.
+	env map[string]string
+}
 
 var ctxKey = "holds an Env"
 
@@ -43,13 +51,10 @@ var ctxKey = "holds an Env"
 // This is guaranteed to return a non-nil Env (i.e. it's always safe for
 // assignment/manipulation)
 //
-// If no Env has been set with With, this returns `System()`.
+// If no Env has been set with `SetInCtx`, this returns `System()`.
 func FromCtx(ctx context.Context) Env {
 	if cur, ok := ctx.Value(&ctxKey).(Env); ok {
-		if cur != nil {
-			return cur.Clone()
-		}
-		return Env{}
+		return cur.Clone()
 	}
 	return System()
 }
@@ -75,7 +80,7 @@ func System() Env {
 // The environment is automatically configured with the local system's case
 // insensitivity.
 func New(s []string) Env {
-	e := make(Env, len(s))
+	e := Env{env: make(map[string]string, len(s))}
 	for _, entry := range s {
 		e.SetEntry(entry)
 	}
@@ -98,8 +103,8 @@ func (e Env) Set(k, v string) { e.SetEntry(Join(k, v)) }
 
 // SetEntry sets the supplied environment to a "KEY[=VALUE]" entry.
 func (e Env) SetEntry(entry string) {
-	if e == nil {
-		panic("cannot modify nil Env")
+	if e.env == nil {
+		panic("cannot modify zero Env")
 	}
 
 	// "entry" must be a well-formed "key=value" entry. If it doesn't have an "=",
@@ -109,7 +114,7 @@ func (e Env) SetEntry(entry string) {
 	}
 	k, _ := Split(entry)
 	if len(k) > 0 {
-		e[normalizeKeyCase(k)] = entry
+		e.env[normalizeKeyCase(k)] = entry
 	}
 }
 
@@ -120,8 +125,8 @@ func (e Env) SetEntry(entry string) {
 // empty value, while Remove removes it entirely.
 func (e Env) Remove(k string) bool {
 	k = normalizeKeyCase(k)
-	if _, ok := e[k]; ok {
-		delete(e, k)
+	if _, ok := e.env[k]; ok {
+		delete(e.env, k)
 		return true
 	}
 	return false
@@ -133,7 +138,7 @@ func (e Env) Remove(k string) bool {
 func (e Env) RemoveMatch(fn func(k, v string) bool) {
 	e.iterate(func(realKey, k, v string) error {
 		if fn(k, v) {
-			delete(e, realKey)
+			delete(e.env, realKey)
 		}
 		return nil
 	})
@@ -160,7 +165,7 @@ func (e Env) Update(other Env) {
 func (e Env) Get(k string) (v string, ok bool) {
 	// NOTE: "v" is initially the combined "key=value" entry, and will need to be
 	// split.
-	if v, ok = e[normalizeKeyCase(k)]; ok {
+	if v, ok = e.env[normalizeKeyCase(k)]; ok {
 		_, v = splitEntryGivenKey(k, v)
 	}
 	return
@@ -177,9 +182,9 @@ func (e Env) GetEmpty(k string) string {
 // Sorted returns the contents of the environment, sorted by key.
 func (e Env) Sorted() []string {
 	var r []string
-	if len(e) > 0 {
-		r = make([]string, 0, len(e))
-		for _, v := range e {
+	if len(e.env) > 0 {
+		r = make([]string, 0, len(e.env))
+		for _, v := range e.env {
 			r = append(r, v)
 		}
 		sort.Strings(r)
@@ -194,11 +199,11 @@ func (e Env) Sorted() []string {
 //
 // If env is either nil or empty, returns nil.
 func (e Env) Map() map[string]string {
-	if len(e) == 0 {
+	if len(e.env) == 0 {
 		return nil
 	}
-	m := make(map[string]string, len(e))
-	for k, entry := range e {
+	m := make(map[string]string, len(e.env))
+	for k, entry := range e.env {
 		ek, ev := splitEntryGivenKey(k, entry)
 		m[ek] = ev
 	}
@@ -206,19 +211,16 @@ func (e Env) Map() map[string]string {
 }
 
 // Len returns the number of environment variables defined in e.
-func (e Env) Len() int { return len(e) }
+func (e Env) Len() int { return len(e.env) }
 
 // Clone creates a new Env instance that is identical to, but independent from,
 // e.
 //
-// If e is nil, returns nil. Otherwise returns a new (perhaps empty) Env.
+// The returned clone is always safe to modify.
 func (e Env) Clone() Env {
-	if e == nil {
-		return nil
-	}
-	clone := make(Env, len(e))
-	for k, v := range e {
-		clone[k] = v
+	clone := Env{env: make(map[string]string, len(e.env))}
+	for k, v := range e.env {
+		clone.env[k] = v
 	}
 	return clone
 }
@@ -231,7 +233,7 @@ func (e Env) Clone() Env {
 // realKey is the real, normalized map key. envKey and envValue are the split
 // map value.
 func (e Env) iterate(cb func(realKey, envKey, envValue string) error) error {
-	for k, v := range e {
+	for k, v := range e.env {
 		envKey, envValue := Split(v)
 		if err := cb(k, envKey, envValue); err != nil {
 			return err

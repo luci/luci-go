@@ -321,7 +321,7 @@ func (o *Options) rationalize(ctx context.Context) (ret launchOptions, newCtx co
 	if o == nil {
 		o = &Options{}
 	}
-	if o.Env != nil {
+	if o.Env.Len() != 0 {
 		ret.env = o.Env.Clone()
 	} else {
 		ret.env = environ.System()

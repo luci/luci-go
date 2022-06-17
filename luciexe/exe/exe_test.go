@@ -45,7 +45,7 @@ func TestExe(t *testing.T) {
 		scFake := streamclient.NewFake()
 		defer scFake.Unregister()
 
-		env := environ.Env{}
+		env := environ.New(nil)
 		env.Set(bootstrap.EnvCoordinatorHost, "test.example.com")
 		env.Set(bootstrap.EnvStreamProject, "test_project")
 		env.Set(bootstrap.EnvStreamPrefix, "test_prefix")

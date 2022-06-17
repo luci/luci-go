@@ -45,7 +45,7 @@ func TestMain(t *testing.T) {
 		scFake := streamclient.NewFake()
 		defer scFake.Unregister()
 
-		env := environ.Env{}
+		env := environ.New(nil)
 		env.Set(bootstrap.EnvStreamServerPath, scFake.StreamServerPath())
 		env.Set(bootstrap.EnvNamespace, "u")
 		ctx = env.SetInCtx(ctx)

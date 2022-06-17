@@ -74,7 +74,7 @@ func TestGetCommandEnv(t *testing.T) {
 			env, err := getCommandEnv(context.Background(), "tmp", &cipdInfo{
 				binaryPath: "cipddir/cipd",
 				cacheDir:   ".cipd/cache",
-			}, "", nil, nil, "", "")
+			}, "", environ.Env{}, nil, "", "")
 			So(err, ShouldBeNil)
 
 			expected := map[string]string{

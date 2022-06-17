@@ -29,7 +29,7 @@ import (
 func init() {
 	bufferLogs = false
 
-	for k := range environ.System() {
+	for k := range environ.System().Map() {
 		if strings.HasPrefix(k, "LOGDOG_") {
 			os.Unsetenv(k)
 		}

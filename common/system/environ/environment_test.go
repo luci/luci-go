@@ -46,9 +46,11 @@ func TestEnvironmentConversion(t *testing.T) {
 				"qux=quux=quuuuuuux",
 			})
 			So(env, ShouldResemble, Env{
-				"FOO": "FOO=",
-				"BAR": "bar=baz",
-				"QUX": "qux=quux=quuuuuuux",
+				env: map[string]string{
+					"FOO": "FOO=",
+					"BAR": "bar=baz",
+					"QUX": "qux=quux=quuuuuuux",
+				},
 			})
 
 			So(env.Sorted(), ShouldResemble, []string{
@@ -76,10 +78,12 @@ func TestEnvironmentConversion(t *testing.T) {
 				"qux=quux=quuuuuuux",
 			})
 			So(env, ShouldResemble, Env{
-				"FOO": "FOO=",
-				"BAR": "BAR=BAZ",
-				"bar": "bar=baz",
-				"qux": "qux=quux=quuuuuuux",
+				env: map[string]string{
+					"FOO": "FOO=",
+					"BAR": "BAR=BAZ",
+					"bar": "bar=baz",
+					"qux": "qux=quux=quuuuuuux",
+				},
 			})
 
 			So(env.Sorted(), ShouldResemble, []string{
@@ -117,7 +121,7 @@ func TestEnvironmentManipulation(t *testing.T) {
 		})
 
 		Convey(`Can be cloned`, func() {
-			So(env.Clone(), ShouldBeNil)
+			So(env.Clone(), ShouldResemble, New(nil))
 		})
 
 		Convey(`Set panics`, func() {
@@ -148,7 +152,7 @@ func TestEnvironmentManipulation(t *testing.T) {
 		})
 
 		Convey(`Can be cloned`, func() {
-			So(env.Clone(), ShouldResemble, Env{})
+			So(env.Clone(), ShouldResemble, New(nil))
 		})
 	})
 
@@ -278,8 +282,10 @@ func TestEnvironmentConstruction(t *testing.T) {
 			"foo": "bar",
 		})
 		So(env, ShouldResemble, Env{
-			"FOO": "FOO=BAR",
-			"foo": "foo=bar",
+			env: map[string]string{
+				"FOO": "FOO=BAR",
+				"foo": "foo=bar",
+			},
 		})
 	})
 }
@@ -295,16 +301,16 @@ func TestEnvironmentContext(t *testing.T) {
 		})
 
 		Convey(`Setting nil works`, func() {
-			ctx = Env(nil).SetInCtx(ctx)
+			ctx = (Env{}).SetInCtx(ctx)
 			env := FromCtx(ctx)
 			// We specifically want FromCtx to always return a mutable Env, even if
 			// the one in context is nil.
 			So(env, ShouldNotBeNil)
-			So(env, ShouldResemble, Env{})
+			So(env, ShouldResemble, Env{env: map[string]string{}})
 		})
 
 		Convey(`Can set in context`, func() {
-			env := Env{}
+			env := New(nil)
 			env.Load(map[string]string{
 				"FOO":  "BAR",
 				"COOL": "Stuff",
