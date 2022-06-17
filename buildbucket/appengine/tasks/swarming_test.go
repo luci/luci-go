@@ -21,17 +21,29 @@ import (
 	"testing"
 	"time"
 
+	"github.com/golang/mock/gomock"
+	taskdefs "go.chromium.org/luci/buildbucket/appengine/tasks/defs"
+	"google.golang.org/api/googleapi"
 	"google.golang.org/protobuf/types/known/durationpb"
+	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/common/api/swarming/swarming/v1"
 	"go.chromium.org/luci/common/clock/testclock"
+	"go.chromium.org/luci/common/retry/transient"
+	"go.chromium.org/luci/gae/filter/txndefer"
 	"go.chromium.org/luci/gae/impl/memory"
+	"go.chromium.org/luci/gae/service/datastore"
+	"go.chromium.org/luci/server/tq"
 
+	"go.chromium.org/luci/buildbucket/appengine/internal/clients"
+	"go.chromium.org/luci/buildbucket/appengine/internal/metrics"
 	"go.chromium.org/luci/buildbucket/appengine/model"
 	"go.chromium.org/luci/buildbucket/cmd/bbagent/bbinput"
 	pb "go.chromium.org/luci/buildbucket/proto"
 
 	. "github.com/smartystreets/goconvey/convey"
+
+	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestTaskDef(t *testing.T) {
@@ -295,4 +307,208 @@ func TestTaskDef(t *testing.T) {
 		}
 		So(req, ShouldResemble, expected)
 	})
+}
+
+func TestSyncBuild(t *testing.T) {
+	t.Parallel()
+	Convey("SyncBuild", t, func() {
+		ctl := gomock.NewController(t)
+		defer ctl.Finish()
+		now := testclock.TestRecentTimeUTC
+		mockSwarm := clients.NewMockSwarmingClient(ctl)
+		ctx, _ := testclock.UseTime(context.Background(), now)
+		ctx = context.WithValue(ctx, &clients.MockSwarmingClientKey, mockSwarm)
+		ctx = memory.UseWithAppID(ctx, "dev~app-id")
+		ctx = txndefer.FilterRDS(ctx)
+		ctx = metrics.WithServiceInfo(ctx, "svc", "job", "ins")
+		datastore.GetTestable(ctx).AutoIndex(true)
+		datastore.GetTestable(ctx).Consistent(true)
+		ctx, sch := tq.TestingContext(ctx, nil)
+
+		b := &model.Build{
+			ID: 123,
+			Proto: &pb.Build{
+				Id:         123,
+				Status:     pb.Status_SCHEDULED,
+				CreateTime: &timestamppb.Timestamp{Seconds: now.UnixNano() / 1000000000},
+				SchedulingTimeout: &durationpb.Duration{
+					Seconds: 3600,
+				},
+				ExecutionTimeout: &durationpb.Duration{
+					Seconds: 4800,
+				},
+				GracePeriod: &durationpb.Duration{
+					Seconds: 60,
+				},
+				Builder: &pb.BuilderID{
+					Project: "proj",
+					Bucket:  "bucket",
+					Builder: "builder",
+				},
+			},
+		}
+		So(datastore.Put(ctx, b), ShouldBeNil)
+		inf := &model.BuildInfra{
+			ID:    1,
+			Build: datastore.KeyForObj(ctx, &model.Build{ID: 123}),
+			Proto: &pb.BuildInfra{
+				Swarming: &pb.BuildInfra_Swarming{
+					Hostname: "swarm",
+					Caches: []*pb.BuildInfra_Swarming_CacheEntry{
+						{Name: "shared_builder_cache", Path: "builder", WaitForWarmCache: &durationpb.Duration{Seconds: 60}},
+						{Name: "second_cache", Path: "second", WaitForWarmCache: &durationpb.Duration{Seconds: 360}},
+					},
+					TaskDimensions: []*pb.RequestedDimension{
+						{Key: "a", Value: "1", Expiration: &durationpb.Duration{Seconds: 120}},
+						{Key: "a", Value: "2", Expiration: &durationpb.Duration{Seconds: 120}},
+						{Key: "pool", Value: "Chrome"},
+					},
+				},
+				Bbagent: &pb.BuildInfra_BBAgent{
+					CacheDir:    "cache",
+					PayloadPath: "kitchen-checkout",
+				},
+				Buildbucket: &pb.BuildInfra_Buildbucket{
+					Agent: &pb.BuildInfra_Buildbucket_Agent{
+						Source: &pb.BuildInfra_Buildbucket_Agent_Source{
+							DataType: &pb.BuildInfra_Buildbucket_Agent_Source_Cipd{
+								Cipd: &pb.BuildInfra_Buildbucket_Agent_Source_CIPD{
+									Package: "infra/tools/luci/bbagent/${platform}",
+									Version: "canary-version",
+									Server:  "cipd server",
+								},
+							},
+						},
+					},
+				},
+			},
+		}
+		So(datastore.Put(ctx, inf), ShouldBeNil)
+
+		Convey("build not found", func() {
+			err := SyncBuild(ctx, 789, 0)
+			So(err, ShouldErrLike, "build 789 or buildInfra not found")
+		})
+
+		Convey("build too old", func() {
+			So(datastore.Put(ctx, &model.Build{
+				ID:         111,
+				CreateTime: now.AddDate(0, 0, -3),
+				Proto: &pb.Build{
+					Builder: &pb.BuilderID{},
+				},
+			}), ShouldBeNil)
+
+			So(datastore.Put(ctx, &model.BuildInfra{
+				ID:    1,
+				Build: datastore.KeyForObj(ctx, &model.Build{ID: 111}),
+			}), ShouldBeNil)
+			err := SyncBuild(ctx, 111, 0)
+			So(err, ShouldBeNil)
+			// TODO: assert the task isn't pushed back into queue once the enqueueing sync-build is implemented.
+		})
+
+		Convey("build ended", func() {
+			So(datastore.Put(ctx, &model.Build{
+				ID:     111,
+				Status: pb.Status_SUCCESS,
+				Proto: &pb.Build{
+					Builder: &pb.BuilderID{},
+				},
+			}), ShouldBeNil)
+			So(datastore.Put(ctx, &model.BuildInfra{
+				ID:    1,
+				Build: datastore.KeyForObj(ctx, &model.Build{ID: 111}),
+			}), ShouldBeNil)
+			err := SyncBuild(ctx, 111, 0)
+			So(err, ShouldBeNil)
+			// TODO: assert the task isn't pushed back into queue once the enqueueing sync-build is implemented.
+		})
+
+		Convey("create swarming success", func() {
+			mockSwarm.EXPECT().CreateTask(gomock.Any(), gomock.Any()).Return(&swarming.SwarmingRpcsTaskRequestMetadata{
+				TaskId: "task123",
+			}, nil)
+			err := SyncBuild(ctx, 123, 0)
+			So(err, ShouldBeNil)
+			updatedBuild := &model.Build{ID: 123}
+			updatedInfra := &model.BuildInfra{Build: datastore.KeyForObj(ctx, updatedBuild)}
+			So(datastore.Get(ctx, updatedBuild), ShouldBeNil)
+			So(datastore.Get(ctx, updatedInfra), ShouldBeNil)
+			So(updatedBuild.UpdateToken, ShouldNotBeEmpty)
+			So(updatedInfra.Proto.Swarming.TaskId, ShouldEqual, "task123")
+		})
+
+		Convey("create swarming http 400 err", func() {
+			mockSwarm.EXPECT().CreateTask(gomock.Any(), gomock.Any()).Return(nil, &googleapi.Error{Code: 400})
+			err := SyncBuild(ctx, 123, 0)
+			So(err, ShouldErrLike, "failed to create a swarming task")
+			So(tq.Fatal.In(err), ShouldBeTrue)
+			failedBuild := &model.Build{ID: 123}
+			So(datastore.Get(ctx, failedBuild), ShouldBeNil)
+			So(failedBuild.Status, ShouldEqual, pb.Status_INFRA_FAILURE)
+			So(failedBuild.Proto.SummaryMarkdown, ShouldContainSubstring, "failed to create a swarming task: googleapi: got HTTP response code 400")
+			So(sch.Tasks(), ShouldHaveLength, 3)
+		})
+
+		Convey("create swarming http 500 err", func() {
+			mockSwarm.EXPECT().CreateTask(gomock.Any(), gomock.Any()).Return(nil, &googleapi.Error{Code: 500})
+			err := SyncBuild(ctx, 123, 0)
+			So(err, ShouldErrLike, "failed to create a swarming task")
+			So(transient.Tag.In(err), ShouldBeTrue)
+			bld := &model.Build{ID: 123}
+			So(datastore.Get(ctx, bld), ShouldBeNil)
+			So(bld.Status, ShouldEqual, pb.Status_SCHEDULED)
+		})
+
+		Convey("create swarming http 500 err give up", func() {
+			ctx1, _ := testclock.UseTime(ctx, now.Add(swarmingCreateTaskGiveUpTimeout))
+			mockSwarm.EXPECT().CreateTask(gomock.Any(), gomock.Any()).Return(nil, &googleapi.Error{Code: 500})
+			err := SyncBuild(ctx1, 123, 0)
+			So(err, ShouldErrLike, "failed to create a swarming task")
+			So(tq.Fatal.In(err), ShouldBeTrue)
+			failedBuild := &model.Build{ID: 123}
+			So(datastore.Get(ctx, failedBuild), ShouldBeNil)
+			So(failedBuild.Status, ShouldEqual, pb.Status_INFRA_FAILURE)
+			So(failedBuild.Proto.SummaryMarkdown, ShouldContainSubstring, "failed to create a swarming task: googleapi: got HTTP response code 500")
+			So(sch.Tasks(), ShouldHaveLength, 3)
+		})
+
+		Convey("swarming task creation success but update build fail", func() {
+			mockSwarm.EXPECT().CreateTask(gomock.Any(), gomock.Any()).DoAndReturn(func(ctx context.Context, req *swarming.SwarmingRpcsNewTaskRequest) (*swarming.SwarmingRpcsTaskRequestMetadata, error) {
+				// hack to make the build update fail when trying to update build with the new task id.
+				inf.Proto.Swarming.TaskId = "old task id"
+				So(datastore.Put(ctx, inf), ShouldBeNil)
+				return &swarming.SwarmingRpcsTaskRequestMetadata{TaskId: "new task id"}, nil
+			})
+
+			err := SyncBuild(ctx, 123, 0)
+			So(err, ShouldErrLike, "failed to update build 123: build already has a task old task id")
+			currentInfra := &model.BuildInfra{Build: datastore.KeyForObj(ctx, &model.Build{
+				ID: 123,
+			})}
+			So(datastore.Get(ctx, currentInfra), ShouldBeNil)
+			So(currentInfra.Proto.Swarming.TaskId, ShouldEqual, "old task id")
+			// One task should be pushed into CancelSwarmingTask queue since update build failed.
+			So(sch.Tasks(), ShouldHaveLength, 1)
+			So(sch.Tasks().Payloads()[0], ShouldResembleProto, &taskdefs.CancelSwarmingTask{
+				Hostname: "swarm",
+				TaskId:   "new task id",
+				Realm:    "proj:bucket",
+			})
+		})
+
+		Convey("create swarming - cancel swarming task fail", func() {
+			mockSwarm.EXPECT().CreateTask(gomock.Any(), gomock.Any()).DoAndReturn(func(ctx context.Context, req *swarming.SwarmingRpcsNewTaskRequest) (*swarming.SwarmingRpcsTaskRequestMetadata, error) {
+				// hack to make the build update and the equeueing CancelSwarmingTask fail
+				inf.Proto.Swarming.TaskId = "old task id"
+				So(datastore.Put(ctx, inf), ShouldBeNil)
+				return &swarming.SwarmingRpcsTaskRequestMetadata{TaskId: ""}, nil
+			})
+
+			err := SyncBuild(ctx, 123, 0)
+			So(err, ShouldErrLike, "failed to enqueue swarming task cancellation task for build 123: task_id is required")
+		})
+	})
+
 }

@@ -23,20 +23,29 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"time"
 
+	"google.golang.org/api/googleapi"
 	"google.golang.org/protobuf/proto"
 
 	"go.chromium.org/luci/common/api/swarming/swarming/v1"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/common/retry/transient"
+	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/gae/service/info"
+	"go.chromium.org/luci/server/tq"
 
 	"go.chromium.org/luci/buildbucket"
 	"go.chromium.org/luci/buildbucket/appengine/internal/buildtoken"
 	"go.chromium.org/luci/buildbucket/appengine/internal/clients"
+	"go.chromium.org/luci/buildbucket/appengine/internal/metrics"
 	"go.chromium.org/luci/buildbucket/appengine/model"
+	taskdefs "go.chromium.org/luci/buildbucket/appengine/tasks/defs"
 	"go.chromium.org/luci/buildbucket/cmd/bbagent/bbinput"
 	pb "go.chromium.org/luci/buildbucket/proto"
+	"go.chromium.org/luci/buildbucket/protoutil"
 )
 
 const (
@@ -45,6 +54,9 @@ const (
 	// TODO(crbug.com/1328646): may need to adjust the grace_period based on
 	// UpdateBuild's new performance in Buildbucket Go.
 	bbagentReservedGracePeriod = 180
+
+	// buildTimeOut is the maximum amount of time to try to sync a build.
+	buildTimeOut = 2 * 24 * time.Hour
 
 	// cacheDir is the path, relative to the swarming run dir, to the directory that
 	// contains the mounted swarming named caches. It will be prepended to paths of
@@ -61,18 +73,74 @@ const (
 		"created_ts": %d,
 		"swarming_hostname": %s
 }`
+
+	// swarmingCreateTaskGiveUpTimeout indicates how long to retry
+	// the createSwarmingTask before giving up with INFRA_FAILURE.
+	swarmingCreateTaskGiveUpTimeout = 10 * 60 * time.Second
 )
 
+// SyncBuild synchronizes the build with Swarming.
+// If the swarming task does not exist yet, creates it.
+// Otherwise, updates the build state to match swarming task state.
+// Enqueues a new sync push task if the build did not end.
+//
+// Cloud tasks handler will retry the task if any error is thrown, unless it's
+// tagged with tq.Fatal.
+func SyncBuild(ctx context.Context, buildID int64, generation int64) error {
+	bld := &model.Build{ID: buildID}
+	infra := &model.BuildInfra{Build: datastore.KeyForObj(ctx, bld)}
+	switch err := datastore.Get(ctx, bld, infra); {
+	case errors.Contains(err, datastore.ErrNoSuchEntity):
+		return tq.Fatal.Apply(errors.Annotate(err, "build %d or buildInfra not found", buildID).Err())
+	case err != nil:
+		return transient.Tag.Apply(errors.Annotate(err, "failed to fetch build %d or buildInfra", buildID).Err())
+	}
+	if protoutil.IsEnded(bld.Status) {
+		logging.Infof(ctx, "build %d is ended", buildID)
+		return nil
+	}
+	if clock.Now(ctx).Sub(bld.CreateTime) > buildTimeOut {
+		logging.Infof(ctx, "build %d (create_time:%s) has passed the sync deadline: %s", buildID, bld.CreateTime, buildTimeOut.String())
+		return nil
+	}
+
+	bld.Proto.Infra = infra.Proto
+	swarm, err := clients.NewSwarmingClient(ctx, infra.Proto.Swarming.Hostname, bld.Project)
+	if err != nil {
+		return tq.Fatal.Apply(errors.Annotate(err, "failed to create a swarming client for build %d (%s), in %s", buildID, bld.Project, infra.Proto.Swarming.Hostname).Err())
+	}
+	if bld.Proto.Infra.Swarming.TaskId == "" {
+		if err := createSwarmingTask(ctx, bld, swarm); err != nil {
+			// Mark build as Infra_failure for fatal and non-retryable errors.
+			if tq.Fatal.In(err) {
+				if e := failBuild(ctx, bld.ID, err.Error()); e != nil {
+					return transient.Tag.Apply(errors.Annotate(err, "failed to terminate build: %d", buildID).Err())
+				}
+			}
+			return err
+		}
+	} else {
+		// TODO(crbug.com/1328646): implement it later.
+		// syncBuildWithTaskResult(buildID, loadTaskResult)
+	}
+
+	// TODO(crbug.com/1328646): Enqueue the swarming-sync task.
+	return nil
+}
+
+// createSwarmingTask creates a swarming task for the build.
+// Requires build.proto.infra to be populated.
+// If the returned error is fatal and non-retryable, the tq.Fatal tag will be added.
 func createSwarmingTask(ctx context.Context, build *model.Build, swarm clients.SwarmingClient) error {
 	taskReq, err := computeSwarmingNewTaskReq(ctx, build)
 	if err != nil {
-		return err
+		return tq.Fatal.Apply(err)
 	}
 
 	// Insert secret bytes.
 	token, err := buildtoken.GenerateToken(build.ID)
 	if err != nil {
-		return err
+		return tq.Fatal.Apply(err)
 	}
 	secrets := &pb.BuildSecrets{
 		BuildToken:                    token,
@@ -80,14 +148,111 @@ func createSwarmingTask(ctx context.Context, build *model.Build, swarm clients.S
 	}
 	secretsBytes, err := proto.Marshal(secrets)
 	if err != nil {
-		return err
+		return tq.Fatal.Apply(err)
 	}
 	for _, t := range taskReq.TaskSlices {
 		t.Properties.SecretBytes = base64.RawURLEncoding.EncodeToString(secretsBytes)
 	}
 
-	// TODO(crbug.com/1328646): call swarming and update Build entity with token
-	// and new task id.
+	// Create a swarming task
+	res, err := swarm.CreateTask(ctx, taskReq)
+	if err != nil {
+		// Give up if HTTP 500s are happening continuously. Otherwise re-throw the
+		// error so Cloud Tasks retries the task.
+		if apiErr, _ := err.(*googleapi.Error); apiErr == nil || apiErr.Code >= 500 {
+			if clock.Now(ctx).Sub(build.CreateTime) < swarmingCreateTaskGiveUpTimeout {
+				return transient.Tag.Apply(errors.Annotate(err, "failed to create a swarming task").Err())
+			}
+			logging.Errorf(ctx, "Give up Swarming task creation retry after %s", swarmingCreateTaskGiveUpTimeout.String())
+		}
+		// Strip out secret bytes and dump the task definition to the log.
+		for _, t := range taskReq.TaskSlices {
+			t.Properties.SecretBytes = ""
+		}
+		logging.Errorf(ctx, "Swarming task creation failure:%s. CreateTask request: %+v\nResponse: %+v", err, taskReq, res)
+		return tq.Fatal.Apply(errors.Annotate(err, "failed to create a swarming task").Err())
+	}
+
+	// Update the build with the build token and new task id.
+	err = datastore.RunInTransaction(ctx, func(ctx context.Context) error {
+		bld := &model.Build{
+			ID: build.ID,
+		}
+		infra := &model.BuildInfra{Build: datastore.KeyForObj(ctx, bld)}
+		if err := datastore.Get(ctx, bld, infra); err != nil {
+			return errors.Annotate(err, "failed to fetch build or buildInfra: %d", bld.ID).Err()
+		}
+
+		if infra.Proto.Swarming.TaskId != "" {
+			return errors.Reason("build already has a task %s", infra.Proto.Swarming.TaskId).Err()
+		}
+		infra.Proto.Swarming.TaskId = res.TaskId
+		bld.UpdateToken = token
+
+		return datastore.Put(ctx, bld, infra)
+	}, nil)
+	if err != nil {
+		logging.Errorf(ctx, "created a task, but failed to update datastore with the error:%s \n"+
+			"cancelling task %s, best effort", err, res.TaskId)
+		if err := CancelSwarmingTask(ctx, &taskdefs.CancelSwarmingTask{
+			Hostname: build.Proto.Infra.Swarming.Hostname,
+			TaskId:   res.TaskId,
+			Realm:    build.Realm(),
+		}); err != nil {
+			return tq.Fatal.Apply(errors.Annotate(err, "failed to enqueue swarming task cancellation task for build %d", build.ID).Err())
+		}
+		return transient.Tag.Apply(errors.Annotate(err, "failed to update build %d", build.ID).Err())
+	}
+	return nil
+}
+
+// failBuild fails the given build with INFRA_FAILURE status.
+func failBuild(ctx context.Context, buildID int64, msg string) error {
+	bld := &model.Build{
+		ID: buildID,
+	}
+
+	err := datastore.RunInTransaction(ctx, func(ctx context.Context) error {
+		switch err := datastore.Get(ctx, bld); {
+		case err == datastore.ErrNoSuchEntity:
+			logging.Warningf(ctx, "build %d not found: %s", buildID, err)
+			return nil
+		case err != nil:
+			return errors.Annotate(err, "failed to fetch build: %d", bld.ID).Err()
+		}
+		protoutil.SetStatus(clock.Now(ctx), bld.Proto, pb.Status_INFRA_FAILURE)
+		bld.Proto.SummaryMarkdown = msg
+
+		if err := sendOnBuildCompletion(ctx, bld); err != nil {
+			return err
+		}
+
+		return datastore.Put(ctx, bld)
+	}, nil)
+	if err != nil {
+		return errors.Annotate(err, "failed to terminate build: %d", buildID).Err()
+	}
+	metrics.BuildCompleted(ctx, bld)
+	return nil
+}
+
+// sendOnBuildCompletion sends a bunch of related events when build is reaching
+// to an end status, e.g. finalizing the resultdb invocation, exporting to Bq,
+// and notify pubsub topics.
+func sendOnBuildCompletion(ctx context.Context, bld *model.Build) error {
+	if err := FinalizeResultDB(ctx, &taskdefs.FinalizeResultDB{
+		BuildId: bld.ID,
+	}); err != nil {
+		return errors.Annotate(err, "failed to enqueue resultDB finalization task: %d", bld.ID).Err()
+	}
+	if err := ExportBigQuery(ctx, &taskdefs.ExportBigQuery{
+		BuildId: bld.ID,
+	}); err != nil {
+		return errors.Annotate(err, "failed to enqueue bigquery export task: %d", bld.ID).Err()
+	}
+	if err := NotifyPubSub(ctx, bld); err != nil {
+		return errors.Annotate(err, "failed to enqueue pubsub notification task: %d", bld.ID).Err()
+	}
 	return nil
 }
 

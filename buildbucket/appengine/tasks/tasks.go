@@ -63,7 +63,7 @@ func init() {
 			}, nil
 		},
 		Handler:   rejectionHandler("cancel-swarming-task"),
-		Kind:      tq.Transactional,
+		Kind:      tq.FollowsContext,
 		Prototype: (*taskdefs.CancelSwarmingTask)(nil),
 		Queue:     "backend-default",
 	})
