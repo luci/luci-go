@@ -17,7 +17,6 @@ package rpc
 import (
 	"context"
 	"crypto/subtle"
-	"encoding/base64"
 	"regexp"
 	"strings"
 	"time"
@@ -38,6 +37,7 @@ import (
 	"go.chromium.org/luci/server/bqlog"
 
 	"go.chromium.org/luci/buildbucket"
+	"go.chromium.org/luci/buildbucket/appengine/internal/buildtoken"
 	"go.chromium.org/luci/buildbucket/appengine/internal/perm"
 	"go.chromium.org/luci/buildbucket/appengine/model"
 	pb "go.chromium.org/luci/buildbucket/proto"
@@ -56,10 +56,6 @@ const (
 	// Find more details at https://godoc.org/go.chromium.org/luci/buildbucket/proto#Build
 	summaryMarkdownMaxLength = 4 * 1000
 
-	// Sanity length limitation for build tokens to allow us to quickly reject
-	// potentially abusive inputs.
-	buildTokenMaxLength = 200
-
 	// buildOutputPropertiesMaxBytes is the maximum length of build.output.properties.
 	// If bytes exceeds this maximum, Buildbucket will reject this request.
 	buildOutputPropertiesMaxBytes = 1000 * 1000
@@ -73,8 +69,6 @@ var (
 	gitilesCommitRegex = regexp.MustCompile(`^commit/gitiles/([^/]+)/(.+?)/\+/([a-f0-9]{40})$`)
 	gerritCLRegex      = regexp.MustCompile(`^patch/gerrit/([^/]+)/(\d+)/(\d+)$`)
 )
-
-var buildTokenInOldFormat = errors.BoolTag{Key: errors.NewTagKey("build token in the old format")}
 
 func init() {
 	bqlog.RegisterSink(bqlog.Sink{
@@ -288,32 +282,6 @@ func validateCommit(cm *pb.GitilesCommit) error {
 	return nil
 }
 
-// tokenBody deserialize the build token and returns the token body.
-func tokenBody(bldTok string) (*pb.TokenBody, error) {
-	if len(bldTok) > buildTokenMaxLength {
-		return nil, errors.Reason("build token %s is too long", bldTok).Err()
-	}
-	tokBytes, err := base64.RawURLEncoding.DecodeString(bldTok)
-	if err != nil {
-		return nil, errors.Reason("error decoding token").Err()
-	}
-
-	msg := &pb.TokenEnvelope{}
-	if err := proto.Unmarshal(tokBytes, msg); err != nil {
-		return nil, errors.Reason("error unmarshalling token").Tag(buildTokenInOldFormat).Err()
-	}
-
-	if msg.Version != pb.TokenEnvelope_UNENCRYPTED_PASSWORD_LIKE {
-		return nil, errors.Reason("token with version %d is not supported", msg.Version).Err()
-	}
-
-	body := &pb.TokenBody{}
-	if err := proto.Unmarshal(msg.Payload, body); err != nil {
-		return nil, errors.Reason("error unmarshalling token payload").Err()
-	}
-	return body, nil
-}
-
 // validateBuildToken validates the update token from the header.
 //
 // bID is mainly used to retrieve the build with the old build token
@@ -349,9 +317,9 @@ func validateBuildToken(ctx context.Context, bID int64, requireToken bool) (*pb.
 	}
 
 	bldTok := buildToks[0]
-	tokBody, err := tokenBody(bldTok)
+	tokBody, err := buildtoken.ParseToTokenBody(bldTok)
 	// There's something wrong with the build token itself.
-	if err != nil && !buildTokenInOldFormat.In(err) {
+	if err != nil && !buildtoken.BuildTokenInOldFormat.In(err) {
 		return nil, nil, err
 	}
 

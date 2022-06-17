@@ -24,7 +24,6 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/google/tink/go/subtle/random"
 	"google.golang.org/protobuf/proto"
 
 	"go.chromium.org/luci/common/api/swarming/swarming/v1"
@@ -33,6 +32,7 @@ import (
 	"go.chromium.org/luci/gae/service/info"
 
 	"go.chromium.org/luci/buildbucket"
+	"go.chromium.org/luci/buildbucket/appengine/internal/buildtoken"
 	"go.chromium.org/luci/buildbucket/appengine/internal/clients"
 	"go.chromium.org/luci/buildbucket/appengine/model"
 	"go.chromium.org/luci/buildbucket/cmd/bbagent/bbinput"
@@ -70,7 +70,7 @@ func createSwarmingTask(ctx context.Context, build *model.Build, swarm clients.S
 	}
 
 	// Insert secret bytes.
-	token, err := generateBuildToken(build.ID)
+	token, err := buildtoken.GenerateToken(build.ID)
 	if err != nil {
 		return err
 	}
@@ -157,31 +157,6 @@ func computeTags(ctx context.Context, build *model.Build) []string {
 	tags = append(tags, build.Tags...)
 	sort.Strings(tags)
 	return tags
-}
-
-// generateBuildToken generates base64 encoded byte string token.
-// In the future, it will be replaced by a self-verifiable token.
-func generateBuildToken(buildID int64) (string, error) {
-	tkBody := &pb.TokenBody{
-		BuildId: buildID,
-		Purpose: pb.TokenBody_BUILD,
-		State:   random.GetRandomBytes(16),
-	}
-
-	tkBytes, err := proto.Marshal(tkBody)
-	if err != nil {
-		return "", err
-	}
-	tkEnvelop := &pb.TokenEnvelope{
-		Version: pb.TokenEnvelope_UNENCRYPTED_PASSWORD_LIKE,
-		Payload: tkBytes,
-	}
-	tkeBytes, err := proto.Marshal(tkEnvelop)
-	if err != nil {
-		return "", err
-	}
-	token := base64.RawURLEncoding.EncodeToString(tkeBytes)
-	return token, nil
 }
 
 // computeTaskSlice computes swarming task slices.
