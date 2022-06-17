@@ -123,6 +123,48 @@ export interface TestVerdictBundle {
   readonly variant: Variant;
 }
 
+export interface FailureReason {
+  readonly primaryErrorMessage: string;
+}
+
+export interface ClusterRequest {
+  readonly project: string;
+  readonly testResults: ReadonlyArray<{
+    readonly requestTag?: string;
+    readonly testId: string;
+    readonly failureReason?: FailureReason;
+  }>;
+}
+
+export interface ClusterResponse {
+  readonly clusteredTestResults: ReadonlyArray<{
+    readonly requestTag?: string;
+    readonly clusters: ReadonlyArray<{
+      readonly clusterId: ClusterId;
+      readonly bug?: AssociatedBug;
+    }>;
+  }>;
+  readonly clusteringVersion: ClusteringVersion;
+}
+
+export interface ClusteringVersion {
+  readonly algorithmsVersion: string;
+  readonly rulesVersion: string;
+  readonly configVersion: string;
+}
+
+export interface ClusterId {
+  readonly algorithm: string;
+  readonly id: string;
+}
+
+export interface AssociatedBug {
+  readonly system: string;
+  readonly id: string;
+  readonly linkText: string;
+  readonly url: string;
+}
+
 export class TestHistoryService {
   private static SERVICE = 'weetbix.v1.TestHistory';
 
@@ -150,5 +192,24 @@ export class TestHistoryService {
 
   async queryVariants(req: QueryVariantsRequest, cacheOpt: CacheOption = {}): Promise<QueryVariantsResponse> {
     return (await this.cachedCallFn(cacheOpt, 'QueryVariants', req)) as QueryVariantsResponse;
+  }
+}
+
+export class ClustersService {
+  private static SERVICE = 'weetbix.v1.Clusters';
+
+  private readonly cachedCallFn: (opt: CacheOption, method: string, message: object) => Promise<unknown>;
+
+  constructor(client: PrpcClientExt) {
+    this.cachedCallFn = cached(
+      (method: string, message: object) => client.call(ClustersService.SERVICE, method, message),
+      {
+        key: (method, message) => `${method}-${stableStringify(message)}`,
+      }
+    );
+  }
+
+  async cluster(req: ClusterRequest, cacheOpt: CacheOption = {}): Promise<ClusterResponse> {
+    return (await this.cachedCallFn(cacheOpt, 'Cluster', req)) as ClusterResponse;
   }
 }
