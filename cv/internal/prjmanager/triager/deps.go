@@ -130,7 +130,7 @@ func (t *triagedDeps) categorize(pcl *prjpb.PCL, cgIndex int32, cg *cfgpb.Config
 
 	switch cgIndexes := dPCL.GetConfigGroupIndexes(); len(cgIndexes) {
 	case 0:
-		panic(fmt.Errorf("At least one ConfigGroup index required for watched dep PCL %d", dPCL.GetClid()))
+		panic(fmt.Errorf("at least one ConfigGroup index required for watched dep PCL %d", dPCL.GetClid()))
 	case 1:
 		if cgIndexes[0] != cgIndex {
 			t.ensureInvalidDeps()
@@ -158,7 +158,7 @@ func (t *triagedDeps) categorize(pcl *prjpb.PCL, cgIndex int32, cg *cfgpb.Config
 }
 
 func (t *triagedDeps) categorizeCombinable(tr, dtr *run.Trigger, dep *changelist.Dep) {
-	// During the `combine_cls.stablization_delay` since the last triggered CL in
+	// During the `combine_cls.stabilization_delay` since the last triggered CL in
 	// a group, a user can change their mind. Since the full group of CLs isn't
 	// known here, categorization decision may or may not be final.
 	switch {
@@ -196,8 +196,6 @@ func (t *triagedDeps) categorizeSingle(tr, dtr *run.Trigger, dep *changelist.Dep
 			// changes.
 			return
 		}
-		// TODO(tandrii): find bug about better handling of stacks in single-CL Run case.
-		// TODO(tandrii): allow this if dep's mode is also FullRun.
 		t.ensureInvalidDeps()
 		t.invalidDeps.SingleFullDeps = append(t.invalidDeps.SingleFullDeps, dep)
 		return

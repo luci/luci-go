@@ -217,7 +217,7 @@ func (h *Handler) OnRunsCreated(ctx context.Context, s *State, created common.Ru
 func (h *Handler) OnRunsFinished(ctx context.Context, s *State, finished common.RunIDs) (_ *State, __ SideEffect, err error) {
 	s.ensureNotYetCloned()
 
-	ctx, span := trace.StartSpan(ctx, "go.chromium.org/luci/cv/internal/prjmanager/impl/state/OnRunsFinished")
+	_, span := trace.StartSpan(ctx, "go.chromium.org/luci/cv/internal/prjmanager/impl/state/OnRunsFinished")
 	defer func() { span.End(err) }()
 
 	// This is rarely a noop, so assume state is modified for simplicity.

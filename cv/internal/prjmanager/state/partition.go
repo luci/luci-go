@@ -109,10 +109,10 @@ func (s *State) execPartition(cat *categorizedCLs, d disjointset.DisjointSet) []
 		for _, clid := range clids {
 			if cat.unused.HasI64(clid) {
 				if len(clids) != 1 {
-					// Note that 2+ CL component which satisfies (1) can't have an unused CL.
-					// Unused CL don't have relation to other CLs, and so wouldn't be grouped
-					// into the same set in a new partition.
-					panic(fmt.Errorf("Component with %d CLs %v has unused CL %d", len(clids), clids, clid))
+					// Note that 2+ CL component which satisfies (1) can't have an unused
+					// CL. Unused CL don't have relation to other CLs, and so wouldn't be
+					// grouped into the same set in a new partition.
+					panic(fmt.Errorf("component with %d CLs %v has unused CL %d", len(clids), clids, clid))
 				}
 				return -1, false
 			}

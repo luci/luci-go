@@ -125,8 +125,8 @@ func (info *clInfo) triageInRun(pm pmState) {
 		// CL before OnRunFinished event.
 		return
 	case len(pcl.GetConfigGroupIndexes()) != 1:
-		// This is expected if project config has changed, but Run's reaction to it via
-		// OnRunFinished event hasn't yet reached PM.
+		// This is expected if project config has changed, but Run's reaction to it
+		// via OnRunFinished event hasn't yet reached PM.
 		return
 	case s != prjpb.PCL_OK:
 		panic(fmt.Errorf("PCL has unrecognized status %s", s))
@@ -174,7 +174,7 @@ func (info *clInfo) triageInPurge(pm pmState) {
 	case 1:
 		info.deps = triageDeps(pcl, cgIndexes[0], pm)
 		// info.deps.OK() may be true, for example if user has already corrected the
-		// mistake that previously reulted in purging op. However, don't mark CL
+		// mistake that previously resulted in purging op. However, don't mark CL
 		// ready until purging op completes or expires.
 	}
 }

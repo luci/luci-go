@@ -140,7 +140,7 @@ func (s *State) categorizeCLs(ctx context.Context) *categorizedCLs {
 }
 
 // loadActiveIntoPCLs ensures PCLs contain all active CLs and modifies
-// categorized CLs accordingly.
+// categorizedCLs accordingly.
 //
 // Doesn't guarantee that all their deps are loaded.
 func (s *State) loadActiveIntoPCLs(ctx context.Context, cat *categorizedCLs) error {
@@ -153,8 +153,8 @@ func (s *State) loadActiveIntoPCLs(ctx context.Context, cat *categorizedCLs) err
 	// OnCLUpdated event of just Z. Upon receiving which, PM will add Z(deps: Y)
 	// into PCL, and then calls this function.
 	// Even if at this point Datastore contains all {Y..A} CLs, it's unreasonable
-	// to load them all in this function because it'd require O(len(chain)) of RPCs to
-	// Datastore, whereby each (% last one) detects yet another dep.
+	// to load them all in this function because it'd require O(len(chain)) of
+	// RPCs to Datastore, whereby each (% last one) detects yet another dep.
 	// Thus, no guarantee to load deps is provided.
 	//
 	// Normally, the next PM invocation to receive remaining {Y..A} OnCLUpdated

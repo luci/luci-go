@@ -104,8 +104,8 @@ func (rs *runStage) stageNewRunsFrom(ctx context.Context, clid int64, info *clIn
 	cg := rs.pm.ConfigGroup(cgIndex)
 
 	if cg.Content.GetCombineCls() != nil {
-		// Maximize Run's CL # to include not only all reachable dependencies, but also
-		// reachable dependents, recursively.
+		// Maximize Run's CL # to include not only all reachable dependencies, but
+		// also reachable dependents, recursively.
 		rs.expandComboVisited(info, &combo)
 
 		// Shall the decision be delayed?

@@ -239,7 +239,7 @@ func (s *State) makePCL(ctx context.Context, cl *changelist.CL) *prjpb.PCL {
 		ap = cl.ApplicableConfig.GetProjects()[0]
 		pcl.Status = prjpb.PCL_OK
 	default:
-		panic(fmt.Errorf("Unknown access kind %d", kind))
+		panic(fmt.Errorf("unknown access kind %d", kind))
 	}
 
 	s.setApplicableConfigGroups(ap, cl.Snapshot, pcl)
@@ -332,7 +332,7 @@ func (s *State) tryUsingApplicableConfigGroups(ap *changelist.ApplicableConfig_P
 func (s *State) setTrigger(ci *gerritpb.ChangeInfo, pcl *prjpb.PCL) {
 	// Trigger is a function of a CL and applicable ConfigGroup, which may define
 	// additional modes.
-	// In case of misconfiguratiuon, they may be 0 or 2+ applicable ConfigGroups,
+	// In case of misconfiguration, they may be 0 or 2+ applicable ConfigGroups,
 	// in which case we use empty ConfigGroup{}. This doesn't matter much,
 	// since such CLs will be soon purged. In the very worst case, CL purger will
 	// remove just the CQ vote and not the additional label's vote defined in

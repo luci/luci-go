@@ -130,7 +130,7 @@ func (h *Handler) triageComponents(ctx context.Context, s *State) ([]*cAction, b
 	case poolErr == nil || (ok && len(merrs) == 0):
 		return actions, false, nil
 	case !ok:
-		panic(fmt.Errorf("Unexpected return from parallel.WorkPool: %s", poolErr))
+		panic(fmt.Errorf("unexpected return from parallel.WorkPool: %s", poolErr))
 	case len(actions) > 0:
 		// Components are independent, so proceed despite errors on some components
 		// since partial progress is better than none.
@@ -169,7 +169,7 @@ func (h *Handler) triageOneComponent(ctx context.Context, s *State, oldC *prjpb.
 		return
 	}
 	if res.NewValue != nil && res.NewValue == oldC {
-		panic(fmt.Errorf("New value re-uses prior component object, must use copy-on-write instead"))
+		panic(fmt.Errorf("new value re-uses prior component object, must use copy-on-write instead"))
 	}
 	if len(res.CLsToPurge) > 0 {
 		s.validatePurgeCLTasks(oldC, res.CLsToPurge)
@@ -241,7 +241,7 @@ func (h *Handler) actOnComponents(ctx context.Context, s *State, actions []*cAct
 		logging.Infof(ctx, "actOnComponents: created %d Runs, %s", runsCreated, proceedMsg)
 		return sideEffect, nil
 	case !ok:
-		panic(fmt.Errorf("Unexpected return from parallel.WorkPool"))
+		panic(fmt.Errorf("unexpected return from parallel.WorkPool"))
 	default:
 		logging.Warningf(ctx, "actOnComponents: created %d Runs, failed to create %d Runs", runsCreated, len(merrs))
 		if componentsUpdated+len(clsToPurge) == 0 {
