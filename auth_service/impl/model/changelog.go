@@ -24,9 +24,11 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/auth_service/api/rpcpb"
+	"go.chromium.org/luci/auth_service/api/taskspb"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/gae/service/datastore"
+	"go.chromium.org/luci/server/tq"
 )
 
 // ChangeType is the enum for AuthDBChange.ChangeType.
@@ -326,4 +328,30 @@ func (change *AuthDBChange) ToProto() *rpcpb.AuthDBChange {
 		PermsRevOld:              change.PermsRevOld,
 		PermsRevNew:              change.PermsRevNew,
 	}
+}
+
+// EnqueueProcessChangeTask adds a ProcessChangeTask task to the cloud task
+// queue.
+func EnqueueProcessChangeTask(ctx context.Context, authdbrev int64) error {
+	if authdbrev < 0 {
+		return errors.New("negative revision numbers are not allowed")
+	}
+	logging.Infof(ctx, "enqueuing %d", authdbrev)
+	return tq.AddTask(ctx, &tq.Task{
+		Payload: &taskspb.ProcessChangeTask{AuthDbRev: authdbrev},
+		Title:   fmt.Sprintf("authdb-rev-%d", authdbrev),
+	})
+}
+
+func handleTask(ctx context.Context, task *taskspb.ProcessChangeTask) error {
+	// TODO(cjacomet): Implement
+	return nil
+}
+
+func ensureInitialSnapshot() {
+	// TODO(cjacomet): Implement
+}
+
+func generateChanges() {
+	// TODO(cjacomet): Implement
 }

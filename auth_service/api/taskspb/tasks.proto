@@ -1,4 +1,4 @@
-// Copyright 2021 The LUCI Authors.
+// Copyright 2022 The LUCI Authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,19 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package main is the main point of entry for the backend module.
-//
-// It handles task queue tasks and cron jobs.
-package main
+syntax = "proto3";
 
-import (
-	"go.chromium.org/luci/server"
+package auth.tasks;
 
-	"go.chromium.org/luci/auth_service/impl"
-)
+option go_package = "go.chromium.org/luci/auth_service/api/taskspb";
 
-func main() {
-	impl.Main(nil, func(srv *server.Server) error {
-		return nil
-	})
+message ProcessChangeTask {
+  int64 auth_db_rev = 1;
 }
