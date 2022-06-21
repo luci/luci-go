@@ -68,7 +68,7 @@ func getCommandEnv(ctx context.Context, tmpDir string, cipdInfo *cipdInfo, runDi
 
 	if cipdInfo != nil {
 		binDir := filepath.Dir(cipdInfo.binaryPath)
-		out.Set("PATH", binDir+string(filepath.ListSeparator)+out.GetEmpty("PATH"))
+		out.Set("PATH", binDir+string(filepath.ListSeparator)+out.Get("PATH"))
 		out.Set("CIPD_CACHE_DIR", cipdInfo.cacheDir)
 	}
 
@@ -77,7 +77,7 @@ func getCommandEnv(ctx context.Context, tmpDir string, cipdInfo *cipdInfo, runDi
 		for _, p := range paths {
 			newPaths = append(newPaths, filepath.Clean(filepath.Join(runDir, p)))
 		}
-		if cur, ok := out.Get(key); ok {
+		if cur, ok := out.Lookup(key); ok {
 			newPaths = append(newPaths, cur)
 		}
 		out.Set(key, strings.Join(newPaths, string(filepath.ListSeparator)))
@@ -130,7 +130,7 @@ func Run(ctx context.Context, command []string, cwd string, env environ.Env, har
 		fmt.Fprint(os.Stderr, `<The executable does not exist or a dependent library is missing>
 <Check for missing .so/.dll in the .isolate or GN file>
 `)
-		if _, ok := environ.System().Get(swarmingimpl.TaskIDEnvVar); ok {
+		if _, ok := environ.System().Lookup(swarmingimpl.TaskIDEnvVar); ok {
 			fmt.Fprint(os.Stderr, `<See the task's page for commands to help diagnose this issue by reproducing the task locally>
 `)
 		}

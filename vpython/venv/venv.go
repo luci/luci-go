@@ -1031,7 +1031,7 @@ func writeFile(path string, data []byte, mode os.FileMode) error {
 // This returns a modified copy of env and a list of pruned paths (if any).
 func StripVirtualEnvPaths(env environ.Env) (ret environ.Env, pruned []string) {
 	ret = env.Clone()
-	path := filepath.SplitList(env.GetEmpty("PATH"))
+	path := filepath.SplitList(env.Get("PATH"))
 	newPath := make([]string, 0, len(path))
 	for _, entry := range path {
 		if _, err := os.Stat(filepath.Join(entry, "activate_this.py")); err == nil {

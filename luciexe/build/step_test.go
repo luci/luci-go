@@ -276,10 +276,10 @@ func TestStepLog(t *testing.T) {
 
 		Convey(`sets LOGDOG_NAMESPACE`, func() {
 			_, subCtx := StartStep(ctx, "some step")
-			So(environ.FromCtx(subCtx).GetEmpty(luciexe.LogdogNamespaceEnv), ShouldEqual, "fakeNS/step/0/u")
+			So(environ.FromCtx(subCtx).Get(luciexe.LogdogNamespaceEnv), ShouldEqual, "fakeNS/step/0/u")
 
 			_, subSubCtx := StartStep(ctx, "some sub step")
-			So(environ.FromCtx(subSubCtx).GetEmpty(luciexe.LogdogNamespaceEnv), ShouldEqual, "fakeNS/step/1/u")
+			So(environ.FromCtx(subSubCtx).Get(luciexe.LogdogNamespaceEnv), ShouldEqual, "fakeNS/step/1/u")
 		})
 	})
 }

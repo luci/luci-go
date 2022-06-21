@@ -81,10 +81,10 @@ func TestLiveExported(t *testing.T) {
 
 		Convey("Can add to environ", func() {
 			env := environ.System()
-			_, ok := env.Get(EnvKey)
+			_, ok := env.Lookup(EnvKey)
 			So(ok, ShouldBeFalse)
 			le.SetInEnviron(env)
-			val, ok := env.Get(EnvKey)
+			val, ok := env.Lookup(EnvKey)
 			So(ok, ShouldBeTrue)
 			So(val, ShouldEqual, le.path)
 		})

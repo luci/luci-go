@@ -140,7 +140,7 @@ func TestOptionsNamespace(t *testing.T) {
 		Convey(`default`, func() {
 			lo, _, err := o.rationalize(ctx)
 			So(err, ShouldBeNil)
-			So(lo.env.GetEmpty(bootstrap.EnvNamespace), ShouldResemble, "")
+			So(lo.env.Get(bootstrap.EnvNamespace), ShouldResemble, "")
 			So(lo.step, ShouldBeNil)
 		})
 
@@ -158,7 +158,7 @@ func TestOptionsNamespace(t *testing.T) {
 			o.Namespace = "u"
 			lo, _, err := o.rationalize(ctx)
 			So(err, ShouldBeNil)
-			So(lo.env.GetEmpty(bootstrap.EnvNamespace), ShouldResemble, "u")
+			So(lo.env.Get(bootstrap.EnvNamespace), ShouldResemble, "u")
 			So(lo.step, ShouldResemble, &bbpb.Step{
 				Name:      "u",
 				StartTime: nowP,
@@ -177,7 +177,7 @@ func TestOptionsNamespace(t *testing.T) {
 			o.Namespace = "sub"
 			lo, _, err := o.rationalize(ctx)
 			So(err, ShouldBeNil)
-			So(lo.env.GetEmpty(bootstrap.EnvNamespace), ShouldResemble, "u/bar/sub")
+			So(lo.env.Get(bootstrap.EnvNamespace), ShouldResemble, "u/bar/sub")
 			So(lo.step, ShouldResemble, &bbpb.Step{
 				Name:      "sub", // host application will swizzle this
 				StartTime: nowP,
@@ -196,7 +196,7 @@ func TestOptionsNamespace(t *testing.T) {
 			o.Namespace = "step|!!cool!!|sub"
 			lo, _, err := o.rationalize(ctx)
 			So(err, ShouldBeNil)
-			So(lo.env.GetEmpty(bootstrap.EnvNamespace),
+			So(lo.env.Get(bootstrap.EnvNamespace),
 				ShouldResemble, "u/step/s___cool__/sub")
 			So(lo.step, ShouldResemble, &bbpb.Step{
 				Name:      "step|!!cool!!|sub", // host application will swizzle this
@@ -435,7 +435,7 @@ func TestOptionsExtraDirs(t *testing.T) {
 			So(os.Mkdir(o.BaseDir, 0777), ShouldBeNil)
 			lo, _, err := o.rationalize(ctx)
 			So(err, ShouldBeNil)
-			So(lo.env.GetEmpty("TMP"), ShouldStartWith, o.BaseDir)
+			So(lo.env.Get("TMP"), ShouldStartWith, o.BaseDir)
 			So(lo.workDir, ShouldStartWith, o.BaseDir)
 		})
 
@@ -455,7 +455,7 @@ func TestOptionsExtraDirs(t *testing.T) {
 		Convey(`fallback to temp`, func() {
 			lo, _, err := o.rationalize(ctx)
 			So(err, ShouldBeNil)
-			So(lo.env.GetEmpty("TMP"), ShouldStartWith, tdir)
+			So(lo.env.Get("TMP"), ShouldStartWith, tdir)
 			So(lo.workDir, ShouldStartWith, tdir)
 		})
 	})

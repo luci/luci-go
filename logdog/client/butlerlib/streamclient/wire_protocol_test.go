@@ -69,7 +69,7 @@ func mkTestCtx() (context.Context, func()) {
 const printQuitEnv = "WIRE_PROTOCOL_PRINT_AND_QUIT"
 
 func init() {
-	data := environ.System().GetEmpty(printQuitEnv)
+	data := environ.System().Get(printQuitEnv)
 	if data != "" {
 		fmt.Print(data)
 		os.Exit(0)

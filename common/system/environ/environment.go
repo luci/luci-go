@@ -49,7 +49,7 @@ var ctxKey = "holds an Env"
 // FromCtx returns a copy of the current Env in `ctx`.
 //
 // This is guaranteed to return a non-nil Env (i.e. it's always safe for
-// assignment/manipulation)
+// assignment/manipulation).
 //
 // If no Env has been set with `SetInCtx`, this returns `System()`.
 func FromCtx(ctx context.Context) Env {
@@ -67,18 +67,12 @@ func (e Env) SetInCtx(ctx context.Context) context.Context {
 
 // System returns an Env instance instantiated with the current os.Environ
 // values.
-//
-// The environment is automatically configured with the local system's case
-// insensitivity.
 func System() Env {
 	return New(os.Environ())
 }
 
 // New instantiates a new Env instance from the supplied set of environment
-// KEY=VALUE strings using LoadSlice.
-//
-// The environment is automatically configured with the local system's case
-// insensitivity.
+// KEY=VALUE strings (e.g. as returned by os.Environ()).
 func New(s []string) Env {
 	e := Env{env: make(map[string]string, len(s))}
 	for _, entry := range s {
@@ -99,9 +93,15 @@ func (e Env) Load(m map[string]string) {
 }
 
 // Set sets the supplied environment key and value.
+//
+// Panics if the Env is zero-valued i.e. equals to Env{}. Use New(nil) to create
+// a modifiable empty environment.
 func (e Env) Set(k, v string) { e.SetEntry(Join(k, v)) }
 
 // SetEntry sets the supplied environment to a "KEY[=VALUE]" entry.
+//
+// Panics if the Env is zero-valued i.e. equals to Env{}. Use New(nil) to create
+// a modifiable empty environment.
 func (e Env) SetEntry(entry string) {
 	if e.env == nil {
 		panic("cannot modify zero Env")
@@ -151,18 +151,21 @@ func (e Env) RemoveMatch(fn func(k, v string) bool) {
 // that if e is case insensitive and there are multiple keys in other that
 // converge on the same case insensitive key, the one that is alphabetically
 // highest will be added.
+//
+// Panics if the Env is zero-valued i.e. equals to Env{}. Use New(nil) to create
+// a modifiable empty environment.
 func (e Env) Update(other Env) {
 	for _, entry := range other.Sorted() {
 		e.SetEntry(entry)
 	}
 }
 
-// Get returns the environment value for the supplied key.
+// Lookup retrieves the value of the environment variable named by the key.
 //
-// If the value is defined, ok will be true and v will be set to its value (note
-// that this can be empty if the environment has an empty value). If the value
-// is not defined, ok will be false.
-func (e Env) Get(k string) (v string, ok bool) {
+// If the variable is present in the environment the value (which may be empty)
+// is returned and the boolean is true. Otherwise the returned value will be
+// empty and the boolean will be false.
+func (e Env) Lookup(k string) (v string, ok bool) {
 	// NOTE: "v" is initially the combined "key=value" entry, and will need to be
 	// split.
 	if v, ok = e.env[normalizeKeyCase(k)]; ok {
@@ -171,11 +174,12 @@ func (e Env) Get(k string) (v string, ok bool) {
 	return
 }
 
-// GetEmpty is the same as Get, except that instead of returning a separate
-// boolean indicating the presence of a key, it will return an empty string if
-// the key is missing.
-func (e Env) GetEmpty(k string) string {
-	v, _ := e.Get(k)
+// Get retrieves the value of the environment variable named by the key.
+//
+// It returns the value, which will be empty if the variable is not present.
+// To distinguish between an empty value and an unset value, use Lookup.
+func (e Env) Get(k string) string {
+	v, _ := e.Lookup(k)
 	return v
 }
 

@@ -196,7 +196,7 @@ func (c *reproduceRun) prepareTaskRequestEnvironment(ctx context.Context, proper
 		for _, value := range prefix.Value {
 			paths = append(paths, filepath.Clean(filepath.Join(c.work, value)))
 		}
-		cur, ok := cmdEnvMap.Get(prefix.Key)
+		cur, ok := cmdEnvMap.Lookup(prefix.Key)
 		if ok {
 			paths = append(paths, cur)
 		}

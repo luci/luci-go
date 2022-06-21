@@ -46,7 +46,7 @@ const (
 )
 
 func wrapperCheck(env environ.Env) bool {
-	if env.GetEmpty(checkWrapperENV) != "" {
+	if env.Get(checkWrapperENV) != "" {
 		fmt.Fprintln(os.Stdout, checkWrapperSentinel)
 		return true
 	}

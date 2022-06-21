@@ -23,7 +23,7 @@ import (
 func main() {
 	env := environ.System()
 
-	if e, ok := env.Get("envvar"); ok && e == "envvar" {
+	if e, ok := env.Lookup("envvar"); ok && e == "envvar" {
 		os.Exit(0)
 	}
 	os.Exit(1)

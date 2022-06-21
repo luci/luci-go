@@ -55,19 +55,19 @@ func TestGetCommandEnv(t *testing.T) {
 
 			So(err, ShouldBeNil)
 
-			_, ok := env.Get("B")
+			_, ok := env.Lookup("B")
 			So(ok, ShouldBeFalse)
 
-			_, ok = env.Get("C")
+			_, ok = env.Lookup("C")
 			So(ok, ShouldBeFalse)
 
 			if runtime.GOOS == "windows" {
-				So(env.GetEmpty("D"), ShouldEqual, `\b\foo;bar`)
+				So(env.Get("D"), ShouldEqual, `\b\foo;bar`)
 			} else {
-				So(env.GetEmpty("D"), ShouldEqual, "/b/foo:bar")
+				So(env.Get("D"), ShouldEqual, "/b/foo:bar")
 			}
 
-			So(env.GetEmpty("E"), ShouldEqual, string(filepath.Separator)+filepath.Join("spam", "eggs"))
+			So(env.Get("E"), ShouldEqual, string(filepath.Separator)+filepath.Join("spam", "eggs"))
 		})
 
 		Convey("cipdInfo", func() {

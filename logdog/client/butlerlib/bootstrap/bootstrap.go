@@ -62,16 +62,16 @@ func GetFromEnv(env environ.Env) (*Bootstrap, error) {
 	// Detect Butler by looking for EnvStreamServerPath in the envrironent. This
 	// is the only environment variable which matters for constructing a Butler
 	// Client; all the rest are just needed to assemble viewer URLs.
-	butlerSocket, ok := env.Get(EnvStreamServerPath)
+	butlerSocket, ok := env.Lookup(EnvStreamServerPath)
 	if !ok {
 		return nil, ErrNotBootstrapped
 	}
 
 	bs := &Bootstrap{
-		CoordinatorHost: env.GetEmpty(EnvCoordinatorHost),
-		Prefix:          types.StreamName(env.GetEmpty(EnvStreamPrefix)),
-		Namespace:       types.StreamName(env.GetEmpty(EnvNamespace)),
-		Project:         env.GetEmpty(EnvStreamProject),
+		CoordinatorHost: env.Get(EnvCoordinatorHost),
+		Prefix:          types.StreamName(env.Get(EnvStreamPrefix)),
+		Namespace:       types.StreamName(env.Get(EnvNamespace)),
+		Project:         env.Get(EnvStreamProject),
 	}
 	if err := bs.initializeClient(butlerSocket); err != nil {
 		return nil, fmt.Errorf("bootstrap: failed to create stream client [%s]: %s", butlerSocket, err)

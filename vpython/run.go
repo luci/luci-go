@@ -65,7 +65,7 @@ func Run(c context.Context, opts Options) error {
 		if !opts.VpythonOptIn {
 			// Prepend BinDir to $PATH
 			e.Set("PATH", strings.Join(
-				[]string{ve.BinDir, e.GetEmpty("PATH")}, string(os.PathListSeparator)))
+				[]string{ve.BinDir, e.Get("PATH")}, string(os.PathListSeparator)))
 		}
 
 		// Run our bootstrapped Python command.

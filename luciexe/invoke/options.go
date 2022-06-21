@@ -160,7 +160,7 @@ func (o *Options) prepNamespace(ctx context.Context, lo *launchOptions) error {
 	// The $LOGDOG_NAMESPACE envvar is currently cumulative, even though the
 	// Log.Url field is relative.
 	fullNS := string(relNS)
-	if curNS := lo.env.GetEmpty(luciexe.LogdogNamespaceEnv); curNS != "" {
+	if curNS := lo.env.Get(luciexe.LogdogNamespaceEnv); curNS != "" {
 		fullNS = strings.Join([]string{curNS, fullNS}, "/")
 	}
 	lo.env.Set(luciexe.LogdogNamespaceEnv, fullNS)

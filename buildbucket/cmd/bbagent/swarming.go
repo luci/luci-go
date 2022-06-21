@@ -52,10 +52,10 @@ func populateSwarmingInfoFromEnv(build *bbpb.Build, env environ.Env) {
 	}
 
 	swarming := build.Infra.Swarming
-	if v, ok := env.Get(swarmingimpl.ServerEnvVar); ok && swarming.Hostname == "" {
+	if v, ok := env.Lookup(swarmingimpl.ServerEnvVar); ok && swarming.Hostname == "" {
 		swarming.Hostname = v
 	}
-	if v, ok := env.Get(swarmingimpl.TaskIDEnvVar); ok && swarming.TaskId == "" {
+	if v, ok := env.Lookup(swarmingimpl.TaskIDEnvVar); ok && swarming.TaskId == "" {
 		swarming.TaskId = v
 	}
 }

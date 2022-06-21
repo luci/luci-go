@@ -71,7 +71,7 @@ func findExecutable(file string, exts []string) (string, error) {
 //	- Ignore the possibility that "file" may be in the CWD; only look in "dir".
 func findInDir(file, dir string, env environ.Env) (string, error) {
 	var exts []string
-	if x, ok := env.Get(`PATHEXT`); ok {
+	if x, ok := env.Lookup(`PATHEXT`); ok {
 		for _, e := range strings.Split(strings.ToLower(x), `;`) {
 			if e == "" {
 				continue

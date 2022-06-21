@@ -167,7 +167,7 @@ func (p *Probe) Locate(c context.Context, cached string, env environ.Env) (strin
 	// isn't self and doesn't identify as a wrapper.
 	pathDirs := p.PathDirs
 	if pathDirs == nil {
-		pathDirs = strings.Split(env.GetEmpty("PATH"), string(os.PathListSeparator))
+		pathDirs = strings.Split(env.Get("PATH"), string(os.PathListSeparator))
 	}
 
 	// Build our list of directories to check for Target.

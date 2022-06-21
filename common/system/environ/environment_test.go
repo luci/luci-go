@@ -59,12 +59,12 @@ func TestEnvironmentConversion(t *testing.T) {
 				"qux=quux=quuuuuuux",
 			})
 
-			So(env.GetEmpty(""), ShouldEqual, "")
-			So(env.GetEmpty("FOO"), ShouldEqual, "")
-			So(env.GetEmpty("BAR"), ShouldEqual, "baz")
-			So(env.GetEmpty("bar"), ShouldEqual, "baz")
-			So(env.GetEmpty("qux"), ShouldEqual, "quux=quuuuuuux")
-			So(env.GetEmpty("QuX"), ShouldEqual, "quux=quuuuuuux")
+			So(env.Get(""), ShouldEqual, "")
+			So(env.Get("FOO"), ShouldEqual, "")
+			So(env.Get("BAR"), ShouldEqual, "baz")
+			So(env.Get("bar"), ShouldEqual, "baz")
+			So(env.Get("qux"), ShouldEqual, "quux=quuuuuuux")
+			So(env.Get("QuX"), ShouldEqual, "quux=quuuuuuux")
 		})
 
 		Convey(`Case sensitive (e.g., POSIX)`, func() {
@@ -93,12 +93,12 @@ func TestEnvironmentConversion(t *testing.T) {
 				"qux=quux=quuuuuuux",
 			})
 
-			So(env.GetEmpty(""), ShouldEqual, "")
-			So(env.GetEmpty("FOO"), ShouldEqual, "")
-			So(env.GetEmpty("BAR"), ShouldEqual, "BAZ")
-			So(env.GetEmpty("bar"), ShouldEqual, "baz")
-			So(env.GetEmpty("qux"), ShouldEqual, "quux=quuuuuuux")
-			So(env.GetEmpty("QuX"), ShouldEqual, "")
+			So(env.Get(""), ShouldEqual, "")
+			So(env.Get("FOO"), ShouldEqual, "")
+			So(env.Get("BAR"), ShouldEqual, "BAZ")
+			So(env.Get("bar"), ShouldEqual, "baz")
+			So(env.Get("qux"), ShouldEqual, "quux=quuuuuuux")
+			So(env.Get("QuX"), ShouldEqual, "")
 		})
 	})
 }
@@ -115,7 +115,7 @@ func TestEnvironmentManipulation(t *testing.T) {
 		})
 
 		Convey(`Can call Get`, func() {
-			v, ok := env.Get("foo")
+			v, ok := env.Lookup("foo")
 			So(ok, ShouldBeFalse)
 			So(v, ShouldEqual, "")
 		})
@@ -140,7 +140,7 @@ func TestEnvironmentManipulation(t *testing.T) {
 		})
 
 		Convey(`Can call Get`, func() {
-			v, ok := env.Get("foo")
+			v, ok := env.Lookup("foo")
 			So(ok, ShouldBeFalse)
 			So(v, ShouldEqual, "")
 		})
@@ -168,24 +168,24 @@ func TestEnvironmentManipulation(t *testing.T) {
 		So(env.Len(), ShouldEqual, 3)
 
 		Convey(`Can Get values.`, func() {
-			v, ok := env.Get("PYTHONPATH")
+			v, ok := env.Lookup("PYTHONPATH")
 			So(ok, ShouldBeTrue)
 			So(v, ShouldEqual, "/foo:/bar:/baz")
 
-			v, ok = env.Get("http_proxy")
+			v, ok = env.Lookup("http_proxy")
 			So(ok, ShouldBeTrue)
 			So(v, ShouldEqual, "http://example.com")
 
-			v, ok = env.Get("novalue")
+			v, ok = env.Lookup("novalue")
 			So(ok, ShouldBeTrue)
 			So(v, ShouldEqual, "")
 		})
 
 		Convey(`Will note missing values.`, func() {
-			_, ok := env.Get("missing")
+			_, ok := env.Lookup("missing")
 			So(ok, ShouldBeFalse)
 
-			_, ok = env.Get("")
+			_, ok = env.Lookup("")
 			So(ok, ShouldBeFalse)
 		})
 
@@ -224,7 +224,7 @@ func TestEnvironmentManipulation(t *testing.T) {
 			orig := env.Clone()
 
 			// Update PYTHONPATH, confirm that it updated correctly.
-			v, _ := env.Get("PYTHONPATH")
+			v, _ := env.Lookup("PYTHONPATH")
 			env.Set("PYTHONPATH", "/override:"+v)
 			So(env.Sorted(), ShouldResemble, []string{
 				"PYTHONPATH=/override:/foo:/bar:/baz",
@@ -240,7 +240,7 @@ func TestEnvironmentManipulation(t *testing.T) {
 					"novalue=",
 					"pYtHoNpAtH=/override:/foo:/bar:/baz",
 				})
-				So(env.GetEmpty("PYTHONPATH"), ShouldEqual, "/override:/foo:/bar:/baz")
+				So(env.Get("PYTHONPATH"), ShouldEqual, "/override:/foo:/bar:/baz")
 
 				So(env.Remove("HTTP_PROXY"), ShouldBeTrue)
 				So(env.Remove("nonexistent"), ShouldBeFalse)

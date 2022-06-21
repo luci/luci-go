@@ -148,7 +148,7 @@ func TestLUCIContextMethods(t *testing.T) {
 				defer e.Close()
 				cmd := exec.Command("something", "something")
 				e.SetInCmd(cmd)
-				path, ok := environ.New(cmd.Env).Get(EnvKey)
+				path, ok := environ.New(cmd.Env).Lookup(EnvKey)
 				So(ok, ShouldBeTrue)
 
 				// There's a valid JSON there.

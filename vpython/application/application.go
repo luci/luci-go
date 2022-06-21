@@ -234,7 +234,7 @@ func (a *application) mainImpl(c context.Context, argv0 string, args []string) e
 	a.opts.EnvConfig.LookPathFunc = lp.look
 
 	// Determine our VirtualEnv base directory.
-	if v, ok := a.opts.Environ.Get(VirtualEnvRootENV); ok {
+	if v, ok := a.opts.Environ.Lookup(VirtualEnvRootENV); ok {
 		a.opts.EnvConfig.BaseDir = v
 	} else {
 		hdir, err := homedir.Dir()
@@ -273,7 +273,7 @@ func (a *application) mainImpl(c context.Context, argv0 string, args []string) e
 			return err
 		}
 		a.opts.EnvConfig.Spec = &sp
-	} else if specPath := a.opts.Environ.GetEmpty(DefaultSpecENV); specPath != "" {
+	} else if specPath := a.opts.Environ.Get(DefaultSpecENV); specPath != "" {
 		if err := spec.Load(specPath, &a.opts.DefaultSpec); err != nil {
 			return errors.Annotate(err, "failed to load default specification file (%s) from %s",
 				DefaultSpecENV, specPath).Err()
@@ -375,7 +375,7 @@ func (cfg *Config) Main(c context.Context, argv []string, env environ.Env) int {
 	}
 
 	defaultLogLevel := logging.Error
-	if env.GetEmpty(LogTraceENV) != "" {
+	if env.Get(LogTraceENV) != "" {
 		defaultLogLevel = logging.Debug
 	}
 
