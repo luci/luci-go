@@ -113,20 +113,26 @@ func (t *terminateRun) terminateBot(ctx context.Context, botID string, service s
 		}
 	}
 
-	fmt.Printf("Successfully terminated %s\n", botID)
-
 	return nil
 
 }
 
-func (t *terminateRun) main(_ subcommands.Application, botID string) error {
+func (t *terminateRun) main(a subcommands.Application, botID string) error {
 	ctx, cancel := context.WithCancel(t.defaultFlags.MakeLoggingContext(os.Stderr))
 	defer signals.HandleInterrupt(cancel)()
 	service, err := t.createSwarmingClient(ctx)
 	if err != nil {
 		return err
 	}
-	return t.terminateBot(ctx, botID, service)
+	if err := t.terminateBot(ctx, botID, service); err != nil {
+		return err
+	}
+
+	if !t.defaultFlags.Quiet {
+		fmt.Fprintf(a.GetOut(), "Successfully terminated %s\n", botID)
+	}
+
+	return nil
 }
 
 func (t *terminateRun) Run(a subcommands.Application, botIDs []string, _ subcommands.Env) int {
