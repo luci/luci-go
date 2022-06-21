@@ -24,6 +24,8 @@ import (
 
 	"github.com/maruel/subcommands"
 
+	"go.chromium.org/luci/common/system/environ"
+
 	// Hacks for OSX 10.11.
 	_ "go.chromium.org/luci/hacks/osx_clock_gettime_fix"
 	_ "go.chromium.org/luci/hacks/osx_crypto_rand_entropy"
@@ -38,52 +40,41 @@ type ContextModificator interface {
 	ModifyContext(context.Context) context.Context
 }
 
-var envKey = "holds a subcommands.Env"
-
-// Getenv returns the given value from the embedded subcommands.Env, or "" if
-// the value was unset and had no default.
-func Getenv(ctx context.Context, key string) string {
-	return LookupEnv(ctx, key).Value
-}
-
-// LookupEnv returns the given value from the embedded subcommands.Env as-is.
-func LookupEnv(ctx context.Context, key string) subcommands.EnvVar {
-	e, _ := ctx.Value(&envKey).(subcommands.Env)
-	return e[key]
-}
-
-// MakeGetEnv returns a function bound to the supplied Context that has the
-// same semantics as os.Getenv. This can be used to simplify environment
-// compatibility.
-func MakeGetEnv(ctx context.Context) func(string) string {
-	return func(key string) string {
-		if v := LookupEnv(ctx, key); v.Exists {
-			return v.Value
-		}
-		return ""
-	}
-}
-
 // GetContext sniffs ContextModificator in the app and in the cmd and uses them
 // to derive a context for the command.
 //
-// Embeds the subcommands.Env into the Context (if any), which can be accessed
-// with the *env methods in this package.
+// Subcommands can use it to get an initial context in their `Run` methods.
 //
-// Subcommands can use it to get an initial context in their 'Run' methods.
+// Uses `env` to initialize luci/common/system/environ environment in the
+// context. In particular populates unset (but registered in the CLI app) env
+// vars with their default values (if they are not empty).
 //
-// Returns the background context if app doesn't implement ContextModificator.
+// Order of the context modifications:
+//  1. Start with the background context.
+//  2. Apply `app` modifications if `app` implements ContextModificator.
+//  3. Initialize luci/common/system/environ in the context.
+//  4. Apply `cmd` modifications if `cmd` implements ContextModificator.
+//
+// In particular, command's modificator is able to examine env vars in
+// the context.
 func GetContext(app subcommands.Application, cmd subcommands.CommandRun, env subcommands.Env) context.Context {
 	ctx := context.Background()
 	if m, _ := app.(ContextModificator); m != nil {
 		ctx = m.ModifyContext(ctx)
 	}
+
+	root := environ.FromCtx(ctx)
+	for name, val := range env {
+		if val.Value != "" || val.Exists {
+			root.Set(name, val.Value)
+		}
+	}
+	ctx = root.SetInCtx(ctx)
+
 	if m, _ := cmd.(ContextModificator); m != nil {
 		ctx = m.ModifyContext(ctx)
 	}
-	if len(env) > 0 {
-		ctx = context.WithValue(ctx, &envKey, env)
-	}
+
 	return ctx
 }
 

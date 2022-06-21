@@ -36,7 +36,6 @@ import (
 	"go.chromium.org/luci/client/casclient"
 	clientswarming "go.chromium.org/luci/client/swarming"
 	"go.chromium.org/luci/common/api/swarming/swarming/v1"
-	"go.chromium.org/luci/common/cli"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/system/environ"
@@ -257,7 +256,7 @@ func downloadCIPDPackages(ctx context.Context, workdir string, slicesByPath map[
 		Root:       workdir,
 		ServiceURL: chromeinfra.CIPDServiceURL,
 	}
-	if err := opts.LoadFromEnv(cli.MakeGetEnv(ctx)); err != nil {
+	if err := opts.LoadFromEnv(ctx); err != nil {
 		return errors.Annotate(err, "failed to create CIPD client").Err()
 	}
 	client, err := cipd.NewClient(opts)

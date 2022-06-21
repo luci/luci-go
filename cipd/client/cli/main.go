@@ -41,6 +41,7 @@ import (
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/logging/gologger"
 	"go.chromium.org/luci/common/retry/transient"
+	"go.chromium.org/luci/common/system/environ"
 	"go.chromium.org/luci/common/system/signals"
 	"go.chromium.org/luci/common/system/terminal"
 
@@ -139,9 +140,8 @@ func (c *cipdSubcommand) ModifyContext(ctx context.Context) context.Context {
 		ctx = c.logConfig.Set(ctx)
 	}
 
-	// Note: cli.Getenv is not effective here yet since the context is not fully
-	// initialized.
-	useSimpleUI := os.Getenv(envSimpleTerminalUI) == "1"
+	// Give a lever to turn off the fancy UI if necessary.
+	useSimpleUI := environ.FromCtx(ctx).Get(envSimpleTerminalUI) == "1"
 
 	// If writing to a real terminal (rather than redirecting to a file) and not
 	// running at a non-default logging level, use a fancy UI with progress bars.
@@ -341,7 +341,7 @@ func (opts *maxThreadsOption) registerFlags(f *flag.FlagSet) {
 // the full CIPD client.
 func (opts *maxThreadsOption) loadMaxThreads(ctx context.Context) (int, error) {
 	clientOpts := cipd.ClientOptions{MaxThreads: opts.maxThreads}
-	if err := clientOpts.LoadFromEnv(cli.MakeGetEnv(ctx)); err != nil {
+	if err := clientOpts.LoadFromEnv(ctx); err != nil {
 		return 0, err
 	}
 	return clientOpts.MaxThreads, nil
@@ -382,7 +382,7 @@ func (opts *clientOptions) resolvedServiceURL(ctx context.Context) string {
 	if opts.serviceURL != "" {
 		return opts.serviceURL
 	}
-	if v := cli.Getenv(ctx, cipd.EnvCIPDServiceURL); v != "" {
+	if v := environ.FromCtx(ctx).Get(cipd.EnvCIPDServiceURL); v != "" {
 		return v
 	}
 	return opts.hardcoded.ServiceURL
@@ -427,7 +427,7 @@ func (opts *clientOptions) toCIPDClientOpts(ctx context.Context) (cipd.ClientOpt
 		PluginHost:          &host.Host{PluginsContext: ctx},
 		LoginInstructions:   "run `cipd auth-login` to login or relogin",
 	}
-	if err := realOpts.LoadFromEnv(cli.MakeGetEnv(ctx)); err != nil {
+	if err := realOpts.LoadFromEnv(ctx); err != nil {
 		return cipd.ClientOptions{}, err
 	}
 	realOpts.ServiceURL = opts.resolvedServiceURL(ctx)

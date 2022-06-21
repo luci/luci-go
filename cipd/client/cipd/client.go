@@ -65,6 +65,7 @@ import (
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry"
 	"go.chromium.org/luci/common/retry/transient"
+	"go.chromium.org/luci/common/system/environ"
 	"go.chromium.org/luci/grpc/prpc"
 
 	api "go.chromium.org/luci/cipd/api/cipd/v1"
@@ -339,7 +340,7 @@ type EnsureOptions struct {
 // ClientOptions is passed to NewClient factory function.
 //
 // If you construct options manually, you almost certainly also need to call
-// LoadFromEnv to load unset values from environment variables before passing
+// LoadFromEnv to load unset values from the process environment before passing
 // options to NewClient.
 type ClientOptions struct {
 	// ServiceURL is root URL of the backend service.
@@ -427,11 +428,15 @@ type ClientOptions struct {
 
 // LoadFromEnv loads supplied default values from an environment into opts.
 //
-// The supplied getEnv function is used to access named environment variables,
-// and should return an empty string if the environment variable is not defined.
-func (opts *ClientOptions) LoadFromEnv(getEnv func(string) string) error {
+// Uses the environment in the context via luci/common/system/environ library,
+// falling back to the regular process environment as usual (so if you don't
+// need to mess with the process environment, just pass any context, it would
+// work fine).
+func (opts *ClientOptions) LoadFromEnv(ctx context.Context) error {
+	env := environ.FromCtx(ctx)
+
 	if opts.CacheDir == "" {
-		if v := getEnv(EnvCacheDir); v != "" {
+		if v := env.Get(EnvCacheDir); v != "" {
 			if !filepath.IsAbs(v) {
 				return fmt.Errorf("bad %s %q: not an absolute path", EnvCacheDir, v)
 			}
@@ -439,7 +444,7 @@ func (opts *ClientOptions) LoadFromEnv(getEnv func(string) string) error {
 		}
 	}
 	if opts.MaxThreads == 0 {
-		if v := getEnv(EnvMaxThreads); v != "" {
+		if v := env.Get(EnvMaxThreads); v != "" {
 			maxThreads, err := strconv.Atoi(v)
 			if err != nil {
 				return fmt.Errorf("bad %s %q: not an integer", EnvMaxThreads, v)
@@ -448,7 +453,7 @@ func (opts *ClientOptions) LoadFromEnv(getEnv func(string) string) error {
 		}
 	}
 	if opts.ParallelDownloads == 0 {
-		if v := getEnv(EnvParallelDownloads); v != "" {
+		if v := env.Get(EnvParallelDownloads); v != "" {
 			val, err := strconv.Atoi(v)
 			if err != nil {
 				return fmt.Errorf("bad %s %q: not an integer", EnvParallelDownloads, v)
@@ -464,24 +469,27 @@ func (opts *ClientOptions) LoadFromEnv(getEnv func(string) string) error {
 		}
 	}
 	if opts.UserAgent == "" {
-		if v := getEnv(EnvHTTPUserAgentPrefix); v != "" {
+		if v := env.Get(EnvHTTPUserAgentPrefix); v != "" {
 			opts.UserAgent = fmt.Sprintf("%s/%s", v, UserAgent)
 		}
 	}
 	if opts.PluginHost != nil && len(opts.AdmissionPlugin) == 0 {
-		if v := getEnv(EnvAdmissionPlugin); v != "" {
+		if v := env.Get(EnvAdmissionPlugin); v != "" {
 			if err := json.Unmarshal([]byte(v), &opts.AdmissionPlugin); err != nil {
 				return fmt.Errorf("bad %s %q: not a valid JSON", EnvAdmissionPlugin, v)
 			}
 		}
 	}
-	if v := getEnv(EnvCIPDServiceURL); v != "" {
+	if v := env.Get(EnvCIPDServiceURL); v != "" {
 		opts.ServiceURL = v
 	}
 	return nil
 }
 
 // NewClient initializes CIPD client object.
+//
+// Note that when constructing ClientOptions, you almost certainly also need
+// to call LoadFromEnv to load unset values from the process environment.
 func NewClient(opts ClientOptions) (Client, error) {
 	if opts.AnonymousClient == nil {
 		opts.AnonymousClient = http.DefaultClient
