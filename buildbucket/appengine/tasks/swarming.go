@@ -25,6 +25,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/google/uuid"
 	"google.golang.org/api/googleapi"
 	"google.golang.org/protobuf/proto"
 
@@ -263,7 +264,7 @@ func computeSwarmingNewTaskReq(ctx context.Context, build *model.Build) (*swarmi
 	}
 	taskReq := &swarming.SwarmingRpcsNewTaskRequest{
 		// to prevent accidental multiple task creation
-		RequestUuid: strconv.FormatInt(build.ID, 10),
+		RequestUuid: uuid.NewSHA1(uuid.Nil, []byte(strconv.FormatInt(build.ID, 10))).String(),
 		Name:        fmt.Sprintf("bb-%d-%s", build.ID, build.BuilderID),
 		Realm:       build.Realm(),
 		Tags:        computeTags(ctx, build),

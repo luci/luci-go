@@ -296,7 +296,7 @@ func TestTaskDef(t *testing.T) {
 		req.TaskSlices = []*swarming.SwarmingRpcsTaskSlice(nil)
 		So(err, ShouldBeNil)
 		expected := &swarming.SwarmingRpcsNewTaskRequest{
-			RequestUuid:    "123",
+			RequestUuid:    "203882df-ce4b-5012-b32a-2c1d29c321a7",
 			Name:           "bb-123-builder-1",
 			Realm:          "project:bucket",
 			Tags:           []string{"buildbucket_bucket:bucket", "buildbucket_build_id:123", "buildbucket_hostname:app-id.appspot.com", "buildbucket_template_canary:0", "luci_project:project"},
