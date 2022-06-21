@@ -119,3 +119,24 @@ export function roundDown(num: number, sortedRoundNumbers: readonly number[]) {
 
   return lastNum;
 }
+
+/**
+ * Returns a promise, a resolve function to resolve the promise, and a reject
+ * function to reject the promise.
+ *
+ * This is useful when we want to resolve/reject a promise after the
+ * initialization step.
+ */
+export function deferred<T>(): [
+  promise: Promise<T>,
+  resolve: (value: T | PromiseLike<T>) => void,
+  reject: (reason?: unknown) => void
+] {
+  let resolvePromise: (value: T | PromiseLike<T>) => void;
+  let rejectPromise: (reason?: unknown) => void;
+  const promise = new Promise<T>((resolve, reject) => {
+    resolvePromise = resolve;
+    rejectPromise = reject;
+  });
+  return [promise, resolvePromise!, rejectPromise!];
+}

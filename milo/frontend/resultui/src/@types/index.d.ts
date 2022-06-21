@@ -27,6 +27,18 @@ interface ToString {
   toString(): string;
 }
 
+type Result<T, E> = ResultOk<T> | ResultErr<E>;
+
+interface ResultOk<T> {
+  ok: true;
+  value: T;
+}
+
+interface ResultErr<E> {
+  ok: false;
+  value: E;
+}
+
 /**
  * Configs of the app.
  * Declared in the server generated file, /configs.js, included as a script tag.
