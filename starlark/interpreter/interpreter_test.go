@@ -32,48 +32,48 @@ func TestMakeModuleKey(t *testing.T) {
 	th.SetLocal(threadModKey, ModuleKey{"cur_pkg", "dir/cur.star"})
 
 	Convey("Works", t, func() {
-		k, err := makeModuleKey("//some/mod", th)
+		k, err := MakeModuleKey(th, "//some/mod")
 		So(err, ShouldBeNil)
 		So(k, ShouldResemble, ModuleKey{"cur_pkg", "some/mod"})
 
-		k, err = makeModuleKey("//some/mod/../blah", th)
+		k, err = MakeModuleKey(th, "//some/mod/../blah")
 		So(err, ShouldBeNil)
 		So(k, ShouldResemble, ModuleKey{"cur_pkg", "some/blah"})
 
-		k, err = makeModuleKey("some/mod", th)
+		k, err = MakeModuleKey(th, "some/mod")
 		So(err, ShouldBeNil)
 		So(k, ShouldResemble, ModuleKey{"cur_pkg", "dir/some/mod"})
 
-		k, err = makeModuleKey("./mod", th)
+		k, err = MakeModuleKey(th, "./mod")
 		So(err, ShouldBeNil)
 		So(k, ShouldResemble, ModuleKey{"cur_pkg", "dir/mod"})
 
-		k, err = makeModuleKey("../mod", th)
+		k, err = MakeModuleKey(th, "../mod")
 		So(err, ShouldBeNil)
 		So(k, ShouldResemble, ModuleKey{"cur_pkg", "mod"})
 
 		// For absolute paths the thread is optional.
-		k, err = makeModuleKey("@pkg//some/mod", nil)
+		k, err = MakeModuleKey(nil, "@pkg//some/mod")
 		So(err, ShouldBeNil)
 		So(k, ShouldResemble, ModuleKey{"pkg", "some/mod"})
 	})
 
 	Convey("Fails", t, func() {
-		_, err := makeModuleKey("@//mod", th)
+		_, err := MakeModuleKey(th, "@//mod")
 		So(err, ShouldNotBeNil)
 
-		_, err = makeModuleKey("@mod", th)
+		_, err = MakeModuleKey(th, "@mod")
 		So(err, ShouldNotBeNil)
 
 		// Imports outside of the package root are forbidden.
-		_, err = makeModuleKey("//..", th)
+		_, err = MakeModuleKey(th, "//..")
 		So(err, ShouldNotBeNil)
 
-		_, err = makeModuleKey("../../mod", th)
+		_, err = MakeModuleKey(th, "../../mod")
 		So(err, ShouldNotBeNil)
 
 		// If the thread is given, it must have the package name.
-		_, err = makeModuleKey("//some/mod", &starlark.Thread{})
+		_, err = MakeModuleKey(&starlark.Thread{}, "//some/mod")
 		So(err, ShouldNotBeNil)
 	})
 }

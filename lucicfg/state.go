@@ -55,6 +55,7 @@ type State struct {
 	generators generators    // callbacks that generate config files based on state
 	graph      graph.Graph   // the graph with config entities defined so far
 	templates  templateCache // cached parsed text templates, see templates.go
+	files      fileCache     // cache of files read from disk, see io.go
 }
 
 // checkUncosumedVars returns an error per a provided (via Inputs.Vars), but

@@ -296,24 +296,24 @@ func (key ModuleKey) String() string {
 	return pkg + "//" + key.Path
 }
 
-// makeModuleKey takes '[@pkg]//<path>' or '<path>', parses and normalizes it.
+// MakeModuleKey takes '[@pkg]//<path>' or '<path>', parses and normalizes it.
 //
 // Converts the path to be relative to the package root. Does some light
-// validation, in particular checking the resulting path is doesn't star with
+// validation, in particular checking the resulting path doesn't start with
 // '../'. Module loaders are expected to validate module paths more rigorously
 // (since they interpret them anyway).
 //
 // 'th' is used to get the name of the currently executing package and a path to
 // the currently executing module within it. It is required if 'ref' is not
 // given as an absolute path (i.e. does NOT look like '@pkg//path').
-func makeModuleKey(ref string, th *starlark.Thread) (key ModuleKey, err error) {
+func MakeModuleKey(th *starlark.Thread, ref string) (key ModuleKey, err error) {
 	defer func() {
 		if err == nil && (strings.HasPrefix(key.Path, "../") || key.Path == "..") {
 			err = errors.New("outside the package root")
 		}
 	}()
 
-	// 'th' can be nil here if makeModuleKey is called by LoadModule or
+	// 'th' can be nil here if MakeModuleKey is called by LoadModule or
 	// ExecModule: they are entry points into Starlark code, there's no thread
 	// yet when they start.
 	var current *ModuleKey
@@ -411,7 +411,7 @@ func (intr *Interpreter) Init(ctx context.Context) error {
 //
 // The context ends up available to builtins through Context(...).
 func (intr *Interpreter) LoadModule(ctx context.Context, pkg, path string) (starlark.StringDict, error) {
-	key, err := makeModuleKey(fmt.Sprintf("@%s//%s", pkg, path), nil)
+	key, err := MakeModuleKey(nil, fmt.Sprintf("@%s//%s", pkg, path))
 	if err != nil {
 		return nil, err
 	}
@@ -453,7 +453,7 @@ func (intr *Interpreter) LoadModule(ctx context.Context, pkg, path string) (star
 //
 // The context ends up available to builtins through Context(...).
 func (intr *Interpreter) ExecModule(ctx context.Context, pkg, path string) (starlark.StringDict, error) {
-	key, err := makeModuleKey(fmt.Sprintf("@%s//%s", pkg, path), nil)
+	key, err := MakeModuleKey(nil, fmt.Sprintf("@%s//%s", pkg, path))
 	if err != nil {
 		return nil, err
 	}
@@ -499,7 +499,7 @@ func (intr *Interpreter) LoadSource(th *starlark.Thread, ref string) (string, er
 			"resolve the file reference), only threads that do 'load' and 'exec' can call this function")
 	}
 
-	target, err := makeModuleKey(ref, th)
+	target, err := MakeModuleKey(th, ref)
 	if err != nil {
 		return "", err
 	}
@@ -567,7 +567,7 @@ func (intr *Interpreter) execBuiltin() *starlark.Builtin {
 		}
 
 		// See also th.Load in runModule.
-		key, err := makeModuleKey(mod, th)
+		key, err := MakeModuleKey(th, mod)
 		if err != nil {
 			return nil, err
 		}
@@ -619,7 +619,7 @@ func (intr *Interpreter) runModule(ctx context.Context, key ModuleKey, kind Thre
 	// intr.modules and ctx.
 	th := intr.Thread(ctx)
 	th.Load = func(th *starlark.Thread, module string) (starlark.StringDict, error) {
-		key, err := makeModuleKey(module, th)
+		key, err := MakeModuleKey(th, module)
 		if err != nil {
 			return nil, err
 		}
@@ -635,7 +635,7 @@ func (intr *Interpreter) runModule(ctx context.Context, key ModuleKey, kind Thre
 	// Let builtins know what this thread is doing. Some calls (most notably Exec
 	// itself) are allowed only from exec'ing threads, not from load'ing ones.
 	th.SetLocal(threadKindKey, kind)
-	// Let builtins (and in particular makeModuleKey and LoadSource) know the
+	// Let builtins (and in particular MakeModuleKey and LoadSource) know the
 	// package and the module that the thread executes.
 	th.SetLocal(threadModKey, key)
 

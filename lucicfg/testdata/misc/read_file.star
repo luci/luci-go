@@ -1,6 +1,9 @@
 def test_read_file_ok():
-    assert.eq(io.read_file("support/file_to_read.txt"), "Hello, world!\n")
-    assert.eq(io.read_file("//testdata/misc/support/file_to_read.txt"), "Hello, world!\n")
+    # Read multiple times to hit the caching code path.
+    for _ in range(5):
+        assert.eq(io.read_file("support/file_to_read.txt"), "Hello, world!\n")
+        assert.eq(io.read_file("//testdata/misc/support/file_to_read.txt"), "Hello, world!\n")
+        assert.eq(io.read_file("support/empty.txt"), "")
 
 def test_read_file_fail():
     assert.fails(lambda: io.read_file("missing_file.txt"), "no such file")

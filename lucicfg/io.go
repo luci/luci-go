@@ -20,6 +20,54 @@ import (
 	"go.chromium.org/luci/starlark/interpreter"
 )
 
+// How many times a file needs to be read before its data is cached in memory.
+//
+// E.g. if cachingThreshold is 2, first two io.read_file calls will actually
+// load the file from disk, and only the third call (and onward) will use
+// the cached data.
+//
+// This is a heuristic to avoid spending RAM on files that will be read only
+// once.
+const cachingThreshold = 2
+
+type fileCache struct {
+	cache map[interpreter.ModuleKey]fileCacheEntry
+}
+
+type fileCacheEntry struct {
+	hits int    // 0, 1, .., cachingThreshold (no counting after cachingThreshold)
+	data string // the cached data if hits == cachingThreshold, "" otherwise
+}
+
+func (c *fileCache) get(key interpreter.ModuleKey, load func() (string, error)) (string, error) {
+	entry := c.cache[key]
+	if entry.hits == cachingThreshold {
+		return entry.data, nil
+	}
+
+	data, err := load()
+	if err != nil {
+		return "", err
+	}
+
+	if data != "" {
+		entry.hits += 1
+		if entry.hits == cachingThreshold {
+			entry.data = data
+		}
+	} else {
+		// Can cache "" right away, no RAM impact.
+		entry.hits = cachingThreshold
+	}
+
+	if c.cache == nil {
+		c.cache = make(map[interpreter.ModuleKey]fileCacheEntry, 1)
+	}
+	c.cache[key] = entry
+
+	return data, nil
+}
+
 func init() {
 	// See //internal/io.star.
 	declNative("read_file", func(call nativeCall) (starlark.Value, error) {
@@ -28,7 +76,13 @@ func init() {
 			return nil, err
 		}
 		intr := interpreter.GetThreadInterpreter(call.Thread)
-		src, err := intr.LoadSource(call.Thread, path.GoString())
+		key, err := interpreter.MakeModuleKey(call.Thread, path.GoString())
+		if err != nil {
+			return nil, err
+		}
+		src, err := call.State.files.get(key, func() (string, error) {
+			return intr.LoadSource(call.Thread, path.GoString())
+		})
 		return starlark.String(src), err
 	})
 }
