@@ -20,12 +20,26 @@ luci.cq_group(
     verifiers = [
         luci.cq_tryjob_verifier(
             builder = "infra:analyzer/go-linter",
-            location_regexp = [r".+/[+]/3pp/.+", r".+[+]/dashboard/.+", ".*manifest/[+].*", ".+/[+].*/OWNERS"],
-            location_regexp_exclude = [r".+/[+]/3pp/exception/.+", r"https://example.com/repo/[+]/all/one.txt"],
+            location_regexp = [
+                r".+/[+]/3pp/.+",
+                r".+[+]/dashboard/.+",
+                r".*manifest/[+].*",
+                r".+/[+].*/OWNERS",
+            ],
+            location_regexp_exclude = [
+                r".+/[+]/3pp/exception/.+",
+                r"https://example.com/repo/[+]/all/one.txt",
+                r"https://example.com/external/github.com/repo/[+]/all/one.txt",
+            ],
         ),
         luci.cq_tryjob_verifier(
             builder = "infra:analyzer/spell-checker",
-            location_regexp = [r".+/[+]/DEPS", r".+[+]/.+/3pp/.+", ".*manifest/[+].+"],
+            location_regexp = [
+                r".+/[+]/DEPS",
+                r".+[+]/.+/3pp/.+",
+                r".*manifest/[+].+",
+                r".+/repo/foo/[+]/a/b/.*",
+            ],
         ),
     ],
 )
@@ -55,6 +69,7 @@ luci.cq_group(
 #         location_regexp: ".+/[+].*/OWNERS"
 #         location_regexp_exclude: ".+/[+]/3pp/exception/.+"
 #         location_regexp_exclude: "https://example.com/repo/[+]/all/one.txt"
+#         location_regexp_exclude: "https://example.com/external/github.com/repo/[+]/all/one.txt"
 #         location_filters {
 #           gerrit_host_regexp: ".*"
 #           gerrit_project_regexp: ".*"
@@ -73,7 +88,7 @@ luci.cq_group(
 #         location_filters {
 #           gerrit_host_regexp: ".*"
 #           gerrit_project_regexp: ".+"
-#           path_regexp: ".*"
+#           path_regexp: ".*/OWNERS"
 #         }
 #         location_filters {
 #           gerrit_host_regexp: ".*"
@@ -87,12 +102,19 @@ luci.cq_group(
 #           path_regexp: "all/one.txt"
 #           exclude: true
 #         }
+#         location_filters {
+#           gerrit_host_regexp: "https://example.com"
+#           gerrit_project_regexp: "external/github.com/repo"
+#           path_regexp: "all/one.txt"
+#           exclude: true
+#         }
 #       }
 #       builders {
 #         name: "infra/analyzer/spell-checker"
 #         location_regexp: ".+/[+]/DEPS"
 #         location_regexp: ".+[+]/.+/3pp/.+"
 #         location_regexp: ".*manifest/[+].+"
+#         location_regexp: ".+/repo/foo/[+]/a/b/.*"
 #         location_filters {
 #           gerrit_host_regexp: ".*"
 #           gerrit_project_regexp: ".*"
@@ -106,7 +128,12 @@ luci.cq_group(
 #         location_filters {
 #           gerrit_host_regexp: ".*"
 #           gerrit_project_regexp: ".*manifest"
-#           path_regexp: ".*"
+#           path_regexp: ".+"
+#         }
+#         location_filters {
+#           gerrit_host_regexp: ".*"
+#           gerrit_project_regexp: "repo/foo"
+#           path_regexp: "a/b/.*"
 #         }
 #       }
 #       retry_config {

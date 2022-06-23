@@ -518,7 +518,7 @@ def _make_location_filter(regexp, exclude = False):
 
     # Pattern matching exact host and project with path pattern, e.g.
     # "https://chromium-review.googlesource.com/chromiumos/config/[+]/.+"
-    groups = re.submatches(r"(https?://[^/]+)/([/a-z0-9_/\-]+)/\[\+\]/(.*)", regexp)
+    groups = re.submatches(r"(https?://[^/]+)/([/a-z0-9_/\-\.]+)/\[\+\]/(.*)", regexp)
     if groups:
         return cq.location_filter(
             gerrit_host_regexp = groups[1],
@@ -527,10 +527,19 @@ def _make_location_filter(regexp, exclude = False):
             exclude = exclude,
         )
 
-    # Pattern matching only project, like ".*manifest/[+].*"
-    groups = re.submatches(r"(.+)/\[\+\]/?\.[+*]", regexp)
+    # Pattern matching only project or project and path.
+    groups = re.submatches(r"(.+)/\[\+\]/?(.*)", regexp)
     if groups and not regexp.startswith("https://"):
-        return cq.location_filter(gerrit_project_regexp = groups[1], exclude = exclude)
+        project_regexp = groups[1]
+        for host_matching_prefix in (".+/", ".*/"):
+            if project_regexp.startswith(host_matching_prefix):
+                project_regexp = project_regexp[len(host_matching_prefix):]
+                break
+        return cq.location_filter(
+            gerrit_project_regexp = project_regexp,
+            path_regexp = groups[2],
+            exclude = exclude,
+        )
 
     # None of our possible cases above matched. Shouldn't happen.
     fail("'location_regexp' didn't match any expected patterns, " +
