@@ -339,8 +339,8 @@ func TestCreateAuthGroup(t *testing.T) {
 			So(createdGroup.CreatedTS.Unix(), ShouldEqual, testCreatedTS.Unix())
 			So(createdGroup.ModifiedBy, ShouldEqual, "user:someone@example.com")
 			So(createdGroup.ModifiedTS.Unix(), ShouldEqual, testCreatedTS.Unix())
-
-			// TODO(jsca): Also check AuthDBRev here
+			So(createdGroup.AuthDBRev, ShouldEqual, 1)
+			So(createdGroup.AuthDBPrevRev, ShouldEqual, 0)
 
 			fetchedGroup, err := GetAuthGroup(ctx, "foo")
 			So(err, ShouldBeNil)
@@ -354,6 +354,52 @@ func TestCreateAuthGroup(t *testing.T) {
 			So(fetchedGroup.CreatedTS.Unix(), ShouldEqual, testCreatedTS.Unix())
 			So(fetchedGroup.ModifiedBy, ShouldEqual, "user:someone@example.com")
 			So(fetchedGroup.ModifiedTS.Unix(), ShouldEqual, testCreatedTS.Unix())
+			So(fetchedGroup.AuthDBRev, ShouldEqual, 1)
+			So(fetchedGroup.AuthDBPrevRev, ShouldEqual, 0)
+		})
+
+		Convey("updates AuthDB revision only on successful write", func() {
+			// Create a group.
+			{
+				group1 := testAuthGroup(ctx, "foo", nil)
+				group1.Owners = "foo"
+				group1.Nested = nil
+
+				createdGroup1, err := CreateAuthGroup(ctx, group1)
+				So(err, ShouldBeNil)
+				So(createdGroup1.AuthDBRev, ShouldEqual, 1)
+				So(createdGroup1.AuthDBPrevRev, ShouldEqual, 0)
+
+				state1, err := GetReplicationState(ctx)
+				So(err, ShouldBeNil)
+				So(state1.AuthDBRev, ShouldEqual, 1)
+			}
+
+			// Create a second group.
+			{
+				group2 := testAuthGroup(ctx, "foo2", nil)
+				group2.Owners = "foo2"
+				group2.Nested = nil
+
+				createdGroup2, err := CreateAuthGroup(ctx, group2)
+				So(err, ShouldBeNil)
+				So(createdGroup2.AuthDBRev, ShouldEqual, 2)
+				So(createdGroup2.AuthDBPrevRev, ShouldEqual, 0)
+
+				state2, err := GetReplicationState(ctx)
+				So(err, ShouldBeNil)
+				So(state2.AuthDBRev, ShouldEqual, 2)
+			}
+
+			// Try to create another group the same as the second, which should fail.
+			{
+				_, err := CreateAuthGroup(ctx, testAuthGroup(ctx, "foo2", nil))
+				So(err, ShouldBeError)
+
+				state3, err := GetReplicationState(ctx)
+				So(err, ShouldBeNil)
+				So(state3.AuthDBRev, ShouldEqual, 2)
+			}
 		})
 	})
 }

@@ -24,6 +24,7 @@ import (
 
 	"google.golang.org/protobuf/types/known/timestamppb"
 
+	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/auth_service/api/rpcpb"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
@@ -45,6 +46,24 @@ type AuthVersionedEntityMixin struct {
 
 	// AuthDBPrevRev is revision number of the previous version of this entity.
 	AuthDBPrevRev int64 `gae:"auth_db_prev_rev"`
+}
+
+// recordChange records a change to the versioned entity, updating its last-modified metadata.
+func (e *AuthVersionedEntityMixin) recordChange(modifiedBy string, modifiedTS time.Time, authDBRev int64) {
+	e.ModifiedTS = modifiedTS
+	e.ModifiedBy = modifiedBy
+	e.AuthDBPrevRev = e.AuthDBRev
+	e.AuthDBRev = authDBRev
+}
+
+// versionedEntity is an internal interface implemented by any struct
+// embedding AuthVersionedEntityMixin. It provides a convencience method for
+// callers to update all of the version information on a versioned entity at
+// once.
+type versionedEntity interface {
+	// recordChange records a change to the versioned entity, updating its
+	// last-modified metadata.
+	recordChange(modifiedBy string, modifiedTS time.Time, authDBRev int64)
 }
 
 // AuthGlobalConfig is the root entity for auth models.
@@ -266,6 +285,67 @@ func makeAuthGroup(ctx context.Context, id string) *AuthGroup {
 	}
 }
 
+// recordEntityChange is a callback function signature that allows business logic
+// to record that an entity is being changed. It should be called by anything that updates
+// the AuthDB via the runAuthDBChange wrapper function.
+type recordEntityChange func(e versionedEntity, time time.Time, author identity.Identity)
+
+// runAuthDBChange runs the provided function inside a Datastore transaction
+// and automatically handles all tasks that should be done every time the AuthDB
+// is changed, e.g. incrementing the revision,
+func runAuthDBChange(ctx context.Context, f func(context.Context, recordEntityChange) error) error {
+	return datastore.RunInTransaction(ctx, func(ctx context.Context) error {
+		// Get current AuthDB state and increment the revision.
+		state, err := GetReplicationState(ctx)
+		if err == datastore.ErrNoSuchEntity {
+			// This is the first entry into the AuthDB, so create a new state with rev 0.
+			state = &AuthReplicationState{
+				Kind:      "AuthReplicationState",
+				ID:        "self",
+				Parent:    RootKey(ctx),
+				AuthDBRev: 0,
+			}
+		} else if err != nil {
+			return err
+		}
+		nextAuthDBRev := state.AuthDBRev + 1
+
+		// Set up a function that callers can use to record a change to an entity.
+		// If this doesn't get called, the AuthDB revision won't get incremented.
+		// This should be called before datastore.Put(entity).
+		recordEntity := func(entity versionedEntity, t time.Time, author identity.Identity) {
+			// Record change on the entity itself.
+			entity.recordChange(string(author), t, nextAuthDBRev)
+
+			// Record change on the AuthDB state.
+			state.AuthDBRev = nextAuthDBRev
+			state.ModifiedTS = t
+
+			// TODO(jsca): Create a historical entity version to be written to the Datastore
+		}
+
+		// Run the wrapped function.
+		if err := f(ctx, recordEntity); err != nil {
+			return err
+		}
+
+		// If the wrapped function didn't actually record an entity change, exit early.
+		if state.AuthDBRev != nextAuthDBRev {
+			return nil
+		}
+
+		// Commit the updated replication state.
+		// TODO(jsca): Commit the historical entities here in the same Put() call to save RPCs.
+		if err := datastore.Put(ctx, state); err != nil {
+			return err
+		}
+
+		// TODO(jsca): Trigger replication
+
+		return nil
+	}, nil)
+}
+
 // GetAuthGroup gets the AuthGroup with the given id(groupName).
 //
 // Returns datastore.ErrNoSuchEntity if the group given is not present.
@@ -309,7 +389,7 @@ func CreateAuthGroup(ctx context.Context, group *AuthGroup) (*AuthGroup, error) 
 	newGroup := makeAuthGroup(ctx, group.ID)
 
 	// The rest of the validation checks interact with the datastore, so run inside a transaction.
-	err := datastore.RunInTransaction(ctx, func(ctx context.Context) error {
+	err := runAuthDBChange(ctx, func(ctx context.Context, recordEntityChange recordEntityChange) error {
 		// Check the group doesn't already exist.
 		exists, err := datastore.Exists(ctx, newGroup)
 		if err != nil {
@@ -355,20 +435,17 @@ func CreateAuthGroup(ctx context.Context, group *AuthGroup) (*AuthGroup, error) 
 			}
 		}
 
-		creator := string(auth.CurrentIdentity(ctx))
+		creator := auth.CurrentIdentity(ctx)
 		createdTS := clock.Now(ctx).UTC()
 		newGroup.CreatedTS = createdTS
-		newGroup.CreatedBy = creator
+		newGroup.CreatedBy = string(creator)
 
-		// TODO(jsca): Increment authdb revision as part of this transaction, then trigger replication
-		// TODO(jsca): Write the below as history to the datastore
-		newGroup.ModifiedTS = createdTS
-		newGroup.ModifiedBy = creator
-		// newGroup.AuthDBRev = authdb.Revision(auth.GetState(c).DB())
+		// Record the entity change to increment the AuthDB revision and trigger replication.
+		recordEntityChange(newGroup, createdTS, creator)
 
 		// Write to the datastore.
 		return datastore.Put(ctx, newGroup)
-	}, nil)
+	})
 	if err != nil {
 		return nil, err
 	}
@@ -533,11 +610,11 @@ func (group *AuthGroup) ToProto(includeMemberships bool) *rpcpb.AuthGroup {
 }
 
 // AuthGroupFromProto allocates a new AuthGroup using the values in the supplied protobuffer.
-func AuthGroupFromProto(c context.Context, grouppb *rpcpb.AuthGroup) *AuthGroup {
+func AuthGroupFromProto(ctx context.Context, grouppb *rpcpb.AuthGroup) *AuthGroup {
 	return &AuthGroup{
 		Kind:        "AuthGroup",
 		ID:          grouppb.GetName(),
-		Parent:      RootKey(c),
+		Parent:      RootKey(ctx),
 		Members:     grouppb.GetMembers(),
 		Globs:       grouppb.GetGlobs(),
 		Nested:      grouppb.GetNested(),
