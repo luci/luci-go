@@ -15,6 +15,7 @@
 package impl
 
 import (
+	"go.chromium.org/luci/auth_service/impl/model"
 	"go.chromium.org/luci/server/auth/rpcacl"
 )
 
@@ -38,6 +39,9 @@ var AuthorizeRPCAccess = rpcacl.Interceptor(rpcacl.Map{
 
 	// All methods to work with groups require authorization.
 	"/auth.service.Groups/*": ServiceAccessGroup,
+
+	// Only administrators can create groups.
+	"/auth.service.Groups/CreateGroup": model.AdminGroup,
 
 	// All methods to work with allowlists require authorization.
 	"/auth.service.Allowlists/*": ServiceAccessGroup,

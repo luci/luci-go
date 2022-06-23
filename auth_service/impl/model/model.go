@@ -17,13 +17,18 @@ package model
 
 import (
 	"context"
+	stderrors "errors"
+	"regexp"
+	"strings"
 	"time"
 
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/auth_service/api/rpcpb"
+	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/gae/service/datastore"
+	"go.chromium.org/luci/server/auth"
 )
 
 // AuthVersionedEntityMixin is for AuthDB entities that
@@ -202,6 +207,18 @@ type AuthDBSnapshotLatest struct {
 	ModifiedTS time.Time `gae:"modified_ts,noindex"`
 }
 
+// AdminGroup defines a group whose members are allowed to create new groups.
+const AdminGroup = "administrators"
+
+var (
+	// ErrAlreadyExists is returned when an entity already exists.
+	ErrAlreadyExists = stderrors.New("entity already exists")
+	// ErrInvalidName is returned when a supplied entity name is invalid.
+	ErrInvalidName = stderrors.New("invalid entity name")
+	// ErrInvalidReference is returned when a referenced entity name is invalid.
+	ErrInvalidReference = stderrors.New("invalid reference")
+)
+
 // RootKey gets the root key of the entity group with all AuthDB entities.
 func RootKey(ctx context.Context) *datastore.Key {
 	return datastore.NewKey(ctx, "AuthGlobalConfig", "root", 0, nil)
@@ -227,16 +244,34 @@ func GetReplicationState(ctx context.Context) (*AuthReplicationState, error) {
 	}
 }
 
+var groupName = regexp.MustCompile(`^([a-z\-]+/)?[0-9a-z_\-\.@]{1,100}$`)
+
+// isValidAuthGroupName checks if the given name is a valid auth group name.
+func isValidAuthGroupName(name string) bool {
+	return groupName.MatchString(name)
+}
+
+// isExternalAuthGroupName checks if the given name is a valid external auth group
+// name. This also implies that the auth group is not editable.
+func isExternalAuthGroupName(name string) bool {
+	return strings.Contains(name, "/") && isValidAuthGroupName(name)
+}
+
+// makeAuthGroup is a convenience function for creating an AuthGroup with the given ID.
+func makeAuthGroup(ctx context.Context, id string) *AuthGroup {
+	return &AuthGroup{
+		Kind:   "AuthGroup",
+		ID:     id,
+		Parent: RootKey(ctx),
+	}
+}
+
 // GetAuthGroup gets the AuthGroup with the given id(groupName).
 //
 // Returns datastore.ErrNoSuchEntity if the group given is not present.
 // Returns an annotated error for other errors.
 func GetAuthGroup(ctx context.Context, groupName string) (*AuthGroup, error) {
-	authGroup := &AuthGroup{
-		Kind:   "AuthGroup",
-		ID:     groupName,
-		Parent: RootKey(ctx),
-	}
+	authGroup := makeAuthGroup(ctx, groupName)
 
 	switch err := datastore.Get(ctx, authGroup); {
 	case err == nil:
@@ -259,6 +294,85 @@ func GetAllAuthGroups(ctx context.Context) ([]*AuthGroup, error) {
 		return nil, errors.Annotate(err, "error getting all AuthGroup entities").Err()
 	}
 	return authGroups, nil
+}
+
+// CreateAuthGroup creates a new AuthGroup and writes it to the datastore.
+// Only the following fields will be read from the input:
+// ID, Description, Owners, Members, Globs, Nested.
+func CreateAuthGroup(ctx context.Context, group *AuthGroup) (*AuthGroup, error) {
+	// Check the supplied group name is valid, and not an external group.
+	if !isValidAuthGroupName(group.ID) || isExternalAuthGroupName(group.ID) {
+		return nil, ErrInvalidName
+	}
+
+	// Construct a new group so that we don't modify the input.
+	newGroup := makeAuthGroup(ctx, group.ID)
+
+	// The rest of the validation checks interact with the datastore, so run inside a transaction.
+	err := datastore.RunInTransaction(ctx, func(ctx context.Context) error {
+		// Check the group doesn't already exist.
+		exists, err := datastore.Exists(ctx, newGroup)
+		if err != nil {
+			return errors.Annotate(err, "failed to check whether group name already exists").Err()
+		}
+		if exists.Get(0) {
+			return ErrAlreadyExists
+		}
+
+		// Copy in all user-settable fields.
+		newGroup.Description = group.Description
+		newGroup.Owners = group.Owners
+		newGroup.Members = group.Members
+		newGroup.Globs = group.Globs
+		newGroup.Nested = group.Nested
+
+		// Check that all referenced groups (owning group, nested groups) exist.
+		// It is ok for a new group to have itself as owner.
+		if newGroup.Owners == "" {
+			newGroup.Owners = AdminGroup
+		}
+		toCheck := newGroup.Nested
+		if newGroup.Owners != newGroup.ID {
+			toCheck = append(toCheck, newGroup.Owners)
+		}
+		if len(toCheck) > 0 {
+			keys := make([]*AuthGroup, 0, len(toCheck))
+			for _, id := range toCheck {
+				keys = append(keys, makeAuthGroup(ctx, id))
+			}
+			refsExists, err := datastore.Exists(ctx, keys)
+			if err != nil {
+				return errors.Annotate(err, "failed to check existence of referenced groups").Err()
+			}
+			if !refsExists.All() {
+				missingRefs := []string{}
+				for i, r := range toCheck {
+					if !refsExists.Get(0, i) {
+						missingRefs = append(missingRefs, r)
+					}
+				}
+				return errors.Annotate(ErrInvalidReference, "some referenced groups don't exist: %s", strings.Join(missingRefs, ", ")).Err()
+			}
+		}
+
+		creator := string(auth.CurrentIdentity(ctx))
+		createdTS := clock.Now(ctx).UTC()
+		newGroup.CreatedTS = createdTS
+		newGroup.CreatedBy = creator
+
+		// TODO(jsca): Increment authdb revision as part of this transaction, then trigger replication
+		// TODO(jsca): Write the below as history to the datastore
+		newGroup.ModifiedTS = createdTS
+		newGroup.ModifiedBy = creator
+		// newGroup.AuthDBRev = authdb.Revision(auth.GetState(c).DB())
+
+		// Write to the datastore.
+		return datastore.Put(ctx, newGroup)
+	}, nil)
+	if err != nil {
+		return nil, err
+	}
+	return newGroup, nil
 }
 
 // GetAuthIPAllowlist gets the AuthIPAllowlist with the given allowlist name.
@@ -416,6 +530,22 @@ func (group *AuthGroup) ToProto(includeMemberships bool) *rpcpb.AuthGroup {
 		authGroup.Nested = group.Nested
 	}
 	return authGroup
+}
+
+// AuthGroupFromProto allocates a new AuthGroup using the values in the supplied protobuffer.
+func AuthGroupFromProto(c context.Context, grouppb *rpcpb.AuthGroup) *AuthGroup {
+	return &AuthGroup{
+		Kind:        "AuthGroup",
+		ID:          grouppb.GetName(),
+		Parent:      RootKey(c),
+		Members:     grouppb.GetMembers(),
+		Globs:       grouppb.GetGlobs(),
+		Nested:      grouppb.GetNested(),
+		Description: grouppb.GetDescription(),
+		Owners:      grouppb.GetOwners(),
+		CreatedTS:   grouppb.GetCreatedTs().AsTime(),
+		CreatedBy:   grouppb.GetCreatedBy(),
+	}
 }
 
 // ToProto converts the AuthIPAllowlist entity to the protobuffer

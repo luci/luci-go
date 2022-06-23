@@ -26,6 +26,8 @@ import (
 	"go.chromium.org/luci/auth_service/impl/model"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
+	"go.chromium.org/luci/server/auth"
+	"go.chromium.org/luci/server/auth/authtest"
 
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
@@ -178,6 +180,76 @@ func TestGroupsServer(t *testing.T) {
 		So(err, ShouldBeNil)
 		So(actualGroupResponse, ShouldResembleProto, expectedResponse)
 
+	})
+
+	Convey("CreateGroup RPC call", t, func() {
+		ctx := auth.WithState(memory.Use(context.Background()), &authtest.FakeState{
+			Identity: "user:someone@example.com",
+		})
+
+		Convey("Invalid name", func() {
+			request := &rpcpb.CreateGroupRequest{
+				Group: &rpcpb.AuthGroup{
+					Name:        "#^&",
+					Description: "This is a group with an invalid name",
+				},
+			}
+			_, err := srv.CreateGroup(ctx, request)
+			So(err, ShouldHaveGRPCStatus, codes.InvalidArgument)
+		})
+
+		Convey("Group already exists", func() {
+			So(datastore.Put(ctx,
+				&model.AuthGroup{
+					ID:          "test-group",
+					Parent:      model.RootKey(ctx),
+					Description: "This is a test group.",
+					Owners:      "testers",
+					CreatedTS:   createdTime,
+					CreatedBy:   "user:test-user-1@example.com",
+				}), ShouldBeNil)
+
+			request := &rpcpb.CreateGroupRequest{
+				Group: &rpcpb.AuthGroup{
+					Name:        "test-group",
+					Description: "This is a group that already exists",
+				},
+			}
+			_, err := srv.CreateGroup(ctx, request)
+			So(err, ShouldHaveGRPCStatus, codes.AlreadyExists)
+		})
+
+		Convey("Group refers to another group that doesn't exist", func() {
+			request := &rpcpb.CreateGroupRequest{
+				Group: &rpcpb.AuthGroup{
+					Name:        "test-group",
+					Description: "This is a test group.",
+					Owners:      "invalid-owner",
+					Nested:      []string{"bad1, bad2"},
+				},
+			}
+			_, err := srv.CreateGroup(ctx, request)
+			So(err, ShouldHaveGRPCStatus, codes.InvalidArgument)
+			So(err, ShouldErrLike, "some referenced groups don't exist: bad1, bad2, invalid-owner")
+		})
+
+		Convey("Successful creation", func() {
+			request := &rpcpb.CreateGroupRequest{
+				Group: &rpcpb.AuthGroup{
+					Name:        "test-group",
+					Description: "This is a test group.",
+					Owners:      "test-group",
+				},
+			}
+
+			resp, err := srv.CreateGroup(ctx, request)
+			So(err, ShouldBeNil)
+			So(resp.Name, ShouldEqual, "test-group")
+			So(resp.Description, ShouldEqual, "This is a test group.")
+			So(resp.Owners, ShouldEqual, "test-group")
+			So(resp.CreatedBy, ShouldEqual, "user:someone@example.com")
+			So(resp.CreatedTs.Seconds, ShouldNotBeZeroValue)
+		})
 	})
 
 	Convey("GetSubgraph RPC call", t, func() {

@@ -31,6 +31,9 @@ service Groups {
   // GetGroup returns information about an individual group, given the name.
   rpc GetGroup(GetGroupRequest) returns (AuthGroup);
 
+  // CreateGroup creates a new group.
+  rpc CreateGroup(CreateGroupRequest) returns (AuthGroup);
+
   // GetSubgraph returns a Subgraph without information about groups that
   // include a principal (perhaps indirectly or via globs). Here a principal is
   // either an identity, a group or a glob (see PrincipalKind enum).
@@ -48,6 +51,14 @@ message ListGroupsResponse {
 // GetGroupRequest is to specify an individual group.
 message GetGroupRequest {
   string name = 1;  // e.g: "administrators"
+}
+
+// CreateGroupRequest requests the creation of a new group.
+message CreateGroupRequest {
+  // Details of the group to create. Not all fields will be written to the new
+  // group: if the request specifies fields that should be automatically
+  // generated (e.g. created/modified timestamps), these will be ignored.
+  AuthGroup group = 1;
 }
 
 // AuthGroup defines an individual group.

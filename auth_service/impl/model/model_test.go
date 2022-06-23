@@ -25,9 +25,14 @@ import (
 
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
+	"go.chromium.org/luci/server/auth"
+	"go.chromium.org/luci/server/auth/authtest"
 	"go.chromium.org/luci/server/auth/service/protocol"
 
 	. "github.com/smartystreets/goconvey/convey"
+	"go.chromium.org/luci/common/clock"
+	"go.chromium.org/luci/common/clock/testclock"
+	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 var (
@@ -233,6 +238,126 @@ func TestGetAllAuthGroups(t *testing.T) {
 	})
 }
 
+func TestCreateAuthGroup(t *testing.T) {
+	t.Parallel()
+
+	Convey("CreateAuthGroup", t, func() {
+		ctx := auth.WithState(memory.Use(context.Background()), &authtest.FakeState{
+			Identity: "user:someone@example.com",
+		})
+		ctx = clock.Set(ctx, testclock.New(testCreatedTS))
+
+		Convey("empty group name", func() {
+			group := testAuthGroup(ctx, "", nil)
+
+			_, err := CreateAuthGroup(ctx, group)
+			So(err, ShouldEqual, ErrInvalidName)
+		})
+
+		Convey("invalid group name", func() {
+			group := testAuthGroup(ctx, "foo^", nil)
+
+			_, err := CreateAuthGroup(ctx, group)
+			So(err, ShouldEqual, ErrInvalidName)
+		})
+
+		Convey("external group name", func() {
+			group := testAuthGroup(ctx, "mdb/foo", nil)
+
+			_, err := CreateAuthGroup(ctx, group)
+			So(err, ShouldEqual, ErrInvalidName)
+		})
+
+		Convey("group name that already exists", func() {
+			So(datastore.Put(ctx,
+				testAuthGroup(ctx, "foo", nil),
+			), ShouldBeNil)
+
+			group := testAuthGroup(ctx, "foo", nil)
+
+			_, err := CreateAuthGroup(ctx, group)
+			So(err, ShouldEqual, ErrAlreadyExists)
+		})
+
+		Convey("all referenced groups must exist", func() {
+			group := testAuthGroup(ctx, "foo", nil)
+			group.Owners = "bar"
+			group.Nested = []string{"baz", "qux"}
+
+			_, err := CreateAuthGroup(ctx, group)
+			So(err, ShouldUnwrapTo, ErrInvalidReference)
+			So(err, ShouldErrLike, "some referenced groups don't exist: baz, qux, bar")
+		})
+
+		Convey("owner must exist", func() {
+			group := testAuthGroup(ctx, "foo", nil)
+			group.Owners = "bar"
+			group.Nested = nil
+
+			_, err := CreateAuthGroup(ctx, group)
+			So(err, ShouldErrLike, "bar")
+		})
+
+		Convey("with empty owners uses 'administrators' group", func() {
+			So(datastore.Put(ctx,
+				testAuthGroup(ctx, AdminGroup, nil),
+			), ShouldBeNil)
+
+			group := testAuthGroup(ctx, "foo", nil)
+			group.Owners = ""
+			group.Nested = nil
+
+			createdGroup, err := CreateAuthGroup(ctx, group)
+			So(err, ShouldBeNil)
+			So(createdGroup.Owners, ShouldEqual, AdminGroup)
+		})
+
+		Convey("group can own itself", func() {
+			group := testAuthGroup(ctx, "foo", nil)
+			group.Owners = "foo"
+			group.Nested = nil
+
+			createdGroup, err := CreateAuthGroup(ctx, group)
+			So(err, ShouldBeNil)
+			So(createdGroup.Owners, ShouldEqual, createdGroup.ID)
+		})
+
+		Convey("successfully writes to datastore", func() {
+			group := testAuthGroup(ctx, "foo", nil)
+			group.Owners = "foo"
+			group.Nested = nil
+
+			createdGroup, err := CreateAuthGroup(ctx, group)
+			So(err, ShouldBeNil)
+			So(createdGroup.ID, ShouldEqual, group.ID)
+			So(createdGroup.Description, ShouldEqual, group.Description)
+			So(createdGroup.Owners, ShouldEqual, group.Owners)
+			So(createdGroup.Members, ShouldResemble, group.Members)
+			So(createdGroup.Globs, ShouldResemble, group.Globs)
+			So(createdGroup.Nested, ShouldResemble, group.Nested)
+			So(createdGroup.CreatedBy, ShouldEqual, "user:someone@example.com")
+			So(createdGroup.CreatedTS.Unix(), ShouldEqual, testCreatedTS.Unix())
+			So(createdGroup.ModifiedBy, ShouldEqual, "user:someone@example.com")
+			So(createdGroup.ModifiedTS.Unix(), ShouldEqual, testCreatedTS.Unix())
+
+			// TODO(jsca): Also check AuthDBRev here
+
+			fetchedGroup, err := GetAuthGroup(ctx, "foo")
+			So(err, ShouldBeNil)
+			So(fetchedGroup.ID, ShouldEqual, group.ID)
+			So(fetchedGroup.Description, ShouldEqual, group.Description)
+			So(fetchedGroup.Owners, ShouldEqual, group.Owners)
+			So(fetchedGroup.Members, ShouldResemble, group.Members)
+			So(fetchedGroup.Globs, ShouldResemble, group.Globs)
+			So(fetchedGroup.Nested, ShouldResemble, group.Nested)
+			So(fetchedGroup.CreatedBy, ShouldEqual, "user:someone@example.com")
+			So(fetchedGroup.CreatedTS.Unix(), ShouldEqual, testCreatedTS.Unix())
+			So(fetchedGroup.ModifiedBy, ShouldEqual, "user:someone@example.com")
+			So(fetchedGroup.ModifiedTS.Unix(), ShouldEqual, testCreatedTS.Unix())
+		})
+	})
+}
+
 func TestGetAuthIPAllowlist(t *testing.T) {
 	t.Parallel()
 
@@ -380,5 +505,26 @@ func TestGetAuthDBSnapshot(t *testing.T) {
 		actualSnapshot, err = GetAuthDBSnapshot(ctx, 42, true)
 		So(err, ShouldBeNil)
 		So(actualSnapshot.AuthDBDeflated, ShouldBeNil)
+	})
+}
+
+func TestProtoConversion(t *testing.T) {
+	t.Parallel()
+
+	Convey("AuthGroup FromProto and ToProto round trip equivalence", t, func() {
+		ctx := memory.Use(context.Background())
+
+		empty := &AuthGroup{
+			Kind:   "AuthGroup",
+			Parent: RootKey(ctx),
+		}
+
+		So(AuthGroupFromProto(ctx, empty.ToProto(true)), ShouldResemble, empty)
+
+		g := testAuthGroup(ctx, "foo-group", nil)
+		// Ignore the versioned entity mixin since this doesn't survive the proto conversion round trip.
+		g.AuthVersionedEntityMixin = AuthVersionedEntityMixin{}
+
+		So(AuthGroupFromProto(ctx, g.ToProto(true)), ShouldResemble, g)
 	})
 }

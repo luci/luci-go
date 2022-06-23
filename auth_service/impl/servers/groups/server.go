@@ -17,6 +17,7 @@ package groups
 
 import (
 	"context"
+	"errors"
 
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -60,6 +61,23 @@ func (*Server) GetGroup(ctx context.Context, request *rpcpb.GetGroupRequest) (*r
 		return nil, status.Errorf(codes.NotFound, "no such group %q", request.Name)
 	default:
 		return nil, status.Errorf(codes.Internal, "failed to fetch group %q: %s", request.Name, err)
+	}
+}
+
+// CreateGroup implements the corresponding RPC method.
+func (*Server) CreateGroup(ctx context.Context, request *rpcpb.CreateGroupRequest) (*rpcpb.AuthGroup, error) {
+	group := model.AuthGroupFromProto(ctx, request.GetGroup())
+	switch createdGroup, err := model.CreateAuthGroup(ctx, group); {
+	case err == nil:
+		return createdGroup.ToProto(true), nil
+	case errors.Is(err, model.ErrAlreadyExists):
+		return nil, status.Errorf(codes.AlreadyExists, "group already exists: %s", err)
+	case errors.Is(err, model.ErrInvalidName):
+		return nil, status.Errorf(codes.InvalidArgument, "invalid group name: %s", err)
+	case errors.Is(err, model.ErrInvalidReference):
+		return nil, status.Errorf(codes.InvalidArgument, "invalid group reference: %s", err)
+	default:
+		return nil, status.Errorf(codes.Internal, "failed to create group %q: %s", request.GetGroup().GetName(), err)
 	}
 }
 
