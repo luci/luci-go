@@ -23,6 +23,7 @@ import (
 
 	"google.golang.org/protobuf/proto"
 
+	"go.chromium.org/luci/auth_service/impl/info"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/server/auth"
@@ -170,6 +171,53 @@ func testAuthDBSnapshotSharded(ctx context.Context, rev int64, shardCount int) (
 	return snapshot, expectedBlob, nil
 }
 
+func getAllDatastoreEntities(ctx context.Context, entityKind string, parent *datastore.Key) ([]datastore.PropertyMap, error) {
+	query := datastore.NewQuery(entityKind).Ancestor(parent)
+	var entities []datastore.PropertyMap
+	err := datastore.GetAll(ctx, query, &entities)
+	return entities, err
+}
+
+func getProp(pm datastore.PropertyMap, key string) interface{} {
+	ps := pm.Slice(key)
+	if ps == nil {
+		return nil
+	}
+	return ps[0].Value()
+}
+
+func getDatastoreKey(pm datastore.PropertyMap) *datastore.Key {
+	return getProp(pm, "$key").(*datastore.Key)
+}
+
+func getStringProp(pm datastore.PropertyMap, key string) string {
+	return getProp(pm, key).(string)
+}
+
+func getBoolProp(pm datastore.PropertyMap, key string) bool {
+	return getProp(pm, key).(bool)
+}
+
+func getInt64Prop(pm datastore.PropertyMap, key string) int64 {
+	return getProp(pm, key).(int64)
+}
+
+func getTimeProp(pm datastore.PropertyMap, key string) time.Time {
+	return getProp(pm, key).(time.Time)
+}
+
+func getStringSliceProp(pm datastore.PropertyMap, key string) []string {
+	vals := []string{}
+	ps := pm.Slice(key)
+	if ps == nil {
+		return nil
+	}
+	for _, p := range ps {
+		vals = append(vals, p.Value().(string))
+	}
+	return vals
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 
 func TestGetReplicationState(t *testing.T) {
@@ -246,6 +294,7 @@ func TestCreateAuthGroup(t *testing.T) {
 			Identity: "user:someone@example.com",
 		})
 		ctx = clock.Set(ctx, testclock.New(testCreatedTS))
+		ctx = info.SetImageVersion(ctx, "test-version")
 
 		Convey("empty group name", func() {
 			group := testAuthGroup(ctx, "", nil)
@@ -399,6 +448,68 @@ func TestCreateAuthGroup(t *testing.T) {
 				state3, err := GetReplicationState(ctx)
 				So(err, ShouldBeNil)
 				So(state3.AuthDBRev, ShouldEqual, 2)
+			}
+		})
+
+		Convey("creates historical group entities", func() {
+			// Create a group.
+			{
+				group := testAuthGroup(ctx, "foo", nil)
+				group.Owners = "foo"
+				group.Nested = nil
+
+				_, err := CreateAuthGroup(ctx, group)
+				So(err, ShouldBeNil)
+
+				entities, err := getAllDatastoreEntities(ctx, "AuthGroupHistory", HistoricalRevisionKey(ctx, 1))
+				So(err, ShouldBeNil)
+				So(entities, ShouldHaveLength, 1)
+				historicalEntity := entities[0]
+				So(getDatastoreKey(historicalEntity).String(), ShouldEqual, "dev~app::/AuthGlobalConfig,\"root\"/Rev,1/AuthGroupHistory,\"foo\"")
+				So(getStringProp(historicalEntity, "description"), ShouldEqual, group.Description)
+				So(getStringProp(historicalEntity, "owners"), ShouldEqual, group.Owners)
+				So(getStringSliceProp(historicalEntity, "members"), ShouldResemble, group.Members)
+				So(getStringSliceProp(historicalEntity, "globs"), ShouldResemble, group.Globs)
+				So(getStringSliceProp(historicalEntity, "nested"), ShouldResemble, group.Nested)
+				So(getStringProp(historicalEntity, "created_by"), ShouldEqual, "user:someone@example.com")
+				So(getTimeProp(historicalEntity, "created_ts").Unix(), ShouldEqual, testCreatedTS.Unix())
+				So(getStringProp(historicalEntity, "modified_by"), ShouldEqual, "user:someone@example.com")
+				So(getTimeProp(historicalEntity, "modified_ts").Unix(), ShouldEqual, testCreatedTS.Unix())
+				So(getInt64Prop(historicalEntity, "auth_db_rev"), ShouldEqual, 1)
+				So(getInt64Prop(historicalEntity, "auth_db_prev_rev"), ShouldEqual, 0)
+				So(getBoolProp(historicalEntity, "auth_db_deleted"), ShouldBeFalse)
+				So(getStringProp(historicalEntity, "auth_db_comment"), ShouldEqual, "Go pRPC API")
+				So(getStringProp(historicalEntity, "auth_db_app_version"), ShouldEqual, "test-version")
+			}
+
+			// Create a second group.
+			{
+				group := testAuthGroup(ctx, "foo2", nil)
+				group.Owners = "foo2"
+				group.Nested = nil
+
+				_, err := CreateAuthGroup(ctx, group)
+				So(err, ShouldBeNil)
+
+				entities, err := getAllDatastoreEntities(ctx, "AuthGroupHistory", HistoricalRevisionKey(ctx, 2))
+				So(err, ShouldBeNil)
+				So(entities, ShouldHaveLength, 1)
+				historicalEntity := entities[0]
+				So(getDatastoreKey(historicalEntity).String(), ShouldEqual, "dev~app::/AuthGlobalConfig,\"root\"/Rev,2/AuthGroupHistory,\"foo2\"")
+				So(getStringProp(historicalEntity, "description"), ShouldEqual, group.Description)
+				So(getStringProp(historicalEntity, "owners"), ShouldEqual, group.Owners)
+				So(getStringSliceProp(historicalEntity, "members"), ShouldResemble, group.Members)
+				So(getStringSliceProp(historicalEntity, "globs"), ShouldResemble, group.Globs)
+				So(getStringSliceProp(historicalEntity, "nested"), ShouldResemble, group.Nested)
+				So(getStringProp(historicalEntity, "created_by"), ShouldEqual, "user:someone@example.com")
+				So(getTimeProp(historicalEntity, "created_ts").Unix(), ShouldEqual, testCreatedTS.Unix())
+				So(getStringProp(historicalEntity, "modified_by"), ShouldEqual, "user:someone@example.com")
+				So(getTimeProp(historicalEntity, "modified_ts").Unix(), ShouldEqual, testCreatedTS.Unix())
+				So(getInt64Prop(historicalEntity, "auth_db_rev"), ShouldEqual, 2)
+				So(getInt64Prop(historicalEntity, "auth_db_prev_rev"), ShouldEqual, 0)
+				So(getBoolProp(historicalEntity, "auth_db_deleted"), ShouldBeFalse)
+				So(getStringProp(historicalEntity, "auth_db_comment"), ShouldEqual, "Go pRPC API")
+				So(getStringProp(historicalEntity, "auth_db_app_version"), ShouldEqual, "test-version")
 			}
 		})
 	})

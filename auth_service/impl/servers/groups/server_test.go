@@ -23,6 +23,7 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/auth_service/api/rpcpb"
+	"go.chromium.org/luci/auth_service/impl/info"
 	"go.chromium.org/luci/auth_service/impl/model"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
@@ -186,6 +187,7 @@ func TestGroupsServer(t *testing.T) {
 		ctx := auth.WithState(memory.Use(context.Background()), &authtest.FakeState{
 			Identity: "user:someone@example.com",
 		})
+		ctx = info.SetImageVersion(ctx, "test-version")
 
 		Convey("Invalid name", func() {
 			request := &rpcpb.CreateGroupRequest{

@@ -458,6 +458,12 @@ func (p *Property) SetValue(value interface{}, is IndexSetting) (err error) {
 	return
 }
 
+// SetIndexSetting sets whether or not the datastore should create indices for
+// this value.
+func (p *Property) SetIndexSetting(is IndexSetting) {
+	p.indexSetting = is
+}
+
 // IndexTypeAndValue returns the type and value of the Property as it would
 // show up in a datastore index.
 //

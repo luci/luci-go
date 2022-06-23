@@ -28,6 +28,7 @@ import (
 	"go.chromium.org/luci/auth_service/api/internalspb"
 	"go.chromium.org/luci/auth_service/api/rpcpb"
 	"go.chromium.org/luci/auth_service/impl"
+	"go.chromium.org/luci/auth_service/impl/info"
 	"go.chromium.org/luci/auth_service/impl/servers/accounts"
 	"go.chromium.org/luci/auth_service/impl/servers/allowlists"
 	"go.chromium.org/luci/auth_service/impl/servers/authdb"
@@ -60,6 +61,9 @@ func main() {
 		if !srv.Options.Prod {
 			srv.Routes.Static("/static", nil, http.Dir("./static"))
 		}
+
+		// Inject app version into the root context so request handlers can use it.
+		srv.Context = info.SetImageVersion(srv.Context, srv.Options.ImageVersion())
 
 		// Cookie auth and pRPC have some rough edges, see prpcCookieAuth comment.
 		prpcAuth := &prpcCookieAuth{cookieAuth: srv.CookieAuth}

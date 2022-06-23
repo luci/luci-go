@@ -26,6 +26,7 @@ import (
 
 	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/auth_service/api/rpcpb"
+	"go.chromium.org/luci/auth_service/impl/info"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/gae/service/datastore"
@@ -56,14 +57,67 @@ func (e *AuthVersionedEntityMixin) recordChange(modifiedBy string, modifiedTS ti
 	e.AuthDBRev = authDBRev
 }
 
+func (e *AuthVersionedEntityMixin) versionInfo() *AuthVersionedEntityMixin {
+	return e
+}
+
+// makeHistoricalCopy returns a PropertyLoadSaver that represents a historical
+// copy of the provided entity at its current revision, plus some metadata:
+//   * whether the entity was deleted at this revision
+//   * a comment describing the change that created this entity version
+//
+// The copy of the entity has all of the same fields as the original, except
+// the kind is modified to end in History (e.g. AuthGroup becomes AuthGroupHistory),
+// the parent key is modified to include the AuthDB revision number, and all
+// fields have indexes removed (they're not needed for this use case).
+func makeHistoricalCopy(ctx context.Context, entity versionedEntity, deleted bool, comment string) (datastore.PropertyLoadSaver, error) {
+	// Fetch all properties from the entity itself.
+	pls := datastore.GetPLS(entity)
+
+	props, err := pls.Save(true)
+	if err != nil {
+		return nil, errors.New("failed to save PropertyMap")
+	}
+
+	// Alter the Parent meta property so it specifies the current AuthDB revision.
+	props["$parent"] = datastore.MkPropertyNI(HistoricalRevisionKey(ctx, entity.versionInfo().AuthDBRev))
+
+	// Alter the Kind meta property to append the "History" suffix.
+	kind, ok := pls.GetMeta("kind")
+	if !ok {
+		return nil, errors.New("failed to get $kind when creating historical copy")
+	}
+	props["$kind"] = datastore.MkPropertyNI(kind.(string) + "History")
+
+	// Remove indexing for all fields.
+	for i, prop := range props {
+		copy := prop.Slice()
+		for _, p := range copy {
+			p.SetIndexSetting(datastore.NoIndex)
+		}
+		props[i] = copy
+	}
+
+	// Add historical metadata.
+	props["auth_db_deleted"] = datastore.MkPropertyNI(deleted)
+	props["auth_db_comment"] = datastore.MkPropertyNI(comment)
+	props["auth_db_app_version"] = datastore.MkPropertyNI(info.ImageVersion(ctx))
+
+	return props, nil
+}
+
 // versionedEntity is an internal interface implemented by any struct
-// embedding AuthVersionedEntityMixin. It provides a convencience method for
+// embedding AuthVersionedEntityMixin. It provides a convenience method for
 // callers to update all of the version information on a versioned entity at
 // once.
 type versionedEntity interface {
 	// recordChange records a change to the versioned entity, updating its
 	// last-modified metadata.
 	recordChange(modifiedBy string, modifiedTS time.Time, authDBRev int64)
+
+	// versionInfo returns a pointer to the AuthVersionedEntityMixin embedded
+	// by the implementing struct.
+	versionInfo() *AuthVersionedEntityMixin
 }
 
 // AuthGlobalConfig is the root entity for auth models.
@@ -243,6 +297,12 @@ func RootKey(ctx context.Context) *datastore.Key {
 	return datastore.NewKey(ctx, "AuthGlobalConfig", "root", 0, nil)
 }
 
+// HistoricalRevisionKey gets the key for an entity subgroup that holds changes
+// done in a concrete revision.
+func HistoricalRevisionKey(ctx context.Context, authDBRev int64) *datastore.Key {
+	return datastore.NewKey(ctx, "Rev", "", authDBRev, RootKey(ctx))
+}
+
 // GetReplicationState fetches AuthReplicationState from the datastore.
 //
 // Returns datastore.ErrNoSuchEntity if it is missing.
@@ -285,15 +345,18 @@ func makeAuthGroup(ctx context.Context, id string) *AuthGroup {
 	}
 }
 
-// recordEntityChange is a callback function signature that allows business logic
-// to record that an entity is being changed. It should be called by anything that updates
-// the AuthDB via the runAuthDBChange wrapper function.
-type recordEntityChange func(e versionedEntity, time time.Time, author identity.Identity)
+// commitAuthEntity is a callback function signature that allows business logic
+// to commit changes to a versioned entity. It should be called by anything that
+// updates the AuthDB via the runAuthDBChange wrapper function.
+type commitAuthEntity func(e versionedEntity, time time.Time, author identity.Identity) error
 
 // runAuthDBChange runs the provided function inside a Datastore transaction
-// and automatically handles all tasks that should be done every time the AuthDB
-// is changed, e.g. incrementing the revision,
-func runAuthDBChange(ctx context.Context, f func(context.Context, recordEntityChange) error) error {
+// and provides a function that allows the caller to commit changes to entities,
+// writing them to the datastore and automatically taking care of history tracking
+// and incrementing the AuthDB revision.
+//
+// NOTE: The provided `commitAuthEntity` callback is not safe to call concurrently.
+func runAuthDBChange(ctx context.Context, f func(context.Context, commitAuthEntity) error) error {
 	return datastore.RunInTransaction(ctx, func(ctx context.Context) error {
 		// Get current AuthDB state and increment the revision.
 		state, err := GetReplicationState(ctx)
@@ -309,23 +372,32 @@ func runAuthDBChange(ctx context.Context, f func(context.Context, recordEntityCh
 			return err
 		}
 		nextAuthDBRev := state.AuthDBRev + 1
+		toCommit := []interface{}{state}
 
-		// Set up a function that callers can use to record a change to an entity.
+		// Set up a function that callers can use to commit a change to an entity.
 		// If this doesn't get called, the AuthDB revision won't get incremented.
-		// This should be called before datastore.Put(entity).
-		recordEntity := func(entity versionedEntity, t time.Time, author identity.Identity) {
-			// Record change on the entity itself.
+		// This should be called instead of datastore.Put(entity).
+		commitEntity := func(entity versionedEntity, t time.Time, author identity.Identity) error {
+			// Record change on the entity itself, and add it to the list of things
+			// to be committed to Datastore.
 			entity.recordChange(string(author), t, nextAuthDBRev)
+			toCommit = append(toCommit, entity)
 
 			// Record change on the AuthDB state.
 			state.AuthDBRev = nextAuthDBRev
 			state.ModifiedTS = t
 
-			// TODO(jsca): Create a historical entity version to be written to the Datastore
+			// Make a historical copy of the entity.
+			historicalCopy, err := makeHistoricalCopy(ctx, entity, false, "Go pRPC API")
+			if err != nil {
+				return err
+			}
+			toCommit = append(toCommit, historicalCopy)
+			return nil
 		}
 
 		// Run the wrapped function.
-		if err := f(ctx, recordEntity); err != nil {
+		if err := f(ctx, commitEntity); err != nil {
 			return err
 		}
 
@@ -334,9 +406,8 @@ func runAuthDBChange(ctx context.Context, f func(context.Context, recordEntityCh
 			return nil
 		}
 
-		// Commit the updated replication state.
-		// TODO(jsca): Commit the historical entities here in the same Put() call to save RPCs.
-		if err := datastore.Put(ctx, state); err != nil {
+		// Commit the updated replication state and any newly created historical entities.
+		if err := datastore.Put(ctx, toCommit); err != nil {
 			return err
 		}
 
@@ -389,7 +460,7 @@ func CreateAuthGroup(ctx context.Context, group *AuthGroup) (*AuthGroup, error) 
 	newGroup := makeAuthGroup(ctx, group.ID)
 
 	// The rest of the validation checks interact with the datastore, so run inside a transaction.
-	err := runAuthDBChange(ctx, func(ctx context.Context, recordEntityChange recordEntityChange) error {
+	err := runAuthDBChange(ctx, func(ctx context.Context, commitEntity commitAuthEntity) error {
 		// Check the group doesn't already exist.
 		exists, err := datastore.Exists(ctx, newGroup)
 		if err != nil {
@@ -440,11 +511,10 @@ func CreateAuthGroup(ctx context.Context, group *AuthGroup) (*AuthGroup, error) 
 		newGroup.CreatedTS = createdTS
 		newGroup.CreatedBy = string(creator)
 
-		// Record the entity change to increment the AuthDB revision and trigger replication.
-		recordEntityChange(newGroup, createdTS, creator)
-
-		// Write to the datastore.
-		return datastore.Put(ctx, newGroup)
+		// Commit the group. This adds last-modified data on the group,
+		// increments the AuthDB revision, automatically creates a historical
+		// version, and triggers replication.
+		return commitEntity(newGroup, createdTS, creator)
 	})
 	if err != nil {
 		return nil, err
