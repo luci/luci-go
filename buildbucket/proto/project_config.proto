@@ -67,6 +67,17 @@ message AclSet {
   repeated Acl acls = 2;
 }
 
+// Constraints for a bucket.
+//
+// Buildbucket.CreateBuild will validate the incoming requests to make sure
+// they meet these constraints.
+message Constraints {
+  // Constraints allowed pools.
+  repeated string pools = 1;
+
+  // Only service accounts in this list are allowed.
+  repeated string service_accounts = 2;
+}
 
 // Defines a swarmbucket builder. A builder has a name, a category and specifies
 // what should happen if a build is scheduled to that builder.
@@ -473,6 +484,32 @@ message Bucket {
   repeated string acl_sets = 4;
   // Buildbucket-swarming integration.
   Swarming swarming = 3;
+
+  // Name of this bucket's shadow bucket for the led builds to use.
+  //
+  // If omitted, it implies that led builds of this bucket reuse this bucket.
+  // This is allowed, but note that it means the led builds will be in
+  // the same bucket/builder with the real builds, which could be noisy,
+  // such as:
+  // * On the LUCI UI, led builds will show under the same builder as the real builds,
+  // * Led builds will share the same ResultDB config as the real builds, so
+  //   their test results will be exported to the same BigQuery tables.
+  // * Subscribers of Buildbucket PubSub need to filter them out.
+  string shadow = 5;
+
+  // Security constraints of the bucket.
+  //
+  // This field is used by CreateBuild on this bucket to constrain proposed
+  // Builds. If a build doesn't meet the constraints, it will be rejected.
+  // For shadow buckets, this is what prevents the bucket from allowing
+  // totally arbitrary Builds.
+  //
+  // `lucicfg` will automatically populate this for the "primary" bucket
+  // when using `luci.builder`.
+  //
+  // Buildbuceket.CreateBuild will validate the incoming requests to make sure
+  // they meet these constraints.
+  Constraints constraints = 6;
 }
 
 // Schema of buildbucket.cfg file, a project config.
