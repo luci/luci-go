@@ -100,7 +100,7 @@ func makeHistoricalCopy(ctx context.Context, entity versionedEntity, deleted boo
 
 	// Add historical metadata.
 	props["auth_db_deleted"] = datastore.MkPropertyNI(deleted)
-	props["auth_db_comment"] = datastore.MkPropertyNI(comment)
+	props["auth_db_change_comment"] = datastore.MkPropertyNI(comment)
 	props["auth_db_app_version"] = datastore.MkPropertyNI(info.ImageVersion(ctx))
 
 	return props, nil

@@ -478,7 +478,7 @@ func TestCreateAuthGroup(t *testing.T) {
 				So(getInt64Prop(historicalEntity, "auth_db_rev"), ShouldEqual, 1)
 				So(getInt64Prop(historicalEntity, "auth_db_prev_rev"), ShouldEqual, 0)
 				So(getBoolProp(historicalEntity, "auth_db_deleted"), ShouldBeFalse)
-				So(getStringProp(historicalEntity, "auth_db_comment"), ShouldEqual, "Go pRPC API")
+				So(getStringProp(historicalEntity, "auth_db_change_comment"), ShouldEqual, "Go pRPC API")
 				So(getStringProp(historicalEntity, "auth_db_app_version"), ShouldEqual, "test-version")
 			}
 
@@ -508,7 +508,7 @@ func TestCreateAuthGroup(t *testing.T) {
 				So(getInt64Prop(historicalEntity, "auth_db_rev"), ShouldEqual, 2)
 				So(getInt64Prop(historicalEntity, "auth_db_prev_rev"), ShouldEqual, 0)
 				So(getBoolProp(historicalEntity, "auth_db_deleted"), ShouldBeFalse)
-				So(getStringProp(historicalEntity, "auth_db_comment"), ShouldEqual, "Go pRPC API")
+				So(getStringProp(historicalEntity, "auth_db_change_comment"), ShouldEqual, "Go pRPC API")
 				So(getStringProp(historicalEntity, "auth_db_app_version"), ShouldEqual, "test-version")
 			}
 		})
