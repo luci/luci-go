@@ -60,6 +60,7 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
+	"go.chromium.org/luci/auth"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
@@ -67,6 +68,7 @@ import (
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/common/system/environ"
 	"go.chromium.org/luci/grpc/prpc"
+	"go.chromium.org/luci/hardcoded/chromeinfra"
 
 	api "go.chromium.org/luci/cipd/api/cipd/v1"
 	"go.chromium.org/luci/cipd/client/cipd/deployer"
@@ -77,6 +79,7 @@ import (
 	"go.chromium.org/luci/cipd/client/cipd/pkg"
 	"go.chromium.org/luci/cipd/client/cipd/platform"
 	"go.chromium.org/luci/cipd/client/cipd/plugin"
+	"go.chromium.org/luci/cipd/client/cipd/plugin/host"
 	"go.chromium.org/luci/cipd/client/cipd/reader"
 	"go.chromium.org/luci/cipd/client/cipd/template"
 	"go.chromium.org/luci/cipd/client/cipd/ui"
@@ -146,7 +149,7 @@ var (
 	// ClientPackage is a package with the CIPD client. Used during self-update.
 	ClientPackage = "infra/tools/cipd/${platform}"
 	// UserAgent is HTTP user agent string for CIPD client.
-	UserAgent = "cipd 2.6.5"
+	UserAgent = "cipd 2.6.6"
 )
 
 func init() {
@@ -173,6 +176,9 @@ type DescribeInstanceOpts struct {
 
 // Client provides high-level CIPD client interface. Thread safe.
 type Client interface {
+	// Options is fully populated ClientOptions the client was created with.
+	Options() ClientOptions
+
 	// Close terminates plugins started by the client.
 	//
 	// Should be used to cleanly shutdown the client when using plugins.
@@ -344,8 +350,6 @@ type EnsureOptions struct {
 // options to NewClient.
 type ClientOptions struct {
 	// ServiceURL is root URL of the backend service.
-	//
-	// Default is ServiceURL const.
 	ServiceURL string
 
 	// Root is a site root directory.
@@ -410,10 +414,10 @@ type ClientOptions struct {
 	// LoginInstructions is appended to "permission denied" error messages.
 	LoginInstructions string
 
-	// PluginHost is a plugin system implementation to use.
+	// PluginsContext is a context to use for logging from plugins (if any).
 	//
-	// If not set, all plugin functionality will be ignored.
-	PluginHost plugin.Host
+	// If not set, logging from plugins will be ignored.
+	PluginsContext context.Context
 
 	// AdmissionPlugin is the deployment admission plugin command line (if any).
 	//
@@ -473,7 +477,7 @@ func (opts *ClientOptions) LoadFromEnv(ctx context.Context) error {
 			opts.UserAgent = fmt.Sprintf("%s/%s", v, UserAgent)
 		}
 	}
-	if opts.PluginHost != nil && len(opts.AdmissionPlugin) == 0 {
+	if len(opts.AdmissionPlugin) == 0 {
 		if v := env.Get(EnvAdmissionPlugin); v != "" {
 			if err := json.Unmarshal([]byte(v), &opts.AdmissionPlugin); err != nil {
 				return fmt.Errorf("bad %s %q: not a valid JSON", EnvAdmissionPlugin, v)
@@ -486,10 +490,59 @@ func (opts *ClientOptions) LoadFromEnv(ctx context.Context) error {
 	return nil
 }
 
-// NewClient initializes CIPD client object.
+// NewClientFromEnv initializes CIPD client using given options and
+// applying settings from the environment on top of them using ClientOptions'
+// LoadFromEnv.
 //
-// Note that when constructing ClientOptions, you almost certainly also need
-// to call LoadFromEnv to load unset values from the process environment.
+// This is the preferred method of constructing fully-functioning CIPD clients
+// programmatically.
+//
+// If the client will be used to install packages, at least Root in
+// ClientOptions must be populated (otherwise EnsurePackages will fail). If the
+// client will be used only to make backend calls (e.g. to resolve versions),
+// Root can be empty.
+//
+// If AuthenticatedClient in ClientOptions is unset, initializes a new
+// authenticating client using the hardcoded Chrome Infra OAuth client
+// credentials.
+//
+// The CIPD client will use the given context for logging from plugins
+// (if any).
+//
+// The client must be shutdown with Close when no longer needed.
+func NewClientFromEnv(ctx context.Context, opts ClientOptions) (Client, error) {
+	if opts.AuthenticatedClient == nil {
+		client, err := auth.NewAuthenticator(ctx, auth.OptionalLogin, chromeinfra.DefaultAuthOptions()).Client()
+		if err != nil {
+			return nil, errors.Annotate(err, "failed to initialize auth client").Err()
+		}
+		opts.AuthenticatedClient = client
+		opts.LoginInstructions = "run `cipd auth-login` to login or relogin"
+	}
+	if err := opts.LoadFromEnv(ctx); err != nil {
+		return nil, err
+	}
+	if opts.ServiceURL == "" {
+		opts.ServiceURL = chromeinfra.CIPDServiceURL
+	}
+	if opts.PluginsContext == nil {
+		opts.PluginsContext = ctx
+	}
+	return NewClient(opts)
+}
+
+// NewClient initializes CIPD client using given options.
+//
+// This is a relatively low level function that doesn't lookup any environment
+// variables to populate unset fields in ClientOptions and doesn't hardcode
+// and preferences.
+//
+// If you just need to construct a simple functioning CIPD client with all
+// defaults based on the environment, use NewClientFromEnv. If you need to
+// examine options before constructing the client, use ClientOption's
+// LoadFromEnv before calling NewClient.
+//
+// The client must be shutdown with Close when no longer needed.
 func NewClient(opts ClientOptions) (Client, error) {
 	if opts.AnonymousClient == nil {
 		opts.AnonymousClient = http.DefaultClient
@@ -551,8 +604,14 @@ func NewClient(opts ClientOptions) (Client, error) {
 		}
 	}
 
-	if opts.PluginHost != nil {
-		err := opts.PluginHost.Initialize(plugin.Config{
+	var pluginHost plugin.Host
+	if len(opts.AdmissionPlugin) != 0 {
+		ctx := opts.PluginsContext
+		if ctx == nil {
+			ctx = context.Background()
+		}
+		pluginHost = &host.Host{PluginsContext: ctx}
+		err := pluginHost.Initialize(plugin.Config{
 			ServiceURL: opts.ServiceURL,
 			Repository: repo,
 		})
@@ -567,13 +626,10 @@ func NewClient(opts ClientOptions) (Client, error) {
 		repo:          repo,
 		storage:       s,
 		deployer:      deployer.New(opts.Root),
-		pluginHost:    opts.PluginHost,
+		pluginHost:    pluginHost,
 	}
 
 	if len(opts.AdmissionPlugin) != 0 {
-		if client.pluginHost == nil {
-			return nil, errors.Reason("using admission plugins requires configuring the plugin system").Err()
-		}
 		client.pluginAdmission, err = client.pluginHost.NewAdmissionPlugin(opts.AdmissionPlugin)
 		if err != nil {
 			return nil, errors.Annotate(err, "failed to initialize the admission plugin").Err()
@@ -768,6 +824,10 @@ func (c *clientImpl) instanceCache(ctx context.Context) (*internal.InstanceCache
 	}
 	cache.Launch(ctx) // start background download goroutines
 	return cache, nil
+}
+
+func (c *clientImpl) Options() ClientOptions {
+	return c.ClientOptions
 }
 
 func (c *clientImpl) Close(ctx context.Context) {

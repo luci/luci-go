@@ -252,14 +252,7 @@ func (c *reproduceRun) prepareTaskRequestEnvironment(ctx context.Context, proper
 
 func downloadCIPDPackages(ctx context.Context, workdir string, slicesByPath map[string]ensure.PackageSlice) error {
 	// Create CIPD client.
-	opts := cipd.ClientOptions{
-		Root:       workdir,
-		ServiceURL: chromeinfra.CIPDServiceURL,
-	}
-	if err := opts.LoadFromEnv(ctx); err != nil {
-		return errors.Annotate(err, "failed to create CIPD client").Err()
-	}
-	client, err := cipd.NewClient(opts)
+	client, err := cipd.NewClientFromEnv(ctx, cipd.ClientOptions{Root: workdir})
 	if err != nil {
 		return errors.Annotate(err, "failed to create CIPD client").Err()
 	}
@@ -267,8 +260,10 @@ func downloadCIPDPackages(ctx context.Context, workdir string, slicesByPath map[
 
 	// Resolve versions.
 	resolver := cipd.Resolver{Client: client}
-	resolved, err := resolver.Resolve(
-		ctx, &ensure.File{ServiceURL: chromeinfra.CIPDServiceURL, PackagesBySubdir: slicesByPath}, template.DefaultExpander())
+	resolved, err := resolver.Resolve(ctx, &ensure.File{
+		ServiceURL:       client.Options().ServiceURL,
+		PackagesBySubdir: slicesByPath,
+	}, template.DefaultExpander())
 	if err != nil {
 		return errors.Annotate(err, "failed to resolve CIPD package versions").Err()
 	}
