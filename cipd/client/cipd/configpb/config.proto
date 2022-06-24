@@ -1,0 +1,53 @@
+// Copyright 2022 The LUCI Authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package cipd.client.config;
+
+option go_package = "go.chromium.org/luci/cipd/client/cipd/configpb";
+
+
+// Schema of a CIPD client configuration file.
+//
+// The configuration file is a text-proto encoded ClientConfig message which
+// CIPD client reads from `/etc/chrome-infra/cipd.cfg` (Linux and OSX) or
+// `C:\chrome-infra\cipd.cfg` (Windows).
+//
+// If there's CIPD_CONFIG_FILE env var present and not empty, it defines where
+// to read the config file from instead. A special value `-` means just to skip
+// reading the default config file.
+//
+// Any explicitly passed CLI flags or `CIPD_*` env vars take precedence over
+// what's in the config file.
+//
+// If the config file is present, but can't be read or parsed, all CIPD client
+// calls will fail.
+message ClientConfig {
+  // Plugins the CIPD client will load.
+  message Plugins {
+    // Admission plugin decides if it's OK to install packages.
+    Plugin admission = 1;
+  }
+  Plugins plugins = 1;
+}
+
+
+// Plugin defines how to execute a plugin subprocess.
+message Plugin {
+  // Path to the plugin binary to execute. Required.
+  string cmd = 1;
+  // Additional command line arguments to pass to the plugin binary, if any.
+  repeated string args = 2;
+}

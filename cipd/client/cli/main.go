@@ -3414,6 +3414,13 @@ func GetApplication(params Parameters) *cli.Application {
 		},
 
 		EnvVars: map[string]subcommands.EnvVarDefinition{
+			cipd.EnvConfigFile: {
+				Advanced: true,
+				ShortDesc: fmt.Sprintf(
+					"Path to a config file to load instead of the default %q. If `-`, just ignore the default config file.",
+					cipd.DefaultConfigFilePath(),
+				),
+			},
 			cipd.EnvHTTPUserAgentPrefix: {
 				Advanced:  true,
 				ShortDesc: "Optional http User-Agent prefix.",

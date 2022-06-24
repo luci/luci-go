@@ -59,6 +59,7 @@ import (
 
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/encoding/prototext"
 
 	"go.chromium.org/luci/auth"
 	"go.chromium.org/luci/common/clock"
@@ -71,6 +72,7 @@ import (
 	"go.chromium.org/luci/hardcoded/chromeinfra"
 
 	api "go.chromium.org/luci/cipd/api/cipd/v1"
+	"go.chromium.org/luci/cipd/client/cipd/configpb"
 	"go.chromium.org/luci/cipd/client/cipd/deployer"
 	"go.chromium.org/luci/cipd/client/cipd/digests"
 	"go.chromium.org/luci/cipd/client/cipd/ensure"
@@ -112,6 +114,7 @@ const (
 
 // Environment variable definitions
 const (
+	EnvConfigFile          = "CIPD_CONFIG_FILE"
 	EnvCacheDir            = "CIPD_CACHE_DIR"
 	EnvHTTPUserAgentPrefix = "CIPD_HTTP_USER_AGENT_PREFIX"
 	EnvMaxThreads          = "CIPD_MAX_THREADS"
@@ -149,7 +152,7 @@ var (
 	// ClientPackage is a package with the CIPD client. Used during self-update.
 	ClientPackage = "infra/tools/cipd/${platform}"
 	// UserAgent is HTTP user agent string for CIPD client.
-	UserAgent = "cipd 2.6.6"
+	UserAgent = "cipd 2.6.7"
 )
 
 func init() {
@@ -343,11 +346,12 @@ type EnsureOptions struct {
 	OverrideInstallMode pkg.InstallMode
 }
 
-// ClientOptions is passed to NewClient factory function.
+// ClientOptions is passed to NewClient and NewClientFromEnv.
 //
-// If you construct options manually, you almost certainly also need to call
-// LoadFromEnv to load unset values from the process environment before passing
-// options to NewClient.
+// If you construct options manually to call NewClient, you almost certainly
+// also need to call LoadFromEnv to load unset values from the process
+// environment and the config file before passing options to NewClient.
+// NewClientFromEnv will do that for you.
 type ClientOptions struct {
 	// ServiceURL is root URL of the backend service.
 	ServiceURL string
@@ -425,9 +429,10 @@ type ClientOptions struct {
 	AdmissionPlugin []string
 
 	// Mocks used by tests.
-	casMock     api.StorageClient
-	repoMock    api.RepositoryClient
-	storageMock storage
+	casMock          api.StorageClient
+	repoMock         api.RepositoryClient
+	storageMock      storage
+	mockedConfigFile string
 }
 
 // LoadFromEnv loads supplied default values from an environment into opts.
@@ -436,6 +441,11 @@ type ClientOptions struct {
 // falling back to the regular process environment as usual (so if you don't
 // need to mess with the process environment, just pass any context, it would
 // work fine).
+//
+// Loads and interprets the configuration file based on `CIPD_CONFIG_FILE` env
+// var (defaulting to `/etc/chrome-infra/cipd.cfg` on Linux/OSX and
+// `C:\chrome-infra\cipd.cfg` on Windows). See configpb/config.proto for the
+// schema.
 func (opts *ClientOptions) LoadFromEnv(ctx context.Context) error {
 	env := environ.FromCtx(ctx)
 
@@ -487,12 +497,82 @@ func (opts *ClientOptions) LoadFromEnv(ctx context.Context) error {
 	if v := env.Get(EnvCIPDServiceURL); v != "" {
 		opts.ServiceURL = v
 	}
+
+	// Load the config from CIPD_CONFIG_FILE if given, falling back to some
+	// default path. When loading based on the env var, the config file *must* be
+	// present. If CIPD_CONFIG_FILE is `-`, just skip loading any configs.
+	configPath := ""
+	allowMissing := false // if true, don't fail if configPath is missing
+	switch pathFromEnv := env.Get(EnvConfigFile); {
+	case pathFromEnv == "-":
+		// just skip setting configPath
+	case pathFromEnv != "":
+		configPath = filepath.Clean(pathFromEnv)
+		if !filepath.IsAbs(configPath) {
+			return fmt.Errorf("bad %s %q: must be an absolute path", EnvConfigFile, pathFromEnv)
+		}
+	default:
+		configPath = DefaultConfigFilePath()
+		if opts.mockedConfigFile != "" {
+			configPath = opts.mockedConfigFile
+		}
+		allowMissing = true
+	}
+
+	if configPath != "" {
+		cfg, err := loadConfigFile(configPath)
+		if err != nil {
+			if !os.IsNotExist(err) || !allowMissing {
+				return errors.Annotate(err, "failed to load CIPD config").Err()
+			}
+			cfg = &configpb.ClientConfig{}
+		} else {
+			logging.Debugf(ctx, "Loaded CIPD config from %q", configPath)
+		}
+		// Pick up the admission plugin from the config only if there's none
+		// defined in the environment.
+		if len(opts.AdmissionPlugin) == 0 {
+			if cfg.GetPlugins().GetAdmission().GetCmd() != "" {
+				opts.AdmissionPlugin = append([]string{cfg.Plugins.Admission.Cmd}, cfg.Plugins.Admission.Args...)
+			}
+		}
+	}
+
 	return nil
 }
 
+// DefaultConfigFilePath is path to the config to load by default.
+func DefaultConfigFilePath() string {
+	if runtime.GOOS == "windows" {
+		return "C:\\chrome-infra\\cipd.cfg"
+	}
+	return "/etc/chrome-infra/cipd.cfg"
+}
+
+// loadConfigFile reads and parses the configuration file.
+func loadConfigFile(path string) (*configpb.ClientConfig, error) {
+	blob, err := ioutil.ReadFile(path)
+	if err != nil {
+		return nil, err
+	}
+
+	// Allow unknown fields, since we don't know what future changes to the config
+	// file will happen and we'll need to keep compatibility with older client
+	// versions.
+	opts := prototext.UnmarshalOptions{
+		DiscardUnknown: true,
+	}
+	cfg := &configpb.ClientConfig{}
+	if err := opts.Unmarshal(blob, cfg); err != nil {
+		return nil, errors.Annotate(err, "can't unmarshal text proto at %s", path).Err()
+	}
+
+	return cfg, nil
+}
+
 // NewClientFromEnv initializes CIPD client using given options and
-// applying settings from the environment on top of them using ClientOptions'
-// LoadFromEnv.
+// applying settings from the environment and the configuration file on top
+// using ClientOptions' LoadFromEnv.
 //
 // This is the preferred method of constructing fully-functioning CIPD clients
 // programmatically.
@@ -534,8 +614,8 @@ func NewClientFromEnv(ctx context.Context, opts ClientOptions) (Client, error) {
 // NewClient initializes CIPD client using given options.
 //
 // This is a relatively low level function that doesn't lookup any environment
-// variables to populate unset fields in ClientOptions and doesn't hardcode
-// and preferences.
+// variables or configuration files to populate unset fields in ClientOptions
+// and doesn't hardcode any preferences.
 //
 // If you just need to construct a simple functioning CIPD client with all
 // defaults based on the environment, use NewClientFromEnv. If you need to

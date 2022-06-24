@@ -20,8 +20,10 @@ import (
 	"fmt"
 	"io/ioutil"
 	"math/rand"
+	"net/http"
 	"os"
 	"path/filepath"
+	"runtime"
 	"sort"
 	"strings"
 	"testing"
@@ -33,6 +35,7 @@ import (
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
+	"go.chromium.org/luci/common/system/environ"
 
 	api "go.chromium.org/luci/cipd/api/cipd/v1"
 	"go.chromium.org/luci/cipd/client/cipd/builder"
@@ -1396,6 +1399,119 @@ func TestMaybeUpdateClient(t *testing.T) {
 // Batch ops.
 
 // TODO
+
+////////////////////////////////////////////////////////////////////////////////
+// Constructing the client.
+
+func TestNewClientFromEnv(t *testing.T) {
+	t.Parallel()
+
+	ctx := context.Background()
+	ctx = environ.New(nil).SetInCtx(ctx)
+
+	Convey("Defaults", t, func() {
+		cl, err := NewClientFromEnv(ctx, ClientOptions{
+			mockedConfigFile: "something-definitely-missing-and-thats-ok.cfg",
+		})
+		So(err, ShouldBeNil)
+
+		opts := cl.Options()
+		So(opts.ServiceURL, ShouldStartWith, "https://")
+		So(opts.Root, ShouldEqual, "")
+		So(opts.CacheDir, ShouldEqual, "")
+		So(opts.Versions, ShouldBeNil)
+		So(opts.AnonymousClient, ShouldEqual, http.DefaultClient)
+		So(opts.AuthenticatedClient, ShouldNotBeNil)
+		So(opts.MaxThreads, ShouldEqual, runtime.NumCPU())
+		So(opts.ParallelDownloads, ShouldEqual, 0) // replaced with DefaultParallelDownloads later
+		So(opts.UserAgent, ShouldEqual, UserAgent)
+		So(opts.LoginInstructions, ShouldNotBeEmpty)
+		So(opts.PluginsContext, ShouldEqual, ctx)
+		So(opts.AdmissionPlugin, ShouldEqual, nil)
+	})
+
+	Convey("With default config file", t, func() {
+		cfg := filepath.Join(t.TempDir(), "cipd.cfg")
+		err := ioutil.WriteFile(cfg, []byte(`
+		plugins: {
+			admission: {
+				cmd: "something"
+				args: "arg 1"
+				args: "arg 2"
+				unrecognized_extra: "zzz"
+				more_extra: {
+					blarg: 123
+				}
+			}
+		}`), 0600)
+		So(err, ShouldBeNil)
+
+		Convey("Without CIPD_CONFIG_FILE", func() {
+			cl, err := NewClientFromEnv(ctx, ClientOptions{mockedConfigFile: cfg})
+			So(err, ShouldBeNil)
+			So(cl.Options().AdmissionPlugin, ShouldResemble, []string{"something", "arg 1", "arg 2"})
+		})
+
+		Convey("With CIPD_CONFIG_FILE", func() {
+			cfg2 := filepath.Join(t.TempDir(), "cipd_2.cfg")
+			err := ioutil.WriteFile(cfg2, []byte(`
+			plugins: {
+				admission: {
+					cmd: "override"
+				}
+			}`), 0600)
+			So(err, ShouldBeNil)
+
+			env := environ.FromCtx(ctx)
+			env.Set(EnvConfigFile, cfg2)
+			ctx := env.SetInCtx(ctx)
+
+			cl, err := NewClientFromEnv(ctx, ClientOptions{mockedConfigFile: cfg})
+			So(err, ShouldBeNil)
+			So(cl.Options().AdmissionPlugin, ShouldResemble, []string{"override"})
+		})
+
+		Convey("CIPD_CONFIG_FILE is empty", func() {
+			env := environ.FromCtx(ctx)
+			env.Set(EnvConfigFile, "")
+			ctx := env.SetInCtx(ctx)
+
+			cl, err := NewClientFromEnv(ctx, ClientOptions{mockedConfigFile: cfg})
+			So(err, ShouldBeNil)
+			So(cl.Options().AdmissionPlugin, ShouldResemble, []string{"something", "arg 1", "arg 2"})
+		})
+
+		Convey("CIPD_CONFIG_FILE is -", func() {
+			env := environ.FromCtx(ctx)
+			env.Set(EnvConfigFile, "-")
+			ctx := env.SetInCtx(ctx)
+
+			cl, err := NewClientFromEnv(ctx, ClientOptions{mockedConfigFile: cfg})
+			So(err, ShouldBeNil)
+			So(cl.Options().AdmissionPlugin, ShouldBeNil)
+		})
+
+		Convey("CIPD_CONFIG_FILE missing", func() {
+			missingAbs, _ := filepath.Abs("something-definitely-missing.cfg")
+
+			env := environ.FromCtx(ctx)
+			env.Set(EnvConfigFile, missingAbs)
+			ctx := env.SetInCtx(ctx)
+
+			_, err := NewClientFromEnv(ctx, ClientOptions{mockedConfigFile: cfg})
+			So(err, ShouldErrLike, "failed to load CIPD config")
+		})
+
+		Convey("CIPD_CONFIG_FILE is not absolute", func() {
+			env := environ.FromCtx(ctx)
+			env.Set(EnvConfigFile, "relative-not-allowed")
+			ctx := env.SetInCtx(ctx)
+
+			_, err := NewClientFromEnv(ctx, ClientOptions{mockedConfigFile: cfg})
+			So(err, ShouldErrLike, "must be an absolute path")
+		})
+	})
+}
 
 ////////////////////////////////////////////////////////////////////////////////
 
