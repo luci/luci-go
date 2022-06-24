@@ -144,7 +144,7 @@ export class TestHistoryDetailsEntryElement extends MobxLitElement implements Re
     if (!this.verdictBundle.verdict.partitionTime) {
       return null;
     }
-    return DateTime.fromISO(this.verdictBundle.verdict.partitionTime);
+    return DateTime.fromISO(this.verdictBundle.verdict.partitionTime).toUTC();
   }
 
   @computed private get invocationUrl() {
