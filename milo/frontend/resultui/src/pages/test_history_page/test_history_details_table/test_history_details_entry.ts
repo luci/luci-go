@@ -151,9 +151,9 @@ export class TestHistoryDetailsEntryElement extends MobxLitElement implements Re
     const invId = this.verdictBundle.verdict.invocationId;
     const match = invId.match(/^build-(?<id>\d+)/);
     if (!match) {
-      return router.urlForName('invocation', { invocation_id: invId });
+      return router.urlForName('invocation-test-results', { invocation_id: invId });
     }
-    return router.urlForName('build-short-link', { build_id: match.groups!['id'] });
+    return router.urlForName('build-short-link', { build_id: match.groups!['id'], path: ['test-results'] });
   }
 
   private renderBody() {
