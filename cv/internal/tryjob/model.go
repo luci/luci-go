@@ -120,6 +120,9 @@ type Tryjob struct {
 	//
 	// Sorted and Indexed.
 	CLPatchsets CLPatchsets
+
+	// UntriggeredReason is the reason why LUCI CV doesn't trigger the Tryjob.
+	UntriggeredReason string
 }
 
 // tryjobMap is intended to quickly determine if a given ExternalID is

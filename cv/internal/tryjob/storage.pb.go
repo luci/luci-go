@@ -72,9 +72,6 @@ const (
 	//
 	// This status is an implementation detail of CV, used for Tryjobs which
 	// weren't actually triggered.
-	//
-	// TODO(crbug/1227363): add a field to the Tryjob model to record reason for
-	// this status, notably to record permission denied errors.
 	Status_UNTRIGGERED Status = 5
 )
 

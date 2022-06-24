@@ -16,7 +16,11 @@ package execute
 
 import (
 	"fmt"
+	"sort"
+	"strconv"
 	"strings"
+
+	bbutil "go.chromium.org/luci/buildbucket/protoutil"
 
 	cfgpb "go.chromium.org/luci/cv/api/config/v2"
 	"go.chromium.org/luci/cv/internal/tryjob"
@@ -45,6 +49,60 @@ func composeReason(tryjobs []*tryjob.Tryjob) string {
 				sb.WriteString(line)
 			}
 		}
+	}
+	return sb.String()
+}
+
+func composeLaunchFailureReason(launchFailures map[*tryjob.Definition]string) string {
+	if len(launchFailures) == 0 {
+		panic(fmt.Errorf("expected non-empty launch failures"))
+	}
+	if len(launchFailures) == 1 { // optimize for most common case
+		for def, reason := range launchFailures {
+			switch {
+			case def.GetBuildbucket() == nil:
+				panic(fmt.Errorf("non Buildbucket backend is not supported. got %T", def.GetBackend()))
+			case def.GetResultVisibility() == cfgpb.CommentLevel_COMMENT_LEVEL_RESTRICTED:
+				// TODO(crbug/1302119): Replace terms like "Project admin" with
+				// dedicated contact sourced from Project Config.
+				return "Failed to launch one tryjob. The tryjob name can't be shown due to configuration. Please contact your Project admin for help."
+			default:
+				builderName := bbutil.FormatBuilderID(def.GetBuildbucket().GetBuilder())
+				return fmt.Sprintf("Failed to launch tryjob `%s`. Reason: %s", builderName, reason)
+			}
+		}
+	}
+
+	var sb strings.Builder
+	sb.WriteString("Failed to launch the following tryjobs:")
+	var restrictedCnt int
+	lines := make([]string, 0, len(launchFailures))
+	for def, reason := range launchFailures {
+		if def.GetResultVisibility() == cfgpb.CommentLevel_COMMENT_LEVEL_RESTRICTED {
+			restrictedCnt++
+			continue
+		}
+		lines = append(lines, fmt.Sprintf("* `%s`; Failure reason: %s", bbutil.FormatBuilderID(def.GetBuildbucket().GetBuilder()), reason))
+	}
+	sort.Strings(lines) // for determinism
+	for _, l := range lines {
+		sb.WriteRune('\n')
+		sb.WriteString(l)
+	}
+
+	switch {
+	case restrictedCnt == len(launchFailures):
+		// TODO(crbug/1302119): Replace terms like "Project admin" with
+		// dedicated contact sourced from Project Config.
+		return fmt.Sprintf("Failed to launch %d tryjobs. The tryjob names can't be shown due to configuration. Please contact your Project admin for help.", restrictedCnt)
+	case restrictedCnt > 0:
+		sb.WriteString("\n\nIn addition to the tryjobs above, failed to launch ")
+		sb.WriteString(strconv.Itoa(restrictedCnt))
+		sb.WriteString(" tryjob")
+		if restrictedCnt > 1 {
+			sb.WriteString("s")
+		}
+		sb.WriteString(". But the tryjob names can't be shown due to configuration. Please contact your Project admin for help.")
 	}
 	return sb.String()
 }

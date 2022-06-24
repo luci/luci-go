@@ -324,7 +324,7 @@ func handleRequirementChange(curReqmt, targetReqmt *tryjob.Requirement, execStat
 	return ret, nil
 }
 
-// execute executes the plan and mutate the state.
+// executePlan executes the plan and mutate the state.
 //
 // Returns side effect that should be executed in the same transaction to save
 // the new state.
@@ -332,5 +332,111 @@ func (e *Executor) executePlan(ctx context.Context, p *plan, r *run.Run, execSta
 	if p.isEmpty() {
 		return nil, nil
 	}
-	return nil, errors.New("not implemented")
+	var sideEffect func(context.Context) error
+	if len(p.discard) > 0 {
+		// TODO(crbug/1323597): cancel the tryjobs because they are no longer
+		// useful.
+		// TODO(yiwzhang): emit a log that these tryjobs are discarded.
+		for _, item := range p.discard {
+			logging.Infof(ctx, "discard tryjob %s; reason: %s", item.definition, item.discardReason)
+		}
+	}
+
+	if len(p.triggerNewAttempt) > 0 {
+		definitions := make([]*tryjob.Definition, len(p.triggerNewAttempt))
+		executions := make([]*tryjob.ExecutionState_Execution, len(p.triggerNewAttempt))
+		for i, item := range p.triggerNewAttempt {
+			definitions[i] = item.definition
+			executions[i] = item.execution
+		}
+
+		tryjobs, err := e.startTryjobs(ctx, r, definitions, executions)
+		if err != nil {
+			return nil, err
+		}
+
+		var criticalLaunchFailures map[*tryjob.Definition]string
+		var endedTryjobs []*tryjob.Tryjob
+		for i, tj := range tryjobs {
+			exec := executions[i]
+			attempt := convertToAttempt(tj, r.ID)
+			exec.Attempts = append(exec.Attempts, attempt)
+			def := definitions[i]
+			switch status := attempt.Status; {
+			case status == tryjob.Status_ENDED:
+				endedTryjobs = append(endedTryjobs, tj)
+			case status == tryjob.Status_UNTRIGGERED && def.Critical:
+				if criticalLaunchFailures == nil {
+					criticalLaunchFailures = make(map[*tryjob.Definition]string)
+				}
+				criticalLaunchFailures[def] = tj.UntriggeredReason
+			}
+		}
+
+		if len(criticalLaunchFailures) > 0 {
+			execState.Status = tryjob.ExecutionState_FAILED
+			execState.FailureReason = composeLaunchFailureReason(criticalLaunchFailures)
+			return nil, nil
+		}
+		if len(endedTryjobs) > 0 {
+			// For simplification, notify all Runs (including this run) about the
+			// ended Tryjobs rather than processing it immediately.
+			sideEffect = makeNotifyTryjobsUpdatedFn(ctx, endedTryjobs, e.RM)
+		}
+	}
+	return sideEffect, nil
+}
+
+func convertToAttempt(tj *tryjob.Tryjob, id common.RunID) *tryjob.ExecutionState_Execution_Attempt {
+	ret := &tryjob.ExecutionState_Execution_Attempt{
+		TryjobId:   int64(tj.ID),
+		ExternalId: string(tj.ExternalID),
+		Status:     tj.Status,
+		Result:     tj.Result,
+	}
+	for _, runID := range tj.ReusedBy {
+		if runID == id {
+			ret.Reused = true
+			break
+		}
+	}
+	return ret
+}
+
+// makeNotifyTryjobsUpdatedFn computes the runs interested in the given
+// tryjobs and returns a closure that notifies the runs about updates on
+// their interested tryjobs.
+func makeNotifyTryjobsUpdatedFn(ctx context.Context, tryjobs []*tryjob.Tryjob, rm rm) func(context.Context) error {
+	notifyTargets := make(map[common.RunID]common.TryjobIDs)
+	addToNotifyTargets := func(runID common.RunID, tjID common.TryjobID) {
+		if _, ok := notifyTargets[runID]; !ok {
+			notifyTargets[runID] = make(common.TryjobIDs, 0, 1)
+		}
+		notifyTargets[runID] = append(notifyTargets[runID], tjID)
+	}
+	for _, tj := range tryjobs {
+		if tj.TriggeredBy != "" {
+			addToNotifyTargets(tj.TriggeredBy, tj.ID)
+		}
+		for _, reuseRun := range tj.ReusedBy {
+			addToNotifyTargets(reuseRun, tj.ID)
+		}
+	}
+
+	return func(ctx context.Context) error {
+		for run, tjIDs := range notifyTargets {
+			events := &tryjob.TryjobUpdatedEvents{
+				Events: make([]*tryjob.TryjobUpdatedEvent, tjIDs.Len()),
+			}
+			for i, tjID := range tjIDs {
+				events.Events[i] = &tryjob.TryjobUpdatedEvent{
+					TryjobId: int64(tjID),
+				}
+			}
+			if err := rm.NotifyTryjobsUpdated(ctx, run, events); err != nil {
+				return errors.Annotate(err, "failed to notify tryjobs updated").Tag(transient.Tag).Err()
+			}
+		}
+		return nil
+	}
 }
