@@ -448,8 +448,8 @@ func (s *hostServer) Log(ctx context.Context, req *protocol.LogRequest) (*emptyp
 	// Note: `ctx` here is a bare gRPC context without any loggers. Use the plugin
 	// context instead.
 	lvl := logging.Info
-	lvl.Set(req.Severity)
-	logging.Logf(plugin.ctx, lvl, "%s: %s", plugin.name, req.Message)
+	_ = lvl.Set(req.Severity)
+	logging.Logf(plugin.ctx, lvl, "Plugin %q: %s", plugin.name, req.Message)
 
 	return &emptypb.Empty{}, nil
 }

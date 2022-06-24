@@ -82,6 +82,9 @@ type AdmissionPlugin interface {
 	// terminates. The plugin subprocess will be terminated by the host in this
 	// case.
 	Close(ctx context.Context)
+
+	// Executable is a path to this plugin's executable.
+	Executable() string
 }
 
 // Promise can be used to wait for a status of a check.

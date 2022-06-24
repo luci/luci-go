@@ -1850,6 +1850,9 @@ func (c *clientImpl) EnsurePackages(ctx context.Context, allPins common.PinSlice
 	// be consulted later before unzipping fetched instances. This is just an
 	// optimization to do checks in parallel with fetching and installing.
 	if c.pluginAdmission != nil {
+		if !realOpts.Silent {
+			logging.Infof(ctx, "Using admission plugin %s", c.pluginAdmission.Executable())
+		}
 		defer c.doBatchAwareOp(ctx, batchAwareOpClearAdmissionCache)
 		for _, a := range perPinActions.updates {
 			c.pluginAdmission.CheckAdmission(a.pin)
@@ -1862,28 +1865,43 @@ func (c *clientImpl) EnsurePackages(ctx context.Context, allPins common.PinSlice
 	// The state carried through the fetch task queue. Describes what needs to be
 	// done once a package is fetched.
 	type pinActionsState struct {
-		ctx      context.Context    // the installation activity context
-		done     context.CancelFunc // called once the unzipping is done
-		pin      common.Pin         // the pin we are fetching
-		updates  []pinAction        // what to do with it when we get it
-		attempts int                // incremented on a retry after detecting a corruption
+		checkCtx  context.Context    // the admission check context, if have it
+		checkDone context.CancelFunc // called once the admission check is done
+		unzipCtx  context.Context    // the installation activity context
+		unzipDone context.CancelFunc // called once the unzipping is done
+		pin       common.Pin         // the pin we are fetching
+		updates   []pinAction        // what to do with it when we get it
+		attempts  int                // incremented on a retry after detecting a corruption
 	}
 
-	// Start fetching all packages we will need.
+	// Start fetching all packages we will need. Need pre-populate all activities
+	// in advance to allow `activities` group to calculate total number of them.
 	reqs := make([]*internal.InstanceRequest, len(perPinActions.updates))
 	for i, a := range perPinActions.updates {
 		fetchCtx, fetchDone := ui.NewActivity(ctx, activities, "fetch")
 		unzipCtx, unzipDone := ui.NewActivity(ctx, activities, "unzip")
+
+		// Admission checks can potentially take some time, initialize an activity
+		// for them. Use `check` since it has the same number of letters as
+		// `fetch` and `unzip` so logs line up nicely.
+		var checkCtx context.Context
+		var checkDone context.CancelFunc
+		if c.pluginAdmission != nil {
+			checkCtx, checkDone = ui.NewActivity(ctx, activities, "check")
+		}
+
 		reqs[i] = &internal.InstanceRequest{
 			Context: fetchCtx,
 			Done:    fetchDone,
 			Pin:     a.pin,
 			Open:    true, // want pkg.Instance, not just pkg.Source
 			State: pinActionsState{
-				ctx:     unzipCtx,
-				done:    unzipDone,
-				pin:     a.pin,
-				updates: a.updates,
+				checkCtx:  checkCtx,
+				checkDone: checkDone,
+				unzipCtx:  unzipCtx,
+				unzipDone: unzipDone,
+				pin:       a.pin,
+				updates:   a.updates,
 			},
 		}
 	}
@@ -1919,23 +1937,32 @@ func (c *clientImpl) EnsurePackages(ctx context.Context, allPins common.PinSlice
 	for cache.HasPendingFetches() {
 		res := cache.WaitInstance()
 		state := res.State.(pinActionsState)
-		unzipCtx := state.ctx // the installation activity context
-		unzipDone := state.done
+		checkCtx := state.checkCtx
+		checkDone := state.checkDone
+		unzipCtx := state.unzipCtx
+		unzipDone := state.unzipDone
 		deployErr := res.Err
 
-		// Check if we are even allowed to install this package. Note that
-		// CheckAdmission results are cached internally and it is fine to call
-		// it multiple times with the same pin (which may happen if we are
-		// refetching a corrupted package).
-		if deployErr == nil && c.pluginAdmission != nil {
-			admErr := c.pluginAdmission.CheckAdmission(state.pin).Wait(unzipCtx)
+		// Check if we are even allowed to install this package. Here `checkCtx` is
+		// non-nil only if we have an admission plugin and it is a first attempt at
+		// installing this particular pin. If admission fails, there'll be no
+		// further attempts. If it succeeds, there's no need to recheck it again
+		// on a retry.
+		if checkCtx != nil {
+			logging.Infof(checkCtx, "Checking if the package is admitted for installation")
+			admErr := c.pluginAdmission.CheckAdmission(state.pin).Wait(checkCtx)
 			if admErr != nil {
 				if status, ok := status.FromError(admErr); ok && status.Code() == codes.FailedPrecondition {
 					deployErr = errors.Reason("not admitted: %s", status.Message()).Err()
+					logging.Errorf(checkCtx, "Not admitted: %s", status.Message())
 				} else {
-					deployErr = errors.Annotate(admErr, "admission check failed").Err()
+					deployErr = errors.Annotate(admErr, "admission check failed unexpectedly").Err()
+					logging.Errorf(checkCtx, "Admission check failed unexpectedly: %s", admErr)
 				}
+			} else {
+				logging.Infof(checkCtx, "Admission check passed")
 			}
+			checkDone()
 		}
 
 		// Keep installing stuff as long as it keeps working (no errors).
@@ -1979,6 +2006,10 @@ func (c *clientImpl) EnsurePackages(ctx context.Context, allPins common.PinSlice
 			refetchCtx, refetchDone := ui.NewActivity(ctx, activities, "refetch")
 			reunzipCtx, reunzipDone := ui.NewActivity(ctx, activities, "reunzip")
 
+			// Note: no checkCtx and checkDone here, since we have already did the
+			// admission check, it passed, and we don't need an activity for it
+			// anymore.
+
 			cache.RequestInstances([]*internal.InstanceRequest{
 				{
 					Context: refetchCtx,
@@ -1986,11 +2017,11 @@ func (c *clientImpl) EnsurePackages(ctx context.Context, allPins common.PinSlice
 					Pin:     state.pin,
 					Open:    true,
 					State: pinActionsState{
-						ctx:      reunzipCtx,
-						done:     reunzipDone,
-						pin:      state.pin,
-						updates:  state.updates[actionIdx:],
-						attempts: state.attempts + 1,
+						unzipCtx:  reunzipCtx,
+						unzipDone: reunzipDone,
+						pin:       state.pin,
+						updates:   state.updates[actionIdx:],
+						attempts:  state.attempts + 1,
 					},
 				},
 			})

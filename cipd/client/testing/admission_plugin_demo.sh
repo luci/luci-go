@@ -101,7 +101,7 @@ cipd pkg-register "$STAGING/c.cipd" \
 
 # Disable any active plugins (if any) for the following check.
 export CIPD_ADMISSION_PLUGIN=
-
+export CIPD_CONFIG_FILE="-"
 
 # Verify all packages can be installed when *not* using admission checks.
 banner "Installing without admission checks, should succeed"

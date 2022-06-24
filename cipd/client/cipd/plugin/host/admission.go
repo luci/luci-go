@@ -138,6 +138,11 @@ func NewAdmissionPlugin(ctx context.Context, host *Host, args []string) *Admissi
 	}
 }
 
+// Executable is a path to this plugin's executable.
+func (p *AdmissionPlugin) Executable() string {
+	return p.args[0]
+}
+
 // Close terminates the plugin (if it was running) and aborts all pending
 // checks.
 //
