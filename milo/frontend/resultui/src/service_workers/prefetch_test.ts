@@ -82,7 +82,7 @@ describe('prefetch', () => {
     const requestedUrls = fetchStub.getCalls().map((c) => new Request(...c.args).url);
     assert.strictEqual(requestedUrls.length, 4);
     assert.includeMembers(requestedUrls, [
-      `http://${self.location.host}/auth-state`,
+      `${self.location.origin}/auth-state`,
       `https://${CONFIGS.BUILDBUCKET.HOST}/prpc/buildbucket.v2.Builds/GetBuild`,
       `https://${CONFIGS.RESULT_DB.HOST}/prpc/luci.resultdb.v1.ResultDB/GetInvocation`,
       `https://${CONFIGS.RESULT_DB.HOST}/prpc/luci.resultdb.v1.ResultDB/QueryTestVariants`,
@@ -94,9 +94,9 @@ describe('prefetch', () => {
       request: new Request(...fetchInterceptor.getCall(0).args),
       respondWith: respondWithStub,
     } as Partial<FetchEvent> as FetchEvent);
+    assert.isTrue(cacheHit);
     let cachedRes = await respondWithStub.getCall(0).args[0];
 
-    assert.isTrue(cacheHit);
     assert.strictEqual(cachedRes, authResponse);
     assert.strictEqual(fetchStub.callCount, 4);
 
@@ -165,7 +165,7 @@ describe('prefetch', () => {
     const requestedUrls = fetchStub.getCalls().map((c) => new Request(...c.args).url);
     assert.strictEqual(requestedUrls.length, 4);
     assert.includeMembers(requestedUrls, [
-      `http://${self.location.host}/auth-state`,
+      `${self.location.origin}/auth-state`,
       `https://${CONFIGS.BUILDBUCKET.HOST}/prpc/buildbucket.v2.Builds/GetBuild`,
       `https://${CONFIGS.RESULT_DB.HOST}/prpc/luci.resultdb.v1.ResultDB/GetInvocation`,
       `https://${CONFIGS.RESULT_DB.HOST}/prpc/luci.resultdb.v1.ResultDB/QueryTestVariants`,
@@ -247,7 +247,7 @@ describe('prefetch', () => {
     const requestedUrls = fetchStub.getCalls().map((c) => new Request(...c.args).url);
     assert.strictEqual(requestedUrls.length, 2);
     assert.includeMembers(requestedUrls, [
-      `http://${self.location.host}/auth-state`,
+      `${self.location.origin}/auth-state`,
       `https://${CONFIGS.RESULT_DB.HOST}/prpc/luci.resultdb.v1.ResultDB/GetArtifact`,
     ]);
 
