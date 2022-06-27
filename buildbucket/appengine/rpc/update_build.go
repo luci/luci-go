@@ -344,7 +344,8 @@ func checkBuildForUpdate(updateMask *mask.Mask, req *pb.UpdateBuildRequest, buil
 func updateEntities(ctx context.Context, req *pb.UpdateBuildRequest, parentID int64, updateMask *mask.Mask, steps *model.BuildSteps) (*model.Build, error) {
 	var b *model.Build
 	var origStatus pb.Status
-	buildCanceled := false // Flag for if the cancel process starts for the build.
+	// Flag for should cancel this build's children or not.
+	shouldCancelChildren := false
 
 	// Get parent at the outside of the transaction.
 	// Because if a build has too many children, we may hit "concurrent transaction"
@@ -355,7 +356,7 @@ func updateEntities(ctx context.Context, req *pb.UpdateBuildRequest, parentID in
 	}
 
 	txErr := datastore.RunInTransaction(ctx, func(ctx context.Context) error {
-		buildCanceled = false
+		shouldCancelChildren = false
 		var err error
 		b, err = getBuild(ctx, req.Build.Id)
 		if err != nil {
@@ -421,6 +422,7 @@ func updateEntities(ctx context.Context, req *pb.UpdateBuildRequest, parentID in
 			}
 		case isEndedStatus:
 			b.ClearLease()
+			shouldCancelChildren = true
 			bqTask := &taskdefs.ExportBigQuery{BuildId: b.ID}
 			invTask := &taskdefs.FinalizeResultDB{BuildId: b.ID}
 			err := parallel.FanOutIn(func(tks chan<- func() error) {
@@ -455,7 +457,7 @@ func updateEntities(ctx context.Context, req *pb.UpdateBuildRequest, parentID in
 				if err := tasks.ScheduleCancelBuildTask(ctx, b.ID, b.Proto.GracePeriod.AsDuration()); err != nil {
 					return appstatus.Errorf(codes.Internal, "failed to schedule CancelBuildTask for build %d: %s", b.ID, err)
 				}
-				buildCanceled = true
+				shouldCancelChildren = true
 			}
 		}
 
@@ -514,7 +516,7 @@ func updateEntities(ctx context.Context, req *pb.UpdateBuildRequest, parentID in
 	}
 
 	// Cancel children.
-	if buildCanceled {
+	if shouldCancelChildren {
 		if err := tasks.CancelChildren(ctx, b.ID); err != nil {
 			// Failures of canceling children should not block updating parent.
 			logging.Debugf(ctx, "failed to cancel children of %d: %s", b.ID, err)

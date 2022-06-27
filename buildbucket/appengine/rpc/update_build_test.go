@@ -1098,7 +1098,6 @@ func TestUpdateBuild(t *testing.T) {
 				})
 
 				Convey("build is being canceled", func() {
-					// Child of the requested build.
 					So(datastore.Put(ctx, &model.Build{
 						ID: 13,
 						Proto: &pb.Build{
@@ -1143,6 +1142,44 @@ func TestUpdateBuild(t *testing.T) {
 					So(build.CancelTime.AsTime(), ShouldEqual, t0.Add(-time.Minute))
 					So(build.SummaryMarkdown, ShouldEqual, "new summary")
 					So(sch.Tasks(), ShouldBeEmpty)
+				})
+
+				Convey("build is ended, should cancel children", func() {
+					So(datastore.Put(ctx, &model.Build{
+						ID: 20,
+						Proto: &pb.Build{
+							Id: 20,
+							Builder: &pb.BuilderID{
+								Project: "project",
+								Bucket:  "bucket",
+								Builder: "builder",
+							},
+						},
+						UpdateToken: tk,
+					}), ShouldBeNil)
+					// Child of the requested build.
+					So(datastore.Put(ctx, &model.Build{
+						ID: 21,
+						Proto: &pb.Build{
+							Id: 21,
+							Builder: &pb.BuilderID{
+								Project: "project",
+								Bucket:  "bucket",
+								Builder: "builder",
+							},
+							AncestorIds:      []int64{20},
+							CanOutliveParent: false,
+						},
+					}), ShouldBeNil)
+					req.Build.Id = 20
+					req.Build.Status = pb.Status_INFRA_FAILURE
+					req.UpdateMask.Paths[0] = "build.status"
+					_, err := srv.UpdateBuild(ctx, req)
+					So(err, ShouldBeRPCOK)
+
+					child, err := getBuild(ctx, 21)
+					So(err, ShouldBeNil)
+					So(child.Proto.CancelTime, ShouldNotBeNil)
 				})
 			})
 		})
