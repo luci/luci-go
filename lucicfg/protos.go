@@ -108,7 +108,7 @@ func init() {
 		"go.chromium.org/luci/common/proto/config/project_config.proto",
 		"go.chromium.org/luci/common/proto/realms/realms_config.proto",
 		"go.chromium.org/luci/cv/api/config/legacy/tricium.proto",
-		"go.chromium.org/luci/cv/api/config/v2/cq.proto",
+		"go.chromium.org/luci/cv/api/config/v2/config.proto",
 		"go.chromium.org/luci/logdog/api/config/svcconfig/project.proto",
 		"go.chromium.org/luci/luci_notify/api/config/notify.proto",
 		"go.chromium.org/luci/milo/api/config/project.proto",

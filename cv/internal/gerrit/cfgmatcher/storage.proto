@@ -32,7 +32,7 @@ message Groups {
 
 // Group represents one config group applied to just 1 Git repository.
 //
-// For full documentation, see ConfigGroup of api/config/v2/cq.proto.
+// For full documentation, see ConfigGroup of api/config/v2/config.proto.
 message Group {
   // ConfigGroupID, as stored in ConfigGroup datastore entity.
   //

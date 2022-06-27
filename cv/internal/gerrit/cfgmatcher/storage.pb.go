@@ -90,7 +90,7 @@ func (x *Groups) GetGroups() []*Group {
 
 // Group represents one config group applied to just 1 Git repository.
 //
-// For full documentation, see ConfigGroup of api/config/v2/cq.proto.
+// For full documentation, see ConfigGroup of api/config/v2/config.proto.
 type Group struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache

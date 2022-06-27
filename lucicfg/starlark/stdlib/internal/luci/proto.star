@@ -28,7 +28,7 @@ load("@proto//go.chromium.org/luci/buildbucket/proto/project_config.proto", _bui
 load("@proto//go.chromium.org/luci/common/proto/config/project_config.proto", _config_pb = "config")
 load("@proto//go.chromium.org/luci/common/proto/realms/realms_config.proto", _realms_pb = "auth_service")
 load("@proto//go.chromium.org/luci/cv/api/config/legacy/tricium.proto", _tricium_pb = "cv.legacy.tricium")
-load("@proto//go.chromium.org/luci/cv/api/config/v2/cq.proto", _cq_pb = "cv.config")
+load("@proto//go.chromium.org/luci/cv/api/config/v2/config.proto", _cq_pb = "cv.config")
 load("@proto//go.chromium.org/luci/logdog/api/config/svcconfig/project.proto", _logdog_pb = "svcconfig")
 load("@proto//go.chromium.org/luci/logdog/api/config/svcconfig/cloud_logging.proto", _logdog_cloud_logging_pb = "svcconfig")
 load("@proto//go.chromium.org/luci/luci_notify/api/config/notify.proto", _notify_pb = "notify")

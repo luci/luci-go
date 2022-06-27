@@ -23,7 +23,7 @@ import "google/protobuf/timestamp.proto";
 import "go.chromium.org/luci/buildbucket/proto/builder_common.proto";
 import "go.chromium.org/luci/buildbucket/proto/common.proto";
 
-import "go.chromium.org/luci/cv/api/config/v2/cq.proto";
+import "go.chromium.org/luci/cv/api/config/v2/config.proto";
 import "go.chromium.org/luci/cv/api/recipe/v1/cq.proto";
 
 // Definition defines what a Tryjob should do.
