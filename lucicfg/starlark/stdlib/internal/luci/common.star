@@ -162,6 +162,8 @@ kinds = struct(
     NOTIFY = "luci.notify",
     NOTIFIABLE = "luci.notifiable",  # either luci.notifier or luci.tree_closer
     NOTIFIER_TEMPLATE = "luci.notifier_template",
+    SHADOWED_BUCKET = "luci.shadowed_bucket",
+    SHADOW_OF = "luci.shadow_of",
 
     # Internal nodes (declared internally as dependency of other nodes).
     BUILDER_REF = "luci.builder_ref",
@@ -198,6 +200,8 @@ keys = struct(
     notify = lambda: _namespaced_key(kinds.NOTIFY, "..."),
     notifiable = lambda ref: _project_scoped_key(kinds.NOTIFIABLE, "notifies", ref),
     notifier_template = lambda ref: _project_scoped_key(kinds.NOTIFIER_TEMPLATE, "template", ref),
+    shadowed_bucket = lambda bucket_key: _namespaced_key(kinds.SHADOWED_BUCKET, bucket_key.id),
+    shadow_of = lambda bucket_key: _namespaced_key(kinds.SHADOW_OF, bucket_key.id),
 
     # Internal nodes (declared internally as dependency of other nodes).
     builder_ref = _builder_ref_key,

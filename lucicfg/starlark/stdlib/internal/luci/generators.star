@@ -310,6 +310,7 @@ def gen_buildbucket_cfg(ctx):
             name = bucket.props.name,
             acls = _buildbucket_acls(get_bucket_acls(bucket)),
             swarming = _buildbucket_builders(bucket),
+            shadow = _buildbucket_shadow(bucket),
         ))
 
 def _buildbucket_acls(elementary):
@@ -458,6 +459,13 @@ def _buildbucket_toggle(val):
     if val == None:
         return buildbucket_pb.UNSET
     return buildbucket_pb.YES if val else buildbucket_pb.NO
+
+def _buildbucket_shadow(bucket):
+    """luci.bucket(...) node => str for buildbucket_pb.Shadow field."""
+    shadow = graph.node(keys.shadow_of(bucket.key))
+    if shadow:
+        return shadow.props.shadow
+    return None
 
 ################################################################################
 ## scheduler.cfg.

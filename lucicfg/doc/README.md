@@ -1291,6 +1291,7 @@ luci.bucket(
     acls = None,
     extends = None,
     bindings = None,
+    shadows = None,
 )
 ```
 
@@ -1308,6 +1309,7 @@ this bucket and all resources these builds produce. See [luci.realm(...)](#luci.
 * **acls**: list of [acl.entry(...)](#acl.entry) objects. Being gradually replaced by [luci.binding(...)](#luci.binding) in `bindings`.
 * **extends**: a reference or a list of references to realms to inherit permission from. Note that buckets themselves are realms for this purpose. Optional. Default (and implicit) is `@root`.
 * **bindings**: a list of [luci.binding(...)](#luci.binding) to add to the bucket's realm. Will eventually replace `acls`.
+* **shadows**: one or a list of bucket names that this bucket shadows. It means that when triggering a led build for the listed buckets (shadowed buckets), Buildbucket will replace the bucket of the led build with this one (shadowing bucket). Note that this is a part of the new led process (WIP) so it's not in use at the moment. TODO(crbug.com/1114804): update the docstring when we start to use shadow.
 
 
 

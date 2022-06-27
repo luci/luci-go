@@ -28,7 +28,8 @@ def _bucket(
         name = None,
         acls = None,
         extends = None,
-        bindings = None):
+        bindings = None,
+        shadows = None):
     """Defines a bucket: a container for LUCI builds.
 
     This rule also implicitly defines the realm to use for the builds in this
@@ -45,6 +46,13 @@ def _bucket(
         purpose. Optional. Default (and implicit) is `@root`.
       bindings: a list of luci.binding(...) to add to the bucket's realm.
         Will eventually replace `acls`.
+      shadows: one or a list of bucket names that this bucket shadows.
+        It means that when triggering a led build for the listed buckets
+        (shadowed buckets), Buildbucket will replace the bucket of the led
+        build with this one (shadowing bucket).
+        Note that this is a part of the new led process (WIP) so it's not in use
+        at the moment.
+        TODO(crbug.com/1114804): update the docstring when we start to use shadow.
     """
     name = validate.string("name", name)
     if name.startswith("luci."):
@@ -60,6 +68,26 @@ def _bucket(
     # Convert legacy `acls` entries into binding(...) too.
     bindings = bindings[:] if bindings else []
     bindings.extend([binding(**d) for d in aclimpl.binding_dicts(acls)])
+
+    # This node will be used by `shadows` relation below to represent the
+    # shadowed bucket. We can't use luci.bucket(...) node directly since buckets
+    # can be shadows of themselves and using luci.bucket(...) would introduce
+    # a forbidden dependency cycle.
+    graph.add_node(keys.shadowed_bucket(key))
+
+    # Add shadow to the shadowed bucket.
+    if shadows != None:
+        if type(shadows) != "list":
+            shadows = [shadows]
+        for shadowed in shadows:
+            shadowed = keys.bucket(shadowed)
+
+            # Use a non-idempotent node to make sure we have only one shadow
+            # associated with `shadows`.
+            graph.add_node(keys.shadow_of(shadowed), props = {"shadow": name})
+
+            # Use an edge to make sure that `shadows` bucket is actually defined.
+            graph.add_edge(key, keys.shadowed_bucket(shadowed), title = "shadows")
 
     # Define the realm and grab its keyset.
     realm_ref = realm(
