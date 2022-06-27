@@ -61,7 +61,7 @@ func TestResolveSelf(t *testing.T) {
 		}
 
 		Convey(`Will resolve our executable.`, func() {
-			So(probe.ResolveSelf(""), ShouldBeNil)
+			So(probe.ResolveSelf(), ShouldBeNil)
 			So(probe.Self, ShouldEqual, realExec)
 			So(os.SameFile(probe.SelfStat, realExecStat), ShouldBeTrue)
 		})
@@ -73,8 +73,8 @@ func TestResolveSelf(t *testing.T) {
 				return
 			}
 
-			So(probe.ResolveSelf(symSelf), ShouldBeNil)
-			So(probe.Self, ShouldEqual, symSelf)
+			So(probe.ResolveSelf(), ShouldBeNil)
+			So(probe.Self, ShouldEqual, realExec)
 			So(os.SameFile(probe.SelfStat, realExecStat), ShouldBeTrue)
 		})
 	})

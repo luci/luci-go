@@ -228,7 +228,7 @@ func (a *application) mainImpl(c context.Context, argv0 string, args []string) e
 		},
 		env: a.opts.Environ,
 	}
-	if err := lp.probeBase.ResolveSelf(argv0); err != nil {
+	if err := lp.probeBase.ResolveSelf(); err != nil {
 		logging.WithError(err).Warningf(c, "Failed to resolve 'self'")
 	}
 	a.opts.EnvConfig.LookPathFunc = lp.look

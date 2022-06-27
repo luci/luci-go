@@ -23,6 +23,7 @@ import (
 	"context"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 
 	"go.chromium.org/luci/common/errors"
@@ -84,9 +85,9 @@ type Probe struct {
 // Self will be set to an absolute path reference to Self, and its SelfStat
 // field will be set to the os.FileInfo for that path.
 //
-// If this process was invoked via symlink, the path to the symlink will be
-// returned if possible.
-func (p *Probe) ResolveSelf(argv0 string) error {
+// If this process was invoked via symlink, the fully resolved path will be
+// returned, except on Windows, where no guarantee is made.
+func (p *Probe) ResolveSelf() error {
 	if p.Self != "" {
 		return nil
 	}
@@ -97,20 +98,18 @@ func (p *Probe) ResolveSelf(argv0 string) error {
 		return errors.Annotate(err, "failed to get executable").Err()
 	}
 
+	// Make sure the path has all symlinks resolved.
+	// Skip EvalSymlinks for windows because it is broken:
+	// https://github.com/golang/go/issues/40180
+	if runtime.GOOS != "windows" {
+		if exec, err = filepath.EvalSymlinks(exec); err != nil {
+			return errors.Annotate(err, "failed to get real path for executable: %s", exec).Err()
+		}
+	}
+
 	execStat, err := os.Stat(exec)
 	if err != nil {
 		return errors.Annotate(err, "failed to stat executable: %s", exec).Err()
-	}
-
-	// Before using "os.Executable" result, which is known to resolve symlinks on
-	// Linux, try and identify via argv0.
-	if argv0 != "" && filesystem.AbsPath(&argv0) == nil {
-		if st, err := os.Stat(argv0); err == nil && os.SameFile(execStat, st) {
-			// argv[0] is the same file as our executable, but may be an unresolved
-			// symlink. Prefer it.
-			p.Self, p.SelfStat = argv0, st
-			return nil
-		}
 	}
 
 	p.Self, p.SelfStat = exec, execStat
