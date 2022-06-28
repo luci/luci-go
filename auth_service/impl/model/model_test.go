@@ -181,11 +181,27 @@ func getAllDatastoreEntities(ctx context.Context, entityKind string, parent *dat
 }
 
 func getProp(pm datastore.PropertyMap, key string) interface{} {
-	ps := pm.Slice(key)
-	if ps == nil {
+	pd := pm[key]
+	if pd == nil {
 		return nil
 	}
-	return ps[0].Value()
+	switch v := pd.(type) {
+	case datastore.Property:
+		return v.Value()
+	default:
+		panic("getProp only supports single property values. Try getStringSliceProp() instead")
+	}
+}
+
+// isPropIndexed returns true if any property with the given key is indexed.
+func isPropIndexed(pm datastore.PropertyMap, key string) bool {
+	ps := pm.Slice(key)
+	for _, p := range ps {
+		if p.IndexSetting() != datastore.NoIndex {
+			return true
+		}
+	}
+	return false
 }
 
 func getDatastoreKey(pm datastore.PropertyMap) *datastore.Key {
@@ -488,10 +504,15 @@ func TestCreateAuthGroup(t *testing.T) {
 				So(getStringProp(historicalEntity, "modified_by"), ShouldEqual, "user:someone@example.com")
 				So(getTimeProp(historicalEntity, "modified_ts").Unix(), ShouldEqual, testCreatedTS.Unix())
 				So(getInt64Prop(historicalEntity, "auth_db_rev"), ShouldEqual, 1)
-				So(getInt64Prop(historicalEntity, "auth_db_prev_rev"), ShouldEqual, 0)
+				So(getProp(historicalEntity, "auth_db_prev_rev"), ShouldBeNil)
 				So(getBoolProp(historicalEntity, "auth_db_deleted"), ShouldBeFalse)
 				So(getStringProp(historicalEntity, "auth_db_change_comment"), ShouldEqual, "Go pRPC API")
 				So(getStringProp(historicalEntity, "auth_db_app_version"), ShouldEqual, "test-version")
+
+				// Check no properties are indexed.
+				for k := range historicalEntity {
+					So(isPropIndexed(historicalEntity, k), ShouldBeFalse)
+				}
 			}
 
 			// Create a second group.
@@ -518,10 +539,15 @@ func TestCreateAuthGroup(t *testing.T) {
 				So(getStringProp(historicalEntity, "modified_by"), ShouldEqual, "user:someone@example.com")
 				So(getTimeProp(historicalEntity, "modified_ts").Unix(), ShouldEqual, testCreatedTS.Unix())
 				So(getInt64Prop(historicalEntity, "auth_db_rev"), ShouldEqual, 2)
-				So(getInt64Prop(historicalEntity, "auth_db_prev_rev"), ShouldEqual, 0)
+				So(getProp(historicalEntity, "auth_db_prev_rev"), ShouldBeNil)
 				So(getBoolProp(historicalEntity, "auth_db_deleted"), ShouldBeFalse)
 				So(getStringProp(historicalEntity, "auth_db_change_comment"), ShouldEqual, "Go pRPC API")
 				So(getStringProp(historicalEntity, "auth_db_app_version"), ShouldEqual, "test-version")
+
+				// Check no properties are indexed.
+				for k := range historicalEntity {
+					So(isPropIndexed(historicalEntity, k), ShouldBeFalse)
+				}
 			}
 		})
 	})

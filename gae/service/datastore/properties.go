@@ -363,6 +363,11 @@ func (p Property) Slice() PropertySlice { return PropertySlice{p} }
 // Clone implements the PropertyData interface.
 func (p Property) Clone() PropertyData { return p }
 
+// IsZero implements the PropertyData interface.
+func (p Property) IsZero() bool {
+	return reflect.ValueOf(p.Value()).IsZero()
+}
+
 func (p Property) String() string {
 	switch p.propType {
 	case PTString, PTBlobKey:
@@ -456,12 +461,6 @@ func (p *Property) SetValue(value interface{}, is IndexSetting) (err error) {
 	p.value = value
 	p.indexSetting = is
 	return
-}
-
-// SetIndexSetting sets whether or not the datastore should create indices for
-// this value.
-func (p *Property) SetIndexSetting(is IndexSetting) {
-	p.indexSetting = is
 }
 
 // IndexTypeAndValue returns the type and value of the Property as it would
@@ -767,6 +766,11 @@ func (s PropertySlice) Slice() PropertySlice {
 	return append(make(PropertySlice, 0, len(s)), s...)
 }
 
+// IsZero implements the PropertyData interface.
+func (s PropertySlice) IsZero() bool {
+	return len(s) == 0
+}
+
 func (s PropertySlice) estimateSize() (v int64) {
 	for _, prop := range s {
 		// Use the public one so we don't have to copy.
@@ -878,6 +882,9 @@ type PropertyData interface {
 
 	// Clone creates a duplicate copy of this PropertyData.
 	Clone() PropertyData
+
+	// IsZero returns true if the property has the zero value or is an empty PropertySlice.
+	IsZero() bool
 }
 
 // PropertyMap represents the contents of a datastore entity in a generic way.
@@ -1003,6 +1010,23 @@ func (pm PropertyMap) EstimateSize() int64 {
 		}
 	}
 	return ret
+}
+
+// TurnOffIdx sets NoIndex for all properties in the map.
+// This method modifies the map in-place.
+func (pm PropertyMap) TurnOffIdx() {
+	for key, val := range pm {
+		switch d := val.(type) {
+		case Property:
+			pm[key] = MkPropertyNI(d.Value())
+		case PropertySlice:
+			for i := range d {
+				d[i].indexSetting = NoIndex
+			}
+		default:
+			panic("unexpected property type")
+		}
+	}
 }
 
 func isMetaKey(k string) bool {

@@ -241,53 +241,65 @@ func TestProperties(t *testing.T) {
 func TestDSPropertyMapImpl(t *testing.T) {
 	t.Parallel()
 
-	Convey("PropertyMap load/save err conditions", t, func() {
-		Convey("empty", func() {
-			pm := PropertyMap{}
-			err := pm.Load(PropertyMap{"hello": Property{}})
-			So(err, ShouldBeNil)
-			So(pm, ShouldResemble, PropertyMap{"hello": Property{}})
-
-			npm, _ := pm.Save(false)
-			So(npm, ShouldResemble, pm)
-		})
-		Convey("meta", func() {
-			Convey("working", func() {
-				pm := PropertyMap{"": MkProperty("trap!")}
-				_, ok := pm.GetMeta("foo")
-				So(ok, ShouldBeFalse)
-
-				So(pm.SetMeta("foo", 100), ShouldBeTrue)
-
-				v, ok := pm.GetMeta("foo")
-				So(ok, ShouldBeTrue)
-				So(v, ShouldEqual, 100)
-
-				So(GetMetaDefault(pm, "foo", 100), ShouldEqual, 100)
-
-				So(GetMetaDefault(pm, "bar", 100), ShouldEqual, 100)
-
-				npm, err := pm.Save(false)
+	Convey("Test PropertyMap", t, func() {
+		Convey("load/save err conditions", func() {
+			Convey("empty", func() {
+				pm := PropertyMap{}
+				err := pm.Load(PropertyMap{"hello": Property{}})
 				So(err, ShouldBeNil)
-				So(len(npm), ShouldEqual, 0)
+				So(pm, ShouldResemble, PropertyMap{"hello": Property{}})
+
+				npm, _ := pm.Save(false)
+				So(npm, ShouldResemble, pm)
 			})
+			Convey("meta", func() {
+				Convey("working", func() {
+					pm := PropertyMap{"": MkProperty("trap!")}
+					_, ok := pm.GetMeta("foo")
+					So(ok, ShouldBeFalse)
 
-			Convey("too many values picks the first one", func() {
-				pm := PropertyMap{
-					"$thing": PropertySlice{MkProperty(100), MkProperty(200)},
-				}
-				v, ok := pm.GetMeta("thing")
-				So(ok, ShouldBeTrue)
-				So(v, ShouldEqual, 100)
-			})
+					So(pm.SetMeta("foo", 100), ShouldBeTrue)
 
-			Convey("errors", func() {
+					v, ok := pm.GetMeta("foo")
+					So(ok, ShouldBeTrue)
+					So(v, ShouldEqual, 100)
 
-				Convey("weird value", func() {
-					pm := PropertyMap{}
-					So(pm.SetMeta("sup", complex(100, 20)), ShouldBeFalse)
+					So(GetMetaDefault(pm, "foo", 100), ShouldEqual, 100)
+
+					So(GetMetaDefault(pm, "bar", 100), ShouldEqual, 100)
+
+					npm, err := pm.Save(false)
+					So(err, ShouldBeNil)
+					So(len(npm), ShouldEqual, 0)
+				})
+
+				Convey("too many values picks the first one", func() {
+					pm := PropertyMap{
+						"$thing": PropertySlice{MkProperty(100), MkProperty(200)},
+					}
+					v, ok := pm.GetMeta("thing")
+					So(ok, ShouldBeTrue)
+					So(v, ShouldEqual, 100)
+				})
+
+				Convey("errors", func() {
+
+					Convey("weird value", func() {
+						pm := PropertyMap{}
+						So(pm.SetMeta("sup", complex(100, 20)), ShouldBeFalse)
+					})
 				})
 			})
+		})
+		Convey("disable indexing on entire map", func() {
+			pm := PropertyMap{
+				"single": MkProperty("foo"),
+				"slice":  PropertySlice{MkProperty(100), MkProperty(200)},
+			}
+			pm.TurnOffIdx()
+			So(pm["single"].Slice()[0].indexSetting, ShouldEqual, NoIndex)
+			So(pm["slice"].Slice()[0].indexSetting, ShouldEqual, NoIndex)
+			So(pm["slice"].Slice()[1].indexSetting, ShouldEqual, NoIndex)
 		})
 	})
 }

@@ -66,6 +66,7 @@ func (e *AuthVersionedEntityMixin) versionInfo() *AuthVersionedEntityMixin {
 // copy of the provided entity at its current revision, plus some metadata:
 //   * whether the entity was deleted at this revision
 //   * a comment describing the change that created this entity version
+//   * the app version with which the change was created
 //
 // The copy of the entity has all of the same fields as the original, except
 // the kind is modified to end in History (e.g. AuthGroup becomes AuthGroupHistory),
@@ -75,36 +76,38 @@ func makeHistoricalCopy(ctx context.Context, entity versionedEntity, deleted boo
 	// Fetch all properties from the entity itself.
 	pls := datastore.GetPLS(entity)
 
-	props, err := pls.Save(true)
+	pmap, err := pls.Save(true)
 	if err != nil {
 		return nil, errors.New("failed to save PropertyMap")
 	}
 
 	// Alter the Parent meta property so it specifies the current AuthDB revision.
-	props["$parent"] = datastore.MkPropertyNI(HistoricalRevisionKey(ctx, entity.versionInfo().AuthDBRev))
+	pmap["$parent"] = datastore.MkPropertyNI(HistoricalRevisionKey(ctx, entity.versionInfo().AuthDBRev))
 
 	// Alter the Kind meta property to append the "History" suffix.
 	kind, ok := pls.GetMeta("kind")
 	if !ok {
 		return nil, errors.New("failed to get $kind when creating historical copy")
 	}
-	props["$kind"] = datastore.MkPropertyNI(kind.(string) + "History")
+	pmap["$kind"] = datastore.MkPropertyNI(kind.(string) + "History")
 
-	// Remove indexing for all fields.
-	for i, prop := range props {
-		copy := prop.Slice()
-		for _, p := range copy {
-			p.SetIndexSetting(datastore.NoIndex)
+	// Remove unset fields.
+	for key, prop := range pmap {
+		if prop.IsZero() {
+			delete(pmap, key)
+			continue
 		}
-		props[i] = copy
 	}
 
-	// Add historical metadata.
-	props["auth_db_deleted"] = datastore.MkPropertyNI(deleted)
-	props["auth_db_change_comment"] = datastore.MkPropertyNI(comment)
-	props["auth_db_app_version"] = datastore.MkPropertyNI(info.ImageVersion(ctx))
+	// Remove indexing for all fields.
+	pmap.TurnOffIdx()
 
-	return props, nil
+	// Add historical metadata.
+	pmap["auth_db_deleted"] = datastore.MkPropertyNI(deleted)
+	pmap["auth_db_change_comment"] = datastore.MkPropertyNI(comment)
+	pmap["auth_db_app_version"] = datastore.MkPropertyNI(info.ImageVersion(ctx))
+
+	return pmap, nil
 }
 
 // versionedEntity is an internal interface implemented by any struct
