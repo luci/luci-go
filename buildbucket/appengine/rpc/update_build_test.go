@@ -32,8 +32,10 @@ import (
 	"go.chromium.org/luci/buildbucket"
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/data/strpair"
+	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/proto/mask"
 	"go.chromium.org/luci/common/tsmon"
+	"go.chromium.org/luci/gae/filter/featureBreaker"
 	"go.chromium.org/luci/gae/filter/txndefer"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
@@ -1094,6 +1096,37 @@ func TestUpdateBuild(t *testing.T) {
 					So(build.CancelTime.AsTime(), ShouldEqual, t0)
 					So(build.SummaryMarkdown, ShouldEqual, "canceled because its parent 3000000 is missing")
 					So(sch.Tasks(), ShouldHaveLength, 2)
+
+				})
+
+				Convey("return err if failed to get parent", func() {
+					So(datastore.Put(ctx, &model.Build{
+						ID: 31,
+						Proto: &pb.Build{
+							Id: 31,
+							Builder: &pb.BuilderID{
+								Project: "project",
+								Bucket:  "bucket",
+								Builder: "builder",
+							},
+							AncestorIds:      []int64{30},
+							CanOutliveParent: false,
+						},
+						UpdateToken: tk,
+					}), ShouldBeNil)
+
+					// Mock datastore.Get failure.
+					var fb featureBreaker.FeatureBreaker
+					ctx, fb = featureBreaker.FilterRDS(ctx, nil)
+					// Break GetMulti will ingest the error to datastore.Get,
+					// directly breaking "Get" doesn't work.
+					fb.BreakFeatures(errors.New("get error"), "GetMulti")
+
+					req.Build.Id = 31
+					req.Build.Status = pb.Status_STARTED
+					req.UpdateMask.Paths[0] = "build.status"
+					_, err := srv.UpdateBuild(ctx, req)
+					So(err, ShouldErrLike, "get error")
 
 				})
 

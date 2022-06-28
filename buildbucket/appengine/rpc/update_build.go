@@ -352,7 +352,16 @@ func updateEntities(ctx context.Context, req *pb.UpdateBuildRequest, parentID in
 	// for all the children reading the parent within transactions concurrently.
 	var parent *model.Build
 	if parentID != 0 {
-		parent, _ = getBuild(ctx, parentID)
+		parent = &model.Build{ID: parentID}
+		err := datastore.Get(ctx, parent)
+		switch err {
+		case nil:
+		case datastore.ErrNoSuchEntity:
+			// if parent is not found, we should cancel this build below.
+			parent = nil
+		default:
+			return nil, errors.Annotate(err, "failed to get parent %d", parentID).Err()
+		}
 	}
 
 	txErr := datastore.RunInTransaction(ctx, func(ctx context.Context) error {
