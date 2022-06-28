@@ -132,6 +132,15 @@ func (e ExternalID) Load(ctx context.Context) (*Tryjob, error) {
 	return res, nil
 }
 
+// MustLoad is like `Load` but panics on error.
+func (e ExternalID) MustLoad(ctx context.Context) *Tryjob {
+	tj, err := e.Load(ctx)
+	if err != nil {
+		panic(err)
+	}
+	return tj
+}
+
 // MustCreateIfNotExists is intended for testing only.
 //
 // If a Tryjob with this ExternalID exists, the Tryjob is loaded from
@@ -153,10 +162,12 @@ func (e ExternalID) MustCreateIfNotExists(ctx context.Context) *Tryjob {
 		case tryjob != nil:
 			return nil
 		}
+		now := datastore.RoundTime(clock.Now(ctx).UTC())
 		tryjob = &Tryjob{
 			ExternalID:       e,
 			EVersion:         1,
-			EntityUpdateTime: datastore.RoundTime(clock.Now(ctx).UTC()),
+			EntityCreateTime: now,
+			EntityUpdateTime: now,
 		}
 		if err := datastore.AllocateIDs(ctx, tryjob); err != nil {
 			return err
@@ -171,7 +182,7 @@ func (e ExternalID) MustCreateIfNotExists(ctx context.Context) *Tryjob {
 }
 
 // Resolve converts ExternalIDs to internal TryjobIDs.
-func Resolve(ctx context.Context, eids ...ExternalID) ([]common.TryjobID, error) {
+func Resolve(ctx context.Context, eids ...ExternalID) (common.TryjobIDs, error) {
 	tjms := make([]tryjobMap, len(eids))
 	for i, eid := range eids {
 		tjms[i].ExternalID = eid
@@ -189,9 +200,43 @@ func Resolve(ctx context.Context, eids ...ExternalID) ([]common.TryjobID, error)
 		}
 	}
 
-	ret := make([]common.TryjobID, len(eids))
+	ret := make(common.TryjobIDs, len(eids))
 	for i, tjm := range tjms {
 		ret[i] = tjm.InternalID
+	}
+	return ret, nil
+}
+
+// MustResolve is like `Resolve` but panics on error
+func MustResolve(ctx context.Context, eids ...ExternalID) common.TryjobIDs {
+	tryjobIDs, err := Resolve(ctx, eids...)
+	if err != nil {
+		panic(err)
+	}
+	return tryjobIDs
+}
+
+// ResolveToTryjobs resolves ExternalIDs to Tryjob entities.
+//
+// If the external id can't be found inside CV, its corresponding Tryjob
+// entity will be nil.
+func ResolveToTryjobs(ctx context.Context, eids ...ExternalID) ([]*Tryjob, error) {
+	tjids, err := Resolve(ctx, eids...)
+	if err != nil {
+		return nil, err
+	}
+	ret := make([]*Tryjob, len(tjids))
+	var toLoad []*Tryjob
+	for i, id := range tjids {
+		if id != 0 {
+			ret[i] = &Tryjob{ID: id}
+			toLoad = append(toLoad, ret[i])
+		}
+	}
+	if len(toLoad) > 0 {
+		if err := datastore.Get(ctx, toLoad); err != nil {
+			return nil, errors.Annotate(err, "failed to load tryjobs").Tag(transient.Tag).Err()
+		}
 	}
 	return ret, nil
 }
