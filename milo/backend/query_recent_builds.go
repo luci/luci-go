@@ -43,8 +43,6 @@ var queryRecentBuildsPageSize = PageSizeLimiter{
 
 // QueryRecentBuilds implements milopb.MiloInternal service
 func (s *MiloInternalService) QueryRecentBuilds(ctx context.Context, req *milopb.QueryRecentBuildsRequest) (_ *milopb.QueryRecentBuildsResponse, err error) {
-	defer func() { err = appstatus.GRPCifyAndLog(ctx, err) }()
-
 	// Validate request.
 	err = validatesQueryRecentBuildsRequest(req)
 	if err != nil {

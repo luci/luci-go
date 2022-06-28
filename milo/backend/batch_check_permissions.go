@@ -29,8 +29,6 @@ const maxPermissions = 100
 
 // BatchCheckPermissions implements milopb.MiloInternal service
 func (s *MiloInternalService) BatchCheckPermissions(ctx context.Context, req *milopb.BatchCheckPermissionsRequest) (_ *milopb.BatchCheckPermissionsResponse, err error) {
-	defer func() { err = appstatus.GRPCifyAndLog(ctx, err) }()
-
 	// Validate request.
 	err = validateBatchCheckPermissionsRequest(req)
 	if err != nil {

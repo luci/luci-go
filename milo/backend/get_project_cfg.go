@@ -28,8 +28,6 @@ import (
 
 // GetProjectCfg implements milopb.MiloInternal service
 func (s *MiloInternalService) GetProjectCfg(ctx context.Context, req *milopb.GetProjectCfgRequest) (_ *milo.Project, err error) {
-	defer func() { err = appstatus.GRPCifyAndLog(ctx, err) }()
-
 	projectName := req.GetProject()
 	if projectName == "" {
 		return nil, appstatus.Error(codes.InvalidArgument, "project must be specified")

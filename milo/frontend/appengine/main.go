@@ -20,8 +20,11 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/golang/protobuf/proto"
+
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/config/server/cfgmodule"
+	"go.chromium.org/luci/grpc/appstatus"
 	"go.chromium.org/luci/grpc/prpc"
 	milopb "go.chromium.org/luci/milo/api/service/v1"
 	"go.chromium.org/luci/milo/backend"
@@ -61,33 +64,38 @@ func main() {
 		cron.RegisterHandler("update-builders", buildbucket.UpdateBuilders)
 		cron.RegisterHandler("delete-builds", buildbucket.DeleteOldBuilds)
 		cron.RegisterHandler("sync-builds", buildbucket.SyncBuilds)
-		milopb.RegisterMiloInternalServer(srv.PRPC, &backend.MiloInternalService{
-			GetGitClient: func(c context.Context) (git.Client, error) {
-				acls, err := gitacls.FromConfig(c, common.GetSettings(c).SourceAcls)
-				if err != nil {
-					return nil, err
-				}
-				return git.NewClient(acls), nil
+		milopb.RegisterMiloInternalServer(srv.PRPC, &milopb.DecoratedMiloInternal{
+			Service: &backend.MiloInternalService{
+				GetGitClient: func(c context.Context) (git.Client, error) {
+					acls, err := gitacls.FromConfig(c, common.GetSettings(c).SourceAcls)
+					if err != nil {
+						return nil, err
+					}
+					return git.NewClient(acls), nil
+				},
+				GetBuildersClient: func(c context.Context, as auth.RPCAuthorityKind) (buildbucketpb.BuildersClient, error) {
+					settings := common.GetSettings(c)
+					host := settings.GetBuildbucket().GetHost()
+					if host == "" {
+						return nil, errors.New("missing buildbucket host in settings")
+					}
+
+					t, err := auth.GetRPCTransport(c, as)
+					if err != nil {
+						return nil, err
+					}
+
+					rpcOpts := prpc.DefaultOptions()
+					rpcOpts.PerRPCTimeout = time.Minute - time.Second
+					return buildbucketpb.NewBuildersClient(&prpc.Client{
+						C:       &http.Client{Transport: t},
+						Host:    host,
+						Options: rpcOpts,
+					}), nil
+				},
 			},
-			GetBuildersClient: func(c context.Context, as auth.RPCAuthorityKind) (buildbucketpb.BuildersClient, error) {
-				settings := common.GetSettings(c)
-				host := settings.GetBuildbucket().GetHost()
-				if host == "" {
-					return nil, errors.New("missing buildbucket host in settings")
-				}
-
-				t, err := auth.GetRPCTransport(c, as)
-				if err != nil {
-					return nil, err
-				}
-
-				rpcOpts := prpc.DefaultOptions()
-				rpcOpts.PerRPCTimeout = time.Minute - time.Second
-				return buildbucketpb.NewBuildersClient(&prpc.Client{
-					C:       &http.Client{Transport: t},
-					Host:    host,
-					Options: rpcOpts,
-				}), nil
+			Postlude: func(ctx context.Context, methodName string, rsp proto.Message, err error) error {
+				return appstatus.GRPCifyAndLog(ctx, err)
 			},
 		})
 		return nil

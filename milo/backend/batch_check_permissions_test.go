@@ -27,7 +27,7 @@ import (
 	"go.chromium.org/luci/milo/common"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
-	"google.golang.org/genproto/googleapis/rpc/code"
+	"google.golang.org/grpc/codes"
 )
 
 func TestBatchCheckPermissions(t *testing.T) {
@@ -68,7 +68,7 @@ func TestBatchCheckPermissions(t *testing.T) {
 				Permissions: []string{bbperms.BuildsAdd.Name(), bbperms.BuildsList.Name(), bbperms.BuildsCancel.Name()},
 			})
 
-			So(err, ShouldHaveGRPCStatus, code.Code_INVALID_ARGUMENT)
+			So(err, ShouldHaveAppStatus, codes.InvalidArgument)
 			So(err, ShouldErrLike, "realm", "must be specified")
 			So(res, ShouldBeNil)
 		})
@@ -79,7 +79,7 @@ func TestBatchCheckPermissions(t *testing.T) {
 				Permissions: []string{bbperms.BuildsAdd.Name(), "testservice.testsubject.testaction"},
 			})
 
-			So(err, ShouldHaveGRPCStatus, code.Code_INVALID_ARGUMENT)
+			So(err, ShouldHaveAppStatus, codes.InvalidArgument)
 			So(err, ShouldErrLike, "testservice.testsubject.testaction", "permission not registered")
 			So(res, ShouldBeNil)
 		})

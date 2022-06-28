@@ -41,8 +41,6 @@ var listBuildersPageSize = PageSizeLimiter{
 
 // ListBuilders implements milopb.MiloInternal service
 func (s *MiloInternalService) ListBuilders(ctx context.Context, req *milopb.ListBuildersRequest) (_ *milopb.ListBuildersResponse, err error) {
-	defer func() { err = appstatus.GRPCifyAndLog(ctx, err) }()
-
 	// Validate request.
 	err = validateListBuildersRequest(req)
 	if err != nil {

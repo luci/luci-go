@@ -44,8 +44,6 @@ var queryBlamelistPageSize = PageSizeLimiter{
 
 // QueryBlamelist implements milopb.MiloInternal service
 func (s *MiloInternalService) QueryBlamelist(ctx context.Context, req *milopb.QueryBlamelistRequest) (_ *milopb.QueryBlamelistResponse, err error) {
-	defer func() { err = appstatus.GRPCifyAndLog(ctx, err) }()
-
 	startRev, err := prepareQueryBlamelistRequest(req)
 	if err != nil {
 		return nil, appstatus.BadRequest(err)

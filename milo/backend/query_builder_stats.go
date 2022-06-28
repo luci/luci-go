@@ -33,8 +33,6 @@ import (
 
 // QueryBuilderStats implements milopb.MiloInternal service
 func (s *MiloInternalService) QueryBuilderStats(ctx context.Context, req *milopb.QueryBuilderStatsRequest) (_ *milopb.BuilderStats, err error) {
-	defer func() { err = appstatus.GRPCifyAndLog(ctx, err) }()
-
 	// Validate request.
 	err = validatesQueryBuilderStatsRequest(req)
 	if err != nil {
