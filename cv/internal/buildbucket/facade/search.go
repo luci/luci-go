@@ -77,7 +77,7 @@ func init() {
 //   * Status
 //   * Result
 //
-// Also, the Tryjobs are guaranteed to have descreasing build ID (in other
+// Also, the Tryjobs are guaranteed to have decreasing build ID (in other
 // word, from newest to oldest) ONLY within the same host.
 // For example, for following matching builds:
 //   * host: A, build: 100, create time: now

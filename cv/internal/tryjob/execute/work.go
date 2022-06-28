@@ -18,6 +18,7 @@ import (
 	"context"
 	"sort"
 
+	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/data/stringset"
 
 	"go.chromium.org/luci/cv/internal/common"
@@ -71,6 +72,17 @@ type worker struct {
 	clPatchsets tryjob.CLPatchsets
 	backend     TryjobBackend
 	rm          rm
+}
+
+func (w *worker) makeBaseTryjob(ctx context.Context) *tryjob.Tryjob {
+	now := clock.Now(ctx).UTC()
+	return &tryjob.Tryjob{
+		EVersion:         1,
+		EntityCreateTime: now,
+		EntityUpdateTime: now,
+		ReuseKey:         w.reuseKey,
+		CLPatchsets:      w.clPatchsets,
+	}
 }
 
 func (w *worker) start(ctx context.Context, definitions []*tryjob.Definition) ([]*tryjob.Tryjob, error) {
