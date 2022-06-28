@@ -189,6 +189,11 @@ export class InvocationState {
     return unwrapObservable(this.invocation$, null);
   }
 
+  @computed
+  get project(): string | null {
+    return this.invocation?.realm.split(':', 2)[0] ?? null;
+  }
+
   @computed get hasInvocation() {
     if (this.isComputedInvId) {
       // The invocation may not exist. Wait for the invocation query to confirm

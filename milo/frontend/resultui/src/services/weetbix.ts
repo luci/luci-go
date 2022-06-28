@@ -14,6 +14,7 @@
 
 import stableStringify from 'fast-json-stable-stringify';
 
+import { batched, BatchOption } from '../libs/batched_fn';
 import { cached, CacheOption } from '../libs/cached_fn';
 import { PrpcClientExt } from '../libs/prpc_client_ext';
 
@@ -136,13 +137,15 @@ export interface ClusterRequest {
   }>;
 }
 
+export interface Cluster {
+  readonly clusterId: ClusterId;
+  readonly bug?: AssociatedBug;
+}
+
 export interface ClusterResponse {
   readonly clusteredTestResults: ReadonlyArray<{
     readonly requestTag?: string;
-    readonly clusters: ReadonlyArray<{
-      readonly clusterId: ClusterId;
-      readonly bug?: AssociatedBug;
-    }>;
+    readonly clusters: readonly Cluster[];
   }>;
   readonly clusteringVersion: ClusteringVersion;
 }
@@ -198,18 +201,68 @@ export class TestHistoryService {
 export class ClustersService {
   private static SERVICE = 'weetbix.v1.Clusters';
 
-  private readonly cachedCallFn: (opt: CacheOption, method: string, message: object) => Promise<unknown>;
+  private readonly cachedBatchedCluster: (
+    cacheOpt: CacheOption,
+    batchOpt: BatchOption,
+    req: ClusterRequest
+  ) => Promise<ClusterResponse>;
 
   constructor(client: PrpcClientExt) {
-    this.cachedCallFn = cached(
-      (method: string, message: object) => client.call(ClustersService.SERVICE, method, message),
-      {
-        key: (method, message) => `${method}-${stableStringify(message)}`,
-      }
-    );
+    const CLUSTER_BATCH_LIMIT = 1000;
+
+    const batchedCluster = batched<[ClusterRequest], ClusterResponse>({
+      fn: (req: ClusterRequest) => client.call(ClustersService.SERVICE, 'Cluster', req),
+      combineParamSets: ([req1], [req2]) => {
+        const canCombine =
+          req1.testResults.length + req2.testResults.length <= CLUSTER_BATCH_LIMIT && req1.project === req2.project;
+        if (!canCombine) {
+          return { ok: false } as ResultErr<void>;
+        }
+        return {
+          ok: true,
+          value: [
+            {
+              project: req1.project,
+              testResults: [...req1.testResults, ...req2.testResults],
+            },
+          ] as [ClusterRequest],
+        };
+      },
+      splitReturn: (paramSets, ret) => {
+        let pivot = 0;
+        const splitRets: ClusterResponse[] = [];
+        for (const [req] of paramSets) {
+          splitRets.push({
+            clusteringVersion: ret.clusteringVersion,
+            clusteredTestResults: ret.clusteredTestResults.slice(pivot, pivot + req.testResults.length),
+          });
+          pivot += req.testResults.length;
+        }
+
+        return splitRets;
+      },
+    });
+
+    this.cachedBatchedCluster = cached((batchOpt: BatchOption, req: ClusterRequest) => batchedCluster(batchOpt, req), {
+      key: (_batchOpt, req) => stableStringify(req),
+    });
   }
 
-  async cluster(req: ClusterRequest, cacheOpt: CacheOption = {}): Promise<ClusterResponse> {
-    return (await this.cachedCallFn(cacheOpt, 'Cluster', req)) as ClusterResponse;
+  async cluster(req: ClusterRequest, batchOpt: BatchOption = {}, cacheOpt: CacheOption = {}): Promise<ClusterResponse> {
+    return (await this.cachedBatchedCluster(cacheOpt, batchOpt, req)) as ClusterResponse;
   }
+}
+
+/**
+ * Construct a link to a weetbix rule page.
+ */
+export function makeRuleLink(project: string, ruleId: string) {
+  return `https://${CONFIGS.WEETBIX.HOST}/p/${project}/rules/${ruleId}`;
+}
+
+/**
+ * Construct a link to a weetbix cluster.
+ */
+export function makeClusterLink(project: string, clusterId: ClusterId) {
+  return `https://${CONFIGS.WEETBIX.HOST}/p/${project}/clusters/${clusterId.algorithm}/${clusterId.id}`;
 }

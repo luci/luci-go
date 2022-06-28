@@ -17,15 +17,20 @@ import { MobxLitElement } from '@adobe/lit-mobx';
 import { css, customElement, html } from 'lit-element';
 import { repeat } from 'lit-html/directives/repeat';
 import { computed, observable } from 'mobx';
+import { fromPromise } from 'mobx-utils';
 
+import '../../../components/associated_bugs_badge';
 import '../../../components/expandable_entry';
 import '../../../components/copy_to_clipboard';
 import '../../../components/result_entry';
 import { AppState, consumeAppState } from '../../../context/app_state';
+import { consumeInvocationState, InvocationState } from '../../../context/invocation_state';
 import { VARIANT_STATUS_CLASS_MAP, VARIANT_STATUS_ICON_MAP } from '../../../libs/constants';
 import { lazyRendering, RenderPlaceHolder } from '../../../libs/observer_element';
 import { sanitizeHTML } from '../../../libs/sanitize_html';
-import { RESULT_LIMIT, TestVariant } from '../../../services/resultdb';
+import { unwrapObservable } from '../../../libs/unwrap_observable';
+import { RESULT_LIMIT, TestStatus, TestVariant } from '../../../services/resultdb';
+import { Cluster } from '../../../services/weetbix';
 import colorClasses from '../../../styles/color_classes.css';
 import commonStyle from '../../../styles/common_style.css';
 
@@ -40,6 +45,7 @@ const ORDERED_VARIANT_DEF_KEYS = Object.freeze(['bucket', 'builder', 'test_suite
 @lazyRendering
 export class TestVariantEntryElement extends MobxLitElement implements RenderPlaceHolder {
   @observable.ref @consumeAppState() appState!: AppState;
+  @observable.ref @consumeInvocationState() invState!: InvocationState;
 
   @observable.ref variant!: TestVariant;
   @observable.ref columnGetters: Array<(v: TestVariant) => unknown> = [];
@@ -78,6 +84,68 @@ export class TestVariantEntryElement extends MobxLitElement implements RenderPla
       return this.variant.testMetadata.name;
     }
     return this.variant.testId;
+  }
+
+  @computed
+  private get clustersByResultId$() {
+    if (!this.invState.project || !this.appState.clustersService) {
+      return fromPromise(Promise.race([]));
+    }
+
+    // We don't care about expected result nor unexpectedly passed/skipped
+    // results. Filter them out.
+    const results = this.variant.results?.filter(
+      (r) => !r.result.expected && ![TestStatus.Pass, TestStatus.Skip].includes(r.result.status)
+    );
+
+    if (!results?.length) {
+      return fromPromise(Promise.resolve([]));
+    }
+
+    return fromPromise(
+      this.appState.clustersService
+        .cluster(
+          {
+            project: this.invState.project,
+            testResults: results.map((r) => ({
+              testId: this.variant.testId,
+              failureReason: r.result.failureReason,
+            })),
+          },
+          { maxPendingMs: 1000 }
+        )
+        .then((res) => {
+          return res.clusteredTestResults.map(
+            (ctr, i) => [results[i].result.resultId, ctr.clusters] as readonly [string, readonly Cluster[]]
+          );
+        })
+    );
+  }
+
+  @computed
+  private get clustersByResultId(): ReadonlyArray<readonly [string, readonly Cluster[]]> {
+    return unwrapObservable(this.clustersByResultId$, []);
+  }
+
+  @computed
+  private get clustersMap(): ReadonlyMap<string, readonly Cluster[]> {
+    return new Map(this.clustersByResultId);
+  }
+
+  @computed
+  private get uniqueClusters(): readonly Cluster[] {
+    const clusters = this.clustersByResultId.flatMap(([_, clusters]) => clusters);
+    const seen = new Set<string>();
+    const uniqueClusters: Cluster[] = [];
+    for (const cluster of clusters) {
+      const key = cluster.clusterId.algorithm + '/' + cluster.clusterId.id;
+      if (seen.has(key)) {
+        continue;
+      }
+      seen.add(key);
+      uniqueClusters.push(cluster);
+    }
+    return uniqueClusters;
   }
 
   private genTestLink() {
@@ -188,6 +256,7 @@ export class TestVariantEntryElement extends MobxLitElement implements RenderPla
           <milo-result-entry
             .id=${i + 1}
             .testResult=${r.result}
+            .clusters=${this.clustersMap.get(r.result.resultId) || []}
             .expanded=${i === this.expandedResultIndex}
           ></milo-result-entry>
         `
@@ -196,6 +265,10 @@ export class TestVariantEntryElement extends MobxLitElement implements RenderPla
   }
 
   renderPlaceHolder() {
+    // Trigger the cluster RPC even when the entry is not rendered yet.
+    // So we can batch more requests into one instead of waiting for new entries
+    // to be progressively rendered.
+    this.clustersByResultId$;
     return '';
   }
 
@@ -209,6 +282,12 @@ export class TestVariantEntryElement extends MobxLitElement implements RenderPla
           ${this.columnValues.map((v) => html`<div title=${v}>${v}</div>`)}
           <div id="test-name">
             <span title=${this.longName}>${this.shortName}</span>
+            ${this.uniqueClusters.length && !this.expanded
+              ? html`<milo-associated-bugs-badge
+                  .project=${this.invState.project}
+                  .clusters=${this.uniqueClusters}
+                ></milo-associated-bugs-badge>`
+              : ''}
             <milo-copy-to-clipboard
               .textToCopy=${this.longName}
               @click=${(e: Event) => e.stopPropagation()}
@@ -316,6 +395,12 @@ export class TestVariantEntryElement extends MobxLitElement implements RenderPla
         padding: 5px;
         background-color: var(--warning-color);
         font-weight: 500;
+      }
+
+      milo-associated-bugs-badge {
+        max-width: 150px;
+        flex-shrink: 0;
+        margin-left: 4px;
       }
     `,
   ];

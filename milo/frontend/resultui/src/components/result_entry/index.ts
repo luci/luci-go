@@ -21,11 +21,13 @@ import { computed, observable } from 'mobx';
 import { fromPromise, IPromiseBasedObservable, PENDING } from 'mobx-utils';
 
 import '../../context/artifact_provider';
+import '../associated_bugs_badge';
 import '../expandable_entry';
 import './image_diff_artifact';
 import './text_artifact';
 import './text_diff_artifact';
 import { AppState, consumeAppState } from '../../context/app_state';
+import { consumeInvocationState, InvocationState } from '../../context/invocation_state';
 import { TEST_STATUS_DISPLAY_MAP } from '../../libs/constants';
 import { consumer } from '../../libs/context';
 import { reportRenderError } from '../../libs/error_handler';
@@ -34,6 +36,7 @@ import { displayCompactDuration, parseProtoDuration } from '../../libs/time_util
 import { unwrapObservable } from '../../libs/unwrap_observable';
 import { getRawArtifactUrl, router } from '../../routes';
 import { Artifact, ListArtifactsResponse, parseTestResultName, Tag, TestResult } from '../../services/resultdb';
+import { Cluster, makeClusterLink } from '../../services/weetbix';
 import colorClasses from '../../styles/color_classes.css';
 import commonStyle from '../../styles/common_style.css';
 
@@ -47,8 +50,13 @@ export class ResultEntryElement extends MobxLitElement {
   @consumeAppState()
   appState!: AppState;
 
+  @observable.ref
+  @consumeInvocationState()
+  invState!: InvocationState;
+
   @observable.ref id = '';
   @observable.ref testResult!: TestResult;
+  @observable.ref clusters: readonly Cluster[] = [];
 
   @observable.ref private _expanded = false;
   @computed get expanded() {
@@ -136,14 +144,30 @@ export class ResultEntryElement extends MobxLitElement {
     };
   }
 
+  @computed private get failureReasonCluster(): Cluster | null {
+    // There can be at most one failureReason cluster.
+    return this.clusters.filter((c) => c.clusterId.algorithm.startsWith('reason-'))?.[0] ?? null;
+  }
+
   private renderFailureReason() {
     const errMsg = this.testResult.failureReason?.primaryErrorMessage;
-    if (!errMsg) {
+    if (!errMsg || !this.invState.project) {
       return html``;
     }
+
     return html`
       <milo-expandable-entry contentRuler="none" .expanded=${true}>
-        <span slot="header">Failure Reason:</span>
+        <span slot="header"
+          >Failure
+          Reason${this.failureReasonCluster
+            ? html` (<a
+                  href=${makeClusterLink(this.invState.project, this.failureReasonCluster.clusterId)}
+                  target="_balnk"
+                  @click=${(e: Event) => e.stopImmediatePropagation()}
+                  >similar failures</a
+                >)`
+            : ''}:
+        </span>
         <pre id="failure-reason" class="info-block" slot="content">${errMsg}</pre>
       </milo-expandable-entry>
     `;
@@ -308,6 +332,12 @@ export class ResultEntryElement extends MobxLitElement {
                 </a>
               `
             : ''}
+          ${this.clusters.length
+            ? html`<milo-associated-bugs-badge
+                .project=${this.invState.project}
+                .clusters=${this.clusters}
+              ></milo-associated-bugs-badge>`
+            : ''}
         </span>
         <div slot="content">${this.renderContent()}</div>
       </milo-expandable-entry>
@@ -380,6 +410,11 @@ export class ResultEntryElement extends MobxLitElement {
 
       #inv-artifacts-header {
         margin-top: 12px;
+      }
+
+      milo-associated-bugs-badge {
+        max-width: 300px;
+        margin-left: 4px;
       }
     `,
   ];

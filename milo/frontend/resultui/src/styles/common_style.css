@@ -51,3 +51,9 @@ mwc-icon {
   width: var(--mdc-icon-size, 24px);
   height: var(--mdc-icon-size, 24px);
 }
+
+hr {
+  background-color: var(--divider-color);
+  border: none;
+  height: 1px;
+}

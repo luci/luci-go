@@ -23,7 +23,7 @@ import { attachTags } from '../libs/tag';
 import { BuilderID, BuildersService, BuildsService } from '../services/buildbucket';
 import { AuthState, MiloInternal } from '../services/milo_internal';
 import { ResultDb } from '../services/resultdb';
-import { TestHistoryService } from '../services/weetbix';
+import { ClustersService, TestHistoryService } from '../services/weetbix';
 
 const MAY_REQUIRE_SIGNIN_ERROR_CODE = [RpcCode.NOT_FOUND, RpcCode.PERMISSION_DENIED, RpcCode.UNAUTHENTICATED];
 
@@ -149,6 +149,14 @@ export class AppState {
     return new BuildersService(this.makeClient({ host: CONFIGS.BUILDBUCKET.HOST }));
   }
 
+  @computed({ keepAlive: true })
+  get clustersService(): ClustersService | null {
+    if (this.isDisposed || this.userIdentity === null) {
+      return null;
+    }
+    return new ClustersService(this.makeClient({ host: CONFIGS.WEETBIX.HOST }));
+  }
+
   /**
    * Perform cleanup.
    * Must be called before the object is GCed.
@@ -162,6 +170,8 @@ export class AppState {
     this.milo;
     this.buildsService;
     this.buildersService;
+    this.testHistoryService;
+    this.clustersService;
   }
 
   private makeClient(opts: PrpcClientOptions) {
