@@ -31,6 +31,7 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/server/auth"
+	_ "go.chromium.org/luci/server/tq/txn/datastore"
 )
 
 // AuthVersionedEntityMixin is for AuthDB entities that
@@ -411,9 +412,8 @@ func runAuthDBChange(ctx context.Context, f func(context.Context, commitAuthEnti
 			return err
 		}
 
-		// TODO(jsca): Trigger replication
-
-		return nil
+		// Enqueue a backend task to process the AuthDB change.
+		return EnqueueProcessChangeTask(ctx, state.AuthDBRev)
 	}, nil)
 }
 

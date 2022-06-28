@@ -21,14 +21,16 @@ import (
 	"testing"
 	"time"
 
-	"google.golang.org/protobuf/proto"
-
+	"go.chromium.org/luci/auth_service/api/taskspb"
 	"go.chromium.org/luci/auth_service/impl/info"
+	"go.chromium.org/luci/gae/filter/txndefer"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
 	"go.chromium.org/luci/server/auth/service/protocol"
+	"go.chromium.org/luci/server/tq"
+	"google.golang.org/protobuf/proto"
 
 	. "github.com/smartystreets/goconvey/convey"
 	"go.chromium.org/luci/common/clock"
@@ -295,6 +297,7 @@ func TestCreateAuthGroup(t *testing.T) {
 		})
 		ctx = clock.Set(ctx, testclock.New(testCreatedTS))
 		ctx = info.SetImageVersion(ctx, "test-version")
+		ctx, taskScheduler := tq.TestingContext(txndefer.FilterRDS(ctx), nil)
 
 		Convey("empty group name", func() {
 			group := testAuthGroup(ctx, "", nil)
@@ -422,6 +425,11 @@ func TestCreateAuthGroup(t *testing.T) {
 				state1, err := GetReplicationState(ctx)
 				So(err, ShouldBeNil)
 				So(state1.AuthDBRev, ShouldEqual, 1)
+				tasks := taskScheduler.Tasks()
+				So(tasks, ShouldHaveLength, 1)
+				task := tasks[0]
+				So(task.Class, ShouldEqual, "process-change-task")
+				So(task.Payload, ShouldResembleProto, &taskspb.ProcessChangeTask{AuthDbRev: 1})
 			}
 
 			// Create a second group.
@@ -438,6 +446,8 @@ func TestCreateAuthGroup(t *testing.T) {
 				state2, err := GetReplicationState(ctx)
 				So(err, ShouldBeNil)
 				So(state2.AuthDBRev, ShouldEqual, 2)
+				tasks := taskScheduler.Tasks()
+				So(tasks, ShouldHaveLength, 2)
 			}
 
 			// Try to create another group the same as the second, which should fail.
@@ -448,6 +458,8 @@ func TestCreateAuthGroup(t *testing.T) {
 				state3, err := GetReplicationState(ctx)
 				So(err, ShouldBeNil)
 				So(state3.AuthDBRev, ShouldEqual, 2)
+				tasks := taskScheduler.Tasks()
+				So(tasks, ShouldHaveLength, 2)
 			}
 		})
 
