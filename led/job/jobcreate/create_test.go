@@ -145,6 +145,12 @@ func TestCreateBBagent(t *testing.T) {
 
 		req := &swarming.SwarmingRpcsNewTaskRequest{}
 		So(json.NewDecoder(bytes.NewReader(data)).Decode(req), ShouldBeNil)
+		req.TaskSlices[0].Properties.Command = []string{
+			"bbagent${EXECUTABLE_SUFFIX}",
+			"-host",
+			"cr-buildbucket.appspot.com",
+			"-build-id",
+			"123"}
 
 		jd, err := FromNewTaskRequest(
 			context.Background(), req,

@@ -78,10 +78,10 @@ func FromNewTaskRequest(ctx context.Context, r *swarming.SwarmingRpcsNewTaskRequ
 		bbCommonFromTaskRequest(bb, r)
 		cmd := r.TaskSlices[0].Properties.Command
 		switch {
-		case bld != nil:
-			bb.BbagentArgs = bbagentArgsFromBuild(bld)
 		case len(cmd) == 2:
 			bb.BbagentArgs, err = bbinput.Parse(cmd[len(cmd)-1])
+		case bld != nil:
+			bb.BbagentArgs = bbagentArgsFromBuild(bld)
 		default:
 			bb.BbagentArgs, err = getBbagentArgsFromCMD(ctx, cmd, authClient)
 		}
