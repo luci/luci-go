@@ -279,67 +279,6 @@ func (x *AclSet) GetAcls() []*Acl {
 	return nil
 }
 
-// Constraints for a bucket.
-//
-// Buildbucket.CreateBuild will validate the incoming requests to make sure
-// they meet these constraints.
-type Constraints struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
-
-	// Constraints allowed pools.
-	Pools []string `protobuf:"bytes,1,rep,name=pools,proto3" json:"pools,omitempty"`
-	// Only service accounts in this list are allowed.
-	ServiceAccounts []string `protobuf:"bytes,2,rep,name=service_accounts,json=serviceAccounts,proto3" json:"service_accounts,omitempty"`
-}
-
-func (x *Constraints) Reset() {
-	*x = Constraints{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_go_chromium_org_luci_buildbucket_proto_project_config_proto_msgTypes[2]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
-}
-
-func (x *Constraints) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*Constraints) ProtoMessage() {}
-
-func (x *Constraints) ProtoReflect() protoreflect.Message {
-	mi := &file_go_chromium_org_luci_buildbucket_proto_project_config_proto_msgTypes[2]
-	if protoimpl.UnsafeEnabled && x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use Constraints.ProtoReflect.Descriptor instead.
-func (*Constraints) Descriptor() ([]byte, []int) {
-	return file_go_chromium_org_luci_buildbucket_proto_project_config_proto_rawDescGZIP(), []int{2}
-}
-
-func (x *Constraints) GetPools() []string {
-	if x != nil {
-		return x.Pools
-	}
-	return nil
-}
-
-func (x *Constraints) GetServiceAccounts() []string {
-	if x != nil {
-		return x.ServiceAccounts
-	}
-	return nil
-}
-
 // Defines a swarmbucket builder. A builder has a name, a category and specifies
 // what should happen if a build is scheduled to that builder.
 //
@@ -562,7 +501,7 @@ type BuilderConfig struct {
 func (x *BuilderConfig) Reset() {
 	*x = BuilderConfig{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_go_chromium_org_luci_buildbucket_proto_project_config_proto_msgTypes[3]
+		mi := &file_go_chromium_org_luci_buildbucket_proto_project_config_proto_msgTypes[2]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -575,7 +514,7 @@ func (x *BuilderConfig) String() string {
 func (*BuilderConfig) ProtoMessage() {}
 
 func (x *BuilderConfig) ProtoReflect() protoreflect.Message {
-	mi := &file_go_chromium_org_luci_buildbucket_proto_project_config_proto_msgTypes[3]
+	mi := &file_go_chromium_org_luci_buildbucket_proto_project_config_proto_msgTypes[2]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -588,7 +527,7 @@ func (x *BuilderConfig) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use BuilderConfig.ProtoReflect.Descriptor instead.
 func (*BuilderConfig) Descriptor() ([]byte, []int) {
-	return file_go_chromium_org_luci_buildbucket_proto_project_config_proto_rawDescGZIP(), []int{3}
+	return file_go_chromium_org_luci_buildbucket_proto_project_config_proto_rawDescGZIP(), []int{2}
 }
 
 func (x *BuilderConfig) GetName() string {
@@ -791,7 +730,7 @@ type Swarming struct {
 func (x *Swarming) Reset() {
 	*x = Swarming{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_go_chromium_org_luci_buildbucket_proto_project_config_proto_msgTypes[4]
+		mi := &file_go_chromium_org_luci_buildbucket_proto_project_config_proto_msgTypes[3]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -804,7 +743,7 @@ func (x *Swarming) String() string {
 func (*Swarming) ProtoMessage() {}
 
 func (x *Swarming) ProtoReflect() protoreflect.Message {
-	mi := &file_go_chromium_org_luci_buildbucket_proto_project_config_proto_msgTypes[4]
+	mi := &file_go_chromium_org_luci_buildbucket_proto_project_config_proto_msgTypes[3]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -817,7 +756,7 @@ func (x *Swarming) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Swarming.ProtoReflect.Descriptor instead.
 func (*Swarming) Descriptor() ([]byte, []int) {
-	return file_go_chromium_org_luci_buildbucket_proto_project_config_proto_rawDescGZIP(), []int{4}
+	return file_go_chromium_org_luci_buildbucket_proto_project_config_proto_rawDescGZIP(), []int{3}
 }
 
 func (x *Swarming) GetBuilders() []*BuilderConfig {
@@ -856,8 +795,11 @@ type Bucket struct {
 	//
 	// If omitted, it implies that led builds of this bucket reuse this bucket.
 	// This is allowed, but note that it means the led builds will be in
-	// the same bucket/builder with the real builds, which could be noisy,
-	// such as:
+	// the same bucket/builder with the real builds, which means Any users with
+	// led access will be able to do ANYTHING that this bucket's bots and
+	// service_accounts can do.
+	//
+	// It could also be noisy, such as:
 	// * On the LUCI UI, led builds will show under the same builder as the real builds,
 	// * Led builds will share the same ResultDB config as the real builds, so
 	//   their test results will be exported to the same BigQuery tables.
@@ -875,13 +817,13 @@ type Bucket struct {
 	//
 	// Buildbuceket.CreateBuild will validate the incoming requests to make sure
 	// they meet these constraints.
-	Constraints *Constraints `protobuf:"bytes,6,opt,name=constraints,proto3" json:"constraints,omitempty"`
+	Constraints *Bucket_Constraints `protobuf:"bytes,6,opt,name=constraints,proto3" json:"constraints,omitempty"`
 }
 
 func (x *Bucket) Reset() {
 	*x = Bucket{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_go_chromium_org_luci_buildbucket_proto_project_config_proto_msgTypes[5]
+		mi := &file_go_chromium_org_luci_buildbucket_proto_project_config_proto_msgTypes[4]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -894,7 +836,7 @@ func (x *Bucket) String() string {
 func (*Bucket) ProtoMessage() {}
 
 func (x *Bucket) ProtoReflect() protoreflect.Message {
-	mi := &file_go_chromium_org_luci_buildbucket_proto_project_config_proto_msgTypes[5]
+	mi := &file_go_chromium_org_luci_buildbucket_proto_project_config_proto_msgTypes[4]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -907,7 +849,7 @@ func (x *Bucket) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Bucket.ProtoReflect.Descriptor instead.
 func (*Bucket) Descriptor() ([]byte, []int) {
-	return file_go_chromium_org_luci_buildbucket_proto_project_config_proto_rawDescGZIP(), []int{5}
+	return file_go_chromium_org_luci_buildbucket_proto_project_config_proto_rawDescGZIP(), []int{4}
 }
 
 func (x *Bucket) GetName() string {
@@ -945,7 +887,7 @@ func (x *Bucket) GetShadow() string {
 	return ""
 }
 
-func (x *Bucket) GetConstraints() *Constraints {
+func (x *Bucket) GetConstraints() *Bucket_Constraints {
 	if x != nil {
 		return x.Constraints
 	}
@@ -967,7 +909,7 @@ type BuildbucketCfg struct {
 func (x *BuildbucketCfg) Reset() {
 	*x = BuildbucketCfg{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_go_chromium_org_luci_buildbucket_proto_project_config_proto_msgTypes[6]
+		mi := &file_go_chromium_org_luci_buildbucket_proto_project_config_proto_msgTypes[5]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -980,7 +922,7 @@ func (x *BuildbucketCfg) String() string {
 func (*BuildbucketCfg) ProtoMessage() {}
 
 func (x *BuildbucketCfg) ProtoReflect() protoreflect.Message {
-	mi := &file_go_chromium_org_luci_buildbucket_proto_project_config_proto_msgTypes[6]
+	mi := &file_go_chromium_org_luci_buildbucket_proto_project_config_proto_msgTypes[5]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -993,7 +935,7 @@ func (x *BuildbucketCfg) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use BuildbucketCfg.ProtoReflect.Descriptor instead.
 func (*BuildbucketCfg) Descriptor() ([]byte, []int) {
-	return file_go_chromium_org_luci_buildbucket_proto_project_config_proto_rawDescGZIP(), []int{6}
+	return file_go_chromium_org_luci_buildbucket_proto_project_config_proto_rawDescGZIP(), []int{5}
 }
 
 func (x *BuildbucketCfg) GetBuckets() []*Bucket {
@@ -1059,7 +1001,7 @@ type BuilderConfig_CacheEntry struct {
 func (x *BuilderConfig_CacheEntry) Reset() {
 	*x = BuilderConfig_CacheEntry{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_go_chromium_org_luci_buildbucket_proto_project_config_proto_msgTypes[7]
+		mi := &file_go_chromium_org_luci_buildbucket_proto_project_config_proto_msgTypes[6]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -1072,7 +1014,7 @@ func (x *BuilderConfig_CacheEntry) String() string {
 func (*BuilderConfig_CacheEntry) ProtoMessage() {}
 
 func (x *BuilderConfig_CacheEntry) ProtoReflect() protoreflect.Message {
-	mi := &file_go_chromium_org_luci_buildbucket_proto_project_config_proto_msgTypes[7]
+	mi := &file_go_chromium_org_luci_buildbucket_proto_project_config_proto_msgTypes[6]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1085,7 +1027,7 @@ func (x *BuilderConfig_CacheEntry) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use BuilderConfig_CacheEntry.ProtoReflect.Descriptor instead.
 func (*BuilderConfig_CacheEntry) Descriptor() ([]byte, []int) {
-	return file_go_chromium_org_luci_buildbucket_proto_project_config_proto_rawDescGZIP(), []int{3, 0}
+	return file_go_chromium_org_luci_buildbucket_proto_project_config_proto_rawDescGZIP(), []int{2, 0}
 }
 
 func (x *BuilderConfig_CacheEntry) GetName() string {
@@ -1167,7 +1109,7 @@ type BuilderConfig_Recipe struct {
 func (x *BuilderConfig_Recipe) Reset() {
 	*x = BuilderConfig_Recipe{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_go_chromium_org_luci_buildbucket_proto_project_config_proto_msgTypes[8]
+		mi := &file_go_chromium_org_luci_buildbucket_proto_project_config_proto_msgTypes[7]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -1180,7 +1122,7 @@ func (x *BuilderConfig_Recipe) String() string {
 func (*BuilderConfig_Recipe) ProtoMessage() {}
 
 func (x *BuilderConfig_Recipe) ProtoReflect() protoreflect.Message {
-	mi := &file_go_chromium_org_luci_buildbucket_proto_project_config_proto_msgTypes[8]
+	mi := &file_go_chromium_org_luci_buildbucket_proto_project_config_proto_msgTypes[7]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1193,7 +1135,7 @@ func (x *BuilderConfig_Recipe) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use BuilderConfig_Recipe.ProtoReflect.Descriptor instead.
 func (*BuilderConfig_Recipe) Descriptor() ([]byte, []int) {
-	return file_go_chromium_org_luci_buildbucket_proto_project_config_proto_rawDescGZIP(), []int{3, 1}
+	return file_go_chromium_org_luci_buildbucket_proto_project_config_proto_rawDescGZIP(), []int{2, 1}
 }
 
 func (x *BuilderConfig_Recipe) GetName() string {
@@ -1251,7 +1193,7 @@ type BuilderConfig_ResultDB struct {
 func (x *BuilderConfig_ResultDB) Reset() {
 	*x = BuilderConfig_ResultDB{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_go_chromium_org_luci_buildbucket_proto_project_config_proto_msgTypes[9]
+		mi := &file_go_chromium_org_luci_buildbucket_proto_project_config_proto_msgTypes[8]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -1264,7 +1206,7 @@ func (x *BuilderConfig_ResultDB) String() string {
 func (*BuilderConfig_ResultDB) ProtoMessage() {}
 
 func (x *BuilderConfig_ResultDB) ProtoReflect() protoreflect.Message {
-	mi := &file_go_chromium_org_luci_buildbucket_proto_project_config_proto_msgTypes[9]
+	mi := &file_go_chromium_org_luci_buildbucket_proto_project_config_proto_msgTypes[8]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1277,7 +1219,7 @@ func (x *BuilderConfig_ResultDB) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use BuilderConfig_ResultDB.ProtoReflect.Descriptor instead.
 func (*BuilderConfig_ResultDB) Descriptor() ([]byte, []int) {
-	return file_go_chromium_org_luci_buildbucket_proto_project_config_proto_rawDescGZIP(), []int{3, 2}
+	return file_go_chromium_org_luci_buildbucket_proto_project_config_proto_rawDescGZIP(), []int{2, 2}
 }
 
 func (x *BuilderConfig_ResultDB) GetEnable() bool {
@@ -1318,7 +1260,7 @@ type BuilderConfig_Backend struct {
 func (x *BuilderConfig_Backend) Reset() {
 	*x = BuilderConfig_Backend{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_go_chromium_org_luci_buildbucket_proto_project_config_proto_msgTypes[10]
+		mi := &file_go_chromium_org_luci_buildbucket_proto_project_config_proto_msgTypes[9]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -1331,7 +1273,7 @@ func (x *BuilderConfig_Backend) String() string {
 func (*BuilderConfig_Backend) ProtoMessage() {}
 
 func (x *BuilderConfig_Backend) ProtoReflect() protoreflect.Message {
-	mi := &file_go_chromium_org_luci_buildbucket_proto_project_config_proto_msgTypes[10]
+	mi := &file_go_chromium_org_luci_buildbucket_proto_project_config_proto_msgTypes[9]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1344,7 +1286,7 @@ func (x *BuilderConfig_Backend) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use BuilderConfig_Backend.ProtoReflect.Descriptor instead.
 func (*BuilderConfig_Backend) Descriptor() ([]byte, []int) {
-	return file_go_chromium_org_luci_buildbucket_proto_project_config_proto_rawDescGZIP(), []int{3, 3}
+	return file_go_chromium_org_luci_buildbucket_proto_project_config_proto_rawDescGZIP(), []int{2, 3}
 }
 
 func (x *BuilderConfig_Backend) GetTarget() string {
@@ -1359,6 +1301,68 @@ func (x *BuilderConfig_Backend) GetConfigJson() string {
 		return x.ConfigJson
 	}
 	return ""
+}
+
+// Constraints for a bucket.
+//
+// Buildbucket.CreateBuild will validate the incoming requests to make sure
+// they meet these constraints.
+type Bucket_Constraints struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	// Constraints allowed pools.
+	// Builds in this bucket must have a "pool" dimension which matches an entry in this list.
+	Pools []string `protobuf:"bytes,1,rep,name=pools,proto3" json:"pools,omitempty"`
+	// Only service accounts in this list are allowed.
+	ServiceAccounts []string `protobuf:"bytes,2,rep,name=service_accounts,json=serviceAccounts,proto3" json:"service_accounts,omitempty"`
+}
+
+func (x *Bucket_Constraints) Reset() {
+	*x = Bucket_Constraints{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_go_chromium_org_luci_buildbucket_proto_project_config_proto_msgTypes[11]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *Bucket_Constraints) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*Bucket_Constraints) ProtoMessage() {}
+
+func (x *Bucket_Constraints) ProtoReflect() protoreflect.Message {
+	mi := &file_go_chromium_org_luci_buildbucket_proto_project_config_proto_msgTypes[11]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use Bucket_Constraints.ProtoReflect.Descriptor instead.
+func (*Bucket_Constraints) Descriptor() ([]byte, []int) {
+	return file_go_chromium_org_luci_buildbucket_proto_project_config_proto_rawDescGZIP(), []int{4, 0}
+}
+
+func (x *Bucket_Constraints) GetPools() []string {
+	if x != nil {
+		return x.Pools
+	}
+	return nil
+}
+
+func (x *Bucket_Constraints) GetServiceAccounts() []string {
+	if x != nil {
+		return x.ServiceAccounts
+	}
+	return nil
 }
 
 var File_go_chromium_org_luci_buildbucket_proto_project_config_proto protoreflect.FileDescriptor
@@ -1396,11 +1400,6 @@ var file_go_chromium_org_luci_buildbucket_proto_project_config_proto_rawDesc = [
 	0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x04, 0x6e, 0x61, 0x6d, 0x65, 0x12, 0x24, 0x0a, 0x04, 0x61,
 	0x63, 0x6c, 0x73, 0x18, 0x02, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x10, 0x2e, 0x62, 0x75, 0x69, 0x6c,
 	0x64, 0x62, 0x75, 0x63, 0x6b, 0x65, 0x74, 0x2e, 0x41, 0x63, 0x6c, 0x52, 0x04, 0x61, 0x63, 0x6c,
-	0x73, 0x22, 0x4e, 0x0a, 0x0b, 0x43, 0x6f, 0x6e, 0x73, 0x74, 0x72, 0x61, 0x69, 0x6e, 0x74, 0x73,
-	0x12, 0x14, 0x0a, 0x05, 0x70, 0x6f, 0x6f, 0x6c, 0x73, 0x18, 0x01, 0x20, 0x03, 0x28, 0x09, 0x52,
-	0x05, 0x70, 0x6f, 0x6f, 0x6c, 0x73, 0x12, 0x29, 0x0a, 0x10, 0x73, 0x65, 0x72, 0x76, 0x69, 0x63,
-	0x65, 0x5f, 0x61, 0x63, 0x63, 0x6f, 0x75, 0x6e, 0x74, 0x73, 0x18, 0x02, 0x20, 0x03, 0x28, 0x09,
-	0x52, 0x0f, 0x73, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x41, 0x63, 0x63, 0x6f, 0x75, 0x6e, 0x74,
 	0x73, 0x22, 0x87, 0x10, 0x0a, 0x0d, 0x42, 0x75, 0x69, 0x6c, 0x64, 0x65, 0x72, 0x43, 0x6f, 0x6e,
 	0x66, 0x69, 0x67, 0x12, 0x12, 0x0a, 0x04, 0x6e, 0x61, 0x6d, 0x65, 0x18, 0x01, 0x20, 0x01, 0x28,
 	0x09, 0x52, 0x04, 0x6e, 0x61, 0x6d, 0x65, 0x12, 0x3c, 0x0a, 0x07, 0x62, 0x61, 0x63, 0x6b, 0x65,
@@ -1541,7 +1540,7 @@ var file_go_chromium_org_luci_buildbucket_proto_project_config_proto_rawDesc = [
 	0x33, 0x32, 0x56, 0x61, 0x6c, 0x75, 0x65, 0x52, 0x1c, 0x74, 0x61, 0x73, 0x6b, 0x54, 0x65, 0x6d,
 	0x70, 0x6c, 0x61, 0x74, 0x65, 0x43, 0x61, 0x6e, 0x61, 0x72, 0x79, 0x50, 0x65, 0x72, 0x63, 0x65,
 	0x6e, 0x74, 0x61, 0x67, 0x65, 0x4a, 0x04, 0x08, 0x01, 0x10, 0x02, 0x4a, 0x04, 0x08, 0x02, 0x10,
-	0x03, 0x4a, 0x04, 0x08, 0x03, 0x10, 0x04, 0x22, 0xe4, 0x01, 0x0a, 0x06, 0x42, 0x75, 0x63, 0x6b,
+	0x03, 0x4a, 0x04, 0x08, 0x03, 0x10, 0x04, 0x22, 0xbb, 0x02, 0x0a, 0x06, 0x42, 0x75, 0x63, 0x6b,
 	0x65, 0x74, 0x12, 0x12, 0x0a, 0x04, 0x6e, 0x61, 0x6d, 0x65, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09,
 	0x52, 0x04, 0x6e, 0x61, 0x6d, 0x65, 0x12, 0x24, 0x0a, 0x04, 0x61, 0x63, 0x6c, 0x73, 0x18, 0x02,
 	0x20, 0x03, 0x28, 0x0b, 0x32, 0x10, 0x2e, 0x62, 0x75, 0x69, 0x6c, 0x64, 0x62, 0x75, 0x63, 0x6b,
@@ -1552,29 +1551,34 @@ var file_go_chromium_org_luci_buildbucket_proto_project_config_proto_rawDesc = [
 	0x64, 0x62, 0x75, 0x63, 0x6b, 0x65, 0x74, 0x2e, 0x53, 0x77, 0x61, 0x72, 0x6d, 0x69, 0x6e, 0x67,
 	0x52, 0x08, 0x73, 0x77, 0x61, 0x72, 0x6d, 0x69, 0x6e, 0x67, 0x12, 0x16, 0x0a, 0x06, 0x73, 0x68,
 	0x61, 0x64, 0x6f, 0x77, 0x18, 0x05, 0x20, 0x01, 0x28, 0x09, 0x52, 0x06, 0x73, 0x68, 0x61, 0x64,
-	0x6f, 0x77, 0x12, 0x3a, 0x0a, 0x0b, 0x63, 0x6f, 0x6e, 0x73, 0x74, 0x72, 0x61, 0x69, 0x6e, 0x74,
-	0x73, 0x18, 0x06, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x18, 0x2e, 0x62, 0x75, 0x69, 0x6c, 0x64, 0x62,
-	0x75, 0x63, 0x6b, 0x65, 0x74, 0x2e, 0x43, 0x6f, 0x6e, 0x73, 0x74, 0x72, 0x61, 0x69, 0x6e, 0x74,
-	0x73, 0x52, 0x0b, 0x63, 0x6f, 0x6e, 0x73, 0x74, 0x72, 0x61, 0x69, 0x6e, 0x74, 0x73, 0x22, 0x75,
-	0x0a, 0x0e, 0x42, 0x75, 0x69, 0x6c, 0x64, 0x62, 0x75, 0x63, 0x6b, 0x65, 0x74, 0x43, 0x66, 0x67,
-	0x12, 0x2d, 0x0a, 0x07, 0x62, 0x75, 0x63, 0x6b, 0x65, 0x74, 0x73, 0x18, 0x01, 0x20, 0x03, 0x28,
-	0x0b, 0x32, 0x13, 0x2e, 0x62, 0x75, 0x69, 0x6c, 0x64, 0x62, 0x75, 0x63, 0x6b, 0x65, 0x74, 0x2e,
-	0x42, 0x75, 0x63, 0x6b, 0x65, 0x74, 0x52, 0x07, 0x62, 0x75, 0x63, 0x6b, 0x65, 0x74, 0x73, 0x12,
-	0x2e, 0x0a, 0x08, 0x61, 0x63, 0x6c, 0x5f, 0x73, 0x65, 0x74, 0x73, 0x18, 0x02, 0x20, 0x03, 0x28,
-	0x0b, 0x32, 0x13, 0x2e, 0x62, 0x75, 0x69, 0x6c, 0x64, 0x62, 0x75, 0x63, 0x6b, 0x65, 0x74, 0x2e,
-	0x41, 0x63, 0x6c, 0x53, 0x65, 0x74, 0x52, 0x07, 0x61, 0x63, 0x6c, 0x53, 0x65, 0x74, 0x73, 0x4a,
-	0x04, 0x08, 0x03, 0x10, 0x04, 0x2a, 0x24, 0x0a, 0x06, 0x54, 0x6f, 0x67, 0x67, 0x6c, 0x65, 0x12,
-	0x09, 0x0a, 0x05, 0x55, 0x4e, 0x53, 0x45, 0x54, 0x10, 0x00, 0x12, 0x07, 0x0a, 0x03, 0x59, 0x45,
-	0x53, 0x10, 0x01, 0x12, 0x06, 0x0a, 0x02, 0x4e, 0x4f, 0x10, 0x02, 0x42, 0x7c, 0x5a, 0x34, 0x67,
-	0x6f, 0x2e, 0x63, 0x68, 0x72, 0x6f, 0x6d, 0x69, 0x75, 0x6d, 0x2e, 0x6f, 0x72, 0x67, 0x2f, 0x6c,
-	0x75, 0x63, 0x69, 0x2f, 0x62, 0x75, 0x69, 0x6c, 0x64, 0x62, 0x75, 0x63, 0x6b, 0x65, 0x74, 0x2f,
-	0x70, 0x72, 0x6f, 0x74, 0x6f, 0x3b, 0x62, 0x75, 0x69, 0x6c, 0x64, 0x62, 0x75, 0x63, 0x6b, 0x65,
-	0x74, 0x70, 0x62, 0xa2, 0xfe, 0x23, 0x42, 0x0a, 0x40, 0x68, 0x74, 0x74, 0x70, 0x73, 0x3a, 0x2f,
-	0x2f, 0x6c, 0x75, 0x63, 0x69, 0x2d, 0x63, 0x6f, 0x6e, 0x66, 0x69, 0x67, 0x2e, 0x61, 0x70, 0x70,
-	0x73, 0x70, 0x6f, 0x74, 0x2e, 0x63, 0x6f, 0x6d, 0x2f, 0x73, 0x63, 0x68, 0x65, 0x6d, 0x61, 0x73,
-	0x2f, 0x70, 0x72, 0x6f, 0x6a, 0x65, 0x63, 0x74, 0x73, 0x3a, 0x62, 0x75, 0x69, 0x6c, 0x64, 0x62,
-	0x75, 0x63, 0x6b, 0x65, 0x74, 0x2e, 0x63, 0x66, 0x67, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f,
-	0x33,
+	0x6f, 0x77, 0x12, 0x41, 0x0a, 0x0b, 0x63, 0x6f, 0x6e, 0x73, 0x74, 0x72, 0x61, 0x69, 0x6e, 0x74,
+	0x73, 0x18, 0x06, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x1f, 0x2e, 0x62, 0x75, 0x69, 0x6c, 0x64, 0x62,
+	0x75, 0x63, 0x6b, 0x65, 0x74, 0x2e, 0x42, 0x75, 0x63, 0x6b, 0x65, 0x74, 0x2e, 0x43, 0x6f, 0x6e,
+	0x73, 0x74, 0x72, 0x61, 0x69, 0x6e, 0x74, 0x73, 0x52, 0x0b, 0x63, 0x6f, 0x6e, 0x73, 0x74, 0x72,
+	0x61, 0x69, 0x6e, 0x74, 0x73, 0x1a, 0x4e, 0x0a, 0x0b, 0x43, 0x6f, 0x6e, 0x73, 0x74, 0x72, 0x61,
+	0x69, 0x6e, 0x74, 0x73, 0x12, 0x14, 0x0a, 0x05, 0x70, 0x6f, 0x6f, 0x6c, 0x73, 0x18, 0x01, 0x20,
+	0x03, 0x28, 0x09, 0x52, 0x05, 0x70, 0x6f, 0x6f, 0x6c, 0x73, 0x12, 0x29, 0x0a, 0x10, 0x73, 0x65,
+	0x72, 0x76, 0x69, 0x63, 0x65, 0x5f, 0x61, 0x63, 0x63, 0x6f, 0x75, 0x6e, 0x74, 0x73, 0x18, 0x02,
+	0x20, 0x03, 0x28, 0x09, 0x52, 0x0f, 0x73, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x41, 0x63, 0x63,
+	0x6f, 0x75, 0x6e, 0x74, 0x73, 0x22, 0x75, 0x0a, 0x0e, 0x42, 0x75, 0x69, 0x6c, 0x64, 0x62, 0x75,
+	0x63, 0x6b, 0x65, 0x74, 0x43, 0x66, 0x67, 0x12, 0x2d, 0x0a, 0x07, 0x62, 0x75, 0x63, 0x6b, 0x65,
+	0x74, 0x73, 0x18, 0x01, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x13, 0x2e, 0x62, 0x75, 0x69, 0x6c, 0x64,
+	0x62, 0x75, 0x63, 0x6b, 0x65, 0x74, 0x2e, 0x42, 0x75, 0x63, 0x6b, 0x65, 0x74, 0x52, 0x07, 0x62,
+	0x75, 0x63, 0x6b, 0x65, 0x74, 0x73, 0x12, 0x2e, 0x0a, 0x08, 0x61, 0x63, 0x6c, 0x5f, 0x73, 0x65,
+	0x74, 0x73, 0x18, 0x02, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x13, 0x2e, 0x62, 0x75, 0x69, 0x6c, 0x64,
+	0x62, 0x75, 0x63, 0x6b, 0x65, 0x74, 0x2e, 0x41, 0x63, 0x6c, 0x53, 0x65, 0x74, 0x52, 0x07, 0x61,
+	0x63, 0x6c, 0x53, 0x65, 0x74, 0x73, 0x4a, 0x04, 0x08, 0x03, 0x10, 0x04, 0x2a, 0x24, 0x0a, 0x06,
+	0x54, 0x6f, 0x67, 0x67, 0x6c, 0x65, 0x12, 0x09, 0x0a, 0x05, 0x55, 0x4e, 0x53, 0x45, 0x54, 0x10,
+	0x00, 0x12, 0x07, 0x0a, 0x03, 0x59, 0x45, 0x53, 0x10, 0x01, 0x12, 0x06, 0x0a, 0x02, 0x4e, 0x4f,
+	0x10, 0x02, 0x42, 0x7c, 0x5a, 0x34, 0x67, 0x6f, 0x2e, 0x63, 0x68, 0x72, 0x6f, 0x6d, 0x69, 0x75,
+	0x6d, 0x2e, 0x6f, 0x72, 0x67, 0x2f, 0x6c, 0x75, 0x63, 0x69, 0x2f, 0x62, 0x75, 0x69, 0x6c, 0x64,
+	0x62, 0x75, 0x63, 0x6b, 0x65, 0x74, 0x2f, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x3b, 0x62, 0x75, 0x69,
+	0x6c, 0x64, 0x62, 0x75, 0x63, 0x6b, 0x65, 0x74, 0x70, 0x62, 0xa2, 0xfe, 0x23, 0x42, 0x0a, 0x40,
+	0x68, 0x74, 0x74, 0x70, 0x73, 0x3a, 0x2f, 0x2f, 0x6c, 0x75, 0x63, 0x69, 0x2d, 0x63, 0x6f, 0x6e,
+	0x66, 0x69, 0x67, 0x2e, 0x61, 0x70, 0x70, 0x73, 0x70, 0x6f, 0x74, 0x2e, 0x63, 0x6f, 0x6d, 0x2f,
+	0x73, 0x63, 0x68, 0x65, 0x6d, 0x61, 0x73, 0x2f, 0x70, 0x72, 0x6f, 0x6a, 0x65, 0x63, 0x74, 0x73,
+	0x3a, 0x62, 0x75, 0x69, 0x6c, 0x64, 0x62, 0x75, 0x63, 0x6b, 0x65, 0x74, 0x2e, 0x63, 0x66, 0x67,
+	0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
 }
 
 var (
@@ -1596,16 +1600,16 @@ var file_go_chromium_org_luci_buildbucket_proto_project_config_proto_goTypes = [
 	(Acl_Role)(0),                    // 1: buildbucket.Acl.Role
 	(*Acl)(nil),                      // 2: buildbucket.Acl
 	(*AclSet)(nil),                   // 3: buildbucket.AclSet
-	(*Constraints)(nil),              // 4: buildbucket.Constraints
-	(*BuilderConfig)(nil),            // 5: buildbucket.BuilderConfig
-	(*Swarming)(nil),                 // 6: buildbucket.Swarming
-	(*Bucket)(nil),                   // 7: buildbucket.Bucket
-	(*BuildbucketCfg)(nil),           // 8: buildbucket.BuildbucketCfg
-	(*BuilderConfig_CacheEntry)(nil), // 9: buildbucket.BuilderConfig.CacheEntry
-	(*BuilderConfig_Recipe)(nil),     // 10: buildbucket.BuilderConfig.Recipe
-	(*BuilderConfig_ResultDB)(nil),   // 11: buildbucket.BuilderConfig.ResultDB
-	(*BuilderConfig_Backend)(nil),    // 12: buildbucket.BuilderConfig.Backend
-	nil,                              // 13: buildbucket.BuilderConfig.ExperimentsEntry
+	(*BuilderConfig)(nil),            // 4: buildbucket.BuilderConfig
+	(*Swarming)(nil),                 // 5: buildbucket.Swarming
+	(*Bucket)(nil),                   // 6: buildbucket.Bucket
+	(*BuildbucketCfg)(nil),           // 7: buildbucket.BuildbucketCfg
+	(*BuilderConfig_CacheEntry)(nil), // 8: buildbucket.BuilderConfig.CacheEntry
+	(*BuilderConfig_Recipe)(nil),     // 9: buildbucket.BuilderConfig.Recipe
+	(*BuilderConfig_ResultDB)(nil),   // 10: buildbucket.BuilderConfig.ResultDB
+	(*BuilderConfig_Backend)(nil),    // 11: buildbucket.BuilderConfig.Backend
+	nil,                              // 12: buildbucket.BuilderConfig.ExperimentsEntry
+	(*Bucket_Constraints)(nil),       // 13: buildbucket.Bucket.Constraints
 	(*Executable)(nil),               // 14: buildbucket.v2.Executable
 	(*durationpb.Duration)(nil),      // 15: google.protobuf.Duration
 	(Trinary)(0),                     // 16: buildbucket.v2.Trinary
@@ -1616,26 +1620,26 @@ var file_go_chromium_org_luci_buildbucket_proto_project_config_proto_goTypes = [
 var file_go_chromium_org_luci_buildbucket_proto_project_config_proto_depIdxs = []int32{
 	1,  // 0: buildbucket.Acl.role:type_name -> buildbucket.Acl.Role
 	2,  // 1: buildbucket.AclSet.acls:type_name -> buildbucket.Acl
-	12, // 2: buildbucket.BuilderConfig.backend:type_name -> buildbucket.BuilderConfig.Backend
-	12, // 3: buildbucket.BuilderConfig.backend_alt:type_name -> buildbucket.BuilderConfig.Backend
-	10, // 4: buildbucket.BuilderConfig.recipe:type_name -> buildbucket.BuilderConfig.Recipe
+	11, // 2: buildbucket.BuilderConfig.backend:type_name -> buildbucket.BuilderConfig.Backend
+	11, // 3: buildbucket.BuilderConfig.backend_alt:type_name -> buildbucket.BuilderConfig.Backend
+	9,  // 4: buildbucket.BuilderConfig.recipe:type_name -> buildbucket.BuilderConfig.Recipe
 	14, // 5: buildbucket.BuilderConfig.exe:type_name -> buildbucket.v2.Executable
 	15, // 6: buildbucket.BuilderConfig.grace_period:type_name -> google.protobuf.Duration
 	16, // 7: buildbucket.BuilderConfig.wait_for_capacity:type_name -> buildbucket.v2.Trinary
-	9,  // 8: buildbucket.BuilderConfig.caches:type_name -> buildbucket.BuilderConfig.CacheEntry
+	8,  // 8: buildbucket.BuilderConfig.caches:type_name -> buildbucket.BuilderConfig.CacheEntry
 	0,  // 9: buildbucket.BuilderConfig.build_numbers:type_name -> buildbucket.Toggle
 	0,  // 10: buildbucket.BuilderConfig.auto_builder_dimension:type_name -> buildbucket.Toggle
 	0,  // 11: buildbucket.BuilderConfig.experimental:type_name -> buildbucket.Toggle
 	17, // 12: buildbucket.BuilderConfig.task_template_canary_percentage:type_name -> google.protobuf.UInt32Value
-	13, // 13: buildbucket.BuilderConfig.experiments:type_name -> buildbucket.BuilderConfig.ExperimentsEntry
+	12, // 13: buildbucket.BuilderConfig.experiments:type_name -> buildbucket.BuilderConfig.ExperimentsEntry
 	16, // 14: buildbucket.BuilderConfig.critical:type_name -> buildbucket.v2.Trinary
-	11, // 15: buildbucket.BuilderConfig.resultdb:type_name -> buildbucket.BuilderConfig.ResultDB
-	5,  // 16: buildbucket.Swarming.builders:type_name -> buildbucket.BuilderConfig
+	10, // 15: buildbucket.BuilderConfig.resultdb:type_name -> buildbucket.BuilderConfig.ResultDB
+	4,  // 16: buildbucket.Swarming.builders:type_name -> buildbucket.BuilderConfig
 	17, // 17: buildbucket.Swarming.task_template_canary_percentage:type_name -> google.protobuf.UInt32Value
 	2,  // 18: buildbucket.Bucket.acls:type_name -> buildbucket.Acl
-	6,  // 19: buildbucket.Bucket.swarming:type_name -> buildbucket.Swarming
-	4,  // 20: buildbucket.Bucket.constraints:type_name -> buildbucket.Constraints
-	7,  // 21: buildbucket.BuildbucketCfg.buckets:type_name -> buildbucket.Bucket
+	5,  // 19: buildbucket.Bucket.swarming:type_name -> buildbucket.Swarming
+	13, // 20: buildbucket.Bucket.constraints:type_name -> buildbucket.Bucket.Constraints
+	6,  // 21: buildbucket.BuildbucketCfg.buckets:type_name -> buildbucket.Bucket
 	3,  // 22: buildbucket.BuildbucketCfg.acl_sets:type_name -> buildbucket.AclSet
 	18, // 23: buildbucket.BuilderConfig.ResultDB.bq_exports:type_name -> luci.resultdb.v1.BigQueryExport
 	19, // 24: buildbucket.BuilderConfig.ResultDB.history_options:type_name -> luci.resultdb.v1.HistoryOptions
@@ -1678,18 +1682,6 @@ func file_go_chromium_org_luci_buildbucket_proto_project_config_proto_init() {
 			}
 		}
 		file_go_chromium_org_luci_buildbucket_proto_project_config_proto_msgTypes[2].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*Constraints); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_go_chromium_org_luci_buildbucket_proto_project_config_proto_msgTypes[3].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*BuilderConfig); i {
 			case 0:
 				return &v.state
@@ -1701,7 +1693,7 @@ func file_go_chromium_org_luci_buildbucket_proto_project_config_proto_init() {
 				return nil
 			}
 		}
-		file_go_chromium_org_luci_buildbucket_proto_project_config_proto_msgTypes[4].Exporter = func(v interface{}, i int) interface{} {
+		file_go_chromium_org_luci_buildbucket_proto_project_config_proto_msgTypes[3].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*Swarming); i {
 			case 0:
 				return &v.state
@@ -1713,7 +1705,7 @@ func file_go_chromium_org_luci_buildbucket_proto_project_config_proto_init() {
 				return nil
 			}
 		}
-		file_go_chromium_org_luci_buildbucket_proto_project_config_proto_msgTypes[5].Exporter = func(v interface{}, i int) interface{} {
+		file_go_chromium_org_luci_buildbucket_proto_project_config_proto_msgTypes[4].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*Bucket); i {
 			case 0:
 				return &v.state
@@ -1725,7 +1717,7 @@ func file_go_chromium_org_luci_buildbucket_proto_project_config_proto_init() {
 				return nil
 			}
 		}
-		file_go_chromium_org_luci_buildbucket_proto_project_config_proto_msgTypes[6].Exporter = func(v interface{}, i int) interface{} {
+		file_go_chromium_org_luci_buildbucket_proto_project_config_proto_msgTypes[5].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*BuildbucketCfg); i {
 			case 0:
 				return &v.state
@@ -1737,7 +1729,7 @@ func file_go_chromium_org_luci_buildbucket_proto_project_config_proto_init() {
 				return nil
 			}
 		}
-		file_go_chromium_org_luci_buildbucket_proto_project_config_proto_msgTypes[7].Exporter = func(v interface{}, i int) interface{} {
+		file_go_chromium_org_luci_buildbucket_proto_project_config_proto_msgTypes[6].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*BuilderConfig_CacheEntry); i {
 			case 0:
 				return &v.state
@@ -1749,7 +1741,7 @@ func file_go_chromium_org_luci_buildbucket_proto_project_config_proto_init() {
 				return nil
 			}
 		}
-		file_go_chromium_org_luci_buildbucket_proto_project_config_proto_msgTypes[8].Exporter = func(v interface{}, i int) interface{} {
+		file_go_chromium_org_luci_buildbucket_proto_project_config_proto_msgTypes[7].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*BuilderConfig_Recipe); i {
 			case 0:
 				return &v.state
@@ -1761,7 +1753,7 @@ func file_go_chromium_org_luci_buildbucket_proto_project_config_proto_init() {
 				return nil
 			}
 		}
-		file_go_chromium_org_luci_buildbucket_proto_project_config_proto_msgTypes[9].Exporter = func(v interface{}, i int) interface{} {
+		file_go_chromium_org_luci_buildbucket_proto_project_config_proto_msgTypes[8].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*BuilderConfig_ResultDB); i {
 			case 0:
 				return &v.state
@@ -1773,8 +1765,20 @@ func file_go_chromium_org_luci_buildbucket_proto_project_config_proto_init() {
 				return nil
 			}
 		}
-		file_go_chromium_org_luci_buildbucket_proto_project_config_proto_msgTypes[10].Exporter = func(v interface{}, i int) interface{} {
+		file_go_chromium_org_luci_buildbucket_proto_project_config_proto_msgTypes[9].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*BuilderConfig_Backend); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_go_chromium_org_luci_buildbucket_proto_project_config_proto_msgTypes[11].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*Bucket_Constraints); i {
 			case 0:
 				return &v.state
 			case 1:

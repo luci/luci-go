@@ -67,18 +67,6 @@ message AclSet {
   repeated Acl acls = 2;
 }
 
-// Constraints for a bucket.
-//
-// Buildbucket.CreateBuild will validate the incoming requests to make sure
-// they meet these constraints.
-message Constraints {
-  // Constraints allowed pools.
-  repeated string pools = 1;
-
-  // Only service accounts in this list are allowed.
-  repeated string service_accounts = 2;
-}
-
 // Defines a swarmbucket builder. A builder has a name, a category and specifies
 // what should happen if a build is scheduled to that builder.
 //
@@ -489,13 +477,29 @@ message Bucket {
   //
   // If omitted, it implies that led builds of this bucket reuse this bucket.
   // This is allowed, but note that it means the led builds will be in
-  // the same bucket/builder with the real builds, which could be noisy,
-  // such as:
+  // the same bucket/builder with the real builds, which means Any users with
+  // led access will be able to do ANYTHING that this bucket's bots and
+  // service_accounts can do.
+  //
+  // It could also be noisy, such as:
   // * On the LUCI UI, led builds will show under the same builder as the real builds,
   // * Led builds will share the same ResultDB config as the real builds, so
   //   their test results will be exported to the same BigQuery tables.
   // * Subscribers of Buildbucket PubSub need to filter them out.
   string shadow = 5;
+
+  // Constraints for a bucket.
+  //
+  // Buildbucket.CreateBuild will validate the incoming requests to make sure
+  // they meet these constraints.
+  message Constraints {
+    // Constraints allowed pools.
+    // Builds in this bucket must have a "pool" dimension which matches an entry in this list.
+    repeated string pools = 1;
+
+    // Only service accounts in this list are allowed.
+    repeated string service_accounts = 2;
+  }
 
   // Security constraints of the bucket.
   //
