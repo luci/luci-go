@@ -48,8 +48,8 @@ var modeToVote = map[run.Mode]int32{
 // on the *triggering* CQ vote also voted on the additional label, then the
 // additional mode is selected instead of standard Dry/Full Run.
 //
-// Returns nil if CL is not triggered.
-func Find(ci *gerritpb.ChangeInfo, cg *cfgpb.ConfigGroup) *run.Trigger {
+// Returns up to one trigger based on a vote on the Commit-Queue label.
+func Find(ci *gerritpb.ChangeInfo, cg *cfgpb.ConfigGroup) run.Triggers {
 	if ci.GetStatus() != gerritpb.ChangeStatus_NEW {
 		return nil
 	}
@@ -128,7 +128,7 @@ func Find(ci *gerritpb.ChangeInfo, cg *cfgpb.ConfigGroup) *run.Trigger {
 	if ret.GetTime().AsTime().Before(revisionTs.AsTime()) {
 		ret.Time = revisionTs
 	}
-	return ret
+	return run.Triggers{ret}
 }
 
 func applyAdditionalMode(ci *gerritpb.ChangeInfo, mode *cfgpb.Mode, res *run.Trigger) bool {

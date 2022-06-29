@@ -403,7 +403,7 @@ func TestComponentsActions(t *testing.T) {
 						ID:               common.CLID(clid),
 						ExpectedEVersion: 1,
 						Snapshot:         cl.Snapshot,
-						TriggerInfo:      trigger.Find(ci, cfgGroups[0].Content),
+						TriggerInfo:      trigger.Find(ci, cfgGroups[0].Content).CQVoteTrigger(),
 					}},
 				}
 			}

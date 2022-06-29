@@ -67,7 +67,8 @@ func TestPostStartMessage(t *testing.T) {
 		prjcfgtest.Create(ctx, lProject, &cfg)
 
 		ensureCL := func(ci *gerritpb.ChangeInfo) (*changelist.CL, *run.RunCL) {
-			t := trigger.Find(ci, cfg.GetConfigGroups()[0])
+			triggers := trigger.Find(ci, cfg.GetConfigGroups()[0])
+			So(triggers.Len(), ShouldEqual, 1)
 			if t == nil {
 				panic(fmt.Errorf("CL %d must be triggered", ci.GetNumber()))
 			}
@@ -85,7 +86,7 @@ func TestPostStartMessage(t *testing.T) {
 				ID:         cl.ID,
 				ExternalID: cl.ExternalID,
 				IndexedID:  cl.ID,
-				Trigger:    t,
+				Trigger:    triggers.CQVoteTrigger(),
 				Run:        datastore.MakeKey(ctx, run.RunKind, string(runID)),
 				Detail: &changelist.Snapshot{
 					Kind: &changelist.Snapshot_Gerrit{Gerrit: &changelist.Gerrit{

@@ -334,7 +334,7 @@ func (rs *runStage) makeCreator(ctx context.Context, combo *combo, cg *prjcfg.Co
 		opts = run.MergeOptions(opts, run.ExtractOptions(cl.Snapshot))
 
 		// Restore email, which Project Manager doesn't track inside PCLs.
-		tr := trigger.Find(cl.Snapshot.GetGerrit().GetInfo(), cg.Content)
+		tr := trigger.Find(cl.Snapshot.GetGerrit().GetInfo(), cg.Content).CQVoteTrigger()
 		if tr.GetMode() != pcl.GetTrigger().GetMode() {
 			panic(fmt.Errorf("inconsistent Trigger in PM (%s) vs freshly extracted (%s)", pcl.GetTrigger(), tr))
 		}

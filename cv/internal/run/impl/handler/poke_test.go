@@ -105,11 +105,13 @@ func TestPokeRecheckTree(t *testing.T) {
 				},
 			},
 		}
+		triggers := trigger.Find(ci, cfg.GetConfigGroups()[0])
+		So(triggers.Len(), ShouldEqual, 1)
 		rcl := &run.RunCL{
 			ID:      gChange,
 			Run:     datastore.MakeKey(ctx, run.RunKind, string(rid)),
 			Detail:  cl.Snapshot,
-			Trigger: trigger.Find(ci, cfg.GetConfigGroups()[0]),
+			Trigger: triggers.CQVoteTrigger(),
 		}
 		So(datastore.Put(ctx, cl, rcl), ShouldBeNil)
 

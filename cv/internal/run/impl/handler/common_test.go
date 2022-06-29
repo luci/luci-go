@@ -168,12 +168,14 @@ func TestCancelTriggers(t *testing.T) {
 				ExternalUpdateTime: timestamppb.New(ct.Clock.Now()),
 			},
 		}
+		triggers := trigger.Find(ci, cg.Content)
+		So(triggers.Len(), ShouldEqual, 1)
 		rcl := run.RunCL{
 			ID:         clid,
 			Run:        datastore.MakeKey(ctx, run.RunKind, string(rid)),
 			ExternalID: cl.ExternalID,
 			Detail:     cl.Snapshot,
-			Trigger:    trigger.Find(ci, cg.Content),
+			Trigger:    triggers.CQVoteTrigger(),
 		}
 		So(datastore.Put(ctx, &cl, &rcl), ShouldBeNil)
 		// Simulate CL no longer existing in Gerrit (e.g. ct.GFake) 1 minute later,

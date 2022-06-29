@@ -330,23 +330,25 @@ func (s *State) tryUsingApplicableConfigGroups(ap *changelist.ApplicableConfig_P
 
 // setTrigger sets a .Trigger of a PCL.
 func (s *State) setTrigger(ci *gerritpb.ChangeInfo, pcl *prjpb.PCL) {
-	// Trigger is a function of a CL and applicable ConfigGroup, which may define
-	// additional modes.
-	// In case of misconfiguration, they may be 0 or 2+ applicable ConfigGroups,
-	// in which case we use empty ConfigGroup{}. This doesn't matter much,
-	// since such CLs will be soon purged. In the very worst case, CL purger will
-	// remove just the CQ vote and not the additional label's vote defined in
-	// actually intended ConfigGroup, which isn't a big deal.
+	// Triggers are a function of a CL and applicable ConfigGroup, which may
+	// define additional modes.
+	// In case of misconfiguration, there may be 0 or 2+ applicable
+	// ConfigGroups, in which case we use empty ConfigGroup{}.
+	// This doesn't matter much, since such CLs will be soon purged.
+	// In the very worst case, CL purger will  remove just the CQ vote and not
+	// the additional label's vote defined in actually intended ConfigGroup,
+	// which isn't a big deal.
 	var cg *cfgpb.ConfigGroup
 	if idxs := pcl.GetConfigGroupIndexes(); len(idxs) == 1 {
 		cg = s.configGroups[idxs[0]].Content
 	} else {
 		cg = &cfgpb.ConfigGroup{}
 	}
-	t := trigger.Find(ci, cg)
-	if t == nil {
+	ts := trigger.Find(ci, cg)
+	if ts.Len() == 0 {
 		return
 	}
+	t := ts.CQVoteTrigger()
 
 	switch mode := run.Mode(t.GetMode()); mode {
 	case "", run.DryRun, run.FullRun, run.QuickDryRun:

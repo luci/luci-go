@@ -1121,7 +1121,7 @@ func defaultPCL(cl *changelist.CL) *prjpb.PCL {
 	}
 	ci := cl.Snapshot.GetGerrit().GetInfo()
 	if ci != nil {
-		p.Trigger = trigger.Find(ci, &cfgpb.ConfigGroup{})
+		p.Trigger = trigger.Find(ci, &cfgpb.ConfigGroup{}).CQVoteTrigger()
 		if p.Trigger != nil {
 			p.Trigger.Email = ""
 			p.Trigger.GerritAccountId = 0
