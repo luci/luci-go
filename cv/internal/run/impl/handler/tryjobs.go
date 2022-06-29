@@ -17,12 +17,14 @@ package handler
 import (
 	"context"
 	"fmt"
+	"sort"
 	"time"
 
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
+	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 
@@ -35,9 +37,32 @@ import (
 	"go.chromium.org/luci/cv/internal/tryjob"
 )
 
+const (
+	// maxTryjobExecutorDuration is the max time that the tryjob executor
+	// can process.
+	maxTryjobExecutorDuration = 8 * time.Minute
+)
+
 // OnTryjobsUpdated implements Handler interface.
 func (impl *Impl) OnTryjobsUpdated(ctx context.Context, rs *state.RunState, tryjobs common.TryjobIDs) (*Result, error) {
-	return nil, errors.New("not implemented")
+	switch status := rs.Status; {
+	case run.IsEnded(status):
+		fallthrough
+	case status == run.Status_WAITING_FOR_SUBMISSION || status == run.Status_SUBMITTING:
+		logging.Debugf(ctx, "Ignoring Tryjobs event because Run is in %s", status)
+		return &Result{State: rs}, nil
+	case status != run.Status_RUNNING:
+		return nil, errors.Reason("expected RUNNING status, got %s", status).Err()
+	case hasExecuteTryjobLongOp(rs):
+		// Process this event after the current tryjob executor finish running.
+		return &Result{State: rs, PreserveEvents: true}, nil
+	default:
+		tryjobs.Dedupe()
+		sort.Sort(tryjobs)
+		rs = rs.ShallowCopy()
+		enqueueTryjobsUpdatedTask(ctx, rs, tryjobs)
+		return &Result{State: rs}, nil
+	}
 }
 
 // OnCQDTryjobsUpdated implements Handler interface.
@@ -179,4 +204,24 @@ func toRunTryjob(in *migrationpb.Tryjob) (*run.Tryjob, error) {
 		},
 		CqdDerived: true,
 	}, nil
+}
+
+func hasExecuteTryjobLongOp(rs *state.RunState) bool {
+	for _, op := range rs.OngoingLongOps.GetOps() {
+		if op.GetExecuteTryjobs() != nil {
+			return true
+		}
+	}
+	return false
+}
+
+func enqueueTryjobsUpdatedTask(ctx context.Context, rs *state.RunState, tryjobs common.TryjobIDs) {
+	rs.EnqueueLongOp(&run.OngoingLongOps_Op{
+		Deadline: timestamppb.New(clock.Now(ctx).UTC().Add(maxTryjobExecutorDuration)),
+		Work: &run.OngoingLongOps_Op_ExecuteTryjobs{
+			ExecuteTryjobs: &tryjob.ExecuteTryjobsPayload{
+				TryjobsUpdated: tryjobs.ToInt64(),
+			},
+		},
+	})
 }

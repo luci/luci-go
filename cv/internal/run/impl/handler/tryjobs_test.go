@@ -40,6 +40,75 @@ import (
 	. "go.chromium.org/luci/common/testing/assertions"
 )
 
+func TestOnTryjobsUpdated(t *testing.T) {
+	t.Parallel()
+
+	Convey("OnTryjobsUpdated", t, func() {
+		ct := cvtesting.Test{}
+		ctx, cancel := ct.SetUp()
+		defer cancel()
+
+		const lProject = "infra"
+
+		now := ct.Clock.Now().UTC()
+		rid := common.MakeRunID(lProject, now, 1, []byte("deadbeef"))
+		rs := &state.RunState{
+			Run: run.Run{
+				ID:         rid,
+				Status:     run.Status_RUNNING,
+				CreateTime: now.Add(-2 * time.Minute),
+				StartTime:  now.Add(-1 * time.Minute),
+				CLs:        common.CLIDs{1},
+			},
+		}
+		h, _ := makeTestHandler(&ct)
+
+		Convey("Enqueue longop", func() {
+			res, err := h.OnTryjobsUpdated(ctx, rs, common.MakeTryjobIDs(456, 789, 456))
+			So(err, ShouldBeNil)
+			So(res.SideEffectFn, ShouldBeNil)
+			So(res.PreserveEvents, ShouldBeFalse)
+			So(res.State.OngoingLongOps.GetOps(), ShouldHaveLength, 1)
+			for _, op := range res.State.OngoingLongOps.GetOps() {
+				So(op, ShouldResembleProto, &run.OngoingLongOps_Op{
+					Deadline: timestamppb.New(ct.Clock.Now().UTC().Add(maxTryjobExecutorDuration)),
+					Work: &run.OngoingLongOps_Op_ExecuteTryjobs{
+						ExecuteTryjobs: &tryjob.ExecuteTryjobsPayload{
+							TryjobsUpdated: []int64{456, 789}, // also deduped 456
+						},
+					},
+				})
+			}
+		})
+
+		Convey("Defer if an tryjob execute task is ongoing", func() {
+			enqueueTryjobsUpdatedTask(ctx, rs, common.TryjobIDs{123})
+			res, err := h.OnTryjobsUpdated(ctx, rs, common.MakeTryjobIDs(456, 789, 456))
+			So(err, ShouldBeNil)
+			So(res.SideEffectFn, ShouldBeNil)
+			So(res.PreserveEvents, ShouldBeTrue)
+		})
+
+		statuses := []run.Status{
+			run.Status_SUCCEEDED,
+			run.Status_FAILED,
+			run.Status_CANCELLED,
+			run.Status_WAITING_FOR_SUBMISSION,
+			run.Status_SUBMITTING,
+		}
+		for _, status := range statuses {
+			Convey(fmt.Sprintf("Noop when Run is %s", status), func() {
+				rs.Status = status
+				res, err := h.OnTryjobsUpdated(ctx, rs, common.TryjobIDs{123})
+				So(err, ShouldBeNil)
+				So(res.State, ShouldEqual, rs)
+				So(res.SideEffectFn, ShouldBeNil)
+				So(res.PreserveEvents, ShouldBeFalse)
+			})
+		}
+	})
+}
+
 func TestOnCQDTryjobsUpdated(t *testing.T) {
 	t.Parallel()
 

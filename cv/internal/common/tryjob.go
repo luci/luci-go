@@ -90,6 +90,18 @@ func (ids TryjobIDs) Contains(id TryjobID) bool {
 	return false
 }
 
+// ToInt64 returns a slice that contains all Tryjobs in int64 type.
+func (ids TryjobIDs) ToInt64() []int64 {
+	if ids == nil {
+		return nil
+	}
+	ret := make([]int64, len(ids))
+	for i, id := range ids {
+		ret[i] = int64(id)
+	}
+	return ret
+}
+
 // MakeTryjobIDs returns TryjobIDs from list of TryjobID in int64.
 func MakeTryjobIDs(ids ...int64) TryjobIDs {
 	if ids == nil {
