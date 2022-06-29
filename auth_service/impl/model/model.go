@@ -294,6 +294,8 @@ var (
 	ErrInvalidName = stderrors.New("invalid entity name")
 	// ErrInvalidReference is returned when a referenced entity name is invalid.
 	ErrInvalidReference = stderrors.New("invalid reference")
+	// ErrInvalidIdentity is returned when a referenced identity or glob is invalid.
+	ErrInvalidIdentity = stderrors.New("invalid identity")
 )
 
 // RootKey gets the root key of the entity group with all AuthDB entities.
@@ -450,6 +452,26 @@ func GetAllAuthGroups(ctx context.Context) ([]*AuthGroup, error) {
 	return authGroups, nil
 }
 
+// validateIdentities validates that all strings in a slice are parseable as valid identities.
+func validateIdentities(ids []string) error {
+	for _, val := range ids {
+		if _, err := identity.MakeIdentity(val); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// validateGlobs validates that all strings in a slice are parseable as valid identity globs.
+func validateGlobs(globs []string) error {
+	for _, val := range globs {
+		if _, err := identity.MakeGlob(val); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 // CreateAuthGroup creates a new AuthGroup and writes it to the datastore.
 // Only the following fields will be read from the input:
 // ID, Description, Owners, Members, Globs, Nested.
@@ -457,6 +479,14 @@ func CreateAuthGroup(ctx context.Context, group *AuthGroup) (*AuthGroup, error) 
 	// Check the supplied group name is valid, and not an external group.
 	if !isValidAuthGroupName(group.ID) || isExternalAuthGroupName(group.ID) {
 		return nil, ErrInvalidName
+	}
+
+	// Check that the supplied members and globs are well-formed.
+	if err := validateIdentities(group.Members); err != nil {
+		return nil, errors.Annotate(ErrInvalidIdentity, "%s", err).Err()
+	}
+	if err := validateGlobs(group.Globs); err != nil {
+		return nil, errors.Annotate(ErrInvalidIdentity, "%s", err).Err()
 	}
 
 	// Construct a new group so that we don't modify the input.

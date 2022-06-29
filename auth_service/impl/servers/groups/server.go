@@ -76,6 +76,8 @@ func (*Server) CreateGroup(ctx context.Context, request *rpcpb.CreateGroupReques
 		return nil, status.Errorf(codes.InvalidArgument, "invalid group name: %s", err)
 	case errors.Is(err, model.ErrInvalidReference):
 		return nil, status.Errorf(codes.InvalidArgument, "invalid group reference: %s", err)
+	case errors.Is(err, model.ErrInvalidIdentity):
+		return nil, status.Errorf(codes.InvalidArgument, "%s", err)
 	default:
 		return nil, status.Errorf(codes.Internal, "failed to create group %q: %s", request.GetGroup().GetName(), err)
 	}

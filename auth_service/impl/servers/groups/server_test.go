@@ -203,6 +203,32 @@ func TestGroupsServer(t *testing.T) {
 			So(err, ShouldHaveGRPCStatus, codes.InvalidArgument)
 		})
 
+		Convey("Invalid members", func() {
+			request := &rpcpb.CreateGroupRequest{
+				Group: &rpcpb.AuthGroup{
+					Name:        "test-group",
+					Description: "This is a group with invalid members.",
+					Owners:      "test-group",
+					Members:     []string{"no-prefix@identity.com"},
+				},
+			}
+			_, err := srv.CreateGroup(ctx, request)
+			So(err, ShouldHaveGRPCStatus, codes.InvalidArgument)
+		})
+
+		Convey("Invalid globs", func() {
+			request := &rpcpb.CreateGroupRequest{
+				Group: &rpcpb.AuthGroup{
+					Name:        "test-group",
+					Description: "This is a group with invalid members.",
+					Owners:      "test-group",
+					Globs:       []string{"*@no-prefix.com"},
+				},
+			}
+			_, err := srv.CreateGroup(ctx, request)
+			So(err, ShouldHaveGRPCStatus, codes.InvalidArgument)
+		})
+
 		Convey("Group already exists", func() {
 			So(datastore.Put(ctx,
 				&model.AuthGroup{

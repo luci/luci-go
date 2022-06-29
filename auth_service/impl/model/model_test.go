@@ -347,6 +347,24 @@ func TestCreateAuthGroup(t *testing.T) {
 			So(err, ShouldEqual, ErrAlreadyExists)
 		})
 
+		Convey("invalid member identities", func() {
+			group := testAuthGroup(ctx, "foo", nil)
+			group.Members = []string{"no-prefix@google.com"}
+
+			_, err := CreateAuthGroup(ctx, group)
+			So(err, ShouldUnwrapTo, ErrInvalidIdentity)
+			So(err, ShouldErrLike, "bad identity string \"no-prefix@google.com\"")
+		})
+
+		Convey("invalid identity globs", func() {
+			group := testAuthGroup(ctx, "foo", nil)
+			group.Globs = []string{"*@no-prefix.com"}
+
+			_, err := CreateAuthGroup(ctx, group)
+			So(err, ShouldUnwrapTo, ErrInvalidIdentity)
+			So(err, ShouldErrLike, "bad identity glob string \"*@no-prefix.com\"")
+		})
+
 		Convey("all referenced groups must exist", func() {
 			group := testAuthGroup(ctx, "foo", nil)
 			group.Owners = "bar"
