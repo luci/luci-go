@@ -1371,6 +1371,7 @@ luci.recipe(
     recipe = None,
     use_bbagent = None,
     use_python3 = None,
+    wrapper = None,
 )
 ```
 
@@ -1413,6 +1414,7 @@ a builder and a recipe needed for this builder.
 * **recipe**: name of a recipe inside the recipe bundle if it differs from `name`. Useful if recipe names clash between different recipe bundles. When this happens, `name` can be used as a non-ambiguous alias, and `recipe` can provide the actual recipe name. Defaults to `name`.
 * **use_bbagent**: a boolean to override Buildbucket's global configuration. If True, then builders with this recipe will always use bbagent. If False, then builders with this recipe will temporarily stop using bbagent (note that all builders are expected to use bbagent by ~2020Q3). Defaults to unspecified, which will cause Buildbucket to pick according to it's own global configuration. See [this bug](crbug.com/1015181) for the global bbagent rollout. Supports the module-scoped default.
 * **use_python3**: a boolean to use python3 to run the recipes. If set, also implies use_bbagent=True. This is equivalent to setting the 'luci.recipes.use_python3' experiment on the builder to 100%. Supports the module-scoped default.
+* **wrapper**: an optional list of strings which are a command and its arguments to wrap around recipe execution. If set, the builder will run `<wrapper> -- <luciexe>`. The 0th argument of the wrapper may be an absolute path. It is up to the owner of the builder to ensure that the wrapper executable is distributed to whatever machines this executable may run on.
 
 
 

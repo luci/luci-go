@@ -49,6 +49,7 @@ luci.recipe(
     name = "main/recipe",
     cipd_package = "recipe/bundles/main",
     use_python3 = True,
+    wrapper = ["path/to/wrapper"],
 )
 
 # Executables.
@@ -656,6 +657,7 @@ lucicfg.emit(
 #         cipd_package: "recipe/bundles/main"
 #         cipd_version: "refs/heads/main"
 #         cmd: "luciexe"
+#         wrapper: "path/to/wrapper"
 #       }
 #       properties:
 #         '{'
@@ -673,6 +675,7 @@ lucicfg.emit(
 #         cipd_package: "recipe/bundles/main"
 #         cipd_version: "refs/heads/main"
 #         cmd: "luciexe"
+#         wrapper: "path/to/wrapper"
 #       }
 #       properties:
 #         '{'
@@ -690,6 +693,7 @@ lucicfg.emit(
 #         cipd_package: "recipe/bundles/main"
 #         cipd_version: "refs/heads/main"
 #         cmd: "luciexe"
+#         wrapper: "path/to/wrapper"
 #       }
 #       properties:
 #         '{'
@@ -707,6 +711,7 @@ lucicfg.emit(
 #         cipd_package: "recipe/bundles/main"
 #         cipd_version: "refs/heads/main"
 #         cmd: "luciexe"
+#         wrapper: "path/to/wrapper"
 #       }
 #       properties:
 #         '{'
@@ -748,6 +753,7 @@ lucicfg.emit(
 #         cipd_package: "recipe/bundles/main"
 #         cipd_version: "refs/heads/main"
 #         cmd: "luciexe"
+#         wrapper: "path/to/wrapper"
 #       }
 #       properties:
 #         '{'
@@ -852,6 +858,7 @@ lucicfg.emit(
 #         cipd_package: "recipe/bundles/main"
 #         cipd_version: "refs/heads/main"
 #         cmd: "luciexe"
+#         wrapper: "path/to/wrapper"
 #       }
 #       properties:
 #         '{'
@@ -983,6 +990,7 @@ lucicfg.emit(
 #         cipd_package: "recipe/bundles/main"
 #         cipd_version: "refs/heads/main"
 #         cmd: "luciexe"
+#         wrapper: "path/to/wrapper"
 #       }
 #       properties:
 #         '{'
@@ -1000,6 +1008,7 @@ lucicfg.emit(
 #         cipd_package: "recipe/bundles/main"
 #         cipd_version: "refs/heads/main"
 #         cmd: "luciexe"
+#         wrapper: "path/to/wrapper"
 #       }
 #       properties:
 #         '{'
@@ -1017,6 +1026,7 @@ lucicfg.emit(
 #         cipd_package: "recipe/bundles/main"
 #         cipd_version: "refs/heads/main"
 #         cmd: "luciexe"
+#         wrapper: "path/to/wrapper"
 #       }
 #       properties:
 #         '{'
@@ -1034,6 +1044,7 @@ lucicfg.emit(
 #         cipd_package: "recipe/bundles/main"
 #         cipd_version: "refs/heads/main"
 #         cmd: "luciexe"
+#         wrapper: "path/to/wrapper"
 #       }
 #       properties:
 #         '{'
@@ -1051,6 +1062,7 @@ lucicfg.emit(
 #         cipd_package: "recipe/bundles/main"
 #         cipd_version: "refs/heads/main"
 #         cmd: "luciexe"
+#         wrapper: "path/to/wrapper"
 #       }
 #       properties:
 #         '{'
@@ -1068,6 +1080,7 @@ lucicfg.emit(
 #         cipd_package: "recipe/bundles/main"
 #         cipd_version: "refs/heads/main"
 #         cmd: "luciexe"
+#         wrapper: "path/to/wrapper"
 #       }
 #       properties:
 #         '{'

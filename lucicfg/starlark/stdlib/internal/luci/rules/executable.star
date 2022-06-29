@@ -144,7 +144,8 @@ def _recipe(
         cipd_version = None,
         recipe = None,
         use_bbagent = None,  # transitional for crbug.com/1015181
-        use_python3 = None):
+        use_python3 = None,
+        wrapper = None):
     """Defines an executable that runs a particular recipe.
 
     Recipes are python-based DSL for defining what a builder should do, see
@@ -198,6 +199,11 @@ def _recipe(
         implies use_bbagent=True. This is equivalent to setting the
         'luci.recipes.use_python3' experiment on the builder to 100%.
         Supports the module-scoped default.
+      wrapper: an optional list of strings which are a command and its arguments
+        to wrap around recipe execution. If set, the builder will run `<wrapper> -- <luciexe>`.
+        The 0th argument of the wrapper may be an absolute path. It is up to the
+        owner of the builder to ensure that the wrapper executable is distributed
+        to whatever machines this executable may run on.
     """
     name = validate.string("name", name)
     use_bbagent = validate.bool(
@@ -231,6 +237,7 @@ def _recipe(
         recipe = recipe or name,
         recipes_py3 = use_python3,
         cmd = cmd,
+        wrapper = wrapper,
     )
     graph.add_node(key, idempotent = True, props = props)
     return graph.keyset(key)
