@@ -26,6 +26,7 @@ import (
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/server/tq/tqtesting"
 
+	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/errors"
 	cfgpb "go.chromium.org/luci/cv/api/config/v2"
 	"go.chromium.org/luci/cv/internal/changelist"
@@ -169,13 +170,19 @@ func TestCancelTriggers(t *testing.T) {
 			},
 		}
 		triggers := trigger.Find(ci, cg.Content)
-		So(triggers.Len(), ShouldEqual, 1)
+		// Defaults for gf.CQ(+2).
+		So(triggers.GetCqVoteTrigger(), ShouldResembleProto, &run.Trigger{
+			Time:            timestamppb.New(testclock.TestRecentTimeUTC.Add(10 * time.Hour)),
+			Mode:            string(run.FullRun),
+			Email:           "user-1@example.com",
+			GerritAccountId: 1,
+		})
 		rcl := run.RunCL{
 			ID:         clid,
 			Run:        datastore.MakeKey(ctx, run.RunKind, string(rid)),
 			ExternalID: cl.ExternalID,
 			Detail:     cl.Snapshot,
-			Trigger:    triggers.CQVoteTrigger(),
+			Trigger:    triggers.GetCqVoteTrigger(),
 		}
 		So(datastore.Put(ctx, &cl, &rcl), ShouldBeNil)
 		// Simulate CL no longer existing in Gerrit (e.g. ct.GFake) 1 minute later,

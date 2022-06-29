@@ -16,64 +16,23 @@ package run
 
 import (
 	"fmt"
-
-	"google.golang.org/protobuf/proto"
-
-	"go.chromium.org/luci/common/data/stringset"
 )
-
-// Triggers is a convenience type to represent the collection of triggers that
-// can be present in a CL.
-type Triggers []*Trigger
-
-// cqVoteTriggers represent the set of modes that are triggered by a vote on
-// the `Commit-Queue` Gerrit label.
-var cqVoteTriggers = stringset.NewFromSlice(string(FullRun), string(DryRun), string(QuickDryRun))
-
-// CQVoteTrigger returns the first trigger in the collection that is triggered
-// by a vote on the `Commit-Queue` Gerrit label.
-func (ts Triggers) CQVoteTrigger() *Trigger {
-	return ts.firstInModes(cqVoteTriggers)
-}
-
-// Len returns the number of triggers in the collection.
-func (ts Triggers) Len() int {
-	return len(ts)
-}
-
-// firstInModes finds one trigger in the collection that matches any of the
-// given set of modes.
-func (ts Triggers) firstInModes(ms stringset.Set) *Trigger {
-	for _, t := range ts {
-		if ms.Has(t.Mode) {
-			return t
-		}
-	}
-	return nil
-}
-
-// Has checks whether the collection has the given trigger.
-func (ts Triggers) Has(target *Trigger) bool {
-	for _, t := range ts {
-		if proto.Equal(t, target) {
-			return true
-		}
-	}
-	return false
-}
 
 // HasTriggerChanged checks whether a trigger is no longer valid for a given CL.
 //
 // A trigger is no longer valid if it is no longer present in the list of
 // triggers found in the CL.
-func HasTriggerChanged(old *Trigger, triggers Triggers, clURL string) string {
-	switch t := triggers.firstInModes(stringset.NewFromSlice(old.GetMode())); {
-	case triggers.Len() == 0 || t == nil:
+func HasTriggerChanged(old *Trigger, ts *Triggers, clURL string) string {
+	cur := ts.GetCqVoteTrigger()
+	switch {
+	case cur == nil:
 		return fmt.Sprintf("the %s trigger on %s has been removed", old.GetMode(), clURL)
-	case !old.GetTime().AsTime().Equal(t.GetTime().AsTime()):
+	case old.GetMode() != cur.GetMode():
+		return fmt.Sprintf("the triggering vote on %s has requested a different run mode: %s", clURL, cur.GetMode())
+	case !old.GetTime().AsTime().Equal(cur.GetTime().AsTime()):
 		return fmt.Sprintf(
 			"the timestamp of the triggering vote on %s has changed from %s to %s",
-			clURL, old.GetTime().AsTime(), t.GetTime().AsTime())
+			clURL, old.GetTime().AsTime(), cur.GetTime().AsTime())
 	default:
 		// Theoretically, if the triggering user changes, it should also be counted
 		// as changed trigger. However, checking whether triggering time has changed

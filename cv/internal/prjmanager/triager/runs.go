@@ -305,7 +305,7 @@ func (rs *runStage) makeCreator(ctx context.Context, combo *combo, cg *prjcfg.Co
 	cls := make([]*changelist.CL, len(combo.all))
 	for i, info := range combo.all {
 		cls[i] = &changelist.CL{ID: common.CLID(info.pcl.GetClid())}
-		if info == combo.latestTriggered {
+		if info == combo.latestTriggeredByCQVote {
 			latestIndex = i
 		}
 	}
@@ -334,9 +334,10 @@ func (rs *runStage) makeCreator(ctx context.Context, combo *combo, cg *prjcfg.Co
 		opts = run.MergeOptions(opts, run.ExtractOptions(cl.Snapshot))
 
 		// Restore email, which Project Manager doesn't track inside PCLs.
-		tr := trigger.Find(cl.Snapshot.GetGerrit().GetInfo(), cg.Content).CQVoteTrigger()
-		if tr.GetMode() != pcl.GetTrigger().GetMode() {
-			panic(fmt.Errorf("inconsistent Trigger in PM (%s) vs freshly extracted (%s)", pcl.GetTrigger(), tr))
+		tr := trigger.Find(cl.Snapshot.GetGerrit().GetInfo(), cg.Content).GetCqVoteTrigger()
+
+		if tr.GetMode() != pcl.GetTriggers().GetCqVoteTrigger().GetMode() {
+			panic(fmt.Errorf("inconsistent Trigger in PM (%s) vs freshly extracted (%s)", pcl.GetTriggers().GetCqVoteTrigger(), tr))
 		}
 
 		bcls[i] = runcreator.CL{
@@ -346,12 +347,12 @@ func (rs *runStage) makeCreator(ctx context.Context, combo *combo, cg *prjcfg.Co
 			Snapshot:         cl.Snapshot,
 		}
 	}
-
+	cqTrigger := combo.latestTriggeredByCQVote.pcl.GetTriggers().GetCqVoteTrigger()
 	return &runcreator.Creator{
 		ConfigGroupID:            cg.ID,
 		LUCIProject:              cg.ProjectString(),
-		Mode:                     run.Mode(combo.latestTriggered.pcl.GetTrigger().GetMode()),
-		CreateTime:               combo.latestTriggered.pcl.GetTrigger().GetTime().AsTime(),
+		Mode:                     run.Mode(cqTrigger.GetMode()),
+		CreateTime:               cqTrigger.GetTime().AsTime(),
 		Owner:                    owner,
 		Options:                  opts,
 		ExpectedIncompleteRunIDs: nil, // no Run is expected
@@ -373,12 +374,12 @@ func (rs *runStage) markVisited(clid int64) bool {
 //
 // The CLs in a combo are a subset of those from the component.
 type combo struct {
-	all                  []*clInfo
-	clids                map[int64]struct{}
-	notReady             []*clInfo
-	withNotYetLoadedDeps *clInfo // nil if none; any one otherwise.
-	latestTriggered      *clInfo
-	maxTriggeredTime     time.Time
+	all                     []*clInfo
+	clids                   map[int64]struct{}
+	notReady                []*clInfo
+	withNotYetLoadedDeps    *clInfo // nil if none; any one otherwise.
+	latestTriggeredByCQVote *clInfo
+	maxTriggeredTime        time.Time
 }
 
 func (c combo) String() string {
@@ -402,8 +403,9 @@ func (c combo) String() string {
 		}
 		sb.WriteRune(']')
 	}
-	if c.latestTriggered != nil {
-		fmt.Fprintf(&sb, " latestTriggered=%d at %s", c.latestTriggered.pcl.GetClid(), c.latestTriggered.pcl.GetTrigger().GetTime().AsTime())
+	if c.latestTriggeredByCQVote != nil {
+		t := c.latestTriggeredByCQVote.pcl.GetTriggers().GetCqVoteTrigger()
+		fmt.Fprintf(&sb, " latestTriggered=%d at %s", c.latestTriggeredByCQVote.pcl.GetClid(), t.GetTime().AsTime())
 	}
 	sb.WriteRune(')')
 	return sb.String()
@@ -425,11 +427,11 @@ func (c *combo) add(info *clInfo) {
 		c.withNotYetLoadedDeps = info
 	}
 
-	if pb := info.pcl.GetTrigger().GetTime(); pb != nil {
+	if pb := info.pcl.GetTriggers().GetCqVoteTrigger().GetTime(); pb != nil {
 		t := pb.AsTime()
 		if c.maxTriggeredTime.IsZero() || t.After(c.maxTriggeredTime) {
 			c.maxTriggeredTime = t
-			c.latestTriggered = info
+			c.latestTriggeredByCQVote = info
 		}
 	}
 }

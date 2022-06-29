@@ -265,7 +265,7 @@ func TestComponentsActions(t *testing.T) {
 				// Unlike PB.PurgingCls, the tasks aren't necessarily sorted.
 				sort.Slice(ps, func(i, j int) bool { return ps[i].GetPurgingCl().GetClid() < ps[j].GetPurgingCl().GetClid() })
 				So(ps[0].GetPurgingCl(), ShouldResembleProto, state2.PB.GetPurgingCls()[0]) // CL#1
-				So(ps[0].GetTrigger(), ShouldResembleProto, state2.PB.GetPcls()[1 /*CL#1*/].GetTrigger())
+				So(ps[0].GetTrigger(), ShouldResembleProto, state2.PB.GetPcls()[1 /*CL#1*/].GetTriggers().GetCqVoteTrigger())
 				So(ps[0].GetLuciProject(), ShouldEqual, lProject)
 				So(ps[1].GetPurgingCl(), ShouldResembleProto, state2.PB.GetPurgingCls()[1]) // CL#3
 			})
@@ -391,7 +391,6 @@ func TestComponentsActions(t *testing.T) {
 					panic(err)
 				}
 				cl.EVersion = 1
-
 				return &runcreator.Creator{
 					LUCIProject:   lProject,
 					ConfigGroupID: cfgGroups[0].ID,
@@ -403,7 +402,7 @@ func TestComponentsActions(t *testing.T) {
 						ID:               common.CLID(clid),
 						ExpectedEVersion: 1,
 						Snapshot:         cl.Snapshot,
-						TriggerInfo:      trigger.Find(ci, cfgGroups[0].Content).CQVoteTrigger(),
+						TriggerInfo:      trigger.Find(ci, cfgGroups[0].Content).GetCqVoteTrigger(),
 					}},
 				}
 			}

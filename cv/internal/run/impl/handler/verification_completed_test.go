@@ -101,7 +101,7 @@ func TestOnVerificationCompleted(t *testing.T) {
 				ACLs: gf.ACLRestricted(lProject),
 			})
 			triggers := trigger.Find(ci, cfg.ConfigGroups[0])
-			So(triggers.Len(), ShouldEqual, 1)
+			So(triggers.GetCqVoteTrigger(), ShouldNotBeNil)
 			So(datastore.Put(ctx,
 				&run.RunCL{
 					ID:         1,
@@ -116,7 +116,7 @@ func TestOnVerificationCompleted(t *testing.T) {
 							},
 						},
 					},
-					Trigger: triggers.CQVoteTrigger(),
+					Trigger: triggers.GetCqVoteTrigger(),
 				},
 				&changelist.CL{
 					ID:         1,

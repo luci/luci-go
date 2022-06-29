@@ -139,7 +139,7 @@ func TestRunBuilder(t *testing.T) {
 			return cl
 		}
 		cqVoteTriggerOf := func(cl *changelist.CL) *run.Trigger {
-			trigger := trigger.Find(cl.Snapshot.GetGerrit().GetInfo(), &cfgpb.ConfigGroup{}).CQVoteTrigger()
+			trigger := trigger.Find(cl.Snapshot.GetGerrit().GetInfo(), &cfgpb.ConfigGroup{}).GetCqVoteTrigger()
 			So(trigger, ShouldNotBeNil)
 			return trigger
 		}

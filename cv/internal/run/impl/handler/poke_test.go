@@ -106,12 +106,17 @@ func TestPokeRecheckTree(t *testing.T) {
 			},
 		}
 		triggers := trigger.Find(ci, cfg.GetConfigGroups()[0])
-		So(triggers.Len(), ShouldEqual, 1)
+		So(triggers.GetCqVoteTrigger(), ShouldResembleProto, &run.Trigger{
+			Time:            timestamppb.New(clock.Now(ctx).UTC()),
+			Mode:            string(run.DryRun),
+			Email:           "foo@example.com",
+			GerritAccountId: 1,
+		})
 		rcl := &run.RunCL{
 			ID:      gChange,
 			Run:     datastore.MakeKey(ctx, run.RunKind, string(rid)),
 			Detail:  cl.Snapshot,
-			Trigger: triggers.CQVoteTrigger(),
+			Trigger: triggers.GetCqVoteTrigger(),
 		}
 		So(datastore.Put(ctx, cl, rcl), ShouldBeNil)
 

@@ -60,7 +60,7 @@ func purgeETA(info *clInfo, now time.Time, pm pmState) time.Time {
 	if d == nil {
 		return now
 	}
-	t := info.lastTriggered()
+	t := info.lastCQVoteTriggered()
 	if t.IsZero() {
 		panic(fmt.Errorf("CL %d which is not triggered can't be purged (reasons: %s)", info.pcl.GetClid(), info.purgeReasons))
 	}

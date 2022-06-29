@@ -38,7 +38,7 @@ import (
 	"go.chromium.org/luci/cv/internal/run/impl/state"
 
 	. "github.com/smartystreets/goconvey/convey"
-	// . "go.chromium.org/luci/common/testing/assertions"
+	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestOnCLsUpdated(t *testing.T) {
@@ -128,22 +128,32 @@ func TestOnCLsUpdated(t *testing.T) {
 		ct.AddMember("foo", committers)
 		cl1 := updateCL(1, ci1, aplConfigOK, accessOK)
 		triggers1 := trigger.Find(ci1, cfg.GetConfigGroups()[0])
-		So(triggers1.Len(), ShouldEqual, 1)
+		So(triggers1.GetCqVoteTrigger(), ShouldResembleProto, &run.Trigger{
+			Time:            timestamppb.New(triggerTime),
+			Mode:            string(run.FullRun),
+			Email:           "foo@example.com",
+			GerritAccountId: 1,
+		})
 		cl2 := updateCL(2, ci2, aplConfigOK, accessOK)
 		triggers2 := trigger.Find(ci2, cfg.GetConfigGroups()[0])
-		So(triggers2.Len(), ShouldEqual, 1)
+		So(triggers2.GetCqVoteTrigger(), ShouldResembleProto, &run.Trigger{
+			Time:            timestamppb.New(triggerTime),
+			Mode:            string(run.FullRun),
+			Email:           "foo@example.com",
+			GerritAccountId: 1,
+		})
 		runCLs := []*run.RunCL{
 			{
 				ID:      1,
 				Run:     datastore.MakeKey(ctx, run.RunKind, string(rs.ID)),
 				Detail:  cl1.Snapshot,
-				Trigger: triggers1.CQVoteTrigger(),
+				Trigger: triggers1.GetCqVoteTrigger(),
 			},
 			{
 				ID:      2,
 				Run:     datastore.MakeKey(ctx, run.RunKind, string(rs.ID)),
 				Detail:  cl2.Snapshot,
-				Trigger: triggers2.CQVoteTrigger(),
+				Trigger: triggers2.GetCqVoteTrigger(),
 			},
 		}
 		So(runCLs[0].Trigger, ShouldNotBeNil) // ensure trigger find is working fine.
@@ -248,7 +258,7 @@ func TestOnCLsUpdated(t *testing.T) {
 		})
 		Convey("Cancels Run on changed mode", func() {
 			updateCL(1, gf.CI(gChange1, gf.PS(gPatchSet1), gf.CQ(+1, triggerTime.Add(1*time.Minute), gf.U("foo"))), aplConfigOK, accessOK)
-			runAndVerifyCancelled("the FULL_RUN trigger on https://x-review.example.com/c/1 has been removed")
+			runAndVerifyCancelled("the triggering vote on https://x-review.example.com/c/1 has requested a different run mode: DRY_RUN")
 		})
 		Convey("Cancels Run on change of triggering time", func() {
 			updateCL(1, gf.CI(gChange1, gf.PS(gPatchSet1), gf.CQ(+2, triggerTime.Add(2*time.Minute), gf.U("foo"))), aplConfigOK, accessOK)

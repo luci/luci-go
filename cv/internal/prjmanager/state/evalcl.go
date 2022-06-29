@@ -273,11 +273,11 @@ func (s *State) makePCL(ctx context.Context, cl *changelist.CL) *prjpb.PCL {
 		})
 	}
 
-	s.setTrigger(ci, pcl)
+	s.setTriggers(ci, pcl)
 
 	// Check for "Commit: false" footer after setting Trigger, because this should
 	// only have an effect in the case of an attempted full run.
-	if hasCommitFalseFlag(cl.Snapshot.GetMetadata()) && run.Mode(pcl.Trigger.GetMode()) == run.FullRun {
+	if hasCommitFalseFlag(cl.Snapshot.GetMetadata()) && pcl.GetTriggers().GetCqVoteTrigger().GetMode() == string(run.FullRun) {
 		pcl.Errors = append(pcl.Errors, &changelist.CLError{
 			Kind: &changelist.CLError_CommitBlocked{CommitBlocked: true},
 		})
@@ -328,8 +328,12 @@ func (s *State) tryUsingApplicableConfigGroups(ap *changelist.ApplicableConfig_P
 	return true
 }
 
-// setTrigger sets a .Trigger of a PCL.
-func (s *State) setTrigger(ci *gerritpb.ChangeInfo, pcl *prjpb.PCL) {
+// setTriggers populates a PCL's .Triggers field with the triggers present in
+// the given ChangeInfo.
+//
+// It also validates that the trigger mode is allowed, and strips the account
+// information from the triggerer.
+func (s *State) setTriggers(ci *gerritpb.ChangeInfo, pcl *prjpb.PCL) {
 	// Triggers are a function of a CL and applicable ConfigGroup, which may
 	// define additional modes.
 	// In case of misconfiguration, there may be 0 or 2+ applicable
@@ -345,11 +349,10 @@ func (s *State) setTrigger(ci *gerritpb.ChangeInfo, pcl *prjpb.PCL) {
 		cg = &cfgpb.ConfigGroup{}
 	}
 	ts := trigger.Find(ci, cg)
-	if ts.Len() == 0 {
+	t := ts.GetCqVoteTrigger()
+	if t == nil {
 		return
 	}
-	t := ts.CQVoteTrigger()
-
 	switch mode := run.Mode(t.GetMode()); mode {
 	case "", run.DryRun, run.FullRun, run.QuickDryRun:
 	default:
@@ -358,9 +361,16 @@ func (s *State) setTrigger(ci *gerritpb.ChangeInfo, pcl *prjpb.PCL) {
 		})
 		return
 	}
+
 	// Project Manager doesn't care about email or Gerrit account.
-	t.Email = ""
-	t.GerritAccountId = 0
+	for _, t := range []*run.Trigger{ts.GetCqVoteTrigger(), ts.GetNewPatchsetRunTrigger()} {
+		if t == nil {
+			continue
+		}
+		t.Email = ""
+		t.GerritAccountId = 0
+	}
+	pcl.Triggers = ts
 	pcl.Trigger = t
 }
 

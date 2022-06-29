@@ -91,6 +91,19 @@ message Trigger {
   int64 gerrit_account_id = 4;
 }
 
+// Triggers describes the triggers associated with a CL.
+message Triggers{
+  // CQVoteTrigger is the trigger that corresponds to a vote on the
+  // `Commit-Queue` Gerrit label.
+ Trigger cq_vote_trigger = 1;
+
+ // NewPatchsetRunTrigger is the trigger that is created automatically by
+ // uploading a new patchset.
+ //
+ // This is only populated if the CL matches a config group that allows this.
+ Trigger new_patchset_run_trigger = 2;
+}
+
 // Submission describes the state of Run submission.
 message Submission {
   // The deadline of this submission.

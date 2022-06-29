@@ -85,7 +85,7 @@ func TestTrigger(t *testing.T) {
 				Value: dryRunVote,
 				Date:  timestamppb.New(now.Add(-15 * time.Minute)),
 			}}
-			So(Find(ci, cg), ShouldResembleProto, run.Triggers{{
+			So(Find(ci, cg), ShouldResembleProto, &run.Triggers{CqVoteTrigger: &run.Trigger{
 				Time:            timestamppb.New(now.Add(-15 * time.Minute)),
 				Mode:            string(run.DryRun),
 				GerritAccountId: user1.GetAccountId(),
@@ -98,7 +98,7 @@ func TestTrigger(t *testing.T) {
 				Value: 3,
 				Date:  timestamppb.New(now.Add(-15 * time.Minute)),
 			}}
-			So(Find(ci, cg), ShouldResembleProto, run.Triggers{{
+			So(Find(ci, cg), ShouldResembleProto, &run.Triggers{CqVoteTrigger: &run.Trigger{
 				Time:            timestamppb.New(now.Add(-15 * time.Minute)),
 				Mode:            string(run.FullRun),
 				GerritAccountId: user1.GetAccountId(),
@@ -118,7 +118,7 @@ func TestTrigger(t *testing.T) {
 					Date:  timestamppb.New(now.Add(-5 * time.Minute)),
 				},
 			}
-			So(Find(ci, cg), ShouldResembleProto, run.Triggers{{
+			So(Find(ci, cg), ShouldResembleProto, &run.Triggers{CqVoteTrigger: &run.Trigger{
 				Time:            timestamppb.New(now.Add(-15 * time.Minute)),
 				Mode:            string(run.DryRun),
 				GerritAccountId: user1.GetAccountId(),
@@ -132,7 +132,7 @@ func TestTrigger(t *testing.T) {
 				})
 				So(err, ShouldBeNil)
 				ci.Messages = append(ci.Messages, &gerritpb.ChangeMessageInfo{Message: cancelMsg})
-				So(Find(ci, cg), ShouldResembleProto, run.Triggers{{
+				So(Find(ci, cg), ShouldResembleProto, &run.Triggers{CqVoteTrigger: &run.Trigger{
 					Time:            timestamppb.New(now.Add(-5 * time.Minute)),
 					Mode:            string(run.DryRun),
 					GerritAccountId: user2.GetAccountId(),
@@ -163,7 +163,7 @@ func TestTrigger(t *testing.T) {
 					Date:  timestamppb.New(now.Add(-1 * time.Minute)),
 				},
 			}
-			So(Find(ci, cg), ShouldResembleProto, run.Triggers{{
+			So(Find(ci, cg), ShouldResembleProto, &run.Triggers{CqVoteTrigger: &run.Trigger{
 				Time:            timestamppb.New(now.Add(-10 * time.Minute)),
 				Mode:            string(run.FullRun),
 				GerritAccountId: user2.GetAccountId(),
@@ -181,7 +181,7 @@ func TestTrigger(t *testing.T) {
 				Number:  3,
 				Created: timestamppb.New(now.Add(-10 * time.Minute)),
 			}
-			So(Find(ci, cg), ShouldResembleProto, run.Triggers{{
+			So(Find(ci, cg), ShouldResembleProto, &run.Triggers{CqVoteTrigger: &run.Trigger{
 				Time:            timestamppb.New(now.Add(-10 * time.Minute)),
 				Mode:            string(run.FullRun),
 				GerritAccountId: user1.GetAccountId(),
@@ -213,7 +213,7 @@ func TestTrigger(t *testing.T) {
 				},
 			}}
 			Convey("Simplest possible QuickDryRun", func() {
-				So(Find(ci, cg), ShouldResembleProto, run.Triggers{{
+				So(Find(ci, cg), ShouldResembleProto, &run.Triggers{CqVoteTrigger: &run.Trigger{
 					Time:            timestamppb.New(now.Add(-15 * time.Minute)),
 					Mode:            string(run.QuickDryRun),
 					GerritAccountId: user1.GetAccountId(),
@@ -246,11 +246,11 @@ func TestTrigger(t *testing.T) {
 						Date:  timestamppb.New(now.Add(-15 * time.Minute)),
 					},
 				}}
-				So(Find(ci, cg).CQVoteTrigger().GetMode(), ShouldEqual, run.QuickDryRun)
+				So(Find(ci, cg).GetCqVoteTrigger().GetMode(), ShouldEqual, run.QuickDryRun)
 			})
 			Convey("Custom mode", func() {
 				cg.AdditionalModes[0].Name = "CUSTOM_RUN"
-				So(Find(ci, cg), ShouldResembleProto, run.Triggers{{
+				So(Find(ci, cg), ShouldResembleProto, &run.Triggers{CqVoteTrigger: &run.Trigger{
 					Time:            timestamppb.New(now.Add(-15 * time.Minute)),
 					Mode:            "CUSTOM_RUN",
 					GerritAccountId: user1.GetAccountId(),
@@ -262,29 +262,29 @@ func TestTrigger(t *testing.T) {
 				Convey("Additional vote must have the same timestamp", func() {
 					Convey("before", func() {
 						ci.Labels[quickLabel].GetAll()[0].Date.Seconds++
-						So(Find(ci, cg).CQVoteTrigger().GetMode(), ShouldEqual, run.DryRun)
+						So(Find(ci, cg).GetCqVoteTrigger().GetMode(), ShouldEqual, run.DryRun)
 					})
 					Convey("after", func() {
 						ci.Labels[quickLabel].GetAll()[0].Date.Seconds--
-						So(Find(ci, cg).CQVoteTrigger().GetMode(), ShouldEqual, run.DryRun)
+						So(Find(ci, cg).GetCqVoteTrigger().GetMode(), ShouldEqual, run.DryRun)
 					})
 				})
 				Convey("Additional vote be from the same account", func() {
 					ci.Labels[quickLabel].GetAll()[0].User = user2
-					So(Find(ci, cg).CQVoteTrigger().GetMode(), ShouldEqual, run.DryRun)
+					So(Find(ci, cg).GetCqVoteTrigger().GetMode(), ShouldEqual, run.DryRun)
 				})
 				Convey("Additional vote must have expected value", func() {
 					ci.Labels[quickLabel].GetAll()[0].Value = 100
-					So(Find(ci, cg).CQVoteTrigger().GetMode(), ShouldEqual, run.DryRun)
+					So(Find(ci, cg).GetCqVoteTrigger().GetMode(), ShouldEqual, run.DryRun)
 				})
 				Convey("Additional vote must be for the correct label", func() {
 					ci.Labels[quickLabel+"-Other"] = ci.Labels[quickLabel]
 					delete(ci.Labels, quickLabel)
-					So(Find(ci, cg).CQVoteTrigger().GetMode(), ShouldEqual, run.DryRun)
+					So(Find(ci, cg).GetCqVoteTrigger().GetMode(), ShouldEqual, run.DryRun)
 				})
 				Convey("CQ vote must have correct value", func() {
 					ci.Labels[CQLabelName].GetAll()[0].Value = fullRunVote
-					So(Find(ci, cg).CQVoteTrigger().GetMode(), ShouldEqual, run.FullRun)
+					So(Find(ci, cg).GetCqVoteTrigger().GetMode(), ShouldEqual, run.FullRun)
 				})
 			})
 		})
