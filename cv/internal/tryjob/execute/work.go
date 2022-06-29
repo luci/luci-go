@@ -20,6 +20,7 @@ import (
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/data/stringset"
+	"go.chromium.org/luci/gae/service/datastore"
 
 	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/run"
@@ -75,7 +76,7 @@ type worker struct {
 }
 
 func (w *worker) makeBaseTryjob(ctx context.Context) *tryjob.Tryjob {
-	now := clock.Now(ctx).UTC()
+	now := datastore.RoundTime(clock.Now(ctx).UTC())
 	return &tryjob.Tryjob{
 		EVersion:         1,
 		EntityCreateTime: now,
@@ -83,6 +84,15 @@ func (w *worker) makeBaseTryjob(ctx context.Context) *tryjob.Tryjob {
 		ReuseKey:         w.reuseKey,
 		CLPatchsets:      w.clPatchsets,
 	}
+}
+
+// makePendingTryjob makes a pending tryjob that is triggered by this Run.
+func (w *worker) makePendingTryjob(ctx context.Context, def *tryjob.Definition) *tryjob.Tryjob {
+	tj := w.makeBaseTryjob(ctx)
+	tj.Definition = def
+	tj.Status = tryjob.Status_PENDING
+	tj.TriggeredBy = w.run.ID
+	return tj
 }
 
 func (w *worker) start(ctx context.Context, definitions []*tryjob.Definition) ([]*tryjob.Tryjob, error) {
