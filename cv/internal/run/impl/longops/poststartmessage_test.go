@@ -28,6 +28,7 @@ import (
 
 	cfgpb "go.chromium.org/luci/cv/api/config/v2"
 	"go.chromium.org/luci/cv/internal/changelist"
+	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/configs/prjcfg/prjcfgtest"
 	"go.chromium.org/luci/cv/internal/configs/validation"
 	"go.chromium.org/luci/cv/internal/cvtesting"
@@ -87,7 +88,7 @@ func TestPostStartMessage(t *testing.T) {
 				ExternalID: cl.ExternalID,
 				IndexedID:  cl.ID,
 				Trigger:    triggers.GetCqVoteTrigger(),
-				Run:        datastore.MakeKey(ctx, run.RunKind, string(runID)),
+				Run:        datastore.MakeKey(ctx, common.RunKind, string(runID)),
 				Detail: &changelist.Snapshot{
 					Kind: &changelist.Snapshot_Gerrit{Gerrit: &changelist.Gerrit{
 						Host: gHost,

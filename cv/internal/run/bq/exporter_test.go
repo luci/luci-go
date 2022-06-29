@@ -62,7 +62,7 @@ func TestExportRunToBQ(t *testing.T) {
 		So(datastore.Put(ctx, &r), ShouldBeNil)
 		So(datastore.Put(ctx, &run.RunCL{
 			ID:         1,
-			Run:        datastore.MakeKey(ctx, run.RunKind, string(runID)),
+			Run:        datastore.MakeKey(ctx, common.RunKind, string(runID)),
 			ExternalID: "gerrit/foo-review.googlesource.com/111",
 			Detail: &changelist.Snapshot{
 				LuciProject:           "lproject",

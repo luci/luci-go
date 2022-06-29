@@ -388,7 +388,7 @@ func (rb *Creator) saveRun(ctx context.Context, now time.Time) error {
 func (rb *Creator) saveRunLog(ctx context.Context) error {
 	l := run.RunLog{
 		ID:  int64(rb.run.EVersion),
-		Run: datastore.MakeKey(ctx, run.RunKind, string(rb.run.ID)),
+		Run: datastore.MakeKey(ctx, common.RunKind, string(rb.run.ID)),
 		Entries: &run.LogEntries{
 			Entries: []*run.LogEntry{
 				{
@@ -411,7 +411,7 @@ func (rb *Creator) saveRunLog(ctx context.Context) error {
 func (rb *Creator) saveRunCL(ctx context.Context, index int) error {
 	inputCL := rb.InputCLs[index]
 	entity := &run.RunCL{
-		Run:        datastore.MakeKey(ctx, run.RunKind, string(rb.run.ID)),
+		Run:        datastore.MakeKey(ctx, common.RunKind, string(rb.run.ID)),
 		ID:         inputCL.ID,
 		IndexedID:  inputCL.ID,
 		ExternalID: rb.cls[index].ExternalID,

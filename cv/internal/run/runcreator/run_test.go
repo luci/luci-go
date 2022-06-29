@@ -320,7 +320,7 @@ func TestRunBuilder(t *testing.T) {
 				Convey(fmt.Sprintf("RunCL %d-th is properly saved", i), func() {
 					saved := &run.RunCL{
 						ID:  rb.InputCLs[i].ID,
-						Run: datastore.MakeKey(ctx, run.RunKind, expectedRunID),
+						Run: datastore.MakeKey(ctx, common.RunKind, expectedRunID),
 					}
 					So(datastore.Get(ctx, saved), ShouldBeNil)
 					So(saved.ExternalID, ShouldEqual, rb.cls[i].ExternalID)

@@ -107,7 +107,7 @@ func TestFetchActiveRuns(t *testing.T) {
 				},
 				&run.RunCL{
 					ID:  1,
-					Run: datastore.MakeKey(ctx, run.RunKind, rid),
+					Run: datastore.MakeKey(ctx, common.RunKind, rid),
 					Detail: &changelist.Snapshot{
 						ExternalUpdateTime: updateTime,
 						Deps: []*changelist.Dep{
@@ -132,7 +132,7 @@ func TestFetchActiveRuns(t *testing.T) {
 				},
 				&run.RunCL{
 					ID:  2,
-					Run: datastore.MakeKey(ctx, run.RunKind, rid),
+					Run: datastore.MakeKey(ctx, common.RunKind, rid),
 					Detail: &changelist.Snapshot{
 						ExternalUpdateTime:    updateTime,
 						Patchset:              5,
@@ -287,7 +287,7 @@ func TestFetchActiveRuns(t *testing.T) {
 				if runCL {
 					err := datastore.Put(ctx, &run.RunCL{
 						ID:     cl.ID,
-						Run:    datastore.MakeKey(ctx, run.RunKind, rid),
+						Run:    datastore.MakeKey(ctx, common.RunKind, rid),
 						Detail: cl.Snapshot,
 						Trigger: &run.Trigger{
 							Time:            timestamppb.New(triggeredAt),

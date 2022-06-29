@@ -105,7 +105,7 @@ func TestOnVerificationCompleted(t *testing.T) {
 			So(datastore.Put(ctx,
 				&run.RunCL{
 					ID:         1,
-					Run:        datastore.MakeKey(ctx, run.RunKind, string(rid)),
+					Run:        datastore.MakeKey(ctx, common.RunKind, string(rid)),
 					ExternalID: changelist.MustGobID(gHost, ci.GetNumber()),
 					Detail: &changelist.Snapshot{
 						LuciProject: lProject,

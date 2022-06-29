@@ -36,7 +36,7 @@ import (
 // EventboxRecipient returns eventbox.Recipient for a given Run.
 func EventboxRecipient(ctx context.Context, runID common.RunID) eventbox.Recipient {
 	return eventbox.Recipient{
-		Key: datastore.MakeKey(ctx, RunKind, string(runID)),
+		Key: datastore.MakeKey(ctx, common.RunKind, string(runID)),
 		// There are lots of Runs, so aggregate all their metrics behind their LUCI
 		// project.
 		MonitoringString: "Run/" + runID.LUCIProject(),

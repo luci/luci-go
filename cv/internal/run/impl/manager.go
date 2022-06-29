@@ -256,7 +256,7 @@ func (rp *runProcessor) SaveState(ctx context.Context, st eventbox.State, ev eve
 	if len(rs.LogEntries) > 0 {
 		l := run.RunLog{
 			ID:      int64(ev),
-			Run:     datastore.MakeKey(ctx, run.RunKind, string(r.ID)),
+			Run:     datastore.MakeKey(ctx, common.RunKind, string(r.ID)),
 			Entries: &run.LogEntries{Entries: rs.LogEntries},
 		}
 		if err := datastore.Put(ctx, &l); err != nil {

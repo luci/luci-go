@@ -88,7 +88,7 @@ func TestCancelTriggers(t *testing.T) {
 					ExternalID: cl.ExternalID,
 					IndexedID:  cl.ID,
 					Trigger:    triggers.GetCqVoteTrigger(),
-					Run:        datastore.MakeKey(ctx, run.RunKind, string(runID)),
+					Run:        datastore.MakeKey(ctx, common.RunKind, string(runID)),
 					Detail:     cl.Snapshot,
 				}
 				cls[i] = cl

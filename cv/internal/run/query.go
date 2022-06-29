@@ -145,10 +145,10 @@ func (b CLQueryBuilder) BuildKeysOnly(ctx context.Context) *datastore.Query {
 		}
 	}
 	if min != "" {
-		q = q.Gt("__key__", datastore.MakeKey(ctx, RunKind, min, RunCLKind, int64(b.CLID)))
+		q = q.Gt("__key__", datastore.MakeKey(ctx, common.RunKind, min, RunCLKind, int64(b.CLID)))
 	}
 	if max != "" {
-		q = q.Lt("__key__", datastore.MakeKey(ctx, RunKind, max, RunCLKind, int64(b.CLID)))
+		q = q.Lt("__key__", datastore.MakeKey(ctx, common.RunKind, max, RunCLKind, int64(b.CLID)))
 	}
 
 	return q
@@ -264,7 +264,7 @@ func (b ProjectQueryBuilder) PageToken(pt *PageToken) ProjectQueryBuilder {
 // WARNING: panics if Status is magic Status_ENDED_MASK,
 // as it's not feasible to perform this as 1 query.
 func (b ProjectQueryBuilder) BuildKeysOnly(ctx context.Context) *datastore.Query {
-	q := datastore.NewQuery(RunKind).KeysOnly(true)
+	q := datastore.NewQuery(common.RunKind).KeysOnly(true)
 
 	switch b.Status {
 	case Status_ENDED_MASK:
@@ -290,7 +290,7 @@ func (b ProjectQueryBuilder) BuildKeysOnly(ctx context.Context) *datastore.Query
 	default:
 		min = string(b.MinExcl)
 	}
-	q = q.Gt("__key__", datastore.MakeKey(ctx, RunKind, min))
+	q = q.Gt("__key__", datastore.MakeKey(ctx, common.RunKind, min))
 
 	switch {
 	case b.MaxExcl == "":
@@ -299,7 +299,7 @@ func (b ProjectQueryBuilder) BuildKeysOnly(ctx context.Context) *datastore.Query
 	default:
 		max = string(b.MaxExcl)
 	}
-	q = q.Lt("__key__", datastore.MakeKey(ctx, RunKind, max))
+	q = q.Lt("__key__", datastore.MakeKey(ctx, common.RunKind, max))
 
 	return q
 }

@@ -25,6 +25,9 @@ import (
 	"go.chromium.org/luci/config"
 )
 
+// RunKind is the Datastore entity kind for Run.
+const RunKind = "Run"
+
 // RunID is an unique RunID to identify a Run in CV.
 //
 // RunID is string like `luciProject/inverseTS-1-hexHashDigest` consisting of

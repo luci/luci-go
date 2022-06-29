@@ -96,7 +96,7 @@ func TestOnReadyForSubmission(t *testing.T) {
 		So(datastore.Put(ctx,
 			&run.RunCL{
 				ID:         1,
-				Run:        datastore.MakeKey(ctx, run.RunKind, string(rid)),
+				Run:        datastore.MakeKey(ctx, common.RunKind, string(rid)),
 				ExternalID: changelist.MustGobID(gHost, ci1.GetNumber()),
 				Detail: &changelist.Snapshot{
 					Kind: &changelist.Snapshot_Gerrit{
@@ -112,7 +112,7 @@ func TestOnReadyForSubmission(t *testing.T) {
 			},
 			&run.RunCL{
 				ID:         2,
-				Run:        datastore.MakeKey(ctx, run.RunKind, string(rid)),
+				Run:        datastore.MakeKey(ctx, common.RunKind, string(rid)),
 				ExternalID: changelist.MustGobID(gHost, ci2.GetNumber()),
 				Detail: &changelist.Snapshot{
 					Kind: &changelist.Snapshot_Gerrit{
@@ -316,7 +316,7 @@ func TestOnSubmissionCompleted(t *testing.T) {
 			}
 			runCL := &run.RunCL{
 				ID:         clid,
-				Run:        datastore.MakeKey(ctx, run.RunKind, string(rid)),
+				Run:        datastore.MakeKey(ctx, common.RunKind, string(rid)),
 				ExternalID: changelist.MustGobID(gHost, ci.GetNumber()),
 				Detail: &changelist.Snapshot{
 					Kind: &changelist.Snapshot_Gerrit{

@@ -145,13 +145,13 @@ func TestOnCLsUpdated(t *testing.T) {
 		runCLs := []*run.RunCL{
 			{
 				ID:      1,
-				Run:     datastore.MakeKey(ctx, run.RunKind, string(rs.ID)),
+				Run:     datastore.MakeKey(ctx, common.RunKind, string(rs.ID)),
 				Detail:  cl1.Snapshot,
 				Trigger: triggers1.GetCqVoteTrigger(),
 			},
 			{
 				ID:      2,
-				Run:     datastore.MakeKey(ctx, run.RunKind, string(rs.ID)),
+				Run:     datastore.MakeKey(ctx, common.RunKind, string(rs.ID)),
 				Detail:  cl2.Snapshot,
 				Trigger: triggers2.GetCqVoteTrigger(),
 			},

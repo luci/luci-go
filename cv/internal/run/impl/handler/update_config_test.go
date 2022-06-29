@@ -57,7 +57,7 @@ func TestUpdateConfig(t *testing.T) {
 			triggers := trigger.Find(ci, cg)
 			So(triggers.GetCqVoteTrigger(), ShouldNotBeNil)
 			rcl := run.RunCL{
-				Run:        datastore.MakeKey(ctx, run.RunKind, string(runID)),
+				Run:        datastore.MakeKey(ctx, common.RunKind, string(runID)),
 				ID:         common.CLID(ci.GetNumber()),
 				ExternalID: changelist.MustGobID(gHost, ci.GetNumber()),
 				Trigger:    triggers.GetCqVoteTrigger(),

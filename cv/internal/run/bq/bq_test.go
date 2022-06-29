@@ -102,7 +102,7 @@ func TestMakeAttempt(t *testing.T) {
 				changeNum := i + 100
 				So(datastore.Put(ctx, &run.RunCL{
 					ID:         clid,
-					Run:        datastore.MakeKey(ctx, run.RunKind, string(runID)),
+					Run:        datastore.MakeKey(ctx, common.RunKind, string(runID)),
 					ExternalID: changelist.MustGobID(gHost, int64(changeNum)),
 					Detail: &changelist.Snapshot{
 						LuciProject:           lProject,

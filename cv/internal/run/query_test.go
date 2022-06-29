@@ -63,7 +63,7 @@ func TestCLQueryBuilder(t *testing.T) {
 			So(datastore.Put(ctx, &Run{ID: runID, CLs: clids}), ShouldBeNil)
 			for _, clid := range clids {
 				So(datastore.Put(ctx, &RunCL{
-					Run:       datastore.MakeKey(ctx, RunKind, string(runID)),
+					Run:       datastore.MakeKey(ctx, common.RunKind, string(runID)),
 					ID:        clid,
 					IndexedID: clid,
 				}), ShouldBeNil)
@@ -531,7 +531,7 @@ func TestLoadRunsFromQuery(t *testing.T) {
 			So(datastore.Put(ctx, &Run{ID: runID, CLs: clids}), ShouldBeNil)
 			for _, clid := range clids {
 				So(datastore.Put(ctx, &RunCL{
-					Run:       datastore.MakeKey(ctx, RunKind, string(runID)),
+					Run:       datastore.MakeKey(ctx, common.RunKind, string(runID)),
 					ID:        clid,
 					IndexedID: clid,
 				}), ShouldBeNil)

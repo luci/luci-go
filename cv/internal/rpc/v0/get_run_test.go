@@ -110,7 +110,7 @@ func TestGetRun(t *testing.T) {
 			So(datastore.Put(
 				ctx,
 				&run.RunCL{
-					Run: datastore.MakeKey(ctx, run.RunKind, string(rid)),
+					Run: datastore.MakeKey(ctx, common.RunKind, string(rid)),
 					ID:  cl1.ID, IndexedID: cl1.ID,
 					ExternalID: cl1.ExternalID,
 					Detail: &changelist.Snapshot{
@@ -118,7 +118,7 @@ func TestGetRun(t *testing.T) {
 					},
 				},
 				&run.RunCL{
-					Run: datastore.MakeKey(ctx, run.RunKind, string(rid)),
+					Run: datastore.MakeKey(ctx, common.RunKind, string(rid)),
 					ID:  cl2.ID, IndexedID: cl2.ID,
 					ExternalID: cl2.ExternalID,
 					Detail: &changelist.Snapshot{
@@ -126,7 +126,7 @@ func TestGetRun(t *testing.T) {
 					},
 				},
 				&run.RunCL{
-					Run: datastore.MakeKey(ctx, run.RunKind, string(rid)),
+					Run: datastore.MakeKey(ctx, common.RunKind, string(rid)),
 					ID:  cl3.ID, IndexedID: cl3.ID,
 					ExternalID: cl3.ExternalID,
 					Detail: &changelist.Snapshot{

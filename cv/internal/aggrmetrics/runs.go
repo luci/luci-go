@@ -161,7 +161,7 @@ func (p *projectStat) report(ctx context.Context, project string) {
 //
 // This is a cheap query in Datastore, both in terms of time and $ cost.
 func loadActiveRuns(ctx context.Context, limit int32) ([]*datastore.Key, error) {
-	q := datastore.NewQuery(run.RunKind).Limit(limit).KeysOnly(true).Lt("Status", run.Status_ENDED_MASK)
+	q := datastore.NewQuery(common.RunKind).Limit(limit).KeysOnly(true).Lt("Status", run.Status_ENDED_MASK)
 	var out []*datastore.Key
 	switch err := datastore.GetAll(ctx, q, &out); {
 	case ctx.Err() != nil:

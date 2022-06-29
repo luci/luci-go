@@ -238,7 +238,7 @@ func (b LoadRunsBuilder) prepareRunObjects() []*Run {
 // LoadRunCLs loads `RunCL` entities of the provided cls in the Run.
 func LoadRunCLs(ctx context.Context, runID common.RunID, clids common.CLIDs) ([]*RunCL, error) {
 	runCLs := make([]*RunCL, len(clids))
-	runKey := datastore.MakeKey(ctx, RunKind, string(runID))
+	runKey := datastore.MakeKey(ctx, common.RunKind, string(runID))
 	for i, clID := range clids {
 		runCLs[i] = &RunCL{
 			ID:  clID,
@@ -270,7 +270,7 @@ func LoadRunLogEntries(ctx context.Context, runID common.RunID) ([]*LogEntry, er
 	// additional multi-Get which will go via DS cache.
 
 	var keys []*datastore.Key
-	runKey := datastore.MakeKey(ctx, RunKind, string(runID))
+	runKey := datastore.MakeKey(ctx, common.RunKind, string(runID))
 	q := datastore.NewQuery(RunLogKind).KeysOnly(true).Ancestor(runKey)
 	if err := datastore.GetAll(ctx, q, &keys); err != nil {
 		return nil, errors.Annotate(err, "failed to fetch keys of RunLog entities").Tag(transient.Tag).Err()

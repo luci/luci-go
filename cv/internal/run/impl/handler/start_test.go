@@ -101,7 +101,7 @@ func TestStart(t *testing.T) {
 			}
 			rCL := &run.RunCL{
 				ID:  common.CLID(clid),
-				Run: datastore.MakeKey(ctx, run.RunKind, string(rs.Run.ID)),
+				Run: datastore.MakeKey(ctx, common.RunKind, string(rs.Run.ID)),
 				Trigger: &run.Trigger{
 					Email: triggerer,
 					Mode:  string(rs.Run.Mode),

@@ -64,7 +64,7 @@ func TestIsActionTakenOnGerritCL(t *testing.T) {
 			ID:         cl.ID,
 			ExternalID: cl.ExternalID,
 			IndexedID:  cl.ID,
-			Run:        datastore.MakeKey(ctx, run.RunKind, string(runID)),
+			Run:        datastore.MakeKey(ctx, common.RunKind, string(runID)),
 			Detail:     cl.Snapshot,
 		}
 		So(datastore.Put(ctx, cl, rcl), ShouldBeNil)

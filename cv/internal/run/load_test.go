@@ -45,7 +45,7 @@ func TestLoadRunLogEntries(t *testing.T) {
 		ev := int64(1)
 		put := func(runID common.RunID, entries ...*LogEntry) {
 			So(datastore.Put(ctx, &RunLog{
-				Run:     datastore.MakeKey(ctx, RunKind, string(runID)),
+				Run:     datastore.MakeKey(ctx, common.RunKind, string(runID)),
 				ID:      ev,
 				Entries: &LogEntries{Entries: entries},
 			}), ShouldBeNil)
@@ -146,8 +146,8 @@ func TestLoadRunsBuilder(t *testing.T) {
 				})
 				Convey("keys", func() {
 					verify(LoadRunsFromKeys(
-						datastore.MakeKey(ctx, RunKind, string(r201.ID)),
-						datastore.MakeKey(ctx, RunKind, string(r202.ID)),
+						datastore.MakeKey(ctx, common.RunKind, string(r201.ID)),
+						datastore.MakeKey(ctx, common.RunKind, string(r202.ID)),
 					))
 				})
 			})

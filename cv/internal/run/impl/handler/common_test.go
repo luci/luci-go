@@ -179,7 +179,7 @@ func TestCancelTriggers(t *testing.T) {
 		})
 		rcl := run.RunCL{
 			ID:         clid,
-			Run:        datastore.MakeKey(ctx, run.RunKind, string(rid)),
+			Run:        datastore.MakeKey(ctx, common.RunKind, string(rid)),
 			ExternalID: cl.ExternalID,
 			Detail:     cl.Snapshot,
 			Trigger:    triggers.GetCqVoteTrigger(),

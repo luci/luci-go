@@ -28,8 +28,6 @@ import (
 )
 
 const (
-	// RunKind is the Datastore entity kind for Run.
-	RunKind = "Run"
 	// RunCLKind is the Datastore entity kind for RunCL.
 	RunCLKind = "RunCL"
 	// RunLogKind is the Datastore entity kind for RunLog.
@@ -54,7 +52,7 @@ const (
 //
 // Detailed information about CLs and Tryjobs are stored in its child entities.
 type Run struct {
-	// $kind must match RunKind.
+	// $kind must match common.RunKind.
 	_kind  string                `gae:"$kind,Run"`
 	_extra datastore.PropertyMap `gae:"-,extra"`
 

@@ -48,7 +48,7 @@ func TestUpgradeCLs(t *testing.T) {
 		mkCL := func(id common.CLID, ci *gerritpb.ChangeInfo) *run.RunCL {
 			cl := &run.RunCL{
 				ID:  id,
-				Run: datastore.MakeKey(ctx, run.RunKind, fmt.Sprintf("prj/%d", id)),
+				Run: datastore.MakeKey(ctx, common.RunKind, fmt.Sprintf("prj/%d", id)),
 				Detail: &changelist.Snapshot{
 					Kind: &changelist.Snapshot_Gerrit{Gerrit: &changelist.Gerrit{
 						Info: ci,

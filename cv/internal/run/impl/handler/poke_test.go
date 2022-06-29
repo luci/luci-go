@@ -114,7 +114,7 @@ func TestPokeRecheckTree(t *testing.T) {
 		})
 		rcl := &run.RunCL{
 			ID:      gChange,
-			Run:     datastore.MakeKey(ctx, run.RunKind, string(rid)),
+			Run:     datastore.MakeKey(ctx, common.RunKind, string(rid)),
 			Detail:  cl.Snapshot,
 			Trigger: triggers.GetCqVoteTrigger(),
 		}

@@ -39,7 +39,7 @@ type state struct {
 }
 
 func loadExecutionState(ctx context.Context, rid common.RunID) (*tryjob.ExecutionState, int64, error) {
-	s := &state{Run: datastore.MakeKey(ctx, run.RunKind, string(rid))}
+	s := &state{Run: datastore.MakeKey(ctx, common.RunKind, string(rid))}
 	switch err := datastore.Get(ctx, s); {
 	case err == datastore.ErrNoSuchEntity:
 		return nil, 0, nil
@@ -105,7 +105,7 @@ func (e *Executor) Do(ctx context.Context, r *run.Run, payload *tryjob.ExecuteTr
 			return errors.Reason("execution state has changed. before: %d, current: %d", stateVer, latestStateVer).Tag(transient.Tag).Err()
 		default:
 			newState = &state{
-				Run:      datastore.MakeKey(ctx, run.RunKind, string(r.ID)),
+				Run:      datastore.MakeKey(ctx, common.RunKind, string(r.ID)),
 				EVersion: latestStateVer + 1,
 				State:    execState,
 			}

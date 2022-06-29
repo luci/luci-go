@@ -76,7 +76,7 @@ func TestSubmitter(t *testing.T) {
 			},
 			&run.RunCL{
 				ID:  1,
-				Run: datastore.MakeKey(ctx, run.RunKind, string(s.runID)),
+				Run: datastore.MakeKey(ctx, common.RunKind, string(s.runID)),
 				Detail: &changelist.Snapshot{
 					Kind: &changelist.Snapshot_Gerrit{
 						Gerrit: &changelist.Gerrit{
@@ -88,7 +88,7 @@ func TestSubmitter(t *testing.T) {
 			},
 			&run.RunCL{
 				ID:  2,
-				Run: datastore.MakeKey(ctx, run.RunKind, string(s.runID)),
+				Run: datastore.MakeKey(ctx, common.RunKind, string(s.runID)),
 				Detail: &changelist.Snapshot{
 					Kind: &changelist.Snapshot_Gerrit{
 						Gerrit: &changelist.Gerrit{

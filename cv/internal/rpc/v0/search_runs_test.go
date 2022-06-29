@@ -139,7 +139,7 @@ func TestSearchRuns(t *testing.T) {
 			So(datastore.Put(ctx, r), ShouldBeNil)
 			for _, cl := range cls {
 				So(datastore.Put(ctx, &run.RunCL{
-					Run:        datastore.MakeKey(ctx, run.RunKind, string(runID)),
+					Run:        datastore.MakeKey(ctx, common.RunKind, string(runID)),
 					ID:         cl.ID,
 					IndexedID:  cl.ID,
 					ExternalID: cl.ExternalID,

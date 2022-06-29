@@ -352,15 +352,15 @@ func TestSearchRuns(t *testing.T) {
 						Status: run.Status_CANCELLED,
 						CLs:    common.MakeCLIDs(1, 2),
 					},
-					&run.RunCL{Run: datastore.MakeKey(ctx, run.RunKind, earlierID), ID: cl1.ID, IndexedID: cl1.ID},
-					&run.RunCL{Run: datastore.MakeKey(ctx, run.RunKind, earlierID), ID: cl2.ID, IndexedID: cl2.ID},
+					&run.RunCL{Run: datastore.MakeKey(ctx, common.RunKind, earlierID), ID: cl1.ID, IndexedID: cl1.ID},
+					&run.RunCL{Run: datastore.MakeKey(ctx, common.RunKind, earlierID), ID: cl2.ID, IndexedID: cl2.ID},
 
 					&run.Run{
 						ID:     laterID,
 						Status: run.Status_RUNNING,
 						CLs:    common.MakeCLIDs(1),
 					},
-					&run.RunCL{Run: datastore.MakeKey(ctx, run.RunKind, laterID), ID: cl1.ID, IndexedID: cl1.ID},
+					&run.RunCL{Run: datastore.MakeKey(ctx, common.RunKind, laterID), ID: cl1.ID, IndexedID: cl1.ID},
 				), ShouldBeNil)
 
 				Convey("exact", func() {
@@ -415,7 +415,7 @@ func TestSearchRuns(t *testing.T) {
 							Status: run.Status_RUNNING,
 							CLs:    common.MakeCLIDs(1),
 						},
-						&run.RunCL{Run: datastore.MakeKey(ctx, run.RunKind, diffProjectID), ID: cl1.ID, IndexedID: cl1.ID},
+						&run.RunCL{Run: datastore.MakeKey(ctx, common.RunKind, diffProjectID), ID: cl1.ID, IndexedID: cl1.ID},
 					), ShouldBeNil)
 
 					req := &adminpb.SearchRunsRequest{
@@ -434,7 +434,7 @@ func TestSearchRuns(t *testing.T) {
 							Status: run.Status_RUNNING,
 							CLs:    common.MakeCLIDs(1),
 						},
-						&run.RunCL{Run: datastore.MakeKey(ctx, run.RunKind, diffProjectID), ID: cl1.ID, IndexedID: cl1.ID},
+						&run.RunCL{Run: datastore.MakeKey(ctx, common.RunKind, diffProjectID), ID: cl1.ID, IndexedID: cl1.ID},
 					), ShouldBeNil)
 
 					req := &adminpb.SearchRunsRequest{
