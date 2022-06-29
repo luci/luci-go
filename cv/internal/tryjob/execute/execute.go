@@ -29,27 +29,6 @@ import (
 	"go.chromium.org/luci/cv/internal/tryjob/requirement"
 )
 
-type state struct {
-	_kind string         `gae:"$kind,TryjobExecutionState"`
-	_id   int64          `gae:"$id,1"`
-	Run   *datastore.Key `gae:"$parent"`
-	// EVersion is the version of this state. Start with 1.
-	EVersion int64
-	State    *tryjob.ExecutionState
-}
-
-func loadExecutionState(ctx context.Context, rid common.RunID) (*tryjob.ExecutionState, int64, error) {
-	s := &state{Run: datastore.MakeKey(ctx, common.RunKind, string(rid))}
-	switch err := datastore.Get(ctx, s); {
-	case err == datastore.ErrNoSuchEntity:
-		return nil, 0, nil
-	case err != nil:
-		return nil, 0, errors.Annotate(err, "failed to load tryjob execution state of run %q", rid).Err()
-	default:
-		return s.State, s.EVersion, nil
-	}
-}
-
 // Executor reacts to changes in external world and tries to fulfills the tryjob
 // requirement.
 type Executor struct {
@@ -78,7 +57,7 @@ type rm interface {
 //
 // This function is idempotent so it is safe to retry.
 func (e *Executor) Do(ctx context.Context, r *run.Run, payload *tryjob.ExecuteTryjobsPayload) error {
-	execState, stateVer, err := loadExecutionState(ctx, r.ID)
+	execState, stateVer, err := tryjob.LoadExecutionState(ctx, r.ID)
 	switch {
 	case err != nil:
 		return err
@@ -97,21 +76,8 @@ func (e *Executor) Do(ctx context.Context, r *run.Run, payload *tryjob.ExecuteTr
 	var innerErr error
 	err = datastore.RunInTransaction(ctx, func(ctx context.Context) (err error) {
 		defer func() { innerErr = err }()
-		var newState *state
-		switch _, latestStateVer, err := loadExecutionState(ctx, r.ID); {
-		case err != nil:
+		if err := tryjob.SaveExecutionState(ctx, r.ID, execState, stateVer); err != nil {
 			return err
-		case latestStateVer != stateVer:
-			return errors.Reason("execution state has changed. before: %d, current: %d", stateVer, latestStateVer).Tag(transient.Tag).Err()
-		default:
-			newState = &state{
-				Run:      datastore.MakeKey(ctx, common.RunKind, string(r.ID)),
-				EVersion: latestStateVer + 1,
-				State:    execState,
-			}
-		}
-		if err := datastore.Put(ctx, newState); err != nil {
-			return errors.Annotate(err, "failed to save execution state").Tag(transient.Tag).Err()
 		}
 		if sideEffect != nil {
 			return sideEffect(ctx)
