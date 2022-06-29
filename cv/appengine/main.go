@@ -113,8 +113,9 @@ func main() {
 		clUpdater := changelist.NewUpdater(&tq.Default, clMutator)
 		gerritupdater.RegisterUpdater(clUpdater, gFactory)
 
+		bbFactory := buildbucket.NewClientFactory()
 		bbFacade := &bbfacade.Facade{
-			ClientFactory: buildbucket.NewClientFactory(),
+			ClientFactory: bbFactory,
 		}
 		tryjobUpdater := tryjob.NewUpdater(&tq.Default, runNotifier)
 		tryjobUpdater.RegisterBackend(bbFacade)
@@ -130,7 +131,7 @@ func main() {
 		if err != nil {
 			return err
 		}
-		_ = runimpl.New(runNotifier, pmNotifier, clMutator, clUpdater, gFactory, tc, bqc, env)
+		_ = runimpl.New(runNotifier, pmNotifier, clMutator, clUpdater, gFactory, bbFactory, tc, bqc, env)
 
 		// Setup pRPC authentication.
 		srv.PRPC.Authenticator = &auth.Authenticator{

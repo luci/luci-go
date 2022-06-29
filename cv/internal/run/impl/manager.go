@@ -30,6 +30,7 @@ import (
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/server/tq"
 
+	"go.chromium.org/luci/cv/internal/buildbucket"
 	"go.chromium.org/luci/cv/internal/changelist"
 	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/common/bq"
@@ -65,6 +66,7 @@ type RunManager struct {
 	tqDispatcher *tq.Dispatcher
 	env          *common.Env
 	gFactory     gerrit.Factory
+	bbFactory    buildbucket.ClientFactory
 	handler      handler.Handler
 
 	testDoLongOperationWithDeadline func(context.Context, *longops.Base) (*eventpb.LongOpCompleted, error)
@@ -77,6 +79,7 @@ func New(
 	clm *changelist.Mutator,
 	clu *changelist.Updater,
 	g gerrit.Factory,
+	bb buildbucket.ClientFactory,
 	tc tree.Client,
 	bqc bq.Client,
 	env *common.Env,
@@ -87,6 +90,7 @@ func New(
 		tqDispatcher: n.TasksBinding.TQDispatcher,
 		env:          env,
 		gFactory:     g,
+		bbFactory:    bb,
 		handler: &handler.Impl{
 			PM:         pm,
 			RM:         n,

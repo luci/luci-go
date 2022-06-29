@@ -103,7 +103,7 @@ func TestLongOps(t *testing.T) {
 		})
 
 		Convey("manager handles Long Operation TQ task", func() {
-			manager := New(notifier, nil, nil, nil, nil, nil, nil, ct.Env)
+			manager := New(notifier, nil, nil, nil, nil, nil, nil, nil, ct.Env)
 
 			Convey("OK", func() {
 				called := false

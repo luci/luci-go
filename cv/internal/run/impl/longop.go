@@ -27,6 +27,7 @@ import (
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/server/tq"
 
+	bbfacade "go.chromium.org/luci/cv/internal/buildbucket/facade"
 	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/run"
 	"go.chromium.org/luci/cv/internal/run/eventpb"
@@ -145,7 +146,9 @@ func (rm *RunManager) doLongOperationWithDeadline(ctx context.Context, opBase *l
 		op = &longops.ExecuteTryjobsOp{
 			Base:        opBase,
 			RunNotifier: rm.runNotifier,
-			// TODO(yiwzhang): Pass backend
+			Backend: &bbfacade.Facade{
+				ClientFactory: rm.bbFactory,
+			},
 		}
 	default:
 		logging.Errorf(ctx, "unknown LongOp work %T", w)

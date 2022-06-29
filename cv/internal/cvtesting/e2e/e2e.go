@@ -164,9 +164,10 @@ func (t *Test) SetUp() (ctx context.Context, deferme func()) {
 	tjNotifier := tryjob.NewNotifier(t.TQDispatcher)
 	clMutator := changelist.NewMutator(t.TQDispatcher, t.PMNotifier, t.RunNotifier, tjNotifier)
 	clUpdater := changelist.NewUpdater(t.TQDispatcher, clMutator)
+	bbFactory := t.BuildbucketFake.NewClientFactory()
 	gerritupdater.RegisterUpdater(clUpdater, gFactory)
 	_ = pmimpl.New(t.PMNotifier, t.RunNotifier, clMutator, gFactory, clUpdater)
-	_ = runimpl.New(t.RunNotifier, t.PMNotifier, clMutator, clUpdater, gFactory, t.TreeFake.Client(), t.BQFake, t.Env)
+	_ = runimpl.New(t.RunNotifier, t.PMNotifier, clMutator, clUpdater, gFactory, bbFactory, t.TreeFake.Client(), t.BQFake, t.Env)
 	_ = tjcancel.NewCancellator(tjNotifier)
 
 	t.MigrationServer = &migration.MigrationServer{
