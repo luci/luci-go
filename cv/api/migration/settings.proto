@@ -68,5 +68,18 @@ message Settings {
     repeated string project_regexp = 1;
     repeated string project_regexp_exclude = 2;
   }
-  UseCVStartMessage use_cv_start_message = 5;
+  UseCVStartMessage use_cv_start_message = 5 [deprecated=true];
+
+  // Use the Tryjob Executor in CV to handle Tryjobs.
+  //
+  // The project is opted to CV handling tryjobs if and only if all 3 hold:
+  //  * project matches at least one project_regexp.
+  //  * project matches no project_regexp_exclude.
+  //  * project matches exactly one ApiHost overall OR exactly one with
+  //    prod=true.
+  message UseCVTryjobExecutor {
+    repeated string project_regexp = 1;
+    repeated string project_regexp_exclude = 2;
+  }
+  UseCVTryjobExecutor use_cv_tryjob_executor = 6;
 }
