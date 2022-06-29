@@ -28,7 +28,6 @@ import (
 	"github.com/google/uuid"
 	"google.golang.org/api/googleapi"
 	"google.golang.org/protobuf/proto"
-	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/common/api/swarming/swarming/v1"
 	"go.chromium.org/luci/common/clock"
@@ -79,9 +78,6 @@ const (
 	// swarmingCreateTaskGiveUpTimeout indicates how long to retry
 	// the createSwarmingTask before giving up with INFRA_FAILURE.
 	swarmingCreateTaskGiveUpTimeout = 10 * 60 * time.Second
-
-	// swarmingTimeFormat is time format used by swarming.
-	swarmingTimeFormat = "2006-01-02T15:04:05.999999999"
 )
 
 // SyncBuild synchronizes the build with Swarming.
@@ -118,185 +114,19 @@ func SyncBuild(ctx context.Context, buildID int64, generation int64) error {
 		if err := createSwarmingTask(ctx, bld, swarm); err != nil {
 			// Mark build as Infra_failure for fatal and non-retryable errors.
 			if tq.Fatal.In(err) {
-				return failBuild(ctx, bld.ID, err.Error())
+				if e := failBuild(ctx, bld.ID, err.Error()); e != nil {
+					return transient.Tag.Apply(errors.Annotate(err, "failed to terminate build: %d", buildID).Err())
+				}
 			}
 			return err
 		}
 	} else {
-		if err := syncBuildWithTaskResult(ctx, bld.ID, bld.Proto.Infra.Swarming.TaskId, swarm); err != nil {
-			// Tq should retry non-fatal errors.
-			if !tq.Fatal.In(err) {
-				return err
-			}
-			// For fatal errors, we just log it and continue to the part of enqueueing
-			// the next generation sync task.
-			logging.Errorf(ctx, "Dropping the sync task due to the fatal error: %s", err)
-		}
+		// TODO(crbug.com/1328646): implement it later.
+		// syncBuildWithTaskResult(buildID, loadTaskResult)
 	}
 
-	// TODO(crbug.com/1328646): Enqueue the next generation of swarming-build-sync task.
+	// TODO(crbug.com/1328646): Enqueue the swarming-sync task.
 	return nil
-}
-
-// syncBuildWithTaskResult syncs Build entity in the datastore with a result of the swarming task.
-func syncBuildWithTaskResult(ctx context.Context, buildID int64, taskID string, swarm clients.SwarmingClient) error {
-	taskResult, err := swarm.GetTaskResult(ctx, taskID)
-	if err != nil {
-		logging.Errorf(ctx, "failed to fetch swarming task %s for build %d: %s", taskID, buildID, err)
-		if apiErr, ok := err.(*googleapi.Error); ok && apiErr.Code >= 400 && apiErr.Code < 500 {
-			return failBuild(ctx, buildID, fmt.Sprintf("invalid swarming task %s", taskID))
-		}
-		return transient.Tag.Apply(err)
-	}
-	if taskResult == nil {
-		return failBuild(ctx, buildID, fmt.Sprintf("Swarming task %s unexpectedly disappeared", taskID))
-	}
-
-	err = datastore.RunInTransaction(ctx, func(ctx context.Context) error {
-		bld := &model.Build{
-			ID: buildID,
-		}
-		infra := &model.BuildInfra{Build: datastore.KeyForObj(ctx, bld)}
-		if err := datastore.Get(ctx, bld, infra); err != nil {
-			return transient.Tag.Apply(errors.Annotate(err, "failed to fetch build or buildInfra: %d", bld.ID).Err())
-		}
-
-		statusChanged, err := updateBuildFromTaskResult(ctx, bld, infra, taskResult)
-		if err != nil {
-			return tq.Fatal.Apply(err)
-		}
-		if !statusChanged {
-			return nil
-		}
-
-		toPut := []interface{}{bld, infra}
-		switch {
-		case bld.Proto.Status == pb.Status_STARTED:
-			if err := NotifyPubSub(ctx, bld); err != nil {
-				return transient.Tag.Apply(err)
-			}
-			metrics.BuildStarted(ctx, bld)
-		case protoutil.IsEnded(bld.Proto.Status):
-			steps := &model.BuildSteps{Build: datastore.KeyForObj(ctx, bld)}
-			if changed, _ := steps.CancelIncomplete(ctx, bld.Proto.EndTime); changed {
-				toPut = append(toPut, steps)
-			}
-			if err := sendOnBuildCompletion(ctx, bld); err != nil {
-				return transient.Tag.Apply(err)
-			}
-			metrics.BuildCompleted(ctx, bld)
-		}
-		return transient.Tag.Apply(datastore.Put(ctx, toPut...))
-	}, nil)
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-// updateBuildFromTaskResult mutate the build and infra entities according to
-// the given task result. Return true if the build status has been changed.
-// Note, it will not write the entities into Datastore.
-func updateBuildFromTaskResult(ctx context.Context, bld *model.Build, infra *model.BuildInfra, taskResult *swarming.SwarmingRpcsTaskResult) (bool, error) {
-	if protoutil.IsEnded(bld.Status) {
-		// Completed builds are immutable.
-		return false, nil
-	}
-
-	oldStatus := bld.Status
-	sw := infra.Proto.Swarming
-	// Update BotDimensions
-	sw.BotDimensions = []*pb.StringPair{}
-	for _, dim := range taskResult.BotDimensions {
-		for _, v := range dim.Value {
-			sw.BotDimensions = append(sw.BotDimensions, &pb.StringPair{Key: dim.Key, Value: v})
-		}
-	}
-	sort.Slice(sw.BotDimensions, func(i, j int) bool {
-		if sw.BotDimensions[i].Key == sw.BotDimensions[j].Key {
-			return sw.BotDimensions[i].Value < sw.BotDimensions[j].Value
-		} else {
-			return sw.BotDimensions[i].Key < sw.BotDimensions[j].Key
-		}
-	})
-
-	// Update build status
-	now := clock.Now(ctx)
-	switch taskResult.State {
-	case "PENDING":
-		if bld.Status == pb.Status_STARTED {
-			// Most probably, race between PubSub push handler and Cron job.
-			// With swarming, a build cannot go from STARTED back to PENDING,
-			// so ignore this.
-			return false, nil
-		}
-		protoutil.SetStatus(now, bld.Proto, pb.Status_SCHEDULED)
-	case "RUNNING":
-		protoutil.SetStatus(now, bld.Proto, pb.Status_STARTED)
-	case "CANCELED", "KILLED":
-		protoutil.SetStatus(now, bld.Proto, pb.Status_CANCELED)
-	case "NO_RESOURCE":
-		protoutil.SetStatus(now, bld.Proto, pb.Status_INFRA_FAILURE)
-		bld.Proto.StatusDetails = &pb.StatusDetails{
-			ResourceExhaustion: &pb.StatusDetails_ResourceExhaustion{},
-		}
-	case "EXPIRED":
-		protoutil.SetStatus(now, bld.Proto, pb.Status_INFRA_FAILURE)
-		bld.Proto.StatusDetails = &pb.StatusDetails{
-			ResourceExhaustion: &pb.StatusDetails_ResourceExhaustion{},
-			Timeout:            &pb.StatusDetails_Timeout{},
-		}
-	case "TIMED_OUT":
-		protoutil.SetStatus(now, bld.Proto, pb.Status_INFRA_FAILURE)
-		bld.Proto.StatusDetails = &pb.StatusDetails{
-			Timeout: &pb.StatusDetails_Timeout{},
-		}
-	case "BOT_DIED":
-		protoutil.SetStatus(now, bld.Proto, pb.Status_INFRA_FAILURE)
-	case "COMPLETED":
-		if taskResult.Failure {
-			// If this truly was a non-infra failure, bbagent would catch that and
-			// mark the build as FAILURE.
-			// That did not happen, so this is an infra failure.
-			protoutil.SetStatus(now, bld.Proto, pb.Status_INFRA_FAILURE)
-		} else {
-			protoutil.SetStatus(now, bld.Proto, pb.Status_SUCCESS)
-		}
-	default:
-		return false, errors.Reason("Unexpected task state: %s", taskResult.State).Err()
-	}
-	if bld.Proto.Status == oldStatus {
-		return false, nil
-	}
-	logging.Infof(ctx, "Build %s status: %s -> %s", bld.ID, oldStatus, bld.Proto.Status)
-
-	// Correct start or end time
-	switch {
-	case bld.Proto.Status == pb.Status_STARTED:
-		if startTime, err := time.Parse(swarmingTimeFormat, taskResult.StartedTs); err == nil {
-			bld.Proto.StartTime = timestamppb.New(startTime)
-		} else {
-			bld.Proto.StartTime = timestamppb.New(now)
-		}
-	case protoutil.IsEnded(bld.Proto.Status):
-		logging.Infof(ctx, "Build %s status: %s", bld.ID, bld.Proto.Status)
-		// if taskResult.StartedTs is empty or invalid , we don't correct build start time for the ended status build.
-		if startTime, err := time.Parse(swarmingTimeFormat, taskResult.StartedTs); err == nil {
-			bld.Proto.StartTime = timestamppb.New(startTime)
-		}
-
-		if endTime, err := time.Parse(swarmingTimeFormat, taskResult.CompletedTs); err == nil {
-			bld.Proto.EndTime = timestamppb.New(endTime)
-		} else if endTime, err := time.Parse(swarmingTimeFormat, taskResult.AbandonedTs); err == nil {
-			bld.Proto.EndTime = timestamppb.New(endTime)
-		} else {
-			bld.Proto.EndTime = timestamppb.New(now)
-		}
-		if bld.Proto.EndTime.AsTime().Before(bld.Proto.CreateTime.AsTime()) {
-			bld.Proto.EndTime = proto.Clone(bld.Proto.CreateTime).(*timestamppb.Timestamp)
-		}
-	}
-	return true, nil
 }
 
 // createSwarmingTask creates a swarming task for the build.
@@ -370,7 +200,7 @@ func createSwarmingTask(ctx context.Context, build *model.Build, swarm clients.S
 			TaskId:   res.TaskId,
 			Realm:    build.Realm(),
 		}); err != nil {
-			return transient.Tag.Apply(errors.Annotate(err, "failed to enqueue swarming task cancellation task for build %d", build.ID).Err())
+			return tq.Fatal.Apply(errors.Annotate(err, "failed to enqueue swarming task cancellation task for build %d", build.ID).Err())
 		}
 		return transient.Tag.Apply(errors.Annotate(err, "failed to update build %d", build.ID).Err())
 	}
@@ -389,19 +219,19 @@ func failBuild(ctx context.Context, buildID int64, msg string) error {
 			logging.Warningf(ctx, "build %d not found: %s", buildID, err)
 			return nil
 		case err != nil:
-			return transient.Tag.Apply(errors.Annotate(err, "failed to fetch build: %d", bld.ID).Err())
+			return errors.Annotate(err, "failed to fetch build: %d", bld.ID).Err()
 		}
 		protoutil.SetStatus(clock.Now(ctx), bld.Proto, pb.Status_INFRA_FAILURE)
 		bld.Proto.SummaryMarkdown = msg
 
 		if err := sendOnBuildCompletion(ctx, bld); err != nil {
-			return transient.Tag.Apply(err)
+			return err
 		}
 
 		return datastore.Put(ctx, bld)
 	}, nil)
 	if err != nil {
-		return transient.Tag.Apply(errors.Annotate(err, "failed to terminate build: %d", buildID).Err())
+		return errors.Annotate(err, "failed to terminate build: %d", buildID).Err()
 	}
 	metrics.BuildCompleted(ctx, bld)
 	return nil
