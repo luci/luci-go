@@ -26,7 +26,7 @@ import (
 )
 
 //go:linkname altGetRandom crypto/rand.altGetRandom
-var altGetRandom func(p []byte) (ok bool)
+var altGetRandom func(p []byte) error
 
 func init() {
 	// Unset "optimized" implementation, making crypto/rand fallback to the

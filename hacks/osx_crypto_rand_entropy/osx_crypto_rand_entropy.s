@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+//go:build darwin && amd64 && go1.17
 //+build darwin,amd64,go1.17
 
 #include "textflag.h"
