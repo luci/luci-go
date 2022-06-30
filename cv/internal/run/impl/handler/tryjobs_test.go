@@ -15,6 +15,7 @@
 package handler
 
 import (
+	"context"
 	"fmt"
 	"strings"
 	"testing"
@@ -22,21 +23,29 @@ import (
 
 	"go.chromium.org/luci/auth/identity"
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
+	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	cvbqpb "go.chromium.org/luci/cv/api/bigquery/v1"
+	cfgpb "go.chromium.org/luci/cv/api/config/v2"
 	migrationpb "go.chromium.org/luci/cv/api/migration"
+	"go.chromium.org/luci/cv/internal/changelist"
 	"go.chromium.org/luci/cv/internal/common"
+	"go.chromium.org/luci/cv/internal/configs/prjcfg/prjcfgtest"
 	"go.chromium.org/luci/cv/internal/cvtesting"
+	gf "go.chromium.org/luci/cv/internal/gerrit/gerritfake"
 	"go.chromium.org/luci/cv/internal/migration"
 	"go.chromium.org/luci/cv/internal/run"
+	"go.chromium.org/luci/cv/internal/run/eventpb"
 	"go.chromium.org/luci/cv/internal/run/impl/state"
+	"go.chromium.org/luci/cv/internal/run/impl/submit"
 	"go.chromium.org/luci/cv/internal/tryjob"
 
 	. "github.com/smartystreets/goconvey/convey"
+	gerritpb "go.chromium.org/luci/common/proto/gerrit"
 	. "go.chromium.org/luci/common/testing/assertions"
 )
 
@@ -106,6 +115,215 @@ func TestOnTryjobsUpdated(t *testing.T) {
 				So(res.PreserveEvents, ShouldBeFalse)
 			})
 		}
+	})
+}
+
+func TestOnCompletedExecuteTryjobs(t *testing.T) {
+	t.Parallel()
+
+	Convey("OnCompletedExecuteTryjobs works", t, func() {
+		ct := cvtesting.Test{}
+		ctx, cancel := ct.SetUp()
+		defer cancel()
+
+		const (
+			lProject = "chromium"
+			gHost    = "example-review.googlesource.com"
+			opID     = "1-1"
+		)
+		now := ct.Clock.Now().UTC()
+
+		prjcfgtest.Create(ctx, lProject, &cfgpb.Config{ConfigGroups: []*cfgpb.ConfigGroup{{Name: "single"}}})
+		rs := &state.RunState{
+			Run: run.Run{
+				ID:            common.MakeRunID(lProject, now, 1, []byte("deadbeef")),
+				Status:        run.Status_RUNNING,
+				CreateTime:    now.Add(-2 * time.Minute),
+				StartTime:     now.Add(-1 * time.Minute),
+				Mode:          run.DryRun,
+				ConfigGroupID: prjcfgtest.MustExist(ctx, lProject).ConfigGroupIDs[0],
+				CLs:           common.CLIDs{1},
+				OngoingLongOps: &run.OngoingLongOps{
+					Ops: map[string]*run.OngoingLongOps_Op{
+						opID: {
+							Work: &run.OngoingLongOps_Op_ExecuteTryjobs{
+								ExecuteTryjobs: &tryjob.ExecuteTryjobsPayload{
+									TryjobsUpdated: []int64{123},
+								},
+							},
+						},
+					},
+				},
+			},
+		}
+
+		for _, clid := range rs.CLs {
+			ci := gf.CI(100 + int(clid))
+			So(datastore.Put(ctx,
+				&run.RunCL{
+					ID:         clid,
+					Run:        datastore.MakeKey(ctx, common.RunKind, string(rs.ID)),
+					ExternalID: changelist.MustGobID(gHost, ci.GetNumber()),
+					Detail: &changelist.Snapshot{
+						LuciProject: lProject,
+						Kind: &changelist.Snapshot_Gerrit{
+							Gerrit: &changelist.Gerrit{
+								Host: gHost,
+								Info: proto.Clone(ci).(*gerritpb.ChangeInfo),
+							},
+						},
+					},
+				},
+			), ShouldBeNil)
+		}
+
+		result := &eventpb.LongOpCompleted{
+			OperationId: opID,
+		}
+		h, _ := makeTestHandler(&ct)
+
+		for _, longOpStatus := range []eventpb.LongOpCompleted_Status{
+			eventpb.LongOpCompleted_EXPIRED,
+			eventpb.LongOpCompleted_FAILED,
+		} {
+			Convey(fmt.Sprintf("on long op %s", longOpStatus), func() {
+				result.Status = longOpStatus
+				res, err := h.OnLongOpCompleted(ctx, rs, result)
+				So(err, ShouldBeNil)
+				So(res.State.Status, ShouldEqual, run.Status_RUNNING)
+				So(res.State.OngoingLongOps.GetOps(), ShouldHaveLength, 1)
+				for _, op := range res.State.OngoingLongOps.GetOps() {
+					So(op.GetCancelTriggers(), ShouldNotBeNil)
+					So(op.GetCancelTriggers().GetRunStatusIfSucceeded(), ShouldEqual, run.Status_FAILED)
+				}
+				So(res.SideEffectFn, ShouldBeNil)
+				So(res.PreserveEvents, ShouldBeFalse)
+			})
+		}
+
+		Convey("on long op success", func() {
+			result.Status = eventpb.LongOpCompleted_SUCCEEDED
+
+			Convey("Tryjob execution still running", func() {
+				err := datastore.RunInTransaction(ctx, func(ctx context.Context) error {
+					return tryjob.SaveExecutionState(ctx, rs.ID, &tryjob.ExecutionState{
+						Status: tryjob.ExecutionState_RUNNING,
+					}, 0)
+				}, nil)
+				So(err, ShouldBeNil)
+				res, err := h.OnLongOpCompleted(ctx, rs, result)
+				So(err, ShouldBeNil)
+				So(res.State.Status, ShouldEqual, run.Status_RUNNING)
+				So(res.State.Tryjobs, ShouldResembleProto, &run.Tryjobs{
+					State: &tryjob.ExecutionState{
+						Status: tryjob.ExecutionState_RUNNING,
+					},
+				})
+				So(res.State.OngoingLongOps, ShouldBeNil)
+				So(res.SideEffectFn, ShouldBeNil)
+				So(res.PreserveEvents, ShouldBeFalse)
+			})
+
+			Convey("Tryjob execution succeeds", func() {
+				err := datastore.RunInTransaction(ctx, func(ctx context.Context) error {
+					return tryjob.SaveExecutionState(ctx, rs.ID, &tryjob.ExecutionState{
+						Status: tryjob.ExecutionState_SUCCEEDED,
+					}, 0)
+				}, nil)
+				So(err, ShouldBeNil)
+				Convey("Full Run", func() {
+					rs.Mode = run.FullRun
+					ctx = context.WithValue(ctx, &fakeTaskIDKey, "task-foo")
+					res, err := h.OnLongOpCompleted(ctx, rs, result)
+					So(err, ShouldBeNil)
+					So(res.State.Status, ShouldEqual, run.Status_SUBMITTING)
+					So(res.State.Tryjobs, ShouldResembleProto, &run.Tryjobs{
+						State: &tryjob.ExecutionState{
+							Status: tryjob.ExecutionState_SUCCEEDED,
+						},
+					})
+					So(res.State.OngoingLongOps, ShouldBeNil)
+					So(res.State.Submission, ShouldNotBeNil)
+					So(submit.MustCurrentRun(ctx, lProject), ShouldEqual, rs.ID)
+					So(res.SideEffectFn, ShouldBeNil)
+					So(res.PreserveEvents, ShouldBeFalse)
+				})
+				Convey("Dry Run", func() {
+					rs.Mode = run.DryRun
+					res, err := h.OnLongOpCompleted(ctx, rs, result)
+					So(err, ShouldBeNil)
+					So(res.State.Status, ShouldEqual, run.Status_RUNNING)
+					So(res.State.Tryjobs, ShouldResembleProto, &run.Tryjobs{
+						State: &tryjob.ExecutionState{
+							Status: tryjob.ExecutionState_SUCCEEDED,
+						},
+					})
+					So(res.State.OngoingLongOps.GetOps(), ShouldHaveLength, 1)
+					for _, op := range res.State.OngoingLongOps.GetOps() {
+						So(op.GetCancelTriggers(), ShouldNotBeNil)
+						So(op.GetCancelTriggers().GetRequests(), ShouldResembleProto, []*run.OngoingLongOps_Op_TriggersCancellation_Request{
+							{
+								Clid:    int64(rs.CLs[0]),
+								Message: "This CL has passed the run",
+								Notify: []run.OngoingLongOps_Op_TriggersCancellation_Whom{
+									run.OngoingLongOps_Op_TriggersCancellation_OWNER,
+									run.OngoingLongOps_Op_TriggersCancellation_CQ_VOTERS,
+								},
+								AddToAttention: []run.OngoingLongOps_Op_TriggersCancellation_Whom{
+									run.OngoingLongOps_Op_TriggersCancellation_OWNER,
+									run.OngoingLongOps_Op_TriggersCancellation_CQ_VOTERS,
+								},
+								AddToAttentionReason: "Run succeeded",
+							},
+						})
+						So(op.GetCancelTriggers().GetRunStatusIfSucceeded(), ShouldEqual, run.Status_SUCCEEDED)
+					}
+					So(res.SideEffectFn, ShouldBeNil)
+					So(res.PreserveEvents, ShouldBeFalse)
+				})
+			})
+
+			Convey("Tryjob execution failed", func() {
+				err := datastore.RunInTransaction(ctx, func(ctx context.Context) error {
+					return tryjob.SaveExecutionState(ctx, rs.ID, &tryjob.ExecutionState{
+						Status:        tryjob.ExecutionState_FAILED,
+						FailureReason: "build 12345 failed",
+					}, 0)
+				}, nil)
+				So(err, ShouldBeNil)
+				res, err := h.OnLongOpCompleted(ctx, rs, result)
+				So(err, ShouldBeNil)
+				So(res.State.Status, ShouldEqual, run.Status_RUNNING)
+				So(res.State.Tryjobs, ShouldResembleProto, &run.Tryjobs{
+					State: &tryjob.ExecutionState{
+						Status:        tryjob.ExecutionState_FAILED,
+						FailureReason: "build 12345 failed",
+					},
+				})
+				So(res.State.OngoingLongOps.GetOps(), ShouldHaveLength, 1)
+				for _, op := range res.State.OngoingLongOps.GetOps() {
+					So(op.GetCancelTriggers(), ShouldNotBeNil)
+					So(op.GetCancelTriggers().GetRequests(), ShouldResembleProto, []*run.OngoingLongOps_Op_TriggersCancellation_Request{
+						{
+							Clid:    int64(rs.CLs[0]),
+							Message: "This CL has failed the run. Reason:\n\nbuild 12345 failed",
+							Notify: []run.OngoingLongOps_Op_TriggersCancellation_Whom{
+								run.OngoingLongOps_Op_TriggersCancellation_OWNER,
+								run.OngoingLongOps_Op_TriggersCancellation_CQ_VOTERS,
+							},
+							AddToAttention: []run.OngoingLongOps_Op_TriggersCancellation_Whom{
+								run.OngoingLongOps_Op_TriggersCancellation_OWNER,
+								run.OngoingLongOps_Op_TriggersCancellation_CQ_VOTERS,
+							},
+							AddToAttentionReason: "Tryjobs failed",
+						},
+					})
+					So(op.GetCancelTriggers().GetRunStatusIfSucceeded(), ShouldEqual, run.Status_FAILED)
+				}
+				So(res.SideEffectFn, ShouldBeNil)
+				So(res.PreserveEvents, ShouldBeFalse)
+			})
+		})
 	})
 }
 

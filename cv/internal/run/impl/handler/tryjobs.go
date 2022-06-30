@@ -31,8 +31,10 @@ import (
 	cvbqpb "go.chromium.org/luci/cv/api/bigquery/v1"
 	migrationpb "go.chromium.org/luci/cv/api/migration"
 	"go.chromium.org/luci/cv/internal/common"
+	"go.chromium.org/luci/cv/internal/gerrit"
 	"go.chromium.org/luci/cv/internal/migration"
 	"go.chromium.org/luci/cv/internal/run"
+	"go.chromium.org/luci/cv/internal/run/eventpb"
 	"go.chromium.org/luci/cv/internal/run/impl/state"
 	"go.chromium.org/luci/cv/internal/tryjob"
 )
@@ -63,6 +65,85 @@ func (impl *Impl) OnTryjobsUpdated(ctx context.Context, rs *state.RunState, tryj
 		enqueueTryjobsUpdatedTask(ctx, rs, tryjobs)
 		return &Result{State: rs}, nil
 	}
+}
+
+func (impl *Impl) onCompletedExecuteTryjobs(ctx context.Context, rs *state.RunState, op *run.OngoingLongOps_Op, opCompleted *eventpb.LongOpCompleted) (*Result, error) {
+	opID := opCompleted.GetOperationId()
+	rs = rs.ShallowCopy()
+	rs.RemoveCompletedLongOp(opID)
+	if rs.Status != run.Status_RUNNING {
+		logging.Warningf(ctx, "long operation to execute tryjobs has completed but Run is %s.", rs.Status)
+		return &Result{State: rs}, nil
+	}
+	var (
+		runStatus       run.Status
+		msg             string
+		attentionReason string
+	)
+	switch opCompleted.GetStatus() {
+	case eventpb.LongOpCompleted_EXPIRED:
+		// Tryjob executor timeout.
+		fallthrough
+	case eventpb.LongOpCompleted_FAILED:
+		// normally indicates tryjob executor itself encounters error (e.g. failed
+		// to read from datastore).
+		runStatus = run.Status_FAILED
+		msg = "Unexpected error when processing Tryjobs. Please retry. If retry continues to fail, please contact LUCI team.\n\n" + cvBugLink
+		attentionReason = "Run failed"
+	case eventpb.LongOpCompleted_SUCCEEDED:
+		switch es, _, err := tryjob.LoadExecutionState(ctx, rs.ID); {
+		case err != nil:
+			return nil, err
+		case es == nil:
+			panic(fmt.Errorf("impossible; Execute Tryjobs task succeeded but ExecutionState was missing"))
+		default:
+			if rs.Tryjobs == nil {
+				rs.Tryjobs = &run.Tryjobs{}
+			}
+			rs.Tryjobs.State = es // copy the execution state to Run entity
+			switch executionStatus := es.GetStatus(); {
+			case executionStatus == tryjob.ExecutionState_SUCCEEDED && rs.Mode == run.FullRun:
+				rs.Status = run.Status_WAITING_FOR_SUBMISSION
+				return impl.OnReadyForSubmission(ctx, rs)
+			case executionStatus == tryjob.ExecutionState_SUCCEEDED:
+				// TODO(crbug/1242951): new patchset run should not leave any message
+				// on CL to spam users.
+				runStatus = run.Status_SUCCEEDED
+				msg = "This CL has passed the run"
+				attentionReason = "Run succeeded"
+			case executionStatus == tryjob.ExecutionState_FAILED:
+				runStatus = run.Status_FAILED
+				msg = "This CL has failed the run. Reason:\n\n" + es.FailureReason
+				attentionReason = "Tryjobs failed"
+			case executionStatus == tryjob.ExecutionState_RUNNING:
+				// tryjobs are still running. No change to run status
+			case executionStatus == tryjob.ExecutionState_STATUS_UNSPECIFIED:
+				panic(fmt.Errorf("execution status is not specified"))
+			default:
+				panic(fmt.Errorf("unknown tryjob execution status %s", executionStatus))
+			}
+		}
+	default:
+		panic(fmt.Errorf("unknown LongOpCompleted status: %s", opCompleted.GetStatus()))
+	}
+
+	if run.IsEnded(runStatus) {
+		meta := reviewInputMeta{
+			message:        msg,
+			notify:         gerrit.Whoms{gerrit.Owner, gerrit.CQVoters},
+			addToAttention: gerrit.Whoms{gerrit.Owner, gerrit.CQVoters},
+			reason:         attentionReason,
+		}
+		metas := make(map[common.CLID]reviewInputMeta, len(rs.CLs))
+		for _, cl := range rs.CLs {
+			metas[cl] = meta
+		}
+		scheduleTriggersCancellation(ctx, rs, metas, runStatus)
+	}
+
+	return &Result{
+		State: rs,
+	}, nil
 }
 
 // OnCQDTryjobsUpdated implements Handler interface.

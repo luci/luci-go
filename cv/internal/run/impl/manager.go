@@ -59,7 +59,7 @@ const maxEventsPerBatch = 10000
 
 // RunManager manages Runs.
 //
-// It decides starting, cancelation, submission etc. for Runs.
+// It decides starting, cancellation, submission etc. for Runs.
 type RunManager struct {
 	runNotifier  *run.Notifier
 	pmNotifier   *prjmanager.Notifier
@@ -477,7 +477,7 @@ func (rp *runProcessor) processTriageResults(ctx context.Context, tr *triageResu
 		}
 		rs, transitions = applyResult(res, tr.pokeEvents, transitions)
 	}
-	// Sumbission runs as PostProcessFn after event handling/state transition
+	// Submission runs as PostProcessFn after event handling/state transition
 	// is done. It is possible that submission never reports the result back
 	// to RM (e.g. app crash in the middle, task timeout and etc.). In that
 	// case, when task retries, CV should try to resume the submission or fail

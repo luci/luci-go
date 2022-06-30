@@ -19,7 +19,6 @@ import (
 	"time"
 
 	"go.chromium.org/luci/common/clock"
-	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 
 	"go.chromium.org/luci/cv/internal/run"
@@ -50,7 +49,7 @@ func (impl *Impl) OnLongOpCompleted(ctx context.Context, rs *state.RunState, res
 	case *run.OngoingLongOps_Op_CancelTriggers:
 		return impl.onCompletedCancelTriggers(ctx, rs, op, result)
 	case *run.OngoingLongOps_Op_ExecuteTryjobs:
-		return nil, errors.New("not implemented")
+		return impl.onCompletedExecuteTryjobs(ctx, rs, op, result)
 	default:
 		logging.Errorf(ctx, "Unknown long operation %q work type %T finished with:\n%s", result.GetOperationId(), w, result)
 		// Remove the long op from the Run anyway, and move on.
