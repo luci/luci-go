@@ -1929,14 +1929,27 @@ func (s *Server) initTracing() error {
 	// Set the token source to call Stackdriver API.
 	opts := []option.ClientOption{option.WithTokenSource(s.cloudTS)}
 
+	// State for suppressing repeated ResourceExhausted error messages, otherwise
+	// logs may get flooded with them. They are usually not super important, but
+	// ignoring them completely is also not great.
+	errorDedup := struct {
+		lock   sync.Mutex
+		report time.Time
+		count  int
+	}{}
+
+	// Annotate logs from exporter so they can be filtered in Cloud Logging.
+	exporterCtx := logging.SetField(s.Context, "activity", "luci.trace")
+
 	// Register the trace uploader. It is also accidentally metrics uploader, but
 	// we shouldn't be using metrics (we have tsmon instead).
 	exporter, err := stackdriver.NewExporter(stackdriver.Options{
+		Context:                 exporterCtx,
 		ProjectID:               s.Options.CloudProject,
 		MonitoringClientOptions: opts, // note: this should be effectively unused
 		TraceClientOptions:      opts,
-		BundleDelayThreshold:    10 * time.Second,
-		BundleCountThreshold:    512,
+		BundleDelayThreshold:    time.Minute,
+		BundleCountThreshold:    3000,
 		DefaultTraceAttributes: map[string]interface{}{
 			"cr.dev/image":   s.Options.ContainerImageID,
 			"cr.dev/service": s.Options.TsMonServiceName,
@@ -1944,7 +1957,25 @@ func (s *Server) initTracing() error {
 			"cr.dev/host":    s.Options.Hostname,
 		},
 		OnError: func(err error) {
-			logging.Errorf(s.Context, "Stackdriver error: %s", err)
+			if !strings.Contains(err.Error(), "ResourceExhausted") {
+				logging.Warningf(exporterCtx, "Error in Stackdriver trace exporter: %s", err)
+				return
+			}
+
+			errorDedup.lock.Lock()
+			defer errorDedup.lock.Unlock()
+
+			errorDedup.count += 1
+
+			if errorDedup.report.IsZero() || time.Since(errorDedup.report) > 5*time.Minute {
+				if errorDedup.report.IsZero() {
+					logging.Warningf(exporterCtx, "Error in Stackdriver trace exporter: %s", err)
+				} else {
+					logging.Warningf(exporterCtx, "Error in Stackdriver trace exporter: %s (%d occurrences in %s since the last report)", err, errorDedup.count, time.Since(errorDedup.report))
+				}
+				errorDedup.report = time.Now()
+				errorDedup.count = 0
+			}
 		},
 	})
 	if err != nil {
