@@ -178,23 +178,9 @@ func (b *bqExporter) queryTextArtifacts(ctx context.Context, exportedID invocati
 		return errors.Annotate(err, "invocation id set").Err()
 	}
 
-	if bqExport.Project == "chrome-luci-data" && bqExport.Dataset == "chromium" && bqExport.Table == "try_text_artifacts" {
-		// Hotfix for crbug/1340700
-		// TODO: remove this as soon as the immediate issue clears
-		logging.Warningf(ctx, "Ignoring chrome-luci-data.chromium.try_text_artifacts due to crbug/1340700")
-		return nil
-	}
-
 	contentTypeRegexp := bqExport.GetTextArtifacts().GetPredicate().GetContentTypeRegexp()
 	if contentTypeRegexp == "" {
-		if bqExport.Project == "chrome-luci-data" && bqExport.Dataset == "chromium" && bqExport.Table == "ci_text_artifacts" {
-			// Hotfix for crbug/1340700
-			// TODO: remove this as soon as the immediate issue clears
-			logging.Warningf(ctx, "Rewriting contentTypeRegexp to 'snippets' due to crbug/1340700")
-			contentTypeRegexp = "snippets"
-		} else {
-			contentTypeRegexp = "text/.*"
-		}
+		contentTypeRegexp = "text/.*"
 	}
 	q := artifacts.Query{
 		InvocationIDs:       invIDs,
