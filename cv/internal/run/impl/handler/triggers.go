@@ -38,11 +38,11 @@ func (impl *Impl) onCompletedCancelTriggers(ctx context.Context, rs *state.RunSt
 	opID := opCompleted.GetOperationId()
 	rs = rs.ShallowCopy()
 	rs.RemoveCompletedLongOp(opID)
-	if rs.Status != run.Status_RUNNING {
+	if status := rs.Status; run.IsEnded(status) || status == run.Status_SUBMITTING {
 		logging.Warningf(ctx, "long operation to cancel triggers has completed but Run is %s. Cancellation Result: %s", rs.Status, opCompleted)
 		return &Result{State: rs}, nil
 	}
-	runStatus := op.GetCancelTriggers().GetRunStatusIfSucceeded() // be optimistic
+	runStatus := op.GetCancelTriggers().GetRunStatusIfSucceeded()
 	switch opCompleted.GetStatus() {
 	case eventpb.LongOpCompleted_EXPIRED:
 		runStatus = run.Status_FAILED
