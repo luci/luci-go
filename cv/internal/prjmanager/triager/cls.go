@@ -54,23 +54,23 @@ type clInfo struct {
 	triagedCL
 }
 
-// lastCQVoteTriggered returns the last triggered time by CQ vote among this CL
-// and its triggered deps. Can be zero time.Time if neither are triggered.
-func (info *clInfo) lastCQVoteTriggered() time.Time {
-	thisPB := info.pcl.GetTriggers().GetCqVoteTrigger().GetTime()
+// lastTriggered returns the last triggered time among this CL and its triggered
+// deps. Can be zero time.Time if neither are triggered.
+func (c *clInfo) lastTriggered() time.Time {
+	thisPB := c.pcl.GetTrigger().GetTime()
 	switch {
-	case thisPB == nil && info.deps == nil:
+	case thisPB == nil && c.deps == nil:
 		return time.Time{}
 	case thisPB == nil:
-		return info.deps.lastCQVoteTriggered
-	case info.deps == nil || info.deps.lastCQVoteTriggered.IsZero():
+		return c.deps.lastTriggered
+	case c.deps == nil || c.deps.lastTriggered.IsZero():
 		return thisPB.AsTime()
 	default:
 		this := thisPB.AsTime()
-		if info.deps.lastCQVoteTriggered.Before(this) {
+		if c.deps.lastTriggered.Before(this) {
 			return this
 		}
-		return info.deps.lastCQVoteTriggered
+		return c.deps.lastTriggered
 	}
 }
 
@@ -120,7 +120,7 @@ func (info *clInfo) triageInRun(pm pmState) {
 		s == prjpb.PCL_UNWATCHED ||
 		s == prjpb.PCL_UNKNOWN ||
 		pcl.GetSubmitted() ||
-		pcl.GetTriggers() == nil):
+		pcl.GetTrigger() == nil):
 		// This is expected while Run is being finalized iff PM sees updates to a
 		// CL before OnRunFinished event.
 		return
@@ -162,7 +162,7 @@ func (info *clInfo) triageInPurge(pm pmState) {
 	case pcl.GetSubmitted():
 		// Someone already submitted CL while purging was ongoing.
 		return
-	case pcl.GetTriggers() == nil:
+	case pcl.GetTrigger() == nil:
 		// Likely purging effect is already visible.
 		return
 	}
@@ -195,7 +195,7 @@ func (info *clInfo) triageNew(pm pmState) {
 	switch {
 	case pcl.GetSubmitted():
 		panic(fmt.Errorf("PCL %d submitted %s", clid, assumption))
-	case pcl.GetTriggers() == nil:
+	case pcl.GetTrigger() == nil:
 		panic(fmt.Errorf("PCL %d not triggered %s", clid, assumption))
 	case len(pcl.GetErrors()) > 0:
 		info.purgeReasons = pcl.GetErrors()

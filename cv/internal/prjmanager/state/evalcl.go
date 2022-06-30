@@ -273,11 +273,11 @@ func (s *State) makePCL(ctx context.Context, cl *changelist.CL) *prjpb.PCL {
 		})
 	}
 
-	s.setTriggers(ci, pcl)
+	s.setTrigger(ci, pcl)
 
 	// Check for "Commit: false" footer after setting Trigger, because this should
 	// only have an effect in the case of an attempted full run.
-	if hasCommitFalseFlag(cl.Snapshot.GetMetadata()) && pcl.GetTriggers().GetCqVoteTrigger().GetMode() == string(run.FullRun) {
+	if hasCommitFalseFlag(cl.Snapshot.GetMetadata()) && run.Mode(pcl.Trigger.GetMode()) == run.FullRun {
 		pcl.Errors = append(pcl.Errors, &changelist.CLError{
 			Kind: &changelist.CLError_CommitBlocked{CommitBlocked: true},
 		})
@@ -328,31 +328,26 @@ func (s *State) tryUsingApplicableConfigGroups(ap *changelist.ApplicableConfig_P
 	return true
 }
 
-// setTriggers populates a PCL's .Triggers field with the triggers present in
-// the given ChangeInfo.
-//
-// It also validates that the trigger mode is allowed, and strips the account
-// information from the triggerer.
-func (s *State) setTriggers(ci *gerritpb.ChangeInfo, pcl *prjpb.PCL) {
-	// Triggers are a function of a CL and applicable ConfigGroup, which may
-	// define additional modes.
-	// In case of misconfiguration, there may be 0 or 2+ applicable
-	// ConfigGroups, in which case we use empty ConfigGroup{}.
-	// This doesn't matter much, since such CLs will be soon purged.
-	// In the very worst case, CL purger will  remove just the CQ vote and not
-	// the additional label's vote defined in actually intended ConfigGroup,
-	// which isn't a big deal.
+// setTrigger sets a .Trigger of a PCL.
+func (s *State) setTrigger(ci *gerritpb.ChangeInfo, pcl *prjpb.PCL) {
+	// Trigger is a function of a CL and applicable ConfigGroup, which may define
+	// additional modes.
+	// In case of misconfiguration, they may be 0 or 2+ applicable ConfigGroups,
+	// in which case we use empty ConfigGroup{}. This doesn't matter much,
+	// since such CLs will be soon purged. In the very worst case, CL purger will
+	// remove just the CQ vote and not the additional label's vote defined in
+	// actually intended ConfigGroup, which isn't a big deal.
 	var cg *cfgpb.ConfigGroup
 	if idxs := pcl.GetConfigGroupIndexes(); len(idxs) == 1 {
 		cg = s.configGroups[idxs[0]].Content
 	} else {
 		cg = &cfgpb.ConfigGroup{}
 	}
-	ts := trigger.Find(ci, cg)
-	t := ts.GetCqVoteTrigger()
+	t := trigger.Find(ci, cg)
 	if t == nil {
 		return
 	}
+
 	switch mode := run.Mode(t.GetMode()); mode {
 	case "", run.DryRun, run.FullRun, run.QuickDryRun:
 	default:
@@ -361,16 +356,9 @@ func (s *State) setTriggers(ci *gerritpb.ChangeInfo, pcl *prjpb.PCL) {
 		})
 		return
 	}
-
 	// Project Manager doesn't care about email or Gerrit account.
-	for _, t := range []*run.Trigger{ts.GetCqVoteTrigger(), ts.GetNewPatchsetRunTrigger()} {
-		if t == nil {
-			continue
-		}
-		t.Email = ""
-		t.GerritAccountId = 0
-	}
-	pcl.Triggers = ts
+	t.Email = ""
+	t.GerritAccountId = 0
 	pcl.Trigger = t
 }
 

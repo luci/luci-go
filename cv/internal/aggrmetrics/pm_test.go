@@ -47,7 +47,7 @@ func TestPMReporter(t *testing.T) {
 					Pcls: []*prjpb.PCL{
 						{Clid: 1, Eversion: 1, Submitted: true},
 						{Clid: 2, Eversion: 2, Deps: []*changelist.Dep{{Clid: 1, Kind: changelist.DepKind_HARD}},
-							Triggers: &run.Triggers{CqVoteTrigger: &run.Trigger{Mode: "DryRun", Time: timestamppb.New(ct.Clock.Now())}},
+							Trigger: &run.Trigger{Mode: "DryRun", Time: timestamppb.New(ct.Clock.Now())},
 						},
 					},
 				},

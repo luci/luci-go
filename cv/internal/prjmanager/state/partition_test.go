@@ -360,10 +360,10 @@ func TestPartitionSpecialCases(t *testing.T) {
 						Clid: 10,
 						// ConfigGroupIndexes: []int32{0},
 						Status: prjpb.PCL_OK,
-						Triggers: &run.Triggers{CqVoteTrigger: &run.Trigger{
+						Trigger: &run.Trigger{
 							Time: timestamppb.New(epoch.Add(1 * time.Minute)),
 							Mode: string(run.DryRun),
-						}},
+						},
 					},
 					{
 						Clid: 11,
@@ -371,8 +371,8 @@ func TestPartitionSpecialCases(t *testing.T) {
 						Deps: []*changelist.Dep{
 							{Clid: 10, Kind: changelist.DepKind_HARD},
 						},
-						Status:   prjpb.PCL_OK,
-						Triggers: nil, // no longer triggered, because its DryRun has just finished.
+						Status:  prjpb.PCL_OK,
+						Trigger: nil, // no longer triggered, because its DryRun has just finished.
 					},
 					{
 						Clid: 12,
@@ -382,10 +382,10 @@ func TestPartitionSpecialCases(t *testing.T) {
 							{Clid: 11, Kind: changelist.DepKind_HARD},
 						},
 						Status: prjpb.PCL_OK,
-						Triggers: &run.Triggers{CqVoteTrigger: &run.Trigger{
+						Trigger: &run.Trigger{
 							Time: timestamppb.New(epoch.Add(2 * time.Minute)),
 							Mode: string(run.DryRun),
-						}},
+						},
 					},
 				},
 

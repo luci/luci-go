@@ -114,7 +114,7 @@ func TestCLsTriage(t *testing.T) {
 				Clid:               1,
 				ConfigGroupIndexes: []int32{singIdx},
 				Status:             prjpb.PCL_OK,
-				Triggers:           &run.Triggers{CqVoteTrigger: dryRun(epoch)},
+				Trigger:            dryRun(epoch),
 				Submitted:          false,
 				Deps:               nil,
 			}}
@@ -239,7 +239,7 @@ func TestCLsTriage(t *testing.T) {
 					Clid:               1,
 					ConfigGroupIndexes: []int32{singIdx},
 					Status:             prjpb.PCL_OK,
-					Triggers:           &run.Triggers{CqVoteTrigger: dryRun(epoch)},
+					Trigger:            dryRun(epoch),
 					Submitted:          false,
 					Deps:               nil,
 				},
@@ -247,7 +247,7 @@ func TestCLsTriage(t *testing.T) {
 					Clid:               2,
 					ConfigGroupIndexes: []int32{singIdx},
 					Status:             prjpb.PCL_OK,
-					Triggers:           &run.Triggers{CqVoteTrigger: dryRun(epoch)},
+					Trigger:            dryRun(epoch),
 					Submitted:          false,
 					Deps:               []*changelist.Dep{{Clid: 1, Kind: changelist.DepKind_HARD}},
 				},
@@ -255,7 +255,7 @@ func TestCLsTriage(t *testing.T) {
 					Clid:               3,
 					ConfigGroupIndexes: []int32{singIdx},
 					Status:             prjpb.PCL_OK,
-					Triggers:           &run.Triggers{CqVoteTrigger: dryRun(epoch)},
+					Trigger:            dryRun(epoch),
 					Submitted:          false,
 					Deps:               []*changelist.Dep{{Clid: 1, Kind: changelist.DepKind_SOFT}, {Clid: 2, Kind: changelist.DepKind_HARD}},
 				},
@@ -267,12 +267,12 @@ func TestCLsTriage(t *testing.T) {
 				for _, info := range cls {
 					So(info.ready, ShouldBeTrue)
 					So(info.deps.OK(), ShouldBeTrue)
-					So(info.lastCQVoteTriggered(), ShouldResemble, epoch)
+					So(info.lastTriggered(), ShouldResemble, epoch)
 				}
 			})
 
 			Convey("Full run at the bottom (CL1) and dry run elsewhere is also OK", func() {
-				sup.PCL(1).Triggers = &run.Triggers{CqVoteTrigger: fullRun(epoch)}
+				sup.PCL(1).Trigger = fullRun(epoch)
 				cls := do(&prjpb.Component{Clids: []int64{1, 2, 3}})
 				So(cls, ShouldHaveLength, 3)
 				for _, info := range cls {
@@ -282,7 +282,7 @@ func TestCLsTriage(t *testing.T) {
 			})
 
 			Convey("Full Run on #3 is purged if its deps aren't submitted", func() {
-				sup.PCL(3).Triggers = &run.Triggers{CqVoteTrigger: fullRun(epoch)}
+				sup.PCL(3).Trigger = fullRun(epoch)
 				cls := do(&prjpb.Component{Clids: []int64{1, 2, 3}})
 				So(cls[1].ready, ShouldBeTrue)
 				So(cls[2].ready, ShouldBeTrue)
@@ -300,7 +300,7 @@ func TestCLsTriage(t *testing.T) {
 							},
 						},
 						deps: &triagedDeps{
-							lastCQVoteTriggered: epoch,
+							lastTriggered: epoch,
 							invalidDeps: &changelist.CLError_InvalidDeps{
 								SingleFullDeps: sup.PCL(3).GetDeps(),
 							},
@@ -310,10 +310,10 @@ func TestCLsTriage(t *testing.T) {
 			})
 
 			Convey("CL1 submitted but still with Run, CL2 CQ+1 is OK, CL3 CQ+2 is purged", func() {
-				sup.PCL(1).Triggers = nil
+				sup.PCL(1).Trigger = nil
 				sup.PCL(1).Submitted = true
 				// PCL(2) is still not submitted.
-				sup.PCL(3).Triggers = &run.Triggers{CqVoteTrigger: fullRun(epoch)}
+				sup.PCL(3).Trigger = fullRun(epoch)
 				cls := do(&prjpb.Component{
 					Clids: []int64{1, 2, 3},
 					Pruns: []*prjpb.PRun{{Id: "r1", Clids: []int64{1}}},
@@ -336,8 +336,8 @@ func TestCLsTriage(t *testing.T) {
 							},
 						},
 						deps: &triagedDeps{
-							lastCQVoteTriggered: epoch.UTC(),
-							submitted:           []*changelist.Dep{{Clid: 1, Kind: changelist.DepKind_SOFT}},
+							lastTriggered: epoch.UTC(),
+							submitted:     []*changelist.Dep{{Clid: 1, Kind: changelist.DepKind_SOFT}},
 							invalidDeps: &changelist.CLError_InvalidDeps{
 								SingleFullDeps: []*changelist.Dep{{Clid: 2, Kind: changelist.DepKind_HARD}},
 							},
@@ -355,7 +355,7 @@ func TestCLsTriage(t *testing.T) {
 					Clid:               1,
 					ConfigGroupIndexes: []int32{combIdx},
 					Status:             prjpb.PCL_OK,
-					Triggers:           &run.Triggers{CqVoteTrigger: dryRun(epoch)},
+					Trigger:            dryRun(epoch),
 					Submitted:          false,
 					Deps:               []*changelist.Dep{{Clid: 2, Kind: changelist.DepKind_SOFT}},
 				},
@@ -363,7 +363,7 @@ func TestCLsTriage(t *testing.T) {
 					Clid:               2,
 					ConfigGroupIndexes: []int32{combIdx},
 					Status:             prjpb.PCL_OK,
-					Triggers:           &run.Triggers{CqVoteTrigger: dryRun(epoch)},
+					Trigger:            dryRun(epoch),
 					Submitted:          false,
 					Deps:               []*changelist.Dep{{Clid: 1, Kind: changelist.DepKind_SOFT}},
 				},
@@ -371,7 +371,7 @@ func TestCLsTriage(t *testing.T) {
 					Clid:               3,
 					ConfigGroupIndexes: []int32{combIdx},
 					Status:             prjpb.PCL_OK,
-					Triggers:           &run.Triggers{CqVoteTrigger: dryRun(epoch)},
+					Trigger:            dryRun(epoch),
 					Submitted:          false,
 					Deps:               []*changelist.Dep{{Clid: 1, Kind: changelist.DepKind_SOFT}, {Clid: 2, Kind: changelist.DepKind_SOFT}},
 				},
@@ -389,8 +389,8 @@ func TestCLsTriage(t *testing.T) {
 			Convey("Full Run on #1 and #2 can co-exist, but Dry run on #3 is purged", func() {
 				// This scenario documents current CQDaemon behavior. This isn't desired
 				// long term though.
-				sup.PCL(1).Triggers = &run.Triggers{CqVoteTrigger: fullRun(epoch)}
-				sup.PCL(2).Triggers = &run.Triggers{CqVoteTrigger: fullRun(epoch)}
+				sup.PCL(1).Trigger = fullRun(epoch)
+				sup.PCL(2).Trigger = fullRun(epoch)
 				cls := do(&prjpb.Component{Clids: []int64{1, 2, 3}})
 				So(cls[1].ready, ShouldBeTrue)
 				So(cls[2].ready, ShouldBeTrue)
@@ -408,7 +408,7 @@ func TestCLsTriage(t *testing.T) {
 							},
 						},
 						deps: &triagedDeps{
-							lastCQVoteTriggered: epoch,
+							lastTriggered: epoch,
 							invalidDeps: &changelist.CLError_InvalidDeps{
 								CombinableMismatchedMode: sup.PCL(3).GetDeps(),
 							},
@@ -434,7 +434,7 @@ func TestCLsTriage(t *testing.T) {
 				}
 
 				Convey("unless dependency is already submitted", func() {
-					sup.PCL(2).Triggers = nil
+					sup.PCL(2).Trigger = nil
 					sup.PCL(2).Submitted = true
 
 					cls := do(&prjpb.Component{Clids: []int64{1, 3}})
@@ -457,7 +457,7 @@ func TestCLsTriage(t *testing.T) {
 					Clid:               2,
 					ConfigGroupIndexes: []int32{combIdx},
 					Status:             prjpb.PCL_OK,
-					Triggers:           &run.Triggers{CqVoteTrigger: dryRun(epoch)},
+					Trigger:            dryRun(epoch),
 					Deps:               []*changelist.Dep{{Clid: 1, Kind: changelist.DepKind_SOFT}},
 				},
 			}

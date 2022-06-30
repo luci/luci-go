@@ -103,7 +103,7 @@ func (impl *Impl) UpdateConfig(ctx context.Context, rs *state.RunState, hash str
 		case 1:
 			cgid := cgids[0]
 			tr := trigger.Find(cl.Detail.GetGerrit().GetInfo(), cgsMap[cgid.Name()].Content)
-			if whatChanged := run.HasTriggerChanged(cl.Trigger, tr, cl.ExternalID.MustURL()); whatChanged != "" {
+			if whatChanged := hasTriggerChanged(cl.Trigger, tr, cl.ExternalID.MustURL()); whatChanged != "" {
 				diffTrigger = append(diffTrigger, cl)
 			} else {
 				m[cgids[0]] = append(m[cgids[0]], cl)

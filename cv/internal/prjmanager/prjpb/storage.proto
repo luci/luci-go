@@ -128,8 +128,6 @@ message LogReasons {
 
 // PCL is a tracked CL.
 message PCL {
-  // next tag: 17
-
   reserved 14;
 
   int64 clid = 1;
@@ -167,22 +165,15 @@ message PCL {
   // Deps refers to CLs in PState.PCLs which are dependencies of the PCL.
   repeated changelist.Dep deps = 11;
 
-  // Deprecated. Being replaced by triggers.
-  cv.internal.run.Trigger trigger = 12 [deprecated = true];
-
-  // Triggers are the triggers currently active on the CL.
+  // Trigger is CQDaemon-compatible record of who/when triggered CQ on this CL.
   //
-  // Note that due to NewPatchsetRuns, CLs can be associated with more than one
-  // Run at any given time, for this reason, it is required that a PCL be able
-  // to track multiple triggers.
-  //
-  // It may be empty if CL is not triggered but nevertheless tracked as either:
+  // It may be nil, if CL is not triggered but nevertheless tracked as either:
   //  * a dependency of another CL.
   //  * previously triggered member of an incomplete Run, which is probably
   //    being finalized right now by its Run Manager.
   //
   // Doesn't store email nor Gerrit account ID.
-  cv.internal.run.Triggers triggers = 16;
+  cv.internal.run.Trigger trigger = 12;
 
   // Submitted means CV isn't going to work on a CL, but CL is still tracked as
   // a dep of another CL or as a member of an incomplete Run (though the other

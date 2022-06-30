@@ -85,12 +85,13 @@ func TestTrigger(t *testing.T) {
 				Value: dryRunVote,
 				Date:  timestamppb.New(now.Add(-15 * time.Minute)),
 			}}
-			So(Find(ci, cg), ShouldResembleProto, &run.Triggers{CqVoteTrigger: &run.Trigger{
+			trigger := Find(ci, cg)
+			So(trigger, ShouldResembleProto, &run.Trigger{
 				Time:            timestamppb.New(now.Add(-15 * time.Minute)),
 				Mode:            string(run.DryRun),
 				GerritAccountId: user1.GetAccountId(),
 				Email:           user1.GetEmail(),
-			}})
+			})
 		})
 		Convey(">CQ+2 is clamped to CQ+2", func() {
 			ci.Labels[CQLabelName].All = []*gerritpb.ApprovalInfo{{
@@ -98,12 +99,13 @@ func TestTrigger(t *testing.T) {
 				Value: 3,
 				Date:  timestamppb.New(now.Add(-15 * time.Minute)),
 			}}
-			So(Find(ci, cg), ShouldResembleProto, &run.Triggers{CqVoteTrigger: &run.Trigger{
+			trigger := Find(ci, cg)
+			So(trigger, ShouldResembleProto, &run.Trigger{
 				Time:            timestamppb.New(now.Add(-15 * time.Minute)),
 				Mode:            string(run.FullRun),
 				GerritAccountId: user1.GetAccountId(),
 				Email:           user1.GetEmail(),
-			}})
+			})
 		})
 		Convey("Earliest votes wins", func() {
 			ci.Labels[CQLabelName].All = []*gerritpb.ApprovalInfo{
@@ -118,12 +120,13 @@ func TestTrigger(t *testing.T) {
 					Date:  timestamppb.New(now.Add(-5 * time.Minute)),
 				},
 			}
-			So(Find(ci, cg), ShouldResembleProto, &run.Triggers{CqVoteTrigger: &run.Trigger{
+			trigger := Find(ci, cg)
+			So(trigger, ShouldResembleProto, &run.Trigger{
 				Time:            timestamppb.New(now.Add(-15 * time.Minute)),
 				Mode:            string(run.DryRun),
 				GerritAccountId: user1.GetAccountId(),
 				Email:           user1.GetEmail(),
-			}})
+			})
 			Convey("except when some later run was canceled via botdata message", func() {
 				cancelMsg, err := botdata.Append("", botdata.BotData{
 					Action:      botdata.Cancel,
@@ -132,12 +135,13 @@ func TestTrigger(t *testing.T) {
 				})
 				So(err, ShouldBeNil)
 				ci.Messages = append(ci.Messages, &gerritpb.ChangeMessageInfo{Message: cancelMsg})
-				So(Find(ci, cg), ShouldResembleProto, &run.Triggers{CqVoteTrigger: &run.Trigger{
+				trigger := Find(ci, cg)
+				So(trigger, ShouldResembleProto, &run.Trigger{
 					Time:            timestamppb.New(now.Add(-5 * time.Minute)),
 					Mode:            string(run.DryRun),
 					GerritAccountId: user2.GetAccountId(),
 					Email:           user2.GetEmail(),
-				}})
+				})
 			})
 		})
 		Convey("Earliest CQ+2 vote wins against even earlier CQ+1", func() {
@@ -163,12 +167,13 @@ func TestTrigger(t *testing.T) {
 					Date:  timestamppb.New(now.Add(-1 * time.Minute)),
 				},
 			}
-			So(Find(ci, cg), ShouldResembleProto, &run.Triggers{CqVoteTrigger: &run.Trigger{
+			trigger := Find(ci, cg)
+			So(trigger, ShouldResembleProto, &run.Trigger{
 				Time:            timestamppb.New(now.Add(-10 * time.Minute)),
 				Mode:            string(run.FullRun),
 				GerritAccountId: user2.GetAccountId(),
 				Email:           user2.GetEmail(),
-			}})
+			})
 		})
 		Convey("Sticky Vote bumps trigger time to cur revision creation time", func() {
 			ci.Labels[CQLabelName].All = []*gerritpb.ApprovalInfo{{
@@ -181,12 +186,13 @@ func TestTrigger(t *testing.T) {
 				Number:  3,
 				Created: timestamppb.New(now.Add(-10 * time.Minute)),
 			}
-			So(Find(ci, cg), ShouldResembleProto, &run.Triggers{CqVoteTrigger: &run.Trigger{
+			trigger := Find(ci, cg)
+			So(trigger, ShouldResembleProto, &run.Trigger{
 				Time:            timestamppb.New(now.Add(-10 * time.Minute)),
 				Mode:            string(run.FullRun),
 				GerritAccountId: user1.GetAccountId(),
 				Email:           user1.GetEmail(),
-			}})
+			})
 		})
 		Convey("Additional modes", func() {
 			const quickLabel = "Quick"
@@ -213,13 +219,14 @@ func TestTrigger(t *testing.T) {
 				},
 			}}
 			Convey("Simplest possible QuickDryRun", func() {
-				So(Find(ci, cg), ShouldResembleProto, &run.Triggers{CqVoteTrigger: &run.Trigger{
+				trigger := Find(ci, cg)
+				So(trigger, ShouldResembleProto, &run.Trigger{
 					Time:            timestamppb.New(now.Add(-15 * time.Minute)),
 					Mode:            string(run.QuickDryRun),
 					GerritAccountId: user1.GetAccountId(),
 					Email:           user1.GetEmail(),
 					AdditionalLabel: quickLabel,
-				}})
+				})
 			})
 			Convey("QuickDryRun despite other users' votes", func() {
 				ci.Labels[CQLabelName].All = []*gerritpb.ApprovalInfo{
@@ -246,45 +253,41 @@ func TestTrigger(t *testing.T) {
 						Date:  timestamppb.New(now.Add(-15 * time.Minute)),
 					},
 				}}
-				So(Find(ci, cg).GetCqVoteTrigger().GetMode(), ShouldEqual, run.QuickDryRun)
+				trigger := Find(ci, cg)
+				So(trigger.GetMode(), ShouldEqual, run.QuickDryRun)
 			})
 			Convey("Custom mode", func() {
 				cg.AdditionalModes[0].Name = "CUSTOM_RUN"
-				So(Find(ci, cg), ShouldResembleProto, &run.Triggers{CqVoteTrigger: &run.Trigger{
-					Time:            timestamppb.New(now.Add(-15 * time.Minute)),
-					Mode:            "CUSTOM_RUN",
-					GerritAccountId: user1.GetAccountId(),
-					Email:           user1.GetEmail(),
-					AdditionalLabel: quickLabel,
-				}})
+				trigger := Find(ci, cg)
+				So(trigger.GetMode(), ShouldEqual, "CUSTOM_RUN")
 			})
 			Convey("Not applicable cases", func() {
 				Convey("Additional vote must have the same timestamp", func() {
 					Convey("before", func() {
 						ci.Labels[quickLabel].GetAll()[0].Date.Seconds++
-						So(Find(ci, cg).GetCqVoteTrigger().GetMode(), ShouldEqual, run.DryRun)
+						So(Find(ci, cg).GetMode(), ShouldEqual, run.DryRun)
 					})
 					Convey("after", func() {
 						ci.Labels[quickLabel].GetAll()[0].Date.Seconds--
-						So(Find(ci, cg).GetCqVoteTrigger().GetMode(), ShouldEqual, run.DryRun)
+						So(Find(ci, cg).GetMode(), ShouldEqual, run.DryRun)
 					})
 				})
 				Convey("Additional vote be from the same account", func() {
 					ci.Labels[quickLabel].GetAll()[0].User = user2
-					So(Find(ci, cg).GetCqVoteTrigger().GetMode(), ShouldEqual, run.DryRun)
+					So(Find(ci, cg).GetMode(), ShouldEqual, run.DryRun)
 				})
 				Convey("Additional vote must have expected value", func() {
 					ci.Labels[quickLabel].GetAll()[0].Value = 100
-					So(Find(ci, cg).GetCqVoteTrigger().GetMode(), ShouldEqual, run.DryRun)
+					So(Find(ci, cg).GetMode(), ShouldEqual, run.DryRun)
 				})
 				Convey("Additional vote must be for the correct label", func() {
 					ci.Labels[quickLabel+"-Other"] = ci.Labels[quickLabel]
 					delete(ci.Labels, quickLabel)
-					So(Find(ci, cg).GetCqVoteTrigger().GetMode(), ShouldEqual, run.DryRun)
+					So(Find(ci, cg).GetMode(), ShouldEqual, run.DryRun)
 				})
 				Convey("CQ vote must have correct value", func() {
 					ci.Labels[CQLabelName].GetAll()[0].Value = fullRunVote
-					So(Find(ci, cg).GetCqVoteTrigger().GetMode(), ShouldEqual, run.FullRun)
+					So(Find(ci, cg).GetMode(), ShouldEqual, run.FullRun)
 				})
 			})
 		})

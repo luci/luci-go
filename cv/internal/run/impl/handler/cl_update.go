@@ -139,11 +139,32 @@ func shouldCancel(ctx context.Context, cl *changelist.CL, rcl *run.RunCL, cg *pr
 		return time.Time{}, fmt.Sprintf("the ref of %s has moved from %s to %s", cl.ExternalID.MustURL(), o, c)
 	}
 	o, c := rcl.Trigger, trigger.Find(cl.Snapshot.GetGerrit().GetInfo(), cg.Content)
-	if whatChanged := run.HasTriggerChanged(o, c, cl.ExternalID.MustURL()); whatChanged != "" {
+	if whatChanged := hasTriggerChanged(o, c, cl.ExternalID.MustURL()); whatChanged != "" {
 		logging.Infof(ctx, "%s has new trigger\nOLD: %s\nNEW: %s", clString, o, c)
 		return time.Time{}, whatChanged
 	}
 	return time.Time{}, ""
+}
+
+func hasTriggerChanged(old, cur *run.Trigger, clURL string) string {
+	switch {
+	case cur == nil:
+		return fmt.Sprintf("the trigger on %s has been removed", clURL)
+	case old.GetMode() != cur.GetMode():
+		return fmt.Sprintf("the triggering vote on %s has requested a different run mode: %s", clURL, cur.GetMode())
+	case !old.GetTime().AsTime().Equal(cur.GetTime().AsTime()):
+		return fmt.Sprintf(
+			"the timestamp of the triggering vote on %s has changed from %s to %s",
+			clURL, old.GetTime().AsTime(), cur.GetTime().AsTime())
+	default:
+		// Theoretically, if the triggering user changes, it should also be counted
+		// as changed trigger. However, checking whether triggering time has changed
+		// is ~enough because it is extremely rare that votes from different users
+		// have the exact same timestamp. And even if it really happens, CV won't
+		// be able to handle this case because CV will generate the same Run ID as
+		// user is not taken into account during ID generation.
+		return ""
+	}
 }
 
 func isTriggersCancellationOngoing(rs *state.RunState) bool {

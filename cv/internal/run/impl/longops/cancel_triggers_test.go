@@ -68,8 +68,8 @@ func TestCancelTriggers(t *testing.T) {
 			for i, ci := range cis {
 				So(ci.GetNumber(), ShouldBeGreaterThan, 0)
 				So(ci.GetNumber(), ShouldBeLessThan, 1000)
-				triggers := trigger.Find(ci, cfg.GetConfigGroups()[0])
-				So(triggers.GetCqVoteTrigger(), ShouldNotBeNil)
+				t := trigger.Find(ci, cfg.GetConfigGroups()[0])
+				So(t, ShouldNotBeNil)
 				So(ct.GFake.Has(gHost, int(ci.GetNumber())), ShouldBeFalse)
 				ct.GFake.AddFrom(gf.WithCIs(gHost, gf.ACLRestricted(lProject), ci))
 				cl := changelist.MustGobID(gHost, ci.GetNumber()).MustCreateIfNotExists(ctx)
@@ -87,7 +87,7 @@ func TestCancelTriggers(t *testing.T) {
 					ID:         cl.ID,
 					ExternalID: cl.ExternalID,
 					IndexedID:  cl.ID,
-					Trigger:    triggers.GetCqVoteTrigger(),
+					Trigger:    t,
 					Run:        datastore.MakeKey(ctx, common.RunKind, string(runID)),
 					Detail:     cl.Snapshot,
 				}

@@ -38,22 +38,18 @@ var modeToVote = map[run.Mode]int32{
 	run.FullRun: 2,
 }
 
-// Find computes the triggers corresponding to a given CL.
+// Find computes the latest trigger based on CQ+1 and CQ+2 votes.
 //
-// It will return the highest priority trigger based on CQ+1 and CQ+2 votes,
-// and in the future it will optionally return an additional trigger for the
-// most recently uploaded patchset.
-//
-// CQ+2 a.k.a. Full Run takes priority of CQ+1 a.k.a Dry Run, even if CQ+1 vote
-// is newer. Among several equal votes, the earliest is selected as the
-// *triggering* CQ vote.
+// CQ+2 a.k.a. Full Run takes priority of CQ+1 a.k.a Dry Run,
+// even if CQ+1 vote is newer. Among several equal votes, the earliest is
+// selected as the *triggering* CQ vote.
 //
 // If the applicable ConfigGroup specifies additional modes AND user who voted
 // on the *triggering* CQ vote also voted on the additional label, then the
-// additional mode is selected instead of the standard Dry/Full Run.
+// additional mode is selected instead of standard Dry/Full Run.
 //
-// Returns up to one trigger based on a vote on the Commit-Queue label.
-func Find(ci *gerritpb.ChangeInfo, cg *cfgpb.ConfigGroup) *run.Triggers {
+// Returns nil if CL is not triggered.
+func Find(ci *gerritpb.ChangeInfo, cg *cfgpb.ConfigGroup) *run.Trigger {
 	if ci.GetStatus() != gerritpb.ChangeStatus_NEW {
 		return nil
 	}
@@ -78,7 +74,7 @@ func Find(ci *gerritpb.ChangeInfo, cg *cfgpb.ConfigGroup) *run.Triggers {
 
 	largest := int32(0)
 	var earliest time.Time
-	var cqTrigger *run.Trigger
+	var ret *run.Trigger
 	for _, ai := range li.GetAll() {
 		val := ai.GetValue()
 		switch {
@@ -105,18 +101,19 @@ func Find(ci *gerritpb.ChangeInfo, cg *cfgpb.ConfigGroup) *run.Triggers {
 			// Equal timestamps shouldn't really ever happen.
 			continue
 		}
-		cqTrigger = &run.Trigger{
+		ret = &run.Trigger{
 			Mode:            string(voteToMode[val]),
 			GerritAccountId: ai.GetUser().GetAccountId(),
 			Time:            ai.GetDate(),
 			Email:           ai.GetUser().GetEmail(),
 		}
 	}
-	if cqTrigger == nil {
+	if ret == nil {
 		return nil
 	}
+
 	for _, mode := range cg.GetAdditionalModes() {
-		if applyAdditionalMode(ci, mode, cqTrigger) {
+		if applyAdditionalMode(ci, mode, ret) {
 			// first one wins
 			break
 		}
@@ -127,11 +124,11 @@ func Find(ci *gerritpb.ChangeInfo, cg *cfgpb.ConfigGroup) *run.Triggers {
 	// and yet *this* CQ attempt started only when new patchset was created.
 	// So, attempt start is the latest of timestamps (CQ vote, this patchset
 	// creation).
-	revisionTS := ci.Revisions[curRevision].GetCreated()
-	if cqTrigger.GetTime().AsTime().Before(revisionTS.AsTime()) {
-		cqTrigger.Time = revisionTS
+	revisionTs := ci.Revisions[curRevision].GetCreated()
+	if ret.GetTime().AsTime().Before(revisionTs.AsTime()) {
+		ret.Time = revisionTs
 	}
-	return &run.Triggers{CqVoteTrigger: cqTrigger}
+	return ret
 }
 
 func applyAdditionalMode(ci *gerritpb.ChangeInfo, mode *cfgpb.Mode, res *run.Trigger) bool {

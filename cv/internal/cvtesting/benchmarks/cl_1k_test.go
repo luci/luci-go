@@ -128,9 +128,8 @@ func makePCL(cl *changelist.CL) *prjpb.PCL {
 	deps := make([]*changelist.Dep, len(cl.Snapshot.GetDeps()))
 	copy(deps, cl.Snapshot.GetDeps())
 
-	trs := trigger.Find(cl.Snapshot.GetGerrit().GetInfo(), &cfgpb.ConfigGroup{})
+	tr := trigger.Find(cl.Snapshot.GetGerrit().GetInfo(), &cfgpb.ConfigGroup{})
 	// Copy trigger email string for realism of allocations.
-	tr := trs.GetCqVoteTrigger()
 	tr.Email = tr.Email + " "
 	return &prjpb.PCL{
 		Clid:               int64(cl.ID),
@@ -139,8 +138,7 @@ func makePCL(cl *changelist.CL) *prjpb.PCL {
 		Submitted:          false,
 		ConfigGroupIndexes: []int32{0},
 		Deps:               deps,
-		Triggers:           trs,
-		Trigger:            trs.GetCqVoteTrigger(),
+		Trigger:            tr,
 	}
 }
 

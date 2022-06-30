@@ -258,6 +258,7 @@ func TestCategorizeAndLoadActiveIntoPCLs(t *testing.T) {
 					Eversion: cls[11].EVersion,
 					Status:   prjpb.PCL_UNWATCHED,
 					Deps:     nil, // not visible to this project
+					Trigger:  nil, // not visible to this project
 				},
 			})
 			So(state.PB, ShouldResembleProto, pb)
@@ -350,15 +351,12 @@ func TestCategorizeAndLoadActiveIntoPCLs(t *testing.T) {
 			})
 
 			Convey("submitted dependent is neither active nor unused, but a dep", func() {
-				triggers := trigger.Find(cis[2], cfg.ConfigGroups[0])
-				So(triggers.GetCqVoteTrigger(), ShouldNotBeNil)
 				state.PB.Pcls = sortPCLs(append(state.PB.Pcls,
 					&prjpb.PCL{
 						Clid:               int64(cls[2].ID),
 						Eversion:           cls[2].EVersion,
 						Status:             prjpb.PCL_OK,
-						Trigger:            triggers.GetCqVoteTrigger(),
-						Triggers:           triggers,
+						Trigger:            trigger.Find(cis[2], cfg.ConfigGroups[0]),
 						ConfigGroupIndexes: []int32{0},
 						Deps:               cls[2].Snapshot.GetDeps(),
 					},
@@ -388,11 +386,6 @@ func TestCategorizeAndLoadActiveIntoPCLs(t *testing.T) {
 						Mode:            string(run.DryRun),
 						Time:            timestamppb.New(t),
 					},
-					Triggers: &run.Triggers{CqVoteTrigger: &run.Trigger{
-						GerritAccountId: 1,
-						Mode:            string(run.DryRun),
-						Time:            timestamppb.New(t),
-					}},
 				}
 			}
 			state.PB.Pcls = []*prjpb.PCL{

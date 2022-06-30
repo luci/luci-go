@@ -63,17 +63,12 @@ func isActiveStandalonePCL(pcl *prjpb.PCL, now time.Time) bool {
 	if pcl.GetStatus() != prjpb.PCL_OK {
 		return false
 	}
-
-	cutoff := now.Add(-common.MaxTriggerAge)
-	tr := pcl.GetTriggers().GetCqVoteTrigger()
-	if tr == nil {
-		// fallback to deprecated field.
-		tr = pcl.GetTrigger()
-		if tr == nil {
-			return false
-		}
+	t := pcl.GetTrigger()
+	if t == nil {
+		return false
 	}
-	return tr.GetTime().AsTime().After(cutoff)
+	cutoff := now.Add(-common.MaxTriggerAge)
+	return t.GetTime().AsTime().After(cutoff)
 }
 
 // categorizeCLs computes categorizedCLs based on current State.

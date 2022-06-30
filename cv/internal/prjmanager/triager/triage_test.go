@@ -72,8 +72,8 @@ func TestTriage(t *testing.T) {
 		pm.cgs, err = prjcfgtest.MustExist(ctx, lProject).GetConfigGroups(ctx)
 		So(err, ShouldBeNil)
 
-		dryRun := func(t time.Time) *run.Triggers {
-			return &run.Triggers{CqVoteTrigger: &run.Trigger{Mode: string(run.DryRun), Time: timestamppb.New(t)}}
+		dryRun := func(t time.Time) *run.Trigger {
+			return &run.Trigger{Mode: string(run.DryRun), Time: timestamppb.New(t)}
 		}
 
 		triage := func(c *prjpb.Component) (itriager.Result, error) {
@@ -113,9 +113,8 @@ func TestTriage(t *testing.T) {
 				panic(fmt.Errorf("unsupported %s", mode))
 			}
 			ci := gf.CI(clid, mods...)
-			trs := trigger.Find(ci, nil)
-			So(trs.GetCqVoteTrigger(), ShouldNotBeNil)
-			So(trs.GetCqVoteTrigger().GetMode(), ShouldResemble, string(mode))
+			tr := trigger.Find(ci, nil)
+			So(tr.GetMode(), ShouldResemble, string(mode))
 			cl := &changelist.CL{
 				ID:       common.CLID(clid),
 				EVersion: 1,
@@ -131,22 +130,22 @@ func TestTriage(t *testing.T) {
 				})
 			}
 			So(datastore.Put(ctx, cl), ShouldBeNil)
-			pclTriggers := proto.Clone(trs).(*run.Triggers)
-			pclTriggers.CqVoteTrigger.Email = ""
-			pclTriggers.CqVoteTrigger.GerritAccountId = 0
+			pclTrigger := proto.Clone(tr).(*run.Trigger)
+			pclTrigger.Email = ""
+			pclTrigger.GerritAccountId = 0
 			return cl, &prjpb.PCL{
 				Clid:               int64(clid),
 				Eversion:           1,
 				Status:             prjpb.PCL_OK,
 				ConfigGroupIndexes: []int32{grpIndex},
-				Triggers:           pclTriggers,
+				Trigger:            pclTrigger,
 				Deps:               cl.Snapshot.GetDeps(),
 			}
 		}
 
 		Convey("Noops", func() {
 			pm.pb.Pcls = []*prjpb.PCL{
-				{Clid: 33, ConfigGroupIndexes: []int32{singIdx}, Triggers: dryRun(ct.Clock.Now())},
+				{Clid: 33, ConfigGroupIndexes: []int32{singIdx}, Trigger: dryRun(ct.Clock.Now())},
 			}
 			oldC := &prjpb.Component{
 				Clids: []int64{33},
@@ -165,7 +164,7 @@ func TestTriage(t *testing.T) {
 				{
 					Clid:               33,
 					ConfigGroupIndexes: nil, // modified below.
-					Triggers:           dryRun(ct.Clock.Now()),
+					Trigger:            dryRun(ct.Clock.Now()),
 					Errors: []*changelist.CLError{ // => must purge.
 						{Kind: &changelist.CLError_OwnerLacksEmail{OwnerLacksEmail: true}},
 					},
@@ -364,7 +363,7 @@ func TestTriage(t *testing.T) {
 					rc := res.RunsToCreate[0]
 					So(rc.ConfigGroupID.Name(), ShouldResemble, "combinable")
 					So(rc.Mode, ShouldResemble, run.FullRun)
-					So(rc.CreateTime, ShouldEqual, pcl33.GetTriggers().GetCqVoteTrigger().GetTime().AsTime())
+					So(rc.CreateTime, ShouldEqual, pcl33.GetTrigger().GetTime().AsTime())
 					So(rc.InputCLs, ShouldHaveLength, 3)
 				})
 
@@ -424,7 +423,7 @@ func TestTriage(t *testing.T) {
 
 					Convey("even if some CLs are no longer triggered", func() {
 						// Happens during Run abort due to, say, tryjob failure.
-						pcl31.Triggers = nil
+						pcl31.Trigger = nil
 						So(res.NewValue.GetTriageRequired(), ShouldBeFalse)
 						So(res.CLsToPurge, ShouldBeEmpty)
 						So(res.RunsToCreate, ShouldBeEmpty)
@@ -432,7 +431,7 @@ func TestTriage(t *testing.T) {
 
 					Convey("even if some CLs are already submitted", func() {
 						// Happens during Run submission.
-						pcl32.Triggers = nil
+						pcl32.Trigger = nil
 						pcl32.Submitted = true
 						So(res.NewValue.GetTriageRequired(), ShouldBeFalse)
 						So(res.CLsToPurge, ShouldBeEmpty)
@@ -481,11 +480,11 @@ func TestTriage(t *testing.T) {
 
 					Convey("multi-CL Run is being submitted", func() {
 						pcl31.Submitted = true
-						pcl31.Triggers = nil
+						pcl31.Trigger = nil
 						mustWaitForRM()
 					})
 					Convey("multi-CL Run is being canceled", func() {
-						pcl31.Triggers = nil
+						pcl31.Trigger = nil
 						mustWaitForRM()
 					})
 					Convey("multi-CL Run is no longer in the same ConfigGroup", func() {
@@ -495,7 +494,7 @@ func TestTriage(t *testing.T) {
 					Convey("multi-CL Run is no longer in the same LUCI project", func() {
 						pcl31.Status = prjpb.PCL_UNWATCHED
 						pcl31.ConfigGroupIndexes = nil
-						pcl31.Triggers = nil
+						pcl31.Trigger = nil
 						mustWaitForRM()
 					})
 				})

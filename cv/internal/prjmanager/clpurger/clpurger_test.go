@@ -111,7 +111,7 @@ func TestPurgeCL(t *testing.T) {
 				Clid:        int64(clBefore.ID),
 				Deadline:    timestamppb.New(ct.Clock.Now().Add(10 * time.Minute)),
 			},
-			Trigger: trigger.Find(ci, cfg.GetConfigGroups()[0]).GetCqVoteTrigger(),
+			Trigger: trigger.Find(ci, cfg.GetConfigGroups()[0]),
 			Reasons: []*changelist.CLError{
 				{Kind: &changelist.CLError_OwnerLacksEmail{OwnerLacksEmail: true}},
 			},
@@ -176,7 +176,7 @@ func TestPurgeCL(t *testing.T) {
 			Convey("Trigger is no longer matching latest CL Snapshot", func() {
 				// Simulate old trigger for CQ+1, while snapshot contains CQ+2.
 				gf.CQ(+1, ct.Clock.Now().Add(-time.Hour), gf.U("user-1"))(ci)
-				task.Trigger = trigger.Find(ci, cfg.GetConfigGroups()[0]).GetCqVoteTrigger()
+				task.Trigger = trigger.Find(ci, cfg.GetConfigGroups()[0])
 
 				So(schedule(), ShouldBeNil)
 				ct.TQ.Run(ctx, tqtesting.StopAfterTask(prjpb.PurgeProjectCLTaskClass))

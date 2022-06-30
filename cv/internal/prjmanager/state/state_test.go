@@ -224,10 +224,6 @@ func TestUpdateConfig(t *testing.T) {
 							Mode: string(run.FullRun),
 							Time: triggerTS,
 						},
-						Triggers: &run.Triggers{CqVoteTrigger: &run.Trigger{
-							Mode: string(run.FullRun),
-							Time: triggerTS,
-						}},
 					},
 					{
 						Clid:               int64(cl202.ID),
@@ -238,10 +234,6 @@ func TestUpdateConfig(t *testing.T) {
 							Mode: string(run.DryRun),
 							Time: triggerTS,
 						},
-						Triggers: &run.Triggers{CqVoteTrigger: &run.Trigger{
-							Mode: string(run.DryRun),
-							Time: triggerTS,
-						}},
 					},
 					{
 						Clid:               int64(cl203.ID),
@@ -252,10 +244,6 @@ func TestUpdateConfig(t *testing.T) {
 							Mode: string(run.DryRun),
 							Time: triggerTS,
 						},
-						Triggers: &run.Triggers{CqVoteTrigger: &run.Trigger{
-							Mode: string(run.DryRun),
-							Time: triggerTS,
-						}},
 						Deps: []*changelist.Dep{{Clid: int64(cl202.ID), Kind: changelist.DepKind_HARD}},
 					},
 				},
@@ -310,10 +298,6 @@ func TestUpdateConfig(t *testing.T) {
 								Mode: string(run.FullRun),
 								Time: triggerTS,
 							},
-							Triggers: &run.Triggers{CqVoteTrigger: &run.Trigger{
-								Mode: string(run.FullRun),
-								Time: triggerTS,
-							}},
 						},
 						pb1.Pcls[1], // #202 didn't change.
 						pb1.Pcls[2], // #203 didn't change.
@@ -428,10 +412,6 @@ func TestUpdateConfig(t *testing.T) {
 						Mode: string(run.FullRun),
 						Time: triggerTS,
 					},
-					Triggers: &run.Triggers{CqVoteTrigger: &run.Trigger{
-						Mode: string(run.FullRun),
-						Time: triggerTS,
-					}},
 				}
 				Convey("CL snapshotted with current config", func() {
 					So(s1.makePCL(ctx, cl101), ShouldResembleProto, expected)
@@ -442,19 +422,16 @@ func TestUpdateConfig(t *testing.T) {
 				})
 				Convey("not triggered CL", func() {
 					delete(cl101.Snapshot.GetGerrit().GetInfo().GetLabels(), trigger.CQLabelName)
-					expected.Triggers = nil
 					expected.Trigger = nil
 					So(s1.makePCL(ctx, cl101), ShouldResembleProto, expected)
 				})
 				Convey("abandoned CL is not triggered even if it has CQ vote", func() {
 					cl101.Snapshot.GetGerrit().GetInfo().Status = gerritpb.ChangeStatus_ABANDONED
-					expected.Triggers = nil
 					expected.Trigger = nil
 					So(s1.makePCL(ctx, cl101), ShouldResembleProto, expected)
 				})
 				Convey("Submitted CL is also not triggered even if it has CQ vote", func() {
 					cl101.Snapshot.GetGerrit().GetInfo().Status = gerritpb.ChangeStatus_MERGED
-					expected.Triggers = nil
 					expected.Trigger = nil
 					expected.Submitted = true
 					So(s1.makePCL(ctx, cl101), ShouldResembleProto, expected)
@@ -504,10 +481,6 @@ func TestUpdateConfig(t *testing.T) {
 						Mode: string(run.FullRun),
 						Time: triggerTS,
 					},
-					Triggers: &run.Triggers{CqVoteTrigger: &run.Trigger{
-						Mode: string(run.FullRun),
-						Time: triggerTS,
-					}},
 					Errors: []*changelist.CLError{
 						{
 							Kind: &changelist.CLError_WatchedByManyProjects_{
@@ -615,10 +588,6 @@ func TestOnCLsUpdated(t *testing.T) {
 						Mode: string(run.FullRun),
 						Time: triggerTS,
 					},
-					Triggers: &run.Triggers{CqVoteTrigger: &run.Trigger{
-						Mode: string(run.FullRun),
-						Time: triggerTS,
-					}},
 				},
 			})
 			So(s1.PB.RepartitionRequired, ShouldBeTrue)
@@ -676,10 +645,6 @@ func TestOnCLsUpdated(t *testing.T) {
 							Mode: string(run.DryRun),
 							Time: triggerTS,
 						},
-						Triggers: &run.Triggers{CqVoteTrigger: &run.Trigger{
-							Mode: string(run.DryRun),
-							Time: triggerTS,
-						}},
 						Deps: []*changelist.Dep{{Clid: int64(cl202.ID), Kind: changelist.DepKind_HARD}},
 					},
 				},
@@ -707,10 +672,10 @@ func TestOnCLsUpdated(t *testing.T) {
 				Eversion:           1,
 				ConfigGroupIndexes: []int32{0}, // g0
 				Status:             prjpb.PCL_OK,
-				Triggers: &run.Triggers{CqVoteTrigger: &run.Trigger{
+				Trigger: &run.Trigger{
 					Mode: string(run.FullRun),
 					Time: triggerTS,
-				}},
+				},
 			}
 			s1 := &State{PB: &prjpb.PState{
 				LuciProject:      ct.lProject,
@@ -728,10 +693,6 @@ func TestOnCLsUpdated(t *testing.T) {
 							Mode: string(run.DryRun),
 							Time: triggerTS,
 						},
-						Triggers: &run.Triggers{CqVoteTrigger: &run.Trigger{
-							Mode: string(run.DryRun),
-							Time: triggerTS,
-						}},
 						Deps: []*changelist.Dep{{Clid: int64(cl202.ID), Kind: changelist.DepKind_HARD}},
 					},
 				}),
@@ -768,10 +729,6 @@ func TestOnCLsUpdated(t *testing.T) {
 							Mode: string(run.DryRun),
 							Time: triggerTS,
 						},
-						Triggers: &run.Triggers{CqVoteTrigger: &run.Trigger{
-							Mode: string(run.DryRun),
-							Time: triggerTS,
-						}},
 					},
 					{ // updated
 						Clid:               int64(cl203.ID),
@@ -782,10 +739,6 @@ func TestOnCLsUpdated(t *testing.T) {
 							Mode: string(run.DryRun),
 							Time: triggerTS,
 						},
-						Triggers: &run.Triggers{CqVoteTrigger: &run.Trigger{
-							Mode: string(run.DryRun),
-							Time: triggerTS,
-						}},
 						Deps: []*changelist.Dep{{Clid: int64(cl202.ID), Kind: changelist.DepKind_HARD}},
 					},
 				}),
@@ -1168,11 +1121,10 @@ func defaultPCL(cl *changelist.CL) *prjpb.PCL {
 	}
 	ci := cl.Snapshot.GetGerrit().GetInfo()
 	if ci != nil {
-		p.Triggers = trigger.Find(ci, &cfgpb.ConfigGroup{})
-		if p.Triggers.GetCqVoteTrigger() != nil {
-			p.Triggers.GetCqVoteTrigger().Email = ""
-			p.Triggers.GetCqVoteTrigger().GerritAccountId = 0
-			p.Trigger = p.Triggers.GetCqVoteTrigger()
+		p.Trigger = trigger.Find(ci, &cfgpb.ConfigGroup{})
+		if p.Trigger != nil {
+			p.Trigger.Email = ""
+			p.Trigger.GerritAccountId = 0
 		}
 	}
 	return p

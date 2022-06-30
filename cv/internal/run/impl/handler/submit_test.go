@@ -290,13 +290,8 @@ func TestOnSubmissionCompleted(t *testing.T) {
 				gf.CQ(1, ct.Clock.Now().Add(-5*time.Minute), gf.U("user-101")),
 				gf.CQ(2, ct.Clock.Now().Add(-2*time.Minute), gf.U("user-100")),
 				gf.Updated(clock.Now(ctx).Add(-1*time.Minute)))
-			triggers := trigger.Find(ci, cg.ConfigGroups[0])
-			So(triggers.GetCqVoteTrigger(), ShouldResembleProto, &run.Trigger{
-				Time:            timestamppb.New(ct.Clock.Now().Add(-2 * time.Minute)),
-				Mode:            string(run.FullRun),
-				Email:           "user-100@example.com",
-				GerritAccountId: 100,
-			})
+			t := trigger.Find(ci, cg.ConfigGroups[0])
+			So(t.GetGerritAccountId(), ShouldEqual, 100)
 			cl := &changelist.CL{
 				ID:         clid,
 				ExternalID: changelist.MustGobID(gHost, ci.GetNumber()),
@@ -326,7 +321,7 @@ func TestOnSubmissionCompleted(t *testing.T) {
 						},
 					},
 				},
-				Trigger: triggers.GetCqVoteTrigger(),
+				Trigger: t,
 			}
 			if len(deps) > 0 {
 				cl.Snapshot.Deps = make([]*changelist.Dep, len(deps))

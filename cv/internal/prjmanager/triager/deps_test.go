@@ -41,11 +41,11 @@ func TestDepsTriage(t *testing.T) {
 	Convey("Component's PCL deps triage", t, func() {
 		// Truncate start time point s.t. easy to see diff in test failures.
 		epoch := testclock.TestRecentTimeUTC.Truncate(10000 * time.Second)
-		dryRun := func(t time.Time) *run.Triggers {
-			return &run.Triggers{CqVoteTrigger: &run.Trigger{Mode: string(run.DryRun), Time: timestamppb.New(t)}}
+		dryRun := func(t time.Time) *run.Trigger {
+			return &run.Trigger{Mode: string(run.DryRun), Time: timestamppb.New(t)}
 		}
-		fullRun := func(t time.Time) *run.Triggers {
-			return &run.Triggers{CqVoteTrigger: &run.Trigger{Mode: string(run.FullRun), Time: timestamppb.New(t)}}
+		fullRun := func(t time.Time) *run.Trigger {
+			return &run.Trigger{Mode: string(run.FullRun), Time: timestamppb.New(t)}
 		}
 
 		sup := &simplePMState{
@@ -82,9 +82,9 @@ func TestDepsTriage(t *testing.T) {
 
 					Convey("Valid CL stack CQ+1", func() {
 						sup.pb.Pcls = []*prjpb.PCL{
-							{Clid: 31, ConfigGroupIndexes: []int32{cgIdx}, Triggers: dryRun(epoch.Add(3 * time.Second))},
-							{Clid: 32, ConfigGroupIndexes: []int32{cgIdx}, Triggers: dryRun(epoch.Add(2 * time.Second))},
-							{Clid: 33, ConfigGroupIndexes: []int32{cgIdx}, Triggers: dryRun(epoch.Add(1 * time.Second)),
+							{Clid: 31, ConfigGroupIndexes: []int32{cgIdx}, Trigger: dryRun(epoch.Add(3 * time.Second))},
+							{Clid: 32, ConfigGroupIndexes: []int32{cgIdx}, Trigger: dryRun(epoch.Add(2 * time.Second))},
+							{Clid: 33, ConfigGroupIndexes: []int32{cgIdx}, Trigger: dryRun(epoch.Add(1 * time.Second)),
 								Deps: []*changelist.Dep{
 									{Clid: 31, Kind: changelist.DepKind_SOFT},
 									{Clid: 32, Kind: changelist.DepKind_HARD},
@@ -92,7 +92,7 @@ func TestDepsTriage(t *testing.T) {
 						}
 						td := do(sup.PCL(33), cgIdx)
 						So(td, cvtesting.SafeShouldResemble, &triagedDeps{
-							lastCQVoteTriggered: epoch.Add(3 * time.Second),
+							lastTriggered: epoch.Add(3 * time.Second),
 						})
 						So(td.OK(), ShouldBeTrue)
 					})
@@ -101,7 +101,7 @@ func TestDepsTriage(t *testing.T) {
 						sup.pb.Pcls = []*prjpb.PCL{
 							// 31 isn't in PCLs yet
 							{Clid: 32, Status: prjpb.PCL_UNKNOWN},
-							{Clid: 33, ConfigGroupIndexes: []int32{cgIdx}, Triggers: dryRun(epoch.Add(1 * time.Second)),
+							{Clid: 33, ConfigGroupIndexes: []int32{cgIdx}, Trigger: dryRun(epoch.Add(1 * time.Second)),
 								Deps: []*changelist.Dep{
 									{Clid: 31, Kind: changelist.DepKind_SOFT},
 									{Clid: 32, Kind: changelist.DepKind_HARD},
@@ -117,7 +117,7 @@ func TestDepsTriage(t *testing.T) {
 						sup.pb.Pcls = []*prjpb.PCL{
 							{Clid: 31, Status: prjpb.PCL_UNWATCHED},
 							{Clid: 32, Status: prjpb.PCL_DELETED},
-							{Clid: 33, ConfigGroupIndexes: []int32{cgIdx}, Triggers: dryRun(epoch.Add(1 * time.Second)),
+							{Clid: 33, ConfigGroupIndexes: []int32{cgIdx}, Trigger: dryRun(epoch.Add(1 * time.Second)),
 								Deps: []*changelist.Dep{
 									{Clid: 31, Kind: changelist.DepKind_SOFT},
 									{Clid: 32, Kind: changelist.DepKind_HARD},
@@ -136,7 +136,7 @@ func TestDepsTriage(t *testing.T) {
 					Convey("Submitted can be in any config group and they are OK deps", func() {
 						sup.pb.Pcls = []*prjpb.PCL{
 							{Clid: 32, ConfigGroupIndexes: []int32{anotherIdx}, Submitted: true},
-							{Clid: 33, ConfigGroupIndexes: []int32{cgIdx}, Triggers: dryRun(epoch.Add(1 * time.Second)),
+							{Clid: 33, ConfigGroupIndexes: []int32{cgIdx}, Trigger: dryRun(epoch.Add(1 * time.Second)),
 								Deps: []*changelist.Dep{{Clid: 32, Kind: changelist.DepKind_HARD}}},
 						}
 						pcl33 := sup.PCL(33)
@@ -147,9 +147,9 @@ func TestDepsTriage(t *testing.T) {
 
 					Convey("Wrong config group", func() {
 						sup.pb.Pcls = []*prjpb.PCL{
-							{Clid: 31, Triggers: dryRun(epoch.Add(3 * time.Second)), ConfigGroupIndexes: []int32{anotherIdx}},
-							{Clid: 32, Triggers: dryRun(epoch.Add(2 * time.Second)), ConfigGroupIndexes: []int32{anotherIdx, cgIdx}},
-							{Clid: 33, Triggers: dryRun(epoch.Add(1 * time.Second)), ConfigGroupIndexes: []int32{cgIdx},
+							{Clid: 31, Trigger: dryRun(epoch.Add(3 * time.Second)), ConfigGroupIndexes: []int32{anotherIdx}},
+							{Clid: 32, Trigger: dryRun(epoch.Add(2 * time.Second)), ConfigGroupIndexes: []int32{anotherIdx, cgIdx}},
+							{Clid: 33, Trigger: dryRun(epoch.Add(1 * time.Second)), ConfigGroupIndexes: []int32{cgIdx},
 								Deps: []*changelist.Dep{
 									{Clid: 31, Kind: changelist.DepKind_SOFT},
 									{Clid: 32, Kind: changelist.DepKind_HARD},
@@ -158,7 +158,7 @@ func TestDepsTriage(t *testing.T) {
 						pcl33 := sup.PCL(33)
 						td := do(pcl33, cgIdx)
 						So(td, cvtesting.SafeShouldResemble, &triagedDeps{
-							lastCQVoteTriggered: epoch.Add(3 * time.Second),
+							lastTriggered: epoch.Add(3 * time.Second),
 							invalidDeps: &changelist.CLError_InvalidDeps{
 								WrongConfigGroup: pcl33.GetDeps(),
 							},
@@ -174,7 +174,7 @@ func TestDepsTriage(t *testing.T) {
 							sup.pb.Pcls = append(sup.pb.Pcls, &prjpb.PCL{
 								Clid:               int64(1000 + i),
 								ConfigGroupIndexes: []int32{cgIdx},
-								Triggers:           dryRun(epoch.Add(time.Second)),
+								Trigger:            dryRun(epoch.Add(time.Second)),
 							})
 							deps = append(deps, &changelist.Dep{Clid: int64(1000 + i), Kind: changelist.DepKind_SOFT})
 						}
@@ -182,12 +182,12 @@ func TestDepsTriage(t *testing.T) {
 						sup.pb.Pcls = append(sup.pb.Pcls, &prjpb.PCL{
 							Clid:               2000,
 							ConfigGroupIndexes: []int32{cgIdx},
-							Triggers:           dryRun(epoch.Add(time.Second)),
+							Trigger:            dryRun(epoch.Add(time.Second)),
 							Deps:               deps,
 						})
 						td := do(sup.PCL(2000), cgIdx)
 						So(td, cvtesting.SafeShouldResemble, &triagedDeps{
-							lastCQVoteTriggered: epoch.Add(time.Second),
+							lastTriggered: epoch.Add(time.Second),
 							invalidDeps: &changelist.CLError_InvalidDeps{
 								TooMany: &changelist.CLError_InvalidDeps_TooMany{
 									Actual:     maxAllowedDeps + 1,
@@ -207,16 +207,16 @@ func TestDepsTriage(t *testing.T) {
 			sup.pb.Pcls = []*prjpb.PCL{
 				{
 					Clid: 31, ConfigGroupIndexes: []int32{singIdx},
-					Triggers: dryRun(epoch.Add(3 * time.Second)),
+					Trigger: dryRun(epoch.Add(3 * time.Second)),
 				},
 				{
 					Clid: 32, ConfigGroupIndexes: []int32{singIdx},
-					Triggers: fullRun(epoch.Add(2 * time.Second)), // not happy about its dep.
-					Deps:     []*changelist.Dep{{Clid: 31, Kind: changelist.DepKind_HARD}},
+					Trigger: fullRun(epoch.Add(2 * time.Second)), // not happy about its dep.
+					Deps:    []*changelist.Dep{{Clid: 31, Kind: changelist.DepKind_HARD}},
 				},
 				{
 					Clid: 33, ConfigGroupIndexes: []int32{singIdx},
-					Triggers: dryRun(epoch.Add(3 * time.Second)), // doesn't care about deps.
+					Trigger: dryRun(epoch.Add(3 * time.Second)), // doesn't care about deps.
 					Deps: []*changelist.Dep{
 						{Clid: 31, Kind: changelist.DepKind_SOFT},
 						{Clid: 32, Kind: changelist.DepKind_HARD},
@@ -227,22 +227,22 @@ func TestDepsTriage(t *testing.T) {
 				pcl33 := sup.PCL(33)
 				td := do(pcl33, singIdx)
 				So(td, cvtesting.SafeShouldResemble, &triagedDeps{
-					lastCQVoteTriggered: epoch.Add(3 * time.Second),
+					lastTriggered: epoch.Add(3 * time.Second),
 				})
 			})
 			Convey("quick dry run doesn't care about deps' triggers", func() {
 				pcl33 := sup.PCL(33)
-				pcl33.Triggers.CqVoteTrigger.Mode = string(run.QuickDryRun)
+				pcl33.Trigger.Mode = string(run.QuickDryRun)
 				td := do(pcl33, singIdx)
 				So(td, cvtesting.SafeShouldResemble, &triagedDeps{
-					lastCQVoteTriggered: epoch.Add(3 * time.Second),
+					lastTriggered: epoch.Add(3 * time.Second),
 				})
 			})
 			Convey("full run doesn't allow any dep by default", func() {
 				pcl32 := sup.PCL(32)
 				td := do(pcl32, singIdx)
 				So(td, cvtesting.SafeShouldResemble, &triagedDeps{
-					lastCQVoteTriggered: epoch.Add(3 * time.Second),
+					lastTriggered: epoch.Add(3 * time.Second),
 					invalidDeps: &changelist.CLError_InvalidDeps{
 						SingleFullDeps: pcl32.GetDeps(),
 					},
@@ -257,7 +257,7 @@ func TestDepsTriage(t *testing.T) {
 					}
 					td := do(pcl32, singIdx)
 					So(td, cvtesting.SafeShouldResemble, &triagedDeps{
-						lastCQVoteTriggered: epoch.Add(3 * time.Second),
+						lastTriggered: epoch.Add(3 * time.Second),
 					})
 					So(td.OK(), ShouldBeTrue)
 
@@ -267,7 +267,7 @@ func TestDepsTriage(t *testing.T) {
 						pcl32.GetDeps()[0].Kind = changelist.DepKind_SOFT
 						td := do(pcl32, singIdx)
 						So(td, cvtesting.SafeShouldResemble, &triagedDeps{
-							lastCQVoteTriggered: epoch.Add(3 * time.Second),
+							lastTriggered: epoch.Add(3 * time.Second),
 							invalidDeps: &changelist.CLError_InvalidDeps{
 								SingleFullDeps: pcl32.GetDeps(),
 							},
@@ -283,16 +283,16 @@ func TestDepsTriage(t *testing.T) {
 			sup.pb.Pcls = []*prjpb.PCL{
 				{
 					Clid: 31, ConfigGroupIndexes: []int32{combIdx},
-					Triggers: dryRun(epoch.Add(3 * time.Second)),
+					Trigger: dryRun(epoch.Add(3 * time.Second)),
 				},
 				{
 					Clid: 32, ConfigGroupIndexes: []int32{combIdx},
-					Triggers: dryRun(epoch.Add(2 * time.Second)),
-					Deps:     []*changelist.Dep{{Clid: 31, Kind: changelist.DepKind_HARD}},
+					Trigger: dryRun(epoch.Add(2 * time.Second)),
+					Deps:    []*changelist.Dep{{Clid: 31, Kind: changelist.DepKind_HARD}},
 				},
 				{
 					Clid: 33, ConfigGroupIndexes: []int32{combIdx},
-					Triggers: dryRun(epoch.Add(1 * time.Second)),
+					Trigger: dryRun(epoch.Add(1 * time.Second)),
 					Deps: []*changelist.Dep{
 						{Clid: 31, Kind: changelist.DepKind_SOFT},
 						{Clid: 32, Kind: changelist.DepKind_HARD},
@@ -303,15 +303,15 @@ func TestDepsTriage(t *testing.T) {
 				pcl32 := sup.PCL(32)
 				Convey("ok", func() {
 					td := do(pcl32, combIdx)
-					So(td, cvtesting.SafeShouldResemble, &triagedDeps{lastCQVoteTriggered: epoch.Add(3 * time.Second)})
+					So(td, cvtesting.SafeShouldResemble, &triagedDeps{lastTriggered: epoch.Add(3 * time.Second)})
 				})
 
 				Convey("... not full runs", func() {
 					// TODO(tandrii): this can and should be supported.
-					sup.PCL(31).Triggers.CqVoteTrigger.Mode = string(run.FullRun)
+					sup.PCL(31).Trigger.Mode = string(run.FullRun)
 					td := do(pcl32, combIdx)
 					So(td, cvtesting.SafeShouldResemble, &triagedDeps{
-						lastCQVoteTriggered: epoch.Add(3 * time.Second),
+						lastTriggered: epoch.Add(3 * time.Second),
 						invalidDeps: &changelist.CLError_InvalidDeps{
 							CombinableMismatchedMode: pcl32.GetDeps(),
 						},
@@ -322,16 +322,16 @@ func TestDepsTriage(t *testing.T) {
 				pcl33 := sup.PCL(33)
 				Convey("ok", func() {
 					for _, pcl := range sup.pb.GetPcls() {
-						pcl.Triggers.CqVoteTrigger.Mode = string(run.FullRun)
+						pcl.Trigger.Mode = string(run.FullRun)
 					}
 					td := do(pcl33, combIdx)
-					So(td, cvtesting.SafeShouldResemble, &triagedDeps{lastCQVoteTriggered: epoch.Add(3 * time.Second)})
+					So(td, cvtesting.SafeShouldResemble, &triagedDeps{lastTriggered: epoch.Add(3 * time.Second)})
 				})
 				Convey("... not dry runs", func() {
-					sup.PCL(32).Triggers.CqVoteTrigger.Mode = string(run.FullRun)
+					sup.PCL(32).Trigger.Mode = string(run.FullRun)
 					td := do(pcl33, combIdx)
 					So(td, cvtesting.SafeShouldResemble, &triagedDeps{
-						lastCQVoteTriggered: epoch.Add(3 * time.Second),
+						lastTriggered: epoch.Add(3 * time.Second),
 						invalidDeps: &changelist.CLError_InvalidDeps{
 							CombinableMismatchedMode: []*changelist.Dep{{Clid: 32, Kind: changelist.DepKind_HARD}},
 						},
