@@ -29,6 +29,7 @@ import (
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/sync/parallel"
 	"go.chromium.org/luci/gae/filter/txndefer"
+	"go.chromium.org/luci/gae/service/datastore"
 
 	"go.chromium.org/luci/cv/internal/acls"
 	"go.chromium.org/luci/cv/internal/changelist"
@@ -52,8 +53,8 @@ func (impl *Impl) endRun(ctx context.Context, rs *state.RunState, st run.Status)
 	}
 
 	rs.Status = st
-	now := clock.Now(ctx)
-	rs.EndTime = now.UTC()
+	now := datastore.RoundTime(clock.Now(ctx).UTC())
+	rs.EndTime = now
 	rs.LogEntries = append(rs.LogEntries, &run.LogEntry{
 		Time: timestamppb.New(now),
 		Kind: &run.LogEntry_RunEnded_{

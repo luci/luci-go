@@ -47,10 +47,6 @@ func (impl *Impl) Cancel(ctx context.Context, rs *state.RunState, reasons []stri
 	uniqueReasons.Del("")
 	rs.CancellationReasons = uniqueReasons.ToSortedSlice()
 	se := impl.endRun(ctx, rs, run.Status_CANCELLED)
-	if rs.StartTime.IsZero() {
-		// This run has never started but already gets a cancelled event.
-		rs.StartTime = rs.EndTime
-	}
 
 	return &Result{
 		State:        rs,
