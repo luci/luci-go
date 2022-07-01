@@ -23,6 +23,7 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
+	"go.chromium.org/luci/auth_service/impl/model"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
 
@@ -48,6 +49,7 @@ func TestAuthorizeRPCAccess(t *testing.T) {
 		So(check(ctx, "auth.service.Accounts", "GetSelf"), ShouldEqual, codes.OK)
 		So(check(ctx, "discovery.Discovery", "Something"), ShouldEqual, codes.OK)
 		So(check(ctx, "auth.service.Groups", "Something"), ShouldEqual, codes.PermissionDenied)
+		So(check(ctx, "auth.service.Groups", "CreateGroup"), ShouldEqual, codes.PermissionDenied)
 		So(check(ctx, "unknown.API", "Something"), ShouldEqual, codes.PermissionDenied)
 	})
 
@@ -60,6 +62,7 @@ func TestAuthorizeRPCAccess(t *testing.T) {
 		So(check(ctx, "auth.service.Accounts", "GetSelf"), ShouldEqual, codes.OK)
 		So(check(ctx, "discovery.Discovery", "Something"), ShouldEqual, codes.OK)
 		So(check(ctx, "auth.service.Groups", "Something"), ShouldEqual, codes.PermissionDenied)
+		So(check(ctx, "auth.service.Groups", "CreateGroup"), ShouldEqual, codes.PermissionDenied)
 		So(check(ctx, "unknown.API", "Something"), ShouldEqual, codes.PermissionDenied)
 	})
 
@@ -72,6 +75,20 @@ func TestAuthorizeRPCAccess(t *testing.T) {
 		So(check(ctx, "auth.service.Accounts", "GetSelf"), ShouldEqual, codes.OK)
 		So(check(ctx, "discovery.Discovery", "Something"), ShouldEqual, codes.OK)
 		So(check(ctx, "auth.service.Groups", "Something"), ShouldEqual, codes.OK)
+		So(check(ctx, "auth.service.Groups", "CreateGroup"), ShouldEqual, codes.PermissionDenied)
+		So(check(ctx, "unknown.API", "Something"), ShouldEqual, codes.PermissionDenied)
+	})
+
+	Convey("Authorized as admin", t, func() {
+		ctx := auth.WithState(context.Background(), &authtest.FakeState{
+			Identity:       "user:someone@example.com",
+			IdentityGroups: []string{ServiceAccessGroup, model.AdminGroup},
+		})
+
+		So(check(ctx, "auth.service.Accounts", "GetSelf"), ShouldEqual, codes.OK)
+		So(check(ctx, "discovery.Discovery", "Something"), ShouldEqual, codes.OK)
+		So(check(ctx, "auth.service.Groups", "Something"), ShouldEqual, codes.OK)
+		So(check(ctx, "auth.service.Groups", "CreateGroup"), ShouldEqual, codes.OK)
 		So(check(ctx, "unknown.API", "Something"), ShouldEqual, codes.PermissionDenied)
 	})
 }
