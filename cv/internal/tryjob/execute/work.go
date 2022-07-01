@@ -16,6 +16,7 @@ package execute
 
 import (
 	"context"
+	"fmt"
 	"sort"
 
 	"go.chromium.org/luci/common/clock"
@@ -56,6 +57,7 @@ func (e *Executor) startTryjobs(ctx context.Context, r *run.Run, definitions []*
 		w.clPatchsets[i] = tryjob.MakeCLPatchset(cl.ID, cl.Detail.GetPatchset())
 	}
 	sort.Sort(w.clPatchsets)
+	w.findReuseFns = append(w.findReuseFns, w.findReuseInCV, w.findReuseInBackend)
 
 	return w.start(ctx, definitions)
 }
@@ -73,6 +75,8 @@ type worker struct {
 	clPatchsets tryjob.CLPatchsets
 	backend     TryjobBackend
 	rm          rm
+
+	findReuseFns []findReuseFn
 }
 
 func (w *worker) makeBaseTryjob(ctx context.Context) *tryjob.Tryjob {
@@ -96,5 +100,98 @@ func (w *worker) makePendingTryjob(ctx context.Context, def *tryjob.Definition) 
 }
 
 func (w *worker) start(ctx context.Context, definitions []*tryjob.Definition) ([]*tryjob.Tryjob, error) {
-	panic("implement")
+	reuse, err := w.findReuse(ctx, definitions)
+	if err != nil {
+		return nil, err
+	}
+	ret := make([]*tryjob.Tryjob, len(definitions))
+	tryjobsToLaunch := make([]*tryjob.Tryjob, 0, len(definitions))
+	reusedTryjobsCount := 0
+	for i, def := range definitions {
+		switch reuseTryjob, hasReuse := reuse[def]; {
+		case !hasReuse:
+			tryjobsToLaunch = append(tryjobsToLaunch, w.makePendingTryjob(ctx, def))
+		case reuseTryjob.TriggeredBy == w.run.ID && reuseTryjob.Status == tryjob.Status_PENDING:
+			// This typically happens when a previous task created the Tryjob entity
+			// but failed to launch the Tryjob at the backend. Such Tryjob entity will
+			// be surfaced again when searching for reusable Tryjob within CV.
+			// Therefore, try to launch the Tryjob again.
+			tryjobsToLaunch = append(tryjobsToLaunch, reuseTryjob)
+		default:
+			ret[i] = reuseTryjob
+			reusedTryjobsCount += 1
+		}
+	}
+
+	if len(tryjobsToLaunch) > 0 {
+		// Save the newly created tryjobs and ensure Tryjob IDs are populated.
+		var tryjobsWithoutInternalID []*tryjob.Tryjob
+		for _, tj := range tryjobsToLaunch {
+			if tj.ID == 0 {
+				tryjobsWithoutInternalID = append(tryjobsWithoutInternalID, tj)
+			}
+		}
+		if len(tryjobsWithoutInternalID) > 0 {
+			if err := tryjob.SaveTryjobs(ctx, tryjobsWithoutInternalID); err != nil {
+				return nil, err
+			}
+		}
+		tryjobsToLaunch, err = w.launchTryjobs(ctx, tryjobsToLaunch)
+		if err != nil {
+			return nil, err
+		}
+		// copy the launched tryjobs to the returned tryjobs at the corresponding
+		// location.
+		if reusedTryjobsCount+len(tryjobsToLaunch) != len(definitions) {
+			panic(fmt.Errorf("impossible; requested %d tryjob definition, reused %d tryjobs but launched %d new tryjobs", len(definitions), reusedTryjobsCount, len(tryjobsToLaunch)))
+		}
+		idx := 0
+		for i, tj := range ret {
+			if tj == nil {
+				ret[i] = tryjobsToLaunch[idx]
+				idx += 1
+			}
+		}
+	}
+
+	return ret, nil
+}
+
+type findReuseFn func(context.Context, []*tryjob.Definition) (map[*tryjob.Definition]*tryjob.Tryjob, error)
+
+func (w *worker) findReuse(ctx context.Context, definitions []*tryjob.Definition) (map[*tryjob.Definition]*tryjob.Tryjob, error) {
+	if len(w.findReuseFns) == 0 {
+		return nil, nil
+	}
+	ret := make(map[*tryjob.Definition]*tryjob.Tryjob, len(definitions))
+	remainingDefinitions := make([]*tryjob.Definition, 0, len(definitions))
+	// start with tryjobs definitions that enable reuse.
+	for _, def := range definitions {
+		if !def.GetDisableReuse() {
+			remainingDefinitions = append(remainingDefinitions, def)
+		}
+	}
+
+	for _, fn := range w.findReuseFns {
+		reuse, err := fn(ctx, remainingDefinitions)
+		if err != nil {
+			return nil, err
+		}
+		for def, tj := range reuse {
+			ret[def] = tj
+		}
+		// reuse remainingDefinitions slice  and filter out the definitions that
+		// have found reuse Tryjobs.
+		tmp := remainingDefinitions[:0]
+		for _, def := range remainingDefinitions {
+			if _, ok := reuse[def]; !ok {
+				tmp = append(tmp, def)
+			}
+		}
+		remainingDefinitions = tmp
+		if len(remainingDefinitions) == 0 {
+			break
+		}
+	}
+	return ret, nil
 }
