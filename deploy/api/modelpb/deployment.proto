@@ -71,6 +71,67 @@ message DeploymentConfig {
   //
   // Default is 20 min.
   google.protobuf.Duration actuation_timeout = 1;
+
+  // Who to notify on noteworthy events.
+  //
+  // Various asset state transitions emit 0 or more events per transition. For
+  // each event kind `notifications` define a set of destinations to send it
+  // to. During a state transition, all emitted events are bucketed by their
+  // destination, then redundant events are trimmed (e.g. if a single
+  // destination is getting ACTUATION_FIXED and ACTUATION_SUCCEEDED events, only
+  // ACTUATION_FIXED will be retained, since it makes little sense to send
+  // two success notifications to the same destination at the same time).
+  message Notification {
+    // Types of events to notify on.
+    enum Event {
+      EVENT_UNSPECIFIED = 0;
+
+      // An actuation is starting.
+      //
+      // Always emitted regardless of any prior history.
+      ACTUATION_STARTING  = 1;
+
+      // An actuation has finished successfully.
+      //
+      // Always emitted regardless of any prior history.
+      ACTUATION_SUCCEEDED = 2;
+
+      // An actuation failed, perhaps after several retries.
+      //
+      // First few failures (below `consecutive_failures` threshold) will *not*
+      // result in an event. Every consecutive failure after that will result
+      // in an event.
+      ACTUATION_FAILED = 3;
+
+      // An actuation succeeded after a series of failures.
+      //
+      // Emitted if the actuation succeeded after >= `consecutive_failures`
+      // consecutive failures. Overrides ACTUATION_SUCCEEDED if emitted by the
+      // same state transition.
+      ACTUATION_FIXED = 4;
+    }
+    repeated Event events = 1;
+
+    // List of emails to send notifications to.
+    repeated string emails = 2;
+
+    // List of Google Chat spaces to send notifications to.
+    message ChatSpace {
+      // A preregistered web hook URL to POST notifications too.
+      //
+      // See https://developers.google.com/chat/how-tos/webhooks#create_a_webhook
+      string webhook_url = 1;
+    }
+    repeated ChatSpace chat_spaces = 3;
+
+    // Consecutive failures threshold for ACTUATION_FAILED and ACTUATION_FIXED.
+    //
+    // First few failures (below the threshold) will *not* result in
+    // a notification. This is useful to avoid spamming on flaky failures
+    // resolved by automatic retries.
+    int32 consecutive_failures = 4;
+  }
+  repeated Notification notifications = 2;
 }
 
 
