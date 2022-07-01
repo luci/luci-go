@@ -42,6 +42,7 @@ type Query struct {
 	FollowEdges         *pb.ArtifactPredicate_EdgeTypeSet
 	TestResultPredicate *pb.TestResultPredicate
 	ContentTypeRegexp   string
+	ArtifactIDRegexp    string
 	PageSize            int // must be positive
 	PageToken           string
 	WithRBECASHash      bool
@@ -117,6 +118,9 @@ WHERE art.InvocationId IN UNNEST(@invIDs)
 {{ if .Params.contentTypeRegexp }}
 		AND REGEXP_CONTAINS(IFNULL(art.ContentType, ""), @contentTypeRegexp)
 {{ end }}
+{{ if .Params.artifactIdRegexp }}
+		AND REGEXP_CONTAINS(IFNULL(art.ArtifactID, ""), @artifactIdRegexp)
+{{ end }}
 ORDER BY InvocationId, ParentId, ArtifactId
 {{ if gt .Q.PageSize 0 }} LIMIT @limit {{ end }}
 `))
@@ -132,6 +136,7 @@ func (q *Query) genStmt(ctx context.Context) (spanner.Statement, error) {
 	params["invIDs"] = q.InvocationIDs
 	params["limit"] = q.PageSize
 	addREParamMaybe(params, "contentTypeRegexp", q.ContentTypeRegexp)
+	addREParamMaybe(params, "artifactIdRegexp", q.ArtifactIDRegexp)
 	addREParamMaybe(params, "ParentIdRegexp", q.parentIDRegexp())
 
 	if err := invocations.TokenToMap(q.PageToken, params, "afterInvocationId", "afterParentId", "afterArtifactId"); err != nil {

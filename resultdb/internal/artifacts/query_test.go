@@ -392,6 +392,31 @@ func TestQuery(t *testing.T) {
 			})
 		})
 
+		Convey(`ArtifactIds`, func() {
+			Convey(`Works`, func() {
+				testutil.MustApply(ctx,
+					insert.Artifact("inv1", "", "a0", nil),
+					insert.Artifact("inv1", "tr/t/r", "a0", nil),
+					insert.Artifact("inv1", "tr/t/r", "a1", nil),
+					insert.Artifact("inv1", "tr/t/r", "a3", nil),
+				)
+				q.ArtifactIDRegexp = "a0"
+
+				actual := mustFetchNames(q)
+				So(actual, ShouldResemble, []string{
+					"invocations/inv1/artifacts/a0",
+					"invocations/inv1/tests/t/results/r/artifacts/a0",
+				})
+			})
+
+			Convey(`Filter generated conditionally`, func() {
+				q.ArtifactIDRegexp = ""
+				st, err := q.genStmt(ctx)
+				So(err, ShouldBeNil)
+				So(st.SQL, ShouldNotContainSubstring, "@artifactIdRegexp")
+			})
+		})
+
 		Convey(`WithRBECASHash`, func() {
 			testutil.MustApply(ctx,
 				insert.Artifact("inv1", "tr/t/r", "a", map[string]interface{}{

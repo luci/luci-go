@@ -186,6 +186,7 @@ func (b *bqExporter) queryTextArtifacts(ctx context.Context, exportedID invocati
 		InvocationIDs:       invIDs,
 		TestResultPredicate: bqExport.GetTextArtifacts().GetPredicate().GetTestResultPredicate(),
 		ContentTypeRegexp:   contentTypeRegexp,
+		ArtifactIDRegexp:    bqExport.GetTextArtifacts().GetPredicate().GetArtifactIdRegexp(),
 		WithRBECASHash:      true,
 	}
 

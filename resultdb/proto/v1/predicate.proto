@@ -119,4 +119,8 @@ message ArtifactPredicate {
   // entirely, i.e. the expression is implicitly wrapped with ^ and $.
   // Defaults to ".*".
   string content_type_regexp = 3;
+
+  // An artifact must have an ID matching this regular expression entirely, i.e.
+  // the expression is implicitly wrapped with ^ and $.  Defaults to ".*".
+  string artifact_id_regexp = 4;
 }
