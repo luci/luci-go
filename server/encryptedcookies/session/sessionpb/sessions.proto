@@ -41,6 +41,9 @@ message Session {
   string email = 8;    // user email from "email" ID token claim
   string name = 9;     // user name from "name" ID token claim
   string picture = 10; // profile picture URL from "picture" ID token claim
+  // the scopes that were requested in the authorization request, in addition
+  // to the default scopes (openid email profile).
+  repeated string additional_scopes = 12;
 
   bytes encrypted_private = 11; // wire-serialized and encrypted Private proto
 }

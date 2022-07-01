@@ -85,18 +85,26 @@ func TestMethod(t *testing.T) {
 		ctx = caching.WithEmptyProcessCache(ctx)
 		ctx = authtest.MockAuthConfig(ctx)
 
-		method := &AuthMethod{
-			OpenIDConfig: func(context.Context) (*OpenIDConfig, error) {
-				return &OpenIDConfig{
-					DiscoveryURL: provider.DiscoveryURL(),
-					ClientID:     provider.ExpectedClientID,
-					ClientSecret: provider.ExpectedClientSecret,
-					RedirectURI:  provider.ExpectedRedirectURI,
-				}, nil
-			},
-			AEADProvider: func(context.Context) tink.AEAD { return ae },
-			Sessions:     &datastore.Store{},
+		sessionStore := &datastore.Store{}
+
+		makeMethod := func(requiredScopes, optionalScopes []string) *AuthMethod {
+			return &AuthMethod{
+				OpenIDConfig: func(context.Context) (*OpenIDConfig, error) {
+					return &OpenIDConfig{
+						DiscoveryURL: provider.DiscoveryURL(),
+						ClientID:     provider.ExpectedClientID,
+						ClientSecret: provider.ExpectedClientSecret,
+						RedirectURI:  provider.ExpectedRedirectURI,
+					}, nil
+				},
+				AEADProvider:   func(context.Context) tink.AEAD { return ae },
+				Sessions:       sessionStore,
+				RequiredScopes: requiredScopes,
+				OptionalScopes: optionalScopes,
+			}
 		}
+
+		methodV1 := makeMethod([]string{"scope1"}, []string{"scope2"})
 
 		call := func(h router.Handler, host string, url *url.URL, header http.Header) *http.Response {
 			rw := httptest.NewRecorder()
@@ -112,7 +120,7 @@ func TestMethod(t *testing.T) {
 			return rw.Result()
 		}
 
-		Convey("Full flow", func() {
+		performLogin := func(method *AuthMethod) (callbackRawQuery string) {
 			So(method.Warmup(ctx), ShouldBeNil)
 
 			loginURL, err := method.LoginURL(ctx, "/some/dest")
@@ -129,10 +137,11 @@ func TestMethod(t *testing.T) {
 
 			// After the user logs in, the provider generates a redirect to the
 			// callback URI with some query parameters.
-			callbackRawQuery := provider.CallbackRawQuery(authURL.Query())
-
+			return provider.CallbackRawQuery(authURL.Query())
+		}
+		performCallback := func(method *AuthMethod, callbackRawQuery string) (cookie string) {
 			// Provider calls us back on our primary host (not "dest.example.com").
-			resp = call(method.callbackHandler, "primary.example.com", &url.URL{
+			resp := call(method.callbackHandler, "primary.example.com", &url.URL{
 				RawQuery: callbackRawQuery,
 			}, nil)
 
@@ -152,15 +161,20 @@ func TestMethod(t *testing.T) {
 			// And we've got some session cookie!
 			setCookie := resp.Header.Get("Set-Cookie")
 			So(setCookie, ShouldNotEqual, "")
-			cookie := strings.Split(setCookie, ";")[0]
+			return strings.Split(setCookie, ";")[0]
+		}
+
+		Convey("Full flow", func() {
+			callbackRawQueryV1 := performLogin(methodV1)
+			cookieV1 := performCallback(methodV1, callbackRawQueryV1)
 
 			// Handed out 1 access token thus far.
 			So(provider.AccessTokensMinted(), ShouldEqual, 1)
 
 			Convey("Code reuse is forbidden", func() {
 				// Trying to use the authorization code again fails.
-				resp := call(method.callbackHandler, "dest.example.com", &url.URL{
-					RawQuery: callbackRawQuery,
+				resp := call(methodV1.callbackHandler, "dest.example.com", &url.URL{
+					RawQuery: callbackRawQueryV1,
 				}, nil)
 				So(resp.StatusCode, ShouldEqual, http.StatusBadRequest)
 			})
@@ -174,14 +188,14 @@ func TestMethod(t *testing.T) {
 			}
 
 			Convey("No cookies => method is skipped", func() {
-				user, session, err := method.Authenticate(ctx, phonyRequest(""))
+				user, session, err := methodV1.Authenticate(ctx, phonyRequest(""))
 				So(err, ShouldBeNil)
 				So(user, ShouldBeNil)
 				So(session, ShouldBeNil)
 			})
 
 			Convey("Good cookie works", func() {
-				user, session, err := method.Authenticate(ctx, phonyRequest(cookie))
+				user, session, err := methodV1.Authenticate(ctx, phonyRequest(cookieV1))
 				So(err, ShouldBeNil)
 				So(user, ShouldResemble, &auth.User{
 					Identity: identity.Identity("user:" + provider.UserEmail),
@@ -205,15 +219,15 @@ func TestMethod(t *testing.T) {
 			})
 
 			Convey("Malformed cookie is ignored", func() {
-				user, session, err := method.Authenticate(ctx, phonyRequest(cookie[:20]+"aaaaaa"+cookie[26:]))
+				user, session, err := methodV1.Authenticate(ctx, phonyRequest(cookieV1[:20]+"aaaaaa"+cookieV1[26:]))
 				So(err, ShouldBeNil)
 				So(user, ShouldBeNil)
 				So(session, ShouldBeNil)
 			})
 
 			Convey("Missing datastore session", func() {
-				method.Sessions.(*datastore.Store).Namespace = "another"
-				user, session, err := method.Authenticate(ctx, phonyRequest(cookie))
+				methodV1.Sessions.(*datastore.Store).Namespace = "another"
+				user, session, err := methodV1.Authenticate(ctx, phonyRequest(cookieV1))
 				So(err, ShouldBeNil)
 				So(user, ShouldBeNil)
 				So(session, ShouldBeNil)
@@ -224,7 +238,7 @@ func TestMethod(t *testing.T) {
 
 				Convey("Session refresh OK", func() {
 					// The session is still valid.
-					user, session, err := method.Authenticate(ctx, phonyRequest(cookie))
+					user, session, err := methodV1.Authenticate(ctx, phonyRequest(cookieV1))
 					So(err, ShouldBeNil)
 					So(user, ShouldNotBeNil)
 					So(session, ShouldNotBeNil)
@@ -239,7 +253,7 @@ func TestMethod(t *testing.T) {
 					So(tok.Expiry.Sub(testclock.TestTimeUTC), ShouldEqual, 3*time.Hour)
 
 					// No need to refresh anymore.
-					user, session, err = method.Authenticate(ctx, phonyRequest(cookie))
+					user, session, err = methodV1.Authenticate(ctx, phonyRequest(cookieV1))
 					So(err, ShouldBeNil)
 					So(user, ShouldNotBeNil)
 					So(session, ShouldNotBeNil)
@@ -249,7 +263,7 @@ func TestMethod(t *testing.T) {
 				Convey("Session refresh transient fail", func() {
 					provider.TransientErr = errors.New("boom")
 
-					_, _, err := method.Authenticate(ctx, phonyRequest(cookie))
+					_, _, err := methodV1.Authenticate(ctx, phonyRequest(cookieV1))
 					So(err, ShouldNotBeNil)
 					So(transient.Tag.In(err), ShouldBeTrue)
 				})
@@ -258,13 +272,13 @@ func TestMethod(t *testing.T) {
 					provider.RefreshToken = "another-token"
 
 					// Refresh fails and closes the session.
-					user, session, err := method.Authenticate(ctx, phonyRequest(cookie))
+					user, session, err := methodV1.Authenticate(ctx, phonyRequest(cookieV1))
 					So(err, ShouldBeNil)
 					So(user, ShouldBeNil)
 					So(session, ShouldBeNil)
 
 					// Using the closed session is unsuccessful.
-					user, session, err = method.Authenticate(ctx, phonyRequest(cookie))
+					user, session, err = methodV1.Authenticate(ctx, phonyRequest(cookieV1))
 					So(err, ShouldBeNil)
 					So(user, ShouldBeNil)
 					So(session, ShouldBeNil)
@@ -272,13 +286,13 @@ func TestMethod(t *testing.T) {
 			})
 
 			Convey("Logout works", func() {
-				logoutURL, err := method.LogoutURL(ctx, "/some/dest")
+				logoutURL, err := methodV1.LogoutURL(ctx, "/some/dest")
 				So(err, ShouldBeNil)
 				So(logoutURL, ShouldEqual, "/auth/openid/logout?r=%2Fsome%2Fdest")
 				parsed, _ := url.Parse(logoutURL)
 
-				resp := call(method.logoutHandler, "primary.example.com", parsed, http.Header{
-					"Cookie": {cookie},
+				resp := call(methodV1.logoutHandler, "primary.example.com", parsed, http.Header{
+					"Cookie": {cookieV1},
 				})
 
 				// Got a redirect to the final destination URL.
@@ -289,7 +303,7 @@ func TestMethod(t *testing.T) {
 				So(resp.Header.Get("Set-Cookie"), ShouldStartWith, "LUCISID=deleted")
 
 				// It also no longer works.
-				user, session, err := method.Authenticate(ctx, phonyRequest(cookie))
+				user, session, err := methodV1.Authenticate(ctx, phonyRequest(cookieV1))
 				So(err, ShouldBeNil)
 				So(user, ShouldBeNil)
 				So(session, ShouldBeNil)
@@ -298,12 +312,89 @@ func TestMethod(t *testing.T) {
 				So(provider.Revoked, ShouldBeNil)
 
 				// Hitting logout again (resending the cookie) succeeds.
-				resp = call(method.logoutHandler, "primary.example.com", parsed, http.Header{
-					"Cookie": {cookie},
+				resp = call(methodV1.logoutHandler, "primary.example.com", parsed, http.Header{
+					"Cookie": {cookieV1},
 				})
 				So(resp.StatusCode, ShouldEqual, http.StatusFound)
 				So(resp.Header.Get("Location"), ShouldEqual, "/some/dest")
 				So(provider.Revoked, ShouldBeNil)
+			})
+
+			Convey("Add additional optional scope works", func() {
+				methodV2 := makeMethod([]string{"scope1"}, []string{"scope2", "scope3"})
+
+				user, session, err := methodV2.Authenticate(ctx, phonyRequest(cookieV1))
+				So(err, ShouldBeNil)
+				So(user, ShouldResemble, &auth.User{
+					Identity: identity.Identity("user:" + provider.UserEmail),
+					Email:    provider.UserEmail,
+					Name:     provider.UserName,
+					Picture:  provider.UserPicture,
+				})
+				So(session, ShouldNotBeNil)
+			})
+
+			Convey("Promote optional scope works", func() {
+				methodV2 := makeMethod([]string{"scope1", "scope2"}, nil)
+
+				user, session, err := methodV2.Authenticate(ctx, phonyRequest(cookieV1))
+				So(err, ShouldBeNil)
+				So(user, ShouldResemble, &auth.User{
+					Identity: identity.Identity("user:" + provider.UserEmail),
+					Email:    provider.UserEmail,
+					Name:     provider.UserName,
+					Picture:  provider.UserPicture,
+				})
+				So(session, ShouldNotBeNil)
+			})
+
+			Convey("Add additional required scope invalidates old sessions", func() {
+				methodV2 := makeMethod([]string{"scope1", "scope3"}, []string{"scope2"})
+
+				user, session, err := methodV2.Authenticate(ctx, phonyRequest(cookieV1))
+				So(err, ShouldBeNil)
+				So(user, ShouldBeNil)
+				So(session, ShouldBeNil)
+
+				// The cookie no longer works with the old method.
+				user, session, err = methodV1.Authenticate(ctx, phonyRequest(cookieV1))
+				So(err, ShouldBeNil)
+				So(user, ShouldBeNil)
+				So(session, ShouldBeNil)
+			})
+
+			Convey("Additional scopes are decided during login not callback", func() {
+				methodV2 := makeMethod([]string{"scope1"}, []string{"scope2", "scope3"})
+				methodV3 := makeMethod([]string{"scope1", "scope3"}, []string{"scope2"})
+
+				// User hit the login handle in the v1 but the callback is handled by
+				// v2.
+				callbackRawQueryV1 := performLogin(methodV1)
+				cookieV1 := performCallback(methodV2, callbackRawQueryV1)
+
+				// Cookies produced by login requests in methodV1 does not have the
+				// added scope.
+				user, session, err := methodV3.Authenticate(ctx, phonyRequest(cookieV1))
+				So(err, ShouldBeNil)
+				So(user, ShouldBeNil)
+				So(session, ShouldBeNil)
+
+				// User hit the login handle in the v2 but the callback is handled by
+				// v1.
+				callbackRawQueryV2 := performLogin(methodV2)
+				cookieV2 := performCallback(methodV1, callbackRawQueryV2)
+
+				// Cookies produced by login requests in methodV2 does have the added
+				// scope.
+				user, session, err = methodV3.Authenticate(ctx, phonyRequest(cookieV2))
+				So(err, ShouldBeNil)
+				So(user, ShouldResemble, &auth.User{
+					Identity: identity.Identity("user:" + provider.UserEmail),
+					Email:    provider.UserEmail,
+					Name:     provider.UserName,
+					Picture:  provider.UserPicture,
+				})
+				So(session, ShouldNotBeNil)
 			})
 		})
 	})

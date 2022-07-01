@@ -19,6 +19,7 @@ import (
 	"encoding/base64"
 	"net/http"
 	"net/url"
+	"strings"
 	"sync"
 
 	"github.com/google/tink/go/tink"
@@ -28,6 +29,7 @@ import (
 
 	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/common/clock"
+	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry/transient"
@@ -103,6 +105,25 @@ type AuthMethod struct {
 	// the session cookie. It is useful to get rid of cookies from previously used
 	// authentication methods.
 	IncompatibleCookies []string
+
+	// RequiredScopes is a list of required OAuth scopes that will be requested
+	// when making the OAuth authorization request, in addition to the default
+	// scopes (openid email profile) and the OptionalScopes.
+	//
+	// Existing sessions that don't have the required scopes will be closed. All
+	// scopes in the RequiredScopes must be in the RequiredScopes or
+	// OptionalScopes of other running instances of the app. Otherwise a session
+	// opened by other running instances could be closed immediately.
+	RequiredScopes []string
+
+	// OptionalScopes is a list of optional OAuth scopes that will be requested
+	// when making the OAuth authorization request, in addition to the default
+	// scopes (openid email profile) and the RequiredScopes.
+	//
+	// Existing sessions that don't have the optional scopes will not be closed.
+	// This is useful for rolling out changes incrementally. Once the new version
+	// takes over all the traffic, promote the optional scopes to RequiredScopes.
+	OptionalScopes []string
 }
 
 var _ interface {
@@ -180,6 +201,18 @@ func (m *AuthMethod) Authenticate(ctx context.Context, r *http.Request) (*auth.U
 		return nil, nil, nil
 	case session.State != sessionpb.State_STATE_OPEN:
 		logging.Warningf(ctx, "Session %q is in state %q, ignoring the session cookie", sid, session.State)
+		return nil, nil, nil
+	}
+
+	additionalScopes := stringset.NewFromSlice(session.AdditionalScopes...)
+	if !additionalScopes.HasAll(m.RequiredScopes...) {
+		logging.Warningf(ctx,
+			"Session %q's scope (%v) isn't a subset of the required scope (%v), closing the session cookie",
+			sid, additionalScopes, m.RequiredScopes)
+		if err := m.closeSession(ctx, aead, encryptedCookie); err != nil {
+			logging.Errorf(ctx, "An error closing the session: %s", err)
+			return nil, nil, errors.Reason("transient error when closing the session").Tag(transient.Tag).Err()
+		}
 		return nil, nil, nil
 	}
 
@@ -313,6 +346,11 @@ func (m *AuthMethod) loginHandler(ctx *router.Context) {
 			return errors.Annotate(err, "bad redirect URI").Err()
 		}
 
+		scopesSet := stringset.New(len(m.RequiredScopes) + len(m.OptionalScopes))
+		scopesSet.AddAll(m.RequiredScopes)
+		scopesSet.AddAll(m.OptionalScopes)
+		additionalScopes := scopesSet.ToSortedSlice()
+
 		// Generate `state` that will be passed back to us in the callbackHandler.
 		state := &encryptedcookiespb.OpenIDState{
 			SessionId:    session.GenerateID(),
@@ -320,6 +358,14 @@ func (m *AuthMethod) loginHandler(ctx *router.Context) {
 			CodeVerifier: internal.GenerateCodeVerifier(),
 			DestHost:     r.Host,
 			DestPath:     dest,
+			// We could get the scope from the exchange code response[1]. However
+			// OpenID provider can replace scopes with their aliases or add other
+			// scopes, making it hard to check the scope during authentication.
+			// Passing the scope though state solves the issue but makes the URL
+			// longer. If the URL length become an issue, we can convert the scope
+			// into hashes.
+			// [1]: https://developers.google.com/identity/protocols/oauth2/openid-connect#exchangecode
+			AdditionalScopes: additionalScopes,
 		}
 
 		// Encrypt it using service-global AEAD, since we are going to expose it.
@@ -335,7 +381,7 @@ func (m *AuthMethod) loginHandler(ctx *router.Context) {
 		// Prepare parameters for the OpenID Connect authorization endpoint.
 		v := url.Values{
 			"response_type":         {"code"},
-			"scope":                 {"openid email profile"},
+			"scope":                 {"openid email profile " + strings.Join(additionalScopes, " ")},
 			"access_type":           {"offline"}, // want a refresh token
 			"prompt":                {"consent"}, // want a NEW refresh token
 			"client_id":             {cfg.ClientID},
@@ -368,7 +414,7 @@ func (m *AuthMethod) logoutHandler(ctx *router.Context) {
 			if aead == nil {
 				return errors.Reason("the encryption key is not configured").Err()
 			}
-			if err := m.closeSession(ctx, aead, encryptedCookie, cfg, discovery); err != nil {
+			if err := m.closeSession(ctx, aead, encryptedCookie); err != nil {
 				logging.Errorf(ctx, "An error closing the session: %s", err)
 				return errors.Reason("transient error when closing the session").Tag(transient.Tag).Err()
 			}
@@ -530,6 +576,7 @@ func (m *AuthMethod) callbackHandler(ctx *router.Context) {
 			Email:            tok.Email,
 			Name:             tok.Name,
 			Picture:          tok.Picture,
+			AdditionalScopes: statepb.AdditionalScopes,
 			EncryptedPrivate: encryptedPrivate,
 		}
 
@@ -563,7 +610,7 @@ func (m *AuthMethod) callbackHandler(ctx *router.Context) {
 		// override the cookie anyway.
 		if existingCookie, _ := r.Cookie(internal.SessionCookieName); existingCookie != nil {
 			logging.Infof(ctx, "Closing the previous session")
-			if err := m.closeSession(ctx, aead, existingCookie, cfg, discovery); err != nil {
+			if err := m.closeSession(ctx, aead, existingCookie); err != nil {
 				logging.Warningf(ctx, "An error closing the previous session, ignoring: %s", err)
 			}
 		}
@@ -702,7 +749,7 @@ func (m *AuthMethod) refreshSession(ctx context.Context, cookie *encryptedcookie
 // frontend will stop working. In the future, we can migrate to use ID tokens
 // instead of access tokens. After that, we can safely revoke the refresh token
 // (users will still need to sign in after the ID token expired).
-func (m *AuthMethod) closeSession(ctx context.Context, aead tink.AEAD, encryptedCookie *http.Cookie, cfg *OpenIDConfig, discovery *openid.DiscoveryDoc) error {
+func (m *AuthMethod) closeSession(ctx context.Context, aead tink.AEAD, encryptedCookie *http.Cookie) error {
 	cookie, err := internal.DecryptSessionCookie(aead, encryptedCookie)
 	if err != nil {
 		logging.Warningf(ctx, "Failed to decrypt the session cookie, ignoring it: %s", err)

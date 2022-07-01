@@ -24,6 +24,7 @@ import (
 	"github.com/google/tink/go/tink"
 
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/flag/stringlistflag"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/server/auth/openid"
 	"go.chromium.org/luci/server/module"
@@ -62,6 +63,25 @@ type ModuleOptions struct {
 
 	// SessionStoreNamespace can be used to namespace sessions in the store.
 	SessionStoreNamespace string
+
+	// RequiredScopes is a list of required OAuth scopes that will be requested
+	// when making the OAuth authorization request, in addition to the default
+	// scopes (openid email profile) and the OptionalScopes.
+	//
+	// Existing sessions that don't have the required scopes will be closed. All
+	// scopes in the RequiredScopes must be in the RequiredScopes or
+	// OptionalScopes of other running instances of the app. Otherwise a session
+	// opened by other running instances could be closed immediately.
+	RequiredScopes stringlistflag.Flag
+
+	// OptionalScopes is a list of optional OAuth scopes that will be requested
+	// when making the OAuth authorization request, in addition to the default
+	// scopes (openid email profile) and the RequiredScopes.
+	//
+	// Existing sessions that don't have the optional scopes will not be closed.
+	// This is useful for rolling out changes incrementally. Once the new version
+	// takes over all the traffic, promote the optional scopes to RequiredScopes.
+	OptionalScopes stringlistflag.Flag
 }
 
 // Register registers the command line flags.
@@ -108,6 +128,20 @@ func (o *ModuleOptions) Register(f *flag.FlagSet) {
 		"encrypted-cookies-session-store-namespace",
 		o.SessionStoreNamespace,
 		`Namespace for the sessions in the store.`,
+	)
+	f.Var(
+		&o.RequiredScopes,
+		`encrypted-cookies-required-scopes`, `Required OAuth scopes that will be requested when `+
+			`making the OAuth authorization request, in addition to the default `+
+			`scopes (openid email profile) and the optional-scopes. Existing `+
+			`sessions without the required scopes will be closed.`,
+	)
+	f.Var(
+		&o.OptionalScopes,
+		`encrypted-cookies-optional-scopes`, `Optional OAuth scopes that will be requested when `+
+			`making the OAuth authorization request, in addition to the default `+
+			`scopes (openid email profile) and the required-scopes. Existing `+
+			`sessions without the optional scopes will NOT be closed.`,
 	)
 }
 
@@ -207,10 +241,12 @@ func (m *serverModule) Initialize(ctx context.Context, host module.Host, opts mo
 
 	// Have enough configuration to create the AuthMethod.
 	method := &AuthMethod{
-		OpenIDConfig: func(context.Context) (*OpenIDConfig, error) { return cfg.Load().(*OpenIDConfig), nil },
-		AEADProvider: func(context.Context) tink.AEAD { return aead.Unwrap() },
-		Sessions:     sessions,
-		Insecure:     !opts.Prod,
+		OpenIDConfig:   func(context.Context) (*OpenIDConfig, error) { return cfg.Load().(*OpenIDConfig), nil },
+		AEADProvider:   func(context.Context) tink.AEAD { return aead.Unwrap() },
+		Sessions:       sessions,
+		Insecure:       !opts.Prod,
+		OptionalScopes: m.opts.OptionalScopes,
+		RequiredScopes: m.opts.RequiredScopes,
 	}
 
 	// Register it with the server guts.

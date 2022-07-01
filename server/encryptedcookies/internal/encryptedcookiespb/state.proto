@@ -25,4 +25,7 @@ message OpenIDState {
   string code_verifier = 3; // random string used in PKCE protocol
   string dest_host = 4;     // the destination redirect host
   string dest_path = 5;     // the destination redirect path
+  // the scopes that were requested in the authorization request, in addition
+  // to the default scopes (openid email profile).
+  repeated string additional_scopes = 6;
 }
