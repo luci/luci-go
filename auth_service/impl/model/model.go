@@ -290,6 +290,9 @@ const AdminGroup = "administrators"
 var (
 	// ErrAlreadyExists is returned when an entity already exists.
 	ErrAlreadyExists = stderrors.New("entity already exists")
+	// ErrPermissionDenied is returned when the user does not have permission for
+	// the requested entity operation.
+	ErrPermissionDenied = stderrors.New("permission denied")
 	// ErrInvalidName is returned when a supplied entity name is invalid.
 	ErrInvalidName = stderrors.New("invalid entity name")
 	// ErrInvalidReference is returned when a referenced entity name is invalid.
@@ -354,7 +357,7 @@ func makeAuthGroup(ctx context.Context, id string) *AuthGroup {
 // commitAuthEntity is a callback function signature that allows business logic
 // to commit changes to a versioned entity. It should be called by anything that
 // updates the AuthDB via the runAuthDBChange wrapper function.
-type commitAuthEntity func(e versionedEntity, time time.Time, author identity.Identity) error
+type commitAuthEntity func(e versionedEntity, time time.Time, author identity.Identity, deletion bool) error
 
 // runAuthDBChange runs the provided function inside a Datastore transaction
 // and provides a function that allows the caller to commit changes to entities,
@@ -382,19 +385,27 @@ func runAuthDBChange(ctx context.Context, f func(context.Context, commitAuthEnti
 
 		// Set up a function that callers can use to commit a change to an entity.
 		// If this doesn't get called, the AuthDB revision won't get incremented.
-		// This should be called instead of datastore.Put(entity).
-		commitEntity := func(entity versionedEntity, t time.Time, author identity.Identity) error {
+		// This should be called instead of datastore.{Put,Delete}(entity).
+		commitEntity := func(entity versionedEntity, t time.Time, author identity.Identity, deletion bool) error {
 			// Record change on the entity itself, and add it to the list of things
 			// to be committed to Datastore.
 			entity.recordChange(string(author), t, nextAuthDBRev)
-			toCommit = append(toCommit, entity)
+			// If deleting, just delete it right now.
+			// If updating, add it to the list of things to Put to the datastore.
+			if deletion {
+				if err := datastore.Delete(ctx, entity); err != nil {
+					return err
+				}
+			} else {
+				toCommit = append(toCommit, entity)
+			}
 
 			// Record change on the AuthDB state.
 			state.AuthDBRev = nextAuthDBRev
 			state.ModifiedTS = t
 
 			// Make a historical copy of the entity.
-			historicalCopy, err := makeHistoricalCopy(ctx, entity, false, "Go pRPC API")
+			historicalCopy, err := makeHistoricalCopy(ctx, entity, deletion, "Go pRPC API")
 			if err != nil {
 				return err
 			}
@@ -547,12 +558,46 @@ func CreateAuthGroup(ctx context.Context, group *AuthGroup) (*AuthGroup, error) 
 		// Commit the group. This adds last-modified data on the group,
 		// increments the AuthDB revision, automatically creates a historical
 		// version, and triggers replication.
-		return commitEntity(newGroup, createdTS, creator)
+		return commitEntity(newGroup, createdTS, creator, false)
 	})
 	if err != nil {
 		return nil, err
 	}
 	return newGroup, nil
+}
+
+// DeleteAuthGroup deletes the specified auth group.
+//
+// Returns datastore.ErrNoSuchEntity if the specified group does not exist.
+// Returns ErrPermissionDenied if the caller is not allowed to delete the group.
+// Returns an annotated error for other errors.
+func DeleteAuthGroup(ctx context.Context, groupName string) error {
+	// Disallow deletion of the admin group.
+	if groupName == AdminGroup {
+		return ErrPermissionDenied
+	}
+
+	return runAuthDBChange(ctx, func(ctx context.Context, commitEntity commitAuthEntity) error {
+		// Fetch the group and check the user is an admin or a group owner.
+		authGroup, err := GetAuthGroup(ctx, groupName)
+		if err != nil {
+			return err
+		}
+		ok, err := auth.IsMember(ctx, AdminGroup, authGroup.Owners)
+		if err != nil {
+			return errors.Annotate(err, "permission check failed").Err()
+		}
+		if !ok {
+			return ErrPermissionDenied
+		}
+
+		// TODO(jsca): Add etag verification here to protect against concurrent modifications.
+
+		// TODO(jsca): Check that the group is not referenced from elsewhere.
+
+		// Delete the group.
+		return commitEntity(authGroup, clock.Now(ctx).UTC(), auth.CurrentIdentity(ctx), true)
+	})
 }
 
 // GetAuthIPAllowlist gets the AuthIPAllowlist with the given allowlist name.

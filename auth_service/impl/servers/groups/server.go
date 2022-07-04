@@ -27,6 +27,7 @@ import (
 	"go.chromium.org/luci/auth_service/impl/model"
 	"go.chromium.org/luci/auth_service/impl/model/graph"
 	"go.chromium.org/luci/gae/service/datastore"
+	"go.chromium.org/luci/server/auth"
 )
 
 // Server implements Groups server.
@@ -80,6 +81,21 @@ func (*Server) CreateGroup(ctx context.Context, request *rpcpb.CreateGroupReques
 		return nil, status.Errorf(codes.InvalidArgument, "%s", err)
 	default:
 		return nil, status.Errorf(codes.Internal, "failed to create group %q: %s", request.GetGroup().GetName(), err)
+	}
+}
+
+// DeleteGroup implements the corresponding RPC method.
+func (*Server) DeleteGroup(ctx context.Context, request *rpcpb.DeleteGroupRequest) (*emptypb.Empty, error) {
+	name := request.GetName()
+	switch err := model.DeleteAuthGroup(ctx, name); {
+	case err == nil:
+		return &emptypb.Empty{}, nil
+	case errors.Is(err, datastore.ErrNoSuchEntity):
+		return nil, status.Errorf(codes.NotFound, "no such group %q", name)
+	case errors.Is(err, model.ErrPermissionDenied):
+		return nil, status.Errorf(codes.PermissionDenied, "%s has no permission to delete group %q", auth.CurrentIdentity(ctx), name)
+	default:
+		return nil, status.Errorf(codes.Internal, "failed to delete group %q: %s", name, err)
 	}
 }
 

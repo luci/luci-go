@@ -571,6 +571,90 @@ func TestCreateAuthGroup(t *testing.T) {
 	})
 }
 
+func TestDeleteAuthGroup(t *testing.T) {
+	t.Parallel()
+
+	Convey("DeleteAuthGroup", t, func() {
+		ctx := auth.WithState(memory.Use(context.Background()), &authtest.FakeState{
+			Identity:       "user:someone@example.com",
+			IdentityGroups: []string{AdminGroup},
+		})
+		ctx = clock.Set(ctx, testclock.New(testCreatedTS))
+		ctx = info.SetImageVersion(ctx, "test-version")
+		ctx, taskScheduler := tq.TestingContext(txndefer.FilterRDS(ctx), nil)
+
+		// A test group to be put in Datastore for deletion.
+		group := testAuthGroup(ctx, "foo", nil)
+		group.Owners = "foo"
+		group.Nested = nil
+		group.AuthDBRev = 0
+		group.AuthDBPrevRev = 0
+
+		Convey("can't delete the admin group", func() {
+			err := DeleteAuthGroup(ctx, AdminGroup)
+			So(err, ShouldEqual, ErrPermissionDenied)
+		})
+
+		Convey("can't delete if not an owner or admin", func() {
+			ctx := auth.WithState(memory.Use(context.Background()), &authtest.FakeState{
+				Identity: "user:someone@example.com",
+			})
+			So(datastore.Put(ctx, group), ShouldBeNil)
+			err := DeleteAuthGroup(ctx, group.ID)
+			So(err, ShouldEqual, ErrPermissionDenied)
+		})
+
+		Convey("group name that doesn't exist", func() {
+			err := DeleteAuthGroup(ctx, "non-existent-group")
+			So(err, ShouldEqual, datastore.ErrNoSuchEntity)
+		})
+
+		Convey("successfully deletes from datastore and updates AuthDB", func() {
+			So(datastore.Put(ctx, group), ShouldBeNil)
+			err := DeleteAuthGroup(ctx, group.ID)
+			So(err, ShouldBeNil)
+
+			state1, err := GetReplicationState(ctx)
+			So(err, ShouldBeNil)
+			So(state1.AuthDBRev, ShouldEqual, 1)
+			tasks := taskScheduler.Tasks()
+			So(tasks, ShouldHaveLength, 1)
+			task := tasks[0]
+			So(task.Class, ShouldEqual, "process-change-task")
+			So(task.Payload, ShouldResembleProto, &taskspb.ProcessChangeTask{AuthDbRev: 1})
+		})
+
+		Convey("creates historical group entities", func() {
+			So(datastore.Put(ctx, group), ShouldBeNil)
+			err := DeleteAuthGroup(ctx, group.ID)
+			So(err, ShouldBeNil)
+
+			entities, err := getAllDatastoreEntities(ctx, "AuthGroupHistory", HistoricalRevisionKey(ctx, 1))
+			So(err, ShouldBeNil)
+			So(entities, ShouldHaveLength, 1)
+			historicalEntity := entities[0]
+			So(getDatastoreKey(historicalEntity).String(), ShouldEqual, "dev~app::/AuthGlobalConfig,\"root\"/Rev,1/AuthGroupHistory,\"foo\"")
+			So(getStringProp(historicalEntity, "description"), ShouldEqual, group.Description)
+			So(getStringProp(historicalEntity, "owners"), ShouldEqual, group.Owners)
+			So(getStringSliceProp(historicalEntity, "members"), ShouldResemble, group.Members)
+			So(getStringSliceProp(historicalEntity, "globs"), ShouldResemble, group.Globs)
+			So(getStringSliceProp(historicalEntity, "nested"), ShouldResemble, group.Nested)
+			So(getStringProp(historicalEntity, "modified_by"), ShouldEqual, "user:someone@example.com")
+			So(getTimeProp(historicalEntity, "modified_ts").Unix(), ShouldEqual, testCreatedTS.Unix())
+			So(getInt64Prop(historicalEntity, "auth_db_rev"), ShouldEqual, 1)
+			So(getProp(historicalEntity, "auth_db_prev_rev"), ShouldBeNil)
+			So(getBoolProp(historicalEntity, "auth_db_deleted"), ShouldBeTrue)
+			So(getStringProp(historicalEntity, "auth_db_change_comment"), ShouldEqual, "Go pRPC API")
+			So(getStringProp(historicalEntity, "auth_db_app_version"), ShouldEqual, "test-version")
+
+			// Check no properties are indexed.
+			for k := range historicalEntity {
+				So(isPropIndexed(historicalEntity, k), ShouldBeFalse)
+			}
+		})
+	})
+}
+
 func TestGetAuthIPAllowlist(t *testing.T) {
 	t.Parallel()
 

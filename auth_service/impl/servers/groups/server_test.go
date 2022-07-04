@@ -283,6 +283,84 @@ func TestGroupsServer(t *testing.T) {
 		})
 	})
 
+	Convey("DeleteGroup RPC call", t, func() {
+		ctx := memory.Use(context.Background())
+		ctx = info.SetImageVersion(ctx, "test-version")
+		ctx, _ = tq.TestingContext(txndefer.FilterRDS(ctx), nil)
+
+		Convey("Group not found", func() {
+			request := &rpcpb.DeleteGroupRequest{
+				Name: "non-existent-group",
+			}
+
+			_, err := srv.DeleteGroup(ctx, request)
+			So(err, ShouldHaveGRPCStatus, codes.NotFound)
+		})
+
+		Convey("Permissions", func() {
+			So(datastore.Put(ctx,
+				&model.AuthGroup{
+					ID:     "test-group",
+					Parent: model.RootKey(ctx),
+					Members: []string{
+						"user:test-user-1",
+						"user:test-user-2",
+					},
+					Globs: []string{
+						"test-user-1@example.com",
+						"test-user-2@example.com",
+					},
+					Nested: []string{
+						"group/tester",
+					},
+					Description: "This is a test group.",
+					Owners:      "owners",
+					CreatedTS:   createdTime,
+					CreatedBy:   "user:test-user-1@example.com",
+				}), ShouldBeNil)
+
+			Convey("Anonymous is denied", func() {
+				ctx := auth.WithState(ctx, &authtest.FakeState{})
+				_, err := srv.DeleteGroup(ctx, &rpcpb.DeleteGroupRequest{
+					Name: "test-group",
+				})
+				So(err, ShouldHaveGRPCStatus, codes.PermissionDenied)
+			})
+
+			Convey("Normal user is denied", func() {
+				ctx := auth.WithState(ctx, &authtest.FakeState{
+					Identity: "user:someone@example.com",
+				})
+				_, err := srv.DeleteGroup(ctx, &rpcpb.DeleteGroupRequest{
+					Name: "test-group",
+				})
+				So(err, ShouldHaveGRPCStatus, codes.PermissionDenied)
+			})
+
+			Convey("Group owner succeeds", func() {
+				ctx := auth.WithState(ctx, &authtest.FakeState{
+					Identity:       "user:someone@example.com",
+					IdentityGroups: []string{"owners"},
+				})
+				_, err := srv.DeleteGroup(ctx, &rpcpb.DeleteGroupRequest{
+					Name: "test-group",
+				})
+				So(err, ShouldBeNil)
+			})
+
+			Convey("Admin succeeds", func() {
+				ctx := auth.WithState(ctx, &authtest.FakeState{
+					Identity:       "user:someone@example.com",
+					IdentityGroups: []string{model.AdminGroup},
+				})
+				_, err := srv.DeleteGroup(ctx, &rpcpb.DeleteGroupRequest{
+					Name: "test-group",
+				})
+				So(err, ShouldBeNil)
+			})
+		})
+	})
+
 	Convey("GetSubgraph RPC call", t, func() {
 		const (
 			// Identities, groups, globs

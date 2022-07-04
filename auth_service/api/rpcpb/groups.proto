@@ -34,6 +34,9 @@ service Groups {
   // CreateGroup creates a new group.
   rpc CreateGroup(CreateGroupRequest) returns (AuthGroup);
 
+  // DeleteGroup deletes a group.
+  rpc DeleteGroup(DeleteGroupRequest) returns (google.protobuf.Empty);
+
   // GetSubgraph returns a Subgraph without information about groups that
   // include a principal (perhaps indirectly or via globs). Here a principal is
   // either an identity, a group or a glob (see PrincipalKind enum).
@@ -59,6 +62,12 @@ message CreateGroupRequest {
   // group: if the request specifies fields that should be automatically
   // generated (e.g. created/modified timestamps), these will be ignored.
   AuthGroup group = 1;
+}
+
+// DeleteGroupRequest requests the deletion of a group.
+message DeleteGroupRequest {
+  // Name of the group to delete.
+  string name = 1;
 }
 
 // AuthGroup defines an individual group.
