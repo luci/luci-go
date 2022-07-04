@@ -109,7 +109,12 @@ export function attachTags<T extends object>(target: T, ...tags: unknown[]): T {
  *
  * See the documentation for `InnerTag` for the recursive rule.
  */
-export function hasTags(target: object | InnerTag, ...tags: unknown[]): boolean {
+export function hasTags(target: unknown, ...tags: unknown[]): boolean {
+  // We don't support tagging primitive types. This is enforced by `attachTags`.
+  // But we still accept them in `hasTags` because errors are usually `unknown`.
+  if (!(target instanceof Object)) {
+    return false;
+  }
   const missingTags = tags.filter((tag) => !tagMap.get(target)?.has(tag));
   if (missingTags.length === 0) {
     return true;

@@ -23,11 +23,13 @@ import '../../../components/associated_bugs_badge';
 import '../../../components/expandable_entry';
 import '../../../components/copy_to_clipboard';
 import '../../../components/result_entry';
+import { MAY_REQUIRE_SIGNIN, OPTIONAL_RESOURCE } from '../../../common_tags';
 import { AppState, consumeAppState } from '../../../context/app_state';
 import { consumeInvocationState, InvocationState } from '../../../context/invocation_state';
 import { VARIANT_STATUS_CLASS_MAP, VARIANT_STATUS_ICON_MAP } from '../../../libs/constants';
 import { lazyRendering, RenderPlaceHolder } from '../../../libs/observer_element';
 import { sanitizeHTML } from '../../../libs/sanitize_html';
+import { attachTags, hasTags } from '../../../libs/tag';
 import { unwrapObservable } from '../../../libs/unwrap_observable';
 import { RESULT_LIMIT, TestStatus, TestVariant } from '../../../services/resultdb';
 import { Cluster } from '../../../services/weetbix';
@@ -114,6 +116,10 @@ export class TestVariantEntryElement extends MobxLitElement implements RenderPla
           },
           { maxPendingMs: 1000 }
         )
+        .catch((err) => {
+          attachTags(err, OPTIONAL_RESOURCE);
+          throw err;
+        })
         .then((res) => {
           return res.clusteredTestResults.map(
             (ctr, i) => [results[i].result.resultId, ctr.clusters] as readonly [string, readonly Cluster[]]
@@ -124,7 +130,15 @@ export class TestVariantEntryElement extends MobxLitElement implements RenderPla
 
   @computed
   private get clustersByResultId(): ReadonlyArray<readonly [string, readonly Cluster[]]> {
-    return unwrapObservable(this.clustersByResultId$, []);
+    try {
+      return unwrapObservable(this.clustersByResultId$, []);
+    } catch (err) {
+      if (!hasTags(err, MAY_REQUIRE_SIGNIN)) {
+        console.error(err);
+      }
+      // Weetbix integration should not break the rest of the component.
+      return [];
+    }
   }
 
   @computed
