@@ -27,12 +27,11 @@ import (
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/buildbucket/protoutil"
 	gitpb "go.chromium.org/luci/common/proto/git"
-	"go.chromium.org/luci/common/proto/gitiles"
-	"go.chromium.org/luci/common/proto/gitiles/mock_gitiles"
 	"go.chromium.org/luci/gae/service/datastore"
 	milopb "go.chromium.org/luci/milo/api/service/v1"
 	"go.chromium.org/luci/milo/common"
 	"go.chromium.org/luci/milo/common/model"
+	"go.chromium.org/luci/milo/git"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
 )
@@ -142,9 +141,9 @@ func TestQueryBlamelist(t *testing.T) {
 		datastore.GetTestable(c).Consistent(true)
 		ctrl := gomock.NewController(t)
 		defer ctrl.Finish()
-		gitMock := mock_gitiles.NewMockGitilesClient(ctrl)
+		gitMock := git.NewMockClient(ctrl)
 		srv := &MiloInternalService{
-			GetGitilesClient: func(c context.Context, host string, as auth.RPCAuthorityKind) (gitiles.GitilesClient, error) {
+			GetGitClient: func(c context.Context) (git.Client, error) {
 				return gitMock, nil
 			},
 		}
@@ -247,15 +246,8 @@ func TestQueryBlamelist(t *testing.T) {
 				}
 				gitMock.
 					EXPECT().
-					Log(gomock.Any(), &gitiles.LogRequest{
-						Project:    "fake_gitiles_project",
-						Committish: "commit1",
-						PageSize:   1001,
-						TreeDiff:   true,
-					}).
-					Return(&gitiles.LogResponse{
-						Log: commits,
-					}, nil)
+					Log(gomock.Any(), req.GitilesCommit.Host, req.GitilesCommit.Project, req.GitilesCommit.Id, &git.LogOptions{Limit: 1001, WithFiles: true}).
+					Return(commits, nil)
 
 				_, err := srv.QueryBlamelist(c, req)
 				So(err, ShouldBeNil)
@@ -272,15 +264,8 @@ func TestQueryBlamelist(t *testing.T) {
 				}
 				gitMock.
 					EXPECT().
-					Log(gomock.Any(), &gitiles.LogRequest{
-						Project:    req.GitilesCommit.Project,
-						Committish: req.GitilesCommit.Id,
-						PageSize:   101,
-						TreeDiff:   true,
-					}).
-					Return(&gitiles.LogResponse{
-						Log: commits,
-					}, nil)
+					Log(gomock.Any(), req.GitilesCommit.Host, req.GitilesCommit.Project, req.GitilesCommit.Id, &git.LogOptions{Limit: 101, WithFiles: true}).
+					Return(commits, nil)
 
 				_, err := srv.QueryBlamelist(c, req)
 				So(err, ShouldBeNil)
@@ -300,15 +285,8 @@ func TestQueryBlamelist(t *testing.T) {
 					}
 					gitMock.
 						EXPECT().
-						Log(gomock.Any(), &gitiles.LogRequest{
-							Project:    req.GitilesCommit.Project,
-							Committish: req.GitilesCommit.Id,
-							PageSize:   101,
-							TreeDiff:   true,
-						}).
-						Return(&gitiles.LogResponse{
-							Log: commits,
-						}, nil)
+						Log(gomock.Any(), req.GitilesCommit.Host, req.GitilesCommit.Project, req.GitilesCommit.Id, &git.LogOptions{Limit: 101, WithFiles: true}).
+						Return(commits, nil)
 
 					res, err := srv.QueryBlamelist(c, req)
 					So(err, ShouldBeNil)
@@ -330,15 +308,8 @@ func TestQueryBlamelist(t *testing.T) {
 					}
 					gitMock.
 						EXPECT().
-						Log(gomock.Any(), &gitiles.LogRequest{
-							Project:    req.GitilesCommit.Project,
-							Committish: req.GitilesCommit.Id,
-							PageSize:   101,
-							TreeDiff:   true,
-						}).
-						Return(&gitiles.LogResponse{
-							Log: commits[5:],
-						}, nil)
+						Log(gomock.Any(), req.GitilesCommit.Host, req.GitilesCommit.Project, req.GitilesCommit.Id, &git.LogOptions{Limit: 101, WithFiles: true}).
+						Return(commits[5:], nil)
 
 					res, err := srv.QueryBlamelist(c, req)
 					So(err, ShouldBeNil)
@@ -365,15 +336,8 @@ func TestQueryBlamelist(t *testing.T) {
 
 					gitMock.
 						EXPECT().
-						Log(gomock.Any(), &gitiles.LogRequest{
-							Project:    req.GitilesCommit.Project,
-							Committish: req.GitilesCommit.Id,
-							PageSize:   3,
-							TreeDiff:   true,
-						}).
-						Return(&gitiles.LogResponse{
-							Log: commits[0:3],
-						}, nil)
+						Log(gomock.Any(), req.GitilesCommit.Host, req.GitilesCommit.Project, req.GitilesCommit.Id, &git.LogOptions{Limit: 3, WithFiles: true}).
+						Return(commits[0:3], nil)
 
 					res, err := srv.QueryBlamelist(c, req)
 					So(err, ShouldBeNil)
@@ -397,15 +361,8 @@ func TestQueryBlamelist(t *testing.T) {
 
 					gitMock.
 						EXPECT().
-						Log(gomock.Any(), &gitiles.LogRequest{
-							Project:    req.GitilesCommit.Project,
-							Committish: "commit6",
-							PageSize:   3,
-							TreeDiff:   true,
-						}).
-						Return(&gitiles.LogResponse{
-							Log: commits[2:5],
-						}, nil)
+						Log(gomock.Any(), req.GitilesCommit.Host, req.GitilesCommit.Project, "commit6", &git.LogOptions{Limit: 3, WithFiles: true}).
+						Return(commits[2:5], nil)
 
 					res, err = srv.QueryBlamelist(c, req)
 					So(err, ShouldBeNil)
@@ -429,15 +386,8 @@ func TestQueryBlamelist(t *testing.T) {
 
 					gitMock.
 						EXPECT().
-						Log(gomock.Any(), &gitiles.LogRequest{
-							Project:    req.GitilesCommit.Project,
-							Committish: req.GitilesCommit.Id,
-							PageSize:   3,
-							TreeDiff:   true,
-						}).
-						Return(&gitiles.LogResponse{
-							Log: commits[5:8],
-						}, nil)
+						Log(gomock.Any(), req.GitilesCommit.Host, req.GitilesCommit.Project, req.GitilesCommit.Id, &git.LogOptions{Limit: 3, WithFiles: true}).
+						Return(commits[5:8], nil)
 
 					res, err := srv.QueryBlamelist(c, req)
 					So(err, ShouldBeNil)
@@ -461,15 +411,8 @@ func TestQueryBlamelist(t *testing.T) {
 
 					gitMock.
 						EXPECT().
-						Log(gomock.Any(), &gitiles.LogRequest{
-							Project:    req.GitilesCommit.Project,
-							Committish: "commit1",
-							PageSize:   3,
-							TreeDiff:   true,
-						}).
-						Return(&gitiles.LogResponse{
-							Log: commits[7:],
-						}, nil)
+						Log(gomock.Any(), req.GitilesCommit.Host, req.GitilesCommit.Project, "commit1", &git.LogOptions{Limit: 3, WithFiles: true}).
+						Return(commits[7:], nil)
 
 					res, err = srv.QueryBlamelist(c, req)
 					So(err, ShouldBeNil)
@@ -493,15 +436,8 @@ func TestQueryBlamelist(t *testing.T) {
 			}
 			gitMock.
 				EXPECT().
-				Log(gomock.Any(), &gitiles.LogRequest{
-					Project:    req.GitilesCommit.Project,
-					Committish: req.GitilesCommit.Id,
-					PageSize:   101,
-					TreeDiff:   true,
-				}).
-				Return(&gitiles.LogResponse{
-					Log: commits[5:],
-				}, nil)
+				Log(gomock.Any(), req.GitilesCommit.Host, req.GitilesCommit.Project, req.GitilesCommit.Id, &git.LogOptions{Limit: 101, WithFiles: true}).
+				Return(commits[5:], nil)
 
 			res, err := srv.QueryBlamelist(c, req)
 			So(err, ShouldBeNil)

@@ -17,7 +17,6 @@ package buildbucket
 import (
 	"context"
 	"fmt"
-	"net/http"
 	"sort"
 	"strconv"
 	"strings"
@@ -33,12 +32,10 @@ import (
 	"go.chromium.org/luci/buildbucket/bbperms"
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/buildbucket/protoutil"
-	"go.chromium.org/luci/common/api/gitiles"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	gitpb "go.chromium.org/luci/common/proto/git"
-	gitilespb "go.chromium.org/luci/common/proto/gitiles"
 	"go.chromium.org/luci/common/sync/parallel"
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/grpc/grpcutil"
@@ -47,6 +44,7 @@ import (
 	"go.chromium.org/luci/milo/common"
 	"go.chromium.org/luci/milo/common/model"
 	"go.chromium.org/luci/milo/frontend/ui"
+	"go.chromium.org/luci/milo/git"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/realms"
 	"go.chromium.org/luci/server/router"
@@ -100,23 +98,10 @@ func simplisticBlamelist(c context.Context, build *buildbucketpb.Build) (result 
 		return
 	}
 
+	gitClient := git.Get(c)
 	svc := &backend.MiloInternalService{
-		GetGitilesClient: func(c context.Context, host string, as auth.RPCAuthorityKind) (gitilespb.GitilesClient, error) {
-			// Override to use `auth.AsSessionUser` because we know the function is
-			// called in the context of a cookie authenticated request not an actual
-			// RPC.
-			// This is a hack but the old build page should eventually go away once
-			// buildbucket can handle raw builds.
-			t, err := auth.GetRPCTransport(c, auth.AsSessionUser)
-			if err != nil {
-				return nil, err
-			}
-			client, err := gitiles.NewRESTClient(&http.Client{Transport: t}, host, true)
-			if err != nil {
-				return nil, err
-			}
-
-			return client, nil
+		GetGitClient: func(c context.Context) (git.Client, error) {
+			return gitClient, nil
 		},
 	}
 	req := &milopb.QueryBlamelistRequest{

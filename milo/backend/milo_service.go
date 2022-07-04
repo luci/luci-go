@@ -18,14 +18,14 @@ import (
 	"context"
 
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
-	"go.chromium.org/luci/common/proto/gitiles"
+	"go.chromium.org/luci/milo/git"
 	"go.chromium.org/luci/server/auth"
 )
 
 // MiloInternalService implements milopb.MiloInternal
 type MiloInternalService struct {
-	// GetGitilesClient returns a git client for the given context.
-	GetGitilesClient func(c context.Context, host string, as auth.RPCAuthorityKind) (gitiles.GitilesClient, error)
+	// GetGitClient returns a git client for the given context.
+	GetGitClient func(c context.Context) (git.Client, error)
 
 	// GetBuildersClient returns a buildbucket builders service for the given
 	// context.

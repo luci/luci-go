@@ -56,7 +56,7 @@ func (p *implementation) Log(c context.Context, host, project, commitish string,
 	case err != nil:
 		return
 	case !allowed:
-		logging.Warningf(c, "%q not allowed for host %q project %q according to git ACL configured in milo's settings", auth.CurrentIdentity(c), host, project)
+		logging.Warningf(c, "%q not allowed for host %q project %q", auth.CurrentIdentity(c), host, project)
 		err = status.Errorf(codes.NotFound, "not found")
 		return
 	}

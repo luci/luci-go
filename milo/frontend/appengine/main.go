@@ -23,8 +23,6 @@ import (
 	"github.com/golang/protobuf/proto"
 
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
-	"go.chromium.org/luci/common/api/gitiles"
-	gitilespb "go.chromium.org/luci/common/proto/gitiles"
 	"go.chromium.org/luci/config/server/cfgmodule"
 	"go.chromium.org/luci/grpc/appstatus"
 	"go.chromium.org/luci/grpc/prpc"
@@ -33,6 +31,8 @@ import (
 	"go.chromium.org/luci/milo/buildsource/buildbucket"
 	"go.chromium.org/luci/milo/common"
 	"go.chromium.org/luci/milo/frontend"
+	"go.chromium.org/luci/milo/git"
+	"go.chromium.org/luci/milo/git/gitacls"
 	"go.chromium.org/luci/server"
 	"go.chromium.org/luci/server/analytics"
 	"go.chromium.org/luci/server/auth"
@@ -66,17 +66,12 @@ func main() {
 		cron.RegisterHandler("sync-builds", buildbucket.SyncBuilds)
 		milopb.RegisterMiloInternalServer(srv.PRPC, &milopb.DecoratedMiloInternal{
 			Service: &backend.MiloInternalService{
-				GetGitilesClient: func(c context.Context, host string, as auth.RPCAuthorityKind) (gitilespb.GitilesClient, error) {
-					t, err := auth.GetRPCTransport(c, as)
+				GetGitClient: func(c context.Context) (git.Client, error) {
+					acls, err := gitacls.FromConfig(c, common.GetSettings(c).SourceAcls)
 					if err != nil {
 						return nil, err
 					}
-					client, err := gitiles.NewRESTClient(&http.Client{Transport: t}, host, false)
-					if err != nil {
-						return nil, err
-					}
-
-					return client, nil
+					return git.NewClient(acls), nil
 				},
 				GetBuildersClient: func(c context.Context, as auth.RPCAuthorityKind) (buildbucketpb.BuildersClient, error) {
 					settings := common.GetSettings(c)

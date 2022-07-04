@@ -24,7 +24,6 @@ import (
 	"go.chromium.org/luci/buildbucket/protoutil"
 	"go.chromium.org/luci/common/errors"
 	gitpb "go.chromium.org/luci/common/proto/git"
-	"go.chromium.org/luci/common/proto/gitiles"
 	"go.chromium.org/luci/common/sync/parallel"
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/grpc/appstatus"
@@ -32,6 +31,7 @@ import (
 	"go.chromium.org/luci/milo/common"
 	"go.chromium.org/luci/milo/common/model"
 	"go.chromium.org/luci/milo/common/model/milostatus"
+	"go.chromium.org/luci/milo/git"
 	"go.chromium.org/luci/server/auth"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/protobuf/proto"
@@ -64,21 +64,15 @@ func (s *MiloInternalService) QueryBlamelist(ctx context.Context, req *milopb.Qu
 
 	// Fetch one more commit to check whether there are more commits in the
 	// blamelist.
-	gitilesClient, err := s.GetGitilesClient(ctx, req.GitilesCommit.Host, auth.AsCredentialsForwarder)
+	opts := &git.LogOptions{Limit: pageSize + 1, WithFiles: true}
+	gitClient, err := s.GetGitClient(ctx)
 	if err != nil {
 		return nil, err
 	}
-	logReq := &gitiles.LogRequest{
-		Project:    req.GitilesCommit.Project,
-		Committish: startRev,
-		PageSize:   int32(pageSize + 1),
-		TreeDiff:   true,
-	}
-	logRes, err := gitilesClient.Log(ctx, logReq)
+	commits, err := gitClient.Log(ctx, req.GitilesCommit.Host, req.GitilesCommit.Project, startRev, opts)
 	if err != nil {
 		return nil, err
 	}
-	commits := logRes.Log
 
 	q := datastore.NewQuery("BuildSummary").Eq("BuilderID", common.LegacyBuilderIDString(req.Builder))
 	commitColumn := "BuildSet"
