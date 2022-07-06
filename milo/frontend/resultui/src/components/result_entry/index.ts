@@ -52,7 +52,7 @@ export class ResultEntryElement extends MobxLitElement {
 
   @observable.ref
   @consumeInvocationState()
-  invState!: InvocationState;
+  invState?: InvocationState;
 
   @observable.ref id = '';
   @observable.ref testResult!: TestResult;
@@ -151,7 +151,7 @@ export class ResultEntryElement extends MobxLitElement {
 
   private renderFailureReason() {
     const errMsg = this.testResult.failureReason?.primaryErrorMessage;
-    if (!errMsg || !this.invState.project) {
+    if (!errMsg || !this.invState?.project) {
       return html``;
     }
 
@@ -332,7 +332,7 @@ export class ResultEntryElement extends MobxLitElement {
                 </a>
               `
             : ''}
-          ${this.clusters.length
+          ${this.clusters.length && this.invState?.project
             ? html`<milo-associated-bugs-badge
                 .project=${this.invState.project}
                 .clusters=${this.clusters}
