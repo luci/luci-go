@@ -27,7 +27,7 @@ import (
 	snooperpb "go.chromium.org/luci/provenance/api/snooperpb/v1"
 )
 
-func TestReportCipdAdmission(t *testing.T) {
+func TestSelfReportClient(t *testing.T) {
 	t.Parallel()
 
 	Convey("testing self reports", t, func() {
@@ -65,15 +65,6 @@ func TestReportCipdAdmission(t *testing.T) {
 			So(ok, ShouldEqual, true)
 			So(err, ShouldBeNil)
 		})
-	})
-}
-
-func TestReportPID(t *testing.T) {
-	t.Parallel()
-	Convey("testing report pid", t, func() {
-		ctx := context.Background()
-		reporter := Report{RClient: &fakeClient{}}
-
 		Convey("works", func() {
 			ok, err := reporter.ReportPID(ctx, 123)
 			So(ok, ShouldEqual, true)
