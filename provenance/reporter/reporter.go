@@ -116,14 +116,10 @@ func (r *Report) ReportGitCheckout(ctx context.Context, repo, commit, ref string
 // All other errors are annotated to indicate permanent failures.
 // TODO: Use go struct when a new parameter is added.
 func (r *Report) ReportStage(ctx context.Context, stage snooperpb.TaskStage, recipe string, pid int64) (bool, error) {
-	// Must pass recipe name when reporting task start.
-	if stage == snooperpb.TaskStage_STARTED && recipe == "" {
+	// Must pass recipe name and pid when reporting task start.
+	if stage == snooperpb.TaskStage_STARTED && (recipe == "" || pid == 0) {
 		logging.Errorf(ctx, "failed to export task stage")
-		return false, fmt.Errorf("a recipe must be provided when task starts")
-	}
-	// TODO(crbug/1269830): Merge with previous check and error.
-	if stage == snooperpb.TaskStage_STARTED && pid == 0 {
-		logging.Warningf(ctx, "must pass pid when reporting task start")
+		return false, fmt.Errorf("a recipe and pid must be provided when task starts")
 	}
 
 	req := &snooperpb.ReportTaskStageRequest{
