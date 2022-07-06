@@ -68,6 +68,25 @@ func TestReportCipdAdmission(t *testing.T) {
 	})
 }
 
+func TestReportPID(t *testing.T) {
+	t.Parallel()
+	Convey("testing report pid", t, func() {
+		ctx := context.Background()
+		reporter := Report{RClient: &fakeClient{}}
+
+		Convey("works", func() {
+			ok, err := reporter.ReportPID(ctx, 123)
+			So(ok, ShouldEqual, true)
+			So(err, ShouldBeNil)
+		})
+		Convey("fails pid validation", func() {
+			ok, err := reporter.ReportPID(ctx, 0)
+			So(ok, ShouldEqual, false)
+			So(err, ShouldErrLike, "pid must be present")
+		})
+	})
+}
+
 type fakeClient struct{}
 
 func (c *fakeClient) ReportCipd(ctx context.Context, in *snooperpb.ReportCipdRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {

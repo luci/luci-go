@@ -18,6 +18,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"os"
 
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -143,6 +144,50 @@ func (r *Report) ReportStage(ctx context.Context, stage snooperpb.TaskStage, rec
 		return true, ErrServiceUnavailable
 	default:
 		logging.Errorf(ctx, "failed to report task stage: %v", err)
+		return false, err
+	}
+}
+
+// ReportPID reports process id to provenance local server for tracking.
+//
+// It returns a success status and annotated error. Status is to indicate user
+// whether to block further execution.
+//
+// If local provenance service is unavailable, it will return an ok status and
+// annotated error. This is to indicate that the user should continue normal
+// execution.
+// All other errors are annotated to indicate permanent failures.
+func (r *Report) ReportPID(ctx context.Context, pid int64) (bool, error) {
+	// Must pass all arguments when reporting pid.
+	if pid == 0 {
+		logging.Errorf(ctx, "failed to export pid")
+		return false, fmt.Errorf("pid must be present")
+	}
+
+	// Find who called this report and include in the report.
+	// This will be an absolute path of the executable that invoked this
+	// process.
+	reporter, err := os.Executable()
+	if err != nil {
+		logging.Errorf(ctx, "failed to export pid")
+		return false, err
+	}
+
+	req := &snooperpb.ReportPIDRequest{
+		Pid:      pid,
+		Reporter: reporter,
+	}
+
+	_, err = r.RClient.ReportPID(ctx, req)
+	switch errS, _ := status.FromError(err); errS.Code() {
+	case codes.OK:
+		logging.Infof(ctx, "succeeded to report task pid")
+		return true, nil
+	case codes.Unavailable:
+		logging.Errorf(ctx, "failed to report task pid: %v", ErrServiceUnavailable)
+		return true, ErrServiceUnavailable
+	default:
+		logging.Errorf(ctx, "failed to report task pid: %v", err)
 		return false, err
 	}
 }
