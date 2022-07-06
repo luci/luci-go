@@ -82,6 +82,10 @@ func (c *fakeClient) ReportTaskStage(ctx context.Context, in *snooperpb.ReportTa
 	return &emptypb.Empty{}, nil
 }
 
+func (c *fakeClient) ReportPID(ctx context.Context, in *snooperpb.ReportPIDRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	return &emptypb.Empty{}, nil
+}
+
 func (c *fakeClient) ReportArtifactDigest(ctx context.Context, in *snooperpb.ReportArtifactDigestRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
 	return &emptypb.Empty{}, nil
 }

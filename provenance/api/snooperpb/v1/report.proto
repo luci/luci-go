@@ -38,6 +38,11 @@ service SelfReport {
     // For details read go/snoopy-design (Google-internal).
     rpc ReportTaskStage(ReportTaskStageRequest) returns (google.protobuf.Empty);
 
+    // Reports a PID to track execution of the process. When implementing the
+    // provenance server ensure safeguards to the end point with strict input
+    // validation.
+    rpc ReportPID(ReportPIDRequest) returns (google.protobuf.Empty);
+
     // Reports digest of produced artifact from a task.
     rpc ReportArtifactDigest(ReportArtifactDigestRequest) returns (google.protobuf.Empty);
 }
@@ -210,4 +215,21 @@ message ReportCipdRequest {
 message ReportGitRequest {
     // git_report will consist of repo name, git hash of checked out repo.
     GitReport git_report = 1;
+}
+
+message ReportPIDRequest {
+    // Process ID to track execution of a task running. It is used by the
+    // server to periodically check health of running task and assert a close
+    // approximation of task end time.
+    //
+    // Accuracy on task end time estimation can vary between implementations, it
+    // directly depends on frequency at which provenance server checks status of
+    // reported pid.
+    int64 pid = 1;
+    // Reporter of the pid request. In the client of provenance server, this
+    // should be automatically assigned by something similar to Go lang's native
+    // os.Executable().
+    //
+    // This can be used to define an allowlist of reporters for this action.
+    string reporter = 2;
 }

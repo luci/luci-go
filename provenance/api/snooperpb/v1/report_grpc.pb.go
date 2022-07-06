@@ -31,6 +31,10 @@ type SelfReportClient interface {
 	// known as `FETCH` stage.
 	// For details read go/snoopy-design (Google-internal).
 	ReportTaskStage(ctx context.Context, in *ReportTaskStageRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	// Reports a PID to track execution of the process. When implementing the
+	// provenance server ensure safeguards to the end point with strict input
+	// validation.
+	ReportPID(ctx context.Context, in *ReportPIDRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	// Reports digest of produced artifact from a task.
 	ReportArtifactDigest(ctx context.Context, in *ReportArtifactDigestRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 }
@@ -70,6 +74,15 @@ func (c *selfReportClient) ReportTaskStage(ctx context.Context, in *ReportTaskSt
 	return out, nil
 }
 
+func (c *selfReportClient) ReportPID(ctx context.Context, in *ReportPIDRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	out := new(emptypb.Empty)
+	err := c.cc.Invoke(ctx, "/provenance.snooperpb.SelfReport/ReportPID", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *selfReportClient) ReportArtifactDigest(ctx context.Context, in *ReportArtifactDigestRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
 	out := new(emptypb.Empty)
 	err := c.cc.Invoke(ctx, "/provenance.snooperpb.SelfReport/ReportArtifactDigest", in, out, opts...)
@@ -95,6 +108,10 @@ type SelfReportServer interface {
 	// known as `FETCH` stage.
 	// For details read go/snoopy-design (Google-internal).
 	ReportTaskStage(context.Context, *ReportTaskStageRequest) (*emptypb.Empty, error)
+	// Reports a PID to track execution of the process. When implementing the
+	// provenance server ensure safeguards to the end point with strict input
+	// validation.
+	ReportPID(context.Context, *ReportPIDRequest) (*emptypb.Empty, error)
 	// Reports digest of produced artifact from a task.
 	ReportArtifactDigest(context.Context, *ReportArtifactDigestRequest) (*emptypb.Empty, error)
 	mustEmbedUnimplementedSelfReportServer()
@@ -112,6 +129,9 @@ func (UnimplementedSelfReportServer) ReportGit(context.Context, *ReportGitReques
 }
 func (UnimplementedSelfReportServer) ReportTaskStage(context.Context, *ReportTaskStageRequest) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ReportTaskStage not implemented")
+}
+func (UnimplementedSelfReportServer) ReportPID(context.Context, *ReportPIDRequest) (*emptypb.Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ReportPID not implemented")
 }
 func (UnimplementedSelfReportServer) ReportArtifactDigest(context.Context, *ReportArtifactDigestRequest) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ReportArtifactDigest not implemented")
@@ -183,6 +203,24 @@ func _SelfReport_ReportTaskStage_Handler(srv interface{}, ctx context.Context, d
 	return interceptor(ctx, in, info, handler)
 }
 
+func _SelfReport_ReportPID_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ReportPIDRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(SelfReportServer).ReportPID(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/provenance.snooperpb.SelfReport/ReportPID",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(SelfReportServer).ReportPID(ctx, req.(*ReportPIDRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _SelfReport_ReportArtifactDigest_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(ReportArtifactDigestRequest)
 	if err := dec(in); err != nil {
@@ -219,6 +257,10 @@ var SelfReport_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ReportTaskStage",
 			Handler:    _SelfReport_ReportTaskStage_Handler,
+		},
+		{
+			MethodName: "ReportPID",
+			Handler:    _SelfReport_ReportPID_Handler,
 		},
 		{
 			MethodName: "ReportArtifactDigest",
