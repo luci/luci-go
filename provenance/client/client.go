@@ -30,6 +30,8 @@ import (
 // Default timeout for RPC calls to Spike
 var timeout = 10 * time.Second
 
+var _ snooperpb.SelfReportClient = (*client)(nil)
+
 type client struct {
 	client snooperpb.SelfReportClient
 }
@@ -77,6 +79,13 @@ func (c *client) ReportTaskStage(ctx context.Context, in *snooperpb.ReportTaskSt
 	ctx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
 	return c.client.ReportTaskStage(ctx, in, opts...)
+}
+
+// ReportPID reports task pid via provenance local server.
+func (c *client) ReportPID(ctx context.Context, in *snooperpb.ReportPIDRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	ctx, cancel := context.WithTimeout(ctx, timeout)
+	defer cancel()
+	return c.client.ReportPID(ctx, in, opts...)
 }
 
 // ReportArtifactDigest reports artifact digest via provenance local server.
