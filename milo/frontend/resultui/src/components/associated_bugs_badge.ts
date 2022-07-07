@@ -68,7 +68,7 @@ export class WeetbixClustersBadgeElement extends MiloBaseElement {
     return html`
       <div
         class="badge"
-        @mouseover=${(e: MouseEvent) => {
+        @mouseover=${() => {
           const tooltip = document.createElement('div');
           render(this.renderTooltip(), tooltip);
 
@@ -76,7 +76,7 @@ export class WeetbixClustersBadgeElement extends MiloBaseElement {
             new CustomEvent<ShowTooltipEventDetail>('show-tooltip', {
               detail: {
                 tooltip,
-                targetRect: (e.target as HTMLElement).getBoundingClientRect(),
+                targetRect: this.getBoundingClientRect(),
                 gapSize: 2,
               },
             })

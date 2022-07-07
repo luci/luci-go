@@ -27,7 +27,6 @@ import './image_diff_artifact';
 import './text_artifact';
 import './text_diff_artifact';
 import { AppState, consumeAppState } from '../../context/app_state';
-import { consumeInvocationState, InvocationState } from '../../context/invocation_state';
 import { TEST_STATUS_DISPLAY_MAP } from '../../libs/constants';
 import { consumer } from '../../libs/context';
 import { reportRenderError } from '../../libs/error_handler';
@@ -50,12 +49,10 @@ export class ResultEntryElement extends MobxLitElement {
   @consumeAppState()
   appState!: AppState;
 
-  @observable.ref
-  @consumeInvocationState()
-  invState?: InvocationState;
-
   @observable.ref id = '';
   @observable.ref testResult!: TestResult;
+
+  @observable.ref project = '';
   @observable.ref clusters: readonly Cluster[] = [];
 
   @observable.ref private _expanded = false;
@@ -151,7 +148,7 @@ export class ResultEntryElement extends MobxLitElement {
 
   private renderFailureReason() {
     const errMsg = this.testResult.failureReason?.primaryErrorMessage;
-    if (!errMsg || !this.invState?.project) {
+    if (!errMsg || !this.project) {
       return html``;
     }
 
@@ -161,7 +158,7 @@ export class ResultEntryElement extends MobxLitElement {
           >Failure
           Reason${this.failureReasonCluster
             ? html` (<a
-                  href=${makeClusterLink(this.invState.project, this.failureReasonCluster.clusterId)}
+                  href=${makeClusterLink(this.project, this.failureReasonCluster.clusterId)}
                   target="_balnk"
                   @click=${(e: Event) => e.stopImmediatePropagation()}
                   >similar failures</a
@@ -332,9 +329,9 @@ export class ResultEntryElement extends MobxLitElement {
                 </a>
               `
             : ''}
-          ${this.clusters.length && this.invState?.project
+          ${this.clusters.length && this.project
             ? html`<milo-associated-bugs-badge
-                .project=${this.invState.project}
+                .project=${this.project}
                 .clusters=${this.clusters}
               ></milo-associated-bugs-badge>`
             : ''}

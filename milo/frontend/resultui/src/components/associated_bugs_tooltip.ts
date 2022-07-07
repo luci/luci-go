@@ -35,9 +35,6 @@ export class WeetbixClustersTooltipElement extends MobxLitElement {
           <tr>
             <td colspan="2">This failure is associated with the following bug(s):</td>
           </tr>
-          <tr>
-            <td colspan="2"><hr /></td>
-          </tr>
           ${bugClusters.map(
             (c) =>
               html`

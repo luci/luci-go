@@ -271,6 +271,7 @@ export class TestVariantEntryElement extends MobxLitElement implements RenderPla
             .id=${i + 1}
             .testResult=${r.result}
             .clusters=${this.clustersMap.get(r.result.resultId) || []}
+            .project=${this.invState.project}
             .expanded=${i === this.expandedResultIndex}
           ></milo-result-entry>
         `
@@ -300,6 +301,7 @@ export class TestVariantEntryElement extends MobxLitElement implements RenderPla
               ? html`<milo-associated-bugs-badge
                   .project=${this.invState.project}
                   .clusters=${this.uniqueClusters}
+                  @click=${(e: Event) => e.stopPropagation()}
                 ></milo-associated-bugs-badge>`
               : ''}
             <milo-copy-to-clipboard
