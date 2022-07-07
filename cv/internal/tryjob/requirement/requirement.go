@@ -360,10 +360,10 @@ const (
 // should be skipped in generating the requirement.
 func shouldInclude(ctx context.Context, in Input, er *rand.Rand, b *cfgpb.Verifiers_Tryjob_Builder, incl stringset.Set, owners []string) (inclusionResult, ComputationFailure, error) {
 	switch ps := isPresubmit(b); {
-	case in.RunOptions.SkipTryjobs && !ps:
+	case in.RunOptions.GetSkipTryjobs() && !ps:
 		return skipBuilder, nil, nil
 	// TODO(crbug.com/950074): Remove this clause.
-	case in.RunOptions.SkipPresubmit && ps:
+	case in.RunOptions.GetSkipPresubmit() && ps:
 		return skipBuilder, nil, nil
 	}
 
@@ -520,7 +520,7 @@ func Compute(ctx context.Context, in Input) (*ComputationResult, error) {
 			ret.Requirement.Definitions = append(ret.Requirement.Definitions, makeDefinition(builder, equivalentOnly, critical))
 		default:
 			equivalence := mainOnly
-			if builder.EquivalentTo != nil && !in.RunOptions.SkipEquivalentBuilders {
+			if builder.EquivalentTo != nil && !in.RunOptions.GetSkipEquivalentBuilders() {
 				equivalence = bothMainAndEquivalent
 				switch disallowedOwners, err := getDisallowedOwners(ctx, allOwnerEmails, builder.EquivalentTo.OwnerWhitelistGroup); {
 				case err != nil:

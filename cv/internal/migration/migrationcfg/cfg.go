@@ -30,15 +30,14 @@ import (
 	"go.chromium.org/luci/cv/internal/configs/srvcfg"
 )
 
-// IsCVInChargeOfPostingStartMessage returns true if CV is in charge of posting
-// the start message on Gerrit CL.
-func IsCVInChargeOfPostingStartMessage(ctx context.Context, env *common.Env, luciProject string) (bool, error) {
+// IsCVInChargeOfTryjob returns true if CV is in charge of tryjob execution.
+func IsCVInChargeOfTryjob(ctx context.Context, env *common.Env, luciProject string) (bool, error) {
 	cfg, err := srvcfg.GetMigrationConfig(ctx)
 	if err != nil {
 		return false, err
 	}
-	u := cfg.GetUseCvStartMessage()
-	if !matches(ctx, luciProject, u.GetProjectRegexp(), u.GetProjectRegexpExclude(), "use_cv_start_message") {
+	u := cfg.GetUseCvTryjobExecutor()
+	if !matches(ctx, luciProject, u.GetProjectRegexp(), u.GetProjectRegexpExclude(), "use_cv_tryjob_executor") {
 		return false, nil
 	}
 
@@ -68,7 +67,7 @@ func IsCVInChargeOfPostingStartMessage(ctx context.Context, env *common.Env, luc
 }
 
 // matches returns true iff the LUCI project matches at least one include and
-// non of the excludes.
+// none of the excludes.
 //
 // Errs on the side of not accidentally matching a project, thus:
 //   * invalid includes are ignored;

@@ -306,3 +306,14 @@ func enqueueTryjobsUpdatedTask(ctx context.Context, rs *state.RunState, tryjobs 
 		},
 	})
 }
+
+func enqueueRequirementChangedTask(ctx context.Context, rs *state.RunState) {
+	rs.EnqueueLongOp(&run.OngoingLongOps_Op{
+		Deadline: timestamppb.New(clock.Now(ctx).UTC().Add(maxTryjobExecutorDuration)),
+		Work: &run.OngoingLongOps_Op_ExecuteTryjobs{
+			ExecuteTryjobs: &tryjob.ExecuteTryjobsPayload{
+				RequirementChanged: true,
+			},
+		},
+	})
+}

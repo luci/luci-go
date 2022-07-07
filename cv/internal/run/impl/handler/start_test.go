@@ -22,18 +22,24 @@ import (
 	"google.golang.org/protobuf/types/known/durationpb"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
+	bbpb "go.chromium.org/luci/buildbucket/proto"
+	bbutil "go.chromium.org/luci/buildbucket/protoutil"
 	"go.chromium.org/luci/common/clock"
-	gerritpb "go.chromium.org/luci/common/proto/gerrit"
 	"go.chromium.org/luci/gae/service/datastore"
+	"go.chromium.org/luci/hardcoded/chromeinfra"
 
 	cfgpb "go.chromium.org/luci/cv/api/config/v2"
+	migrationpb "go.chromium.org/luci/cv/api/migration"
 	"go.chromium.org/luci/cv/internal/changelist"
 	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/configs/prjcfg/prjcfgtest"
+	"go.chromium.org/luci/cv/internal/configs/srvcfg"
 	"go.chromium.org/luci/cv/internal/cvtesting"
+	gf "go.chromium.org/luci/cv/internal/gerrit/gerritfake"
 	"go.chromium.org/luci/cv/internal/run"
 	"go.chromium.org/luci/cv/internal/run/eventpb"
 	"go.chromium.org/luci/cv/internal/run/impl/state"
+	"go.chromium.org/luci/cv/internal/tryjob"
 
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
@@ -56,6 +62,11 @@ func TestStart(t *testing.T) {
 			startLatency       = 2 * time.Minute
 		)
 
+		builder := &bbpb.BuilderID{
+			Project: lProject,
+			Bucket:  "try",
+			Builder: "cool_tester",
+		}
 		prjcfgtest.Create(ctx, lProject, &cfgpb.Config{ConfigGroups: []*cfgpb.ConfigGroup{{
 			Name: "combinable",
 			CombineCls: &cfgpb.CombineCLs{
@@ -66,8 +77,28 @@ func TestStart(t *testing.T) {
 					CommitterList:    []string{committers},
 					DryRunAccessList: []string{dryRunners},
 				},
+				Tryjob: &cfgpb.Verifiers_Tryjob{
+					Builders: []*cfgpb.Verifiers_Tryjob_Builder{
+						{
+							Name: bbutil.FormatBuilderID(builder),
+						},
+					},
+				},
 			},
 		}}})
+
+		So(srvcfg.SetTestMigrationConfig(ctx, &migrationpb.Settings{
+			ApiHosts: []*migrationpb.Settings_ApiHost{
+				{
+					Host:          ct.Env.LogicalHostname,
+					Prod:          true,
+					ProjectRegexp: []string{".*"},
+				},
+			},
+			UseCvTryjobExecutor: &migrationpb.Settings_UseCVTryjobExecutor{
+				ProjectRegexp: []string{lProject},
+			},
+		}), ShouldBeNil)
 
 		rs := &state.RunState{
 			Run: run.Run{
@@ -75,41 +106,50 @@ func TestStart(t *testing.T) {
 				Status:        run.Status_PENDING,
 				CreateTime:    clock.Now(ctx).UTC().Add(-startLatency),
 				ConfigGroupID: prjcfgtest.MustExist(ctx, lProject).ConfigGroupIDs[0],
-				Mode:          run.FullRun,
+				Mode:          run.DryRun,
 			},
 		}
 		h, _ := makeTestHandler(&ct)
 
-		var clid int64
+		var clid common.CLID
 		addCL := func(triggerer, owner string) *changelist.CL {
 			clid++
+			rs.CLs = append(rs.CLs, clid)
+			ci := gf.CI(100+int(clid),
+				gf.Owner(owner),
+				gf.CQ(+1, rs.CreateTime, gf.U(triggerer)))
 			cl := &changelist.CL{
-				ID:         common.CLID(clid),
-				ExternalID: changelist.MustGobID(gerritHost, clid),
+				ID:         clid,
+				ExternalID: changelist.MustGobID(gerritHost, ci.GetNumber()),
 				Snapshot: &changelist.Snapshot{
 					Kind: &changelist.Snapshot_Gerrit{
 						Gerrit: &changelist.Gerrit{
 							Host: gerritHost,
-							Info: &gerritpb.ChangeInfo{
-								Owner: &gerritpb.AccountInfo{
-									Email: owner,
-								},
-							},
+							Info: ci,
 						},
 					},
 				},
 			}
 			rCL := &run.RunCL{
-				ID:  common.CLID(clid),
-				Run: datastore.MakeKey(ctx, common.RunKind, string(rs.Run.ID)),
+				ID:  clid,
+				Run: datastore.MakeKey(ctx, common.RunKind, string(rs.ID)),
 				Trigger: &run.Trigger{
-					Email: triggerer,
-					Mode:  string(rs.Run.Mode),
+					Email: gf.U(triggerer).Email,
+					Time:  timestamppb.New(rs.CreateTime),
+					Mode:  string(rs.Mode),
 				},
 			}
 			So(datastore.Put(ctx, cl, rCL), ShouldBeNil)
 			return cl
 		}
+
+		const (
+			owner     = "user-1"
+			triggerer = owner
+		)
+		cl := addCL(triggerer, owner)
+		ct.AddMember(owner, dryRunners)
+		ct.AddMember(owner, committers)
 
 		Convey("Starts when Run is PENDING", func() {
 			res, err := h.Start(ctx, rs)
@@ -118,14 +158,31 @@ func TestStart(t *testing.T) {
 			So(res.PreserveEvents, ShouldBeFalse)
 
 			So(res.State.Status, ShouldEqual, run.Status_RUNNING)
-			So(res.State.StartTime, ShouldResemble, clock.Now(ctx).UTC())
-			So(res.State.Tryjobs, ShouldBeNil)
+			So(res.State.StartTime, ShouldEqual, ct.Clock.Now().UTC())
+			So(res.State.Tryjobs, ShouldResembleProto, &run.Tryjobs{
+				Requirement: &tryjob.Requirement{
+					Definitions: []*tryjob.Definition{
+						{
+							Backend: &tryjob.Definition_Buildbucket_{
+								Buildbucket: &tryjob.Definition_Buildbucket{
+									Host:    chromeinfra.BuildbucketHost,
+									Builder: builder,
+								},
+							},
+							Critical: true,
+						},
+					},
+				},
+				RequirementVersion:   1,
+				RequirementComputeAt: timestamppb.New(ct.Clock.Now().UTC()),
+			})
+			So(res.State.UseCVTryjobExecutor, ShouldBeTrue)
 			So(res.State.LogEntries, ShouldHaveLength, 1)
 			So(res.State.LogEntries[0].GetStarted(), ShouldNotBeNil)
 
-			So(res.State.NewLongOpIDs, ShouldHaveLength, 1)
-			longOp := res.State.OngoingLongOps.GetOps()[res.State.NewLongOpIDs[0]]
-			So(longOp.GetPostStartMessage(), ShouldBeTrue)
+			So(res.State.NewLongOpIDs, ShouldHaveLength, 2)
+			So(res.State.OngoingLongOps.GetOps()[res.State.NewLongOpIDs[0]].GetExecuteTryjobs(), ShouldNotBeNil)
+			So(res.State.OngoingLongOps.GetOps()[res.State.NewLongOpIDs[1]].GetPostStartMessage(), ShouldBeTrue)
 
 			So(ct.TSMonSentDistr(ctx, metricPickupLatencyS, lProject).Sum(),
 				ShouldAlmostEqual, startLatency.Seconds())
@@ -133,46 +190,65 @@ func TestStart(t *testing.T) {
 				ShouldAlmostEqual, (startLatency - stabilizationDelay).Seconds())
 		})
 
-		// TODO(crbug/1227363): Enable this test after tryjob requirement
-		// computation works.
-		SkipConvey("Fail the Run if tryjob computation fails", func() {
-			// TODO(crbug/1227363): Setup to fail the Tryjob requirement (e.g.
-			// include an unauthorized or non-existent builder via git footer).
+		Convey("Don't use CV tryjob executor", func() {
+			So(srvcfg.SetTestMigrationConfig(ctx, &migrationpb.Settings{
+				ApiHosts: []*migrationpb.Settings_ApiHost{
+					{
+						Host:          ct.Env.LogicalHostname,
+						Prod:          true,
+						ProjectRegexp: []string{".*"},
+					},
+				},
+				UseCvTryjobExecutor: &migrationpb.Settings_UseCVTryjobExecutor{
+					ProjectRegexpExclude: []string{lProject},
+				},
+			}), ShouldBeNil)
+			res, err := h.Start(ctx, rs)
+			So(err, ShouldBeNil)
+			So(res.SideEffectFn, ShouldBeNil)
+			So(res.PreserveEvents, ShouldBeFalse)
+
+			So(res.State.Status, ShouldEqual, run.Status_RUNNING)
+			So(res.State.Tryjobs, ShouldBeNil)
+			So(res.State.UseCVTryjobExecutor, ShouldBeFalse)
+
+			So(res.State.NewLongOpIDs, ShouldHaveLength, 1)
+			So(res.State.OngoingLongOps.GetOps()[res.State.NewLongOpIDs[0]].GetPostStartMessage(), ShouldBeTrue)
+		})
+
+		Convey("Fail the Run if tryjob computation fails", func() {
+			if rs.Options == nil {
+				rs.Options = &run.Options{}
+			}
+			// included a builder that doesn't exist
+			rs.Options.IncludedTryjobs = append(rs.Options.IncludedTryjobs, "fooproj/ci:bar_builder")
 			res, err := h.Start(ctx, rs)
 			So(err, ShouldBeNil)
 			So(res.SideEffectFn, ShouldBeNil)
 			So(res.PreserveEvents, ShouldBeFalse)
 
 			So(res.State.Status, ShouldEqual, run.Status_PENDING)
-			So(res.State.StartTime, ShouldResemble, clock.Now(ctx).UTC())
-			So(res.State.Tryjobs, ShouldResembleProto, &run.Tryjobs{
-				Requirement: nil,
-			})
-			So(res.State.LogEntries, ShouldHaveLength, 1)
-			So(res.State.LogEntries[0].GetInfo(), ShouldResembleProto, &run.LogEntry_Info{
-				Label:   "tryjob requirement computation",
-				Message: "failed to compute tryjob requirement. Reason:\n\n  Provide Reason",
-			})
-
+			So(res.State.Tryjobs, ShouldBeNil)
+			So(res.State.UseCVTryjobExecutor, ShouldBeTrue)
 			So(res.State.NewLongOpIDs, ShouldHaveLength, 1)
-			longOp := res.State.OngoingLongOps.GetOps()[res.State.NewLongOpIDs[0]]
-			So(longOp.GetCancelTriggers(), ShouldBeTrue)
-			// assert that triggers of ALL CLs are cancelled.
+			op := res.State.OngoingLongOps.GetOps()[res.State.NewLongOpIDs[0]]
+			So(op.GetCancelTriggers(), ShouldNotBeNil)
+			So(op.GetCancelTriggers().GetRunStatusIfSucceeded(), ShouldEqual, run.Status_FAILED)
 			cancelledCLs := common.CLIDs{}
-			for _, req := range longOp.GetCancelTriggers().GetRequests() {
+			for _, req := range op.GetCancelTriggers().GetRequests() {
 				cancelledCLs = append(cancelledCLs, common.CLID(req.Clid))
 			}
 			So(cancelledCLs, ShouldResemble, res.State.CLs)
+			So(res.State.LogEntries, ShouldHaveLength, 1)
+			So(res.State.LogEntries[0].GetInfo(), ShouldResembleProto, &run.LogEntry_Info{
+				Label:   "Tryjob Requirement Computation",
+				Message: "Failed to compute tryjob requirement. Reason: builder \"fooproj/ci/bar_builder\" is included but not defined in the LUCI project",
+			})
+
 		})
 
 		Convey("Fail the Run if acls.CheckRunCreate fails", func() {
-			const (
-				owner     = "owner@example.org"
-				triggerer = owner
-			)
-			cl1 := addCL(triggerer, owner)
-			rs.CLs = append(rs.CLs, cl1.ID)
-
+			ct.ResetMockedAuthDB(ctx)
 			res, err := h.Start(ctx, rs)
 			So(err, ShouldBeNil)
 			So(res.SideEffectFn, ShouldBeNil)
@@ -184,7 +260,7 @@ func TestStart(t *testing.T) {
 				Label: "Run failed",
 				Message: "" +
 					"the Run does not pass eligibility checks. See reasons at:" +
-					"\n  * " + cl1.ExternalID.MustURL(),
+					"\n  * " + cl.ExternalID.MustURL(),
 			})
 
 			So(res.State.NewLongOpIDs, ShouldHaveLength, 1)
@@ -193,9 +269,9 @@ func TestStart(t *testing.T) {
 			So(cancelOp.Requests, ShouldHaveLength, 1)
 			So(cancelOp.Requests[0], ShouldResembleProto,
 				&run.OngoingLongOps_Op_TriggersCancellation_Request{
-					Clid: int64(cl1.ID),
+					Clid: int64(cl.ID),
 					Message: fmt.Sprintf(
-						"CV cannot start a Run for `%s` because the user is not a committer.", triggerer,
+						"CV cannot start a Run for `%s` because the user is not a dry-runner.", gf.U(triggerer).Email,
 					),
 					Notify: []run.OngoingLongOps_Op_TriggersCancellation_Whom{
 						run.OngoingLongOps_Op_TriggersCancellation_OWNER,

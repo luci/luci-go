@@ -127,6 +127,7 @@ type Impl struct {
 	BQExporter *bq.Exporter
 	TreeClient tree.Client
 	Publisher  *pubsub.Publisher
+	Env        *common.Env
 }
 
 var _ Handler = (*Impl)(nil)

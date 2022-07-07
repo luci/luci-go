@@ -60,7 +60,7 @@ func (bnd *buildersNotDefined) Reason() string {
 	case 0:
 		panic(fmt.Errorf("impossible: at least one undefined builder is needed in this failure"))
 	case 1:
-		return fmt.Sprintf("builder %q is included but not defined in the LUCI project: ", bnd.Builders[0])
+		return fmt.Sprintf("builder %q is included but not defined in the LUCI project", bnd.Builders[0])
 	default:
 		return fmt.Sprintf("the following builders are included but not defined in the LUCI project:\n - %s", strings.Join(bnd.Builders, "\n - "))
 	}

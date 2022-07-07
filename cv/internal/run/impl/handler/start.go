@@ -29,6 +29,7 @@ import (
 	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/configs/prjcfg"
 	"go.chromium.org/luci/cv/internal/gerrit"
+	"go.chromium.org/luci/cv/internal/migration/migrationcfg"
 	"go.chromium.org/luci/cv/internal/run"
 	"go.chromium.org/luci/cv/internal/run/eventpb"
 	"go.chromium.org/luci/cv/internal/run/impl/state"
@@ -69,7 +70,11 @@ func (impl *Impl) Start(ctx context.Context, rs *state.RunState) (*Result, error
 		return &Result{State: rs}, nil
 	}
 
-	switch _, err := requirement.Compute(ctx, requirement.Input{
+	rs.UseCVTryjobExecutor, err = migrationcfg.IsCVInChargeOfTryjob(ctx, impl.Env, rs.ID.LUCIProject())
+	if err != nil {
+		return nil, err
+	}
+	switch result, err := requirement.Compute(ctx, requirement.Input{
 		ConfigGroup: cg,
 		RunOwner:    rs.Owner,
 		CLs:         runCLs,
@@ -77,32 +82,37 @@ func (impl *Impl) Start(ctx context.Context, rs *state.RunState) (*Result, error
 	}); {
 	case err != nil:
 		return nil, err
-
-	// TODO(crbug.com/1257922): Uncomment the blocks below once the
-	// requirement computation is fully implemented.
-	default: // case result.OK():
-		rs.EnqueueLongOp(&run.OngoingLongOps_Op{
-			Deadline: timestamppb.New(clock.Now(ctx).Add(maxPostStartMessageDuration)),
-			Work: &run.OngoingLongOps_Op_PostStartMessage{
-				PostStartMessage: true,
-			},
-		})
-		/*
-				rs.Tryjobs = &run.Tryjobs{
-					Requirement: result.Requirement,
-				}
-
-				// TODO(crbug/1227363): enqueue long op to execute requirement.
-			default:
-				rs.LogInfof(ctx, "tryjob requirement computation", "failed to compute tryjob requirement. Reason: %s", result.ComputationFailure.Reason())
-				scheduleTriggersCancellation(ctx, rs, rs.CLs, reviewInputMeta{
-					message:        fmt.Sprintf("LUCI CV failed to compute tryjob requirement. Reason:\n\n  %s", result.ComputationFailure.Reason()),
-					notify:         gerrit.Whoms{gerrit.Owner, gerrit.CQVoters},
-					addToAttention: gerrit.Whoms{gerrit.Owner, gerrit.CQVoters},
-					reason:         "failed to compute tryjob requirement",
-				}, run.Status_FAILED)
-		*/
+	case !rs.UseCVTryjobExecutor:
+		// Let CQDaemon handle Tryjobs.
+	case rs.UseCVTryjobExecutor && result.OK():
+		rs.Tryjobs = &run.Tryjobs{
+			Requirement:          result.Requirement,
+			RequirementVersion:   1,
+			RequirementComputeAt: timestamppb.New(clock.Now(ctx).UTC()),
+		}
+		enqueueRequirementChangedTask(ctx, rs)
+	case rs.UseCVTryjobExecutor:
+		meta := reviewInputMeta{
+			message:        fmt.Sprintf("Failed to compute tryjob requirement. Reason:\n\n%s", result.ComputationFailure.Reason()),
+			notify:         gerrit.Whoms{gerrit.Owner, gerrit.CQVoters},
+			addToAttention: gerrit.Whoms{gerrit.Owner, gerrit.CQVoters},
+			reason:         "Computing tryjob requirement failed",
+		}
+		metas := make(map[common.CLID]reviewInputMeta, len(cls))
+		for _, cl := range rs.CLs {
+			metas[cl] = meta
+		}
+		scheduleTriggersCancellation(ctx, rs, metas, run.Status_FAILED)
+		rs.LogInfof(ctx, "Tryjob Requirement Computation", "Failed to compute tryjob requirement. Reason: %s", result.ComputationFailure.Reason())
+		return &Result{State: rs}, nil
 	}
+
+	rs.EnqueueLongOp(&run.OngoingLongOps_Op{
+		Deadline: timestamppb.New(clock.Now(ctx).UTC().Add(maxPostStartMessageDuration)),
+		Work: &run.OngoingLongOps_Op_PostStartMessage{
+			PostStartMessage: true,
+		},
+	})
 	// Note that it is inevitable that duplicate pickup latency metric maybe
 	// emitted for the same Run if the state transition fails later that
 	// causes a retry.
@@ -114,7 +124,7 @@ func (impl *Impl) Start(ctx context.Context, rs *state.RunState) (*Result, error
 			Started: &run.LogEntry_Started{},
 		},
 	})
-	recordPickupLatency(ctx, &(rs.Run), cg)
+	recordPickupLatency(ctx, rs, cg)
 	return &Result{State: rs}, nil
 }
 
@@ -170,14 +180,14 @@ func (impl *Impl) onCompletedPostStartMessage(ctx context.Context, rs *state.Run
 	}, nil
 }
 
-func recordPickupLatency(ctx context.Context, r *run.Run, cg *prjcfg.ConfigGroup) {
-	delay := r.StartTime.Sub(r.CreateTime)
-	metricPickupLatencyS.Add(ctx, delay.Seconds(), r.ID.LUCIProject())
+func recordPickupLatency(ctx context.Context, rs *state.RunState, cg *prjcfg.ConfigGroup) {
+	delay := rs.StartTime.Sub(rs.CreateTime)
+	metricPickupLatencyS.Add(ctx, delay.Seconds(), rs.ID.LUCIProject())
 
 	if d := cg.Content.GetCombineCls().GetStabilizationDelay(); d != nil {
 		delay -= d.AsDuration()
 	}
-	metricPickupLatencyAdjustedS.Add(ctx, delay.Seconds(), r.ID.LUCIProject())
+	metricPickupLatencyAdjustedS.Add(ctx, delay.Seconds(), rs.ID.LUCIProject())
 
 	if delay >= 1*time.Minute {
 		logging.Warningf(ctx, "Too large adjusted pickup delay: %s", delay)

@@ -368,6 +368,7 @@ func makeImpl(ct *cvtesting.Test) (*Impl, dependencies) {
 		GFactory:   ct.GFactory(),
 		BQExporter: bq.NewExporter(ct.TQDispatcher, ct.BQFake, ct.Env),
 		Publisher:  pubsub.NewPublisher(ct.TQDispatcher, ct.Env),
+		Env:        ct.Env,
 	}
 	return impl, deps
 }
