@@ -84,14 +84,14 @@ func (impl *Impl) Start(ctx context.Context, rs *state.RunState) (*Result, error
 		return nil, err
 	case !rs.UseCVTryjobExecutor:
 		// Let CQDaemon handle Tryjobs.
-	case rs.UseCVTryjobExecutor && result.OK():
+	case result.OK():
 		rs.Tryjobs = &run.Tryjobs{
 			Requirement:          result.Requirement,
 			RequirementVersion:   1,
 			RequirementComputeAt: timestamppb.New(clock.Now(ctx).UTC()),
 		}
 		enqueueRequirementChangedTask(ctx, rs)
-	case rs.UseCVTryjobExecutor:
+	default:
 		meta := reviewInputMeta{
 			message:        fmt.Sprintf("Failed to compute tryjob requirement. Reason:\n\n%s", result.ComputationFailure.Reason()),
 			notify:         gerrit.Whoms{gerrit.Owner, gerrit.CQVoters},
