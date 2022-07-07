@@ -86,15 +86,6 @@ message Requirement {
   //
   // No retry allowed if nil.
   cv.config.Verifiers.Tryjob.RetryConfig retry_config = 2;
-  // Version increments by 1 every time this requirement changes.
-  //
-  // Starts with 1.
-  int32 version = 3;
-  // The timestamp when requirement is last computed.
-  //
-  // Every requirement computation will update this field even if the result
-  // requirement is the same as the existing one.
-  google.protobuf.Timestamp last_computed_at = 4;
 }
 
 // Status is a high level status of a Tryjob from CV implementation PoV.
@@ -254,6 +245,8 @@ message ExecutionState {
   repeated Execution executions = 1;
   // Requirement is the requirement that is currently being worked on.
   Requirement requirement = 2;
+  // The version of the requirement  that is currently being worked on.
+  int32 requirement_version = 5;
   // Status will be set to SUCCEEDED if all tryjobs succeed,
   // FAILED if at least one tryjob fails and cannot be retried,
   // or RUNNING otherwise.

@@ -223,12 +223,12 @@ func TestPrepExecutionPlan(t *testing.T) {
 				Definitions: []*tryjob.Definition{
 					builderFooDef,
 				},
-				Version:        2,
-				LastComputedAt: timestamppb.New(ct.Clock.Now()),
 			}
 			r := &run.Run{
 				Tryjobs: &run.Tryjobs{
-					Requirement: latestReqmt,
+					Requirement:          latestReqmt,
+					RequirementVersion:   2,
+					RequirementComputeAt: timestamppb.New(ct.Clock.Now()),
 				},
 			}
 			Convey("Noop if execution has ended already", func() {
@@ -246,7 +246,7 @@ func TestPrepExecutionPlan(t *testing.T) {
 
 			Convey("Noop if current version newer than target version", func() {
 				execState := newExecStateBuilder().
-					withRequirementVersion(int(latestReqmt.Version) + 1).
+					withRequirementVersion(int(r.Tryjobs.GetRequirementVersion()) + 1).
 					build()
 				plan, err := prepExecutionPlan(ctx, execState, r, nil, true)
 				So(err, ShouldBeNil)
@@ -342,8 +342,7 @@ func (esb *execStateBuilder) withRetryConfig(retryConfig *cfgpb.Verifiers_Tryjob
 }
 
 func (esb *execStateBuilder) withRequirementVersion(ver int) *execStateBuilder {
-	esb.ensureRequirement()
-	esb.state.Requirement.Version = int32(ver)
+	esb.state.RequirementVersion = int32(ver)
 	return esb
 }
 

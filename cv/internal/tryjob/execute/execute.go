@@ -137,12 +137,11 @@ func prepExecutionPlan(ctx context.Context, execState *tryjob.ExecutionState, r 
 		// Execution has ended already. No need to react to requirement change.
 		logging.Warningf(ctx, "Got requirement changed when execution is no longer running")
 		return nil, nil
+	case reqmtChanged && r.Tryjobs.GetRequirementVersion() <= execState.GetRequirementVersion():
+		logging.Errorf(ctx, "Tryjob executor is executing requirement that is either later or equal to the requested requirement version. current: %d, got: %d ", r.Tryjobs.GetRequirementVersion(), execState.GetRequirementVersion())
+		return nil, nil
 	case reqmtChanged:
 		curReqmt, targetReqmt := execState.GetRequirement(), r.Tryjobs.GetRequirement()
-		if targetReqmt.GetVersion() <= curReqmt.GetVersion() {
-			logging.Errorf(ctx, "Tryjob executor is executing requirement that is either later or equal to the requested requirement version. current: %d, got: %d ", targetReqmt.GetVersion(), curReqmt.GetVersion())
-			return nil, nil
-		}
 		return handleRequirementChange(curReqmt, targetReqmt, execState)
 	default:
 		panic(fmt.Errorf("the executor is called without any update on either tryjobs or requirement"))

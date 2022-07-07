@@ -265,7 +265,15 @@ message Tryjobs {
   //      staging requirement to requirement and enqueue a new long op task to
   //      execute the new requirement.
   cv.internal.tryjob.Requirement staging_requirement = 4;
-
+  // RequirementVersion increments by 1 every time this requirement changes.
+  //
+  // Starts with 1.
+  int32 requirement_version = 6;
+  // The timestamp when the requirement is last computed.
+  //
+  // Every requirement computation will update this field even if the result
+  // requirement is the same as the existing one.
+  google.protobuf.Timestamp requirement_compute_at = 7;
   // Tryjobs tracks tryjobs of a Run.
   //
   // It may contain Tryjobs which are no longer required.
@@ -274,12 +282,10 @@ message Tryjobs {
   //
   // TODO(crbug/1227363): replace this field in favor of `state`
   repeated Tryjob tryjobs = 2 [deprecated = true];
-
   // The timestamp of the CQDaemon report last incorporated into `tryjobs`.
   //
   // TODO(crbug/1227523): delete this field.
   google.protobuf.Timestamp cqd_update_time = 3;
-
   // State is the latest state reported by Tryjob Executor task.
   //
   // Once the Run is ended, this state is finalized.
