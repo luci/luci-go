@@ -664,7 +664,7 @@ func TestUpdateBuild(t *testing.T) {
 			Convey("without mask", func() {
 				So(updateBuild(ctx, req), ShouldBeRPCOK)
 				b := getBuildWithDetails(ctx, req.Build.Id)
-				So(b.Proto.Output.Properties, ShouldResembleProtoJSON, `{}`)
+				So(b.Proto.Output.Properties, ShouldBeNil)
 			})
 
 		})

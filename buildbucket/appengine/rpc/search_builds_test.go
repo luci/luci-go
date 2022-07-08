@@ -341,13 +341,11 @@ func TestSearchBuilds(t *testing.T) {
 			}), ShouldBeNil)
 			So(datastore.Put(ctx, &model.BuildInputProperties{
 				Build: key,
-				Proto: model.DSStruct{
-					Struct: structpb.Struct{
-						Fields: map[string]*structpb.Value{
-							"input": {
-								Kind: &structpb.Value_StringValue{
-									StringValue: "input value",
-								},
+				Proto: &structpb.Struct{
+					Fields: map[string]*structpb.Value{
+						"input": {
+							Kind: &structpb.Value_StringValue{
+								StringValue: "input value",
 							},
 						},
 					},
@@ -383,10 +381,8 @@ func TestSearchBuilds(t *testing.T) {
 						},
 					},
 					{
-						Id: 2,
-						Input: &pb.Build_Input{
-							Properties: &structpb.Struct{},
-						},
+						Id:    2,
+						Input: &pb.Build_Input{},
 					},
 				},
 			}
