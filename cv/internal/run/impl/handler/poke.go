@@ -23,6 +23,7 @@ import (
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/gae/service/datastore"
 
+	"go.chromium.org/luci/cv/internal/migration/migrationcfg"
 	"go.chromium.org/luci/cv/internal/run"
 	"go.chromium.org/luci/cv/internal/run/impl/state"
 )
@@ -67,6 +68,22 @@ func (impl *Impl) Poke(ctx context.Context, rs *state.RunState) (*Result, error)
 			rs.LatestCLsRefresh = datastore.RoundTime(clock.Now(ctx).UTC())
 		}
 	}
+
+	switch {
+	case !rs.UseCVTryjobExecutor:
+		// once a Run decides not to use CV for tryjob execution, it keeps in that
+		// state for the whole lifetime.
+	case hasExecuteTryjobLongOp(rs):
+		// wait for the existing execute tryjob long op to finish before handing
+		// the control of tryjob to CQDaemon.
+	default:
+		var err error
+		rs.UseCVTryjobExecutor, err = migrationcfg.IsCVInChargeOfTryjob(ctx, impl.Env, rs.ID.LUCIProject())
+		if err != nil {
+			return nil, err
+		}
+	}
+
 	return impl.processExpiredLongOps(ctx, rs)
 }
 

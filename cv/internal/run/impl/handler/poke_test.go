@@ -25,10 +25,12 @@ import (
 	"go.chromium.org/luci/gae/service/datastore"
 
 	cfgpb "go.chromium.org/luci/cv/api/config/v2"
+	migrationpb "go.chromium.org/luci/cv/api/migration"
 	"go.chromium.org/luci/cv/internal/changelist"
 	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/common/tree"
 	"go.chromium.org/luci/cv/internal/configs/prjcfg/prjcfgtest"
+	"go.chromium.org/luci/cv/internal/configs/srvcfg"
 	"go.chromium.org/luci/cv/internal/cvtesting"
 	gf "go.chromium.org/luci/cv/internal/gerrit/gerritfake"
 	"go.chromium.org/luci/cv/internal/gerrit/trigger"
@@ -40,7 +42,7 @@ import (
 	. "go.chromium.org/luci/common/testing/assertions"
 )
 
-func TestPokeRecheckTree(t *testing.T) {
+func TestPoke(t *testing.T) {
 	t.Parallel()
 
 	Convey("Poke", t, func() {
@@ -72,16 +74,29 @@ func TestPokeRecheckTree(t *testing.T) {
 			},
 		}
 		prjcfgtest.Create(ctx, lProject, cfg)
+		So(srvcfg.SetTestMigrationConfig(ctx, &migrationpb.Settings{
+			ApiHosts: []*migrationpb.Settings_ApiHost{
+				{
+					Host:          ct.Env.LogicalHostname,
+					Prod:          true,
+					ProjectRegexp: []string{".*"},
+				},
+			},
+			UseCvTryjobExecutor: &migrationpb.Settings_UseCVTryjobExecutor{
+				ProjectRegexp: []string{lProject},
+			},
+		}), ShouldBeNil)
 		h, deps := makeTestHandler(&ct)
 
 		rid := common.MakeRunID(lProject, ct.Clock.Now(), gChange, []byte("deadbeef"))
 		rs := &state.RunState{
 			Run: run.Run{
-				ID:            rid,
-				CreateTime:    ct.Clock.Now().UTC().Add(-2 * time.Minute),
-				StartTime:     ct.Clock.Now().UTC().Add(-1 * time.Minute),
-				CLs:           common.CLIDs{gChange},
-				ConfigGroupID: prjcfgtest.MustExist(ctx, lProject).ConfigGroupIDs[0],
+				ID:                  rid,
+				CreateTime:          ct.Clock.Now().UTC().Add(-2 * time.Minute),
+				StartTime:           ct.Clock.Now().UTC().Add(-1 * time.Minute),
+				CLs:                 common.CLIDs{gChange},
+				ConfigGroupID:       prjcfgtest.MustExist(ctx, lProject).ConfigGroupIDs[0],
+				UseCVTryjobExecutor: true,
 			},
 		}
 
@@ -261,6 +276,61 @@ func TestPokeRecheckTree(t *testing.T) {
 					},
 				)
 				So(cancelOp.RunStatusIfSucceeded, ShouldEqual, run.Status_FAILED)
+			})
+		})
+
+		Convey("Check UseCVTryjobExecutor", func() {
+			Convey("Skip if UseCVTryjobExecutor is false", func() {
+				rs.UseCVTryjobExecutor = false
+				res, err := h.Poke(ctx, rs)
+				So(err, ShouldBeNil)
+				So(res.SideEffectFn, ShouldBeNil)
+				So(res.PreserveEvents, ShouldBeFalse)
+				So(res.PostProcessFn, ShouldBeNil)
+				So(res.State.UseCVTryjobExecutor, ShouldBeFalse)
+			})
+
+			Convey("Skip if has ExecuteTryjobs long op", func() {
+				enqueueTryjobsUpdatedTask(ctx, rs, common.TryjobIDs{123})
+				So(srvcfg.SetTestMigrationConfig(ctx, &migrationpb.Settings{
+					ApiHosts: []*migrationpb.Settings_ApiHost{
+						{
+							Host:          ct.Env.LogicalHostname,
+							Prod:          true,
+							ProjectRegexp: []string{".*"},
+						},
+					},
+					UseCvTryjobExecutor: &migrationpb.Settings_UseCVTryjobExecutor{
+						ProjectRegexpExclude: []string{lProject},
+					},
+				}), ShouldBeNil)
+				res, err := h.Poke(ctx, rs)
+				So(err, ShouldBeNil)
+				So(res.SideEffectFn, ShouldBeNil)
+				So(res.PreserveEvents, ShouldBeFalse)
+				So(res.PostProcessFn, ShouldBeNil)
+				So(res.State.UseCVTryjobExecutor, ShouldBeTrue)
+			})
+
+			Convey("Change UseCVTryjobExecutor to false", func() {
+				So(srvcfg.SetTestMigrationConfig(ctx, &migrationpb.Settings{
+					ApiHosts: []*migrationpb.Settings_ApiHost{
+						{
+							Host:          ct.Env.LogicalHostname,
+							Prod:          true,
+							ProjectRegexp: []string{".*"},
+						},
+					},
+					UseCvTryjobExecutor: &migrationpb.Settings_UseCVTryjobExecutor{
+						ProjectRegexpExclude: []string{lProject},
+					},
+				}), ShouldBeNil)
+				res, err := h.Poke(ctx, rs)
+				So(err, ShouldBeNil)
+				So(res.SideEffectFn, ShouldBeNil)
+				So(res.PreserveEvents, ShouldBeFalse)
+				So(res.PostProcessFn, ShouldBeNil)
+				So(res.State.UseCVTryjobExecutor, ShouldBeFalse)
 			})
 		})
 	})
