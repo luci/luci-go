@@ -86,6 +86,7 @@ func TestFindReuseInBackend(t *testing.T) {
 			backend: &bbfacade.Facade{
 				ClientFactory: ct.BuildbucketFake.NewClientFactory(),
 			},
+			rm: run.NewNotifier(ct.TQDispatcher),
 		}
 		builder := &bbpb.BuilderID{
 			Project: lProject,

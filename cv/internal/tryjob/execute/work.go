@@ -125,14 +125,14 @@ func (w *worker) start(ctx context.Context, definitions []*tryjob.Definition) ([
 
 	if len(tryjobsToLaunch) > 0 {
 		// Save the newly created tryjobs and ensure Tryjob IDs are populated.
-		var tryjobsWithoutInternalID []*tryjob.Tryjob
+		var newlyCreatedTryjobs []*tryjob.Tryjob
 		for _, tj := range tryjobsToLaunch {
 			if tj.ID == 0 {
-				tryjobsWithoutInternalID = append(tryjobsWithoutInternalID, tj)
+				newlyCreatedTryjobs = append(newlyCreatedTryjobs, tj)
 			}
 		}
-		if len(tryjobsWithoutInternalID) > 0 {
-			if err := tryjob.SaveTryjobs(ctx, tryjobsWithoutInternalID); err != nil {
+		if len(newlyCreatedTryjobs) > 0 {
+			if err := datastore.Put(ctx, newlyCreatedTryjobs); err != nil {
 				return nil, err
 			}
 		}

@@ -174,22 +174,8 @@ func (w *worker) saveLaunchedTryjobs(ctx context.Context, tryjobs []*tryjob.Tryj
 		if err != nil {
 			return err
 		}
-		if err := tryjob.SaveTryjobs(ctx, append(reconciled, dropped...)); err != nil {
+		if err := tryjob.SaveTryjobs(ctx, append(reconciled, dropped...), w.rm.NotifyTryjobsUpdated); err != nil {
 			return err
-		}
-		for _, tj := range dropped {
-			for _, r := range tj.AllWatchingRuns() {
-				if r != w.run.ID {
-					err := w.rm.NotifyTryjobsUpdated(ctx, r, &tryjob.TryjobUpdatedEvents{
-						Events: []*tryjob.TryjobUpdatedEvent{
-							{TryjobId: int64(tj.ID)},
-						},
-					})
-					if err != nil {
-						return err
-					}
-				}
-			}
 		}
 		return nil
 	}, nil)

@@ -26,6 +26,7 @@ import (
 	bbpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/data/rand/mathrand"
 	gerritpb "go.chromium.org/luci/common/proto/gerrit"
+	"go.chromium.org/luci/gae/service/datastore"
 
 	bbfacade "go.chromium.org/luci/cv/internal/buildbucket/facade"
 	"go.chromium.org/luci/cv/internal/changelist"
@@ -97,6 +98,7 @@ func TestWorker(t *testing.T) {
 			backend: &bbfacade.Facade{
 				ClientFactory: ct.BuildbucketFake.NewClientFactory(),
 			},
+			rm: run.NewNotifier(ct.TQDispatcher),
 		}
 		builder := &bbpb.BuilderID{
 			Project: lProject,
@@ -128,7 +130,9 @@ func TestWorker(t *testing.T) {
 				},
 				Status: tryjob.Result_SUCCEEDED,
 			}
-			So(tryjob.SaveTryjobs(ctx, []*tryjob.Tryjob{tj}), ShouldBeNil)
+			So(datastore.RunInTransaction(ctx, func(ctx context.Context) error {
+				return tryjob.SaveTryjobs(ctx, []*tryjob.Tryjob{tj}, nil)
+			}, nil), ShouldBeNil)
 			return tj
 		}
 		Convey("Reuse", func() {
@@ -166,7 +170,9 @@ func TestWorker(t *testing.T) {
 				func(ctx context.Context, definitions []*tryjob.Definition) (map[*tryjob.Definition]*tryjob.Tryjob, error) {
 					So(definitions, ShouldHaveLength, 1)
 					tj := w.makePendingTryjob(ctx, definitions[0])
-					So(tryjob.SaveTryjobs(ctx, []*tryjob.Tryjob{tj}), ShouldBeNil)
+					So(datastore.RunInTransaction(ctx, func(ctx context.Context) error {
+						return tryjob.SaveTryjobs(ctx, []*tryjob.Tryjob{tj}, nil)
+					}, nil), ShouldBeNil)
 					reuseID = tj.ID
 					return map[*tryjob.Definition]*tryjob.Tryjob{
 						definitions[0]: tj,

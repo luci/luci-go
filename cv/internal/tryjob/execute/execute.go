@@ -69,20 +69,14 @@ func (e *Executor) Do(ctx context.Context, r *run.Run, payload *tryjob.ExecuteTr
 	if err != nil {
 		return err
 	}
-	sideEffect, err := e.executePlan(ctx, plan, r, execState)
-	if err != nil {
+
+	if err := e.executePlan(ctx, plan, r, execState); err != nil {
 		return err
 	}
 	var innerErr error
 	err = datastore.RunInTransaction(ctx, func(ctx context.Context) (err error) {
 		defer func() { innerErr = err }()
-		if err := tryjob.SaveExecutionState(ctx, r.ID, execState, stateVer); err != nil {
-			return err
-		}
-		if sideEffect != nil {
-			return sideEffect(ctx)
-		}
-		return nil
+		return tryjob.SaveExecutionState(ctx, r.ID, execState, stateVer)
 	}, nil)
 
 	switch {
@@ -164,7 +158,9 @@ func handleUpdatedTryjobs(ctx context.Context, tryjobs []int64, execState *tryjo
 		definition := execState.GetRequirement().GetDefinitions()[i]
 		switch latestAttemptEnded := hasLatestAttemptEnded(exec); {
 		case !latestAttemptEnded:
-			hasNonEndedCriticalTryjob = definition.GetCritical()
+			if !hasNonEndedCriticalTryjob {
+				hasNonEndedCriticalTryjob = definition.GetCritical()
+			}
 			continue
 		case !updated:
 			continue
@@ -293,11 +289,10 @@ func handleRequirementChange(curReqmt, targetReqmt *tryjob.Requirement, execStat
 //
 // Returns side effect that should be executed in the same transaction to save
 // the new state.
-func (e *Executor) executePlan(ctx context.Context, p *plan, r *run.Run, execState *tryjob.ExecutionState) (func(context.Context) error, error) {
+func (e *Executor) executePlan(ctx context.Context, p *plan, r *run.Run, execState *tryjob.ExecutionState) error {
 	if p.isEmpty() {
-		return nil, nil
+		return nil
 	}
-	var sideEffect func(context.Context) error
 	if len(p.discard) > 0 {
 		// TODO(crbug/1323597): cancel the tryjobs because they are no longer
 		// useful.
@@ -317,20 +312,15 @@ func (e *Executor) executePlan(ctx context.Context, p *plan, r *run.Run, execSta
 
 		tryjobs, err := e.startTryjobs(ctx, r, definitions, executions)
 		if err != nil {
-			return nil, err
+			return err
 		}
 
 		var criticalLaunchFailures map[*tryjob.Definition]string
-		var endedTryjobs []*tryjob.Tryjob
 		for i, tj := range tryjobs {
-			exec := executions[i]
+			def, exec := definitions[i], executions[i]
 			attempt := convertToAttempt(tj, r.ID)
 			exec.Attempts = append(exec.Attempts, attempt)
-			def := definitions[i]
-			switch status := attempt.Status; {
-			case status == tryjob.Status_ENDED:
-				endedTryjobs = append(endedTryjobs, tj)
-			case status == tryjob.Status_UNTRIGGERED && def.Critical:
+			if attempt.Status == tryjob.Status_UNTRIGGERED && def.GetCritical() {
 				if criticalLaunchFailures == nil {
 					criticalLaunchFailures = make(map[*tryjob.Definition]string)
 				}
@@ -341,15 +331,10 @@ func (e *Executor) executePlan(ctx context.Context, p *plan, r *run.Run, execSta
 		if len(criticalLaunchFailures) > 0 {
 			execState.Status = tryjob.ExecutionState_FAILED
 			execState.FailureReason = composeLaunchFailureReason(criticalLaunchFailures)
-			return nil, nil
-		}
-		if len(endedTryjobs) > 0 {
-			// For simplification, notify all Runs (including this run) about the
-			// ended Tryjobs rather than processing it immediately.
-			sideEffect = makeNotifyTryjobsUpdatedFn(ctx, endedTryjobs, e.RM)
+			return nil
 		}
 	}
-	return sideEffect, nil
+	return nil
 }
 
 func convertToAttempt(tj *tryjob.Tryjob, id common.RunID) *tryjob.ExecutionState_Execution_Attempt {
@@ -366,42 +351,4 @@ func convertToAttempt(tj *tryjob.Tryjob, id common.RunID) *tryjob.ExecutionState
 		}
 	}
 	return ret
-}
-
-// makeNotifyTryjobsUpdatedFn computes the runs interested in the given
-// tryjobs and returns a closure that notifies the runs about updates on
-// their interested tryjobs.
-func makeNotifyTryjobsUpdatedFn(ctx context.Context, tryjobs []*tryjob.Tryjob, rm rm) func(context.Context) error {
-	notifyTargets := make(map[common.RunID]common.TryjobIDs)
-	addToNotifyTargets := func(runID common.RunID, tjID common.TryjobID) {
-		if _, ok := notifyTargets[runID]; !ok {
-			notifyTargets[runID] = make(common.TryjobIDs, 0, 1)
-		}
-		notifyTargets[runID] = append(notifyTargets[runID], tjID)
-	}
-	for _, tj := range tryjobs {
-		if tj.TriggeredBy != "" {
-			addToNotifyTargets(tj.TriggeredBy, tj.ID)
-		}
-		for _, reuseRun := range tj.ReusedBy {
-			addToNotifyTargets(reuseRun, tj.ID)
-		}
-	}
-
-	return func(ctx context.Context) error {
-		for run, tjIDs := range notifyTargets {
-			events := &tryjob.TryjobUpdatedEvents{
-				Events: make([]*tryjob.TryjobUpdatedEvent, tjIDs.Len()),
-			}
-			for i, tjID := range tjIDs {
-				events.Events[i] = &tryjob.TryjobUpdatedEvent{
-					TryjobId: int64(tjID),
-				}
-			}
-			if err := rm.NotifyTryjobsUpdated(ctx, run, events); err != nil {
-				return errors.Annotate(err, "failed to notify tryjobs updated").Tag(transient.Tag).Err()
-			}
-		}
-		return nil
-	}
 }

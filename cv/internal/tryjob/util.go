@@ -16,6 +16,7 @@ package tryjob
 
 import (
 	"context"
+	"fmt"
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/retry/transient"
@@ -61,78 +62,93 @@ func LoadTryjobsMapByIDs(ctx context.Context, ids []common.TryjobID) (map[common
 	}
 }
 
-// SaveTryjobs saves given tryjobs to datastore.
+// NotifyTryjobsUpdatedFn is used to notify Run about the updated Tryjobs.
+type NotifyTryjobsUpdatedFn func(context.Context, common.RunID, *TryjobUpdatedEvents) error
+
+// SaveTryjobs saves Tryjobs to datastore and notifies the interested Runs.
 //
 // Assigns a new internal ID if not given. If an external ID is given, the
 // function saves a mapping from it to this new internal ID.
 //
 // Note that if an external ID is given, it must not already map to another
-// tryjob, or this function will fail.
-func SaveTryjobs(ctx context.Context, tryjobs []*Tryjob) error {
-	tryjobsWithExternalID := filterTryjobWithExternalID(tryjobs)
+// Tryjob, or this function will fail.
+//
+// If the provided `notifyFn`, notify nothing.
+//
+// MUST be called in datastore transaction context.
+//
+// TODO(yiwzhang): inspect the code and avoid unnecessary notification. Right
+// now, for simplicity, notify all Runs about all Tryjobs. The Run manager
+// will be waken up and realize there's nothing to do.
+func SaveTryjobs(ctx context.Context, tryjobs []*Tryjob, notifyFn NotifyTryjobsUpdatedFn) error {
+	if datastore.CurrentTransaction(ctx) == nil {
+		panic(fmt.Errorf("SaveTryjobs must be called in a transaction"))
+	}
 
+	tryjobsWithExternalID := filterTryjobsWithExternalID(tryjobs)
 	if len(tryjobsWithExternalID) == 0 { // early return for easy cases
 		if err := datastore.Put(ctx, tryjobs); err != nil {
 			return errors.Annotate(err, "failed to save Tryjobs").Tag(transient.Tag).Err()
 		}
-	}
-	saveFn := func(ctx context.Context) error {
-		eids := make([]ExternalID, len(tryjobsWithExternalID))
-		for i, tj := range tryjobsWithExternalID {
-			eids[i] = tj.ExternalID
-		}
-		ids, err := Resolve(ctx, eids...)
-		if err != nil {
+		if err := notifyRuns(ctx, tryjobs, notifyFn); err != nil {
 			return err
-		}
-
-		var tryjobsToAllocateID []*Tryjob
-		var tjms []*tryjobMap
-		for i, existingID := range ids {
-			switch tj := tryjobsWithExternalID[i]; {
-			case tj.ID == 0 && existingID == 0:
-				tryjobsToAllocateID = append(tryjobsToAllocateID, tj)
-			case tj.ID == 0:
-				return errors.Reason("external tryjob id %q has already mapped to internal id %d", tj.ExternalID, existingID).Err()
-			case existingID == 0:
-				tjms = append(tjms, &tryjobMap{
-					ExternalID: tj.ExternalID,
-					InternalID: tj.ID,
-				})
-			case existingID != tj.ID:
-				return errors.Reason("external tryjob id %q has already mapped to internal id %d; got internal id %d", tj.ExternalID, existingID, tj.ID).Err()
-			}
-		}
-		if len(tryjobsToAllocateID) > 0 {
-			if err := datastore.AllocateIDs(ctx, tryjobsToAllocateID); err != nil {
-				return errors.Annotate(err, "allocating tryjob ids").Tag(transient.Tag).Err()
-			}
-			for _, tj := range tryjobsToAllocateID {
-				tjms = append(tjms, &tryjobMap{
-					ExternalID: tj.ExternalID,
-					InternalID: tj.ID,
-				})
-			}
-		}
-
-		if len(tjms) > 0 {
-			err = datastore.Put(ctx, tryjobs, tjms)
-		} else {
-			err = datastore.Put(ctx, tryjobs)
-		}
-		if err != nil {
-			return errors.Annotate(err, "saving tryjobs and tryjobMaps").Tag(transient.Tag).Err()
 		}
 		return nil
 	}
 
-	if datastore.CurrentTransaction(ctx) == nil {
-		return datastore.RunInTransaction(ctx, saveFn, nil)
+	eids := make([]ExternalID, len(tryjobsWithExternalID))
+	for i, tj := range tryjobsWithExternalID {
+		eids[i] = tj.ExternalID
 	}
-	return saveFn(ctx)
+	ids, err := Resolve(ctx, eids...)
+	if err != nil {
+		return err
+	}
+
+	// Allocate IDs for Tryjobs missing internal ID and figure out all
+	// new mapping that need to be stored.
+	var tryjobsToAllocateID []*Tryjob
+	var tjms []*tryjobMap
+	for i, existingID := range ids {
+		switch tj := tryjobsWithExternalID[i]; {
+		case tj.ID == 0 && existingID == 0:
+			tryjobsToAllocateID = append(tryjobsToAllocateID, tj)
+		case tj.ID == 0:
+			return errors.Reason("external Tryjob id %q has already mapped to internal id %d", tj.ExternalID, existingID).Err()
+		case existingID == 0:
+			tjms = append(tjms, &tryjobMap{
+				ExternalID: tj.ExternalID,
+				InternalID: tj.ID,
+			})
+		case existingID != tj.ID:
+			return errors.Reason("external Tryjob id %q has already mapped to internal id %d; got internal id %d", tj.ExternalID, existingID, tj.ID).Err()
+		}
+	}
+	if len(tryjobsToAllocateID) > 0 {
+		if err := datastore.AllocateIDs(ctx, tryjobsToAllocateID); err != nil {
+			return errors.Annotate(err, "allocating Tryjob ids").Tag(transient.Tag).Err()
+		}
+		for _, tj := range tryjobsToAllocateID {
+			tjms = append(tjms, &tryjobMap{
+				ExternalID: tj.ExternalID,
+				InternalID: tj.ID,
+			})
+		}
+	}
+
+	// Store Tryjobs and new mappings if any and notify interested Runs.
+	if len(tjms) > 0 {
+		err = datastore.Put(ctx, tryjobs, tjms)
+	} else {
+		err = datastore.Put(ctx, tryjobs)
+	}
+	if err != nil {
+		return errors.Annotate(err, "saving Tryjobs and TryjobMaps").Tag(transient.Tag).Err()
+	}
+	return notifyRuns(ctx, tryjobs, notifyFn)
 }
 
-func filterTryjobWithExternalID(tryjobs []*Tryjob) []*Tryjob {
+func filterTryjobsWithExternalID(tryjobs []*Tryjob) []*Tryjob {
 	var ret []*Tryjob
 	for _, tj := range tryjobs {
 		if tj.ExternalID != "" {
@@ -140,4 +156,35 @@ func filterTryjobWithExternalID(tryjobs []*Tryjob) []*Tryjob {
 		}
 	}
 	return ret
+}
+
+// notifyRuns notifies the Runs interested in the given Tryjobs.
+func notifyRuns(ctx context.Context, tryjobs []*Tryjob, notifyFn NotifyTryjobsUpdatedFn) error {
+	if notifyFn == nil {
+		return nil
+	}
+	notifyTargets := make(map[common.RunID]common.TryjobIDs)
+	for _, tj := range tryjobs {
+		for _, runID := range tj.AllWatchingRuns() {
+			if _, ok := notifyTargets[runID]; !ok {
+				notifyTargets[runID] = common.TryjobIDs{tj.ID}
+				continue
+			}
+			notifyTargets[runID] = append(notifyTargets[runID], tj.ID)
+		}
+	}
+	for runID, tjIDs := range notifyTargets {
+		events := &TryjobUpdatedEvents{
+			Events: make([]*TryjobUpdatedEvent, tjIDs.Len()),
+		}
+		for i, tjID := range tjIDs {
+			events.Events[i] = &TryjobUpdatedEvent{
+				TryjobId: int64(tjID),
+			}
+		}
+		if err := notifyFn(ctx, runID, events); err != nil {
+			return errors.Annotate(err, "failed to notify Tryjobs updated for run %s", runID).Tag(transient.Tag).Err()
+		}
+	}
+	return nil
 }

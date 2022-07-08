@@ -15,6 +15,7 @@
 package tryjob
 
 import (
+	"context"
 	"testing"
 	"time"
 
@@ -37,6 +38,17 @@ func TestSaveTryjobs(t *testing.T) {
 		defer cancel()
 		const bbHost = "buildbucket.example.com"
 		now := ct.Clock.Now().UTC()
+		var runID = common.MakeRunID("infra", now.Add(-1*time.Hour), 1, []byte("foo"))
+		var notified map[common.RunID]common.TryjobIDs
+		notifyFn := func(ctx context.Context, runID common.RunID, events *TryjobUpdatedEvents) error {
+			if notified == nil {
+				notified = make(map[common.RunID]common.TryjobIDs)
+			}
+			for _, evt := range events.Events {
+				notified[runID] = append(notified[runID], common.TryjobID(evt.TryjobId))
+			}
+			return nil
+		}
 
 		Convey("No internal ID", func() {
 			Convey("No external ID", func() {
@@ -44,9 +56,15 @@ func TestSaveTryjobs(t *testing.T) {
 					EVersion:         1,
 					EntityCreateTime: now,
 					EntityUpdateTime: now,
+					TriggeredBy:      runID,
 				}
-				So(SaveTryjobs(ctx, []*Tryjob{tj}), ShouldBeNil)
+				So(datastore.RunInTransaction(ctx, func(ctx context.Context) error {
+					return SaveTryjobs(ctx, []*Tryjob{tj}, notifyFn)
+				}, nil), ShouldBeNil)
 				So(tj.ID, ShouldNotBeEmpty)
+				So(notified, ShouldResemble, map[common.RunID]common.TryjobIDs{
+					runID: {tj.ID},
+				})
 			})
 			Convey("External ID provided", func() {
 				Convey("Does not map to any existing tryjob", func() {
@@ -56,11 +74,17 @@ func TestSaveTryjobs(t *testing.T) {
 						EVersion:         1,
 						EntityCreateTime: now,
 						EntityUpdateTime: now,
+						TriggeredBy:      runID,
 					}
-					So(SaveTryjobs(ctx, []*Tryjob{tj}), ShouldBeNil)
+					So(datastore.RunInTransaction(ctx, func(ctx context.Context) error {
+						return SaveTryjobs(ctx, []*Tryjob{tj}, notifyFn)
+					}, nil), ShouldBeNil)
 					tj, err := eid.Load(ctx)
 					So(err, ShouldBeNil)
 					So(tj, ShouldNotBeNil)
+					So(notified, ShouldResemble, map[common.RunID]common.TryjobIDs{
+						runID: {tj.ID},
+					})
 				})
 				Convey("Map to an existing tryjob", func() {
 					eid := MustBuildbucketID(bbHost, 10)
@@ -70,8 +94,12 @@ func TestSaveTryjobs(t *testing.T) {
 						EVersion:         1,
 						EntityCreateTime: now,
 						EntityUpdateTime: now,
+						TriggeredBy:      runID,
 					}
-					So(SaveTryjobs(ctx, []*Tryjob{tj}), ShouldErrLike, "has already mapped to internal id")
+					So(datastore.RunInTransaction(ctx, func(ctx context.Context) error {
+						return SaveTryjobs(ctx, []*Tryjob{tj}, notifyFn)
+					}, nil), ShouldErrLike, "has already mapped to internal id")
+					So(notified, ShouldBeEmpty)
 				})
 			})
 		})
@@ -84,8 +112,14 @@ func TestSaveTryjobs(t *testing.T) {
 					EVersion:         1,
 					EntityCreateTime: now,
 					EntityUpdateTime: now,
+					ReusedBy:         common.RunIDs{runID},
 				}
-				So(SaveTryjobs(ctx, []*Tryjob{tj}), ShouldBeNil)
+				So(datastore.RunInTransaction(ctx, func(ctx context.Context) error {
+					return SaveTryjobs(ctx, []*Tryjob{tj}, notifyFn)
+				}, nil), ShouldBeNil)
+				So(notified, ShouldResemble, map[common.RunID]common.TryjobIDs{
+					runID: {tjID},
+				})
 			})
 			Convey("External ID provided", func() {
 				Convey("Does not map to any existing tryjob", func() {
@@ -96,9 +130,15 @@ func TestSaveTryjobs(t *testing.T) {
 						EVersion:         1,
 						EntityCreateTime: now,
 						EntityUpdateTime: now,
+						ReusedBy:         common.RunIDs{runID},
 					}
-					So(SaveTryjobs(ctx, []*Tryjob{tj}), ShouldBeNil)
+					So(datastore.RunInTransaction(ctx, func(ctx context.Context) error {
+						return SaveTryjobs(ctx, []*Tryjob{tj}, notifyFn)
+					}, nil), ShouldBeNil)
 					So(eid.MustLoad(ctx).ID, ShouldEqual, tjID)
+					So(notified, ShouldResemble, map[common.RunID]common.TryjobIDs{
+						runID: {tjID},
+					})
 				})
 
 				Convey("Map to an existing tryjob", func() {
@@ -111,9 +151,15 @@ func TestSaveTryjobs(t *testing.T) {
 							ExternalID:       eid,
 							EVersion:         existing.EVersion + 1,
 							EntityUpdateTime: datastore.RoundTime(clock.Now(ctx).UTC()),
+							ReusedBy:         common.RunIDs{runID},
 						}
-						So(SaveTryjobs(ctx, []*Tryjob{tj}), ShouldBeNil)
+						So(datastore.RunInTransaction(ctx, func(ctx context.Context) error {
+							return SaveTryjobs(ctx, []*Tryjob{tj}, notifyFn)
+						}, nil), ShouldBeNil)
 						So(eid.MustLoad(ctx).EVersion, ShouldEqual, existing.EVersion+1)
+						So(notified, ShouldResemble, map[common.RunID]common.TryjobIDs{
+							runID: {tj.ID},
+						})
 					})
 					Convey("existing tryjob has a different ID", func() {
 						eid := MustBuildbucketID(bbHost, 10)
@@ -124,8 +170,12 @@ func TestSaveTryjobs(t *testing.T) {
 							ExternalID:       eid,
 							EVersion:         existing.EVersion + 1,
 							EntityUpdateTime: datastore.RoundTime(clock.Now(ctx).UTC()),
+							ReusedBy:         common.RunIDs{runID},
 						}
-						So(SaveTryjobs(ctx, []*Tryjob{tj}), ShouldErrLike, "has already mapped to")
+						So(datastore.RunInTransaction(ctx, func(ctx context.Context) error {
+							return SaveTryjobs(ctx, []*Tryjob{tj}, notifyFn)
+						}, nil), ShouldErrLike, "has already mapped to")
+						So(notified, ShouldBeEmpty)
 					})
 				})
 			})

@@ -16,7 +16,6 @@ package execute
 
 import (
 	"context"
-	"sync"
 	"testing"
 	"time"
 
@@ -58,7 +57,6 @@ func TestLaunch(t *testing.T) {
 		)
 		var runID = common.MakeRunID(lProject, ct.Clock.Now().Add(-1*time.Hour), 1, []byte("abcd"))
 
-		fakeRM := &fakeRM{}
 		w := &worker{
 			run: &run.Run{
 				ID:   runID,
@@ -96,7 +94,7 @@ func TestLaunch(t *testing.T) {
 			backend: &bbfacade.Facade{
 				ClientFactory: ct.BuildbucketFake.NewClientFactory(),
 			},
-			rm: fakeRM,
+			rm: run.NewNotifier(ct.TQDispatcher),
 		}
 		builder := &bbpb.BuilderID{
 			Project: lProject,
@@ -114,7 +112,9 @@ func TestLaunch(t *testing.T) {
 		ct.BuildbucketFake.AddBuilder(bbHost, builder, nil)
 		Convey("Works", func() {
 			tj := w.makePendingTryjob(ctx, defFoo)
-			So(tryjob.SaveTryjobs(ctx, []*tryjob.Tryjob{tj}), ShouldBeNil)
+			So(datastore.RunInTransaction(ctx, func(ctx context.Context) error {
+				return tryjob.SaveTryjobs(ctx, []*tryjob.Tryjob{tj}, nil)
+			}, nil), ShouldBeNil)
 			tryjobs, err := w.launchTryjobs(ctx, []*tryjob.Tryjob{tj})
 			So(err, ShouldBeNil)
 			So(tryjobs, ShouldHaveLength, 1)
@@ -153,7 +153,9 @@ func TestLaunch(t *testing.T) {
 					}
 				}
 			})
-			So(tryjob.SaveTryjobs(ctx, []*tryjob.Tryjob{tj}), ShouldBeNil)
+			So(datastore.RunInTransaction(ctx, func(ctx context.Context) error {
+				return tryjob.SaveTryjobs(ctx, []*tryjob.Tryjob{tj}, nil)
+			}, nil), ShouldBeNil)
 			tryjobs, err := w.launchTryjobs(ctx, []*tryjob.Tryjob{tj})
 			So(err, ShouldBeNil)
 			So(tryjobs, ShouldHaveLength, 1)
@@ -167,7 +169,9 @@ func TestLaunch(t *testing.T) {
 			tj.TriggeredBy = runID
 			reuseRun := common.MakeRunID(lProject, ct.Clock.Now().Add(-30*time.Minute), 1, []byte("beef"))
 			tj.ReusedBy = append(tj.ReusedBy, reuseRun)
-			So(tryjob.SaveTryjobs(ctx, []*tryjob.Tryjob{tj}), ShouldBeNil)
+			So(datastore.RunInTransaction(ctx, func(ctx context.Context) error {
+				return tryjob.SaveTryjobs(ctx, []*tryjob.Tryjob{tj}, nil)
+			}, nil), ShouldBeNil)
 			existingTryjobID := tj.ID + 59
 			w.backend = &decoratedBackend{
 				TryjobBackend: w.backend,
@@ -177,7 +181,9 @@ func TestLaunch(t *testing.T) {
 					// ID from the input tryjob.
 					originalID := tj.ID
 					tryjobs[0].ID = existingTryjobID
-					So(tryjob.SaveTryjobs(ctx, tryjobs), ShouldBeNil)
+					So(datastore.RunInTransaction(ctx, func(ctx context.Context) error {
+						return tryjob.SaveTryjobs(ctx, []*tryjob.Tryjob{tj}, nil)
+					}, nil), ShouldBeNil)
 					tryjobs[0].ID = originalID
 				},
 			}
@@ -191,8 +197,6 @@ func TestLaunch(t *testing.T) {
 			tj = &tryjob.Tryjob{ID: tj.ID}
 			So(datastore.Get(ctx, tj), ShouldBeNil)
 			So(tj.Status, ShouldEqual, tryjob.Status_UNTRIGGERED)
-			So(fakeRM.notified, ShouldContainKey, reuseRun)
-			So(fakeRM.notified[reuseRun], ShouldResemble, common.TryjobIDs{tj.ID})
 		})
 	})
 }
@@ -209,23 +213,6 @@ func (db *decoratedBackend) Launch(ctx context.Context, tryjobs []*tryjob.Tryjob
 	}
 	if db.launchedTryjobsHook != nil {
 		db.launchedTryjobsHook(tryjobs)
-	}
-	return nil
-}
-
-type fakeRM struct {
-	mu       sync.Mutex
-	notified map[common.RunID]common.TryjobIDs
-}
-
-func (rm *fakeRM) NotifyTryjobsUpdated(ctx context.Context, runID common.RunID, events *tryjob.TryjobUpdatedEvents) error {
-	rm.mu.Lock()
-	defer rm.mu.Unlock()
-	if rm.notified == nil {
-		rm.notified = make(map[common.RunID]common.TryjobIDs, 1)
-	}
-	for _, event := range events.GetEvents() {
-		rm.notified[runID] = append(rm.notified[runID], common.TryjobID(event.GetTryjobId()))
 	}
 	return nil
 }

@@ -299,7 +299,6 @@ func TestPrepExecutionPlan(t *testing.T) {
 				So(execState.Requirement, ShouldResembleProto, latestReqmt)
 				So(plan.isEmpty(), ShouldBeTrue)
 			})
-
 		})
 	})
 }

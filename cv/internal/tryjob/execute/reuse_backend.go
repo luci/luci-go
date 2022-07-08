@@ -88,7 +88,7 @@ func (w *worker) findReuseInBackend(ctx context.Context, definitions []*tryjob.D
 			}
 			candidates[tj.Definition] = tj
 		}
-		return tryjob.SaveTryjobs(ctx, tryjobs)
+		return tryjob.SaveTryjobs(ctx, tryjobs, w.rm.NotifyTryjobsUpdated)
 	}, nil)
 	switch {
 	case innerErr != nil:
