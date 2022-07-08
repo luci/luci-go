@@ -73,7 +73,7 @@ message Config {
 // ConfigGroup allows one to share single verifiers config across a set of
 // Gerrit repositories, which may be in different Gerrit installations.
 message ConfigGroup {
-  // Next field number: 8.
+  // Next field number: 10.
 
   reserved 3; // allow_cq_depend.
 
@@ -169,15 +169,23 @@ message ConfigGroup {
   // mode, CQ will fallback to standard DRY_RUN or FULL_RUN.
   repeated Mode additional_modes = 7;
 
-  // Per-user quota config.
+  // Per-user quota configs for this ConfigGroup.
   //
-  // Runs triggered under this ConfigGroup will be affected by the per-user
-  // quota configs, if there is a QuotaPolicy applicable to a given user.
+  // At the time of a Run creation, CV will look for the QuotaPolicy
+  // for the user in the following sequence.
   //
-  // If not specified, no quota policy will be enforced.
-  UserQuotaConfig user_quota_config = 8;
+  // 1) The QuotaPolicy with "user:<the_gerrit_user>" in principals.
+  // 2) The first QuotaPolicy, where the gerrit user is a member of any of
+  // the groups specified in the principals.
+  // 3) user_quota_default. If unset, all the users are granted unlimited quota.
+  //
+  // Note that CV will pick the first matching policy, not the first policy with
+  // available quotas. For example, if there is a quota policy specifically for
+  // user:foo, then CV will always pick the quota policy when creating a Run,
+  // whether the policy has available quotas or not.
+  repeated QuotaPolicy user_quotas = 8;
+  QuotaPolicy user_quota_default = 9;
 }
-
 
 // SubmitOptions control how CQ submits CLs.
 message SubmitOptions {
@@ -387,7 +395,7 @@ message Verifiers {
     Toggle cancel_stale_tryjobs = 3 [deprecated = true];
 
     message Builder {
-      // Next field number: 12
+      // Next field number: 16
 
       // Required. Name of the builder as <project>/<bucket>/<builder>
       //
@@ -765,50 +773,50 @@ enum Toggle {
 
 // QuotaPolicy specifies the quota policy limits.
 message QuotaPolicy {
-    oneof apply_to {
-      // Email of the Gerrit user to apply the quota policy to.
-      string user = 1;
-      // CrIA group to apply the quota policy to.
-      string cria_group = 2;
-    }
-    // Maximum number of active Runs allowed at any given moment.
+    // Name of the policy. Must be unique across all the policies
+    // with the LUCI project.
     //
-    // Active Run is a Run that has started but not ended yet.
-    int32 max_active_runs = 3;
-    // Maximum number of active Tryjobs allowed at any given moment.
+    // Required. Must match regex '^[0-9A-Za-z][0-9A-Za-z\.\-@_+]{0,511}'
+    string name = 1;
+    // Principals to apply the QuotaPolicy to.
     //
-    // Active TryJob is a tryjob that CV has successfully launched, and has not
-    // ended yet from CV's point of view. Also, optional tryjobs, which are
-    // experimental tryjobs that were not explicitly requested via the git
-    // footer, are not counted as active tryjobs.
-    //
-    // Note that counting active tryjobs and launching tryjobs are not atomic
-    // operations. So, # of active tryjobs may not match # of the successfully
-    // launched tryjobs for a short period, but will match eventually.
-    int32 max_active_tryjobs = 4;
-}
+    // Each entry can be either an identity string "user:<email>"
+    // or a LUCI group reference "group:<name>"
+    repeated string principals = 2;
 
-// UserQuotaConfig specifies per-user quota configs.
-message UserQuotaConfig {
-    // A list of QuotaPolicy(s) for Gerrit users.
-    //
-    // * Always pick the first matching QuotaPolicy
-    // If there are more than one applicable QuotaPolicy(s) for a given user,
-    // CV will pick the left-most applicable QuotaPolicy.
-    //
-    // * No QuotaPolicy, no quota enforcement.
-    // If there is no QuotaPolicy applicable to a given Gerrit user, no quota
-    // policy will be enforced, i.e., unlimited quota.
-    repeated QuotaPolicy policies = 2;
-    // Payer tells whose quotas should be consumed for the Run.
-    // If omitted, the CL owner pays the quota charges.
-    enum Payer {
-        // CL owner pays the charged amount.
-        PAYER_CL_OWNER = 0;
-        // Run triggerer, who is the first voter with a CQ label for the Run,
-        // pays the charged amount.
-        PAYER_RUN_TRIGGERER = 1;
+    message Limit {
+      // Required. value must be > 0, unless unlimited is set to True.
+      oneof limit {
+        int64 value = 1;
+        bool unlimited = 2;
+      }
     }
-    Payer payer = 3;
-    bool include_optional = 4;
+
+    message RunLimits {
+        // Maximum number of active runs that this policy can have at any
+        // moment.
+        //
+        // Required. Active Run is a Run that has started but not ended yet.
+        Limit max_active = 1;
+    }
+    message TryjobLimits {
+        // Maximum number of active tryjobs that this policy can have at any
+        // moment.
+        //
+        // Active tryjob is a tryjob that CV has successfully launched,
+        // and has not ended yet from CV's point of view. Also, optional
+        // tryjobs, which are experimental tryjobs that were not explicitly
+        // requested via the git footer, are not counted as active tryjobs.
+        //
+        // Note that counting active tryjobs and launching tryjobs are not
+        // atomic operations. So, # of active tryjobs may not match # of
+        // the successfully launched tryjobs for a short period, but will
+        // match eventually.
+        //
+        // If not specified, an unlimited number of active Tryjobs are allowed.
+        Limit max_active = 1;
+    }
+
+    RunLimits run_limits = 5;
+    TryjobLimits tryjob_limits = 6;
 }
