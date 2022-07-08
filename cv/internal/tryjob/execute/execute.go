@@ -18,6 +18,8 @@ import (
 	"context"
 	"fmt"
 
+	"google.golang.org/protobuf/proto"
+
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry/transient"
@@ -63,11 +65,19 @@ func (e *Executor) Do(ctx context.Context, r *run.Run, payload *tryjob.ExecuteTr
 		return err
 	case execState == nil:
 		execState = initExecutionState()
+	case execState.GetStatus() == tryjob.ExecutionState_SUCCEEDED:
+		fallthrough
+	case execState.GetStatus() == tryjob.ExecutionState_FAILED:
+		logging.Warningf(ctx, "Tryjob executor is invoked after execution has ended")
+		return nil
 	}
 
 	plan, err := prepExecutionPlan(ctx, execState, r, payload.GetTryjobsUpdated(), payload.GetRequirementChanged())
-	if err != nil {
+	switch {
+	case err != nil:
 		return err
+	case plan.isEmpty():
+		return nil
 	}
 
 	if err := e.executePlan(ctx, plan, r, execState); err != nil {
@@ -84,8 +94,9 @@ func (e *Executor) Do(ctx context.Context, r *run.Run, payload *tryjob.ExecuteTr
 		return innerErr
 	case err != nil:
 		return errors.Annotate(err, "failed to commit transaction").Tag(transient.Tag).Err()
+	default:
+		return nil
 	}
-	return nil
 }
 
 func initExecutionState() *tryjob.ExecutionState {
@@ -127,10 +138,6 @@ func prepExecutionPlan(ctx context.Context, execState *tryjob.ExecutionState, r 
 	case hasTryjobsUpdated:
 		logging.Debugf(ctx, "received update for tryjobs %s", tryjobsUpdated)
 		return handleUpdatedTryjobs(ctx, tryjobsUpdated, execState)
-	case reqmtChanged && execState.Status != tryjob.ExecutionState_RUNNING:
-		// Execution has ended already. No need to react to requirement change.
-		logging.Warningf(ctx, "Got requirement changed when execution is no longer running")
-		return nil, nil
 	case reqmtChanged && r.Tryjobs.GetRequirementVersion() <= execState.GetRequirementVersion():
 		logging.Errorf(ctx, "Tryjob executor is executing requirement that is either later or equal to the requested requirement version. current: %d, got: %d ", r.Tryjobs.GetRequirementVersion(), execState.GetRequirementVersion())
 		return nil, nil
@@ -177,13 +184,25 @@ func handleUpdatedTryjobs(ctx context.Context, tryjobs []int64, execState *tryjo
 			failedTryjobs = append(failedTryjobs, tryjobByID[common.TryjobID(attempt.TryjobId)])
 		case attempt.Status == tryjob.Status_ENDED:
 			// TODO(yiwzhang): emit a log to record failed non critical tryjob.
-		case attempt.Status == tryjob.Status_UNTRIGGERED:
+		case attempt.Status == tryjob.Status_CANCELLED:
+			// This SHOULD happen during race condition as a Tryjob is cancelled by
+			// LUCI CV iff a new patchset is uploaded. In that case, Run SHOULD be
+			// cancelled and try executor should never be invoked. Do nothing apart
+			// from logging here and Run should be cancelled very soon.
+			// TODO(yiwzhang): emit a log to record cancelled tryjobs.
+		case attempt.Status == tryjob.Status_UNTRIGGERED && attempt.Reused:
 			// Normally happens when this Run reuses a PENDING Tryjob from another
 			// Run but the Tryjob doesn't end up getting triggered.
 			ret.triggerNewAttempt = append(ret.triggerNewAttempt, planItem{
 				definition: definition,
 				execution:  exec,
 			})
+		case attempt.Status == tryjob.Status_UNTRIGGERED && !definition.GetCritical():
+			// Ignore failure when launching non-critical tryjobs.
+		case attempt.Status == tryjob.Status_UNTRIGGERED:
+			// If a critical tryjob fails to launch, then this Run should have failed
+			// already. So this code path should never be exercised.
+			panic(fmt.Errorf("critical tryjob %d failed to launch but tryjob executor was asked to update this Tryjob", attempt.GetTryjobId()))
 		default:
 			panic(fmt.Errorf("unexpected attempt status %s for Tryjob %d", attempt.Status, attempt.TryjobId))
 		}
@@ -217,9 +236,11 @@ func updateLatestAttempt(exec *tryjob.ExecutionState_Execution, tryjobsByIDs map
 	}
 	attempt := exec.Attempts[len(exec.Attempts)-1]
 	if tj, ok := tryjobsByIDs[common.TryjobID(attempt.TryjobId)]; ok {
-		attempt.Status = tj.Status
-		attempt.Result = tj.Result
-		return true
+		if attempt.Status != tj.Status || !proto.Equal(attempt.Result, tj.Result) {
+			attempt.Status = tj.Status
+			attempt.Result = tj.Result
+			return true
+		}
 	}
 	return false
 }
@@ -290,9 +311,6 @@ func handleRequirementChange(curReqmt, targetReqmt *tryjob.Requirement, execStat
 // Returns side effect that should be executed in the same transaction to save
 // the new state.
 func (e *Executor) executePlan(ctx context.Context, p *plan, r *run.Run, execState *tryjob.ExecutionState) error {
-	if p.isEmpty() {
-		return nil
-	}
 	if len(p.discard) > 0 {
 		// TODO(crbug/1323597): cancel the tryjobs because they are no longer
 		// useful.

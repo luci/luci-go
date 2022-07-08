@@ -153,14 +153,23 @@ func TestPrepExecutionPlan(t *testing.T) {
 
 				Convey("Untriggered", func() {
 					ensureTryjob(ctx, tjID, tryjob.Status_UNTRIGGERED, tryjob.Result_UNKNOWN)
-					plan := prepPlan(execState, tjID)
-					So(plan.isEmpty(), ShouldBeFalse)
-					So(plan.triggerNewAttempt, ShouldHaveLength, 1)
-					So(plan.triggerNewAttempt[0].definition, ShouldResembleProto, execState.GetRequirement().GetDefinitions()[0])
-					So(execState.Executions[0].Attempts, ShouldResembleProto, []*tryjob.ExecutionState_Execution_Attempt{
-						makeAttempt(tjID, tryjob.Status_UNTRIGGERED, tryjob.Result_UNKNOWN),
+					Convey("Reused", func() {
+						execution := execState.GetExecutions()[0]
+						execution.Attempts[len(execution.Attempts)-1].Reused = true
+						plan := prepPlan(execState, tjID)
+						So(plan.isEmpty(), ShouldBeFalse)
+						So(plan.triggerNewAttempt, ShouldHaveLength, 1)
+						So(plan.triggerNewAttempt[0].definition, ShouldResembleProto, execState.GetRequirement().GetDefinitions()[0])
+						attempt := makeAttempt(tjID, tryjob.Status_UNTRIGGERED, tryjob.Result_UNKNOWN)
+						attempt.Reused = true
+						So(execState.Executions[0].Attempts, ShouldResembleProto, []*tryjob.ExecutionState_Execution_Attempt{attempt})
+						So(execState.Status, ShouldEqual, tryjob.ExecutionState_RUNNING)
 					})
-					So(execState.Status, ShouldEqual, tryjob.ExecutionState_RUNNING)
+					Convey("Not critical", func() {
+						execState.GetRequirement().GetDefinitions()[0].Critical = false
+						plan := prepPlan(execState, tjID)
+						So(plan.isEmpty(), ShouldBeTrue)
+					})
 				})
 			})
 
@@ -231,18 +240,6 @@ func TestPrepExecutionPlan(t *testing.T) {
 					RequirementComputeAt: timestamppb.New(ct.Clock.Now()),
 				},
 			}
-			Convey("Noop if execution has ended already", func() {
-				for _, st := range []tryjob.ExecutionState_Status{
-					tryjob.ExecutionState_SUCCEEDED,
-					tryjob.ExecutionState_FAILED} {
-					execState := newExecStateBuilder().
-						withStatus(st).
-						build()
-					plan, err := prepExecutionPlan(ctx, execState, r, nil, true)
-					So(err, ShouldBeNil)
-					So(plan.isEmpty(), ShouldBeTrue)
-				}
-			})
 
 			Convey("Noop if current version newer than target version", func() {
 				execState := newExecStateBuilder().
