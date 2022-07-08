@@ -42,8 +42,7 @@ func fetchActiveRuns(ctx context.Context, project string) ([]*migrationpb.Active
 	case len(runs) == 0:
 		return nil, nil
 	}
-	// Remove runs with corresponding VerifiedCQDRun entities or those being
-	// cancelled.
+
 	runs, err = pruneInactiveRuns(ctx, runs)
 	switch {
 	case err != nil:
@@ -202,16 +201,23 @@ func saveVerifiedCQDRun(ctx context.Context, req *migrationpb.ReportVerifiedRunR
 	return errors.Annotate(err, "failed to record VerifiedCQDRun %q after %d tries", runID, try).Tag(transient.Tag).Err()
 }
 
-// pruneInactiveRuns removes Runs for which VerifiedCQDRun have already been
-// written or it has been scheduled to cancel the Run trigger.
+// pruneInactiveRuns removes Runs that are no longer active from CQ's PoV.
+//
+// Those Runs include
+//  * Run has associated VerifiedCQDRun
+//  * Run has been scheduled to cancel the Run trigger
+//  * Run uses LUCI CV to execute tryjobs
 //
 // Modifies the Runs slice in place, but also returns it for readability.
 func pruneInactiveRuns(ctx context.Context, in []*run.Run) ([]*run.Run, error) {
 	activeRuns := in[:0]
 
-	// filter out Runs w/ CancelTrigger long ops, so that
-	// CQD won't process events for the Run.
+	// filter out Runs using CV to execute tryjob or w/ CancelTrigger long ops,
+	// so that CQD won't process those Runs.
 	for _, r := range in {
+		if r.UseCVTryjobExecutor {
+			continue
+		}
 		isBeingCancelled := false
 		for _, op := range r.OngoingLongOps.GetOps() {
 			if op.GetCancelTriggers() != nil {

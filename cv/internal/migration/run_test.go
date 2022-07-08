@@ -247,11 +247,29 @@ func TestFetchActiveRuns(t *testing.T) {
 					Status: run.Status_RUNNING,
 					OngoingLongOps: &run.OngoingLongOps{
 						Ops: map[string]*run.OngoingLongOps_Op{
-							"1-1": &run.OngoingLongOps_Op{
+							"1-1": {
 								Work: &run.OngoingLongOps_Op_CancelTriggers{},
 							},
 						},
 					},
+				},
+			)
+			So(err, ShouldBeNil)
+			runs, err := fetchActiveRuns(ctx, "chromium")
+			So(err, ShouldBeNil)
+			So(runs, ShouldHaveLength, 1)
+			So(runs[0].Id, ShouldEqual, "chromium/1111111111111-deadbeef")
+		})
+		Convey("Excludes runs use CV to execute tryjobs", func() {
+			err := datastore.Put(ctx,
+				&run.Run{
+					ID:     "chromium/1111111111111-deadbeef",
+					Status: run.Status_RUNNING,
+				},
+				&run.Run{
+					ID:                  "chromium/1111111111111-cececece",
+					Status:              run.Status_RUNNING,
+					UseCVTryjobExecutor: true,
 				},
 			)
 			So(err, ShouldBeNil)
