@@ -80,7 +80,8 @@ func (e *Executor) Do(ctx context.Context, r *run.Run, payload *tryjob.ExecuteTr
 		return nil
 	}
 
-	if err := e.executePlan(ctx, plan, r, execState); err != nil {
+	execState, err = e.executePlan(ctx, plan, r, execState)
+	if err != nil {
 		return err
 	}
 	var innerErr error
@@ -310,7 +311,7 @@ func handleRequirementChange(curReqmt, targetReqmt *tryjob.Requirement, execStat
 //
 // Returns side effect that should be executed in the same transaction to save
 // the new state.
-func (e *Executor) executePlan(ctx context.Context, p *plan, r *run.Run, execState *tryjob.ExecutionState) error {
+func (e *Executor) executePlan(ctx context.Context, p *plan, r *run.Run, execState *tryjob.ExecutionState) (*tryjob.ExecutionState, error) {
 	if len(p.discard) > 0 {
 		// TODO(crbug/1323597): cancel the tryjobs because they are no longer
 		// useful.
@@ -330,7 +331,7 @@ func (e *Executor) executePlan(ctx context.Context, p *plan, r *run.Run, execSta
 
 		tryjobs, err := e.startTryjobs(ctx, r, definitions, executions)
 		if err != nil {
-			return err
+			return nil, err
 		}
 
 		var criticalLaunchFailures map[*tryjob.Definition]string
@@ -349,10 +350,10 @@ func (e *Executor) executePlan(ctx context.Context, p *plan, r *run.Run, execSta
 		if len(criticalLaunchFailures) > 0 {
 			execState.Status = tryjob.ExecutionState_FAILED
 			execState.FailureReason = composeLaunchFailureReason(criticalLaunchFailures)
-			return nil
+			return execState, nil
 		}
 	}
-	return nil
+	return execState, nil
 }
 
 func convertToAttempt(tj *tryjob.Tryjob, id common.RunID) *tryjob.ExecutionState_Execution_Attempt {

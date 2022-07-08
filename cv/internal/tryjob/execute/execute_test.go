@@ -19,14 +19,20 @@ import (
 	"fmt"
 	"math"
 	"testing"
+	"time"
 
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	bbpb "go.chromium.org/luci/buildbucket/proto"
+	"go.chromium.org/luci/common/clock"
+	"go.chromium.org/luci/common/clock/testclock"
+	gerritpb "go.chromium.org/luci/common/proto/gerrit"
 	"go.chromium.org/luci/gae/service/datastore"
 
 	cfgpb "go.chromium.org/luci/cv/api/config/v2"
+	bbfacade "go.chromium.org/luci/cv/internal/buildbucket/facade"
+	"go.chromium.org/luci/cv/internal/changelist"
 	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/cvtesting"
 	"go.chromium.org/luci/cv/internal/run"
@@ -295,6 +301,185 @@ func TestPrepExecutionPlan(t *testing.T) {
 				So(err, ShouldBeNil)
 				So(execState.Requirement, ShouldResembleProto, latestReqmt)
 				So(plan.isEmpty(), ShouldBeTrue)
+			})
+		})
+	})
+}
+
+func TestExecutePlan(t *testing.T) {
+	t.Parallel()
+	Convey("ExecutePlan", t, func() {
+		ct := cvtesting.Test{}
+		ctx, cancel := ct.SetUp()
+		defer cancel()
+
+		Convey("Trigger new attempt", func() {
+			const (
+				lProject     = "test_proj"
+				bbHost       = "buildbucket.example.com"
+				buildID      = 9524107902457
+				clid         = 34586452134
+				gHost        = "example-review.com"
+				gRepo        = "repo/a"
+				gChange      = 123
+				gPatchset    = 5
+				gMinPatchset = 4
+			)
+			now := ct.Clock.Now().UTC()
+			var runID = common.MakeRunID(lProject, now.Add(-1*time.Hour), 1, []byte("abcd"))
+			r := &run.Run{
+				ID:     runID,
+				Mode:   run.DryRun,
+				CLs:    common.CLIDs{clid},
+				Status: run.Status_RUNNING,
+			}
+			runCL := &run.RunCL{
+				ID:  clid,
+				Run: datastore.NewKey(ctx, common.RunKind, string(runID), 0, nil),
+				Detail: &changelist.Snapshot{
+					Patchset:              gPatchset,
+					MinEquivalentPatchset: gMinPatchset,
+					Kind: &changelist.Snapshot_Gerrit{
+						Gerrit: &changelist.Gerrit{
+							Host: gHost,
+							Info: &gerritpb.ChangeInfo{
+								Project: gRepo,
+								Number:  gChange,
+								Owner: &gerritpb.AccountInfo{
+									Email: "owner@example.com",
+								},
+							},
+						},
+					},
+				},
+				Trigger: &run.Trigger{
+					Mode:  string(run.DryRun),
+					Email: "triggerer@example.com",
+				},
+			}
+			So(datastore.Put(ctx, runCL), ShouldBeNil)
+			builder := &bbpb.BuilderID{
+				Project: lProject,
+				Bucket:  "some_bucket",
+				Builder: "some_builder",
+			}
+			def := &tryjob.Definition{
+				Backend: &tryjob.Definition_Buildbucket_{
+					Buildbucket: &tryjob.Definition_Buildbucket{
+						Host:    bbHost,
+						Builder: builder,
+					},
+				},
+				Critical: true,
+			}
+			ct.BuildbucketFake.AddBuilder(bbHost, builder, nil)
+			executor := &Executor{
+				Backend: &bbfacade.Facade{
+					ClientFactory: ct.BuildbucketFake.NewClientFactory(),
+				},
+				RM: run.NewNotifier(ct.TQDispatcher),
+			}
+			execution := &tryjob.ExecutionState_Execution{}
+			execState := &tryjob.ExecutionState{
+				Executions: []*tryjob.ExecutionState_Execution{execution},
+				Requirement: &tryjob.Requirement{
+					Definitions: []*tryjob.Definition{def},
+				},
+				Status: tryjob.ExecutionState_RUNNING,
+			}
+
+			Convey("New Tryjob is not launched when tryjob can be reused", func() {
+				result := &tryjob.Result{
+					CreateTime: timestamppb.New(now.Add(-staleTryjobAge / 2)),
+					Backend: &tryjob.Result_Buildbucket_{
+						Buildbucket: &tryjob.Result_Buildbucket{
+							Id:      buildID,
+							Builder: builder,
+						},
+					},
+					Status: tryjob.Result_SUCCEEDED,
+				}
+				reuseTryjob := &tryjob.Tryjob{
+					ExternalID:       tryjob.MustBuildbucketID(bbHost, buildID),
+					EVersion:         1,
+					EntityCreateTime: now.Add(-staleTryjobAge / 2),
+					EntityUpdateTime: now.Add(-1 * time.Minute),
+					ReuseKey:         computeReuseKey([]*run.RunCL{runCL}),
+					CLPatchsets:      tryjob.CLPatchsets{tryjob.MakeCLPatchset(runCL.ID, gPatchset)},
+					Definition:       def,
+					Status:           tryjob.Status_ENDED,
+					TriggeredBy:      common.MakeRunID(lProject, now.Add(-2*time.Hour), 1, []byte("efgh")),
+					Result:           result,
+				}
+				So(datastore.RunInTransaction(ctx, func(ctx context.Context) error {
+					return tryjob.SaveTryjobs(ctx, []*tryjob.Tryjob{reuseTryjob}, nil)
+				}, nil), ShouldBeNil)
+				execState, err := executor.executePlan(ctx, &plan{
+					triggerNewAttempt: []planItem{
+						{
+							definition: def,
+							execution:  execution,
+						},
+					},
+				}, r, execState)
+				So(err, ShouldBeNil)
+				So(execState.GetStatus(), ShouldEqual, tryjob.ExecutionState_RUNNING)
+				So(execState.GetExecutions()[0].GetAttempts(), ShouldResembleProto,
+					[]*tryjob.ExecutionState_Execution_Attempt{
+						{
+							TryjobId:   int64(reuseTryjob.ID),
+							ExternalId: string(tryjob.MustBuildbucketID(bbHost, buildID)),
+							Status:     tryjob.Status_ENDED,
+							Result:     result,
+							Reused:     true,
+						},
+					})
+			})
+
+			Convey("When Tryjob can't be reused thus launch a new Tryjob", func() {
+				execState, err := executor.executePlan(ctx, &plan{
+					triggerNewAttempt: []planItem{
+						{
+							definition: def,
+							execution:  execution,
+						},
+					},
+				}, r, execState)
+				So(err, ShouldBeNil)
+				So(execState.GetStatus(), ShouldEqual, tryjob.ExecutionState_RUNNING)
+				So(execState.GetExecutions()[0].GetAttempts(), ShouldHaveLength, 1)
+				attempt := execState.GetExecutions()[0].GetAttempts()[0]
+				So(attempt.GetTryjobId(), ShouldNotEqual, 0)
+				So(attempt.GetExternalId(), ShouldNotBeEmpty)
+				So(attempt.GetStatus(), ShouldEqual, tryjob.Status_TRIGGERED)
+				So(attempt.GetReused(), ShouldBeFalse)
+			})
+
+			Convey("Fail the execution if encounter launch failure", func() {
+				def.GetBuildbucket().GetBuilder().Project = "another_proj"
+				ct.Clock.SetTimerCallback(func(dur time.Duration, timer clock.Timer) {
+					for _, tag := range testclock.GetTags(timer) {
+						if tag == launchRetryClockTag {
+							ct.Clock.Add(dur)
+						}
+					}
+				})
+				execState, err := executor.executePlan(ctx, &plan{
+					triggerNewAttempt: []planItem{
+						{
+							definition: def,
+							execution:  execution,
+						},
+					},
+				}, r, execState)
+				So(err, ShouldBeNil)
+				So(execState.GetExecutions()[0].GetAttempts(), ShouldHaveLength, 1)
+				attempt := execState.GetExecutions()[0].GetAttempts()[0]
+				So(attempt.GetTryjobId(), ShouldNotEqual, 0)
+				So(attempt.GetExternalId(), ShouldBeEmpty)
+				So(attempt.GetStatus(), ShouldEqual, tryjob.Status_UNTRIGGERED)
+				So(execState.Status, ShouldEqual, tryjob.ExecutionState_FAILED)
+				So(execState.FailureReason, ShouldContainSubstring, "Failed to launch tryjob")
 			})
 		})
 	})
