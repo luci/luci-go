@@ -20,6 +20,7 @@ import (
 	"strings"
 
 	"golang.org/x/sync/errgroup"
+	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/common/clock"
@@ -28,10 +29,12 @@ import (
 
 	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/configs/prjcfg"
+	"go.chromium.org/luci/cv/internal/gerrit"
 	"go.chromium.org/luci/cv/internal/gerrit/cfgmatcher"
 	"go.chromium.org/luci/cv/internal/gerrit/trigger"
 	"go.chromium.org/luci/cv/internal/run"
 	"go.chromium.org/luci/cv/internal/run/impl/state"
+	"go.chromium.org/luci/cv/internal/tryjob/requirement"
 )
 
 // UpdateConfig implements Handler interface.
@@ -127,6 +130,45 @@ func (impl *Impl) UpdateConfig(ctx context.Context, rs *state.RunState, hash str
 				},
 			},
 		})
+
+		if rs.UseCVTryjobExecutor {
+			switch result, err := requirement.Compute(ctx, requirement.Input{
+				ConfigGroup: cgsMap[rs.ConfigGroupID.Name()].Content,
+				RunOwner:    rs.Owner,
+				CLs:         runCLs,
+				RunOptions:  rs.Options,
+			}); {
+			case err != nil:
+				return nil, err
+			case !result.OK():
+				meta := reviewInputMeta{
+					message:        fmt.Sprintf("Config has changed while Run is still running.However, the Tryjob requirement became invalid. Detailed reason:\n\n%s", result.ComputationFailure.Reason()),
+					notify:         gerrit.Whoms{gerrit.Owner, gerrit.CQVoters},
+					addToAttention: gerrit.Whoms{gerrit.Owner, gerrit.CQVoters},
+					reason:         "Computing tryjob requirement failed",
+				}
+				metas := make(map[common.CLID]reviewInputMeta, len(rs.CLs))
+				for _, cl := range rs.CLs {
+					metas[cl] = meta
+				}
+				scheduleTriggersCancellation(ctx, rs, metas, run.Status_FAILED)
+				rs.LogInfof(ctx, "Tryjob Requirement Computation", "Failed to compute tryjob requirement. Reason: %s", result.ComputationFailure.Reason())
+				return &Result{State: rs}, nil
+			case proto.Equal(result.Requirement, rs.Tryjobs.GetRequirement()):
+				// No change to the requirement
+			case hasExecuteTryjobLongOp(rs):
+				// TODO(yiwzhang): implement the staging requirement instead of waiting
+				// for existing long op to complete.
+				return &Result{State: rs, PreserveEvents: true}, nil
+			default:
+				// rs.Tryjobs MUST be non-nil now because start should populate it.
+				rs.Tryjobs = proto.Clone(rs.Tryjobs).(*run.Tryjobs)
+				rs.Tryjobs.Requirement = result.Requirement
+				rs.Tryjobs.RequirementVersion += 1
+				rs.Tryjobs.RequirementComputeAt = timestamppb.New(clock.Now(ctx).UTC())
+				enqueueRequirementChangedTask(ctx, rs)
+			}
+		}
 
 		logging.Infof(ctx, "Upgrading to new ConfigGroupID %q", rs.ConfigGroupID)
 		return &Result{State: rs}, nil

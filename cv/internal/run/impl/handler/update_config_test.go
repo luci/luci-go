@@ -20,7 +20,10 @@ import (
 	"time"
 
 	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/types/known/timestamppb"
 
+	bbpb "go.chromium.org/luci/buildbucket/proto"
+	bbutil "go.chromium.org/luci/buildbucket/protoutil"
 	"go.chromium.org/luci/common/clock"
 	gerritpb "go.chromium.org/luci/common/proto/gerrit"
 	"go.chromium.org/luci/gae/service/datastore"
@@ -34,6 +37,7 @@ import (
 	"go.chromium.org/luci/cv/internal/gerrit/trigger"
 	"go.chromium.org/luci/cv/internal/run"
 	"go.chromium.org/luci/cv/internal/run/impl/state"
+	"go.chromium.org/luci/cv/internal/tryjob/requirement"
 
 	. "github.com/smartystreets/goconvey/convey"
 )
@@ -52,6 +56,11 @@ func TestUpdateConfig(t *testing.T) {
 			gRef        = "refs/heads/main"
 		)
 		runID := common.MakeRunID(lProject, ct.Clock.Now(), 1, []byte("deadbeef"))
+		builder := &bbpb.BuilderID{
+			Project: lProject,
+			Bucket:  "bucket",
+			Builder: "some-builder",
+		}
 
 		putRunCL := func(ci *gerritpb.ChangeInfo, cg *cfgpb.ConfigGroup) {
 			tr := trigger.Find(ci, cg)
@@ -90,6 +99,13 @@ func TestUpdateConfig(t *testing.T) {
 							{Name: gRepoSecond, RefRegexp: []string{"refs/heads/.+"}},
 						},
 					}},
+					Verifiers: &cfgpb.Verifiers{
+						Tryjob: &cfgpb.Verifiers_Tryjob{
+							Builders: []*cfgpb.Verifiers_Tryjob_Builder{
+								{Name: bbutil.FormatBuilderID(builder)},
+							},
+						},
+					},
 					AdditionalModes: []*cfgpb.Mode{{
 						Name:            "QUICK_DRY_RUN",
 						CqLabelValue:    1,
@@ -128,8 +144,24 @@ func TestUpdateConfig(t *testing.T) {
 				StartTime:     triggerTime.Add(1 * time.Minute),
 				Status:        run.Status_RUNNING,
 				ConfigGroupID: prjcfgtest.MustExist(ctx, lProject).ConfigGroupIDs[0], // main
+				Tryjobs: &run.Tryjobs{
+					RequirementVersion:   1,
+					RequirementComputeAt: timestamppb.New(triggerTime.Add(1 * time.Minute)),
+				},
+				UseCVTryjobExecutor: true,
 			},
 		}
+		runCLs, err := run.LoadRunCLs(ctx, rs.ID, rs.CLs)
+		So(err, ShouldBeNil)
+		initialReqmt, err := requirement.Compute(ctx, requirement.Input{
+			ConfigGroup: cgMain,
+			RunOwner:    rs.Owner,
+			CLs:         runCLs,
+			RunOptions:  rs.Options,
+		})
+		So(err, ShouldBeNil)
+		So(initialReqmt.OK(), ShouldBeTrue)
+		rs.Tryjobs.Requirement = initialReqmt.Requirement
 		// Prepare new config as a copy of existing one. Add extra ConfigGroup to it
 		// to ensure its hash will always differ.
 		cfgNew := proto.Clone(cfgCurrent).(*cfgpb.Config)
@@ -185,7 +217,7 @@ func TestUpdateConfig(t *testing.T) {
 		})
 
 		Convey("Upgrades to newer config version when", func() {
-			ensureUpdated := func(expectedGroupName string) {
+			ensureUpdated := func(expectedGroupName string) *Result {
 				res := updateConfig()
 				So(res.State.ConfigGroupID.Hash(), ShouldNotEqual, metaCurrent.Hash())
 				So(res.State.ConfigGroupID.Name(), ShouldEqual, expectedGroupName)
@@ -194,6 +226,7 @@ func TestUpdateConfig(t *testing.T) {
 				So(res.State.LogEntries[0].GetConfigChanged(), ShouldNotBeNil)
 				So(res.SideEffectFn, ShouldBeNil)
 				So(res.PreserveEvents, ShouldBeFalse)
+				return res
 			}
 			Convey("ConfigGroup is same", func() {
 				ensureUpdated("main")
@@ -208,14 +241,24 @@ func TestUpdateConfig(t *testing.T) {
 				ensureUpdated("blah")
 			})
 			Convey("Verifier config changed", func() {
-				cfgNew.ConfigGroups[0].Verifiers = &cfgpb.Verifiers{
-					TreeStatus: &cfgpb.Verifiers_TreeStatus{Url: "https://whatever.example.com"},
-				}
-				ensureUpdated("main")
+				cfgNew.ConfigGroups[0].Verifiers.TreeStatus = &cfgpb.Verifiers_TreeStatus{Url: "https://whatever.example.com"}
+				res := ensureUpdated("main")
+				So(res.State.Tryjobs.GetRequirementVersion(), ShouldEqual, rs.Tryjobs.GetRequirementVersion())
 			})
 			Convey("Watched refs changed", func() {
 				cfgNew.ConfigGroups[0].Gerrit[0].Projects[0].RefRegexpExclude = []string{"refs/heads/exclude"}
 				ensureUpdated("main")
+			})
+			Convey("Tryjob requirement changed", func() {
+				tryjobVerifier := cfgNew.ConfigGroups[0].Verifiers.Tryjob
+				tryjobVerifier.Builders = append(tryjobVerifier.Builders,
+					&cfgpb.Verifiers_Tryjob_Builder{
+						Name: fmt.Sprintf("%s/another-bucket/another-builder", lProject),
+					})
+				res := ensureUpdated("main")
+				So(proto.Equal(res.State.Tryjobs.GetRequirement(), rs.Tryjobs.GetRequirement()), ShouldBeFalse)
+				So(res.State.Tryjobs.GetRequirementVersion(), ShouldEqual, rs.Tryjobs.GetRequirementVersion()+1)
+				So(res.State.Tryjobs.GetRequirementComputeAt().AsTime(), ShouldEqual, ct.Clock.Now().UTC())
 			})
 		})
 

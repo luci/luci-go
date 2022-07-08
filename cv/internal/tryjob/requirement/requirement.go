@@ -32,14 +32,13 @@ import (
 
 	cfgpb "go.chromium.org/luci/cv/api/config/v2"
 	"go.chromium.org/luci/cv/internal/buildbucket"
-	"go.chromium.org/luci/cv/internal/configs/prjcfg"
 	"go.chromium.org/luci/cv/internal/run"
 	"go.chromium.org/luci/cv/internal/tryjob"
 )
 
 // Input contains all info needed to compute the Tryjob Requirement.
 type Input struct {
-	ConfigGroup *prjcfg.ConfigGroup
+	ConfigGroup *cfgpb.ConfigGroup
 	RunOwner    identity.Identity
 	CLs         []*run.RunCL
 	RunOptions  *run.Options
@@ -474,14 +473,14 @@ func getIncludablesAndTriggeredBy(builders []*cfgpb.Verifiers_Tryjob_Builder) (i
 // Compute computes the tryjob requirement to verify the run.
 func Compute(ctx context.Context, in Input) (*ComputationResult, error) {
 	ret := &ComputationResult{Requirement: &tryjob.Requirement{
-		RetryConfig: in.ConfigGroup.Content.GetVerifiers().GetTryjob().GetRetryConfig(),
+		RetryConfig: in.ConfigGroup.GetVerifiers().GetTryjob().GetRetryConfig(),
 	}}
 
 	explicitlyIncluded, compFail := getIncludedTryjobs(in.RunOptions.GetIncludedTryjobs())
 	if compFail != nil {
 		return &ComputationResult{ComputationFailure: compFail}, nil
 	}
-	includableBuilders, triggeredByBuilders := getIncludablesAndTriggeredBy(in.ConfigGroup.Content.GetVerifiers().GetTryjob().GetBuilders())
+	includableBuilders, triggeredByBuilders := getIncludablesAndTriggeredBy(in.ConfigGroup.GetVerifiers().GetTryjob().GetBuilders())
 	unincludable := explicitlyIncluded.Difference(includableBuilders)
 	undefined := unincludable.Difference(triggeredByBuilders)
 	switch {
@@ -504,7 +503,7 @@ func Compute(ctx context.Context, in Input) (*ComputationResult, error) {
 	// equivalent builders upon recomputation.
 	rands := makeRands(in, 2)
 	experimentRand, equivalentBuilderRand := rands[0], rands[1]
-	for _, builder := range in.ConfigGroup.Content.GetVerifiers().GetTryjob().GetBuilders() {
+	for _, builder := range in.ConfigGroup.GetVerifiers().GetTryjob().GetBuilders() {
 		r, compFail, err := shouldInclude(ctx, in, experimentRand, builder, explicitlyIncluded, allOwnerEmails)
 		switch {
 		case err != nil:

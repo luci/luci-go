@@ -75,7 +75,7 @@ func (impl *Impl) Start(ctx context.Context, rs *state.RunState) (*Result, error
 		return nil, err
 	}
 	switch result, err := requirement.Compute(ctx, requirement.Input{
-		ConfigGroup: cg,
+		ConfigGroup: cg.Content,
 		RunOwner:    rs.Owner,
 		CLs:         runCLs,
 		RunOptions:  rs.Options,

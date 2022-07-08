@@ -99,6 +99,8 @@ func (impl *Impl) onCompletedExecuteTryjobs(ctx context.Context, rs *state.RunSt
 		default:
 			if rs.Tryjobs == nil {
 				rs.Tryjobs = &run.Tryjobs{}
+			} else {
+				rs.Tryjobs = proto.Clone(rs.Tryjobs).(*run.Tryjobs)
 			}
 			rs.Tryjobs.State = es // copy the execution state to Run entity
 			switch executionStatus := es.GetStatus(); {

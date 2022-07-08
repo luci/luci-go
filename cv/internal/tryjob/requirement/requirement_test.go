@@ -31,7 +31,6 @@ import (
 	cfgpb "go.chromium.org/luci/cv/api/config/v2"
 	"go.chromium.org/luci/cv/internal/changelist"
 	"go.chromium.org/luci/cv/internal/common"
-	"go.chromium.org/luci/cv/internal/configs/prjcfg"
 	"go.chromium.org/luci/cv/internal/cvtesting"
 	"go.chromium.org/luci/cv/internal/run"
 	"go.chromium.org/luci/cv/internal/tryjob"
@@ -776,16 +775,14 @@ func (bcg builderConfigGenerator) generate() *cfgpb.Verifiers_Tryjob_Builder {
 
 func makeInput(ctx context.Context, builders []*cfgpb.Verifiers_Tryjob_Builder) *Input {
 	ret := &Input{
-		ConfigGroup: &prjcfg.ConfigGroup{
-			Content: &cfgpb.ConfigGroup{
-				Verifiers: &cfgpb.Verifiers{
-					Tryjob: &cfgpb.Verifiers_Tryjob{
-						RetryConfig: &cfgpb.Verifiers_Tryjob_RetryConfig{
-							SingleQuota: 2,
-							GlobalQuota: 8,
-						},
-						Builders: builders,
+		ConfigGroup: &cfgpb.ConfigGroup{
+			Verifiers: &cfgpb.Verifiers{
+				Tryjob: &cfgpb.Verifiers_Tryjob{
+					RetryConfig: &cfgpb.Verifiers_Tryjob_RetryConfig{
+						SingleQuota: 2,
+						GlobalQuota: 8,
 					},
+					Builders: builders,
 				},
 			},
 		},
