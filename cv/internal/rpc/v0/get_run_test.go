@@ -98,14 +98,15 @@ func TestGetRun(t *testing.T) {
 			cl3 := changelist.MustGobID(gHost, 3).MustCreateIfNotExists(ctx)
 			epoch := testclock.TestRecentTimeUTC.Truncate(time.Millisecond)
 			r := &run.Run{
-				ID:         rid,
-				Status:     run.Status_SUCCEEDED,
-				CreateTime: epoch,
-				StartTime:  epoch.Add(time.Second),
-				UpdateTime: epoch.Add(time.Minute),
-				EndTime:    epoch.Add(time.Hour),
-				Owner:      "user:foo@example.org",
-				CLs:        common.MakeCLIDs(int64(cl1.ID), int64(cl2.ID), int64(cl3.ID)),
+				ID:                  rid,
+				Status:              run.Status_SUCCEEDED,
+				CreateTime:          epoch,
+				StartTime:           epoch.Add(time.Second),
+				UpdateTime:          epoch.Add(time.Minute),
+				EndTime:             epoch.Add(time.Hour),
+				Owner:               "user:foo@example.org",
+				CLs:                 common.MakeCLIDs(int64(cl1.ID), int64(cl2.ID), int64(cl3.ID)),
+				UseCVTryjobExecutor: true,
 			}
 			So(datastore.Put(
 				ctx,
@@ -151,59 +152,83 @@ func TestGetRun(t *testing.T) {
 			})
 
 			Convey("w/ tryjobs", func() {
-				def := &tryjob.Definition{
-					Backend: &tryjob.Definition_Buildbucket_{
-						Buildbucket: &tryjob.Definition_Buildbucket{
-							Host: "bb",
-							Builder: &bbpb.BuilderID{
-								Project: "prj",
-								Bucket:  "ci",
-								Builder: "foo",
+				r.Tryjobs = &run.Tryjobs{
+					State: &tryjob.ExecutionState{
+						Requirement: &tryjob.Requirement{
+							Definitions: []*tryjob.Definition{
+								{
+									Backend: &tryjob.Definition_Buildbucket_{
+										Buildbucket: &tryjob.Definition_Buildbucket{
+											Host: "bb",
+											Builder: &bbpb.BuilderID{
+												Project: "prj",
+												Bucket:  "ci",
+												Builder: "foo",
+											},
+										},
+									},
+									Critical: true,
+								},
+								{
+									Backend: &tryjob.Definition_Buildbucket_{
+										Buildbucket: &tryjob.Definition_Buildbucket{
+											Host: "bb",
+											Builder: &bbpb.BuilderID{
+												Project: "prj",
+												Bucket:  "ci",
+												Builder: "bar",
+											},
+										},
+									},
+									Critical: false,
+								},
+							},
+						},
+						Executions: []*tryjob.ExecutionState_Execution{
+							{
+								Attempts: []*tryjob.ExecutionState_Execution_Attempt{
+									{
+										TryjobId:   1,
+										ExternalId: string(tryjob.MustBuildbucketID("bb-host", 11)),
+										Status:     tryjob.Status_ENDED,
+										Result: &tryjob.Result{
+											Status: tryjob.Result_FAILED_TRANSIENTLY,
+											Backend: &tryjob.Result_Buildbucket_{
+												Buildbucket: &tryjob.Result_Buildbucket{
+													Id:     11,
+													Status: bbpb.Status_FAILURE,
+												},
+											},
+										},
+										Reused: false,
+									},
+								},
+							},
+							{
+								Attempts: []*tryjob.ExecutionState_Execution_Attempt{
+									{
+										TryjobId:   2,
+										ExternalId: string(tryjob.MustBuildbucketID("bb-host", 12)),
+										Status:     tryjob.Status_ENDED,
+										Result: &tryjob.Result{
+											Status: tryjob.Result_SUCCEEDED,
+											Backend: &tryjob.Result_Buildbucket_{
+												Buildbucket: &tryjob.Result_Buildbucket{
+													Id:     12,
+													Status: bbpb.Status_SUCCESS,
+												},
+											},
+										},
+										Reused: true,
+									},
+								},
 							},
 						},
 					},
 				}
-				r.Tryjobs = &run.Tryjobs{Tryjobs: []*run.Tryjob{
-					// first tryjob was cancelled.
-					{
-						Id:         1,
-						ExternalId: string(tryjob.MustBuildbucketID("bb-host", 11)),
-						Definition: def,
-						Status:     tryjob.Status_CANCELLED,
-						Result: &tryjob.Result{
-							Status: tryjob.Result_FAILED_TRANSIENTLY,
-							Backend: &tryjob.Result_Buildbucket_{
-								Buildbucket: &tryjob.Result_Buildbucket{
-									Id:     11,
-									Status: bbpb.Status_CANCELED,
-								},
-							},
-						},
-						Critical: true,
-						Reused:   false,
-					},
-					// but the next one was succeeded.
-					{
-						Id:         2,
-						ExternalId: string(tryjob.MustBuildbucketID("bb-host", 12)),
-						Definition: def,
-						Status:     tryjob.Status_ENDED,
-						Result: &tryjob.Result{
-							Status: tryjob.Result_SUCCEEDED,
-							Backend: &tryjob.Result_Buildbucket_{
-								Buildbucket: &tryjob.Result_Buildbucket{
-									Id:     12,
-									Status: bbpb.Status_SUCCESS,
-								},
-							},
-						},
-						Critical: false,
-						Reused:   true,
-					},
-				}}
 				So(saveAndGet(r).Tryjobs, ShouldResembleProto, []*apiv0pb.Tryjob{
 					{
-						Status: apiv0pb.Tryjob_CANCELLED,
+						Status: apiv0pb.Tryjob_ENDED,
 						Result: &apiv0pb.Tryjob_Result{
 							Status: apiv0pb.Tryjob_Result_FAILED_TRANSIENTLY,
 							Backend: &apiv0pb.Tryjob_Result_Buildbucket_{
@@ -224,6 +249,84 @@ func TestGetRun(t *testing.T) {
 						Critical: false,
 						Reuse:    true,
 					},
+				})
+
+				Convey("use tryjobs reported by CQD", func() {
+					r.UseCVTryjobExecutor = false
+					def := &tryjob.Definition{
+						Backend: &tryjob.Definition_Buildbucket_{
+							Buildbucket: &tryjob.Definition_Buildbucket{
+								Host: "bb",
+								Builder: &bbpb.BuilderID{
+									Project: "prj",
+									Bucket:  "ci",
+									Builder: "foo",
+								},
+							},
+						},
+					}
+					r.Tryjobs = &run.Tryjobs{Tryjobs: []*run.Tryjob{
+						// first tryjob was cancelled.
+						{
+							Id:         1,
+							ExternalId: string(tryjob.MustBuildbucketID("bb-host", 11)),
+							Definition: def,
+							Status:     tryjob.Status_CANCELLED,
+							Result: &tryjob.Result{
+								Status: tryjob.Result_FAILED_TRANSIENTLY,
+								Backend: &tryjob.Result_Buildbucket_{
+									Buildbucket: &tryjob.Result_Buildbucket{
+										Id:     11,
+										Status: bbpb.Status_CANCELED,
+									},
+								},
+							},
+							Critical: true,
+							Reused:   false,
+						},
+						// but the next one was succeeded.
+						{
+							Id:         2,
+							ExternalId: string(tryjob.MustBuildbucketID("bb-host", 12)),
+							Definition: def,
+							Status:     tryjob.Status_ENDED,
+							Result: &tryjob.Result{
+								Status: tryjob.Result_SUCCEEDED,
+								Backend: &tryjob.Result_Buildbucket_{
+									Buildbucket: &tryjob.Result_Buildbucket{
+										Id:     12,
+										Status: bbpb.Status_SUCCESS,
+									},
+								},
+							},
+							Critical: false,
+							Reused:   true,
+						},
+					}}
+					So(saveAndGet(r).Tryjobs, ShouldResembleProto, []*apiv0pb.Tryjob{
+						{
+							Status: apiv0pb.Tryjob_CANCELLED,
+							Result: &apiv0pb.Tryjob_Result{
+								Status: apiv0pb.Tryjob_Result_FAILED_TRANSIENTLY,
+								Backend: &apiv0pb.Tryjob_Result_Buildbucket_{
+									Buildbucket: &apiv0pb.Tryjob_Result_Buildbucket{Id: 11},
+								},
+							},
+							Critical: true,
+							Reuse:    false,
+						},
+						{
+							Status: apiv0pb.Tryjob_ENDED,
+							Result: &apiv0pb.Tryjob_Result{
+								Status: apiv0pb.Tryjob_Result_SUCCEEDED,
+								Backend: &apiv0pb.Tryjob_Result_Buildbucket_{
+									Buildbucket: &apiv0pb.Tryjob_Result_Buildbucket{Id: 12},
+								},
+							},
+							Critical: false,
+							Reuse:    true,
+						},
+					})
 				})
 			})
 

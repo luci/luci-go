@@ -80,29 +80,6 @@ func populateRunResponse(ctx context.Context, r *run.Run) (resp *apiv0pb.Run, er
 		}
 	}
 
-	tryjobs := make([]*apiv0pb.Tryjob, len(r.Tryjobs.GetTryjobs()))
-	for i, tj := range r.Tryjobs.GetTryjobs() {
-		tryjobs[i] = &apiv0pb.Tryjob{
-			Status: versioning.TryjobStatusV0(tj.Status),
-		}
-		if tj.Critical {
-			tryjobs[i].Critical = true
-		}
-		if tj.Reused {
-			tryjobs[i].Reuse = true
-		}
-		if result := tj.GetResult(); result != nil {
-			tryjobs[i].Result = &apiv0pb.Tryjob_Result{
-				Status: versioning.TryjobResultStatusV0(result.Status),
-			}
-			if bb := result.GetBuildbucket(); bb != nil {
-				tryjobs[i].Result.Backend = &apiv0pb.Tryjob_Result_Buildbucket_{
-					Buildbucket: &apiv0pb.Tryjob_Result_Buildbucket{Id: bb.Id},
-				}
-			}
-		}
-	}
-
 	var submission *apiv0pb.Run_Submission
 	if len(sCLIndexes) > 0 || len(fCLIndexes) > 0 {
 		submission = &apiv0pb.Run_Submission{
@@ -122,9 +99,62 @@ func populateRunResponse(ctx context.Context, r *run.Run) (resp *apiv0pb.Run, er
 		EndTime:    common.Time2PBNillable(r.EndTime),
 		Owner:      string(r.Owner),
 		Cls:        gcls,
-		Tryjobs:    tryjobs,
+		Tryjobs:    constructTryjobs(ctx, r),
 		Submission: submission,
 	}, nil
+}
+
+func constructTryjobs(ctx context.Context, r *run.Run) []*apiv0pb.Tryjob {
+	if !r.UseCVTryjobExecutor {
+		ret := make([]*apiv0pb.Tryjob, len(r.Tryjobs.GetTryjobs()))
+		for i, tj := range r.Tryjobs.GetTryjobs() {
+			ret[i] = &apiv0pb.Tryjob{
+				Status: versioning.TryjobStatusV0(tj.Status),
+			}
+			if tj.Critical {
+				ret[i].Critical = true
+			}
+			if tj.Reused {
+				ret[i].Reuse = true
+			}
+			if result := tj.GetResult(); result != nil {
+				ret[i].Result = &apiv0pb.Tryjob_Result{
+					Status: versioning.TryjobResultStatusV0(result.Status),
+				}
+				if bb := result.GetBuildbucket(); bb != nil {
+					ret[i].Result.Backend = &apiv0pb.Tryjob_Result_Buildbucket_{
+						Buildbucket: &apiv0pb.Tryjob_Result_Buildbucket{Id: bb.Id},
+					}
+				}
+			}
+		}
+		return ret
+	}
+	var ret []*apiv0pb.Tryjob
+	for i, execution := range r.Tryjobs.GetState().GetExecutions() {
+		definition := r.Tryjobs.GetState().GetRequirement().GetDefinitions()[i]
+		for _, attempt := range execution.GetAttempts() {
+			tj := &apiv0pb.Tryjob{
+				Status:   versioning.TryjobStatusV0(attempt.GetStatus()),
+				Critical: definition.GetCritical(),
+				Reuse:    attempt.GetReused(),
+			}
+			if result := attempt.GetResult(); result != nil {
+				tj.Result = &apiv0pb.Tryjob_Result{
+					Status: versioning.TryjobResultStatusV0(result.GetStatus()),
+				}
+				if bbid := result.GetBuildbucket().GetId(); bbid != 0 {
+					tj.Result.Backend = &apiv0pb.Tryjob_Result_Buildbucket_{
+						Buildbucket: &apiv0pb.Tryjob_Result_Buildbucket{
+							Id: bbid,
+						},
+					}
+				}
+			}
+			ret = append(ret, tj)
+		}
+	}
+	return ret
 }
 
 func min(i, j int) int {
