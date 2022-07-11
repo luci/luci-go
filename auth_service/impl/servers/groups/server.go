@@ -87,13 +87,15 @@ func (*Server) CreateGroup(ctx context.Context, request *rpcpb.CreateGroupReques
 // DeleteGroup implements the corresponding RPC method.
 func (*Server) DeleteGroup(ctx context.Context, request *rpcpb.DeleteGroupRequest) (*emptypb.Empty, error) {
 	name := request.GetName()
-	switch err := model.DeleteAuthGroup(ctx, name); {
+	switch err := model.DeleteAuthGroup(ctx, name, request.GetEtag()); {
 	case err == nil:
 		return &emptypb.Empty{}, nil
 	case errors.Is(err, datastore.ErrNoSuchEntity):
 		return nil, status.Errorf(codes.NotFound, "no such group %q", name)
 	case errors.Is(err, model.ErrPermissionDenied):
 		return nil, status.Errorf(codes.PermissionDenied, "%s has no permission to delete group %q", auth.CurrentIdentity(ctx), name)
+	case errors.Is(err, model.ErrConcurrentModification):
+		return nil, status.Error(codes.Aborted, err.Error())
 	default:
 		return nil, status.Errorf(codes.Internal, "failed to delete group %q: %s", name, err)
 	}

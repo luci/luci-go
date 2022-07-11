@@ -590,8 +590,11 @@ func TestDeleteAuthGroup(t *testing.T) {
 		group.AuthDBRev = 0
 		group.AuthDBPrevRev = 0
 
+		// Etag to use for the group, derived from the last-modified time.
+		etag := `W/"MjAyMS0wOC0xNlQxMjoyMDowMFo="`
+
 		Convey("can't delete the admin group", func() {
-			err := DeleteAuthGroup(ctx, AdminGroup)
+			err := DeleteAuthGroup(ctx, AdminGroup, "")
 			So(err, ShouldEqual, ErrPermissionDenied)
 		})
 
@@ -600,18 +603,24 @@ func TestDeleteAuthGroup(t *testing.T) {
 				Identity: "user:someone@example.com",
 			})
 			So(datastore.Put(ctx, group), ShouldBeNil)
-			err := DeleteAuthGroup(ctx, group.ID)
+			err := DeleteAuthGroup(ctx, group.ID, "")
 			So(err, ShouldEqual, ErrPermissionDenied)
 		})
 
+		Convey("can't delete if etag doesn't match", func() {
+			So(datastore.Put(ctx, group), ShouldBeNil)
+			err := DeleteAuthGroup(ctx, group.ID, "bad-etag")
+			So(err, ShouldErrLike, ErrConcurrentModification)
+		})
+
 		Convey("group name that doesn't exist", func() {
-			err := DeleteAuthGroup(ctx, "non-existent-group")
+			err := DeleteAuthGroup(ctx, "non-existent-group", "")
 			So(err, ShouldEqual, datastore.ErrNoSuchEntity)
 		})
 
 		Convey("successfully deletes from datastore and updates AuthDB", func() {
 			So(datastore.Put(ctx, group), ShouldBeNil)
-			err := DeleteAuthGroup(ctx, group.ID)
+			err := DeleteAuthGroup(ctx, group.ID, etag)
 			So(err, ShouldBeNil)
 
 			state1, err := GetReplicationState(ctx)
@@ -626,7 +635,7 @@ func TestDeleteAuthGroup(t *testing.T) {
 
 		Convey("creates historical group entities", func() {
 			So(datastore.Put(ctx, group), ShouldBeNil)
-			err := DeleteAuthGroup(ctx, group.ID)
+			err := DeleteAuthGroup(ctx, group.ID, "")
 			So(err, ShouldBeNil)
 
 			entities, err := getAllDatastoreEntities(ctx, "AuthGroupHistory", HistoricalRevisionKey(ctx, 1))

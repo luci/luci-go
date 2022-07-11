@@ -17,7 +17,9 @@ package model
 
 import (
 	"context"
+	"encoding/base64"
 	stderrors "errors"
+	"fmt"
 	"regexp"
 	"strings"
 	"time"
@@ -60,6 +62,20 @@ func (e *AuthVersionedEntityMixin) recordChange(modifiedBy string, modifiedTS ti
 
 func (e *AuthVersionedEntityMixin) versionInfo() *AuthVersionedEntityMixin {
 	return e
+}
+
+// etag returns an opaque string to use as an etag for the entity.
+// In reality it just encodes the last-modified time in base64, but this shouldn't
+// be relied on by callers as the implementation may change in future.
+func (e *AuthVersionedEntityMixin) etag() string {
+	bytes, err := e.ModifiedTS.MarshalText()
+	if err != nil {
+		// This is only possible if the timestamp was invalid, which should
+		// never happen.
+		panic("invalid timestamp passed to etagFromTimestamp")
+	}
+	b64 := base64.StdEncoding.EncodeToString(bytes)
+	return fmt.Sprintf(`W/"%s"`, b64)
 }
 
 // makeHistoricalCopy returns a PropertyLoadSaver that represents a historical
@@ -299,6 +315,8 @@ var (
 	ErrInvalidReference = stderrors.New("invalid reference")
 	// ErrInvalidIdentity is returned when a referenced identity or glob is invalid.
 	ErrInvalidIdentity = stderrors.New("invalid identity")
+	// ErrConcurrentModification is returned when an entity is modified by two concurrent operations.
+	ErrConcurrentModification = stderrors.New("concurrent modification")
 )
 
 // RootKey gets the root key of the entity group with all AuthDB entities.
@@ -571,7 +589,7 @@ func CreateAuthGroup(ctx context.Context, group *AuthGroup) (*AuthGroup, error) 
 // Returns datastore.ErrNoSuchEntity if the specified group does not exist.
 // Returns ErrPermissionDenied if the caller is not allowed to delete the group.
 // Returns an annotated error for other errors.
-func DeleteAuthGroup(ctx context.Context, groupName string) error {
+func DeleteAuthGroup(ctx context.Context, groupName string, etag string) error {
 	// Disallow deletion of the admin group.
 	if groupName == AdminGroup {
 		return ErrPermissionDenied
@@ -591,7 +609,10 @@ func DeleteAuthGroup(ctx context.Context, groupName string) error {
 			return ErrPermissionDenied
 		}
 
-		// TODO(jsca): Add etag verification here to protect against concurrent modifications.
+		// Verify etag (if provided) to protect against concurrent modifications.
+		if etag != "" && authGroup.etag() != etag {
+			return errors.Annotate(ErrConcurrentModification, "group %q was updated by someone else", groupName).Err()
+		}
 
 		// TODO(jsca): Check that the group is not referenced from elsewhere.
 
@@ -748,6 +769,7 @@ func (group *AuthGroup) ToProto(includeMemberships bool) *rpcpb.AuthGroup {
 		Owners:      group.Owners,
 		CreatedTs:   timestamppb.New(group.CreatedTS),
 		CreatedBy:   group.CreatedBy,
+		Etag:        group.etag(),
 	}
 	if includeMemberships {
 		authGroup.Members = group.Members

@@ -40,6 +40,12 @@ func TestGroupsServer(t *testing.T) {
 	t.Parallel()
 	srv := Server{}
 	createdTime := time.Date(2021, time.August, 16, 15, 20, 0, 0, time.UTC)
+	modifiedTime := time.Date(2022, time.July, 4, 15, 45, 0, 0, time.UTC)
+	versionedEntity := model.AuthVersionedEntityMixin{
+		ModifiedTS: modifiedTime,
+	}
+	// Etag derived from the above modified time.
+	etag := `W/"MjAyMi0wNy0wNFQxNTo0NTowMFo="`
 
 	Convey("ListGroups RPC call", t, func() {
 		ctx := memory.Use(context.Background())
@@ -60,10 +66,11 @@ func TestGroupsServer(t *testing.T) {
 				Nested: []string{
 					"group/tester",
 				},
-				Description: "This is a test group.",
-				Owners:      "testers",
-				CreatedTS:   createdTime,
-				CreatedBy:   "user:test-user-1@example.com",
+				Description:              "This is a test group.",
+				Owners:                   "testers",
+				CreatedTS:                createdTime,
+				CreatedBy:                "user:test-user-1@example.com",
+				AuthVersionedEntityMixin: versionedEntity,
 			},
 			&model.AuthGroup{
 				ID:     "test-group-2",
@@ -77,10 +84,11 @@ func TestGroupsServer(t *testing.T) {
 				Nested: []string{
 					"group/test-group",
 				},
-				Description: "This is another test group.",
-				Owners:      "test-group",
-				CreatedTS:   createdTime,
-				CreatedBy:   "user:test-user-2@example.com",
+				Description:              "This is another test group.",
+				Owners:                   "test-group",
+				CreatedTS:                createdTime,
+				CreatedBy:                "user:test-user-2@example.com",
+				AuthVersionedEntityMixin: versionedEntity,
 			},
 			&model.AuthGroup{
 				ID:      "test-group-3",
@@ -90,10 +98,11 @@ func TestGroupsServer(t *testing.T) {
 				Nested: []string{
 					"group/tester",
 				},
-				Description: "This is yet another test group.",
-				Owners:      "testers",
-				CreatedTS:   createdTime,
-				CreatedBy:   "user:test-user-1@example.com",
+				Description:              "This is yet another test group.",
+				Owners:                   "testers",
+				CreatedTS:                createdTime,
+				CreatedBy:                "user:test-user-1@example.com",
+				AuthVersionedEntityMixin: versionedEntity,
 			}), ShouldBeNil)
 
 		// What expected response should be, built with pb.
@@ -105,6 +114,7 @@ func TestGroupsServer(t *testing.T) {
 					Owners:      "test-group",
 					CreatedTs:   timestamppb.New(createdTime),
 					CreatedBy:   "user:test-user-2@example.com",
+					Etag:        etag,
 				},
 				{
 					Name:        "test-group-3",
@@ -112,6 +122,7 @@ func TestGroupsServer(t *testing.T) {
 					Owners:      "testers",
 					CreatedTs:   timestamppb.New(createdTime),
 					CreatedBy:   "user:test-user-1@example.com",
+					Etag:        etag,
 				},
 				{
 					Name:        "z-test-group",
@@ -119,6 +130,7 @@ func TestGroupsServer(t *testing.T) {
 					Owners:      "testers",
 					CreatedTs:   timestamppb.New(createdTime),
 					CreatedBy:   "user:test-user-1@example.com",
+					Etag:        etag,
 				},
 			},
 		}
@@ -154,10 +166,11 @@ func TestGroupsServer(t *testing.T) {
 				Nested: []string{
 					"group/tester",
 				},
-				Description: "This is a test group.",
-				Owners:      "testers",
-				CreatedTS:   createdTime,
-				CreatedBy:   "user:test-user-1@example.com",
+				Description:              "This is a test group.",
+				Owners:                   "testers",
+				CreatedTS:                createdTime,
+				CreatedBy:                "user:test-user-1@example.com",
+				AuthVersionedEntityMixin: versionedEntity,
 			}), ShouldBeNil)
 
 		expectedResponse := &rpcpb.AuthGroup{
@@ -177,6 +190,7 @@ func TestGroupsServer(t *testing.T) {
 			Owners:      "testers",
 			CreatedTs:   timestamppb.New(createdTime),
 			CreatedBy:   "user:test-user-1@example.com",
+			Etag:        etag,
 		}
 
 		actualGroupResponse, err := srv.GetGroup(ctx, request)
@@ -313,10 +327,11 @@ func TestGroupsServer(t *testing.T) {
 					Nested: []string{
 						"group/tester",
 					},
-					Description: "This is a test group.",
-					Owners:      "owners",
-					CreatedTS:   createdTime,
-					CreatedBy:   "user:test-user-1@example.com",
+					Description:              "This is a test group.",
+					Owners:                   "owners",
+					CreatedTS:                createdTime,
+					CreatedBy:                "user:test-user-1@example.com",
+					AuthVersionedEntityMixin: versionedEntity,
 				}), ShouldBeNil)
 
 			Convey("Anonymous is denied", func() {
@@ -355,6 +370,57 @@ func TestGroupsServer(t *testing.T) {
 				})
 				_, err := srv.DeleteGroup(ctx, &rpcpb.DeleteGroupRequest{
 					Name: "test-group",
+				})
+				So(err, ShouldBeNil)
+			})
+		})
+
+		Convey("Etags", func() {
+			ctx := auth.WithState(ctx, &authtest.FakeState{
+				Identity:       "user:someone@example.com",
+				IdentityGroups: []string{"owners"},
+			})
+			So(datastore.Put(ctx,
+				&model.AuthGroup{
+					ID:     "test-group",
+					Parent: model.RootKey(ctx),
+					Members: []string{
+						"user:test-user-1",
+						"user:test-user-2",
+					},
+					Globs: []string{
+						"test-user-1@example.com",
+						"test-user-2@example.com",
+					},
+					Nested: []string{
+						"group/tester",
+					},
+					Description:              "This is a test group.",
+					Owners:                   "owners",
+					CreatedTS:                createdTime,
+					CreatedBy:                "user:test-user-1@example.com",
+					AuthVersionedEntityMixin: versionedEntity,
+				}), ShouldBeNil)
+
+			Convey("Incorrect etag is aborted", func() {
+				_, err := srv.DeleteGroup(ctx, &rpcpb.DeleteGroupRequest{
+					Name: "test-group",
+					Etag: "blah",
+				})
+				So(err, ShouldHaveGRPCStatus, codes.Aborted)
+			})
+
+			Convey("Empty etag succeeds", func() {
+				_, err := srv.DeleteGroup(ctx, &rpcpb.DeleteGroupRequest{
+					Name: "test-group",
+				})
+				So(err, ShouldBeNil)
+			})
+
+			Convey("Correct etag succeeds if present", func() {
+				_, err := srv.DeleteGroup(ctx, &rpcpb.DeleteGroupRequest{
+					Name: "test-group",
+					Etag: etag,
 				})
 				So(err, ShouldBeNil)
 			})

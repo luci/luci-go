@@ -68,6 +68,10 @@ message CreateGroupRequest {
 message DeleteGroupRequest {
   // Name of the group to delete.
   string name = 1;
+  // The current etag of the group.
+  // If an etag is provided and does not match the current etag of the group,
+  // deletion will be blocked and an ABORTED error will be returned.
+  string etag = 2;
 }
 
 // AuthGroup defines an individual group.
@@ -80,6 +84,16 @@ message AuthGroup {
   string owners = 6;            // e.g: "administrators"
   google.protobuf.Timestamp created_ts = 7;  // e.g: "1972-01-01T10:00:20.021Z"
   string created_by = 8;                     // e.g: "user:test@example.com"
+
+  // An opaque string that indicates the version of the group being edited.
+  // This will be sent to the client in responses, and should be sent back
+  // to the server for update and delete requests in order to protect against
+  // concurrent modification errors. See https://google.aip.dev/154.
+  // Technically this is a "weak etag", meaning that if two AuthGroups have the
+  // same etag, they are not guaranteed to be byte-for-byte identical. This is
+  // because under the hood we generate it based on the last-modified time
+  // (though this should not be relied on as it may change in future).
+  string etag = 99;
 }
 
 // GetSubgraphRequest contains the Principal that is the basis of the search
