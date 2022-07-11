@@ -21,13 +21,15 @@ import (
 	"testing"
 	"time"
 
+	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/types/known/timestamppb"
+
 	"go.chromium.org/luci/auth/identity"
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
+	gerritpb "go.chromium.org/luci/common/proto/gerrit"
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
-	"google.golang.org/protobuf/proto"
-	"google.golang.org/protobuf/types/known/timestamppb"
 
 	cvbqpb "go.chromium.org/luci/cv/api/bigquery/v1"
 	cfgpb "go.chromium.org/luci/cv/api/config/v2"
@@ -45,7 +47,6 @@ import (
 	"go.chromium.org/luci/cv/internal/tryjob"
 
 	. "github.com/smartystreets/goconvey/convey"
-	gerritpb "go.chromium.org/luci/common/proto/gerrit"
 	. "go.chromium.org/luci/common/testing/assertions"
 )
 
@@ -63,11 +64,12 @@ func TestOnTryjobsUpdated(t *testing.T) {
 		rid := common.MakeRunID(lProject, now, 1, []byte("deadbeef"))
 		rs := &state.RunState{
 			Run: run.Run{
-				ID:         rid,
-				Status:     run.Status_RUNNING,
-				CreateTime: now.Add(-2 * time.Minute),
-				StartTime:  now.Add(-1 * time.Minute),
-				CLs:        common.CLIDs{1},
+				ID:                  rid,
+				Status:              run.Status_RUNNING,
+				CreateTime:          now.Add(-2 * time.Minute),
+				StartTime:           now.Add(-1 * time.Minute),
+				CLs:                 common.CLIDs{1},
+				UseCVTryjobExecutor: true,
 			},
 		}
 		h, _ := makeTestHandler(&ct)
@@ -115,6 +117,15 @@ func TestOnTryjobsUpdated(t *testing.T) {
 				So(res.PreserveEvents, ShouldBeFalse)
 			})
 		}
+
+		Convey("Noop when Run is not using CV Tryjob executor", func() {
+			rs.UseCVTryjobExecutor = false
+			res, err := h.OnTryjobsUpdated(ctx, rs, common.TryjobIDs{123})
+			So(err, ShouldBeNil)
+			So(res.State, ShouldEqual, rs)
+			So(res.SideEffectFn, ShouldBeNil)
+			So(res.PreserveEvents, ShouldBeFalse)
+		})
 	})
 }
 

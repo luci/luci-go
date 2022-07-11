@@ -55,6 +55,9 @@ func (impl *Impl) OnTryjobsUpdated(ctx context.Context, rs *state.RunState, tryj
 		return &Result{State: rs}, nil
 	case status != run.Status_RUNNING:
 		return nil, errors.Reason("expected RUNNING status, got %s", status).Err()
+	case !rs.UseCVTryjobExecutor:
+		logging.Debugf(ctx, "Ignoring Tryjobs event because UseCVTryjobExecutor is set to false")
+		return &Result{State: rs}, nil
 	case hasExecuteTryjobLongOp(rs):
 		// Process this event after the current tryjob executor finish running.
 		return &Result{State: rs, PreserveEvents: true}, nil
