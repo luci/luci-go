@@ -117,10 +117,11 @@ message DeploymentConfig {
 
     // List of Google Chat spaces to send notifications to.
     message ChatSpace {
-      // A preregistered web hook URL to POST notifications too.
+      // Space ID e.g. "AAAA9ulaM5M", can be extracted from the Space URL.
       //
-      // See https://developers.google.com/chat/how-tos/webhooks#create_a_webhook
-      string webhook_url = 1;
+      // The chat app needs to be added into the space first. Search for it
+      // using "LUCI Deploy" title.
+      string id = 1;
     }
     repeated ChatSpace chat_spaces = 3;
 
