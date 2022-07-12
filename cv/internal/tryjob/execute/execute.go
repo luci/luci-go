@@ -62,7 +62,7 @@ type rm interface {
 // This function is idempotent so it is safe to retry.
 func (e *Executor) Do(ctx context.Context, r *run.Run, payload *tryjob.ExecuteTryjobsPayload) error {
 	if !r.UseCVTryjobExecutor {
-		logging.Warningf(ctx, "Tryjob executor is invoked when UseCVTryjobExecutor is set to false. It's likely caused by a race condition when reverting the migration config setting")
+		logging.Warningf(ctx, "crbug/1312255: Tryjob executor is invoked when UseCVTryjobExecutor is set to false. It's likely caused by a race condition when reverting the migration config setting")
 		return nil
 	}
 
