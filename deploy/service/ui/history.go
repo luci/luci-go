@@ -190,7 +190,7 @@ func parseHistoryID(historyID string) (int64, error) {
 
 // historyListingPage renders the history listing page.
 func (ui *UI) historyListingPage(ctx *router.Context, assetID string) error {
-	const pageSize = 50
+	const pageSize = 200
 
 	latest := int64(0)
 	if latestVal := ctx.Request.FormValue("latest"); latestVal != "" {
