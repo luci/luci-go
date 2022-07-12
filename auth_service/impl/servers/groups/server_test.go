@@ -302,6 +302,28 @@ func TestGroupsServer(t *testing.T) {
 		ctx = info.SetImageVersion(ctx, "test-version")
 		ctx, _ = tq.TestingContext(txndefer.FilterRDS(ctx), nil)
 
+		So(datastore.Put(ctx,
+			&model.AuthGroup{
+				ID:     "test-group",
+				Parent: model.RootKey(ctx),
+				Members: []string{
+					"user:test-user-1",
+					"user:test-user-2",
+				},
+				Globs: []string{
+					"test-user-1@example.com",
+					"test-user-2@example.com",
+				},
+				Nested: []string{
+					"group/tester",
+				},
+				Description:              "This is a test group.",
+				Owners:                   "owners",
+				CreatedTS:                createdTime,
+				CreatedBy:                "user:test-user-1@example.com",
+				AuthVersionedEntityMixin: versionedEntity,
+			}), ShouldBeNil)
+
 		Convey("Group not found", func() {
 			request := &rpcpb.DeleteGroupRequest{
 				Name: "non-existent-group",
@@ -311,28 +333,28 @@ func TestGroupsServer(t *testing.T) {
 			So(err, ShouldHaveGRPCStatus, codes.NotFound)
 		})
 
-		Convey("Permissions", func() {
+		Convey("Group referenced elsewhere", func() {
+			ctx := auth.WithState(ctx, &authtest.FakeState{
+				Identity:       "user:someone@example.com",
+				IdentityGroups: []string{"owners"},
+			})
 			So(datastore.Put(ctx,
 				&model.AuthGroup{
-					ID:     "test-group",
+					ID:     "nesting-group",
 					Parent: model.RootKey(ctx),
-					Members: []string{
-						"user:test-user-1",
-						"user:test-user-2",
-					},
-					Globs: []string{
-						"test-user-1@example.com",
-						"test-user-2@example.com",
-					},
 					Nested: []string{
-						"group/tester",
+						"test-group",
 					},
-					Description:              "This is a test group.",
-					Owners:                   "owners",
-					CreatedTS:                createdTime,
-					CreatedBy:                "user:test-user-1@example.com",
-					AuthVersionedEntityMixin: versionedEntity,
 				}), ShouldBeNil)
+			request := &rpcpb.DeleteGroupRequest{
+				Name: "test-group",
+			}
+
+			_, err := srv.DeleteGroup(ctx, request)
+			So(err, ShouldHaveGRPCStatus, codes.FailedPrecondition)
+		})
+
+		Convey("Permissions", func() {
 
 			Convey("Anonymous is denied", func() {
 				ctx := auth.WithState(ctx, &authtest.FakeState{})
@@ -380,27 +402,6 @@ func TestGroupsServer(t *testing.T) {
 				Identity:       "user:someone@example.com",
 				IdentityGroups: []string{"owners"},
 			})
-			So(datastore.Put(ctx,
-				&model.AuthGroup{
-					ID:     "test-group",
-					Parent: model.RootKey(ctx),
-					Members: []string{
-						"user:test-user-1",
-						"user:test-user-2",
-					},
-					Globs: []string{
-						"test-user-1@example.com",
-						"test-user-2@example.com",
-					},
-					Nested: []string{
-						"group/tester",
-					},
-					Description:              "This is a test group.",
-					Owners:                   "owners",
-					CreatedTS:                createdTime,
-					CreatedBy:                "user:test-user-1@example.com",
-					AuthVersionedEntityMixin: versionedEntity,
-				}), ShouldBeNil)
 
 			Convey("Incorrect etag is aborted", func() {
 				_, err := srv.DeleteGroup(ctx, &rpcpb.DeleteGroupRequest{

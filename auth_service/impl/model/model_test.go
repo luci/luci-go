@@ -618,6 +618,30 @@ func TestDeleteAuthGroup(t *testing.T) {
 			So(err, ShouldEqual, datastore.ErrNoSuchEntity)
 		})
 
+		Convey("can't delete if group owns another group", func() {
+			So(datastore.Put(ctx, group), ShouldBeNil)
+
+			ownedGroup := testAuthGroup(ctx, "owned", nil)
+			ownedGroup.Owners = group.ID
+			So(datastore.Put(ctx, ownedGroup), ShouldBeNil)
+
+			err := DeleteAuthGroup(ctx, group.ID, "")
+			So(err, ShouldErrLike, ErrReferencedEntity)
+			So(err, ShouldErrLike, "this group is referenced by other groups: [owned]")
+		})
+
+		Convey("can't delete if group is nested by group", func() {
+			So(datastore.Put(ctx, group), ShouldBeNil)
+
+			nestingGroup := testAuthGroup(ctx, "nester", nil)
+			nestingGroup.Nested = []string{group.ID}
+			So(datastore.Put(ctx, nestingGroup), ShouldBeNil)
+
+			err := DeleteAuthGroup(ctx, group.ID, "")
+			So(err, ShouldErrLike, ErrReferencedEntity)
+			So(err, ShouldErrLike, "this group is referenced by other groups: [nester]")
+		})
+
 		Convey("successfully deletes from datastore and updates AuthDB", func() {
 			So(datastore.Put(ctx, group), ShouldBeNil)
 			err := DeleteAuthGroup(ctx, group.ID, etag)

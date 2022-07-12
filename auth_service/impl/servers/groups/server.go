@@ -96,6 +96,8 @@ func (*Server) DeleteGroup(ctx context.Context, request *rpcpb.DeleteGroupReques
 		return nil, status.Errorf(codes.PermissionDenied, "%s has no permission to delete group %q", auth.CurrentIdentity(ctx), name)
 	case errors.Is(err, model.ErrConcurrentModification):
 		return nil, status.Error(codes.Aborted, err.Error())
+	case errors.Is(err, model.ErrReferencedEntity):
+		return nil, status.Error(codes.FailedPrecondition, err.Error())
 	default:
 		return nil, status.Errorf(codes.Internal, "failed to delete group %q: %s", name, err)
 	}

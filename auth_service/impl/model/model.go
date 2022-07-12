@@ -30,7 +30,9 @@ import (
 	"go.chromium.org/luci/auth_service/api/rpcpb"
 	"go.chromium.org/luci/auth_service/impl/info"
 	"go.chromium.org/luci/common/clock"
+	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/sync/parallel"
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/server/auth"
 	_ "go.chromium.org/luci/server/tq/txn/datastore"
@@ -317,6 +319,8 @@ var (
 	ErrInvalidIdentity = stderrors.New("invalid identity")
 	// ErrConcurrentModification is returned when an entity is modified by two concurrent operations.
 	ErrConcurrentModification = stderrors.New("concurrent modification")
+	// ErrReferencedEntity is returned when an entity cannot be deleted because it is referenced elsewhere.
+	ErrReferencedEntity = stderrors.New("cannot delete referenced entity")
 )
 
 // RootKey gets the root key of the entity group with all AuthDB entities.
@@ -584,10 +588,55 @@ func CreateAuthGroup(ctx context.Context, group *AuthGroup) (*AuthGroup, error) 
 	return newGroup, nil
 }
 
+// findGroupsWithFieldEq queries Datastore for the names of all groups where the
+// given field has at least one value equal to val.
+func findGroupsWithFieldEq(ctx context.Context, field string, val string) ([]string, error) {
+	q := datastore.NewQuery("AuthGroup").Ancestor(RootKey(ctx)).Eq(field, val)
+	var groups []*AuthGroup
+	if err := datastore.GetAll(ctx, q, &groups); err != nil {
+		return nil, err
+	}
+	names := make([]string, len(groups))
+	for i, group := range groups {
+		names[i] = group.ID
+	}
+	return names, nil
+}
+
+// findReferencingGroups finds groups that reference the specified group as nested group or owner.
+//
+// Used to verify that group is safe to delete, i.e. no other group is depending on it.
+//
+// Returns a set of names of referencing groups.
+// May include the original group if it referenced itself.
+func findReferencingGroups(ctx context.Context, groupName string) (stringset.Set, error) {
+	var nestingGroups []string
+	var ownedGroups []string
+	err := parallel.FanOutIn(func(work chan<- func() error) {
+		work <- func() (err error) {
+			nestingGroups, err = findGroupsWithFieldEq(ctx, "nested", groupName)
+			return
+		}
+		work <- func() (err error) {
+			ownedGroups, err = findGroupsWithFieldEq(ctx, "owners", groupName)
+			return
+		}
+	})
+	if err != nil {
+		return nil, errors.Annotate(err, "error fetching referencing groups").Err()
+	}
+	names := stringset.New(len(nestingGroups) + len(ownedGroups))
+	names.AddAll(nestingGroups)
+	names.AddAll(ownedGroups)
+	return names, nil
+}
+
 // DeleteAuthGroup deletes the specified auth group.
 //
 // Returns datastore.ErrNoSuchEntity if the specified group does not exist.
 // Returns ErrPermissionDenied if the caller is not allowed to delete the group.
+// Returns ErrConcurrentModification if the provided etag is not up-to-date.
+// Returns ErrReferencedEntity if the group is referenced by another group.
 // Returns an annotated error for other errors.
 func DeleteAuthGroup(ctx context.Context, groupName string, etag string) error {
 	// Disallow deletion of the admin group.
@@ -614,7 +663,17 @@ func DeleteAuthGroup(ctx context.Context, groupName string, etag string) error {
 			return errors.Annotate(ErrConcurrentModification, "group %q was updated by someone else", groupName).Err()
 		}
 
-		// TODO(jsca): Check that the group is not referenced from elsewhere.
+		// Check that the group is not referenced from elsewhere.
+		referencingGroups, err := findReferencingGroups(ctx, groupName)
+		if err != nil {
+			return errors.Annotate(err, "failed to check referencing groups").Err()
+		}
+		// It's okay to delete a group that references itself.
+		referencingGroups.Del(groupName)
+		if len(referencingGroups) > 0 {
+			groupsStr := strings.Join(referencingGroups.ToSortedSlice(), ", ")
+			return errors.Annotate(ErrReferencedEntity, "this group is referenced by other groups: [%s]", groupsStr).Err()
+		}
 
 		// Delete the group.
 		return commitEntity(authGroup, clock.Now(ctx).UTC(), auth.CurrentIdentity(ctx), true)
