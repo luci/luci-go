@@ -29,8 +29,10 @@ func shouldRecordHistory(next, prev *modelpb.AssetHistory) bool {
 	nextDecision := next.Decision.Decision
 	prevDecision := prev.Decision.Decision
 	switch {
+	case nextDecision == modelpb.ActuationDecision_SKIP_UPTODATE && IsActuateDecision(prevDecision):
+		return false // this particular transition is very common and not interesting
 	case nextDecision != prevDecision:
-		return true // changes are always interesting
+		return true // other changes are always interesting
 	case IsActuateDecision(nextDecision):
 		return true // active actuations are also always interesting
 	case nextDecision == modelpb.ActuationDecision_SKIP_UPTODATE:
