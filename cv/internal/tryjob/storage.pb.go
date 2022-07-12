@@ -661,6 +661,130 @@ func (x *ExecutionState) GetFailureReason() string {
 	return ""
 }
 
+// ExecutionLogEntries contains a list of log entries ordered by time.
+type ExecutionLogEntries struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	Entries []*ExecutionLogEntry `protobuf:"bytes,1,rep,name=entries,proto3" json:"entries,omitempty"`
+}
+
+func (x *ExecutionLogEntries) Reset() {
+	*x = ExecutionLogEntries{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_go_chromium_org_luci_cv_internal_tryjob_storage_proto_msgTypes[4]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *ExecutionLogEntries) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ExecutionLogEntries) ProtoMessage() {}
+
+func (x *ExecutionLogEntries) ProtoReflect() protoreflect.Message {
+	mi := &file_go_chromium_org_luci_cv_internal_tryjob_storage_proto_msgTypes[4]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ExecutionLogEntries.ProtoReflect.Descriptor instead.
+func (*ExecutionLogEntries) Descriptor() ([]byte, []int) {
+	return file_go_chromium_org_luci_cv_internal_tryjob_storage_proto_rawDescGZIP(), []int{4}
+}
+
+func (x *ExecutionLogEntries) GetEntries() []*ExecutionLogEntry {
+	if x != nil {
+		return x.Entries
+	}
+	return nil
+}
+
+// ExecutionLogEntry records what happened during Tryjob Execution.
+type ExecutionLogEntry struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	// Time is when the event occurs.
+	Time *timestamppb.Timestamp `protobuf:"bytes,1,opt,name=time,proto3" json:"time,omitempty"`
+	// Types that are assignable to Kind:
+	//	*ExecutionLogEntry_RequirementChanged_
+	Kind isExecutionLogEntry_Kind `protobuf_oneof:"kind"`
+}
+
+func (x *ExecutionLogEntry) Reset() {
+	*x = ExecutionLogEntry{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_go_chromium_org_luci_cv_internal_tryjob_storage_proto_msgTypes[5]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *ExecutionLogEntry) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ExecutionLogEntry) ProtoMessage() {}
+
+func (x *ExecutionLogEntry) ProtoReflect() protoreflect.Message {
+	mi := &file_go_chromium_org_luci_cv_internal_tryjob_storage_proto_msgTypes[5]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ExecutionLogEntry.ProtoReflect.Descriptor instead.
+func (*ExecutionLogEntry) Descriptor() ([]byte, []int) {
+	return file_go_chromium_org_luci_cv_internal_tryjob_storage_proto_rawDescGZIP(), []int{5}
+}
+
+func (x *ExecutionLogEntry) GetTime() *timestamppb.Timestamp {
+	if x != nil {
+		return x.Time
+	}
+	return nil
+}
+
+func (m *ExecutionLogEntry) GetKind() isExecutionLogEntry_Kind {
+	if m != nil {
+		return m.Kind
+	}
+	return nil
+}
+
+func (x *ExecutionLogEntry) GetRequirementChanged() *ExecutionLogEntry_RequirementChanged {
+	if x, ok := x.GetKind().(*ExecutionLogEntry_RequirementChanged_); ok {
+		return x.RequirementChanged
+	}
+	return nil
+}
+
+type isExecutionLogEntry_Kind interface {
+	isExecutionLogEntry_Kind()
+}
+
+type ExecutionLogEntry_RequirementChanged_ struct {
+	RequirementChanged *ExecutionLogEntry_RequirementChanged `protobuf:"bytes,2,opt,name=requirement_changed,json=requirementChanged,proto3,oneof"` // TODO(yiwzhang): add more log kinds
+}
+
+func (*ExecutionLogEntry_RequirementChanged_) isExecutionLogEntry_Kind() {}
+
 // TryjobUpdatedEvent describes which Tryjob entity is updated.
 type TryjobUpdatedEvent struct {
 	state         protoimpl.MessageState
@@ -673,7 +797,7 @@ type TryjobUpdatedEvent struct {
 func (x *TryjobUpdatedEvent) Reset() {
 	*x = TryjobUpdatedEvent{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_go_chromium_org_luci_cv_internal_tryjob_storage_proto_msgTypes[4]
+		mi := &file_go_chromium_org_luci_cv_internal_tryjob_storage_proto_msgTypes[6]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -686,7 +810,7 @@ func (x *TryjobUpdatedEvent) String() string {
 func (*TryjobUpdatedEvent) ProtoMessage() {}
 
 func (x *TryjobUpdatedEvent) ProtoReflect() protoreflect.Message {
-	mi := &file_go_chromium_org_luci_cv_internal_tryjob_storage_proto_msgTypes[4]
+	mi := &file_go_chromium_org_luci_cv_internal_tryjob_storage_proto_msgTypes[6]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -699,7 +823,7 @@ func (x *TryjobUpdatedEvent) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use TryjobUpdatedEvent.ProtoReflect.Descriptor instead.
 func (*TryjobUpdatedEvent) Descriptor() ([]byte, []int) {
-	return file_go_chromium_org_luci_cv_internal_tryjob_storage_proto_rawDescGZIP(), []int{4}
+	return file_go_chromium_org_luci_cv_internal_tryjob_storage_proto_rawDescGZIP(), []int{6}
 }
 
 func (x *TryjobUpdatedEvent) GetTryjobId() int64 {
@@ -721,7 +845,7 @@ type TryjobUpdatedEvents struct {
 func (x *TryjobUpdatedEvents) Reset() {
 	*x = TryjobUpdatedEvents{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_go_chromium_org_luci_cv_internal_tryjob_storage_proto_msgTypes[5]
+		mi := &file_go_chromium_org_luci_cv_internal_tryjob_storage_proto_msgTypes[7]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -734,7 +858,7 @@ func (x *TryjobUpdatedEvents) String() string {
 func (*TryjobUpdatedEvents) ProtoMessage() {}
 
 func (x *TryjobUpdatedEvents) ProtoReflect() protoreflect.Message {
-	mi := &file_go_chromium_org_luci_cv_internal_tryjob_storage_proto_msgTypes[5]
+	mi := &file_go_chromium_org_luci_cv_internal_tryjob_storage_proto_msgTypes[7]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -747,7 +871,7 @@ func (x *TryjobUpdatedEvents) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use TryjobUpdatedEvents.ProtoReflect.Descriptor instead.
 func (*TryjobUpdatedEvents) Descriptor() ([]byte, []int) {
-	return file_go_chromium_org_luci_cv_internal_tryjob_storage_proto_rawDescGZIP(), []int{5}
+	return file_go_chromium_org_luci_cv_internal_tryjob_storage_proto_rawDescGZIP(), []int{7}
 }
 
 func (x *TryjobUpdatedEvents) GetEvents() []*TryjobUpdatedEvent {
@@ -769,7 +893,7 @@ type Definition_Buildbucket struct {
 func (x *Definition_Buildbucket) Reset() {
 	*x = Definition_Buildbucket{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_go_chromium_org_luci_cv_internal_tryjob_storage_proto_msgTypes[6]
+		mi := &file_go_chromium_org_luci_cv_internal_tryjob_storage_proto_msgTypes[8]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -782,7 +906,7 @@ func (x *Definition_Buildbucket) String() string {
 func (*Definition_Buildbucket) ProtoMessage() {}
 
 func (x *Definition_Buildbucket) ProtoReflect() protoreflect.Message {
-	mi := &file_go_chromium_org_luci_cv_internal_tryjob_storage_proto_msgTypes[6]
+	mi := &file_go_chromium_org_luci_cv_internal_tryjob_storage_proto_msgTypes[8]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -828,7 +952,7 @@ type Result_Buildbucket struct {
 func (x *Result_Buildbucket) Reset() {
 	*x = Result_Buildbucket{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_go_chromium_org_luci_cv_internal_tryjob_storage_proto_msgTypes[7]
+		mi := &file_go_chromium_org_luci_cv_internal_tryjob_storage_proto_msgTypes[9]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -841,7 +965,7 @@ func (x *Result_Buildbucket) String() string {
 func (*Result_Buildbucket) ProtoMessage() {}
 
 func (x *Result_Buildbucket) ProtoReflect() protoreflect.Message {
-	mi := &file_go_chromium_org_luci_cv_internal_tryjob_storage_proto_msgTypes[7]
+	mi := &file_go_chromium_org_luci_cv_internal_tryjob_storage_proto_msgTypes[9]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -902,7 +1026,7 @@ type ExecutionState_Execution struct {
 func (x *ExecutionState_Execution) Reset() {
 	*x = ExecutionState_Execution{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_go_chromium_org_luci_cv_internal_tryjob_storage_proto_msgTypes[8]
+		mi := &file_go_chromium_org_luci_cv_internal_tryjob_storage_proto_msgTypes[10]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -915,7 +1039,7 @@ func (x *ExecutionState_Execution) String() string {
 func (*ExecutionState_Execution) ProtoMessage() {}
 
 func (x *ExecutionState_Execution) ProtoReflect() protoreflect.Message {
-	mi := &file_go_chromium_org_luci_cv_internal_tryjob_storage_proto_msgTypes[8]
+	mi := &file_go_chromium_org_luci_cv_internal_tryjob_storage_proto_msgTypes[10]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -973,7 +1097,7 @@ type ExecutionState_Execution_Attempt struct {
 func (x *ExecutionState_Execution_Attempt) Reset() {
 	*x = ExecutionState_Execution_Attempt{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_go_chromium_org_luci_cv_internal_tryjob_storage_proto_msgTypes[9]
+		mi := &file_go_chromium_org_luci_cv_internal_tryjob_storage_proto_msgTypes[11]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -986,7 +1110,7 @@ func (x *ExecutionState_Execution_Attempt) String() string {
 func (*ExecutionState_Execution_Attempt) ProtoMessage() {}
 
 func (x *ExecutionState_Execution_Attempt) ProtoReflect() protoreflect.Message {
-	mi := &file_go_chromium_org_luci_cv_internal_tryjob_storage_proto_msgTypes[9]
+	mi := &file_go_chromium_org_luci_cv_internal_tryjob_storage_proto_msgTypes[11]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1035,6 +1159,44 @@ func (x *ExecutionState_Execution_Attempt) GetReused() bool {
 		return x.Reused
 	}
 	return false
+}
+
+type ExecutionLogEntry_RequirementChanged struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+}
+
+func (x *ExecutionLogEntry_RequirementChanged) Reset() {
+	*x = ExecutionLogEntry_RequirementChanged{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_go_chromium_org_luci_cv_internal_tryjob_storage_proto_msgTypes[12]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *ExecutionLogEntry_RequirementChanged) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ExecutionLogEntry_RequirementChanged) ProtoMessage() {}
+
+func (x *ExecutionLogEntry_RequirementChanged) ProtoReflect() protoreflect.Message {
+	mi := &file_go_chromium_org_luci_cv_internal_tryjob_storage_proto_msgTypes[12]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ExecutionLogEntry_RequirementChanged.ProtoReflect.Descriptor instead.
+func (*ExecutionLogEntry_RequirementChanged) Descriptor() ([]byte, []int) {
+	return file_go_chromium_org_luci_cv_internal_tryjob_storage_proto_rawDescGZIP(), []int{5, 0}
 }
 
 var File_go_chromium_org_luci_cv_internal_tryjob_storage_proto protoreflect.FileDescriptor
@@ -1184,25 +1346,44 @@ var file_go_chromium_org_luci_cv_internal_tryjob_storage_proto_rawDesc = []byte{
 	0x53, 0x50, 0x45, 0x43, 0x49, 0x46, 0x49, 0x45, 0x44, 0x10, 0x00, 0x12, 0x0b, 0x0a, 0x07, 0x52,
 	0x55, 0x4e, 0x4e, 0x49, 0x4e, 0x47, 0x10, 0x01, 0x12, 0x0a, 0x0a, 0x06, 0x46, 0x41, 0x49, 0x4c,
 	0x45, 0x44, 0x10, 0x02, 0x12, 0x0d, 0x0a, 0x09, 0x53, 0x55, 0x43, 0x43, 0x45, 0x45, 0x44, 0x45,
-	0x44, 0x10, 0x03, 0x22, 0x31, 0x0a, 0x12, 0x54, 0x72, 0x79, 0x6a, 0x6f, 0x62, 0x55, 0x70, 0x64,
-	0x61, 0x74, 0x65, 0x64, 0x45, 0x76, 0x65, 0x6e, 0x74, 0x12, 0x1b, 0x0a, 0x09, 0x74, 0x72, 0x79,
-	0x6a, 0x6f, 0x62, 0x5f, 0x69, 0x64, 0x18, 0x01, 0x20, 0x01, 0x28, 0x03, 0x52, 0x08, 0x74, 0x72,
-	0x79, 0x6a, 0x6f, 0x62, 0x49, 0x64, 0x22, 0x55, 0x0a, 0x13, 0x54, 0x72, 0x79, 0x6a, 0x6f, 0x62,
-	0x55, 0x70, 0x64, 0x61, 0x74, 0x65, 0x64, 0x45, 0x76, 0x65, 0x6e, 0x74, 0x73, 0x12, 0x3e, 0x0a,
-	0x06, 0x65, 0x76, 0x65, 0x6e, 0x74, 0x73, 0x18, 0x01, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x26, 0x2e,
-	0x63, 0x76, 0x2e, 0x69, 0x6e, 0x74, 0x65, 0x72, 0x6e, 0x61, 0x6c, 0x2e, 0x74, 0x72, 0x79, 0x6a,
-	0x6f, 0x62, 0x2e, 0x54, 0x72, 0x79, 0x6a, 0x6f, 0x62, 0x55, 0x70, 0x64, 0x61, 0x74, 0x65, 0x64,
-	0x45, 0x76, 0x65, 0x6e, 0x74, 0x52, 0x06, 0x65, 0x76, 0x65, 0x6e, 0x74, 0x73, 0x2a, 0x67, 0x0a,
-	0x06, 0x53, 0x74, 0x61, 0x74, 0x75, 0x73, 0x12, 0x16, 0x0a, 0x12, 0x53, 0x54, 0x41, 0x54, 0x55,
-	0x53, 0x5f, 0x55, 0x4e, 0x53, 0x50, 0x45, 0x43, 0x49, 0x46, 0x49, 0x45, 0x44, 0x10, 0x00, 0x12,
-	0x0b, 0x0a, 0x07, 0x50, 0x45, 0x4e, 0x44, 0x49, 0x4e, 0x47, 0x10, 0x01, 0x12, 0x0d, 0x0a, 0x09,
-	0x54, 0x52, 0x49, 0x47, 0x47, 0x45, 0x52, 0x45, 0x44, 0x10, 0x02, 0x12, 0x09, 0x0a, 0x05, 0x45,
-	0x4e, 0x44, 0x45, 0x44, 0x10, 0x03, 0x12, 0x0d, 0x0a, 0x09, 0x43, 0x41, 0x4e, 0x43, 0x45, 0x4c,
-	0x4c, 0x45, 0x44, 0x10, 0x04, 0x12, 0x0f, 0x0a, 0x0b, 0x55, 0x4e, 0x54, 0x52, 0x49, 0x47, 0x47,
-	0x45, 0x52, 0x45, 0x44, 0x10, 0x05, 0x42, 0x30, 0x5a, 0x2e, 0x67, 0x6f, 0x2e, 0x63, 0x68, 0x72,
-	0x6f, 0x6d, 0x69, 0x75, 0x6d, 0x2e, 0x6f, 0x72, 0x67, 0x2f, 0x6c, 0x75, 0x63, 0x69, 0x2f, 0x63,
-	0x76, 0x2f, 0x69, 0x6e, 0x74, 0x65, 0x72, 0x6e, 0x61, 0x6c, 0x2f, 0x74, 0x72, 0x79, 0x6a, 0x6f,
-	0x62, 0x3b, 0x74, 0x72, 0x79, 0x6a, 0x6f, 0x62, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
+	0x44, 0x10, 0x03, 0x22, 0x56, 0x0a, 0x13, 0x45, 0x78, 0x65, 0x63, 0x75, 0x74, 0x69, 0x6f, 0x6e,
+	0x4c, 0x6f, 0x67, 0x45, 0x6e, 0x74, 0x72, 0x69, 0x65, 0x73, 0x12, 0x3f, 0x0a, 0x07, 0x65, 0x6e,
+	0x74, 0x72, 0x69, 0x65, 0x73, 0x18, 0x01, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x25, 0x2e, 0x63, 0x76,
+	0x2e, 0x69, 0x6e, 0x74, 0x65, 0x72, 0x6e, 0x61, 0x6c, 0x2e, 0x74, 0x72, 0x79, 0x6a, 0x6f, 0x62,
+	0x2e, 0x45, 0x78, 0x65, 0x63, 0x75, 0x74, 0x69, 0x6f, 0x6e, 0x4c, 0x6f, 0x67, 0x45, 0x6e, 0x74,
+	0x72, 0x79, 0x52, 0x07, 0x65, 0x6e, 0x74, 0x72, 0x69, 0x65, 0x73, 0x22, 0xce, 0x01, 0x0a, 0x11,
+	0x45, 0x78, 0x65, 0x63, 0x75, 0x74, 0x69, 0x6f, 0x6e, 0x4c, 0x6f, 0x67, 0x45, 0x6e, 0x74, 0x72,
+	0x79, 0x12, 0x2e, 0x0a, 0x04, 0x74, 0x69, 0x6d, 0x65, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0b, 0x32,
+	0x1a, 0x2e, 0x67, 0x6f, 0x6f, 0x67, 0x6c, 0x65, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x62, 0x75,
+	0x66, 0x2e, 0x54, 0x69, 0x6d, 0x65, 0x73, 0x74, 0x61, 0x6d, 0x70, 0x52, 0x04, 0x74, 0x69, 0x6d,
+	0x65, 0x12, 0x6b, 0x0a, 0x13, 0x72, 0x65, 0x71, 0x75, 0x69, 0x72, 0x65, 0x6d, 0x65, 0x6e, 0x74,
+	0x5f, 0x63, 0x68, 0x61, 0x6e, 0x67, 0x65, 0x64, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x38,
+	0x2e, 0x63, 0x76, 0x2e, 0x69, 0x6e, 0x74, 0x65, 0x72, 0x6e, 0x61, 0x6c, 0x2e, 0x74, 0x72, 0x79,
+	0x6a, 0x6f, 0x62, 0x2e, 0x45, 0x78, 0x65, 0x63, 0x75, 0x74, 0x69, 0x6f, 0x6e, 0x4c, 0x6f, 0x67,
+	0x45, 0x6e, 0x74, 0x72, 0x79, 0x2e, 0x52, 0x65, 0x71, 0x75, 0x69, 0x72, 0x65, 0x6d, 0x65, 0x6e,
+	0x74, 0x43, 0x68, 0x61, 0x6e, 0x67, 0x65, 0x64, 0x48, 0x00, 0x52, 0x12, 0x72, 0x65, 0x71, 0x75,
+	0x69, 0x72, 0x65, 0x6d, 0x65, 0x6e, 0x74, 0x43, 0x68, 0x61, 0x6e, 0x67, 0x65, 0x64, 0x1a, 0x14,
+	0x0a, 0x12, 0x52, 0x65, 0x71, 0x75, 0x69, 0x72, 0x65, 0x6d, 0x65, 0x6e, 0x74, 0x43, 0x68, 0x61,
+	0x6e, 0x67, 0x65, 0x64, 0x42, 0x06, 0x0a, 0x04, 0x6b, 0x69, 0x6e, 0x64, 0x22, 0x31, 0x0a, 0x12,
+	0x54, 0x72, 0x79, 0x6a, 0x6f, 0x62, 0x55, 0x70, 0x64, 0x61, 0x74, 0x65, 0x64, 0x45, 0x76, 0x65,
+	0x6e, 0x74, 0x12, 0x1b, 0x0a, 0x09, 0x74, 0x72, 0x79, 0x6a, 0x6f, 0x62, 0x5f, 0x69, 0x64, 0x18,
+	0x01, 0x20, 0x01, 0x28, 0x03, 0x52, 0x08, 0x74, 0x72, 0x79, 0x6a, 0x6f, 0x62, 0x49, 0x64, 0x22,
+	0x55, 0x0a, 0x13, 0x54, 0x72, 0x79, 0x6a, 0x6f, 0x62, 0x55, 0x70, 0x64, 0x61, 0x74, 0x65, 0x64,
+	0x45, 0x76, 0x65, 0x6e, 0x74, 0x73, 0x12, 0x3e, 0x0a, 0x06, 0x65, 0x76, 0x65, 0x6e, 0x74, 0x73,
+	0x18, 0x01, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x26, 0x2e, 0x63, 0x76, 0x2e, 0x69, 0x6e, 0x74, 0x65,
+	0x72, 0x6e, 0x61, 0x6c, 0x2e, 0x74, 0x72, 0x79, 0x6a, 0x6f, 0x62, 0x2e, 0x54, 0x72, 0x79, 0x6a,
+	0x6f, 0x62, 0x55, 0x70, 0x64, 0x61, 0x74, 0x65, 0x64, 0x45, 0x76, 0x65, 0x6e, 0x74, 0x52, 0x06,
+	0x65, 0x76, 0x65, 0x6e, 0x74, 0x73, 0x2a, 0x67, 0x0a, 0x06, 0x53, 0x74, 0x61, 0x74, 0x75, 0x73,
+	0x12, 0x16, 0x0a, 0x12, 0x53, 0x54, 0x41, 0x54, 0x55, 0x53, 0x5f, 0x55, 0x4e, 0x53, 0x50, 0x45,
+	0x43, 0x49, 0x46, 0x49, 0x45, 0x44, 0x10, 0x00, 0x12, 0x0b, 0x0a, 0x07, 0x50, 0x45, 0x4e, 0x44,
+	0x49, 0x4e, 0x47, 0x10, 0x01, 0x12, 0x0d, 0x0a, 0x09, 0x54, 0x52, 0x49, 0x47, 0x47, 0x45, 0x52,
+	0x45, 0x44, 0x10, 0x02, 0x12, 0x09, 0x0a, 0x05, 0x45, 0x4e, 0x44, 0x45, 0x44, 0x10, 0x03, 0x12,
+	0x0d, 0x0a, 0x09, 0x43, 0x41, 0x4e, 0x43, 0x45, 0x4c, 0x4c, 0x45, 0x44, 0x10, 0x04, 0x12, 0x0f,
+	0x0a, 0x0b, 0x55, 0x4e, 0x54, 0x52, 0x49, 0x47, 0x47, 0x45, 0x52, 0x45, 0x44, 0x10, 0x05, 0x42,
+	0x30, 0x5a, 0x2e, 0x67, 0x6f, 0x2e, 0x63, 0x68, 0x72, 0x6f, 0x6d, 0x69, 0x75, 0x6d, 0x2e, 0x6f,
+	0x72, 0x67, 0x2f, 0x6c, 0x75, 0x63, 0x69, 0x2f, 0x63, 0x76, 0x2f, 0x69, 0x6e, 0x74, 0x65, 0x72,
+	0x6e, 0x61, 0x6c, 0x2f, 0x74, 0x72, 0x79, 0x6a, 0x6f, 0x62, 0x3b, 0x74, 0x72, 0x79, 0x6a, 0x6f,
+	0x62, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
 }
 
 var (
@@ -1218,54 +1399,60 @@ func file_go_chromium_org_luci_cv_internal_tryjob_storage_proto_rawDescGZIP() []
 }
 
 var file_go_chromium_org_luci_cv_internal_tryjob_storage_proto_enumTypes = make([]protoimpl.EnumInfo, 3)
-var file_go_chromium_org_luci_cv_internal_tryjob_storage_proto_msgTypes = make([]protoimpl.MessageInfo, 10)
+var file_go_chromium_org_luci_cv_internal_tryjob_storage_proto_msgTypes = make([]protoimpl.MessageInfo, 13)
 var file_go_chromium_org_luci_cv_internal_tryjob_storage_proto_goTypes = []interface{}{
-	(Status)(0),                              // 0: cv.internal.tryjob.Status
-	(Result_Status)(0),                       // 1: cv.internal.tryjob.Result.Status
-	(ExecutionState_Status)(0),               // 2: cv.internal.tryjob.ExecutionState.Status
-	(*Definition)(nil),                       // 3: cv.internal.tryjob.Definition
-	(*Requirement)(nil),                      // 4: cv.internal.tryjob.Requirement
-	(*Result)(nil),                           // 5: cv.internal.tryjob.Result
-	(*ExecutionState)(nil),                   // 6: cv.internal.tryjob.ExecutionState
-	(*TryjobUpdatedEvent)(nil),               // 7: cv.internal.tryjob.TryjobUpdatedEvent
-	(*TryjobUpdatedEvents)(nil),              // 8: cv.internal.tryjob.TryjobUpdatedEvents
-	(*Definition_Buildbucket)(nil),           // 9: cv.internal.tryjob.Definition.Buildbucket
-	(*Result_Buildbucket)(nil),               // 10: cv.internal.tryjob.Result.Buildbucket
-	(*ExecutionState_Execution)(nil),         // 11: cv.internal.tryjob.ExecutionState.Execution
-	(*ExecutionState_Execution_Attempt)(nil), // 12: cv.internal.tryjob.ExecutionState.Execution.Attempt
-	(v2.CommentLevel)(0),                     // 13: cv.config.CommentLevel
-	(*v2.Verifiers_Tryjob_RetryConfig)(nil),  // 14: cv.config.Verifiers.Tryjob.RetryConfig
-	(*timestamppb.Timestamp)(nil),            // 15: google.protobuf.Timestamp
-	(*v1.Output)(nil),                        // 16: cq.recipe.Output
-	(*proto.BuilderID)(nil),                  // 17: buildbucket.v2.BuilderID
-	(proto.Status)(0),                        // 18: buildbucket.v2.Status
+	(Status)(0),                                  // 0: cv.internal.tryjob.Status
+	(Result_Status)(0),                           // 1: cv.internal.tryjob.Result.Status
+	(ExecutionState_Status)(0),                   // 2: cv.internal.tryjob.ExecutionState.Status
+	(*Definition)(nil),                           // 3: cv.internal.tryjob.Definition
+	(*Requirement)(nil),                          // 4: cv.internal.tryjob.Requirement
+	(*Result)(nil),                               // 5: cv.internal.tryjob.Result
+	(*ExecutionState)(nil),                       // 6: cv.internal.tryjob.ExecutionState
+	(*ExecutionLogEntries)(nil),                  // 7: cv.internal.tryjob.ExecutionLogEntries
+	(*ExecutionLogEntry)(nil),                    // 8: cv.internal.tryjob.ExecutionLogEntry
+	(*TryjobUpdatedEvent)(nil),                   // 9: cv.internal.tryjob.TryjobUpdatedEvent
+	(*TryjobUpdatedEvents)(nil),                  // 10: cv.internal.tryjob.TryjobUpdatedEvents
+	(*Definition_Buildbucket)(nil),               // 11: cv.internal.tryjob.Definition.Buildbucket
+	(*Result_Buildbucket)(nil),                   // 12: cv.internal.tryjob.Result.Buildbucket
+	(*ExecutionState_Execution)(nil),             // 13: cv.internal.tryjob.ExecutionState.Execution
+	(*ExecutionState_Execution_Attempt)(nil),     // 14: cv.internal.tryjob.ExecutionState.Execution.Attempt
+	(*ExecutionLogEntry_RequirementChanged)(nil), // 15: cv.internal.tryjob.ExecutionLogEntry.RequirementChanged
+	(v2.CommentLevel)(0),                         // 16: cv.config.CommentLevel
+	(*v2.Verifiers_Tryjob_RetryConfig)(nil),      // 17: cv.config.Verifiers.Tryjob.RetryConfig
+	(*timestamppb.Timestamp)(nil),                // 18: google.protobuf.Timestamp
+	(*v1.Output)(nil),                            // 19: cq.recipe.Output
+	(*proto.BuilderID)(nil),                      // 20: buildbucket.v2.BuilderID
+	(proto.Status)(0),                            // 21: buildbucket.v2.Status
 }
 var file_go_chromium_org_luci_cv_internal_tryjob_storage_proto_depIdxs = []int32{
-	9,  // 0: cv.internal.tryjob.Definition.buildbucket:type_name -> cv.internal.tryjob.Definition.Buildbucket
+	11, // 0: cv.internal.tryjob.Definition.buildbucket:type_name -> cv.internal.tryjob.Definition.Buildbucket
 	3,  // 1: cv.internal.tryjob.Definition.equivalent_to:type_name -> cv.internal.tryjob.Definition
-	13, // 2: cv.internal.tryjob.Definition.result_visibility:type_name -> cv.config.CommentLevel
+	16, // 2: cv.internal.tryjob.Definition.result_visibility:type_name -> cv.config.CommentLevel
 	3,  // 3: cv.internal.tryjob.Requirement.definitions:type_name -> cv.internal.tryjob.Definition
-	14, // 4: cv.internal.tryjob.Requirement.retry_config:type_name -> cv.config.Verifiers.Tryjob.RetryConfig
+	17, // 4: cv.internal.tryjob.Requirement.retry_config:type_name -> cv.config.Verifiers.Tryjob.RetryConfig
 	1,  // 5: cv.internal.tryjob.Result.status:type_name -> cv.internal.tryjob.Result.Status
-	15, // 6: cv.internal.tryjob.Result.create_time:type_name -> google.protobuf.Timestamp
-	15, // 7: cv.internal.tryjob.Result.update_time:type_name -> google.protobuf.Timestamp
-	16, // 8: cv.internal.tryjob.Result.output:type_name -> cq.recipe.Output
-	10, // 9: cv.internal.tryjob.Result.buildbucket:type_name -> cv.internal.tryjob.Result.Buildbucket
-	11, // 10: cv.internal.tryjob.ExecutionState.executions:type_name -> cv.internal.tryjob.ExecutionState.Execution
+	18, // 6: cv.internal.tryjob.Result.create_time:type_name -> google.protobuf.Timestamp
+	18, // 7: cv.internal.tryjob.Result.update_time:type_name -> google.protobuf.Timestamp
+	19, // 8: cv.internal.tryjob.Result.output:type_name -> cq.recipe.Output
+	12, // 9: cv.internal.tryjob.Result.buildbucket:type_name -> cv.internal.tryjob.Result.Buildbucket
+	13, // 10: cv.internal.tryjob.ExecutionState.executions:type_name -> cv.internal.tryjob.ExecutionState.Execution
 	4,  // 11: cv.internal.tryjob.ExecutionState.requirement:type_name -> cv.internal.tryjob.Requirement
 	2,  // 12: cv.internal.tryjob.ExecutionState.status:type_name -> cv.internal.tryjob.ExecutionState.Status
-	7,  // 13: cv.internal.tryjob.TryjobUpdatedEvents.events:type_name -> cv.internal.tryjob.TryjobUpdatedEvent
-	17, // 14: cv.internal.tryjob.Definition.Buildbucket.builder:type_name -> buildbucket.v2.BuilderID
-	17, // 15: cv.internal.tryjob.Result.Buildbucket.builder:type_name -> buildbucket.v2.BuilderID
-	18, // 16: cv.internal.tryjob.Result.Buildbucket.status:type_name -> buildbucket.v2.Status
-	12, // 17: cv.internal.tryjob.ExecutionState.Execution.attempts:type_name -> cv.internal.tryjob.ExecutionState.Execution.Attempt
-	0,  // 18: cv.internal.tryjob.ExecutionState.Execution.Attempt.status:type_name -> cv.internal.tryjob.Status
-	5,  // 19: cv.internal.tryjob.ExecutionState.Execution.Attempt.result:type_name -> cv.internal.tryjob.Result
-	20, // [20:20] is the sub-list for method output_type
-	20, // [20:20] is the sub-list for method input_type
-	20, // [20:20] is the sub-list for extension type_name
-	20, // [20:20] is the sub-list for extension extendee
-	0,  // [0:20] is the sub-list for field type_name
+	8,  // 13: cv.internal.tryjob.ExecutionLogEntries.entries:type_name -> cv.internal.tryjob.ExecutionLogEntry
+	18, // 14: cv.internal.tryjob.ExecutionLogEntry.time:type_name -> google.protobuf.Timestamp
+	15, // 15: cv.internal.tryjob.ExecutionLogEntry.requirement_changed:type_name -> cv.internal.tryjob.ExecutionLogEntry.RequirementChanged
+	9,  // 16: cv.internal.tryjob.TryjobUpdatedEvents.events:type_name -> cv.internal.tryjob.TryjobUpdatedEvent
+	20, // 17: cv.internal.tryjob.Definition.Buildbucket.builder:type_name -> buildbucket.v2.BuilderID
+	20, // 18: cv.internal.tryjob.Result.Buildbucket.builder:type_name -> buildbucket.v2.BuilderID
+	21, // 19: cv.internal.tryjob.Result.Buildbucket.status:type_name -> buildbucket.v2.Status
+	14, // 20: cv.internal.tryjob.ExecutionState.Execution.attempts:type_name -> cv.internal.tryjob.ExecutionState.Execution.Attempt
+	0,  // 21: cv.internal.tryjob.ExecutionState.Execution.Attempt.status:type_name -> cv.internal.tryjob.Status
+	5,  // 22: cv.internal.tryjob.ExecutionState.Execution.Attempt.result:type_name -> cv.internal.tryjob.Result
+	23, // [23:23] is the sub-list for method output_type
+	23, // [23:23] is the sub-list for method input_type
+	23, // [23:23] is the sub-list for extension type_name
+	23, // [23:23] is the sub-list for extension extendee
+	0,  // [0:23] is the sub-list for field type_name
 }
 
 func init() { file_go_chromium_org_luci_cv_internal_tryjob_storage_proto_init() }
@@ -1323,7 +1510,7 @@ func file_go_chromium_org_luci_cv_internal_tryjob_storage_proto_init() {
 			}
 		}
 		file_go_chromium_org_luci_cv_internal_tryjob_storage_proto_msgTypes[4].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*TryjobUpdatedEvent); i {
+			switch v := v.(*ExecutionLogEntries); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -1335,7 +1522,7 @@ func file_go_chromium_org_luci_cv_internal_tryjob_storage_proto_init() {
 			}
 		}
 		file_go_chromium_org_luci_cv_internal_tryjob_storage_proto_msgTypes[5].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*TryjobUpdatedEvents); i {
+			switch v := v.(*ExecutionLogEntry); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -1347,7 +1534,7 @@ func file_go_chromium_org_luci_cv_internal_tryjob_storage_proto_init() {
 			}
 		}
 		file_go_chromium_org_luci_cv_internal_tryjob_storage_proto_msgTypes[6].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*Definition_Buildbucket); i {
+			switch v := v.(*TryjobUpdatedEvent); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -1359,7 +1546,7 @@ func file_go_chromium_org_luci_cv_internal_tryjob_storage_proto_init() {
 			}
 		}
 		file_go_chromium_org_luci_cv_internal_tryjob_storage_proto_msgTypes[7].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*Result_Buildbucket); i {
+			switch v := v.(*TryjobUpdatedEvents); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -1371,7 +1558,7 @@ func file_go_chromium_org_luci_cv_internal_tryjob_storage_proto_init() {
 			}
 		}
 		file_go_chromium_org_luci_cv_internal_tryjob_storage_proto_msgTypes[8].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*ExecutionState_Execution); i {
+			switch v := v.(*Definition_Buildbucket); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -1383,7 +1570,43 @@ func file_go_chromium_org_luci_cv_internal_tryjob_storage_proto_init() {
 			}
 		}
 		file_go_chromium_org_luci_cv_internal_tryjob_storage_proto_msgTypes[9].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*Result_Buildbucket); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_go_chromium_org_luci_cv_internal_tryjob_storage_proto_msgTypes[10].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*ExecutionState_Execution); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_go_chromium_org_luci_cv_internal_tryjob_storage_proto_msgTypes[11].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*ExecutionState_Execution_Attempt); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_go_chromium_org_luci_cv_internal_tryjob_storage_proto_msgTypes[12].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*ExecutionLogEntry_RequirementChanged); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -1401,13 +1624,16 @@ func file_go_chromium_org_luci_cv_internal_tryjob_storage_proto_init() {
 	file_go_chromium_org_luci_cv_internal_tryjob_storage_proto_msgTypes[2].OneofWrappers = []interface{}{
 		(*Result_Buildbucket_)(nil),
 	}
+	file_go_chromium_org_luci_cv_internal_tryjob_storage_proto_msgTypes[5].OneofWrappers = []interface{}{
+		(*ExecutionLogEntry_RequirementChanged_)(nil),
+	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: file_go_chromium_org_luci_cv_internal_tryjob_storage_proto_rawDesc,
 			NumEnums:      3,
-			NumMessages:   10,
+			NumMessages:   13,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

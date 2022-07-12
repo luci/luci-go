@@ -41,6 +41,8 @@ type Executor struct {
 	RM rm
 	// ShouldStop is returns whether executor should stop the execution.
 	ShouldStop func() bool
+	// logEntries records what has happened during the execution.
+	logEntries []*tryjob.ExecutionLogEntry
 }
 
 // TryjobBackend encapsulates the interactions with a Tryjob backend.
@@ -92,7 +94,7 @@ func (e *Executor) Do(ctx context.Context, r *run.Run, payload *tryjob.ExecuteTr
 	var innerErr error
 	err = datastore.RunInTransaction(ctx, func(ctx context.Context) (err error) {
 		defer func() { innerErr = err }()
-		return tryjob.SaveExecutionState(ctx, r.ID, execState, stateVer)
+		return tryjob.SaveExecutionState(ctx, r.ID, execState, stateVer, e.logEntries)
 	}, nil)
 
 	switch {

@@ -256,6 +256,23 @@ message ExecutionState {
   string failure_reason = 4;
 }
 
+// ExecutionLogEntries contains a list of log entries ordered by time.
+message ExecutionLogEntries {
+  repeated ExecutionLogEntry entries = 1;
+}
+
+// ExecutionLogEntry records what happened during Tryjob Execution.
+message ExecutionLogEntry {
+  // Time is when the event occurs.
+  google.protobuf.Timestamp time = 1;
+  oneof kind {
+    RequirementChanged requirement_changed = 2;
+    // TODO(yiwzhang): add more log kinds
+  }
+
+  message RequirementChanged {}
+}
+
 // TryjobUpdatedEvent describes which Tryjob entity is updated.
 message TryjobUpdatedEvent {
   int64 tryjob_id = 1;

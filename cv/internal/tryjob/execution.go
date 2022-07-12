@@ -38,6 +38,23 @@ type executionState struct {
 	State      *ExecutionState
 }
 
+// executionLog is an immutable record for changes to Tryjob execution state.
+type executionLog struct {
+	_kind string `gae:"$kind,TryjobExecutionLog"`
+
+	// ID is the value executionState.EVersion which was saved
+	// transactionally with the creation of the ExecutionLog entity.
+	//
+	// Thus, ordering by ID (default Datastore ordering) will automatically
+	// provide semantically chronological order.
+	ID  int64          `gae:"$id"`
+	Run *datastore.Key `gae:"$parent"`
+	// Entries record what happened to the Run.
+	//
+	// Ordered from oldest to newest.
+	Entries *ExecutionLogEntries
+}
+
 // LoadExecutionState loads the execution state of the given Run.
 //
 // Returns nil state and 0 version if execution state never exists for this
@@ -54,7 +71,7 @@ func LoadExecutionState(ctx context.Context, rid common.RunID) (state *Execution
 	}
 }
 
-// SaveExecutionState saves new state for the run.
+// SaveExecutionState saves new execution state and logs for the run.
 //
 // Fails if the current version of the state is different from the provided
 // `expectedVersion`. This typically means the state has changed since the
@@ -62,7 +79,7 @@ func LoadExecutionState(ctx context.Context, rid common.RunID) (state *Execution
 // this Run before.
 //
 // Must be called in a transaction.
-func SaveExecutionState(ctx context.Context, rid common.RunID, state *ExecutionState, expectedVersion int64) error {
+func SaveExecutionState(ctx context.Context, rid common.RunID, state *ExecutionState, expectedVersion int64, logEntries []*ExecutionLogEntry) error {
 	if datastore.CurrentTransaction(ctx) == nil {
 		panic(fmt.Errorf("must be called in a transaction"))
 	}
@@ -72,15 +89,30 @@ func SaveExecutionState(ctx context.Context, rid common.RunID, state *ExecutionS
 	case latestStateVer != expectedVersion:
 		return errors.Reason("execution state has changed. before: %d, current: %d", expectedVersion, latestStateVer).Tag(transient.Tag).Err()
 	default:
+		runKey := datastore.MakeKey(ctx, common.RunKind, string(rid))
 		newState := &executionState{
-			Run:        datastore.MakeKey(ctx, common.RunKind, string(rid)),
+			Run:        runKey,
 			EVersion:   latestStateVer + 1,
 			UpdateTime: clock.Now(ctx).UTC(),
 			State:      state,
 		}
-		if err := datastore.Put(ctx, newState); err != nil {
-			return errors.Annotate(err, "failed to save execution state").Tag(transient.Tag).Err()
+
+		if len(logEntries) == 0 {
+			if err := datastore.Put(ctx, newState); err != nil {
+				return errors.Annotate(err, "failed to save execution state").Tag(transient.Tag).Err()
+			}
+		} else {
+			el := &executionLog{
+				ID:  newState.EVersion,
+				Run: runKey,
+				Entries: &ExecutionLogEntries{
+					Entries: logEntries,
+				},
+			}
+			if err := datastore.Put(ctx, newState, el); err != nil {
+				return errors.Annotate(err, "failed to save execution state and log").Tag(transient.Tag).Err()
+			}
 		}
+		return nil
 	}
-	return nil
 }

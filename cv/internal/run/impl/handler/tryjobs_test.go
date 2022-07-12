@@ -219,7 +219,7 @@ func TestOnCompletedExecuteTryjobs(t *testing.T) {
 				err := datastore.RunInTransaction(ctx, func(ctx context.Context) error {
 					return tryjob.SaveExecutionState(ctx, rs.ID, &tryjob.ExecutionState{
 						Status: tryjob.ExecutionState_RUNNING,
-					}, 0)
+					}, 0, nil)
 				}, nil)
 				So(err, ShouldBeNil)
 				res, err := h.OnLongOpCompleted(ctx, rs, result)
@@ -239,7 +239,7 @@ func TestOnCompletedExecuteTryjobs(t *testing.T) {
 				err := datastore.RunInTransaction(ctx, func(ctx context.Context) error {
 					return tryjob.SaveExecutionState(ctx, rs.ID, &tryjob.ExecutionState{
 						Status: tryjob.ExecutionState_SUCCEEDED,
-					}, 0)
+					}, 0, nil)
 				}, nil)
 				So(err, ShouldBeNil)
 				Convey("Full Run", func() {
@@ -299,7 +299,7 @@ func TestOnCompletedExecuteTryjobs(t *testing.T) {
 					return tryjob.SaveExecutionState(ctx, rs.ID, &tryjob.ExecutionState{
 						Status:        tryjob.ExecutionState_FAILED,
 						FailureReason: "build 12345 failed",
-					}, 0)
+					}, 0, nil)
 				}, nil)
 				So(err, ShouldBeNil)
 				res, err := h.OnLongOpCompleted(ctx, rs, result)
