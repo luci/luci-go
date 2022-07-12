@@ -145,8 +145,8 @@ func TestUpdateConfig(t *testing.T) {
 				Status:        run.Status_RUNNING,
 				ConfigGroupID: prjcfgtest.MustExist(ctx, lProject).ConfigGroupIDs[0], // main
 				Tryjobs: &run.Tryjobs{
-					RequirementVersion:   1,
-					RequirementComputeAt: timestamppb.New(triggerTime.Add(1 * time.Minute)),
+					RequirementVersion:    1,
+					RequirementComputedAt: timestamppb.New(triggerTime.Add(1 * time.Minute)),
 				},
 				UseCVTryjobExecutor: true,
 			},
@@ -258,7 +258,7 @@ func TestUpdateConfig(t *testing.T) {
 				res := ensureUpdated("main")
 				So(proto.Equal(res.State.Tryjobs.GetRequirement(), rs.Tryjobs.GetRequirement()), ShouldBeFalse)
 				So(res.State.Tryjobs.GetRequirementVersion(), ShouldEqual, rs.Tryjobs.GetRequirementVersion()+1)
-				So(res.State.Tryjobs.GetRequirementComputeAt().AsTime(), ShouldEqual, ct.Clock.Now().UTC())
+				So(res.State.Tryjobs.GetRequirementComputedAt().AsTime(), ShouldEqual, ct.Clock.Now().UTC())
 			})
 		})
 

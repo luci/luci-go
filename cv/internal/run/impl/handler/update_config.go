@@ -165,7 +165,7 @@ func (impl *Impl) UpdateConfig(ctx context.Context, rs *state.RunState, hash str
 				rs.Tryjobs = proto.Clone(rs.Tryjobs).(*run.Tryjobs)
 				rs.Tryjobs.Requirement = result.Requirement
 				rs.Tryjobs.RequirementVersion += 1
-				rs.Tryjobs.RequirementComputeAt = timestamppb.New(clock.Now(ctx).UTC())
+				rs.Tryjobs.RequirementComputedAt = timestamppb.New(clock.Now(ctx).UTC())
 				enqueueRequirementChangedTask(ctx, rs)
 			}
 		}

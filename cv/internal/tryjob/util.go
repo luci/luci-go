@@ -73,7 +73,7 @@ type NotifyTryjobsUpdatedFn func(context.Context, common.RunID, *TryjobUpdatedEv
 // Note that if an external ID is given, it must not already map to another
 // Tryjob, or this function will fail.
 //
-// If the provided `notifyFn`, notify nothing.
+// If the provided `notifyFn` is nil, notify nothing.
 //
 // MUST be called in datastore transaction context.
 //
@@ -86,14 +86,12 @@ func SaveTryjobs(ctx context.Context, tryjobs []*Tryjob, notifyFn NotifyTryjobsU
 	}
 
 	tryjobsWithExternalID := filterTryjobsWithExternalID(tryjobs)
-	if len(tryjobsWithExternalID) == 0 { // early return for easy cases
+	if len(tryjobsWithExternalID) == 0 {
+		// early return for easy cases
 		if err := datastore.Put(ctx, tryjobs); err != nil {
 			return errors.Annotate(err, "failed to save Tryjobs").Tag(transient.Tag).Err()
 		}
-		if err := notifyRuns(ctx, tryjobs, notifyFn); err != nil {
-			return err
-		}
-		return nil
+		return notifyRuns(ctx, tryjobs, notifyFn)
 	}
 
 	eids := make([]ExternalID, len(tryjobsWithExternalID))

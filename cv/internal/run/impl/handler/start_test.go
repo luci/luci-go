@@ -173,8 +173,8 @@ func TestStart(t *testing.T) {
 						},
 					},
 				},
-				RequirementVersion:   1,
-				RequirementComputeAt: timestamppb.New(ct.Clock.Now().UTC()),
+				RequirementVersion:    1,
+				RequirementComputedAt: timestamppb.New(ct.Clock.Now().UTC()),
 			})
 			So(res.State.UseCVTryjobExecutor, ShouldBeTrue)
 			So(res.State.LogEntries, ShouldHaveLength, 1)

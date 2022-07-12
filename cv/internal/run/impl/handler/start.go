@@ -86,9 +86,9 @@ func (impl *Impl) Start(ctx context.Context, rs *state.RunState) (*Result, error
 		// Let CQDaemon handle Tryjobs.
 	case result.OK():
 		rs.Tryjobs = &run.Tryjobs{
-			Requirement:          result.Requirement,
-			RequirementVersion:   1,
-			RequirementComputeAt: timestamppb.New(clock.Now(ctx).UTC()),
+			Requirement:           result.Requirement,
+			RequirementVersion:    1,
+			RequirementComputedAt: timestamppb.New(clock.Now(ctx).UTC()),
 		}
 		enqueueRequirementChangedTask(ctx, rs)
 	default:

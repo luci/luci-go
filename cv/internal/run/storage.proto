@@ -273,7 +273,7 @@ message Tryjobs {
   //
   // Every requirement computation will update this field even if the result
   // requirement is the same as the existing one.
-  google.protobuf.Timestamp requirement_compute_at = 7;
+  google.protobuf.Timestamp requirement_computed_at = 7;
   // Tryjobs tracks tryjobs of a Run.
   //
   // It may contain Tryjobs which are no longer required.

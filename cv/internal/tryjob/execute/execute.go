@@ -314,8 +314,7 @@ func handleRequirementChange(curReqmt, targetReqmt *tryjob.Requirement, execStat
 
 // executePlan executes the plan and mutate the state.
 //
-// Returns side effect that should be executed in the same transaction to save
-// the new state.
+// Returns the mutated state.
 func (e *Executor) executePlan(ctx context.Context, p *plan, r *run.Run, execState *tryjob.ExecutionState) (*tryjob.ExecutionState, error) {
 	if len(p.discard) > 0 {
 		// TODO(crbug/1323597): cancel the tryjobs because they are no longer

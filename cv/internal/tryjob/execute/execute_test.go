@@ -241,9 +241,9 @@ func TestPrepExecutionPlan(t *testing.T) {
 			}
 			r := &run.Run{
 				Tryjobs: &run.Tryjobs{
-					Requirement:          latestReqmt,
-					RequirementVersion:   2,
-					RequirementComputeAt: timestamppb.New(ct.Clock.Now()),
+					Requirement:           latestReqmt,
+					RequirementVersion:    2,
+					RequirementComputedAt: timestamppb.New(ct.Clock.Now()),
 				},
 			}
 
