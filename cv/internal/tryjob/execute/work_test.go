@@ -149,6 +149,22 @@ func TestWorker(t *testing.T) {
 			So(err, ShouldBeNil)
 			So(tryjobs, ShouldHaveLength, 1)
 			So(tryjobs[0].ExternalID, ShouldEqual, eid)
+			So(w.logEntries, ShouldResembleProto, []*tryjob.ExecutionLogEntry{
+				{
+					Time: timestamppb.New(ct.Clock.Now().UTC()),
+					Kind: &tryjob.ExecutionLogEntry_TryjobsReused_{
+						TryjobsReused: &tryjob.ExecutionLogEntry_TryjobsReused{
+							Tryjobs: []*tryjob.ExecutionLogEntry_TryjobReused{
+								{
+									Definition: def,
+									TryjobId:   int64(tryjobs[0].ID),
+									ExternalId: string(eid),
+								},
+							},
+						},
+					},
+				},
+			})
 		})
 
 		Convey("No reuse, launch new tryjob", func() {

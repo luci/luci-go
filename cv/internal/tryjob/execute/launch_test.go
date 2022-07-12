@@ -19,6 +19,8 @@ import (
 	"testing"
 	"time"
 
+	"google.golang.org/protobuf/types/known/timestamppb"
+
 	bbpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
@@ -33,6 +35,7 @@ import (
 	"go.chromium.org/luci/cv/internal/tryjob"
 
 	. "github.com/smartystreets/goconvey/convey"
+	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestLaunch(t *testing.T) {
@@ -130,6 +133,22 @@ func TestLaunch(t *testing.T) {
 			build, err := bbClient.GetBuild(ctx, &bbpb.GetBuildRequest{Id: buildID})
 			So(err, ShouldBeNil)
 			So(build, ShouldNotBeNil)
+			So(w.logEntries, ShouldResembleProto, []*tryjob.ExecutionLogEntry{
+				{
+					Time: timestamppb.New(ct.Clock.Now().UTC()),
+					Kind: &tryjob.ExecutionLogEntry_TryjobsLaunched_{
+						TryjobsLaunched: &tryjob.ExecutionLogEntry_TryjobsLaunched{
+							Tryjobs: []*tryjob.ExecutionLogEntry_TryjobLaunched{
+								{
+									Definition: defFoo,
+									TryjobId:   int64(tryjobs[0].ID),
+									ExternalId: string(eid),
+								},
+							},
+						},
+					},
+				},
+			})
 		})
 
 		Convey("Failed to trigger", func() {
@@ -162,6 +181,21 @@ func TestLaunch(t *testing.T) {
 			So(tryjobs[0].ExternalID, ShouldBeEmpty)
 			So(tryjobs[0].Status, ShouldEqual, tryjob.Status_UNTRIGGERED)
 			So(tryjobs[0].UntriggeredReason, ShouldEqual, "received NotFound from buildbucket. message: builder testProj/BucketFoo/non-existent-builder not found")
+			So(w.logEntries, ShouldResembleProto, []*tryjob.ExecutionLogEntry{
+				{
+					Time: timestamppb.New(ct.Clock.Now().UTC()),
+					Kind: &tryjob.ExecutionLogEntry_TryjobsLaunchFailed_{
+						TryjobsLaunchFailed: &tryjob.ExecutionLogEntry_TryjobsLaunchFailed{
+							Tryjobs: []*tryjob.ExecutionLogEntry_TryjobLaunchFailed{
+								{
+									Definition: def,
+									Reason:     tryjobs[0].UntriggeredReason,
+								},
+							},
+						},
+					},
+				},
+			})
 		})
 
 		Convey("Reconcile with existing", func() {

@@ -15,10 +15,56 @@
 package execute
 
 import (
+	"context"
 	"fmt"
+
+	"google.golang.org/protobuf/types/known/timestamppb"
+
+	"go.chromium.org/luci/common/clock"
 
 	"go.chromium.org/luci/cv/internal/tryjob"
 )
+
+func (e *Executor) logRequirementChanged(ctx context.Context) {
+	e.log(&tryjob.ExecutionLogEntry{
+		Time: timestamppb.New(clock.Now(ctx).UTC()),
+		Kind: &tryjob.ExecutionLogEntry_RequirementChanged_{
+			RequirementChanged: &tryjob.ExecutionLogEntry_RequirementChanged{},
+		},
+	})
+}
+
+func (e *Executor) logTryjobEnded(ctx context.Context, def *tryjob.Definition, tryjobID int64) {
+	e.log(&tryjob.ExecutionLogEntry{
+		// TODO(yiwzhang): to be more precise, record end time in the backend
+		// system for tryjob and use that time instead.
+		Time: timestamppb.New(clock.Now(ctx).UTC()),
+		Kind: &tryjob.ExecutionLogEntry_TryjobEnded_{
+			TryjobEnded: &tryjob.ExecutionLogEntry_TryjobEnded{
+				Definition: def,
+				TryjobId:   tryjobID,
+			},
+		},
+	})
+}
+
+func (e *Executor) logTryjobDiscarded(ctx context.Context, def *tryjob.Definition, exec *tryjob.ExecutionState_Execution, reason string) {
+	var latestAttempt *tryjob.ExecutionState_Execution_Attempt
+	if len(exec.GetAttempts()) > 0 {
+		latestAttempt = exec.GetAttempts()[len(exec.GetAttempts())-1]
+	}
+	e.log(&tryjob.ExecutionLogEntry{
+		Time: timestamppb.New(clock.Now(ctx).UTC()),
+		Kind: &tryjob.ExecutionLogEntry_TryjobDiscarded_{
+			TryjobDiscarded: &tryjob.ExecutionLogEntry_TryjobDiscarded{
+				Definition: def,
+				TryjobId:   latestAttempt.GetTryjobId(),
+				ExternalId: latestAttempt.GetExternalId(),
+				Reason:     reason,
+			},
+		},
+	})
+}
 
 // log adds a new execution log entry.
 func (e *Executor) log(entry *tryjob.ExecutionLogEntry) {

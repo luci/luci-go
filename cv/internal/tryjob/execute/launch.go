@@ -23,6 +23,7 @@ import (
 
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
@@ -90,6 +91,7 @@ func (w *worker) launchTryjobs(ctx context.Context, tryjobs []*tryjob.Tryjob) ([
 		logging.Warningf(ctx, sb.String())
 	})
 
+	launchFailureLogs := make([]*tryjob.ExecutionLogEntry_TryjobLaunchFailed, 0, len(launchFailures))
 	for _, tj := range tryjobs {
 		if err, ok := launchFailures[tj]; ok {
 			tj.Status = tryjob.Status_UNTRIGGERED
@@ -104,28 +106,68 @@ func (w *worker) launchTryjobs(ctx context.Context, tryjobs []*tryjob.Tryjob) ([
 					tj.UntriggeredReason += ". message: " + msg
 				}
 			}
+			launchFailureLogs = append(launchFailureLogs, &tryjob.ExecutionLogEntry_TryjobLaunchFailed{
+				Definition: tj.Definition,
+				Reason:     tj.UntriggeredReason,
+			})
 		}
 		tj.EVersion += 1
 		tj.EntityUpdateTime = datastore.RoundTime(clock.Now(ctx).UTC())
+	}
+	if len(launchFailureLogs) > 0 {
+		w.logEntries = append(w.logEntries, &tryjob.ExecutionLogEntry{
+			Time: timestamppb.New(clock.Now(ctx).UTC()),
+			Kind: &tryjob.ExecutionLogEntry_TryjobsLaunchFailed_{
+				TryjobsLaunchFailed: &tryjob.ExecutionLogEntry_TryjobsLaunchFailed{
+					Tryjobs: launchFailureLogs,
+				},
+			},
+		})
 	}
 	return w.saveLaunchedTryjobs(ctx, tryjobs)
 }
 
 func (w *worker) tryLaunchTryjobsOnce(ctx context.Context, tryjobs []*tryjob.Tryjob) (failures map[*tryjob.Tryjob]error, hasFatal bool) {
+	launchLogs := make([]*tryjob.ExecutionLogEntry_TryjobLaunched, 0, len(tryjobs))
 	err := w.backend.Launch(ctx, tryjobs, w.run, w.cls)
-	if err == nil {
-		return nil, false
-	}
-	for i, err := range err.(errors.MultiError) {
-		if err != nil {
-			if failures == nil {
-				failures = make(map[*tryjob.Tryjob]error, 1)
-			}
-			failures[tryjobs[i]] = err
-			if !canRetryBackendError(err) {
-				hasFatal = true
+	switch merrs, ok := err.(errors.MultiError); {
+	case err == nil:
+		for _, tj := range tryjobs {
+			launchLogs = append(launchLogs, &tryjob.ExecutionLogEntry_TryjobLaunched{
+				Definition: tj.Definition,
+				TryjobId:   int64(tj.ID),
+				ExternalId: string(tj.ExternalID),
+			})
+		}
+	case !ok:
+		panic(fmt.Errorf("impossible; backend.Launch must return multi errors, got %s", err))
+	default:
+		for i, err := range merrs {
+			if err != nil {
+				if failures == nil {
+					failures = make(map[*tryjob.Tryjob]error, 1)
+				}
+				failures[tryjobs[i]] = err
+				hasFatal = hasFatal || !canRetryBackendError(err)
+			} else {
+				launchLogs = append(launchLogs, &tryjob.ExecutionLogEntry_TryjobLaunched{
+					Definition: tryjobs[i].Definition,
+					TryjobId:   int64(tryjobs[i].ID),
+					ExternalId: string(tryjobs[i].ExternalID),
+				})
 			}
 		}
+	}
+
+	if len(launchLogs) > 0 {
+		w.logEntries = append(w.logEntries, &tryjob.ExecutionLogEntry{
+			Time: timestamppb.New(clock.Now(ctx).UTC()),
+			Kind: &tryjob.ExecutionLogEntry_TryjobsLaunched_{
+				TryjobsLaunched: &tryjob.ExecutionLogEntry_TryjobsLaunched{
+					Tryjobs: launchLogs,
+				},
+			},
+		})
 	}
 	return failures, hasFatal
 }

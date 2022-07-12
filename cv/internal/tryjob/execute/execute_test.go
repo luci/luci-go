@@ -49,10 +49,12 @@ func TestPrepExecutionPlan(t *testing.T) {
 		ctx, cancel := ct.SetUp()
 		defer cancel()
 
+		executor := &Executor{}
+
 		Convey("Tryjobs Updated", func() {
 			const builderFoo = "foo"
 			prepPlan := func(execState *tryjob.ExecutionState, updatedTryjobs ...int64) *plan {
-				p, err := prepExecutionPlan(ctx, execState, nil, updatedTryjobs, false)
+				p, err := executor.prepExecutionPlan(ctx, execState, nil, updatedTryjobs, false)
 				So(err, ShouldBeNil)
 				return p
 			}
@@ -77,12 +79,14 @@ func TestPrepExecutionPlan(t *testing.T) {
 					So(plan.isEmpty(), ShouldBeTrue)
 				})
 				So(execState, ShouldResembleProto, original)
+				So(executor.logEntries, ShouldBeEmpty)
 			})
 
 			Convey("Single Tryjob", func() {
 				const tjID = 101
+				def := makeDefinition(builderFoo, true)
 				execState := newExecStateBuilder().
-					appendDefinition(makeDefinition(builderFoo, true)).
+					appendDefinition(def).
 					appendAttempt(builderFoo, makeAttempt(tjID, tryjob.Status_PENDING, tryjob.Result_UNKNOWN)).
 					withRetryConfig(&cfgpb.Verifiers_Tryjob_RetryConfig{
 						SingleQuota:            2,
@@ -99,6 +103,17 @@ func TestPrepExecutionPlan(t *testing.T) {
 						makeAttempt(tjID, tryjob.Status_ENDED, tryjob.Result_SUCCEEDED),
 					})
 					So(execState.Status, ShouldEqual, tryjob.ExecutionState_SUCCEEDED)
+					So(executor.logEntries, ShouldResembleProto, []*tryjob.ExecutionLogEntry{
+						{
+							Time: timestamppb.New(ct.Clock.Now().UTC()),
+							Kind: &tryjob.ExecutionLogEntry_TryjobEnded_{
+								TryjobEnded: &tryjob.ExecutionLogEntry_TryjobEnded{
+									Definition: def,
+									TryjobId:   tjID,
+								},
+							},
+						},
+					})
 				})
 
 				Convey("Still Running", func() {
@@ -117,6 +132,7 @@ func TestPrepExecutionPlan(t *testing.T) {
 					So(execState.Executions[0].Attempts, ShouldResembleProto, []*tryjob.ExecutionState_Execution_Attempt{
 						makeAttempt(tjID, tryjob.Status_TRIGGERED, tryjob.Result_UNKNOWN),
 					})
+					So(executor.logEntries, ShouldBeEmpty)
 				})
 
 				Convey("Failed", func() {
@@ -155,6 +171,17 @@ func TestPrepExecutionPlan(t *testing.T) {
 						// tryjob has failed.
 						So(execState.Status, ShouldEqual, tryjob.ExecutionState_SUCCEEDED)
 					})
+					So(executor.logEntries, ShouldResembleProto, []*tryjob.ExecutionLogEntry{
+						{
+							Time: timestamppb.New(ct.Clock.Now().UTC()),
+							Kind: &tryjob.ExecutionLogEntry_TryjobEnded_{
+								TryjobEnded: &tryjob.ExecutionLogEntry_TryjobEnded{
+									Definition: def,
+									TryjobId:   tjID,
+								},
+							},
+						},
+					})
 				})
 
 				Convey("Untriggered", func() {
@@ -176,6 +203,7 @@ func TestPrepExecutionPlan(t *testing.T) {
 						plan := prepPlan(execState, tjID)
 						So(plan.isEmpty(), ShouldBeTrue)
 					})
+					So(executor.logEntries, ShouldBeEmpty)
 				})
 			})
 
@@ -251,18 +279,20 @@ func TestPrepExecutionPlan(t *testing.T) {
 				execState := newExecStateBuilder().
 					withRequirementVersion(int(r.Tryjobs.GetRequirementVersion()) + 1).
 					build()
-				plan, err := prepExecutionPlan(ctx, execState, r, nil, true)
+				plan, err := executor.prepExecutionPlan(ctx, execState, r, nil, true)
 				So(err, ShouldBeNil)
 				So(plan.isEmpty(), ShouldBeTrue)
+				So(executor.logEntries, ShouldBeEmpty)
 			})
 
-			Convey("New Tryjob", func() {
+			Convey("New Requirement", func() {
 				execState := newExecStateBuilder().build()
-				plan, err := prepExecutionPlan(ctx, execState, r, nil, true)
+				plan, err := executor.prepExecutionPlan(ctx, execState, r, nil, true)
 				So(err, ShouldBeNil)
 				So(execState.Requirement, ShouldResembleProto, latestReqmt)
 				So(plan.triggerNewAttempt, ShouldHaveLength, 1)
 				So(plan.triggerNewAttempt[0].definition, ShouldResembleProto, builderFooDef)
+				So(executor.logEntries, ShouldBeEmpty)
 			})
 
 			Convey("Removed Tryjob", func() {
@@ -271,7 +301,7 @@ func TestPrepExecutionPlan(t *testing.T) {
 					appendDefinition(removedDef).
 					appendDefinition(builderFooDef).
 					build()
-				plan, err := prepExecutionPlan(ctx, execState, r, nil, true)
+				plan, err := executor.prepExecutionPlan(ctx, execState, r, nil, true)
 				So(err, ShouldBeNil)
 				So(execState.Requirement, ShouldResembleProto, latestReqmt)
 				So(plan.triggerNewAttempt, ShouldBeEmpty)
@@ -279,6 +309,14 @@ func TestPrepExecutionPlan(t *testing.T) {
 				So(plan.discard[0].definition, ShouldResembleProto, removedDef)
 				So(execState.Executions, ShouldHaveLength, 1)
 				So(plan.discard[0].discardReason, ShouldEqual, noLongerRequiredInConfig)
+				So(executor.logEntries, ShouldResembleProto, []*tryjob.ExecutionLogEntry{
+					{
+						Time: timestamppb.New(ct.Clock.Now().UTC()),
+						Kind: &tryjob.ExecutionLogEntry_RequirementChanged_{
+							RequirementChanged: &tryjob.ExecutionLogEntry_RequirementChanged{},
+						},
+					},
+				})
 			})
 
 			Convey("Changed Tryjob", func() {
@@ -287,20 +325,40 @@ func TestPrepExecutionPlan(t *testing.T) {
 				execState := newExecStateBuilder().
 					appendDefinition(builderFooOriginal).
 					build()
-				plan, err := prepExecutionPlan(ctx, execState, r, nil, true)
+				plan, err := executor.prepExecutionPlan(ctx, execState, r, nil, true)
 				So(err, ShouldBeNil)
 				So(execState.Requirement, ShouldResembleProto, latestReqmt)
 				So(plan.isEmpty(), ShouldBeTrue)
+				So(executor.logEntries, ShouldResembleProto, []*tryjob.ExecutionLogEntry{
+					{
+						Time: timestamppb.New(ct.Clock.Now().UTC()),
+						Kind: &tryjob.ExecutionLogEntry_RequirementChanged_{
+							RequirementChanged: &tryjob.ExecutionLogEntry_RequirementChanged{},
+						},
+					},
+				})
 			})
 
-			Convey("No change", func() {
+			Convey("Change in retry config", func() {
 				execState := newExecStateBuilder().
 					appendDefinition(builderFooDef).
+					withRetryConfig(&cfgpb.Verifiers_Tryjob_RetryConfig{
+						SingleQuota: 2,
+						GlobalQuota: 10,
+					}).
 					build()
-				plan, err := prepExecutionPlan(ctx, execState, r, nil, true)
+				plan, err := executor.prepExecutionPlan(ctx, execState, r, nil, true)
 				So(err, ShouldBeNil)
 				So(execState.Requirement, ShouldResembleProto, latestReqmt)
 				So(plan.isEmpty(), ShouldBeTrue)
+				So(executor.logEntries, ShouldResembleProto, []*tryjob.ExecutionLogEntry{
+					{
+						Time: timestamppb.New(ct.Clock.Now().UTC()),
+						Kind: &tryjob.ExecutionLogEntry_RequirementChanged_{
+							RequirementChanged: &tryjob.ExecutionLogEntry_RequirementChanged{},
+						},
+					},
+				})
 			})
 		})
 	})
@@ -312,6 +370,57 @@ func TestExecutePlan(t *testing.T) {
 		ct := cvtesting.Test{}
 		ctx, cancel := ct.SetUp()
 		defer cancel()
+
+		Convey("Discard tryjobs", func() {
+			executor := &Executor{}
+			const bbHost = "buildbucket.example.com"
+			def := &tryjob.Definition{
+				Backend: &tryjob.Definition_Buildbucket_{
+					Buildbucket: &tryjob.Definition_Buildbucket{
+						Host: bbHost,
+						Builder: &bbpb.BuilderID{
+							Project: "some_proj",
+							Bucket:  "some_bucket",
+							Builder: "some_builder",
+						},
+					},
+				},
+			}
+			_, err := executor.executePlan(ctx, &plan{
+				discard: []planItem{
+					{
+						definition: def,
+						execution: &tryjob.ExecutionState_Execution{
+							Attempts: []*tryjob.ExecutionState_Execution_Attempt{
+								{
+									TryjobId:   67,
+									ExternalId: string(tryjob.MustBuildbucketID(bbHost, 6767)),
+								},
+								{
+									TryjobId:   58,
+									ExternalId: string(tryjob.MustBuildbucketID(bbHost, 5858)),
+								},
+							},
+						},
+						discardReason: "no longer needed",
+					},
+				},
+			}, nil, nil)
+			So(err, ShouldBeNil)
+			So(executor.logEntries, ShouldResembleProto, []*tryjob.ExecutionLogEntry{
+				{
+					Time: timestamppb.New(ct.Clock.Now().UTC()),
+					Kind: &tryjob.ExecutionLogEntry_TryjobDiscarded_{
+						TryjobDiscarded: &tryjob.ExecutionLogEntry_TryjobDiscarded{
+							Definition: def,
+							TryjobId:   58,
+							ExternalId: string(tryjob.MustBuildbucketID(bbHost, 5858)),
+							Reason:     "no longer needed",
+						},
+					},
+				},
+			})
+		})
 
 		Convey("Trigger new attempt", func() {
 			const (

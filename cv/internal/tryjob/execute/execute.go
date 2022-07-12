@@ -79,7 +79,7 @@ func (e *Executor) Do(ctx context.Context, r *run.Run, payload *tryjob.ExecuteTr
 		return nil
 	}
 
-	plan, err := prepExecutionPlan(ctx, execState, r, payload.GetTryjobsUpdated(), payload.GetRequirementChanged())
+	plan, err := e.prepExecutionPlan(ctx, execState, r, payload.GetTryjobsUpdated(), payload.GetRequirementChanged())
 	switch {
 	case err != nil:
 		return err
@@ -139,25 +139,30 @@ const noLongerRequiredInConfig = "Tryjob is no longer required in Project Config
 
 // prepExecutionPlan updates the states and computes a plan in order to
 // fulfill the requirement.
-func prepExecutionPlan(ctx context.Context, execState *tryjob.ExecutionState, r *run.Run, tryjobsUpdated []int64, reqmtChanged bool) (*plan, error) {
+func (e *Executor) prepExecutionPlan(ctx context.Context, execState *tryjob.ExecutionState, r *run.Run, tryjobsUpdated []int64, reqmtChanged bool) (*plan, error) {
 	switch hasTryjobsUpdated := len(tryjobsUpdated) > 0; {
 	case hasTryjobsUpdated && reqmtChanged:
 		panic(fmt.Errorf("the executor can't handle requirement update and tryjobs update at the same time"))
 	case hasTryjobsUpdated:
 		logging.Debugf(ctx, "received update for tryjobs %s", tryjobsUpdated)
-		return handleUpdatedTryjobs(ctx, tryjobsUpdated, execState)
+		return e.handleUpdatedTryjobs(ctx, tryjobsUpdated, execState)
 	case reqmtChanged && r.Tryjobs.GetRequirementVersion() <= execState.GetRequirementVersion():
 		logging.Errorf(ctx, "Tryjob executor is executing requirement that is either later or equal to the requested requirement version. current: %d, got: %d ", r.Tryjobs.GetRequirementVersion(), execState.GetRequirementVersion())
 		return nil, nil
 	case reqmtChanged:
 		curReqmt, targetReqmt := execState.GetRequirement(), r.Tryjobs.GetRequirement()
+		if curReqmt != nil {
+			// only log when existing requirement is present. In another word, the
+			// requirement has changed when Run is running.
+			e.logRequirementChanged(ctx)
+		}
 		return handleRequirementChange(curReqmt, targetReqmt, execState)
 	default:
 		panic(fmt.Errorf("the executor is called without any update on either tryjobs or requirement"))
 	}
 }
 
-func handleUpdatedTryjobs(ctx context.Context, tryjobs []int64, execState *tryjob.ExecutionState) (*plan, error) {
+func (e *Executor) handleUpdatedTryjobs(ctx context.Context, tryjobs []int64, execState *tryjob.ExecutionState) (*plan, error) {
 	tryjobByID, err := tryjob.LoadTryjobsMapByIDs(ctx, common.MakeTryjobIDs(tryjobs...))
 	if err != nil {
 		return nil, err
@@ -184,20 +189,19 @@ func handleUpdatedTryjobs(ctx context.Context, tryjobs []int64, execState *tryjo
 		// has ended.
 		switch attempt := exec.Attempts[len(exec.Attempts)-1]; {
 		case attempt.Status == tryjob.Status_ENDED && attempt.GetResult().GetStatus() == tryjob.Result_SUCCEEDED:
-			// TODO(yiwzhang): emit a log to record successful completion of this
-			// tryjob.
+			e.logTryjobEnded(ctx, definition, attempt.TryjobId)
 		case attempt.Status == tryjob.Status_ENDED && definition.GetCritical():
-			// TODO(yiwzhang): emit a log to record failed critical tryjob.
 			failedIndices = append(failedIndices, i)
 			failedTryjobs = append(failedTryjobs, tryjobByID[common.TryjobID(attempt.TryjobId)])
-		case attempt.Status == tryjob.Status_ENDED:
-			// TODO(yiwzhang): emit a log to record failed non critical tryjob.
+			e.logTryjobEnded(ctx, definition, attempt.TryjobId)
+		case attempt.Status == tryjob.Status_ENDED: // non critical failure
+			e.logTryjobEnded(ctx, definition, attempt.TryjobId)
 		case attempt.Status == tryjob.Status_CANCELLED:
 			// This SHOULD happen during race condition as a Tryjob is cancelled by
 			// LUCI CV iff a new patchset is uploaded. In that case, Run SHOULD be
 			// cancelled and try executor should never be invoked. Do nothing apart
 			// from logging here and Run should be cancelled very soon.
-			// TODO(yiwzhang): emit a log to record cancelled tryjobs.
+			e.logTryjobEnded(ctx, definition, attempt.TryjobId)
 		case attempt.Status == tryjob.Status_UNTRIGGERED && attempt.Reused:
 			// Normally happens when this Run reuses a PENDING Tryjob from another
 			// Run but the Tryjob doesn't end up getting triggered.
@@ -321,9 +325,8 @@ func (e *Executor) executePlan(ctx context.Context, p *plan, r *run.Run, execSta
 	if len(p.discard) > 0 {
 		// TODO(crbug/1323597): cancel the tryjobs because they are no longer
 		// useful.
-		// TODO(yiwzhang): emit a log that these tryjobs are discarded.
 		for _, item := range p.discard {
-			logging.Infof(ctx, "discard tryjob %s; reason: %s", item.definition, item.discardReason)
+			e.logTryjobDiscarded(ctx, item.definition, item.execution, item.discardReason)
 		}
 	}
 

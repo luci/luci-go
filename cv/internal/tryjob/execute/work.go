@@ -19,6 +19,8 @@ import (
 	"fmt"
 	"sort"
 
+	"google.golang.org/protobuf/types/known/timestamppb"
+
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/gae/service/datastore"
@@ -59,7 +61,14 @@ func (e *Executor) startTryjobs(ctx context.Context, r *run.Run, definitions []*
 	sort.Sort(w.clPatchsets)
 	w.findReuseFns = append(w.findReuseFns, w.findReuseInCV, w.findReuseInBackend)
 
-	return w.start(ctx, definitions)
+	ret, err := w.start(ctx, definitions)
+	for _, le := range w.logEntries {
+		e.log(le)
+	}
+	if err != nil {
+		return nil, err
+	}
+	return ret, nil
 }
 
 // worker implements the workflow to trigger tryjobs for the given definitions
@@ -77,6 +86,7 @@ type worker struct {
 	rm          rm
 
 	findReuseFns []findReuseFn
+	logEntries   []*tryjob.ExecutionLogEntry
 }
 
 func (w *worker) makeBaseTryjob(ctx context.Context) *tryjob.Tryjob {
@@ -192,6 +202,25 @@ func (w *worker) findReuse(ctx context.Context, definitions []*tryjob.Definition
 		if len(remainingDefinitions) == 0 {
 			break
 		}
+	}
+
+	if len(ret) > 0 {
+		reusedTryjobLogEntries := make([]*tryjob.ExecutionLogEntry_TryjobReused, 0, len(ret))
+		for def, tj := range ret {
+			reusedTryjobLogEntries = append(reusedTryjobLogEntries, &tryjob.ExecutionLogEntry_TryjobReused{
+				Definition: def,
+				TryjobId:   int64(tj.ID),
+				ExternalId: string(tj.ExternalID),
+			})
+		}
+		w.logEntries = append(w.logEntries, &tryjob.ExecutionLogEntry{
+			Time: timestamppb.New(clock.Now(ctx).UTC()),
+			Kind: &tryjob.ExecutionLogEntry_TryjobsReused_{
+				TryjobsReused: &tryjob.ExecutionLogEntry_TryjobsReused{
+					Tryjobs: reusedTryjobLogEntries,
+				},
+			},
+		})
 	}
 	return ret, nil
 }

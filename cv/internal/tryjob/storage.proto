@@ -267,10 +267,58 @@ message ExecutionLogEntry {
   google.protobuf.Timestamp time = 1;
   oneof kind {
     RequirementChanged requirement_changed = 2;
-    // TODO(yiwzhang): add more log kinds
+    TryjobsLaunched tryjobs_launched = 3;
+    TryjobsLaunchFailed tryjobs_launch_failed = 4;
+    TryjobsReused tryjobs_reused = 5;
+    TryjobEnded tryjob_ended = 6;
+    TryjobDiscarded tryjob_discarded = 7;
   }
 
-  message RequirementChanged {}
+  message RequirementChanged {
+    // TODO(yiwzhang): provide more detail on the config revision change
+    // that cause the requirement change.
+  }
+
+  message TryjobsLaunched {
+    repeated TryjobLaunched tryjobs = 1;
+  }
+
+  message TryjobLaunched {
+    Definition definition = 1;
+    int64 tryjob_id = 2;
+    string external_id = 3;
+  }
+
+  message TryjobsLaunchFailed {
+    repeated TryjobLaunchFailed tryjobs = 1;
+  }
+
+  message TryjobLaunchFailed {
+    Definition definition = 1;
+    string reason = 2;
+  }
+
+  message TryjobsReused {
+    repeated TryjobReused tryjobs = 1;
+  }
+
+  message TryjobReused {
+    Definition definition = 1;
+    int64 tryjob_id = 2;
+    string external_id = 3;
+  }
+
+  message TryjobEnded {
+    Definition definition = 1;
+    int64 tryjob_id = 2;
+  }
+
+  message TryjobDiscarded{
+    Definition definition = 1;
+    int64 tryjob_id = 2;
+    string external_id = 3;
+    string reason = 4;
+  }
 }
 
 // TryjobUpdatedEvent describes which Tryjob entity is updated.
