@@ -112,7 +112,7 @@ func TestTriage(t *testing.T) {
 				panic(fmt.Errorf("unsupported %s", mode))
 			}
 			ci := gf.CI(clid, mods...)
-			trs := trigger.Find(ci, nil)
+			trs := trigger.Find(&trigger.FindInput{ChangeInfo: ci, ConfigGroup: nil})
 			So(trs.GetCqVoteTrigger(), ShouldNotBeNil)
 			So(trs.GetCqVoteTrigger().GetMode(), ShouldResemble, string(mode))
 			cl := &changelist.CL{

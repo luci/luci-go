@@ -175,7 +175,7 @@ func needsPurging(ctx context.Context, cl *changelist.CL, task *prjpb.PurgeCLTas
 	// votes). But do a best effort check that Trigger's timestamp is still the
 	// same to the best of CV's knowledge. Note that this ignores potentially
 	// configured additional modes such as run.QuickDryRun.
-	switch t := trigger.Find(ci, &cfgpb.ConfigGroup{}).GetCqVoteTrigger(); {
+	switch t := trigger.Find(&trigger.FindInput{ChangeInfo: ci, ConfigGroup: &cfgpb.ConfigGroup{}}).GetCqVoteTrigger(); {
 	case t == nil:
 		logging.Debugf(ctx, "CL is no longer triggered")
 		return false

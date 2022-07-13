@@ -138,7 +138,9 @@ func shouldCancel(ctx context.Context, cl *changelist.CL, rcl *run.RunCL, cg *pr
 		logging.Warningf(ctx, "%s has new ref %q => %q", clString, o, c)
 		return time.Time{}, fmt.Sprintf("the ref of %s has moved from %s to %s", cl.ExternalID.MustURL(), o, c)
 	}
-	o, c := rcl.Trigger, trigger.Find(cl.Snapshot.GetGerrit().GetInfo(), cg.Content)
+	o, c := rcl.Trigger, trigger.Find(&trigger.FindInput{
+		ChangeInfo:  cl.Snapshot.GetGerrit().GetInfo(),
+		ConfigGroup: cg.Content})
 	if whatChanged := run.HasTriggerChanged(o, c, cl.ExternalID.MustURL()); whatChanged != "" {
 		logging.Infof(ctx, "%s has new trigger\nOLD: %s\nNEW: %s", clString, o, c)
 		return time.Time{}, whatChanged

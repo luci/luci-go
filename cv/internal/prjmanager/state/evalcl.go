@@ -348,7 +348,7 @@ func (s *State) setTriggers(ci *gerritpb.ChangeInfo, pcl *prjpb.PCL) {
 	} else {
 		cg = &cfgpb.ConfigGroup{}
 	}
-	ts := trigger.Find(ci, cg)
+	ts := trigger.Find(&trigger.FindInput{ChangeInfo: ci, ConfigGroup: cg})
 	t := ts.GetCqVoteTrigger()
 	if t == nil {
 		return

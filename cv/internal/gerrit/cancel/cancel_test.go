@@ -68,7 +68,7 @@ func TestCancel(t *testing.T) {
 			gf.Updated(clock.Now(ctx).Add(-1*time.Minute)),
 			gf.Reviewer(gf.U(fmt.Sprintf("user-%d", reviewerID))),
 		)
-		triggers := trigger.Find(ci, &cfgpb.ConfigGroup{})
+		triggers := trigger.Find(&trigger.FindInput{ChangeInfo: ci, ConfigGroup: &cfgpb.ConfigGroup{}})
 		So(triggers.GetCqVoteTrigger(), ShouldResembleProto, &run.Trigger{
 			Time:            timestamppb.New(triggerTime),
 			Mode:            string(run.FullRun),
@@ -121,7 +121,7 @@ func TestCancel(t *testing.T) {
 
 		findTrigger := func(resultCI *gerritpb.ChangeInfo) *run.Trigger {
 			for _, cg := range input.ConfigGroups {
-				if t := trigger.Find(resultCI, cg.Content); t != nil {
+				if t := trigger.Find(&trigger.FindInput{ChangeInfo: resultCI, ConfigGroup: cg.Content}); t != nil {
 					return t.GetCqVoteTrigger()
 				}
 			}

@@ -63,7 +63,7 @@ func TestUpdateConfig(t *testing.T) {
 		}
 
 		putRunCL := func(ci *gerritpb.ChangeInfo, cg *cfgpb.ConfigGroup) {
-			triggers := trigger.Find(ci, cg)
+			triggers := trigger.Find(&trigger.FindInput{ChangeInfo: ci, ConfigGroup: cg})
 			So(triggers.GetCqVoteTrigger(), ShouldNotBeNil)
 			rcl := run.RunCL{
 				Run:        datastore.MakeKey(ctx, common.RunKind, string(runID)),

@@ -169,7 +169,7 @@ func TestCancelTriggers(t *testing.T) {
 				ExternalUpdateTime: timestamppb.New(ct.Clock.Now()),
 			},
 		}
-		triggers := trigger.Find(ci, cg.Content)
+		triggers := trigger.Find(&trigger.FindInput{ChangeInfo: ci, ConfigGroup: cg.Content})
 		// Defaults for gf.CQ(+2).
 		So(triggers.GetCqVoteTrigger(), ShouldResembleProto, &run.Trigger{
 			Time:            timestamppb.New(testclock.TestRecentTimeUTC.Add(10 * time.Hour)),

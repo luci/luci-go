@@ -127,7 +127,7 @@ func TestOnCLsUpdated(t *testing.T) {
 		)
 		ct.AddMember("foo", committers)
 		cl1 := updateCL(1, ci1, aplConfigOK, accessOK)
-		triggers1 := trigger.Find(ci1, cfg.GetConfigGroups()[0])
+		triggers1 := trigger.Find(&trigger.FindInput{ChangeInfo: ci1, ConfigGroup: cfg.GetConfigGroups()[0]})
 		So(triggers1.GetCqVoteTrigger(), ShouldResembleProto, &run.Trigger{
 			Time:            timestamppb.New(triggerTime),
 			Mode:            string(run.FullRun),
@@ -135,7 +135,7 @@ func TestOnCLsUpdated(t *testing.T) {
 			GerritAccountId: 1,
 		})
 		cl2 := updateCL(2, ci2, aplConfigOK, accessOK)
-		triggers2 := trigger.Find(ci2, cfg.GetConfigGroups()[0])
+		triggers2 := trigger.Find(&trigger.FindInput{ChangeInfo: ci2, ConfigGroup: cfg.GetConfigGroups()[0]})
 		So(triggers2.GetCqVoteTrigger(), ShouldResembleProto, &run.Trigger{
 			Time:            timestamppb.New(triggerTime),
 			Mode:            string(run.FullRun),
@@ -252,7 +252,7 @@ func TestOnCLsUpdated(t *testing.T) {
 		})
 		Convey("Cancels Run on removed trigger", func() {
 			newCI1 := gf.CI(gChange1, gf.PS(gPatchSet1), gf.CQ(0, triggerTime.Add(1*time.Minute), gf.U("foo")))
-			So(trigger.Find(newCI1, cfg.GetConfigGroups()[0]), ShouldBeNil)
+			So(trigger.Find(&trigger.FindInput{ChangeInfo: newCI1, ConfigGroup: cfg.GetConfigGroups()[0]}), ShouldBeNil)
 			updateCL(1, newCI1, aplConfigOK, accessOK)
 			runAndVerifyCancelled("the FULL_RUN trigger on https://x-review.example.com/c/1 has been removed")
 		})

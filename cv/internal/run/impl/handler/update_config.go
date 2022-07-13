@@ -105,7 +105,9 @@ func (impl *Impl) UpdateConfig(ctx context.Context, rs *state.RunState, hash str
 			unwatched = append(unwatched, cl)
 		case 1:
 			cgid := cgids[0]
-			tr := trigger.Find(cl.Detail.GetGerrit().GetInfo(), cgsMap[cgid.Name()].Content)
+			tr := trigger.Find(&trigger.FindInput{
+				ChangeInfo:  cl.Detail.GetGerrit().GetInfo(),
+				ConfigGroup: cgsMap[cgid.Name()].Content})
 			if whatChanged := run.HasTriggerChanged(cl.Trigger, tr, cl.ExternalID.MustURL()); whatChanged != "" {
 				diffTrigger = append(diffTrigger, cl)
 			} else {

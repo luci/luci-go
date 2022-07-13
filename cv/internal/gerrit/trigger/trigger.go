@@ -38,6 +38,18 @@ var modeToVote = map[run.Mode]int32{
 	run.FullRun: 2,
 }
 
+// FindInput contains the parameters needed to find active triggers related to a
+// particular CL.
+type FindInput struct {
+	// ChangeInfo is required. It should contain the most recent information
+	// about the CL to find the triggers in. E.g. label votes and patchsets.
+	ChangeInfo *gerritpb.ChangeInfo
+
+	// ConfigGroup is required. It specifies the configuration that matches the
+	// change and should define any additional modes required.
+	ConfigGroup *cfgpb.ConfigGroup
+}
+
 // Find computes the triggers corresponding to a given CL.
 //
 // It will return the highest priority trigger based on CQ+1 and CQ+2 votes,
@@ -53,25 +65,25 @@ var modeToVote = map[run.Mode]int32{
 // additional mode is selected instead of the standard Dry/Full Run.
 //
 // Returns up to one trigger based on a vote on the Commit-Queue label.
-func Find(ci *gerritpb.ChangeInfo, cg *cfgpb.ConfigGroup) *run.Triggers {
-	if ci.GetStatus() != gerritpb.ChangeStatus_NEW {
+func Find(input *FindInput) *run.Triggers {
+	if input.ChangeInfo.GetStatus() != gerritpb.ChangeStatus_NEW {
 		return nil
 	}
-	li := ci.GetLabels()[CQLabelName]
+	li := input.ChangeInfo.GetLabels()[CQLabelName]
 	if li == nil {
 		return nil
 	}
-	curRevision := ci.GetCurrentRevision()
+	curRevision := input.ChangeInfo.GetCurrentRevision()
 
 	// Check if there was a previous attempt that got canceled by means of a
 	// comment. Normally, CQDaemon would remove appropriate label, but in case
 	// of ACLs misconfiguration preventing CQDaemon from removing votes on
 	// behalf of users, CQDaemon will abort attempt by posting a special comment.
-	var prevAttemptTs time.Time
-	for _, msg := range ci.GetMessages() {
+	var prevAttemptTS time.Time
+	for _, msg := range input.ChangeInfo.GetMessages() {
 		if bd, ok := botdata.Parse(msg); ok {
-			if bd.Action == botdata.Cancel && bd.Revision == curRevision && bd.TriggeredAt.After(prevAttemptTs) {
-				prevAttemptTs = bd.TriggeredAt
+			if bd.Action == botdata.Cancel && bd.Revision == curRevision && bd.TriggeredAt.After(prevAttemptTS) {
+				prevAttemptTS = bd.TriggeredAt
 			}
 		}
 	}
@@ -92,7 +104,7 @@ func Find(ci *gerritpb.ChangeInfo, cg *cfgpb.ConfigGroup) *run.Triggers {
 		}
 
 		switch t := ai.GetDate().AsTime(); {
-		case !prevAttemptTs.Before(t):
+		case !prevAttemptTS.Before(t):
 			continue
 		case val > largest:
 			largest = val
@@ -115,8 +127,8 @@ func Find(ci *gerritpb.ChangeInfo, cg *cfgpb.ConfigGroup) *run.Triggers {
 	if cqTrigger == nil {
 		return nil
 	}
-	for _, mode := range cg.GetAdditionalModes() {
-		if applyAdditionalMode(ci, mode, cqTrigger) {
+	for _, mode := range input.ConfigGroup.GetAdditionalModes() {
+		if applyAdditionalMode(input.ChangeInfo, mode, cqTrigger) {
 			// first one wins
 			break
 		}
@@ -127,7 +139,7 @@ func Find(ci *gerritpb.ChangeInfo, cg *cfgpb.ConfigGroup) *run.Triggers {
 	// and yet *this* CQ attempt started only when new patchset was created.
 	// So, attempt start is the latest of timestamps (CQ vote, this patchset
 	// creation).
-	revisionTS := ci.Revisions[curRevision].GetCreated()
+	revisionTS := input.ChangeInfo.Revisions[curRevision].GetCreated()
 	if cqTrigger.GetTime().AsTime().Before(revisionTS.AsTime()) {
 		cqTrigger.Time = revisionTS
 	}

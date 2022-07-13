@@ -334,7 +334,10 @@ func (rs *runStage) makeCreator(ctx context.Context, combo *combo, cg *prjcfg.Co
 		opts = run.MergeOptions(opts, run.ExtractOptions(cl.Snapshot))
 
 		// Restore email, which Project Manager doesn't track inside PCLs.
-		tr := trigger.Find(cl.Snapshot.GetGerrit().GetInfo(), cg.Content).GetCqVoteTrigger()
+		tr := trigger.Find(&trigger.FindInput{
+			ChangeInfo:  cl.Snapshot.GetGerrit().GetInfo(),
+			ConfigGroup: cg.Content,
+		}).GetCqVoteTrigger()
 		pclT := pcl.GetTriggers().GetCqVoteTrigger()
 		if pclT == nil {
 			pclT = pcl.GetTrigger()

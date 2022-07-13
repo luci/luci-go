@@ -350,7 +350,7 @@ func TestCategorizeAndLoadActiveIntoPCLs(t *testing.T) {
 			})
 
 			Convey("submitted dependent is neither active nor unused, but a dep", func() {
-				triggers := trigger.Find(cis[2], cfg.ConfigGroups[0])
+				triggers := trigger.Find(&trigger.FindInput{ChangeInfo: cis[2], ConfigGroup: cfg.ConfigGroups[0]})
 				So(triggers.GetCqVoteTrigger(), ShouldNotBeNil)
 				state.PB.Pcls = sortPCLs(append(state.PB.Pcls,
 					&prjpb.PCL{

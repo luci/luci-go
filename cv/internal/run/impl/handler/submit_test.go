@@ -290,7 +290,7 @@ func TestOnSubmissionCompleted(t *testing.T) {
 				gf.CQ(1, ct.Clock.Now().Add(-5*time.Minute), gf.U("user-101")),
 				gf.CQ(2, ct.Clock.Now().Add(-2*time.Minute), gf.U("user-100")),
 				gf.Updated(clock.Now(ctx).Add(-1*time.Minute)))
-			triggers := trigger.Find(ci, cg.ConfigGroups[0])
+			triggers := trigger.Find(&trigger.FindInput{ChangeInfo: ci, ConfigGroup: cg.ConfigGroups[0]})
 			So(triggers.GetCqVoteTrigger(), ShouldResembleProto, &run.Trigger{
 				Time:            timestamppb.New(ct.Clock.Now().Add(-2 * time.Minute)),
 				Mode:            string(run.FullRun),

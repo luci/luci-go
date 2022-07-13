@@ -68,7 +68,7 @@ func TestPostStartMessage(t *testing.T) {
 		prjcfgtest.Create(ctx, lProject, &cfg)
 
 		ensureCL := func(ci *gerritpb.ChangeInfo) (*changelist.CL, *run.RunCL) {
-			triggers := trigger.Find(ci, cfg.GetConfigGroups()[0])
+			triggers := trigger.Find(&trigger.FindInput{ChangeInfo: ci, ConfigGroup: cfg.GetConfigGroups()[0]})
 			So(triggers.GetCqVoteTrigger(), ShouldNotBeNil)
 			if triggers.GetCqVoteTrigger() == nil {
 				panic(fmt.Errorf("CL %d must be triggered", ci.GetNumber()))

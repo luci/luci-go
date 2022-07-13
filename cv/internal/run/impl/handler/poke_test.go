@@ -120,7 +120,7 @@ func TestPoke(t *testing.T) {
 				},
 			},
 		}
-		triggers := trigger.Find(ci, cfg.GetConfigGroups()[0])
+		triggers := trigger.Find(&trigger.FindInput{ChangeInfo: ci, ConfigGroup: cfg.GetConfigGroups()[0]})
 		So(triggers.GetCqVoteTrigger(), ShouldResembleProto, &run.Trigger{
 			Time:            timestamppb.New(clock.Now(ctx).UTC()),
 			Mode:            string(run.DryRun),

@@ -68,7 +68,7 @@ func TestCancelTriggers(t *testing.T) {
 			for i, ci := range cis {
 				So(ci.GetNumber(), ShouldBeGreaterThan, 0)
 				So(ci.GetNumber(), ShouldBeLessThan, 1000)
-				triggers := trigger.Find(ci, cfg.GetConfigGroups()[0])
+				triggers := trigger.Find(&trigger.FindInput{ChangeInfo: ci, ConfigGroup: cfg.GetConfigGroups()[0]})
 				So(triggers.GetCqVoteTrigger(), ShouldNotBeNil)
 				So(ct.GFake.Has(gHost, int(ci.GetNumber())), ShouldBeFalse)
 				ct.GFake.AddFrom(gf.WithCIs(gHost, gf.ACLRestricted(lProject), ci))
@@ -145,7 +145,7 @@ func TestCancelTriggers(t *testing.T) {
 			So(err, ShouldBeNil)
 			So(host, ShouldEqual, gHost)
 			changeInfo := ct.GFake.GetChange(gHost, int(changeID)).Info
-			So(trigger.Find(changeInfo, cfg.GetConfigGroups()[0]), ShouldBeNil)
+			So(trigger.Find(&trigger.FindInput{ChangeInfo: changeInfo, ConfigGroup: cfg.GetConfigGroups()[0]}), ShouldBeNil)
 		}
 
 		testHappyPath := func(prefix string, clCount, concurrency int) {
