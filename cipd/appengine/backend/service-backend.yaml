@@ -37,3 +37,4 @@ entrypoint: >
   -cipd-temp-gs-path /${GCS_BUCKET}/temp
   -random-secrets-in-datastore
   -cloud-error-reporting
+  -bqlog-dataset cipd
