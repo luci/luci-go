@@ -1041,6 +1041,12 @@ func (e *engineImpl) resetJobOnDevServer(c context.Context, jobID string) error 
 // Double checks that the invocation belongs to the given job. Returns
 // ErrNoSuchInvocation if not.
 func (e *engineImpl) getInvocation(c context.Context, jobID string, invID int64) (*Invocation, error) {
+	// ID 0 is special in datastore. There are no invocations with ID 0, but
+	// making the ds.Get call below to check this would fail with "invalid key"
+	// error.
+	if invID == 0 {
+		return nil, ErrNoSuchInvocation
+	}
 	inv := &Invocation{ID: invID}
 	switch err := ds.Get(c, inv); {
 	case err == nil:
