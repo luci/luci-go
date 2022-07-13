@@ -30,9 +30,12 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry/transient"
+	"go.chromium.org/luci/common/trace"
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/grpc/grpcutil"
+	"go.chromium.org/luci/server"
 	"go.chromium.org/luci/server/auth"
+	"go.chromium.org/luci/server/bqlog"
 	"go.chromium.org/luci/server/tq"
 
 	api "go.chromium.org/luci/cipd/api/cipd/v1"
@@ -67,15 +70,23 @@ type StorageServer interface {
 // It can be used internally by the backend. Assumes ACL checks are already
 // done.
 //
-// Registers some task queue tasks in the given dispatcher.
-func Internal(d *tq.Dispatcher, s *settings.Settings) StorageServer {
+// Registers some task queue tasks in the given dispatcher and log sinks in
+// the given bundler.
+func Internal(d *tq.Dispatcher, b *bqlog.Bundler, s *settings.Settings, opts *server.Options) StorageServer {
 	impl := &storageImpl{
-		tq:           d,
-		settings:     s,
-		getGS:        gs.Get,
-		getSignedURL: getSignedURL,
+		tq:             d,
+		settings:       s,
+		serviceVersion: opts.ImageVersion(),
+		processID:      opts.Hostname,
+		getGS:          gs.Get,
+		getSignedURL:   getSignedURL,
+		submitLog:      func(ctx context.Context, entry *api.VerificationLogEntry) { b.Log(ctx, entry) },
 	}
 	impl.registerTasks()
+	b.RegisterSink(bqlog.Sink{
+		Prototype: &api.VerificationLogEntry{},
+		Table:     "verification",
+	})
 	return impl
 }
 
@@ -88,9 +99,14 @@ type storageImpl struct {
 	tq       *tq.Dispatcher
 	settings *settings.Settings
 
+	// For VerificationLogEntry fields.
+	serviceVersion string
+	processID      string
+
 	// Mocking points for tests. See Internal() for real implementations.
 	getGS        func(ctx context.Context) gs.GoogleStorage
 	getSignedURL func(ctx context.Context, gsPath, filename string, signer signerFactory, gs gs.GoogleStorage) (string, uint64, error)
+	submitLog    func(ctx context.Context, entry *api.VerificationLogEntry)
 }
 
 // registerTasks adds tasks to the tq Dispatcher.
@@ -446,24 +462,59 @@ func (s *storageImpl) verifyUploadTask(ctx context.Context, task *tasks.VerifyUp
 
 	verifiedHexDigest := "" // set after the successful hash verification below
 
+	// Log some details about the verification operation.
+	logEntry := &api.VerificationLogEntry{
+		OperationId:    op.ID,
+		InitiatedBy:    string(op.CreatedBy),
+		TempGsPath:     op.TempGSPath,
+		Submitted:      op.CreatedTS.UnixNano() / 1000,
+		Started:        clock.Now(ctx).UnixNano() / 1000,
+		ServiceVersion: s.serviceVersion,
+		ProcessId:      s.processID,
+		TraceId:        trace.SpanContext(ctx),
+	}
+	if op.HexDigest != "" {
+		logEntry.ExpectedInstanceId = common.ObjectRefToInstanceID(&api.ObjectRef{
+			HashAlgo:  op.HashAlgo,
+			HexDigest: op.HexDigest,
+		})
+	}
+
+	submitLog := func(outcome api.UploadStatus, error string) {
+		logEntry.Outcome = outcome.String()
+		logEntry.Error = error
+		logEntry.Finished = clock.Now(ctx).UnixNano() / 1000
+
+		verificationTimeSec := float64(logEntry.Finished-logEntry.Started) / 1e6
+		if verificationTimeSec < 0.001 {
+			verificationTimeSec = 0.001
+		}
+		logEntry.VerificationSpeed = int64(float64(logEntry.FileSize) / verificationTimeSec)
+
+		if s.submitLog != nil {
+			s.submitLog(ctx, logEntry)
+		}
+	}
+
 	defer func() {
 		if err != nil {
-			logging.Errorf(ctx, "Verification error - %s", err)
+			logging.Errorf(ctx, "Verification error: %s", err)
 		}
 
 		// On transient errors don't touch the temp file or the operation, we need
 		// them for retries.
 		if transient.Tag.In(err) {
+			submitLog(api.UploadStatus_ERRORED, fmt.Sprintf("Transient error: %s", err))
 			return
 		}
 
 		// Update the status of the operation based on 'err'. If Advance fails
 		// itself, return a transient error to make sure 'verifyUploadTask' is
 		// retried.
-		_, opErr := op.Advance(ctx, func(_ context.Context, op *upload.Operation) error {
+		advancedOp, opErr := op.Advance(ctx, func(_ context.Context, op *upload.Operation) error {
 			if err != nil {
 				op.Status = api.UploadStatus_ERRORED
-				op.Error = fmt.Sprintf("Verification failed - %s", err)
+				op.Error = fmt.Sprintf("Verification failed: %s", err)
 			} else {
 				op.Status = api.UploadStatus_PUBLISHED
 				op.HexDigest = verifiedHexDigest
@@ -472,8 +523,11 @@ func (s *storageImpl) verifyUploadTask(ctx context.Context, task *tasks.VerifyUp
 		})
 		if opErr != nil {
 			err = opErr // override the error returned by the task
+			submitLog(api.UploadStatus_ERRORED, fmt.Sprintf("Error updating UploadOperation: %s", err))
 			return
 		}
+
+		submitLog(advancedOp.Status, advancedOp.Error)
 
 		// Best effort deletion of the temporary file. We do it here, after updating
 		// the operation, to avoid retrying the expensive verification procedure
@@ -504,6 +558,7 @@ func (s *storageImpl) verifyUploadTask(ctx context.Context, task *tasks.VerifyUp
 	if fileSize < int64(bufSize) {
 		bufSize = int(fileSize)
 	}
+	logEntry.FileSize = fileSize
 
 	// Feed the file to the hasher.
 	_, err = io.CopyBuffer(hash, io.NewSectionReader(r, 0, fileSize), make([]byte, bufSize))
@@ -511,6 +566,12 @@ func (s *storageImpl) verifyUploadTask(ctx context.Context, task *tasks.VerifyUp
 		return errors.Annotate(err, "failed to read Google Storage file").Err()
 	}
 	verifiedHexDigest = hex.EncodeToString(hash.Sum(nil))
+
+	// This should usually match logEntry.ExpectedInstanceId.
+	logEntry.VerifiedInstanceId = common.ObjectRefToInstanceID(&api.ObjectRef{
+		HashAlgo:  op.HashAlgo,
+		HexDigest: verifiedHexDigest,
+	})
 
 	// If we know the expected hash, verify it matches what we have calculated.
 	if op.HexDigest != "" && op.HexDigest != verifiedHexDigest {

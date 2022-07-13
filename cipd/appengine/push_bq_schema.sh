@@ -19,6 +19,14 @@ bqschemaupdater \
   -partitioning-field "timestamp" \
   -partitioning-expiration "8760h"  # 1y
 
+bqschemaupdater \
+  -table "$PROJECT_ID.cipd.verification" \
+  -friendly-name "CIPD verification log." \
+  -message-dir "$THIS_DIR/../api/cipd/v1" \
+  -message "cipd.VerificationLogEntry" \
+  -partitioning-field "submitted" \
+  -partitioning-expiration "8760h"  # 1y
+
 # Note: this table is used as a template table to create 'exported_tags_<jobid>'
 # tables that contain tags exported by a single specific mapper job. Each such
 # individual table is an approximate "snapshot" of the state of tags at the time

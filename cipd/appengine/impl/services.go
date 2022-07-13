@@ -24,6 +24,7 @@ import (
 
 	"go.chromium.org/luci/config/server/cfgmodule"
 	"go.chromium.org/luci/server"
+	"go.chromium.org/luci/server/bqlog"
 	"go.chromium.org/luci/server/cron"
 	"go.chromium.org/luci/server/dsmapper"
 	"go.chromium.org/luci/server/gaeemulation"
@@ -67,6 +68,7 @@ type Services struct {
 // Main initializes the core server modules and launches the callback.
 func Main(extra []module.Module, cb func(srv *server.Server, svc *Services) error) {
 	modules := append([]module.Module{
+		bqlog.NewModuleFromFlags(),
 		cfgmodule.NewModuleFromFlags(),
 		cron.NewModuleFromFlags(),
 		dsmapper.NewModuleFromFlags(),
@@ -90,7 +92,7 @@ func Main(extra []module.Module, cb func(srv *server.Server, svc *Services) erro
 		}
 		srv.Context = ev.RegisterSink(srv.Context, &tq.Default, srv.Options.Prod)
 
-		internalCAS := cas.Internal(&tq.Default, s)
+		internalCAS := cas.Internal(&tq.Default, &bqlog.Default, s, &srv.Options)
 		return cb(srv, &Services{
 			InternalCAS: internalCAS,
 			PublicCAS:   cas.Public(internalCAS),

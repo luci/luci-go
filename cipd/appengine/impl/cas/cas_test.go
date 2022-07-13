@@ -19,11 +19,13 @@ import (
 	"io"
 	"net/http"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/protobuf/proto"
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/retry/transient"
@@ -242,7 +244,7 @@ func TestBeginUpload(t *testing.T) {
 	t.Parallel()
 
 	Convey("With mocks", t, func() {
-		ctx, gsMock, _, impl := storageMocks()
+		ctx, gsMock, _, _, impl := storageMocks()
 
 		Convey("Success (no Object)", func() {
 			resp, err := impl.BeginUpload(ctx, &api.BeginUploadRequest{
@@ -354,7 +356,27 @@ func TestBeginUpload(t *testing.T) {
 	})
 }
 
-func storageMocks() (context.Context, *mockedGS, *tqtesting.Scheduler, *storageImpl) {
+type verificationLogs struct {
+	m    sync.Mutex
+	logs []*api.VerificationLogEntry
+}
+
+func (v *verificationLogs) submitLog(_ context.Context, entry *api.VerificationLogEntry) {
+	v.m.Lock()
+	defer v.m.Unlock()
+	v.logs = append(v.logs, proto.Clone(entry).(*api.VerificationLogEntry))
+}
+
+func (v *verificationLogs) last() *api.VerificationLogEntry {
+	v.m.Lock()
+	defer v.m.Unlock()
+	if len(v.logs) == 0 {
+		return nil
+	}
+	return v.logs[len(v.logs)-1]
+}
+
+func storageMocks() (context.Context, *mockedGS, *tqtesting.Scheduler, *verificationLogs, *storageImpl) {
 	ctx, _, _ := testutil.TestingContext()
 	ctx = secrets.Use(ctx, &testsecrets.Store{})
 
@@ -367,24 +389,27 @@ func storageMocks() (context.Context, *mockedGS, *tqtesting.Scheduler, *storageI
 		deleteCalls: []string{},
 	}
 
+	logs := &verificationLogs{}
+
 	impl := &storageImpl{
 		tq: dispatcher,
 		settings: &settings.Settings{
 			StorageGSPath: "/bucket/store",
 			TempGSPath:    "/bucket/tmp_path",
 		},
-		getGS: func(context.Context) gs.GoogleStorage { return gsMock },
+		getGS:     func(context.Context) gs.GoogleStorage { return gsMock },
+		submitLog: logs.submitLog,
 	}
 	impl.registerTasks()
 
-	return ctx, gsMock, sched, impl
+	return ctx, gsMock, sched, logs, impl
 }
 
 func TestFinishUpload(t *testing.T) {
 	t.Parallel()
 
 	Convey("With mocks", t, func() {
-		ctx, gsMock, tq, impl := storageMocks()
+		ctx, gsMock, tq, verificationLogs, impl := storageMocks()
 
 		Convey("With force hash", func() {
 			// Initiate an upload to get operation ID.
@@ -538,6 +563,20 @@ func TestFinishUpload(t *testing.T) {
 						HexDigest: "5994471abb01112afcc18159f6cc74b4f511b99806da59b3caf5a9c173cacfc5",
 					},
 				})
+
+				// There's a log entry.
+				So(verificationLogs.last(), ShouldResembleProto, &api.VerificationLogEntry{
+					OperationId:        1,
+					InitiatedBy:        string(testutil.TestUser),
+					TempGsPath:         "/bucket/tmp_path/1454472306_1",
+					VerifiedInstanceId: "WZRHGrsBESr8wYFZ9sx0tPURuZgG2lmzyvWpwXPKz8UC",
+					Submitted:          testutil.TestTime.UnixNano() / 1000,
+					Started:            testutil.TestTime.UnixNano() / 1000,
+					Finished:           testutil.TestTime.UnixNano() / 1000,
+					FileSize:           5,
+					VerificationSpeed:  5000, // this is fake, our time is frozen
+					Outcome:            "PUBLISHED",
+				})
 			})
 
 			Convey("Publish transient error", func() {
@@ -559,6 +598,21 @@ func TestFinishUpload(t *testing.T) {
 					OperationId: op.OperationId,
 					Status:      api.UploadStatus_VERIFYING,
 					UploadUrl:   "http://upload-url.example.com/for/+/bucket/tmp_path/1454472306_1",
+				})
+
+				// There's a log entry.
+				So(verificationLogs.last(), ShouldResembleProto, &api.VerificationLogEntry{
+					OperationId:        1,
+					InitiatedBy:        string(testutil.TestUser),
+					TempGsPath:         "/bucket/tmp_path/1454472306_1",
+					VerifiedInstanceId: "WZRHGrsBESr8wYFZ9sx0tPURuZgG2lmzyvWpwXPKz8UC",
+					Submitted:          testutil.TestTime.UnixNano() / 1000,
+					Started:            testutil.TestTime.UnixNano() / 1000,
+					Finished:           testutil.TestTime.UnixNano() / 1000,
+					FileSize:           5,
+					VerificationSpeed:  5000, // this is fake, our time is frozen
+					Outcome:            "ERRORED",
+					Error:              "Transient error: failed to publish the verified file: blarg",
 				})
 			})
 
@@ -582,7 +636,22 @@ func TestFinishUpload(t *testing.T) {
 					OperationId:  op.OperationId,
 					Status:       api.UploadStatus_ERRORED,
 					UploadUrl:    "http://upload-url.example.com/for/+/bucket/tmp_path/1454472306_1",
-					ErrorMessage: "Verification failed - failed to publish the verified file: blarg",
+					ErrorMessage: "Verification failed: failed to publish the verified file: blarg",
+				})
+
+				// There's a log entry.
+				So(verificationLogs.last(), ShouldResembleProto, &api.VerificationLogEntry{
+					OperationId:        1,
+					InitiatedBy:        string(testutil.TestUser),
+					TempGsPath:         "/bucket/tmp_path/1454472306_1",
+					VerifiedInstanceId: "WZRHGrsBESr8wYFZ9sx0tPURuZgG2lmzyvWpwXPKz8UC",
+					Submitted:          testutil.TestTime.UnixNano() / 1000,
+					Started:            testutil.TestTime.UnixNano() / 1000,
+					Finished:           testutil.TestTime.UnixNano() / 1000,
+					FileSize:           5,
+					VerificationSpeed:  5000, // this is fake, our time is frozen
+					Outcome:            "ERRORED",
+					Error:              "Verification failed: failed to publish the verified file: blarg",
 				})
 			})
 		})
@@ -649,6 +718,21 @@ func TestFinishUpload(t *testing.T) {
 						HexDigest: "5994471abb01112afcc18159f6cc74b4f511b99806da59b3caf5a9c173cacfc5",
 					},
 				})
+
+				// There's a log entry.
+				So(verificationLogs.last(), ShouldResembleProto, &api.VerificationLogEntry{
+					OperationId:        1,
+					InitiatedBy:        string(testutil.TestUser),
+					TempGsPath:         "/bucket/tmp_path/1454472306_1",
+					ExpectedInstanceId: "WZRHGrsBESr8wYFZ9sx0tPURuZgG2lmzyvWpwXPKz8UC",
+					VerifiedInstanceId: "WZRHGrsBESr8wYFZ9sx0tPURuZgG2lmzyvWpwXPKz8UC",
+					Submitted:          testutil.TestTime.UnixNano() / 1000,
+					Started:            testutil.TestTime.UnixNano() / 1000,
+					Finished:           testutil.TestTime.UnixNano() / 1000,
+					FileSize:           5,
+					VerificationSpeed:  5000, // this is fake, our time is frozen
+					Outcome:            "PUBLISHED",
+				})
 			})
 
 			Convey("Failed verification", func() {
@@ -671,7 +755,7 @@ func TestFinishUpload(t *testing.T) {
 					OperationId: op.OperationId,
 					Status:      api.UploadStatus_ERRORED,
 					UploadUrl:   "http://upload-url.example.com/for/+/bucket/tmp_path/1454472306_1",
-					ErrorMessage: "Verification failed - expected SHA256 to be " +
+					ErrorMessage: "Verification failed: expected SHA256 to be " +
 						"5994471abb01112afcc18159f6cc74b4f511b99806da59b3caf5a9c173cacfc5, " +
 						"got 8d969eef6ecad3c29a3a629280e686cf0c3f5d5a86aff3ca12020c923adc6c92",
 				})
@@ -702,6 +786,9 @@ func TestFinishUpload(t *testing.T) {
 						HexDigest: "5994471abb01112afcc18159f6cc74b4f511b99806da59b3caf5a9c173cacfc5",
 					},
 				})
+
+				// No log entries since there were no verification.
+				So(verificationLogs.last(), ShouldBeNil)
 			})
 		})
 
@@ -734,7 +821,7 @@ func TestCancelUpload(t *testing.T) {
 			tempGSPath = "/bucket/tmp_path/1454472306_1"
 		)
 
-		ctx, gsMock, tq, impl := storageMocks()
+		ctx, gsMock, tq, _, impl := storageMocks()
 
 		// Initiate an upload to get operation ID.
 		op, err := impl.BeginUpload(ctx, &api.BeginUploadRequest{

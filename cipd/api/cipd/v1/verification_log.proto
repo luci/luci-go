@@ -1,0 +1,54 @@
+// Copyright 2022 The LUCI Authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package cipd;
+
+option go_package = "go.chromium.org/luci/cipd/api/cipd/v1;api";
+
+import "go.chromium.org/luci/common/bq/pb/options.proto";
+
+// VerificationLogEntry defines a schema for `verification` BigQuery table.
+//
+// It records details about hash verification jobs, in particular to collect
+// information for https://crbug.com/1261988.
+//
+// This is a best effort log populated using in-memory buffers. Some entries may
+// be dropped if a process crashes before it flushes the buffer.
+//
+// Field types must be compatible with BigQuery Storage Write API, see
+// https://cloud.google.com/bigquery/docs/write-api#data_type_conversions
+message VerificationLogEntry {
+  int64 operation_id = 1;  // matches UploadOperation.ID
+  string initiated_by = 2; // e.g. "user:someone@example.com"
+  string temp_gs_path = 3; // the GS object in the staging area being verified
+
+  string expected_instance_id = 4; // may be empty if not known
+  string verified_instance_id = 5; // always populated on success
+
+  int64 submitted = 6 [(bqschema.options).bq_type = "TIMESTAMP"]; // microseconds since epoch
+  int64 started = 7 [(bqschema.options).bq_type = "TIMESTAMP"];   // microseconds since epoch
+  int64 finished = 8 [(bqschema.options).bq_type = "TIMESTAMP"];  // microseconds since epoch
+
+  string service_version = 9; // GAE service version e.g. "4123-abcdef"
+  string process_id = 10;     // identifier of the concrete backend process
+  string trace_id = 11;       // Cloud Trace ID of the request
+
+  int64 file_size = 12;          // total file size in bytes
+  int64 verification_speed = 13; // file_size / duration, in bytes per second
+
+  string outcome = 14; // see cas.UploadStatus enum
+  string error = 15;   // error message, if any
+}

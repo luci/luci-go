@@ -21,7 +21,6 @@ import (
 
 	"go.chromium.org/luci/server"
 	"go.chromium.org/luci/server/auth"
-	"go.chromium.org/luci/server/bqlog"
 	"go.chromium.org/luci/server/encryptedcookies"
 	"go.chromium.org/luci/server/module"
 	"go.chromium.org/luci/server/router"
@@ -42,7 +41,6 @@ func main() {
 	// Extra modules used by the frontend server only.
 	extra := []module.Module{
 		encryptedcookies.NewModuleFromFlags(),
-		bqlog.NewModuleFromFlags(),
 	}
 
 	impl.Main(extra, func(srv *server.Server, svc *impl.Services) error {
