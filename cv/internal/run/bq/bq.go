@@ -17,6 +17,7 @@ package bq
 import (
 	"context"
 	"fmt"
+	"sort"
 
 	"golang.org/x/sync/errgroup"
 	"google.golang.org/protobuf/types/known/timestamppb"
@@ -49,8 +50,8 @@ const (
 )
 
 func send(ctx context.Context, env *common.Env, client cvbq.Client, id common.RunID) error {
-	r := run.Run{ID: id}
-	switch err := datastore.Get(ctx, &r); {
+	r := &run.Run{ID: id}
+	switch err := datastore.Get(ctx, r); {
 	case err == datastore.ErrNoSuchEntity:
 		return errors.Reason("Run not found").Err()
 	case err != nil:
@@ -59,7 +60,13 @@ func send(ctx context.Context, env *common.Env, client cvbq.Client, id common.Ru
 		panic("Run status must be final before sending to BQ.")
 	}
 
-	a, err := makeAttempt(ctx, &r)
+	// Load CLs and convert them to GerritChanges including submit status.
+	cls, err := run.LoadRunCLs(ctx, r.ID, r.CLs)
+	if err != nil {
+		return err
+	}
+
+	a, err := makeAttempt(ctx, r, cls)
 	if err != nil {
 		return errors.Annotate(err, "failed to make Attempt").Err()
 	}
@@ -68,7 +75,7 @@ func send(ctx context.Context, env *common.Env, client cvbq.Client, id common.Ru
 	// builds, CV can't populate all of the fields of Attempt without the
 	// information from CQDaemon; so for finished Attempts reported by
 	// CQDaemon, we can fill in the remaining fields.
-	switch cqda, err := fetchCQDAttempt(ctx, &r); {
+	switch cqda, err := fetchCQDAttempt(ctx, r); {
 	case err != nil:
 		return err
 	case cqda != nil:
@@ -105,19 +112,11 @@ func send(ctx context.Context, env *common.Env, client cvbq.Client, id common.Ru
 	return eg.Wait()
 }
 
-func makeAttempt(ctx context.Context, r *run.Run) (*cvbqpb.Attempt, error) {
-	// Load CLs and convert them to GerritChanges including submit status.
-	runCLs, err := run.LoadRunCLs(ctx, r.ID, r.CLs)
+func makeAttempt(ctx context.Context, r *run.Run, cls []*run.RunCL) (*cvbqpb.Attempt, error) {
+	builds, err := computeAttemptBuilds(ctx, r)
 	if err != nil {
 		return nil, err
 	}
-	submittedSet := common.MakeCLIDsSet(r.Submission.GetSubmittedCls()...)
-	failedSet := common.MakeCLIDsSet(r.Submission.GetFailedCls()...)
-	gerritChanges := make([]*cvbqpb.GerritChange, len(runCLs))
-	for i, cl := range runCLs {
-		gerritChanges[i] = toGerritChange(cl, submittedSet, failedSet, r.Mode)
-	}
-
 	// TODO(crbug/1173168, crbug/1105669): We want to change the BQ
 	// schema so that StartTime is processing start time and CreateTime is
 	// trigger time.
@@ -125,27 +124,22 @@ func makeAttempt(ctx context.Context, r *run.Run) (*cvbqpb.Attempt, error) {
 		Key:                  r.ID.AttemptKey(),
 		LuciProject:          r.ID.LUCIProject(),
 		ConfigGroup:          r.ConfigGroupID.Name(),
-		ClGroupKey:           run.ComputeCLGroupKey(runCLs, false),
-		EquivalentClGroupKey: run.ComputeCLGroupKey(runCLs, true),
+		ClGroupKey:           run.ComputeCLGroupKey(cls, false),
+		EquivalentClGroupKey: run.ComputeCLGroupKey(cls, true),
 		// Run.CreateTime is trigger time, which corresponds to what CQD sends for
 		// StartTime.
-		StartTime:     timestamppb.New(r.CreateTime),
-		EndTime:       timestamppb.New(r.EndTime),
-		GerritChanges: gerritChanges,
-		Status:        attemptStatus(ctx, r),
-		// Substatus and HasCustomRequirement are not known to CV yet during the
-		// migration state, so they should be filled in with Attempt
-		// from CQD if possible.
-		// TODO(crbug/1114686): Add a new FAILED_SUBMIT substatus, which
-		// should be used in the case that some CLs failed to submit after
-		// passing checks. (In this case, for backwards compatibility, we
-		// will set status = SUCCESS, substatus = FAILED_SUBMIT.)
-		Substatus: cvbqpb.AttemptSubstatus_NO_SUBSTATUS,
+		StartTime:            timestamppb.New(r.CreateTime),
+		EndTime:              timestamppb.New(r.EndTime),
+		Builds:               builds,
+		HasCustomRequirement: len(r.Options.GetIncludedTryjobs()) > 0,
 	}
-
-	if a.Builds, err = computeAttemptBuilds(ctx, r); err != nil {
-		return nil, err
+	submittedSet := common.MakeCLIDsSet(r.Submission.GetSubmittedCls()...)
+	failedSet := common.MakeCLIDsSet(r.Submission.GetFailedCls()...)
+	a.GerritChanges = make([]*cvbqpb.GerritChange, len(cls))
+	for i, cl := range cls {
+		a.GerritChanges[i] = toGerritChange(cl, submittedSet, failedSet, r.Mode)
 	}
+	a.Status, a.Substatus = attemptStatus(ctx, r)
 	return a, nil
 }
 
@@ -178,7 +172,6 @@ func toGerritChange(cl *run.RunCL, submitted, failed common.CLIDsSet, mode run.M
 			gc.SubmitStatus = cvbqpb.GerritChange_PENDING
 		}
 	}
-
 	return gc
 }
 
@@ -224,28 +217,71 @@ func reconcileAttempts(a, cqda *cvbqpb.Attempt) *cvbqpb.Attempt {
 }
 
 // attemptStatus converts a Run status to Attempt status.
-func attemptStatus(ctx context.Context, r *run.Run) cvbqpb.AttemptStatus {
+func attemptStatus(ctx context.Context, r *run.Run) (cvbqpb.AttemptStatus, cvbqpb.AttemptSubstatus) {
 	switch r.Status {
 	case run.Status_SUCCEEDED:
-		return cvbqpb.AttemptStatus_SUCCESS
+		return cvbqpb.AttemptStatus_SUCCESS, cvbqpb.AttemptSubstatus_NO_SUBSTATUS
 	case run.Status_FAILED:
-		// In the case that the checks passed but not all CLs were submitted
-		// successfully, the Attempt will still have status set to SUCCESS for
-		// backwards compatibility. Note that r.Submission is expected to be
-		// set only if a submission is attempted, meaning all checks passed.
-		if r.Submission != nil && len(r.Submission.Cls) != len(r.Submission.SubmittedCls) {
-			return cvbqpb.AttemptStatus_SUCCESS
+		switch {
+		case r.Submission != nil && len(r.Submission.Cls) != len(r.Submission.SubmittedCls):
+			// In the case that the checks passed but not all CLs were submitted
+			// successfully, the Attempt will still have status set to SUCCESS for
+			// backwards compatibility (See: crbug.com/1114686). Note that
+			// r.Submission is expected to be set only if a submission is attempted,
+			// 	meaning all checks passed.
+			//
+			// TODO(crbug/1114686): Add a new FAILED_SUBMIT substatus, which
+			// should be used in the case that some CLs failed to submit after
+			// passing checks. (In this case, for backwards compatibility, we
+			// will set status = SUCCESS, substatus = FAILED_SUBMIT.)
+			return cvbqpb.AttemptStatus_SUCCESS, cvbqpb.AttemptSubstatus_NO_SUBSTATUS
+		case r.UseCVTryjobExecutor && r.Tryjobs.GetState().GetStatus() == tryjob.ExecutionState_FAILED:
+			return cvbqpb.AttemptStatus_FAILURE, cvbqpb.AttemptSubstatus_FAILED_TRYJOBS
+		default:
+			// TODO(crbug/1342810): use the failure reason stored in Run entity to
+			// decide accurate sub-status. For now, use unapproved because it is the
+			// most common failure reason after failed tryjobs.
+			return cvbqpb.AttemptStatus_FAILURE, cvbqpb.AttemptSubstatus_UNAPPROVED
 		}
-		return cvbqpb.AttemptStatus_FAILURE
 	case run.Status_CANCELLED:
-		return cvbqpb.AttemptStatus_ABORTED
+		return cvbqpb.AttemptStatus_ABORTED, cvbqpb.AttemptSubstatus_MANUAL_CANCEL
 	default:
 		logging.Errorf(ctx, "Unexpected attempt status %q", r.Status)
-		return cvbqpb.AttemptStatus_ATTEMPT_STATUS_UNSPECIFIED
+		return cvbqpb.AttemptStatus_ATTEMPT_STATUS_UNSPECIFIED, cvbqpb.AttemptSubstatus_ATTEMPT_SUBSTATUS_UNSPECIFIED
 	}
 }
 
 func computeAttemptBuilds(ctx context.Context, r *run.Run) ([]*cvbqpb.Build, error) {
+	if r.UseCVTryjobExecutor {
+		var ret []*cvbqpb.Build
+		for i, execution := range r.Tryjobs.GetState().GetExecutions() {
+			definition := r.Tryjobs.GetState().GetRequirement().GetDefinitions()[i]
+			for _, executionAttempt := range execution.GetAttempts() {
+				host, buildID, err := tryjob.ExternalID(executionAttempt.GetExternalId()).ParseBuildbucketID()
+				if err != nil {
+					return nil, err
+				}
+				origin := cvbqpb.Build_NOT_REUSED
+				switch {
+				case executionAttempt.GetReused():
+					origin = cvbqpb.Build_REUSED
+				case definition.GetDisableReuse():
+					origin = cvbqpb.Build_NOT_REUSABLE
+				}
+				ret = append(ret, &cvbqpb.Build{
+					Host:     host,
+					Id:       buildID,
+					Critical: definition.GetCritical(),
+					Origin:   origin,
+				})
+			}
+		}
+		sort.Slice(ret, func(i, j int) bool {
+			return ret[i].Id < ret[j].Id
+		})
+		return ret, nil
+	}
+
 	runTryjobs := r.Tryjobs.GetTryjobs()
 	if len(runTryjobs) == 0 {
 		return nil, nil

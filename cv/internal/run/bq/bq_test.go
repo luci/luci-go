@@ -22,6 +22,7 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
+	bbutil "go.chromium.org/luci/buildbucket/protoutil"
 	"go.chromium.org/luci/common/clock/testclock"
 	gerritpb "go.chromium.org/luci/common/proto/gerrit"
 	"go.chromium.org/luci/gae/service/datastore"
@@ -47,9 +48,36 @@ func TestMakeAttempt(t *testing.T) {
 		ctx, cancel := ct.SetUp()
 		defer cancel()
 		epoch := ct.Clock.Now().UTC()
-		const lProject = "infra"
-		const bbHost = "cr-buildbucket.appspot.com"
-		const gHost = "foo-review.googlesource.com"
+		const (
+			lProject      = "infra"
+			bbHost        = "cr-buildbucket.appspot.com"
+			gHost         = "foo-review.googlesource.com"
+			gRepo         = "test/repo"
+			gRef          = "refs/head/main"
+			gChange       = 101
+			gPatchset     = 47
+			gEquiPatchset = 42
+			gBuildID1     = 100001
+			gBuildID2     = 100002
+			gBuildID3     = 100003
+			gBuildID4     = 100004
+		)
+
+		plainBuilder := &buildbucketpb.BuilderID{
+			Project: lProject,
+			Bucket:  "try",
+			Builder: "plain",
+		}
+		reuseDisabledBuilder := &buildbucketpb.BuilderID{
+			Project: lProject,
+			Bucket:  "try",
+			Builder: "disable-reuse",
+		}
+		optionalBuilder := &buildbucketpb.BuilderID{
+			Project: lProject,
+			Bucket:  "try",
+			Builder: "optional",
+		}
 		runID := common.MakeRunID(lProject, epoch, 1, []byte("aaa"))
 		cfg := &cfgpb.Config{
 			ConfigGroups: []*cfgpb.ConfigGroup{
@@ -59,19 +87,15 @@ func TestMakeAttempt(t *testing.T) {
 						Tryjob: &cfgpb.Verifiers_Tryjob{
 							Builders: []*cfgpb.Verifiers_Tryjob_Builder{
 								{
-									Name:         fmt.Sprintf("%s/try/reused", lProject),
-									DisableReuse: false,
+									Name: bbutil.FormatBuilderID(plainBuilder),
 								},
 								{
-									Name:         fmt.Sprintf("%s/try/reusable", lProject),
-									DisableReuse: false,
-								},
-								{
-									Name: fmt.Sprintf("%s/try/not-reusable", lProject),
-									EquivalentTo: &cfgpb.Verifiers_Tryjob_EquivalentBuilder{
-										Name: fmt.Sprintf("%s/try/equi-builder", lProject),
-									},
+									Name:         bbutil.FormatBuilderID(reuseDisabledBuilder),
 									DisableReuse: true,
+								},
+								{
+									Name:                 bbutil.FormatBuilderID(optionalBuilder),
+									ExperimentPercentage: 100,
 								},
 							},
 						},
@@ -81,150 +105,332 @@ func TestMakeAttempt(t *testing.T) {
 		}
 		prjcfgtest.Create(ctx, lProject, cfg)
 
-		makeRun := func(mode run.Mode, cls common.CLIDs, submission *run.Submission, tryjobs []*run.Tryjob) *run.Run {
-			r := &run.Run{
-				ID:            common.RunID(runID),
-				Status:        run.Status_SUCCEEDED,
-				ConfigGroupID: prjcfgtest.MustExist(ctx, lProject).ConfigGroupIDs[0],
-				CreateTime:    epoch,
-				StartTime:     epoch.Add(time.Minute * 2),
-				EndTime:       epoch.Add(time.Minute * 25),
-				CLs:           cls,
-				Tryjobs: &run.Tryjobs{
-					Tryjobs: tryjobs,
+		cl := &run.RunCL{
+			ID:         gChange + 1000,
+			Run:        datastore.MakeKey(ctx, common.RunKind, string(runID)),
+			ExternalID: changelist.MustGobID(gHost, gChange),
+			Detail: &changelist.Snapshot{
+				LuciProject:           lProject,
+				Patchset:              gPatchset,
+				MinEquivalentPatchset: gEquiPatchset,
+				Kind: &changelist.Snapshot_Gerrit{
+					Gerrit: &changelist.Gerrit{
+						Host: gHost,
+						Info: &gerritpb.ChangeInfo{
+							Number:  gChange,
+							Project: gRepo,
+							Ref:     gRef,
+						},
+					},
 				},
-				Submission: submission,
-				Mode:       mode,
-			}
-			So(datastore.Put(ctx, r), ShouldBeNil)
+			},
+			Trigger: &run.Trigger{Time: timestamppb.New(epoch)},
+		}
 
-			for i, clid := range cls {
-				changeNum := i + 100
-				So(datastore.Put(ctx, &run.RunCL{
-					ID:         clid,
-					Run:        datastore.MakeKey(ctx, common.RunKind, string(runID)),
-					ExternalID: changelist.MustGobID(gHost, int64(changeNum)),
-					Detail: &changelist.Snapshot{
-						LuciProject:           lProject,
-						Patchset:              int32(i + 1),
-						MinEquivalentPatchset: int32(i + 1),
-						Kind: &changelist.Snapshot_Gerrit{
-							Gerrit: &changelist.Gerrit{
-								Host: gHost,
-								Info: &gerritpb.ChangeInfo{
-									Number:  int64(changeNum),
-									Project: "gproject",
-									Ref:     "refs/heads/main",
+		r := &run.Run{
+			ID:            common.RunID(runID),
+			Status:        run.Status_SUCCEEDED,
+			ConfigGroupID: prjcfgtest.MustExist(ctx, lProject).ConfigGroupIDs[0],
+			CreateTime:    epoch,
+			StartTime:     epoch.Add(time.Minute * 2),
+			EndTime:       epoch.Add(time.Minute * 25),
+			CLs:           common.CLIDs{cl.ID},
+			Mode:          run.FullRun,
+			Submission: &run.Submission{
+				Cls:          []int64{int64(cl.ID)},
+				SubmittedCls: []int64{int64(cl.ID)},
+			},
+			UseCVTryjobExecutor: true,
+			Tryjobs: &run.Tryjobs{
+				State: &tryjob.ExecutionState{
+					Requirement: &tryjob.Requirement{
+						Definitions: []*tryjob.Definition{
+							{
+								Backend: &tryjob.Definition_Buildbucket_{
+									Buildbucket: &tryjob.Definition_Buildbucket{
+										Host:    bbHost,
+										Builder: plainBuilder,
+									},
+								},
+								Critical: true,
+							},
+							{
+								Backend: &tryjob.Definition_Buildbucket_{
+									Buildbucket: &tryjob.Definition_Buildbucket{
+										Host:    bbHost,
+										Builder: reuseDisabledBuilder,
+									},
+								},
+								DisableReuse: true,
+								Critical:     true,
+							},
+							{
+								Backend: &tryjob.Definition_Buildbucket_{
+									Buildbucket: &tryjob.Definition_Buildbucket{
+										Host:    bbHost,
+										Builder: optionalBuilder,
+									},
+								},
+								Experimental: true,
+								Critical:     false,
+							},
+						},
+					},
+					Executions: []*tryjob.ExecutionState_Execution{
+						{
+							Attempts: []*tryjob.ExecutionState_Execution_Attempt{
+								{
+									ExternalId: string(tryjob.MustBuildbucketID(bbHost, gBuildID4)),
+									Status:     tryjob.Status_ENDED,
+									Reused:     true,
+								},
+								{
+									ExternalId: string(tryjob.MustBuildbucketID(bbHost, gBuildID1)),
+									Status:     tryjob.Status_ENDED,
+								},
+							},
+						},
+						{
+							Attempts: []*tryjob.ExecutionState_Execution_Attempt{
+								{
+									ExternalId: string(tryjob.MustBuildbucketID(bbHost, gBuildID2)),
+									Status:     tryjob.Status_ENDED,
+								},
+							},
+						},
+						{
+							Attempts: []*tryjob.ExecutionState_Execution_Attempt{
+								{
+									ExternalId: string(tryjob.MustBuildbucketID(bbHost, gBuildID3)),
+									Status:     tryjob.Status_ENDED,
 								},
 							},
 						},
 					},
-					Trigger: &run.Trigger{Time: timestamppb.New(epoch)},
-				}), ShouldBeNil)
-			}
-			return r
+					Status: tryjob.ExecutionState_SUCCEEDED,
+				},
+			},
 		}
 
-		Convey("with 1 CL", func() {
-			r := makeRun(run.DryRun, common.CLIDs{1}, nil, nil)
-			a, err := makeAttempt(ctx, r)
+		Convey("All fields", func() {
+			a, err := makeAttempt(ctx, r, []*run.RunCL{cl})
 			So(err, ShouldBeNil)
 			So(a, ShouldResembleProto, &cvbqpb.Attempt{
 				Key:                  runID.AttemptKey(),
 				LuciProject:          lProject,
-				ConfigGroup:          "main",
-				ClGroupKey:           "5f12962fb6ae6239",
-				EquivalentClGroupKey: "2f286ef1dcce9458",
+				ConfigGroup:          cfg.GetConfigGroups()[0].GetName(),
+				ClGroupKey:           "2fb6f02ce54ceef7",
+				EquivalentClGroupKey: "b5aefc068a978ddc",
 				StartTime:            timestamppb.New(epoch),
 				EndTime:              timestamppb.New(epoch.Add(25 * time.Minute)),
-				GerritChanges: []*cvbqpb.GerritChange{
-					{
-						Host:                       "foo-review.googlesource.com",
-						Project:                    "gproject",
-						Change:                     100,
-						Patchset:                   1,
-						EarliestEquivalentPatchset: 1,
-						TriggerTime:                timestamppb.New(epoch),
-						Mode:                       cvbqpb.Mode_DRY_RUN,
-						SubmitStatus:               cvbqpb.GerritChange_PENDING,
-					},
-				},
-				Status:    cvbqpb.AttemptStatus_SUCCESS,
-				Substatus: cvbqpb.AttemptSubstatus_NO_SUBSTATUS,
-			})
-		})
-
-		Convey("run with partially submitted CLs", func() {
-			sub := &run.Submission{
-				// CL 3 was submitted, CL 5 failed to submit and CL 7 was never
-				// attempted.
-				Cls:          []int64{3, 5, 7},
-				SubmittedCls: []int64{3},
-				FailedCls:    []int64{5},
-			}
-			r := makeRun(run.FullRun, common.CLIDs{3, 5, 7}, sub, nil)
-			a, err := makeAttempt(ctx, r)
-			So(err, ShouldBeNil)
-			So(a, ShouldResembleProto, &cvbqpb.Attempt{
-				Key:                  runID.AttemptKey(),
-				LuciProject:          lProject,
-				ConfigGroup:          r.ConfigGroupID.Name(),
-				ClGroupKey:           "9792d0b416c84c38",
-				EquivalentClGroupKey: "59dca6566c96aec8",
-				StartTime:            timestamppb.New(r.CreateTime),
-				EndTime:              timestamppb.New(r.EndTime),
+				Status:               cvbqpb.AttemptStatus_SUCCESS,
+				Substatus:            cvbqpb.AttemptSubstatus_NO_SUBSTATUS,
 				GerritChanges: []*cvbqpb.GerritChange{
 					{
 						Host:                       gHost,
-						Project:                    "gproject",
-						Change:                     100,
-						Patchset:                   1,
-						EarliestEquivalentPatchset: 1,
+						Project:                    gRepo,
+						Change:                     gChange,
+						Patchset:                   gPatchset,
+						EarliestEquivalentPatchset: gEquiPatchset,
 						TriggerTime:                timestamppb.New(epoch),
 						Mode:                       cvbqpb.Mode_FULL_RUN,
 						SubmitStatus:               cvbqpb.GerritChange_SUCCESS,
 					},
+				},
+				Builds: []*cvbqpb.Build{
 					{
-						Host:                       gHost,
-						Project:                    "gproject",
-						Change:                     101,
-						Patchset:                   2,
-						EarliestEquivalentPatchset: 2,
-						TriggerTime:                timestamppb.New(epoch),
-						Mode:                       cvbqpb.Mode_FULL_RUN,
-						SubmitStatus:               cvbqpb.GerritChange_FAILURE,
+						Host:     bbHost,
+						Id:       gBuildID1,
+						Origin:   cvbqpb.Build_NOT_REUSED,
+						Critical: true,
 					},
 					{
-						Host:                       gHost,
-						Project:                    "gproject",
-						Change:                     102,
-						Patchset:                   3,
-						EarliestEquivalentPatchset: 3,
-						TriggerTime:                timestamppb.New(epoch),
-						Mode:                       cvbqpb.Mode_FULL_RUN,
-						SubmitStatus:               cvbqpb.GerritChange_PENDING,
+						Host:     bbHost,
+						Id:       gBuildID2,
+						Origin:   cvbqpb.Build_NOT_REUSABLE,
+						Critical: true,
+					},
+					{
+						Host:     bbHost,
+						Id:       gBuildID3,
+						Origin:   cvbqpb.Build_NOT_REUSED,
+						Critical: false,
+					},
+					{
+						Host:     bbHost,
+						Id:       gBuildID4,
+						Origin:   cvbqpb.Build_REUSED,
+						Critical: true,
 					},
 				},
-				// In the case of submit failure for one or more CLs,
-				// the Attempt value is still SUCCESS, for backwards
-				// compatibility.
-				Status:    cvbqpb.AttemptStatus_SUCCESS,
-				Substatus: cvbqpb.AttemptSubstatus_NO_SUBSTATUS,
 			})
 		})
 
-		Convey("run with tryjobs", func() {
-			tryjobs := []*run.Tryjob{
+		Convey("Partial submission", func() {
+			clSubmitted := &run.RunCL{
+				ID:         1,
+				Run:        datastore.MakeKey(ctx, common.RunKind, string(runID)),
+				ExternalID: changelist.MustGobID(gHost, 1),
+				Detail: &changelist.Snapshot{
+					LuciProject:           lProject,
+					Patchset:              11,
+					MinEquivalentPatchset: 11,
+					Kind: &changelist.Snapshot_Gerrit{
+						Gerrit: &changelist.Gerrit{
+							Host: gHost,
+							Info: &gerritpb.ChangeInfo{
+								Number:  1,
+								Project: gRepo,
+								Ref:     gRef,
+							},
+						},
+					},
+				},
+				Trigger: &run.Trigger{Time: timestamppb.New(epoch)},
+			}
+			clFailedToSubmit := &run.RunCL{
+				ID:         2,
+				Run:        datastore.MakeKey(ctx, common.RunKind, string(runID)),
+				ExternalID: changelist.MustGobID(gHost, 2),
+				Detail: &changelist.Snapshot{
+					LuciProject:           lProject,
+					Patchset:              22,
+					MinEquivalentPatchset: 22,
+					Kind: &changelist.Snapshot_Gerrit{
+						Gerrit: &changelist.Gerrit{
+							Host: gHost,
+							Info: &gerritpb.ChangeInfo{
+								Number:  2,
+								Project: gRepo,
+								Ref:     gRef,
+							},
+						},
+					},
+				},
+				Trigger: &run.Trigger{Time: timestamppb.New(epoch)},
+			}
+			clPendingToSubmit := &run.RunCL{
+				ID:         3,
+				Run:        datastore.MakeKey(ctx, common.RunKind, string(runID)),
+				ExternalID: changelist.MustGobID(gHost, 3),
+				Detail: &changelist.Snapshot{
+					LuciProject:           lProject,
+					Patchset:              33,
+					MinEquivalentPatchset: 33,
+					Kind: &changelist.Snapshot_Gerrit{
+						Gerrit: &changelist.Gerrit{
+							Host: gHost,
+							Info: &gerritpb.ChangeInfo{
+								Number:  3,
+								Project: gRepo,
+								Ref:     gRef,
+							},
+						},
+					},
+				},
+				Trigger: &run.Trigger{Time: timestamppb.New(epoch)},
+			}
+			r.CLs = common.CLIDs{clSubmitted.ID, clFailedToSubmit.ID, clPendingToSubmit.ID}
+			r.Status = run.Status_FAILED
+			r.Submission = &run.Submission{
+				Cls: []int64{
+					int64(clSubmitted.ID),
+					int64(clFailedToSubmit.ID),
+					int64(clPendingToSubmit.ID),
+				},
+				SubmittedCls: []int64{int64(clSubmitted.ID)},
+				FailedCls:    []int64{int64(clFailedToSubmit.ID)},
+			}
+
+			a, err := makeAttempt(ctx, r, []*run.RunCL{
+				clSubmitted, clFailedToSubmit, clPendingToSubmit,
+			})
+			So(err, ShouldBeNil)
+			So(a.GetGerritChanges(), ShouldResembleProto, []*cvbqpb.GerritChange{
+				{
+					Host:                       gHost,
+					Project:                    gRepo,
+					Change:                     1,
+					Patchset:                   11,
+					EarliestEquivalentPatchset: 11,
+					TriggerTime:                timestamppb.New(epoch),
+					Mode:                       cvbqpb.Mode_FULL_RUN,
+					SubmitStatus:               cvbqpb.GerritChange_SUCCESS,
+				},
+				{
+					Host:                       gHost,
+					Project:                    gRepo,
+					Change:                     2,
+					Patchset:                   22,
+					EarliestEquivalentPatchset: 22,
+					TriggerTime:                timestamppb.New(epoch),
+					Mode:                       cvbqpb.Mode_FULL_RUN,
+					SubmitStatus:               cvbqpb.GerritChange_FAILURE,
+				},
+				{
+					Host:                       gHost,
+					Project:                    gRepo,
+					Change:                     3,
+					Patchset:                   33,
+					EarliestEquivalentPatchset: 33,
+					TriggerTime:                timestamppb.New(epoch),
+					Mode:                       cvbqpb.Mode_FULL_RUN,
+					SubmitStatus:               cvbqpb.GerritChange_PENDING,
+				},
+			})
+			// In the case of submit failure for one or more CLs,
+			// the Attempt value is still SUCCESS, for backwards
+			// compatibility.
+			So(a.Status, ShouldEqual, cvbqpb.AttemptStatus_SUCCESS)
+			So(a.Substatus, ShouldEqual, cvbqpb.AttemptSubstatus_NO_SUBSTATUS)
+		})
+
+		Convey("Failed Tryjob", func() {
+			r.Tryjobs.GetState().Status = tryjob.ExecutionState_FAILED
+			r.Tryjobs.GetState().FailureReason = "some tryjobs have failed"
+			r.Status = run.Status_FAILED
+			a, err := makeAttempt(ctx, r, []*run.RunCL{cl})
+			So(err, ShouldBeNil)
+			So(a.Status, ShouldEqual, cvbqpb.AttemptStatus_FAILURE)
+			So(a.Substatus, ShouldEqual, cvbqpb.AttemptSubstatus_FAILED_TRYJOBS)
+		})
+
+		Convey("Failed due to missing approval", func() {
+			// TODO(crbug/1342810): Populate run failure reason
+			r.Status = run.Status_FAILED
+			a, err := makeAttempt(ctx, r, []*run.RunCL{cl})
+			So(err, ShouldBeNil)
+			So(a.Status, ShouldEqual, cvbqpb.AttemptStatus_FAILURE)
+			So(a.Substatus, ShouldEqual, cvbqpb.AttemptSubstatus_UNAPPROVED)
+		})
+
+		Convey("Cancelled", func() {
+			// TODO(crbug/1342810): Populate run failure reason
+			r.Status = run.Status_CANCELLED
+			a, err := makeAttempt(ctx, r, []*run.RunCL{cl})
+			So(err, ShouldBeNil)
+			So(a.Status, ShouldEqual, cvbqpb.AttemptStatus_ABORTED)
+			So(a.Substatus, ShouldEqual, cvbqpb.AttemptSubstatus_MANUAL_CANCEL)
+		})
+
+		Convey("HasCustomRequirement", func() {
+			r.Options = &run.Options{
+				IncludedTryjobs: []string{fmt.Sprintf("%s/try: cool-builder", lProject)},
+			}
+			a, err := makeAttempt(ctx, r, []*run.RunCL{cl})
+			So(err, ShouldBeNil)
+			So(a.GetHasCustomRequirement(), ShouldBeTrue)
+		})
+
+		Convey("Legacy Tryjobs handled by CQD", func() {
+			r.UseCVTryjobExecutor = false
+			r.Tryjobs.Tryjobs = []*run.Tryjob{
 				{
 					Definition: &tryjob.Definition{
 						Backend: &tryjob.Definition_Buildbucket_{
 							Buildbucket: &tryjob.Definition_Buildbucket{
-								Host: bbHost,
-								Builder: &buildbucketpb.BuilderID{
-									Project: lProject,
-									Bucket:  "try",
-									Builder: "reused",
-								},
+								Host:    bbHost,
+								Builder: plainBuilder,
 							},
 						},
 					},
@@ -236,12 +442,8 @@ func TestMakeAttempt(t *testing.T) {
 					Definition: &tryjob.Definition{
 						Backend: &tryjob.Definition_Buildbucket_{
 							Buildbucket: &tryjob.Definition_Buildbucket{
-								Host: bbHost,
-								Builder: &buildbucketpb.BuilderID{
-									Project: lProject,
-									Bucket:  "try",
-									Builder: "reusable",
-								},
+								Host:    bbHost,
+								Builder: optionalBuilder,
 							},
 						},
 					},
@@ -253,12 +455,8 @@ func TestMakeAttempt(t *testing.T) {
 					Definition: &tryjob.Definition{
 						Backend: &tryjob.Definition_Buildbucket_{
 							Buildbucket: &tryjob.Definition_Buildbucket{
-								Host: bbHost,
-								Builder: &buildbucketpb.BuilderID{
-									Project: lProject,
-									Bucket:  "try",
-									Builder: "not-reusable",
-								},
+								Host:    bbHost,
+								Builder: reuseDisabledBuilder,
 							},
 						},
 					},
@@ -266,63 +464,28 @@ func TestMakeAttempt(t *testing.T) {
 					Reused:     false,
 					Critical:   true,
 				},
-				{
-					Definition: &tryjob.Definition{
-						Backend: &tryjob.Definition_Buildbucket_{
-							Buildbucket: &tryjob.Definition_Buildbucket{
-								Host: bbHost,
-								Builder: &buildbucketpb.BuilderID{
-									Project: lProject,
-									Bucket:  "try",
-									Builder: "equi-builder",
-								},
-							},
-						},
-					},
-					ExternalId: string(tryjob.MustBuildbucketID(bbHost, 789)),
-					Reused:     false,
-					Critical:   false,
-				},
 			}
-			r := makeRun(run.DryRun, nil, nil, tryjobs)
-			a, err := makeAttempt(ctx, r)
+			a, err := makeAttempt(ctx, r, []*run.RunCL{cl})
 			So(err, ShouldBeNil)
-			So(a, ShouldResembleProto, &cvbqpb.Attempt{
-				Key:                  runID.AttemptKey(),
-				LuciProject:          lProject,
-				ConfigGroup:          "main",
-				ClGroupKey:           "e3b0c44298fc1c14",
-				EquivalentClGroupKey: "c5bd4eaa8690c8f8",
-				StartTime:            timestamppb.New(epoch),
-				EndTime:              timestamppb.New(epoch.Add(25 * time.Minute)),
-				Builds: []*cvbqpb.Build{
-					{
-						Id:       456,
-						Host:     bbHost,
-						Origin:   cvbqpb.Build_REUSED,
-						Critical: true,
-					},
-					{
-						Id:       567,
-						Host:     bbHost,
-						Origin:   cvbqpb.Build_NOT_REUSED,
-						Critical: false,
-					},
-					{
-						Id:       678,
-						Host:     bbHost,
-						Origin:   cvbqpb.Build_NOT_REUSABLE,
-						Critical: true,
-					},
-					{
-						Id:       789,
-						Host:     bbHost,
-						Origin:   cvbqpb.Build_NOT_REUSABLE,
-						Critical: false,
-					},
+			So(a.GetBuilds(), ShouldResembleProto, []*cvbqpb.Build{
+				{
+					Id:       456,
+					Host:     bbHost,
+					Origin:   cvbqpb.Build_REUSED,
+					Critical: true,
 				},
-				Status:    cvbqpb.AttemptStatus_SUCCESS,
-				Substatus: cvbqpb.AttemptSubstatus_NO_SUBSTATUS,
+				{
+					Id:       567,
+					Host:     bbHost,
+					Origin:   cvbqpb.Build_NOT_REUSED,
+					Critical: false,
+				},
+				{
+					Id:       678,
+					Host:     bbHost,
+					Origin:   cvbqpb.Build_NOT_REUSABLE,
+					Critical: true,
+				},
 			})
 		})
 	})
