@@ -52,15 +52,14 @@ func TestAgent(t *testing.T) {
 		ctx, _ := testclock.UseTime(context.Background(), testclock.TestRecentTimeLocal)
 		ctx, cancel := context.WithCancel(ctx)
 
+		baseProps, err := structpb.NewStruct(map[string]interface{}{
+			"test": "value",
+		})
+		So(err, ShouldBeNil)
+
 		base := &bbpb.Build{
 			Input: &bbpb.Build_Input{
-				Properties: &structpb.Struct{
-					Fields: map[string]*structpb.Value{
-						"test": {Kind: &structpb.Value_StringValue{
-							StringValue: "value",
-						}},
-					},
-				},
+				Properties: baseProps,
 			},
 			Output: &bbpb.Build_Output{
 				Logs: []*bbpb.Log{
@@ -469,6 +468,83 @@ func TestAgent(t *testing.T) {
 
 				})
 			})
+		})
+
+		Convey(`can merge sub-build into global namespace`, func() {
+			merger.onNewStream(mkDesc("u/build.proto"))
+			rootTrack, ok := merger.states["url://u/build.proto"]
+			So(ok, ShouldBeTrue)
+
+			baseProps, err := structpb.NewStruct(map[string]interface{}{
+				"something": "value",
+			})
+			So(err, ShouldBeNil)
+
+			rootTrack.handleNewData(mkDgram(&bbpb.Build{
+				Output: &bbpb.Build_Output{
+					Properties: baseProps,
+				},
+				SummaryMarkdown: "some words",
+				Steps: []*bbpb.Step{
+					{
+						Name:   "Merge",
+						Status: bbpb.Status_STARTED,
+						MergeBuild: &bbpb.Step_MergeBuild{
+							FromLogdogStream:      "sub/build.proto",
+							LegacyGlobalNamespace: true,
+						},
+					},
+				},
+			}))
+			// make sure to pull this through to avoid races
+			<-merger.MergedBuildC
+
+			expect := proto.Clone(base).(*bbpb.Build)
+			expect.Steps = nil
+			expect.UpdateTime = now
+			expect.SummaryMarkdown = "some words"
+			expect.Output.Logs[0].Url = "url://u/stdout"
+			expect.Output.Properties, _ = structpb.NewStruct(map[string]interface{}{
+				"something": "value",
+			})
+			expect.Steps = []*bbpb.Step{
+				{
+					Name:   "Merge",
+					Status: bbpb.Status_STARTED,
+					MergeBuild: &bbpb.Step_MergeBuild{
+						FromLogdogStream:      "url://u/sub/build.proto",
+						LegacyGlobalNamespace: true,
+					},
+					SummaryMarkdown: "build.proto stream: \"url://u/sub/build.proto\" is empty",
+				},
+			}
+
+			merger.onNewStream(mkDesc("u/sub/build.proto"))
+			subTrack, ok := merger.states["url://u/sub/build.proto"]
+			So(ok, ShouldBeTrue)
+
+			Convey(`Overwrites properties`, func() {
+				subProps, err := structpb.NewStruct(map[string]interface{}{
+					"new":       "prop",
+					"something": "overwrite",
+				})
+				So(err, ShouldBeNil)
+				subTrack.handleNewData(mkDgram(&bbpb.Build{
+					Output: &bbpb.Build_Output{
+						Properties: subProps,
+					},
+					Status: bbpb.Status_STARTED,
+					Steps: []*bbpb.Step{
+						{Name: "SubStep"},
+					},
+				}))
+				expect.Steps = append(expect.Steps, &bbpb.Step{Name: "SubStep"})
+				expect.Output.Properties.Fields["new"] = structpb.NewStringValue("prop")
+				expect.Output.Properties.Fields["something"] = structpb.NewStringValue("overwrite")
+				expect.Steps[0].SummaryMarkdown = ""
+				So(<-merger.MergedBuildC, ShouldResembleProto, expect)
+			})
+
 		})
 	})
 }

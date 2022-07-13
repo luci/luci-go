@@ -69,6 +69,28 @@ message Step {
     // This should be the stream name relative to the current build's
     // $LOGDOG_NAMESPACE.
     string from_logdog_stream = 1;
+
+    // If set, then this stream will be merged "in line" with this step.
+    //
+    // Properties emitted by the merge build stream will overwrite global
+    // outputs with the same top-level key.
+    //
+    // Steps emitted by the merge build stream will NOT have their names
+    // namespaced (though the log stream names are still expected to
+    // adhere to the regular luciexe rules).
+    //
+    // Because this is a legacy feature, this intentionally omits other fields
+    // which "could be" merged, because there was no affordance to emit them
+    // under the legacy annotator scheme:
+    //   * output.gitiles_commit will not be merged.
+    //   * output.logs will not be merged.
+    //   * summary_markdown will not be merged.
+    //
+    // This is NOT a recommended mode of operation, but legacy ChromeOS
+    // builders rely on this behavior.
+    //
+    // See crbug.com/1310155.
+    bool legacy_global_namespace = 2;
   }
   // MergeBuild is used for go.chromium.org/luci/luciexe to indicate to the
   // luciexe host process if some Build stream should be merged under this step.

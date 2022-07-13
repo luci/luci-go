@@ -290,6 +290,34 @@
 // their build's namespace, it's only possible to have a merge step point
 // further 'down' the tree, making it impossible to create a cycle.
 //
+// Recursive Invocation - Legacy ChromeOS style
+//
+// Note that there's an option in MergeBuild called 'legacy_global_namespace'.
+// This mode is NOT RECOMMENDED, and was only added to support legacy ChromeOS
+// builders which relied on this functionality prior to luciexe.
+//
+// When this option is turned on, output properties on the build stream will be
+// merged into the top-level build containing the Merge Step, and it will also
+// de-namespace the step names (i.e. a MergeStep called "Parent" whose
+// build.proto stream contains a name "Step" would normally show on the build as
+// "Parent|Step", will instead simply show as "Step" in this mode. This also
+// means that these merge step processes must make sure not to emit a step which
+// duplicates the name of one emitted in the parent build (otherwise the overall
+// build will be invalid)).
+//
+// Using this functionality has the downside that properties emitted by the
+// parent build WILL BE OVERWRITTEN by the merged build stream, if written to
+// the same top-level property keys. In ChromeOS's case this is "OK" because the
+// legacy recipes do a short bootstrap followed by the main payload which does
+// all the actual stuff.
+//
+// There's a version of this feature which would be more-supportable, which
+// would be to introduce namespaced outputs so that the top-level build could
+// reflect the outputs from a given step (i.e. allow Step to actually have its
+// own Output message). If you feel like you need this functionality, please
+// contact ChOps Foundation team to discuss, rather than trying to use the
+// legacy_global_namespace option.
+//
 // Related Libraries
 //
 // For implementation-level details, please refer to the following:

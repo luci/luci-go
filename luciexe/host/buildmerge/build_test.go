@@ -21,6 +21,7 @@ import (
 
 	"github.com/golang/protobuf/ptypes"
 	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/types/known/structpb"
 
 	bbpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/clock/testclock"
@@ -237,6 +238,78 @@ func TestUpdateBaseFromUserbuild(t *testing.T) {
 					},
 				},
 			})
+		})
+	})
+}
+
+func TestUpdateBuildFromGlobalSubBuild(t *testing.T) {
+	Convey(`TestUpdateBuildFromGlobalSubBuild`, t, func() {
+		base := &bbpb.Build{}
+		sub := &bbpb.Build{}
+
+		Convey(`empty parent`, func() {
+			Convey(`empty child`, func() {
+				updateBuildFromGlobalSubBuild(base, sub)
+				So(base, ShouldResembleProto, &bbpb.Build{})
+			})
+
+			Convey(`properties`, func() {
+				s, err := structpb.NewStruct(map[string]interface{}{
+					"hello": "world",
+					"this":  100,
+				})
+				So(err, ShouldBeNil)
+				sub.Output = &bbpb.Build_Output{Properties: s}
+				updateBuildFromGlobalSubBuild(base, sub)
+				m := base.Output.Properties.AsMap()
+				So(m, ShouldResemble, map[string]interface{}{
+					"hello": "world",
+					"this":  100.0, // because JSON semantics
+				})
+			})
+		})
+
+		Convey(`populated parent`, func() {
+			s, err := structpb.NewStruct(map[string]interface{}{
+				"hello": "world",
+				"this":  100,
+			})
+			So(err, ShouldBeNil)
+			base.Output = &bbpb.Build_Output{
+				Properties: s,
+			}
+
+			Convey(`empty child`, func() {
+				updateBuildFromGlobalSubBuild(base, sub)
+				So(base, ShouldResembleProto, &bbpb.Build{
+					Output: &bbpb.Build_Output{
+						Properties: s,
+					},
+				})
+			})
+
+			Convey(`properties`, func() {
+				sSub, err := structpb.NewStruct(map[string]interface{}{
+					"newkey": "yes",
+					"hello":  "replacement",
+				})
+				So(err, ShouldBeNil)
+				sub.Output = &bbpb.Build_Output{Properties: sSub}
+				updateBuildFromGlobalSubBuild(base, sub)
+
+				sNew, err := structpb.NewStruct(map[string]interface{}{
+					"hello":  "replacement",
+					"this":   100,
+					"newkey": "yes",
+				})
+				So(err, ShouldBeNil)
+				So(base, ShouldResembleProto, &bbpb.Build{
+					Output: &bbpb.Build_Output{
+						Properties: sNew,
+					},
+				})
+			})
+
 		})
 	})
 }

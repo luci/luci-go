@@ -307,7 +307,8 @@ func (a *Agent) sendMerge(_ *buffer.Batch) error {
 			return nil
 		}
 		for _, step := range build.GetSteps() {
-			mergeStream := step.GetMergeBuild().GetFromLogdogStream()
+			mb := step.GetMergeBuild()
+			mergeStream := mb.GetFromLogdogStream()
 			if mergeStream != "" || len(stepNS) > 0 {
 				step = reflectutil.ShallowCopy(step).(*bbpb.Step)
 			}
@@ -319,7 +320,11 @@ func (a *Agent) sendMerge(_ *buffer.Batch) error {
 			base.Steps = append(base.Steps, step)
 
 			if mergeStream != "" {
-				subBuild := insertSteps(append(stepNS, baseName), mergeStream)
+				var subNamespace []string
+				if !mb.LegacyGlobalNamespace {
+					subNamespace = append(stepNS, baseName)
+				}
+				subBuild := insertSteps(subNamespace, mergeStream)
 				if subBuild == nil {
 					var sb strings.Builder
 					if step.SummaryMarkdown != "" {
@@ -334,6 +339,9 @@ func (a *Agent) sendMerge(_ *buffer.Batch) error {
 					step.SummaryMarkdown = sb.String()
 				} else {
 					updateStepFromBuild(step, subBuild)
+					if mb.LegacyGlobalNamespace {
+						updateBuildFromGlobalSubBuild(build, subBuild)
+					}
 				}
 			}
 		}
