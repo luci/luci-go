@@ -32,15 +32,16 @@ import (
 // See also https://crbug.com/1217100.
 const maxAllowedDeps = 240
 
-// triagedDeps categorizes deps of a CL, referred to below as the "dependent" CL.
+// triagedDeps categorizes deps of a CL, referred to below as the "dependent"
+// CL.
 //
 // Categories are exclusive. Non-submitted OK deps are not recorded here to
 // avoid unnecessary allocations in the most common case, but they do affect
 // the lastTriggered time.
 type triagedDeps struct {
-	// lastTriggered among *all* deps which are triggered. Can be Zero time if no
-	// dep is triggered.
-	lastTriggered time.Time
+	// lastCQVoteTriggered among *all* deps which are triggered. Can be Zero
+	//time if no dep is triggered.
+	lastCQVoteTriggered time.Time
 
 	// submitted are already submitted deps watched by this project, though not
 	// necessarily the same config group as the dependent CL. These deps are OK.
@@ -59,9 +60,15 @@ func triageDeps(pcl *prjpb.PCL, cgIndex int32, pm pmState) *triagedDeps {
 	for _, dep := range pcl.GetDeps() {
 		dPCL := pm.PCL(dep.GetClid())
 		res.categorize(pcl, cgIndex, cg, dPCL, dep)
-		if tPB := dPCL.GetTrigger().GetTime(); tPB != nil {
-			if t := tPB.AsTime(); res.lastTriggered.IsZero() || res.lastTriggered.Before(t) {
-				res.lastTriggered = t
+		cqTrigger := dPCL.GetTriggers().GetCqVoteTrigger()
+		if cqTrigger == nil {
+			cqTrigger = dPCL.GetTrigger()
+		}
+		if cqTrigger != nil {
+			if tPB := cqTrigger.GetTime(); tPB != nil {
+				if t := tPB.AsTime(); res.lastCQVoteTriggered.IsZero() || res.lastCQVoteTriggered.Before(t) {
+					res.lastCQVoteTriggered = t
+				}
 			}
 		}
 	}
@@ -122,8 +129,8 @@ func (t *triagedDeps) categorize(pcl *prjpb.PCL, cgIndex int32, cg *cfgpb.Config
 
 	if dPCL.GetSubmitted() {
 		// Submitted CL may no longer be in the expected ConfigGroup,
-		// but since it's in the same project, it's OK to refer to it as it doesn't
-		// create an information leak.
+		// but since it's in the same project, it's OK to refer to it as it
+		// doesn't create an information leak.
 		t.submitted = append(t.submitted, dep)
 		return
 	}
@@ -148,19 +155,25 @@ func (t *triagedDeps) categorize(pcl *prjpb.PCL, cgIndex int32, cg *cfgpb.Config
 		return
 	}
 
-	tr := pcl.GetTrigger()
-	dtr := dPCL.GetTrigger()
+	tr := pcl.GetTriggers().GetCqVoteTrigger()
+	if tr == nil {
+		tr = pcl.GetTrigger()
+	}
+	dtr := dPCL.GetTriggers().GetCqVoteTrigger()
+	if dtr == nil {
+		dtr = dPCL.GetTrigger()
+	}
 	if cg.GetCombineCls() == nil {
-		t.categorizeSingle(tr, dtr, dep, cg)
+		t.categorizeSingle(tr, dep, cg)
 	} else {
 		t.categorizeCombinable(tr, dtr, dep)
 	}
 }
 
 func (t *triagedDeps) categorizeCombinable(tr, dtr *run.Trigger, dep *changelist.Dep) {
-	// During the `combine_cls.stabilization_delay` since the last triggered CL in
-	// a group, a user can change their mind. Since the full group of CLs isn't
-	// known here, categorization decision may or may not be final.
+	// During the `combine_cls.stabilization_delay` since the last triggered CL
+	// in a group, a user can change their mind. Since the full group of CLs
+	// isn't known here, categorization decision may or may not be final.
 	switch {
 	case dtr.GetMode() == tr.GetMode():
 		// Happy path.
@@ -185,15 +198,15 @@ func (t *triagedDeps) categorizeCombinable(tr, dtr *run.Trigger, dep *changelist
 	}
 }
 
-func (t *triagedDeps) categorizeSingle(tr, dtr *run.Trigger, dep *changelist.Dep, cg *cfgpb.ConfigGroup) {
+func (t *triagedDeps) categorizeSingle(tr *run.Trigger, dep *changelist.Dep, cg *cfgpb.ConfigGroup) {
 	// dependent is guaranteed non-nil.
 	switch mode := run.Mode(tr.GetMode()); mode {
 	case run.DryRun, run.QuickDryRun:
 		return // OK.
 	case run.FullRun:
 		if cg.GetVerifiers().GetGerritCqAbility().GetAllowSubmitWithOpenDeps() && dep.GetKind() == changelist.DepKind_HARD {
-			// If configured, allow CV to submit the entire stack (HARD deps only) of
-			// changes.
+			// If configured, allow CV to submit the entire stack (HARD deps
+			// only) of changes.
 			return
 		}
 		t.ensureInvalidDeps()

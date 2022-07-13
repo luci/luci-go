@@ -72,8 +72,8 @@ func TestTriage(t *testing.T) {
 		pm.cgs, err = prjcfgtest.MustExist(ctx, lProject).GetConfigGroups(ctx)
 		So(err, ShouldBeNil)
 
-		dryRun := func(t time.Time) *run.Trigger {
-			return &run.Trigger{Mode: string(run.DryRun), Time: timestamppb.New(t)}
+		dryRun := func(t time.Time) *run.Triggers {
+			return &run.Triggers{CqVoteTrigger: &run.Trigger{Mode: string(run.DryRun), Time: timestamppb.New(t)}}
 		}
 
 		triage := func(c *prjpb.Component) (itriager.Result, error) {
@@ -100,8 +100,7 @@ func TestTriage(t *testing.T) {
 			c.TriageRequired = false
 			return c
 		}
-
-		putPCL := func(clid int, grpIndex int32, mode run.Mode, triggerTime time.Time, depsCLIDs ...int) (*changelist.CL, *prjpb.PCL) {
+		putPCLBoth := func(clid int, grpIndex int32, mode run.Mode, triggerTime time.Time, depsCLIDs ...int) (*changelist.CL, *prjpb.PCL) {
 			mods := []gf.CIModifier{gf.PS(1), gf.Updated(triggerTime)}
 			u := gf.U("user-1")
 			switch mode {
@@ -113,8 +112,9 @@ func TestTriage(t *testing.T) {
 				panic(fmt.Errorf("unsupported %s", mode))
 			}
 			ci := gf.CI(clid, mods...)
-			tr := trigger.Find(ci, nil)
-			So(tr.GetMode(), ShouldResemble, string(mode))
+			trs := trigger.Find(ci, nil)
+			So(trs.GetCqVoteTrigger(), ShouldNotBeNil)
+			So(trs.GetCqVoteTrigger().GetMode(), ShouldResemble, string(mode))
 			cl := &changelist.CL{
 				ID:       common.CLID(clid),
 				EVersion: 1,
@@ -130,23 +130,37 @@ func TestTriage(t *testing.T) {
 				})
 			}
 			So(datastore.Put(ctx, cl), ShouldBeNil)
-			pclTrigger := proto.Clone(tr).(*run.Trigger)
-			pclTrigger.Email = ""
-			pclTrigger.GerritAccountId = 0
+			pclTriggers := proto.Clone(trs).(*run.Triggers)
+			pclTriggers.CqVoteTrigger.Email = ""
+			pclTriggers.CqVoteTrigger.GerritAccountId = 0
 			return cl, &prjpb.PCL{
 				Clid:               int64(clid),
 				Eversion:           1,
 				Status:             prjpb.PCL_OK,
 				ConfigGroupIndexes: []int32{grpIndex},
-				Trigger:            pclTrigger,
+				Triggers:           pclTriggers,
+				Trigger:            pclTriggers.GetCqVoteTrigger(),
 				Deps:               cl.Snapshot.GetDeps(),
 			}
 		}
+		putPCLOld := func(clid int, grpIndex int32, mode run.Mode, triggerTime time.Time, depsCLIDs ...int) (*changelist.CL, *prjpb.PCL) {
+			cl, pcl := putPCLBoth(clid, grpIndex, mode, triggerTime, depsCLIDs...)
+			pcl.Triggers = nil
+			return cl, pcl
+		}
+		putPCLNew := func(clid int, grpIndex int32, mode run.Mode, triggerTime time.Time, depsCLIDs ...int) (*changelist.CL, *prjpb.PCL) {
+			cl, pcl := putPCLBoth(clid, grpIndex, mode, triggerTime, depsCLIDs...)
+			pcl.Trigger = nil
+			return cl, pcl
+		}
+		resetTriggers := func(pcl *prjpb.PCL) {
+			pcl.Trigger = nil
+			pcl.Triggers = nil
+		}
 
 		Convey("Noops", func() {
-			pm.pb.Pcls = []*prjpb.PCL{
-				{Clid: 33, ConfigGroupIndexes: []int32{singIdx}, Trigger: dryRun(ct.Clock.Now())},
-			}
+			pcl := &prjpb.PCL{Clid: 33, ConfigGroupIndexes: []int32{singIdx}, Triggers: dryRun(ct.Clock.Now())}
+			pm.pb.Pcls = []*prjpb.PCL{pcl}
 			oldC := &prjpb.Component{
 				Clids: []int64{33},
 				// Component already has a Run, so no action required.
@@ -164,7 +178,7 @@ func TestTriage(t *testing.T) {
 				{
 					Clid:               33,
 					ConfigGroupIndexes: nil, // modified below.
-					Trigger:            dryRun(ct.Clock.Now()),
+					Triggers:           dryRun(ct.Clock.Now()),
 					Errors: []*changelist.CLError{ // => must purge.
 						{Kind: &changelist.CLError_OwnerLacksEmail{OwnerLacksEmail: true}},
 					},
@@ -204,50 +218,101 @@ func TestTriage(t *testing.T) {
 				So(res.CLsToPurge, ShouldHaveLength, 1)
 				So(res.RunsToCreate, ShouldBeEmpty)
 			})
+
 			Convey("with already existing Run:", func() {
-				_, pcl32 := putPCL(32, combIdx, run.FullRun, ct.Clock.Now().Add(-time.Second))
-				_, pcl33 := putPCL(33, combIdx, run.FullRun, ct.Clock.Now(), 32)
-				pm.pb.Pcls = []*prjpb.PCL{pcl32, pcl33}
-				oldC := &prjpb.Component{Clids: []int64{32, 33}, TriageRequired: true}
-				ct.Clock.Add(stabilizationDelay)
-				const expectedRunID = "v8/9042327596854-1-690d9e2cc74b34aa"
+				Convey("with pre-transition pcls", func() {
+					_, pcl32 := putPCLOld(32, combIdx, run.FullRun, ct.Clock.Now().Add(-time.Second))
+					_, pcl33 := putPCLOld(33, combIdx, run.FullRun, ct.Clock.Now(), 32)
 
-				Convey("wait a bit if Run is RUNNING", func() {
-					So(datastore.Put(ctx, &run.Run{ID: expectedRunID, Status: run.Status_RUNNING}), ShouldBeNil)
-					res := mustTriage(oldC)
-					So(res.NewValue.GetTriageRequired(), ShouldBeFalse)
-					So(res.NewValue.GetDecisionTime().AsTime(), ShouldResemble, ct.Clock.Now().Add(5*time.Second).UTC())
-					So(res.RunsToCreate, ShouldBeEmpty)
-					So(res.CLsToPurge, ShouldBeEmpty)
-				})
+					pm.pb.Pcls = []*prjpb.PCL{pcl32, pcl33}
+					oldC := &prjpb.Component{Clids: []int64{32, 33}, TriageRequired: true}
+					ct.Clock.Add(stabilizationDelay)
+					const expectedRunID = "v8/9042327596854-1-690d9e2cc74b34aa"
 
-				r := &run.Run{
-					ID:      expectedRunID,
-					Status:  run.Status_CANCELLED,
-					EndTime: datastore.RoundTime(ct.Clock.Now().UTC()),
-				}
-				So(datastore.Put(ctx, r), ShouldBeNil)
+					Convey("wait a bit if Run is RUNNING", func() {
+						So(datastore.Put(ctx, &run.Run{ID: expectedRunID, Status: run.Status_RUNNING}), ShouldBeNil)
+						res := mustTriage(oldC)
+						So(res.NewValue.GetTriageRequired(), ShouldBeFalse)
+						So(res.NewValue.GetDecisionTime().AsTime(), ShouldResemble, ct.Clock.Now().Add(5*time.Second).UTC())
+						So(res.RunsToCreate, ShouldBeEmpty)
+						So(res.CLsToPurge, ShouldBeEmpty)
+					})
 
-				Convey("wait a bit if Run was just finalized", func() {
-					ct.Clock.Add(5 * time.Second)
-					res := mustTriage(oldC)
-					So(res.NewValue.GetTriageRequired(), ShouldBeFalse)
-					So(res.NewValue.GetDecisionTime().AsTime(), ShouldResemble, r.EndTime.Add(time.Minute).UTC())
-					So(res.RunsToCreate, ShouldBeEmpty)
-					So(res.CLsToPurge, ShouldBeEmpty)
-				})
-
-				Convey("purge CLs due to trigger re-use after long-ago finished Run", func() {
-					ct.Clock.Add(2 * time.Minute)
-					res := mustTriage(oldC)
-					So(res.NewValue.GetTriageRequired(), ShouldBeFalse)
-					So(res.NewValue.GetDecisionTime(), ShouldBeNil)
-					So(res.RunsToCreate, ShouldBeEmpty)
-					So(res.CLsToPurge, ShouldHaveLength, 2)
-					for _, p := range res.CLsToPurge {
-						So(p.GetReasons(), ShouldHaveLength, 1)
-						So(p.GetReasons()[0].GetReusedTrigger().GetRun(), ShouldResemble, expectedRunID)
+					r := &run.Run{
+						ID:      expectedRunID,
+						Status:  run.Status_CANCELLED,
+						EndTime: datastore.RoundTime(ct.Clock.Now().UTC()),
 					}
+					So(datastore.Put(ctx, r), ShouldBeNil)
+
+					Convey("wait a bit if Run was just finalized", func() {
+						ct.Clock.Add(5 * time.Second)
+						res := mustTriage(oldC)
+						So(res.NewValue.GetTriageRequired(), ShouldBeFalse)
+						So(res.NewValue.GetDecisionTime().AsTime(), ShouldResemble, r.EndTime.Add(time.Minute).UTC())
+						So(res.RunsToCreate, ShouldBeEmpty)
+						So(res.CLsToPurge, ShouldBeEmpty)
+					})
+
+					Convey("purge CLs due to trigger re-use after long-ago finished Run", func() {
+						ct.Clock.Add(2 * time.Minute)
+						res := mustTriage(oldC)
+						So(res.NewValue.GetTriageRequired(), ShouldBeFalse)
+						So(res.NewValue.GetDecisionTime(), ShouldBeNil)
+						So(res.RunsToCreate, ShouldBeEmpty)
+						So(res.CLsToPurge, ShouldHaveLength, 2)
+						for _, p := range res.CLsToPurge {
+							So(p.GetReasons(), ShouldHaveLength, 1)
+							So(p.GetReasons()[0].GetReusedTrigger().GetRun(), ShouldResemble, expectedRunID)
+						}
+					})
+				})
+				Convey("with post-transition PCLs ", func() {
+					_, pcl32 := putPCLNew(32, combIdx, run.FullRun, ct.Clock.Now().Add(-time.Second))
+					_, pcl33 := putPCLNew(33, combIdx, run.FullRun, ct.Clock.Now(), 32)
+
+					pm.pb.Pcls = []*prjpb.PCL{pcl32, pcl33}
+					oldC := &prjpb.Component{Clids: []int64{32, 33}, TriageRequired: true}
+					ct.Clock.Add(stabilizationDelay)
+					const expectedRunID = "v8/9042327596854-1-690d9e2cc74b34aa"
+
+					Convey("wait a bit if Run is RUNNING", func() {
+						So(datastore.Put(ctx, &run.Run{ID: expectedRunID, Status: run.Status_RUNNING}), ShouldBeNil)
+						res := mustTriage(oldC)
+						So(res.NewValue.GetTriageRequired(), ShouldBeFalse)
+						So(res.NewValue.GetDecisionTime().AsTime(), ShouldResemble, ct.Clock.Now().Add(5*time.Second).UTC())
+						So(res.RunsToCreate, ShouldBeEmpty)
+						So(res.CLsToPurge, ShouldBeEmpty)
+					})
+
+					r := &run.Run{
+						ID:      expectedRunID,
+						Status:  run.Status_CANCELLED,
+						EndTime: datastore.RoundTime(ct.Clock.Now().UTC()),
+					}
+					So(datastore.Put(ctx, r), ShouldBeNil)
+
+					Convey("wait a bit if Run was just finalized", func() {
+						ct.Clock.Add(5 * time.Second)
+						res := mustTriage(oldC)
+						So(res.NewValue.GetTriageRequired(), ShouldBeFalse)
+						So(res.NewValue.GetDecisionTime().AsTime(), ShouldResemble, r.EndTime.Add(time.Minute).UTC())
+						So(res.RunsToCreate, ShouldBeEmpty)
+						So(res.CLsToPurge, ShouldBeEmpty)
+					})
+
+					Convey("purge CLs due to trigger re-use after long-ago finished Run", func() {
+						ct.Clock.Add(2 * time.Minute)
+						res := mustTriage(oldC)
+						So(res.NewValue.GetTriageRequired(), ShouldBeFalse)
+						So(res.NewValue.GetDecisionTime(), ShouldBeNil)
+						So(res.RunsToCreate, ShouldBeEmpty)
+						So(res.CLsToPurge, ShouldHaveLength, 2)
+						for _, p := range res.CLsToPurge {
+							So(p.GetReasons(), ShouldHaveLength, 1)
+							So(p.GetReasons()[0].GetReusedTrigger().GetRun(), ShouldResemble, expectedRunID)
+						}
+					})
 				})
 			})
 		})
@@ -255,7 +320,13 @@ func TestTriage(t *testing.T) {
 		Convey("Creates Runs", func() {
 			Convey("Singular", func() {
 				Convey("OK", func() {
-					_, pcl := putPCL(33, singIdx, run.DryRun, ct.Clock.Now())
+					var pcl *prjpb.PCL
+					Convey("New", func() {
+						_, pcl = putPCLNew(33, singIdx, run.DryRun, ct.Clock.Now())
+					})
+					Convey("Old", func() {
+						_, pcl = putPCLOld(33, singIdx, run.DryRun, ct.Clock.Now())
+					})
 					pm.pb.Pcls = []*prjpb.PCL{pcl}
 					oldC := &prjpb.Component{Clids: []int64{33}, TriageRequired: true}
 					res := mustTriage(oldC)
@@ -270,7 +341,13 @@ func TestTriage(t *testing.T) {
 				})
 
 				Convey("Noop when Run already exists", func() {
-					_, pcl := putPCL(33, singIdx, run.DryRun, ct.Clock.Now())
+					var pcl *prjpb.PCL
+					Convey("New", func() {
+						_, pcl = putPCLNew(33, singIdx, run.DryRun, ct.Clock.Now())
+					})
+					Convey("Old", func() {
+						_, pcl = putPCLOld(33, singIdx, run.DryRun, ct.Clock.Now())
+					})
 					pm.pb.Pcls = []*prjpb.PCL{pcl}
 					oldC := &prjpb.Component{Clids: []int64{33}, TriageRequired: true, Pruns: makePruns("run-id", 33)}
 					res := mustTriage(oldC)
@@ -280,7 +357,14 @@ func TestTriage(t *testing.T) {
 				})
 
 				Convey("EVersion mismatch is an ErrOutdatedPMState", func() {
-					cl, pcl := putPCL(33, singIdx, run.DryRun, ct.Clock.Now())
+					var pcl *prjpb.PCL
+					var cl *changelist.CL
+					Convey("New", func() {
+						cl, pcl = putPCLNew(33, singIdx, run.DryRun, ct.Clock.Now())
+					})
+					Convey("Old", func() {
+						cl, pcl = putPCLOld(33, singIdx, run.DryRun, ct.Clock.Now())
+					})
 					cl.EVersion = 2
 					So(datastore.Put(ctx, cl), ShouldBeNil)
 					pm.pb.Pcls = []*prjpb.PCL{pcl}
@@ -290,8 +374,15 @@ func TestTriage(t *testing.T) {
 				})
 
 				Convey("OK with resolved deps", func() {
-					_, pcl32 := putPCL(32, singIdx, run.FullRun, ct.Clock.Now())
-					_, pcl33 := putPCL(33, singIdx, run.DryRun, ct.Clock.Now(), 32)
+					var pcl32, pcl33 *prjpb.PCL
+					Convey("New", func() {
+						_, pcl32 = putPCLNew(32, singIdx, run.FullRun, ct.Clock.Now())
+						_, pcl33 = putPCLNew(33, singIdx, run.DryRun, ct.Clock.Now(), 32)
+					})
+					Convey("Old", func() {
+						_, pcl32 = putPCLOld(32, singIdx, run.FullRun, ct.Clock.Now())
+						_, pcl33 = putPCLOld(33, singIdx, run.DryRun, ct.Clock.Now(), 32)
+					})
 					pm.pb.Pcls = []*prjpb.PCL{pcl32, pcl33}
 					oldC := &prjpb.Component{Clids: []int64{32, 33}, TriageRequired: true}
 					res := mustTriage(oldC)
@@ -306,9 +397,17 @@ func TestTriage(t *testing.T) {
 				})
 
 				Convey("OK with existing Runs but on different CLs", func() {
-					_, pcl31 := putPCL(31, singIdx, run.FullRun, ct.Clock.Now())
-					_, pcl32 := putPCL(32, singIdx, run.DryRun, ct.Clock.Now(), 31)
-					_, pcl33 := putPCL(33, singIdx, run.DryRun, ct.Clock.Now(), 32)
+					var pcl31, pcl32, pcl33 *prjpb.PCL
+					Convey("New", func() {
+						_, pcl31 = putPCLNew(31, singIdx, run.FullRun, ct.Clock.Now())
+						_, pcl32 = putPCLNew(32, singIdx, run.DryRun, ct.Clock.Now(), 31)
+						_, pcl33 = putPCLNew(33, singIdx, run.DryRun, ct.Clock.Now(), 32)
+					})
+					Convey("Old", func() {
+						_, pcl31 = putPCLOld(31, singIdx, run.FullRun, ct.Clock.Now())
+						_, pcl32 = putPCLOld(32, singIdx, run.DryRun, ct.Clock.Now(), 31)
+						_, pcl33 = putPCLOld(33, singIdx, run.DryRun, ct.Clock.Now(), 32)
+					})
 					pm.pb.Pcls = []*prjpb.PCL{pcl31, pcl32, pcl33}
 					oldC := &prjpb.Component{
 						Clids:          []int64{31, 32, 33},
@@ -325,7 +424,13 @@ func TestTriage(t *testing.T) {
 
 				Convey("Waits for unresolved dep without an error", func() {
 					pcl32 := &prjpb.PCL{Clid: 32, Eversion: 1, Status: prjpb.PCL_UNKNOWN}
-					_, pcl33 := putPCL(33, singIdx, run.DryRun, ct.Clock.Now(), 32)
+					var pcl33 *prjpb.PCL
+					Convey("New", func() {
+						_, pcl33 = putPCLNew(33, singIdx, run.DryRun, ct.Clock.Now(), 32)
+					})
+					Convey("Old", func() {
+						_, pcl33 = putPCLOld(33, singIdx, run.DryRun, ct.Clock.Now(), 32)
+					})
 					pm.pb.Pcls = []*prjpb.PCL{pcl32, pcl33}
 					oldC := &prjpb.Component{Clids: []int64{33}, TriageRequired: true}
 					res := mustTriage(oldC)
@@ -343,9 +448,17 @@ func TestTriage(t *testing.T) {
 				Convey("OK after obeying stabilization delay", func() {
 					// Simulate a CL stack <base> -> 31 -> 32 -> 33, which user wants
 					// to land at the same time by making 31 depend on 33.
-					_, pcl31 := putPCL(31, combIdx, run.FullRun, ct.Clock.Now().Add(-time.Minute), 33)
-					_, pcl32 := putPCL(32, combIdx, run.FullRun, ct.Clock.Now().Add(-time.Second), 31)
-					_, pcl33 := putPCL(33, combIdx, run.FullRun, ct.Clock.Now(), 32, 31)
+					var pcl31, pcl32, pcl33 *prjpb.PCL
+					Convey("New", func() {
+						_, pcl31 = putPCLNew(31, combIdx, run.FullRun, ct.Clock.Now().Add(-time.Minute), 33)
+						_, pcl32 = putPCLNew(32, combIdx, run.FullRun, ct.Clock.Now().Add(-time.Second), 31)
+						_, pcl33 = putPCLNew(33, combIdx, run.FullRun, ct.Clock.Now(), 32, 31)
+					})
+					Convey("Old", func() {
+						_, pcl31 = putPCLOld(31, combIdx, run.FullRun, ct.Clock.Now().Add(-time.Minute), 33)
+						_, pcl32 = putPCLOld(32, combIdx, run.FullRun, ct.Clock.Now().Add(-time.Second), 31)
+						_, pcl33 = putPCLOld(33, combIdx, run.FullRun, ct.Clock.Now(), 32, 31)
+					})
 					pm.pb.Pcls = []*prjpb.PCL{pcl31, pcl32, pcl33}
 					oldC := &prjpb.Component{Clids: []int64{31, 32, 33}, TriageRequired: true}
 					res := mustTriage(oldC)
@@ -363,12 +476,22 @@ func TestTriage(t *testing.T) {
 					rc := res.RunsToCreate[0]
 					So(rc.ConfigGroupID.Name(), ShouldResemble, "combinable")
 					So(rc.Mode, ShouldResemble, run.FullRun)
-					So(rc.CreateTime, ShouldEqual, pcl33.GetTrigger().GetTime().AsTime())
+					t := pcl33.GetTriggers().GetCqVoteTrigger()
+					if t == nil {
+						t = pcl33.GetTrigger()
+					}
+					So(rc.CreateTime, ShouldEqual, t.GetTime().AsTime())
 					So(rc.InputCLs, ShouldHaveLength, 3)
 				})
 
 				Convey("Even a single CL should wait for stabilization delay", func() {
-					_, pcl := putPCL(33, combIdx, run.FullRun, ct.Clock.Now())
+					var pcl *prjpb.PCL
+					Convey("New", func() {
+						_, pcl = putPCLNew(33, combIdx, run.FullRun, ct.Clock.Now())
+					})
+					Convey("Old", func() {
+						_, pcl = putPCLOld(33, combIdx, run.FullRun, ct.Clock.Now())
+					})
 					pm.pb.Pcls = []*prjpb.PCL{pcl}
 					oldC := &prjpb.Component{Clids: []int64{33}, TriageRequired: true}
 					res := mustTriage(oldC)
@@ -392,7 +515,13 @@ func TestTriage(t *testing.T) {
 
 				Convey("Waits for unresolved dep, even after stabilization delay", func() {
 					pcl32 := &prjpb.PCL{Clid: 32, Eversion: 1, Status: prjpb.PCL_UNKNOWN}
-					_, pcl33 := putPCL(33, combIdx, run.FullRun, ct.Clock.Now(), 32)
+					var pcl33 *prjpb.PCL
+					Convey("New", func() {
+						_, pcl33 = putPCLNew(33, combIdx, run.FullRun, ct.Clock.Now(), 32)
+					})
+					Convey("Old", func() {
+						_, pcl33 = putPCLOld(33, combIdx, run.FullRun, ct.Clock.Now(), 32)
+					})
 					pm.pb.Pcls = []*prjpb.PCL{pcl32, pcl33}
 					oldC := &prjpb.Component{Clids: []int64{33}, TriageRequired: true}
 					res := mustTriage(oldC)
@@ -412,30 +541,62 @@ func TestTriage(t *testing.T) {
 				})
 
 				Convey("Noop if there is existing Run encompassing all the CLs", func() {
-					_, pcl31 := putPCL(31, combIdx, run.FullRun, ct.Clock.Now().Add(-time.Hour), 32)
-					_, pcl32 := putPCL(32, combIdx, run.FullRun, ct.Clock.Now().Add(-time.Hour), 31)
-					pm.pb.Pcls = []*prjpb.PCL{pcl31, pcl32}
-					oldC := &prjpb.Component{Clids: []int64{31, 32}, TriageRequired: true, Pruns: makePruns("runID", 31, 32)}
-					res := mustTriage(oldC)
-					So(res.NewValue.GetTriageRequired(), ShouldBeFalse)
-					So(res.CLsToPurge, ShouldBeEmpty)
-					So(res.RunsToCreate, ShouldBeEmpty)
 
-					Convey("even if some CLs are no longer triggered", func() {
-						// Happens during Run abort due to, say, tryjob failure.
-						pcl31.Trigger = nil
+					Convey("with pre-transition pcls", func() {
+						_, pcl31 := putPCLOld(31, combIdx, run.FullRun, ct.Clock.Now().Add(-time.Hour), 32)
+						_, pcl32 := putPCLOld(32, combIdx, run.FullRun, ct.Clock.Now().Add(-time.Hour), 31)
+
+						pm.pb.Pcls = []*prjpb.PCL{pcl31, pcl32}
+						oldC := &prjpb.Component{Clids: []int64{31, 32}, TriageRequired: true, Pruns: makePruns("runID", 31, 32)}
+						res := mustTriage(oldC)
 						So(res.NewValue.GetTriageRequired(), ShouldBeFalse)
 						So(res.CLsToPurge, ShouldBeEmpty)
 						So(res.RunsToCreate, ShouldBeEmpty)
+
+						Convey("even if some CLs are no longer triggered", func() {
+							// Happens during Run abort due to, say, tryjob failure.
+							resetTriggers(pcl31)
+							So(res.NewValue.GetTriageRequired(), ShouldBeFalse)
+							So(res.CLsToPurge, ShouldBeEmpty)
+							So(res.RunsToCreate, ShouldBeEmpty)
+						})
+
+						Convey("even if some CLs are already submitted", func() {
+							// Happens during Run submission.
+							resetTriggers(pcl32)
+							pcl32.Submitted = true
+							So(res.NewValue.GetTriageRequired(), ShouldBeFalse)
+							So(res.CLsToPurge, ShouldBeEmpty)
+							So(res.RunsToCreate, ShouldBeEmpty)
+						})
 					})
+					Convey("with post-transition pcls", func() {
+						_, pcl31 := putPCLNew(31, combIdx, run.FullRun, ct.Clock.Now().Add(-time.Hour), 32)
+						_, pcl32 := putPCLNew(32, combIdx, run.FullRun, ct.Clock.Now().Add(-time.Hour), 31)
 
-					Convey("even if some CLs are already submitted", func() {
-						// Happens during Run submission.
-						pcl32.Trigger = nil
-						pcl32.Submitted = true
+						pm.pb.Pcls = []*prjpb.PCL{pcl31, pcl32}
+						oldC := &prjpb.Component{Clids: []int64{31, 32}, TriageRequired: true, Pruns: makePruns("runID", 31, 32)}
+						res := mustTriage(oldC)
 						So(res.NewValue.GetTriageRequired(), ShouldBeFalse)
 						So(res.CLsToPurge, ShouldBeEmpty)
 						So(res.RunsToCreate, ShouldBeEmpty)
+
+						Convey("even if some CLs are no longer triggered", func() {
+							// Happens during Run abort due to, say, tryjob failure.
+							resetTriggers(pcl31)
+							So(res.NewValue.GetTriageRequired(), ShouldBeFalse)
+							So(res.CLsToPurge, ShouldBeEmpty)
+							So(res.RunsToCreate, ShouldBeEmpty)
+						})
+
+						Convey("even if some CLs are already submitted", func() {
+							// Happens during Run submission.
+							resetTriggers(pcl32)
+							pcl32.Submitted = true
+							So(res.NewValue.GetTriageRequired(), ShouldBeFalse)
+							So(res.CLsToPurge, ShouldBeEmpty)
+							So(res.RunsToCreate, ShouldBeEmpty)
+						})
 					})
 				})
 
@@ -447,9 +608,17 @@ func TestTriage(t *testing.T) {
 					// This may change once postponeExpandingExistingRunScope() function is
 					// implemented, but for now test documents that CV will just wait
 					// until (31, 41) Run completes.
-					_, pcl31 := putPCL(31, combIdx, run.FullRun, ct.Clock.Now().Add(-time.Hour))
-					_, pcl41 := putPCL(41, combIdx, run.FullRun, ct.Clock.Now().Add(-time.Hour), 31)
-					_, pcl51 := putPCL(51, combIdx, run.FullRun, ct.Clock.Now(), 31)
+					var pcl31, pcl41, pcl51 *prjpb.PCL
+					Convey("New", func() {
+						_, pcl31 = putPCLNew(31, combIdx, run.FullRun, ct.Clock.Now().Add(-time.Hour))
+						_, pcl41 = putPCLNew(41, combIdx, run.FullRun, ct.Clock.Now().Add(-time.Hour), 31)
+						_, pcl51 = putPCLNew(51, combIdx, run.FullRun, ct.Clock.Now(), 31)
+					})
+					Convey("Old", func() {
+						_, pcl31 = putPCLOld(31, combIdx, run.FullRun, ct.Clock.Now().Add(-time.Hour))
+						_, pcl41 = putPCLOld(41, combIdx, run.FullRun, ct.Clock.Now().Add(-time.Hour), 31)
+						_, pcl51 = putPCLOld(51, combIdx, run.FullRun, ct.Clock.Now(), 31)
+					})
 					ct.Clock.Add(2 * stabilizationDelay)
 					pm.pb.Pcls = []*prjpb.PCL{pcl31, pcl41, pcl51}
 					oldC := &prjpb.Component{Clids: []int64{31, 41, 51}, TriageRequired: true, Pruns: makePruns("41-31", 31, 41)}
@@ -461,41 +630,83 @@ func TestTriage(t *testing.T) {
 				})
 
 				Convey("Doesn't react to updates that must be handled first by the Run Manager", func() {
-					_, pcl31 := putPCL(31, combIdx, run.DryRun, ct.Clock.Now().Add(-time.Hour), 31)
-					_, pcl41 := putPCL(41, combIdx, run.DryRun, ct.Clock.Now().Add(-time.Hour), 31)
-					_, pcl51 := putPCL(51, combIdx, run.DryRun, ct.Clock.Now().Add(-time.Hour), 31, 41)
-					pm.pb.Pcls = []*prjpb.PCL{pcl31, pcl41, pcl51}
-					oldC := &prjpb.Component{
-						Clids:          []int64{31, 41, 51},
-						TriageRequired: true,
-						Pruns:          makePruns("sub/mitting", 31, 41, 51),
-					}
-					mustWaitForRM := func() {
-						res := mustTriage(oldC)
-						So(res.NewValue.GetTriageRequired(), ShouldBeFalse)
-						So(res.NewValue.GetDecisionTime(), ShouldBeNil)
-						So(res.CLsToPurge, ShouldBeEmpty)
-						So(res.RunsToCreate, ShouldBeEmpty)
-					}
+					Convey("with pre-transition pcls", func() {
+						_, pcl31 := putPCLOld(31, combIdx, run.DryRun, ct.Clock.Now().Add(-time.Hour), 31)
+						_, pcl41 := putPCLOld(41, combIdx, run.DryRun, ct.Clock.Now().Add(-time.Hour), 31)
+						_, pcl51 := putPCLOld(51, combIdx, run.DryRun, ct.Clock.Now().Add(-time.Hour), 31, 41)
 
-					Convey("multi-CL Run is being submitted", func() {
-						pcl31.Submitted = true
-						pcl31.Trigger = nil
-						mustWaitForRM()
+						pm.pb.Pcls = []*prjpb.PCL{pcl31, pcl41, pcl51}
+						oldC := &prjpb.Component{
+							Clids:          []int64{31, 41, 51},
+							TriageRequired: true,
+							Pruns:          makePruns("sub/mitting", 31, 41, 51),
+						}
+						mustWaitForRM := func() {
+							res := mustTriage(oldC)
+							So(res.NewValue.GetTriageRequired(), ShouldBeFalse)
+							So(res.NewValue.GetDecisionTime(), ShouldBeNil)
+							So(res.CLsToPurge, ShouldBeEmpty)
+							So(res.RunsToCreate, ShouldBeEmpty)
+						}
+
+						Convey("multi-CL Run is being submitted", func() {
+							pcl31.Submitted = true
+							resetTriggers(pcl31)
+							mustWaitForRM()
+						})
+						Convey("multi-CL Run is being canceled", func() {
+							resetTriggers(pcl31)
+							mustWaitForRM()
+						})
+						Convey("multi-CL Run is no longer in the same ConfigGroup", func() {
+							pcl31.ConfigGroupIndexes = []int32{anotherIdx}
+							mustWaitForRM()
+						})
+						Convey("multi-CL Run is no longer in the same LUCI project", func() {
+							pcl31.Status = prjpb.PCL_UNWATCHED
+							pcl31.ConfigGroupIndexes = nil
+							resetTriggers(pcl31)
+							mustWaitForRM()
+						})
 					})
-					Convey("multi-CL Run is being canceled", func() {
-						pcl31.Trigger = nil
-						mustWaitForRM()
-					})
-					Convey("multi-CL Run is no longer in the same ConfigGroup", func() {
-						pcl31.ConfigGroupIndexes = []int32{anotherIdx}
-						mustWaitForRM()
-					})
-					Convey("multi-CL Run is no longer in the same LUCI project", func() {
-						pcl31.Status = prjpb.PCL_UNWATCHED
-						pcl31.ConfigGroupIndexes = nil
-						pcl31.Trigger = nil
-						mustWaitForRM()
+					Convey("with post-transition pcls", func() {
+						_, pcl31 := putPCLNew(31, combIdx, run.DryRun, ct.Clock.Now().Add(-time.Hour), 31)
+						_, pcl41 := putPCLNew(41, combIdx, run.DryRun, ct.Clock.Now().Add(-time.Hour), 31)
+						_, pcl51 := putPCLNew(51, combIdx, run.DryRun, ct.Clock.Now().Add(-time.Hour), 31, 41)
+
+						pm.pb.Pcls = []*prjpb.PCL{pcl31, pcl41, pcl51}
+						oldC := &prjpb.Component{
+							Clids:          []int64{31, 41, 51},
+							TriageRequired: true,
+							Pruns:          makePruns("sub/mitting", 31, 41, 51),
+						}
+						mustWaitForRM := func() {
+							res := mustTriage(oldC)
+							So(res.NewValue.GetTriageRequired(), ShouldBeFalse)
+							So(res.NewValue.GetDecisionTime(), ShouldBeNil)
+							So(res.CLsToPurge, ShouldBeEmpty)
+							So(res.RunsToCreate, ShouldBeEmpty)
+						}
+
+						Convey("multi-CL Run is being submitted", func() {
+							pcl31.Submitted = true
+							resetTriggers(pcl31)
+							mustWaitForRM()
+						})
+						Convey("multi-CL Run is being canceled", func() {
+							resetTriggers(pcl31)
+							mustWaitForRM()
+						})
+						Convey("multi-CL Run is no longer in the same ConfigGroup", func() {
+							pcl31.ConfigGroupIndexes = []int32{anotherIdx}
+							mustWaitForRM()
+						})
+						Convey("multi-CL Run is no longer in the same LUCI project", func() {
+							pcl31.Status = prjpb.PCL_UNWATCHED
+							pcl31.ConfigGroupIndexes = nil
+							resetTriggers(pcl31)
+							mustWaitForRM()
+						})
 					})
 				})
 
@@ -505,9 +716,17 @@ func TestTriage(t *testing.T) {
 					// result yet PM's view of CL state has changed to look valid, and
 					// ready to trigger a Run.
 					// Then, PM must wait for the purge to complete.
-					_, pcl31 := putPCL(31, combIdx, run.DryRun, ct.Clock.Now())
-					_, pcl32 := putPCL(32, combIdx, run.DryRun, ct.Clock.Now(), 31)
-					_, pcl33 := putPCL(33, combIdx, run.DryRun, ct.Clock.Now(), 31)
+					var pcl31, pcl32, pcl33 *prjpb.PCL
+					Convey("New", func() {
+						_, pcl31 = putPCLNew(31, combIdx, run.DryRun, ct.Clock.Now())
+						_, pcl32 = putPCLNew(32, combIdx, run.DryRun, ct.Clock.Now(), 31)
+						_, pcl33 = putPCLNew(33, combIdx, run.DryRun, ct.Clock.Now(), 31)
+					})
+					Convey("Old", func() {
+						_, pcl31 = putPCLOld(31, combIdx, run.DryRun, ct.Clock.Now())
+						_, pcl32 = putPCLOld(32, combIdx, run.DryRun, ct.Clock.Now(), 31)
+						_, pcl33 = putPCLOld(33, combIdx, run.DryRun, ct.Clock.Now(), 31)
+					})
 					ct.Clock.Add(2 * stabilizationDelay)
 					pm.pb.Pcls = []*prjpb.PCL{pcl31, pcl32, pcl33}
 					pm.pb.PurgingCls = []*prjpb.PurgingCL{

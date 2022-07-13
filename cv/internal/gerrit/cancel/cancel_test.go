@@ -68,7 +68,14 @@ func TestCancel(t *testing.T) {
 			gf.Updated(clock.Now(ctx).Add(-1*time.Minute)),
 			gf.Reviewer(gf.U(fmt.Sprintf("user-%d", reviewerID))),
 		)
-		So(trigger.Find(ci, &cfgpb.ConfigGroup{}).GerritAccountId, ShouldEqual, 100)
+		triggers := trigger.Find(ci, &cfgpb.ConfigGroup{})
+		So(triggers.GetCqVoteTrigger(), ShouldResembleProto, &run.Trigger{
+			Time:            timestamppb.New(triggerTime),
+			Mode:            string(run.FullRun),
+			Email:           fmt.Sprintf("user-%d@example.com", triggererID),
+			GerritAccountId: triggererID,
+		})
+		So(triggers.GetCqVoteTrigger().GerritAccountId, ShouldEqual, 100)
 		cl := &changelist.CL{
 			ID:         99999,
 			ExternalID: changelist.MustGobID(gHost, int64(changeNum)),
@@ -115,7 +122,7 @@ func TestCancel(t *testing.T) {
 		findTrigger := func(resultCI *gerritpb.ChangeInfo) *run.Trigger {
 			for _, cg := range input.ConfigGroups {
 				if t := trigger.Find(resultCI, cg.Content); t != nil {
-					return t
+					return t.GetCqVoteTrigger()
 				}
 			}
 			return nil

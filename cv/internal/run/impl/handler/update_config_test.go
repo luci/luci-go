@@ -63,13 +63,13 @@ func TestUpdateConfig(t *testing.T) {
 		}
 
 		putRunCL := func(ci *gerritpb.ChangeInfo, cg *cfgpb.ConfigGroup) {
-			tr := trigger.Find(ci, cg)
-			So(tr, ShouldNotBeNil)
+			triggers := trigger.Find(ci, cg)
+			So(triggers.GetCqVoteTrigger(), ShouldNotBeNil)
 			rcl := run.RunCL{
 				Run:        datastore.MakeKey(ctx, common.RunKind, string(runID)),
 				ID:         common.CLID(ci.GetNumber()),
 				ExternalID: changelist.MustGobID(gHost, ci.GetNumber()),
-				Trigger:    tr,
+				Trigger:    triggers.GetCqVoteTrigger(),
 				Detail: &changelist.Snapshot{
 					Patchset: ci.GetRevisions()[ci.GetCurrentRevision()].GetNumber(),
 					Kind: &changelist.Snapshot_Gerrit{

@@ -138,10 +138,10 @@ func TestRunBuilder(t *testing.T) {
 			So(datastore.Put(ctx, cl), ShouldBeNil)
 			return cl
 		}
-		triggerOf := func(cl *changelist.CL) *run.Trigger {
-			t := trigger.Find(cl.Snapshot.GetGerrit().GetInfo(), &cfgpb.ConfigGroup{})
-			So(t, ShouldNotBeNil)
-			return t
+		cqVoteTriggerOf := func(cl *changelist.CL) *run.Trigger {
+			trigger := trigger.Find(cl.Snapshot.GetGerrit().GetInfo(), &cfgpb.ConfigGroup{}).GetCqVoteTrigger()
+			So(trigger, ShouldNotBeNil)
+			return trigger
 		}
 
 		ct.Clock.Add(time.Minute)
@@ -165,14 +165,14 @@ func TestRunBuilder(t *testing.T) {
 			InputCLs: []CL{
 				{
 					ID:               cl1.ID,
-					TriggerInfo:      triggerOf(cl1),
+					TriggerInfo:      cqVoteTriggerOf(cl1),
 					ExpectedEVersion: 1,
 					Snapshot:         cl1.Snapshot,
 				},
 				{
 					ID:               cl2.ID,
 					ExpectedEVersion: 1,
-					TriggerInfo:      triggerOf(cl2),
+					TriggerInfo:      cqVoteTriggerOf(cl2),
 					Snapshot:         cl2.Snapshot,
 				},
 			},
