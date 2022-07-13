@@ -389,6 +389,12 @@ func (c *change) removeVote(ctx context.Context, accountID int64) error {
 			OnBehalfOf: accountID,
 		}, opt)
 		switch grpcutil.Code(gerritErr) {
+		// TODO(crbug/1344304): remove
+		case codes.Internal:
+			if c.Number == 4830556 && accountID == 1181283 {
+				return ErrPermanentTag.Apply(gerritErr)
+			}
+			return gerritErr
 		case codes.NotFound:
 			// This is known to happen on new CLs or on recently created revisions.
 			return gerrit.ErrStaleData
