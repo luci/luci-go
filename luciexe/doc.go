@@ -254,12 +254,11 @@
 // of the responsibilities of the Host Application.
 //
 // The parent can achieve this by recording a Step S (with no children), and
-// a Step.Log named "$build.proto" which points to a "build.proto" stream (see
-// "Updating the Build State"). If step S has multiple logs, the
-// "$build.proto" log must be the first one. This is called a "Merge Step", and
-// is a directive for the host to merge the Build message located in the
-// "$build.proto" log here. Note that the provision that 'Step.Log.Url' fields
-// must be relative still applies here. However, it's the invoker's
+// a Step.MergeBuild.from_logdog_stream which points to a "build.proto" stream
+// (see "Updating the Build State"). This is called a "Merge Step", and is
+// a directive for the host to merge Build messages from in the
+// from_logdog_stream log here. Note that this stream name should follow the
+// same provisions specified for "Step.Log.Url". It's the invoker's
 // responsibility to populate $LOGDOG_NAMESPACE with the new, full, namespace.
 // Failure to do this will result in missing logs/step data.
 //

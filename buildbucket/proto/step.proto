@@ -62,6 +62,20 @@ message Step {
   // BigQuery: excluded from rows.
   repeated Log logs = 5;
 
+  message MergeBuild {
+    // If set, then this stream is expected to be a datagram stream
+    // containing Build messages.
+    //
+    // This should be the stream name relative to the current build's
+    // $LOGDOG_NAMESPACE.
+    string from_logdog_stream = 1;
+  }
+  // MergeBuild is used for go.chromium.org/luci/luciexe to indicate to the
+  // luciexe host process if some Build stream should be merged under this step.
+  //
+  // BigQuery: excluded from rows.
+  MergeBuild merge_build = 6;
+
   // Human-readable summary of the step provided by the step itself,
   // in Markdown format (https://spec.commonmark.org/0.28/).
   //

@@ -15,7 +15,6 @@
 package luciexe
 
 import (
-	bbpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/buildbucket/protoutil"
 )
 
@@ -39,13 +38,3 @@ const (
 	// opened by the invoking process instead of the invoked process.
 	BuildProtoStreamSuffix = "build.proto"
 )
-
-// IsMergeStep returns true iff the given step is identified as a 'merge step'.
-//
-// See "Recursive Invocation" in the doc for this package.
-func IsMergeStep(s *bbpb.Step) bool {
-	if len(s.GetLogs()) >= 1 && s.Logs[0].Name == BuildProtoLogName {
-		return true
-	}
-	return false
-}

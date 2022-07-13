@@ -221,16 +221,17 @@ func TestAgent(t *testing.T) {
 			rootTrack.handleNewData(mkDgram(&bbpb.Build{
 				Steps: []*bbpb.Step{
 					{Name: "Hello"},
-					{Name: "Merge", Logs: []*bbpb.Log{
-						{Name: "$build.proto", Url: "sub/build.proto"},
-					}},
+					{Name: "Merge",
+						MergeBuild: &bbpb.Step_MergeBuild{
+							FromLogdogStream: "sub/build.proto",
+						}},
 				},
 			}))
 			expect.Steps = append(expect.Steps, &bbpb.Step{
 				Name: "Merge",
-				Logs: []*bbpb.Log{{
-					Name: "$build.proto", Url: "url://u/sub/build.proto",
-				}},
+				MergeBuild: &bbpb.Step_MergeBuild{
+					FromLogdogStream: "url://u/sub/build.proto",
+				},
 			})
 			expect.Steps = append(expect.Steps, &bbpb.Step{Name: "Merge|SubStep"})
 			expect.UpdateTime = now
@@ -262,9 +263,10 @@ func TestAgent(t *testing.T) {
 				subTrack.handleNewData(mkDgram(&bbpb.Build{
 					Steps: []*bbpb.Step{
 						{Name: "SubStep"},
-						{Name: "SuperDeep", Logs: []*bbpb.Log{
-							{Name: "$build.proto", Url: "super_deep/build.proto"},
-						}},
+						{Name: "SuperDeep",
+							MergeBuild: &bbpb.Step_MergeBuild{
+								FromLogdogStream: "super_deep/build.proto",
+							}},
 					},
 				}))
 				<-merger.MergedBuildC // digest subTrack update
@@ -276,9 +278,9 @@ func TestAgent(t *testing.T) {
 				expect.Steps = append(expect.Steps,
 					&bbpb.Step{
 						Name: "Merge|SuperDeep",
-						Logs: []*bbpb.Log{{
-							Name: "$build.proto", Url: "url://u/sub/super_deep/build.proto",
-						}},
+						MergeBuild: &bbpb.Step_MergeBuild{
+							FromLogdogStream: "url://u/sub/super_deep/build.proto",
+						},
 					},
 					&bbpb.Step{
 						Name: "Merge|SuperDeep|Hi!",
@@ -339,9 +341,9 @@ func TestAgent(t *testing.T) {
 							Name:    "Merge",
 							Status:  bbpb.Status_INFRA_FAILURE,
 							EndTime: now,
-							Logs: []*bbpb.Log{{
-								Name: "$build.proto", Url: "url://u/sub/build.proto",
-							}},
+							MergeBuild: &bbpb.Step_MergeBuild{
+								FromLogdogStream: "url://u/sub/build.proto",
+							},
 							SummaryMarkdown: "\n\nError in build protocol: step[\"Invalid_SubStep\"].logs[\"\"]: bad log url \"emoji 💩 is not a valid url\": illegal character ( ) at index 5",
 						},
 						&bbpb.Step{
@@ -375,9 +377,10 @@ func TestAgent(t *testing.T) {
 					{
 						Name:   "Merge",
 						Status: bbpb.Status_STARTED,
-						Logs: []*bbpb.Log{
-							{Name: "$build.proto", Url: "sub/build.proto"},
-						}},
+						MergeBuild: &bbpb.Step_MergeBuild{
+							FromLogdogStream: "sub/build.proto",
+						},
+					},
 				},
 			}))
 
@@ -391,9 +394,9 @@ func TestAgent(t *testing.T) {
 					{
 						Name:   "Merge",
 						Status: bbpb.Status_STARTED,
-						Logs: []*bbpb.Log{{
-							Name: "$build.proto", Url: "url://u/sub/build.proto",
-						}},
+						MergeBuild: &bbpb.Step_MergeBuild{
+							FromLogdogStream: "url://u/sub/build.proto",
+						},
 						SummaryMarkdown: "build.proto stream: \"url://u/sub/build.proto\" is not registered",
 					},
 				}
@@ -406,9 +409,10 @@ func TestAgent(t *testing.T) {
 								Name:            "Merge",
 								Status:          bbpb.Status_STARTED,
 								SummaryMarkdown: "existing summary",
-								Logs: []*bbpb.Log{
-									{Name: "$build.proto", Url: "sub/build.proto"},
-								}},
+								MergeBuild: &bbpb.Step_MergeBuild{
+									FromLogdogStream: "sub/build.proto",
+								},
+							},
 						},
 					}))
 
@@ -416,9 +420,9 @@ func TestAgent(t *testing.T) {
 						{
 							Name:   "Merge",
 							Status: bbpb.Status_STARTED,
-							Logs: []*bbpb.Log{{
-								Name: "$build.proto", Url: "url://u/sub/build.proto",
-							}},
+							MergeBuild: &bbpb.Step_MergeBuild{
+								FromLogdogStream: "url://u/sub/build.proto",
+							},
 							SummaryMarkdown: "existing summary\n\nbuild.proto stream: \"url://u/sub/build.proto\" is not registered",
 						},
 					}
@@ -433,9 +437,9 @@ func TestAgent(t *testing.T) {
 						{
 							Name:   "Merge",
 							Status: bbpb.Status_STARTED,
-							Logs: []*bbpb.Log{{
-								Name: "$build.proto", Url: "url://u/sub/build.proto",
-							}},
+							MergeBuild: &bbpb.Step_MergeBuild{
+								FromLogdogStream: "url://u/sub/build.proto",
+							},
 							SummaryMarkdown: "build.proto stream: \"url://u/sub/build.proto\" is empty",
 						},
 					}
@@ -454,9 +458,9 @@ func TestAgent(t *testing.T) {
 							{
 								Name:   "Merge",
 								Status: bbpb.Status_SUCCESS,
-								Logs: []*bbpb.Log{{
-									Name: "$build.proto", Url: "url://u/sub/build.proto",
-								}},
+								MergeBuild: &bbpb.Step_MergeBuild{
+									FromLogdogStream: "url://u/sub/build.proto",
+								},
 							},
 							{Name: "Merge|SubStep"},
 						}

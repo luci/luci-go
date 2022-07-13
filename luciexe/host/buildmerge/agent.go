@@ -307,8 +307,8 @@ func (a *Agent) sendMerge(_ *buffer.Batch) error {
 			return nil
 		}
 		for _, step := range build.GetSteps() {
-			isMergeStep := luciexe.IsMergeStep(step)
-			if isMergeStep || len(stepNS) > 0 {
+			mergeStream := step.GetMergeBuild().GetFromLogdogStream()
+			if mergeStream != "" || len(stepNS) > 0 {
 				step = reflectutil.ShallowCopy(step).(*bbpb.Step)
 			}
 			baseName := step.Name
@@ -318,19 +318,18 @@ func (a *Agent) sendMerge(_ *buffer.Batch) error {
 
 			base.Steps = append(base.Steps, step)
 
-			if isMergeStep {
-				subBuildStreamURL := step.Logs[0].Url
-				subBuild := insertSteps(append(stepNS, baseName), subBuildStreamURL)
+			if mergeStream != "" {
+				subBuild := insertSteps(append(stepNS, baseName), mergeStream)
 				if subBuild == nil {
 					var sb strings.Builder
 					if step.SummaryMarkdown != "" {
 						sb.WriteString(step.SummaryMarkdown)
 						sb.WriteString("\n\n")
 					}
-					if _, ok := builds[subBuildStreamURL]; ok {
-						sb.WriteString(fmt.Sprintf("build.proto stream: %q is empty", subBuildStreamURL))
+					if _, ok := builds[mergeStream]; ok {
+						sb.WriteString(fmt.Sprintf("build.proto stream: %q is empty", mergeStream))
 					} else {
-						sb.WriteString(fmt.Sprintf("build.proto stream: %q is not registered", subBuildStreamURL))
+						sb.WriteString(fmt.Sprintf("build.proto stream: %q is not registered", mergeStream))
 					}
 					step.SummaryMarkdown = sb.String()
 				} else {

@@ -24,7 +24,6 @@ import (
 	"go.chromium.org/luci/buildbucket/protoutil"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/proto/reflectutil"
-	"go.chromium.org/luci/luciexe"
 )
 
 // setErrorOnBuild modifies `build` so that it's SummaryMarkdown contains `err`
@@ -67,7 +66,7 @@ func processFinalBuild(now *timestamppb.Timestamp, build *bbpb.Build) {
 			continue
 		}
 
-		if luciexe.IsMergeStep(s) {
+		if s.GetMergeBuild().GetFromLogdogStream() != "" {
 			// It is okay merge step has a non-terminal status at this moment.
 			// The final merge will make sure this merge step is updated with
 			// the final state of sub build in the final build.

@@ -30,6 +30,7 @@ import (
 	"go.chromium.org/luci/common/sync/dispatcher/buffer"
 	"go.chromium.org/luci/logdog/api/logpb"
 	"go.chromium.org/luci/logdog/common/types"
+	"go.chromium.org/luci/luciexe"
 )
 
 // buildState represets the current state of a single build.proto stream.
@@ -112,6 +113,19 @@ func (t *buildStateTracker) processDataUnlocked(state *buildState, data []byte) 
 		parsedBuild = build
 
 		for _, step := range parsedBuild.Steps {
+			if len(step.Logs) > 0 && step.Logs[0].Name == luciexe.BuildProtoLogName {
+				// convert incoming $build.proto logs to MergeBuild messages.
+				// If the step has both, then just discard the $build.proto log.
+				//
+				// TODO(crbug.com/1310155): Remove this conversion after everything
+				// emits MergeBuild messages natively.
+				if step.MergeBuild == nil {
+					step.MergeBuild = &bbpb.Step_MergeBuild{
+						FromLogdogStream: step.Logs[0].Url,
+					}
+				}
+				step.Logs = step.Logs[1:]
+			}
 			for _, log := range step.Logs {
 				var err error
 				log.Url, log.ViewUrl, err = absolutizeURLs(log.Url, log.ViewUrl, t.ldNamespace, t.merger.calculateURLs)
@@ -119,6 +133,15 @@ func (t *buildStateTracker) processDataUnlocked(state *buildState, data []byte) 
 					step.Status = bbpb.Status_INFRA_FAILURE
 					step.SummaryMarkdown += err.Error()
 					return errors.Annotate(err, "step[%q].logs[%q]", step.Name, log.Name).Err()
+				}
+			}
+			if mb := step.GetMergeBuild(); mb != nil && mb.FromLogdogStream != "" {
+				var err error
+				mb.FromLogdogStream, _, err = absolutizeURLs(mb.FromLogdogStream, "", t.ldNamespace, t.merger.calculateURLs)
+				if err != nil {
+					step.Status = bbpb.Status_INFRA_FAILURE
+					step.SummaryMarkdown += err.Error()
+					return errors.Annotate(err, "step[%q].merge_build.from_logdog_stream", step.Name).Err()
 				}
 			}
 		}

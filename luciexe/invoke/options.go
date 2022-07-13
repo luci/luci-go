@@ -169,6 +169,7 @@ func (o *Options) prepNamespace(ctx context.Context, lo *launchOptions) error {
 	if err != nil {
 		return errors.Annotate(err, "invalid StartTime").Err()
 	}
+	bpStream := string(relNS.Concat(luciexe.BuildProtoStreamSuffix))
 	lo.step = &bbpb.Step{
 		Name:      o.Namespace,
 		StartTime: startTime,
@@ -176,7 +177,7 @@ func (o *Options) prepNamespace(ctx context.Context, lo *launchOptions) error {
 		Logs: []*bbpb.Log{
 			{
 				Name: luciexe.BuildProtoLogName,
-				Url:  string(relNS.Concat(luciexe.BuildProtoStreamSuffix)),
+				Url:  bpStream,
 			},
 			{
 				Name: "stdout",
@@ -186,6 +187,11 @@ func (o *Options) prepNamespace(ctx context.Context, lo *launchOptions) error {
 				Name: "stderr",
 				Url:  string(relNS.Concat("stderr")),
 			}},
+		// TODO(crbug.com/1310155) - Set new MergeBuild entry when luciexe/bbagent
+		// is redeployed.
+		// MergeBuild: &bbpb.Step_MergeBuild{
+		//	FromLogdogStream: bpStream,
+		// },
 	}
 	return nil
 }

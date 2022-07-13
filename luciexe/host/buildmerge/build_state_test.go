@@ -219,11 +219,10 @@ func TestBuildState(t *testing.T) {
 							{Name: "Parent|Child"},
 							{
 								Name: "Parent|Merge",
-								Logs: []*bbpb.Log{{
-									Name:    "$build.proto",
-									Url:     "url://ns/Parent/Merge/build.proto",
-									ViewUrl: "view://ns/Parent/Merge/build.proto",
-								}},
+								Logs: []*bbpb.Log{},
+								MergeBuild: &bbpb.Step_MergeBuild{
+									FromLogdogStream: "url://ns/Parent/Merge/build.proto",
+								},
 							},
 						},
 						UpdateTime: now,
@@ -260,11 +259,10 @@ func TestBuildState(t *testing.T) {
 									SummaryMarkdown: "step was never finalized; did the build crash?"},
 								{
 									Name: "Parent|Merge",
-									Logs: []*bbpb.Log{{
-										Name:    "$build.proto",
-										Url:     "url://ns/Parent/Merge/build.proto",
-										ViewUrl: "view://ns/Parent/Merge/build.proto",
-									}},
+									Logs: []*bbpb.Log{},
+									MergeBuild: &bbpb.Step_MergeBuild{
+										FromLogdogStream: "url://ns/Parent/Merge/build.proto",
+									},
 								},
 							},
 							UpdateTime: now,
@@ -298,11 +296,10 @@ func TestBuildState(t *testing.T) {
 									SummaryMarkdown: "step was never finalized; did the build crash?"},
 								{
 									Name: "Parent|Merge",
-									Logs: []*bbpb.Log{{
-										Name:    "$build.proto",
-										Url:     "url://ns/Parent/Merge/build.proto",
-										ViewUrl: "view://ns/Parent/Merge/build.proto",
-									}},
+									Logs: []*bbpb.Log{},
+									MergeBuild: &bbpb.Step_MergeBuild{
+										FromLogdogStream: "url://ns/Parent/Merge/build.proto",
+									},
 								},
 							},
 							EndTime:    now,
@@ -319,7 +316,7 @@ func TestBuildState(t *testing.T) {
 				})
 			})
 
-			FocusConvey(`invalid build data`, func() {
+			Convey(`invalid build data`, func() {
 				bs.handleNewData(&logpb.LogEntry{
 					Content: &logpb.LogEntry_Datagram{Datagram: &logpb.Datagram{
 						Data: []byte("narpnarp"),
@@ -343,6 +340,7 @@ func TestBuildState(t *testing.T) {
 					bs.handleNewData(mkDgram(&bbpb.Build{SummaryMarkdown: "hi"}))
 					assertStateEqual(bs.GetFinal(), &buildState{
 						invalid: true,
+						final:   true,
 						closed:  true,
 						build: &bbpb.Build{
 							SummaryMarkdown: ("\n\nError in build protocol: parsing Build: proto:"),
