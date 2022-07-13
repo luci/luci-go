@@ -51,7 +51,13 @@ export class GetBuildError extends Error implements InnerTag {
  * Records state of a build.
  */
 export class BuildState {
+  /**
+   * The builder ID of the build.
+   * Ignored when build `buildNumOrIdParam` is a build ID string (i.e. begins
+   * with 'b').
+   */
   @observable.ref builderIdParam?: BuilderID;
+
   @observable.ref buildNumOrIdParam?: string;
 
   /**
@@ -60,15 +66,11 @@ export class BuildState {
    */
   @observable.ref useComputedInvId = true;
 
-  @computed get builderId() {
-    return this.builderIdParam || this.build?.builder;
-  }
-
   /**
    * buildNum is defined when this.buildNumOrId is defined and doesn't start
    * with 'b'.
    */
-  @computed get buildNum() {
+  @computed private get buildNum() {
     return this.buildNumOrIdParam?.startsWith('b') === false ? Number(this.buildNumOrIdParam) : null;
   }
 
@@ -299,10 +301,10 @@ export class BuildState {
       return fromPromise(Promise.race([]));
     }
 
-    if (!this.appState.buildersService || !this.builderId) {
+    if (!this.appState.buildersService || !this.build?.builder) {
       return fromPromise(Promise.race([]));
     }
-    return fromPromise(this.appState.buildersService.getBuilder({ id: this.builderId }));
+    return fromPromise(this.appState.buildersService.getBuilder({ id: this.build.builder }));
   }
 
   @computed
@@ -311,10 +313,10 @@ export class BuildState {
   }
 
   @computed private get realm() {
-    if (!this.builderId) {
+    if (!this.build?.builder) {
       return null;
     }
-    return `${this.builderId.project}:${this.builderId.bucket}`;
+    return `${this.build?.builder.project}:${this.build?.builder.bucket}`;
   }
 
   @computed({ keepAlive: true })
@@ -344,7 +346,7 @@ export class BuildState {
 
   @computed({ keepAlive: true })
   private get projectCfg$() {
-    if (this.isDisposed || !this.appState.milo || !this.builderId?.project) {
+    if (this.isDisposed || !this.appState.milo || !this.build?.builder?.project) {
       // Returns a promise that never resolves when the dependencies aren't
       // ready.
       return fromPromise(Promise.race([]));
@@ -355,7 +357,7 @@ export class BuildState {
 
     return fromPromise(
       this.appState.milo.getProjectCfg({
-        project: this.builderId.project,
+        project: this.build?.builder.project,
       })
     );
   }

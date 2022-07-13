@@ -13,7 +13,7 @@
 // limitations under the License.
 
 import { aTimeout } from '@open-wc/testing/index-no-side-effects';
-import { assert } from 'chai';
+import { assert, expect } from 'chai';
 import { autorun } from 'mobx';
 import sinon from 'sinon';
 
@@ -24,47 +24,87 @@ import { AppState } from './app_state';
 import { BuildState } from './build_state';
 
 describe('BuildState', () => {
-  let getBuildStub: sinon.SinonStub<[req: GetBuildRequest, cacheOpt?: CacheOption], Promise<Build>>;
-  let appState: AppState;
-  let buildState: BuildState;
+  describe('cache', () => {
+    let getBuildStub: sinon.SinonStub<[req: GetBuildRequest, cacheOpt?: CacheOption], Promise<Build>>;
+    let appState: AppState;
+    let buildState: BuildState;
 
-  beforeEach(() => {
+    beforeEach(() => {
+      const builderId = { project: 'proj', bucket: 'bucket', builder: 'builder' };
+      appState = new AppState();
+      appState.authState = { identity: ANONYMOUS_IDENTITY };
+      getBuildStub = sinon.stub(appState.buildsService!, 'getBuild');
+      getBuildStub.onCall(0).resolves({ number: 1, id: '2', builder: builderId } as Build);
+      getBuildStub.onCall(1).resolves({ number: 1, id: '2', builder: builderId } as Build);
+
+      buildState = new BuildState(appState);
+      buildState.buildNumOrIdParam = '1';
+      buildState.builderIdParam = builderId;
+    });
+
+    afterEach(() => {
+      buildState.dispose();
+      appState.dispose();
+    });
+
+    it('should accept cache when first querying build', async () => {
+      const disposer = autorun(() => buildState.build);
+      after(disposer);
+
+      await aTimeout(0);
+
+      assert.notStrictEqual(getBuildStub.getCall(0).args[1]?.acceptCache, false);
+    });
+
+    it('should not accept cache after calling refresh', async () => {
+      const disposer = autorun(() => {
+        buildState.build;
+      });
+      after(disposer);
+      await aTimeout(0);
+      appState.refresh();
+      await aTimeout(0);
+
+      assert.notStrictEqual(getBuildStub.getCall(0).args[1]?.acceptCache, false);
+      assert.strictEqual(getBuildStub.getCall(1).args[1]?.acceptCache, false);
+    });
+  });
+
+  it('ignore builderIdParam when buildNumOrIdParam is a buildId', async () => {
     const builderId = { project: 'proj', bucket: 'bucket', builder: 'builder' };
-    appState = new AppState();
+    const appState = new AppState();
     appState.authState = { identity: ANONYMOUS_IDENTITY };
-    getBuildStub = sinon.stub(appState.buildsService!, 'getBuild');
-    getBuildStub.onCall(0).resolves({ number: 1, id: '2', builder: builderId } as Build);
-    getBuildStub.onCall(1).resolves({ number: 1, id: '2', builder: builderId } as Build);
+    const getBuildStub = sinon.stub(appState.buildsService!, 'getBuild');
+    const getBuilderStub = sinon.stub(appState.buildersService!, 'getBuilder');
+    const getProjectCfgStub = sinon.stub(appState.milo!, 'getProjectCfg');
+    const batchCheckPermissionsStub = sinon.stub(appState.milo!, 'batchCheckPermissions');
+    getBuildStub.onCall(0).resolves({ number: 1, id: '123', builder: builderId } as Build);
+    getBuilderStub.onCall(0).resolves({ id: builderId, config: {} });
+    getProjectCfgStub.onCall(0).resolves({});
+    batchCheckPermissionsStub.onCall(0).resolves({ results: {} });
 
-    buildState = new BuildState(appState);
-    buildState.buildNumOrIdParam = '1';
-    buildState.builderIdParam = builderId;
-  });
+    const buildState = new BuildState(appState);
+    buildState.buildNumOrIdParam = 'b123';
+    buildState.builderIdParam = { project: 'wrong_proj', bucket: 'wrong_bucket', builder: 'wrong_builder' };
 
-  afterEach(() => {
-    buildState.dispose();
-    appState.dispose();
-  });
+    after(() => {
+      buildState.dispose();
+      appState.dispose();
+    });
 
-  it('should accept cache when first querying build', async () => {
-    const disposer = autorun(() => buildState.build);
-    after(disposer);
-
-    await aTimeout(0);
-
-    assert.notStrictEqual(getBuildStub.getCall(0).args[1]?.acceptCache, false);
-  });
-
-  it('should not accept cache after calling refresh', async () => {
     const disposer = autorun(() => {
       buildState.build;
+      buildState.builder;
+      buildState.customBugLink;
+      buildState.permittedActions;
     });
     after(disposer);
-    await aTimeout(0);
-    appState.refresh();
+
     await aTimeout(0);
 
-    assert.notStrictEqual(getBuildStub.getCall(0).args[1]?.acceptCache, false);
-    assert.strictEqual(getBuildStub.getCall(1).args[1]?.acceptCache, false);
+    expect(getBuildStub.getCall(0).args[0].builder).to.be.undefined;
+    expect(getBuilderStub.getCall(0).args[0].id).to.deep.equal(builderId);
+    expect(getProjectCfgStub.getCall(0).args[0].project).to.equal(builderId.project);
+    expect(batchCheckPermissionsStub.getCall(0).args[0].realm).to.equal(`${builderId.project}:${builderId.bucket}`);
   });
 });
