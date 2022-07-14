@@ -518,7 +518,7 @@ def _make_location_filter(regexp, exclude = False):
 
     # Pattern matching exact host and project with path pattern, e.g.
     # "https://chromium-review.googlesource.com/chromiumos/config/[+]/.+"
-    groups = re.submatches(r"(https?://[^/]+)/([/a-z0-9_/\-\.]+)/\[\+\]/(.*)", regexp)
+    groups = re.submatches(r"https?://([^/]+)/([/a-z0-9_/\-\.]+)/\[\+\]/(.*)", regexp)
     if groups:
         return cq.location_filter(
             gerrit_host_regexp = groups[1],

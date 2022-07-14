@@ -97,13 +97,13 @@ luci.cq_group(
 #           exclude: true
 #         }
 #         location_filters {
-#           gerrit_host_regexp: "https://example.com"
+#           gerrit_host_regexp: "example.com"
 #           gerrit_project_regexp: "repo"
 #           path_regexp: "all/one.txt"
 #           exclude: true
 #         }
 #         location_filters {
-#           gerrit_host_regexp: "https://example.com"
+#           gerrit_host_regexp: "example.com"
 #           gerrit_project_regexp: "external/github.com/repo"
 #           path_regexp: "all/one.txt"
 #           exclude: true
