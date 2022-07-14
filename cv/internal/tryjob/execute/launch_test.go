@@ -200,7 +200,7 @@ func TestLaunch(t *testing.T) {
 
 		Convey("Reconcile with existing", func() {
 			tj := w.makePendingTryjob(ctx, defFoo)
-			tj.TriggeredBy = runID
+			tj.LaunchedBy = runID
 			reuseRun := common.MakeRunID(lProject, ct.Clock.Now().Add(-30*time.Minute), 1, []byte("beef"))
 			tj.ReusedBy = append(tj.ReusedBy, reuseRun)
 			So(datastore.RunInTransaction(ctx, func(ctx context.Context) error {

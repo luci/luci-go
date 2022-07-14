@@ -85,7 +85,7 @@ func makeTryjobWithStatus(ctx context.Context, status Status) (*Tryjob, error) {
 
 func makeTryjobWithDetails(ctx context.Context, buildID int64, status Status, triggerer common.RunID, reusers common.RunIDs) (*Tryjob, error) {
 	tj := MustBuildbucketID("cr-buildbucket.example.com", buildID).MustCreateIfNotExists(ctx)
-	tj.TriggeredBy = triggerer
+	tj.LaunchedBy = triggerer
 	tj.ReusedBy = reusers
 	tj.Status = status
 	return tj, datastore.Put(ctx, tj)
@@ -133,7 +133,7 @@ func TestHandleTask(t *testing.T) {
 					}), ShouldBeNil)
 				})
 				So(rn.notifiedRuns, ShouldHaveLength, 1)
-				So(rn.notifiedRuns[0], ShouldEqual, tryjob.TriggeredBy)
+				So(rn.notifiedRuns[0], ShouldEqual, tryjob.LaunchedBy)
 
 				// Ensure status updated.
 				tryjob = tryjob.ExternalID.MustCreateIfNotExists(ctx)
@@ -150,7 +150,7 @@ func TestHandleTask(t *testing.T) {
 				mb.returns = []*returnValues{{Status_TRIGGERED, &Result{Status: Result_SUCCEEDED}, nil}}
 				So(updater.handleTask(ctx, &UpdateTryjobTask{Id: int64(tryjob.ID)}), ShouldBeNil)
 				So(rn.notifiedRuns, ShouldHaveLength, 1)
-				So(rn.notifiedRuns[0], ShouldEqual, tryjob.TriggeredBy)
+				So(rn.notifiedRuns[0], ShouldEqual, tryjob.LaunchedBy)
 
 				tryjob = tryjob.ExternalID.MustCreateIfNotExists(ctx)
 				So(tryjob.EVersion, ShouldEqual, originalEVersion+1)
@@ -166,7 +166,7 @@ func TestHandleTask(t *testing.T) {
 				mb.returns = []*returnValues{{Status_TRIGGERED, nil, nil}}
 				So(updater.handleTask(ctx, &UpdateTryjobTask{Id: int64(tryjob.ID)}), ShouldBeNil)
 				So(rn.notifiedRuns, ShouldHaveLength, 1)
-				So(rn.notifiedRuns[0], ShouldEqual, tryjob.TriggeredBy)
+				So(rn.notifiedRuns[0], ShouldEqual, tryjob.LaunchedBy)
 
 				tryjob = tryjob.ExternalID.MustCreateIfNotExists(ctx)
 				So(tryjob.EVersion, ShouldEqual, originalEVersion+1)

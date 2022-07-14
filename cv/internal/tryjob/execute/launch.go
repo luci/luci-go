@@ -272,7 +272,7 @@ func reconcileWithExisting(ctx context.Context, tryjobs []*tryjob.Tryjob, rid co
 			reconciled[i] = existing
 			if tj.ID != existing.ID {
 				switch {
-				case existing.TriggeredBy == rid:
+				case existing.LaunchedBy == rid:
 					// expected
 				case existing.ReusedBy.Index(rid) < 0:
 					existing.ReusedBy = append(existing.ReusedBy, rid)

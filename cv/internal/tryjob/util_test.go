@@ -56,7 +56,7 @@ func TestSaveTryjobs(t *testing.T) {
 					EVersion:         1,
 					EntityCreateTime: now,
 					EntityUpdateTime: now,
-					TriggeredBy:      runID,
+					LaunchedBy:       runID,
 				}
 				So(datastore.RunInTransaction(ctx, func(ctx context.Context) error {
 					return SaveTryjobs(ctx, []*Tryjob{tj}, notifyFn)
@@ -74,7 +74,7 @@ func TestSaveTryjobs(t *testing.T) {
 						EVersion:         1,
 						EntityCreateTime: now,
 						EntityUpdateTime: now,
-						TriggeredBy:      runID,
+						LaunchedBy:       runID,
 					}
 					So(datastore.RunInTransaction(ctx, func(ctx context.Context) error {
 						return SaveTryjobs(ctx, []*Tryjob{tj}, notifyFn)
@@ -94,7 +94,7 @@ func TestSaveTryjobs(t *testing.T) {
 						EVersion:         1,
 						EntityCreateTime: now,
 						EntityUpdateTime: now,
-						TriggeredBy:      runID,
+						LaunchedBy:       runID,
 					}
 					So(datastore.RunInTransaction(ctx, func(ctx context.Context) error {
 						return SaveTryjobs(ctx, []*Tryjob{tj}, notifyFn)

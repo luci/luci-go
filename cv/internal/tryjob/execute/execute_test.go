@@ -517,7 +517,7 @@ func TestExecutePlan(t *testing.T) {
 					CLPatchsets:      tryjob.CLPatchsets{tryjob.MakeCLPatchset(runCL.ID, gPatchset)},
 					Definition:       def,
 					Status:           tryjob.Status_ENDED,
-					TriggeredBy:      common.MakeRunID(lProject, now.Add(-2*time.Hour), 1, []byte("efgh")),
+					LaunchedBy:       common.MakeRunID(lProject, now.Add(-2*time.Hour), 1, []byte("efgh")),
 					Result:           result,
 				}
 				So(datastore.RunInTransaction(ctx, func(ctx context.Context) error {

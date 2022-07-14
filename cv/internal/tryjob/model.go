@@ -93,13 +93,13 @@ type Tryjob struct {
 	// It's used by the Run Manager.
 	Result *Result
 
-	// TriggeredBy is the Run that triggered this Tryjob.
+	// LaunchedBy is the Run that launches this Tryjob.
 	//
-	// May be unset if the Tryjob was not triggered by CV, in which case
-	// ReusedBy has at least one Run.
+	// May be unset if the Tryjob was not launched by CV (e.g. through Gerrit
+	// UI), in which case ReusedBy should have at least one Run.
 	//
 	// Indexed.
-	TriggeredBy common.RunID
+	LaunchedBy common.RunID
 
 	// ReusedBy are the Runs that are interested in the result of this Tryjob.
 	//
@@ -149,8 +149,8 @@ type tryjobMap struct {
 // T.LUCIProject() != P, until it has been verified with the tryjob backend
 // that P has access to T.
 func (t *Tryjob) LUCIProject() string {
-	if t.TriggeredBy != "" {
-		return t.TriggeredBy.LUCIProject()
+	if t.LaunchedBy != "" {
+		return t.LaunchedBy.LUCIProject()
 	}
 	if len(t.ReusedBy) == 0 {
 		panic("tryjob is not associated with any runs")
@@ -164,8 +164,8 @@ func (t *Tryjob) LUCIProject() string {
 // Runs reusing this tryjob (if any).
 func (t *Tryjob) AllWatchingRuns() common.RunIDs {
 	ret := make(common.RunIDs, 0, 1+len(t.ReusedBy))
-	if t.TriggeredBy != "" {
-		ret = append(ret, t.TriggeredBy)
+	if t.LaunchedBy != "" {
+		ret = append(ret, t.LaunchedBy)
 	}
 	return append(ret, t.ReusedBy...)
 }

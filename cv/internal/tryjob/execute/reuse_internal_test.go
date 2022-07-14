@@ -75,7 +75,7 @@ func TestFindReuseInCV(t *testing.T) {
 			ReuseKey:         reuseKey,
 			Definition:       defFoo,
 			Status:           tryjob.Status_ENDED,
-			TriggeredBy:      common.MakeRunID(lProject, now.Add(-2*time.Hour), 1, []byte("efgh")),
+			LaunchedBy:       common.MakeRunID(lProject, now.Add(-2*time.Hour), 1, []byte("efgh")),
 			Result: &tryjob.Result{
 				CreateTime: timestamppb.New(now.Add(-staleTryjobAge / 2)),
 				Backend: &tryjob.Result_Buildbucket_{
@@ -158,7 +158,7 @@ func TestFindReuseInCV(t *testing.T) {
 		})
 
 		Convey("Tryjob is from different project", func() {
-			tj.TriggeredBy = common.MakeRunID("anotherProj", now.Add(-2*time.Hour), 1, []byte("cool"))
+			tj.LaunchedBy = common.MakeRunID("anotherProj", now.Add(-2*time.Hour), 1, []byte("cool"))
 			So(datastore.Put(ctx, tj), ShouldBeNil)
 			result, err := w.findReuseInCV(ctx, []*tryjob.Definition{defFoo})
 			So(err, ShouldBeNil)

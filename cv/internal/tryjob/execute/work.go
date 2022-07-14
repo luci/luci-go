@@ -105,7 +105,7 @@ func (w *worker) makePendingTryjob(ctx context.Context, def *tryjob.Definition) 
 	tj := w.makeBaseTryjob(ctx)
 	tj.Definition = def
 	tj.Status = tryjob.Status_PENDING
-	tj.TriggeredBy = w.run.ID
+	tj.LaunchedBy = w.run.ID
 	return tj
 }
 
@@ -121,7 +121,7 @@ func (w *worker) start(ctx context.Context, definitions []*tryjob.Definition) ([
 		switch reuseTryjob, hasReuse := reuse[def]; {
 		case !hasReuse:
 			tryjobsToLaunch = append(tryjobsToLaunch, w.makePendingTryjob(ctx, def))
-		case reuseTryjob.TriggeredBy == w.run.ID && reuseTryjob.Status == tryjob.Status_PENDING:
+		case reuseTryjob.LaunchedBy == w.run.ID && reuseTryjob.Status == tryjob.Status_PENDING:
 			// This typically happens when a previous task created the Tryjob entity
 			// but failed to launch the Tryjob at the backend. Such Tryjob entity will
 			// be surfaced again when searching for reusable Tryjob within CV.
