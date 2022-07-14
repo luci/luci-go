@@ -1245,6 +1245,8 @@ func (s *Server) healthResponse(c context.Context) string {
 //
 // Basically srv.ListenAndServe with some testing helpers.
 func (s *Server) serveLoop(srv *http.Server) error {
+	// Make sure http.Request inherits our root context.
+	srv.BaseContext = func(net.Listener) context.Context { return s.Context }
 	// If not running tests, let http.Server bind the socket as usual.
 	if s.Options.testListeners == nil {
 		return srv.ListenAndServe()
@@ -1353,11 +1355,14 @@ var cloudTraceFormat = propagation.HTTPFormat{}
 
 // rootMiddleware prepares the per-request context.
 func (s *Server) rootMiddleware(c *router.Context, next router.Handler) {
-	started := clock.Now(s.Context)
+	// The request context is derived from s.Context (see serveLoop) and has
+	// various server systems injected into it already. Its only difference from
+	// s.Context is that http.Server cancels it when the client disconnects,
+	// which we want.
+	ctx := c.Request.Context()
 
 	// If running on GAE, initialize the per-request API tickets needed to make
 	// RPCs to the GAE service bridge.
-	ctx := s.Context
 	if s.Options.GAE {
 		ctx = gae.WithTickets(ctx, gae.RequestTickets(c.Request.Header))
 	}
@@ -1372,6 +1377,7 @@ func (s *Server) rootMiddleware(c *router.Context, next router.Handler) {
 	ctx, span := s.startRequestSpan(ctx, c.Request, healthCheck)
 
 	// This is used in waitUntilNotServing.
+	started := clock.Now(ctx)
 	if !healthCheck {
 		s.lastReqTime.Store(started)
 	}
@@ -1410,7 +1416,7 @@ func (s *Server) rootMiddleware(c *router.Context, next router.Handler) {
 			}
 			// Emit a warning if the health check is slow, this likely indicates
 			// high CPU load.
-			logging.Warningf(c.Context, "Health check is slow: %s > %s", latency, healthTimeLogThreshold)
+			logging.Warningf(ctx, "Health check is slow: %s > %s", latency, healthTimeLogThreshold)
 		}
 
 		// When running behind Envoy, log its request IDs to simplify debugging.
@@ -1496,7 +1502,10 @@ func (s *Server) rootMiddleware(c *router.Context, next router.Handler) {
 		}, annotateWithSpan))
 	}
 
-	c.Context = caching.WithRequestCache(ctx)
+	ctx = caching.WithRequestCache(ctx)
+
+	c.Context = ctx
+	c.Request = c.Request.WithContext(ctx)
 	next(c)
 }
 

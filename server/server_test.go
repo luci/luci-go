@@ -184,6 +184,30 @@ func TestServer(t *testing.T) {
 			So(err, ShouldBeNil)
 		})
 
+		Convey("Context cancellation on client timeout", func() {
+			cancelled := make(chan struct{})
+			srv.Routes.GET("/request", nil, func(c *router.Context) {
+				select {
+				case <-c.Context.Done():
+					close(cancelled)
+				case <-time.After(time.Minute):
+				}
+				http.Error(c.Writer, "This should basically be ignored", 500)
+			})
+			srv.ServeInBackground()
+
+			_, err := srv.GetMainWithTimeout("/request", nil, time.Second)
+			So(err, ShouldNotBeNil)
+
+			wasCancelled := false
+			select {
+			case <-cancelled:
+				wasCancelled = true
+			case <-time.After(time.Minute):
+			}
+			So(wasCancelled, ShouldBeTrue)
+		})
+
 		Convey("Warmup and cleanup callbacks", func() {
 			var warmups []string
 			var cleanups []string
@@ -716,23 +740,34 @@ func (s *testServer) StopBackgroundServing() error {
 // GetMain makes a blocking request to the main serving port, aborting it if
 // the server dies.
 func (s *testServer) GetMain(uri string, headers map[string]string) (string, error) {
-	return s.get(s.mainAddr+uri, headers)
+	return s.get(s.mainAddr+uri, headers, 0)
+}
+
+// GetMain makes a blocking request with timeout to the main serving port,
+// aborting it if the server dies.
+func (s *testServer) GetMainWithTimeout(uri string, headers map[string]string, timeout time.Duration) (string, error) {
+	return s.get(s.mainAddr+uri, headers, timeout)
 }
 
 // GetAdmin makes a blocking request to the admin port, aborting it if
 // the server dies.
 func (s *testServer) GetAdmin(uri string, headers map[string]string) (string, error) {
-	return s.get(s.adminAddr+uri, headers)
+	return s.get(s.adminAddr+uri, headers, 0)
 }
 
 // get makes a blocking request, aborting it if the server dies.
-func (s *testServer) get(uri string, headers map[string]string) (resp string, err error) {
+func (s *testServer) get(uri string, headers map[string]string, timeout time.Duration) (resp string, err error) {
 	done := make(chan struct{})
 	go func() {
 		defer close(done)
 		var req *http.Request
 		if req, err = http.NewRequest("GET", uri, nil); err != nil {
 			return
+		}
+		if timeout != 0 {
+			ctx, cancel := context.WithTimeout(context.Background(), timeout)
+			defer cancel()
+			req = req.WithContext(ctx)
 		}
 		for k, v := range headers {
 			req.Header.Set(k, v)
