@@ -117,7 +117,7 @@ func TestTaskHandler(t *testing.T) {
 			})
 			Convey("tryjob not triggered by cv", func() {
 				tj31 := putTryjob(ctx, 500, 2, tryjob.Status_TRIGGERED, 31, run.Status_CANCELLED, func(tj *tryjob.Tryjob) {
-					tj.TriggeredByCV = false
+					tj.TriggeredBy = ""
 				})
 				err := c.handleTask(ctx, &tryjob.CancelStaleTryjobsTask{
 					Clid:                     500,
@@ -174,7 +174,6 @@ func putTryjob(ctx context.Context, clid common.CLID, patchset int32, tjStatus t
 		EntityCreateTime: now,
 		EntityUpdateTime: now,
 		TriggeredBy:      r.ID,
-		TriggeredByCV:    true,
 		Definition:       &tryjob.Definition{},
 	}
 	if modify != nil {

@@ -90,7 +90,7 @@ func (c *Cancellator) handleTask(ctx context.Context, task *tryjob.CancelStaleTr
 	// will not appear in subsequent runs of the query, ensuring progress.
 
 	dsErr := datastore.Run(ctx, q, func(tj *tryjob.Tryjob) error {
-		if tj.IsEnded() || !tj.TriggeredByCV || tj.Definition.SkipStaleCheck {
+		if tj.IsEnded() || tj.TriggeredBy == "" || tj.Definition.SkipStaleCheck {
 			return nil
 		}
 		switch ended, err := c.allWatchingRunsEnded(ctx, tj); {

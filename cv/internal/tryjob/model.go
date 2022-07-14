@@ -85,12 +85,6 @@ type Tryjob struct {
 	// Indexed.
 	Status Status
 
-	// TriggeredByCV is true if it was triggered by CV.
-	//
-	// This is used for cancelation, since CV shouldn't cancel tryjobs it
-	// didn't trigger.
-	TriggeredByCV bool `gae:",noindex"`
-
 	// Result of the Tryjob.
 	//
 	// Must be set if Status is ENDED.
@@ -122,7 +116,7 @@ type Tryjob struct {
 	CLPatchsets CLPatchsets
 
 	// UntriggeredReason is the reason why LUCI CV doesn't trigger the Tryjob.
-	UntriggeredReason string
+	UntriggeredReason string `gae:",noindex"`
 }
 
 // tryjobMap is intended to quickly determine if a given ExternalID is
