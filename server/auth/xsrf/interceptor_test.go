@@ -16,6 +16,7 @@ package xsrf
 
 import (
 	"context"
+	"net"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -65,9 +66,11 @@ func TestInterceptor(t *testing.T) {
 		discovery.Enable(rpcSrv)
 
 		// Expose pRPC API via test HTTP server.
-		router := router.NewWithRootContext(ctx)
+		router := router.New()
 		rpcSrv.InstallHandlers(router, nil)
-		httpSrv := httptest.NewServer(router)
+		httpSrv := httptest.NewUnstartedServer(router)
+		httpSrv.Config.BaseContext = func(net.Listener) context.Context { return ctx }
+		httpSrv.Start()
 		defer httpSrv.Close()
 
 		// Create a discovery client targeting our test server.

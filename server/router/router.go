@@ -30,13 +30,15 @@ import (
 type Router struct {
 	hrouter    *httprouter.Router
 	middleware MiddlewareChain
-	rootCtx    context.Context
 
+	// BasePath is the root path to mount routes under.
 	BasePath string
 }
 
 // Context contains the context, response writer, request, and params shared
 // across Middleware and Handler functions.
+//
+// TODO: Remove Context in favor of Request.Context().
 type Context struct {
 	Context     context.Context
 	Writer      http.ResponseWriter
@@ -49,16 +51,9 @@ var _ http.Handler = (*Router)(nil)
 
 // New creates a Router.
 func New() *Router {
-	return NewWithRootContext(context.Background())
-}
-
-// NewWithRootContext creates a router whose request contexts all inherit from
-// the given context.
-func NewWithRootContext(root context.Context) *Router {
 	return &Router{
 		hrouter:    httprouter.New(),
 		middleware: NewMiddlewareChain(),
-		rootCtx:    root,
 		BasePath:   "/",
 	}
 }
@@ -74,13 +69,11 @@ func (r *Router) Use(mc MiddlewareChain) {
 // The new router copies middleware and configuration from the
 // router it derives from.
 func (r *Router) Subrouter(relativePath string) *Router {
-	newRouter := &Router{
+	return &Router{
 		hrouter:    r.hrouter,
 		middleware: r.middleware,
-		rootCtx:    r.rootCtx,
 		BasePath:   makeBasePath(r.BasePath, relativePath),
 	}
-	return newRouter
 }
 
 // GET is a shortcut for router.Handle("GET", path, mc, h).
@@ -167,24 +160,25 @@ func (r *Router) Static(prefix string, mc MiddlewareChain, root http.FileSystem)
 
 // adapt adapts given middleware chain and handler into a httprouter-style handle.
 func (r *Router) adapt(mc MiddlewareChain, h Handler, path string) httprouter.Handle {
-	return httprouter.Handle(func(rw http.ResponseWriter, req *http.Request, p httprouter.Params) {
+	return func(rw http.ResponseWriter, req *http.Request, p httprouter.Params) {
 		run(&Context{
-			Context:     r.rootCtx,
+			Context:     req.Context(),
 			Writer:      rw,
 			Request:     req,
 			Params:      p,
 			HandlerPath: path,
 		}, r.middleware, mc, h)
-	})
+	}
 }
 
 // makeBasePath combines the given base and relative path using "/".
 // The result is: "/"+base+"/"+relative. Consecutive "/" are collapsed
-// into a single "/". In addition, the following rules apply:
-//         - The "/" between base and relative exists only if either base has a
-//           trailing "/" or relative is not the empty string.
-//         - A trailing "/" is added to the result if relative has a trailing
-//           "/".
+// into a single "/".
+//
+// In addition, the following rules apply:
+//  - The "/" between base and relative exists only if either base has a
+//    trailing "/" or relative is not the empty string.
+//  - A trailing "/" is added to the result if relative has a trailing "/".
 func makeBasePath(base, relative string) string {
 	if !strings.HasSuffix(base, "/") && relative != "" {
 		base += "/"

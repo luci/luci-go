@@ -306,9 +306,10 @@ func (s *Server) Start(ctx context.Context) error {
 	}
 
 	// create an HTTP server with a pRPC service.
-	routes := router.NewWithRootContext(ctx)
+	routes := router.New()
 	routes.Use(router.NewMiddlewareChain(middleware.WithPanicCatcher))
 	s.httpSrv.Handler = routes
+	s.httpSrv.BaseContext = func(net.Listener) context.Context { return ctx }
 	ss, err := newSinkServer(ctx, s.cfg)
 	if err != nil {
 		return err

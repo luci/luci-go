@@ -58,11 +58,11 @@ func TestDispatcher(t *testing.T) {
 
 		d := &Dispatcher{DisableAuth: true}
 
-		srv := router.NewWithRootContext(ctx)
+		srv := router.New()
 		d.InstallCronRoutes(srv, "/crons")
 
 		call := func(path string) int {
-			req := httptest.NewRequest("GET", path, nil)
+			req := httptest.NewRequest("GET", path, nil).WithContext(ctx)
 			rec := httptest.NewRecorder()
 			srv.ServeHTTP(rec, req)
 			return rec.Result().StatusCode

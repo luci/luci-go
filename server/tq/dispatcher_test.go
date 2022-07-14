@@ -320,11 +320,11 @@ func TestPushHandler(t *testing.T) {
 			return
 		}
 
-		srv := router.NewWithRootContext(ctx)
+		srv := router.New()
 		d.InstallTasksRoutes(srv, "/pfx")
 
 		call := func(body string, header http.Header) int {
-			req := httptest.NewRequest("POST", "/pfx/ignored/part", strings.NewReader(body))
+			req := httptest.NewRequest("POST", "/pfx/ignored/part", strings.NewReader(body)).WithContext(ctx)
 			req.Header = header
 			rec := httptest.NewRecorder()
 			srv.ServeHTTP(rec, req)

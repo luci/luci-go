@@ -429,7 +429,7 @@ type openIDProviderFake struct {
 }
 
 func (f *openIDProviderFake) Init(ctx context.Context, c C) {
-	r := router.NewWithRootContext(ctx)
+	r := router.New()
 	r.GET("/discovery", nil, f.discoveryHandler)
 	r.GET("/jwks", nil, f.jwksHandler)
 	r.POST("/token", nil, f.tokenHandler)

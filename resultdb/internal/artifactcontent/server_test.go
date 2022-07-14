@@ -100,8 +100,6 @@ func TestServeContent(t *testing.T) {
 				return casReader, casReadErr
 			},
 		}
-		r := router.NewWithRootContext(ctx)
-		s.InstallHandlers(r)
 
 		ctx = auth.WithState(ctx, &authtest.FakeState{
 			Identity: identity.AnonymousIdentity,
