@@ -100,6 +100,7 @@ func New(
 			GFactory:   g,
 			TreeClient: tc,
 			Publisher:  pubsub.NewPublisher(n.TasksBinding.TQDispatcher, env),
+			Env:        env,
 		},
 	}
 	n.TasksBinding.ManageRun.AttachHandler(
