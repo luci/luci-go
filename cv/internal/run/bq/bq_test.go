@@ -201,6 +201,11 @@ func TestMakeAttempt(t *testing.T) {
 						{
 							Attempts: []*tryjob.ExecutionState_Execution_Attempt{
 								{
+									// tryjob not triggered so external id is missing.
+									ExternalId: "",
+									Status:     tryjob.Status_UNTRIGGERED,
+								},
+								{
 									ExternalId: string(tryjob.MustBuildbucketID(bbHost, gBuildID3)),
 									Status:     tryjob.Status_ENDED,
 								},

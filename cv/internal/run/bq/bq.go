@@ -257,6 +257,11 @@ func computeAttemptBuilds(ctx context.Context, r *run.Run) ([]*cvbqpb.Build, err
 		for i, execution := range r.Tryjobs.GetState().GetExecutions() {
 			definition := r.Tryjobs.GetState().GetRequirement().GetDefinitions()[i]
 			for _, executionAttempt := range execution.GetAttempts() {
+				if executionAttempt.GetExternalId() == "" {
+					// It's possible that CV fails to launch the tryjob against
+					// buildbucket and has missing external ID.
+					continue
+				}
 				host, buildID, err := tryjob.ExternalID(executionAttempt.GetExternalId()).ParseBuildbucketID()
 				if err != nil {
 					return nil, err
