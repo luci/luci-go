@@ -94,12 +94,10 @@ func testAuthReplicationState(ctx context.Context, rev int64) *AuthReplicationSt
 	}
 }
 
-func testAuthGroup(ctx context.Context, name string, members []string) *AuthGroup {
-	if members == nil {
-		members = []string{
-			fmt.Sprintf("user:%s-m1@example.com", name),
-			fmt.Sprintf("user:%s-m2@example.com", name),
-		}
+func testAuthGroup(ctx context.Context, name string) *AuthGroup {
+	members := []string{
+		fmt.Sprintf("user:%s-m1@example.com", name),
+		fmt.Sprintf("user:%s-m2@example.com", name),
 	}
 	return &AuthGroup{
 		Kind:                     "AuthGroup",
@@ -113,6 +111,25 @@ func testAuthGroup(ctx context.Context, name string, members []string) *AuthGrou
 		Owners:                   "owners-" + name,
 		CreatedTS:                testCreatedTS,
 		CreatedBy:                "user:test-creator@example.com",
+	}
+}
+
+// emptyAuthGroup creates a new AuthGroup, that owns itself, with no members.
+func emptyAuthGroup(ctx context.Context, name string) *AuthGroup {
+	return &AuthGroup{
+		Kind:   "AuthGroup",
+		ID:     name,
+		Parent: RootKey(ctx),
+		AuthVersionedEntityMixin: AuthVersionedEntityMixin{
+			ModifiedTS:    testModifiedTS,
+			ModifiedBy:    "user:test-modifier@example.com",
+			AuthDBRev:     1,
+			AuthDBPrevRev: 0,
+		},
+		Description: fmt.Sprintf("This is a test auth group %q.", name),
+		Owners:      name,
+		CreatedTS:   testCreatedTS,
+		CreatedBy:   "user:test-creator@example.com",
 	}
 }
 
@@ -264,10 +281,7 @@ func TestGetAuthGroup(t *testing.T) {
 	Convey("Testing GetAuthGroup", t, func() {
 		ctx := memory.Use(context.Background())
 
-		authGroup := testAuthGroup(ctx, "test-auth-group-1", []string{
-			"user:a@example.com",
-			"user:b@example.com",
-		})
+		authGroup := testAuthGroup(ctx, "test-auth-group-1")
 
 		_, err := GetAuthGroup(ctx, "test-auth-group-1")
 		So(err, ShouldEqual, datastore.ErrNoSuchEntity)
@@ -288,9 +302,9 @@ func TestGetAllAuthGroups(t *testing.T) {
 
 		// Out of order alphabetically by ID.
 		So(datastore.Put(ctx,
-			testAuthGroup(ctx, "test-auth-group-3", nil),
-			testAuthGroup(ctx, "test-auth-group-1", nil),
-			testAuthGroup(ctx, "test-auth-group-2", nil),
+			testAuthGroup(ctx, "test-auth-group-3"),
+			testAuthGroup(ctx, "test-auth-group-1"),
+			testAuthGroup(ctx, "test-auth-group-2"),
 		), ShouldBeNil)
 
 		actualAuthGroups, err := GetAllAuthGroups(ctx)
@@ -298,9 +312,9 @@ func TestGetAllAuthGroups(t *testing.T) {
 
 		// Returned in alphabetical order.
 		So(actualAuthGroups, ShouldResemble, []*AuthGroup{
-			testAuthGroup(ctx, "test-auth-group-1", nil),
-			testAuthGroup(ctx, "test-auth-group-2", nil),
-			testAuthGroup(ctx, "test-auth-group-3", nil),
+			testAuthGroup(ctx, "test-auth-group-1"),
+			testAuthGroup(ctx, "test-auth-group-2"),
+			testAuthGroup(ctx, "test-auth-group-3"),
 		})
 	})
 }
@@ -317,21 +331,21 @@ func TestCreateAuthGroup(t *testing.T) {
 		ctx, taskScheduler := tq.TestingContext(txndefer.FilterRDS(ctx), nil)
 
 		Convey("empty group name", func() {
-			group := testAuthGroup(ctx, "", nil)
+			group := testAuthGroup(ctx, "")
 
 			_, err := CreateAuthGroup(ctx, group)
 			So(err, ShouldEqual, ErrInvalidName)
 		})
 
 		Convey("invalid group name", func() {
-			group := testAuthGroup(ctx, "foo^", nil)
+			group := testAuthGroup(ctx, "foo^")
 
 			_, err := CreateAuthGroup(ctx, group)
 			So(err, ShouldEqual, ErrInvalidName)
 		})
 
 		Convey("external group name", func() {
-			group := testAuthGroup(ctx, "mdb/foo", nil)
+			group := testAuthGroup(ctx, "mdb/foo")
 
 			_, err := CreateAuthGroup(ctx, group)
 			So(err, ShouldEqual, ErrInvalidName)
@@ -339,17 +353,17 @@ func TestCreateAuthGroup(t *testing.T) {
 
 		Convey("group name that already exists", func() {
 			So(datastore.Put(ctx,
-				testAuthGroup(ctx, "foo", nil),
+				testAuthGroup(ctx, "foo"),
 			), ShouldBeNil)
 
-			group := testAuthGroup(ctx, "foo", nil)
+			group := testAuthGroup(ctx, "foo")
 
 			_, err := CreateAuthGroup(ctx, group)
 			So(err, ShouldEqual, ErrAlreadyExists)
 		})
 
 		Convey("invalid member identities", func() {
-			group := testAuthGroup(ctx, "foo", nil)
+			group := testAuthGroup(ctx, "foo")
 			group.Members = []string{"no-prefix@google.com"}
 
 			_, err := CreateAuthGroup(ctx, group)
@@ -358,7 +372,7 @@ func TestCreateAuthGroup(t *testing.T) {
 		})
 
 		Convey("invalid identity globs", func() {
-			group := testAuthGroup(ctx, "foo", nil)
+			group := testAuthGroup(ctx, "foo")
 			group.Globs = []string{"*@no-prefix.com"}
 
 			_, err := CreateAuthGroup(ctx, group)
@@ -367,7 +381,7 @@ func TestCreateAuthGroup(t *testing.T) {
 		})
 
 		Convey("all referenced groups must exist", func() {
-			group := testAuthGroup(ctx, "foo", nil)
+			group := testAuthGroup(ctx, "foo")
 			group.Owners = "bar"
 			group.Nested = []string{"baz", "qux"}
 
@@ -377,9 +391,8 @@ func TestCreateAuthGroup(t *testing.T) {
 		})
 
 		Convey("owner must exist", func() {
-			group := testAuthGroup(ctx, "foo", nil)
+			group := testAuthGroup(ctx, "foo")
 			group.Owners = "bar"
-			group.Nested = nil
 
 			_, err := CreateAuthGroup(ctx, group)
 			So(err, ShouldErrLike, "bar")
@@ -387,12 +400,11 @@ func TestCreateAuthGroup(t *testing.T) {
 
 		Convey("with empty owners uses 'administrators' group", func() {
 			So(datastore.Put(ctx,
-				testAuthGroup(ctx, AdminGroup, nil),
+				testAuthGroup(ctx, AdminGroup),
 			), ShouldBeNil)
 
-			group := testAuthGroup(ctx, "foo", nil)
+			group := emptyAuthGroup(ctx, "foo")
 			group.Owners = ""
-			group.Nested = nil
 
 			createdGroup, err := CreateAuthGroup(ctx, group)
 			So(err, ShouldBeNil)
@@ -400,9 +412,8 @@ func TestCreateAuthGroup(t *testing.T) {
 		})
 
 		Convey("group can own itself", func() {
-			group := testAuthGroup(ctx, "foo", nil)
+			group := emptyAuthGroup(ctx, "foo")
 			group.Owners = "foo"
-			group.Nested = nil
 
 			createdGroup, err := CreateAuthGroup(ctx, group)
 			So(err, ShouldBeNil)
@@ -410,9 +421,7 @@ func TestCreateAuthGroup(t *testing.T) {
 		})
 
 		Convey("successfully writes to datastore", func() {
-			group := testAuthGroup(ctx, "foo", nil)
-			group.Owners = "foo"
-			group.Nested = nil
+			group := emptyAuthGroup(ctx, "foo")
 
 			createdGroup, err := CreateAuthGroup(ctx, group)
 			So(err, ShouldBeNil)
@@ -448,9 +457,7 @@ func TestCreateAuthGroup(t *testing.T) {
 		Convey("updates AuthDB revision only on successful write", func() {
 			// Create a group.
 			{
-				group1 := testAuthGroup(ctx, "foo", nil)
-				group1.Owners = "foo"
-				group1.Nested = nil
+				group1 := emptyAuthGroup(ctx, "foo")
 
 				createdGroup1, err := CreateAuthGroup(ctx, group1)
 				So(err, ShouldBeNil)
@@ -469,9 +476,7 @@ func TestCreateAuthGroup(t *testing.T) {
 
 			// Create a second group.
 			{
-				group2 := testAuthGroup(ctx, "foo2", nil)
-				group2.Owners = "foo2"
-				group2.Nested = nil
+				group2 := emptyAuthGroup(ctx, "foo2")
 
 				createdGroup2, err := CreateAuthGroup(ctx, group2)
 				So(err, ShouldBeNil)
@@ -487,7 +492,7 @@ func TestCreateAuthGroup(t *testing.T) {
 
 			// Try to create another group the same as the second, which should fail.
 			{
-				_, err := CreateAuthGroup(ctx, testAuthGroup(ctx, "foo2", nil))
+				_, err := CreateAuthGroup(ctx, emptyAuthGroup(ctx, "foo2"))
 				So(err, ShouldBeError)
 
 				state3, err := GetReplicationState(ctx)
@@ -501,9 +506,7 @@ func TestCreateAuthGroup(t *testing.T) {
 		Convey("creates historical group entities", func() {
 			// Create a group.
 			{
-				group := testAuthGroup(ctx, "foo", nil)
-				group.Owners = "foo"
-				group.Nested = nil
+				group := emptyAuthGroup(ctx, "foo")
 
 				_, err := CreateAuthGroup(ctx, group)
 				So(err, ShouldBeNil)
@@ -536,9 +539,7 @@ func TestCreateAuthGroup(t *testing.T) {
 
 			// Create a second group.
 			{
-				group := testAuthGroup(ctx, "foo2", nil)
-				group.Owners = "foo2"
-				group.Nested = nil
+				group := emptyAuthGroup(ctx, "foo2")
 
 				_, err := CreateAuthGroup(ctx, group)
 				So(err, ShouldBeNil)
@@ -585,9 +586,8 @@ func TestUpdateAuthGroup(t *testing.T) {
 		ctx, taskScheduler := tq.TestingContext(txndefer.FilterRDS(ctx), nil)
 
 		// A test group to be put in Datastore for updating.
-		group := testAuthGroup(ctx, "foo", nil)
-		group.AuthDBRev = 1
-		group.AuthDBPrevRev = 0
+		group := emptyAuthGroup(ctx, "foo")
+		group.Owners = "owners-foo"
 
 		// Etag to use for the group, derived from the last-modified time.
 		etag := `W/"MjAyMS0wOC0xNlQxMjoyMDowMFo="`
@@ -666,7 +666,7 @@ func TestUpdateAuthGroup(t *testing.T) {
 		})
 
 		Convey("with empty owners uses 'administrators' group", func() {
-			So(datastore.Put(ctx, testAuthGroup(ctx, AdminGroup, nil)), ShouldBeNil)
+			So(datastore.Put(ctx, testAuthGroup(ctx, AdminGroup)), ShouldBeNil)
 			So(datastore.Put(ctx, group), ShouldBeNil)
 
 			group.Owners = ""
@@ -678,8 +678,8 @@ func TestUpdateAuthGroup(t *testing.T) {
 
 		Convey("successfully writes to datastore", func() {
 			So(datastore.Put(ctx, group), ShouldBeNil)
-			So(datastore.Put(ctx, testAuthGroup(ctx, "new-owner-group", nil)), ShouldBeNil)
-			So(datastore.Put(ctx, testAuthGroup(ctx, "new-nested-group", nil)), ShouldBeNil)
+			So(datastore.Put(ctx, emptyAuthGroup(ctx, "new-owner-group")), ShouldBeNil)
+			So(datastore.Put(ctx, emptyAuthGroup(ctx, "new-nested-group")), ShouldBeNil)
 
 			group.Description = "updated description"
 			group.Owners = "new-owner-group"
@@ -720,8 +720,8 @@ func TestUpdateAuthGroup(t *testing.T) {
 
 		Convey("updates AuthDB revision only on successful write", func() {
 			So(datastore.Put(ctx, group), ShouldBeNil)
-			So(datastore.Put(ctx, testAuthGroup(ctx, "new-owner-group", nil)), ShouldBeNil)
-			So(datastore.Put(ctx, testAuthGroup(ctx, "new-nested-group", nil)), ShouldBeNil)
+			So(datastore.Put(ctx, emptyAuthGroup(ctx, "new-owner-group")), ShouldBeNil)
+			So(datastore.Put(ctx, emptyAuthGroup(ctx, "new-nested-group")), ShouldBeNil)
 
 			// Update a group, should succeed and bump AuthDB revision.
 			group.Description = "updated description"
@@ -756,8 +756,8 @@ func TestUpdateAuthGroup(t *testing.T) {
 
 		Convey("creates historical group entities", func() {
 			So(datastore.Put(ctx, group), ShouldBeNil)
-			So(datastore.Put(ctx, testAuthGroup(ctx, "new-owner-group", nil)), ShouldBeNil)
-			So(datastore.Put(ctx, testAuthGroup(ctx, "new-nested-group", nil)), ShouldBeNil)
+			So(datastore.Put(ctx, emptyAuthGroup(ctx, "new-owner-group")), ShouldBeNil)
+			So(datastore.Put(ctx, emptyAuthGroup(ctx, "new-nested-group")), ShouldBeNil)
 
 			// Update a group, should succeed and bump AuthDB revision.
 			group.Description = "updated description"
@@ -794,6 +794,90 @@ func TestUpdateAuthGroup(t *testing.T) {
 				So(isPropIndexed(historicalEntity, k), ShouldBeFalse)
 			}
 		})
+
+		Convey("cyclic dependencies", func() {
+			// Use admin creds for simplicity.
+			ctx := auth.WithState(ctx, &authtest.FakeState{
+				Identity:       "user:someone@example.com",
+				IdentityGroups: []string{AdminGroup},
+			})
+
+			// Initial state is a tree with 4 groups like this:
+			//
+			//      A
+			//     / \
+			//    B1 B2
+			//   /
+			//  C
+			//
+			a := emptyAuthGroup(ctx, "A")
+			a.Nested = []string{"B1", "B2"}
+			b1 := emptyAuthGroup(ctx, "B1")
+			b1.Nested = []string{"C"}
+			b2 := emptyAuthGroup(ctx, "B2")
+			c := emptyAuthGroup(ctx, "C")
+			So(datastore.Put(ctx, []*AuthGroup{a, b1, b2, c}), ShouldBeNil)
+
+			Convey("self-reference", func() {
+				//   A
+				//  /
+				// A
+				a.Nested = []string{"A"}
+
+				_, err := UpdateAuthGroup(ctx, a, &fieldmaskpb.FieldMask{Paths: []string{"nested"}}, "")
+				So(err, ShouldErrLike, "groups can not have cyclic dependencies: A -> A.")
+			})
+
+			Convey("cycle of length 2", func() {
+				//   A
+				//  /
+				// B2
+				//  \
+				//   A
+				b2.Nested = []string{"A"}
+
+				_, err := UpdateAuthGroup(ctx, b2, &fieldmaskpb.FieldMask{Paths: []string{"nested"}}, "")
+				So(err, ShouldErrLike, "groups can not have cyclic dependencies: B2 -> A -> B2.")
+			})
+
+			Convey("cycle of length 3", func() {
+				//   A
+				//  /
+				// B1
+				//  \
+				//   C
+				//  /
+				// A
+				c.Nested = []string{"A"}
+
+				_, err := UpdateAuthGroup(ctx, c, &fieldmaskpb.FieldMask{Paths: []string{"nested"}}, "")
+				So(err, ShouldErrLike, "groups can not have cyclic dependencies: C -> A -> B1 -> C.")
+			})
+
+			Convey("cycle not at root", func() {
+				//   B1
+				//  /
+				// C
+				//  \
+				//   B1
+				c.Nested = []string{"B1"}
+
+				_, err := UpdateAuthGroup(ctx, c, &fieldmaskpb.FieldMask{Paths: []string{"nested"}}, "")
+				So(err, ShouldErrLike, "groups can not have cyclic dependencies: C -> B1 -> C.")
+			})
+
+			Convey("diamond shape", func() {
+				//      A
+				//     / \
+				//    B1 B2
+				//     \ /
+				//      C
+				b2.Nested = []string{"C"}
+
+				_, err := UpdateAuthGroup(ctx, b2, &fieldmaskpb.FieldMask{Paths: []string{"nested"}}, "")
+				So(err, ShouldBeNil)
+			})
+		})
 	})
 }
 
@@ -810,9 +894,8 @@ func TestDeleteAuthGroup(t *testing.T) {
 		ctx, taskScheduler := tq.TestingContext(txndefer.FilterRDS(ctx), nil)
 
 		// A test group to be put in Datastore for deletion.
-		group := testAuthGroup(ctx, "foo", nil)
+		group := testAuthGroup(ctx, "foo")
 		group.Owners = "foo"
-		group.Nested = nil
 		group.AuthDBRev = 0
 		group.AuthDBPrevRev = 0
 
@@ -847,7 +930,7 @@ func TestDeleteAuthGroup(t *testing.T) {
 		Convey("can't delete if group owns another group", func() {
 			So(datastore.Put(ctx, group), ShouldBeNil)
 
-			ownedGroup := testAuthGroup(ctx, "owned", nil)
+			ownedGroup := testAuthGroup(ctx, "owned")
 			ownedGroup.Owners = group.ID
 			So(datastore.Put(ctx, ownedGroup), ShouldBeNil)
 
@@ -859,7 +942,7 @@ func TestDeleteAuthGroup(t *testing.T) {
 		Convey("can't delete if group is nested by group", func() {
 			So(datastore.Put(ctx, group), ShouldBeNil)
 
-			nestingGroup := testAuthGroup(ctx, "nester", nil)
+			nestingGroup := testAuthGroup(ctx, "nester")
 			nestingGroup.Nested = []string{group.ID}
 			So(datastore.Put(ctx, nestingGroup), ShouldBeNil)
 
@@ -1077,7 +1160,7 @@ func TestProtoConversion(t *testing.T) {
 
 		So(AuthGroupFromProto(ctx, empty.ToProto(true)), ShouldResemble, empty)
 
-		g := testAuthGroup(ctx, "foo-group", nil)
+		g := testAuthGroup(ctx, "foo-group")
 		// Ignore the versioned entity mixin since this doesn't survive the proto conversion round trip.
 		g.AuthVersionedEntityMixin = AuthVersionedEntityMixin{}
 

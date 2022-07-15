@@ -379,6 +379,19 @@ func TestGroupsServer(t *testing.T) {
 			So(err, ShouldHaveGRPCStatus, codes.InvalidArgument)
 		})
 
+		Convey("Cyclic dependency", func() {
+			request := &rpcpb.UpdateGroupRequest{
+				Group: &rpcpb.AuthGroup{
+					Name:   "test-group",
+					Nested: []string{"test-group"},
+				},
+				UpdateMask: &fieldmaskpb.FieldMask{Paths: []string{"nested"}},
+			}
+
+			_, err := srv.UpdateGroup(ctx, request)
+			So(err, ShouldHaveGRPCStatus, codes.FailedPrecondition)
+		})
+
 		Convey("Permissions", func() {
 			request := &rpcpb.UpdateGroupRequest{
 				Group: &rpcpb.AuthGroup{

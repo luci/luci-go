@@ -324,6 +324,8 @@ var (
 	ErrConcurrentModification = stderrors.New("concurrent modification")
 	// ErrReferencedEntity is returned when an entity cannot be deleted because it is referenced elsewhere.
 	ErrReferencedEntity = stderrors.New("cannot delete referenced entity")
+	// ErrCyclicDependency is returned when an update would create a cyclic dependency.
+	ErrCyclicDependency = stderrors.New("circular dependency")
 )
 
 // RootKey gets the root key of the entity group with all AuthDB entities.
@@ -534,6 +536,101 @@ func checkGroupsExist(ctx context.Context, groups []string) error {
 	return nil
 }
 
+// indexOf checks whether or not a group in the provided slice has the given name.
+func indexOf(groups []*AuthGroup, name string) int {
+	for i, g := range groups {
+		if g.ID == name {
+			return i
+		}
+	}
+	return -1
+}
+
+// findGroupDependencyCycle looks for a dependency cycle between nested groups.
+// Returns the first such cycle as a list of group names, or a nil slice if
+// there is no such cycle.
+// It does a depth-first search starting from the specified group and fetching
+// all nested groups from Datastore as it goes.
+func findGroupDependencyCycle(ctx context.Context, group *AuthGroup) ([]string, error) {
+	// Cache of groups that have already been fetched from Datastore.
+	groups := map[string]*AuthGroup{group.ID: group}
+	// Set of groups that are completely explored (all subtree is traversed).
+	visited := stringset.Set{}
+	// Stack containing the groups currently being explored.
+	// If a cycle is detected, this will contain the cycle.
+	stack := []*AuthGroup{}
+
+	var visit func(group *AuthGroup) (bool, error)
+	visit = func(group *AuthGroup) (bool, error) {
+		// Load nested groups into the cache if they're not already there.
+		toFetch := make([]*AuthGroup, 0, len(group.Nested))
+		for _, name := range group.Nested {
+			if _, ok := groups[name]; !ok {
+				toFetch = append(toFetch, makeAuthGroup(ctx, name))
+			}
+		}
+		if err := datastore.Get(ctx, toFetch); err != nil {
+			return false, err
+		}
+		for _, group := range toFetch {
+			groups[group.ID] = group
+		}
+
+		// Push current group on to the stack.
+		stack = append(stack, group)
+		// Examine children.
+		for _, nested := range group.Nested {
+			nestedGroup, ok := groups[nested]
+			if !ok {
+				// This shouldn't happen, but don't crash just in case.
+				return false, errors.New(fmt.Sprintf("group %s not found in cache", nested))
+			}
+			// Cross edge. Can happen in diamond-like graph, not a cycle.
+			if visited.Has(nested) {
+				continue
+			}
+			// Back edge: group references its own ancestor -> cycle.
+			if i := indexOf(stack, nested); i > -1 {
+				// Add the duplicate group into the stack again before we exit,
+				// so it's clear what the cycle is.
+				stack = append(stack, stack[i])
+				return true, nil
+			}
+			// Explore subtree.
+			cycle, err := visit(nestedGroup)
+			if err != nil {
+				return false, err
+			}
+			if cycle {
+				return true, nil
+			}
+		}
+		// Pop current group off the stack.
+		stack = stack[:len(stack)-1]
+		visited.Add(group.ID)
+
+		return false, nil
+	}
+
+	cycle, err := visit(group)
+	if err != nil {
+		return nil, err
+	}
+	if cycle {
+		// If visit returned true, the stack should be non-empty.
+		if len(stack) == 0 {
+			panic(cycle)
+		}
+		names := make([]string, len(stack))
+		for i, g := range stack {
+			names[i] = g.ID
+		}
+		return names, nil
+	}
+
+	return nil, nil
+}
+
 // CreateAuthGroup creates a new AuthGroup and writes it to the datastore.
 // Only the following fields will be read from the input:
 // ID, Description, Owners, Members, Globs, Nested.
@@ -709,8 +806,6 @@ func UpdateAuthGroup(ctx context.Context, groupUpdate *AuthGroup, updateMask *fi
 			return errors.Annotate(ErrConcurrentModification, "group %q was updated by someone else", groupName).Err()
 		}
 
-		// TODO(jsca): Check for group dependency cycles.
-
 		// Update fields according to the mask.
 		for _, field := range updateMask.GetPaths() {
 			switch field {
@@ -726,6 +821,14 @@ func UpdateAuthGroup(ctx context.Context, groupUpdate *AuthGroup, updateMask *fi
 					return err
 				}
 				authGroup.Nested = groupUpdate.Nested
+
+				// Check for group dependency cycles given the new nested groups.
+				if cycle, err := findGroupDependencyCycle(ctx, authGroup); err != nil {
+					return err
+				} else if cycle != nil {
+					cycleStr := strings.Join(cycle, " -> ")
+					return errors.Annotate(ErrCyclicDependency, "groups can not have cyclic dependencies: %s.", cycleStr).Err()
+				}
 			case "description":
 				authGroup.Description = groupUpdate.Description
 			case "owners":

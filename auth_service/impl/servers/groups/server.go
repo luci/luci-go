@@ -102,6 +102,8 @@ func (*Server) UpdateGroup(ctx context.Context, request *rpcpb.UpdateGroupReques
 		return nil, status.Errorf(codes.InvalidArgument, "%s", err)
 	case errors.Is(err, model.ErrInvalidIdentity):
 		return nil, status.Errorf(codes.InvalidArgument, "%s", err)
+	case errors.Is(err, model.ErrCyclicDependency):
+		return nil, status.Errorf(codes.FailedPrecondition, "%s", err)
 	default:
 		return nil, status.Errorf(codes.Internal, "failed to update group %q: %s", request.GetGroup().GetName(), err)
 	}

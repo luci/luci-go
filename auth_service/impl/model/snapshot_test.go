@@ -42,8 +42,8 @@ func TestTakeSnapshot(t *testing.T) {
 		So(datastore.Put(ctx,
 			testAuthReplicationState(ctx, testAuthDBRev),
 			testAuthGlobalConfig(ctx),
-			testAuthGroup(ctx, "group-2", nil),
-			testAuthGroup(ctx, "group-1", nil),
+			testAuthGroup(ctx, "group-2"),
+			testAuthGroup(ctx, "group-1"),
 			testIPAllowlist(ctx, "ip-allowlist-2", nil),
 			testIPAllowlist(ctx, "ip-allowlist-1", nil),
 		), ShouldBeNil)
@@ -55,8 +55,8 @@ func TestTakeSnapshot(t *testing.T) {
 			ReplicationState: testAuthReplicationState(ctx, 12345),
 			GlobalConfig:     testAuthGlobalConfig(ctx),
 			Groups: []*AuthGroup{
-				testAuthGroup(ctx, "group-1", nil),
-				testAuthGroup(ctx, "group-2", nil),
+				testAuthGroup(ctx, "group-1"),
+				testAuthGroup(ctx, "group-2"),
 			},
 			IPAllowlists: []*AuthIPAllowlist{
 				testIPAllowlist(ctx, "ip-allowlist-1", nil),
