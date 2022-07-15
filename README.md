@@ -1,6 +1,7 @@
 # luci-go: LUCI services and tools in Go
 
-[![GoDoc](https://godoc.org/go.chromium.org/luci?status.svg)](https://godoc.org/go.chromium.org/luci)
+[![Go
+Reference](https://pkg.go.dev/badge/go.chromium.org/luci.svg)](https://pkg.go.dev/go.chromium.org/luci)
 
 
 ## Installing
@@ -15,6 +16,27 @@ then run:
     cd infra/go
     eval `./env.py`
     cd src/go.chromium.org/luci
+
+It is now possible to directly install tools with go install:
+
+    go install go.chromium.org/luci/auth/client/cmd/...@latest
+    go install go.chromium.org/luci/buildbucket/cmd/...@latest
+    go install go.chromium.org/luci/cipd/client/cmd/...@latest
+    go install go.chromium.org/luci/client/cmd/...@latest
+    go install go.chromium.org/luci/cv/cmd/...@latest
+    go install go.chromium.org/luci/gce/cmd/...@latest
+    go install go.chromium.org/luci/grpc/cmd/...@latest
+    go install go.chromium.org/luci/logdog/client/cmd/...@latest
+    go install go.chromium.org/luci/luci_notify/cmd/...@latest
+    go install go.chromium.org/luci/lucicfg/cmd/...@latest
+    go install go.chromium.org/luci/luciexe/legacy/cmd/...@latest
+    go install go.chromium.org/luci/mailer/cmd/...@latest
+    go install go.chromium.org/luci/mmutex/cmd/...@latest
+    go install go.chromium.org/luci/resultdb/cmd/...@latest
+    go install go.chromium.org/luci/server/cmd/...@latest
+    go install go.chromium.org/luci/swarming/cmd/...@latest
+    go install go.chromium.org/luci/tokenserver/cmd/...@latest
+    go install go.chromium.org/luci/tools/cmd/...@latest
 
 
 ## Contributing
