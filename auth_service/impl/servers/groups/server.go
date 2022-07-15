@@ -84,6 +84,29 @@ func (*Server) CreateGroup(ctx context.Context, request *rpcpb.CreateGroupReques
 	}
 }
 
+// UpdateGroup implements the corresponding RPC method.
+func (*Server) UpdateGroup(ctx context.Context, request *rpcpb.UpdateGroupRequest) (*rpcpb.AuthGroup, error) {
+	groupUpdate := model.AuthGroupFromProto(ctx, request.GetGroup())
+	switch updatedGroup, err := model.UpdateAuthGroup(ctx, groupUpdate, request.GetUpdateMask(), request.GetGroup().GetEtag()); {
+	case err == nil:
+		return updatedGroup.ToProto(true), nil
+	case errors.Is(err, datastore.ErrNoSuchEntity):
+		return nil, status.Errorf(codes.NotFound, "no such group %q", groupUpdate.ID)
+	case errors.Is(err, model.ErrPermissionDenied):
+		return nil, status.Errorf(codes.PermissionDenied, "%s does not have permission to update group %q", auth.CurrentIdentity(ctx), groupUpdate.ID)
+	case errors.Is(err, model.ErrConcurrentModification):
+		return nil, status.Error(codes.Aborted, err.Error())
+	case errors.Is(err, model.ErrInvalidReference):
+		return nil, status.Errorf(codes.InvalidArgument, "invalid group reference: %s", err)
+	case errors.Is(err, model.ErrInvalidArgument):
+		return nil, status.Errorf(codes.InvalidArgument, "%s", err)
+	case errors.Is(err, model.ErrInvalidIdentity):
+		return nil, status.Errorf(codes.InvalidArgument, "%s", err)
+	default:
+		return nil, status.Errorf(codes.Internal, "failed to update group %q: %s", request.GetGroup().GetName(), err)
+	}
+}
+
 // DeleteGroup implements the corresponding RPC method.
 func (*Server) DeleteGroup(ctx context.Context, request *rpcpb.DeleteGroupRequest) (*emptypb.Empty, error) {
 	name := request.GetName()
@@ -93,7 +116,7 @@ func (*Server) DeleteGroup(ctx context.Context, request *rpcpb.DeleteGroupReques
 	case errors.Is(err, datastore.ErrNoSuchEntity):
 		return nil, status.Errorf(codes.NotFound, "no such group %q", name)
 	case errors.Is(err, model.ErrPermissionDenied):
-		return nil, status.Errorf(codes.PermissionDenied, "%s has no permission to delete group %q", auth.CurrentIdentity(ctx), name)
+		return nil, status.Errorf(codes.PermissionDenied, "%s does not have permission to delete group %q", auth.CurrentIdentity(ctx), name)
 	case errors.Is(err, model.ErrConcurrentModification):
 		return nil, status.Error(codes.Aborted, err.Error())
 	case errors.Is(err, model.ErrReferencedEntity):

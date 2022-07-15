@@ -27,6 +27,8 @@ type GroupsClient interface {
 	GetGroup(ctx context.Context, in *GetGroupRequest, opts ...grpc.CallOption) (*AuthGroup, error)
 	// CreateGroup creates a new group.
 	CreateGroup(ctx context.Context, in *CreateGroupRequest, opts ...grpc.CallOption) (*AuthGroup, error)
+	// UpdateGroup updates an existing group.
+	UpdateGroup(ctx context.Context, in *UpdateGroupRequest, opts ...grpc.CallOption) (*AuthGroup, error)
 	// DeleteGroup deletes a group.
 	DeleteGroup(ctx context.Context, in *DeleteGroupRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	// GetSubgraph returns a Subgraph without information about groups that
@@ -70,6 +72,15 @@ func (c *groupsClient) CreateGroup(ctx context.Context, in *CreateGroupRequest, 
 	return out, nil
 }
 
+func (c *groupsClient) UpdateGroup(ctx context.Context, in *UpdateGroupRequest, opts ...grpc.CallOption) (*AuthGroup, error) {
+	out := new(AuthGroup)
+	err := c.cc.Invoke(ctx, "/auth.service.Groups/UpdateGroup", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *groupsClient) DeleteGroup(ctx context.Context, in *DeleteGroupRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
 	out := new(emptypb.Empty)
 	err := c.cc.Invoke(ctx, "/auth.service.Groups/DeleteGroup", in, out, opts...)
@@ -100,6 +111,8 @@ type GroupsServer interface {
 	GetGroup(context.Context, *GetGroupRequest) (*AuthGroup, error)
 	// CreateGroup creates a new group.
 	CreateGroup(context.Context, *CreateGroupRequest) (*AuthGroup, error)
+	// UpdateGroup updates an existing group.
+	UpdateGroup(context.Context, *UpdateGroupRequest) (*AuthGroup, error)
 	// DeleteGroup deletes a group.
 	DeleteGroup(context.Context, *DeleteGroupRequest) (*emptypb.Empty, error)
 	// GetSubgraph returns a Subgraph without information about groups that
@@ -121,6 +134,9 @@ func (UnimplementedGroupsServer) GetGroup(context.Context, *GetGroupRequest) (*A
 }
 func (UnimplementedGroupsServer) CreateGroup(context.Context, *CreateGroupRequest) (*AuthGroup, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method CreateGroup not implemented")
+}
+func (UnimplementedGroupsServer) UpdateGroup(context.Context, *UpdateGroupRequest) (*AuthGroup, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method UpdateGroup not implemented")
 }
 func (UnimplementedGroupsServer) DeleteGroup(context.Context, *DeleteGroupRequest) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method DeleteGroup not implemented")
@@ -195,6 +211,24 @@ func _Groups_CreateGroup_Handler(srv interface{}, ctx context.Context, dec func(
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Groups_UpdateGroup_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UpdateGroupRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(GroupsServer).UpdateGroup(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/auth.service.Groups/UpdateGroup",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(GroupsServer).UpdateGroup(ctx, req.(*UpdateGroupRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _Groups_DeleteGroup_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(DeleteGroupRequest)
 	if err := dec(in); err != nil {
@@ -249,6 +283,10 @@ var Groups_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "CreateGroup",
 			Handler:    _Groups_CreateGroup_Handler,
+		},
+		{
+			MethodName: "UpdateGroup",
+			Handler:    _Groups_UpdateGroup_Handler,
 		},
 		{
 			MethodName: "DeleteGroup",

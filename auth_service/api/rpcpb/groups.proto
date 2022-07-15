@@ -18,7 +18,9 @@ package auth.service;
 
 option go_package = "go.chromium.org/luci/auth_service/api/rpcpb";
 
+import "google/api/field_behavior.proto";
 import "google/protobuf/empty.proto";
+import "google/protobuf/field_mask.proto";
 import "google/protobuf/timestamp.proto";
 
 // Groups service contains methods to examine groups.
@@ -33,6 +35,9 @@ service Groups {
 
   // CreateGroup creates a new group.
   rpc CreateGroup(CreateGroupRequest) returns (AuthGroup);
+
+  // UpdateGroup updates an existing group.
+  rpc UpdateGroup(UpdateGroupRequest) returns (AuthGroup);
 
   // DeleteGroup deletes a group.
   rpc DeleteGroup(DeleteGroupRequest) returns (google.protobuf.Empty);
@@ -61,13 +66,24 @@ message CreateGroupRequest {
   // Details of the group to create. Not all fields will be written to the new
   // group: if the request specifies fields that should be automatically
   // generated (e.g. created/modified timestamps), these will be ignored.
-  AuthGroup group = 1;
+  AuthGroup group = 1 [ (google.api.field_behavior) = REQUIRED ];
+}
+
+// UpdateGroupRequest requests an update to an existing group.
+message UpdateGroupRequest {
+  // Details of the group to update. The group's 'name' field is used to
+  // identify the group to update.
+  AuthGroup group = 1 [ (google.api.field_behavior) = REQUIRED ];
+
+  // The list of fields to be updated.
+  google.protobuf.FieldMask update_mask = 2;
 }
 
 // DeleteGroupRequest requests the deletion of a group.
 message DeleteGroupRequest {
   // Name of the group to delete.
-  string name = 1;
+  string name = 1 [ (google.api.field_behavior) = REQUIRED ];
+
   // The current etag of the group.
   // If an etag is provided and does not match the current etag of the group,
   // deletion will be blocked and an ABORTED error will be returned.

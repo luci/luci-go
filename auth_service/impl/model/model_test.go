@@ -31,6 +31,7 @@ import (
 	"go.chromium.org/luci/server/auth/service/protocol"
 	"go.chromium.org/luci/server/tq"
 	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/types/known/fieldmaskpb"
 
 	. "github.com/smartystreets/goconvey/convey"
 	"go.chromium.org/luci/common/clock"
@@ -566,6 +567,231 @@ func TestCreateAuthGroup(t *testing.T) {
 				for k := range historicalEntity {
 					So(isPropIndexed(historicalEntity, k), ShouldBeFalse)
 				}
+			}
+		})
+	})
+}
+
+func TestUpdateAuthGroup(t *testing.T) {
+	t.Parallel()
+
+	Convey("UpdateAuthGroup", t, func() {
+		ctx := auth.WithState(memory.Use(context.Background()), &authtest.FakeState{
+			Identity:       "user:someone@example.com",
+			IdentityGroups: []string{"owners-foo"},
+		})
+		ctx = clock.Set(ctx, testclock.New(testCreatedTS))
+		ctx = info.SetImageVersion(ctx, "test-version")
+		ctx, taskScheduler := tq.TestingContext(txndefer.FilterRDS(ctx), nil)
+
+		// A test group to be put in Datastore for updating.
+		group := testAuthGroup(ctx, "foo", nil)
+		group.AuthDBRev = 1
+		group.AuthDBPrevRev = 0
+
+		// Etag to use for the group, derived from the last-modified time.
+		etag := `W/"MjAyMS0wOC0xNlQxMjoyMDowMFo="`
+
+		// Set current auth DB revision to 10.
+		So(datastore.Put(ctx, testAuthReplicationState(ctx, 10)), ShouldBeNil)
+
+		Convey("can't update if not an owner", func() {
+			ctx := auth.WithState(ctx, &authtest.FakeState{
+				Identity: "user:someone@example.com",
+			})
+			So(datastore.Put(ctx, group), ShouldBeNil)
+			_, err := UpdateAuthGroup(ctx, group, nil, etag)
+			So(err, ShouldEqual, ErrPermissionDenied)
+		})
+
+		Convey("can update if admin", func() {
+			ctx := auth.WithState(ctx, &authtest.FakeState{
+				Identity:       "user:someone@example.com",
+				IdentityGroups: []string{AdminGroup},
+			})
+			So(datastore.Put(ctx, group), ShouldBeNil)
+			_, err := UpdateAuthGroup(ctx, group, nil, etag)
+			So(err, ShouldBeNil)
+		})
+
+		Convey("can't delete if etag doesn't match", func() {
+			So(datastore.Put(ctx, group), ShouldBeNil)
+			_, err := UpdateAuthGroup(ctx, group, nil, "bad-etag")
+			So(err, ShouldErrLike, ErrConcurrentModification)
+		})
+
+		Convey("group name that doesn't exist", func() {
+			group.ID = "non-existent-group"
+			_, err := UpdateAuthGroup(ctx, group, nil, etag)
+			So(err, ShouldEqual, datastore.ErrNoSuchEntity)
+		})
+
+		Convey("invalid member identities", func() {
+			So(datastore.Put(ctx, group), ShouldBeNil)
+
+			group.Members = []string{"no-prefix@google.com"}
+
+			_, err := UpdateAuthGroup(ctx, group, &fieldmaskpb.FieldMask{Paths: []string{"members"}}, etag)
+			So(err, ShouldUnwrapTo, ErrInvalidIdentity)
+			So(err, ShouldErrLike, "bad identity string \"no-prefix@google.com\"")
+		})
+
+		Convey("invalid identity globs", func() {
+			So(datastore.Put(ctx, group), ShouldBeNil)
+
+			group.Globs = []string{"*@no-prefix.com"}
+
+			_, err := UpdateAuthGroup(ctx, group, &fieldmaskpb.FieldMask{Paths: []string{"globs"}}, etag)
+			So(err, ShouldUnwrapTo, ErrInvalidIdentity)
+			So(err, ShouldErrLike, "bad identity glob string \"*@no-prefix.com\"")
+		})
+
+		Convey("all nested groups must exist", func() {
+			So(datastore.Put(ctx, group), ShouldBeNil)
+
+			group.Nested = []string{"baz", "qux"}
+
+			_, err := UpdateAuthGroup(ctx, group, &fieldmaskpb.FieldMask{Paths: []string{"nested"}}, etag)
+			So(err, ShouldUnwrapTo, ErrInvalidReference)
+			So(err, ShouldErrLike, "some referenced groups don't exist")
+		})
+
+		Convey("owner must exist", func() {
+			So(datastore.Put(ctx, group), ShouldBeNil)
+
+			group.Owners = "bar"
+
+			_, err := UpdateAuthGroup(ctx, group, &fieldmaskpb.FieldMask{Paths: []string{"owners"}}, etag)
+			So(err, ShouldErrLike, "bar")
+		})
+
+		Convey("with empty owners uses 'administrators' group", func() {
+			So(datastore.Put(ctx, testAuthGroup(ctx, AdminGroup, nil)), ShouldBeNil)
+			So(datastore.Put(ctx, group), ShouldBeNil)
+
+			group.Owners = ""
+
+			updatedGroup, err := UpdateAuthGroup(ctx, group, &fieldmaskpb.FieldMask{Paths: []string{"owners"}}, etag)
+			So(err, ShouldBeNil)
+			So(updatedGroup.Owners, ShouldEqual, AdminGroup)
+		})
+
+		Convey("successfully writes to datastore", func() {
+			So(datastore.Put(ctx, group), ShouldBeNil)
+			So(datastore.Put(ctx, testAuthGroup(ctx, "new-owner-group", nil)), ShouldBeNil)
+			So(datastore.Put(ctx, testAuthGroup(ctx, "new-nested-group", nil)), ShouldBeNil)
+
+			group.Description = "updated description"
+			group.Owners = "new-owner-group"
+			group.Members = []string{"user:updated@example.com"}
+			group.Globs = []string{"user:*@updated.com"}
+			group.Nested = []string{"new-nested-group"}
+
+			updatedGroup, err := UpdateAuthGroup(ctx, group, nil, etag)
+			So(err, ShouldBeNil)
+			So(updatedGroup.ID, ShouldEqual, group.ID)
+			So(updatedGroup.Description, ShouldEqual, group.Description)
+			So(updatedGroup.Owners, ShouldEqual, group.Owners)
+			So(updatedGroup.Members, ShouldResemble, group.Members)
+			So(updatedGroup.Globs, ShouldResemble, group.Globs)
+			So(updatedGroup.Nested, ShouldResemble, group.Nested)
+			So(updatedGroup.CreatedBy, ShouldEqual, "user:test-creator@example.com")
+			So(updatedGroup.CreatedTS.Unix(), ShouldEqual, testCreatedTS.Unix())
+			So(updatedGroup.ModifiedBy, ShouldEqual, "user:someone@example.com")
+			So(updatedGroup.ModifiedTS.Unix(), ShouldEqual, testCreatedTS.Unix())
+			So(updatedGroup.AuthDBRev, ShouldEqual, 11)
+			So(updatedGroup.AuthDBPrevRev, ShouldEqual, 1)
+
+			fetchedGroup, err := GetAuthGroup(ctx, "foo")
+			So(err, ShouldBeNil)
+			So(fetchedGroup.ID, ShouldEqual, group.ID)
+			So(fetchedGroup.Description, ShouldEqual, group.Description)
+			So(fetchedGroup.Owners, ShouldEqual, group.Owners)
+			So(fetchedGroup.Members, ShouldResemble, group.Members)
+			So(fetchedGroup.Globs, ShouldResemble, group.Globs)
+			So(fetchedGroup.Nested, ShouldResemble, group.Nested)
+			So(fetchedGroup.CreatedBy, ShouldEqual, "user:test-creator@example.com")
+			So(fetchedGroup.CreatedTS.Unix(), ShouldEqual, testCreatedTS.Unix())
+			So(fetchedGroup.ModifiedBy, ShouldEqual, "user:someone@example.com")
+			So(fetchedGroup.ModifiedTS.Unix(), ShouldEqual, testCreatedTS.Unix())
+			So(fetchedGroup.AuthDBRev, ShouldEqual, 11)
+			So(fetchedGroup.AuthDBPrevRev, ShouldEqual, 1)
+		})
+
+		Convey("updates AuthDB revision only on successful write", func() {
+			So(datastore.Put(ctx, group), ShouldBeNil)
+			So(datastore.Put(ctx, testAuthGroup(ctx, "new-owner-group", nil)), ShouldBeNil)
+			So(datastore.Put(ctx, testAuthGroup(ctx, "new-nested-group", nil)), ShouldBeNil)
+
+			// Update a group, should succeed and bump AuthDB revision.
+			group.Description = "updated description"
+			group.Owners = "new-owner-group"
+			group.Members = []string{"user:updated@example.com"}
+			group.Globs = []string{"user:*@updated.com"}
+			group.Nested = []string{"new-nested-group"}
+
+			updatedGroup, err := UpdateAuthGroup(ctx, group, nil, etag)
+			So(err, ShouldBeNil)
+			So(updatedGroup.AuthDBRev, ShouldEqual, 11)
+			So(updatedGroup.AuthDBPrevRev, ShouldEqual, 1)
+
+			state, err := GetReplicationState(ctx)
+			So(err, ShouldBeNil)
+			So(state.AuthDBRev, ShouldEqual, 11)
+			tasks := taskScheduler.Tasks()
+			So(tasks, ShouldHaveLength, 1)
+			task := tasks[0]
+			So(task.Class, ShouldEqual, "process-change-task")
+			So(task.Payload, ShouldResembleProto, &taskspb.ProcessChangeTask{AuthDbRev: 11})
+
+			// Update a group, should fail (due to bad etag) and *not* bump AuthDB revision.
+			_, err = UpdateAuthGroup(ctx, group, nil, "bad-etag")
+			So(err, ShouldBeError)
+
+			state, err = GetReplicationState(ctx)
+			So(err, ShouldBeNil)
+			So(state.AuthDBRev, ShouldEqual, 11)
+			So(taskScheduler.Tasks(), ShouldHaveLength, 1)
+		})
+
+		Convey("creates historical group entities", func() {
+			So(datastore.Put(ctx, group), ShouldBeNil)
+			So(datastore.Put(ctx, testAuthGroup(ctx, "new-owner-group", nil)), ShouldBeNil)
+			So(datastore.Put(ctx, testAuthGroup(ctx, "new-nested-group", nil)), ShouldBeNil)
+
+			// Update a group, should succeed and bump AuthDB revision.
+			group.Description = "updated description"
+			group.Owners = "new-owner-group"
+			group.Members = []string{"user:updated@example.com"}
+			group.Globs = []string{"user:*@updated.com"}
+			group.Nested = []string{"new-nested-group"}
+
+			_, err := UpdateAuthGroup(ctx, group, nil, etag)
+			So(err, ShouldBeNil)
+
+			entities, err := getAllDatastoreEntities(ctx, "AuthGroupHistory", HistoricalRevisionKey(ctx, 11))
+			So(err, ShouldBeNil)
+			So(entities, ShouldHaveLength, 1)
+			historicalEntity := entities[0]
+			So(getDatastoreKey(historicalEntity).String(), ShouldEqual, "dev~app::/AuthGlobalConfig,\"root\"/Rev,11/AuthGroupHistory,\"foo\"")
+			So(getStringProp(historicalEntity, "description"), ShouldEqual, group.Description)
+			So(getStringProp(historicalEntity, "owners"), ShouldEqual, group.Owners)
+			So(getStringSliceProp(historicalEntity, "members"), ShouldResemble, group.Members)
+			So(getStringSliceProp(historicalEntity, "globs"), ShouldResemble, group.Globs)
+			So(getStringSliceProp(historicalEntity, "nested"), ShouldResemble, group.Nested)
+			So(getStringProp(historicalEntity, "created_by"), ShouldEqual, "user:test-creator@example.com")
+			So(getTimeProp(historicalEntity, "created_ts").Unix(), ShouldEqual, testCreatedTS.Unix())
+			So(getStringProp(historicalEntity, "modified_by"), ShouldEqual, "user:someone@example.com")
+			So(getTimeProp(historicalEntity, "modified_ts").Unix(), ShouldEqual, testCreatedTS.Unix())
+			So(getInt64Prop(historicalEntity, "auth_db_rev"), ShouldEqual, 11)
+			So(getProp(historicalEntity, "auth_db_prev_rev"), ShouldEqual, 1)
+			So(getBoolProp(historicalEntity, "auth_db_deleted"), ShouldBeFalse)
+			So(getStringProp(historicalEntity, "auth_db_change_comment"), ShouldEqual, "Go pRPC API")
+			So(getStringProp(historicalEntity, "auth_db_app_version"), ShouldEqual, "test-version")
+
+			// Check no properties are indexed.
+			for k := range historicalEntity {
+				So(isPropIndexed(historicalEntity, k), ShouldBeFalse)
 			}
 		})
 	})

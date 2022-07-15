@@ -24,6 +24,7 @@ import (
 	"strings"
 	"time"
 
+	"google.golang.org/protobuf/types/known/fieldmaskpb"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/auth/identity"
@@ -311,6 +312,8 @@ var (
 	// ErrPermissionDenied is returned when the user does not have permission for
 	// the requested entity operation.
 	ErrPermissionDenied = stderrors.New("permission denied")
+	// ErrInvalidArgument is a generic error returned when an argument is invalid.
+	ErrInvalidArgument = stderrors.New("invalid argument")
 	// ErrInvalidName is returned when a supplied entity name is invalid.
 	ErrInvalidName = stderrors.New("invalid entity name")
 	// ErrInvalidReference is returned when a referenced entity name is invalid.
@@ -505,6 +508,32 @@ func validateGlobs(globs []string) error {
 	return nil
 }
 
+// checkGroupsExist checks that groups with the given names exist in datastore.
+// Returns ErrInvalidReference if one or more of the groups do not exist.
+func checkGroupsExist(ctx context.Context, groups []string) error {
+	if len(groups) == 0 {
+		return nil
+	}
+	keys := make([]*AuthGroup, 0, len(groups))
+	for _, id := range groups {
+		keys = append(keys, makeAuthGroup(ctx, id))
+	}
+	refsExists, err := datastore.Exists(ctx, keys)
+	if err != nil {
+		return errors.Annotate(err, "failed to check existence of referenced groups").Err()
+	}
+	if !refsExists.All() {
+		missingRefs := []string{}
+		for i, r := range groups {
+			if !refsExists.Get(0, i) {
+				missingRefs = append(missingRefs, r)
+			}
+		}
+		return errors.Annotate(ErrInvalidReference, "some referenced groups don't exist: %s", strings.Join(missingRefs, ", ")).Err()
+	}
+	return nil
+}
+
 // CreateAuthGroup creates a new AuthGroup and writes it to the datastore.
 // Only the following fields will be read from the input:
 // ID, Description, Owners, Members, Globs, Nested.
@@ -552,24 +581,8 @@ func CreateAuthGroup(ctx context.Context, group *AuthGroup) (*AuthGroup, error) 
 		if newGroup.Owners != newGroup.ID {
 			toCheck = append(toCheck, newGroup.Owners)
 		}
-		if len(toCheck) > 0 {
-			keys := make([]*AuthGroup, 0, len(toCheck))
-			for _, id := range toCheck {
-				keys = append(keys, makeAuthGroup(ctx, id))
-			}
-			refsExists, err := datastore.Exists(ctx, keys)
-			if err != nil {
-				return errors.Annotate(err, "failed to check existence of referenced groups").Err()
-			}
-			if !refsExists.All() {
-				missingRefs := []string{}
-				for i, r := range toCheck {
-					if !refsExists.Get(0, i) {
-						missingRefs = append(missingRefs, r)
-					}
-				}
-				return errors.Annotate(ErrInvalidReference, "some referenced groups don't exist: %s", strings.Join(missingRefs, ", ")).Err()
-			}
+		if err := checkGroupsExist(ctx, toCheck); err != nil {
+			return err
 		}
 
 		creator := auth.CurrentIdentity(ctx)
@@ -631,13 +644,128 @@ func findReferencingGroups(ctx context.Context, groupName string) (stringset.Set
 	return names, nil
 }
 
+// UpdateAuthGroup updates the given auth group.
+// The ID of the AuthGroup is used to determine which group to update.
+// The field mask determines which fields of the AuthGroup will be updated.
+// If the field mask is nil, all fields will be updated.
+//
+// Possible errors:
+//  ErrInvalidArgument if the field mask provided is invalid.
+//  ErrInvalidIdentity if any identities or globs specified in the update are invalid.
+//  datastore.ErrNoSuchEntity if the specified group does not exist.
+//  ErrPermissionDenied if the caller is not allowed to update the group.
+//  ErrConcurrentModification if the provided etag is not up-to-date.
+//  Annotated error for other errors.
+func UpdateAuthGroup(ctx context.Context, groupUpdate *AuthGroup, updateMask *fieldmaskpb.FieldMask, etag string) (*AuthGroup, error) {
+	// A nil updateMask means we should update all fields.
+	// If updateable fields are added to AuthGroup in future, they need to be
+	// added to the below list.
+	if updateMask == nil {
+		updateMask = &fieldmaskpb.FieldMask{
+			Paths: []string{
+				"members",
+				"globs",
+				"nested",
+				"description",
+				"owners",
+			},
+		}
+	}
+
+	// Do some preliminary validation before entering the Datastore transaction.
+	for _, field := range updateMask.GetPaths() {
+		switch field {
+		case "members":
+			// Check that the supplied members are well-formed.
+			if err := validateIdentities(groupUpdate.Members); err != nil {
+				return nil, errors.Annotate(ErrInvalidIdentity, "%s", err).Err()
+			}
+		case "globs":
+			// Check that the supplied globs are well-formed.
+			if err := validateGlobs(groupUpdate.Globs); err != nil {
+				return nil, errors.Annotate(ErrInvalidIdentity, "%s", err).Err()
+			}
+		}
+	}
+
+	var authGroup *AuthGroup
+	err := runAuthDBChange(ctx, func(ctx context.Context, commitEntity commitAuthEntity) error {
+		var err error
+		// Fetch the group and check the user is an admin or a group owner.
+		authGroup, err = GetAuthGroup(ctx, groupUpdate.ID)
+		if err != nil {
+			return err
+		}
+		ok, err := auth.IsMember(ctx, AdminGroup, authGroup.Owners)
+		if err != nil {
+			return errors.Annotate(err, "permission check failed").Err()
+		}
+		if !ok {
+			return ErrPermissionDenied
+		}
+
+		// Verify etag (if provided) to protect against concurrent modifications.
+		if etag != "" && authGroup.etag() != etag {
+			return errors.Annotate(ErrConcurrentModification, "group %q was updated by someone else", groupName).Err()
+		}
+
+		// TODO(jsca): Check for group dependency cycles.
+
+		// Update fields according to the mask.
+		for _, field := range updateMask.GetPaths() {
+			switch field {
+			case "members":
+				authGroup.Members = groupUpdate.Members
+			case "globs":
+				authGroup.Globs = groupUpdate.Globs
+			case "nested":
+				// Check that any new groups being added exist.
+				addingNestedGroups := stringset.NewFromSlice(groupUpdate.Nested...)
+				addingNestedGroups.DelAll(authGroup.Nested)
+				if err := checkGroupsExist(ctx, addingNestedGroups.ToSlice()); err != nil {
+					return err
+				}
+				authGroup.Nested = groupUpdate.Nested
+			case "description":
+				authGroup.Description = groupUpdate.Description
+			case "owners":
+				newOwners := groupUpdate.Owners
+				if newOwners == authGroup.Owners {
+					continue
+				}
+				if newOwners == "" {
+					newOwners = AdminGroup
+				}
+				// Check the new owners group exists.
+				// No need to do this if the group owns itself.
+				if newOwners != authGroup.ID {
+					if err := checkGroupsExist(ctx, []string{newOwners}); err != nil {
+						return err
+					}
+				}
+				authGroup.Owners = newOwners
+			default:
+				return errors.Annotate(ErrInvalidArgument, "unknown field: %s", field).Err()
+			}
+		}
+
+		// Commit the update.
+		return commitEntity(authGroup, clock.Now(ctx).UTC(), auth.CurrentIdentity(ctx), false)
+	})
+	if err != nil {
+		return nil, err
+	}
+	return authGroup, nil
+}
+
 // DeleteAuthGroup deletes the specified auth group.
 //
-// Returns datastore.ErrNoSuchEntity if the specified group does not exist.
-// Returns ErrPermissionDenied if the caller is not allowed to delete the group.
-// Returns ErrConcurrentModification if the provided etag is not up-to-date.
-// Returns ErrReferencedEntity if the group is referenced by another group.
-// Returns an annotated error for other errors.
+// Possible errors:
+//  datastore.ErrNoSuchEntity if the specified group does not exist.
+//  ErrPermissionDenied if the caller is not allowed to delete the group.
+//  ErrConcurrentModification if the provided etag is not up-to-date.
+//  ErrReferencedEntity if the group is referenced by another group.
+//  Annotated error for other errors.
 func DeleteAuthGroup(ctx context.Context, groupName string, etag string) error {
 	// Disallow deletion of the admin group.
 	if groupName == AdminGroup {

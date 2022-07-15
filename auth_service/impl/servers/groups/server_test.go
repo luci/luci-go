@@ -31,6 +31,7 @@ import (
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
 	"go.chromium.org/luci/server/tq"
+	fieldmaskpb "google.golang.org/protobuf/types/known/fieldmaskpb"
 
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
@@ -294,6 +295,157 @@ func TestGroupsServer(t *testing.T) {
 			So(resp.Owners, ShouldEqual, "test-group")
 			So(resp.CreatedBy, ShouldEqual, "user:someone@example.com")
 			So(resp.CreatedTs.Seconds, ShouldNotBeZeroValue)
+		})
+	})
+
+	Convey("UpdateGroup RPC call", t, func() {
+		ctx := auth.WithState(memory.Use(context.Background()), &authtest.FakeState{
+			Identity:       "user:someone@example.com",
+			IdentityGroups: []string{"owners"},
+		})
+		ctx = info.SetImageVersion(ctx, "test-version")
+		ctx, _ = tq.TestingContext(txndefer.FilterRDS(ctx), nil)
+
+		So(datastore.Put(ctx,
+			&model.AuthGroup{
+				ID:     "test-group",
+				Parent: model.RootKey(ctx),
+				Members: []string{
+					"user:test-user-1",
+					"user:test-user-2",
+				},
+				Globs: []string{
+					"test-user-1@example.com",
+					"test-user-2@example.com",
+				},
+				Nested: []string{
+					"group/tester",
+				},
+				Description:              "This is a test group.",
+				Owners:                   "owners",
+				CreatedTS:                createdTime,
+				CreatedBy:                "user:test-user-1@example.com",
+				AuthVersionedEntityMixin: versionedEntity,
+			}), ShouldBeNil)
+
+		Convey("Group not found", func() {
+			request := &rpcpb.UpdateGroupRequest{
+				Group: &rpcpb.AuthGroup{
+					Name:        "non-existent-group",
+					Description: "update",
+				},
+			}
+
+			_, err := srv.UpdateGroup(ctx, request)
+			So(err, ShouldHaveGRPCStatus, codes.NotFound)
+		})
+
+		Convey("Invalid field mask", func() {
+			request := &rpcpb.UpdateGroupRequest{
+				Group: &rpcpb.AuthGroup{
+					Name:        "test-group",
+					Description: "update",
+				},
+				UpdateMask: &fieldmaskpb.FieldMask{Paths: []string{"bad"}},
+			}
+
+			_, err := srv.UpdateGroup(ctx, request)
+			So(err, ShouldHaveGRPCStatus, codes.InvalidArgument)
+		})
+
+		Convey("Set owners to group that doesn't exist", func() {
+			request := &rpcpb.UpdateGroupRequest{
+				Group: &rpcpb.AuthGroup{
+					Name:   "test-group",
+					Owners: "non-existent",
+				},
+				UpdateMask: &fieldmaskpb.FieldMask{Paths: []string{"owners"}},
+			}
+
+			_, err := srv.UpdateGroup(ctx, request)
+			So(err, ShouldHaveGRPCStatus, codes.InvalidArgument)
+		})
+
+		Convey("Set invalid member identity", func() {
+			request := &rpcpb.UpdateGroupRequest{
+				Group: &rpcpb.AuthGroup{
+					Name:    "test-group",
+					Members: []string{"bad"},
+				},
+				UpdateMask: &fieldmaskpb.FieldMask{Paths: []string{"members"}},
+			}
+
+			_, err := srv.UpdateGroup(ctx, request)
+			So(err, ShouldHaveGRPCStatus, codes.InvalidArgument)
+		})
+
+		Convey("Permissions", func() {
+			request := &rpcpb.UpdateGroupRequest{
+				Group: &rpcpb.AuthGroup{
+					Name:        "test-group",
+					Description: "update",
+				},
+				UpdateMask: &fieldmaskpb.FieldMask{Paths: []string{"description"}},
+			}
+			Convey("Anonymous is denied", func() {
+				ctx := auth.WithState(ctx, &authtest.FakeState{})
+				_, err := srv.UpdateGroup(ctx, request)
+				So(err, ShouldHaveGRPCStatus, codes.PermissionDenied)
+			})
+
+			Convey("Normal user is denied", func() {
+				ctx := auth.WithState(ctx, &authtest.FakeState{
+					Identity: "user:someone@example.com",
+				})
+				_, err := srv.UpdateGroup(ctx, request)
+				So(err, ShouldHaveGRPCStatus, codes.PermissionDenied)
+			})
+
+			Convey("Group owner succeeds", func() {
+				ctx := auth.WithState(ctx, &authtest.FakeState{
+					Identity:       "user:someone@example.com",
+					IdentityGroups: []string{"owners"},
+				})
+				_, err := srv.UpdateGroup(ctx, request)
+				So(err, ShouldBeNil)
+			})
+
+			Convey("Admin succeeds", func() {
+				ctx := auth.WithState(ctx, &authtest.FakeState{
+					Identity:       "user:someone@example.com",
+					IdentityGroups: []string{model.AdminGroup},
+				})
+				_, err := srv.UpdateGroup(ctx, request)
+				So(err, ShouldBeNil)
+			})
+		})
+
+		Convey("Etags", func() {
+			request := &rpcpb.UpdateGroupRequest{
+				Group: &rpcpb.AuthGroup{
+					Name:        "test-group",
+					Description: "update",
+				},
+				UpdateMask: &fieldmaskpb.FieldMask{Paths: []string{"description"}},
+			}
+
+			Convey("Incorrect etag is aborted", func() {
+				request.Group.Etag = "blah"
+				_, err := srv.UpdateGroup(ctx, request)
+				So(err, ShouldHaveGRPCStatus, codes.Aborted)
+			})
+
+			Convey("Empty etag succeeds", func() {
+				request.Group.Etag = ""
+				_, err := srv.UpdateGroup(ctx, request)
+				So(err, ShouldBeNil)
+			})
+
+			Convey("Correct etag succeeds if present", func() {
+				request.Group.Etag = etag
+				_, err := srv.UpdateGroup(ctx, request)
+				So(err, ShouldBeNil)
+			})
 		})
 	})
 
