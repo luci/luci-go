@@ -15,17 +15,32 @@
 package realms
 
 import (
-	"sort"
 	"strings"
 	"sync"
 
-	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
 )
 
 var (
 	mu    sync.RWMutex
-	perms = stringset.New(0)
+	perms = map[string]PermissionFlags{}
+)
+
+// PermissionFlags describe how a registered permission is going to be used in
+// the current process.
+//
+// These are purely process-local flags. It is possible for the same single
+// permission to be defined with different flags in different processes.
+type PermissionFlags uint8
+
+const (
+	// UsedInQueryRealms indicates the permission will be used with QueryRealms.
+	//
+	// It instructs the runtime to build an in-memory index to speed up the query.
+	// This flag is necessary for QueryRealms function to work. It implies some
+	// performance and memory costs and should be used only with permissions that
+	// are going to be passed to QueryRealms.
+	UsedInQueryRealms PermissionFlags = 1 << iota
 )
 
 // Permission is a symbol that has form "<service>.<subject>.<verb>", which
@@ -53,10 +68,23 @@ func (p Permission) String() string {
 	return p.name
 }
 
+// AddFlags appends given flags to a registered permission.
+//
+// Intended to be called during init() time, but may be called later too.
+//
+// Permissions are usually defined in shared packages used by multiple services.
+// Flags that makes sense for one service do not always make sense for another.
+// For that reason RegisterPermission and AddFlags are two separate functions.
+func (p Permission) AddFlags(flags PermissionFlags) {
+	mu.Lock()
+	defer mu.Unlock()
+	perms[p.name] |= flags
+}
+
 // clearPermissions removes all registered permissions (for tests).
 func clearPermissions() {
 	mu.Lock()
-	perms = stringset.New(0)
+	perms = map[string]PermissionFlags{}
 	mu.Unlock()
 }
 
@@ -72,7 +100,7 @@ func RegisterPermission(name string) Permission {
 	if err := ValidatePermissionName(name); err != nil {
 		panic(err)
 	}
-	perms.Add(name)
+	perms[name] |= 0
 	return Permission{name: name}
 }
 
@@ -84,7 +112,7 @@ func GetPermissions(names ...string) ([]Permission, error) {
 	mu.RLock()
 	var err error
 	for _, name := range names {
-		if !perms.Has(name) {
+		if _, ok := perms[name]; !ok {
 			err = errors.Reason("permission not registered: %q", name).Err()
 			break
 		}
@@ -102,18 +130,15 @@ func GetPermissions(names ...string) ([]Permission, error) {
 	return perms, nil
 }
 
-// RegisteredPermissions returns a snapshot of all registered permissions.
-//
-// Permissions in the slice are ordered by their name.
-func RegisteredPermissions() []Permission {
+// RegisteredPermissions returns a snapshot of all registered permissions along
+// with their flags.
+func RegisteredPermissions() map[Permission]PermissionFlags {
 	mu.RLock()
-	all := make([]Permission, 0, perms.Len())
-	perms.Iter(func(name string) bool {
-		all = append(all, Permission{name: name})
-		return true
-	})
-	mu.RUnlock()
-	sort.Slice(all, func(i, j int) bool { return all[i].name < all[j].name })
+	defer mu.RUnlock()
+	all := make(map[Permission]PermissionFlags, len(perms))
+	for name, flags := range perms {
+		all[Permission{name: name}] = flags
+	}
 	return all
 }
 
