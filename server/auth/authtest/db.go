@@ -256,6 +256,11 @@ func (db *FakeDB) HasPermission(ctx context.Context, id identity.Identity, perm 
 	return false, nil
 }
 
+// QueryRealms is part of authdb.DB interface.
+func (db *FakeDB) QueryRealms(ctx context.Context, id identity.Identity, perm realms.Permission, project string, attrs realms.Attrs) ([]string, error) {
+	return nil, fmt.Errorf("QueryRealms is not implemented yet")
+}
+
 // IsAllowedOAuthClientID is part of authdb.DB interface.
 func (db *FakeDB) IsAllowedOAuthClientID(ctx context.Context, email, clientID string) (bool, error) {
 	return true, nil

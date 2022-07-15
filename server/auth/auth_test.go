@@ -384,6 +384,10 @@ func (db *fakeDB) HasPermission(ctx context.Context, id identity.Identity, perm 
 	return false, errors.New("fakeDB: HasPermission is not implemented")
 }
 
+func (db *fakeDB) QueryRealms(ctx context.Context, id identity.Identity, perm realms.Permission, project string, attrs realms.Attrs) ([]string, error) {
+	return nil, errors.New("fakeDB: QueryRealms is not implemented")
+}
+
 func (db *fakeDB) GetCertificates(ctx context.Context, id identity.Identity) (*signing.PublicCertificates, error) {
 	return nil, errors.New("fakeDB: GetCertificates is not implemented")
 }

@@ -229,6 +229,31 @@ func (dr HasPermissionDryRun) Execute(ctx context.Context, perm realms.Permissio
 	}
 }
 
+// QueryRealms returns a list of realms where the current caller has the given
+// permission.
+//
+// If `project` is not empty, restricts the check only to the realms in this
+// project, otherwise checks all realms across all projects. Either way, the
+// returned realm names have form `<some-project>:<some-realm>`. The list is
+// returned in some arbitrary order.
+//
+// Semantically it is equivalent to visiting all explicitly defined realms
+// (plus "<project>:@root" and "<project>:@legacy") in the requested project or
+// all projects, and calling HasPermission(perm, realm, attr) for each of them.
+//
+// The permission `perm` should be flagged in the process with UsedInQueryRealms
+// flag, which lets the runtime know it must prepare indexes for the
+// corresponding QueryRealms call.
+//
+// Returns an error only if the check itself failed due to a misconfiguration
+// or transient issues. This should usually result in an Internal error.
+func QueryRealms(ctx context.Context, id identity.Identity, perm realms.Permission, project string, attrs realms.Attrs) ([]string, error) {
+	if s := GetState(ctx); s != nil {
+		return s.DB().QueryRealms(ctx, s.User().Identity, perm, project, attrs)
+	}
+	return nil, ErrNotConfigured
+}
+
 // ShouldEnforceRealmACL is true if the service should enforce the realm's ACLs.
 //
 // Based on `enforce_in_service` realm data. Exists temporarily during the

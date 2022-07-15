@@ -269,6 +269,13 @@ func (db *SnapshotDB) HasPermission(ctx context.Context, id identity.Identity, p
 	return false, nil
 }
 
+// QueryRealms returns a list of realms where the identity has the given
+// permission.
+func (db *SnapshotDB) QueryRealms(ctx context.Context, id identity.Identity, perm realms.Permission, project string, attrs realms.Attrs) ([]string, error) {
+	// TODO
+	return nil, errors.Reason("QueryRealms is not implemented yet").Err()
+}
+
 // GetCertificates returns a bundle with certificates of a trusted signer.
 //
 // Currently only the Token Server is a trusted signer.

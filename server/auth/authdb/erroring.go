@@ -63,6 +63,13 @@ func (db ErroringDB) HasPermission(ctx context.Context, id identity.Identity, pe
 	return false, db.Error
 }
 
+// QueryRealms returns a list of realms where the identity has the given
+// permission.
+func (db ErroringDB) QueryRealms(ctx context.Context, id identity.Identity, perm realms.Permission, project string, attrs realms.Attrs) ([]string, error) {
+	logging.Errorf(ctx, "%s", db.Error)
+	return nil, db.Error
+}
+
 // GetCertificates returns a bundle with certificates of a trusted signer.
 func (db ErroringDB) GetCertificates(ctx context.Context, id identity.Identity) (*signing.PublicCertificates, error) {
 	logging.Errorf(ctx, "%s", db.Error)

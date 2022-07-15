@@ -68,6 +68,11 @@ func (db UnconfiguredDB) HasPermission(ctx context.Context, id identity.Identity
 	return false, db.Error
 }
 
+func (db UnconfiguredDB) QueryRealms(ctx context.Context, id identity.Identity, perm realms.Permission, project string, attrs realms.Attrs) ([]string, error) {
+	db.log(ctx, "QueryRealms")
+	return nil, db.Error
+}
+
 func (db UnconfiguredDB) GetCertificates(ctx context.Context, id identity.Identity) (*signing.PublicCertificates, error) {
 	db.log(ctx, "GetCertificates")
 	return nil, db.Error

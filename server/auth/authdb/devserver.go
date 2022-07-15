@@ -59,6 +59,10 @@ func (DevServerDB) HasPermission(ctx context.Context, id identity.Identity, perm
 	return id.Kind() != identity.Anonymous, nil
 }
 
+func (DevServerDB) QueryRealms(ctx context.Context, id identity.Identity, perm realms.Permission, project string, attrs realms.Attrs) ([]string, error) {
+	return nil, errNotImplementedInDev
+}
+
 func (DevServerDB) GetCertificates(ctx context.Context, id identity.Identity) (*signing.PublicCertificates, error) {
 	return nil, errNotImplementedInDev
 }
