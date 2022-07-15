@@ -27,7 +27,7 @@ type Signer interface {
 	// signature using the currently active signing key.
 	//
 	// Returns the signature and name of the key used.
-	SignBytes(c context.Context, blob []byte) (keyName string, signature []byte, err error)
+	SignBytes(ctx context.Context, blob []byte) (keyName string, signature []byte, err error)
 
 	// Certificates returns a bundle with public certificates for all active keys.
 	//
@@ -36,7 +36,7 @@ type Signer interface {
 	// PublicCertificates.
 	//
 	// Do not modify return value, it may be shared by many callers.
-	Certificates(c context.Context) (*PublicCertificates, error)
+	Certificates(ctx context.Context) (*PublicCertificates, error)
 
 	// ServiceInfo returns information about the current service.
 	//
@@ -44,5 +44,5 @@ type Signer interface {
 	// signing private key).
 	//
 	// Do not modify return value, it may be shared by many callers.
-	ServiceInfo(c context.Context) (*ServiceInfo, error)
+	ServiceInfo(ctx context.Context) (*ServiceInfo, error)
 }

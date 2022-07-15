@@ -53,21 +53,21 @@ var xsrfToken = tokens.TokenKind{
 // <input type="hidden" name="xsrf_token" value="{{.XsrfToken}}">.
 //
 // Later WithTokenCheck will grab it from there and verify its validity.
-func Token(c context.Context) (string, error) {
-	return xsrfToken.Generate(c, state(c), nil, 0)
+func Token(ctx context.Context) (string, error) {
+	return xsrfToken.Generate(ctx, state(ctx), nil, 0)
 }
 
 // Check returns nil if XSRF token is valid.
-func Check(c context.Context, tok string) error {
-	_, err := xsrfToken.Validate(c, tok, state(c))
+func Check(ctx context.Context, tok string) error {
+	_, err := xsrfToken.Validate(ctx, tok, state(ctx))
 	return err
 }
 
 // TokenField generates "<input type="hidden" ...>" field with the token.
 //
 // It can be put into HTML forms directly. Panics on errors.
-func TokenField(c context.Context) template.HTML {
-	tok, err := Token(c)
+func TokenField(ctx context.Context) template.HTML {
+	tok, err := Token(ctx)
 	if err != nil {
 		panic(err)
 	}
@@ -99,13 +99,13 @@ func WithTokenCheck(c *router.Context, next router.Handler) {
 
 // state must return exact same value when generating and verifying token for
 // the verification to succeed.
-func state(c context.Context) []byte {
-	return []byte(auth.CurrentUser(c).Identity)
+func state(ctx context.Context) []byte {
+	return []byte(auth.CurrentUser(ctx).Identity)
 }
 
 // replyError sends error response and logs it.
-func replyError(c context.Context, rw http.ResponseWriter, code int, msg string, args ...interface{}) {
+func replyError(ctx context.Context, rw http.ResponseWriter, code int, msg string, args ...interface{}) {
 	text := fmt.Sprintf(msg, args...)
-	logging.Errorf(c, "xsrf: %s", text)
+	logging.Errorf(ctx, "xsrf: %s", text)
 	http.Error(rw, text, code)
 }

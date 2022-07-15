@@ -90,28 +90,28 @@ func (m *CookieAuthMethod) InstallHandlers(r *router.Router, base router.Middlew
 // Warmup prepares local caches. It's optional.
 //
 // Implements auth.Warmable.
-func (m *CookieAuthMethod) Warmup(c context.Context) (err error) {
-	cfg, err := FetchOpenIDSettings(c)
+func (m *CookieAuthMethod) Warmup(ctx context.Context) (err error) {
+	cfg, err := FetchOpenIDSettings(ctx)
 	if err != nil {
 		return
 	}
 	if cfg.DiscoveryURL != "" {
-		_, err = openid.FetchDiscoveryDoc(c, cfg.DiscoveryURL)
+		_, err = openid.FetchDiscoveryDoc(ctx, cfg.DiscoveryURL)
 	} else {
-		logging.Infof(c, "Skipping OpenID warmup, not configured")
+		logging.Infof(ctx, "Skipping OpenID warmup, not configured")
 	}
 	return
 }
 
 // Authenticate extracts peer's identity from the incoming request. It is part
 // of auth.Method interface.
-func (m *CookieAuthMethod) Authenticate(c context.Context, r *http.Request) (*auth.User, auth.Session, error) {
+func (m *CookieAuthMethod) Authenticate(ctx context.Context, r *http.Request) (*auth.User, auth.Session, error) {
 	if m.SessionStore == nil {
 		return nil, nil, ErrNotConfigured
 	}
 
 	// Grab session ID from the cookie.
-	sid, err := decodeSessionCookie(c, r)
+	sid, err := decodeSessionCookie(ctx, r)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -120,25 +120,25 @@ func (m *CookieAuthMethod) Authenticate(c context.Context, r *http.Request) (*au
 	}
 
 	// Grab session (with user information) from the store.
-	session, err := m.SessionStore.GetSession(c, sid)
+	session, err := m.SessionStore.GetSession(ctx, sid)
 	if err != nil {
 		return nil, nil, err
 	}
 	if session == nil {
-		(logging.Fields{"sid": sid}).Warningf(c, "The session cookie references unknown session")
+		(logging.Fields{"sid": sid}).Warningf(ctx, "The session cookie references unknown session")
 		return nil, nil, nil
 	}
 	(logging.Fields{
 		"sid":   sid,
 		"email": session.User.Email,
-	}).Debugf(c, "Fetched the session")
+	}).Debugf(ctx, "Fetched the session")
 	return &session.User, nil, nil
 }
 
 // LoginURL returns a URL that, when visited, prompts the user to sign in,
 // then redirects the user to the URL specified by dest. It is part of
 // auth.UsersAPI interface.
-func (m *CookieAuthMethod) LoginURL(c context.Context, dest string) (string, error) {
+func (m *CookieAuthMethod) LoginURL(ctx context.Context, dest string) (string, error) {
 	if m.SessionStore == nil {
 		return "", ErrNotConfigured
 	}
@@ -148,7 +148,7 @@ func (m *CookieAuthMethod) LoginURL(c context.Context, dest string) (string, err
 // LogoutURL returns a URL that, when visited, signs the user out,
 // then redirects the user to the URL specified by dest. It is part of
 // auth.UsersAPI interface.
-func (m *CookieAuthMethod) LogoutURL(c context.Context, dest string) (string, error) {
+func (m *CookieAuthMethod) LogoutURL(ctx context.Context, dest string) (string, error) {
 	if m.SessionStore == nil {
 		return "", ErrNotConfigured
 	}
@@ -389,12 +389,12 @@ func removeCookie(rw http.ResponseWriter, r *http.Request, cookie string) {
 
 // replyError logs the error and replies with HTTP 500 (on transient errors) or
 // HTTP 400 on fatal errors (that can happen only on bad requests).
-func replyError(c context.Context, rw http.ResponseWriter, err error, msg string, args ...interface{}) {
+func replyError(ctx context.Context, rw http.ResponseWriter, err error, msg string, args ...interface{}) {
 	code := http.StatusBadRequest
 	if transient.Tag.In(err) {
 		code = http.StatusInternalServerError
 	}
 	msg = fmt.Sprintf(msg, args...)
-	logging.Errorf(c, "HTTP %d: %s", code, msg)
+	logging.Errorf(ctx, "HTTP %d: %s", code, msg)
 	http.Error(rw, msg, code)
 }

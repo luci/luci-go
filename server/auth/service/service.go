@@ -54,9 +54,9 @@ type Notification struct {
 }
 
 // Acknowledge tells PubSub to stop redelivering this notification.
-func (n *Notification) Acknowledge(c context.Context) error {
+func (n *Notification) Acknowledge(ctx context.Context) error {
 	if n.service != nil { // may be nil if Notification is generated in tests
-		return n.service.ackMessages(c, n.subscription, n.ackIDs)
+		return n.service.ackMessages(ctx, n.subscription, n.ackIDs)
 	}
 	return nil
 }
@@ -123,7 +123,7 @@ func (s *AuthService) oauthScopes() []string {
 //
 // This works only if the caller is in "auth-trusted-services" group. As soon
 // as the caller is removed from this group, the access is revoked.
-func (s *AuthService) RequestAccess(c context.Context) (*AuthDBAccess, error) {
+func (s *AuthService) RequestAccess(ctx context.Context) (*AuthDBAccess, error) {
 	// See appengine/auth_service/handlers_frontend.py.
 	var response struct {
 		Topic string `json:"topic"`
@@ -138,7 +138,7 @@ func (s *AuthService) RequestAccess(c context.Context) (*AuthDBAccess, error) {
 		Body:   map[string]string{},
 		Out:    &response,
 	}
-	if err := req.Do(c); err != nil {
+	if err := req.Do(ctx); err != nil {
 		return nil, err
 	}
 	return &AuthDBAccess{
@@ -152,7 +152,7 @@ func (s *AuthService) RequestAccess(c context.Context) (*AuthDBAccess, error) {
 // subscription name e.g "projects/<projectid>/subscriptions/<subid>". Name of
 // the topic is fetched from the auth service. Returns nil if such subscription
 // already exists.
-func (s *AuthService) EnsureSubscription(c context.Context, subscription, pushURL string) error {
+func (s *AuthService) EnsureSubscription(ctx context.Context, subscription, pushURL string) error {
 	// Subscription already exists?
 	var existing struct {
 		Error struct {
@@ -168,7 +168,7 @@ func (s *AuthService) EnsureSubscription(c context.Context, subscription, pushUR
 		Scopes: s.oauthScopes(),
 		Out:    &existing,
 	}
-	err := req.Do(c)
+	err := req.Do(ctx)
 	if err != nil && existing.Error.Code != 404 {
 		return err
 	}
@@ -176,7 +176,7 @@ func (s *AuthService) EnsureSubscription(c context.Context, subscription, pushUR
 	// Create a new subscription if existing is missing.
 	if err != nil {
 		// Make sure caller has access to the PubSub topic.
-		access, err := s.RequestAccess(c)
+		access, err := s.RequestAccess(ctx)
 		if err != nil {
 			return err
 		}
@@ -197,7 +197,7 @@ func (s *AuthService) EnsureSubscription(c context.Context, subscription, pushUR
 			Scopes: s.oauthScopes(),
 			Body:   &config,
 		}
-		return req.Do(c)
+		return req.Do(ctx)
 	}
 
 	// Is existing subscription configured correctly already?
@@ -219,11 +219,11 @@ func (s *AuthService) EnsureSubscription(c context.Context, subscription, pushUR
 		Scopes: s.oauthScopes(),
 		Body:   &request,
 	}
-	return req.Do(c)
+	return req.Do(ctx)
 }
 
 // DeleteSubscription removes PubSub subscription if it exists.
-func (s *AuthService) DeleteSubscription(c context.Context, subscription string) error {
+func (s *AuthService) DeleteSubscription(ctx context.Context, subscription string) error {
 	var reply struct {
 		Error struct {
 			Code int `json:"code"`
@@ -235,7 +235,7 @@ func (s *AuthService) DeleteSubscription(c context.Context, subscription string)
 		Scopes: s.oauthScopes(),
 		Out:    &reply,
 	}
-	if err := req.Do(c); err != nil && reply.Error.Code != 404 {
+	if err := req.Do(ctx); err != nil && reply.Error.Code != 404 {
 		return err
 	}
 	return nil
@@ -245,7 +245,7 @@ func (s *AuthService) DeleteSubscription(c context.Context, subscription string)
 // previously by EnsureSubscription), authenticates them, and converts
 // them into Notification object. Returns (nil, nil) if no pending messages.
 // Does not wait for messages to arrive.
-func (s *AuthService) PullPubSub(c context.Context, subscription string) (*Notification, error) {
+func (s *AuthService) PullPubSub(ctx context.Context, subscription string) (*Notification, error) {
 	request := struct {
 		ReturnImmediately bool `json:"returnImmediately"`
 		MaxMessages       int  `json:"maxMessages"`
@@ -262,17 +262,17 @@ func (s *AuthService) PullPubSub(c context.Context, subscription string) (*Notif
 		Body:   &request,
 		Out:    &response,
 	}
-	if err := req.Do(c); err != nil {
+	if err := req.Do(ctx); err != nil {
 		return nil, err
 	}
 	if len(response.ReceivedMessages) == 0 {
 		return nil, nil
 	}
 
-	logging.Infof(c, "Received PubSub notification: %d", len(response.ReceivedMessages))
+	logging.Infof(ctx, "Received PubSub notification: %d", len(response.ReceivedMessages))
 
 	// Grab certs to verify signatures on PubSub messages.
-	certs, err := signing.FetchCertificatesFromLUCIService(c, s.URL)
+	certs, err := signing.FetchCertificatesFromLUCIService(ctx, s.URL)
 	if err != nil {
 		return nil, err
 	}
@@ -287,7 +287,7 @@ func (s *AuthService) PullPubSub(c context.Context, subscription string) (*Notif
 		}
 		notify, err := s.decodeMessage(&msg, certs)
 		if err != nil {
-			logging.Warningf(c, "Bad signature on message %s - %s", msg.Message.MessageID, err)
+			logging.Warningf(ctx, "Bad signature on message %s - %s", msg.Message.MessageID, err)
 			continue
 		}
 		if notify.GetRevision().GetAuthDbRev() > maxRev {
@@ -298,14 +298,14 @@ func (s *AuthService) PullPubSub(c context.Context, subscription string) (*Notif
 	// All message are invalid and skipped? Try to acknowledge them to remove
 	// them from the queue, but don't error if it fails.
 	if maxRev == -1 {
-		err := s.ackMessages(c, subscription, ackIDs)
+		err := s.ackMessages(ctx, subscription, ackIDs)
 		if err != nil {
-			logging.Warningf(c, "Failed to ack some PubSub messages (%v) - %s", ackIDs, err)
+			logging.Warningf(ctx, "Failed to ack some PubSub messages (%v) - %s", ackIDs, err)
 		}
 		return nil, nil
 	}
 
-	logging.Infof(c, "Auth service notifies us that the most recent AuthDB revision is %d", maxRev)
+	logging.Infof(ctx, "Auth service notifies us that the most recent AuthDB revision is %d", maxRev)
 	return &Notification{
 		Revision:     maxRev,
 		service:      s,
@@ -318,23 +318,23 @@ func (s *AuthService) PullPubSub(c context.Context, subscription string) (*Notif
 // the entire body of the push HTTP request. Invalid messages are silently
 // skipped by returning nil error (to avoid redelivery). The error is still
 // logged though.
-func (s *AuthService) ProcessPubSubPush(c context.Context, body []byte) (*Notification, error) {
+func (s *AuthService) ProcessPubSubPush(ctx context.Context, body []byte) (*Notification, error) {
 	msg := pubSubMessage{}
 	if err := json.Unmarshal(body, &msg); err != nil {
-		logging.Errorf(c, "auth: bad PubSub notification, not JSON - %s", err)
+		logging.Errorf(ctx, "auth: bad PubSub notification, not JSON - %s", err)
 		return nil, nil
 	}
 
 	// It's fine to return error here. Certificate fetch can fail due to bad
 	// connectivity and we need a retry.
-	certs, err := signing.FetchCertificatesFromLUCIService(c, s.URL)
+	certs, err := signing.FetchCertificatesFromLUCIService(ctx, s.URL)
 	if err != nil {
 		return nil, err
 	}
 
 	notify, err := s.decodeMessage(&msg, certs)
 	if err != nil {
-		logging.Errorf(c, "auth: bad PubSub notification - %s", err)
+		logging.Errorf(ctx, "auth: bad PubSub notification - %s", err)
 		return nil, nil
 	}
 
@@ -385,7 +385,7 @@ func (s *AuthService) decodeMessage(m *pubSubMessage, certs *signing.PublicCerti
 }
 
 // ackMessages acknowledges processing of pubsub messages.
-func (s *AuthService) ackMessages(c context.Context, subscription string, ackIDs []string) error {
+func (s *AuthService) ackMessages(ctx context.Context, subscription string, ackIDs []string) error {
 	if len(ackIDs) == 0 {
 		return nil
 	}
@@ -398,12 +398,12 @@ func (s *AuthService) ackMessages(c context.Context, subscription string, ackIDs
 		Scopes: s.oauthScopes(),
 		Body:   &request,
 	}
-	return req.Do(c)
+	return req.Do(ctx)
 }
 
 // GetLatestSnapshotRevision fetches revision number of the latest AuthDB
 // snapshot.
-func (s *AuthService) GetLatestSnapshotRevision(c context.Context) (int64, error) {
+func (s *AuthService) GetLatestSnapshotRevision(ctx context.Context) (int64, error) {
 	var out struct {
 		Snapshot struct {
 			Rev int64 `json:"auth_db_rev"`
@@ -415,7 +415,7 @@ func (s *AuthService) GetLatestSnapshotRevision(c context.Context) (int64, error
 		Scopes: s.oauthScopes(),
 		Out:    &out,
 	}
-	if err := req.Do(c); err != nil {
+	if err := req.Do(ctx); err != nil {
 		return 0, err
 	}
 	return out.Snapshot.Rev, nil
@@ -423,7 +423,7 @@ func (s *AuthService) GetLatestSnapshotRevision(c context.Context) (int64, error
 
 // GetSnapshot fetches AuthDB snapshot at given revision, unpacks and
 // validates it.
-func (s *AuthService) GetSnapshot(c context.Context, rev int64) (*Snapshot, error) {
+func (s *AuthService) GetSnapshot(ctx context.Context, rev int64) (*Snapshot, error) {
 	// Fetch.
 	var out struct {
 		Snapshot struct {
@@ -439,7 +439,7 @@ func (s *AuthService) GetSnapshot(c context.Context, rev int64) (*Snapshot, erro
 		Scopes: s.oauthScopes(),
 		Out:    &out,
 	}
-	if err := req.Do(c); err != nil {
+	if err := req.Do(ctx); err != nil {
 		return nil, err
 	}
 	if out.Snapshot.Rev != rev {
@@ -483,16 +483,16 @@ func (s *AuthService) GetSnapshot(c context.Context, rev int64) (*Snapshot, erro
 
 	// Log some stats.
 	logging.Infof(
-		c, "auth: fetched AuthDB snapshot at rev %d (inflated size is %.1f Kb, deflated size is %.1f Kb)",
+		ctx, "auth: fetched AuthDB snapshot at rev %d (inflated size is %.1f Kb, deflated size is %.1f Kb)",
 		rev, float32(len(blob.Bytes()))/1024, float32(len(deflated))/1024)
 	logging.Infof(
-		c, "auth: AuthDB snapshot generated by %s (using components.auth v%s)",
+		ctx, "auth: AuthDB snapshot generated by %s (using components.auth v%s)",
 		revMsg.GetPrimaryId(), msg.GetAuthCodeVersion())
 
 	// Validate AuthDB by constructing SnapshotDB from it (with validation).
 	authDB := msg.GetAuthDb()
 	if authDB == nil {
-		return nil, fmt.Errorf("auth: 'auth_db' field is missing in proto message (%v)", msg)
+		return nil, fmt.Errorf("auth: 'auth_db' field is missing in proto message (%v)", &msg)
 	}
 	if _, err := authdb.NewSnapshotDB(authDB, s.URL, rev, true); err != nil {
 		return nil, err

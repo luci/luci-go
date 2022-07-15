@@ -40,8 +40,8 @@ var sessionCookieToken = tokens.TokenKind{
 
 // makeSessionCookie takes a session ID and makes a signed cookie that can be
 // put in a response.
-func makeSessionCookie(c context.Context, sid string, secure bool) (*http.Cookie, error) {
-	tok, err := sessionCookieToken.Generate(c, nil, map[string]string{"sid": sid}, 0)
+func makeSessionCookie(ctx context.Context, sid string, secure bool) (*http.Cookie, error) {
+	tok, err := sessionCookieToken.Generate(ctx, nil, map[string]string{"sid": sid}, 0)
 	if err != nil {
 		return nil, err
 	}
@@ -54,7 +54,7 @@ func makeSessionCookie(c context.Context, sid string, secure bool) (*http.Cookie
 		Path:     "/",
 		Secure:   secure,
 		HttpOnly: true, // no access from Javascript
-		Expires:  clock.Now(c).Add(exp),
+		Expires:  clock.Now(ctx).Add(exp),
 		MaxAge:   int(exp / time.Second),
 	}, nil
 }
@@ -62,20 +62,20 @@ func makeSessionCookie(c context.Context, sid string, secure bool) (*http.Cookie
 // decodeSessionCookie takes an incoming request and returns a session ID stored
 // in a session cookie, or "" if not there, invalid or expired. Returns errors
 // on transient errors only.
-func decodeSessionCookie(c context.Context, r *http.Request) (string, error) {
+func decodeSessionCookie(ctx context.Context, r *http.Request) (string, error) {
 	cookie, err := r.Cookie(sessionCookieName)
 	if err != nil {
 		return "", nil // no such cookie
 	}
-	payload, err := sessionCookieToken.Validate(c, cookie.Value, nil)
+	payload, err := sessionCookieToken.Validate(ctx, cookie.Value, nil)
 	switch {
 	case transient.Tag.In(err):
 		return "", err
 	case err != nil:
-		logging.Warningf(c, "Failed to decode session cookie %q: %s", cookie.Value, err)
+		logging.Warningf(ctx, "Failed to decode session cookie %q: %s", cookie.Value, err)
 		return "", nil
 	case payload["sid"] == "":
-		logging.Warningf(c, "No 'sid' key in cookie payload %v", payload)
+		logging.Warningf(ctx, "No 'sid' key in cookie payload %v", payload)
 		return "", nil
 	}
 	return payload["sid"], nil

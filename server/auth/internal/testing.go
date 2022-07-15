@@ -28,8 +28,8 @@ var testTransportKey = "testTransport"
 type TestTransportCallback func(r *http.Request, body string) (code int, response string)
 
 // WithTestTransport puts a testing transport in the context to use for fetches.
-func WithTestTransport(c context.Context, cb TestTransportCallback) context.Context {
-	return context.WithValue(c, &testTransportKey, &testTransport{cb: cb})
+func WithTestTransport(ctx context.Context, cb TestTransportCallback) context.Context {
+	return context.WithValue(ctx, &testTransportKey, &testTransport{cb: cb})
 }
 
 type testTransport struct {

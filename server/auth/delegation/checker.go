@@ -68,7 +68,7 @@ type CertificatesProvider interface {
 	// Returns (nil, nil) if the given signer is not trusted.
 	//
 	// Returns errors (usually transient) if the bundle can't be fetched.
-	GetCertificates(c context.Context, id identity.Identity) (*signing.PublicCertificates, error)
+	GetCertificates(ctx context.Context, id identity.Identity) (*signing.PublicCertificates, error)
 }
 
 // GroupsChecker is accepted by 'CheckToken', it is implemented by authdb.DB.
@@ -77,7 +77,7 @@ type GroupsChecker interface {
 	//
 	// Unknown groups are considered empty. May return errors if underlying
 	// datastore has issues.
-	IsMember(c context.Context, id identity.Identity, groups []string) (bool, error)
+	IsMember(ctx context.Context, id identity.Identity, groups []string) (bool, error)
 }
 
 // CheckTokenParams is passed to CheckToken.
@@ -95,32 +95,32 @@ type CheckTokenParams struct {
 // token).
 //
 // May return transient errors.
-func CheckToken(c context.Context, params CheckTokenParams) (_ identity.Identity, err error) {
-	c, span := trace.StartSpan(c, "go.chromium.org/luci/server/auth/delegation.CheckToken")
+func CheckToken(ctx context.Context, params CheckTokenParams) (_ identity.Identity, err error) {
+	ctx, span := trace.StartSpan(ctx, "go.chromium.org/luci/server/auth/delegation.CheckToken")
 	defer func() { span.End(err) }()
 
 	// base64-encoded token -> DelegationToken proto (with signed serialized
 	// subtoken).
 	tok, err := deserializeToken(params.Token)
 	if err != nil {
-		logging.Warningf(c, "auth: Failed to deserialize delegation token - %s", err)
+		logging.Warningf(ctx, "auth: Failed to deserialize delegation token - %s", err)
 		return "", ErrMalformedDelegationToken
 	}
 
 	// Signed serialized subtoken -> Subtoken proto.
-	subtoken, err := unsealToken(c, tok, params.CertificatesProvider)
+	subtoken, err := unsealToken(ctx, tok, params.CertificatesProvider)
 	if err != nil {
 		if transient.Tag.In(err) {
-			logging.Warningf(c, "auth: Transient error when checking delegation token signature - %s", err)
+			logging.Warningf(ctx, "auth: Transient error when checking delegation token signature - %s", err)
 			return "", err
 		}
-		logging.Warningf(c, "auth: Failed to check delegation token signature - %s", err)
+		logging.Warningf(ctx, "auth: Failed to check delegation token signature - %s", err)
 		return "", ErrUnsignedDelegationToken
 	}
 
 	// Validate all constrains encoded in the token and derive the delegated
 	// identity.
-	return checkSubtoken(c, subtoken, &params)
+	return checkSubtoken(ctx, subtoken, &params)
 }
 
 // deserializeToken deserializes DelegationToken proto message.
@@ -142,13 +142,13 @@ func deserializeToken(token string) (*messages.DelegationToken, error) {
 // unsealToken verifies token's signature and deserializes the subtoken.
 //
 // May return transient errors.
-func unsealToken(c context.Context, tok *messages.DelegationToken, certsProvider CertificatesProvider) (*messages.Subtoken, error) {
+func unsealToken(ctx context.Context, tok *messages.DelegationToken, certsProvider CertificatesProvider) (*messages.Subtoken, error) {
 	// Grab the public keys of the service that signed the token, if we trust it.
 	signerID, err := identity.MakeIdentity(tok.SignerId)
 	if err != nil {
 		return nil, fmt.Errorf("bad signer_id %q - %s", tok.SignerId, err)
 	}
-	certs, err := certsProvider.GetCertificates(c, signerID)
+	certs, err := certsProvider.GetCertificates(ctx, signerID)
 	switch {
 	case err != nil:
 		return nil, fmt.Errorf("failed to grab certificates of %q - %s", tok.SignerId, err)
@@ -174,37 +174,37 @@ func unsealToken(c context.Context, tok *messages.DelegationToken, certsProvider
 // checkSubtoken validates the delegation subtoken.
 //
 // It extracts and returns original delegated_identity.
-func checkSubtoken(c context.Context, subtoken *messages.Subtoken, params *CheckTokenParams) (identity.Identity, error) {
+func checkSubtoken(ctx context.Context, subtoken *messages.Subtoken, params *CheckTokenParams) (identity.Identity, error) {
 	if subtoken.Kind != messages.Subtoken_BEARER_DELEGATION_TOKEN {
-		logging.Warningf(c, "auth: Invalid delegation token kind - %s", subtoken.Kind)
+		logging.Warningf(ctx, "auth: Invalid delegation token kind - %s", subtoken.Kind)
 		return "", ErrForbiddenDelegationToken
 	}
 
 	// Do fast checks before heavy ones.
-	now := clock.Now(c).Unix()
+	now := clock.Now(ctx).Unix()
 	if err := checkSubtokenExpiration(subtoken, now); err != nil {
-		logging.Warningf(c, "auth: Bad delegation token expiration - %s", err)
+		logging.Warningf(ctx, "auth: Bad delegation token expiration - %s", err)
 		return "", ErrForbiddenDelegationToken
 	}
 	if err := checkSubtokenServices(subtoken, params.OwnServiceIdentity); err != nil {
-		logging.Warningf(c, "auth: Forbidden delegation token - %s", err)
+		logging.Warningf(ctx, "auth: Forbidden delegation token - %s", err)
 		return "", ErrForbiddenDelegationToken
 	}
 
 	// Do the audience check (may use group lookups).
-	if err := checkSubtokenAudience(c, subtoken, params.PeerID, params.GroupsChecker); err != nil {
+	if err := checkSubtokenAudience(ctx, subtoken, params.PeerID, params.GroupsChecker); err != nil {
 		if transient.Tag.In(err) {
-			logging.Warningf(c, "auth: Transient error when checking delegation token audience - %s", err)
+			logging.Warningf(ctx, "auth: Transient error when checking delegation token audience - %s", err)
 			return "", err
 		}
-		logging.Warningf(c, "auth: Bad delegation token audience - %s", err)
+		logging.Warningf(ctx, "auth: Bad delegation token audience - %s", err)
 		return "", ErrForbiddenDelegationToken
 	}
 
 	// Grab delegated identity.
 	ident, err := identity.MakeIdentity(subtoken.DelegatedIdentity)
 	if err != nil {
-		logging.Warningf(c, "auth: Invalid delegated_identity in the delegation token - %s", err)
+		logging.Warningf(ctx, "auth: Invalid delegated_identity in the delegation token - %s", err)
 		return "", ErrMalformedDelegationToken
 	}
 
@@ -248,7 +248,7 @@ func checkSubtokenServices(t *messages.Subtoken, serviceID identity.Identity) er
 // identity.
 //
 // May return transient errors.
-func checkSubtokenAudience(c context.Context, t *messages.Subtoken, ident identity.Identity, checker GroupsChecker) error {
+func checkSubtokenAudience(ctx context.Context, t *messages.Subtoken, ident identity.Identity, checker GroupsChecker) error {
 	// Empty audience field is not allowed.
 	if len(t.Audience) == 0 {
 		return fmt.Errorf("the token's audience list is empty")
@@ -265,7 +265,7 @@ func checkSubtokenAudience(c context.Context, t *messages.Subtoken, ident identi
 		}
 	}
 	// Search through groups now.
-	switch ok, err := checker.IsMember(c, ident, groups); {
+	switch ok, err := checker.IsMember(ctx, ident, groups); {
 	case err != nil:
 		return err // transient error during group lookup
 	case ok:

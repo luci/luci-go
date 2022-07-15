@@ -22,20 +22,20 @@ import (
 )
 
 func init() {
-	warmup.Register("server/auth:DBProvider", func(c context.Context) (err error) {
-		if cfg := getConfig(c); cfg != nil && cfg.DBProvider != nil {
-			_, err = cfg.DBProvider(c)
+	warmup.Register("server/auth:DBProvider", func(ctx context.Context) (err error) {
+		if cfg := getConfig(ctx); cfg != nil && cfg.DBProvider != nil {
+			_, err = cfg.DBProvider(ctx)
 		} else {
-			logging.Infof(c, "DBProvider is not configured") // this is fine
+			logging.Infof(ctx, "DBProvider is not configured") // this is fine
 		}
 		return
 	})
 
-	warmup.Register("server/auth:Signer", func(c context.Context) (err error) {
-		if cfg := getConfig(c); cfg != nil && cfg.Signer != nil {
-			_, err = cfg.Signer.ServiceInfo(c)
+	warmup.Register("server/auth:Signer", func(ctx context.Context) (err error) {
+		if cfg := getConfig(ctx); cfg != nil && cfg.Signer != nil {
+			_, err = cfg.Signer.ServiceInfo(ctx)
 		} else {
-			logging.Infof(c, "Signer is not configured") // this is fine
+			logging.Infof(ctx, "Signer is not configured") // this is fine
 		}
 		return
 	})

@@ -56,9 +56,9 @@ type Settings struct {
 }
 
 // FetchOpenIDSettings fetches OpenID configuration from the settings store.
-func FetchOpenIDSettings(c context.Context) (*Settings, error) {
+func FetchOpenIDSettings(ctx context.Context) (*Settings, error) {
 	cfg := &Settings{}
-	if err := settings.Get(c, SettingsKey, cfg); err != settings.ErrNoSettings {
+	if err := settings.Get(ctx, SettingsKey, cfg); err != settings.ErrNoSettings {
 		return cfg, err
 	}
 	return cfg, nil
@@ -71,11 +71,11 @@ type settingsPage struct {
 	portal.BasePage
 }
 
-func (settingsPage) Title(c context.Context) (string, error) {
+func (settingsPage) Title(ctx context.Context) (string, error) {
 	return "OpenID authentication settings (deprecated)", nil
 }
 
-func (settingsPage) Fields(c context.Context) ([]portal.Field, error) {
+func (settingsPage) Fields(ctx context.Context) ([]portal.Field, error) {
 	return []portal.Field{
 		{
 			ID:    "DiscoveryURL",
@@ -112,9 +112,9 @@ Client with exact same value.`,
 	}, nil
 }
 
-func (settingsPage) ReadSettings(c context.Context) (map[string]string, error) {
+func (settingsPage) ReadSettings(ctx context.Context) (map[string]string, error) {
 	s := Settings{}
-	err := settings.GetUncached(c, SettingsKey, &s)
+	err := settings.GetUncached(ctx, SettingsKey, &s)
 	if err != nil && err != settings.ErrNoSettings {
 		return nil, err
 	}
@@ -126,8 +126,8 @@ func (settingsPage) ReadSettings(c context.Context) (map[string]string, error) {
 	}, nil
 }
 
-func (settingsPage) WriteSettings(c context.Context, values map[string]string, who, why string) error {
-	return settings.SetIfChanged(c, SettingsKey, &Settings{
+func (settingsPage) WriteSettings(ctx context.Context, values map[string]string, who, why string) error {
+	return settings.SetIfChanged(ctx, SettingsKey, &Settings{
 		DiscoveryURL: values["DiscoveryURL"],
 		ClientID:     values["ClientID"],
 		ClientSecret: values["ClientSecret"],

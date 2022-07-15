@@ -89,8 +89,8 @@ type stateContextKey int
 //
 // Mostly useful from tests. Must not be normally used from production code,
 // 'Authenticate' sets the state itself.
-func WithState(c context.Context, s State) context.Context {
-	return context.WithValue(c, stateContextKey(0), s)
+func WithState(ctx context.Context, s State) context.Context {
+	return context.WithValue(ctx, stateContextKey(0), s)
 }
 
 // GetState return State stored in the context by 'Authenticate' call, the
@@ -102,22 +102,22 @@ func WithState(c context.Context, s State) context.Context {
 // use 'Authenticate' see this state by default. Its most important role is to
 // provide access to authdb.DB (and all functionality that depends on it) to
 // background handlers.
-func GetState(c context.Context) State {
-	if s, ok := c.Value(stateContextKey(0)).(State); ok && s != nil {
+func GetState(ctx context.Context) State {
+	if s, ok := ctx.Value(stateContextKey(0)).(State); ok && s != nil {
 		return s
 	}
-	if getConfig(c) != nil {
-		return backgroundState{c}
+	if getConfig(ctx) != nil {
+		return backgroundState{ctx}
 	}
 	return nil
 }
 
 // CurrentUser represents the current caller.
 //
-// Shortcut for GetState(c).User(). Returns user with AnonymousIdentity if
+// Shortcut for GetState(ctx).User(). Returns user with AnonymousIdentity if
 // the context doesn't have State.
-func CurrentUser(c context.Context) *User {
-	if s := GetState(c); s != nil {
+func CurrentUser(ctx context.Context) *User {
+	if s := GetState(ctx); s != nil {
 		return s.User()
 	}
 	return &User{Identity: identity.AnonymousIdentity}
@@ -125,10 +125,10 @@ func CurrentUser(c context.Context) *User {
 
 // CurrentIdentity return identity of the current caller.
 //
-// Shortcut for GetState(c).User().Identity(). Returns AnonymousIdentity if
+// Shortcut for GetState(ctx).User().Identity(). Returns AnonymousIdentity if
 // the context doesn't have State.
-func CurrentIdentity(c context.Context) identity.Identity {
-	if s := GetState(c); s != nil {
+func CurrentIdentity(ctx context.Context) identity.Identity {
+	if s := GetState(ctx); s != nil {
 		return s.User().Identity
 	}
 	return identity.AnonymousIdentity
@@ -140,9 +140,9 @@ func CurrentIdentity(c context.Context) identity.Identity {
 //
 // May return errors if the check can not be performed (e.g. on datastore
 // issues).
-func IsMember(c context.Context, groups ...string) (bool, error) {
-	if s := GetState(c); s != nil {
-		return s.DB().IsMember(c, s.User().Identity, groups)
+func IsMember(ctx context.Context, groups ...string) (bool, error) {
+	if s := GetState(ctx); s != nil {
+		return s.DB().IsMember(ctx, s.User().Identity, groups)
 	}
 	return false, ErrNotConfigured
 }
@@ -163,9 +163,9 @@ func IsMember(c context.Context, groups ...string) (bool, error) {
 //
 // Returns an error only if the check itself failed due to a misconfiguration
 // or transient issues. This should usually result in an Internal error.
-func HasPermission(c context.Context, perm realms.Permission, realm string, attrs realms.Attrs) (bool, error) {
-	if s := GetState(c); s != nil {
-		return s.DB().HasPermission(c, s.User().Identity, perm, realm, attrs)
+func HasPermission(ctx context.Context, perm realms.Permission, realm string, attrs realms.Attrs) (bool, error) {
+	if s := GetState(ctx); s != nil {
+		return s.DB().HasPermission(ctx, s.User().Identity, perm, realm, attrs)
 	}
 	return false, ErrNotConfigured
 }
@@ -184,10 +184,10 @@ type HasPermissionDryRun struct {
 // Logs information about the call and any errors or discrepancies found.
 //
 // Accepts same arguments as HasPermission. Intentionally returns nothing.
-func (dr HasPermissionDryRun) Execute(c context.Context, perm realms.Permission, realm string, attrs realms.Attrs) {
-	s := GetState(c)
+func (dr HasPermissionDryRun) Execute(ctx context.Context, perm realms.Permission, realm string, attrs realms.Attrs) {
+	s := GetState(ctx)
 	if s == nil { // this should not really be happening at all
-		logging.Errorf(c, "HasPermissionDryRun: no state in the context")
+		logging.Errorf(ctx, "HasPermissionDryRun: no state in the context")
 		return
 	}
 
@@ -208,23 +208,23 @@ func (dr HasPermissionDryRun) Execute(c context.Context, perm realms.Permission,
 		return "DENY"
 	}
 
-	switch result, err := db.HasPermission(c, ident, perm, realm, attrs); {
+	switch result, err := db.HasPermission(ctx, ident, perm, realm, attrs); {
 	case err != nil:
-		logging.Errorf(c, "%s: error - want %s, got: %s", logPfx, allowDeny(dr.ExpectedResult), err)
+		logging.Errorf(ctx, "%s: error - want %s, got: %s", logPfx, allowDeny(dr.ExpectedResult), err)
 	case result == dr.ExpectedResult:
-		logging.Infof(c, "%s: match - %s", logPfx, allowDeny(result))
+		logging.Infof(ctx, "%s: match - %s", logPfx, allowDeny(result))
 	case dr.AdminGroup == "" || !dr.ExpectedResult:
-		logging.Warningf(c, "%s: mismatch - got %s, want %s", logPfx, allowDeny(result), allowDeny(dr.ExpectedResult))
+		logging.Warningf(ctx, "%s: mismatch - got %s, want %s", logPfx, allowDeny(result), allowDeny(dr.ExpectedResult))
 	default:
 		// We expected ALLOW, but got DENY. Maybe the legacy ACL check relied on
 		// the admin group. Check this separately.
-		switch admin, err := db.IsMember(c, ident, []string{dr.AdminGroup}); {
+		switch admin, err := db.IsMember(ctx, ident, []string{dr.AdminGroup}); {
 		case err != nil:
-			logging.Errorf(c, "%s: error - want ALLOW, got: %s", logPfx, err)
+			logging.Errorf(ctx, "%s: error - want ALLOW, got: %s", logPfx, err)
 		case admin:
-			logging.Infof(c, "%s: match - ADMIN_ALLOW", logPfx)
+			logging.Infof(ctx, "%s: match - ADMIN_ALLOW", logPfx)
 		default:
-			logging.Warningf(c, "%s: mismatch - got DENY, want ALLOW", logPfx)
+			logging.Warningf(ctx, "%s: mismatch - got DENY, want ALLOW", logPfx)
 		}
 	}
 }
@@ -235,13 +235,13 @@ func (dr HasPermissionDryRun) Execute(c context.Context, perm realms.Permission,
 // realms migration.
 //
 // TODO(crbug.com/1051724): Remove when no longer used.
-func ShouldEnforceRealmACL(c context.Context, realm string) (bool, error) {
-	s := GetState(c)
+func ShouldEnforceRealmACL(ctx context.Context, realm string) (bool, error) {
+	s := GetState(ctx)
 	if s == nil {
 		return false, ErrNotConfigured
 	}
 
-	data, err := s.DB().GetRealmData(c, realm)
+	data, err := s.DB().GetRealmData(ctx, realm)
 	switch {
 	case err != nil:
 		return false, errors.Annotate(err, "failed to load realm data").Err()
@@ -251,7 +251,7 @@ func ShouldEnforceRealmACL(c context.Context, realm string) (bool, error) {
 		return false, nil // enforced nowhere
 	}
 
-	info, err := GetSigner(c).ServiceInfo(c)
+	info, err := GetSigner(ctx).ServiceInfo(ctx)
 	if err != nil {
 		return false, errors.Annotate(err, "failed to get our own service info").Err()
 	}
@@ -271,9 +271,9 @@ func ShouldEnforceRealmACL(c context.Context, realm string) (bool, error) {
 //
 // May return errors if the check can not be performed (e.g. on datastore
 // issues).
-func IsInWhitelist(c context.Context, whitelist string) (bool, error) {
-	if s := GetState(c); s != nil {
-		return s.DB().IsInWhitelist(c, s.PeerIP(), whitelist)
+func IsInWhitelist(ctx context.Context, whitelist string) (bool, error) {
+	if s := GetState(ctx); s != nil {
+		return s.DB().IsInWhitelist(ctx, s.PeerIP(), whitelist)
 	}
 	return false, ErrNotConfigured
 }
@@ -281,10 +281,10 @@ func IsInWhitelist(c context.Context, whitelist string) (bool, error) {
 // LoginURL returns a URL that, when visited, prompts the user to sign in,
 // then redirects the user to the URL specified by dest.
 //
-// Shortcut for GetState(c).Authenticator().LoginURL(...).
-func LoginURL(c context.Context, dest string) (string, error) {
-	if s := GetState(c); s != nil {
-		return s.Authenticator().LoginURL(c, dest)
+// Shortcut for GetState(ctx).Authenticator().LoginURL(...).
+func LoginURL(ctx context.Context, dest string) (string, error) {
+	if s := GetState(ctx); s != nil {
+		return s.Authenticator().LoginURL(ctx, dest)
 	}
 	return "", ErrNotConfigured
 }
@@ -292,10 +292,10 @@ func LoginURL(c context.Context, dest string) (string, error) {
 // LogoutURL returns a URL that, when visited, signs the user out, then
 // redirects the user to the URL specified by dest.
 //
-// Shortcut for GetState(c).Authenticator().LogoutURL(...).
-func LogoutURL(c context.Context, dest string) (string, error) {
-	if s := GetState(c); s != nil {
-		return s.Authenticator().LogoutURL(c, dest)
+// Shortcut for GetState(ctx).Authenticator().LogoutURL(...).
+func LogoutURL(ctx context.Context, dest string) (string, error) {
+	if s := GetState(ctx); s != nil {
+		return s.Authenticator().LogoutURL(ctx, dest)
 	}
 	return "", ErrNotConfigured
 }

@@ -26,15 +26,15 @@ import (
 type SessionStore interface {
 	// OpenSession create a new session for a user with given expiration time.
 	// It returns unique session ID.
-	OpenSession(c context.Context, userID string, u *auth.User, exp time.Time) (string, error)
+	OpenSession(ctx context.Context, userID string, u *auth.User, exp time.Time) (string, error)
 
 	// CloseSession closes a session given its ID. Does nothing if session is
 	// already closed or doesn't exist. Returns only transient errors.
-	CloseSession(c context.Context, sessionID string) error
+	CloseSession(ctx context.Context, sessionID string) error
 
 	// GetSession returns existing non-expired session given its ID. Returns nil
 	// if session doesn't exist, closed or expired. Returns only transient errors.
-	GetSession(c context.Context, sessionID string) (*Session, error)
+	GetSession(ctx context.Context, sessionID string) (*Session, error)
 }
 
 // Session is returned by SessionStore.GetSession(...).

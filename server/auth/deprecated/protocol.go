@@ -45,13 +45,13 @@ var openIDStateToken = tokens.TokenKind{
 // redirect user's browser to it. After consent screen, redirect_uri will be
 // called (via user's browser) with `state` and authorization code passed to it,
 // eventually resulting in a call to 'handle_authorization_code'.
-func authenticationURI(c context.Context, cfg *Settings, state map[string]string) (string, error) {
+func authenticationURI(ctx context.Context, cfg *Settings, state map[string]string) (string, error) {
 	if cfg.ClientID == "" || cfg.RedirectURI == "" || cfg.DiscoveryURL == "" {
 		return "", ErrNotConfigured
 	}
 
 	// Grab authorization URL from discovery doc.
-	discovery, err := openid.FetchDiscoveryDoc(c, cfg.DiscoveryURL)
+	discovery, err := openid.FetchDiscoveryDoc(ctx, cfg.DiscoveryURL)
 	if err != nil {
 		return "", err
 	}
@@ -60,7 +60,7 @@ func authenticationURI(c context.Context, cfg *Settings, state map[string]string
 	}
 
 	// Wrap state into HMAC-protected token.
-	stateTok, err := openIDStateToken.Generate(c, nil, state, 0)
+	stateTok, err := openIDStateToken.Generate(ctx, nil, state, 0)
 	if err != nil {
 		return "", err
 	}
@@ -78,18 +78,18 @@ func authenticationURI(c context.Context, cfg *Settings, state map[string]string
 
 // validateStateToken validates 'state' token passed to redirect_uri. Returns
 // whatever `state` was passed to authenticationURI.
-func validateStateToken(c context.Context, stateTok string) (map[string]string, error) {
-	return openIDStateToken.Validate(c, stateTok, nil)
+func validateStateToken(ctx context.Context, stateTok string) (map[string]string, error) {
+	return openIDStateToken.Validate(ctx, stateTok, nil)
 }
 
 // handleAuthorizationCode exchange `code` for user ID token and user profile.
-func handleAuthorizationCode(c context.Context, cfg *Settings, code string) (uid string, u *auth.User, err error) {
+func handleAuthorizationCode(ctx context.Context, cfg *Settings, code string) (uid string, u *auth.User, err error) {
 	if cfg.ClientID == "" || cfg.ClientSecret == "" || cfg.RedirectURI == "" {
 		return "", nil, ErrNotConfigured
 	}
 
 	// Validate the discover doc has necessary fields to proceed.
-	discovery, err := openid.FetchDiscoveryDoc(c, cfg.DiscoveryURL)
+	discovery, err := openid.FetchDiscoveryDoc(ctx, cfg.DiscoveryURL)
 	switch {
 	case err != nil:
 		return "", nil, err
@@ -120,12 +120,12 @@ func handleAuthorizationCode(c context.Context, cfg *Settings, code string) (uid
 		},
 		Out: &token,
 	}
-	if err := req.Do(c); err != nil {
+	if err := req.Do(ctx); err != nil {
 		return "", nil, err
 	}
 
 	// Unpack the ID token to grab the user information from it.
-	tok, user, err := openid.UserFromIDToken(c, token.IDToken, discovery)
+	tok, user, err := openid.UserFromIDToken(ctx, token.IDToken, discovery)
 	if err != nil {
 		return "", nil, err
 	}

@@ -187,7 +187,7 @@ func (m *GoogleOAuth2Method) Authenticate(ctx context.Context, r *http.Request) 
 }
 
 // GetUserCredentials implements UserCredentialsGetter.
-func (m *GoogleOAuth2Method) GetUserCredentials(c context.Context, r *http.Request) (*oauth2.Token, error) {
+func (m *GoogleOAuth2Method) GetUserCredentials(ctx context.Context, r *http.Request) (*oauth2.Token, error) {
 	accessToken, err := accessTokenFromHeader(r.Header.Get("Authorization"))
 	if err != nil {
 		return nil, err

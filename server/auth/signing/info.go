@@ -60,15 +60,15 @@ type ServiceInfo struct {
 // (like LUCI services do). Uses process cache to cache the response for 1h.
 //
 // LUCI services serve the service info at /auth/api/v1/server/info.
-func FetchServiceInfo(c context.Context, url string) (*ServiceInfo, error) {
-	info, err := infoCache.GetOrCreate(c, url, func() (interface{}, time.Duration, error) {
+func FetchServiceInfo(ctx context.Context, url string) (*ServiceInfo, error) {
+	info, err := infoCache.GetOrCreate(ctx, url, func() (interface{}, time.Duration, error) {
 		info := &ServiceInfo{}
 		req := internal.Request{
 			Method: "GET",
 			URL:    url,
 			Out:    info,
 		}
-		if err := req.Do(c); err != nil {
+		if err := req.Do(ctx); err != nil {
 			return nil, 0, err
 		}
 		return info, time.Hour, nil
@@ -83,7 +83,7 @@ func FetchServiceInfo(c context.Context, url string) (*ServiceInfo, error) {
 // LUCI-specific endpoint.
 //
 // 'serviceURL' is root URL of the service (e.g. 'https://example.com').
-func FetchServiceInfoFromLUCIService(c context.Context, serviceURL string) (*ServiceInfo, error) {
+func FetchServiceInfoFromLUCIService(ctx context.Context, serviceURL string) (*ServiceInfo, error) {
 	serviceURL = strings.ToLower(serviceURL)
 	if !strings.HasPrefix(serviceURL, "https://") {
 		return nil, fmt.Errorf("not an https:// URL - %q", serviceURL)
@@ -92,7 +92,7 @@ func FetchServiceInfoFromLUCIService(c context.Context, serviceURL string) (*Ser
 	if domain == "" || strings.ContainsRune(domain, '/') {
 		return nil, fmt.Errorf("not a root URL - %q", serviceURL)
 	}
-	return FetchServiceInfo(c, serviceURL+"/auth/api/v1/server/info")
+	return FetchServiceInfo(ctx, serviceURL+"/auth/api/v1/server/info")
 }
 
 // FetchLUCIServiceIdentity returns "service:<app-id>" of a LUCI service.
@@ -102,8 +102,8 @@ func FetchServiceInfoFromLUCIService(c context.Context, serviceURL string) (*Ser
 // some other ServiceInfo fields).
 //
 // 'serviceURL' is root URL of the service (e.g. 'https://example.com').
-func FetchLUCIServiceIdentity(c context.Context, serviceURL string) (identity.Identity, error) {
-	info, err := FetchServiceInfoFromLUCIService(c, serviceURL)
+func FetchLUCIServiceIdentity(ctx context.Context, serviceURL string) (identity.Identity, error) {
+	info, err := FetchServiceInfoFromLUCIService(ctx, serviceURL)
 	if err != nil {
 		return "", err
 	}

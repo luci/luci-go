@@ -151,7 +151,7 @@ func (db *SnapshotDB) IsAllowedOAuthClientID(_ context.Context, email, clientID 
 //
 // What hosts are internal is controlled by 'internal_service_regexp' setting
 // in security.cfg in the Auth Service configs.
-func (db *SnapshotDB) IsInternalService(c context.Context, hostname string) (bool, error) {
+func (db *SnapshotDB) IsInternalService(ctx context.Context, hostname string) (bool, error) {
 	if db.securityCfg != nil {
 		return db.securityCfg.IsInternalService(hostname), nil
 	}
@@ -162,12 +162,12 @@ func (db *SnapshotDB) IsInternalService(c context.Context, hostname string) (boo
 //
 // Unknown groups are considered empty. May return errors if underlying
 // datastore has issues.
-func (db *SnapshotDB) IsMember(c context.Context, id identity.Identity, groups []string) (bool, error) {
+func (db *SnapshotDB) IsMember(ctx context.Context, id identity.Identity, groups []string) (bool, error) {
 	if db.groups == nil {
 		return false, nil
 	}
 
-	_, span := trace.StartSpan(c, "go.chromium.org/luci/server/auth/authdb.IsMember")
+	_, span := trace.StartSpan(ctx, "go.chromium.org/luci/server/auth/authdb.IsMember")
 	span.Attribute("cr.dev/groups", strings.Join(groups, ", "))
 	defer span.End(nil)
 
@@ -189,12 +189,12 @@ func (db *SnapshotDB) IsMember(c context.Context, id identity.Identity, groups [
 // be different from the order in 'groups'.
 //
 // May return errors if underlying datastore has issues.
-func (db *SnapshotDB) CheckMembership(c context.Context, id identity.Identity, groups []string) (out []string, err error) {
+func (db *SnapshotDB) CheckMembership(ctx context.Context, id identity.Identity, groups []string) (out []string, err error) {
 	if db.groups == nil {
 		return
 	}
 
-	_, span := trace.StartSpan(c, "go.chromium.org/luci/server/auth/authdb.CheckMembership")
+	_, span := trace.StartSpan(ctx, "go.chromium.org/luci/server/auth/authdb.CheckMembership")
 	span.Attribute("cr.dev/groups", strings.Join(groups, ", "))
 	defer span.End(nil)
 
@@ -209,8 +209,8 @@ func (db *SnapshotDB) CheckMembership(c context.Context, id identity.Identity, g
 
 // HasPermission returns true if the identity has the given permission in the
 // realm.
-func (db *SnapshotDB) HasPermission(c context.Context, id identity.Identity, perm realms.Permission, realm string, attrs realms.Attrs) (ok bool, err error) {
-	_, span := trace.StartSpan(c, "go.chromium.org/luci/server/auth/authdb.HasPermission")
+func (db *SnapshotDB) HasPermission(ctx context.Context, id identity.Identity, perm realms.Permission, realm string, attrs realms.Attrs) (ok bool, err error) {
+	_, span := trace.StartSpan(ctx, "go.chromium.org/luci/server/auth/authdb.HasPermission")
 	span.Attribute("cr.dev/permission", perm.Name())
 	span.Attribute("cr.dev/realm", realm)
 	for k, v := range attrs {
@@ -225,7 +225,7 @@ func (db *SnapshotDB) HasPermission(c context.Context, id identity.Identity, per
 
 	permIdx, ok := db.realms.PermissionIndex(perm)
 	if !ok {
-		logging.Warningf(c, "Checking permission %q not present in the AuthDB", perm)
+		logging.Warningf(ctx, "Checking permission %q not present in the AuthDB", perm)
 		return false, nil
 	}
 
@@ -237,16 +237,16 @@ func (db *SnapshotDB) HasPermission(c context.Context, id identity.Identity, per
 		project, name := realms.Split(realm)
 		root := realms.Join(project, realms.RootRealm)
 		if realm == root {
-			logging.Warningf(c, "Checking %q in a non-existing root realm %q: denying", perm, realm)
+			logging.Warningf(ctx, "Checking %q in a non-existing root realm %q: denying", perm, realm)
 			return false, nil
 		}
 		if !db.realms.HasRealm(root) {
-			logging.Warningf(c, "Checking %q in a non-existing realm %q that doesn't have a root realm (no such project?): denying", perm, realm)
+			logging.Warningf(ctx, "Checking %q in a non-existing realm %q that doesn't have a root realm (no such project?): denying", perm, realm)
 			return false, nil
 		}
 		// Don't log @legacy => @root fallbacks, they are semi-expected.
 		if name != realms.LegacyRealm {
-			logging.Warningf(c, "Checking %q in a non-existing realm %q: falling back to the root realm %q", perm, realm, root)
+			logging.Warningf(ctx, "Checking %q in a non-existing realm %q: falling back to the root realm %q", perm, realm, root)
 		}
 		realm = root
 	}
@@ -255,7 +255,7 @@ func (db *SnapshotDB) HasPermission(c context.Context, id identity.Identity, per
 	// the permission under what condition. Groups are represented as indexes in
 	// `db.groups`. Nil conditions evaluate to true.
 	for _, binding := range db.realms.Bindings(realm, permIdx) {
-		if binding.Condition == nil || binding.Condition.Eval(c, attrs) {
+		if binding.Condition == nil || binding.Condition.Eval(ctx, attrs) {
 			switch {
 			case binding.Idents.Has(string(id)):
 				return true, nil // `id` was granted the permission explicitly in the ACL
@@ -272,14 +272,14 @@ func (db *SnapshotDB) HasPermission(c context.Context, id identity.Identity, per
 // GetCertificates returns a bundle with certificates of a trusted signer.
 //
 // Currently only the Token Server is a trusted signer.
-func (db *SnapshotDB) GetCertificates(c context.Context, signerID identity.Identity) (*signing.PublicCertificates, error) {
+func (db *SnapshotDB) GetCertificates(ctx context.Context, signerID identity.Identity) (*signing.PublicCertificates, error) {
 	if db.tokenServiceURL == "" {
 		logging.Warningf(
-			c, "Delegation is not supported, the token server URL is not set by %s",
+			ctx, "Delegation is not supported, the token server URL is not set by %s",
 			db.AuthServiceURL)
 		return nil, nil
 	}
-	switch tokenServerID, certs, err := db.tokenServiceCerts.GetCerts(c); {
+	switch tokenServerID, certs, err := db.tokenServiceCerts.GetCerts(ctx); {
 	case err != nil:
 		return nil, err
 	case signerID != tokenServerID:
@@ -295,7 +295,7 @@ func (db *SnapshotDB) GetCertificates(c context.Context, signerID identity.Ident
 // It's used to restrict access for certain account to certain IP subnets.
 //
 // Returns ("", nil) if `ident` is not IP restricted.
-func (db *SnapshotDB) GetWhitelistForIdentity(c context.Context, ident identity.Identity) (string, error) {
+func (db *SnapshotDB) GetWhitelistForIdentity(ctx context.Context, ident identity.Identity) (string, error) {
 	return db.whitelistedIPs.GetWhitelistForIdentity(ident), nil
 }
 
@@ -303,7 +303,7 @@ func (db *SnapshotDB) GetWhitelistForIdentity(c context.Context, ident identity.
 //
 // IP whitelist is a set of IP subnets. Unknown IP whitelists are considered
 // empty. May return errors if underlying datastore has issues.
-func (db *SnapshotDB) IsInWhitelist(c context.Context, ip net.IP, whitelist string) (bool, error) {
+func (db *SnapshotDB) IsInWhitelist(ctx context.Context, ip net.IP, whitelist string) (bool, error) {
 	return db.whitelistedIPs.IsInWhitelist(ip, whitelist), nil
 }
 
@@ -311,7 +311,7 @@ func (db *SnapshotDB) IsInWhitelist(c context.Context, ip net.IP, whitelist stri
 // the snapshot was fetched from.
 //
 // This is needed to implement authdb.DB interface.
-func (db *SnapshotDB) GetAuthServiceURL(c context.Context) (string, error) {
+func (db *SnapshotDB) GetAuthServiceURL(ctx context.Context) (string, error) {
 	if db.AuthServiceURL == "" {
 		return "", errors.Reason("not using Auth Service").Err()
 	}
@@ -321,7 +321,7 @@ func (db *SnapshotDB) GetAuthServiceURL(c context.Context) (string, error) {
 // GetTokenServiceURL returns root URL ("https://<host>") of the token server.
 //
 // This is needed to implement authdb.DB interface.
-func (db *SnapshotDB) GetTokenServiceURL(c context.Context) (string, error) {
+func (db *SnapshotDB) GetTokenServiceURL(ctx context.Context) (string, error) {
 	return db.tokenServiceURL, nil
 }
 

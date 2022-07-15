@@ -29,7 +29,7 @@ func TestDBCache(t *testing.T) {
 		c := context.Background()
 		c, tc := testclock.UseTime(c, time.Unix(1442540000, 0))
 
-		factory := NewDBCache(func(c context.Context, prev DB) (DB, error) {
+		factory := NewDBCache(func(ctx context.Context, prev DB) (DB, error) {
 			if prev == nil {
 				return &SnapshotDB{Rev: 1}, nil
 			}

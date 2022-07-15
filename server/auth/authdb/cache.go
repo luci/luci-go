@@ -25,7 +25,7 @@ import (
 // DBCacheUpdater knows how to update local in-memory copy of DB.
 //
 // Used by NewDBCache.
-type DBCacheUpdater func(c context.Context, prev DB) (DB, error)
+type DBCacheUpdater func(ctx context.Context, prev DB) (DB, error)
 
 // NewDBCache returns a provider of DB instances that uses local memory to
 // cache DB instances for 5-10 seconds. It uses supplied callback to refetch DB
@@ -33,13 +33,13 @@ type DBCacheUpdater func(c context.Context, prev DB) (DB, error)
 //
 // Even though the return value is technically a function, treat it as a heavy
 // stateful object, since it has the cache of DB in its closure.
-func NewDBCache(updater DBCacheUpdater) func(c context.Context) (DB, error) {
+func NewDBCache(updater DBCacheUpdater) func(ctx context.Context) (DB, error) {
 	cacheSlot := lazyslot.Slot{}
-	return func(c context.Context) (DB, error) {
-		val, err := cacheSlot.Get(c, func(prev interface{}) (db interface{}, exp time.Duration, err error) {
+	return func(ctx context.Context) (DB, error) {
+		val, err := cacheSlot.Get(ctx, func(prev interface{}) (db interface{}, exp time.Duration, err error) {
 			prevDB, _ := prev.(DB)
-			if db, err = updater(c, prevDB); err == nil {
-				exp = 5*time.Second + time.Duration(mathrand.Get(c).Intn(5000))*time.Millisecond
+			if db, err = updater(ctx, prevDB); err == nil {
+				exp = 5*time.Second + time.Duration(mathrand.Get(ctx).Intn(5000))*time.Millisecond
 			}
 			return
 		})

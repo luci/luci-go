@@ -280,7 +280,7 @@ func generateSnapshot(rev int64) (body string, digest string) {
 	return
 }
 
-func fakePubSubMessage(c context.Context, ackID string, rev int64, signer signing.Signer) string {
+func fakePubSubMessage(ctx context.Context, ackID string, rev int64, signer signing.Signer) string {
 	msg := protocol.ChangeNotification{
 		Revision: &protocol.AuthDBRevision{
 			AuthDbRev:  rev,
@@ -289,7 +289,7 @@ func fakePubSubMessage(c context.Context, ackID string, rev int64, signer signin
 		},
 	}
 	blob, _ := proto.Marshal(&msg)
-	key, sig, _ := signer.SignBytes(c, blob)
+	key, sig, _ := signer.SignBytes(ctx, blob)
 	ps := pubSubMessage{
 		AckID: ackID,
 	}

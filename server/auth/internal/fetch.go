@@ -33,7 +33,7 @@ import (
 //
 // If 'scopes' is empty, the factory should return a client that makes anonymous
 // requests.
-type ClientFactory func(c context.Context, scopes []string) (*http.Client, error)
+type ClientFactory func(ctx context.Context, scopes []string) (*http.Client, error)
 
 var clientFactory ClientFactory
 
@@ -71,17 +71,17 @@ type Request struct {
 // JSON.
 //
 // Respects context's deadline and cancellation.
-func (r *Request) Do(c context.Context) error {
+func (r *Request) Do(ctx context.Context) error {
 	// Grab a client first. Use same client for all retry attempts.
 	var client *http.Client
 	if clientFactory != nil {
 		var err error
-		if client, err = clientFactory(c, r.Scopes); err != nil {
+		if client, err = clientFactory(ctx, r.Scopes); err != nil {
 			return err
 		}
 	} else {
 		client = http.DefaultClient
-		if testTransport := c.Value(&testTransportKey); testTransport != nil {
+		if testTransport := ctx.Value(&testTransportKey); testTransport != nil {
 			client = &http.Client{Transport: testTransport.(http.RoundTripper)}
 		}
 	}
@@ -100,7 +100,7 @@ func (r *Request) Do(c context.Context) error {
 		isJSON = true
 	}
 
-	return fetchJSON(c, client, r.Out, func() (*http.Request, error) {
+	return fetchJSON(ctx, client, r.Out, func() (*http.Request, error) {
 		req, err := http.NewRequest(r.Method, r.URL, bytes.NewReader(bodyBlob))
 		if err != nil {
 			return nil, err
@@ -118,16 +118,16 @@ func (r *Request) Do(c context.Context) error {
 // TODO(vadimsh): Add retries on HTTP 500.
 
 // fetchJSON fetches JSON document by making a request using given client.
-func fetchJSON(c context.Context, client *http.Client, val interface{}, f func() (*http.Request, error)) error {
+func fetchJSON(ctx context.Context, client *http.Client, val interface{}, f func() (*http.Request, error)) error {
 	r, err := f()
 	if err != nil {
-		logging.Errorf(c, "auth: URL fetch failed - %s", err)
+		logging.Errorf(ctx, "auth: URL fetch failed - %s", err)
 		return err
 	}
-	logging.Infof(c, "auth: %s %s", r.Method, r.URL)
-	resp, err := ctxhttp.Do(c, client, r)
+	logging.Infof(ctx, "auth: %s %s", r.Method, r.URL)
+	resp, err := ctxhttp.Do(ctx, client, r)
 	if err != nil {
-		logging.Errorf(c, "auth: URL fetch failed, can't connect - %s", err)
+		logging.Errorf(ctx, "auth: URL fetch failed, can't connect - %s", err)
 		return transient.Tag.Apply(err)
 	}
 	defer func() {
@@ -140,7 +140,7 @@ func fetchJSON(c context.Context, client *http.Client, val interface{}, f func()
 		if val != nil {
 			json.Unmarshal(body, val)
 		}
-		logging.Errorf(c, "auth: URL fetch failed - HTTP %d - %s", resp.StatusCode, string(body))
+		logging.Errorf(ctx, "auth: URL fetch failed - HTTP %d - %s", resp.StatusCode, string(body))
 		err := fmt.Errorf("auth: HTTP code (%d) when fetching %s", resp.StatusCode, r.URL)
 		if resp.StatusCode >= 500 {
 			return transient.Tag.Apply(err)
@@ -149,7 +149,7 @@ func fetchJSON(c context.Context, client *http.Client, val interface{}, f func()
 	}
 	if val != nil {
 		if err = json.NewDecoder(resp.Body).Decode(val); err != nil {
-			logging.Errorf(c, "auth: URL fetch failed, bad JSON - %s", err)
+			logging.Errorf(ctx, "auth: URL fetch failed, bad JSON - %s", err)
 			return fmt.Errorf("auth: can't deserialize JSON at %q - %s", r.URL, err)
 		}
 	}

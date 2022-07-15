@@ -69,8 +69,8 @@ var (
 		field.String("outcome")) // OK, BAD_TOKEN, DEADLINE, ERROR
 )
 
-func durationReporter(c context.Context, m metric.CumulativeDistribution) func(error, string) {
-	startTs := clock.Now(c)
+func durationReporter(ctx context.Context, m metric.CumulativeDistribution) func(error, string) {
+	startTs := clock.Now(ctx)
 	return func(err error, result string) {
 		// We should report context errors as such. It doesn't matter at which stage
 		// the deadline happens, thus we ignore 'result' if seeing a context error.
@@ -80,6 +80,6 @@ func durationReporter(c context.Context, m metric.CumulativeDistribution) func(e
 		case context.Canceled:
 			result = "CONTEXT_CANCELED"
 		}
-		m.Add(c, float64(clock.Since(c, startTs).Nanoseconds()/1000), result)
+		m.Add(ctx, float64(clock.Since(ctx, startTs).Nanoseconds()/1000), result)
 	}
 }

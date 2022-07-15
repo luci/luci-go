@@ -25,7 +25,7 @@ import (
 )
 
 func init() {
-	RegisterClientFactory(func(c context.Context, scopes []string) (*http.Client, error) {
+	RegisterClientFactory(func(ctx context.Context, scopes []string) (*http.Client, error) {
 		return http.DefaultClient, nil
 	})
 }

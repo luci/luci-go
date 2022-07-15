@@ -149,14 +149,14 @@ type phonySigner struct {
 	err error
 }
 
-func (s *phonySigner) SignBytes(c context.Context, blob []byte) (string, []byte, error) {
+func (s *phonySigner) SignBytes(ctx context.Context, blob []byte) (string, []byte, error) {
 	if s.err != nil {
 		return "", nil, s.err
 	}
 	return "phonyKey", []byte("signature"), nil
 }
 
-func (s *phonySigner) Certificates(c context.Context) (*signing.PublicCertificates, error) {
+func (s *phonySigner) Certificates(ctx context.Context) (*signing.PublicCertificates, error) {
 	if s.err != nil {
 		return nil, s.err
 	}
@@ -170,7 +170,7 @@ func (s *phonySigner) Certificates(c context.Context) (*signing.PublicCertificat
 	}, nil
 }
 
-func (s *phonySigner) ServiceInfo(c context.Context) (*signing.ServiceInfo, error) {
+func (s *phonySigner) ServiceInfo(ctx context.Context) (*signing.ServiceInfo, error) {
 	if s.err != nil {
 		return nil, s.err
 	}

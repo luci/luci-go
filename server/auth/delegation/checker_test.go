@@ -185,11 +185,11 @@ func TestCheckToken(t *testing.T) {
 }
 
 // subtoken returns messages.Subtoken with some fields filled in.
-func subtoken(c context.Context, delegatedID, audience string) *messages.Subtoken {
+func subtoken(ctx context.Context, delegatedID, audience string) *messages.Subtoken {
 	return &messages.Subtoken{
 		Kind:              messages.Subtoken_BEARER_DELEGATION_TOKEN,
 		DelegatedIdentity: delegatedID,
-		CreationTime:      clock.Now(c).Unix() - 300,
+		CreationTime:      clock.Now(ctx).Unix() - 300,
 		ValidityDuration:  3600,
 		Audience:          []string{audience},
 		Services:          []string{"service:service-id"},
@@ -212,19 +212,19 @@ func newFakeTokenMinter() *fakeTokenMinter {
 	}
 }
 
-func (f *fakeTokenMinter) GetCertificates(c context.Context, id identity.Identity) (*signing.PublicCertificates, error) {
+func (f *fakeTokenMinter) GetCertificates(ctx context.Context, id identity.Identity) (*signing.PublicCertificates, error) {
 	if string(id) != f.signerID {
 		return nil, nil
 	}
-	return f.signer.Certificates(c)
+	return f.signer.Certificates(ctx)
 }
 
-func (f *fakeTokenMinter) mintToken(c context.Context, subtoken *messages.Subtoken) string {
+func (f *fakeTokenMinter) mintToken(ctx context.Context, subtoken *messages.Subtoken) string {
 	blob, err := proto.Marshal(subtoken)
 	if err != nil {
 		panic(err)
 	}
-	keyID, sig, err := f.signer.SignBytes(c, blob)
+	keyID, sig, err := f.signer.SignBytes(ctx, blob)
 	if err != nil {
 		panic(err)
 	}
@@ -245,7 +245,7 @@ type fakeGroups struct {
 	groups map[string]string // if nil, IsMember always returns false
 }
 
-func (f *fakeGroups) IsMember(c context.Context, id identity.Identity, groups []string) (bool, error) {
+func (f *fakeGroups) IsMember(ctx context.Context, id identity.Identity, groups []string) (bool, error) {
 	for _, group := range groups {
 		if f.groups[group] == string(id) {
 			return true, nil

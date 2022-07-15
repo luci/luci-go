@@ -89,7 +89,7 @@ func NewSigner(serviceInfo *signing.ServiceInfo) *Signer {
 
 // SignBytes signs the blob with some active private key.
 // Returns the signature and name of the key used.
-func (s *Signer) SignBytes(c context.Context, blob []byte) (keyName string, signature []byte, err error) {
+func (s *Signer) SignBytes(ctx context.Context, blob []byte) (keyName string, signature []byte, err error) {
 	// Passing nil as 'rand' to SignPKCS1v15 disables RSA blinding, making
 	// the signature deterministic, but reduces overall security. Do not do it
 	// in non testing code.
@@ -99,7 +99,7 @@ func (s *Signer) SignBytes(c context.Context, blob []byte) (keyName string, sign
 }
 
 // Certificates returns a bundle with public certificates for all active keys.
-func (s *Signer) Certificates(c context.Context) (*signing.PublicCertificates, error) {
+func (s *Signer) Certificates(ctx context.Context) (*signing.PublicCertificates, error) {
 	return &s.certs, nil
 }
 
@@ -107,7 +107,7 @@ func (s *Signer) Certificates(c context.Context) (*signing.PublicCertificates, e
 //
 // It includes app ID and the service account name (that ultimately owns the
 // signing private key).
-func (s *Signer) ServiceInfo(c context.Context) (*signing.ServiceInfo, error) {
+func (s *Signer) ServiceInfo(ctx context.Context) (*signing.ServiceInfo, error) {
 	return &s.serviceInfo, nil
 }
 
