@@ -35,6 +35,9 @@ const (
 	// QuickDryRun is like DryRun but different thus allowing either different or
 	// faster yet less thorough Tryjobs.
 	QuickDryRun Mode = "QUICK_DRY_RUN"
+	// NewPatchsetRun is triggered by uploading a new patchset.
+	// It only runs tryjobs explicitly allowed in this mode.
+	NewPatchsetRun Mode = "NEW_PATCHSET_RUN"
 )
 
 func (m Mode) Valid() bool {

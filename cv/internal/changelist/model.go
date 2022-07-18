@@ -72,6 +72,18 @@ type CL struct {
 	//
 	// It's updated transactionally with the Run being modified.
 	IncompleteRuns common.RunIDs `gae:",noindex"`
+
+	// TriggerNewPatchsetRunAfterPS indicates the patchset number after which
+	// new patchset runs can be triggered.
+	//
+	// E.g. if this value is set to 2, do not trigger new patchset runs for
+	// patchsets 1 or 2. Presumably this is because those runs were already
+	// completed/failed/otherwise purged.
+	//
+	// This is needed because unlike label votes which CV can remove, triggering
+	// new patchset upload runs relies on the presence of the patchset in the CL
+	// snapshot, which cannot be removed.
+	TriggerNewPatchsetRunAfterPS int32 `gae:",noindex"`
 }
 
 // clMap is CLMap entity in Datastore which ensures strict 1:1 mapping

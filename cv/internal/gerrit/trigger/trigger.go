@@ -40,6 +40,9 @@ var modeToVote = map[run.Mode]int32{
 
 // FindInput contains the parameters needed to find active triggers related to a
 // particular CL.
+//
+// TODO(crbug/1242951): Use the changelist.CL insteat of gerritpb.ChangeInfo,
+//                      and remove TriggerNewPatchsetRunAfterPS.
 type FindInput struct {
 	// ChangeInfo is required. It should contain the most recent information
 	// about the CL to find the triggers in. E.g. label votes and patchsets.
@@ -48,6 +51,10 @@ type FindInput struct {
 	// ConfigGroup is required. It specifies the configuration that matches the
 	// change and should define any additional modes required.
 	ConfigGroup *cfgpb.ConfigGroup
+
+	// TriggerNewPatchsetRunAfterPS tells Find to ignore patchsets less or equal
+	// to this number.
+	TriggerNewPatchsetRunAfterPS int32
 }
 
 // Find computes the triggers corresponding to a given CL.
@@ -66,6 +73,44 @@ type FindInput struct {
 //
 // Returns up to one trigger based on a vote on the Commit-Queue label.
 func Find(input *FindInput) *run.Triggers {
+	cqTrigger := findCQTrigger(input)
+	nprTrigger := findNewPatchsetRunTrigger(input)
+
+	if cqTrigger == nil && nprTrigger == nil {
+		return nil
+	}
+	return &run.Triggers{
+		CqVoteTrigger:         cqTrigger,
+		NewPatchsetRunTrigger: nprTrigger,
+	}
+}
+
+func isNewPatchsetRunTriggerable(cg *cfgpb.ConfigGroup) bool {
+	for _, b := range cg.GetVerifiers().GetTryjob().GetBuilders() {
+		for _, mode := range b.ModeAllowlist {
+			if mode == string(run.NewPatchsetRun) {
+				return true
+			}
+		}
+	}
+	return false
+}
+
+func findNewPatchsetRunTrigger(input *FindInput) *run.Trigger {
+	switch currentRev := input.ChangeInfo.GetRevisions()[input.ChangeInfo.GetCurrentRevision()]; {
+	case !isNewPatchsetRunTriggerable(input.ConfigGroup):
+	case input.TriggerNewPatchsetRunAfterPS >= currentRev.GetNumber():
+	default:
+		return &run.Trigger{
+			Mode:  string(run.NewPatchsetRun),
+			Email: currentRev.GetUploader().GetEmail(),
+			Time:  currentRev.GetCreated(),
+		}
+	}
+	return nil
+}
+
+func findCQTrigger(input *FindInput) *run.Trigger {
 	if input.ChangeInfo.GetStatus() != gerritpb.ChangeStatus_NEW {
 		return nil
 	}
@@ -143,7 +188,7 @@ func Find(input *FindInput) *run.Triggers {
 	if cqTrigger.GetTime().AsTime().Before(revisionTS.AsTime()) {
 		cqTrigger.Time = revisionTS
 	}
-	return &run.Triggers{CqVoteTrigger: cqTrigger}
+	return cqTrigger
 }
 
 func applyAdditionalMode(ci *gerritpb.ChangeInfo, mode *cfgpb.Mode, res *run.Trigger) bool {
