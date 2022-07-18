@@ -121,8 +121,12 @@ func (r *Realms) Bindings(realm string, perm PermissionIndex) []Binding {
 	return r.realms[realmAndPerm{realm, perm}]
 }
 
-// Build constructs Realms from the proto message and the group graph.
-func Build(r *protocol.Realms, qg *graph.QueryableGraph) (*Realms, error) {
+// Build constructs Realms from the proto message, the group graph and
+// permissions registered by the processes.
+//
+// Only registered permissions will be queriable. Bindings with all other
+// permissions will be ignored to save RAM.
+func Build(r *protocol.Realms, qg *graph.QueryableGraph, registered map[realms.Permission]realms.PermissionFlags) (*Realms, error) {
 	// Do not use realms.Realms we don't understand. Better to go offline
 	// completely than mistakenly allow access to something private by
 	// misinterpreting realm rules (e.g. if a new hypothetical DENY rule is
@@ -144,6 +148,16 @@ func Build(r *protocol.Realms, qg *graph.QueryableGraph) (*Realms, error) {
 	perms := make(map[string]PermissionIndex, len(r.Permissions))
 	for idx, perm := range r.Permissions {
 		perms[perm.Name] = PermissionIndex(idx)
+	}
+
+	// Build a set of permission indexes the process is interested in checking.
+	// All other permissions will simply be ignored to avoid wasting RAM on them
+	// (they won't be checked anyway).
+	activePerms := make(map[PermissionIndex]struct{}, len(registered))
+	for perm := range registered {
+		if idx, ok := perms[perm.Name()]; ok {
+			activePerms[idx] = struct{}{}
+		}
 	}
 
 	// Gather names of all realms for HasRealm check.
@@ -188,7 +202,11 @@ func Build(r *protocol.Realms, qg *graph.QueryableGraph) (*Realms, error) {
 
 			// Add principals into the corresponding principal sets in realmsToBe.
 			for _, permIdx := range binding.Permissions {
-				key := bindingKey{realmAndPerm{realm.Name, PermissionIndex(permIdx)}, cond}
+				permIdx := PermissionIndex(permIdx)
+				if _, yes := activePerms[permIdx]; !yes {
+					continue
+				}
+				key := bindingKey{realmAndPerm{realm.Name, permIdx}, cond}
 				if ps, ok := realmsToBe[key]; ok {
 					ps.add(groups, idents)
 				} else {

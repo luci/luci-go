@@ -26,13 +26,16 @@ import (
 	. "github.com/smartystreets/goconvey/convey"
 )
 
+var (
+	testPerm1 = realms.RegisterPermission("testing.tests.perm1")
+	testPerm2 = realms.RegisterPermission("testing.tests.perm2")
+	testPerm3 = realms.RegisterPermission("testing.tests.perm3")
+)
+
 func TestFakeDB(t *testing.T) {
 	t.Parallel()
 
 	ctx := context.Background()
-	testPerm1 := realms.RegisterPermission("testing.tests.perm1")
-	testPerm2 := realms.RegisterPermission("testing.tests.perm2")
-	testPerm3 := realms.RegisterPermission("testing.tests.perm3")
 
 	dataRoot := &protocol.RealmData{EnforceInService: []string{"A"}}
 	dataSome := &protocol.RealmData{EnforceInService: []string{"B"}}

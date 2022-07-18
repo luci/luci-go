@@ -22,8 +22,9 @@ import (
 )
 
 var (
-	mu    sync.RWMutex
-	perms = map[string]PermissionFlags{}
+	mu            sync.RWMutex
+	perms         = map[string]PermissionFlags{}
+	forbidChanges bool
 )
 
 // PermissionFlags describe how a registered permission is going to be used in
@@ -70,14 +71,18 @@ func (p Permission) String() string {
 
 // AddFlags appends given flags to a registered permission.
 //
-// Intended to be called during init() time, but may be called later too.
-//
 // Permissions are usually defined in shared packages used by multiple services.
 // Flags that makes sense for one service do not always make sense for another.
 // For that reason RegisterPermission and AddFlags are two separate functions.
+//
+// Must to be called during startup, e.g. in init(). Panics if called when
+// the process is already serving requests.
 func (p Permission) AddFlags(flags PermissionFlags) {
 	mu.Lock()
 	defer mu.Unlock()
+	if forbidChanges {
+		panic("cannot call Permission.AddFlags while already serving requests, do it before starting the serving loop, e.g. in init()")
+	}
 	perms[p.name] |= flags
 }
 
@@ -85,6 +90,7 @@ func (p Permission) AddFlags(flags PermissionFlags) {
 func clearPermissions() {
 	mu.Lock()
 	perms = map[string]PermissionFlags{}
+	forbidChanges = false
 	mu.Unlock()
 }
 
@@ -93,10 +99,14 @@ func clearPermissions() {
 //
 // Panics if the permission name doesn't look like "<service>.<subject>.<verb>".
 //
-// Intended to be called during init() time, but may be called later too.
+// Must to be called during startup, e.g. in init(). Panics if called when
+// the process is already serving requests.
 func RegisterPermission(name string) Permission {
 	mu.Lock()
 	defer mu.Unlock()
+	if forbidChanges {
+		panic("cannot call RegisterPermission while already serving requests, do it before starting the serving loop, e.g. in init()")
+	}
 	if err := ValidatePermissionName(name); err != nil {
 		panic(err)
 	}
@@ -117,10 +127,17 @@ func GetPermissions(names ...string) ([]Permission, error) {
 			break
 		}
 	}
+	forbiddenAlready := forbidChanges
 	mu.RUnlock()
 
 	if err != nil {
 		return nil, err
+	}
+
+	if !forbiddenAlready {
+		mu.Lock()
+		forbidChanges = true
+		mu.Unlock()
 	}
 
 	perms := make([]Permission, 0, len(names))
@@ -134,11 +151,19 @@ func GetPermissions(names ...string) ([]Permission, error) {
 // with their flags.
 func RegisteredPermissions() map[Permission]PermissionFlags {
 	mu.RLock()
-	defer mu.RUnlock()
 	all := make(map[Permission]PermissionFlags, len(perms))
 	for name, flags := range perms {
 		all[Permission{name: name}] = flags
 	}
+	forbiddenAlready := forbidChanges
+	mu.RUnlock()
+
+	if !forbiddenAlready {
+		mu.Lock()
+		forbidChanges = true
+		mu.Unlock()
+	}
+
 	return all
 }
 

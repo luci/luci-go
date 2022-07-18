@@ -49,6 +49,12 @@ import (
 	. "go.chromium.org/luci/common/testing/assertions"
 )
 
+var (
+	perm1       = realms.RegisterPermission("luci.dev.testing1")
+	perm2       = realms.RegisterPermission("luci.dev.testing2")
+	unknownPerm = realms.RegisterPermission("luci.dev.unknown")
+)
+
 func TestSnapshotDB(t *testing.T) {
 	c := context.Background()
 
@@ -58,10 +64,6 @@ func TestSnapshotDB(t *testing.T) {
 			`(.*-dot-)?i2\.example\.com`,
 		},
 	})
-
-	perm1 := realms.RegisterPermission("luci.dev.testing1")
-	perm2 := realms.RegisterPermission("luci.dev.testing2")
-	unknownPerm := realms.RegisterPermission("luci.dev.unknown")
 
 	db, err := NewSnapshotDB(&protocol.AuthDB{
 		OauthClientId: "primary-client-id",

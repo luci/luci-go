@@ -25,11 +25,12 @@ import (
 	. "github.com/smartystreets/goconvey/convey"
 )
 
+var testPerm = realms.RegisterPermission("testing.tests.perm")
+
 func TestFakeState(t *testing.T) {
 	t.Parallel()
 
 	ctx := context.Background()
-	testPerm := realms.RegisterPermission("testing.tests.perm")
 
 	Convey("Default FakeState works", t, func() {
 		state := FakeState{}

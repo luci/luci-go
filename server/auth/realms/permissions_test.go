@@ -51,14 +51,8 @@ func TestRegister(t *testing.T) {
 			So(p1.String(), ShouldEqual, "luci.dev.testing1")
 			So(fmt.Sprintf("%q", p1), ShouldEqual, `"luci.dev.testing1"`)
 
-			So(RegisteredPermissions(), ShouldResemble, map[Permission]PermissionFlags{p1: 0})
-
 			p2 := RegisterPermission("luci.dev.testing2")
 			p2.AddFlags(UsedInQueryRealms)
-			So(RegisteredPermissions(), ShouldResemble, map[Permission]PermissionFlags{
-				p1: 0,
-				p2: UsedInQueryRealms,
-			})
 
 			// Reregistering doesn't clear the flags.
 			RegisterPermission("luci.dev.testing2")
@@ -70,6 +64,13 @@ func TestRegister(t *testing.T) {
 
 		Convey("Panics on bad name", func() {
 			So(func() { RegisterPermission(".bad.name") }, ShouldPanic)
+		})
+
+		Convey("Panics on mutation after freeze", func() {
+			p1 := RegisterPermission("luci.dev.testing1")
+			_ = RegisteredPermissions()
+			So(func() { RegisterPermission("luci.dev.testing1") }, ShouldPanic)
+			So(func() { p1.AddFlags(UsedInQueryRealms) }, ShouldPanic)
 		})
 	})
 }

@@ -109,9 +109,9 @@ func NewSnapshotDB(authDB *protocol.AuthDB, authServiceURL string, rev int64, va
 		return nil, errors.Annotate(err, "failed to build groups graph").Err()
 	}
 
-	var realms *realmset.Realms
+	var realmSet *realmset.Realms
 	if authDB.Realms != nil {
-		realms, err = realmset.Build(authDB.Realms, groups)
+		realmSet, err = realmset.Build(authDB.Realms, groups, realms.RegisteredPermissions())
 		if err != nil {
 			return nil, errors.Annotate(err, "failed to prepare Realms DB").Err()
 		}
@@ -131,7 +131,7 @@ func NewSnapshotDB(authDB *protocol.AuthDB, authServiceURL string, rev int64, va
 		AuthServiceURL:    authServiceURL,
 		Rev:               rev,
 		groups:            groups,
-		realms:            realms,
+		realms:            realmSet,
 		clientIDs:         oauthid.NewWhitelist(authDB.OauthClientId, authDB.OauthAdditionalClientIds),
 		whitelistedIPs:    ipWL,
 		securityCfg:       securityCfg,

@@ -25,6 +25,14 @@ import (
 	. "github.com/smartystreets/goconvey/convey"
 )
 
+var (
+	permTesting0 = realms.RegisterPermission("luci.dev.testing0")
+	permTesting1 = realms.RegisterPermission("luci.dev.testing1")
+	permTesting2 = realms.RegisterPermission("luci.dev.testing2")
+	permUnknown  = realms.RegisterPermission("luci.dev.unknown")
+	permIgnored  = realms.RegisterPermission("luci.dev.ignored")
+)
+
 func TestRealms(t *testing.T) {
 	t.Parallel()
 
@@ -35,6 +43,13 @@ func TestRealms(t *testing.T) {
 		"g2": {},
 	})
 
+	// Kick out permIgnored to test what happens to "dynamically" registered
+	// permissions. Note that we avoid really dynamically registering it because
+	// the registry lives in the global process memory and dynamically mutating
+	// it in t.Parallel() test is flaky.
+	registered := realms.RegisteredPermissions()
+	delete(registered, permIgnored)
+
 	Convey("Works", t, func() {
 		r, err := Build(&protocol.Realms{
 			ApiVersion: ExpectedAPIVersion,
@@ -42,13 +57,14 @@ func TestRealms(t *testing.T) {
 				{Name: "luci.dev.testing0"},
 				{Name: "luci.dev.testing1"},
 				{Name: "luci.dev.testing2"},
+				{Name: "luci.dev.ignored"},
 			},
 			Realms: []*protocol.Realm{
 				{
 					Name: "proj:r1",
 					Bindings: []*protocol.Binding{
 						{
-							Permissions: []uint32{0},
+							Permissions: []uint32{0, 3},
 							Principals: []string{
 								"group:g1",
 								"group:unknown",
@@ -63,7 +79,7 @@ func TestRealms(t *testing.T) {
 							},
 						},
 						{
-							Permissions: []uint32{2},
+							Permissions: []uint32{2, 3},
 							Principals:  []string{"group:g2", "user:u2@example.com"},
 						},
 					},
@@ -82,27 +98,37 @@ func TestRealms(t *testing.T) {
 						},
 					},
 				},
+				{
+					Name: "proj:only-ignored",
+					Bindings: []*protocol.Binding{
+						{
+							Permissions: []uint32{3},
+						},
+					},
+				},
 			},
-		}, grp)
+		}, grp, registered)
 		So(err, ShouldBeNil)
 
 		So(r.perms, ShouldResemble, map[string]PermissionIndex{
 			"luci.dev.testing0": 0,
 			"luci.dev.testing1": 1,
 			"luci.dev.testing2": 2,
+			"luci.dev.ignored":  3,
 		})
-		So(r.names.ToSortedSlice(), ShouldResemble, []string{"proj:empty", "proj:r1"})
+		So(r.names.ToSortedSlice(), ShouldResemble, []string{"proj:empty", "proj:only-ignored", "proj:r1"})
 
-		idx, ok := r.PermissionIndex(realms.RegisterPermission("luci.dev.testing2"))
+		idx, ok := r.PermissionIndex(permTesting2)
 		So(ok, ShouldBeTrue)
 		So(idx, ShouldEqual, 2)
 
-		_, ok = r.PermissionIndex(realms.RegisterPermission("luci.dev.unknown"))
+		_, ok = r.PermissionIndex(permUnknown)
 		So(ok, ShouldBeFalse)
 
 		So(r.HasRealm("proj:r1"), ShouldBeTrue)
 		So(r.HasRealm("proj:empty"), ShouldBeTrue)
 		So(r.HasRealm("proj:unknown"), ShouldBeFalse)
+		So(r.HasRealm("proj:only-ignored"), ShouldBeTrue)
 
 		So(r.Data("proj:r1").EnforceInService, ShouldResemble, []string{"a"})
 		So(r.Data("proj:empty"), ShouldBeNil)
@@ -125,6 +151,13 @@ func TestRealms(t *testing.T) {
 
 		So(r.Bindings("proj:empty", 0), ShouldBeEmpty)
 		So(r.Bindings("proj:unknown", 0), ShouldBeEmpty)
+
+		// This isn't really happening in real programs since they are not usually
+		// registering permissions dynamically after building Realms set, but check
+		// that such "late" permissions are basically ignored.
+		idx, _ = r.PermissionIndex(permIgnored)
+		So(idx, ShouldEqual, 3)
+		So(r.Bindings("proj:r1", 3), ShouldBeEmpty)
 	})
 
 	Convey("Conditional bindings", t, func() {
@@ -133,6 +166,7 @@ func TestRealms(t *testing.T) {
 			Permissions: []*protocol.Permission{
 				{Name: "luci.dev.testing0"},
 				{Name: "luci.dev.testing1"},
+				{Name: "luci.dev.ignored"},
 			},
 			Conditions: []*protocol.Condition{
 				restrict("a", "ok"),
@@ -143,19 +177,19 @@ func TestRealms(t *testing.T) {
 					Name: "proj:r1",
 					Bindings: []*protocol.Binding{
 						{
-							Permissions: []uint32{0},
+							Permissions: []uint32{0, 2},
 							Principals: []string{
 								"user:0@example.com",
 							},
 						},
 						{
-							Permissions: []uint32{1},
+							Permissions: []uint32{1, 2},
 							Principals: []string{
 								"user:1@example.com",
 							},
 						},
 						{
-							Permissions: []uint32{0},
+							Permissions: []uint32{0, 2},
 							Conditions:  []uint32{0},
 							Principals: []string{
 								"user:0-if-0@example.com",
@@ -196,7 +230,7 @@ func TestRealms(t *testing.T) {
 							},
 						},
 						{
-							Permissions: []uint32{1},
+							Permissions: []uint32{1, 2},
 							Conditions:  []uint32{0, 1},
 							Principals: []string{
 								"user:1-if-0&1@example.com",
@@ -212,7 +246,7 @@ func TestRealms(t *testing.T) {
 					},
 				},
 			},
-		}, grp)
+		}, grp, registered)
 		So(err, ShouldBeNil)
 
 		type pretty struct {
@@ -250,6 +284,9 @@ func TestRealms(t *testing.T) {
 			{cond: 2, users: []string{"user:01-if-1@example.com", "user:1-if-1@example.com"}},
 			{cond: 3, users: []string{"user:1-if-0&1@example.com"}},
 		})
+
+		// The "non-active" permission is ignored.
+		So(r.Bindings("proj:r1", 2), ShouldBeEmpty)
 
 		// Now actually confirm mapping of `cond` indexes above to elementary
 		// conditions from Realms proto.
