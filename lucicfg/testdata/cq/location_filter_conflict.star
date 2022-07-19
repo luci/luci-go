@@ -6,7 +6,7 @@
 lucicfg.enable_experiment("crbug.com/1171945")
 
 luci.project(
-    name = "foo"
+    name = "foo",
 )
 
 luci.cq_group(
@@ -21,7 +21,7 @@ luci.cq_group(
         luci.cq_tryjob_verifier(
             builder = "infra:analyzer/go-linter",
             location_regexp_exclude = [r".+/[+]/3pp/.+"],
-            location_filters = [cq.location_filter(path_regexp = '3pp/.+', exclude = True)]
+            location_filters = [cq.location_filter(path_regexp = "3pp/.+", exclude = True)],
         ),
     ],
 )

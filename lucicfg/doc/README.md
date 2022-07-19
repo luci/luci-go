@@ -2331,6 +2331,7 @@ luci.cq_tryjob_verifier(
     experiment_percentage = None,
     location_regexp = None,
     location_regexp_exclude = None,
+    location_filters = None,
     owner_whitelist = None,
     equivalent_builder = None,
     equivalent_builder_percentage = None,
@@ -2358,8 +2359,20 @@ it is ignored.
 The CQ can examine a set of files touched by the CL and decide to skip this
 verifier. Touching a file means either adding, modifying or removing it.
 
-This is controlled by the `location_regexp` and `location_regexp_exclude`
-fields:
+This is controlled by the `location_filters` field.
+
+location_filters is a list of filters, each of which includes regular
+expressions for matching Gerrit host, project, and path. The Gerrit host,
+Gerrit project and file path for each file in each CL are matched against
+the filters; The last filter that matches all paterns determines whether
+the file is considered included (not skipped) or excluded (skipped); if the
+last matching LocationFilter has exclude set to true, then the builder is
+skipped. If none of the LocationFilters match, then the file is considered
+included if the first rule is an exclude rule; else the file is excluded.
+
+Note that `location_regexp` and `location_regexp_exclude` is the deprecated
+way to perform filtering. You may continue to use them but they are
+mutually exclusive with `location_filter`. See crbug.com/1171945.
 
   * If `location_regexp` is specified and no file in a CL matches any of the
     `location_regexp`, then the CQ will not care about this verifier.
@@ -2386,20 +2399,19 @@ This filtering currently cannot be used in any of the following cases:
 
   * For verifiers in CQ groups with `allow_submit_with_open_deps = True`.
 
-NOTE: location_regexp and location_regexp_exclude are deprecated in favor
-of location_filters.
-TODO(crbug.com/1171945): Update this after location_filters is used.
-
 Please talk to CQ owners if these restrictions are limiting you.
 
 ##### Examples
 
-Enable the verifier for all CLs touching any file in `third_party/WebKit`
-directory of the `chromium/src` repo, but not directory itself:
+Enable the verifier for all CLs touching any file in `third_party/blink`
+directory of the `chromium/src` repo, but not the directory itself:
 
     luci.cq_tryjob_verifier(
-        location_regexp = [
-            'https://chromium-review.googlesource.com/chromium/src/[+]/third_party/WebKit/.+',
+        location_filters = [
+            cq.location_filter(
+                gerrit_host_regexp = 'chromium-review.googlesource.com',
+                gerrit_project_regexp = 'chromium/src'
+                path_regexp = 'third_party/blink/.+')
         ],
     )
 
@@ -2407,8 +2419,17 @@ Match a CL which touches at least one file other than `one.txt` inside
 `all/` directory of the Gerrit project `repo`:
 
     luci.cq_tryjob_verifier(
-        location_regexp = ['https://example.com/repo/[+]/.+'],
-        location_regexp_exclude = ['https://example.com/repo/[+]/all/one.txt'],
+        location_filters = [
+            cq.location_filter(
+                gerrit_host_regexp = 'example.com,
+                gerrit_project_regexp = 'repo',
+                path_regexp = '.+'),
+            cq.location_filter(
+                gerrit_host_regexp = 'example.com,
+                gerrit_project_regexp = 'repo',
+                path_regexp = 'all/one.txt',
+                exclude = True),
+        ],
     )
 
 Match a CL which touches at least one file other than `one.txt` in any
@@ -2416,7 +2437,13 @@ repository **or** belongs to any other Gerrit server. Note, in this case
 `location_regexp` defaults to `.*`:
 
     luci.cq_tryjob_verifier(
-        location_regexp_exclude = ['https://example.com/repo/[+]/all/one.txt'],
+        location_filters = [
+            cq.location_filter(
+                gerrit_host_regexp = 'example.com,
+                gerrit_project_regexp = 'repo',
+                path_regexp = 'all/one.txt',
+                exclude = True),
+        ],
     )
 
 #### Per-CL opt-in only builders
@@ -2541,6 +2568,7 @@ break CQ. This can be done by asking lucicfg to track only Tricium config:
 * **experiment_percentage**: when this field is present, it marks the verifier as experimental. Such verifier is only triggered on a given percentage of the CLs and the outcome does not affect the decision whether a CL can land or not. This is typically used to test new builders and estimate their capacity requirements. May be combined with `location_regexp` and `location_regexp_exclude`.
 * **location_regexp**: a list of regexps that define a set of files whose modification trigger this verifier. See the explanation above for all details.
 * **location_regexp_exclude**: a list of regexps that define a set of files to completely skip when evaluating whether the verifier should be applied to a CL or not. See the explanation above for all details.
+* **location_filters**: a list of [cq.location_filter(...)](#cq.location-filter).
 * **owner_whitelist**: a list of groups with accounts of CL owners to enable this builder for. If set, only CLs owned by someone from any one of these groups will be verified by this builder.
 * **equivalent_builder**: an optional alternative builder for the CQ to choose instead. If provided, the CQ will choose only one of the equivalent builders as required based purely on the given CL and CL's owner and **regardless** of the possibly already completed try jobs.
 * **equivalent_builder_percentage**: a percentage expressing probability of the CQ triggering `equivalent_builder` instead of `builder`. A choice itself is made deterministically based on CL alone, hereby all CQ attempts on all patchsets of a given CL will trigger the same builder, assuming CQ config doesn't change in the mean time. Note that if `equivalent_builder_whitelist` is also specified, the choice over which of the two builders to trigger will be made only for CLs owned by the accounts in the whitelisted group. Defaults to 0, meaning the equivalent builder is never triggered by the CQ, but an existing build can be re-used.

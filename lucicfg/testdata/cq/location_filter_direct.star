@@ -21,22 +21,24 @@ luci.cq_group(
         luci.cq_tryjob_verifier(
             builder = "infra:analyzer/go-linter",
             location_filters = [
-                cq.location_filter(path_regexp = '3pp/.+'),
-                cq.location_filter(path_regexp = 'dashboard/.+'),
-                cq.location_filter(gerrit_project_regexp = '.*manifest'),
-                cq.location_filter(gerrit_project_regexp = '.+', path_regexp = '.*/OWNERS'),
-                cq.location_filter(path_regexp = '3pp/exception/.+', exclude = True),
+                cq.location_filter(path_regexp = "3pp/.+"),
+                cq.location_filter(path_regexp = "dashboard/.+"),
+                cq.location_filter(gerrit_project_regexp = ".*manifest"),
+                cq.location_filter(gerrit_project_regexp = ".+", path_regexp = ".*/OWNERS"),
+                cq.location_filter(path_regexp = "3pp/exception/.+", exclude = True),
                 cq.location_filter(
                     gerrit_host_regexp = "example.com",
                     gerrit_project_regexp = "repo",
-                    path_regexp = 'all/one.txt',
-                    exclude = True),
+                    path_regexp = "all/one.txt",
+                    exclude = True,
+                ),
                 cq.location_filter(
                     gerrit_host_regexp = "example.com",
                     gerrit_project_regexp = "external/github.com/repo",
-                    path_regexp = 'all/one.txt',
-                    exclude = True),
-            ]
+                    path_regexp = "all/one.txt",
+                    exclude = True,
+                ),
+            ],
         ),
     ],
 )
