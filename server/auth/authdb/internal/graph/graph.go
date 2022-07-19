@@ -366,19 +366,41 @@ func (g *QueryableGraph) IsMember(ident identity.Identity, group string) bool {
 	return false // unknown groups are considered empty
 }
 
-// IsMemberOfAny returns true if the given identity belongs to any of the given
+// MembershipsQueryCache prepares a query for memberships of the given identity.
+//
+// This query can be used to answer a bunch of IsMemberOfAny questions, caching
+// some internal state in-between them.
+func (g *QueryableGraph) MembershipsQueryCache(ident identity.Identity) MembershipsQueryCache {
+	return MembershipsQueryCache{
+		Identity:    ident,
+		graph:       g,
+		memberships: g.memberships[ident],
+	}
+}
+
+// MembershipsQueryCache can be used to answer a bunch of IsMemberOfAny
+// questions, caching some internal state in-between them.
+type MembershipsQueryCache struct {
+	// Identity whose memberships are being queried.
+	Identity identity.Identity
+
+	graph       *QueryableGraph
+	memberships SortedNodeSet
+}
+
+// IsMemberOfAny returns true if the identity belongs to any of the given
 // groups.
 //
 // Groups are given as a sorted slice of group indexes obtained via GroupIndex.
-func (g *QueryableGraph) IsMemberOfAny(ident identity.Identity, groups SortedNodeSet) bool {
-	if g.memberships[ident].Intersects(groups) {
+func (q *MembershipsQueryCache) IsMemberOfAny(groups SortedNodeSet) bool {
+	if q.memberships.Intersects(groups) {
 		return true
 	}
 	// The above check works only for identities mentioned in the group graph
-	// directly. We still need to check whether `ident` belongs to any of the
+	// directly. We still need to check whether `q.Identity` belongs to any of the
 	// groups through a glob.
 	for _, grpIdx := range groups {
-		if g.globs[grpIdx].Has(ident) {
+		if q.graph.globs[grpIdx].Has(q.Identity) {
 			return true
 		}
 	}

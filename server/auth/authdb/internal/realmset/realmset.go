@@ -18,6 +18,7 @@
 package realmset
 
 import (
+	"context"
 	"sort"
 	"strings"
 
@@ -40,7 +41,7 @@ const ExpectedAPIVersion = 1
 type Realms struct {
 	perms  map[string]PermissionIndex     // permission name -> its index
 	names  stringset.Set                  // just names of all defined realms
-	realms map[realmAndPerm][]Binding     // <realm, perm> -> who has it under which conditions
+	realms map[realmAndPerm]Bindings      // <realm, perm> -> who has it under which conditions
 	data   map[string]*protocol.RealmData // per-realm attached RealmData
 }
 
@@ -62,7 +63,7 @@ type Binding struct {
 // evaluate and how likely it will apply.
 //
 // 0 means "easy to evaluate, high likelihood of applying". Used to sort
-// bindings in []Binding array returned by Bindings(...).
+// bindings in Bindings array returned by Bindings(...).
 func (b *Binding) badness() int {
 	// TODO(vadimsh): This can be improved. For example, bindings with groups
 	// that contain globs (like `user:*`) are more likely to apply and should
@@ -71,6 +72,27 @@ func (b *Binding) badness() int {
 		return 0
 	}
 	return 1
+}
+
+// Bindings is a list of bindings in a single realm for a single permission.
+type Bindings []Binding
+
+// Check returns true of any of the bindings in the list are applying.
+//
+// Checks conditions on `attrs` and memberships of the identity represented by
+// `q`.
+func (b Bindings) Check(ctx context.Context, q *graph.MembershipsQueryCache, attrs realms.Attrs) bool {
+	for _, binding := range b {
+		if binding.Condition == nil || binding.Condition.Eval(ctx, attrs) {
+			switch {
+			case binding.Idents.Has(string(q.Identity)):
+				return true // was granted the permission explicitly in the ACL
+			case q.IsMemberOfAny(binding.Groups):
+				return true // has the permission through a group
+			}
+		}
+	}
+	return false
 }
 
 // realmAndPerm is used as a composite key in `realms` map.
@@ -117,7 +139,7 @@ func (r *Realms) Data(realm string) *protocol.RealmData {
 //
 // Returns nil if the requested permission is not mentioned in any binding in
 // the realm at all.
-func (r *Realms) Bindings(realm string, perm PermissionIndex) []Binding {
+func (r *Realms) Bindings(realm string, perm PermissionIndex) Bindings {
 	return r.realms[realmAndPerm{realm, perm}]
 }
 
@@ -221,12 +243,12 @@ func Build(r *protocol.Realms, qg *graph.QueryableGraph, registered map[realms.P
 	// Collect conditional bindings for the same (realm, perm) key into an array,
 	// since we'll need to evaluate them sequentially when serving HasPermission
 	// checks.
-	realms := make(map[realmAndPerm][]Binding, len(counts))
+	realms := make(map[realmAndPerm]Bindings, len(counts))
 	dedupper := graph.NodeSetDedupper{}
 	for key, ps := range realmsToBe {
 		groups, idents := ps.finalize(dedupper)
 		if realms[key.realmAndPerm] == nil {
-			realms[key.realmAndPerm] = make([]Binding, 0, counts[key.realmAndPerm])
+			realms[key.realmAndPerm] = make(Bindings, 0, counts[key.realmAndPerm])
 		}
 		realms[key.realmAndPerm] = append(realms[key.realmAndPerm], Binding{
 			Condition: key.cond,

@@ -298,10 +298,15 @@ func TestQueryable(t *testing.T) {
 		root, _ := q.GroupIndex("root")
 		standalone, _ := q.GroupIndex("standalone")
 
-		So(q.IsMemberOfAny("user:1@example.com", []NodeIndex{root, standalone}), ShouldBeTrue)
-		So(q.IsMemberOfAny("user:3@example.com", []NodeIndex{root, standalone}), ShouldBeTrue)
-		So(q.IsMemberOfAny("user:3@example.com", []NodeIndex{standalone}), ShouldBeFalse)
-		So(q.IsMemberOfAny("user:glob@example.com", []NodeIndex{root, standalone}), ShouldBeTrue)
+		q1 := q.MembershipsQueryCache("user:1@example.com")
+		So(q1.IsMemberOfAny([]NodeIndex{root, standalone}), ShouldBeTrue)
+
+		q2 := q.MembershipsQueryCache("user:3@example.com")
+		So(q2.IsMemberOfAny([]NodeIndex{root, standalone}), ShouldBeTrue)
+		So(q2.IsMemberOfAny([]NodeIndex{standalone}), ShouldBeFalse)
+
+		q3 := q.MembershipsQueryCache("user:glob@example.com")
+		So(q3.IsMemberOfAny([]NodeIndex{root, standalone}), ShouldBeTrue)
 	})
 }
 

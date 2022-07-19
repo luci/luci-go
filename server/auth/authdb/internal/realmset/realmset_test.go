@@ -254,7 +254,7 @@ func TestRealms(t *testing.T) {
 			users []string
 		}
 
-		prettify := func(bs []Binding) []pretty {
+		prettify := func(bs Bindings) []pretty {
 			out := make([]pretty, len(bs))
 			for i, b := range bs {
 				cond := 0

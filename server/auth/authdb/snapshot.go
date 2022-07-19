@@ -210,7 +210,7 @@ func (db *SnapshotDB) CheckMembership(ctx context.Context, id identity.Identity,
 // HasPermission returns true if the identity has the given permission in the
 // realm.
 func (db *SnapshotDB) HasPermission(ctx context.Context, id identity.Identity, perm realms.Permission, realm string, attrs realms.Attrs) (ok bool, err error) {
-	_, span := trace.StartSpan(ctx, "go.chromium.org/luci/server/auth/authdb.HasPermission")
+	ctx, span := trace.StartSpan(ctx, "go.chromium.org/luci/server/auth/authdb.HasPermission")
 	span.Attribute("cr.dev/permission", perm.Name())
 	span.Attribute("cr.dev/realm", realm)
 	for k, v := range attrs {
@@ -251,22 +251,10 @@ func (db *SnapshotDB) HasPermission(ctx context.Context, id identity.Identity, p
 		realm = root
 	}
 
-	// Walk over a list of (condition, groups, idents) tuples that define who has
-	// the permission under what condition. Groups are represented as indexes in
-	// `db.groups`. Nil conditions evaluate to true.
-	for _, binding := range db.realms.Bindings(realm, permIdx) {
-		if binding.Condition == nil || binding.Condition.Eval(ctx, attrs) {
-			switch {
-			case binding.Idents.Has(string(id)):
-				return true, nil // `id` was granted the permission explicitly in the ACL
-			case db.groups.IsMemberOfAny(id, binding.Groups):
-				return true, nil // `id` has the permission through a group
-			}
-		}
-	}
-
-	// No applicable bindings, deny the permission.
-	return false, nil
+	// Grab the list of bindings for this permission and check if any applies to
+	// the `id` based on its group memberships.
+	q := db.groups.MembershipsQueryCache(id)
+	return db.realms.Bindings(realm, permIdx).Check(ctx, &q, attrs), nil
 }
 
 // QueryRealms returns a list of realms where the identity has the given
