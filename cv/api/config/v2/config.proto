@@ -169,21 +169,17 @@ message ConfigGroup {
   // mode, CQ will fallback to standard DRY_RUN or FULL_RUN.
   repeated Mode additional_modes = 7;
 
-  // Per-user quota configs for this ConfigGroup.
+  // Per-user quota policies.
   //
-  // At the time of a Run creation, CV will look for the QuotaPolicy
-  // for the user in the following sequence.
-  //
-  // 1) The QuotaPolicy with "user:<the_gerrit_user>" in principals.
-  // 2) The first QuotaPolicy, where the gerrit user is a member of any of
-  // the groups specified in the principals.
-  // 3) user_quota_default. If unset, all the users are granted unlimited quota.
-  //
-  // Note that CV will pick the first matching policy, not the first policy with
-  // available quotas. For example, if there is a quota policy specifically for
-  // user:foo, then CV will always pick the quota policy when creating a Run,
-  // whether the policy has available quotas or not.
+  // At the time of a Run creation, CV will iterate `user_quotas` and apply
+  // the first policy, matching to the user, to the Run. If none of the policies
+  // match, CV will apply `users_quota_default` to the Run.
   repeated QuotaPolicy user_quotas = 8;
+
+  // Per-user default quota policies.
+  //
+  // If CV couldn't find a quota policy matching to the owner of a Run,
+  // this policy will be applied to the Run.
   QuotaPolicy user_quota_default = 9;
 }
 
@@ -776,7 +772,7 @@ message QuotaPolicy {
     // Name of the policy. Must be unique across all the policies
     // with the LUCI project.
     //
-    // Required. Must match regex '^[0-9A-Za-z][0-9A-Za-z\.\-@_+]{0,511}'
+    // Required. Must match regex '^[0-9A-Za-z][0-9A-Za-z\.\-@_+]{0,511}$'
     string name = 1;
     // Principals to apply the QuotaPolicy to.
     //

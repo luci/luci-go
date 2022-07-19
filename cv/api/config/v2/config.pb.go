@@ -355,22 +355,17 @@ type ConfigGroup struct {
 	// mode for which triggering conditions are fulfilled. If there is no such
 	// mode, CQ will fallback to standard DRY_RUN or FULL_RUN.
 	AdditionalModes []*Mode `protobuf:"bytes,7,rep,name=additional_modes,json=additionalModes,proto3" json:"additional_modes,omitempty"`
-	// Per-user quota configs for this ConfigGroup.
+	// Per-user quota policies.
 	//
-	// At the time of a Run creation, CV will look for the QuotaPolicy
-	// for the user in the following sequence.
+	// At the time of a Run creation, CV will iterate `user_quotas` and apply
+	// the first policy, matching to the user, to the Run. If none of the policies
+	// match, CV will apply `users_quota_default` to the Run.
+	UserQuotas []*QuotaPolicy `protobuf:"bytes,8,rep,name=user_quotas,json=userQuotas,proto3" json:"user_quotas,omitempty"`
+	// Per-user default quota policies.
 	//
-	// 1) The QuotaPolicy with "user:<the_gerrit_user>" in principals.
-	// 2) The first QuotaPolicy, where the gerrit user is a member of any of
-	// the groups specified in the principals.
-	// 3) user_quota_default. If unset, all the users are granted unlimited quota.
-	//
-	// Note that CV will pick the first matching policy, not the first policy with
-	// available quotas. For example, if there is a quota policy specifically for
-	// user:foo, then CV will always pick the quota policy when creating a Run,
-	// whether the policy has available quotas or not.
-	UserQuotas       []*QuotaPolicy `protobuf:"bytes,8,rep,name=user_quotas,json=userQuotas,proto3" json:"user_quotas,omitempty"`
-	UserQuotaDefault *QuotaPolicy   `protobuf:"bytes,9,opt,name=user_quota_default,json=userQuotaDefault,proto3" json:"user_quota_default,omitempty"`
+	// If CV couldn't find a quota policy matching to the owner of a Run,
+	// this policy will be applied to the Run.
+	UserQuotaDefault *QuotaPolicy `protobuf:"bytes,9,opt,name=user_quota_default,json=userQuotaDefault,proto3" json:"user_quota_default,omitempty"`
 }
 
 func (x *ConfigGroup) Reset() {
@@ -826,7 +821,7 @@ type QuotaPolicy struct {
 	// Name of the policy. Must be unique across all the policies
 	// with the LUCI project.
 	//
-	// Required. Must match regex '^[0-9A-Za-z][0-9A-Za-z\.\-@_+]{0,511}'
+	// Required. Must match regex '^[0-9A-Za-z][0-9A-Za-z\.\-@_+]{0,511}$'
 	Name string `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
 	// Principals to apply the QuotaPolicy to.
 	//
