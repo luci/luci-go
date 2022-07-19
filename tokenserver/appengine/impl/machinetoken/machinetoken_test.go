@@ -185,10 +185,10 @@ func TestMint(t *testing.T) {
 				IssuedAt:    1422936306,
 				Lifetime:    3600,
 				CaId:        0,
-				CertSn:      12345,
+				CertSn:      big.NewInt(12345).Bytes(),
 			})
-			So(token, ShouldEqual, "CjMKC2hvc3QuZG9tYWluEhh0b2tlbi1zZXJ2ZXJAZXhhbXB"+
-				"sZS5jb20Y8pHBpgUgkBwwuWASBmtleV9pZBoJc2lnbmF0dXJl")
+			So(token, ShouldEqual, "CjQKC2hvc3QuZG9tYWluEhh0b2tlbi1zZXJ2ZXJAZXhhbXB"+
+				"sZS5jb20Y8pHBpgUgkBw6AjA5EgZrZXlfaWQaCXNpZ25hdHVyZQ")
 		})
 	})
 }

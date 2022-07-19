@@ -59,7 +59,7 @@ func TestInspectMachineTokenRPC(t *testing.T) {
 						IssuedAt:    1422936306,
 						Lifetime:    3600,
 						CaId:        123,
-						CertSn:      4096,
+						CertSn:      big.NewInt(4096).Bytes(),
 					},
 				},
 			})
@@ -86,7 +86,7 @@ func TestInspectMachineTokenRPC(t *testing.T) {
 						IssuedAt:    1422936306,
 						Lifetime:    3600,
 						CaId:        123,
-						CertSn:      4096,
+						CertSn:      big.NewInt(4096).Bytes(),
 					},
 				},
 			})
@@ -114,7 +114,7 @@ func TestInspectMachineTokenRPC(t *testing.T) {
 						IssuedAt:    1422936306,
 						Lifetime:    3600,
 						CaId:        123,
-						CertSn:      4096,
+						CertSn:      big.NewInt(4096).Bytes(),
 					},
 				},
 			})
@@ -152,7 +152,7 @@ func TestInspectMachineTokenRPC(t *testing.T) {
 						IssuedAt:    1422936306,
 						Lifetime:    3600,
 						CaId:        123,
-						CertSn:      4096,
+						CertSn:      big.NewInt(4096).Bytes(),
 					},
 				},
 			})

@@ -27,6 +27,8 @@ enum MachineTokenType {
 // (no need for microsecond precision), and assume certificate serial numbers
 // are smallish uint64 integers (not random blobs).
 message MachineTokenBody {
+  reserved 6;
+
   // Machine identity this token conveys (machine FQDN).
   //
   // It is extracted from a Common Name of a certificate used as a basis for
@@ -58,7 +60,7 @@ message MachineTokenBody {
   // used to check for certificate revocation (by asking token server whether
   // the given certificate is in CRL). Revocation checks are optional, most
   // callers can rely on expiration checks only.
-  uint64 cert_sn = 6;
+  bytes cert_sn = 7;
 }
 
 

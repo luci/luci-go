@@ -16,7 +16,7 @@ package machinetoken
 
 import (
 	"context"
-	"fmt"
+	"math/big"
 	"net"
 
 	"google.golang.org/protobuf/types/known/timestamppb"
@@ -62,7 +62,7 @@ func (i *MintedTokenInfo) toBigQueryMessage() *bqpb.MachineToken {
 		TokenType:          i.Request.TokenType,
 		IssuedAt:           &timestamppb.Timestamp{Seconds: int64(i.TokenBody.IssuedAt)},
 		Expiration:         &timestamppb.Timestamp{Seconds: int64(i.TokenBody.IssuedAt + i.TokenBody.Lifetime)},
-		CertSerialNumber:   fmt.Sprintf("%d", i.TokenBody.CertSn),
+		CertSerialNumber:   new(big.Int).SetBytes(i.TokenBody.CertSn).String(),
 		SignatureAlgorithm: i.Request.SignatureAlgorithm,
 
 		// Information about the CA used to authorize this request.

@@ -20,8 +20,6 @@ import (
 	"crypto/x509"
 	"encoding/base64"
 	"fmt"
-	"math"
-	"math/big"
 	"strings"
 	"time"
 
@@ -44,8 +42,6 @@ import (
 // TODO(vadimsh): Enable it. Requires some temporary hacks to accept old and
 // new tokens at the same time.
 const tokenSigningContext = ""
-
-var maxUint64 = big.NewInt(0).SetUint64(math.MaxUint64)
 
 // MintParams is passed to Mint.
 //
@@ -124,10 +120,9 @@ func (p *MintParams) Validate() error {
 		return fmt.Errorf("machine tokens for machines in domain %q are not allowed", domain)
 	}
 
-	// Make sure cert serial number fits into uint64. We don't support negative or
-	// giant SNs.
+	// We don't support negative SNs.
 	sn := p.Cert.SerialNumber
-	if sn.Sign() <= 0 || sn.Cmp(maxUint64) >= 0 {
+	if sn.Sign() <= 0 {
 		return fmt.Errorf("invalid certificate serial number: %s", sn)
 	}
 	return nil
@@ -181,7 +176,7 @@ func Mint(c context.Context, params *MintParams) (*tokenserver.MachineTokenBody,
 		IssuedAt:    uint64(clock.Now(c).Unix()),
 		Lifetime:    uint64(cfg.MachineTokenLifetime),
 		CaId:        params.Config.UniqueId,
-		CertSn:      params.Cert.SerialNumber.Uint64(), // already validated, fits uint64
+		CertSn:      params.Cert.SerialNumber.Bytes(),
 	}
 	signed, err := SignToken(c, params.Signer, body)
 	if err != nil {

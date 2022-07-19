@@ -113,7 +113,7 @@ func (r *InspectMachineTokenRPC) InspectMachineToken(c context.Context, req *adm
 	}
 
 	// Check that certificate SN is not in the revocation list.
-	sn := big.NewInt(0).SetUint64(body.CertSn)
+	sn := big.NewInt(0).SetBytes(body.CertSn)
 	revoked, err := certChecker.CRL.IsRevokedSN(c, sn)
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "can't check CRL - %s", err)

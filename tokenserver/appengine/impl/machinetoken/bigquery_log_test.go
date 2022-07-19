@@ -15,6 +15,7 @@
 package machinetoken
 
 import (
+	"math/big"
 	"net"
 	"testing"
 	"time"
@@ -53,7 +54,7 @@ func TestMintedTokenInfo(t *testing.T) {
 				IssuedAt:    1422936306,
 				Lifetime:    3600,
 				CaId:        123,
-				CertSn:      4096,
+				CertSn:      big.NewInt(4096).Bytes(),
 			},
 			CA:        &testingCA,
 			PeerIP:    net.ParseIP("127.10.10.10"),
