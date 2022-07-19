@@ -19,6 +19,8 @@ import (
 	"reflect"
 	"regexp"
 	"sort"
+	"strconv"
+	"strings"
 
 	"go.chromium.org/luci/common/errors"
 	api "go.chromium.org/luci/swarming/proto/api"
@@ -71,11 +73,28 @@ var (
 	swarmingHostRx = regexp.MustCompile(`(.*)\.appspot\.com`)
 )
 
-// Convert a swarming host name to cas instance name.
+// ToCasInstance converts a swarming host name to cas instance name.
 func ToCasInstance(swarmingHost string) (string, error) {
 	match := swarmingHostRx.FindStringSubmatch(swarmingHost)
 	if match == nil {
 		return "", errors.New("invalid swarming host in job definition")
 	}
 	return fmt.Sprintf(casInstanceTemplate, match[1]), nil
+}
+
+// ToCasDigest converts a string (in the format of "hash/size", e.g. "dead...beef/1234") to cas digest.
+func ToCasDigest(str string) (*api.Digest, error) {
+	digest := &api.Digest{}
+	var err error
+	switch strs := strings.Split(str, "/"); {
+	case len(strs) == 2:
+		digest.Hash = strs[0]
+		if digest.SizeBytes, err = strconv.ParseInt(strs[1], 10, 64); err != nil {
+			return nil, err
+		}
+	default:
+		err = errors.Reason("Invalid RBE-CAS digest %s", str).Err()
+		return nil, err
+	}
+	return digest, nil
 }

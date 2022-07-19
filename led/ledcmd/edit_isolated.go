@@ -138,16 +138,24 @@ func EditIsolated(ctx context.Context, authOpts auth.Options, jd *job.Definition
 	return nil
 }
 
-func newCASClient(ctx context.Context, authOpts auth.Options, jd *job.Definition) (*client.Client, error) {
+func getCASInstance(jd *job.Definition) (string, error) {
 	current, err := jd.Info().CurrentIsolated()
 	if err != nil {
-		return nil, err
+		return "", err
 	}
 	casInstance := current.GetCasInstance()
 	if casInstance == "" {
 		if casInstance, err = jd.CasInstance(); err != nil {
-			return nil, err
+			return "", err
 		}
+	}
+	return casInstance, nil
+}
+
+func newCASClient(ctx context.Context, authOpts auth.Options, jd *job.Definition) (*client.Client, error) {
+	casInstance, err := getCASInstance(jd)
+	if err != nil {
+		return nil, err
 	}
 	return casclient.NewLegacy(ctx, casclient.AddrProd, casInstance, authOpts, false)
 }
