@@ -35,7 +35,7 @@ import (
 type ActuationEndOp struct {
 	actuation *Actuation
 	assets    map[string]*Asset
-	history   []*modelpb.AssetHistory
+	history   *historyRecorder
 	now       time.Time
 }
 
@@ -65,6 +65,7 @@ func NewActuationEndOp(ctx context.Context, actuation *Actuation) (*ActuationEnd
 	return &ActuationEndOp{
 		actuation: actuation,
 		assets:    active,
+		history:   &historyRecorder{actuation: actuation.Actuation},
 		now:       clock.Now(ctx),
 	}, nil
 }
@@ -116,7 +117,7 @@ func (op *ActuationEndOp) HandleActuatedState(ctx context.Context, assetID strin
 	if ent.IsRecordingHistoryEntry() {
 		ent.HistoryEntry.Actuation = op.actuation.Actuation
 		ent.HistoryEntry.PostActuationState = reported
-		op.history = append(op.history, ent.finalizeHistoryEntry())
+		op.history.recordAndNotify(ent.finalizeHistoryEntry())
 	}
 }
 
@@ -134,7 +135,7 @@ func (op *ActuationEndOp) Expire(ctx context.Context) {
 		asset.ConsecutiveFailures += 1
 		if asset.IsRecordingHistoryEntry() {
 			asset.HistoryEntry.Actuation = op.actuation.Actuation
-			op.history = append(op.history, asset.finalizeHistoryEntry())
+			op.history.recordAndNotify(asset.finalizeHistoryEntry())
 		}
 	}
 }
@@ -161,7 +162,7 @@ func (op *ActuationEndOp) Apply(ctx context.Context) error {
 
 	// Prepare AssetHistory entities. Note they refer to op.actuation by pointer
 	// inside already and will pick up all changes made to the Actuation proto.
-	history, err := commitHistory(ctx, op.history)
+	history, err := op.history.commit(ctx)
 	if err != nil {
 		return err
 	}

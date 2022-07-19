@@ -250,13 +250,14 @@ func TestActuationBeginOp(t *testing.T) {
 			// Made correct history records.
 			So(assets["apps/app1"].LastHistoryID, ShouldEqual, 1)
 			So(assets["apps/app1"].HistoryEntry, ShouldResembleProto, &modelpb.AssetHistory{
-				AssetId:       "apps/app1",
-				HistoryId:     1,
-				Decision:      decisions["apps/app1"],
-				Actuation:     storedActuation.Actuation,
-				Config:        app1Call.Config,
-				IntendedState: app1Call.IntendedState,
-				ReportedState: app1Call.ReportedState,
+				AssetId:                  "apps/app1",
+				HistoryId:                1,
+				Decision:                 decisions["apps/app1"],
+				Actuation:                storedActuation.Actuation,
+				Config:                   app1Call.Config,
+				IntendedState:            app1Call.IntendedState,
+				ReportedState:            app1Call.ReportedState,
+				PriorConsecutiveFailures: 111,
 			})
 			rec := AssetHistory{ID: 1, Parent: datastore.KeyForObj(ctx, assets["apps/app1"])}
 			So(datastore.Get(ctx, &rec), ShouldBeNil)
@@ -264,13 +265,14 @@ func TestActuationBeginOp(t *testing.T) {
 
 			So(assets["apps/app2"].LastHistoryID, ShouldEqual, 0)
 			So(assets["apps/app2"].HistoryEntry, ShouldResembleProto, &modelpb.AssetHistory{
-				AssetId:       "apps/app2",
-				HistoryId:     1,
-				Decision:      decisions["apps/app2"],
-				Actuation:     storedActuation.Actuation,
-				Config:        app2Call.Config,
-				IntendedState: app2Call.IntendedState,
-				ReportedState: app2Call.ReportedState,
+				AssetId:                  "apps/app2",
+				HistoryId:                1,
+				Decision:                 decisions["apps/app2"],
+				Actuation:                storedActuation.Actuation,
+				Config:                   app2Call.Config,
+				IntendedState:            app2Call.IntendedState,
+				ReportedState:            app2Call.ReportedState,
+				PriorConsecutiveFailures: 222,
 			})
 			rec = AssetHistory{ID: 1, Parent: datastore.KeyForObj(ctx, assets["apps/app2"])}
 			So(datastore.Get(ctx, &rec), ShouldEqual, datastore.ErrNoSuchEntity)
@@ -488,6 +490,13 @@ func TestActuationBeginOp(t *testing.T) {
 			// Incremented ConsecutiveFailures counter.
 			assets, _ := fetchAssets(ctx, []string{"apps/app1"}, true)
 			So(assets["apps/app1"].ConsecutiveFailures, ShouldEqual, 112)
+
+			// Stored the historical record with correct ConsecutiveFailures counter.
+			So(assets["apps/app1"].LastHistoryID, ShouldEqual, 1)
+			So(assets["apps/app1"].HistoryEntry.PriorConsecutiveFailures, ShouldEqual, 111)
+			rec := AssetHistory{ID: 1, Parent: datastore.KeyForObj(ctx, assets["apps/app1"])}
+			So(datastore.Get(ctx, &rec), ShouldBeNil)
+			So(rec.Entry, ShouldResembleProto, assets["apps/app1"].HistoryEntry)
 		})
 	})
 }

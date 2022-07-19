@@ -25,6 +25,10 @@ import (
 //
 // It is skipped if it is not sufficiently interesting compared to the last
 // committed entry.
+//
+// Note that skipping a historical record also skips sending any notifications
+// related to it (notifications need an AssetHistory record to link to to be
+// useful).
 func shouldRecordHistory(next, prev *modelpb.AssetHistory) bool {
 	nextDecision := next.Decision.Decision
 	prevDecision := prev.Decision.Decision
@@ -60,14 +64,34 @@ func sameLocks(a, b []*modelpb.ActuationLock) bool {
 	return true
 }
 
-// commitHistory prepares the history entries for commit and emits TQ tasks.
+// historyRecorder collects AssetHistory records emitted by an actuation to
+// store them and send notifications based on them.
+type historyRecorder struct {
+	actuation *modelpb.Actuation
+	entries   []*modelpb.AssetHistory
+}
+
+// recordAndNotify emits a notification and records the historical entry.
+func (h *historyRecorder) recordAndNotify(e *modelpb.AssetHistory) {
+	h.entries = append(h.entries, e)
+	h.notifyOnly(e)
+}
+
+// notifyOnly emits the notification without updating the history.
+//
+// Useful for sending notifications pertaining to ongoing actuations.
+func (h *historyRecorder) notifyOnly(e *modelpb.AssetHistory) {
+	// TODO
+}
+
+// commit prepares the history entries for commit and emits TQ tasks.
 //
 // Must be called inside a transaction. Returns a list of entities to
 // transactionally store.
-func commitHistory(ctx context.Context, entries []*modelpb.AssetHistory) ([]interface{}, error) {
+func (h *historyRecorder) commit(ctx context.Context) ([]interface{}, error) {
 	// TODO: Emit TQ tasks.
-	toPut := make([]interface{}, len(entries))
-	for idx, entry := range entries {
+	toPut := make([]interface{}, len(h.entries))
+	for idx, entry := range h.entries {
 		toPut[idx] = &AssetHistory{
 			ID:      entry.HistoryId,
 			Parent:  datastore.NewKey(ctx, "Asset", entry.AssetId, 0, nil),

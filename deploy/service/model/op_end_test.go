@@ -90,6 +90,7 @@ func TestActuationEndOp(t *testing.T) {
 						Actuation: &modelpb.Actuation{
 							Id: "phony-to-be-overridden",
 						},
+						PriorConsecutiveFailures: 111,
 					},
 					ConsecutiveFailures: 111,
 				},
@@ -220,6 +221,7 @@ func TestActuationEndOp(t *testing.T) {
 							Appengine: mockedReportedState("new actuated", 0),
 						},
 					},
+					PriorConsecutiveFailures: 111,
 				})
 				So(assets["apps/app1"].ConsecutiveFailures, ShouldEqual, 0)
 
@@ -323,7 +325,15 @@ func TestActuationEndOp(t *testing.T) {
 						Message: "status boom",
 					},
 				})
+
+				// Stored the historical record with correct PriorConsecutiveFailures
+				// counter.
 				So(assets["apps/app1"].ConsecutiveFailures, ShouldEqual, 112)
+				So(assets["apps/app1"].LastHistoryID, ShouldEqual, 124)
+				So(assets["apps/app1"].HistoryEntry.PriorConsecutiveFailures, ShouldEqual, 111)
+				rec := AssetHistory{ID: 124, Parent: datastore.KeyForObj(ctx, assets["apps/app1"])}
+				So(datastore.Get(ctx, &rec), ShouldBeNil)
+				So(rec.Entry, ShouldResembleProto, assets["apps/app1"].HistoryEntry)
 
 				// Wasn't touched.
 				So(assets["apps/app2"].Asset, ShouldResembleProto, &modelpb.Asset{

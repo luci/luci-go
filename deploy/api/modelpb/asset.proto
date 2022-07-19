@@ -159,6 +159,8 @@ message AssetHistory {
   AssetState last_applied_state = 8;
   // The reported state **after** the actuation, if it was performed.
   AssetState post_actuation_state = 9;
+  // Number of consecutive failures prior to this entry (excluding itself).
+  int64 prior_consecutive_failures = 10;
 }
 
 

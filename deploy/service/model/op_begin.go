@@ -42,7 +42,7 @@ type ActuationBeginOp struct {
 	actuation *modelpb.Actuation
 	decisions map[string]*modelpb.ActuationDecision
 	assets    map[string]*Asset
-	history   []*modelpb.AssetHistory
+	history   *historyRecorder
 	now       time.Time
 
 	actuating bool     // true if have at least one ACTUATE_* decision
@@ -61,6 +61,7 @@ func NewActuationBeginOp(ctx context.Context, assets []string, actuation *modelp
 		actuation: actuation,
 		decisions: make(map[string]*modelpb.ActuationDecision, len(assetMap)),
 		assets:    assetMap,
+		history:   &historyRecorder{actuation: actuation},
 		now:       clock.Now(ctx),
 	}, nil
 }
@@ -133,9 +134,9 @@ func (op *ActuationBeginOp) MakeDecision(ctx context.Context, assetID string, as
 	}
 	op.decisions[assetID] = stored.LastDecision
 
-	op.maybeUpdateHistory(&modelpb.AssetHistory{
+	op.maybeUpdateHistoryAndNotify(&modelpb.AssetHistory{
 		AssetId:          assetID,
-		HistoryId:        0, // will be populated in maybeUpdateHistory
+		HistoryId:        0, // will be populated in maybeUpdateHistoryAndNotify
 		Decision:         stored.LastDecision,
 		Actuation:        op.actuation,
 		Config:           asset.Config,
@@ -145,8 +146,9 @@ func (op *ActuationBeginOp) MakeDecision(ctx context.Context, assetID string, as
 	})
 }
 
-func (op *ActuationBeginOp) maybeUpdateHistory(entry *modelpb.AssetHistory) {
+func (op *ActuationBeginOp) maybeUpdateHistoryAndNotify(entry *modelpb.AssetHistory) {
 	asset := op.assets[entry.AssetId]
+	entry.PriorConsecutiveFailures = asset.ConsecutiveFailures
 
 	// If had an open history entry, then the previous actuation (that was
 	// supposed to close it) probably crashed, i.e. it didn't call EndActuation.
@@ -159,7 +161,7 @@ func (op *ActuationBeginOp) maybeUpdateHistory(entry *modelpb.AssetHistory) {
 			Code:    int32(codes.Unknown),
 			Message: "the actuation probably crashed: the asset was picked up by another actuation",
 		}
-		op.history = append(op.history, asset.finalizeHistoryEntry())
+		op.history.recordAndNotify(asset.finalizeHistoryEntry())
 	}
 
 	// Update the failure counter if the outcome is already known. For ACTUATE_*
@@ -183,13 +185,19 @@ func (op *ActuationBeginOp) maybeUpdateHistory(entry *modelpb.AssetHistory) {
 	entry.HistoryId = asset.LastHistoryID + 1
 	asset.HistoryEntry = entry
 
-	// If the decision is final, then the actuation is done with this asset and
-	// we can emit the log record right now. Otherwise we'll keep the prepared log
-	// record cached in the Asset entity and commit it in EndActuation when we
-	// know the actuation outcome.
-	if !IsActuateDecision(entry.Decision.Decision) {
+	if IsActuateDecision(entry.Decision.Decision) {
+		// An actuation is only starting and it will be updated later in
+		// EndActuation. We should emit ACTUATION_STARTING notification, but don't
+		// commit the log record yet (because the history is immutable and
+		// contains only finalized actuations).
+		op.history.notifyOnly(entry)
+	} else {
+		// If the decision is final, then the actuation is done with this asset and
+		// we can emit the log record right now. Otherwise we'll keep the prepared
+		// log record cached in the Asset entity and commit it in EndActuation when
+		// we know the actuation outcome.
 		asset.LastHistoryID = entry.HistoryId
-		op.history = append(op.history, entry)
+		op.history.recordAndNotify(entry)
 	}
 }
 
@@ -248,7 +256,7 @@ func (op *ActuationBeginOp) Apply(ctx context.Context) (map[string]*modelpb.Actu
 
 	// Prepare AssetHistory entities. Note they refer to op.actuation by pointer
 	// inside already and will pick up all changes made to the Actuation proto.
-	history, err := commitHistory(ctx, op.history)
+	history, err := op.history.commit(ctx)
 	if err != nil {
 		return nil, err
 	}
