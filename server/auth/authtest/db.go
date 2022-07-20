@@ -17,11 +17,13 @@ package authtest
 import (
 	"context"
 	"fmt"
+	"math/rand"
 	"net"
 	"sync"
 
 	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/common/data/stringset"
+	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authdb"
 	"go.chromium.org/luci/server/auth/realms"
@@ -238,6 +240,11 @@ func (db *FakeDB) CheckMembership(ctx context.Context, id identity.Identity, gro
 
 // HasPermission is part of authdb.DB interface.
 func (db *FakeDB) HasPermission(ctx context.Context, id identity.Identity, perm realms.Permission, realm string, attrs realms.Attrs) (bool, error) {
+	// This flips a flag forbidding registration of new permissions. Presumably
+	// this should help catching "dynamic" permission registration in tests,
+	// before it panics in production.
+	realms.ForbidPermissionChanges()
+
 	db.m.RLock()
 	defer db.m.RUnlock()
 
@@ -258,7 +265,47 @@ func (db *FakeDB) HasPermission(ctx context.Context, id identity.Identity, perm 
 
 // QueryRealms is part of authdb.DB interface.
 func (db *FakeDB) QueryRealms(ctx context.Context, id identity.Identity, perm realms.Permission, project string, attrs realms.Attrs) ([]string, error) {
-	return nil, fmt.Errorf("QueryRealms is not implemented yet")
+	// This implicitly flips a flag forbidding registration of new permissions.
+	// Presumably this should help catching "dynamic" permission registration
+	// in tests, before it panics in production. We also need the result to check
+	// UsedInQueryRealms flag.
+	flags := realms.RegisteredPermissions()
+
+	db.m.RLock()
+	defer db.m.RUnlock()
+
+	if db.err != nil {
+		return nil, db.err
+	}
+
+	if project != "" {
+		if err := realms.ValidateProjectName(project); err != nil {
+			return nil, err
+		}
+	}
+
+	if flags[perm]&realms.UsedInQueryRealms == 0 {
+		return nil, errors.Reason("permission %s cannot be used in QueryRealms: it was not flagged with UsedInQueryRealms flag", perm).Err()
+	}
+
+	var out []string
+	if mocked := db.perID[id]; mocked != nil {
+		for _, mockedPerm := range mocked.perms {
+			if mockedPerm.perm == perm && mockedPerm.cond(attrs) {
+				if realmProj, _ := realms.Split(mockedPerm.realm); project == "" || project == realmProj {
+					out = append(out, mockedPerm.realm)
+				}
+			}
+		}
+	}
+
+	// The result in production in inherently unordered, since ordering it takes
+	// time and in many applications the order doesn't really matter, so always
+	// sorting it is wasteful. Simulate this behavior in tests too. If callers of
+	// QueryRealms want the result ordered, they should sort it themselves.
+	rand.Shuffle(len(out), func(i, j int) { out[i], out[j] = out[j], out[i] })
+
+	return out, nil
 }
 
 // IsAllowedOAuthClientID is part of authdb.DB interface.

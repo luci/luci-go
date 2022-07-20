@@ -117,6 +117,9 @@ func RegisterPermission(name string) Permission {
 // GetPermissions returns the permissions with the matching names. The order of
 // the permission is the same as the provided names.
 //
+// Implicitly calls ForbidPermissionChanges to make sure no new permissions
+// are added later.
+//
 // Returns an error if any of the permission isn't registered.
 func GetPermissions(names ...string) ([]Permission, error) {
 	mu.RLock()
@@ -149,6 +152,9 @@ func GetPermissions(names ...string) ([]Permission, error) {
 
 // RegisteredPermissions returns a snapshot of all registered permissions along
 // with their flags.
+//
+// Implicitly calls ForbidPermissionChanges to make sure no new permissions
+// are added later.
 func RegisteredPermissions() map[Permission]PermissionFlags {
 	mu.RLock()
 	all := make(map[Permission]PermissionFlags, len(perms))
@@ -165,6 +171,20 @@ func RegisteredPermissions() map[Permission]PermissionFlags {
 	}
 
 	return all
+}
+
+// ForbidPermissionChanges explicitly forbids registering new permissions or
+// changing their flags.
+//
+// All permissions should be registered before the server starts running its
+// loop. The runtime relies on this when building various caches. After this
+// function is called, RegisterPermissions and AddFlags would start panicking.
+//
+// Intended for internal server code.
+func ForbidPermissionChanges() {
+	mu.Lock()
+	forbidChanges = true
+	mu.Unlock()
 }
 
 // ValidatePermissionName returns an error if the permission name is invalid.

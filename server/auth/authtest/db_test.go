@@ -18,12 +18,14 @@ import (
 	"context"
 	"errors"
 	"net"
+	"sort"
 	"testing"
 
 	"go.chromium.org/luci/server/auth/realms"
 	"go.chromium.org/luci/server/auth/service/protocol"
 
 	. "github.com/smartystreets/goconvey/convey"
+	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 var (
@@ -31,6 +33,10 @@ var (
 	testPerm2 = realms.RegisterPermission("testing.tests.perm2")
 	testPerm3 = realms.RegisterPermission("testing.tests.perm3")
 )
+
+func init() {
+	testPerm1.AddFlags(realms.UsedInQueryRealms)
+}
 
 func TestFakeDB(t *testing.T) {
 	t.Parallel()
@@ -46,6 +52,7 @@ func TestFakeDB(t *testing.T) {
 			MockMembership("user:abc@def.com", "group-b"),
 
 			MockPermission("user:abc@def.com", "proj:realm", testPerm1),
+			MockPermission("user:abc@def.com", "another:realm", testPerm1),
 			MockPermission("user:abc@def.com", "proj:realm", testPerm2),
 
 			MockPermission("user:abc@def.com", "proj:cond", testPerm1,
@@ -149,6 +156,33 @@ func TestFakeDB(t *testing.T) {
 			})
 			So(err, ShouldBeNil)
 			So(resp, ShouldBeTrue)
+		})
+
+		Convey("QueryRealms works", func() {
+			res, err := db.QueryRealms(ctx, "user:abc@def.com", testPerm1, "", nil)
+			So(err, ShouldBeNil)
+			sort.Strings(res)
+			So(res, ShouldResemble, []string{"another:realm", "proj:realm"})
+
+			res, err = db.QueryRealms(ctx, "user:abc@def.com", testPerm1, "proj", nil)
+			So(err, ShouldBeNil)
+			So(res, ShouldResemble, []string{"proj:realm"})
+
+			res, err = db.QueryRealms(ctx, "user:zzz@def.com", testPerm1, "", nil)
+			So(err, ShouldBeNil)
+			So(res, ShouldBeEmpty)
+
+			// Conditional bindings.
+			res, err = db.QueryRealms(ctx, "user:abc@def.com", testPerm1, "", realms.Attrs{
+				"attr1": "val1",
+			})
+			So(err, ShouldBeNil)
+			sort.Strings(res)
+			So(res, ShouldResemble, []string{"another:realm", "proj:cond", "proj:realm"})
+
+			// Unflagged permission.
+			_, err = db.QueryRealms(ctx, "user:abc@def.com", testPerm2, "", nil)
+			So(err, ShouldErrLike, "permission testing.tests.perm2 cannot be used in QueryRealms")
 		})
 
 		Convey("GetRealmData works", func() {
