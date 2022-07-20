@@ -398,9 +398,6 @@ func (c *change) removeVote(ctx context.Context, accountID int64) error {
 	})
 
 	switch {
-	// TODO(crbug/1344304): remove
-	case gerritErr != nil && grpcutil.Code(gerritErr) == codes.Internal && c.Number == 4830556 && accountID == 1181283:
-		return ErrPermanentTag.Apply(gerritErr)
 	case gerritErr != nil:
 		return c.annotateGerritErr(ctx, gerritErr, "remove vote")
 	case outerErr != nil:
