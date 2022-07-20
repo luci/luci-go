@@ -41,6 +41,8 @@ load("@stdlib//internal/validate.star", "validate")
 #   luci.project -> [luci.notifier_template]
 #   luci.bucket -> [luci.builder]
 #   luci.bucket -> [luci.gitiles_poller]
+#   luci.bucket -> [luci.bucket_constraints]
+#   luci.bucket_constraints_root -> [luci.bucket_constraints]
 #   luci.builder_ref -> luci.builder
 #   luci.builder -> [luci.triggerer]
 #   luci.builder -> luci.executable
@@ -164,6 +166,7 @@ kinds = struct(
     NOTIFIER_TEMPLATE = "luci.notifier_template",
     SHADOWED_BUCKET = "luci.shadowed_bucket",
     SHADOW_OF = "luci.shadow_of",
+    BUCKET_CONSTRAINTS = "luci.bucket_constraints",
 
     # Internal nodes (declared internally as dependency of other nodes).
     BUILDER_REF = "luci.builder_ref",
@@ -173,6 +176,7 @@ kinds = struct(
     MILO_VIEW = "luci.milo_view",
     CQ_VERIFIERS_ROOT = "luci.cq_verifiers_root",
     CQ_EQUIVALENT_BUILDER = "luci.cq_equivalent_builder",
+    BUCKET_CONSTRAINTS_ROOT = "luci.bucket_constraints_root",
 )
 
 # Keys is a collection of key constructors for various LUCI config nodes.
@@ -210,13 +214,15 @@ keys = struct(
     milo_entries_root = lambda: _namespaced_key(kinds.MILO_ENTRIES_ROOT, "..."),
     milo_view = lambda name: _namespaced_key(kinds.MILO_VIEW, name),
     cq_verifiers_root = lambda: _namespaced_key(kinds.CQ_VERIFIERS_ROOT, "..."),
+    bucket_constraints_root = lambda: _namespaced_key(kinds.BUCKET_CONSTRAINTS_ROOT, "..."),
 
     # Generates a key of the given kind and name within some auto-generated
     # unique container key.
     #
-    # Used with LIST_VIEW_ENTRY, CONSOLE_VIEW_ENTRY and CQ_TRYJOB_VERIFIER
-    # helper nodes. They don't really represent any "external" entities, and
-    # their names don't really matter, other than for error messages.
+    # Used with LIST_VIEW_ENTRY, CONSOLE_VIEW_ENTRY, CQ_TRYJOB_VERIFIER and
+    # BUCKET_CONSTRAINTS helper nodes. They don't really represent any
+    # "external" entities, and their names don't really matter, other than for
+    # error messages.
     #
     # Note that IDs of keys whose kind stars with '_' (like '_UNIQUE' here),
     # are skipped when printing the key in error messages. Thus the meaningless

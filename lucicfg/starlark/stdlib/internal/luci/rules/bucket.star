@@ -29,7 +29,8 @@ def _bucket(
         acls = None,
         extends = None,
         bindings = None,
-        shadows = None):
+        shadows = None,
+        constraints = None):
     """Defines a bucket: a container for LUCI builds.
 
     This rule also implicitly defines the realm to use for the builds in this
@@ -53,6 +54,7 @@ def _bucket(
         Note that this is a part of the new led process (WIP) so it's not in use
         at the moment.
         TODO(crbug.com/1114804): update the docstring when we start to use shadow.
+      constraints: a luci.bucket_constraints(...) to add to the bucket.
     """
     name = validate.string("name", name)
     if name.startswith("luci."):
@@ -88,6 +90,10 @@ def _bucket(
 
             # Use an edge to make sure that `shadows` bucket is actually defined.
             graph.add_edge(key, keys.shadowed_bucket(shadowed), title = "shadows")
+
+    # Add bucket constraints.
+    if constraints != None:
+        graph.add_edge(key, constraints.get(kinds.BUCKET_CONSTRAINTS))
 
     # Define the realm and grab its keyset.
     realm_ref = realm(

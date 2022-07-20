@@ -22,6 +22,7 @@ load("@stdlib//internal/time.star", _time = "time")
 # Individual LUCI rules.
 load("@stdlib//internal/luci/rules/binding.star", _binding = "binding")
 load("@stdlib//internal/luci/rules/bucket.star", _bucket = "bucket")
+load("@stdlib//internal/luci/rules/bucket_constraints.star", _bucket_constraints = "bucket_constraints")
 load("@stdlib//internal/luci/rules/builder.star", _builder = "builder")
 load("@stdlib//internal/luci/rules/console_view.star", _console_view = "console_view")
 load("@stdlib//internal/luci/rules/console_view_entry.star", _console_view_entry = "console_view_entry")
@@ -89,6 +90,7 @@ luci = struct(
     cq = _cq,
     cq_group = _cq_group,
     cq_tryjob_verifier = _cq_tryjob_verifier,
+    bucket_constraints = _bucket_constraints,
 )
 acl = _acl
 resultdb = _resultdb

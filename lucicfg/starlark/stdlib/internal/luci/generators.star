@@ -304,6 +304,7 @@ def gen_buildbucket_cfg(ctx):
     cfg = buildbucket_pb.BuildbucketCfg()
     buildbucket = get_service("buildbucket", "defining buckets")
     set_config(ctx, buildbucket.cfg_file, cfg)
+    _buildbucket_check_connections()
 
     for bucket in buckets:
         cfg.buckets.append(buildbucket_pb.Bucket(
@@ -311,7 +312,22 @@ def gen_buildbucket_cfg(ctx):
             acls = _buildbucket_acls(get_bucket_acls(bucket)),
             swarming = _buildbucket_builders(bucket),
             shadow = _buildbucket_shadow(bucket),
+            constraints = _buildbucket_constraints(bucket),
         ))
+
+def _buildbucket_check_connections():
+    """Ensures all luci.bucket_constraints(...) are connected to one and only one luci.bucket(...)."""
+    root = keys.bucket_constraints_root()
+    for e in graph.children(root):
+        buckets = [p for p in graph.parents(e.key) if p.key != root]
+        if len(buckets) == 0:
+            error("%s is not added to any bucket, either remove or comment it out" % e, trace = e.trace)
+        elif len(buckets) > 1:
+            error(
+                "%s is added to multiple buckets: %s" %
+                (e, ", ".join([str(v) for v in buckets])),
+                trace = e.trace,
+            )
 
 def _buildbucket_acls(elementary):
     """[acl.elementary] => filtered [buildbucket_pb.Acl]."""
@@ -461,11 +477,24 @@ def _buildbucket_toggle(val):
     return buildbucket_pb.YES if val else buildbucket_pb.NO
 
 def _buildbucket_shadow(bucket):
-    """luci.bucket(...) node => str for buildbucket_pb.Shadow field."""
+    """luci.bucket(...) node => buildbucket_pb.Shadow or None."""
     shadow = graph.node(keys.shadow_of(bucket.key))
     if shadow:
         return shadow.props.shadow
     return None
+
+def _buildbucket_constraints(bucket):
+    """luci.bucket(...) node => buildbucket_pb.Bucket.Constraints or None."""
+    pools = set()
+    service_accounts = set()
+    for node in graph.children(bucket.key, kinds.BUCKET_CONSTRAINTS):
+        pools |= set(node.props.pools)
+        service_accounts |= set(node.props.service_accounts)
+    pools = sorted(pools)
+    service_accounts = sorted(service_accounts)
+    if len(pools) == 0 and len(service_accounts) == 0:
+        return None
+    return buildbucket_pb.Bucket.Constraints(pools = pools, service_accounts = service_accounts)
 
 ################################################################################
 ## scheduler.cfg.
