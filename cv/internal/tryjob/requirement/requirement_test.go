@@ -498,11 +498,10 @@ func TestCompute(t *testing.T) {
 		Convey("with location matching", func() {
 			Convey("empty change after location exclusions skips builder", func() {
 				in := makeInput(ctx, []*cfgpb.Verifiers_Tryjob_Builder{builderConfigGenerator{
-					Name:                  "luci/test/builder1",
-					LocationRegexpExclude: []string{"https://example.com/repo/[+]/some/.+"},
+					Name: "luci/test/builder1",
 					LocationFilters: []*cfgpb.Verifiers_Tryjob_Builder_LocationFilter{
 						{
-							GerritHostRegexp:    "https://example.com",
+							GerritHostRegexp:    "example.com",
 							GerritProjectRegexp: "repo",
 							PathRegexp:          "some/.+",
 							Exclude:             true,
@@ -523,13 +522,12 @@ func TestCompute(t *testing.T) {
 					},
 				})
 			})
-			Convey("with location regex", func() {
+			Convey("with location filters", func() {
 				in := makeInput(ctx, []*cfgpb.Verifiers_Tryjob_Builder{builderConfigGenerator{
-					Name:           "luci/test/builder1",
-					LocationRegexp: []string{"https://example.com/repo/[+]/some/.+"},
+					Name: "luci/test/builder1",
 					LocationFilters: []*cfgpb.Verifiers_Tryjob_Builder_LocationFilter{
 						{
-							GerritHostRegexp:    "https://example.com",
+							GerritHostRegexp:    "example.com",
 							GerritProjectRegexp: "repo",
 							PathRegexp:          "some/.+",
 						},
@@ -607,21 +605,19 @@ func TestCompute(t *testing.T) {
 					})
 				})
 			})
-			Convey("with location regex and exclusion", func() {
+			Convey("with location filters and exclusion", func() {
 				in := makeInput(ctx, []*cfgpb.Verifiers_Tryjob_Builder{
 					builderConfigGenerator{
-						Name:                  "luci/test/builder1",
-						LocationRegexp:        []string{"https://example.com/repo/[+]/some/.+"},
-						LocationRegexpExclude: []string{"https://example.com/repo/[+]/some/excluded/.*"},
+						Name: "luci/test/builder1",
 						LocationFilters: []*cfgpb.Verifiers_Tryjob_Builder_LocationFilter{
 							{
-								GerritHostRegexp:    "https://example.com",
+								GerritHostRegexp:    "example.com",
 								GerritProjectRegexp: "repo",
 								PathRegexp:          "some/.+",
 								Exclude:             false,
 							},
 							{
-								GerritHostRegexp:    "https://example.com",
+								GerritHostRegexp:    "example.com",
 								GerritProjectRegexp: "repo",
 								PathRegexp:          "some/excluded/.*",
 								Exclude:             true,

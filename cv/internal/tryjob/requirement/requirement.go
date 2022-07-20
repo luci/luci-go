@@ -415,17 +415,19 @@ func shouldInclude(ctx context.Context, in Input, er *rand.Rand, b *cfgpb.Verifi
 	// Check for LocationRegexp match to decide whether to skip the builder.
 	// Also evaluate with LocationFilter (if it is set) to assess the
 	// correctness of LocationFilter matching.
-	matched, err := locationMatch(ctx, b.LocationRegexp, b.LocationRegexpExclude, in.CLs)
+	locationRegexpMatched, err := locationMatch(ctx, b.LocationRegexp, b.LocationRegexpExclude, in.CLs)
 	if err != nil {
-
 		return skipBuilder, nil, err
 	}
-
-	if len(b.LocationFilters) > 0 {
-		locationFilterMatched, err := locationFilterMatch(ctx, b.LocationFilters, in.CLs)
-		if err != nil {
-			return skipBuilder, nil, err
-		} else if matched != locationFilterMatched {
+	locationFilterMatched, err := locationFilterMatch(ctx, b.LocationFilters, in.CLs)
+	if err != nil {
+		return skipBuilder, nil, err
+	}
+	locationFilterSpecified := len(b.LocationFilters) > 0
+	locationRegexpSpecified := len(b.LocationRegexp)+len(b.LocationRegexpExclude) > 0
+	switch {
+	case locationRegexpSpecified && locationFilterSpecified:
+		if locationRegexpMatched != locationFilterMatched {
 			// If the result using LocationRegexp is not the same as LocationFilter,
 			// we want to know about it because this means that locationFilterMatch
 			// is not correct.
@@ -433,14 +435,21 @@ func shouldInclude(ctx context.Context, in Input, er *rand.Rand, b *cfgpb.Verifi
 				"location_regexp":         b.LocationRegexp,
 				"location_regexp_exclude": b.LocationRegexpExclude,
 				"location_filters":        b.LocationFilters,
-				"location_regexp result":  matched,
+				"location_regexp result":  locationRegexpMatched,
 				"location_filters result": locationFilterMatched,
 			}.Errorf(ctx, "LocationFilters and LocationRegexp did not give the same result.")
 		}
-	}
-
-	if !matched {
-		return skipBuilder, nil, nil
+		fallthrough
+	case locationRegexpSpecified:
+		// If LocationRegexp was specified, use it as the source of truth.
+		if !locationRegexpMatched {
+			return skipBuilder, nil, nil
+		}
+	case locationFilterSpecified:
+		// If only LocationFilters was specified, use it as the source of truth.
+		if !locationFilterMatched {
+			return skipBuilder, nil, nil
+		}
 	}
 
 	if b.ExperimentPercentage != 0 && er.Float32()*100 > b.ExperimentPercentage {
