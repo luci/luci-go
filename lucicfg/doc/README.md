@@ -3398,6 +3398,44 @@ cq.location_filter struct.
 
 
 
+### cq.quota_policy {#cq.quota-policy}
+
+```python
+cq.quota_policy(
+    # Required arguments.
+    name,
+
+    # Optional arguments.
+    users = None,
+    groups = None,
+    run_limits = None,
+    tryjob_limits = None,
+)
+```
+
+
+
+Construct a quota policy with run and tryjob limits for users and groups.
+
+At the time of Run creation, CV looks up a quota policy applicable for
+the Run, and blocks processing the Run or the tryjobs, if the remaining
+quota balance is insufficient.
+
+This constructs and returns a quota policy which specifies run and tryjob
+limits for given users and groups in cq_group(...). Find cq_group(...) to
+find how quota policies are used in cq_group(...).
+
+#### Arguments {#cq.quota-policy-args}
+
+* **name**: the name of the policy to configure. Must be unqiue in the ConfigGroup. Must match regex '^[0-9A-Za-z][0-9A-Za-z\.\-@_+]{0,511}$'. Required.
+* **users**: a list of user identities, which is an email typically, to apply the quota policy to.
+* **groups**: a list of chrome infra auth group names to apply the quota policy to.
+* **run_limits**: Run limits to apply. See cq.run_limits(...) for more details. If omitted, unlimited run quotas are granted to the users and groups.
+* **tryjob_limits**: Tryjob limits to apply. See cq.tryjob_limits(...) for more details. If omitted, unlimited tryjob quotas are granted to the users and groups.
+
+
+
+
 
 
 ## Built-in constants and functions

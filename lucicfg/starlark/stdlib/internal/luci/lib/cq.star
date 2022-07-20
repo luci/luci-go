@@ -40,6 +40,9 @@ _run_mode_ctor = __native__.genstruct("cq.run_mode")
 # A struct returned by cq.location_filter(...).
 _location_filter_ctor = __native__.genstruct("cq.location_filter")
 
+# A struct returned by cq.quota_policy(...).
+_quota_policy_ctor = __native__.genstruct("cq.quota_policy")
+
 def _refset(repo = None, *, refs = None, refs_exclude = None):
     """Defines a repository and a subset of its refs.
 
@@ -244,6 +247,66 @@ def _validate_location_filter(attr, val, *, default = None, required = True):
     """Validates location_filter."""
     return validate.struct(attr, val, _location_filter_ctor, default = default, required = required)
 
+def _validate_quota_policy(attr, val, *, default = None, required = False):
+    """Validates that `val` was constructed via cq._quota_policy(...)."""
+    return validate.struct(attr, val, _quota_policy_ctor, default = default, required = required)
+
+def _quota_policy(
+        name = None,
+        users = None,
+        groups = None,
+        run_limits = None,
+        tryjob_limits = None):
+    """Construct a quota policy with run and tryjob limits for users and groups.
+
+    At the time of Run creation, CV looks up a quota policy applicable for
+    the Run, and blocks processing the Run or the tryjobs, if the remaining
+    quota balance is insufficient.
+
+    This constructs and returns a quota policy which specifies run and tryjob
+    limits for given users and groups in cq_group(...). Find cq_group(...) to
+    find how quota policies are used in cq_group(...).
+
+    Args:
+      name: the name of the policy to configure.
+        Must be unqiue in the ConfigGroup.
+        Must match regex '^[0-9A-Za-z][0-9A-Za-z\\.\\-@_+]{0,511}$'.
+        Required.
+      users: a list of user identities, which is an email typically, to apply
+        the quota policy to.
+      groups: a list of chrome infra auth group names to apply the quota policy
+        to.
+      run_limits: Run limits to apply. See cq.run_limits(...) for more details.
+        If omitted, unlimited run quotas are granted to the users and groups.
+      tryjob_limits: Tryjob limits to apply. See cq.tryjob_limits(...) for more
+        details. If omitted, unlimited tryjob quotas are granted to the users
+        and groups.
+    """
+    name = validate.string(
+        "name",
+        name,
+        required = True,
+        regexp = "^[0-9A-Za-z][0-9A-Za-z.\\-@_+]{0,511}$",
+    )
+
+    principals = []
+    users = validate.list("users", users, required = False)
+    groups = validate.list("groups", groups, required = False)
+    for i, u in enumerate(users):
+        p = "user:%s" % validate.string("users[%d]" % i, u, required = True)
+        principals.append(p)
+    for i, g in enumerate(groups):
+        p = "group:%s" % validate.string("groups[%d]" % i, g, required = True)
+        principals.append(p)
+
+    # TODO(ddoman): validate run_limits and tryjob_limits
+    return _quota_policy_ctor(
+        name = name,
+        principals = principals,
+        run_limits = run_limits,
+        tryjob_limits = tryjob_limits,
+    )
+
 # CQ module exposes structs and enums useful when defining luci.cq_group(...)
 # entities.
 #
@@ -297,6 +360,7 @@ cq = struct(
     retry_config = _retry_config,
     run_mode = _run_mode,
     location_filter = _location_filter,
+    quota_policy = _quota_policy,
     ACTION_NONE = cq_pb.Verifiers.GerritCQAbility.UNSET,
     ACTION_DRY_RUN = cq_pb.Verifiers.GerritCQAbility.DRY_RUN,
     ACTION_COMMIT = cq_pb.Verifiers.GerritCQAbility.COMMIT,
@@ -329,4 +393,5 @@ cqimpl = struct(
     validate_retry_config = _validate_retry_config,
     validate_run_mode = _validate_run_mode,
     validate_location_filter = _validate_location_filter,
+    validate_quota_policy = _validate_quota_policy,
 )
