@@ -28,7 +28,6 @@ import (
 	pb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/logdog/client/butlerlib/bootstrap"
-	"go.chromium.org/luci/luciexe"
 	"go.chromium.org/luci/luciexe/exe"
 	"go.chromium.org/luci/luciexe/legacy/annotee"
 	"go.chromium.org/luci/luciexe/legacy/annotee/annotation"
@@ -148,15 +147,4 @@ func updateBaseBuild(base, latest *pb.Build) {
 		}
 	}
 	base.Steps = latest.Steps
-	for _, step := range base.Steps {
-		if len(step.Logs) > 0 && step.Logs[0].Name == luciexe.BuildProtoLogName {
-			step.Logs[0].Name = "disabled-" + step.Logs[0].Name
-			if step.SummaryMarkdown != "" {
-				step.SummaryMarkdown += "\n\n"
-			}
-			step.SummaryMarkdown += "Launching a merge step in legacy annotation " +
-				"mode is not supported. Please migrate to bbagent first. " +
-				" $build.proto log is currently renamed to disabled-$build.proto."
-		}
-	}
 }

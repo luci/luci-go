@@ -30,7 +30,6 @@ import (
 	"go.chromium.org/luci/common/sync/dispatcher/buffer"
 	"go.chromium.org/luci/logdog/api/logpb"
 	"go.chromium.org/luci/logdog/common/types"
-	"go.chromium.org/luci/luciexe"
 )
 
 // buildState represets the current state of a single build.proto stream.
@@ -113,7 +112,7 @@ func (t *buildStateTracker) processDataUnlocked(state *buildState, data []byte) 
 		parsedBuild = build
 
 		for _, step := range parsedBuild.Steps {
-			if len(step.Logs) > 0 && step.Logs[0].Name == luciexe.BuildProtoLogName {
+			if len(step.Logs) > 0 && step.Logs[0].Name == "$build.proto" {
 				// convert incoming $build.proto logs to MergeBuild messages.
 				// If the step has both, then just discard the $build.proto log.
 				//

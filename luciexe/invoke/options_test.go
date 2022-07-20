@@ -159,17 +159,18 @@ func TestOptionsNamespace(t *testing.T) {
 			lo, _, err := o.rationalize(ctx)
 			So(err, ShouldBeNil)
 			So(lo.env.Get(bootstrap.EnvNamespace), ShouldResemble, "u")
-			So(lo.step, ShouldResemble, &bbpb.Step{
+			So(lo.step, ShouldResembleProto, &bbpb.Step{
 				Name:      "u",
 				StartTime: nowP,
 				Status:    bbpb.Status_STARTED,
 				Logs: []*bbpb.Log{
-					{Name: "$build.proto", Url: "u/build.proto"},
 					{Name: "stdout", Url: "u/stdout"},
 					{Name: "stderr", Url: "u/stderr"},
 				},
+				MergeBuild: &bbpb.Step_MergeBuild{
+					FromLogdogStream: "u/build.proto",
+				},
 			})
-			So(lo.step.Logs[0].Url, ShouldEqual, "u/build.proto")
 		})
 
 		Convey(`nested`, func() {
@@ -178,17 +179,18 @@ func TestOptionsNamespace(t *testing.T) {
 			lo, _, err := o.rationalize(ctx)
 			So(err, ShouldBeNil)
 			So(lo.env.Get(bootstrap.EnvNamespace), ShouldResemble, "u/bar/sub")
-			So(lo.step, ShouldResemble, &bbpb.Step{
+			So(lo.step, ShouldResembleProto, &bbpb.Step{
 				Name:      "sub", // host application will swizzle this
 				StartTime: nowP,
 				Status:    bbpb.Status_STARTED,
 				Logs: []*bbpb.Log{
-					{Name: "$build.proto", Url: "sub/build.proto"},
 					{Name: "stdout", Url: "sub/stdout"},
 					{Name: "stderr", Url: "sub/stderr"},
 				},
+				MergeBuild: &bbpb.Step_MergeBuild{
+					FromLogdogStream: "sub/build.proto",
+				},
 			})
-			So(lo.step.Logs[0].Url, ShouldEqual, "sub/build.proto")
 		})
 
 		Convey(`deeply nested`, func() {
@@ -198,17 +200,18 @@ func TestOptionsNamespace(t *testing.T) {
 			So(err, ShouldBeNil)
 			So(lo.env.Get(bootstrap.EnvNamespace),
 				ShouldResemble, "u/step/s___cool__/sub")
-			So(lo.step, ShouldResemble, &bbpb.Step{
+			So(lo.step, ShouldResembleProto, &bbpb.Step{
 				Name:      "step|!!cool!!|sub", // host application will swizzle this
 				StartTime: nowP,
 				Status:    bbpb.Status_STARTED,
 				Logs: []*bbpb.Log{
-					{Name: "$build.proto", Url: "step/s___cool__/sub/build.proto"},
 					{Name: "stdout", Url: "step/s___cool__/sub/stdout"},
 					{Name: "stderr", Url: "step/s___cool__/sub/stderr"},
 				},
+				MergeBuild: &bbpb.Step_MergeBuild{
+					FromLogdogStream: "step/s___cool__/sub/build.proto",
+				},
 			})
-			So(lo.step.Logs[0].Url, ShouldEqual, "step/s___cool__/sub/build.proto")
 		})
 	})
 }

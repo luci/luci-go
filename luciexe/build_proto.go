@@ -19,9 +19,6 @@ import (
 )
 
 const (
-	// BuildProtoLogName is the Build.Step.Log.Name for sub-lucictx programs.
-	BuildProtoLogName = "$build.proto"
-
 	// BuildProtoContentType is the ContentType of the build.proto LogDog datagram
 	// stream.
 	BuildProtoContentType = protoutil.BuildMediaType
