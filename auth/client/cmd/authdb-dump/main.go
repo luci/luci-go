@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Command realms-dump can dump realm configs served by an Auth Service.
+// Command authdb-dump can dump AuthDB proto served by an Auth Service.
 //
 // This is to aid in developing Realms API and debugging issues. Not intended to
 // be used in any production setting.
@@ -47,6 +47,8 @@ import (
 var (
 	authServiceURL = flag.String("auth-service-url", "https://chrome-infra-auth.appspot.com",
 		"https:// URL of a Auth Service to fetch realms from")
+	outputFile = flag.String("output-proto-file", "",
+		"If set, write the protocol.AuthDB to this file using wirepb encoding instead of dumping it as text to stdout")
 )
 
 func main() {
@@ -79,8 +81,16 @@ func run(ctx context.Context) error {
 		return err
 	}
 
-	logging.Infof(ctx, "Realms proto:")
-	fmt.Printf("%s", proto.MarshalTextString(authDB.Realms))
+	if *outputFile != "" {
+		blob, err := proto.Marshal(authDB)
+		if err != nil {
+			return err
+		}
+		return ioutil.WriteFile(*outputFile, blob, 0600)
+	}
+
+	logging.Infof(ctx, "AuthDB proto:")
+	fmt.Printf("%s", proto.MarshalTextString(authDB))
 	return nil
 }
 
