@@ -16,6 +16,7 @@ package realmset
 
 import (
 	"context"
+	"sort"
 	"testing"
 
 	"go.chromium.org/luci/server/auth/authdb/internal/graph"
@@ -32,6 +33,11 @@ var (
 	permUnknown  = realms.RegisterPermission("luci.dev.unknown")
 	permIgnored  = realms.RegisterPermission("luci.dev.ignored")
 )
+
+func init() {
+	permTesting0.AddFlags(realms.UsedInQueryRealms)
+	permTesting1.AddFlags(realms.UsedInQueryRealms)
+}
 
 func TestRealms(t *testing.T) {
 	t.Parallel()
@@ -88,6 +94,28 @@ func TestRealms(t *testing.T) {
 					},
 				},
 				{
+					Name: "proj:r2",
+					Bindings: []*protocol.Binding{
+						{
+							Permissions: []uint32{0},
+							Principals: []string{
+								"group:g1",
+							},
+						},
+					},
+				},
+				{
+					Name: "another:r1",
+					Bindings: []*protocol.Binding{
+						{
+							Permissions: []uint32{0, 1, 2},
+							Principals: []string{
+								"group:g1",
+							},
+						},
+					},
+				},
+				{
 					Name: "proj:empty",
 					Bindings: []*protocol.Binding{
 						{
@@ -116,7 +144,13 @@ func TestRealms(t *testing.T) {
 			"luci.dev.testing2": 2,
 			"luci.dev.ignored":  3,
 		})
-		So(r.names.ToSortedSlice(), ShouldResemble, []string{"proj:empty", "proj:only-ignored", "proj:r1"})
+		So(r.names.ToSortedSlice(), ShouldResemble, []string{
+			"another:r1",
+			"proj:empty",
+			"proj:only-ignored",
+			"proj:r1",
+			"proj:r2",
+		})
 
 		idx, ok := r.PermissionIndex(permTesting2)
 		So(ok, ShouldBeTrue)
@@ -158,6 +192,38 @@ func TestRealms(t *testing.T) {
 		idx, _ = r.PermissionIndex(permIgnored)
 		So(idx, ShouldEqual, 3)
 		So(r.Bindings("proj:r1", 3), ShouldBeEmpty)
+
+		// Check bindings from QueryBindings match what Bindings(...) returns and
+		// also convert the result into a map we can easily pass to ShouldResemble.
+		checkBindingsMap := func(m map[string][]RealmBindings, perm PermissionIndex) map[string][]string {
+			out := map[string][]string{}
+			for proj, realms := range m {
+				for _, realmAndBindings := range realms {
+					So(realmAndBindings.Bindings, ShouldResemble, r.Bindings(realmAndBindings.Realm, perm))
+					out[proj] = append(out[proj], realmAndBindings.Realm)
+				}
+				sort.Strings(out[proj])
+			}
+			return out
+		}
+
+		bindings, ok := r.QueryBindings(0)
+		So(ok, ShouldBeTrue)
+		So(checkBindingsMap(bindings, 0), ShouldResemble, map[string][]string{
+			"another": {"another:r1"},
+			"proj":    {"proj:r1", "proj:r2"},
+		})
+
+		bindings, ok = r.QueryBindings(1)
+		So(ok, ShouldBeTrue)
+		So(checkBindingsMap(bindings, 1), ShouldResemble, map[string][]string{
+			"another": {"another:r1"},
+			"proj":    {"proj:r1"},
+		})
+
+		// The permission is not flagged with UsedInQueryRealms.
+		_, ok = r.QueryBindings(2)
+		So(ok, ShouldBeFalse)
 	})
 
 	Convey("Conditional bindings", t, func() {

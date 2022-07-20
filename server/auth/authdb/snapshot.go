@@ -259,9 +259,57 @@ func (db *SnapshotDB) HasPermission(ctx context.Context, id identity.Identity, p
 
 // QueryRealms returns a list of realms where the identity has the given
 // permission.
-func (db *SnapshotDB) QueryRealms(ctx context.Context, id identity.Identity, perm realms.Permission, project string, attrs realms.Attrs) ([]string, error) {
-	// TODO
-	return nil, errors.Reason("QueryRealms is not implemented yet").Err()
+func (db *SnapshotDB) QueryRealms(ctx context.Context, id identity.Identity, perm realms.Permission, project string, attrs realms.Attrs) (out []string, err error) {
+	ctx, span := trace.StartSpan(ctx, "go.chromium.org/luci/server/auth/authdb.QueryRealms")
+	span.Attribute("cr.dev/permission", perm.Name())
+	for k, v := range attrs {
+		span.Attribute("cr.dev/attr/"+k, v)
+	}
+	defer func() { span.End(err) }()
+
+	if project != "" {
+		if err := realms.ValidateProjectName(project); err != nil {
+			return nil, err
+		}
+	}
+
+	// This may happen if the AuthDB proto has no Realms yet.
+	if db.realms == nil {
+		return nil, errors.Reason("Realms API is not available").Err()
+	}
+
+	permIdx, ok := db.realms.PermissionIndex(perm)
+	if !ok {
+		logging.Warningf(ctx, "Querying realms with permission %q not present in the AuthDB", perm)
+		return nil, nil
+	}
+
+	// Get the map project => all bindings for the given permission there. This
+	// returns `ok == false` if the permission was not flagged with
+	// UsedInQueryRealms.
+	permBindings, ok := db.realms.QueryBindings(permIdx)
+	if !ok {
+		return nil, errors.Reason("permission %s cannot be used in QueryRealms: it was not flagged with UsedInQueryRealms flag", perm).Err()
+	}
+
+	// For each potentially matching list of bindings, check if it really matches.
+	q := db.groups.MembershipsQueryCache(id)
+	visit := func(bindings []realmset.RealmBindings) {
+		for _, realmBindings := range bindings {
+			if realmBindings.Bindings.Check(ctx, &q, attrs) {
+				out = append(out, realmBindings.Realm)
+			}
+		}
+	}
+	if project != "" {
+		visit(permBindings[project])
+	} else {
+		for _, bindings := range permBindings {
+			visit(bindings)
+		}
+	}
+
+	return out, nil
 }
 
 // GetCertificates returns a bundle with certificates of a trusted signer.

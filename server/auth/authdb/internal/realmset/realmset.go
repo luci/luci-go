@@ -43,6 +43,9 @@ type Realms struct {
 	names  stringset.Set                  // just names of all defined realms
 	realms map[realmAndPerm]Bindings      // <realm, perm> -> who has it under which conditions
 	data   map[string]*protocol.RealmData // per-realm attached RealmData
+
+	// Used by QueryBindings: perm -> project -> [(realm, bindings)].
+	bindingsIdx map[PermissionIndex]map[string][]RealmBindings
 }
 
 // PermissionIndex is used in place of permission names.
@@ -95,6 +98,16 @@ func (b Bindings) Check(ctx context.Context, q *graph.MembershipsQueryCache, att
 	return false
 }
 
+// RealmBindings is a realm name plus bindings for a single permission there.
+//
+// Used as part of QueryBindings return value.
+type RealmBindings struct {
+	// Realms is a full realm name as "<project>:<name>".
+	Realm string
+	// Bindings is a list of bindings for a permission passed to QueryBindings.
+	Bindings Bindings
+}
+
 // realmAndPerm is used as a composite key in `realms` map.
 type realmAndPerm struct {
 	realm string
@@ -141,6 +154,21 @@ func (r *Realms) Data(realm string) *protocol.RealmData {
 // the realm at all.
 func (r *Realms) Bindings(realm string, perm PermissionIndex) Bindings {
 	return r.realms[realmAndPerm{realm, perm}]
+}
+
+// QueryBindings returns **all** bindings for the given permission across all
+// realms and projects.
+//
+// The result is a map "project name => list of (realm, bindings for the
+// requested permission in this realm)". It includes only projects and realms
+// that have bindings for the queried permission. The order of items in the list
+// is not well-defined.
+//
+// This information is available only for permission flagged with
+// UsedInQueryRealms. Returns `ok == false` if `perm` was not flagged.
+func (r *Realms) QueryBindings(perm PermissionIndex) (map[string][]RealmBindings, bool) {
+	res, ok := r.bindingsIdx[perm]
+	return res, ok
 }
 
 // Build constructs Realms from the proto message, the group graph and
@@ -243,14 +271,14 @@ func Build(r *protocol.Realms, qg *graph.QueryableGraph, registered map[realms.P
 	// Collect conditional bindings for the same (realm, perm) key into an array,
 	// since we'll need to evaluate them sequentially when serving HasPermission
 	// checks.
-	realms := make(map[realmAndPerm]Bindings, len(counts))
+	realmMap := make(map[realmAndPerm]Bindings, len(counts))
 	dedupper := graph.NodeSetDedupper{}
 	for key, ps := range realmsToBe {
 		groups, idents := ps.finalize(dedupper)
-		if realms[key.realmAndPerm] == nil {
-			realms[key.realmAndPerm] = make(Bindings, 0, counts[key.realmAndPerm])
+		if realmMap[key.realmAndPerm] == nil {
+			realmMap[key.realmAndPerm] = make(Bindings, 0, counts[key.realmAndPerm])
 		}
-		realms[key.realmAndPerm] = append(realms[key.realmAndPerm], Binding{
+		realmMap[key.realmAndPerm] = append(realmMap[key.realmAndPerm], Binding{
 			Condition: key.cond,
 			Groups:    groups,
 			Idents:    idents,
@@ -261,7 +289,7 @@ func Build(r *protocol.Realms, qg *graph.QueryableGraph, registered map[realms.P
 	// chances of applying. Right now this uses a very simplistic heuristic:
 	// unconditional bindings are easier to check and more likely to apply than
 	// conditional ones.
-	for _, bindings := range realms {
+	for _, bindings := range realmMap {
 		sort.Slice(bindings, func(l, r int) bool {
 			if bl, br := bindings[l].badness(), bindings[r].badness(); bl != br {
 				return bl < br
@@ -296,11 +324,34 @@ func Build(r *protocol.Realms, qg *graph.QueryableGraph, registered map[realms.P
 		}
 	}
 
+	// For all permissions with UsedInQueryRealms flag, build a data set with all
+	// realms that have this permission. This allows skipping unrelated realms
+	// in QueryRealms. Note that we'll reuse Bindings slices from `realmMap`, so
+	// we pay extra RAM only for actual mapping.
+	bindingsIdx := make(map[PermissionIndex]map[string][]RealmBindings, len(registered))
+	for perm, flags := range registered {
+		if flags&realms.UsedInQueryRealms != 0 {
+			if permIdx, ok := perms[perm.Name()]; ok {
+				bindingsIdx[permIdx] = map[string][]RealmBindings{}
+			}
+		}
+	}
+	for realmAndPerm, bindings := range realmMap {
+		if projToBindings, ok := bindingsIdx[realmAndPerm.perm]; ok {
+			proj, _ := realms.Split(realmAndPerm.realm)
+			projToBindings[proj] = append(projToBindings[proj], RealmBindings{
+				Realm:    realmAndPerm.realm,
+				Bindings: bindings,
+			})
+		}
+	}
+
 	return &Realms{
-		perms:  perms,
-		names:  names,
-		realms: realms,
-		data:   data,
+		perms:       perms,
+		names:       names,
+		realms:      realmMap,
+		data:        data,
+		bindingsIdx: bindingsIdx,
 	}, nil
 }
 

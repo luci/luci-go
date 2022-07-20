@@ -1,0 +1,3 @@
+# In case someone forgets to delete auth.db using for benchmarks. Uploading it
+# to code review would be pretty bad.
+auth.db

@@ -53,7 +53,15 @@ var (
 	perm1       = realms.RegisterPermission("luci.dev.testing1")
 	perm2       = realms.RegisterPermission("luci.dev.testing2")
 	unknownPerm = realms.RegisterPermission("luci.dev.unknown")
+
+	// For the benchmark that uses real AuthDB dumps.
+	bbBuildsGet = realms.RegisterPermission("buildbucket.builds.get")
 )
+
+func init() {
+	perm1.AddFlags(realms.UsedInQueryRealms)
+	bbBuildsGet.AddFlags(realms.UsedInQueryRealms)
+}
 
 func TestSnapshotDB(t *testing.T) {
 	c := context.Background()
@@ -253,6 +261,15 @@ func TestSnapshotDB(t *testing.T) {
 						},
 					},
 					{
+						Name: "another:realm",
+						Bindings: []*protocol.Binding{
+							{
+								Permissions: []uint32{0},
+								Principals:  []string{"user:realm@example.com"},
+							},
+						},
+					},
+					{
 						Name: "proj:empty",
 					},
 				},
@@ -321,6 +338,43 @@ func TestSnapshotDB(t *testing.T) {
 			ok, err = db.HasPermission(c, "user:cond@example.com", perm2, "proj:some/realm", realms.Attrs{"a": "ok_1"})
 			So(err, ShouldBeNil)
 			So(ok, ShouldBeFalse)
+		})
+
+		Convey("QueryRealms works", func() {
+			// A direct hit.
+			r, err := db.QueryRealms(c, "user:realm@example.com", perm1, "", nil)
+			sort.Strings(r)
+			So(err, ShouldBeNil)
+			So(r, ShouldResemble, []string{"another:realm", "proj:some/realm"})
+
+			// Filtering by project.
+			r, err = db.QueryRealms(c, "user:realm@example.com", perm1, "proj", nil)
+			So(err, ShouldBeNil)
+			So(r, ShouldResemble, []string{"proj:some/realm"})
+
+			// A hit through a group.
+			r, err = db.QueryRealms(c, "user:abc@example.com", perm1, "", nil)
+			So(err, ShouldBeNil)
+			So(r, ShouldResemble, []string{"proj:some/realm"})
+		})
+
+		Convey("QueryRealms with conditional bindings", func() {
+			r, err := db.QueryRealms(c, "user:cond@example.com", perm1, "", nil)
+			So(err, ShouldBeNil)
+			So(r, ShouldBeEmpty)
+
+			r, err = db.QueryRealms(c, "user:cond@example.com", perm1, "", realms.Attrs{"a": "ok_1"})
+			So(err, ShouldBeNil)
+			So(r, ShouldResemble, []string{"proj:some/realm"})
+
+			r, err = db.QueryRealms(c, "user:cond@example.com", perm1, "", realms.Attrs{"a": "???"})
+			So(err, ShouldBeNil)
+			So(r, ShouldBeEmpty)
+		})
+
+		Convey("QueryRealms with unindexed permission", func() {
+			_, err := db.QueryRealms(c, "user:realm@example.com", perm2, "", nil)
+			So(err, ShouldErrLike, "permission luci.dev.testing2 cannot be used in QueryRealms")
 		})
 
 		Convey("GetRealmData works", func() {
@@ -485,15 +539,11 @@ func readTestDB(path string) *protocol.AuthDB {
 	if err != nil {
 		panic(err)
 	}
-	signed := protocol.SignedAuthDB{}
-	if err := proto.Unmarshal(blob, &signed); err != nil {
+	authdb := protocol.AuthDB{}
+	if err := proto.Unmarshal(blob, &authdb); err != nil {
 		panic(err)
 	}
-	m := protocol.ReplicationPushRequest{}
-	if err := proto.Unmarshal(signed.AuthDbBlob, &m); err != nil {
-		panic(err)
-	}
-	return m.AuthDb
+	return &authdb
 }
 
 func makeTestDB(users, groups int) *protocol.AuthDB {
@@ -567,9 +617,10 @@ func runMemUsageTest(t *testing.T, cb func(db *protocol.AuthDB) queryableGraph) 
 	})
 }
 
-// Note: to compare memory usage with some real AuthDB (previously saved to a
-// file):
+// Note: to run some benchmarks with real AuthDB:
+//   go run go.chromium.org/luci/auth/client/cmd/authdb-dump -output-proto-file auth.db
 //   go test . -run=TestMemUsage* -v -authdb auth.db
+//   go test -bench=QueryRealms -run=XXX -authdb auth.db
 
 func TestMemUsageOld(t *testing.T) {
 	runMemUsageTest(t, oldQueryableGraph)
@@ -631,4 +682,22 @@ func BenchmarkIsMemberOld(b *testing.B) {
 func BenchmarkIsMemberNew(b *testing.B) {
 	db := makeTestDB(100, 50)
 	runIsMemberBenchmark(b, db, newQueryableGraph(db))
+}
+
+func BenchmarkQueryRealms(b *testing.B) {
+	ctx := context.Background()
+	db, err := NewSnapshotDB(makeTestDB(100, 50), "http://auth-service", 1234, false)
+	if err != nil {
+		b.Fatalf("bad AuthDB: %s", err)
+	}
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		realms, err := db.QueryRealms(ctx, "user:someone@example.com", bbBuildsGet, "", nil)
+		if i == 0 {
+			if err != nil {
+				b.Fatalf("QueryRealms failed: %s", err)
+			}
+			b.Logf("Hits: %d", len(realms))
+		}
+	}
 }
