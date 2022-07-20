@@ -493,8 +493,15 @@ func GetAllAuthGroups(ctx context.Context) ([]*AuthGroup, error) {
 // validateIdentities validates that all strings in a slice are parseable as valid identities.
 func validateIdentities(ids []string) error {
 	for _, val := range ids {
-		if _, err := identity.MakeIdentity(val); err != nil {
+		if id, err := identity.MakeIdentity(val); err != nil {
 			return err
+		} else if id.Kind() == identity.Project {
+			// Forbid using project identities in groups.
+			// They are not safe to be added to groups until all services that consume
+			// AuthDB understand them. Many services do an overzealous validation of
+			// AuthDB pushes and totally reject them if AuthDB contains some unrecognized
+			// identity kinds.
+			return errors.New(`"project:..." identities aren't allowed in groups`)
 		}
 	}
 	return nil
@@ -503,8 +510,15 @@ func validateIdentities(ids []string) error {
 // validateGlobs validates that all strings in a slice are parseable as valid identity globs.
 func validateGlobs(globs []string) error {
 	for _, val := range globs {
-		if _, err := identity.MakeGlob(val); err != nil {
+		if glob, err := identity.MakeGlob(val); err != nil {
 			return err
+		} else if glob.Kind() == identity.Project {
+			// Forbid using project identities in groups.
+			// They are not safe to be added to groups until all services that consume
+			// AuthDB understand them. Many services do an overzealous validation of
+			// AuthDB pushes and totally reject them if AuthDB contains some unrecognized
+			// identity kinds.
+			return errors.New(`"project:..." globs aren't allowed in groups`)
 		}
 	}
 	return nil

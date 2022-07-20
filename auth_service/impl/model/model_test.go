@@ -371,6 +371,15 @@ func TestCreateAuthGroup(t *testing.T) {
 			So(err, ShouldErrLike, "bad identity string \"no-prefix@google.com\"")
 		})
 
+		Convey("project member identities", func() {
+			group := testAuthGroup(ctx, "foo")
+			group.Members = []string{"project:abc"}
+
+			_, err := CreateAuthGroup(ctx, group)
+			So(err, ShouldUnwrapTo, ErrInvalidIdentity)
+			So(err, ShouldErrLike, `"project:..." identities aren't allowed in groups`)
+		})
+
 		Convey("invalid identity globs", func() {
 			group := testAuthGroup(ctx, "foo")
 			group.Globs = []string{"*@no-prefix.com"}
@@ -378,6 +387,15 @@ func TestCreateAuthGroup(t *testing.T) {
 			_, err := CreateAuthGroup(ctx, group)
 			So(err, ShouldUnwrapTo, ErrInvalidIdentity)
 			So(err, ShouldErrLike, "bad identity glob string \"*@no-prefix.com\"")
+		})
+
+		Convey("project identity globs", func() {
+			group := testAuthGroup(ctx, "foo")
+			group.Globs = []string{"project:*"}
+
+			_, err := CreateAuthGroup(ctx, group)
+			So(err, ShouldUnwrapTo, ErrInvalidIdentity)
+			So(err, ShouldErrLike, `"project:..." globs aren't allowed in groups`)
 		})
 
 		Convey("all referenced groups must exist", func() {
@@ -643,6 +661,16 @@ func TestUpdateAuthGroup(t *testing.T) {
 			So(err, ShouldErrLike, "bad identity string \"no-prefix@google.com\"")
 		})
 
+		Convey("project member identities", func() {
+			So(datastore.Put(ctx, group), ShouldBeNil)
+
+			group.Members = []string{"project:abc"}
+
+			_, err := UpdateAuthGroup(ctx, group, &fieldmaskpb.FieldMask{Paths: []string{"members"}}, etag)
+			So(err, ShouldUnwrapTo, ErrInvalidIdentity)
+			So(err, ShouldErrLike, `"project:..." identities aren't allowed in groups`)
+		})
+
 		Convey("invalid identity globs", func() {
 			So(datastore.Put(ctx, group), ShouldBeNil)
 
@@ -651,6 +679,16 @@ func TestUpdateAuthGroup(t *testing.T) {
 			_, err := UpdateAuthGroup(ctx, group, &fieldmaskpb.FieldMask{Paths: []string{"globs"}}, etag)
 			So(err, ShouldUnwrapTo, ErrInvalidIdentity)
 			So(err, ShouldErrLike, "bad identity glob string \"*@no-prefix.com\"")
+		})
+
+		Convey("project identity globs", func() {
+			So(datastore.Put(ctx, group), ShouldBeNil)
+
+			group.Globs = []string{"project:*"}
+
+			_, err := UpdateAuthGroup(ctx, group, &fieldmaskpb.FieldMask{Paths: []string{"globs"}}, etag)
+			So(err, ShouldUnwrapTo, ErrInvalidIdentity)
+			So(err, ShouldErrLike, `"project:..." globs aren't allowed in groups`)
 		})
 
 		Convey("all nested groups must exist", func() {
