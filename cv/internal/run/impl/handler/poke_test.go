@@ -16,6 +16,7 @@ package handler
 
 import (
 	"context"
+	"fmt"
 	"testing"
 	"time"
 
@@ -187,6 +188,32 @@ func TestPoke(t *testing.T) {
 						LastTreeCheckTime: timestamppb.New(now),
 					})
 					runtest.AssertReceivedPoke(ctx, rid, now.Add(1*time.Minute))
+				})
+
+				Convey("Failed", func() {
+					ct.TreeFake.ModifyState(ctx, tree.StateUnknown)
+					ct.TreeFake.InjectErr(fmt.Errorf("error retrieving tree status"))
+					Convey("Not too long", func() {
+						res, err := h.Poke(ctx, rs)
+						So(err, ShouldBeNil)
+						So(res.State.Status, ShouldEqual, run.Status_WAITING_FOR_SUBMISSION)
+					})
+
+					Convey("Too long", func() {
+						rs.Submission.TreeErrorSince = timestamppb.New(now.Add(-11 * time.Minute))
+						res, err := h.Poke(ctx, rs)
+						So(err, ShouldBeNil)
+						So(res.State, ShouldNotEqual, rs)
+						So(res.SideEffectFn, ShouldBeNil)
+						So(res.PreserveEvents, ShouldBeFalse)
+						So(res.PostProcessFn, ShouldBeNil)
+						So(res.State.NewLongOpIDs, ShouldHaveLength, 1)
+						ct := res.State.OngoingLongOps.Ops[res.State.NewLongOpIDs[0]].GetCancelTriggers()
+						So(ct.RunStatusIfSucceeded, ShouldEqual, run.Status_FAILED)
+						So(ct.Requests, ShouldHaveLength, 1)
+						So(ct.Requests[0].Message, ShouldContainSubstring, "Could not submit this CL because the tree status app at tree.example.com repeatedly returned failures")
+						So(res.State.Status, ShouldEqual, run.Status_WAITING_FOR_SUBMISSION)
+					})
 				})
 			})
 

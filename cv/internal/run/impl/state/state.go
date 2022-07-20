@@ -130,6 +130,8 @@ func (rs *RunState) DeepCopy() *RunState {
 //
 // Returns true if no Tree or Options.SkipTreeChecks is configured for this Run.
 // Updates the latest result to `rs.Submission`.
+// In case fetching the status results in error for the first time, it records
+// the time in the appropriate field in Submission.
 // Records a new LogEntry.
 func (rs *RunState) CheckTree(ctx context.Context, tc tree.Client) (bool, error) {
 	treeOpen := true
@@ -140,9 +142,15 @@ func (rs *RunState) CheckTree(ctx context.Context, tc tree.Client) (bool, error)
 		}
 		if treeURL := cg.Content.GetVerifiers().GetTreeStatus().GetUrl(); treeURL != "" {
 			status, err := tc.FetchLatest(ctx, treeURL)
-			if err != nil {
+			switch {
+			case err != nil && rs.Submission.TreeErrorSince == nil:
+				rs.Submission.TreeErrorSince = timestamppb.New(clock.Now(ctx))
+				fallthrough
+			case err != nil:
+				rs.Submission.LastTreeCheckTime = timestamppb.New(clock.Now(ctx))
 				return false, err
 			}
+			rs.Submission.TreeErrorSince = nil
 			treeOpen = status.State == tree.Open || status.State == tree.Throttled
 			rs.LogEntries = append(rs.LogEntries, &run.LogEntry{
 				Time: timestamppb.New(clock.Now(ctx)),

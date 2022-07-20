@@ -131,8 +131,12 @@ message Submission {
   repeated int64 failed_cls = 5;
   // If True, Tree is currently in open state.
   bool tree_open = 10;
-  // The timestamp when the Tree status was last fetched.
+  // The timestamp when the last attempt to fetch the Tree status occurred.
   google.protobuf.Timestamp last_tree_check_time = 11;
+  // The timestamp when an attempt to fetch the Tree status first resulted in
+  // an error.
+  google.protobuf.Timestamp tree_error_since = 12;
+
 }
 
 // Options are Run-specific additions on top of LUCI project config.

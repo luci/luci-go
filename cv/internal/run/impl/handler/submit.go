@@ -97,14 +97,38 @@ func (impl *Impl) OnReadyForSubmission(ctx context.Context, rs *state.RunState) 
 			rs.Submission = proto.Clone(rs.Submission).(*run.Submission)
 		}
 
-		switch treeOpen, err := rs.CheckTree(ctx, impl.TreeClient); {
-		case err != nil:
-			return nil, err
+		switch treeOpen, treeErr := rs.CheckTree(ctx, impl.TreeClient); {
+		case treeErr != nil && clock.Since(ctx, rs.Submission.TreeErrorSince.AsTime()) > treeStatusFailureTimeLimit:
+			// Failed to fetch status for a long time. Fail the Run.
+			rims := make(map[common.CLID]reviewInputMeta, len(rs.CLs))
+			cg, err := prjcfg.GetConfigGroup(ctx, rs.ID.LUCIProject(), rs.ConfigGroupID)
+			if err != nil {
+				return nil, err
+			}
+			for _, id := range rs.CLs {
+				rims[id] = reviewInputMeta{
+					notify: gerrit.Whoms{gerrit.Owner, gerrit.CQVoters},
+					// Add the same set of group/people to the attention set.
+					addToAttention: gerrit.Whoms{gerrit.Owner, gerrit.CQVoters},
+					reason:         treeStatusCheckFailedReason,
+					message:        fmt.Sprintf(persistentTreeStatusAppFailureTemplate, cg.Content.GetVerifiers().GetTreeStatus().GetUrl()),
+				}
+			}
+			scheduleTriggersCancellation(ctx, rs, rims, run.Status_FAILED)
+			if err := releaseSubmitQueue(ctx, rs, impl.RM); err != nil {
+				return nil, err
+			}
+			return &Result{
+				State: rs,
+			}, nil
+		case treeErr != nil:
+			logging.Warningf(ctx, "tree-status check failed with: %s, retrying in %s", treeErr, treeCheckInterval)
+			fallthrough
 		case !treeOpen:
 			err := parallel.WorkPool(2, func(work chan<- func() error) {
 				work <- func() error {
-					// Tree is closed, revisit after 1 minute.
-					return impl.RM.PokeAfter(ctx, rs.ID, 1*time.Minute)
+					// Tree is closed or status unknown, revisit after 1 minute.
+					return impl.RM.PokeAfter(ctx, rs.ID, treeCheckInterval)
 				}
 				work <- func() error {
 					// Give up the Submit Queue while waiting for tree to open.
@@ -667,6 +691,9 @@ const (
 		// to see under what circumstance it may happen and revise this message
 		// so that CV doesn't get blamed for timeout it isn't responsible for.
 		"Please contact LUCI team.\n\n" + cvBugLink
+	persistentTreeStatusAppFailureTemplate = "Could not submit this CL " +
+		"because the tree status app at %s repeatedly returned failures. "
+	treeStatusCheckFailedReason      = "Tree status check failed."
 	submissionFailureAttentionReason = "Submission failed."
 )
 

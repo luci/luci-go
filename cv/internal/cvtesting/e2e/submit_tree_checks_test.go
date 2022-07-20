@@ -15,6 +15,7 @@
 package e2e
 
 import (
+	"fmt"
 	"testing"
 
 	"google.golang.org/protobuf/proto"
@@ -33,9 +34,8 @@ import (
 )
 
 func TestSubmissionDuringClosedTree(t *testing.T) {
-	t.Parallel()
-
-	Convey("CV submits Full Run if tree is closed only iff No-Tree-Checks: True", t, func() {
+	//	t.Parallel()
+	Convey("Test closed tree", t, func() {
 		ct := Test{}
 		ctx, cancel := ct.SetUp()
 		defer cancel()
@@ -44,71 +44,133 @@ func TestSubmissionDuringClosedTree(t *testing.T) {
 		const gHost = "g-review"
 		const gRepo = "re/po"
 		const gRef = "refs/heads/main"
-		const gChangeWait = 400
+		const gChange = 400
 		const gChangeSubmit = 200
-		descriptions := map[int]string{
-			gChangeWait:   "Just a normal CL",
-			gChangeSubmit: "This is a revert.\n\nNo-Tree-Checks: True\nNo-Try: True",
-		}
+		Convey("CV fails Full Run if tree status app is down", func() {
+			ct.TreeFake.InjectErr(fmt.Errorf("tree status app is down"))
 
-		ct.TreeFake.ModifyState(ctx, tree.Closed)
+			cfg := MakeCfgSingular("cg0", gHost, gRepo, gRef)
+			cfg.ConfigGroups[0].Verifiers.TreeStatus = &cfgpb.Verifiers_TreeStatus{
+				Url: "https://tree-status.example.com/",
+			}
+			prjcfgtest.Create(ctx, lProject, cfg)
+			So(ct.PMNotifier.UpdateConfig(ctx, lProject), ShouldBeNil)
 
-		cfg := MakeCfgSingular("cg0", gHost, gRepo, gRef)
-		cfg.ConfigGroups[0].Verifiers.TreeStatus = &cfgpb.Verifiers_TreeStatus{
-			Url: "https://tree-status.example.com/",
-		}
-		prjcfgtest.Create(ctx, lProject, cfg)
-		So(ct.PMNotifier.UpdateConfig(ctx, lProject), ShouldBeNil)
-
-		for _, gChange := range []int{gChangeWait, gChangeSubmit} {
 			ct.GFake.AddFrom(gf.WithCIs(gHost, gf.ACLRestricted(lProject), gf.CI(
 				gChange, gf.Project(gRepo), gf.Ref(gRef),
 				gf.Owner("user-1"),
 				gf.CQ(+2, ct.Clock.Now(), gf.U("user-2")),
 				gf.Approve(),
 				gf.Updated(ct.Clock.Now()),
-				gf.Desc(descriptions[gChange]),
+				gf.Desc("Just a normal CL"),
 			)))
-		}
-		// Only a committer can trigger a FullRun for someone else' CL.
-		ct.AddCommitter("user-2")
 
-		// Start CQDaemon and make it succeed the Run immediately.
-		ct.MustCQD(ctx, lProject).SetVerifyClbk(
-			func(r *migrationpb.ReportedRun) *migrationpb.ReportedRun {
-				r = proto.Clone(r).(*migrationpb.ReportedRun)
-				r.Attempt.Status = cvbqpb.AttemptStatus_SUCCESS
-				r.Attempt.Substatus = cvbqpb.AttemptSubstatus_NO_SUBSTATUS
-				return r
-			},
-		)
-		ct.LogPhase(ctx, "CV starts Runs")
-		var rWait, rSubmit *run.Run
-		ct.RunUntil(ctx, func() bool {
-			rs := ct.LoadRunsOf(ctx, lProject)
-			if len(rs) != 2 {
-				return false
-			}
-			if rs[0].CLs[0] == ct.LoadGerritCL(ctx, gHost, gChangeSubmit).ID {
-				rSubmit, rWait = rs[0], rs[1]
-			} else {
-				rSubmit, rWait = rs[1], rs[0]
-			}
-			return true
+			// Only a committer can trigger a FullRun for someone else's CL.
+			ct.AddCommitter("user-2")
+
+			// Start CQDaemon and make it succeed the Run immediately.
+			ct.MustCQD(ctx, lProject).SetVerifyClbk(
+				func(r *migrationpb.ReportedRun) *migrationpb.ReportedRun {
+					r = proto.Clone(r).(*migrationpb.ReportedRun)
+					r.Attempt.Status = cvbqpb.AttemptStatus_SUCCESS
+					r.Attempt.Substatus = cvbqpb.AttemptSubstatus_NO_SUBSTATUS
+					return r
+				},
+			)
+			ct.LogPhase(ctx, "CV starts Runs")
+			var r *run.Run
+			ct.RunUntil(ctx, func() bool {
+				rs := ct.LoadRunsOf(ctx, lProject)
+				if len(rs) == 0 {
+					return false
+				}
+				r = rs[0]
+				return true
+			})
+
+			ct.LogPhase(ctx, "CV fails to submit the CL")
+			ct.RunUntil(ctx, func() bool {
+				r = ct.LoadRun(ctx, r.ID)
+				return r.Status == run.Status_FAILED
+			})
+			info := ct.GFake.GetChange(gHost, gChange).Info
+			So(info.GetStatus(), ShouldEqual, gerritpb.ChangeStatus_NEW)
+			So(info.Messages[len(info.Messages)-1].Message, ShouldContainSubstring, "Could not submit this CL because the tree status app")
+			So(info.Messages[len(info.Messages)-1].Message, ShouldContainSubstring, "repeatedly returned failures")
+			So(info.GetLabels()["Commit-Queue"].Value, ShouldEqual, 0)
 		})
 
-		ct.LogPhase(ctx, "CV submits CL with No-Tree-Checks and waits with the other CL")
-		ct.RunUntil(ctx, func() bool {
-			rSubmit = ct.LoadRun(ctx, rSubmit.ID)
-			rWait = ct.LoadRun(ctx, rWait.ID)
-			return rWait.Status == run.Status_WAITING_FOR_SUBMISSION && rSubmit.Status == run.Status_SUCCEEDED
-		})
-		So(ct.GFake.GetChange(gHost, gChangeWait).Info.GetStatus(), ShouldEqual, gerritpb.ChangeStatus_NEW)
-		So(ct.GFake.GetChange(gHost, gChangeSubmit).Info.GetStatus(), ShouldEqual, gerritpb.ChangeStatus_MERGED)
+		Convey("CV submits Full Run only iff No-Tree-Checks: True", func() {
+			descriptions := map[int]string{
+				gChange:       "Just a normal CL",
+				gChangeSubmit: "This is a revert.\n\nNo-Tree-Checks: True\nNo-Try: True",
+			}
+			var expectedErr error
+			Convey("when tree is closed", func() {
+				ct.TreeFake.ModifyState(ctx, tree.Closed)
+			})
+			Convey("when tree status app is failing", func() {
+				expectedErr = fmt.Errorf("tree status app is down")
+				ct.TreeFake.InjectErr(expectedErr)
+			})
 
-		// And the tree must remain closed.
-		st, err := ct.TreeFake.Client().FetchLatest(ctx, "whatever")
-		So(err, ShouldBeNil)
-		So(st.State, ShouldEqual, tree.Closed)
+			cfg := MakeCfgSingular("cg0", gHost, gRepo, gRef)
+			cfg.ConfigGroups[0].Verifiers.TreeStatus = &cfgpb.Verifiers_TreeStatus{
+				Url: "https://tree-status.example.com/",
+			}
+			prjcfgtest.Create(ctx, lProject, cfg)
+			So(ct.PMNotifier.UpdateConfig(ctx, lProject), ShouldBeNil)
+
+			for _, gChange := range []int{gChange, gChangeSubmit} {
+				ct.GFake.AddFrom(gf.WithCIs(gHost, gf.ACLRestricted(lProject), gf.CI(
+					gChange, gf.Project(gRepo), gf.Ref(gRef),
+					gf.Owner("user-1"),
+					gf.CQ(+2, ct.Clock.Now(), gf.U("user-2")),
+					gf.Approve(),
+					gf.Updated(ct.Clock.Now()),
+					gf.Desc(descriptions[gChange]),
+				)))
+			}
+			// Only a committer can trigger a FullRun for someone else' CL.
+			ct.AddCommitter("user-2")
+
+			// Start CQDaemon and make it succeed the Run immediately.
+			ct.MustCQD(ctx, lProject).SetVerifyClbk(
+				func(r *migrationpb.ReportedRun) *migrationpb.ReportedRun {
+					r = proto.Clone(r).(*migrationpb.ReportedRun)
+					r.Attempt.Status = cvbqpb.AttemptStatus_SUCCESS
+					r.Attempt.Substatus = cvbqpb.AttemptSubstatus_NO_SUBSTATUS
+					return r
+				},
+			)
+			ct.LogPhase(ctx, "CV starts Runs")
+			var rWait, rSubmit *run.Run
+			ct.RunUntil(ctx, func() bool {
+				rs := ct.LoadRunsOf(ctx, lProject)
+				if len(rs) != 2 {
+					return false
+				}
+				if rs[0].CLs[0] == ct.LoadGerritCL(ctx, gHost, gChangeSubmit).ID {
+					rSubmit, rWait = rs[0], rs[1]
+				} else {
+					rSubmit, rWait = rs[1], rs[0]
+				}
+				return true
+			})
+
+			ct.LogPhase(ctx, "CV submits CL with No-Tree-Checks and waits with the other CL")
+			ct.RunUntil(ctx, func() bool {
+				rSubmit = ct.LoadRun(ctx, rSubmit.ID)
+				rWait = ct.LoadRun(ctx, rWait.ID)
+				return rWait.Status == run.Status_WAITING_FOR_SUBMISSION && rSubmit.Status == run.Status_SUCCEEDED
+			})
+			So(ct.GFake.GetChange(gHost, gChange).Info.GetStatus(), ShouldEqual, gerritpb.ChangeStatus_NEW)
+			So(ct.GFake.GetChange(gHost, gChangeSubmit).Info.GetStatus(), ShouldEqual, gerritpb.ChangeStatus_MERGED)
+
+			// And the tree must not open.
+			st, err := ct.TreeFake.Client().FetchLatest(ctx, "whatever")
+			So(err, ShouldEqual, expectedErr)
+			So(st.State, ShouldNotEqual, tree.Open)
+		})
 	})
 }

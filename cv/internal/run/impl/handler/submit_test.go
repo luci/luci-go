@@ -239,13 +239,35 @@ func TestOnReadyForSubmission(t *testing.T) {
 					So(res.PreserveEvents, ShouldBeFalse)
 					So(res.PostProcessFn, ShouldBeNil)
 					runtest.AssertReceivedPoke(ctx, rid, now.Add(1*time.Minute))
-					// Must not occupy the Submit Queue
+					// The Run must not occupy the Submit Queue
 					So(submit.MustCurrentRun(ctx, lProject), ShouldNotEqual, rid)
 					So(res.State.LogEntries, ShouldHaveLength, 3)
 					So(res.State.LogEntries[0].Kind, ShouldHaveSameTypeAs, &run.LogEntry_AcquiredSubmitQueue_{})
 					So(res.State.LogEntries[1].Kind, ShouldHaveSameTypeAs, &run.LogEntry_TreeChecked_{})
 					So(res.State.LogEntries[2].Kind, ShouldHaveSameTypeAs, &run.LogEntry_ReleasedSubmitQueue_{})
 					So(res.State.LogEntries[1].Kind.(*run.LogEntry_TreeChecked_).TreeChecked.Open, ShouldBeFalse)
+				})
+
+				Convey("Set TreeErrorSince on first failure", func() {
+					ct.TreeFake.ModifyState(ctx, tree.StateUnknown)
+					ct.TreeFake.InjectErr(fmt.Errorf("error while fetching tree status"))
+					res, err := h.OnReadyForSubmission(ctx, rs)
+					So(err, ShouldBeNil)
+					So(res.State.Status, ShouldEqual, run.Status_WAITING_FOR_SUBMISSION)
+					So(res.State.Submission, ShouldResembleProto, &run.Submission{
+						TreeOpen:          false,
+						LastTreeCheckTime: timestamppb.New(now),
+						TreeErrorSince:    timestamppb.New(now),
+					})
+					So(res.SideEffectFn, ShouldBeNil)
+					So(res.PreserveEvents, ShouldBeFalse)
+					So(res.PostProcessFn, ShouldBeNil)
+					runtest.AssertReceivedPoke(ctx, rid, now.Add(1*time.Minute))
+					// The Run must not occupy the Submit Queue
+					So(submit.MustCurrentRun(ctx, lProject), ShouldNotEqual, rid)
+					So(res.State.LogEntries, ShouldHaveLength, 2)
+					So(res.State.LogEntries[0].Kind, ShouldHaveSameTypeAs, &run.LogEntry_AcquiredSubmitQueue_{})
+					So(res.State.LogEntries[1].Kind, ShouldHaveSameTypeAs, &run.LogEntry_ReleasedSubmitQueue_{})
 				})
 			})
 		}

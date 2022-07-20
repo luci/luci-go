@@ -28,6 +28,8 @@ import (
 type Fake struct {
 	// TreeStatus represents the current status of this fake Tree.
 	TreeStatus tree.Status
+	// Error forces FetchLatest to fail when set.
+	Error error
 	// mu protects access/mutation to this fake Tree.
 	mu sync.RWMutex
 }
@@ -42,9 +44,18 @@ func NewFake(ctx context.Context, state tree.State) *Fake {
 	}
 }
 
-// Client returns a clientof this Fake Tree.
+// Client returns a client of this Fake Tree.
 func (f *Fake) Client() tree.Client {
 	return &client{f}
+}
+
+// InjectErr causes Fake tree status app to return error.
+//
+// Passing nil error will bring tree status app to normal.
+func (f *Fake) InjectErr(err error) {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	f.Error = err
 }
 
 // ModifyState changes the state of this fake Tree.
@@ -66,5 +77,8 @@ var _ tree.Client = (*client)(nil)
 func (c *client) FetchLatest(ctx context.Context, endpoint string) (tree.Status, error) {
 	c.fake.mu.RLock()
 	defer c.fake.mu.RUnlock()
+	if c.fake.Error != nil {
+		return tree.Status{}, c.fake.Error
+	}
 	return c.fake.TreeStatus, nil
 }

@@ -16,21 +16,27 @@ package handler
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"google.golang.org/protobuf/proto"
 
 	"go.chromium.org/luci/common/clock"
+	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/gae/service/datastore"
 
+	"go.chromium.org/luci/cv/internal/common"
+	"go.chromium.org/luci/cv/internal/configs/prjcfg"
+	"go.chromium.org/luci/cv/internal/gerrit"
 	"go.chromium.org/luci/cv/internal/migration/migrationcfg"
 	"go.chromium.org/luci/cv/internal/run"
 	"go.chromium.org/luci/cv/internal/run/impl/state"
 )
 
 const (
-	treeCheckInterval = time.Minute
-	clRefreshInterval = 10 * time.Minute
+	treeCheckInterval          = time.Minute
+	clRefreshInterval          = 10 * time.Minute
+	treeStatusFailureTimeLimit = 10 * time.Minute
 )
 
 // Poke implements Handler interface.
@@ -39,8 +45,30 @@ func (impl *Impl) Poke(ctx context.Context, rs *state.RunState) (*Result, error)
 	if shouldCheckTree(ctx, rs.Status, rs.Submission) {
 		rs.Submission = proto.Clone(rs.Submission).(*run.Submission)
 		switch open, err := rs.CheckTree(ctx, impl.TreeClient); {
+		case err != nil && clock.Since(ctx, rs.Submission.TreeErrorSince.AsTime()) > treeStatusFailureTimeLimit:
+			// The tree has been erroring for too long. Cancel the triggers and
+			// fail the run.
+			cg, err := prjcfg.GetConfigGroup(ctx, rs.ID.LUCIProject(), rs.ConfigGroupID)
+			if err != nil {
+				return nil, err
+			}
+			rims := make(map[common.CLID]reviewInputMeta, len(rs.CLs))
+			for _, cid := range rs.CLs {
+				rims[common.CLID(cid)] = reviewInputMeta{
+					notify: gerrit.Whoms{gerrit.Owner, gerrit.CQVoters},
+					// Add the same set of group/people to the attention set.
+					addToAttention: gerrit.Whoms{gerrit.Owner, gerrit.CQVoters},
+					reason:         submissionFailureAttentionReason,
+					message:        fmt.Sprintf(persistentTreeStatusAppFailureTemplate, cg.Content.GetVerifiers().GetTreeStatus().GetUrl()),
+				}
+			}
+			scheduleTriggersCancellation(ctx, rs, rims, run.Status_FAILED)
+			return &Result{
+				State: rs,
+			}, nil
 		case err != nil:
-			return nil, err
+			logging.Warningf(ctx, "tree status check failed with error: %s", err)
+			fallthrough
 		case !open:
 			if err := impl.RM.PokeAfter(ctx, rs.ID, treeCheckInterval); err != nil {
 				return nil, err
@@ -88,11 +116,14 @@ func (impl *Impl) Poke(ctx context.Context, rs *state.RunState) (*Result, error)
 }
 
 func shouldCheckTree(ctx context.Context, st run.Status, sub *run.Submission) bool {
-	return st == run.Status_WAITING_FOR_SUBMISSION &&
-		// Tree was closed during the last Tree check.
-		(sub.GetLastTreeCheckTime() != nil && !sub.GetTreeOpen()) &&
-		// Avoid too frequent refreshes of the Tree.
-		clock.Now(ctx).Sub(sub.GetLastTreeCheckTime().AsTime()) >= treeCheckInterval
+	switch {
+	case st != run.Status_WAITING_FOR_SUBMISSION:
+	case sub.GetLastTreeCheckTime() == nil:
+		return true
+	case !sub.GetTreeOpen():
+		return clock.Now(ctx).Sub(sub.GetLastTreeCheckTime().AsTime()) >= treeCheckInterval
+	}
+	return false
 }
 
 func shouldRefreshCLs(ctx context.Context, rs *state.RunState) bool {
