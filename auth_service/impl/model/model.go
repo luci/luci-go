@@ -769,6 +769,11 @@ func UpdateAuthGroup(ctx context.Context, groupUpdate *AuthGroup, updateMask *fi
 		}
 	}
 
+	// External groups cannot be manually updated.
+	if isExternalAuthGroupName(groupUpdate.ID) {
+		return nil, errors.Annotate(ErrPermissionDenied, "cannot update external group").Err()
+	}
+
 	// Do some preliminary validation before entering the Datastore transaction.
 	for _, field := range updateMask.GetPaths() {
 		switch field {
@@ -873,6 +878,11 @@ func DeleteAuthGroup(ctx context.Context, groupName string, etag string) error {
 	// Disallow deletion of the admin group.
 	if groupName == AdminGroup {
 		return ErrPermissionDenied
+	}
+
+	// External groups cannot be manually deleted.
+	if isExternalAuthGroupName(groupName) {
+		return errors.Annotate(ErrPermissionDenied, "cannot delete external group").Err()
 	}
 
 	return runAuthDBChange(ctx, func(ctx context.Context, commitEntity commitAuthEntity) error {

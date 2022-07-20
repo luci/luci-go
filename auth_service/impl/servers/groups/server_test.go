@@ -218,6 +218,17 @@ func TestGroupsServer(t *testing.T) {
 			So(err, ShouldHaveGRPCStatus, codes.InvalidArgument)
 		})
 
+		Convey("Invalid name (looks like external group)", func() {
+			request := &rpcpb.CreateGroupRequest{
+				Group: &rpcpb.AuthGroup{
+					Name:        "mdb/foo",
+					Description: "This is a group with an invalid name",
+				},
+			}
+			_, err := srv.CreateGroup(ctx, request)
+			So(err, ShouldHaveGRPCStatus, codes.InvalidArgument)
+		})
+
 		Convey("Invalid members", func() {
 			request := &rpcpb.CreateGroupRequest{
 				Group: &rpcpb.AuthGroup{
@@ -327,6 +338,19 @@ func TestGroupsServer(t *testing.T) {
 				CreatedBy:                "user:test-user-1@example.com",
 				AuthVersionedEntityMixin: versionedEntity,
 			}), ShouldBeNil)
+
+		Convey("Cannot update external group", func() {
+			request := &rpcpb.UpdateGroupRequest{
+				Group: &rpcpb.AuthGroup{
+					Name:        "mdb/foo",
+					Description: "update",
+				},
+			}
+
+			_, err := srv.UpdateGroup(ctx, request)
+			So(err, ShouldHaveGRPCStatus, codes.PermissionDenied)
+			So(err, ShouldErrLike, "cannot update external group")
+		})
 
 		Convey("Group not found", func() {
 			request := &rpcpb.UpdateGroupRequest{
@@ -488,6 +512,16 @@ func TestGroupsServer(t *testing.T) {
 				CreatedBy:                "user:test-user-1@example.com",
 				AuthVersionedEntityMixin: versionedEntity,
 			}), ShouldBeNil)
+
+		Convey("Cannot delete external group", func() {
+			request := &rpcpb.DeleteGroupRequest{
+				Name: "mdb/foo",
+			}
+
+			_, err := srv.DeleteGroup(ctx, request)
+			So(err, ShouldHaveGRPCStatus, codes.PermissionDenied)
+			So(err, ShouldErrLike, "cannot delete external group")
+		})
 
 		Convey("Group not found", func() {
 			request := &rpcpb.DeleteGroupRequest{

@@ -595,6 +595,13 @@ func TestUpdateAuthGroup(t *testing.T) {
 		// Set current auth DB revision to 10.
 		So(datastore.Put(ctx, testAuthReplicationState(ctx, 10)), ShouldBeNil)
 
+		Convey("can't update external group", func() {
+			group.ID = "mdb/foo"
+			So(datastore.Put(ctx, group), ShouldBeNil)
+			_, err := UpdateAuthGroup(ctx, group, nil, etag)
+			So(err, ShouldErrLike, "cannot update external group")
+		})
+
 		Convey("can't update if not an owner", func() {
 			ctx := auth.WithState(ctx, &authtest.FakeState{
 				Identity: "user:someone@example.com",
@@ -905,6 +912,13 @@ func TestDeleteAuthGroup(t *testing.T) {
 		Convey("can't delete the admin group", func() {
 			err := DeleteAuthGroup(ctx, AdminGroup, "")
 			So(err, ShouldEqual, ErrPermissionDenied)
+		})
+
+		Convey("can't delete external group", func() {
+			group.ID = "mdb/foo"
+			So(datastore.Put(ctx, group), ShouldBeNil)
+			err := DeleteAuthGroup(ctx, group.ID, "")
+			So(err, ShouldErrLike, "cannot delete external group")
 		})
 
 		Convey("can't delete if not an owner or admin", func() {

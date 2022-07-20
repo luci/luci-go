@@ -93,17 +93,17 @@ func (*Server) UpdateGroup(ctx context.Context, request *rpcpb.UpdateGroupReques
 	case errors.Is(err, datastore.ErrNoSuchEntity):
 		return nil, status.Errorf(codes.NotFound, "no such group %q", groupUpdate.ID)
 	case errors.Is(err, model.ErrPermissionDenied):
-		return nil, status.Errorf(codes.PermissionDenied, "%s does not have permission to update group %q", auth.CurrentIdentity(ctx), groupUpdate.ID)
+		return nil, status.Errorf(codes.PermissionDenied, "%s does not have permission to update group %q: %s", auth.CurrentIdentity(ctx), groupUpdate.ID, err)
 	case errors.Is(err, model.ErrConcurrentModification):
 		return nil, status.Error(codes.Aborted, err.Error())
 	case errors.Is(err, model.ErrInvalidReference):
 		return nil, status.Errorf(codes.InvalidArgument, "invalid group reference: %s", err)
 	case errors.Is(err, model.ErrInvalidArgument):
-		return nil, status.Errorf(codes.InvalidArgument, "%s", err)
+		return nil, status.Error(codes.InvalidArgument, err.Error())
 	case errors.Is(err, model.ErrInvalidIdentity):
-		return nil, status.Errorf(codes.InvalidArgument, "%s", err)
+		return nil, status.Error(codes.InvalidArgument, err.Error())
 	case errors.Is(err, model.ErrCyclicDependency):
-		return nil, status.Errorf(codes.FailedPrecondition, "%s", err)
+		return nil, status.Error(codes.FailedPrecondition, err.Error())
 	default:
 		return nil, status.Errorf(codes.Internal, "failed to update group %q: %s", request.GetGroup().GetName(), err)
 	}
@@ -118,7 +118,7 @@ func (*Server) DeleteGroup(ctx context.Context, request *rpcpb.DeleteGroupReques
 	case errors.Is(err, datastore.ErrNoSuchEntity):
 		return nil, status.Errorf(codes.NotFound, "no such group %q", name)
 	case errors.Is(err, model.ErrPermissionDenied):
-		return nil, status.Errorf(codes.PermissionDenied, "%s does not have permission to delete group %q", auth.CurrentIdentity(ctx), name)
+		return nil, status.Errorf(codes.PermissionDenied, "%s does not have permission to delete group %q: %s", auth.CurrentIdentity(ctx), name, err)
 	case errors.Is(err, model.ErrConcurrentModification):
 		return nil, status.Error(codes.Aborted, err.Error())
 	case errors.Is(err, model.ErrReferencedEntity):
