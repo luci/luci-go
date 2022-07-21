@@ -16,6 +16,7 @@ package tryjob
 
 import (
 	"context"
+	"fmt"
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/retry/transient"
@@ -25,10 +26,12 @@ import (
 )
 
 const CancelStaleTaskClass = "cancel-stale-tryjobs"
+const UpdateTaskClass = "update-tryjob"
 
 // TaskBindings allow us to assign handlers separately from task registration.
 type TaskBindings struct {
 	CancelStale tq.TaskClassRef
+	Update      tq.TaskClassRef
 	tqd         *tq.Dispatcher
 }
 
@@ -46,6 +49,16 @@ func NewNotifier(tqd *tq.Dispatcher) *Notifier {
 				Prototype:    &CancelStaleTryjobsTask{},
 				Queue:        "cancel-stale-tryjobs",
 				Kind:         tq.Transactional,
+				Quiet:        true,
+				QuietOnError: true,
+			},
+		),
+		Update: tqd.RegisterTaskClass(
+			tq.TaskClass{
+				ID:           UpdateTaskClass,
+				Prototype:    &UpdateTryjobTask{},
+				Queue:        "update-tryjob",
+				Kind:         tq.FollowsContext,
 				Quiet:        true,
 				QuietOnError: true,
 			},
@@ -71,4 +84,26 @@ func (n *Notifier) NotifyCancelStale(ctx context.Context, clid common.CLID, prev
 		}
 	}
 	return nil
+}
+
+// ScheduleUpdate schedules a task to update the given tryjob.
+// At least one ID must be given.
+func (n *Notifier) ScheduleUpdate(ctx context.Context, id common.TryjobID, eid ExternalID) error {
+	var taskTitle string
+	switch {
+	case id == 0 && eid == "":
+		return errors.New("At least one of the tryjob's IDs must be given.")
+	case id != 0 && eid != "":
+		taskTitle = fmt.Sprintf("id-%d/eid-%s", id, eid)
+	case id != 0:
+		taskTitle = fmt.Sprintf("id-%d", id)
+	case eid != "":
+		taskTitle = fmt.Sprintf("eid-%s", eid)
+	}
+	// id will be set, but eid may not be. In such case, it's up to the task to
+	// resolve it.
+	return n.Bindings.tqd.AddTask(ctx, &tq.Task{
+		Title:   taskTitle,
+		Payload: &UpdateTryjobTask{ExternalId: string(eid), Id: int64(id)},
+	})
 }

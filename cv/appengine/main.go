@@ -66,6 +66,7 @@ import (
 	runimpl "go.chromium.org/luci/cv/internal/run/impl"
 	"go.chromium.org/luci/cv/internal/tryjob"
 	"go.chromium.org/luci/cv/internal/tryjob/tjcancel"
+	tjupdate "go.chromium.org/luci/cv/internal/tryjob/update"
 	"go.chromium.org/luci/cv/internal/userhtml"
 )
 
@@ -117,7 +118,8 @@ func main() {
 		bbFacade := &bbfacade.Facade{
 			ClientFactory: bbFactory,
 		}
-		tryjobUpdater := tryjob.NewUpdater(&tq.Default, runNotifier)
+
+		tryjobUpdater := tjupdate.NewUpdater(tryjobNotifier, runNotifier)
 		tryjobUpdater.RegisterBackend(bbFacade)
 		tryjobCancellator := tjcancel.NewCancellator(tryjobNotifier)
 		tryjobCancellator.RegisterBackend(bbFacade)
@@ -174,7 +176,7 @@ func main() {
 		cron.RegisterHandler("aggregate-metrics", func(ctx context.Context) error {
 			return aggregator.Cron(ctx)
 		})
-		buildbucketListener, err := bblistener.New(tryjobUpdater, srv.Options.CloudProject, bblistener.SubscriptionID)
+		buildbucketListener, err := bblistener.New(tryjobNotifier, srv.Options.CloudProject, bblistener.SubscriptionID)
 		if err != nil {
 			return err
 		}

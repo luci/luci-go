@@ -74,7 +74,7 @@ func TestProcessNotificationBatch(t *testing.T) {
 		ctx, cancel := ct.SetUp()
 		defer cancel()
 
-		updater := &testUpdater{
+		tjNotifier := &testTryjobNotifier{
 			ok:    make(stringset.Set),
 			trans: make(stringset.Set),
 			perm:  make(stringset.Set),
@@ -85,19 +85,19 @@ func TestProcessNotificationBatch(t *testing.T) {
 				eid := tryjob.MustBuildbucketID(successHost, 1)
 				eid.MustCreateIfNotExists(ctx)
 				n := mockBuildNotification(eid)
-				So(processNotificationsBatch(ctx, updater, []notification{n}), ShouldBeNil)
+				So(processNotificationsBatch(ctx, tjNotifier, []notification{n}), ShouldBeNil)
 				So(n.(*mockMessage).ackCount, ShouldEqual, 1)
 				So(n.(*mockMessage).nackCount, ShouldEqual, 0)
-				So(updater.ok, ShouldHaveLength, 1)
-				So(updater.callCount, ShouldEqual, 1)
+				So(tjNotifier.ok, ShouldHaveLength, 1)
+				So(tjNotifier.callCount, ShouldEqual, 1)
 			})
 			Convey("Irrelevant", func() {
 				eid := tryjob.MustBuildbucketID(successHost, 404)
 				n := mockBuildNotification(eid)
-				So(processNotificationsBatch(ctx, updater, []notification{n}), ShouldBeNil)
+				So(processNotificationsBatch(ctx, tjNotifier, []notification{n}), ShouldBeNil)
 				So(n.(*mockMessage).ackCount, ShouldEqual, 1)
 				So(n.(*mockMessage).nackCount, ShouldEqual, 0)
-				So(updater.callCount, ShouldEqual, 0)
+				So(tjNotifier.callCount, ShouldEqual, 0)
 			})
 			Convey("Mixed batch", func() {
 				batchSize := int64(100)
@@ -124,11 +124,11 @@ func TestProcessNotificationBatch(t *testing.T) {
 					}
 					notifications = append(notifications, mockBuildNotification(eid))
 				}
-				So(processNotificationsBatch(ctx, updater, notifications), ShouldErrLike, "permanent error")
+				So(processNotificationsBatch(ctx, tjNotifier, notifications), ShouldErrLike, "permanent error")
 
-				So(updater.ok.ToSortedSlice(), ShouldResemble, expectedSuccessIds.ToSortedSlice())
-				So(updater.trans.ToSortedSlice(), ShouldResemble, expectedTransFailIds.ToSortedSlice())
-				So(updater.perm.ToSortedSlice(), ShouldResemble, expectedPermFailIds.ToSortedSlice())
+				So(tjNotifier.ok.ToSortedSlice(), ShouldResemble, expectedSuccessIds.ToSortedSlice())
+				So(tjNotifier.trans.ToSortedSlice(), ShouldResemble, expectedTransFailIds.ToSortedSlice())
+				So(tjNotifier.perm.ToSortedSlice(), ShouldResemble, expectedPermFailIds.ToSortedSlice())
 
 				var allAcks, allNacks int
 				for _, n := range notifications {
@@ -144,31 +144,31 @@ func TestProcessNotificationBatch(t *testing.T) {
 				eid := tryjob.MustBuildbucketID(transFailHost, 1)
 				eid.MustCreateIfNotExists(ctx)
 				n := mockBuildNotification(eid)
-				So(processNotificationsBatch(ctx, updater, []notification{n}), ShouldBeNil)
+				So(processNotificationsBatch(ctx, tjNotifier, []notification{n}), ShouldBeNil)
 				So(n.(*mockMessage).ackCount, ShouldEqual, 0)
 				So(n.(*mockMessage).nackCount, ShouldEqual, 1)
-				So(updater.trans, ShouldHaveLength, 1)
-				So(updater.callCount, ShouldEqual, 1)
+				So(tjNotifier.trans, ShouldHaveLength, 1)
+				So(tjNotifier.callCount, ShouldEqual, 1)
 			})
 		})
 		Convey("Permanent failure", func() {
 			Convey("Unparseable", func() {
 				var n notification = &mockMessage{data: []byte("Unparseable hot garbage.'}]\"")}
-				So(processNotificationsBatch(ctx, updater, []notification{n}), ShouldErrLike, "while unmarshalling build notification")
+				So(processNotificationsBatch(ctx, tjNotifier, []notification{n}), ShouldErrLike, "while unmarshalling build notification")
 				So(n.(*mockMessage).ackCount, ShouldEqual, 1)
 				So(n.(*mockMessage).nackCount, ShouldEqual, 0)
-				So(updater.callCount, ShouldEqual, 0)
+				So(tjNotifier.callCount, ShouldEqual, 0)
 			})
 
 			Convey("Schedule call fails permanently", func() {
 				eid := tryjob.MustBuildbucketID(permFailHost, 1)
 				eid.MustCreateIfNotExists(ctx)
 				n := mockBuildNotification(eid)
-				So(processNotificationsBatch(ctx, updater, []notification{n}), ShouldEqual, errPermanent)
+				So(processNotificationsBatch(ctx, tjNotifier, []notification{n}), ShouldEqual, errPermanent)
 				So(n.(*mockMessage).ackCount, ShouldEqual, 1)
 				So(n.(*mockMessage).nackCount, ShouldEqual, 0)
-				So(updater.perm, ShouldHaveLength, 1)
-				So(updater.callCount, ShouldEqual, 1)
+				So(tjNotifier.perm, ShouldHaveLength, 1)
+				So(tjNotifier.callCount, ShouldEqual, 1)
 			})
 		})
 
@@ -187,7 +187,7 @@ func mockBuildNotification(eid tryjob.ExternalID) notification {
 	return &mockMessage{data: buildJSON}
 }
 
-type testUpdater struct {
+type testTryjobNotifier struct {
 	sync.Mutex
 	trans, perm, ok stringset.Set
 	callCount       int
@@ -195,21 +195,21 @@ type testUpdater struct {
 
 // Schedule mocks tryjob.Schedule, and returns an error based on the host in
 // the given ExternalID.
-func (tu *testUpdater) Schedule(ctx context.Context, _ common.TryjobID, eid tryjob.ExternalID) error {
-	tu.Lock()
-	defer tu.Unlock()
-	tu.callCount++
+func (ttn *testTryjobNotifier) ScheduleUpdate(ctx context.Context, _ common.TryjobID, eid tryjob.ExternalID) error {
+	ttn.Lock()
+	defer ttn.Unlock()
+	ttn.callCount++
 	switch host, _, err := eid.ParseBuildbucketID(); {
 	case err != nil:
 		panic(err)
 	case host == transFailHost:
-		tu.trans.Add(string(eid))
+		ttn.trans.Add(string(eid))
 		return errTransient
 	case host == permFailHost:
-		tu.perm.Add(string(eid))
+		ttn.perm.Add(string(eid))
 		return errPermanent
 	default:
-		tu.ok.Add(string(eid))
+		ttn.ok.Add(string(eid))
 		return nil
 	}
 }

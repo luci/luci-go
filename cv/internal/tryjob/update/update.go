@@ -12,7 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package tryjob
+// tjupdate updates the Tryjob entity by querying backend system.
+package tjupdate
 
 import (
 	"context"
@@ -26,12 +27,10 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/gae/service/datastore"
-	"go.chromium.org/luci/server/tq"
 
 	"go.chromium.org/luci/cv/internal/common"
+	"go.chromium.org/luci/cv/internal/tryjob"
 )
-
-const TaskClass = "update-tryjob"
 
 type updaterBackend interface {
 	// Kind identifies the backend.
@@ -42,17 +41,16 @@ type updaterBackend interface {
 	// Update should fetch the Tryjob given the current entity in Datastore.
 	//
 	// MUST not modify the given Tryjob object.
-	Update(ctx context.Context, saved *Tryjob) (Status, *Result, error)
+	Update(ctx context.Context, saved *tryjob.Tryjob) (tryjob.Status, *tryjob.Result, error)
 }
 
 // rmNotifier abstracts out Run Manager notifier.
 type rmNotifier interface {
-	NotifyTryjobsUpdated(context.Context, common.RunID, *TryjobUpdatedEvents) error
+	NotifyTryjobsUpdated(context.Context, common.RunID, *tryjob.TryjobUpdatedEvents) error
 }
 
 // Updater knows how to update Tryjobs, notifying other CV parts as needed.
 type Updater struct {
-	tqd        *tq.Dispatcher
 	rmNotifier rmNotifier
 
 	rwmutex  sync.RWMutex // guards `backends`
@@ -62,20 +60,13 @@ type Updater struct {
 // NewUpdater creates a new Updater.
 //
 // Starts without backends, but they should be added via RegisterBackend().
-func NewUpdater(tqd *tq.Dispatcher, rm rmNotifier) *Updater {
+func NewUpdater(tn *tryjob.Notifier, rm rmNotifier) *Updater {
 	u := &Updater{
-		tqd:        tqd,
 		rmNotifier: rm,
 		backends:   make(map[string]updaterBackend, 1),
 	}
-	u.tqd.RegisterTaskClass(tq.TaskClass{
-		ID:        TaskClass,
-		Prototype: &UpdateTryjobTask{},
-		Queue:     "update-tryjob",
-		Kind:      tq.FollowsContext,
-		Handler: func(ctx context.Context, payload proto.Message) error {
-			return common.TQifyError(ctx, u.handleTask(ctx, payload.(*UpdateTryjobTask)))
-		},
+	tn.Bindings.Update.AttachHandler(func(ctx context.Context, payload proto.Message) error {
+		return common.TQifyError(ctx, u.handleTask(ctx, payload.(*tryjob.UpdateTryjobTask)))
 	})
 	return u
 }
@@ -96,23 +87,8 @@ func (u *Updater) RegisterBackend(b updaterBackend) {
 	u.backends[kind] = b
 }
 
-// Schedule dispatches a TQ task to update the given tryjob.
-//
-// At least one ID must be given.
-func (u *Updater) Schedule(ctx context.Context, id common.TryjobID, eid ExternalID) error {
-	if id == 0 && eid == "" {
-		return errors.New("At least one of the tryjob's IDs must be given.")
-	}
-	// id will be set, but eid may not be. In such case, it's up to the task to
-	// resolve it.
-	return u.tqd.AddTask(ctx, &tq.Task{
-		Title:   fmt.Sprintf("%d/%s", id, eid),
-		Payload: &UpdateTryjobTask{ExternalId: string(eid), Id: int64(id)},
-	})
-}
-
-func (u *Updater) handleTask(ctx context.Context, task *UpdateTryjobTask) error {
-	tj := &Tryjob{ID: common.TryjobID(task.Id)}
+func (u *Updater) handleTask(ctx context.Context, task *tryjob.UpdateTryjobTask) error {
+	tj := &tryjob.Tryjob{ID: common.TryjobID(task.Id)}
 	switch {
 	case task.GetId() != 0:
 		switch err := datastore.Get(ctx, tj); {
@@ -127,7 +103,7 @@ func (u *Updater) handleTask(ctx context.Context, task *UpdateTryjobTask) error 
 		}
 	case task.GetExternalId() != "":
 		var err error
-		switch tj, err = ExternalID(task.ExternalId).Load(ctx); {
+		switch tj, err = tryjob.ExternalID(task.ExternalId).Load(ctx); {
 		case err != nil:
 			return errors.Annotate(err, "loading Tryjob with ExternalID %s", task.ExternalId).Tag(transient.Tag).Err()
 		case tj == nil:
@@ -157,7 +133,7 @@ func (u *Updater) handleTask(ctx context.Context, task *UpdateTryjobTask) error 
 		defer func() {
 			innerErr = err
 		}()
-		tj = &Tryjob{ID: common.TryjobID(tj.ID)}
+		tj = &tryjob.Tryjob{ID: common.TryjobID(tj.ID)}
 		if err := datastore.Get(ctx, tj); err != nil {
 			return errors.Annotate(err, "failed to load Tryjob %d", tj.ID).Tag(transient.Tag).Err()
 		}
@@ -173,13 +149,17 @@ func (u *Updater) handleTask(ctx context.Context, task *UpdateTryjobTask) error 
 			return errors.Annotate(err, "failed to save Tryjob %d", tj.ID).Tag(transient.Tag).Err()
 		}
 		for _, run := range tj.AllWatchingRuns() {
-			if err := u.rmNotifier.NotifyTryjobsUpdated(
-				ctx, run, &TryjobUpdatedEvents{Events: []*TryjobUpdatedEvent{{TryjobId: int64(tj.ID)}}},
-			); err != nil {
+			err := u.rmNotifier.NotifyTryjobsUpdated(
+				ctx, run, &tryjob.TryjobUpdatedEvents{
+					Events: []*tryjob.TryjobUpdatedEvent{
+						{TryjobId: int64(tj.ID)},
+					},
+				},
+			)
+			if err != nil {
 				return err
 			}
 		}
-
 		return nil
 	}, nil)
 	switch {
@@ -191,7 +171,7 @@ func (u *Updater) handleTask(ctx context.Context, task *UpdateTryjobTask) error 
 	return nil
 }
 
-func (u *Updater) backendFor(t *Tryjob) (updaterBackend, error) {
+func (u *Updater) backendFor(t *tryjob.Tryjob) (updaterBackend, error) {
 	kind, err := t.ExternalID.Kind()
 	if err != nil {
 		return nil, err

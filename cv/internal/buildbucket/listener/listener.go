@@ -38,20 +38,19 @@ import (
 // build updates.
 const SubscriptionID = "buildbucket-builds"
 
-// This interface is implemented by tryjob.Updater, but can be mocked in this
-// package for testing.
-type scheduler interface {
-	Schedule(context.Context, common.TryjobID, tryjob.ExternalID) error
+// This interface encapsulate the communication with tryjob component.
+type tryjobNotifier interface {
+	ScheduleUpdate(context.Context, common.TryjobID, tryjob.ExternalID) error
 }
 
 // New creates a pulling batch processor that pulls Buildbucket build
 // notifications from the PubSub subscription specified by projectID and subID,
 // and when they concern a Tryjob corresponding to one of our Runs, schedules
 // tasks to notify the appropriate Run Manager.
-func New(updater scheduler, projectID, subID string) (*pubsubutils.PullingBatchProcessor, error) {
+func New(tjNotifier tryjobNotifier, projectID, subID string) (*pubsubutils.PullingBatchProcessor, error) {
 	listener := &pubsubutils.PullingBatchProcessor{
 		ProcessBatch: func(ctx context.Context, msgs []*pubsub.Message) error {
-			return processNotificationsBatch(ctx, updater, notsFromMsgs(msgs))
+			return processNotificationsBatch(ctx, tjNotifier, notsFromMsgs(msgs))
 		},
 		ProjectID: projectID,
 		SubID:     subID,
@@ -62,7 +61,7 @@ func New(updater scheduler, projectID, subID string) (*pubsubutils.PullingBatchP
 	return listener, nil
 }
 
-func processNotificationsBatch(ctx context.Context, updater scheduler, msgs []notification) error {
+func processNotificationsBatch(ctx context.Context, tjNotifier tryjobNotifier, msgs []notification) error {
 	var lastPermErr error
 
 	eids := make([]tryjob.ExternalID, 0, len(msgs))
@@ -95,7 +94,7 @@ func processNotificationsBatch(ctx context.Context, updater scheduler, msgs []no
 				continue
 			}
 			work <- func() error {
-				switch err := updater.Schedule(ctx, ids[i], eids[i]); {
+				switch err := tjNotifier.ScheduleUpdate(ctx, ids[i], eids[i]); {
 				case err == nil:
 					remainingMessages[i].Ack()
 				case transient.Tag.In(err):
