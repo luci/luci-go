@@ -40,6 +40,7 @@ import (
 	taskdefs "go.chromium.org/luci/buildbucket/appengine/tasks/defs"
 	"go.chromium.org/luci/buildbucket/cmd/bbagent/bbinput"
 	pb "go.chromium.org/luci/buildbucket/proto"
+	"go.chromium.org/luci/buildbucket/protoutil"
 
 	. "github.com/smartystreets/goconvey/convey"
 
@@ -406,7 +407,7 @@ func TestSyncBuild(t *testing.T) {
 				}), ShouldBeNil)
 				err := SyncBuild(ctx, 111, 0)
 				So(err, ShouldBeNil)
-				// TODO: assert the task isn't pushed back into queue once the enqueueing sync-build is implemented.
+				So(sch.Tasks(), ShouldHaveLength, 0)
 			})
 
 			Convey("build ended", func() {
@@ -423,7 +424,7 @@ func TestSyncBuild(t *testing.T) {
 				}), ShouldBeNil)
 				err := SyncBuild(ctx, 111, 0)
 				So(err, ShouldBeNil)
-				// TODO: assert the task isn't pushed back into queue once the enqueueing sync-build is implemented.
+				So(sch.Tasks(), ShouldHaveLength, 0)
 			})
 
 			Convey("create swarming success", func() {
@@ -438,6 +439,7 @@ func TestSyncBuild(t *testing.T) {
 				So(datastore.Get(ctx, updatedInfra), ShouldBeNil)
 				So(updatedBuild.UpdateToken, ShouldNotBeEmpty)
 				So(updatedInfra.Proto.Swarming.TaskId, ShouldEqual, "task123")
+				So(sch.Tasks(), ShouldHaveLength, 1)
 			})
 
 			Convey("create swarming http 400 err", func() {
@@ -557,7 +559,11 @@ func TestSyncBuild(t *testing.T) {
 				bb = &model.Build{ID: 123}
 				So(datastore.Get(ctx, bb), ShouldBeNil)
 				So(bb.Status, ShouldEqual, pb.Status_SCHEDULED)
-				// TODO(yuanjunh) assert the next ggeneration of sync task
+				So(sch.Tasks(), ShouldHaveLength, 1)
+				So(sch.Tasks().Payloads()[0], ShouldResembleProto, &taskdefs.SyncSwarmingBuildTask{
+					BuildId: 123,
+					Generation: 2,
+				})
 			})
 
 			var cases = []struct {
@@ -752,7 +758,13 @@ func TestSyncBuild(t *testing.T) {
 						So(datastore.Get(ctx, syncedInfra), ShouldBeNil)
 						So(syncedInfra.Proto.Swarming.BotDimensions, ShouldResembleProto, tCase.expected.botDimensions)
 					}
-					// TODO(yuanjunh) assert the next generation sync task in TQ once it's implemented.
+					if protoutil.IsEnded(syncedBuild.Status) {
+						// FinalizeResultDB, ExportBigQuery, NotifyPubSub and a continuation sync task.
+						So(sch.Tasks(), ShouldHaveLength, 4)
+					} else if syncedBuild.Status == pb.Status_STARTED {
+						// NotifyPubSub and a continuation sync task.
+						So(sch.Tasks(), ShouldHaveLength, 2)
+					}
 				})
 			}
 		})

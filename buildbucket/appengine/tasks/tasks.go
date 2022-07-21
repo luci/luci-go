@@ -194,10 +194,8 @@ func init() {
 		Prototype: (*taskdefs.SyncSwarmingBuildTask)(nil),
 		Queue:     "swarming-build-sync-go",
 		Handler: func(ctx context.Context, payload proto.Message) error {
-			t := payload.(*taskdefs.CreateSwarmingBuildTask)
-			// TODO(crbug.com/1328646): implement the handler in follow-up CLs.
-			logging.Warningf(ctx, "swarming-build-sync-go handler isn't ready. Drop the message for build %d", t.BuildId)
-			return nil
+			t := payload.(*taskdefs.SyncSwarmingBuildTask)
+			return SyncBuild(ctx, t.GetBuildId(), t.GetGeneration())
 		},
 	})
 }
@@ -241,7 +239,7 @@ func CreateSwarmingBuildTask(ctx context.Context, task *taskdefs.CreateSwarmingB
 
 // SyncSwarmingBuildTask enqueues a Cloud Tasks task to sync the Swarming task
 // with the given build.
-func SyncSwarmingBuildTask(ctx context.Context, task *taskdefs.SyncSwarmingBuildTask) error {
+func SyncSwarmingBuildTask(ctx context.Context, task *taskdefs.SyncSwarmingBuildTask, delay time.Duration) error {
 	switch {
 	case task.GetBuildId() == 0:
 		return errors.Reason("build_id is required").Err()
@@ -251,7 +249,7 @@ func SyncSwarmingBuildTask(ctx context.Context, task *taskdefs.SyncSwarmingBuild
 	return tq.AddTask(ctx, &tq.Task{
 		Title:            fmt.Sprintf("sync-swarming-task-%d", task.BuildId),
 		Payload:          task,
-		Delay:            300 * time.Second, // Run the continuation task in 5m.
+		Delay:            delay,
 		DeduplicationKey: fmt.Sprintf("%d-%d", task.BuildId, task.Generation),
 	})
 }

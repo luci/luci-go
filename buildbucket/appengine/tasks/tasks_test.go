@@ -17,6 +17,7 @@ package tasks
 import (
 	"context"
 	"testing"
+	"time"
 
 	"go.chromium.org/luci/gae/filter/txndefer"
 	"go.chromium.org/luci/gae/impl/memory"
@@ -26,6 +27,7 @@ import (
 	taskdef "go.chromium.org/luci/buildbucket/appengine/tasks/defs"
 
 	. "github.com/smartystreets/goconvey/convey"
+
 	. "go.chromium.org/luci/common/testing/assertions"
 )
 
@@ -264,13 +266,13 @@ func TestTasks(t *testing.T) {
 		Convey("SyncSwarmingBuildTask", func() {
 			Convey("invalid", func() {
 				Convey("nil", func() {
-					So(SyncSwarmingBuildTask(ctx, nil), ShouldErrLike, "build_id is required")
+					So(SyncSwarmingBuildTask(ctx, nil, time.Second), ShouldErrLike, "build_id is required")
 					So(sch.Tasks(), ShouldBeEmpty)
 				})
 
 				Convey("empty", func() {
 					task := &taskdef.SyncSwarmingBuildTask{}
-					So(SyncSwarmingBuildTask(ctx, task), ShouldErrLike, "build_id is required")
+					So(SyncSwarmingBuildTask(ctx, task, time.Second), ShouldErrLike, "build_id is required")
 					So(sch.Tasks(), ShouldBeEmpty)
 				})
 
@@ -279,7 +281,7 @@ func TestTasks(t *testing.T) {
 						BuildId:    123,
 						Generation: 0,
 					}
-					So(SyncSwarmingBuildTask(ctx, task), ShouldErrLike, "generation should be larger than 0")
+					So(SyncSwarmingBuildTask(ctx, task, time.Second), ShouldErrLike, "generation should be larger than 0")
 					So(sch.Tasks(), ShouldBeEmpty)
 				})
 			})
@@ -289,7 +291,7 @@ func TestTasks(t *testing.T) {
 					BuildId:    123,
 					Generation: 1,
 				}
-				So(SyncSwarmingBuildTask(ctx, task), ShouldBeNil)
+				So(SyncSwarmingBuildTask(ctx, task, time.Second), ShouldBeNil)
 				So(sch.Tasks(), ShouldHaveLength, 1)
 			})
 		})

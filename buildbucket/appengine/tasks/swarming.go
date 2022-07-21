@@ -56,9 +56,6 @@ const (
 	// UpdateBuild's new performance in Buildbucket Go.
 	bbagentReservedGracePeriod = 180
 
-	// buildTimeOut is the maximum amount of time to try to sync a build.
-	buildTimeOut = 2 * 24 * time.Hour
-
 	// cacheDir is the path, relative to the swarming run dir, to the directory that
 	// contains the mounted swarming named caches. It will be prepended to paths of
 	// caches defined in global or builder configs.
@@ -103,8 +100,8 @@ func SyncBuild(ctx context.Context, buildID int64, generation int64) error {
 		logging.Infof(ctx, "build %d is ended", buildID)
 		return nil
 	}
-	if clock.Now(ctx).Sub(bld.CreateTime) > buildTimeOut {
-		logging.Infof(ctx, "build %d (create_time:%s) has passed the sync deadline: %s", buildID, bld.CreateTime, buildTimeOut.String())
+	if clock.Now(ctx).Sub(bld.CreateTime) > model.BuildMaxCompletionTime {
+		logging.Infof(ctx, "build %d (create_time:%s) has passed the sync deadline: %s", buildID, bld.CreateTime, model.BuildMaxCompletionTime)
 		return nil
 	}
 
@@ -133,7 +130,12 @@ func SyncBuild(ctx context.Context, buildID int64, generation int64) error {
 		}
 	}
 
-	// TODO(crbug.com/1328646): Enqueue the next generation of swarming-build-sync task.
+	// Enqueue a continuation sync task in 5m.
+	if clock.Now(ctx).Sub(bld.CreateTime) < model.BuildMaxCompletionTime {
+		if err := SyncSwarmingBuildTask(ctx, &taskdefs.SyncSwarmingBuildTask{BuildId: buildID, Generation: generation + 1}, 5*time.Minute); err != nil {
+			return transient.Tag.Apply(errors.Annotate(err, "failed to enqueue the continuation sync task for build %d", buildID).Err())
+		}
+	}
 	return nil
 }
 
