@@ -1017,6 +1017,11 @@ def _cq_config_group(cq_group, project, triggering_map):
             fail("only Gerrit repos are supported")
         group_by_gob_host.setdefault(w.__gob_host, []).append(w)
 
+    user_quotas = [_cq_quota_policy(q) for q in cq_group.props.user_quotas]
+    user_quota_default = cq_group.props.user_quota_default
+    if user_quota_default != None:
+        user_quota_default = _cq_quota_policy(user_quota_default)
+
     return cq_pb.ConfigGroup(
         name = cq_group.key.id,
         gerrit = [
@@ -1042,6 +1047,8 @@ def _cq_config_group(cq_group, project, triggering_map):
             _cq_run_mode(m)
             for m in cq_group.props.additional_modes
         ] if cq_group.props.additional_modes else None,
+        user_quotas = user_quotas,
+        user_quota_default = user_quota_default,
     )
 
 def _cq_retry_config(retry_config):
@@ -1185,6 +1192,14 @@ def _cq_visibility(val):
     if val == None:
         return cq_pb.COMMENT_LEVEL_UNSET
     return val
+
+def _cq_quota_policy(p):
+    """cq.quota_policy(...) => cq_pb.QuotaPolicy."""
+    return cq_pb.QuotaPolicy(
+        name = p.name,
+        principals = p.principals,
+        # TODO(ddoman): populate RunLimit and TryjobLimits.
+    )
 
 ################################################################################
 ## notify.cfg.

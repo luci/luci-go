@@ -2287,6 +2287,8 @@ luci.cq_group(
     cancel_stale_tryjobs = None,
     verifiers = None,
     additional_modes = None,
+    user_quotas = None,
+    user_quota_default = None,
 )
 ```
 
@@ -2313,6 +2315,8 @@ See https://chromium.googlesource.com/infra/luci/luci-go/+/refs/heads/main/cv/#l
 * **cancel_stale_tryjobs**: unused anymore, but kept for backward compatibility.
 * **verifiers**: a list of [luci.cq_tryjob_verifier(...)](#luci.cq-tryjob-verifier) specifying what checks to run on a pending CL. See [luci.cq_tryjob_verifier(...)](#luci.cq-tryjob-verifier) for all details. As a shortcut, each entry can also either be a dict or a string. A dict is an alias for `luci.cq_tryjob_verifier(**entry)` and a string is an alias for `luci.cq_tryjob_verifier(builder = entry)`.
 * **additional_modes**: either a single [cq.run_mode(...)](#cq.run-mode) or a list of [cq.run_mode(...)](#cq.run-mode) defining additional run modes supported by this CQ group apart from standard DRY_RUN and FULL_RUN. If specified, CQ will create the Run with the first mode for which triggering conditions are fulfilled. If there is no such mode, CQ will fallback to standard DRY_RUN or FULL_RUN.
+* **user_quotas**: a list of [cq.quota_policy(...)](#cq.quota-policy) or None. **WARNING**: Please contact luci-eng@ before setting this param. They specify per-user quota policies for given users or groups. At the time of Run creation, CV looks up and picks the first matching quota policy for the CL owner, and applies the policy to the Run. If no matching policy is found, then `user_quota_default` will be applied to the Run. Each policy must specify at least one user or group.
+* **user_quota_default**: [cq.quota_policy(...)](#cq.quota-policy) or None. **WARNING*:: Please contact luci-eng@ before setting this param. If None, the users who don't have a policy in `user_quotas` will be granted unlimited quotas. The policy must not specify users and groups.
 
 
 

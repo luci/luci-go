@@ -34,7 +34,9 @@ def _cq_group(
         retry_config = None,
         cancel_stale_tryjobs = None,  # @unused
         verifiers = None,
-        additional_modes = None):
+        additional_modes = None,
+        user_quotas = None,
+        user_quota_default = None):
     """Defines a set of refs to watch and a set of verifier to run.
 
     The CQ will run given verifiers whenever there's a pending approved CL for
@@ -92,6 +94,17 @@ def _cq_group(
         create the Run with the first mode for which triggering conditions are
         fulfilled. If there is no such mode, CQ will fallback to standard
         DRY_RUN or FULL_RUN.
+      user_quotas: a list of cq.quota_policy(...) or None. **WARNING**: Please
+        contact luci-eng@ before setting this param. They specify per-user quota
+        policies for given users or groups. At the time of Run creation, CV
+        looks up and picks the first matching quota policy for the CL owner, and
+        applies the policy to the Run. If no matching policy is found, then
+        `user_quota_default` will be applied to the Run. Each policy must
+        specify at least one user or group.
+      user_quota_default: cq.quota_policy(...) or None. **WARNING*:: Please
+        contact luci-eng@ before setting this param. If None, the users who
+        don't have a policy in `user_quotas` will be granted unlimited quotas.
+        The policy must not specify users and groups.
     """
     key = keys.cq_group(validate.string("name", name))
 
@@ -109,6 +122,30 @@ def _cq_group(
         validate.list("additional_modes", additional_modes, required = False)
         for m in additional_modes:
             cqimpl.validate_run_mode("run_mode", m)
+
+    quota_names = dict()
+    user_quotas = validate.list("user_quotas", user_quotas)
+    for i, q in enumerate(user_quotas):
+        q = cqimpl.validate_quota_policy("user_quotas[%d]" % i, q, required = True)
+        if q.name in quota_names:
+            fail("user_quotas[%d]: duplicate policy name '%s'" % (i, q.name))
+        if not q.principals:
+            fail("user_quotas[%d]: must specify at least one user or group" % i)
+        quota_names[q.name] = None
+
+    user_quota_default = cqimpl.validate_quota_policy(
+        "user_quota_default",
+        user_quota_default,
+        required = False,
+    )
+
+    # TODO(crbug.com/1346143): make user_quota_default required.
+    if user_quota_default != None:
+        if user_quota_default.name in quota_names:
+            fail("user_quota_default: policy '%s' is already used in user_quotas" %
+                 user_quota_default.name)
+        if user_quota_default.principals:
+            fail("user_quota_default: must not specify user or group")
 
     # TODO(vadimsh): Convert `acls` to luci.binding(...). Need to figure out
     # what realm to use for them. This probably depends on a design of
@@ -136,6 +173,8 @@ def _cq_group(
             required = False,
         ),
         "additional_modes": additional_modes,
+        "user_quotas": user_quotas,
+        "user_quota_default": user_quota_default,
     })
     graph.add_edge(keys.project(), key)
 

@@ -94,6 +94,28 @@ luci.list_view(
 luci.cq_group(
     name = "Main CQ",
     watch = cq.refset(REPO_URL),
+    user_quotas = [
+        cq.quota_policy(
+            name = "user_quotas_for_foo_and_bar",
+            users = ["foo@example.com"],
+            groups = ["bar"],
+        ),
+        cq.quota_policy(
+            name = "user_quotas_for_committers",
+            groups = ["committers"],
+        ),
+        cq.quota_policy(
+            name = "user_quotas_for_third_party_devs",
+            users = [
+                "partner_1@example.com",
+                "partner_2@example.com",
+            ],
+            groups = ["third_party_devs_all"],
+        ),
+    ],
+    user_quota_default = cq.quota_policy(
+        name = "default_user_quota",
+    ),
 )
 
 # The gitiles poller: a source of commits that trigger CI builders.
