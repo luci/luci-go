@@ -81,6 +81,25 @@ func TestRunManager(t *testing.T) {
 		}{
 			{
 				&eventpb.Event{
+					Event: &eventpb.Event_LongOpCompleted{
+						LongOpCompleted: &eventpb.LongOpCompleted{
+							OperationId: "1-1",
+						},
+					},
+				},
+				func(ctx context.Context) error {
+					return notifier.SendNow(ctx, runID, &eventpb.Event{
+						Event: &eventpb.Event_LongOpCompleted{
+							LongOpCompleted: &eventpb.LongOpCompleted{
+								OperationId: "1-1",
+							},
+						},
+					})
+				},
+				"OnLongOpCompleted",
+			},
+			{
+				&eventpb.Event{
 					Event: &eventpb.Event_Cancel{
 						Cancel: &eventpb.Cancel{
 							Reason: "user request",
@@ -239,25 +258,6 @@ func TestRunManager(t *testing.T) {
 					})
 				},
 				"OnReadyForSubmission",
-			},
-			{
-				&eventpb.Event{
-					Event: &eventpb.Event_LongOpCompleted{
-						LongOpCompleted: &eventpb.LongOpCompleted{
-							OperationId: "1-1",
-						},
-					},
-				},
-				func(ctx context.Context) error {
-					return notifier.SendNow(ctx, runID, &eventpb.Event{
-						Event: &eventpb.Event_LongOpCompleted{
-							LongOpCompleted: &eventpb.LongOpCompleted{
-								OperationId: "1-1",
-							},
-						},
-					})
-				},
-				"OnLongOpCompleted",
 			},
 			{
 				&eventpb.Event{

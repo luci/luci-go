@@ -382,7 +382,15 @@ func (tr *triageResult) triage(ctx context.Context, item eventbox.Event, eventLo
 func (rp *runProcessor) processTriageResults(ctx context.Context, tr *triageResult, rs *state.RunState) ([]eventbox.Transition, error) {
 	statingState := rs
 	var transitions []eventbox.Transition
-
+	if len(tr.longOpCompleted.events) > 0 {
+		for i, opResult := range tr.longOpCompleted.results {
+			res, err := rp.handler.OnLongOpCompleted(ctx, rs, opResult)
+			if err != nil {
+				return nil, err
+			}
+			rs, transitions = applyResult(res, tr.longOpCompleted.events[i:i+1], transitions)
+		}
+	}
 	switch {
 	case len(tr.cancelEvents.events) > 0:
 		res, err := rp.handler.Cancel(ctx, rs, tr.cancelEvents.reasons)
@@ -461,16 +469,6 @@ func (rp *runProcessor) processTriageResults(ctx context.Context, tr *triageResu
 		}
 		rs, transitions = applyResult(res, tr.readyForSubmissionEvents, transitions)
 	}
-	if len(tr.longOpCompleted.events) > 0 {
-		for i, opResult := range tr.longOpCompleted.results {
-			res, err := rp.handler.OnLongOpCompleted(ctx, rs, opResult)
-			if err != nil {
-				return nil, err
-			}
-			rs, transitions = applyResult(res, tr.longOpCompleted.events[i:i+1], transitions)
-		}
-	}
-
 	if len(tr.pokeEvents) > 0 {
 		res, err := rp.handler.Poke(ctx, rs)
 		if err != nil {
