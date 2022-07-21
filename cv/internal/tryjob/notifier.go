@@ -58,7 +58,7 @@ func NewNotifier(tqd *tq.Dispatcher) *Notifier {
 				ID:           UpdateTaskClass,
 				Prototype:    &UpdateTryjobTask{},
 				Queue:        "update-tryjob",
-				Kind:         tq.FollowsContext,
+				Kind:         tq.NonTransactional,
 				Quiet:        true,
 				QuietOnError: true,
 			},
