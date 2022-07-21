@@ -247,7 +247,7 @@ func (dr HasPermissionDryRun) Execute(ctx context.Context, perm realms.Permissio
 //
 // Returns an error only if the check itself failed due to a misconfiguration
 // or transient issues. This should usually result in an Internal error.
-func QueryRealms(ctx context.Context, id identity.Identity, perm realms.Permission, project string, attrs realms.Attrs) ([]string, error) {
+func QueryRealms(ctx context.Context, perm realms.Permission, project string, attrs realms.Attrs) ([]string, error) {
 	if s := GetState(ctx); s != nil {
 		return s.DB().QueryRealms(ctx, s.User().Identity, perm, project, attrs)
 	}
