@@ -22,6 +22,7 @@ import (
 
 	"google.golang.org/protobuf/types/known/timestamppb"
 
+	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/gae/service/datastore"
 
@@ -38,6 +39,7 @@ import (
 	"go.chromium.org/luci/cv/internal/run"
 	"go.chromium.org/luci/cv/internal/run/impl/state"
 	"go.chromium.org/luci/cv/internal/run/runtest"
+	"go.chromium.org/luci/cv/internal/tryjob"
 
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
@@ -273,7 +275,7 @@ func TestPoke(t *testing.T) {
 					rs.LatestCLsRefresh = time.Time{}
 					verifyScheduled()
 				})
-				Convey("For the (n+1)-th time", func() {
+				Convey("For the second (and later) time", func() {
 					rs.LatestCLsRefresh = ct.Clock.Now().Add(-clRefreshInterval - time.Second)
 					verifyScheduled()
 				})
@@ -310,6 +312,80 @@ func TestPoke(t *testing.T) {
 					},
 				)
 				So(cancelOp.RunStatusIfSucceeded, ShouldEqual, run.Status_FAILED)
+			})
+		})
+
+		Convey("Tryjobs Refresh", func() {
+			reqmt := &tryjob.Requirement{
+				Definitions: []*tryjob.Definition{
+					{
+						Backend: &tryjob.Definition_Buildbucket_{
+							Buildbucket: &tryjob.Definition_Buildbucket{
+								Builder: &buildbucketpb.BuilderID{
+									Project: "test_proj",
+									Bucket:  "test_bucket",
+									Builder: "test_builder",
+								},
+							},
+						},
+					},
+				},
+			}
+			rs.Tryjobs = &run.Tryjobs{
+				Requirement: reqmt,
+				State: &tryjob.ExecutionState{
+					Requirement: reqmt,
+					Executions: []*tryjob.ExecutionState_Execution{
+						{
+							Attempts: []*tryjob.ExecutionState_Execution_Attempt{
+								{TryjobId: 1, ExternalId: string(tryjob.MustBuildbucketID("bb.example.com", 456))},
+								{TryjobId: 2, ExternalId: string(tryjob.MustBuildbucketID("bb.example.com", 123))},
+							},
+						},
+					},
+				},
+			}
+			Convey("No-op if finalized", func() {
+				rs.Status = run.Status_CANCELLED
+				verifyNoOp()
+			})
+			Convey("No-op if recently created", func() {
+				rs.CreateTime = ct.Clock.Now()
+				rs.LatestTryjobsRefresh = time.Time{}
+				verifyNoOp()
+			})
+			Convey("No-op if recently refreshed", func() {
+				rs.LatestTryjobsRefresh = ct.Clock.Now().Add(-tryjobRefreshInterval / 2)
+				verifyNoOp()
+			})
+			Convey("Schedule refresh", func() {
+				verifyScheduled := func() {
+					res, err := h.Poke(ctx, rs)
+					So(err, ShouldBeNil)
+					So(res.SideEffectFn, ShouldBeNil)
+					So(res.PreserveEvents, ShouldBeFalse)
+					So(res.PostProcessFn, ShouldBeNil)
+					So(res.State, ShouldNotEqual, rs)
+					So(res.State.LatestTryjobsRefresh, ShouldEqual, datastore.RoundTime(ct.Clock.Now().UTC()))
+					So(deps.tjNotifier.updateScheduled, ShouldResemble, common.TryjobIDs{2})
+				}
+				Convey("For the first time", func() {
+					rs.CreateTime = ct.Clock.Now().Add(-tryjobRefreshInterval - time.Second)
+					rs.LatestTryjobsRefresh = time.Time{}
+					verifyScheduled()
+				})
+				Convey("For the second (and later) time", func() {
+					rs.LatestTryjobsRefresh = ct.Clock.Now().Add(-tryjobRefreshInterval - time.Second)
+					verifyScheduled()
+				})
+
+				Convey("Skip if external id is not present", func() {
+					execution := rs.Tryjobs.GetState().GetExecutions()[0]
+					execution.GetAttempts()[len(execution.GetAttempts())-1].ExternalId = ""
+					_, err := h.Poke(ctx, rs)
+					So(err, ShouldBeNil)
+					So(deps.tjNotifier.updateScheduled, ShouldBeEmpty)
+				})
 			})
 		})
 

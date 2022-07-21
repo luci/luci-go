@@ -22,7 +22,9 @@ import (
 	"google.golang.org/protobuf/proto"
 
 	"go.chromium.org/luci/common/clock"
+	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/common/sync/parallel"
 	"go.chromium.org/luci/gae/service/datastore"
 
 	"go.chromium.org/luci/cv/internal/common"
@@ -31,11 +33,13 @@ import (
 	"go.chromium.org/luci/cv/internal/migration/migrationcfg"
 	"go.chromium.org/luci/cv/internal/run"
 	"go.chromium.org/luci/cv/internal/run/impl/state"
+	"go.chromium.org/luci/cv/internal/tryjob"
 )
 
 const (
 	treeCheckInterval          = time.Minute
 	clRefreshInterval          = 10 * time.Minute
+	tryjobRefreshInterval      = 10 * time.Minute
 	treeStatusFailureTimeLimit = 10 * time.Minute
 )
 
@@ -112,6 +116,41 @@ func (impl *Impl) Poke(ctx context.Context, rs *state.RunState) (*Result, error)
 		}
 	}
 
+	if rs.UseCVTryjobExecutor && shouldRefreshTryjobs(ctx, rs) {
+		executions := rs.Tryjobs.GetState().GetExecutions()
+		errs := errors.NewLazyMultiError(len(executions))
+		poolErr := parallel.WorkPool(min(8, len(executions)), func(workCh chan<- func() error) {
+			for i, execution := range executions {
+				i := i
+				if len(execution.GetAttempts()) == 0 {
+					continue
+				}
+				// Only care about the latest attempt with the assumption that all
+				// earlier attempt should have been ended already.
+				latestAttempt := execution.GetAttempts()[len(execution.GetAttempts())-1]
+				if latestAttempt.GetExternalId() == "" {
+					// There's no point to update Tryjob if Tryjob hasn't been triggered
+					// yet.
+					continue
+				}
+				workCh <- func() error {
+					errs.Assign(i, impl.TN.ScheduleUpdate(ctx,
+						common.TryjobID(latestAttempt.GetTryjobId()),
+						tryjob.ExternalID(latestAttempt.GetExternalId())))
+					return nil
+				}
+			}
+		})
+		switch {
+		case poolErr != nil:
+			panic(poolErr)
+		case errs.Get() != nil:
+			return nil, common.MostSevereError(errs.Get())
+		default:
+			rs.LatestTryjobsRefresh = datastore.RoundTime(clock.Now(ctx).UTC())
+		}
+	}
+
 	return impl.processExpiredLongOps(ctx, rs)
 }
 
@@ -127,12 +166,21 @@ func shouldCheckTree(ctx context.Context, st run.Status, sub *run.Submission) bo
 }
 
 func shouldRefreshCLs(ctx context.Context, rs *state.RunState) bool {
-	if run.IsEnded(rs.Status) {
+	return shouldRefresh(ctx, rs, rs.LatestCLsRefresh, clRefreshInterval)
+}
+
+func shouldRefreshTryjobs(ctx context.Context, rs *state.RunState) bool {
+	return shouldRefresh(ctx, rs, rs.LatestTryjobsRefresh, tryjobRefreshInterval)
+}
+
+func shouldRefresh(ctx context.Context, rs *state.RunState, last time.Time, interval time.Duration) bool {
+	switch {
+	case run.IsEnded(rs.Status):
 		return false
-	}
-	last := rs.LatestCLsRefresh
-	if last.IsZero() {
+	case last.IsZero():
 		last = rs.CreateTime
+		fallthrough
+	default:
+		return clock.Since(ctx, last) > interval
 	}
-	return clock.Since(ctx, last) > clRefreshInterval
 }

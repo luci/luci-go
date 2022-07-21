@@ -27,6 +27,7 @@ import (
 	"go.chromium.org/luci/cv/internal/run/eventpb"
 	"go.chromium.org/luci/cv/internal/run/impl/state"
 	"go.chromium.org/luci/cv/internal/run/pubsub"
+	"go.chromium.org/luci/cv/internal/tryjob"
 )
 
 // Result is the result of handling the events.
@@ -117,10 +118,17 @@ type CLUpdater interface {
 	ScheduleBatch(ctx context.Context, luciProject string, cls []*changelist.CL) error
 }
 
+// TryjobNotifier encapsulates interaction with Tryjob components by the Run
+// events handler.
+type TryjobNotifier interface {
+	ScheduleUpdate(ctx context.Context, id common.TryjobID, eid tryjob.ExternalID) error
+}
+
 // Impl is a prod implementation of Handler interface.
 type Impl struct {
 	PM         PM
 	RM         RM
+	TN         TryjobNotifier
 	GFactory   gerrit.Factory
 	CLUpdater  CLUpdater
 	CLMutator  *changelist.Mutator

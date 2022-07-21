@@ -48,6 +48,7 @@ import (
 	"go.chromium.org/luci/cv/internal/run/impl/state"
 	"go.chromium.org/luci/cv/internal/run/impl/submit"
 	"go.chromium.org/luci/cv/internal/run/pubsub"
+	"go.chromium.org/luci/cv/internal/tryjob"
 )
 
 // maxEventsPerBatch limits the number of incoming events the PM will process at
@@ -76,6 +77,7 @@ type RunManager struct {
 func New(
 	n *run.Notifier,
 	pm *prjmanager.Notifier,
+	tn *tryjob.Notifier,
 	clm *changelist.Mutator,
 	clu *changelist.Updater,
 	g gerrit.Factory,
@@ -94,6 +96,7 @@ func New(
 		handler: &handler.Impl{
 			PM:         pm,
 			RM:         n,
+			TN:         tn,
 			CLUpdater:  clu,
 			CLMutator:  clm,
 			BQExporter: runbq.NewExporter(n.TasksBinding.TQDispatcher, bqc, env),

@@ -202,10 +202,10 @@ func TestCancelTriggers(t *testing.T) {
 }
 
 type dependencies struct {
-	pm        *prjmanager.Notifier
-	rm        *run.Notifier
-	tj        *tryjob.Notifier
-	clUpdater *clUpdaterMock
+	pm         *prjmanager.Notifier
+	rm         *run.Notifier
+	tjNotifier *tryjobNotifierMock
+	clUpdater  *clUpdaterMock
 }
 
 type testHandler struct {
@@ -363,15 +363,16 @@ func makeTestHandler(ct *cvtesting.Test) (Handler, dependencies) {
 // please use makeTestHandler instead.
 func makeImpl(ct *cvtesting.Test) (*Impl, dependencies) {
 	deps := dependencies{
-		pm:        prjmanager.NewNotifier(ct.TQDispatcher),
-		rm:        run.NewNotifier(ct.TQDispatcher),
-		tj:        tryjob.NewNotifier(ct.TQDispatcher),
-		clUpdater: &clUpdaterMock{},
+		pm:         prjmanager.NewNotifier(ct.TQDispatcher),
+		rm:         run.NewNotifier(ct.TQDispatcher),
+		tjNotifier: &tryjobNotifierMock{},
+		clUpdater:  &clUpdaterMock{},
 	}
 	impl := &Impl{
 		PM:         deps.pm,
 		RM:         deps.rm,
-		CLMutator:  changelist.NewMutator(ct.TQDispatcher, deps.pm, deps.rm, deps.tj),
+		TN:         deps.tjNotifier,
+		CLMutator:  changelist.NewMutator(ct.TQDispatcher, deps.pm, deps.rm, nil),
 		CLUpdater:  deps.clUpdater,
 		TreeClient: ct.TreeFake.Client(),
 		GFactory:   ct.GFactory(),
@@ -393,5 +394,17 @@ func (c *clUpdaterMock) ScheduleBatch(ctx context.Context, luciProject string, c
 		c.refreshedCLs = append(c.refreshedCLs, cl.ID)
 	}
 	c.m.Unlock()
+	return nil
+}
+
+type tryjobNotifierMock struct {
+	m               sync.Mutex
+	updateScheduled common.TryjobIDs
+}
+
+func (t *tryjobNotifierMock) ScheduleUpdate(ctx context.Context, id common.TryjobID, _ tryjob.ExternalID) error {
+	t.m.Lock()
+	t.updateScheduled = append(t.updateScheduled, id)
+	t.m.Unlock()
 	return nil
 }

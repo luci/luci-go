@@ -116,6 +116,9 @@ type Run struct {
 	// LatestCLsRefresh is the latest time when Run Manager scheduled async
 	// refresh of CLs.
 	LatestCLsRefresh time.Time `gae:",noindex"`
+	// LatestTryjobsRefresh is the latest time when Run Manager scheduled async
+	// refresh of Tryjobs.
+	LatestTryjobsRefresh time.Time `gae:",noindex"`
 
 	// UseCVTryjobExecutor indicates Tryjob is handled in CV instead of CQ.
 	//

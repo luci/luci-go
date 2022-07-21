@@ -68,10 +68,10 @@ func TestRunManager(t *testing.T) {
 
 		notifier := run.NewNotifier(ct.TQDispatcher)
 		pm := prjmanager.NewNotifier(ct.TQDispatcher)
-		tj := tryjob.NewNotifier(ct.TQDispatcher)
-		clMutator := changelist.NewMutator(ct.TQDispatcher, pm, notifier, tj)
+		tjNotifier := tryjob.NewNotifier(ct.TQDispatcher)
+		clMutator := changelist.NewMutator(ct.TQDispatcher, pm, notifier, tjNotifier)
 		clUpdater := changelist.NewUpdater(ct.TQDispatcher, clMutator)
-		_ = New(notifier, pm, clMutator, clUpdater, ct.GFactory(), ct.BuildbucketFake.NewClientFactory(), ct.TreeFake.Client(), ct.BQFake, ct.Env)
+		_ = New(notifier, pm, tjNotifier, clMutator, clUpdater, ct.GFactory(), ct.BuildbucketFake.NewClientFactory(), ct.TreeFake.Client(), ct.BQFake, ct.Env)
 
 		// sorted by the order of execution.
 		eventTestcases := []struct {
@@ -420,10 +420,10 @@ func TestRunManager(t *testing.T) {
 
 		notifier := run.NewNotifier(ct.TQDispatcher)
 		pm := prjmanager.NewNotifier(ct.TQDispatcher)
-		tj := tryjob.NewNotifier(ct.TQDispatcher)
-		clMutator := changelist.NewMutator(ct.TQDispatcher, pm, notifier, tj)
+		tjNotifier := tryjob.NewNotifier(ct.TQDispatcher)
+		clMutator := changelist.NewMutator(ct.TQDispatcher, pm, notifier, tjNotifier)
 		clUpdater := changelist.NewUpdater(ct.TQDispatcher, clMutator)
-		_ = New(notifier, pm, clMutator, clUpdater, ct.GFactory(), ct.BuildbucketFake.NewClientFactory(), ct.TreeFake.Client(), ct.BQFake, ct.Env)
+		_ = New(notifier, pm, tjNotifier, clMutator, clUpdater, ct.GFactory(), ct.BuildbucketFake.NewClientFactory(), ct.TreeFake.Client(), ct.BQFake, ct.Env)
 
 		Convey("Recursive", func() {
 			So(notifier.PokeNow(ctx, runID), ShouldBeNil)

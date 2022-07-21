@@ -167,7 +167,7 @@ func (t *Test) SetUp() (ctx context.Context, deferme func()) {
 	bbFactory := t.BuildbucketFake.NewClientFactory()
 	gerritupdater.RegisterUpdater(clUpdater, gFactory)
 	_ = pmimpl.New(t.PMNotifier, t.RunNotifier, clMutator, gFactory, clUpdater)
-	_ = runimpl.New(t.RunNotifier, t.PMNotifier, clMutator, clUpdater, gFactory, bbFactory, t.TreeFake.Client(), t.BQFake, t.Env)
+	_ = runimpl.New(t.RunNotifier, t.PMNotifier, tjNotifier, clMutator, clUpdater, gFactory, bbFactory, t.TreeFake.Client(), t.BQFake, t.Env)
 	_ = tjcancel.NewCancellator(tjNotifier)
 
 	t.MigrationServer = &migration.MigrationServer{
