@@ -58,10 +58,7 @@ func (w *worker) findReuseInCV(ctx context.Context, definitions []*tryjob.Defini
 				toSave = append(toSave, tj)
 			}
 		}
-		if err := datastore.Put(ctx, toSave); err != nil {
-			return errors.Annotate(err, "failed to save Tryjob entities").Tag(transient.Tag).Err()
-		}
-		return nil
+		return tryjob.SaveTryjobs(ctx, toSave, w.rm.NotifyTryjobsUpdated)
 	}, nil)
 	switch {
 	case innerErr != nil:
