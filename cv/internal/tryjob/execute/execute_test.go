@@ -54,7 +54,7 @@ func TestPrepExecutionPlan(t *testing.T) {
 		Convey("Tryjobs Updated", func() {
 			const builderFoo = "foo"
 			prepPlan := func(execState *tryjob.ExecutionState, updatedTryjobs ...int64) *plan {
-				p, err := executor.prepExecutionPlan(ctx, execState, nil, updatedTryjobs, false)
+				_, p, err := executor.prepExecutionPlan(ctx, execState, nil, updatedTryjobs, false)
 				So(err, ShouldBeNil)
 				return p
 			}
@@ -279,7 +279,7 @@ func TestPrepExecutionPlan(t *testing.T) {
 				execState := newExecStateBuilder().
 					withRequirementVersion(int(r.Tryjobs.GetRequirementVersion()) + 1).
 					build()
-				plan, err := executor.prepExecutionPlan(ctx, execState, r, nil, true)
+				execState, plan, err := executor.prepExecutionPlan(ctx, execState, r, nil, true)
 				So(err, ShouldBeNil)
 				So(plan.isEmpty(), ShouldBeTrue)
 				So(executor.logEntries, ShouldBeEmpty)
@@ -287,7 +287,7 @@ func TestPrepExecutionPlan(t *testing.T) {
 
 			Convey("New Requirement", func() {
 				execState := newExecStateBuilder().build()
-				plan, err := executor.prepExecutionPlan(ctx, execState, r, nil, true)
+				execState, plan, err := executor.prepExecutionPlan(ctx, execState, r, nil, true)
 				So(err, ShouldBeNil)
 				So(execState.Requirement, ShouldResembleProto, latestReqmt)
 				So(plan.triggerNewAttempt, ShouldHaveLength, 1)
@@ -301,7 +301,7 @@ func TestPrepExecutionPlan(t *testing.T) {
 					appendDefinition(removedDef).
 					appendDefinition(builderFooDef).
 					build()
-				plan, err := executor.prepExecutionPlan(ctx, execState, r, nil, true)
+				execState, plan, err := executor.prepExecutionPlan(ctx, execState, r, nil, true)
 				So(err, ShouldBeNil)
 				So(execState.Requirement, ShouldResembleProto, latestReqmt)
 				So(plan.triggerNewAttempt, ShouldBeEmpty)
@@ -325,7 +325,7 @@ func TestPrepExecutionPlan(t *testing.T) {
 				execState := newExecStateBuilder().
 					appendDefinition(builderFooOriginal).
 					build()
-				plan, err := executor.prepExecutionPlan(ctx, execState, r, nil, true)
+				execState, plan, err := executor.prepExecutionPlan(ctx, execState, r, nil, true)
 				So(err, ShouldBeNil)
 				So(execState.Requirement, ShouldResembleProto, latestReqmt)
 				So(plan.isEmpty(), ShouldBeTrue)
@@ -347,7 +347,7 @@ func TestPrepExecutionPlan(t *testing.T) {
 						GlobalQuota: 10,
 					}).
 					build()
-				plan, err := executor.prepExecutionPlan(ctx, execState, r, nil, true)
+				execState, plan, err := executor.prepExecutionPlan(ctx, execState, r, nil, true)
 				So(err, ShouldBeNil)
 				So(execState.Requirement, ShouldResembleProto, latestReqmt)
 				So(plan.isEmpty(), ShouldBeTrue)

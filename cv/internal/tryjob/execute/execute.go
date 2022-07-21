@@ -79,24 +79,25 @@ func (e *Executor) Do(ctx context.Context, r *run.Run, payload *tryjob.ExecuteTr
 		return nil
 	}
 
-	plan, err := e.prepExecutionPlan(ctx, execState, r, payload.GetTryjobsUpdated(), payload.GetRequirementChanged())
+	execState, plan, err := e.prepExecutionPlan(ctx, execState, r, payload.GetTryjobsUpdated(), payload.GetRequirementChanged())
 	switch {
 	case err != nil:
 		return err
-	case plan.isEmpty():
-		return nil
+	case !plan.isEmpty():
+		execState, err = e.executePlan(ctx, plan, r, execState)
+		if err != nil {
+			return err
+		}
 	}
 
-	execState, err = e.executePlan(ctx, plan, r, execState)
-	if err != nil {
-		return err
-	}
+	// TODO(yiwzhang): optimize the code to save the state when it is changed or
+	// has new log entries. However, most of the time, the state will be changed.
+	// Therefore, the cost is trivial to always save the state.
 	var innerErr error
 	err = datastore.RunInTransaction(ctx, func(ctx context.Context) (err error) {
 		defer func() { innerErr = err }()
 		return tryjob.SaveExecutionState(ctx, r.ID, execState, stateVer, e.logEntries)
 	}, nil)
-
 	switch {
 	case innerErr != nil:
 		return innerErr
@@ -139,7 +140,7 @@ const noLongerRequiredInConfig = "Tryjob is no longer required in Project Config
 
 // prepExecutionPlan updates the states and computes a plan in order to
 // fulfill the requirement.
-func (e *Executor) prepExecutionPlan(ctx context.Context, execState *tryjob.ExecutionState, r *run.Run, tryjobsUpdated []int64, reqmtChanged bool) (*plan, error) {
+func (e *Executor) prepExecutionPlan(ctx context.Context, execState *tryjob.ExecutionState, r *run.Run, tryjobsUpdated []int64, reqmtChanged bool) (*tryjob.ExecutionState, *plan, error) {
 	switch hasTryjobsUpdated := len(tryjobsUpdated) > 0; {
 	case hasTryjobsUpdated && reqmtChanged:
 		panic(fmt.Errorf("the executor can't handle requirement update and tryjobs update at the same time"))
@@ -148,7 +149,7 @@ func (e *Executor) prepExecutionPlan(ctx context.Context, execState *tryjob.Exec
 		return e.handleUpdatedTryjobs(ctx, tryjobsUpdated, execState)
 	case reqmtChanged && r.Tryjobs.GetRequirementVersion() <= execState.GetRequirementVersion():
 		logging.Errorf(ctx, "Tryjob executor is executing requirement that is either later or equal to the requested requirement version. current: %d, got: %d ", r.Tryjobs.GetRequirementVersion(), execState.GetRequirementVersion())
-		return nil, nil
+		return execState, nil, nil
 	case reqmtChanged:
 		curReqmt, targetReqmt := execState.GetRequirement(), r.Tryjobs.GetRequirement()
 		if curReqmt != nil {
@@ -162,13 +163,13 @@ func (e *Executor) prepExecutionPlan(ctx context.Context, execState *tryjob.Exec
 	}
 }
 
-func (e *Executor) handleUpdatedTryjobs(ctx context.Context, tryjobs []int64, execState *tryjob.ExecutionState) (*plan, error) {
+func (e *Executor) handleUpdatedTryjobs(ctx context.Context, tryjobs []int64, execState *tryjob.ExecutionState) (*tryjob.ExecutionState, *plan, error) {
 	tryjobByID, err := tryjob.LoadTryjobsMapByIDs(ctx, common.MakeTryjobIDs(tryjobs...))
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	var (
-		ret                       plan
+		p                         plan
 		failedIndices             []int            // critical tryjobs only
 		failedTryjobs             []*tryjob.Tryjob // critical tryjobs only
 		hasNonEndedCriticalTryjob bool
@@ -178,9 +179,7 @@ func (e *Executor) handleUpdatedTryjobs(ctx context.Context, tryjobs []int64, ex
 		definition := execState.GetRequirement().GetDefinitions()[i]
 		switch latestAttemptEnded := hasLatestAttemptEnded(exec); {
 		case !latestAttemptEnded:
-			if !hasNonEndedCriticalTryjob {
-				hasNonEndedCriticalTryjob = definition.GetCritical()
-			}
+			hasNonEndedCriticalTryjob = hasNonEndedCriticalTryjob || definition.GetCritical()
 			continue
 		case !updated:
 			continue
@@ -205,7 +204,7 @@ func (e *Executor) handleUpdatedTryjobs(ctx context.Context, tryjobs []int64, ex
 		case attempt.Status == tryjob.Status_UNTRIGGERED && attempt.Reused:
 			// Normally happens when this Run reuses a PENDING Tryjob from another
 			// Run but the Tryjob doesn't end up getting triggered.
-			ret.triggerNewAttempt = append(ret.triggerNewAttempt, planItem{
+			p.triggerNewAttempt = append(p.triggerNewAttempt, planItem{
 				definition: definition,
 				execution:  exec,
 			})
@@ -220,26 +219,26 @@ func (e *Executor) handleUpdatedTryjobs(ctx context.Context, tryjobs []int64, ex
 		}
 	}
 
-	switch hasFailed, hasNewAttemptToTrigger := len(failedIndices) > 0, len(ret.triggerNewAttempt) > 0; {
+	switch hasFailed, hasNewAttemptToTrigger := len(failedIndices) > 0, len(p.triggerNewAttempt) > 0; {
 	case !hasFailed && !hasNewAttemptToTrigger && !hasNonEndedCriticalTryjob:
 		// all critical tryjobs have completed successfully.
 		execState.Status = tryjob.ExecutionState_SUCCEEDED
-		return nil, nil
+		return execState, nil, nil
 	case hasFailed:
 		if ok, _ := canRetryAll(ctx, execState, failedIndices); !ok {
 			// TODO(yiwzhang): log why execution can't be retried
 			execState.Status = tryjob.ExecutionState_FAILED
 			execState.FailureReason = composeReason(failedTryjobs)
-			return nil, nil
+			return execState, nil, nil
 		}
 		for _, idx := range failedIndices {
-			ret.triggerNewAttempt = append(ret.triggerNewAttempt, planItem{
+			p.triggerNewAttempt = append(p.triggerNewAttempt, planItem{
 				definition: execState.GetRequirement().GetDefinitions()[idx],
 				execution:  execState.GetExecutions()[idx],
 			})
 		}
 	}
-	return &ret, nil
+	return execState, &p, nil
 }
 
 func updateLatestAttempt(exec *tryjob.ExecutionState_Execution, tryjobsByIDs map[common.TryjobID]*tryjob.Tryjob) bool {
@@ -272,16 +271,16 @@ func hasLatestAttemptEnded(exec *tryjob.ExecutionState_Execution) bool {
 	}
 }
 
-func handleRequirementChange(curReqmt, targetReqmt *tryjob.Requirement, execState *tryjob.ExecutionState) (*plan, error) {
+func handleRequirementChange(curReqmt, targetReqmt *tryjob.Requirement, execState *tryjob.ExecutionState) (*tryjob.ExecutionState, *plan, error) {
 	existingExecutionByDef := make(map[*tryjob.Definition]*tryjob.ExecutionState_Execution, len(curReqmt.GetDefinitions()))
 	for i, def := range curReqmt.GetDefinitions() {
 		existingExecutionByDef[def] = execState.GetExecutions()[i]
 	}
 	reqmtDiff := requirement.Diff(curReqmt, targetReqmt)
-	ret := &plan{}
+	p := &plan{}
 	// populate discarded tryjob.
 	for def := range reqmtDiff.RemovedDefs {
-		ret.discard = append(ret.discard, planItem{
+		p.discard = append(p.discard, planItem{
 			definition:    def,
 			execution:     existingExecutionByDef[def],
 			discardReason: noLongerRequiredInConfig,
@@ -296,7 +295,7 @@ func handleRequirementChange(curReqmt, targetReqmt *tryjob.Requirement, execStat
 		case reqmtDiff.AddedDefs.Has(def):
 			exec := &tryjob.ExecutionState_Execution{}
 			execState.Executions = append(execState.Executions, exec)
-			ret.triggerNewAttempt = append(ret.triggerNewAttempt, planItem{
+			p.triggerNewAttempt = append(p.triggerNewAttempt, planItem{
 				definition: def,
 				execution:  exec,
 			})
@@ -315,7 +314,7 @@ func handleRequirementChange(curReqmt, targetReqmt *tryjob.Requirement, execStat
 			execState.Executions = append(execState.Executions, exec)
 		}
 	}
-	return ret, nil
+	return execState, p, nil
 }
 
 // executePlan executes the plan and mutate the state.
