@@ -14,6 +14,7 @@
 
 """Defines luci.builder(...) rule."""
 
+load("@stdlib//internal/experiments.star", "experiments")
 load("@stdlib//internal/graph.star", "graph")
 load("@stdlib//internal/lucicfg.star", "lucicfg")
 load("@stdlib//internal/validate.star", "validate")
@@ -22,6 +23,11 @@ load("@stdlib//internal/luci/lib/resultdb.star", "resultdb", "resultdbimpl")
 load("@stdlib//internal/luci/lib/scheduler.star", "schedulerimpl")
 load("@stdlib//internal/luci/lib/swarming.star", "swarming")
 load("@stdlib//internal/luci/rules/binding.star", "binding")
+load("@stdlib//internal/luci/rules/bucket_constraints.star", "bucket_constraints")
+
+# Enables the application of a builder's config (more specifically pool and
+# service_account) to its bucket as constraints.
+_apply_builder_config_as_bucket_constraints = experiments.register("crbug.com/1338648")
 
 def _builder(
         ctx,  # @unused
@@ -349,6 +355,17 @@ def _builder(
             roles = "role/buildbucket.builderServiceAccount",
             users = props["service_account"],
         )
+
+    if _apply_builder_config_as_bucket_constraints.is_enabled():
+        # Implicitly add constraints to this builder's bucket.
+        pools = [p.value for p in props["dimensions"].get("pool", [])]
+        service_accounts = [props["service_account"]] if props["service_account"] else []
+        if pools or service_accounts:
+            bucket_constraints(
+                bucket = bucket_key.id,
+                pools = pools,
+                service_accounts = service_accounts,
+            )
 
     return graph.keyset(builder_key, builder_ref_key, triggerer_key)
 
