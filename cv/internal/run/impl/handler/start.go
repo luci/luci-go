@@ -79,6 +79,7 @@ func (impl *Impl) Start(ctx context.Context, rs *state.RunState) (*Result, error
 		RunOwner:    rs.Owner,
 		CLs:         runCLs,
 		RunOptions:  rs.Options,
+		RunMode:     rs.Mode,
 	}); {
 	case err != nil:
 		return nil, err

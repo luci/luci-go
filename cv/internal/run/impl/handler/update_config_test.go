@@ -158,6 +158,7 @@ func TestUpdateConfig(t *testing.T) {
 			RunOwner:    rs.Owner,
 			CLs:         runCLs,
 			RunOptions:  rs.Options,
+			RunMode:     rs.Mode,
 		})
 		So(err, ShouldBeNil)
 		So(initialReqmt.OK(), ShouldBeTrue)

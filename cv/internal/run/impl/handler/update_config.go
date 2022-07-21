@@ -139,6 +139,7 @@ func (impl *Impl) UpdateConfig(ctx context.Context, rs *state.RunState, hash str
 				RunOwner:    rs.Owner,
 				CLs:         runCLs,
 				RunOptions:  rs.Options,
+				RunMode:     rs.Mode,
 			}); {
 			case err != nil:
 				return nil, err
