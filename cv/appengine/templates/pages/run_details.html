@@ -6,87 +6,93 @@ Run {{.Run.ID.Inner}}
 
 {{define "head"}}
 <style type="text/css">
+  table td {
+    padding: 2px 8px;
+  }
 
-table td{
-  padding: 2px 8px;
-}
-table td.long {
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
+  table td.long {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
 
-.collapsible{
-  padding: 0 18px;
-  display: none;
-  overflow: hidden;
-  background-color: #f1f1f1;
-}
+  .collapsible {
+    padding: 0 18px;
+    display: none;
+    overflow: hidden;
+    background-color: #f1f1f1;
+  }
 
-.clickable:hover {
-  background-color: #ccc;
-}
+  .clickable:hover {
+    background-color: #ccc;
+  }
 
-div.clickable {
-  padding: 10px;
-  border: 2px;
-  border-color: black;
-  font-weight: bold;
-}
+  div.clickable {
+    padding: 10px;
+    border: 2px;
+    border-color: black;
+    font-weight: bold;
+  }
 
-#full-details-panel{
-  margin-left: 50px;
-}
+  #full-details-panel {
+    margin-left: 50px;
+  }
 
-.tryjob-chips ul li{
-  padding: 2px 4px;
-  margin: 2px 4px;
-}
+  .tryjob-chips ul li {
+    padding: 2px 4px;
+    margin: 2px 4px;
+  }
 
-.tryjob-chip {
-  line-height: 2;
-  white-space: nowrap;
-  color: black;
-  font-size: 90%;
-  border: solid 1px rgba(0, 0, 0, 0.5);
-  border-radius: 3px;
-  padding: 2px 4px;
-}
-.tryjob-chip.highlight {
-  box-shadow: gray 1.5px 1.5px 1px;
-  text-decoration: underline;
-  color: blue;
-}
-.tryjob-chip.highlight:visited {
-  color: purple;
-}
-.tryjob-chip.unexpected {
-  background: #f0f;
-}
-.tryjob-chip.not-started {
-  background: #eee;
-}
-.tryjob-chip.running {
-  background: #ff7;
-}
-.tryjob-chip.passed {
-  background: #9e6;
-  border-width: 3px;
-}
-.tryjob-chip.failed {
-  background: #e88;
-  border-width: 3px;
-  border-style: dashed;
-}
+  .tryjob-chip {
+    line-height: 2;
+    white-space: nowrap;
+    color: black;
+    font-size: 90%;
+    border: solid 1px rgba(0, 0, 0, 0.5);
+    border-radius: 3px;
+    padding: 2px 4px;
+  }
 
-.message {
-  overflow: auto;
-  max-height: 250px;
-  background-color: white;
-  padding: 10px 50px;
-}
+  .tryjob-chip.highlight {
+    box-shadow: gray 1.5px 1.5px 1px;
+    text-decoration: underline;
+    color: blue;
+  }
+
+  .tryjob-chip.highlight:visited {
+    color: purple;
+  }
+
+  .tryjob-chip.unexpected {
+    background: #f0f;
+  }
+
+  .tryjob-chip.not-started {
+    background: #eee;
+  }
+
+  .tryjob-chip.running {
+    background: #ff7;
+  }
+
+  .tryjob-chip.passed {
+    background: #9e6;
+    border-width: 3px;
+  }
+
+  .tryjob-chip.failed {
+    background: #e88;
+    border-width: 3px;
+    border-style: dashed;
+  }
+
+  .message {
+    overflow: auto;
+    max-height: 250px;
+    background-color: white;
+    padding: 10px 50px;
+  }
 </style>
-
 {{end}}
 
 {{define "content"}}
@@ -96,9 +102,9 @@ div.clickable {
 {{$LogMessage := .LogMessage}}
 <div class="container">
   <div>
-      <h3>Run details</h3>
-        {{template "runDetails" .Run}}
-        {{$Created := .Run.CreateTime}}
+    <h3>Run details</h3>
+    {{template "runDetails" .Run}}
+    {{$Created := .Run.CreateTime}}
   </div>
 
   <div>
@@ -120,25 +126,25 @@ div.clickable {
         </thead>
         <tbody>
           {{range .Cls}}
-            <tr>
-              <td style="white-space: nowrap;" class="text-center">
-                {{with .Prev}}
-                  <a href="/ui/run/{{.}}">&lt; Previous</a>
-                {{else}}
-                  <span style="color: #ccc;"> &mdash; </span>
-                {{end}}
-              </td>
-              <td style="white-space: nowrap;" class="text-center">
-                <a href="{{.URLWithPatchset}}">{{.ShortWithPatchset}}</a>
-              </td>
-              <td style="white-space: nowrap;" class="text-center">
-                {{with .Next}}
-                  <a href="/ui/run/{{.}}">Next &gt;</a>
-                {{else}}
-                  <span style="color: #ccc;"> &mdash; </span>
-                {{end}}
-              </td>
-            </tr>
+          <tr>
+            <td style="white-space: nowrap;" class="text-center">
+              {{with .Prev}}
+              <a href="/ui/run/{{.}}">&lt; Previous</a>
+              {{else}}
+              <span style="color: #ccc;"> &mdash; </span>
+              {{end}}
+            </td>
+            <td style="white-space: nowrap;" class="text-center">
+              <a href="{{.URLWithPatchset}}">{{.ShortWithPatchset}}</a>
+            </td>
+            <td style="white-space: nowrap;" class="text-center">
+              {{with .Next}}
+              <a href="/ui/run/{{.}}">Next &gt;</a>
+              {{else}}
+              <span style="color: #ccc;"> &mdash; </span>
+              {{end}}
+            </td>
+          </tr>
           {{end}}
         </tbody>
       </table>
@@ -148,162 +154,170 @@ div.clickable {
   <div>
     <h3>Tryjobs</h3>
     {{if $AllTryjobs}}
-      <div>
-        <p class ="well">
-          <b>NOTE</b> color codes represent how CV sees tryjobs, e.g.
-          <span class="tryjob-chip running"><i>triggered</i></span>
-          <span class="tryjob-chip failed"> <i>failed</i></span>
-          <span class="tryjob-chip passed"> <i>succeeded</i></span>
-          which isn't as granular as Buildbucket's statuses.
-        </p>
-        <p class="tryjob-chips">
-          {{range $AllTryjobs}}
-            {{with UITryjob .}}
-              <a class="tryjob-chip {{.Class}}" href="{{.Link}}">{{.Display}}</a>
-              <span> </span>
-            {{end}}
+    <div>
+      <p class="well">
+        <b>NOTE</b> color codes represent how CV sees tryjobs, e.g.
+        <span class="tryjob-chip running"><i>triggered</i></span>
+        <span class="tryjob-chip failed"> <i>failed</i></span>
+        <span class="tryjob-chip passed"> <i>succeeded</i></span>
+        which isn't as granular as Buildbucket's statuses.
+      </p>
+      <p class="tryjob-chips">
+        {{range $AllTryjobs}}
+          {{with UITryjob .}}
+          <a class="tryjob-chip {{.Class}}" href="{{.Link}}">{{.Display}}</a>
+          <span> </span>
           {{end}}
-        </p>
-      </div>
+        {{end}}
+      </p>
+    </div>
     {{else}}
-      <span style="color: #ccc;">No tryjobs to show</span>
+    <span style="color: #ccc;">No tryjobs to show</span>
     {{end}}
   </div>
 
   <div>
     <h3>Logs</h3>
     {{if .Logs}}
-      <table class="table table-striped">
-        <thead>
-          <th style="width: 200px;">Event</th>
-          <th style="width: 250px;">Time</th>
-          <th style="width: 100px;">&nbsp;</th>
-          <th>&nbsp;</th>
-        </thead>
-        <tbody>
-          {{range .Logs}}
-            <tr class="log-entry{{if .GetTryjobsUpdated}}-top{{end}}">
-              <td><em>{{LogTypeString .}}</em></td>
-              <td style="white-space: nowrap;" class="unix-timestamp">{{.GetTime.AsTime.Unix}}</td>
-              <td style="white-space: nowrap;">{{call $RelTime .GetTime.AsTime}} </td>
-              <td>
-                {{if (call $LogMessage .)}}
-                  <div class="message"><pre>{{call $LogMessage .}}</pre></div>
-                {{end}}
-              </td>
-            </tr>
-            {{if .GetTryjobsUpdated}}
-              <tr class="log-entry-bottom">
-                {{with .GetTryjobsUpdated}}
-                  <td class="tryjob-chips" colspan="4">
-                    <ul>
-                    {{range $label, $jobs := ByTryjobStatus .GetTryjobs}}
-                      <li>{{$label}}:
-                      {{range $jobs}}
-                        {{with UITryjob .}}
-                        <a class="tryjob-chip {{.Class}}" href="{{.Link}}">{{.Display}}</a>
-                        <span> </span>
-                        {{end}}
-                      {{end}}
-                      </li>
-                    {{end}}
-                    </ul>
-                  </td>
-                {{end}}
-              </tr>
+    <table class="table table-striped">
+      <thead>
+        <th style="width: 200px;">Event</th>
+        <th style="width: 250px;">Time</th>
+        <th style="width: 100px;">&nbsp;</th>
+        <th>&nbsp;</th>
+      </thead>
+      <tbody>
+        {{range .Logs}}
+        <tr class="log-entry{{if .GetTryjobsUpdated}}-top{{end}}">
+          <td><em>{{LogTypeString .}}</em></td>
+          <td style="white-space: nowrap;" class="unix-timestamp">{{.GetTime.AsTime.Unix}}</td>
+          <td style="white-space: nowrap;">{{call $RelTime .GetTime.AsTime}} </td>
+          <td>
+            {{if (call $LogMessage .)}}
+            <div class="message">
+              <pre>{{call $LogMessage .}}</pre>
+            </div>
             {{end}}
+          </td>
+        </tr>
+        {{if .GetTryjobsUpdated}}
+        <tr class="log-entry-bottom">
+          {{with .GetTryjobsUpdated}}
+          <td class="tryjob-chips" colspan="4">
+            <ul>
+              {{range $label, $jobs := ByTryjobStatus .GetTryjobs}}
+              <li>{{$label}}:
+                {{range $jobs}}
+                  {{with UITryjob .}}
+                  <a class="tryjob-chip {{.Class}}" href="{{.Link}}">{{.Display}}</a>
+                  <span> </span>
+                  {{end}}
+                {{end}}
+              </li>
+              {{end}}
+            </ul>
+          </td>
           {{end}}
-        </tbody>
-      </table>
+        </tr>
+        {{end}}
+        {{end}}
+      </tbody>
+    </table>
     {{else}}
-      <span style="color: #ccc;">No logs to show</span>
+    <span style="color: #ccc;">No logs to show</span>
     {{end}}
   </div>
-{{end}}
+  {{end}}
 
-{{define "runDetails"}}
-<div>
-  <table class="table run-details">
-    <thead>
-      <tr>
-        <th style="width: 10%;">PROJECT</th>
-        <th style="width: 25%;">ID</th>
-        <th style="width: 10%;">MODE</th>
-        <th style="width: 10%;">STATUS</th>
-        <th>&nbsp;</th>
-      </tr>
-    </thead>
-    <tbody>
-      <tr>
-      <td><a href="/ui/recents/{{.ID.LUCIProject}}">
-          {{.ID.LUCIProject}}
-      </a></td>
-      <td><b>{{.ID.Inner}}</b></td>
-      <td>{{.Mode}}</td>
-      <td>{{.Status}}</td>
-      <td>
-        <div id="run-details-expander" class="clickable"> (+) Show details</div>
-        <div id="run-details-collapser" class="collapsible">(-) Hide details</div>
-      </td>
-      </tr>
-    </tbody>
-  </table>
+  {{define "runDetails"}}
+  <div>
+    <table class="table run-details">
+      <thead>
+        <tr>
+          <th style="width: 10%;">PROJECT</th>
+          <th style="width: 25%;">ID</th>
+          <th style="width: 10%;">MODE</th>
+          <th style="width: 10%;">STATUS</th>
+          <th>&nbsp;</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><a href="/ui/recents/{{.ID.LUCIProject}}">
+              {{.ID.LUCIProject}}
+            </a></td>
+          <td><b>{{.ID.Inner}}</b></td>
+          <td>{{.Mode}}</td>
+          <td>{{.Status}}</td>
+          <td>
+            <div id="run-details-expander" class="clickable"> (+) Show details</div>
+            <div id="run-details-collapser" class="collapsible">(-) Hide details</div>
+          </td>
+        </tr>
+      </tbody>
+    </table>
 
-  <div id="full-details-panel" class="collapsible well">
-  <dl class="dl-horizontal">
-  <dt>Eversion:</dt><dd>{{.EVersion}}</dd>
-  <dt>Id:</dt><dd>{{.ID}}</dd>
-  <dt>Mode:</dt><dd>{{.Mode}}</dd>
-  <dt>Status:</dt><dd>{{.Status}}</dd>
-  <dt>CreateTime:</dt>
-    <dd class="unix-timestamp">{{.CreateTime.Unix}}</dd>
-  <dt>StartTime:</dt>
-    <dd class="unix-timestamp">
-      {{if .StartTime.IsZero}}
-        Not Started
-      {{else}}
-        {{.StartTime.Unix}}
-      {{end}}
-    </dd>
-  <dt>UpdateTime:</dt>
-    <dd class="unix-timestamp">
-      {{if .UpdateTime.IsZero}}
-        N/A
-      {{else}}
-        {{.UpdateTime.Unix}}
-      {{end}}
-    </dd>
-  <dt>EndTime:</dt>
-    <dd class="unix-timestamp">
-      {{if .EndTime.IsZero}}
-        N/A
-      {{else}}
-        {{.EndTime.Unix}}
-      {{end}}
-    </dd>
-  <dt>Owner:</dt><dd>{{.Owner}}</dd>
-  <dt>ConfigGroupId:</dt><dd>{{.ConfigGroupID}}</dd>
-  </dl>
+    <div id="full-details-panel" class="collapsible well">
+      <dl class="dl-horizontal">
+        <dt>Eversion:</dt>
+        <dd>{{.EVersion}}</dd>
+        <dt>Id:</dt>
+        <dd>{{.ID}}</dd>
+        <dt>Mode:</dt>
+        <dd>{{.Mode}}</dd>
+        <dt>Status:</dt>
+        <dd>{{.Status}}</dd>
+        <dt>CreateTime:</dt>
+        <dd class="unix-timestamp">{{.CreateTime.Unix}}</dd>
+        <dt>StartTime:</dt>
+        <dd class="unix-timestamp">
+          {{if .StartTime.IsZero}}
+          Not Started
+          {{else}}
+          {{.StartTime.Unix}}
+          {{end}}
+        </dd>
+        <dt>UpdateTime:</dt>
+        <dd class="unix-timestamp">
+          {{if .UpdateTime.IsZero}}
+          N/A
+          {{else}}
+          {{.UpdateTime.Unix}}
+          {{end}}
+        </dd>
+        <dt>EndTime:</dt>
+        <dd class="unix-timestamp">
+          {{if .EndTime.IsZero}}
+          N/A
+          {{else}}
+          {{.EndTime.Unix}}
+          {{end}}
+        </dd>
+        <dt>Owner:</dt>
+        <dd>{{.Owner}}</dd>
+        <dt>ConfigGroupId:</dt>
+        <dd>{{.ConfigGroupID}}</dd>
+      </dl>
+    </div>
   </div>
-</div>
-{{template "collapserScript"}}
-{{end}}
+  {{template "collapserScript"}}
+  {{end}}
 
-{{define "collapserScript"}}
+  {{define "collapserScript"}}
   <script>
-  var expander = document.getElementById("run-details-expander");
-  var collapser = document.getElementById("run-details-collapser");
-  var collapsible = document.getElementById("full-details-panel");
+    var expander = document.getElementById("run-details-expander");
+    var collapser = document.getElementById("run-details-collapser");
+    var collapsible = document.getElementById("full-details-panel");
 
-  function toggler(){
-    collapsible.classList.toggle("collapsible");
-    collapser.classList.toggle("collapsible")
-    collapser.classList.toggle("clickable");
-    expander.classList.toggle("collapsible")
-    expander.classList.toggle("clickable");
-  }
+    function toggler() {
+      collapsible.classList.toggle("collapsible");
+      collapser.classList.toggle("collapsible")
+      collapser.classList.toggle("clickable");
+      expander.classList.toggle("collapsible")
+      expander.classList.toggle("clickable");
+    }
 
-  expander.addEventListener("click", toggler);
-  collapser.addEventListener("click", toggler);
+    expander.addEventListener("click", toggler);
+    collapser.addEventListener("click", toggler);
   </script>
-{{end}}
+  {{end}}
