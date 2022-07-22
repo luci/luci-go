@@ -88,6 +88,11 @@ service Builds {
   // If build with the given ID already exists, returns ALREADY_EXISTS
   // error code.
   rpc CreateBuild(CreateBuildRequest) returns (Build) {};
+
+  // Synthesizes a build proto.
+  //
+  // This RPC is exclusively for generating led builds.
+  rpc SynthesizeBuild(SynthesizeBuildRequest) returns (Build) {};
 }
 
 // A request message for GetBuild rpc.
@@ -493,6 +498,17 @@ message CreateBuildRequest {
   // If not set, the default mask is used, see Build message comments for the
   // list of fields returned by default.
   BuildMask mask = 3;
+}
+
+// A request message for SynthesizeBuild rpc.
+message SynthesizeBuildRequest {
+  // ID of a build to use as the template.
+  // Mutually exclusive with builder.
+  int64 template_build_id = 1;
+
+  // Value for Build.builder. See its comments.
+  // Required, unless template_build_id is specified.
+  BuilderID builder = 2;
 }
 
 // Defines a subset of Build fields and properties to return.

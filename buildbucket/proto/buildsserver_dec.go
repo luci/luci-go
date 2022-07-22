@@ -141,3 +141,20 @@ func (s *DecoratedBuilds) CreateBuild(ctx context.Context, req *CreateBuildReque
 	}
 	return
 }
+
+func (s *DecoratedBuilds) SynthesizeBuild(ctx context.Context, req *SynthesizeBuildRequest) (rsp *Build, err error) {
+	if s.Prelude != nil {
+		var newCtx context.Context
+		newCtx, err = s.Prelude(ctx, "SynthesizeBuild", req)
+		if err == nil {
+			ctx = newCtx
+		}
+	}
+	if err == nil {
+		rsp, err = s.Service.SynthesizeBuild(ctx, req)
+	}
+	if s.Postlude != nil {
+		err = s.Postlude(ctx, "SynthesizeBuild", rsp, err)
+	}
+	return
+}
