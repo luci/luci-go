@@ -3434,8 +3434,46 @@ find how quota policies are used in cq_group(...).
 * **name**: the name of the policy to configure. Must be unqiue in the ConfigGroup. Must match regex '^[0-9A-Za-z][0-9A-Za-z\.\-@_+]{0,511}$'. Required.
 * **users**: a list of user identities, which is an email typically, to apply the quota policy to.
 * **groups**: a list of chrome infra auth group names to apply the quota policy to.
-* **run_limits**: Run limits to apply. See cq.run_limits(...) for more details. If omitted, unlimited run quotas are granted to the users and groups.
-* **tryjob_limits**: Tryjob limits to apply. See cq.tryjob_limits(...) for more details. If omitted, unlimited tryjob quotas are granted to the users and groups.
+* **run_limits**: Run limits to apply. See [cq.run_limits(...)](#cq.run-limits) for more details. If omitted, unlimited run quotas are granted to the users and groups.
+* **tryjob_limits**: Tryjob limits to apply. See [cq.tryjob_limits(...)](#cq.tryjob-limits) for more details. If omitted, unlimited tryjob quotas are granted to the users and groups.
+
+
+
+
+### cq.run_limits {#cq.run-limits}
+
+```python
+cq.run_limits(max_active = None)
+```
+
+
+
+Constructs Run limits.
+
+All limit values must be > 0, or None if no limit.
+
+#### Arguments {#cq.run-limits-args}
+
+* **max_active**: Max number of ongoing Runs that there can be at any moment.
+
+
+
+
+### cq.tryjob_limits {#cq.tryjob-limits}
+
+```python
+cq.tryjob_limits(max_active = None)
+```
+
+
+
+Constructs Tryjob limits.
+
+All limit values must be > 0, or None if no limit.
+
+#### Arguments {#cq.tryjob-limits-args}
+
+* **max_active**: Max number of ongoing Tryjobs that there can be at any moment.
 
 
 

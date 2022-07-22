@@ -484,6 +484,18 @@ luci.cq_group(
         triggering_label = "TEST_RUN_LABEL",
         triggering_value = 1,
     ),
+    user_quotas = [
+        cq.quota_policy(
+            name = "comitters",
+            groups = ["comitters"],
+            run_limits = cq.run_limits(max_active = 3),
+        ),
+    ],
+    user_quota_default = cq.quota_policy(
+        name = "user_quota_default",
+        run_limits = cq.run_limits(max_active = 1),
+        tryjob_limits = cq.tryjob_limits(max_active = 40),
+    ),
 )
 
 luci.cq_tryjob_verifier(
@@ -635,6 +647,33 @@ lucicfg.emit(
 #     cq_label_value: 1
 #     triggering_label: "TEST_RUN_LABEL"
 #     triggering_value: 1
+#   }
+#   user_quotas {
+#     name: "comitters"
+#     principals: "group:comitters"
+#     run_limits {
+#       max_active {
+#         value: 3
+#       }
+#     }
+#     tryjob_limits {
+#       max_active {
+#         unlimited: true
+#       }
+#     }
+#   }
+#   user_quota_default {
+#     name: "user_quota_default"
+#     run_limits {
+#       max_active {
+#         value: 1
+#       }
+#     }
+#     tryjob_limits {
+#       max_active {
+#         value: 40
+#       }
+#     }
 #   }
 # }
 # ===

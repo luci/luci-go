@@ -1198,8 +1198,34 @@ def _cq_quota_policy(p):
     return cq_pb.QuotaPolicy(
         name = p.name,
         principals = p.principals,
-        # TODO(ddoman): populate RunLimit and TryjobLimits.
+        run_limits = _cq_quota_policy_run_limits(p.run_limits),
+        tryjob_limits = _cq_quota_policy_tryjob_limits(p.tryjob_limits),
     )
+
+def _cq_quota_policy_run_limits(limits):
+    """cq.run_limits(...) => cq_pb.QuotaPolicy.RunLimits."""
+    return cq_pb.QuotaPolicy.RunLimits(
+        max_active = _cq_quota_policy_limit(
+            limits.max_active if limits != None else None,
+        ),
+    )
+
+def _cq_quota_policy_tryjob_limits(limits):
+    """cq.tryjob_limits(...) => cq_pb.QuotaPolicy.TryjobLimits."""
+    return cq_pb.QuotaPolicy.TryjobLimits(
+        max_active = _cq_quota_policy_limit(
+            limits.max_active if limits != None else None,
+        ),
+    )
+
+def _cq_quota_policy_limit(limit):
+    """Int|None => cq_pb.QuotaPolicy.Limit."""
+    # if the limit is None, return with unlimited = True, so that
+    # so that the config output clarifies what policies granted
+    # unliimited quotas.
+    if limit == None:
+        return cq_pb.QuotaPolicy.Limit(unlimited = True)
+    return cq_pb.QuotaPolicy.Limit(value = limit)
 
 ################################################################################
 ## notify.cfg.

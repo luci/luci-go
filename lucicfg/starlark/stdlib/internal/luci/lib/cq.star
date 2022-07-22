@@ -43,6 +43,12 @@ _location_filter_ctor = __native__.genstruct("cq.location_filter")
 # A struct returned by cq.quota_policy(...).
 _quota_policy_ctor = __native__.genstruct("cq.quota_policy")
 
+# A struct returned by cq.run_limits(...).
+_run_limits_ctor = __native__.genstruct("cq.run_limits")
+
+# A struct returned by cq.tryjob_limits(...).
+_tryjob_limits_ctor = __native__.genstruct("cq.tryjob_limits")
+
 def _refset(repo = None, *, refs = None, refs_exclude = None):
     """Defines a repository and a subset of its refs.
 
@@ -288,7 +294,6 @@ def _quota_policy(
         required = True,
         regexp = "^[0-9A-Za-z][0-9A-Za-z.\\-@_+]{0,511}$",
     )
-
     principals = []
     users = validate.list("users", users, required = False)
     groups = validate.list("groups", groups, required = False)
@@ -298,13 +303,58 @@ def _quota_policy(
     for i, g in enumerate(groups):
         p = "group:%s" % validate.string("groups[%d]" % i, g, required = True)
         principals.append(p)
+    _validate_run_limits("run_limits", run_limits, required = False)
+    _validate_tryjob_limits("tryjob_limits", tryjob_limits, required = False)
 
-    # TODO(ddoman): validate run_limits and tryjob_limits
     return _quota_policy_ctor(
         name = name,
         principals = principals,
         run_limits = run_limits,
         tryjob_limits = tryjob_limits,
+    )
+
+def _validate_run_limits(attr, val, *, default = None, required = False):
+    """Validates that `val` was constructed via cq.run_limits(...)."""
+    return validate.struct(attr, val, _run_limits_ctor, default = default, required = required)
+
+def _run_limits(max_active = None):
+    """Constructs Run limits.
+
+    All limit values must be > 0, or None if no limit.
+
+    Args:
+      max_active: Max number of ongoing Runs that there can be at any moment.
+    """
+    return _run_limits_ctor(
+        max_active = validate.int(
+            "max_active",
+            max_active,
+            min = 1,
+            default = None,
+            required = False,
+        ),
+    )
+
+def _validate_tryjob_limits(attr, val, *, default = None, required = False):
+    """Validates that `val` was constructed via cq.tryjob_limits(...)."""
+    return validate.struct(attr, val, _tryjob_limits_ctor, default = default, required = required)
+
+def _tryjob_limits(max_active = None):
+    """Constructs Tryjob limits.
+
+    All limit values must be > 0, or None if no limit.
+
+    Args:
+      max_active: Max number of ongoing Tryjobs that there can be at any moment.
+    """
+    return _tryjob_limits_ctor(
+        max_active = validate.int(
+            "max_active",
+            max_active,
+            min = 1,
+            default = None,
+            required = False,
+        ),
     )
 
 # CQ module exposes structs and enums useful when defining luci.cq_group(...)
@@ -361,6 +411,8 @@ cq = struct(
     run_mode = _run_mode,
     location_filter = _location_filter,
     quota_policy = _quota_policy,
+    run_limits = _run_limits,
+    tryjob_limits = _tryjob_limits,
     ACTION_NONE = cq_pb.Verifiers.GerritCQAbility.UNSET,
     ACTION_DRY_RUN = cq_pb.Verifiers.GerritCQAbility.DRY_RUN,
     ACTION_COMMIT = cq_pb.Verifiers.GerritCQAbility.COMMIT,

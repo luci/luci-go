@@ -99,10 +99,13 @@ luci.cq_group(
             name = "user_quotas_for_foo_and_bar",
             users = ["foo@example.com"],
             groups = ["bar"],
+            run_limits = cq.run_limits(max_active = 60),
+            tryjob_limits = cq.tryjob_limits(max_active = 60),
         ),
         cq.quota_policy(
             name = "user_quotas_for_committers",
             groups = ["committers"],
+            run_limits = cq.run_limits(max_active = 20),
         ),
         cq.quota_policy(
             name = "user_quotas_for_third_party_devs",
