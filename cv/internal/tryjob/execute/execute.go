@@ -314,6 +314,9 @@ func handleRequirementChange(curReqmt, targetReqmt *tryjob.Requirement, execStat
 			execState.Executions = append(execState.Executions, exec)
 		}
 	}
+	if len(targetReqmt.GetDefinitions()) == 0 {
+		execState.Status = tryjob.ExecutionState_SUCCEEDED
+	}
 	return execState, p, nil
 }
 

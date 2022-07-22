@@ -279,7 +279,7 @@ func TestPrepExecutionPlan(t *testing.T) {
 				execState := newExecStateBuilder().
 					withRequirementVersion(int(r.Tryjobs.GetRequirementVersion()) + 1).
 					build()
-				execState, plan, err := executor.prepExecutionPlan(ctx, execState, r, nil, true)
+				_, plan, err := executor.prepExecutionPlan(ctx, execState, r, nil, true)
 				So(err, ShouldBeNil)
 				So(plan.isEmpty(), ShouldBeTrue)
 				So(executor.logEntries, ShouldBeEmpty)
@@ -359,6 +359,18 @@ func TestPrepExecutionPlan(t *testing.T) {
 						},
 					},
 				})
+			})
+
+			Convey("Empty definitions", func() {
+				latestReqmt.Definitions = nil
+				execState := newExecStateBuilder().
+					appendDefinition(builderFooDef).
+					build()
+				execState, plan, err := executor.prepExecutionPlan(ctx, execState, r, nil, true)
+				So(err, ShouldBeNil)
+				So(execState.Requirement, ShouldResembleProto, latestReqmt)
+				So(plan.discard, ShouldHaveLength, 1)
+				So(execState.Status, ShouldEqual, tryjob.ExecutionState_SUCCEEDED)
 			})
 		})
 	})
