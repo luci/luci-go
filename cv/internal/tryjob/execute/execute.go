@@ -19,7 +19,9 @@ import (
 	"fmt"
 
 	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/types/known/timestamppb"
 
+	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry/transient"
@@ -173,6 +175,7 @@ func (e *Executor) handleUpdatedTryjobs(ctx context.Context, tryjobs []int64, ex
 		failedIndices             []int            // critical tryjobs only
 		failedTryjobs             []*tryjob.Tryjob // critical tryjobs only
 		hasNonEndedCriticalTryjob bool
+		endedTryjobLogs           []*tryjob.ExecutionLogEntry_TryjobSnapshot
 	)
 	for i, exec := range execState.GetExecutions() {
 		updated := updateLatestAttempt(exec, tryjobByID)
@@ -188,19 +191,19 @@ func (e *Executor) handleUpdatedTryjobs(ctx context.Context, tryjobs []int64, ex
 		// has ended.
 		switch attempt := exec.Attempts[len(exec.Attempts)-1]; {
 		case attempt.Status == tryjob.Status_ENDED && attempt.GetResult().GetStatus() == tryjob.Result_SUCCEEDED:
-			e.logTryjobEnded(ctx, definition, attempt.TryjobId)
+			endedTryjobLogs = append(endedTryjobLogs, makeLogTryjobSnapshotFromAttempt(definition, attempt))
 		case attempt.Status == tryjob.Status_ENDED && definition.GetCritical():
 			failedIndices = append(failedIndices, i)
 			failedTryjobs = append(failedTryjobs, tryjobByID[common.TryjobID(attempt.TryjobId)])
-			e.logTryjobEnded(ctx, definition, attempt.TryjobId)
+			endedTryjobLogs = append(endedTryjobLogs, makeLogTryjobSnapshotFromAttempt(definition, attempt))
 		case attempt.Status == tryjob.Status_ENDED: // non critical failure
-			e.logTryjobEnded(ctx, definition, attempt.TryjobId)
+			endedTryjobLogs = append(endedTryjobLogs, makeLogTryjobSnapshotFromAttempt(definition, attempt))
 		case attempt.Status == tryjob.Status_CANCELLED:
 			// This SHOULD happen during race condition as a Tryjob is cancelled by
 			// LUCI CV iff a new patchset is uploaded. In that case, Run SHOULD be
 			// cancelled and try executor should never be invoked. Do nothing apart
 			// from logging here and Run should be cancelled very soon.
-			e.logTryjobEnded(ctx, definition, attempt.TryjobId)
+			endedTryjobLogs = append(endedTryjobLogs, makeLogTryjobSnapshotFromAttempt(definition, attempt))
 		case attempt.Status == tryjob.Status_UNTRIGGERED && attempt.Reused:
 			// Normally happens when this Run reuses a PENDING Tryjob from
 			// another Run but the Tryjob doesn't end up getting triggered.
@@ -217,6 +220,17 @@ func (e *Executor) handleUpdatedTryjobs(ctx context.Context, tryjobs []int64, ex
 		default:
 			panic(fmt.Errorf("unexpected attempt status %s for Tryjob %d", attempt.Status, attempt.TryjobId))
 		}
+	}
+
+	if len(endedTryjobLogs) > 0 {
+		e.log(&tryjob.ExecutionLogEntry{
+			Time: timestamppb.New(clock.Now(ctx).UTC()),
+			Kind: &tryjob.ExecutionLogEntry_TryjobsEnded_{
+				TryjobsEnded: &tryjob.ExecutionLogEntry_TryjobsEnded{
+					Tryjobs: endedTryjobLogs,
+				},
+			},
+		})
 	}
 
 	switch hasFailed, hasNewAttemptToTrigger := len(failedIndices) > 0, len(p.triggerNewAttempt) > 0; {

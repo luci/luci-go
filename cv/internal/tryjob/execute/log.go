@@ -34,20 +34,6 @@ func (e *Executor) logRequirementChanged(ctx context.Context) {
 	})
 }
 
-func (e *Executor) logTryjobEnded(ctx context.Context, def *tryjob.Definition, tryjobID int64) {
-	e.log(&tryjob.ExecutionLogEntry{
-		// TODO(yiwzhang): to be more precise, record end time in the backend
-		// system for tryjob and use that time instead.
-		Time: timestamppb.New(clock.Now(ctx).UTC()),
-		Kind: &tryjob.ExecutionLogEntry_TryjobEnded_{
-			TryjobEnded: &tryjob.ExecutionLogEntry_TryjobEnded{
-				Definition: def,
-				TryjobId:   tryjobID,
-			},
-		},
-	})
-}
-
 func (e *Executor) logTryjobDiscarded(ctx context.Context, def *tryjob.Definition, exec *tryjob.ExecutionState_Execution, reason string) {
 	var latestAttempt *tryjob.ExecutionState_Execution_Attempt
 	if len(exec.GetAttempts()) > 0 {
@@ -57,10 +43,8 @@ func (e *Executor) logTryjobDiscarded(ctx context.Context, def *tryjob.Definitio
 		Time: timestamppb.New(clock.Now(ctx).UTC()),
 		Kind: &tryjob.ExecutionLogEntry_TryjobDiscarded_{
 			TryjobDiscarded: &tryjob.ExecutionLogEntry_TryjobDiscarded{
-				Definition: def,
-				TryjobId:   latestAttempt.GetTryjobId(),
-				ExternalId: latestAttempt.GetExternalId(),
-				Reason:     reason,
+				Snapshot: makeLogTryjobSnapshotFromAttempt(def, latestAttempt),
+				Reason:   reason,
 			},
 		},
 	})

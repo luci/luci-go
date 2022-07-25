@@ -106,3 +106,23 @@ func composeLaunchFailureReason(launchFailures map[*tryjob.Definition]string) st
 	}
 	return sb.String()
 }
+
+func makeLogTryjobSnapshot(def *tryjob.Definition, tj *tryjob.Tryjob) *tryjob.ExecutionLogEntry_TryjobSnapshot {
+	return &tryjob.ExecutionLogEntry_TryjobSnapshot{
+		Definition: def,
+		Id:         int64(tj.ID),
+		ExternalId: string(tj.ExternalID),
+		Status:     tj.Status,
+		Result:     tj.Result,
+	}
+}
+
+func makeLogTryjobSnapshotFromAttempt(def *tryjob.Definition, attempt *tryjob.ExecutionState_Execution_Attempt) *tryjob.ExecutionLogEntry_TryjobSnapshot {
+	return &tryjob.ExecutionLogEntry_TryjobSnapshot{
+		Definition: def,
+		Id:         attempt.GetTryjobId(),
+		ExternalId: attempt.GetExternalId(),
+		Status:     attempt.GetStatus(),
+		Result:     attempt.GetResult(),
+	}
+}

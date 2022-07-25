@@ -265,6 +265,7 @@ message ExecutionLogEntries {
 
 // ExecutionLogEntry records what happened during Tryjob Execution.
 message ExecutionLogEntry {
+  reserved 6;
   // Time is when the event occurs.
   google.protobuf.Timestamp time = 1;
   oneof kind {
@@ -272,7 +273,7 @@ message ExecutionLogEntry {
     TryjobsLaunched tryjobs_launched = 3;
     TryjobsLaunchFailed tryjobs_launch_failed = 4;
     TryjobsReused tryjobs_reused = 5;
-    TryjobEnded tryjob_ended = 6;
+    TryjobsEnded tryjobs_ended = 8;
     TryjobDiscarded tryjob_discarded = 7;
   }
 
@@ -281,14 +282,17 @@ message ExecutionLogEntry {
     // that cause the requirement change.
   }
 
-  message TryjobsLaunched {
-    repeated TryjobLaunched tryjobs = 1;
+  message TryjobSnapshot {
+    int64 id = 1;
+    string external_id = 2;
+    Definition definition = 3;
+    Status status = 4;
+    Result result = 5;
   }
 
-  message TryjobLaunched {
-    Definition definition = 1;
-    int64 tryjob_id = 2;
-    string external_id = 3;
+  message TryjobsLaunched {
+    reserved 1;
+    repeated TryjobSnapshot tryjobs = 2;
   }
 
   message TryjobsLaunchFailed {
@@ -301,25 +305,18 @@ message ExecutionLogEntry {
   }
 
   message TryjobsReused {
-    repeated TryjobReused tryjobs = 1;
+    reserved 1;
+    repeated TryjobSnapshot tryjobs = 2;
   }
 
-  message TryjobReused {
-    Definition definition = 1;
-    int64 tryjob_id = 2;
-    string external_id = 3;
-  }
-
-  message TryjobEnded {
-    Definition definition = 1;
-    int64 tryjob_id = 2;
+  message TryjobsEnded {
+    reserved 1;
+    repeated TryjobSnapshot tryjobs = 2;
   }
 
   message TryjobDiscarded{
-    Definition definition = 1;
-    int64 tryjob_id = 2;
-    string external_id = 3;
-    string reason = 4;
+    TryjobSnapshot snapshot = 1;
+    string reason = 2;
   }
 }
 

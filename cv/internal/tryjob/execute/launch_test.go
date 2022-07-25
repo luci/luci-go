@@ -138,12 +138,8 @@ func TestLaunch(t *testing.T) {
 					Time: timestamppb.New(ct.Clock.Now().UTC()),
 					Kind: &tryjob.ExecutionLogEntry_TryjobsLaunched_{
 						TryjobsLaunched: &tryjob.ExecutionLogEntry_TryjobsLaunched{
-							Tryjobs: []*tryjob.ExecutionLogEntry_TryjobLaunched{
-								{
-									Definition: defFoo,
-									TryjobId:   int64(tryjobs[0].ID),
-									ExternalId: string(eid),
-								},
+							Tryjobs: []*tryjob.ExecutionLogEntry_TryjobSnapshot{
+								makeLogTryjobSnapshot(defFoo, tryjobs[0]),
 							},
 						},
 					},

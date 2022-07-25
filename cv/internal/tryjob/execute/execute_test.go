@@ -96,7 +96,7 @@ func TestPrepExecutionPlan(t *testing.T) {
 					}).
 					build()
 				Convey("Succeeded", func() {
-					ensureTryjob(ctx, tjID, tryjob.Status_ENDED, tryjob.Result_SUCCEEDED)
+					tj := ensureTryjob(ctx, tjID, tryjob.Status_ENDED, tryjob.Result_SUCCEEDED)
 					plan := prepPlan(execState, tjID)
 					So(plan.isEmpty(), ShouldBeTrue)
 					So(execState.Executions[0].Attempts, ShouldResembleProto, []*tryjob.ExecutionState_Execution_Attempt{
@@ -106,10 +106,11 @@ func TestPrepExecutionPlan(t *testing.T) {
 					So(executor.logEntries, ShouldResembleProto, []*tryjob.ExecutionLogEntry{
 						{
 							Time: timestamppb.New(ct.Clock.Now().UTC()),
-							Kind: &tryjob.ExecutionLogEntry_TryjobEnded_{
-								TryjobEnded: &tryjob.ExecutionLogEntry_TryjobEnded{
-									Definition: def,
-									TryjobId:   tjID,
+							Kind: &tryjob.ExecutionLogEntry_TryjobsEnded_{
+								TryjobsEnded: &tryjob.ExecutionLogEntry_TryjobsEnded{
+									Tryjobs: []*tryjob.ExecutionLogEntry_TryjobSnapshot{
+										makeLogTryjobSnapshot(def, tj),
+									},
 								},
 							},
 						},
@@ -136,9 +137,10 @@ func TestPrepExecutionPlan(t *testing.T) {
 				})
 
 				Convey("Failed", func() {
+					var tj *tryjob.Tryjob
 					Convey("Critical and can retry", func() {
 						// Quota allows retrying transient failure.
-						ensureTryjob(ctx, tjID, tryjob.Status_ENDED, tryjob.Result_FAILED_TRANSIENTLY)
+						tj = ensureTryjob(ctx, tjID, tryjob.Status_ENDED, tryjob.Result_FAILED_TRANSIENTLY)
 						plan := prepPlan(execState, tjID)
 						So(plan.isEmpty(), ShouldBeFalse)
 						So(plan.triggerNewAttempt, ShouldHaveLength, 1)
@@ -150,7 +152,7 @@ func TestPrepExecutionPlan(t *testing.T) {
 					})
 					Convey("Critical and can NOT retry", func() {
 						// Quota doesn't allow retrying permanent failure
-						ensureTryjob(ctx, tjID, tryjob.Status_ENDED, tryjob.Result_FAILED_PERMANENTLY)
+						tj = ensureTryjob(ctx, tjID, tryjob.Status_ENDED, tryjob.Result_FAILED_PERMANENTLY)
 						plan := prepPlan(execState, tjID)
 						So(plan.isEmpty(), ShouldBeTrue)
 						So(execState.Executions[0].Attempts, ShouldResembleProto, []*tryjob.ExecutionState_Execution_Attempt{
@@ -160,7 +162,7 @@ func TestPrepExecutionPlan(t *testing.T) {
 						So(execState.FailureReason, ShouldContainSubstring, "Failed Tryjobs")
 					})
 					Convey("Tryjob is not critical", func() {
-						ensureTryjob(ctx, tjID, tryjob.Status_ENDED, tryjob.Result_FAILED_PERMANENTLY)
+						tj = ensureTryjob(ctx, tjID, tryjob.Status_ENDED, tryjob.Result_FAILED_PERMANENTLY)
 						execState.GetRequirement().GetDefinitions()[0].Critical = false
 						plan := prepPlan(execState, tjID)
 						So(plan.isEmpty(), ShouldBeTrue)
@@ -174,10 +176,11 @@ func TestPrepExecutionPlan(t *testing.T) {
 					So(executor.logEntries, ShouldResembleProto, []*tryjob.ExecutionLogEntry{
 						{
 							Time: timestamppb.New(ct.Clock.Now().UTC()),
-							Kind: &tryjob.ExecutionLogEntry_TryjobEnded_{
-								TryjobEnded: &tryjob.ExecutionLogEntry_TryjobEnded{
-									Definition: def,
-									TryjobId:   tjID,
+							Kind: &tryjob.ExecutionLogEntry_TryjobsEnded_{
+								TryjobsEnded: &tryjob.ExecutionLogEntry_TryjobsEnded{
+									Tryjobs: []*tryjob.ExecutionLogEntry_TryjobSnapshot{
+										makeLogTryjobSnapshot(def, tj),
+									},
 								},
 							},
 						},
@@ -424,10 +427,12 @@ func TestExecutePlan(t *testing.T) {
 					Time: timestamppb.New(ct.Clock.Now().UTC()),
 					Kind: &tryjob.ExecutionLogEntry_TryjobDiscarded_{
 						TryjobDiscarded: &tryjob.ExecutionLogEntry_TryjobDiscarded{
-							Definition: def,
-							TryjobId:   58,
-							ExternalId: string(tryjob.MustBuildbucketID(bbHost, 5858)),
-							Reason:     "no longer needed",
+							Snapshot: &tryjob.ExecutionLogEntry_TryjobSnapshot{
+								Definition: def,
+								Id:         58,
+								ExternalId: string(tryjob.MustBuildbucketID(bbHost, 5858)),
+							},
+							Reason: "no longer needed",
 						},
 					},
 				},

@@ -128,16 +128,12 @@ func (w *worker) launchTryjobs(ctx context.Context, tryjobs []*tryjob.Tryjob) ([
 }
 
 func (w *worker) tryLaunchTryjobsOnce(ctx context.Context, tryjobs []*tryjob.Tryjob) (failures map[*tryjob.Tryjob]error, hasFatal bool) {
-	launchLogs := make([]*tryjob.ExecutionLogEntry_TryjobLaunched, 0, len(tryjobs))
+	launchLogs := make([]*tryjob.ExecutionLogEntry_TryjobSnapshot, 0, len(tryjobs))
 	err := w.backend.Launch(ctx, tryjobs, w.run, w.cls)
 	switch merrs, ok := err.(errors.MultiError); {
 	case err == nil:
 		for _, tj := range tryjobs {
-			launchLogs = append(launchLogs, &tryjob.ExecutionLogEntry_TryjobLaunched{
-				Definition: tj.Definition,
-				TryjobId:   int64(tj.ID),
-				ExternalId: string(tj.ExternalID),
-			})
+			launchLogs = append(launchLogs, makeLogTryjobSnapshot(tj.Definition, tj))
 		}
 	case !ok:
 		panic(fmt.Errorf("impossible; backend.Launch must return multi errors, got %s", err))
@@ -150,11 +146,7 @@ func (w *worker) tryLaunchTryjobsOnce(ctx context.Context, tryjobs []*tryjob.Try
 				failures[tryjobs[i]] = err
 				hasFatal = hasFatal || !canRetryBackendError(err)
 			} else {
-				launchLogs = append(launchLogs, &tryjob.ExecutionLogEntry_TryjobLaunched{
-					Definition: tryjobs[i].Definition,
-					TryjobId:   int64(tryjobs[i].ID),
-					ExternalId: string(tryjobs[i].ExternalID),
-				})
+				launchLogs = append(launchLogs, makeLogTryjobSnapshot(tryjobs[i].Definition, tryjobs[i]))
 			}
 		}
 	}

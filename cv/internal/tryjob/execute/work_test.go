@@ -154,12 +154,8 @@ func TestWorker(t *testing.T) {
 					Time: timestamppb.New(ct.Clock.Now().UTC()),
 					Kind: &tryjob.ExecutionLogEntry_TryjobsReused_{
 						TryjobsReused: &tryjob.ExecutionLogEntry_TryjobsReused{
-							Tryjobs: []*tryjob.ExecutionLogEntry_TryjobReused{
-								{
-									Definition: def,
-									TryjobId:   int64(tryjobs[0].ID),
-									ExternalId: string(eid),
-								},
+							Tryjobs: []*tryjob.ExecutionLogEntry_TryjobSnapshot{
+								makeLogTryjobSnapshot(def, tryjobs[0]),
 							},
 						},
 					},
