@@ -92,13 +92,14 @@ Run {{.Run.ID.Inner}}
     background-color: white;
     padding: 10px 50px;
   }
+
 </style>
 {{end}}
 
 {{define "content"}}
 {{$TJProgression := .TJProgression}}
 {{$RelTime := .RelTime}}
-{{$AllTryjobs := .AllTryjobs}}
+{{$Tryjobs := .LatestTryjobs}}
 {{$LogMessage := .LogMessage}}
 <div class="container">
   <div>
@@ -153,21 +154,23 @@ Run {{.Run.ID.Inner}}
 
   <div>
     <h3>Tryjobs</h3>
-    {{if $AllTryjobs}}
+    {{if $Tryjobs}}
     <div>
       <p class="well">
         <b>NOTE</b> color codes represent how CV sees tryjobs, e.g.
-        <span class="tryjob-chip running"><i>triggered</i></span>
+        <span class="tryjob-chip running"><i>running</i></span>
         <span class="tryjob-chip failed"> <i>failed</i></span>
         <span class="tryjob-chip passed"> <i>succeeded</i></span>
         which isn't as granular as Buildbucket's statuses.
       </p>
       <p class="tryjob-chips">
-        {{range $AllTryjobs}}
-          {{with UITryjob .}}
-          <a class="tryjob-chip {{.Class}}" href="{{.Link}}">{{.Display}}</a>
-          <span> </span>
-          {{end}}
+        {{range $Tryjobs}}
+        {{if .Link}}
+        <a class="tryjob-chip {{.CSSClass}}" href="{{.Link}}">{{.Name}}</a>
+        {{else}}
+        <span class="tryjob-chip {{.CSSClass}}">{{.Name}}</span>
+        {{end}}
+        <span> </span>
         {{end}}
       </p>
     </div>
@@ -208,10 +211,12 @@ Run {{.Run.ID.Inner}}
               {{range $label, $jobs := ByTryjobStatus .GetTryjobs}}
               <li>{{$label}}:
                 {{range $jobs}}
-                  {{with UITryjob .}}
-                  <a class="tryjob-chip {{.Class}}" href="{{.Link}}">{{.Display}}</a>
-                  <span> </span>
-                  {{end}}
+                {{if .Link}}
+                <a class="tryjob-chip {{.CSSClass}}" href="{{.Link}}">{{.Name}}</a>
+                {{else}}
+                <span class="tryjob-chip {{.CSSClass}}">{{.Name}}</span>
+                {{end}}
+                <span> </span>
                 {{end}}
               </li>
               {{end}}

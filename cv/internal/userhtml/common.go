@@ -94,9 +94,7 @@ func prepareTemplates(opts *server.Options, templatesPath string) *templates.Bun
 				return displayCLExternalID(changelist.ExternalID(eid))
 			},
 			// Runlog specific, see run_details.go.
-			"LogTypeString": logTypeString,
-
-			"UITryjob":       makeUITryjob,
+			"LogTypeString":  logTypeString,
 			"ByTryjobStatus": groupTryjobsByStatus,
 		},
 		DefaultArgs: func(ctx context.Context, e *templates.Extra) (templates.Args, error) {

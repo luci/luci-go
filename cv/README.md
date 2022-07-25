@@ -162,6 +162,7 @@ these arguments:
 
 ```
 go run main.go \
+    -http-addr localhost:8800
     -cloud-project luci-change-verifier-dev \
     -root-secret devsecret://base64anything \
     -primary-tink-aead-key devsecret-gen://tink/aead
@@ -172,7 +173,7 @@ invocations, when you first invoke it, observe output of the first invocation wh
 should mention a `devsecret://veeeeeeeeeeeeeeery-looooooong-base64-line`, which
 you can use on subsequent invocations instead of `devsecret-gen://tink/aead`.
 
-For a quick check, eyeball these two pages (your port may be different):
+For a quick check, eyeball these two pages:
   * http://localhost:8800/ui/run/cq-test/8991920303854-1-19bc46b6c6972e90
   * http://localhost:8800/ui/recents/cq-test
 

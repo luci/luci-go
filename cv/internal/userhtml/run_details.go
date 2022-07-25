@@ -25,12 +25,13 @@ import (
 	"golang.org/x/sync/errgroup"
 
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/retry/transient"
+	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/server/router"
 	"go.chromium.org/luci/server/templates"
 
 	"go.chromium.org/luci/cv/internal/acls"
 	"go.chromium.org/luci/cv/internal/common"
-	adminpb "go.chromium.org/luci/cv/internal/rpc/admin/api"
 	"go.chromium.org/luci/cv/internal/run"
 	"go.chromium.org/luci/cv/internal/run/eventpb"
 	"go.chromium.org/luci/cv/internal/tryjob"
@@ -48,25 +49,11 @@ func runDetails(c *router.Context) {
 		return
 	}
 
-	// Reverse entries to get the most recent at the top of the list.
-	logEntries, err := run.LoadRunLogEntries(ctx, r.ID)
+	cls, latestTryjobs, runLogs, err := loadRunInfo(ctx, r)
 	if err != nil {
 		errPage(c, err)
 		return
 	}
-	nEntries := len(logEntries)
-	for i := 0; i < nEntries/2; i++ {
-		logEntries[i], logEntries[nEntries-1-i] = logEntries[nEntries-1-i], logEntries[i]
-	}
-
-	cls, err := run.LoadRunCLs(ctx, common.RunID(r.ID), r.CLs)
-	if err != nil {
-		errPage(c, err)
-		return
-	}
-
-	// Sort a stack of CLs by external ID.
-	sort.Slice(cls, func(i, j int) bool { return cls[i].ExternalID < cls[j].ExternalID })
 
 	// Compute next and previous runs for all cls in parallel.
 	clsAndLinks, err := computeCLsAndLinks(ctx, cls, r.ID)
@@ -78,7 +65,7 @@ func runDetails(c *router.Context) {
 
 	templates.MustRender(ctx, c.Writer, "pages/run_details.html", templates.Args{
 		"Run":  r,
-		"Logs": logEntries,
+		"Logs": runLogs,
 		"Cls":  clsAndLinks,
 		"RelTime": func(ts time.Time) string {
 			return humanize.RelTime(ts, startTime(ctx), "ago", "from now")
@@ -117,8 +104,67 @@ func runDetails(c *router.Context) {
 				return ""
 			}
 		},
-		"AllTryjobs": r.Tryjobs.GetTryjobs(),
+		"LatestTryjobs": latestTryjobs,
 	})
+}
+
+func loadRunInfo(ctx context.Context, r *run.Run) ([]*run.RunCL, []*uiTryjob, []*run.LogEntry, error) {
+	var cls []*run.RunCL
+	var latestTryjobs []*tryjob.Tryjob
+	var runLogs []*run.LogEntry
+	eg, ctx := errgroup.WithContext(ctx)
+	eg.Go(func() (err error) {
+		cls, err = run.LoadRunCLs(ctx, common.RunID(r.ID), r.CLs)
+		if err != nil {
+			return err
+		}
+		// Sort a stack of CLs by external ID.
+		sort.Slice(cls, func(i, j int) bool { return cls[i].ExternalID < cls[j].ExternalID })
+		return nil
+	})
+	eg.Go(func() (err error) {
+		runLogs, err = run.LoadRunLogEntries(ctx, r.ID)
+		if err != nil {
+			return err
+		}
+		// ensure most recent log is at the top of the list
+		sort.Slice(runLogs, func(i, j int) bool {
+			return runLogs[i].GetTime().AsTime().After(runLogs[j].GetTime().AsTime())
+		})
+		return nil
+	})
+	eg.Go(func() (err error) {
+		if r.UseCVTryjobExecutor {
+			for _, execution := range r.Tryjobs.GetState().GetExecutions() {
+				// TODO(yiwzhang): display the tryjob as not-started even if no
+				// attempt has been triggered.
+				if len(execution.GetAttempts()) == 0 {
+					continue
+				}
+				latestAttempt := execution.GetAttempts()[len(execution.GetAttempts())-1]
+				latestTryjobs = append(latestTryjobs, &tryjob.Tryjob{
+					ID: common.TryjobID(latestAttempt.GetTryjobId()),
+				})
+			}
+			if err := datastore.Get(ctx, latestTryjobs); err != nil {
+				return errors.Annotate(err, "failed to load tryjobs").Tag(transient.Tag).Err()
+			}
+		} else {
+			for _, tj := range r.Tryjobs.GetTryjobs() {
+				latestTryjobs = append(latestTryjobs, &tryjob.Tryjob{
+					ExternalID: tryjob.ExternalID(tj.ExternalId),
+					Definition: tj.Definition,
+					Status:     tj.Status,
+					Result:     tj.Result,
+				})
+			}
+		}
+		return nil
+	})
+	if err := eg.Wait(); err != nil {
+		return nil, nil, nil, err
+	}
+	return cls, makeUITryjobs(latestTryjobs), runLogs, nil
 }
 
 type clAndNeighborRuns struct {
@@ -207,47 +253,6 @@ func getNeighborsByCL(ctx context.Context, cl *run.RunCL, rID common.RunID) (com
 	return prev, next, err
 }
 
-// uiTryjob is fed to the template to draw tryjob chips.
-type uiTryjob struct {
-	Link, Class, Display string
-}
-
-func makeUITryjob(t *run.Tryjob) *uiTryjob {
-	// TODO(crbug/1233963):  Make sure we are not leaking any sensitive info
-	// based on Read Perms. E.g. internal builder name.
-	builder := t.Definition.GetBuildbucket().Builder
-	return &uiTryjob{
-		Link:    tryjob.ExternalID(t.ExternalId).MustURL(),
-		Class:   toCSSClass(t),
-		Display: fmt.Sprintf("%s/%s/%s", builder.Project, builder.Bucket, builder.Builder),
-	}
-}
-
-// toCSSClass returns a css class for styling a tryjob chip based on its
-// status and its result's status.
-func toCSSClass(t *run.Tryjob) string {
-	switch t.GetStatus() {
-	case tryjob.Status_PENDING:
-		return "not-started"
-	case tryjob.Status_CANCELLED:
-		return "cancelled"
-	case tryjob.Status_TRIGGERED, tryjob.Status_ENDED:
-		switch t.GetResult().GetStatus() {
-		case tryjob.Result_FAILED_PERMANENTLY, tryjob.Result_FAILED_TRANSIENTLY:
-			return "failed"
-		case tryjob.Result_SUCCEEDED:
-			return "passed"
-		default:
-			if t.GetStatus() == tryjob.Status_ENDED {
-				panic("Tryjob status is ENDED but result status is not set")
-			}
-			return "running"
-		}
-	default:
-		panic(fmt.Errorf("unknown tryjob status: %s", t.GetStatus()))
-	}
-}
-
 func logTypeString(rle *run.LogEntry) string {
 	switch v := rle.GetKind().(type) {
 	case *run.LogEntry_TryjobsUpdated_:
@@ -288,22 +293,18 @@ func logTypeString(rle *run.LogEntry) string {
 }
 
 // groupTryjobsByStatus puts tryjobs in the list into separate lists by status.
-func groupTryjobsByStatus(tjs []*run.Tryjob) map[string][]*run.Tryjob {
-	ret := map[string][]*run.Tryjob{}
-	for _, t := range tjs {
-		k := strings.Title(strings.ToLower(t.Status.String()))
-		ret[k] = append(ret[k], t)
+func groupTryjobsByStatus(tjs []*run.Tryjob) map[string][]*uiTryjob {
+	ret := map[string][]*uiTryjob{}
+	for _, tj := range tjs {
+		k := strings.Title(strings.ToLower(tj.Status.String()))
+		ret[k] = append(ret[k], &uiTryjob{
+			ExternalID: tryjob.ExternalID(tj.ExternalId),
+			Definition: tj.Definition,
+			Status:     tj.Status,
+			Result:     tj.Result,
+		})
 	}
 	return ret
-}
-
-func indexOf(runs []*adminpb.GetRunResponse, runID common.RunID) int {
-	for i := 0; i < len(runs); i++ {
-		if runs[i].Id == string(runID) {
-			return i
-		}
-	}
-	return -1
 }
 
 func makeURLMap(cls []*run.RunCL) map[common.CLID]string {

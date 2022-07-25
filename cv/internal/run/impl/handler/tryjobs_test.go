@@ -428,7 +428,12 @@ func TestOnCQDTryjobsUpdated(t *testing.T) {
 				Result: &tryjob.Result{
 					CreateTime: tryjobCreateTime,
 					Backend: &tryjob.Result_Buildbucket_{Buildbucket: &tryjob.Result_Buildbucket{
-						Id:     1001,
+						Id: 1001,
+						Builder: &buildbucketpb.BuilderID{
+							Project: lProject,
+							Bucket:  "try",
+							Builder: "bldr-1001",
+						},
 						Status: buildbucketpb.Status_STARTED,
 					}},
 				},
@@ -449,7 +454,12 @@ func TestOnCQDTryjobsUpdated(t *testing.T) {
 				Result: &tryjob.Result{
 					CreateTime: tryjobCreateTime,
 					Backend: &tryjob.Result_Buildbucket_{Buildbucket: &tryjob.Result_Buildbucket{
-						Id:     1002,
+						Id: 1002,
+						Builder: &buildbucketpb.BuilderID{
+							Project: lProject,
+							Bucket:  "try",
+							Builder: "bldr-1002",
+						},
 						Status: buildbucketpb.Status_SCHEDULED,
 					}},
 				},

@@ -283,10 +283,12 @@ func toRunTryjob(in *migrationpb.Tryjob) (*run.Tryjob, error) {
 			CreateTime: in.GetCreateTime(),
 			UpdateTime: nil, // CQD doesn't track this.
 			Output:     nil, // recipe Output is not relevant to the UI.
-			Backend: &tryjob.Result_Buildbucket_{Buildbucket: &tryjob.Result_Buildbucket{
-				Id:     in.GetBuild().GetId(),
-				Status: bbStatus,
-			}},
+			Backend: &tryjob.Result_Buildbucket_{
+				Buildbucket: &tryjob.Result_Buildbucket{
+					Id:      in.GetBuild().GetId(),
+					Builder: in.GetBuilder(),
+					Status:  bbStatus,
+				}},
 		},
 		CqdDerived: true,
 	}, nil
