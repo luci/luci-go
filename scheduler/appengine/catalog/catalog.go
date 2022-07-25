@@ -28,14 +28,12 @@ import (
 	"github.com/golang/protobuf/proto"
 
 	"go.chromium.org/luci/common/data/stringset"
-	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/config"
 	"go.chromium.org/luci/config/cfgclient"
 	"go.chromium.org/luci/config/validation"
 	"go.chromium.org/luci/server/auth/realms"
 
-	"go.chromium.org/luci/scheduler/appengine/acl"
 	"go.chromium.org/luci/scheduler/appengine/engine/policy"
 	"go.chromium.org/luci/scheduler/appengine/messages"
 	"go.chromium.org/luci/scheduler/appengine/schedule"
@@ -121,11 +119,6 @@ type Definition struct {
 
 	// Realm is a global realm name (i.e. "<ProjectID>:...") the job belongs to.
 	RealmID string
-
-	// Acls describes who can read and who owns this job.
-	//
-	// Deprecated in favor of RealmID.
-	Acls acl.GrantsByRole
 
 	// Flavor describes what category of jobs this is, see the enum.
 	Flavor JobFlavor
@@ -230,11 +223,6 @@ func (cat *catalog) GetProjectJobs(c context.Context, projectID string) ([]Defin
 	if revisionURL != "" {
 		logging.Infof(c, "Importing %s", revisionURL)
 	}
-	ctx := &validation.Context{Context: c}
-	knownACLSets := acl.ValidateACLSets(ctx, cfg.GetAclSets())
-	if err := ctx.Finalize(); err != nil {
-		return nil, errors.Annotate(err, "invalid aclsets in a project %s", projectID).Err()
-	}
 
 	out := make([]Definition, 0, len(cfg.Job)+len(cfg.Trigger))
 	disabledCount := 0
@@ -254,10 +242,9 @@ func (cat *catalog) GetProjectJobs(c context.Context, projectID string) ([]Defin
 		}
 		// Create a new validation context for each job/trigger since errors
 		// persist in context but we want to find all valid jobs/trigger.
-		ctx = &validation.Context{Context: c}
+		ctx := &validation.Context{Context: c}
 		realmID := validateRealm(ctx, projectID, job.Realm)
 		task := cat.validateJobProto(ctx, job, realmID)
-		acls := acl.ValidateTaskACLs(ctx, knownACLSets, job.GetAclSets(), job.GetAcls())
 		if err := ctx.Finalize(); err != nil {
 			logging.Errorf(c, "Invalid job definition %s: %s", id, err)
 			continue
@@ -278,7 +265,6 @@ func (cat *catalog) GetProjectJobs(c context.Context, projectID string) ([]Defin
 		out = append(out, Definition{
 			JobID:            fmt.Sprintf("%s/%s", projectID, job.Id),
 			RealmID:          realmID,
-			Acls:             *acls,
 			Flavor:           flavor,
 			Revision:         meta.Revision,
 			RevisionURL:      revisionURL,
@@ -299,10 +285,9 @@ func (cat *catalog) GetProjectJobs(c context.Context, projectID string) ([]Defin
 		if trigger.Id != "" {
 			id = trigger.Id
 		}
-		ctx = &validation.Context{Context: c}
+		ctx := &validation.Context{Context: c}
 		realmID := validateRealm(ctx, projectID, trigger.Realm)
 		task := cat.validateTriggerProto(ctx, trigger, realmID, allJobIDs, false)
-		acls := acl.ValidateTaskACLs(ctx, knownACLSets, trigger.GetAclSets(), trigger.GetAcls())
 		if err := ctx.Finalize(); err != nil {
 			logging.Errorf(c, "Invalid trigger definition %s: %s", id, err)
 			continue
@@ -319,7 +304,6 @@ func (cat *catalog) GetProjectJobs(c context.Context, projectID string) ([]Defin
 		out = append(out, Definition{
 			JobID:            fmt.Sprintf("%s/%s", projectID, trigger.Id),
 			RealmID:          realmID,
-			Acls:             *acls,
 			Flavor:           JobFlavorTrigger,
 			Revision:         meta.Revision,
 			RevisionURL:      revisionURL,
@@ -356,11 +340,6 @@ func (cat *catalog) validateProjectConfig(ctx *validation.Context, configSet, pa
 	}
 	projectID := strings.TrimPrefix(configSet, "projects/")
 
-	// AclSets.
-	ctx.Enter("acl_sets")
-	knownACLSets := acl.ValidateACLSets(ctx, cfg.GetAclSets())
-	ctx.Exit()
-
 	knownIDs := stringset.New(len(cfg.Job) + len(cfg.Trigger))
 	// Jobs.
 	ctx.Enter("job")
@@ -375,7 +354,6 @@ func (cat *catalog) validateProjectConfig(ctx *validation.Context, configSet, pa
 		}
 		realmID := validateRealm(ctx, projectID, job.Realm)
 		cat.validateJobProto(ctx, job, realmID)
-		acl.ValidateTaskACLs(ctx, knownACLSets, job.GetAclSets(), job.GetAcls())
 		ctx.Exit()
 	}
 	ctx.Exit()
@@ -394,7 +372,6 @@ func (cat *catalog) validateProjectConfig(ctx *validation.Context, configSet, pa
 		}
 		realmID := validateRealm(ctx, projectID, trigger.Realm)
 		cat.validateTriggerProto(ctx, trigger, realmID, allJobIDs, true)
-		acl.ValidateTaskACLs(ctx, knownACLSets, trigger.GetAclSets(), trigger.GetAcls())
 		ctx.Exit()
 	}
 	ctx.Exit()

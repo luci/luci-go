@@ -35,46 +35,31 @@ message ProjectConfig {
   repeated Job job = 1;
   // Trigger is a set of triggering jobs defined in the project.
   repeated Trigger trigger = 2;
-  // A list of ACL sets. Names must be unique.
+  // Deprecated and unused. Use realms permissions instead.
   repeated AclSet acl_sets = 3 [deprecated = true];
 }
 
 
-// A single access control rule.
-//
-// Deprecated in favor of LUCI Realms.
+// Deprecated in favor of LUCI Realms. This proto is totally unused now, exists
+// only to not break older configs that still may have deprecated fields
+// populated.
 message Acl {
   enum Role {
-    // Can do read-only operations, such as listing invocations of a Job.
     READER = 0;
-    // Can emit triggers for a Job.
-    //
-    // Being TRIGGERER implicitly grants READER permission.
     TRIGGERER = 2;
-    // Same as READER + TRIGGERER + can modify state of a Job or Invocation such
-    // as aborting them.
-    // LUCI scheduler (this service) is an OWNER of each `Job` and `Trigger`,
-    // thus `Trigger`s are allowed to trigger all `Job`s defined in the same
-    // project, regardless of their respective ACLs.
     OWNER = 1;
   }
-  // Role denotes a list of actions that an identity can perform.
-  Role role = 1;
-  // Either email or "group:xyz" or auth service identity string "kind:name".
-  string granted_to = 2;
+  Role role = 1 [deprecated = true];
+  string granted_to = 2 [deprecated = true];
 }
 
 
-// A set of Acl messages. Can be referenced in a Job or Trigger by name.
-//
-// Deprecated in favor of LUCI Realms.
+// Deprecated in favor of LUCI Realms. This proto is totally unused now, exists
+// only to not break older configs that still may have deprecated fields
+// populated.
 message AclSet {
-  // A name of the ACL set, unique for a project.
-  // Required. Must match regex '^[0-9A-Za-z_\-\.]{1,100}$'.
-  string name = 1;
-  // List of access control rules.
-  // The order does not matter.
-  repeated Acl acls = 2;
+  string name = 1 [deprecated = true];
+  repeated Acl acls = 2 [deprecated = true];
 }
 
 
@@ -193,14 +178,9 @@ message Job {
   // temporarily git rid of the job.
   bool disabled = 3;
 
-  // List of access control rules for the Job.
-  // The order does not matter.
-  // There can be at most 32 different acls for a Job, including those from
-  // acl_sets.
+  // Deprecated and unused. Use realms permissions instead.
   repeated Acl acls = 5 [deprecated = true];
-  // A list of ACL set names. Each ACL in each referenced ACL set will be
-  // included in this Job.
-  // The order does not matter.
+  // Deprecated and unused. Use realms permissions instead.
   repeated string acl_sets = 6 [deprecated = true];
 
   // TriggeringPolicy defines how job handles incoming triggering events.
@@ -250,8 +230,9 @@ message Trigger {
   // Se Job.disabled for more info.
   bool disabled = 3;
 
-  // ACLs, see Job.acls and Job.acl_sets.
+  // Deprecated and unused. Use realms permissions instead.
   repeated Acl acls = 4 [deprecated = true];
+  // Deprecated and unused. Use realms permissions instead.
   repeated string acl_sets = 5 [deprecated = true];
 
   // TriggeringPolicy defines how job handles incoming triggering events.

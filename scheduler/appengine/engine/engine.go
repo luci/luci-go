@@ -957,7 +957,6 @@ func (e *engineImpl) updateJob(c context.Context, def catalog.Definition) error 
 		job.Flavor = def.Flavor
 		job.Revision = def.Revision
 		job.RevisionURL = def.RevisionURL
-		job.Acls = def.Acls
 		job.Enabled = true
 		job.Schedule = def.Schedule
 		job.Task = def.Task

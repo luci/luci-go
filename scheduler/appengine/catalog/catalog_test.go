@@ -37,7 +37,6 @@ import (
 	"go.chromium.org/luci/config/validation"
 	"go.chromium.org/luci/config/vars"
 
-	"go.chromium.org/luci/scheduler/appengine/acl"
 	"go.chromium.org/luci/scheduler/appengine/internal"
 	"go.chromium.org/luci/scheduler/appengine/messages"
 	"go.chromium.org/luci/scheduler/appengine/task"
@@ -245,19 +244,14 @@ func TestConfigReading(t *testing.T) {
 		})
 
 		Convey("GetProjectJobs works", func() {
-			const expectedRev = "a0cd8e4a450eeb7e0c4a33353769bb6190d98c87"
+			const expectedRev = "06e505e46c49133cc928fbc244b27b232d7e8010"
 
 			defs, err := cat.GetProjectJobs(ctx, "project1")
 			So(err, ShouldBeNil)
 			So(defs, ShouldResemble, []Definition{
 				{
-					JobID:   "project1/noop-job-1",
-					RealmID: "project1:public",
-					Acls: acl.GrantsByRole{
-						Readers:    []string{"group:all"},
-						Triggerers: []string{},
-						Owners:     []string{"group:some-admins"},
-					},
+					JobID:            "project1/noop-job-1",
+					RealmID:          "project1:public",
 					Revision:         expectedRev,
 					RevisionURL:      "https://example.com/view/here/app.cfg",
 					Schedule:         "*/10 * * * * * *",
@@ -265,39 +259,24 @@ func TestConfigReading(t *testing.T) {
 					TriggeringPolicy: []uint8{16, 4},
 				},
 				{
-					JobID:   "project1/noop-job-2",
-					RealmID: "project1:@legacy",
-					Acls: acl.GrantsByRole{
-						Readers:    []string{"group:all"},
-						Triggerers: []string{},
-						Owners:     []string{"group:some-admins"},
-					},
+					JobID:       "project1/noop-job-2",
+					RealmID:     "project1:@legacy",
 					Revision:    expectedRev,
 					RevisionURL: "https://example.com/view/here/app.cfg",
 					Schedule:    "*/10 * * * * * *",
 					Task:        []uint8{10, 0},
 				},
 				{
-					JobID:   "project1/urlfetch-job-1",
-					RealmID: "project1:@legacy",
-					Acls: acl.GrantsByRole{
-						Readers:    []string{"group:all"},
-						Triggerers: []string{"group:triggerers"},
-						Owners:     []string{"group:debuggers", "group:some-admins"},
-					},
+					JobID:       "project1/urlfetch-job-1",
+					RealmID:     "project1:@legacy",
 					Revision:    expectedRev,
 					RevisionURL: "https://example.com/view/here/app.cfg",
 					Schedule:    "*/10 * * * * * *",
 					Task:        []uint8{18, 21, 18, 19, 104, 116, 116, 112, 115, 58, 47, 47, 101, 120, 97, 109, 112, 108, 101, 46, 99, 111, 109},
 				},
 				{
-					JobID:   "project1/trigger",
-					RealmID: "project1:@legacy",
-					Acls: acl.GrantsByRole{
-						Readers:    []string{"group:all"},
-						Triggerers: []string{},
-						Owners:     []string{"group:some-admins"},
-					},
+					JobID:            "project1/trigger",
+					RealmID:          "project1:@legacy",
 					Flavor:           JobFlavorTrigger,
 					Revision:         expectedRev,
 					RevisionURL:      "https://example.com/view/here/app.cfg",
@@ -314,32 +293,24 @@ func TestConfigReading(t *testing.T) {
 		})
 
 		Convey("GetProjectJobs filters unknown job IDs in triggers", func() {
+			const expectedRev = "3ef040fb696156a96c882837b05f31d2da0ba0f5"
+
 			defs, err := cat.GetProjectJobs(ctx, "project2")
 			So(err, ShouldBeNil)
 			So(defs, ShouldResemble, []Definition{
 				{
-					JobID:   "project2/noop-job-1",
-					RealmID: "project2:@legacy",
-					Acls: acl.GrantsByRole{
-						Owners:     []string{"group:all"},
-						Triggerers: []string{},
-						Readers:    []string{},
-					},
-					Revision:    "dcac009130d80e97ec6f380baf4f13b73908ce9a",
+					JobID:       "project2/noop-job-1",
+					RealmID:     "project2:@legacy",
+					Revision:    expectedRev,
 					RevisionURL: "https://example.com/view/here/app.cfg",
 					Schedule:    "*/10 * * * * * *",
 					Task:        []uint8{10, 0},
 				},
 				{
-					JobID:   "project2/trigger",
-					RealmID: "project2:@legacy",
-					Acls: acl.GrantsByRole{
-						Owners:     []string{"group:all"},
-						Triggerers: []string{},
-						Readers:    []string{},
-					},
+					JobID:       "project2/trigger",
+					RealmID:     "project2:@legacy",
 					Flavor:      2,
-					Revision:    "dcac009130d80e97ec6f380baf4f13b73908ce9a",
+					Revision:    expectedRev,
 					RevisionURL: "https://example.com/view/here/app.cfg",
 					Schedule:    "with 30s interval",
 					Task:        []uint8{10, 0},
@@ -408,62 +379,45 @@ func TestValidateConfig(t *testing.T) {
 	Convey("Config validation works", t, func() {
 		ctx := &validation.Context{Context: testContext()}
 		Convey("correct config file content", func() {
-			rules.ValidateConfig(ctx, "projects/good", "luci-scheduler.cfg", []byte(project3Cfg))
+			So(rules.ValidateConfig(ctx, "projects/good", "luci-scheduler.cfg", []byte(project3Cfg)), ShouldBeNil)
 			So(ctx.Finalize(), ShouldBeNil)
 		})
 
 		Convey("Config that can't be deserialized", func() {
-			rules.ValidateConfig(ctx, "projects/bad", "luci-scheduler.cfg", []byte("deadbeef"))
+			So(rules.ValidateConfig(ctx, "projects/bad", "luci-scheduler.cfg", []byte("deadbeef")), ShouldBeNil)
 			So(ctx.Finalize(), ShouldNotBeNil)
 		})
 
-		Convey("semantic errors", func() {
-			rules.ValidateConfig(ctx, "projects/validation-error", "luci-scheduler.cfg", []byte(project5Cfg))
-			So(ctx.Finalize(), ShouldErrLike, "referencing AclSet \"standard\" which doesn't exist")
-		})
-
 		Convey("rejects triggers with unknown references", func() {
-			rules.ValidateConfig(ctx, "projects/bad", "luci-scheduler.cfg", []byte(project2Cfg))
+			So(rules.ValidateConfig(ctx, "projects/bad", "luci-scheduler.cfg", []byte(project2Cfg)), ShouldBeNil)
 			So(ctx.Finalize(), ShouldErrLike, `referencing unknown job "noop-job-2" in 'triggers' field`)
 		})
 
 		Convey("rejects duplicate ids", func() {
-			rules.ValidateConfig(ctx, "projects/bad", "luci-scheduler.cfg", []byte(`
-				acl_sets {
-					name: "default"
-					acls { role: OWNER granted_to: "group:admins" }
-				}
-
+			// job + job
+			So(rules.ValidateConfig(ctx, "projects/bad", "luci-scheduler.cfg", []byte(`
 				job {
 					id: "dup"
-					acl_sets: "default"
 					noop: { }
 				}
 				job {
 					id: "dup"
-					acl_sets: "default"
 					noop: { }
 				}
-			`))
+			`)), ShouldBeNil)
 			So(ctx.Finalize(), ShouldErrLike, `duplicate id "dup"`)
 
-			rules.ValidateConfig(ctx, "projects/bad", "luci-scheduler.cfg", []byte(`
-				acl_sets {
-					name: "default"
-					acls { role: OWNER granted_to: "group:admins" }
-				}
-
+			// job + trigger
+			So(rules.ValidateConfig(ctx, "projects/bad", "luci-scheduler.cfg", []byte(`
 				job {
 					id: "dup"
-					acl_sets: "default"
 					noop: { }
 				}
 				trigger {
 					id: "dup"
-					acl_sets: "default"
 					noop: { }
 				}
-			`))
+			`)), ShouldBeNil)
 			So(ctx.Finalize(), ShouldErrLike, `duplicate id "dup"`)
 		})
 	})
@@ -555,23 +509,9 @@ func testContext() context.Context {
 ////
 
 const project1Cfg = `
-
-acl_sets {
-	name: "public"
-	acls {
-		role: READER
-		granted_to: "group:all"
-	}
-	acls {
-		role: OWNER
-		granted_to: "group:some-admins"
-	}
-}
-
 job {
 	id: "noop-job-1"
 	schedule: "*/10 * * * * * *"
-	acl_sets: "public"
 	realm: "public"
 
 	triggering_policy {
@@ -584,7 +524,6 @@ job {
 job {
 	id: "noop-job-2"
 	schedule: "*/10 * * * * * *"
-	acl_sets: "public"
 
 	noop: {}
 }
@@ -600,15 +539,6 @@ job {
 job {
 	id: "urlfetch-job-1"
 	schedule: "*/10 * * * * * *"
-	acl_sets: "public"
-	acls {
-		role: OWNER
-		granted_to: "group:debuggers"
-	}
-	acls {
-		role: TRIGGERER
-		granted_to: "group:triggerers"
-	}
 
 	url_fetch: {
 		url: "https://example.com"
@@ -617,7 +547,6 @@ job {
 
 trigger {
 	id: "trigger"
-	acl_sets: "public"
 
 	triggering_policy {
 		kind: GREEDY_BATCHING
@@ -644,24 +573,14 @@ job {
 // the config validation, but will still load by GetProjectJobs. We need this
 // behavior since unfortunately some inconsistencies crept in into the configs.
 const project2Cfg = `
-acl_sets {
-	name: "default"
-	acls {
-		role: OWNER
-		granted_to: "group:all"
-	}
-}
-
 job {
 	id: "noop-job-1"
-	acl_sets: "default"
 	schedule: "*/10 * * * * * *"
 	noop: {}
 }
 
 trigger {
 	id: "trigger"
-	acl_sets: "default"
 
 	noop: {}
 
@@ -671,21 +590,8 @@ trigger {
 `
 
 const project3Cfg = `
-acl_sets {
-	name: "default"
-	acls {
-		role: READER
-		granted_to: "group:all"
-	}
-	acls {
-		role: OWNER
-		granted_to: "group:all"
-	}
-}
-
 job {
 	id: "noop-job-v2"
-	acl_sets: "default"
 	noop: {
 		sleep_ms: 1000
 	}
@@ -693,44 +599,6 @@ job {
 
 trigger {
 	id: "noop-trigger-v2"
-	acl_sets: "default"
-
-	noop: {
-		sleep_ms: 1000
-		triggers_count: 2
-	}
-
-	triggers: "noop-job-v2"
-}
-`
-
-// project5Cfg should contain validation errors related to only "standard"
-// acl_set (referencing AclSet "standard" that does not exist, no OWNER
-// AclSet and no READER AclSet).
-const project5Cfg = `
-acl_sets {
-	name: "default"
-	acls {
-		role: READER
-		granted_to: "group:all"
-	}
-	acls {
-		role: OWNER
-		granted_to: "group:all"
-	}
-}
-
-job {
-	id: "noop-job-v2"
-	acl_sets: "default"
-	noop: {
-		sleep_ms: 1000
-	}
-}
-
-trigger {
-	id: "noop-trigger-v2"
-	acl_sets: "standard"
 
 	noop: {
 		sleep_ms: 1000

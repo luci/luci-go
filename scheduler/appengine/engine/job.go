@@ -29,7 +29,6 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/gae/service/datastore"
 
-	"go.chromium.org/luci/scheduler/appengine/acl"
 	"go.chromium.org/luci/scheduler/appengine/catalog"
 	"go.chromium.org/luci/scheduler/appengine/engine/cron"
 	"go.chromium.org/luci/scheduler/appengine/engine/dsset"
@@ -106,11 +105,6 @@ type Job struct {
 	// TriggeredJobIDs is a list of jobIDs of jobs which this job triggers.
 	// The list is sorted and without duplicates.
 	TriggeredJobIDs []string `gae:",noindex"`
-
-	// ACLs are the latest ACLs applied to Job and all its invocations.
-	//
-	// Deprecated in favor of RealmID.
-	Acls acl.GrantsByRole `gae:",noindex"`
 
 	// Cron holds the state of the cron state machine.
 	Cron cron.State `gae:",noindex"`
@@ -232,7 +226,6 @@ func (e *Job) IsEqual(other *Job) bool {
 		e.RevisionURL == other.RevisionURL &&
 		e.Schedule == other.Schedule &&
 		e.LastTriage.Equal(other.LastTriage) &&
-		e.Acls.Equal(&other.Acls) &&
 		bytes.Equal(e.Task, other.Task) &&
 		equalSortedLists(e.TriggeredJobIDs, other.TriggeredJobIDs) &&
 		e.Cron.Equal(&other.Cron) &&
@@ -248,7 +241,6 @@ func (e *Job) MatchesDefinition(def catalog.Definition) bool {
 		e.RealmID == def.RealmID &&
 		e.Flavor == def.Flavor &&
 		e.Schedule == def.Schedule &&
-		e.Acls.Equal(&def.Acls) &&
 		bytes.Equal(e.Task, def.Task) &&
 		bytes.Equal(e.TriggeringPolicyRaw, def.TriggeringPolicy) &&
 		equalSortedLists(e.TriggeredJobIDs, def.TriggeredJobIDs)
