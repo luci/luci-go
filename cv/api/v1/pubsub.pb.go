@@ -44,13 +44,13 @@ type PubSubRun struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// The unqiue ID of the Run.
+	// The unique ID of the Run.
 	//
 	// The format of an ID is "projects/$luci-project/runs/$id", where
 	// - luci-project is the name of the LUCI project the Run belongs to
 	// - id is an opaque key unique in the LUCI project.
 	Id string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
-	// status of the Run.
+	// The Run status, e.g. pending, running, cancelled, etc.
 	Status Run_Status `protobuf:"varint,2,opt,name=status,proto3,enum=cv.v1.Run_Status" json:"status,omitempty"`
 	// eversion is the entity version, which is monotonically increasing.
 	Eversion int64 `protobuf:"varint,3,opt,name=eversion,proto3" json:"eversion,omitempty"`

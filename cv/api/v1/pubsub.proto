@@ -26,13 +26,13 @@ option go_package = "go.chromium.org/luci/cv/api/v1;cvpb";
 // This includes a subset of the fields defined in Run message.
 // Use "runs.GetRun" rpc to retrieve the full field set of Runs.
 message PubSubRun {
-  // The unqiue ID of the Run.
+  // The unique ID of the Run.
   //
   // The format of an ID is "projects/$luci-project/runs/$id", where
   // - luci-project is the name of the LUCI project the Run belongs to
   // - id is an opaque key unique in the LUCI project.
   string id = 1;
-  // status of the Run.
+  // The Run status, e.g. pending, running, cancelled, etc.
   Run.Status status = 2;
   // eversion is the entity version, which is monotonically increasing.
   int64 eversion = 3;

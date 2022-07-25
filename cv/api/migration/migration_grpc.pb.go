@@ -22,7 +22,7 @@ type MigrationClient interface {
 	// ReportVerifiedRun notifies CV of the Run CQDaemon has just finished
 	// verifying.
 	//
-	// The Run may not contain CV's id, but CV can figure out the the ID using
+	// The Run may not contain CV's id, but CV can figure out the ID using
 	// Run.Attempt.Key.
 	//
 	// Called by CQDaemon when CV is in charge of run management.
@@ -30,7 +30,7 @@ type MigrationClient interface {
 	// FetchRunStatus provides to CQDaemon info about a completed Run in order to
 	// send to CQ Status app.
 	//
-	// The Run may not contain CV's id, but CV can figure out the the ID using
+	// The Run may not contain CV's id, but CV can figure out the ID using
 	// Run.Attempt.Key.
 	//
 	// Called by CQDaemon when CV is in charge of run management.
@@ -130,7 +130,7 @@ type MigrationServer interface {
 	// ReportVerifiedRun notifies CV of the Run CQDaemon has just finished
 	// verifying.
 	//
-	// The Run may not contain CV's id, but CV can figure out the the ID using
+	// The Run may not contain CV's id, but CV can figure out the ID using
 	// Run.Attempt.Key.
 	//
 	// Called by CQDaemon when CV is in charge of run management.
@@ -138,7 +138,7 @@ type MigrationServer interface {
 	// FetchRunStatus provides to CQDaemon info about a completed Run in order to
 	// send to CQ Status app.
 	//
-	// The Run may not contain CV's id, but CV can figure out the the ID using
+	// The Run may not contain CV's id, but CV can figure out the ID using
 	// Run.Attempt.Key.
 	//
 	// Called by CQDaemon when CV is in charge of run management.

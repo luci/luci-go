@@ -40,21 +40,21 @@ type Run_Status int32
 const (
 	// Unspecified status.
 	Run_STATUS_UNSPECIFIED Run_Status = 0
-	// Run is pending to start.
+	// Run has not started yet.
 	//
 	// It is either because Run Manager hasn't processed the StartEvent yet or
-	// the RunOwner has exhausted all the quota and waiting for new quota to
-	// be available.
+	// the RunOwner has exhausted all the quota and waiting for new quota to be
+	// available.
 	Run_PENDING Run_Status = 1
 	// Run is running.
 	Run_RUNNING Run_Status = 2
 	// Run is waiting for submission.
 	//
-	// Run is in this status if one of the following scenario is true:
+	// Run is in this status if one of the following scenarios is true:
 	//   1. Tree is closed at the time Run attempts to submit.
 	//   2. There is another Run in the same LUCI Project that is currently
 	//      submitting.
-	//   3. The submission is rate limited according to the submit option in
+	//   3. The submission is rate-limited according to the submit option in
 	//      Project Config.
 	//
 	// This status is cancellable.
@@ -141,7 +141,7 @@ type Run struct {
 	// - luci-project is the name of the LUCI project the Run belongs to
 	// - id is an opaque key unique in the LUCI project.
 	Id string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
-	// status of the Run.
+	// Status of the Run.
 	Status Run_Status `protobuf:"varint,2,opt,name=status,proto3,enum=cv.v1.Run_Status" json:"status,omitempty"`
 	// eversion is the entity version, which is monotonically increasing.
 	Eversion int64 `protobuf:"varint,3,opt,name=eversion,proto3" json:"eversion,omitempty"`
