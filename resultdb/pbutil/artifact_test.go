@@ -69,7 +69,6 @@ func TestParseArtifactName(t *testing.T) {
 func TestArtifactName(t *testing.T) {
 	t.Parallel()
 	Convey(`ArtifactName`, t, func() {
-
 		Convey(`Invocation level`, func() {
 			Convey(`Success`, func() {
 				name := InvocationArtifactName("inv", "a")
@@ -109,5 +108,24 @@ func TestValidateArtifactName(t *testing.T) {
 			err := ValidateArtifactName("abc")
 			So(err, ShouldErrLike, "does not match")
 		})
+	})
+}
+
+func TestArtifactId(t *testing.T) {
+	t.Parallel()
+	Convey(`ValidateArtifactID`, t, func() {
+		Convey(`ASCII printable`, func() {
+			err := ValidateArtifactID("ascii.txt")
+			So(err, ShouldBeNil)
+		})
+		Convey(`Unicode printable`, func() {
+			err := ValidateArtifactID("unicode ©.txt")
+			So(err, ShouldBeNil)
+		})
+		Convey(`Unprintable`, func() {
+			err := ValidateArtifactID("unprintable \a.txt")
+			So(err, ShouldErrLike, "does not match")
+		})
+
 	})
 }
