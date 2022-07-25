@@ -44,7 +44,8 @@ type Status int32
 const (
 	// STATUS_UNSPECIFIED is never used.
 	Status_STATUS_UNSPECIFIED Status = 0
-	// PENDING means Tryjob is being triggered by CV.
+	// PENDING means Tryjob is being triggered by CV, i.e. it has not yet been
+	// triggered, but CV will try to trigger it.
 	//
 	// *may* not yet have an external ID.
 	// *must* have no Result.
@@ -192,18 +193,18 @@ func (Result_Status) EnumDescriptor() ([]byte, []int) {
 	return file_go_chromium_org_luci_cv_internal_tryjob_storage_proto_rawDescGZIP(), []int{2, 0}
 }
 
-// Status describes the summarized status of the overall tryjob execution.
+// Status describes the summarized status of the overall Tryjob execution.
 type ExecutionState_Status int32
 
 const (
 	// Unspecified is never used.
 	ExecutionState_STATUS_UNSPECIFIED ExecutionState_Status = 0
-	// At least one critical tryjob is not yet finished so its result is
+	// At least one critical Tryjob is not yet finished so its result is
 	// unknown.
 	ExecutionState_RUNNING ExecutionState_Status = 1
-	// At least one critical tryjob in the state failed and cannot be retried.
+	// At least one critical Tryjob in the state failed and cannot be retried.
 	ExecutionState_FAILED ExecutionState_Status = 2
-	// All the critical tryjobs in the execution state succeeded.
+	// All the critical Tryjobs in the execution state succeeded.
 	ExecutionState_SUCCEEDED ExecutionState_Status = 3
 )
 
@@ -267,23 +268,24 @@ type Definition struct {
 	// Note that recursive `equivalent_to` is not supported. Also, this doesn't
 	// affect triggering a new tryjob.
 	EquivalentTo *Definition `protobuf:"bytes,2,opt,name=equivalent_to,json=equivalentTo,proto3" json:"equivalent_to,omitempty"`
-	// If true, trigger a new tryjob using this definition regardless of whether
+	// If true, trigger a new tryjob using this Definition regardless of whether
 	// reusable tryjobs exist.
 	DisableReuse bool `protobuf:"varint,3,opt,name=disable_reuse,json=disableReuse,proto3" json:"disable_reuse,omitempty"`
-	// If true, CV should let this tryjob run even if it becomes stale,
-	// e.g. by a new non-trivial patchset on one of this tryjob's CLs.
+	// If true, CV should let this Tryjob run even if it becomes stale,
+	// e.g. by a new non-trivial patchset on one of this Tryjob's CLs.
 	//
-	// If the Tryjob is not triggered by CV, then this is value is ignored and
-	// in effect it's assumed true. I.e. we don't cancel tryjobs not triggered
+	// If the Tryjob is not triggered by CV, then this is value is ignored and in
+	// effect it's assumed true. That is, we don't cancel tryjobs not triggered
 	// by CV.
 	SkipStaleCheck bool `protobuf:"varint,4,opt,name=skip_stale_check,json=skipStaleCheck,proto3" json:"skip_stale_check,omitempty"`
-	// If true, this tryjob is deemed critical for the Run to succeed, i.e.
-	// the Run will fail unless one of the attempts of this tryjob is successful.
+	// If true, the Tryjob is deemed critical for the Run to succeed, i.e. the
+	// Run will fail unless one of the attempts of this Tryjob is successful.
 	Critical bool `protobuf:"varint,5,opt,name=critical,proto3" json:"critical,omitempty"`
-	// If true, this tryjob will be marked as experimental.
+	// If true, the Tryjob will be marked as experimental.
 	//
-	// However, experimental tryjob could be critical iff it is requested
-	// explicitly (i.e. via git footer).
+	// Experimental Tryjobs are generally not critical. However, an experimental
+	// Tryjob could be critical iff it is requested explicitly (i.e. via git
+	// footer).
 	Experimental bool `protobuf:"varint,7,opt,name=experimental,proto3" json:"experimental,omitempty"`
 	// If set to restricted, CV should only post generic messages such as
 	//   "Build failed: https://ci.chromium.org/b/1234"
@@ -470,7 +472,7 @@ type Result struct {
 	// This is used by CV to determine if the Tryjob is fresh enough to be used
 	// to verify a Run.
 	CreateTime *timestamppb.Timestamp `protobuf:"bytes,2,opt,name=create_time,json=createTime,proto3" json:"create_time,omitempty"`
-	// Time when the tryjob was last updated in the backend.
+	// Time when the Tryjob was last updated in the backend.
 	//
 	// This is used by CV to determine if it needs to refresh Tryjob's Result by
 	// querying its backend.
@@ -583,10 +585,10 @@ type ExecutionState struct {
 	Executions []*ExecutionState_Execution `protobuf:"bytes,1,rep,name=executions,proto3" json:"executions,omitempty"`
 	// Requirement is the requirement that is currently being worked on.
 	Requirement *Requirement `protobuf:"bytes,2,opt,name=requirement,proto3" json:"requirement,omitempty"`
-	// The version of the requirement  that is currently being worked on.
+	// The version of the requirement that is currently being worked on.
 	RequirementVersion int32 `protobuf:"varint,5,opt,name=requirement_version,json=requirementVersion,proto3" json:"requirement_version,omitempty"`
-	// Status will be set to SUCCEEDED if all tryjobs succeed,
-	// FAILED if at least one tryjob fails and cannot be retried,
+	// Status will be set to SUCCEEDED if all Tryjobs succeed,
+	// FAILED if at least one Tryjob fails and cannot be retried,
 	// or RUNNING otherwise.
 	Status ExecutionState_Status `protobuf:"varint,3,opt,name=status,proto3,enum=cv.internal.tryjob.ExecutionState_Status" json:"status,omitempty"`
 	// FailureReason provides a user-readable explanation of the
@@ -1159,8 +1161,8 @@ type ExecutionState_Execution_Attempt struct {
 	// by CV for this Run specifically.
 	//
 	// In other words, either:
-	//  * tryjob was triggered by CV for a previous Run
-	//  * tryjob was triggered by non-CV (e.g. `git cl try`)
+	//  * the Tryjob was triggered by CV for a previous Run, or
+	//  * the Tryjob was triggered by non-CV (e.g. `git cl try`).
 	Reused bool `protobuf:"varint,5,opt,name=reused,proto3" json:"reused,omitempty"`
 }
 

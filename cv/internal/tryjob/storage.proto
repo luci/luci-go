@@ -47,26 +47,27 @@ message Definition {
   // affect triggering a new tryjob.
   Definition equivalent_to = 2;
 
-  // If true, trigger a new tryjob using this definition regardless of whether
+  // If true, trigger a new tryjob using this Definition regardless of whether
   // reusable tryjobs exist.
   bool disable_reuse = 3;
 
-  // If true, CV should let this tryjob run even if it becomes stale,
-  // e.g. by a new non-trivial patchset on one of this tryjob's CLs.
+  // If true, CV should let this Tryjob run even if it becomes stale,
+  // e.g. by a new non-trivial patchset on one of this Tryjob's CLs.
   //
-  // If the Tryjob is not triggered by CV, then this is value is ignored and
-  // in effect it's assumed true. I.e. we don't cancel tryjobs not triggered
+  // If the Tryjob is not triggered by CV, then this is value is ignored and in
+  // effect it's assumed true. That is, we don't cancel tryjobs not triggered
   // by CV.
   bool skip_stale_check = 4;
 
-  // If true, this tryjob is deemed critical for the Run to succeed, i.e.
-  // the Run will fail unless one of the attempts of this tryjob is successful.
+  // If true, the Tryjob is deemed critical for the Run to succeed, i.e. the
+  // Run will fail unless one of the attempts of this Tryjob is successful.
   bool critical = 5;
 
-  // If true, this tryjob will be marked as experimental.
+  // If true, the Tryjob will be marked as experimental.
   //
-  // However, experimental tryjob could be critical iff it is requested
-  // explicitly (i.e. via git footer).
+  // Experimental Tryjobs are generally not critical. However, an experimental
+  // Tryjob could be critical iff it is requested explicitly (i.e. via git
+  // footer).
   bool experimental = 7;
 
   // If set to restricted, CV should only post generic messages such as
@@ -93,7 +94,8 @@ enum Status {
   // STATUS_UNSPECIFIED is never used.
   STATUS_UNSPECIFIED = 0;
 
-  // PENDING means Tryjob is being triggered by CV.
+  // PENDING means Tryjob is being triggered by CV, i.e. it has not yet been
+  // triggered, but CV will try to trigger it.
   //
   // *may* not yet have an external ID.
   // *must* have no Result.
@@ -162,7 +164,7 @@ message Result {
   // This is used by CV to determine if the Tryjob is fresh enough to be used
   // to verify a Run.
   google.protobuf.Timestamp create_time = 2;
-  // Time when the tryjob was last updated in the backend.
+  // Time when the Tryjob was last updated in the backend.
   //
   // This is used by CV to determine if it needs to refresh Tryjob's Result by
   // querying its backend.
@@ -209,11 +211,11 @@ message ExecutionState {
       // by CV for this Run specifically.
       //
       // In other words, either:
-      //  * tryjob was triggered by CV for a previous Run
-      //  * tryjob was triggered by non-CV (e.g. `git cl try`)
+      //  * the Tryjob was triggered by CV for a previous Run, or
+      //  * the Tryjob was triggered by non-CV (e.g. `git cl try`).
       bool reused = 5;
 
-      // TODO(yiwzhang): add model for children tryjobs. It could reuse
+      // TODO(yiwzhang): Add model for children Tryjobs. It could reuse
       // `Attempt` messages, it may also have a trimmed version of `Attempt`
       // message because some of the fields don't make sense to children
       // Tryjobs. Also, if crbug.com/1031205 is shipped before we implement
@@ -227,16 +229,16 @@ message ExecutionState {
     // Tryjob.
     int32 used_quota = 3;
   }
-   // Status describes the summarized status of the overall tryjob execution.
+   // Status describes the summarized status of the overall Tryjob execution.
   enum Status {
     // Unspecified is never used.
     STATUS_UNSPECIFIED = 0;
-    // At least one critical tryjob is not yet finished so its result is
+    // At least one critical Tryjob is not yet finished so its result is
     // unknown.
     RUNNING = 1;
-    // At least one critical tryjob in the state failed and cannot be retried.
+    // At least one critical Tryjob in the state failed and cannot be retried.
     FAILED = 2;
-    // All the critical tryjobs in the execution state succeeded.
+    // All the critical Tryjobs in the execution state succeeded.
     SUCCEEDED = 3;
   }
   // Executions track the execution state of all required Tryjobs.
@@ -245,10 +247,10 @@ message ExecutionState {
   repeated Execution executions = 1;
   // Requirement is the requirement that is currently being worked on.
   Requirement requirement = 2;
-  // The version of the requirement  that is currently being worked on.
+  // The version of the requirement that is currently being worked on.
   int32 requirement_version = 5;
-  // Status will be set to SUCCEEDED if all tryjobs succeed,
-  // FAILED if at least one tryjob fails and cannot be retried,
+  // Status will be set to SUCCEEDED if all Tryjobs succeed,
+  // FAILED if at least one Tryjob fails and cannot be retried,
   // or RUNNING otherwise.
   Status status = 3;
   // FailureReason provides a user-readable explanation of the

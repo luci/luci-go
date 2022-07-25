@@ -31,15 +31,15 @@ import (
 	"go.chromium.org/luci/cv/internal/tryjob/requirement"
 )
 
-// Executor reacts to changes in external world and tries to fulfills the tryjob
-// requirement.
+// Executor reacts to changes in external world and tries to fulfills the
+// tryjob requirement.
 type Executor struct {
 	// Backend is the Tryjob backend that executor will search reusable Tryjobs
 	// from and launch new Tryjobs.
 	Backend TryjobBackend
 	// RM is used to notify Run for changes in Tryjob states.
 	RM rm
-	// ShouldStop is returns whether executor should stop the execution.
+	// ShouldStop returns whether executor should stop the execution.
 	ShouldStop func() bool
 	// logEntries records what has happened during the execution.
 	logEntries []*tryjob.ExecutionLogEntry
@@ -52,14 +52,14 @@ type TryjobBackend interface {
 	Launch(ctx context.Context, tryjobs []*tryjob.Tryjob, r *run.Run, cls []*run.RunCL) error
 }
 
-// TryjobBackend encapsulates the interactions with Run manager.
+// TryjobBackend encapsulates the interactions with Run Manager.
 type rm interface {
 	NotifyTryjobsUpdated(ctx context.Context, runID common.RunID, tryjobs *tryjob.TryjobUpdatedEvents) error
 }
 
-// Do executes the tryjob requirement for a run.
+// Do executes the tryjob requirement for a Run.
 //
-// This function is idempotent so it is safe to retry.
+// This function is idempotent, so it is safe to retry.
 func (e *Executor) Do(ctx context.Context, r *run.Run, payload *tryjob.ExecuteTryjobsPayload) error {
 	if !r.UseCVTryjobExecutor {
 		logging.Warningf(ctx, "crbug/1312255: Tryjob executor is invoked when UseCVTryjobExecutor is set to false. It's likely caused by a race condition when reverting the migration config setting")
@@ -123,12 +123,12 @@ type planItem struct {
 type plan struct {
 	// Trigger a new attempt for provided execution.
 	//
-	// Typically due to new tryjob definition or retrying failed tryjobs.
+	// Typically used if to new tryjob definition or retrying failed tryjobs.
 	triggerNewAttempt []planItem
 
-	// Discard the tryjob execution is no longer needed.
+	// Discard the tryjob execution as it is no longer needed.
 	//
-	// Typically due to tryjob definition is removed in Project Config.
+	// Typically used if the tryjob definition is removed from the Project Config.
 	discard []planItem
 }
 
@@ -153,8 +153,8 @@ func (e *Executor) prepExecutionPlan(ctx context.Context, execState *tryjob.Exec
 	case reqmtChanged:
 		curReqmt, targetReqmt := execState.GetRequirement(), r.Tryjobs.GetRequirement()
 		if curReqmt != nil {
-			// only log when existing requirement is present. In another word, the
-			// requirement has changed when Run is running.
+			// Only log when existing requirement is present. In another words,
+			// the requirement has changed when Run is running.
 			e.logRequirementChanged(ctx)
 		}
 		return handleRequirementChange(curReqmt, targetReqmt, execState)
@@ -202,8 +202,8 @@ func (e *Executor) handleUpdatedTryjobs(ctx context.Context, tryjobs []int64, ex
 			// from logging here and Run should be cancelled very soon.
 			e.logTryjobEnded(ctx, definition, attempt.TryjobId)
 		case attempt.Status == tryjob.Status_UNTRIGGERED && attempt.Reused:
-			// Normally happens when this Run reuses a PENDING Tryjob from another
-			// Run but the Tryjob doesn't end up getting triggered.
+			// Normally happens when this Run reuses a PENDING Tryjob from
+			// another Run but the Tryjob doesn't end up getting triggered.
 			p.triggerNewAttempt = append(p.triggerNewAttempt, planItem{
 				definition: definition,
 				execution:  exec,
@@ -211,8 +211,8 @@ func (e *Executor) handleUpdatedTryjobs(ctx context.Context, tryjobs []int64, ex
 		case attempt.Status == tryjob.Status_UNTRIGGERED && !definition.GetCritical():
 			// Ignore failure when launching non-critical tryjobs.
 		case attempt.Status == tryjob.Status_UNTRIGGERED:
-			// If a critical tryjob fails to launch, then this Run should have failed
-			// already. So this code path should never be exercised.
+			// If a critical tryjob fails to launch, then this Run should have
+			// failed already. So, this code path should never be exercised.
 			panic(fmt.Errorf("critical tryjob %d failed to launch but tryjob executor was asked to update this Tryjob", attempt.GetTryjobId()))
 		default:
 			panic(fmt.Errorf("unexpected attempt status %s for Tryjob %d", attempt.Status, attempt.TryjobId))
@@ -221,7 +221,7 @@ func (e *Executor) handleUpdatedTryjobs(ctx context.Context, tryjobs []int64, ex
 
 	switch hasFailed, hasNewAttemptToTrigger := len(failedIndices) > 0, len(p.triggerNewAttempt) > 0; {
 	case !hasFailed && !hasNewAttemptToTrigger && !hasNonEndedCriticalTryjob:
-		// all critical tryjobs have completed successfully.
+		// All critical tryjobs have completed successfully.
 		execState.Status = tryjob.ExecutionState_SUCCEEDED
 		return execState, nil, nil
 	case hasFailed:
