@@ -12,53 +12,101 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package bblistener listens to build updates notification from Buildbucket
-// Pubsub.
 package bblistener
 
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"sync"
+	"time"
 
 	"cloud.google.com/go/pubsub"
+	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/types/known/durationpb"
 
 	v1pb "go.chromium.org/luci/common/api/buildbucket/buildbucket/v1"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/common/sync/parallel"
+	"go.chromium.org/luci/server/tq"
 
 	"go.chromium.org/luci/cv/internal/common"
 	pubsubutils "go.chromium.org/luci/cv/internal/common/pubsub"
 	"go.chromium.org/luci/cv/internal/tryjob"
 )
 
-// SubscriptionID is the default subscription ID for listening to Buildbucket
-// build updates.
-const SubscriptionID = "buildbucket-builds"
+const (
+	// NumConcurrentListeners defines the number of Buildbucket Pubsub listeners
+	// that runs concurrently.
+	//
+	// Increase this value if the notification processing speed can't keep up
+	// with the incoming speed.
+	NumConcurrentListeners = 5
+	// SubscriptionID is the default subscription ID for listening to Buildbucket
+	// build updates.
+	SubscriptionID = "buildbucket-builds"
+	// ListenDuration is how long each listener will running for.
+	//
+	// This should be in sync with the interval of the cron job that kicks the
+	// listener to ensure continuous processing of Buildbucket pubsub events
+	ListenDuration = 5 * time.Minute
+)
 
 // This interface encapsulate the communication with tryjob component.
 type tryjobNotifier interface {
 	ScheduleUpdate(context.Context, common.TryjobID, tryjob.ExternalID) error
 }
 
-// New creates a pulling batch processor that pulls Buildbucket build
-// notifications from the PubSub subscription specified by projectID and subID,
-// and when they concern a Tryjob corresponding to one of our Runs, schedules
-// tasks to notify the appropriate Run Manager.
-func New(tjNotifier tryjobNotifier, projectID, subID string) (*pubsubutils.PullingBatchProcessor, error) {
-	listener := &pubsubutils.PullingBatchProcessor{
-		ProcessBatch: func(ctx context.Context, msgs []*pubsub.Message) error {
-			return processNotificationsBatch(ctx, tjNotifier, notsFromMsgs(msgs))
+// Register register tasks for listener and returns a function to kick off
+// `NumConcurrentListeners` listeners.
+func Register(tqd *tq.Dispatcher, projectID string, tjNotifier tryjobNotifier) func(context.Context) error {
+	_ = tqd.RegisterTaskClass(tq.TaskClass{
+		ID:           "listen-bb-pubsub",
+		Prototype:    &ListenBBPubsubTask{},
+		Queue:        "listen-bb-pubsub",
+		Kind:         tq.NonTransactional,
+		Quiet:        true,
+		QuietOnError: true,
+		Handler: func(ctx context.Context, payload proto.Message) error {
+			task := payload.(*ListenBBPubsubTask)
+			listener := &pubsubutils.PullingBatchProcessor{
+				ProcessBatch: func(ctx context.Context, msgs []*pubsub.Message) error {
+					return processNotificationsBatch(ctx, tjNotifier, notsFromMsgs(msgs))
+				},
+				ProjectID: projectID,
+				SubID:     SubscriptionID,
+				Options: pubsubutils.Options{
+					ReceiveDuration: task.GetDuration().AsDuration(),
+				},
+			}
+			if err := listener.Validate(); err != nil {
+				return err
+			}
+			// Never retry the tasks because the listener will be started
+			// periodically by the Cron.
+			if err := listener.Process(ctx); err != nil {
+				return common.TQIfy{NeverRetry: true}.Error(ctx, err)
+			}
+			return nil
 		},
-		ProjectID: projectID,
-		SubID:     subID,
+	})
+	return func(ctx context.Context) error {
+		return parallel.FanOutIn(func(workCh chan<- func() error) {
+			for i := 0; i < NumConcurrentListeners; i++ {
+				i := i
+				workCh <- func() error {
+					return tqd.AddTask(ctx, &tq.Task{
+						Title: fmt.Sprintf("listener-%d", i),
+						Payload: &ListenBBPubsubTask{
+							Duration: durationpb.New(ListenDuration),
+						},
+					})
+				}
+			}
+		})
 	}
-	if err := listener.Validate(); err != nil {
-		return nil, err
-	}
-	return listener, nil
 }
 
 func processNotificationsBatch(ctx context.Context, tjNotifier tryjobNotifier, msgs []notification) error {

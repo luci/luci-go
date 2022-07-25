@@ -61,6 +61,9 @@ queue:
 - name: tq-sweep
   rate: 500/s
 
+- name: listen-bb-pubsub
+  rate: 10/s
+
 - name: update-tryjob
   rate: 30/s
 
