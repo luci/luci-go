@@ -18,7 +18,6 @@ package main
 import (
 	"context"
 
-	"go.chromium.org/luci/common/proto/access"
 	"go.chromium.org/luci/config/server/cfgmodule"
 	"go.chromium.org/luci/grpc/prpc"
 	"go.chromium.org/luci/server"
@@ -76,7 +75,6 @@ func main() {
 			}
 		}
 
-		access.RegisterAccessServer(srv.PRPC, &access.UnimplementedAccessServer{})
 		pb.RegisterBuildsServer(srv.PRPC, rpc.NewBuilds())
 		pb.RegisterBuildersServer(srv.PRPC, rpc.NewBuilders())
 		// TODO(crbug/1082369): Remove this workaround once field masks can be decoded.
