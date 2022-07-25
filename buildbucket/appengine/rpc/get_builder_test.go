@@ -20,12 +20,14 @@ import (
 
 	"google.golang.org/grpc/codes"
 
+	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
 
 	"go.chromium.org/luci/buildbucket/appengine/model"
+	"go.chromium.org/luci/buildbucket/bbperms"
 	pb "go.chromium.org/luci/buildbucket/proto"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -34,6 +36,8 @@ import (
 
 func TestGetBuilder(t *testing.T) {
 	t.Parallel()
+
+	const userID = identity.Identity("user:user@example.com")
 
 	Convey("GetBuilder", t, func() {
 		srv := &Builders{}
@@ -56,7 +60,7 @@ func TestGetBuilder(t *testing.T) {
 
 		Convey(`No permissions`, func() {
 			ctx = auth.WithState(ctx, &authtest.FakeState{
-				Identity: "user:user",
+				Identity: userID,
 			})
 			So(datastore.Put(
 				ctx,
@@ -77,21 +81,17 @@ func TestGetBuilder(t *testing.T) {
 
 		Convey(`End to end`, func() {
 			ctx = auth.WithState(ctx, &authtest.FakeState{
-				Identity: "user:user",
+				Identity: userID,
+				FakeDB: authtest.NewFakeDB(
+					authtest.MockPermission(userID, "project:bucket", bbperms.BuildersGet),
+				),
 			})
 			So(datastore.Put(
 				ctx,
 				&model.Bucket{
 					Parent: model.ProjectKey(ctx, "project"),
 					ID:     "bucket",
-					Proto: &pb.Bucket{
-						Acls: []*pb.Acl{
-							{
-								Identity: "user:user",
-								Role:     pb.Acl_READER,
-							},
-						},
-					},
+					Proto:  &pb.Bucket{},
 				},
 				&model.Builder{
 					Parent: model.BucketKey(ctx, "project", "bucket"),

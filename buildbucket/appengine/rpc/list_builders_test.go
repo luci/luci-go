@@ -23,6 +23,7 @@ import (
 	"github.com/google/tink/go/aead"
 	"github.com/google/tink/go/keyset"
 
+	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/server/auth"
@@ -30,6 +31,7 @@ import (
 	"go.chromium.org/luci/server/secrets"
 
 	"go.chromium.org/luci/buildbucket/appengine/model"
+	"go.chromium.org/luci/buildbucket/bbperms"
 	pb "go.chromium.org/luci/buildbucket/proto"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -38,6 +40,8 @@ import (
 
 func TestListBuilders(t *testing.T) {
 	t.Parallel()
+
+	const userID = identity.Identity("user:user@example.com")
 
 	Convey("ListBuilders", t, func() {
 		srv := &Builders{}
@@ -76,7 +80,7 @@ func TestListBuilders(t *testing.T) {
 
 		Convey(`No permissions`, func() {
 			ctx = auth.WithState(ctx, &authtest.FakeState{
-				Identity: "user:user",
+				Identity: userID,
 			})
 			So(datastore.Put(
 				ctx,
@@ -100,21 +104,19 @@ func TestListBuilders(t *testing.T) {
 
 		Convey(`End to end`, func() {
 			ctx = auth.WithState(ctx, &authtest.FakeState{
-				Identity: "user:user",
+				Identity: userID,
+				FakeDB: authtest.NewFakeDB(
+					authtest.MockPermission(userID, "project:bucket1", bbperms.BuildersList),
+					authtest.MockPermission(userID, "project:bucket3", bbperms.BuildersList),
+					authtest.MockPermission(userID, "project2:bucket1", bbperms.BuildersList),
+				),
 			})
 			So(datastore.Put(
 				ctx,
 				&model.Bucket{
 					Parent: model.ProjectKey(ctx, "project"),
 					ID:     "bucket1",
-					Proto: &pb.Bucket{
-						Acls: []*pb.Acl{
-							{
-								Identity: "user:user",
-								Role:     pb.Acl_READER,
-							},
-						},
-					},
+					Proto:  &pb.Bucket{},
 				},
 				&model.Builder{
 					Parent: model.BucketKey(ctx, "project", "bucket1"),
@@ -147,14 +149,7 @@ func TestListBuilders(t *testing.T) {
 				&model.Bucket{
 					Parent: model.ProjectKey(ctx, "project"),
 					ID:     "bucket3",
-					Proto: &pb.Bucket{
-						Acls: []*pb.Acl{
-							{
-								Identity: "user:user",
-								Role:     pb.Acl_READER,
-							},
-						},
-					},
+					Proto:  &pb.Bucket{},
 				},
 				&model.Builder{
 					Parent: model.BucketKey(ctx, "project", "bucket3"),
@@ -166,14 +161,7 @@ func TestListBuilders(t *testing.T) {
 				&model.Bucket{
 					Parent: model.ProjectKey(ctx, "project2"),
 					ID:     "bucket1",
-					Proto: &pb.Bucket{
-						Acls: []*pb.Acl{
-							{
-								Identity: "user:user",
-								Role:     pb.Acl_READER,
-							},
-						},
-					},
+					Proto:  &pb.Bucket{},
 				},
 				&model.Builder{
 					Parent: model.BucketKey(ctx, "project2", "bucket1"),

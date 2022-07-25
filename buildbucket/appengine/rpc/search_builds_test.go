@@ -30,6 +30,7 @@ import (
 
 	bb "go.chromium.org/luci/buildbucket"
 	"go.chromium.org/luci/buildbucket/appengine/model"
+	"go.chromium.org/luci/buildbucket/bbperms"
 	pb "go.chromium.org/luci/buildbucket/proto"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -247,12 +248,18 @@ func TestValidateSearchBuilds(t *testing.T) {
 func TestSearchBuilds(t *testing.T) {
 	t.Parallel()
 
+	const userID = identity.Identity("user:user@example.com")
+
 	Convey("search builds", t, func() {
 		srv := &Builds{}
 		ctx := memory.Use(context.Background())
 		ctx = memlogger.Use(ctx)
 		ctx = auth.WithState(ctx, &authtest.FakeState{
-			Identity: identity.Identity("user:user"),
+			Identity: userID,
+			FakeDB: authtest.NewFakeDB(
+				authtest.MockPermission(userID, "project:bucket", bbperms.BuildersList),
+				authtest.MockPermission(userID, "project:bucket", bbperms.BuildsList),
+			),
 		})
 		datastore.GetTestable(ctx).AutoIndex(true)
 		datastore.GetTestable(ctx).Consistent(true)
@@ -260,14 +267,7 @@ func TestSearchBuilds(t *testing.T) {
 		So(datastore.Put(ctx, &model.Bucket{
 			ID:     "bucket",
 			Parent: model.ProjectKey(ctx, "project"),
-			Proto: &pb.Bucket{
-				Acls: []*pb.Acl{
-					{
-						Identity: "user:user",
-						Role:     pb.Acl_READER,
-					},
-				},
-			},
+			Proto:  &pb.Bucket{},
 		}), ShouldBeNil)
 		So(datastore.Put(ctx, &model.Build{
 			Proto: &pb.Build{

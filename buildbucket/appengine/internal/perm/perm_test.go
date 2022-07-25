@@ -43,94 +43,7 @@ func testingContext() context.Context {
 	return ctx
 }
 
-func TestHasInBucketLegacy(t *testing.T) {
-	t.Parallel()
-
-	Convey("With mocked auth DB", t, func() {
-		const (
-			anon           = identity.AnonymousIdentity
-			admin          = identity.Identity("user:admin@example.com")
-			reader         = identity.Identity("user:reader@example.com")
-			writer         = identity.Identity("user:writer@example.com")
-			sameProject    = identity.Identity("project:some-project")
-			anotherProject = identity.Identity("project:another-project")
-		)
-
-		s := &authtest.FakeState{
-			FakeDB: authtest.NewFakeDB(
-				authtest.MockMembership(admin, "administrators"),
-				authtest.MockMembership(reader, "readers"),
-				authtest.MockMembership(writer, "writers"),
-			),
-		}
-		ctx := auth.WithState(testingContext(), s)
-
-		makeBucket := func(acls []*pb.Acl) {
-			So(datastore.Put(ctx, &model.Bucket{
-				ID:     "some-bucket",
-				Parent: model.ProjectKey(ctx, "some-project"),
-				Proto:  &pb.Bucket{Acls: acls},
-			}), ShouldBeNil)
-		}
-
-		check := func(perm realms.Permission, caller identity.Identity) codes.Code {
-			s.Identity = caller
-			err := HasInBucket(ctx, perm, "some-project", "some-bucket")
-			if err == nil {
-				return codes.OK
-			}
-			status, ok := appstatus.Get(err)
-			if !ok {
-				return codes.Internal
-			}
-			return status.Code()
-		}
-
-		Convey("Missing bucket", func() {
-			So(check(bbperms.BuildsGet, anon), ShouldEqual, codes.NotFound)
-			So(check(bbperms.BuildsGet, admin), ShouldEqual, codes.NotFound)
-			So(check(bbperms.BuildsGet, sameProject), ShouldEqual, codes.NotFound)
-			So(check(bbperms.BuildsGet, reader), ShouldEqual, codes.NotFound)
-		})
-
-		Convey("Existing bucket, no ACLs in it", func() {
-			makeBucket(nil)
-
-			So(check(bbperms.BuildsGet, anon), ShouldEqual, codes.NotFound)
-			So(check(bbperms.BuildsGet, admin), ShouldEqual, codes.OK)
-			So(check(bbperms.BuildsGet, sameProject), ShouldEqual, codes.OK)
-			So(check(bbperms.BuildsGet, anotherProject), ShouldEqual, codes.NotFound)
-			So(check(bbperms.BuildsGet, reader), ShouldEqual, codes.NotFound)
-		})
-
-		Convey("Existing bucket, with ACLs", func() {
-			makeBucket([]*pb.Acl{
-				{Role: pb.Acl_READER, Group: "readers"},
-				{Role: pb.Acl_WRITER, Group: "writers"},
-			})
-
-			Convey("Read perm", func() {
-				So(check(bbperms.BuildsGet, anon), ShouldEqual, codes.NotFound)
-				So(check(bbperms.BuildsGet, admin), ShouldEqual, codes.OK)
-				So(check(bbperms.BuildsGet, sameProject), ShouldEqual, codes.OK)
-				So(check(bbperms.BuildsGet, anotherProject), ShouldEqual, codes.NotFound)
-				So(check(bbperms.BuildsGet, reader), ShouldEqual, codes.OK)
-				So(check(bbperms.BuildsGet, writer), ShouldEqual, codes.OK)
-			})
-
-			Convey("Write perm", func() {
-				So(check(bbperms.BuildsCancel, anon), ShouldEqual, codes.NotFound)
-				So(check(bbperms.BuildsCancel, admin), ShouldEqual, codes.OK)
-				So(check(bbperms.BuildsCancel, sameProject), ShouldEqual, codes.OK)
-				So(check(bbperms.BuildsCancel, anotherProject), ShouldEqual, codes.NotFound)
-				So(check(bbperms.BuildsCancel, reader), ShouldEqual, codes.PermissionDenied)
-				So(check(bbperms.BuildsCancel, writer), ShouldEqual, codes.OK)
-			})
-		})
-	})
-}
-
-func TestHasInBucketRealms(t *testing.T) {
+func TestHasInBucket(t *testing.T) {
 	t.Parallel()
 
 	Convey("With mocked auth DB", t, func() {
@@ -157,6 +70,7 @@ func TestHasInBucketRealms(t *testing.T) {
 			ID:     existingBucketID,
 			Parent: model.ProjectKey(ctx, projectID),
 			Proto: &pb.Bucket{
+				// Legacy ACLs are unused and should be ignored.
 				Acls: []*pb.Acl{
 					{Role: pb.Acl_READER, Group: "legacy-readers"},
 					{Role: pb.Acl_WRITER, Group: "legacy-writers"},
@@ -191,8 +105,8 @@ func TestHasInBucketRealms(t *testing.T) {
 			So(check(existingBucketID, bbperms.BuildsGet, admin), ShouldEqual, codes.OK)
 			So(check(existingBucketID, bbperms.BuildsGet, reader), ShouldEqual, codes.NotFound)
 			So(check(existingBucketID, bbperms.BuildsGet, writer), ShouldEqual, codes.NotFound)
-			So(check(existingBucketID, bbperms.BuildsGet, legacyReader), ShouldEqual, codes.OK)
-			So(check(existingBucketID, bbperms.BuildsGet, legacyWriter), ShouldEqual, codes.OK)
+			So(check(existingBucketID, bbperms.BuildsGet, legacyReader), ShouldEqual, codes.NotFound)
+			So(check(existingBucketID, bbperms.BuildsGet, legacyWriter), ShouldEqual, codes.NotFound)
 
 			So(check(missingBucketID, bbperms.BuildsGet, anon), ShouldEqual, codes.NotFound)
 			So(check(missingBucketID, bbperms.BuildsGet, admin), ShouldEqual, codes.NotFound)
@@ -222,8 +136,9 @@ func TestHasInBucketRealms(t *testing.T) {
 				So(check(existingBucketID, bbperms.BuildsGet, admin), ShouldEqual, codes.OK)
 				So(check(existingBucketID, bbperms.BuildsGet, reader), ShouldEqual, codes.OK)
 				So(check(existingBucketID, bbperms.BuildsGet, writer), ShouldEqual, codes.OK)
-				So(check(existingBucketID, bbperms.BuildsGet, legacyReader), ShouldEqual, codes.OK)
-				So(check(existingBucketID, bbperms.BuildsGet, legacyWriter), ShouldEqual, codes.OK)
+				// Legacy ACLs are ignored.
+				So(check(existingBucketID, bbperms.BuildsGet, legacyReader), ShouldEqual, codes.NotFound)
+				So(check(existingBucketID, bbperms.BuildsGet, legacyWriter), ShouldEqual, codes.NotFound)
 			})
 
 			Convey("Write perm", func() {
@@ -231,8 +146,9 @@ func TestHasInBucketRealms(t *testing.T) {
 				So(check(existingBucketID, bbperms.BuildsCancel, admin), ShouldEqual, codes.OK)
 				So(check(existingBucketID, bbperms.BuildsCancel, reader), ShouldEqual, codes.PermissionDenied)
 				So(check(existingBucketID, bbperms.BuildsCancel, writer), ShouldEqual, codes.OK)
-				So(check(existingBucketID, bbperms.BuildsCancel, legacyReader), ShouldEqual, codes.PermissionDenied)
-				So(check(existingBucketID, bbperms.BuildsCancel, legacyWriter), ShouldEqual, codes.OK)
+				// Legacy ACLs are ignored.
+				So(check(existingBucketID, bbperms.BuildsCancel, legacyReader), ShouldEqual, codes.NotFound)
+				So(check(existingBucketID, bbperms.BuildsCancel, legacyWriter), ShouldEqual, codes.NotFound)
 			})
 
 			Convey("Missing bucket", func() {
@@ -254,135 +170,42 @@ func TestHasInBucketRealms(t *testing.T) {
 	})
 }
 
-func TestGetRole(t *testing.T) {
-	t.Parallel()
-
-	Convey("With mocked auth DB", t, func() {
-		s := &authtest.FakeState{
-			FakeDB: authtest.NewFakeDB(
-				authtest.MockMembership("user:reader@example.com", "readers"),
-				authtest.MockMembership("user:writer@example.com", "writers"),
-				authtest.MockMembership("user:writer@example.com", "readers"), // also a reader
-			),
-		}
-		ctx := auth.WithState(testingContext(), s)
-
-		role := func(id identity.Identity, acls []*pb.Acl) pb.Acl_Role {
-			r, err := getRole(ctx, id, acls)
-			So(err, ShouldBeNil)
-			return r
-		}
-
-		Convey("Empty", func() {
-			So(role("user:someone@example.com", nil), ShouldEqual, -1)
-		})
-
-		Convey("Email", func() {
-			acls := []*pb.Acl{
-				{
-					Identity: "some-email@example.com",
-					Role:     pb.Acl_READER,
-				},
-			}
-
-			So(role("user:some-email@example.com", acls), ShouldEqual, pb.Acl_READER)
-			So(role("user:another-email@example.com", acls), ShouldEqual, -1)
-		})
-
-		Convey("User", func() {
-			acls := []*pb.Acl{
-				{
-					Identity: "user:some-email@example.com",
-					Role:     pb.Acl_READER,
-				},
-			}
-
-			So(role("user:some-email@example.com", acls), ShouldEqual, pb.Acl_READER)
-			So(role("user:another-email@example.com", acls), ShouldEqual, -1)
-		})
-
-		Convey("Group", func() {
-			acls := []*pb.Acl{
-				{
-					Group: "readers",
-					Role:  pb.Acl_READER,
-				},
-				{
-					Group: "empty",
-					Role:  pb.Acl_READER,
-				},
-			}
-
-			So(role("user:reader@example.com", acls), ShouldEqual, pb.Acl_READER)
-			So(role("user:unknown@example.com", acls), ShouldEqual, -1)
-		})
-
-		Convey("Highest role wins", func() {
-			acls := []*pb.Acl{
-				{
-					Group: "readers",
-					Role:  pb.Acl_READER,
-				},
-				{
-					Group: "writers",
-					Role:  pb.Acl_WRITER,
-				},
-			}
-
-			So(role("user:reader@example.com", acls), ShouldEqual, pb.Acl_READER)
-			So(role("user:writer@example.com", acls), ShouldEqual, pb.Acl_WRITER)
-			So(role("user:unknown@example.com", acls), ShouldEqual, -1)
-		})
-	})
-}
-
 func TestBucketsByPerm(t *testing.T) {
 	t.Parallel()
 
 	Convey("GetAccessibleBuckets", t, func() {
+		const reader = identity.Identity("user:reader@example.com")
+
 		ctx := testingContext()
 		ctx = auth.WithState(ctx, &authtest.FakeState{
-			Identity: identity.Identity("user:user"),
+			Identity: reader,
+			FakeDB: authtest.NewFakeDB(
+				authtest.MockPermission(reader, "project:bucket1", bbperms.BuildersList),
+				authtest.MockPermission(reader, "project:bucket2", bbperms.BuildersList),
+				authtest.MockPermission(reader, "project2:bucket1", bbperms.BuildersList),
+				authtest.MockPermission(reader, "project:bucket2", bbperms.BuildsCancel),
+			),
 		})
 		datastore.GetTestable(ctx).AutoIndex(true)
 		datastore.GetTestable(ctx).Consistent(true)
 
-		So(datastore.Put(ctx, &model.Bucket{
-			ID:     "bucket1",
-			Parent: model.ProjectKey(ctx, "project"),
-			Proto: &pb.Bucket{
-				Acls: []*pb.Acl{
-					{
-						Identity: "user:user",
-						Role:     pb.Acl_READER,
-					},
-				},
+		So(datastore.Put(ctx,
+			&model.Bucket{
+				ID:     "bucket1",
+				Parent: model.ProjectKey(ctx, "project"),
+				Proto:  &pb.Bucket{},
 			},
-		}), ShouldBeNil)
-		So(datastore.Put(ctx, &model.Bucket{
-			ID:     "bucket1",
-			Parent: model.ProjectKey(ctx, "project2"),
-			Proto: &pb.Bucket{
-				Acls: []*pb.Acl{
-					{
-						Identity: "user:user",
-						Role:     pb.Acl_READER,
-					},
-				},
+			&model.Bucket{
+				ID:     "bucket1",
+				Parent: model.ProjectKey(ctx, "project2"),
+				Proto:  &pb.Bucket{},
 			},
-		}), ShouldBeNil)
-		So(datastore.Put(ctx, &model.Bucket{
-			ID:     "bucket2",
-			Parent: model.ProjectKey(ctx, "project"),
-			Proto: &pb.Bucket{
-				Acls: []*pb.Acl{
-					{
-						Identity: "user:user",
-						Role:     pb.Acl_WRITER,
-					},
-				},
+			&model.Bucket{
+				ID:     "bucket2",
+				Parent: model.ProjectKey(ctx, "project"),
+				Proto:  &pb.Bucket{},
 			},
-		}), ShouldBeNil)
+		), ShouldBeNil)
 
 		buckets1, err := BucketsByPerm(ctx, bbperms.BuildersList, "")
 		So(err, ShouldBeNil)
@@ -397,7 +220,7 @@ func TestBucketsByPerm(t *testing.T) {
 		So(buckets3, ShouldResemble, []string{"project2/bucket1"})
 
 		ctx = auth.WithState(ctx, &authtest.FakeState{
-			Identity: identity.Identity("user:no_any_permission"),
+			Identity: identity.Identity("user:unknown@example.com"),
 		})
 		buckets4, err := BucketsByPerm(ctx, bbperms.BuildersList, "")
 		So(err, ShouldBeNil)
@@ -409,8 +232,8 @@ func TestCanUpdateBuild(t *testing.T) {
 	t.Parallel()
 
 	Convey("With mocked auth DB", t, func() {
-		member := identity.Identity("member@example.com")
-		notMember := identity.Identity("not-member@example.com")
+		member := identity.Identity("user:member@example.com")
+		notMember := identity.Identity("user:not-member@example.com")
 		s := &authtest.FakeState{
 			FakeDB: authtest.NewFakeDB(
 				authtest.MockMembership(member, UpdateBuildAllowedUsers),

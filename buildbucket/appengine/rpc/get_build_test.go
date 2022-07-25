@@ -25,6 +25,7 @@ import (
 	"go.chromium.org/luci/server/auth/authtest"
 
 	"go.chromium.org/luci/buildbucket/appengine/model"
+	"go.chromium.org/luci/buildbucket/bbperms"
 	pb "go.chromium.org/luci/buildbucket/proto"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -34,6 +35,8 @@ import (
 func TestGetBuild(t *testing.T) {
 	t.Parallel()
 
+	const userID = identity.Identity("user:user@example.com")
+
 	Convey("GetBuild", t, func() {
 		srv := &Builds{}
 		ctx := memory.Use(context.Background())
@@ -41,7 +44,7 @@ func TestGetBuild(t *testing.T) {
 		datastore.GetTestable(ctx).Consistent(true)
 
 		ctx = auth.WithState(ctx, &authtest.FakeState{
-			Identity: "user:caller@example.com",
+			Identity: userID,
 		})
 
 		Convey("id", func() {
@@ -54,37 +57,11 @@ func TestGetBuild(t *testing.T) {
 				So(rsp, ShouldBeNil)
 			})
 
-			Convey("permission denied", func() {
-				So(datastore.Put(ctx, &model.Build{
-					Proto: &pb.Build{
-						Id: 1,
-						Builder: &pb.BuilderID{
-							Project: "project",
-							Bucket:  "bucket",
-							Builder: "builder",
-						},
-					},
-				}), ShouldBeNil)
-				req := &pb.GetBuildRequest{
-					Id: 1,
-				}
-				rsp, err := srv.GetBuild(ctx, req)
-				So(err, ShouldErrLike, "not found")
-				So(rsp, ShouldBeNil)
-			})
-
-			Convey("found", func() {
+			Convey("with build entity", func() {
 				So(datastore.Put(ctx, &model.Bucket{
 					ID:     "bucket",
 					Parent: model.ProjectKey(ctx, "project"),
-					Proto: &pb.Bucket{
-						Acls: []*pb.Acl{
-							{
-								Identity: "user:caller@example.com",
-								Role:     pb.Acl_READER,
-							},
-						},
-					},
+					Proto:  &pb.Bucket{},
 				}), ShouldBeNil)
 				So(datastore.Put(ctx, &model.Build{
 					Proto: &pb.Build{
@@ -96,19 +73,37 @@ func TestGetBuild(t *testing.T) {
 						},
 					},
 				}), ShouldBeNil)
-				req := &pb.GetBuildRequest{
-					Id: 1,
-				}
-				rsp, err := srv.GetBuild(ctx, req)
-				So(err, ShouldBeNil)
-				So(rsp, ShouldResembleProto, &pb.Build{
-					Id: 1,
-					Builder: &pb.BuilderID{
-						Project: "project",
-						Bucket:  "bucket",
-						Builder: "builder",
-					},
-					Input: &pb.Build_Input{},
+
+				Convey("permission denied", func() {
+					req := &pb.GetBuildRequest{
+						Id: 1,
+					}
+					rsp, err := srv.GetBuild(ctx, req)
+					So(err, ShouldErrLike, "not found")
+					So(rsp, ShouldBeNil)
+				})
+
+				Convey("found", func() {
+					ctx = auth.WithState(ctx, &authtest.FakeState{
+						Identity: userID,
+						FakeDB: authtest.NewFakeDB(
+							authtest.MockPermission(userID, "project:bucket", bbperms.BuildsGet),
+						),
+					})
+					req := &pb.GetBuildRequest{
+						Id: 1,
+					}
+					rsp, err := srv.GetBuild(ctx, req)
+					So(err, ShouldBeNil)
+					So(rsp, ShouldResembleProto, &pb.Build{
+						Id: 1,
+						Builder: &pb.BuilderID{
+							Project: "project",
+							Bucket:  "bucket",
+							Builder: "builder",
+						},
+						Input: &pb.Build_Input{},
+					})
 				})
 			})
 		})
@@ -194,16 +189,16 @@ func TestGetBuild(t *testing.T) {
 			})
 
 			Convey("ok", func() {
+				ctx = auth.WithState(ctx, &authtest.FakeState{
+					Identity: userID,
+					FakeDB: authtest.NewFakeDB(
+						authtest.MockPermission(userID, "project:bucket", bbperms.BuildsGet),
+					),
+				})
 				So(datastore.Put(ctx, &model.Bucket{
 					ID:     "bucket",
 					Parent: model.ProjectKey(ctx, "project"),
-					Proto: &pb.Bucket{
-						Acls: []*pb.Acl{
-							{
-								Identity: "user:caller@example.com",
-							},
-						},
-					},
+					Proto:  &pb.Bucket{},
 				}), ShouldBeNil)
 				So(datastore.Put(ctx, &model.TagIndex{
 					ID: ":2:build_address:luci.project.bucket/builder/1",

@@ -25,6 +25,7 @@ import (
 	"google.golang.org/protobuf/types/known/fieldmaskpb"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
+	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/data/rand/mathrand"
 	"go.chromium.org/luci/gae/filter/txndefer"
@@ -37,6 +38,7 @@ import (
 
 	"go.chromium.org/luci/buildbucket/appengine/internal/config"
 	"go.chromium.org/luci/buildbucket/appengine/model"
+	"go.chromium.org/luci/buildbucket/bbperms"
 	pb "go.chromium.org/luci/buildbucket/proto"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -46,6 +48,8 @@ import (
 
 func TestBatch(t *testing.T) {
 	t.Parallel()
+
+	const userID = identity.Identity("user:caller@example.com")
 
 	Convey("Batch", t, func() {
 		ctl := gomock.NewController(t)
@@ -71,21 +75,22 @@ func TestBatch(t *testing.T) {
 		defer b.Shutdown(ctx)
 
 		ctx = auth.WithState(ctx, &authtest.FakeState{
-			Identity: "user:caller@example.com",
+			Identity: userID,
+			FakeDB: authtest.NewFakeDB(
+				authtest.MockPermission(userID, "project:bucket", bbperms.BuildersGet),
+				authtest.MockPermission(userID, "project:bucket", bbperms.BuildersList),
+				authtest.MockPermission(userID, "project:bucket", bbperms.BuildsAdd),
+				authtest.MockPermission(userID, "project:bucket", bbperms.BuildsCancel),
+				authtest.MockPermission(userID, "project:bucket", bbperms.BuildsGet),
+				authtest.MockPermission(userID, "project:bucket", bbperms.BuildsList),
+			),
 		})
 		So(datastore.Put(
 			ctx,
 			&model.Bucket{
 				ID:     "bucket",
 				Parent: model.ProjectKey(ctx, "project"),
-				Proto: &pb.Bucket{
-					Acls: []*pb.Acl{
-						{
-							Identity: "user:caller@example.com",
-							Role:     pb.Acl_WRITER,
-						},
-					},
-				},
+				Proto:  &pb.Bucket{},
 			},
 			&model.Build{
 				Proto: &pb.Build{

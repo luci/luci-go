@@ -36,12 +36,15 @@ import (
 
 	bb "go.chromium.org/luci/buildbucket"
 	"go.chromium.org/luci/buildbucket/appengine/model"
+	"go.chromium.org/luci/buildbucket/bbperms"
 	pb "go.chromium.org/luci/buildbucket/proto"
 
 	. "github.com/smartystreets/goconvey/convey"
 
 	. "go.chromium.org/luci/common/testing/assertions"
 )
+
+const userID = identity.Identity("user:user@example.com")
 
 func TestNewSearchQuery(t *testing.T) {
 	t.Parallel()
@@ -215,6 +218,20 @@ func TestMainFetchFlow(t *testing.T) {
 		datastore.GetTestable(ctx).AutoIndex(true)
 		datastore.GetTestable(ctx).Consistent(true)
 
+		So(datastore.Put(
+			ctx,
+			&model.Bucket{
+				Parent: model.ProjectKey(ctx, "project"),
+				ID:     "bucket",
+				Proto:  &pb.Bucket{},
+			},
+			&model.Builder{
+				Parent: model.BucketKey(ctx, "project", "bucket"),
+				ID:     "builder",
+				Config: &pb.BuilderConfig{Name: "builder"},
+			},
+		), ShouldBeNil)
+
 		query := NewQuery(&pb.SearchBuildsRequest{
 			Predicate: &pb.BuildPredicate{
 				Builder: &pb.BuilderID{
@@ -224,167 +241,106 @@ func TestMainFetchFlow(t *testing.T) {
 				},
 			},
 		})
+
 		Convey("No permission for requested bucketId", func() {
 			ctx = auth.WithState(ctx, &authtest.FakeState{
-				Identity: "user:user",
+				Identity: userID,
 			})
-			So(datastore.Put(
-				ctx,
-				&model.Bucket{
-					Parent: model.ProjectKey(ctx, "project"),
-					ID:     "bucket",
-				},
-				&model.Builder{
-					Parent: model.BucketKey(ctx, "project", "bucket"),
-					ID:     "builder",
-					Config: &pb.BuilderConfig{Name: "builder"},
-				},
-			), ShouldBeNil)
-
 			_, err := query.Fetch(ctx)
 			So(err, ShouldHaveAppStatus, codes.NotFound, "not found")
 		})
-		Convey("Fetch via TagIndex flow", func() {
+
+		Convey("With read permission", func() {
 			ctx = auth.WithState(ctx, &authtest.FakeState{
-				Identity: "user:user",
+				Identity: userID,
+				FakeDB: authtest.NewFakeDB(
+					authtest.MockPermission(userID, "project:bucket", bbperms.BuildersList),
+					authtest.MockPermission(userID, "project:bucket", bbperms.BuildsList),
+				),
 			})
-			So(datastore.Put(
-				ctx,
-				&model.Bucket{
-					Parent: model.ProjectKey(ctx, "project"),
-					ID:     "bucket",
-					Proto: &pb.Bucket{
-						Acls: []*pb.Acl{
-							{
-								Identity: "user:user",
-								Role:     pb.Acl_READER,
-							},
+
+			Convey("Fetch via TagIndex flow", func() {
+				query.Tags = strpair.ParseMap([]string{"buildset:1"})
+				actualRsp, err := query.Fetch(ctx)
+				So(err, ShouldBeNil)
+				So(actualRsp, ShouldResembleProto, &pb.SearchBuildsResponse{})
+			})
+
+			Convey("Fetch via Build flow", func() {
+				So(datastore.Put(ctx, &model.Build{
+					Proto: &pb.Build{
+						Id: 1,
+						Builder: &pb.BuilderID{
+							Project: "project",
+							Bucket:  "bucket",
+							Builder: "builder",
 						},
 					},
-				},
-				&model.Builder{
-					Parent: model.BucketKey(ctx, "project", "bucket"),
-					ID:     "builder",
-					Config: &pb.BuilderConfig{Name: "builder"},
-				},
-			), ShouldBeNil)
+					BucketID:    "project/bucket",
+					BuilderID:   "project/bucket/builder",
+					Experiments: experiments(false, false),
+				}), ShouldBeNil)
 
-			query.Tags = strpair.ParseMap([]string{"buildset:1"})
-			actualRsp, err := query.Fetch(ctx)
-			So(err, ShouldBeNil)
-			So(actualRsp, ShouldResembleProto, &pb.SearchBuildsResponse{})
-		})
-		Convey("Fetch via Build flow", func() {
-			ctx = auth.WithState(ctx, &authtest.FakeState{
-				Identity: identity.Identity("user:user"),
-			})
-			So(datastore.Put(ctx, &model.Bucket{
-				ID:     "bucket",
-				Parent: model.ProjectKey(ctx, "project"),
-				Proto: &pb.Bucket{
-					Acls: []*pb.Acl{
+				query := NewQuery(&pb.SearchBuildsRequest{})
+				rsp, err := query.Fetch(ctx)
+				So(err, ShouldBeNil)
+				expectedRsp := &pb.SearchBuildsResponse{
+					Builds: []*pb.Build{
 						{
-							Identity: "user:user",
-							Role:     pb.Acl_READER,
+							Id: 1,
+							Builder: &pb.BuilderID{
+								Project: "project",
+								Bucket:  "bucket",
+								Builder: "builder",
+							},
 						},
 					},
-				},
-			}), ShouldBeNil)
-			So(datastore.Put(ctx, &model.Build{
-				Proto: &pb.Build{
-					Id: 1,
-					Builder: &pb.BuilderID{
-						Project: "project",
-						Bucket:  "bucket",
-						Builder: "builder",
-					},
-				},
-				BucketID:    "project/bucket",
-				BuilderID:   "project/bucket/builder",
-				Experiments: experiments(false, false),
-			}), ShouldBeNil)
-
-			query := NewQuery(&pb.SearchBuildsRequest{})
-			rsp, err := query.Fetch(ctx)
-			So(err, ShouldBeNil)
-			expectedRsp := &pb.SearchBuildsResponse{
-				Builds: []*pb.Build{
-					{
-						Id: 1,
-						Builder: &pb.BuilderID{
-							Project: "project",
-							Bucket:  "bucket",
-							Builder: "builder",
-						},
-					},
-				},
-			}
-			So(rsp, ShouldResembleProto, expectedRsp)
-		})
-		Convey("Fallback to fetchOnBuild flow", func() {
-			ctx = auth.WithState(ctx, &authtest.FakeState{
-				Identity: "user:user",
+				}
+				So(rsp, ShouldResembleProto, expectedRsp)
 			})
-			So(datastore.Put(
-				ctx,
-				&model.Bucket{
-					Parent: model.ProjectKey(ctx, "project"),
-					ID:     "bucket",
-					Proto: &pb.Bucket{
-						Acls: []*pb.Acl{
-							{
-								Identity: "user:user",
-								Role:     pb.Acl_READER,
-							},
-						},
-					},
-				},
-				&model.Builder{
-					Parent: model.BucketKey(ctx, "project", "bucket"),
-					ID:     "builder",
-					Config: &pb.BuilderConfig{Name: "builder"},
-				},
-			), ShouldBeNil)
-			So(datastore.Put(ctx, &model.TagIndex{
-				ID:         ":10:buildset:1",
-				Incomplete: true,
-				Entries:    nil,
-			}), ShouldBeNil)
-			So(datastore.Put(ctx, &model.Build{
-				Proto: &pb.Build{
-					Id: 1,
-					Builder: &pb.BuilderID{
-						Project: "project",
-						Bucket:  "bucket",
-						Builder: "builder",
-					},
-				},
-				BucketID:    "project/bucket",
-				BuilderID:   "project/bucket/builder",
-				Tags:        []string{"buildset:1"},
-				Experiments: experiments(false, false),
-			}), ShouldBeNil)
 
-			query.Tags = strpair.ParseMap([]string{"buildset:1"})
-			actualRsp, err := query.Fetch(ctx)
-			So(err, ShouldBeNil)
-			So(actualRsp, ShouldResembleProto, &pb.SearchBuildsResponse{
-				Builds: []*pb.Build{
-					{
+			Convey("Fallback to fetchOnBuild flow", func() {
+				So(datastore.Put(ctx, &model.TagIndex{
+					ID:         ":10:buildset:1",
+					Incomplete: true,
+					Entries:    nil,
+				}), ShouldBeNil)
+				So(datastore.Put(ctx, &model.Build{
+					Proto: &pb.Build{
 						Id: 1,
 						Builder: &pb.BuilderID{
 							Project: "project",
 							Bucket:  "bucket",
 							Builder: "builder",
 						},
-						Tags: []*pb.StringPair{
-							{
-								Key:   "buildset",
-								Value: "1",
+					},
+					BucketID:    "project/bucket",
+					BuilderID:   "project/bucket/builder",
+					Tags:        []string{"buildset:1"},
+					Experiments: experiments(false, false),
+				}), ShouldBeNil)
+
+				query.Tags = strpair.ParseMap([]string{"buildset:1"})
+				actualRsp, err := query.Fetch(ctx)
+				So(err, ShouldBeNil)
+				So(actualRsp, ShouldResembleProto, &pb.SearchBuildsResponse{
+					Builds: []*pb.Build{
+						{
+							Id: 1,
+							Builder: &pb.BuilderID{
+								Project: "project",
+								Bucket:  "bucket",
+								Builder: "builder",
+							},
+							Tags: []*pb.StringPair{
+								{
+									Key:   "buildset",
+									Value: "1",
+								},
 							},
 						},
 					},
-				},
+				})
 			})
 		})
 	})
@@ -396,7 +352,11 @@ func TestFetchOnBuild(t *testing.T) {
 	Convey("FetchOnBuild", t, func() {
 		ctx := memory.Use(context.Background())
 		ctx = auth.WithState(ctx, &authtest.FakeState{
-			Identity: identity.Identity("user:user"),
+			Identity: userID,
+			FakeDB: authtest.NewFakeDB(
+				authtest.MockPermission(userID, "project:bucket", bbperms.BuildersList),
+				authtest.MockPermission(userID, "project:bucket", bbperms.BuildsList),
+			),
 		})
 		datastore.GetTestable(ctx).AutoIndex(true)
 		datastore.GetTestable(ctx).Consistent(true)
@@ -404,14 +364,7 @@ func TestFetchOnBuild(t *testing.T) {
 		So(datastore.Put(ctx, &model.Bucket{
 			ID:     "bucket",
 			Parent: model.ProjectKey(ctx, "project"),
-			Proto: &pb.Bucket{
-				Acls: []*pb.Acl{
-					{
-						Identity: "user:user",
-						Role:     pb.Acl_READER,
-					},
-				},
-			},
+			Proto:  &pb.Bucket{},
 		}), ShouldBeNil)
 		So(datastore.Put(ctx, &model.Build{
 			ID: 100,
@@ -1219,7 +1172,11 @@ func TestFetchOnTagIndex(t *testing.T) {
 	Convey("FetchOnTagIndex", t, func() {
 		ctx := memory.Use(context.Background())
 		ctx = auth.WithState(ctx, &authtest.FakeState{
-			Identity: "user:user",
+			Identity: userID,
+			FakeDB: authtest.NewFakeDB(
+				authtest.MockPermission(userID, "project:bucket", bbperms.BuildersList),
+				authtest.MockPermission(userID, "project:bucket", bbperms.BuildsList),
+			),
 		})
 		datastore.GetTestable(ctx).AutoIndex(true)
 		datastore.GetTestable(ctx).Consistent(true)
@@ -1227,14 +1184,7 @@ func TestFetchOnTagIndex(t *testing.T) {
 		So(datastore.Put(ctx, &model.Bucket{
 			ID:     "bucket",
 			Parent: model.ProjectKey(ctx, "project"),
-			Proto: &pb.Bucket{
-				Acls: []*pb.Acl{
-					{
-						Identity: "user:user",
-						Role:     pb.Acl_READER,
-					},
-				},
-			},
+			Proto:  &pb.Bucket{},
 		}), ShouldBeNil)
 		So(datastore.Put(ctx, &model.Build{
 			ID: 100,

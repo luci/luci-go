@@ -28,6 +28,7 @@ import (
 	"google.golang.org/protobuf/types/known/structpb"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
+	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/data/rand/mathrand"
 	"go.chromium.org/luci/common/data/stringset"
@@ -46,6 +47,7 @@ import (
 	"go.chromium.org/luci/buildbucket/appengine/internal/config"
 	"go.chromium.org/luci/buildbucket/appengine/internal/metrics"
 	"go.chromium.org/luci/buildbucket/appengine/model"
+	"go.chromium.org/luci/buildbucket/bbperms"
 	pb "go.chromium.org/luci/buildbucket/proto"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -60,6 +62,9 @@ func fv(vs ...interface{}) []interface{} {
 
 func TestScheduleBuild(t *testing.T) {
 	t.Parallel()
+
+	// Note: request deduplication IDs depend on a hash of this value.
+	const userID = identity.Identity("user:caller@example.com")
 
 	Convey("builderMatches", t, func() {
 		Convey("nil", func() {
@@ -1515,20 +1520,16 @@ func TestScheduleBuild(t *testing.T) {
 		datastore.GetTestable(ctx).AutoIndex(true)
 		datastore.GetTestable(ctx).Consistent(true)
 		ctx = auth.WithState(ctx, &authtest.FakeState{
-			Identity: "user:caller@example.com",
+			Identity: userID,
+			FakeDB: authtest.NewFakeDB(
+				authtest.MockPermission(userID, "project:bucket", bbperms.BuildsGet),
+			),
 		})
 
 		So(datastore.Put(ctx, &model.Bucket{
 			ID:     "bucket",
 			Parent: model.ProjectKey(ctx, "project"),
-			Proto: &pb.Bucket{
-				Acls: []*pb.Acl{
-					{
-						Identity: "user:caller@example.com",
-						Role:     pb.Acl_READER,
-					},
-				},
-			},
+			Proto:  &pb.Bucket{},
 		}), ShouldBeNil)
 
 		Convey("nil", func() {
@@ -4675,7 +4676,7 @@ func TestScheduleBuild(t *testing.T) {
 		datastore.GetTestable(ctx).AutoIndex(true)
 		datastore.GetTestable(ctx).Consistent(true)
 		ctx = auth.WithState(ctx, &authtest.FakeState{
-			Identity: "user:caller@example.com",
+			Identity: userID,
 		})
 
 		So(config.SetTestSettingsCfg(ctx, &pb.SettingsCfg{
@@ -4734,16 +4735,17 @@ func TestScheduleBuild(t *testing.T) {
 			})
 
 			Convey("dynamic", func() {
+				ctx = auth.WithState(ctx, &authtest.FakeState{
+					Identity: userID,
+					FakeDB: authtest.NewFakeDB(
+						authtest.MockPermission(userID, "project:bucket", bbperms.BuildsAdd),
+					),
+				})
+
 				So(datastore.Put(ctx, &model.Bucket{
 					ID:     "bucket",
 					Parent: model.ProjectKey(ctx, "project"),
 					Proto: &pb.Bucket{
-						Acls: []*pb.Acl{
-							{
-								Identity: "user:caller@example.com",
-								Role:     pb.Acl_SCHEDULER,
-							},
-						},
 						Name: "bucket",
 					},
 				}), ShouldBeNil)
@@ -4763,7 +4765,7 @@ func TestScheduleBuild(t *testing.T) {
 						Bucket:  "bucket",
 						Builder: "builder",
 					},
-					CreatedBy:  "user:caller@example.com",
+					CreatedBy:  string(userID),
 					CreateTime: timestamppb.New(testclock.TestRecentTimeUTC),
 					UpdateTime: timestamppb.New(testclock.TestRecentTimeUTC),
 					Id:         9021868963221667745,
@@ -4774,16 +4776,17 @@ func TestScheduleBuild(t *testing.T) {
 			})
 
 			Convey("static", func() {
+				ctx = auth.WithState(ctx, &authtest.FakeState{
+					Identity: userID,
+					FakeDB: authtest.NewFakeDB(
+						authtest.MockPermission(userID, "project:bucket", bbperms.BuildsAdd),
+					),
+				})
+
 				So(datastore.Put(ctx, &model.Bucket{
 					ID:     "bucket",
 					Parent: model.ProjectKey(ctx, "project"),
 					Proto: &pb.Bucket{
-						Acls: []*pb.Acl{
-							{
-								Identity: "user:caller@example.com",
-								Role:     pb.Acl_SCHEDULER,
-							},
-						},
 						Name:     "bucket",
 						Swarming: &pb.Swarming{},
 					},
@@ -4847,7 +4850,7 @@ func TestScheduleBuild(t *testing.T) {
 							Bucket:  "bucket",
 							Builder: "builder",
 						},
-						CreatedBy:  "user:caller@example.com",
+						CreatedBy:  string(userID),
 						CreateTime: timestamppb.New(testclock.TestRecentTimeUTC),
 						UpdateTime: timestamppb.New(testclock.TestRecentTimeUTC),
 						Id:         9021868963221667745,
@@ -4990,7 +4993,7 @@ func TestScheduleBuild(t *testing.T) {
 								Bucket:  "bucket",
 								Builder: "builder",
 							},
-							CreatedBy:  "user:caller@example.com",
+							CreatedBy:  string(userID),
 							CreateTime: timestamppb.New(testclock.TestRecentTimeUTC),
 							UpdateTime: timestamppb.New(testclock.TestRecentTimeUTC),
 							Id:         9021868963221667745,
@@ -5006,7 +5009,7 @@ func TestScheduleBuild(t *testing.T) {
 						So(r, ShouldResemble, &model.RequestID{
 							ID:         "6d03f5c780125e74ac6cb0f25c5e0b6467ff96c96d98bfb41ba382863ba7707a",
 							BuildID:    9021868963221667745,
-							CreatedBy:  "user:caller@example.com",
+							CreatedBy:  userID,
 							CreateTime: datastore.RoundTime(testclock.TestRecentTimeUTC),
 							RequestID:  "id",
 						})
@@ -5048,16 +5051,17 @@ func TestScheduleBuild(t *testing.T) {
 			})
 
 			Convey("ok", func() {
+				ctx = auth.WithState(ctx, &authtest.FakeState{
+					Identity: userID,
+					FakeDB: authtest.NewFakeDB(
+						authtest.MockPermission(userID, "project:bucket", bbperms.BuildsGet),
+						authtest.MockPermission(userID, "project:bucket", bbperms.BuildsAdd),
+					),
+				})
 				So(datastore.Put(ctx, &model.Bucket{
 					ID:     "bucket",
 					Parent: model.ProjectKey(ctx, "project"),
 					Proto: &pb.Bucket{
-						Acls: []*pb.Acl{
-							{
-								Identity: "user:caller@example.com",
-								Role:     pb.Acl_SCHEDULER,
-							},
-						},
 						Name:     "bucket",
 						Swarming: &pb.Swarming{},
 					},
@@ -5102,7 +5106,7 @@ func TestScheduleBuild(t *testing.T) {
 							Bucket:  "bucket",
 							Builder: "builder",
 						},
-						CreatedBy:  "user:caller@example.com",
+						CreatedBy:  string(userID),
 						CreateTime: timestamppb.New(testclock.TestRecentTimeUTC),
 						UpdateTime: timestamppb.New(testclock.TestRecentTimeUTC),
 						Id:         9021868963221667745,
@@ -5126,7 +5130,11 @@ func TestScheduleBuild(t *testing.T) {
 		datastore.GetTestable(ctx).AutoIndex(true)
 		datastore.GetTestable(ctx).Consistent(true)
 		ctx = auth.WithState(ctx, &authtest.FakeState{
-			Identity: "user:caller@example.com",
+			Identity: userID,
+			FakeDB: authtest.NewFakeDB(
+				authtest.MockPermission(userID, "project:bucket", bbperms.BuildsGet),
+				authtest.MockPermission(userID, "project:bucket", bbperms.BuildsAdd),
+			),
 		})
 		globalCfg := &pb.SettingsCfg{
 			Resultdb: &pb.ResultDBSettings{
@@ -5148,12 +5156,6 @@ func TestScheduleBuild(t *testing.T) {
 			ID:     "bucket",
 			Parent: model.ProjectKey(ctx, "project"),
 			Proto: &pb.Bucket{
-				Acls: []*pb.Acl{
-					{
-						Identity: "user:caller@example.com",
-						Role:     pb.Acl_SCHEDULER,
-					},
-				},
 				Name:     "bucket",
 				Swarming: &pb.Swarming{},
 			},
@@ -5200,7 +5202,7 @@ func TestScheduleBuild(t *testing.T) {
 					Bucket:  "bucket",
 					Builder: "builder",
 				},
-				CreatedBy:  "user:caller@example.com",
+				CreatedBy:  string(userID),
 				CreateTime: timestamppb.New(testclock.TestRecentTimeUTC),
 				UpdateTime: timestamppb.New(testclock.TestRecentTimeUTC),
 				Id:         9021868963221667745,
@@ -5264,7 +5266,7 @@ func TestScheduleBuild(t *testing.T) {
 						Id:         9021868963222163313,
 						Builder:    &pb.BuilderID{Project: "project", Bucket: "bucket", Builder: "builder"},
 						Number:     1,
-						CreatedBy:  "user:caller@example.com",
+						CreatedBy:  string(userID),
 						Status:     pb.Status_SCHEDULED,
 						CreateTime: timestamppb.New(testclock.TestRecentTimeUTC),
 						UpdateTime: timestamppb.New(testclock.TestRecentTimeUTC),
@@ -5275,7 +5277,7 @@ func TestScheduleBuild(t *testing.T) {
 						Id:         9021868963222163297,
 						Builder:    &pb.BuilderID{Project: "project", Bucket: "bucket", Builder: "builder"},
 						Number:     2,
-						CreatedBy:  "user:caller@example.com",
+						CreatedBy:  string(userID),
 						Status:     pb.Status_SCHEDULED,
 						CreateTime: timestamppb.New(testclock.TestRecentTimeUTC),
 						UpdateTime: timestamppb.New(testclock.TestRecentTimeUTC),
@@ -5315,7 +5317,7 @@ func TestScheduleBuild(t *testing.T) {
 						Bucket:  "bucket",
 						Builder: "builder",
 					},
-					CreatedBy:  "user:caller@example.com",
+					CreatedBy:  string(userID),
 					UpdateTime: timestamppb.New(testclock.TestRecentTimeUTC),
 					CreateTime: timestamppb.New(testclock.TestRecentTimeUTC),
 					Id:         9021868963222163313,
@@ -5329,7 +5331,7 @@ func TestScheduleBuild(t *testing.T) {
 						Bucket:  "bucket",
 						Builder: "builder",
 					},
-					CreatedBy:  "user:caller@example.com",
+					CreatedBy:  string(userID),
 					UpdateTime: timestamppb.New(testclock.TestRecentTimeUTC),
 					CreateTime: timestamppb.New(testclock.TestRecentTimeUTC),
 					Id:         9021868963222163297,
@@ -5686,14 +5688,7 @@ func TestScheduleBuild(t *testing.T) {
 					So(datastore.Put(ctx, &model.Bucket{
 						ID:     "bucket",
 						Parent: model.ProjectKey(ctx, "project"),
-						Proto: &pb.Bucket{
-							Acls: []*pb.Acl{
-								{
-									Identity: "user:caller@example.com",
-									Role:     pb.Acl_READER,
-								},
-							},
-						},
+						Proto:  &pb.Bucket{},
 					}), ShouldBeNil)
 					So(datastore.Put(ctx, &model.Build{
 						Proto: &pb.Build{
@@ -5717,14 +5712,7 @@ func TestScheduleBuild(t *testing.T) {
 					So(datastore.Put(ctx, &model.Bucket{
 						ID:     "bucket",
 						Parent: model.ProjectKey(ctx, "project"),
-						Proto: &pb.Bucket{
-							Acls: []*pb.Acl{
-								{
-									Identity: "user:caller@example.com",
-									Role:     pb.Acl_READER,
-								},
-							},
-						},
+						Proto:  &pb.Bucket{},
 					}), ShouldBeNil)
 					So(datastore.Put(ctx, &model.Build{
 						Proto: &pb.Build{

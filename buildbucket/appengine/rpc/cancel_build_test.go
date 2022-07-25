@@ -21,6 +21,7 @@ import (
 	"google.golang.org/protobuf/types/known/fieldmaskpb"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
+	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/gae/filter/txndefer"
 	"go.chromium.org/luci/gae/impl/memory"
@@ -30,6 +31,7 @@ import (
 	"go.chromium.org/luci/server/tq"
 
 	"go.chromium.org/luci/buildbucket/appengine/model"
+	"go.chromium.org/luci/buildbucket/bbperms"
 	pb "go.chromium.org/luci/buildbucket/proto"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -38,6 +40,8 @@ import (
 
 func TestCancelBuild(t *testing.T) {
 	t.Parallel()
+
+	const userID = identity.Identity("user:user@example.com")
 
 	Convey("validateCancel", t, func() {
 		Convey("request", func() {
@@ -83,19 +87,16 @@ func TestCancelBuild(t *testing.T) {
 
 			Convey("permission denied", func() {
 				ctx = auth.WithState(ctx, &authtest.FakeState{
-					Identity: "user:user",
+					Identity: userID,
+					FakeDB: authtest.NewFakeDB(
+						// Read only permission: not enough to cancel.
+						authtest.MockPermission(userID, "project:bucket", bbperms.BuildsGet),
+					),
 				})
 				So(datastore.Put(ctx, &model.Bucket{
 					ID:     "bucket",
 					Parent: model.ProjectKey(ctx, "project"),
-					Proto: &pb.Bucket{
-						Acls: []*pb.Acl{
-							{
-								Identity: "user:user",
-								Role:     pb.Acl_READER,
-							},
-						},
-					},
+					Proto:  &pb.Bucket{},
 				}), ShouldBeNil)
 				So(datastore.Put(ctx, &model.Build{
 					Proto: &pb.Build{
@@ -119,21 +120,18 @@ func TestCancelBuild(t *testing.T) {
 
 			Convey("found", func() {
 				ctx = auth.WithState(ctx, &authtest.FakeState{
-					Identity: "user:user",
+					Identity: userID,
+					FakeDB: authtest.NewFakeDB(
+						authtest.MockPermission(userID, "project:bucket", bbperms.BuildsGet),
+						authtest.MockPermission(userID, "project:bucket", bbperms.BuildsCancel),
+					),
 				})
 				now := testclock.TestRecentTimeLocal
 				ctx, _ = testclock.UseTime(ctx, now)
 				So(datastore.Put(ctx, &model.Bucket{
 					ID:     "bucket",
 					Parent: model.ProjectKey(ctx, "project"),
-					Proto: &pb.Bucket{
-						Acls: []*pb.Acl{
-							{
-								Identity: "user:user",
-								Role:     pb.Acl_SCHEDULER,
-							},
-						},
-					},
+					Proto:  &pb.Bucket{},
 				}), ShouldBeNil)
 				So(datastore.Put(ctx, &model.Build{
 					Proto: &pb.Build{
