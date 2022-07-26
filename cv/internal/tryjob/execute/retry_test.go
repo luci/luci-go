@@ -16,18 +16,25 @@ package execute
 
 import (
 	"context"
+	"math"
 	"testing"
+
+	"google.golang.org/protobuf/types/known/timestamppb"
+
+	"go.chromium.org/luci/common/clock"
+	"go.chromium.org/luci/common/clock/testclock"
 
 	cfgpb "go.chromium.org/luci/cv/api/config/v2"
 	"go.chromium.org/luci/cv/api/recipe/v1"
 	"go.chromium.org/luci/cv/internal/tryjob"
 
 	. "github.com/smartystreets/goconvey/convey"
+	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestCanRetryAll(t *testing.T) {
 	Convey("CanRetryAll", t, func() {
-		ctx := context.Background()
+		ctx, _ := testclock.UseTime(context.Background(), testclock.TestRecentTimeUTC)
 		const builderZero = "builder-zero"
 		const builderOne = "builder-one"
 		execState := newExecStateBuilder().
@@ -41,15 +48,36 @@ func TestCanRetryAll(t *testing.T) {
 				TimeoutWeight:          2,
 			}).
 			build()
+		executor := &Executor{}
 
 		Convey("With no retry config", func() {
 			execState = newExecStateBuilder(execState).
 				withRetryConfig(nil).
 				appendAttempt(builderZero, makeAttempt(1, tryjob.Status_ENDED, tryjob.Result_FAILED_TRANSIENTLY)).
 				build()
-			ok, reason := canRetryAll(ctx, execState, []int{0})
+			ok := executor.canRetryAll(ctx, execState, []int{0})
 			So(ok, ShouldBeFalse)
-			So(reason, ShouldEqual, "retry is not enabled for this Config Group")
+			So(executor.logEntries, ShouldResembleProto, []*tryjob.ExecutionLogEntry{
+				{
+					Time: timestamppb.New(clock.Now(ctx).UTC()),
+					Kind: &tryjob.ExecutionLogEntry_RetryDenied_{
+						RetryDenied: &tryjob.ExecutionLogEntry_RetryDenied{
+							Tryjobs: []*tryjob.ExecutionLogEntry_TryjobSnapshot{
+								{
+									Definition: makeDefinition(builderZero, true),
+									Id:         1,
+									ExternalId: string(tryjob.MustBuildbucketID("buildbucket.example.com", math.MaxInt64-1)),
+									Status:     tryjob.Status_ENDED,
+									Result: &tryjob.Result{
+										Status: tryjob.Result_FAILED_TRANSIENTLY,
+									},
+								},
+							},
+							Reason: "retry is not enabled in the config",
+						},
+					},
+				},
+			})
 		})
 		Convey("With retry config", func() {
 			Convey("quota", func() {
@@ -57,48 +85,120 @@ func TestCanRetryAll(t *testing.T) {
 					execState = newExecStateBuilder(execState).
 						appendAttempt(builderZero, makeAttempt(345, tryjob.Status_ENDED, tryjob.Result_FAILED_TRANSIENTLY)).
 						build()
-					ok, reason := canRetryAll(ctx, execState, []int{0})
+					ok := executor.canRetryAll(ctx, execState, []int{0})
 					So(ok, ShouldBeTrue)
-					So(reason, ShouldBeEmpty)
+					So(executor.logEntries, ShouldBeEmpty)
 				})
 				Convey("for single execution exceeded", func() {
 					execState = newExecStateBuilder(execState).
 						appendAttempt(builderZero, makeAttempt(345, tryjob.Status_ENDED, tryjob.Result_FAILED_PERMANENTLY)).
 						build()
-					ok, reason := canRetryAll(ctx, execState, []int{0})
+					ok := executor.canRetryAll(ctx, execState, []int{0})
 					So(ok, ShouldBeFalse)
-					So(reason, ShouldContainSubstring, "cannot be retried due to insufficient quota")
 					So(execState.GetExecutions()[0].GetUsedQuota(), ShouldEqual, 3)
+					So(executor.logEntries, ShouldResembleProto, []*tryjob.ExecutionLogEntry{
+						{
+							Time: timestamppb.New(clock.Now(ctx).UTC()),
+							Kind: &tryjob.ExecutionLogEntry_RetryDenied_{
+								RetryDenied: &tryjob.ExecutionLogEntry_RetryDenied{
+									Tryjobs: []*tryjob.ExecutionLogEntry_TryjobSnapshot{
+										{
+											Definition: makeDefinition(builderZero, true),
+											Id:         345,
+											ExternalId: string(tryjob.MustBuildbucketID("buildbucket.example.com", math.MaxInt64-345)),
+											Status:     tryjob.Status_ENDED,
+											Result: &tryjob.Result{
+												Status: tryjob.Result_FAILED_PERMANENTLY,
+											},
+										},
+									},
+									Reason: "insufficient quota",
+								},
+							},
+						},
+					})
 				})
 				Convey("for whole run exceeded", func() {
 					execState = newExecStateBuilder(execState).
 						appendAttempt(builderZero, makeAttempt(345, tryjob.Status_ENDED, tryjob.Result_TIMEOUT)).
 						appendAttempt(builderOne, makeAttempt(567, tryjob.Status_ENDED, tryjob.Result_TIMEOUT)).
 						build()
-					ok, reason := canRetryAll(ctx, execState, []int{0, 1})
+					ok := executor.canRetryAll(ctx, execState, []int{0, 1})
 					So(ok, ShouldBeFalse)
-					So(reason, ShouldEqual, "tryjobs cannot be retried due to insufficient global quota")
 					So(execState.GetExecutions()[0].GetUsedQuota(), ShouldEqual, 2)
 					So(execState.GetExecutions()[1].GetUsedQuota(), ShouldEqual, 2)
+					So(executor.logEntries, ShouldResembleProto, []*tryjob.ExecutionLogEntry{
+						{
+							Time: timestamppb.New(clock.Now(ctx).UTC()),
+							Kind: &tryjob.ExecutionLogEntry_RetryDenied_{
+								RetryDenied: &tryjob.ExecutionLogEntry_RetryDenied{
+									Tryjobs: []*tryjob.ExecutionLogEntry_TryjobSnapshot{
+										{
+											Definition: makeDefinition(builderZero, true),
+											Id:         345,
+											ExternalId: string(tryjob.MustBuildbucketID("buildbucket.example.com", math.MaxInt64-345)),
+											Status:     tryjob.Status_ENDED,
+											Result: &tryjob.Result{
+												Status: tryjob.Result_TIMEOUT,
+											},
+										},
+										{
+											Definition: makeDefinition(builderOne, true),
+											Id:         567,
+											ExternalId: string(tryjob.MustBuildbucketID("buildbucket.example.com", math.MaxInt64-567)),
+											Status:     tryjob.Status_ENDED,
+											Result: &tryjob.Result{
+												Status: tryjob.Result_TIMEOUT,
+											},
+										},
+									},
+									Reason: "insufficient global quota",
+								},
+							},
+						},
+					})
 				})
 				Convey("reused run does not cause exceeding", func() {
 					execState = newExecStateBuilder(execState).
 						appendAttempt(builderZero, makeAttempt(345, tryjob.Status_ENDED, tryjob.Result_FAILED_PERMANENTLY)).
 						build()
 					execState.GetExecutions()[0].Attempts[0].Reused = true
-					ok, reason := canRetryAll(ctx, execState, []int{0})
+					ok := executor.canRetryAll(ctx, execState, []int{0})
 					So(ok, ShouldBeTrue)
-					So(reason, ShouldBeEmpty)
 					So(execState.GetExecutions()[0].GetUsedQuota(), ShouldEqual, 0)
+					So(executor.logEntries, ShouldBeEmpty)
 				})
 				Convey("with retry-denied property output", func() {
 					execState = newExecStateBuilder(execState).
 						appendAttempt(builderZero, makeAttempt(345, tryjob.Status_ENDED, tryjob.Result_FAILED_TRANSIENTLY)).
 						build()
 					execState.GetExecutions()[0].Attempts[0].Result.Output = &recipe.Output{Retry: recipe.Output_OUTPUT_RETRY_DENIED}
-					ok, reason := canRetryAll(ctx, execState, []int{0})
+					ok := executor.canRetryAll(ctx, execState, []int{0})
 					So(ok, ShouldBeFalse)
-					So(reason, ShouldContainSubstring, "denies retry")
+					So(executor.logEntries, ShouldResembleProto, []*tryjob.ExecutionLogEntry{
+						{
+							Time: timestamppb.New(clock.Now(ctx).UTC()),
+							Kind: &tryjob.ExecutionLogEntry_RetryDenied_{
+								RetryDenied: &tryjob.ExecutionLogEntry_RetryDenied{
+									Tryjobs: []*tryjob.ExecutionLogEntry_TryjobSnapshot{
+										{
+											Definition: makeDefinition(builderZero, true),
+											Id:         345,
+											ExternalId: string(tryjob.MustBuildbucketID("buildbucket.example.com", math.MaxInt64-345)),
+											Status:     tryjob.Status_ENDED,
+											Result: &tryjob.Result{
+												Status: tryjob.Result_FAILED_TRANSIENTLY,
+												Output: &recipe.Output{
+													Retry: recipe.Output_OUTPUT_RETRY_DENIED,
+												},
+											},
+										},
+									},
+									Reason: "tryjob explicitly denies retry in its output",
+								},
+							},
+						},
+					})
 				})
 			})
 		})

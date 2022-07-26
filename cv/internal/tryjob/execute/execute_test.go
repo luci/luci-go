@@ -149,6 +149,18 @@ func TestPrepExecutionPlan(t *testing.T) {
 							makeAttempt(tjID, tryjob.Status_ENDED, tryjob.Result_FAILED_TRANSIENTLY),
 						})
 						So(execState.Status, ShouldEqual, tryjob.ExecutionState_RUNNING)
+						So(executor.logEntries, ShouldResembleProto, []*tryjob.ExecutionLogEntry{
+							{
+								Time: timestamppb.New(ct.Clock.Now().UTC()),
+								Kind: &tryjob.ExecutionLogEntry_TryjobsEnded_{
+									TryjobsEnded: &tryjob.ExecutionLogEntry_TryjobsEnded{
+										Tryjobs: []*tryjob.ExecutionLogEntry_TryjobSnapshot{
+											makeLogTryjobSnapshot(def, tj),
+										},
+									},
+								},
+							},
+						})
 					})
 					Convey("Critical and can NOT retry", func() {
 						// Quota doesn't allow retrying permanent failure
@@ -160,6 +172,29 @@ func TestPrepExecutionPlan(t *testing.T) {
 						})
 						So(execState.Status, ShouldEqual, tryjob.ExecutionState_FAILED)
 						So(execState.FailureReason, ShouldContainSubstring, "Failed Tryjobs")
+						So(executor.logEntries, ShouldResembleProto, []*tryjob.ExecutionLogEntry{
+							{
+								Time: timestamppb.New(ct.Clock.Now().UTC()),
+								Kind: &tryjob.ExecutionLogEntry_TryjobsEnded_{
+									TryjobsEnded: &tryjob.ExecutionLogEntry_TryjobsEnded{
+										Tryjobs: []*tryjob.ExecutionLogEntry_TryjobSnapshot{
+											makeLogTryjobSnapshot(def, tj),
+										},
+									},
+								},
+							},
+							{
+								Time: timestamppb.New(ct.Clock.Now().UTC()),
+								Kind: &tryjob.ExecutionLogEntry_RetryDenied_{
+									RetryDenied: &tryjob.ExecutionLogEntry_RetryDenied{
+										Tryjobs: []*tryjob.ExecutionLogEntry_TryjobSnapshot{
+											makeLogTryjobSnapshot(def, tj),
+										},
+										Reason: "insufficient quota",
+									},
+								},
+							},
+						})
 					})
 					Convey("Tryjob is not critical", func() {
 						tj = ensureTryjob(ctx, tjID, tryjob.Status_ENDED, tryjob.Result_FAILED_PERMANENTLY)
@@ -172,18 +207,18 @@ func TestPrepExecutionPlan(t *testing.T) {
 						// Still consider execution as succeeded even though non-critical
 						// tryjob has failed.
 						So(execState.Status, ShouldEqual, tryjob.ExecutionState_SUCCEEDED)
-					})
-					So(executor.logEntries, ShouldResembleProto, []*tryjob.ExecutionLogEntry{
-						{
-							Time: timestamppb.New(ct.Clock.Now().UTC()),
-							Kind: &tryjob.ExecutionLogEntry_TryjobsEnded_{
-								TryjobsEnded: &tryjob.ExecutionLogEntry_TryjobsEnded{
-									Tryjobs: []*tryjob.ExecutionLogEntry_TryjobSnapshot{
-										makeLogTryjobSnapshot(def, tj),
+						So(executor.logEntries, ShouldResembleProto, []*tryjob.ExecutionLogEntry{
+							{
+								Time: timestamppb.New(ct.Clock.Now().UTC()),
+								Kind: &tryjob.ExecutionLogEntry_TryjobsEnded_{
+									TryjobsEnded: &tryjob.ExecutionLogEntry_TryjobsEnded{
+										Tryjobs: []*tryjob.ExecutionLogEntry_TryjobSnapshot{
+											makeLogTryjobSnapshot(def, tj),
+										},
 									},
 								},
 							},
-						},
+						})
 					})
 				})
 

@@ -239,8 +239,7 @@ func (e *Executor) handleUpdatedTryjobs(ctx context.Context, tryjobs []int64, ex
 		execState.Status = tryjob.ExecutionState_SUCCEEDED
 		return execState, nil, nil
 	case hasFailed:
-		if ok, _ := canRetryAll(ctx, execState, failedIndices); !ok {
-			// TODO(yiwzhang): log why execution can't be retried
+		if ok := e.canRetryAll(ctx, execState, failedIndices); !ok {
 			execState.Status = tryjob.ExecutionState_FAILED
 			execState.FailureReason = composeReason(failedTryjobs)
 			return execState, nil, nil

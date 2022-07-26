@@ -275,6 +275,7 @@ message ExecutionLogEntry {
     TryjobsReused tryjobs_reused = 5;
     TryjobsEnded tryjobs_ended = 8;
     TryjobDiscarded tryjob_discarded = 7;
+    RetryDenied retry_denied = 9;
   }
 
   message RequirementChanged {
@@ -316,6 +317,11 @@ message ExecutionLogEntry {
 
   message TryjobDiscarded{
     TryjobSnapshot snapshot = 1;
+    string reason = 2;
+  }
+
+  message RetryDenied {
+    repeated TryjobSnapshot tryjobs =1;
     string reason = 2;
   }
 }

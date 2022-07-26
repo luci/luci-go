@@ -17,7 +17,6 @@ package execute
 import (
 	"context"
 	"fmt"
-	"strings"
 
 	"go.chromium.org/luci/common/logging"
 
@@ -66,26 +65,26 @@ func ensureTryjobCriticalAndFailed(def *tryjob.Definition, attempt *tryjob.Execu
 
 // canRetryAll checks whether all failed critical tryjobs can be retried.
 //
-// Returns true with empty string or false with the reason explaining why
-// tryjobs can't be retried. Panics when any provided index points to a tryjob
-// that is not critical or its latest attempt doesn't fail.
+// Panics when any provided index points to a tryjob that is not critical or
+// its latest attempt doesn't fail.
 //
 // Always updates the consumed quota for failed executions.
-func canRetryAll(
+func (e *Executor) canRetryAll(
 	ctx context.Context,
 	execState *tryjob.ExecutionState,
 	failedIndices []int,
-) (bool, string) {
+) bool {
 	if execState.GetRequirement().GetRetryConfig() == nil {
-		return false, "retry is not enabled for this Config Group"
+		e.logRetryDenied(ctx, execState, failedIndices, "retry is not enabled in the config")
+		return false
 	}
 
 	var totalUsedQuota int32
+	canRetryAll := true
 	for _, execution := range execState.GetExecutions() {
 		totalUsedQuota += execution.GetUsedQuota()
 	}
 	retryConfig := execState.GetRequirement().GetRetryConfig()
-	var reasons []string
 	for _, idx := range failedIndices {
 		definition := execState.GetRequirement().GetDefinitions()[idx]
 		exec := execState.GetExecutions()[idx]
@@ -93,7 +92,8 @@ func canRetryAll(
 		ensureTryjobCriticalAndFailed(definition, attempt)
 		switch canRetry(definition, attempt) {
 		case retryDenied:
-			reasons = append(reasons, fmt.Sprintf("tryjob %s denies retry", attempt.GetExternalId()))
+			canRetryAll = false
+			e.logRetryDenied(ctx, execState, []int{idx}, "tryjob explicitly denies retry in its output")
 		case retryAllowedIgnoreQuota:
 		case retryAllowed:
 			var quotaToRetry int32
@@ -111,22 +111,17 @@ func canRetryAll(
 			exec.UsedQuota += quotaToRetry
 			totalUsedQuota += quotaToRetry
 			if exec.UsedQuota > retryConfig.GetSingleQuota() {
-				reasons = append(reasons, fmt.Sprintf("tryjob %s cannot be retried due to insufficient quota", attempt.GetExternalId()))
+				canRetryAll = false
+				e.logRetryDenied(ctx, execState, []int{idx}, "insufficient quota")
 			}
 		default:
 			panic(fmt.Errorf("unknown retriability"))
 		}
 	}
 
-	if totalUsedQuota > retryConfig.GetGlobalQuota() {
-		reasons = append(reasons, "tryjobs cannot be retried due to insufficient global quota")
+	if canRetryAll && totalUsedQuota > retryConfig.GetGlobalQuota() {
+		canRetryAll = false
+		e.logRetryDenied(ctx, execState, failedIndices, "insufficient global quota")
 	}
-	switch len(reasons) {
-	case 0:
-		return true, ""
-	case 1:
-		return false, reasons[0]
-	default:
-		return false, fmt.Sprintf("can't retry because\n* %s", strings.Join(reasons, "\n* "))
-	}
+	return canRetryAll
 }

@@ -50,6 +50,24 @@ func (e *Executor) logTryjobDiscarded(ctx context.Context, def *tryjob.Definitio
 	})
 }
 
+func (e *Executor) logRetryDenied(ctx context.Context, execState *tryjob.ExecutionState, failedIndices []int, reason string) {
+	snapshots := make([]*tryjob.ExecutionLogEntry_TryjobSnapshot, len(failedIndices))
+	for i, idx := range failedIndices {
+		def := execState.GetRequirement().GetDefinitions()[idx]
+		execution := execState.GetExecutions()[idx]
+		snapshots[i] = makeLogTryjobSnapshotFromAttempt(def, execution.GetAttempts()[len(execution.GetAttempts())-1])
+	}
+	e.log(&tryjob.ExecutionLogEntry{
+		Time: timestamppb.New(clock.Now(ctx).UTC()),
+		Kind: &tryjob.ExecutionLogEntry_RetryDenied_{
+			RetryDenied: &tryjob.ExecutionLogEntry_RetryDenied{
+				Tryjobs: snapshots,
+				Reason:  reason,
+			},
+		},
+	})
+}
+
 // log adds a new execution log entry.
 func (e *Executor) log(entry *tryjob.ExecutionLogEntry) {
 	if entry.GetTime() == nil {
