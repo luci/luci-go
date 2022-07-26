@@ -48,21 +48,9 @@ func TestProject(t *testing.T) {
 			var okCfg = `
 				buckets {
 					name: "good.name"
-					acls {
-						role: WRITER
-						group: "writers"
-					}
 				}
 				buckets {
 					name: "good.name2"
-					acls {
-						role: READER
-						identity: "a@a.com"
-					}
-					acls {
-						role: READER
-						identity: "user:b@a.com"
-					}
 				}
 			`
 			So(validateProjectCfg(vctx, configSet, path, []byte(okCfg)), ShouldBeNil)
@@ -83,29 +71,11 @@ func TestProject(t *testing.T) {
 
 		Convey("fail", func() {
 			var badCfg = `
-				acl_sets { name: "a" }
 				buckets {
 					name: "a"
-					acls {
-						role: READER
-						group: "writers"
-						identity: "a@a.com"
-					}
-					acls {
-						role: READER
-					}
 				}
 				buckets {
 					name: "a"
-					acl_sets: "a"
-					acls {
-						role: READER
-						identity: "ldap"
-					}
-					acls {
-						role: READER
-						group: ";%:"
-					}
 				}
 				buckets {}
 				buckets { name: "luci.x" }
@@ -113,16 +83,10 @@ func TestProject(t *testing.T) {
 			So(validateProjectCfg(vctx, configSet, path, []byte(badCfg)), ShouldBeNil)
 			ve, ok := vctx.Finalize().(*validation.Error)
 			So(ok, ShouldEqual, true)
-			So(len(ve.Errors), ShouldEqual, 9)
-			So(ve.Errors[0].Error(), ShouldContainSubstring, "acl_sets: deprecated (use go/lucicfg)")
-			So(ve.Errors[1].Error(), ShouldContainSubstring, "(buckets #0 - a / acls #0): either group or identity must be set, not both")
-			So(ve.Errors[2].Error(), ShouldContainSubstring, "(buckets #0 - a / acls #1): group or identity must be set")
-			So(ve.Errors[3].Error(), ShouldContainSubstring, "(buckets #1 - a): duplicate bucket name \"a\"")
-			So(ve.Errors[4].Error(), ShouldContainSubstring, "(buckets #1 - a / acls #0): \"ldap\" invalid: auth: bad value \"ldap\" for identity kind \"user\"")
-			So(ve.Errors[5].Error(), ShouldContainSubstring, "(buckets #1 - a / acls #1): invalid group: ;%:")
-			So(ve.Errors[6].Error(), ShouldContainSubstring, "(buckets #1 - a): acl_sets: deprecated (use go/lucicfg)")
-			So(ve.Errors[7].Error(), ShouldContainSubstring, "(buckets #2 - ): invalid name \"\": bucket name is not specified")
-			So(ve.Errors[8].Error(), ShouldContainSubstring, "(buckets #3 - luci.x): invalid name \"luci.x\": must start with 'luci.test.' because it starts with 'luci.' and is defined in the \"test\" project")
+			So(len(ve.Errors), ShouldEqual, 3)
+			So(ve.Errors[0].Error(), ShouldContainSubstring, "(buckets #1 - a): duplicate bucket name \"a\"")
+			So(ve.Errors[1].Error(), ShouldContainSubstring, "(buckets #2 - ): invalid name \"\": bucket name is not specified")
+			So(ve.Errors[2].Error(), ShouldContainSubstring, "(buckets #3 - luci.x): invalid name \"luci.x\": must start with 'luci.test.' because it starts with 'luci.' and is defined in the \"test\" project")
 		})
 
 		Convey("buckets unsorted", func() {
