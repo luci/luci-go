@@ -17,14 +17,17 @@ package bblistener
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"sync"
 	"testing"
+	"time"
 
 	"cloud.google.com/go/pubsub"
+	"cloud.google.com/go/pubsub/pstest"
+	"google.golang.org/api/option"
+	"google.golang.org/grpc"
 
-	v1 "go.chromium.org/luci/common/api/buildbucket/buildbucket/v1"
-	"go.chromium.org/luci/common/data/stringset"
+	bbv1pb "go.chromium.org/luci/common/api/buildbucket/buildbucket/v1"
+	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/retry/transient"
 	. "go.chromium.org/luci/common/testing/assertions"
 
@@ -35,202 +38,215 @@ import (
 	. "github.com/smartystreets/goconvey/convey"
 )
 
-func TestGetBuildIDFromPubsubMessage(t *testing.T) {
+func TestParseExternalID(t *testing.T) {
 	t.Parallel()
 	Convey("works", t, func() {
-		original := tryjob.MustBuildbucketID(successHost, 123456789)
-		extracted, err := getBuildIDFromPubsubMessage(context.Background(), mockBuildNotification(original).GetData())
+		original := tryjob.MustBuildbucketID("buildbucket.example.com", 123456789)
+		extracted, err := parseExternalID(context.Background(), toPubsubMessageData(original))
 		So(err, ShouldBeNil)
 		So(extracted, ShouldEqual, original)
 	})
 	Convey("no ID", t, func() {
-		buildJSON, err := json.Marshal(&v1.LegacyApiBuildResponseMessage{Build: &v1.LegacyApiCommonBuildMessage{}})
+		buildJSON, err := json.Marshal(&bbv1pb.LegacyApiBuildResponseMessage{Build: &bbv1pb.LegacyApiCommonBuildMessage{}})
 		So(err, ShouldBeNil)
 		message := &pubsub.Message{Data: buildJSON}
-		eid, err := getBuildIDFromPubsubMessage(context.Background(), message.Data)
+		eid, err := parseExternalID(context.Background(), message.Data)
 		So(err, ShouldErrLike, "missing build details")
 		So(eid, ShouldEqual, tryjob.ExternalID(""))
 	})
 	Convey("no Build", t, func() {
-		buildJSON, err := json.Marshal(&v1.LegacyApiBuildResponseMessage{})
+		buildJSON, err := json.Marshal(&bbv1pb.LegacyApiBuildResponseMessage{})
 		So(err, ShouldBeNil)
 		message := &pubsub.Message{Data: buildJSON}
-		eid, err := getBuildIDFromPubsubMessage(context.Background(), message.Data)
+		eid, err := parseExternalID(context.Background(), message.Data)
 		So(err, ShouldErrLike, "missing build details")
 		So(eid, ShouldEqual, tryjob.ExternalID(""))
 	})
 }
 
-const (
-	successHost   = "cr-buildbucket.example.com"
-	permFailHost  = "perm-cr-buildbucket.example.com"
-	transFailHost = "trans-cr-buildbucket.example.com"
-)
-
-func TestProcessNotificationBatch(t *testing.T) {
+func TestListener(t *testing.T) {
 	t.Parallel()
-	Convey("test processNotificationsBatch", t, func() {
+	const bbHost = "buildbucket.example.com"
+	Convey("Listener", t, func() {
 		ct := cvtesting.Test{}
 		ctx, cancel := ct.SetUp()
 		defer cancel()
 
-		tjNotifier := &testTryjobNotifier{
-			ok:    make(stringset.Set),
-			trans: make(stringset.Set),
-			perm:  make(stringset.Set),
+		srv := pstest.NewServer()
+		defer srv.Close()
+		conn, err := grpc.Dial(srv.Addr, grpc.WithInsecure())
+		So(err, ShouldBeNil)
+		defer conn.Close()
+		client, err := pubsub.NewClient(ctx, "testProj", option.WithGRPCConn(conn))
+		So(err, ShouldBeNil)
+		defer client.Close()
+		topic, err := client.CreateTopic(ctx, "build-update")
+		So(err, ShouldBeNil)
+		_, err = client.CreateSubscription(ctx, SubscriptionID, pubsub.SubscriptionConfig{
+			Topic: topic,
+		})
+		So(err, ShouldBeNil)
+
+		tjNotifier := &testTryjobNotifier{}
+		l := &listener{
+			pubsubClient: client,
+			tjNotifier:   tjNotifier,
+			processedCh:  make(chan string, 10),
+		}
+
+		cctx, cancel := context.WithCancel(ctx)
+		listenerDoneCh := make(chan struct{})
+		defer func() {
+			cancel()
+			<-listenerDoneCh
+		}()
+		go func() {
+			defer close(listenerDoneCh)
+			if err := l.start(cctx); err != nil {
+				panic(errors.Reason("failed to start listener. reason: %s", err).Err())
+			}
+		}()
+
+		ensureAcked := func(msgID string) {
+			timer := time.After(10 * time.Second)
+			for {
+				select {
+				case <-timer:
+					panic(errors.Reason("took too long to ack message %s", msgID))
+				default:
+					acks := srv.Message(msgID).Acks
+					if acks > 0 {
+						return
+					}
+				}
+			}
 		}
 
 		Convey("Successful", func() {
 			Convey("Relevant", func() {
-				eid := tryjob.MustBuildbucketID(successHost, 1)
+				eid := tryjob.MustBuildbucketID(bbHost, 1)
 				eid.MustCreateIfNotExists(ctx)
-				n := mockBuildNotification(eid)
-				So(processNotificationsBatch(ctx, tjNotifier, []notification{n}), ShouldBeNil)
-				So(n.(*mockMessage).ackCount, ShouldEqual, 1)
-				So(n.(*mockMessage).nackCount, ShouldEqual, 0)
-				So(tjNotifier.ok, ShouldHaveLength, 1)
-				So(tjNotifier.callCount, ShouldEqual, 1)
+				msgID := srv.Publish(topic.String(), toPubsubMessageData(eid), nil)
+				select {
+				case <-time.After(15 * time.Second):
+					panic("took too long to process message")
+				case processedMsgID := <-l.processedCh:
+					So(processedMsgID, ShouldEqual, msgID)
+				}
+				So(tjNotifier.notified, ShouldResemble, []tryjob.ExternalID{eid})
+				ensureAcked(msgID)
 			})
+
 			Convey("Irrelevant", func() {
-				eid := tryjob.MustBuildbucketID(successHost, 404)
-				n := mockBuildNotification(eid)
-				So(processNotificationsBatch(ctx, tjNotifier, []notification{n}), ShouldBeNil)
-				So(n.(*mockMessage).ackCount, ShouldEqual, 1)
-				So(n.(*mockMessage).nackCount, ShouldEqual, 0)
-				So(tjNotifier.callCount, ShouldEqual, 0)
-			})
-			Convey("Mixed batch", func() {
-				batchSize := int64(100)
-				startBuild := int64(1000)
-				notifications := make([]notification, 0, batchSize)
-				expectedSuccessIds := make(stringset.Set)
-				expectedPermFailIds := make(stringset.Set)
-				expectedTransFailIds := make(stringset.Set)
-				for i := startBuild; i < startBuild+batchSize; i++ {
-					eid := tryjob.MustBuildbucketID(successHost, i)
-					switch i % 4 {
-					case 0:
-						eid.MustCreateIfNotExists(ctx)
-						expectedSuccessIds.Add(string(eid))
-					case 1:
-						eid = tryjob.MustBuildbucketID(transFailHost, i)
-						eid.MustCreateIfNotExists(ctx)
-						expectedTransFailIds.Add(string(eid))
-					case 3:
-						eid = tryjob.MustBuildbucketID(permFailHost, i)
-						eid.MustCreateIfNotExists(ctx)
-						expectedPermFailIds.Add(string(eid))
-					default:
-					}
-					notifications = append(notifications, mockBuildNotification(eid))
+				eid := tryjob.MustBuildbucketID(bbHost, 404)
+				msgID := srv.Publish(topic.String(), toPubsubMessageData(eid), nil)
+				select {
+				case <-time.After(15 * time.Second):
+					panic("took too long to process message")
+				case processedMsgID := <-l.processedCh:
+					So(processedMsgID, ShouldEqual, msgID)
 				}
-				So(processNotificationsBatch(ctx, tjNotifier, notifications), ShouldErrLike, "permanent error")
-
-				So(tjNotifier.ok.ToSortedSlice(), ShouldResemble, expectedSuccessIds.ToSortedSlice())
-				So(tjNotifier.trans.ToSortedSlice(), ShouldResemble, expectedTransFailIds.ToSortedSlice())
-				So(tjNotifier.perm.ToSortedSlice(), ShouldResemble, expectedPermFailIds.ToSortedSlice())
-
-				var allAcks, allNacks int
-				for _, n := range notifications {
-					allAcks += n.(*mockMessage).ackCount
-					allNacks += n.(*mockMessage).nackCount
-				}
-				So(allNacks, ShouldEqual, len(expectedTransFailIds))
-				So(allAcks, ShouldEqual, len(notifications)-len(expectedTransFailIds))
+				So(tjNotifier.notified, ShouldBeEmpty)
+				ensureAcked(msgID)
 			})
 		})
+
 		Convey("Transient failure", func() {
 			Convey("Schedule call fails transiently", func() {
-				eid := tryjob.MustBuildbucketID(transFailHost, 1)
+				eid := tryjob.MustBuildbucketID(bbHost, 1)
 				eid.MustCreateIfNotExists(ctx)
-				n := mockBuildNotification(eid)
-				So(processNotificationsBatch(ctx, tjNotifier, []notification{n}), ShouldBeNil)
-				So(n.(*mockMessage).ackCount, ShouldEqual, 0)
-				So(n.(*mockMessage).nackCount, ShouldEqual, 1)
-				So(tjNotifier.trans, ShouldHaveLength, 1)
-				So(tjNotifier.callCount, ShouldEqual, 1)
+				tjNotifier.response = map[tryjob.ExternalID]error{
+					eid: errTransient,
+				}
+				msgID := srv.Publish(topic.String(), toPubsubMessageData(eid), nil)
+				timer := time.After(15 * time.Second)
+				for srv.Message(msgID).Deliveries <= 1 {
+					select {
+					case <-timer:
+						panic(errors.New("took too long for pub/sub to redeliver messages"))
+					case processedMsgID := <-l.processedCh:
+						So(processedMsgID, ShouldEqual, msgID)
+					}
+				}
+				So(tjNotifier.notified, ShouldBeEmpty)
+				So(srv.Message(msgID).Acks, ShouldEqual, 0)
 			})
 		})
+
 		Convey("Permanent failure", func() {
 			Convey("Unparseable", func() {
-				var n notification = &mockMessage{data: []byte("Unparseable hot garbage.'}]\"")}
-				So(processNotificationsBatch(ctx, tjNotifier, []notification{n}), ShouldErrLike, "while unmarshalling build notification")
-				So(n.(*mockMessage).ackCount, ShouldEqual, 1)
-				So(n.(*mockMessage).nackCount, ShouldEqual, 0)
-				So(tjNotifier.callCount, ShouldEqual, 0)
+				msgID := srv.Publish(topic.String(), []byte("Unparseable hot garbage.'}]\""), nil)
+				select {
+				case <-time.After(15 * time.Second):
+					panic("took too long to process message")
+				case processedMsgID := <-l.processedCh:
+					So(processedMsgID, ShouldEqual, msgID)
+				}
+				So(tjNotifier.notified, ShouldBeEmpty)
+				So(l.stats.permanentErrCount, ShouldEqual, 1)
+				ensureAcked(msgID)
 			})
 
 			Convey("Schedule call fails permanently", func() {
-				eid := tryjob.MustBuildbucketID(permFailHost, 1)
+				eid := tryjob.MustBuildbucketID(bbHost, 1)
 				eid.MustCreateIfNotExists(ctx)
-				n := mockBuildNotification(eid)
-				So(processNotificationsBatch(ctx, tjNotifier, []notification{n}), ShouldEqual, errPermanent)
-				So(n.(*mockMessage).ackCount, ShouldEqual, 1)
-				So(n.(*mockMessage).nackCount, ShouldEqual, 0)
-				So(tjNotifier.perm, ShouldHaveLength, 1)
-				So(tjNotifier.callCount, ShouldEqual, 1)
+				tjNotifier.response = map[tryjob.ExternalID]error{
+					eid: errPermanent,
+				}
+				msgID := srv.Publish(topic.String(), toPubsubMessageData(eid), nil)
+				select {
+				case <-time.After(15 * time.Second):
+					panic("took too long to process message")
+				case processedMsgID := <-l.processedCh:
+					So(processedMsgID, ShouldEqual, msgID)
+				}
+				So(tjNotifier.notified, ShouldBeEmpty)
+				So(l.stats.permanentErrCount, ShouldEqual, 1)
+				ensureAcked(msgID)
 			})
 		})
 
 	})
 }
 
-func mockBuildNotification(eid tryjob.ExternalID) notification {
+func toPubsubMessageData(eid tryjob.ExternalID) []byte {
 	host, id, err := eid.ParseBuildbucketID()
 	if err != nil {
 		panic(err)
 	}
-	buildJSON, err := json.Marshal(buildMessage{Build: &v1.LegacyApiCommonBuildMessage{Id: id}, Hostname: host})
+	buildJSON, err := json.Marshal(buildMessage{
+		Build:    &bbv1pb.LegacyApiCommonBuildMessage{Id: id},
+		Hostname: host,
+	})
 	if err != nil {
 		panic(err)
 	}
-	return &mockMessage{data: buildJSON}
+	return buildJSON
 }
 
 type testTryjobNotifier struct {
-	sync.Mutex
-	trans, perm, ok stringset.Set
-	callCount       int
+	mu sync.Mutex
+
+	response map[tryjob.ExternalID]error
+	notified []tryjob.ExternalID
 }
 
 // Schedule mocks tryjob.Schedule, and returns an error based on the host in
 // the given ExternalID.
-func (ttn *testTryjobNotifier) ScheduleUpdate(ctx context.Context, _ common.TryjobID, eid tryjob.ExternalID) error {
-	ttn.Lock()
-	defer ttn.Unlock()
-	ttn.callCount++
-	switch host, _, err := eid.ParseBuildbucketID(); {
-	case err != nil:
-		panic(err)
-	case host == transFailHost:
-		ttn.trans.Add(string(eid))
-		return errTransient
-	case host == permFailHost:
-		ttn.perm.Add(string(eid))
-		return errPermanent
-	default:
-		ttn.ok.Add(string(eid))
-		return nil
+func (ttn *testTryjobNotifier) ScheduleUpdate(ctx context.Context, id common.TryjobID, eid tryjob.ExternalID) error {
+	if id == 0 {
+		panic(errors.New("must provide internal tryjob id"))
 	}
+	ttn.mu.Lock()
+	defer ttn.mu.Unlock()
+	if err, ok := ttn.response[eid]; ok {
+		return err
+	}
+	ttn.notified = append(ttn.notified, eid)
+	return nil
 }
 
 var (
 	errTransient error = transient.Tag.Apply(errors.New("transient error"))
 	errPermanent error = errors.New("permanent error")
 )
-
-type mockMessage struct {
-	data      []byte
-	ackCount  int
-	nackCount int
-}
-
-func (mm *mockMessage) Ack() {
-	mm.ackCount = 1
-}
-func (mm *mockMessage) Nack() {
-	mm.nackCount = 1
-}
-func (mm *mockMessage) GetData() []byte {
-	return mm.data
-}

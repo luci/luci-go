@@ -18,14 +18,15 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"sync"
+	"sync/atomic"
 	"time"
 
 	"cloud.google.com/go/pubsub"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/durationpb"
 
-	v1pb "go.chromium.org/luci/common/api/buildbucket/buildbucket/v1"
+	bbv1pb "go.chromium.org/luci/common/api/buildbucket/buildbucket/v1"
+	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry/transient"
@@ -33,7 +34,6 @@ import (
 	"go.chromium.org/luci/server/tq"
 
 	"go.chromium.org/luci/cv/internal/common"
-	pubsubutils "go.chromium.org/luci/cv/internal/common/pubsub"
 	"go.chromium.org/luci/cv/internal/tryjob"
 )
 
@@ -70,23 +70,29 @@ func Register(tqd *tq.Dispatcher, projectID string, tjNotifier tryjobNotifier) f
 		Quiet:        true,
 		QuietOnError: true,
 		Handler: func(ctx context.Context, payload proto.Message) error {
-			task := payload.(*ListenBBPubsubTask)
-			listener := &pubsubutils.PullingBatchProcessor{
-				ProcessBatch: func(ctx context.Context, msgs []*pubsub.Message) error {
-					return processNotificationsBatch(ctx, tjNotifier, notsFromMsgs(msgs))
-				},
-				ProjectID: projectID,
-				SubID:     SubscriptionID,
-				Options: pubsubutils.Options{
-					ReceiveDuration: task.GetDuration().AsDuration(),
-				},
-			}
-			if err := listener.Validate(); err != nil {
+			client, err := pubsub.NewClient(ctx, projectID)
+			if err != nil {
 				return err
 			}
-			// Never retry the tasks because the listener will be started
-			// periodically by the Cron.
-			if err := listener.Process(ctx); err != nil {
+			defer func() {
+				if err := client.Close(); err != nil {
+					logging.Errorf(ctx, "failed to close PubSub client: %s", err)
+				}
+			}()
+			l := &listener{
+				pubsubClient: client,
+				tjNotifier:   tjNotifier,
+			}
+			defer l.reportStats(ctx)
+			duration := payload.(*ListenBBPubsubTask).GetDuration().AsDuration()
+			if duration == 0 {
+				duration = ListenDuration
+			}
+			cctx, cancel := clock.WithTimeout(ctx, duration)
+			defer cancel()
+			if err := l.start(cctx); err != nil {
+				// Never retry the tasks because the listener will be started
+				// periodically by the Cron.
 				return common.TQIfy{NeverRetry: true}.Error(ctx, err)
 			}
 			return nil
@@ -109,69 +115,64 @@ func Register(tqd *tq.Dispatcher, projectID string, tjNotifier tryjobNotifier) f
 	}
 }
 
-func processNotificationsBatch(ctx context.Context, tjNotifier tryjobNotifier, msgs []notification) error {
-	var lastPermErr error
+type listener struct {
+	pubsubClient *pubsub.Client
+	tjNotifier   tryjobNotifier
 
-	eids := make([]tryjob.ExternalID, 0, len(msgs))
-	remainingMessages := make([]notification, 0, len(msgs))
-	for i := range msgs {
-		eid, err := getBuildIDFromPubsubMessage(ctx, msgs[i].GetData())
-		if err == nil {
-			eids = append(eids, eid)
-			remainingMessages = append(remainingMessages, msgs[i])
-			continue
+	stats       listenerStats
+	processedCh chan string // for testing only
+}
+
+type listenerStats struct {
+	totalProcessedCount, transientErrCount, permanentErrCount int64
+}
+
+func (l *listener) start(ctx context.Context) error {
+	subscription := l.pubsubClient.Subscription(SubscriptionID)
+	return subscription.Receive(ctx, func(ctx context.Context, msg *pubsub.Message) {
+		switch err := l.processMsg(ctx, msg); {
+		case err == nil:
+			msg.Ack()
+		case transient.Tag.In(err):
+			logging.Warningf(ctx, "encounter transient error when processing buildbucket pubsub message %q; Reason: %s", string(msg.Data), err)
+			msg.Nack()
+			atomic.AddInt64(&l.stats.totalProcessedCount, 1)
+		default:
+			logging.Errorf(ctx, "encounter non-transient error when processing  buildbucket pubsub message: %q; Reason: %s", string(msg.Data), err)
+			// Dismiss non-transient failure.
+			msg.Ack()
+			atomic.AddInt64(&l.stats.permanentErrCount, 1)
 		}
-		common.LogError(ctx, err)
-		lastPermErr = err
-		// Dismiss unparseable messages.
-		msgs[i].Ack()
-	}
+		atomic.AddInt64(&l.stats.transientErrCount, 1)
+		if l.processedCh != nil {
+			l.processedCh <- msg.ID
+		}
+	})
+}
 
-	ids, err := tryjob.Resolve(ctx, eids...)
+func (l *listener) processMsg(ctx context.Context, msg *pubsub.Message) error {
+	eid, err := parseExternalID(ctx, msg.Data)
 	if err != nil {
 		return err
 	}
-
-	var lastPermErrMutex sync.Mutex
-	poolErr := parallel.WorkPool(min(8, len(ids)), func(work chan<- func() error) {
-		for i := range ids {
-			i := i
-			if ids[i] == 0 {
-				// Dismiss irrelevant notifications.
-				remainingMessages[i].Ack()
-				continue
-			}
-			work <- func() error {
-				switch err := tjNotifier.ScheduleUpdate(ctx, ids[i], eids[i]); {
-				case err == nil:
-					remainingMessages[i].Ack()
-				case transient.Tag.In(err):
-					logging.Warningf(ctx, "transient error in scheduling update to %q: %s", eids[i], err)
-					remainingMessages[i].Nack()
-				default:
-					common.LogError(ctx, err)
-					lastPermErrMutex.Lock()
-					defer lastPermErrMutex.Unlock()
-					lastPermErr = err
-					// Dismiss notifications that cause permanent errors.
-					remainingMessages[i].Ack()
-				}
-				return nil
-			}
-		}
-	})
-	if poolErr != nil {
-		panic(poolErr)
+	switch ids, err := tryjob.Resolve(ctx, eid); {
+	case err != nil:
+		return err
+	case len(ids) != 1:
+		panic(fmt.Errorf("impossible; requested to resolve 1 external ID %s, got %d", eid, len(ids)))
+	case ids[0] != 0:
+		// Build that is tracked by LUCI CV.
+		return l.tjNotifier.ScheduleUpdate(ctx, ids[0], eid)
 	}
-	return lastPermErr
+	return nil
 }
 
 type buildMessage struct {
-	Build    *v1pb.LegacyApiCommonBuildMessage `json:"build"`
-	Hostname string                            `json:"hostname"`
+	Build    *bbv1pb.LegacyApiCommonBuildMessage `json:"build"`
+	Hostname string                              `json:"hostname"`
 }
 
-func getBuildIDFromPubsubMessage(ctx context.Context, data []byte) (tryjob.ExternalID, error) {
+func parseExternalID(ctx context.Context, data []byte) (tryjob.ExternalID, error) {
 	build := &buildMessage{}
 	if err := json.Unmarshal(data, build); err != nil {
 		return "", errors.Annotate(err, "while unmarshalling build notification").Err()
@@ -183,31 +184,11 @@ func getBuildIDFromPubsubMessage(ctx context.Context, data []byte) (tryjob.Exter
 	return tryjob.BuildbucketID(build.Hostname, build.Build.Id)
 }
 
-func min(i, j int) int {
-	if i < j {
-		return i
-	}
-	return j
-}
-
-type notification interface {
-	Ack()
-	Nack()
-	GetData() []byte
-}
-
-type psNotification struct {
-	*pubsub.Message
-}
-
-func (psn *psNotification) GetData() []byte {
-	return psn.Data
-}
-
-func notsFromMsgs(msgs []*pubsub.Message) []notification {
-	ret := make([]notification, 0, len(msgs))
-	for _, msg := range msgs {
-		ret = append(ret, &psNotification{msg})
-	}
-	return ret
+func (l *listener) reportStats(ctx context.Context) {
+	logging.Infof(ctx, "processed %d buildbucket pubsub messages in total. %d of them have transient failure. %d of them have non-transient failure",
+		l.stats.totalProcessedCount,
+		l.stats.transientErrCount,
+		l.stats.permanentErrCount)
+	// TODO(yiwzhang): send tsmon metrics. Especially for non-transient count to
+	// to alert on.
 }
