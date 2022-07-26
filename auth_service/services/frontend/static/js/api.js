@@ -147,6 +147,11 @@ var api = (function() {
     return call('auth.service.Groups', 'GetGroup', {'name': request});
   };
 
+  // Delete individual group.
+  exports.groupDelete = function(name, etag) {
+    return call('auth.service.Groups', 'DeleteGroup', {'name': name, 'etag': etag});
+  };
+
   // Get all allowlists.
   exports.ipAllowlists = function() {
     return call('auth.service.Allowlists', 'ListAllowlists');

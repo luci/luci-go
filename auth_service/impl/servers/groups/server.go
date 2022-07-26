@@ -123,6 +123,9 @@ func (*Server) DeleteGroup(ctx context.Context, request *rpcpb.DeleteGroupReques
 		return nil, status.Error(codes.Aborted, err.Error())
 	case errors.Is(err, model.ErrReferencedEntity):
 		return nil, status.Error(codes.FailedPrecondition, err.Error())
+	// TODO(cjacomet): Handle context cancelled and internal errors in a more general way with logging.
+	case errors.Is(err, context.Canceled):
+		return nil, status.Error(codes.Canceled, err.Error())
 	default:
 		return nil, status.Errorf(codes.Internal, "failed to delete group %q: %s", name, err)
 	}

@@ -181,6 +181,7 @@ class EditGroupForm extends GroupForm {
       var owners = clone.querySelector('#owners-box');
       var membersAndGlobs = clone.querySelector('#membersAndGlobs');
       var nested = clone.querySelector('#nested');
+      var deleteBtn = clone.querySelector('#delete-btn');
 
       // Clear any previous html.
       this.element.innerHTML = '';
@@ -197,8 +198,25 @@ class EditGroupForm extends GroupForm {
       // HTML template element is not supported.
       console.error('Unable to load HTML template element, not supported.')
     }
-  }
 
+    deleteBtn.addEventListener('click', () => {
+      let result = confirm(`Are you sure you want to delete ${group.name}?`)
+      if (result) {
+        console.log(`attempting to delete ${group.name}...`);
+        api.groupDelete(group.name, group.etag)
+          .then(() => {
+            console.log(`deleted ${group.name} successfully!`);
+            // TODO(cjacomet): Optimize this to just reload content of scroller and not entire window.
+            location.reload();
+          })
+          .catch((error) => {
+            console.log(`failed trying to delete ${group.name}: ${error}`);
+            // TODO(cjacomet): Replace alert with error modal to display error to users through UI.
+            alert(`failed trying to delete ${group.name}: ${error}`);
+          });
+      }
+    })
+  }
 }
 
 window.onload = () => {

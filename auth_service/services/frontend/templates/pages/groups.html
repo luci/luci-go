@@ -58,27 +58,27 @@
     </div>
     <hr>
     <button type="submit" class="btn btn-primary">Update group</button>
-    <button type="submit" class="btn btn-danger">Delete group</button>
+    <button id="delete-btn" type="button" class="btn btn-danger">Delete group</button>
   </form>
 </template>
-
-  <div class="row">
-    <div class="col-4 my-2 border rounded">
-      <div class="row my-2">
-        <form class="d-flex">
-          <input class="form-control me-2" type="search" placeholder="Search" aria-label="Search">
-          <button class="btn btn-outline-success" type="submit">Search</button>
-        </form>
-      </div>
-      <div class="row">
-        <ul class="navbar-nav-scroll px-1" style="--bs-scroll-height: 704px;" id="group-chooser">
-            <!-- Load group-scroller-row template. -->
-        </ul>
-      </div>
+<div class="row">
+  <div class="col-4 my-2 border rounded">
+    <div class="row my-2">
+      <form class="d-flex">
+        <input class="form-control me-2" type="search" placeholder="Search" aria-label="Search">
+        <button class="btn btn-outline-success" type="submit">Search</button>
+      </form>
     </div>
-    <div class="col my-2 ms-2 border rounded" id="group-content">
-      <!-- Load group-form template here -->
+    <div class="row">
+      <ul class="navbar-nav-scroll px-1" style="--bs-scroll-height: 704px;" id="group-chooser">
+          <!-- Load group-scroller-row template. -->
+      </ul>
     </div>
   </div>
+  <div class="col my-2 ms-2 border rounded" id="group-content">
+    <!-- Load group-form template here -->
+  </div>
+</div>
 
 {{end}}
+
