@@ -57,8 +57,10 @@ func NewFilter(mask []*StructMask) (*Filter, error) {
 //
 // If you need to modify the result, consider explicitly making a deep copy with
 // proto.Clone first.
+//
+// If given `nil`, returns `nil` as well.
 func (f *Filter) Apply(s *structpb.Struct) *structpb.Struct {
-	if f.root == nil || f.root == leafNode {
+	if s == nil || f.root == nil || f.root == leafNode {
 		return s
 	}
 	filtered := f.root.filterStruct(s)
