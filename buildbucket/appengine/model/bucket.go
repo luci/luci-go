@@ -51,8 +51,9 @@ type Bucket struct {
 	Bucket string `gae:"bucket_name"`
 	// Proto is the pb.Bucket proto representation of the bucket.
 	//
-	// swarming.builders is zeroed and stored in separate Builder datastore
-	// entities due to potentially large size.
+	// acl_sets is zeroed by inlining acls. swarming.builders is
+	// zeroed and stored in separate Builder datastore entities due to
+	// potentially large size.
 	Proto *pb.Bucket `gae:"config,legacy"`
 	// Revision is the config revision this entity was created from.
 	// TODO(crbug/1042991): Switch to noindex.
