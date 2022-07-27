@@ -338,8 +338,16 @@ func TestPoke(t *testing.T) {
 					Executions: []*tryjob.ExecutionState_Execution{
 						{
 							Attempts: []*tryjob.ExecutionState_Execution_Attempt{
-								{TryjobId: 1, ExternalId: string(tryjob.MustBuildbucketID("bb.example.com", 456))},
-								{TryjobId: 2, ExternalId: string(tryjob.MustBuildbucketID("bb.example.com", 123))},
+								{
+									TryjobId:   1,
+									ExternalId: string(tryjob.MustBuildbucketID("bb.example.com", 456)),
+									Status:     tryjob.Status_ENDED,
+								},
+								{
+									TryjobId:   2,
+									ExternalId: string(tryjob.MustBuildbucketID("bb.example.com", 123)),
+									Status:     tryjob.Status_TRIGGERED,
+								},
 							},
 						},
 					},
@@ -382,6 +390,14 @@ func TestPoke(t *testing.T) {
 				Convey("Skip if external id is not present", func() {
 					execution := rs.Tryjobs.GetState().GetExecutions()[0]
 					tryjob.LatestAttempt(execution).ExternalId = ""
+					_, err := h.Poke(ctx, rs)
+					So(err, ShouldBeNil)
+					So(deps.tjNotifier.updateScheduled, ShouldBeEmpty)
+				})
+
+				Convey("Skip if tryjob is not in Triggered status", func() {
+					execution := rs.Tryjobs.GetState().GetExecutions()[0]
+					tryjob.LatestAttempt(execution).Status = tryjob.Status_ENDED
 					_, err := h.Poke(ctx, rs)
 					So(err, ShouldBeNil)
 					So(deps.tjNotifier.updateScheduled, ShouldBeEmpty)

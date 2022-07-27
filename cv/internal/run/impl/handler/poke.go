@@ -124,9 +124,8 @@ func (impl *Impl) Poke(ctx context.Context, rs *state.RunState) (*Result, error)
 				switch latestAttempt := tryjob.LatestAttempt(execution); {
 				case latestAttempt == nil:
 				case latestAttempt.GetExternalId() == "":
-					// There's no point to update Tryjob if Tryjob hasn't been triggered
-					// yet.
-				default:
+				case latestAttempt.GetStatus() == tryjob.Status_TRIGGERED:
+					// Only update Tryjob if it has been triggered at the Tryjob backend.
 					i := i
 					workCh <- func() error {
 						errs.Assign(i, impl.TN.ScheduleUpdate(ctx,
