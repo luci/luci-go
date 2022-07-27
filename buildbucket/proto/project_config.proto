@@ -31,40 +31,18 @@ option (luci.file_metadata) = {
   doc_url: "https://luci-config.appspot.com/schemas/projects:buildbucket.cfg";
 };
 
-// A single access control rule.
+// Deprecated in favor of LUCI Realms. This proto is totally unused now, exists
+// only to not break older configs that still may have deprecated fields
+// populated.
 message Acl {
-
-  // A buildbucket user role.
-  // Defines what a user can do.
-  //
-  // The order of enum member tags is important.
-  // A role with a higher tag number can perform any action that a role with a
-  // lower tag number can perform.
   enum Role {
-    // Can do read-only operations, such as search for builds.
     READER = 0;
-    // Same as READER + can schedule and cancel builds.
     SCHEDULER = 1;
-    // Can do all write operations.
     WRITER = 2;
   }
-  // Role denotes a list of actions that an identity can perform.
-  Role role = 1;
-  // Name of the group defined in the auth service.
-  string group = 2;
-  // An email address or a full identity string "kind:name". See auth service
-  // on kinds of identities. Anonymous users are "anonymous:anonymous".
-  // Either identity or group must be present, not both.
-  string identity = 3;
-}
-
-// DEPRECATED.
-message AclSet {
-  // A name of the ACL set. Required. Must match regex '^[a-z0-9_]+$'.
-  string name = 1;
-  // List of access control rules.
-  // The order does not matter.
-  repeated Acl acls = 2;
+  Role role = 1 [deprecated = true];
+  string group = 2 [deprecated = true];
+  string identity = 3 [deprecated = true];
 }
 
 // Defines a swarmbucket builder. A builder has a name, a category and specifies
@@ -460,16 +438,15 @@ message Swarming {
 
 // Defines one bucket in buildbucket.cfg
 message Bucket {
+  reserved 4; // acl_sets
+
   // Name of the bucket. Names are unique within one instance of buildbucket.
   // If another project already uses this name, a config will be rejected.
   // Name reservation is first-come first-serve.
   // Regex: ^[a-z0-9\-_.]{1,100}$
   string name = 1;
-  // List of access control rules for the bucket.
-  // The order does not matter.
-  repeated Acl acls = 2;
-  // DEPRECATED.
-  repeated string acl_sets = 4;
+  // Deprecated and ignored. Use Realms ACLs instead.
+  repeated Acl acls = 2 [deprecated = true];
   // Buildbucket-swarming integration.
   Swarming swarming = 3;
 
@@ -518,11 +495,11 @@ message Bucket {
 
 // Schema of buildbucket.cfg file, a project config.
 message BuildbucketCfg {
+  reserved 2; // acl_sets
+  reserved 3; // builder_mixins
+
   // All buckets defined for this project.
   repeated Bucket buckets = 1;
-  // DEPRECATED.
-  repeated AclSet acl_sets = 2;
-  reserved 3; // builder_mixins
 }
 
 // Toggle is a boolean with an extra state UNSET.

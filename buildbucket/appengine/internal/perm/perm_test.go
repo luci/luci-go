@@ -48,12 +48,10 @@ func TestHasInBucket(t *testing.T) {
 
 	Convey("With mocked auth DB", t, func() {
 		const (
-			anon         = identity.AnonymousIdentity
-			admin        = identity.Identity("user:admin@example.com")
-			reader       = identity.Identity("user:reader@example.com")
-			writer       = identity.Identity("user:writer@example.com")
-			legacyReader = identity.Identity("user:legacy-reader@example.com")
-			legacyWriter = identity.Identity("user:legacy-writer@example.com")
+			anon   = identity.AnonymousIdentity
+			admin  = identity.Identity("user:admin@example.com")
+			reader = identity.Identity("user:reader@example.com")
+			writer = identity.Identity("user:writer@example.com")
 
 			appID            = "buildbucket-app-id"
 			projectID        = "some-project"
@@ -69,20 +67,12 @@ func TestHasInBucket(t *testing.T) {
 		So(datastore.Put(ctx, &model.Bucket{
 			ID:     existingBucketID,
 			Parent: model.ProjectKey(ctx, projectID),
-			Proto: &pb.Bucket{
-				// Legacy ACLs are unused and should be ignored.
-				Acls: []*pb.Acl{
-					{Role: pb.Acl_READER, Group: "legacy-readers"},
-					{Role: pb.Acl_WRITER, Group: "legacy-writers"},
-				},
-			},
+			Proto:  &pb.Bucket{},
 		}), ShouldBeNil)
 
 		s := &authtest.FakeState{
 			FakeDB: authtest.NewFakeDB(
 				authtest.MockMembership(admin, Administrators),
-				authtest.MockMembership(legacyReader, "legacy-readers"),
-				authtest.MockMembership(legacyWriter, "legacy-writers"),
 			),
 		}
 		ctx = auth.WithState(ctx, s)
@@ -105,15 +95,11 @@ func TestHasInBucket(t *testing.T) {
 			So(check(existingBucketID, bbperms.BuildsGet, admin), ShouldEqual, codes.OK)
 			So(check(existingBucketID, bbperms.BuildsGet, reader), ShouldEqual, codes.NotFound)
 			So(check(existingBucketID, bbperms.BuildsGet, writer), ShouldEqual, codes.NotFound)
-			So(check(existingBucketID, bbperms.BuildsGet, legacyReader), ShouldEqual, codes.NotFound)
-			So(check(existingBucketID, bbperms.BuildsGet, legacyWriter), ShouldEqual, codes.NotFound)
 
 			So(check(missingBucketID, bbperms.BuildsGet, anon), ShouldEqual, codes.NotFound)
 			So(check(missingBucketID, bbperms.BuildsGet, admin), ShouldEqual, codes.NotFound)
 			So(check(missingBucketID, bbperms.BuildsGet, reader), ShouldEqual, codes.NotFound)
 			So(check(missingBucketID, bbperms.BuildsGet, writer), ShouldEqual, codes.NotFound)
-			So(check(missingBucketID, bbperms.BuildsGet, legacyReader), ShouldEqual, codes.NotFound)
-			So(check(missingBucketID, bbperms.BuildsGet, legacyWriter), ShouldEqual, codes.NotFound)
 		})
 
 		Convey("With realm ACLs", func() {
@@ -136,9 +122,6 @@ func TestHasInBucket(t *testing.T) {
 				So(check(existingBucketID, bbperms.BuildsGet, admin), ShouldEqual, codes.OK)
 				So(check(existingBucketID, bbperms.BuildsGet, reader), ShouldEqual, codes.OK)
 				So(check(existingBucketID, bbperms.BuildsGet, writer), ShouldEqual, codes.OK)
-				// Legacy ACLs are ignored.
-				So(check(existingBucketID, bbperms.BuildsGet, legacyReader), ShouldEqual, codes.NotFound)
-				So(check(existingBucketID, bbperms.BuildsGet, legacyWriter), ShouldEqual, codes.NotFound)
 			})
 
 			Convey("Write perm", func() {
@@ -146,9 +129,6 @@ func TestHasInBucket(t *testing.T) {
 				So(check(existingBucketID, bbperms.BuildsCancel, admin), ShouldEqual, codes.OK)
 				So(check(existingBucketID, bbperms.BuildsCancel, reader), ShouldEqual, codes.PermissionDenied)
 				So(check(existingBucketID, bbperms.BuildsCancel, writer), ShouldEqual, codes.OK)
-				// Legacy ACLs are ignored.
-				So(check(existingBucketID, bbperms.BuildsCancel, legacyReader), ShouldEqual, codes.NotFound)
-				So(check(existingBucketID, bbperms.BuildsCancel, legacyWriter), ShouldEqual, codes.NotFound)
 			})
 
 			Convey("Missing bucket", func() {
@@ -156,15 +136,11 @@ func TestHasInBucket(t *testing.T) {
 				So(check(missingBucketID, bbperms.BuildsGet, admin), ShouldEqual, codes.NotFound)
 				So(check(missingBucketID, bbperms.BuildsGet, reader), ShouldEqual, codes.NotFound)
 				So(check(missingBucketID, bbperms.BuildsGet, writer), ShouldEqual, codes.NotFound)
-				So(check(missingBucketID, bbperms.BuildsGet, legacyReader), ShouldEqual, codes.NotFound)
-				So(check(missingBucketID, bbperms.BuildsGet, legacyWriter), ShouldEqual, codes.NotFound)
 
 				So(check(missingBucketID, bbperms.BuildsCancel, anon), ShouldEqual, codes.NotFound)
 				So(check(missingBucketID, bbperms.BuildsCancel, admin), ShouldEqual, codes.NotFound)
 				So(check(missingBucketID, bbperms.BuildsCancel, reader), ShouldEqual, codes.NotFound)
 				So(check(missingBucketID, bbperms.BuildsCancel, writer), ShouldEqual, codes.NotFound)
-				So(check(missingBucketID, bbperms.BuildsCancel, legacyReader), ShouldEqual, codes.NotFound)
-				So(check(missingBucketID, bbperms.BuildsCancel, legacyWriter), ShouldEqual, codes.NotFound)
 			})
 		})
 	})

@@ -24,7 +24,6 @@ import (
 
 	"google.golang.org/protobuf/encoding/prototext"
 
-	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/data/strpair"
 	"go.chromium.org/luci/common/errors"
@@ -79,10 +78,6 @@ func validateProjectCfg(ctx *validation.Context, configSet, path string, content
 	}
 	wellKnownExperiments := protoutil.WellKnownExperiments(globalCfg)
 
-	if len(cfg.AclSets) > 0 {
-		ctx.Errorf("acl_sets: deprecated (use go/lucicfg)")
-	}
-
 	// The format of configSet here is "projects/.*"
 	project := strings.Split(configSet, "/")[1]
 	bucketNames := stringset.New(len(cfg.Buckets))
@@ -97,10 +92,6 @@ func validateProjectCfg(ctx *validation.Context, configSet, path string, content
 			ctx.Warningf("bucket %q out of order", bucket.Name)
 		}
 		bucketNames.Add(bucket.Name)
-		validateAcls(ctx, bucket.Acls)
-		if len(bucket.AclSets) > 0 {
-			ctx.Errorf("acl_sets: deprecated (use go/lucicfg)")
-		}
 		if s := bucket.Swarming; s != nil {
 			validateProjectSwarming(ctx, s, wellKnownExperiments)
 		}
@@ -141,29 +132,6 @@ func validateBucketName(bucket, project string) error {
 		return errors.Reason("%q does not match %q", bucket, bucketRegex).Err()
 	}
 	return nil
-}
-
-func validateAcls(ctx *validation.Context, acls []*pb.Acl) {
-	for i, acl := range acls {
-		ctx.Enter("acls #%d", i)
-		switch {
-		case acl.Group != "" && acl.Identity != "":
-			ctx.Errorf("either group or identity must be set, not both")
-		case acl.Group == "" && acl.Identity == "":
-			ctx.Errorf("group or identity must be set")
-		case acl.Group != "" && !authGroupNameRegex.MatchString(acl.Group):
-			ctx.Errorf("invalid group: %s", acl.Group)
-		case acl.Identity != "":
-			identityStr := acl.Identity
-			if !strings.Contains(acl.Identity, ":") {
-				identityStr = fmt.Sprintf("user:%s", acl.Identity)
-			}
-			if err := identity.Identity(identityStr).Validate(); err != nil {
-				ctx.Errorf("%q invalid: %s", acl.Identity, err)
-			}
-		}
-		ctx.Exit()
-	}
 }
 
 // validateBuilderCfg validate a Builder config message.
