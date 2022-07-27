@@ -90,13 +90,7 @@ func (impl *Impl) OnReadyForSubmission(ctx context.Context, rs *state.RunState) 
 			// This Run will be notified by Submit Queue once its turn comes.
 			return &Result{State: rs}, nil
 		}
-		switch {
-		case rs.Submission == nil:
-			rs.Submission = &run.Submission{}
-		default:
-			rs.Submission = proto.Clone(rs.Submission).(*run.Submission)
-		}
-
+		rs.CloneSubmission()
 		switch treeOpen, treeErr := rs.CheckTree(ctx, impl.TreeClient); {
 		case treeErr != nil && clock.Since(ctx, rs.Submission.TreeErrorSince.AsTime()) > treeStatusFailureTimeLimit:
 			// Failed to fetch status for a long time. Fail the Run.

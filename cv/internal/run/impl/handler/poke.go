@@ -19,8 +19,6 @@ import (
 	"fmt"
 	"time"
 
-	"google.golang.org/protobuf/proto"
-
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
@@ -47,7 +45,7 @@ const (
 func (impl *Impl) Poke(ctx context.Context, rs *state.RunState) (*Result, error) {
 	rs = rs.ShallowCopy()
 	if shouldCheckTree(ctx, rs.Status, rs.Submission) {
-		rs.Submission = proto.Clone(rs.Submission).(*run.Submission)
+		rs.CloneSubmission()
 		switch open, err := rs.CheckTree(ctx, impl.TreeClient); {
 		case err != nil && clock.Since(ctx, rs.Submission.TreeErrorSince.AsTime()) > treeStatusFailureTimeLimit:
 			// The tree has been erroring for too long. Cancel the triggers and

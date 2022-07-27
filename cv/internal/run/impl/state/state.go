@@ -127,6 +127,17 @@ func (rs *RunState) DeepCopy() *RunState {
 	return ret
 }
 
+// CloneSubmission clones the `Submission` property.
+//
+// Initializes the property if this is nil.
+func (rs *RunState) CloneSubmission() {
+	if rs.Submission == nil {
+		rs.Submission = &run.Submission{}
+	} else {
+		rs.Submission = proto.Clone(rs.Submission).(*run.Submission)
+	}
+}
+
 // CheckTree returns whether Tree is open for this Run.
 //
 // Returns true if no Tree or Options.SkipTreeChecks is configured for this Run.
