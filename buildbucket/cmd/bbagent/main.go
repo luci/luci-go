@@ -68,14 +68,6 @@ import (
 	"go.chromium.org/luci/luciexe/invoke"
 )
 
-func main() {
-	go func() {
-		// serves "/debug" endpoints for pprof.
-		log.Println(http.ListenAndServe("localhost:6060", nil))
-	}()
-	os.Exit(mainImpl())
-}
-
 type closeOnceCh struct {
 	ch   chan struct{}
 	once sync.Once
@@ -92,15 +84,189 @@ func (c *closeOnceCh) close() {
 	c.once.Do(func() { close(c.ch) })
 }
 
-func mainImpl() int {
-	ctx := logging.SetLevel(gologger.StdConfig.Use(context.Background()), logging.Info)
+func check(ctx context.Context, err error) {
+	if err != nil {
+		logging.Errorf(ctx, err.Error())
+		os.Exit(1)
+	}
+}
 
-	check := func(err error) {
-		if err != nil {
-			logging.Errorf(ctx, err.Error())
-			os.Exit(1)
+// finalizeBuild returns true if fatalErr is nil and there's no additional
+// errors finalizing the build.
+func finalizeBuild(ctx context.Context, finalBuild *bbpb.Build, fatalErr error, statusDetails *bbpb.StatusDetails, outputFile *luciexe.OutputFlag) bool {
+	if statusDetails != nil {
+		if finalBuild.StatusDetails == nil {
+			finalBuild.StatusDetails = &bbpb.StatusDetails{}
+		}
+		proto.Merge(finalBuild.StatusDetails, statusDetails)
+	}
+
+	// set final times
+	now := timestamppb.New(clock.Now(ctx))
+	finalBuild.UpdateTime = now
+	finalBuild.EndTime = now
+
+	var finalErrs errors.MultiError
+	if fatalErr != nil {
+		finalErrs = append(finalErrs, errors.Annotate(fatalErr, "fatal error in buildbucket.UpdateBuild").Err())
+	}
+	if err := outputFile.Write(finalBuild); err != nil {
+		finalErrs = append(finalErrs, errors.Annotate(err, "writing final build").Err())
+	}
+
+	if len(finalErrs) > 0 {
+		errors.Log(ctx, finalErrs)
+
+		// we had some really bad error, just downgrade status and add a message to
+		// summary markdown.
+		finalBuild.Status = bbpb.Status_INFRA_FAILURE
+		originalSM := finalBuild.SummaryMarkdown
+		finalBuild.SummaryMarkdown = fmt.Sprintf("FATAL: %s", finalErrs.Error())
+		if originalSM != "" {
+			finalBuild.SummaryMarkdown += "\n\n" + originalSM
 		}
 	}
+
+	return len(finalErrs) == 0
+}
+
+func prepareInputBuild(ctx context.Context, build *bbpb.Build) {
+	// mark started
+	build.Status = bbpb.Status_STARTED
+	now := timestamppb.New(clock.Now(ctx))
+	build.StartTime, build.UpdateTime = now, now
+	// TODO(iannucci): this is sketchy, but we preemptively add the log entries
+	// for the top level user stdout/stderr streams.
+	//
+	// Really, `invoke.Start` is the one that knows how to arrange the
+	// Output.Logs, but host.Run makes a copy of this build immediately. Find
+	// a way to set these up nicely (maybe have opts.BaseBuild be a function
+	// returning an immutable bbpb.Build?).
+	build.Output = &bbpb.Build_Output{
+		Logs: []*bbpb.Log{
+			{Name: "stdout", Url: "stdout"},
+			{Name: "stderr", Url: "stderr"},
+		},
+	}
+	populateSwarmingInfoFromEnv(build, environ.System())
+	return
+}
+
+func resolveExe(path string) (string, error) {
+	if filepath.Ext(path) != "" {
+		return path, nil
+	}
+
+	lme := errors.NewLazyMultiError(2)
+	for i, ext := range []string{".exe", ".bat"} {
+		candidate := path + ext
+		if _, err := os.Stat(candidate); !lme.Assign(i, err) {
+			return candidate, nil
+		}
+	}
+
+	me := lme.Get().(errors.MultiError)
+	return path, errors.Reason("cannot find .exe (%q) or .bat (%q)", me[0], me[1]).Err()
+}
+
+// processCmd resolves the cmd by constructing the absolute path and resolving
+// the exe suffix.
+func processCmd(path, cmd string) (string, error) {
+	relPath := filepath.Join(path, cmd)
+	absPath, err := filepath.Abs(relPath)
+	if err != nil {
+		return "", errors.Annotate(err, "absoluting %q", relPath).Err()
+	}
+	if runtime.GOOS == "windows" {
+		absPath, err = resolveExe(absPath)
+		if err != nil {
+			return "", errors.Annotate(err, "resolving %q", absPath).Err()
+		}
+	}
+	return absPath, nil
+}
+
+// processExeArgs processes the given "Executable" message into a single command
+// which bbagent will invoke as a luciexe.
+//
+// This includes resolving paths relative to the current working directory
+// (expected to be the task's root).
+func processExeArgs(input *bbpb.BBAgentArgs, check func(err error)) []string {
+	exeArgs := make([]string, 0, len(input.Build.Exe.Wrapper)+len(input.Build.Exe.Cmd)+1)
+
+	if len(input.Build.Exe.Wrapper) != 0 {
+		exeArgs = append(exeArgs, input.Build.Exe.Wrapper...)
+		exeArgs = append(exeArgs, "--")
+
+		if strings.Contains(exeArgs[0], "/") || strings.Contains(exeArgs[0], "\\") {
+			absPath, err := filepath.Abs(exeArgs[0])
+			check(errors.Annotate(err, "absoluting wrapper path: %q", exeArgs[0]).Err())
+			exeArgs[0] = absPath
+		}
+
+		cmdPath, err := exec.LookPath(exeArgs[0])
+		check(errors.Annotate(err, "wrapper not found: %q", exeArgs[0]).Err())
+		exeArgs[0] = cmdPath
+	}
+
+	exeCmd := input.Build.Exe.Cmd[0]
+	payloadPath := input.PayloadPath
+	if len(input.Build.Exe.Cmd) == 0 {
+		// TODO(iannucci): delete me with ExecutablePath.
+		payloadPath, exeCmd = path.Split(input.ExecutablePath)
+	} else {
+		for p, purpose := range input.Build.GetInfra().GetBuildbucket().GetAgent().GetPurposes() {
+			if purpose == bbpb.BuildInfra_Buildbucket_Agent_PURPOSE_EXE_PAYLOAD {
+				payloadPath = p
+				break
+			}
+		}
+	}
+	exePath, err := processCmd(payloadPath, exeCmd)
+	check(err)
+	exeArgs = append(exeArgs, exePath)
+	exeArgs = append(exeArgs, input.Build.Exe.Cmd[1:]...)
+
+	return exeArgs
+}
+
+func cancelBuild(ctx context.Context, bbclient BuildsClient, bld *bbpb.Build) (retCode int) {
+	logging.Infof(ctx, "The build is in the cancel process, cancel time is %s. Actually cancel it now.", bld.CancelTime.AsTime())
+	_, err := bbclient.UpdateBuild(
+		ctx,
+		&bbpb.UpdateBuildRequest{
+			Build: &bbpb.Build{
+				Id:     bld.Id,
+				Status: bbpb.Status_CANCELED,
+			},
+			UpdateMask: &fieldmaskpb.FieldMask{Paths: []string{"build.status"}},
+		})
+	if err != nil {
+		logging.Errorf(ctx, "failed to actually cancel the build: %s", err)
+		return 1
+	}
+	return 0
+}
+
+func prependPath(bld *bbpb.Build, workDir string) error {
+	extraPathEnv := stringset.Set{}
+	for _, ref := range bld.Infra.Buildbucket.Agent.Input.Data {
+		extraPathEnv.AddAll(ref.OnPath)
+	}
+
+	var extraAbsPaths []string
+	for _, p := range extraPathEnv.ToSortedSlice() {
+		extraAbsPaths = append(extraAbsPaths, filepath.Join(workDir, p))
+	}
+	original := os.Getenv("PATH")
+	if err := os.Setenv("PATH", strings.Join(append(extraAbsPaths, original), string(os.PathListSeparator))); err != nil {
+		return err
+	}
+	return nil
+}
+
+func mainImpl() int {
+	ctx := logging.SetLevel(gologger.StdConfig.Use(context.Background()), logging.Info)
 
 	hostname := flag.String("host", "", "Buildbucket server hostname")
 	buildID := flag.Int64("build-id", 0, "Buildbucket build ID")
@@ -121,7 +287,7 @@ func mainImpl() int {
 			ExposeSystemAccount: true,
 		}
 		err := authCtx.Launch(ctx, "")
-		check(errors.Annotate(err, "failed launch the local LUCI auth context").Err())
+		check(ctx, errors.Annotate(err, "failed launch the local LUCI auth context").Err())
 		defer authCtx.Close(ctx)
 
 		// Switch the default auth in the context to the one we just setup.
@@ -138,13 +304,13 @@ func mainImpl() int {
 		// TODO(crbug/1219018): Remove CLI BBAgentArgs mode in favor of -host + -build-id.
 		logging.Debugf(ctx, "parsing BBAgentArgs")
 		input, err = bbinput.Parse(args[0])
-		check(errors.Annotate(err, "could not unmarshal BBAgentArgs").Err())
+		check(ctx, errors.Annotate(err, "could not unmarshal BBAgentArgs").Err())
 		bbclient, secrets, err = newBuildsClient(ctx, input.Build.Infra.Buildbucket.GetHostname(), retry.Default)
-		check(errors.Annotate(err, "could not connect to Buildbucket").Err())
+		check(ctx, errors.Annotate(err, "could not connect to Buildbucket").Err())
 	case *hostname != "" && *buildID > 0:
 		logging.Debugf(ctx, "fetching build %d", *buildID)
 		bbclient, secrets, err = newBuildsClient(ctx, *hostname, defaultRetryStrategy)
-		check(errors.Annotate(err, "could not connect to Buildbucket").Err())
+		check(ctx, errors.Annotate(err, "could not connect to Buildbucket").Err())
 		// Get everything from the build.
 		// Here we use UpdateBuild instead of GetBuild, so that
 		// * bbagent can always get the build because of the build token.
@@ -166,7 +332,7 @@ func mainImpl() int {
 				},
 			})
 
-		check(errors.Annotate(err, "failed to fetch build").Err())
+		check(ctx, errors.Annotate(err, "failed to fetch build").Err())
 		input = &bbpb.BBAgentArgs{
 			Build:                  build,
 			CacheDir:               build.Infra.Bbagent.CacheDir,
@@ -174,7 +340,7 @@ func mainImpl() int {
 			PayloadPath:            build.Infra.Bbagent.PayloadPath,
 		}
 	default:
-		check(errors.Reason("-host and -build-id are required").Err())
+		check(ctx, errors.Reason("-host and -build-id are required").Err())
 	}
 
 	// Set `buildbucket` in the context.
@@ -204,7 +370,7 @@ func mainImpl() int {
 	}
 
 	logdogOutput, err := mkLogdogOutput(ctx, input.Build.Infra.Logdog)
-	check(errors.Annotate(err, "could not create logdog output").Err())
+	check(ctx, errors.Annotate(err, "could not create logdog output").Err())
 
 	var (
 		cctx   context.Context
@@ -231,7 +397,7 @@ func mainImpl() int {
 			UpdateMask: &fieldmaskpb.FieldMask{Paths: []string{"build.status"}},
 			Mask:       readMask,
 		})
-	check(errors.Annotate(err, "failed to report status STARTED to Buildbucket").Err())
+	check(ctx, errors.Annotate(err, "failed to report status STARTED to Buildbucket").Err())
 	// The build has been canceled, bail out early.
 	if updatedBuild.CancelTime != nil {
 		return cancelBuild(ctx, bbclient, updatedBuild)
@@ -239,7 +405,7 @@ func mainImpl() int {
 
 	// from this point forward we want to try to report errors to buildbucket,
 	// too.
-	check = func(err error) {
+	check := func(err error) {
 		if err != nil {
 			logging.Errorf(cctx, err.Error())
 			if _, bbErr := bbclient.UpdateBuild(
@@ -531,176 +697,10 @@ func mainImpl() int {
 	return retcode
 }
 
-// finalizeBuild returns true if fatalErr is nil and there's no additional
-// errors finalizing the build.
-func finalizeBuild(ctx context.Context, finalBuild *bbpb.Build, fatalErr error, statusDetails *bbpb.StatusDetails, outputFile *luciexe.OutputFlag) bool {
-	if statusDetails != nil {
-		if finalBuild.StatusDetails == nil {
-			finalBuild.StatusDetails = &bbpb.StatusDetails{}
-		}
-		proto.Merge(finalBuild.StatusDetails, statusDetails)
-	}
-
-	// set final times
-	now := timestamppb.New(clock.Now(ctx))
-	finalBuild.UpdateTime = now
-	finalBuild.EndTime = now
-
-	var finalErrs errors.MultiError
-	if fatalErr != nil {
-		finalErrs = append(finalErrs, errors.Annotate(fatalErr, "fatal error in buildbucket.UpdateBuild").Err())
-	}
-	if err := outputFile.Write(finalBuild); err != nil {
-		finalErrs = append(finalErrs, errors.Annotate(err, "writing final build").Err())
-	}
-
-	if len(finalErrs) > 0 {
-		errors.Log(ctx, finalErrs)
-
-		// we had some really bad error, just downgrade status and add a message to
-		// summary markdown.
-		finalBuild.Status = bbpb.Status_INFRA_FAILURE
-		originalSM := finalBuild.SummaryMarkdown
-		finalBuild.SummaryMarkdown = fmt.Sprintf("FATAL: %s", finalErrs.Error())
-		if originalSM != "" {
-			finalBuild.SummaryMarkdown += "\n\n" + originalSM
-		}
-	}
-
-	return len(finalErrs) == 0
-}
-
-func prepareInputBuild(ctx context.Context, build *bbpb.Build) {
-	// mark started
-	build.Status = bbpb.Status_STARTED
-	now := timestamppb.New(clock.Now(ctx))
-	build.StartTime, build.UpdateTime = now, now
-	// TODO(iannucci): this is sketchy, but we preemptively add the log entries
-	// for the top level user stdout/stderr streams.
-	//
-	// Really, `invoke.Start` is the one that knows how to arrange the
-	// Output.Logs, but host.Run makes a copy of this build immediately. Find
-	// a way to set these up nicely (maybe have opts.BaseBuild be a function
-	// returning an immutable bbpb.Build?).
-	build.Output = &bbpb.Build_Output{
-		Logs: []*bbpb.Log{
-			{Name: "stdout", Url: "stdout"},
-			{Name: "stderr", Url: "stderr"},
-		},
-	}
-	populateSwarmingInfoFromEnv(build, environ.System())
-	return
-}
-
-func resolveExe(path string) (string, error) {
-	if filepath.Ext(path) != "" {
-		return path, nil
-	}
-
-	lme := errors.NewLazyMultiError(2)
-	for i, ext := range []string{".exe", ".bat"} {
-		candidate := path + ext
-		if _, err := os.Stat(candidate); !lme.Assign(i, err) {
-			return candidate, nil
-		}
-	}
-
-	me := lme.Get().(errors.MultiError)
-	return path, errors.Reason("cannot find .exe (%q) or .bat (%q)", me[0], me[1]).Err()
-}
-
-// processCmd resolves the cmd by constructing the absolute path and resolving
-// the exe suffix.
-func processCmd(path, cmd string) (string, error) {
-	relPath := filepath.Join(path, cmd)
-	absPath, err := filepath.Abs(relPath)
-	if err != nil {
-		return "", errors.Annotate(err, "absoluting %q", relPath).Err()
-	}
-	if runtime.GOOS == "windows" {
-		absPath, err = resolveExe(absPath)
-		if err != nil {
-			return "", errors.Annotate(err, "resolving %q", absPath).Err()
-		}
-	}
-	return absPath, nil
-}
-
-// processExeArgs processes the given "Executable" message into a single command
-// which bbagent will invoke as a luciexe.
-//
-// This includes resolving paths relative to the current working directory
-// (expected to be the task's root).
-func processExeArgs(input *bbpb.BBAgentArgs, check func(err error)) []string {
-	exeArgs := make([]string, 0, len(input.Build.Exe.Wrapper)+len(input.Build.Exe.Cmd)+1)
-
-	if len(input.Build.Exe.Wrapper) != 0 {
-		exeArgs = append(exeArgs, input.Build.Exe.Wrapper...)
-		exeArgs = append(exeArgs, "--")
-
-		if strings.Contains(exeArgs[0], "/") || strings.Contains(exeArgs[0], "\\") {
-			absPath, err := filepath.Abs(exeArgs[0])
-			check(errors.Annotate(err, "absoluting wrapper path: %q", exeArgs[0]).Err())
-			exeArgs[0] = absPath
-		}
-
-		cmdPath, err := exec.LookPath(exeArgs[0])
-		check(errors.Annotate(err, "wrapper not found: %q", exeArgs[0]).Err())
-		exeArgs[0] = cmdPath
-	}
-
-	exeCmd := input.Build.Exe.Cmd[0]
-	payloadPath := input.PayloadPath
-	if len(input.Build.Exe.Cmd) == 0 {
-		// TODO(iannucci): delete me with ExecutablePath.
-		payloadPath, exeCmd = path.Split(input.ExecutablePath)
-	} else {
-		for p, purpose := range input.Build.GetInfra().GetBuildbucket().GetAgent().GetPurposes() {
-			if purpose == bbpb.BuildInfra_Buildbucket_Agent_PURPOSE_EXE_PAYLOAD {
-				payloadPath = p
-				break
-			}
-		}
-	}
-	exePath, err := processCmd(payloadPath, exeCmd)
-	check(err)
-	exeArgs = append(exeArgs, exePath)
-	exeArgs = append(exeArgs, input.Build.Exe.Cmd[1:]...)
-
-	return exeArgs
-}
-
-func cancelBuild(ctx context.Context, bbclient BuildsClient, bld *bbpb.Build) (retCode int) {
-	logging.Infof(ctx, "The build is in the cancel process, cancel time is %s. Actually cancel it now.", bld.CancelTime.AsTime())
-	_, err := bbclient.UpdateBuild(
-		ctx,
-		&bbpb.UpdateBuildRequest{
-			Build: &bbpb.Build{
-				Id:     bld.Id,
-				Status: bbpb.Status_CANCELED,
-			},
-			UpdateMask: &fieldmaskpb.FieldMask{Paths: []string{"build.status"}},
-		})
-	if err != nil {
-		logging.Errorf(ctx, "failed to actually cancel the build: %s", err)
-		return 1
-	}
-	return 0
-}
-
-func prependPath(bld *bbpb.Build, workDir string) error {
-	extraPathEnv := stringset.Set{}
-	for _, ref := range bld.Infra.Buildbucket.Agent.Input.Data {
-		extraPathEnv.AddAll(ref.OnPath)
-	}
-
-	var extraAbsPaths []string
-	for _, p := range extraPathEnv.ToSortedSlice() {
-		extraAbsPaths = append(extraAbsPaths, filepath.Join(workDir, p))
-	}
-	original := os.Getenv("PATH")
-	if err := os.Setenv("PATH", strings.Join(append(extraAbsPaths, original), string(os.PathListSeparator))); err != nil {
-		return err
-	}
-	return nil
+func main() {
+	go func() {
+		// serves "/debug" endpoints for pprof.
+		log.Println(http.ListenAndServe("localhost:6060", nil))
+	}()
+	os.Exit(mainImpl())
 }
