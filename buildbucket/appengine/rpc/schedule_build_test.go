@@ -1620,6 +1620,7 @@ func TestScheduleBuild(t *testing.T) {
 							bb.ExperimentBBCanarySoftware: true,
 							bb.ExperimentNonProduction:    false,
 						},
+						Properties: &structpb.Struct{},
 					})
 				})
 
@@ -1642,6 +1643,7 @@ func TestScheduleBuild(t *testing.T) {
 							bb.ExperimentBBCanarySoftware: false,
 							bb.ExperimentNonProduction:    false,
 						},
+						Properties: &structpb.Struct{},
 					})
 				})
 			})
@@ -1682,6 +1684,7 @@ func TestScheduleBuild(t *testing.T) {
 							Bucket:  "bucket",
 							Builder: "builder",
 						},
+						Properties: &structpb.Struct{},
 						Experiments: map[string]bool{
 							bb.ExperimentBBCanarySoftware: false,
 							bb.ExperimentNonProduction:    false,
@@ -1708,6 +1711,7 @@ func TestScheduleBuild(t *testing.T) {
 							bb.ExperimentBBCanarySoftware: true,
 							bb.ExperimentNonProduction:    false,
 						},
+						Properties: &structpb.Struct{},
 					})
 				})
 			})
@@ -1749,6 +1753,7 @@ func TestScheduleBuild(t *testing.T) {
 						bb.ExperimentBBCanarySoftware: false,
 						bb.ExperimentNonProduction:    false,
 					},
+					Properties: &structpb.Struct{},
 				})
 			})
 
@@ -1772,6 +1777,7 @@ func TestScheduleBuild(t *testing.T) {
 						bb.ExperimentBBCanarySoftware: false,
 						bb.ExperimentNonProduction:    false,
 					},
+					Properties: &structpb.Struct{},
 				})
 			})
 		})
@@ -1816,6 +1822,7 @@ func TestScheduleBuild(t *testing.T) {
 							bb.ExperimentBBCanarySoftware: false,
 							bb.ExperimentNonProduction:    false,
 						},
+						Properties: &structpb.Struct{},
 					})
 				})
 
@@ -1850,6 +1857,7 @@ func TestScheduleBuild(t *testing.T) {
 							CipdPackage: "package",
 							CipdVersion: "new",
 						},
+						Properties: &structpb.Struct{},
 					})
 				})
 			})
@@ -1877,6 +1885,7 @@ func TestScheduleBuild(t *testing.T) {
 						CipdPackage: "package",
 						CipdVersion: "version",
 					},
+					Properties: &structpb.Struct{},
 				})
 			})
 		})
@@ -1934,6 +1943,7 @@ func TestScheduleBuild(t *testing.T) {
 								Patchset: 1,
 							},
 						},
+						Properties: &structpb.Struct{},
 					})
 				})
 
@@ -1980,6 +1990,7 @@ func TestScheduleBuild(t *testing.T) {
 								Patchset: 2,
 							},
 						},
+						Properties: &structpb.Struct{},
 					})
 				})
 			})
@@ -2011,6 +2022,7 @@ func TestScheduleBuild(t *testing.T) {
 							Patchset: 1,
 						},
 					},
+					Properties: &structpb.Struct{},
 				})
 			})
 		})
@@ -2057,6 +2069,7 @@ func TestScheduleBuild(t *testing.T) {
 					Project: "project",
 					Ref:     "refs/heads/master",
 				},
+				Properties: &structpb.Struct{},
 			})
 		})
 
@@ -2146,6 +2159,7 @@ func TestScheduleBuild(t *testing.T) {
 							bb.ExperimentBBCanarySoftware: false,
 							bb.ExperimentNonProduction:    false,
 						},
+						Properties: &structpb.Struct{},
 					})
 				})
 			})
@@ -2153,11 +2167,13 @@ func TestScheduleBuild(t *testing.T) {
 			Convey("non-empty", func() {
 				So(datastore.Put(ctx, &model.BuildInputProperties{
 					Build: datastore.MakeKey(ctx, "Build", 1),
-					Proto: &structpb.Struct{
-						Fields: map[string]*structpb.Value{
-							"input": {
-								Kind: &structpb.Value_StringValue{
-									StringValue: "input value",
+					Proto: model.DSStruct{
+						Struct: structpb.Struct{
+							Fields: map[string]*structpb.Value{
+								"input": {
+									Kind: &structpb.Value_StringValue{
+										StringValue: "input value",
+									},
 								},
 							},
 						},
@@ -2311,6 +2327,7 @@ func TestScheduleBuild(t *testing.T) {
 							bb.ExperimentBBCanarySoftware: false,
 							bb.ExperimentNonProduction:    false,
 						},
+						Properties: &structpb.Struct{},
 						Tags: []*pb.StringPair{
 							{
 								Key:   "key",
@@ -2351,6 +2368,7 @@ func TestScheduleBuild(t *testing.T) {
 							bb.ExperimentBBCanarySoftware: false,
 							bb.ExperimentNonProduction:    false,
 						},
+						Properties: &structpb.Struct{},
 						Tags: []*pb.StringPair{
 							{
 								Key:   "other",
@@ -2380,6 +2398,7 @@ func TestScheduleBuild(t *testing.T) {
 						bb.ExperimentBBCanarySoftware: false,
 						bb.ExperimentNonProduction:    false,
 					},
+					Properties: &structpb.Struct{},
 					Tags: []*pb.StringPair{
 						{
 							Key:   "key",
@@ -2420,6 +2439,7 @@ func TestScheduleBuild(t *testing.T) {
 					bb.ExperimentBBCanarySoftware: false,
 					bb.ExperimentNonProduction:    false,
 				},
+				Properties: &structpb.Struct{},
 			})
 		})
 	})

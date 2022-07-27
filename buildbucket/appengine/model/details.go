@@ -49,6 +49,39 @@ func defaultStructValues(s *structpb.Struct) {
 	}
 }
 
+// Ensure DSStruct implements datastore.PropertyConverter.
+var _ datastore.PropertyConverter = &DSStruct{}
+
+// DSStruct is a wrapper around structpb.Struct.
+// Implements datastore.PropertyConverter,
+// allowing reads from and writes to the datastore.
+type DSStruct struct {
+	structpb.Struct
+}
+
+// FromProperty deserializes structpb.Struct protos from the datastore.
+// Implements datastore.PropertyConverter.
+func (s *DSStruct) FromProperty(p datastore.Property) error {
+	err := proto.Unmarshal(p.Value().([]byte), &s.Struct)
+	if err != nil {
+		return errors.Annotate(err, "error unmarshalling proto").Err()
+	}
+	defaultStructValues(&s.Struct)
+	return nil
+}
+
+// ToProperty serializes structpb.Struct protos to datastore format.
+// Implements datastore.PropertyConverter.
+func (s *DSStruct) ToProperty() (datastore.Property, error) {
+	p := datastore.Property{}
+	b, err := proto.Marshal(&s.Struct)
+	if err != nil {
+		return p, errors.Annotate(err, "failed to marshal proto").Err()
+	}
+	// noindex is not respected in tags.
+	return p, p.SetValue(b, datastore.NoIndex)
+}
+
 // BuildInfra is a representation of a build proto's infra field
 // in the datastore.
 type BuildInfra struct {
@@ -89,7 +122,7 @@ type BuildInputProperties struct {
 	// Build is the key for the build this entity belongs to.
 	Build *datastore.Key `gae:"$parent"`
 	// Proto is the structpb.Struct representation of the properties field.
-	Proto *structpb.Struct `gae:"properties,legacy"`
+	Proto DSStruct `gae:"properties,noindex"`
 }
 
 // BuildOutputProperties is a representation of a build proto's output field's
@@ -101,7 +134,7 @@ type BuildOutputProperties struct {
 	// Build is the key for the build this entity belongs to.
 	Build *datastore.Key `gae:"$parent"`
 	// Proto is the structpb.Struct representation of the properties field.
-	Proto *structpb.Struct `gae:"properties,legacy"`
+	Proto DSStruct `gae:"properties,noindex"`
 }
 
 // BuildStepsMaxBytes is the maximum length of BuildSteps.Bytes. If Bytes

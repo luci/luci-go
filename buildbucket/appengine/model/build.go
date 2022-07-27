@@ -400,11 +400,11 @@ func LoadBuildDetails(ctx context.Context, m *BuildMask, builds ...*pb.Build) er
 		if p.Input == nil {
 			p.Input = &pb.Build_Input{}
 		}
-		p.Input.Properties = inp[i].Proto
+		p.Input.Properties = &inp[i].Proto.Struct
 		if p.Output == nil {
 			p.Output = &pb.Build_Output{}
 		}
-		p.Output.Properties = out[i].Proto
+		p.Output.Properties = &out[i].Proto.Struct
 		p.Steps, err = stp[i].ToProto(ctx)
 		if err != nil {
 			return errors.Annotate(err, "error fetching steps for build %q", p).Err()

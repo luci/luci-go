@@ -1295,7 +1295,9 @@ func scheduleBuilds(ctx context.Context, globalCfg *pb.SettingsCfg, reqs ...*pb.
 					},
 					&model.BuildInputProperties{
 						Build: datastore.KeyForObj(ctx, b),
-						Proto: b.Proto.Input.Properties,
+						Proto: model.DSStruct{
+							Struct: *b.Proto.Input.Properties,
+						},
 					},
 				}
 				r := model.NewRequestID(ctx, b.ID, now, reqID)

@@ -50,7 +50,7 @@ func help() {
 func main() {
 	var raw string
 
-	interrupt := make(chan os.Signal, 1)
+	interrupt := make(chan os.Signal)
 	go func() {
 		<-interrupt
 		help()
