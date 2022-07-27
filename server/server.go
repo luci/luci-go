@@ -321,7 +321,7 @@ func Main(opts *Options, mods []module.Module, init func(srv *Server) error) {
 			srv.Fatal(err)
 		}
 	}
-	if err = srv.ListenAndServe(); err != nil {
+	if err = srv.Serve(); err != nil {
 		srv.Fatal(err)
 	}
 }
@@ -636,8 +636,8 @@ func (o *Options) hostOptions() module.HostOptions {
 type Server struct {
 	// Context is the root context used by all requests and background activities.
 	//
-	// Can be replaced (by a derived context) before ListenAndServe call, for
-	// example to inject values accessible to all request handlers.
+	// Can be replaced (by a derived context) before Serve call, for example to
+	// inject values accessible to all request handlers.
 	Context context.Context
 
 	// Routes is a router for requests hitting HTTPAddr port.
@@ -649,12 +649,12 @@ type Server struct {
 	// This router is also accessible to the server modules and they can install
 	// routes into it.
 	//
-	// Should be populated before ListenAndServe call.
+	// Should be populated before Serve call.
 	Routes *router.Router
 
 	// PRPC is pRPC server with APIs exposed on HTTPAddr port via Routes router.
 	//
-	// Should be populated before ListenAndServe call.
+	// Should be populated before Serve call.
 	PRPC *prpc.Server
 
 	// CookieAuth is an authentication method implemented via cookies.
@@ -677,12 +677,12 @@ type Server struct {
 
 	mu      sync.Mutex    // protects fields below
 	ports   []*Port       // all non-dummy ports (each one hosts an HTTP server)
-	started bool          // true inside and after ListenAndServe
+	started bool          // true inside and after Serve
 	stopped bool          // true inside and after Shutdown
 	ready   chan struct{} // closed right before starting the serving loop
 	done    chan struct{} // closed after Shutdown returns
 
-	// See RegisterUnaryServerInterceptor and ListenAndServe.
+	// See RegisterUnaryServerInterceptor and Serve.
 	unaryInterceptors []grpc.UnaryServerInterceptor
 
 	rndM sync.Mutex // protects rnd
@@ -728,6 +728,14 @@ func (h *moduleHostImpl) panicIfInvalid() {
 func (h *moduleHostImpl) ServiceRegistrar() grpc.ServiceRegistrar {
 	h.panicIfInvalid()
 	return h.srv.PRPC
+}
+
+func (h *moduleHostImpl) HTTPAddr() net.Addr {
+	h.panicIfInvalid()
+	if h.srv.mainPort.listener != nil {
+		return h.srv.mainPort.listener.Addr()
+	}
+	return nil
 }
 
 func (h *moduleHostImpl) Routes() *router.Router {
@@ -922,7 +930,7 @@ func New(ctx context.Context, opts Options, mods []module.Module) (srv *Server, 
 	return srv, nil
 }
 
-// AddPort prepares an additional serving HTTP port.
+// AddPort prepares and binds an additional serving HTTP port.
 //
 // Can be used to open more listening HTTP ports (in addition to opts.HTTPAddr
 // and opts.AdminAddr). The returned Port object can be used to populate the
@@ -932,8 +940,8 @@ func New(ctx context.Context, opts Options, mods []module.Module) (srv *Server, 
 // object, but it is not actually exposed as a listening TCP socket. This is
 // useful to disable listening ports without changing any code.
 //
-// Should be called before ListenAndServe (panics otherwise).
-func (s *Server) AddPort(opts PortOptions) *Port {
+// Should be called before Serve (panics otherwise).
+func (s *Server) AddPort(opts PortOptions) (*Port, error) {
 	port := &Port{
 		Routes: s.newRouter(opts),
 		parent: s,
@@ -945,10 +953,27 @@ func (s *Server) AddPort(opts PortOptions) *Port {
 	if s.started {
 		s.Fatal(errors.Reason("the server has already been started").Err())
 	}
+
 	if opts.ListenAddr != "-" {
+		// If not running tests, bind the socket as usual.
+		if s.Options.testListeners == nil {
+			var err error
+			port.listener, err = net.Listen("tcp", opts.ListenAddr)
+			if err != nil {
+				return nil, errors.Annotate(err, "failed to bind the listening port for %q at %q", opts.Name, opts.ListenAddr).Err()
+			}
+		} else {
+			// In test mode the listener MUST be prepared already.
+			port.listener = s.Options.testListeners[opts.ListenAddr]
+			if port.listener == nil {
+				return nil, errors.Reason("test listener for %q at %q is not set", opts.Name, opts.ListenAddr).Err()
+			}
+		}
+		// Add to the list of ports that actually have sockets listening.
 		s.ports = append(s.ports, port)
 	}
-	return port
+
+	return port, nil
 }
 
 // VirtualHost returns a router (registering it if necessary) used for requests
@@ -972,7 +997,7 @@ func (s *Server) AddPort(opts PortOptions) *Port {
 // directly into server.Routes instead, using VirtualHost only for routes that
 // critically depend on Host header.
 //
-// Should be called before ListenAndServe (panics otherwise).
+// Should be called before Serve (panics otherwise).
 func (s *Server) VirtualHost(host string) *router.Router {
 	return s.mainPort.VirtualHost(host)
 }
@@ -1067,9 +1092,9 @@ func (s *Server) RunInBackground(activity string, f func(context.Context)) {
 //
 // An interceptor set in server.PRPC.UnaryServerInterceptor (if any) is
 // automatically registered as the last (innermost) one right before the server
-// starts listening for requests in ListenAndServe.
+// starts serving requests in Serve.
 //
-// Should be called before ListenAndServe (panics otherwise).
+// Should be called before Serve (panics otherwise).
 func (s *Server) RegisterUnaryServerInterceptor(intr grpc.UnaryServerInterceptor) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -1079,7 +1104,7 @@ func (s *Server) RegisterUnaryServerInterceptor(intr grpc.UnaryServerInterceptor
 	s.unaryInterceptors = append(s.unaryInterceptors, intr)
 }
 
-// ListenAndServe launches the serving loop.
+// Serve launches the serving loop.
 //
 // Blocks forever or until the server is stopped via Shutdown (from another
 // goroutine or from a SIGTERM handler). Returns nil if the server was shutdown
@@ -1087,7 +1112,7 @@ func (s *Server) RegisterUnaryServerInterceptor(intr grpc.UnaryServerInterceptor
 // is logged inside.
 //
 // Should be called only once. Panics otherwise.
-func (s *Server) ListenAndServe() error {
+func (s *Server) Serve() error {
 	s.mu.Lock()
 	if s.started {
 		s.mu.Unlock()
@@ -1149,7 +1174,9 @@ func (s *Server) ListenAndServe() error {
 		port := port
 		go func() {
 			defer wg.Done()
-			if err := s.serveLoop(port.httpServer()); err != http.ErrServerClosed {
+			srv := port.httpServer()
+			srv.BaseContext = func(net.Listener) context.Context { return s.Context }
+			if err := srv.Serve(port.listener); err != http.ErrServerClosed {
 				logging.WithError(err).Errorf(s.Context, "Server %s failed", port.nameForLog())
 				errs[i] = err
 				s.Shutdown() // close all other servers
@@ -1204,7 +1231,7 @@ func (s *Server) Shutdown() {
 	// Wait for all background goroutines to stop.
 	s.bgrWg.Wait()
 
-	// Notify ListenAndServe that it can exit now.
+	// Notify Serve that it can exit now.
 	s.stopped = true
 	close(s.done)
 }
@@ -1239,23 +1266,6 @@ func (s *Server) healthResponse(c context.Context) string {
 		"host:    " + s.Options.Hostname,
 		"",
 	}, "\n")
-}
-
-// serveLoop binds the socket and launches the serving loop.
-//
-// Basically srv.ListenAndServe with some testing helpers.
-func (s *Server) serveLoop(srv *http.Server) error {
-	// Make sure http.Request inherits our root context.
-	srv.BaseContext = func(net.Listener) context.Context { return s.Context }
-	// If not running tests, let http.Server bind the socket as usual.
-	if s.Options.testListeners == nil {
-		return srv.ListenAndServe()
-	}
-	// In test mode the listener MUST be prepared already.
-	if l, _ := s.Options.testListeners[srv.Addr]; l != nil {
-		return srv.Serve(l)
-	}
-	return errors.Reason("test listener is not set").Err()
 }
 
 // waitUntilNotServing is called during the graceful shutdown and it tries to
@@ -1295,8 +1305,8 @@ func (s *Server) waitUntilNotServing() {
 	}
 }
 
-// RegisterWarmup registers a callback that is run in server's ListenAndServe
-// right before the serving loop.
+// RegisterWarmup registers a callback that is run in server's Serve right
+// before the serving loop.
 //
 // It receives the global server context (including all customizations made
 // by the user code in server.Main). Intended for best-effort warmups: there's
@@ -1321,8 +1331,8 @@ func (s *Server) runWarmup() {
 	}
 }
 
-// RegisterCleanup registers a callback that is run in ListenAndServe after the
-// server has exited the serving loop.
+// RegisterCleanup registers a callback that is run in Serve after the server
+// has exited the serving loop.
 //
 // Registering a new cleanup callback from within a cleanup causes a deadlock,
 // don't do that.
@@ -1355,10 +1365,9 @@ var cloudTraceFormat = propagation.HTTPFormat{}
 
 // rootMiddleware prepares the per-request context.
 func (s *Server) rootMiddleware(c *router.Context, next router.Handler) {
-	// The request context is derived from s.Context (see serveLoop) and has
-	// various server systems injected into it already. Its only difference from
-	// s.Context is that http.Server cancels it when the client disconnects,
-	// which we want.
+	// The request context is derived from s.Context (see Serve) and has various
+	// server systems injected into it already. Its only difference from s.Context
+	// is that http.Server cancels it when the client disconnects, which we want.
 	ctx := c.Request.Context()
 
 	// If running on GAE, initialize the per-request API tickets needed to make
@@ -2056,17 +2065,21 @@ func (s *Server) getServiceID() string {
 
 // initMainPort initializes the server on options.HTTPAddr port.
 func (s *Server) initMainPort() error {
-	s.mainPort = s.AddPort(PortOptions{
+	var err error
+	s.mainPort, err = s.AddPort(PortOptions{
 		Name:       "main",
 		ListenAddr: s.Options.HTTPAddr,
 	})
+	if err != nil {
+		return err
+	}
 	s.Routes = s.mainPort.Routes
 
 	// Install auth info handlers (under "/auth/api/v1/server/").
 	auth.InstallHandlers(s.Routes, nil)
 
-	// Expose public pRPC endpoints (see also ListenAndServe where we put the
-	// final interceptors).
+	// Expose public pRPC endpoints (see also Serve where we put the final
+	// interceptors).
 	s.PRPC = &prpc.Server{
 		Authenticator: &auth.Authenticator{
 			Methods: []auth.Method{
@@ -2110,11 +2123,14 @@ func (s *Server) initAdminPort() error {
 	})
 
 	// Install endpoints accessible through the admin port only.
-	adminPort := s.AddPort(PortOptions{
+	adminPort, err := s.AddPort(PortOptions{
 		Name:           "admin",
 		ListenAddr:     s.Options.AdminAddr,
 		DisableMetrics: true, // do not pollute HTTP metrics with admin-only routes
 	})
+	if err != nil {
+		return err
+	}
 	routes := adminPort.Routes
 
 	routes.GET("/", nil, func(c *router.Context) {

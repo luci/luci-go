@@ -18,6 +18,7 @@ package module
 
 import (
 	"context"
+	"net"
 
 	"google.golang.org/grpc"
 
@@ -81,6 +82,11 @@ type Host interface {
 	// ServiceRegistrar is a registrar that can be used to register gRPC services.
 	ServiceRegistrar() grpc.ServiceRegistrar
 
+	// HTTPAddr is the address the main HTTP port is bound to.
+	//
+	// May be nil if the server doesn't expose the main port.
+	HTTPAddr() net.Addr
+
 	// Routes returns a router that servers HTTP requests hitting the main port.
 	//
 	// The module can use it to register additional request handlers.
@@ -105,8 +111,8 @@ type Host interface {
 	// the goroutine will exit soon after the context is canceled.
 	RunInBackground(activity string, f func(context.Context))
 
-	// RegisterWarmup registers a callback that is run in server's ListenAndServe
-	// right before the serving loop.
+	// RegisterWarmup registers a callback that is run in server's Serve right
+	// before the serving loop.
 	//
 	// It receives the global server context (including all customizations made
 	// by the user code in server.Main). Intended for best-effort warmups: there's
@@ -117,8 +123,8 @@ type Host interface {
 	// in server.Main and it can't depend on modifications done there.
 	RegisterWarmup(cb func(context.Context))
 
-	// RegisterCleanup registers a callback that is run in server's ListenAndServe
-	// after the server exits the serving loop.
+	// RegisterCleanup registers a callback that is run in server's Serve after
+	// the server exits the serving loop.
 	//
 	// It receives the global server context.
 	RegisterCleanup(cb func(context.Context))

@@ -716,7 +716,7 @@ func newTestServer(ctx context.Context, o *Options) (srv *testServer, err error)
 }
 
 func (s *testServer) ServeInBackground() {
-	go func() { s.serveErr.Set(s.ListenAndServe()) }()
+	go func() { s.serveErr.Set(s.Serve()) }()
 
 	// Wait until both HTTP endpoints are serving before returning.
 	if _, err := s.GetMain(healthEndpoint, nil); err != nil {

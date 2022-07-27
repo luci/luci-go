@@ -16,6 +16,7 @@ package server
 
 import (
 	"fmt"
+	"net"
 	"net/http"
 	"sync"
 
@@ -40,11 +41,12 @@ type Port struct {
 	// specially registered per-host routers (see VirtualHost). Normally, there
 	// are no such per-host routers, so usually Routes is used for all requests.
 	//
-	// Should be populated before Server's ListenAndServe call.
+	// Should be populated before Server's Serve loop.
 	Routes *router.Router
 
-	parent *Server     // the owning server
-	opts   PortOptions // options passed to AddPort
+	parent   *Server      // the owning server
+	opts     PortOptions  // options passed to AddPort
+	listener net.Listener // listening socket if ListenAddr != "-"
 
 	mu      sync.Mutex
 	srv     *http.Server              // lazy-initialized in httpServer()
@@ -58,7 +60,7 @@ type Port struct {
 // reach the default router (port.Routes), even if the virtual host router
 // doesn't have a route for them. Such requests finish with HTTP 404.
 //
-// Should be called before Server's ListenAndServe (panics otherwise).
+// Should be called before Server's Serve loop (panics otherwise).
 func (p *Port) VirtualHost(host string) *router.Router {
 	p.mu.Lock()
 	defer p.mu.Unlock()
@@ -82,10 +84,10 @@ func (p *Port) VirtualHost(host string) *router.Router {
 // nameForLog returns a string to identify this port in the server logs.
 func (p *Port) nameForLog() string {
 	var pfx string
-	if p.opts.ListenAddr == "-" {
-		pfx = "-"
+	if p.listener != nil {
+		pfx = "http://" + p.listener.Addr().String()
 	} else {
-		pfx = "http://" + p.opts.ListenAddr
+		pfx = "-"
 	}
 	if p.opts.Name != "" {
 		return fmt.Sprintf("%s [%s]", pfx, p.opts.Name)
@@ -95,7 +97,7 @@ func (p *Port) nameForLog() string {
 
 // httpServer lazy-initializes and returns http.Server for this port.
 //
-// Called from Server's ListenAndServe.
+// Called from Server's Serve.
 //
 // Once this function is called, no more virtual hosts can be added to the
 // server (an attempt to do so causes a panic).
@@ -103,13 +105,13 @@ func (p *Port) httpServer() *http.Server {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 
-	if p.opts.ListenAddr == "-" {
-		panic("httpServer must not be used with dummy ports")
+	if p.listener == nil {
+		panic("httpServer must not be used with uninitialized ports")
 	}
 
 	if p.srv == nil {
 		p.srv = &http.Server{
-			Addr:     p.opts.ListenAddr,
+			Addr:     p.listener.Addr().String(),
 			Handler:  p.initHandlerLocked(),
 			ErrorLog: nil, // TODO(vadimsh): Log via 'logging' package.
 		}

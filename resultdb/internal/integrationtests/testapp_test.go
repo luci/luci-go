@@ -221,13 +221,13 @@ func (t *testApp) initServers(ctx context.Context) error {
 	return nil
 }
 
-func (t *testApp) ListenAndServe() error {
+func (t *testApp) Serve() error {
 	eg := errgroup.Group{}
 	for _, s := range t.servers {
 		s := s
 		eg.Go(func() error {
 			defer t.Shutdown()
-			return s.ListenAndServe()
+			return s.Serve()
 		})
 	}
 	return eg.Wait()
@@ -238,7 +238,7 @@ func (t *testApp) ListenAndServe() error {
 func (t *testApp) Start(ctx context.Context) error {
 	errC := make(chan error, 1)
 	go func() {
-		errC <- t.ListenAndServe()
+		errC <- t.Serve()
 	}()
 
 	// Give servers 5s to start.
