@@ -93,8 +93,8 @@ type testingLoader struct {
 // This environment includes the acquisition and construction of binary data
 // that will be used to perform the VirtualEnv test suite, namely:
 //
-//	- Building test wheel files from source.
-//	- Downloading the testing VirtualEnv package.
+//   - Building test wheel files from source.
+//   - Downloading the testing VirtualEnv package.
 //
 // This online setup is preferred to actually checking these binary files into
 // Git, as it offers more versatility and doesn't clutter Git with binary junk.
@@ -201,10 +201,10 @@ func (tl *testingLoader) buildWheelLocked(t *testing.T, py *python.Interpreter, 
 
 	// Create a bootstrap wheel-generating VirtualEnv!
 	cfg := Config{
-		MaxHashLen: 1, // Only going to be 1 environment.
-		BaseDir:    filepath.Join(outDir, ".env"),
-		SetupEnv:   environ.System(),
-		Python:     []string{py.Python},
+		MaxHashLen:        1, // Only going to be 1 environment.
+		BaseDir:           filepath.Join(outDir, ".env"),
+		SetupEnv:          environ.System(),
+		UnversionedPython: []string{py.Python},
 		Package: vpython.Spec_Package{
 			Name:    "foo/bar/virtualenv",
 			Version: "whatever",

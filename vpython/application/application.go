@@ -100,15 +100,17 @@ type Config struct {
 	// wheels will be deduplicated.
 	BaseWheels []*vpythonAPI.Spec_Package
 
-	// RelativePathOverride is a series of forward-slash-delimited paths to
-	// directories relative to the "vpython" executable that will be checked
-	// for Python targets prior to checking PATH. This allows bundles (e.g., CIPD)
-	// that include both the wrapper and a real implementation, to force the
-	// wrapper to use the bundled implementation if present.
-	//
-	// See "go.chromium.org/luci/common/wrapper/prober.Probe"'s
-	// RelativePathOverride member for more information.
+	// DEPRECATED, remove once no more callers exist.
 	RelativePathOverride []string
+
+	// InterpreterPaths is a series of forward-slash-delimited paths to
+	// Python interpreters, keyed by Python minor version. This will be
+	// consulted before checking PATH. This allows bundles (e.g., CIPD)
+	// that include both vpython and an interpreter, to force use of the
+	// bundled interpreter and avoid probing overhead. The values should be
+	// the complete path to the binary, including any suffix such as .exe
+	// on Windows.
+	InterpreterPaths map[string]string
 
 	// PruneThreshold, if > 0, is the maximum age of a VirtualEnv before it
 	// becomes candidate for pruning. If <= 0, no pruning will be performed.
@@ -187,7 +189,7 @@ func (a *application) addToFlagSet(fs *flag.FlagSet) {
 
 	fs.BoolVar(&a.toolMode, "vpython-tool", a.toolMode,
 		"Enter tooling subcommand mode (use 'help' subcommand for details).")
-	fs.Var(&a.opts.EnvConfig.Python, "vpython-interpreter",
+	fs.Var(&a.opts.EnvConfig.UnversionedPython, "vpython-interpreter",
 		"Path to system Python interpreter to use. Default is found on PATH. "+
 			"May be passed more than once, in which case the first one "+
 			"matching the spec's python_version will be used.")
@@ -390,6 +392,7 @@ func (cfg *Config) Main(c context.Context, argv []string, env environ.Env) int {
 				MaxHashLen:        6,
 				SetupEnv:          env,
 				Package:           cfg.VENVPackage,
+				Python:            cfg.InterpreterPaths,
 				PruneThreshold:    cfg.PruneThreshold,
 				MaxPrunesPerSweep: cfg.MaxPrunesPerSweep,
 				Loader:            cfg.PackageLoader,

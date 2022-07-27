@@ -109,7 +109,7 @@ func TestResolvePythonInterpreter(t *testing.T) {
 		})
 
 		c.Convey(fmt.Sprintf(`Fails when Python 9999 is requested, but a Python %s interpreter is forced.`, vers), func() {
-			cfg.Python = []string{ri.py.Python}
+			cfg.UnversionedPython = []string{ri.py.Python}
 			s.PythonVersion = "9999"
 			So(cfg.resolvePythonInterpreter(ctx, &s), ShouldErrLike, "none of [", "] matched specification")
 		})
@@ -184,7 +184,7 @@ func TestResolvePythonInterpreter(t *testing.T) {
 					}
 				}
 
-				cfg := Config{Python: cfgPythons}
+				cfg := Config{UnversionedPython: cfgPythons}
 
 				// No Python version specified in the spec, so we should default
 				// to the first interpreter from the config.
@@ -201,7 +201,7 @@ func TestResolvePythonInterpreter(t *testing.T) {
 			}
 
 			for _, ri := range pythons {
-				cfg := Config{Python: cfgPythons}
+				cfg := Config{UnversionedPython: cfgPythons}
 
 				// Python version specified in the spec, so we should select
 				// the matching interpreter from the config.
@@ -251,8 +251,8 @@ func testVirtualEnvWith(t *testing.T, ri *resolvedInterpreter) {
 				Name:    "foo/bar/virtualenv",
 				Version: "unresolved",
 			},
-			Python: []string{ri.py.Python},
-			Loader: tl,
+			UnversionedPython: []string{ri.py.Python},
+			Loader:            tl,
 			Spec: &vpython.Spec{
 				Wheel: []*vpython.Spec_Package{
 					{Name: "foo/bar/shirt", Version: "unresolved"},

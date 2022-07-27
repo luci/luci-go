@@ -76,10 +76,17 @@ type Config struct {
 	// overriding one.
 	Package vpython.Spec_Package
 
-	// Python is the set of Python interpreters to use. If empty, one will be
-	// resolved based on the Spec and the current PATH. If more than one, the
-	// first interpreter matching the Spec will be used.
-	Python SliceFlag
+	// Python is a hardcoded set of Python interpreters to use, keyed by
+	// the python minor version, such as "3.8". If a key is found for the
+	// Python version required by the spec, and that file exists, it will
+	// be used without further probing. Otherwise, a list of possible
+	// interpreters may be given as UnversionedPython; the first one
+	// matching the Spec version will be used.
+	//
+	// If no interpreter is found via either of these methods, PATH will be
+	// searched for a matching interpreter.
+	Python            map[string]string
+	UnversionedPython SliceFlag
 
 	// LookPathFunc, if not nil, will be used instead of exec.LookPath to find the
 	// underlying Python interpreter.
@@ -275,16 +282,9 @@ func (cfg *Config) resolvePythonInterpreter(c context.Context, s *vpython.Spec) 
 		return errors.Annotate(err, "failed to parse Python version from: %q", s.PythonVersion).Err()
 	}
 
-	if len(cfg.Python) == 0 {
-		// No explicitly-specified Python path. Search PATH to find one
-		// matching the specification.
-		if cfg.si, err = python.Find(c, specVers, cfg.LookPathFunc); err != nil {
-			return errors.Annotate(err, "could not find Python for: %s", specVers).Err()
-		}
-	} else {
-		// Select the interpreter out of cfg.Python that matches the
-		// specification.
-		for _, pythonPath := range cfg.Python {
+	if len(cfg.UnversionedPython) > 0 {
+		// Select the interpreter that matches the specification.
+		for _, pythonPath := range cfg.UnversionedPython {
 			i := python.Interpreter{Python: pythonPath}
 			if err := i.Normalize(); err != nil {
 				continue
@@ -301,7 +301,29 @@ func (cfg *Config) resolvePythonInterpreter(c context.Context, s *vpython.Spec) 
 		}
 
 		if cfg.si == nil {
-			return errors.Reason("none of %v matched specification %s", cfg.Python, specVers).Err()
+			return errors.Reason("none of %v matched specification %s", cfg.UnversionedPython, specVers).Err()
+		}
+	} else {
+		if pythonPath, present := cfg.Python[s.PythonVersion]; present {
+			// A Python interpreter was given for this specific version.
+			// Make sure it exists before using it.
+			// TODO: Use a build-time variable to control whether the bundled
+			// interpreter is expected to be present; skip the stat if so.
+			_, err := os.Stat(pythonPath)
+			if err == nil {
+				cfg.si = &python.Interpreter{Python: pythonPath}
+				if err := cfg.si.Normalize(); err != nil {
+					return errors.Annotate(err, "unable to normalize python interpreter").Err()
+				}
+			}
+		}
+
+		if cfg.si == nil {
+			// No explicitly-specified Python path. Search PATH to find one
+			// matching the specification.
+			if cfg.si, err = python.Find(c, specVers, cfg.LookPathFunc); err != nil {
+				return errors.Annotate(err, "could not find Python for: %s", specVers).Err()
+			}
 		}
 	}
 	if err := cfg.si.Normalize(); err != nil {
