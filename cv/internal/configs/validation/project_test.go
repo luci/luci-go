@@ -484,6 +484,92 @@ func TestValidateProjectDetailed(t *testing.T) {
 					"negative single_quota not allowed (-1 given) (and 4 other errors)")
 			})
 		})
+
+		Convey("UserQuotas and UserQuotaDefault", func() {
+			cg := cfg.ConfigGroups[0]
+			cg.UserQuotas = []*cfgpb.QuotaPolicy{
+				{
+					Name:       "user_policy",
+					Principals: []string{"user:foo@example.org"},
+				},
+				{
+					Name:       "group_policy",
+					Principals: []string{"group:bar"},
+				},
+			}
+			cg.UserQuotaDefault = &cfgpb.QuotaPolicy{
+				Name: "user_quota_default_policy",
+			}
+			validateProjectConfig(vctx, &cfg)
+			So(vctx.Finalize(), ShouldBeNil)
+
+			Convey("UserQuotas doesn't allow nil", func() {
+				cg.UserQuotas[1] = nil
+				validateProjectConfig(vctx, &cfg)
+				So(vctx.Finalize(), ShouldErrLike, "user_quotas #2): cannot be nil")
+			})
+			Convey("UserQuota names should be unique", func() {
+				cg.UserQuotas[0].Name = cg.UserQuotas[1].Name
+				validateProjectConfig(vctx, &cfg)
+				So(vctx.Finalize(), ShouldErrLike, "user_quotas #2 / name): duplicate name")
+			})
+			Convey("UserQuotaDefault.Name should be unique", func() {
+				cg.UserQuotaDefault.Name = cg.UserQuotas[0].Name
+				validateProjectConfig(vctx, &cfg)
+				So(vctx.Finalize(), ShouldErrLike, "user_quota_default / name): duplicate name")
+			})
+			Convey("Policy names must be valid", func() {
+				ok := func(n string) {
+					vctx := &validation.Context{Context: ctx}
+					cg.UserQuotas[0].Name = n
+					validateProjectConfig(vctx, &cfg)
+					So(vctx.Finalize(), ShouldBeNil)
+				}
+				fail := func(n string) {
+					vctx := &validation.Context{Context: ctx}
+					cg.UserQuotas[0].Name = n
+					validateProjectConfig(vctx, &cfg)
+					So(vctx.Finalize(), ShouldErrLike, "does not match")
+				}
+				ok("UserQuotas")
+				ok("User-_@.+Quotas")
+				ok("1User.Quotas")
+				ok("User5.Quotas-3")
+				fail("")
+				fail("user quota #1")
+			})
+			Convey("UserQuotas require principals", func() {
+				cg.UserQuotas[0].Principals = nil
+				validateProjectConfig(vctx, &cfg)
+				So(vctx.Finalize(), ShouldErrLike, "user_quotas #1 / principals): must have at least one")
+			})
+			Convey("UserQuotaDefault require no principals", func() {
+				cg.UserQuotaDefault.Principals = []string{"group:committers"}
+				validateProjectConfig(vctx, &cfg)
+				So(vctx.Finalize(), ShouldErrLike, "user_quota_default / principals): must not have any")
+			})
+			Convey("principals must be valid", func() {
+				ok := func(id string) {
+					vctx := &validation.Context{Context: ctx}
+					cg.UserQuotas[0].Principals[0] = id
+					validateProjectConfig(vctx, &cfg)
+					So(vctx.Finalize(), ShouldBeNil)
+				}
+				fail := func(id, msg string) {
+					vctx := &validation.Context{Context: ctx}
+					cg.UserQuotas[0].Principals[0] = id
+					validateProjectConfig(vctx, &cfg)
+					So(vctx.Finalize(), ShouldErrLike, msg)
+				}
+				ok("user:test@example.org")
+				ok("group:committers")
+				fail("user:", `"user:" doesn't look like a principal id`)
+				fail("user1", `"user1" doesn't look like a principal id`)
+				fail("group:", `"group:" doesn't look like a principal id`)
+				fail("bot:linux-123", `unknown principal type "bot"`)
+				fail("user:foo", `bad value "foo" for identity kind "user"`)
+			})
+		})
 	})
 }
 

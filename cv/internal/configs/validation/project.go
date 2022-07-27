@@ -17,11 +17,13 @@
 package validation
 
 import (
+	"fmt"
 	"net/url"
 	"regexp"
 	"strings"
 	"time"
 
+	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/common/data/stringset"
 	luciconfig "go.chromium.org/luci/config"
 	"go.chromium.org/luci/config/validation"
@@ -31,9 +33,13 @@ import (
 )
 
 const (
-	CQStatusHostPublic   = "chromium-cq-status.appspot.com"
+	// CQStatusHostPublic is the public host of the CQ status app.
+	CQStatusHostPublic = "chromium-cq-status.appspot.com"
+	// CQStatusHostInternal is the internal host of the CQ status app.
 	CQStatusHostInternal = "internal-cq-status.appspot.com"
 )
+
+var policyNameRe = regexp.MustCompile(`^[0-9A-Za-z][0-9A-Za-z.\-@_+]{0,511}$`)
 
 // ValidateProject validates project config and returns error only on blocking
 // errors (ie ignores problems with warning severity).
@@ -197,6 +203,7 @@ func validateConfigGroup(ctx *validation.Context, group *cfgpb.ConfigGroup, know
 		validateVerifiers(ctx, group.Verifiers, additionalModes.Union(standardModes))
 		ctx.Exit()
 	}
+	validateUserQuotas(ctx, group.GetUserQuotas(), group.GetUserQuotaDefault())
 }
 
 func validateGerrit(ctx *validation.Context, g *cfgpb.ConfigGroup_Gerrit) {
@@ -616,4 +623,69 @@ func validateTryjobRetry(ctx *validation.Context, r *cfgpb.Verifiers_Tryjob_Retr
 	if r.TimeoutWeight < 0 {
 		ctx.Errorf("negative timeout_weight not allowed (%d given)", r.TimeoutWeight)
 	}
+}
+
+func validateUserQuotas(ctx *validation.Context, ps []*cfgpb.QuotaPolicy, def *cfgpb.QuotaPolicy) {
+	names := stringset.New(len(ps))
+	for i, p := range ps {
+		ctx.Enter("user_quotas #%d", i+1)
+		if p == nil {
+			ctx.Errorf("cannot be nil")
+		} else {
+			validateQuotaPolicy(ctx, p, names, true)
+		}
+		ctx.Exit()
+	}
+
+	if def != nil {
+		ctx.Enter("user_quota_default")
+		validateQuotaPolicy(ctx, def, names, false)
+		ctx.Exit()
+	}
+}
+
+func validateQuotaPolicy(ctx *validation.Context, p *cfgpb.QuotaPolicy, namesSeen stringset.Set, principalsRequired bool) {
+	ctx.Enter("name")
+	if !namesSeen.Add(p.GetName()) {
+		ctx.Errorf("duplicate name %q", p.GetName())
+	}
+	if !policyNameRe.MatchString(p.GetName()) {
+		ctx.Errorf("%q does not match %q", p.GetName(), policyNameRe)
+	}
+	ctx.Exit()
+
+	ctx.Enter("principals")
+	switch {
+	case principalsRequired && len(p.GetPrincipals()) == 0:
+		ctx.Errorf("must have at least one principal")
+	case !principalsRequired && len(p.GetPrincipals()) > 0:
+		ctx.Errorf("must not have any principals (%d principal(s) given)", len(p.GetPrincipals()))
+	}
+	ctx.Exit()
+
+	for i, id := range p.GetPrincipals() {
+		ctx.Enter("principals #%d", i+1)
+		if err := validatePrincipalID(id); err != nil {
+			ctx.Errorf("%s", err)
+		}
+		ctx.Exit()
+	}
+	// TODO(ddomna): validate run_limits and tryjob_limits.
+}
+
+func validatePrincipalID(id string) error {
+	chunks := strings.Split(id, ":")
+	if len(chunks) != 2 || chunks[0] == "" || chunks[1] == "" {
+		return fmt.Errorf("%q doesn't look like a principal id (<type>:<id>)", id)
+	}
+
+	switch chunks[0] {
+	case "group":
+		return nil // any non-empty group name is ok
+	case "user":
+		// Should be a valid identity.
+		_, err := identity.MakeIdentity(id)
+		return err
+	}
+	return fmt.Errorf("unknown principal type %q", chunks[0])
 }
