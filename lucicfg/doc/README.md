@@ -3431,7 +3431,7 @@ find how quota policies are used in cq_group(...).
 
 #### Arguments {#cq.quota-policy-args}
 
-* **name**: the name of the policy to configure. Must be unqiue in the ConfigGroup. Must match regex '^[0-9A-Za-z][0-9A-Za-z\.\-@_+]{0,511}$'. Required.
+* **name**: the name of the policy to configure. Must be unique in the ConfigGroup. Must match regex '^[0-9A-Za-z][0-9A-Za-z\.\-@_+]{0,511}$'. Required.
 * **users**: a list of user identities, which is an email typically, to apply the quota policy to.
 * **groups**: a list of chrome infra auth group names to apply the quota policy to.
 * **run_limits**: Run limits to apply. See [cq.run_limits(...)](#cq.run-limits) for more details. If omitted, unlimited run quotas are granted to the users and groups.

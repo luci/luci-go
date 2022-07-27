@@ -275,7 +275,7 @@ def _quota_policy(
 
     Args:
       name: the name of the policy to configure.
-        Must be unqiue in the ConfigGroup.
+        Must be unique in the ConfigGroup.
         Must match regex '^[0-9A-Za-z][0-9A-Za-z\\.\\-@_+]{0,511}$'.
         Required.
       users: a list of user identities, which is an email typically, to apply
