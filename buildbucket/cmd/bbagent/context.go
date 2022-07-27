@@ -1,4 +1,4 @@
-// Copyright 2020 The LUCI Authors.
+// Copyright 2022 The LUCI Authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -16,8 +16,10 @@ package main
 
 import (
 	"context"
+	"fmt"
 
 	bbpb "go.chromium.org/luci/buildbucket/proto"
+	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/lucictx"
 )
 
@@ -43,6 +45,38 @@ func setResultDBContext(ctx context.Context, buildProto *bbpb.Build, secrets *bb
 			Invocation: resultDBCtx.CurrentInvocation.Name,
 		}
 		return ctx
+	}
+	return ctx
+}
+
+func setBuildbucketContext(ctx context.Context, hostname *string, secrets *bbpb.BuildSecrets) context.Context {
+	// Set `buildbucket` in the context.
+	bbCtx := lucictx.GetBuildbucket(ctx)
+	if bbCtx == nil || bbCtx.Hostname != *hostname || bbCtx.ScheduleBuildToken != secrets.BuildToken {
+		ctx = lucictx.SetBuildbucket(ctx, &lucictx.Buildbucket{
+			Hostname:           *hostname,
+			ScheduleBuildToken: secrets.BuildToken,
+		})
+		if bbCtx != nil {
+			logging.Warningf(ctx, "buildbucket context is overwritten.")
+		}
+	}
+	return ctx
+}
+
+func setRealmContext(ctx context.Context, input *bbpb.BBAgentArgs) context.Context {
+	// Populate `realm` in the context based on the build's bucket if there's no
+	// realm there already.
+	if lucictx.GetRealm(ctx).GetName() == "" {
+		project := input.Build.Builder.Project
+		bucket := input.Build.Builder.Bucket
+		if project != "" && bucket != "" {
+			ctx = lucictx.SetRealm(ctx, &lucictx.Realm{
+				Name: fmt.Sprintf("%s:%s", project, bucket),
+			})
+		} else {
+			logging.Warningf(ctx, "Bad BuilderID in the build proto: %s", input.Build.Builder)
+		}
 	}
 	return ctx
 }

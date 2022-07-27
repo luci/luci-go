@@ -343,31 +343,9 @@ func mainImpl() int {
 		check(ctx, errors.Reason("-host and -build-id are required").Err())
 	}
 
-	// Set `buildbucket` in the context.
-	bbCtx := lucictx.GetBuildbucket(ctx)
-	if bbCtx == nil || bbCtx.Hostname != *hostname || bbCtx.ScheduleBuildToken != secrets.BuildToken {
-		ctx = lucictx.SetBuildbucket(ctx, &lucictx.Buildbucket{
-			Hostname:           *hostname,
-			ScheduleBuildToken: secrets.BuildToken,
-		})
-		if bbCtx != nil {
-			logging.Warningf(ctx, "buildbucket context is overwritten.")
-		}
-	}
-
-	// Populate `realm` in the context based on the build's bucket if there's no
-	// realm there already.
-	if lucictx.GetRealm(ctx).GetName() == "" {
-		project := input.Build.Builder.Project
-		bucket := input.Build.Builder.Bucket
-		if project != "" && bucket != "" {
-			ctx = lucictx.SetRealm(ctx, &lucictx.Realm{
-				Name: fmt.Sprintf("%s:%s", project, bucket),
-			})
-		} else {
-			logging.Warningf(ctx, "Bad BuilderID in the build proto: %s", input.Build.Builder)
-		}
-	}
+	// Manipulate the context and obtain a context with cancel
+	ctx = setBuildbucketContext(ctx, hostname, secrets)
+	ctx = setRealmContext(ctx, input)
 
 	logdogOutput, err := mkLogdogOutput(ctx, input.Build.Infra.Logdog)
 	check(ctx, errors.Annotate(err, "could not create logdog output").Err())
