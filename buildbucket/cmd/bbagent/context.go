@@ -18,7 +18,10 @@ import (
 	"context"
 	"fmt"
 
+	"go.chromium.org/luci/auth"
+	"go.chromium.org/luci/auth/authctx"
 	bbpb "go.chromium.org/luci/buildbucket/proto"
+	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/lucictx"
 )
@@ -79,4 +82,22 @@ func setRealmContext(ctx context.Context, input *bbpb.BBAgentArgs) context.Conte
 		}
 	}
 	return ctx
+}
+
+func setLocalAuth(ctx context.Context) context.Context {
+	// If asked to use the GCE account, create a new local auth context so it
+	// can be properly picked through out the rest of bbagent process tree. Use
+	// it as the default task account and as a "system" account (so it is used
+	// for things like Logdog PubSub calls).
+	authCtx := authctx.Context{
+		ID:                  "bbagent",
+		Options:             auth.Options{Method: auth.GCEMetadataMethod},
+		ExposeSystemAccount: true,
+	}
+	err := authCtx.Launch(ctx, "")
+	check(ctx, errors.Annotate(err, "failed launch the local LUCI auth context").Err())
+	defer authCtx.Close(ctx)
+
+	// Switch the default auth in the context to the one we just setup.
+	return authCtx.SetLocalAuth(ctx)
 }

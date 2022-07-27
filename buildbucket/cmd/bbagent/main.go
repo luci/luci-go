@@ -47,8 +47,6 @@ import (
 	"google.golang.org/protobuf/types/known/fieldmaskpb"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
-	"go.chromium.org/luci/auth"
-	"go.chromium.org/luci/auth/authctx"
 	"go.chromium.org/luci/buildbucket"
 	"go.chromium.org/luci/buildbucket/cmd/bbagent/bbinput"
 	bbpb "go.chromium.org/luci/buildbucket/proto"
@@ -89,6 +87,51 @@ func check(ctx context.Context, err error) {
 		logging.Errorf(ctx, err.Error())
 		os.Exit(1)
 	}
+}
+
+func parseBbAgentArgs(ctx context.Context, arg string) (*bbpb.BBAgentArgs, BuildsClient, *bbpb.BuildSecrets) {
+	// TODO(crbug/1219018): Remove CLI BBAgentArgs mode in favor of -host + -build-id.
+	logging.Debugf(ctx, "parsing BBAgentArgs")
+	input, err := bbinput.Parse(arg)
+	check(ctx, errors.Annotate(err, "could not unmarshal BBAgentArgs").Err())
+	bbclient, secrets, err := newBuildsClient(ctx, input.Build.Infra.Buildbucket.GetHostname(), retry.Default)
+	check(ctx, errors.Annotate(err, "could not connect to Buildbucket").Err())
+	return input, bbclient, secrets
+}
+
+func parseHostBuildID(ctx context.Context, hostname *string, buildID *int64) (*bbpb.BBAgentArgs, BuildsClient, *bbpb.BuildSecrets) {
+	logging.Debugf(ctx, "fetching build %d", *buildID)
+	bbclient, secrets, err := newBuildsClient(ctx, *hostname, defaultRetryStrategy)
+	check(ctx, errors.Annotate(err, "could not connect to Buildbucket").Err())
+	// Get everything from the build.
+	// Here we use UpdateBuild instead of GetBuild, so that
+	// * bbagent can always get the build because of the build token.
+	//   * This was not guaranteed for GetBuild, because it's possible that a
+	//     service account has permission to run a build but doesn't have
+	//     permission to view the build.
+	//   * bbagent could tear down the build earlier if the parent build is canceled.
+	// TODO(crbug.com/1019272):  we should also use this RPC to set the initial
+	// status of the build to STARTED (and also be prepared to quit in the case
+	// that this build got double-scheduled).
+	build, err := bbclient.UpdateBuild(
+		ctx,
+		&bbpb.UpdateBuildRequest{
+			Build: &bbpb.Build{
+				Id: *buildID,
+			},
+			Mask: &bbpb.BuildMask{
+				AllFields: true,
+			},
+		})
+
+	check(ctx, errors.Annotate(err, "failed to fetch build").Err())
+	input := &bbpb.BBAgentArgs{
+		Build:                  build,
+		CacheDir:               build.Infra.Bbagent.CacheDir,
+		KnownPublicGerritHosts: build.Infra.Buildbucket.KnownPublicGerritHosts,
+		PayloadPath:            build.Infra.Bbagent.PayloadPath,
+	}
+	return input, bbclient, secrets
 }
 
 // finalizeBuild returns true if fatalErr is nil and there's no additional
@@ -277,21 +320,7 @@ func mainImpl() int {
 	args := flag.Args()
 
 	if *useGCEAccount {
-		// If asked to use the GCE account, create a new local auth context so it
-		// can be properly picked through out the rest of bbagent process tree. Use
-		// it as the default task account and as a "system" account (so it is used
-		// for things like Logdog PubSub calls).
-		authCtx := authctx.Context{
-			ID:                  "bbagent",
-			Options:             auth.Options{Method: auth.GCEMetadataMethod},
-			ExposeSystemAccount: true,
-		}
-		err := authCtx.Launch(ctx, "")
-		check(ctx, errors.Annotate(err, "failed launch the local LUCI auth context").Err())
-		defer authCtx.Close(ctx)
-
-		// Switch the default auth in the context to the one we just setup.
-		ctx = authCtx.SetLocalAuth(ctx)
+		setLocalAuth(ctx)
 	}
 
 	var input *bbpb.BBAgentArgs
@@ -301,44 +330,9 @@ func mainImpl() int {
 
 	switch {
 	case len(args) == 1:
-		// TODO(crbug/1219018): Remove CLI BBAgentArgs mode in favor of -host + -build-id.
-		logging.Debugf(ctx, "parsing BBAgentArgs")
-		input, err = bbinput.Parse(args[0])
-		check(ctx, errors.Annotate(err, "could not unmarshal BBAgentArgs").Err())
-		bbclient, secrets, err = newBuildsClient(ctx, input.Build.Infra.Buildbucket.GetHostname(), retry.Default)
-		check(ctx, errors.Annotate(err, "could not connect to Buildbucket").Err())
+		input, bbclient, secrets = parseBbAgentArgs(ctx, args[0])
 	case *hostname != "" && *buildID > 0:
-		logging.Debugf(ctx, "fetching build %d", *buildID)
-		bbclient, secrets, err = newBuildsClient(ctx, *hostname, defaultRetryStrategy)
-		check(ctx, errors.Annotate(err, "could not connect to Buildbucket").Err())
-		// Get everything from the build.
-		// Here we use UpdateBuild instead of GetBuild, so that
-		// * bbagent can always get the build because of the build token.
-		//   * This was not guaranteed for GetBuild, because it's possible that a
-		//     service account has permission to run a build but doesn't have
-		//     permission to view the build.
-		//   * bbagent could tear down the build earlier if the parent build is canceled.
-		// TODO(crbug.com/1019272):  we should also use this RPC to set the initial
-		// status of the build to STARTED (and also be prepared to quit in the case
-		// that this build got double-scheduled).
-		build, err := bbclient.UpdateBuild(
-			ctx,
-			&bbpb.UpdateBuildRequest{
-				Build: &bbpb.Build{
-					Id: *buildID,
-				},
-				Mask: &bbpb.BuildMask{
-					AllFields: true,
-				},
-			})
-
-		check(ctx, errors.Annotate(err, "failed to fetch build").Err())
-		input = &bbpb.BBAgentArgs{
-			Build:                  build,
-			CacheDir:               build.Infra.Bbagent.CacheDir,
-			KnownPublicGerritHosts: build.Infra.Buildbucket.KnownPublicGerritHosts,
-			PayloadPath:            build.Infra.Bbagent.PayloadPath,
-		}
+		input, bbclient, secrets = parseHostBuildID(ctx, hostname, buildID)
 	default:
 		check(ctx, errors.Reason("-host and -build-id are required").Err())
 	}
