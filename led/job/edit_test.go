@@ -31,12 +31,14 @@ func TestClearCurrentIsolated(t *testing.T) {
 		{
 			name: "basic with rbe-cas input",
 			fn: func(jd *Definition) {
-				jd.CasUserPayload = &api.CASReference{
-					CasInstance: "instance",
-					Digest: &api.Digest{
-						Hash:      "hash",
-						SizeBytes: 1,
-					},
+				if jd.GetSwarming() != nil {
+					jd.GetSwarming().CasUserPayload = &api.CASReference{
+						CasInstance: "instance",
+						Digest: &api.Digest{
+							Hash:      "hash",
+							SizeBytes: 1,
+						},
+					}
 				}
 				for _, slc := range jd.GetSwarming().GetTask().GetTaskSlices() {
 					if slc.Properties == nil {

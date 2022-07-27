@@ -24,9 +24,8 @@ import (
 )
 
 type swarmingEditor struct {
-	jd             *Definition
-	sw             *Swarming
-	casUserPayload *api.CASReference
+	jd *Definition
+	sw *Swarming
 
 	err error
 }
@@ -41,7 +40,8 @@ func newSwarmingEditor(jd *Definition) *swarmingEditor {
 	if sw.Task == nil {
 		sw.Task = &api.TaskRequest{}
 	}
-	return &swarmingEditor{jd, sw, jd.CasUserPayload, nil}
+
+	return &swarmingEditor{jd, sw, nil}
 }
 
 func (swe *swarmingEditor) Close() error {
@@ -71,8 +71,8 @@ func (swe *swarmingEditor) tweakSlices(fn func(*api.TaskSlice) error) {
 
 func (swe *swarmingEditor) ClearCurrentIsolated() {
 	swe.tweak(func() error {
-		swe.casUserPayload = nil
-		swe.jd.CasUserPayload = nil
+		swe.jd.GetSwarming().CasUserPayload = nil
+
 		return nil
 	})
 	swe.tweakSlices(func(slc *api.TaskSlice) error {

@@ -135,6 +135,9 @@ func EditIsolated(ctx context.Context, authOpts auth.Options, jd *job.Definition
 	}
 	logging.Infof(ctx, "isolated upload: done")
 	jd.CasUserPayload = casRef
+	if jd.GetSwarming() != nil {
+		jd.GetSwarming().CasUserPayload = casRef
+	}
 	return nil
 }
 

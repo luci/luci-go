@@ -153,6 +153,9 @@ func fillCasDefaults(jd *job.Definition) error {
 			CasInstance: cas,
 		}
 	}
+	if jd.GetSwarming() != nil && jd.GetSwarming().GetCasUserPayload() == nil {
+		jd.GetSwarming().CasUserPayload = jd.CasUserPayload
+	}
 	return nil
 }
 

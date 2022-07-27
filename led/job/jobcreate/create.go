@@ -165,6 +165,9 @@ func FromNewTaskRequest(ctx context.Context, r *swarming.SwarmingRpcsNewTaskRequ
 			}
 		}
 	}
+	if ret.GetSwarming() != nil {
+		ret.GetSwarming().CasUserPayload = ret.CasUserPayload
+	}
 
 	return ret, err
 }

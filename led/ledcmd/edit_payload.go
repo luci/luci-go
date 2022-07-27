@@ -70,6 +70,9 @@ func editPayloadWithCASRef(ctx context.Context, jd *job.Definition, opts *EditPa
 		return err
 	}
 	jd.CasUserPayload = casRef
+	if jd.GetSwarming() != nil {
+		jd.GetSwarming().CasUserPayload = casRef
+	}
 	return jd.HighLevelEdit(func(je job.HighLevelEditor) {
 		je.TaskPayloadSource("", "")
 		je.TaskPayloadPath(RecipeDirectory)

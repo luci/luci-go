@@ -60,7 +60,7 @@ func TestGetCurrentIsolated(t *testing.T) {
 
 				Convey(`slice+CasUserPayload (match)`, func() {
 					jd := testSWJob()
-					jd.CasUserPayload = &api.CASReference{CasInstance: "instance"}
+					jd.GetSwarming().CasUserPayload = &api.CASReference{CasInstance: "instance"}
 					jd.GetSwarming().Task = &api.TaskRequest{
 						TaskSlices: []*api.TaskSlice{
 							{
@@ -77,7 +77,7 @@ func TestGetCurrentIsolated(t *testing.T) {
 
 				Convey(`slice+CasUserPayload (mismatch)`, func() {
 					jd := testSWJob()
-					jd.CasUserPayload = &api.CASReference{Digest: &api.Digest{Hash: "new hash"}}
+					jd.GetSwarming().CasUserPayload = &api.CASReference{Digest: &api.Digest{Hash: "new hash"}}
 					jd.GetSwarming().Task = &api.TaskRequest{
 						TaskSlices: []*api.TaskSlice{
 							{

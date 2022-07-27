@@ -32,7 +32,7 @@ import (
 // and CasUserPayload for swarming tasks. For the same file, the one in CasUserPayload
 // will replace the one in slice.Properties.CasInputRoot.
 func ConsolidateRbeCasSources(ctx context.Context, authOpts auth.Options, jd *job.Definition) error {
-	if jd.GetSwarming() == nil || (jd.CasUserPayload.GetDigest().GetHash() == "") {
+	if jd.GetSwarming() == nil || (jd.GetSwarming().CasUserPayload.GetDigest().GetHash() == "") {
 		return nil
 	}
 	logging.Infof(ctx, "consolidating RBE-CAS sources...")
@@ -45,7 +45,7 @@ func ConsolidateRbeCasSources(ctx context.Context, authOpts auth.Options, jd *jo
 			logging.Errorf(ctx, "failed to cleanup temp dir %q: %s", tdir, err)
 		}
 	}()
-	casClient, err := casclient.NewLegacy(ctx, casclient.AddrProd, jd.CasUserPayload.CasInstance, authOpts, false)
+	casClient, err := casclient.NewLegacy(ctx, casclient.AddrProd, jd.GetSwarming().CasUserPayload.CasInstance, authOpts, false)
 	if err != nil {
 		return err
 	}
@@ -56,7 +56,7 @@ func ConsolidateRbeCasSources(ctx context.Context, authOpts auth.Options, jd *jo
 			slc.Properties = &api.TaskProperties{}
 		}
 		props := slc.Properties
-		if props.CasInputRoot == nil || props.CasInputRoot.Digest.GetHash() == jd.CasUserPayload.Digest.Hash {
+		if props.CasInputRoot == nil || props.CasInputRoot.Digest.GetHash() == jd.GetSwarming().CasUserPayload.Digest.Hash {
 			continue
 		}
 
@@ -64,7 +64,7 @@ func ConsolidateRbeCasSources(ctx context.Context, authOpts auth.Options, jd *jo
 		if err := downloadFromCas(ctx, props.CasInputRoot, casClient, subDir); err != nil {
 			return errors.Annotate(err, "consolidation").Err()
 		}
-		if err := downloadFromCas(ctx, jd.CasUserPayload, casClient, subDir); err != nil {
+		if err := downloadFromCas(ctx, jd.GetSwarming().CasUserPayload, casClient, subDir); err != nil {
 			return errors.Annotate(err, "consolidation").Err()
 		}
 		casRef, err := uploadToCas(ctx, casClient, subDir)
@@ -73,8 +73,8 @@ func ConsolidateRbeCasSources(ctx context.Context, authOpts auth.Options, jd *jo
 		}
 		props.CasInputRoot.Digest = casRef.GetDigest()
 	}
-	if jd.CasUserPayload != nil {
-		jd.CasUserPayload.Digest = nil
+	if jd.GetSwarming().CasUserPayload != nil {
+		jd.GetSwarming().CasUserPayload.Digest = nil
 	}
 	return nil
 }

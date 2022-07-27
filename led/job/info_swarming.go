@@ -26,7 +26,6 @@ import (
 
 type swInfo struct {
 	*Swarming
-	casUserPayload *swarmingpb.CASReference
 }
 
 var _ Info = swInfo{}
@@ -41,7 +40,7 @@ func (s swInfo) TaskName() string {
 
 func (s swInfo) CurrentIsolated() (*swarmingpb.CASReference, error) {
 	casOptions := map[string]*swarmingpb.CASReference{}
-	if p := s.casUserPayload; p.GetDigest().GetHash() != "" {
+	if p := s.GetCasUserPayload(); p.GetDigest().GetHash() != "" {
 		casOptions[p.Digest.Hash] = p
 	}
 

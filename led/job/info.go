@@ -116,7 +116,7 @@ func (jd *Definition) Info() Info {
 	if bb := jd.GetBuildbucket(); bb != nil {
 		return bbInfo{bb, jd.CasUserPayload}
 	} else if sw := jd.GetSwarming(); sw != nil {
-		return swInfo{sw, jd.CasUserPayload}
+		return swInfo{sw}
 	}
 	return nil
 }
