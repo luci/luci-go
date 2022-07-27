@@ -17,7 +17,7 @@ import '@material/mwc-dialog';
 import '@material/mwc-icon';
 import { MobxLitElement } from '@adobe/lit-mobx';
 import { css, customElement, html } from 'lit-element';
-import { observable } from 'mobx';
+import { makeObservable, observable } from 'mobx';
 
 import { consumeTestHistoryPageState, TestHistoryPageState } from '../../../context/test_history_page_state';
 import { consumer } from '../../../libs/context';
@@ -37,6 +37,11 @@ export class TestHistoryDetailsTableConfigWidgetElement extends MobxLitElement {
   private uncommittedSortingKeys: readonly string[] = [];
 
   @observable.ref private showTableConfigDialog = false;
+
+  constructor() {
+    super();
+    makeObservable(this);
+  }
 
   private renderPropKeysConfigRow(label: string, keys: readonly string[], updateKeys: (newKeys: string[]) => void) {
     return html`

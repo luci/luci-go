@@ -21,7 +21,7 @@ import { PrpcClientExt } from './prpc_client_ext';
 describe('PrpcClientExt', () => {
   it('should grab access token from getAccessToken', async () => {
     let accessToken = '1';
-    const fetchStub = sinon.stub<[RequestInfo, RequestInit | undefined], Promise<Response>>();
+    const fetchStub = sinon.stub<[URL | RequestInfo, RequestInit | undefined], Promise<Response>>();
     fetchStub.onCall(0).resolves(new Response(")]}'\n{}", { headers: { 'X-Prpc-Grpc-Code': RpcCode.OK.toString() } }));
     fetchStub.onCall(1).resolves(new Response(")]}'\n{}", { headers: { 'X-Prpc-Grpc-Code': RpcCode.OK.toString() } }));
 
@@ -38,7 +38,7 @@ describe('PrpcClientExt', () => {
 
   it('should not override additional header', async () => {
     const accessToken = '1';
-    const fetchStub = sinon.stub<[RequestInfo, RequestInit | undefined], Promise<Response>>();
+    const fetchStub = sinon.stub<[URL | RequestInfo, RequestInit | undefined], Promise<Response>>();
     fetchStub.onCall(0).resolves(new Response(")]}'\n{}", { headers: { 'X-Prpc-Grpc-Code': RpcCode.OK.toString() } }));
     fetchStub.onCall(1).resolves(new Response(")]}'\n{}", { headers: { 'X-Prpc-Grpc-Code': RpcCode.OK.toString() } }));
 

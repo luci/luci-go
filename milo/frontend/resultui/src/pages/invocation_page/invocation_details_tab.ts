@@ -17,7 +17,7 @@ import { MobxLitElement } from '@adobe/lit-mobx';
 import { css, customElement } from 'lit-element';
 import { html } from 'lit-html';
 import { styleMap } from 'lit-html/directives/style-map';
-import { computed, observable } from 'mobx';
+import { computed, makeObservable, observable } from 'mobx';
 
 import { AppState, consumeAppState } from '../../context/app_state';
 import { consumeInvocationState, InvocationState } from '../../context/invocation_state';
@@ -47,6 +47,11 @@ export class InvocationDetailsTabElement extends MobxLitElement {
   @computed
   private get hasTags() {
     return (this.invocationState.invocation!.tags || []).length > 0;
+  }
+
+  constructor() {
+    super();
+    makeObservable(this);
   }
 
   connectedCallback() {

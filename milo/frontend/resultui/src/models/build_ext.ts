@@ -13,7 +13,7 @@
 // limitations under the License.
 
 import { DateTime, Duration } from 'luxon';
-import { computed, IObservableValue, observable } from 'mobx';
+import { computed, IObservableValue, makeObservable, observable } from 'mobx';
 
 import { parseProtoDuration } from '../libs/time_utils';
 import {
@@ -61,6 +61,8 @@ export class BuildExt {
   private readonly renderTime: IObservableValue<DateTime>;
 
   constructor(build: Build, renderTime?: IObservableValue<DateTime>) {
+    makeObservable(this);
+
     this.renderTime = renderTime || observable.box(DateTime.local());
 
     this.id = build.id;

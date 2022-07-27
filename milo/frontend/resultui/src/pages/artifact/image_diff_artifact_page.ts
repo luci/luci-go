@@ -15,7 +15,7 @@
 import { MobxLitElement } from '@adobe/lit-mobx';
 import { BeforeEnterObserver, PreventAndRedirectCommands, RouterLocation } from '@vaadin/router';
 import { css, customElement, html } from 'lit-element';
-import { computed, observable } from 'mobx';
+import { computed, makeObservable, observable } from 'mobx';
 import { fromPromise } from 'mobx-utils';
 
 import '../../components/image_diff_viewer';
@@ -94,6 +94,11 @@ export class ImageDiffArtifactPage extends MobxLitElement implements BeforeEnter
 
   @computed get isLoading() {
     return !this.expectedArtifact || !this.actualArtifact || !this.diffArtifact;
+  }
+
+  constructor() {
+    super();
+    makeObservable(this);
   }
 
   onBeforeEnter(location: RouterLocation, cmd: PreventAndRedirectCommands) {

@@ -13,7 +13,7 @@
 // limitations under the License.
 
 import { css, customElement, html, svg, SVGTemplateResult } from 'lit-element';
-import { observable } from 'mobx';
+import { makeObservable, observable } from 'mobx';
 
 import '../../components/status_bar';
 import '../../components/dot_spinner';
@@ -41,6 +41,11 @@ const STATUS_ORDER = [
 @consumer
 export class TestHistoryStatusGraphElement extends MiloBaseElement {
   @observable.ref @consumeTestHistoryPageState() pageState!: TestHistoryPageState;
+
+  constructor() {
+    super();
+    makeObservable(this);
+  }
 
   protected render() {
     const variants = this.pageState.filteredVariants;

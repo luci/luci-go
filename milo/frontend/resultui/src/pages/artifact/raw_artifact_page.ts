@@ -13,7 +13,7 @@
 // limitations under the License.
 
 import { css, customElement, html } from 'lit-element';
-import { autorun, computed, observable } from 'mobx';
+import { autorun, computed, makeObservable, observable } from 'mobx';
 import { fromPromise } from 'mobx-utils';
 
 import '../../components/dot_spinner';
@@ -52,6 +52,11 @@ export class RawArtifactPageElement extends MiloBaseElement {
   @computed
   private get artifact() {
     return unwrapObservable(this.artifact$, null);
+  }
+
+  constructor() {
+    super();
+    makeObservable(this);
   }
 
   connectedCallback() {

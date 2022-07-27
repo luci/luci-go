@@ -16,7 +16,7 @@ import '@material/mwc-icon';
 import { MobxLitElement } from '@adobe/lit-mobx';
 import copy from 'copy-to-clipboard';
 import { css, customElement, html } from 'lit-element';
-import { observable } from 'mobx';
+import { makeObservable, observable } from 'mobx';
 
 /**
  * A simple icon that copies textToCopy to clipboard onclick.
@@ -36,6 +36,11 @@ export class CopyToClipboard extends MobxLitElement {
     this.copied = true;
     setTimeout(() => (this.copied = false), 1000);
   };
+
+  constructor() {
+    super();
+    makeObservable(this);
+  }
 
   protected render() {
     if (this.copied) {

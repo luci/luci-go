@@ -12,9 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { css, customElement, LitElement, property } from 'lit-element';
+import { MobxLitElement } from '@adobe/lit-mobx';
+import { css, customElement } from 'lit-element';
 import { html } from 'lit-html';
 import { styleMap } from 'lit-html/directives/style-map';
+import { makeObservable, observable } from 'mobx';
 
 import { getLogdogRawUrl } from '../libs/build_utils';
 import { Log } from '../services/buildbucket';
@@ -23,8 +25,13 @@ import { Log } from '../services/buildbucket';
  * Renders a Log object.
  */
 @customElement('milo-log')
-export class LogElement extends LitElement {
-  @property() log!: Log;
+export class LogElement extends MobxLitElement {
+  @observable.ref log!: Log;
+
+  constructor() {
+    super();
+    makeObservable(this);
+  }
 
   protected render() {
     return html`

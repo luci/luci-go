@@ -17,7 +17,7 @@ import { MobxLitElement } from '@adobe/lit-mobx';
 import { css, customElement, html } from 'lit-element';
 import { repeat } from 'lit-html/directives/repeat';
 import { DateTime } from 'luxon';
-import { computed, observable } from 'mobx';
+import { computed, makeObservable, observable } from 'mobx';
 import { fromPromise } from 'mobx-utils';
 
 import '../../../components/expandable_entry';
@@ -154,6 +154,11 @@ export class TestHistoryDetailsEntryElement extends MobxLitElement implements Re
       return router.urlForName('invocation-test-results', { invocation_id: invId });
     }
     return router.urlForName('build-short-link', { build_id: match.groups!['id'], path: ['test-results'] });
+  }
+
+  constructor() {
+    super();
+    makeObservable(this);
   }
 
   private renderBody() {

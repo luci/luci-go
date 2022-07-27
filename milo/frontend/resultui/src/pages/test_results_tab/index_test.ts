@@ -14,7 +14,7 @@
 
 import { aTimeout, fixture, fixtureCleanup } from '@open-wc/testing/index-no-side-effects';
 import { assert } from 'chai';
-import { customElement, html, LitElement, property } from 'lit-element';
+import { customElement, html, LitElement } from 'lit-element';
 import sinon, { SinonStub } from 'sinon';
 
 import '.';
@@ -68,15 +68,12 @@ const variant5 = {
 @customElement('milo-test-context-provider')
 @provider
 class ContextProvider extends LitElement {
-  @property()
   @provideAppState()
   appState!: AppState;
 
-  @property()
   @provideConfigsStore()
   configsStore!: UserConfigsStore;
 
-  @property()
   @provideInvocationState()
   invocationState!: InvocationState;
 }

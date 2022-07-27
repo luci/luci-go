@@ -17,7 +17,7 @@ import '@material/mwc-icon';
 import { BeforeEnterObserver, PreventAndRedirectCommands, RouterLocation } from '@vaadin/router';
 import { css, customElement, html } from 'lit-element';
 import { styleMap } from 'lit-html/directives/style-map';
-import { observable, reaction } from 'mobx';
+import { makeObservable, observable, reaction } from 'mobx';
 
 import '../../components/dot_spinner';
 import '../../components/overlay';
@@ -55,6 +55,11 @@ export class TestHistoryPageElement extends MiloBaseElement implements BeforeEnt
   @observable.ref private realm!: string;
   @observable.ref private testId!: string;
   private initialFilterText = '';
+
+  constructor() {
+    super();
+    makeObservable(this);
+  }
 
   onBeforeEnter(location: RouterLocation, cmd: PreventAndRedirectCommands) {
     const realm = location.params['realm'];
@@ -217,7 +222,7 @@ export class TestHistoryPageElement extends MiloBaseElement implements BeforeEnt
 
     return html`
       <milo-overlay
-        ?show=${this.pageState.selectedGroup !== null}
+        .show=${this.pageState.selectedGroup !== null}
         @dismiss=${() => (this.pageState.selectedGroup = null)}
       >
         <div id="thdt-container">
@@ -225,7 +230,7 @@ export class TestHistoryPageElement extends MiloBaseElement implements BeforeEnt
             <milo-thdt-config-widget id="thdt-config-widget"></milo-thdt-config-widget>
             <div><!-- GAP --></div>
             <milo-hotkey
-              key="x"
+              .key="x"
               .handler=${this.toggleAllVariantsByHotkey}
               title="press x to expand/collapse all entries"
             >
@@ -233,7 +238,7 @@ export class TestHistoryPageElement extends MiloBaseElement implements BeforeEnt
               <mwc-button dense unelevated @click=${() => this.toggleAllVariants(false)}>Collapse All</mwc-button>
             </milo-hotkey>
             <milo-hotkey
-              key="esc"
+              .key="esc"
               .handler=${() => (this.pageState.selectedGroup = null)}
               title="press esc to close the test variant details table"
             >

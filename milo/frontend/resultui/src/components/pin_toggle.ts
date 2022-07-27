@@ -12,15 +12,22 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { css, customElement, html, LitElement, property } from 'lit-element';
+import { MobxLitElement } from '@adobe/lit-mobx';
+import { css, customElement, html } from 'lit-element';
 import { classMap } from 'lit-html/directives/class-map';
+import { makeObservable, observable } from 'mobx';
 
 /**
  * An icon that indicates whether the item is pinned.
  */
 @customElement('milo-pin-toggle')
-export class CopyToClipboard extends LitElement {
-  @property() pinned = false;
+export class CopyToClipboard extends MobxLitElement {
+  @observable.ref pinned = false;
+
+  constructor() {
+    super();
+    makeObservable(this);
+  }
 
   protected render() {
     /* eslint-disable max-len */

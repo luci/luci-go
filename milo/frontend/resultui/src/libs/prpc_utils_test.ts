@@ -20,7 +20,7 @@ import { genCacheKeyForPrpcRequest, removeDefaultProps } from './prpc_utils';
 
 describe('genCacheKeyForPrpcRequest', () => {
   it('should generate identical keys for identical requests', async () => {
-    const fetchStub = sinon.stub<[RequestInfo, RequestInit | undefined], Promise<Response>>();
+    const fetchStub = sinon.stub<[URL | RequestInfo, RequestInit | undefined], Promise<Response>>();
     const client = new PrpcClient({ fetchImpl: fetchStub });
     client.call('service', 'method', { prop: 1 });
     client.call('service', 'method', { prop: 1 });
@@ -31,7 +31,7 @@ describe('genCacheKeyForPrpcRequest', () => {
   });
 
   it('should generate different keys for requests with different hosts', async () => {
-    const fetchStub = sinon.stub<[RequestInfo, RequestInit | undefined], Promise<Response>>();
+    const fetchStub = sinon.stub<[URL | RequestInfo, RequestInit | undefined], Promise<Response>>();
     const client1 = new PrpcClient({ host: 'host1', fetchImpl: fetchStub });
     const client2 = new PrpcClient({ host: 'host2', fetchImpl: fetchStub });
     client1.call('service', 'method', { prop: 1 });
@@ -43,7 +43,7 @@ describe('genCacheKeyForPrpcRequest', () => {
   });
 
   it('should generate different keys for requests with different access tokens', async () => {
-    const fetchStub = sinon.stub<[RequestInfo, RequestInit | undefined], Promise<Response>>();
+    const fetchStub = sinon.stub<[URL | RequestInfo, RequestInit | undefined], Promise<Response>>();
     const client1 = new PrpcClient({ accessToken: 'token1', fetchImpl: fetchStub });
     const client2 = new PrpcClient({ accessToken: 'token2', fetchImpl: fetchStub });
     client1.call('service', 'method', { prop: 1 });
@@ -55,7 +55,7 @@ describe('genCacheKeyForPrpcRequest', () => {
   });
 
   it('should generate different keys for requests with different secure modes', async () => {
-    const fetchStub = sinon.stub<[RequestInfo, RequestInit | undefined], Promise<Response>>();
+    const fetchStub = sinon.stub<[URL | RequestInfo, RequestInit | undefined], Promise<Response>>();
     const client1 = new PrpcClient({ insecure: true, fetchImpl: fetchStub });
     const client2 = new PrpcClient({ insecure: false, fetchImpl: fetchStub });
     client1.call('service', 'method', { prop: 1 });
@@ -67,7 +67,7 @@ describe('genCacheKeyForPrpcRequest', () => {
   });
 
   it('should generate different keys for requests with different services', async () => {
-    const fetchStub = sinon.stub<[RequestInfo, RequestInit | undefined], Promise<Response>>();
+    const fetchStub = sinon.stub<[URL | RequestInfo, RequestInit | undefined], Promise<Response>>();
     const client = new PrpcClient({ fetchImpl: fetchStub });
     client.call('service1', 'method', { prop: 1 });
     client.call('service2', 'method', { prop: 1 });
@@ -78,7 +78,7 @@ describe('genCacheKeyForPrpcRequest', () => {
   });
 
   it('should generate different keys for requests with different methods', async () => {
-    const fetchStub = sinon.stub<[RequestInfo, RequestInit | undefined], Promise<Response>>();
+    const fetchStub = sinon.stub<[URL | RequestInfo, RequestInit | undefined], Promise<Response>>();
     const client = new PrpcClient({ fetchImpl: fetchStub });
     client.call('service', 'method1', { prop: 1 });
     client.call('service', 'method2', { prop: 1 });
@@ -89,7 +89,7 @@ describe('genCacheKeyForPrpcRequest', () => {
   });
 
   it('should generate different keys for requests with different bodies', async () => {
-    const fetchStub = sinon.stub<[RequestInfo, RequestInit | undefined], Promise<Response>>();
+    const fetchStub = sinon.stub<[URL | RequestInfo, RequestInit | undefined], Promise<Response>>();
     const client = new PrpcClient({ fetchImpl: fetchStub });
     client.call('service', 'method', { prop: 1 });
     client.call('service', 'method', { prop: 2 });
@@ -100,7 +100,7 @@ describe('genCacheKeyForPrpcRequest', () => {
   });
 
   it('should generate different keys for requests with different critical headers', async () => {
-    const fetchStub = sinon.stub<[RequestInfo, RequestInit | undefined], Promise<Response>>();
+    const fetchStub = sinon.stub<[URL | RequestInfo, RequestInit | undefined], Promise<Response>>();
     const client = new PrpcClient({ fetchImpl: fetchStub });
     client.call('service', 'method', { prop: 1 }, { 'header-key': 'header-value1' });
     client.call('service', 'method', { prop: 1 }, { 'header-key': 'header-value2' });
@@ -111,7 +111,7 @@ describe('genCacheKeyForPrpcRequest', () => {
   });
 
   it('should generate different keys for requests with different default critical headers', async () => {
-    const fetchStub = sinon.stub<[RequestInfo, RequestInit | undefined], Promise<Response>>();
+    const fetchStub = sinon.stub<[URL | RequestInfo, RequestInit | undefined], Promise<Response>>();
     const client = new PrpcClient({ fetchImpl: fetchStub });
     client.call(
       'service',
@@ -148,7 +148,7 @@ describe('genCacheKeyForPrpcRequest', () => {
   });
 
   it('should generate identical keys for requests with different non-critical headers', async () => {
-    const fetchStub = sinon.stub<[RequestInfo, RequestInit | undefined], Promise<Response>>();
+    const fetchStub = sinon.stub<[URL | RequestInfo, RequestInit | undefined], Promise<Response>>();
     const client = new PrpcClient({ fetchImpl: fetchStub });
     client.call('service', 'method', { prop: 1 }, { 'header-key': 'header-value1' });
     client.call('service', 'method', { prop: 1 }, { 'header-key': 'header-value2' });
@@ -159,7 +159,7 @@ describe('genCacheKeyForPrpcRequest', () => {
   });
 
   it('should generate identical keys for identical requests with different header key cases', async () => {
-    const fetchStub = sinon.stub<[RequestInfo, RequestInit | undefined], Promise<Response>>();
+    const fetchStub = sinon.stub<[URL | RequestInfo, RequestInit | undefined], Promise<Response>>();
     const client = new PrpcClient({ fetchImpl: fetchStub });
     client.call('service', 'method', { prop: 1 }, { 'HEADER-KEY': 'header-value' });
     client.call('service', 'method', { prop: 1 });
@@ -170,7 +170,7 @@ describe('genCacheKeyForPrpcRequest', () => {
   });
 
   it('should generate different keys when prefix are different', async () => {
-    const fetchStub = sinon.stub<[RequestInfo, RequestInit | undefined], Promise<Response>>();
+    const fetchStub = sinon.stub<[URL | RequestInfo, RequestInit | undefined], Promise<Response>>();
     const client = new PrpcClient({ fetchImpl: fetchStub });
     client.call('service', 'method', { prop: 1 });
     client.call('service', 'method', { prop: 1 });
@@ -181,7 +181,7 @@ describe('genCacheKeyForPrpcRequest', () => {
   });
 
   it('should generate identical keys when false-ish properties are omitted', async () => {
-    const fetchStub = sinon.stub<[RequestInfo, RequestInit | undefined], Promise<Response>>();
+    const fetchStub = sinon.stub<[URL | RequestInfo, RequestInit | undefined], Promise<Response>>();
     const client = new PrpcClient({ fetchImpl: fetchStub });
     client.call('service', 'method', { prop: 1, pageToken: '', emptyArray: [] });
     client.call('service', 'method', { prop: 1 });

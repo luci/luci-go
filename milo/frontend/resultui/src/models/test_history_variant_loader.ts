@@ -13,7 +13,7 @@
 // limitations under the License.
 
 import { DateTime } from 'luxon';
-import { comparer, computed, observable, untracked } from 'mobx';
+import { comparer, computed, makeObservable, observable, untracked } from 'mobx';
 
 import { Variant } from '../services/resultdb';
 import { TestHistoryService, TestVerdict } from '../services/weetbix';
@@ -68,6 +68,8 @@ export class TestHistoryVariantLoader {
     readonly resolve: (time: DateTime) => string,
     readonly testHistoryService: TestHistoryService
   ) {
+    makeObservable(this);
+
     this.worker = this.workerGen();
   }
 

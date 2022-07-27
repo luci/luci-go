@@ -15,7 +15,7 @@
 import '@material/mwc-button';
 import { css, customElement, html } from 'lit-element';
 import { styleMap } from 'lit-html/directives/style-map';
-import { computed, observable, reaction } from 'mobx';
+import { computed, makeObservable, observable, reaction } from 'mobx';
 
 import '../../components/commit_entry';
 import '../../components/dot_spinner';
@@ -105,6 +105,11 @@ export class BlamelistTabElement extends MiloBaseElement {
     return '';
   }
 
+  constructor() {
+    super();
+    makeObservable(this);
+  }
+
   connectedCallback() {
     super.connectedCallback();
     this.appState.selectedTabId = 'blamelist';
@@ -169,7 +174,7 @@ export class BlamelistTabElement extends MiloBaseElement {
             )}
           </select>
         </div>
-        <milo-hotkey key="x" .handler=${this.toggleAllEntriesByHotkey} title="press x to expand/collapse all entries">
+        <milo-hotkey .key="x" .handler=${this.toggleAllEntriesByHotkey} title="press x to expand/collapse all entries">
           <mwc-button class="action-button" dense unelevated @click=${() => this.toggleAllEntries(true)}>
             Expand All
           </mwc-button>

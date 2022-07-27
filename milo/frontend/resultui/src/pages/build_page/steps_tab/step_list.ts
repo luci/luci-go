@@ -15,7 +15,7 @@
 import '@material/mwc-button';
 import { css, customElement, html } from 'lit-element';
 import { styleMap } from 'lit-html/directives/style-map';
-import { computed, observable, reaction } from 'mobx';
+import { computed, makeObservable, observable, reaction } from 'mobx';
 
 import '../../../components/dot_spinner';
 import './step_entry';
@@ -57,6 +57,11 @@ export class BuildPageStepListElement extends MiloBaseElement {
       return !rootSteps?.length ? 'No steps.' : '';
     }
     return !rootSteps?.find((s) => s.status !== BuildStatus.Success) ? 'All steps succeeded.' : '';
+  }
+
+  constructor() {
+    super();
+    makeObservable(this);
   }
 
   toggleAllSteps(expand: boolean) {

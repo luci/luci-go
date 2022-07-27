@@ -15,7 +15,7 @@
 import '@material/mwc-icon';
 import { MobxLitElement } from '@adobe/lit-mobx';
 import { css, customElement, html, property } from 'lit-element';
-import { computed, observable } from 'mobx';
+import { computed, makeObservable, observable } from 'mobx';
 import { fromPromise, IPromiseBasedObservable } from 'mobx-utils';
 
 import '../dot_spinner';
@@ -42,8 +42,8 @@ export class TextArtifactElement extends MobxLitElement {
   @consumeArtifactsFinalized()
   finalized = false;
 
-  @property({ attribute: 'artifact-id' }) artifactID!: string;
-  @property({ attribute: 'inv-level', type: Boolean }) isInvLevelArtifact = false;
+  @observable.ref @property({ attribute: 'artifact-id' }) artifactID!: string;
+  @observable.ref @property({ attribute: 'inv-level', type: Boolean }) isInvLevelArtifact = false;
 
   @computed
   private get fetchUrl(): string {
@@ -65,6 +65,11 @@ export class TextArtifactElement extends MobxLitElement {
   @computed
   private get content() {
     return unwrapObservable(this.content$, null);
+  }
+
+  constructor() {
+    super();
+    makeObservable(this);
   }
 
   protected render = reportRenderError(this, () => {

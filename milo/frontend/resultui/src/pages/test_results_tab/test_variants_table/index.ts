@@ -18,7 +18,7 @@ import { css, customElement, html } from 'lit-element';
 import { classMap } from 'lit-html/directives/class-map';
 import { repeat } from 'lit-html/directives/repeat';
 import { styleMap } from 'lit-html/directives/style-map';
-import { computed, observable, reaction } from 'mobx';
+import { computed, makeObservable, observable, reaction } from 'mobx';
 
 import '../../../components/dot_spinner';
 import '../../../components/column_header';
@@ -57,6 +57,11 @@ export class TestVariantsTableElement extends MiloBaseElement {
 
   @computed private get columnWidths() {
     return this.invState.columnWidths;
+  }
+
+  constructor() {
+    super();
+    makeObservable(this);
   }
 
   private getTvtColumns(columnWidths: readonly number[]) {

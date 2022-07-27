@@ -17,7 +17,7 @@ import '@material/mwc-icon';
 import { css, customElement, html } from 'lit-element';
 import { repeat } from 'lit-html/directives/repeat';
 import { styleMap } from 'lit-html/directives/style-map';
-import { computed, observable, reaction } from 'mobx';
+import { computed, makeObservable, observable, reaction } from 'mobx';
 
 import '../../../components/dot_spinner';
 import '../../../components/column_header';
@@ -54,6 +54,11 @@ export class TestHistoryDetailsTableElement extends MiloBaseElement {
       return ret;
     }
     return this.pageState.columnWidths;
+  }
+
+  constructor() {
+    super();
+    makeObservable(this);
   }
 
   private getThdtColumns(columnWidths: readonly number[]) {

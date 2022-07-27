@@ -28,7 +28,7 @@
  * @customElement('context-provider')
  * // Context providers needs to be denoted with @provider
  * @provider
- * class ContextProvider extends LitElement {
+ * class ContextProvider extends MobxLitElement {
  *   // Context bind properties in a context provider HAVE TO be decorated with
  *   // @property(). Otherwise changes won't be propagated.
  *   @property()
@@ -56,7 +56,7 @@
  * @customElement('context-consumer')
  * // Context consumers needs to be denoted with @consumer
  * @consumer
- * class ContextConsumer extends LitElement {
+ * class ContextConsumer extends MobxLitElement {
  *   @property()
  *   @consumeString()
  *   // The property key don't have to be the same as the property key used in
@@ -75,7 +75,7 @@
  * }
  *
  * @customElement('page')
- * class Page extends LitElement {
+ * class Page extends MobxLitElement {
  *   // renders 'page-value' on screen.
  *   protected render() {
  *     return html`
@@ -90,7 +90,8 @@
  */
 
 import 'reflect-metadata';
-import { LitElement, PropertyValues } from 'lit-element';
+import { MobxLitElement } from '@adobe/lit-mobx';
+import { PropertyValues } from 'lit-element';
 
 interface ContextEventDetail {
   onCtxUpdate(newCtxValue: unknown): void;
@@ -148,7 +149,7 @@ const localContextProviderCounter = new Map<string, number>();
  *
  * See @fileoverview for examples.
  */
-export function provider<Cls extends Constructor<LitElement>>(cls: Cls) {
+export function provider<Cls extends Constructor<MobxLitElement>>(cls: Cls) {
   // Create new symbols every time we apply the mixin so applying the mixin
   // multiple times won't override the property.
   const onCtxUpdatesSymbol = Symbol('onCtxUpdates');
@@ -158,7 +159,7 @@ export function provider<Cls extends Constructor<LitElement>>(cls: Cls) {
   const meta: ProviderContextMeta = Reflect.getMetadata(providerMetaSymbol, cls.prototype) || new Map();
   const eventTypes = [...meta.keys()];
 
-  class Provider extends (cls as Constructor<LitElement>) {
+  class Provider extends (cls as Constructor<MobxLitElement>) {
     [onCtxUpdatesSymbol] = new Map<string, Set<(newCtx: unknown) => void>>(
       eventTypes.map((eventType) => [eventType, new Set()])
     );
@@ -245,7 +246,7 @@ export function provider<Cls extends Constructor<LitElement>>(cls: Cls) {
   }
 
   // Recover the type information that was lost in the down-casting above.
-  return Provider as Constructor<LitElement> as Cls;
+  return Provider as Constructor<MobxLitElement> as Cls;
 }
 
 /**
@@ -264,7 +265,7 @@ export function provider<Cls extends Constructor<LitElement>>(cls: Cls) {
  *
  * See @fileoverview for examples.
  */
-export function consumer<Cls extends Constructor<LitElement>>(cls: Cls) {
+export function consumer<Cls extends Constructor<MobxLitElement>>(cls: Cls) {
   // Create new symbols every time we apply the mixin so applying the mixin
   // multiple times won't override the property.
   const disconnectedCBsSymbol = Symbol('disconnectedCBs');
@@ -272,8 +273,8 @@ export function consumer<Cls extends Constructor<LitElement>>(cls: Cls) {
   const meta = (Reflect.getMetadata(consumerMetaSymbol, cls.prototype) as ConsumerContextMeta | undefined) || [];
 
   // TypeScript doesn't allow type parameter in extends or implements
-  // position. Cast to Constructor<LitElement> to stop tsc complaining.
-  class Consumer extends (cls as Constructor<LitElement>) {
+  // position. Cast to Constructor<MobxLitElement> to stop tsc complaining.
+  class Consumer extends (cls as Constructor<MobxLitElement>) {
     [disconnectedCBsSymbol]: Array<() => void> = [];
 
     connectedCallback() {
@@ -319,7 +320,7 @@ export function consumer<Cls extends Constructor<LitElement>>(cls: Cls) {
   }
 
   // Recover the type information that was lost in the down-casting above.
-  return Consumer as Constructor<LitElement> as Cls;
+  return Consumer as Constructor<MobxLitElement> as Cls;
 }
 
 const DEFAULT_PROVIDER_OPT: CtxProviderOption = Object.freeze({
@@ -343,7 +344,7 @@ export function createContextLink<Ctx>() {
     return function <
       K extends string | number | symbol,
       // Ctx must be assignable to T[K].
-      T extends LitElement & Record<K, Ctx>
+      T extends MobxLitElement & Record<K, Ctx>
     >(target: T, propKey: K) {
       if (!Reflect.hasMetadata(providerMetaSymbol, target)) {
         Reflect.defineMetadata(providerMetaSymbol, new Map(), target);
@@ -354,7 +355,7 @@ export function createContextLink<Ctx>() {
   }
 
   function consumeContext() {
-    return function <K extends string | number | symbol, V, T extends LitElement & Partial<Record<K, V>>>(
+    return function <K extends string | number | symbol, V, T extends MobxLitElement & Partial<Record<K, V>>>(
       // T[K] must be assignable to Ctx.
       target: Ctx extends T[K] ? T : never,
       propKey: K

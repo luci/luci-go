@@ -14,9 +14,11 @@
 
 import { aTimeout, fixture, fixtureCleanup, html } from '@open-wc/testing/index-no-side-effects';
 import { assert } from 'chai';
-import { css, customElement, LitElement, property } from 'lit-element';
+import { css, customElement } from 'lit-element';
+import { makeObservable, observable, reaction } from 'mobx';
 import * as sinon from 'sinon';
 
+import { MiloBaseElement } from '../components/milo_base';
 import { provider } from './context';
 import {
   IntersectionNotifier,
@@ -30,10 +32,29 @@ import {
 
 @customElement('milo-enter-view-observer-notifier-provider-test')
 @provider
-class EnterViewObserverNotifierProviderElement extends LitElement {
-  @property()
+class EnterViewObserverNotifierProviderElement extends MiloBaseElement {
+  @observable.ref
   @provideNotifier()
   notifier = new IntersectionNotifier({ root: this });
+
+  constructor() {
+    super();
+    makeObservable(this);
+  }
+
+  connectedCallback() {
+    super.connectedCallback();
+    this.addDisposer(
+      reaction(
+        () => this.notifier,
+        (notifier) => {
+          // Emulate @property() update.
+          this.updated(new Map([['notifier', notifier]]));
+        },
+        { fireImmediately: true }
+      )
+    );
+  }
 
   protected render() {
     return html`<slot></slot>`;
@@ -50,8 +71,13 @@ class EnterViewObserverNotifierProviderElement extends LitElement {
 
 @customElement('milo-enter-view-observer-test-entry')
 @observer
-class EnterViewObserverTestEntryElement extends LitElement implements ObserverElement {
-  @property() onEnterCallCount = 0;
+class EnterViewObserverTestEntryElement extends MiloBaseElement implements ObserverElement {
+  @observable.ref onEnterCallCount = 0;
+
+  constructor() {
+    super();
+    makeObservable(this);
+  }
 
   notify() {
     this.onEnterCallCount++;
@@ -180,7 +206,12 @@ describe('enterViewObserver', () => {
 
 @customElement('milo-lazy-rendering-test-entry')
 @lazyRendering
-class LazyRenderingElement extends LitElement implements RenderPlaceHolder {
+class LazyRenderingElement extends MiloBaseElement implements RenderPlaceHolder {
+  constructor() {
+    super();
+    makeObservable(this);
+  }
+
   renderPlaceHolder() {
     return html`placeholder`;
   }
@@ -231,7 +262,12 @@ describe('lazyRendering', () => {
 
 @customElement('milo-progressive-rendering-test-entry')
 @lazyRendering
-class ProgressiveRenderingElement extends LitElement implements RenderPlaceHolder {
+class ProgressiveRenderingElement extends MiloBaseElement implements RenderPlaceHolder {
+  constructor() {
+    super();
+    makeObservable(this);
+  }
+
   renderPlaceHolder() {
     return html`placeholder`;
   }
@@ -250,7 +286,7 @@ class ProgressiveRenderingElement extends LitElement implements RenderPlaceHolde
 
 @customElement('milo-progressive-rendering-notifier-provider-test')
 @provider
-class ProgressiveNotifierProviderElement extends LitElement {
+class ProgressiveNotifierProviderElement extends MiloBaseElement {
   @provideNotifier() notifier = new ProgressiveNotifier({ batchInterval: 100, batchSize: 10, root: this });
 
   protected render() {

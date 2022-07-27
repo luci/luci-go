@@ -12,8 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import { MobxLitElement } from '@adobe/lit-mobx';
 import { BroadcastChannel } from 'broadcast-channel';
-import { css, customElement, html, LitElement, property } from 'lit-element';
+import { css, customElement, html } from 'lit-element';
+import { makeObservable, observable } from 'mobx';
 
 import { ANONYMOUS_IDENTITY } from '../services/milo_internal';
 
@@ -57,10 +59,15 @@ export function changeUserState(signIn: boolean) {
  * @event user-update: emits a UserUpdateEvent when user's profile is updated.
  */
 @customElement('milo-signin')
-export class SignInElement extends LitElement {
-  @property() private identity?: string;
-  @property() private email?: string;
-  @property() private picture?: string;
+export class SignInElement extends MobxLitElement {
+  @observable.ref private identity?: string;
+  @observable.ref private email?: string;
+  @observable.ref private picture?: string;
+
+  constructor() {
+    super();
+    makeObservable(this);
+  }
 
   protected render() {
     if (!this.identity || this.identity === ANONYMOUS_IDENTITY) {

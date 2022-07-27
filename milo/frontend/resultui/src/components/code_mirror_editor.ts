@@ -17,21 +17,27 @@ import 'codemirror/addon/fold/brace-fold';
 import 'codemirror/addon/fold/foldcode';
 import 'codemirror/addon/fold/foldgutter';
 import 'codemirror/mode/javascript/javascript';
+import { MobxLitElement } from '@adobe/lit-mobx';
 import * as CodeMirror from 'codemirror';
 import foldGutterStyle from 'codemirror/addon/fold/foldgutter.css';
 import codemirrorStyle from 'codemirror/lib/codemirror.css';
-import { css, customElement, LitElement } from 'lit-element';
+import { css, customElement } from 'lit-element';
 import { html } from 'lit-html';
-import { observable } from 'mobx';
+import { makeObservable, observable } from 'mobx';
 
 /**
  * A lit-element wrapper of codemirror
  */
 @customElement('milo-code-mirror-editor')
-export class CodeMirrorEditorElement extends LitElement {
+export class CodeMirrorEditorElement extends MobxLitElement {
   @observable.ref value!: string;
   @observable.ref options: CodeMirror.EditorConfiguration | undefined;
   onInit = (_editor: CodeMirror.Editor) => {};
+
+  constructor() {
+    super();
+    makeObservable(this);
+  }
 
   protected firstUpdated() {
     const editor = CodeMirror.fromTextArea(

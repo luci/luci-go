@@ -15,7 +15,7 @@
 import '@material/mwc-icon';
 import { MobxLitElement } from '@adobe/lit-mobx';
 import { customElement, html } from 'lit-element';
-import { computed, observable } from 'mobx';
+import { computed, makeObservable, observable } from 'mobx';
 
 import '../expandable_entry';
 import '../image_diff_viewer';
@@ -38,9 +38,14 @@ export class TextDiffArtifactElement extends MobxLitElement {
     return `${router.urlForName('artifact')}/image-diff/${this.diff.name}?${search}`;
   }
 
+  constructor() {
+    super();
+    makeObservable(this);
+  }
+
   protected render() {
     return html`
-      <milo-expandable-entry .expanded=${true} contentRuler="invisible">
+      <milo-expandable-entry .expanded=${true} .contentRuler="invisible">
         <span id="header" slot="header">
           Unexpected image output from
           <a href=${this.artifactPageUrl} target="_blank">${this.diff.artifactId}</a>

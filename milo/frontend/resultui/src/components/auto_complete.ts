@@ -12,10 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { css, customElement, html, property, TemplateResult } from 'lit-element';
+import { css, customElement, html, TemplateResult } from 'lit-element';
 import { classMap } from 'lit-html/directives/class-map';
 import { styleMap } from 'lit-html/directives/style-map';
-import { computed, observable, reaction } from 'mobx';
+import { computed, makeObservable, observable, reaction } from 'mobx';
 
 import { MiloBaseElement } from './milo_base';
 
@@ -50,7 +50,7 @@ export class AutoCompleteElement extends MiloBaseElement {
    * 1. this.highlight is true when first rendered, and
    * 2. this.value is not empty when first rendered.
    */
-  @property() highlight = false;
+  @observable.ref highlight = false;
 
   onValueUpdate = (_newVal: string) => {};
   onSuggestionSelected = (_suggestion: SuggestionEntry) => {};
@@ -80,6 +80,11 @@ export class AutoCompleteElement extends MiloBaseElement {
       }
     }
     return this.placeHolder;
+  }
+
+  constructor() {
+    super();
+    makeObservable(this);
   }
 
   protected updated() {

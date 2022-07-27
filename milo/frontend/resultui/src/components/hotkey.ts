@@ -13,7 +13,10 @@
 // limitations under the License.
 
 import Hotkeys, { HotkeysEvent, KeyHandler } from 'hotkeys-js';
-import { customElement, html, LitElement, property, PropertyValues } from 'lit-element';
+import { customElement, html } from 'lit-element';
+import { makeObservable, observable, reaction } from 'mobx';
+
+import { MiloBaseElement } from './milo_base';
 
 // Let individual hotkey element set the filters instead.
 Hotkeys.filter = () => true;
@@ -24,8 +27,8 @@ Hotkeys.filter = () => true;
  * disconnected.
  */
 @customElement('milo-hotkey')
-export class HotkeyElement extends LitElement {
-  @property() key!: string;
+export class HotkeyElement extends MiloBaseElement {
+  @observable.ref key!: string;
   handler!: KeyHandler;
 
   // By default, prevent hotkeys from reacting to events from input related elements
@@ -43,26 +46,44 @@ export class HotkeyElement extends LitElement {
     this.handler(keyboardEvent, hotkeysEvent);
   };
 
-  shouldUpdate(changedProperties: PropertyValues) {
-    if (!this.isConnected) {
-      return false;
-    }
+  private oldKey?: string;
 
-    const oldKey = changedProperties.get('key') as string | undefined;
-    if (oldKey) {
-      Hotkeys.unbind(oldKey, this._handle);
-      Hotkeys(this.key, this._handle);
-    }
-    return true;
+  constructor() {
+    super();
+    makeObservable(this);
   }
 
   connectedCallback() {
     super.connectedCallback();
-    Hotkeys(this.key, this._handle);
+
+    this.addDisposer(
+      reaction(
+        () => [this.key],
+        ([key]) => {
+          if (!this.isConnected) {
+            return false;
+          }
+
+          if (this.oldKey) {
+            Hotkeys.unbind(this.oldKey, this._handle);
+            this.oldKey = '';
+          }
+          if (key) {
+            this.oldKey = key;
+            Hotkeys(key, this._handle);
+          }
+          return true;
+        },
+        { fireImmediately: true }
+      )
+    );
   }
   disconnectedCallback() {
     super.disconnectedCallback();
-    Hotkeys.unbind(this.key, this._handle);
+    if (this.oldKey) {
+      Hotkeys.unbind(this.oldKey, this._handle);
+      this.oldKey = '';
+    }
   }
 
   protected render() {

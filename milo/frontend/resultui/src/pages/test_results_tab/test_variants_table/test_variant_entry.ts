@@ -16,7 +16,7 @@ import '@material/mwc-icon';
 import { MobxLitElement } from '@adobe/lit-mobx';
 import { css, customElement, html } from 'lit-element';
 import { repeat } from 'lit-html/directives/repeat';
-import { computed, observable } from 'mobx';
+import { computed, makeObservable, observable } from 'mobx';
 import { fromPromise } from 'mobx-utils';
 
 import '../../../components/associated_bugs_badge';
@@ -219,6 +219,11 @@ export class TestVariantEntryElement extends MobxLitElement implements RenderPla
 
   @computed private get columnValues() {
     return this.columnGetters.map((fn) => fn(this.variant));
+  }
+
+  constructor() {
+    super();
+    makeObservable(this);
   }
 
   private renderBody() {

@@ -14,7 +14,7 @@
 
 import { render } from 'lit-html';
 import { DateTime, Duration } from 'luxon';
-import { computed, IObservableValue, observable } from 'mobx';
+import { computed, IObservableValue, makeObservable, observable } from 'mobx';
 
 import { renderMarkdown } from '../libs/markdown_utils';
 import { BuildStatus, Log, Step } from '../services/buildbucket';
@@ -46,6 +46,8 @@ export class StepExt {
   readonly renderTime: IObservableValue<DateTime>;
 
   constructor(init: StepInit) {
+    makeObservable(this);
+
     const step = init.step;
     this.name = step.name;
     this.startTime = step.startTime ? DateTime.fromISO(step.startTime) : null;

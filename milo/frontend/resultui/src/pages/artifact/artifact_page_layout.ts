@@ -14,7 +14,7 @@
 
 import { BeforeEnterObserver, PreventAndRedirectCommands, RouterLocation } from '@vaadin/router';
 import { css, customElement, html } from 'lit-element';
-import { computed, observable, reaction } from 'mobx';
+import { computed, makeObservable, observable, reaction } from 'mobx';
 
 import '../../components/image_diff_viewer';
 import '../../components/status_bar';
@@ -46,6 +46,11 @@ export class ArtifactPageLayoutElement extends MiloBaseElement implements Before
       resultId: this.resultId,
       artifactId: this.artifactId,
     };
+  }
+
+  constructor() {
+    super();
+    makeObservable(this);
   }
 
   onBeforeEnter(location: RouterLocation, cmd: PreventAndRedirectCommands) {

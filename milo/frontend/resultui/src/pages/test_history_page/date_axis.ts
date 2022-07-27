@@ -14,7 +14,7 @@
 
 import { AxisScale, axisTop, scaleTime, select as d3Select, timeDay, timeFormat } from 'd3';
 import { css, customElement, html } from 'lit-element';
-import { computed, observable } from 'mobx';
+import { computed, makeObservable, observable } from 'mobx';
 
 import { MiloBaseElement } from '../../components/milo_base';
 import { consumeTestHistoryPageState, TestHistoryPageState } from '../../context/test_history_page_state';
@@ -30,6 +30,11 @@ export class TestHistoryDateAxisElement extends MiloBaseElement {
     const days = Math.floor((this.getBoundingClientRect().width - 2) / CELL_SIZE);
     this.pageState.days = days;
   });
+
+  constructor() {
+    super();
+    makeObservable(this);
+  }
 
   connectedCallback() {
     super.connectedCallback();

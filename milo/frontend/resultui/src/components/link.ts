@@ -12,8 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { customElement, LitElement, property } from 'lit-element';
+import { MobxLitElement } from '@adobe/lit-mobx';
+import { customElement } from 'lit-element';
 import { html } from 'lit-html';
+import { makeObservable, observable } from 'mobx';
 
 import { Link } from '../models/link';
 import commonStyle from '../styles/common_style.css';
@@ -22,9 +24,14 @@ import commonStyle from '../styles/common_style.css';
  * Renders a Link object.
  */
 @customElement('milo-link')
-export class LinkElement extends LitElement {
-  @property() link!: Link;
-  @property() target?: string;
+export class LinkElement extends MobxLitElement {
+  @observable.ref link!: Link;
+  @observable.ref target?: string;
+
+  constructor() {
+    super();
+    makeObservable(this);
+  }
 
   protected render() {
     return html`

@@ -13,7 +13,7 @@
 // limitations under the License.
 
 import merge from 'lodash-es/merge';
-import { computed, observable, reaction } from 'mobx';
+import { computed, makeObservable, observable, reaction } from 'mobx';
 
 import { createContextLink } from '../libs/context';
 
@@ -74,6 +74,8 @@ export class UserConfigsStore {
   private disposers: Array<() => void> = [];
 
   constructor(private readonly storage = window.localStorage) {
+    makeObservable(this);
+
     const storedConfigsStr = storage.getItem(UserConfigsStore.KEY) || '{}';
     try {
       merge(this.userConfigs, JSON.parse(storedConfigsStr));

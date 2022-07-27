@@ -15,7 +15,7 @@
 import '@material/mwc-icon';
 import { BeforeEnterObserver, PreventAndRedirectCommands, RouterLocation } from '@vaadin/router';
 import { css, customElement, html } from 'lit-element';
-import { computed, observable, reaction } from 'mobx';
+import { computed, makeObservable, observable, reaction } from 'mobx';
 
 import '../../components/status_bar';
 import '../../components/tab_bar';
@@ -53,6 +53,11 @@ export class InvocationPageElement extends MiloBaseElement implements BeforeEnte
   @observable.ref
   @provideInvocationState({ global: true })
   invocationState!: InvocationState;
+
+  constructor() {
+    super();
+    makeObservable(this);
+  }
 
   private invocationId = '';
   onBeforeEnter(location: RouterLocation, cmd: PreventAndRedirectCommands) {

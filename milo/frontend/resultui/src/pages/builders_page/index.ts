@@ -16,7 +16,7 @@ import { BeforeEnterObserver, PreventAndRedirectCommands, RouterLocation } from 
 import { css, customElement, html } from 'lit-element';
 import { repeat } from 'lit-html/directives/repeat';
 import { styleMap } from 'lit-html/directives/style-map';
-import { computed, observable, reaction } from 'mobx';
+import { computed, makeObservable, observable, reaction } from 'mobx';
 
 import '../../components/status_bar';
 import '../../components/dot_spinner';
@@ -69,6 +69,11 @@ export class BuildersPageElement extends MiloBaseElement implements BeforeEnterO
     }
 
     return streamListBuildersRes();
+  }
+
+  constructor() {
+    super();
+    makeObservable(this);
   }
 
   onBeforeEnter(location: RouterLocation, cmd: PreventAndRedirectCommands) {

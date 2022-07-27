@@ -23,10 +23,10 @@ import {
   Selection,
   timeMillisecond,
 } from 'd3';
-import { css, customElement, html, property } from 'lit-element';
+import { css, customElement, html } from 'lit-element';
 import { render } from 'lit-html';
 import { DateTime } from 'luxon';
-import { autorun, observable } from 'mobx';
+import { autorun, makeObservable, observable } from 'mobx';
 
 import '../../components/dot_spinner';
 import { MiloBaseElement } from '../../components/milo_base';
@@ -102,12 +102,10 @@ export class TimelineTabElement extends MiloBaseElement {
   @observable.ref private totalWidth!: number;
   @observable.ref private bodyWidth!: number;
 
-  // Don't set them as observable. When render methods update them, we don't
-  // want autorun to trigger this.renderTimeline() again.
-  @property() private headerEle!: HTMLDivElement;
-  @property() private footerEle!: HTMLDivElement;
-  @property() private sidePanelEle!: HTMLDivElement;
-  @property() private bodyEle!: HTMLDivElement;
+  @observable.ref private headerEle!: HTMLDivElement;
+  @observable.ref private footerEle!: HTMLDivElement;
+  @observable.ref private sidePanelEle!: HTMLDivElement;
+  @observable.ref private bodyEle!: HTMLDivElement;
 
   // Properties shared between render methods.
   private bodyHeight!: number;
@@ -117,6 +115,11 @@ export class TimelineTabElement extends MiloBaseElement {
   private readonly nowTimestamp = Date.now();
   private readonly now = DateTime.fromMillis(this.nowTimestamp);
   private relativeTimeText!: Selection<SVGTextElement, unknown, null, undefined>;
+
+  constructor() {
+    super();
+    makeObservable(this);
+  }
 
   connectedCallback() {
     super.connectedCallback();

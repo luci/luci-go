@@ -15,7 +15,7 @@
 import { MobxLitElement } from '@adobe/lit-mobx';
 import * as Diff2Html from 'diff2html';
 import { css, customElement, html } from 'lit-element';
-import { computed, observable } from 'mobx';
+import { computed, makeObservable, observable } from 'mobx';
 import { fromPromise } from 'mobx-utils';
 
 import '../../components/dot_spinner';
@@ -69,6 +69,11 @@ export class TextDiffArtifactPageElement extends MobxLitElement {
   }
   @computed private get content() {
     return unwrapObservable(this.content$, null);
+  }
+
+  constructor() {
+    super();
+    makeObservable(this);
   }
 
   protected render = reportRenderError(this, () => {

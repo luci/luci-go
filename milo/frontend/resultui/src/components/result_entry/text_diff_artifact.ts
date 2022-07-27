@@ -16,7 +16,7 @@ import '@material/mwc-icon';
 import { MobxLitElement } from '@adobe/lit-mobx';
 import * as Diff2Html from 'diff2html';
 import { css, customElement, html } from 'lit-element';
-import { computed, observable } from 'mobx';
+import { computed, makeObservable, observable } from 'mobx';
 import { fromPromise, IPromiseBasedObservable } from 'mobx-utils';
 
 import '../expandable_entry';
@@ -49,6 +49,11 @@ export class TextDiffArtifactElement extends MobxLitElement {
     return unwrapObservable(this.content$, null);
   }
 
+  constructor() {
+    super();
+    makeObservable(this);
+  }
+
   protected render = reportRenderError(this, () => {
     return html`
       <link
@@ -56,7 +61,7 @@ export class TextDiffArtifactElement extends MobxLitElement {
         type="text/css"
         href="https://cdn.jsdelivr.net/npm/diff2html/bundles/css/diff2html.min.css"
       />
-      <milo-expandable-entry .expanded=${true} contentRuler="invisible">
+      <milo-expandable-entry .expanded=${true} .contentRuler="invisible">
         <span id="header" slot="header">
           Unexpected text output from
           <a href="${router.urlForName('artifact')}/text-diff/${this.artifact.name}" target="_blank">

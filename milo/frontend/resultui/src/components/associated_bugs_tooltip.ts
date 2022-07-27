@@ -16,7 +16,7 @@ import '@material/mwc-menu';
 import { MobxLitElement } from '@adobe/lit-mobx';
 import { css, customElement } from 'lit-element';
 import { html } from 'lit-html';
-import { observable } from 'mobx';
+import { makeObservable, observable } from 'mobx';
 
 import { Cluster, makeRuleLink } from '../services/weetbix';
 import commonStyle from '../styles/common_style.css';
@@ -25,6 +25,11 @@ import commonStyle from '../styles/common_style.css';
 export class WeetbixClustersTooltipElement extends MobxLitElement {
   @observable.ref project!: string;
   @observable.ref clusters!: readonly Cluster[];
+
+  constructor() {
+    super();
+    makeObservable(this);
+  }
 
   protected render() {
     const bugClusters = this.clusters.filter((c) => c.bug);

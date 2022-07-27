@@ -12,9 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { css, customElement, LitElement, property } from 'lit-element';
+import { MobxLitElement } from '@adobe/lit-mobx';
+import { css, customElement } from 'lit-element';
 import { html } from 'lit-html';
 import { classMap } from 'lit-html/directives/class-map';
+import { makeObservable, observable } from 'mobx';
 
 export interface TabDef {
   id: string;
@@ -30,11 +32,16 @@ export interface TabDef {
  * changed, the parent element must set a new selectedTabId.
  */
 @customElement('milo-tab-bar')
-export class TabBarElement extends LitElement {
-  @property() tabs: TabDef[] = [];
-  @property() selectedTabId = '';
+export class TabBarElement extends MobxLitElement {
+  @observable.ref tabs: TabDef[] = [];
+  @observable.ref selectedTabId = '';
 
   onTabClicked: (clickedTabId: string) => void = () => {};
+
+  constructor() {
+    super();
+    makeObservable(this);
+  }
 
   protected render() {
     return html`

@@ -15,7 +15,7 @@
 import { MobxLitElement } from '@adobe/lit-mobx';
 import { EditorConfiguration, ModeSpec } from 'codemirror';
 import { css, customElement, html } from 'lit-element';
-import { computed, observable } from 'mobx';
+import { computed, makeObservable, observable } from 'mobx';
 
 import './code_mirror_editor';
 import './connection_observer';
@@ -71,6 +71,11 @@ export class PropertyViewerElement extends MobxLitElement implements RenderPlace
       },
     },
   };
+
+  constructor() {
+    super();
+    makeObservable(this);
+  }
 
   private toggleFold(line: string, folded: boolean) {
     if (folded) {

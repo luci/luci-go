@@ -14,8 +14,10 @@
 
 import { fixture, fixtureCleanup } from '@open-wc/testing/index-no-side-effects';
 import { assert } from 'chai';
-import { customElement, html, LitElement, property } from 'lit-element';
+import { customElement, html, LitElement } from 'lit-element';
+import { makeObservable, observable, reaction } from 'mobx';
 
+import { MiloBaseElement } from '../components/milo_base';
 import { consumer, createContextLink, provider } from './context';
 
 class Parent {
@@ -41,31 +43,31 @@ const [provideSelfProvidedKey, consumeSelfProvidedKey] = createContextLink<strin
 
 @customElement('milo-outer-context-provider-test')
 @provider
-class OuterContextProvider extends LitElement {
+class OuterContextProvider extends MiloBaseElement {
   @provideOuterProviderInactiveKey()
   outerProviderInactiveKey = 'outer_provider-outer_provider_inactive-val0';
 
-  @property()
+  @observable.ref
   @provideOuterProviderKey()
   outerProviderKey = 'outer_provider-outer_provider-val0';
 
   // The same context is provided by multiple properties, the last one is used.
-  @property()
+  @observable.ref
   @provideProviderKey()
   ignoredProviderKey = 'ignored_outer_provider-provider-val0';
 
-  @property()
+  @observable.ref
   @provideProviderKey()
   providerKey = 'outer_provider-provider-val0';
 
-  @property()
+  @observable.ref
   @provideOuterUnobservedKey()
   outerUnobservedKey = 'outer_provider-outer_unobserved-val0';
 
-  @property()
+  @observable.ref
   unprovidedKey = 'outer_provider-unprovided-val0';
 
-  @property()
+  @observable.ref
   @provideConsumerOptionalPropKey()
   consumerOptionalPropKey = 'outer_provider-consumer_optional_pro-val0';
 
@@ -80,33 +82,142 @@ class OuterContextProvider extends LitElement {
   // parent.
   @provideSubtypeKey()
   grandChild = new GrandChild();
+
+  constructor() {
+    super();
+    makeObservable(this);
+  }
+
+  connectedCallback(): void {
+    super.connectedCallback();
+
+    this.addDisposer(
+      reaction(
+        () => this.outerProviderKey,
+        (outerProviderKey) => {
+          // Emulate @property() update.
+          this.updated(new Map([['outerProviderKey', outerProviderKey]]));
+        },
+        { fireImmediately: true }
+      )
+    );
+    this.addDisposer(
+      reaction(
+        () => this.ignoredProviderKey,
+        (ignoredProviderKey) => {
+          // Emulate @property() update.
+          this.updated(new Map([['ignoredProviderKey', ignoredProviderKey]]));
+        },
+        { fireImmediately: true }
+      )
+    );
+    this.addDisposer(
+      reaction(
+        () => this.providerKey,
+        (providerKey) => {
+          // Emulate @property() update.
+          this.updated(new Map([['providerKey', providerKey]]));
+        },
+        { fireImmediately: true }
+      )
+    );
+    this.addDisposer(
+      reaction(
+        () => this.outerUnobservedKey,
+        (outerUnobservedKey) => {
+          // Emulate @property() update.
+          this.updated(new Map([['outerUnobservedKey', outerUnobservedKey]]));
+        },
+        { fireImmediately: true }
+      )
+    );
+    this.addDisposer(
+      reaction(
+        () => this.unprovidedKey,
+        (unprovidedKey) => {
+          // Emulate @property() update.
+          this.updated(new Map([['unprovidedKey', unprovidedKey]]));
+        },
+        { fireImmediately: true }
+      )
+    );
+    this.addDisposer(
+      reaction(
+        () => this.consumerOptionalPropKey,
+        (consumerOptionalPropKey) => {
+          // Emulate @property() update.
+          this.updated(new Map([['consumerOptionalPropKey', consumerOptionalPropKey]]));
+        },
+        { fireImmediately: true }
+      )
+    );
+  }
 }
 
 @customElement('milo-inner-context-provider-test')
 @provider
-class InnerContextProvider extends LitElement {
-  @property()
+class InnerContextProvider extends MiloBaseElement {
+  @observable.ref
   @provideProviderKey()
   providerKey = 'inner_provider-provider-val0';
+
+  constructor() {
+    super();
+    makeObservable(this);
+  }
+
+  connectedCallback(): void {
+    super.connectedCallback();
+
+    this.addDisposer(
+      reaction(
+        () => this.providerKey,
+        (providerKey) => {
+          // Emulate @property() update.
+          this.updated(new Map([['providerKey', providerKey]]));
+        },
+        { fireImmediately: true }
+      )
+    );
+  }
 }
 
 @customElement('milo-global-context-provider-test')
 @provider
-class GlobalContextProvider extends LitElement {
-  @property()
+class GlobalContextProvider extends MiloBaseElement {
+  @observable.ref
   @provideProviderKey({ global: true })
   providerKey = 'global_provider-provider-val0';
+
+  constructor() {
+    super();
+    makeObservable(this);
+  }
+
+  connectedCallback(): void {
+    super.connectedCallback();
+
+    this.addDisposer(
+      reaction(
+        () => this.providerKey,
+        (providerKey) => {
+          // Emulate @property() update.
+          this.updated(new Map([['providerKey', providerKey]]));
+        },
+        { fireImmediately: true }
+      )
+    );
+  }
 }
 
 @customElement('milo-context-consumer-test')
 @provider
 @consumer
-class ContextConsumer extends LitElement {
-  @property()
+class ContextConsumer extends MiloBaseElement {
   @consumeOuterProviderInactiveKey()
   outerProviderInactiveKey = 'local-outer_provider_inactive';
 
-  @property()
+  @observable.ref
   @consumeOuterProviderKey()
   outerProviderKey = 'local-output_provider';
 
@@ -117,15 +228,15 @@ class ContextConsumer extends LitElement {
   @consumeProviderKey()
   providerKeyWithAnotherName = 'local-provider';
 
-  @property()
+  @observable.ref
   @consumeUnprovidedKey()
   unprovidedKey = 'local-unprovided';
 
-  @property()
+  @observable.ref
   outerUnobservedKey = 'local-unobserved';
 
   // This should compile without warnings.
-  @property()
+  @observable.ref
   @consumeConsumerOptionalPropKey()
   consumerOptionalPropKey?: string;
 
@@ -140,11 +251,11 @@ class ContextConsumer extends LitElement {
   @consumeSubtypeKey()
   child = new Child();
 
-  @property()
+  @observable.ref
   @provideSelfProvidedKey()
   selfProvided = 'local-self_provided';
 
-  @property()
+  @observable.ref
   @consumeSelfProvidedKey()
   selfProvided2 = '';
 
@@ -154,6 +265,36 @@ class ContextConsumer extends LitElement {
   @consumeProviderKey()
   set providerKeySetter(_newVal: string) {
     this.setterCallCount++;
+  }
+
+  constructor() {
+    super();
+    makeObservable(this);
+  }
+
+  connectedCallback(): void {
+    super.connectedCallback();
+
+    this.addDisposer(
+      reaction(
+        () => this.selfProvided,
+        (selfProvided) => {
+          // Emulate @property() update.
+          this.updated(new Map([['selfProvided', selfProvided]]));
+        },
+        { fireImmediately: true }
+      )
+    );
+    this.addDisposer(
+      reaction(
+        () => this.selfProvided2,
+        (selfProvided2) => {
+          // Emulate @property() update.
+          this.updated(new Map([['selfProvided2', selfProvided2]]));
+        },
+        { fireImmediately: true }
+      )
+    );
   }
 }
 

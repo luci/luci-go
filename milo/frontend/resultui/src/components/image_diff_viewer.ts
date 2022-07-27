@@ -12,9 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { css, customElement, html, property } from 'lit-element';
+import { css, customElement, html } from 'lit-element';
 import { styleMap } from 'lit-html/directives/style-map';
-import { computed, observable } from 'mobx';
+import { computed, makeObservable, observable, reaction } from 'mobx';
 
 import './hotkey';
 import './pixel_viewer';
@@ -54,7 +54,7 @@ export class ImageDiffViewerElement extends MiloBaseElement {
   @observable.ref diff!: Artifact;
 
   @observable.ref private showPixelViewers = false;
-  @provideCoord() @property() coord: Coordinate = { x: 0, y: 0 };
+  @observable.ref @provideCoord() coord: Coordinate = { x: 0, y: 0 };
 
   @computed private get expectedImgUrl() {
     return getRawArtifactUrl(this.expected.name);
@@ -78,11 +78,26 @@ export class ImageDiffViewerElement extends MiloBaseElement {
     this.coord = { x, y };
   };
 
+  constructor() {
+    super();
+    makeObservable(this);
+  }
+
   connectedCallback() {
     super.connectedCallback();
     const hidePixelViewers = () => (this.showPixelViewers = false);
     window.addEventListener('click', hidePixelViewers);
     this.addDisposer(() => window.removeEventListener('click', hidePixelViewers));
+    this.addDisposer(
+      reaction(
+        () => this.coord,
+        (coord) => {
+          // Emulate @property() update.
+          this.updated(new Map([['coord', coord]]));
+        },
+        { fireImmediately: true }
+      )
+    );
   }
 
   protected render() {
@@ -90,7 +105,7 @@ export class ImageDiffViewerElement extends MiloBaseElement {
       <div id="pixel-viewers" style=${styleMap({ display: this.showPixelViewers ? '' : 'none' })}>
         <milo-hotkey
           id="close-viewers-instruction"
-          key="esc"
+          .key="esc"
           .handler=${() => (this.showPixelViewers = false)}
           @click=${() => (this.showPixelViewers = false)}
         >

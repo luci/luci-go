@@ -15,7 +15,7 @@
 import '@material/mwc-icon';
 import { css, customElement, html } from 'lit-element';
 import { styleMap } from 'lit-html/directives/style-map';
-import { computed, observable } from 'mobx';
+import { computed, makeObservable, observable } from 'mobx';
 
 import { MiloBaseElement } from '../../components/milo_base';
 import {
@@ -34,6 +34,11 @@ export class TestHistoryGraphConfigElement extends MiloBaseElement {
 
   @computed private get shouldShowCountFilter() {
     return this.pageState.graphType === GraphType.STATUS && this.pageState.xAxisType === XAxisType.DATE;
+  }
+
+  constructor() {
+    super();
+    makeObservable(this);
   }
 
   protected render() {

@@ -14,7 +14,7 @@
 
 import { customElement, html } from 'lit-element';
 import { DateTime, Duration } from 'luxon';
-import { autorun, computed, observable } from 'mobx';
+import { autorun, computed, makeObservable, observable } from 'mobx';
 
 import { displayDuration } from '../libs/time_utils';
 import { MiloBaseElement } from './milo_base';
@@ -44,6 +44,11 @@ export class RelativeTimestampElement extends MiloBaseElement {
     } else {
       return this.formatFn(this.duration.negate()) + ' ago';
     }
+  }
+
+  constructor() {
+    super();
+    makeObservable(this);
   }
 
   connectedCallback() {

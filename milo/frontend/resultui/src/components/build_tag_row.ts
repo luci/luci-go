@@ -12,8 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { css, customElement, LitElement, property } from 'lit-element';
+import { MobxLitElement } from '@adobe/lit-mobx';
+import { css, customElement } from 'lit-element';
 import { html } from 'lit-html';
+import { makeObservable, observable } from 'mobx';
 
 import { getSafeUrlFromBuildset } from '../libs/build_utils';
 import commonStyle from '../styles/common_style.css';
@@ -22,9 +24,14 @@ import commonStyle from '../styles/common_style.css';
  * Renders a build tag row, include linkify support for some build tags.
  */
 @customElement('milo-build-tag-row')
-export class BuildTagRowElement extends LitElement {
-  @property() key!: string;
-  @property() value!: string;
+export class BuildTagRowElement extends MobxLitElement {
+  @observable.ref key!: string;
+  @observable.ref value!: string;
+
+  constructor() {
+    super();
+    makeObservable(this);
+  }
 
   protected render() {
     if (this.key === 'buildset') {

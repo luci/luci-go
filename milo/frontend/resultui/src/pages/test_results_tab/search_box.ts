@@ -16,7 +16,7 @@ import '@material/mwc-icon';
 import { MobxLitElement } from '@adobe/lit-mobx';
 import { css, customElement, html } from 'lit-element';
 import { styleMap } from 'lit-html/directives/style-map';
-import { computed, observable } from 'mobx';
+import { computed, makeObservable, observable } from 'mobx';
 
 import '../../components/auto_complete';
 import '../../components/hotkey';
@@ -46,10 +46,15 @@ export class TestResultTabSearchBoxElement extends MobxLitElement {
     return suggestTestResultSearchQuery(this.invocationState.searchText);
   }
 
+  constructor() {
+    super();
+    makeObservable(this);
+  }
+
   protected render() {
     return html`
       <milo-hotkey
-        key="/"
+        .key="/"
         .handler=${() => {
           // Set a tiny timeout to ensure '/' isn't recorded by the input box.
           setTimeout(() => this.shadowRoot?.getElementById('search-box')!.focus());
@@ -57,7 +62,7 @@ export class TestResultTabSearchBoxElement extends MobxLitElement {
       >
         <milo-auto-complete
           id="search-box"
-          highlight=${true}
+          .highlight=${true}
           .value=${this.invocationState.searchText}
           .placeHolder=${'Press / to search test results...'}
           .suggestions=${this.suggestions}

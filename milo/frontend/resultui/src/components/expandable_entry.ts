@@ -13,25 +13,27 @@
 // limitations under the License.
 
 import '@material/mwc-icon';
-import { css, customElement, html, LitElement, property } from 'lit-element';
+import { MobxLitElement } from '@adobe/lit-mobx';
+import { css, customElement, html } from 'lit-element';
 import { styleMap } from 'lit-html/directives/style-map';
+import { makeObservable, observable } from 'mobx';
 
 /**
  * Renders an expandable entry.
  */
 @customElement('milo-expandable-entry')
-export class ExpandableEntry extends LitElement {
+export class ExpandableEntry extends MobxLitElement {
   /**
    * Configure whether the content ruler should be rendered.
    * * visible: the default option. Renders the content ruler.
    * * invisible: hide the content ruler but keep the indentation.
    * * none: hide the content ruler and don't keep the indentation.
    */
-  @property() contentRuler: 'visible' | 'invisible' | 'none' = 'visible';
+  @observable.ref contentRuler: 'visible' | 'invisible' | 'none' = 'visible';
 
   onToggle = (_isExpanded: boolean) => {};
 
-  @property() private _expanded = false;
+  @observable.ref private _expanded = false;
   get expanded() {
     return this._expanded;
   }
@@ -41,6 +43,11 @@ export class ExpandableEntry extends LitElement {
     }
     this._expanded = isExpanded;
     this.onToggle(this._expanded);
+  }
+
+  constructor() {
+    super();
+    makeObservable(this);
   }
 
   protected render() {

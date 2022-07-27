@@ -15,7 +15,7 @@
 import '@material/mwc-menu';
 import { css, customElement } from 'lit-element';
 import { html, render } from 'lit-html';
-import { computed, observable, reaction } from 'mobx';
+import { computed, makeObservable, observable, reaction } from 'mobx';
 
 import './associated_bugs_tooltip';
 import { AssociatedBug, Cluster } from '../services/weetbix';
@@ -45,6 +45,11 @@ export class WeetbixClustersBadgeElement extends MiloBaseElement {
       uniqueBugs.push(cluster.bug);
     }
     return uniqueBugs;
+  }
+
+  constructor() {
+    super();
+    makeObservable(this);
   }
 
   connectedCallback() {

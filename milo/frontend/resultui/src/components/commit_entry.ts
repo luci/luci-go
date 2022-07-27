@@ -17,7 +17,7 @@ import { MobxLitElement } from '@adobe/lit-mobx';
 import { css, customElement, html } from 'lit-element';
 import { DateTime } from 'luxon';
 import MarkdownIt from 'markdown-it';
-import { computed, observable } from 'mobx';
+import { computed, makeObservable, observable } from 'mobx';
 
 import './expandable_entry';
 import { bugLine } from '../libs/markdown_it_plugins/bug_line';
@@ -82,6 +82,11 @@ export class CommitEntryElement extends MobxLitElement {
       }
       return diff.newPath;
     });
+  }
+
+  constructor() {
+    super();
+    makeObservable(this);
   }
 
   private renderChangedFiles() {

@@ -13,7 +13,7 @@
 // limitations under the License.
 
 import { DateTime } from 'luxon';
-import { computed, observable } from 'mobx';
+import { computed, makeObservable, observable } from 'mobx';
 
 import { TestHistoryService, TestVerdict, TestVerdictBundle, Variant } from '../services/weetbix';
 
@@ -29,7 +29,9 @@ export class TestHistoryEntriesLoader {
     readonly variant: Variant,
     readonly testHistoryService: TestHistoryService,
     readonly pageSize = 100
-  ) {}
+  ) {
+    makeObservable(this);
+  }
 
   @observable.shallow private _testVerdicts: TestVerdict[] = [];
   @computed get verdictBundles(): readonly TestVerdictBundle[] {

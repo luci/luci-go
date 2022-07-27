@@ -18,7 +18,7 @@
  */
 
 import { groupBy } from 'lodash-es';
-import { action, computed, observable } from 'mobx';
+import { action, computed, makeObservable, observable } from 'mobx';
 
 import { InnerTag, TAG_SOURCE } from '../libs/tag';
 import { toError } from '../libs/utils';
@@ -49,6 +49,7 @@ export class LoadTestVariantsError extends Error implements InnerTag {
 
   constructor(readonly req: QueryTestVariantsRequest, source: Error) {
     super(source.message);
+    makeObservable(this);
 
     this[TAG_SOURCE] = source;
   }
@@ -114,7 +115,7 @@ export class TestLoader {
       }
       groups = groups.flatMap((group) => Object.values(groupBy(group, propGetter)));
     }
-    return groups.map((group) => group.sort(this.cmpFn));
+    return groups.map((group) => group.slice().sort(this.cmpFn));
   }
 
   /**
@@ -165,7 +166,9 @@ export class TestLoader {
   // empty string is the token for the first page.
   private nextPageToken: string | undefined = '';
 
-  constructor(private readonly req: QueryTestVariantsRequest, private readonly resultDb: ResultDb) {}
+  constructor(private readonly req: QueryTestVariantsRequest, private readonly resultDb: ResultDb) {
+    makeObservable(this);
+  }
 
   private loadPromise = Promise.resolve();
   private firstLoadPromise?: Promise<void>;

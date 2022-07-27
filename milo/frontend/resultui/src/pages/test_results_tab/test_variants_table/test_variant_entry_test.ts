@@ -14,7 +14,7 @@
 
 import { GrpcError, RpcCode } from '@chopsui/prpc-client';
 import { aTimeout, expect, fixture, fixtureCleanup, html } from '@open-wc/testing/index-no-side-effects';
-import { customElement, LitElement, property } from 'lit-element';
+import { customElement, LitElement } from 'lit-element';
 import * as sinon from 'sinon';
 
 import './test_variant_entry';
@@ -71,11 +71,9 @@ const cluster3: Cluster = {
 @customElement('milo-test-variant-entry-test-context')
 @provider
 class TestVariantEntryTestContextElement extends LitElement {
-  @property()
   @provideAppState()
   appState!: AppState;
 
-  @property()
   @provideNotifier()
   notifier: Notifier = {
     subscribe(ele) {

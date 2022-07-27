@@ -14,7 +14,7 @@
 
 import '@material/mwc-button';
 import { css, customElement, html } from 'lit-element';
-import { computed, observable } from 'mobx';
+import { computed, makeObservable, observable } from 'mobx';
 
 import '../../../components/hotkey';
 import './step_list';
@@ -55,6 +55,11 @@ export class StepsTabElement extends MiloBaseElement {
     this.shadowRoot!.querySelector<BuildPageStepEntryElement>('milo-bp-step-list')!.toggleAllSteps(expand);
   }
   private readonly toggleAllStepsByHotkey = () => this.toggleAllSteps(!this.allStepsWereExpanded);
+
+  constructor() {
+    super();
+    makeObservable(this);
+  }
 
   protected render = reportRenderError(this, () => {
     return html`
@@ -99,7 +104,7 @@ export class StepsTabElement extends MiloBaseElement {
           </div>
         </div>
         <span></span>
-        <milo-hotkey key="x" .handler=${this.toggleAllStepsByHotkey} title="press x to expand/collapse all entries">
+        <milo-hotkey .key="x" .handler=${this.toggleAllStepsByHotkey} title="press x to expand/collapse all entries">
           <mwc-button class="action-button" dense unelevated @click=${() => this.toggleAllSteps(true)}>
             Expand All
           </mwc-button>

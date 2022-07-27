@@ -23,7 +23,7 @@ import {
   timeSecond,
 } from 'd3';
 import { css, customElement, html } from 'lit-element';
-import { computed, observable } from 'mobx';
+import { computed, makeObservable, observable } from 'mobx';
 
 import { MiloBaseElement } from '../../components/milo_base';
 import { consumeTestHistoryPageState, TestHistoryPageState } from '../../context/test_history_page_state';
@@ -89,6 +89,11 @@ export class TestHistoryDurationLegendElement extends MiloBaseElement {
     return d3Select(document.createElementNS('http://www.w3.org/2000/svg', 'g')).call(
       axisRight(this.scaleDurationY).ticks(this.tickInterval).tickFormat(this.tickFormat)
     );
+  }
+
+  constructor() {
+    super();
+    makeObservable(this);
   }
 
   protected render() {

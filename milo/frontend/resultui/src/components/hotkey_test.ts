@@ -63,7 +63,7 @@ describe('hotkey_test', () => {
   before(async () => {
     const parentEle = await fixture<HotkeyElement>(html`
       <div>
-        <milo-hotkey id="hotkey" key="a" .handler=${handlerSpy}>
+        <milo-hotkey id="hotkey" .key=${'a'} .handler=${handlerSpy}>
           <div id="child"></div>
         </milo-hotkey>
         <input id="input" />

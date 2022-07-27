@@ -12,15 +12,22 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { css, customElement, html, LitElement, property } from 'lit-element';
+import { MobxLitElement } from '@adobe/lit-mobx';
+import { css, customElement, html } from 'lit-element';
+import { makeObservable, observable } from 'mobx';
 
 /**
  * Renders the child components in an overlay. Fire a 'dismiss' event when users
  * clicks on the background area.
  */
 @customElement('milo-overlay')
-export class OverlayElement extends LitElement {
-  @property({ type: Boolean }) show = false;
+export class OverlayElement extends MobxLitElement {
+  @observable.ref show = false;
+
+  constructor() {
+    super();
+    makeObservable(this);
+  }
 
   protected render() {
     if (!this.show) {

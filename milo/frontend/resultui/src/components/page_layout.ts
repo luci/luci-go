@@ -19,7 +19,7 @@ import { BeforeEnterObserver, Router } from '@vaadin/router';
 import { BroadcastChannel } from 'broadcast-channel';
 import { css, customElement, html } from 'lit-element';
 import { styleMap } from 'lit-html/directives/style-map';
-import { observable, reaction } from 'mobx';
+import { makeObservable, observable, reaction } from 'mobx';
 
 import './signin';
 import './tooltip';
@@ -70,6 +70,11 @@ export class PageLayoutElement extends MiloBaseElement implements BeforeEnterObs
   });
 
   @observable.ref showUpdateBanner = false;
+
+  constructor() {
+    super();
+    makeObservable(this);
+  }
 
   onBeforeEnter() {
     if ('serviceWorker' in navigator) {

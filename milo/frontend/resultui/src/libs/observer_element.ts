@@ -20,8 +20,8 @@
  * ```
  * @customElement('lazy-loading-element')
  * @observer
- * class LazyLoadingElement extends LitElement implements ObserverElement {
- *   @property() private prerender = true;
+ * class LazyLoadingElement extends MobxLitElement implements ObserverElement {
+ *   @observable.ref private prerender = true;
  *
  *   notify() {
  *     this.prerender = false;
@@ -41,7 +41,7 @@
  * ```
  * @customElement('lazy-loading-element')
  * @lazyRendering
- * class LazyLoadingElement extends LitElement implements RenderPlaceHolder {
+ * class LazyLoadingElement extends MobxLitElement implements RenderPlaceHolder {
  *   renderPlaceHolder() {
  *     return html`Placeholder`;
  *   }
@@ -57,8 +57,8 @@
  * ```
  * @customElement('parent-element')
  * @provider
- * class ParentElement extends LitElement {
- *   @property()
+ * class ParentElement extends MobxLitElement {
+ *   @observable.ref
  *   @provideNotifier()
  *   notifier = new ProgressiveNotifier();
  *
@@ -69,12 +69,13 @@
  * ```
  */
 
-import { LitElement, property } from 'lit-element';
+import { MobxLitElement } from '@adobe/lit-mobx';
 import merge from 'lodash-es/merge';
+import { makeObservable, observable } from 'mobx';
 
 import { consumer, createContextLink } from './context';
 
-export interface ObserverElement extends LitElement {
+export interface ObserverElement extends MobxLitElement {
   notify(): void;
 }
 
@@ -195,9 +196,9 @@ const connectedCBCalledSymbol = Symbol('connectedCBCalled');
  */
 export function observer<T extends ObserverElement, C extends Constructor<T>>(cls: C) {
   // TypeScript doesn't allow type parameter in extends or implements
-  // position. Cast to Constructor<LitElement> to stop tsc complaining.
+  // position. Cast to Constructor<MobxLitElement> to stop tsc complaining.
   @consumer
-  class EnterViewObserverElement extends (cls as Constructor<LitElement>) {
+  class EnterViewObserverElement extends (cls as Constructor<MobxLitElement>) {
     [connectedCBCalledSymbol] = false;
 
     @consumeNotifier()
@@ -205,7 +206,7 @@ export function observer<T extends ObserverElement, C extends Constructor<T>>(cl
       if (this[privateNotifierSymbol] === newVal) {
         return;
       }
-      this[privateNotifierSymbol].unsubscribe(this as LitElement as ObserverElement);
+      this[privateNotifierSymbol].unsubscribe(this as MobxLitElement as ObserverElement);
       this[privateNotifierSymbol] = newVal;
 
       // If the notifier is updated before or during this.connectedCallback(),
@@ -214,7 +215,7 @@ export function observer<T extends ObserverElement, C extends Constructor<T>>(cl
       // We can't use this.isConnected, because this.isConnected is true during
       // this.connectedCallback();
       if (this[connectedCBCalledSymbol]) {
-        this[privateNotifierSymbol].subscribe(this as LitElement as ObserverElement);
+        this[privateNotifierSymbol].subscribe(this as MobxLitElement as ObserverElement);
       }
     }
 
@@ -225,7 +226,7 @@ export function observer<T extends ObserverElement, C extends Constructor<T>>(cl
     private [privateNotifierSymbol] = INTERSECTION_NOTIFIER;
 
     connectedCallback() {
-      this[notifierSymbol].subscribe(this as LitElement as ObserverElement);
+      this[notifierSymbol].subscribe(this as MobxLitElement as ObserverElement);
       super.connectedCallback();
       this[connectedCBCalledSymbol] = true;
     }
@@ -233,14 +234,14 @@ export function observer<T extends ObserverElement, C extends Constructor<T>>(cl
     disconnectedCallback() {
       this[connectedCBCalledSymbol] = false;
       super.disconnectedCallback();
-      this[notifierSymbol].unsubscribe(this as LitElement as ObserverElement);
+      this[notifierSymbol].unsubscribe(this as MobxLitElement as ObserverElement);
     }
   }
   // Recover the type information that lost in the down-casting above.
-  return EnterViewObserverElement as Constructor<LitElement> as C;
+  return EnterViewObserverElement as Constructor<MobxLitElement> as C;
 }
 
-export interface RenderPlaceHolder extends LitElement {
+export interface RenderPlaceHolder extends MobxLitElement {
   /**
    * Renders a placeholder. The placeholder should have roughly the same size
    * as the actual content.
@@ -257,9 +258,14 @@ const prerenderSymbol = Symbol('prerender');
 export function lazyRendering<T extends RenderPlaceHolder, C extends Constructor<T>>(cls: C) {
   @observer
   // TypeScript doesn't allow type parameter in extends or implements
-  // position. Cast to Constructor<LitElement> to stop tsc complaining.
+  // position. Cast to Constructor<MobxLitElement> to stop tsc complaining.
   class LazilyRenderedElement extends (cls as Constructor<RenderPlaceHolder>) {
-    @property() [prerenderSymbol] = true;
+    @observable.ref [prerenderSymbol] = true;
+
+    constructor() {
+      super();
+      makeObservable(this);
+    }
 
     notify() {
       this[prerenderSymbol] = false;
@@ -274,5 +280,5 @@ export function lazyRendering<T extends RenderPlaceHolder, C extends Constructor
     }
   }
   // Recover the type information that lost in the down-casting above.
-  return LazilyRenderedElement as Constructor<LitElement> as C;
+  return LazilyRenderedElement as Constructor<MobxLitElement> as C;
 }

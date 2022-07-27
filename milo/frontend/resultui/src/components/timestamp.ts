@@ -12,9 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { css, customElement, LitElement, property } from 'lit-element';
+import { MobxLitElement } from '@adobe/lit-mobx';
+import { css, customElement } from 'lit-element';
 import { html, render } from 'lit-html';
 import { DateTime } from 'luxon';
+import { makeObservable, observable } from 'mobx';
 
 import { displayDuration, LONG_TIME_FORMAT } from '../libs/time_utils';
 import { HideTooltipEventDetail, ShowTooltipEventDetail } from './tooltip';
@@ -40,10 +42,15 @@ export const DEFAULT_EXTRA_ZONE_CONFIGS = [
  * Shows duration and addition timezone on hover.
  */
 @customElement('milo-timestamp')
-export class TimestampElement extends LitElement {
-  @property() datetime!: DateTime;
-  @property() format = LONG_TIME_FORMAT;
-  @property() extraZones = DEFAULT_EXTRA_ZONE_CONFIGS;
+export class TimestampElement extends MobxLitElement {
+  @observable.ref datetime!: DateTime;
+  @observable.ref format = LONG_TIME_FORMAT;
+  @observable.ref extraZones = DEFAULT_EXTRA_ZONE_CONFIGS;
+
+  constructor() {
+    super();
+    makeObservable(this);
+  }
 
   private renderTooltip() {
     const now = DateTime.now();

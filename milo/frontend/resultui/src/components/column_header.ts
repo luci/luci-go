@@ -16,7 +16,7 @@ import '@material/mwc-menu';
 import { MobxLitElement } from '@adobe/lit-mobx';
 import { css, customElement, html } from 'lit-element';
 import { styleMap } from 'lit-html/directives/style-map';
-import { computed, observable } from 'mobx';
+import { computed, makeObservable, observable } from 'mobx';
 
 import './drag_tracker';
 import commonStyle from '../styles/common_style.css';
@@ -46,6 +46,11 @@ export class ColumnHeaderElement extends MobxLitElement {
   }
   @computed private get canHide() {
     return Boolean(this.hideColumn);
+  }
+
+  constructor() {
+    super();
+    makeObservable(this);
   }
 
   private renderResizer() {

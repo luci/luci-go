@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { computed, observable } from 'mobx';
+import { computed, makeObservable, observable } from 'mobx';
 
 import { TestHistoryService, Variant, VariantPredicate } from '../services/weetbix';
 
@@ -38,6 +38,7 @@ export class VariantLoader {
     readonly variantPredicate: VariantPredicate,
     readonly testHistoryService: TestHistoryService
   ) {
+    makeObservable(this);
     this.worker = this.workerGen();
   }
 

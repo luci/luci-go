@@ -16,7 +16,7 @@ import '@material/mwc-icon';
 import { MobxLitElement } from '@adobe/lit-mobx';
 import { css, customElement, html } from 'lit-element';
 import { styleMap } from 'lit-html/directives/style-map';
-import { computed, observable } from 'mobx';
+import { computed, makeObservable, observable } from 'mobx';
 
 import '../../components/auto_complete';
 import '../../components/hotkey';
@@ -48,6 +48,11 @@ export class TestHistoryFilterBoxElement extends MobxLitElement {
     return suggestTestHistoryFilterQuery(this.uncommittedFilterText);
   }
 
+  constructor() {
+    super();
+    makeObservable(this);
+  }
+
   commitFilter() {
     this.pageState.filterText = this.uncommittedFilterText;
   }
@@ -60,7 +65,7 @@ export class TestHistoryFilterBoxElement extends MobxLitElement {
   protected render() {
     return html`
       <milo-hotkey
-        key="/"
+        .key="/"
         .handler=${() => {
           // Set a tiny timeout to ensure '/' isn't recorded by the input box.
           setTimeout(() => this.shadowRoot?.getElementById('input-box')!.focus());
@@ -68,7 +73,7 @@ export class TestHistoryFilterBoxElement extends MobxLitElement {
       >
         <milo-auto-complete
           id="input-box"
-          highlight=${true}
+          .highlight=${true}
           .value=${this.uncommittedFilterText}
           .placeHolder=${'Press / to filter test history...'}
           .suggestions=${this.suggestions}

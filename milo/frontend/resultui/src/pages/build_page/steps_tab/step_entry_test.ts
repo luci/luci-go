@@ -13,7 +13,7 @@
 // limitations under the License.
 
 import { aTimeout, fixture, fixtureCleanup, html } from '@open-wc/testing/index-no-side-effects';
-import { css, customElement, LitElement, property } from 'lit-element';
+import { css, customElement, LitElement } from 'lit-element';
 
 import './step_entry';
 import { UserConfigsStore } from '../../../context/user_configs';
@@ -25,7 +25,6 @@ import { BuildStatus } from '../../../services/buildbucket';
 @customElement('milo-bp-step-entry-test-notifier-provider')
 @provider
 class NotifierProviderElement extends LitElement {
-  @property()
   @provideNotifier()
   notifier = new IntersectionNotifier({ root: this });
 

@@ -14,7 +14,7 @@
 
 import '@material/mwc-button';
 import { css, customElement, html } from 'lit-element';
-import { observable, reaction } from 'mobx';
+import { makeObservable, observable, reaction } from 'mobx';
 
 import '../../components/dot_spinner';
 import '../../components/hotkey';
@@ -56,6 +56,11 @@ export class TestResultsTabElement extends MiloBaseElement {
     this.shadowRoot!.querySelector<TestVariantsTableElement>('milo-test-variants-table')!.toggleAllVariants(expand);
   }
   private readonly toggleAllVariantsByHotkey = () => this.toggleAllVariants(!this.allVariantsWereExpanded);
+
+  constructor() {
+    super();
+    makeObservable(this);
+  }
 
   connectedCallback() {
     super.connectedCallback();
@@ -138,7 +143,7 @@ export class TestResultsTabElement extends MiloBaseElement {
         <milo-tvt-config-widget class="filters-container"></milo-tvt-config-widget>
         <div class="filters-container-delimiter"></div>
         <milo-trt-search-box></milo-trt-search-box>
-        <milo-hotkey key="x" .handler=${this.toggleAllVariantsByHotkey} title="press x to expand/collapse all entries">
+        <milo-hotkey .key="x" .handler=${this.toggleAllVariantsByHotkey} title="press x to expand/collapse all entries">
           <mwc-button dense unelevated @click=${() => this.toggleAllVariants(true)}>Expand All</mwc-button>
           <mwc-button dense unelevated @click=${() => this.toggleAllVariants(false)}>Collapse All</mwc-button>
         </milo-hotkey>

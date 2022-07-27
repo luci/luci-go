@@ -14,7 +14,7 @@
 
 import { interpolateOranges, scaleLinear, scaleSequential } from 'd3';
 import { DateTime } from 'luxon';
-import { autorun, comparer, computed, observable, reaction } from 'mobx';
+import { autorun, comparer, computed, makeObservable, observable, reaction } from 'mobx';
 
 import { createContextLink } from '../libs/context';
 import { parseVariantFilter, parseVariantPredicate } from '../libs/queries/th_filter_query';
@@ -160,6 +160,8 @@ export class TestHistoryPageState {
     readonly testHistoryService: TestHistoryService,
     readonly resultDb: ResultDb
   ) {
+    makeObservable(this);
+
     [this.project, this.subRealm] = realm.split(':', 2);
 
     // Keep the filters in sync.

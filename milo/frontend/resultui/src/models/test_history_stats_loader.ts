@@ -13,7 +13,7 @@
 // limitations under the License.
 
 import { DateTime } from 'luxon';
-import { observable } from 'mobx';
+import { makeObservable, observable } from 'mobx';
 
 import {
   QueryTestHistoryStatsRequest,
@@ -67,6 +67,8 @@ export class TestHistoryStatsLoader {
     readonly variantPredicate: VariantPredicate,
     readonly testHistoryService: TestHistoryService
   ) {
+    makeObservable(this);
+
     this.latestDate = latestDate.toUTC().startOf('day');
     this.worker = this.workerGen();
   }

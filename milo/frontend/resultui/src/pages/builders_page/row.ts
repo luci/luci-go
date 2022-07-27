@@ -13,7 +13,7 @@
 // limitations under the License.
 
 import { css, customElement, html } from 'lit-element';
-import { computed, observable } from 'mobx';
+import { computed, makeObservable, observable } from 'mobx';
 import { fromPromise, IPromiseBasedObservable } from 'mobx-utils';
 
 import '../../components/dot_spinner';
@@ -73,6 +73,11 @@ export class BuildersPageRowElement extends MiloBaseElement {
 
   @computed private get builderStats() {
     return unwrapObservable<BuilderStats | null>(this.builderStats$, null);
+  }
+
+  constructor() {
+    super();
+    makeObservable(this);
   }
 
   renderPlaceHolder() {

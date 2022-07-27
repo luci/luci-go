@@ -17,7 +17,7 @@ import { MobxLitElement } from '@adobe/lit-mobx';
 import { css, customElement, html } from 'lit-element';
 import { styleMap } from 'lit-html/directives/style-map';
 import { Duration } from 'luxon';
-import { computed, observable } from 'mobx';
+import { computed, makeObservable, observable } from 'mobx';
 import { fromPromise, IPromiseBasedObservable, PENDING } from 'mobx-utils';
 
 import '../../context/artifact_provider';
@@ -146,6 +146,11 @@ export class ResultEntryElement extends MobxLitElement {
     return this.clusters.filter((c) => c.clusterId.algorithm.startsWith('reason-'))?.[0] ?? null;
   }
 
+  constructor() {
+    super();
+    makeObservable(this);
+  }
+
   private renderFailureReason() {
     const errMsg = this.testResult.failureReason?.primaryErrorMessage;
     if (!errMsg || !this.project) {
@@ -153,7 +158,7 @@ export class ResultEntryElement extends MobxLitElement {
     }
 
     return html`
-      <milo-expandable-entry contentRuler="none" .expanded=${true}>
+      <milo-expandable-entry .contentRuler="none" .expanded=${true}>
         <span slot="header"
           >Failure
           Reason${this.failureReasonCluster
@@ -176,7 +181,7 @@ export class ResultEntryElement extends MobxLitElement {
     }
 
     return html`
-      <milo-expandable-entry contentRuler="none" .expanded=${true}>
+      <milo-expandable-entry .contentRuler="none" .expanded=${true}>
         <span slot="header">Summary:</span>
         <div id="summary-html" class="info-block" slot="content">
           <milo-artifact-provider
@@ -197,7 +202,7 @@ export class ResultEntryElement extends MobxLitElement {
 
     return html`
       <milo-expandable-entry
-        contentRuler="invisible"
+        .contentRuler="invisible"
         .onToggle=${(expanded: boolean) => {
           this.tagExpanded = expanded;
         }}
@@ -265,7 +270,7 @@ export class ResultEntryElement extends MobxLitElement {
     }
 
     return html`
-      <milo-expandable-entry contentRuler="invisible">
+      <milo-expandable-entry .contentRuler="invisible">
         <span slot="header"> Artifacts: <span class="greyed-out">${artifactCount}</span> </span>
         <div slot="content">
           <ul>

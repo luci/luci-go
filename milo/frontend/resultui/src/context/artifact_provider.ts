@@ -12,9 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { MobxLitElement } from '@adobe/lit-mobx';
-import { customElement, html, property } from 'lit-element';
+import { customElement, html, PropertyValues } from 'lit-element';
+import { makeObservable, observable, reaction } from 'mobx';
 
+import { MiloBaseElement } from '../components/milo_base';
 import { createContextLink, provider } from '../libs/context';
 import { Artifact } from '../services/resultdb';
 
@@ -26,14 +27,48 @@ export const [provideArtifactsFinalized, consumeArtifactsFinalized] = createCont
  */
 @customElement('milo-artifact-provider')
 @provider
-export class ArtifactProvider extends MobxLitElement {
-  @property()
+export class ArtifactProvider extends MiloBaseElement {
+  @observable.ref
   @provideArtifacts()
   artifacts!: Map<string, Artifact>;
 
-  @property()
+  @observable.ref
   @provideArtifactsFinalized()
   finalized = false;
+
+  constructor() {
+    super();
+    makeObservable(this);
+  }
+
+  connectedCallback(): void {
+    super.connectedCallback();
+
+    this.addDisposer(
+      reaction(
+        () => this.artifacts,
+        (artifacts) => {
+          // Emulate @property() update.
+          this.updated(new Map([['artifacts', artifacts]]));
+        },
+        { fireImmediately: true }
+      )
+    );
+    this.addDisposer(
+      reaction(
+        () => this.finalized,
+        (finalized) => {
+          // Emulate @property() update.
+          this.updated(new Map([['finalized', finalized]]));
+        },
+        { fireImmediately: true }
+      )
+    );
+  }
+
+  protected updated(changedProperties: PropertyValues) {
+    super.updated(changedProperties);
+  }
 
   protected render() {
     return html` <slot></slot> `;

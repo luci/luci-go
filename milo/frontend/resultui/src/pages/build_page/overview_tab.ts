@@ -19,7 +19,7 @@ import { MobxLitElement } from '@adobe/lit-mobx';
 import { TextArea } from '@material/mwc-textarea';
 import { Router } from '@vaadin/router';
 import { css, customElement, html, TemplateResult } from 'lit-element';
-import { computed, observable } from 'mobx';
+import { computed, makeObservable, observable } from 'mobx';
 
 import '../../components/build_tag_row';
 import '../../components/expandable_entry';
@@ -81,6 +81,11 @@ export class OverviewTabElement extends MobxLitElement {
 
   @computed private get columnGetters() {
     return this.invocationState.columnKeys.map((col) => createTVPropGetter(col));
+  }
+
+  constructor() {
+    super();
+    makeObservable(this);
   }
 
   connectedCallback() {
@@ -337,7 +342,7 @@ export class OverviewTabElement extends MobxLitElement {
           <tr>
             <td>Requested CIPD Manifest</td>
             <td>
-              <milo-expandable-entry contentRuler="none" .expanded=${false}>
+              <milo-expandable-entry .contentRuler="none" .expanded=${false}>
                 <div slot="content" class="nav-scrollbar">
                   <table class="nested-manifest-table">
                     <tr>
@@ -354,7 +359,7 @@ export class OverviewTabElement extends MobxLitElement {
             ? html`<tr>
                 <td>Resolved CIPD Manifest</td>
                 <td>
-                  <milo-expandable-entry contentRuler="none" .expanded=${false}>
+                  <milo-expandable-entry .contentRuler="none" .expanded=${false}>
                     <div slot="content" class="nav-scrollbar">
                       <table class="nested-manifest-table">
                         <tr>

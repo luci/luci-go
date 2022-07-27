@@ -18,7 +18,7 @@ import '@material/mwc-icon';
 import { BeforeEnterObserver, PreventAndRedirectCommands, Router, RouterLocation } from '@vaadin/router';
 import { css, customElement, html } from 'lit-element';
 import merge from 'lodash-es/merge';
-import { autorun, computed, observable, reaction, when } from 'mobx';
+import { autorun, computed, makeObservable, observable, reaction, when } from 'mobx';
 
 import '../../components/status_bar';
 import '../../components/tab_bar';
@@ -172,6 +172,11 @@ export class BuildPageElement extends MiloBaseElement implements BeforeEnterObse
 
   @computed private get legacyUrl() {
     return getLegacyURLPathForBuild(this.builderIdParam!, this.buildNumOrId);
+  }
+
+  constructor() {
+    super();
+    makeObservable(this);
   }
 
   onBeforeEnter(location: RouterLocation, cmd: PreventAndRedirectCommands) {

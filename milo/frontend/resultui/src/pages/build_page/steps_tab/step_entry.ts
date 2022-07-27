@@ -17,7 +17,7 @@ import { css, customElement } from 'lit-element';
 import { html, render } from 'lit-html';
 import { classMap } from 'lit-html/directives/class-map';
 import { styleMap } from 'lit-html/directives/style-map';
-import { computed, observable, reaction } from 'mobx';
+import { computed, makeObservable, observable, reaction } from 'mobx';
 
 import '../../../components/copy_to_clipboard';
 import '../../../components/expandable_entry';
@@ -85,6 +85,11 @@ export class BuildPageStepEntryElement extends MiloBaseElement implements Render
   @computed private get logs() {
     const logs = this.step.logs || [];
     return this.configsStore.userConfigs.steps.showDebugLogs ? logs : logs.filter((log) => !log.name.startsWith('$'));
+  }
+
+  constructor() {
+    super();
+    makeObservable(this);
   }
 
   private renderContent() {
@@ -252,16 +257,17 @@ export class BuildPageStepEntryElement extends MiloBaseElement implements Render
               }}
             ></milo-copy-to-clipboard>
             <span id="header-markdown">${this.step.header}</span>
-            ${this.step.header != null && this.step.header.title != '' ? html`
-              <milo-copy-to-clipboard
-                .textToCopy=${this.step.header.title}
-                title="Copy the step header."
-                class="hidden-icon"
-                @click=${(e: Event) => {
-                  e.stopPropagation();
-                  this.trackInteraction();
-                }}
-              ></milo-copy-to-clipboard>` : html``}
+            ${this.step.header != null && this.step.header.title != ''
+              ? html` <milo-copy-to-clipboard
+                  .textToCopy=${this.step.header.title}
+                  title="Copy the step header."
+                  class="hidden-icon"
+                  @click=${(e: Event) => {
+                    e.stopPropagation();
+                    this.trackInteraction();
+                  }}
+                ></milo-copy-to-clipboard>`
+              : html``}
           </div>
         </span>
         <div id="content" slot="content">${this.renderContent()}</div>
@@ -315,7 +321,7 @@ export class BuildPageStepEntryElement extends MiloBaseElement implements Render
         grid-template-columns: auto auto auto auto 1fr;
       }
 
-      #header-markdown  {
+      #header-markdown {
         overflow: hidden;
         text-overflow: ellipsis;
       }

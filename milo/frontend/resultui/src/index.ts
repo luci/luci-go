@@ -12,11 +12,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import { configure } from 'mobx';
 import { Workbox } from 'workbox-window';
 
 import './stackdriver_errors';
 import './routes';
 import { NEW_MILO_VERSION_EVENT_TYPE } from './libs/constants';
+
+// TODO(crbug/1347294): encloses all state modifying actions in mobx actions
+// then delete this.
+configure({ enforceActions: 'never' });
 
 window.SW_PROMISE = new Promise((resolve) => {
   // Don't cache resources in development mode. Otherwise we will need to

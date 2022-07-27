@@ -21,6 +21,12 @@
  * trying to map a file that is not at the project root).
  */
 
+import { configure } from 'mobx';
+
+// TODO(crbug/1347294): encloses all state modifying actions in mobx actions
+// then delete this.
+configure({ enforceActions: 'never' });
+
 // require all modules ending in "_test" from the
 // src directory and all subdirectories
 const testsContext = require.context('./src', true, /_test$/);

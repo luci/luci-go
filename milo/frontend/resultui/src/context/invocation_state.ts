@@ -14,7 +14,7 @@
 
 import { deepEqual } from 'fast-equals';
 import { html } from 'lit-html';
-import { autorun, comparer, computed, observable } from 'mobx';
+import { autorun, comparer, computed, makeObservable, observable } from 'mobx';
 import { fromPromise, IPromiseBasedObservable } from 'mobx-utils';
 
 import { createContextLink } from '../libs/context';
@@ -123,6 +123,8 @@ export class InvocationState {
 
   private disposers: Array<() => void> = [];
   constructor(private appState: AppState) {
+    makeObservable(this);
+
     this.disposers.push(
       autorun(() => {
         try {

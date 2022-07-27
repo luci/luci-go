@@ -15,7 +15,7 @@
 import { MobxLitElement } from '@adobe/lit-mobx';
 import { css, customElement, html } from 'lit-element';
 import { repeat } from 'lit-html/directives/repeat';
-import { observable } from 'mobx';
+import { makeObservable, observable } from 'mobx';
 
 import '../../components/dot_spinner';
 import { AppState, consumeAppState } from '../../context/app_state';
@@ -41,6 +41,11 @@ export class RelatedBuildsTabElement extends MobxLitElement {
   @observable.ref
   @consumeBuildState()
   buildState!: BuildState;
+
+  constructor() {
+    super();
+    makeObservable(this);
+  }
 
   connectedCallback() {
     super.connectedCallback();

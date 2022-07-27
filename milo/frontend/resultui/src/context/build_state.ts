@@ -13,7 +13,7 @@
 // limitations under the License.
 
 import { GrpcError, RpcCode } from '@chopsui/prpc-client';
-import { autorun, computed, observable } from 'mobx';
+import { autorun, computed, makeObservable, observable } from 'mobx';
 import { fromPromise, IPromiseBasedObservable } from 'mobx-utils';
 
 import { getGitilesRepoURL, renderBugUrlTemplate } from '../libs/build_utils';
@@ -111,6 +111,8 @@ export class BuildState {
   private disposers: Array<() => void> = [];
 
   constructor(private appState: AppState) {
+    makeObservable(this);
+
     this.disposers.push(
       autorun(() => {
         if (!this.build) {

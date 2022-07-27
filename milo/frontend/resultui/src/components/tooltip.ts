@@ -12,7 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { css, customElement, html, LitElement, property } from 'lit-element';
+import { MobxLitElement } from '@adobe/lit-mobx';
+import { css, customElement, html } from 'lit-element';
+import { makeObservable, observable } from 'mobx';
 
 export interface ShowTooltipEventDetail {
   tooltip: HTMLElement;
@@ -45,10 +47,10 @@ export type HideTooltipEvent = CustomEvent<HideTooltipEventDetail>;
 // 1. makes it easier to ensure there's at most one active tooltip.
 // 2. is not constrained by ancestors' overflow setting.
 @customElement('milo-tooltip')
-export class TooltipElement extends LitElement {
-  @property() private tooltip?: HTMLElement;
-  @property() private targetRect?: DOMRectReadOnly;
-  @property() private gapSize?: number;
+export class TooltipElement extends MobxLitElement {
+  @observable.ref private tooltip?: HTMLElement;
+  @observable.ref private targetRect?: DOMRectReadOnly;
+  @observable.ref private gapSize?: number;
 
   private hideTooltipTimeout = 0;
 
@@ -86,6 +88,11 @@ export class TooltipElement extends LitElement {
 
   onmouseover = () => window.clearTimeout(this.hideTooltipTimeout);
   onmouseout = this.hideTooltip;
+
+  constructor() {
+    super();
+    makeObservable(this);
+  }
 
   connectedCallback() {
     super.connectedCallback();

@@ -14,7 +14,7 @@
 
 import { axisLeft, axisTop, scaleLinear, select as d3Select } from 'd3';
 import { css, customElement, html, PropertyValues } from 'lit-element';
-import { autorun, computed, observable, reaction } from 'mobx';
+import { autorun, computed, makeObservable, observable, reaction } from 'mobx';
 
 import { consumer, createContextLink } from '../libs/context';
 import { MiloBaseElement } from './milo_base';
@@ -67,6 +67,11 @@ export class PixelViewerElement extends MiloBaseElement {
   @computed private get labelColor() {
     const [r, g, b, a] = this.coordColor;
     return ((r + g + b) / 3) * (a / 255) > 127 ? 'black' : 'white';
+  }
+
+  constructor() {
+    super();
+    makeObservable(this);
   }
 
   connectedCallback() {

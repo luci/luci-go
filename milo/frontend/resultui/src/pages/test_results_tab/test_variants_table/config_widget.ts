@@ -17,7 +17,7 @@ import '@material/mwc-dialog';
 import '@material/mwc-icon';
 import { MobxLitElement } from '@adobe/lit-mobx';
 import { css, customElement, html } from 'lit-element';
-import { observable } from 'mobx';
+import { makeObservable, observable } from 'mobx';
 
 import { consumeInvocationState, InvocationState } from '../../../context/invocation_state';
 import { consumer } from '../../../libs/context';
@@ -38,6 +38,11 @@ export class TestVariantsTableConfigWidgetElement extends MobxLitElement {
   private uncommittedGroupingKeys: readonly string[] = [];
 
   @observable.ref private showTableConfigDialog = false;
+
+  constructor() {
+    super();
+    makeObservable(this);
+  }
 
   private renderPropKeysConfigRow(label: string, keys: readonly string[], updateKeys: (newKeys: string[]) => void) {
     return html`

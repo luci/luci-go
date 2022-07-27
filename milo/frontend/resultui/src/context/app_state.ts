@@ -14,7 +14,7 @@
 
 import { PrpcClientOptions, RpcCode } from '@chopsui/prpc-client';
 import stableStringify from 'fast-json-stable-stringify';
-import { computed, observable, untracked } from 'mobx';
+import { computed, makeObservable, observable, untracked } from 'mobx';
 
 import { MAY_REQUIRE_SIGNIN } from '../common_tags';
 import { createContextLink } from '../libs/context';
@@ -155,6 +155,10 @@ export class AppState {
       return null;
     }
     return new ClustersService(this.makeClient({ host: CONFIGS.WEETBIX.HOST }));
+  }
+
+  constructor() {
+    makeObservable(this);
   }
 
   /**

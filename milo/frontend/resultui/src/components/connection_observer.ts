@@ -12,7 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { customElement, html, LitElement, property } from 'lit-element';
+import { MobxLitElement } from '@adobe/lit-mobx';
+import { customElement, html, property } from 'lit-element';
+import { makeObservable, observable } from 'mobx';
 
 export interface ConnectionEventDetail<T> {
   data: T;
@@ -28,11 +30,16 @@ export type ConnectionEvent<T> = CustomEvent<ConnectionEventDetail<T>>;
  * event.detail.addDisconnectedEventCB
  */
 @customElement('milo-connection-observer')
-export class ConnectionObserverElement<T> extends LitElement {
-  @property({ type: String, attribute: 'event-type' }) eventType = 'connected';
-  @property({ type: Object }) data!: T;
+export class ConnectionObserverElement<T> extends MobxLitElement {
+  @observable.ref @property({ type: String, attribute: 'event-type' }) eventType = 'connected';
+  @observable.ref @property({ type: Object }) data!: T;
 
   disconnectedListeners: Array<(data: T) => void> = [];
+
+  constructor() {
+    super();
+    makeObservable(this);
+  }
 
   connectedCallback() {
     super.connectedCallback();

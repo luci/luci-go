@@ -15,7 +15,7 @@
 import { MobxLitElement } from '@adobe/lit-mobx';
 import { BeforeEnterObserver, Router, RouterLocation } from '@vaadin/router';
 import { css, customElement, html } from 'lit-element';
-import { observable, when } from 'mobx';
+import { makeObservable, observable, when } from 'mobx';
 
 import { changeUserState } from '../components/signin';
 import { AppState, consumeAppState } from '../context/app_state';
@@ -39,6 +39,11 @@ export class LoginPageElement extends MobxLitElement implements BeforeEnterObser
   appState!: AppState;
 
   private redirectUri = '';
+
+  constructor() {
+    super();
+    makeObservable(this);
+  }
 
   onBeforeEnter(location: RouterLocation) {
     const redirect = new URLSearchParams(location.search).get('redirect');

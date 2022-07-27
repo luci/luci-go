@@ -14,7 +14,7 @@
 
 import { css, customElement, html, svg, SVGTemplateResult } from 'lit-element';
 import { Duration } from 'luxon';
-import { observable } from 'mobx';
+import { makeObservable, observable } from 'mobx';
 
 import { MiloBaseElement } from '../../components/milo_base';
 import { consumeTestHistoryPageState, TestHistoryPageState } from '../../context/test_history_page_state';
@@ -28,6 +28,11 @@ import { CELL_PADDING, CELL_SIZE, INNER_CELL_SIZE } from './constants';
 @consumer
 export class TestHistoryDurationGraphElement extends MiloBaseElement {
   @observable.ref @consumeTestHistoryPageState() pageState!: TestHistoryPageState;
+
+  constructor() {
+    super();
+    makeObservable(this);
+  }
 
   protected render() {
     const variants = this.pageState.filteredVariants;
