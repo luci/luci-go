@@ -308,13 +308,11 @@ func TestBuild(t *testing.T) {
 			}), ShouldBeNil)
 			So(datastore.Put(ctx, &BuildInputProperties{
 				Build: key,
-				Proto: DSStruct{
-					Struct: structpb.Struct{
-						Fields: map[string]*structpb.Value{
-							"input": {
-								Kind: &structpb.Value_StringValue{
-									StringValue: "input value",
-								},
+				Proto: &structpb.Struct{
+					Fields: map[string]*structpb.Value{
+						"input": {
+							Kind: &structpb.Value_StringValue{
+								StringValue: "input value",
 							},
 						},
 					},
@@ -374,13 +372,11 @@ func TestBuild(t *testing.T) {
 			Convey("output properties", func() {
 				So(datastore.Put(ctx, &BuildOutputProperties{
 					Build: key,
-					Proto: DSStruct{
-						Struct: structpb.Struct{
-							Fields: map[string]*structpb.Value{
-								"output": {
-									Kind: &structpb.Value_StringValue{
-										StringValue: "output value",
-									},
+					Proto: &structpb.Struct{
+						Fields: map[string]*structpb.Value{
+							"output": {
+								Kind: &structpb.Value_StringValue{
+									StringValue: "output value",
 								},
 							},
 						},

@@ -65,6 +65,24 @@ import (
 //      field's actual name. Note that by default, all fields (with indexable
 //      types) are indexed.
 //
+//   `gae:"fieldName[,nocompress|zstd|legacy]"` -- for fields of type
+//     `protobuf.Message`. Protobuf fields are _never_ indexed, but are stored
+//     as encoded blobs.
+//
+//     By default (with no options), protos are stored with binary encoding
+//     without compression. This is the same as "nocompress".
+//
+//     You may optionally use "zstd" compression by specifying this option.
+//
+//     It is valid to switch between "nocompress" and "zstd"; the library
+//     knows how to decode and encode both, even when the in-datastore format
+//     doesn't match the tag.
+//
+//     The "legacy" option will store the protobuf without compression, BUT
+//     this encoding doesn't have a "mode" bit. This is purely for
+//     compatibilty with the deprecated `proto-gae` generator, and is not
+//     recommended.
+//
 //   `gae:"$metaKey[,<value>]` -- indicates a field is metadata. Metadata
 //      can be used to control filter behavior, or to store key data when using
 //      the Interface.KeyForObj* methods. The supported field types are:
@@ -79,13 +97,12 @@ import (
 //      Only exported fields allow SetMeta, but all fields of appropriate type
 //      allow tagged defaults for use with GetMeta. See Examples.
 //
-//   `gae:"[-],extra"` -- indicates that any extra, unrecognized or mismatched
-//      property types (type in datastore doesn't match your struct's field
-//      type) should be loaded into and saved from this field. The precise type
-//      of the field must be PropertyMap. This form allows you to control the
-//      behavior of reads and writes when your schema changes, or to implement
-//      something like ndb.Expando with a mix of structured and unstructured
-//      fields.
+//   `gae:"[-],extra"` -- for fields of type PropertyMap. Indicates that any
+//      extra, unrecognized or mismatched property types (type in datastore
+//      doesn't match your struct's field type) should be loaded into and
+//      saved from this field. This form allows you to control the behavior
+//      of reads and writes when your schema changes, or to implement something
+//      like ndb.Expando with a mix of structured and unstructured fields.
 //
 //      If the `-` is present, then datastore write operations will not put
 //      elements of this map into the datastore.
