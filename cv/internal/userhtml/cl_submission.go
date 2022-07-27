@@ -23,11 +23,12 @@ import (
 	"go.chromium.org/luci/cv/internal/run/eventpb"
 )
 
-// StringifySubmissionSuccesses composes a message indicating the urls of the CLs
-// that were just submitted, and the number of pending CLs.
-func StringifySubmissionSuccesses(clidToURL map[common.CLID]string, v *run.LogEntry_CLSubmitted, all int64) string {
+// StringifySubmissionSuccesses composes a message indicating the urls of the
+// CLs that were just submitted, and the number of pending CLs.
+func StringifySubmissionSuccesses(allCls []*run.RunCL, v *run.LogEntry_CLSubmitted) string {
 	var sb strings.Builder
 	currentlySubmitted := common.MakeCLIDs(v.NewlySubmittedCls...)
+	clidToURL := makeURLMap(allCls)
 	switch len(currentlySubmitted) {
 	case 0:
 		sb.WriteString("No CLs were submitted successfully")
@@ -39,21 +40,22 @@ func StringifySubmissionSuccesses(clidToURL map[common.CLID]string, v *run.LogEn
 			_, _ = fmt.Fprintf(&sb, "\n  * %s", clidToURL[clid])
 		}
 	}
-	if left := all - v.TotalSubmitted; left > 0 {
-		_, _ = fmt.Fprintf(&sb, "\n%d out of %d CLs are still pending", all-v.TotalSubmitted, all)
+	if left := len(allCls) - int(v.TotalSubmitted); left > 0 {
+		_, _ = fmt.Fprintf(&sb, "\n%d out of %d CLs are still pending", left, len(allCls))
 	}
 	return sb.String()
 }
 
 // StringifySubmissionFailureReason makes a human-readable message detailing
 // the reason for the failure of this submission.
-func StringifySubmissionFailureReason(clidToURL map[common.CLID]string, sc *eventpb.SubmissionCompleted) string {
+func StringifySubmissionFailureReason(allCls []*run.RunCL, sc *eventpb.SubmissionCompleted) string {
 	var sb strings.Builder
 	if sc.GetFailureReason() != nil {
 		switch sc.GetFailureReason().(type) {
 		case *eventpb.SubmissionCompleted_Timeout:
 			return "Timeout"
 		case *eventpb.SubmissionCompleted_ClFailures:
+			clidToURL := makeURLMap(allCls)
 			msg, err := sFormatCLSubmissionFailures(clidToURL, sc.GetClFailures())
 			if err != nil {
 				panic(err)
@@ -90,4 +92,12 @@ func sFormatCLSubmissionFailures(clidToURL map[common.CLID]string, fs *eventpb.S
 		}
 	}
 	return sb.String(), nil
+}
+
+func makeURLMap(cls []*run.RunCL) map[common.CLID]string {
+	ret := make(map[common.CLID]string, len(cls))
+	for _, cl := range cls {
+		ret[cl.ID] = cl.ExternalID.MustURL()
+	}
+	return ret
 }

@@ -93,9 +93,6 @@ func prepareTemplates(opts *server.Options, templatesPath string) *templates.Bun
 				}
 				return displayCLExternalID(changelist.ExternalID(eid))
 			},
-			// Runlog specific, see run_details.go.
-			"LogTypeString":  logTypeString,
-			"ByTryjobStatus": groupTryjobsByStatus,
 		},
 		DefaultArgs: func(ctx context.Context, e *templates.Extra) (templates.Args, error) {
 			loginURL, err := auth.LoginURL(ctx, e.Request.URL.RequestURI())

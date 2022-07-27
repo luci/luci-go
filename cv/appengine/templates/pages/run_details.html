@@ -191,24 +191,24 @@ Run {{.Run.ID.Inner}}
       </thead>
       <tbody>
         {{range .Logs}}
-        <tr class="log-entry{{if .GetTryjobsUpdated}}-top{{end}}">
-          <td><em>{{LogTypeString .}}</em></td>
-          <td style="white-space: nowrap;" class="unix-timestamp">{{.GetTime.AsTime.Unix}}</td>
-          <td style="white-space: nowrap;">{{call $RelTime .GetTime.AsTime}} </td>
+        <tr class="log-entry{{if .HasTryjobChips}}-top{{end}}">
+          <td><em>{{.EventType}}</em></td>
+          <td style="white-space: nowrap;" class="unix-timestamp">{{.Time.Unix}}</td>
+          <td style="white-space: nowrap;">{{call $RelTime .Time}} </td>
           <td>
-            {{if (call $LogMessage .)}}
+            {{if .Message}}
             <div class="message">
-              <pre>{{call $LogMessage .}}</pre>
+              <pre>{{.Message}}</pre>
             </div>
             {{end}}
           </td>
         </tr>
-        {{if .GetTryjobsUpdated}}
+        {{if .HasTryjobChips}}
         <tr class="log-entry-bottom">
-          {{with .GetTryjobsUpdated}}
           <td class="tryjob-chips" colspan="4">
+            {{if .LegacyTryjobsByStatus}}
             <ul>
-              {{range $label, $jobs := ByTryjobStatus .GetTryjobs}}
+              {{range $label, $jobs := .LegacyTryjobsByStatus}}
               <li>{{$label}}:
                 {{range $jobs}}
                 {{if .Link}}
@@ -221,8 +221,16 @@ Run {{.Run.ID.Inner}}
               </li>
               {{end}}
             </ul>
+            {{else}}
+              {{range .Tryjobs}}
+              {{if .Link}}
+              <a class="tryjob-chip {{.CSSClass}}" href="{{.Link}}">{{.Name}}</a>
+              {{else}}
+              <span class="tryjob-chip {{.CSSClass}}">{{.Name}}</span>
+              {{end}}
+              {{end}}
+            {{end}}
           </td>
-          {{end}}
         </tr>
         {{end}}
         {{end}}

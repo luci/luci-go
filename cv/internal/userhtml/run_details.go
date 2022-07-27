@@ -18,7 +18,6 @@ import (
 	"context"
 	"fmt"
 	"sort"
-	"strings"
 	"time"
 
 	"github.com/dustin/go-humanize"
@@ -33,7 +32,6 @@ import (
 	"go.chromium.org/luci/cv/internal/acls"
 	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/run"
-	"go.chromium.org/luci/cv/internal/run/eventpb"
 	"go.chromium.org/luci/cv/internal/tryjob"
 )
 
@@ -49,7 +47,7 @@ func runDetails(c *router.Context) {
 		return
 	}
 
-	cls, latestTryjobs, runLogs, err := loadRunInfo(ctx, r)
+	cls, latestTryjobs, logs, err := loadRunInfo(ctx, r)
 	if err != nil {
 		errPage(c, err)
 		return
@@ -61,57 +59,23 @@ func runDetails(c *router.Context) {
 		errPage(c, err)
 		return
 	}
-	clidToURL := makeURLMap(cls)
 
 	templates.MustRender(ctx, c.Writer, "pages/run_details.html", templates.Args{
 		"Run":  r,
-		"Logs": runLogs,
+		"Logs": logs,
 		"Cls":  clsAndLinks,
 		"RelTime": func(ts time.Time) string {
 			return humanize.RelTime(ts, startTime(ctx), "ago", "from now")
-		},
-		"LogMessage": func(rle *run.LogEntry) string {
-			switch v := rle.GetKind().(type) {
-			case *run.LogEntry_Info_:
-				return v.Info.Message
-			case *run.LogEntry_ClSubmitted:
-				return StringifySubmissionSuccesses(clidToURL, v.ClSubmitted, int64(len(r.CLs)))
-			case *run.LogEntry_SubmissionFailure_:
-				return StringifySubmissionFailureReason(clidToURL, v.SubmissionFailure.Event)
-			case *run.LogEntry_RunEnded_:
-				// This assumes the status of a Run won't change after transitioning to
-				// one of the terminal statuses. If the assumption is no longer valid.
-				// End status and cancellation reason need to be stored explicitly in
-				// the log entry.
-				if r.Status == run.Status_CANCELLED {
-					switch len(r.CancellationReasons) {
-					case 0:
-					case 1:
-						return fmt.Sprintf("Run is cancelled. Reason: %s", r.CancellationReasons[0])
-					default:
-						var sb strings.Builder
-						sb.WriteString("Run is cancelled. Reasons:")
-						for _, reason := range r.CancellationReasons {
-							sb.WriteRune('\n')
-							sb.WriteString("  * ")
-							sb.WriteString(strings.TrimSpace(reason))
-						}
-						return sb.String()
-					}
-				}
-				return ""
-			default:
-				return ""
-			}
 		},
 		"LatestTryjobs": latestTryjobs,
 	})
 }
 
-func loadRunInfo(ctx context.Context, r *run.Run) ([]*run.RunCL, []*uiTryjob, []*run.LogEntry, error) {
+func loadRunInfo(ctx context.Context, r *run.Run) ([]*run.RunCL, []*uiTryjob, []*uiLogEntry, error) {
 	var cls []*run.RunCL
 	var latestTryjobs []*tryjob.Tryjob
 	var runLogs []*run.LogEntry
+	var tryjobLogs []*tryjob.ExecutionLogEntry
 	eg, ctx := errgroup.WithContext(ctx)
 	eg.Go(func() (err error) {
 		cls, err = run.LoadRunCLs(ctx, common.RunID(r.ID), r.CLs)
@@ -124,27 +88,22 @@ func loadRunInfo(ctx context.Context, r *run.Run) ([]*run.RunCL, []*uiTryjob, []
 	})
 	eg.Go(func() (err error) {
 		runLogs, err = run.LoadRunLogEntries(ctx, r.ID)
-		if err != nil {
-			return err
-		}
-		// ensure most recent log is at the top of the list
-		sort.Slice(runLogs, func(i, j int) bool {
-			return runLogs[i].GetTime().AsTime().After(runLogs[j].GetTime().AsTime())
-		})
-		return nil
+		return err
+	})
+	eg.Go(func() (err error) {
+		tryjobLogs, err = tryjob.LoadExecutionLogs(ctx, r.ID)
+		return err
 	})
 	eg.Go(func() (err error) {
 		if r.UseCVTryjobExecutor {
 			for _, execution := range r.Tryjobs.GetState().GetExecutions() {
 				// TODO(yiwzhang): display the tryjob as not-started even if no
 				// attempt has been triggered.
-				if len(execution.GetAttempts()) == 0 {
-					continue
+				if attempt := tryjob.LatestAttempt(execution); attempt != nil {
+					latestTryjobs = append(latestTryjobs, &tryjob.Tryjob{
+						ID: common.TryjobID(attempt.GetTryjobId()),
+					})
 				}
-				latestAttempt := execution.GetAttempts()[len(execution.GetAttempts())-1]
-				latestTryjobs = append(latestTryjobs, &tryjob.Tryjob{
-					ID: common.TryjobID(latestAttempt.GetTryjobId()),
-				})
 			}
 			if err := datastore.Get(ctx, latestTryjobs); err != nil {
 				return errors.Annotate(err, "failed to load tryjobs").Tag(transient.Tag).Err()
@@ -164,7 +123,27 @@ func loadRunInfo(ctx context.Context, r *run.Run) ([]*run.RunCL, []*uiTryjob, []
 	if err := eg.Wait(); err != nil {
 		return nil, nil, nil, err
 	}
-	return cls, makeUITryjobs(latestTryjobs), runLogs, nil
+	uiLogEntries := make([]*uiLogEntry, len(runLogs)+len(tryjobLogs))
+	for i, rl := range runLogs {
+		uiLogEntries[i] = &uiLogEntry{
+			runLog: rl,
+			run:    r,
+			cls:    cls,
+		}
+	}
+	offset := len(runLogs)
+	for i, tl := range tryjobLogs {
+		uiLogEntries[offset+i] = &uiLogEntry{
+			tryjobLog: tl,
+			run:       r,
+			cls:       cls,
+		}
+	}
+	// ensure most recent log is at the top of the list.
+	sort.Slice(uiLogEntries, func(i, j int) bool {
+		return uiLogEntries[i].Time().After(uiLogEntries[j].Time())
+	})
+	return cls, makeUITryjobs(latestTryjobs), uiLogEntries, nil
 }
 
 type clAndNeighborRuns struct {
@@ -251,66 +230,4 @@ func getNeighborsByCL(ctx context.Context, cl *run.RunCL, rID common.RunID) (com
 
 	err := eg.Wait()
 	return prev, next, err
-}
-
-func logTypeString(rle *run.LogEntry) string {
-	switch v := rle.GetKind().(type) {
-	case *run.LogEntry_TryjobsUpdated_:
-		return "Tryjob Updated"
-	case *run.LogEntry_TryjobsRequirementUpdated_:
-		return "Tryjob Requirements Updated"
-	case *run.LogEntry_ConfigChanged_:
-		return "Config Changed"
-	case *run.LogEntry_Started_:
-		return "Started"
-	case *run.LogEntry_Created_:
-		return "Created"
-	case *run.LogEntry_TreeChecked_:
-		if v.TreeChecked.Open {
-			return "Tree Found Open"
-		}
-		return "Tree Found Closed"
-	case *run.LogEntry_Info_:
-		return v.Info.Label
-	case *run.LogEntry_AcquiredSubmitQueue_:
-		return "Acquired Submit Queue"
-	case *run.LogEntry_ReleasedSubmitQueue_:
-		return "Released Submit Queue"
-	case *run.LogEntry_Waitlisted_:
-		return "Waitlisted for Submit Queue"
-	case *run.LogEntry_SubmissionFailure_:
-		if v.SubmissionFailure.Event.GetResult() == eventpb.SubmissionResult_FAILED_TRANSIENT {
-			return "Transient Submission Failure"
-		}
-		return "Final Submission Failure"
-	case *run.LogEntry_ClSubmitted:
-		return "CL Submission"
-	case *run.LogEntry_RunEnded_:
-		return "CV Finished Work on this Run"
-	default:
-		return fmt.Sprintf("FIXME: Unknown Kind of LogEntry %T", v)
-	}
-}
-
-// groupTryjobsByStatus puts tryjobs in the list into separate lists by status.
-func groupTryjobsByStatus(tjs []*run.Tryjob) map[string][]*uiTryjob {
-	ret := map[string][]*uiTryjob{}
-	for _, tj := range tjs {
-		k := strings.Title(strings.ToLower(tj.Status.String()))
-		ret[k] = append(ret[k], &uiTryjob{
-			ExternalID: tryjob.ExternalID(tj.ExternalId),
-			Definition: tj.Definition,
-			Status:     tj.Status,
-			Result:     tj.Result,
-		})
-	}
-	return ret
-}
-
-func makeURLMap(cls []*run.RunCL) map[common.CLID]string {
-	ret := make(map[common.CLID]string, len(cls))
-	for _, cl := range cls {
-		ret[cl.ID] = cl.ExternalID.MustURL()
-	}
-	return ret
 }

@@ -48,6 +48,24 @@ func makeUITryjobs(tjs []*tryjob.Tryjob) []*uiTryjob {
 	return ret
 }
 
+func makeUITryjobsFromSnapshots(snapshots []*tryjob.ExecutionLogEntry_TryjobSnapshot) []*uiTryjob {
+	// TODO(crbug/1233963):  Make sure we are not leaking any sensitive info
+	// based on Read Perms. E.g. internal builder name.
+	if len(snapshots) == 0 {
+		return nil
+	}
+	ret := make([]*uiTryjob, len(snapshots))
+	for i, snapshot := range snapshots {
+		ret[i] = &uiTryjob{
+			ExternalID: tryjob.ExternalID(snapshot.GetExternalId()),
+			Definition: snapshot.GetDefinition(),
+			Status:     snapshot.GetStatus(),
+			Result:     snapshot.GetResult(),
+		}
+	}
+	return ret
+}
+
 // Link returns the link to the Tryjob in the external system.
 func (ut *uiTryjob) Link() string {
 	if ut.ExternalID == "" {
@@ -77,6 +95,8 @@ func (ut *uiTryjob) CSSClass() string {
 		default:
 			panic(fmt.Errorf("unexpected Tryjob result status %s", ut.Result.GetStatus()))
 		}
+	case tryjob.Status_UNTRIGGERED:
+		return "not-started"
 	default:
 		panic(fmt.Errorf("unknown tryjob status: %s", ut.Status))
 	}
