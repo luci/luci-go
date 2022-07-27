@@ -189,7 +189,7 @@ func (e *Executor) handleUpdatedTryjobs(ctx context.Context, tryjobs []int64, ex
 		}
 		// Only process the tryjob that has been updated and its latest attempt
 		// has ended.
-		switch attempt := exec.Attempts[len(exec.Attempts)-1]; {
+		switch attempt := tryjob.LatestAttempt(exec); {
 		case attempt.Status == tryjob.Status_ENDED && attempt.GetResult().GetStatus() == tryjob.Result_SUCCEEDED:
 			endedTryjobLogs = append(endedTryjobLogs, makeLogTryjobSnapshotFromAttempt(definition, attempt))
 		case attempt.Status == tryjob.Status_ENDED && definition.GetCritical():
@@ -255,10 +255,10 @@ func (e *Executor) handleUpdatedTryjobs(ctx context.Context, tryjobs []int64, ex
 }
 
 func updateLatestAttempt(exec *tryjob.ExecutionState_Execution, tryjobsByIDs map[common.TryjobID]*tryjob.Tryjob) bool {
-	if len(exec.GetAttempts()) == 0 {
+	attempt := tryjob.LatestAttempt(exec)
+	if attempt == nil {
 		return false
 	}
-	attempt := exec.Attempts[len(exec.Attempts)-1]
 	if tj, ok := tryjobsByIDs[common.TryjobID(attempt.TryjobId)]; ok {
 		if attempt.Status != tj.Status || !proto.Equal(attempt.Result, tj.Result) {
 			attempt.Status = tj.Status
@@ -270,13 +270,14 @@ func updateLatestAttempt(exec *tryjob.ExecutionState_Execution, tryjobsByIDs map
 }
 
 func hasLatestAttemptEnded(exec *tryjob.ExecutionState_Execution) bool {
-	if len(exec.GetAttempts()) == 0 {
+	attempt := tryjob.LatestAttempt(exec)
+	if attempt == nil {
 		return false // hasn't launched any new attempt
 	}
 	// only look at the latest attempt
-	switch latestAttempt := exec.GetAttempts()[len(exec.GetAttempts())-1]; latestAttempt.Status {
+	switch attempt.Status {
 	case tryjob.Status_STATUS_UNSPECIFIED:
-		panic(fmt.Errorf("attempt status not specified for Tryjob %d", latestAttempt.TryjobId))
+		panic(fmt.Errorf("attempt status not specified for Tryjob %d", attempt.TryjobId))
 	case tryjob.Status_PENDING, tryjob.Status_TRIGGERED:
 		return false
 	default:

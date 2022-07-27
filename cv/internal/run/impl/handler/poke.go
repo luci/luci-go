@@ -121,24 +121,23 @@ func (impl *Impl) Poke(ctx context.Context, rs *state.RunState) (*Result, error)
 		errs := errors.NewLazyMultiError(len(executions))
 		poolErr := parallel.WorkPool(min(8, len(executions)), func(workCh chan<- func() error) {
 			for i, execution := range executions {
-				i := i
-				if len(execution.GetAttempts()) == 0 {
-					continue
-				}
 				// Only care about the latest attempt with the assumption that all
 				// earlier attempt should have been ended already.
-				latestAttempt := execution.GetAttempts()[len(execution.GetAttempts())-1]
-				if latestAttempt.GetExternalId() == "" {
+				switch latestAttempt := tryjob.LatestAttempt(execution); {
+				case latestAttempt == nil:
+				case latestAttempt.GetExternalId() == "":
 					// There's no point to update Tryjob if Tryjob hasn't been triggered
 					// yet.
-					continue
+				default:
+					i := i
+					workCh <- func() error {
+						errs.Assign(i, impl.TN.ScheduleUpdate(ctx,
+							common.TryjobID(latestAttempt.GetTryjobId()),
+							tryjob.ExternalID(latestAttempt.GetExternalId())))
+						return nil
+					}
 				}
-				workCh <- func() error {
-					errs.Assign(i, impl.TN.ScheduleUpdate(ctx,
-						common.TryjobID(latestAttempt.GetTryjobId()),
-						tryjob.ExternalID(latestAttempt.GetExternalId())))
-					return nil
-				}
+
 			}
 		})
 		switch {

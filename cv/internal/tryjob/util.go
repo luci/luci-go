@@ -186,3 +186,15 @@ func notifyRuns(ctx context.Context, tryjobs []*Tryjob, notifyFn NotifyTryjobsUp
 	}
 	return nil
 }
+
+// LatestAttempt returns the latest attempt of the given Tryjob Execution.
+//
+// Returns nil if the Tryjob execution doesn't have any attempt yet.
+func LatestAttempt(execution *ExecutionState_Execution) *ExecutionState_Execution_Attempt {
+	switch l := len(execution.GetAttempts()); l {
+	case 0:
+		return nil
+	default:
+		return execution.GetAttempts()[l-1]
+	}
+}

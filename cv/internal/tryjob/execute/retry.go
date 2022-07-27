@@ -88,7 +88,7 @@ func (e *Executor) canRetryAll(
 	for _, idx := range failedIndices {
 		definition := execState.GetRequirement().GetDefinitions()[idx]
 		exec := execState.GetExecutions()[idx]
-		attempt := exec.GetAttempts()[len(exec.GetAttempts())-1]
+		attempt := tryjob.LatestAttempt(exec)
 		ensureTryjobCriticalAndFailed(definition, attempt)
 		switch canRetry(definition, attempt) {
 		case retryDenied:

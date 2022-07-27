@@ -381,7 +381,7 @@ func TestPoke(t *testing.T) {
 
 				Convey("Skip if external id is not present", func() {
 					execution := rs.Tryjobs.GetState().GetExecutions()[0]
-					execution.GetAttempts()[len(execution.GetAttempts())-1].ExternalId = ""
+					tryjob.LatestAttempt(execution).ExternalId = ""
 					_, err := h.Poke(ctx, rs)
 					So(err, ShouldBeNil)
 					So(deps.tjNotifier.updateScheduled, ShouldBeEmpty)

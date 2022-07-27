@@ -35,27 +35,26 @@ func (e *Executor) logRequirementChanged(ctx context.Context) {
 }
 
 func (e *Executor) logTryjobDiscarded(ctx context.Context, def *tryjob.Definition, exec *tryjob.ExecutionState_Execution, reason string) {
-	var latestAttempt *tryjob.ExecutionState_Execution_Attempt
-	if len(exec.GetAttempts()) > 0 {
-		latestAttempt = exec.GetAttempts()[len(exec.GetAttempts())-1]
-	}
-	e.log(&tryjob.ExecutionLogEntry{
-		Time: timestamppb.New(clock.Now(ctx).UTC()),
-		Kind: &tryjob.ExecutionLogEntry_TryjobDiscarded_{
-			TryjobDiscarded: &tryjob.ExecutionLogEntry_TryjobDiscarded{
-				Snapshot: makeLogTryjobSnapshotFromAttempt(def, latestAttempt),
-				Reason:   reason,
+	latestAttempt := tryjob.LatestAttempt(exec)
+	if latestAttempt != nil {
+		e.log(&tryjob.ExecutionLogEntry{
+			Time: timestamppb.New(clock.Now(ctx).UTC()),
+			Kind: &tryjob.ExecutionLogEntry_TryjobDiscarded_{
+				TryjobDiscarded: &tryjob.ExecutionLogEntry_TryjobDiscarded{
+					Snapshot: makeLogTryjobSnapshotFromAttempt(def, latestAttempt),
+					Reason:   reason,
+				},
 			},
-		},
-	})
+		})
+	}
 }
 
 func (e *Executor) logRetryDenied(ctx context.Context, execState *tryjob.ExecutionState, failedIndices []int, reason string) {
 	snapshots := make([]*tryjob.ExecutionLogEntry_TryjobSnapshot, len(failedIndices))
 	for i, idx := range failedIndices {
-		def := execState.GetRequirement().GetDefinitions()[idx]
-		execution := execState.GetExecutions()[idx]
-		snapshots[i] = makeLogTryjobSnapshotFromAttempt(def, execution.GetAttempts()[len(execution.GetAttempts())-1])
+		snapshots[i] = makeLogTryjobSnapshotFromAttempt(
+			execState.GetRequirement().GetDefinitions()[idx],
+			tryjob.LatestAttempt(execState.GetExecutions()[idx]))
 	}
 	e.log(&tryjob.ExecutionLogEntry{
 		Time: timestamppb.New(clock.Now(ctx).UTC()),

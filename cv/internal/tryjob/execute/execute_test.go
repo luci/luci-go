@@ -225,8 +225,7 @@ func TestPrepExecutionPlan(t *testing.T) {
 				Convey("Untriggered", func() {
 					ensureTryjob(ctx, tjID, tryjob.Status_UNTRIGGERED, tryjob.Result_UNKNOWN)
 					Convey("Reused", func() {
-						execution := execState.GetExecutions()[0]
-						execution.Attempts[len(execution.Attempts)-1].Reused = true
+						tryjob.LatestAttempt(execState.GetExecutions()[0]).Reused = true
 						plan := prepPlan(execState, tjID)
 						So(plan.isEmpty(), ShouldBeFalse)
 						So(plan.triggerNewAttempt, ShouldHaveLength, 1)
