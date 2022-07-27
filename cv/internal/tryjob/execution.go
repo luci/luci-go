@@ -116,3 +116,42 @@ func SaveExecutionState(ctx context.Context, rid common.RunID, state *ExecutionS
 		return nil
 	}
 }
+
+// LoadExecutionLogs loads all the Tryjob execution log entries for a given Run.
+//
+// Ordered from logically oldest to newest as it assumes logs associated with
+// a smaller ExecutionState EVersion should happen earlier than the logs
+// associated with a larger ExecutionState EVersion.
+func LoadExecutionLogs(ctx context.Context, runID common.RunID) ([]*ExecutionLogEntry, error) {
+	var keys []*datastore.Key
+	runKey := datastore.MakeKey(ctx, common.RunKind, string(runID))
+	// Getting the key first as getting the execution log entity directly is
+	// more likely a cache hit.
+	q := datastore.NewQuery("TryjobExecutionLog").KeysOnly(true).Ancestor(runKey)
+	if err := datastore.GetAll(ctx, q, &keys); err != nil {
+		return nil, errors.Annotate(err, "failed to fetch keys of TryjobExecutionLog entities").Tag(transient.Tag).Err()
+	}
+	if len(keys) == 0 {
+		return nil, nil
+	}
+	entities := make([]*executionLog, len(keys))
+	for i, key := range keys {
+		entities[i] = &executionLog{
+			ID:  key.IntID(),
+			Run: runKey,
+		}
+	}
+	if err := datastore.Get(ctx, entities); err != nil {
+		// It's possible to get EntityNotExists, but it may only happen if data
+		// retention enforcement is deleting old entities at the same time.
+		// Thus, treat all errors as transient.
+		return nil, errors.Annotate(common.MostSevereError(err), "failed to fetch TryjobExecutionLog entities").Tag(transient.Tag).Err()
+	}
+
+	// Each TryjobExecutionLog entity contains at least 1 LogEntry.
+	ret := make([]*ExecutionLogEntry, 0, len(entities))
+	for _, e := range entities {
+		ret = append(ret, e.Entries.GetEntries()...)
+	}
+	return ret, nil
+}
