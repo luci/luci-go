@@ -42,6 +42,16 @@ load(
 load("@proto//google/protobuf/duration.proto", duration_pb = "google.protobuf")
 load("@proto//google/protobuf/wrappers.proto", wrappers_pb = "google.protobuf")
 
+# If set, do not generate legacy Buildbucket and Scheduler ACLs.
+#
+# Implies generation of shorter BuildbucketTask protos and conditional bindings,
+# succeeding experiment "crbug.com/1182002".
+_drop_legacy_shed_bb_acls = experiments.register("crbug.com/1347252", "1.32.0")
+
+def _legacy_acls():
+    """True to generate legacy Scheduler and Buildbucket ACLs."""
+    return not _drop_legacy_shed_bb_acls.is_enabled()
+
 def register():
     """Registers all LUCI config generator callbacks."""
     lucicfg.generator(impl = gen_project_cfg)
@@ -331,6 +341,8 @@ def _buildbucket_check_connections():
 
 def _buildbucket_acls(elementary):
     """[acl.elementary] => filtered [buildbucket_pb.Acl]."""
+    if not _legacy_acls():
+        return []
     return [
         buildbucket_pb.Acl(
             role = _buildbucket_roles[a.role],
@@ -575,14 +587,15 @@ def gen_scheduler_cfg(ctx):
     cfg = scheduler_pb.ProjectConfig()
     set_config(ctx, scheduler.cfg_file, cfg)
 
-    # Generate per-bucket ACL sets based on bucket-level permissions. Skip
-    # buckets that aren't used to avoid polluting configs with unnecessary
-    # entries.
-    for bucket in get_buckets_of(entities):
-        cfg.acl_sets.append(scheduler_pb.AclSet(
-            name = bucket.props.name,
-            acls = _scheduler_acls(get_bucket_acls(bucket)),
-        ))
+    if _legacy_acls():
+        # Generate per-bucket ACL sets based on bucket-level permissions. Skip
+        # buckets that aren't used to avoid polluting configs with unnecessary
+        # entries.
+        for bucket in get_buckets_of(entities):
+            cfg.acl_sets.append(scheduler_pb.AclSet(
+                name = bucket.props.name,
+                acls = _scheduler_acls(get_bucket_acls(bucket)),
+            ))
 
     # We prefer to use bucket-less names in the scheduler configs, so that IDs
     # that show up in logs and in the debug UI match what is used in the
@@ -602,7 +615,7 @@ def gen_scheduler_cfg(ctx):
         cfg.trigger.append(scheduler_pb.Trigger(
             id = node_to_id[poller],
             realm = poller.props.realm,
-            acl_sets = [poller.props.bucket],
+            acl_sets = [poller.props.bucket] if _legacy_acls() else [],
             triggers = [node_to_id[b] for b in targets],
             schedule = poller.props.schedule,
             gitiles = scheduler_pb.GitilesTask(
@@ -620,7 +633,7 @@ def gen_scheduler_cfg(ctx):
         cfg.job.append(scheduler_pb.Job(
             id = node_to_id[builder],
             realm = builder.props.realm,
-            acl_sets = [builder.props.bucket],
+            acl_sets = [builder.props.bucket] if _legacy_acls() else [],
             acls = _scheduler_acls(aclimpl.normalize_acls([
                 acl.entry(acl.SCHEDULER_TRIGGERER, users = t.props.service_account)
                 for t in triggered_by
@@ -634,12 +647,16 @@ def gen_scheduler_cfg(ctx):
 
     # Add conditional "role/scheduler.triggerer" bindings that allow builders to
     # trigger jobs.
-    if _scheduler_use_bb_v2.is_enabled():
+    if _scheduler_realms_configs():
         _gen_scheduler_bindings(
             ctx.output[output_path(realms_cfg(project))],
             builders,
             node_to_id,
         )
+
+def _scheduler_realms_configs():
+    """True to generate realms-only Scheduler configs."""
+    return _scheduler_use_bb_v2.is_enabled() or not _legacy_acls()
 
 def _scheduler_disambiguate_ids(nodes):
     """[graph.node] => dict{node: name to use for it in scheduler.cfg}."""
@@ -718,6 +735,8 @@ def _gen_scheduler_bindings(realms_cfg, builders, node_to_id):
 
 def _scheduler_acls(elementary):
     """[acl.elementary] => filtered [scheduler_pb.Acl]."""
+    if not _legacy_acls():
+        return []
     return [
         scheduler_pb.Acl(
             role = _scheduler_roles[a.role],
@@ -738,7 +757,7 @@ def _scheduler_identity(a):
 
 def _scheduler_task(builder, buildbucket, project_name):
     """Produces scheduler_pb.BuildbucketTask for a scheduler job."""
-    if not _scheduler_use_bb_v2.is_enabled():
+    if not _scheduler_realms_configs():
         bucket = legacy_bucket_name(builder.props.bucket, project_name)
     else:
         bucket = builder.props.bucket
@@ -1220,6 +1239,7 @@ def _cq_quota_policy_tryjob_limits(limits):
 
 def _cq_quota_policy_limit(limit):
     """Int|None => cq_pb.QuotaPolicy.Limit."""
+
     # if the limit is None, return with unlimited = True, so that
     # so that the config output clarifies what policies granted
     # unliimited quotas.
