@@ -38,6 +38,9 @@ type Name struct {
 // String returns the name string.
 func (n Name) String() string { return n.name }
 
+// Valid is true if this name is not empty.
+func (n Name) Valid() bool { return n.name != "" }
+
 // RegisterName registers a module name and returns it.
 //
 // It's the only way to construct new Name instances. Panics if such name was

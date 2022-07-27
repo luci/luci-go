@@ -74,7 +74,7 @@ type Impl struct {
 	// Must match Kind() of the produced DB instance.
 	Kind string
 
-	// Module is name of the server module with DB implementation.
+	// Module is name of the server module with DB implementation, if any.
 	Module module.Name
 
 	// ProbeForTxn "probes" a context for an active transaction, returning a DB

@@ -17,8 +17,9 @@ package tqtesting
 import (
 	"bytes"
 	"context"
+	"io"
+	"net"
 	"net/http"
-	"net/http/httptest"
 	"net/url"
 	"strconv"
 
@@ -27,10 +28,14 @@ import (
 	"go.chromium.org/luci/common/logging"
 )
 
-// LoopbackHTTPExecutor is an Executor that executes tasks by calling the given
-// HTTP handler.
+// LoopbackHTTPExecutor is an Executor that executes tasks by sending HTTP
+// requests to the server with TQ module serving at the given (usually loopback)
+// address.
+//
+// Used exclusively when running TQ locally.
 type LoopbackHTTPExecutor struct {
-	Handler http.Handler
+	// ServerAddr is where the server is listening for requests.
+	ServerAddr net.Addr
 }
 
 // Execute dispatches the task to the HTTP handler in a dedicated goroutine.
@@ -47,6 +52,11 @@ func (e *LoopbackHTTPExecutor) Execute(ctx context.Context, t *Task, done func(r
 	defer func() {
 		done(!success)
 	}()
+
+	if e.ServerAddr == nil {
+		logging.Errorf(ctx, "LoopbackHTTPExecutor is not configured. Is the server exposing main HTTP port?")
+		return
+	}
 
 	var method taskspb.HttpMethod
 	var requestURL string
@@ -76,13 +86,17 @@ func (e *LoopbackHTTPExecutor) Execute(ctx context.Context, t *Task, done func(r
 	}
 	host := parsedURL.Host
 
-	// Make the URL relative.
-	parsedURL.Scheme = ""
-	parsedURL.Host = ""
+	// Make the URL relative to the localhost server at the requested port.
+	parsedURL.Scheme = "http"
+	parsedURL.Host = e.ServerAddr.String() // this is "<host>:<port>"
 	requestURL = parsedURL.String()
 
-	req := httptest.NewRequest(method.String(), requestURL, bytes.NewReader(body))
-	req.Host = host
+	req, err := http.NewRequestWithContext(ctx, method.String(), requestURL, bytes.NewReader(body))
+	if err != nil {
+		logging.Errorf(ctx, "Could not construct HTTP request: %s", err)
+		return
+	}
+	req.Host = host // sets "Host" request header
 	for k, v := range headers {
 		req.Header.Set(k, v)
 	}
@@ -94,8 +108,17 @@ func (e *LoopbackHTTPExecutor) Execute(ctx context.Context, t *Task, done func(r
 		req.Header.Set("X-CloudTasks-TaskRetryReason", "task handler failed")
 	}
 
-	rr := httptest.NewRecorder()
-	e.Handler.ServeHTTP(rr, req)
-	status := rr.Result().StatusCode
-	success = status >= 200 && status <= 299
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		logging.Errorf(ctx, "Failed to send HTTP request: %s", err)
+		return
+	}
+	defer resp.Body.Close()
+	// Read the body fully to be able to reuse the connection.
+	if _, err = io.Copy(io.Discard, resp.Body); err != nil {
+		logging.Errorf(ctx, "Failed to read the response: %s", err)
+		return
+	}
+
+	success = resp.StatusCode >= 200 && resp.StatusCode <= 299
 }

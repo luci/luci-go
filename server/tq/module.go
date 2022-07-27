@@ -284,7 +284,9 @@ func (*tqModule) Name() module.Name {
 func (*tqModule) Dependencies() []module.Dependency {
 	var deps []module.Dependency
 	db.VisitImpls(func(db *db.Impl) {
-		deps = append(deps, module.RequiredDependency(db.Module))
+		if db.Module.Valid() {
+			deps = append(deps, module.RequiredDependency(db.Module))
+		}
 	})
 	return deps
 }
@@ -354,13 +356,12 @@ func (m *tqModule) initDispatching(ctx context.Context, host module.Host, opts m
 		// HTTP layer to pick up logging, middlewares, etc.
 		scheduler := &tqtesting.Scheduler{
 			Executor: &tqtesting.LoopbackHTTPExecutor{
-				Handler: host.Routes(),
+				ServerAddr: host.HTTPAddr(),
 			},
 		}
 		host.RunInBackground("luci.tq", func(ctx context.Context) {
 			scheduler.Run(ctx, tqtesting.ParallelExecute())
 		})
-		Default.DisableAuth = true
 		submitter = scheduler
 	}
 
