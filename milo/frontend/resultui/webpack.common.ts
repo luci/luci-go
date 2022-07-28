@@ -34,7 +34,7 @@ const config: Configuration = {
   module: {
     rules: [
       {
-        test: /\.ts$/,
+        test: /\.tsx?$/,
         use: {
           loader: 'ts-loader',
           options: {
@@ -50,7 +50,7 @@ const config: Configuration = {
     ],
   },
   resolve: {
-    extensions: ['.js', '.ts', '.css'],
+    extensions: ['.js', '.jsx', '.ts', '.tsx', '.css'],
   },
   externals: {
     configs: 'CONFIGS',

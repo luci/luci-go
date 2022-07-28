@@ -38,6 +38,17 @@ router.setRoutes({
       },
     },
     {
+      path: '/search',
+      name: 'search',
+      action: async (_ctx, cmd) => {
+        await import(
+          /* webpackChunkName: "search_page" */
+          './pages/search_page'
+        );
+        return cmd.component('milo-search-page');
+      },
+    },
+    {
       path: '/inv/:invocation_id',
       name: 'invocation',
       action: async (_ctx, cmd) => {

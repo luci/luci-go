@@ -33,6 +33,8 @@ const MAY_REQUIRE_SIGNIN_ERROR_CODE = [RpcCode.NOT_FOUND, RpcCode.PERMISSION_DEN
 export class AppState {
   @observable.ref timestamp = Date.now();
 
+  @observable.ref searchPageQuery = '';
+
   // The timestamp when the user selected the current tab.
   tabSelectionTime = TIME_ORIGIN;
   @observable.ref _selectedTabId: string | null = null;
