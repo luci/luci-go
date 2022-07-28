@@ -29,10 +29,9 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/trace"
+	"go.chromium.org/luci/resultdb/internal/spanutil"
 	"go.chromium.org/luci/server/redisconn"
 	"go.chromium.org/luci/server/span"
-
-	"go.chromium.org/luci/resultdb/internal/spanutil"
 )
 
 // MaxNodes is the maximum number of invocation nodes that ResultDB
@@ -78,19 +77,53 @@ var TooManyTag = errors.BoolTag{
 }
 
 // Reachable returns all invocations reachable from roots along the inclusion
-// edges.
+// edges.  Will return an error if there are more than MaxNodes invocations.
 // May return an appstatus-annotated error.
 func Reachable(ctx context.Context, roots IDSet) (IDSet, error) {
-	return reachable(ctx, roots, true)
+	allIDs := IDSet{}
+	processor := func(ctx context.Context, invIDs IDSet) error {
+		allIDs.Union(invIDs)
+		// Yes, this is an artificial limit.  With 20,000 invocations you are already likely
+		// to run into problems if you try to process all of these in one go (e.g. in a
+		// Spanner query).  If you want more, use the batched call and handle a batch at a time.
+		if len(allIDs) > MaxNodes {
+			return errors.Reason("more than %d invocations match", MaxNodes).Tag(TooManyTag).Err()
+		}
+		return nil
+	}
+	err := BatchedReachable(ctx, roots, processor)
+	return allIDs, err
 }
 
-// ReachableSkipRootCache is similar to Reachable, but it ignores cache
+// BatchedReachable calls the processor for batches of all invocations reachable
+// from roots along the inclusion edges.  Using this function avoids the MaxNodes
+// limitation.
+// If the processor returns an error, no more batches will be processed and the
+// error will be returned immediately.
+func BatchedReachable(ctx context.Context, roots IDSet, processor func(context.Context, IDSet) error) error {
+	invIDs, err := reachable(ctx, roots, true)
+	if err != nil {
+		return err
+	}
+	for _, batch := range invIDs.Batches() {
+		if err := processor(ctx, batch); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// ReachableSkipRootCache is similar to BatchedReachable, but it ignores cache
 // for the roots.
 //
 // Useful to keep cache-hit stats high in cases where the roots are known not to
 // have cache.
-func ReachableSkipRootCache(ctx context.Context, roots IDSet) (IDSet, error) {
-	return reachable(ctx, roots, false)
+func ReachableSkipRootCache(ctx context.Context, roots IDSet, processor func(context.Context, IDSet) error) error {
+	invIDs, err := reachable(ctx, roots, false)
+	if err != nil {
+		return err
+	}
+	return processor(ctx, invIDs)
 }
 
 func reachable(ctx context.Context, roots IDSet, useRootCache bool) (reachable IDSet, err error) {
@@ -99,10 +132,6 @@ func reachable(ctx context.Context, roots IDSet, useRootCache bool) (reachable I
 
 	eg, ctx := errgroup.WithContext(ctx)
 	defer eg.Wait()
-
-	tooMany := func() error {
-		return errors.Reason("more than %d invocations match", MaxNodes).Tag(TooManyTag).Err()
-	}
 
 	reachable = make(IDSet, len(roots))
 	var mu sync.Mutex
@@ -117,11 +146,6 @@ func reachable(ctx context.Context, roots IDSet, useRootCache bool) (reachable I
 		// Check if we already started/finished fetching this invocation.
 		if reachable.Has(id) {
 			return nil
-		}
-
-		// Consider fetching a new invocation.
-		if len(reachable) == MaxNodes {
-			return tooMany()
 		}
 
 		// Mark the invocation as being processed.
@@ -146,9 +170,6 @@ func reachable(ctx context.Context, roots IDSet, useRootCache bool) (reachable I
 					mu.Lock()
 					defer mu.Unlock()
 					reachable.Union(ids)
-					if len(reachable) > MaxNodes {
-						return tooMany()
-					}
 					return nil
 				}
 				// Cache miss. => Read from Spanner.

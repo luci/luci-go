@@ -28,16 +28,15 @@ import (
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/sync/parallel"
 	"go.chromium.org/luci/common/trace"
-	"go.chromium.org/luci/server"
-	"go.chromium.org/luci/server/span"
-	"go.chromium.org/luci/server/tq"
-
 	"go.chromium.org/luci/resultdb/internal/invocations"
 	"go.chromium.org/luci/resultdb/internal/services/bqexporter"
 	"go.chromium.org/luci/resultdb/internal/spanutil"
 	"go.chromium.org/luci/resultdb/internal/tasks"
 	"go.chromium.org/luci/resultdb/internal/tasks/taskspb"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
+	"go.chromium.org/luci/server"
+	"go.chromium.org/luci/server/span"
+	"go.chromium.org/luci/server/tq"
 )
 
 // InitServer initializes a finalizer server.
@@ -238,7 +237,7 @@ func ensureFinalizing(ctx context.Context, invID invocations.ID) error {
 // For each FINALIZING invocation that includes the given one, enqueues
 // a finalization task.
 func finalizeInvocation(ctx context.Context, invID invocations.ID) error {
-	var reach invocations.IDSet
+	var reach = make(invocations.IDSet)
 	_, err := span.ReadWriteTransaction(ctx, func(ctx context.Context) error {
 		// Check the state before proceeding, so that if the invocation already
 		// finalized, we return errAlreadyFinalized.
@@ -250,11 +249,19 @@ func finalizeInvocation(ctx context.Context, invID invocations.ID) error {
 		err := parallel.FanOutIn(func(work chan<- func() error) {
 			// Read all reachable invocations to cache them after the transaction.
 			work <- func() (err error) {
-				reach, err = invocations.ReachableSkipRootCache(ctx, invocations.NewIDSet(invID))
+				processReachableInvocations := func(ctx context.Context, invIDs invocations.IDSet) error {
+					reach.Union(invIDs)
+					variants, err := variantUnion(ctx, reach)
+					if err != nil {
+						return err
+					}
+					reachVarUnion = append(reachVarUnion, variants...)
+					return nil
+				}
+				err = invocations.ReachableSkipRootCache(ctx, invocations.NewIDSet(invID), processReachableInvocations)
 				if err != nil {
 					return
 				}
-				reachVarUnion, err = variantUnion(ctx, reach)
 				return
 			}
 
@@ -327,6 +334,7 @@ func parentsInFinalizingState(ctx context.Context, invID invocations.ID) (ids []
 
 // variantUnion computes the variant union of the invocations in reach.
 func variantUnion(ctx context.Context, reach invocations.IDSet) ([]string, error) {
+	// TODO: remove this function and calls when removing Test History API.
 	st := spanner.NewStatement(`
 		SELECT DISTINCT tv
 		FROM Invocations inv, inv.TestResultVariantUnion tv

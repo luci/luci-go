@@ -15,17 +15,18 @@
 package invocations
 
 import (
+	"context"
 	"fmt"
+	"strconv"
 	"testing"
 
 	"cloud.google.com/go/spanner"
 	"github.com/gomodule/redigo/redis"
+	. "github.com/smartystreets/goconvey/convey"
 
 	"go.chromium.org/luci/resultdb/internal/testutil"
 	"go.chromium.org/luci/server/redisconn"
 	"go.chromium.org/luci/server/span"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestReachable(t *testing.T) {
@@ -67,6 +68,87 @@ func TestReachable(t *testing.T) {
 				node("c"),
 			)...)
 			So(mustReadIDs("a"), ShouldResemble, NewIDSet("a", "b", "c"))
+		})
+	})
+}
+
+func TestBatchedReachable(t *testing.T) {
+	Convey(`Reachable`, t, func() {
+		ctx := testutil.SpannerTestContext(t)
+
+		node := insertInvocationIncluding
+
+		read := func(roots ...ID) (IDSet, error) {
+			ctx, cancel := span.ReadOnlyTransaction(ctx)
+			defer cancel()
+			invs := NewIDSet()
+			process := func(ctx context.Context, batch IDSet) error {
+				invs.Union(batch)
+				return nil
+			}
+			if err := BatchedReachable(ctx, NewIDSet(roots...), process); err != nil {
+				return nil, err
+			}
+			return invs, nil
+		}
+
+		mustReadIDs := func(roots ...ID) IDSet {
+			invs, err := read(roots...)
+			So(err, ShouldBeNil)
+			return invs
+		}
+
+		Convey(`a -> []`, func() {
+			testutil.MustApply(ctx, node("a")...)
+			So(mustReadIDs("a"), ShouldResemble, NewIDSet("a"))
+		})
+
+		Convey(`a -> [b, c]`, func() {
+			testutil.MustApply(ctx, testutil.CombineMutations(
+				node("a", "b", "c"),
+				node("b"),
+				node("c"),
+			)...)
+			So(mustReadIDs("a"), ShouldResemble, NewIDSet("a", "b", "c"))
+		})
+
+		Convey(`a -> b -> c`, func() {
+			testutil.MustApply(ctx, testutil.CombineMutations(
+				node("a", "b"),
+				node("b", "c"),
+				node("c"),
+			)...)
+			So(mustReadIDs("a"), ShouldResemble, NewIDSet("a", "b", "c"))
+		})
+		Convey(`a -> [100 invocations]`, func() {
+			nodes := [][]*spanner.Mutation{}
+			nodeSet := []ID{}
+			for i := 0; i < 100; i++ {
+				name := ID(strconv.FormatInt(int64(i), 10))
+				nodes = append(nodes, node(name))
+				nodeSet = append(nodeSet, name)
+			}
+			nodes = append(nodes, node("a", nodeSet...))
+			testutil.MustApply(ctx, testutil.CombineMutations(
+				nodes...,
+			)...)
+			expectedSet := NewIDSet(nodeSet...)
+			expectedSet.Add("a")
+			So(mustReadIDs("a"), ShouldResemble, expectedSet)
+		})
+		Convey(`errors passed through`, func() {
+			testutil.MustApply(ctx, testutil.CombineMutations(
+				node("a", "b", "c"),
+				node("b"),
+				node("c"),
+			)...)
+			ctx, cancel := span.ReadOnlyTransaction(ctx)
+			defer cancel()
+			process := func(ctx context.Context, batch IDSet) error {
+				return fmt.Errorf("expected error")
+			}
+			err := BatchedReachable(ctx, NewIDSet("a"), process)
+			So(err, ShouldNotEqual, nil)
 		})
 	})
 }

@@ -31,14 +31,13 @@ import (
 	"go.chromium.org/luci/common/bq"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
-	"go.chromium.org/luci/server/span"
-
 	"go.chromium.org/luci/resultdb/internal/artifactcontent"
 	"go.chromium.org/luci/resultdb/internal/artifacts"
 	"go.chromium.org/luci/resultdb/internal/invocations"
 	"go.chromium.org/luci/resultdb/pbutil"
 	bqpb "go.chromium.org/luci/resultdb/proto/bq"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
+	"go.chromium.org/luci/server/span"
 )
 
 var textArtifactRowSchema bigquery.Schema
@@ -173,37 +172,40 @@ type artifact struct {
 }
 
 func (b *bqExporter) queryTextArtifacts(ctx context.Context, exportedID invocations.ID, bqExport *pb.BigQueryExport, artifactC chan *artifact) error {
-	invIDs, err := getInvocationIDSet(ctx, exportedID)
+	exportInvocationBatch := func(ctx context.Context, invIDs invocations.IDSet) error {
+		contentTypeRegexp := bqExport.GetTextArtifacts().GetPredicate().GetContentTypeRegexp()
+		if contentTypeRegexp == "" {
+			contentTypeRegexp = "text/.*"
+		}
+		q := artifacts.Query{
+			InvocationIDs:       invIDs,
+			TestResultPredicate: bqExport.GetTextArtifacts().GetPredicate().GetTestResultPredicate(),
+			ContentTypeRegexp:   contentTypeRegexp,
+			ArtifactIDRegexp:    bqExport.GetTextArtifacts().GetPredicate().GetArtifactIdRegexp(),
+			WithRBECASHash:      true,
+		}
+
+		invs, err := invocations.ReadBatch(ctx, q.InvocationIDs)
+		if err != nil {
+			return err
+		}
+
+		return q.Run(ctx, func(a *artifacts.Artifact) error {
+			invID, _, _, _ := artifacts.MustParseName(a.Name)
+			select {
+			case <-ctx.Done():
+				return ctx.Err()
+			case artifactC <- &artifact{Artifact: a, exported: invs[exportedID], parent: invs[invID]}:
+			}
+			return nil
+		})
+	}
+
+	err := getInvocationIDSet(ctx, exportedID, exportInvocationBatch)
 	if err != nil {
 		return errors.Annotate(err, "invocation id set").Err()
 	}
-
-	contentTypeRegexp := bqExport.GetTextArtifacts().GetPredicate().GetContentTypeRegexp()
-	if contentTypeRegexp == "" {
-		contentTypeRegexp = "text/.*"
-	}
-	q := artifacts.Query{
-		InvocationIDs:       invIDs,
-		TestResultPredicate: bqExport.GetTextArtifacts().GetPredicate().GetTestResultPredicate(),
-		ContentTypeRegexp:   contentTypeRegexp,
-		ArtifactIDRegexp:    bqExport.GetTextArtifacts().GetPredicate().GetArtifactIdRegexp(),
-		WithRBECASHash:      true,
-	}
-
-	invs, err := invocations.ReadBatch(ctx, q.InvocationIDs)
-	if err != nil {
-		return err
-	}
-
-	return q.Run(ctx, func(a *artifacts.Artifact) error {
-		invID, _, _, _ := artifacts.MustParseName(a.Name)
-		select {
-		case <-ctx.Done():
-			return ctx.Err()
-		case artifactC <- &artifact{Artifact: a, exported: invs[exportedID], parent: invs[invID]}:
-		}
-		return nil
-	})
+	return nil
 }
 
 func (b *bqExporter) artifactRowInputToBatch(ctx context.Context, rowC chan rowInput, batchC chan []rowInput) error {
