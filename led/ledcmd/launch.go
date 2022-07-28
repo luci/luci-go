@@ -102,7 +102,7 @@ func LaunchSwarming(ctx context.Context, authClient *http.Client, jd *job.Defini
 		return nil, nil, errors.Annotate(err, "failed to flatten job definition to swarming").Err()
 	}
 
-	st, err := jobexport.ToSwarmingNewTask(jd.GetSwarming(), jd.CasUserPayload)
+	st, err := jobexport.ToSwarmingNewTask(jd.GetSwarming())
 	if err != nil {
 		return nil, nil, err
 	}

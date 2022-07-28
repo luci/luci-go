@@ -70,7 +70,7 @@ func readTestFixture(fixtureBaseName string) *job.Definition {
 		actual, err := marshaler.MarshalToString(jd)
 		So(err, ShouldBeNil)
 
-		So(string(current), ShouldEqual, actual)
+		So(actual, ShouldEqual, string(current))
 	}
 
 	return jd

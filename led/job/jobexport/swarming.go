@@ -32,13 +32,8 @@ var (
 
 // ToSwarmingNewTask renders a swarming proto task to a
 // SwarmingRpcsNewTaskRequest.
-// TODO(crbug.com/1345722): remove casUserPayload from argument list after
-// led operates on Build instead of Buildbucket.
-func ToSwarmingNewTask(sw *job.Swarming, casUserPayload *apipb.CASReference) (*swarming.SwarmingRpcsNewTaskRequest, error) {
+func ToSwarmingNewTask(sw *job.Swarming) (*swarming.SwarmingRpcsNewTaskRequest, error) {
 	task := sw.Task
-	if sw.GetCasUserPayload() != nil && sw.GetCasUserPayload().GetDigest() != nil {
-		casUserPayload = sw.CasUserPayload
-	}
 	ret := &swarming.SwarmingRpcsNewTaskRequest{
 		BotPingToleranceSecs: task.GetBotPingTolerance().GetSeconds(),
 		Name:                 task.Name,
@@ -56,8 +51,8 @@ func ToSwarmingNewTask(sw *job.Swarming, casUserPayload *apipb.CASReference) (*s
 		}
 	}
 
+	casUserPayload := sw.GetCasUserPayload()
 	cupDigest := casUserPayload.GetDigest()
-
 	for i, slice := range task.TaskSlices {
 		props := slice.Properties
 

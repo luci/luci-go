@@ -180,7 +180,7 @@ func (c *cmdEdit) execute(ctx context.Context, _ *http.Client, _ auth.Options, i
 					if digest, err = job.ToCasDigest(c.recipeIsolate); err != nil {
 						return
 					}
-					inJob.CasUserPayload.Digest = digest
+					je.CASTaskPayload("", &apipb.CASReference{Digest: digest})
 				}
 				je.TaskPayloadSource(pkg, ver)
 			}

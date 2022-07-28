@@ -17,6 +17,7 @@ package job
 import (
 	bbpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/errors"
+	swarmingpb "go.chromium.org/luci/swarming/proto/api"
 )
 
 // Editor represents low-level mutations you can make on a job.Definition.
@@ -113,6 +114,9 @@ type HighLevelEditor interface {
 	// TaskPayloadPath sets the location of where bbagent should locate the task
 	// payload data within the task.
 	TaskPayloadPath(path string)
+
+	// CASTaskPayload sets the cas reference as the build's user payload.
+	CASTaskPayload(path string, casRef *swarmingpb.CASReference)
 
 	// TaskPayloadCmd sets the arguments used to run the task payload.
 	//

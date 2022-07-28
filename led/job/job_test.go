@@ -170,13 +170,29 @@ func TestFlattenToSwarming(t *testing.T) {
 				je.TaskPayloadSource("", "")
 				je.TaskPayloadPath("some/path")
 			})
-			bbJob.CasUserPayload = &swarmingpb.CASReference{
-				CasInstance: "projects/chromium-swarm-dev/instances/default_instance",
-				Digest: &swarmingpb.Digest{
-					Hash:      "b7c329e532e221e23809ba23f9af5b309aa17d490d845580207493d381998bd9",
-					SizeBytes: 24,
+			bbJob.GetBuildbucket().BbagentArgs.Build.Infra.Buildbucket = &bbpb.BuildInfra_Buildbucket{
+				Agent: &bbpb.BuildInfra_Buildbucket_Agent{
+					Input: &bbpb.BuildInfra_Buildbucket_Agent_Input{
+						Data: map[string]*bbpb.InputDataRef{
+							"payload_path": {
+								DataType: &bbpb.InputDataRef_Cas{
+									Cas: &bbpb.InputDataRef_CAS{
+										CasInstance: "projects/chromium-swarm-dev/instances/default_instance",
+										Digest: &bbpb.InputDataRef_CAS_Digest{
+											Hash:      "b7c329e532e221e23809ba23f9af5b309aa17d490d845580207493d381998bd9",
+											SizeBytes: 24,
+										},
+									},
+								},
+							},
+						},
+					},
+					Purposes: map[string]bbpb.BuildInfra_Buildbucket_Agent_Purpose{
+						"payload_path": bbpb.BuildInfra_Buildbucket_Agent_PURPOSE_EXE_PAYLOAD,
+					},
 				},
 			}
+
 			So(bbJob.FlattenToSwarming(ctx, "username", "parent_task_id", NoKitchenSupport(), "off"), ShouldBeNil)
 
 			sw := bbJob.GetSwarming()

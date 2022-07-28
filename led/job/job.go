@@ -110,14 +110,17 @@ func (jd *Definition) addLedProperties(ctx context.Context, uid string) (err err
 	// The logdog prefix is unique to each led job, so it can be used as an
 	// ID for the job.
 	props := ledProperties{LedRunID: logdogProjectPrefix}
-
+	casUserPayload, err := jd.Info().CurrentIsolated()
+	if err != nil {
+		return errors.Annotate(err, "failed to get CAS user payload for the build").Err()
+	}
 	if exe := bb.GetBbagentArgs().GetBuild().GetExe(); exe.GetCipdPackage() != "" {
 		props.CIPDInput = &cipdInput{
 			Package: exe.CipdPackage,
 			Version: exe.CipdVersion,
 		}
-	} else if payload := jd.GetCasUserPayload(); payload.GetDigest() != nil {
-		props.RbeCasInput = proto.Clone(payload).(*swarmingpb.CASReference)
+	} else if casUserPayload.GetDigest() != nil {
+		props.RbeCasInput = proto.Clone(casUserPayload).(*swarmingpb.CASReference)
 	}
 
 	// in case both isolate and rbe-cas properties are set in "$recipe_engine/led".
@@ -373,9 +376,13 @@ func (jd *Definition) FlattenToSwarming(ctx context.Context, uid, parentTaskId s
 		}
 	}
 
+	casUserPayload, err := jd.Info().CurrentIsolated()
+	if err != nil {
+		return errors.Annotate(err, "failed to get CAS user payload for the build").Err()
+	}
 	baseProperties := &swarmingpb.TaskProperties{
 		CipdInputs:   append(([]*swarmingpb.CIPDPackage)(nil), bb.CipdPackages...),
-		CasInputRoot: jd.CasUserPayload,
+		CasInputRoot: casUserPayload,
 
 		EnvPaths:         bb.EnvPrefixes,
 		ExecutionTimeout: bb.BbagentArgs.Build.ExecutionTimeout,

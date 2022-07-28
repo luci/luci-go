@@ -119,12 +119,5 @@
         "size_bytes": "24"
       }
     }
-  },
-  "cas_user_payload": {
-    "cas_instance": "projects/chromium-swarm-dev/instances/default_instance",
-    "digest": {
-      "hash": "b7c329e532e221e23809ba23f9af5b309aa17d490d845580207493d381998bd9",
-      "size_bytes": "24"
-    }
   }
 }

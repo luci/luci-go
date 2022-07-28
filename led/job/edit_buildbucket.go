@@ -26,13 +26,12 @@ import (
 	bbpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
-	api "go.chromium.org/luci/swarming/proto/api"
+	swarmingpb "go.chromium.org/luci/swarming/proto/api"
 )
 
 type buildbucketEditor struct {
-	jd             *Definition
-	bb             *Buildbucket
-	casUserPayload *api.CASReference
+	jd *Definition
+	bb *Buildbucket
 
 	err error
 }
@@ -46,7 +45,7 @@ func newBuildbucketEditor(jd *Definition) *buildbucketEditor {
 	}
 	bb.EnsureBasics()
 
-	return &buildbucketEditor{jd, bb, jd.CasUserPayload, nil}
+	return &buildbucketEditor{jd, bb, nil}
 }
 
 func (bbe *buildbucketEditor) Close() error {
@@ -98,6 +97,65 @@ func (bbe *buildbucketEditor) TaskPayloadSource(cipdPkg, cipdVers string) {
 func (bbe *buildbucketEditor) TaskPayloadPath(path string) {
 	bbe.tweak(func() error {
 		bbe.bb.BbagentArgs.PayloadPath = path
+		agent := bbe.bb.BbagentArgs.Build.Infra.Buildbucket.GetAgent()
+		if agent == nil {
+			agent = &bbpb.BuildInfra_Buildbucket_Agent{
+				Input:    &bbpb.BuildInfra_Buildbucket_Agent_Input{},
+				Purposes: map[string]bbpb.BuildInfra_Buildbucket_Agent_Purpose{},
+			}
+			bbe.bb.BbagentArgs.Build.Infra.Buildbucket.Agent = agent
+		}
+		agent.Purposes[path] = bbpb.BuildInfra_Buildbucket_Agent_PURPOSE_EXE_PAYLOAD
+		return nil
+	})
+}
+
+func (bbe *buildbucketEditor) CASTaskPayload(path string, casRef *swarmingpb.CASReference) {
+	bbe.tweak(func() error {
+		if path != "" {
+			bbe.TaskPayloadPath(path)
+		} else {
+			purposes := bbe.bb.BbagentArgs.Build.Infra.Buildbucket.GetAgent().GetPurposes()
+			for dir, pur := range purposes {
+				if pur == bbpb.BuildInfra_Buildbucket_Agent_PURPOSE_EXE_PAYLOAD {
+					path = dir
+					break
+				}
+			}
+		}
+
+		if path == "" {
+			return errors.Reason("failed to get exe payload path").Err()
+		}
+
+		input := bbe.bb.BbagentArgs.Build.Infra.Buildbucket.Agent.Input
+		inputData := input.GetData()
+		if len(inputData) == 0 {
+			inputData = make(map[string]*bbpb.InputDataRef)
+			input.Data = inputData
+		}
+
+		if ref, ok := inputData[path]; ok && ref.GetCas() != nil {
+			if casRef.CasInstance != "" {
+				ref.GetCas().CasInstance = casRef.CasInstance
+			}
+			ref.GetCas().Digest = &bbpb.InputDataRef_CAS_Digest{
+				Hash:      casRef.GetDigest().GetHash(),
+				SizeBytes: casRef.GetDigest().GetSizeBytes(),
+			}
+		} else {
+			inputData[path] = &bbpb.InputDataRef{
+				DataType: &bbpb.InputDataRef_Cas{
+					Cas: &bbpb.InputDataRef_CAS{
+						CasInstance: casRef.CasInstance,
+						Digest: &bbpb.InputDataRef_CAS_Digest{
+							Hash:      casRef.GetDigest().GetHash(),
+							SizeBytes: casRef.GetDigest().GetSizeBytes(),
+						},
+					},
+				},
+			}
+		}
 		return nil
 	})
 }
@@ -114,8 +172,27 @@ func (bbe *buildbucketEditor) TaskPayloadCmd(args []string) {
 
 func (bbe *buildbucketEditor) ClearCurrentIsolated() {
 	bbe.tweak(func() error {
-		bbe.casUserPayload = nil
-		bbe.jd.CasUserPayload = nil
+		agent := bbe.bb.BbagentArgs.Build.GetInfra().GetBuildbucket().GetAgent()
+		if agent == nil {
+			return nil
+		}
+
+		payloadPath := ""
+		for p, purpose := range agent.GetPurposes() {
+			if purpose == bbpb.BuildInfra_Buildbucket_Agent_PURPOSE_EXE_PAYLOAD {
+				payloadPath = p
+				break
+			}
+		}
+		if payloadPath == "" {
+			return nil
+		}
+		inputData := agent.GetInput().GetData()
+		if ref, ok := inputData[payloadPath]; ok {
+			if ref.GetCas() != nil {
+				delete(inputData, payloadPath)
+			}
+		}
 		return nil
 	})
 }

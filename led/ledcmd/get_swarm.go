@@ -136,26 +136,22 @@ func GetFromSwarmingTask(ctx context.Context, authClient *http.Client, bld *bbpb
 		}
 	}
 
-	if err := fillCasDefaults(jd); err != nil {
-		return nil, err
-	}
 	return jd, nil
 }
 
 // fill the cas default if no isolate inputs.
 func fillCasDefaults(jd *job.Definition) error {
-	if jd.CasUserPayload.GetCasInstance() == "" {
+	sw := jd.GetSwarming()
+	if sw != nil && sw.GetCasUserPayload().GetCasInstance() == "" {
 		cas, err := jd.CasInstance()
 		if err != nil {
 			return err
 		}
-		jd.CasUserPayload = &swarmingpb.CASReference{
+		sw.CasUserPayload = &swarmingpb.CASReference{
 			CasInstance: cas,
 		}
 	}
-	if jd.GetSwarming() != nil && jd.GetSwarming().GetCasUserPayload() == nil {
-		jd.GetSwarming().CasUserPayload = jd.CasUserPayload
-	}
+
 	return nil
 }
 

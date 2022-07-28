@@ -111,13 +111,13 @@
       "name": "led: test_name",
       "bot_ping_tolerance": "1200s"
     },
-    "hostname": "swarming.example.com"
-  },
-  "cas_user_payload": {
-    "cas_instance": "projects/chromium-swarm-dev/instances/default_instance",
-    "digest": {
-      "hash": "b7c329e532e221e23809ba23f9af5b309aa17d490d845580207493d381998bd9",
-      "size_bytes": "24"
+    "hostname": "swarming.example.com",
+    "cas_user_payload": {
+      "cas_instance": "projects/chromium-swarm-dev/instances/default_instance",
+      "digest": {
+        "hash": "b7c329e532e221e23809ba23f9af5b309aa17d490d845580207493d381998bd9",
+        "size_bytes": "24"
+      }
     }
   }
 }

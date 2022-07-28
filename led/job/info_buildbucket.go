@@ -24,8 +24,6 @@ import (
 
 type bbInfo struct {
 	*Buildbucket
-
-	casUserPayload *swarmingpb.CASReference
 }
 
 var _ Info = bbInfo{}
@@ -39,8 +37,33 @@ func (b bbInfo) TaskName() string {
 }
 
 func (b bbInfo) CurrentIsolated() (*swarmingpb.CASReference, error) {
-	if b.casUserPayload.GetDigest().GetHash() != "" {
-		return proto.Clone(b.casUserPayload).(*swarmingpb.CASReference), nil
+	agent := b.GetBbagentArgs().GetBuild().GetInfra().GetBuildbucket().GetAgent()
+	if agent == nil {
+		return nil, nil
+	}
+
+	payloadPath := ""
+	for p, purpose := range agent.GetPurposes() {
+		if purpose == bbpb.BuildInfra_Buildbucket_Agent_PURPOSE_EXE_PAYLOAD {
+			payloadPath = p
+			break
+		}
+	}
+	if payloadPath == "" {
+		return nil, nil
+	}
+	inputData := agent.GetInput().GetData()
+	if ref, ok := inputData[payloadPath]; ok {
+		cas := ref.GetCas()
+		if cas != nil {
+			return &swarmingpb.CASReference{
+				CasInstance: cas.GetCasInstance(),
+				Digest: &swarmingpb.Digest{
+					Hash:      cas.GetDigest().GetHash(),
+					SizeBytes: cas.GetDigest().GetSizeBytes(),
+				},
+			}, nil
+		}
 	}
 	return nil, nil
 }

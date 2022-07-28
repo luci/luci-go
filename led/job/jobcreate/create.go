@@ -61,11 +61,7 @@ func FromNewTaskRequest(ctx context.Context, r *swarming.SwarmingRpcsNewTaskRequ
 		return nil, errors.New("swarming tasks without task slices are not supported")
 	}
 
-	ret = &job.Definition{
-		CasUserPayload: &swarmingpb.CASReference{
-			Digest: &swarmingpb.Digest{},
-		},
-	}
+	ret = &job.Definition{}
 	name = "led: " + name
 
 	switch detectMode(r) {
@@ -158,15 +154,47 @@ func FromNewTaskRequest(ctx context.Context, r *swarming.SwarmingRpcsNewTaskRequ
 	}
 
 	// ensure isolate/rbe-cas source consistency
+	casUserPayload := &swarmingpb.CASReference{
+		Digest: &swarmingpb.Digest{},
+	}
 	for i, slice := range r.TaskSlices {
 		if cir := slice.Properties.CasInputRoot; cir != nil {
-			if err := populateCasPayload(ret.CasUserPayload, cir); err != nil {
+			if err := populateCasPayload(casUserPayload, cir); err != nil {
 				return nil, errors.Annotate(err, "task slice %d", i).Err()
 			}
 		}
 	}
 	if ret.GetSwarming() != nil {
-		ret.GetSwarming().CasUserPayload = ret.CasUserPayload
+		ret.GetSwarming().CasUserPayload = casUserPayload
+	}
+	if ret.GetBuildbucket() != nil {
+		// `led get-builder` is still using swarmingbucket.get_task_def, so
+		// we need to fill in the data to ret.GetBuildbucket() for its builds.
+		// TODO(crbug.com/1345722): remove this after we migrate away from
+		// swarmingbucket.get_task_def.
+		agent := ret.GetBuildbucket().BbagentArgs.Build.Infra.Buildbucket.GetAgent()
+		if agent == nil {
+			agent = &bbpb.BuildInfra_Buildbucket_Agent{
+				Input: &bbpb.BuildInfra_Buildbucket_Agent_Input{
+					Data: map[string]*bbpb.InputDataRef{},
+				},
+				Purposes: map[string]bbpb.BuildInfra_Buildbucket_Agent_Purpose{},
+			}
+			ret.GetBuildbucket().BbagentArgs.Build.Infra.Buildbucket.Agent = agent
+		}
+		payloadPath := ret.GetBuildbucket().BbagentArgs.PayloadPath
+		agent.Purposes[payloadPath] = bbpb.BuildInfra_Buildbucket_Agent_PURPOSE_EXE_PAYLOAD
+		agent.Input.Data[payloadPath] = &bbpb.InputDataRef{
+			DataType: &bbpb.InputDataRef_Cas{
+				Cas: &bbpb.InputDataRef_CAS{
+					CasInstance: casUserPayload.GetCasInstance(),
+					Digest: &bbpb.InputDataRef_CAS_Digest{
+						Hash:      casUserPayload.GetDigest().GetHash(),
+						SizeBytes: casUserPayload.GetDigest().GetSizeBytes(),
+					},
+				},
+			},
+		}
 	}
 
 	return ret, err

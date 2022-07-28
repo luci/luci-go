@@ -44,7 +44,24 @@
         },
         "infra": {
           "buildbucket": {
-
+            "agent": {
+              "input": {
+                "data": {
+                  "kitchen-checkout": {
+                    "cas": {
+                      "cas_instance": "projects/chromium-swarm-dev/instances/default_instance",
+                      "digest": {
+                        "hash": "b7c329e532e221e23809ba23f9af5b309aa17d490d845580207493d381998bd9",
+                        "size_bytes": "24"
+                      }
+                    }
+                  }
+                }
+              },
+              "purposes": {
+                "kitchen-checkout": "PURPOSE_EXE_PAYLOAD"
+              }
+            }
           },
           "swarming": {
             "hostname": "chromium-swarm-dev.appspot.com",
@@ -220,12 +237,5 @@
     },
     "name": "led: test_name",
     "final_build_proto_path": "build.proto.json"
-  },
-  "cas_user_payload": {
-    "cas_instance": "projects/chromium-swarm-dev/instances/default_instance",
-    "digest": {
-      "hash": "b7c329e532e221e23809ba23f9af5b309aa17d490d845580207493d381998bd9",
-      "size_bytes": "24"
-    }
   }
 }

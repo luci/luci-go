@@ -114,7 +114,7 @@ type HighLevelInfo interface {
 // Returns nil if the Definition doesn't support Info().
 func (jd *Definition) Info() Info {
 	if bb := jd.GetBuildbucket(); bb != nil {
-		return bbInfo{bb, jd.CasUserPayload}
+		return bbInfo{bb}
 	} else if sw := jd.GetSwarming(); sw != nil {
 		return swInfo{sw}
 	}
@@ -128,7 +128,7 @@ func (jd *Definition) Info() Info {
 // returns nil.
 func (jd *Definition) HighLevelInfo() HighLevelInfo {
 	if bb := jd.GetBuildbucket(); bb != nil {
-		return bbInfo{bb, jd.CasUserPayload}
+		return bbInfo{bb}
 	}
 	return nil
 }

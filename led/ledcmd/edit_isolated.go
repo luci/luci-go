@@ -134,7 +134,6 @@ func EditIsolated(ctx context.Context, authOpts auth.Options, jd *job.Definition
 		return errors.Annotate(err, "errors in uploadToCas").Err()
 	}
 	logging.Infof(ctx, "isolated upload: done")
-	jd.CasUserPayload = casRef
 	if jd.GetSwarming() != nil {
 		jd.GetSwarming().CasUserPayload = casRef
 	}

@@ -17,9 +17,11 @@ package job
 import (
 	"testing"
 
+	bbpb "go.chromium.org/luci/buildbucket/proto"
+	api "go.chromium.org/luci/swarming/proto/api"
+
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
-	api "go.chromium.org/luci/swarming/proto/api"
 )
 
 func TestGetCurrentIsolated(t *testing.T) {
@@ -34,7 +36,32 @@ func TestGetCurrentIsolated(t *testing.T) {
 
 		Convey(`CasUserPayload`, func() {
 			jd := testBBJob()
-			jd.CasUserPayload = &api.CASReference{Digest: &api.Digest{Hash: "hash"}}
+			jd.GetBuildbucket().BbagentArgs = &bbpb.BBAgentArgs{
+				Build: &bbpb.Build{
+					Infra: &bbpb.BuildInfra{
+						Buildbucket: &bbpb.BuildInfra_Buildbucket{
+							Agent: &bbpb.BuildInfra_Buildbucket_Agent{
+								Input: &bbpb.BuildInfra_Buildbucket_Agent_Input{
+									Data: map[string]*bbpb.InputDataRef{
+										"payload_path": {
+											DataType: &bbpb.InputDataRef_Cas{
+												Cas: &bbpb.InputDataRef_CAS{
+													Digest: &bbpb.InputDataRef_CAS_Digest{
+														Hash: "hash",
+													},
+												},
+											},
+										},
+									},
+								},
+								Purposes: map[string]bbpb.BuildInfra_Buildbucket_Agent_Purpose{
+									"payload_path": bbpb.BuildInfra_Buildbucket_Agent_PURPOSE_EXE_PAYLOAD,
+								},
+							},
+						},
+					},
+				},
+			}
 			current, err := jd.Info().CurrentIsolated()
 			So(err, ShouldBeNil)
 			So(current, ShouldResemble, &api.CASReference{Digest: &api.Digest{Hash: "hash"}})

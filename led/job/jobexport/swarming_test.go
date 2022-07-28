@@ -48,7 +48,7 @@ func readTestFixture(fixtureBaseName string) *swarming.SwarmingRpcsNewTaskReques
 	So(jd.FlattenToSwarming(ctx, "testuser@example.com", "293109284abc", job.NoKitchenSupport(), "off"),
 		ShouldBeNil)
 
-	ret, err := ToSwarmingNewTask(jd.GetSwarming(), jd.CasUserPayload)
+	ret, err := ToSwarmingNewTask(jd.GetSwarming())
 	So(err, ShouldBeNil)
 
 	outFile := fmt.Sprintf("testdata/%s.swarm.json", fixtureBaseName)
