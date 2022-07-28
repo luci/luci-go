@@ -827,8 +827,10 @@ type QuotaPolicy struct {
 	//
 	// Each entry can be either an identity string "user:<email>"
 	// or a LUCI group reference "group:<name>"
-	Principals   []string                  `protobuf:"bytes,2,rep,name=principals,proto3" json:"principals,omitempty"`
-	RunLimits    *QuotaPolicy_RunLimits    `protobuf:"bytes,5,opt,name=run_limits,json=runLimits,proto3" json:"run_limits,omitempty"`
+	Principals []string `protobuf:"bytes,2,rep,name=principals,proto3" json:"principals,omitempty"`
+	// Run limits. Required.
+	RunLimits *QuotaPolicy_RunLimits `protobuf:"bytes,5,opt,name=run_limits,json=runLimits,proto3" json:"run_limits,omitempty"`
+	// Tryjob limits. Required
 	TryjobLimits *QuotaPolicy_TryjobLimits `protobuf:"bytes,6,opt,name=tryjob_limits,json=tryjobLimits,proto3" json:"tryjob_limits,omitempty"`
 }
 

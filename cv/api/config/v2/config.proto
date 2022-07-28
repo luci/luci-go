@@ -813,6 +813,8 @@ message QuotaPolicy {
         Limit max_active = 1;
     }
 
+    // Run limits. Required.
     RunLimits run_limits = 5;
+    // Tryjob limits. Required
     TryjobLimits tryjob_limits = 6;
 }

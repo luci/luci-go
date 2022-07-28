@@ -25,6 +25,7 @@ import (
 
 	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/common/data/stringset"
+	"go.chromium.org/luci/common/errors"
 	luciconfig "go.chromium.org/luci/config"
 	"go.chromium.org/luci/config/validation"
 	"google.golang.org/protobuf/encoding/prototext"
@@ -670,7 +671,33 @@ func validateQuotaPolicy(ctx *validation.Context, p *cfgpb.QuotaPolicy, namesSee
 		}
 		ctx.Exit()
 	}
-	// TODO(ddomna): validate run_limits and tryjob_limits.
+
+	ctx.Enter("run_limits")
+	switch limits := p.GetRunLimits(); {
+	case limits == nil:
+		ctx.Errorf("missing; set all limits with `unlimited` if there are no limits")
+	default:
+		ctx.Enter("max_active")
+		if err := validateLimit(limits.GetMaxActive()); err != nil {
+			ctx.Errorf("%s", err)
+		}
+		ctx.Exit()
+	}
+	ctx.Exit()
+
+	ctx.Enter("tryjob_limits")
+	switch limits := p.GetTryjobLimits(); {
+	case limits == nil:
+		ctx.Errorf("missing; set all limits with `unlimited` if there are no limits")
+	default:
+		ctx.Enter("max_active")
+		if err := validateLimit(limits.GetMaxActive()); err != nil {
+			ctx.Errorf("%s", err)
+		}
+		ctx.Exit()
+	}
+	ctx.Exit()
+
 }
 
 func validatePrincipalID(id string) error {
@@ -688,4 +715,19 @@ func validatePrincipalID(id string) error {
 		return err
 	}
 	return fmt.Errorf("unknown principal type %q", chunks[0])
+}
+
+func validateLimit(l *cfgpb.QuotaPolicy_Limit) error {
+	switch l.GetLimit().(type) {
+	case *cfgpb.QuotaPolicy_Limit_Unlimited:
+	case *cfgpb.QuotaPolicy_Limit_Value:
+		if val := l.GetValue(); val < 1 {
+			return errors.Reason("invalid limit %d; must be > 0", val).Err()
+		}
+	case nil:
+		return errors.Reason("missing; set `unlimited` if there is no limit").Err()
+	default:
+		return errors.Reason("unknown limit type %T", l.GetLimit()).Err()
+	}
+	return nil
 }
