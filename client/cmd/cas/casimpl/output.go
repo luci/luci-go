@@ -24,6 +24,56 @@ import (
 	"go.chromium.org/luci/common/errors"
 )
 
+type StatusCode int
+
+// possible exit errors
+const (
+	// Bad command line arguments were provided
+	ArgumentsInvalid StatusCode = iota
+	// Error authenticating with RBE-CAS server
+	AuthenticationError
+	// Error instantiating a new RBE client
+	ClientError
+	// The provided digest is bad and the file/dir cannot be found
+	DigestInvalid
+	// Disk I/O issues
+	IOError
+	// Issue with RPC to RBE-CAS server
+	RPCError
+	// Any uncategorised error
+	Unknown
+)
+
+// writeExitResult writes the status msg
+func writeExitResult(path string, statusCode StatusCode) error {
+	if path == "" {
+		return nil
+	}
+
+	var toString = map[StatusCode]string{
+		ArgumentsInvalid:    "arguments_invalid",
+		AuthenticationError: "authentication_error",
+		ClientError:         "client_error",
+		DigestInvalid:       "digest_invalid",
+		IOError:             "io_error",
+		RPCError:            "rpc_error",
+		Unknown:             "unknown",
+	}
+
+	body, err := json.Marshal(struct {
+		Result string `json:"result"`
+	}{
+		Result: toString[statusCode],
+	})
+	if err != nil {
+		return errors.Annotate(err, "failed to marshal json").Err()
+	}
+	if err := ioutil.WriteFile(path, body, 0600); err != nil {
+		return errors.Annotate(err, "failed to write json").Err()
+	}
+	return nil
+}
+
 // writeStats writes cache stats in packed format.
 func writeStats(path string, hot, cold []int64) error {
 	// Copy before sort.
@@ -46,15 +96,17 @@ func writeStats(path string, hot, cold []int64) error {
 	statsJSON, err := json.Marshal(struct {
 		ItemsCold []byte `json:"items_cold"`
 		ItemsHot  []byte `json:"items_hot"`
+		Result    string `json:"result"`
 	}{
 		ItemsCold: packedCold,
 		ItemsHot:  packedHot,
+		Result:    "success",
 	})
 	if err != nil {
-		return errors.Annotate(err, "failed to marshal stats json").Err()
+		return errors.Annotate(err, "failed to marshal json").Err()
 	}
 	if err := ioutil.WriteFile(path, statsJSON, 0600); err != nil {
-		return errors.Annotate(err, "failed to write stats json").Err()
+		return errors.Annotate(err, "failed to write json").Err()
 	}
 
 	return nil

@@ -55,7 +55,8 @@ working directory, '-paths :foo' is sufficient.`,
 			c.Init(authFlags)
 			c.Flags.Var(&c.paths, "paths", "File(s)/Directory(ies) to archive. Specify as <working directory>:<relative path to file/dir>")
 			c.Flags.StringVar(&c.dumpDigest, "dump-digest", "", "Dump uploaded CAS root digest to file in the format of '<Hash>/<Size>'")
-			c.Flags.StringVar(&c.dumpStatsJSON, "dump-stats-json", "", "Dump upload stats to json file.")
+			c.Flags.StringVar(&c.dumpJSON, "dump-json", "", "Dump upload stats to json file.")
+			c.Flags.StringVar(&c.dumpJSON, "dump-stats-json", "", "Dump upload stats to json file (deprecated).")
 			return &c
 		},
 	}
@@ -63,9 +64,9 @@ working directory, '-paths :foo' is sufficient.`,
 
 type archiveRun struct {
 	commonFlags
-	paths         scatterGather
-	dumpDigest    string
-	dumpStatsJSON string
+	paths      scatterGather
+	dumpDigest string
+	dumpJSON   string
 }
 
 func (c *archiveRun) parse(a subcommands.Application, args []string) error {
@@ -114,6 +115,9 @@ func (c *archiveRun) doArchive(ctx context.Context) error {
 
 	root, err := getRoot(c.paths)
 	if err != nil {
+		if err := writeExitResult(c.dumpJSON, IOError); err != nil {
+			return errors.Annotate(err, "failed to write json file").Err()
+		}
 		return err
 	}
 
@@ -124,6 +128,9 @@ func (c *archiveRun) doArchive(ctx context.Context) error {
 
 	client, err := c.authFlags.NewRBEClient(ctx, c.casFlags.Addr, c.casFlags.Instance, false)
 	if err != nil {
+		if err := writeExitResult(c.dumpJSON, ClientError); err != nil {
+			return errors.Annotate(err, "failed to write json file").Err()
+		}
 		return errors.Annotate(err, "failed to create cas client").Err()
 	}
 	defer client.Close()
@@ -132,6 +139,9 @@ func (c *archiveRun) doArchive(ctx context.Context) error {
 
 	rootDg, entries, _, err := client.ComputeMerkleTree(root, "", "", &is, filemetadata.NewNoopCache())
 	if err != nil {
+		if err := writeExitResult(c.dumpJSON, IOError); err != nil {
+			return errors.Annotate(err, "failed to write json file").Err()
+		}
 		return errors.Annotate(err, "failed to call ComputeMerkleTree").Err()
 	}
 	logging.Infof(ctx, "ComputeMerkleTree took %s", time.Since(start))
@@ -139,19 +149,25 @@ func (c *archiveRun) doArchive(ctx context.Context) error {
 	start = time.Now()
 	uploadedDigests, moved, err := client.UploadIfMissing(ctx, entries...)
 	if err != nil {
+		if err := writeExitResult(c.dumpJSON, RPCError); err != nil {
+			return errors.Annotate(err, "failed to write json file").Err()
+		}
 		return errors.Annotate(err, "failed to call UploadIfMissing").Err()
 	}
 	logging.Infof(ctx, "UploadIfMissing took %s, moved %d bytes", time.Since(start), moved)
 
 	if dd := c.dumpDigest; dd != "" {
 		if err := ioutil.WriteFile(dd, []byte(rootDg.String()), 0600); err != nil {
+			if err := writeExitResult(c.dumpJSON, IOError); err != nil {
+				return errors.Annotate(err, "failed to write json file").Err()
+			}
 			return errors.Annotate(err, "failed to dump digest").Err()
 		}
 	} else {
 		fmt.Printf("uploaded digest is %s\n", rootDg.String())
 	}
 
-	if dsj := c.dumpStatsJSON; dsj != "" {
+	if dsj := c.dumpJSON; dsj != "" {
 		uploaded := make([]int64, len(uploadedDigests))
 		uploadedSet := make(map[digest.Digest]struct{})
 		for i, d := range uploadedDigests {
@@ -167,7 +183,7 @@ func (c *archiveRun) doArchive(ctx context.Context) error {
 		}
 
 		if err := writeStats(dsj, notUploaded, uploaded); err != nil {
-			return errors.Annotate(err, "failed to write stats json").Err()
+			return errors.Annotate(err, "failed to write json file").Err()
 		}
 	}
 
@@ -180,6 +196,9 @@ func (c *archiveRun) Run(a subcommands.Application, args []string, env subcomman
 	if err := c.parse(a, args); err != nil {
 		errors.Log(ctx, err)
 		fmt.Fprintf(a.GetErr(), "%s: %s\n", a.GetName(), err)
+		if err := writeExitResult(c.dumpJSON, ArgumentsInvalid); err != nil {
+			fmt.Fprintf(a.GetErr(), "failed to write json file")
+		}
 		return 1
 	}
 	defer c.profiler.Stop()

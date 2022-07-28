@@ -59,13 +59,13 @@ func TestArchiveAndDownloadCommand(t *testing.T) {
 
 		outDir := t.TempDir()
 		digestPath := filepath.Join(outDir, "out.digest")
-		uploadStatsJSONPath := filepath.Join(outDir, "upload-stats.json")
+		uploadJSONPath := filepath.Join(outDir, "upload-stats.json")
 
 		archiveFlags := []string{
 			"-dump-digest",
 			digestPath,
-			"-dump-stats-json",
-			uploadStatsJSONPath,
+			"-dump-json",
+			uploadJSONPath,
 			"-paths",
 			fmt.Sprintf("%s:%s", uploadDir, "foo"),
 		}
@@ -77,14 +77,14 @@ func TestArchiveAndDownloadCommand(t *testing.T) {
 		So(digest, ShouldEqual, "1ec750cf7c4ebc220a753a705229574873b3c650b939cf4a69df1af84b40b981/77")
 
 		Convey("and download", func() {
-			downloadStatsJSONPath := filepath.Join(outDir, "download-stats.json")
+			downloadJSONPath := filepath.Join(outDir, "download-stats.json")
 			downloadDir := filepath.Join(outDir, "out")
 
 			downloadFlags := []string{
 				"-digest",
 				digest,
-				"-dump-stats-json",
-				downloadStatsJSONPath,
+				"-dump-json",
+				downloadJSONPath,
 				"-dir",
 				downloadDir,
 			}
