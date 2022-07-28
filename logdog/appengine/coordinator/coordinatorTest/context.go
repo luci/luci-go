@@ -33,7 +33,6 @@ import (
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/logging/gologger"
 	"go.chromium.org/luci/common/logging/memlogger"
-	configPB "go.chromium.org/luci/common/proto/config"
 	"go.chromium.org/luci/config"
 	"go.chromium.org/luci/config/cfgclient"
 	"go.chromium.org/luci/config/impl/memory"
@@ -226,11 +225,8 @@ func Install(useRealIndex bool) (context.Context, *Environment) {
 
 	// luci-config: Projects.
 	addProjectConfig := func(project string, access ...string) {
-		projectAccesses := make([]string, len(access))
-
-		// Build our service config. Also builds "projectAccesses".
 		e.ModProjectConfig(c, project, func(pcfg *svcconfig.ProjectConfig) {
-			for i, a := range access {
+			for _, a := range access {
 				parts := strings.SplitN(a, ":", 2)
 				group, field := parts[0], &pcfg.ReaderAuthGroups
 				if len(parts) == 2 {
@@ -244,15 +240,6 @@ func Install(useRealIndex bool) (context.Context, *Environment) {
 					}
 				}
 				*field = append(*field, group)
-				projectAccesses[i] = fmt.Sprintf("group:%s", group)
-			}
-		})
-
-		var pcfg configPB.ProjectCfg
-		e.modTextProtobuf(c, config.ProjectSet(project), "project.cfg", &pcfg, func() {
-			pcfg = configPB.ProjectCfg{
-				Name:   project,
-				Access: projectAccesses,
 			}
 		})
 	}
