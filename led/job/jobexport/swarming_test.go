@@ -67,7 +67,7 @@ func readTestFixture(fixtureBaseName string) *swarming.SwarmingRpcsNewTaskReques
 		actual, err := json.MarshalIndent(ret, "", "  ")
 		So(err, ShouldBeNil)
 
-		So(string(current), ShouldEqual, string(actual)+"\n")
+		So(string(actual)+"\n", ShouldEqual, string(current))
 	}
 
 	return ret

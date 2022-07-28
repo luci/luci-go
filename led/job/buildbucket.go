@@ -56,3 +56,38 @@ func (b *Buildbucket) EnsureBasics() {
 		},
 	}}})
 }
+
+// UpdateBuildbucketAgent updates or populates b.BbagentArgs.Build.Infra.Buildbucket.Agent.
+func (b *Buildbucket) UpdateBuildbucketAgent(updates *bbpb.BuildInfra_Buildbucket_Agent) {
+	if b.BbagentArgs.Build.Infra.Buildbucket.GetAgent() == nil {
+		b.BbagentArgs.Build.Infra.Buildbucket.Agent = &bbpb.BuildInfra_Buildbucket_Agent{}
+	}
+	proto.Merge(b.BbagentArgs.Build.Infra.Buildbucket.Agent, updates)
+}
+
+func (b *Buildbucket) updateBuildbucketAgentPayloadPath(newPath string) {
+	for p, purpose := range b.BbagentArgs.Build.Infra.Buildbucket.GetAgent().GetPurposes() {
+		if purpose == bbpb.BuildInfra_Buildbucket_Agent_PURPOSE_EXE_PAYLOAD {
+			delete(b.BbagentArgs.Build.Infra.Buildbucket.Agent.Purposes, p)
+		}
+	}
+	b.UpdateBuildbucketAgent(&bbpb.BuildInfra_Buildbucket_Agent{
+		Purposes: map[string]bbpb.BuildInfra_Buildbucket_Agent_Purpose{
+			newPath: bbpb.BuildInfra_Buildbucket_Agent_PURPOSE_EXE_PAYLOAD,
+		},
+	})
+}
+
+// UpdateBuildFromBbagentArgs populates fields in b.BbagentArgs.Build
+// from b.BbagentArgs.
+func (b *Buildbucket) UpdateBuildFromBbagentArgs() {
+	b.EnsureBasics()
+	b.BbagentArgs.Build.Infra.Buildbucket.KnownPublicGerritHosts = b.BbagentArgs.KnownPublicGerritHosts
+	b.updateBuildbucketAgentPayloadPath(b.BbagentArgs.PayloadPath)
+}
+
+// UpdatePayloadPath updates the payload path of the led build.
+func (b *Buildbucket) UpdatePayloadPath(newPath string) {
+	b.BbagentArgs.PayloadPath = newPath
+	b.updateBuildbucketAgentPayloadPath(newPath)
+}

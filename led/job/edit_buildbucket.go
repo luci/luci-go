@@ -96,16 +96,7 @@ func (bbe *buildbucketEditor) TaskPayloadSource(cipdPkg, cipdVers string) {
 
 func (bbe *buildbucketEditor) TaskPayloadPath(path string) {
 	bbe.tweak(func() error {
-		bbe.bb.BbagentArgs.PayloadPath = path
-		agent := bbe.bb.BbagentArgs.Build.Infra.Buildbucket.GetAgent()
-		if agent == nil {
-			agent = &bbpb.BuildInfra_Buildbucket_Agent{
-				Input:    &bbpb.BuildInfra_Buildbucket_Agent_Input{},
-				Purposes: map[string]bbpb.BuildInfra_Buildbucket_Agent_Purpose{},
-			}
-			bbe.bb.BbagentArgs.Build.Infra.Buildbucket.Agent = agent
-		}
-		agent.Purposes[path] = bbpb.BuildInfra_Buildbucket_Agent_PURPOSE_EXE_PAYLOAD
+		bbe.bb.UpdatePayloadPath(path)
 		return nil
 	})
 }

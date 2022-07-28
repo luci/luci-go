@@ -76,6 +76,7 @@ func FromNewTaskRequest(ctx context.Context, r *swarming.SwarmingRpcsNewTaskRequ
 		switch {
 		case len(cmd) == 2:
 			bb.BbagentArgs, err = bbinput.Parse(cmd[len(cmd)-1])
+			bb.UpdateBuildFromBbagentArgs()
 		case bld != nil:
 			bb.BbagentArgs = bbagentArgsFromBuild(bld)
 		default:
@@ -135,7 +136,7 @@ func FromNewTaskRequest(ctx context.Context, r *swarming.SwarmingRpcsNewTaskRequ
 			// convert to new mode
 			payload, arg := path.Split(exePath)
 			bb.BbagentArgs.ExecutablePath = ""
-			bb.BbagentArgs.PayloadPath = strings.TrimSuffix(payload, "/")
+			bb.UpdatePayloadPath(strings.TrimSuffix(payload, "/"))
 			bb.BbagentArgs.Build.Exe.Cmd = []string{arg}
 		}
 
@@ -164,6 +165,10 @@ func FromNewTaskRequest(ctx context.Context, r *swarming.SwarmingRpcsNewTaskRequ
 			}
 		}
 	}
+	if casUserPayload.Digest.GetHash() == "" {
+		return ret, err
+	}
+
 	if ret.GetSwarming() != nil {
 		ret.GetSwarming().CasUserPayload = casUserPayload
 	}
@@ -172,29 +177,28 @@ func FromNewTaskRequest(ctx context.Context, r *swarming.SwarmingRpcsNewTaskRequ
 		// we need to fill in the data to ret.GetBuildbucket() for its builds.
 		// TODO(crbug.com/1345722): remove this after we migrate away from
 		// swarmingbucket.get_task_def.
-		agent := ret.GetBuildbucket().BbagentArgs.Build.Infra.Buildbucket.GetAgent()
-		if agent == nil {
-			agent = &bbpb.BuildInfra_Buildbucket_Agent{
-				Input: &bbpb.BuildInfra_Buildbucket_Agent_Input{
-					Data: map[string]*bbpb.InputDataRef{},
-				},
-				Purposes: map[string]bbpb.BuildInfra_Buildbucket_Agent_Purpose{},
-			}
-			ret.GetBuildbucket().BbagentArgs.Build.Infra.Buildbucket.Agent = agent
-		}
 		payloadPath := ret.GetBuildbucket().BbagentArgs.PayloadPath
-		agent.Purposes[payloadPath] = bbpb.BuildInfra_Buildbucket_Agent_PURPOSE_EXE_PAYLOAD
-		agent.Input.Data[payloadPath] = &bbpb.InputDataRef{
-			DataType: &bbpb.InputDataRef_Cas{
-				Cas: &bbpb.InputDataRef_CAS{
-					CasInstance: casUserPayload.GetCasInstance(),
-					Digest: &bbpb.InputDataRef_CAS_Digest{
-						Hash:      casUserPayload.GetDigest().GetHash(),
-						SizeBytes: casUserPayload.GetDigest().GetSizeBytes(),
+		updates := &bbpb.BuildInfra_Buildbucket_Agent{
+			Input: &bbpb.BuildInfra_Buildbucket_Agent_Input{
+				Data: map[string]*bbpb.InputDataRef{
+					payloadPath: {
+						DataType: &bbpb.InputDataRef_Cas{
+							Cas: &bbpb.InputDataRef_CAS{
+								CasInstance: casUserPayload.GetCasInstance(),
+								Digest: &bbpb.InputDataRef_CAS_Digest{
+									Hash:      casUserPayload.GetDigest().GetHash(),
+									SizeBytes: casUserPayload.GetDigest().GetSizeBytes(),
+								},
+							},
+						},
 					},
 				},
 			},
+			Purposes: map[string]bbpb.BuildInfra_Buildbucket_Agent_Purpose{
+				payloadPath: bbpb.BuildInfra_Buildbucket_Agent_PURPOSE_EXE_PAYLOAD,
+			},
 		}
+		ret.GetBuildbucket().UpdateBuildbucketAgent(updates)
 	}
 
 	return ret, err

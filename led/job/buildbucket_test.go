@@ -17,9 +17,11 @@ package job
 import (
 	"testing"
 
-	. "github.com/smartystreets/goconvey/convey"
 	"google.golang.org/protobuf/types/known/structpb"
 
+	bbpb "go.chromium.org/luci/buildbucket/proto"
+
+	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
 )
 
@@ -51,5 +53,54 @@ func TestWriteProperties(t *testing.T) {
 				"hello": {Kind: &structpb.Value_StringValue{StringValue: "world"}},
 			},
 		})
+	})
+}
+
+func TestUpdateBuildFromBbagentArgs(t *testing.T) {
+	t.Parallel()
+
+	Convey(`UpdateBuildFromBbagentArgs`, t, func() {
+		bb := testBBJob().GetBuildbucket()
+		So(bb.GetBbagentArgs().GetBuild().GetInfra().GetBuildbucket().GetAgent(), ShouldBeNil)
+
+		bb.BbagentArgs = &bbpb.BBAgentArgs{
+			PayloadPath:            "payload_path",
+			KnownPublicGerritHosts: []string{"host"},
+		}
+		bb.UpdateBuildFromBbagentArgs()
+
+		So(bb.GetBbagentArgs().GetBuild().GetInfra().GetBuildbucket(), ShouldResembleProto,
+			&bbpb.BuildInfra_Buildbucket{
+				Agent: &bbpb.BuildInfra_Buildbucket_Agent{
+					Purposes: map[string]bbpb.BuildInfra_Buildbucket_Agent_Purpose{
+						"payload_path": bbpb.BuildInfra_Buildbucket_Agent_PURPOSE_EXE_PAYLOAD,
+					},
+				},
+				KnownPublicGerritHosts: []string{"host"},
+			})
+	})
+}
+
+func TestUpdatePayloadPath(t *testing.T) {
+	t.Parallel()
+
+	Convey(`UpdatePayloadPath`, t, func() {
+		bb := testBBJob().GetBuildbucket()
+
+		bb.BbagentArgs = &bbpb.BBAgentArgs{
+			PayloadPath: "payload_path",
+		}
+		bb.UpdateBuildFromBbagentArgs()
+		bb.UpdatePayloadPath("new_path")
+
+		So(bb.GetBbagentArgs().GetPayloadPath(), ShouldEqual, "new_path")
+		So(bb.GetBbagentArgs().GetBuild().GetInfra().GetBuildbucket(), ShouldResembleProto,
+			&bbpb.BuildInfra_Buildbucket{
+				Agent: &bbpb.BuildInfra_Buildbucket_Agent{
+					Purposes: map[string]bbpb.BuildInfra_Buildbucket_Agent_Purpose{
+						"new_path": bbpb.BuildInfra_Buildbucket_Agent_PURPOSE_EXE_PAYLOAD,
+					},
+				},
+			})
 	})
 }
