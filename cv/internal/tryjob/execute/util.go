@@ -35,22 +35,49 @@ func (is intSet) has(value int) bool {
 
 // composeReason puts together information about failing tryjobs.
 func composeReason(tryjobs []*tryjob.Tryjob) string {
-	if len(tryjobs) == 0 {
+	switch len(tryjobs) {
+	case 0:
 		panic(fmt.Errorf("composeReason called without tryjobs"))
-	}
-	var sb strings.Builder
-	sb.WriteString("Failed Tryjobs:")
-	for _, tj := range tryjobs {
-		sb.WriteString("\n* ")
+	case 1: // optimize for most common case
+		tj := tryjobs[0]
+		restricted := tj.Definition.GetResultVisibility() == cfgpb.CommentLevel_COMMENT_LEVEL_RESTRICTED
+		var sb strings.Builder
+		sb.WriteString("Tryjob ")
+		if !restricted {
+			sb.WriteString("`")
+			sb.WriteString(getBuilderName(tj.Definition, tj.Result))
+			sb.WriteString("` ")
+		}
+		sb.WriteString("has failed: ")
 		sb.WriteString(tj.ExternalID.MustURL())
-		if sm := tj.Result.GetBuildbucket().GetSummaryMarkdown(); sm != "" && tj.Definition.ResultVisibility != cfgpb.CommentLevel_COMMENT_LEVEL_RESTRICTED {
+		if sm := tj.Result.GetBuildbucket().GetSummaryMarkdown(); sm != "" && !restricted {
 			for _, line := range strings.Split(sm, "\n") {
-				sb.WriteString("\n ") // indent.
+				sb.WriteString("\n\t") // indent.
 				sb.WriteString(line)
 			}
 		}
+		return sb.String()
+	default:
+		var sb strings.Builder
+		sb.WriteString("Failed Tryjobs:")
+		for _, tj := range tryjobs {
+			restricted := tj.Definition.GetResultVisibility() == cfgpb.CommentLevel_COMMENT_LEVEL_RESTRICTED
+			sb.WriteString("\n* ")
+			if !restricted {
+				sb.WriteString("`")
+				sb.WriteString(getBuilderName(tj.Definition, tj.Result))
+				sb.WriteString("`: ")
+			}
+			sb.WriteString(tj.ExternalID.MustURL())
+			if sm := tj.Result.GetBuildbucket().GetSummaryMarkdown(); sm != "" && !restricted {
+				for _, line := range strings.Split(sm, "\n") {
+					sb.WriteString("\n\t") // indent.
+					sb.WriteString(line)
+				}
+			}
+		}
+		return sb.String()
 	}
-	return sb.String()
 }
 
 func composeLaunchFailureReason(launchFailures map[*tryjob.Definition]string) string {
@@ -105,6 +132,36 @@ func composeLaunchFailureReason(launchFailures map[*tryjob.Definition]string) st
 		sb.WriteString(". But the tryjob names can't be shown due to configuration. Please contact your Project admin for help.")
 	}
 	return sb.String()
+}
+
+// getBuilderName gets the Buildbucket builder name from Tryjob result or
+// Tryjob definition.
+//
+// Tries to get builder name from the result first as it reflects actual
+// builder launched which may or may not be the main builder in the tryjob
+// definition.
+func getBuilderName(def *tryjob.Definition, result *tryjob.Result) string {
+	if result != nil && result.GetBackend() != nil {
+		switch result.GetBackend().(type) {
+		case *tryjob.Result_Buildbucket_:
+			if builder := result.GetBuildbucket().GetBuilder(); builder != nil {
+				return bbutil.FormatBuilderID(builder)
+			}
+		default:
+			panic(fmt.Errorf("non Buildbucket tryjob backend is not supported. got %T", result.GetBackend()))
+		}
+	}
+	if def != nil && def.GetBackend() != nil {
+		switch def.GetBackend().(type) {
+		case *tryjob.Definition_Buildbucket_:
+			if builder := def.GetBuildbucket().GetBuilder(); builder != nil {
+				return bbutil.FormatBuilderID(builder)
+			}
+		default:
+			panic(fmt.Errorf("non Buildbucket tryjob backend is not supported. got %T", def.GetBackend()))
+		}
+	}
+	panic(fmt.Errorf("impossible; can't get builder name from definition and result. Definition: %s; Result: %s", def, result))
 }
 
 func makeLogTryjobSnapshot(def *tryjob.Definition, tj *tryjob.Tryjob) *tryjob.ExecutionLogEntry_TryjobSnapshot {

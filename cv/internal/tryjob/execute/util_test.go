@@ -17,7 +17,8 @@ package execute
 import (
 	"testing"
 
-	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
+	bbpb "go.chromium.org/luci/buildbucket/proto"
+
 	cfgpb "go.chromium.org/luci/cv/api/config/v2"
 	"go.chromium.org/luci/cv/internal/tryjob"
 
@@ -32,44 +33,132 @@ func TestComposeReason(t *testing.T) {
 				_ = composeReason(nil)
 			}, ShouldPanicLike, "called without tryjobs")
 		})
+		const bbHost = "test.com"
+		builder := &bbpb.BuilderID{
+			Project: "test_proj",
+			Bucket:  "test_bucket",
+			Builder: "test_builder",
+		}
 		Convey("works", func() {
-			r := composeReason([]*tryjob.Tryjob{
-				// restricted.
-				{
-					ExternalID: tryjob.MustBuildbucketID("test.com", 123456790),
-					Definition: &tryjob.Definition{
-						ResultVisibility: cfgpb.CommentLevel_COMMENT_LEVEL_RESTRICTED,
-					},
-					Result: &tryjob.Result{
-						Backend: &tryjob.Result_Buildbucket_{
-							Buildbucket: &tryjob.Result_Buildbucket{
-								SummaryMarkdown: "A couple\nof lines\nwith secret details",
+			Convey("single", func() {
+				Convey("restricted", func() {
+					r := composeReason([]*tryjob.Tryjob{
+						{
+							ExternalID: tryjob.MustBuildbucketID(bbHost, 123456790),
+							Definition: &tryjob.Definition{
+								Backend: &tryjob.Definition_Buildbucket_{
+									Buildbucket: &tryjob.Definition_Buildbucket{
+										Builder: builder,
+										Host:    bbHost,
+									},
+								},
+								ResultVisibility: cfgpb.CommentLevel_COMMENT_LEVEL_RESTRICTED,
+							},
+							Result: &tryjob.Result{
+								Backend: &tryjob.Result_Buildbucket_{
+									Buildbucket: &tryjob.Result_Buildbucket{
+										Builder:         builder,
+										SummaryMarkdown: "A couple\nof lines\nwith secret details",
+									},
+								},
 							},
 						},
-					},
-				},
-				// restricted but empty.
-				{
-					ExternalID: tryjob.MustBuildbucketID("test.com", 123456791),
-					Definition: &tryjob.Definition{
-						ResultVisibility: cfgpb.CommentLevel_COMMENT_LEVEL_RESTRICTED,
-					},
-					Result: &tryjob.Result{},
-				},
-				// un-restricted.
-				{
-					ExternalID: tryjob.MustBuildbucketID("test.com", 123456792),
-					Definition: &tryjob.Definition{},
-					Result: &tryjob.Result{
-						Backend: &tryjob.Result_Buildbucket_{
-							Buildbucket: &tryjob.Result_Buildbucket{
-								SummaryMarkdown: "A couple\nof lines\nwith public details",
+					})
+					So(r, ShouldEqual, "Tryjob has failed: https://test.com/build/123456790")
+				})
+				Convey("not restricted", func() {
+					r := composeReason([]*tryjob.Tryjob{
+						{
+							ExternalID: tryjob.MustBuildbucketID(bbHost, 123456790),
+							Definition: &tryjob.Definition{
+								Backend: &tryjob.Definition_Buildbucket_{
+									Buildbucket: &tryjob.Definition_Buildbucket{
+										Builder: builder,
+										Host:    bbHost,
+									},
+								},
+								ResultVisibility: cfgpb.CommentLevel_COMMENT_LEVEL_FULL,
+							},
+							Result: &tryjob.Result{
+								Backend: &tryjob.Result_Buildbucket_{
+									Buildbucket: &tryjob.Result_Buildbucket{
+										Builder:         builder,
+										SummaryMarkdown: "A couple\nof lines\nwith public details",
+									},
+								},
 							},
 						},
-					},
-				},
+					})
+					So(r, ShouldEqual, "Tryjob `test_proj/test_bucket/test_builder` has failed: https://test.com/build/123456790\n\tA couple\n\tof lines\n\twith public details")
+				})
 			})
-			So(r, ShouldEqual, "Failed Tryjobs:\n* https://test.com/build/123456790\n* https://test.com/build/123456791\n* https://test.com/build/123456792\n A couple\n of lines\n with public details")
+
+			Convey("multiple", func() {
+				r := composeReason([]*tryjob.Tryjob{
+					// restricted.
+					{
+						ExternalID: tryjob.MustBuildbucketID("test.com", 123456790),
+						Definition: &tryjob.Definition{
+							Backend: &tryjob.Definition_Buildbucket_{
+								Buildbucket: &tryjob.Definition_Buildbucket{
+									Builder: builder,
+									Host:    bbHost,
+								},
+							},
+							ResultVisibility: cfgpb.CommentLevel_COMMENT_LEVEL_RESTRICTED,
+						},
+						Result: &tryjob.Result{
+							Backend: &tryjob.Result_Buildbucket_{
+								Buildbucket: &tryjob.Result_Buildbucket{
+									Builder:         builder,
+									SummaryMarkdown: "A couple\nof lines\nwith secret details",
+								},
+							},
+						},
+					},
+					// un-restricted but empty summary markdown.
+					{
+						ExternalID: tryjob.MustBuildbucketID("test.com", 123456791),
+						Definition: &tryjob.Definition{
+							Backend: &tryjob.Definition_Buildbucket_{
+								Buildbucket: &tryjob.Definition_Buildbucket{
+									Builder: builder,
+									Host:    bbHost,
+								},
+							},
+							ResultVisibility: cfgpb.CommentLevel_COMMENT_LEVEL_FULL,
+						},
+						Result: &tryjob.Result{
+							Backend: &tryjob.Result_Buildbucket_{
+								Buildbucket: &tryjob.Result_Buildbucket{
+									Builder: builder,
+								},
+							},
+						},
+					},
+					// un-restricted.
+					{
+						ExternalID: tryjob.MustBuildbucketID("test.com", 123456792),
+						Definition: &tryjob.Definition{
+							Backend: &tryjob.Definition_Buildbucket_{
+								Buildbucket: &tryjob.Definition_Buildbucket{
+									Builder: builder,
+									Host:    bbHost,
+								},
+							},
+							ResultVisibility: cfgpb.CommentLevel_COMMENT_LEVEL_FULL,
+						},
+						Result: &tryjob.Result{
+							Backend: &tryjob.Result_Buildbucket_{
+								Buildbucket: &tryjob.Result_Buildbucket{
+									SummaryMarkdown: "A couple\nof lines\nwith public details",
+								},
+							},
+						},
+					},
+				})
+				So(r, ShouldEqual, "Failed Tryjobs:\n* https://test.com/build/123456790\n* `test_proj/test_bucket/test_builder`: https://test.com/build/123456791\n* `test_proj/test_bucket/test_builder`: https://test.com/build/123456792\n\tA couple\n\tof lines\n\twith public details")
+			})
 		})
 	})
 }
@@ -80,7 +169,7 @@ func TestComposeLaunchFailureReason(t *testing.T) {
 			Backend: &tryjob.Definition_Buildbucket_{
 				Buildbucket: &tryjob.Definition_Buildbucket{
 					Host: "buildbucket.example.com",
-					Builder: &buildbucketpb.BuilderID{
+					Builder: &bbpb.BuilderID{
 						Project: "ProjectFoo",
 						Bucket:  "BucketFoo",
 						Builder: "BuilderFoo",
@@ -107,7 +196,7 @@ func TestComposeLaunchFailureReason(t *testing.T) {
 			Backend: &tryjob.Definition_Buildbucket_{
 				Buildbucket: &tryjob.Definition_Buildbucket{
 					Host: "buildbucket.example.com",
-					Builder: &buildbucketpb.BuilderID{
+					Builder: &bbpb.BuilderID{
 						Project: "ProjectBar",
 						Bucket:  "BucketBar",
 						Builder: "BuilderBar",
