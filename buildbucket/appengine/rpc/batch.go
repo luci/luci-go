@@ -146,10 +146,6 @@ func (b *Builds) Batch(ctx context.Context, req *pb.BatchRequest) (*pb.BatchResp
 				}
 				logToBQ(ctx, trace.SpanContext(ctx), parent, method)
 				if err != nil {
-					logging.Warningf(ctx, "Error from Go: %s", err)
-					if goErrSt, ok := convertGRPCError(err); ok {
-						return appstatus.Error(goErrSt.Code(), goErrSt.Message())
-					}
 					response.Response = toBatchResponseError(ctx, err)
 				}
 				res.Responses[goIndices[i]] = response
@@ -164,24 +160,6 @@ func (b *Builds) Batch(ctx context.Context, req *pb.BatchRequest) (*pb.BatchResp
 	return res, nil
 }
 
-// convertGRPCError converts to a grpc Status, if this error is a grpc error.
-//
-// If it's DeadlineExceeded error, return a Status with the internal error code
-// as a short-term solution (crbug.com/1174310) for the caller side retry, e.g., bb cli.
-//
-// If it's not a grpc error, ok is false and a Status is returned with
-// codes.Unknown and the original error message.
-func convertGRPCError(err error) (*grpcStatus.Status, bool) {
-	gStatus, ok := grpcStatus.FromError(err)
-	if !ok {
-		return gStatus, false
-	}
-	if gStatus.Code() == codes.DeadlineExceeded {
-		return grpcStatus.New(codes.Internal, gStatus.Message()), true
-	}
-	return gStatus, true
-}
-
 // toBatchResponseError converts an error to BatchResponse_Response_Error type.
 func toBatchResponseError(ctx context.Context, err error) *pb.BatchResponse_Response_Error {
 	if errors.Contains(err, context.DeadlineExceeded) {
@@ -189,7 +167,10 @@ func toBatchResponseError(ctx context.Context, err error) *pb.BatchResponse_Resp
 	}
 	st, ok := appstatus.Get(err)
 	if !ok {
-		logging.Errorf(ctx, "Non-appstatus error in a batch response: %s", err)
+		if gStatus, ok := grpcStatus.FromError(err); ok {
+			return &pb.BatchResponse_Response_Error{Error: gStatus.Proto()}
+		}
+		logging.Errorf(ctx, "Non-appstatus and non-grpc error in a batch response: %s", err)
 		return &pb.BatchResponse_Response_Error{Error: grpcStatus.New(codes.Internal, "Internal server error").Proto()}
 	}
 	return &pb.BatchResponse_Response_Error{Error: st.Proto()}
