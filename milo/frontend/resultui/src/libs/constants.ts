@@ -18,6 +18,14 @@ import { TestVerdictStatus } from '../services/weetbix';
 
 export const NEW_MILO_VERSION_EVENT_TYPE = 'new-milo-version';
 
+export const enum LoadingState {
+  Pending,
+  Running,
+  PartiallyFulfilled,
+  Fulfilled,
+  Rejected,
+}
+
 export const INVOCATION_STATE_DISPLAY_MAP = {
   [InvocationState.Unspecified]: 'unspecified',
   [InvocationState.Active]: 'active',

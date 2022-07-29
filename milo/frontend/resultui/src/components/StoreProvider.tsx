@@ -13,7 +13,7 @@
 // limitations under the License.
 
 import { applySnapshot } from 'mobx-state-tree';
-import React, { createContext, ReactNode, useContext } from 'react';
+import { createContext, ReactNode, useContext } from 'react';
 
 import { AppState } from '../context/app_state';
 import { Store, StoreEnv, StoreInstance, StoreSnapshotIn } from '../context/store';
@@ -41,7 +41,7 @@ export function StoreProvider({ appState, children, snapshot }: StoreProviderPro
   return <StoreContext.Provider value={store}>{children}</StoreContext.Provider>;
 }
 
-export const DEFAULT_SNAPSHOT: StoreSnapshotIn = Object.freeze({ searchPage: { searchQuery: '' } });
+export const DEFAULT_SNAPSHOT: StoreSnapshotIn = Object.freeze({ searchPage: {} });
 
 export function initializeStore(storeEnv: StoreEnv, snapshot = DEFAULT_SNAPSHOT) {
   if (!clientStore) {

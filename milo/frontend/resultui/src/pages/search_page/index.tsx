@@ -15,28 +15,66 @@
 import { MobxLitElement } from '@adobe/lit-mobx';
 import createCache from '@emotion/cache';
 import { CacheProvider, EmotionCache } from '@emotion/react';
+import { Search } from '@mui/icons-material';
+import { FormControl, InputAdornment, TextField } from '@mui/material';
 import { customElement } from 'lit-element';
 import { observable } from 'mobx';
 import { observer } from 'mobx-react-lite';
-import React from 'react';
-import { render } from 'react-dom';
+import { useEffect, useRef, useState } from 'react';
+import { createRoot, Root } from 'react-dom/client';
 
+import '../../components/dot_spinner';
 import { StoreProvider, useStore } from '../../components/StoreProvider';
 import { AppState, consumeAppState } from '../../context/app_state';
+import { LoadingState } from '../../libs/constants';
 import { consumer } from '../../libs/context';
+import commonStyle from '../../styles/common_style.css';
+import { BuildersList } from './builders_list';
 
 export const SearchPage = observer(() => {
-  const appState = useStore().appState;
   const pageState = useStore().searchPage;
-  const onChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    pageState.setSearchQuery(e.target.value);
-  };
+  const [searchQuery, setSearchQuery] = useState(pageState.searchQuery);
+
+  const timeoutId = useRef(0);
+  useEffect(() => () => window.clearTimeout(timeoutId.current), []);
+
   return (
-    <>
-      <div>{appState.authState?.identity}</div>
-      <input value={pageState.searchQuery} onChange={onChange}></input>
-      <div>{pageState.searchQuery}</div>
-    </>
+    <div css={{ padding: '20px 30px' }}>
+      <FormControl css={{ margin: '0px 200px', width: 'calc(100% - 400px)' }}>
+        <TextField
+          id="failure_filter"
+          value={searchQuery}
+          placeholder="Search builders in all projects"
+          onChange={(e) => {
+            setSearchQuery(e.target.value);
+
+            // Update the search query after a light delay to avoid updating the
+            // list too frequently.
+            window.clearTimeout(timeoutId.current);
+            timeoutId.current = window.setTimeout(() => pageState.setSearchQuery(e.target.value), 300);
+          }}
+          autoFocus
+          fullWidth
+          variant="outlined"
+          size="small"
+          InputProps={{
+            startAdornment: (
+              <InputAdornment position="start">
+                <Search />
+              </InputAdornment>
+            ),
+          }}
+        ></TextField>
+      </FormControl>
+      <div css={{ marginTop: '20px' }}>
+        <BuildersList groupedBuilders={pageState.groupedBuilders} />
+        {pageState.loadingBuildersState !== LoadingState.Fulfilled && (
+          <span>
+            Loading <milo-dot-spinner></milo-dot-spinner>
+          </span>
+        )}
+      </div>
+    </div>
   );
 });
 
@@ -47,13 +85,14 @@ export class SearchPageElement extends MobxLitElement {
 
   private readonly cache: EmotionCache;
   private readonly parent: HTMLDivElement;
-  private readonly child: HTMLDivElement;
+  private readonly root: Root;
 
   constructor() {
     super();
     this.parent = document.createElement('div');
-    this.child = document.createElement('div');
-    this.parent.appendChild(this.child);
+    const child = document.createElement('div');
+    this.root = createRoot(child);
+    this.parent.appendChild(child);
     this.cache = createCache({
       key: 'milo-search-page',
       container: this.parent,
@@ -61,14 +100,15 @@ export class SearchPageElement extends MobxLitElement {
   }
 
   protected render() {
-    render(
+    this.root.render(
       <CacheProvider value={this.cache}>
         <StoreProvider appState={this.appState}>
           <SearchPage></SearchPage>
         </StoreProvider>
-      </CacheProvider>,
-      this.child
+      </CacheProvider>
     );
     return this.parent;
   }
+
+  static styles = [commonStyle];
 }

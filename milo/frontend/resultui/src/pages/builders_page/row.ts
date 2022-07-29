@@ -230,10 +230,6 @@ export class BuildersPageRowElement extends MiloBaseElement {
       .cell.infra-failure-cell {
         color: white;
       }
-
-      milo-dot-spinner {
-        color: var(--active-text-color);
-      }
     `,
   ];
 }

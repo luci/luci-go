@@ -371,6 +371,18 @@ export interface BuilderItem {
   readonly config: Builder;
 }
 
+export interface ListBuildersRequest {
+  readonly project?: string;
+  readonly bucket?: string;
+  readonly pageSize?: number;
+  readonly pageToken?: string;
+}
+
+export interface ListBuildersResponse {
+  readonly builders?: readonly BuilderItem[];
+  readonly nextPageToken?: string;
+}
+
 export class BuildersService {
   private static SERVICE = 'buildbucket.v2.Builders';
 
@@ -385,5 +397,9 @@ export class BuildersService {
 
   async getBuilder(req: GetBuilderRequest, cacheOpt: CacheOption = {}) {
     return (await this.cachedCallFn(cacheOpt, 'GetBuilder', req)) as BuilderItem;
+  }
+
+  async listBuilders(req: ListBuildersRequest, cacheOpt: CacheOption = {}) {
+    return (await this.cachedCallFn(cacheOpt, 'ListBuilders', req)) as ListBuildersResponse;
   }
 }

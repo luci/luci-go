@@ -289,10 +289,6 @@ export class TestHistoryDetailsEntryElement extends MobxLitElement implements Re
         padding: 5px;
       }
 
-      milo-dot-spinner {
-        color: var(--active-text-color);
-      }
-
       #result-limit-warning {
         padding: 5px;
         background-color: var(--warning-color);

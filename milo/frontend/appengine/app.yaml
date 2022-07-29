@@ -42,7 +42,7 @@ handlers:
   static_dir: static
 
 # ResultUI frontend routes.
-- url: /ui/(login|(inv|p|b|artifact|test)/.*)
+- url: /ui/(login|(inv|p|b|artifact|test|search)/.*)
   secure: always
   static_files: resultui/index.html
   upload: resultui/index.html

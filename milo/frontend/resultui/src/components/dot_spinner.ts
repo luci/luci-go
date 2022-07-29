@@ -28,6 +28,7 @@ export class DotSpinnerElement extends LitElement {
     :host {
       display: inline-block;
       text-align: center;
+      color: var(--active-text-color);
     }
 
     div {
@@ -58,4 +59,13 @@ export class DotSpinnerElement extends LitElement {
       }
     }
   `;
+}
+
+declare global {
+  // eslint-disable-next-line @typescript-eslint/no-namespace
+  namespace JSX {
+    interface IntrinsicElements {
+      'milo-dot-spinner': {};
+    }
+  }
 }

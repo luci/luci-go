@@ -204,10 +204,6 @@ export class BuildersPageElement extends MiloBaseElement implements BeforeEnterO
         color: var(--active-text-color);
         cursor: pointer;
       }
-
-      milo-dot-spinner {
-        color: var(--active-text-color);
-      }
     `,
   ];
 }
