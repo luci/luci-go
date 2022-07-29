@@ -23,11 +23,16 @@ import (
 	"os/exec"
 	"path/filepath"
 	"strings"
+	"time"
 
 	bbpb "go.chromium.org/luci/buildbucket/proto"
+	"go.chromium.org/luci/cipd/client/cipd/platform"
 	cipdVersion "go.chromium.org/luci/cipd/version"
+	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
+	"google.golang.org/protobuf/types/known/durationpb"
+	"google.golang.org/protobuf/types/known/fieldmaskpb"
 )
 
 const (
@@ -52,17 +57,100 @@ type cipdOut struct {
 	Result map[string][]*cipdPkg `json:"result"`
 }
 
+// downloadCipdPackages wraps installCipdPackages with logic to update the build
+func downloadCipdPackages(ctx context.Context, cwd string, c clientInput) int {
+	// Most likely happens in `led get-build` process where it creates from an old build
+	// before new Agent field was there. This new feature shouldn't work for those builds.
+	if c.input.Build.Infra.Buildbucket.Agent == nil {
+		checkReport(ctx, c, errors.New("Cannot enable downloading cipd pkgs feature; Build Agent field is not set"))
+	}
+
+	agent := c.input.Build.Infra.Buildbucket.Agent
+	agent.Output = &bbpb.BuildInfra_Buildbucket_Agent_Output{
+		Status: bbpb.Status_STARTED,
+	}
+	updateReq := &bbpb.UpdateBuildRequest{
+		Build: &bbpb.Build{
+			Id: c.input.Build.Id,
+			Infra: &bbpb.BuildInfra{
+				Buildbucket: &bbpb.BuildInfra_Buildbucket{
+					Agent: agent,
+				},
+			},
+		},
+		UpdateMask: &fieldmaskpb.FieldMask{Paths: []string{"build.infra.buildbucket.agent.output"}},
+		Mask:       readMask,
+	}
+	bldStartCipd, err := c.bbclient.UpdateBuild(ctx, updateReq)
+	if err != nil {
+		// Carry on and bear the non-fatal update failure.
+		logging.Warningf(ctx, "Failed to report build agent STARTED status: %s", err)
+	}
+	// The build has been canceled, bail out early.
+	if bldStartCipd.CancelTime != nil {
+		return cancelBuild(ctx, c.bbclient, bldStartCipd)
+	}
+
+	agent.Output.AgentPlatform = platform.CurrentPlatform()
+
+	// Encapsulate all the installation logic with a defer to set the
+	// TotalDuration. As we add more installation logic (e.g. RBE-CAS),
+	// TotalDuration should continue to surround that logic.
+	err = func() error {
+		start := clock.Now(ctx)
+		defer func() {
+			agent.Output.TotalDuration = &durationpb.Duration{
+				Seconds: int64(clock.Since(ctx, start).Round(time.Second).Seconds()),
+			}
+		}()
+		if err := prependPath(c.input.Build, cwd); err != nil {
+			return err
+		}
+		if err = installCipdPackages(ctx, c.input.Build, cwd); err != nil {
+			return err
+		}
+		return downloadCasFiles(ctx, c.input.Build, cwd)
+	}()
+
+	if err != nil {
+		logging.Errorf(ctx, "Failure in installing cipd packages: %s", err)
+		agent.Output.Status = bbpb.Status_FAILURE
+		agent.Output.SummaryHtml = err.Error()
+		updateReq.Build.Status = bbpb.Status_INFRA_FAILURE
+		updateReq.Build.SummaryMarkdown = "Failed to install cipd packages for this build"
+		updateReq.UpdateMask.Paths = append(updateReq.UpdateMask.Paths, "build.status", "build.summary_markdown")
+	} else {
+		agent.Output.Status = bbpb.Status_SUCCESS
+		if c.input.Build.Exe != nil {
+			updateReq.UpdateMask.Paths = append(updateReq.UpdateMask.Paths, "build.infra.buildbucket.agent.purposes")
+		}
+	}
+
+	bldCompleteCipd, bbErr := c.bbclient.UpdateBuild(ctx, updateReq)
+	if bbErr != nil {
+		logging.Warningf(ctx, "Failed to report build agent output status: %s", bbErr)
+	}
+	if err != nil {
+		os.Exit(-1)
+	}
+	// The build has been canceled, bail out early.
+	if bldCompleteCipd.CancelTime != nil {
+		return cancelBuild(ctx, c.bbclient, bldCompleteCipd)
+	}
+	return 0
+}
+
 // installCipdPackages installs cipd packages defined in build.Infra.Buildbucket.Agent.Input
 // and build exe.
 //
 // This will update the following fields in build:
-//   * Infra.Buidlbucket.Agent.Output.ResolvedData
-//   * Infra.Buildbucket.Agent.Purposes
+//   - Infra.Buidlbucket.Agent.Output.ResolvedData
+//   - Infra.Buildbucket.Agent.Purposes
 //
 // Note:
-//   1. It assumes `cipd` client tool binary is already in path.
-//   2. Hack: it includes bbagent version in the ensure file if it's called from
-//   a cipd installed bbagent.
+//  1. It assumes `cipd` client tool binary is already in path.
+//  2. Hack: it includes bbagent version in the ensure file if it's called from
+//     a cipd installed bbagent.
 func installCipdPackages(ctx context.Context, build *bbpb.Build, workDir string) error {
 	logging.Infof(ctx, "Installing cipd packages into %s", workDir)
 	inputData := build.Infra.Buildbucket.Agent.Input.Data

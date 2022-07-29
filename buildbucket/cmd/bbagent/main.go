@@ -43,14 +43,12 @@ import (
 	"github.com/golang/protobuf/jsonpb"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/protobuf/proto"
-	"google.golang.org/protobuf/types/known/durationpb"
 	"google.golang.org/protobuf/types/known/fieldmaskpb"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/buildbucket"
 	"go.chromium.org/luci/buildbucket/cmd/bbagent/bbinput"
 	bbpb "go.chromium.org/luci/buildbucket/proto"
-	"go.chromium.org/luci/cipd/client/cipd/platform"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
@@ -82,6 +80,11 @@ func (c *closeOnceCh) close() {
 	c.once.Do(func() { close(c.ch) })
 }
 
+type clientInput struct {
+	bbclient BuildsClient
+	input    *bbpb.BBAgentArgs
+}
+
 func check(ctx context.Context, err error) {
 	if err != nil {
 		logging.Errorf(ctx, err.Error())
@@ -89,17 +92,37 @@ func check(ctx context.Context, err error) {
 	}
 }
 
-func parseBbAgentArgs(ctx context.Context, arg string) (*bbpb.BBAgentArgs, BuildsClient, *bbpb.BuildSecrets) {
+// checkReport logs errors, tries to report them to buildbucket, then exits
+func checkReport(ctx context.Context, c clientInput, err error) {
+	if err != nil {
+		logging.Errorf(ctx, err.Error())
+		if _, bbErr := c.bbclient.UpdateBuild(
+			ctx,
+			&bbpb.UpdateBuildRequest{
+				Build: &bbpb.Build{
+					Id:              c.input.Build.Id,
+					Status:          bbpb.Status_INFRA_FAILURE,
+					SummaryMarkdown: fmt.Sprintf("fatal error in startup: %s", err),
+				},
+				UpdateMask: &fieldmaskpb.FieldMask{Paths: []string{"build.status", "build.summary_markdown"}},
+			}); bbErr != nil {
+			logging.Errorf(ctx, "Failed to report INFRA_FAILURE status to Buildbucket: %s", bbErr)
+		}
+		os.Exit(1)
+	}
+}
+
+func parseBbAgentArgs(ctx context.Context, arg string) (clientInput, *bbpb.BuildSecrets) {
 	// TODO(crbug/1219018): Remove CLI BBAgentArgs mode in favor of -host + -build-id.
 	logging.Debugf(ctx, "parsing BBAgentArgs")
 	input, err := bbinput.Parse(arg)
 	check(ctx, errors.Annotate(err, "could not unmarshal BBAgentArgs").Err())
 	bbclient, secrets, err := newBuildsClient(ctx, input.Build.Infra.Buildbucket.GetHostname(), retry.Default)
 	check(ctx, errors.Annotate(err, "could not connect to Buildbucket").Err())
-	return input, bbclient, secrets
+	return clientInput{bbclient, input}, secrets
 }
 
-func parseHostBuildID(ctx context.Context, hostname *string, buildID *int64) (*bbpb.BBAgentArgs, BuildsClient, *bbpb.BuildSecrets) {
+func parseHostBuildID(ctx context.Context, hostname *string, buildID *int64) (clientInput, *bbpb.BuildSecrets) {
 	logging.Debugf(ctx, "fetching build %d", *buildID)
 	bbclient, secrets, err := newBuildsClient(ctx, *hostname, defaultRetryStrategy)
 	check(ctx, errors.Annotate(err, "could not connect to Buildbucket").Err())
@@ -131,7 +154,7 @@ func parseHostBuildID(ctx context.Context, hostname *string, buildID *int64) (*b
 		KnownPublicGerritHosts: build.Infra.Buildbucket.KnownPublicGerritHosts,
 		PayloadPath:            build.Infra.Bbagent.PayloadPath,
 	}
-	return input, bbclient, secrets
+	return clientInput{bbclient, input}, secrets
 }
 
 // finalizeBuild returns true if fatalErr is nil and there's no additional
@@ -234,31 +257,31 @@ func processCmd(path, cmd string) (string, error) {
 //
 // This includes resolving paths relative to the current working directory
 // (expected to be the task's root).
-func processExeArgs(input *bbpb.BBAgentArgs, check func(err error)) []string {
-	exeArgs := make([]string, 0, len(input.Build.Exe.Wrapper)+len(input.Build.Exe.Cmd)+1)
+func processExeArgs(ctx context.Context, c clientInput) []string {
+	exeArgs := make([]string, 0, len(c.input.Build.Exe.Wrapper)+len(c.input.Build.Exe.Cmd)+1)
 
-	if len(input.Build.Exe.Wrapper) != 0 {
-		exeArgs = append(exeArgs, input.Build.Exe.Wrapper...)
+	if len(c.input.Build.Exe.Wrapper) != 0 {
+		exeArgs = append(exeArgs, c.input.Build.Exe.Wrapper...)
 		exeArgs = append(exeArgs, "--")
 
 		if strings.Contains(exeArgs[0], "/") || strings.Contains(exeArgs[0], "\\") {
 			absPath, err := filepath.Abs(exeArgs[0])
-			check(errors.Annotate(err, "absoluting wrapper path: %q", exeArgs[0]).Err())
+			checkReport(ctx, c, errors.Annotate(err, "absoluting wrapper path: %q", exeArgs[0]).Err())
 			exeArgs[0] = absPath
 		}
 
 		cmdPath, err := exec.LookPath(exeArgs[0])
-		check(errors.Annotate(err, "wrapper not found: %q", exeArgs[0]).Err())
+		checkReport(ctx, c, errors.Annotate(err, "wrapper not found: %q", exeArgs[0]).Err())
 		exeArgs[0] = cmdPath
 	}
 
-	exeCmd := input.Build.Exe.Cmd[0]
-	payloadPath := input.PayloadPath
-	if len(input.Build.Exe.Cmd) == 0 {
+	exeCmd := c.input.Build.Exe.Cmd[0]
+	payloadPath := c.input.PayloadPath
+	if len(c.input.Build.Exe.Cmd) == 0 {
 		// TODO(iannucci): delete me with ExecutablePath.
-		payloadPath, exeCmd = path.Split(input.ExecutablePath)
+		payloadPath, exeCmd = path.Split(c.input.ExecutablePath)
 	} else {
-		for p, purpose := range input.Build.GetInfra().GetBuildbucket().GetAgent().GetPurposes() {
+		for p, purpose := range c.input.Build.GetInfra().GetBuildbucket().GetAgent().GetPurposes() {
 			if purpose == bbpb.BuildInfra_Buildbucket_Agent_PURPOSE_EXE_PAYLOAD {
 				payloadPath = p
 				break
@@ -266,9 +289,9 @@ func processExeArgs(input *bbpb.BBAgentArgs, check func(err error)) []string {
 		}
 	}
 	exePath, err := processCmd(payloadPath, exeCmd)
-	check(err)
+	checkReport(ctx, c, err)
 	exeArgs = append(exeArgs, exePath)
-	exeArgs = append(exeArgs, input.Build.Exe.Cmd[1:]...)
+	exeArgs = append(exeArgs, c.input.Build.Exe.Cmd[1:]...)
 
 	return exeArgs
 }
@@ -323,25 +346,24 @@ func mainImpl() int {
 		setLocalAuth(ctx)
 	}
 
-	var input *bbpb.BBAgentArgs
-	var bbclient BuildsClient
+	var bbclientInput clientInput
 	var secrets *bbpb.BuildSecrets
 	var err error
 
 	switch {
 	case len(args) == 1:
-		input, bbclient, secrets = parseBbAgentArgs(ctx, args[0])
+		bbclientInput, secrets = parseBbAgentArgs(ctx, args[0])
 	case *hostname != "" && *buildID > 0:
-		input, bbclient, secrets = parseHostBuildID(ctx, hostname, buildID)
+		bbclientInput, secrets = parseHostBuildID(ctx, hostname, buildID)
 	default:
 		check(ctx, errors.Reason("-host and -build-id are required").Err())
 	}
 
 	// Manipulate the context and obtain a context with cancel
 	ctx = setBuildbucketContext(ctx, hostname, secrets)
-	ctx = setRealmContext(ctx, input)
+	ctx = setRealmContext(ctx, bbclientInput.input)
 
-	logdogOutput, err := mkLogdogOutput(ctx, input.Build.Infra.Logdog)
+	logdogOutput, err := mkLogdogOutput(ctx, bbclientInput.input.Build.Infra.Logdog)
 	check(ctx, errors.Annotate(err, "could not create logdog output").Err())
 
 	var (
@@ -359,11 +381,11 @@ func mainImpl() int {
 
 	// We send a single status=STARTED here, and will send the final build status
 	// after the user executable completes.
-	updatedBuild, err := bbclient.UpdateBuild(
+	updatedBuild, err := bbclientInput.bbclient.UpdateBuild(
 		cctx,
 		&bbpb.UpdateBuildRequest{
 			Build: &bbpb.Build{
-				Id:     input.Build.Id,
+				Id:     bbclientInput.input.Build.Id,
 				Status: bbpb.Status_STARTED,
 			},
 			UpdateMask: &fieldmaskpb.FieldMask{Paths: []string{"build.status"}},
@@ -372,32 +394,11 @@ func mainImpl() int {
 	check(ctx, errors.Annotate(err, "failed to report status STARTED to Buildbucket").Err())
 	// The build has been canceled, bail out early.
 	if updatedBuild.CancelTime != nil {
-		return cancelBuild(ctx, bbclient, updatedBuild)
+		return cancelBuild(ctx, bbclientInput.bbclient, updatedBuild)
 	}
 
-	// from this point forward we want to try to report errors to buildbucket,
-	// too.
-	check := func(err error) {
-		if err != nil {
-			logging.Errorf(cctx, err.Error())
-			if _, bbErr := bbclient.UpdateBuild(
-				cctx,
-				&bbpb.UpdateBuildRequest{
-					Build: &bbpb.Build{
-						Id:              input.Build.Id,
-						Status:          bbpb.Status_INFRA_FAILURE,
-						SummaryMarkdown: fmt.Sprintf("fatal error in startup: %s", err),
-					},
-					UpdateMask: &fieldmaskpb.FieldMask{Paths: []string{"build.status", "build.summary_markdown"}},
-				}); bbErr != nil {
-				logging.Errorf(cctx, "Failed to report INFRA_FAILURE status to Buildbucket: %s", bbErr)
-			}
-			os.Exit(1)
-		}
-	}
-
-	cctx = setResultDBContext(cctx, input.Build, secrets)
-	prepareInputBuild(cctx, input.Build)
+	cctx = setResultDBContext(cctx, bbclientInput.input.Build, secrets)
+	prepareInputBuild(cctx, bbclientInput.input.Build)
 
 	// TODO(crbug.com/1211789) - As part of adding 'dry_run' functionality
 	// to ScheduleBuild, it was necessary to start saving `tags` in the
@@ -415,7 +416,7 @@ func mainImpl() int {
 	// this discrepancy would go away (and it may also make sense to remove
 	// BaseBuild from host.Options, since it really only needs to carry the
 	// user-code-generated-delta at that point).
-	hostOptionsBaseBuild := proto.Clone(input.Build).(*bbpb.Build)
+	hostOptionsBaseBuild := proto.Clone(bbclientInput.input.Build).(*bbpb.Build)
 	hostOptionsBaseBuild.Tags = nil
 
 	opts := &host.Options{
@@ -423,114 +424,39 @@ func mainImpl() int {
 		ButlerLogLevel: logging.Warning,
 		// TODO(crbug.com/1219086) - generate a correct URL for LED tasks.
 		ViewerURL: fmt.Sprintf("https://%s/build/%d",
-			input.Build.Infra.Buildbucket.Hostname, input.Build.Id),
+			bbclientInput.input.Build.Infra.Buildbucket.Hostname, bbclientInput.input.Build.Id),
 		LogdogOutput: logdogOutput,
-		ExeAuth:      host.DefaultExeAuth("bbagent", input.KnownPublicGerritHosts),
+		ExeAuth:      host.DefaultExeAuth("bbagent", bbclientInput.input.KnownPublicGerritHosts),
 	}
 	cwd, err := os.Getwd()
-	check(errors.Annotate(err, "getting cwd").Err())
+	checkReport(ctx, bbclientInput, errors.Annotate(err, "getting cwd").Err())
 	opts.BaseDir = filepath.Join(cwd, "x")
 
 	initialJSONPB, err := (&jsonpb.Marshaler{
 		OrigName: true, Indent: "  ",
-	}).MarshalToString(input)
-	check(errors.Annotate(err, "marshalling input args").Err())
+	}).MarshalToString(bbclientInput.input)
+	checkReport(ctx, bbclientInput, errors.Annotate(err, "marshalling input args").Err())
 	logging.Infof(ctx, "Input args:\n%s", initialJSONPB)
 
 	// Downloading cipd packages if any.
-	if stringset.NewFromSlice(input.Build.Input.Experiments...).Has(buildbucket.ExperimentBBAgentDownloadCipd) {
-		// Most likely happens in `led get-build` process where it creates from an old build
-		// before new Agent field was there. This new feature shouldn't work for those builds.
-		if input.Build.Infra.Buildbucket.Agent == nil {
-			check(errors.New("Cannot enable downloading cipd pkgs feature; Build Agent field is not set"))
-		}
-
-		agent := input.Build.Infra.Buildbucket.Agent
-		agent.Output = &bbpb.BuildInfra_Buildbucket_Agent_Output{
-			Status: bbpb.Status_STARTED,
-		}
-		updateReq := &bbpb.UpdateBuildRequest{
-			Build: &bbpb.Build{
-				Id: input.Build.Id,
-				Infra: &bbpb.BuildInfra{
-					Buildbucket: &bbpb.BuildInfra_Buildbucket{
-						Agent: agent,
-					},
-				},
-			},
-			UpdateMask: &fieldmaskpb.FieldMask{Paths: []string{"build.infra.buildbucket.agent.output"}},
-			Mask:       readMask,
-		}
-		bldStartCipd, err := bbclient.UpdateBuild(cctx, updateReq)
-		if err != nil {
-			// Carry on and bear the non-fatal update failure.
-			logging.Warningf(ctx, "Failed to report build agent STARTED status: %s", err)
-		}
-		// The build has been canceled, bail out early.
-		if bldStartCipd.CancelTime != nil {
-			return cancelBuild(cctx, bbclient, bldStartCipd)
-		}
-
-		agent.Output.AgentPlatform = platform.CurrentPlatform()
-
-		// Encapsulate all the installation logic with a defer to set the
-		// TotalDuration. As we add more installation logic (e.g. RBE-CAS),
-		// TotalDuration should continue to surround that logic.
-		err = func() error {
-			start := clock.Now(ctx)
-			defer func() {
-				agent.Output.TotalDuration = &durationpb.Duration{
-					Seconds: int64(clock.Since(ctx, start).Round(time.Second).Seconds()),
-				}
-			}()
-			if err := prependPath(input.Build, cwd); err != nil {
-				return err
-			}
-			if err = installCipdPackages(ctx, input.Build, cwd); err != nil {
-				return err
-			}
-			return downloadCasFiles(ctx, input.Build, cwd)
-		}()
-
-		if err != nil {
-			logging.Errorf(ctx, "Failure in installing cipd packages: %s", err)
-			agent.Output.Status = bbpb.Status_FAILURE
-			agent.Output.SummaryHtml = err.Error()
-			updateReq.Build.Status = bbpb.Status_INFRA_FAILURE
-			updateReq.Build.SummaryMarkdown = "Failed to install cipd packages for this build"
-			updateReq.UpdateMask.Paths = append(updateReq.UpdateMask.Paths, "build.status", "build.summary_markdown")
-		} else {
-			agent.Output.Status = bbpb.Status_SUCCESS
-			if input.Build.Exe != nil {
-				updateReq.UpdateMask.Paths = append(updateReq.UpdateMask.Paths, "build.infra.buildbucket.agent.purposes")
-			}
-		}
-
-		bldCompleteCipd, bbErr := bbclient.UpdateBuild(cctx, updateReq)
-		if bbErr != nil {
-			logging.Warningf(ctx, "Failed to report build agent output status: %s", bbErr)
-		}
-		if err != nil {
-			os.Exit(-1)
-		}
-		// The build has been canceled, bail out early.
-		if bldCompleteCipd.CancelTime != nil {
-			return cancelBuild(cctx, bbclient, bldCompleteCipd)
+	if stringset.NewFromSlice(bbclientInput.input.Build.Input.Experiments...).Has(buildbucket.ExperimentBBAgentDownloadCipd) {
+		if retcode := downloadCipdPackages(ctx, cwd, bbclientInput); retcode != 0 {
+			return retcode
 		}
 	}
 
-	exeArgs := processExeArgs(input, check)
+	exeArgs := processExeArgs(ctx, bbclientInput)
 	dispatcherOpts, dispatcherErrCh := channelOpts(cctx)
 	canceledBuildCh := newCloseOnceCh()
 	invokeErr := make(chan error)
 	// Use a dedicated BuildsClient for dispatcher, which turns off retries.
 	// dispatcher.Channel will handle retries instead.
-	bbclientForDispatcher, _, err := newBuildsClient(cctx, input.Build.Infra.Buildbucket.GetHostname(), func() retry.Iterator { return nil })
+	bbclientForDispatcher, _, err := newBuildsClient(cctx, bbclientInput.input.Build.Infra.Buildbucket.GetHostname(), func() retry.Iterator { return nil })
 	if err != nil {
-		check(errors.Annotate(err, "could not connect to Buildbucket").Err())
+		checkReport(ctx, bbclientInput, errors.Annotate(err, "could not connect to Buildbucket").Err())
 	}
-	buildsCh, err := dispatcher.NewChannel(cctx, dispatcherOpts, mkSendFn(cctx, bbclientForDispatcher, input.Build.Id, canceledBuildCh))
-	check(errors.Annotate(err, "could not create builds dispatcher channel").Err())
+	buildsCh, err := dispatcher.NewChannel(cctx, dispatcherOpts, mkSendFn(cctx, bbclientForDispatcher, bbclientInput.input.Build.Id, canceledBuildCh))
+	checkReport(ctx, bbclientInput, errors.Annotate(err, "could not create builds dispatcher channel").Err())
 	defer buildsCh.CloseAndDrain(cctx)
 
 	shutdownCh := newCloseOnceCh()
@@ -538,13 +464,13 @@ func mainImpl() int {
 	var subprocErr error
 	builds, err := host.Run(cctx, opts, func(ctx context.Context, hostOpts host.Options) {
 		logging.Infof(ctx, "running luciexe: %q", exeArgs)
-		logging.Infof(ctx, "  (cache dir): %q", input.CacheDir)
+		logging.Infof(ctx, "  (cache dir): %q", bbclientInput.input.CacheDir)
 		invokeOpts := &invoke.Options{
 			BaseDir:  hostOpts.BaseDir,
-			CacheDir: input.CacheDir,
+			CacheDir: bbclientInput.input.CacheDir,
 			Env:      environ.System(),
 		}
-		if stringset.NewFromSlice(input.Build.Input.Experiments...).Has("luci.recipes.use_python3") {
+		if stringset.NewFromSlice(bbclientInput.input.Build.Input.Experiments...).Has("luci.recipes.use_python3") {
 			invokeOpts.Env.Set("RECIPES_USE_PY3", "true")
 		}
 		// Buildbucket assigns some grace period to the surrounding task which is
@@ -552,7 +478,7 @@ func mainImpl() int {
 		// reserve the difference here so the user task only gets what they asked
 		// for.
 		deadline := lucictx.GetDeadline(ctx)
-		toReserve := deadline.GracePeriodDuration() - input.Build.GracePeriod.AsDuration()
+		toReserve := deadline.GracePeriodDuration() - bbclientInput.input.Build.GracePeriod.AsDuration()
 		logging.Infof(
 			ctx, "Reserving %s out of %s of grace_period from LUCI_CONTEXT.",
 			toReserve, lucictx.GetDeadline(ctx).GracePeriodDuration())
@@ -565,7 +491,7 @@ func mainImpl() int {
 			}
 		}()
 		defer close(invokeErr)
-		subp, err := invoke.Start(dctx, exeArgs, input.Build, invokeOpts)
+		subp, err := invoke.Start(dctx, exeArgs, bbclientInput.input.Build, invokeOpts)
 		if err != nil {
 			invokeErr <- err
 			return
@@ -576,11 +502,11 @@ func mainImpl() int {
 		statusDetails = build.StatusDetails
 	})
 	if err != nil {
-		check(errors.Annotate(err, "could not start luciexe host environment").Err())
+		checkReport(ctx, bbclientInput, errors.Annotate(err, "could not start luciexe host environment").Err())
 	}
 
 	var (
-		finalBuild                *bbpb.Build = proto.Clone(input.Build).(*bbpb.Build)
+		finalBuild                *bbpb.Build = proto.Clone(bbclientInput.input.Build).(*bbpb.Build)
 		fatalUpdateBuildErrorSlot atomic.Value
 	)
 
@@ -596,7 +522,7 @@ func mainImpl() int {
 		for {
 			select {
 			case err := <-invokeErr:
-				check(errors.Annotate(err, "could not invoke luciexe").Err())
+				checkReport(ctx, bbclientInput, errors.Annotate(err, "could not invoke luciexe").Err())
 			case err := <-dispatcherErrCh:
 				if !stopped && grpcutil.Code(err) == codes.InvalidArgument {
 					shutdownCh.close()
@@ -640,7 +566,7 @@ func mainImpl() int {
 	}
 	// No need to check the returned build here because it's already finalizing
 	// the build.
-	_, bbErr := bbclient.UpdateBuild(
+	_, bbErr := bbclientInput.bbclient.UpdateBuild(
 		cctx,
 		&bbpb.UpdateBuildRequest{
 			Build:      finalBuild,
