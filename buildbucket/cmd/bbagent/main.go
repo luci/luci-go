@@ -343,7 +343,7 @@ func mainImpl() int {
 	args := flag.Args()
 
 	if *useGCEAccount {
-		setLocalAuth(ctx)
+		ctx = setLocalAuth(ctx)
 	}
 
 	var bbclientInput clientInput
