@@ -147,7 +147,7 @@ func queryExoneratedTestVariants(ctx context.Context, invIDs invocations.IDSet) 
 
 func (b *bqExporter) queryTestResults(
 	ctx context.Context,
-	exportedID invocations.ID,
+	exported *pb.Invocation,
 	q testresults.Query,
 	exoneratedTestVariants map[testVariantKey]struct{},
 	batchC chan []rowInput) error {
@@ -164,7 +164,7 @@ func (b *bqExporter) queryTestResults(
 		_, exonerated := exoneratedTestVariants[testVariantKey{testID: tr.TestId, variantHash: tr.VariantHash}]
 		parentID, _, _ := testresults.MustParseName(tr.Name)
 		rows = append(rows, &testResultRowInput{
-			exported:   invs[exportedID],
+			exported:   exported,
 			parent:     invs[parentID],
 			tr:         tr,
 			exonerated: exonerated,
@@ -207,6 +207,10 @@ func (b *bqExporter) exportTestResultsToBigQuery(ctx context.Context, ins insert
 	ctx, cancel := span.ReadOnlyTransaction(ctx)
 	defer cancel()
 
+	exported, err := invocations.Read(ctx, invID)
+	if err != nil {
+		return err
+	}
 	exportInvocationBatch := func(ctx context.Context, invIDs invocations.IDSet) error {
 		exoneratedTestVariants, err := queryExoneratedTestVariants(ctx, invIDs)
 		if err != nil {
@@ -239,14 +243,13 @@ func (b *bqExporter) exportTestResultsToBigQuery(ctx context.Context, ins insert
 		}
 		eg.Go(func() error {
 			defer close(batchC)
-			return b.queryTestResults(ctx, invID, q, exoneratedTestVariants, batchC)
+			return b.queryTestResults(ctx, exported, q, exoneratedTestVariants, batchC)
 		})
 
 		return eg.Wait()
 	}
 	// Get the invocation set.
-	err := getInvocationIDSet(ctx, invID, exportInvocationBatch)
-	if err != nil {
+	if err := getInvocationIDSet(ctx, invID, exportInvocationBatch); err != nil {
 		return errors.Annotate(err, "invocation id set").Err()
 	}
 	return nil
