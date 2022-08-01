@@ -74,6 +74,7 @@ func (c *Cancellator) RegisterBackend(b cancellatorBackend) {
 }
 
 func (c *Cancellator) handleTask(ctx context.Context, task *tryjob.CancelStaleTryjobsTask) error {
+	ctx = logging.SetField(ctx, "CLID", task.GetClid())
 	if task.PreviousMinEquivPatchset >= task.CurrentMinEquivPatchset {
 		panic(fmt.Errorf("patchset numbers expected to increase monotonically"))
 	}
@@ -121,6 +122,8 @@ func (c *Cancellator) handleTask(ctx context.Context, task *tryjob.CancelStaleTr
 	}
 }
 
+const reason = "LUCI CV no longer needs this Tryjob"
+
 func (c *Cancellator) cancelAll(ctx context.Context, tjs []*tryjob.Tryjob) error {
 	if len(tjs) == 0 {
 		return nil
@@ -135,9 +138,9 @@ func (c *Cancellator) cancelAll(ctx context.Context, tjs []*tryjob.Tryjob) error
 				}
 				// TODO(crbug/1308930): use Buildbucket's batch API to reduce
 				// number of RPCs.
-				err = be.CancelTryjob(ctx, tj)
+				err = be.CancelTryjob(ctx, tj, reason)
 				if err != nil {
-					return err
+					return errors.Annotate(err, "failed to cancel Tryjob [id=%d, eid=%s]", tj.ID, tj.ExternalID).Err()
 				}
 				return datastore.RunInTransaction(ctx, func(ctx context.Context) error {
 					if err := datastore.Get(ctx, tj); err != nil {
@@ -168,7 +171,7 @@ type cancellatorBackend interface {
 	//
 	// MUST not modify the given Tryjob object.
 	// If the tryjob was already cancelled, it should not return an error.
-	CancelTryjob(ctx context.Context, tj *tryjob.Tryjob) error
+	CancelTryjob(ctx context.Context, tj *tryjob.Tryjob, reason string) error
 }
 
 // allWatchingRunsEnded checks if all of the runs that are watching the given

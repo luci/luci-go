@@ -85,7 +85,7 @@ func (f *Facade) Update(ctx context.Context, saved *tryjob.Tryjob) (tryjob.Statu
 // CancelTryjob asks buildbucket to cancel a running tryjob.
 //
 // It returns nil error if the buildbucket build is ended.
-func (f *Facade) CancelTryjob(ctx context.Context, tj *tryjob.Tryjob) error {
+func (f *Facade) CancelTryjob(ctx context.Context, tj *tryjob.Tryjob, reason string) error {
 	host, buildID, err := tj.ExternalID.ParseBuildbucketID()
 	if err != nil {
 		return err
@@ -97,7 +97,8 @@ func (f *Facade) CancelTryjob(ctx context.Context, tj *tryjob.Tryjob) error {
 	}
 
 	_, err = bbClient.CancelBuild(ctx, &bbpb.CancelBuildRequest{
-		Id: buildID,
+		Id:              buildID,
+		SummaryMarkdown: reason,
 	})
 	return err
 }

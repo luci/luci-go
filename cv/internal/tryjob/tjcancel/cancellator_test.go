@@ -198,7 +198,7 @@ func (mb *mockBackend) Kind() string {
 	return "buildbucket"
 }
 
-func (mb *mockBackend) CancelTryjob(ctx context.Context, tj *tryjob.Tryjob) error {
+func (mb *mockBackend) CancelTryjob(ctx context.Context, tj *tryjob.Tryjob, reason string) error {
 	mb.calledWith = append(mb.calledWith, tj)
 	return nil
 }
