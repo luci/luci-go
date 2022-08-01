@@ -528,7 +528,7 @@ luci.cq_tryjob_verifier(
 luci.cq_tryjob_verifier(
     builder = "another-project:analyzer/format checker",
     cq_group = "main-cq",
-    location_regexp = [r".+\.py", r".+\.go"],
+    location_regexp = [r".+\.py", r".+\.go", r".+\.X4"],
     owner_whitelist = ["project-contributor"],
     mode_allowlist = [cq.MODE_ANALYZER_RUN, cq.MODE_FULL_RUN],
 )
@@ -581,6 +581,7 @@ lucicfg.emit(
 #         name: "another-project/analyzer/format checker"
 #         location_regexp: ".+\\.py"
 #         location_regexp: ".+\\.go"
+#         location_regexp: ".+\\.X4"
 #         owner_whitelist_group: "project-contributor"
 #         mode_allowlist: "ANALYZER_RUN"
 #         mode_allowlist: "FULL_RUN"
@@ -1504,6 +1505,7 @@ lucicfg.emit(
 #   name: "AnotherProjectAnalyzerFormatChecker"
 #   needs: GIT_FILE_DETAILS
 #   provides: RESULTS
+#   path_filters: "*.X4"
 #   path_filters: "*.go"
 #   path_filters: "*.py"
 #   impls {

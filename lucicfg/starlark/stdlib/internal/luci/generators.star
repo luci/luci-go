@@ -18,7 +18,6 @@ load("@stdlib//internal/error.star", "error")
 load("@stdlib//internal/experiments.star", "experiments")
 load("@stdlib//internal/graph.star", "graph")
 load("@stdlib//internal/lucicfg.star", "lucicfg")
-load("@stdlib//internal/re.star", "re")
 load("@stdlib//internal/strutil.star", "strutil")
 load("@stdlib//internal/time.star", "time")
 load("@stdlib//internal/luci/common.star", "builder_ref", "keys", "kinds", "triggerer")
@@ -1449,7 +1448,7 @@ def _tricium_config(verifiers, cq_group, project):
             continue
         recipe = _tricium_recipe(verifier, project)
         func_name = _compute_func_name(recipe)
-        gerrit_projs, exts = _parse_location_regexp_from_tricium(verifier.props.location_regexp)
+        gerrit_projs, exts = _parse_location_filters_for_tricium(verifier.props.location_filters)
         if watching_gerrit_projects == None:
             watching_gerrit_projects = gerrit_projs
         elif watching_gerrit_projects != gerrit_projs:
@@ -1531,23 +1530,25 @@ def _compute_func_name(recipe):
         normalize(recipe.builder),
     ])
 
-def _parse_location_regexp_from_tricium(location_regexps):
-    """Returns the Gerrit projects and extensions the location_regexps watches.
+def _parse_location_filters_for_tricium(location_filters):
+    """Returns Gerrit projects and path filters based on location_filters.
 
-    This SHOULD ONLY be used for generating config only which extracts watching
-    Gerrit reposfrom location_regexp. The result watching projects and/or
-    extensions may be empty.
+    The parsed host, project, and extension patterns are used only for
+    generating watched repos and path filters in the Tricium config. Hosts,
+    projects or path filters that aren't in the expected format will be
+    skipped.
+
+    Returns:
+        A pair: (list of (host, proj) pairs, list of extension patterns).
+        Either list may be empty.
     """
     host_and_projs = []
     exts = []
-    for r in location_regexps:
-        gerrit_url_re = r"https://([a-z\-]+)\-review\.googlesource\.com/([a-z0-9_\-/]+)+/\[\+\]/"
-        extension_re = r"\\\.[a-z]+"
-        re_for_location_re = r"^(%s)?\.\+(%s)?$" % (gerrit_url_re, extension_re)
-        groups = re.submatches(re_for_location_re, r)
-        host, proj, ext = groups[2], groups[3], groups[4].lstrip(r"\.")
-        if host and proj:
+    for f in location_filters:
+        if f.gerrit_host_regexp.endswith("-review.googlesource.com") and f.gerrit_project_regexp:
+            host = f.gerrit_host_regexp[:-len("-review.googlesource.com")]
+            proj = f.gerrit_project_regexp
             host_and_projs.append((host, proj))
-        if ext:
-            exts.append(ext)
+        if f.path_regexp and f.path_regexp.startswith(r".+\."):
+            exts.append(f.path_regexp[len(r".+\."):])
     return sorted(set(host_and_projs)), sorted(set(exts))

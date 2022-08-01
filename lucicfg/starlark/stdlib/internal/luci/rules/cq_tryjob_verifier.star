@@ -343,68 +343,6 @@ def _cq_tryjob_verifier(
     for m in mode_allowlist:
         validate.string("mode_allowlist", m)
 
-    if cq.MODE_ANALYZER_RUN in mode_allowlist:
-        # TODO(crbug/1202952): Remove all following restrictions after Tricium
-        # is folded into CV.
-        if location_regexp:
-            re_for_gerrit_url_re = r"https://([a-z\-]+)\-review\.googlesource\.com/([a-z0-9_\-/]+)+/\[\+\]/"
-            re_for_extension_re = r"\\\.[a-z]+"
-            re_for_location_re = r"^(%s)?\.\+(%s)?$" % (re_for_gerrit_url_re, re_for_extension_re)
-            ext_to_gerrit_urls = {}
-            all_gerrit_urls = []
-            for r in location_regexp:
-                groups = re.submatches(re_for_location_re, r)
-                if not groups:
-                    fail(r'"location_regexp" of an analyzer MUST either be in ' +
-                         r'the format of ".+\.extension" (e.g. ".+\.py) ' +
-                         r'or "https://host-review.googlesource.com/project/[+]/.+\.extension" ' +
-                         r'(e.g. "https://chromium-review.googlesource.com/infra/infra/[+]/.+\.py"). Extension is optional.')
-                gerrit_url, ext = groups[1].rstrip("[+]"), groups[4].lstrip(r"\.")
-                if ext not in ext_to_gerrit_urls:
-                    ext_to_gerrit_urls[ext] = []
-                if ((gerrit_url and "" in all_gerrit_urls) or (
-                    gerrit_url == "" and any(all_gerrit_urls)
-                )):
-                    fail(r'"location_regexp" of an analyzer MUST NOT mix ' +
-                         r'two different formats (i.e. ".+\.extension" ' +
-                         r'and "https://host-review.googlesource.com/project/[+]/.+\.extension"). Got %s.' % location_regexp)
-                ext_to_gerrit_urls[ext].append(gerrit_url)
-                all_gerrit_urls.append(gerrit_url)
-
-            # Since all analyzers in a Tricium config are watching the same set
-            # of Gerrit repos, we need to make sure that for each extension
-            # this analyzer is watching, it MUST specify the same set of Gerrit
-            # repos it is watching. This allows lucicfg to derive a homogeneous
-            # set of watching Gerrit repos when generating Tricium config
-            # later.
-            #
-            # For example, location_rexgep values like:
-            #
-            #   https://example-review.googlesource.com/repo1/[+]/.+\.go
-            #   https://example-review.googlesource.com/repo2/[+]/.+\.go
-            #   https://example-review.googlesource.com/repo1/[+]/.+\.py
-            #
-            # are not allowed, because the generated Tricium config has to
-            # watch both repo1 and repo2. If we allow it, Tricium will
-            # implicitly run for Python files in repo2 which is not what
-            # user intended. Therefore, user MUST provide
-            # https://example-review.googlesource.com/repo2/[+]/.+\.py here
-            # as well.
-            ref_ext, ref_gerrit_urls = ext_to_gerrit_urls.popitem()
-            ref_gerrit_urls = sorted(ref_gerrit_urls)
-            for ext, gerrit_urls in ext_to_gerrit_urls.items():
-                if sorted(gerrit_urls) != ref_gerrit_urls:
-                    fail('each extension specified in "location_regexp" of an ' +
-                         "analyzer MUST have the same set of gerrit URLs; got " +
-                         "%s for extension %s, but %s for extension %s." % (
-                             sorted(gerrit_urls),
-                             ext,
-                             ref_gerrit_urls,
-                             ref_ext,
-                         ))
-        if location_regexp_exclude:
-            fail('"analyzer currently can not be used together with  "location_regexp_exclude"')
-
     # Fill location_filters in based on location_regexp and
     # location_regexp_exclude.
     location_filters = []
@@ -412,6 +350,12 @@ def _cq_tryjob_verifier(
         location_filters.append(_make_location_filter(r, exclude = False))
     for r in location_regexp_exclude:
         location_filters.append(_make_location_filter(r, exclude = True))
+
+    # Validate location_filters used by analyzers.
+    # TODO(crbug/1202952): Remove these restrictions after Tricium is
+    # folded into CV.
+    if cq.MODE_ANALYZER_RUN in mode_allowlist:
+        _validate_analyzer_location(location_filters)
 
     if not equivalent_builder:
         if equivalent_builder_percentage != None:
@@ -485,6 +429,95 @@ def _cq_tryjob_verifier(
 
     return graph.keyset(key)
 
+def _validate_analyzer_location(location_filters):
+    """Validates location_regexp/location_filters for analyzers.
+
+    Some parts of Tricium config are generated from location_filters. But
+    because of the way that Tricium watches one set of repos per config and
+    uses glob path filters which (in practice) are used for file extensions,
+    not all location filters are valid for analyzers.
+
+    Specifically: Since all analyzers in a Tricium config are watching the same
+    set of Gerrit repos, we need to make sure that for each extension this
+    analyzer is watching, it MUST specify the same set of Gerrit repos it is
+    watching. This allows lucicfg to derive a homogeneous set of watching
+    Gerrit repos when generating Tricium config later.
+
+    For example, location_filters values that match repo1 and repo2 with path
+    filter *.go; and only repo1 with path filter .*.py would not be allowed,
+    because the generated Tricium config has to watch both repo1 and repo2. If
+    we allow it, Tricium will implicitly run for Python files in repo2 which is
+    not what user intended.
+    """
+    if not location_filters:
+        return
+
+    re_for_ext_re = r"\.\+\\\.\w+"
+    ext_prefix = r".+\."
+
+    def matches_ext(s):
+        return re.submatches(re_for_ext_re, s) and s.startswith(ext_prefix)
+
+    re_for_gerrit_host_re = r"[a-z\-]+\-review\.googlesource\.com"
+    re_for_gerrit_project_re = r"[a-z0-9\.\-/]+"
+
+    ext_to_gerrit_urls = {}
+    all_gerrit_urls = []
+
+    for f in location_filters:
+        if f.exclude:
+            fail('"analyzer currently can not be used together with exclude filters')
+
+        # Path filter must be empty (matching everything) or match only an extension.
+        empty_path = f.path_regexp in ("", ".*", ".+")
+        if not empty_path and not matches_ext(f.path_regexp):
+            fail('"location_filter" of an analyzer MUST have a path_regexp ' +
+                 'that matches everything, OR a path_regexp like ".+\\.py"; ' +
+                 'got "%s", expecting pattern "%s"' % (f.path_regexp, re_for_ext_re))
+        ext = ""
+        if matches_ext(f.path_regexp):
+            ext = f.path_regexp[len(ext_prefix):]
+
+        empty_host = f.gerrit_host_regexp in ("", ".*", ".+")
+        empty_project = f.gerrit_project_regexp in ("", ".*", ".+")
+        if (not empty_host and empty_project) or (empty_host and not empty_project):
+            # Only host or project specified, not both.
+            fail('"location_filter" of an analyzer MUST have either both Gerrit host and project ' +
+                 'or neither. Got "%s", "%s"' % (f.gerrit_host_regexp, f.gerrit_project_regexp))
+
+        # gerrit_url below is a combination of host and project; both must be
+        # specified and match the expected formats.
+        gerrit_url = ""
+        if not empty_host and not empty_project:
+            gerrit_url = f.gerrit_host_regexp + "/" + f.gerrit_project_regexp
+            if not re.submatches(re_for_gerrit_host_re, f.gerrit_host_regexp):
+                fail("Gerrit host in location filter did not match expected format, " +
+                     'got "%s", expecting pattern "%s"' % (f.gerrit_host_regexp, re_for_gerrit_host_re))
+            if not re.submatches(re_for_gerrit_project_re, f.gerrit_project_regexp):
+                fail("Gerrit project in location filter did not match expected format, " +
+                     'got "%s", expecting pattern "%s"' % (f.gerrit_project_regexp, re_for_gerrit_project_re))
+
+        if ext not in ext_to_gerrit_urls:
+            ext_to_gerrit_urls[ext] = []
+        if ((gerrit_url and "" in all_gerrit_urls) or (gerrit_url == "" and any(all_gerrit_urls))):
+            fail(r'"location_filters" of an analyzer MUST NOT mix two different formats ' +
+                 r'(i.e. only extension, and extension plus gerrit host/project."')
+        ext_to_gerrit_urls[ext].append(gerrit_url)
+        all_gerrit_urls.append(gerrit_url)
+
+    ref_ext, ref_gerrit_urls = ext_to_gerrit_urls.popitem()
+    ref_gerrit_urls = sorted(ref_gerrit_urls)
+    for ext, gerrit_urls in ext_to_gerrit_urls.items():
+        if sorted(gerrit_urls) != ref_gerrit_urls:
+            fail('each extension specified in "location_regexp" or ' +
+                 '"location_filters" of an analyzer MUST have the same set ' +
+                 "of gerrit URLs; got %s for extension %s, but %s for extension %s." % (
+                     sorted(gerrit_urls),
+                     ext,
+                     ref_gerrit_urls,
+                     ref_ext,
+                 ))
+
 def _make_location_filter(regexp, exclude = False):
     """Helper method to convert a location regexp to a location filter.
 
@@ -530,6 +563,18 @@ def _make_location_filter(regexp, exclude = False):
     # Pattern matching exact host and project with path pattern, e.g.
     # "https://chromium-review.googlesource.com/chromiumos/config/[+]/.+"
     groups = re.submatches(r"https?://([^/]+)/([/a-z0-9_/\-\.]+)/\[\+\]/(.*)", regexp)
+    if groups:
+        return cq.location_filter(
+            gerrit_host_regexp = groups[1],
+            gerrit_project_regexp = groups[2],
+            path_regexp = groups[3],
+            exclude = exclude,
+        )
+
+    # Pattern matching host and path pattern both not project, e.g.
+    # "https://chromium-review.googlesource.com/.*/[+]/.+"
+    # Note that this doesn't occur in real configs at this time, but is possible.
+    groups = re.submatches(r"https?://([^/]+)/(\.[\+\*])/\[\+\]/(.*)", regexp)
     if groups:
         return cq.location_filter(
             gerrit_host_regexp = groups[1],
