@@ -19,7 +19,9 @@ import (
 	"fmt"
 
 	"go.chromium.org/luci/common/logging"
+	"google.golang.org/protobuf/proto"
 
+	cfgpb "go.chromium.org/luci/cv/api/config/v2"
 	"go.chromium.org/luci/cv/api/recipe/v1"
 	"go.chromium.org/luci/cv/internal/tryjob"
 )
@@ -74,7 +76,7 @@ func (e *Executor) canRetryAll(
 	execState *tryjob.ExecutionState,
 	failedIndices []int,
 ) bool {
-	if execState.GetRequirement().GetRetryConfig() == nil {
+	if !isRetryEnabled(execState.GetRequirement().GetRetryConfig()) {
 		e.logRetryDenied(ctx, execState, failedIndices, "retry is not enabled in the config")
 		return false
 	}
@@ -124,4 +126,17 @@ func (e *Executor) canRetryAll(
 		e.logRetryDenied(ctx, execState, failedIndices, "insufficient global quota")
 	}
 	return canRetryAll
+}
+
+var emptyRetryConfig = &cfgpb.Verifiers_Tryjob_RetryConfig{}
+
+func isRetryEnabled(rc *cfgpb.Verifiers_Tryjob_RetryConfig) bool {
+	switch {
+	case rc == nil:
+		return false
+	case proto.Equal(rc, emptyRetryConfig):
+		return false
+	default:
+		return true
+	}
 }

@@ -51,10 +51,18 @@ func TestCanRetryAll(t *testing.T) {
 		executor := &Executor{}
 
 		Convey("With no retry config", func() {
-			execState = newExecStateBuilder(execState).
-				withRetryConfig(nil).
-				appendAttempt(builderZero, makeAttempt(1, tryjob.Status_ENDED, tryjob.Result_FAILED_TRANSIENTLY)).
-				build()
+			Convey("Nil config", func() {
+				execState = newExecStateBuilder(execState).
+					withRetryConfig(nil).
+					appendAttempt(builderZero, makeAttempt(1, tryjob.Status_ENDED, tryjob.Result_FAILED_TRANSIENTLY)).
+					build()
+			})
+			Convey("Empty config", func() {
+				execState = newExecStateBuilder(execState).
+					withRetryConfig(&cfgpb.Verifiers_Tryjob_RetryConfig{}).
+					appendAttempt(builderZero, makeAttempt(1, tryjob.Status_ENDED, tryjob.Result_FAILED_TRANSIENTLY)).
+					build()
+			})
 			ok := executor.canRetryAll(ctx, execState, []int{0})
 			So(ok, ShouldBeFalse)
 			So(executor.logEntries, ShouldResembleProto, []*tryjob.ExecutionLogEntry{
