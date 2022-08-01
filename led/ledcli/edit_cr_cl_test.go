@@ -47,7 +47,7 @@ func TestParseCLURL(t *testing.T) {
 
 		{
 			url: "https://thing-review.googlesource.com/wat",
-			err: "Unknown changelist URL",
+			err: "gerrit URL parsing change",
 		},
 
 		{
@@ -102,11 +102,11 @@ func TestParseCLURL(t *testing.T) {
 		for _, tc := range cases {
 			tc := tc
 			Convey(fmt.Sprintf("%q", tc.url), func() {
-				cl, err := parseCrChangeListURL(tc.url, func(string, int64) (int64, error) {
+				cl, err := parseCrChangeListURL(tc.url, func(string, int64) (string, int64, error) {
 					if tc.resolvePatchset != 0 {
-						return tc.resolvePatchset, nil
+						return "project", tc.resolvePatchset, nil
 					}
-					return 0, errors.New("TEST: resolvePatchset not set")
+					return "", 0, errors.New("TEST: resolvePatchset not set")
 				})
 				if tc.err != "" {
 					So(err, ShouldErrLike, tc.err)
