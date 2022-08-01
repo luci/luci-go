@@ -505,7 +505,18 @@ def _make_location_filter(regexp, exclude = False):
         # Match everything.
         return cq.location_filter(exclude = exclude)
 
-    # Pattern matching path but not at root directory, e.g ".*OWNERS".
+    # Pattern matching path, potentially matching at either root directory or
+    # subdirectory, e.g ".*/OWNERS".
+    if "[+]" not in regexp and (regexp.startswith(".*/") or regexp.startswith(".+/")):
+        # Because the character immediately preceeding the path part is "/",
+        # a regexp like this could match at the root or a subdirectory.
+        path_regexp = "(%s)?%s" % (regexp[:len(".*/")], regexp[len(".*/"):])
+        return cq.location_filter(path_regexp = path_regexp, exclude = exclude)
+
+    # Pattern matching path, but not at root directory, e.g ".*OWNERS",
+    # .+pubkeys.+pub". Note that some
+    # such patterns could potentially also match host or project in addition to
+    # path, but in all observed such patterns, the intent is to match path.
     if "[+]" not in regexp and (regexp.startswith(".*") or regexp.startswith(".+")):
         return cq.location_filter(path_regexp = regexp, exclude = exclude)
 
@@ -527,13 +538,16 @@ def _make_location_filter(regexp, exclude = False):
             exclude = exclude,
         )
 
-    # Pattern matching only project or project and path.
+    # Pattern matching only project or project and path, such as
+    # ".+/chromeos/overlays/[+]/sys-boot/.+". Note that theoretically this
+    # could match a Gerrit project like "foo/chromeos/overlays", but most
+    # likely the intent is to match exactly the project "chromeos/overlays".
     groups = re.submatches(r"(.+)/\[\+\]/?(.*)", regexp)
     if groups and not regexp.startswith("https://"):
         project_regexp = groups[1]
-        for host_matching_prefix in (".+/", ".*/"):
-            if project_regexp.startswith(host_matching_prefix):
-                project_regexp = project_regexp[len(host_matching_prefix):]
+        for prefix in (".+/", ".*/"):
+            if project_regexp.startswith(prefix):
+                project_regexp = "(%s)?%s" % (project_regexp[:len(prefix)], project_regexp[len(prefix):])
                 break
         return cq.location_filter(
             gerrit_project_regexp = project_regexp,

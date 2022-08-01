@@ -25,6 +25,8 @@ luci.cq_group(
                 r".+[+]/dashboard/.+",
                 r".*manifest/[+].*",
                 r".+/[+].*/OWNERS",
+                r".+/touch_to_fail_tryjob",
+                r".*/OWNERS",
             ],
             location_regexp_exclude = [
                 r".+/[+]/3pp/exception/.+",
@@ -38,7 +40,11 @@ luci.cq_group(
                 r".+/[+]/DEPS",
                 r".+[+]/.+/3pp/.+",
                 r".*manifest/[+].+",
+                r".+generated.+",
+                r".+pubkeys.+pub",
                 r".+/repo/foo/[+]/a/b/.*",
+                r".+/chromeos/overlays/baseboard-dedede-private/[+]/sys-boot/coreboot-private-files-baseboard-dedede/files/blobs/.+",
+                r".+/experiences/[+]/.+",
             ],
         ),
     ],
@@ -67,6 +73,8 @@ luci.cq_group(
 #         location_regexp: ".+[+]/dashboard/.+"
 #         location_regexp: ".*manifest/[+].*"
 #         location_regexp: ".+/[+].*/OWNERS"
+#         location_regexp: ".+/touch_to_fail_tryjob"
+#         location_regexp: ".*/OWNERS"
 #         location_regexp_exclude: ".+/[+]/3pp/exception/.+"
 #         location_regexp_exclude: "https://example.com/repo/[+]/all/one.txt"
 #         location_regexp_exclude: "https://example.com/external/github.com/repo/[+]/all/one.txt"
@@ -93,6 +101,16 @@ luci.cq_group(
 #         location_filters {
 #           gerrit_host_regexp: ".*"
 #           gerrit_project_regexp: ".*"
+#           path_regexp: "(.+/)?touch_to_fail_tryjob"
+#         }
+#         location_filters {
+#           gerrit_host_regexp: ".*"
+#           gerrit_project_regexp: ".*"
+#           path_regexp: "(.*/)?OWNERS"
+#         }
+#         location_filters {
+#           gerrit_host_regexp: ".*"
+#           gerrit_project_regexp: ".*"
 #           path_regexp: "3pp/exception/.+"
 #           exclude: true
 #         }
@@ -114,7 +132,11 @@ luci.cq_group(
 #         location_regexp: ".+/[+]/DEPS"
 #         location_regexp: ".+[+]/.+/3pp/.+"
 #         location_regexp: ".*manifest/[+].+"
+#         location_regexp: ".+generated.+"
+#         location_regexp: ".+pubkeys.+pub"
 #         location_regexp: ".+/repo/foo/[+]/a/b/.*"
+#         location_regexp: ".+/chromeos/overlays/baseboard-dedede-private/[+]/sys-boot/coreboot-private-files-baseboard-dedede/files/blobs/.+"
+#         location_regexp: ".+/experiences/[+]/.+"
 #         location_filters {
 #           gerrit_host_regexp: ".*"
 #           gerrit_project_regexp: ".*"
@@ -132,8 +154,28 @@ luci.cq_group(
 #         }
 #         location_filters {
 #           gerrit_host_regexp: ".*"
-#           gerrit_project_regexp: "repo/foo"
+#           gerrit_project_regexp: ".*"
+#           path_regexp: ".+generated.+"
+#         }
+#         location_filters {
+#           gerrit_host_regexp: ".*"
+#           gerrit_project_regexp: ".*"
+#           path_regexp: ".+pubkeys.+pub"
+#         }
+#         location_filters {
+#           gerrit_host_regexp: ".*"
+#           gerrit_project_regexp: "(.+/)?repo/foo"
 #           path_regexp: "a/b/.*"
+#         }
+#         location_filters {
+#           gerrit_host_regexp: ".*"
+#           gerrit_project_regexp: "(.+/)?chromeos/overlays/baseboard-dedede-private"
+#           path_regexp: "sys-boot/coreboot-private-files-baseboard-dedede/files/blobs/.+"
+#         }
+#         location_filters {
+#           gerrit_host_regexp: ".*"
+#           gerrit_project_regexp: "(.+/)?experiences"
+#           path_regexp: ".+"
 #         }
 #       }
 #       retry_config {
