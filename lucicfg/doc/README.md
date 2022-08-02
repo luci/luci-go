@@ -2854,6 +2854,7 @@ resultdb.artifact_predicate(
     included_invocations = None,
     test_results = None,
     content_type_regexp = None,
+    artifact_id_regexp = None,
 )
 ```
 
@@ -2867,6 +2868,7 @@ Represents a predicate of text artifacts.
 * **included_invocations**: bool, if true, invocation level artifacts are included.
 * **test_results**: bool, if true, test result level artifacts are included.
 * **content_type_regexp**: string, an artifact must have a content type matching this regular expression entirely, i.e. the expression is implicitly wrapped with ^ and $.
+* **artifact_id_regexp**: string, an artifact must have an ID matching this regular expression entirely, i.e. the expression is implicitly wrapped with ^ and $.
 
 
 #### Returns  {#resultdb.artifact-predicate-returns}

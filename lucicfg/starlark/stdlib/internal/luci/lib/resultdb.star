@@ -188,7 +188,8 @@ def _artifact_predicate(
         test_result_predicate = None,
         included_invocations = None,
         test_results = None,
-        content_type_regexp = None):
+        content_type_regexp = None,
+        artifact_id_regexp = None):
     """Represents a predicate of text artifacts.
 
     Args:
@@ -200,6 +201,9 @@ def _artifact_predicate(
       content_type_regexp: string, an artifact must have a content type matching
         this regular expression entirely, i.e. the expression is implicitly
         wrapped with ^ and $.
+      artifact_id_regexp: string, an artifact must have an ID matching this
+        regular expression entirely, i.e. the expression is implicitly wrapped
+        with ^ and $.
 
     Returns:
       A populated predicate_pb.ArtifactPredicate() proto.
@@ -214,6 +218,11 @@ def _artifact_predicate(
         content_type_regexp = validate.string(
             "content_type_regexp",
             content_type_regexp,
+            required = False,
+        ),
+        artifact_id_regexp = validate.string(
+            "artifact_id_regexp",
+            artifact_id_regexp,
             required = False,
         ),
     )
