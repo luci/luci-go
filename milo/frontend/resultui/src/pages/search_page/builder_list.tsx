@@ -17,11 +17,11 @@ import { observer } from 'mobx-react-lite';
 import { getURLPathForBuilder } from '../../libs/build_utils';
 import { BuilderID } from '../../services/buildbucket';
 
-export interface BuildersListProps {
+export interface BuilderListProps {
   readonly groupedBuilders: { [bucketId: string]: BuilderID[] | undefined };
 }
 
-export const BuildersList = observer(({ groupedBuilders }: BuildersListProps) => {
+export const BuilderList = observer(({ groupedBuilders }: BuilderListProps) => {
   return (
     <>
       {Object.entries(groupedBuilders).map(([bucketId, builders]) => (

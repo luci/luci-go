@@ -14,21 +14,34 @@
 
 import { groupBy } from 'lodash-es';
 import { reaction } from 'mobx';
-import { addDisposer, flow, getEnv, getParentOfType, Instance, SnapshotIn, SnapshotOut, types } from 'mobx-state-tree';
+import { addDisposer, getEnv, getParentOfType, Instance, SnapshotIn, SnapshotOut, types } from 'mobx-state-tree';
 
-import { LoadingState } from '../libs/constants';
-import { BuilderID, BuildersService, ListBuildersResponse } from '../services/buildbucket';
+import { PageLoader } from '../libs/page_loader';
+import { BuilderID, BuildersService } from '../services/buildbucket';
 import { AppState } from './app_state';
 
 export const SearchPage = types
   .model('SearchPage', {
+    buildersService: types.frozen<BuildersService | null>(null),
     searchQuery: '',
-    loadedBuilders: types.array(types.frozen<BuilderID>()),
-    loadingBuildersState: types.frozen<LoadingState>(LoadingState.Pending),
   })
   .views((self) => ({
+    get builderLoader() {
+      const buildersService = self.buildersService;
+      if (!buildersService) {
+        return null;
+      }
+
+      return new PageLoader<BuilderID>(async (pageToken) => {
+        const res = await buildersService.listBuilders({
+          pageToken,
+          pageSize: 1000,
+        });
+        return [res.builders?.map((b) => b.id) || [], res.nextPageToken];
+      });
+    },
     get builders() {
-      return self.loadedBuilders.map<[string, BuilderID]>((b) => [
+      return this.builderLoader?.items.map<[string, BuilderID]>((b) => [
         `${b.project}/${b.bucket}/${b.builder}`.toLowerCase(),
         b,
       ]);
@@ -42,39 +55,38 @@ export const SearchPage = types
     },
   }))
   .actions((self) => ({
+    setDependencies(buildersService: BuildersService | null) {
+      self.buildersService = buildersService;
+    },
     setSearchQuery(newSearchString: string) {
       self.searchQuery = newSearchString;
     },
-    loadAllBuilders: flow(function* (buildersService: BuildersService) {
-      self.loadedBuilders.clear();
-      self.loadingBuildersState = LoadingState.Running;
-
-      let pageToken = '';
-      try {
-        do {
-          const res: ListBuildersResponse = yield buildersService.listBuilders({ pageToken, pageSize: 1000 });
-          self.loadingBuildersState = LoadingState.PartiallyFulfilled;
-          self.loadedBuilders.push(...(res.builders?.map(({ id }) => id) || []));
-          pageToken = res.nextPageToken || '';
-        } while (pageToken);
-      } catch (e) {
-        self.loadingBuildersState = LoadingState.Rejected;
-        return;
-      }
-
-      self.loadingBuildersState = LoadingState.Fulfilled;
-    }),
-    afterAttach: function () {
+    afterCreate: function () {
       addDisposer(
         self,
         reaction(
-          () => getParentOfType(self, Store).appState.buildersService,
-          (buildersService) => {
-            if (!buildersService) {
+          () => self.builderLoader,
+          async (builderLoader) => {
+            if (!builderLoader) {
               return;
             }
-            this.loadAllBuilders(buildersService);
+            while (!builderLoader.loadedAll) {
+              await builderLoader.loadNextPage();
+            }
           },
+          { fireImmediately: true }
+        )
+      );
+    },
+    afterAttach() {
+      addDisposer(
+        self,
+        reaction(
+          () => {
+            const appState: AppState = getParentOfType(self, Store).appState;
+            return [appState.buildersService] as const;
+          },
+          (deps) => this.setDependencies(...deps),
           { fireImmediately: true }
         )
       );

@@ -13,25 +13,78 @@
 // limitations under the License.
 
 import { expect } from 'chai';
+import { when } from 'mobx';
 import { Instance } from 'mobx-state-tree';
+import sinon, { SinonMock } from 'sinon';
 
+import { PrpcClientExt } from '../libs/prpc_client_ext';
+import { BuildersService } from '../services/buildbucket';
+import { ListBuildersResponse } from '../services/milo_internal';
 import { SearchPage } from './store';
+
+const listBuilderResponses: { [pageToken: string]: ListBuildersResponse } = {
+  page1: {
+    builders: [
+      {
+        id: { project: 'project1', bucket: 'bucket1', builder: 'builder1' },
+        config: {},
+      },
+      {
+        id: { project: 'project1', bucket: 'bucket1', builder: 'builder2' },
+        config: {},
+      },
+      {
+        id: { project: 'project1', bucket: 'bucket2', builder: 'builder1' },
+        config: {},
+      },
+    ],
+    nextPageToken: 'page2',
+  },
+  page2: {
+    builders: [
+      {
+        id: { project: 'project1', bucket: 'bucket2', builder: 'builder2' },
+        config: {},
+      },
+      {
+        id: { project: 'project2', bucket: 'bucket1', builder: 'builder1' },
+        config: {},
+      },
+      {
+        id: { project: 'project2', bucket: 'bucket1', builder: 'builder2' },
+        config: {},
+      },
+    ],
+    nextPageToken: 'page3',
+  },
+  page3: {
+    builders: [
+      {
+        id: { project: 'project2', bucket: 'bucket2', builder: 'builder1' },
+        config: {},
+      },
+      {
+        id: { project: 'project2', bucket: 'bucket2', builder: 'builder2' },
+        config: {},
+      },
+    ],
+  },
+};
 
 describe('SearchPage', () => {
   let searchPage: Instance<typeof SearchPage>;
-  beforeEach(() => {
-    searchPage = SearchPage.create({
-      loadedBuilders: [
-        { project: 'project1', bucket: 'bucket1', builder: 'builder1' },
-        { project: 'project1', bucket: 'bucket1', builder: 'builder2' },
-        { project: 'project1', bucket: 'bucket2', builder: 'builder1' },
-        { project: 'project1', bucket: 'bucket2', builder: 'builder2' },
-        { project: 'project2', bucket: 'bucket1', builder: 'builder1' },
-        { project: 'project2', bucket: 'bucket1', builder: 'builder2' },
-        { project: 'project2', bucket: 'bucket2', builder: 'builder1' },
-        { project: 'project2', bucket: 'bucket2', builder: 'builder2' },
-      ],
-    });
+  let mock: SinonMock;
+  beforeEach((done) => {
+    const buildersService = new BuildersService(new PrpcClientExt({}, () => ''));
+    mock = sinon.mock(buildersService);
+
+    mock
+      .expects('listBuilders')
+      .exactly(3)
+      .callsFake(async ({ pageToken }) => listBuilderResponses[pageToken || 'page1']);
+    searchPage = SearchPage.create({ buildersService });
+
+    when(() => Boolean(searchPage.builderLoader?.loadedAll), done);
   });
 
   it('should group builders correctly', () => {

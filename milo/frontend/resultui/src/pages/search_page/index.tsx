@@ -26,10 +26,9 @@ import { createRoot, Root } from 'react-dom/client';
 import '../../components/dot_spinner';
 import { StoreProvider, useStore } from '../../components/StoreProvider';
 import { AppState, consumeAppState } from '../../context/app_state';
-import { LoadingState } from '../../libs/constants';
 import { consumer } from '../../libs/context';
 import commonStyle from '../../styles/common_style.css';
-import { BuildersList } from './builders_list';
+import { BuilderList } from './builder_list';
 
 export const SearchPage = observer(() => {
   const pageState = useStore().searchPage;
@@ -40,9 +39,8 @@ export const SearchPage = observer(() => {
 
   return (
     <div css={{ padding: '20px 30px' }}>
-      <FormControl css={{ margin: '0px 200px', width: 'calc(100% - 400px)' }}>
+      <FormControl css={{ margin: '0 200px', display: 'block' }}>
         <TextField
-          id="failure_filter"
           value={searchQuery}
           placeholder="Search builders in all projects"
           onChange={(e) => {
@@ -67,8 +65,8 @@ export const SearchPage = observer(() => {
         ></TextField>
       </FormControl>
       <div css={{ marginTop: '20px' }}>
-        <BuildersList groupedBuilders={pageState.groupedBuilders} />
-        {pageState.loadingBuildersState !== LoadingState.Fulfilled && (
+        <BuilderList groupedBuilders={pageState.groupedBuilders} />
+        {(pageState.builderLoader?.isLoading ?? true) && (
           <span>
             Loading <milo-dot-spinner></milo-dot-spinner>
           </span>
