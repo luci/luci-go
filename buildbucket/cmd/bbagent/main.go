@@ -85,6 +85,42 @@ type clientInput struct {
 	input    *bbpb.BBAgentArgs
 }
 
+// stopInfo contains different channels involved in causing the build to stop and shutdown
+type stopInfo struct {
+	invokeErr       chan error
+	shutdownCh      *closeOnceCh
+	canceledBuildCh *closeOnceCh
+	dispatcherErrCh <-chan error
+}
+
+func (si stopInfo) stopEvents(ctx context.Context, c clientInput, fatalUpdateBuildErrorSlot atomic.Value) {
+	// Monitors events that cause the build to stop.
+	// * Monitors the `dispatcherErrCh` and checks for fatal error.
+	//   * Stops the build shuttling and shuts down the luciexe if a fatal error
+	//     is received.
+	// * Monitors the returned build from UpdateBuild rpcs and checks if the
+	//   build has been canceled.
+	//   * Shuts down the luciexe if the build is canceled.
+	stopped := false
+	for {
+		select {
+		case err := <-si.invokeErr:
+			checkReport(ctx, c, errors.Annotate(err, "could not invoke luciexe").Err())
+		case err := <-si.dispatcherErrCh:
+			if !stopped && grpcutil.Code(err) == codes.InvalidArgument {
+				si.shutdownCh.close()
+				fatalUpdateBuildErrorSlot.Store(err)
+				stopped = true
+			}
+		case <-si.canceledBuildCh.ch:
+			// The build has been canceled, bail out early.
+			si.shutdownCh.close()
+		case <-ctx.Done():
+			return
+		}
+	}
+}
+
 func check(ctx context.Context, err error) {
 	if err != nil {
 		logging.Errorf(ctx, err.Error())
@@ -510,33 +546,14 @@ func mainImpl() int {
 		fatalUpdateBuildErrorSlot atomic.Value
 	)
 
-	go func() {
-		// Monitors events that cause the build to stop.
-		// * Monitors the `dispatcherErrCh` and checks for fatal error.
-		//   * Stops the build shuttling and shuts down the luciexe if a fatal error
-		//     is received.
-		// * Monitors the returned build from UpdateBuild rpcs and checks if the
-		//   build has been canceled.
-		//   * Shuts down the luciexe if the build is canceled.
-		stopped := false
-		for {
-			select {
-			case err := <-invokeErr:
-				checkReport(ctx, bbclientInput, errors.Annotate(err, "could not invoke luciexe").Err())
-			case err := <-dispatcherErrCh:
-				if !stopped && grpcutil.Code(err) == codes.InvalidArgument {
-					shutdownCh.close()
-					fatalUpdateBuildErrorSlot.Store(err)
-					stopped = true
-				}
-			case <-canceledBuildCh.ch:
-				// The build has been canceled, bail out early.
-				shutdownCh.close()
-			case <-cctx.Done():
-				return
-			}
-		}
-	}()
+	si := stopInfo{
+		invokeErr,
+		shutdownCh,
+		canceledBuildCh,
+		dispatcherErrCh,
+	}
+
+	go si.stopEvents(ctx, bbclientInput, fatalUpdateBuildErrorSlot)
 
 	// Now all we do is shuttle builds through to the buildbucket client channel
 	// until there are no more builds to shuttle.
