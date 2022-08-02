@@ -77,13 +77,8 @@ export class TestHistoryDetailsTableElement extends MiloBaseElement {
     // When a new test loader is received, load the first page.
     this.addDisposer(
       reaction(
-        () => this.pageState.loadedFirstPage,
-        () => {
-          if (this.pageState.loadedFirstPage) {
-            return;
-          }
-          reportErrorAsync(this, () => this.pageState.loadFirstPage())();
-        },
+        () => this.pageState.entriesLoader,
+        (entriesLoader) => reportErrorAsync(this, async () => await entriesLoader?.loadFirstPage())(),
         { fireImmediately: true }
       )
     );
@@ -98,9 +93,10 @@ export class TestHistoryDetailsTableElement extends MiloBaseElement {
     );
   }
 
-  private loadMore = reportErrorAsync(this, () => this.pageState.loadNextPage());
+  private loadMore = reportErrorAsync(this, async () => await this.pageState.entriesLoader?.loadNextPage());
 
   private renderAllVariants() {
+    const entryLoaders = this.pageState.entriesLoader;
     return html`
       ${repeat(
         this.pageState.verdictBundles,
@@ -109,17 +105,17 @@ export class TestHistoryDetailsTableElement extends MiloBaseElement {
           <milo-test-history-details-entry
             .verdictBundle=${v}
             .columnGetters=${this.columnGetters}
-            .expanded=${this.pageState.loadedTestVerdictCount === 1}
+            .expanded=${entryLoaders?.items.length === 1}
           ></milo-test-history-details-entry>
         `
       )}
       <div id="variant-list-tail">
-        Showing ${this.pageState.loadedTestVerdictCount} /
-        ${this.pageState.selectedTestVerdictCount}${this.pageState.loadedAllTestVerdicts ? '' : '+'} tests.
+        Showing ${entryLoaders?.items.length || 0} /
+        ${this.pageState.selectedTestVerdictCount}${entryLoaders?.loadedAll ? '' : '+'} tests.
         <span
           class="active-text"
           style=${styleMap({
-            display: !this.pageState.loadedAllTestVerdicts ? '' : 'none',
+            display: !(entryLoaders?.loadedAll ?? true) ? '' : 'none',
           })}
           >${this.renderLoadMore()}</span
         >
@@ -127,14 +123,17 @@ export class TestHistoryDetailsTableElement extends MiloBaseElement {
     `;
   }
   private renderLoadMore() {
-    const state = this.pageState;
+    const entriesLoader = this.pageState.entriesLoader;
     return html`
-      <span style=${styleMap({ display: state.isLoading ?? true ? 'none' : '' })} @click=${() => this.loadMore()}>
+      <span
+        style=${styleMap({ display: entriesLoader?.isLoading ?? true ? 'none' : '' })}
+        @click=${() => this.loadMore()}
+      >
         [load more]
       </span>
       <span
         style=${styleMap({
-          display: state.isLoading ?? true ? '' : 'none',
+          display: entriesLoader?.isLoading ?? true ? '' : 'none',
           cursor: 'initial',
         })}
       >

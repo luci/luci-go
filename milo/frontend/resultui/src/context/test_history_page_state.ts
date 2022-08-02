@@ -17,10 +17,9 @@ import { DateTime } from 'luxon';
 import { autorun, comparer, computed, makeObservable, observable, reaction } from 'mobx';
 
 import { createContextLink } from '../libs/context';
+import { PageLoader } from '../libs/page_loader';
 import { parseVariantFilter, parseVariantPredicate } from '../libs/queries/th_filter_query';
-import { TestHistoryEntriesLoader } from '../models/test_history_entries_loader';
 import { TestHistoryStatsLoader } from '../models/test_history_stats_loader';
-import { VariantLoader } from '../models/variant_loader';
 import { getCriticalVariantKeys, ResultDb } from '../services/resultdb';
 import {
   QueryTestHistoryStatsResponseGroup,
@@ -80,20 +79,31 @@ export class TestHistoryPageState {
     if (this.isDisposed) {
       return null;
     }
-    return new VariantLoader(this.project, this.subRealm, this.testId, this.variantPredicate, this.testHistoryService);
+
+    // Establish dependencies so the loader will get re-computed correctly.
+    const project = this.project;
+    const subRealm = this.subRealm;
+    const testId = this.testId;
+    const variantPredicate = this.variantPredicate;
+    const testHistoryService = this.testHistoryService;
+
+    return new PageLoader(async (pageToken) => {
+      const res = await testHistoryService.queryVariants({
+        project,
+        subRealm,
+        testId,
+        variantPredicate,
+        pageToken,
+      });
+      return [
+        res.variants?.map((v) => [v.variantHash, v.variant || { def: {} }] as [string, Variant]) || [],
+        res.nextPageToken,
+      ];
+    });
   }
 
   @computed get filteredVariants() {
-    return this.variantLoader!.variants.filter(([hash, v]) => this.variantFilter(v, hash));
-  }
-
-  @observable.ref private discoverVariantReqCount = 0;
-  @computed get isDiscoveringVariants() {
-    return this.discoverVariantReqCount > 0;
-  }
-  @observable.ref private _loadedAllVariants = false;
-  @computed get loadedAllVariants() {
-    return this._loadedAllVariants;
+    return this.variantLoader!.items.filter(([hash, v]) => this.variantFilter(v, hash));
   }
 
   @observable.ref graphType = GraphType.STATUS;
@@ -121,7 +131,7 @@ export class TestHistoryPageState {
 
   @computed({ equals: comparer.shallow })
   get criticalVariantKeys(): readonly string[] {
-    return getCriticalVariantKeys(this.variantLoader!.variants.map(([_, v]) => v));
+    return getCriticalVariantKeys(this.variantLoader!.items.map(([_, v]) => v));
   }
 
   @observable.ref private customColumnKeys?: readonly string[];
@@ -195,51 +205,59 @@ export class TestHistoryPageState {
     this.disposers.push(
       reaction(
         () => this.variantLoader,
-        () => this.discoverVariants(),
+        (loader) => loader?.loadFirstPage(),
         { fireImmediately: true }
       )
     );
   }
 
-  async discoverVariants() {
-    this.discoverVariantReqCount++;
-    const req = this.variantLoader!.discoverVariants();
-    req.finally(() => this.discoverVariantReqCount--);
-    this._loadedAllVariants = await req;
-    return this._loadedAllVariants;
-  }
-
   @computed({ keepAlive: true })
-  private get entriesLoader() {
+  get entriesLoader() {
     if (this.isDisposed || !this.selectedGroup) {
       return null;
     }
     const [project, subRealm] = this.realm.split(':', 2);
-    return new TestHistoryEntriesLoader(
-      project,
-      subRealm,
-      this.testId,
-      DateTime.fromISO(this.selectedGroup.partitionTime),
-      this.variantLoader!.getVariant(this.selectedGroup.variantHash)!,
-      this.testHistoryService
-    );
+    const testId = this.testId;
+    // this.selectedGroup.variantHash originated from the variant loader.
+    // So it must exist.
+    const variantHash = this.selectedGroup.variantHash;
+    const variant = this.variantLoader!.items.find(([vHash]) => vHash === variantHash)![1];
+    const earliest = this.selectedGroup.partitionTime;
+    const latest = DateTime.fromISO(earliest).minus({ days: -1 }).toISO();
+    const testHistoryService = this.testHistoryService;
+
+    return new PageLoader(async (pageToken) => {
+      const res = await testHistoryService.query({
+        project: project,
+        testId: testId,
+        predicate: {
+          subRealm: subRealm,
+          variantPredicate: {
+            equals: variant,
+          },
+          partitionTimeRange: {
+            earliest,
+            latest,
+          },
+        },
+        pageSize: 100,
+        pageToken,
+      });
+      return [res.verdicts?.map((verdict) => ({ verdict, variant: variant })) || [], res.nextPageToken];
+    });
   }
 
   @observable.ref selectedGroup: QueryTestHistoryStatsResponseGroup | null = null;
 
   @computed get verdictBundles(): ReadonlyArray<TestVerdictBundle> {
-    if (!this.entriesLoader?.verdictBundles.length) {
+    if (!this.entriesLoader?.items.length) {
       return [];
     }
 
     const cmpFn = createTVCmpFn(this.sortingKeys);
-    return [...this.entriesLoader?.verdictBundles].sort(cmpFn);
+    return [...(this.entriesLoader?.items || [])].sort(cmpFn);
   }
 
-  @computed
-  get loadedTestVerdictCount() {
-    return this.entriesLoader?.verdictBundles.length || 0;
-  }
   @computed
   get selectedTestVerdictCount() {
     return (
@@ -249,28 +267,6 @@ export class TestHistoryPageState {
       (this.selectedGroup?.exoneratedCount || 0) +
       (this.selectedGroup?.expectedCount || 0)
     );
-  }
-
-  @computed get isLoading() {
-    return this.entriesLoader?.isLoading ?? false;
-  }
-  get loadedAllTestVerdicts() {
-    return this.entriesLoader?.loadedAllTestVerdicts ?? true;
-  }
-  get loadedFirstPage() {
-    return this.entriesLoader?.loadedFirstPage ?? true;
-  }
-
-  async loadFirstPage() {
-    await this.entriesLoader?.loadFirstPage();
-  }
-  async loadNextPage() {
-    await this.entriesLoader?.loadNextPage();
-  }
-
-  // Don't display history URL when the user is already on the history page.
-  getHistoryUrl() {
-    return '';
   }
 
   /**
@@ -285,7 +281,9 @@ export class TestHistoryPageState {
 
     // Evaluates @computed({keepAlive: true}) properties after this.isDisposed
     // is set to true so they no longer subscribes to any external observable.
+    this.statsLoader;
     this.entriesLoader;
+    this.variantLoader;
   }
 }
 

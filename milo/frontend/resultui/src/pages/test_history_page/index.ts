@@ -199,15 +199,17 @@ export class TestHistoryPageElement extends MiloBaseElement implements BeforeEnt
         <i>match${this.pageState.filteredVariants.length === 1 ? '' : 'es'} the filter</i>.
         <span>
           ${
-            !this.pageState.isDiscoveringVariants && !this.pageState.loadedAllVariants
+            !(this.pageState.variantLoader?.isLoading ?? true) && !this.pageState.variantLoader?.loadedAll
               ? html`
-                  <span class="active-text" @click=${() => this.pageState.discoverVariants()}>[load more]</span>
+                  <span class="active-text" @click=${() => this.pageState.variantLoader?.loadNextPage()}>
+                    [load more]
+                  </span>
                   <mwc-icon class="inline-icon" title=${LOADING_VARIANT_INFO_TOOLTIP}>info</mwc-icon>
                 `
               : ''
           }
           ${
-            this.pageState.isDiscoveringVariants
+            this.pageState.variantLoader?.isLoading ?? true
               ? html` <span class="active-text">loading <milo-dot-spinner></milo-dot-spinner></span>`
               : ''
           }
