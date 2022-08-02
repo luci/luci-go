@@ -172,6 +172,11 @@ type artifact struct {
 }
 
 func (b *bqExporter) queryTextArtifacts(ctx context.Context, exportedID invocations.ID, bqExport *pb.BigQueryExport, artifactC chan *artifact) error {
+	exportedInv, err := invocations.Read(ctx, exportedID)
+	if err != nil {
+		return errors.Annotate(err, "error reading exported invocation").Err()
+	}
+
 	exportInvocationBatch := func(ctx context.Context, invIDs invocations.IDSet) error {
 		contentTypeRegexp := bqExport.GetTextArtifacts().GetPredicate().GetContentTypeRegexp()
 		if contentTypeRegexp == "" {
@@ -195,14 +200,13 @@ func (b *bqExporter) queryTextArtifacts(ctx context.Context, exportedID invocati
 			select {
 			case <-ctx.Done():
 				return ctx.Err()
-			case artifactC <- &artifact{Artifact: a, exported: invs[exportedID], parent: invs[invID]}:
+			case artifactC <- &artifact{Artifact: a, exported: exportedInv, parent: invs[invID]}:
 			}
 			return nil
 		})
 	}
 
-	err := getInvocationIDSet(ctx, exportedID, exportInvocationBatch)
-	if err != nil {
+	if err := getInvocationIDSet(ctx, exportedID, exportInvocationBatch); err != nil {
 		return errors.Annotate(err, "invocation id set").Err()
 	}
 	return nil
