@@ -128,6 +128,19 @@ export interface FailureReason {
   readonly primaryErrorMessage: string;
 }
 
+export interface QueryTestsRequest {
+  readonly project: string;
+  readonly testIdSubstring: string;
+  readonly subRealm?: string;
+  readonly pageSize?: number;
+  readonly pageToken?: string;
+}
+
+export interface QueryTestsResponse {
+  readonly testIds?: string[];
+  readonly nextPageToken?: string;
+}
+
 export interface ClusterRequest {
   readonly project: string;
   readonly testResults: ReadonlyArray<{
@@ -195,6 +208,10 @@ export class TestHistoryService {
 
   async queryVariants(req: QueryVariantsRequest, cacheOpt: CacheOption = {}): Promise<QueryVariantsResponse> {
     return (await this.cachedCallFn(cacheOpt, 'QueryVariants', req)) as QueryVariantsResponse;
+  }
+
+  async queryTests(req: QueryTestsRequest, cacheOpt: CacheOption = {}): Promise<QueryTestsResponse> {
+    return (await this.cachedCallFn(cacheOpt, 'QueryTests', req)) as QueryTestsResponse;
   }
 }
 

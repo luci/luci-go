@@ -18,12 +18,23 @@ import { addDisposer, getEnv, getParentOfType, Instance, SnapshotIn, SnapshotOut
 
 import { PageLoader } from '../libs/page_loader';
 import { BuilderID, BuildersService } from '../services/buildbucket';
+import { TestHistoryService } from '../services/weetbix';
 import { AppState } from './app_state';
+
+export const enum SearchTarget {
+  Builders,
+  Tests,
+}
 
 export const SearchPage = types
   .model('SearchPage', {
+    testHistoryService: types.frozen<TestHistoryService | null>(null),
     buildersService: types.frozen<BuildersService | null>(null),
+
+    searchTarget: types.frozen<SearchTarget>(SearchTarget.Builders),
     searchQuery: '',
+
+    testProject: 'chromium',
   })
   .views((self) => ({
     get builderLoader() {
@@ -53,13 +64,37 @@ export const SearchPage = types
     get groupedBuilders() {
       return groupBy(this.filteredBuilders, (b) => `${b.project}/${b.bucket}`);
     },
+    get testLoader() {
+      const testHistoryService = self.testHistoryService;
+      const project = self.testProject;
+      const testIdSubstring = self.searchQuery;
+      if (!testHistoryService || !project || !testIdSubstring) {
+        return null;
+      }
+
+      return new PageLoader<string>(async (pageToken) => {
+        const res = await testHistoryService.queryTests({
+          project,
+          testIdSubstring,
+          pageToken,
+        });
+        return [res.testIds || [], res.nextPageToken];
+      });
+    },
   }))
   .actions((self) => ({
-    setDependencies(buildersService: BuildersService | null) {
+    setDependencies(buildersService: BuildersService | null, testHistoryService: TestHistoryService | null) {
       self.buildersService = buildersService;
+      self.testHistoryService = testHistoryService;
+    },
+    setSearchTarget(newSearchTarget: SearchTarget) {
+      self.searchTarget = newSearchTarget;
     },
     setSearchQuery(newSearchString: string) {
       self.searchQuery = newSearchString;
+    },
+    setTestProject(newTestProject: string) {
+      self.testProject = newTestProject;
     },
     afterCreate: function () {
       addDisposer(
@@ -77,6 +112,20 @@ export const SearchPage = types
           { fireImmediately: true }
         )
       );
+
+      addDisposer(
+        self,
+        reaction(
+          () => [self.searchTarget, self.testLoader] as const,
+          ([searchTarget, testLoader]) => {
+            if (searchTarget !== SearchTarget.Tests) {
+              return;
+            }
+            testLoader?.loadFirstPage();
+          },
+          { fireImmediately: true }
+        )
+      );
     },
     afterAttach() {
       addDisposer(
@@ -84,7 +133,7 @@ export const SearchPage = types
         reaction(
           () => {
             const appState: AppState = getParentOfType(self, Store).appState;
-            return [appState.buildersService] as const;
+            return [appState.buildersService, appState.testHistoryService] as const;
           },
           (deps) => this.setDependencies(...deps),
           { fireImmediately: true }

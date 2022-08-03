@@ -127,7 +127,7 @@ export function roundDown(num: number, sortedRoundNumbers: readonly number[]) {
  * This is useful when we want to resolve/reject a promise after the
  * initialization step.
  */
-export function deferred<T>(): [
+export function deferred<T = void>(): [
   promise: Promise<T>,
   resolve: (value: T | PromiseLike<T>) => void,
   reject: (reason?: unknown) => void
