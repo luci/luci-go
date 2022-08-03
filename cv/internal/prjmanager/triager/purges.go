@@ -21,6 +21,7 @@ import (
 
 	"go.chromium.org/luci/common/clock"
 
+	"go.chromium.org/luci/cv/internal/changelist"
 	"go.chromium.org/luci/cv/internal/prjmanager/prjpb"
 )
 
@@ -36,9 +37,14 @@ func stagePurges(ctx context.Context, cls map[int64]*clInfo, pm pmState) ([]*prj
 		case when.After(now):
 			next = earliest(next, when)
 		default:
+			var clErrors []*changelist.CLError
+			for _, pr := range info.purgeReasons {
+				clErrors = append(clErrors, pr.GetClError())
+			}
 			out = append(out, &prjpb.PurgeCLTask{
-				Reasons:   info.purgeReasons,
-				PurgingCl: &prjpb.PurgingCL{Clid: clid},
+				PurgeReasons: info.purgeReasons,
+				Reasons:      clErrors, // For backwards compatibility only.
+				PurgingCl:    &prjpb.PurgingCL{Clid: clid},
 			})
 		}
 	}

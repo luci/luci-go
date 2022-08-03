@@ -219,7 +219,7 @@ func (rs *runStage) stageNewRunsFrom(ctx context.Context, clid int64, info *clIn
 		}
 		logging.Warningf(ctx, "Run %q already exists, finalized %s ago; will purge CLs with reused triggers", existing.ID, since)
 		for _, info := range combo.all {
-			info.purgeReasons = append(info.purgeReasons, &changelist.CLError{
+			info.addPurgeReason(info.pcl.Triggers.GetCqVoteTrigger(), &changelist.CLError{
 				Kind: &changelist.CLError_ReusedTrigger_{
 					ReusedTrigger: &changelist.CLError_ReusedTrigger{
 						Run: string(existing.ID),

@@ -112,9 +112,12 @@ func TestPurgeCL(t *testing.T) {
 				Deadline:    timestamppb.New(ct.Clock.Now().Add(10 * time.Minute)),
 			},
 			Trigger: trigger.Find(&trigger.FindInput{ChangeInfo: ci, ConfigGroup: cfg.GetConfigGroups()[0]}).GetCqVoteTrigger(),
-			Reasons: []*changelist.CLError{
-				{Kind: &changelist.CLError_OwnerLacksEmail{OwnerLacksEmail: true}},
-			},
+			PurgeReasons: []*prjpb.PurgeReason{{
+				ClError: &changelist.CLError{
+					Kind: &changelist.CLError_OwnerLacksEmail{OwnerLacksEmail: true},
+				},
+				ApplyTo: &prjpb.PurgeReason_AllActiveTriggers{AllActiveTriggers: true},
+			}},
 			ConfigGroups: []string{string(cfgMeta.ConfigGroupIDs[0])},
 		}
 		So(task.Trigger, ShouldNotBeNil)

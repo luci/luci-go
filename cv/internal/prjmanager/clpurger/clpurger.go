@@ -84,8 +84,32 @@ func (p *Purger) Schedule(ctx context.Context, t *prjpb.PurgeCLTask) error {
 func (p *Purger) PurgeCL(ctx context.Context, task *prjpb.PurgeCLTask) error {
 	now := clock.Now(ctx)
 
-	if len(task.GetReasons()) == 0 {
+	if len(task.GetPurgeReasons()) == 0 && len(task.GetReasons()) == 0 {
 		return errors.Reason("no reasons given in %s", task).Err()
+	}
+	pr := &prjpb.PurgeReason{}
+	switch t := task.GetTrigger(); run.Mode(t.GetMode()) {
+	case "":
+		pr.ApplyTo = &prjpb.PurgeReason_AllActiveTriggers{AllActiveTriggers: true}
+	case run.NewPatchsetRun:
+		pr.ApplyTo = &prjpb.PurgeReason_Triggers{Triggers: &run.Triggers{
+			NewPatchsetRunTrigger: t,
+		}}
+	case run.DryRun, run.QuickDryRun, run.FullRun:
+		pr.ApplyTo = &prjpb.PurgeReason_Triggers{Triggers: &run.Triggers{
+			NewPatchsetRunTrigger: t,
+		}}
+	default:
+		panic(fmt.Errorf("unexpected trigger mode %q", t.GetMode()))
+	}
+
+	if len(task.GetReasons()) > 0 && len(task.GetPurgeReasons()) == 0 {
+		for _, r := range task.GetReasons() {
+			task.PurgeReasons = append(task.PurgeReasons, &prjpb.PurgeReason{
+				ClError: r,
+				ApplyTo: pr.GetApplyTo(),
+			})
+		}
 	}
 
 	d := task.GetPurgingCl().GetDeadline()
@@ -118,8 +142,9 @@ func (p *Purger) purgeWithDeadline(ctx context.Context, task *prjpb.PurgeCLTask)
 	if err != nil {
 		return nil
 	}
-
-	msg, err := usertext.SFormatCLErrors(ctx, task.GetReasons(), cl, run.Mode(task.GetTrigger().GetMode()))
+	// TODO(robertocn): Use the trigger information in the purge reason.
+	// Perform one cancellation per trigger in parallel.
+	msg, err := usertext.SFormatPurgeReasons(ctx, task.GetPurgeReasons(), cl, run.Mode(task.GetTrigger().GetMode()))
 	if err != nil {
 		return errors.Annotate(err, "CL %d of project %q", cl.ID, task.GetLuciProject()).Err()
 	}

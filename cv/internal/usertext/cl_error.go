@@ -26,13 +26,19 @@ import (
 
 	"go.chromium.org/luci/cv/internal/changelist"
 	"go.chromium.org/luci/cv/internal/common"
+	"go.chromium.org/luci/cv/internal/prjmanager/prjpb"
 	"go.chromium.org/luci/cv/internal/run"
 )
 
-// SFormatCLErrors is the same as FormatCLErrors but returns a string.
-func SFormatCLErrors(ctx context.Context, reasons []*changelist.CLError, cl *changelist.CL, mode run.Mode) (string, error) {
+// SFormatPurgeReasons applies FormatCLErrors to the given reasons and returns a
+// string.
+func SFormatPurgeReasons(ctx context.Context, reasons []*prjpb.PurgeReason, cl *changelist.CL, mode run.Mode) (string, error) {
+	var clErrors []*changelist.CLError
+	for _, pr := range reasons {
+		clErrors = append(clErrors, pr.GetClError())
+	}
 	var sb strings.Builder
-	if err := FormatCLErrors(ctx, reasons, cl, mode, &sb); err != nil {
+	if err := FormatCLErrors(ctx, clErrors, cl, mode, &sb); err != nil {
 		return "", err
 	}
 	return sb.String(), nil

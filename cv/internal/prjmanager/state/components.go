@@ -287,7 +287,7 @@ func (s *State) validatePurgeCLTasks(c *prjpb.Component, ts []*prjpb.PurgeCLTask
 			panic(fmt.Errorf("clid must be set"))
 		case m.HasI64(id):
 			panic(fmt.Errorf("duplicated clid %d", id))
-		case t.GetReasons() == nil:
+		case len(t.GetPurgeReasons()) == 0 && len(t.GetReasons()) == 0:
 			panic(fmt.Errorf("at least 1 reason must be given"))
 		}
 		for i, r := range t.GetReasons() {
@@ -295,6 +295,15 @@ func (s *State) validatePurgeCLTasks(c *prjpb.Component, ts []*prjpb.PurgeCLTask
 				panic(fmt.Errorf("Reason #%d is nil", i))
 			}
 		}
+		for i, r := range t.GetPurgeReasons() {
+			if r.GetClError().GetKind() == nil {
+				panic(fmt.Errorf("PurgeReason #%d is nil", i))
+			}
+			if r.GetApplyTo() == nil {
+				panic(fmt.Errorf("which trigger(s) the PurgeReason applies to must be specified"))
+			}
+		}
+
 		m.AddI64(id)
 	}
 	// Verify only CLs not yet purged are being purged.

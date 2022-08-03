@@ -147,9 +147,19 @@ func TestCLsTriage(t *testing.T) {
 			})
 
 			Convey("CL already with Errors is not ready", func() {
-				sup.pb.Pcls[0].Errors = []*changelist.CLError{
-					{Kind: &changelist.CLError_OwnerLacksEmail{OwnerLacksEmail: true}},
-					{Kind: &changelist.CLError_UnsupportedMode{UnsupportedMode: "CUSTOM_RUN"}},
+				sup.pb.Pcls[0].PurgeReasons = []*prjpb.PurgeReason{
+					{
+						ClError: &changelist.CLError{
+							Kind: &changelist.CLError_OwnerLacksEmail{OwnerLacksEmail: true},
+						},
+						ApplyTo: &prjpb.PurgeReason_AllActiveTriggers{AllActiveTriggers: true},
+					},
+					{
+						ClError: &changelist.CLError{
+							Kind: &changelist.CLError_UnsupportedMode{UnsupportedMode: "CUSTOM_RUN"},
+						},
+						ApplyTo: &prjpb.PurgeReason_AllActiveTriggers{AllActiveTriggers: true},
+					},
 				}
 				cls := do(&prjpb.Component{Clids: []int64{1}})
 				So(cls, ShouldHaveLength, 1)
@@ -159,7 +169,7 @@ func TestCLsTriage(t *testing.T) {
 					purgingCL:  nil,
 
 					triagedCL: triagedCL{
-						purgeReasons: sup.pb.Pcls[0].Errors,
+						purgeReasons: sup.pb.Pcls[0].GetPurgeReasons(),
 					},
 				}
 				So(cls[1], shouldResembleTriagedCL, expected)
@@ -203,15 +213,16 @@ func TestCLsTriage(t *testing.T) {
 					purgingCL:  nil,
 
 					triagedCL: triagedCL{
-						purgeReasons: []*changelist.CLError{
-							{
+						purgeReasons: []*prjpb.PurgeReason{{
+							ClError: &changelist.CLError{
 								Kind: &changelist.CLError_WatchedByManyConfigGroups_{
 									WatchedByManyConfigGroups: &changelist.CLError_WatchedByManyConfigGroups{
 										ConfigGroups: []string{"singular", "another"},
 									},
 								},
 							},
-						},
+							ApplyTo: &prjpb.PurgeReason_AllActiveTriggers{AllActiveTriggers: true},
+						}},
 						ready: false,
 						deps:  nil, // not checked.
 					},
@@ -290,15 +301,20 @@ func TestCLsTriage(t *testing.T) {
 					pcl: sup.PCL(3),
 					triagedCL: triagedCL{
 						ready: false,
-						purgeReasons: []*changelist.CLError{
-							{
+						purgeReasons: []*prjpb.PurgeReason{{
+							ClError: &changelist.CLError{
 								Kind: &changelist.CLError_InvalidDeps_{
 									InvalidDeps: &changelist.CLError_InvalidDeps{
 										SingleFullDeps: sup.PCL(3).GetDeps(),
 									},
 								},
 							},
-						},
+							ApplyTo: &prjpb.PurgeReason_Triggers{
+								Triggers: &run.Triggers{
+									CqVoteTrigger: fullRun(epoch),
+								},
+							},
+						}},
 						deps: &triagedDeps{
 							lastCQVoteTriggered: epoch,
 							invalidDeps: &changelist.CLError_InvalidDeps{
@@ -326,15 +342,20 @@ func TestCLsTriage(t *testing.T) {
 					pcl: sup.PCL(3),
 					triagedCL: triagedCL{
 						ready: false,
-						purgeReasons: []*changelist.CLError{
-							{
+						purgeReasons: []*prjpb.PurgeReason{{
+							ClError: &changelist.CLError{
 								Kind: &changelist.CLError_InvalidDeps_{
 									InvalidDeps: &changelist.CLError_InvalidDeps{
 										SingleFullDeps: []*changelist.Dep{{Clid: 2, Kind: changelist.DepKind_HARD}},
 									},
 								},
 							},
-						},
+							ApplyTo: &prjpb.PurgeReason_Triggers{
+								Triggers: &run.Triggers{
+									CqVoteTrigger: fullRun(epoch),
+								},
+							},
+						}},
 						deps: &triagedDeps{
 							lastCQVoteTriggered: epoch.UTC(),
 							submitted:           []*changelist.Dep{{Clid: 1, Kind: changelist.DepKind_SOFT}},
@@ -398,15 +419,20 @@ func TestCLsTriage(t *testing.T) {
 					pcl: sup.PCL(3),
 					triagedCL: triagedCL{
 						ready: false,
-						purgeReasons: []*changelist.CLError{
-							{
+						purgeReasons: []*prjpb.PurgeReason{{
+							ClError: &changelist.CLError{
 								Kind: &changelist.CLError_InvalidDeps_{
 									InvalidDeps: &changelist.CLError_InvalidDeps{
 										CombinableMismatchedMode: sup.PCL(3).GetDeps(),
 									},
 								},
 							},
-						},
+							ApplyTo: &prjpb.PurgeReason_Triggers{
+								Triggers: &run.Triggers{
+									CqVoteTrigger: dryRun(epoch),
+								},
+							},
+						}},
 						deps: &triagedDeps{
 							lastCQVoteTriggered: epoch,
 							invalidDeps: &changelist.CLError_InvalidDeps{
@@ -424,13 +450,18 @@ func TestCLsTriage(t *testing.T) {
 				cls := do(&prjpb.Component{Clids: []int64{1, 2, 3}})
 				for _, info := range cls {
 					So(info.ready, ShouldBeFalse)
-					So(info.purgeReasons, ShouldResembleProto, []*changelist.CLError{
-						{
+					So(info.purgeReasons, ShouldResembleProto, []*prjpb.PurgeReason{{
+						ClError: &changelist.CLError{
 							Kind: &changelist.CLError_InvalidDeps_{
 								InvalidDeps: info.triagedCL.deps.invalidDeps,
 							},
 						},
-					})
+						ApplyTo: &prjpb.PurgeReason_Triggers{
+							Triggers: &run.Triggers{
+								CqVoteTrigger: dryRun(epoch),
+							},
+						},
+					}})
 				}
 
 				Convey("unless dependency is already submitted", func() {

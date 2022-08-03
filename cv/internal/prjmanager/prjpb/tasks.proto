@@ -50,12 +50,16 @@ message KickManageProjectTask {
 //
 // Queue: "purge-project-cl".
 message PurgeCLTask {
+  // Next tag: 8
+
   string luci_project = 1;
   PurgingCL purging_cl = 2;
 
   cv.internal.run.Trigger trigger = 3;
 
-  repeated cv.internal.changelist.CLError reasons = 5;
+  // Deprecated in favor of purge_reasons.
+  repeated cv.internal.changelist.CLError reasons = 5 [deprecated=true];
+  repeated PurgeReason purge_reasons = 7;
 
   // Applicable config groups of this CL within the given LUCI Project.
   repeated string config_groups = 6;

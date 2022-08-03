@@ -174,16 +174,17 @@ func TestTriage(t *testing.T) {
 		})
 
 		Convey("Purges CLs", func() {
-			pm.pb.Pcls = []*prjpb.PCL{
-				{
-					Clid:               33,
-					ConfigGroupIndexes: nil, // modified below.
-					Triggers:           dryRun(ct.Clock.Now()),
-					Errors: []*changelist.CLError{ // => must purge.
-						{Kind: &changelist.CLError_OwnerLacksEmail{OwnerLacksEmail: true}},
+			pm.pb.Pcls = []*prjpb.PCL{{
+				Clid:               33,
+				ConfigGroupIndexes: nil, // modified below.
+				Triggers:           dryRun(ct.Clock.Now()),
+				PurgeReasons: []*prjpb.PurgeReason{{
+					ClError: &changelist.CLError{ // => must purge.
+						Kind: &changelist.CLError_OwnerLacksEmail{OwnerLacksEmail: true},
 					},
-				},
-			}
+					ApplyTo: &prjpb.PurgeReason_AllActiveTriggers{AllActiveTriggers: true},
+				}},
+			}}
 			oldC := &prjpb.Component{Clids: []int64{33}}
 
 			Convey("singular group -- no delay", func() {
@@ -262,8 +263,8 @@ func TestTriage(t *testing.T) {
 						So(res.RunsToCreate, ShouldBeEmpty)
 						So(res.CLsToPurge, ShouldHaveLength, 2)
 						for _, p := range res.CLsToPurge {
-							So(p.GetReasons(), ShouldHaveLength, 1)
-							So(p.GetReasons()[0].GetReusedTrigger().GetRun(), ShouldResemble, expectedRunID)
+							So(p.GetPurgeReasons(), ShouldHaveLength, 1)
+							So(p.GetPurgeReasons()[0].GetClError().GetReusedTrigger().GetRun(), ShouldResemble, expectedRunID)
 						}
 					})
 				})
@@ -309,8 +310,8 @@ func TestTriage(t *testing.T) {
 						So(res.RunsToCreate, ShouldBeEmpty)
 						So(res.CLsToPurge, ShouldHaveLength, 2)
 						for _, p := range res.CLsToPurge {
-							So(p.GetReasons(), ShouldHaveLength, 1)
-							So(p.GetReasons()[0].GetReusedTrigger().GetRun(), ShouldResemble, expectedRunID)
+							So(p.GetPurgeReasons(), ShouldHaveLength, 1)
+							So(p.GetPurgeReasons()[0].GetClError().GetReusedTrigger().GetRun(), ShouldResemble, expectedRunID)
 						}
 					})
 				})

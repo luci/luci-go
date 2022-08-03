@@ -231,14 +231,17 @@ func TestComponentsActions(t *testing.T) {
 			h.ComponentTriage = func(_ context.Context, c *prjpb.Component, _ itriager.PMState) (itriager.Result, error) {
 				switch clid := c.GetClids()[0]; clid {
 				case 1, 3:
-					return itriager.Result{CLsToPurge: []*prjpb.PurgeCLTask{
-						{
-							PurgingCl: &prjpb.PurgingCL{Clid: clid},
-							Reasons: []*changelist.CLError{
-								{Kind: &changelist.CLError_OwnerLacksEmail{OwnerLacksEmail: true}},
+					return itriager.Result{CLsToPurge: []*prjpb.PurgeCLTask{{
+						PurgingCl: &prjpb.PurgingCL{Clid: clid},
+						PurgeReasons: []*prjpb.PurgeReason{{
+							ClError: &changelist.CLError{
+								Kind: &changelist.CLError_OwnerLacksEmail{
+									OwnerLacksEmail: true,
+								},
 							},
-						},
-					}}, nil
+							ApplyTo: &prjpb.PurgeReason_AllActiveTriggers{AllActiveTriggers: true},
+						}},
+					}}}, nil
 				case 2:
 					return itriager.Result{}, nil
 				}
@@ -468,9 +471,12 @@ func TestComponentsActions(t *testing.T) {
 						res.CLsToPurge = []*prjpb.PurgeCLTask{
 							{
 								PurgingCl: &prjpb.PurgingCL{Clid: clid},
-								Reasons: []*changelist.CLError{
-									{Kind: &changelist.CLError_OwnerLacksEmail{OwnerLacksEmail: true}},
-								},
+								PurgeReasons: []*prjpb.PurgeReason{{
+									ClError: &changelist.CLError{
+										Kind: &changelist.CLError_OwnerLacksEmail{OwnerLacksEmail: true},
+									},
+									ApplyTo: &prjpb.PurgeReason_AllActiveTriggers{AllActiveTriggers: true},
+								}},
 							},
 						}
 					}

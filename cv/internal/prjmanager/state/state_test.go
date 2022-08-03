@@ -508,40 +508,60 @@ func TestUpdateConfig(t *testing.T) {
 						Mode: string(run.FullRun),
 						Time: triggerTS,
 					}},
-					Errors: []*changelist.CLError{
-						{
+					PurgeReasons: []*prjpb.PurgeReason{{
+						ClError: &changelist.CLError{
 							Kind: &changelist.CLError_WatchedByManyProjects_{
 								WatchedByManyProjects: &changelist.CLError_WatchedByManyProjects{
 									Projects: []string{s1.PB.GetLuciProject(), "another"},
 								},
 							},
 						},
-					},
+						ApplyTo: &prjpb.PurgeReason_AllActiveTriggers{AllActiveTriggers: true},
+					}},
+					Errors: []*changelist.CLError{{Kind: &changelist.CLError_WatchedByManyProjects_{
+						WatchedByManyProjects: &changelist.CLError_WatchedByManyProjects{
+							Projects: []string{s1.PB.GetLuciProject(), "another"},
+						},
+					}}},
 				})
 			})
 
 			Convey("CL with Commit: false footer has an error", func() {
 				cl101.Snapshot.Metadata = []*changelist.StringPair{{Key: "Commit", Value: "false"}}
-				So(s1.makePCL(ctx, cl101).GetErrors(), ShouldResembleProto, []*changelist.CLError{
+				So(s1.makePCL(ctx, cl101).GetPurgeReasons(), ShouldResembleProto, []*prjpb.PurgeReason{
 					{
-						Kind: &changelist.CLError_CommitBlocked{CommitBlocked: true},
+						ClError: &changelist.CLError{
+							Kind: &changelist.CLError_CommitBlocked{CommitBlocked: true},
+						},
+						ApplyTo: &prjpb.PurgeReason_Triggers{Triggers: &run.Triggers{
+							CqVoteTrigger: &run.Trigger{
+								Mode: string(run.FullRun),
+								Time: triggerTS,
+							},
+						}},
 					},
 				})
 			})
 
 			Convey("'Commit: false' footer works with different capitalization", func() {
 				cl101.Snapshot.Metadata = []*changelist.StringPair{{Key: "COMMIT", Value: "FALSE"}}
-				So(s1.makePCL(ctx, cl101).GetErrors(), ShouldResembleProto, []*changelist.CLError{
-					{
+				So(s1.makePCL(ctx, cl101).GetPurgeReasons(), ShouldResembleProto, []*prjpb.PurgeReason{{
+					ClError: &changelist.CLError{
 						Kind: &changelist.CLError_CommitBlocked{CommitBlocked: true},
 					},
-				})
+					ApplyTo: &prjpb.PurgeReason_Triggers{Triggers: &run.Triggers{
+						CqVoteTrigger: &run.Trigger{
+							Mode: string(run.FullRun),
+							Time: triggerTS,
+						},
+					}},
+				}})
 			})
 
 			Convey("'Commit: false' has no effect for dry run CL", func() {
 				// cl202 is set up for dry run, unlike cl101.
 				cl202.Snapshot.Metadata = []*changelist.StringPair{{Key: "Commit", Value: "false"}}
-				So(s1.makePCL(ctx, cl202).GetErrors(), ShouldBeEmpty)
+				So(s1.makePCL(ctx, cl202).GetPurgeReasons(), ShouldBeEmpty)
 			})
 		})
 	})

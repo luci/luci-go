@@ -20,6 +20,7 @@ import (
 
 	"go.chromium.org/luci/cv/internal/changelist"
 	"go.chromium.org/luci/cv/internal/prjmanager/prjpb"
+	"go.chromium.org/luci/cv/internal/run"
 )
 
 // triageCLs decides whether individual CLs ought to be acted upon.
@@ -90,7 +91,7 @@ type triagedCL struct {
 	// purgeReasons is set if the CL ought to be purged.
 	//
 	// Not set if CL is .purgingCL is non-nil since CL is already being purged.
-	purgeReasons []*changelist.CLError
+	purgeReasons []*prjpb.PurgeReason
 	// ready is true if it can be used in creation of new Runs.
 	//
 	// If true, purgeReason must be nil, and deps must be OK though they may contain
@@ -183,6 +184,40 @@ func (info *clInfo) triageInPurge(pm pmState) {
 	}
 }
 
+func (info *clInfo) addPurgeReason(t *run.Trigger, clError *changelist.CLError) {
+	switch {
+	case t == nil:
+		info.purgeReasons = append(info.purgeReasons, &prjpb.PurgeReason{
+			ClError: clError,
+			ApplyTo: &prjpb.PurgeReason_AllActiveTriggers{
+				AllActiveTriggers: true,
+			},
+		})
+	case run.Mode(t.Mode) == run.NewPatchsetRun:
+		info.purgeReasons = append(info.purgeReasons, &prjpb.PurgeReason{
+			ClError: clError,
+			ApplyTo: &prjpb.PurgeReason_Triggers{
+				Triggers: &run.Triggers{
+					NewPatchsetRunTrigger: t,
+				},
+			},
+		})
+	case (run.Mode(t.Mode) == run.DryRun ||
+		run.Mode(t.Mode) == run.FullRun ||
+		run.Mode(t.Mode) == run.QuickDryRun):
+		info.purgeReasons = append(info.purgeReasons, &prjpb.PurgeReason{
+			ClError: clError,
+			ApplyTo: &prjpb.PurgeReason_Triggers{
+				Triggers: &run.Triggers{
+					CqVoteTrigger: t,
+				},
+			},
+		})
+	default:
+		panic(fmt.Sprintf("impossible Run mode %q", t.GetMode()))
+	}
+}
+
 func (info *clInfo) triageNew(pm pmState) {
 	pcl := info.pcl
 	clid := pcl.GetClid()
@@ -201,8 +236,8 @@ func (info *clInfo) triageNew(pm pmState) {
 		panic(fmt.Errorf("PCL %d submitted %s", clid, assumption))
 	case pcl.GetTriggers() == nil && pcl.GetTrigger() == nil:
 		panic(fmt.Errorf("PCL %d not triggered %s", clid, assumption))
-	case len(pcl.GetErrors()) > 0:
-		info.purgeReasons = pcl.GetErrors()
+	case len(pcl.GetPurgeReasons()) > 0:
+		info.purgeReasons = pcl.GetPurgeReasons()
 		return
 	}
 
@@ -214,14 +249,14 @@ func (info *clInfo) triageNew(pm pmState) {
 		if info.deps = triageDeps(pcl, cgIndexes[0], pm); info.deps.OK() {
 			info.ready = true
 		} else {
-			info.purgeReasons = append(info.purgeReasons, info.deps.makePurgeReason())
+			info.addPurgeReason(info.pcl.Triggers.GetCqVoteTrigger(), info.deps.makePurgeReason())
 		}
 	default:
 		cgNames := make([]string, len(cgIndexes))
 		for i, idx := range cgIndexes {
 			cgNames[i] = pm.ConfigGroup(idx).ID.Name()
 		}
-		info.purgeReasons = append(info.purgeReasons, &changelist.CLError{
+		info.addPurgeReason(nil, &changelist.CLError{
 			Kind: &changelist.CLError_WatchedByManyConfigGroups_{
 				WatchedByManyConfigGroups: &changelist.CLError_WatchedByManyConfigGroups{
 					ConfigGroups: cgNames,

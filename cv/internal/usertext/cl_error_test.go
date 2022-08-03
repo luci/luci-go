@@ -27,6 +27,7 @@ import (
 
 	"go.chromium.org/luci/cv/internal/changelist"
 	gf "go.chromium.org/luci/cv/internal/gerrit/gerritfake"
+	"go.chromium.org/luci/cv/internal/prjmanager/prjpb"
 	"go.chromium.org/luci/cv/internal/run"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -202,17 +203,22 @@ func TestFormatCLError(t *testing.T) {
 		})
 
 		Convey("Multiple", func() {
-			reasons := []*changelist.CLError{
-				{Kind: &changelist.CLError_OwnerLacksEmail{OwnerLacksEmail: true}},
+			reasons := []*prjpb.PurgeReason{
 				{
-					Kind: &changelist.CLError_WatchedByManyConfigGroups_{
-						WatchedByManyConfigGroups: &changelist.CLError_WatchedByManyConfigGroups{
-							ConfigGroups: []string{"first", "second"},
+					ClError: &changelist.CLError{
+						Kind: &changelist.CLError_OwnerLacksEmail{OwnerLacksEmail: true}},
+				},
+				{
+					ClError: &changelist.CLError{
+						Kind: &changelist.CLError_WatchedByManyConfigGroups_{
+							WatchedByManyConfigGroups: &changelist.CLError_WatchedByManyConfigGroups{
+								ConfigGroups: []string{"first", "second"},
+							},
 						},
 					},
 				},
 			}
-			s, err := SFormatCLErrors(ctx, reasons, cl, run.DryRun)
+			s, err := SFormatPurgeReasons(ctx, reasons, cl, run.DryRun)
 			So(err, ShouldBeNil)
 			So(s, ShouldContainSubstring, "set preferred email")
 			So(s, ShouldContainSubstring, "more than 1 config group")

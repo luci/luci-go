@@ -128,7 +128,7 @@ message LogReasons {
 
 // PCL is a tracked CL.
 message PCL {
-  // next tag: 17
+  // next tag: 18
 
   reserved 14;
 
@@ -189,8 +189,12 @@ message PCL {
   // Run will probably finish soon).
   bool submitted = 13;
 
-  // If set, describes one or more problems with CL.
-  repeated cv.internal.changelist.CLError errors = 15;
+  // Deprecated in favor of purge_reasons.
+  repeated cv.internal.changelist.CLError errors = 15 [deprecated=true];
+
+  // If set, describes problems that require that some or all of the PCL's
+  // triggers be purged.
+  repeated PurgeReason purge_reasons = 17;
 }
 
 // PRun is an incomplete Run on which CV is currently working.
@@ -266,4 +270,18 @@ message PurgingCL {
   // period, PM will consider purge operation expired and it'll be removed from
   // PState.
   google.protobuf.Timestamp deadline = 3;
+}
+
+// PurgeReason represent a list of errors with the CL that would require that
+// the given trigger (or the whole CL if no trigger is given) be purged.
+message PurgeReason {
+  // ClErrors are a list of errors associated with Trigger below, or with the
+  // a whole CL if Trigger is not given.
+  cv.internal.changelist.CLError cl_error = 1;
+
+  // What trigger(s) the error above applies to.
+  oneof apply_to {
+    cv.internal.run.Triggers triggers = 2;
+    bool all_active_triggers = 3;
+  }
 }

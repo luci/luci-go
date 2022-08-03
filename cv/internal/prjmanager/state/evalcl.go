@@ -223,7 +223,13 @@ func (s *State) makePCL(ctx context.Context, cl *changelist.CL) *prjpb.PCL {
 			return pcl
 		}
 		// Special case if the CL is watched by more than one project.
-		pcl.Errors = append(pcl.Errors, newMultiProjectWatchError(cl))
+		err := newMultiProjectWatchError(cl)
+		pcl.PurgeReasons = append(pcl.PurgeReasons,
+			&prjpb.PurgeReason{
+				ClError: err,
+				ApplyTo: &prjpb.PurgeReason_AllActiveTriggers{AllActiveTriggers: true},
+			})
+		pcl.Errors = append(pcl.Errors, err)
 		pcl.Status = prjpb.PCL_OK
 	case changelist.AccessGranted:
 		switch {
@@ -244,7 +250,13 @@ func (s *State) makePCL(ctx context.Context, cl *changelist.CL) *prjpb.PCL {
 
 	s.setApplicableConfigGroups(ap, cl.Snapshot, pcl)
 	if errs := cl.Snapshot.GetErrors(); len(errs) > 0 {
-		pcl.Errors = append(pcl.Errors, errs...)
+		for _, err := range errs {
+			pcl.PurgeReasons = append(pcl.PurgeReasons, &prjpb.PurgeReason{
+				ClError: err,
+				ApplyTo: &prjpb.PurgeReason_AllActiveTriggers{AllActiveTriggers: true},
+			})
+			pcl.Errors = append(pcl.Errors, err)
+		}
 	}
 
 	pcl.Deps = cl.Snapshot.GetDeps()
@@ -255,9 +267,17 @@ func (s *State) makePCL(ctx context.Context, cl *changelist.CL) *prjpb.PCL {
 				// If this actually happens, better to proceed with bad error message to
 				// the user than crash later while processing the CL.
 			}
-			pcl.Errors = append(pcl.Errors, &changelist.CLError{
+			// TODO(robertocn): allow new patchset runs to continue even in the
+			// case of this error, since new patchset runs should not be subject
+			// to dependencies.
+			err := &changelist.CLError{
 				Kind: &changelist.CLError_SelfCqDepend{SelfCqDepend: true},
+			}
+			pcl.PurgeReasons = append(pcl.PurgeReasons, &prjpb.PurgeReason{
+				ClError: err,
+				ApplyTo: &prjpb.PurgeReason_AllActiveTriggers{AllActiveTriggers: true},
 			})
+			pcl.Errors = append(pcl.Errors, err)
 		}
 	}
 
@@ -268,9 +288,14 @@ func (s *State) makePCL(ctx context.Context, cl *changelist.CL) *prjpb.PCL {
 	}
 
 	if ci.GetOwner().GetEmail() == "" {
-		pcl.Errors = append(pcl.Errors, &changelist.CLError{
+		err := &changelist.CLError{
 			Kind: &changelist.CLError_OwnerLacksEmail{OwnerLacksEmail: true},
+		}
+		pcl.PurgeReasons = append(pcl.PurgeReasons, &prjpb.PurgeReason{
+			ClError: err,
+			ApplyTo: &prjpb.PurgeReason_AllActiveTriggers{AllActiveTriggers: true},
 		})
+		pcl.Errors = append(pcl.Errors, err)
 	}
 
 	s.setTriggers(ci, pcl)
@@ -278,9 +303,18 @@ func (s *State) makePCL(ctx context.Context, cl *changelist.CL) *prjpb.PCL {
 	// Check for "Commit: false" footer after setting Trigger, because this should
 	// only have an effect in the case of an attempted full run.
 	if hasCommitFalseFlag(cl.Snapshot.GetMetadata()) && pcl.GetTriggers().GetCqVoteTrigger().GetMode() == string(run.FullRun) {
-		pcl.Errors = append(pcl.Errors, &changelist.CLError{
+		err := &changelist.CLError{
 			Kind: &changelist.CLError_CommitBlocked{CommitBlocked: true},
+		}
+		pcl.PurgeReasons = append(pcl.PurgeReasons, &prjpb.PurgeReason{
+			ClError: err,
+			ApplyTo: &prjpb.PurgeReason_Triggers{
+				Triggers: &run.Triggers{
+					CqVoteTrigger: pcl.GetTriggers().GetCqVoteTrigger(),
+				},
+			},
 		})
+		pcl.Errors = append(pcl.Errors, err)
 	}
 	return pcl
 }
@@ -356,9 +390,16 @@ func (s *State) setTriggers(ci *gerritpb.ChangeInfo, pcl *prjpb.PCL) {
 	switch mode := run.Mode(t.GetMode()); mode {
 	case "", run.DryRun, run.FullRun, run.QuickDryRun:
 	default:
-		pcl.Errors = append(pcl.Errors, &changelist.CLError{
+		err := &changelist.CLError{
 			Kind: &changelist.CLError_UnsupportedMode{UnsupportedMode: string(mode)},
+		}
+		pcl.PurgeReasons = append(pcl.PurgeReasons, &prjpb.PurgeReason{
+			ClError: err,
+			ApplyTo: &prjpb.PurgeReason_Triggers{
+				Triggers: &run.Triggers{CqVoteTrigger: t},
+			},
 		})
+		pcl.Errors = append(pcl.Errors, err)
 		return
 	}
 
