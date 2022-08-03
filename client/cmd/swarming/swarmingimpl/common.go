@@ -88,6 +88,7 @@ type swarmingService interface {
 	ListBots(ctx context.Context, dimensions []string, fields []googleapi.Field) ([]*swarming.SwarmingRpcsBotInfo, error)
 	DeleteBot(ctx context.Context, botID string) (*swarming.SwarmingRpcsDeletedResponse, error)
 	TerminateBot(ctx context.Context, botID string) (*swarming.SwarmingRpcsTerminateResponse, error)
+	ListBotTasks(ctx context.Context, botID string, limit int64, start float64, state string, fields []googleapi.Field) ([]*swarming.SwarmingRpcsTaskResult, error)
 }
 
 type swarmingServiceImpl struct {
@@ -248,6 +249,46 @@ func (s *swarmingServiceImpl) TerminateBot(ctx context.Context, botID string) (r
 		return
 	})
 	return
+}
+
+
+func (s *swarmingServiceImpl) ListBotTasks(ctx context.Context, botID string, limit int64, start float64, state string, fields []googleapi.Field) (res []*swarming.SwarmingRpcsTaskResult, err error) {
+	// Create an empty array so that if serialized to JSON it's an empty list,
+	// not null.
+	tasks := []*swarming.SwarmingRpcsTaskResult{}
+	// If no fields are specified, all fields will be returned. If any fields are
+	// specified, ensure the cursor is specified so we can get subsequent pages.
+	if len(fields) > 0 {
+		fields = append(fields, "cursor")
+	}
+
+	call := s.service.Bot.Tasks(botID).Context(ctx).Limit(limit).Start(start).Fields(fields...)
+	if state != "" {
+		call = call.State(state)
+	}
+	// Keep calling as long as there's a cursor indicating more tasks to list.
+	for {
+		var res *swarming.SwarmingRpcsBotTasks
+		err := retryGoogleRPC(ctx, "ListBotTasks", func() (ierr error) {
+			res, ierr = call.Do()
+			return
+		})
+		if err != nil {
+			return tasks, err
+		}
+
+		tasks = append(tasks, res.Items...)
+		if res.Cursor == "" || int64(len(tasks)) >= limit || len(res.Items) == 0 {
+			break
+		}
+		call.Cursor(res.Cursor)
+	}
+
+	if int64(len(tasks)) > limit {
+		tasks = tasks[0:limit]
+	}
+
+	return tasks, nil
 }
 
 type taskState int32

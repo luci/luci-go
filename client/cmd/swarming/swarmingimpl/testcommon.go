@@ -40,6 +40,7 @@ type testService struct {
 	listBots     func(context.Context, []string, []googleapi.Field) ([]*swarming.SwarmingRpcsBotInfo, error)
 	deleteBot    func(context.Context, string) (*swarming.SwarmingRpcsDeletedResponse, error)
 	terminateBot func(context.Context, string) (*swarming.SwarmingRpcsTerminateResponse, error)
+	listBotTasks func(context.Context, string, int64, float64, string, []googleapi.Field) ([]*swarming.SwarmingRpcsTaskResult, error)
 }
 
 func (testService) Client() *http.Client {
@@ -92,6 +93,10 @@ func (s testService) DeleteBot(ctx context.Context, botID string) (*swarming.Swa
 
 func (s testService) TerminateBot(ctx context.Context, botID string) (*swarming.SwarmingRpcsTerminateResponse, error) {
 	return s.terminateBot(ctx, botID)
+}
+
+func (s testService) ListBotTasks(ctx context.Context, botID string, limit int64, start float64, state string, fields []googleapi.Field) ([]*swarming.SwarmingRpcsTaskResult, error) {
+	return s.listBotTasks(ctx, botID, limit, start, state, fields)
 }
 
 var _ AuthFlags = (*testAuthFlags)(nil)
