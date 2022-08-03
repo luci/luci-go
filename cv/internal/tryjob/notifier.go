@@ -17,6 +17,7 @@ package tryjob
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/retry/transient"
@@ -48,7 +49,7 @@ func NewNotifier(tqd *tq.Dispatcher) *Notifier {
 				ID:           CancelStaleTaskClass,
 				Prototype:    &CancelStaleTryjobsTask{},
 				Queue:        "cancel-stale-tryjobs",
-				Kind:         tq.Transactional,
+				Kind:         tq.FollowsContext,
 				Quiet:        true,
 				QuietOnError: true,
 			},
@@ -68,9 +69,11 @@ func NewNotifier(tqd *tq.Dispatcher) *Notifier {
 	}
 }
 
-// NotifyCancelStale schedules a task if tryjobs associated with the given CL
-// may be stale and need to be cancelled.
-func (n *Notifier) NotifyCancelStale(ctx context.Context, clid common.CLID, prevMinEquivalentPatchset, currentMinEquivalentPatchset int32) error {
+// ScheduleCancelStale schedules a task at the given `eta` that cancels the
+// tryjobs associated with the given CL that are considered stale.
+//
+// Passing zero `eta` will schedule the task immediately.
+func (n *Notifier) ScheduleCancelStale(ctx context.Context, clid common.CLID, prevMinEquivalentPatchset, currentMinEquivalentPatchset int32, eta time.Time) error {
 	if prevMinEquivalentPatchset < currentMinEquivalentPatchset {
 		err := n.Bindings.tqd.AddTask(ctx, &tq.Task{
 			Payload: &CancelStaleTryjobsTask{
@@ -78,6 +81,8 @@ func (n *Notifier) NotifyCancelStale(ctx context.Context, clid common.CLID, prev
 				PreviousMinEquivPatchset: prevMinEquivalentPatchset,
 				CurrentMinEquivPatchset:  currentMinEquivalentPatchset,
 			},
+			Title: fmt.Sprintf("clid/%d/prev/%d/cur/%d", clid, prevMinEquivalentPatchset, currentMinEquivalentPatchset),
+			ETA:   eta,
 		})
 		if err != nil {
 			return errors.Annotate(err, "failed to schedule task to cancel stale tryjobs for CLID %d", clid).Tag(transient.Tag).Err()

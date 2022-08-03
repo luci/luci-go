@@ -476,6 +476,6 @@ func (r *runNotifierMock) popCancel() []cancellationRequest {
 
 type tjMock struct{}
 
-func (t *tjMock) NotifyCancelStale(ctx context.Context, clid common.CLID, prevMinEquivalentPatchset, currentMinEquivalentPatchset int32) error {
+func (t *tjMock) ScheduleCancelStale(ctx context.Context, clid common.CLID, prevMinEquivalentPatchset, currentMinEquivalentPatchset int32, eta time.Time) error {
 	return nil
 }

@@ -101,11 +101,12 @@ func TestTaskHandler(t *testing.T) {
 			})
 			Convey("tryjob still watched", func() {
 				tj21 := putTryjob(ctx, 400, 2, tryjob.Status_TRIGGERED, 21, run.Status_RUNNING, nil)
-				err := c.handleTask(ctx, &tryjob.CancelStaleTryjobsTask{
+				task := &tryjob.CancelStaleTryjobsTask{
 					Clid:                     400,
 					PreviousMinEquivPatchset: 2,
 					CurrentMinEquivPatchset:  5,
-				})
+				}
+				err := c.handleTask(ctx, task)
 				So(err, ShouldBeNil)
 				// Should not call backend.
 				So(mb.calledWith, ShouldHaveLength, 0)
@@ -114,6 +115,9 @@ func TestTaskHandler(t *testing.T) {
 				// Should not modify the entity.
 				So(tj21.EVersion, ShouldEqual, 1)
 				So(tj21.Status, ShouldEqual, tryjob.Status_TRIGGERED)
+				So(cvt.TQ.Tasks(), ShouldHaveLength, 1)
+				So(cvt.TQ.Tasks()[0].Payload, ShouldResembleProto, task)
+				So(cvt.TQ.Tasks()[0].ETA, ShouldEqual, cvt.Clock.Now().Add(cancelLaterDuration))
 			})
 			Convey("tryjob not triggered by cv", func() {
 				tj31 := putTryjob(ctx, 500, 2, tryjob.Status_TRIGGERED, 31, run.Status_CANCELLED, func(tj *tryjob.Tryjob) {

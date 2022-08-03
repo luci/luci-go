@@ -21,17 +21,20 @@ package tjcancel
 import (
 	"context"
 	"fmt"
+	"strconv"
 	"strings"
 	"sync"
+	"time"
 
 	"google.golang.org/protobuf/proto"
 
 	"go.chromium.org/luci/common/clock"
+	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/common/sync/parallel"
 	"go.chromium.org/luci/gae/service/datastore"
-	"go.chromium.org/luci/server/tq"
 
 	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/run"
@@ -40,7 +43,7 @@ import (
 
 // Cancellator is patterned after Updater to support multiple tryjob backends.
 type Cancellator struct {
-	tqd *tq.Dispatcher
+	tn *tryjob.Notifier
 
 	// guards backends map.
 	rwmutex  sync.RWMutex
@@ -49,10 +52,13 @@ type Cancellator struct {
 
 func NewCancellator(tn *tryjob.Notifier) *Cancellator {
 	c := &Cancellator{
+		tn:       tn,
 		backends: make(map[string]cancellatorBackend),
 	}
 	tn.Bindings.CancelStale.AttachHandler(func(ctx context.Context, payload proto.Message) error {
-		return common.TQifyError(ctx, c.handleTask(ctx, payload.(*tryjob.CancelStaleTryjobsTask)))
+		task := payload.(*tryjob.CancelStaleTryjobsTask)
+		ctx = logging.SetField(ctx, "CLID", task.GetClid())
+		return common.TQifyError(ctx, c.handleTask(ctx, task))
 	})
 	return c
 }
@@ -74,57 +80,113 @@ func (c *Cancellator) RegisterBackend(b cancellatorBackend) {
 }
 
 func (c *Cancellator) handleTask(ctx context.Context, task *tryjob.CancelStaleTryjobsTask) error {
-	ctx = logging.SetField(ctx, "CLID", task.GetClid())
 	if task.PreviousMinEquivPatchset >= task.CurrentMinEquivPatchset {
 		panic(fmt.Errorf("patchset numbers expected to increase monotonically"))
 	}
-	atOrAfter := tryjob.MakeCLPatchset(common.CLID(task.GetClid()), task.GetPreviousMinEquivPatchset())
-	before := tryjob.MakeCLPatchset(common.CLID(task.GetClid()), task.GetCurrentMinEquivPatchset())
-	q := datastore.NewQuery(tryjob.TryjobKind).Gte("CLPatchsets", atOrAfter).Lt("CLPatchsets", before)
 
-	toCancel := make([]*tryjob.Tryjob, 0)
-	// The task should be safe to re-run even if it makes partial progress.
-	// If the cancellation succeeded but the entity was not successfully
-	// updated, on the next run the cancellation should be a no-op and the
-	// entity update will be tried again.
-	// Any tryjobs that are successfully cancelled and their entities updated
-	// will not appear in subsequent runs of the query, ensuring progress.
-
-	dsErr := datastore.Run(ctx, q, func(tj *tryjob.Tryjob) error {
-		if tj.IsEnded() || tj.LaunchedBy == "" || tj.Definition.SkipStaleCheck {
-			return nil
+	candidates, err := c.fetchCandidates(ctx, common.CLID(task.GetClid()), task.GetPreviousMinEquivPatchset(), task.GetCurrentMinEquivPatchset())
+	switch {
+	case err != nil:
+		return err
+	case len(candidates) == 0:
+		logging.Infof(ctx, "no stale Tryjobs to cancel")
+		return nil
+	default:
+		tryjobIDs := make([]string, len(candidates))
+		for i, tj := range candidates {
+			tryjobIDs[i] = strconv.Itoa(int(tj.ID))
 		}
-		switch ended, err := c.allWatchingRunsEnded(ctx, tj); {
-		case err != nil:
-			return err
-		// External ID is required to cancel tryjob.
-		// It may be unset for a few reasons:
-		//   - The task triggering the tryjob is stuck.
-		//   - The transaction saving the external id got rolled back and is
-		//     waiting to retry.
-		//   - RM has a bug.
-		case ended && tj.ExternalID != "":
-			toCancel = append(toCancel, tj)
+		logging.Infof(ctx, "found stale Tryjobs to cancel: [%s]", strings.Join(tryjobIDs, ", "))
+		return c.cancelTryjobs(ctx, candidates)
+	}
+}
+
+const cancelLaterDuration = 10 * time.Second
+
+func (c *Cancellator) fetchCandidates(ctx context.Context, clid common.CLID, prevMinEquiPS, curMinEquiPS int32) ([]*tryjob.Tryjob, error) {
+	q := datastore.NewQuery(tryjob.TryjobKind).
+		Gte("CLPatchsets", tryjob.MakeCLPatchset(clid, prevMinEquiPS)).
+		Lt("CLPatchsets", tryjob.MakeCLPatchset(clid, curMinEquiPS))
+
+	var candidates []*tryjob.Tryjob
+	err := datastore.Run(ctx, q, func(tj *tryjob.Tryjob) error {
+		switch {
+		case tj.ExternalID == "":
+			// Most likely Tryjob hasn't been triggered in the backend yet.
+		case tj.IsEnded():
+		case tj.LaunchedBy == "":
+			// Not launched by LUCI CV, may be through `git cl try` command line.
+		case tj.Definition.GetSkipStaleCheck():
+		default:
+			candidates = append(candidates, tj)
 		}
 		return nil
 	})
 	switch {
-	case len(toCancel) == 0:
-		return dsErr
-	case dsErr != nil:
-		logging.Warningf(ctx, "the query to fetch stale tryjobs returned an error along with partial results, will continue to cancel the returned tryjobs first")
-		fallthrough
-	default:
-		if err := c.cancelAll(ctx, toCancel); err != nil {
-			return err
-		}
-		return dsErr
+	case err != nil:
+		return nil, errors.Annotate(err, "failed to run the query to fetch candidate tryjobs for cancellation").Tag(transient.Tag).Err()
+	case len(candidates) == 0:
+		return nil, nil
 	}
+
+	hasAllWatchingRunsEndedFn, err := makeHasAllWatchingRunEndedFn(ctx, candidates)
+	if err != nil {
+		return nil, err
+	}
+	var ret = candidates[:0] // reuse the same slice
+	var cancelLaterScheduled bool
+	for _, candidate := range candidates {
+		switch nonEndedRuns := hasAllWatchingRunsEndedFn(candidate); {
+		case len(nonEndedRuns) > 0 && !cancelLaterScheduled:
+			eta := clock.Now(ctx).UTC().Add(cancelLaterDuration)
+			if err := c.tn.ScheduleCancelStale(ctx, clid, prevMinEquiPS, curMinEquiPS, eta); err != nil {
+				return nil, err
+			}
+			cancelLaterScheduled = true
+			fallthrough
+		case len(nonEndedRuns) > 0:
+			logging.Warningf(ctx, "tryjob %d is still watched by non ended runs %s. This is likely a race condition and those runs will end soon. Will retry cancellation after %s.", candidate.ID, nonEndedRuns, cancelLaterDuration)
+		default:
+			ret = append(ret, candidate)
+		}
+	}
+	return ret, nil
+
+}
+
+func makeHasAllWatchingRunEndedFn(ctx context.Context, tryjobs []*tryjob.Tryjob) (func(*tryjob.Tryjob) (nonEnded common.RunIDs), error) {
+	runIDSet := stringset.New(1) // typically only one run.
+	for _, tj := range tryjobs {
+		for _, rid := range tj.AllWatchingRuns() {
+			runIDSet.Add(string(rid))
+		}
+	}
+	runs, errs := run.LoadRunsFromIDs(common.MakeRunIDs(runIDSet.ToSlice()...)...).Do(ctx)
+	endedRunIDs := make(map[common.RunID]struct{}, len(runs))
+	for i, r := range runs {
+		switch err := errs[i]; {
+		case err == datastore.ErrNoSuchEntity:
+			return nil, errors.Reason("Tryjob is associated with a non-existent Run %s", r.ID).Err()
+		case err != nil:
+			return nil, errors.Annotate(err, "failed to load run %s", r.ID).Tag(transient.Tag).Err()
+		case run.IsEnded(r.Status):
+			endedRunIDs[r.ID] = struct{}{}
+		}
+	}
+	return func(tj *tryjob.Tryjob) common.RunIDs {
+		var nonEnded common.RunIDs
+		for _, rid := range tj.AllWatchingRuns() {
+			if _, ended := endedRunIDs[rid]; !ended {
+				nonEnded = append(nonEnded, rid)
+			}
+		}
+		return nonEnded
+	}, nil
 }
 
 const reason = "LUCI CV no longer needs this Tryjob"
 
-func (c *Cancellator) cancelAll(ctx context.Context, tjs []*tryjob.Tryjob) error {
+func (c *Cancellator) cancelTryjobs(ctx context.Context, tjs []*tryjob.Tryjob) error {
 	if len(tjs) == 0 {
 		return nil
 	}
@@ -144,7 +206,7 @@ func (c *Cancellator) cancelAll(ctx context.Context, tjs []*tryjob.Tryjob) error
 				}
 				return datastore.RunInTransaction(ctx, func(ctx context.Context) error {
 					if err := datastore.Get(ctx, tj); err != nil {
-						return err
+						return errors.Annotate(err, "failed to load Tryjob %d", tj.ID).Tag(transient.Tag).Err()
 					}
 					if tj.IsEnded() {
 						return nil
@@ -152,7 +214,10 @@ func (c *Cancellator) cancelAll(ctx context.Context, tjs []*tryjob.Tryjob) error
 					tj.Status = tryjob.Status_CANCELLED
 					tj.EVersion++
 					tj.EntityUpdateTime = datastore.RoundTime(clock.Now(ctx).UTC())
-					return datastore.Put(ctx, tj)
+					if err := datastore.Put(ctx, tj); err != nil {
+						return errors.Annotate(err, "failed to save Tryjob %d", tj.ID).Tag(transient.Tag).Err()
+					}
+					return nil
 				}, nil)
 			}
 		}
@@ -172,24 +237,6 @@ type cancellatorBackend interface {
 	// MUST not modify the given Tryjob object.
 	// If the tryjob was already cancelled, it should not return an error.
 	CancelTryjob(ctx context.Context, tj *tryjob.Tryjob, reason string) error
-}
-
-// allWatchingRunsEnded checks if all of the runs that are watching the given
-// tryjob have ended.
-func (c *Cancellator) allWatchingRunsEnded(ctx context.Context, tryjob *tryjob.Tryjob) (bool, error) {
-	runIds := tryjob.AllWatchingRuns()
-	runs, errs := run.LoadRunsFromIDs(runIds...).Do(ctx)
-	for i, r := range runs {
-		switch {
-		case errs[i] == datastore.ErrNoSuchEntity:
-			return false, errors.Reason("Tryjob %s is associated with a non-existent Run %s", tryjob.ExternalID, runIds[i]).Err()
-		case errs[i] != nil:
-			return false, errors.Annotate(errs[i], "failed to load run %s", runIds[i]).Err()
-		case !run.IsEnded(r.Status):
-			return false, nil
-		}
-	}
-	return true, nil
 }
 
 func (c *Cancellator) backendFor(t *tryjob.Tryjob) (cancellatorBackend, error) {

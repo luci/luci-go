@@ -92,7 +92,7 @@ type rmNotifier interface {
 }
 
 type tjNotifier interface {
-	NotifyCancelStale(ctx context.Context, clid common.CLID, prevMinEquivalentPatchset, currentMinEquivalentPatchset int32) error
+	ScheduleCancelStale(ctx context.Context, clid common.CLID, prevMinEquivalentPatchset, currentMinEquivalentPatchset int32, eta time.Time) error
 }
 
 // ErrStopMutation is a special error used by MutateCallback to signal that no
@@ -444,7 +444,10 @@ func (m *Mutator) dispatchBatchNotify(ctx context.Context, muts ...*CLMutation) 
 			batch.Runs[string(r)] = batch.Runs[string(r)].append(e)
 		}
 		if mut.CL.Snapshot != nil && mut.priorMinEquivalentPatchset != 0 {
-			if err := m.tj.NotifyCancelStale(ctx, mut.id, mut.priorMinEquivalentPatchset, mut.CL.Snapshot.GetMinEquivalentPatchset()); err != nil {
+			// add 1 second delay to allow run to finalize so that Tryjobs can be
+			// cancelled right away.
+			eta := clock.Now(ctx).UTC().Add(1 * time.Second)
+			if err := m.tj.ScheduleCancelStale(ctx, mut.id, mut.priorMinEquivalentPatchset, mut.CL.Snapshot.GetMinEquivalentPatchset(), eta); err != nil {
 				return err
 			}
 		}

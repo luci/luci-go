@@ -614,7 +614,7 @@ type tjMock struct {
 	mutex       sync.Mutex
 }
 
-func (t *tjMock) NotifyCancelStale(ctx context.Context, clid common.CLID, prevMinEquivalentPatchset, currentMinEquivalentPatchset int32) error {
+func (t *tjMock) ScheduleCancelStale(ctx context.Context, clid common.CLID, prevMinEquivalentPatchset, currentMinEquivalentPatchset int32, eta time.Time) error {
 	t.mutex.Lock()
 	defer t.mutex.Unlock()
 	t.clsNotified = append(t.clsNotified, clid)
