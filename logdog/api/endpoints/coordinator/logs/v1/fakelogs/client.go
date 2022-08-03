@@ -51,9 +51,13 @@ type prefixState struct {
 	streams   stringset.Set
 }
 
-// Project is the logdog project namespace that you should use with your
-// fakelogs clients.
-const Project = coordinatorTest.AllAccessProject
+const (
+	// Project is the logdog project namespace that you should use with your
+	// fakelogs clients.
+	Project = "fakelogs-project"
+	// Realm is a realm all fake logs end up associated with.
+	Realm = "fakelogs-realm"
+)
 
 // Client implements the logs.LogsClient API, and also has some 'reach-around'
 // APIs to insert stream data into the backend.
@@ -83,21 +87,21 @@ type Client struct {
 // Get implements logs.Get.
 func (c *Client) Get(_ context.Context, in *logs_api.GetRequest, _ ...grpc.CallOption) (*logs_api.GetResponse, error) {
 	realIn := proto.Clone(in).(*logs_api.GetRequest)
-	realIn.Project = coordinatorTest.AllAccessProject
+	realIn.Project = Project
 	return c.logsServ.Get(c.ctx, realIn)
 }
 
 // Tail implements logs.Tail.
 func (c *Client) Tail(_ context.Context, in *logs_api.TailRequest, _ ...grpc.CallOption) (*logs_api.GetResponse, error) {
 	realIn := proto.Clone(in).(*logs_api.TailRequest)
-	realIn.Project = coordinatorTest.AllAccessProject
+	realIn.Project = Project
 	return c.logsServ.Tail(c.ctx, realIn)
 }
 
 // Query implements logs.Query.
 func (c *Client) Query(_ context.Context, in *logs_api.QueryRequest, _ ...grpc.CallOption) (*logs_api.QueryResponse, error) {
 	realIn := proto.Clone(in).(*logs_api.QueryRequest)
-	realIn.Project = coordinatorTest.AllAccessProject
+	realIn.Project = Project
 	return c.logsServ.Query(c.ctx, realIn)
 }
 
@@ -157,7 +161,8 @@ func (c *Client) getPrefixState(prefix string) (*prefixState, error) {
 	state, seenPrefix := c.prefixes[prefix]
 	if !seenPrefix {
 		rsp, err := c.regServ.RegisterPrefix(c.ctx, &reg_api.RegisterPrefixRequest{
-			Project: coordinatorTest.AllAccessProject,
+			Project: Project,
+			Realm:   Realm,
 			Prefix:  prefix,
 		})
 		if err != nil {
@@ -195,7 +200,7 @@ func (c *Client) open(streamType logpb.StreamType, prefix, path logdog_types.Str
 	}
 
 	rsp, err := c.srvServ.RegisterStream(c.ctx, &services_api.RegisterStreamRequest{
-		Project:       coordinatorTest.AllAccessProject,
+		Project:       Project,
 		Secret:        state.secret,
 		ProtoVersion:  logpb.Version,
 		Desc:          data,
@@ -245,8 +250,10 @@ func (s storageclient) GetSignedURLs(context.Context, *coordinator.URLSigningReq
 // behave like the real thing.
 func NewClient() *Client {
 	ctx, env := coordinatorTest.Install(false)
-	env.LogIn()
-	env.AuthState.IdentityGroups = []string{"admin", "all", "auth", "services"}
+	env.AddProject(ctx, Project)
+	env.ActAsWriter(Project, Realm)
+	env.JoinAdmins()
+	env.JoinServices()
 
 	ts := taskqueue.GetTestable(ctx)
 	ts.CreatePullQueue(services_impl.RawArchiveQueueName(0))

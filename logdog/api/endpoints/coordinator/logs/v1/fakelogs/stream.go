@@ -25,7 +25,6 @@ import (
 	"go.chromium.org/luci/common/clock"
 	services "go.chromium.org/luci/logdog/api/endpoints/coordinator/services/v1"
 	"go.chromium.org/luci/logdog/api/logpb"
-	"go.chromium.org/luci/logdog/appengine/coordinator/coordinatorTest"
 	logdog_types "go.chromium.org/luci/logdog/common/types"
 )
 
@@ -94,7 +93,7 @@ func (s *Stream) Write(bs []byte) (int, error) {
 		s.sequence++
 	}
 
-	s.c.storage.PutEntries(s.c.ctx, coordinatorTest.AllAccessProject, s.pth, entry)
+	s.c.storage.PutEntries(s.c.ctx, Project, s.pth, entry)
 
 	return len(bs), nil
 }
@@ -102,7 +101,7 @@ func (s *Stream) Write(bs []byte) (int, error) {
 // Close terminates this stream.
 func (s *Stream) Close() error {
 	_, err := s.c.srvServ.TerminateStream(s.c.ctx, &services.TerminateStreamRequest{
-		Project:       coordinatorTest.AllAccessProject,
+		Project:       Project,
 		Id:            s.streamID,
 		Secret:        s.secret,
 		TerminalIndex: s.streamIndex - 1,

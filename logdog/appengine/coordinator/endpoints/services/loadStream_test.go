@@ -41,7 +41,8 @@ func TestLoadStream(t *testing.T) {
 		svr := New(ServerSettings{NumQueues: 2})
 
 		// Register a test stream.
-		tls := ct.MakeStream(c, "proj-foo", "", "testing/+/foo/bar")
+		env.AddProject(c, "proj-foo")
+		tls := ct.MakeStream(c, "proj-foo", "some-realm", "testing/+/foo/bar")
 		if err := tls.Put(c); err != nil {
 			panic(err)
 		}
@@ -58,7 +59,7 @@ func TestLoadStream(t *testing.T) {
 		})
 
 		Convey(`When logged in as a service`, func() {
-			env.JoinGroup("services")
+			env.ActAsService()
 
 			Convey(`Will succeed.`, func() {
 				resp, err := svr.LoadStream(c, req)

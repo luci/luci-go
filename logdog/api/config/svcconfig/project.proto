@@ -27,13 +27,10 @@ option (luci.file_metadata) = {
 //
 // Many of the parameters here can be bounded by GlobalConfig parameters.
 message ProjectConfig {
-  // The set of auth service groups that are permitted READ access to this
-  // project's log streams.
-  repeated string reader_auth_groups = 2;
-
-  // The set of chrome-infra-auth groups that are permitted WRITE access to this
-  // project's log streams.
-  repeated string writer_auth_groups = 3;
+  // Deprecated and unused. Use 'role/logdog.reader' realms role instead.
+  repeated string reader_auth_groups = 2 [deprecated = true];
+  // Deprecated and unused. Use 'role/logdog.writer' realms role instead.
+  repeated string writer_auth_groups = 3 [deprecated = true];
 
   // The maximum amount of time after a prefix has been registered when log
   // streams may also be registered under that prefix.

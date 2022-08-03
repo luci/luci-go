@@ -56,7 +56,7 @@ func TestServiceAuth(t *testing.T) {
 					})
 
 					Convey(`Will allow users who are members of the service group.`, func() {
-						env.JoinGroup("services")
+						env.ActAsService()
 
 						_, err := svr.Prelude(c, "test", nil)
 						So(err, ShouldBeNil)

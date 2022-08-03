@@ -36,7 +36,7 @@ func TestTaskQueue(t *testing.T) {
 		c = mathrand.Set(c, rand.New(rand.NewSource(1234)))
 
 		// By default, the testing user is a service.
-		env.JoinGroup("services")
+		env.ActAsService()
 		svr := New(ServerSettings{NumQueues: 2})
 
 		// The testable TQ object.

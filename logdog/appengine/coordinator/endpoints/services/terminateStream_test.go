@@ -40,7 +40,8 @@ func TestTerminateStream(t *testing.T) {
 
 		svr := New(ServerSettings{NumQueues: 2})
 
-		tls := ct.MakeStream(c, "proj-foo", "", "testing/+/foo/bar")
+		env.AddProject(c, "proj-foo")
+		tls := ct.MakeStream(c, "proj-foo", "some-realm", "testing/+/foo/bar")
 
 		req := logdog.TerminateStreamRequest{
 			Project:       string(tls.Project),
@@ -60,7 +61,7 @@ func TestTerminateStream(t *testing.T) {
 		})
 
 		Convey(`When logged in as a service`, func() {
-			env.JoinGroup("services")
+			env.ActAsService()
 
 			Convey(`A non-terminal registered stream, "testing/+/foo/bar"`, func() {
 				So(tls.Put(c), ShouldBeNil)

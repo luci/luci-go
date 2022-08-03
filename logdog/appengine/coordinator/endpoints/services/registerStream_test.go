@@ -42,9 +42,10 @@ func TestRegisterStream(t *testing.T) {
 
 	Convey(`With a testing configuration`, t, func() {
 		c, env := ct.Install(true)
+		env.AddProject(c, "proj-foo")
 
 		// By default, the testing user is a service.
-		env.JoinGroup("services")
+		env.ActAsService()
 
 		svr := New(ServerSettings{NumQueues: 2})
 
@@ -54,14 +55,14 @@ func TestRegisterStream(t *testing.T) {
 		ts.CreatePullQueue(RawArchiveQueueName(1))
 
 		Convey(`Returns Forbidden error if not a service.`, func() {
-			env.LeaveAllGroups()
+			env.ActAsNobody()
 
 			_, err := svr.RegisterStream(c, &logdog.RegisterStreamRequest{})
 			So(err, ShouldBeRPCPermissionDenied)
 		})
 
 		Convey(`When registering a testing log sream, "testing/+/foo/bar"`, func() {
-			tls := ct.MakeStream(c, "proj-foo", "", "testing/+/foo/bar")
+			tls := ct.MakeStream(c, "proj-foo", "some-realm", "testing/+/foo/bar")
 
 			req := logdog.RegisterStreamRequest{
 				Project:       string(tls.Project),
@@ -277,14 +278,15 @@ func BenchmarkRegisterStream(b *testing.B) {
 	c, env := ct.Install(true)
 
 	// By default, the testing user is a service.
-	env.JoinGroup("services")
+	env.ActAsService()
 
 	const (
 		prefix  = types.StreamName("testing")
 		project = "proj-foo"
 	)
 
-	tls := ct.MakeStream(c, project, "", prefix.Join(types.StreamName(fmt.Sprintf("foo/bar"))))
+	env.AddProject(c, project)
+	tls := ct.MakeStream(c, project, "some-realm", prefix.Join(types.StreamName("foo/bar")))
 	tls.WithProjectNamespace(c, func(c context.Context) {
 		if err := ds.Put(c, tls.Prefix); err != nil {
 			b.Fatalf("failed to register prefix: %v", err)
@@ -296,7 +298,7 @@ func BenchmarkRegisterStream(b *testing.B) {
 	b.ResetTimer()
 
 	for i := 0; i < b.N; i++ {
-		tls := ct.MakeStream(c, project, "", prefix.Join(types.StreamName(fmt.Sprintf("foo/bar/%d", i))))
+		tls := ct.MakeStream(c, project, "some-realm", prefix.Join(types.StreamName(fmt.Sprintf("foo/bar/%d", i))))
 
 		req := logdog.RegisterStreamRequest{
 			Project:       string(tls.Project),

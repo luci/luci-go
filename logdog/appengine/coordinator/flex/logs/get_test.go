@@ -44,7 +44,6 @@ import (
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
 	"go.chromium.org/luci/server/auth/realms"
-	"go.chromium.org/luci/server/auth/service/protocol"
 
 	"go.chromium.org/luci/gae/filter/featureBreaker"
 
@@ -100,11 +99,14 @@ func testGetImpl(t *testing.T, archived bool) {
 
 		svr := New()
 
-		// di is a datastore bound to the test project namespace.
-		const project = "proj-foo"
+		const project = "some-project"
+		const realm = "some-realm"
+
+		env.AddProject(c, project)
+		env.ActAsReader(project, realm)
 
 		// Generate our test stream.
-		tls := ct.MakeStream(c, "proj-foo", "test-realm", "testing/+/foo/bar")
+		tls := ct.MakeStream(c, project, realm, "testing/+/foo/bar")
 
 		putLogStream := func(c context.Context) {
 			if err := tls.Put(c); err != nil {
@@ -126,14 +128,14 @@ func testGetImpl(t *testing.T, archived bool) {
 			switch v {
 			case 4:
 				le.Content = &logpb.LogEntry_Binary{
-					&logpb.Binary{
+					Binary: &logpb.Binary{
 						Data: []byte{0x00, 0x01, 0x02, 0x03},
 					},
 				}
 
 			case 5:
 				le.Content = &logpb.LogEntry_Datagram{
-					&logpb.Datagram{
+					Datagram: &logpb.Datagram{
 						Data: []byte{0x00, 0x01, 0x02, 0x03},
 						Partial: &logpb.Datagram_Partial{
 							Index: 2,
@@ -202,73 +204,51 @@ func testGetImpl(t *testing.T, archived bool) {
 				req.Path = "testing/+/**"
 
 				Convey(`Anon`, func() {
+					env.ActAsAnon()
 					_, err := svr.Get(c, &req)
 					So(err, ShouldBeRPCUnauthenticated)
 				})
 
 				Convey(`User`, func() {
-					env.LogIn()
+					env.ActAsNobody()
 					_, err := svr.Get(c, &req)
 					So(err, ShouldBeRPCPermissionDenied)
 				})
 			})
 
 			Convey(`Authorization rules`, func() {
-				// "proj-exclusive" has restricted legacy ACLs, see coordinatorTest.
-				const project = "proj-exclusive"
-				req.Project = project
-
 				const (
 					User   = "user:caller@example.com"
 					Anon   = identity.AnonymousIdentity
 					Legacy = "user:legacy@example.com" // present in @legacy realm ACL
 				)
-
 				const (
 					NoRealm        = ""
 					AllowedRealm   = "allowed"
 					ForbiddenRealm = "forbidden"
 				)
 
-				const (
-					AllowLegacy  = true
-					ForbidLegacy = false
-				)
-
 				realm := func(short string) string {
 					return realms.Join(project, short)
 				}
+				authDB := authtest.NewFakeDB(
+					authtest.MockPermission(User, realm(AllowedRealm), coordinator.PermLogsGet),
+					authtest.MockPermission(Legacy, realm(realms.LegacyRealm), coordinator.PermLogsGet),
+				)
 
 				cases := []struct {
-					enforce     bool              // is enforce_realms_in ON or OFF
-					ident       identity.Identity // who's making the call
-					realm       string            // the realm to put the stream in
-					allowLegacy bool              // mock legacy ACLs to allow access
-					code        codes.Code        // the expected gRPC code
+					ident identity.Identity // who's making the call
+					realm string            // the realm to put the stream in
+					code  codes.Code        // the expected gRPC code
 				}{
-					// Enforcement is on, legacy ACLs are ignored.
-					{true, User, NoRealm, AllowLegacy, codes.PermissionDenied},
-					{true, User, NoRealm, ForbidLegacy, codes.PermissionDenied},
-					{true, Legacy, NoRealm, AllowLegacy, codes.OK},
-					{true, Legacy, NoRealm, ForbidLegacy, codes.OK},
-					{true, User, AllowedRealm, AllowLegacy, codes.OK},
-					{true, User, AllowedRealm, ForbidLegacy, codes.OK},
-					{true, User, ForbiddenRealm, AllowLegacy, codes.PermissionDenied},
-					{true, User, ForbiddenRealm, ForbidLegacy, codes.PermissionDenied},
-
-					// Enforcement is off, have a fallback on legacy ACLs.
-					{false, User, NoRealm, AllowLegacy, codes.OK},
-					{false, User, NoRealm, ForbidLegacy, codes.PermissionDenied},
-					{false, Legacy, NoRealm, AllowLegacy, codes.OK},
-					{false, Legacy, NoRealm, ForbidLegacy, codes.OK},
-					{false, User, AllowedRealm, AllowLegacy, codes.OK},
-					{false, User, AllowedRealm, ForbidLegacy, codes.OK},
-					{false, User, ForbiddenRealm, AllowLegacy, codes.OK},
-					{false, User, ForbiddenRealm, ForbidLegacy, codes.PermissionDenied},
+					{User, NoRealm, codes.PermissionDenied},
+					{User, AllowedRealm, codes.OK},
+					{User, ForbiddenRealm, codes.PermissionDenied},
+					{Legacy, NoRealm, codes.OK},
 
 					// Permission denied for anon => Unauthenticated.
-					{true, Anon, ForbiddenRealm, AllowLegacy, codes.Unauthenticated},
-					{false, Anon, NoRealm, ForbidLegacy, codes.Unauthenticated},
+					{Anon, ForbiddenRealm, codes.Unauthenticated},
+					{Anon, NoRealm, codes.Unauthenticated},
 				}
 
 				for i, test := range cases {
@@ -276,23 +256,10 @@ func testGetImpl(t *testing.T, archived bool) {
 						tls = ct.MakeStream(c, project, test.realm, types.StreamPath(req.Path))
 						putLogStream(c)
 
-						mocks := []authtest.MockedDatum{
-							authtest.MockPermission(test.ident, realm(AllowedRealm), coordinator.PermLogsGet),
-							authtest.MockPermission(Legacy, realm(realms.LegacyRealm), coordinator.PermLogsGet),
-						}
-						if test.enforce {
-							mocks = append(mocks, authtest.MockRealmData(
-								realm(realms.RootRealm),
-								&protocol.RealmData{EnforceInService: []string{env.ServiceID}},
-							))
-						}
-						if test.allowLegacy {
-							mocks = append(mocks, authtest.MockMembership(test.ident, "auth"))
-						}
-
+						// Note: this overrides mocks set by ActAsReader.
 						c := auth.WithState(c, &authtest.FakeState{
 							Identity: test.ident,
-							FakeDB:   authtest.NewFakeDB(mocks...),
+							FakeDB:   authDB,
 						})
 
 						resp, err := svr.Get(c, &req)
@@ -369,7 +336,7 @@ func testGetImpl(t *testing.T, archived bool) {
 					})
 
 					Convey(`Will process the request if the user is an administrator.`, func() {
-						env.JoinGroup("admin")
+						env.JoinAdmins()
 
 						resp, err := svr.Get(c, &req)
 						So(err, ShouldBeRPCOK)

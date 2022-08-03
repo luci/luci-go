@@ -118,13 +118,23 @@ func (r *queryRunner) runQuery(resp *logdog.QueryResponse) error {
 		return grpcutil.Internal
 	}
 
-	if err := coordinator.CheckPermission(r.ctx, coordinator.PermLogsList, q.Prefix, pfx.Realm); err != nil {
+	// Old prefixes have no realm set. Fallback to "@legacy".
+	realm := pfx.Realm
+	if realm == "" {
+		realm = realms.Join(r.req.Project, realms.LegacyRealm)
+	}
+	resp.Project, resp.Realm = realms.Split(realm)
+
+	// Check the caller is allowed to enumerate streams under this prefix.
+	if err := coordinator.CheckPermission(r.ctx, coordinator.PermLogsList, q.Prefix, realm); err != nil {
 		return err
 	}
 
-	resp.Project = r.req.Project
-	if pfx.Realm != "" {
-		_, resp.Realm = realms.Split(pfx.Realm)
+	// The stored realm project **must** match the requested project. This error
+	// should never happen. If it does, it indicates some kind of a corruption.
+	if resp.Project != r.req.Project {
+		log.Errorf(r.ctx, "Expected a realm in project %q, but saw %q", r.req.Project, realm)
+		return grpcutil.Internal
 	}
 
 	if err := q.SetCursor(r.ctx, r.req.Next); err != nil {

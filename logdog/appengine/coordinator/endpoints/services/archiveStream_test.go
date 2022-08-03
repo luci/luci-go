@@ -38,7 +38,8 @@ func TestArchiveStream(t *testing.T) {
 		svr := New(ServerSettings{NumQueues: 2})
 
 		// Register a testing log stream with an archive tasked.
-		tls := ct.MakeStream(c, "proj-foo", "", "testing/+/foo")
+		env.AddProject(c, "proj-foo")
+		tls := ct.MakeStream(c, "proj-foo", "some-realm", "testing/+/foo")
 		tls.State.ArchivalKey = []byte("archival key")
 		So(tls.State.ArchivalState(), ShouldEqual, coordinator.ArchiveTasked)
 		if err := tls.Put(c); err != nil {
@@ -66,7 +67,7 @@ func TestArchiveStream(t *testing.T) {
 		})
 
 		Convey(`When logged in as a service`, func() {
-			env.JoinGroup("services")
+			env.ActAsService()
 
 			Convey(`Will mark the stream as archived.`, func() {
 				_, err := svr.ArchiveStream(c, req)

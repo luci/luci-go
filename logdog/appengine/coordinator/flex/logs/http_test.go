@@ -36,9 +36,16 @@ func TestHTTP(t *testing.T) {
 	t.Parallel()
 
 	Convey(`With a testing configuration`, t, func() {
-		c, _ := ct.Install(true)
+		c, env := ct.Install(true)
 		c, tc := testclock.UseTime(c, testclock.TestRecentTimeUTC)
-		tls := ct.MakeStream(c, "proj-foo", "", "testing/+/foo/bar")
+
+		const project = "proj-foo"
+		const realm = "some-realm"
+
+		env.AddProject(c, project)
+		env.ActAsReader(project, realm)
+
+		tls := ct.MakeStream(c, project, realm, "testing/+/foo/bar")
 		So(tls.Put(c), ShouldBeNil)
 
 		resp := httptest.NewRecorder()

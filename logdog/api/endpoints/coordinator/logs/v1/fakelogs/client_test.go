@@ -25,7 +25,6 @@ import (
 	"go.chromium.org/luci/common/logging/gologger"
 	. "go.chromium.org/luci/common/testing/assertions"
 	logs "go.chromium.org/luci/logdog/api/endpoints/coordinator/logs/v1"
-	"go.chromium.org/luci/logdog/appengine/coordinator/coordinatorTest"
 	"go.chromium.org/luci/logdog/client/butlerlib/streamproto"
 	"go.chromium.org/luci/logdog/client/coordinator"
 	"go.chromium.org/luci/logdog/common/fetcher"
@@ -63,7 +62,7 @@ func TestFakeLogs(t *testing.T) {
 
 			Convey(`can query`, func() {
 				rsp, err := c.Query(ctx, &logs.QueryRequest{
-					Project: coordinatorTest.AllAccessProject,
+					Project: Project,
 					Path:    "some/prefix/+/**",
 					Tags: map[string]string{
 						"tag": "",
@@ -71,7 +70,8 @@ func TestFakeLogs(t *testing.T) {
 				})
 				So(err, ShouldBeNil)
 				So(rsp, ShouldResembleProto, &logs.QueryResponse{
-					Project: coordinatorTest.AllAccessProject,
+					Project: Project,
+					Realm:   Realm,
 					Streams: []*logs.QueryResponse_Stream{
 						{Path: "some/prefix/+/some/path"},
 					},
@@ -82,7 +82,8 @@ func TestFakeLogs(t *testing.T) {
 				})
 				So(err, ShouldBeNil)
 				So(rsp, ShouldResembleProto, &logs.QueryResponse{
-					Project: coordinatorTest.AllAccessProject,
+					Project: Project,
+					Realm:   Realm,
 					Streams: []*logs.QueryResponse_Stream{
 						{Path: "some/prefix/+/other/path"},
 					},
@@ -99,7 +100,7 @@ func TestFakeLogs(t *testing.T) {
 			So(st.Close(), ShouldBeNil)
 
 			client := &coordinator.Client{C: c, Host: "testing-host.example.com"}
-			stream := client.Stream(coordinatorTest.AllAccessProject, "some/prefix/+/some/path")
+			stream := client.Stream(Project, "some/prefix/+/some/path")
 			data, err := ioutil.ReadAll(stream.Fetcher(ctx, &fetcher.Options{
 				RequireCompleteStream: true,
 			}).Reader())
@@ -117,7 +118,7 @@ func TestFakeLogs(t *testing.T) {
 			So(st.Close(), ShouldBeNil)
 
 			client := &coordinator.Client{C: c, Host: "testing-host.example.com"}
-			stream := client.Stream(coordinatorTest.AllAccessProject, "some/prefix/+/some/path")
+			stream := client.Stream(Project, "some/prefix/+/some/path")
 			ent, err := stream.Tail(ctx)
 			So(err, ShouldBeNil)
 			So(string(ent.GetDatagram().Data), ShouldResemble, "this is\ntwo lines")
@@ -132,7 +133,7 @@ func TestFakeLogs(t *testing.T) {
 			So(st.Close(), ShouldBeNil)
 
 			client := &coordinator.Client{C: c, Host: "testing-host.example.com"}
-			stream := client.Stream(coordinatorTest.AllAccessProject, "some/prefix/+/some/path")
+			stream := client.Stream(Project, "some/prefix/+/some/path")
 			data, err := ioutil.ReadAll(stream.Fetcher(ctx, &fetcher.Options{
 				RequireCompleteStream: true,
 			}).Reader())

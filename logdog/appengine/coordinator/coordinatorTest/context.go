@@ -19,7 +19,6 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"strings"
 	"time"
 
 	"google.golang.org/protobuf/types/known/durationpb"
@@ -46,8 +45,7 @@ import (
 	logdogcfg "go.chromium.org/luci/logdog/server/config"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
-	"go.chromium.org/luci/server/auth/signing"
-	"go.chromium.org/luci/server/auth/signing/signingtest"
+	"go.chromium.org/luci/server/auth/realms"
 	"go.chromium.org/luci/server/caching"
 
 	gaeMemory "go.chromium.org/luci/gae/impl/memory"
@@ -55,10 +53,6 @@ import (
 
 	"github.com/golang/protobuf/proto"
 )
-
-// AllAccessProject is the project name that can be used to get a full-access
-// project (i.e. unauthenticated users have both R and W permissions).
-const AllAccessProject = "proj-foo"
 
 // mainServicePath is the path to the main service.
 var mainServicePath string
@@ -97,24 +91,75 @@ type Environment struct {
 	syncConfig func()
 }
 
-// LogIn installs an testing identity into the testing auth state.
-func (e *Environment) LogIn() {
-	id, err := identity.MakeIdentity("user:testing@example.com")
-	if err != nil {
-		panic(err)
-	}
-	e.AuthState.Identity = id
-}
-
-// JoinGroup adds the named group the to the list of groups for the current
-// identity.
-func (e *Environment) JoinGroup(g string) {
-	e.AuthState.IdentityGroups = append(e.AuthState.IdentityGroups, g)
-}
-
-// LeaveAllGroups clears all auth groups that the user is currently a member of.
-func (e *Environment) LeaveAllGroups() {
+// ActAsAnon mocks the auth state to indicate an anonymous caller.
+//
+// It has no access to any project.
+func (e *Environment) ActAsAnon() {
+	e.AuthState.Identity = identity.AnonymousIdentity
 	e.AuthState.IdentityGroups = nil
+	e.AuthState.IdentityPermissions = nil
+}
+
+// ActAsNobody mocks the auth state to indicate it's some unknown user calling.
+//
+// It has no access to any project.
+func (e *Environment) ActAsNobody() {
+	e.AuthState.Identity = "user:nodoby@example.com"
+	e.AuthState.IdentityGroups = nil
+	e.AuthState.IdentityPermissions = nil
+}
+
+// ActAsService mocks the auth state to indicate it's a service calling.
+func (e *Environment) ActAsService() {
+	e.AuthState.Identity = "user:services@example.com"
+	e.AuthState.IdentityGroups = []string{"services"}
+	e.AuthState.IdentityPermissions = nil
+}
+
+// ActAsWriter mocks the auth state to indicate it's a prefix writer calling.
+func (e *Environment) ActAsWriter(project, realm string) {
+	e.AuthState.Identity = "user:client@example.com"
+	e.AuthState.IdentityGroups = nil
+	e.AuthState.IdentityPermissions = []authtest.RealmPermission{
+		{
+			Realm:      realms.Join(project, realm),
+			Permission: coordinator.PermLogsGet,
+		},
+		{
+			Realm:      realms.Join(project, realm),
+			Permission: coordinator.PermLogsList,
+		},
+		{
+			Realm:      realms.Join(project, realm),
+			Permission: coordinator.PermLogsCreate,
+		},
+	}
+}
+
+// ActAsReader mocks the auth state to indicate it's a prefix reader calling.
+func (e *Environment) ActAsReader(project, realm string) {
+	e.AuthState.Identity = "user:client@example.com"
+	e.AuthState.IdentityGroups = nil
+	e.AuthState.IdentityPermissions = []authtest.RealmPermission{
+		{
+			Realm:      realms.Join(project, realm),
+			Permission: coordinator.PermLogsGet,
+		},
+		{
+			Realm:      realms.Join(project, realm),
+			Permission: coordinator.PermLogsList,
+		},
+	}
+}
+
+// JoinAdmins adds the current caller to the administrators group.
+func (e *Environment) JoinAdmins() {
+	e.AuthState.IdentityGroups = append(e.AuthState.IdentityGroups, "admin")
+}
+
+// JoinServices adds the current caller to the services group.
+func (e *Environment) JoinServices() {
+	e.AuthState.IdentityGroups = append(e.AuthState.IdentityGroups, "services")
 }
 
 // ModServiceConfig loads the current service configuration, invokes the
@@ -133,6 +178,11 @@ func (e *Environment) ModProjectConfig(c context.Context, project string, fn fun
 	e.modTextProtobuf(c, config.ProjectSet(project), e.ServiceID+".cfg", &pcfg, func() {
 		fn(&pcfg)
 	})
+}
+
+// AddProject ensures there's a config for the given project.
+func (e *Environment) AddProject(c context.Context, project string) {
+	e.ModProjectConfig(c, project, func(*svcconfig.ProjectConfig) {})
 }
 
 func (e *Environment) modTextProtobuf(c context.Context, configSet config.Set, path string,
@@ -180,12 +230,6 @@ func Install(useRealIndex bool) (context.Context, *Environment) {
 	c = cryptorand.MockForTest(c, 765589025) // as chosen by fair dice roll
 	ds.GetTestable(c).Consistent(true)
 
-	// Signer is used by ShouldEnforceRealmACL to discover service ID.
-	c = auth.ModifyConfig(c, func(cfg auth.Config) auth.Config {
-		cfg.Signer = signingtest.NewSigner(&signing.ServiceInfo{AppID: e.ServiceID})
-		return cfg
-	})
-
 	c = caching.WithEmptyProcessCache(c)
 	if *testGoLogger {
 		c = logging.SetLevel(gologger.StdConfig.Use(c), logging.Debug)
@@ -223,33 +267,8 @@ func Install(useRealIndex bool) (context.Context, *Environment) {
 
 	c = logdogcfg.WithStore(c, &logdogcfg.Store{NoCache: true})
 
-	// luci-config: Projects.
-	addProjectConfig := func(project string, access ...string) {
-		e.ModProjectConfig(c, project, func(pcfg *svcconfig.ProjectConfig) {
-			for _, a := range access {
-				parts := strings.SplitN(a, ":", 2)
-				group, field := parts[0], &pcfg.ReaderAuthGroups
-				if len(parts) == 2 {
-					switch parts[1] {
-					case "R":
-						break
-					case "W":
-						field = &pcfg.WriterAuthGroups
-					default:
-						panic(a)
-					}
-				}
-				*field = append(*field, group)
-			}
-		})
-	}
-	addProjectConfig(AllAccessProject, "all:R", "all:W")
-	addProjectConfig("proj-bar", "all:R", "auth:W")
-	addProjectConfig("proj-exclusive", "auth:R", "auth:W")
-
 	// Add a project without a LogDog project config.
 	e.addConfigEntry("projects/proj-unconfigured", "not-logdog.cfg", "junk")
-
 	// Add a project with malformed configs.
 	e.addConfigEntry(config.ProjectSet("proj-malformed"), e.ServiceID+".cfg", "!!! not a text protobuf !!!")
 
@@ -272,10 +291,7 @@ func Install(useRealIndex bool) (context.Context, *Environment) {
 
 	// Install authentication state.
 	c = auth.WithState(c, &e.AuthState)
-
-	// Setup authentication state.
-	e.LeaveAllGroups()
-	e.JoinGroup("all")
+	e.ActAsAnon()
 
 	// Setup our default Coordinator services.
 	e.Services = Services{

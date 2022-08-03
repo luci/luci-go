@@ -24,6 +24,7 @@ import (
 	ds "go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/grpc/grpcutil"
 	"go.chromium.org/luci/logdog/common/types"
+	"go.chromium.org/luci/server/auth/realms"
 )
 
 // MetadataFetcher fetches LogStream and LogPrefix metadata and checks ACLs.
@@ -87,8 +88,14 @@ func (f *MetadataFetcher) FetchWithACLCheck(ctx context.Context) error {
 		return grpcutil.Internal
 	}
 
+	// Old prefixes have no realm set. Fallback to "@legacy".
+	realm := f.Prefix.Realm
+	if realm == "" {
+		realm = realms.Join(Project(ctx), realms.LegacyRealm)
+	}
+
 	// Check the caller is allowed to read streams under this prefix.
-	if err := CheckPermission(ctx, PermLogsGet, prefix, f.Prefix.Realm); err != nil {
+	if err := CheckPermission(ctx, PermLogsGet, prefix, realm); err != nil {
 		return err
 	}
 

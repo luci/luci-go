@@ -83,10 +83,8 @@ func (s *server) RegisterPrefix(c context.Context, req *logdog.RegisterPrefixReq
 		"expiration": req.Expiration.AsDuration(),
 	}.Debugf(c, "Registering log prefix.")
 
-	// Note: if the project has `enforce_realms_in` setting ON and req.Realm is
-	// empty, CheckPermission below will barf with InvalidArgument error. And when
-	// not enforcing realm ACLs, it is fine to pass empty "realm" string, it will
-	// be replaced with @legacy.
+	// Legacy clients do not pass `realm`. This is fine, fallback to "@legacy"
+	// realm.
 	var realm string
 	if req.Realm != "" {
 		if err := realms.ValidateRealmName(req.Realm, realms.ProjectScope); err != nil {
@@ -94,6 +92,8 @@ func (s *server) RegisterPrefix(c context.Context, req *logdog.RegisterPrefixReq
 			return nil, grpcutil.Errf(codes.InvalidArgument, "%s", err)
 		}
 		realm = realms.Join(req.Project, req.Realm)
+	} else {
+		realm = realms.Join(req.Project, realms.LegacyRealm)
 	}
 
 	// Confirm that the Prefix is a valid stream name.

@@ -36,7 +36,6 @@ import (
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
 	"go.chromium.org/luci/server/auth/realms"
-	"go.chromium.org/luci/server/auth/service/protocol"
 
 	. "github.com/smartystreets/goconvey/convey"
 
@@ -83,11 +82,16 @@ func TestQuery(t *testing.T) {
 		svr := New()
 		svrBase := svr.(*logdog.DecoratedLogs).Service.(*server)
 
-		const project = "proj-foo"
+		const project = "some-project"
+		const realm = "some-realm"
+
+		env.AddProject(c, project)
+		env.ActAsReader(project, realm)
 
 		// Stock query request, will be modified by each test.
 		req := logdog.QueryRequest{
 			Project: project,
+			Path:    "prefix/+/**",
 			Tags:    map[string]string{},
 		}
 
@@ -112,7 +116,7 @@ func TestQuery(t *testing.T) {
 			"testing/+/foo/bar/baz",
 			"testing/+/baz",
 		} {
-			tls := ct.MakeStream(c, project, "", v)
+			tls := ct.MakeStream(c, project, realm, v)
 			tls.Desc.ContentType = tls.Stream.Prefix
 			tls.Desc.Tags = map[string]string{
 				"prefix": tls.Stream.Prefix,
@@ -185,121 +189,89 @@ func TestQuery(t *testing.T) {
 		}
 
 		Convey(`An empty query will return an error.`, func() {
+			req.Path = ""
 			_, err := svr.Query(c, &req)
 			So(err, ShouldBeRPCInvalidArgument, "invalid query `path`")
 		})
 
 		Convey(`Handles non-existent project.`, func() {
 			req.Project = "does-not-exist"
-			req.Path = "testing/+/**"
 
 			Convey(`Anon`, func() {
+				env.ActAsAnon()
 				_, err := svr.Query(c, &req)
 				So(err, ShouldBeRPCUnauthenticated)
 			})
 
 			Convey(`User`, func() {
-				env.LogIn()
+				env.ActAsNobody()
 				_, err := svr.Query(c, &req)
 				So(err, ShouldBeRPCPermissionDenied)
 			})
 		})
 
 		Convey(`Authorization rules`, func() {
-			// "proj-exclusive" has restricted legacy ACLs, see coordinatorTest.
-			const project = "proj-exclusive"
-			req.Project = "proj-exclusive"
-			req.Path = "exclusive/+/**"
-
 			const (
 				User   = "user:caller@example.com"
 				Anon   = identity.AnonymousIdentity
 				Legacy = "user:legacy@example.com" // present in @legacy realm ACL
 			)
-
 			const (
 				NoRealm        = ""
 				AllowedRealm   = "allowed"
 				ForbiddenRealm = "forbidden"
 			)
 
-			const (
-				AllowLegacy  = true
-				ForbidLegacy = false
-			)
-
 			realm := func(short string) string {
 				return realms.Join(project, short)
 			}
+			authDB := authtest.NewFakeDB(
+				authtest.MockPermission(User, realm(AllowedRealm), coordinator.PermLogsList),
+				authtest.MockPermission(Legacy, realm(realms.LegacyRealm), coordinator.PermLogsList),
+			)
 
 			cases := []struct {
-				enforce     bool              // is enforce_realms_in ON or OFF
-				ident       identity.Identity // who's making the call
-				realm       string            // the realm to put the stream in
-				allowLegacy bool              // mock legacy ACLs to allow access
-				code        codes.Code        // the expected gRPC code
+				ident identity.Identity // who's making the call
+				realm string            // the realm to put the stream in
+				code  codes.Code        // the expected gRPC code
 			}{
-				// Enforcement is on, legacy ACLs are ignored.
-				{true, User, NoRealm, AllowLegacy, codes.PermissionDenied},
-				{true, User, NoRealm, ForbidLegacy, codes.PermissionDenied},
-				{true, Legacy, NoRealm, AllowLegacy, codes.OK},
-				{true, Legacy, NoRealm, ForbidLegacy, codes.OK},
-				{true, User, AllowedRealm, AllowLegacy, codes.OK},
-				{true, User, AllowedRealm, ForbidLegacy, codes.OK},
-				{true, User, ForbiddenRealm, AllowLegacy, codes.PermissionDenied},
-				{true, User, ForbiddenRealm, ForbidLegacy, codes.PermissionDenied},
-
-				// Enforcement is off, have a fallback on legacy ACLs.
-				{false, User, NoRealm, AllowLegacy, codes.OK},
-				{false, User, NoRealm, ForbidLegacy, codes.PermissionDenied},
-				{false, Legacy, NoRealm, AllowLegacy, codes.OK},
-				{false, Legacy, NoRealm, ForbidLegacy, codes.OK},
-				{false, User, AllowedRealm, AllowLegacy, codes.OK},
-				{false, User, AllowedRealm, ForbidLegacy, codes.OK},
-				{false, User, ForbiddenRealm, AllowLegacy, codes.OK},
-				{false, User, ForbiddenRealm, ForbidLegacy, codes.PermissionDenied},
+				{User, NoRealm, codes.PermissionDenied},
+				{User, AllowedRealm, codes.OK},
+				{User, ForbiddenRealm, codes.PermissionDenied},
+				{Legacy, NoRealm, codes.OK},
 
 				// Permission denied for anon => Unauthenticated.
-				{true, Anon, ForbiddenRealm, AllowLegacy, codes.Unauthenticated},
-				{false, Anon, NoRealm, ForbidLegacy, codes.Unauthenticated},
+				{Anon, ForbiddenRealm, codes.Unauthenticated},
+				{Anon, NoRealm, codes.Unauthenticated},
 			}
 
 			for i, test := range cases {
 				Convey(fmt.Sprintf("Case #%d", i), func() {
-					tls := ct.MakeStream(c, project, test.realm, "exclusive/+/foo")
-					tls.Put(c)
+					tls := ct.MakeStream(c, project, test.realm, "prefix/+/foo")
+					So(tls.Put(c), ShouldBeNil)
 
-					mocks := []authtest.MockedDatum{
-						authtest.MockPermission(test.ident, realm(AllowedRealm), coordinator.PermLogsList),
-						authtest.MockPermission(Legacy, realm(realms.LegacyRealm), coordinator.PermLogsList),
-					}
-					if test.enforce {
-						mocks = append(mocks, authtest.MockRealmData(
-							realm(realms.RootRealm),
-							&protocol.RealmData{EnforceInService: []string{env.ServiceID}},
-						))
-					}
-					if test.allowLegacy {
-						mocks = append(mocks, authtest.MockMembership(test.ident, "auth"))
-					}
-
+					// Note: this overrides mocks set by ActAsReader.
 					c := auth.WithState(c, &authtest.FakeState{
 						Identity: test.ident,
-						FakeDB:   authtest.NewFakeDB(mocks...),
+						FakeDB:   authDB,
 					})
 
 					resp, err := svr.Query(c, &req)
 					So(status.Code(err), ShouldEqual, test.code)
 					if err == nil {
 						So(resp.Project, ShouldEqual, project)
-						So(resp.Realm, ShouldEqual, test.realm)
+						if test.realm != "" {
+							So(resp.Realm, ShouldEqual, test.realm)
+						} else {
+							So(resp.Realm, ShouldEqual, realms.LegacyRealm)
+						}
 					}
 				})
 			}
 		})
 
 		Convey(`An empty query will include purged streams if admin.`, func() {
-			env.JoinGroup("admin")
+			env.JoinAdmins()
 
 			req.Path = "meta/+/**"
 			resp, err := svr.Query(c, &req)
@@ -469,7 +441,7 @@ func TestQuery(t *testing.T) {
 			})
 
 			Convey(`When the user is an administrator`, func() {
-				env.JoinGroup("admin")
+				env.JoinAdmins()
 
 				Convey(`When purged=yes, returns [terminated/archived/purged, purged]`, func() {
 					req.Purged = logdog.QueryRequest_YES
