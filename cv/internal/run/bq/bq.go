@@ -369,6 +369,12 @@ func compare(ctx context.Context, r *run.Run, cls []*run.RunCL) error {
 	case r.UseCVTryjobExecutor:
 		// compare only when Tryjobs are handled by LUCI CV.
 		return nil
+	case len(r.Tryjobs.GetTryjobs()) == 0:
+		// CQDaemon must launch at least one tryjobs. Otherwise, it is very likely
+		// this Run failed before CQDaemon started to manage Tryjobs. For example,
+		// user doesn't have the permission to trigger the Run. In that case,
+		// there's no point for this comparison.
+		return nil
 	}
 	reqmt, err := computeRequirement(ctx, r, cls)
 	if err != nil {
