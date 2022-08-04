@@ -20,10 +20,18 @@ import (
 
 // HasTriggerChanged checks whether a trigger is no longer valid for a given CL.
 //
-// A trigger is no longer valid if it is no longer present in the list of
-// triggers found in the CL.
+// A trigger is no longer valid if it is no longer found in the CL.
 func HasTriggerChanged(old *Trigger, ts *Triggers, clURL string) string {
-	cur := ts.GetCqVoteTrigger()
+	var cur *Trigger
+	switch Mode(old.Mode) {
+	case NewPatchsetRun:
+		cur = ts.GetNewPatchsetRunTrigger()
+	case FullRun, DryRun, QuickDryRun:
+		cur = ts.GetCqVoteTrigger()
+	default:
+		panic(fmt.Errorf("unsupported mode %v", old.Mode))
+	}
+
 	switch {
 	case cur == nil:
 		return fmt.Sprintf("the %s trigger on %s has been removed", old.GetMode(), clURL)
