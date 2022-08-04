@@ -360,7 +360,13 @@ func bbBuilderNameFromDef(def *tryjob.Definition) string {
 }
 
 func compare(ctx context.Context, r *run.Run, cls []*run.RunCL) error {
-	if r.UseCVTryjobExecutor {
+	switch luciProject := r.ID.LUCIProject(); {
+	case luciProject == "v8" || luciProject == "quickoffice":
+		// Those projects have indirectly triggered builders that CQDaemon will
+		// also report. This will impact the comparison result. Therefore, skip
+		// those 2 projects.
+		return nil
+	case r.UseCVTryjobExecutor:
 		// compare only when Tryjobs are handled by LUCI CV.
 		return nil
 	}
