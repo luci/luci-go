@@ -53,7 +53,8 @@ import (
 // CancelTriggersOp is a single-use object.
 type CancelTriggersOp struct {
 	*Base
-	GFactory gerrit.Factory
+	GFactory  gerrit.Factory
+	CLMutator *changelist.Mutator
 	// CancelConcurrency is the number of CLs that will be cancelled concurrently.
 	//
 	// Default is 8.
@@ -199,6 +200,8 @@ func (op *CancelTriggersOp) loadInputs(ctx context.Context) error {
 			RunCLExternalIDs:  allRunCLExternalIDs,
 			AddToAttentionSet: convertToGerritWhoms(req.AddToAttention),
 			AttentionReason:   req.AddToAttentionReason,
+			GFactory:          op.GFactory,
+			CLMutator:         op.CLMutator,
 		}
 		op.results[i] = cancelResult{
 			err: notAttemptedYetErr,
@@ -274,7 +277,7 @@ func (op *CancelTriggersOp) makeDispatcherChannel(ctx context.Context) dispatche
 			panic(fmt.Errorf("unexpected batch data item %s", data.Data[0].Item))
 		}
 		result := &op.results[ci.index]
-		result.err = cancel.Cancel(ctx, op.GFactory, ci.input)
+		result.err = cancel.Cancel(ctx, ci.input)
 		if result.err == nil {
 			result.cancelledAt = clock.Now(ctx)
 		}

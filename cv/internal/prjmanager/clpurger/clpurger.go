@@ -46,6 +46,7 @@ type Purger struct {
 	pmNotifier *prjmanager.Notifier
 	gFactory   gerrit.Factory
 	clUpdater  clUpdater
+	clMutator  *changelist.Mutator
 }
 
 // clUpdater is a subset of the *changelist.Updater which Purger needs.
@@ -55,8 +56,8 @@ type clUpdater interface {
 
 // New creates a Purger and registers it for handling tasks created by the given
 // PM Notifier.
-func New(n *prjmanager.Notifier, g gerrit.Factory, u clUpdater) *Purger {
-	p := &Purger{n, g, u}
+func New(n *prjmanager.Notifier, g gerrit.Factory, u clUpdater, clm *changelist.Mutator) *Purger {
+	p := &Purger{n, g, u, clm}
 	n.TasksBinding.PurgeProjectCL.AttachHandler(
 		func(ctx context.Context, payload proto.Message) error {
 			task := payload.(*prjpb.PurgeCLTask)
@@ -150,7 +151,7 @@ func (p *Purger) purgeWithDeadline(ctx context.Context, task *prjpb.PurgeCLTask)
 	}
 	logging.Debugf(ctx, "proceeding to purge CL due to\n%s", msg)
 
-	err = cancel.Cancel(ctx, p.gFactory, cancel.Input{
+	err = cancel.Cancel(ctx, cancel.Input{
 		LUCIProject:       task.GetLuciProject(),
 		CL:                cl,
 		LeaseDuration:     time.Minute,
@@ -162,6 +163,8 @@ func (p *Purger) purgeWithDeadline(ctx context.Context, task *prjpb.PurgeCLTask)
 		Message:           msg,
 		RunCLExternalIDs:  nil, // there is no Run.
 		ConfigGroups:      configGroups,
+		GFactory:          p.gFactory,
+		CLMutator:         p.clMutator,
 	})
 	switch {
 	case err == nil:

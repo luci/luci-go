@@ -76,7 +76,7 @@ func New(n *prjmanager.Notifier, rn state.RunNotifier, c *changelist.Mutator, g 
 			CLMutator:       c,
 			PMNotifier:      n,
 			RunNotifier:     rn,
-			CLPurger:        clpurger.New(n, g, u),
+			CLPurger:        clpurger.New(n, g, u, c),
 			CLPoller:        poller.New(n.TasksBinding.TQDispatcher, g, u, n),
 			ComponentTriage: triager.Triage,
 		},

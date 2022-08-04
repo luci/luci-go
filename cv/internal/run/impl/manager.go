@@ -64,6 +64,7 @@ const maxEventsPerBatch = 10000
 type RunManager struct {
 	runNotifier  *run.Notifier
 	pmNotifier   *prjmanager.Notifier
+	clMutator    *changelist.Mutator
 	tqDispatcher *tq.Dispatcher
 	env          *common.Env
 	gFactory     gerrit.Factory
@@ -89,6 +90,7 @@ func New(
 	rm := &RunManager{
 		runNotifier:  n,
 		pmNotifier:   pm,
+		clMutator:    clm,
 		tqDispatcher: n.TasksBinding.TQDispatcher,
 		env:          env,
 		gFactory:     g,

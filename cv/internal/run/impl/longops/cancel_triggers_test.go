@@ -46,6 +46,7 @@ func TestCancelTriggers(t *testing.T) {
 		ct := cvtesting.Test{}
 		ctx, cancel := ct.SetUp()
 		defer cancel()
+		mutator := changelist.NewMutator(ct.TQDispatcher, nil, nil, nil)
 
 		const (
 			lProject = "infra"
@@ -136,7 +137,8 @@ func TestCancelTriggers(t *testing.T) {
 					IsCancelRequested: func() bool { return false },
 					Run:               r,
 				},
-				GFactory: ct.GFactory(),
+				GFactory:  ct.GFactory(),
+				CLMutator: mutator,
 			}
 		}
 

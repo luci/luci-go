@@ -113,6 +113,7 @@ func TestMutatorSingleCL(t *testing.T) {
 
 				ct.Clock.Add(time.Second)
 				s2 := makeSnapshot(lProject, ct.Clock.Now())
+				s2.MinEquivalentPatchset++
 				var priorSnapshot *Snapshot
 				cl, err := m.Upsert(ctx, lProject, eid, func(cl *CL) error {
 					if priorSnapshot == nil {
@@ -177,6 +178,7 @@ func TestMutatorSingleCL(t *testing.T) {
 
 				ct.Clock.Add(time.Second)
 				s2 := makeSnapshot(lProject, ct.Clock.Now())
+				s2.MinEquivalentPatchset++
 				cl, err := m.Update(ctx, lProject, priorCL.ID, func(cl *CL) error {
 					cl.Snapshot = s2
 					return nil
@@ -353,7 +355,7 @@ func TestMutatorBatch(t *testing.T) {
 				assertNotified(pm.byProject[lProjectAlt], expectedAltProject)
 				assertNotified(rm.byRun[run1], expectedRun1)
 				assertNotified(rm.byRun[run2], expectedRun2)
-				So(tj.clsNotified.Set(), ShouldResemble, clids.Set())
+				So(tj.clsNotified.Set(), ShouldBeEmpty)
 			}
 
 			Convey("BeginBatch + FinalizeBatch", func() {

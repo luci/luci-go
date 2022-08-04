@@ -140,6 +140,7 @@ func (rm *RunManager) doLongOperationWithDeadline(ctx context.Context, opBase *l
 		op = &longops.CancelTriggersOp{
 			Base:              opBase,
 			GFactory:          rm.gFactory,
+			CLMutator:         rm.clMutator,
 			CancelConcurrency: 8,
 		}
 	case *run.OngoingLongOps_Op_ExecuteTryjobs:

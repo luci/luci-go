@@ -56,7 +56,7 @@ func TestPurgeCL(t *testing.T) {
 		_ = tjcancel.NewCancellator(tjNotifier)
 		clMutator := changelist.NewMutator(ct.TQDispatcher, pmNotifier, nil, tjNotifier)
 		fakeCLUpdater := clUpdaterMock{}
-		purger := New(pmNotifier, ct.GFactory(), &fakeCLUpdater)
+		purger := New(pmNotifier, ct.GFactory(), &fakeCLUpdater, clMutator)
 
 		const lProject = "lprj"
 		const gHost = "x-review"

@@ -91,6 +91,8 @@ func (m Mode) GerritMessageTag() string {
 		return prefix + "full-run"
 	case QuickDryRun:
 		return prefix + "quick-dry-run"
+	case NewPatchsetRun:
+		return prefix + "new-patchset-run"
 	default:
 		panic(fmt.Sprintf("unknown RunMode %q", m))
 	}

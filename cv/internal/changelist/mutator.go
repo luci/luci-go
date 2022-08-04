@@ -443,7 +443,7 @@ func (m *Mutator) dispatchBatchNotify(ctx context.Context, muts ...*CLMutation) 
 		for _, r := range mut.CL.IncompleteRuns {
 			batch.Runs[string(r)] = batch.Runs[string(r)].append(e)
 		}
-		if mut.CL.Snapshot != nil && mut.priorMinEquivalentPatchset != 0 {
+		if mut.CL.Snapshot != nil && mut.priorMinEquivalentPatchset != 0 && mut.priorMinEquivalentPatchset < mut.CL.Snapshot.GetMinEquivalentPatchset() {
 			// add 1 second delay to allow run to finalize so that Tryjobs can be
 			// cancelled right away.
 			eta := clock.Now(ctx).UTC().Add(1 * time.Second)

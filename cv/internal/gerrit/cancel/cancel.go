@@ -110,6 +110,12 @@ type Input struct {
 	// TODO(yiwzhang): consider dropping after M1 is launched if it is not adding
 	// any value to include those IDs in the bot data.
 	RunCLExternalIDs []changelist.ExternalID
+	// GFactory is used to create the gerrit client needed to perform the
+	// cancellation.
+	GFactory gerrit.Factory
+	// CLMutator performs mutations to the CL entity and notifies relevant parts
+	// of CV when appropriate.
+	CLMutator *changelist.Mutator
 }
 
 func (in *Input) panicIfInvalid() {
@@ -125,14 +131,22 @@ func (in *Input) panicIfInvalid() {
 		err = fmt.Errorf("mismatched LUCI Project: got %q in input and %q in CL snapshot", in.LUCIProject, in.CL.Snapshot.GetLuciProject())
 	case len(in.ConfigGroups) == 0:
 		err = fmt.Errorf("ConfigGroups must be given")
+	case in.GFactory == nil:
+		err = fmt.Errorf("gerrit factory must be non-nil")
+	case in.CLMutator == nil:
+		err = fmt.Errorf("mutator must be non-nil")
 	}
 	if err != nil {
 		panic(err)
 	}
 }
 
-// Cancel removes or "deactivates" CQ-triggering votes on a CL and posts the
-// given message.
+// Cancel removes or "deactivates" the trigger that made CV start processing the
+// current run, whether by removing votes on a CL and posting the given message,
+// or by updating the datastore entity associated with the CL; this, depending
+// on the RunMode of the Run.
+//
+// For vote-removal-based cancellations:
 //
 // Returns error tagged with `ErrPreconditionFailedTag` if one of the
 // following conditions is matched.
@@ -151,7 +165,14 @@ func (in *Input) panicIfInvalid() {
 //   * reason for abnormality,
 //   * special `botdata.BotData` which ensures CV won't consider previously
 //     triggering votes as triggering in the future.
-func Cancel(ctx context.Context, gFactory gerrit.Factory, in Input) error {
+//
+// Alternatively, in the case of a new patchset run:
+//
+// Updates the CLEntity to record that CV is not to create new patchset runs
+// with the current patchset or lower. This prevents trigger.Find() from
+// continuing to return a trigger for this patchset, analog to the effect of
+// removing a cq vote on gerrit.
+func Cancel(ctx context.Context, in Input) error {
 	in.panicIfInvalid()
 	if in.CL.AccessKindFromCodeReviewSite(ctx, in.LUCIProject) != changelist.AccessGranted {
 		return errors.New("failed to cancel trigger because CV lost access to this CL", ErrPreconditionFailedTag)
@@ -160,31 +181,68 @@ func Cancel(ctx context.Context, gFactory gerrit.Factory, in Input) error {
 		logging.Warningf(ctx, "FIXME Cancel was given empty in AttentionReason.")
 		in.AttentionReason = usertext.StoppedRun
 	}
-	if err := ensurePSLatestInCV(ctx, in.CL); err != nil {
-		return err
-	}
 
-	c := change{
-		Host:        in.CL.Snapshot.GetGerrit().GetHost(),
-		LUCIProject: in.LUCIProject,
-		RunMode:     run.Mode(in.Trigger.GetMode()),
-		Project:     in.CL.Snapshot.GetGerrit().GetInfo().GetProject(),
-		Number:      in.CL.Snapshot.GetGerrit().GetInfo().GetNumber(),
-		Revision:    in.CL.Snapshot.GetGerrit().GetInfo().GetCurrentRevision(),
-		gf:          gFactory,
-	}
-
-	var err error
-	if c.gc, err = gFactory.MakeClient(ctx, c.Host, c.LUCIProject); err != nil {
-		return err
-	}
-
-	leaseCtx, close, err := lease.ApplyOnCL(ctx, in.CL.ID, in.LeaseDuration, in.Requester)
+	client, err := in.GFactory.MakeClient(ctx, in.CL.Snapshot.GetGerrit().GetHost(), in.LUCIProject)
 	if err != nil {
 		return err
 	}
-	defer close()
-	return cancelLeased(leaseCtx, &c, &in)
+
+	switch run.Mode(in.Trigger.GetMode()) {
+	case run.NewPatchsetRun:
+		updatedCL, err := cancelByUpdatingCLEntity(ctx, client, &in)
+		if err != nil {
+			return err
+		}
+		if in.Message != "" {
+			c := makeChange(client, &in, updatedCL)
+			leaseCtx, close, lErr := lease.ApplyOnCL(ctx, in.CL.ID, in.LeaseDuration, in.Requester)
+			if lErr != nil {
+				return lErr
+			}
+			defer close()
+			return c.postGerritMsg(
+				leaseCtx, updatedCL.Snapshot.GetGerrit().GetInfo(), in.Message, in.Trigger, in.Notify, in.AddToAttentionSet, in.AttentionReason)
+		}
+		return nil
+	case run.FullRun, run.DryRun, run.QuickDryRun:
+		if err := ensurePSLatestInCV(ctx, in.CL); err != nil {
+			return err
+		}
+		leaseCtx, close, lErr := lease.ApplyOnCL(ctx, in.CL.ID, in.LeaseDuration, in.Requester)
+		if lErr != nil {
+			return lErr
+		}
+		defer close()
+		return cancelLeased(leaseCtx, client, &in)
+	default:
+		panic(fmt.Errorf("unexpected RunMode %s", in.Trigger.GetMode()))
+	}
+}
+
+func makeChange(client gerrit.Client, in *Input, cl *changelist.CL) *change {
+	return &change{
+		Host:        cl.Snapshot.GetGerrit().GetHost(),
+		LUCIProject: in.LUCIProject,
+		RunMode:     run.Mode(in.Trigger.GetMode()),
+		Project:     cl.Snapshot.GetGerrit().GetInfo().GetProject(),
+		Number:      cl.Snapshot.GetGerrit().GetInfo().GetNumber(),
+		Revision:    cl.Snapshot.GetGerrit().GetInfo().GetCurrentRevision(),
+		gf:          in.GFactory,
+		gc:          client,
+	}
+}
+
+func cancelByUpdatingCLEntity(ctx context.Context, client gerrit.Client, in *Input) (*changelist.CL, error) {
+	return in.CLMutator.Update(ctx, in.LUCIProject, in.CL.ID, func(cl *changelist.CL) error {
+		switch {
+		case cl.TriggerNewPatchsetRunAfterPS < in.CL.Snapshot.GetPatchset():
+			cl.TriggerNewPatchsetRunAfterPS = in.CL.Snapshot.GetPatchset()
+			return nil
+		default:
+			logging.Warningf(ctx, "cl.TriggerNewPatchsetRunAfterPS has already been updated, race?")
+			return changelist.ErrStopMutation
+		}
+	})
 }
 
 // TODO(tandrii): merge with prjmanager/purger's error messages.
@@ -192,7 +250,8 @@ var failMessage = "CV failed to unset the " + trigger.CQLabelName +
 	" label on your behalf. Please unvote and revote on the " +
 	trigger.CQLabelName + " label to retry."
 
-func cancelLeased(ctx context.Context, c *change, in *Input) error {
+func cancelLeased(ctx context.Context, client gerrit.Client, in *Input) error {
+	c := makeChange(client, in, in.CL)
 	logging.Infof(ctx, "Canceling triggers on %s/%d", c.Host, c.Number)
 	ci, err := c.getLatest(ctx, in.CL.Snapshot.GetGerrit().GetInfo().GetUpdated().AsTime())
 	switch {

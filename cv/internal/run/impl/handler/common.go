@@ -147,7 +147,7 @@ func (impl *Impl) cancelCLTriggers(ctx context.Context, runID common.RunID, toCa
 		for i := range toCancel {
 			i := i
 			work <- func() error {
-				err := cancel.Cancel(ctx, impl.GFactory, cancel.Input{
+				err := cancel.Cancel(ctx, cancel.Input{
 					CL:                cls[i],
 					Trigger:           toCancel[i].Trigger,
 					LUCIProject:       luciProject,
@@ -159,6 +159,8 @@ func (impl *Impl) cancelCLTriggers(ctx context.Context, runID common.RunID, toCa
 					RunCLExternalIDs:  runCLExternalIDs,
 					AddToAttentionSet: meta.addToAttention,
 					AttentionReason:   meta.reason,
+					GFactory:          impl.GFactory,
+					CLMutator:         impl.CLMutator,
 				})
 				switch {
 				case err == nil:
