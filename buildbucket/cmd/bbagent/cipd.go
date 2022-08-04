@@ -106,10 +106,7 @@ func downloadCipdPackages(ctx context.Context, cwd string, c clientInput) int {
 		if err := prependPath(c.input.Build, cwd); err != nil {
 			return err
 		}
-		if err = installCipdPackages(ctx, c.input.Build, cwd); err != nil {
-			return err
-		}
-		return downloadCasFiles(ctx, c.input.Build, cwd)
+		return installCipdPackages(ctx, c.input.Build, cwd)
 	}()
 
 	if err != nil {

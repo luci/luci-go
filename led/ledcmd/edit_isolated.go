@@ -136,8 +136,13 @@ func EditIsolated(ctx context.Context, authOpts auth.Options, jd *job.Definition
 	logging.Infof(ctx, "isolated upload: done")
 	if jd.GetSwarming() != nil {
 		jd.GetSwarming().CasUserPayload = casRef
+		return nil
 	}
-	return nil
+
+	return jd.HighLevelEdit(func(je job.HighLevelEditor) {
+		je.TaskPayloadSource("", "")
+		je.CASTaskPayload(RecipeDirectory, casRef)
+	})
 }
 
 func getCASInstance(jd *job.Definition) (string, error) {

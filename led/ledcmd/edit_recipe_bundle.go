@@ -167,9 +167,6 @@ func EditRecipeBundle(ctx context.Context, authOpts auth.Options, jd *job.Defini
 	return jd.HighLevelEdit(func(je job.HighLevelEditor) {
 		if setRecipeBundleProperty {
 			je.Properties(extraProperties, false)
-		} else {
-			je.TaskPayloadSource("", "")
-			je.TaskPayloadPath(RecipeDirectory)
 		}
 		if opts.DebugSleep != 0 {
 			je.Env(map[string]string{
@@ -243,9 +240,9 @@ func (opts *EditRecipeBundleOpts) prepBundle(ctx context.Context, inDir, recipes
 }
 
 // findRecipesPy locates the current repo's `recipes.py`. It does this by:
-//   * invoking git to find the repo root
-//   * loading the recipes.cfg at infra/config/recipes.cfg
-//   * stat'ing the recipes.py implied by the recipes_path in that cfg file.
+//   - invoking git to find the repo root
+//   - loading the recipes.cfg at infra/config/recipes.cfg
+//   - stat'ing the recipes.py implied by the recipes_path in that cfg file.
 //
 // Failure will return an error.
 //

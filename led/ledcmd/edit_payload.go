@@ -71,6 +71,7 @@ func editPayloadWithCASRef(ctx context.Context, jd *job.Definition, opts *EditPa
 	}
 	if jd.GetSwarming() != nil {
 		jd.GetSwarming().CasUserPayload = casRef
+		return nil
 	}
 	return jd.HighLevelEdit(func(je job.HighLevelEditor) {
 		je.TaskPayloadSource("", "")
