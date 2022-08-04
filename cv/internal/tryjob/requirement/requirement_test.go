@@ -239,7 +239,7 @@ func TestCompute(t *testing.T) {
 		ctx = makeFakeAuthState(ctx)
 
 		Convey("with a minimal test case", func() {
-			in := makeInput(ctx, []*cfgpb.Verifiers_Tryjob_Builder{builderConfigGenerator{Name: "luci/test/builder1"}.generate()})
+			in := makeInput(ctx, []*cfgpb.Verifiers_Tryjob_Builder{builderConfigGenerator{Name: "test-proj/test/builder1"}.generate()})
 			Convey("with a single CL", func() {})
 			Convey("with multiple CLs", func() { in.addCL(userB.Email()) })
 			res, err := Compute(ctx, *in)
@@ -256,7 +256,7 @@ func TestCompute(t *testing.T) {
 						Buildbucket: &tryjob.Definition_Buildbucket{
 							Host: "cr-buildbucket.appspot.com",
 							Builder: &buildbucketpb.BuilderID{
-								Project: "luci",
+								Project: "test-proj",
 								Bucket:  "test",
 								Builder: "builder1",
 							},
@@ -267,31 +267,31 @@ func TestCompute(t *testing.T) {
 			})
 		})
 		Convey("includes undefined builder", func() {
-			in := makeInput(ctx, []*cfgpb.Verifiers_Tryjob_Builder{builderConfigGenerator{Name: "luci/test/builder1"}.generate()})
-			in.RunOptions.IncludedTryjobs = append(in.RunOptions.IncludedTryjobs, "luci/test:unlisted")
+			in := makeInput(ctx, []*cfgpb.Verifiers_Tryjob_Builder{builderConfigGenerator{Name: "test-proj/test/builder1"}.generate()})
+			in.RunOptions.IncludedTryjobs = append(in.RunOptions.IncludedTryjobs, "test-proj/test:unlisted")
 
 			res, err := Compute(ctx, *in)
 			So(err, ShouldBeNil)
 			So(res.OK(), ShouldBeFalse)
 			So(res, ShouldResemble, &ComputationResult{
 				ComputationFailure: &buildersNotDefined{
-					Builders: []string{"luci/test/unlisted"},
+					Builders: []string{"test-proj/test/unlisted"},
 				},
 			})
 		})
 		Convey("includes triggeredBy builder", func() {
 			in := makeInput(ctx, []*cfgpb.Verifiers_Tryjob_Builder{
-				builderConfigGenerator{Name: "luci/test/builder1"}.generate(),
-				builderConfigGenerator{Name: "luci/test/indirect", TriggeredBy: "luci/test/builder1"}.generate(),
+				builderConfigGenerator{Name: "test-proj/test/builder1"}.generate(),
+				builderConfigGenerator{Name: "test-proj/test/indirect", TriggeredBy: "test-proj/test/builder1"}.generate(),
 			})
-			in.RunOptions.IncludedTryjobs = append(in.RunOptions.IncludedTryjobs, "luci/test:indirect")
+			in.RunOptions.IncludedTryjobs = append(in.RunOptions.IncludedTryjobs, "test-proj/test:indirect")
 			res, err := Compute(ctx, *in)
 
 			So(err, ShouldBeNil)
 			So(res.OK(), ShouldBeFalse)
 			So(res, ShouldResemble, &ComputationResult{
 				ComputationFailure: &buildersNotDirectlyIncludable{
-					Builders: []string{"luci/test/indirect"},
+					Builders: []string{"test-proj/test/indirect"},
 				},
 			})
 		})
@@ -299,10 +299,10 @@ func TestCompute(t *testing.T) {
 			Convey("with single unauthorized user", func() {
 				in := makeInput(ctx, []*cfgpb.Verifiers_Tryjob_Builder{
 					builderConfigGenerator{
-						Name:      "luci/test/builder1",
+						Name:      "test-proj/test/builder1",
 						Allowlist: group2,
 					}.generate()})
-				in.RunOptions.IncludedTryjobs = append(in.RunOptions.IncludedTryjobs, "luci/test:builder1")
+				in.RunOptions.IncludedTryjobs = append(in.RunOptions.IncludedTryjobs, "test-proj/test:builder1")
 
 				res, err := Compute(ctx, *in)
 				So(err, ShouldBeNil)
@@ -310,17 +310,17 @@ func TestCompute(t *testing.T) {
 				So(res, ShouldResemble, &ComputationResult{
 					ComputationFailure: &unauthorizedIncludedTryjob{
 						Users:   []string{userA.Email()},
-						Builder: "luci/test/builder1",
+						Builder: "test-proj/test/builder1",
 					},
 				})
 			})
 			Convey("with multiple users, one of which is unauthorized", func() {
 				in := makeInput(ctx, []*cfgpb.Verifiers_Tryjob_Builder{
 					builderConfigGenerator{
-						Name:      "luci/test/builder1",
+						Name:      "test-proj/test/builder1",
 						Allowlist: group1,
 					}.generate()})
-				in.RunOptions.IncludedTryjobs = append(in.RunOptions.IncludedTryjobs, "luci/test:builder1")
+				in.RunOptions.IncludedTryjobs = append(in.RunOptions.IncludedTryjobs, "test-proj/test:builder1")
 				// Add a second CL, the owner of which is not authorized to trigger builder1
 				in.addCL(userD.Email())
 
@@ -330,15 +330,15 @@ func TestCompute(t *testing.T) {
 				So(res, ShouldResemble, &ComputationResult{
 					ComputationFailure: &unauthorizedIncludedTryjob{
 						Users:   []string{userD.Email()},
-						Builder: "luci/test/builder1",
+						Builder: "test-proj/test/builder1",
 					},
 				})
 			})
 		})
 		Convey("with includable-only builder", func() {
 			in := makeInput(ctx, []*cfgpb.Verifiers_Tryjob_Builder{
-				builderConfigGenerator{Name: "luci/test/builder1"}.generate(),
-				builderConfigGenerator{Name: "luci/test/builder2", IncludableOnly: true}.generate(),
+				builderConfigGenerator{Name: "test-proj/test/builder1"}.generate(),
+				builderConfigGenerator{Name: "test-proj/test.bucket/builder2", IncludableOnly: true}.generate(),
 			})
 
 			Convey("skips by default", func() {
@@ -355,7 +355,7 @@ func TestCompute(t *testing.T) {
 							Buildbucket: &tryjob.Definition_Buildbucket{
 								Host: "cr-buildbucket.appspot.com",
 								Builder: &buildbucketpb.BuilderID{
-									Project: "luci",
+									Project: "test-proj",
 									Bucket:  "test",
 									Builder: "builder1",
 								},
@@ -367,7 +367,12 @@ func TestCompute(t *testing.T) {
 			})
 
 			Convey("included", func() {
-				in.RunOptions.IncludedTryjobs = append(in.RunOptions.IncludedTryjobs, "luci/test:builder2")
+				Convey("modern style", func() {
+					in.RunOptions.IncludedTryjobs = append(in.RunOptions.IncludedTryjobs, "test-proj/test.bucket:builder2")
+				})
+				Convey("legacy style", func() {
+					in.RunOptions.IncludedTryjobs = append(in.RunOptions.IncludedTryjobs, "luci.test-proj.test.bucket:builder2")
+				})
 				res, err := Compute(ctx, *in)
 				So(err, ShouldBeNil)
 				So(res.ComputationFailure, ShouldBeNil)
@@ -382,7 +387,7 @@ func TestCompute(t *testing.T) {
 								Buildbucket: &tryjob.Definition_Buildbucket{
 									Host: "cr-buildbucket.appspot.com",
 									Builder: &buildbucketpb.BuilderID{
-										Project: "luci",
+										Project: "test-proj",
 										Bucket:  "test",
 										Builder: "builder1",
 									},
@@ -395,8 +400,8 @@ func TestCompute(t *testing.T) {
 								Buildbucket: &tryjob.Definition_Buildbucket{
 									Host: "cr-buildbucket.appspot.com",
 									Builder: &buildbucketpb.BuilderID{
-										Project: "luci",
-										Bucket:  "test",
+										Project: "test-proj",
+										Bucket:  "test.bucket",
 										Builder: "builder2",
 									},
 								},
@@ -408,15 +413,14 @@ func TestCompute(t *testing.T) {
 			})
 		})
 		Convey("includes equivalent builder explicitly", func() {
-
 			Convey("unauthorized", func() {
 				in := makeInput(ctx, []*cfgpb.Verifiers_Tryjob_Builder{builderConfigGenerator{
-					Name:          "luci/test/builder1",
+					Name:          "test-proj/test/builder1",
 					Allowlist:     "secret-group",
-					EquiName:      "luci/test/equibuilder",
+					EquiName:      "test-proj/test/equibuilder",
 					EquiAllowlist: "other-secret-group",
 				}.generate()})
-				in.RunOptions.IncludedTryjobs = append(in.RunOptions.IncludedTryjobs, "luci/test:equibuilder")
+				in.RunOptions.IncludedTryjobs = append(in.RunOptions.IncludedTryjobs, "test-proj/test:equibuilder")
 
 				res, err := Compute(ctx, *in)
 				So(err, ShouldBeNil)
@@ -424,19 +428,19 @@ func TestCompute(t *testing.T) {
 				So(res, ShouldResemble, &ComputationResult{
 					ComputationFailure: &unauthorizedIncludedTryjob{
 						Users:   []string{userA.Email()},
-						Builder: "luci/test/equibuilder",
+						Builder: "test-proj/test/equibuilder",
 					},
 				})
 			})
 
 			Convey("authorized", func() {
 				in := makeInput(ctx, []*cfgpb.Verifiers_Tryjob_Builder{builderConfigGenerator{
-					Name:          "luci/test/builder1",
+					Name:          "test-proj/test/builder1",
 					Allowlist:     "secret-group",
-					EquiName:      "luci/test/equibuilder",
+					EquiName:      "test-proj/test/equibuilder",
 					EquiAllowlist: "", // Allow everyone
 				}.generate()})
-				in.RunOptions.IncludedTryjobs = append(in.RunOptions.IncludedTryjobs, "luci/test:equibuilder")
+				in.RunOptions.IncludedTryjobs = append(in.RunOptions.IncludedTryjobs, "test-proj/test:equibuilder")
 
 				res, err := Compute(ctx, *in)
 				So(err, ShouldBeNil)
@@ -451,7 +455,7 @@ func TestCompute(t *testing.T) {
 							Buildbucket: &tryjob.Definition_Buildbucket{
 								Host: "cr-buildbucket.appspot.com",
 								Builder: &buildbucketpb.BuilderID{
-									Project: "luci",
+									Project: "test-proj",
 									Bucket:  "test",
 									Builder: "equibuilder",
 								},
@@ -464,10 +468,10 @@ func TestCompute(t *testing.T) {
 		})
 		Convey("experimental", func() {
 			in := makeInput(ctx, []*cfgpb.Verifiers_Tryjob_Builder{
-				builderConfigGenerator{Name: "luci/test/expbuilder", ExperimentPercentage: 100}.generate(),
+				builderConfigGenerator{Name: "test-proj/test/expbuilder", ExperimentPercentage: 100}.generate(),
 				// The CLID and timestamp hardcoded in the mockBuilderConfig
 				// generate function make this deterministically not selected.
-				builderConfigGenerator{Name: "luci/test/expbuilder-notselected", ExperimentPercentage: 1}.generate(),
+				builderConfigGenerator{Name: "test-proj/test/expbuilder-notselected", ExperimentPercentage: 1}.generate(),
 			})
 
 			res, err := Compute(ctx, *in)
@@ -484,7 +488,7 @@ func TestCompute(t *testing.T) {
 							Buildbucket: &tryjob.Definition_Buildbucket{
 								Host: "cr-buildbucket.appspot.com",
 								Builder: &buildbucketpb.BuilderID{
-									Project: "luci",
+									Project: "test-proj",
 									Bucket:  "test",
 									Builder: "expbuilder",
 								},
@@ -498,7 +502,7 @@ func TestCompute(t *testing.T) {
 		Convey("with location matching", func() {
 			Convey("empty change after location exclusions skips builder", func() {
 				in := makeInput(ctx, []*cfgpb.Verifiers_Tryjob_Builder{builderConfigGenerator{
-					Name: "luci/test/builder1",
+					Name: "test-proj/test/builder1",
 					LocationFilters: []*cfgpb.Verifiers_Tryjob_Builder_LocationFilter{
 						{
 							GerritHostRegexp:    "example.com",
@@ -524,7 +528,7 @@ func TestCompute(t *testing.T) {
 			})
 			Convey("with location filters", func() {
 				in := makeInput(ctx, []*cfgpb.Verifiers_Tryjob_Builder{builderConfigGenerator{
-					Name: "luci/test/builder1",
+					Name: "test-proj/test/builder1",
 					LocationFilters: []*cfgpb.Verifiers_Tryjob_Builder_LocationFilter{
 						{
 							GerritHostRegexp:    "example.com",
@@ -553,7 +557,7 @@ func TestCompute(t *testing.T) {
 								Buildbucket: &tryjob.Definition_Buildbucket{
 									Host: "cr-buildbucket.appspot.com",
 									Builder: &buildbucketpb.BuilderID{
-										Project: "luci",
+										Project: "test-proj",
 										Bucket:  "test",
 										Builder: "builder1",
 									},
@@ -594,7 +598,7 @@ func TestCompute(t *testing.T) {
 								Buildbucket: &tryjob.Definition_Buildbucket{
 									Host: "cr-buildbucket.appspot.com",
 									Builder: &buildbucketpb.BuilderID{
-										Project: "luci",
+										Project: "test-proj",
 										Bucket:  "test",
 										Builder: "builder1",
 									},
@@ -608,7 +612,7 @@ func TestCompute(t *testing.T) {
 			Convey("with location filters and exclusion", func() {
 				in := makeInput(ctx, []*cfgpb.Verifiers_Tryjob_Builder{
 					builderConfigGenerator{
-						Name: "luci/test/builder1",
+						Name: "test-proj/test/builder1",
 						LocationFilters: []*cfgpb.Verifiers_Tryjob_Builder_LocationFilter{
 							{
 								GerritHostRegexp:    "example.com",
@@ -676,7 +680,7 @@ func TestCompute(t *testing.T) {
 								Buildbucket: &tryjob.Definition_Buildbucket{
 									Host: "cr-buildbucket.appspot.com",
 									Builder: &buildbucketpb.BuilderID{
-										Project: "luci",
+										Project: "test-proj",
 										Bucket:  "test",
 										Builder: "builder1",
 									},
@@ -695,7 +699,7 @@ func TestCompute(t *testing.T) {
 
 				in := makeInput(ctx, []*cfgpb.Verifiers_Tryjob_Builder{
 					builderConfigGenerator{
-						Name: "luci/test/builder1",
+						Name: "test-proj/test/builder1",
 						// Include those in some/ but not in some/excluded/..
 						LocationRegexp:        []string{".*/[+]/some/.+"},
 						LocationRegexpExclude: []string{".*/[+]/some/excluded/.*"},

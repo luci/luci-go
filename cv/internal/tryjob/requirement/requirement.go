@@ -123,13 +123,18 @@ func getDisallowedOwners(ctx context.Context, allOwnerEmails []string, allowList
 	return disallowed, nil
 }
 
-// The regexes are based on Buildbucket documentation:
-// https://chromium.googlesource.com/infra/luci/luci-go/+/6b8fdd66/buildbucket/proto/project_config.proto#220
-var builderRE = `[a-zA-Z0-9\-_.\(\) ]+`
-var projectRE = `[a-z0-9\-_.]+`
-var bucketRE = `[a-z0-9\-_.]+`
-var buildersRE = fmt.Sprintf(`%s/%s\s*:\s*%s(\s*,\s*%s)*`, projectRE, bucketRE, builderRE, builderRE)
-var includeLineRegexp = regexp.MustCompile(fmt.Sprintf(`^\s*%s(\s*;\s*%s)*\s*$`, buildersRE, buildersRE))
+var (
+	// Reference: https://chromium.googlesource.com/infra/luci/luci-py/+/a6655aa3/appengine/components/components/config/proto/service_config.proto#87
+	projectRE = `[a-z0-9\-]+`
+	// Reference: https://chromium.googlesource.com/infra/luci/luci-go/+/6b8fdd66/buildbucket/proto/project_config.proto#482
+	bucketRE = `[a-z0-9\-_.]+`
+	// Reference: https://chromium.googlesource.com/infra/luci/luci-go/+/6b8fdd66/buildbucket/proto/project_config.proto#220
+	builderRE          = `[a-zA-Z0-9\-_.\(\) ]+`
+	modernProjBucketRe = fmt.Sprintf(`%s/%s`, projectRE, bucketRE)
+	legacyProjBucketRe = fmt.Sprintf(`luci\.%s\.%s`, projectRE, bucketRE)
+	buildersRE         = fmt.Sprintf(`((%s)|(%s))\s*:\s*%s(\s*,\s*%s)*`, modernProjBucketRe, legacyProjBucketRe, builderRE, builderRE)
+	includeLineRegexp  = regexp.MustCompile(fmt.Sprintf(`^\s*%s(\s*;\s*%s)*\s*$`, buildersRE, buildersRE))
+)
 
 // TODO(robertocn): Consider moving the parsing of the Cq-Include-Trybots
 // directives to the place where the footer values are extracted, and refactor
@@ -141,9 +146,22 @@ func parseBuilderStrings(line string) ([]string, ComputationFailure) {
 	var ret []string
 	for _, bucketSegment := range strings.Split(strings.TrimSpace(line), ";") {
 		parts := strings.Split(strings.TrimSpace(bucketSegment), ":")
+		if len(parts) != 2 {
+			panic(fmt.Errorf("impossible; expected %q separated by exactly one \":\", got %d", bucketSegment, len(parts)-1))
+		}
 		projectBucket, builders := strings.TrimSpace(parts[0]), strings.TrimSpace(parts[1])
+		var project, bucket string
+		if strings.HasPrefix(projectBucket, "luci.") {
+			// Legacy style. Example: luci.chromium.try: builder_a
+			parts := strings.SplitN(projectBucket, ".", 3)
+			project, bucket = parts[1], parts[2]
+		} else {
+			// Modern style. Example: chromium/try: builder_a
+			parts := strings.SplitN(projectBucket, "/", 2)
+			project, bucket = parts[0], parts[1]
+		}
 		for _, builderName := range strings.Split(builders, ",") {
-			ret = append(ret, fmt.Sprintf("%s/%s", projectBucket, strings.TrimSpace(builderName)))
+			ret = append(ret, fmt.Sprintf("%s/%s/%s", strings.TrimSpace(project), strings.TrimSpace(bucket), strings.TrimSpace(builderName)))
 		}
 	}
 	return ret, nil
