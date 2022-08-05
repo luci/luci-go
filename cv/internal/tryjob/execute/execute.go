@@ -33,15 +33,15 @@ import (
 	"go.chromium.org/luci/cv/internal/tryjob/requirement"
 )
 
-// Executor reacts to changes in external world and tries to fulfills the
+// Executor reacts to changes in the external world and tries to fulfills the
 // tryjob requirement.
 type Executor struct {
-	// Backend is the Tryjob backend that executor will search reusable Tryjobs
+	// Backend is the Tryjob backend that Executor will search reusable Tryjobs
 	// from and launch new Tryjobs.
 	Backend TryjobBackend
-	// RM is used to notify Run for changes in Tryjob states.
+	// RM is used to notify Run about changes in Tryjob states.
 	RM rm
-	// ShouldStop returns whether executor should stop the execution.
+	// ShouldStop returns whether Executor should stop the execution.
 	ShouldStop func() bool
 	// logEntries records what has happened during the execution.
 	logEntries []*tryjob.ExecutionLogEntry
@@ -64,7 +64,7 @@ type rm interface {
 // This function is idempotent, so it is safe to retry.
 func (e *Executor) Do(ctx context.Context, r *run.Run, payload *tryjob.ExecuteTryjobsPayload) error {
 	if !r.UseCVTryjobExecutor {
-		logging.Warningf(ctx, "crbug/1312255: Tryjob executor is invoked when UseCVTryjobExecutor is set to false. It's likely caused by a race condition when reverting the migration config setting")
+		logging.Warningf(ctx, "crbug/1312255: Tryjob Executor is invoked when UseCVTryjobExecutor is set to false. It's likely caused by a race condition when reverting the migration config setting")
 		return nil
 	}
 
@@ -77,7 +77,7 @@ func (e *Executor) Do(ctx context.Context, r *run.Run, payload *tryjob.ExecuteTr
 	case execState.GetStatus() == tryjob.ExecutionState_SUCCEEDED:
 		fallthrough
 	case execState.GetStatus() == tryjob.ExecutionState_FAILED:
-		logging.Warningf(ctx, "Tryjob executor is invoked after execution has ended")
+		logging.Warningf(ctx, "Tryjob Executor is invoked after execution has ended")
 		return nil
 	}
 
@@ -141,16 +141,16 @@ func (p *plan) isEmpty() bool {
 const noLongerRequiredInConfig = "Tryjob is no longer required in Project Config"
 
 // prepExecutionPlan updates the states and computes a plan in order to
-// fulfill the requirement.
+// fulfill the Requirement.
 func (e *Executor) prepExecutionPlan(ctx context.Context, execState *tryjob.ExecutionState, r *run.Run, tryjobsUpdated []int64, reqmtChanged bool) (*tryjob.ExecutionState, *plan, error) {
 	switch hasTryjobsUpdated := len(tryjobsUpdated) > 0; {
 	case hasTryjobsUpdated && reqmtChanged:
-		panic(fmt.Errorf("the executor can't handle requirement update and tryjobs update at the same time"))
+		panic(fmt.Errorf("the Executor can't handle updates to Requirement and Tryjobs at the same time"))
 	case hasTryjobsUpdated:
 		logging.Debugf(ctx, "received update for tryjobs %s", tryjobsUpdated)
 		return e.handleUpdatedTryjobs(ctx, tryjobsUpdated, execState)
 	case reqmtChanged && r.Tryjobs.GetRequirementVersion() <= execState.GetRequirementVersion():
-		logging.Errorf(ctx, "Tryjob executor is executing requirement that is either later or equal to the requested requirement version. current: %d, got: %d ", r.Tryjobs.GetRequirementVersion(), execState.GetRequirementVersion())
+		logging.Errorf(ctx, "Tryjob Executor is executing a Requirement that is either later than or equal to the requested Requirement version. current: %d, got: %d ", r.Tryjobs.GetRequirementVersion(), execState.GetRequirementVersion())
 		return execState, nil, nil
 	case reqmtChanged:
 		curReqmt, targetReqmt := execState.GetRequirement(), r.Tryjobs.GetRequirement()
@@ -161,7 +161,7 @@ func (e *Executor) prepExecutionPlan(ctx context.Context, execState *tryjob.Exec
 		}
 		return handleRequirementChange(curReqmt, targetReqmt, execState)
 	default:
-		panic(fmt.Errorf("the executor is called without any update on either tryjobs or requirement"))
+		panic(fmt.Errorf("the Executor was called without any update on either Tryjobs or Requirement"))
 	}
 }
 
@@ -187,7 +187,7 @@ func (e *Executor) handleUpdatedTryjobs(ctx context.Context, tryjobs []int64, ex
 		case !updated:
 			continue
 		}
-		// Only process the tryjob that has been updated and its latest attempt
+		// Only process a tryjob that has been updated and its latest attempt
 		// has ended.
 		switch attempt := tryjob.LatestAttempt(exec); {
 		case attempt.Status == tryjob.Status_ENDED && attempt.GetResult().GetStatus() == tryjob.Result_SUCCEEDED:
