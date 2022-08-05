@@ -28,6 +28,7 @@ import (
 	"google.golang.org/protobuf/types/known/durationpb"
 	durpb "google.golang.org/protobuf/types/known/durationpb"
 
+	"go.chromium.org/luci/buildbucket"
 	"go.chromium.org/luci/buildbucket/cmd/bbagent/bbinput"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/data/rand/cryptorand"
@@ -304,6 +305,27 @@ func (jd *Definition) generateCommand(ctx context.Context, ks KitchenSupport) ([
 	return append(ret, bbinput.Encode(bb.BbagentArgs)), nil
 }
 
+func (jd *Definition) generateCIPDInputs() (cipdInputs []*swarmingpb.CIPDPackage) {
+	cipdInputs = ([]*swarmingpb.CIPDPackage)(nil)
+	bb := jd.GetBuildbucket()
+	if bb.LegacyKitchen {
+		cipdInputs = append(cipdInputs, bb.CipdPackages...)
+		return
+	}
+
+	if !stringset.NewFromSlice(bb.GetBbagentArgs().GetBuild().GetInput().GetExperiments()...).Has(buildbucket.ExperimentBBAgentDownloadCipd) {
+		cipdInputs = append(cipdInputs, bb.CipdPackages...)
+		return
+	}
+
+	for _, pck := range bb.CipdPackages {
+		if pck.GetDestPath() == "." {
+			cipdInputs = append(cipdInputs, pck)
+		}
+	}
+	return
+}
+
 // FlattenToSwarming modifies this Definition to populate the Swarming field
 // from the Buildbucket field.
 //
@@ -381,7 +403,7 @@ func (jd *Definition) FlattenToSwarming(ctx context.Context, uid, parentTaskId s
 		return errors.Annotate(err, "failed to get CAS user payload for the build").Err()
 	}
 	baseProperties := &swarmingpb.TaskProperties{
-		CipdInputs:   append(([]*swarmingpb.CIPDPackage)(nil), bb.CipdPackages...),
+		CipdInputs:   jd.generateCIPDInputs(),
 		CasInputRoot: casUserPayload,
 
 		EnvPaths:         bb.EnvPrefixes,
