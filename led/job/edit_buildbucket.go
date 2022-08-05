@@ -120,6 +120,10 @@ func (bbe *buildbucketEditor) CASTaskPayload(path string, casRef *swarmingpb.CAS
 		}
 
 		input := bbe.bb.BbagentArgs.Build.Infra.Buildbucket.Agent.Input
+		if input == nil {
+			input = &bbpb.BuildInfra_Buildbucket_Agent_Input{}
+			bbe.bb.BbagentArgs.Build.Infra.Buildbucket.Agent.Input = input
+		}
 		inputData := input.GetData()
 		if len(inputData) == 0 {
 			inputData = make(map[string]*bbpb.InputDataRef)
