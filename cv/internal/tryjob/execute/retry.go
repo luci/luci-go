@@ -39,32 +39,6 @@ const (
 	retryAllowedIgnoreQuota
 )
 
-// canRetry determines whether an individual attempt can be retried.
-func canRetry(definition *tryjob.Definition, attempt *tryjob.ExecutionState_Execution_Attempt) retriability {
-	switch {
-	// If this run did not trigger the tryjob, do not count its failure
-	// towards retry quota. Also ignores the output_retry_denied property.
-	case attempt.Reused:
-		return retryAllowedIgnoreQuota
-	// Check if the tryjob forbids retry.
-	case attempt.Result.GetOutput().GetRetry() == recipe.Output_OUTPUT_RETRY_DENIED:
-		return retryDenied
-	default:
-		return retryAllowed
-	}
-}
-
-func ensureTryjobCriticalAndFailed(def *tryjob.Definition, attempt *tryjob.ExecutionState_Execution_Attempt) {
-	switch {
-	case !def.Critical:
-		panic(fmt.Errorf("calling canRetryAll for non critical tryjob: %s", def))
-	case attempt.Status != tryjob.Status_ENDED:
-		panic(fmt.Errorf("calling canRetryAll for non ended tryjob: %s", def))
-	case attempt.Result.Status == tryjob.Result_SUCCEEDED:
-		panic(fmt.Errorf("calling canRetryAll for succeeded tryjob: %s", def))
-	}
-}
-
 // canRetryAll checks whether all failed critical tryjobs can be retried.
 //
 // Panics when any provided index points to a tryjob that is not critical or
@@ -126,6 +100,32 @@ func (e *Executor) canRetryAll(
 		e.logRetryDenied(ctx, execState, failedIndices, "insufficient global quota")
 	}
 	return canRetryAll
+}
+
+func ensureTryjobCriticalAndFailed(def *tryjob.Definition, attempt *tryjob.ExecutionState_Execution_Attempt) {
+	switch {
+	case !def.Critical:
+		panic(fmt.Errorf("calling canRetryAll for non critical tryjob: %s", def))
+	case attempt.Status != tryjob.Status_ENDED:
+		panic(fmt.Errorf("calling canRetryAll for non ended tryjob: %s", def))
+	case attempt.Result.Status == tryjob.Result_SUCCEEDED:
+		panic(fmt.Errorf("calling canRetryAll for succeeded tryjob: %s", def))
+	}
+}
+
+// canRetry determines whether an individual attempt can be retried.
+func canRetry(definition *tryjob.Definition, attempt *tryjob.ExecutionState_Execution_Attempt) retriability {
+	switch {
+	// If this run did not trigger the tryjob, do not count its failure
+	// towards retry quota. Also ignores the output_retry_denied property.
+	case attempt.Reused:
+		return retryAllowedIgnoreQuota
+	// Check if the tryjob forbids retry.
+	case attempt.Result.GetOutput().GetRetry() == recipe.Output_OUTPUT_RETRY_DENIED:
+		return retryDenied
+	default:
+		return retryAllowed
+	}
 }
 
 var emptyRetryConfig = &cfgpb.Verifiers_Tryjob_RetryConfig{}
