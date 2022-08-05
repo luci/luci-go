@@ -213,11 +213,12 @@ func parseHostBuildID(ctx context.Context, hostname *string, buildID *int64) (cl
 	return clientInput{bbclient, input}, secrets
 }
 
-func prepareInputBuild(ctx context.Context, build *bbpb.Build) {
-	// mark started
-	build.Status = bbpb.Status_STARTED
-	now := timestamppb.New(clock.Now(ctx))
-	build.StartTime, build.UpdateTime = now, now
+// prepareInputBuild sets status=STARTED and adds log entries
+func prepareInputBuild(ctx context.Context, build, updatedBuild *bbpb.Build) {
+	build.Status = updatedBuild.Status
+	build.StartTime = updatedBuild.StartTime
+	build.UpdateTime = updatedBuild.UpdateTime
+
 	// TODO(iannucci): this is sketchy, but we preemptively add the log entries
 	// for the top level user stdout/stderr streams.
 	//
@@ -232,7 +233,6 @@ func prepareInputBuild(ctx context.Context, build *bbpb.Build) {
 		},
 	}
 	populateSwarmingInfoFromEnv(build, environ.System())
-	return
 }
 
 func resolveExe(path string) (string, error) {
@@ -413,13 +413,15 @@ func mainImpl() int {
 			Mask:       readMask,
 		})
 	check(ctx, errors.Annotate(err, "failed to report status STARTED to Buildbucket").Err())
+
 	// The build has been canceled, bail out early.
 	if updatedBuild.CancelTime != nil {
 		return cancelBuild(ctx, bbclientInput.bbclient, updatedBuild)
 	}
 
+	prepareInputBuild(cctx, bbclientInput.input.Build, updatedBuild)
+
 	cctx = setResultDBContext(cctx, bbclientInput.input.Build, secrets)
-	prepareInputBuild(cctx, bbclientInput.input.Build)
 
 	// TODO(crbug.com/1211789) - As part of adding 'dry_run' functionality
 	// to ScheduleBuild, it was necessary to start saving `tags` in the

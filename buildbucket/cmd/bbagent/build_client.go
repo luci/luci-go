@@ -61,6 +61,8 @@ var readMask = &bbpb.BuildMask{
 		Paths: []string{
 			"id",
 			"cancel_time",
+			"start_time",
+			"update_time",
 		},
 	},
 }
