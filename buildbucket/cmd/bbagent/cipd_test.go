@@ -22,6 +22,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -89,6 +90,63 @@ func TestHelperProcess(t *testing.T) {
 	case "failure":
 		os.Exit(1)
 	}
+}
+
+func TestPrependPath(t *testing.T) {
+	originalPathEnv := os.Getenv("PATH")
+	Convey("prependPath", t, func() {
+		defer func() {
+			_ = os.Setenv("PATH", originalPathEnv)
+		}()
+
+		build := &pb.Build{
+			Id: 123,
+			Infra: &pb.BuildInfra{
+				Buildbucket: &pb.BuildInfra_Buildbucket{
+					Agent: &pb.BuildInfra_Buildbucket_Agent{
+						Input: &pb.BuildInfra_Buildbucket_Agent_Input{
+							Data: map[string]*pb.InputDataRef{
+								"path_a": {
+									DataType: &pb.InputDataRef_Cipd{
+										Cipd: &pb.InputDataRef_CIPD{
+											Specs: []*pb.InputDataRef_CIPD_PkgSpec{{Package: "pkg_a", Version: "latest"}},
+										},
+									},
+									OnPath: []string{"path_a/bin", "path_a"},
+								},
+								"path_b": {
+									DataType: &pb.InputDataRef_Cas{
+										Cas: &pb.InputDataRef_CAS{
+											CasInstance: "projects/project/instances/instance",
+											Digest: &pb.InputDataRef_CAS_Digest{
+												Hash:      "hash",
+												SizeBytes: 1,
+											},
+										},
+									},
+									OnPath: []string{"path_b/bin", "path_b"},
+								},
+							},
+						},
+						Output: &pb.BuildInfra_Buildbucket_Agent_Output{},
+					},
+				},
+			},
+			Input: &pb.Build_Input{
+				Experiments: []string{"luci.buildbucket.agent.cipd_installation"},
+			},
+		}
+
+		cwd, err := os.Getwd()
+		So(err, ShouldBeNil)
+		So(prependPath(build, cwd), ShouldBeNil)
+		pathEnv := os.Getenv("PATH")
+		var expectedPath []string
+		for _, p := range []string{"path_a", "path_a/bin", "path_b", "path_b/bin"} {
+			expectedPath = append(expectedPath, filepath.Join(cwd, p))
+		}
+		So(strings.Contains(pathEnv, strings.Join(expectedPath, string(os.PathListSeparator))), ShouldBeTrue)
+	})
 }
 
 func TestInstallCipdPackages(t *testing.T) {

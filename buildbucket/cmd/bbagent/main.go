@@ -93,14 +93,16 @@ type stopInfo struct {
 	dispatcherErrCh <-chan error
 }
 
+// stopEvents monitors events that cause the build to stop.
+// * Monitors the `dispatcherErrCh` and checks for fatal error.
+//   - Stops the build shuttling and shuts down the luciexe if a fatal error
+//     is received.
+//
+// * Monitors the returned build from UpdateBuild rpcs and checks if the
+//
+//	build has been canceled.
+//	* Shuts down the luciexe if the build is canceled.
 func (si stopInfo) stopEvents(ctx context.Context, c clientInput, fatalUpdateBuildErrorSlot atomic.Value) {
-	// Monitors events that cause the build to stop.
-	// * Monitors the `dispatcherErrCh` and checks for fatal error.
-	//   * Stops the build shuttling and shuts down the luciexe if a fatal error
-	//     is received.
-	// * Monitors the returned build from UpdateBuild rpcs and checks if the
-	//   build has been canceled.
-	//   * Shuts down the luciexe if the build is canceled.
 	stopped := false
 	for {
 		select {
@@ -148,6 +150,24 @@ func checkReport(ctx context.Context, c clientInput, err error) {
 	}
 }
 
+func cancelBuild(ctx context.Context, bbclient BuildsClient, bld *bbpb.Build) (retCode int) {
+	logging.Infof(ctx, "The build is in the cancel process, cancel time is %s. Actually cancel it now.", bld.CancelTime.AsTime())
+	_, err := bbclient.UpdateBuild(
+		ctx,
+		&bbpb.UpdateBuildRequest{
+			Build: &bbpb.Build{
+				Id:     bld.Id,
+				Status: bbpb.Status_CANCELED,
+			},
+			UpdateMask: &fieldmaskpb.FieldMask{Paths: []string{"build.status"}},
+		})
+	if err != nil {
+		logging.Errorf(ctx, "failed to actually cancel the build: %s", err)
+		return 1
+	}
+	return 0
+}
+
 func parseBbAgentArgs(ctx context.Context, arg string) (clientInput, *bbpb.BuildSecrets) {
 	// TODO(crbug/1219018): Remove CLI BBAgentArgs mode in favor of -host + -build-id.
 	logging.Debugf(ctx, "parsing BBAgentArgs")
@@ -191,45 +211,6 @@ func parseHostBuildID(ctx context.Context, hostname *string, buildID *int64) (cl
 		PayloadPath:            build.Infra.Bbagent.PayloadPath,
 	}
 	return clientInput{bbclient, input}, secrets
-}
-
-// finalizeBuild returns true if fatalErr is nil and there's no additional
-// errors finalizing the build.
-func finalizeBuild(ctx context.Context, finalBuild *bbpb.Build, fatalErr error, statusDetails *bbpb.StatusDetails, outputFile *luciexe.OutputFlag) bool {
-	if statusDetails != nil {
-		if finalBuild.StatusDetails == nil {
-			finalBuild.StatusDetails = &bbpb.StatusDetails{}
-		}
-		proto.Merge(finalBuild.StatusDetails, statusDetails)
-	}
-
-	// set final times
-	now := timestamppb.New(clock.Now(ctx))
-	finalBuild.UpdateTime = now
-	finalBuild.EndTime = now
-
-	var finalErrs errors.MultiError
-	if fatalErr != nil {
-		finalErrs = append(finalErrs, errors.Annotate(fatalErr, "fatal error in buildbucket.UpdateBuild").Err())
-	}
-	if err := outputFile.Write(finalBuild); err != nil {
-		finalErrs = append(finalErrs, errors.Annotate(err, "writing final build").Err())
-	}
-
-	if len(finalErrs) > 0 {
-		errors.Log(ctx, finalErrs)
-
-		// we had some really bad error, just downgrade status and add a message to
-		// summary markdown.
-		finalBuild.Status = bbpb.Status_INFRA_FAILURE
-		originalSM := finalBuild.SummaryMarkdown
-		finalBuild.SummaryMarkdown = fmt.Sprintf("FATAL: %s", finalErrs.Error())
-		if originalSM != "" {
-			finalBuild.SummaryMarkdown += "\n\n" + originalSM
-		}
-	}
-
-	return len(finalErrs) == 0
 }
 
 func prepareInputBuild(ctx context.Context, build *bbpb.Build) {
@@ -332,39 +313,43 @@ func processExeArgs(ctx context.Context, c clientInput) []string {
 	return exeArgs
 }
 
-func cancelBuild(ctx context.Context, bbclient BuildsClient, bld *bbpb.Build) (retCode int) {
-	logging.Infof(ctx, "The build is in the cancel process, cancel time is %s. Actually cancel it now.", bld.CancelTime.AsTime())
-	_, err := bbclient.UpdateBuild(
-		ctx,
-		&bbpb.UpdateBuildRequest{
-			Build: &bbpb.Build{
-				Id:     bld.Id,
-				Status: bbpb.Status_CANCELED,
-			},
-			UpdateMask: &fieldmaskpb.FieldMask{Paths: []string{"build.status"}},
-		})
-	if err != nil {
-		logging.Errorf(ctx, "failed to actually cancel the build: %s", err)
-		return 1
-	}
-	return 0
-}
-
-func prependPath(bld *bbpb.Build, workDir string) error {
-	extraPathEnv := stringset.Set{}
-	for _, ref := range bld.Infra.Buildbucket.Agent.Input.Data {
-		extraPathEnv.AddAll(ref.OnPath)
+// finalizeBuild returns true if fatalErr is nil and there's no additional
+// errors finalizing the build.
+func finalizeBuild(ctx context.Context, finalBuild *bbpb.Build, fatalErr error, statusDetails *bbpb.StatusDetails, outputFile *luciexe.OutputFlag) bool {
+	if statusDetails != nil {
+		if finalBuild.StatusDetails == nil {
+			finalBuild.StatusDetails = &bbpb.StatusDetails{}
+		}
+		proto.Merge(finalBuild.StatusDetails, statusDetails)
 	}
 
-	var extraAbsPaths []string
-	for _, p := range extraPathEnv.ToSortedSlice() {
-		extraAbsPaths = append(extraAbsPaths, filepath.Join(workDir, p))
+	// set final times
+	now := timestamppb.New(clock.Now(ctx))
+	finalBuild.UpdateTime = now
+	finalBuild.EndTime = now
+
+	var finalErrs errors.MultiError
+	if fatalErr != nil {
+		finalErrs = append(finalErrs, errors.Annotate(fatalErr, "fatal error in buildbucket.UpdateBuild").Err())
 	}
-	original := os.Getenv("PATH")
-	if err := os.Setenv("PATH", strings.Join(append(extraAbsPaths, original), string(os.PathListSeparator))); err != nil {
-		return err
+	if err := outputFile.Write(finalBuild); err != nil {
+		finalErrs = append(finalErrs, errors.Annotate(err, "writing final build").Err())
 	}
-	return nil
+
+	if len(finalErrs) > 0 {
+		errors.Log(ctx, finalErrs)
+
+		// we had some really bad error, just downgrade status and add a message to
+		// summary markdown.
+		finalBuild.Status = bbpb.Status_INFRA_FAILURE
+		originalSM := finalBuild.SummaryMarkdown
+		finalBuild.SummaryMarkdown = fmt.Sprintf("FATAL: %s", finalErrs.Error())
+		if originalSM != "" {
+			finalBuild.SummaryMarkdown += "\n\n" + originalSM
+		}
+	}
+
+	return len(finalErrs) == 0
 }
 
 func mainImpl() int {

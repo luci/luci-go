@@ -29,6 +29,7 @@ import (
 	"go.chromium.org/luci/cipd/client/cipd/platform"
 	cipdVersion "go.chromium.org/luci/cipd/version"
 	"go.chromium.org/luci/common/clock"
+	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"google.golang.org/protobuf/types/known/durationpb"
@@ -55,6 +56,23 @@ type cipdPkg struct {
 // cipdOut corresponds to the structure of the generated result json file from cipd ensure command.
 type cipdOut struct {
 	Result map[string][]*cipdPkg `json:"result"`
+}
+
+func prependPath(bld *bbpb.Build, workDir string) error {
+	extraPathEnv := stringset.Set{}
+	for _, ref := range bld.Infra.Buildbucket.Agent.Input.Data {
+		extraPathEnv.AddAll(ref.OnPath)
+	}
+
+	var extraAbsPaths []string
+	for _, p := range extraPathEnv.ToSortedSlice() {
+		extraAbsPaths = append(extraAbsPaths, filepath.Join(workDir, p))
+	}
+	original := os.Getenv("PATH")
+	if err := os.Setenv("PATH", strings.Join(append(extraAbsPaths, original), string(os.PathListSeparator))); err != nil {
+		return err
+	}
+	return nil
 }
 
 // downloadCipdPackages wraps installCipdPackages with logic to update the build
