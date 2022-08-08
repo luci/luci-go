@@ -18,6 +18,7 @@ import (
 	"bytes"
 	"context"
 	"crypto/sha256"
+	"io"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
@@ -123,7 +124,7 @@ func TestDownload(t *testing.T) {
 			err = storage.download(ctx, "http://localhost/dwn", out, h)
 			So(err, ShouldBeNil)
 
-			out.Seek(0, os.SEEK_SET)
+			_, _ = out.Seek(0, io.SeekStart)
 			fetched, err := ioutil.ReadAll(out)
 			So(err, ShouldBeNil)
 			So(string(fetched), ShouldEqual, "file data")

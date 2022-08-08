@@ -214,7 +214,7 @@ var badEnsureFiles = []struct {
 		f(
 			"$VerifiedPlatform foo-bar baz",
 		),
-		`invalid platform entry #2, should be <os>-<arch>, not "baz"`,
+		`invalid platform entry #2: platform must be <os>-<arch>, got "baz"`,
 	},
 }
 

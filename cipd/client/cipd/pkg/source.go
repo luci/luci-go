@@ -17,13 +17,17 @@ package pkg
 import (
 	"bytes"
 	"context"
-	"fmt"
 	"io"
 	"os"
 	"sync"
+
+	"go.chromium.org/luci/common/errors"
 )
 
 // Source is an underlying data source with CIPD package data.
+//
+// All errors are assumed to be IO errors and may be returned unannotated.
+// Higher layers of the CIPD client will annotated them.
 type Source interface {
 	io.ReaderAt
 
@@ -94,7 +98,7 @@ type ReadSeekerSource struct {
 
 func (r *ReadSeekerSource) ReadAt(data []byte, off int64) (int, error) {
 	if off < 0 {
-		return 0, fmt.Errorf("ReadSeekerSource.ReadAt: negative offset")
+		return 0, errors.Reason("ReadSeekerSource.ReadAt: negative offset").Err()
 	}
 
 	// Make sure we don't exceed the advertised size even if the underlying
@@ -111,7 +115,7 @@ func (r *ReadSeekerSource) ReadAt(data []byte, off int64) (int, error) {
 
 	// Skip Seek operation if happen to read the file sequentially.
 	if off != r.ptr {
-		if _, err := r.r.Seek(off, os.SEEK_SET); err != nil {
+		if _, err := r.r.Seek(off, io.SeekStart); err != nil {
 			return 0, err
 		}
 		r.ptr = off
@@ -127,7 +131,7 @@ func (r *ReadSeekerSource) Close(ctx context.Context, corrupt bool) error { retu
 
 // NewReadSeekerSource returns a Source implemented on top of an io.ReadSeeker.
 func NewReadSeekerSource(r io.ReadSeeker) (*ReadSeekerSource, error) {
-	off, err := r.Seek(0, os.SEEK_END)
+	off, err := r.Seek(0, io.SeekEnd)
 	if err != nil {
 		return nil, err
 	}

@@ -15,8 +15,10 @@
 package pkg
 
 import (
-	"fmt"
 	"runtime"
+
+	"go.chromium.org/luci/cipd/common/cipderr"
+	"go.chromium.org/luci/common/errors"
 )
 
 // InstallMode defines how to install a package.
@@ -60,7 +62,7 @@ func ValidateInstallMode(mode InstallMode) error {
 	if mode == "" || mode == InstallModeCopy || mode == InstallModeSymlink {
 		return nil
 	}
-	return fmt.Errorf("invalid install mode %q", mode)
+	return errors.Reason("invalid install mode %q", mode).Tag(cipderr.BadArgument).Err()
 }
 
 // PickInstallMode validates the install mode and picks the correct default

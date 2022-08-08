@@ -23,8 +23,10 @@ import (
 	"regexp"
 	"strings"
 
-	"go.chromium.org/luci/cipd/client/cipd/platform"
 	"go.chromium.org/luci/common/errors"
+
+	"go.chromium.org/luci/cipd/client/cipd/platform"
+	"go.chromium.org/luci/cipd/common/cipderr"
 )
 
 // Expander is a mapping of simple string substitutions which is used to
@@ -93,13 +95,13 @@ func (t Expander) expandImpl(template string, alwaysFill bool) (pkg string, err 
 				return value
 			}
 
-			err = errors.Reason("unknown variable in ${%s}", contents).Err()
+			err = errors.Reason("unknown variable in ${%s}", contents).Tag(cipderr.BadArgument).Err()
 		}
 
 		// ${varName=value,value}
 		ourValue, ok := t[varNameValues[0]]
 		if !ok {
-			err = errors.Reason("unknown variable %q", parm).Err()
+			err = errors.Reason("unknown variable %q", parm).Tag(cipderr.BadArgument).Err()
 			return parm
 		}
 
@@ -115,7 +117,7 @@ func (t Expander) expandImpl(template string, alwaysFill bool) (pkg string, err 
 		err = ErrSkipTemplate
 	}
 	if err == nil && strings.ContainsRune(pkg, '$') {
-		err = errors.Reason("unable to process some variables in %q", template).Err()
+		err = errors.Reason("unable to process some variables in %q", template).Tag(cipderr.BadArgument).Err()
 	}
 	return
 }
@@ -133,7 +135,7 @@ type Platform struct {
 func ParsePlatform(v string) (Platform, error) {
 	parts := strings.Split(v, "-")
 	if len(parts) != 2 {
-		return Platform{}, errors.Reason("platform must be <os>-<arch>: %q", v).Err()
+		return Platform{}, errors.Reason("platform must be <os>-<arch>, got %q", v).Tag(cipderr.BadArgument).Err()
 	}
 	return Platform{parts[0], parts[1]}, nil
 }

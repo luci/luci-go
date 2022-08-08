@@ -86,6 +86,7 @@ import (
 	"go.chromium.org/luci/cipd/client/cipd/template"
 	"go.chromium.org/luci/cipd/client/cipd/ui"
 	"go.chromium.org/luci/cipd/common"
+	"go.chromium.org/luci/cipd/common/cipderr"
 	"go.chromium.org/luci/cipd/version"
 )
 
@@ -124,35 +125,10 @@ const (
 )
 
 var (
-	// ErrFinalizationTimeout is returned if CAS service can not finalize upload
-	// fast enough.
-	ErrFinalizationTimeout = errors.New("timeout while waiting for CAS service to finalize the upload", transient.Tag)
-
-	// ErrBadUpload is returned when a package file is uploaded, but servers asks
-	// us to upload it again.
-	ErrBadUpload = errors.New("package file is uploaded, but servers asks us to upload it again", transient.Tag)
-
-	// ErrProcessingTimeout is returned by SetRefWhenReady or AttachTagsWhenReady
-	// if the instance processing on the backend takes longer than expected. Refs
-	// and tags can be attached only to processed instances.
-	ErrProcessingTimeout = errors.New("timeout while waiting for the instance to become ready", transient.Tag)
-
-	// ErrDownloadError is returned by FetchInstance on download errors.
-	ErrDownloadError = errors.New("failed to download the package file after multiple attempts", transient.Tag)
-
-	// ErrUploadError is returned by RegisterInstance on upload errors.
-	ErrUploadError = errors.New("failed to upload the package file after multiple attempts", transient.Tag)
-
-	// ErrEnsurePackagesFailed is returned by EnsurePackages if something is not
-	// right.
-	ErrEnsurePackagesFailed = errors.New("failed to update the deployment")
-)
-
-var (
 	// ClientPackage is a package with the CIPD client. Used during self-update.
 	ClientPackage = "infra/tools/cipd/${platform}"
 	// UserAgent is HTTP user agent string for CIPD client.
-	UserAgent = "cipd 2.6.7"
+	UserAgent = "cipd 2.6.8"
 )
 
 func init() {
@@ -452,7 +428,7 @@ func (opts *ClientOptions) LoadFromEnv(ctx context.Context) error {
 	if opts.CacheDir == "" {
 		if v := env.Get(EnvCacheDir); v != "" {
 			if !filepath.IsAbs(v) {
-				return fmt.Errorf("bad %s %q: not an absolute path", EnvCacheDir, v)
+				return errors.Reason("bad %s %q: not an absolute path", EnvCacheDir, v).Tag(cipderr.BadArgument).Err()
 			}
 			opts.CacheDir = v
 		}
@@ -461,7 +437,7 @@ func (opts *ClientOptions) LoadFromEnv(ctx context.Context) error {
 		if v := env.Get(EnvMaxThreads); v != "" {
 			maxThreads, err := strconv.Atoi(v)
 			if err != nil {
-				return fmt.Errorf("bad %s %q: not an integer", EnvMaxThreads, v)
+				return errors.Reason("bad %s %q: not an integer", EnvMaxThreads, v).Tag(cipderr.BadArgument).Err()
 			}
 			opts.MaxThreads = maxThreads
 		}
@@ -470,7 +446,7 @@ func (opts *ClientOptions) LoadFromEnv(ctx context.Context) error {
 		if v := env.Get(EnvParallelDownloads); v != "" {
 			val, err := strconv.Atoi(v)
 			if err != nil {
-				return fmt.Errorf("bad %s %q: not an integer", EnvParallelDownloads, v)
+				return errors.Reason("bad %s %q: not an integer", EnvParallelDownloads, v).Tag(cipderr.BadArgument).Err()
 			}
 			// CIPD_PARALLEL_DOWNLOADS == 0 means "no parallel work at all", this is
 			// conveyed by negatives in opts.ParallelDownloads (because 0 was already
@@ -490,7 +466,7 @@ func (opts *ClientOptions) LoadFromEnv(ctx context.Context) error {
 	if len(opts.AdmissionPlugin) == 0 {
 		if v := env.Get(EnvAdmissionPlugin); v != "" {
 			if err := json.Unmarshal([]byte(v), &opts.AdmissionPlugin); err != nil {
-				return fmt.Errorf("bad %s %q: not a valid JSON", EnvAdmissionPlugin, v)
+				return errors.Reason("bad %s %q: not a valid JSON", EnvAdmissionPlugin, v).Tag(cipderr.BadArgument).Err()
 			}
 		}
 	}
@@ -509,7 +485,7 @@ func (opts *ClientOptions) LoadFromEnv(ctx context.Context) error {
 	case pathFromEnv != "":
 		configPath = filepath.Clean(pathFromEnv)
 		if !filepath.IsAbs(configPath) {
-			return fmt.Errorf("bad %s %q: must be an absolute path", EnvConfigFile, pathFromEnv)
+			return errors.Reason("bad %s %q: must be an absolute path", EnvConfigFile, pathFromEnv).Tag(cipderr.BadArgument).Err()
 		}
 	default:
 		configPath = DefaultConfigFilePath()
@@ -523,7 +499,7 @@ func (opts *ClientOptions) LoadFromEnv(ctx context.Context) error {
 		cfg, err := loadConfigFile(configPath)
 		if err != nil {
 			if !os.IsNotExist(err) || !allowMissing {
-				return errors.Annotate(err, "failed to load CIPD config").Err()
+				return errors.Annotate(err, "loading CIPD config").Tag(cipderr.BadArgument).Err()
 			}
 			cfg = &configpb.ClientConfig{}
 		} else {
@@ -594,7 +570,7 @@ func NewClientFromEnv(ctx context.Context, opts ClientOptions) (Client, error) {
 	if opts.AuthenticatedClient == nil {
 		client, err := auth.NewAuthenticator(ctx, auth.OptionalLogin, chromeinfra.DefaultAuthOptions()).Client()
 		if err != nil {
-			return nil, errors.Annotate(err, "failed to initialize auth client").Err()
+			return nil, errors.Annotate(err, "initializing auth client").Tag(cipderr.Auth).Err()
 		}
 		opts.AuthenticatedClient = client
 		opts.LoginInstructions = "run `cipd auth-login` to login or relogin"
@@ -639,14 +615,14 @@ func NewClient(opts ClientOptions) (Client, error) {
 
 	// Validate and normalize service URL.
 	if opts.ServiceURL == "" {
-		return nil, fmt.Errorf("ServiceURL is required")
+		return nil, errors.Reason("ServiceURL is required").Tag(cipderr.BadArgument).Err()
 	}
 	parsed, err := url.Parse(opts.ServiceURL)
 	if err != nil {
-		return nil, fmt.Errorf("not a valid URL %q: %s", opts.ServiceURL, err)
+		return nil, errors.Annotate(err, "not a valid URL %q", opts.ServiceURL).Tag(cipderr.BadArgument).Err()
 	}
 	if parsed.Path != "" && parsed.Path != "/" {
-		return nil, fmt.Errorf("expecting a root URL, not %q", opts.ServiceURL)
+		return nil, errors.Reason("expecting a root URL, not %q", opts.ServiceURL).Tag(cipderr.BadArgument).Err()
 	}
 	opts.ServiceURL = fmt.Sprintf("%s://%s", parsed.Scheme, parsed.Host)
 
@@ -696,7 +672,7 @@ func NewClient(opts ClientOptions) (Client, error) {
 			Repository: repo,
 		})
 		if err != nil {
-			return nil, errors.Annotate(err, "failed to initialize the plugin host").Err()
+			return nil, errors.Annotate(err, "initializing the plugin host").Err()
 		}
 	}
 
@@ -712,7 +688,7 @@ func NewClient(opts ClientOptions) (Client, error) {
 	if len(opts.AdmissionPlugin) != 0 {
 		client.pluginAdmission, err = client.pluginHost.NewAdmissionPlugin(opts.AdmissionPlugin)
 		if err != nil {
-			return nil, errors.Annotate(err, "failed to initialize the admission plugin").Err()
+			return nil, errors.Annotate(err, "initializing the admission plugin").Err()
 		}
 	}
 
@@ -867,20 +843,20 @@ func (c *clientImpl) instanceCache(ctx context.Context) (*internal.InstanceCache
 			// Create the root tmp directory in the site root guts.
 			tmpDir, err := c.deployer.FS().EnsureDirectory(ctx, filepath.Join(c.Root, fs.SiteServiceDir, "tmp"))
 			if err != nil {
-				return nil, err
+				return nil, errors.Annotate(err, "creating site root temp dir").Tag(cipderr.IO).Err()
 			}
 			// An inside it create a unique directory for the new InstanceCache.
 			// Multiple temp caches must not reuse the same directory or they'll
 			// interfere with one another when deleting instances or cleaning them up
 			// when closing.
 			if cacheDir, err = ioutil.TempDir(tmpDir, "dl_"); err != nil {
-				return nil, err
+				return nil, errors.Annotate(err, "creating temp instance cache dir").Tag(cipderr.IO).Err()
 			}
 		} else {
 			// When not using a site root, just create the directory in /tmp.
 			var err error
 			if cacheDir, err = ioutil.TempDir("", "cipd_dl_"); err != nil {
-				return nil, err
+				return nil, errors.Annotate(err, "creating temp instance cache dir").Tag(cipderr.IO).Err()
 			}
 		}
 	}
@@ -954,7 +930,13 @@ func (c *clientImpl) doBatchAwareOp(ctx context.Context, op batchAwareOp) {
 	}
 }
 
-func (c *clientImpl) FetchACL(ctx context.Context, prefix string) ([]PackageACL, error) {
+func (c *clientImpl) FetchACL(ctx context.Context, prefix string) (acls []PackageACL, err error) {
+	defer func() {
+		cipderr.AttachDetails(&err, cipderr.Details{
+			Package: prefix,
+		})
+	}()
+
 	if _, err := common.ValidatePackagePrefix(prefix); err != nil {
 		return nil, err
 	}
@@ -963,13 +945,19 @@ func (c *clientImpl) FetchACL(ctx context.Context, prefix string) ([]PackageACL,
 		Prefix: prefix,
 	}, expectedCodes)
 	if err != nil {
-		return nil, c.humanErr(err)
+		return nil, c.rpcErr(err, nil)
 	}
 
 	return prefixMetadataToACLs(resp), nil
 }
 
-func (c *clientImpl) ModifyACL(ctx context.Context, prefix string, changes []PackageACLChange) error {
+func (c *clientImpl) ModifyACL(ctx context.Context, prefix string, changes []PackageACLChange) (err error) {
+	defer func() {
+		cipderr.AttachDetails(&err, cipderr.Details{
+			Package: prefix,
+		})
+	}()
+
 	if _, err := common.ValidatePackagePrefix(prefix); err != nil {
 		return err
 	}
@@ -979,7 +967,7 @@ func (c *clientImpl) ModifyACL(ctx context.Context, prefix string, changes []Pac
 		Prefix: prefix,
 	}, expectedCodes)
 	if code := status.Code(err); code != codes.OK && code != codes.NotFound {
-		return c.humanErr(err)
+		return c.rpcErr(err, nil)
 	}
 
 	// Construct new empty metadata for codes.NotFound.
@@ -994,10 +982,16 @@ func (c *clientImpl) ModifyACL(ctx context.Context, prefix string, changes []Pac
 
 	// Store the new metadata. This call will check meta.Fingerprint.
 	_, err = c.repo.UpdatePrefixMetadata(ctx, meta, expectedCodes)
-	return c.humanErr(err)
+	return c.rpcErr(err, nil)
 }
 
-func (c *clientImpl) FetchRoles(ctx context.Context, prefix string) ([]string, error) {
+func (c *clientImpl) FetchRoles(ctx context.Context, prefix string) (roles []string, err error) {
+	defer func() {
+		cipderr.AttachDetails(&err, cipderr.Details{
+			Package: prefix,
+		})
+	}()
+
 	if _, err := common.ValidatePackagePrefix(prefix); err != nil {
 		return nil, err
 	}
@@ -1006,7 +1000,7 @@ func (c *clientImpl) FetchRoles(ctx context.Context, prefix string) ([]string, e
 		Prefix: prefix,
 	}, expectedCodes)
 	if err != nil {
-		return nil, c.humanErr(err)
+		return nil, c.rpcErr(err, nil)
 	}
 
 	out := make([]string, len(resp.Roles))
@@ -1016,7 +1010,13 @@ func (c *clientImpl) FetchRoles(ctx context.Context, prefix string) ([]string, e
 	return out, nil
 }
 
-func (c *clientImpl) ListPackages(ctx context.Context, prefix string, recursive, includeHidden bool) ([]string, error) {
+func (c *clientImpl) ListPackages(ctx context.Context, prefix string, recursive, includeHidden bool) (list []string, err error) {
+	defer func() {
+		cipderr.AttachDetails(&err, cipderr.Details{
+			Package: prefix,
+		})
+	}()
+
 	if _, err := common.ValidatePackagePrefix(prefix); err != nil {
 		return nil, err
 	}
@@ -1027,7 +1027,7 @@ func (c *clientImpl) ListPackages(ctx context.Context, prefix string, recursive,
 		IncludeHidden: includeHidden,
 	}, expectedCodes)
 	if err != nil {
-		return nil, c.humanErr(err)
+		return nil, c.rpcErr(err, nil)
 	}
 
 	listing := resp.Packages
@@ -1038,7 +1038,14 @@ func (c *clientImpl) ListPackages(ctx context.Context, prefix string, recursive,
 	return listing, nil
 }
 
-func (c *clientImpl) ResolveVersion(ctx context.Context, packageName, version string) (common.Pin, error) {
+func (c *clientImpl) ResolveVersion(ctx context.Context, packageName, version string) (pin common.Pin, err error) {
+	defer func() {
+		cipderr.AttachDetails(&err, cipderr.Details{
+			Package: packageName,
+			Version: version,
+		})
+	}()
+
 	if err := common.ValidatePackageName(packageName); err != nil {
 		return common.Pin{}, err
 	}
@@ -1080,9 +1087,12 @@ func (c *clientImpl) ResolveVersion(ctx context.Context, packageName, version st
 		Version: version,
 	}, expectedCodes)
 	if err != nil {
-		return common.Pin{}, c.humanErr(err)
+		return common.Pin{}, c.rpcErr(err, map[codes.Code]cipderr.Code{
+			// May happen when using an ambiguous tag. Consider it a bad version too.
+			codes.FailedPrecondition: cipderr.InvalidVersion,
+		})
 	}
-	pin := common.Pin{
+	pin = common.Pin{
 		PackageName: packageName,
 		InstanceID:  common.ObjectRefToInstanceID(resp.Instance),
 	}
@@ -1214,13 +1224,13 @@ func (c *clientImpl) maybeUpdateClient(ctx context.Context, fs fs.FileSystem,
 		plat := platform.CurrentPlatform()
 		switch pinnedRef := digests.ClientRef(plat); {
 		case pinnedRef == nil:
-			return common.Pin{}, fmt.Errorf("there's no supported hash for %q in CIPD *.digests file", plat)
+			return common.Pin{}, errors.Reason("there's no supported hash for %q in CIPD *.digests file", plat).Tag(cipderr.InvalidVersion).Err()
 		case !digests.Contains(plat, clientRef):
-			return common.Pin{}, fmt.Errorf(
+			return common.Pin{}, errors.Reason(
 				"the CIPD client hash reported by the backend (%s) is not in *.digests file, "+
 					"if you changed CIPD client version recently most likely the *.digests "+
 					"file is just stale and needs to be regenerated via 'cipd selfupdate-roll ...'",
-				clientRef.HexDigest)
+				clientRef.HexDigest).Tag(cipderr.Stale).Err()
 		default:
 			clientRef = pinnedRef // pick the best supported hash algo from *.digests
 		}
@@ -1281,6 +1291,10 @@ func (c *clientImpl) RegisterInstance(ctx context.Context, pin common.Pin, src p
 	defer func() {
 		if err != nil {
 			logging.Errorf(ctx, "Instance registration failed: %s", err)
+			cipderr.AttachDetails(&err, cipderr.Details{
+				Package: pin.PackageName,
+				Version: pin.InstanceID,
+			})
 		}
 		done()
 	}()
@@ -1293,7 +1307,7 @@ func (c *clientImpl) RegisterInstance(ctx context.Context, pin common.Pin, src p
 			Instance: common.InstanceIDToObjectRef(pin.InstanceID),
 		}, expectedCodes)
 		if err != nil {
-			return nil, c.humanErr(err)
+			return nil, c.rpcErr(err, nil)
 		}
 		switch resp.Status {
 		case api.RegistrationStatus_REGISTERED:
@@ -1308,7 +1322,7 @@ func (c *clientImpl) RegisterInstance(ctx context.Context, pin common.Pin, src p
 		case api.RegistrationStatus_NOT_UPLOADED:
 			return resp.UploadOp, nil
 		default:
-			return nil, fmt.Errorf("unrecognized package registration status %s", resp.Status)
+			return nil, errors.Reason("unrecognized package registration status %s", resp.Status).Tag(cipderr.RPC).Err()
 		}
 	}
 
@@ -1334,7 +1348,7 @@ func (c *clientImpl) RegisterInstance(ctx context.Context, pin common.Pin, src p
 	// succeed.
 	switch uploadOp, err := attemptToRegister(); {
 	case uploadOp != nil:
-		return ErrBadUpload // welp, the upload didn't work for some reason, give up
+		return errors.Reason("package file is uploaded, but servers asks us to upload it again").Tag(cipderr.RPC).Err()
 	default:
 		return err
 	}
@@ -1350,7 +1364,7 @@ func (c *clientImpl) finalizeUpload(ctx context.Context, opID string, timeout ti
 	for {
 		select {
 		case <-ctx.Done():
-			return ErrFinalizationTimeout
+			return errors.Reason("timeout while waiting for CIPD service to finalize the upload").Tag(transient.Tag, cipderr.Timeout).Err()
 		default:
 		}
 
@@ -1361,26 +1375,31 @@ func (c *clientImpl) finalizeUpload(ctx context.Context, opID string, timeout ti
 		case status.Code(err) == codes.DeadlineExceeded:
 			continue // this may be short RPC deadline, try again
 		case err != nil:
-			return c.humanErr(err)
+			return c.rpcErr(err, nil)
 		case op.Status == api.UploadStatus_PUBLISHED:
 			return nil // verified!
 		case op.Status == api.UploadStatus_ERRORED:
-			return errors.New(op.ErrorMessage) // fatal verification error
+			return errors.Reason("%s", op.ErrorMessage).Tag(cipderr.CAS).Err() // fatal verification error
 		case op.Status == api.UploadStatus_UPLOADING || op.Status == api.UploadStatus_VERIFYING:
 			logging.Infof(ctx, "Verifying...")
-			if clock.Sleep(clock.Tag(ctx, "cipd-sleeping"), sleep).Incomplete() {
-				return ErrFinalizationTimeout
-			}
+			clock.Sleep(clock.Tag(ctx, "cipd-sleeping"), sleep)
 			if sleep < 10*time.Second {
 				sleep += 500 * time.Millisecond
 			}
 		default:
-			return fmt.Errorf("unrecognized upload operation status %s", op.Status)
+			return errors.Reason("unrecognized upload operation status %s", op.Status).Tag(cipderr.RPC).Err()
 		}
 	}
 }
 
-func (c *clientImpl) DescribeInstance(ctx context.Context, pin common.Pin, opts *DescribeInstanceOpts) (*InstanceDescription, error) {
+func (c *clientImpl) DescribeInstance(ctx context.Context, pin common.Pin, opts *DescribeInstanceOpts) (desc *InstanceDescription, err error) {
+	defer func() {
+		cipderr.AttachDetails(&err, cipderr.Details{
+			Package: pin.PackageName,
+			Version: pin.InstanceID,
+		})
+	}()
+
 	if err := common.ValidatePin(pin, common.AnyHash); err != nil {
 		return nil, err
 	}
@@ -1395,13 +1414,20 @@ func (c *clientImpl) DescribeInstance(ctx context.Context, pin common.Pin, opts 
 		DescribeTags: opts.DescribeTags,
 	}, expectedCodes)
 	if err != nil {
-		return nil, c.humanErr(err)
+		return nil, c.rpcErr(err, nil)
 	}
 
 	return apiDescToInfo(resp), nil
 }
 
-func (c *clientImpl) DescribeClient(ctx context.Context, pin common.Pin) (*ClientDescription, error) {
+func (c *clientImpl) DescribeClient(ctx context.Context, pin common.Pin) (desc *ClientDescription, err error) {
+	defer func() {
+		cipderr.AttachDetails(&err, cipderr.Details{
+			Package: pin.PackageName,
+			Version: pin.InstanceID,
+		})
+	}()
+
 	if err := common.ValidatePin(pin, common.AnyHash); err != nil {
 		return nil, err
 	}
@@ -1411,13 +1437,20 @@ func (c *clientImpl) DescribeClient(ctx context.Context, pin common.Pin) (*Clien
 		Instance: common.InstanceIDToObjectRef(pin.InstanceID),
 	}, expectedCodes)
 	if err != nil {
-		return nil, c.humanErr(err)
+		return nil, c.rpcErr(err, nil)
 	}
 
 	return apiClientDescToInfo(resp), nil
 }
 
-func (c *clientImpl) SetRefWhenReady(ctx context.Context, ref string, pin common.Pin) error {
+func (c *clientImpl) SetRefWhenReady(ctx context.Context, ref string, pin common.Pin) (err error) {
+	defer func() {
+		cipderr.AttachDetails(&err, cipderr.Details{
+			Package: pin.PackageName,
+			Version: pin.InstanceID,
+		})
+	}()
+
 	if err := common.ValidatePackageRef(ref); err != nil {
 		return err
 	}
@@ -1430,7 +1463,7 @@ func (c *clientImpl) SetRefWhenReady(ctx context.Context, ref string, pin common
 
 	logging.Infof(ctx, "Setting ref of %s: %q => %q", pin.PackageName, ref, pin.InstanceID)
 
-	err := c.retryUntilReady(ctx, SetRefTimeout, func(ctx context.Context) error {
+	err = c.retryUntilReady(ctx, SetRefTimeout, func(ctx context.Context) error {
 		_, err := c.repo.CreateRef(ctx, &api.Ref{
 			Name:     ref,
 			Package:  pin.PackageName,
@@ -1439,18 +1472,22 @@ func (c *clientImpl) SetRefWhenReady(ctx context.Context, ref string, pin common
 		return err
 	})
 
-	switch err {
-	case nil:
-		logging.Infof(ctx, "Ref %q is set", ref)
-	case ErrProcessingTimeout:
-		logging.Errorf(ctx, "Failed to set ref: deadline exceeded")
-	default:
+	if err != nil {
 		logging.Errorf(ctx, "Failed to set ref: %s", err)
+	} else {
+		logging.Infof(ctx, "Ref %q is set", ref)
 	}
 	return err
 }
 
-func (c *clientImpl) AttachTagsWhenReady(ctx context.Context, pin common.Pin, tags []string) error {
+func (c *clientImpl) AttachTagsWhenReady(ctx context.Context, pin common.Pin, tags []string) (err error) {
+	defer func() {
+		cipderr.AttachDetails(&err, cipderr.Details{
+			Package: pin.PackageName,
+			Version: pin.InstanceID,
+		})
+	}()
+
 	if err := common.ValidatePin(pin, common.AnyHash); err != nil {
 		return err
 	}
@@ -1478,7 +1515,7 @@ func (c *clientImpl) AttachTagsWhenReady(ctx context.Context, pin common.Pin, ta
 		logging.Infof(ctx, "Attaching tags")
 	}
 
-	err := c.retryUntilReady(ctx, TagAttachTimeout, func(ctx context.Context) error {
+	err = c.retryUntilReady(ctx, TagAttachTimeout, func(ctx context.Context) error {
 		_, err := c.repo.AttachTags(ctx, &api.AttachTagsRequest{
 			Package:  pin.PackageName,
 			Instance: common.InstanceIDToObjectRef(pin.InstanceID),
@@ -1487,22 +1524,26 @@ func (c *clientImpl) AttachTagsWhenReady(ctx context.Context, pin common.Pin, ta
 		return err
 	})
 
-	switch err {
-	case nil:
+	if err != nil {
+		logging.Errorf(ctx, "Failed to attach tags: %s", err)
+	} else {
 		if len(tags) == 1 {
 			logging.Infof(ctx, "Tag %q was attached", tags[0])
 		} else {
 			logging.Infof(ctx, "All tags were attached")
 		}
-	case ErrProcessingTimeout:
-		logging.Errorf(ctx, "Failed to attach tags: deadline exceeded")
-	default:
-		logging.Errorf(ctx, "Failed to attach tags: %s", err)
 	}
 	return err
 }
 
-func (c *clientImpl) AttachMetadataWhenReady(ctx context.Context, pin common.Pin, md []Metadata) error {
+func (c *clientImpl) AttachMetadataWhenReady(ctx context.Context, pin common.Pin, md []Metadata) (err error) {
+	defer func() {
+		cipderr.AttachDetails(&err, cipderr.Details{
+			Package: pin.PackageName,
+			Version: pin.InstanceID,
+		})
+	}()
+
 	if err := common.ValidatePin(pin, common.AnyHash); err != nil {
 		return err
 	}
@@ -1540,7 +1581,7 @@ func (c *clientImpl) AttachMetadataWhenReady(ctx context.Context, pin common.Pin
 		logging.Infof(ctx, "Attaching metadata")
 	}
 
-	err := c.retryUntilReady(ctx, MetadataAttachTimeout, func(ctx context.Context) error {
+	err = c.retryUntilReady(ctx, MetadataAttachTimeout, func(ctx context.Context) error {
 		_, err := c.repo.AttachMetadata(ctx, &api.AttachMetadataRequest{
 			Package:  pin.PackageName,
 			Instance: common.InstanceIDToObjectRef(pin.InstanceID),
@@ -1549,17 +1590,14 @@ func (c *clientImpl) AttachMetadataWhenReady(ctx context.Context, pin common.Pin
 		return err
 	})
 
-	switch err {
-	case nil:
+	if err != nil {
+		logging.Errorf(ctx, "Failed to attach metadata: %s", err)
+	} else {
 		if len(md) == 1 {
 			logging.Infof(ctx, "Metadata %q was attached", md[0].Key)
 		} else {
 			logging.Infof(ctx, "Metadata was attached")
 		}
-	case ErrProcessingTimeout:
-		logging.Errorf(ctx, "Failed to attach metadata: deadline exceeded")
-	default:
-		logging.Errorf(ctx, "Failed to attach metadata: %s", err)
 	}
 	return err
 }
@@ -1577,7 +1615,7 @@ func (c *clientImpl) retryUntilReady(ctx context.Context, timeout time.Duration,
 	for {
 		select {
 		case <-ctx.Done():
-			return ErrProcessingTimeout
+			return errors.Reason("timeout while waiting for the instance to become ready").Tag(cipderr.Timeout).Err()
 		default:
 		}
 
@@ -1587,17 +1625,21 @@ func (c *clientImpl) retryUntilReady(ctx context.Context, timeout time.Duration,
 		case status.Code(err) == codes.DeadlineExceeded:
 			continue // this may be short RPC deadline, try again
 		case status.Code(err) == codes.FailedPrecondition: // the instance is not ready
-			logging.Warningf(ctx, "Not ready: %s", c.humanErr(err))
-			if clock.Sleep(clock.Tag(ctx, "cipd-sleeping"), retryDelay).Incomplete() {
-				return ErrProcessingTimeout
-			}
+			logging.Warningf(ctx, "Not ready: %s", c.rpcErr(err, nil))
+			clock.Sleep(clock.Tag(ctx, "cipd-sleeping"), retryDelay)
 		default:
-			return c.humanErr(err)
+			return c.rpcErr(err, nil)
 		}
 	}
 }
 
-func (c *clientImpl) SearchInstances(ctx context.Context, packageName string, tags []string) (common.PinSlice, error) {
+func (c *clientImpl) SearchInstances(ctx context.Context, packageName string, tags []string) (list common.PinSlice, err error) {
+	defer func() {
+		cipderr.AttachDetails(&err, cipderr.Details{
+			Package: packageName,
+		})
+	}()
+
 	if err := common.ValidatePackageName(packageName); err != nil {
 		return nil, err
 	}
@@ -1622,7 +1664,7 @@ func (c *clientImpl) SearchInstances(ctx context.Context, packageName string, ta
 	case status.Code(err) == codes.NotFound: // no such package => no instances
 		return nil, nil
 	case err != nil:
-		return nil, c.humanErr(err)
+		return nil, c.rpcErr(err, nil)
 	}
 
 	out := make(common.PinSlice, len(resp.Instances))
@@ -1635,10 +1677,14 @@ func (c *clientImpl) SearchInstances(ctx context.Context, packageName string, ta
 	return out, nil
 }
 
-func (c *clientImpl) ListInstances(ctx context.Context, packageName string) (InstanceEnumerator, error) {
+func (c *clientImpl) ListInstances(ctx context.Context, packageName string) (enum InstanceEnumerator, err error) {
+	details := cipderr.Details{Package: packageName}
+
 	if err := common.ValidatePackageName(packageName); err != nil {
+		cipderr.AttachDetails(&err, details)
 		return nil, err
 	}
+
 	return &instanceEnumeratorImpl{
 		fetch: func(ctx context.Context, limit int, cursor string) ([]InstanceInfo, string, error) {
 			resp, err := c.repo.ListInstances(ctx, &api.ListInstancesRequest{
@@ -1647,7 +1693,9 @@ func (c *clientImpl) ListInstances(ctx context.Context, packageName string) (Ins
 				PageToken: cursor,
 			}, expectedCodes)
 			if err != nil {
-				return nil, "", c.humanErr(err)
+				err = c.rpcErr(err, nil)
+				cipderr.AttachDetails(&err, details)
+				return nil, "", err
 			}
 			instances := make([]InstanceInfo, len(resp.Instances))
 			for i, inst := range resp.Instances {
@@ -1658,7 +1706,13 @@ func (c *clientImpl) ListInstances(ctx context.Context, packageName string) (Ins
 	}, nil
 }
 
-func (c *clientImpl) FetchPackageRefs(ctx context.Context, packageName string) ([]RefInfo, error) {
+func (c *clientImpl) FetchPackageRefs(ctx context.Context, packageName string) (refs []RefInfo, err error) {
+	defer func() {
+		cipderr.AttachDetails(&err, cipderr.Details{
+			Package: packageName,
+		})
+	}()
+
 	if err := common.ValidatePackageName(packageName); err != nil {
 		return nil, err
 	}
@@ -1667,17 +1721,24 @@ func (c *clientImpl) FetchPackageRefs(ctx context.Context, packageName string) (
 		Package: packageName,
 	}, expectedCodes)
 	if err != nil {
-		return nil, c.humanErr(err)
+		return nil, c.rpcErr(err, nil)
 	}
 
-	refs := make([]RefInfo, len(resp.Refs))
+	refs = make([]RefInfo, len(resp.Refs))
 	for i, r := range resp.Refs {
 		refs[i] = apiRefToInfo(r)
 	}
 	return refs, nil
 }
 
-func (c *clientImpl) FetchInstance(ctx context.Context, pin common.Pin) (pkg.Source, error) {
+func (c *clientImpl) FetchInstance(ctx context.Context, pin common.Pin) (src pkg.Source, err error) {
+	defer func() {
+		cipderr.AttachDetails(&err, cipderr.Details{
+			Package: pin.PackageName,
+			Version: pin.InstanceID,
+		})
+	}()
+
 	if err := common.ValidatePin(pin, common.KnownHash); err != nil {
 		return nil, err
 	}
@@ -1702,7 +1763,14 @@ func (c *clientImpl) FetchInstance(ctx context.Context, pin common.Pin) (pkg.Sou
 	return res.Source, nil
 }
 
-func (c *clientImpl) FetchInstanceTo(ctx context.Context, pin common.Pin, output io.WriteSeeker) error {
+func (c *clientImpl) FetchInstanceTo(ctx context.Context, pin common.Pin, output io.WriteSeeker) (err error) {
+	defer func() {
+		cipderr.AttachDetails(&err, cipderr.Details{
+			Package: pin.PackageName,
+			Version: pin.InstanceID,
+		})
+	}()
+
 	if err := common.ValidatePin(pin, common.KnownHash); err != nil {
 		return err
 	}
@@ -1744,6 +1812,10 @@ func (c *clientImpl) remoteFetchInstance(ctx context.Context, pin common.Pin, ou
 	defer func() {
 		if err != nil {
 			logging.Errorf(ctx, "Failed to fetch %s: %s", pin, err)
+			cipderr.AttachDetails(&err, cipderr.Details{
+				Package: pin.PackageName,
+				Version: pin.InstanceID,
+			})
 		} else {
 			logging.Infof(ctx, "Fetched %s in %.1fs", pin, clock.Now(ctx).Sub(startTS).Seconds())
 		}
@@ -1757,7 +1829,7 @@ func (c *clientImpl) remoteFetchInstance(ctx context.Context, pin common.Pin, ou
 		Instance: objRef,
 	}, expectedCodes)
 	if err != nil {
-		return c.humanErr(err)
+		return c.rpcErr(err, nil)
 	}
 
 	hash := common.MustNewHash(objRef.HashAlgo)
@@ -1767,7 +1839,7 @@ func (c *clientImpl) remoteFetchInstance(ctx context.Context, pin common.Pin, ou
 
 	// Make sure we fetched what we've asked for.
 	if digest := common.HexDigest(hash); objRef.HexDigest != digest {
-		err = fmt.Errorf("package hash mismatch: expecting %q, got %q", objRef.HexDigest, digest)
+		err = errors.Reason("package hash mismatch: expecting %q, got %q", objRef.HexDigest, digest).Tag(cipderr.HashMismatch).Err()
 	}
 	return
 }
@@ -1820,19 +1892,29 @@ func (c *clientImpl) EnsurePackages(ctx context.Context, allPins common.PinSlice
 		return
 	}
 
-	hasErrors := false
+	var allErrors errors.MultiError
 	reportActionErr := func(ctx context.Context, a pinAction, err error) {
 		subdir := ""
 		if a.subdir != "" {
 			subdir = fmt.Sprintf(" in %q", a.subdir)
 		}
 		logging.Errorf(ctx, "Failed to %s %s%s: %s", a.action, a.pin.PackageName, subdir, err)
-		aMap[a.subdir].Errors = append(aMap[a.subdir].Errors, ActionError{
-			Action: a.action,
-			Pin:    a.pin,
-			Error:  JSONError{err},
+
+		err = errors.Annotate(err, "failed to %s %s%s", a.action, a.pin.PackageName, subdir).Err()
+		cipderr.AttachDetails(&err, cipderr.Details{
+			Package: a.pin.PackageName,
+			Version: a.pin.InstanceID,
+			Subdir:  a.subdir,
 		})
-		hasErrors = true
+		allErrors = append(allErrors, err)
+
+		aMap[a.subdir].Errors = append(aMap[a.subdir].Errors, ActionError{
+			Action:       a.action,
+			Pin:          a.pin,
+			Error:        JSONError{err},
+			ErrorCode:    cipderr.ToCode(err),
+			ErrorDetails: cipderr.ToDetails(err),
+		})
 	}
 
 	// Need a cache to fetch packages into.
@@ -1953,7 +2035,7 @@ func (c *clientImpl) EnsurePackages(ctx context.Context, allPins common.PinSlice
 			admErr := c.pluginAdmission.CheckAdmission(state.pin).Wait(checkCtx)
 			if admErr != nil {
 				if status, ok := status.FromError(admErr); ok && status.Code() == codes.FailedPrecondition {
-					deployErr = errors.Reason("not admitted: %s", status.Message()).Err()
+					deployErr = errors.Reason("not admitted: %s", status.Message()).Tag(cipderr.NotAdmitted).Err()
 					logging.Errorf(checkCtx, "Not admitted: %s", status.Message())
 				} else {
 					deployErr = errors.Annotate(admErr, "admission check failed unexpectedly").Err()
@@ -2041,12 +2123,11 @@ func (c *clientImpl) EnsurePackages(ctx context.Context, allPins common.PinSlice
 	// Opportunistically cleanup the trash left from previous installs.
 	c.doBatchAwareOp(ctx, batchAwareOpCleanupTrash)
 
-	if !hasErrors {
+	if len(allErrors) == 0 {
 		logging.Infof(ctx, "All changes applied.")
-	} else {
-		err = ErrEnsurePackagesFailed
+		return aMap, nil
 	}
-	return
+	return aMap, allErrors
 }
 
 // makeRepairChecker returns a function that decided whether we should attempt
@@ -2120,18 +2201,45 @@ var expectedCodes = prpc.ExpectedCode(
 	codes.PermissionDenied,
 )
 
-// humanErr takes gRPC errors and returns a human readable error that can be
-// presented in the CLI.
+// rpcErr takes gRPC errors and returns an annotated CIPD error with human
+// readable string representations for CLI error messages.
 //
-// It basically strips scary looking gRPC framing around the error message.
-func (c *clientImpl) humanErr(err error) error {
-	if err != nil {
-		if status, ok := status.FromError(err); ok {
-			if status.Code() == codes.PermissionDenied && c.LoginInstructions != "" {
-				return errors.Reason("%s, %s", status.Message(), c.LoginInstructions).Err()
-			}
-			return errors.New(status.Message())
-		}
+// It strips scary looking gRPC framing around the error message and attaches
+// an appropriate cipderr tag.
+func (c *clientImpl) rpcErr(err error, specialCodes map[codes.Code]cipderr.Code) error {
+	if err == nil {
+		return nil
 	}
-	return err
+
+	status, ok := status.FromError(err)
+	if !ok {
+		return err
+	}
+
+	var tag cipderr.Code
+	switch status.Code() {
+	case codes.Unknown, codes.Internal, codes.Unavailable:
+		tag = cipderr.BackendUnavailable
+	case codes.DeadlineExceeded, codes.Canceled:
+		tag = cipderr.Timeout
+	case codes.InvalidArgument:
+		tag = cipderr.BadArgument
+	case codes.PermissionDenied, codes.Unauthenticated:
+		tag = cipderr.Auth
+	case codes.NotFound:
+		tag = cipderr.InvalidVersion
+	default:
+		tag = cipderr.RPC
+	}
+
+	// Errors for some particular RPCs map better to different codes.
+	if special, ok := specialCodes[status.Code()]; ok {
+		tag = special
+	}
+
+	if tag == cipderr.Auth && c.LoginInstructions != "" {
+		return errors.Reason("%s, %s", status.Message(), c.LoginInstructions).Tag(tag).Err()
+	}
+
+	return errors.New(status.Message(), tag)
 }

@@ -28,6 +28,7 @@ import (
 	"sync"
 	"time"
 
+	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 
 	"go.chromium.org/luci/cipd/client/cipd/internal/retry"
@@ -37,6 +38,11 @@ import (
 //
 // All functions operate in terms of native file paths. It exists mostly to hide
 // differences between file system semantic on Windows and Linux\Mac.
+//
+// IO errors are returned unannotated and unwrapped, so they can be examined by
+// os.IsNotExist and similar functions. Higher layers of the CIPD client should
+// eventually annotated them with an appropriate cipderr tag (usually
+// cipderr.IO).
 type FileSystem interface {
 	// Root returns absolute path to a directory FileSystem operates in.
 	//
@@ -203,13 +209,13 @@ func (f *fsImpl) CaseSensitive() (bool, error) {
 		f.caseSens, f.caseSensErr = func() (sens bool, err error) {
 			tmp, err := ioutil.TempFile(f.root, ".test_case.*.tmp")
 			if err != nil {
-				return false, fmt.Errorf("cannot create a file to test case-sensitivity of %q: %s", f.root, err)
+				return false, errors.Annotate(err, "creating a file to test case-sensitivity of %q", f.root).Err()
 			}
 			tmp.Close() // for Windows, it may act funny with open files
 
 			defer func() {
 				if rmErr := os.Remove(tmp.Name()); err == nil && rmErr != nil {
-					err = fmt.Errorf("failed to remove the file during case-sensitivity test of %q: %s", f.root, rmErr)
+					err = errors.Annotate(rmErr, "removing the file during case-sensitivity test of %q", f.root).Err()
 				}
 			}()
 
@@ -220,7 +226,7 @@ func (f *fsImpl) CaseSensitive() (bool, error) {
 			case os.IsNotExist(err):
 				return true, nil // case-sensitive
 			default:
-				return false, fmt.Errorf("cannot stat file when testing case-sensitivity of %q: %s", f.root, err)
+				return false, errors.Annotate(err, "stat'ing file when testing case-sensitivity of %q", f.root).Err()
 			}
 		}()
 	})
@@ -238,7 +244,7 @@ func (f *fsImpl) CwdRelToAbs(p string) (string, error) {
 	}
 	rel = filepath.ToSlash(rel)
 	if rel == ".." || strings.HasPrefix(rel, "../") {
-		return "", fmt.Errorf("fs: path %q is outside of %q", p, f.root)
+		return "", errors.Reason("path %q is outside of %q", p, f.root).Err()
 	}
 	return p, nil
 }
@@ -605,7 +611,7 @@ func (f *fsImpl) moveToTrash(ctx context.Context, path string) (string, error) {
 // Logs errors.
 func (f *fsImpl) cleanupTrashedFile(ctx context.Context, path string) error {
 	if filepath.Dir(path) != f.trash {
-		return fmt.Errorf("not in the trash: %q", path)
+		return errors.Reason("not in the trash: %q", path).Err()
 	}
 	err := os.RemoveAll(path)
 	if err != nil {

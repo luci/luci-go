@@ -31,6 +31,7 @@ import (
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/data/stringset"
+	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 
 	"go.chromium.org/luci/cipd/client/cipd/fs"
@@ -38,6 +39,7 @@ import (
 	"go.chromium.org/luci/cipd/client/cipd/pkg"
 	"go.chromium.org/luci/cipd/client/cipd/reader"
 	"go.chromium.org/luci/cipd/common"
+	"go.chromium.org/luci/cipd/common/cipderr"
 )
 
 const (
@@ -371,8 +373,8 @@ func (c *InstanceCache) openAsSource(ctx context.Context, pin common.Pin) (pkg.S
 
 	stat, err := f.Stat()
 	if err != nil {
-		f.Close()
-		return nil, err
+		_ = f.Close()
+		return nil, errors.Annotate(err, "checking size").Tag(cipderr.IO).Err()
 	}
 
 	return &cacheFile{
@@ -391,7 +393,7 @@ func (c *InstanceCache) openOrFetch(ctx context.Context, pin common.Pin) (*os.Fi
 
 	path, err := c.FS.RootRelToAbs(pin.InstanceID)
 	if err != nil {
-		return nil, fmt.Errorf("invalid instance ID %q", pin.InstanceID)
+		return nil, errors.Reason("invalid instance ID %q", pin.InstanceID).Tag(cipderr.BadArgument).Err()
 	}
 
 	attempt := 0
@@ -416,6 +418,9 @@ func (c *InstanceCache) openOrFetch(ctx context.Context, pin common.Pin) (*os.Fi
 			return c.Fetcher(ctx, pin, f)
 		})
 		if err != nil {
+			if cipderr.ToCode(err) == cipderr.Unknown {
+				err = errors.Annotate(err, "writing to instance cache").Tag(cipderr.IO).Err()
+			}
 			return nil, err
 		}
 
@@ -433,10 +438,10 @@ func (c *InstanceCache) openOrFetch(ctx context.Context, pin common.Pin) (*os.Fi
 			logging.Infof(ctx, "Pin %s is still not in the cache, retrying...", pin)
 		case os.IsNotExist(err) && attempt > 1:
 			logging.Errorf(ctx, "Pin %s is unexpectedly missing from the cache", pin)
-			return nil, err
+			return nil, errors.Annotate(err, "pin %s is unexpectedly missing from the cache", pin).Tag(cipderr.IO).Err()
 		case err != nil:
 			logging.Errorf(ctx, "Failed to open the instance %s: %s", pin, err)
-			return nil, err
+			return nil, errors.Annotate(err, "opening the cached instance %s", pin).Tag(cipderr.IO).Err()
 		default:
 			c.touch(ctx, pin.InstanceID, true) // mark it as accessed, run the GC
 			return file, nil
@@ -470,11 +475,11 @@ func (c *InstanceCache) touch(ctx context.Context, instanceID string, gc bool) {
 func (c *InstanceCache) delete(ctx context.Context, pin common.Pin) error {
 	path, err := c.FS.RootRelToAbs(pin.InstanceID)
 	if err != nil {
-		return fmt.Errorf("invalid instance ID %q", pin.InstanceID)
+		return errors.Reason("invalid instance ID %q", pin.InstanceID).Tag(cipderr.BadArgument).Err()
 	}
 
 	if err := c.FS.EnsureFileGone(ctx, path); err != nil {
-		return err
+		return errors.Annotate(err, "deleting the cached instance file").Tag(cipderr.IO).Err()
 	}
 
 	c.withState(ctx, clock.Now(ctx), func(s *messages.InstanceCache) (save bool) {

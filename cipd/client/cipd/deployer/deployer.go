@@ -40,6 +40,7 @@ import (
 	"go.chromium.org/luci/cipd/client/cipd/pkg"
 	"go.chromium.org/luci/cipd/client/cipd/reader"
 	"go.chromium.org/luci/cipd/common"
+	"go.chromium.org/luci/cipd/common/cipderr"
 )
 
 // TODO(vadimsh): How to handle path conflicts between two packages? Currently
@@ -183,9 +184,12 @@ type Deployer interface {
 func New(root string) Deployer {
 	var err error
 	if root == "" {
-		err = fmt.Errorf("site root path is not provided")
+		err = errors.Reason("site root path is not provided").Tag(cipderr.BadArgument).Err()
 	} else {
 		root, err = filepath.Abs(filepath.Clean(root))
+		if err != nil {
+			err = errors.Annotate(err, "bad site root path").Tag(cipderr.BadArgument).Err()
+		}
 	}
 	if err != nil {
 		return errDeployer{err}
@@ -304,7 +308,7 @@ func (d *deployerImpl) DeployInstance(ctx context.Context, subdir string, inst p
 		return common.Pin{}, err
 	}
 	if _, err = d.fs.EnsureDirectory(ctx, filepath.Join(d.fs.Root(), subdir)); err != nil {
-		return common.Pin{}, err
+		return common.Pin{}, errors.Annotate(err, "creating destination subdir").Tag(cipderr.IO).Err()
 	}
 
 	// Extract new version to the .cipd/pkgs/* guts. For "symlink" install mode it
@@ -324,7 +328,7 @@ func (d *deployerImpl) DeployInstance(ctx context.Context, subdir string, inst p
 	// different packages at the same time is still allowed.
 	unlock, err := d.lockPkg(ctx, pkgPath)
 	if err != nil {
-		return common.Pin{}, fmt.Errorf("failed to acquire FS lock: %s", err)
+		return common.Pin{}, errors.Annotate(err, "failed to acquire FS lock").Tag(cipderr.IO).Err()
 	}
 	defer unlock()
 
@@ -385,7 +389,7 @@ func (d *deployerImpl) DeployInstance(ctx context.Context, subdir string, inst p
 	logging.Infof(ctx, "Moving files to their final destination...")
 	keep, err := d.addToSiteRoot(ctx, subdir, newManifest.Files, installMode, pkgPath, destPath)
 	if err != nil {
-		return common.Pin{}, err
+		return common.Pin{}, errors.Annotate(err, "adding files to the site root").Tag(cipderr.IO).Err()
 	}
 
 	// Mark installed instance as a current one. After this call the package is
@@ -444,9 +448,9 @@ func (d *deployerImpl) DeployInstance(ctx context.Context, subdir string, inst p
 	case err != nil:
 		return common.Pin{}, err
 	case !state.Deployed: // should not happen really...
-		return common.Pin{}, fmt.Errorf("the package is reported as not installed, see logs")
+		return common.Pin{}, errors.Reason("the package is reported as not installed, see logs").Tag(cipderr.IO).Err()
 	case state.Pin.InstanceID != pin.InstanceID:
-		return state.Pin, fmt.Errorf("other instance (%s) was deployed concurrently", state.Pin.InstanceID)
+		return state.Pin, errors.Reason("other instance (%s) was deployed concurrently", state.Pin.InstanceID).Tag(cipderr.Stale).Err()
 	default:
 		return pin, nil
 	}
@@ -534,7 +538,7 @@ func (d *deployerImpl) FindDeployed(ctx context.Context) (common.PinSliceBySubdi
 		if os.IsNotExist(err) {
 			return nil, nil
 		}
-		return nil, err
+		return nil, errors.Annotate(err, "scanning packages directory").Tag(cipderr.IO).Err()
 	}
 
 	found := common.PinMapBySubdir{}
@@ -588,15 +592,18 @@ func (d *deployerImpl) RemoveDeployed(ctx context.Context, subdir, packageName s
 		// root. We can just remove the guts thus forgetting about the package.
 		logging.Warningf(ctx, "Package %s is partially installed, removing it", packageName)
 	}
-	return d.fs.EnsureDirectoryGone(ctx, deployed.packagePath)
+	if err := d.fs.EnsureDirectoryGone(ctx, deployed.packagePath); err != nil {
+		return errors.Annotate(err, "removing the deployed package directory").Tag(cipderr.IO).Err()
+	}
+	return nil
 }
 
 func (d *deployerImpl) RepairDeployed(ctx context.Context, subdir string, pin common.Pin, overrideInstallMode pkg.InstallMode, maxThreads int, params RepairParams) error {
 	switch {
 	case len(params.ToRedeploy) != 0 && params.Instance == nil:
-		return errors.Reason("if ToRedeploy is not empty, Instance must be given too").Err()
+		return errors.Reason("if ToRedeploy is not empty, Instance must be given too").Tag(cipderr.BadArgument).Err()
 	case params.Instance != nil && params.Instance.Pin() != pin:
-		return errors.Reason("expecting instance with pin %s, got %s", pin, params.Instance.Pin()).Err()
+		return errors.Reason("expecting instance with pin %s, got %s", pin, params.Instance.Pin()).Tag(cipderr.BadArgument).Err()
 	}
 
 	// Note that we can slightly optimize the repairs of packages in 'copy'
@@ -613,9 +620,9 @@ func (d *deployerImpl) RepairDeployed(ctx context.Context, subdir string, pin co
 	case err != nil:
 		return err
 	case !p.Deployed:
-		return fmt.Errorf("the package %s is not deployed any more, refusing to recover", pin.PackageName)
+		return errors.Reason("the package %s is not deployed any more, refusing to recover", pin.PackageName).Tag(cipderr.Stale).Err()
 	case p.Pin != pin:
-		return fmt.Errorf("expected to find pin %s, got %s, refusing to recover", pin, p.Pin)
+		return errors.Reason("expected to find pin %s, got %s, refusing to recover", pin, p.Pin).Tag(cipderr.Stale).Err()
 	case p.packagePath == "":
 		panic("impossible, packagePath cannot be empty for deployed pkg")
 	case p.instancePath == "":
@@ -630,7 +637,7 @@ func (d *deployerImpl) RepairDeployed(ctx context.Context, subdir string, pin co
 	// See the comment about locking in DeployInstance.
 	unlock, err := d.lockPkg(ctx, p.packagePath)
 	if err != nil {
-		return fmt.Errorf("failed to acquire FS lock: %s", err)
+		return errors.Annotate(err, "failed to acquire FS lock").Tag(cipderr.IO).Err()
 	}
 	defer unlock()
 
@@ -714,7 +721,7 @@ func (d *deployerImpl) RepairDeployed(ctx context.Context, subdir string, pin co
 	}
 	logging.Infof(ctx, "Relinking %d files...", len(infos))
 	if _, err := d.addToSiteRoot(ctx, p.Subdir, infos, installMode, p.packagePath, p.instancePath); err != nil {
-		return err
+		return errors.Annotate(err, "adding files to the site root").Tag(cipderr.IO).Err()
 	}
 
 	// Cleanup empty directories left in the guts after files have been moved
@@ -724,7 +731,7 @@ func (d *deployerImpl) RepairDeployed(ctx context.Context, subdir string, pin co
 	}
 
 	if failed {
-		return fmt.Errorf("repair of %s failed, see logs", p.Pin.PackageName)
+		return errors.Reason("repair of %s failed, see logs", p.Pin.PackageName).Tag(cipderr.Stale).Err()
 	}
 	return nil
 }
@@ -732,9 +739,13 @@ func (d *deployerImpl) RepairDeployed(ctx context.Context, subdir string, pin co
 func (d *deployerImpl) TempDir(ctx context.Context, prefix string, mode os.FileMode) (string, error) {
 	dir, err := d.fs.EnsureDirectory(ctx, filepath.Join(d.fs.Root(), fs.SiteServiceDir, "tmp"))
 	if err != nil {
-		return "", err
+		return "", errors.Annotate(err, "creating temp directory").Tag(cipderr.IO).Err()
 	}
-	return fs.TempDir(dir, prefix, mode)
+	tmp, err := fs.TempDir(dir, prefix, mode)
+	if err != nil {
+		return "", errors.Annotate(err, "creating temp directory").Tag(cipderr.IO).Err()
+	}
+	return tmp, nil
 }
 
 func (d *deployerImpl) FS() fs.FileSystem {
@@ -757,7 +768,9 @@ func (f *symlinkFile) ModTime() time.Time             { return time.Time{} }
 func (f *symlinkFile) Symlink() bool                  { return true }
 func (f *symlinkFile) SymlinkTarget() (string, error) { return f.target, nil }
 func (f *symlinkFile) WinAttrs() fs.WinAttrs          { return 0 }
-func (f *symlinkFile) Open() (io.ReadCloser, error)   { return nil, fmt.Errorf("can't open a symlink") }
+func (f *symlinkFile) Open() (io.ReadCloser, error) {
+	return nil, errors.Reason("can't open a symlink").Tag(cipderr.IO).Err()
+}
 
 ////////////////////////////////////////////////////////////////////////////////
 // Utility methods.
@@ -810,8 +823,7 @@ func (d *deployerImpl) packagePath(ctx context.Context, subdir, pkg string, allo
 	rel := filepath.FromSlash(packagesDir)
 	abs, err := d.fs.RootRelToAbs(rel)
 	if err != nil {
-		logging.Errorf(ctx, "Can't get absolute path of %q: %s", rel, err)
-		return "", err
+		return "", errors.Annotate(err, "resolving absolute path of %q", rel).Tag(cipderr.IO).Err()
 	}
 
 	seenNumbers, curPkgs := d.resolveValidPackageDirs(ctx, abs)
@@ -825,8 +837,7 @@ func (d *deployerImpl) packagePath(ctx context.Context, subdir, pkg string, allo
 
 	// We didn't find one, so we have to make one.
 	if _, err := d.fs.EnsureDirectory(ctx, abs); err != nil {
-		logging.Errorf(ctx, "Cannot ensure packages directory: %s", err)
-		return "", err
+		return "", errors.Annotate(err, "creating packages directory").Tag(cipderr.IO).Err()
 	}
 
 	// Take the last 2 components from the pkg path.
@@ -841,16 +852,14 @@ func (d *deployerImpl) packagePath(ctx context.Context, subdir, pkg string, allo
 	// 0777 allows umask to take effect
 	tmpDir, err := d.TempDir(ctx, prefix, 0777)
 	if err != nil {
-		logging.Errorf(ctx, "Cannot create new pkg tempdir: %s", err)
-		return "", err
+		return "", errors.Annotate(err, "creating new package temp dir").Tag(cipderr.IO).Err()
 	}
 	defer d.fs.EnsureDirectoryGone(ctx, tmpDir)
 	err = d.fs.EnsureFile(ctx, filepath.Join(tmpDir, descriptionName), func(f *os.File) error {
 		return writeDescription(&description{Subdir: subdir, PackageName: pkg}, f)
 	})
 	if err != nil {
-		logging.Errorf(ctx, "Cannot create new pkg description.json: %s", err)
-		return "", err
+		return "", errors.Annotate(err, "creating new package description.json").Tag(cipderr.IO).Err()
 	}
 
 	// Now we have to find a suitable index folder for it.
@@ -883,8 +892,7 @@ func (d *deployerImpl) packagePath(ctx context.Context, subdir, pkg string, allo
 		// happens on Windows instead of ENOTEMPTY, see the following explanation:
 		// https://github.com/golang/go/issues/14527#issuecomment-189755676
 		case !fs.IsNotEmpty(err) && !fs.IsAccessDenied(err):
-			logging.Errorf(ctx, "Unknown error while creating pkg dir %s: %s", pkgPath, err)
-			return "", err
+			return "", errors.Annotate(err, "unknown error when creating pkg dir %q", pkgPath).Tag(cipderr.IO).Err()
 		}
 
 		// os.Rename failed with ENOTEMPTY, that means that another client wrote
@@ -900,8 +908,7 @@ func (d *deployerImpl) packagePath(ctx context.Context, subdir, pkg string, allo
 		// another slot a bit later, to give a chance for the concurrent writers to
 		// proceed too.
 		if err := waiter(); err != nil {
-			logging.Errorf(ctx, "Unable to find valid index for package %q in %s!", pkg, abs)
-			return "", fmt.Errorf("unable to find valid index for package %q in %s", pkg, abs)
+			return "", errors.Annotate(err, "unable to find valid index for package %q in %s", pkg, abs).Tag(cipderr.IO).Err()
 		}
 	}
 }
@@ -974,7 +981,7 @@ func (d *deployerImpl) resolveValidPackageDirs(ctx context.Context, pkgsAbsDir s
 		description, err := d.readDescription(ctx, fullPkgPath)
 		if description == nil || err != nil {
 			if err == nil {
-				err = fmt.Errorf("missing description.json and current instance")
+				err = errors.Reason("missing description.json and current instance").Err()
 			}
 			logging.Warningf(ctx, "removing junk directory: %q (%s)", fullPkgPath, err)
 			if err := d.fs.EnsureDirectoryGone(ctx, fullPkgPath); err != nil {
@@ -1030,11 +1037,10 @@ func (d *deployerImpl) getCurrentInstanceID(packageDir string) (string, error) {
 		if os.IsNotExist(err) {
 			return "", nil
 		}
-		return "", err
+		return "", errors.Annotate(err, "reading the current instance ID").Tag(cipderr.IO).Err()
 	}
 	if err = common.ValidateInstanceID(current, common.AnyHash); err != nil {
-		return "", fmt.Errorf(
-			"pointer to currently installed instance doesn't look like a valid instance id: %s", err)
+		return "", errors.Annotate(err, "pointer to currently installed instance doesn't look like a valid instance ID").Tag(cipderr.IO).Err()
 	}
 	return current, nil
 }
@@ -1046,12 +1052,18 @@ func (d *deployerImpl) setCurrentInstanceID(ctx context.Context, packageDir, ins
 	if err := common.ValidateInstanceID(instanceID, common.AnyHash); err != nil {
 		return err
 	}
+	var err error
 	if runtime.GOOS == "windows" {
-		return fs.EnsureFile(
+		err = fs.EnsureFile(
 			ctx, d.fs, filepath.Join(packageDir, currentTxt),
 			strings.NewReader(instanceID))
+	} else {
+		err = d.fs.EnsureSymlink(ctx, filepath.Join(packageDir, currentSymlink), instanceID)
 	}
-	return d.fs.EnsureSymlink(ctx, filepath.Join(packageDir, currentSymlink), instanceID)
+	if err != nil {
+		return errors.Annotate(err, "writing the current instance ID").Tag(cipderr.IO).Err()
+	}
+	return nil
 }
 
 // readDescription reads the package description.json given a path to a package
@@ -1115,7 +1127,7 @@ func (d *deployerImpl) readManifest(ctx context.Context, instanceDir string) (pk
 	manifestPath := filepath.Join(instanceDir, filepath.FromSlash(pkg.ManifestName))
 	r, err := os.Open(manifestPath)
 	if err != nil {
-		return pkg.Manifest{}, err
+		return pkg.Manifest{}, errors.Annotate(err, "opening manifest file").Tag(cipderr.IO).Err()
 	}
 	defer r.Close()
 	manifest, err := pkg.ReadManifest(r)
@@ -1126,7 +1138,7 @@ func (d *deployerImpl) readManifest(ctx context.Context, instanceDir string) (pk
 	// from actual files on disk.
 	if len(manifest.Files) == 0 {
 		if manifest.Files, err = scanPackageDir(ctx, instanceDir); err != nil {
-			return pkg.Manifest{}, err
+			return pkg.Manifest{}, errors.Annotate(err, "scanning package directory").Tag(cipderr.IO).Err()
 		}
 	}
 	return manifest, nil
@@ -1148,7 +1160,7 @@ func (d *deployerImpl) readManifest(ctx context.Context, instanceDir string) (pk
 func (d *deployerImpl) addToSiteRoot(ctx context.Context, subdir string, files []pkg.FileInfo, installMode pkg.InstallMode, pkgDir, srcDir string) (*pathTree, error) {
 	caseSens, err := d.fs.CaseSensitive()
 	if err != nil {
-		return nil, err
+		return nil, errors.Annotate(err, "checking file system case sensitivity").Tag(cipderr.IO).Err()
 	}
 
 	// Build a set of all added paths (including intermediary directories). It

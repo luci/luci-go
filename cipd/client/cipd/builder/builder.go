@@ -17,7 +17,6 @@ package builder
 import (
 	"bytes"
 	"context"
-	"fmt"
 	"io"
 	"io/ioutil"
 	"os"
@@ -29,12 +28,14 @@ import (
 	"github.com/klauspost/compress/zip"
 
 	"go.chromium.org/luci/common/data/stringset"
+	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 
 	api "go.chromium.org/luci/cipd/api/cipd/v1"
 	"go.chromium.org/luci/cipd/client/cipd/fs"
 	"go.chromium.org/luci/cipd/client/cipd/pkg"
 	"go.chromium.org/luci/cipd/common"
+	"go.chromium.org/luci/cipd/common/cipderr"
 )
 
 // Options defines options for BuildInstance function.
@@ -97,11 +98,11 @@ func BuildInstance(ctx context.Context, opts Options) (common.Pin, error) {
 	for _, f := range opts.Input {
 		// Make sure no files are written to package service directory.
 		if strings.HasPrefix(f.Name(), pkg.ServiceDir+"/") {
-			return common.Pin{}, fmt.Errorf("can't write to %s: %s", pkg.ServiceDir, f.Name())
+			return common.Pin{}, errors.Reason("can't write to %s: %s", pkg.ServiceDir, f.Name()).Tag(cipderr.BadArgument).Err()
 		}
 		// Make sure no files are written to cipd's internal state directory.
 		if strings.HasPrefix(f.Name(), fs.SiteServiceDir+"/") {
-			return common.Pin{}, fmt.Errorf("can't write to %s: %s", fs.SiteServiceDir, f.Name())
+			return common.Pin{}, errors.Reason("can't write to %s: %s", fs.SiteServiceDir, f.Name()).Tag(cipderr.BadArgument).Err()
 		}
 	}
 
@@ -117,7 +118,7 @@ func BuildInstance(ctx context.Context, opts Options) (common.Pin, error) {
 	for _, f := range files {
 		_, seen := seenNames[f.Name()]
 		if seen {
-			return common.Pin{}, fmt.Errorf("file %s is provided twice", f.Name())
+			return common.Pin{}, errors.Reason("file %s is provided twice", f.Name()).Tag(cipderr.BadArgument).Err()
 		}
 		seenNames[f.Name()] = struct{}{}
 	}
@@ -195,7 +196,7 @@ func zipInputFiles(ctx context.Context, files []fs.File, w io.Writer, level int)
 
 		dst, err := writer.CreateHeader(&fh)
 		if err != nil {
-			return err
+			return errors.Annotate(err, "writing zip entry header").Tag(cipderr.IO).Err()
 		}
 		if in.Symlink() {
 			err = zipSymlinkFile(dst, in)
@@ -213,15 +214,15 @@ func zipInputFiles(ctx context.Context, files []fs.File, w io.Writer, level int)
 func zipRegularFile(dst io.Writer, f fs.File) error {
 	src, err := f.Open()
 	if err != nil {
-		return err
+		return errors.Annotate(err, "opening %q for zipping", f.Name()).Tag(cipderr.IO).Err()
 	}
 	defer src.Close()
 	written, err := io.Copy(dst, src)
 	if err != nil {
-		return err
+		return errors.Annotate(err, "zipping %q", f.Name()).Tag(cipderr.IO).Err()
 	}
 	if uint64(written) != f.Size() {
-		return fmt.Errorf("file %s changed midway", f.Name())
+		return errors.Reason("file %q changed midway", f.Name()).Tag(cipderr.IO).Err()
 	}
 	return nil
 }
@@ -229,12 +230,14 @@ func zipRegularFile(dst io.Writer, f fs.File) error {
 func zipSymlinkFile(dst io.Writer, f fs.File) error {
 	target, err := f.SymlinkTarget()
 	if err != nil {
-		return err
+		return errors.Annotate(err, "resolving symlink %q for zipping", f.Name()).Tag(cipderr.IO).Err()
 	}
 	// Symlinks are zipped as text files with target path. os.ModeSymlink bit in
 	// the header distinguishes them from regular files.
-	_, err = dst.Write([]byte(target))
-	return err
+	if _, err = dst.Write([]byte(target)); err != nil {
+		return errors.Annotate(err, "zipping symlink %q", f.Name()).Tag(cipderr.IO).Err()
+	}
+	return nil
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -332,7 +335,7 @@ func (m *manifestFile) Symlink() bool         { return false }
 func (m *manifestFile) WinAttrs() fs.WinAttrs { return 0 }
 
 func (m *manifestFile) SymlinkTarget() (string, error) {
-	return "", fmt.Errorf("not a symlink: %s", m.Name())
+	return "", errors.Reason("%q: not a symlink", m.Name()).Tag(cipderr.IO).Err()
 }
 
 func (m *manifestFile) Open() (io.ReadCloser, error) {
@@ -343,7 +346,7 @@ func (m *manifestFile) Open() (io.ReadCloser, error) {
 // File interface.
 func makeManifestFile(opts Options) (fs.File, error) {
 	if opts.VersionFile != "" && !fs.IsCleanSlashPath(opts.VersionFile) {
-		return nil, fmt.Errorf("version file path should be a clean path relative to a package root: %s", opts.VersionFile)
+		return nil, errors.Reason("version file path should be a clean path relative to a package root: %s", opts.VersionFile).Tag(cipderr.BadArgument).Err()
 	}
 	if err := pkg.ValidateInstallMode(opts.InstallMode); err != nil {
 		return nil, err

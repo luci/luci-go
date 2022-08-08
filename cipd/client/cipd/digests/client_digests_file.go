@@ -25,10 +25,12 @@ import (
 
 	"google.golang.org/protobuf/proto"
 
+	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/iotools"
 
 	api "go.chromium.org/luci/cipd/api/cipd/v1"
 	"go.chromium.org/luci/cipd/common"
+	"go.chromium.org/luci/cipd/common/cipderr"
 )
 
 // ClientDigestsFile holds a mapping "platform => hash of the client binary for
@@ -79,7 +81,7 @@ func (d *ClientDigestsFile) AddClientRef(plat string, ref *api.ObjectRef) error 
 	}
 	for _, e := range d.entries {
 		if e.plat == plat && e.ref.HashAlgo == ref.HashAlgo {
-			return fmt.Errorf("%s hash for %s has already been added", ref.HashAlgo, plat)
+			return errors.Reason("%s hash for %s has already been added", ref.HashAlgo, plat).Tag(cipderr.BadArgument).Err()
 		}
 	}
 	d.entries = append(d.entries, clientDigestEntry{plat, ref})
@@ -171,7 +173,10 @@ func (d *ClientDigestsFile) Serialize(w io.Writer, version, versionFile string) 
 
 		return nil
 	})
-	return err
+	if err != nil {
+		return errors.Annotate(err, "failed to write client digests file").Tag(cipderr.IO).Err()
+	}
+	return nil
 }
 
 // ParseClientDigestsFile parses previously serialized client digests file.
@@ -184,7 +189,7 @@ func ParseClientDigestsFile(r io.Reader) (*ClientDigestsFile, error) {
 	lineNo := 0
 	makeError := func(fmtStr string, args ...interface{}) error {
 		args = append([]interface{}{lineNo}, args...)
-		return fmt.Errorf("failed to parse client digests file (line %d): "+fmtStr, args...)
+		return errors.Reason("failed to parse client digests file (line %d): "+fmtStr, args...).Tag(cipderr.BadArgument).Err()
 	}
 
 	scanner := bufio.NewScanner(r)
@@ -219,7 +224,7 @@ func ParseClientDigestsFile(r io.Reader) (*ClientDigestsFile, error) {
 	}
 
 	if err := scanner.Err(); err != nil {
-		return nil, err
+		return nil, errors.Annotate(err, "failed to read client digests file").Tag(cipderr.IO).Err()
 	}
 	return res, nil
 }

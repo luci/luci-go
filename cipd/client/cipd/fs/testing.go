@@ -16,10 +16,12 @@ package fs
 
 import (
 	"bytes"
-	"fmt"
 	"io"
 	"io/ioutil"
 	"time"
+
+	"go.chromium.org/luci/cipd/common/cipderr"
+	"go.chromium.org/luci/common/errors"
 )
 
 // TestFileOpts holds options for NewTestFile method. Used in unittests.
@@ -82,14 +84,14 @@ func (f *testFile) WinAttrs() WinAttrs { return f.winAttrs }
 
 func (f *testFile) SymlinkTarget() (string, error) {
 	if f.symlinkTarget == "" {
-		return "", fmt.Errorf("not a symlink: %s", f.Name())
+		return "", errors.Reason("%q: not a symlink", f.Name()).Tag(cipderr.IO).Err()
 	}
 	return f.symlinkTarget, nil
 }
 
 func (f *testFile) Open() (io.ReadCloser, error) {
 	if f.Symlink() {
-		return nil, fmt.Errorf("can't open symlink: %s", f.Name())
+		return nil, errors.Reason("%q: can't open symlink", f.Name()).Tag(cipderr.IO).Err()
 	}
 	r := bytes.NewReader([]byte(f.data))
 	return ioutil.NopCloser(r), nil

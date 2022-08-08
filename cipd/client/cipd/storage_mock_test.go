@@ -19,9 +19,10 @@ import (
 	"hash"
 	"io"
 	"io/ioutil"
-	"os"
 	"sync"
 	"sync/atomic"
+
+	"go.chromium.org/luci/common/errors"
 )
 
 // This file has no tests, but contains definition of a mock for 'storage'
@@ -59,10 +60,10 @@ func (s *mockedStorage) returnErr(err error) {
 
 func (s *mockedStorage) upload(ctx context.Context, url string, data io.ReadSeeker) error {
 	// Mimic the real storage implementation by seeking in same patter as it does.
-	if _, err := data.Seek(0, os.SEEK_END); err != nil {
+	if _, err := data.Seek(0, io.SeekEnd); err != nil {
 		return err
 	}
-	if _, err := data.Seek(0, os.SEEK_SET); err != nil {
+	if _, err := data.Seek(0, io.SeekStart); err != nil {
 		return err
 	}
 	if s.err != nil {
@@ -80,7 +81,7 @@ func (s *mockedStorage) download(ctx context.Context, url string, output io.Writ
 
 	// Mimic the real storage behavioral patterns.
 	h.Reset()
-	if _, err := output.Seek(0, os.SEEK_SET); err != nil {
+	if _, err := output.Seek(0, io.SeekStart); err != nil {
 		return err
 	}
 
@@ -90,7 +91,7 @@ func (s *mockedStorage) download(ctx context.Context, url string, output io.Writ
 
 	body := s.getStored(url)
 	if body == "" {
-		return ErrDownloadError
+		return errors.Reason("mocked downloaded error").Err()
 	}
 
 	_, err := io.MultiWriter(output, h).Write([]byte(body))

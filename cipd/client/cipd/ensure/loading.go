@@ -18,6 +18,9 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+
+	"go.chromium.org/luci/cipd/common/cipderr"
+	"go.chromium.org/luci/common/errors"
 )
 
 // LoadEnsureFile loads the ensure file from the given path or stdin (if 'path'
@@ -32,17 +35,17 @@ func LoadEnsureFile(path string) (*File, error) {
 	if path == "-" {
 		var err error
 		if basePath, err = os.Getwd(); err != nil {
-			return nil, err
+			return nil, errors.Annotate(err, "failed to get cwd").Tag(cipderr.IO).Err()
 		}
 		f = os.Stdin
 	} else {
 		abs, err := filepath.Abs(path)
 		if err != nil {
-			return nil, err
+			return nil, errors.Annotate(err, "bad ensure file path").Tag(cipderr.BadArgument).Err()
 		}
 		basePath = filepath.Dir(abs)
 		if f, err = os.Open(path); err != nil {
-			return nil, err
+			return nil, errors.Annotate(err, "opening ensure file").Tag(cipderr.IO).Err()
 		}
 		defer f.Close()
 	}

@@ -15,7 +15,6 @@
 package builder
 
 import (
-	"fmt"
 	"io"
 	"io/ioutil"
 	"path/filepath"
@@ -24,9 +23,12 @@ import (
 
 	"gopkg.in/yaml.v2"
 
+	"go.chromium.org/luci/common/errors"
+
 	"go.chromium.org/luci/cipd/client/cipd/fs"
 	"go.chromium.org/luci/cipd/client/cipd/pkg"
 	"go.chromium.org/luci/cipd/common"
+	"go.chromium.org/luci/cipd/common/cipderr"
 )
 
 // PackageDef defines how exactly to build a package.
@@ -81,12 +83,12 @@ type PackageChunkDef struct {
 func LoadPackageDef(r io.Reader, vars map[string]string) (PackageDef, error) {
 	data, err := ioutil.ReadAll(r)
 	if err != nil {
-		return PackageDef{}, err
+		return PackageDef{}, errors.Annotate(err, "reading package definition file").Tag(cipderr.IO).Err()
 	}
 
 	out := PackageDef{}
 	if err = yaml.Unmarshal(data, &out); err != nil {
-		return PackageDef{}, err
+		return PackageDef{}, errors.Annotate(err, "bad package definition file").Tag(cipderr.BadArgument).Err()
 	}
 
 	// Substitute variables in all strings.
@@ -119,19 +121,19 @@ func LoadPackageDef(r io.Reader, vars map[string]string) (PackageDef, error) {
 			has = append(has, "dir")
 		}
 		if len(has) == 0 {
-			return out, fmt.Errorf("files entry #%d needs 'file', 'dir' or 'version_file' key", i)
+			return out, errors.Reason("files entry #%d needs 'file', 'dir' or 'version_file' key", i).Tag(cipderr.BadArgument).Err()
 		}
 		if len(has) != 1 {
-			return out, fmt.Errorf("files entry #%d should have only one key, got %q", i, has)
+			return out, errors.Reason("files entry #%d should have only one key, got %q", i, has).Tag(cipderr.BadArgument).Err()
 		}
 		//'version_file' can appear only once, it must be a clean relative path.
 		if chunk.VersionFile != "" {
 			if versionFile != "" {
-				return out, fmt.Errorf("'version_file' entry can be used only once")
+				return out, errors.Reason("'version_file' entry can be used only once").Tag(cipderr.BadArgument).Err()
 			}
 			versionFile = chunk.VersionFile
 			if !fs.IsCleanSlashPath(versionFile) {
-				return out, fmt.Errorf("'version_file' must be a path relative to the package root: %s", versionFile)
+				return out, errors.Reason("'version_file' must be a path relative to the package root: %s", versionFile).Tag(cipderr.BadArgument).Err()
 			}
 		}
 	}
@@ -151,7 +153,7 @@ func (def *PackageDef) FindFiles(cwd string) ([]fs.File, error) {
 	// Root of the package is defined relative to package def YAML file.
 	absCwd, err := filepath.Abs(cwd)
 	if err != nil {
-		return nil, err
+		return nil, errors.Annotate(err, "bad input directory").Tag(cipderr.BadArgument).Err()
 	}
 	root := filepath.Clean(def.Root)
 	if !filepath.IsAbs(root) {
@@ -199,12 +201,12 @@ func (def *PackageDef) FindFiles(cwd string) ([]fs.File, error) {
 			// Exclude files as specified in 'exclude' section.
 			exclude, err := makeExclusionFilter(chunk.Exclude)
 			if err != nil {
-				return nil, err
+				return nil, errors.Annotate(err, "dir %q", chunk.Dir).Err()
 			}
 			// Run the scan.
 			files, err := fs.ScanFileSystem(startDir, root, exclude, scanOpts)
 			if err != nil {
-				return nil, err
+				return nil, errors.Annotate(err, "dir %q", chunk.Dir).Err()
 			}
 			for _, f := range files {
 				add(f)
@@ -213,7 +215,7 @@ func (def *PackageDef) FindFiles(cwd string) ([]fs.File, error) {
 		}
 
 		// LoadPackageDef does validation, so this should not happen.
-		return nil, fmt.Errorf("unexpected definition: %v", chunk)
+		return nil, errors.Reason("unexpected definition: %v", chunk).Tag(cipderr.BadArgument).Err()
 	}
 
 	// Sort by Name().
@@ -268,7 +270,7 @@ func makeExclusionFilter(patterns []string) (fs.ScanFilter, error) {
 		}
 		re, err := regexp.Compile(expr)
 		if err != nil {
-			return nil, err
+			return nil, errors.Annotate(err, "bad exclusion pattern").Tag(cipderr.BadArgument).Err()
 		}
 		exps = append(exps, re)
 	}
@@ -332,7 +334,7 @@ func subVars(s string, vars map[string]string) (string, error) {
 		return val
 	})
 	if len(badKeys) != 0 {
-		return res, fmt.Errorf("values for some variables are not provided: %v", badKeys)
+		return res, errors.Reason("values for some variables are not provided: %v", badKeys).Tag(cipderr.BadArgument).Err()
 	}
 	return res, nil
 }

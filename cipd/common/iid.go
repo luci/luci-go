@@ -20,7 +20,6 @@ import (
 	"fmt"
 
 	"go.chromium.org/luci/common/errors"
-	"go.chromium.org/luci/grpc/grpcutil"
 
 	api "go.chromium.org/luci/cipd/api/cipd/v1"
 )
@@ -69,7 +68,7 @@ func ValidateInstanceID(iid string, v HashAlgoValidation) (err error) {
 	if err == nil {
 		return
 	}
-	return fmt.Errorf("not a valid package instance ID %q: %s", iid, err)
+	return errors.Annotate(err, "not a valid package instance ID %q", iid).Err()
 }
 
 // ValidateObjectRef returns a grpc-annotated error if the given object ref is
@@ -84,20 +83,18 @@ func ValidateInstanceID(iid string, v HashAlgoValidation) (err error) {
 // Errors have InvalidArgument grpc code.
 func ValidateObjectRef(ref *api.ObjectRef, v HashAlgoValidation) error {
 	if ref == nil {
-		return errors.Reason("the object ref is not provided").
-			Tag(grpcutil.InvalidArgumentTag).Err()
+		return validationErr("the object ref is not provided")
 	}
 
 	switch {
 	case ref.HashAlgo < 0:
-		return errors.Reason("bad negative hash algo").Tag(grpcutil.InvalidArgumentTag).Err()
+		return validationErr("bad negative hash algo")
 	case ref.HashAlgo == 0:
-		return errors.Reason("unspecified hash algo").Tag(grpcutil.InvalidArgumentTag).Err()
+		return validationErr("unspecified hash algo")
 	}
 
 	if err := checkIsHex(ref.HexDigest); err != nil {
-		return errors.Annotate(err, "invalid %s hex digest", ref.HashAlgo).
-			Tag(grpcutil.InvalidArgumentTag).Err()
+		return errors.Annotate(err, "invalid %s hex digest", ref.HashAlgo).Err()
 	}
 
 	if v {
@@ -106,8 +103,7 @@ func ValidateObjectRef(ref *api.ObjectRef, v HashAlgoValidation) error {
 		}
 		hexDigestLen := supportedAlgos[ref.HashAlgo].hexDigestLen
 		if len(ref.HexDigest) != hexDigestLen {
-			return errors.Reason("invalid %s digest: expecting %d chars, got %d", ref.HashAlgo, hexDigestLen, len(ref.HexDigest)).
-				Tag(grpcutil.InvalidArgumentTag).Err()
+			return validationErr("invalid %s digest: expecting %d chars, got %d", ref.HashAlgo, hexDigestLen, len(ref.HexDigest))
 		}
 	}
 
@@ -199,24 +195,24 @@ func decodeObjectRef(iid string) (*api.ObjectRef, error) {
 	// We assume we use at least 160 bit digests here (which translates to at
 	// least 28 bytes of encoded iid).
 	if len(iid) < 28 {
-		return nil, fmt.Errorf("not a valid size for an encoded digest")
+		return nil, validationErr("not a valid size for an encoded digest")
 	}
 
 	blob, err := base64.RawURLEncoding.DecodeString(iid)
 	switch {
 	case err != nil:
-		return nil, fmt.Errorf("cannot base64 decode: %s", err)
+		return nil, validationErr("cannot base64 decode: %s", err)
 	case len(blob) == 0:
-		return nil, fmt.Errorf("empty")
+		return nil, validationErr("empty")
 	case len(blob)%2 != 1: // 1 byte for hashAlgo, the rest is the digest
-		return nil, fmt.Errorf("the digest can't be odd")
+		return nil, validationErr("the digest can't be odd")
 	}
 
 	hashAlgo := api.HashAlgo(blob[len(blob)-1])
 	digest := blob[:len(blob)-1]
 
 	if hashAlgo == 0 {
-		return nil, fmt.Errorf("unspecified hash algo (0)")
+		return nil, validationErr("unspecified hash algo (0)")
 	}
 
 	// If algo is known to us, make sure it is valid. Otherwise just decode what
@@ -224,7 +220,7 @@ func decodeObjectRef(iid string) (*api.ObjectRef, error) {
 	// ValidateHashAlgo, if really needed.
 	if int(hashAlgo) < len(supportedAlgos) {
 		if prop := supportedAlgos[hashAlgo]; len(digest)*2 != prop.hexDigestLen {
-			return nil, fmt.Errorf("wrong digest len %d for algo %s", len(digest), hashAlgo)
+			return nil, validationErr("wrong digest len %d for algo %s", len(digest), hashAlgo)
 		}
 	}
 
@@ -240,13 +236,13 @@ func decodeObjectRef(iid string) (*api.ObjectRef, error) {
 func checkIsHex(s string) error {
 	switch {
 	case s == "":
-		return fmt.Errorf("empty hex string")
+		return validationErr("empty hex string")
 	case len(s)%2 != 0:
-		return fmt.Errorf("uneven number of symbols in the hex string")
+		return validationErr("uneven number of symbols in the hex string")
 	}
 	for _, c := range s {
 		if !((c >= '0' && c <= '9') || (c >= 'a' && c <= 'f')) {
-			return fmt.Errorf("bad lowercase hex string %q, wrong char %c", s, c)
+			return validationErr("bad lowercase hex string %q, wrong char %c", s, c)
 		}
 	}
 	return nil

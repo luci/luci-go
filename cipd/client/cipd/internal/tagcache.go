@@ -22,12 +22,14 @@ import (
 	"sort"
 	"sync"
 
+	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 
 	api "go.chromium.org/luci/cipd/api/cipd/v1"
 	"go.chromium.org/luci/cipd/client/cipd/fs"
 	"go.chromium.org/luci/cipd/client/cipd/internal/messages"
 	"go.chromium.org/luci/cipd/common"
+	"go.chromium.org/luci/cipd/common/cipderr"
 )
 
 const (
@@ -340,7 +342,7 @@ func (c *TagCache) Save(ctx context.Context) error {
 func (c *TagCache) loadFromDisk(ctx context.Context, allServices bool) (*messages.TagCache, error) {
 	path, err := c.fs.RootRelToAbs(tagCacheFilename)
 	if err != nil {
-		return nil, err
+		return nil, errors.Annotate(err, "bad tag cache path").Tag(cipderr.BadArgument).Err()
 	}
 
 	blob, err := ioutil.ReadFile(path)
@@ -348,7 +350,7 @@ func (c *TagCache) loadFromDisk(ctx context.Context, allServices bool) (*message
 	case os.IsNotExist(err):
 		return &messages.TagCache{}, nil
 	case err != nil:
-		return nil, err
+		return nil, errors.Annotate(err, "reading tag cache").Tag(cipderr.IO).Err()
 	}
 
 	// Just ignore the corrupted cache file.
@@ -379,13 +381,17 @@ func (c *TagCache) loadFromDisk(ctx context.Context, allServices bool) (*message
 func (c *TagCache) dumpToDisk(ctx context.Context, msg *messages.TagCache) error {
 	path, err := c.fs.RootRelToAbs(tagCacheFilename)
 	if err != nil {
-		return err
+		return errors.Annotate(err, "bad tag cache path").Tag(cipderr.BadArgument).Err()
 	}
 
 	blob, err := MarshalWithSHA256(msg)
 	if err != nil {
-		return err
+		return errors.Annotate(err, "serializing tag cache").Tag(cipderr.BadArgument).Err()
 	}
 
-	return fs.EnsureFile(ctx, c.fs, path, bytes.NewReader(blob))
+	if err := fs.EnsureFile(ctx, c.fs, path, bytes.NewReader(blob)); err != nil {
+		return errors.Annotate(err, "writing tag cache").Tag(cipderr.IO).Err()
+	}
+
+	return nil
 }

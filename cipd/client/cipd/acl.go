@@ -15,10 +15,12 @@
 package cipd
 
 import (
-	"fmt"
 	"time"
 
+	"go.chromium.org/luci/common/errors"
+
 	api "go.chromium.org/luci/cipd/api/cipd/v1"
+	"go.chromium.org/luci/cipd/common/cipderr"
 )
 
 // Helper structs and functions for working with package ACLs.
@@ -102,7 +104,7 @@ func mutateACLs(meta *api.PrefixMetadata, changes []PackageACLChange) (dirty boo
 	for _, ch := range changes {
 		role := api.Role(api.Role_value[ch.Role])
 		if role == 0 {
-			return dirty, fmt.Errorf("unrecognized role %q, not in the API definition", ch.Role)
+			return dirty, errors.Reason("unrecognized role %q, not in the API definition", ch.Role).Tag(cipderr.BadArgument).Err()
 		}
 		changed := false
 		switch ch.Action {
@@ -111,7 +113,7 @@ func mutateACLs(meta *api.PrefixMetadata, changes []PackageACLChange) (dirty boo
 		case RevokeRole:
 			changed = revokeRole(meta, role, ch.Principal)
 		default:
-			return dirty, fmt.Errorf("unrecognized PackageACLChangeAction %q", ch.Action)
+			return dirty, errors.Reason("unrecognized PackageACLChangeAction %q", ch.Action).Tag(cipderr.BadArgument).Err()
 		}
 		dirty = dirty || changed
 	}

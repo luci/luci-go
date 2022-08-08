@@ -475,7 +475,7 @@ func TestExistingDestination(t *testing.T) {
 
 			// Open same file (perhaps via lexically different path).
 			_, err = dest.CreateFile(ctx, "a/b/d/../c", CreateFileOptions{})
-			So(err.Error(), ShouldEqual, "file a/b/d/../c is already open")
+			So(err.Error(), ShouldEqual, `"a/b/d/../c": already open`)
 
 			So(wr.Close(), ShouldBeNil)
 

@@ -15,7 +15,8 @@
 package deployer
 
 import (
-	"fmt"
+	"go.chromium.org/luci/cipd/common/cipderr"
+	"go.chromium.org/luci/common/errors"
 )
 
 // ParanoidMode specifies how paranoid CIPD client should be.
@@ -49,6 +50,6 @@ func (p ParanoidMode) Validate() error {
 	case NotParanoid, CheckPresence, CheckIntegrity:
 		return nil
 	default:
-		return fmt.Errorf("unrecognized paranoid mode %q", p)
+		return errors.Reason("unrecognized paranoid mode %q", p).Tag(cipderr.BadArgument).Err()
 	}
 }

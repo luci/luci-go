@@ -18,6 +18,9 @@ import (
 	"encoding/json"
 	"io"
 	"io/ioutil"
+
+	"go.chromium.org/luci/cipd/common/cipderr"
+	"go.chromium.org/luci/common/errors"
 )
 
 const (
@@ -100,20 +103,26 @@ type VersionFile struct {
 }
 
 // ReadManifest reads and decodes manifest JSON from io.Reader.
-func ReadManifest(r io.Reader) (manifest Manifest, err error) {
+func ReadManifest(r io.Reader) (Manifest, error) {
 	blob, err := ioutil.ReadAll(r)
-	if err == nil {
-		err = json.Unmarshal(blob, &manifest)
+	if err != nil {
+		return Manifest{}, errors.Annotate(err, "reading manifest file").Tag(cipderr.IO).Err()
 	}
-	return
+	var manifest Manifest
+	if err := json.Unmarshal(blob, &manifest); err != nil {
+		return Manifest{}, errors.Annotate(err, "parsing manifest").Tag(cipderr.BadArgument).Err()
+	}
+	return manifest, nil
 }
 
 // WriteManifest encodes and writes manifest JSON to io.Writer.
 func WriteManifest(m *Manifest, w io.Writer) error {
 	data, err := json.MarshalIndent(m, "", "  ")
 	if err != nil {
-		return err
+		return errors.Annotate(err, "serializing manifest").Tag(cipderr.BadArgument).Err()
 	}
-	_, err = w.Write(data)
-	return err
+	if _, err = w.Write(data); err != nil {
+		return errors.Annotate(err, "writing manifest file").Tag(cipderr.IO).Err()
+	}
+	return nil
 }

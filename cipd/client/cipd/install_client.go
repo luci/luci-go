@@ -19,30 +19,32 @@ package cipd
 
 import (
 	"context"
-	"fmt"
 	"hash"
 	"os"
 
+	"go.chromium.org/luci/common/errors"
+
 	"go.chromium.org/luci/cipd/client/cipd/fs"
 	"go.chromium.org/luci/cipd/common"
+	"go.chromium.org/luci/cipd/common/cipderr"
 )
 
-func (client *clientImpl) installClient(ctx context.Context, fs fs.FileSystem, h hash.Hash, fetchURL, destination, hexDigest string) error {
+func (c *clientImpl) installClient(ctx context.Context, fs fs.FileSystem, h hash.Hash, fetchURL, destination, hexDigest string) error {
 	curStat, err := os.Stat(destination)
 	if err != nil {
-		return err
+		return errors.Annotate(err, "checking old client binary file").Tag(cipderr.IO).Err()
 	}
 
 	return fs.EnsureFile(ctx, destination, func(of *os.File) error {
 		if err := of.Chmod(curStat.Mode()); err != nil {
-			return err
+			return errors.Annotate(err, "changing new client binary mode").Tag(cipderr.IO).Err()
 		}
 		// TODO(iannucci): worry about owner/group?
-		if err := client.storage.download(ctx, fetchURL, of, h); err != nil {
+		if err := c.storage.download(ctx, fetchURL, of, h); err != nil {
 			return err
 		}
 		if got := common.HexDigest(h); got != hexDigest {
-			return fmt.Errorf("file hash mismatch: expecting %q, got %q", hexDigest, got)
+			return errors.Reason("client binary file hash mismatch: expecting %q, got %q", hexDigest, got).Tag(cipderr.HashMismatch).Err()
 		}
 		return nil
 	})

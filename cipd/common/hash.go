@@ -20,9 +20,6 @@ import (
 	"hash"
 	"reflect"
 
-	"go.chromium.org/luci/common/errors"
-	"go.chromium.org/luci/grpc/grpcutil"
-
 	api "go.chromium.org/luci/cipd/api/cipd/v1"
 )
 
@@ -77,11 +74,9 @@ func MustNewHash(algo api.HashAlgo) hash.Hash {
 func ValidateHashAlgo(h api.HashAlgo) error {
 	switch {
 	case h == api.HashAlgo_HASH_ALGO_UNSPECIFIED:
-		return errors.Reason("the hash algorithm is not specified or unrecognized").
-			Tag(grpcutil.InvalidArgumentTag).Err()
+		return validationErr("the hash algorithm is not specified or unrecognized")
 	case int(h) >= len(supportedAlgos) || supportedAlgos[h].hash == nil:
-		return errors.Reason("unsupported hash algorithm %d", h).
-			Tag(grpcutil.InvalidArgumentTag).Err()
+		return validationErr("unsupported hash algorithm %d", h)
 	}
 	return nil
 }

@@ -25,6 +25,7 @@ import (
 	"go.chromium.org/luci/common/iotools"
 
 	"go.chromium.org/luci/cipd/common"
+	"go.chromium.org/luci/cipd/common/cipderr"
 )
 
 // VersionsFile contains a mapping "(package name, version) -> instance ID" used
@@ -79,7 +80,7 @@ func (v VersionsFile) AddVersion(pkg, ver, iid string) error {
 		if ver != iid {
 			return errors.Reason(
 				"version given as instance ID (%q) should resolve into that ID, not into %q",
-				ver, iid).Err()
+				ver, iid).Tag(cipderr.BadArgument).Err()
 		}
 		return nil
 	}
@@ -99,7 +100,11 @@ func (v VersionsFile) ResolveVersion(pkg, ver string) (common.Pin, error) {
 	if iid, ok := v[unresolvedVer{pkg, ver}]; ok {
 		return common.Pin{PackageName: pkg, InstanceID: iid}, nil
 	}
-	return common.Pin{}, errors.Reason("not in the versions file").Err()
+	return common.Pin{}, errors.Reason("not in the versions file").
+		Tag(cipderr.InvalidVersion.WithDetails(cipderr.Details{
+			Package: pkg,
+			Version: ver,
+		})).Err()
 }
 
 // Equal returns true if version files have same entries.
@@ -137,6 +142,9 @@ func (v VersionsFile) Serialize(w io.Writer) error {
 		}
 		return nil
 	})
+	if err != nil {
+		return errors.Annotate(err, "writing versions file").Tag(cipderr.IO).Err()
+	}
 	return err
 }
 
@@ -147,7 +155,7 @@ func ParseVersionsFile(r io.Reader) (VersionsFile, error) {
 	lineNo := 0
 	makeError := func(fmtStr string, args ...interface{}) error {
 		args = append([]interface{}{lineNo}, args...)
-		return fmt.Errorf("failed to parse versions file (line %d): "+fmtStr, args...)
+		return errors.Reason("failed to parse versions file (line %d): "+fmtStr, args...).Tag(cipderr.BadArgument).Err()
 	}
 
 	const (
@@ -222,7 +230,7 @@ func ParseVersionsFile(r io.Reader) (VersionsFile, error) {
 	}
 
 	if err := scanner.Err(); err != nil {
-		return nil, err
+		return nil, errors.Annotate(err, "failed to read the versions file").Tag(cipderr.IO).Err()
 	}
 	return res, nil
 }

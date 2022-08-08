@@ -337,7 +337,7 @@ func TestRegisterInstance(t *testing.T) {
 				Status: api.UploadStatus_PUBLISHED,
 			}))
 			repo.expect(registerInstanceRPC(api.RegistrationStatus_NOT_UPLOADED, &op))
-			So(client.RegisterInstance(ctx, inst.Pin(), inst.Source(), 0), ShouldEqual, ErrBadUpload)
+			So(client.RegisterInstance(ctx, inst.Pin(), inst.Source(), 0), ShouldErrLike, "servers asks us to upload it again")
 		})
 
 		Convey("Verification timeout", func() {
@@ -345,7 +345,7 @@ func TestRegisterInstance(t *testing.T) {
 			cas.expectMany(finishUploadRPC(op.OperationId, &api.UploadOperation{
 				Status: api.UploadStatus_VERIFYING,
 			}))
-			So(client.RegisterInstance(ctx, inst.Pin(), inst.Source(), 0), ShouldEqual, ErrFinalizationTimeout)
+			So(client.RegisterInstance(ctx, inst.Pin(), inst.Source(), 0), ShouldErrLike, "timeout while waiting")
 		})
 	})
 }
@@ -441,21 +441,21 @@ func TestAttachingStuffWhenReady(t *testing.T) {
 			rpc := createRefRPC()
 			rpc.err = status.Errorf(codes.FailedPrecondition, "not ready")
 			repo.expectMany(rpc)
-			So(client.SetRefWhenReady(ctx, "zzz", pin), ShouldEqual, ErrProcessingTimeout)
+			So(client.SetRefWhenReady(ctx, "zzz", pin), ShouldErrLike, "timeout")
 		})
 
 		Convey("AttachTagsWhenReady timeout", func() {
 			rpc := attachTagsRPC()
 			rpc.err = status.Errorf(codes.FailedPrecondition, "not ready")
 			repo.expectMany(rpc)
-			So(client.AttachTagsWhenReady(ctx, pin, []string{"k1:v1", "k2:v2"}), ShouldEqual, ErrProcessingTimeout)
+			So(client.AttachTagsWhenReady(ctx, pin, []string{"k1:v1", "k2:v2"}), ShouldErrLike, "timeout")
 		})
 
 		Convey("AttachMetadataWhenReady timeout", func() {
 			rpc := attachMetadataRPC()
 			rpc.err = status.Errorf(codes.FailedPrecondition, "not ready")
 			repo.expectMany(rpc)
-			So(client.AttachMetadataWhenReady(ctx, pin, cannedMD), ShouldEqual, ErrProcessingTimeout)
+			So(client.AttachMetadataWhenReady(ctx, pin, cannedMD), ShouldErrLike, "timeout")
 		})
 
 		Convey("SetRefWhenReady fatal RPC err", func() {
@@ -1499,7 +1499,7 @@ func TestNewClientFromEnv(t *testing.T) {
 			ctx := env.SetInCtx(ctx)
 
 			_, err := NewClientFromEnv(ctx, ClientOptions{mockedConfigFile: cfg})
-			So(err, ShouldErrLike, "failed to load CIPD config")
+			So(err, ShouldErrLike, "loading CIPD config")
 		})
 
 		Convey("CIPD_CONFIG_FILE is not absolute", func() {

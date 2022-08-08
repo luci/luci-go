@@ -15,7 +15,6 @@
 package ensure
 
 import (
-	"fmt"
 	"net/url"
 	"strings"
 
@@ -25,6 +24,7 @@ import (
 	"go.chromium.org/luci/cipd/client/cipd/pkg"
 	"go.chromium.org/luci/cipd/client/cipd/template"
 	"go.chromium.org/luci/cipd/common"
+	"go.chromium.org/luci/cipd/common/cipderr"
 )
 
 // an itemParser should parse the value from `val`, and update s or
@@ -54,10 +54,10 @@ func subdirParser(s *itemParserState, _ *File, val string) (err error) {
 
 func serviceURLParser(_ *itemParserState, f *File, val string) error {
 	if f.ServiceURL != "" {
-		return fmt.Errorf("$ServiceURL may only be set once per file")
+		return errors.Reason("$ServiceURL may only be set once per file").Tag(cipderr.BadArgument).Err()
 	}
 	if _, err := url.Parse(val); err != nil {
-		return fmt.Errorf("expecting '$ServiceURL <url>' but url is invalid: %s", err)
+		return errors.Annotate(err, "expecting '$ServiceURL <url>' but url is invalid").Tag(cipderr.BadArgument).Err()
 	}
 	f.ServiceURL = val
 	return nil
@@ -69,7 +69,7 @@ func verifyParser(_ *itemParserState, f *File, val string) error {
 	for i, field := range fields {
 		var err error
 		if plats[i], err = template.ParsePlatform(field); err != nil {
-			return fmt.Errorf("invalid platform entry #%d, should be <os>-<arch>, not %q", i+1, field)
+			return errors.Annotate(err, "invalid platform entry #%d", i+1).Err()
 		}
 	}
 	f.VerifyPlatforms = append(f.VerifyPlatforms, plats...)
@@ -79,7 +79,7 @@ func verifyParser(_ *itemParserState, f *File, val string) error {
 func paranoidModeParser(_ *itemParserState, f *File, val string) error {
 	p := deployer.ParanoidMode(val)
 	if err := p.Validate(); err != nil {
-		return fmt.Errorf("bad $ParanoidMode: %s", err)
+		return errors.Annotate(err, "bad $ParanoidMode").Err()
 	}
 	f.ParanoidMode = p
 	return nil
@@ -96,7 +96,7 @@ func overrideInstallModeParser(_ *itemParserState, f *File, val string) error {
 		return err
 	}
 	if im != pkg.InstallModeCopy {
-		return errors.New("only copy mode is allowed")
+		return errors.Reason("only copy mode is allowed").Tag(cipderr.BadArgument).Err()
 	}
 	f.OverrideInstallMode = im
 	return nil

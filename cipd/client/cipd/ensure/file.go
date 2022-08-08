@@ -32,6 +32,7 @@ import (
 	"go.chromium.org/luci/cipd/client/cipd/pkg"
 	"go.chromium.org/luci/cipd/client/cipd/template"
 	"go.chromium.org/luci/cipd/common"
+	"go.chromium.org/luci/cipd/common/cipderr"
 )
 
 // File is an in-process representation of the 'ensure file' format.
@@ -63,7 +64,7 @@ func ParseFile(r io.Reader) (*File, error) {
 	lineNo := 0
 	makeError := func(fmtStr string, args ...interface{}) error {
 		args = append([]interface{}{lineNo}, args...)
-		return fmt.Errorf("failed to parse desired state (line %d): "+fmtStr, args...)
+		return errors.Reason("failed to parse desired state (line %d): "+fmtStr, args...).Tag(cipderr.BadArgument).Err()
 	}
 
 	scanner := bufio.NewScanner(r)
@@ -112,7 +113,7 @@ func ParseFile(r io.Reader) (*File, error) {
 		}
 	}
 	if err := scanner.Err(); err != nil {
-		return nil, err
+		return nil, errors.Annotate(err, "failed to read the ensure file").Tag(cipderr.IO).Err()
 	}
 
 	return ret, nil
@@ -174,14 +175,14 @@ func (f *File) Resolve(rslv VersionResolver, expander template.Expander) (*Resol
 	if f.ServiceURL != "" {
 		// double check the url
 		if _, err := url.Parse(f.ServiceURL); err != nil {
-			return nil, errors.Annotate(err, "bad ServiceURL").Err()
+			return nil, errors.Annotate(err, "bad ServiceURL").Tag(cipderr.BadArgument).Err()
 		}
 	}
 
 	ret.ParanoidMode = deployer.NotParanoid
 	if f.ParanoidMode != "" {
 		if err := f.ParanoidMode.Validate(); err != nil {
-			return nil, errors.Annotate(err, "bad ParanoidMode").Err()
+			return nil, err
 		}
 		ret.ParanoidMode = f.ParanoidMode
 	}
@@ -282,7 +283,7 @@ func (f *File) Resolve(rslv VersionResolver, expander template.Expander) (*Resol
 		if origLineNo, ok := resolvedPkgDupList[p.subdir][p.pkg]; ok {
 			merr = append(merr, errors.
 				Reason("duplicate package in subdir %q: %q: defined on line %d and %d",
-					p.subdir, p.pkg, origLineNo, p.def.LineNo).Err())
+					p.subdir, p.pkg, origLineNo, p.def.LineNo).Tag(cipderr.BadArgument).Err())
 			continue
 		}
 
@@ -386,5 +387,8 @@ func (f *File) Serialize(w io.Writer) error {
 		maybeAddNL()
 		return nil
 	})
-	return err
+	if err != nil {
+		return errors.Annotate(err, "failed to write resolved ensure file").Tag(cipderr.IO).Err()
+	}
+	return nil
 }

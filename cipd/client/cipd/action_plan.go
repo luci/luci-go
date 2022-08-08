@@ -23,6 +23,7 @@ import (
 	"go.chromium.org/luci/common/logging"
 
 	"go.chromium.org/luci/cipd/common"
+	"go.chromium.org/luci/cipd/common/cipderr"
 )
 
 // Helper structs and implementation guts of EnsurePackages call.
@@ -113,9 +114,11 @@ func (p *RepairPlan) NumBrokenFiles() int {
 
 // ActionError holds an error that happened when working on the pin.
 type ActionError struct {
-	Action ActionKind `json:"action"`
-	Pin    common.Pin `json:"pin"`
-	Error  JSONError  `json:"error,omitempty"`
+	Action       ActionKind       `json:"action"`
+	Pin          common.Pin       `json:"pin"`
+	Error        JSONError        `json:"error,omitempty"`         // human readable message
+	ErrorCode    cipderr.Code     `json:"error_code,omitempty"`    // enum with categories
+	ErrorDetails *cipderr.Details `json:"error_details,omitempty"` // structured details
 }
 
 // ActionMap is a map of subdir to the Actions which will occur within it.

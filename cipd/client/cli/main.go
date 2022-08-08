@@ -59,6 +59,7 @@ import (
 	"go.chromium.org/luci/cipd/client/cipd/template"
 	"go.chromium.org/luci/cipd/client/cipd/ui"
 	"go.chromium.org/luci/cipd/common"
+	"go.chromium.org/luci/cipd/common/cipderr"
 )
 
 // TODO(vadimsh): Add some tests.
@@ -74,7 +75,7 @@ const envSimpleTerminalUI = "CIPD_SIMPLE_TERMINAL_UI"
 func expandTemplate(tmpl string) (pkg string, err error) {
 	pkg, err = template.DefaultExpander().Expand(tmpl)
 	if err != nil {
-		err = commandLineError{err}
+		err = cliErrorTag.Apply(err)
 	}
 	return
 }
@@ -104,8 +105,15 @@ type pinInfo struct {
 	Platform string `json:"platform,omitempty"`
 	// Tracking is what ref is being tracked by that package in the site root.
 	Tracking string `json:"tracking,omitempty"`
-	// Err is not empty if pin related operation failed. Pin is nil in that case.
-	Err string `json:"error,omitempty"`
+	// Error is not empty if pin related operation failed. Pin is nil in that case.
+	Error string `json:"error,omitempty"`
+	// ErrorCode is an enumeration with possible error conditions.
+	ErrorCode cipderr.Code `json:"error_code,omitempty"`
+	// ErrorDetails are structured error details.
+	ErrorDetails *cipderr.Details `json:"error_details,omitempty"`
+
+	// The original annotated error.
+	err error `json:"-"`
 }
 
 type instanceInfoWithRefs struct {
@@ -214,9 +222,9 @@ func (c *cipdSubcommand) checkArgs(args []string, minPosCount, maxPosCount int) 
 	return true
 }
 
-// printError prints error to stderr (recognizing commandLineError).
+// printError prints error to stderr (recognizing cliErrorTag).
 func (c *cipdSubcommand) printError(err error) {
-	if _, ok := err.(commandLineError); ok {
+	if cliErrorTag.In(err) {
 		fmt.Fprintf(os.Stderr, "Bad command line: %s.\n\n", err)
 		c.Flags.Usage()
 		return
@@ -243,11 +251,15 @@ func (c *cipdSubcommand) writeJSONOutput(result interface{}, err error) error {
 
 	// Prepare the body of the output file.
 	var body struct {
-		Error  string      `json:"error,omitempty"`
-		Result interface{} `json:"result,omitempty"`
+		Error        string           `json:"error,omitempty"`         // human-readable message
+		ErrorCode    cipderr.Code     `json:"error_code,omitempty"`    // error code enum, omitted on success
+		ErrorDetails *cipderr.Details `json:"error_details,omitempty"` // structured error details
+		Result       interface{}      `json:"result,omitempty"`
 	}
 	if err != nil {
 		body.Error = err.Error()
+		body.ErrorCode = cipderr.ToCode(err)
+		body.ErrorDetails = cipderr.ToDetails(err)
 	}
 	body.Result = result
 	out, e := json.MarshalIndent(&body, "", "  ")
@@ -296,32 +308,43 @@ func (c *cipdSubcommand) doneWithPins(pins []pinInfo, err error) int {
 // doneWithPinMap is a handy shortcut that prints the subdir->pinInfo map and
 // deduces process exit code based on presence of errors there.
 func (c *cipdSubcommand) doneWithPinMap(pins map[string][]pinInfo, err error) int {
-	if len(pins) == 0 {
-		if err == nil { // this error will be printed in c.done(...)
-			fmt.Println("No packages.")
-		}
-	} else {
-		printPinsAndError(pins)
+	// If have an overall (not pin-specific error), print it before pin errors.
+	if err != nil {
+		c.printError(err)
 	}
-	if ret := c.done(pins, err); ret != 0 {
-		return ret
-	}
-	for _, infos := range pins {
-		if hasErrors(infos) {
-			return 1
+	printPinsAndError(pins)
+
+	// If have no overall error, hoist all pin errors up top, so we have a final
+	// overall error for writeJSONOutput, otherwise it may look as if the call
+	// succeeded.
+	if err == nil {
+		var merr errors.MultiError
+		for _, pinSlice := range pins {
+			for _, pin := range pinSlice {
+				if pin.err != nil {
+					merr = append(merr, pin.err)
+				}
+			}
 		}
+		if len(merr) != 0 {
+			err = merr
+		}
+	}
+
+	// Dump all this to JSON. Note we don't use done(...) to avoid printing the
+	// error again.
+	if c.writeJSONOutput(pins, err) != nil {
+		return 1
 	}
 	return 0
 }
 
-// commandLineError is used to tag errors related to CLI.
-type commandLineError struct {
-	error
-}
+// cliErrorTag is used to tag errors related to CLI.
+var cliErrorTag = errors.BoolTag{Key: errors.NewTagKey("CIPD CLI error")}
 
-// makeCLIError returns new commandLineError.
+// makeCLIError returns a new error tagged with cliErrorTag and BadArgument.
 func makeCLIError(msg string, args ...interface{}) error {
-	return commandLineError{fmt.Errorf(msg, args...)}
+	return errors.Reason(msg, args...).Tag(cliErrorTag, cipderr.BadArgument).Err()
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -409,11 +432,11 @@ func (opts *clientOptions) registerFlags(f *flag.FlagSet, params Parameters, roo
 func (opts *clientOptions) toCIPDClientOpts(ctx context.Context) (cipd.ClientOptions, error) {
 	authOpts, err := opts.authFlags.Options()
 	if err != nil {
-		return cipd.ClientOptions{}, err
+		return cipd.ClientOptions{}, errors.Annotate(err, "bad auth options").Tag(cipderr.BadArgument).Err()
 	}
 	client, err := auth.NewAuthenticator(ctx, auth.OptionalLogin, authOpts).Client()
 	if err != nil {
-		return cipd.ClientOptions{}, err
+		return cipd.ClientOptions{}, errors.Annotate(err, "initializing auth client").Tag(cipderr.Auth).Err()
 	}
 
 	realOpts := cipd.ClientOptions{
@@ -571,7 +594,10 @@ func (opts *inputOptions) prepareInput() (builder.Options, error) {
 		// Parse the file, perform variable substitution.
 		f, err := os.Open(opts.packageDef)
 		if err != nil {
-			return empty, err
+			if os.IsNotExist(err) {
+				return empty, errors.Annotate(err, "package definition file is missing").Tag(cipderr.BadArgument).Err()
+			}
+			return empty, errors.Annotate(err, "opening package definition file").Tag(cipderr.IO).Err()
 		}
 		defer f.Close()
 		pkgDef, err := builder.LoadPackageDef(f, opts.vars)
@@ -613,7 +639,7 @@ func (refs *refList) String() string {
 func (refs *refList) Set(value string) error {
 	err := common.ValidatePackageRef(value)
 	if err != nil {
-		return commandLineError{err}
+		return cliErrorTag.Apply(err)
 	}
 	*refs = append(*refs, value)
 	return nil
@@ -643,7 +669,7 @@ func (tags *tagList) String() string {
 func (tags *tagList) Set(value string) error {
 	err := common.ValidateInstanceTag(value)
 	if err != nil {
-		return commandLineError{err}
+		return cliErrorTag.Apply(err)
 	}
 	*tags = append(*tags, value)
 	return nil
@@ -702,14 +728,14 @@ func (md *metadataList) Set(value string) error {
 
 	// Validate everything we can.
 	if err := common.ValidateInstanceMetadataKey(key); err != nil {
-		return commandLineError{err}
+		return cliErrorTag.Apply(err)
 	}
 	if err := common.ValidateContentType(contentType); err != nil {
-		return commandLineError{err}
+		return cliErrorTag.Apply(err)
 	}
 	if md.valueKind == "value" {
 		if err := common.ValidateInstanceMetadataLen(len(value)); err != nil {
-			return commandLineError{err}
+			return cliErrorTag.Apply(err)
 		}
 	}
 
@@ -776,7 +802,7 @@ func (opts *metadataOptions) load(ctx context.Context) ([]cipd.Metadata, error) 
 		}
 		var err error
 		if entry.Value, err = loadMetadataFromFile(ctx, md.key, md.value); err != nil {
-			return nil, makeCLIError("when loading metadata from %q: %s", md.value, err)
+			return nil, err
 		}
 		// Guess the content type from the file extension and its body.
 		if entry.ContentType == "" {
@@ -798,7 +824,10 @@ func loadMetadataFromFile(ctx context.Context, key, path string) ([]byte, error)
 		var err error
 		file, err = os.Open(path)
 		if err != nil {
-			return nil, err
+			if os.IsNotExist(err) {
+				return nil, errors.Annotate(err, "missing metadata file").Tag(cipderr.BadArgument).Err()
+			}
+			return nil, errors.Annotate(err, "reading metadata file").Tag(cipderr.IO).Err()
 		}
 		defer file.Close()
 	}
@@ -807,10 +836,10 @@ func loadMetadataFromFile(ctx context.Context, key, path string) ([]byte, error)
 	switch _, err := io.CopyN(&buf, file, common.MetadataMaxLen+1); {
 	case err == nil:
 		// Successfully read more than needed => the file size is too large.
-		return nil, fmt.Errorf("the metadata value is too long, should be <=%d bytes", common.MetadataMaxLen)
+		return nil, errors.Reason("the metadata value in %q is too long, should be <=%d bytes", path, common.MetadataMaxLen).Tag(cipderr.BadArgument).Err()
 	case err != io.EOF:
 		// Failed with some unexpected read error.
-		return nil, err
+		return nil, errors.Annotate(err, "error reading metadata from %q", path).Tag(cipderr.IO).Err()
 	default:
 		return buf.Bytes(), nil
 	}
@@ -867,7 +896,7 @@ func (ha *hashAlgoFlag) String() string {
 func (ha *hashAlgoFlag) Set(value string) error {
 	val := api.HashAlgo_value[strings.ToUpper(value)]
 	if val == 0 {
-		return fmt.Errorf("unknown hash algo %q, should be one of: %s", value, allAlgos)
+		return makeCLIError("unknown hash algo %q, should be one of: %s", value, allAlgos)
 	}
 	*ha = hashAlgoFlag(val)
 	return nil
@@ -969,7 +998,7 @@ func (opts *ensureFileOptions) loadEnsureFile(ctx context.Context, clientOpts *c
 		logging.Errorf(ctx,
 			"For this feature to work, verification platforms must be specified in "+
 				"the ensure file using one or more $VerifiedPlatform directives.")
-		return nil, errors.New("no verification platforms configured")
+		return nil, errors.Reason("no verification platforms configured").Tag(cipderr.BadArgument).Err()
 	}
 
 	if parseVers && parsedFile.ResolvedVersions != "" {
@@ -1013,7 +1042,10 @@ func expandPkgDir(ctx context.Context, c cipd.Client, packagePrefix string) ([]s
 		}
 	}
 	if len(out) == 0 {
-		return nil, fmt.Errorf("no packages under %s", packagePrefix)
+		return nil, errors.Reason("no packages under %s", packagePrefix).
+			Tag(cipderr.RPC.WithDetails(cipderr.Details{
+				Package: packagePrefix,
+			})).Err()
 	}
 	return out, nil
 }
@@ -1038,7 +1070,13 @@ func performBatchOperation(ctx context.Context, op batchOperation) ([]pinInfo, e
 	return callConcurrently(pkgs, func(pkg string) pinInfo {
 		pin, err := op.callback(pkg)
 		if err != nil {
-			return pinInfo{Pkg: pkg, Err: err.Error()}
+			return pinInfo{
+				Pkg:          pkg,
+				Error:        err.Error(),
+				ErrorCode:    cipderr.ToCode(err),
+				ErrorDetails: cipderr.ToDetails(err),
+				err:          err,
+			}
 		}
 		return pinInfo{Pkg: pkg, Pin: &pin}
 	}), nil
@@ -1071,7 +1109,7 @@ func printPinsAndError(pinMap map[string][]pinInfo) {
 		hasPins := false
 		hasErrors := false
 		for _, p := range pins {
-			if p.Err != "" {
+			if p.Error != "" {
 				hasErrors = true
 			} else if p.Pin != nil {
 				hasPins = true
@@ -1086,7 +1124,7 @@ func printPinsAndError(pinMap map[string][]pinInfo) {
 		if hasPins {
 			fmt.Printf("Packages%s:\n", subdirString)
 			for _, p := range pins {
-				if p.Err != "" || p.Pin == nil {
+				if p.Error != "" || p.Pin == nil {
 					continue
 				}
 				plat := ""
@@ -1103,8 +1141,8 @@ func printPinsAndError(pinMap map[string][]pinInfo) {
 		if hasErrors {
 			fmt.Fprintf(os.Stderr, "Errors%s:\n", subdirString)
 			for _, p := range pins {
-				if p.Err != "" {
-					fmt.Fprintf(os.Stderr, "  %s: %s.\n", p.Pkg, p.Err)
+				if p.Error != "" {
+					fmt.Fprintf(os.Stderr, "  %s: %s.\n", p.Pkg, p.Error)
 				}
 			}
 		}
@@ -1113,7 +1151,7 @@ func printPinsAndError(pinMap map[string][]pinInfo) {
 
 func hasErrors(pins []pinInfo) bool {
 	for _, p := range pins {
-		if p.Err != "" {
+		if p.Error != "" {
 			return true
 		}
 	}
@@ -1183,10 +1221,10 @@ func resolvedFilesToPinMap(res map[template.Platform]*ensure.ResolvedFile) map[s
 func loadVersionsFile(path, ensureFile string) (ensure.VersionsFile, error) {
 	switch f, err := os.Open(path); {
 	case os.IsNotExist(err):
-		return nil, fmt.Errorf("the resolved versions file doesn't exist, "+
-			"use 'cipd ensure-file-resolve -ensure-file %q' to generate it", ensureFile)
+		return nil, errors.Reason("the resolved versions file doesn't exist, "+
+			"use 'cipd ensure-file-resolve -ensure-file %q' to generate it", ensureFile).Tag(cipderr.BadArgument).Err()
 	case err != nil:
-		return nil, err
+		return nil, errors.Annotate(err, "reading resolved versions file").Tag(cipderr.IO).Err()
 	default:
 		defer f.Close()
 		return ensure.ParseVersionsFile(f)
@@ -1198,7 +1236,10 @@ func saveVersionsFile(path string, v ensure.VersionsFile) error {
 	if err := v.Serialize(&buf); err != nil {
 		return err
 	}
-	return ioutil.WriteFile(path, buf.Bytes(), 0666)
+	if err := ioutil.WriteFile(path, buf.Bytes(), 0666); err != nil {
+		return errors.Annotate(err, "writing versions file").Tag(cipderr.IO).Err()
+	}
+	return nil
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -1251,11 +1292,15 @@ func (c *createRun) Run(a subcommands.Application, args []string, env subcommand
 func buildAndUploadInstance(ctx context.Context, opts *createOpts) (common.Pin, error) {
 	f, err := ioutil.TempFile("", "cipd_pkg")
 	if err != nil {
-		return common.Pin{}, err
+		return common.Pin{}, errors.Annotate(err, "creating temp instance file").Tag(cipderr.IO).Err()
 	}
 	defer func() {
-		f.Close()
-		os.Remove(f.Name())
+		// Note: we don't care about errors here since this file is used only as
+		// a temporary buffer between buildInstanceFile and registerInstanceFile.
+		// These functions check that everything was uploaded correctly using
+		// hashes.
+		_ = f.Close()
+		_ = os.Remove(f.Name())
 	}()
 	pin, err := buildInstanceFile(ctx, f.Name(), opts.inputOptions, opts.hashAlgo())
 	if err != nil {
@@ -1424,7 +1469,11 @@ func ensurePackages(ctx context.Context, ef *ensure.File, ensureFileOut string, 
 		resolved.ParanoidMode = ""
 		if err = resolved.Serialize(&buf); err == nil {
 			err = ioutil.WriteFile(ensureFileOut, buf.Bytes(), 0666)
+			if err != nil {
+				err = errors.Annotate(err, "writing resolved ensure file").Tag(cipderr.IO).Err()
+			}
 		}
+
 	}
 
 	return resolved.PackagesBySubdir, actions, err
@@ -1481,9 +1530,9 @@ func (c *ensureFileVerifyRun) Run(a subcommands.Application, args []string, env 
 	case err != nil:
 		return c.done(nil, err)
 	case !existing.Equal(versions):
-		return c.done(nil, fmt.Errorf("the resolved versions file %s is stale, "+
+		return c.done(nil, errors.Reason("the resolved versions file %s is stale, "+
 			"use 'cipd ensure-file-resolve -ensure-file %q' to update it",
-			filepath.Base(ef.ResolvedVersions), c.ensureFile))
+			filepath.Base(ef.ResolvedVersions), c.ensureFile).Tag(cipderr.Stale).Err())
 	default:
 		return c.doneWithPinMap(pinMap, err)
 	}
@@ -1530,7 +1579,7 @@ func (c *ensureFileResolveRun) Run(a subcommands.Application, args []string, env
 		logging.Errorf(ctx,
 			"The ensure file doesn't have $ResolvedVersion directive that specifies "+
 				"where to put the resolved package versions, so it can't be resolved.")
-		return c.done(nil, errors.New("no resolved versions file configured"))
+		return c.done(nil, errors.Reason("no resolved versions file configured").Tag(cipderr.BadArgument).Err())
 	}
 
 	pinMap, versions, err := resolveEnsureFile(ctx, ef, c.clientOptions)
@@ -1725,13 +1774,10 @@ func (c *exportRun) Run(a subcommands.Application, args []string, env subcommand
 	fsystem := fs.NewFileSystem(c.rootDir, "")
 	ssd, err := fsystem.RootRelToAbs(fs.SiteServiceDir)
 	if err != nil {
-		logging.Errorf(ctx, "Unable to resolve service dir: %s", err)
-		return c.done(pins, err)
+		err = errors.Annotate(err, "unable to resolve service dir").Tag(cipderr.IO).Err()
+	} else if err = fsystem.EnsureDirectoryGone(ctx, ssd); err != nil {
+		err = errors.Annotate(err, "unable to purge service dir").Tag(cipderr.IO).Err()
 	}
-	if err = fsystem.EnsureDirectoryGone(ctx, ssd); err != nil {
-		logging.Errorf(ctx, "Unable to purge service dir: %s", err)
-	}
-
 	return c.done(pins, err)
 }
 
@@ -2049,7 +2095,10 @@ func visitPins(ctx context.Context, args *visitPinsArgs) ([]pinInfo, error) {
 	}
 	if hasErrors(pins) {
 		printPinsAndError(map[string][]pinInfo{"": pins})
-		return nil, fmt.Errorf("can't find %q version in all packages, aborting", args.version)
+		return nil, errors.Reason("can't find %q version in all packages, aborting", args.version).
+			Tag(cipderr.InvalidVersion.WithDetails(cipderr.Details{
+				Version: args.version,
+			})).Err()
 	}
 
 	// Prepare for the next batch call.
@@ -2305,7 +2354,7 @@ func searchInstances(ctx context.Context, packageName string, tags []string, cli
 			fmt.Printf("  %s\n", pin)
 		}
 	}
-	return pins, err
+	return pins, nil
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -2625,7 +2674,7 @@ func buildInstanceFile(ctx context.Context, instanceFile string, inputOpts input
 	// Prepare the destination, update build options with io.Writer to it.
 	out, err := os.OpenFile(instanceFile, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0666)
 	if err != nil {
-		return common.Pin{}, err
+		return common.Pin{}, errors.Annotate(err, "opening instance file for writing").Tag(cipderr.IO).Err()
 	}
 	buildOpts.Output = out
 	buildOpts.HashAlgo = algo
@@ -2640,7 +2689,7 @@ func buildInstanceFile(ctx context.Context, instanceFile string, inputOpts input
 
 	// Make sure it is flushed properly by ensuring Close succeeds.
 	if err := out.Close(); err != nil {
-		return common.Pin{}, err
+		return common.Pin{}, errors.Annotate(err, "flushing built instance file").Tag(cipderr.IO).Err()
 	}
 
 	return pin, nil
@@ -2750,21 +2799,28 @@ func (c *fetchRun) Run(a subcommands.Application, args []string, env subcommands
 	return c.done(fetchInstanceFile(ctx, pkg, c.version, c.outputPath, c.clientOptions))
 }
 
-func fetchInstanceFile(ctx context.Context, packageName, version, instanceFile string, clientOpts clientOptions) (common.Pin, error) {
+func fetchInstanceFile(ctx context.Context, packageName, version, instanceFile string, clientOpts clientOptions) (pin common.Pin, err error) {
 	client, err := clientOpts.makeCIPDClient(ctx)
 	if err != nil {
 		return common.Pin{}, err
 	}
 	defer client.Close(ctx)
 
-	pin, err := client.ResolveVersion(ctx, packageName, version)
+	defer func() {
+		cipderr.AttachDetails(&err, cipderr.Details{
+			Package: packageName,
+			Version: version,
+		})
+	}()
+
+	pin, err = client.ResolveVersion(ctx, packageName, version)
 	if err != nil {
 		return common.Pin{}, err
 	}
 
 	out, err := os.OpenFile(instanceFile, os.O_CREATE|os.O_WRONLY, 0666)
 	if err != nil {
-		return common.Pin{}, err
+		return common.Pin{}, errors.Annotate(err, "opening the instance file for writing").Tag(cipderr.IO).Err()
 	}
 	ok := false
 	defer func() {
@@ -2779,7 +2835,9 @@ func fetchInstanceFile(ctx context.Context, packageName, version, instanceFile s
 		return common.Pin{}, err
 	}
 
-	out.Close()
+	if err := out.Close(); err != nil {
+		return common.Pin{}, errors.Annotate(err, "flushing fetched instance file").Tag(cipderr.IO).Err()
+	}
 	ok = true
 
 	// Print information about the instance. 'FetchInstanceTo' already verified
@@ -2933,7 +2991,10 @@ func registerInstanceFile(ctx context.Context, instanceFile string, knownPin *co
 
 	src, err := pkg.NewFileSource(instanceFile)
 	if err != nil {
-		return common.Pin{}, err
+		if os.IsNotExist(err) {
+			return common.Pin{}, errors.Annotate(err, "missing input instance file").Tag(cipderr.BadArgument).Err()
+		}
+		return common.Pin{}, errors.Annotate(err, "opening input instance file").Tag(cipderr.IO).Err()
 	}
 	defer src.Close(ctx, false)
 
@@ -3146,8 +3207,8 @@ func (c *selfupdateRollRun) Run(a subcommands.Application, args []string, env su
 	// maybe users are using refs and do not move them by convention.
 	switch {
 	case common.ValidateInstanceID(version, common.AnyHash) == nil:
-		return c.done(nil, fmt.Errorf("expecting a version identifier that can be "+
-			"resolved for all per-platform CIPD client packages, not a concrete instance ID"))
+		return c.done(nil, errors.Reason("expecting a version identifier that can be "+
+			"resolved for all per-platform CIPD client packages, not a concrete instance ID").Tag(cipderr.BadArgument).Err())
 	case common.ValidateInstanceTag(version) != nil:
 		fmt.Printf(
 			"WARNING! Version %q is not a tag. The hash pinning in *.digests file is "+
@@ -3164,7 +3225,7 @@ func (c *selfupdateRollRun) Run(a subcommands.Application, args []string, env su
 
 	if c.version != "" {
 		if err := ioutil.WriteFile(c.versionFile, []byte(c.version+"\n"), 0666); err != nil {
-			return c.done(nil, err)
+			return c.done(nil, errors.Annotate(err, "writing the client version file").Tag(cipderr.IO).Err())
 		}
 	}
 
@@ -3187,7 +3248,7 @@ func generateClientDigests(ctx context.Context, client cipd.Client, path, versio
 		return nil, err
 	}
 	if err := ioutil.WriteFile(path, buf.Bytes(), 0666); err != nil {
-		return nil, err
+		return nil, errors.Annotate(err, "writing client digests file").Tag(cipderr.IO).Err()
 	}
 
 	fmt.Printf("The pinned client hashes have been written to %s.\n\n", filepath.Base(path))
@@ -3205,9 +3266,9 @@ func checkClientDigests(ctx context.Context, client cipd.Client, path, version s
 	}
 	if !digests.Equal(existing) {
 		base := filepath.Base(path)
-		return nil, fmt.Errorf("the file with pinned client hashes (%s) is stale, "+
+		return nil, errors.Reason("the file with pinned client hashes (%s) is stale, "+
 			"use 'cipd selfupdate-roll -version-file %s' to update it",
-			base, strings.TrimSuffix(base, digestsSfx))
+			base, strings.TrimSuffix(base, digestsSfx)).Tag(cipderr.Stale).Err()
 	}
 	fmt.Printf("The file with pinned client hashes (%s) is up-to-date.\n\n", filepath.Base(path))
 	return pins, nil
@@ -3217,7 +3278,7 @@ func checkClientDigests(ctx context.Context, client cipd.Client, path, version s
 func loadClientVersion(path string) (string, error) {
 	blob, err := ioutil.ReadFile(path)
 	if err != nil {
-		return "", err
+		return "", errors.Annotate(err, "reading client version file").Tag(cipderr.IO).Err()
 	}
 	version := strings.TrimSpace(string(blob))
 	if err := common.ValidateInstanceVersion(version); err != nil {
@@ -3231,11 +3292,11 @@ func loadClientDigests(path string) (*digests.ClientDigestsFile, error) {
 	switch f, err := os.Open(path); {
 	case os.IsNotExist(err):
 		base := filepath.Base(path)
-		return nil, fmt.Errorf("the file with pinned client hashes (%s) doesn't exist, "+
+		return nil, errors.Reason("the file with pinned client hashes (%s) doesn't exist, "+
 			"use 'cipd selfupdate-roll -version-file %s' to generate it",
-			base, strings.TrimSuffix(base, digestsSfx))
+			base, strings.TrimSuffix(base, digestsSfx)).Tag(cipderr.Stale).Err()
 	case err != nil:
-		return nil, err
+		return nil, errors.Annotate(err, "error reading client digests file").Tag(cipderr.IO).Err()
 	default:
 		defer f.Close()
 		return digests.ParseClientDigestsFile(f)
@@ -3277,7 +3338,7 @@ func assembleClientDigests(ctx context.Context, c cipd.Client, version string) (
 	case err != nil:
 		return nil, pins, err
 	case hasErrors(pins):
-		return nil, pins, errors.New("failed to obtain the client binary digest for all platforms")
+		return nil, pins, errors.Reason("failed to obtain the client binary digest for all platforms").Tag(cipderr.RPC).Err()
 	}
 
 	out.Sort()
@@ -3338,7 +3399,7 @@ func checkDeployment(ctx context.Context, clientOpts clientOptions) (cipd.Action
 	}
 	actions.Log(ctx, true)
 	if len(actions) != 0 {
-		err = fmt.Errorf("the deployment needs a repair")
+		err = errors.Reason("the deployment needs a repair").Tag(cipderr.Stale).Err()
 	}
 	return actions, err
 }
