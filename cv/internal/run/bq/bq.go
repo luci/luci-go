@@ -381,6 +381,11 @@ func compare(ctx context.Context, r *run.Run, cls []*run.RunCL) error {
 		return err
 	}
 
+	runLogs, err := run.LoadRunLogEntries(ctx, r.ID)
+	if err != nil {
+		return err
+	}
+
 	var expectedDefinitions []*tryjob.Definition
 	for _, def := range reqmt.GetDefinitions() {
 		if def.GetCritical() { // only care about the critical definitions
@@ -388,9 +393,13 @@ func compare(ctx context.Context, r *run.Run, cls []*run.RunCL) error {
 		}
 	}
 	actualLaunchedBuilders := stringset.New(len(r.Tryjobs.GetTryjobs()))
-	for _, tj := range r.Tryjobs.GetTryjobs() {
-		if tj.Critical { // only care about the critical tryjobs
-			actualLaunchedBuilders.Add(bbBuilderNameFromDef(tj.GetDefinition()))
+	for _, rl := range runLogs {
+		if rl.GetTryjobsUpdated() != nil {
+			for _, tj := range rl.GetTryjobsUpdated().GetTryjobs() {
+				if tj.Critical { // only care about the critical tryjobs
+					actualLaunchedBuilders.Add(bbBuilderNameFromDef(tj.GetDefinition()))
+				}
+			}
 		}
 	}
 
