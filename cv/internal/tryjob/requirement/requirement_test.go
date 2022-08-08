@@ -466,6 +466,62 @@ func TestCompute(t *testing.T) {
 				})
 			})
 		})
+		Convey("owner allowlist denied", func() {
+			Convey("without equivalent builder", func() {
+				in := makeInput(ctx, []*cfgpb.Verifiers_Tryjob_Builder{builderConfigGenerator{
+					Name:      "test-proj/test/builder1",
+					Allowlist: "secret-group",
+				}.generate()})
+
+				res, err := Compute(ctx, *in)
+				So(err, ShouldBeNil)
+				So(res.OK(), ShouldBeTrue)
+				So(res.Requirement.GetDefinitions(), ShouldBeEmpty)
+			})
+
+			Convey("with equivalent builder", func() {
+				Convey("equivalent builder allowed", func() {
+					in := makeInput(ctx, []*cfgpb.Verifiers_Tryjob_Builder{builderConfigGenerator{
+						Name:          "test-proj/test/builder1",
+						Allowlist:     "secret-group",
+						EquiName:      "test-proj/test/equibuilder",
+						EquiAllowlist: "", // allow everyone
+					}.generate()})
+					res, err := Compute(ctx, *in)
+					So(err, ShouldBeNil)
+					So(res.OK(), ShouldBeTrue)
+					So(res.Requirement.Definitions, ShouldResembleProto, []*tryjob.Definition{
+						{
+							Backend: &tryjob.Definition_Buildbucket_{
+								Buildbucket: &tryjob.Definition_Buildbucket{
+									Host: "cr-buildbucket.appspot.com",
+									Builder: &buildbucketpb.BuilderID{
+										Project: "test-proj",
+										Bucket:  "test",
+										Builder: "equibuilder",
+									},
+								},
+							},
+							Critical: true,
+						},
+					})
+				})
+
+				Convey("equivalent builder denied", func() {
+					in := makeInput(ctx, []*cfgpb.Verifiers_Tryjob_Builder{builderConfigGenerator{
+						Name:          "test-proj/test/builder1",
+						Allowlist:     "secret-group",
+						EquiName:      "test-proj/test/equibuilder",
+						EquiAllowlist: "another-secret-group",
+					}.generate()})
+					res, err := Compute(ctx, *in)
+					So(err, ShouldBeNil)
+					So(res.OK(), ShouldBeTrue)
+					So(res.Requirement.GetDefinitions(), ShouldBeEmpty)
+				})
+
+			})
+		})
 		Convey("experimental", func() {
 			in := makeInput(ctx, []*cfgpb.Verifiers_Tryjob_Builder{
 				builderConfigGenerator{Name: "test-proj/test/expbuilder", ExperimentPercentage: 100}.generate(),

@@ -123,6 +123,31 @@ func getDisallowedOwners(ctx context.Context, allOwnerEmails []string, allowList
 	return disallowed, nil
 }
 
+func isBuilderAllowed(ctx context.Context, allOwners []string, b *cfgpb.Verifiers_Tryjob_Builder) (bool, error) {
+	if len(b.GetOwnerWhitelistGroup()) > 0 {
+		switch disallowedOwners, err := getDisallowedOwners(ctx, allOwners, b.GetOwnerWhitelistGroup()...); {
+		case err != nil:
+			return false, err
+		case len(disallowedOwners) > 0:
+			return false, nil
+		}
+	}
+	return true, nil
+
+}
+
+func isEquiBuilderAllowed(ctx context.Context, allOwners []string, b *cfgpb.Verifiers_Tryjob_EquivalentBuilder) (bool, error) {
+	if b.GetOwnerWhitelistGroup() != "" {
+		switch disallowedOwners, err := getDisallowedOwners(ctx, allOwners, b.GetOwnerWhitelistGroup()); {
+		case err != nil:
+			return false, err
+		case len(disallowedOwners) > 0:
+			return false, nil
+		}
+	}
+	return true, nil
+}
+
 var (
 	// Reference: https://chromium.googlesource.com/infra/luci/luci-py/+/a6655aa3/appengine/components/components/config/proto/service_config.proto#87
 	projectRE = `[a-z0-9\-]+`
@@ -369,8 +394,8 @@ type inclusionResult byte
 const (
 	skipBuilder inclusionResult = iota
 	includeBuilder
-	includeBuilderExplicitly
-	includeEquivalentExplicitly
+	includeMainBuilderOnly
+	includeEquiBuilderOnly
 )
 
 // shouldInclude decides based on the configuration whether a given builder
@@ -391,8 +416,7 @@ func shouldInclude(ctx context.Context, in Input, er *rand.Rand, b *cfgpb.Verifi
 	}
 
 	if incl.Del(b.Name) {
-		disallowedOwners, err := getDisallowedOwners(ctx, owners, b.OwnerWhitelistGroup...)
-		switch {
+		switch disallowedOwners, err := getDisallowedOwners(ctx, owners, b.GetOwnerWhitelistGroup()...); {
 		case err != nil:
 			return skipBuilder, nil, err
 		case len(disallowedOwners) != 0:
@@ -402,13 +426,12 @@ func shouldInclude(ctx context.Context, in Input, er *rand.Rand, b *cfgpb.Verifi
 				Builder: b.Name,
 			}, nil
 		}
-		return includeBuilderExplicitly, nil, nil
+		return includeMainBuilderOnly, nil, nil
 	}
 
-	if b.EquivalentTo != nil && incl.Del(b.EquivalentTo.Name) {
-		if b.EquivalentTo.OwnerWhitelistGroup != "" {
-			disallowedOwners, err := getDisallowedOwners(ctx, owners, b.EquivalentTo.OwnerWhitelistGroup)
-			switch {
+	if b.GetEquivalentTo() != nil && incl.Del(b.GetEquivalentTo().GetName()) {
+		if ownerAllowGroup := b.GetEquivalentTo().GetOwnerWhitelistGroup(); ownerAllowGroup != "" {
+			switch disallowedOwners, err := getDisallowedOwners(ctx, owners, ownerAllowGroup); {
 			case err != nil:
 				return skipBuilder, nil, err
 			case len(disallowedOwners) != 0:
@@ -419,7 +442,7 @@ func shouldInclude(ctx context.Context, in Input, er *rand.Rand, b *cfgpb.Verifi
 				}, nil
 			}
 		}
-		return includeEquivalentExplicitly, nil, nil
+		return includeEquiBuilderOnly, nil, nil
 	}
 
 	if b.IncludableOnly {
@@ -473,7 +496,25 @@ func shouldInclude(ctx context.Context, in Input, er *rand.Rand, b *cfgpb.Verifi
 	if b.ExperimentPercentage != 0 && er.Float32()*100 > b.ExperimentPercentage {
 		return skipBuilder, nil, nil
 	}
-	return includeBuilder, nil, nil
+
+	switch allowed, err := isBuilderAllowed(ctx, owners, b); {
+	case err != nil:
+		return skipBuilder, nil, err
+	case allowed:
+		return includeBuilder, nil, nil
+	case b.GetEquivalentTo() != nil:
+		// See if the owners can trigger the equivalent builder instead.
+		switch equiAllowed, err := isEquiBuilderAllowed(ctx, owners, b.GetEquivalentTo()); {
+		case err != nil:
+			return skipBuilder, nil, err
+		case equiAllowed:
+			return includeEquiBuilderOnly, nil, err
+		default:
+			return skipBuilder, nil, err
+		}
+	default:
+		return skipBuilder, nil, nil
+	}
 }
 
 // getIncludablesAndTriggeredBy computes the set of builders that it is valid to
@@ -538,20 +579,18 @@ func Compute(ctx context.Context, in Input) (*ComputationResult, error) {
 		case compFail != nil:
 			return &ComputationResult{ComputationFailure: compFail}, nil
 		case r == skipBuilder:
-		case r == includeBuilderExplicitly:
-			// The builder was explicitly included.
+		case r == includeMainBuilderOnly:
 			ret.Requirement.Definitions = append(ret.Requirement.Definitions, makeDefinition(builder, mainOnly, critical))
-		case r == includeEquivalentExplicitly:
-			// The equivalent builder was explicitly included.
+		case r == includeEquiBuilderOnly:
 			ret.Requirement.Definitions = append(ret.Requirement.Definitions, makeDefinition(builder, equivalentOnly, critical))
 		default:
 			equivalence := mainOnly
-			if builder.EquivalentTo != nil && !in.RunOptions.GetSkipEquivalentBuilders() {
+			if builder.GetEquivalentTo() != nil && !in.RunOptions.GetSkipEquivalentBuilders() {
 				equivalence = bothMainAndEquivalent
-				switch disallowedOwners, err := getDisallowedOwners(ctx, allOwnerEmails, builder.EquivalentTo.OwnerWhitelistGroup); {
+				switch allowed, err := isEquiBuilderAllowed(ctx, allOwnerEmails, builder.GetEquivalentTo()); {
 				case err != nil:
 					return nil, err
-				case len(disallowedOwners) == 0:
+				case allowed:
 					if equivalentBuilderRand.Float32()*100 <= builder.EquivalentTo.Percentage {
 						// Invert equivalence: trigger equivalent, but accept reusing original too.
 						equivalence = flipMainAndEquivalent
