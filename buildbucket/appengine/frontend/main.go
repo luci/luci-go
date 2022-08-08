@@ -17,16 +17,22 @@ package main
 
 import (
 	"context"
+	"fmt"
 
+	"go.chromium.org/luci/auth/identity"
+	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/config/server/cfgmodule"
 	"go.chromium.org/luci/grpc/prpc"
 	"go.chromium.org/luci/server"
 	"go.chromium.org/luci/server/auth"
+	"go.chromium.org/luci/server/auth/openid"
 	"go.chromium.org/luci/server/bqlog"
 	"go.chromium.org/luci/server/cron"
 	"go.chromium.org/luci/server/gaeemulation"
 	"go.chromium.org/luci/server/gerritauth"
 	"go.chromium.org/luci/server/module"
+	"go.chromium.org/luci/server/router"
 	"go.chromium.org/luci/server/secrets"
 	"go.chromium.org/luci/server/tq"
 
@@ -37,6 +43,7 @@ import (
 	"go.chromium.org/luci/buildbucket/appengine/internal/config"
 	"go.chromium.org/luci/buildbucket/appengine/internal/metrics"
 	"go.chromium.org/luci/buildbucket/appengine/rpc"
+	"go.chromium.org/luci/buildbucket/appengine/tasks"
 	pb "go.chromium.org/luci/buildbucket/proto"
 )
 
@@ -84,6 +91,32 @@ func main() {
 		cron.RegisterHandler("expire_builds", buildcron.TimeoutExpiredBuilds)
 		cron.RegisterHandler("update_config", config.UpdateSettingsCfg)
 		cron.RegisterHandler("reset_expired_leases", buildcron.ResetExpiredLeases)
+
+		// PubSub push handler processing messages
+		oidcMW := router.NewMiddlewareChain(
+			auth.Authenticate(&openid.GoogleIDTokenAuthMethod{
+				AudienceCheck: openid.AudienceMatchesHost,
+			}),
+		)
+		// swarming-go-pubsub@ is a part of the PubSub Push subscription config.
+		pusherID := identity.Identity(fmt.Sprintf("user:swarming-go-pubsub@%s.iam.gserviceaccount.com", srv.Options.CloudProject))
+		srv.Routes.POST("/push-handlers/swarming-go/notify", oidcMW, func(ctx *router.Context) {
+			if got := auth.CurrentIdentity(ctx.Context); got != pusherID {
+				logging.Errorf(ctx.Context, "Expecting ID token of %q, got %q", pusherID, got)
+				ctx.Writer.WriteHeader(403)
+			} else {
+				switch err := tasks.SubNotify(ctx.Context, ctx.Request.Body); {
+				case err == nil:
+					ctx.Writer.WriteHeader(200)
+				case transient.Tag.In(err):
+					logging.Warningf(ctx.Context, "Encounter transient error when processing pubsub msg: %s", err)
+					ctx.Writer.WriteHeader(500) // PubSub will resend this msg.
+				default:
+					logging.Errorf(ctx.Context, "Encounter non-transient error when processing pubsub msg: %s", err)
+					ctx.Writer.WriteHeader(202)
+				}
+			}
+		})
 		return nil
 	})
 }

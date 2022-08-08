@@ -19,6 +19,8 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"io"
+	"io/ioutil"
 	"path/filepath"
 	"sort"
 	"strconv"
@@ -63,14 +65,7 @@ const (
 
 	// pubsubTopicTemplate is the topic template where Swarming publishes
 	// notifications on the task update.
-	pubsubTopicTemplate = "projects/%s/topics/swarming"
-
-	// pubSubUserDataTemplate is the Swarming topic user data template.
-	pubSubUserDataTemplate = `{
-		"build_id": %d,
-		"created_ts": %d,
-		"swarming_hostname": %s
-}`
+	pubsubTopicTemplate = "projects/%s/topics/swarming-go"
 
 	// swarmingCreateTaskGiveUpTimeout indicates how long to retry
 	// the createSwarmingTask before giving up with INFRA_FAILURE.
@@ -79,6 +74,20 @@ const (
 	// swarmingTimeFormat is time format used by swarming.
 	swarmingTimeFormat = "2006-01-02T15:04:05.999999999"
 )
+
+// userdata will be sent back and forth between Swarming and Buildbucket.
+type userdata struct {
+	BuildID          int64  `json:"build_id"`
+	CreatedTS        int64  `json:"created_ts"`
+	SwarmingHostname string `json:"swarming_hostname"`
+}
+
+// notification captures all fields that Buildbucket needs from the message of Swarming notification subscription.
+type notification struct {
+	messageID string
+	taskID    string
+	*userdata
+}
 
 // SyncBuild synchronizes the build with Swarming.
 // If the swarming task does not exist yet, creates it.
@@ -137,6 +146,116 @@ func SyncBuild(ctx context.Context, buildID int64, generation int64) error {
 		}
 	}
 	return nil
+}
+
+// SubNotify handles swarming-go PubSub push messages produced by Swarming.
+// For a retryable error, it will be tagged with transient.Tag.
+func SubNotify(ctx context.Context, body io.Reader) error {
+	nt, err := unpackMsg(ctx, body)
+	if err != nil {
+		return err
+	}
+	// TODO(yuanjunh): Dedup msg by msgID.
+
+	taskURL := func(hostname, taskID string) string {
+		return fmt.Sprintf("https://%s/task?id=%s", hostname, taskID)
+	}
+	// load build and build infra.
+	logging.Infof(ctx, "received swarming notification for build %d", nt.BuildID)
+	bld := &model.Build{ID: nt.BuildID}
+	infra := &model.BuildInfra{Build: datastore.KeyForObj(ctx, bld)}
+	switch err := datastore.Get(ctx, bld, infra); {
+	case errors.Contains(err, datastore.ErrNoSuchEntity):
+		if clock.Now(ctx).Sub(time.Unix(0, nt.CreatedTS*int64(time.Microsecond)).UTC()) < time.Minute {
+			return errors.Annotate(err, "Build %d or BuildInfra for task %s not found yet", nt.BuildID, taskURL(nt.SwarmingHostname, nt.taskID)).Tag(transient.Tag).Err()
+		}
+		return errors.Annotate(err, "Build %d or BuildInfra for task %s not found", nt.BuildID, taskURL(nt.SwarmingHostname, nt.taskID)).Err()
+	case err != nil:
+		return errors.Annotate(err, "failed to fetch build %d or buildInfra", nt.BuildID).Tag(transient.Tag).Err()
+	}
+	if protoutil.IsEnded(bld.Status) {
+		logging.Infof(ctx, "build(%d) is completed and immutable.", nt.BuildID)
+		return nil
+	}
+
+	// ensure the loaded build is associated with the task.
+	bld.Proto.Infra = infra.Proto
+	sw := bld.Proto.GetInfra().GetSwarming()
+	if nt.SwarmingHostname != sw.GetHostname() {
+		return errors.Reason("swarming_hostname %s of build %d does not match %s", sw.Hostname, nt.BuildID, nt.SwarmingHostname).Err()
+	}
+	if strings.TrimSpace(sw.GetTaskId()) == "" {
+		return errors.Reason("build %d is not associated with a task", nt.BuildID).Tag(transient.Tag).Err()
+	}
+	if nt.taskID != sw.GetTaskId() {
+		return errors.Reason("swarming_task_id %s of build %d does not match %s", sw.TaskId, nt.BuildID, nt.taskID).Err()
+	}
+
+	// update build.
+	swarm, err := clients.NewSwarmingClient(ctx, sw.Hostname, bld.Project)
+	if err != nil {
+		return errors.Annotate(err, "failed to create a swarming client for build %d (%s), in %s", nt.BuildID, bld.Project, sw.Hostname).Err()
+	}
+	return syncBuildWithTaskResult(ctx, nt.BuildID, sw.TaskId, swarm)
+}
+
+// unpackMsg unpacks swarming-go pubsub message and extracts message id,
+// swarming hostname, creation time, task id and build id.
+func unpackMsg(ctx context.Context, body io.Reader) (*notification, error) {
+	blob, err := ioutil.ReadAll(body)
+	if err != nil {
+		return nil, errors.Annotate(err, "failed to read the request body").Tag(transient.Tag).Err()
+	}
+
+	// process pubsub message
+	// See https://cloud.google.com/pubsub/docs/push#receive_push
+	var msg struct {
+		Message struct {
+			Attributes map[string]string `json:"attributes,omitempty"`
+			Data       string            `json:"data,omitempty"`
+			MessageID  string            `json:"messageId,omitempty"`
+		} `json:"message"`
+	}
+	if err := json.Unmarshal(blob, &msg); err != nil {
+		return nil, errors.Annotate(err, "failed to unmarshal swarming PubSub message").Err()
+	}
+
+	// process swarming message data
+	swarmData, err := base64.StdEncoding.DecodeString(msg.Message.Data)
+	if err != nil {
+		return nil, errors.Annotate(err, "cannot decode message data as base64").Err()
+	}
+	var data struct {
+		TaskID   string `json:"task_id"`
+		Userdata string `json:"userdata"`
+	}
+	if err := json.Unmarshal(swarmData, &data); err != nil {
+		return nil, errors.Annotate(err, "failed to unmarshal the swarming pubsub data").Err()
+	}
+	ud := &userdata{}
+	if err := json.Unmarshal([]byte(data.Userdata), ud); err != nil {
+		return nil, errors.Annotate(err, "failed to unmarshal userdata").Err()
+	}
+
+	// validate swarming message data
+	switch {
+	case strings.TrimSpace(data.TaskID) == "":
+		return nil, errors.Reason("task_id not found in message data").Err()
+	case ud.BuildID <= 0:
+		return nil, errors.Reason("invalid build_id %d", ud.BuildID).Err()
+	case ud.CreatedTS <= 0:
+		return nil, errors.Reason("invalid created_ts %d", ud.CreatedTS).Err()
+	case strings.TrimSpace(ud.SwarmingHostname) == "":
+		return nil, errors.Reason("swarming hostname not found in userdata").Err()
+	case strings.Contains(ud.SwarmingHostname, "://"):
+		return nil, errors.Reason("swarming hostname %s must not contain '://'", ud.SwarmingHostname).Err()
+	}
+
+	return &notification{
+		messageID: msg.Message.MessageID,
+		taskID:    data.TaskID,
+		userdata:  ud,
+	}, nil
 }
 
 // syncBuildWithTaskResult syncs Build entity in the datastore with a result of the swarming task.
@@ -478,8 +597,16 @@ func computeSwarmingNewTaskReq(ctx context.Context, build *model.Build) (*swarmi
 	}
 
 	taskReq.PubsubTopic = fmt.Sprintf(pubsubTopicTemplate, info.AppID(ctx))
-	taskReq.PubsubUserdata = fmt.Sprintf(pubSubUserDataTemplate, build.ID, clock.Now(ctx).UnixNano()/1000, sw.Hostname)
-
+	ud := &userdata{
+		BuildID:          build.ID,
+		CreatedTS:        clock.Now(ctx).UnixNano() / int64(time.Microsecond),
+		SwarmingHostname: sw.Hostname,
+	}
+	udBytes, err := json.Marshal(ud)
+	if err != nil {
+		return nil, errors.Annotate(err, "failed to marshal pubsub userdata").Err()
+	}
+	taskReq.PubsubUserdata = string(udBytes)
 	return taskReq, err
 }
 

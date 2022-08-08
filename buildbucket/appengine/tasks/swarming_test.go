@@ -15,8 +15,12 @@
 package tasks
 
 import (
+	"bytes"
 	"context"
+	"encoding/base64"
+	"encoding/json"
 	"fmt"
+	"io"
 	"path/filepath"
 	"testing"
 	"time"
@@ -296,14 +300,19 @@ func TestTaskDef(t *testing.T) {
 		// Strip out TaskSlices. It has been tested in other tests
 		req.TaskSlices = []*swarming.SwarmingRpcsTaskSlice(nil)
 		So(err, ShouldBeNil)
+		ud, _ := json.Marshal(&userdata{
+			BuildID:          123,
+			CreatedTS:        1444945245000000,
+			SwarmingHostname: "swarm.com",
+		})
 		expected := &swarming.SwarmingRpcsNewTaskRequest{
 			RequestUuid:    "203882df-ce4b-5012-b32a-2c1d29c321a7",
 			Name:           "bb-123-builder-1",
 			Realm:          "project:bucket",
 			Tags:           []string{"buildbucket_bucket:bucket", "buildbucket_build_id:123", "buildbucket_hostname:app-id.appspot.com", "buildbucket_template_canary:0", "luci_project:project"},
 			Priority:       int64(20),
-			PubsubTopic:    "projects/app-id/topics/swarming",
-			PubsubUserdata: fmt.Sprintf(pubSubUserDataTemplate, 123, 1444945245000000, "swarm.com"),
+			PubsubTopic:    "projects/app-id/topics/swarming-go",
+			PubsubUserdata: string(ud),
 			ServiceAccount: "abc",
 		}
 		So(req, ShouldResemble, expected)
@@ -561,7 +570,7 @@ func TestSyncBuild(t *testing.T) {
 				So(bb.Status, ShouldEqual, pb.Status_SCHEDULED)
 				So(sch.Tasks(), ShouldHaveLength, 1)
 				So(sch.Tasks().Payloads()[0], ShouldResembleProto, &taskdefs.SyncSwarmingBuildTask{
-					BuildId: 123,
+					BuildId:    123,
 					Generation: 2,
 				})
 			})
@@ -770,6 +779,222 @@ func TestSyncBuild(t *testing.T) {
 		})
 	})
 
+}
+
+func TestSubNotify(t *testing.T) {
+	t.Parallel()
+	Convey("SubNotify", t, func() {
+		ctl := gomock.NewController(t)
+		defer ctl.Finish()
+		now := testclock.TestRecentTimeUTC
+		mockSwarm := clients.NewMockSwarmingClient(ctl)
+		ctx, _ := testclock.UseTime(context.Background(), now)
+		ctx = context.WithValue(ctx, &clients.MockSwarmingClientKey, mockSwarm)
+		ctx = memory.UseWithAppID(ctx, "dev~app-id")
+		ctx = txndefer.FilterRDS(ctx)
+		ctx = metrics.WithServiceInfo(ctx, "svc", "job", "ins")
+		datastore.GetTestable(ctx).AutoIndex(true)
+		datastore.GetTestable(ctx).Consistent(true)
+		ctx, _ = tq.TestingContext(ctx, nil)
+
+		b := &model.Build{
+			ID: 123,
+			Proto: &pb.Build{
+				Id:         123,
+				Status:     pb.Status_SCHEDULED,
+				CreateTime: &timestamppb.Timestamp{Seconds: now.UnixNano() / 1000000000},
+				SchedulingTimeout: &durationpb.Duration{
+					Seconds: 3600,
+				},
+				ExecutionTimeout: &durationpb.Duration{
+					Seconds: 4800,
+				},
+				GracePeriod: &durationpb.Duration{
+					Seconds: 60,
+				},
+				Builder: &pb.BuilderID{
+					Project: "proj",
+					Bucket:  "bucket",
+					Builder: "builder",
+				},
+			},
+		}
+		So(datastore.Put(ctx, b), ShouldBeNil)
+		inf := &model.BuildInfra{
+			ID:    1,
+			Build: datastore.KeyForObj(ctx, &model.Build{ID: 123}),
+			Proto: &pb.BuildInfra{
+				Swarming: &pb.BuildInfra_Swarming{
+					Hostname: "swarm",
+					TaskId:   "task123",
+					Caches: []*pb.BuildInfra_Swarming_CacheEntry{
+						{Name: "shared_builder_cache", Path: "builder", WaitForWarmCache: &durationpb.Duration{Seconds: 60}},
+						{Name: "second_cache", Path: "second", WaitForWarmCache: &durationpb.Duration{Seconds: 360}},
+					},
+					TaskDimensions: []*pb.RequestedDimension{
+						{Key: "a", Value: "1", Expiration: &durationpb.Duration{Seconds: 120}},
+						{Key: "a", Value: "2", Expiration: &durationpb.Duration{Seconds: 120}},
+						{Key: "pool", Value: "Chrome"},
+					},
+				},
+				Bbagent: &pb.BuildInfra_BBAgent{
+					CacheDir:    "cache",
+					PayloadPath: "kitchen-checkout",
+				},
+				Buildbucket: &pb.BuildInfra_Buildbucket{
+					Agent: &pb.BuildInfra_Buildbucket_Agent{
+						Source: &pb.BuildInfra_Buildbucket_Agent_Source{
+							DataType: &pb.BuildInfra_Buildbucket_Agent_Source_Cipd{
+								Cipd: &pb.BuildInfra_Buildbucket_Agent_Source_CIPD{
+									Package: "infra/tools/luci/bbagent/${platform}",
+									Version: "canary-version",
+									Server:  "cipd server",
+								},
+							},
+						},
+					},
+				},
+			},
+		}
+		So(datastore.Put(ctx, inf), ShouldBeNil)
+
+		Convey("bad msg data", func() {
+			body := makeSwarmingPubsubMsg(&userdata{
+				BuildID:          999,
+				CreatedTS:        1448841600000,
+				SwarmingHostname: "swarm",
+			}, "", "msg1")
+			err := SubNotify(ctx, body)
+			So(err, ShouldErrLike, "task_id not found in message data")
+			So(transient.Tag.In(err), ShouldBeFalse)
+
+			body = makeSwarmingPubsubMsg(&userdata{
+				CreatedTS:        1448841600000,
+				SwarmingHostname: "swarm",
+			}, "task123", "msg1")
+			err = SubNotify(ctx, body)
+			So(err, ShouldErrLike, "invalid build_id 0")
+
+			body = makeSwarmingPubsubMsg(&userdata{
+				BuildID:          999,
+				SwarmingHostname: "swarm",
+			}, "task123", "msg1")
+			err = SubNotify(ctx, body)
+			So(err, ShouldErrLike, "invalid created_ts 0")
+
+			body = makeSwarmingPubsubMsg(&userdata{
+				BuildID:          999,
+				CreatedTS:        1448841600000,
+				SwarmingHostname: " ",
+			}, "task123", "msg1")
+			err = SubNotify(ctx, body)
+			So(err, ShouldErrLike, "swarming hostname not found in userdata")
+
+			body = makeSwarmingPubsubMsg(&userdata{
+				BuildID:          999,
+				CreatedTS:        1448841600000,
+				SwarmingHostname: "https://swarm.com",
+			}, "task123", "msg1")
+			err = SubNotify(ctx, body)
+			So(err, ShouldErrLike, "swarming hostname https://swarm.com must not contain '://'")
+		})
+
+		Convey("build not found", func() {
+			old := now.Add(-time.Minute).UnixNano() / int64(time.Microsecond)
+			body := makeSwarmingPubsubMsg(&userdata{
+				BuildID:          999,
+				CreatedTS:        old,
+				SwarmingHostname: "swarm",
+			}, "task123", "msg1")
+			err := SubNotify(ctx, body)
+			So(err, ShouldErrLike, "Build 999 or BuildInfra for task https://swarm/task?id=task123 not found")
+			So(transient.Tag.In(err), ShouldBeFalse)
+
+			recent := now.Add(-50*time.Second).UnixNano() / int64(time.Microsecond)
+			body = makeSwarmingPubsubMsg(&userdata{
+				BuildID:          999,
+				CreatedTS:        recent,
+				SwarmingHostname: "swarm",
+			}, "task123", "msg1")
+			err = SubNotify(ctx, body)
+			So(err, ShouldErrLike, "Build 999 or BuildInfra for task https://swarm/task?id=task123 not found yet")
+			So(transient.Tag.In(err), ShouldBeTrue)
+		})
+
+		Convey("different swarming hostname", func() {
+
+			body := makeSwarmingPubsubMsg(&userdata{
+				BuildID:          123,
+				CreatedTS:        1517260502000000,
+				SwarmingHostname: "swarm2",
+			}, "task123", "msg1")
+			err := SubNotify(ctx, body)
+			So(err, ShouldErrLike, "swarming_hostname swarm of build 123 does not match swarm2")
+			So(transient.Tag.In(err), ShouldBeFalse)
+		})
+
+		Convey("different task id", func() {
+			body := makeSwarmingPubsubMsg(&userdata{
+				BuildID:          123,
+				CreatedTS:        1517260502000000,
+				SwarmingHostname: "swarm",
+			}, "task345", "msg1")
+			err := SubNotify(ctx, body)
+			So(err, ShouldErrLike, "swarming_task_id task123 of build 123 does not match task345")
+			So(transient.Tag.In(err), ShouldBeFalse)
+		})
+
+		Convey("swarming 500s error", func() {
+			body := makeSwarmingPubsubMsg(&userdata{
+				BuildID:          123,
+				CreatedTS:        1517260502000000,
+				SwarmingHostname: "swarm",
+			}, "task123", "msg1")
+			mockSwarm.EXPECT().GetTaskResult(ctx, "task123").Return(nil, &googleapi.Error{Code: 500, Message: "swarming internal error"})
+			err := SubNotify(ctx, body)
+			So(err, ShouldErrLike, "googleapi: Error 500: swarming internal error")
+			So(transient.Tag.In(err), ShouldBeTrue)
+		})
+
+		Convey("success", func() {
+			body := makeSwarmingPubsubMsg(&userdata{
+				BuildID:          123,
+				CreatedTS:        1517260502000000,
+				SwarmingHostname: "swarm",
+			}, "task123", "msg1")
+			mockSwarm.EXPECT().GetTaskResult(ctx, "task123").Return(&swarming.SwarmingRpcsTaskResult{
+				State:       "COMPLETED",
+				StartedTs:   "2018-01-29T21:15:02.649750",
+				CompletedTs: "2018-01-30T00:15:18.162860"}, nil)
+			err := SubNotify(ctx, body)
+			So(err, ShouldBeNil)
+			syncedBuild := &model.Build{ID: 123}
+			So(datastore.Get(ctx, syncedBuild), ShouldBeNil)
+			So(syncedBuild.Status, ShouldEqual, pb.Status_SUCCESS)
+			So(syncedBuild.Proto.StartTime, ShouldResembleProto, &timestamppb.Timestamp{Seconds: 1517260502, Nanos: 649750000})
+			So(syncedBuild.Proto.EndTime, ShouldResembleProto, &timestamppb.Timestamp{Seconds: 1517271318, Nanos: 162860000})
+		})
+	})
+}
+
+func makeSwarmingPubsubMsg(userdata *userdata, taskID string, msgID string) io.Reader {
+	ud, _ := json.Marshal(userdata)
+	data := struct {
+		TaskID   string `json:"task_id"`
+		Userdata string `json:"userdata"`
+	}{TaskID: taskID, Userdata: string(ud)}
+	bd, _ := json.Marshal(data)
+	msg := struct {
+		Message struct {
+			Data      string
+			MessageID string
+		}
+	}{struct {
+		Data      string
+		MessageID string
+	}{Data: base64.StdEncoding.EncodeToString(bd), MessageID: msgID}}
+	jmsg, _ := json.Marshal(msg)
+	return bytes.NewReader(jmsg)
 }
 
 type expectedBuildFields struct {
