@@ -251,7 +251,6 @@ func (s *swarmingServiceImpl) TerminateBot(ctx context.Context, botID string) (r
 	return
 }
 
-
 func (s *swarmingServiceImpl) ListBotTasks(ctx context.Context, botID string, limit int64, start float64, state string, fields []googleapi.Field) (res []*swarming.SwarmingRpcsTaskResult, err error) {
 	// Create an empty array so that if serialized to JSON it's an empty list,
 	// not null.
@@ -294,17 +293,18 @@ func (s *swarmingServiceImpl) ListBotTasks(ctx context.Context, botID string, li
 type taskState int32
 
 const (
-	maskAlive                 = 1
-	stateBotDied    taskState = 1 << 1
-	stateCancelled  taskState = 1 << 2
-	stateCompleted  taskState = 1 << 3
-	stateExpired    taskState = 1 << 4
-	statePending    taskState = 1<<5 | maskAlive
-	stateRunning    taskState = 1<<6 | maskAlive
-	stateTimedOut   taskState = 1 << 7
-	stateNoResource taskState = 1 << 8
-	stateKilled     taskState = 1 << 9
-	stateUnknown    taskState = -1
+	maskAlive                  = 1
+	stateBotDied     taskState = 1 << 1
+	stateCancelled   taskState = 1 << 2
+	stateCompleted   taskState = 1 << 3
+	stateExpired     taskState = 1 << 4
+	statePending     taskState = 1<<5 | maskAlive
+	stateRunning     taskState = 1<<6 | maskAlive
+	stateTimedOut    taskState = 1 << 7
+	stateNoResource  taskState = 1 << 8
+	stateKilled      taskState = 1 << 9
+	stateClientError taskState = 1 << 10
+	stateUnknown     taskState = -1
 )
 
 func parseTaskState(state string) (taskState, error) {
@@ -327,6 +327,8 @@ func parseTaskState(state string) (taskState, error) {
 		return stateNoResource, nil
 	case "KILLED":
 		return stateKilled, nil
+	case "CLIENT_ERROR":
+		return stateClientError, nil
 	default:
 		return stateUnknown, errors.Reason("unrecognized state: %q", state).Err()
 	}
