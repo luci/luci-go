@@ -130,6 +130,7 @@ message LogReasons {
 message PCL {
   // next tag: 18
 
+  reserved 12; // Trigger (single), replaced by Triggers.
   reserved 14;
 
   int64 clid = 1;
@@ -166,9 +167,6 @@ message PCL {
 
   // Deps refers to CLs in PState.PCLs which are dependencies of the PCL.
   repeated changelist.Dep deps = 11;
-
-  // Deprecated. Being replaced by triggers.
-  cv.internal.run.Trigger trigger = 12 [deprecated = true];
 
   // Triggers are the triggers currently active on the CL.
   //

@@ -357,7 +357,6 @@ func TestCategorizeAndLoadActiveIntoPCLs(t *testing.T) {
 						Clid:               int64(cls[2].ID),
 						Eversion:           cls[2].EVersion,
 						Status:             prjpb.PCL_OK,
-						Trigger:            triggers.GetCqVoteTrigger(),
 						Triggers:           triggers,
 						ConfigGroupIndexes: []int32{0},
 						Deps:               cls[2].Snapshot.GetDeps(),
@@ -383,11 +382,6 @@ func TestCategorizeAndLoadActiveIntoPCLs(t *testing.T) {
 					Eversion: 1,
 					Status:   prjpb.PCL_OK,
 					Deps:     deps,
-					Trigger: &run.Trigger{
-						GerritAccountId: 1,
-						Mode:            string(run.DryRun),
-						Time:            timestamppb.New(t),
-					},
 					Triggers: &run.Triggers{CqVoteTrigger: &run.Trigger{
 						GerritAccountId: 1,
 						Mode:            string(run.DryRun),

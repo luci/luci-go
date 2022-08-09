@@ -412,7 +412,6 @@ func (s *State) setTriggers(ci *gerritpb.ChangeInfo, pcl *prjpb.PCL) {
 		t.GerritAccountId = 0
 	}
 	pcl.Triggers = ts
-	pcl.Trigger = t
 }
 
 // loadCLsForPCLs loads CLs from Datastore corresponding to PCLs.

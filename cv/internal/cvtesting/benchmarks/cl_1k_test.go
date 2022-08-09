@@ -142,7 +142,6 @@ func makePCL(cl *changelist.CL) *prjpb.PCL {
 		ConfigGroupIndexes: []int32{0},
 		Deps:               deps,
 		Triggers:           trs,
-		Trigger:            trs.GetCqVoteTrigger(),
 	}
 }
 

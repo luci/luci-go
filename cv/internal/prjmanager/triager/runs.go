@@ -339,9 +339,6 @@ func (rs *runStage) makeCreator(ctx context.Context, combo *combo, cg *prjcfg.Co
 			ConfigGroup: cg.Content,
 		}).GetCqVoteTrigger()
 		pclT := pcl.GetTriggers().GetCqVoteTrigger()
-		if pclT == nil {
-			pclT = pcl.GetTrigger()
-		}
 		if tr.GetMode() != pclT.GetMode() {
 			panic(fmt.Errorf("inconsistent Trigger in PM (%s) vs freshly extracted (%s)", pcl.GetTriggers().GetCqVoteTrigger(), tr))
 		}
@@ -354,9 +351,6 @@ func (rs *runStage) makeCreator(ctx context.Context, combo *combo, cg *prjcfg.Co
 		}
 	}
 	cqTrigger := combo.latestTriggeredByCQVote.pcl.GetTriggers().GetCqVoteTrigger()
-	if cqTrigger == nil {
-		cqTrigger = combo.latestTriggeredByCQVote.pcl.GetTrigger()
-	}
 	return &runcreator.Creator{
 		ConfigGroupID:            cg.ID,
 		LUCIProject:              cg.ProjectString(),
@@ -414,9 +408,6 @@ func (c combo) String() string {
 	}
 	if c.latestTriggeredByCQVote != nil {
 		t := c.latestTriggeredByCQVote.pcl.GetTriggers().GetCqVoteTrigger()
-		if t == nil {
-			t = c.latestTriggeredByCQVote.pcl.GetTrigger()
-		}
 		fmt.Fprintf(&sb, " latestTriggered=%d at %s", c.latestTriggeredByCQVote.pcl.GetClid(), t.GetTime().AsTime())
 	}
 	sb.WriteRune(')')
@@ -439,9 +430,6 @@ func (c *combo) add(info *clInfo) {
 		c.withNotYetLoadedDeps = info
 	}
 	trig := info.pcl.GetTriggers().GetCqVoteTrigger()
-	if trig == nil {
-		trig = info.pcl.GetTrigger()
-	}
 	if pb := trig.GetTime(); pb != nil {
 		t := pb.AsTime()
 		if c.maxTriggeredTime.IsZero() || t.After(c.maxTriggeredTime) {

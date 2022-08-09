@@ -356,9 +356,6 @@ func (s *State) populatePurgeCLTasks(ctx context.Context, ts []*prjpb.PurgeCLTas
 		pcl := s.PB.GetPcls()[s.pclIndex[common.CLID(id)]]
 
 		t.Trigger = pcl.GetTriggers().GetCqVoteTrigger()
-		if t.Trigger == nil {
-			t.Trigger = pcl.GetTrigger()
-		}
 		t.LuciProject = s.PB.GetLuciProject()
 		t.PurgingCl.Deadline = deadline
 		t.PurgingCl.OperationId = fmt.Sprintf("%d-%d", opInt, id)

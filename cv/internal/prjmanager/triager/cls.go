@@ -59,9 +59,6 @@ type clInfo struct {
 // and its triggered deps. Can be zero time.Time if neither are triggered.
 func (info *clInfo) lastCQVoteTriggered() time.Time {
 	t := info.pcl.GetTriggers().GetCqVoteTrigger()
-	if t == nil {
-		t = info.pcl.GetTrigger()
-	}
 	thisPB := t.GetTime()
 	switch {
 	case thisPB == nil && info.deps == nil:
@@ -125,7 +122,7 @@ func (info *clInfo) triageInRun(pm pmState) {
 		s == prjpb.PCL_UNWATCHED ||
 		s == prjpb.PCL_UNKNOWN ||
 		pcl.GetSubmitted() ||
-		(pcl.GetTriggers() == nil && pcl.GetTrigger() == nil)):
+		pcl.GetTriggers() == nil):
 		// This is expected while Run is being finalized iff PM sees updates to a
 		// CL before OnRunFinished event.
 		return
@@ -167,7 +164,7 @@ func (info *clInfo) triageInPurge(pm pmState) {
 	case pcl.GetSubmitted():
 		// Someone already submitted CL while purging was ongoing.
 		return
-	case pcl.GetTriggers() == nil && pcl.GetTrigger() == nil:
+	case pcl.GetTriggers() == nil:
 		// Likely purging effect is already visible.
 		return
 	}
@@ -234,7 +231,7 @@ func (info *clInfo) triageNew(pm pmState) {
 	switch {
 	case pcl.GetSubmitted():
 		panic(fmt.Errorf("PCL %d submitted %s", clid, assumption))
-	case pcl.GetTriggers() == nil && pcl.GetTrigger() == nil:
+	case pcl.GetTriggers() == nil:
 		panic(fmt.Errorf("PCL %d not triggered %s", clid, assumption))
 	case len(pcl.GetPurgeReasons()) > 0:
 		info.purgeReasons = pcl.GetPurgeReasons()

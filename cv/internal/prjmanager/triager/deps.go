@@ -61,9 +61,6 @@ func triageDeps(pcl *prjpb.PCL, cgIndex int32, pm pmState) *triagedDeps {
 		dPCL := pm.PCL(dep.GetClid())
 		res.categorize(pcl, cgIndex, cg, dPCL, dep)
 		cqTrigger := dPCL.GetTriggers().GetCqVoteTrigger()
-		if cqTrigger == nil {
-			cqTrigger = dPCL.GetTrigger()
-		}
 		if cqTrigger != nil {
 			if tPB := cqTrigger.GetTime(); tPB != nil {
 				if t := tPB.AsTime(); res.lastCQVoteTriggered.IsZero() || res.lastCQVoteTriggered.Before(t) {
@@ -156,13 +153,7 @@ func (t *triagedDeps) categorize(pcl *prjpb.PCL, cgIndex int32, cg *cfgpb.Config
 	}
 
 	tr := pcl.GetTriggers().GetCqVoteTrigger()
-	if tr == nil {
-		tr = pcl.GetTrigger()
-	}
 	dtr := dPCL.GetTriggers().GetCqVoteTrigger()
-	if dtr == nil {
-		dtr = dPCL.GetTrigger()
-	}
 	if cg.GetCombineCls() == nil {
 		t.categorizeSingle(tr, dep, cg)
 	} else {

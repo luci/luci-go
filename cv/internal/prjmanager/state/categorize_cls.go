@@ -67,11 +67,7 @@ func isActiveStandalonePCL(pcl *prjpb.PCL, now time.Time) bool {
 	cutoff := now.Add(-common.MaxTriggerAge)
 	tr := pcl.GetTriggers().GetCqVoteTrigger()
 	if tr == nil {
-		// fallback to deprecated field.
-		tr = pcl.GetTrigger()
-		if tr == nil {
-			return false
-		}
+		return false
 	}
 	return tr.GetTime().AsTime().After(cutoff)
 }
