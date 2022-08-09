@@ -90,6 +90,8 @@ const (
 	// TaskNoResource means there was not enough capacity when scheduled, so the
 	// task failed immediately.
 	TaskNoResource = "NO_RESOURCE"
+	// TaskClientError means that the client has caused a task to error
+	TaskClientError = "CLIENT_ERROR"
 )
 
 func getSwarmingClient(c context.Context, host string) (*swarming.Service, error) {
@@ -331,7 +333,7 @@ func addTaskToMiloStep(c context.Context, host string, sr *swarming.SwarmingRpcs
 	case TaskPending:
 		step.Status = annopb.Status_PENDING
 
-	case TaskExpired, TaskTimedOut, TaskBotDied:
+	case TaskExpired, TaskTimedOut, TaskBotDied, TaskClientError:
 		step.Status = annopb.Status_FAILURE
 
 		switch sr.State {
@@ -349,6 +351,11 @@ func addTaskToMiloStep(c context.Context, host string, sr *swarming.SwarmingRpcs
 			step.FailureDetails = &annopb.FailureDetails{
 				Type: annopb.FailureDetails_INFRA,
 				Text: "Bot died",
+			}
+		case TaskClientError:
+			step.FailureDetails = &annopb.FailureDetails{
+				Type: annopb.FailureDetails_INFRA,
+				Text: "Client error",
 			}
 		}
 
@@ -883,8 +890,8 @@ func GetBuild(c context.Context, host, taskID string) (*ui.MiloBuildLegacy, erro
 }
 
 // RedirectsFromTask returns either
-//   * The ID of the buildbucket build corresponding to this task. OR
-//   * The build.proto logdog stream from this swarming task.
+//   - The ID of the buildbucket build corresponding to this task. OR
+//   - The build.proto logdog stream from this swarming task.
 //
 // If the task does not represent a buildbucket build, returns (0, "", nil).
 func RedirectsFromTask(c context.Context, host, taskID string) (int64, string, error) {
