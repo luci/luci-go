@@ -224,16 +224,16 @@ func locationMatch(ctx context.Context, locationRegexp, locationRegexpExclude []
 	}
 	changedLocations := make(stringset.Set)
 	for _, cl := range cls {
+		if isMergeCommit(ctx, cl.Detail.GetGerrit()) {
+			// Merge commits have zero changed files. We don't want to land such
+			// changes without triggering any builders, so we ignore location filters
+			// if there are any CLs that are merge commits. See crbug/1006534.
+			return true, nil
+		}
 		host, project := cl.Detail.GetGerrit().GetHost(), cl.Detail.GetGerrit().GetInfo().GetProject()
 		for _, f := range cl.Detail.GetGerrit().GetFiles() {
 			changedLocations.Add(fmt.Sprintf("https://%s/%s/+/%s", host, project, f))
 		}
-	}
-	if changedLocations.Len() == 0 {
-		// Gerrit treats CLs representing merged commits (i.e. CL's git commit
-		// has >2 parents) as having 0 filediff. Therefore, assume that the CL
-		// matches all location(files)-conditioned builders. See crbug/1006534.
-		return true, nil
 	}
 	// First remove from the list the files that match locationRegexpExclude, and
 	for _, lre := range locationRegexpExclude {

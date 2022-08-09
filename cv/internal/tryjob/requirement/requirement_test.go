@@ -32,6 +32,7 @@ import (
 	"go.chromium.org/luci/cv/internal/changelist"
 	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/cvtesting"
+	gf "go.chromium.org/luci/cv/internal/gerrit/gerritfake"
 	"go.chromium.org/luci/cv/internal/run"
 	"go.chromium.org/luci/cv/internal/tryjob"
 
@@ -601,8 +602,8 @@ func TestCompute(t *testing.T) {
 					res, err := Compute(ctx, *in)
 					So(err, ShouldBeNil)
 					So(res.ComputationFailure, ShouldBeNil)
-					So(err, ShouldBeNil)
-					So(res.ComputationFailure, ShouldBeNil)
+					// If the builder is not skipped, it will be in
+					// res.Requirement.Definitions.
 					So(res.Requirement, ShouldResembleProto, &tryjob.Requirement{
 						RetryConfig: &cfgpb.Verifiers_Tryjob_RetryConfig{
 							SingleQuota: 2,
@@ -636,12 +637,12 @@ func TestCompute(t *testing.T) {
 						},
 					})
 				})
-				Convey("CL with empty filediff", func() {
-					// No files changed. See crbug/1006534
+				Convey("CL with merge commit", func() {
+					// No files changed, and two parents of the commit of the current revision.
+					// This simulates a merge commit. See crbug/1006534.
 					in.CLs[0].Detail.GetGerrit().Files = []string{}
+					in.CLs[0].Detail.GetGerrit().Info = gf.CI(10, gf.ParentCommits([]string{"one", "two"}), gf.Project("repo"))
 					res, err := Compute(ctx, *in)
-					So(err, ShouldBeNil)
-					So(res.ComputationFailure, ShouldBeNil)
 					So(err, ShouldBeNil)
 					So(res.ComputationFailure, ShouldBeNil)
 					So(res.Requirement, ShouldResembleProto, &tryjob.Requirement{
@@ -663,6 +664,90 @@ func TestCompute(t *testing.T) {
 							Critical: true,
 						}},
 					})
+				})
+			})
+			Convey("multi-CL, one CL with merge commit, with location_regexp", func() {
+				// One CL has a file (non-matching) and the other is empty.
+				multiCLIn := makeInput(ctx, []*cfgpb.Verifiers_Tryjob_Builder{builderConfigGenerator{
+					Name: "luci/test/builder1",
+					LocationRegexp: []string{
+						"https://example.com/repo/[+]/some/.+",
+					},
+				}.generate()})
+				multiCLIn.CLs[0].Detail.GetGerrit().Files = []string{
+					"other/directory/contains/some/file",
+				}
+				multiCLIn.addCL(userA.Email())
+				multiCLIn.CLs[1].Detail.GetGerrit().Files = []string{}
+				multiCLIn.CLs[1].Detail.GetGerrit().Host = "example.com"
+				multiCLIn.CLs[1].Detail.GetGerrit().Info = gf.CI(10, gf.ParentCommits([]string{"one", "two"}), gf.Project("repo"))
+				res, err := Compute(ctx, *multiCLIn)
+				So(err, ShouldBeNil)
+				So(res.ComputationFailure, ShouldBeNil)
+				// Builder is triggered because there is a merge commit.
+				So(res.Requirement, ShouldResembleProto, &tryjob.Requirement{
+					RetryConfig: &cfgpb.Verifiers_Tryjob_RetryConfig{
+						SingleQuota: 2,
+						GlobalQuota: 8,
+					},
+					Definitions: []*tryjob.Definition{{
+						Backend: &tryjob.Definition_Buildbucket_{
+							Buildbucket: &tryjob.Definition_Buildbucket{
+								Host: "cr-buildbucket.appspot.com",
+								Builder: &buildbucketpb.BuilderID{
+									Project: "luci",
+									Bucket:  "test",
+									Builder: "builder1",
+								},
+							},
+						},
+						Critical: true,
+					}},
+				})
+			})
+			Convey("multi-CL, one CL with empty filediff, with location_filters", func() {
+				// This test case is the same as the above, but using
+				// location_filters, to test that the behavior is the same for
+				// both.
+				multiCLIn := makeInput(ctx, []*cfgpb.Verifiers_Tryjob_Builder{builderConfigGenerator{
+					Name: "luci/test/builder1",
+					LocationFilters: []*cfgpb.Verifiers_Tryjob_Builder_LocationFilter{
+						{
+							GerritHostRegexp:    "example.com",
+							GerritProjectRegexp: "repo",
+							PathRegexp:          "some/.+",
+						},
+					},
+				}.generate()})
+				multiCLIn.CLs[0].Detail.GetGerrit().Files = []string{
+					"other/directory/contains/some/file",
+				}
+				multiCLIn.addCL(userA.Email())
+				multiCLIn.CLs[1].Detail.GetGerrit().Files = []string{}
+				multiCLIn.CLs[1].Detail.GetGerrit().Host = "example.com"
+				multiCLIn.CLs[1].Detail.GetGerrit().Info = gf.CI(10, gf.ParentCommits([]string{"one", "two"}), gf.Project("repo"))
+				res, err := Compute(ctx, *multiCLIn)
+				So(err, ShouldBeNil)
+				So(res.ComputationFailure, ShouldBeNil)
+				// Builder is triggered because there is a merge commit.
+				So(res.Requirement, ShouldResembleProto, &tryjob.Requirement{
+					RetryConfig: &cfgpb.Verifiers_Tryjob_RetryConfig{
+						SingleQuota: 2,
+						GlobalQuota: 8,
+					},
+					Definitions: []*tryjob.Definition{{
+						Backend: &tryjob.Definition_Buildbucket_{
+							Buildbucket: &tryjob.Definition_Buildbucket{
+								Host: "cr-buildbucket.appspot.com",
+								Builder: &buildbucketpb.BuilderID{
+									Project: "luci",
+									Bucket:  "test",
+									Builder: "builder1",
+								},
+							},
+						},
+						Critical: true,
+					}},
 				})
 			})
 			Convey("with location filters and exclusion", func() {

@@ -20,8 +20,10 @@ import (
 	"regexp"
 
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/logging"
 
 	cfgpb "go.chromium.org/luci/cv/api/config/v2"
+	"go.chromium.org/luci/cv/internal/changelist"
 	"go.chromium.org/luci/cv/internal/run"
 )
 
@@ -42,24 +44,35 @@ func locationFilterMatch(ctx context.Context, locationFilters []*cfgpb.Verifiers
 
 	for _, cl := range cls {
 		gerrit := cl.Detail.GetGerrit()
-		switch {
-		case gerrit == nil:
+		if gerrit == nil {
 			// Could result from error or if there is an non-Gerrit backend.
 			return false, errors.New("empty Gerrit detail")
-		case len(gerrit.GetFiles()) == 0:
-			// Gerrit treats CLs representing merged commits (i.e. CLs with with a
-			// git commit with multiple parents) as having no file diff. In this
-			// case, the builder is included. See crbug/1006534.
-			return true, nil
 		}
 		host := gerrit.GetHost()
 		project := gerrit.GetInfo().GetProject()
 
-		// If the first filter is an exclude filter, then include by default, and
-		// vice versa.
-		included := locationFilters[0].Exclude
-
+		if isMergeCommit(ctx, gerrit) {
+			if hostAndProjectMatch(compiled, host, project) {
+				// Gerrit treats CLs representing merged commits (i.e. CLs with with a
+				// git commit with multiple parents) as having no file diff. There may
+				// also be no file diff if there is no longer a diff after rebase.
+				// For merge commits, we want to avoid inadvertently landing
+				// such a CLs without triggering any builders.
+				//
+				// If there is a CL which is a merge commit, and the builder would
+				// be triggered for some files in that repo, then trigger the builder.
+				// See crbug/1006534.
+				return true, nil
+			}
+			continue
+		}
+		// Iterate through all files to try to find a match.
+		// If there are no files, but this is not a merge commit, then do
+		// nothing for this CL.
 		for _, path := range gerrit.GetFiles() {
+			// If the first filter is an exclude filter, then include by default, and
+			// vice versa.
+			included := locationFilters[0].Exclude
 			// Whether the file is included is determined by the last filter to match.
 			// So we can iterate through the filters backwards and break when we have
 			// a match.
@@ -79,7 +92,8 @@ func locationFilterMatch(ctx context.Context, locationFilters []*cfgpb.Verifiers
 		}
 	}
 
-	// After looping through all files in all CLs, all were considered excluded.
+	// After looping through all files in all CLs, all were considered
+	// excluded, so the builder should not be triggered.
 	return false, nil
 }
 
@@ -125,4 +139,29 @@ type compiledLocationFilter struct {
 	hostRE, projectRE, pathRE *regexp.Regexp
 	// Whether this filter is an exclude filter.
 	exclude bool
+}
+
+// hostAndProjectMatch returns true if the Gerrit host and project could match
+// the filters (for any possible files).
+func hostAndProjectMatch(compiled []compiledLocationFilter, host, project string) bool {
+	for _, f := range compiled {
+		if !f.exclude && match(f.hostRE, host) && match(f.projectRE, project) {
+			return true
+		}
+	}
+	// If the first filter is an exclude filter, we include by default;
+	// exclude by default.
+	return compiled[0].exclude
+}
+
+// isMergeCommit checks whether the current revision of the change is a merge
+// commit based on available Gerrit information.
+func isMergeCommit(ctx context.Context, g *changelist.Gerrit) bool {
+	i := g.GetInfo()
+	rev, ok := i.GetRevisions()[i.GetCurrentRevision()]
+	if !ok {
+		logging.Errorf(ctx, "No current revision in ChangeInfo when checking isMergeCommit, got %+v", i)
+		return false
+	}
+	return len(rev.GetCommit().GetParents()) > 1 && len(g.GetFiles()) == 0
 }
