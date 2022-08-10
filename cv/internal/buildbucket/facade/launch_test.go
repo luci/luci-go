@@ -121,6 +121,9 @@ func TestLaunch(t *testing.T) {
 			ID:   common.MakeRunID(lProject, epoch, 1, []byte("cafe")),
 			CLs:  common.CLIDs{cl1.ID, cl2.ID},
 			Mode: run.DryRun,
+			Options: &run.Options{
+				CustomTryjobTags: []string{"foo:bar"},
+			},
 		}
 
 		Convey("Single Tryjob", func() {
@@ -187,6 +190,7 @@ func TestLaunch(t *testing.T) {
 					{Key: "cq_cl_group_key", Value: "42497728aa4b5097"},
 					{Key: "cq_cl_owner", Value: owner1Email},
 					{Key: "cq_cl_owner", Value: owner2Email},
+					{Key: "cq_cl_tag", Value: "foo:bar"},
 					{Key: "cq_equivalent_cl_group_key", Value: "1aac15146c0bc164"},
 					{Key: "cq_experimental", Value: "false"},
 					{Key: "cq_triggerer", Value: triggerEmail},

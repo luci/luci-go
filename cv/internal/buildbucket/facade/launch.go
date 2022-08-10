@@ -223,7 +223,7 @@ func makeTags(r *run.Run, cls []*run.RunCL) (nonExp, exp []*bbpb.StringPair, err
 	var commonTags []*bbpb.StringPair
 	addTag := func(key string, values ...string) {
 		for _, v := range values {
-			commonTags = append(commonTags, &bbpb.StringPair{Key: key, Value: v})
+			commonTags = append(commonTags, &bbpb.StringPair{Key: key, Value: strings.TrimSpace(v)})
 		}
 	}
 	addTag("user_agent", "cq")
@@ -242,7 +242,7 @@ func makeTags(r *run.Run, cls []*run.RunCL) (nonExp, exp []*bbpb.StringPair, err
 	}
 	addTag("cq_cl_owner", owners.ToSlice()...)
 	addTag("cq_triggerer", triggerers.ToSlice()...)
-	// TODO(crbug/1323978): support custom tags
+	addTag("cq_cl_tag", r.Options.GetCustomTryjobTags()...)
 	nonExp = append([]*bbpb.StringPair{{Key: "cq_experimental", Value: "false"}}, commonTags...)
 	exp = append([]*bbpb.StringPair{{Key: "cq_experimental", Value: "true"}}, commonTags...)
 	sortTags(nonExp)
