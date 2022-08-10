@@ -206,6 +206,11 @@ message PRun {
   //
   // Actual Run may orders its CLs in a different way.
   repeated int64 clids = 2;
+
+  // The mode of the Run referenced by this message.
+  //
+  // It uses the string value of run.Mode.
+  string mode = 3;
 }
 
 // Component is a set of CLs related to each other.

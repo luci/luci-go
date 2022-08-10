@@ -59,6 +59,7 @@ func MakePRun(r *run.Run) *PRun {
 	return &PRun{
 		Id:    string(r.ID),
 		Clids: clids,
+		Mode:  string(r.Mode),
 	}
 }
 
