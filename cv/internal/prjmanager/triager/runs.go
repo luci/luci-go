@@ -58,11 +58,11 @@ func stageNewRuns(ctx context.Context, c *prjpb.Component, cls map[int64]*clInfo
 	// For determinism, iterate in fixed order:
 	for _, clid := range c.GetClids() {
 		info := cls[clid]
-		switch rc, nt, err := rs.stageNewRunsFrom(ctx, clid, info); {
+		switch rcs, nt, err := rs.stageNewRunsFrom(ctx, clid, info); {
 		case err != nil:
 			return nil, time.Time{}, err
-		case rc != nil:
-			out = append(out, rc)
+		case len(rcs) != 0:
+			out = append(out, rcs...)
 		default:
 			next = earliest(next, nt)
 		}
@@ -87,7 +87,7 @@ type runStage struct {
 	cachedReverseDeps map[int64][]int64
 }
 
-func (rs *runStage) stageNewRunsFrom(ctx context.Context, clid int64, info *clInfo) (*runcreator.Creator, time.Time, error) {
+func (rs *runStage) stageNewRunsFrom(ctx context.Context, clid int64, info *clInfo) ([]*runcreator.Creator, time.Time, error) {
 	// Only start with ready CLs. Non-ready ones can't form new Runs anyway.
 	if !info.ready {
 		return nil, time.Time{}, nil
@@ -202,7 +202,7 @@ func (rs *runStage) stageNewRunsFrom(ctx context.Context, clid int64, info *clIn
 	case err == datastore.ErrNoSuchEntity:
 		// This is the expected case.
 		// NOTE: actual creation may still fail due to a race, and that's fine.
-		return rc, time.Time{}, nil
+		return []*runcreator.Creator{rc}, time.Time{}, nil
 	case err != nil:
 		return nil, time.Time{}, errors.Annotate(err, "failed to check for existing Run %q", existing.ID).Tag(transient.Tag).Err()
 	case !run.IsEnded(existing.Status):
@@ -274,7 +274,7 @@ func (rs *runStage) expandCombo(clid int64, result *combo) {
 	rs.expandComboVisited(info, result)
 }
 
-func (rs *runStage) postponeDueToNotYetLoadedDeps(ctx context.Context, combo *combo) (*runcreator.Creator, time.Time, error) {
+func (rs *runStage) postponeDueToNotYetLoadedDeps(ctx context.Context, combo *combo) ([]*runcreator.Creator, time.Time, error) {
 	// TODO(crbug/1211576): this waiting can last forever. Component needs to
 	// record how long it has been waiting and abort with clear message to the
 	// user.
@@ -282,19 +282,19 @@ func (rs *runStage) postponeDueToNotYetLoadedDeps(ctx context.Context, combo *co
 	return nil, time.Time{}, nil
 }
 
-func (rs *runStage) postponeDueToNotReadyCLs(ctx context.Context, combo *combo) (*runcreator.Creator, time.Time, error) {
+func (rs *runStage) postponeDueToNotReadyCLs(ctx context.Context, combo *combo) ([]*runcreator.Creator, time.Time, error) {
 	// TODO(crbug/1211576): for safety, this should not wait forever.
 	logging.Warningf(ctx, "%s waits for not yet ready CLs", combo)
 	return nil, time.Time{}, nil
 }
 
-func (rs *runStage) postponeDueToExistingRunDiffScope(ctx context.Context, combo *combo, r *prjpb.PRun) (*runcreator.Creator, time.Time, error) {
+func (rs *runStage) postponeDueToExistingRunDiffScope(ctx context.Context, combo *combo, r *prjpb.PRun) ([]*runcreator.Creator, time.Time, error) {
 	// TODO(crbug/1211576): for safety, this should not wait forever.
 	logging.Warningf(ctx, "%s is waiting for a differently scoped run %q to finish", combo, r.GetId())
 	return nil, time.Time{}, nil
 }
 
-func (rs *runStage) postponeExpandingExistingRunScope(ctx context.Context, combo *combo, r *prjpb.PRun) (*runcreator.Creator, time.Time, error) {
+func (rs *runStage) postponeExpandingExistingRunScope(ctx context.Context, combo *combo, r *prjpb.PRun) ([]*runcreator.Creator, time.Time, error) {
 	// TODO(crbug/1211576): for safety, this should not wait forever.
 	logging.Warningf(ctx, "%s is waiting for smaller scoped run %q to finish", combo, r.GetId())
 	return nil, time.Time{}, nil
