@@ -76,7 +76,7 @@ func (f *commitFlag) retrieveCommit(ctx context.Context, client *http.Client) (*
 	return commit, nil
 }
 
-var regexCommit = regexp.MustCompile(`([\w\-]+\.googlesource\.com)/([^\+]+)/\+/(([a-f0-9]{40})|([\w\-/]+))`)
+var regexCommit = regexp.MustCompile(`([\w\-]+\.googlesource\.com)/([^\+]+)/\+/(([a-f0-9]{40})|([\w\-/\.]+))`)
 
 // crrevRedirect returns a URL that crrev.com redirects the query to.
 func crrevRedirect(ctx context.Context, client *http.Client, query string) (redirect string, err error) {
