@@ -112,6 +112,38 @@ func TestExtractOptions(t *testing.T) {
 			})
 		})
 
+		Convey("Cq-Include-Trybots/CQ_INCLUDE_TRYBOTS", func() {
+			So(extract(`
+				CL title.
+
+				Cq-Include-Trybots: project/bucket:builder1,builder2;project2/bucket:builder3
+				CQ_INCLUDE_TRYBOTS=project/bucket:builder4
+			`), ShouldResembleProto,
+				&Options{
+					IncludedTryjobs: []string{
+						"project/bucket:builder1,builder2;project2/bucket:builder3",
+						"project/bucket:builder4",
+					},
+				})
+		})
+
+		Convey("Cq-Cl-Tag", func() {
+			// legacy format (i.e. CQ_CL_TAG=XXX) is not supported.
+			So(extract(`
+				CL title.
+
+				Cq-Cl-Tag: foo:bar
+				Cq-Cl-Tag: foo:baz
+				CQ_CL_TAG=another_foo:another_bar
+			`), ShouldResembleProto,
+				&Options{
+					CustomTryjobTags: []string{
+						"foo:baz",
+						"foo:bar",
+					},
+				})
+		})
+
 		Convey("If keys are repeated, any true value means true", func() {
 			So(extract(`
 				CL title.

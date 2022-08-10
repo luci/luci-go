@@ -36,7 +36,7 @@ func ExtractOptions(snapshot *changelist.Snapshot) *Options {
 		switch k := footer.NormalizeKey(mkey); {
 		case mkey == "":
 		case k != mkey:
-			panic(fmt.Errorf("Use normalized key %q not %q in CV code", k, mkey))
+			panic(fmt.Errorf("use normalized key %q not %q in CV code", k, mkey))
 		default:
 			out = append(out, byKey[mkey]...)
 		}
@@ -49,7 +49,7 @@ func ExtractOptions(snapshot *changelist.Snapshot) *Options {
 
 	has := func(mkey, lkey, value string) bool {
 		if l := strings.ToLower(value); l != value {
-			panic(fmt.Errorf("Use lowercase value %q not %q in CV code", l, value))
+			panic(fmt.Errorf("use lowercase value %q not %q in CV code", l, value))
 		}
 		for _, v := range valuesOf(mkey, lkey) {
 			if strings.ToLower(v) == value {
@@ -78,6 +78,7 @@ func ExtractOptions(snapshot *changelist.Snapshot) *Options {
 		o.SkipPresubmit = true
 	}
 	o.IncludedTryjobs = append(o.IncludedTryjobs, valuesOf("Cq-Include-Trybots", "CQ_INCLUDE_TRYBOTS")...)
+	o.CustomTryjobTags = append(o.CustomTryjobTags, valuesOf("Cq-Cl-Tag", "")...)
 	return o
 }
 
@@ -98,5 +99,6 @@ func MergeOptions(a, b *Options) *Options {
 		SkipEquivalentBuilders: a.SkipEquivalentBuilders || b.SkipEquivalentBuilders,
 		SkipTreeChecks:         a.SkipTreeChecks || b.SkipTreeChecks,
 		IncludedTryjobs:        append(a.IncludedTryjobs, b.IncludedTryjobs...),
+		CustomTryjobTags:       append(a.CustomTryjobTags, b.CustomTryjobTags...),
 	}
 }

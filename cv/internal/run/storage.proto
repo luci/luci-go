@@ -179,6 +179,13 @@ message Options {
   // Note that there may be duplication in the directives, it's up to the
   // consumer of this information to handle it.
   repeated string included_tryjobs = 6;
+
+  // Contains the custom Tryjob tags that should be added when launching
+  // Tryjobs for this Run.
+  //
+  // Each element SHOULD be in the format of "$tag_key:$tag_value" and the
+  // character set for tag key is [a-z0-9_\-].
+  repeated string custom_tryjob_tags = 7;
 }
 
 // LogEntries contains 1+ LogEntry ordered from logically oldest to newest.
