@@ -320,18 +320,15 @@ func handleRequirementChange(curReqmt, targetReqmt *tryjob.Requirement, execStat
 				panic(fmt.Errorf("impossible; definition shows up in diff but not in existing execution state. Definition: %s", existingDef))
 			}
 			execState.Executions = append(execState.Executions, exec)
+		case !reqmtDiff.UnchangedDefsReverse.Has(def):
+			panic(fmt.Errorf("impossible; definition is not showing up in diff result. Definition: %s", def))
 		default: // Nothing has changed for this definition.
-			var foundMatchingExecution bool
-			for existingDef, exec := range existingExecutionByDef {
-				if proto.Equal(def, existingDef) {
-					foundMatchingExecution = true
-					execState.Executions = append(execState.Executions, exec)
-					break
-				}
+			existingDef := reqmtDiff.UnchangedDefsReverse[def]
+			exec, ok := existingExecutionByDef[existingDef]
+			if !ok {
+				panic(fmt.Errorf("impossible; definition shows up in diff but not in existing execution state. Definition: %s", existingDef))
 			}
-			if !foundMatchingExecution {
-				panic(fmt.Errorf("impossible; definition neither shows up in diff nor in existing execution state. Definition: %s", def))
-			}
+			execState.Executions = append(execState.Executions, exec)
 		}
 	}
 	if len(targetReqmt.GetDefinitions()) == 0 {

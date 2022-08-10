@@ -88,11 +88,13 @@ func TestDiff(t *testing.T) {
 						Definitions: []*tryjob.Definition{shared},
 					},
 					&tryjob.Requirement{
-						Definitions: []*tryjob.Definition{shared, extra},
+						Definitions: []*tryjob.Definition{proto.Clone(shared).(*tryjob.Definition), extra},
 					})
 				So(res.AddedDefs, ShouldHaveLength, 1)
 				So(res.AddedDefs, ShouldContainKey, extra)
 				So(res.ChangedDefs, ShouldBeEmpty)
+				So(res.UnchangedDefs, ShouldHaveLength, 1)
+				So(res.UnchangedDefs[shared], ShouldResembleProto, shared)
 				So(res.RemovedDefs, ShouldBeEmpty)
 			})
 			Convey("Target has one removed", func() {
@@ -103,10 +105,12 @@ func TestDiff(t *testing.T) {
 						Definitions: []*tryjob.Definition{shared, removed},
 					},
 					&tryjob.Requirement{
-						Definitions: []*tryjob.Definition{shared},
+						Definitions: []*tryjob.Definition{proto.Clone(shared).(*tryjob.Definition)},
 					})
 				So(res.AddedDefs, ShouldBeEmpty)
 				So(res.ChangedDefs, ShouldBeEmpty)
+				So(res.UnchangedDefs, ShouldHaveLength, 1)
+				So(res.UnchangedDefs[shared], ShouldResembleProto, shared)
 				So(res.RemovedDefs, ShouldHaveLength, 1)
 				So(res.RemovedDefs, ShouldContainKey, removed)
 			})
@@ -148,7 +152,7 @@ func TestDiff(t *testing.T) {
 					Definitions: []*tryjob.Definition{builder1, builder2, builder3, builderDiffProj},
 				}
 				target := &tryjob.Requirement{
-					Definitions: []*tryjob.Definition{builder1, builder3Changed, builder4, builderDiffProjChanged},
+					Definitions: []*tryjob.Definition{proto.Clone(builder1).(*tryjob.Definition), builder3Changed, builder4, builderDiffProjChanged},
 				}
 				rand.Seed(testclock.TestRecentTimeUTC.Unix())
 				rand.Shuffle(len(base.Definitions), func(i, j int) {
@@ -168,6 +172,8 @@ func TestDiff(t *testing.T) {
 				So(res.ChangedDefsReverse, ShouldHaveLength, 2)
 				So(res.ChangedDefsReverse[builder3Changed], ShouldResembleProto, builder3)
 				So(res.ChangedDefsReverse[builderDiffProjChanged], ShouldResembleProto, builderDiffProj)
+				So(res.UnchangedDefs, ShouldHaveLength, 1)
+				So(res.UnchangedDefs[builder1], ShouldResembleProto, builder1)
 			})
 		})
 

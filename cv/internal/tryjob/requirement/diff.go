@@ -57,6 +57,14 @@ type DiffResult struct {
 	//
 	// Only the keys will be populated, the values will be nil.
 	AddedDefs DefinitionMapping
+	// UnchangedDefs is like `ChangeDefs` but contain unchanged definitions.
+	//
+	// This comes handy when trying to locate the corresponding definition in the
+	// `target` when iterating through `base`.
+	UnchangedDefs DefinitionMapping
+	// UnchangedDefsReverse is a reverse mapping of `UnchangedDefs`
+	UnchangedDefsReverse DefinitionMapping
+
 	// RetryConfigChanged indicates the retry configuration has changed.
 	RetryConfigChanged bool
 }
@@ -67,10 +75,12 @@ func Diff(base, target *tryjob.Requirement) DiffResult {
 	sortedTargetDefs := toSortedTryjobDefs(target.GetDefinitions())
 
 	res := DiffResult{
-		AddedDefs:          make(DefinitionMapping),
-		ChangedDefs:        make(DefinitionMapping),
-		ChangedDefsReverse: make(DefinitionMapping),
-		RemovedDefs:        make(DefinitionMapping),
+		AddedDefs:            make(DefinitionMapping),
+		ChangedDefs:          make(DefinitionMapping),
+		ChangedDefsReverse:   make(DefinitionMapping),
+		UnchangedDefs:        make(DefinitionMapping),
+		UnchangedDefsReverse: make(DefinitionMapping),
+		RemovedDefs:          make(DefinitionMapping),
 	}
 	for len(sortedBaseDefs) > 0 && len(sortedTargetDefs) > 0 {
 		baseDef, targetDef := sortedBaseDefs[0].def, sortedTargetDefs[0].def
@@ -79,6 +89,9 @@ func Diff(base, target *tryjob.Requirement) DiffResult {
 			if !proto.Equal(baseDef, targetDef) {
 				res.ChangedDefs[baseDef] = targetDef
 				res.ChangedDefsReverse[targetDef] = baseDef
+			} else {
+				res.UnchangedDefs[baseDef] = targetDef
+				res.UnchangedDefsReverse[targetDef] = baseDef
 			}
 			sortedBaseDefs, sortedTargetDefs = sortedBaseDefs[1:], sortedTargetDefs[1:]
 		case -1:
