@@ -306,9 +306,10 @@ const (
 )
 
 type definitionMaker struct {
-	builder     *cfgpb.Verifiers_Tryjob_Builder
-	equivalence equivalentUsage
-	criticality criticality
+	builder        *cfgpb.Verifiers_Tryjob_Builder
+	equivalence    equivalentUsage
+	criticality    criticality
+	skipStaleCheck bool
 }
 
 func (dm *definitionMaker) make() *tryjob.Definition {
@@ -331,7 +332,7 @@ func (dm *definitionMaker) make() *tryjob.Definition {
 	definition.Critical = bool(dm.criticality)
 	definition.Experimental = dm.builder.GetExperimentPercentage() > 0
 	definition.ResultVisibility = dm.builder.GetResultVisibility()
-	definition.SkipStaleCheck = dm.builder.GetCancelStale() == cfgpb.Toggle_NO
+	definition.SkipStaleCheck = dm.skipStaleCheck
 	return definition
 }
 
@@ -600,6 +601,11 @@ func Compute(ctx context.Context, in Input) (*ComputationResult, error) {
 		dm := &definitionMaker{
 			builder:     builder,
 			criticality: builder.ExperimentPercentage == 0,
+		}
+		if in.RunOptions.GetAvoidCancellingTryjobs() {
+			dm.skipStaleCheck = true
+		} else {
+			dm.skipStaleCheck = builder.GetCancelStale() == cfgpb.Toggle_NO
 		}
 		r, compFail, err := shouldInclude(ctx, in, dm, experimentRand, equivalentBuilderRand, builder, explicitlyIncluded, allOwnerEmails)
 		switch {

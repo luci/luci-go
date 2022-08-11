@@ -902,6 +902,54 @@ func TestCompute(t *testing.T) {
 				})
 			})
 		})
+		Convey("stale check", func() {
+			Convey("from config", func() {
+				in := makeInput(ctx, []*cfgpb.Verifiers_Tryjob_Builder{
+					builderConfigGenerator{
+						Name: "test-proj/test/stale-default",
+					}.generate(),
+					builderConfigGenerator{
+						Name:        "test-proj/test/stale-no",
+						CancelStale: cfgpb.Toggle_NO,
+					}.generate(),
+					builderConfigGenerator{
+						Name:        "test-proj/test/stale-yes",
+						CancelStale: cfgpb.Toggle_YES,
+					}.generate(),
+				})
+
+				res, err := Compute(ctx, *in)
+				So(err, ShouldBeNil)
+				So(res.ComputationFailure, ShouldBeNil)
+				So(res.Requirement.GetDefinitions(), ShouldHaveLength, 3)
+				expectedSkipStaleCheck := []bool{false, true, false}
+				for i, def := range res.Requirement.GetDefinitions() {
+					So(def.GetSkipStaleCheck(), ShouldEqual, expectedSkipStaleCheck[i])
+				}
+			})
+			Convey("overridden by run option", func() {
+				in := makeInput(ctx, []*cfgpb.Verifiers_Tryjob_Builder{
+					builderConfigGenerator{
+						Name:        "test-proj/test/stale-no",
+						CancelStale: cfgpb.Toggle_NO,
+					}.generate(),
+					builderConfigGenerator{
+						Name:        "test-proj/test/stale-yes",
+						CancelStale: cfgpb.Toggle_YES,
+					}.generate(),
+				})
+				in.RunOptions = &run.Options{
+					AvoidCancellingTryjobs: true,
+				}
+
+				res, err := Compute(ctx, *in)
+				So(err, ShouldBeNil)
+				So(res.ComputationFailure, ShouldBeNil)
+				for _, def := range res.Requirement.GetDefinitions() {
+					So(def.GetSkipStaleCheck(), ShouldBeTrue)
+				}
+			})
+		})
 	})
 }
 
@@ -916,6 +964,7 @@ type builderConfigGenerator struct {
 	LocationRegexpExclude []string
 	LocationFilters       []*cfgpb.Verifiers_Tryjob_Builder_LocationFilter
 	TriggeredBy           string
+	CancelStale           cfgpb.Toggle
 }
 
 func (bcg builderConfigGenerator) generate() *cfgpb.Verifiers_Tryjob_Builder {
@@ -926,6 +975,7 @@ func (bcg builderConfigGenerator) generate() *cfgpb.Verifiers_Tryjob_Builder {
 		LocationRegexpExclude: bcg.LocationRegexpExclude,
 		LocationFilters:       bcg.LocationFilters,
 		TriggeredBy:           bcg.TriggeredBy,
+		CancelStale:           bcg.CancelStale,
 	}
 	if bcg.Allowlist != "" {
 		ret.OwnerWhitelistGroup = []string{bcg.Allowlist}
