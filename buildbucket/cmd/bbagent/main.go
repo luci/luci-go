@@ -102,7 +102,7 @@ type stopInfo struct {
 //
 //	build has been canceled.
 //	* Shuts down the luciexe if the build is canceled.
-func (si stopInfo) stopEvents(ctx context.Context, c clientInput, fatalUpdateBuildErrorSlot atomic.Value) {
+func (si stopInfo) stopEvents(ctx context.Context, c clientInput, fatalUpdateBuildErrorSlot *atomic.Value) {
 	stopped := false
 	for {
 		select {
@@ -540,7 +540,7 @@ func mainImpl() int {
 		dispatcherErrCh,
 	}
 
-	go si.stopEvents(ctx, bbclientInput, fatalUpdateBuildErrorSlot)
+	go si.stopEvents(ctx, bbclientInput, &fatalUpdateBuildErrorSlot)
 
 	// Now all we do is shuttle builds through to the buildbucket client channel
 	// until there are no more builds to shuttle.
