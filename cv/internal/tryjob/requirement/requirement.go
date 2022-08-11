@@ -475,10 +475,11 @@ func shouldInclude(ctx context.Context, in Input, er *rand.Rand, b *cfgpb.Verifi
 			logging.Fields{
 				"location_regexp":         b.LocationRegexp,
 				"location_regexp_exclude": b.LocationRegexpExclude,
-				"location_filters":        b.LocationFilters,
 				"location_regexp result":  locationRegexpMatched,
 				"location_filters result": locationFilterMatched,
-			}.Errorf(ctx, "LocationFilters and LocationRegexp did not give the same result.")
+				"builder name":            b.Name,
+			}.Errorf(ctx, "LocationFilters and LocationRegexp did not give the same result. LocationFilters: %+v", b.LocationFilters, in.CLs)
+
 		}
 		fallthrough
 	case locationRegexpSpecified:
