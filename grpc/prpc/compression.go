@@ -28,7 +28,10 @@ import (
 // https://webmasters.stackexchange.com/questions/31750/what-is-recommended-minimum-object-size-for-gzip-performance-benefits
 const gzipThreshold = 1024
 
-var gzipWriters sync.Pool
+var (
+	gzipWriters sync.Pool
+	gzipReaders sync.Pool
+)
 
 func getGZipWriter(w io.Writer) *gzip.Writer {
 	if gw, _ := gzipWriters.Get().(*gzip.Writer); gw != nil {
@@ -40,6 +43,21 @@ func getGZipWriter(w io.Writer) *gzip.Writer {
 
 func returnGZipWriter(gw *gzip.Writer) {
 	gzipWriters.Put(gw)
+}
+
+func getGZipReader(r io.Reader) (*gzip.Reader, error) {
+	if gr, _ := gzipReaders.Get().(*gzip.Reader); gr != nil {
+		if err := gr.Reset(gr); err != nil {
+			gzipReaders.Put(gr) // it is still good for reuse, even on errors
+			return nil, err
+		}
+		return gr, nil
+	}
+	return gzip.NewReader(r)
+}
+
+func returnGZipReader(gr *gzip.Reader) {
+	gzipReaders.Put(gr)
 }
 
 // compressBlob compresses data using gzip.

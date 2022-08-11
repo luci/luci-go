@@ -119,13 +119,16 @@ type Client struct {
 	// their bodies) all queue up in memory anyway.
 	MaxConcurrentRequests int
 
-	// EnableRequestCompression allows the client to compress the request
-	// message. Use this option only with servers that implement pRPC v1.3+.
-	// Olders servers would fail to parse the request.
+	// EnableRequestCompression allows the client to compress requests if they
+	// are larger than a certain threshold.
 	//
-	// The response message compression is configured on the server.
+	// This is false by default. Use this option only with servers that understand
+	// compressed requests! These are Go servers built after Aug 15 2022. Python
+	// servers and olders Go servers would fail to parse the request with
+	// INVALID_ARGUMENT error.
 	//
-	// TODO(crbug.com/1336810): This is currently broken, do not use.
+	// The response compression is configured independently on the server. The
+	// client always accepts compressed responses.
 	EnableRequestCompression bool
 
 	// PathPrefix is the prefix of the URL path, "<PathPrefix>/<service>/<method>"

@@ -47,10 +47,27 @@ func readMessage(r *http.Request, msg proto.Message, fixFieldMasksForJSON bool) 
 		return errorf(http.StatusUnsupportedMediaType, "Content-Type header: %s", err)
 	}
 
-	buf, err := ioutil.ReadAll(r.Body)
-	if err != nil {
-		return errorf(http.StatusBadRequest, "could not read body: %s", err)
+	var buf []byte
+	if r.Header.Get("Content-Encoding") == "gzip" {
+		reader, err := getGZipReader(r.Body)
+		if err != nil {
+			return errorf(http.StatusBadRequest, "failed to start decompressing gzip request body: %s", err)
+		}
+		buf, err = ioutil.ReadAll(reader)
+		if err == nil {
+			err = reader.Close() // this just checks the checksum
+		}
+		returnGZipReader(reader)
+		if err != nil {
+			return errorf(http.StatusBadRequest, "could not read or decompress request body: %s", err)
+		}
+	} else {
+		buf, err = ioutil.ReadAll(r.Body)
+		if err != nil {
+			return errorf(http.StatusBadRequest, "could not read request body: %s", err)
+		}
 	}
+
 	switch format {
 	// Do not redefine "err" below.
 

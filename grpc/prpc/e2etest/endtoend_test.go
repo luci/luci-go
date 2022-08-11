@@ -82,10 +82,8 @@ func TestEndToEnd(t *testing.T) {
 			panic(err)
 		}
 
-		// TODO(crbug.com/1336810): Request compression is broken now. Uncommenting
-		// this will break the test.
-		//
-		// prpcClient.EnableRequestCompression = true
+		ts.EnableResponseCompression = true
+		prpcClient.EnableRequestCompression = true
 
 		client := NewHelloClient(prpcClient)
 
@@ -105,6 +103,18 @@ func TestEndToEnd(t *testing.T) {
 			So(err, ShouldBeNil)
 
 			resp, err := client.Greet(c, &HelloRequest{Name: hex.EncodeToString(msg)})
+			So(err, ShouldBeRPCOK)
+			So(resp, ShouldResembleProto, svc.R)
+		})
+
+		Convey(`Can receive a giant message with compression`, func() {
+			msg := make([]byte, 10*1024*1024)
+			_, err := rand.Read(msg)
+			So(err, ShouldBeNil)
+
+			svc.R = &HelloReply{Message: hex.EncodeToString(msg)}
+
+			resp, err := client.Greet(c, &HelloRequest{Name: "hi"})
 			So(err, ShouldBeRPCOK)
 			So(resp, ShouldResembleProto, svc.R)
 		})

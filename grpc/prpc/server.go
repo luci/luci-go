@@ -172,9 +172,17 @@ type Server struct {
 	// invoke handler to complete the RPC.
 	UnaryServerInterceptor grpc.UnaryServerInterceptor
 
-	// EnableCompression tells the Server to respect "Accept-Encoding: gzip"
-	// request header. If false (default), responses are never compressed.
-	EnableCompression bool
+	// EnableResponseCompression allows the server to compress responses if they
+	// are larger than a certain threshold.
+	//
+	// If false (default), responses are never compressed.
+	//
+	// If true and the client sends "Accept-Encoding: gzip" (default for all Go
+	// clients), responses larger than a certain threshold will be compressed.
+	//
+	// The request compression is configured independently on the client. The
+	// server always accepts compressed requests.
+	EnableResponseCompression bool
 
 	mu        sync.RWMutex
 	services  map[string]*service
@@ -330,7 +338,7 @@ func (s *Server) handlePOST(c *router.Context) {
 		return
 	}
 
-	writeMessage(c.Context, c.Writer, res.out, res.fmt, s.EnableCompression && res.acceptsGZip)
+	writeMessage(c.Context, c.Writer, res.out, res.fmt, s.EnableResponseCompression && res.acceptsGZip)
 }
 
 func (s *Server) handleOPTIONS(c *router.Context) {
