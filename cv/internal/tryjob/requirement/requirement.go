@@ -296,38 +296,42 @@ const (
 	nonCritical criticality = false
 )
 
-type equivalentUsage int
+type equivalentUsage int8
 
 const (
-	mainOnly equivalentUsage = iota
+	mainOnly equivalentUsage = iota + 1
 	equivalentOnly
 	bothMainAndEquivalent
 	flipMainAndEquivalent
 )
 
-// makeDefinition creates a Tryjob Definition for the given builder names and
-// reuse flag.
-func makeDefinition(builder *cfgpb.Verifiers_Tryjob_Builder, useEquivalent equivalentUsage, isCritical criticality) *tryjob.Definition {
+type definitionMaker struct {
+	builder     *cfgpb.Verifiers_Tryjob_Builder
+	equivalence equivalentUsage
+	criticality criticality
+}
+
+func (dm *definitionMaker) make() *tryjob.Definition {
 	var definition *tryjob.Definition
-	switch useEquivalent {
+	switch dm.equivalence {
 	case mainOnly:
-		definition = makeBuildbucketDefinition(builder.Name)
+		definition = makeBuildbucketDefinition(dm.builder.GetName())
 	case equivalentOnly:
-		definition = makeBuildbucketDefinition(builder.EquivalentTo.Name)
+		definition = makeBuildbucketDefinition(dm.builder.GetEquivalentTo().GetName())
 	case bothMainAndEquivalent:
-		definition = makeBuildbucketDefinition(builder.Name)
-		definition.EquivalentTo = makeBuildbucketDefinition(builder.EquivalentTo.Name)
+		definition = makeBuildbucketDefinition(dm.builder.GetName())
+		definition.EquivalentTo = makeBuildbucketDefinition(dm.builder.GetEquivalentTo().GetName())
 	case flipMainAndEquivalent:
-		definition = makeBuildbucketDefinition(builder.EquivalentTo.Name)
-		definition.EquivalentTo = makeBuildbucketDefinition(builder.Name)
+		definition = makeBuildbucketDefinition(dm.builder.GetEquivalentTo().GetName())
+		definition.EquivalentTo = makeBuildbucketDefinition(dm.builder.GetName())
 	default:
-		panic(fmt.Errorf("unknown useEquivalent(%d)", useEquivalent))
+		panic(fmt.Errorf("unknown equivalentUsage(%d)", dm.equivalence))
 	}
-	definition.DisableReuse = builder.DisableReuse
-	definition.Critical = bool(isCritical)
-	definition.Experimental = builder.ExperimentPercentage > 0
-	definition.ResultVisibility = builder.ResultVisibility
-	definition.SkipStaleCheck = builder.GetCancelStale() == cfgpb.Toggle_NO
+	definition.DisableReuse = dm.builder.GetDisableReuse()
+	definition.Critical = bool(dm.criticality)
+	definition.Experimental = dm.builder.GetExperimentPercentage() > 0
+	definition.ResultVisibility = dm.builder.GetResultVisibility()
+	definition.SkipStaleCheck = dm.builder.GetCancelStale() == cfgpb.Toggle_NO
 	return definition
 }
 
@@ -389,18 +393,16 @@ func isPresubmit(builder *cfgpb.Verifiers_Tryjob_Builder) bool {
 	return builder.DisableReuse
 }
 
-type inclusionResult byte
+type inclusionResult bool
 
 const (
-	skipBuilder inclusionResult = iota
-	includeBuilder
-	includeMainBuilderOnly
-	includeEquiBuilderOnly
+	skipBuilder    inclusionResult = false
+	includeBuilder                 = true
 )
 
 // shouldInclude decides based on the configuration whether a given builder
 // should be skipped in generating the requirement.
-func shouldInclude(ctx context.Context, in Input, er *rand.Rand, b *cfgpb.Verifiers_Tryjob_Builder, incl stringset.Set, owners []string) (inclusionResult, ComputationFailure, error) {
+func shouldInclude(ctx context.Context, in Input, dm *definitionMaker, experimentRand, equivalentRand *rand.Rand, b *cfgpb.Verifiers_Tryjob_Builder, incl stringset.Set, owners []string) (inclusionResult, ComputationFailure, error) {
 	switch ps := isPresubmit(b); {
 	case in.RunOptions.GetSkipTryjobs() && !ps:
 		return skipBuilder, nil, nil
@@ -426,7 +428,9 @@ func shouldInclude(ctx context.Context, in Input, er *rand.Rand, b *cfgpb.Verifi
 				Builder: b.Name,
 			}, nil
 		}
-		return includeMainBuilderOnly, nil, nil
+		dm.equivalence = mainOnly
+		dm.criticality = true // explicitly included builder is always critical
+		return includeBuilder, nil, nil
 	}
 
 	if b.GetEquivalentTo() != nil && incl.Del(b.GetEquivalentTo().GetName()) {
@@ -442,7 +446,9 @@ func shouldInclude(ctx context.Context, in Input, er *rand.Rand, b *cfgpb.Verifi
 				}, nil
 			}
 		}
-		return includeEquiBuilderOnly, nil, nil
+		dm.equivalence = equivalentOnly
+		dm.criticality = true // explicitly included builder is always critical
+		return includeBuilder, nil, nil
 	}
 
 	if b.IncludableOnly {
@@ -494,7 +500,7 @@ func shouldInclude(ctx context.Context, in Input, er *rand.Rand, b *cfgpb.Verifi
 		}
 	}
 
-	if b.ExperimentPercentage != 0 && er.Float32()*100 > b.ExperimentPercentage {
+	if b.ExperimentPercentage != 0 && experimentRand.Float32()*100 > b.ExperimentPercentage {
 		return skipBuilder, nil, nil
 	}
 
@@ -502,14 +508,32 @@ func shouldInclude(ctx context.Context, in Input, er *rand.Rand, b *cfgpb.Verifi
 	case err != nil:
 		return skipBuilder, nil, err
 	case allowed:
+		// decide whether CV should use main builder or equivalent builder
+		dm.equivalence = mainOnly
+		if b.GetEquivalentTo() != nil && !in.RunOptions.GetSkipEquivalentBuilders() {
+			dm.equivalence = bothMainAndEquivalent
+			switch allowed, err := isEquiBuilderAllowed(ctx, owners, b.GetEquivalentTo()); {
+			case err != nil:
+				return skipBuilder, nil, err
+			case allowed:
+				if equivalentRand.Float32()*100 <= b.GetEquivalentTo().GetPercentage() {
+					// Invert equivalence: trigger equivalent, but accept reusing original too.
+					dm.equivalence = flipMainAndEquivalent
+				}
+			default:
+				// Not allowed to use equivalent.
+				dm.equivalence = mainOnly
+			}
+		}
 		return includeBuilder, nil, nil
-	case b.GetEquivalentTo() != nil:
+	case b.GetEquivalentTo() != nil && !in.RunOptions.GetSkipEquivalentBuilders():
 		// See if the owners can trigger the equivalent builder instead.
 		switch equiAllowed, err := isEquiBuilderAllowed(ctx, owners, b.GetEquivalentTo()); {
 		case err != nil:
 			return skipBuilder, nil, err
 		case equiAllowed:
-			return includeEquiBuilderOnly, nil, err
+			dm.equivalence = equivalentOnly
+			return includeBuilder, nil, err
 		default:
 			return skipBuilder, nil, err
 		}
@@ -573,35 +597,18 @@ func Compute(ctx context.Context, in Input) (*ComputationResult, error) {
 	rands := makeRands(in, 2)
 	experimentRand, equivalentBuilderRand := rands[0], rands[1]
 	for _, builder := range in.ConfigGroup.GetVerifiers().GetTryjob().GetBuilders() {
-		r, compFail, err := shouldInclude(ctx, in, experimentRand, builder, explicitlyIncluded, allOwnerEmails)
+		dm := &definitionMaker{
+			builder:     builder,
+			criticality: builder.ExperimentPercentage == 0,
+		}
+		r, compFail, err := shouldInclude(ctx, in, dm, experimentRand, equivalentBuilderRand, builder, explicitlyIncluded, allOwnerEmails)
 		switch {
 		case err != nil:
 			return nil, err
 		case compFail != nil:
 			return &ComputationResult{ComputationFailure: compFail}, nil
-		case r == skipBuilder:
-		case r == includeMainBuilderOnly:
-			ret.Requirement.Definitions = append(ret.Requirement.Definitions, makeDefinition(builder, mainOnly, critical))
-		case r == includeEquiBuilderOnly:
-			ret.Requirement.Definitions = append(ret.Requirement.Definitions, makeDefinition(builder, equivalentOnly, critical))
-		default:
-			equivalence := mainOnly
-			if builder.GetEquivalentTo() != nil && !in.RunOptions.GetSkipEquivalentBuilders() {
-				equivalence = bothMainAndEquivalent
-				switch allowed, err := isEquiBuilderAllowed(ctx, allOwnerEmails, builder.GetEquivalentTo()); {
-				case err != nil:
-					return nil, err
-				case allowed:
-					if equivalentBuilderRand.Float32()*100 <= builder.EquivalentTo.Percentage {
-						// Invert equivalence: trigger equivalent, but accept reusing original too.
-						equivalence = flipMainAndEquivalent
-					}
-				default:
-					// Not allowed to use equivalent.
-					equivalence = mainOnly
-				}
-			}
-			ret.Requirement.Definitions = append(ret.Requirement.Definitions, makeDefinition(builder, equivalence, builder.ExperimentPercentage == 0))
+		case r != skipBuilder:
+			ret.Requirement.Definitions = append(ret.Requirement.Definitions, dm.make())
 		}
 	}
 	return ret, nil

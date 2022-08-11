@@ -51,8 +51,8 @@ func TestIsModeAllowed(t *testing.T) {
 	})
 }
 
-func TestMakeDefinition(t *testing.T) {
-	Convey("makeDefinition works", t, func() {
+func TestDefinitionMaker(t *testing.T) {
+	Convey("definition maker works", t, func() {
 		valid := "a/b/c"
 		alternateValid := "a/b/x"
 		invalidShort := "d/e"
@@ -66,11 +66,13 @@ func TestMakeDefinition(t *testing.T) {
 			ResultVisibility: cfgpb.CommentLevel_COMMENT_LEVEL_UNSET,
 		}
 
-		var def *tryjob.Definition
-
 		Convey("main only", func() {
 			Convey("flags off", func() {
-				def := makeDefinition(b, mainOnly, nonCritical)
+				def := (&definitionMaker{
+					builder:     b,
+					equivalence: mainOnly,
+					criticality: nonCritical,
+				}).make()
 				So(def, ShouldResembleProto, &tryjob.Definition{
 					Backend: &tryjob.Definition_Buildbucket_{
 						Buildbucket: &tryjob.Definition_Buildbucket{
@@ -88,7 +90,11 @@ func TestMakeDefinition(t *testing.T) {
 				b.ResultVisibility = cfgpb.CommentLevel_COMMENT_LEVEL_RESTRICTED
 				b.ExperimentPercentage = 49.9
 				b.DisableReuse = true
-				def = makeDefinition(b, mainOnly, critical)
+				def := (&definitionMaker{
+					builder:     b,
+					equivalence: mainOnly,
+					criticality: critical,
+				}).make()
 				So(def, ShouldResembleProto, &tryjob.Definition{
 					DisableReuse:     true,
 					Critical:         true,
@@ -108,7 +114,11 @@ func TestMakeDefinition(t *testing.T) {
 			})
 		})
 		Convey("equivalent only", func() {
-			def = makeDefinition(b, equivalentOnly, nonCritical)
+			def := (&definitionMaker{
+				builder:     b,
+				equivalence: equivalentOnly,
+				criticality: nonCritical,
+			}).make()
 			So(def, ShouldResembleProto, &tryjob.Definition{
 				Backend: &tryjob.Definition_Buildbucket_{
 					Buildbucket: &tryjob.Definition_Buildbucket{
@@ -123,7 +133,11 @@ func TestMakeDefinition(t *testing.T) {
 			})
 		})
 		Convey("both", func() {
-			def = makeDefinition(b, bothMainAndEquivalent, nonCritical)
+			def := (&definitionMaker{
+				builder:     b,
+				equivalence: bothMainAndEquivalent,
+				criticality: nonCritical,
+			}).make()
 			So(def, ShouldResembleProto, &tryjob.Definition{
 				Backend: &tryjob.Definition_Buildbucket_{
 					Buildbucket: &tryjob.Definition_Buildbucket{
@@ -150,7 +164,11 @@ func TestMakeDefinition(t *testing.T) {
 			})
 		})
 		Convey("flipped", func() {
-			def = makeDefinition(b, flipMainAndEquivalent, nonCritical)
+			def := (&definitionMaker{
+				builder:     b,
+				equivalence: flipMainAndEquivalent,
+				criticality: nonCritical,
+			}).make()
 			So(def, ShouldResembleProto, &tryjob.Definition{
 				Backend: &tryjob.Definition_Buildbucket_{
 					Buildbucket: &tryjob.Definition_Buildbucket{
@@ -178,11 +196,21 @@ func TestMakeDefinition(t *testing.T) {
 		})
 		Convey("empty buildername in main", func() {
 			b.Name = ""
-			So(func() { makeDefinition(b, mainOnly, critical) }, ShouldPanicLike, "unexpectedly empty")
+			dm := &definitionMaker{
+				builder:     b,
+				equivalence: mainOnly,
+				criticality: critical,
+			}
+			So(func() { dm.make() }, ShouldPanicLike, "unexpectedly empty")
 		})
 		Convey("empty buildername in equivalent", func() {
 			b.EquivalentTo.Name = ""
-			So(func() { makeDefinition(b, equivalentOnly, critical) }, ShouldPanicLike, "unexpectedly empty")
+			dm := &definitionMaker{
+				builder:     b,
+				equivalence: equivalentOnly,
+				criticality: critical,
+			}
+			So(func() { dm.make() }, ShouldPanicLike, "unexpectedly empty")
 		})
 		Convey("short buildername", func() {
 			So(func() { makeBuildbucketDefinition(invalidShort) }, ShouldPanicLike, "unexpected format")
