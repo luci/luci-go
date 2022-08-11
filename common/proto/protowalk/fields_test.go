@@ -23,6 +23,8 @@ import (
 	"google.golang.org/protobuf/reflect/protoreflect"
 	"google.golang.org/protobuf/types/descriptorpb"
 
+	"go.chromium.org/luci/common/data/stringset"
+
 	. "github.com/smartystreets/goconvey/convey"
 )
 
@@ -149,7 +151,7 @@ func BenchmarkCache(b *testing.B) {
 	b.ResetTimer()
 
 	for i := 0; i < b.N; i++ {
-		generateCacheEntry(desc, lookupProcBundles(checker)[0])
+		generateCacheEntry(desc, lookupProcBundles(checker)[0], stringset.New(0), map[string]*cacheEntryBuilder{})
 	}
 }
 
@@ -197,7 +199,7 @@ func BenchmarkFields(b *testing.B) {
 		&CustomChecker{},
 	}
 	for _, chk := range checkers {
-		setCacheEntry(msg.ProtoReflect().Descriptor(), lookupProcBundles(chk)[0])
+		setCacheEntry(msg.ProtoReflect().Descriptor(), lookupProcBundles(chk)[0], stringset.New(0), map[string]*cacheEntryBuilder{})
 	}
 	expect := []string{
 		`.deprecated: deprecated`,

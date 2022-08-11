@@ -18,6 +18,7 @@ package protowalk;
 
 import "google/api/field_behavior.proto";
 import "google/protobuf/descriptor.proto";
+import "google/protobuf/struct.proto";
 
 option go_package = "go.chromium.org/luci/common/proto/protowalk";
 
@@ -39,6 +40,12 @@ message Inner {
     string custom = 5 [(protowalk.custom).must_equal = "hello"];
   }
 
+  message Recursive {
+    int64 output_only = 1 [(google.api.field_behavior) = OUTPUT_ONLY];
+    int64 regular = 2;
+    Recursive next = 3;
+  }
+
   string regular = 1;
 
   string deprecated = 2 [deprecated = true];
@@ -49,6 +56,23 @@ message Inner {
   Embedded single_embed = 6;
   repeated Embedded multi_embed = 7;
   map<string,Embedded> map_embed = 8;
+  google.protobuf.Struct struct = 9 [(google.api.field_behavior) = OUTPUT_ONLY];
+  Recursive recursive = 10 [deprecated = true];
+}
+
+message A {
+  string a_value = 1;
+  B b = 2;
+  Chh c = 3;
+}
+
+message B {
+  string b_value = 1 [(google.api.field_behavior) = OUTPUT_ONLY];
+  A a = 2;
+}
+
+message Chh {
+  map<string,A> a_map = 1;
 }
 
 message Outer {
@@ -68,4 +92,9 @@ message Outer {
   map<int32,Inner> int_map_inner = 10;
 
   Inner output_inner = 11 [(google.api.field_behavior) = OUTPUT_ONLY];
+
+  google.protobuf.Struct struct = 12 [(google.api.field_behavior) = OUTPUT_ONLY];
+
+  A a = 13;
+  B b = 14;
 }

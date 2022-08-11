@@ -40,6 +40,12 @@ func TestDeprecated(t *testing.T) {
 						{Deprecated: "yay"},
 						{Regular: "ignore"},
 					},
+					Recursive: &Inner_Recursive{
+						Regular: 1,
+						Next: &Inner_Recursive{
+							Regular: 2,
+						},
+					},
 				},
 			},
 			MultiDeprecated: []*Inner{
@@ -53,9 +59,9 @@ func TestDeprecated(t *testing.T) {
 			`.map_inner["schwoot"].deprecated: deprecated`,
 			`.map_inner["schwoot"].single_embed.deprecated: deprecated`,
 			`.map_inner["schwoot"].multi_embed[0].deprecated: deprecated`,
+			`.map_inner["schwoot"].recursive: deprecated`,
 			`.multi_deprecated: deprecated`,
 			`.multi_deprecated[1].deprecated: deprecated`,
 		})
 	})
 }
-

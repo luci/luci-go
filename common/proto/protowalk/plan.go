@@ -19,6 +19,8 @@ import (
 	"sort"
 
 	"google.golang.org/protobuf/reflect/protoreflect"
+
+	"go.chromium.org/luci/common/data/stringset"
 )
 
 type planItem struct {
@@ -62,7 +64,7 @@ func makePlan(desc protoreflect.MessageDescriptor, processors []*procBundle) (re
 	// Now for each processor, go over its cached (msg+processor) data, and merge
 	// it into the overall plan.
 	for procIdx, proc := range processors {
-		for _, entry := range setCacheEntry(desc, proc) {
+		for _, entry := range setCacheEntry(desc, proc, stringset.New(0), map[string]*cacheEntryBuilder{}) {
 			curPlan, ok := ret.items[entry.fieldNum]
 			if !ok { // need to add entry.field to ret.fieldOrder
 				foIdx := sort.Search(

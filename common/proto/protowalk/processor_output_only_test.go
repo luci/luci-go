@@ -17,7 +17,10 @@ package protowalk
 import (
 	"testing"
 
+	"google.golang.org/protobuf/types/known/structpb"
+
 	. "github.com/smartystreets/goconvey/convey"
+	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestOutputOnly(t *testing.T) {
@@ -29,11 +32,144 @@ func TestOutputOnly(t *testing.T) {
 			OutputInner: &Inner{
 				Regular: "a bunch of stuff",
 				Output:  "ignored because output_inner is cleared",
+				Struct: &structpb.Struct{
+					Fields: map[string]*structpb.Value{
+						"input": {
+							Kind: &structpb.Value_StringValue{
+								StringValue: "inner struct",
+							},
+						},
+					},
+				},
+				Recursive: &Inner_Recursive{
+					OutputOnly: 1,
+					Regular:    1,
+					Next: &Inner_Recursive{
+						OutputOnly: 2,
+						Regular:    2,
+					},
+				},
+			},
+			IntMapInner: map[int32]*Inner{
+				1: {
+					Recursive: &Inner_Recursive{
+						OutputOnly: 1,
+						Regular:    1,
+						Next: &Inner_Recursive{
+							OutputOnly: 2,
+							Regular:    2,
+							Next: &Inner_Recursive{
+								OutputOnly: 3,
+								Regular:    3,
+							},
+						},
+					},
+				},
+			},
+			Struct: &structpb.Struct{
+				Fields: map[string]*structpb.Value{
+					"input": {
+						Kind: &structpb.Value_StringValue{
+							StringValue: "outer struct",
+						},
+					},
+				},
+			},
+			A: &A{
+				AValue: "a_value_1",
+				B: &B{
+					BValue: "b_value_2",
+					A: &A{
+						AValue: "a_value_3",
+						B: &B{
+							BValue: "b_value_4",
+						},
+					},
+				},
+				C: &Chh{
+					AMap: map[string]*A{
+						"key": {
+							AValue: "a_value_1",
+							B: &B{
+								BValue: "b_value_2",
+							},
+						},
+					},
+				},
+			},
+			B: &B{
+				BValue: "b_value_1",
+				A: &A{
+					AValue: "a_value_2",
+					B: &B{
+						BValue: "b_value_3",
+						A: &A{
+							AValue: "a_value_4",
+							B: &B{
+								BValue: "b_value_5",
+							},
+						},
+					},
+				},
 			},
 		}
 		So(Fields(msg, &OutputOnlyProcessor{}).Strings(), ShouldResemble, []string{
 			`.output: cleared OUTPUT_ONLY field`,
+			`.int_map_inner[1].recursive.output_only: cleared OUTPUT_ONLY field`,
+			`.int_map_inner[1].recursive.next.output_only: cleared OUTPUT_ONLY field`,
+			`.int_map_inner[1].recursive.next.next.output_only: cleared OUTPUT_ONLY field`,
 			`.output_inner: cleared OUTPUT_ONLY field`,
+			`.struct: cleared OUTPUT_ONLY field`,
+			`.a.b.b_value: cleared OUTPUT_ONLY field`,
+			`.a.b.a.b.b_value: cleared OUTPUT_ONLY field`,
+			`.a.c.a_map["key"].b.b_value: cleared OUTPUT_ONLY field`,
+			`.b.b_value: cleared OUTPUT_ONLY field`,
+			`.b.a.b.b_value: cleared OUTPUT_ONLY field`,
+			`.b.a.b.a.b.b_value: cleared OUTPUT_ONLY field`,
 		})
+
+		So(msg, ShouldResembleProto,
+			&Outer{
+				IntMapInner: map[int32]*Inner{
+					1: {Recursive: &Inner_Recursive{
+						Regular: 1,
+						Next: &Inner_Recursive{
+							Regular: 2,
+							Next: &Inner_Recursive{
+								Regular: 3,
+							},
+						},
+					}},
+				},
+				A: &A{
+					AValue: "a_value_1",
+					B: &B{
+						A: &A{
+							AValue: "a_value_3",
+							B:      &B{},
+						},
+					},
+					C: &Chh{
+						AMap: map[string]*A{
+							"key": {
+								AValue: "a_value_1",
+								B:      &B{},
+							},
+						},
+					},
+				},
+				B: &B{
+					A: &A{
+						AValue: "a_value_2",
+						B: &B{
+							A: &A{
+								AValue: "a_value_4",
+								B:      &B{},
+							},
+						},
+					},
+				},
+			},
+		)
 	})
 }
