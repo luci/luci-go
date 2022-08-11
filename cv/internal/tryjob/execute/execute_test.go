@@ -110,7 +110,7 @@ func TestPrepExecutionPlan(t *testing.T) {
 							Kind: &tryjob.ExecutionLogEntry_TryjobsEnded_{
 								TryjobsEnded: &tryjob.ExecutionLogEntry_TryjobsEnded{
 									Tryjobs: []*tryjob.ExecutionLogEntry_TryjobSnapshot{
-										makeLogTryjobSnapshot(def, tj),
+										makeLogTryjobSnapshot(def, tj, false),
 									},
 								},
 							},
@@ -156,7 +156,7 @@ func TestPrepExecutionPlan(t *testing.T) {
 								Kind: &tryjob.ExecutionLogEntry_TryjobsEnded_{
 									TryjobsEnded: &tryjob.ExecutionLogEntry_TryjobsEnded{
 										Tryjobs: []*tryjob.ExecutionLogEntry_TryjobSnapshot{
-											makeLogTryjobSnapshot(def, tj),
+											makeLogTryjobSnapshot(def, tj, false),
 										},
 									},
 								},
@@ -179,7 +179,7 @@ func TestPrepExecutionPlan(t *testing.T) {
 								Kind: &tryjob.ExecutionLogEntry_TryjobsEnded_{
 									TryjobsEnded: &tryjob.ExecutionLogEntry_TryjobsEnded{
 										Tryjobs: []*tryjob.ExecutionLogEntry_TryjobSnapshot{
-											makeLogTryjobSnapshot(def, tj),
+											makeLogTryjobSnapshot(def, tj, false),
 										},
 									},
 								},
@@ -189,7 +189,7 @@ func TestPrepExecutionPlan(t *testing.T) {
 								Kind: &tryjob.ExecutionLogEntry_RetryDenied_{
 									RetryDenied: &tryjob.ExecutionLogEntry_RetryDenied{
 										Tryjobs: []*tryjob.ExecutionLogEntry_TryjobSnapshot{
-											makeLogTryjobSnapshot(def, tj),
+											makeLogTryjobSnapshot(def, tj, false),
 										},
 										Reason: "insufficient quota",
 									},
@@ -214,7 +214,7 @@ func TestPrepExecutionPlan(t *testing.T) {
 								Kind: &tryjob.ExecutionLogEntry_TryjobsEnded_{
 									TryjobsEnded: &tryjob.ExecutionLogEntry_TryjobsEnded{
 										Tryjobs: []*tryjob.ExecutionLogEntry_TryjobSnapshot{
-											makeLogTryjobSnapshot(def, tj),
+											makeLogTryjobSnapshot(def, tj, false),
 										},
 									},
 								},

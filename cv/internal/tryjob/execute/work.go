@@ -207,7 +207,7 @@ func (w *worker) findReuse(ctx context.Context, definitions []*tryjob.Definition
 	if len(ret) > 0 {
 		reusedTryjobLogs := make([]*tryjob.ExecutionLogEntry_TryjobSnapshot, 0, len(ret))
 		for def, tj := range ret {
-			reusedTryjobLogs = append(reusedTryjobLogs, makeLogTryjobSnapshot(def, tj))
+			reusedTryjobLogs = append(reusedTryjobLogs, makeLogTryjobSnapshot(def, tj, true))
 		}
 		w.logEntries = append(w.logEntries, &tryjob.ExecutionLogEntry{
 			Time: timestamppb.New(clock.Now(ctx).UTC()),

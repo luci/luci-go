@@ -155,7 +155,7 @@ func TestWorker(t *testing.T) {
 					Kind: &tryjob.ExecutionLogEntry_TryjobsReused_{
 						TryjobsReused: &tryjob.ExecutionLogEntry_TryjobsReused{
 							Tryjobs: []*tryjob.ExecutionLogEntry_TryjobSnapshot{
-								makeLogTryjobSnapshot(def, tryjobs[0]),
+								makeLogTryjobSnapshot(def, tryjobs[0], true),
 							},
 						},
 					},

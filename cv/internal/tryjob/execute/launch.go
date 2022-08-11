@@ -133,7 +133,7 @@ func (w *worker) tryLaunchTryjobsOnce(ctx context.Context, tryjobs []*tryjob.Try
 	switch merrs, ok := err.(errors.MultiError); {
 	case err == nil:
 		for _, tj := range tryjobs {
-			launchLogs = append(launchLogs, makeLogTryjobSnapshot(tj.Definition, tj))
+			launchLogs = append(launchLogs, makeLogTryjobSnapshot(tj.Definition, tj, false))
 		}
 	case !ok:
 		panic(fmt.Errorf("impossible; backend.Launch must return multi errors, got %s", err))
@@ -146,7 +146,7 @@ func (w *worker) tryLaunchTryjobsOnce(ctx context.Context, tryjobs []*tryjob.Try
 				failures[tryjobs[i]] = err
 				hasFatal = hasFatal || !canRetryBackendError(err)
 			} else {
-				launchLogs = append(launchLogs, makeLogTryjobSnapshot(tryjobs[i].Definition, tryjobs[i]))
+				launchLogs = append(launchLogs, makeLogTryjobSnapshot(tryjobs[i].Definition, tryjobs[i], false))
 			}
 		}
 	}

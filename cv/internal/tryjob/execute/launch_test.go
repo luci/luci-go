@@ -139,7 +139,7 @@ func TestLaunch(t *testing.T) {
 					Kind: &tryjob.ExecutionLogEntry_TryjobsLaunched_{
 						TryjobsLaunched: &tryjob.ExecutionLogEntry_TryjobsLaunched{
 							Tryjobs: []*tryjob.ExecutionLogEntry_TryjobSnapshot{
-								makeLogTryjobSnapshot(defFoo, tryjobs[0]),
+								makeLogTryjobSnapshot(defFoo, tryjobs[0], false),
 							},
 						},
 					},

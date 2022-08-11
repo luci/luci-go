@@ -164,13 +164,14 @@ func getBuilderName(def *tryjob.Definition, result *tryjob.Result) string {
 	panic(fmt.Errorf("impossible; can't get builder name from definition and result. Definition: %s; Result: %s", def, result))
 }
 
-func makeLogTryjobSnapshot(def *tryjob.Definition, tj *tryjob.Tryjob) *tryjob.ExecutionLogEntry_TryjobSnapshot {
+func makeLogTryjobSnapshot(def *tryjob.Definition, tj *tryjob.Tryjob, reused bool) *tryjob.ExecutionLogEntry_TryjobSnapshot {
 	return &tryjob.ExecutionLogEntry_TryjobSnapshot{
 		Definition: def,
 		Id:         int64(tj.ID),
 		ExternalId: string(tj.ExternalID),
 		Status:     tj.Status,
 		Result:     tj.Result,
+		Reused:     reused,
 	}
 }
 
@@ -181,5 +182,6 @@ func makeLogTryjobSnapshotFromAttempt(def *tryjob.Definition, attempt *tryjob.Ex
 		ExternalId: attempt.GetExternalId(),
 		Status:     attempt.GetStatus(),
 		Result:     attempt.GetResult(),
+		Reused:     attempt.GetReused(),
 	}
 }

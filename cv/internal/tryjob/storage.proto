@@ -289,6 +289,7 @@ message ExecutionLogEntry {
     Definition definition = 3;
     Status status = 4;
     Result result = 5;
+    bool reused = 6;
   }
 
   message TryjobsLaunched {
