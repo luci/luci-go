@@ -80,7 +80,6 @@ func TestValidateTags(t *testing.T) {
 			So(validateBuildSet("myformat/x"), ShouldBeNil)
 		})
 		Convey("invalid", func() {
-			So(validateBuildSet("commit/gitiles/chromium.googlesource.com/chromium/src.git/+/aaa"), ShouldErrLike, `does not match regex "^commit/gitiles/([^/]+)/(.+?)/\+/([a-f0-9]{40})$"`)
 			gitiles := fmt.Sprintf("commit/gitiles/chromium.googlesource.com/a/chromium/src/+/%s", strings.Repeat("a", 40))
 			So(validateBuildSet(gitiles), ShouldErrLike, `gitiles project must not start with "a/"`)
 			gitiles = fmt.Sprintf("commit/gitiles/chromium.googlesource.com/chromium/src.git/+/%s", strings.Repeat("a", 40))
@@ -109,8 +108,7 @@ func TestValidateTags(t *testing.T) {
 				{Key: "buildset", Value: gitiles1},
 				{Key: "buildset", Value: gitiles2},
 			}, TagNew),
-				ShouldErrLike,
-				fmt.Sprintf(`tag "buildset:%s" conflicts with tag "buildset:%s"`, gitiles2, gitiles1))
+				ShouldBeNil)
 			So(validateTags([]*pb.StringPair{
 				{Key: "buildset", Value: gitiles1},
 				{Key: "buildset", Value: gitiles1},

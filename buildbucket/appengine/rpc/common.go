@@ -178,7 +178,6 @@ func validateTags(tags []*pb.StringPair, m tagValidationMode) error {
 	}
 	var k, v string
 	var seenBuilderTagValue string
-	var seenGitilesCommit string
 	for _, tag := range tags {
 		k = tag.Key
 		v = tag.Value
@@ -191,12 +190,6 @@ func validateTags(tags []*pb.StringPair, m tagValidationMode) error {
 		if k == "buildset" {
 			if err := validateBuildSet(v); err != nil {
 				return err
-			}
-			if gitilesCommitRegex.MatchString(v) {
-				if seenGitilesCommit != "" && v != seenGitilesCommit {
-					return errors.Reason(`tag "buildset:%s" conflicts with tag "buildset:%s"`, v, seenGitilesCommit).Err()
-				}
-				seenGitilesCommit = v
 			}
 		}
 		if k == "builder" {
