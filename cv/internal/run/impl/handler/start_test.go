@@ -16,6 +16,7 @@ package handler
 
 import (
 	"fmt"
+	"strings"
 	"testing"
 	"time"
 
@@ -216,6 +217,33 @@ func TestStart(t *testing.T) {
 			So(res.State.NewLongOpIDs, ShouldHaveLength, 1)
 			So(res.State.OngoingLongOps.GetOps()[res.State.NewLongOpIDs[0]].GetPostStartMessage(), ShouldBeTrue)
 		})
+		Convey("Fail the Run if Run Option is invalid", func() {
+			rs.Options = &run.Options{
+				CustomTryjobTags: []string{"BAD TAG", "ANOTHER_ONE", "good:tag_foo"},
+			}
+			res, err := h.Start(ctx, rs)
+			So(err, ShouldBeNil)
+			So(res.SideEffectFn, ShouldBeNil)
+			So(res.PreserveEvents, ShouldBeFalse)
+
+			So(res.State.Status, ShouldEqual, run.Status_PENDING)
+			So(res.State.Tryjobs, ShouldBeNil)
+			So(res.State.NewLongOpIDs, ShouldHaveLength, 1)
+			op := res.State.OngoingLongOps.GetOps()[res.State.NewLongOpIDs[0]]
+			So(op.GetCancelTriggers(), ShouldNotBeNil)
+			So(op.GetCancelTriggers().GetRunStatusIfSucceeded(), ShouldEqual, run.Status_FAILED)
+			cancelledCLs := common.CLIDs{}
+			for _, req := range op.GetCancelTriggers().GetRequests() {
+				cancelledCLs = append(cancelledCLs, common.CLID(req.Clid))
+			}
+			So(cancelledCLs, ShouldResemble, res.State.CLs)
+			So(op.GetCancelTriggers().GetRequests()[0].GetMessage(), ShouldEqual, strings.TrimSpace(`
+Failed to start the Run. Reason:
+
+* malformed tag: "BAD TAG"; expecting format "^[a-z0-9_\\-]+:.+$"
+* malformed tag: "ANOTHER_ONE"; expecting format "^[a-z0-9_\\-]+:.+$"
+`))
+		})
 
 		Convey("Fail the Run if tryjob computation fails", func() {
 			if rs.Options == nil {
@@ -245,7 +273,6 @@ func TestStart(t *testing.T) {
 				Label:   "Tryjob Requirement Computation",
 				Message: "Failed to compute tryjob requirement. Reason: builder \"fooproj/ci/bar_builder\" is included but not defined in the LUCI project",
 			})
-
 		})
 
 		Convey("Fail the Run if acls.CheckRunCreate fails", func() {

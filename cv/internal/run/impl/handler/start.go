@@ -17,6 +17,8 @@ package handler
 import (
 	"context"
 	"fmt"
+	"regexp"
+	"strings"
 	"time"
 
 	"google.golang.org/protobuf/types/known/timestamppb"
@@ -54,6 +56,37 @@ func (impl *Impl) Start(ctx context.Context, rs *state.RunState) (*Result, error
 		panic(err)
 	case status != run.Status_PENDING:
 		logging.Debugf(ctx, "Skip starting Run because this Run is %s", status)
+		return &Result{State: rs}, nil
+	}
+
+	if reasons, isValid := validateRunOptions(rs); !isValid {
+		rs = rs.ShallowCopy()
+		var msgBuilder strings.Builder
+		msgBuilder.WriteString("Failed to start the Run. Reason:")
+		switch len(reasons) {
+		case 0:
+			panic(fmt.Errorf("must provide reason"))
+		case 1:
+			msgBuilder.WriteRune(' ')
+			msgBuilder.WriteString(reasons[0])
+		default:
+			msgBuilder.WriteString("\n")
+			for _, reason := range reasons {
+				msgBuilder.WriteString("\n* ")
+				msgBuilder.WriteString(reason)
+			}
+		}
+		meta := reviewInputMeta{
+			message:        msgBuilder.String(),
+			notify:         gerrit.Whoms{gerrit.Owner, gerrit.CQVoters},
+			addToAttention: gerrit.Whoms{gerrit.Owner, gerrit.CQVoters},
+			reason:         "Failed to start the run",
+		}
+		metas := make(map[common.CLID]reviewInputMeta, len(rs.CLs))
+		for _, cl := range rs.CLs {
+			metas[cl] = meta
+		}
+		scheduleTriggersCancellation(ctx, rs, metas, run.Status_FAILED)
 		return &Result{State: rs}, nil
 	}
 
@@ -180,6 +213,22 @@ func (impl *Impl) onCompletedPostStartMessage(ctx context.Context, rs *state.Run
 		State:        rs,
 		SideEffectFn: impl.endRun(ctx, rs, run.Status_FAILED),
 	}, nil
+}
+
+const customTryjobTagRe = `^[a-z0-9_\-]+:.+$`
+
+var customTryjobTagReCompiled = regexp.MustCompile(customTryjobTagRe)
+
+func validateRunOptions(rs *state.RunState) (reasons []string, isValid bool) {
+	for _, tag := range rs.Options.GetCustomTryjobTags() {
+		if !customTryjobTagReCompiled.Match([]byte(strings.TrimSpace(tag))) {
+			reasons = append(reasons, fmt.Sprintf("malformed tag: %q; expecting format %q", tag, customTryjobTagRe))
+		}
+	}
+	if len(reasons) == 0 {
+		return nil, true
+	}
+	return reasons, false
 }
 
 func recordPickupLatency(ctx context.Context, rs *state.RunState, cg *prjcfg.ConfigGroup) {
