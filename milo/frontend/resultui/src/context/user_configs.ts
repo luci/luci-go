@@ -51,7 +51,7 @@ export interface UserConfigs {
 
 export const DEFAULT_USER_CONFIGS = Object.freeze<UserConfigs>({
   steps: Object.freeze({
-    showSucceededSteps: true,
+    showSucceededSteps: false,
     showDebugLogs: false,
     expandByDefault: false,
     stepPinTime: Object.freeze({}),
