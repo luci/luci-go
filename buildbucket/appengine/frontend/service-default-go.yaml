@@ -35,6 +35,7 @@ entrypoint: >
   -root-secret sm://root-secret
   -primary-tink-aead-key sm://tink-aead-primary
   -ds-connection-pool-size 8
+  -redis-addr ${REDIS_ADDR}
 
 handlers:
 - url: /.*
