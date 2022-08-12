@@ -169,18 +169,18 @@ message ConfigGroup {
   // mode, CQ will fallback to standard DRY_RUN or FULL_RUN.
   repeated Mode additional_modes = 7;
 
-  // Per-user quota policies.
+  // Per-user limits.
   //
-  // At the time of a Run creation, CV will iterate `user_quotas` and apply
-  // the first policy, matching to the user, to the Run. If none of the policies
-  // match, CV will apply `users_quota_default` to the Run.
-  repeated QuotaPolicy user_quotas = 8;
+  // At the time of a Run creation, CV will iterate `user_limits` and apply the
+  // first applicable limit to the Run. If none of the limit(s) are applicable,
+  // CV will apply `user_limits_default` to the run.
+  repeated UserLimit user_limits = 8;
 
-  // Per-user default quota policies.
+  // Default per-user limit.
   //
-  // If CV couldn't find a quota policy matching to the owner of a Run,
-  // this policy will be applied to the Run.
-  QuotaPolicy user_quota_default = 9;
+  // If CV couldn't find an applicable limit from `user_limits`, this limit
+  // will be applied.
+  UserLimit user_limit_default = 9;
 }
 
 // SubmitOptions control how CQ submits CLs.
@@ -767,14 +767,14 @@ enum Toggle {
   NO = 2;
 }
 
-// QuotaPolicy specifies the quota policy limits.
-message QuotaPolicy {
-    // Name of the policy. Must be unique across all the policies
+// UserLimit specifies Run and Tryjob limits per user.
+message UserLimit {
+    // Name of the limit. Must be unique across all the policies
     // with the LUCI project.
     //
     // Required. Must match regex '^[0-9A-Za-z][0-9A-Za-z\.\-@_+]{0,511}$'
     string name = 1;
-    // Principals to apply the QuotaPolicy to.
+    // Principals to apply the limits to.
     //
     // Each entry can be either an identity string "user:<email>"
     // or a LUCI group reference "group:<name>"
@@ -788,15 +788,14 @@ message QuotaPolicy {
       }
     }
 
-    message RunLimits {
-        // Maximum number of active runs that this policy can have at any
-        // moment.
+    message Run {
+        // Maximum number of active runs that the user can have at any moment.
         //
         // Required. Active Run is a Run that has started but not ended yet.
         Limit max_active = 1;
     }
-    message TryjobLimits {
-        // Maximum number of active tryjobs that this policy can have at any
+    message Tryjob {
+        // Maximum number of active tryjobs that the user can have at any
         // moment.
         //
         // Active tryjob is a tryjob that CV has successfully launched,
@@ -814,7 +813,7 @@ message QuotaPolicy {
     }
 
     // Run limits. Required.
-    RunLimits run_limits = 5;
+    Run run = 5;
     // Tryjob limits. Required
-    TryjobLimits tryjob_limits = 6;
+    Tryjob tryjob = 6;
 }

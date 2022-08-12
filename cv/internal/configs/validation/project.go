@@ -40,7 +40,7 @@ const (
 	CQStatusHostInternal = "internal-cq-status.appspot.com"
 )
 
-var policyNameRe = regexp.MustCompile(`^[0-9A-Za-z][0-9A-Za-z.\-@_+]{0,511}$`)
+var limitNameRe = regexp.MustCompile(`^[0-9A-Za-z][0-9A-Za-z.\-@_+]{0,511}$`)
 
 // ValidateProject validates project config and returns error only on blocking
 // errors (ie ignores problems with warning severity).
@@ -204,7 +204,7 @@ func validateConfigGroup(ctx *validation.Context, group *cfgpb.ConfigGroup, know
 		validateVerifiers(ctx, group.Verifiers, additionalModes.Union(standardModes))
 		ctx.Exit()
 	}
-	validateUserQuotas(ctx, group.GetUserQuotas(), group.GetUserQuotaDefault())
+	validateUserLimits(ctx, group.GetUserLimits(), group.GetUserLimitDefault())
 }
 
 func validateGerrit(ctx *validation.Context, g *cfgpb.ConfigGroup_Gerrit) {
@@ -626,45 +626,45 @@ func validateTryjobRetry(ctx *validation.Context, r *cfgpb.Verifiers_Tryjob_Retr
 	}
 }
 
-func validateUserQuotas(ctx *validation.Context, ps []*cfgpb.QuotaPolicy, def *cfgpb.QuotaPolicy) {
-	names := stringset.New(len(ps))
-	for i, p := range ps {
-		ctx.Enter("user_quotas #%d", i+1)
-		if p == nil {
+func validateUserLimits(ctx *validation.Context, limits []*cfgpb.UserLimit, def *cfgpb.UserLimit) {
+	names := stringset.New(len(limits))
+	for i, l := range limits {
+		ctx.Enter("user_limits #%d", i+1)
+		if l == nil {
 			ctx.Errorf("cannot be nil")
 		} else {
-			validateQuotaPolicy(ctx, p, names, true)
+			validateUserLimit(ctx, l, names, true)
 		}
 		ctx.Exit()
 	}
 
 	if def != nil {
-		ctx.Enter("user_quota_default")
-		validateQuotaPolicy(ctx, def, names, false)
+		ctx.Enter("user_limit_default")
+		validateUserLimit(ctx, def, names, false)
 		ctx.Exit()
 	}
 }
 
-func validateQuotaPolicy(ctx *validation.Context, p *cfgpb.QuotaPolicy, namesSeen stringset.Set, principalsRequired bool) {
+func validateUserLimit(ctx *validation.Context, limit *cfgpb.UserLimit, namesSeen stringset.Set, principalsRequired bool) {
 	ctx.Enter("name")
-	if !namesSeen.Add(p.GetName()) {
-		ctx.Errorf("duplicate name %q", p.GetName())
+	if !namesSeen.Add(limit.GetName()) {
+		ctx.Errorf("duplicate name %q", limit.GetName())
 	}
-	if !policyNameRe.MatchString(p.GetName()) {
-		ctx.Errorf("%q does not match %q", p.GetName(), policyNameRe)
+	if !limitNameRe.MatchString(limit.GetName()) {
+		ctx.Errorf("%q does not match %q", limit.GetName(), limitNameRe)
 	}
 	ctx.Exit()
 
 	ctx.Enter("principals")
 	switch {
-	case principalsRequired && len(p.GetPrincipals()) == 0:
+	case principalsRequired && len(limit.GetPrincipals()) == 0:
 		ctx.Errorf("must have at least one principal")
-	case !principalsRequired && len(p.GetPrincipals()) > 0:
-		ctx.Errorf("must not have any principals (%d principal(s) given)", len(p.GetPrincipals()))
+	case !principalsRequired && len(limit.GetPrincipals()) > 0:
+		ctx.Errorf("must not have any principals (%d principal(s) given)", len(limit.GetPrincipals()))
 	}
 	ctx.Exit()
 
-	for i, id := range p.GetPrincipals() {
+	for i, id := range limit.GetPrincipals() {
 		ctx.Enter("principals #%d", i+1)
 		if err := validatePrincipalID(id); err != nil {
 			ctx.Errorf("%s", err)
@@ -672,32 +672,31 @@ func validateQuotaPolicy(ctx *validation.Context, p *cfgpb.QuotaPolicy, namesSee
 		ctx.Exit()
 	}
 
-	ctx.Enter("run_limits")
-	switch limits := p.GetRunLimits(); {
-	case limits == nil:
+	ctx.Enter("run")
+	switch r := limit.GetRun(); {
+	case r == nil:
 		ctx.Errorf("missing; set all limits with `unlimited` if there are no limits")
 	default:
 		ctx.Enter("max_active")
-		if err := validateLimit(limits.GetMaxActive()); err != nil {
+		if err := validateLimit(r.GetMaxActive()); err != nil {
 			ctx.Errorf("%s", err)
 		}
 		ctx.Exit()
 	}
 	ctx.Exit()
 
-	ctx.Enter("tryjob_limits")
-	switch limits := p.GetTryjobLimits(); {
-	case limits == nil:
+	ctx.Enter("tryjob")
+	switch tj := limit.GetTryjob(); {
+	case tj == nil:
 		ctx.Errorf("missing; set all limits with `unlimited` if there are no limits")
 	default:
 		ctx.Enter("max_active")
-		if err := validateLimit(limits.GetMaxActive()); err != nil {
+		if err := validateLimit(tj.GetMaxActive()); err != nil {
 			ctx.Errorf("%s", err)
 		}
 		ctx.Exit()
 	}
 	ctx.Exit()
-
 }
 
 func validatePrincipalID(id string) error {
@@ -717,10 +716,10 @@ func validatePrincipalID(id string) error {
 	return fmt.Errorf("unknown principal type %q", chunks[0])
 }
 
-func validateLimit(l *cfgpb.QuotaPolicy_Limit) error {
+func validateLimit(l *cfgpb.UserLimit_Limit) error {
 	switch l.GetLimit().(type) {
-	case *cfgpb.QuotaPolicy_Limit_Unlimited:
-	case *cfgpb.QuotaPolicy_Limit_Value:
+	case *cfgpb.UserLimit_Limit_Unlimited:
+	case *cfgpb.UserLimit_Limit_Value:
 		if val := l.GetValue(); val < 1 {
 			return errors.Reason("invalid limit %d; must be > 0", val).Err()
 		}

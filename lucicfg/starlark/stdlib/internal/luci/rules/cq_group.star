@@ -35,8 +35,8 @@ def _cq_group(
         cancel_stale_tryjobs = None,  # @unused
         verifiers = None,
         additional_modes = None,
-        user_quotas = None,
-        user_quota_default = None):
+        user_limits = None,
+        user_limit_default = None):
     """Defines a set of refs to watch and a set of verifier to run.
 
     The CQ will run given verifiers whenever there's a pending approved CL for
@@ -94,17 +94,19 @@ def _cq_group(
         create the Run with the first mode for which triggering conditions are
         fulfilled. If there is no such mode, CQ will fallback to standard
         DRY_RUN or FULL_RUN.
-      user_quotas: a list of cq.quota_policy(...) or None. **WARNING**: Please
-        contact luci-eng@ before setting this param. They specify per-user quota
-        policies for given users or groups. At the time of Run creation, CV
-        looks up and picks the first matching quota policy for the CL owner, and
-        applies the policy to the Run. If no matching policy is found, then
-        `user_quota_default` will be applied to the Run. Each policy must
-        specify at least one user or group.
-      user_quota_default: cq.quota_policy(...) or None. **WARNING*:: Please
-        contact luci-eng@ before setting this param. If None, the users who
-        don't have a policy in `user_quotas` will be granted unlimited quotas.
-        The policy must not specify users and groups.
+      user_limits: a list of cq.user_limit(...) or None. **WARNING**: Please
+        contact luci-eng@ before setting this param. They specify per-user
+        limits for given principals. At the time of a Run start, CV looks up
+        and applies the first matching `cq.user_limit(...)` to the Run, and
+        postpones the start if limits were reached already. If none of the
+        user_limit(s) were applicable, `user_limit_default` will be applied
+        instead. Each cq.user_limit(...) must specify at least one user or
+        group.
+      user_limit_default: cq.user_limit(...) or None. **WARNING*:: Please
+        contact luci-eng@ before setting this param. If none of limits in
+        `user_limits` are applicable and `user_limit_default` is not specified,
+        the user is granted unlimited runs and tryjobs. `user_limit_default`
+        must not specify users and groups.
     """
     key = keys.cq_group(validate.string("name", name))
 
@@ -123,29 +125,28 @@ def _cq_group(
         for m in additional_modes:
             cqimpl.validate_run_mode("run_mode", m)
 
-    quota_names = dict()
-    user_quotas = validate.list("user_quotas", user_quotas)
-    for i, q in enumerate(user_quotas):
-        q = cqimpl.validate_quota_policy("user_quotas[%d]" % i, q, required = True)
-        if q.name in quota_names:
-            fail("user_quotas[%d]: duplicate policy name '%s'" % (i, q.name))
-        if not q.principals:
-            fail("user_quotas[%d]: must specify at least one user or group" % i)
-        quota_names[q.name] = None
+    limit_names = dict()
+    user_limits = validate.list("user_limits", user_limits)
+    for i, lim in enumerate(user_limits):
+        lim = cqimpl.validate_user_limit("user_limits[%d]" % i, lim, required = True)
+        if lim.name in limit_names:
+            fail("user_limits[%d]: duplicate limit name '%s'" % (i, lim.name))
+        if not lim.principals:
+            fail("user_limits[%d]: must specify at least one user or group" % i)
+        limit_names[lim.name] = None
 
-    user_quota_default = cqimpl.validate_quota_policy(
-        "user_quota_default",
-        user_quota_default,
+    user_limit_default = cqimpl.validate_user_limit(
+        "user_limit_default",
+        user_limit_default,
         required = False,
     )
 
-    # TODO(crbug.com/1346143): make user_quota_default required.
-    if user_quota_default != None:
-        if user_quota_default.name in quota_names:
-            fail("user_quota_default: policy '%s' is already used in user_quotas" %
-                 user_quota_default.name)
-        if user_quota_default.principals:
-            fail("user_quota_default: must not specify user or group")
+    # TODO(crbug.com/1346143): make user_limit_default required.
+    if user_limit_default != None:
+        if user_limit_default.name in limit_names:
+            fail("user_limit_default: limit name '%s' is already used in user_limits" % user_limit_default.name)
+        if user_limit_default.principals:
+            fail("user_limit_default: must not specify user or group")
 
     # TODO(vadimsh): Convert `acls` to luci.binding(...). Need to figure out
     # what realm to use for them. This probably depends on a design of
@@ -173,8 +174,8 @@ def _cq_group(
             required = False,
         ),
         "additional_modes": additional_modes,
-        "user_quotas": user_quotas,
-        "user_quota_default": user_quota_default,
+        "user_limits": user_limits,
+        "user_limit_default": user_limit_default,
     })
     graph.add_edge(keys.project(), key)
 

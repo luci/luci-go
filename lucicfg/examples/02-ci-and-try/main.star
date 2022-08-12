@@ -94,21 +94,21 @@ luci.list_view(
 luci.cq_group(
     name = "Main CQ",
     watch = cq.refset(REPO_URL),
-    user_quotas = [
-        cq.quota_policy(
-            name = "user_quotas_for_foo_and_bar",
+    user_limits = [
+        cq.user_limit(
+            name = "user_limits_for_foo_and_bar",
             users = ["foo@example.com"],
             groups = ["bar"],
-            run_limits = cq.run_limits(max_active = 60),
-            tryjob_limits = cq.tryjob_limits(max_active = 60),
+            run = cq.run_limits(max_active = 60),
+            tryjob = cq.tryjob_limits(max_active = 60),
         ),
-        cq.quota_policy(
-            name = "user_quotas_for_committers",
+        cq.user_limit(
+            name = "user_limits_for_committers",
             groups = ["committers"],
-            run_limits = cq.run_limits(max_active = 20),
+            run = cq.run_limits(max_active = 20),
         ),
-        cq.quota_policy(
-            name = "user_quotas_for_third_party_devs",
+        cq.user_limit(
+            name = "user_limits_for_third_party_devs",
             users = [
                 "partner_1@example.com",
                 "partner_2@example.com",
@@ -116,7 +116,7 @@ luci.cq_group(
             groups = ["third_party_devs_all"],
         ),
     ],
-    user_quota_default = cq.quota_policy(
+    user_limit_default = cq.user_limit(
         name = "default_user_quota",
     ),
 )

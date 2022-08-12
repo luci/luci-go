@@ -2287,8 +2287,8 @@ luci.cq_group(
     cancel_stale_tryjobs = None,
     verifiers = None,
     additional_modes = None,
-    user_quotas = None,
-    user_quota_default = None,
+    user_limits = None,
+    user_limit_default = None,
 )
 ```
 
@@ -2315,8 +2315,8 @@ See https://chromium.googlesource.com/infra/luci/luci-go/+/refs/heads/main/cv/#l
 * **cancel_stale_tryjobs**: unused anymore, but kept for backward compatibility.
 * **verifiers**: a list of [luci.cq_tryjob_verifier(...)](#luci.cq-tryjob-verifier) specifying what checks to run on a pending CL. See [luci.cq_tryjob_verifier(...)](#luci.cq-tryjob-verifier) for all details. As a shortcut, each entry can also either be a dict or a string. A dict is an alias for `luci.cq_tryjob_verifier(**entry)` and a string is an alias for `luci.cq_tryjob_verifier(builder = entry)`.
 * **additional_modes**: either a single [cq.run_mode(...)](#cq.run-mode) or a list of [cq.run_mode(...)](#cq.run-mode) defining additional run modes supported by this CQ group apart from standard DRY_RUN and FULL_RUN. If specified, CQ will create the Run with the first mode for which triggering conditions are fulfilled. If there is no such mode, CQ will fallback to standard DRY_RUN or FULL_RUN.
-* **user_quotas**: a list of [cq.quota_policy(...)](#cq.quota-policy) or None. **WARNING**: Please contact luci-eng@ before setting this param. They specify per-user quota policies for given users or groups. At the time of Run creation, CV looks up and picks the first matching quota policy for the CL owner, and applies the policy to the Run. If no matching policy is found, then `user_quota_default` will be applied to the Run. Each policy must specify at least one user or group.
-* **user_quota_default**: [cq.quota_policy(...)](#cq.quota-policy) or None. **WARNING*:: Please contact luci-eng@ before setting this param. If None, the users who don't have a policy in `user_quotas` will be granted unlimited quotas. The policy must not specify users and groups.
+* **user_limits**: a list of [cq.user_limit(...)](#cq.user-limit) or None. **WARNING**: Please contact luci-eng@ before setting this param. They specify per-user limits for given principals. At the time of a Run start, CV looks up and applies the first matching `[cq.user_limit(...)](#cq.user-limit)` to the Run, and postpones the start if limits were reached already. If none of the user_limit(s) were applicable, `user_limit_default` will be applied instead. Each [cq.user_limit(...)](#cq.user-limit) must specify at least one user or group.
+* **user_limit_default**: [cq.user_limit(...)](#cq.user-limit) or None. **WARNING*:: Please contact luci-eng@ before setting this param. If none of limits in `user_limits` are applicable and `user_limit_default` is not specified, the user is granted unlimited runs and tryjobs. `user_limit_default` must not specify users and groups.
 
 
 
@@ -3404,40 +3404,40 @@ cq.location_filter struct.
 
 
 
-### cq.quota_policy {#cq.quota-policy}
+### cq.user_limit {#cq.user-limit}
 
 ```python
-cq.quota_policy(
+cq.user_limit(
     # Required arguments.
     name,
 
     # Optional arguments.
     users = None,
     groups = None,
-    run_limits = None,
-    tryjob_limits = None,
+    run = None,
+    tryjob = None,
 )
 ```
 
 
 
-Construct a quota policy with run and tryjob limits for users and groups.
+Construct a user_limit for run and tryjob limits.
 
-At the time of Run creation, CV looks up a quota policy applicable for
-the Run, and blocks processing the Run or the tryjobs, if the remaining
-quota balance is insufficient.
+At the time of Run creation, CV looks up a user_limit applicable for
+the Run, and blocks processing the Run or the tryjobs, if the number of
+ongoing runs and tryjobs reached the limits.
 
-This constructs and returns a quota policy which specifies run and tryjob
-limits for given users and groups in cq_group(...). Find cq_group(...) to
-find how quota policies are used in cq_group(...).
+This constructs and return a user_limit, which specifies run and tryjob
+limits for given users and members of given groups. Find cq_group(...) to
+find how user_limit(s) are used in cq_group(...).
 
-#### Arguments {#cq.quota-policy-args}
+#### Arguments {#cq.user-limit-args}
 
-* **name**: the name of the policy to configure. Must be unique in the ConfigGroup. Must match regex '^[0-9A-Za-z][0-9A-Za-z\.\-@_+]{0,511}$'. Required.
-* **users**: a list of user identities, which is an email typically, to apply the quota policy to.
-* **groups**: a list of chrome infra auth group names to apply the quota policy to.
-* **run_limits**: Run limits to apply. See [cq.run_limits(...)](#cq.run-limits) for more details. If omitted, unlimited run quotas are granted to the users and groups.
-* **tryjob_limits**: Tryjob limits to apply. See [cq.tryjob_limits(...)](#cq.tryjob-limits) for more details. If omitted, unlimited tryjob quotas are granted to the users and groups.
+* **name**: the name of the limit to configure. This usually indicates the intended users and groups. e.g., "limits_for_committers", "limits_for_external_contributors" Must be unique in the ConfigGroup. Must match regex '^[0-9A-Za-z][0-9A-Za-z\.\-@_+]{0,511}$'. Required.
+* **users**: a list of user identities to apply the limits to. User identities are the email addresses in most cases.
+* **groups**: a list of chrome infra auth groups to apply the limits to the members of.
+* **run**: [cq.run_limits(...)](#cq.run-limits). If omitted, runs are unlimited for the users.
+* **tryjob**: [cq.tryjob_limits(...)](#cq.tryjob-limits). If omitted, tryjobs are unlimited for the users.
 
 
 

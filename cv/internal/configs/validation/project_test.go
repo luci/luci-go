@@ -485,54 +485,54 @@ func TestValidateProjectDetailed(t *testing.T) {
 			})
 		})
 
-		Convey("UserQuotas and UserQuotaDefault", func() {
+		Convey("UserLimits and UserLimitDefault", func() {
 			cg := cfg.ConfigGroups[0]
-			cg.UserQuotas = []*cfgpb.QuotaPolicy{
+			cg.UserLimits = []*cfgpb.UserLimit{
 				{
-					Name:       "user_policy",
+					Name:       "user_limit",
 					Principals: []string{"user:foo@example.org"},
-					RunLimits: &cfgpb.QuotaPolicy_RunLimits{
-						MaxActive: &cfgpb.QuotaPolicy_Limit{
-							Limit: &cfgpb.QuotaPolicy_Limit_Value{Value: 123},
+					Run: &cfgpb.UserLimit_Run{
+						MaxActive: &cfgpb.UserLimit_Limit{
+							Limit: &cfgpb.UserLimit_Limit_Value{Value: 123},
 						},
 					},
-					TryjobLimits: &cfgpb.QuotaPolicy_TryjobLimits{
-						MaxActive: &cfgpb.QuotaPolicy_Limit{
-							Limit: &cfgpb.QuotaPolicy_Limit_Unlimited{
+					Tryjob: &cfgpb.UserLimit_Tryjob{
+						MaxActive: &cfgpb.UserLimit_Limit{
+							Limit: &cfgpb.UserLimit_Limit_Unlimited{
 								Unlimited: true,
 							},
 						},
 					},
 				},
 				{
-					Name:       "group_policy",
+					Name:       "group_limit",
 					Principals: []string{"group:bar"},
-					RunLimits: &cfgpb.QuotaPolicy_RunLimits{
-						MaxActive: &cfgpb.QuotaPolicy_Limit{
-							Limit: &cfgpb.QuotaPolicy_Limit_Unlimited{
+					Run: &cfgpb.UserLimit_Run{
+						MaxActive: &cfgpb.UserLimit_Limit{
+							Limit: &cfgpb.UserLimit_Limit_Unlimited{
 								Unlimited: true,
 							},
 						},
 					},
-					TryjobLimits: &cfgpb.QuotaPolicy_TryjobLimits{
-						MaxActive: &cfgpb.QuotaPolicy_Limit{
-							Limit: &cfgpb.QuotaPolicy_Limit_Value{Value: 456},
+					Tryjob: &cfgpb.UserLimit_Tryjob{
+						MaxActive: &cfgpb.UserLimit_Limit{
+							Limit: &cfgpb.UserLimit_Limit_Value{Value: 456},
 						},
 					},
 				},
 			}
-			cg.UserQuotaDefault = &cfgpb.QuotaPolicy{
-				Name: "user_quota_default_policy",
-				RunLimits: &cfgpb.QuotaPolicy_RunLimits{
-					MaxActive: &cfgpb.QuotaPolicy_Limit{
-						Limit: &cfgpb.QuotaPolicy_Limit_Unlimited{
+			cg.UserLimitDefault = &cfgpb.UserLimit{
+				Name: "user_limit_default_limit",
+				Run: &cfgpb.UserLimit_Run{
+					MaxActive: &cfgpb.UserLimit_Limit{
+						Limit: &cfgpb.UserLimit_Limit_Unlimited{
 							Unlimited: true,
 						},
 					},
 				},
-				TryjobLimits: &cfgpb.QuotaPolicy_TryjobLimits{
-					MaxActive: &cfgpb.QuotaPolicy_Limit{
-						Limit: &cfgpb.QuotaPolicy_Limit_Unlimited{
+				Tryjob: &cfgpb.UserLimit_Tryjob{
+					MaxActive: &cfgpb.UserLimit_Limit{
+						Limit: &cfgpb.UserLimit_Limit_Unlimited{
 							Unlimited: true,
 						},
 					},
@@ -541,61 +541,61 @@ func TestValidateProjectDetailed(t *testing.T) {
 			validateProjectConfig(vctx, &cfg)
 			So(vctx.Finalize(), ShouldBeNil)
 
-			Convey("UserQuotas doesn't allow nil", func() {
-				cg.UserQuotas[1] = nil
+			Convey("UserLimits doesn't allow nil", func() {
+				cg.UserLimits[1] = nil
 				validateProjectConfig(vctx, &cfg)
-				So(vctx.Finalize(), ShouldErrLike, "user_quotas #2): cannot be nil")
+				So(vctx.Finalize(), ShouldErrLike, "user_limits #2): cannot be nil")
 			})
-			Convey("UserQuota names should be unique", func() {
-				cg.UserQuotas[0].Name = cg.UserQuotas[1].Name
+			Convey("Names in UserLimits should be unique", func() {
+				cg.UserLimits[0].Name = cg.UserLimits[1].Name
 				validateProjectConfig(vctx, &cfg)
-				So(vctx.Finalize(), ShouldErrLike, "user_quotas #2 / name): duplicate name")
+				So(vctx.Finalize(), ShouldErrLike, "user_limits #2 / name): duplicate name")
 			})
-			Convey("UserQuotaDefault.Name should be unique", func() {
-				cg.UserQuotaDefault.Name = cg.UserQuotas[0].Name
+			Convey("UserLimitDefault.Name should be unique", func() {
+				cg.UserLimitDefault.Name = cg.UserLimits[0].Name
 				validateProjectConfig(vctx, &cfg)
-				So(vctx.Finalize(), ShouldErrLike, "user_quota_default / name): duplicate name")
+				So(vctx.Finalize(), ShouldErrLike, "user_limit_default / name): duplicate name")
 			})
-			Convey("Policy names must be valid", func() {
+			Convey("Limit names must be valid", func() {
 				ok := func(n string) {
 					vctx := &validation.Context{Context: ctx}
-					cg.UserQuotas[0].Name = n
+					cg.UserLimits[0].Name = n
 					validateProjectConfig(vctx, &cfg)
 					So(vctx.Finalize(), ShouldBeNil)
 				}
 				fail := func(n string) {
 					vctx := &validation.Context{Context: ctx}
-					cg.UserQuotas[0].Name = n
+					cg.UserLimits[0].Name = n
 					validateProjectConfig(vctx, &cfg)
 					So(vctx.Finalize(), ShouldErrLike, "does not match")
 				}
-				ok("UserQuotas")
-				ok("User-_@.+Quotas")
-				ok("1User.Quotas")
-				ok("User5.Quotas-3")
+				ok("UserLimits")
+				ok("User-_@.+Limits")
+				ok("1User.Limits")
+				ok("User5.Limits-3")
 				fail("")
-				fail("user quota #1")
+				fail("user limit #1")
 			})
-			Convey("UserQuotas require principals", func() {
-				cg.UserQuotas[0].Principals = nil
+			Convey("UserLimits require principals", func() {
+				cg.UserLimits[0].Principals = nil
 				validateProjectConfig(vctx, &cfg)
-				So(vctx.Finalize(), ShouldErrLike, "user_quotas #1 / principals): must have at least one")
+				So(vctx.Finalize(), ShouldErrLike, "user_limits #1 / principals): must have at least one")
 			})
-			Convey("UserQuotaDefault require no principals", func() {
-				cg.UserQuotaDefault.Principals = []string{"group:committers"}
+			Convey("UserLimitDefault require no principals", func() {
+				cg.UserLimitDefault.Principals = []string{"group:committers"}
 				validateProjectConfig(vctx, &cfg)
-				So(vctx.Finalize(), ShouldErrLike, "user_quota_default / principals): must not have any")
+				So(vctx.Finalize(), ShouldErrLike, "user_limit_default / principals): must not have any")
 			})
 			Convey("principals must be valid", func() {
 				ok := func(id string) {
 					vctx := &validation.Context{Context: ctx}
-					cg.UserQuotas[0].Principals[0] = id
+					cg.UserLimits[0].Principals[0] = id
 					validateProjectConfig(vctx, &cfg)
 					So(vctx.Finalize(), ShouldBeNil)
 				}
 				fail := func(id, msg string) {
 					vctx := &validation.Context{Context: ctx}
-					cg.UserQuotas[0].Principals[0] = id
+					cg.UserLimits[0].Principals[0] = id
 					validateProjectConfig(vctx, &cfg)
 					So(vctx.Finalize(), ShouldErrLike, msg)
 				}
@@ -614,43 +614,42 @@ func TestValidateProjectDetailed(t *testing.T) {
 					So(vctx.Finalize(), ShouldErrLike, msg)
 				}
 
-				cg.UserQuotas[0].RunLimits = nil
-				fail("run_limits): missing; set all limits with `unlimited` if there are no limits")
-				cg.UserQuotas[0].RunLimits = &cfgpb.QuotaPolicy_RunLimits{}
-				fail("run_limits / max_active): missing; set `unlimited` if there is no limit")
+				cg.UserLimits[0].Run = nil
+				fail("run): missing; set all limits with `unlimited` if there are no limits")
+				cg.UserLimits[0].Run = &cfgpb.UserLimit_Run{}
+				fail("run / max_active): missing; set `unlimited` if there is no limit")
 			})
 			Convey("limits are > 0 or unlimited", func() {
-				ok := func(l *cfgpb.QuotaPolicy_Limit, val int64, unlimited bool) {
+				ok := func(l *cfgpb.UserLimit_Limit, val int64, unlimited bool) {
 					vctx := &validation.Context{Context: ctx}
 					if unlimited {
-						l.Limit = &cfgpb.QuotaPolicy_Limit_Unlimited{Unlimited: true}
+						l.Limit = &cfgpb.UserLimit_Limit_Unlimited{Unlimited: true}
 					} else {
-						l.Limit = &cfgpb.QuotaPolicy_Limit_Value{Value: val}
+						l.Limit = &cfgpb.UserLimit_Limit_Value{Value: val}
 					}
 					validateProjectConfig(vctx, &cfg)
 					So(vctx.Finalize(), ShouldBeNil)
 				}
-				fail := func(l *cfgpb.QuotaPolicy_Limit, val int64, unlimited bool, msg string) {
+				fail := func(l *cfgpb.UserLimit_Limit, val int64, unlimited bool, msg string) {
 					vctx := &validation.Context{Context: ctx}
-					l.Limit = &cfgpb.QuotaPolicy_Limit_Unlimited{Unlimited: true}
+					l.Limit = &cfgpb.UserLimit_Limit_Unlimited{Unlimited: true}
 					if !unlimited {
-						l.Limit = &cfgpb.QuotaPolicy_Limit_Value{Value: val}
+						l.Limit = &cfgpb.UserLimit_Limit_Value{Value: val}
 					}
 					validateProjectConfig(vctx, &cfg)
 					So(vctx.Finalize(), ShouldErrLike, msg)
 				}
 
 				// run limits
-				rlimits := cg.UserQuotas[0].RunLimits
-				fail(rlimits.MaxActive, 0, false, "invalid limit 0;")
-				ok(rlimits.MaxActive, 3, false)
-				ok(rlimits.MaxActive, 0, true)
+				ulimit := cg.UserLimits[0]
+				fail(ulimit.Run.MaxActive, 0, false, "invalid limit 0;")
+				ok(ulimit.Run.MaxActive, 3, false)
+				ok(ulimit.Run.MaxActive, 0, true)
 
 				// tryjob limits
-				tlimits := cg.UserQuotas[0].TryjobLimits
-				fail(tlimits.MaxActive, 0, false, "invalid limit 0;")
-				ok(tlimits.MaxActive, 3, false)
-				ok(tlimits.MaxActive, 0, true)
+				fail(ulimit.Tryjob.MaxActive, 0, false, "invalid limit 0;")
+				ok(ulimit.Tryjob.MaxActive, 3, false)
+				ok(ulimit.Tryjob.MaxActive, 0, true)
 			})
 		})
 	})

@@ -40,8 +40,8 @@ _run_mode_ctor = __native__.genstruct("cq.run_mode")
 # A struct returned by cq.location_filter(...).
 _location_filter_ctor = __native__.genstruct("cq.location_filter")
 
-# A struct returned by cq.quota_policy(...).
-_quota_policy_ctor = __native__.genstruct("cq.quota_policy")
+# A struct returned by cq.user_limit(...).
+_user_limit_ctor = __native__.genstruct("cq.user_limit")
 
 # A struct returned by cq.run_limits(...).
 _run_limits_ctor = __native__.genstruct("cq.run_limits")
@@ -253,40 +253,40 @@ def _validate_location_filter(attr, val, *, default = None, required = True):
     """Validates location_filter."""
     return validate.struct(attr, val, _location_filter_ctor, default = default, required = required)
 
-def _validate_quota_policy(attr, val, *, default = None, required = False):
-    """Validates that `val` was constructed via cq._quota_policy(...)."""
-    return validate.struct(attr, val, _quota_policy_ctor, default = default, required = required)
+def _validate_user_limit(attr, val, *, default = None, required = False):
+    """Validates that `val` was constructed via cq._user_limit(...)."""
+    return validate.struct(attr, val, _user_limit_ctor, default = default, required = required)
 
-def _quota_policy(
+def _user_limit(
         name = None,
         users = None,
         groups = None,
-        run_limits = None,
-        tryjob_limits = None):
-    """Construct a quota policy with run and tryjob limits for users and groups.
+        run = None,
+        tryjob = None):
+    """Construct a user_limit for run and tryjob limits.
 
-    At the time of Run creation, CV looks up a quota policy applicable for
-    the Run, and blocks processing the Run or the tryjobs, if the remaining
-    quota balance is insufficient.
+    At the time of Run creation, CV looks up a user_limit applicable for
+    the Run, and blocks processing the Run or the tryjobs, if the number of
+    ongoing runs and tryjobs reached the limits.
 
-    This constructs and returns a quota policy which specifies run and tryjob
-    limits for given users and groups in cq_group(...). Find cq_group(...) to
-    find how quota policies are used in cq_group(...).
+    This constructs and return a user_limit, which specifies run and tryjob
+    limits for given users and members of given groups. Find cq_group(...) to
+    find how user_limit(s) are used in cq_group(...).
 
     Args:
-      name: the name of the policy to configure.
+      name: the name of the limit to configure.
+        This usually indicates the intended users and groups.
+        e.g., "limits_for_committers", "limits_for_external_contributors"
         Must be unique in the ConfigGroup.
         Must match regex '^[0-9A-Za-z][0-9A-Za-z\\.\\-@_+]{0,511}$'.
         Required.
-      users: a list of user identities, which is an email typically, to apply
-        the quota policy to.
-      groups: a list of chrome infra auth group names to apply the quota policy
-        to.
-      run_limits: Run limits to apply. See cq.run_limits(...) for more details.
-        If omitted, unlimited run quotas are granted to the users and groups.
-      tryjob_limits: Tryjob limits to apply. See cq.tryjob_limits(...) for more
-        details. If omitted, unlimited tryjob quotas are granted to the users
-        and groups.
+      users: a list of user identities to apply the limits to.
+        User identities are the email addresses in most cases.
+      groups: a list of chrome infra auth groups to apply the limits to
+        the members of.
+      run: cq.run_limits(...). If omitted, runs are unlimited for the users.
+      tryjob: cq.tryjob_limits(...). If omitted, tryjobs are unlimited for
+        the users.
     """
     name = validate.string(
         "name",
@@ -303,14 +303,14 @@ def _quota_policy(
     for i, g in enumerate(groups):
         p = "group:%s" % validate.string("groups[%d]" % i, g, required = True)
         principals.append(p)
-    _validate_run_limits("run_limits", run_limits, required = False)
-    _validate_tryjob_limits("tryjob_limits", tryjob_limits, required = False)
+    _validate_run_limits("run", run, required = False)
+    _validate_tryjob_limits("tryjob", tryjob, required = False)
 
-    return _quota_policy_ctor(
+    return _user_limit_ctor(
         name = name,
         principals = principals,
-        run_limits = run_limits,
-        tryjob_limits = tryjob_limits,
+        run = run,
+        tryjob = tryjob,
     )
 
 def _validate_run_limits(attr, val, *, default = None, required = False):
@@ -410,7 +410,7 @@ cq = struct(
     retry_config = _retry_config,
     run_mode = _run_mode,
     location_filter = _location_filter,
-    quota_policy = _quota_policy,
+    user_limit = _user_limit,
     run_limits = _run_limits,
     tryjob_limits = _tryjob_limits,
     ACTION_NONE = cq_pb.Verifiers.GerritCQAbility.UNSET,
@@ -445,5 +445,5 @@ cqimpl = struct(
     validate_retry_config = _validate_retry_config,
     validate_run_mode = _validate_run_mode,
     validate_location_filter = _validate_location_filter,
-    validate_quota_policy = _validate_quota_policy,
+    validate_user_limit = _validate_user_limit,
 )

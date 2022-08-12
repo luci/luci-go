@@ -1035,10 +1035,10 @@ def _cq_config_group(cq_group, project, triggering_map):
             fail("only Gerrit repos are supported")
         group_by_gob_host.setdefault(w.__gob_host, []).append(w)
 
-    user_quotas = [_cq_quota_policy(q) for q in cq_group.props.user_quotas]
-    user_quota_default = cq_group.props.user_quota_default
-    if user_quota_default != None:
-        user_quota_default = _cq_quota_policy(user_quota_default)
+    user_limits = [_cq_user_limit(q) for q in cq_group.props.user_limits]
+    user_limit_default = cq_group.props.user_limit_default
+    if user_limit_default != None:
+        user_limit_default = _cq_user_limit(user_limit_default)
 
     return cq_pb.ConfigGroup(
         name = cq_group.key.id,
@@ -1065,8 +1065,8 @@ def _cq_config_group(cq_group, project, triggering_map):
             _cq_run_mode(m)
             for m in cq_group.props.additional_modes
         ] if cq_group.props.additional_modes else None,
-        user_quotas = user_quotas,
-        user_quota_default = user_quota_default,
+        user_limits = user_limits,
+        user_limit_default = user_limit_default,
     )
 
 def _cq_retry_config(retry_config):
@@ -1211,40 +1211,39 @@ def _cq_visibility(val):
         return cq_pb.COMMENT_LEVEL_UNSET
     return val
 
-def _cq_quota_policy(p):
-    """cq.quota_policy(...) => cq_pb.QuotaPolicy."""
-    return cq_pb.QuotaPolicy(
-        name = p.name,
-        principals = p.principals,
-        run_limits = _cq_quota_policy_run_limits(p.run_limits),
-        tryjob_limits = _cq_quota_policy_tryjob_limits(p.tryjob_limits),
+def _cq_user_limit(limit):
+    """cq.user_limit(...) => cq_pb.UserLimit."""
+    return cq_pb.UserLimit(
+        name = limit.name,
+        principals = limit.principals,
+        run = _cq_user_limit_run(limit.run),
+        tryjob = _cq_user_limit_tryjob(limit.tryjob),
     )
 
-def _cq_quota_policy_run_limits(limits):
-    """cq.run_limits(...) => cq_pb.QuotaPolicy.RunLimits."""
-    return cq_pb.QuotaPolicy.RunLimits(
-        max_active = _cq_quota_policy_limit(
+def _cq_user_limit_run(limits):
+    """cq.run_limits(...) => cq_pb.UserLimit.Run."""
+    return cq_pb.UserLimit.Run(
+        max_active = _cq_user_limit_limit(
             limits.max_active if limits != None else None,
         ),
     )
 
-def _cq_quota_policy_tryjob_limits(limits):
-    """cq.tryjob_limits(...) => cq_pb.QuotaPolicy.TryjobLimits."""
-    return cq_pb.QuotaPolicy.TryjobLimits(
-        max_active = _cq_quota_policy_limit(
+def _cq_user_limit_tryjob(limits):
+    """cq.tryjob_limits(...) => cq_pb.UserLimit.Tryjob."""
+    return cq_pb.UserLimit.Tryjob(
+        max_active = _cq_user_limit_limit(
             limits.max_active if limits != None else None,
         ),
     )
 
-def _cq_quota_policy_limit(limit):
-    """Int|None => cq_pb.QuotaPolicy.Limit."""
+def _cq_user_limit_limit(limit):
+    """Int|None => cq_pb.UserLimit.Limit."""
 
     # if the limit is None, return with unlimited = True, so that
-    # so that the config output clarifies what policies granted
-    # unliimited quotas.
+    # so that the config output clarifies what limits were set as unlimited.
     if limit == None:
-        return cq_pb.QuotaPolicy.Limit(unlimited = True)
-    return cq_pb.QuotaPolicy.Limit(value = limit)
+        return cq_pb.UserLimit.Limit(unlimited = True)
+    return cq_pb.UserLimit.Limit(value = limit)
 
 ################################################################################
 ## notify.cfg.
