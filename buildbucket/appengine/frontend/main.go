@@ -32,6 +32,7 @@ import (
 	"go.chromium.org/luci/server/gaeemulation"
 	"go.chromium.org/luci/server/gerritauth"
 	"go.chromium.org/luci/server/module"
+	"go.chromium.org/luci/server/redisconn"
 	"go.chromium.org/luci/server/router"
 	"go.chromium.org/luci/server/secrets"
 	"go.chromium.org/luci/server/tq"
@@ -55,6 +56,7 @@ func main() {
 		gaeemulation.NewModuleFromFlags(),
 		gerritauth.NewModuleFromFlags(),
 		tq.NewModuleFromFlags(),
+		redisconn.NewModuleFromFlags(),
 		secrets.NewModuleFromFlags(),
 	}
 

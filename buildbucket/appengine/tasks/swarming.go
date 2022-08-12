@@ -38,6 +38,7 @@ import (
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/gae/service/info"
+	"go.chromium.org/luci/server/caching"
 	"go.chromium.org/luci/server/tq"
 
 	"go.chromium.org/luci/buildbucket"
@@ -155,7 +156,23 @@ func SubNotify(ctx context.Context, body io.Reader) error {
 	if err != nil {
 		return err
 	}
-	// TODO(yuanjunh): Dedup msg by msgID.
+	// TODO(crbug/1328646): delete the log once the new Go flow becomes stable.
+	logging.Infof(ctx, "Received message: %+v", nt)
+
+	// Try not to process same message more than once.
+	cache := caching.GlobalCache(ctx, "swarming-pubsub-msg-id")
+	if cache == nil {
+		return errors.Annotate(err, "global cache is not found").Tag(transient.Tag).Err()
+	}
+	msgCached, err := cache.Get(ctx, nt.messageID)
+	switch {
+	case err == caching.ErrCacheMiss: // no-op, continue
+	case err != nil:
+		return errors.Annotate(err, "failed to read %s from the global cache", nt.messageID).Tag(transient.Tag).Err()
+	case msgCached != nil:
+		logging.Infof(ctx, "seen this message %s before, ignoring", nt.messageID)
+		return nil
+	}
 
 	taskURL := func(hostname, taskID string) string {
 		return fmt.Sprintf("https://%s/task?id=%s", hostname, taskID)
@@ -196,7 +213,11 @@ func SubNotify(ctx context.Context, body io.Reader) error {
 	if err != nil {
 		return errors.Annotate(err, "failed to create a swarming client for build %d (%s), in %s", nt.BuildID, bld.Project, sw.Hostname).Err()
 	}
-	return syncBuildWithTaskResult(ctx, nt.BuildID, sw.TaskId, swarm)
+	if err := syncBuildWithTaskResult(ctx, nt.BuildID, sw.TaskId, swarm); err != nil {
+		return err
+	}
+
+	return cache.Set(ctx, nt.messageID, []byte{1}, 10*time.Minute)
 }
 
 // unpackMsg unpacks swarming-go pubsub message and extracts message id,

@@ -32,10 +32,13 @@ import (
 
 	"go.chromium.org/luci/common/api/swarming/swarming/v1"
 	"go.chromium.org/luci/common/clock/testclock"
+	"go.chromium.org/luci/common/data/caching/lru"
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/gae/filter/txndefer"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
+	"go.chromium.org/luci/server/caching"
+	"go.chromium.org/luci/server/caching/cachingtest"
 	"go.chromium.org/luci/server/tq"
 
 	"go.chromium.org/luci/buildbucket/appengine/internal/clients"
@@ -47,7 +50,6 @@ import (
 	"go.chromium.org/luci/buildbucket/protoutil"
 
 	. "github.com/smartystreets/goconvey/convey"
-
 	. "go.chromium.org/luci/common/testing/assertions"
 )
 
@@ -796,6 +798,11 @@ func TestSubNotify(t *testing.T) {
 		datastore.GetTestable(ctx).AutoIndex(true)
 		datastore.GetTestable(ctx).Consistent(true)
 		ctx, _ = tq.TestingContext(ctx, nil)
+		ctx = cachingtest.WithGlobalCache(ctx, map[string]caching.BlobCache{
+			"swarming-pubsub-msg-id": &cachingtest.BlobCache{
+				LRU: lru.New(0),
+			},
+		})
 
 		b := &model.Build{
 			ID: 123,
@@ -954,6 +961,10 @@ func TestSubNotify(t *testing.T) {
 			err := SubNotify(ctx, body)
 			So(err, ShouldErrLike, "googleapi: Error 500: swarming internal error")
 			So(transient.Tag.In(err), ShouldBeTrue)
+
+			cache := caching.GlobalCache(ctx, "swarming-pubsub-msg-id")
+			_, err = cache.Get(ctx, "msg1")
+			So(err, ShouldEqual, caching.ErrCacheMiss)
 		})
 
 		Convey("success", func() {
@@ -973,6 +984,26 @@ func TestSubNotify(t *testing.T) {
 			So(syncedBuild.Status, ShouldEqual, pb.Status_SUCCESS)
 			So(syncedBuild.Proto.StartTime, ShouldResembleProto, &timestamppb.Timestamp{Seconds: 1517260502, Nanos: 649750000})
 			So(syncedBuild.Proto.EndTime, ShouldResembleProto, &timestamppb.Timestamp{Seconds: 1517271318, Nanos: 162860000})
+
+			cache := caching.GlobalCache(ctx, "swarming-pubsub-msg-id")
+			cached, err := cache.Get(ctx, "msg1")
+			So(err, ShouldBeNil)
+			So(cached, ShouldResemble, []byte{1})
+		})
+
+		Convey("duplicate message", func() {
+			cache := caching.GlobalCache(ctx, "swarming-pubsub-msg-id")
+			err := cache.Set(ctx, "msg123", []byte{1}, 0*time.Second)
+			So(err, ShouldBeNil)
+
+			body := makeSwarmingPubsubMsg(&userdata{
+				BuildID:          123,
+				CreatedTS:        1517260502000000,
+				SwarmingHostname: "swarm",
+			}, "task123", "msg123")
+			mockSwarm.EXPECT().GetTaskResult(ctx, gomock.Any()).Times(0)
+			err = SubNotify(ctx, body)
+			So(err, ShouldBeNil)
 		})
 	})
 }
