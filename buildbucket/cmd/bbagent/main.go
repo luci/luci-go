@@ -313,9 +313,9 @@ func processExeArgs(ctx context.Context, c clientInput) []string {
 	return exeArgs
 }
 
-// finalizeBuild returns true if fatalErr is nil and there's no additional
+// readyToFinalize returns true if fatalErr is nil and there's no additional
 // errors finalizing the build.
-func finalizeBuild(ctx context.Context, finalBuild *bbpb.Build, fatalErr error, statusDetails *bbpb.StatusDetails, outputFile *luciexe.OutputFlag) bool {
+func readyToFinalize(ctx context.Context, finalBuild *bbpb.Build, fatalErr error, statusDetails *bbpb.StatusDetails, outputFile *luciexe.OutputFlag) bool {
 	if statusDetails != nil {
 		if finalBuild.StatusDetails == nil {
 			finalBuild.StatusDetails = &bbpb.StatusDetails{}
@@ -350,6 +350,23 @@ func finalizeBuild(ctx context.Context, finalBuild *bbpb.Build, fatalErr error, 
 	}
 
 	return len(finalErrs) == 0
+}
+
+func finalizeBuild(ctx context.Context, bbclient BuildsClient, finalBuild *bbpb.Build, updateMask []string) int {
+	var retcode int
+	// No need to check the returned build here because it's already finalizing
+	// the build.
+	_, bbErr := bbclient.UpdateBuild(
+		ctx,
+		&bbpb.UpdateBuildRequest{
+			Build:      finalBuild,
+			UpdateMask: &fieldmaskpb.FieldMask{Paths: updateMask},
+		})
+	if bbErr != nil {
+		logging.Errorf(ctx, "Failed to update Buildbucket due to %s", bbErr)
+		retcode = 2
+	}
+	return retcode
 }
 
 func mainImpl() int {
@@ -561,25 +578,15 @@ func mainImpl() int {
 	var retcode int
 
 	fatalUpdateBuildErr, _ := fatalUpdateBuildErrorSlot.Load().(error)
-	if finalizeBuild(ctx, finalBuild, fatalUpdateBuildErr, statusDetails, outputFile) {
+	if readyToFinalize(cctx, finalBuild, fatalUpdateBuildErr, statusDetails, outputFile) {
 		updateMask = append(updateMask, "build.steps", "build.output")
 	} else {
-		// finalizeBuild indicated that something is really wrong; Omit steps and
+		// readyToFinalize indicated that something is really wrong; Omit steps and
 		// output from the final push to minimize potential issues.
 		retcode = 1
 	}
-	// No need to check the returned build here because it's already finalizing
-	// the build.
-	_, bbErr := bbclientInput.bbclient.UpdateBuild(
-		cctx,
-		&bbpb.UpdateBuildRequest{
-			Build:      finalBuild,
-			UpdateMask: &fieldmaskpb.FieldMask{Paths: updateMask},
-		})
-	if bbErr != nil {
-		logging.Errorf(cctx, "Failed to report error %s to Buildbucket due to %s", err, bbErr)
-		retcode = 2
-	}
+
+	retcode = finalizeBuild(cctx, bbclientInput.bbclient, finalBuild, updateMask)
 
 	if retcode == 0 && subprocErr != nil {
 		errors.Walk(subprocErr, func(err error) bool {
@@ -595,7 +602,6 @@ func mainImpl() int {
 			logging.Errorf(cctx, "Non retcode-containing error from user subprocess: %s", subprocErr)
 		}
 	}
-
 	return retcode
 }
 
