@@ -26,12 +26,24 @@ import (
 	"testing"
 
 	. "github.com/smartystreets/goconvey/convey"
+	"google.golang.org/grpc"
+	"google.golang.org/protobuf/proto"
 
-	pb "go.chromium.org/luci/buildbucket/proto"
+	bbpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/logging/memlogger"
 	. "go.chromium.org/luci/common/testing/assertions"
 	"go.chromium.org/luci/gae/impl/memory"
 )
+
+type testBBClient struct {
+	requests []*bbpb.UpdateBuildRequest
+}
+
+func (t *testBBClient) UpdateBuild(ctx context.Context, in *bbpb.UpdateBuildRequest, opts ...grpc.CallOption) (*bbpb.Build, error) {
+	req := proto.Clone(in).(*bbpb.UpdateBuildRequest)
+	t.requests = append(t.requests, req)
+	return &bbpb.Build{}, nil
+}
 
 var successResult = &cipdOut{
 	Result: map[string][]*cipdPkg{
@@ -99,26 +111,26 @@ func TestPrependPath(t *testing.T) {
 			_ = os.Setenv("PATH", originalPathEnv)
 		}()
 
-		build := &pb.Build{
+		build := &bbpb.Build{
 			Id: 123,
-			Infra: &pb.BuildInfra{
-				Buildbucket: &pb.BuildInfra_Buildbucket{
-					Agent: &pb.BuildInfra_Buildbucket_Agent{
-						Input: &pb.BuildInfra_Buildbucket_Agent_Input{
-							Data: map[string]*pb.InputDataRef{
+			Infra: &bbpb.BuildInfra{
+				Buildbucket: &bbpb.BuildInfra_Buildbucket{
+					Agent: &bbpb.BuildInfra_Buildbucket_Agent{
+						Input: &bbpb.BuildInfra_Buildbucket_Agent_Input{
+							Data: map[string]*bbpb.InputDataRef{
 								"path_a": {
-									DataType: &pb.InputDataRef_Cipd{
-										Cipd: &pb.InputDataRef_CIPD{
-											Specs: []*pb.InputDataRef_CIPD_PkgSpec{{Package: "pkg_a", Version: "latest"}},
+									DataType: &bbpb.InputDataRef_Cipd{
+										Cipd: &bbpb.InputDataRef_CIPD{
+											Specs: []*bbpb.InputDataRef_CIPD_PkgSpec{{Package: "pkg_a", Version: "latest"}},
 										},
 									},
 									OnPath: []string{"path_a/bin", "path_a"},
 								},
 								"path_b": {
-									DataType: &pb.InputDataRef_Cas{
-										Cas: &pb.InputDataRef_CAS{
+									DataType: &bbpb.InputDataRef_Cas{
+										Cas: &bbpb.InputDataRef_CAS{
 											CasInstance: "projects/project/instances/instance",
-											Digest: &pb.InputDataRef_CAS_Digest{
+											Digest: &bbpb.InputDataRef_CAS_Digest{
 												Hash:      "hash",
 												SizeBytes: 1,
 											},
@@ -128,11 +140,11 @@ func TestPrependPath(t *testing.T) {
 								},
 							},
 						},
-						Output: &pb.BuildInfra_Buildbucket_Agent_Output{},
+						Output: &bbpb.BuildInfra_Buildbucket_Agent_Output{},
 					},
 				},
 			},
-			Input: &pb.Build_Input{
+			Input: &bbpb.Build_Input{
 				Experiments: []string{"luci.buildbucket.agent.cipd_installation"},
 			},
 		}
@@ -149,6 +161,59 @@ func TestPrependPath(t *testing.T) {
 	})
 }
 
+func TestDownloadCipdPackages(t *testing.T) {
+	resultsFilePath = filepath.Join(t.TempDir(), "cipd_ensure_results.json")
+	build := &bbpb.Build{
+		Id: 123,
+		Infra: &bbpb.BuildInfra{
+			Buildbucket: &bbpb.BuildInfra_Buildbucket{
+				Agent: &bbpb.BuildInfra_Buildbucket_Agent{
+					Input: &bbpb.BuildInfra_Buildbucket_Agent_Input{
+						Data: map[string]*bbpb.InputDataRef{
+							"path_a": {
+								DataType: &bbpb.InputDataRef_Cipd{
+									Cipd: &bbpb.InputDataRef_CIPD{
+										Specs: []*bbpb.InputDataRef_CIPD_PkgSpec{{Package: "pkg_a", Version: "latest"}},
+									},
+								},
+								OnPath: []string{"path_a/bin", "path_a"},
+							},
+						},
+					},
+					Output: &bbpb.BuildInfra_Buildbucket_Agent_Output{},
+				},
+			},
+		},
+		Input: &bbpb.Build_Input{
+			Experiments: []string{"luci.buildbucket.agent.cipd_installation"},
+		},
+		CancelTime: nil,
+	}
+
+	Convey("downloadCipdPackages", t, func(c C) {
+		Convey("success", func() {
+			testCase = "success"
+
+			ctx := memory.Use(context.Background())
+			ctx = memlogger.Use(ctx)
+			execCommandContext = fakeExecCommand
+			defer func() { execCommandContext = exec.CommandContext }()
+			cwd, err := os.Getwd()
+			So(err, ShouldBeNil)
+
+			bbclient := &testBBClient{}
+			input := &bbpb.BBAgentArgs{Build: build}
+			rc := downloadCipdPackages(ctx, cwd, clientInput{bbclient, input})
+
+			So(rc, ShouldEqual, 0)
+			So(len(bbclient.requests), ShouldEqual, 2)
+			So(bbclient.requests[0].Build.Infra.Buildbucket.Agent.Output.Status, ShouldEqual, bbpb.Status_STARTED)
+			So(bbclient.requests[1].Build.Infra.Buildbucket.Agent.Output.Status, ShouldEqual, bbpb.Status_SUCCESS)
+		})
+	})
+
+}
+
 func TestInstallCipdPackages(t *testing.T) {
 	resultsFilePath = filepath.Join(t.TempDir(), "cipd_ensure_results.json")
 	Convey("installCipdPackages", t, func() {
@@ -157,36 +222,36 @@ func TestInstallCipdPackages(t *testing.T) {
 		execCommandContext = fakeExecCommand
 		defer func() { execCommandContext = exec.CommandContext }()
 
-		build := &pb.Build{
+		build := &bbpb.Build{
 			Id: 123,
-			Infra: &pb.BuildInfra{
-				Buildbucket: &pb.BuildInfra_Buildbucket{
-					Agent: &pb.BuildInfra_Buildbucket_Agent{
-						Input: &pb.BuildInfra_Buildbucket_Agent_Input{
-							Data: map[string]*pb.InputDataRef{
+			Infra: &bbpb.BuildInfra{
+				Buildbucket: &bbpb.BuildInfra_Buildbucket{
+					Agent: &bbpb.BuildInfra_Buildbucket_Agent{
+						Input: &bbpb.BuildInfra_Buildbucket_Agent_Input{
+							Data: map[string]*bbpb.InputDataRef{
 								"path_a": {
-									DataType: &pb.InputDataRef_Cipd{
-										Cipd: &pb.InputDataRef_CIPD{
-											Specs: []*pb.InputDataRef_CIPD_PkgSpec{{Package: "pkg_a", Version: "latest"}},
+									DataType: &bbpb.InputDataRef_Cipd{
+										Cipd: &bbpb.InputDataRef_CIPD{
+											Specs: []*bbpb.InputDataRef_CIPD_PkgSpec{{Package: "pkg_a", Version: "latest"}},
 										},
 									},
 									OnPath: []string{"path_a/bin", "path_a"},
 								},
 								"path_b": {
-									DataType: &pb.InputDataRef_Cipd{
-										Cipd: &pb.InputDataRef_CIPD{
-											Specs: []*pb.InputDataRef_CIPD_PkgSpec{{Package: "pkg_b", Version: "latest"}},
+									DataType: &bbpb.InputDataRef_Cipd{
+										Cipd: &bbpb.InputDataRef_CIPD{
+											Specs: []*bbpb.InputDataRef_CIPD_PkgSpec{{Package: "pkg_b", Version: "latest"}},
 										},
 									},
 									OnPath: []string{"path_b/bin", "path_b"},
 								},
 							},
 						},
-						Output: &pb.BuildInfra_Buildbucket_Agent_Output{},
+						Output: &bbpb.BuildInfra_Buildbucket_Agent_Output{},
 					},
 				},
 			},
-			Input: &pb.Build_Input{
+			Input: &bbpb.Build_Input{
 				Experiments: []string{"luci.buildbucket.agent.cipd_installation"},
 			},
 		}
@@ -196,17 +261,17 @@ func TestInstallCipdPackages(t *testing.T) {
 			cwd, err := os.Getwd()
 			So(err, ShouldBeNil)
 			So(installCipdPackages(ctx, build, cwd), ShouldBeNil)
-			So(build.Infra.Buildbucket.Agent.Output.ResolvedData["path_a"], ShouldResembleProto, &pb.ResolvedDataRef{
-				DataType: &pb.ResolvedDataRef_Cipd{
-					Cipd: &pb.ResolvedDataRef_CIPD{
-						Specs: []*pb.ResolvedDataRef_CIPD_PkgSpec{{Package: successResult.Result["path_a"][0].Package, Version: successResult.Result["path_a"][0].InstanceID}},
+			So(build.Infra.Buildbucket.Agent.Output.ResolvedData["path_a"], ShouldResembleProto, &bbpb.ResolvedDataRef{
+				DataType: &bbpb.ResolvedDataRef_Cipd{
+					Cipd: &bbpb.ResolvedDataRef_CIPD{
+						Specs: []*bbpb.ResolvedDataRef_CIPD_PkgSpec{{Package: successResult.Result["path_a"][0].Package, Version: successResult.Result["path_a"][0].InstanceID}},
 					},
 				},
 			})
-			So(build.Infra.Buildbucket.Agent.Output.ResolvedData["path_b"], ShouldResembleProto, &pb.ResolvedDataRef{
-				DataType: &pb.ResolvedDataRef_Cipd{
-					Cipd: &pb.ResolvedDataRef_CIPD{
-						Specs: []*pb.ResolvedDataRef_CIPD_PkgSpec{{Package: successResult.Result["path_b"][0].Package, Version: successResult.Result["path_b"][0].InstanceID}},
+			So(build.Infra.Buildbucket.Agent.Output.ResolvedData["path_b"], ShouldResembleProto, &bbpb.ResolvedDataRef{
+				DataType: &bbpb.ResolvedDataRef_Cipd{
+					Cipd: &bbpb.ResolvedDataRef_CIPD{
+						Specs: []*bbpb.ResolvedDataRef_CIPD_PkgSpec{{Package: successResult.Result["path_b"][0].Package, Version: successResult.Result["path_b"][0].InstanceID}},
 					},
 				},
 			})
