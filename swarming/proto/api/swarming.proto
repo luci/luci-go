@@ -358,25 +358,19 @@ enum BotEventType {
   //
   // BotEvent.event_msg shall not be set.
   BOT_NEW_SESSION = 1;
-  // Bot had an internal failure to report to the server outside of a task
-  // context. This shall send a report to the administrator of the instance and
-  // service author.
-  //
-  // BotEvent.event_msg shall contain the error message.
+
+  // Currently unused.
   BOT_INTERNAL_FAILURE = 2;
+
   // Bot had an hook error to report to the server. This shall send a report to
   // the administrator of the instance.
   //
   // BotEvent.event_msg shall contain the error message.
   BOT_HOOK_ERROR = 3;
-  // Bot hook logged information. The bot hooks can log locally to the local log
-  // file, which itself can be streamed out of band. For special notifications
-  // that are worth notifying the administrator, this event can be used to raise
-  // these. Due to the cost of doing an RPC just for this, this should be used
-  // sparingly; vs local logging.
-  //
-  // BotEvent.event_msg shall contain the log entry.
+
+  // Currently unused.
   BOT_HOOK_LOG = 4;
+
   // Bot initiated a host reboot. An example is a bot hook requesting to reboot
   // the host after a task failure.
   //
@@ -386,11 +380,10 @@ enum BotEventType {
   //
   // BotEvent.event_msg shall contain the reason.
   BOT_SHUTDOWN = 6;
-  // Knowledge of the bot by the server was deleted.
-  //
-  // In this case, the bot's historical data is still kept in the Swarming
-  // server's DB for a year, but the bot is not shown anywhere.
-  BOT_DELETED = 7;  // Not used yet. https://crbug.com/905087
+
+  // Currently unused.
+  BOT_DELETED = 7;
+
   // Bot is missing. There have been no communication from the bot for longer
   // than deadline configured on server side.
   BOT_MISSING = 8;
@@ -409,7 +402,7 @@ enum BotEventType {
   // contain the task ID.
   INSTRUCT_START_TASK = 11;
   // The server instructs the bot to restart without self-updating. This is to
-  // initiate a new bot session.
+  // initiate a new bot session, with potentially new bot hooks.
   //
   // BotEvent.event_msg can be set to the rationale, if any.
   INSTRUCT_RESTART_BOT = 12;
@@ -656,14 +649,13 @@ message TaskProperties {
   // Items must be sorted per the named cache name.
   repeated NamedCacheEntry named_caches = 3;
   // Command to run. This has priority over a command specified in the isolated
-  // files. Only one of 'command' or 'extra_args' can be specified.
+  // files.
   repeated string command = 4;
   // Relative working directory to start the 'command' in, defaults to the root
   // mapped directory or what is provided in the isolated file, if any.
   string relative_cwd = 5;
   // Extraneous arguments to append to the command specified in the isolated
-  // file. Can only be used when an isolated file specifies a command. Only one
-  // of 'command' or 'extra_args' can be specified.
+  // file. Can only be used when an isolated file specifies a command.
   //
   // Deprecated.
   repeated string extra_args = 6;

@@ -159,6 +159,11 @@ message BotGroup {
   //
   // If not set, bots will not use authentication at all.
   string system_service_account = 24;
+
+  // The cloud project id where the bot saves its logs.
+  // For GCE bots, it is the same cloud project where the bots reside.
+  // For non-GCE bots, it is the cloud project where the logs are being sent to.
+  string logs_cloud_project = 27;
 }
 
 

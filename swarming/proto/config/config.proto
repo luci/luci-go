@@ -34,8 +34,8 @@ message SettingsCfg {
   // Enable ts_mon based monitoring.
   bool enable_ts_monitoring = 4;
 
-  // (deprecated, see pools.proto) Configuration for swarming-isolate integration.
-  IsolateSettings isolate = 5;
+  // (deprecated) isolate field is not used.
+  reserved 5;
 
   // (deprecated, see pools.proto) Configuration for swarming-cipd integration.
   CipdSettings cipd = 6;
@@ -83,19 +83,6 @@ message SettingsCfg {
 
   // Configuration for RBE-CAS integration.
   CASSettings cas = 20;
-}
-
-
-// Configuration for swarming-isolate integration.
-message IsolateSettings {
-  // URL of the default isolate server to use if it is not specified in a
-  // task. Must start with "https://" or "http://",
-  // e.g. "https://isolateserver.appspot.com"
-  string default_server = 1;
-
-  // Default namespace to use if it is not specified in a task,
-  // e.g. "default-gzip"
-  string default_namespace = 2;
 }
 
 

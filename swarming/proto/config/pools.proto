@@ -81,19 +81,8 @@ message Pool {
   // AuthSettings in config.proto).
   Schedulers schedulers = 3;
 
-  // List of service account emails allowed to be used for tasks that target
-  // this pool. Tasks specify the service account via 'service_account' field
-  // in the tasks.New RPC.
-  //
-  // By associating accounts with pools in the config we make it more explicit
-  // that a bot belonging to a pool eventually can get access to service
-  // accounts of all tasks running in this pool (just by sitting there, grabbing
-  // tasks and sniffing service account tokens).
-  repeated string allowed_service_account = 4;
-
-  // Same as 'allowed_service_account', but the set of service accounts is
-  // specified through an auth group.
-  repeated string allowed_service_account_group = 5;
+  reserved 4, 5;
+  reserved "allowed_service_account", "allowed_service_account_group";
 
   oneof task_deployment_scheme {
     // Most Pools will include a task_template_deployment by name.
@@ -445,20 +434,8 @@ message ExternalSchedulerConfig {
 }
 
 message ExternalServices {
-  message Isolate {
-    // (required) URL of the default isolate server to use if it is not
-    // specified in the task.
-    //
-    // Must start with "https://" or "http://".
-    //
-    // e.g. "https://isolateserver.appspot.com"
-    string server = 1;
-
-    // (required) Default namespace to use if it is not specified in a task,
-    // e.g. "default-gzip"
-    string namespace = 2;
-  }
-  Isolate isolate = 1;
+  // (deprecated) isolate field is not used.
+  reserved 1;
 
   message CIPD {
     reserved 2; // Used to be "client_version", no longer used.
