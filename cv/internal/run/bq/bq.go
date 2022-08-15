@@ -18,12 +18,10 @@ import (
 	"context"
 	"fmt"
 	"sort"
-	"strings"
 
 	"golang.org/x/sync/errgroup"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
-	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry/transient"
@@ -37,7 +35,6 @@ import (
 	"go.chromium.org/luci/cv/internal/migration"
 	"go.chromium.org/luci/cv/internal/run"
 	"go.chromium.org/luci/cv/internal/tryjob"
-	"go.chromium.org/luci/cv/internal/tryjob/requirement"
 )
 
 const (
@@ -113,13 +110,6 @@ func send(ctx context.Context, env *common.Env, client cvbq.Client, id common.Ru
 		})
 	})
 
-	eg.Go(func() error {
-		if err := compare(ctx, r, cls); err != nil {
-			// swallow the error so that the critical path is not impacted.
-			logging.Errorf(ctx, "encountered error when trying to compare requirement computed by CV and actual tryjobs launched by CQDaemon: %s", err)
-		}
-		return nil
-	})
 	return eg.Wait()
 }
 
@@ -357,123 +347,4 @@ func bbBuilderNameFromDef(def *tryjob.Definition) string {
 	}
 	builder := def.GetBuildbucket().GetBuilder()
 	return fmt.Sprintf("%s/%s/%s", builder.Project, builder.Bucket, builder.Builder)
-}
-
-func compare(ctx context.Context, r *run.Run, cls []*run.RunCL) error {
-	switch luciProject := r.ID.LUCIProject(); {
-	case luciProject == "v8" || luciProject == "quickoffice":
-		// Those projects have indirectly triggered builders that CQDaemon will
-		// also report. This will impact the comparison result. Therefore, skip
-		// those 2 projects.
-		return nil
-	case r.UseCVTryjobExecutor:
-		// compare only when Tryjobs are handled by LUCI CV.
-		return nil
-	case len(r.Tryjobs.GetTryjobs()) == 0:
-		// CQDaemon must launch at least one tryjobs. Otherwise, it is very likely
-		// this Run failed before CQDaemon started to manage Tryjobs. For example,
-		// user doesn't have the permission to trigger the Run. In that case,
-		// there's no point for this comparison.
-		return nil
-	}
-	reqmt, err := computeRequirement(ctx, r, cls)
-	if err != nil {
-		return err
-	}
-
-	runLogs, err := run.LoadRunLogEntries(ctx, r.ID)
-	if err != nil {
-		return err
-	}
-
-	var expectedDefinitions []*tryjob.Definition
-	for _, def := range reqmt.GetDefinitions() {
-		if def.GetCritical() { // only care about the critical definitions
-			expectedDefinitions = append(expectedDefinitions, def)
-		}
-	}
-	actualLaunchedBuilders := stringset.New(len(r.Tryjobs.GetTryjobs()))
-	for _, rl := range runLogs {
-		if rl.GetTryjobsUpdated() != nil {
-			for _, tj := range rl.GetTryjobsUpdated().GetTryjobs() {
-				if tj.Critical { // only care about the critical tryjobs
-					actualLaunchedBuilders.Add(bbBuilderNameFromDef(tj.GetDefinition()))
-				}
-			}
-		}
-	}
-
-	expectedLaunched := make([]bool, len(expectedDefinitions)) // bitmask of expectedDefinitions
-	extraBuilders := make([]string, 0, len(actualLaunchedBuilders))
-	actualLaunchedBuilders.Iter(func(actualBuilder string) bool {
-		for i, expectedDef := range expectedDefinitions {
-			switch {
-			case bbBuilderNameFromDef(expectedDef) == actualBuilder:
-				expectedLaunched[i] = true
-				return true
-			case expectedDef.GetEquivalentTo() != nil && bbBuilderNameFromDef(expectedDef.GetEquivalentTo()) == actualBuilder:
-				expectedLaunched[i] = true
-				return true
-			}
-		}
-		extraBuilders = append(extraBuilders, actualBuilder)
-		return true
-	})
-
-	var missingDef []*tryjob.Definition
-	for i, expectedDef := range expectedDefinitions {
-		if !expectedLaunched[i] {
-			missingDef = append(missingDef, expectedDef)
-		}
-	}
-
-	if len(missingDef) > 0 || len(extraBuilders) > 0 {
-		var sb strings.Builder
-		sb.WriteString("FIXME crbug/1348645: found diff between the requirement computed by LUCI CV and actual launched builders by CQDaemon.")
-		if len(missingDef) > 0 {
-			sb.WriteString("\nRequirement computed by CV contains following definition but CQDaemon did not launch them:")
-			for _, def := range missingDef {
-				sb.WriteRune('\n')
-				sb.WriteString("  * main: ")
-				sb.WriteString(bbBuilderNameFromDef(def))
-				if def.GetEquivalentTo() != nil {
-					sb.WriteString("; equivalent: ")
-					sb.WriteString(bbBuilderNameFromDef(def.GetEquivalentTo()))
-				}
-			}
-		}
-		if len(extraBuilders) > 0 {
-			sb.WriteString("\nCQDaemon launched following builders but they are not in the requirement computed by LUCI CV:")
-			for _, builder := range extraBuilders {
-				sb.WriteString("\n  * ")
-				sb.WriteString(builder)
-			}
-		}
-		logging.Errorf(ctx, "%s", sb.String())
-	} else {
-		logging.Debugf(ctx, "crbug/1348645: requirement from CV matches the Tryjobs launched by CQDaemon")
-	}
-	return nil
-}
-
-func computeRequirement(ctx context.Context, r *run.Run, cls []*run.RunCL) (*tryjob.Requirement, error) {
-	cg, err := prjcfg.GetConfigGroup(ctx, r.ID.LUCIProject(), r.ConfigGroupID)
-	if err != nil {
-		return nil, err
-	}
-	reqmtInput := requirement.Input{
-		ConfigGroup: cg.Content,
-		RunOwner:    r.Owner,
-		CLs:         cls,
-		RunOptions:  r.Options,
-		RunMode:     r.Mode,
-	}
-	switch result, err := requirement.Compute(ctx, reqmtInput); {
-	case err != nil:
-		return nil, err
-	case !result.OK():
-		return nil, errors.Reason("requirement computation failed %s", result.ComputationFailure.Reason()).Err()
-	default:
-		return result.Requirement, nil
-	}
 }
