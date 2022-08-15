@@ -214,6 +214,7 @@ func (ul *uiLogEntry) LegacyTryjobsByStatus() map[string][]*uiTryjob {
 			Definition: tj.Definition,
 			Status:     tj.Status,
 			Result:     tj.Result,
+			Reused:     tj.Reused,
 		})
 	}
 	return ret

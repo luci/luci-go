@@ -110,11 +110,16 @@ func loadRunInfo(ctx context.Context, r *run.Run) ([]*run.RunCL, []*uiTryjob, []
 			}
 		} else {
 			for _, tj := range r.Tryjobs.GetTryjobs() {
+				launchedBy := r.ID
+				if tj.Reused {
+					launchedBy = ""
+				}
 				latestTryjobs = append(latestTryjobs, &tryjob.Tryjob{
 					ExternalID: tryjob.ExternalID(tj.ExternalId),
 					Definition: tj.Definition,
 					Status:     tj.Status,
 					Result:     tj.Result,
+					LaunchedBy: launchedBy,
 				})
 			}
 		}
@@ -143,7 +148,7 @@ func loadRunInfo(ctx context.Context, r *run.Run) ([]*run.RunCL, []*uiTryjob, []
 	sort.Slice(uiLogEntries, func(i, j int) bool {
 		return uiLogEntries[i].Time().After(uiLogEntries[j].Time())
 	})
-	return cls, makeUITryjobs(latestTryjobs), uiLogEntries, nil
+	return cls, makeUITryjobs(latestTryjobs, r.ID), uiLogEntries, nil
 }
 
 type clAndNeighborRuns struct {

@@ -19,6 +19,7 @@ import (
 
 	bbutil "go.chromium.org/luci/buildbucket/protoutil"
 
+	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/tryjob"
 )
 
@@ -28,9 +29,10 @@ type uiTryjob struct {
 	Definition *tryjob.Definition
 	Status     tryjob.Status
 	Result     *tryjob.Result
+	Reused     bool
 }
 
-func makeUITryjobs(tjs []*tryjob.Tryjob) []*uiTryjob {
+func makeUITryjobs(tjs []*tryjob.Tryjob, runID common.RunID) []*uiTryjob {
 	// TODO(crbug/1233963):  Make sure we are not leaking any sensitive info
 	// based on Read Perms. E.g. internal builder name.
 	if len(tjs) == 0 {
@@ -43,6 +45,7 @@ func makeUITryjobs(tjs []*tryjob.Tryjob) []*uiTryjob {
 			Definition: tj.Definition,
 			Status:     tj.Status,
 			Result:     tj.Result,
+			Reused:     tj.LaunchedBy != runID,
 		}
 	}
 	return ret
@@ -61,6 +64,7 @@ func makeUITryjobsFromSnapshots(snapshots []*tryjob.ExecutionLogEntry_TryjobSnap
 			Definition: snapshot.GetDefinition(),
 			Status:     snapshot.GetStatus(),
 			Result:     snapshot.GetResult(),
+			Reused:     snapshot.GetReused(),
 		}
 	}
 	return ret
