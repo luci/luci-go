@@ -55,13 +55,13 @@ func TestLocationFilterMatch(t *testing.T) {
 
 		Convey("with includes and excludes", func() {
 			lfs := []*cfgpb.Verifiers_Tryjob_Builder_LocationFilter{
-				&cfgpb.Verifiers_Tryjob_Builder_LocationFilter{
+				{
 					GerritHostRegexp:    "x-review.googlesource.com",
 					GerritProjectRegexp: "gp",
 					PathRegexp:          "included/.*",
 					Exclude:             false,
 				},
-				&cfgpb.Verifiers_Tryjob_Builder_LocationFilter{
+				{
 					GerritHostRegexp:    "x-review.googlesource.com",
 					GerritProjectRegexp: "gp",
 					PathRegexp:          "included/excluded/.*",
@@ -128,7 +128,7 @@ func TestLocationFilterMatch(t *testing.T) {
 
 		Convey("with initial exclude", func() {
 			lfs := []*cfgpb.Verifiers_Tryjob_Builder_LocationFilter{
-				&cfgpb.Verifiers_Tryjob_Builder_LocationFilter{
+				{
 					GerritHostRegexp:    "x-review.googlesource.com",
 					GerritProjectRegexp: "gp",
 					PathRegexp:          "excluded/.*",
@@ -149,7 +149,7 @@ func TestLocationFilterMatch(t *testing.T) {
 
 		Convey("with some patterns empty", func() {
 			lfs := []*cfgpb.Verifiers_Tryjob_Builder_LocationFilter{
-				&cfgpb.Verifiers_Tryjob_Builder_LocationFilter{
+				{
 					PathRegexp: "included/.*",
 					Exclude:    false,
 				},
@@ -173,7 +173,7 @@ func TestLocationFilterMatch(t *testing.T) {
 
 		Convey("returns error given invalid regex", func() {
 			lfs := []*cfgpb.Verifiers_Tryjob_Builder_LocationFilter{
-				&cfgpb.Verifiers_Tryjob_Builder_LocationFilter{
+				{
 					PathRegexp: "([i*",
 				},
 			}
@@ -185,15 +185,15 @@ func TestLocationFilterMatch(t *testing.T) {
 
 		Convey("with nested include exclude include", func() {
 			lfs := []*cfgpb.Verifiers_Tryjob_Builder_LocationFilter{
-				&cfgpb.Verifiers_Tryjob_Builder_LocationFilter{
+				{
 					PathRegexp: "included/.*",
 					Exclude:    false,
 				},
-				&cfgpb.Verifiers_Tryjob_Builder_LocationFilter{
+				{
 					PathRegexp: "included/excluded/.*",
 					Exclude:    true,
 				},
-				&cfgpb.Verifiers_Tryjob_Builder_LocationFilter{
+				{
 					PathRegexp: "included/excluded/included.txt",
 					Exclude:    false,
 				},
@@ -256,13 +256,13 @@ func TestHelperFunctions(t *testing.T) {
 
 		Convey("when only some files in a repo are included", func() {
 			lfs := []*cfgpb.Verifiers_Tryjob_Builder_LocationFilter{
-				&cfgpb.Verifiers_Tryjob_Builder_LocationFilter{
+				{
 					GerritHostRegexp:    "x-review.googlesource.com",
 					GerritProjectRegexp: "gp",
 					PathRegexp:          "included/.*",
 					Exclude:             false,
 				},
-				&cfgpb.Verifiers_Tryjob_Builder_LocationFilter{
+				{
 					GerritHostRegexp:    "x-review.googlesource.com",
 					GerritProjectRegexp: "gp",
 					PathRegexp:          "included/excluded/.*",
@@ -277,7 +277,7 @@ func TestHelperFunctions(t *testing.T) {
 
 		Convey("simple match all case", func() {
 			lfs := []*cfgpb.Verifiers_Tryjob_Builder_LocationFilter{
-				&cfgpb.Verifiers_Tryjob_Builder_LocationFilter{
+				{
 					GerritHostRegexp:    ".*",
 					GerritProjectRegexp: ".*",
 					PathRegexp:          "foo/.*",
@@ -291,7 +291,7 @@ func TestHelperFunctions(t *testing.T) {
 
 		Convey("default include case", func() {
 			lfs := []*cfgpb.Verifiers_Tryjob_Builder_LocationFilter{
-				&cfgpb.Verifiers_Tryjob_Builder_LocationFilter{
+				{
 					GerritHostRegexp:    ".*",
 					GerritProjectRegexp: ".*",
 					PathRegexp:          "foo/.*",

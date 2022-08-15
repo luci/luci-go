@@ -479,14 +479,42 @@ func shouldInclude(ctx context.Context, in Input, dm *definitionMaker, experimen
 			// If the result using LocationRegexp is not the same as LocationFilter,
 			// we want to know about it because this means that locationFilterMatch
 			// is not correct.
-			logging.Fields{
-				"location_regexp":         b.LocationRegexp,
-				"location_regexp_exclude": b.LocationRegexpExclude,
-				"location_regexp result":  locationRegexpMatched,
-				"location_filters result": locationFilterMatched,
-				"builder name":            b.Name,
-			}.Errorf(ctx, "LocationFilters and LocationRegexp did not give the same result. LocationFilters: %+v", b.LocationFilters, in.CLs)
+			var sb strings.Builder
+			var filterResult, regexpResult = "skip", "include"
+			if locationFilterMatched {
+				filterResult, regexpResult = "include", "skip"
+			}
+			fmt.Fprintf(&sb, "FIXME(crbug/1171945): disagreed location outputs: Filter(%s) Regexp(%s)", filterResult, regexpResult)
+			sb.WriteString("\n\n")
+			sb.WriteString("location_filters:")
+			for _, lf := range b.GetLocationFilters() {
+				var inclusiveness = "include"
+				if lf.Exclude {
+					inclusiveness = "exclude"
+				}
+				fmt.Fprintf(&sb, "\n  * %s host: %q; project: %q; path: %q", inclusiveness, lf.GetGerritHostRegexp(), lf.GetGerritProjectRegexp(), lf.GetPathRegexp())
+			}
 
+			sb.WriteString("\n\n")
+			sb.WriteString("location_regexp:")
+			for _, lr := range b.GetLocationRegexp() {
+				fmt.Fprintf(&sb, "\n  * %q", lr)
+			}
+			sb.WriteString("\n")
+			sb.WriteString("location_regexp_exclude:")
+			for _, lre := range b.GetLocationRegexpExclude() {
+				fmt.Fprintf(&sb, "\n  * %q", lre)
+			}
+
+			sb.WriteString("\n")
+			fmt.Fprintf(&sb, "\nbuilder name: %s", b.GetName())
+			fmt.Fprintf(&sb, "\nconfig group name: %s", in.ConfigGroup.GetName())
+			sb.WriteString("\ncls:")
+			for _, cl := range in.CLs {
+				fmt.Fprintf(&sb, "\n  * %s", cl.ExternalID.MustURL())
+			}
+
+			logging.Errorf(ctx, "%s", sb.String())
 		}
 		fallthrough
 	case locationRegexpSpecified:

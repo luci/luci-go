@@ -898,7 +898,7 @@ func TestCompute(t *testing.T) {
 							GlobalQuota: 8,
 						},
 					})
-					So(log, memlogger.ShouldHaveLog, logging.Error, "LocationFilters and LocationRegexp did not give the same result")
+					So(log, memlogger.ShouldHaveLog, logging.Error, "disagreed location outputs")
 				})
 			})
 		})
