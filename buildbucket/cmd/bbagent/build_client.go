@@ -112,10 +112,8 @@ func newBuildsClient(ctx context.Context, hostname string, retryF retry.Factory)
 	prpcClient := &prpc.Client{
 		Host: hostname,
 		Options: &prpc.Options{
-			Insecure: lhttp.IsLocalHost(hostname),
-			// As of 2021-06-28, the P99 of UpdateBuild latency is ~2.1s.
-			// So 5s should be long enough for the most of requests.
-			PerRPCTimeout: 5 * time.Second,
+			Insecure:      lhttp.IsLocalHost(hostname),
+			PerRPCTimeout: 30 * time.Second,
 		},
 	}
 	secrets, err := readBuildSecrets(ctx)
