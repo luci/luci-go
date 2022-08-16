@@ -16,13 +16,11 @@ package buildbucket
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"net/http"
 
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/grpc/prpc"
-	"go.chromium.org/luci/milo/common"
 	"go.chromium.org/luci/server/auth"
 )
 
@@ -52,18 +50,10 @@ func WithBuildsClientFactory(c context.Context, factory buildsClientFactory) con
 	return context.WithValue(c, &buildsClientContextKey, factory)
 }
 
-func buildbucketBuildsClient(c context.Context, host string, as auth.RPCAuthorityKind, opts ...auth.RPCOption) (buildbucketpb.BuildsClient, error) {
+func BuildsClient(c context.Context, host string, as auth.RPCAuthorityKind, opts ...auth.RPCOption) (buildbucketpb.BuildsClient, error) {
 	factory, ok := c.Value(&buildsClientContextKey).(buildsClientFactory)
 	if !ok {
 		return nil, fmt.Errorf("no buildbucket builds client factory found in context")
 	}
 	return factory(c, host, as, opts...)
-}
-
-func getHost(c context.Context) (string, error) {
-	settings := common.GetSettings(c)
-	if settings.Buildbucket == nil || settings.Buildbucket.Host == "" {
-		return "", errors.New("missing buildbucket host in settings")
-	}
-	return settings.Buildbucket.Host, nil
 }

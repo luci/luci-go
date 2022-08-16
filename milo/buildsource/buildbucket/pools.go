@@ -208,7 +208,7 @@ func processBots(c context.Context, descriptors []model.PoolDescriptor) error {
 // 2. Consolidates all known descriptors (host+dimensions), saves BuilderPool.
 // 3. Fetches and saves BotPool data from swarming for all known descriptors.
 func UpdatePools(c context.Context) error {
-	host, err := getHost(c)
+	host, err := GetHost(c)
 	if err != nil {
 		return err
 	}

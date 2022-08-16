@@ -17,39 +17,28 @@ package buildbucket
 import (
 	"context"
 	"fmt"
-	"net/http"
 	"sort"
 	"strconv"
 	"strings"
-	"time"
 
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"google.golang.org/genproto/protobuf/field_mask"
 	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
 
 	"go.chromium.org/luci/auth/identity"
-	"go.chromium.org/luci/buildbucket/bbperms"
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/buildbucket/protoutil"
-	"go.chromium.org/luci/common/api/gitiles"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
-	gitpb "go.chromium.org/luci/common/proto/git"
-	gitilespb "go.chromium.org/luci/common/proto/gitiles"
 	"go.chromium.org/luci/common/sync/parallel"
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/grpc/grpcutil"
-	milopb "go.chromium.org/luci/milo/api/service/v1"
-	"go.chromium.org/luci/milo/backend"
 	"go.chromium.org/luci/milo/common"
 	"go.chromium.org/luci/milo/common/model"
 	"go.chromium.org/luci/milo/frontend/ui"
 	"go.chromium.org/luci/server/auth"
-	"go.chromium.org/luci/server/auth/realms"
-	"go.chromium.org/luci/server/router"
 )
 
 var (
@@ -84,105 +73,6 @@ func BuildAddress(build *buildbucketpb.Build) string {
 	return fmt.Sprintf("luci.%s.%s/%s/%s", b.Project, b.Bucket, b.Builder, num)
 }
 
-// simplisticBlamelist returns a slice of ui.Commit for a build, and/or an error.
-//
-// HACK(iannucci) - Getting the frontend to render a proper blamelist will
-// require some significant refactoring. To do this properly, we'll need:
-//   * The frontend to get BuildSummary from the backend.
-//   * BuildSummary to have a .PreviousBuild() API.
-//   * The frontend to obtain the annotation streams itself (so it could see
-//     the SourceManifest objects inside of them). Currently getRespBuild defers
-//     to swarming's implementation of buildsource.ID.Get(), which only returns
-//     the resp object.
-func simplisticBlamelist(c context.Context, build *buildbucketpb.Build) (result []*ui.Commit, err error) {
-	gc := build.GetInput().GetGitilesCommit()
-	if gc == nil {
-		return
-	}
-
-	svc := &backend.MiloInternalService{
-		GetGitilesClient: func(c context.Context, host string, as auth.RPCAuthorityKind) (gitilespb.GitilesClient, error) {
-			// Override to use `auth.AsSessionUser` because we know the function is
-			// called in the context of a cookie authenticated request not an actual
-			// RPC.
-			// This is a hack but the old build page should eventually go away once
-			// buildbucket can handle raw builds.
-			t, err := auth.GetRPCTransport(c, auth.AsSessionUser)
-			if err != nil {
-				return nil, err
-			}
-			client, err := gitiles.NewRESTClient(&http.Client{Transport: t}, host, true)
-			if err != nil {
-				return nil, err
-			}
-
-			return client, nil
-		},
-	}
-	req := &milopb.QueryBlamelistRequest{
-		Builder:       build.Builder,
-		GitilesCommit: gc,
-		PageSize:      100,
-	}
-	res, err := svc.QueryBlamelist(c, req)
-
-	switch {
-	case err == nil:
-		// continue
-	case status.Code(err) == codes.PermissionDenied:
-		err = grpcutil.UnauthenticatedTag.Apply(err)
-		return
-	default:
-		return
-	}
-
-	result = make([]*ui.Commit, 0, len(res.Commits)+1)
-	for _, commit := range res.Commits {
-		result = append(result, uiCommit(commit, protoutil.GitilesRepoURL(gc)))
-	}
-	logging.Infof(c, "Fetched %d commit blamelist from Gitiles", len(result))
-
-	if res.NextPageToken != "" {
-		result = append(result, &ui.Commit{
-			Description: "<blame list capped at 100 commits>",
-			Revision:    &ui.Link{},
-			AuthorName:  "<blame list capped at 100 commits>",
-		})
-	}
-
-	return
-}
-
-func uiCommit(commit *gitpb.Commit, repoURL string) *ui.Commit {
-	res := &ui.Commit{
-		AuthorName:  commit.Author.Name,
-		AuthorEmail: commit.Author.Email,
-		Repo:        repoURL,
-		Description: commit.Message,
-
-		// TODO(iannucci): this use of links is very sloppy; the frontend should
-		// know how to render a Commit without having Links embedded in it.
-		Revision: ui.NewLink(
-			commit.Id,
-			repoURL+"/+/"+commit.Id, fmt.Sprintf("commit by %s", commit.Author.Email)),
-	}
-	res.CommitTime = commit.Committer.Time.AsTime()
-	res.File = make([]string, 0, len(commit.TreeDiff))
-	for _, td := range commit.TreeDiff {
-		// If a file was moved, there is both an old and a new path, from which we
-		// take only the new path.
-		// If a file was deleted, its new path is /dev/null. In that case, we're
-		// only interested in the old path.
-		switch {
-		case td.NewPath != "" && td.NewPath != "/dev/null":
-			res.File = append(res.File, td.NewPath)
-		case td.OldPath != "":
-			res.File = append(res.File, td.OldPath)
-		}
-	}
-	return res
-}
-
 // GetBuildSummary fetches a build summary where the Context URI matches the
 // given address.
 func GetBuildSummary(c context.Context, id int64) (*model.BuildSummary, error) {
@@ -198,20 +88,6 @@ func GetBuildSummary(c context.Context, id int64) (*model.BuildSummary, error) {
 	default:
 		return bs[0], nil
 	}
-}
-
-// getBlame fetches blame information from Gitiles.
-// This requires the BuildSummary to be indexed in Milo.
-func getBlame(c context.Context, host string, b *buildbucketpb.Build, timeout time.Duration) ([]*ui.Commit, error) {
-	nc, cancel := context.WithTimeout(c, timeout)
-	defer cancel()
-	commit := b.GetInput().GetGitilesCommit()
-	// No commit? No blamelist.
-	if commit == nil {
-		return nil, nil
-	}
-
-	return simplisticBlamelist(nc, b)
 }
 
 // searchBuildset creates a searchBuildsRequest that looks for a buildset tag.
@@ -332,7 +208,7 @@ func GetBuilderID(c context.Context, id int64) (builder *buildbucketpb.BuilderID
 }
 
 var (
-	fullBuildMask = &field_mask.FieldMask{
+	FullBuildMask = &field_mask.FieldMask{
 		Paths: []string{
 			"id",
 			"builder",
@@ -354,7 +230,7 @@ var (
 			"exe",
 		},
 	}
-	tagsAndGitilesMask = &field_mask.FieldMask{
+	TagsAndGitilesMask = &field_mask.FieldMask{
 		Paths: []string{
 			"id",
 			"number",
@@ -364,65 +240,6 @@ var (
 		},
 	}
 )
-
-// GetBuildPage fetches the full set of information for a Milo build page from Buildbucket.
-// Including the blamelist and other auxiliary information.
-func GetBuildPage(ctx *router.Context, br *buildbucketpb.GetBuildRequest, blamelistOpt BlamelistOption) (*ui.BuildPage, error) {
-	now := timestamppb.New(clock.Now(ctx.Context))
-
-	c := ctx.Context
-	host, err := getHost(c)
-	if err != nil {
-		return nil, err
-	}
-	client, err := buildbucketBuildsClient(c, host, auth.AsUser)
-	if err != nil {
-		return nil, err
-	}
-
-	br.Fields = fullBuildMask
-	b, err := client.GetBuild(c, br)
-	if err != nil {
-		return nil, common.TagGRPC(c, err)
-	}
-
-	var blame []*ui.Commit
-	var blameErr error
-	switch blamelistOpt {
-	case ForceBlamelist:
-		blame, blameErr = getBlame(c, host, b, 55*time.Second)
-	case GetBlamelist:
-		blame, blameErr = getBlame(c, host, b, 1*time.Second)
-	case NoBlamelist:
-		break
-	default:
-		blameErr = errors.Reason("invalid blamelist option").Err()
-	}
-
-	realm := realms.Join(b.Builder.Project, b.Builder.Bucket)
-	canCancel, err := auth.HasPermission(c, bbperms.BuildsCancel, realm, nil)
-	if err != nil {
-		return nil, err
-	}
-	canRetry, err := auth.HasPermission(c, bbperms.BuildsAdd, realm, nil)
-	if err != nil {
-		return nil, err
-	}
-
-	logging.Infof(c, "Got all the things")
-	return &ui.BuildPage{
-		Build: ui.Build{
-			Build: b,
-			Now:   now,
-		},
-		Blame:           blame,
-		BuildbucketHost: host,
-		BlamelistError:  blameErr,
-		ForcedBlamelist: blamelistOpt == ForceBlamelist,
-		CanCancel:       canCancel,
-		CanRetry:        canRetry,
-	}, nil
-}
 
 // GetRelatedBuildsTable fetches all the related builds of the given build from Buildbucket.
 func GetRelatedBuildsTable(c context.Context, buildbucketID int64) (*ui.RelatedBuildsTable, error) {
@@ -435,7 +252,7 @@ func GetRelatedBuildsTable(c context.Context, buildbucketID int64) (*ui.RelatedB
 
 	build, err := client.GetBuild(c, &buildbucketpb.GetBuildRequest{
 		Id:     buildbucketID,
-		Fields: tagsAndGitilesMask,
+		Fields: TagsAndGitilesMask,
 	})
 	if err != nil {
 		return nil, err
@@ -482,11 +299,11 @@ func RetryBuild(c context.Context, buildbucketID int64, requestID string) (*buil
 }
 
 func getBuildbucketBuildsClient(c context.Context) (buildbucketpb.BuildsClient, error) {
-	host, err := getHost(c)
+	host, err := GetHost(c)
 	if err != nil {
 		return nil, err
 	}
-	client, err := buildbucketBuildsClient(c, host, auth.AsUser)
+	client, err := BuildsClient(c, host, auth.AsUser)
 	if err != nil {
 		return nil, err
 	}

@@ -15,7 +15,19 @@
 package buildbucket
 
 import (
+	"context"
+	"errors"
 	"time"
+
+	"go.chromium.org/luci/milo/common"
 )
 
 const bbRPCTimeout = time.Minute - time.Second
+
+func GetHost(c context.Context) (string, error) {
+	settings := common.GetSettings(c)
+	if settings.Buildbucket == nil || settings.Buildbucket.Host == "" {
+		return "", errors.New("missing buildbucket host in settings")
+	}
+	return settings.Buildbucket.Host, nil
+}

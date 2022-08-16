@@ -50,7 +50,7 @@ func WithBuildersClientFactory(c context.Context, factory buildersClientFactory)
 	return context.WithValue(c, &buildersClientContextKey, factory)
 }
 
-func buildbucketBuildersClient(c context.Context, host string, as auth.RPCAuthorityKind, opts ...auth.RPCOption) (buildbucketpb.BuildersClient, error) {
+func BuildersClient(c context.Context, host string, as auth.RPCAuthorityKind, opts ...auth.RPCOption) (buildbucketpb.BuildersClient, error) {
 	factory, ok := c.Value(&buildersClientContextKey).(buildersClientFactory)
 	if !ok {
 		return nil, fmt.Errorf("no buildbucket builders client factory found in context")

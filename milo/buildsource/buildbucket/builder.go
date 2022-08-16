@@ -120,7 +120,7 @@ func viewsForBuilder(c context.Context, bid *buildbucketpb.BuilderID) ([]*ui.Lin
 func GetBuilderPage(c context.Context, bid *buildbucketpb.BuilderID, pageSize int, pageToken string) (*ui.BuilderPage, error) {
 	nowTS := timestamppb.New(clock.Now(c))
 
-	host, err := getHost(c)
+	host, err := GetHost(c)
 	if err != nil {
 		return nil, err
 	}
@@ -131,11 +131,11 @@ func GetBuilderPage(c context.Context, bid *buildbucketpb.BuilderID, pageSize in
 
 	result := &ui.BuilderPage{}
 
-	buildsClient, err := buildbucketBuildsClient(c, host, auth.AsUser)
+	buildsClient, err := BuildsClient(c, host, auth.AsUser)
 	if err != nil {
 		return nil, err
 	}
-	buildersClient, err := buildbucketBuildersClient(c, host, auth.AsUser)
+	buildersClient, err := BuildersClient(c, host, auth.AsUser)
 	if err != nil {
 		return nil, err
 	}

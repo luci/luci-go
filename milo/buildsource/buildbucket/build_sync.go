@@ -230,7 +230,7 @@ func pubSubHandlerImpl(c context.Context, r *http.Request) error {
 		return errors.Annotate(err, "could not parse pubsub message data").Err()
 	}
 
-	client, err := buildbucketBuildsClient(c, event.Hostname, auth.AsSelf)
+	client, err := BuildsClient(c, event.Hostname, auth.AsSelf)
 	if err != nil {
 		return err
 	}
@@ -474,7 +474,7 @@ func syncBuildsImpl(c context.Context) error {
 								continue
 							}
 
-							client, err := buildbucketBuildsClient(c, host, auth.AsSelf)
+							client, err := BuildsClient(c, host, auth.AsSelf)
 							if err != nil {
 								return err
 							}
