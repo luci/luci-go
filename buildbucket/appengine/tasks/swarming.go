@@ -118,7 +118,8 @@ func SyncBuild(ctx context.Context, buildID int64, generation int64) error {
 	bld.Proto.Infra = infra.Proto
 	swarm, err := clients.NewSwarmingClient(ctx, infra.Proto.Swarming.Hostname, bld.Project)
 	if err != nil {
-		return tq.Fatal.Apply(errors.Annotate(err, "failed to create a swarming client for build %d (%s), in %s", buildID, bld.Project, infra.Proto.Swarming.Hostname).Err())
+		logging.Errorf(ctx,"failed to create a swarming client for build %d (%s), in %s: %s",  buildID, bld.Project, infra.Proto.Swarming.Hostname, err)
+		return failBuild(ctx, buildID, fmt.Sprintf("failed to create a swarming client:%s", err))
 	}
 	if bld.Proto.Infra.Swarming.TaskId == "" {
 		if err := createSwarmingTask(ctx, bld, swarm); err != nil {
@@ -157,12 +158,12 @@ func SubNotify(ctx context.Context, body io.Reader) error {
 		return err
 	}
 	// TODO(crbug/1328646): delete the log once the new Go flow becomes stable.
-	logging.Infof(ctx, "Received message: %+v", nt)
+	logging.Infof(ctx, "Received message - messageID:%s, taskID:%s, userdata:%+v", nt.messageID, nt.taskID, nt.userdata)
 
 	// Try not to process same message more than once.
 	cache := caching.GlobalCache(ctx, "swarming-pubsub-msg-id")
 	if cache == nil {
-		return errors.Annotate(err, "global cache is not found").Tag(transient.Tag).Err()
+		return errors.Reason( "global cache is not found").Tag(transient.Tag).Err()
 	}
 	msgCached, err := cache.Get(ctx, nt.messageID)
 	switch {
@@ -443,7 +444,7 @@ func updateBuildFromTaskResult(ctx context.Context, bld *model.Build, infra *mod
 	if bld.Proto.Status == oldStatus {
 		return false, nil
 	}
-	logging.Infof(ctx, "Build %s status: %s -> %s", bld.ID, oldStatus, bld.Proto.Status)
+	logging.Infof(ctx, "Build %d status: %s -> %s", bld.ID, oldStatus, bld.Proto.Status)
 	return true, nil
 }
 
@@ -658,6 +659,9 @@ func computeTaskSlice(build *model.Build) ([]*swarming.SwarmingRpcsTaskSlice, er
 	dims := map[int64][]*swarming.SwarmingRpcsStringPair{}
 	for _, cache := range build.Proto.GetInfra().GetSwarming().GetCaches() {
 		expSecs := cache.WaitForWarmCache.GetSeconds()
+		if expSecs <= 0 {
+			continue
+		}
 		if _, ok := dims[expSecs]; !ok {
 			dims[expSecs] = []*swarming.SwarmingRpcsStringPair{}
 		}

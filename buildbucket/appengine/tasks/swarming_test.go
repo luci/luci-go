@@ -108,10 +108,6 @@ func TestTaskDef(t *testing.T) {
 			}})
 			So(slices[0].Properties.Dimensions, ShouldResemble, []*swarming.SwarmingRpcsStringPair{
 				{
-					Key:   "caches",
-					Value: "shared_builder_cache",
-				},
-				{
 					Key:   "pool",
 					Value: "Chrome",
 				},
