@@ -1334,10 +1334,18 @@ func scheduleBuilds(ctx context.Context, globalCfg *pb.SettingsCfg, reqs ...*pb.
 						return nil
 					}
 
-					if err := tasks.CreateSwarmingTask(ctx, &taskdefs.CreateSwarmingTask{
-						BuildId: b.ID,
-					}); err != nil {
-						return errors.Annotate(err, "failed to enqueue swarming task creation task: %d", b.ID).Err()
+					if stringset.NewFromSlice(b.Proto.Input.Experiments...).Has(bb.ExperimentBackendGo) {
+						if err := tasks.CreateSwarmingBuildTask(ctx, &taskdefs.CreateSwarmingBuildTask{
+							BuildId: b.ID,
+						}); err != nil {
+							return errors.Annotate(err, "failed to enqueue CreateSwarmingBuildTask: %d", b.ID).Err()
+						}
+					} else {
+						if err := tasks.CreateSwarmingTask(ctx, &taskdefs.CreateSwarmingTask{
+							BuildId: b.ID,
+						}); err != nil {
+							return errors.Annotate(err, "failed to enqueue CreateSwarmingTask: %d", b.ID).Err()
+						}
 					}
 					return nil
 				}, nil)

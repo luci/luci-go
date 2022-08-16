@@ -97,6 +97,7 @@ func cmdLS(p Params) *subcommands.Command {
 				Well-known experiments:
 				  * `+bb.ExperimentNonProduction+`
 				  * `+bb.ExperimentBackendAlt+`
+					* `+bb.ExperimentBackendGo+`
 				  * `+bb.ExperimentBBCanarySoftware+`
 				  * `+bb.ExperimentBBAgent+`
 					* `+bb.ExperimentBBAgentDownloadCipd+`

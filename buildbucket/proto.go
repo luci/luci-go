@@ -49,6 +49,7 @@ const MinUpdateBuildInterval = 30 * time.Second
 // See the Builder.experiments field documentation.
 const (
 	ExperimentBackendAlt          = "luci.buildbucket.backend_alt"
+	ExperimentBackendGo           = "luci.buildbucket.backend_go"
 	ExperimentBBAgent             = "luci.buildbucket.use_bbagent"
 	ExperimentBBAgentDownloadCipd = "luci.buildbucket.agent.cipd_installation"
 	ExperimentBBAgentGetBuild     = "luci.buildbucket.bbagent_getbuild"

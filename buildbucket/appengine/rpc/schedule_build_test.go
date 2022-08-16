@@ -47,6 +47,7 @@ import (
 	"go.chromium.org/luci/buildbucket/appengine/internal/config"
 	"go.chromium.org/luci/buildbucket/appengine/internal/metrics"
 	"go.chromium.org/luci/buildbucket/appengine/model"
+	taskdefs "go.chromium.org/luci/buildbucket/appengine/tasks/defs"
 	"go.chromium.org/luci/buildbucket/bbperms"
 	pb "go.chromium.org/luci/buildbucket/proto"
 
@@ -4832,7 +4833,7 @@ func TestScheduleBuild(t *testing.T) {
 					So(sch.Tasks(), ShouldBeEmpty)
 				})
 
-				Convey("ok", func() {
+				Convey("ok without backend_go exp", func() {
 					So(datastore.Put(ctx, &model.Builder{
 						Parent: model.BucketKey(ctx, "project", "bucket"),
 						ID:     "builder",
@@ -4859,6 +4860,42 @@ func TestScheduleBuild(t *testing.T) {
 						Status:     pb.Status_SCHEDULED,
 					})
 					So(sch.Tasks(), ShouldHaveLength, 1)
+					So(sch.Tasks().Payloads()[0], ShouldResembleProto, &taskdefs.CreateSwarmingTask{
+						BuildId: 9021868963221667745,
+					})
+				})
+
+				Convey("ok with backend_go exp", func() {
+					So(datastore.Put(ctx, &model.Builder{
+						Parent: model.BucketKey(ctx, "project", "bucket"),
+						ID:     "builder",
+						Config: &pb.BuilderConfig{
+							BuildNumbers: pb.Toggle_YES,
+							Name:         "builder",
+							Experiments: map[string]int32{bb.ExperimentBackendGo: 100},
+						},
+					}), ShouldBeNil)
+
+					rsp, err := srv.ScheduleBuild(ctx, req)
+					So(err, ShouldBeNil)
+					So(rsp, ShouldResembleProto, &pb.Build{
+						Builder: &pb.BuilderID{
+							Project: "project",
+							Bucket:  "bucket",
+							Builder: "builder",
+						},
+						CreatedBy:  string(userID),
+						CreateTime: timestamppb.New(testclock.TestRecentTimeUTC),
+						UpdateTime: timestamppb.New(testclock.TestRecentTimeUTC),
+						Id:         9021868963221667745,
+						Input:      &pb.Build_Input{},
+						Number:     1,
+						Status:     pb.Status_SCHEDULED,
+					})
+					So(sch.Tasks(), ShouldHaveLength, 1)
+					So(sch.Tasks().Payloads()[0], ShouldResembleProto, &taskdefs.CreateSwarmingBuildTask{
+						BuildId: 9021868963221667745,
+					})
 				})
 
 				Convey("dry_run", func() {

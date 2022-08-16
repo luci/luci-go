@@ -182,9 +182,7 @@ func init() {
 		Queue:     "swarming-build-create-go",
 		Handler: func(ctx context.Context, payload proto.Message) error {
 			t := payload.(*taskdefs.CreateSwarmingBuildTask)
-			// TODO(crbug.com/1328646): implement the handler in follow-up CLs.
-			logging.Warningf(ctx, "swarming-build-create-go handler isn't ready. Drop the message for build %d", t.BuildId)
-			return nil
+			return SyncBuild(ctx, t.GetBuildId(), 0)
 		},
 	})
 
