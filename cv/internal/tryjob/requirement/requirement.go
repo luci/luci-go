@@ -470,17 +470,28 @@ func shouldInclude(ctx context.Context, in Input, dm *definitionMaker, experimen
 
 	// Check for LocationRegexp match to decide whether to skip the builder.
 	// Also evaluate with LocationFilter (if it is set) to assess the
-	// correctness of LocationFilter matching.
+	// correctness of LocationFilter matching if the file count is not too large.
+	locationRegexpSpecified := (len(b.LocationRegexp) + len(b.LocationRegexpExclude)) > 0
 	locationRegexpMatched, err := locationMatch(ctx, b.LocationRegexp, b.LocationRegexpExclude, in.CLs)
 	if err != nil {
 		return skipBuilder, nil, err
 	}
-	locationFilterMatched, err := locationFilterMatch(ctx, b.LocationFilters, in.CLs)
-	if err != nil {
-		return skipBuilder, nil, err
+
+	// Only evaluate LocationFilters iff the total file count is fewer than 1000
+	// to save latency on large file count use case. Otherwise, treat
+	// LocationFilter as not specified.
+	var locationFilterSpecified, locationFilterMatched bool
+	var totalFileCnt int
+	for _, cl := range in.CLs {
+		totalFileCnt += len(cl.Detail.GetGerrit().GetFiles())
 	}
-	locationFilterSpecified := len(b.LocationFilters) > 0
-	locationRegexpSpecified := len(b.LocationRegexp)+len(b.LocationRegexpExclude) > 0
+	if totalFileCnt <= 1000 {
+		locationFilterSpecified = len(b.LocationFilters) > 0
+		locationFilterMatched, err = locationFilterMatch(ctx, b.LocationFilters, in.CLs)
+		if err != nil {
+			return skipBuilder, nil, err
+		}
+	}
 	switch {
 	case locationRegexpSpecified && locationFilterSpecified:
 		if locationRegexpMatched != locationFilterMatched {
