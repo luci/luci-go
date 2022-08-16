@@ -235,15 +235,11 @@ func locationMatch(ctx context.Context, locationRegexp, locationRegexpExclude []
 			changedLocations.Add(fmt.Sprintf("https://%s/%s/+/%s", host, project, f))
 		}
 	}
-	// First pre-compile locationRegexpExclude and remove the matching files from
-	// the list.
-	compiledLocationRegexpExclude := make([]*regexp.Regexp, len(locationRegexpExclude))
-	for i, lre := range locationRegexpExclude {
-		compiledLocationRegexpExclude[i] = regexp.MustCompile(fmt.Sprintf("^%s$", lre))
-	}
-	for _, lre := range compiledLocationRegexpExclude {
+	// First remove from the list the files that match locationRegexpExclude, and
+	for _, lre := range locationRegexpExclude {
+		re := regexp.MustCompile(fmt.Sprintf("^%s$", lre))
 		changedLocations.Iter(func(loc string) bool {
-			if lre.MatchString(loc) {
+			if re.MatchString(loc) {
 				changedLocations.Del(loc)
 			}
 			return true
@@ -256,11 +252,7 @@ func locationMatch(ctx context.Context, locationRegexp, locationRegexpExclude []
 	}
 	// Matching the remainder against locationRegexp, returning true if there's
 	// a match.
-	compiledLocationRegexp := make([]*regexp.Regexp, len(locationRegexp))
-	for i, lr := range locationRegexp {
-		compiledLocationRegexp[i] = regexp.MustCompile(fmt.Sprintf("^%s$", lr))
-	}
-	for _, lri := range compiledLocationRegexp {
+	for _, lri := range locationRegexp {
 		re := regexp.MustCompile(fmt.Sprintf("^%s$", lri))
 		found := false
 		changedLocations.Iter(func(loc string) bool {
