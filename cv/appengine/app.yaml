@@ -5,7 +5,6 @@ instance_class: F4
 
 automatic_scaling:
   max_concurrent_requests: 80
-  max_instances: 60
 
 # luci_gae_vars is interpreted by gae.py, for apps deployed manually.
 # It maps the app ID being deployed to values of vars used below.
