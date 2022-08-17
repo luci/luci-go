@@ -232,7 +232,9 @@ func TestComponentsActions(t *testing.T) {
 				switch clid := c.GetClids()[0]; clid {
 				case 1, 3:
 					return itriager.Result{CLsToPurge: []*prjpb.PurgeCLTask{{
-						PurgingCl: &prjpb.PurgingCL{Clid: clid},
+						PurgingCl: &prjpb.PurgingCL{Clid: clid,
+							ApplyTo: &prjpb.PurgingCL_AllActiveTriggers{AllActiveTriggers: true},
+						},
 						PurgeReasons: []*prjpb.PurgeReason{{
 							ClError: &changelist.CLError{
 								Kind: &changelist.CLError_OwnerLacksEmail{
@@ -258,8 +260,12 @@ func TestComponentsActions(t *testing.T) {
 				So(err, ShouldBeNil)
 				expectedDeadline := timestamppb.New(now.Add(maxPurgingCLDuration))
 				So(state2.PB.GetPurgingCls(), ShouldResembleProto, []*prjpb.PurgingCL{
-					{Clid: 1, OperationId: "1580640000-1", Deadline: expectedDeadline},
-					{Clid: 3, OperationId: "1580640000-3", Deadline: expectedDeadline},
+					{Clid: 1, OperationId: "1580640000-1", Deadline: expectedDeadline,
+						ApplyTo: &prjpb.PurgingCL_AllActiveTriggers{AllActiveTriggers: true},
+					},
+					{Clid: 3, OperationId: "1580640000-3", Deadline: expectedDeadline,
+						ApplyTo: &prjpb.PurgingCL_AllActiveTriggers{AllActiveTriggers: true},
+					},
 				})
 
 				So(sideEffect, ShouldHaveSameTypeAs, &TriggerPurgeCLTasks{})
@@ -470,7 +476,10 @@ func TestComponentsActions(t *testing.T) {
 						// there are several CLs and presumably on different CLs.
 						res.CLsToPurge = []*prjpb.PurgeCLTask{
 							{
-								PurgingCl: &prjpb.PurgingCL{Clid: clid},
+								PurgingCl: &prjpb.PurgingCL{
+									Clid:    clid,
+									ApplyTo: &prjpb.PurgingCL_AllActiveTriggers{AllActiveTriggers: true},
+								},
 								PurgeReasons: []*prjpb.PurgeReason{{
 									ClError: &changelist.CLError{
 										Kind: &changelist.CLError_OwnerLacksEmail{OwnerLacksEmail: true},
@@ -500,6 +509,7 @@ func TestComponentsActions(t *testing.T) {
 					{
 						Clid: 3, OperationId: "1580640000-3",
 						Deadline: timestamppb.New(ct.Clock.Now().Add(maxPurgingCLDuration)),
+						ApplyTo:  &prjpb.PurgingCL_AllActiveTriggers{AllActiveTriggers: true},
 					},
 				}
 				pb.NextEvalTime = timestamppb.New(ct.Clock.Now()) // re-triage ASAP.

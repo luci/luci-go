@@ -516,7 +516,10 @@ func TestTriage(t *testing.T) {
 					ct.Clock.Add(2 * stabilizationDelay)
 					pm.pb.Pcls = []*prjpb.PCL{pcl31, pcl32, pcl33}
 					pm.pb.PurgingCls = []*prjpb.PurgingCL{
-						{Clid: 31, OperationId: "purge-op-31", Deadline: timestamppb.New(ct.Clock.Now().Add(time.Minute))},
+						{
+							Clid: 31, OperationId: "purge-op-31", Deadline: timestamppb.New(ct.Clock.Now().Add(time.Minute)),
+							ApplyTo: &prjpb.PurgingCL_AllActiveTriggers{AllActiveTriggers: true},
+						},
 					}
 					oldC := &prjpb.Component{Clids: []int64{31, 32, 33}, TriageRequired: true}
 					res := mustTriage(oldC)

@@ -176,7 +176,10 @@ func TestCLsTriage(t *testing.T) {
 			})
 
 			Convey("Already purged is never ready", func() {
-				sup.pb.PurgingCls = []*prjpb.PurgingCL{{Clid: 1}}
+				sup.pb.PurgingCls = []*prjpb.PurgingCL{{
+					Clid:    1,
+					ApplyTo: &prjpb.PurgingCL_AllActiveTriggers{AllActiveTriggers: true},
+				}}
 				cls := do(&prjpb.Component{Clids: []int64{1}})
 				So(cls, ShouldHaveLength, 1)
 				expected := &clInfo{

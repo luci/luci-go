@@ -253,6 +253,10 @@ message Component {
 //
 // Individual CLs are purged independently, even if CLs are related.
 //
+// Trying to purge multiple triggers of the same type on the same CL will
+// result in only purging one of them. This is not possible today, but may have
+// an unexpected effect on future features.
+//
 // Upon TQ task completion, the task handler notifies PM back via an
 // PurgeCompleted event. For fail-safe reasons, there is a deadline to
 // perform the purge. PM keeps the PurgingCL in PState until either deadline is
@@ -273,10 +277,19 @@ message PurgingCL {
   // period, PM will consider purge operation expired and it'll be removed from
   // PState.
   google.protobuf.Timestamp deadline = 3;
+  // What trigger(s) are being purged.
+  oneof apply_to {
+    cv.internal.run.Triggers triggers = 4;
+    bool all_active_triggers = 5;
+  }
 }
 
 // PurgeReason represent a list of errors with the CL that would require that
 // the given trigger (or the whole CL if no trigger is given) be purged.
+//
+// Trying to purge multiple triggers of the same type on the same CL will
+// result in only purging one of them. This is not possible today, but may have
+// an unexpected effect on future features.
 message PurgeReason {
   // ClErrors are a list of errors associated with Trigger below, or with the
   // a whole CL if Trigger is not given.

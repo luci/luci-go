@@ -110,6 +110,7 @@ func TestPurgeCL(t *testing.T) {
 				OperationId: "op",
 				Clid:        int64(clBefore.ID),
 				Deadline:    timestamppb.New(ct.Clock.Now().Add(10 * time.Minute)),
+				ApplyTo:     &prjpb.PurgingCL_AllActiveTriggers{AllActiveTriggers: true},
 			},
 			Trigger: trigger.Find(&trigger.FindInput{ChangeInfo: ci, ConfigGroup: cfg.GetConfigGroups()[0]}).GetCqVoteTrigger(),
 			PurgeReasons: []*prjpb.PurgeReason{{

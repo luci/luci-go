@@ -20,9 +20,11 @@ import (
 	"time"
 
 	"go.chromium.org/luci/common/clock"
+	"google.golang.org/protobuf/proto"
 
 	"go.chromium.org/luci/cv/internal/changelist"
 	"go.chromium.org/luci/cv/internal/prjmanager/prjpb"
+	"go.chromium.org/luci/cv/internal/run"
 )
 
 // stagePurges returns either purgeCLtasks for immediate purging OR the earliest
@@ -41,10 +43,28 @@ func stagePurges(ctx context.Context, cls map[int64]*clInfo, pm pmState) ([]*prj
 			for _, pr := range info.purgeReasons {
 				clErrors = append(clErrors, pr.GetClError())
 			}
+			purgingCl := &prjpb.PurgingCL{
+				Clid: clid,
+			}
+			var triggers *run.Triggers
+		loop:
+			for _, pr := range info.purgeReasons {
+				switch v := pr.ApplyTo.(type) {
+				case *prjpb.PurgeReason_AllActiveTriggers:
+					purgingCl.ApplyTo = &prjpb.PurgingCL_AllActiveTriggers{AllActiveTriggers: true}
+					break loop
+				case *prjpb.PurgeReason_Triggers:
+					if triggers == nil {
+						triggers = &run.Triggers{}
+						purgingCl.ApplyTo = &prjpb.PurgingCL_Triggers{Triggers: triggers}
+					}
+					proto.Merge(triggers, v.Triggers)
+				}
+			}
 			out = append(out, &prjpb.PurgeCLTask{
 				PurgeReasons: info.purgeReasons,
 				Reasons:      clErrors, // For backwards compatibility only.
-				PurgingCl:    &prjpb.PurgingCL{Clid: clid},
+				PurgingCl:    purgingCl,
 			})
 		}
 	}

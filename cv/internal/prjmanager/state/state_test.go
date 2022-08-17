@@ -1041,11 +1041,20 @@ func TestOnPurgesCompleted(t *testing.T) {
 			s1 := &State{PB: &prjpb.PState{
 				PurgingCls: []*prjpb.PurgingCL{
 					// expires later
-					{Clid: 1, OperationId: "1", Deadline: timestamppb.New(now.Add(time.Minute))},
+					{
+						Clid: 1, OperationId: "1", Deadline: timestamppb.New(now.Add(time.Minute)),
+						ApplyTo: &prjpb.PurgingCL_AllActiveTriggers{AllActiveTriggers: true},
+					},
 					// expires now, but due to grace period it'll stay here.
-					{Clid: 2, OperationId: "2", Deadline: timestamppb.New(now)},
+					{
+						Clid: 2, OperationId: "2", Deadline: timestamppb.New(now),
+						ApplyTo: &prjpb.PurgingCL_AllActiveTriggers{AllActiveTriggers: true},
+					},
 					// definitely expired.
-					{Clid: 3, OperationId: "3", Deadline: timestamppb.New(now.Add(-time.Hour))},
+					{
+						Clid: 3, OperationId: "3", Deadline: timestamppb.New(now.Add(-time.Hour)),
+						ApplyTo: &prjpb.PurgingCL_AllActiveTriggers{AllActiveTriggers: true},
+					},
 				},
 				// Components require PCLs, but in this test it doesn't matter.
 				Components: []*prjpb.Component{
@@ -1064,7 +1073,10 @@ func TestOnPurgesCompleted(t *testing.T) {
 				So(s1.PB, ShouldResembleProto, pb)
 
 				pb.PurgingCls = []*prjpb.PurgingCL{
-					{Clid: 2, OperationId: "2", Deadline: timestamppb.New(now)},
+					{
+						Clid: 2, OperationId: "2", Deadline: timestamppb.New(now),
+						ApplyTo: &prjpb.PurgingCL_AllActiveTriggers{AllActiveTriggers: true},
+					},
 				}
 				pb.Components = []*prjpb.Component{
 					pb.Components[0],
