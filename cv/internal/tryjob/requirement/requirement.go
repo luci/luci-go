@@ -21,12 +21,15 @@ import (
 	"fmt"
 	"math/rand"
 	"regexp"
+	"runtime"
 	"sort"
 	"strings"
+	"sync/atomic"
 
 	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/common/sync/parallel"
 	"go.chromium.org/luci/hardcoded/chromeinfra"
 	"go.chromium.org/luci/server/auth"
 
@@ -403,7 +406,7 @@ const (
 
 // shouldInclude decides based on the configuration whether a given builder
 // should be skipped in generating the requirement.
-func shouldInclude(ctx context.Context, in Input, dm *definitionMaker, experimentRand, equivalentRand *rand.Rand, b *cfgpb.Verifiers_Tryjob_Builder, incl stringset.Set, owners []string) (inclusionResult, ComputationFailure, error) {
+func shouldInclude(ctx context.Context, in Input, dm *definitionMaker, useEquivalent bool, b *cfgpb.Verifiers_Tryjob_Builder, incl stringset.Set, owners []string) (inclusionResult, ComputationFailure, error) {
 	switch ps := isPresubmit(b); {
 	case in.RunOptions.GetSkipTryjobs() && !ps:
 		return skipBuilder, nil, nil
@@ -418,7 +421,7 @@ func shouldInclude(ctx context.Context, in Input, dm *definitionMaker, experimen
 		return skipBuilder, nil, nil
 	}
 
-	if incl.Del(b.Name) {
+	if incl.Has(b.Name) {
 		switch disallowedOwners, err := getDisallowedOwners(ctx, owners, b.GetOwnerWhitelistGroup()...); {
 		case err != nil:
 			return skipBuilder, nil, err
@@ -434,7 +437,7 @@ func shouldInclude(ctx context.Context, in Input, dm *definitionMaker, experimen
 		return includeBuilder, nil, nil
 	}
 
-	if b.GetEquivalentTo() != nil && incl.Del(b.GetEquivalentTo().GetName()) {
+	if b.GetEquivalentTo() != nil && incl.Has(b.GetEquivalentTo().GetName()) {
 		if ownerAllowGroup := b.GetEquivalentTo().GetOwnerWhitelistGroup(); ownerAllowGroup != "" {
 			switch disallowedOwners, err := getDisallowedOwners(ctx, owners, ownerAllowGroup); {
 			case err != nil:
@@ -540,10 +543,6 @@ func shouldInclude(ctx context.Context, in Input, dm *definitionMaker, experimen
 		}
 	}
 
-	if b.ExperimentPercentage != 0 && experimentRand.Float32()*100 > b.ExperimentPercentage {
-		return skipBuilder, nil, nil
-	}
-
 	switch allowed, err := isBuilderAllowed(ctx, owners, b); {
 	case err != nil:
 		return skipBuilder, nil, err
@@ -556,7 +555,7 @@ func shouldInclude(ctx context.Context, in Input, dm *definitionMaker, experimen
 			case err != nil:
 				return skipBuilder, nil, err
 			case allowed:
-				if equivalentRand.Float32()*100 <= b.GetEquivalentTo().GetPercentage() {
+				if useEquivalent {
 					// Invert equivalence: trigger equivalent, but accept reusing original too.
 					dm.equivalence = flipMainAndEquivalent
 				}
@@ -636,25 +635,64 @@ func Compute(ctx context.Context, in Input) (*ComputationResult, error) {
 	// equivalent builders upon recomputation.
 	rands := makeRands(in, 2)
 	experimentRand, equivalentBuilderRand := rands[0], rands[1]
-	for _, builder := range in.ConfigGroup.GetVerifiers().GetTryjob().GetBuilders() {
-		dm := &definitionMaker{
-			builder:     builder,
-			criticality: builder.ExperimentPercentage == 0,
+	builders := in.ConfigGroup.GetVerifiers().GetTryjob().GetBuilders()
+	definitions := make([]*tryjob.Definition, len(builders))
+	var computationFailureHolder atomic.Value
+	// Utilize multiple cores.
+	err := parallel.WorkPool(min(len(builders), runtime.NumCPU()), func(work chan<- func() error) {
+		for i, builder := range builders {
+			if expPercentage := builder.GetExperimentPercentage(); expPercentage != 0 && experimentRand.Float32()*100 > expPercentage {
+				// skip this experimental builder.
+				continue
+			}
+			i, builder := i, builder
+			useEquivalent := false
+			if equiPercentage := builder.GetEquivalentTo().GetPercentage(); equiPercentage != 0 {
+				useEquivalent = equivalentBuilderRand.Float32()*100 <= equiPercentage
+			}
+			work <- func() error {
+				dm := &definitionMaker{
+					builder:     builder,
+					criticality: builder.ExperimentPercentage == 0,
+				}
+				if in.RunOptions.GetAvoidCancellingTryjobs() {
+					dm.skipStaleCheck = true
+				} else {
+					dm.skipStaleCheck = builder.GetCancelStale() == cfgpb.Toggle_NO
+				}
+				switch r, compFail, err := shouldInclude(ctx, in, dm, useEquivalent, builder, explicitlyIncluded, allOwnerEmails); {
+				case err != nil:
+					return err
+				case compFail != nil:
+					computationFailureHolder.Store(compFail)
+				case r != skipBuilder:
+					definitions[i] = dm.make()
+				}
+				return nil
+			}
 		}
-		if in.RunOptions.GetAvoidCancellingTryjobs() {
-			dm.skipStaleCheck = true
-		} else {
-			dm.skipStaleCheck = builder.GetCancelStale() == cfgpb.Toggle_NO
-		}
-		r, compFail, err := shouldInclude(ctx, in, dm, experimentRand, equivalentBuilderRand, builder, explicitlyIncluded, allOwnerEmails)
-		switch {
-		case err != nil:
-			return nil, err
-		case compFail != nil:
-			return &ComputationResult{ComputationFailure: compFail}, nil
-		case r != skipBuilder:
-			ret.Requirement.Definitions = append(ret.Requirement.Definitions, dm.make())
+	})
+
+	switch failure := computationFailureHolder.Load(); {
+	case err != nil:
+		return nil, err
+	case failure != nil:
+		return &ComputationResult{
+			ComputationFailure: failure.(ComputationFailure),
+		}, nil
+	default:
+		for _, def := range definitions {
+			if def != nil {
+				ret.Requirement.Definitions = append(ret.Requirement.Definitions, def)
+			}
 		}
 	}
 	return ret, nil
+}
+
+func min(a, b int) int {
+	if a < b {
+		return a
+	}
+	return b
 }
