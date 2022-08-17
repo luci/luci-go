@@ -353,7 +353,7 @@ func TestGetRPCTransport(t *testing.T) {
 
 		Convey("in AsSessionUser mode without session", func(c C) {
 			_, err := GetRPCTransport(ctx, AsSessionUser)
-			So(err, ShouldEqual, ErrNotConfigured)
+			So(err, ShouldEqual, nil)
 		})
 
 		Convey("in AsSessionUser mode", func(c C) {

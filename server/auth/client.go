@@ -945,9 +945,7 @@ func asProjectHeaders(ctx context.Context, opts *rpcOptions, req *http.Request) 
 // currentSession either returns the current session or ErrNotConfigured.
 func currentSession(ctx context.Context) (Session, error) {
 	if state := GetState(ctx); state != nil {
-		if session := state.Session(); session != nil {
-			return session, nil
-		}
+		return state.Session(), nil
 	}
 	return nil, ErrNotConfigured
 }
@@ -960,6 +958,9 @@ func asSessionUserHeaders(ctx context.Context, opts *rpcOptions, _ *http.Request
 	s, err := currentSession(ctx)
 	if err != nil {
 		return nil, nil, err
+	}
+	if s == nil {
+		return nil, nil, nil
 	}
 	if opts.idToken {
 		tok, err = s.IDToken(ctx)

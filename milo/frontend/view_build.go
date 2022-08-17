@@ -168,7 +168,7 @@ func simplisticBlamelist(c context.Context, build *buildbucketpb.Build) (result 
 			if err != nil {
 				return nil, err
 			}
-			client, err := gitiles.NewRESTClient(&http.Client{Transport: t}, host, true)
+			client, err := gitiles.NewRESTClient(&http.Client{Transport: t}, host, false)
 			if err != nil {
 				return nil, err
 			}
