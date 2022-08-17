@@ -13,6 +13,45 @@
   </li>
 </template>
 
+<template id="new-group-form-template">
+  <form id="group-form" class="m-2">
+    <div class="row mb-3">
+      <label for="group-name" class="col-2 col-form-label">Group Name</label>
+      <div class="col">
+        <input class="form-control" rows="1" id="group-name-box" required></input>
+        <span class="error" aria-live="polite"></span>
+      </div>
+    </div>
+    <div class="row mb-3">
+      <label for="description" class="col-2 col-form-label">Description</label>
+      <div class="col">
+        <textarea class="form-control" rows="3" id="description-box" required></textarea>
+      </div>
+    </div>
+    <div class="row">
+      <label for="owners" class="col-2 col-form-label">Owners</label>
+      <div class="col">
+        <textarea class="form-control" rows="1" id="owners-box"></textarea>
+      </div>
+    </div>
+    <hr>
+    <div class="row mb-3">
+      <label for="members" class="col-2 col-form-label">Members</label>
+      <div class="col">
+        <textarea class="form-control" rows="12" id="membersAndGlobs"></textarea>
+      </div>
+    </div>
+    <div class="row">
+      <label for="subgroups" class="col-2 col-form-label">Subgroups</label>
+      <div class="col">
+        <textarea class="form-control" rows="5" id="nested"></textarea>
+      </div>
+    </div>
+    <hr>
+    <button type="submit" class="btn btn-primary">Create group</button>
+  </form>
+</template>
+
 <template id="edit-group-form-template">
   <div class="row mx-0 my-2">
     <div class="col m-0 pt-1 border rounded" style="background-color: #f5f5f5;">
@@ -30,7 +69,7 @@
       </h5>
     </div>
   </div>
-  <form id="edit-group-form" class="">
+  <form id="edit-group-form" class="m-2">
     <div class="row mb-3">
       <label for="description" class="col-2 col-form-label">Description</label>
       <div class="col">
@@ -61,6 +100,7 @@
     <button id="delete-btn" type="button" class="btn btn-danger">Delete group</button>
   </form>
 </template>
+
 <div class="row">
   <div class="col-4 my-2 border rounded">
     <div class="row my-2">
@@ -68,6 +108,19 @@
         <input class="form-control me-2" type="search" placeholder="Search" aria-label="Search">
         <button class="btn btn-outline-success" type="submit">Search</button>
       </form>
+      <div class="row pt-2">
+        <div class="col">
+          <div class="form-check pt-2 sm-6">
+            <input class="form-check-input me-2" type="checkbox" value="" id="external-check">
+            <label class="form-check-label" for="external-check">
+              Show External Groups
+            </label>
+          </div>
+        </div>
+        <div class="col-2 me-2">
+          <button type="button" class="btn btn-outline-primary" id="create-group-btn">Create</button>
+        </div>
+      </div>
     </div>
     <div class="row">
       <ul class="navbar-nav-scroll px-1" style="--bs-scroll-height: 704px;" id="group-chooser">

@@ -35,6 +35,9 @@ class GroupChooser {
   constructor(element) {
     // Root DOM element.
     this.element = document.getElementById(element);
+
+    // Button for triggering create group workflow.
+    this.createGroupBtn = document.getElementById("create-group-btn");
   }
 
   // Loads list of groups from a server.
@@ -70,10 +73,6 @@ class GroupChooser {
         name.textContent = group.name;
         description.textContent = trimGroupDescription(group.description);
         this.element.appendChild(clone);
-      } else {
-        // TODO(cjacomet): Find another way to add group-chooser items.
-        // HTML template element is not supported.
-        console.error('Unable to load HTML template element, not supported.')
       }
       listEl.addEventListener('click', () => {
         this.setSelection(group.name);
@@ -118,17 +117,79 @@ class GroupChooser {
 }
 
 ////////////////////////////////////////////////////////////////////////////////
+// ContentFrame is the outer frame that will load a GroupForm, this can be
+// a NewGroupForm or an EditGroupForm.
+class ContentFrame {
+  constructor(elementSelector) {
+    // The root element of this ContentFrame (the container for the GroupForm).
+    this.element = document.querySelector(elementSelector);
+    // The content that this frame currently has loaded.
+    // This will be an instance of GroupForm class.
+    this.content = null;
+    // What the frame is currently trying to load, used to check if another loadContent
+    // call was made before loading is done (i.e. user clicks a different group).
+    this.loading = null;
+  }
+
+  // Sets the content of the content frame.
+  // Clears any content that was previously in the frame.
+  setContent(content) {
+    // Empty the dom element.
+    this.element.innerHTML = '';
+
+    // Set to the new content.
+    this.content = content;
+    this.loading = null;
+
+    if (this.content) {
+      this.element.appendChild(this.content.element);
+      // TODO(cjacomet): Trigger content shown handler.
+    }
+  }
+
+  // Loads new content asynchronously using content.load(...) call.
+  // |content| is an instance of GroupForm class.
+  loadContent(content) {
+    let self = this;
+    // TODO(cjacomet): Disable interaction while we load content.
+    self.loading = content;
+    return content.load()
+      .then(() => {
+        // Switch content only if another 'loadContent' wasn't called before.
+        if (self.loading == content) {
+          self.setContent(content);
+        }
+      })
+      .catch((error) => {
+        // Still loading same content?
+        if (self.loading == content) {
+          self.setContent(null);
+          // TODO(cjacomet): Load error pane or alert instead of console.log.
+          console.log("error unable to load content");
+        }
+      });
+  };
+}
+
+////////////////////////////////////////////////////////////////////////////////
 // Common code for 'New group' and 'Edit group' forms.
 class GroupForm {
 
-  constructor(element, groupName, template) {
-    // The content containing the form and heading.
-    this.element = document.querySelector(element);
+  constructor(templateName, groupName) {
+    // The cloned template of the respective form we'll be loading.
+    this.element = document.querySelector(templateName).content.cloneNode(true);
     // Name of the group this form operates on.
     this.groupName = groupName;
-    // Template to use: (new or edit).
-    this.template = document.querySelector(template);
   }
+
+  // returns a resolved promise, the subclass should override this when
+  // making an RPC call.
+  load() {
+    return new Promise(resolve => {
+      resolve();
+    });
+  }
+
 
 }
 
@@ -138,18 +199,14 @@ class EditGroupForm extends GroupForm {
 
   constructor(groupName) {
     // Call parent constructor.
-    super('#group-content', groupName, '#edit-group-form-template');
-    // Name of the group this form operates on.
-    this.groupName = groupName;
+    super('#edit-group-form-template', groupName);
   }
 
   // Get group response and build the form.
   load() {
-    var defer = api.groupRead(this.groupName);
-    defer.then((response) => {
+    return api.groupRead(this.groupName).then((response) => {
       this.buildForm(response);
     });
-    return defer;
   }
 
   // Prepare response for html text content.
@@ -167,37 +224,26 @@ class EditGroupForm extends GroupForm {
     groupClone.nested = (groupClone.nested || []).join('\n') + '\n';
 
     // TODO(cjacomet): Set up external group handling.
-    // TODO(cjacomet): Set up form submission and deletion.
     this.populateForm(groupClone);
   }
 
   // Populates the form with the text lists of the group.
   populateForm(group) {
-    if ('content' in document.createElement('template')) {
-      // Clone and grab elements to modify.
-      var clone = this.template.content.cloneNode(true);
-      var heading = clone.querySelector('#group-heading');
-      var description = clone.querySelector('#description-box');
-      var owners = clone.querySelector('#owners-box');
-      var membersAndGlobs = clone.querySelector('#membersAndGlobs');
-      var nested = clone.querySelector('#nested');
-      var deleteBtn = clone.querySelector('#delete-btn');
+    // Grab form fields.
+    var heading = this.element.querySelector('#group-heading');
+    var description = this.element.querySelector('#description-box');
+    var owners = this.element.querySelector('#owners-box');
+    var membersAndGlobs = this.element.querySelector('#membersAndGlobs');
+    var nested = this.element.querySelector('#nested');
+    var deleteBtn = this.element.querySelector('#delete-btn');
 
-      // Clear any previous html.
-      this.element.innerHTML = '';
-
-      // Modify contents and append to parent.
-      heading.textContent = group.name;
-      description.textContent = group.description;
-      owners.textContent = group.owners;
-      membersAndGlobs.textContent = group.membersAndGlobs
-      nested.textContent = group.nested;
-      this.element.appendChild(clone);
-    } else {
-      // TODO(cjacomet): Find another way to add group-content group.
-      // HTML template element is not supported.
-      console.error('Unable to load HTML template element, not supported.')
-    }
+    // Modify contents.
+    heading.textContent = group.name;
+    description.textContent = group.description;
+    owners.textContent = group.owners;
+    membersAndGlobs.textContent = group.membersAndGlobs
+    nested.textContent = group.nested;
+    
 
     deleteBtn.addEventListener('click', () => {
       let result = confirm(`Are you sure you want to delete ${group.name}?`)
@@ -219,13 +265,27 @@ class EditGroupForm extends GroupForm {
   }
 }
 
+////////////////////////////////////////////////////////////////////////////////
+// Form to create a new group.
+class NewGroupForm extends GroupForm {
+  constructor() {
+    super('#new-group-form-template', '');
+  }
+}
+
 window.onload = () => {
   // Setup global UI elements.
   var groupChooser = new GroupChooser('group-chooser');
+  var contentFrame = new ContentFrame('#group-content');
+
+  const startNewGroupFlow = () => {
+    let form = new NewGroupForm();
+    contentFrame.loadContent(form);
+  };
 
   const startEditGroupFlow = (groupName) => {
     let form = new EditGroupForm(groupName);
-    form.load();
+    contentFrame.loadContent(form);
   };
 
   groupChooser.element.addEventListener('selectionChanged', (event) => {
@@ -235,6 +295,11 @@ window.onload = () => {
       startEditGroupFlow(event.detail.group);
     }
   });
+
+  groupChooser.createGroupBtn.addEventListener('click', (event) => {
+    startNewGroupFlow();
+    groupChooser.setSelection(null);
+  })
 
   const jumpToCurrentGroup = (selectDefault) => {
     if (selectDefault) {
