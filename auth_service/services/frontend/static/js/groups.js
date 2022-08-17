@@ -21,7 +21,7 @@ const trimGroupDescription = (desc) => {
   if (desc == null) {
     return '';
   }
-  var firstLine = desc.split('\n')[0];
+  let firstLine = desc.split('\n')[0];
   if (firstLine.length > 55) {
     firstLine = firstLine.slice(0, 55) + '...';
   }
@@ -34,46 +34,43 @@ class GroupChooser {
 
   constructor(element) {
     // Root DOM element.
-    this.element = document.getElementById(element);
+    this.element = document.querySelector(element);
 
     // Button for triggering create group workflow.
-    this.createGroupBtn = document.getElementById("create-group-btn");
+    this.createGroupBtn = document.querySelector("#create-group-btn");
   }
 
   // Loads list of groups from a server.
   // Updates group chooser UI. Returns deferred.
   refetchGroups() {
-    var self = this;
-    var defer = api.groups();
-    defer
+    const self = this;
+    return api.groups()
       .then((response) => {
         self.setGroupList(response.groups);
       })
       .catch((err) => {
         console.log(err);
       });
-    return defer;
   }
 
   // Sets groupList (group-chooser) element.
   setGroupList(groups) {
     // Adds list item to group-chooser.
     const addElement = (group) => {
-      if ('content' in document.createElement('template')) {
-        var template = document.querySelector('#group-scroller-row-template');
+      const template = document.querySelector('#group-scroller-row-template');
 
-        // Clone and grab elements to modify.
-        var clone = template.content.cloneNode(true);
-        var listEl = clone.querySelector('li');
-        var name = clone.querySelector('p');
-        var description = clone.querySelector('small');
+      // Clone and grab elements to modify.
+      const clone = template.content.cloneNode(true);
+      const listEl = clone.querySelector('li');
+      const name = clone.querySelector('p');
+      const description = clone.querySelector('small');
 
-        // Modify contents and append to parent.
-        listEl.setAttribute('data-group-name', group.name);
-        name.textContent = group.name;
-        description.textContent = trimGroupDescription(group.description);
-        this.element.appendChild(clone);
-      }
+      // Modify contents and append to parent.
+      listEl.setAttribute('data-group-name', group.name);
+      name.textContent = group.name;
+      description.textContent = trimGroupDescription(group.description);
+      this.element.appendChild(clone);
+
       listEl.addEventListener('click', () => {
         this.setSelection(group.name);
       });
@@ -213,9 +210,9 @@ class EditGroupForm extends GroupForm {
   buildForm(group) {
     const groupClone = { ...group };
 
-    var members = (groupClone.members ? groupClone.members.map((member) => common.stripPrefix('user', member)) : []);
-    var globs = (groupClone.globs ? groupClone.globs.map((glob) => common.stripPrefix('user', glob)) : []);
-    var membersAndGlobs = [].concat(members, globs);
+    const members = (groupClone.members ? groupClone.members.map((member) => common.stripPrefix('user', member)) : []);
+    const globs = (groupClone.globs ? groupClone.globs.map((glob) => common.stripPrefix('user', glob)) : []);
+    const membersAndGlobs = [].concat(members, globs);
 
     // TODO(cjacomet): Assert that membersAndGlobs can be split.
 
@@ -230,12 +227,12 @@ class EditGroupForm extends GroupForm {
   // Populates the form with the text lists of the group.
   populateForm(group) {
     // Grab form fields.
-    var heading = this.element.querySelector('#group-heading');
-    var description = this.element.querySelector('#description-box');
-    var owners = this.element.querySelector('#owners-box');
-    var membersAndGlobs = this.element.querySelector('#membersAndGlobs');
-    var nested = this.element.querySelector('#nested');
-    var deleteBtn = this.element.querySelector('#delete-btn');
+    const heading = this.element.querySelector('#group-heading');
+    const description = this.element.querySelector('#description-box');
+    const owners = this.element.querySelector('#owners-box');
+    const membersAndGlobs = this.element.querySelector('#membersAndGlobs');
+    const nested = this.element.querySelector('#nested');
+    const deleteBtn = this.element.querySelector('#delete-btn');
 
     // Modify contents.
     heading.textContent = group.name;
@@ -243,7 +240,7 @@ class EditGroupForm extends GroupForm {
     owners.textContent = group.owners;
     membersAndGlobs.textContent = group.membersAndGlobs
     nested.textContent = group.nested;
-    
+
 
     deleteBtn.addEventListener('click', () => {
       let result = confirm(`Are you sure you want to delete ${group.name}?`)
@@ -275,8 +272,8 @@ class NewGroupForm extends GroupForm {
 
 window.onload = () => {
   // Setup global UI elements.
-  var groupChooser = new GroupChooser('group-chooser');
-  var contentFrame = new ContentFrame('#group-content');
+  const groupChooser = new GroupChooser('group-chooser');
+  const contentFrame = new ContentFrame('#group-content');
 
   const startNewGroupFlow = () => {
     let form = new NewGroupForm();
