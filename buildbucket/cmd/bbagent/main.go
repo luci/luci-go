@@ -480,7 +480,7 @@ func mainImpl() int {
 
 	// Downloading cipd packages if any.
 	if stringset.NewFromSlice(bbclientInput.input.Build.Input.Experiments...).Has(buildbucket.ExperimentBBAgentDownloadCipd) {
-		if retcode := downloadCipdPackages(ctx, cwd, bbclientInput); retcode != 0 {
+		if retcode := downloadCipdPackages(cctx, cwd, bbclientInput); retcode != 0 {
 			return retcode
 		}
 	}
@@ -557,7 +557,7 @@ func mainImpl() int {
 		dispatcherErrCh,
 	}
 
-	go si.stopEvents(ctx, bbclientInput, &fatalUpdateBuildErrorSlot)
+	go si.stopEvents(cctx, bbclientInput, &fatalUpdateBuildErrorSlot)
 
 	// Now all we do is shuttle builds through to the buildbucket client channel
 	// until there are no more builds to shuttle.
