@@ -272,7 +272,7 @@ class NewGroupForm extends GroupForm {
 
 window.onload = () => {
   // Setup global UI elements.
-  const groupChooser = new GroupChooser('group-chooser');
+  const groupChooser = new GroupChooser('#group-chooser');
   const contentFrame = new ContentFrame('#group-content');
 
   const startNewGroupFlow = () => {
