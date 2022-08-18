@@ -198,7 +198,7 @@ func TestTaskDef(t *testing.T) {
 			},
 		}
 		Convey("bbagent_getbuild experiment", func() {
-			b.Experiments = []string{"luci.buildbucket.bbagent_getbuild"}
+			b.Experiments = []string{"+luci.buildbucket.bbagent_getbuild"}
 			bbagentCmd := computeCommand(b)
 			So(bbagentCmd, ShouldResemble, []string{
 				"bbagent${EXECUTABLE_SUFFIX}",
@@ -210,6 +210,7 @@ func TestTaskDef(t *testing.T) {
 		})
 
 		Convey("no bbagent_getbuild experiment", func() {
+			b.Experiments = []string{"-luci.buildbucket.bbagent_getbuild"}
 			b.Proto.Infra.Bbagent = &pb.BuildInfra_BBAgent{
 				CacheDir:    "cache",
 				PayloadPath: "payload_path",

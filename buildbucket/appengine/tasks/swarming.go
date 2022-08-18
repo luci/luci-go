@@ -809,15 +809,7 @@ func computeEnvPrefixes(build *model.Build) []*swarming.SwarmingRpcsStringListPa
 
 // computeCommand computes the command for bbagent.
 func computeCommand(build *model.Build) []string {
-	bbagentGetBuildEnabled := false
-	for _, exp := range build.Experiments {
-		if exp == buildbucket.ExperimentBBAgentGetBuild {
-			bbagentGetBuildEnabled = true
-			break
-		}
-	}
-
-	if bbagentGetBuildEnabled {
+	if strings.Contains(build.ExperimentsString(), buildbucket.ExperimentBBAgentGetBuild) {
 		return []string{
 			"bbagent${EXECUTABLE_SUFFIX}",
 			"-host",
