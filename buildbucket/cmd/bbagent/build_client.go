@@ -114,6 +114,7 @@ func newBuildsClient(ctx context.Context, hostname string, retryF retry.Factory)
 		Options: &prpc.Options{
 			Insecure:      lhttp.IsLocalHost(hostname),
 			PerRPCTimeout: 30 * time.Second,
+			Debug:         true,
 		},
 	}
 	secrets, err := readBuildSecrets(ctx)

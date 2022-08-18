@@ -47,6 +47,11 @@ type Options struct {
 	// It can be overridden on per-call basis via CallAcceptContentSubtype().
 	AcceptContentSubtype string
 
+	// Debug is a flag indicate if we want to print more logs for debug purpose.
+	// Right now we use this option to print the raw requests when certain
+	// failures occur.
+	Debug bool
+
 	// These can be set only using *prpc.CallOption or some grpc.CallOption.
 
 	resHeaderMetadata  *metadata.MD // destination for response HTTP headers.
