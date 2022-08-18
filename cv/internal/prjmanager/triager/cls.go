@@ -89,11 +89,11 @@ type triagedCL struct {
 	//
 	// Not set if CL is .purgingCL is non-nil since CL is already being purged.
 	purgeReasons []*prjpb.PurgeReason
-	// ready is true if it can be used in creation of new Runs.
+	// cqReady is true if it can be used in creation of new CQ-Vote Runs.
 	//
 	// If true, purgeReason must be nil, and deps must be OK though they may contain
 	// not-yet-loaded deps.
-	ready bool
+	cqReady bool
 }
 
 // triage sets the triagedCL part of clInfo.
@@ -138,7 +138,7 @@ func (info *clInfo) triageInRun(pm pmState) {
 	info.deps = triageDeps(pcl, cgIndex, pm)
 	// A purging CL must not be "ready" to avoid creating new Runs with them.
 	if info.deps.OK() && info.purgingCL == nil {
-		info.ready = true
+		info.cqReady = true
 	}
 }
 
@@ -244,7 +244,7 @@ func (info *clInfo) triageNew(pm pmState) {
 		panic(fmt.Errorf("PCL %d without ConfigGroup index %s", clid, assumption))
 	case 1:
 		if info.deps = triageDeps(pcl, cgIndexes[0], pm); info.deps.OK() {
-			info.ready = true
+			info.cqReady = true
 		} else {
 			info.addPurgeReason(info.pcl.Triggers.GetCqVoteTrigger(), info.deps.makePurgeReason())
 		}

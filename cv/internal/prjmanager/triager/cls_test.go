@@ -60,7 +60,7 @@ func shouldResembleTriagedCL(actual interface{}, expected ...interface{}) string
 
 	buf := strings.Builder{}
 	for _, err := range []string{
-		ShouldResemble(a.ready, b.ready),
+		ShouldResemble(a.cqReady, b.cqReady),
 		ShouldResemble(a.runIndexes, b.runIndexes),
 		cvtesting.SafeShouldResemble(a.deps, b.deps),
 		ShouldResembleProto(a.pcl, b.pcl),
@@ -129,7 +129,7 @@ func TestCLsTriage(t *testing.T) {
 
 					triagedCL: triagedCL{
 						purgeReasons: nil,
-						ready:        true,
+						cqReady:      true,
 						deps:         &triagedDeps{},
 					},
 				}
@@ -189,7 +189,7 @@ func TestCLsTriage(t *testing.T) {
 
 					triagedCL: triagedCL{
 						purgeReasons: nil,
-						ready:        false,
+						cqReady:      false,
 						deps:         &triagedDeps{},
 					},
 				}
@@ -226,8 +226,8 @@ func TestCLsTriage(t *testing.T) {
 							},
 							ApplyTo: &prjpb.PurgeReason_AllActiveTriggers{AllActiveTriggers: true},
 						}},
-						ready: false,
-						deps:  nil, // not checked.
+						cqReady: false,
+						deps:    nil, // not checked.
 					},
 				}
 				So(cls[1], shouldResembleTriagedCL, expected)
@@ -279,7 +279,7 @@ func TestCLsTriage(t *testing.T) {
 				cls := do(&prjpb.Component{Clids: []int64{1, 2, 3}})
 				So(cls, ShouldHaveLength, 3)
 				for _, info := range cls {
-					So(info.ready, ShouldBeTrue)
+					So(info.cqReady, ShouldBeTrue)
 					So(info.deps.OK(), ShouldBeTrue)
 					So(info.lastCQVoteTriggered(), ShouldResemble, epoch)
 				}
@@ -290,7 +290,7 @@ func TestCLsTriage(t *testing.T) {
 				cls := do(&prjpb.Component{Clids: []int64{1, 2, 3}})
 				So(cls, ShouldHaveLength, 3)
 				for _, info := range cls {
-					So(info.ready, ShouldBeTrue)
+					So(info.cqReady, ShouldBeTrue)
 					So(info.deps.OK(), ShouldBeTrue)
 				}
 			})
@@ -298,12 +298,12 @@ func TestCLsTriage(t *testing.T) {
 			Convey("Full Run on #3 is purged if its deps aren't submitted", func() {
 				sup.PCL(3).Triggers = &run.Triggers{CqVoteTrigger: fullRun(epoch)}
 				cls := do(&prjpb.Component{Clids: []int64{1, 2, 3}})
-				So(cls[1].ready, ShouldBeTrue)
-				So(cls[2].ready, ShouldBeTrue)
+				So(cls[1].cqReady, ShouldBeTrue)
+				So(cls[2].cqReady, ShouldBeTrue)
 				So(cls[3], shouldResembleTriagedCL, &clInfo{
 					pcl: sup.PCL(3),
 					triagedCL: triagedCL{
-						ready: false,
+						cqReady: false,
 						purgeReasons: []*prjpb.PurgeReason{{
 							ClError: &changelist.CLError{
 								Kind: &changelist.CLError_InvalidDeps_{
@@ -337,14 +337,14 @@ func TestCLsTriage(t *testing.T) {
 					Clids: []int64{1, 2, 3},
 					Pruns: []*prjpb.PRun{{Id: "r1", Clids: []int64{1}}},
 				})
-				So(cls[2].ready, ShouldBeTrue)
+				So(cls[2].cqReady, ShouldBeTrue)
 				So(cls[2].deps, cvtesting.SafeShouldResemble, &triagedDeps{
 					submitted: []*changelist.Dep{{Clid: 1, Kind: changelist.DepKind_HARD}},
 				})
 				So(cls[3], shouldResembleTriagedCL, &clInfo{
 					pcl: sup.PCL(3),
 					triagedCL: triagedCL{
-						ready: false,
+						cqReady: false,
 						purgeReasons: []*prjpb.PurgeReason{{
 							ClError: &changelist.CLError{
 								Kind: &changelist.CLError_InvalidDeps_{
@@ -405,7 +405,7 @@ func TestCLsTriage(t *testing.T) {
 				cls := do(&prjpb.Component{Clids: []int64{1, 2, 3}})
 				So(cls, ShouldHaveLength, 3)
 				for _, info := range cls {
-					So(info.ready, ShouldBeTrue)
+					So(info.cqReady, ShouldBeTrue)
 					So(info.deps.OK(), ShouldBeTrue)
 				}
 			})
@@ -416,12 +416,12 @@ func TestCLsTriage(t *testing.T) {
 				sup.PCL(1).Triggers = &run.Triggers{CqVoteTrigger: fullRun(epoch)}
 				sup.PCL(2).Triggers = &run.Triggers{CqVoteTrigger: fullRun(epoch)}
 				cls := do(&prjpb.Component{Clids: []int64{1, 2, 3}})
-				So(cls[1].ready, ShouldBeTrue)
-				So(cls[2].ready, ShouldBeTrue)
+				So(cls[1].cqReady, ShouldBeTrue)
+				So(cls[2].cqReady, ShouldBeTrue)
 				So(cls[3], shouldResembleTriagedCL, &clInfo{
 					pcl: sup.PCL(3),
 					triagedCL: triagedCL{
-						ready: false,
+						cqReady: false,
 						purgeReasons: []*prjpb.PurgeReason{{
 							ClError: &changelist.CLError{
 								Kind: &changelist.CLError_InvalidDeps_{
@@ -452,7 +452,7 @@ func TestCLsTriage(t *testing.T) {
 				sup.PCL(3).ConfigGroupIndexes = []int32{combIdx}    // depends on 1(OK) and 2.
 				cls := do(&prjpb.Component{Clids: []int64{1, 2, 3}})
 				for _, info := range cls {
-					So(info.ready, ShouldBeFalse)
+					So(info.cqReady, ShouldBeFalse)
 					So(info.purgeReasons, ShouldResembleProto, []*prjpb.PurgeReason{{
 						ClError: &changelist.CLError{
 							Kind: &changelist.CLError_InvalidDeps_{
@@ -473,7 +473,7 @@ func TestCLsTriage(t *testing.T) {
 
 					cls := do(&prjpb.Component{Clids: []int64{1, 3}})
 					for _, info := range cls {
-						So(info.ready, ShouldBeTrue)
+						So(info.cqReady, ShouldBeTrue)
 						So(info.purgeReasons, ShouldBeNil)
 						So(info.deps.submitted, ShouldResembleProto, []*changelist.Dep{{Clid: 2, Kind: changelist.DepKind_SOFT}})
 					}
@@ -499,8 +499,8 @@ func TestCLsTriage(t *testing.T) {
 			So(cls[2], shouldResembleTriagedCL, &clInfo{
 				pcl: sup.PCL(2),
 				triagedCL: triagedCL{
-					ready: true,
-					deps:  &triagedDeps{notYetLoaded: sup.PCL(2).GetDeps()},
+					cqReady: true,
+					deps:    &triagedDeps{notYetLoaded: sup.PCL(2).GetDeps()},
 				},
 			})
 		})

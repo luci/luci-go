@@ -89,7 +89,7 @@ type runStage struct {
 
 func (rs *runStage) stageNewRunsFrom(ctx context.Context, clid int64, info *clInfo) ([]*runcreator.Creator, time.Time, error) {
 	// Only start with ready CLs. Non-ready ones can't form new Runs anyway.
-	if !info.ready {
+	if !info.cqReady {
 		return nil, time.Time{}, nil
 	}
 
@@ -422,7 +422,7 @@ func (c *combo) add(info *clInfo) {
 		c.clids[info.pcl.GetClid()] = struct{}{}
 	}
 
-	if !info.ready {
+	if !info.cqReady {
 		c.notReady = append(c.notReady, info)
 	}
 
