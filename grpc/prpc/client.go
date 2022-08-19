@@ -355,9 +355,9 @@ func (c *Client) call(ctx context.Context, options *Options, in []byte) ([]byte,
 				logging.WithError(err).Warningf(ctx, "RPC failed permanently: %s", err)
 				if options.Debug {
 					if code == codes.InvalidArgument && strings.Contains(err.Error(), "could not decode body") {
-						logging.Debugf(ctx, "Original request size: %d", len(in))
-						logging.Debugf(ctx, "Content-type: %s", options.inFormat.MediaType())
-						logging.Debugf(ctx, "Original request in bytes: %v", in)
+						logging.Warningf(ctx, "Original request size: %d", len(in))
+						logging.Warningf(ctx, "Content-type: %s", options.inFormat.MediaType())
+						logging.Warningf(ctx, "Original request in bytes: %v", in)
 					}
 				}
 			}
