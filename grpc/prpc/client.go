@@ -357,7 +357,8 @@ func (c *Client) call(ctx context.Context, options *Options, in []byte) ([]byte,
 					if code == codes.InvalidArgument && strings.Contains(err.Error(), "could not decode body") {
 						logging.Warningf(ctx, "Original request size: %d", len(in))
 						logging.Warningf(ctx, "Content-type: %s", options.inFormat.MediaType())
-						logging.Warningf(ctx, "Original request in bytes: %v", in)
+						b64 := base64.StdEncoding.EncodeToString(in)
+						logging.Warningf(ctx, "Original request in base64 encoding: %s", b64)
 					}
 				}
 			}
