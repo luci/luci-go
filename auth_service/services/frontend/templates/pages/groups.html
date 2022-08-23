@@ -25,33 +25,37 @@
     <div class="row mb-3">
       <label for="group-name" class="col-2 col-form-label">Group Name</label>
       <div class="col">
-        <input class="form-control" rows="1" id="group-name-box" required></input>
+        <input class="form-control groupName required" rows="1" id="group-name-box" placeholder="required"></input>
         <span class="error" aria-live="polite"></span>
       </div>
     </div>
     <div class="row mb-3">
       <label for="description" class="col-2 col-form-label">Description</label>
       <div class="col">
-        <textarea class="form-control" rows="3" id="description-box" required></textarea>
+        <textarea class="form-control required" rows="3" id="description-box" placeholder="required"></textarea>
+        <span class="error" aria-live="polite"></span>
       </div>
     </div>
     <div class="row">
       <label for="owners" class="col-2 col-form-label">Owners</label>
       <div class="col">
-        <textarea class="form-control" rows="1" id="owners-box"></textarea>
+        <textarea class="form-control groupNameOrEmpty" rows="1" id="owners-box"></textarea>
+        <span class="error" aria-live="polite"></span>
       </div>
     </div>
     <hr>
     <div class="row mb-3">
       <label for="members" class="col-2 col-form-label">Members</label>
       <div class="col">
-        <textarea class="form-control" rows="12" id="membersAndGlobs"></textarea>
+        <textarea class="form-control membersAndGlobsList" rows="12" id="membersAndGlobs"></textarea>
+        <span class="error" aria-live="polite"></span>
       </div>
     </div>
     <div class="row">
       <label for="subgroups" class="col-2 col-form-label">Subgroups</label>
       <div class="col">
-        <textarea class="form-control" rows="5" id="nested"></textarea>
+        <textarea class="form-control groupList" rows="5" id="nested"></textarea>
+        <span class="error" aria-live="polite"></span>
       </div>
     </div>
     <hr>
@@ -76,30 +80,34 @@
       </h5>
     </div>
   </div>
-  <form id="edit-group-form" class="m-2">
+  <form id="group-form" class="m-2">
     <div class="row mb-3">
       <label for="description" class="col-2 col-form-label">Description</label>
       <div class="col">
-        <textarea class="form-control" rows="3" id="description-box"></textarea>
+        <textarea class="form-control required" rows="3" id="description-box"></textarea>
+        <span class="error" aria-live="polite"></span>
       </div>
     </div>
     <div class="row">
       <label for="owners" class="col-2 col-form-label">Owners</label>
       <div class="col">
-        <textarea class="form-control" rows="1" id="owners-box"></textarea>
+        <textarea class="form-control groupNameOrEmpty" rows="1" id="owners-box"></textarea>
+        <span class="error" aria-live="polite"></span>
       </div>
     </div>
     <hr>
     <div class="row mb-3">
       <label for="members" class="col-2 col-form-label">Members</label>
       <div class="col">
-        <textarea class="form-control" rows="12" id="membersAndGlobs"></textarea>
+        <textarea class="form-control membersAndGlobsList" rows="12" id="membersAndGlobs"></textarea>
+        <span class="error" aria-live="polite"></span>
       </div>
     </div>
     <div class="row">
       <label for="subgroups" class="col-2 col-form-label">Subgroups</label>
       <div class="col">
-        <textarea class="form-control" rows="5" id="nested"></textarea>
+        <textarea class="form-control groupList" rows="5" id="nested"></textarea>
+        <span class="error" aria-live="polite"></span>
       </div>
     </div>
     <hr>

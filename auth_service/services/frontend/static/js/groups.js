@@ -29,6 +29,63 @@ const trimGroupDescription = (desc) => {
 }
 
 ////////////////////////////////////////////////////////////////////////////////
+// Form Validation.
+
+// Form validation regex.
+const groupsRe = /^([a-z\-]+\/)?[0-9a-z_\-\.@]{1,100}$/;
+const membersRe = /^((user|bot|project|service|anonymous)\:)?[\w\-\+\%\.\@\*\[\]]+$/;
+
+// Splits 'value' on lines boundaries, trims spaces and returns lines
+// as an array of strings.
+const splitItemList = (list) => {
+  return list.split('\n').map((item) => item.trim()).filter((item) => !!item);
+};
+
+// Sets classes for invalid element.
+const setInvalid = (formObj, errorMsg) => {
+  formObj.element.classList.add('is-invalid');
+  formObj.errorElement.textContent = errorMsg;
+  formObj.errorElement.className = "error active text-danger";
+}
+
+// Resets the validity of the field's html classes.
+const resetValidity = (fieldElement, errorElement) => {
+  fieldElement.classList.remove('is-invalid');
+  errorElement.textContent = "";
+  errorElement.className = "error";
+}
+
+// Set of callbacks and respective error message for each type of validation.
+// Key comes from class names added to HTML form-control element inside the
+// current form.
+const validators = {
+  'groupName': [
+    (value) => { return groupsRe.test(value); },
+    'Invalid group name.'
+  ],
+  'groupNameOrEmpty': [
+    (value) => { return !value || groupsRe.test(value); },
+    'Invalid group name.'
+  ],
+  'membersAndGlobsList': [
+    (value) => {
+      // TODO(cjacomet): Check globs here as well.
+      return splitItemList(value).every((item) => {membersRe.test('user:' + item)});
+    },
+  ],
+  'groupList': [
+    (value) => {
+      return splitItemList(value).every((item) => {groupsRe.test(item)});
+    },
+    'Invalid group name.'
+  ],
+  'required': [
+    (value) => { return !!value },
+    'Field is required.',
+  ],
+};
+
+////////////////////////////////////////////////////////////////////////////////
 // GroupChooser is a scrollable list containing the auth service groups.
 class GroupChooser {
 
@@ -110,7 +167,6 @@ class GroupChooser {
       this.setSelection(elements[0].dataset.groupName);
     }
   }
-
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -177,6 +233,44 @@ class GroupForm {
     this.element = document.querySelector(templateName).content.cloneNode(true);
     // Name of the group this form operates on.
     this.groupName = groupName;
+
+    // The Form element.
+    this.form = this.element.querySelector('#group-form');
+
+    // Is the form valid to submit?
+    this.valid = false;
+
+    // Field elements of the form, we rely on the 'form-control' class. If another
+    // field is added to the form it must have 'form-control' in the class to
+    // be picked up for validation.
+    const fieldElems = Array.from(this.form.getElementsByClassName('form-control'));
+
+    // Maintains a list of the fields respective event listeners and validation
+    // function(s) necessary to validate a given field.
+    this.fields = fieldElems.map((element) => {
+
+      // Attach event listener to this field.
+      const validatorNames = Array.from(element.classList).filter((name) => { return name in validators; })
+      const errorElement = element.nextElementSibling;
+      const formFieldObj = {element, validatorNames, errorElement};
+      element.addEventListener('input', () => {
+        this.validate(formFieldObj);
+      });
+      return formFieldObj
+    });
+
+
+    // Event listener to trigger validation workflow when form submit event
+    // happens.
+    this.form.addEventListener('submit', (event) => {
+      event.preventDefault();
+      this.valid = true;
+      this.fields.forEach((formField) => { this.validate(formField);  });
+      // If valid -> submit w/ json
+      if (this.valid) {
+        // TODO(cjacomet): Setup request and make GroupCreate API call.
+      }
+    })
   }
 
   // returns a resolved promise, the subclass should override this when
@@ -187,7 +281,21 @@ class GroupForm {
     });
   }
 
+  // Updates the value of the current formField Object
+  // then calls validation callbacks on the given field.
+  validate(formFieldObj) {
+    const {element, errorElement} = formFieldObj;
+    const value = element.value.trim();
+    resetValidity(element, errorElement);
 
+    formFieldObj.validatorNames.forEach((name) => {
+      const isValid = validators[name][0](value);
+      if (!isValid) {
+        this.valid = false;
+        setInvalid(formFieldObj, validators[name][1]);
+      }
+    })
+  }
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -240,7 +348,6 @@ class EditGroupForm extends GroupForm {
     owners.textContent = group.owners;
     membersAndGlobs.textContent = group.membersAndGlobs
     nested.textContent = group.nested;
-
 
     deleteBtn.addEventListener('click', () => {
       let result = confirm(`Are you sure you want to delete ${group.name}?`)
