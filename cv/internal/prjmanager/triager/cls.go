@@ -96,6 +96,10 @@ type triagedCL struct {
 	cqReady bool
 }
 
+func isCQVotePurging(purgingCL *prjpb.PurgingCL) bool {
+	return purgingCL.GetTriggers().GetCqVoteTrigger() != nil || purgingCL.GetAllActiveTriggers()
+}
+
 // triage sets the triagedCL part of clInfo.
 //
 // Expects non-triagedCL part of clInfo to be already set.
@@ -106,78 +110,66 @@ func (info *clInfo) triage(pm pmState) {
 		// Once CV supports API-based triggering, a CL may be both in purged
 		// state and have an incomplete Run at the same time. The presence in a
 		// Run is more important, so treat it as such.
-		info.triageInRun(pm)
-	case info.purgingCL != nil:
-		info.triageInPurge(pm)
-	default:
-		info.triageNew(pm)
+		info.triageInCQVoteRun(pm)
+	case isCQVotePurging(info.purgingCL):
+		info.triageInCQVotePurge(pm)
+	case info.pcl.GetTriggers().GetCqVoteTrigger() != nil:
+		info.triageCQVoteNew(pm)
 	}
 }
 
-func (info *clInfo) triageInRun(pm pmState) {
+// triageInCQVoteRun checks the pcl status, if ok, checks deps, then sets cqReady
+func (info *clInfo) triageInCQVoteRun(pm pmState) {
+	if info.pclStatusTriageReady() && info.pcl.GetTriggers().GetCqVoteTrigger() != nil {
+		pcl := info.pcl
+		cgIndex := pcl.GetConfigGroupIndexes()[0]
+		info.deps = triageDeps(pcl, cgIndex, pm)
+		// A purging CL must not be "ready" to avoid creating new Runs with them.
+		if info.deps.OK() && !isCQVotePurging(info.purgingCL) {
+			info.cqReady = true
+		}
+	}
+}
+
+func (info *clInfo) pclStatusTriageReady() bool {
 	pcl := info.pcl
 	switch s := pcl.GetStatus(); {
 	case (false || // false is a noop for ease of reading
 		s == prjpb.PCL_DELETED ||
 		s == prjpb.PCL_UNWATCHED ||
 		s == prjpb.PCL_UNKNOWN ||
-		pcl.GetSubmitted() ||
-		pcl.GetTriggers() == nil):
+		pcl.GetSubmitted()):
 		// This is expected while Run is being finalized iff PM sees updates to a
 		// CL before OnRunFinished event.
-		return
+		return false
 	case len(pcl.GetConfigGroupIndexes()) != 1:
 		// This is expected if project config has changed, but Run's reaction to it
 		// via OnRunFinished event hasn't yet reached PM.
-		return
+		return false
 	case s != prjpb.PCL_OK:
 		panic(fmt.Errorf("PCL has unrecognized status %s", s))
 	}
-
-	cgIndex := pcl.GetConfigGroupIndexes()[0]
-	info.deps = triageDeps(pcl, cgIndex, pm)
-	// A purging CL must not be "ready" to avoid creating new Runs with them.
-	if info.deps.OK() && info.purgingCL == nil {
-		info.cqReady = true
-	}
+	return true
 }
 
-func (info *clInfo) triageInPurge(pm pmState) {
+func (info *clInfo) triageInCQVotePurge(pm pmState) {
 	// The PM hasn't noticed yet the completion of the async purge.
 	// The result of purging is modified CL, which may be observed by PM earlier
 	// than completion of purge.
 	//
 	// Thus, consider these CLs in potential Run Creation, but don't mark them
 	// ready in order to avoid creating new Runs.
-	pcl := info.pcl
-	switch s := pcl.GetStatus(); s {
-	case prjpb.PCL_DELETED, prjpb.PCL_UNWATCHED, prjpb.PCL_UNKNOWN:
-		// Likely purging effect is already visible.
-		return
-	case prjpb.PCL_OK:
-		// OK.
-	default:
-		panic(fmt.Errorf("PCL has unrecognized status %s", s))
-	}
-
-	switch {
-	case pcl.GetSubmitted():
-		// Someone already submitted CL while purging was ongoing.
-		return
-	case pcl.GetTriggers() == nil:
-		// Likely purging effect is already visible.
-		return
-	}
-
-	cgIndexes := pcl.GetConfigGroupIndexes()
-	switch len(cgIndexes) {
-	case 0:
-		panic(fmt.Errorf("PCL %d without ConfigGroup index not possible for CL not referenced by any Runs (partitioning bug?)", pcl.GetClid()))
-	case 1:
-		info.deps = triageDeps(pcl, cgIndexes[0], pm)
-		// info.deps.OK() may be true, for example if user has already corrected the
-		// mistake that previously resulted in purging op. However, don't mark CL
-		// ready until purging op completes or expires.
+	if info.pclStatusTriageReady() && info.pcl.Triggers.GetCqVoteTrigger() != nil {
+		cgIndexes := info.pcl.GetConfigGroupIndexes()
+		switch len(cgIndexes) {
+		case 0:
+			panic(fmt.Errorf("PCL %d without ConfigGroup index not possible for CL not referenced by any Runs (partitioning bug?)", info.pcl.GetClid()))
+		case 1:
+			info.deps = triageDeps(info.pcl, cgIndexes[0], pm)
+			// info.deps.OK() may be true, for example if user has already corrected the
+			// mistake that previously resulted in purging op. However, don't mark CL
+			// ready until purging op completes or expires.
+		}
 	}
 }
 
@@ -215,7 +207,7 @@ func (info *clInfo) addPurgeReason(t *run.Trigger, clError *changelist.CLError) 
 	}
 }
 
-func (info *clInfo) triageNew(pm pmState) {
+func (info *clInfo) triageCQVoteNew(pm pmState) {
 	pcl := info.pcl
 	clid := pcl.GetClid()
 	assumption := "not possible for CL not referenced by any Runs (partitioning bug?)"
@@ -231,7 +223,7 @@ func (info *clInfo) triageNew(pm pmState) {
 	switch {
 	case pcl.GetSubmitted():
 		panic(fmt.Errorf("PCL %d submitted %s", clid, assumption))
-	case pcl.GetTriggers() == nil:
+	case pcl.GetTriggers().GetCqVoteTrigger() == nil:
 		panic(fmt.Errorf("PCL %d not triggered %s", clid, assumption))
 	case len(pcl.GetPurgeReasons()) > 0:
 		info.purgeReasons = pcl.GetPurgeReasons()
