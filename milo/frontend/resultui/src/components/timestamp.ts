@@ -71,27 +71,30 @@ export class TimestampElement extends MobxLitElement {
     `;
   }
 
-  onmouseover = (e: MouseEvent) => {
-    const tooltip = document.createElement('div');
-    render(this.renderTooltip(), tooltip);
-
-    window.dispatchEvent(
-      new CustomEvent<ShowTooltipEventDetail>('show-tooltip', {
-        detail: {
-          tooltip,
-          targetRect: (e.target as HTMLElement).getBoundingClientRect(),
-          gapSize: 2,
-        },
-      })
-    );
-  };
-
-  onmouseout = () => {
-    window.dispatchEvent(new CustomEvent<HideTooltipEventDetail>('hide-tooltip', { detail: { delay: 50 } }));
-  };
-
   protected render() {
-    return this.datetime.toFormat(this.format);
+    return html`
+      <span
+        @mouseover=${(e: MouseEvent) => {
+          const tooltip = document.createElement('div');
+          render(this.renderTooltip(), tooltip);
+
+          window.dispatchEvent(
+            new CustomEvent<ShowTooltipEventDetail>('show-tooltip', {
+              detail: {
+                tooltip,
+                targetRect: (e.target as HTMLElement).getBoundingClientRect(),
+                gapSize: 2,
+              },
+            })
+          );
+        }}
+        @mouseout=${() => {
+          window.dispatchEvent(new CustomEvent<HideTooltipEventDetail>('hide-tooltip', { detail: { delay: 50 } }));
+        }}
+      >
+        ${this.datetime.toFormat(this.format)}
+      </span>
+    `;
   }
 
   static styles = css`

@@ -30,33 +30,37 @@ export type DragEvent = CustomEvent<DragEventDetails>;
  */
 @customElement('milo-drag-tracker')
 export class DragTrackerElement extends LitElement {
-  onmousedown = (startEvent: MouseEvent) => {
-    const x = startEvent.pageX;
-    const y = startEvent.pageY;
+  constructor() {
+    super();
 
-    const dispatchEvent = (e: MouseEvent, type: string) => {
-      const dx = e.pageX - x;
-      const dy = e.pageY - y;
-      this.dispatchEvent(new CustomEvent<DragEventDetails>(type, { detail: { dx, dy } }));
-    };
+    this.addEventListener('mousedown', (startEvent: MouseEvent) => {
+      const x = startEvent.pageX;
+      const y = startEvent.pageY;
 
-    const onMouseMove = (dragEvent: MouseEvent) => {
-      dragEvent.preventDefault();
-      dispatchEvent(dragEvent, 'drag');
-    };
-    document.addEventListener('mousemove', onMouseMove);
+      const dispatchEvent = (e: MouseEvent, type: string) => {
+        const dx = e.pageX - x;
+        const dy = e.pageY - y;
+        this.dispatchEvent(new CustomEvent<DragEventDetails>(type, { detail: { dx, dy } }));
+      };
 
-    document.addEventListener(
-      'mouseup',
-      (endEvent: MouseEvent) => {
-        dispatchEvent(endEvent, 'dragend');
-        document.removeEventListener('mousemove', onMouseMove);
-      },
-      { once: true }
-    );
+      const onMouseMove = (dragEvent: MouseEvent) => {
+        dragEvent.preventDefault();
+        dispatchEvent(dragEvent, 'drag');
+      };
+      document.addEventListener('mousemove', onMouseMove);
 
-    dispatchEvent(startEvent, 'dragstart');
-  };
+      document.addEventListener(
+        'mouseup',
+        (endEvent: MouseEvent) => {
+          dispatchEvent(endEvent, 'dragend');
+          document.removeEventListener('mousemove', onMouseMove);
+        },
+        { once: true }
+      );
+
+      dispatchEvent(startEvent, 'dragstart');
+    });
+  }
 
   protected render() {
     return html``;

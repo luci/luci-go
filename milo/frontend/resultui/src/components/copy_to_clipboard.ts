@@ -28,18 +28,17 @@ export class CopyToClipboard extends MobxLitElement {
   // when it's too costly to generate or can change frequently.
   textToCopy: string | (() => string) = '';
 
-  onclick = () => {
-    if (this.copied) {
-      return;
-    }
-    copy(typeof this.textToCopy === 'function' ? this.textToCopy() : this.textToCopy);
-    this.copied = true;
-    setTimeout(() => (this.copied = false), 1000);
-  };
-
   constructor() {
     super();
     makeObservable(this);
+    this.addEventListener('click', () => {
+      if (this.copied) {
+        return;
+      }
+      copy(typeof this.textToCopy === 'function' ? this.textToCopy() : this.textToCopy);
+      this.copied = true;
+      setTimeout(() => (this.copied = false), 1000);
+    });
   }
 
   protected render() {

@@ -86,12 +86,11 @@ export class TooltipElement extends MobxLitElement {
     this.gapSize = undefined;
   };
 
-  onmouseover = () => window.clearTimeout(this.hideTooltipTimeout);
-  onmouseout = this.hideTooltip;
-
   constructor() {
     super();
     makeObservable(this);
+    this.addEventListener('mouseover', () => window.clearTimeout(this.hideTooltipTimeout));
+    this.addEventListener('mouseout', this.hideTooltip);
   }
 
   connectedCallback() {
