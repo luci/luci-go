@@ -1,6 +1,7 @@
 # Example ReactJS app
 
 ## Introduction
+
 This is an example ReactJS app that you can copy/paste in your project.
 It uses multiple state-management solutions, you can opt out of any of them.
 It also has all the configurations in place for you to start developing your app without the need of any wiring.
@@ -19,11 +20,23 @@ The gist of those recommendations are:
 9. Eslint for linting with a small number of opinionated linting configurations (can be found in `eslintrc.js` in the rules section).
 
 ## Adding your apps meta data
+
 Before running and building the app, you need to fill in some data about it:
 
 1. In `package.json` replace `app_name` in `name` with your apps name.
 2. Replace `{USER}` with the username of the app's author.
 3. In `cypress.json` replace `{APP_BASE_URL}` with your app's base URL.
+
+## Deleting framework folders you don't need
+
+Delete the items corresponding the the framework you won't use.
+
+1. **Redux**:
+   1. `store` folder.
+   2. `react-redux` and `@redux/toolkit` from `package.json`.
+2. **React Query**:
+   1. `example_react_query` folder.
+   2. `react-query` from `package.json`.
 
 ## Building and running the project
 
