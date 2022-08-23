@@ -445,7 +445,7 @@ export class OverviewTabElement extends MobxLitElement {
     const columnWidths = '24px ' + this.invocationState.columnWidths.map(() => '0').join(' ') + ' 1fr';
 
     return html`
-      <h3>Failed Tests (<a href=${testsTabUrl}>View All Test</a>)</h3>
+      <h3>Failed Tests (<a href=${testsTabUrl}>View All Tests</a>)</h3>
       <div id="failed-tests-section-body">
         ${testLoader?.firstPageLoaded
           ? html`
