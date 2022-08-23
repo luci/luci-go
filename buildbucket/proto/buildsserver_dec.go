@@ -91,6 +91,23 @@ func (s *DecoratedBuilds) ScheduleBuild(ctx context.Context, req *ScheduleBuildR
 	return
 }
 
+func (s *DecoratedBuilds) UpdateBuildTask(ctx context.Context, req *UpdateBuildTaskRequest) (rsp *Task, err error) {
+	if s.Prelude != nil {
+		var newCtx context.Context
+		newCtx, err = s.Prelude(ctx, "UpdateBuildTask", req)
+		if err == nil {
+			ctx = newCtx
+		}
+	}
+	if err == nil {
+		rsp, err = s.Service.UpdateBuildTask(ctx, req)
+	}
+	if s.Postlude != nil {
+		err = s.Postlude(ctx, "UpdateBuildTask", rsp, err)
+	}
+	return
+}
+
 func (s *DecoratedBuilds) CancelBuild(ctx context.Context, req *CancelBuildRequest) (rsp *Build, err error) {
 	if s.Prelude != nil {
 		var newCtx context.Context

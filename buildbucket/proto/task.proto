@@ -16,19 +16,44 @@ syntax = "proto3";
 
 package buildbucket.v2;
 
+import "google/protobuf/struct.proto";
+import "go.chromium.org/luci/buildbucket/proto/common.proto";
+
+
+
 option go_package = "go.chromium.org/luci/buildbucket/proto;buildbucketpb";
 
 // A backend task.
 message Task {
-  // A unique identifier for tasks.
-  message ID {
-    // Target backend. e.g. "swarming://chromium-swarm".
-    string target = 1;
+  TaskID id = 1;
 
-    // An ID unique to the target used to identify this task. e.g. Swarming task
-    // ID.
-    string id = 2;
-  }
+  // (optional) Human-clickable link to the status page for this task.
+  string link = 2;
 
-  ID id = 1;
+  // The backend's status for handling this task.
+  Status status = 3;
+
+  // The 'status_details' around handling this task.
+  StatusDetails status_details = 4;
+
+  // Human-readable commentary around the handling of this task.
+  string summary_html = 5;
+
+  // Additional backend-specific details about the task.
+  //
+  // This could be used to indicate things like named-cache status, task
+  // startup/end time, etc.
+  //
+  // This is limited to 10KB (binary PB + gzip(5))
+  google.protobuf.Struct details = 6;
+}
+
+// A unique identifier for tasks.
+message TaskID {
+  // Target backend. e.g. "swarming://chromium-swarm".
+  string target = 1;
+
+  // An ID unique to the target used to identify this task. e.g. Swarming task
+  // ID.
+  string id = 2;
 }

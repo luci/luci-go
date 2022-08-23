@@ -8,6 +8,7 @@ package buildbucket.v2;
 
 option go_package = "go.chromium.org/luci/buildbucket/proto;buildbucketpb";
 
+import "google/api/field_behavior.proto";
 import "google/protobuf/duration.proto";
 import "google/protobuf/field_mask.proto";
 import "google/protobuf/struct.proto";
@@ -16,6 +17,7 @@ import "go.chromium.org/luci/buildbucket/proto/build.proto";
 import "go.chromium.org/luci/buildbucket/proto/builder_common.proto";
 import "go.chromium.org/luci/buildbucket/proto/common.proto";
 import "go.chromium.org/luci/buildbucket/proto/notification.proto";
+import "go.chromium.org/luci/buildbucket/proto/task.proto";
 import "go.chromium.org/luci/common/proto/structmask/structmask.proto";
 
 // Manages builds.
@@ -93,6 +95,9 @@ service Builds {
   //
   // This RPC is exclusively for generating led builds.
   rpc SynthesizeBuild(SynthesizeBuildRequest) returns (Build) {};
+
+  // Updates a build task
+  rpc UpdateBuildTask(UpdateBuildTaskRequest) returns (Task) {};
 }
 
 // A request message for GetBuild rpc.
@@ -642,4 +647,12 @@ message BuildRange {
   int64 start_build_id = 1;
   // Inclusive upper (more recent build) boundary. Optional.
   int64 end_build_id = 2;
+}
+
+message UpdateBuildTaskRequest {
+  // A build id.
+  string build_id = 1 [(google.api.field_behavior) = REQUIRED];
+
+  // Task
+  Task task = 2 [(google.api.field_behavior) = REQUIRED];
 }
