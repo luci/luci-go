@@ -14,12 +14,11 @@
 
 import { groupBy } from 'lodash-es';
 import { reaction } from 'mobx';
-import { addDisposer, getEnv, getParentOfType, Instance, SnapshotIn, SnapshotOut, types } from 'mobx-state-tree';
+import { addDisposer, types } from 'mobx-state-tree';
 
 import { PageLoader } from '../libs/page_loader';
 import { BuilderID, BuildersService } from '../services/buildbucket';
 import { TestHistoryService } from '../services/weetbix';
-import { AppState } from './app_state';
 
 export const enum SearchTarget {
   Builders,
@@ -28,8 +27,8 @@ export const enum SearchTarget {
 
 export const SearchPage = types
   .model('SearchPage', {
-    testHistoryService: types.frozen<TestHistoryService | null>(null),
-    buildersService: types.frozen<BuildersService | null>(null),
+    testHistoryService: types.maybe(types.frozen<TestHistoryService>()),
+    buildersService: types.maybe(types.frozen<BuildersService>()),
 
     searchTarget: types.frozen<SearchTarget>(SearchTarget.Builders),
     searchQuery: '',
@@ -84,8 +83,8 @@ export const SearchPage = types
   }))
   .actions((self) => ({
     setDependencies(buildersService: BuildersService | null, testHistoryService: TestHistoryService | null) {
-      self.buildersService = buildersService;
-      self.testHistoryService = testHistoryService;
+      self.buildersService = buildersService ?? undefined;
+      self.testHistoryService = testHistoryService ?? undefined;
     },
     setSearchTarget(newSearchTarget: SearchTarget) {
       self.searchTarget = newSearchTarget;
@@ -127,35 +126,4 @@ export const SearchPage = types
         )
       );
     },
-    afterAttach() {
-      addDisposer(
-        self,
-        reaction(
-          () => {
-            const appState: AppState = getParentOfType(self, Store).appState;
-            return [appState.buildersService, appState.testHistoryService] as const;
-          },
-          (deps) => this.setDependencies(...deps),
-          { fireImmediately: true }
-        )
-      );
-    },
   }));
-
-export interface StoreEnv {
-  readonly appState: AppState;
-}
-
-export const Store = types
-  .model({
-    searchPage: SearchPage,
-  })
-  .views((self) => ({
-    get appState() {
-      return getEnv<StoreEnv>(self).appState as AppState;
-    },
-  }));
-
-export type StoreInstance = Instance<typeof Store>;
-export type StoreSnapshotIn = SnapshotIn<typeof Store>;
-export type StoreSnapshotOut = SnapshotOut<typeof Store>;

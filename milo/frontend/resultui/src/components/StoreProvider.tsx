@@ -13,12 +13,11 @@
 // limitations under the License.
 
 import { applySnapshot } from 'mobx-state-tree';
-import { createContext, ReactNode, useContext } from 'react';
+import { createContext, ReactNode, useContext, useEffect, useRef } from 'react';
 
 import { AppState } from '../context/app_state';
-import { Store, StoreEnv, StoreInstance, StoreSnapshotIn } from '../context/store';
+import { Store, StoreInstance, StoreSnapshotIn } from '../store';
 
-let clientStore: StoreInstance;
 export const StoreContext = createContext<StoreInstance | null>(null);
 
 export function useStore() {
@@ -32,23 +31,31 @@ export function useStore() {
 
 export interface StoreProviderProps {
   appState: AppState;
-  children: ReactNode;
   snapshot?: StoreSnapshotIn;
+  children: ReactNode;
 }
 
-export function StoreProvider({ appState, children, snapshot }: StoreProviderProps) {
-  const store = initializeStore({ appState }, snapshot);
-  return <StoreContext.Provider value={store}>{children}</StoreContext.Provider>;
-}
-
-export const DEFAULT_SNAPSHOT: StoreSnapshotIn = Object.freeze({ searchPage: {} });
-
-export function initializeStore(storeEnv: StoreEnv, snapshot = DEFAULT_SNAPSHOT) {
-  if (!clientStore) {
-    clientStore = Store.create(snapshot, storeEnv);
-    return clientStore;
+export function StoreProvider({ appState, snapshot, children }: StoreProviderProps) {
+  const store = useRef<StoreInstance | null>(null);
+  if (!store.current) {
+    store.current = Store.create(snapshot);
+    store.current.setAppState(appState);
   }
 
-  applySnapshot(clientStore, snapshot);
-  return clientStore;
+  // Applying a snapshot can cause components to update if its already being
+  // observed. Therefore we need to wrap `applySnapshot` in `useEffect`.
+  useEffect(() => {
+    // Add this check to help TS infer the type. This should never happen
+    // because we've initialized the store when first creating the component.
+    if (!store.current) {
+      throw new Error('unreachable');
+    }
+
+    if (snapshot) {
+      applySnapshot(store.current, snapshot);
+    }
+    store.current?.setAppState(appState);
+  }, [snapshot, appState]);
+
+  return <StoreContext.Provider value={store.current}>{children}</StoreContext.Provider>;
 }

@@ -23,7 +23,7 @@ import { deferred } from '../libs/utils';
 import { BuildersService, ListBuildersRequest } from '../services/buildbucket';
 import { ListBuildersResponse } from '../services/milo_internal';
 import { QueryTestsRequest, QueryTestsResponse, TestHistoryService } from '../services/weetbix';
-import { SearchPage, SearchTarget } from './store';
+import { SearchPage, SearchTarget } from './search_page';
 
 const listBuilderResponses: { [pageToken: string]: ListBuildersResponse } = {
   page1: {
