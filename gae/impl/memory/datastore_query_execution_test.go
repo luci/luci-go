@@ -265,24 +265,11 @@ var queryExecutionTests = []qExTest{
 				{q: nq("").Gt("__key__", key("Kind", 2)),
 					// count counts from the index with KeysOnly and so counts the deleted
 					// entity Unique/1.
-					count: 8,
+					count: 4,
 					get: []ds.PropertyMap{
-						// TODO(riannucci): determine if the real datastore shows metadata
-						// during kindless queries. The documentation seems to imply so, but
-						// I'd like to be sure.
-						pmap("$key", key("Kind", 2, "__entity_group__", 1), Next,
-							"__version__", 1),
 						stage1Data[2],
 						stage1Data[4],
-						// this is 5 because the value is retrieved from HEAD and not from
-						// the index snapshot!
-						pmap("$key", key("Kind", 3, "__entity_group__", 1), Next,
-							"__version__", 5),
 						stage1Data[3],
-						pmap("$key", key("Kind", 6, "__entity_group__", 1), Next,
-							"__version__", 1),
-						pmap("$key", key("Unique", 1, "__entity_group__", 1), Next,
-							"__version__", 2),
 					}},
 
 				{q: (nq("Kind").
@@ -387,23 +374,8 @@ var queryExecutionTests = []qExTest{
 
 			extraFns: []func(context.Context){
 				func(c context.Context) {
-					curs := ds.Cursor(nil)
-
 					q := nq("").Gt("__key__", key("Kind", 2))
-
-					err := ds.Run(c, q, func(pm ds.PropertyMap, gc ds.CursorCB) error {
-						So(pm, ShouldResemble, pmap(
-							"$key", key("Kind", 2, "__entity_group__", 1), Next,
-							"__version__", 1))
-
-						err := error(nil)
-						curs, err = gc()
-						So(err, ShouldBeNil)
-						return ds.Stop
-					})
-					So(err, shouldBeSuccessful)
-
-					err = ds.Run(c, q.Start(curs), func(pm ds.PropertyMap) error {
+					err := ds.Run(c, q, func(pm ds.PropertyMap) error {
 						So(pm, ShouldResemble, stage1Data[2])
 						return ds.Stop
 					})
@@ -541,6 +513,30 @@ var queryExecutionTests = []qExTest{
 				{
 					q:   nq("Other").Eq("A", "value").Order("B"),
 					get: []ds.PropertyMap{},
+				},
+			},
+		},
+	}},
+
+	{"regression: don't expose __entity_group__ entities in kindless queries", []qExStage{
+		{
+			putEnts: []ds.PropertyMap{
+				pmap(
+					"$key", key("Kind", 1), Next,
+					"A", "value"),
+			},
+		},
+		{
+			expect: []qExpect{
+				{
+					q: nq(""),
+					// prior to the bug fix, this would have also shown the
+					// __entity_group__ entity.
+					get: []ds.PropertyMap{
+						pmap(
+							"$key", key("Kind", 1), Next,
+							"A", "value"),
+					},
 				},
 			},
 		},

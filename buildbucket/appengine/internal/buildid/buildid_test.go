@@ -66,7 +66,7 @@ func TestNewBuildIDs(t *testing.T) {
 			for i := 0; i < 2^16; i++ {
 				ids := NewBuildIDs(ctx, t, i)
 				So(ids, ShouldHaveLength, i)
-				prev := buildIDMax
+				prev := BuildIDMax
 				for _, id := range ids {
 					// Ensure strictly decreasing.
 					So(id, ShouldBeLessThan, prev)

@@ -54,6 +54,10 @@ func TestDeleteOldBuilds(t *testing.T) {
 		setID := func(b *model.Build, t time.Time) {
 			b.ID = buildid.NewBuildIDs(ctx, t, 1)[0]
 			So(datastore.Put(ctx, b), ShouldBeNil)
+			So(datastore.Put(ctx, &model.BuildSteps{
+				ID:    1,
+				Build: datastore.KeyForObj(ctx, b),
+			}), ShouldBeNil)
 		}
 
 		Convey("keeps builds", func() {
@@ -61,11 +65,16 @@ func TestDeleteOldBuilds(t *testing.T) {
 				setID(b, now.Add(-model.BuildStorageDuration))
 				So(DeleteOldBuilds(ctx), ShouldBeNil)
 				So(datastore.Get(ctx, b), ShouldBeNil)
+				count, err := datastore.Count(ctx, datastore.NewQuery(""))
+				So(err, ShouldBeNil)
+				So(count, ShouldResemble, int64(2))
 			})
 			Convey("younger than BuildStorageDuration", func() {
 				setID(b, now.Add(-model.BuildStorageDuration+time.Minute))
 				So(DeleteOldBuilds(ctx), ShouldBeNil)
-				So(datastore.Get(ctx, b), ShouldBeNil)
+				count, err := datastore.Count(ctx, datastore.NewQuery(""))
+				So(err, ShouldBeNil)
+				So(count, ShouldResemble, int64(2))
 			})
 		})
 
@@ -73,6 +82,9 @@ func TestDeleteOldBuilds(t *testing.T) {
 			setID(b, now.Add(-model.BuildStorageDuration-time.Minute))
 			So(DeleteOldBuilds(ctx), ShouldBeNil)
 			So(datastore.Get(ctx, b), ShouldEqual, datastore.ErrNoSuchEntity)
+			count, err := datastore.Count(ctx, datastore.NewQuery(""))
+			So(err, ShouldBeNil)
+			So(count, ShouldResemble, int64(0))
 		})
 
 		Convey("removes many builds", func() {
@@ -83,6 +95,9 @@ func TestDeleteOldBuilds(t *testing.T) {
 				setID(&bs[i], old)
 			}
 			So(DeleteOldBuilds(ctx), ShouldBeNil)
+			count, err := datastore.Count(ctx, datastore.NewQuery(""))
+			So(err, ShouldBeNil)
+			So(count, ShouldResemble, int64(0))
 			So(datastore.Get(ctx, bs), ShouldErrLike,
 				"datastore: no such entity (and 233 other errors)")
 		})

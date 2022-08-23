@@ -163,7 +163,7 @@ func TestDatastoreSingleReadWriter(t *testing.T) {
 					So(ds.Run(c, ds.NewQuery(""), func(_ *ds.Key) {
 						count++
 					}), ShouldBeNil)
-					So(count, ShouldEqual, 3)
+					So(count, ShouldEqual, 2)
 
 					So(testGetMeta(c, k), ShouldEqual, 22)
 

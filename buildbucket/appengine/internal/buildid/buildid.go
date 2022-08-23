@@ -49,9 +49,9 @@ import (
 const (
 	timeResolution = time.Millisecond
 
-	// buildIDMax is the maximum theoretical build ID.
+	// BuildIDMax is the maximum theoretical build ID.
 	// Based on time = beginningOfTheWorld, and max values for random and version bits.
-	buildIDMax = int64(0x7FFFFFFFFFFFFFFF)
+	BuildIDMax = int64(0x7FFFFFFFFFFFFFFF)
 
 	// buildIDTimeSuffixLen is the number of bits following the time in a build ID.
 	buildIDTimeSuffixLen = 20

@@ -37,7 +37,7 @@ func buildKeyByAge(ctx context.Context, age time.Duration) *datastore.Key {
 		now.Add(-age), /* low time */
 		now,           /* high time */
 	)
-	return datastore.KeyForObj(ctx, &model.Build{ID: idHigh})
+	return datastore.MakeKey(ctx, model.BuildKind, idHigh)
 }
 
 func deleteBuilds(ctx context.Context, keys []*datastore.Key) error {
@@ -63,13 +63,15 @@ func deleteBuilds(ctx context.Context, keys []*datastore.Key) error {
 	return err
 }
 
-// DeleteOldBuilds deletes builds that were created longer than
-// model.BuildStorageDuration ago.
+// DeleteOldBuilds deletes builds and other descendants that were created longer
+// than model.BuildStorageDuration ago.
 func DeleteOldBuilds(ctx context.Context) error {
 	const batchSize = 128
 	const nWorkers = 4
-	q := datastore.NewQuery(model.BuildKind).
+	// kindless query for Build and all of its descendants.
+	q := datastore.NewQuery("").
 		Gt("__key__", buildKeyByAge(ctx, model.BuildStorageDuration)).
+		Lt("__key__", datastore.MakeKey(ctx, model.BuildKind, buildid.BuildIDMax)).
 		KeysOnly(true)
 
 	return parallel.WorkPool(nWorkers, func(workC chan<- func() error) {

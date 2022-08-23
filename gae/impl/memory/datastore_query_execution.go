@@ -286,6 +286,21 @@ func executeQuery(fq *ds.FinalizedQuery, kc ds.KeyContext, isTxn bool, idx, head
 	}
 
 	return multiIterate(idxs, func(suffix []byte) error {
+		rawData, decodedProps := parseSuffix(kc.AppID, kc.Namespace, rq.suffixFormat, suffix, -1)
+
+		keyProp := decodedProps[len(decodedProps)-1]
+		if keyProp.Type() != ds.PTKey {
+			impossible(fmt.Errorf("decoded index row doesn't end with a Key: %#v", keyProp))
+		}
+
+		key := keyProp.Value().(*ds.Key)
+		if key.LastTok().Kind == "__entity_group__" {
+			// These are internal entities and so shouldn't count to user-observable
+			// offset/limit. Real datastore doesn't include these in query output
+			// (they are 'synthetic' entities), but we store them in the main table.
+			return nil
+		}
+
 		if offset > 0 {
 			offset--
 			return nil
@@ -297,15 +312,6 @@ func executeQuery(fq *ds.FinalizedQuery, kc ds.KeyContext, isTxn bool, idx, head
 			limit--
 		}
 
-		rawData, decodedProps := parseSuffix(kc.AppID, kc.Namespace, rq.suffixFormat, suffix, -1)
-
-		keyProp := decodedProps[len(decodedProps)-1]
-		if keyProp.Type() != ds.PTKey {
-			impossible(fmt.Errorf("decoded index row doesn't end with a Key: %#v", keyProp))
-		}
-
-		return strategy.handle(
-			rawData, decodedProps, keyProp.Value().(*ds.Key),
-			getCursorFn(suffix))
+		return strategy.handle(rawData, decodedProps, key, getCursorFn(suffix))
 	})
 }
