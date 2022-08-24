@@ -107,7 +107,7 @@ func TestAgent(t *testing.T) {
 			tracker, ok := merger.states["url://u/build.proto"]
 			So(ok, ShouldBeTrue)
 
-			So(tracker.getLatest().build, ShouldResembleProto, &bbpb.Build{
+			So(tracker.getLatestBuild(), ShouldResembleProto, &bbpb.Build{
 				EndTime:         now,
 				UpdateTime:      now,
 				Status:          bbpb.Status_INFRA_FAILURE,
@@ -125,7 +125,7 @@ func TestAgent(t *testing.T) {
 			tracker, ok := merger.states["url://u/build.proto"]
 			So(ok, ShouldBeTrue)
 
-			So(tracker.getLatest().build, ShouldResembleProto, &bbpb.Build{
+			So(tracker.getLatestBuild(), ShouldResembleProto, &bbpb.Build{
 				EndTime:         now,
 				UpdateTime:      now,
 				Status:          bbpb.Status_INFRA_FAILURE,
@@ -143,7 +143,7 @@ func TestAgent(t *testing.T) {
 			tracker, ok := merger.states["url://u/build.proto"]
 			So(ok, ShouldBeTrue)
 
-			So(tracker.getLatest().build, ShouldResembleProto, &bbpb.Build{
+			So(tracker.getLatestBuild(), ShouldResembleProto, &bbpb.Build{
 				EndTime:         now,
 				UpdateTime:      now,
 				Status:          bbpb.Status_INFRA_FAILURE,

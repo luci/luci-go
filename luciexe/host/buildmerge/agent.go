@@ -262,7 +262,7 @@ func (a *Agent) Close() {
 		t.Close()
 	}
 	for _, t := range states {
-		t.GetFinal()
+		t.Drain()
 	}
 
 	// tells our merge Channel to process all the current (now-final) states one

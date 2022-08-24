@@ -94,7 +94,8 @@ func TestBuildState(t *testing.T) {
 			bs := newBuildStateTracker(ctx, merger, "ns/", false, errors.New("nope"))
 			wait() // for final build
 			So(bs.workClosed, ShouldBeTrue)
-			assertStateEqual(bs.getLatest(), &buildState{
+			bs.Drain()
+			assertStateEqual(bs.latestState, &buildState{
 				build: &bbpb.Build{
 					SummaryMarkdown: "\n\nError in build protocol: nope",
 					Status:          bbpb.Status_INFRA_FAILURE,
@@ -128,8 +129,8 @@ func TestBuildState(t *testing.T) {
 					},
 				}))
 				// No wait, because this handleNewData was ignored.
-
-				assertStateEqual(bs.GetFinal(), &buildState{
+				bs.Drain()
+				assertStateEqual(bs.latestState, &buildState{
 					build: &bbpb.Build{
 						EndTime:         now,
 						UpdateTime:      now,
@@ -142,7 +143,8 @@ func TestBuildState(t *testing.T) {
 
 				Convey(`can still close, though`, func() {
 					bs.handleNewData(nil)
-					assertStateEqual(bs.GetFinal(), &buildState{
+					bs.Drain()
+					assertStateEqual(bs.latestState, &buildState{
 						closed: true,
 						final:  true,
 						build: &bbpb.Build{
@@ -159,7 +161,8 @@ func TestBuildState(t *testing.T) {
 				Convey(`handleNewData(nil)`, func() {
 					bs.handleNewData(nil)
 					wait()
-					assertStateEqual(bs.GetFinal(), &buildState{
+					bs.Drain()
+					assertStateEqual(bs.latestState, &buildState{
 						closed: true,
 						final:  true,
 						build: &bbpb.Build{
@@ -179,7 +182,7 @@ func TestBuildState(t *testing.T) {
 							build:  &bbpb.Build{SummaryMarkdown: "wat"},
 						}
 						bs.handleNewData(nil)
-						assertStateEqual(bs.GetFinal(), &buildState{
+						assertStateEqual(bs.latestState, &buildState{
 							closed: true,
 							final:  true,
 							build:  &bbpb.Build{SummaryMarkdown: "wat"},
@@ -211,28 +214,26 @@ func TestBuildState(t *testing.T) {
 				}))
 				wait()
 
-				assertStateEqual(bs.getLatest(), &buildState{
-					build: &bbpb.Build{
-						SummaryMarkdown: "some stuff",
-						Steps: []*bbpb.Step{
-							{Name: "Parent"},
-							{Name: "Parent|Child"},
-							{
-								Name: "Parent|Merge",
-								Logs: []*bbpb.Log{},
-								MergeBuild: &bbpb.Step_MergeBuild{
-									FromLogdogStream: "url://ns/Parent/Merge/build.proto",
-								},
+				So(bs.getLatestBuild(), ShouldResembleProto, &bbpb.Build{
+					SummaryMarkdown: "some stuff",
+					Steps: []*bbpb.Step{
+						{Name: "Parent"},
+						{Name: "Parent|Child"},
+						{
+							Name: "Parent|Merge",
+							Logs: []*bbpb.Log{},
+							MergeBuild: &bbpb.Step_MergeBuild{
+								FromLogdogStream: "url://ns/Parent/Merge/build.proto",
 							},
 						},
-						UpdateTime: now,
-						Output: &bbpb.Build_Output{
-							Logs: []*bbpb.Log{{
-								Name:    "stderr",
-								Url:     "url://ns/stderr",
-								ViewUrl: "view://ns/stderr",
-							}},
-						},
+					},
+					UpdateTime: now,
+					Output: &bbpb.Build_Output{
+						Logs: []*bbpb.Log{{
+							Name:    "stderr",
+							Url:     "url://ns/stderr",
+							ViewUrl: "view://ns/stderr",
+						}},
 					},
 				})
 
@@ -244,7 +245,8 @@ func TestBuildState(t *testing.T) {
 					})
 					wait()
 					wait() // for final build
-					assertStateEqual(bs.GetFinal(), &buildState{
+					bs.Drain()
+					assertStateEqual(bs.latestState, &buildState{
 						closed:  true,
 						final:   true,
 						invalid: true,
@@ -281,7 +283,8 @@ func TestBuildState(t *testing.T) {
 				Convey(`handleNewData(nil)`, func() {
 					bs.handleNewData(nil)
 					wait()
-					assertStateEqual(bs.GetFinal(), &buildState{
+					bs.Drain()
+					assertStateEqual(bs.latestState, &buildState{
 						closed: true,
 						final:  true,
 						build: &bbpb.Build{
@@ -324,7 +327,8 @@ func TestBuildState(t *testing.T) {
 				})
 				wait()
 				wait() // for final build
-				assertStateEqual(bs.GetFinal(), &buildState{
+				bs.Drain()
+				assertStateEqual(bs.latestState, &buildState{
 					closed:  true,
 					final:   true,
 					invalid: true,
@@ -338,7 +342,8 @@ func TestBuildState(t *testing.T) {
 
 				Convey(`ignores further updates`, func() {
 					bs.handleNewData(mkDgram(&bbpb.Build{SummaryMarkdown: "hi"}))
-					assertStateEqual(bs.GetFinal(), &buildState{
+					bs.Drain()
+					assertStateEqual(bs.latestState, &buildState{
 						invalid: true,
 						final:   true,
 						closed:  true,
@@ -387,39 +392,37 @@ func TestBuildState(t *testing.T) {
 				}))
 				wait()
 
-				assertStateEqual(bs.getLatest(), &buildState{
-					build: &bbpb.Build{
-						Steps: []*bbpb.Step{
-							{
-								Name: "hi",
-								Logs: []*bbpb.Log{{
-									Name:    "foo",
-									Url:     "url://ns/log/foo",
-									ViewUrl: "view://ns/log/foo",
-								}},
-							},
-							{
-								Name: "heyo",
-								Logs: []*bbpb.Log{{
-									Name:    "bar",
-									Url:     "url://another_ns/log/bar",
-									ViewUrl: "view://another_ns/log/bar",
-								}},
-							},
+				So(bs.getLatestBuild(), ShouldResembleProto, &bbpb.Build{
+					Steps: []*bbpb.Step{
+						{
+							Name: "hi",
+							Logs: []*bbpb.Log{{
+								Name:    "foo",
+								Url:     "url://ns/log/foo",
+								ViewUrl: "view://ns/log/foo",
+							}},
 						},
-						UpdateTime: now,
-						Output: &bbpb.Build_Output{
-							Logs: []*bbpb.Log{
-								{
-									Name:    "stderr",
-									Url:     "url://ns/stderr",
-									ViewUrl: "view://ns/stderr",
-								},
-								{
-									Name:    "another stderr",
-									Url:     "url://another_ns/stderr",
-									ViewUrl: "view://another_ns/stderr",
-								},
+						{
+							Name: "heyo",
+							Logs: []*bbpb.Log{{
+								Name:    "bar",
+								Url:     "url://another_ns/log/bar",
+								ViewUrl: "view://another_ns/log/bar",
+							}},
+						},
+					},
+					UpdateTime: now,
+					Output: &bbpb.Build_Output{
+						Logs: []*bbpb.Log{
+							{
+								Name:    "stderr",
+								Url:     "url://ns/stderr",
+								ViewUrl: "view://ns/stderr",
+							},
+							{
+								Name:    "another stderr",
+								Url:     "url://another_ns/stderr",
+								ViewUrl: "view://another_ns/stderr",
 							},
 						},
 					},
@@ -441,7 +444,8 @@ func TestBuildState(t *testing.T) {
 					}))
 					wait()
 					wait() // for final build
-					assertStateEqual(bs.GetFinal(), &buildState{
+					bs.Drain()
+					assertStateEqual(bs.latestState, &buildState{
 						closed:  true,
 						final:   true,
 						invalid: true,
@@ -480,7 +484,8 @@ func TestBuildState(t *testing.T) {
 					}))
 					wait()
 					wait() // for final build
-					assertStateEqual(bs.GetFinal(), &buildState{
+					bs.Drain()
+					assertStateEqual(bs.latestState, &buildState{
 						closed:  true,
 						final:   true,
 						invalid: true,

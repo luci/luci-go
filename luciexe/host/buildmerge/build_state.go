@@ -295,14 +295,6 @@ func (t *buildStateTracker) parseAndSend(data *buffer.Batch) error {
 	return nil
 }
 
-// getLatest returns the current state of the Build. See `buildState`.
-func (t *buildStateTracker) getLatest() *buildState {
-	t.latestStateMu.Lock()
-	defer t.latestStateMu.Unlock()
-	state := *t.latestState
-	return &state
-}
-
 // getLatestBuild returns the Build in the current state.
 //
 // It returns the internal read-only copy of the build to avoid the read/write race.
@@ -315,20 +307,6 @@ func (t *buildStateTracker) getLatestBuild() *bbpb.Build {
 		t.latestState.buildReadOnly = proto.Clone(t.latestState.build).(*bbpb.Build)
 	}
 	return t.latestState.buildReadOnly
-}
-
-// GetFinal waits for the build state to finalize then returns the final state
-// of the Build.
-//
-// This always returns a non-nil buildState.build to make the calling code
-// simpler.
-//
-// The returned buildState will always have `buildState.final == true`.
-func (t *buildStateTracker) GetFinal() *buildState {
-	if t.work.DrainC != nil {
-		<-t.work.DrainC
-	}
-	return t.getLatest()
 }
 
 // This implements the bundler.StreamChunkCallback callback function.
@@ -376,4 +354,11 @@ func (t *buildStateTracker) Close() {
 	t.workMu.Lock()
 	defer t.workMu.Unlock()
 	t.closeWorkLocked()
+}
+
+// Drain waits for the build state to finalize.
+func (t *buildStateTracker) Drain() {
+	if t.work.DrainC != nil {
+		<-t.work.DrainC
+	}
 }
