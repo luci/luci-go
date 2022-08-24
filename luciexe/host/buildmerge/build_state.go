@@ -25,7 +25,6 @@ import (
 
 	bbpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/errors"
-	"go.chromium.org/luci/common/proto/reflectutil"
 	"go.chromium.org/luci/common/sync/dispatcher"
 	"go.chromium.org/luci/common/sync/dispatcher/buffer"
 	"go.chromium.org/luci/logdog/api/logpb"
@@ -40,6 +39,10 @@ type buildState struct {
 	// This may be `nil` until the first user-supplied build.proto is processed,
 	// or until the buildStateTracker closes.
 	build *bbpb.Build
+
+	// buildReadOnly holds the most recently processed Build state to read.
+	// This message should be  treated as immutable (i.e. proto.Clone before modifying it).
+	buildReadOnly *bbpb.Build
 
 	// closed is set to true when the build state is terminated and will receive
 	// no more user updates (but may still need to be finalized()).
@@ -85,88 +88,107 @@ type buildStateTracker struct {
 	latestState   *buildState
 }
 
-// processDataUnlocked updates `state` with the Build.proto message contained as
-// binary-encoded proto in `data`.
+// updateState updates `state` with the Build.proto message inside the lock.
 //
-// If there's an error parsing `data`, or an error in the decoded message's
-// contents, `state.invalid` and `state.closed` will be set to true, and
-// `state.build` will be updated with the error message.
-func (t *buildStateTracker) processDataUnlocked(state *buildState, data []byte) {
-	var parsedBuild *bbpb.Build
-	err := func() error {
-		if t.zlib {
-			z, err := zlib.NewReader(bytes.NewBuffer(data))
-			if err != nil {
-				return errors.Annotate(err, "constructing decompressor for Build").Err()
-			}
-			data, err = ioutil.ReadAll(z)
-			if err != nil {
-				return errors.Annotate(err, "decompressing Build").Err()
-			}
-		}
+// If there's an error when generating the new build - i.e. when parsing `data`
+// or an error in the decoded message's contents, `state.invalid` and
+// `state.closed` will be set to true, and `state.build` will be updated with
+// the error message.
+func (t *buildStateTracker) updateState(newBuild *bbpb.Build, err error) {
+	t.latestStateMu.Lock()
+	defer t.latestStateMu.Unlock()
+	state := *t.latestState
+	oldBuild := state.build
 
-		build := &bbpb.Build{}
-		if err := proto.Unmarshal(data, build); err != nil {
-			return errors.Annotate(err, "parsing Build").Err()
-		}
-		parsedBuild = build
+	if state.closed {
+		return
+	}
 
-		for _, step := range parsedBuild.Steps {
-			if len(step.Logs) > 0 && step.Logs[0].Name == "$build.proto" {
-				// convert incoming $build.proto logs to MergeBuild messages.
-				// If the step has both, then just discard the $build.proto log.
-				//
-				// TODO(crbug.com/1310155): Remove this conversion after everything
-				// emits MergeBuild messages natively.
-				if step.MergeBuild == nil {
-					step.MergeBuild = &bbpb.Step_MergeBuild{
-						FromLogdogStream: step.Logs[0].Url,
-					}
-				}
-				step.Logs = step.Logs[1:]
-			}
-			for _, log := range step.Logs {
-				var err error
-				log.Url, log.ViewUrl, err = absolutizeURLs(log.Url, log.ViewUrl, t.ldNamespace, t.merger.calculateURLs)
-				if err != nil {
-					step.Status = bbpb.Status_INFRA_FAILURE
-					step.SummaryMarkdown += err.Error()
-					return errors.Annotate(err, "step[%q].logs[%q]", step.Name, log.Name).Err()
-				}
-			}
-			if mb := step.GetMergeBuild(); mb != nil && mb.FromLogdogStream != "" {
-				var err error
-				mb.FromLogdogStream, _, err = absolutizeURLs(mb.FromLogdogStream, "", t.ldNamespace, t.merger.calculateURLs)
-				if err != nil {
-					step.Status = bbpb.Status_INFRA_FAILURE
-					step.SummaryMarkdown += err.Error()
-					return errors.Annotate(err, "step[%q].merge_build.from_logdog_stream", step.Name).Err()
-				}
-			}
-		}
-		for _, log := range parsedBuild.GetOutput().GetLogs() {
-			var err error
-			log.Url, log.ViewUrl, err = absolutizeURLs(log.Url, log.ViewUrl, t.ldNamespace, t.merger.calculateURLs)
-			if err != nil {
-				return errors.Annotate(err, "build.output.logs[%q]", log.Name).Err()
-			}
-		}
-		return nil
-	}()
 	if err != nil {
-		if parsedBuild == nil {
-			if state.build == nil {
-				parsedBuild = &bbpb.Build{}
+		if newBuild == nil {
+			if oldBuild == nil {
+				newBuild = &bbpb.Build{}
 			} else {
-				parsedBuild = reflectutil.ShallowCopy(state.build).(*bbpb.Build)
+				newBuild = oldBuild
 			}
 		}
-		setErrorOnBuild(parsedBuild, err)
+		setErrorOnBuild(newBuild, err)
+		newBuild.UpdateTime = t.merger.clockNow()
 		state.closed = true
 		state.invalid = true
 	}
 
-	state.build = parsedBuild
+	state.build = newBuild
+	// Reset buildReadOnly since we have a new build state now.
+	state.buildReadOnly = nil
+
+	if state.closed {
+		t.Close()
+	}
+
+	t.latestState = &state
+}
+
+// parseBuild parses `data` then returns the parsed Build.
+func (t *buildStateTracker) parseBuild(data []byte) (*bbpb.Build, error) {
+	if t.zlib {
+		z, err := zlib.NewReader(bytes.NewBuffer(data))
+		if err != nil {
+			return nil, errors.Annotate(err, "constructing decompressor for Build").Err()
+		}
+		data, err = ioutil.ReadAll(z)
+		if err != nil {
+			return nil, errors.Annotate(err, "decompressing Build").Err()
+		}
+	}
+
+	parsedBuild := &bbpb.Build{}
+	if err := proto.Unmarshal(data, parsedBuild); err != nil {
+		return nil, errors.Annotate(err, "parsing Build").Err()
+	}
+
+	for _, step := range parsedBuild.Steps {
+		if len(step.Logs) > 0 && step.Logs[0].Name == "$build.proto" {
+			// convert incoming $build.proto logs to MergeBuild messages.
+			// If the step has both, then just discard the $build.proto log.
+			//
+			// TODO(crbug.com/1310155): Remove this conversion after everything
+			// emits MergeBuild messages natively.
+			if step.MergeBuild == nil {
+				step.MergeBuild = &bbpb.Step_MergeBuild{
+					FromLogdogStream: step.Logs[0].Url,
+				}
+			}
+			step.Logs = step.Logs[1:]
+		}
+		for _, log := range step.Logs {
+			var err error
+			log.Url, log.ViewUrl, err = absolutizeURLs(log.Url, log.ViewUrl, t.ldNamespace, t.merger.calculateURLs)
+			if err != nil {
+				step.Status = bbpb.Status_INFRA_FAILURE
+				step.SummaryMarkdown += err.Error()
+				return parsedBuild, errors.Annotate(err, "step[%q].logs[%q]", step.Name, log.Name).Err()
+			}
+		}
+		if mb := step.GetMergeBuild(); mb != nil && mb.FromLogdogStream != "" {
+			var err error
+			mb.FromLogdogStream, _, err = absolutizeURLs(mb.FromLogdogStream, "", t.ldNamespace, t.merger.calculateURLs)
+			if err != nil {
+				step.Status = bbpb.Status_INFRA_FAILURE
+				step.SummaryMarkdown += err.Error()
+				return parsedBuild, errors.Annotate(err, "step[%q].merge_build.from_logdog_stream", step.Name).Err()
+			}
+		}
+	}
+	for _, log := range parsedBuild.GetOutput().GetLogs() {
+		var err error
+		log.Url, log.ViewUrl, err = absolutizeURLs(log.Url, log.ViewUrl, t.ldNamespace, t.merger.calculateURLs)
+		if err != nil {
+			return parsedBuild, errors.Annotate(err, "build.output.logs[%q]", log.Name).Err()
+		}
+	}
+	parsedBuild.UpdateTime = t.merger.clockNow()
+	return parsedBuild, nil
 }
 
 // newBuildStateTracker produces a new buildStateTracker in the given logdog
@@ -229,9 +251,9 @@ func newBuildStateTracker(ctx context.Context, merger *Agent, namespace types.St
 
 // finalized is called exactly once when either:
 //
-//  * newBuildStateTracker is called with err != nil
-//  * buildStateTracker.work is fully shut down (this is installed as
-//    dispatcher.Options.DrainedFn)
+//   - newBuildStateTracker is called with err != nil
+//   - buildStateTracker.work is fully shut down (this is installed as
+//     dispatcher.Options.DrainedFn)
 func (t *buildStateTracker) finalize() {
 	t.latestStateMu.Lock()
 	defer t.latestStateMu.Unlock()
@@ -248,11 +270,9 @@ func (t *buildStateTracker) finalize() {
 			SummaryMarkdown: "Never received any build data.",
 			Status:          bbpb.Status_INFRA_FAILURE,
 		}
-	} else {
-		state.build = reflectutil.ShallowCopy(state.build).(*bbpb.Build)
 	}
 	processFinalBuild(t.merger.clockNow(), state.build)
-
+	state.buildReadOnly = nil
 	t.latestState = &state
 	t.merger.informNewData()
 }
@@ -267,25 +287,10 @@ func (t *buildStateTracker) parseAndSend(data *buffer.Batch) error {
 		return nil
 	}
 
-	oldBuild := state.build
-
+	newBuild, err := t.parseBuild(data.Data[0].Item.([]byte))
 	// may set state.closed on an error
-	t.processDataUnlocked(&state, data.Data[0].Item.([]byte))
+	t.updateState(newBuild, err)
 
-	// if we didn't update state.build, make a shallow copy.
-	if oldBuild == state.build {
-		state.build = reflectutil.ShallowCopy(state.build).(*bbpb.Build)
-	}
-
-	if state.closed {
-		t.Close()
-	} else {
-		state.build.UpdateTime = t.merger.clockNow()
-	}
-
-	t.latestStateMu.Lock()
-	t.latestState = &state
-	t.latestStateMu.Unlock()
 	t.merger.informNewData()
 	return nil
 }
@@ -296,6 +301,20 @@ func (t *buildStateTracker) getLatest() *buildState {
 	defer t.latestStateMu.Unlock()
 	state := *t.latestState
 	return &state
+}
+
+// getLatestBuild returns the Build in the current state.
+//
+// It returns the internal read-only copy of the build to avoid the read/write race.
+func (t *buildStateTracker) getLatestBuild() *bbpb.Build {
+	t.latestStateMu.Lock()
+	defer t.latestStateMu.Unlock()
+
+	// Lazily clone the build to its read-only copy when needed.
+	if t.latestState.buildReadOnly == nil {
+		t.latestState.buildReadOnly = proto.Clone(t.latestState.build).(*bbpb.Build)
+	}
+	return t.latestState.buildReadOnly
 }
 
 // GetFinal waits for the build state to finalize then returns the final state

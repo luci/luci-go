@@ -20,10 +20,10 @@
 // This package is separate from luciexe/host to avoid unnecessary entaglement
 // with butler/logdog; All the logic here is implemented to avoid:
 //
-//   * interacting with the environment
-//   * interacting with butler/logdog (except by implementing callbacks for
+//   - interacting with the environment
+//   - interacting with butler/logdog (except by implementing callbacks for
 //     those, but only acting on simple datastructures/proto messages)
-//   * handling errors in any 'brutal' ways (all errors in this package are
+//   - handling errors in any 'brutal' ways (all errors in this package are
 //     handled by reporting them directly in the data structures that this
 //     package manipulates).
 //
@@ -124,30 +124,30 @@ type Agent struct {
 // New returns a new Agent.
 //
 // Args:
-//   * ctx - used for logging, clock and cancelation. When canceled, the Agent
+//   - ctx - used for logging, clock and cancelation. When canceled, the Agent
 //     will cease sending updates on MergedBuildC, but you must still invoke
 //     Agent.Close() in order to clean up all resources associated with the
 //     Agent.
-//   * userNamespace - The logdog namespace (with a trailing slash) under which
+//   - userNamespace - The logdog namespace (with a trailing slash) under which
 //     we should monitor streams.
-//   * base - The "model" Build message that all generated builds should start
+//   - base - The "model" Build message that all generated builds should start
 //     with. All build proto streams will be merged onto a copy of this message.
 //     Any Output.Log's which have non-absolute URLs will have their Url and
 //     ViewUrl absolutized relative to userNamespace using calculateURLs.
-//   * calculateURLs - A function to calculate Log.Url and Log.ViewUrl values.
+//   - calculateURLs - A function to calculate Log.Url and Log.ViewUrl values.
 //     Should be a pure function.
 //
 // The following fields will be merged into `base` from the user controlled
 // build.proto stream(s):
 //
-//   Steps
-//   SummaryMarkdown
-//   Status
-//   StatusDetails
-//   UpdateTime
-//   Tags
-//   EndTime
-//   Output
+//	Steps
+//	SummaryMarkdown
+//	Status
+//	StatusDetails
+//	UpdateTime
+//	Tags
+//	EndTime
+//	Output
 //
 // The frequency of updates from this Agent is governed by how quickly the
 // caller consumes from Agent.MergedBuildC.
@@ -289,7 +289,7 @@ func (a *Agent) sendMerge(_ *buffer.Batch) error {
 	builds := make(map[string]*bbpb.Build, len(trackers))
 	stepCount := 0
 	for k, v := range trackers {
-		build := v.getLatest().build
+		build := v.getLatestBuild()
 		stepCount += len(build.GetSteps())
 		builds[k] = build
 	}
