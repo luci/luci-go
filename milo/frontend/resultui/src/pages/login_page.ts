@@ -18,9 +18,9 @@ import { css, customElement, html } from 'lit-element';
 import { makeObservable, observable, when } from 'mobx';
 
 import { changeUserState } from '../components/signin';
-import { AppState, consumeAppState } from '../context/app_state';
 import { consumer } from '../libs/context';
 import { ANONYMOUS_IDENTITY } from '../services/milo_internal';
+import { consumeStore, StoreInstance } from '../store';
 import commonStyle from '../styles/common_style.css';
 
 /**
@@ -35,8 +35,8 @@ import commonStyle from '../styles/common_style.css';
 @consumer
 export class LoginPageElement extends MobxLitElement implements BeforeEnterObserver {
   @observable.ref
-  @consumeAppState()
-  appState!: AppState;
+  @consumeStore()
+  store!: StoreInstance;
 
   private redirectUri = '';
 
@@ -53,7 +53,7 @@ export class LoginPageElement extends MobxLitElement implements BeforeEnterObser
   connectedCallback() {
     super.connectedCallback();
     when(
-      () => ![null, ANONYMOUS_IDENTITY].includes(this.appState.userIdentity),
+      () => ![undefined, ANONYMOUS_IDENTITY].includes(this.store.userIdentity),
       () => Router.go(this.redirectUri)
     );
   }

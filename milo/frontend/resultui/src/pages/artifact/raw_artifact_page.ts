@@ -19,11 +19,11 @@ import { fromPromise } from 'mobx-utils';
 import '../../components/dot_spinner';
 import '../../components/status_bar';
 import { MiloBaseElement } from '../../components/milo_base';
-import { AppState, consumeAppState } from '../../context/app_state';
 import { consumer } from '../../libs/context';
 import { reportError, reportRenderError } from '../../libs/error_handler';
 import { unwrapObservable } from '../../libs/unwrap_observable';
 import { ArtifactIdentifier, constructArtifactName } from '../../services/resultdb';
+import { consumeStore, StoreInstance } from '../../store';
 import commonStyle from '../../styles/common_style.css';
 import { consumeArtifactIdent } from './artifact_page_layout';
 
@@ -34,8 +34,8 @@ import { consumeArtifactIdent } from './artifact_page_layout';
 @consumer
 export class RawArtifactPageElement extends MiloBaseElement {
   @observable.ref
-  @consumeAppState()
-  appState!: AppState;
+  @consumeStore()
+  store!: StoreInstance;
 
   @observable.ref
   @consumeArtifactIdent()
@@ -43,10 +43,10 @@ export class RawArtifactPageElement extends MiloBaseElement {
 
   @computed
   private get artifact$() {
-    if (!this.appState.resultDb) {
+    if (!this.store.resultDb) {
       return fromPromise(Promise.race([]));
     }
-    return fromPromise(this.appState.resultDb.getArtifact({ name: constructArtifactName(this.artifactIdent) }));
+    return fromPromise(this.store.resultDb.getArtifact({ name: constructArtifactName(this.artifactIdent) }));
   }
 
   @computed

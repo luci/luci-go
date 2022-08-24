@@ -20,7 +20,6 @@ import { fromPromise } from 'mobx-utils';
 
 import '../../components/dot_spinner';
 import '../../components/status_bar';
-import { AppState, consumeAppState } from '../../context/app_state';
 import { ARTIFACT_LENGTH_LIMIT } from '../../libs/constants';
 import { consumer } from '../../libs/context';
 import { reportRenderError } from '../../libs/error_handler';
@@ -29,6 +28,7 @@ import { unwrapObservable } from '../../libs/unwrap_observable';
 import { urlSetSearchQueryParam } from '../../libs/utils';
 import { getRawArtifactUrl } from '../../routes';
 import { ArtifactIdentifier, constructArtifactName } from '../../services/resultdb';
+import { consumeStore, StoreInstance } from '../../store';
 import commonStyle from '../../styles/common_style.css';
 import { consumeArtifactIdent } from './artifact_page_layout';
 
@@ -39,8 +39,8 @@ import { consumeArtifactIdent } from './artifact_page_layout';
 @consumer
 export class TextDiffArtifactPageElement extends MobxLitElement {
   @observable.ref
-  @consumeAppState()
-  appState!: AppState;
+  @consumeStore()
+  store!: StoreInstance;
 
   @observable.ref
   @consumeArtifactIdent()
@@ -48,10 +48,10 @@ export class TextDiffArtifactPageElement extends MobxLitElement {
 
   @computed
   private get artifact$() {
-    if (!this.appState.resultDb) {
+    if (!this.store.resultDb) {
       return fromPromise(Promise.race([]));
     }
-    return fromPromise(this.appState.resultDb.getArtifact({ name: constructArtifactName(this.artifactIdent) }));
+    return fromPromise(this.store.resultDb.getArtifact({ name: constructArtifactName(this.artifactIdent) }));
   }
   @computed private get artifact() {
     return unwrapObservable(this.artifact$, null);
@@ -59,7 +59,7 @@ export class TextDiffArtifactPageElement extends MobxLitElement {
 
   @computed
   private get content$() {
-    if (!this.appState.resultDb || !this.artifact) {
+    if (!this.store.resultDb || !this.artifact) {
       return fromPromise(Promise.race([]));
     }
     return fromPromise(

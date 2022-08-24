@@ -22,7 +22,6 @@ import { fromPromise } from 'mobx-utils';
 
 import '../../../components/expandable_entry';
 import '../../../components/result_entry';
-import { AppState, consumeAppState } from '../../../context/app_state';
 import { VARIANT_STATUS_CLASS_MAP, VARIANT_STATUS_ICON_MAP, VERDICT_VARIANT_STATUS_MAP } from '../../../libs/constants';
 import { lazyRendering, RenderPlaceHolder } from '../../../libs/observer_element';
 import { sanitizeHTML } from '../../../libs/sanitize_html';
@@ -31,6 +30,7 @@ import { unwrapObservable } from '../../../libs/unwrap_observable';
 import { router } from '../../../routes';
 import { RESULT_LIMIT } from '../../../services/resultdb';
 import { TestVerdictBundle } from '../../../services/weetbix';
+import { consumeStore, StoreInstance } from '../../../store';
 import colorClasses from '../../../styles/color_classes.css';
 import commonStyle from '../../../styles/common_style.css';
 
@@ -44,7 +44,7 @@ const ORDERED_VARIANT_DEF_KEYS = Object.freeze(['bucket', 'builder', 'test_suite
 @customElement('milo-test-history-details-entry')
 @lazyRendering
 export class TestHistoryDetailsEntryElement extends MobxLitElement implements RenderPlaceHolder {
-  @observable.ref @consumeAppState() appState!: AppState;
+  @observable.ref @consumeStore() store!: StoreInstance;
 
   @observable.ref verdictBundle!: TestVerdictBundle;
   @observable.ref columnGetters: Array<(v: TestVerdictBundle) => unknown> = [];
@@ -64,11 +64,11 @@ export class TestHistoryDetailsEntryElement extends MobxLitElement implements Re
 
   @computed
   private get testVariant$() {
-    if (!this.appState.resultDb) {
+    if (!this.store.resultDb) {
       return fromPromise(Promise.race([]));
     }
     const verdict = this.verdictBundle.verdict;
-    const testVariant = this.appState.resultDb
+    const testVariant = this.store.resultDb
       .batchGetTestVariants({
         invocation: 'invocations/' + verdict.invocationId,
         testVariants: [

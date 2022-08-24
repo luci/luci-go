@@ -18,7 +18,6 @@ import { fromPromise, IPromiseBasedObservable } from 'mobx-utils';
 
 import '../../components/dot_spinner';
 import { MiloBaseElement } from '../../components/milo_base';
-import { AppState, consumeAppState } from '../../context/app_state';
 import { getURLPathForBuild, getURLPathForBuilder } from '../../libs/build_utils';
 import { BUILD_STATUS_CLASS_MAP } from '../../libs/constants';
 import { reportRenderError } from '../../libs/error_handler';
@@ -26,12 +25,15 @@ import { lazyRendering } from '../../libs/observer_element';
 import { unwrapObservable } from '../../libs/unwrap_observable';
 import { Build, BuilderID } from '../../services/buildbucket';
 import { BuilderStats } from '../../services/milo_internal';
+import { consumeStore, StoreInstance } from '../../store';
 import commonStyle from '../../styles/common_style.css';
 
 @customElement('milo-builders-page-row')
 @lazyRendering
 export class BuildersPageRowElement extends MiloBaseElement {
-  @observable.ref @consumeAppState() appState!: AppState;
+  @observable.ref
+  @consumeStore()
+  store!: StoreInstance;
 
   @observable.ref builder!: BuilderID;
   @observable.ref numOfBuilds = 25;
@@ -41,12 +43,12 @@ export class BuildersPageRowElement extends MiloBaseElement {
   }
 
   @computed private get recentBuilds$(): IPromiseBasedObservable<readonly Build[]> {
-    if (!this.appState?.milo) {
+    if (!this.store?.milo) {
       return fromPromise(Promise.race([]));
     }
 
     return fromPromise(
-      this.appState.milo
+      this.store.milo
         .queryRecentBuilds({
           builder: this.builder,
           pageSize: this.numOfBuilds,
@@ -60,12 +62,12 @@ export class BuildersPageRowElement extends MiloBaseElement {
   }
 
   @computed private get builderStats$(): IPromiseBasedObservable<BuilderStats> {
-    if (!this.appState?.milo) {
+    if (!this.store?.milo) {
       return fromPromise(Promise.race([]));
     }
 
     return fromPromise(
-      this.appState.milo.queryBuilderStats({
+      this.store.milo.queryBuilderStats({
         builder: this.builder,
       })
     );

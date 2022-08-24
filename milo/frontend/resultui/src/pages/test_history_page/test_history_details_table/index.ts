@@ -23,7 +23,6 @@ import '../../../components/dot_spinner';
 import '../../../components/column_header';
 import './test_history_details_entry';
 import { MiloBaseElement } from '../../../components/milo_base';
-import { AppState, consumeAppState } from '../../../context/app_state';
 import { consumeTestHistoryPageState, TestHistoryPageState } from '../../../context/test_history_page_state';
 import { consumeConfigsStore, UserConfigsStore } from '../../../context/user_configs';
 import { consumer } from '../../../libs/context';
@@ -39,7 +38,6 @@ import { TestHistoryDetailsEntryElement } from './test_history_details_entry';
 @customElement('milo-test-history-details-table')
 @consumer
 export class TestHistoryDetailsTableElement extends MiloBaseElement {
-  @observable.ref @consumeAppState() appState!: AppState;
   @observable.ref @consumeConfigsStore() configsStore!: UserConfigsStore;
   @observable.ref @consumeTestHistoryPageState() pageState!: TestHistoryPageState;
 

@@ -19,11 +19,11 @@ import { computed, makeObservable, observable } from 'mobx';
 import '../../../components/hotkey';
 import './step_list';
 import { MiloBaseElement } from '../../../components/milo_base';
-import { AppState, consumeAppState } from '../../../context/app_state';
 import { consumeConfigsStore, UserConfigsStore } from '../../../context/user_configs';
 import { GA_ACTIONS, GA_CATEGORIES, trackEvent } from '../../../libs/analytics_utils';
 import { consumer } from '../../../libs/context';
 import { errorHandler, forwardWithoutMsg, reportRenderError } from '../../../libs/error_handler';
+import { consumeStore, StoreInstance } from '../../../store';
 import commonStyle from '../../../styles/common_style.css';
 import { BuildPageStepEntryElement } from './step_entry';
 
@@ -32,8 +32,8 @@ import { BuildPageStepEntryElement } from './step_entry';
 @consumer
 export class StepsTabElement extends MiloBaseElement {
   @observable.ref
-  @consumeAppState()
-  appState!: AppState;
+  @consumeStore()
+  store!: StoreInstance;
 
   @observable.ref
   @consumeConfigsStore()
@@ -41,7 +41,7 @@ export class StepsTabElement extends MiloBaseElement {
 
   connectedCallback() {
     super.connectedCallback();
-    this.appState.selectedTabId = 'steps';
+    this.store.setSelectedTabId('steps');
     trackEvent(GA_CATEGORIES.STEPS_TAB, GA_ACTIONS.TAB_VISITED, window.location.href);
   }
 

@@ -22,7 +22,7 @@ import {
   TestVariant,
   TestVariantStatus,
 } from '../services/resultdb';
-import { AppState } from './app_state';
+import { StoreInstance } from '../store';
 import { InvocationState } from './invocation_state';
 
 const variant1: TestVariant = {
@@ -65,14 +65,14 @@ describe('InvocationState', () => {
     const queryTestVariantsStub = sinon.stub<[QueryTestVariantsRequest], Promise<QueryTestVariantsResponse>>();
     queryTestVariantsStub.onCall(0).resolves({ testVariants: [variant1, variant2, variant3, variant4, variant5] });
 
-    const appState = {
+    const store = {
       selectedTabId: '',
       resultDb: {
         queryTestVariants: queryTestVariantsStub as typeof ResultDb.prototype.queryTestVariants,
       },
-    } as AppState;
+    } as StoreInstance;
 
-    const invocationState = new InvocationState(appState);
+    const invocationState = new InvocationState(store);
     invocationState.invocationId = 'invocation-id';
     before(async () => await invocationState.testLoader!.loadNextTestVariants());
     after(() => invocationState.dispose());

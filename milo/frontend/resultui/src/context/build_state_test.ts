@@ -15,36 +15,36 @@
 import { aTimeout } from '@open-wc/testing/index-no-side-effects';
 import { assert, expect } from 'chai';
 import { autorun } from 'mobx';
+import { destroy } from 'mobx-state-tree';
 import sinon from 'sinon';
 
 import { CacheOption } from '../libs/cached_fn';
 import { Build, GetBuildRequest } from '../services/buildbucket';
 import { ANONYMOUS_IDENTITY } from '../services/milo_internal';
-import { AppState } from './app_state';
+import { Store, StoreInstance } from '../store';
 import { BuildState } from './build_state';
 
 describe('BuildState', () => {
   describe('cache', () => {
     let getBuildStub: sinon.SinonStub<[req: GetBuildRequest, cacheOpt?: CacheOption], Promise<Build>>;
-    let appState: AppState;
+    let store: StoreInstance;
     let buildState: BuildState;
 
     beforeEach(() => {
       const builderId = { project: 'proj', bucket: 'bucket', builder: 'builder' };
-      appState = new AppState();
-      appState.authState = { identity: ANONYMOUS_IDENTITY };
-      getBuildStub = sinon.stub(appState.buildsService!, 'getBuild');
+      store = Store.create({ authState: { identity: ANONYMOUS_IDENTITY } });
+      getBuildStub = sinon.stub(store.buildsService!, 'getBuild');
       getBuildStub.onCall(0).resolves({ number: 1, id: '2', builder: builderId } as Build);
       getBuildStub.onCall(1).resolves({ number: 1, id: '2', builder: builderId } as Build);
 
-      buildState = new BuildState(appState);
+      buildState = new BuildState(store);
       buildState.buildNumOrIdParam = '1';
       buildState.builderIdParam = builderId;
     });
 
     afterEach(() => {
+      destroy(store);
       buildState.dispose();
-      appState.dispose();
     });
 
     it('should accept cache when first querying build', async () => {
@@ -62,7 +62,7 @@ describe('BuildState', () => {
       });
       after(disposer);
       await aTimeout(0);
-      appState.refresh();
+      store.refresh();
       await aTimeout(0);
 
       assert.notStrictEqual(getBuildStub.getCall(0).args[1]?.acceptCache, false);
@@ -72,24 +72,24 @@ describe('BuildState', () => {
 
   it('ignore builderIdParam when buildNumOrIdParam is a buildId', async () => {
     const builderId = { project: 'proj', bucket: 'bucket', builder: 'builder' };
-    const appState = new AppState();
-    appState.authState = { identity: ANONYMOUS_IDENTITY };
-    const getBuildStub = sinon.stub(appState.buildsService!, 'getBuild');
-    const getBuilderStub = sinon.stub(appState.buildersService!, 'getBuilder');
-    const getProjectCfgStub = sinon.stub(appState.milo!, 'getProjectCfg');
-    const batchCheckPermissionsStub = sinon.stub(appState.milo!, 'batchCheckPermissions');
+    const store = Store.create({ authState: { identity: ANONYMOUS_IDENTITY } });
+    after(() => destroy(store));
+
+    const getBuildStub = sinon.stub(store.buildsService!, 'getBuild');
+    const getBuilderStub = sinon.stub(store.buildersService!, 'getBuilder');
+    const getProjectCfgStub = sinon.stub(store.milo!, 'getProjectCfg');
+    const batchCheckPermissionsStub = sinon.stub(store.milo!, 'batchCheckPermissions');
     getBuildStub.onCall(0).resolves({ number: 1, id: '123', builder: builderId } as Build);
     getBuilderStub.onCall(0).resolves({ id: builderId, config: {} });
     getProjectCfgStub.onCall(0).resolves({});
     batchCheckPermissionsStub.onCall(0).resolves({ results: {} });
 
-    const buildState = new BuildState(appState);
+    const buildState = new BuildState(store);
     buildState.buildNumOrIdParam = 'b123';
     buildState.builderIdParam = { project: 'wrong_proj', bucket: 'wrong_bucket', builder: 'wrong_builder' };
 
     after(() => {
       buildState.dispose();
-      appState.dispose();
     });
 
     const disposer = autorun(() => {

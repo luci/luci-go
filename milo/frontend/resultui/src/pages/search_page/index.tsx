@@ -24,9 +24,8 @@ import { useEffect, useRef, useState } from 'react';
 import { createRoot, Root } from 'react-dom/client';
 
 import '../../components/dot_spinner';
-import { StoreProvider, useStore } from '../../components/StoreProvider';
-import { AppState, consumeAppState } from '../../context/app_state';
 import { consumer } from '../../libs/context';
+import { consumeStore, StoreContext, StoreInstance, useStore } from '../../store';
 import { SearchTarget } from '../../store/search_page';
 import commonStyle from '../../styles/common_style.css';
 import { BuilderList } from './builder_list';
@@ -165,7 +164,7 @@ export const SearchPage = observer(() => {
 @customElement('milo-search-page')
 @consumer
 export class SearchPageElement extends MobxLitElement {
-  @observable.ref @consumeAppState() appState!: AppState;
+  @observable.ref @consumeStore() store!: StoreInstance;
 
   private readonly cache: EmotionCache;
   private readonly parent: HTMLDivElement;
@@ -186,9 +185,9 @@ export class SearchPageElement extends MobxLitElement {
   protected render() {
     this.root.render(
       <CacheProvider value={this.cache}>
-        <StoreProvider appState={this.appState}>
+        <StoreContext.Provider value={this.store}>
           <SearchPage></SearchPage>
-        </StoreProvider>
+        </StoreContext.Provider>
       </CacheProvider>
     );
     return this.parent;

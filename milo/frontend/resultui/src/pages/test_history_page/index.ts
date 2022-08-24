@@ -33,10 +33,10 @@ import './filter_box';
 import './status_graph';
 import './variant_def_table';
 import { MiloBaseElement } from '../../components/milo_base';
-import { AppState, consumeAppState } from '../../context/app_state';
 import { GraphType, provideTestHistoryPageState, TestHistoryPageState } from '../../context/test_history_page_state';
 import { consumer, provider } from '../../libs/context';
 import { NOT_FOUND_URL } from '../../routes';
+import { consumeStore, StoreInstance } from '../../store';
 import commonStyle from '../../styles/common_style.css';
 import { TestHistoryDetailsTableElement } from './test_history_details_table';
 
@@ -49,7 +49,7 @@ const LOADING_VARIANT_INFO_TOOLTIP =
 @provider
 @consumer
 export class TestHistoryPageElement extends MiloBaseElement implements BeforeEnterObserver {
-  @observable.ref @consumeAppState() appState!: AppState;
+  @observable.ref @consumeStore() store!: StoreInstance;
   @observable.ref @provideTestHistoryPageState() pageState!: TestHistoryPageState;
 
   @observable.ref private realm!: string;
@@ -82,15 +82,15 @@ export class TestHistoryPageElement extends MiloBaseElement implements BeforeEnt
     super.connectedCallback();
 
     const banner = html`Test history data before 2022-05-17 is not available.`;
-    this.appState.addBanner(banner);
-    this.addDisposer(() => this.appState.removeBanner(banner));
+    this.store.addBanner(banner);
+    this.addDisposer(() => this.store.removeBanner(banner));
 
     // Set up TestHistoryPageState.
     this.addDisposer(
       reaction(
-        () => [this.realm, this.testId, this.appState?.testHistoryService],
+        () => [this.realm, this.testId, this.store?.testHistoryService],
         () => {
-          if (!this.realm || !this.testId || !this.appState.testHistoryService || !this.appState.resultDb) {
+          if (!this.realm || !this.testId || !this.store.testHistoryService || !this.store.resultDb) {
             return;
           }
 
@@ -100,8 +100,8 @@ export class TestHistoryPageElement extends MiloBaseElement implements BeforeEnt
           this.pageState = new TestHistoryPageState(
             this.realm,
             this.testId,
-            this.appState.testHistoryService,
-            this.appState.resultDb
+            this.store.testHistoryService,
+            this.store.resultDb
           );
           this.pageState.filterText = filterText;
           // Emulate @property() update.

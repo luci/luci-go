@@ -36,7 +36,7 @@ import {
 } from '../services/buildbucket';
 import { Project, QueryBlamelistRequest, QueryBlamelistResponse } from '../services/milo_internal';
 import { getInvIdFromBuildId, getInvIdFromBuildNum } from '../services/resultdb';
-import { AppState } from './app_state';
+import { StoreInstance } from '../store';
 
 export class GetBuildError extends Error implements InnerTag {
   readonly [TAG_SOURCE]: Error;
@@ -80,9 +80,7 @@ export class BuildState {
    */
   @computed get buildId() {
     const cached =
-      this.builderIdParam && this.buildNum !== null
-        ? this.appState.getBuildId(this.builderIdParam, this.buildNum)
-        : null;
+      this.builderIdParam && this.buildNum !== null ? this.store.getBuildId(this.builderIdParam, this.buildNum) : null;
     return cached || (this.buildNumOrIdParam?.startsWith('b') ? this.buildNumOrIdParam.slice(1) : null);
   }
 
@@ -110,7 +108,7 @@ export class BuildState {
 
   private disposers: Array<() => void> = [];
 
-  constructor(private appState: AppState) {
+  constructor(private readonly store: StoreInstance) {
     makeObservable(this);
 
     this.disposers.push(
@@ -155,14 +153,10 @@ export class BuildState {
     this.disposers = [];
   }
 
-  private buildQueryTime = this.appState.timestamp;
+  private buildQueryTime = this.store.timestamp;
   @computed({ keepAlive: true })
   private get build$(): IPromiseBasedObservable<BuildExt> {
-    if (
-      this.isDisposed ||
-      !this.appState.buildsService ||
-      (!this.buildId && (!this.builderIdParam || !this.buildNum))
-    ) {
+    if (this.isDisposed || !this.store.buildsService || (!this.buildId && (!this.builderIdParam || !this.buildNum))) {
       // Returns a promise that never resolves when the dependencies aren't
       // ready.
       return fromPromise(Promise.race([]));
@@ -179,9 +173,9 @@ export class BuildState {
     // If we record the query time instead, no other code will need to read
     // or update the query time.
     const cacheOpt = {
-      acceptCache: this.buildQueryTime >= this.appState.timestamp,
+      acceptCache: this.buildQueryTime >= this.store.timestamp,
     };
-    this.buildQueryTime = this.appState.timestamp;
+    this.buildQueryTime = this.store.timestamp;
 
     // Favor ID over builder + number to ensure cache hit when the build page is
     // redirected from a short build link to a long build link.
@@ -190,7 +184,7 @@ export class BuildState {
       : { builder: this.builderIdParam, buildNumber: this.buildNum!, fields: BUILD_FIELD_MASK };
 
     return fromPromise(
-      this.appState.buildsService
+      this.store.buildsService
         .getBuild(req, cacheOpt)
         .catch((e) => {
           if (e instanceof GrpcError && e.code === RpcCode.NOT_FOUND) {
@@ -219,7 +213,7 @@ export class BuildState {
       // twice.
       .filter((b) => !b.startsWith('commit/git/'))
       .map((b) =>
-        this.appState
+        this.store
           .buildsService!.searchBuilds({
             predicate: { tags: [{ key: 'buildset', value: b }] },
             fields: SEARCH_BUILD_FIELD_MASK,
@@ -252,7 +246,7 @@ export class BuildState {
   @observable.ref selectedBlamelistPinIndex = 0;
 
   private getQueryBlamelistResIterFn(gitilesCommit: GitilesCommit, multiProjectSupport = false) {
-    if (!this.appState.milo || !this.build) {
+    if (!this.store.milo || !this.build) {
       // eslint-disable-next-line require-yield
       return async function* () {
         await Promise.race([]);
@@ -263,7 +257,7 @@ export class BuildState {
       builder: this.build.builder,
       multiProjectSupport,
     };
-    const milo = this.appState.milo;
+    const milo = this.store.milo;
     async function* streamBlamelist() {
       let res: QueryBlamelistResponse;
       do {
@@ -303,10 +297,10 @@ export class BuildState {
       return fromPromise(Promise.race([]));
     }
 
-    if (!this.appState.buildersService || !this.build?.builder) {
+    if (!this.store.buildersService || !this.build?.builder) {
       return fromPromise(Promise.race([]));
     }
-    return fromPromise(this.appState.buildersService.getBuilder({ id: this.build.builder }));
+    return fromPromise(this.store.buildersService.getBuilder({ id: this.build.builder }));
   }
 
   @computed
@@ -323,17 +317,17 @@ export class BuildState {
 
   @computed({ keepAlive: true })
   private get permittedActions$() {
-    if (this.isDisposed || !this.appState.milo || !this.realm) {
+    if (this.isDisposed || !this.store.milo || !this.realm) {
       // Returns a promise that never resolves when the dependencies aren't
       // ready.
       return fromPromise(Promise.race([]));
     }
 
     // Establish a dependency on the timestamp.
-    this.appState.timestamp;
+    this.store.timestamp;
 
     return fromPromise(
-      this.appState.milo.batchCheckPermissions({
+      this.store.milo.batchCheckPermissions({
         realm: this.realm,
         permissions: [CANCEL_BUILD_PERM, ADD_BUILD_PERM],
       })
@@ -348,17 +342,17 @@ export class BuildState {
 
   @computed({ keepAlive: true })
   private get projectCfg$() {
-    if (this.isDisposed || !this.appState.milo || !this.build?.builder?.project) {
+    if (this.isDisposed || !this.store.milo || !this.build?.builder?.project) {
       // Returns a promise that never resolves when the dependencies aren't
       // ready.
       return fromPromise(Promise.race([]));
     }
 
     // Establishes a dependency on the timestamp.
-    this.appState.timestamp;
+    this.store.timestamp;
 
     return fromPromise(
-      this.appState.milo.getProjectCfg({
+      this.store.milo.getProjectCfg({
         project: this.build?.builder.project,
       })
     );

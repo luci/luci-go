@@ -31,7 +31,6 @@ import { autorun, makeObservable, observable } from 'mobx';
 import '../../components/dot_spinner';
 import { MiloBaseElement } from '../../components/milo_base';
 import { HideTooltipEventDetail, ShowTooltipEventDetail } from '../../components/tooltip';
-import { AppState, consumeAppState } from '../../context/app_state';
 import { BuildState, consumeBuildState } from '../../context/build_state';
 import { GA_ACTIONS, GA_CATEGORIES, trackEvent } from '../../libs/analytics_utils';
 import { BUILD_STATUS_CLASS_MAP, PREDEFINED_TIME_INTERVALS } from '../../libs/constants';
@@ -41,6 +40,7 @@ import { enumerate } from '../../libs/iter_utils';
 import { displayDuration, NUMERIC_TIME_FORMAT } from '../../libs/time_utils';
 import { roundDown } from '../../libs/utils';
 import { StepExt } from '../../models/step_ext';
+import { consumeStore, StoreInstance } from '../../store';
 import commonStyle from '../../styles/common_style.css';
 
 const MARGIN = 10;
@@ -92,8 +92,8 @@ export function* traverseStepList(rootSteps: readonly StepExt[], prefix = ''): I
 @consumer
 export class TimelineTabElement extends MiloBaseElement {
   @observable.ref
-  @consumeAppState()
-  appState!: AppState;
+  @consumeStore()
+  store!: StoreInstance;
 
   @observable.ref
   @consumeBuildState()
@@ -123,7 +123,7 @@ export class TimelineTabElement extends MiloBaseElement {
 
   connectedCallback() {
     super.connectedCallback();
-    this.appState.selectedTabId = 'timeline';
+    this.store.setSelectedTabId('timeline');
     trackEvent(GA_CATEGORIES.TIMELINE_TAB, GA_ACTIONS.TAB_VISITED, window.location.href);
 
     const syncWidth = () => {

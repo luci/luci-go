@@ -20,12 +20,12 @@ import { BroadcastChannel } from 'broadcast-channel';
 import { css, customElement, html } from 'lit-element';
 import { styleMap } from 'lit-html/directives/style-map';
 import { makeObservable, observable, reaction } from 'mobx';
+import { destroy } from 'mobx-state-tree';
 
 import './signin';
 import './tooltip';
 import { getAuthStateCache, setAuthStateCache } from '../auth_state_cache';
 import { MAY_REQUIRE_SIGNIN, OPTIONAL_RESOURCE } from '../common_tags';
-import { AppState, provideAppState } from '../context/app_state';
 import { provideConfigsStore, UserConfigsStore } from '../context/user_configs';
 import { NEW_MILO_VERSION_EVENT_TYPE } from '../libs/constants';
 import { provider } from '../libs/context';
@@ -35,6 +35,7 @@ import { hasTags } from '../libs/tag';
 import { genFeedbackUrl, timeout } from '../libs/utils';
 import { router } from '../routes';
 import { ANONYMOUS_IDENTITY, queryAuthState } from '../services/milo_internal';
+import { provideStore, Store } from '../store';
 import commonStyle from '../styles/common_style.css';
 import { MiloBaseElement } from './milo_base';
 
@@ -42,7 +43,7 @@ export const refreshAuthChannel = new BroadcastChannel('refresh-auth-channel');
 
 function redirectToLogin(err: ErrorEvent, ele: PageLayoutElement) {
   if (
-    ele.appState.authState?.identity === ANONYMOUS_IDENTITY &&
+    ele.store.authState?.identity === ANONYMOUS_IDENTITY &&
     hasTags(err.error, MAY_REQUIRE_SIGNIN) &&
     !hasTags(err.error, OPTIONAL_RESOURCE)
   ) {
@@ -61,7 +62,7 @@ function redirectToLogin(err: ErrorEvent, ele: PageLayoutElement) {
 @errorHandler(redirectToLogin)
 @provider
 export class PageLayoutElement extends MiloBaseElement implements BeforeEnterObserver {
-  @provideAppState({ global: true }) readonly appState = new AppState();
+  @provideStore({ global: true }) readonly store = Store.create();
   @provideConfigsStore({ global: true }) readonly configsStore = new UserConfigsStore();
   @provideNotifier({ global: true }) readonly notifier = new ProgressiveNotifier({
     // Ensures that everything above the current scroll view is rendered.
@@ -81,10 +82,10 @@ export class PageLayoutElement extends MiloBaseElement implements BeforeEnterObs
       // onBeforeEnter can be async.
       // But we don't want to block the rest of the page from rendering.
       navigator.serviceWorker.getRegistration('/').then((redirectSw) => {
-        this.appState.redirectSw = redirectSw;
+        this.store.setRedirectSw(redirectSw || null);
       });
     } else {
-      this.appState.redirectSw = undefined;
+      this.store.setRedirectSw(null);
     }
   }
 
@@ -100,13 +101,13 @@ export class PageLayoutElement extends MiloBaseElement implements BeforeEnterObs
     this.addDisposer(() => refreshAuthChannel.removeEventListener('message', onRefreshAuth));
 
     this.addDisposer(() => {
-      this.appState.dispose();
+      destroy(this.store);
       this.configsStore.dispose();
     });
 
     let firstUpdate = true;
     getAuthStateCache()
-      .then((authState) => (this.appState.authState = authState))
+      .then((authState) => this.store.setAuthState(authState))
       .finally(() => {
         if (!this.isConnected) {
           return;
@@ -114,7 +115,7 @@ export class PageLayoutElement extends MiloBaseElement implements BeforeEnterObs
 
         this.addDisposer(
           reaction(
-            () => this.appState.authState,
+            () => this.store.authState,
             () => {
               const wasFirstUpdate = firstUpdate;
               firstUpdate = false;
@@ -150,13 +151,13 @@ export class PageLayoutElement extends MiloBaseElement implements BeforeEnterObs
     this.lastScheduleId = scheduleId;
 
     let validDuration = 0;
-    if (!forceUpdate && this.appState.authState !== null) {
-      if (!this.appState.authState.accessTokenExpiry) {
+    if (!forceUpdate && this.store.authState) {
+      if (!this.store.authState.accessTokenExpiry) {
         return;
       }
       // Refresh the access token 10s earlier to prevent the token from
       // expiring before the new token is returned.
-      validDuration = this.appState.authState.accessTokenExpiry * 1000 - Date.now() - 10000;
+      validDuration = this.store.authState.accessTokenExpiry * 1000 - Date.now() - 10000;
     }
 
     await timeout(validDuration);
@@ -173,7 +174,7 @@ export class PageLayoutElement extends MiloBaseElement implements BeforeEnterObs
     }
 
     setAuthStateCache(newAuthState);
-    this.appState.authState = newAuthState;
+    this.store.setAuthState(newAuthState);
   }
 
   protected render() {
@@ -191,7 +192,7 @@ export class PageLayoutElement extends MiloBaseElement implements BeforeEnterObs
         <mwc-icon-button icon="close" slot="dismiss" @click=${() => (this.showUpdateBanner = false)}></mwc-icon-button>
       </mwc-snackbar>
       <milo-tooltip></milo-tooltip>
-      ${this.appState.banners.map((banner) => html`<div class="banner-container">${banner}</div>`)}
+      ${this.store.banners.map((banner) => html`<div class="banner-container">${banner}</div>`)}
       <div id="container">
         <div id="title-container">
           <a href="/" id="title-link">
@@ -209,16 +210,16 @@ export class PageLayoutElement extends MiloBaseElement implements BeforeEnterObs
         <mwc-icon
           class="interactive-icon"
           title="Settings"
-          @click=${() => (this.appState.showSettingsDialog = true)}
-          style=${styleMap({ display: this.appState.hasSettingsDialog > 0 ? '' : 'none' })}
+          @click=${() => this.store.setShowSettingsDialog(true)}
+          style=${styleMap({ display: this.store.hasSettingsDialog > 0 ? '' : 'none' })}
           >settings</mwc-icon
         >
         <div id="signin">
-          ${this.appState.authState
+          ${this.store.authState
             ? html`<milo-signin
-                .identity=${this.appState.authState.identity}
-                .email=${this.appState.authState.email}
-                .picture=${this.appState.authState.picture}
+                .identity=${this.store.authState.identity}
+                .email=${this.store.authState.email}
+                .picture=${this.store.authState.picture}
               ></milo-signin>`
             : ''}
         </div>

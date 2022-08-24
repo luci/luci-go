@@ -22,7 +22,6 @@ import '../../components/status_bar';
 import '../../components/dot_spinner';
 import './row';
 import { MiloBaseElement } from '../../components/milo_base';
-import { AppState, consumeAppState } from '../../context/app_state';
 import { getURLPathForProject } from '../../libs/build_utils';
 import { consumer, provider } from '../../libs/context';
 import { reportError, reportErrorAsync } from '../../libs/error_handler';
@@ -30,14 +29,19 @@ import { IntersectionNotifier, provideNotifier } from '../../libs/observer_eleme
 import { NOT_FOUND_URL } from '../../routes';
 import { BuilderID } from '../../services/buildbucket';
 import { ListBuildersRequest, ListBuildersResponse } from '../../services/milo_internal';
+import { consumeStore, StoreInstance } from '../../store';
 import commonStyle from '../../styles/common_style.css';
 
 @customElement('milo-builders-page')
 @provider
 @consumer
 export class BuildersPageElement extends MiloBaseElement implements BeforeEnterObserver {
-  @observable.ref @consumeAppState() appState!: AppState;
-  @provideNotifier() notifier = new IntersectionNotifier({ rootMargin: '1000px' });
+  @observable.ref
+  @consumeStore()
+  store!: StoreInstance;
+
+  @provideNotifier()
+  notifier = new IntersectionNotifier({ rootMargin: '1000px' });
 
   private project!: string;
   private group!: string;
@@ -47,7 +51,7 @@ export class BuildersPageElement extends MiloBaseElement implements BeforeEnterO
   @observable.ref private isLoading = false;
 
   @computed private get listBuildersResIter(): AsyncIterableIterator<ListBuildersResponse> {
-    if (!this.appState.milo) {
+    if (!this.store.milo) {
       return (async function* () {
         yield Promise.race([]);
       })();
@@ -57,7 +61,7 @@ export class BuildersPageElement extends MiloBaseElement implements BeforeEnterO
       project: this.project,
       group: this.group,
     };
-    const milo = this.appState.milo;
+    const milo = this.store.milo;
 
     async function* streamListBuildersRes() {
       let res: ListBuildersResponse;

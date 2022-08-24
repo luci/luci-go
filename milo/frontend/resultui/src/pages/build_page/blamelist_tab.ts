@@ -22,13 +22,13 @@ import '../../components/dot_spinner';
 import '../../components/hotkey';
 import { CommitEntryElement } from '../../components/commit_entry';
 import { MiloBaseElement } from '../../components/milo_base';
-import { AppState, consumeAppState } from '../../context/app_state';
 import { BuildState, consumeBuildState } from '../../context/build_state';
 import { GA_ACTIONS, GA_CATEGORIES, trackEvent } from '../../libs/analytics_utils';
 import { getGitilesRepoURL } from '../../libs/build_utils';
 import { consumer } from '../../libs/context';
 import { errorHandler, forwardWithoutMsg, reportErrorAsync, reportRenderError } from '../../libs/error_handler';
 import { GitCommit } from '../../services/milo_internal';
+import { consumeStore, StoreInstance } from '../../store';
 import commonStyle from '../../styles/common_style.css';
 
 @customElement('milo-blamelist-tab')
@@ -36,8 +36,8 @@ import commonStyle from '../../styles/common_style.css';
 @consumer
 export class BlamelistTabElement extends MiloBaseElement {
   @observable.ref
-  @consumeAppState()
-  appState!: AppState;
+  @consumeStore()
+  store!: StoreInstance;
 
   @observable.ref
   @consumeBuildState()
@@ -112,7 +112,7 @@ export class BlamelistTabElement extends MiloBaseElement {
 
   connectedCallback() {
     super.connectedCallback();
-    this.appState.selectedTabId = 'blamelist';
+    this.store.setSelectedTabId('blamelist');
     trackEvent(GA_CATEGORIES.BLAMELIST_TAB, GA_ACTIONS.TAB_VISITED, window.location.href);
     this.addDisposer(
       reaction(

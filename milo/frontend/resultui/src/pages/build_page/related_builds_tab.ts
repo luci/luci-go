@@ -18,7 +18,6 @@ import { repeat } from 'lit-html/directives/repeat';
 import { makeObservable, observable } from 'mobx';
 
 import '../../components/dot_spinner';
-import { AppState, consumeAppState } from '../../context/app_state';
 import { BuildState, consumeBuildState } from '../../context/build_state';
 import { GA_ACTIONS, GA_CATEGORIES, trackEvent } from '../../libs/analytics_utils';
 import { getURLPathForBuild, getURLPathForBuilder } from '../../libs/build_utils';
@@ -28,6 +27,7 @@ import { errorHandler, forwardWithoutMsg, reportRenderError } from '../../libs/e
 import { renderMarkdown } from '../../libs/markdown_utils';
 import { displayDuration, NUMERIC_TIME_FORMAT } from '../../libs/time_utils';
 import { BuildExt } from '../../models/build_ext';
+import { consumeStore, StoreInstance } from '../../store';
 import commonStyle from '../../styles/common_style.css';
 
 @customElement('milo-related-builds-tab')
@@ -35,8 +35,8 @@ import commonStyle from '../../styles/common_style.css';
 @consumer
 export class RelatedBuildsTabElement extends MobxLitElement {
   @observable.ref
-  @consumeAppState()
-  appState!: AppState;
+  @consumeStore()
+  store!: StoreInstance;
 
   @observable.ref
   @consumeBuildState()
@@ -49,7 +49,7 @@ export class RelatedBuildsTabElement extends MobxLitElement {
 
   connectedCallback() {
     super.connectedCallback();
-    this.appState.selectedTabId = 'related-builds';
+    this.store.setSelectedTabId('related-builds');
     trackEvent(GA_CATEGORIES.RELATED_BUILD_TAB, GA_ACTIONS.TAB_VISITED, window.location.href);
   }
 

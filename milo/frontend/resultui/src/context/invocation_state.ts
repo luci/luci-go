@@ -33,7 +33,7 @@ import {
   TestVariant,
   TestVariantStatus,
 } from '../services/resultdb';
-import { AppState } from './app_state';
+import { StoreInstance } from '../store';
 
 export class QueryInvocationError extends Error implements InnerTag {
   readonly [TAG_SOURCE]: Error;
@@ -122,7 +122,7 @@ export class InvocationState {
   }
 
   private disposers: Array<() => void> = [];
-  constructor(private appState: AppState) {
+  constructor(private store: StoreInstance) {
     makeObservable(this);
 
     this.disposers.push(
@@ -174,13 +174,13 @@ export class InvocationState {
 
   @computed
   private get invocation$(): IPromiseBasedObservable<Invocation> {
-    if (!this.appState.resultDb || !this.invocationName) {
+    if (!this.store.resultDb || !this.invocationName) {
       // Returns a promise that never resolves when resultDb isn't ready.
       return fromPromise(Promise.race([]));
     }
     const invId = this.invocationId;
     return fromPromise(
-      this.appState.resultDb.getInvocation({ name: this.invocationName }).catch((e) => {
+      this.store.resultDb.getInvocation({ name: this.invocationName }).catch((e) => {
         throw new QueryInvocationError(invId!, e);
       })
     );
@@ -207,10 +207,10 @@ export class InvocationState {
 
   @computed({ keepAlive: true })
   get testLoader(): TestLoader | null {
-    if (this.isDisposed || !this.invocationName || !this.appState.resultDb) {
+    if (this.isDisposed || !this.invocationName || !this.store.resultDb) {
       return null;
     }
-    return new TestLoader({ invocations: [this.invocationName], resultLimit: RESULT_LIMIT }, this.appState.resultDb);
+    return new TestLoader({ invocations: [this.invocationName], resultLimit: RESULT_LIMIT }, this.store.resultDb);
   }
 
   @computed get variantGroups() {

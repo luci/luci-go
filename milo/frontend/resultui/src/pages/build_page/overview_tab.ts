@@ -30,7 +30,6 @@ import '../../components/relative_timestamp';
 import '../../components/timestamp';
 import '../test_results_tab/test_variants_table/test_variant_entry';
 import './steps_tab/step_list';
-import { AppState, consumeAppState } from '../../context/app_state';
 import { BuildState, consumeBuildState } from '../../context/build_state';
 import { consumeInvocationState, InvocationState } from '../../context/invocation_state';
 import { consumeConfigsStore, UserConfigsStore } from '../../context/user_configs';
@@ -52,6 +51,7 @@ import { displayDuration } from '../../libs/time_utils';
 import { router } from '../../routes';
 import { ADD_BUILD_PERM, BuildStatus, CANCEL_BUILD_PERM, GitilesCommit } from '../../services/buildbucket';
 import { createTVPropGetter, getPropKeyLabel } from '../../services/resultdb';
+import { consumeStore, StoreInstance } from '../../store';
 import colorClasses from '../../styles/color_classes.css';
 import commonStyle from '../../styles/common_style.css';
 
@@ -61,8 +61,8 @@ const MAX_DISPLAYED_UNEXPECTED_TESTS = 10;
 @consumer
 export class OverviewTabElement extends MobxLitElement {
   @observable.ref
-  @consumeAppState()
-  appState!: AppState;
+  @consumeStore()
+  store!: StoreInstance;
 
   @observable.ref
   @consumeConfigsStore()
@@ -90,7 +90,7 @@ export class OverviewTabElement extends MobxLitElement {
 
   connectedCallback() {
     super.connectedCallback();
-    this.appState.selectedTabId = 'overview';
+    this.store.setSelectedTabId('overview');
     trackEvent(GA_CATEGORIES.OVERVIEW_TAB, GA_ACTIONS.TAB_VISITED, window.location.href);
   }
 
@@ -169,15 +169,15 @@ export class OverviewTabElement extends MobxLitElement {
   }
 
   private async cancelBuild(reason: string) {
-    await this.appState.buildsService!.cancelBuild({
+    await this.store.buildsService!.cancelBuild({
       id: this.buildState.build!.id,
       summaryMarkdown: reason,
     });
-    this.appState.refresh();
+    this.store.refresh();
   }
 
   private async retryBuild() {
-    const build = await this.appState.buildsService!.scheduleBuild({
+    const build = await this.store.buildsService!.scheduleBuild({
       templateBuildId: this.buildState.build!.id,
     });
     Router.go(getURLPathForBuild(build));

@@ -27,14 +27,15 @@ export const enum SearchTarget {
 
 export const SearchPage = types
   .model('SearchPage', {
-    testHistoryService: types.maybe(types.frozen<TestHistoryService>()),
-    buildersService: types.maybe(types.frozen<BuildersService>()),
-
     searchTarget: types.frozen<SearchTarget>(SearchTarget.Builders),
     searchQuery: '',
 
     testProject: 'chromium',
   })
+  .volatile(() => ({
+    testHistoryService: null as TestHistoryService | null,
+    buildersService: null as BuildersService | null,
+  }))
   .views((self) => ({
     get builderLoader() {
       const buildersService = self.buildersService;
@@ -83,8 +84,8 @@ export const SearchPage = types
   }))
   .actions((self) => ({
     setDependencies(buildersService: BuildersService | null, testHistoryService: TestHistoryService | null) {
-      self.buildersService = buildersService ?? undefined;
-      self.testHistoryService = testHistoryService ?? undefined;
+      self.buildersService = buildersService;
+      self.testHistoryService = testHistoryService;
     },
     setSearchTarget(newSearchTarget: SearchTarget) {
       self.searchTarget = newSearchTarget;

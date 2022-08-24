@@ -22,13 +22,13 @@ import '../../components/tab_bar';
 import '../test_results_tab/count_indicator';
 import { MiloBaseElement } from '../../components/milo_base';
 import { TabDef } from '../../components/tab_bar';
-import { AppState, consumeAppState } from '../../context/app_state';
 import { InvocationState, provideInvocationState } from '../../context/invocation_state';
 import { consumeConfigsStore, UserConfigsStore } from '../../context/user_configs';
 import { INVOCATION_STATE_DISPLAY_MAP } from '../../libs/constants';
 import { consumer, provider } from '../../libs/context';
 import { reportRenderError } from '../../libs/error_handler';
 import { NOT_FOUND_URL, router } from '../../routes';
+import { consumeStore, StoreInstance } from '../../store';
 import commonStyle from '../../styles/common_style.css';
 
 /**
@@ -43,8 +43,8 @@ import commonStyle from '../../styles/common_style.css';
 @consumer
 export class InvocationPageElement extends MiloBaseElement implements BeforeEnterObserver {
   @observable.ref
-  @consumeAppState()
-  appState!: AppState;
+  @consumeStore()
+  store!: StoreInstance;
 
   @observable.ref
   @consumeConfigsStore()
@@ -74,10 +74,10 @@ export class InvocationPageElement extends MiloBaseElement implements BeforeEnte
 
     this.addDisposer(
       reaction(
-        () => [this.appState],
-        ([appState]) => {
+        () => [this.store],
+        ([store]) => {
           this.invocationState?.dispose();
-          this.invocationState = new InvocationState(appState);
+          this.invocationState = new InvocationState(store);
           this.invocationState.invocationId = this.invocationId;
 
           // Emulate @property() update.
@@ -142,7 +142,7 @@ export class InvocationPageElement extends MiloBaseElement implements BeforeEnte
         .components=${[{ color: 'var(--active-color)', weight: 1 }]}
         .loading=${this.invocationState.invocation === null}
       ></milo-status-bar>
-      <milo-tab-bar .tabs=${this.tabDefs} .selectedTabId=${this.appState.selectedTabId}>
+      <milo-tab-bar .tabs=${this.tabDefs} .selectedTabId=${this.store.selectedTabId}>
         <milo-trt-count-indicator slot="test-count-indicator"></milo-trt-count-indicator>
       </milo-tab-bar>
       <slot></slot>

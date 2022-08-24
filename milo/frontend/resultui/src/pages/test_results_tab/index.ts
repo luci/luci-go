@@ -22,12 +22,12 @@ import './test_variants_table';
 import './test_variants_table/config_widget';
 import './search_box';
 import { MiloBaseElement } from '../../components/milo_base';
-import { AppState, consumeAppState } from '../../context/app_state';
 import { consumeInvocationState, InvocationState } from '../../context/invocation_state';
 import { consumeConfigsStore, UserConfigsStore } from '../../context/user_configs';
 import { GA_ACTIONS, GA_CATEGORIES, trackEvent } from '../../libs/analytics_utils';
 import { consumer } from '../../libs/context';
 import { errorHandler, forwardWithoutMsg, reportRenderError } from '../../libs/error_handler';
+import { consumeStore, StoreInstance } from '../../store';
 import commonStyle from '../../styles/common_style.css';
 import { TestVariantsTableElement } from './test_variants_table';
 
@@ -39,8 +39,8 @@ import { TestVariantsTableElement } from './test_variants_table';
 @consumer
 export class TestResultsTabElement extends MiloBaseElement {
   @observable.ref
-  @consumeAppState()
-  appState!: AppState;
+  @consumeStore()
+  store!: StoreInstance;
 
   @observable.ref
   @consumeConfigsStore()
@@ -64,7 +64,7 @@ export class TestResultsTabElement extends MiloBaseElement {
 
   connectedCallback() {
     super.connectedCallback();
-    this.appState.selectedTabId = 'test-results';
+    this.store.setSelectedTabId('test-results');
     trackEvent(GA_CATEGORIES.TEST_RESULTS_TAB, GA_ACTIONS.TAB_VISITED, window.location.href);
 
     // Update filters to match the querystring without saving them.

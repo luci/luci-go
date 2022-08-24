@@ -24,7 +24,6 @@ import '../../../components/dot_spinner';
 import '../../../components/column_header';
 import './test_variant_entry';
 import { MiloBaseElement } from '../../../components/milo_base';
-import { AppState, consumeAppState } from '../../../context/app_state';
 import { consumeInvocationState, InvocationState } from '../../../context/invocation_state';
 import { consumeConfigsStore, UserConfigsStore } from '../../../context/user_configs';
 import { VARIANT_STATUS_CLASS_MAP } from '../../../libs/constants';
@@ -47,7 +46,6 @@ export interface VariantGroup {
 @customElement('milo-test-variants-table')
 @consumer
 export class TestVariantsTableElement extends MiloBaseElement {
-  @observable.ref @consumeAppState() appState!: AppState;
   @observable.ref @consumeConfigsStore() configsStore!: UserConfigsStore;
   @observable.ref @consumeInvocationState() invState!: InvocationState;
 

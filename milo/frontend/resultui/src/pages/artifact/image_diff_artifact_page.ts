@@ -21,12 +21,12 @@ import { fromPromise } from 'mobx-utils';
 import '../../components/image_diff_viewer';
 import '../../components/status_bar';
 import '../../components/dot_spinner';
-import { AppState, consumeAppState } from '../../context/app_state';
 import { consumer } from '../../libs/context';
 import { reportRenderError } from '../../libs/error_handler';
 import { unwrapObservable } from '../../libs/unwrap_observable';
 import { NOT_FOUND_URL } from '../../routes';
 import { ArtifactIdentifier, constructArtifactName } from '../../services/resultdb';
+import { consumeStore, StoreInstance } from '../../store';
 import commonStyle from '../../styles/common_style.css';
 import { consumeArtifactIdent } from './artifact_page_layout';
 
@@ -39,8 +39,8 @@ import { consumeArtifactIdent } from './artifact_page_layout';
 @consumer
 export class ImageDiffArtifactPage extends MobxLitElement implements BeforeEnterObserver {
   @observable.ref
-  @consumeAppState()
-  appState!: AppState;
+  @consumeStore()
+  store!: StoreInstance;
 
   @observable.ref
   @consumeArtifactIdent()
@@ -61,10 +61,10 @@ export class ImageDiffArtifactPage extends MobxLitElement implements BeforeEnter
 
   @computed
   private get diffArtifact$() {
-    if (!this.appState.resultDb) {
+    if (!this.store.resultDb) {
       return fromPromise(Promise.race([]));
     }
-    return fromPromise(this.appState.resultDb.getArtifact({ name: this.diffArtifactName }));
+    return fromPromise(this.store.resultDb.getArtifact({ name: this.diffArtifactName }));
   }
   @computed private get diffArtifact() {
     return unwrapObservable(this.diffArtifact$, null);
@@ -72,10 +72,10 @@ export class ImageDiffArtifactPage extends MobxLitElement implements BeforeEnter
 
   @computed
   private get expectedArtifact$() {
-    if (!this.appState.resultDb) {
+    if (!this.store.resultDb) {
       return fromPromise(Promise.race([]));
     }
-    return fromPromise(this.appState.resultDb.getArtifact({ name: this.expectedArtifactName }));
+    return fromPromise(this.store.resultDb.getArtifact({ name: this.expectedArtifactName }));
   }
   @computed private get expectedArtifact() {
     return unwrapObservable(this.expectedArtifact$, null);
@@ -83,10 +83,10 @@ export class ImageDiffArtifactPage extends MobxLitElement implements BeforeEnter
 
   @computed
   private get actualArtifact$() {
-    if (!this.appState.resultDb) {
+    if (!this.store.resultDb) {
       return fromPromise(Promise.race([]));
     }
-    return fromPromise(this.appState.resultDb.getArtifact({ name: this.actualArtifactName }));
+    return fromPromise(this.store.resultDb.getArtifact({ name: this.actualArtifactName }));
   }
   @computed private get actualArtifact() {
     return unwrapObservable(this.actualArtifact$, null);

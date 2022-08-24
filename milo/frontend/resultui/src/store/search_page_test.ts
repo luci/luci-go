@@ -14,7 +14,7 @@
 
 import { expect } from 'chai';
 import { when } from 'mobx';
-import { Instance } from 'mobx-state-tree';
+import { destroy, Instance } from 'mobx-state-tree';
 import sinon from 'sinon';
 
 import { CacheOption } from '../libs/cached_fn';
@@ -87,10 +87,13 @@ describe('SearchPage', () => {
       listBuildersStub = sinon.stub(buildersService, 'listBuilders');
 
       listBuildersStub.callsFake(async ({ pageToken }) => listBuilderResponses[pageToken || 'page1']);
-      searchPage = SearchPage.create({ buildersService });
+      searchPage = SearchPage.create();
+      searchPage.setDependencies(buildersService, null);
 
       when(() => Boolean(searchPage.builderLoader?.loadedAll), done);
     });
+
+    afterEach(() => destroy(searchPage));
 
     it('should load builders correctly', () => {
       expect(listBuildersStub.callCount).to.eq(3);
@@ -153,8 +156,11 @@ describe('SearchPage', () => {
       const testHistoryService = new TestHistoryService(new PrpcClientExt({}, () => ''));
       queryTestsStub = sinon.stub(testHistoryService, 'queryTests');
 
-      searchPage = SearchPage.create({ testHistoryService });
+      searchPage = SearchPage.create();
+      searchPage.setDependencies(null, testHistoryService);
     });
+
+    afterEach(() => destroy(searchPage));
 
     it('e2e', async () => {
       searchPage.setSearchTarget(SearchTarget.Tests);

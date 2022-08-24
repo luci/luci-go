@@ -15,19 +15,16 @@
 import { aTimeout, fixture, fixtureCleanup } from '@open-wc/testing/index-no-side-effects';
 import { assert } from 'chai';
 import { customElement, html, LitElement } from 'lit-element';
+import { destroy } from 'mobx-state-tree';
 import sinon, { SinonStub } from 'sinon';
 
 import '.';
-import { AppState, provideAppState } from '../../context/app_state';
 import { InvocationState, provideInvocationState } from '../../context/invocation_state';
 import { provideConfigsStore, UserConfigsStore } from '../../context/user_configs';
 import { provider } from '../../libs/context';
-import {
-  QueryTestVariantsRequest,
-  QueryTestVariantsResponse,
-  ResultDb,
-  TestVariantStatus,
-} from '../../services/resultdb';
+import { ANONYMOUS_IDENTITY } from '../../services/milo_internal';
+import { ResultDb, TestVariantStatus } from '../../services/resultdb';
+import { provideStore, Store, StoreInstance } from '../../store';
 import { TestResultsTabElement } from '.';
 
 const variant1 = {
@@ -68,8 +65,8 @@ const variant5 = {
 @customElement('milo-test-context-provider')
 @provider
 class ContextProvider extends LitElement {
-  @provideAppState()
-  appState!: AppState;
+  @provideStore()
+  store!: StoreInstance;
 
   @provideConfigsStore()
   configsStore!: UserConfigsStore;
@@ -80,31 +77,25 @@ class ContextProvider extends LitElement {
 
 describe('Test Results Tab', () => {
   it('should load the first page of test variants when connected', async () => {
-    const queryTestVariantsStub = sinon.stub<[QueryTestVariantsRequest], Promise<QueryTestVariantsResponse>>();
+    const store = Store.create({ authState: { identity: ANONYMOUS_IDENTITY } });
+    after(() => destroy(store));
+
+    const queryTestVariantsStub = sinon.stub(store.resultDb!, 'queryTestVariants');
     queryTestVariantsStub.onCall(0).resolves({ testVariants: [variant1, variant2, variant3], nextPageToken: 'next' });
     queryTestVariantsStub.onCall(1).resolves({ testVariants: [variant4, variant5] });
+    const getInvocationStub = sinon.stub(store.resultDb!, 'getInvocation');
+    getInvocationStub.returns(Promise.race([]));
 
-    const appState = {
-      selectedTabId: '',
-      resultDb: {
-        queryTestVariants: queryTestVariantsStub as typeof ResultDb.prototype.queryTestVariants,
-        getInvocation: (() => Promise.race([])) as typeof ResultDb.prototype.getInvocation,
-      },
-    } as AppState;
     const configsStore = new UserConfigsStore();
     after(() => configsStore.dispose());
 
-    const invocationState = new InvocationState(appState);
+    const invocationState = new InvocationState(store);
     invocationState.invocationId = 'invocation-id';
     after(() => invocationState.dispose());
 
     after(fixtureCleanup);
     const provider = await fixture<ContextProvider>(html`
-      <milo-test-context-provider
-        .appState=${appState}
-        .configsStore=${configsStore}
-        .invocationState=${invocationState}
-      >
+      <milo-test-context-provider .store=${store} .configsStore=${configsStore} .invocationState=${invocationState}>
         <milo-test-results-tab></milo-test-results-tab>
       </milo-test-context-provider>
     `);
@@ -121,37 +112,34 @@ describe('Test Results Tab', () => {
   });
 
   describe('loadNextTestVariants', () => {
-    let queryTestVariantsStub: SinonStub<[QueryTestVariantsRequest], Promise<QueryTestVariantsResponse>>;
-    let appState: AppState;
+    let queryTestVariantsStub: SinonStub<
+      Parameters<ResultDb['queryTestVariants']>,
+      ReturnType<ResultDb['queryTestVariants']>
+    >;
+    let store: StoreInstance;
     let configsStore: UserConfigsStore;
     let invocationState: InvocationState;
     let tab: TestResultsTabElement;
 
     beforeEach(async () => {
-      queryTestVariantsStub = sinon.stub<[QueryTestVariantsRequest], Promise<QueryTestVariantsResponse>>();
+      store = Store.create({ authState: { identity: ANONYMOUS_IDENTITY } });
+
+      queryTestVariantsStub = sinon.stub(store.resultDb!, 'queryTestVariants');
       queryTestVariantsStub.onCall(0).resolves({ testVariants: [variant1], nextPageToken: 'next0' });
       queryTestVariantsStub.onCall(1).resolves({ testVariants: [variant2], nextPageToken: 'next1' });
       queryTestVariantsStub.onCall(2).resolves({ testVariants: [variant3], nextPageToken: 'next2' });
       queryTestVariantsStub.onCall(3).resolves({ testVariants: [variant4], nextPageToken: 'next3' });
       queryTestVariantsStub.onCall(4).resolves({ testVariants: [variant5] });
-      appState = {
-        selectedTabId: '',
-        resultDb: {
-          queryTestVariants: queryTestVariantsStub as typeof ResultDb.prototype.queryTestVariants,
-          getInvocation: (() => Promise.race([])) as typeof ResultDb.prototype.getInvocation,
-        },
-      } as AppState;
-      configsStore = new UserConfigsStore();
 
-      invocationState = new InvocationState(appState);
+      const getInvocationStub = sinon.stub(store.resultDb!, 'getInvocation');
+      getInvocationStub.returns(Promise.race([]));
+
+      configsStore = new UserConfigsStore();
+      invocationState = new InvocationState(store);
       invocationState.invocationId = 'invocation-id';
 
       const provider = await fixture<ContextProvider>(html`
-        <milo-test-context-provider
-          .appState=${appState}
-          .configsStore=${configsStore}
-          .invocationState=${invocationState}
-        >
+        <milo-test-context-provider .store=${store} .configsStore=${configsStore} .invocationState=${invocationState}>
           <milo-test-results-tab></milo-test-results-tab>
         </milo-test-context-provider>
       `);
@@ -159,6 +147,7 @@ describe('Test Results Tab', () => {
     });
 
     afterEach(() => {
+      destroy(store);
       invocationState.dispose();
       configsStore.dispose();
       const url = `${window.location.protocol}//${window.location.host}${window.location.pathname}`;
@@ -177,11 +166,7 @@ describe('Test Results Tab', () => {
       // Disconnect, then reload the tab.
       tab.disconnectedCallback();
       await fixture<ContextProvider>(html`
-        <milo-test-context-provider
-          .appState=${appState}
-          .configsStore=${configsStore}
-          .invocationState=${invocationState}
-        >
+        <milo-test-context-provider .store=${store} .configsStore=${configsStore} .invocationState=${invocationState}>
           <milo-test-results-tab></milo-test-results-tab>
         </milo-test-context-provider>
       `);

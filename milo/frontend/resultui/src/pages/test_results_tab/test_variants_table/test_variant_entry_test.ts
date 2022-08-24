@@ -15,16 +15,17 @@
 import { GrpcError, RpcCode } from '@chopsui/prpc-client';
 import { aTimeout, expect, fixture, fixtureCleanup, html } from '@open-wc/testing/index-no-side-effects';
 import { customElement, LitElement } from 'lit-element';
+import { destroy } from 'mobx-state-tree';
 import * as sinon from 'sinon';
 
 import './test_variant_entry';
 import { ExpandableEntry } from '../../../components/expandable_entry';
-import { AppState, provideAppState } from '../../../context/app_state';
 import { provider } from '../../../libs/context';
 import { Notifier, provideNotifier } from '../../../libs/observer_element';
 import { ANONYMOUS_IDENTITY } from '../../../services/milo_internal';
 import { TestResultBundle, TestStatus, TestVariant, TestVariantStatus } from '../../../services/resultdb';
 import { Cluster } from '../../../services/weetbix';
+import { provideStore, Store, StoreInstance } from '../../../store';
 import { TestVariantEntryElement } from './test_variant_entry';
 
 const clusteringVersion = { algorithmsVersion: '1', rulesVersion: '1', configVersion: '1' };
@@ -71,8 +72,8 @@ const cluster3: Cluster = {
 @customElement('milo-test-variant-entry-test-context')
 @provider
 class TestVariantEntryTestContextElement extends LitElement {
-  @provideAppState()
-  appState!: AppState;
+  @provideStore()
+  store!: StoreInstance;
 
   @provideNotifier()
   notifier: Notifier = {
@@ -91,9 +92,9 @@ describe('test_variant_entry_test', () => {
   afterEach(fixtureCleanup);
 
   it('should only query the necessary clusters', async () => {
-    const appState = new AppState();
-    appState.authState = { identity: ANONYMOUS_IDENTITY };
-    const clusterStub = sinon.stub(appState.clustersService!, 'cluster');
+    const store = Store.create({ authState: { identity: ANONYMOUS_IDENTITY } });
+    after(() => destroy(store));
+    const clusterStub = sinon.stub(store.clustersService!, 'cluster');
     clusterStub.onCall(0).resolves({
       clusteringVersion,
       clusteredTestResults: [
@@ -140,7 +141,7 @@ describe('test_variant_entry_test', () => {
 
     await fixture<TestVariantEntryElement>(html`
       <milo-test-variant-entry
-        .appState=${appState}
+        .store=${store}
         .invState=${{ project: 'proj' }}
         .variant=${tv}
       ></milo-test-variant-entry>
@@ -160,9 +161,9 @@ describe('test_variant_entry_test', () => {
   });
 
   it('should work properly if failed to query clusters from weetbix', async () => {
-    const appState = new AppState();
-    appState.authState = { identity: ANONYMOUS_IDENTITY };
-    const clusterStub = sinon.stub(appState.clustersService!, 'cluster');
+    const store = Store.create({ authState: { identity: ANONYMOUS_IDENTITY } });
+    after(() => destroy(store));
+    const clusterStub = sinon.stub(store.clustersService!, 'cluster');
     clusterStub.onCall(0).rejects(new GrpcError(RpcCode.PERMISSION_DENIED, 'not allowed'));
 
     const tv: TestVariant = {
@@ -185,7 +186,7 @@ describe('test_variant_entry_test', () => {
     };
 
     const ele = await fixture<TestVariantEntryTestContextElement>(html`
-      <milo-test-variant-entry-test-context .appState=${appState}>
+      <milo-test-variant-entry-test-context .store=${store}>
         <milo-test-variant-entry .invState=${{ project: 'proj' }} .variant=${tv}></milo-test-variant-entry>
       </milo-test-variant-entry-test-context>
     `);

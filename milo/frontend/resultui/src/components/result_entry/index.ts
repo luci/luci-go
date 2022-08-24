@@ -26,7 +26,6 @@ import '../expandable_entry';
 import './image_diff_artifact';
 import './text_artifact';
 import './text_diff_artifact';
-import { AppState, consumeAppState } from '../../context/app_state';
 import { TEST_STATUS_DISPLAY_MAP } from '../../libs/constants';
 import { consumer } from '../../libs/context';
 import { reportRenderError } from '../../libs/error_handler';
@@ -36,6 +35,7 @@ import { unwrapObservable } from '../../libs/unwrap_observable';
 import { getRawArtifactUrl, router } from '../../routes';
 import { Artifact, ListArtifactsResponse, parseTestResultName, Tag, TestResult } from '../../services/resultdb';
 import { Cluster, makeClusterLink } from '../../services/weetbix';
+import { consumeStore, StoreInstance } from '../../store';
 import colorClasses from '../../styles/color_classes.css';
 import commonStyle from '../../styles/common_style.css';
 
@@ -46,8 +46,8 @@ import commonStyle from '../../styles/common_style.css';
 @consumer
 export class ResultEntryElement extends MobxLitElement {
   @observable.ref
-  @consumeAppState()
-  appState!: AppState;
+  @consumeStore()
+  store!: StoreInstance;
 
   @observable.ref id = '';
   @observable.ref testResult!: TestResult;
@@ -98,12 +98,12 @@ export class ResultEntryElement extends MobxLitElement {
 
   @computed
   private get resultArtifacts$(): IPromiseBasedObservable<ListArtifactsResponse> {
-    if (!this.appState.resultDb) {
+    if (!this.store.resultDb) {
       // Returns a promise that never resolves when resultDb isn't ready.
       return fromPromise(Promise.race([]));
     }
     // TODO(weiweilin): handle pagination.
-    return fromPromise(this.appState.resultDb.listArtifacts({ parent: this.testResult.name }));
+    return fromPromise(this.store.resultDb.listArtifacts({ parent: this.testResult.name }));
   }
 
   @computed private get resultArtifacts() {
@@ -111,12 +111,12 @@ export class ResultEntryElement extends MobxLitElement {
   }
 
   @computed private get invArtifacts$() {
-    if (!this.appState.resultDb) {
+    if (!this.store.resultDb) {
       // Returns a promise that never resolves when resultDb isn't ready.
       return fromPromise(Promise.race([]));
     }
     // TODO(weiweilin): handle pagination.
-    return fromPromise(this.appState.resultDb.listArtifacts({ parent: 'invocations/' + this.parentInvId }));
+    return fromPromise(this.store.resultDb.listArtifacts({ parent: 'invocations/' + this.parentInvId }));
   }
 
   @computed private get invArtifacts() {

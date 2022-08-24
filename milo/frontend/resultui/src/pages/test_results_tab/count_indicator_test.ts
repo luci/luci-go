@@ -18,7 +18,6 @@ import { customElement, html, LitElement } from 'lit-element';
 import sinon from 'sinon';
 
 import './count_indicator';
-import { AppState } from '../../context/app_state';
 import { InvocationState, provideInvocationState } from '../../context/invocation_state';
 import { provider } from '../../libs/context';
 import {
@@ -27,6 +26,7 @@ import {
   ResultDb,
   TestVariantStatus,
 } from '../../services/resultdb';
+import { StoreInstance } from '../../store';
 import { TestResultsTabCountIndicatorElement } from './count_indicator';
 
 const variant1 = {
@@ -82,7 +82,7 @@ describe('Test Count Indicator', () => {
       resultDb: {
         queryTestVariants: queryTestVariantsStub as typeof ResultDb.prototype.queryTestVariants,
       },
-    } as AppState;
+    } as StoreInstance;
 
     const invocationState = new InvocationState(appState);
     invocationState.invocationId = 'invocation-id';

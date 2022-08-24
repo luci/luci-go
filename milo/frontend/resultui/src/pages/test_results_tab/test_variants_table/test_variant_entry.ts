@@ -24,7 +24,6 @@ import '../../../components/expandable_entry';
 import '../../../components/copy_to_clipboard';
 import '../../../components/result_entry';
 import { MAY_REQUIRE_SIGNIN, OPTIONAL_RESOURCE } from '../../../common_tags';
-import { AppState, consumeAppState } from '../../../context/app_state';
 import { consumeInvocationState, InvocationState } from '../../../context/invocation_state';
 import { VARIANT_STATUS_CLASS_MAP, VARIANT_STATUS_ICON_MAP } from '../../../libs/constants';
 import { lazyRendering, RenderPlaceHolder } from '../../../libs/observer_element';
@@ -33,6 +32,7 @@ import { attachTags, hasTags } from '../../../libs/tag';
 import { unwrapObservable } from '../../../libs/unwrap_observable';
 import { RESULT_LIMIT, TestStatus, TestVariant } from '../../../services/resultdb';
 import { Cluster } from '../../../services/weetbix';
+import { consumeStore, StoreInstance } from '../../../store';
 import colorClasses from '../../../styles/color_classes.css';
 import commonStyle from '../../../styles/common_style.css';
 
@@ -46,7 +46,7 @@ const ORDERED_VARIANT_DEF_KEYS = Object.freeze(['bucket', 'builder', 'test_suite
 @customElement('milo-test-variant-entry')
 @lazyRendering
 export class TestVariantEntryElement extends MobxLitElement implements RenderPlaceHolder {
-  @observable.ref @consumeAppState() appState!: AppState;
+  @observable.ref @consumeStore() store!: StoreInstance;
   @observable.ref @consumeInvocationState() invState!: InvocationState;
 
   @observable.ref variant!: TestVariant;
@@ -90,7 +90,7 @@ export class TestVariantEntryElement extends MobxLitElement implements RenderPla
 
   @computed
   private get clustersByResultId$() {
-    if (!this.invState.project || !this.appState.clustersService) {
+    if (!this.invState.project || !this.store.clustersService) {
       return fromPromise(Promise.race([]));
     }
 
@@ -105,7 +105,7 @@ export class TestVariantEntryElement extends MobxLitElement implements RenderPla
     }
 
     return fromPromise(
-      this.appState.clustersService
+      this.store.clustersService
         .cluster(
           {
             project: this.invState.project,

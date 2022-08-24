@@ -19,10 +19,10 @@ import { html } from 'lit-html';
 import { styleMap } from 'lit-html/directives/style-map';
 import { computed, makeObservable, observable } from 'mobx';
 
-import { AppState, consumeAppState } from '../../context/app_state';
 import { consumeInvocationState, InvocationState } from '../../context/invocation_state';
 import { consumer } from '../../libs/context';
 import { router } from '../../routes';
+import { consumeStore, StoreInstance } from '../../store';
 import commonStyle from '../../styles/common_style.css';
 
 function stripInvocationPrefix(invocationName: string): string {
@@ -33,8 +33,8 @@ function stripInvocationPrefix(invocationName: string): string {
 @consumer
 export class InvocationDetailsTabElement extends MobxLitElement {
   @observable.ref
-  @consumeAppState()
-  appState!: AppState;
+  @consumeStore()
+  store!: StoreInstance;
 
   @observable.ref
   @consumeInvocationState()
@@ -56,7 +56,7 @@ export class InvocationDetailsTabElement extends MobxLitElement {
 
   connectedCallback() {
     super.connectedCallback();
-    this.appState.selectedTabId = 'invocation-details';
+    this.store.setSelectedTabId('invocation-details');
   }
 
   protected render() {

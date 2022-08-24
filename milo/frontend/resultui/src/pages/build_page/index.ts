@@ -26,7 +26,6 @@ import '../test_results_tab/count_indicator';
 import { OPTIONAL_RESOURCE } from '../../common_tags';
 import { MiloBaseElement } from '../../components/milo_base';
 import { TabDef } from '../../components/tab_bar';
-import { AppState, consumeAppState } from '../../context/app_state';
 import { BuildState, GetBuildError, provideBuildState } from '../../context/build_state';
 import { InvocationState, provideInvocationState, QueryInvocationError } from '../../context/invocation_state';
 import { consumeConfigsStore, DEFAULT_USER_CONFIGS, UserConfigs, UserConfigsStore } from '../../context/user_configs';
@@ -51,6 +50,7 @@ import { displayDuration, LONG_TIME_FORMAT } from '../../libs/time_utils';
 import { LoadTestVariantsError } from '../../models/test_loader';
 import { NOT_FOUND_URL, router } from '../../routes';
 import { BuilderID, BuildStatus, TEST_PRESENTATION_KEY } from '../../services/buildbucket';
+import { consumeStore, StoreInstance } from '../../store';
 import colorClasses from '../../styles/color_classes.css';
 import commonStyle from '../../styles/common_style.css';
 
@@ -140,8 +140,8 @@ function renderError(err: ErrorEvent, ele: BuildPageElement) {
 @consumer
 export class BuildPageElement extends MiloBaseElement implements BeforeEnterObserver {
   @observable.ref
-  @consumeAppState()
-  appState!: AppState;
+  @consumeStore()
+  store!: StoreInstance;
 
   @observable.ref
   @consumeConfigsStore()
@@ -227,14 +227,14 @@ export class BuildPageElement extends MiloBaseElement implements BeforeEnterObse
       trackEvent(GA_CATEGORIES.PROJECT_BUILD_PAGE, GA_ACTIONS.VISITED_NEW, this.builderIdParam!.project);
     }
 
-    this.appState.hasSettingsDialog++;
+    this.store.registerSettingsDialog();
 
     this.addDisposer(
       reaction(
-        () => [this.appState],
+        () => [this.store],
         () => {
           this.buildState?.dispose();
-          this.buildState = new BuildState(this.appState);
+          this.buildState = new BuildState(this.store);
           this.buildState.builderIdParam = this.builderIdParam;
           this.buildState.buildNumOrIdParam = this.buildNumOrIdParam;
 
@@ -248,10 +248,10 @@ export class BuildPageElement extends MiloBaseElement implements BeforeEnterObse
 
     this.addDisposer(
       reaction(
-        () => this.appState,
-        (appState) => {
+        () => this.store,
+        (store) => {
           this.invocationState?.dispose();
-          this.invocationState = new InvocationState(appState);
+          this.invocationState = new InvocationState(store);
 
           // Emulate @property() update.
           this.updated(new Map([['invocationState', this.invocationState]]));
@@ -283,7 +283,7 @@ export class BuildPageElement extends MiloBaseElement implements BeforeEnterObse
           () => {
             const build = this.buildState.build!;
             if (build.number !== undefined) {
-              this.appState.setBuildId(build.builder, build.number, build.id);
+              this.store.setBuildId(build.builder, build.number, build.id);
             }
             const buildUrl = router.urlForName('build', {
               project: build.builder.project,
@@ -331,7 +331,7 @@ export class BuildPageElement extends MiloBaseElement implements BeforeEnterObse
   }
 
   disconnectedCallback() {
-    this.appState.hasSettingsDialog--;
+    this.store.unregisterSettingsDialog();
     super.disconnectedCallback();
   }
 
@@ -428,14 +428,14 @@ export class BuildPageElement extends MiloBaseElement implements BeforeEnterObse
       <mwc-dialog
         id="settings-dialog"
         heading="Settings"
-        ?open=${this.appState.showSettingsDialog}
+        ?open=${this.store.showSettingsDialog}
         @closed=${(event: CustomEvent<{ action: string }>) => {
           if (event.detail.action === 'save') {
             merge(this.configsStore.userConfigs, this.uncommittedConfigs);
           }
           // Reset uncommitted configs.
           merge(this.uncommittedConfigs, this.configsStore.userConfigs);
-          this.appState.showSettingsDialog = false;
+          this.store.setShowSettingsDialog(false);
         }}
       >
         <table>
@@ -478,7 +478,7 @@ export class BuildPageElement extends MiloBaseElement implements BeforeEnterObse
               <div class="delimiter"></div>
               <a href=${this.buildState.customBugLink} target="_blank">File a bug</a>
             `}
-        ${this.appState.redirectSw === null
+        ${this.store.redirectSw === null
           ? html``
           : html`
               <div class="delimiter"></div>
@@ -497,7 +497,7 @@ export class BuildPageElement extends MiloBaseElement implements BeforeEnterObse
 
                   const expires = new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toUTCString();
                   document.cookie = `showNewBuildPage=false; expires=${expires}; path=/`;
-                  this.appState.redirectSw?.unregister();
+                  this.store.redirectSw?.unregister();
                 }}
                 href=${this.legacyUrl}
               >
@@ -510,7 +510,7 @@ export class BuildPageElement extends MiloBaseElement implements BeforeEnterObse
         .components=${[{ color: this.statusBarColor, weight: 1 }]}
         .loading=${!this.buildState.build}
       ></milo-status-bar>
-      <milo-tab-bar .tabs=${this.tabDefs} .selectedTabId=${this.appState.selectedTabId}>
+      <milo-tab-bar .tabs=${this.tabDefs} .selectedTabId=${this.store.selectedTabId}>
         <milo-trt-count-indicator slot="test-count-indicator"></milo-trt-count-indicator>
       </milo-tab-bar>
       <slot></slot>
