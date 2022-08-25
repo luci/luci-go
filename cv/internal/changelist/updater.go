@@ -34,6 +34,7 @@ import (
 	"go.chromium.org/luci/server/tq"
 
 	"go.chromium.org/luci/cv/internal/common"
+	"go.chromium.org/luci/cv/internal/gerrit"
 )
 
 const (
@@ -417,11 +418,16 @@ func (u *Updater) handleCL(ctx context.Context, task *UpdateCLTask) error {
 		return common.TQifyError(ctx, err)
 	}
 
-	if err := u.handleCLWithBackend(ctx, task, cl, backend); err != nil {
+	switch err := u.handleCLWithBackend(ctx, task, cl, backend); {
+	case err == errHackRetryForOutOfQuota:
+		return tq.Ignore.Apply(err)
+	case err != nil:
 		return backend.TQErrorSpec().Error(ctx, err)
 	}
 	return nil
 }
+
+var errHackRetryForOutOfQuota = errors.New("hack retry for out of quota")
 
 func (u *Updater) handleCLWithBackend(ctx context.Context, task *UpdateCLTask, cl *CL, backend UpdaterBackend) error {
 	// Save ID and ExternalID before giving CL to backend to avoid accidental corruption.
@@ -432,7 +438,16 @@ func (u *Updater) handleCLWithBackend(ctx context.Context, task *UpdateCLTask, c
 		return err
 	case !skip:
 		updateFields, err = backend.Fetch(ctx, cl, task.GetLuciProject(), common.PB2TimeNillable(task.GetUpdatedHint()))
-		if err != nil {
+		switch {
+		case err != nil && errors.Unwrap(err) == gerrit.ErrOutOfQuota && task.GetLuciProject() == "chromeos":
+			// HACK: don't retry on out of quota error, instead schedule another task
+			// with delay so that it will be deduplicated in cloud task with any
+			// subsequent tasks.
+			if scheduleErr := u.ScheduleDelayed(ctx, task, blindRefreshInterval); scheduleErr != nil {
+				return errors.Annotate(err, "%T.Fetch failed", backend).Err()
+			}
+			return errHackRetryForOutOfQuota
+		case err != nil:
 			return errors.Annotate(err, "%T.Fetch failed", backend).Err()
 		}
 	}
