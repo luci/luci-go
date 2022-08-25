@@ -199,7 +199,7 @@ message ExecutionState {
     //
     // Failed attempt will trigger a retry attempt if quota allows.
     message Attempt {
-      // TryjobId is the id of this attempt of the Tryjob.
+      // TryjobId is the ID of this attempt of the Tryjob.
       int64 tryjob_id = 1;
       // ExternalID is the external ID of this attempt of the Tryjob
       string external_id = 2;
@@ -215,12 +215,27 @@ message ExecutionState {
       //  * the Tryjob was triggered by non-CV (e.g. `git cl try`).
       bool reused = 5;
 
-      // TODO(yiwzhang): Add model for children Tryjobs. It could reuse
-      // `Attempt` messages, it may also have a trimmed version of `Attempt`
-      // message because some of the fields don't make sense to children
-      // Tryjobs. Also, if crbug.com/1031205 is shipped before we implement
-      // children support in LUCI CV, we may not even need a new field
-      // (maybe a new status will suffice: like WAITING_FOR_CHILDREN).
+      // A Child represents a child Tryjob of this attempt.
+      //
+      // The Tryjob directly specified in the Attempt is the root or parent
+      // Tryjob; if that Tryjob triggers another Tryjob which should be watched
+      // (as specified in the project config), then the child shall be listed
+      // here.
+      message Child {
+        // TryjobId is the ID of the corresponding Tryjob entity.
+        int64 tryjob_id = 1;
+        // ExternalID is the external ID of the Tryjob, e.g. a BuildBucket ID.
+        string external_id = 2;
+        // Status is the status of the Tryjob.
+        cv.internal.tryjob.Status status = 3;
+        // Result is the Result of the Tryjob.
+        cv.internal.tryjob.Result result = 4;
+        // Triggered Tryjobs can recursively trigger child Tryjobs.
+        repeated Child children = 5;
+      }
+
+      // Children Tryjobs indirectly triggered by CV.
+      repeated Child children = 6;
     }
     // Attempts records all attempts (including retries) to verify the Run with
     // this Tryjob Execution.
