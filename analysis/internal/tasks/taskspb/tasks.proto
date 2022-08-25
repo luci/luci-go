@@ -1,0 +1,159 @@
+// Copyright 2022 The LUCI Authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package weetbix.internal.tasks;
+
+import "google/protobuf/timestamp.proto";
+import "go.chromium.org/luci/resultdb/proto/v1/invocation.proto";
+import "go.chromium.org/luci/analysis/proto/v1/common.proto";
+import "go.chromium.org/luci/analysis/proto/analyzedtestvariant/predicate.proto";
+import "go.chromium.org/luci/analysis/internal/ingestion/control/proto/control.proto";
+
+option go_package = "go.chromium.org/luci/analysis/internal/tasks/taskspb";
+
+// Payload of IngestTestResults task.
+message IngestTestResults {
+  reserved 1, 2, 4 to 7;
+
+  // Timestamp representing the start of the data retention period
+  // for the ingested test results. In case of multiple builds
+  // ingested for one CV run, the partition_time used for all
+  // builds must be the same.
+  google.protobuf.Timestamp partition_time = 3;
+
+  // The build that is being ingested.
+  weetbix.internal.ingestion.control.BuildResult build = 8;
+
+  // Context about the presubmit run the build was a part of. Only
+  // populated if the build is a presubmit run.
+  weetbix.internal.ingestion.control.PresubmitResult presubmit_run = 9;
+
+  // The page token value to use when calling QueryTestVariants.
+  // For the first task, this should be "". For subsequent tasks,
+  // this is the next_page_token value returned by the last call.
+  string page_token = 10;
+
+  // The task number of test results task. 0 for the first
+  // task, 1 for the second task, and so on. Used to avoid creating
+  // duplicate tasks.
+  int64 task_index = 11;
+}
+
+// ResultDB-specific information.
+message ResultDB {
+  // Information of the invocation.
+  luci.resultdb.v1.Invocation invocation = 1;
+  // Hostname of the ResultDB instance, such as "results.api.cr.dev".
+  string host = 2;
+}
+
+// Payload of CollectTestResults task.
+message CollectTestResults {
+  // ResultDB-specific information.
+  ResultDB resultdb = 1;
+  // Builder of the invocation.
+  string builder = 2;
+  // If the task is for a try build.
+  bool is_pre_submit = 3;
+  // If the try build contributes to a CL's submission.
+  bool contributed_to_cl_submission = 4;
+}
+
+// Information that can form a key to an AnalyzedTestVariant row.
+message TestVariantKey {
+  string realm = 1;
+  string test_id = 2;
+  string variant_hash = 3;
+
+}
+// Payload of UpdateTestVariant task.
+message UpdateTestVariant {
+  TestVariantKey test_variant_key = 1;
+
+  // The time this task is ready to be enqueued.
+  // The task will run only if this time matches the AnalyzedTestVariants row's
+  // NextUpdateTaskEnqueueTime.
+  google.protobuf.Timestamp enqueue_time = 2;
+}
+
+
+// Payload of ExportTestVariants task.
+message ExportTestVariants {
+  // LUCI Realm. Test variants in this realm are exported.
+  string realm = 1;
+
+  // BigQuery table to export test variants to.
+  string cloud_project = 2;
+  string dataset = 3;
+  string table = 4;
+
+  // Represents a function Variant -> bool.
+  // Test variants satisfy this predicate are exported.
+  weetbix.analyzedtestvariant.Predicate predicate = 5;
+
+  // Time range of the task.
+  // The ranges serves 2 purposes:
+  // - Test variants satisfy the predicate within the time_range are exported.
+  // - Each row uses this time_range as their default time range*. Meaning each row
+  //   contains the information of the test variants within the time range,
+  //   especially, the row contains the verdicts that weetbix ingested within
+  //   the range, and compute the flake_statistics using those verdicts.
+  //   * Note that a row can have a narrower time_range, if the test variant's
+  //     status changes within the time_range.
+  weetbix.v1.TimeRange time_range = 6;
+}
+
+// Payload of the ReclusterChunks task.
+message ReclusterChunks {
+  // The LUCI Project containing test results to be re-clustered.
+  string project = 1;
+
+  // The attempt time for which this task is. This should be cross-referenced
+  // with the ReclusteringRuns table to identify the reclustering parameters.
+  // This is also the soft deadline for the task.
+  google.protobuf.Timestamp attempt_time = 2;
+
+  // The exclusive lower bound defining the range of Chunk IDs to
+  // be re-clustered. To define the table start, use the empty string ("").
+  string start_chunk_id = 3;
+
+  // The inclusive upper bound defining the range of Chunk IDs to
+  // be re-clustered. To define the table end use "ff" x 16, i.e.
+  // "ffffffffffffffffffffffffffffffff".
+  string end_chunk_id = 4;
+
+  // State to be passed from one execution of the task to the next.
+  // To fit with autoscaling, each task aims to execute only for a short time
+  // before enqueuing another task to act as its continuation.
+  // Must be populated on all tasks, even on the initial task.
+  ReclusterChunkState state = 5;
+}
+
+// ReclusterChunkState captures state passed from one execution of a
+// ReclusterChunks task to the next.
+message ReclusterChunkState {
+  // The exclusive lower bound of Chunk IDs processed to date.
+  string current_chunk_id = 1;
+
+  // The next time a progress report should be made.
+  google.protobuf.Timestamp next_report_due = 2;
+
+  // Whether progress has been reported at least once.
+  bool reported_once = 3;
+
+  // The last progress value which was reported.
+  int64 last_reported_progress = 4;
+}

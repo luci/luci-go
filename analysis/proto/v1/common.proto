@@ -1,0 +1,283 @@
+// Copyright 2022 The LUCI Authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package weetbix.v1;
+
+import "google/api/field_behavior.proto";
+import "google/protobuf/timestamp.proto";
+
+option go_package = "go.chromium.org/luci/analysis/proto/v1;weetbixpb";
+
+// A range of timestamps.
+message TimeRange {
+  // The oldest timestamp to include in the range.
+  google.protobuf.Timestamp earliest = 1;
+
+  // Include only timestamps that are strictly older than this.
+  google.protobuf.Timestamp latest = 2;
+}
+
+// Identity of a test result.
+message TestResultId {
+  // The test results system.
+  // Currently, the only valid value is "resultdb".
+  string system = 1;
+
+  // ID for the test result in the test results system.
+  // For test results in ResultDB, the format is:
+  // "invocations/{INVOCATION_ID}/tests/{URL_ESCAPED_TEST_ID}/results/{RESULT_ID}"
+  // Where INVOCATION_ID, URL_ESCAPED_TEST_ID and RESULT_ID are values defined
+  // in ResultDB.
+  string id = 2;
+}
+
+// Variant represents a way of running a test case.
+//
+// The same test case can be executed in different ways, for example on
+// different OS, GPUs, with different compile options or runtime flags.
+message Variant {
+  // The definition of the variant. Each key-value pair represents a
+  // parameter describing how the test was run (e.g. OS, GPU, etc.).
+  map<string, string> def = 1;
+}
+
+message StringPair {
+  // Regex: ^[a-z][a-z0-9_]*(/[a-z][a-z0-9_]*)*$
+  // Max length: 64.
+  string key = 1;
+
+  // Max length: 256.
+  string value = 2;
+}
+
+// Identity of a bug tracking component in a bug tracking system.
+message BugTrackingComponent {
+  // The bug tracking system corresponding to this test case, as identified
+  // by the test results system.
+  // Currently, the only valid value is "monorail".
+  string system = 1;
+
+  // The bug tracking component corresponding to this test case, as identified
+  // by the test results system.
+  // If the bug tracking system is monorail, this is the component as the
+  // user would see it, e.g. "Infra>Test>Flakiness". For monorail, the bug
+  // tracking project (e.g. "chromium") is not encoded, but assumed to be
+  // specified in the project's Weetbix configuration.
+  string component = 2;
+}
+
+// Identity of a presubmit run (also known as a "CQ Run" or "CV Run").
+message PresubmitRunId {
+  // The system that was used to process the presubmit run.
+  // Currently, the only valid value is "luci-cv" for LUCI Commit Verifier
+  // (LUCI CV).
+  string system = 1;
+
+  // Identity of the presubmit run.
+  // If the presubmit system is LUCI CV, the format of this value is:
+  //   "{LUCI_PROJECT}/{LUCI_CV_ID}", e.g.
+  //   "infra/8988819463854-1-f94732fe20056fd1".
+  string id = 2;
+}
+
+// Identity of a bug in a bug-tracking system.
+message AssociatedBug {
+  // System is the bug tracking system of the bug. This is either
+  // "monorail" or "buganizer".
+  string system = 1;
+
+  // Id is the bug tracking system-specific identity of the bug.
+  // For monorail, the scheme is {project}/{numeric_id}, for
+  // buganizer the scheme is {numeric_id}.
+  string id = 2;
+
+  // A human-readable name for the bug. This is typically the
+  // bug shortlink (e.g. "crbug.com/1234567").
+  string link_text = 3
+    [(google.api.field_behavior) = OUTPUT_ONLY];
+
+  // The resolved bug URL, e.g.
+  // E.g. "https://bugs.chromium.org/p/chromium/issues/detail?id=123456".
+  string url = 4
+    [(google.api.field_behavior) = OUTPUT_ONLY];
+}
+
+// ClusterId represents the identity of a cluster. The LUCI Project is
+// omitted as it is assumed to be implicit from the context.
+//
+// This is often used in place of the resource name of the cluster
+// (in the sense of https://google.aip.dev/122) as clients may need
+// to access individual parts of the resource name (e.g. to determine
+// the algorithm used) and it is not desirable to make clients parse
+// the resource name.
+message ClusterId {
+  // Algorithm is the name of the clustering algorithm that identified
+  // the cluster.
+  string algorithm = 1;
+
+  // Id is the cluster identifier returned by the algorithm. The underlying
+  // identifier is at most 16 bytes, but is represented here as a hexadecimal
+  // string of up to 32 lowercase hexadecimal characters.
+  string id = 2;
+}
+
+// BuildStatus the result of the build in which the test verdict was produced.
+// This can be used to detect if the test verdict is incomplete (e.g. because
+// an infra failure or cancellation occurred), and whether the unexpected
+// test verdict was also followed by a failing build.
+//
+// Note: All values prefixed with BUILD_STATUS_ as the names are generic
+// and likely to conflict with other/future enumerations otherwise.
+// See https://google.aip.dev/126.
+enum BuildStatus {
+  // A build must not have this status.
+  BUILD_STATUS_UNSPECIFIED = 0;
+
+  // The build succeeded.
+  BUILD_STATUS_SUCCESS = 1;
+
+  // The build failed.
+  BUILD_STATUS_FAILURE = 2;
+
+  // The build encountered an infrastructure failure.
+  BUILD_STATUS_INFRA_FAILURE = 3;
+
+  // The build was canceled.
+  BUILD_STATUS_CANCELED = 4;
+}
+
+// ExonerationReason captures a reason why a test failure was
+// exonerated. Exonerated means the failure was ignored and did not
+// have further impact, in terms of causing the build to fail or
+// rejecting the CL being tested in a presubmit run.
+//
+// Based on https://source.chromium.org/chromium/infra/infra/+/main:go/src/go.chromium.org/luci/resultdb/proto/v1/test_result.proto?q=ExonerationReason&type=cs.
+enum ExonerationReason {
+  // A test failure must not have this status.
+  EXONERATION_REASON_UNSPECIFIED = 0;
+
+  // Similar unexpected results were observed on a mainline branch
+  // (i.e. against a build without unsubmitted changes applied).
+  // (For avoidance of doubt, this includes both flakily and
+  // deterministically occurring unexpected results.)
+  // Applies to unexpected results in presubmit/CQ runs only.
+  OCCURS_ON_MAINLINE = 1;
+
+  // Similar unexpected results were observed in presubmit run(s) for other,
+  // unrelated CL(s). (This is suggestive of the issue being present
+  // on mainline but is not confirmed as there are possible confounding
+  // factors, like how tests are run on CLs vs how tests are run on
+  // mainline branches.)
+  // Applies to unexpected results in presubmit/CQ runs only.
+  OCCURS_ON_OTHER_CLS = 2;
+
+  // The tests are not critical to the test subject (e.g. CL) passing.
+  // This could be because more data is being collected to determine if
+  // the tests are stable enough to be made critical (as is often the
+  // case for experimental test suites).
+  NOT_CRITICAL = 3;
+
+  // The test result was an unexpected pass. (Note that such an exoneration is
+  // not automatically created for unexpected passes, unless the option is
+  // specified to ResultSink or the project manually creates one).
+  UNEXPECTED_PASS = 4;
+}
+
+// Information about a test.
+//
+// As of Oct 2021, it's an exact copy of luci.resultdb.v1.TestMetadata, but
+// we'd like to keep a local definition of the proto to keep the possibility that
+// we need to diverge down the track.
+message TestMetadata {
+  // The original test name.
+  string name = 1;
+
+  // Where the test is defined, e.g. the file name.
+  // location.repo MUST be specified.
+  TestLocation location = 2;
+}
+
+// Location of the test definition.
+message TestLocation {
+  // Gitiles URL as the identifier for a repo.
+  // Format for Gitiles URL: https://<host>/<project>
+  // For example "https://chromium.googlesource.com/chromium/src"
+  // Must not end with ".git".
+  // SHOULD be specified.
+  string repo = 1;
+
+  // Name of the file where the test is defined.
+  // For files in a repository, must start with "//"
+  // Example: "//components/payments/core/payment_request_data_util_unittest.cc"
+  // Max length: 512.
+  // MUST not use backslashes.
+  // Required.
+  string file_name = 2;
+
+  // One-based line number where the test is defined.
+  int32 line = 3;
+}
+
+// SubmittedFilter filters test verdicts based on whether they had unsubmitted
+// changes.
+enum SubmittedFilter {
+  // Default value. Include all test verdicts.
+  SUBMITTED_FILTER_UNSPECIFIED = 0;
+
+  // Only include test verdicts that don't have unsubmitted changes.
+  ONLY_SUBMITTED = 1;
+
+  // Only include test verdicts that have unsubmitted changes.
+  ONLY_UNSUBMITTED = 2;
+}
+
+// PresubmitRunMode describes the mode of a presubmit run. Currently
+// based on LUCI CV run mode enumeration at
+// https://source.chromium.org/chromium/infra/infra/+/main:go/src/go.chromium.org/luci/cv/api/bigquery/v1/attempt.proto?q=QUICK_DRY_RUN&type=cs.
+enum PresubmitRunMode {
+  // A presubmit run must not have this status.
+  PRESUBMIT_RUN_MODE_UNSPECIFIED = 0;
+
+  // Run all tests but do not submit.
+  DRY_RUN = 1;
+
+  // Run all tests and potentially submit.
+  FULL_RUN = 2;
+
+  // Run some tests but do not submit.
+  QUICK_DRY_RUN = 3;
+}
+
+// PresubmitRunStatus is the ending status of a presubmit run.
+//
+// Note: All values prefixed with PRESUBMIT_RUN_STATUS_ as the names are
+// generic and likely to conflict with other/future enumerations otherwise.
+// See https://google.aip.dev/126.
+//
+// Based on https://source.chromium.org/chromium/infra/infra/+/main:go/src/go.chromium.org/luci/cv/internal/run/storage.proto;l=28?q=LUCI%20CV%20status%20lang:proto.
+enum PresubmitRunStatus {
+  // A build must not have this status.
+  PRESUBMIT_RUN_STATUS_UNSPECIFIED = 0;
+
+  // The run succeeded.
+  PRESUBMIT_RUN_STATUS_SUCCEEDED = 1;
+
+  // The run failed.
+  PRESUBMIT_RUN_STATUS_FAILED = 2;
+
+  // The run was canceled.
+  PRESUBMIT_RUN_STATUS_CANCELED = 3;
+}

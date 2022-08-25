@@ -1,0 +1,14 @@
+{
+    "extends": "./tsconfig.json",
+    "compilerOptions": {
+        "module": "es2020",
+    },
+    "exclude": [
+        "node_modules",
+        "index_test.ts",
+        "src/**/*_test.ts",
+        "karma.conf.ts",
+        "webpack.*.ts",
+        "cypress"
+    ]
+}

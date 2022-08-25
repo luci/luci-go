@@ -1,0 +1,223 @@
+// Copyright 2022 The LUCI Authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package weetbix.v1;
+
+option go_package = "go.chromium.org/luci/analysis/proto/v1;weetbixpb";
+
+import "google/protobuf/timestamp.proto";
+import "go.chromium.org/luci/analysis/proto/v1/common.proto";
+import "go.chromium.org/luci/analysis/proto/v1/changelist.proto";
+
+// Provides methods to obtain statistics about test variants.
+service TestVariants {
+    // Queries the failure rate of specified test variants, returning
+    // signals indicating if the test variant is flaky and/or
+    // deterministically failing. Intended for use by recipes to
+    // inform exoneration decisions.
+    //
+    // TODO(crbug.com/1314194): This is an experimental RPC implemented for
+    // Chrome CQ exoneration and is subject to change or removal.
+    //
+    // Changes to this RPC should comply with https://google.aip.dev/231.
+    rpc QueryFailureRate(QueryTestVariantFailureRateRequest)
+        returns (QueryTestVariantFailureRateResponse) {};
+}
+
+message QueryTestVariantFailureRateRequest {
+    // The LUCI Project for which test variants should be looked up.
+    string project = 1;
+
+    // The list of test variants to retrieve results for.
+    // At most 100 test variants may be specified in one request.
+    // It is an error to request the same test variant twice.
+    repeated TestVariantIdentifier test_variants = 2;
+}
+
+// The identity of a test variant.
+message TestVariantIdentifier {
+    // A unique identifier of the test in a LUCI project.
+    string test_id = 1;
+
+    // Description of one specific way of running the test,
+    // e.g. a specific bucket, builder and a test suite.
+    Variant variant = 2;
+
+    // The variant hash. Alternative to specifying the variant.
+    // Prefer to specify the full variant (if available), as the
+    // variant hashing implementation is an implementation detail
+    // and may change.
+    string variant_hash = 3;
+}
+
+message QueryTestVariantFailureRateResponse {
+    // Interval defines the time buckets used for time interval
+    // data.
+    message Interval {
+        // The interval being defined. age=1 is the most recent
+        // interval, age=2 is the interval immediately before that,
+        // and so on.
+        int32 interval_age = 1;
+
+        // The start time of the interval (inclusive).
+        google.protobuf.Timestamp start_time = 2;
+
+        // The end time of the interval (exclusive).
+        google.protobuf.Timestamp end_time = 3;
+    }
+
+    // The time buckets used for time interval data.
+    //
+    // Currently each interval represents 24 weekday hours, including the
+    // weekend contained in that range (if any). This is to compensate
+    // for the typically reduced testing that is seen over weekends.
+    // So interval with age=1 is the last 24 hours of weekday data
+    // before the time the query is made, age=2 is the 24 hours of
+    // weekday data before that, and so on.
+    // In total, there will be 5 intervals, numbered 1 to 5.
+    //
+    // 24 hours of weekday data before X is defined to be
+    // the smallest period ending at X which includes exactly 24
+    // hours of a weekday in UTC. Therefore:
+    // If X is on a weekend (in UTC), the returned data will
+    // cover all of the weekend up to X and all of previous Friday (in UTC).
+    // If X is on a Monday (in UTC), the returned data will cover all
+    // of the weekend, up to a time on Friday that corresponds to
+    // X's time on Monday (e.g. if X is Monday at 8am, the period goes
+    // back to Friday at 8am).
+    // Otherwise, X is on a Tuesday to Friday (in UTC), the period
+    // will cover the last 24 hours.
+    repeated Interval intervals = 1;
+
+    // The test variant failure rate analysis requested.
+    // Test variants are returned in the order they were requested.
+    repeated TestVariantFailureRateAnalysis test_variants = 2;
+}
+
+
+// Signals relevant to determining whether a test variant should be
+// exonerated in presubmit.
+message TestVariantFailureRateAnalysis {
+    // A unique identifier of the test in a LUCI project.
+    string test_id = 1;
+
+    // Description of one specific way of running the test,
+    // e.g. a specific bucket, builder and a test suite.
+    // Only populated if populated on the request.
+    Variant variant = 2;
+
+    // The variant hash.
+    // Only populated if populated on the request.
+    string variant_hash = 3;
+
+    message IntervalStats {
+        // The age of the interval. 1 is the most recent interval,
+        // 2 is the interval immediately before that, and so on.
+        // Cross reference with the intervals field on the
+        // QueryTestVariantFailureRateResponse response to
+        // identify the exact time interval this represents.
+        int32 interval_age = 1;
+
+        // The number of verdicts which had only expected runs.
+        // An expected run is a run (e.g. swarming task) which has at least
+        // one expected result, excluding skipped results.
+        int32 total_run_expected_verdicts = 2;
+
+        // The number of verdicts which had both expected and 
+        // unexpected runs.
+        // An expected run is a run (e.g. swarming task) which has at least
+        // one expected result, excluding skips.
+        // An unexpected run is a run which had only unexpected
+        // results (and at least one unexpected result), excluding skips.
+        int32 total_run_flaky_verdicts = 3;
+
+        // The number of verdicts which had only unexpected runs.
+        // An unexpected run is a run (e.g. swarming task) which had only
+        // unexpected results (and at least one unexpected result),
+        // excluding skips.
+        int32 total_run_unexpected_verdicts = 4;
+    }
+
+    // Statistics broken down by time interval. Intervals will be ordered
+    // by recency, starting at the most recent interval (age = 1).
+    //
+    // The following filtering applies to verdicts used in time interval data:
+    // - Verdicts are filtered to at most one per unique CL under test,
+    //   with verdicts for multi-CL tryjob runs excluded.
+    repeated IntervalStats interval_stats = 4;
+
+    // VerdictExample describes a verdict that is part of a statistic.
+    message VerdictExample {
+        // The partition time of the verdict. This the time associated with the
+        // test result for test history purposes, usually the build or presubmit
+        // run start time.
+        google.protobuf.Timestamp partition_time = 1;
+
+        // The identity of the ingested invocation.
+        string ingested_invocation_id = 2;
+
+        // The changelist(s) tested, if any.
+        repeated Changelist changelists = 3;
+    }
+
+    // Examples of verdicts which had both expected and unexpected runs.
+    //
+    // Ordered by recency, starting at the most recent example at offset 0.
+    //
+    // Limited to at most 10. Further limited to only verdicts produced
+    // since 5 weekdays ago (this corresponds to the exact same time range
+    // as for which interval data is provided).
+    repeated VerdictExample run_flaky_verdict_examples = 5;
+
+    message RecentVerdict {
+        // The partition time of the verdict. This the time associated with the
+        // test result for test history purposes, usually the build or presubmit
+        // run start time.
+        google.protobuf.Timestamp partition_time = 1;
+
+        // The identity of the ingested invocation.
+        string ingested_invocation_id = 2;
+
+        // The changelist(s) tested, if any.
+        repeated Changelist changelists = 3;
+
+        // Whether the verdict had an unexpected run.
+        // An unexpected run is a run (e.g. swarming task) which
+        // had only unexpected results, after excluding skips.
+        //
+        // Example: a verdict includes the result of two
+        // swarming tasks (i.e. two runs), which each contain two
+        // test results.
+        // One of the two test runs has two unexpected failures.
+        // Therefore, the verdict has an unexpected run.
+        bool has_unexpected_runs = 4;
+    }
+
+    // The most recent verdicts for the test variant.
+    //
+    // The following filtering applies to verdicts used in this field:
+    // - Verdicts are filtered to at most one per unique CL under test,
+    //   with verdicts for multi-CL tryjob runs excluded.
+    // - Verdicts for CLs authored by automation are excluded, to avoid a
+    //   single repeatedly failing automatic uprev process populating
+    //   this list with 10 failures.
+    // Ordered by recency, starting at the most recent verdict at offset 0.
+    //
+    // Limited to at most 10. Further limited to only verdicts produced
+    // since 5 weekdays ago (this corresponds to the exact same time range
+    // as for which interval data is provided).
+    repeated RecentVerdict recent_verdicts = 6;
+}

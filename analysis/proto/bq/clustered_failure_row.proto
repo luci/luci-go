@@ -1,0 +1,309 @@
+// Copyright 2022 The LUCI Authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package weetbix.bq;
+
+import "google/protobuf/timestamp.proto";
+import "go.chromium.org/luci/analysis/proto/v1/common.proto";
+import "go.chromium.org/luci/analysis/proto/v1/changelist.proto";
+import "go.chromium.org/luci/analysis/proto/v1/failure_reason.proto";
+
+option go_package = "go.chromium.org/luci/analysis/proto/bq;weetbixpb";
+
+// ClusteredFailureRow represents a row in a BigQuery table for a clustered
+// test failure.
+// Next ID: 39.
+message ClusteredFailureRow {
+  // The clustering algorithm which clustered the test failure.
+  string cluster_algorithm = 1;
+
+  // The algorithm-defined cluster ID. Together with the cluster algorithm,
+  // this uniquely defines a cluster the test failure was clustered into.
+  //
+  // Note that each test failure may appear in multiple clusters (due to
+  // the presence of multiple clustering algorithms), but each clustering
+  // algorithm may only cluster the test result into one cluster.
+  //
+  // Note that the cluster ID is split over two fields (cluster_algorithm,
+  // cluster_id), rather than as one field with a record type, so that
+  // BigQuery clustering can be defined over the ID (not possible if a
+  // record type was used).
+  string cluster_id = 2;
+
+  // The test results system from which the test originated.
+  //
+  // Currently, the only valid value is "resultdb".
+  string test_result_system = 3;
+
+  // The identity of the test result in the test results system. Together
+  // with the test results sytstem, this uniquely identifies the test result
+  // that was clustered.
+  //
+  // For test results in ResultDB, the format is:
+  // "invocations/{INVOCATION_ID}/tests/{URL_ESCAPED_TEST_ID}/results/{RESULT_ID}"
+  // Where INVOCATION_ID, URL_ESCAPED_TEST_ID and RESULT_ID are values
+  // defined in ResultDB.
+  //
+  // Note that the test result ID is split over two fields (test_result_system,
+  // test_result_id), rather than as one field with a record type, so that
+  // BigQuery clustering can be defined over the ID (not possible if a
+  // record type was used).
+  string test_result_id = 4;
+
+  // Last Updated defines the version of test result-cluster inclusion status,
+  // as represented by this row. During its lifetime, due to changing
+  // failure association rules and clustering algorithm revisions, the
+  // clusters a test result is in may be updated.
+  //
+  // To achieve deletion in an append-optimised datastore like BigQuery,
+  // a new row will be exported for a given (cluster_algorithm, cluster_id,
+  // test_result_system, test_result_id) tuple with a later last_updated
+  // time that changes the is_included and/or is_included_with_high_priority
+  // fields. A scheduled query periodically purges superseded rows, to
+  // avoid excessive growth in the table.
+  //
+  // Clients should filter the rows they read to ensure they only use the
+  // rows with the latest last_updated time.
+  //
+  // The following is the definition of a view that correctly uses
+  // the last updated time column to query the table:
+  //   SELECT
+  //     ARRAY_AGG(cf ORDER BY last_updated DESC LIMIT 1)[OFFSET(0)] as row
+  //   FROM ${LUCI_PROJECT}.clustered_failures cf
+  //   -- Recommended: Apply restriction on partitions (e.g. last 14 days) as
+  //   -- desired.
+  //   -- WHERE partition_time >= TIMESTAMP_SUB(@as_at_time, INTERVAL 14 DAY)
+  //   GROUP BY cluster_algorithm, cluster_id, test_result_system, test_result_id
+  //   HAVING row.is_included
+  //
+  // This is based on the query design in [1].
+  // [1]: https://cloud.google.com/blog/products/bigquery/performing-large-scale-mutations-in-bigquery
+  google.protobuf.Timestamp last_updated = 5;
+
+  // The test result partition time identifies the beginning of the test
+  // result retention period, and corresponds approximately to the time
+  // the test result was produced.
+  //
+  // It is guaranteed that all test results from one presubmit run
+  // will have the same partition time. It is also guaranteed that all
+  // test results from one build will have the same partition time (in
+  // case of builds associated with presubmit runs this was implied by
+  // previous guarantee, but for testing that occurs outside presubmit
+  // this is an added guarantee).
+  google.protobuf.Timestamp partition_time = 6;
+
+  // Whether the test result is included in the cluster. Set to false if
+  // the test result has been removed from the cluster.
+  // False values appear in BigQuery as NULL.
+  bool is_included = 7;
+
+  // Whether the test result is included in the cluster with high priority.
+  // True if either:
+  // 1. this cluster is a bug cluster (i.e. cluster defined by failure
+  //    association rule), OR
+  // 2. this cluster is a suggested cluster, and the test result is NOT
+  //    also in a bug cluster.
+  // False values appear in BigQuery as NULL.
+  bool is_included_with_high_priority = 8;
+
+  // The chunk this failure was processed and stored in. Assigned by
+  // Weetbix ingestion.
+  string chunk_id = 9;
+
+  // The zero-based index of this failure within the chunk. Assigned by
+  // Weetbix ingestion.
+  int64 chunk_index = 10;
+
+  // Security realm of the test result.
+  // For test results from ResultDB, this must be set. The format is
+  // "{LUCI_PROJECT}:{REALM_SUFFIX}", for example "chromium:ci".
+  string realm = 11;
+
+  // The unique identifier of the test.
+  // For test results from ResultDB, see luci.resultdb.v1.TestResult.test_id.
+  string test_id = 12;
+
+  // key:value pairs to specify the way of running a particular test.
+  // e.g. a specific bucket, builder and a test suite.
+  // For ResultDB, this is the known field.
+  repeated weetbix.v1.StringPair variant = 13;
+
+  // Metadata key value pairs for this test result.
+  // It might describe this particular execution or the test case.
+  // A key can be repeated.
+  repeated weetbix.v1.StringPair tags = 32;
+
+  // Hash of the variant.
+  // hex(sha256(''.join(sorted('%s:%s\n' for k, v in variant.items())))).
+  string variant_hash = 14;
+
+  // A failure reason describing why the test failed.
+  weetbix.v1.FailureReason failure_reason = 15;
+
+  // The bug tracking component corresponding to this test case, as identified
+  // by the test results system. If no information is available, this is
+  // unset.
+  weetbix.v1.BugTrackingComponent bug_tracking_component = 16;
+
+  // The point in time when the test case started to execute.
+  google.protobuf.Timestamp start_time = 17;
+
+  // The amount of time the test case took to execute, in seconds.
+  double duration = 18;
+
+  reserved 19;
+
+  reserved 31;
+
+  message TestExoneration {
+    // Machine-readable reasons describing why the test failure was exonerated
+    // (if any).
+    weetbix.v1.ExonerationReason reason = 1;
+  }
+
+  // The exonerations applied to the test verdict.
+  // An empty list indicates the test verdict this test result was a part of
+  // was not exonerated.
+  repeated TestExoneration exonerations = 33;
+
+  // Identity of the presubmit run that contains this test result.
+  // This should be unique per "CQ+1"/"CQ+2" attempt on gerrit.
+  //
+  // One presumbit run MAY have many ingested invocation IDs (e.g. for its
+  // various tryjobs), but every ingested invocation ID only ever has one
+  // presubmit run ID (if any).
+  //
+  // All test results for the same presubmit run will have one
+  // partition_time.
+  //
+  // If the test result was not collected as part of a presubmit run,
+  // this is unset.
+  weetbix.v1.PresubmitRunId presubmit_run_id = 20;
+
+  // The owner of the presubmit run (if any).
+  // This is the owner of the CL on which CQ+1/CQ+2 was clicked
+  // (even in case of presubmit run with multiple CLs).
+  // There is scope for this field to become an email address if privacy
+  // approval is obtained, until then it is "automation" (for automation
+  // service accounts) and "user" otherwise.
+  string presubmit_run_owner = 29;
+
+  // The mode of the presubmit run (if any).
+  // E.g. DRY_RUN, FULL_RUN, QUICK_DRY_RUN.
+  // If this test result does not relate to a presubmit run, this field
+  // is left as its default value (""). In BigQuery, this results in a
+  // NULL value.
+  string presubmit_run_mode = 34;
+
+  // The presubmit run's ending status.
+  // Notionally weetbix.v1.PresubmitRunStatus, but string so that
+  // we can chop off the "PRESUBMIT_RUN_STATUS_" prefix and have
+  // only the status, e.g. SUCCESS, FAILURE, CANCELED.
+  // If this test result does not relate to a presubmit run, this field
+  // is left as its default value (""). In BigQuery, this results in a
+  // NULL value.
+  string presubmit_run_status = 35;
+
+  reserved 30;
+
+  // The status of the build that contained this test result. Can be used
+  // to filter incomplete results (e.g. where build was cancelled or had
+  // an infra failure). Can also be used to filter builds with incomplete
+  // exonerations (e.g. build succeeded but some tests not exonerated).
+  // This is the build corresponding to ingested_invocation_id.
+  // Notionally weetbix.v1.BuildStatus, but string so that we can chop off
+  // the BUILD_STATUS_ prefix that would otherwise appear on every value.
+  string build_status = 36;
+
+  // Whether the build was critical to a presubmit run succeeding.
+  // If the build did not relate presubmit run (i.e. because it was a tryjob
+  // for a presubmit run), this is false.
+  // Note that both possible false values (from the build is not critical
+  // or because the build was not part of a presubmit run) appear in
+  // BigQuery as NULL.
+  // You can identify which of these cases applies by
+  // checking if presubmit_run_id is populated.
+  bool build_critical = 37;
+
+  // The unsubmitted changelists that were tested (if any).
+  // Changelists are sorted in ascending (host, change, patchset) order.
+  // Up to 10 changelists are captured.
+  repeated weetbix.v1.Changelist changelists = 38;
+
+  // The invocation from which this test result was ingested. This is
+  // the top-level invocation that was ingested, an "invocation" being
+  // a container of test results as identified by the source test result
+  // system.
+  //
+  // For ResultDB, Weetbix ingests invocations corresponding to
+  // buildbucket builds.
+  //
+  // All test results ingested from the same invocation (i.e. with the
+  // same ingested_invocation_id) will have the same partition time.
+  string ingested_invocation_id = 21;
+
+  // The zero-based index for this test result, in the sequence of the
+  // ingested invocation's results for this test variant. Within the sequence,
+  // test results are ordered by start_time and then by test result ID.
+  // The first test result is 0, the last test result is
+  // ingested_invocation_result_count - 1.
+  int64 ingested_invocation_result_index = 22;
+
+  // The number of test results having this test variant in the ingested
+  // invocation.
+  int64 ingested_invocation_result_count = 23;
+
+  // Is the ingested invocation blocked by this test variant? This is
+  // only true if all (non-skipped) test results for this test variant
+  // (in the ingested invocation) are unexpected failures.
+  //
+  // Exoneration does not factor into this value; check is_exonerated
+  // to see if the impact of this ingested invocation being blocked was
+  // mitigated by exoneration.
+  bool is_ingested_invocation_blocked = 24;
+
+  // The identifier of the test run the test ran in. Test results in different
+  // test runs are generally considered independent as they should be unable
+  // to leak state to one another.
+  //
+  // In Chrome and Chrome OS, a test run logically corresponds to a swarming
+  // task that runs tests, but this ID is not necessarily the ID of that
+  // task, but rather any other ID that is unique per such task.
+  //
+  // If test result system is ResultDB, this is the ID of the ResultDB
+  // invocation the test result was immediately contained within, not including
+  // any "invocations/" prefix.
+  string test_run_id = 25;
+
+  // The zero-based index for this test result, in the sequence of results
+  // having this test variant and test run. Within the sequence, test
+  // results are ordered by start_time and then by test result ID.
+  // The first test result is 0, the last test result is
+  // test_run_result_count - 1.
+  int64 test_run_result_index = 26;
+
+  // The number of test results having this test variant and test run.
+  int64 test_run_result_count = 27;
+
+  // Is the test run blocked by this test variant? This is only true if all
+  // (non-skipped) test results for this test variant (in the test run)
+  // are unexpected failures.
+  //
+  // Exoneration does not factor into this value; check is_exonerated
+  // to see if the impact of this test run being blocked was
+  // mitigated by exoneration.
+  bool is_test_run_blocked = 28;
+}

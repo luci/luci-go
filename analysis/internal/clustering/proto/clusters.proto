@@ -1,0 +1,61 @@
+// Copyright 2022 The LUCI Authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package weetbix.internal.clustering;
+
+option go_package = "go.chromium.org/luci/analysis/internal/clustering/proto;clusteringpb";
+
+// Represents the clusters a chunk of test results are included in.
+message ChunkClusters {
+  // The types of clusters in this proto.
+  repeated ClusterType cluster_types = 1;
+
+  // The identifiers of the clusters referenced in this proto.
+  repeated ReferencedCluster referenced_clusters = 2;
+
+  // The clusters of test results in the chunk. This is a list, so the first
+  // TestResultClusters message is for first test result in the chunk,
+  // the second message is for the second test result, and so on.
+  repeated TestResultClusters result_clusters = 3;
+}
+
+// Defines a type of cluster.
+message ClusterType {
+  // The algorithm used to create the cluster, e.g. "reason-0.1" for reason-based
+  // clustering or "rule-0.1" for clusters based on failure association rules.
+  // If specific algorithm versions are deprecated, this will allow us to target
+  // cluster references for deletion.
+  string algorithm = 1;
+
+  // Other information we may wish to store about the cluster, like priority, etc.
+}
+
+// Represents a reference to a cluster.
+message ReferencedCluster {
+  // The type of the referenced cluster, represented by an index
+  // into the cluster_types list of ChunkClusters.
+  int64 type_ref = 1;
+
+  // The identifier of the referenced cluster (up to 16 bytes).
+  bytes cluster_id = 2;
+}
+
+// Represents the clusters a test result is included in.
+message TestResultClusters {
+  // The clusters the test result is a member of. Clusters are identified by
+  // their index in the referenced_clusters list.
+  repeated int64 cluster_refs = 1 [ packed = true ];
+}

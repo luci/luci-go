@@ -1,0 +1,188 @@
+// Copyright 2022 The LUCI Authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package weetbix.v1;
+
+import "google/api/field_behavior.proto";
+import "google/protobuf/field_mask.proto";
+import "google/protobuf/timestamp.proto";
+import "go.chromium.org/luci/analysis/proto/v1/common.proto";
+
+option go_package = "go.chromium.org/luci/analysis/proto/v1;weetbixpb";
+
+// Provides methods to manipulate rules in Weetbix, used to associate
+// failures with bugs.
+service Rules {
+  // Retrieves a rule.
+  // Designed to conform to https://google.aip.dev/131.
+  rpc Get(GetRuleRequest) returns (Rule) {};
+
+  // Lists rules.
+  // TODO: implement pagination to make this
+  // RPC compliant with https://google.aip.dev/132.
+  // This RPC is incomplete. Future breaking changes are
+  // expressly flagged.
+  rpc List(ListRulesRequest) returns (ListRulesResponse) {};
+
+  // Creates a new rule.
+  // Designed to conform to https://google.aip.dev/133.
+  rpc Create(CreateRuleRequest) returns (Rule) {};
+
+  // Updates a rule.
+  // Designed to conform to https://google.aip.dev/134.
+  rpc Update(UpdateRuleRequest) returns (Rule) {};
+
+  // Looks up the rule associated with a given bug, without knowledge
+  // of the Weetbix project the rule is in.
+  // Designed to conform to https://google.aip.dev/136.
+  rpc LookupBug(LookupBugRequest) returns (LookupBugResponse) {};
+}
+
+// A rule associating failures with a bug.
+// Next ID: 15.
+message Rule {
+  // Can be used to refer to this rule, e.g. in RulesService.Get RPC.
+  // Format: projects/{project}/rules/{rule_id}.
+  // See also https://google.aip.dev/122.
+  string name = 1;
+
+  // The LUCI Project for which this rule is defined.
+  string project = 2
+    [(google.api.field_behavior) = OUTPUT_ONLY];
+
+  // The unique identifier for the failure association rule,
+  // as 32 lowercase hexadecimal characters.
+  string rule_id = 3
+    [(google.api.field_behavior) = OUTPUT_ONLY];
+
+  // The rule predicate, defining which failures are being associated.
+  string rule_definition = 4
+    [(google.api.field_behavior) = REQUIRED];
+
+  // The bug that the failures are associated with.
+  weetbix.v1.AssociatedBug bug = 5
+    [(google.api.field_behavior) = REQUIRED];
+
+  // Whether the bug should be updated by Weetbix, and whether failures
+  // should still be matched against the rule.
+  bool is_active = 6;
+
+  // Whether Weetbix should manage the priority and verified status
+  // of the associated bug based on the impact established via this rule.
+  bool is_managing_bug = 14;
+
+  // The suggested cluster this rule was created from (if any).
+  // Until re-clustering is complete and has reduced the residual impact
+  // of the source cluster, this cluster ID tells bug filing to ignore
+  // the source cluster when determining whether new bugs need to be filed.
+  weetbix.v1.ClusterId source_cluster = 7;
+
+  // The time the rule was created.
+  google.protobuf.Timestamp create_time = 8
+    [(google.api.field_behavior) = OUTPUT_ONLY];
+
+  // The user which created the rule.
+  string create_user = 9
+    [(google.api.field_behavior) = OUTPUT_ONLY];
+
+  // The time the rule was last updated.
+  google.protobuf.Timestamp last_update_time = 10
+    [(google.api.field_behavior) = OUTPUT_ONLY];
+
+  // The user which last updated the rule.
+  string last_update_user = 11
+    [(google.api.field_behavior) = OUTPUT_ONLY];
+
+  // The time the rule was last updated in a way that caused the
+  // matched failures to change, i.e. because of a change to rule_definition
+  // or is_active. (By contrast, updating the associated bug does NOT change
+  // the matched failures, so does NOT update this field.)
+  // Output only.
+  google.protobuf.Timestamp predicate_last_update_time = 13
+    [(google.api.field_behavior) = OUTPUT_ONLY];
+
+  // This checksum is computed by the server based on the value of other
+  // fields, and may be sent on update requests to ensure the client
+  // has an up-to-date value before proceeding.
+  // See also https://google.aip.dev/154.
+  string etag = 12;
+}
+
+message GetRuleRequest {
+  // The name of the rule to retrieve.
+  // Format: projects/{project}/rules/{rule_id}.
+  string name = 1
+    [(google.api.field_behavior) = REQUIRED];
+}
+
+message ListRulesRequest {
+  // The parent, which owns this collection of rules.
+  // Format: projects/{project}.
+  string parent = 1
+    [(google.api.field_behavior) = REQUIRED];
+}
+
+message ListRulesResponse {
+  // The rules.
+  repeated Rule rules = 1;
+}
+
+message CreateRuleRequest {
+  // The parent resource where the rule will be created.
+  // Format: projects/{project}.
+  string parent = 1
+    [(google.api.field_behavior) = REQUIRED];
+
+  // The rule to create.
+  Rule rule = 2
+    [(google.api.field_behavior) = REQUIRED];
+}
+
+message UpdateRuleRequest {
+  // The rule to update.
+  //
+  // The rule's `name` field is used to identify the book to update.
+  // Format: projects/{project}/rules/{rule_id}.
+  Rule rule = 1
+    [(google.api.field_behavior) = REQUIRED];
+
+  // The list of fields to update.
+  google.protobuf.FieldMask update_mask = 2;
+
+  // The current etag of the rule.
+  // If an etag is provided and does not match the current etag of the rule,
+  // update will be blocked and an ABORTED error will be returned.
+  string etag = 3;
+}
+
+message LookupBugRequest {
+  // System is the bug tracking system of the bug. This is either
+  // "monorail" or "buganizer".
+  string system = 1
+    [(google.api.field_behavior) = REQUIRED];
+
+  // Id is the bug tracking system-specific identity of the bug.
+  // For monorail, the scheme is {project}/{numeric_id}, for
+  // buganizer the scheme is {numeric_id}.
+  string id = 2
+    [(google.api.field_behavior) = REQUIRED];
+}
+
+message LookupBugResponse {
+  // The rules corresponding to the requested bug.
+  // Format: projects/{project}/rules/{rule_id}.
+  repeated string rules = 2;
+}

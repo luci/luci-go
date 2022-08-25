@@ -1,0 +1,494 @@
+// Copyright 2022 The LUCI Authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package weetbix.v1;
+
+option go_package = "go.chromium.org/luci/analysis/proto/v1;weetbixpb";
+
+import "google/protobuf/timestamp.proto";
+import "go.chromium.org/luci/analysis/proto/v1/common.proto";
+import "go.chromium.org/luci/analysis/proto/v1/changelist.proto";
+import "go.chromium.org/luci/analysis/proto/v1/failure_reason.proto";
+
+// Provides methods to cluster test results, and obtain the impact of those
+// clusters.
+//
+// A cluster is a group of test failures with a common characteristic.
+// For example, test results may form a cluster with other failures that share
+// a common test name, or failure reason. Test results may also be in a cluster
+// defined by a user-modifiable failure association rule (which associates
+// failures with a bug). In this case, the failures have the property defined
+// by the failure association rule in common.
+//
+// A test result may be in many clusters, and each cluster may contain many
+// test results.
+//
+// Each cluster has an identity, consisting of three components:
+// - The LUCI Project name, e.g. "chromium" or "fuchsia".
+// - The Clustering Algorithm that identified the cluster. As at writing
+//   (April 2022), the algorithms are 'testname-v3' for version 3 of the
+//   test-name clustering algorithm, 'reason-v3' for version 3 of the failure
+//   reason clustering algorithm, and 'rules-v2' for the rules-based clustering
+//   algorithm.
+//   (Although internally versioned, the rules algorithm version is hidden
+//   for clients, so that {luci_project}/rules/{rule_id} always represents
+//   the cluster defined by the given rule_id.)
+//   We make no guarantees about the structure of algorithm names, they should
+//   be treated as opaque strings by clients.
+// - An algorithm-defined cluster identifier. This is algorithm-dependent and
+//   although (as at April 2022) a lowercase hexadecimal string, should be
+//   treated as an opaque value by clients.
+//   For the 'rules' algorithm, the cluster identifier will always correspond
+//   to the Rule ID of the rule that defines the cluster.
+service Clusters {
+    // Identifies the cluster(s) for one or more test failure(s).
+    //
+    // This RPC returns the clusters of each test result, using
+    // current suggested cluster algorithms, configured failure
+    // association rules, and ingested project configuration with
+    // a bounded staleness of up to one minute. (Returned clusters
+    // may be based on project configuration and configured failure
+    // association rules that is up to one minute out-of-date).
+    //
+    // As at April 2022, the implementation does not use stale
+    // rules, but you are instructed NOT to rely on this property to
+    // allow reversion to the faster implementation that is tolerant
+    // to higher QPS in future. If your use case require strong reads
+    // (e.g. you want to call cluster immediately after updating a rule),
+    // please contact Weetbix owners. We may be able to provide a
+    // request flag to select this processing behaviour.
+    //
+    // This RPC is a pure query API and does not lead to the ingestion of the
+    // test failures by Weetbix (e.g. for cluster impact calculations).
+    rpc Cluster(ClusterRequest) returns (ClusterResponse) {};
+
+    // Reads information about the given clusters.
+    //
+    // Please consult Weetbix owners before adding additional calls to this
+    // RPC, as the implementation currently calls back to BigQuery and as
+    // such, is not cost-optimised if many queries are to be made.
+    //
+    // As of writing (April 13, 2022) this query reads ~1 GB per call for
+    // the largest LUCI Project, which translates to a cost of 0.5 US cents
+    // per query at published pricing (US$5/TB analyzed for BigQuery).
+    //
+    // Changes to this RPC should comply with https://google.aip.dev/231.
+    rpc BatchGet(BatchGetClustersRequest)
+        returns (BatchGetClustersResponse) {};
+
+    // Reads current progress re-clustering the given project. Re-clustering
+    // means updating the clusters each failure is in to reflect the latest
+    // failure association rules, suggested clustering algorithms and
+    // clustering configuration.
+    rpc GetReclusteringProgress(GetReclusteringProgressRequest)
+        returns (ReclusteringProgress) {};
+
+    // Queries summary information about top clusters.
+    //
+    // The set of test failures used as input to the clustering can be
+    // specified using the failure_filter field on the request.
+    // The returned clusters include only the impact derived from the
+    // filtered failures.
+    //
+    // This allows investigation of the highest impact clusters for some
+    // subset of the failure data in a project. For example, a filter string
+    // of "failure_reason:ssh" would find all of the clusters where any test
+    // results mention "ssh" in their failure reason, and show how big the
+    // impact from these ssh failures is in each cluster. This is useful when
+    // investigating specific problems, or ownership areas of the tests.
+    //
+    // Please consult Weetbix owners before adding additional calls to this
+    // RPC, as the implementation currently calls back to BigQuery and as
+    // such, is not cost-optimised if many queries are to be made.
+    //
+    // As of writing (April 13, 2022) this query reads up to 10 GB per call for
+    // the largest LUCI Project, which translates to a cost of up to 5 US cents
+    // per query at published pricing (US$5/TB analyzed for BigQuery).
+    rpc QueryClusterSummaries(QueryClusterSummariesRequest)
+        returns (QueryClusterSummariesResponse) {};
+
+    // Queries examples of failures in the given cluster.
+    //
+    // Please consult Weetbix owners before adding additional calls to this
+    // RPC, as the implementation currently calls back to BigQuery and as
+    // such, is not cost-optimised if many queries are to be made.
+    rpc QueryClusterFailures(QueryClusterFailuresRequest)
+        returns (QueryClusterFailuresResponse) {};
+}
+
+message ClusterRequest {
+    // TestResult captures information about a test result, sufficient to
+    // cluster it. The fields requested here may be expanded over time.
+    // For example, variant information may be requested in future.
+    message TestResult {
+        // Opaque tag supplied by the caller, to be returned in the
+        // response. Provided to assist correlating responses with requests.
+        // Does not need to be unique. Optional.
+        string request_tag = 1;
+
+        // Identifier of the test (as reported to ResultDB).
+        // For chromium projects, this starts with ninja://.
+        string test_id = 2;
+
+        // The failure reason of the test (if any).
+        weetbix.v1.FailureReason failure_reason = 3;
+    }
+    // The LUCI Project for which the test result should be clustered.
+    string project = 1;
+
+    // The test results to cluster. At most 1000 test results may be
+    // clustered in one request.
+    repeated TestResult test_results = 2;
+}
+
+message ClusterResponse {
+    // The cluster(s) a test result is contained in.
+    message ClusteredTestResult {
+        // An individual cluster a test result is contained in.
+        message ClusterEntry {
+            // The unique identifier of the cluster.
+            // If the algorithm is "rules", the cluster ID is also a rule ID.
+            weetbix.v1.ClusterId cluster_id = 1;
+
+            // The bug associated with the cluster, if any. This is only
+            // populated for clusters defined by a failure association rule,
+            // which associates specified failures to a bug.
+            weetbix.v1.AssociatedBug bug = 2;
+        }
+        // Opaque tag supplied by the caller in the request. Provided to assist
+        // the caller correlate responses with requests.
+        string request_tag = 1;
+
+        // The clusters the test result is contained within.
+        repeated ClusterEntry clusters = 2;
+    }
+
+   // The clusters each test result is in.
+   // Contains one result for each test result specified in the request.
+   // Results are provided in the same order as the request, so
+   // the i-th ClusteredTestResult corresponds to the i-th
+   // TestResult in the request.
+   repeated ClusteredTestResult clustered_test_results = 1;
+
+   // The versions of clustering algorithms, rules and project configuration
+   // used to service this request. For debugging purposes only.
+   ClusteringVersion clustering_version = 2;
+}
+
+// The versions of algorithms, rules and configuration used by Weetbix
+// to cluster test results. For a given test result and ClusteringVersion,
+// the set of returned clusters should always be the same.
+message ClusteringVersion {
+    // The version of clustering algorithms used.
+    int32 algorithms_version = 1;
+
+    // The version of failure association rules used. This is the Spanner
+    // commit timestamp of the last rule modification incorporated in the
+    // set of rules used to cluster the results.
+    google.protobuf.Timestamp rules_version = 2;
+
+    // The version of project configuration used. This is the timestamp
+    // the project configuration was ingested by Weetbix.
+    google.protobuf.Timestamp config_version = 3;
+}
+
+message BatchGetClustersRequest {
+    // The LUCI project shared by all clusters to retrieve.
+    // Required.
+    // Format: projects/{project}.
+    string parent = 1;
+
+    // The resource name of the clusters retrieve.
+    // Format: projects/{project}/clusters/{cluster_algorithm}/{cluster_id}.
+    // Designed to conform to aip.dev/231.
+    // At most 1,000 clusters may be requested at a time.
+    repeated string names = 2;
+}
+
+message BatchGetClustersResponse {
+    // The clusters requested.
+    repeated Cluster clusters = 1;
+}
+
+message Cluster {
+    // The resource name of the cluster.
+    // Format: projects/{project}/clusters/{cluster_algorithm}/{cluster_id}.
+    string name = 1;
+
+    // Whether there is a recent example in the cluster.
+    bool has_example = 2;
+
+    // A human-readable name for the cluster.
+    // Only populated for suggested clusters where has_example = true.
+    // Not populated for rule-based clusters.
+    string title = 3;
+
+    message MetricValues {
+        message Counts {
+            // The value of the metric (summed over all failures).
+            int64 nominal = 1;
+        }
+
+        // The metric value for the last day.
+        Counts one_day = 2;
+        // The metric value for the last three days.
+        Counts three_day = 3;
+        // The metric value for the last week.
+        Counts seven_day = 4;
+    }
+
+    // The total number of user changelists which failed presubmit.
+    MetricValues user_cls_failed_presubmit = 4;
+
+    // The total number of failures in the cluster that occurred on tryjobs
+    // that were critical (presubmit-blocking) and were exonerated for a
+    // reason other than NOT_CRITICAL or UNEXPECTED_PASS.
+    MetricValues critical_failures_exonerated = 5;
+
+    // The total number of failures in the cluster.
+    MetricValues failures = 6;
+
+    // The failure association rule equivalent to the cluster. Populated only
+    // for suggested clusters where has_example = true.
+    // Not populated for rule-based clusters. If you need the failure
+    // association rule for a rule-based cluster, use weetbix.v1.Rules/Get
+    // to retrieve the rule with ID matching the cluster ID.
+    // Used to facilitate creating a new rule based on a suggested cluster.
+    string equivalent_failure_association_rule = 7;
+}
+
+// Designed to conform with aip.dev/131.
+message GetReclusteringProgressRequest {
+    // The name of the reclustering progress resource to retrieve.
+    // Format: projects/{project}/reclusteringProgress.
+    string name = 1;
+}
+
+// ReclusteringProgress captures the progress re-clustering a
+// given LUCI project's test results using specific rules
+// versions or algorithms versions.
+message ReclusteringProgress {
+    // The name of the reclustering progress resource.
+    // Format: projects/{project}/reclusteringProgress.
+    string name = 1;
+
+    // ProgressPerMille is the progress of the current re-clustering run,
+    // measured in thousandths (per mille). As such, this value ranges
+    // from 0 (0% complete) to 1000 (100% complete).
+    int32 progress_per_mille = 2;
+
+    // The goal of the last completed re-clustering run.
+    ClusteringVersion last = 5;
+
+    // The goal of the current re-clustering run. (For which
+    // ProgressPerMille is specified.) This may be the same as the
+    // last completed re-clustering run the available algorithm versions,
+    // rules and configuration is unchanged.
+    ClusteringVersion next = 6;
+}
+
+message QueryClusterSummariesRequest {
+    // The LUCI Project.
+    string project = 1;
+
+    // An AIP-160 style filter to select test failures in the project
+    // to cluster and calculate metrics for.
+    //
+    // Filtering supports a subset of [AIP-160 filtering](https://google.aip.dev/160).
+    //
+    // All values are case-sensitive.
+    //
+    // A bare value is searched for in the columns test_id and
+    // failure_reason. E.g. ninja or "test failed".
+    //
+    // You can use AND, OR and NOT (case sensitive) logical operators, along
+    // with grouping. '-' is equivalent to NOT. Multiple bare values are
+    // considered to be AND separated.  E.g. These are equivalent:
+    // hello world
+    // and:
+    // hello AND world
+    //
+    // More examples:
+    // a OR b
+    // a AND NOT(b or -c)
+    //
+    // You can filter particular columns with '=', '!=' and ':' (has) operators.
+    // The right hand side of the operator must be a simple value. E.g:
+    // test_id:telemetry
+    // -failure_reason:Timeout
+    // ingested_invocation_id="build-8822963500388678513"
+    //
+    // Supported columns to search on:
+    // - test_id
+    // - failure_reason
+    // - realm
+    // - ingested_invocation_id
+    // - cluster_algorithm
+    // - cluster_id
+    // - variant_hash
+    // - test_run_id
+    string failure_filter = 2;
+
+    // A comma-seperated list of fields to order the response by.
+    // Valid fields are "presubmit_rejects", "critical_failures_exonerated"
+    // and "failures".
+    // The default sorting order is ascending, to specify descending order
+    // for a field append a " desc" suffix.
+    // E.g. "presubmit_rejects desc, failures desc".
+    // See the order by section on aip.dev/132 for more details.
+    string order_by = 3;
+}
+
+message QueryClusterSummariesResponse {
+    // The clusters and impact metrics from the filtered failures.
+    repeated ClusterSummary cluster_summaries = 1;
+}
+
+message ClusterSummary {
+    // The cluster ID of this cluster.
+    weetbix.v1.ClusterId cluster_id = 1;
+
+    // Title is a one-line description of the cluster.
+    string title = 2;
+
+    // The bug associated with the cluster. This will only be present for
+    // rules algorithm clusters.
+    weetbix.v1.AssociatedBug bug = 3;
+
+    // The number of distinct developer changelists that failed at least one
+    // presubmit (CQ) run because of failure(s) in this cluster.
+    int64 presubmit_rejects = 4;
+
+    // The number of failures on test variants which were configured to be
+    // presubmit-blocking, which were exonerated (i.e. did not actually block
+    // presubmit) because infrastructure determined the test variant to be
+    // failing or too flaky at tip-of-tree. If this number is non-zero, it
+    // means a test variant which was configured to be presubmit-blocking is
+    // not stable enough to do so, and should be fixed or made non-blocking.
+    int64 critical_failures_exonerated = 5;
+
+    // The total number of test results in this cluster. Weetbix only
+    // clusters test results which are unexpected and have a status of crash,
+    // abort or fail.
+    int64 failures = 6;
+}
+
+message QueryClusterFailuresRequest {
+    // The resource name of the cluster to retrieve failures for.
+    // Format: projects/{project}/clusters/{cluster_algorithm}/{cluster_id}/failures.
+    string parent = 1;
+}
+
+message QueryClusterFailuresResponse {
+    // Example failures in the cluster.
+    // Limited to the most recent 2000 examples.
+    repeated DistinctClusterFailure failures = 1;
+}
+
+// DistinctClusterFailure represents a number of failures which have identical
+// properties. This provides slightly compressed transfer of examples.
+message DistinctClusterFailure {
+    // Representation of an exoneration. An exoneration means the subject of
+    // the test (e.g. a CL) is absolved from blame for the unexpected results
+    // of the test variant.
+    message Exoneration {
+        // The machine-readable reason for the exoneration.
+        weetbix.v1.ExonerationReason reason = 1;
+    }
+    
+    // Representation of a presubmit run (e.g. LUCI CV Run).
+    message PresubmitRun {
+        // Identity of the presubmit run that contains this test result.
+        // This should be unique per "CQ+1"/"CQ+2" attempt on gerrit.
+        //
+        // One presumbit run MAY have many ingested invocation IDs (e.g. for its
+        // various tryjobs), but every ingested invocation ID only ever has one
+        // presubmit run ID (if any).
+        //
+        // All test results for the same presubmit run will have one
+        // partition_time.
+        //
+        // If the test result was not collected as part of a presubmit run,
+        // this is unset.
+        weetbix.v1.PresubmitRunId presubmit_run_id = 1;
+    
+        // The owner of the presubmit run (if any).
+        // This is the owner of the CL on which CQ+1/CQ+2 was clicked
+        // (even in case of presubmit run with multiple CLs).
+        // There is scope for this field to become an email address if privacy
+        // approval is obtained, until then it is "automation" (for automation
+        // service accounts) and "user" otherwise.
+        string owner = 2;
+    
+        // The mode of the presubmit run. E.g. DRY_RUN, FULL_RUN, QUICK_DRY_RUN.
+        weetbix.v1.PresubmitRunMode mode = 3;
+    }
+
+    // The identity of the test.
+    string test_id = 1;
+
+    // The test variant.
+    weetbix.v1.Variant variant = 2;
+
+    // Timestamp representing the start of the data retention period for the
+    // test results in this group.
+    // The partition time is usually the presubmit run start time (if any) or
+    // build start time.
+    google.protobuf.Timestamp partition_time = 3;
+
+    // Details if the presubmit run associated with these results (if any).
+    PresubmitRun presubmit_run = 4;
+
+    // Whether the build was critical to a presubmit run succeeding.
+    // If the build was not part of a presubmit run, this field should
+    // be ignored.
+    bool is_build_critical = 5;
+
+    // The exonerations applied to the test variant verdict.
+    repeated Exoneration exonerations = 6;
+
+    // The status of the build that contained this test result. Can be used
+    // to filter incomplete results (e.g. where build was cancelled or had
+    // an infra failure). Can also be used to filter builds with incomplete
+    // exonerations (e.g. build succeeded but some tests not exonerated).
+    // This is the build corresponding to ingested_invocation_id.
+    weetbix.v1.BuildStatus build_status = 7;
+
+    // The invocation from which this test result was ingested. This is
+    // the top-level invocation that was ingested, an "invocation" being
+    // a container of test results as identified by the source test result
+    // system.
+    //
+    // For ResultDB, Weetbix ingests invocations corresponding to
+    // buildbucket builds.
+    string ingested_invocation_id = 8;
+
+    // Is the ingested invocation blocked by this test variant? This is
+    // only true if all (non-skipped) test results for this test variant
+    // (in the ingested invocation) are unexpected failures.
+    //
+    // Exoneration does not factor into this value; check exonerations
+    // to see if the impact of this ingested invocation being blocked was
+    // mitigated by exoneration. 
+    bool is_ingested_invocation_blocked = 9;
+
+    // The unsubmitted changelists that were tested (if any).
+    // Up to 10 changelists are captured.
+    repeated weetbix.v1.Changelist changelists = 10;
+
+    // The number of test results which have these properties.
+    int32 count = 11;
+}

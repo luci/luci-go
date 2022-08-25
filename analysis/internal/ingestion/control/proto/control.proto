@@ -1,0 +1,72 @@
+// Copyright 2022 The LUCI Authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package weetbix.internal.ingestion.control;
+
+import "google/protobuf/timestamp.proto";
+import "go.chromium.org/luci/analysis/proto/v1/common.proto";
+
+option go_package = "go.chromium.org/luci/analysis/internal/ingestion/control/proto;controlpb";
+
+// BuildResult represents the result from the buildbucket pub/sub
+// that should be passed to the result ingestion task.
+message BuildResult {
+  // Buildbucket build ID, unique per Buildbucket instance.
+  int64 id = 1;
+
+  // Buildbucket host, e.g. "cr-buildbucket.appspot.com".
+  string host = 2;
+
+  // The time the build was created.
+  google.protobuf.Timestamp creation_time = 3;
+
+  // The LUCI Project to which the build belongs.
+  string project = 4;
+}
+
+// PresubmitResult represents the result from the presubmit pub/sub
+// that should be passed to the result ingestion task.
+message PresubmitResult {
+  // The identity of the presubmit run. If the ingestion does not relate to test
+  // results obtained in a presubmit run, this field should not be set.
+  weetbix.v1.PresubmitRunId presubmit_run_id = 1;
+
+  reserved 2;
+
+  // The ending status of the presubmit run. E.g. Canceled, Success, Failure.
+  weetbix.v1.PresubmitRunStatus status = 9;
+
+  // The presubmit run mode.
+  // E.g. FULL_RUN, DRY_RUN, QUICK_DRY_RUN.
+  weetbix.v1.PresubmitRunMode mode = 8;
+
+  // The owner of the presubmit run (if any).
+  // This is the owner of the CL on which CQ+1/CQ+2 was clicked
+  // (even in case of presubmit run with multiple CLs).
+  // There is scope for this field to become an email address if privacy
+  // approval is obtained, until then it is "automation" (for automation
+  // service accounts) and "user" otherwise.
+  string owner = 4;
+
+  reserved 5, 6;
+
+  // The time the presubmit was created.
+  google.protobuf.Timestamp creation_time = 3;
+
+  // Whether the build was critical to the completion of the presubmit run.
+  // True if the failure of the build would cause the presubmit run to fail.
+  bool critical = 7;
+}

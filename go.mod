@@ -19,6 +19,7 @@ require (
 	cloud.google.com/go/storage v1.22.1
 	contrib.go.opencensus.io/exporter/stackdriver v0.13.12
 	github.com/Microsoft/go-winio v0.5.2
+	github.com/alecthomas/participle/v2 v2.0.0-alpha7
 	github.com/alicebob/miniredis/v2 v2.21.0
 	github.com/bazelbuild/buildtools v0.0.0-20220510163207-df8cabe96863
 	github.com/bazelbuild/remote-apis v0.0.0-20220510175640-3b4b64021035
