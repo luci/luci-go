@@ -1,0 +1,14 @@
+name: luci-go/luci-analysis
+extends: ../gae.yaml
+
+inputsdir: ../../analysis
+
+build:
+  # This builds the frontend code, updating ${inputsdir}/frontend/ui/dist.
+  - run: ['make', 'release']
+    cwd: ${inputsdir}/frontend/ui
+
+  # This packages all Go code, including the frontend code from
+  # frontend/ui/dist.
+  - go_gae_bundle: ${inputsdir}/frontend/app.yaml
+    dest: ${contextdir}/frontend
