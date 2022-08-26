@@ -24,13 +24,13 @@ a {
   font-weight: normal;
 }
 
-.badge {
-  color: white;
-  background-color: var(--active-color);
+.duration {
+  color: var(--light-text-color);
+  background-color: var(--light-active-color);
   display: inline-block;
   padding: 0.25em 0.4em;
   font-size: 75%;
-  font-weight: 700;
+  font-weight: 500;
   line-height: 13px;
   text-align: center;
   white-space: nowrap;
@@ -38,6 +38,27 @@ a {
   border-radius: 0.25rem;
   margin-bottom: 3px;
   width: 35px;
+}
+
+.duration.ms {
+  background-color: var(--light-background-color-1);
+}
+
+.duration.s {
+  background-color: var(--light-background-color-2);
+}
+
+.duration.m {
+  background-color: var(--light-background-color-3);
+}
+
+.duration.h {
+  background-color: var(--light-background-color-4);
+}
+
+.duration.d {
+  color: white;
+  background-color: var(--active-color);
 }
 
 input[type='checkbox'] {

@@ -55,5 +55,10 @@ html {
   --delete-color: var(--failure-color);
   --mdc-theme-primary: var(--active-color);
 
+  --light-background-color-1: hsl(206, 85%, 96%);
+  --light-background-color-2: hsl(206, 85%, 91%);
+  --light-background-color-3: hsl(206, 85%, 84%);
+  --light-background-color-4: hsl(206, 85%, 74%);
+
   --expand-button-width: 155px;
 }

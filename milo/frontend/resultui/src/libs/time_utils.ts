@@ -42,25 +42,25 @@ export function displayDuration(duration: Duration) {
   return parts.join(' ');
 }
 
-export function displayCompactDuration(duration: Duration) {
+export function displayCompactDuration(duration: Duration): [string, string] {
   const shifted = duration.shiftTo('days', 'hours', 'minutes', 'seconds', 'milliseconds');
   if (shifted.days >= 1) {
-    return `${(shifted.days + shifted.hours / 24).toFixed(1)}d`;
+    return [`${(shifted.days + shifted.hours / 24).toFixed(1)}d`, 'd'];
   }
   if (shifted.hours >= 1) {
-    return `${(shifted.hours + shifted.minutes / 60).toPrecision(2)}h`;
+    return [`${(shifted.hours + shifted.minutes / 60).toPrecision(2)}h`, 'h'];
   }
   if (shifted.minutes >= 1) {
-    return `${(shifted.minutes + shifted.seconds / 60).toPrecision(2)}m`;
+    return [`${(shifted.minutes + shifted.seconds / 60).toPrecision(2)}m`, 'm'];
   }
 
   // Unlike other units, shifted.milliseconds may not be an integer.
   // shifted.milliseconds.toFixed(0) may give us 1000 when
   // shifted.milliseconds >= 999.5. We should display it as 1.0s in that case.
   if (shifted.seconds >= 1 || shifted.milliseconds >= 999.5) {
-    return `${(shifted.seconds + shifted.milliseconds / 1000).toPrecision(2)}s`;
+    return [`${(shifted.seconds + shifted.milliseconds / 1000).toPrecision(2)}s`, 's'];
   }
-  return `${shifted.milliseconds.toFixed(0)}ms`;
+  return [`${shifted.milliseconds.toFixed(0)}ms`, 'ms'];
 }
 
 /* eslint-disable max-len */

@@ -115,12 +115,15 @@ export class BuildPageStepEntryElement extends MiloBaseElement implements Render
 
   private renderDuration() {
     if (!this.step.startTime) {
-      return html` <span class="badge" title="No duration">N/A</span> `;
+      return html` <span class="duration" title="No duration">N/A</span> `;
     }
+
+    let compactDuration: string, compactDurationUnits: string;
+    [compactDuration, compactDurationUnits] = displayCompactDuration(this.step.duration);
 
     return html`
       <div
-        class="badge"
+        class="duration ${compactDurationUnits}"
         @mouseover=${(e: MouseEvent) => {
           const tooltip = document.createElement('div');
           render(this.renderDurationTooltip(), tooltip);
@@ -139,7 +142,7 @@ export class BuildPageStepEntryElement extends MiloBaseElement implements Render
           window.dispatchEvent(new CustomEvent<HideTooltipEventDetail>('hide-tooltip', { detail: { delay: 50 } }));
         }}
       >
-        ${displayCompactDuration(this.step.duration)}
+        ${compactDuration}
       </div>
     `;
   }
@@ -306,7 +309,7 @@ export class BuildPageStepEntryElement extends MiloBaseElement implements Render
         vertical-align: bottom;
       }
 
-      .badge {
+      .duration {
         margin-top: 3px;
         margin-bottom: 5px;
       }

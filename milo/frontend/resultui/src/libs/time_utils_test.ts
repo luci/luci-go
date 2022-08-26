@@ -52,31 +52,31 @@ describe('Time Utils Tests', () => {
   describe('displayCompactDuration', () => {
     it('should display correct duration in days', async () => {
       const duration = Duration.fromISO('P3DT11H');
-      assert.strictEqual(displayCompactDuration(duration), '3.5d');
+      assert.deepEqual(displayCompactDuration(duration), ['3.5d', 'd']);
     });
     it('should display correct duration in hours', async () => {
       const duration = Duration.fromISO('PT1H11M');
-      assert.strictEqual(displayCompactDuration(duration), '1.2h');
+      assert.deepEqual(displayCompactDuration(duration), ['1.2h', 'h']);
     });
     it('should display correct duration in minutes', async () => {
       const duration = Duration.fromISO('PT2M3S');
-      assert.strictEqual(displayCompactDuration(duration), '2.0m');
+      assert.deepEqual(displayCompactDuration(duration), ['2.0m', 'm']);
     });
     it('should display correct duration in seconds', async () => {
       const duration = Duration.fromISO('PT15S');
-      assert.strictEqual(displayCompactDuration(duration), '15s');
+      assert.deepEqual(displayCompactDuration(duration), ['15s', 's']);
     });
     it('should display correct duration in milliseconds', async () => {
       const duration = Duration.fromMillis(999);
-      assert.strictEqual(displayCompactDuration(duration), '999ms');
+      assert.deepEqual(displayCompactDuration(duration), ['999ms', 'ms']);
     });
     it("should not display the duration in ms if it's no less than 999.5ms", async () => {
       const duration = Duration.fromMillis(999.5);
-      assert.strictEqual(displayCompactDuration(duration), '1.0s');
+      assert.deepEqual(displayCompactDuration(duration), ['1.0s', 's']);
     });
     it("should display the duration in ms if it's less than 999.5ms", async () => {
       const duration = Duration.fromMillis(999.4999);
-      assert.strictEqual(displayCompactDuration(duration), '999ms');
+      assert.deepEqual(displayCompactDuration(duration), ['999ms', 'ms']);
     });
   });
 });

@@ -30,7 +30,7 @@ import { TEST_STATUS_DISPLAY_MAP } from '../../libs/constants';
 import { consumer } from '../../libs/context';
 import { reportRenderError } from '../../libs/error_handler';
 import { sanitizeHTML } from '../../libs/sanitize_html';
-import { displayCompactDuration, parseProtoDuration } from '../../libs/time_utils';
+import { displayCompactDuration, displayDuration, parseProtoDuration } from '../../libs/time_utils';
 import { unwrapObservable } from '../../libs/unwrap_observable';
 import { getRawArtifactUrl, router } from '../../routes';
 import { Artifact, ListArtifactsResponse, parseTestResultName, Tag, TestResult } from '../../services/resultdb';
@@ -311,11 +311,18 @@ export class ResultEntryElement extends MobxLitElement {
   }
 
   protected render = reportRenderError(this, () => {
+    let duration: string = "No duration";
+    let compactDuration: string = "N/A";
+    let durationUnits: string = "";
+    if (this.duration) {
+      duration = displayDuration(this.duration);
+      [compactDuration, durationUnits] = displayCompactDuration(this.duration);
+    }
     return html`
       <milo-expandable-entry .expanded=${this.expanded} .onToggle=${(expanded: boolean) => (this.expanded = expanded)}>
         <span id="header" slot="header">
-          <div class="badge" title=${this.duration ? '' : 'No duration'}>
-            ${this.duration ? displayCompactDuration(this.duration) : 'N/A'}
+          <div class="duration ${durationUnits}" title=${duration}>
+            ${compactDuration}
           </div>
           run #${this.id}
           <span class=${this.testResult.expected ? 'expected' : 'unexpected'}>
