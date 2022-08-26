@@ -1,7 +1,16 @@
--- Copyright 2021 The Chromium Authors. All rights reserved.
---
--- Use of this source code is governed by a BSD-style license that can be
--- found in the LICENSE file.
+-- Copyright 2022 The LUCI Authors.
+-- 
+-- Licensed under the Apache License, Version 2.0 (the "License");
+-- you may not use this file except in compliance with the License.
+-- You may obtain a copy of the License at
+-- 
+--      http://www.apache.org/licenses/LICENSE-2.0
+-- 
+-- Unless required by applicable law or agreed to in writing, software
+-- distributed under the License is distributed on an "AS IS" BASIS,
+-- WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+-- See the License for the specific language governing permissions and
+-- limitations under the License.
 
 --------------------------------------------------------------------------------
 -- This script initializes a Weetbix Spanner database.
@@ -284,10 +293,7 @@ CREATE TABLE ReclusteringRuns (
   -- The progress. This is a value between 0 and 1000*ShardCount.
   Progress INT64 NOT NULL,
 ) PRIMARY KEY (Project, AttemptTimestamp DESC)
--- Commented out for Cloud Spanner Emulator:
--- https://github.com/GoogleCloudPlatform/cloud-spanner-emulator/issues/32
--- but **should** be applied to real Spanner instances.
---, ROW DELETION POLICY (OLDER_THAN(AttemptTimestamp, INTERVAL 90 DAY));
+, ROW DELETION POLICY (OLDER_THAN(AttemptTimestamp, INTERVAL 90 DAY));
 
 -- Ingestions is used to synchronise and deduplicate the ingestion
 -- of test results which require data from one or more sources.
@@ -338,11 +344,7 @@ CREATE TABLE Ingestions (
 -- are always retained longer than the ingested results (acknowledging
 -- the partition time on ingested chunks may be later than the LastUpdated
 -- time if clocks are not synchronised).
---
--- Commented out for Cloud Spanner Emulator:
--- https://github.com/GoogleCloudPlatform/cloud-spanner-emulator/issues/32
--- but **should** be applied to real Spanner instances.
---, ROW DELETION POLICY (OLDER_THAN(LastUpdated, INTERVAL 100 DAY));
+, ROW DELETION POLICY (OLDER_THAN(LastUpdated, INTERVAL 100 DAY));
 
 -- Used to speed-up querying join statistics for presubmit runs.
 CREATE NULL_FILTERED INDEX IngestionsByIsPresubmit
