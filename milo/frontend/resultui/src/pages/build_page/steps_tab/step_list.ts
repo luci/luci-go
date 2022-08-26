@@ -21,10 +21,10 @@ import '../../../components/dot_spinner';
 import './step_entry';
 import { MiloBaseElement } from '../../../components/milo_base';
 import { BuildState, consumeBuildState } from '../../../context/build_state';
-import { consumeConfigsStore, UserConfigsStore } from '../../../context/user_configs';
 import { consumer } from '../../../libs/context';
 import { errorHandler, forwardWithoutMsg, reportRenderError } from '../../../libs/error_handler';
 import { BuildStatus } from '../../../services/buildbucket';
+import { consumeStore, StoreInstance } from '../../../store';
 import commonStyle from '../../../styles/common_style.css';
 import { BuildPageStepEntryElement } from './step_entry';
 
@@ -33,15 +33,15 @@ import { BuildPageStepEntryElement } from './step_entry';
 @consumer
 export class BuildPageStepListElement extends MiloBaseElement {
   @observable.ref
-  @consumeConfigsStore()
-  configsStore!: UserConfigsStore;
+  @consumeStore()
+  store!: StoreInstance;
 
   @observable.ref
   @consumeBuildState()
   buildState!: BuildState;
 
   @computed private get stepsConfig() {
-    return this.configsStore.userConfigs.steps;
+    return this.store.userConfig.build.steps;
   }
 
   @computed private get loaded() {

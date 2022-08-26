@@ -19,7 +19,6 @@ import { computed, makeObservable, observable } from 'mobx';
 import '../../../components/hotkey';
 import './step_list';
 import { MiloBaseElement } from '../../../components/milo_base';
-import { consumeConfigsStore, UserConfigsStore } from '../../../context/user_configs';
 import { GA_ACTIONS, GA_CATEGORIES, trackEvent } from '../../../libs/analytics_utils';
 import { consumer } from '../../../libs/context';
 import { errorHandler, forwardWithoutMsg, reportRenderError } from '../../../libs/error_handler';
@@ -35,10 +34,6 @@ export class StepsTabElement extends MiloBaseElement {
   @consumeStore()
   store!: StoreInstance;
 
-  @observable.ref
-  @consumeConfigsStore()
-  configsStore!: UserConfigsStore;
-
   connectedCallback() {
     super.connectedCallback();
     this.store.setSelectedTabId('steps');
@@ -46,7 +41,7 @@ export class StepsTabElement extends MiloBaseElement {
   }
 
   @computed private get stepsConfig() {
-    return this.configsStore.userConfigs.steps;
+    return this.store.userConfig.build.steps;
   }
 
   private allStepsWereExpanded = false;
@@ -72,7 +67,7 @@ export class StepsTabElement extends MiloBaseElement {
               type="checkbox"
               ?checked=${this.stepsConfig.showSucceededSteps}
               @change=${(e: MouseEvent) => {
-                this.stepsConfig.showSucceededSteps = (e.target as HTMLInputElement).checked;
+                this.stepsConfig.setShowSucceededSteps((e.target as HTMLInputElement).checked);
               }}
             />
             <label for="succeeded" style="color: var(--success-color);">Succeeded Steps</label>
@@ -83,7 +78,7 @@ export class StepsTabElement extends MiloBaseElement {
               type="checkbox"
               ?checked=${this.stepsConfig.showDebugLogs}
               @change=${(e: MouseEvent) => {
-                this.stepsConfig.showDebugLogs = (e.target as HTMLInputElement).checked;
+                this.stepsConfig.setShowDebugLogs((e.target as HTMLInputElement).checked);
               }}
             />
             <label for="debug-logs">Debug Logs</label>
@@ -95,9 +90,9 @@ export class StepsTabElement extends MiloBaseElement {
             <input
               id="expand-by-default"
               type="checkbox"
-              ?checked=${this.stepsConfig.expandByDefault}
+              ?checked=${this.stepsConfig.expandSucceededByDefault}
               @change=${(e: MouseEvent) => {
-                this.stepsConfig.expandByDefault = (e.target as HTMLInputElement).checked;
+                this.stepsConfig.expandSucceededByDefault = (e.target as HTMLInputElement).checked;
               }}
             />
             <label for="expand-by-default">Expand by default</label>

@@ -26,13 +26,13 @@ import '../../../components/pin_toggle';
 import { MiloBaseElement } from '../../../components/milo_base';
 import { HideTooltipEventDetail, ShowTooltipEventDetail } from '../../../components/tooltip';
 import { consumeInvocationState, InvocationState } from '../../../context/invocation_state';
-import { consumeConfigsStore, UserConfigsStore } from '../../../context/user_configs';
 import { GA_ACTIONS, GA_CATEGORIES, trackEvent } from '../../../libs/analytics_utils';
 import { BUILD_STATUS_CLASS_MAP, BUILD_STATUS_DISPLAY_MAP, BUILD_STATUS_ICON_MAP } from '../../../libs/constants';
 import { lazyRendering, RenderPlaceHolder } from '../../../libs/observer_element';
 import { displayCompactDuration, displayDuration, NUMERIC_TIME_FORMAT } from '../../../libs/time_utils';
 import { StepExt } from '../../../models/step_ext';
 import { BuildStatus } from '../../../services/buildbucket';
+import { consumeStore, StoreInstance } from '../../../store';
 import colorClasses from '../../../styles/color_classes.css';
 import commonStyle from '../../../styles/common_style.css';
 
@@ -43,8 +43,8 @@ import commonStyle from '../../../styles/common_style.css';
 @lazyRendering
 export class BuildPageStepEntryElement extends MiloBaseElement implements RenderPlaceHolder {
   @observable.ref
-  @consumeConfigsStore()
-  configsStore!: UserConfigsStore;
+  @consumeStore()
+  store!: StoreInstance;
 
   @observable.ref
   @consumeInvocationState()
@@ -66,7 +66,7 @@ export class BuildPageStepEntryElement extends MiloBaseElement implements Render
   @observable.ref private shouldRenderContent = false;
 
   @computed private get isPinned() {
-    return this.configsStore.stepIsPinned(this.step.name);
+    return this.store.userConfig.build.steps.stepIsPinned(this.step.name);
   }
 
   @computed private get isCriticalStep() {
@@ -84,7 +84,7 @@ export class BuildPageStepEntryElement extends MiloBaseElement implements Render
 
   @computed private get logs() {
     const logs = this.step.logs || [];
-    return this.configsStore.userConfigs.steps.showDebugLogs ? logs : logs.filter((log) => !log.name.startsWith('$'));
+    return this.store.userConfig.build.steps.showDebugLogs ? logs : logs.filter((log) => !log.name.startsWith('$'));
   }
 
   constructor() {
@@ -185,9 +185,9 @@ export class BuildPageStepEntryElement extends MiloBaseElement implements Render
     );
     this.addDisposer(
       reaction(
-        () => this.configsStore.userConfigs.steps.expandByDefault,
-        (expandByDefault) => {
-          this.expanded = expandByDefault;
+        () => this.store.userConfig.build.steps.expandSucceededByDefault,
+        (expandSucceededByDefault) => {
+          this.expanded = expandSucceededByDefault;
           this.expandSubSteps = true;
         },
         { fireImmediately: true }
@@ -206,7 +206,7 @@ export class BuildPageStepEntryElement extends MiloBaseElement implements Render
       this.expanded = true;
 
       // Keep the pin setting fresh.
-      this.configsStore.setStepPin(this.step.name, this.isPinned);
+      this.store.userConfig.build.steps.setStepPin(this.step.name, this.isPinned);
     }
   }
 
@@ -240,7 +240,7 @@ export class BuildPageStepEntryElement extends MiloBaseElement implements Render
               class="hidden-icon"
               style=${styleMap({ visibility: this.isPinned ? 'visible' : '' })}
               @click=${(e: Event) => {
-                this.configsStore.setStepPin(this.step.name, !this.isPinned);
+                this.store.userConfig.build.steps.setStepPin(this.step.name, !this.isPinned);
                 e.stopPropagation();
                 // Users are not consuming the step info when (un)setting the
                 // pins, don't record step interaction.
@@ -257,7 +257,7 @@ export class BuildPageStepEntryElement extends MiloBaseElement implements Render
               }}
             ></milo-copy-to-clipboard>
             <span id="header-markdown">${this.step.header}</span>
-            ${this.step.header != null && this.step.header.title != ''
+            ${this.step.header !== null && this.step.header.title !== ''
               ? html` <milo-copy-to-clipboard
                   .textToCopy=${this.step.header.title}
                   title="Copy the step header."

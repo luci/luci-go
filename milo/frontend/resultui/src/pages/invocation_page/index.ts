@@ -23,7 +23,6 @@ import '../test_results_tab/count_indicator';
 import { MiloBaseElement } from '../../components/milo_base';
 import { TabDef } from '../../components/tab_bar';
 import { InvocationState, provideInvocationState } from '../../context/invocation_state';
-import { consumeConfigsStore, UserConfigsStore } from '../../context/user_configs';
 import { INVOCATION_STATE_DISPLAY_MAP } from '../../libs/constants';
 import { consumer, provider } from '../../libs/context';
 import { reportRenderError } from '../../libs/error_handler';
@@ -45,10 +44,6 @@ export class InvocationPageElement extends MiloBaseElement implements BeforeEnte
   @observable.ref
   @consumeStore()
   store!: StoreInstance;
-
-  @observable.ref
-  @consumeConfigsStore()
-  configsStore!: UserConfigsStore;
 
   @observable.ref
   @provideInvocationState({ global: true })

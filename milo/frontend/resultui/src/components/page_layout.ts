@@ -26,7 +26,6 @@ import './signin';
 import './tooltip';
 import { getAuthStateCache, setAuthStateCache } from '../auth_state_cache';
 import { MAY_REQUIRE_SIGNIN, OPTIONAL_RESOURCE } from '../common_tags';
-import { provideConfigsStore, UserConfigsStore } from '../context/user_configs';
 import { NEW_MILO_VERSION_EVENT_TYPE } from '../libs/constants';
 import { provider } from '../libs/context';
 import { errorHandler, handleLocally } from '../libs/error_handler';
@@ -63,7 +62,6 @@ function redirectToLogin(err: ErrorEvent, ele: PageLayoutElement) {
 @provider
 export class PageLayoutElement extends MiloBaseElement implements BeforeEnterObserver {
   @provideStore({ global: true }) readonly store = Store.create();
-  @provideConfigsStore({ global: true }) readonly configsStore = new UserConfigsStore();
   @provideNotifier({ global: true }) readonly notifier = new ProgressiveNotifier({
     // Ensures that everything above the current scroll view is rendered.
     // This reduces page shifting due to incorrect height estimate.
@@ -102,7 +100,6 @@ export class PageLayoutElement extends MiloBaseElement implements BeforeEnterObs
 
     this.addDisposer(() => {
       destroy(this.store);
-      this.configsStore.dispose();
     });
 
     let firstUpdate = true;

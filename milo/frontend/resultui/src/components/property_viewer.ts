@@ -20,6 +20,7 @@ import { computed, makeObservable, observable } from 'mobx';
 import './code_mirror_editor';
 import './connection_observer';
 import { lazyRendering, RenderPlaceHolder } from '../libs/observer_element';
+import { PropertyViewerConfigInstance } from '../store/user_config';
 import { ConnectionEvent, ConnectionObserverElement } from './connection_observer';
 
 const LEFT_RIGHT_ARROW = '\u2194';
@@ -28,7 +29,7 @@ const LEFT_RIGHT_ARROW = '\u2194';
 @lazyRendering
 export class PropertyViewerElement extends MobxLitElement implements RenderPlaceHolder {
   @observable.ref properties!: { [key: string]: unknown };
-  @observable.ref propLineFoldTime!: { [key: string]: number };
+  @observable.ref config!: PropertyViewerConfigInstance;
 
   @computed private get formattedValue() {
     return JSON.stringify(this.properties, undefined, 2);
@@ -77,14 +78,6 @@ export class PropertyViewerElement extends MobxLitElement implements RenderPlace
     makeObservable(this);
   }
 
-  private toggleFold(line: string, folded: boolean) {
-    if (folded) {
-      this.propLineFoldTime[line] = Date.now();
-    } else {
-      delete this.propLineFoldTime[line];
-    }
-  }
-
   renderPlaceHolder() {
     return html`<div id="placeholder"></div>`;
   }
@@ -96,7 +89,7 @@ export class PropertyViewerElement extends MobxLitElement implements RenderPlace
         .options=${this.editorOptions}
         .onInit=${(editor: CodeMirror.Editor) => {
           this.formattedValueLines.forEach((line, lineIndex) => {
-            if (this.propLineFoldTime[line]) {
+            if (this.config.isFolded(line)) {
               // This triggers folded-root-lvl-prop then this.toggleFold which
               // updates the timestamp in this.propLineFoldTime[line].
               // As a result, recently accessed this.propLineFoldTime[line] is
@@ -106,13 +99,13 @@ export class PropertyViewerElement extends MobxLitElement implements RenderPlace
           });
         }}
         @folded-root-lvl-prop=${(e: ConnectionEvent<string>) => {
-          this.toggleFold(e.detail.data, true);
+          this.config.setFolded(e.detail.data, true);
 
           e.detail.addDisconnectedCB((data) => {
             // If the widget is disconnected because the property
             // viewer is disconnected, ignore.
             if (this.isConnected) {
-              this.toggleFold(data, false);
+              this.config.setFolded(data, false);
             }
           });
         }}

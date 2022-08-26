@@ -23,7 +23,6 @@ import './test_variants_table/config_widget';
 import './search_box';
 import { MiloBaseElement } from '../../components/milo_base';
 import { consumeInvocationState, InvocationState } from '../../context/invocation_state';
-import { consumeConfigsStore, UserConfigsStore } from '../../context/user_configs';
 import { GA_ACTIONS, GA_CATEGORIES, trackEvent } from '../../libs/analytics_utils';
 import { consumer } from '../../libs/context';
 import { errorHandler, forwardWithoutMsg, reportRenderError } from '../../libs/error_handler';
@@ -41,10 +40,6 @@ export class TestResultsTabElement extends MiloBaseElement {
   @observable.ref
   @consumeStore()
   store!: StoreInstance;
-
-  @observable.ref
-  @consumeConfigsStore()
-  configsStore!: UserConfigsStore;
 
   @observable.ref
   @consumeInvocationState()

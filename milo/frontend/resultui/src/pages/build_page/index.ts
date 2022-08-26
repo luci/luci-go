@@ -17,8 +17,8 @@ import '@material/mwc-dialog';
 import '@material/mwc-icon';
 import { BeforeEnterObserver, PreventAndRedirectCommands, Router, RouterLocation } from '@vaadin/router';
 import { css, customElement, html } from 'lit-element';
-import merge from 'lodash-es/merge';
 import { autorun, computed, makeObservable, observable, reaction, when } from 'mobx';
+import { applySnapshot, destroy, getSnapshot } from 'mobx-state-tree';
 
 import '../../components/status_bar';
 import '../../components/tab_bar';
@@ -28,7 +28,6 @@ import { MiloBaseElement } from '../../components/milo_base';
 import { TabDef } from '../../components/tab_bar';
 import { BuildState, GetBuildError, provideBuildState } from '../../context/build_state';
 import { InvocationState, provideInvocationState, QueryInvocationError } from '../../context/invocation_state';
-import { consumeConfigsStore, DEFAULT_USER_CONFIGS, UserConfigs, UserConfigsStore } from '../../context/user_configs';
 import { GA_ACTIONS, GA_CATEGORIES, trackEvent } from '../../libs/analytics_utils';
 import { getLegacyURLPathForBuild, getURLPathForBuilder, getURLPathForProject } from '../../libs/build_utils';
 import {
@@ -51,6 +50,7 @@ import { LoadTestVariantsError } from '../../models/test_loader';
 import { NOT_FOUND_URL, router } from '../../routes';
 import { BuilderID, BuildStatus, TEST_PRESENTATION_KEY } from '../../services/buildbucket';
 import { consumeStore, StoreInstance } from '../../store';
+import { UserConfig } from '../../store/user_config';
 import colorClasses from '../../styles/color_classes.css';
 import commonStyle from '../../styles/common_style.css';
 
@@ -144,10 +144,6 @@ export class BuildPageElement extends MiloBaseElement implements BeforeEnterObse
   store!: StoreInstance;
 
   @observable.ref
-  @consumeConfigsStore()
-  configsStore!: UserConfigsStore;
-
-  @observable.ref
   @provideBuildState({ global: true })
   buildState!: BuildState;
 
@@ -155,7 +151,7 @@ export class BuildPageElement extends MiloBaseElement implements BeforeEnterObse
   @provideInvocationState({ global: true })
   invocationState!: InvocationState;
 
-  @observable private readonly uncommittedConfigs: UserConfigs = merge({}, DEFAULT_USER_CONFIGS);
+  @observable private uncommittedConfigs = UserConfig.create({});
 
   // The page is visited via a short link.
   // The page will be redirected to the long link after the build is fetched.
@@ -320,11 +316,16 @@ export class BuildPageElement extends MiloBaseElement implements BeforeEnterObse
       )
     );
 
-    // Sync uncommitted configs with committed configs.
+    // Sync uncommitted configs with committed configs whenever user opens the
+    // dialog.
     this.addDisposer(
       reaction(
-        () => merge({}, this.configsStore.userConfigs),
-        (committedConfig) => merge(this.uncommittedConfigs, committedConfig),
+        () => this.store.showSettingsDialog,
+        (showSettingsDialog) => {
+          if (showSettingsDialog) {
+            applySnapshot(this.uncommittedConfigs, getSnapshot(this.store.userConfig));
+          }
+        },
         { fireImmediately: true }
       )
     );
@@ -332,6 +333,7 @@ export class BuildPageElement extends MiloBaseElement implements BeforeEnterObse
 
   disconnectedCallback() {
     this.store.unregisterSettingsDialog();
+    destroy(this.uncommittedConfigs);
     super.disconnectedCallback();
   }
 
@@ -431,10 +433,11 @@ export class BuildPageElement extends MiloBaseElement implements BeforeEnterObse
         ?open=${this.store.showSettingsDialog}
         @closed=${(event: CustomEvent<{ action: string }>) => {
           if (event.detail.action === 'save') {
-            merge(this.configsStore.userConfigs, this.uncommittedConfigs);
+            applySnapshot(this.store.userConfig, getSnapshot(this.uncommittedConfigs));
           }
           // Reset uncommitted configs.
-          merge(this.uncommittedConfigs, this.configsStore.userConfigs);
+          destroy(this.uncommittedConfigs);
+          this.uncommittedConfigs = UserConfig.create({});
           this.store.setShowSettingsDialog(false);
         }}
       >
@@ -445,11 +448,11 @@ export class BuildPageElement extends MiloBaseElement implements BeforeEnterObse
               <select
                 id="default-tab-selector"
                 @change=${(e: InputEvent) =>
-                  (this.uncommittedConfigs.defaultBuildPageTabName = (e.target as HTMLOptionElement).value)}
+                  this.uncommittedConfigs.build.setDefaultTab((e.target as HTMLOptionElement).value)}
               >
                 ${TAB_NAME_LABEL_TUPLES.map(
                   ([tabName, label]) => html`
-                    <option value=${tabName} ?selected=${tabName === this.uncommittedConfigs.defaultBuildPageTabName}>
+                    <option value=${tabName} ?selected=${tabName === this.uncommittedConfigs.build.defaultTabName}>
                       ${label}
                     </option>
                   `

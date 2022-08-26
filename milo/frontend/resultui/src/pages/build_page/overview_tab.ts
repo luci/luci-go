@@ -32,7 +32,6 @@ import '../test_results_tab/test_variants_table/test_variant_entry';
 import './steps_tab/step_list';
 import { BuildState, consumeBuildState } from '../../context/build_state';
 import { consumeInvocationState, InvocationState } from '../../context/invocation_state';
-import { consumeConfigsStore, UserConfigsStore } from '../../context/user_configs';
 import { GA_ACTIONS, GA_CATEGORIES, trackEvent } from '../../libs/analytics_utils';
 import {
   getBotLink,
@@ -63,10 +62,6 @@ export class OverviewTabElement extends MobxLitElement {
   @observable.ref
   @consumeStore()
   store!: StoreInstance;
-
-  @observable.ref
-  @consumeConfigsStore()
-  configsStore!: UserConfigsStore;
 
   @observable.ref
   @consumeBuildState()
@@ -509,9 +504,9 @@ export class OverviewTabElement extends MobxLitElement {
           <input
             id="succeeded"
             type="checkbox"
-            ?checked=${this.configsStore.userConfigs.steps.showSucceededSteps}
+            ?checked=${this.store.userConfig.build.steps.showSucceededSteps}
             @change=${(e: MouseEvent) => {
-              this.configsStore.userConfigs.steps.showSucceededSteps = (e.target as HTMLInputElement).checked;
+              this.store.userConfig.build.steps.setShowSucceededSteps((e.target as HTMLInputElement).checked);
             }}
           />
           <label for="succeeded" style="color: var(--success-color);">Succeeded Steps</label>
@@ -519,18 +514,18 @@ export class OverviewTabElement extends MobxLitElement {
           <input
             id="debug-logs"
             type="checkbox"
-            ?checked=${this.configsStore.userConfigs.steps.showDebugLogs}
+            ?checked=${this.store.userConfig.build.steps.showDebugLogs}
             @change=${(e: MouseEvent) => {
-              this.configsStore.userConfigs.steps.showDebugLogs = (e.target as HTMLInputElement).checked;
+              this.store.userConfig.build.steps.setShowDebugLogs((e.target as HTMLInputElement).checked);
             }}
           />
           <label id="debug-logs-label" for="debug-logs">Debug Logs</label>
           <input
             id="expand-by-default"
             type="checkbox"
-            ?checked=${this.configsStore.userConfigs.steps.expandByDefault}
+            ?checked=${this.store.userConfig.build.steps.expandSucceededByDefault}
             @change=${(e: MouseEvent) => {
-              this.configsStore.userConfigs.steps.expandByDefault = (e.target as HTMLInputElement).checked;
+              this.store.userConfig.build.steps.setExpandSucceededByDefault((e.target as HTMLInputElement).checked);
             }}
           />
           <label for="expand-by-default">Expand by default</label>
@@ -680,12 +675,12 @@ export class OverviewTabElement extends MobxLitElement {
           <h3>Input Properties</h3>
           <milo-property-viewer
             .properties=${build.input?.properties || {}}
-            .propLineFoldTime=${this.configsStore.userConfigs.inputPropLineFoldTime}
+            .config=${this.store.userConfig.build.inputProperties}
           ></milo-property-viewer>
           <h3>Output Properties</h3>
           <milo-property-viewer
             .properties=${build.output?.properties || {}}
-            .propLineFoldTime=${this.configsStore.userConfigs.outputPropLineFoldTime}
+            .config=${this.store.userConfig.build.outputProperties}
           ></milo-property-viewer>
           ${this.renderBuildPackages()}
         </div>

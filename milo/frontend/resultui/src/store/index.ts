@@ -28,6 +28,7 @@ import { AuthState, MiloInternal } from '../services/milo_internal';
 import { ResultDb } from '../services/resultdb';
 import { ClustersService, TestHistoryService } from '../services/weetbix';
 import { SearchPage } from './search_page';
+import { UserConfig } from './user_config';
 
 const MAY_REQUIRE_SIGNIN_ERROR_CODE = [RpcCode.NOT_FOUND, RpcCode.PERMISSION_DENIED, RpcCode.UNAUTHENTICATED];
 
@@ -47,13 +48,26 @@ export const Store = types
      */
     hasSettingsDialog: 0,
     showSettingsDialog: false,
-    // undefined means it's not initialized yet.
-    // null means there's no such service worker.
-    redirectSw: types.maybe(types.maybeNull(types.frozen<ServiceWorkerRegistration>())),
     authState: types.maybe(types.frozen<AuthState>()),
     banners: types.array(types.frozen<unknown>()),
-
+    userConfig: types.optional(UserConfig, {}),
     searchPage: types.optional(SearchPage, {}),
+  })
+  .volatile(() => {
+    const cachedBuildId = new Map<string, string>();
+    return {
+      setBuildId(builderId: BuilderID, buildNum: number, buildId: string) {
+        cachedBuildId.set(stableStringify([builderId, buildNum]), buildId);
+      },
+      getBuildId(builderId: BuilderID, buildNum: number) {
+        return cachedBuildId.get(stableStringify([builderId, buildNum]));
+      },
+      /**
+       * undefined means it's not initialized yet.
+       * null means there's no such service worker.
+       */
+      redirectSw: undefined as ServiceWorkerRegistration | null | undefined,
+    };
   })
   .views((self) => {
     function makeClient(opts: PrpcClientOptions) {
@@ -110,17 +124,6 @@ export const Store = types
           return null;
         }
         return new ClustersService(makeClient({ host: CONFIGS.WEETBIX.HOST }));
-      },
-    };
-  })
-  .volatile(() => {
-    const cachedBuildId = new Map<string, string>();
-    return {
-      setBuildId(builderId: BuilderID, buildNum: number, buildId: string) {
-        cachedBuildId.set(stableStringify([builderId, buildNum]), buildId);
-      },
-      getBuildId(builderId: BuilderID, buildNum: number) {
-        return cachedBuildId.get(stableStringify([builderId, buildNum]));
       },
     };
   })

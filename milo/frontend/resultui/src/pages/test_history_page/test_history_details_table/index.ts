@@ -24,10 +24,10 @@ import '../../../components/column_header';
 import './test_history_details_entry';
 import { MiloBaseElement } from '../../../components/milo_base';
 import { consumeTestHistoryPageState, TestHistoryPageState } from '../../../context/test_history_page_state';
-import { consumeConfigsStore, UserConfigsStore } from '../../../context/user_configs';
 import { consumer } from '../../../libs/context';
 import { reportErrorAsync } from '../../../libs/error_handler';
 import { createTVPropGetter, getPropKeyLabel } from '../../../services/resultdb';
+import { consumeStore, StoreInstance } from '../../../store';
 import colorClasses from '../../../styles/color_classes.css';
 import commonStyle from '../../../styles/common_style.css';
 import { TestHistoryDetailsEntryElement } from './test_history_details_entry';
@@ -38,7 +38,7 @@ import { TestHistoryDetailsEntryElement } from './test_history_details_entry';
 @customElement('milo-test-history-details-table')
 @consumer
 export class TestHistoryDetailsTableElement extends MiloBaseElement {
-  @observable.ref @consumeConfigsStore() configsStore!: UserConfigsStore;
+  @observable.ref @consumeStore() store!: StoreInstance;
   @observable.ref @consumeTestHistoryPageState() pageState!: TestHistoryPageState;
 
   @computed private get columnGetters() {
@@ -84,7 +84,7 @@ export class TestHistoryDetailsTableElement extends MiloBaseElement {
     // Sync column width from the user config.
     this.addDisposer(
       reaction(
-        () => this.configsStore.userConfigs.testResults.columnWidths,
+        () => this.store.userConfig.tests.columnWidths,
         (columnWidths) => this.pageState.setColumnWidths(columnWidths),
         { fireImmediately: true }
       )
@@ -191,7 +191,7 @@ export class TestHistoryDetailsTableElement extends MiloBaseElement {
                       }
 
                       this.tableHeaderEle?.style.removeProperty('--thdt-columns');
-                      this.configsStore.userConfigs.testResults.columnWidths[col] = this.columnWidths[i] + delta;
+                      this.store.userConfig.tests.columnWidths[col] = this.columnWidths[i] + delta;
                     }
               }
               .sortByColumn=${this.sortByColumnFn(col)}

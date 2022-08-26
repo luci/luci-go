@@ -19,19 +19,19 @@ import { customElement, html, LitElement } from 'lit-element';
 import '../../components/commit_entry';
 import '../../components/hotkey';
 import { BuildState, consumeBuildState } from '../../context/build_state';
-import { consumeConfigsStore, UserConfigsStore } from '../../context/user_configs';
 import { consumer } from '../../libs/context';
 import { router } from '../../routes';
+import { consumeStore, StoreInstance } from '../../store';
 
 @customElement('milo-build-default-tab')
 @consumer
 export class BuildDefaultTabElement extends LitElement {
-  @consumeConfigsStore() configsStore!: UserConfigsStore;
+  @consumeStore() store!: StoreInstance;
   @consumeBuildState() buildState!: BuildState;
 
   connectedCallback() {
     super.connectedCallback();
-    const newUrl = router.urlForName(this.configsStore.userConfigs.defaultBuildPageTabName, {
+    const newUrl = router.urlForName(this.store.userConfig.build.defaultTabName, {
       ...this.buildState.builderIdParam!,
       build_num_or_id: this.buildState.buildNumOrIdParam!,
     });

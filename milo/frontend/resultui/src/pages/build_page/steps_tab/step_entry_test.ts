@@ -16,11 +16,11 @@ import { aTimeout, fixture, fixtureCleanup, html } from '@open-wc/testing/index-
 import { css, customElement, LitElement } from 'lit-element';
 
 import './step_entry';
-import { UserConfigsStore } from '../../../context/user_configs';
 import { provider } from '../../../libs/context';
 import { IntersectionNotifier, provideNotifier } from '../../../libs/observer_element';
 import { StepExt } from '../../../models/step_ext';
 import { BuildStatus } from '../../../services/buildbucket';
+import { Store } from '../../../store';
 
 @customElement('milo-bp-step-entry-test-notifier-provider')
 @provider
@@ -42,9 +42,6 @@ class NotifierProviderElement extends LitElement {
 }
 
 describe('bp_step_entry', () => {
-  const configsStore = new UserConfigsStore();
-  after(() => configsStore.dispose());
-
   it('can render a step without start time', async () => {
     const step = new StepExt({
       step: {
@@ -58,7 +55,7 @@ describe('bp_step_entry', () => {
     });
     await fixture<NotifierProviderElement>(html`
       <milo-bp-step-entry-test-notifier-provider>
-        <milo-bp-step-entry .configsStore=${configsStore} .step=${step}></milo-bp-step-entry>
+        <milo-bp-step-entry .store=${Store.create()} .step=${step}></milo-bp-step-entry>
       </milo-bp-step-entry-test-notifier-provider>
     `);
     await aTimeout(10);

@@ -25,11 +25,11 @@ import '../../../components/column_header';
 import './test_variant_entry';
 import { MiloBaseElement } from '../../../components/milo_base';
 import { consumeInvocationState, InvocationState } from '../../../context/invocation_state';
-import { consumeConfigsStore, UserConfigsStore } from '../../../context/user_configs';
 import { VARIANT_STATUS_CLASS_MAP } from '../../../libs/constants';
 import { consumer } from '../../../libs/context';
 import { reportErrorAsync } from '../../../libs/error_handler';
 import { createTVPropGetter, getPropKeyLabel, TestVariant, TestVariantStatus } from '../../../services/resultdb';
+import { consumeStore, StoreInstance } from '../../../store';
 import colorClasses from '../../../styles/color_classes.css';
 import commonStyle from '../../../styles/common_style.css';
 import { TestVariantEntryElement } from './test_variant_entry';
@@ -46,7 +46,7 @@ export interface VariantGroup {
 @customElement('milo-test-variants-table')
 @consumer
 export class TestVariantsTableElement extends MiloBaseElement {
-  @observable.ref @consumeConfigsStore() configsStore!: UserConfigsStore;
+  @observable.ref @consumeStore() store!: StoreInstance;
   @observable.ref @consumeInvocationState() invState!: InvocationState;
 
   @computed private get columnGetters() {
@@ -92,7 +92,7 @@ export class TestVariantsTableElement extends MiloBaseElement {
     // Sync column width from the user config.
     this.addDisposer(
       reaction(
-        () => this.configsStore.userConfigs.testResults.columnWidths,
+        () => this.store.userConfig.tests.columnWidths,
         (columnWidths) => this.invState.setColumnWidths(columnWidths),
         { fireImmediately: true }
       )
@@ -251,7 +251,7 @@ export class TestVariantsTableElement extends MiloBaseElement {
                 }
 
                 this.tableHeaderEle?.style.removeProperty('--tvt-columns');
-                this.configsStore.userConfigs.testResults.columnWidths[col] = this.columnWidths[i] + delta;
+                this.store.userConfig.tests.columnWidths[col] = this.columnWidths[i] + delta;
               }}
               .sortByColumn=${this.sortByColumnFn(col)}
               .groupByColumn=${this.groupByColumnFn(col)}

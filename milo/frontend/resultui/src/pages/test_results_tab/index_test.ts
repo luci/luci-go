@@ -20,7 +20,6 @@ import sinon, { SinonStub } from 'sinon';
 
 import '.';
 import { InvocationState, provideInvocationState } from '../../context/invocation_state';
-import { provideConfigsStore, UserConfigsStore } from '../../context/user_configs';
 import { provider } from '../../libs/context';
 import { ANONYMOUS_IDENTITY } from '../../services/milo_internal';
 import { ResultDb, TestVariantStatus } from '../../services/resultdb';
@@ -68,9 +67,6 @@ class ContextProvider extends LitElement {
   @provideStore()
   store!: StoreInstance;
 
-  @provideConfigsStore()
-  configsStore!: UserConfigsStore;
-
   @provideInvocationState()
   invocationState!: InvocationState;
 }
@@ -86,16 +82,13 @@ describe('Test Results Tab', () => {
     const getInvocationStub = sinon.stub(store.resultDb!, 'getInvocation');
     getInvocationStub.returns(Promise.race([]));
 
-    const configsStore = new UserConfigsStore();
-    after(() => configsStore.dispose());
-
     const invocationState = new InvocationState(store);
     invocationState.invocationId = 'invocation-id';
     after(() => invocationState.dispose());
 
     after(fixtureCleanup);
     const provider = await fixture<ContextProvider>(html`
-      <milo-test-context-provider .store=${store} .configsStore=${configsStore} .invocationState=${invocationState}>
+      <milo-test-context-provider .store=${store} .invocationState=${invocationState}>
         <milo-test-results-tab></milo-test-results-tab>
       </milo-test-context-provider>
     `);
@@ -117,7 +110,6 @@ describe('Test Results Tab', () => {
       ReturnType<ResultDb['queryTestVariants']>
     >;
     let store: StoreInstance;
-    let configsStore: UserConfigsStore;
     let invocationState: InvocationState;
     let tab: TestResultsTabElement;
 
@@ -134,12 +126,11 @@ describe('Test Results Tab', () => {
       const getInvocationStub = sinon.stub(store.resultDb!, 'getInvocation');
       getInvocationStub.returns(Promise.race([]));
 
-      configsStore = new UserConfigsStore();
       invocationState = new InvocationState(store);
       invocationState.invocationId = 'invocation-id';
 
       const provider = await fixture<ContextProvider>(html`
-        <milo-test-context-provider .store=${store} .configsStore=${configsStore} .invocationState=${invocationState}>
+        <milo-test-context-provider .store=${store} .invocationState=${invocationState}>
           <milo-test-results-tab></milo-test-results-tab>
         </milo-test-context-provider>
       `);
@@ -149,7 +140,6 @@ describe('Test Results Tab', () => {
     afterEach(() => {
       destroy(store);
       invocationState.dispose();
-      configsStore.dispose();
       const url = `${window.location.protocol}//${window.location.host}${window.location.pathname}`;
       window.history.replaceState(null, '', url);
       fixtureCleanup();
@@ -166,7 +156,7 @@ describe('Test Results Tab', () => {
       // Disconnect, then reload the tab.
       tab.disconnectedCallback();
       await fixture<ContextProvider>(html`
-        <milo-test-context-provider .store=${store} .configsStore=${configsStore} .invocationState=${invocationState}>
+        <milo-test-context-provider .store=${store} .invocationState=${invocationState}>
           <milo-test-results-tab></milo-test-results-tab>
         </milo-test-context-provider>
       `);
