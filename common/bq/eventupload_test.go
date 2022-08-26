@@ -23,6 +23,7 @@ import (
 	"google.golang.org/protobuf/types/known/durationpb"
 	"google.golang.org/protobuf/types/known/emptypb"
 	"google.golang.org/protobuf/types/known/structpb"
+	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/common/bq/testdata"
 	"go.chromium.org/luci/common/clock/testclock"
@@ -82,6 +83,20 @@ func TestSave(t *testing.T) {
 					"map_key_2": "map_value_2",
 				},
 				BqTypeOverride: 1234,
+				StringEnumMap: map[string]testdata.TestMessage_FOO{
+					"e_map_key_1": testdata.TestMessage_Y,
+					"e_map_key_2": testdata.TestMessage_X,
+				},
+				StringDurationMap: map[string]*durationpb.Duration{
+					"d_map_key_1": durationpb.New(1*time.Second + 1*time.Millisecond),
+					"d_map_key_2": durationpb.New(2*time.Second + 2*time.Millisecond),
+				},
+				StringTimestampMap: map[string]*timestamppb.Timestamp{
+					"t_map_key": ts,
+				},
+				StringProtoMap: map[string]*testdata.NestedTestMessage{
+					"p_map_key": {Name: "nestedname"},
+				},
 			},
 			InsertID: "testid",
 		}
@@ -106,6 +121,20 @@ func TestSave(t *testing.T) {
 				map[string]bigquery.Value{"key": "map_key_2", "value": "map_value_2"},
 			},
 			"bq_type_override": int64(1234),
+			"string_enum_map": []interface{}{
+				map[string]bigquery.Value{"key": "e_map_key_1", "value": "Y"},
+				map[string]bigquery.Value{"key": "e_map_key_2", "value": "X"},
+			},
+			"string_duration_map": []interface{}{
+				map[string]bigquery.Value{"key": "d_map_key_1", "value": 1.001},
+				map[string]bigquery.Value{"key": "d_map_key_2", "value": 2.002},
+			},
+			"string_timestamp_map": []interface{}{
+				map[string]bigquery.Value{"key": "t_map_key", "value": recentTime},
+			},
+			"string_proto_map": []interface{}{
+				map[string]bigquery.Value{"key": "p_map_key", "value": map[string]bigquery.Value{"name": "nestedname"}},
+			},
 		})
 	})
 

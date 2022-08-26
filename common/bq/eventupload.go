@@ -184,7 +184,7 @@ func mapFromMessage(m proto.Message, path []string) (map[string]bigquery.Value, 
 				for i, k := range keys {
 					kStr := k.String()
 					vPath[len(vPath)-1] = kStr
-					elemValue, err := getValue(f.MapIndex(k).Interface(), vPath, fi.Properties)
+					elemValue, err := getValue(f.MapIndex(k).Interface(), vPath, fi.Properties.MapValProp)
 					if err != nil {
 						return nil, errors.Annotate(err, "%s[%s]", fi.OrigName, kStr).Err()
 					}

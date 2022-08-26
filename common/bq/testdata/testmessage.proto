@@ -45,6 +45,12 @@ message TestMessage {
   map<string, string> string_map = 13;
 
   int64 bq_type_override = 14 [(bqschema.options).bq_type = "TIMESTAMP"];
+
+  map<string, FOO> string_enum_map = 15;
+
+  map<string, google.protobuf.Duration> string_duration_map = 16;
+  map<string, google.protobuf.Timestamp> string_timestamp_map = 17;
+  map<string, NestedTestMessage> string_proto_map = 18;
 }
 
 message NestedTestMessage {
