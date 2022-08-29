@@ -1,0 +1,12 @@
+// Copy this file to configs.json, modify as needed, and remove this comment.
+{
+    "RESULT_DB": {
+        "HOST": "staging.results.api.cr.dev"
+    },
+    "BUILDBUCKET": {
+        "HOST": "cr-buildbucket-dev.appspot.com"
+    },
+    "WEETBIX": {
+        "HOST": "chops-weetbix-dev.appspot.com"
+    }
+}

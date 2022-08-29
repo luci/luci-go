@@ -1,4 +1,5 @@
 node_modules
 out
 dev-configs
+!dev-configs/*sample
 stats.json
