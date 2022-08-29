@@ -49,7 +49,7 @@ const monorailPageSize = 100
 // for clusters.
 type BugManager struct {
 	client *Client
-	// The GAE APP ID, e.g. "chops-weetbix".
+	// The GAE APP ID, e.g. "luci-analysis".
 	appID string
 	// The LUCI Project.
 	project string
@@ -86,11 +86,6 @@ func NewBugManager(client *Client, appID, project string, projectCfg *configpb.P
 // any encountered error.
 func (m *BugManager) Create(ctx context.Context, request *bugs.CreateRequest) (string, error) {
 	components := request.MonorailComponents
-	if m.appID == "chops-weetbix" {
-		// In production, do not apply components to bugs as they are not yet
-		// ready to be surfaced widely.
-		components = nil
-	}
 	components, err := m.filterToValidComponents(ctx, components)
 	if err != nil {
 		return "", errors.Annotate(err, "validate components").Err()
@@ -201,7 +196,7 @@ func shouldArchiveRule(ctx context.Context, issue *mpb.Issue, isManaging bool) b
 	}
 	now := clock.Now(ctx)
 	if isManaging {
-		// If Weetbix is managing the bug,
+		// If LUCI Analysis is managing the bug,
 		// more than 30 days since the issue was verified.
 		return issue.Status.Status == VerifiedStatus &&
 			now.Sub(issue.StatusModifyTime.AsTime()).Hours() >= 30*24

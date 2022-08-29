@@ -70,7 +70,7 @@ func TestManager(t *testing.T) {
 			Monorail:           monorailCfgs,
 			BugFilingThreshold: bugFilingThreshold,
 		}
-		bm, err := NewBugManager(cl, "chops-weetbix-test", "luciproject", projectCfg)
+		bm, err := NewBugManager(cl, "luci-analysis-test", "luciproject", projectCfg)
 		So(err, ShouldBeNil)
 
 		now := time.Date(2040, time.January, 1, 2, 3, 4, 5, time.UTC)
@@ -98,7 +98,6 @@ func TestManager(t *testing.T) {
 					Name:             "projects/chromium/issues/100",
 					Summary:          "Tests are failing: Expected equality of these values: \"Expected_Value\" my_expr.evaluate(123) Which is: \"Unexpected_Value\"",
 					Reporter:         AutomationUsers[0],
-					Owner:            &mpb.Issue_UserValue{User: ChromiumDefaultAssignee},
 					State:            mpb.IssueContentState_ACTIVE,
 					Status:           &mpb.Issue_StatusValue{Status: "Untriaged"},
 					StatusModifyTime: timestamppb.New(now),
@@ -119,16 +118,16 @@ func TestManager(t *testing.T) {
 						{Component: "projects/chromium/componentDefs/Blink>Network"},
 					},
 					Labels: []*mpb.Issue_LabelValue{{
-						Label: "Restrict-View-Google",
+						Label: "LUCI-Analysis-Auto-Filed",
 					}, {
-						Label: "Weetbix-Auto-Filed",
+						Label: "Restrict-View-Google",
 					}},
 				})
 				So(len(issue.Comments), ShouldEqual, 2)
 				So(issue.Comments[0].Content, ShouldContainSubstring, reason)
 				So(issue.Comments[0].Content, ShouldNotContainSubstring, "ClusterIDShouldNotAppearInOutput")
 				// Link to cluster page should appear in output.
-				So(issue.Comments[1].Content, ShouldContainSubstring, "https://chops-weetbix-test.appspot.com/b/chromium/100")
+				So(issue.Comments[1].Content, ShouldContainSubstring, "https://luci-analysis-test.appspot.com/b/chromium/100")
 				So(issue.NotifyCount, ShouldEqual, 1)
 			})
 			Convey("With test name failure cluster", func() {
@@ -145,7 +144,6 @@ func TestManager(t *testing.T) {
 					Name:             "projects/chromium/issues/100",
 					Summary:          "Tests are failing: ninja://:blink_web_tests/media/my-suite/my-test.html",
 					Reporter:         AutomationUsers[0],
-					Owner:            &mpb.Issue_UserValue{User: ChromiumDefaultAssignee},
 					State:            mpb.IssueContentState_ACTIVE,
 					Status:           &mpb.Issue_StatusValue{Status: "Untriaged"},
 					StatusModifyTime: timestamppb.New(now),
@@ -166,15 +164,15 @@ func TestManager(t *testing.T) {
 						{Component: "projects/chromium/componentDefs/Blink>Network"},
 					},
 					Labels: []*mpb.Issue_LabelValue{{
-						Label: "Restrict-View-Google",
+						Label: "LUCI-Analysis-Auto-Filed",
 					}, {
-						Label: "Weetbix-Auto-Filed",
+						Label: "Restrict-View-Google",
 					}},
 				})
 				So(len(issue.Comments), ShouldEqual, 2)
 				So(issue.Comments[0].Content, ShouldContainSubstring, "ninja://:blink_web_tests/media/my-suite/my-test.html")
 				// Link to cluster page should appear in output.
-				So(issue.Comments[1].Content, ShouldContainSubstring, "https://chops-weetbix-test.appspot.com/b/chromium/100")
+				So(issue.Comments[1].Content, ShouldContainSubstring, "https://luci-analysis-test.appspot.com/b/chromium/100")
 				So(issue.NotifyCount, ShouldEqual, 1)
 			})
 			Convey("Does nothing if in simulation mode", func() {
@@ -253,9 +251,9 @@ func TestManager(t *testing.T) {
 						"Because:\n"+
 							"- Test Runs Failed (1-day) < 9, and\n"+
 							"- Test Results Failed (1-day) < 90\n"+
-							"Weetbix has decreased the bug priority from 2 to 3.")
+							"LUCI Analysis has decreased the bug priority from 2 to 3.")
 					So(f.Issues[0].Comments[2].Content, ShouldContainSubstring,
-						"https://chops-weetbix-test.appspot.com/b/chromium/100")
+						"https://luci-analysis-test.appspot.com/b/chromium/100")
 
 					// Does not notify.
 					So(f.Issues[0].NotifyCount, ShouldEqual, originalNotifyCount)
@@ -281,9 +279,9 @@ func TestManager(t *testing.T) {
 					So(f.Issues[0].Comments[2].Content, ShouldContainSubstring,
 						"Because:\n"+
 							"- Test Results Failed (1-day) >= 550\n"+
-							"Weetbix has increased the bug priority from 2 to 1.")
+							"LUCI Analysis has increased the bug priority from 2 to 1.")
 					So(f.Issues[0].Comments[2].Content, ShouldContainSubstring,
-						"https://chops-weetbix-test.appspot.com/b/chromium/100")
+						"https://luci-analysis-test.appspot.com/b/chromium/100")
 
 					// Notified the increase.
 					So(f.Issues[0].NotifyCount, ShouldEqual, originalNotifyCount+1)
@@ -302,11 +300,11 @@ func TestManager(t *testing.T) {
 
 					expectedComment := "Because:\n" +
 						"- Test Results Failed (1-day) >= 1000\n" +
-						"Weetbix has increased the bug priority from 2 to 0."
+						"LUCI Analysis has increased the bug priority from 2 to 0."
 					So(f.Issues[0].Comments, ShouldHaveLength, 3)
 					So(f.Issues[0].Comments[2].Content, ShouldContainSubstring, expectedComment)
 					So(f.Issues[0].Comments[2].Content, ShouldContainSubstring,
-						"https://chops-weetbix-test.appspot.com/b/chromium/100")
+						"https://luci-analysis-test.appspot.com/b/chromium/100")
 
 					// Notified the increase.
 					So(f.Issues[0].NotifyCount, ShouldEqual, originalNotifyCount+1)
@@ -391,11 +389,11 @@ func TestManager(t *testing.T) {
 						"- Test Results Failed (1-day) < 45, and\n" +
 						"- Test Results Failed (3-day) < 272, and\n" +
 						"- Test Results Failed (7-day) < 1\n" +
-						"Weetbix is marking the issue verified."
+						"LUCI Analysis is marking the issue verified."
 					So(f.Issues[0].Comments, ShouldHaveLength, 3)
 					So(f.Issues[0].Comments[2].Content, ShouldContainSubstring, expectedComment)
 					So(f.Issues[0].Comments[2].Content, ShouldContainSubstring,
-						"https://chops-weetbix-test.appspot.com/b/chromium/100")
+						"https://luci-analysis-test.appspot.com/b/chromium/100")
 
 					// Verify repeated update has no effect.
 					updateDoesNothing()
@@ -439,15 +437,15 @@ func TestManager(t *testing.T) {
 
 							expectedComment := "Because:\n" +
 								"- Test Results Failed (1-day) >= 75\n" +
-								"Weetbix has re-opened the bug.\n\n" +
+								"LUCI Analysis has re-opened the bug.\n\n" +
 								"Because:\n" +
 								"- Test Runs Failed (1-day) < 9, and\n" +
 								"- Test Results Failed (1-day) < 90\n" +
-								"Weetbix has decreased the bug priority from 2 to 3."
+								"LUCI Analysis has decreased the bug priority from 2 to 3."
 							So(f.Issues[0].Comments, ShouldHaveLength, 5)
 							So(f.Issues[0].Comments[4].Content, ShouldContainSubstring, expectedComment)
 							So(f.Issues[0].Comments[4].Content, ShouldContainSubstring,
-								"https://chops-weetbix-test.appspot.com/b/chromium/100")
+								"https://luci-analysis-test.appspot.com/b/chromium/100")
 
 							// Verify repeated update has no effect.
 							updateDoesNothing()
@@ -468,15 +466,15 @@ func TestManager(t *testing.T) {
 
 							expectedComment := "Because:\n" +
 								"- Test Results Failed (1-day) >= 75\n" +
-								"Weetbix has re-opened the bug.\n\n" +
+								"LUCI Analysis has re-opened the bug.\n\n" +
 								"Because:\n" +
 								"- Test Runs Failed (1-day) < 9, and\n" +
 								"- Test Results Failed (1-day) < 90\n" +
-								"Weetbix has decreased the bug priority from 2 to 3."
+								"LUCI Analysis has decreased the bug priority from 2 to 3."
 							So(f.Issues[0].Comments, ShouldHaveLength, 5)
 							So(f.Issues[0].Comments[4].Content, ShouldContainSubstring, expectedComment)
 							So(f.Issues[0].Comments[4].Content, ShouldContainSubstring,
-								"https://chops-weetbix-test.appspot.com/b/chromium/100")
+								"https://luci-analysis-test.appspot.com/b/chromium/100")
 
 							// Verify repeated update has no effect.
 							updateDoesNothing()
@@ -518,7 +516,7 @@ func TestManager(t *testing.T) {
 			Convey("Rule managing a bug not archived after 30 days of the bug being in fixed state", func() {
 				tc.Add(time.Hour * 24 * 30)
 
-				// If Weetbix is mangaging the bug state, the fixed state
+				// If LUCI Analysis is mangaging the bug state, the fixed state
 				// means the bug is still not verified. Do not archive the
 				// rule.
 				bugsToUpdate[0].IsManagingBug = true
@@ -611,7 +609,7 @@ func TestManager(t *testing.T) {
 			So(f.Issues[0].Comments, ShouldHaveLength, 3)
 			So(f.Issues[0].Comments[2].Content, ShouldContainSubstring, "Some comment.")
 			So(f.Issues[0].Comments[2].Content, ShouldContainSubstring,
-				"https://chops-weetbix-test.appspot.com/b/chromium/100")
+				"https://luci-analysis-test.appspot.com/b/chromium/100")
 		})
 	})
 }

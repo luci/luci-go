@@ -31,15 +31,15 @@ import (
 const (
 	DescriptionTemplate = `%s
 
-This bug has been automatically filed by Weetbix in response to a cluster of test failures.`
+This bug has been automatically filed by LUCI Analysis in response to a cluster of test failures.`
 
 	LinkTemplate = `See failure impact and configure the failure association rule for this bug at: %s`
 )
 
 const (
-	manualPriorityLabel = "Weetbix-Manual-Priority"
+	manualPriorityLabel = "LUCI-Analysis-Manual-Priority"
 	restrictViewLabel   = "Restrict-View-Google"
-	autoFiledLabel      = "Weetbix-Auto-Filed"
+	autoFiledLabel      = "LUCI-Analysis-Auto-Filed"
 )
 
 // whitespaceRE matches blocks of whitespace, including new lines tabs and
@@ -49,17 +49,14 @@ var whitespaceRE = regexp.MustCompile(`[ \t\n]+`)
 // priorityRE matches chromium monorail priority values.
 var priorityRE = regexp.MustCompile(`^Pri-([0123])$`)
 
-// AutomationUsers are the identifiers of Weetbix automation users in monorail.
+// AutomationUsers are the identifiers of LUCI Analysis automation users
+// in monorail.
 var AutomationUsers = []string{
 	"users/3816576959", // chops-weetbix@appspot.gserviceaccount.com
 	"users/4149141945", // chops-weetbix-dev@appspot.gserviceaccount.com
 	"users/3371420746", // luci-analysis@appspot.gserviceaccount.com
 	"users/1503471452", // luci-analysis-dev@appspot.gserviceaccount.com
 }
-
-// ChromiumDefaultAssignee is the default issue assignee for chromium.
-// This should be deleted in future when auto-assignment is implemented.
-const ChromiumDefaultAssignee = "users/2581171748" // mwarton@chromium.org
 
 // VerifiedStatus is that status of bugs that have been fixed and verified.
 const VerifiedStatus = "Verified"
@@ -100,7 +97,7 @@ var ArchivedStatuses = map[string]struct{}{
 // Generator provides access to a methods to generate a new bug and/or bug
 // updates for a cluster.
 type Generator struct {
-	// The GAE app id, e.g. "chops-weetbix".
+	// The GAE app id, e.g. "luci-analysis".
 	appID string
 	// The monorail configuration to use.
 	monorailCfg *configpb.MonorailProject
@@ -135,9 +132,9 @@ func (g *Generator) PrepareNew(impact *bugs.ClusterImpact, description *clusteri
 			},
 		},
 		Labels: []*mpb.Issue_LabelValue{{
-			Label: restrictViewLabel,
-		}, {
 			Label: autoFiledLabel,
+		}, {
+			Label: restrictViewLabel,
 		}},
 	}
 	for _, fv := range g.monorailCfg.DefaultFieldValues {
@@ -157,10 +154,6 @@ func (g *Generator) PrepareNew(impact *bugs.ClusterImpact, description *clusteri
 			Component: fmt.Sprintf("projects/%s/componentDefs/%s", g.monorailCfg.Project, c),
 		})
 	}
-	if g.monorailCfg.Project == "chromium" {
-		// Assign mwarton@chromium.org in both prod and staging monorail.
-		issue.Owner = &mpb.Issue_UserValue{User: ChromiumDefaultAssignee}
-	}
 
 	return &mpb.MakeIssueRequest{
 		Parent:      fmt.Sprintf("projects/%s", g.monorailCfg.Project),
@@ -171,14 +164,14 @@ func (g *Generator) PrepareNew(impact *bugs.ClusterImpact, description *clusteri
 }
 
 // linkToRuleComment returns a comment that links the user to the failure
-// association rule in Weetbix. bugName is the internal bug name,
+// association rule in LUCI Analysis. bugName is the internal bug name,
 // e.g. "chromium/100".
 func (g *Generator) linkToRuleComment(bugName string) string {
 	bugLink := fmt.Sprintf("https://%s.appspot.com/b/%s", g.appID, bugName)
 	return fmt.Sprintf(LinkTemplate, bugLink)
 }
 
-// PrepareLinkComment prepares a request that adds links to Weetbix to
+// PrepareLinkComment prepares a request that adds links to LUCI Analysis to
 // a monorail bug.
 func (g *Generator) PrepareLinkComment(bugName string) (*mpb.ModifyIssuesRequest, error) {
 	issueName, err := toMonorailIssueName(bugName)
@@ -334,7 +327,7 @@ func (g *Generator) prepareBugVerifiedUpdate(impact *bugs.ClusterImpact, issue *
 
 		message.WriteString("Because:\n")
 		message.WriteString(g.priorityDecreaseJustification(oldPriorityIndex, newPriorityIndex))
-		message.WriteString("Weetbix is marking the issue verified.")
+		message.WriteString("LUCI Analysis is marking the issue verified.")
 	} else {
 		if issue.GetOwner().GetUser() != "" {
 			status = AssignedStatus
@@ -344,7 +337,7 @@ func (g *Generator) prepareBugVerifiedUpdate(impact *bugs.ClusterImpact, issue *
 
 		message.WriteString("Because:\n")
 		message.WriteString(g.explainThresholdsMet(impact, g.bugFilingThreshold))
-		message.WriteString("Weetbix has re-opened the bug.")
+		message.WriteString("LUCI Analysis has re-opened the bug.")
 	}
 	update.Issue.Status = &mpb.Issue_StatusValue{Status: status}
 	update.UpdateMask.Paths = append(update.UpdateMask.Paths, "status")
@@ -356,7 +349,7 @@ func prepareManualPriorityUpdate(issue *mpb.Issue, update *mpb.IssueDelta) strin
 		Label: manualPriorityLabel,
 	}}
 	update.UpdateMask.Paths = append(update.UpdateMask.Paths, "labels")
-	return fmt.Sprintf("The bug priority has been manually set. To re-enable automatic priority updates by Weetbix, remove the %s label.", manualPriorityLabel)
+	return fmt.Sprintf("The bug priority has been manually set. To re-enable automatic priority updates by LUCI Analysis, remove the %s label.", manualPriorityLabel)
 }
 
 func (g *Generator) preparePriorityUpdate(impact *bugs.ClusterImpact, issue *mpb.Issue, update *mpb.IssueDelta) string {
@@ -378,13 +371,13 @@ func (g *Generator) preparePriorityUpdate(impact *bugs.ClusterImpact, issue *mpb
 		var message strings.Builder
 		message.WriteString("Because:\n")
 		message.WriteString(g.priorityIncreaseJustification(impact, oldPriorityIndex, newPriorityIndex))
-		message.WriteString(fmt.Sprintf("Weetbix has increased the bug priority from %v to %v.", oldPriority, newPriority))
+		message.WriteString(fmt.Sprintf("LUCI Analysis has increased the bug priority from %v to %v.", oldPriority, newPriority))
 		return message.String()
 	} else {
 		var message strings.Builder
 		message.WriteString("Because:\n")
 		message.WriteString(g.priorityDecreaseJustification(oldPriorityIndex, newPriorityIndex))
-		message.WriteString(fmt.Sprintf("Weetbix has decreased the bug priority from %v to %v.", oldPriority, newPriority))
+		message.WriteString(fmt.Sprintf("LUCI Analysis has decreased the bug priority from %v to %v.", oldPriority, newPriority))
 		return message.String()
 	}
 }
@@ -597,7 +590,7 @@ func explainThresholdNotMet(thresoldNotMet *configpb.ImpactThreshold) string {
 //   g.monorailCfg.Priorities
 // The special index len(g.monorailCfg.Priorities) indicates an issue
 // with a priority lower than the lowest priority configured to be
-// assigned by Weetbix.
+// assigned by LUCI Analysis.
 //
 // Example output:
 // "- Presubmit Runs Failed (1-day) >= 15"
