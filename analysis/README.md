@@ -1,6 +1,6 @@
-# Weetbix
+# LUCI Analysis
 
-Weetbix is a system designed to understand and reduce the impact of test
+LUCI Analysis is a system designed to understand and reduce the impact of test
 failures.
 
 This app follows the structure described in [Template for GAE Standard app].
@@ -9,13 +9,13 @@ This app follows the structure described in [Template for GAE Standard app].
 
 To run the server locally, first authorize as the correct GCP project (you should only need to do this once):
 ```
-gcloud config set project chops-weetbix-dev
+gcloud config set project luci-analysis-dev
 gcloud auth application-default login
 ```
 
 Authenticate in LUCI and in :
 
-1. In Weetbix's `frontend` directory run:
+1. In LUCI Analysis's `frontend` directory run:
     ```
     luci-auth login -scopes "https://www.googleapis.com/auth/cloud-platform https://www.googleapis.com/auth/userinfo.email"
     ```
@@ -34,8 +34,8 @@ To run the server, in another terminal use:
 ```
 cd frontend
 go run main.go \
- -cloud-project chops-weetbix-dev \
- -spanner-database projects/chops-weetbix-dev/instances/dev/databases/chops-weetbix-dev \
+ -cloud-project luci-analysis-dev \
+ -spanner-database projects/luci-analysis-dev/instances/dev/databases/luci-analysis-dev \
  -auth-service-host chrome-infra-auth-dev.appspot.com \
  -default-request-timeout 10m0s \
  -config-local-dir ../configs
@@ -72,7 +72,7 @@ npm run test-watch
 
 ### Developer Testing {#test-deployment}
 
-Weetbix uses `gae.py` for deployment of the GAE instances for developer
+LUCI Analysis uses `gae.py` for deployment of the GAE instances for developer
 testing (e.g. of local changes).
 
 First, enter the infra env (via the infra.git checkout):
@@ -84,7 +84,7 @@ Then use the following commands to deploy:
 ```
 cd frontend/ui
 npm run build
-gae.py upload --target-version ${USER} -A chops-weetbix-dev
+gae.py upload --target-version ${USER} -A luci-analysis-dev
 ```
 
 ### Dev and Prod Instances
@@ -116,10 +116,10 @@ From command line, first set environment variables:
 export INTEGRATION_TESTS=1
 ```
 
-Then run go test as usual. For example
+Then run go test as usual. For example:
 
 ```
-go test -v ./...
+go test go.chromium.org/luci/analysis/...
 ```
 
 [Template for GAE Standard app]: https://chromium.googlesource.com/infra/luci/luci-go/+/HEAD/examples/appengine/helloworld_standard/README.md

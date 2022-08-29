@@ -41,7 +41,7 @@ func TestServiceConfigValidator(t *testing.T) {
 
 	Convey("config template is valid", t, func() {
 		content, err := ioutil.ReadFile(
-			"../../configs/services/chops-weetbix-dev/config-template.cfg",
+			"../../configs/services/luci-analysis-dev/config-template.cfg",
 		)
 		So(err, ShouldBeNil)
 		cfg := &configpb.Config{}
@@ -124,7 +124,7 @@ func TestProjectConfigValidator(t *testing.T) {
 
 	Convey("config template is valid", t, func() {
 		content, err := ioutil.ReadFile(
-			"../../configs/projects/chromium/chops-weetbix-dev-template.cfg",
+			"../../configs/projects/chromium/luci-analysis-dev-template.cfg",
 		)
 		So(err, ShouldBeNil)
 		cfg := &configpb.ProjectConfig{}

@@ -11,7 +11,7 @@ cron:
 - description: "Trigger ExportTestVariant jobs on a schedule."
   url: /internal/cron/export-test-variants
   # Note: to update the schedule, you also need to update
-  # ScheduleTasks at weetbix/internal/services/testvariantbqexporter/task.go
+  # ScheduleTasks at analysis/internal/services/testvariantbqexporter/task.go
   # to make sure the new schedule and time range of each row matches.
   schedule: every 1 hours from 00:00 to 23:00
   retry_parameters:
