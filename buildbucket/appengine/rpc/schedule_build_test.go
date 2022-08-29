@@ -1337,6 +1337,7 @@ func TestScheduleBuild(t *testing.T) {
 			tkBody := &pb.TokenBody{
 				BuildId: 1,
 				State:   []byte("random"),
+				Purpose: pb.TokenBody_BUILD,
 			}
 			tkBytes, err := proto.Marshal(tkBody)
 			So(err, ShouldBeNil)
@@ -4872,7 +4873,7 @@ func TestScheduleBuild(t *testing.T) {
 						Config: &pb.BuilderConfig{
 							BuildNumbers: pb.Toggle_YES,
 							Name:         "builder",
-							Experiments: map[string]int32{bb.ExperimentBackendGo: 100},
+							Experiments:  map[string]int32{bb.ExperimentBackendGo: 100},
 						},
 					}), ShouldBeNil)
 
@@ -5711,6 +5712,7 @@ func TestScheduleBuild(t *testing.T) {
 				tkBody := &pb.TokenBody{
 					BuildId: 1,
 					State:   []byte("random"),
+					Purpose: pb.TokenBody_BUILD,
 				}
 				tkBytes, err := proto.Marshal(tkBody)
 				So(err, ShouldBeNil)

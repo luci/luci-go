@@ -17,13 +17,17 @@ package rpc
 import (
 	"context"
 
-	"google.golang.org/grpc/codes"
-
+	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/grpc/appstatus"
 
 	pb "go.chromium.org/luci/buildbucket/proto"
 )
 
 func (*Builds) UpdateBuildTask(ctx context.Context, req *pb.UpdateBuildTaskRequest) (*pb.Task, error) {
-	return nil, appstatus.Errorf(codes.Unimplemented, "method not implemented")
+	_, _, err := validateBuildTaskToken(ctx, req.GetBuildId())
+	if err != nil {
+		return nil, appstatus.BadRequest(errors.Annotate(err, "invalid build").Err())
+	}
+
+	return req.GetTask(), nil
 }

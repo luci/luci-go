@@ -32,14 +32,12 @@ const (
 	buildTokenMaxLength = 200
 )
 
-var BuildTokenInOldFormat = errors.BoolTag{Key: errors.NewTagKey("build token in the old format")}
-
 // GenerateToken generates base64 encoded byte string token for a build.
 // In the future, it will be replaced by a self-verifiable token.
-func GenerateToken(buildID int64) (string, error) {
+func GenerateToken(buildID int64, purpose pb.TokenBody_Purpose) (string, error) {
 	tkBody := &pb.TokenBody{
 		BuildId: buildID,
-		Purpose: pb.TokenBody_BUILD,
+		Purpose: purpose,
 		State:   random.GetRandomBytes(16),
 	}
 
@@ -71,7 +69,7 @@ func ParseToTokenBody(bldTok string) (*pb.TokenBody, error) {
 
 	msg := &pb.TokenEnvelope{}
 	if err := proto.Unmarshal(tokBytes, msg); err != nil {
-		return nil, errors.Reason("error unmarshalling token").Tag(BuildTokenInOldFormat).Err()
+		return nil, errors.Reason("error unmarshalling token").Err()
 	}
 
 	if msg.Version != pb.TokenEnvelope_UNENCRYPTED_PASSWORD_LIKE {

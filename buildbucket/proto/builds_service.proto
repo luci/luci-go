@@ -96,7 +96,18 @@ service Builds {
   // This RPC is exclusively for generating led builds.
   rpc SynthesizeBuild(SynthesizeBuildRequest) returns (Build) {};
 
-  // Updates a build task
+  // UpdateBuildTask allows the Backend to preemptively update the
+  // status of the task (e.g. if it knows that the task has crashed, etc.).
+  //
+  // The Backend must supply the RunTaskRequest.backend_token supplied during
+  // TaskBackend.RunTask() as the header:
+  //
+  //   X-Buildbucket-Backend-Token
+  //
+  // Buildbucket will validate this against the build ID supplied in
+  // the UpdateBuildTaskRequest and verify task ID in the request matches the task
+  // ID associated with the build (if any). It will establish this association if 
+  // the build is not associated with a task yet.
   rpc UpdateBuildTask(UpdateBuildTaskRequest) returns (Task) {};
 }
 

@@ -18,6 +18,7 @@ import (
 	"context"
 	"crypto/subtle"
 	"regexp"
+	"strconv"
 	"strings"
 	"time"
 
@@ -275,7 +276,22 @@ func validateCommit(cm *pb.GitilesCommit) error {
 	return nil
 }
 
-// validateBuildToken validates the update token from the header.
+func valdiateTokenPurposeMatchesHeader(purpose pb.TokenBody_Purpose, header string) (bool, error) {
+	switch {
+	case purpose == pb.TokenBody_PURPOSE_UNSPECIFIED:
+		return false, errors.Reason("token purpose is not specified").Err()
+	case header == "":
+		return false, errors.Reason("token header is not specified").Err()
+	case purpose == pb.TokenBody_BUILD && header == buildbucket.BuildbucketTokenHeader:
+		return true, nil
+	case purpose == pb.TokenBody_TASK && header == buildbucket.BuildbucketBackendTokenHeader:
+		return true, nil
+	default:
+		return false, nil
+	}
+}
+
+// validateToken validates the update token from the header.
 //
 // bID is mainly used to retrieve the build with the old build token
 // for validation, if known (i.e. in UpdateBuild, bID can be retrieved from
@@ -288,10 +304,15 @@ func validateCommit(cm *pb.GitilesCommit) error {
 // only attached in the context when scheduling a child build.
 // So missing the build token in ScheduleBuild doesn't necessarily mean there's an
 // error.
-func validateBuildToken(ctx context.Context, bID int64, requireToken bool) (*pb.TokenBody, *model.Build, error) {
+//
+// tokenHeader should be one of a token constant defined in
+// infra/go/src/go.chromium.org/luci/buildbucket/proto.go
+func validateToken(ctx context.Context, bID int64, requireToken bool, tokenHeader string) (*pb.TokenBody, *model.Build, error) {
 	md, _ := metadata.FromIncomingContext(ctx)
-	buildToks := md.Get(buildbucket.BuildbucketTokenHeader)
-	if len(buildToks) == 0 {
+	buildToks := md.Get(tokenHeader)
+
+	// Only want to perform this validation when token is BuildbucketTokenHeader
+	if len(buildToks) == 0 && tokenHeader == buildbucket.BuildbucketTokenHeader {
 		// TODO(crbug.com/1031205): remove buildbucket.BuildTokenHeader.
 		buildToks = md.Get(buildbucket.BuildTokenHeader)
 		if len(buildToks) > 0 {
@@ -302,7 +323,7 @@ func validateBuildToken(ctx context.Context, bID int64, requireToken bool) (*pb.
 		if !requireToken {
 			return nil, nil, nil
 		}
-		return nil, nil, appstatus.Errorf(codes.Unauthenticated, "missing header %q", buildbucket.BuildbucketTokenHeader)
+		return nil, nil, appstatus.Errorf(codes.Unauthenticated, "missing header %q", tokenHeader)
 	}
 
 	if len(buildToks) > 1 {
@@ -312,11 +333,18 @@ func validateBuildToken(ctx context.Context, bID int64, requireToken bool) (*pb.
 	bldTok := buildToks[0]
 	tokBody, err := buildtoken.ParseToTokenBody(bldTok)
 	// There's something wrong with the build token itself.
-	if err != nil && !buildtoken.BuildTokenInOldFormat.In(err) {
+	if err != nil {
 		return nil, nil, err
 	}
 
 	if tokBody != nil {
+		match, err := valdiateTokenPurposeMatchesHeader(tokBody.Purpose, tokenHeader)
+		if err != nil {
+			return nil, nil, errors.Annotate(err, "failed to compare token's purpose with token header").Err()
+		} else if !match {
+			return nil, nil, errors.Reason("token purpose does not match token header").Err()
+		}
+
 		if bID == 0 {
 			bID = tokBody.BuildId
 		} else if tokBody.BuildId != bID {
@@ -338,4 +366,18 @@ func validateBuildToken(ctx context.Context, bID int64, requireToken bool) (*pb.
 		return tokBody, bld, nil
 	}
 	return nil, nil, perm.NotFoundErr(ctx)
+}
+
+// validateBuildToken validates the update token for the UpdateBuild RPC
+func validateBuildToken(ctx context.Context, bID int64, requireToken bool) (*pb.TokenBody, *model.Build, error) {
+	return validateToken(ctx, bID, requireToken, buildbucket.BuildbucketTokenHeader)
+}
+
+// validateBuildTaskToken validates the update token for the UpdateBuildTask RPC
+func validateBuildTaskToken(ctx context.Context, bID string) (*pb.TokenBody, *model.Build, error) {
+	intBuildID, err := strconv.ParseInt(bID, 0, 64)
+	if err != nil {
+		return nil, nil, errors.Reason("the build ID provided could not be converted from string to int64").Err()
+	}
+	return validateToken(ctx, intBuildID, true, buildbucket.BuildbucketBackendTokenHeader)
 }

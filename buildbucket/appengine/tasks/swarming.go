@@ -118,7 +118,7 @@ func SyncBuild(ctx context.Context, buildID int64, generation int64) error {
 	bld.Proto.Infra = infra.Proto
 	swarm, err := clients.NewSwarmingClient(ctx, infra.Proto.Swarming.Hostname, bld.Project)
 	if err != nil {
-		logging.Errorf(ctx,"failed to create a swarming client for build %d (%s), in %s: %s",  buildID, bld.Project, infra.Proto.Swarming.Hostname, err)
+		logging.Errorf(ctx, "failed to create a swarming client for build %d (%s), in %s: %s", buildID, bld.Project, infra.Proto.Swarming.Hostname, err)
 		return failBuild(ctx, buildID, fmt.Sprintf("failed to create a swarming client:%s", err))
 	}
 	if bld.Proto.Infra.Swarming.TaskId == "" {
@@ -163,7 +163,7 @@ func SubNotify(ctx context.Context, body io.Reader) error {
 	// Try not to process same message more than once.
 	cache := caching.GlobalCache(ctx, "swarming-pubsub-msg-id")
 	if cache == nil {
-		return errors.Reason( "global cache is not found").Tag(transient.Tag).Err()
+		return errors.Reason("global cache is not found").Tag(transient.Tag).Err()
 	}
 	msgCached, err := cache.Get(ctx, nt.messageID)
 	switch {
@@ -458,7 +458,7 @@ func createSwarmingTask(ctx context.Context, build *model.Build, swarm clients.S
 	}
 
 	// Insert secret bytes.
-	token, err := buildtoken.GenerateToken(build.ID)
+	token, err := buildtoken.GenerateToken(build.ID, pb.TokenBody_BUILD)
 	if err != nil {
 		return tq.Fatal.Apply(err)
 	}

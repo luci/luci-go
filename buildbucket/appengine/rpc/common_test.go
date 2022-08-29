@@ -16,7 +16,6 @@ package rpc
 
 import (
 	"context"
-	"encoding/base64"
 	"fmt"
 	"strings"
 	"testing"
@@ -30,6 +29,7 @@ import (
 
 	"go.chromium.org/luci/server/bqlog"
 
+	"go.chromium.org/luci/buildbucket/appengine/internal/buildtoken"
 	"go.chromium.org/luci/buildbucket/appengine/model"
 	pb "go.chromium.org/luci/buildbucket/proto"
 	"google.golang.org/grpc/metadata"
@@ -277,8 +277,8 @@ func TestValidateBuildToken(t *testing.T) {
 	Convey("validateBuildToken", t, func() {
 		ctx := memory.Use(context.Background())
 		ctx, _ = testclock.UseTime(ctx, time.Unix(1444945245, 0))
-		tk1 := base64.RawURLEncoding.EncodeToString([]byte("a token"))
-		tk2 := base64.RawURLEncoding.EncodeToString([]byte("b token"))
+		tk1, _ := buildtoken.GenerateToken(1, pb.TokenBody_BUILD)
+		tk2, _ := buildtoken.GenerateToken(1, pb.TokenBody_BUILD)
 		build := &model.Build{
 			ID: 1,
 			Proto: &pb.Build{
@@ -316,6 +316,80 @@ func TestValidateBuildToken(t *testing.T) {
 				_, _, err := validateBuildToken(ctx, 1, true)
 				So(err, ShouldNotBeNil)
 			})
+		})
+	})
+}
+
+func TestValidateBuildTaskToken(t *testing.T) {
+	t.Parallel()
+
+	Convey("validateBuildTaskToken", t, func() {
+		ctx := memory.Use(context.Background())
+		ctx, _ = testclock.UseTime(ctx, time.Unix(1444945245, 0))
+		tk1, _ := buildtoken.GenerateToken(1, pb.TokenBody_TASK)
+		tk2, _ := buildtoken.GenerateToken(1, pb.TokenBody_TASK)
+		build := &model.Build{
+			ID: 1,
+			Proto: &pb.Build{
+				Id: 1,
+				Builder: &pb.BuilderID{
+					Project: "project",
+					Bucket:  "bucket",
+					Builder: "builder",
+				},
+				Status: pb.Status_STARTED,
+			},
+			UpdateToken: tk1,
+		}
+		So(datastore.Put(ctx, build), ShouldBeNil)
+
+		Convey("Works", func() {
+			ctx = metadata.NewIncomingContext(ctx, metadata.Pairs(buildbucket.BuildbucketBackendTokenHeader, tk1))
+			_, _, err := validateBuildTaskToken(ctx, "1")
+			So(err, ShouldBeNil)
+		})
+
+		Convey("Fails", func() {
+			Convey("if unmatched", func() {
+				ctx = metadata.NewIncomingContext(ctx, metadata.Pairs(buildbucket.BuildbucketBackendTokenHeader, tk2))
+				_, _, err := validateBuildTaskToken(ctx, "1")
+				So(err, ShouldNotBeNil)
+			})
+			Convey("if missing", func() {
+				_, _, err := validateBuildTaskToken(ctx, "1")
+				So(err, ShouldNotBeNil)
+			})
+			Convey("if not int", func() {
+				_, _, err := validateBuildTaskToken(ctx, "one")
+				So(err, ShouldNotBeNil)
+			})
+		})
+	})
+}
+
+func TestValdiateTokenPurposeMatchesHeader(t *testing.T) {
+	t.Parallel()
+
+	Convey("build", t, func() {
+		Convey("match", func() {
+			_, err := valdiateTokenPurposeMatchesHeader(pb.TokenBody_BUILD, buildbucket.BuildbucketTokenHeader)
+			So(err, ShouldBeNil)
+		})
+		Convey("no match", func() {
+			_, err := valdiateTokenPurposeMatchesHeader(pb.TokenBody_TASK, buildbucket.BuildbucketTokenHeader)
+			So(err, ShouldBeNil)
+		})
+		Convey("purpose is nil", func() {
+			_, err := valdiateTokenPurposeMatchesHeader(pb.TokenBody_PURPOSE_UNSPECIFIED, buildbucket.BuildbucketTokenHeader)
+			So(err, ShouldBeError)
+		})
+		Convey("header is nil", func() {
+			_, err := valdiateTokenPurposeMatchesHeader(pb.TokenBody_BUILD, "")
+			So(err, ShouldBeError)
+		})
+		Convey("header and purpose are nil", func() {
+			_, err := valdiateTokenPurposeMatchesHeader(pb.TokenBody_PURPOSE_UNSPECIFIED, "")
+			So(err, ShouldBeError)
 		})
 	})
 }

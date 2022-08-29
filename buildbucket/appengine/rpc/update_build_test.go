@@ -16,7 +16,6 @@ package rpc
 
 import (
 	"context"
-	"encoding/base64"
 	"strconv"
 	"strings"
 	"testing"
@@ -43,6 +42,7 @@ import (
 	"go.chromium.org/luci/server/auth/authtest"
 	"go.chromium.org/luci/server/tq"
 
+	"go.chromium.org/luci/buildbucket/appengine/internal/buildtoken"
 	"go.chromium.org/luci/buildbucket/appengine/internal/metrics"
 	"go.chromium.org/luci/buildbucket/appengine/internal/perm"
 	"go.chromium.org/luci/buildbucket/appengine/model"
@@ -520,9 +520,18 @@ func TestCheckBuildForUpdate(t *testing.T) {
 }
 
 func TestUpdateBuild(t *testing.T) {
+
+	updateContextForNewBuildToken := func(ctx context.Context, buildID int64) (string, context.Context) {
+		newToken, _ := buildtoken.GenerateToken(buildID, pb.TokenBody_BUILD)
+		ctx = metadata.NewIncomingContext(ctx, metadata.Pairs(buildbucket.BuildbucketTokenHeader, newToken))
+		return newToken, ctx
+	}
+
 	t.Parallel()
 
-	tk := base64.RawURLEncoding.EncodeToString([]byte("a token"))
+	// Generating a token with a BuildID of 1
+	tk, _ := buildtoken.GenerateToken(1, pb.TokenBody_BUILD)
+
 	getBuildWithDetails := func(ctx context.Context, bid int64) *model.Build {
 		b, err := getBuild(ctx, bid)
 		So(err, ShouldBeNil)
@@ -547,7 +556,7 @@ func TestUpdateBuild(t *testing.T) {
 		}
 		ctx := auth.WithState(memory.Use(context.Background()), s)
 		ctx = metrics.WithServiceInfo(ctx, "svc", "job", "ins")
-		ctx = metadata.NewIncomingContext(ctx, metadata.Pairs(buildbucket.BuildbucketTokenHeader, tk))
+		tk, ctx = updateContextForNewBuildToken(ctx, 1)
 		datastore.GetTestable(ctx).AutoIndex(true)
 		datastore.GetTestable(ctx).Consistent(true)
 		ctx, _ = tsmon.WithDummyInMemory(ctx)
@@ -856,6 +865,8 @@ func TestUpdateBuild(t *testing.T) {
 				// create a sample task with SCHEDULED.
 				build.Proto.Id++
 				build.ID++
+				tk, ctx = updateContextForNewBuildToken(ctx, build.ID)
+				build.UpdateToken = tk
 				build.Proto.Status, build.Status = pb.Status_SCHEDULED, pb.Status_SCHEDULED
 				So(datastore.Put(ctx, build), ShouldBeNil)
 
@@ -984,6 +995,8 @@ func TestUpdateBuild(t *testing.T) {
 					CreateTime:  t0,
 					UpdateToken: tk,
 				}
+				tk, ctx = updateContextForNewBuildToken(ctx, 11)
+				child.UpdateToken = tk
 				So(datastore.Put(ctx, child), ShouldBeNil)
 
 				Convey("request is to terminate the child", func() {
@@ -1042,6 +1055,7 @@ func TestUpdateBuild(t *testing.T) {
 							AncestorIds:      []int64{11},
 							CanOutliveParent: false,
 						},
+						UpdateToken: tk,
 					}), ShouldBeNil)
 					req.Build.Id = 11
 					req.Build.Status = pb.Status_STARTED
@@ -1066,6 +1080,7 @@ func TestUpdateBuild(t *testing.T) {
 				})
 
 				Convey("start the cancel process if parent is missing", func() {
+					tk, ctx = updateContextForNewBuildToken(ctx, 15)
 					So(datastore.Put(ctx, &model.Build{
 						ID: 15,
 						Proto: &pb.Build{
@@ -1124,6 +1139,7 @@ func TestUpdateBuild(t *testing.T) {
 
 					req.Build.Id = 31
 					req.Build.Status = pb.Status_STARTED
+					tk, ctx = updateContextForNewBuildToken(ctx, 31)
 					req.UpdateMask.Paths[0] = "build.status"
 					_, err := srv.UpdateBuild(ctx, req)
 					So(err, ShouldErrLike, "get error")
@@ -1131,6 +1147,7 @@ func TestUpdateBuild(t *testing.T) {
 				})
 
 				Convey("build is being canceled", func() {
+					tk, ctx = updateContextForNewBuildToken(ctx, 13)
 					So(datastore.Put(ctx, &model.Build{
 						ID: 13,
 						Proto: &pb.Build{
@@ -1158,6 +1175,7 @@ func TestUpdateBuild(t *testing.T) {
 							AncestorIds:      []int64{13},
 							CanOutliveParent: false,
 						},
+						UpdateToken: tk,
 					}), ShouldBeNil)
 					req.Build.Id = 13
 					req.Build.SummaryMarkdown = "new summary"
@@ -1178,6 +1196,7 @@ func TestUpdateBuild(t *testing.T) {
 				})
 
 				Convey("build is ended, should cancel children", func() {
+					tk, ctx = updateContextForNewBuildToken(ctx, 20)
 					So(datastore.Put(ctx, &model.Build{
 						ID: 20,
 						Proto: &pb.Build{
@@ -1203,6 +1222,7 @@ func TestUpdateBuild(t *testing.T) {
 							AncestorIds:      []int64{20},
 							CanOutliveParent: false,
 						},
+						UpdateToken: tk,
 					}), ShouldBeNil)
 					req.Build.Id = 20
 					req.Build.Status = pb.Status_INFRA_FAILURE

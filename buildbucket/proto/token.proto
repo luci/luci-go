@@ -29,6 +29,8 @@ message TokenBody {
     PURPOSE_UNSPECIFIED = 0;
     // The token is a build token.
     BUILD = 1;
+    // The token is a task token.
+    TASK = 2;
   }
 
   // Purpose of the token.

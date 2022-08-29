@@ -35,7 +35,7 @@ func TestBuildToken(t *testing.T) {
 	Convey("build token", t, func() {
 		Convey("success", func() {
 			bID := int64(123)
-			token, err := GenerateToken(bID)
+			token, err := GenerateToken(bID, pb.TokenBody_BUILD)
 			So(err, ShouldBeNil)
 			tBody, err := ParseToTokenBody(token)
 			So(err, ShouldBeNil)
