@@ -30,6 +30,7 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/lhttp"
 	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/common/proto/reflectutil"
 	"go.chromium.org/luci/common/retry"
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/common/sync/dispatcher"
@@ -193,7 +194,11 @@ func mkSendFn(ctx context.Context, client BuildsClient, bID int64, canceledBuild
 			req = b.Meta.(*bbpb.UpdateBuildRequest)
 		} else {
 			build := b.Data[0].Item.(*bbpb.Build)
-			build.Tags = buildbucket.WithoutDisallowedTagKeys(build.Tags)
+			adaptedTags := buildbucket.WithoutDisallowedTagKeys(build.Tags)
+			if len(build.Tags) != len(adaptedTags) {
+				build = reflectutil.ShallowCopy(build).(*bbpb.Build)
+				build.Tags = adaptedTags
+			}
 			req = &bbpb.UpdateBuildRequest{
 				Build: build,
 				UpdateMask: &field_mask.FieldMask{
