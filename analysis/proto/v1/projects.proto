@@ -14,16 +14,16 @@
 
 syntax = "proto3";
 
-package weetbix.v1;
+package luci.analysis.v1;
 
-option go_package = "go.chromium.org/luci/analysis/proto/v1;weetbixpb";
+option go_package = "go.chromium.org/luci/analysis/proto/v1;analysispb";
 
 import "go.chromium.org/luci/analysis/proto/v1/project.proto";
 
 
-// Provides methods to access the projects which are using Weetbix.
+// Provides methods to access the projects which are using LUCI Analysis.
 service Projects {
-  // Gets Weetbix configuration for a LUCI Project.
+  // Gets LUCI Analysis configuration for a LUCI Project.
   //
   // RPC desigend to comply with https://google.aip.dev/131.
   rpc GetConfig(GetProjectConfigRequest) returns (ProjectConfig) {};
@@ -37,12 +37,13 @@ service Projects {
 }
 
 // A request object with data to fetch the list of projects configured
-// by Weetbix.
+// in LUCI Analysis.
 message ListProjectsRequest {}
 
-// A response containing the list of projects which are are using Weetbix.
+// A response containing the list of projects which are are using
+// LUCI Analysis.
 message ListProjectsResponse {
-  // The list of projects using Weetbix.
+  // The list of projects using LUCI Analysis.
   repeated Project projects = 1;
 }
 

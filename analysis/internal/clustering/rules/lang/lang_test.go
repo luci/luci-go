@@ -22,7 +22,7 @@ import (
 	. "github.com/smartystreets/goconvey/convey"
 
 	"go.chromium.org/luci/analysis/internal/clustering"
-	weetbixpb "go.chromium.org/luci/analysis/proto/v1"
+	analysispb "go.chromium.org/luci/analysis/proto/v1"
 )
 
 func TestRules(t *testing.T) {
@@ -95,11 +95,11 @@ func TestRules(t *testing.T) {
 		}
 		boot := &clustering.Failure{
 			TestID: "tast.arc.Boot",
-			Reason: &weetbixpb.FailureReason{PrimaryErrorMessage: "annotation 1: annotation 2: failure"},
+			Reason: &analysispb.FailureReason{PrimaryErrorMessage: "annotation 1: annotation 2: failure"},
 		}
 		dbus := &clustering.Failure{
 			TestID: "tast.example.DBus",
-			Reason: &weetbixpb.FailureReason{PrimaryErrorMessage: "true was not true"},
+			Reason: &analysispb.FailureReason{PrimaryErrorMessage: "true was not true"},
 		}
 		Convey(`String Expression`, func() {
 			So(eval(`test = "tast.arc.Boot"`, boot), ShouldBeTrue)
@@ -166,7 +166,7 @@ func TestRules(t *testing.T) {
 				So(eval(`test LIKE "a\\\\.+*?()|[]{}^$\\%"`, escapeTest3), ShouldBeTrue)
 
 				escapeTest4 := &clustering.Failure{
-					Reason: &weetbixpb.FailureReason{
+					Reason: &analysispb.FailureReason{
 						PrimaryErrorMessage: "a\nb",
 					},
 				}
@@ -266,7 +266,7 @@ func BenchmarkRules(b *testing.B) {
 	}
 	data := &clustering.Failure{
 		TestID: testText.String(),
-		Reason: &weetbixpb.FailureReason{PrimaryErrorMessage: reasonText.String()},
+		Reason: &analysispb.FailureReason{PrimaryErrorMessage: reasonText.String()},
 	}
 
 	// Start benchmark.

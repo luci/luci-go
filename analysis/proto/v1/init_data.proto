@@ -1,8 +1,8 @@
 syntax = "proto3";
 
-package weetbix.v1;
+package luci.analysis.v1;
 
-option go_package = "go.chromium.org/luci/analysis/proto/v1;weetbixpb";
+option go_package = "go.chromium.org/luci/analysis/proto/v1;analysispb";
 
 // A service that provides access to initialization data required by clients.
 service InitDataGenerator {
@@ -23,7 +23,8 @@ message GenerateInitDataResponse {
     InitData init_data = 1;
 }
 
-// The data describing the current state of the weetbix server and the user logged in.
+// The data describing the current state of the LUCI Analysis server and the
+// user logged in.
 // Data provided here can be used to initialise the client UI.
 message InitData {
     Hostnames hostnames = 1;

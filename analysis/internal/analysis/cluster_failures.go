@@ -36,7 +36,7 @@ type ClusterFailure struct {
 	Changelists       []*Changelist
 	PartitionTime     bigquery.NullTimestamp `json:"partitionTime"`
 	Exonerations      []*Exoneration         `json:"exonerations"`
-	// weetbix.v1.BuildStatus, without "BUILD_STATUS_" prefix.
+	// luci.analysis.v1.BuildStatus, without "BUILD_STATUS_" prefix.
 	BuildStatus                 bigquery.NullString `json:"buildStatus"`
 	IsBuildCritical             bigquery.NullBool   `json:"isBuildCritical"`
 	IngestedInvocationID        bigquery.NullString `json:"ingestedInvocationId"`
@@ -45,7 +45,7 @@ type ClusterFailure struct {
 }
 
 type Exoneration struct {
-	// weetbix.v1.ExonerationReason value. E.g. "OCCURS_ON_OTHER_CLS".
+	// luci.analysis.v1.ExonerationReason value. E.g. "OCCURS_ON_OTHER_CLS".
 	Reason bigquery.NullString `json:"reason"`
 }
 

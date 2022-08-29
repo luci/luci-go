@@ -14,7 +14,7 @@
 
 syntax = "proto3";
 
-package weetbix.internal.ingestion.control;
+package luci.analysis.internal.ingestion.control;
 
 import "google/protobuf/timestamp.proto";
 import "go.chromium.org/luci/analysis/proto/v1/common.proto";
@@ -42,16 +42,16 @@ message BuildResult {
 message PresubmitResult {
   // The identity of the presubmit run. If the ingestion does not relate to test
   // results obtained in a presubmit run, this field should not be set.
-  weetbix.v1.PresubmitRunId presubmit_run_id = 1;
+  luci.analysis.v1.PresubmitRunId presubmit_run_id = 1;
 
   reserved 2;
 
   // The ending status of the presubmit run. E.g. Canceled, Success, Failure.
-  weetbix.v1.PresubmitRunStatus status = 9;
+  luci.analysis.v1.PresubmitRunStatus status = 9;
 
   // The presubmit run mode.
   // E.g. FULL_RUN, DRY_RUN, QUICK_DRY_RUN.
-  weetbix.v1.PresubmitRunMode mode = 8;
+  luci.analysis.v1.PresubmitRunMode mode = 8;
 
   // The owner of the presubmit run (if any).
   // This is the owner of the CL on which CQ+1/CQ+2 was clicked

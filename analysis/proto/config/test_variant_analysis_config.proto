@@ -14,7 +14,7 @@
 
 syntax = "proto3";
 
-package weetbix.config;
+package luci.analysis.config;
 
 import "google/protobuf/duration.proto";
 import "go.chromium.org/luci/analysis/proto/analyzedtestvariant/predicate.proto";
@@ -30,15 +30,15 @@ message BigQueryExport {
   }
   // The BigQuery table the analyzed test variants should be exported to.
   //
-  // Weetbix will use the project-scoped service account when exporting the
-  // data.
+  // LUCI Analysis will use the project-scoped service account when exporting
+  // the data.
   // The project-scoped service account MUST have permissions to create the
   // table in the dataset and insert rows to the table, e.g. WRITER role.
   BigQueryTable table = 1;
 
   // Use predicate to query test variants that should be exported to
   // BigQuery table.
-  weetbix.analyzedtestvariant.Predicate predicate = 2;
+  luci.analysis.analyzedtestvariant.Predicate predicate = 2;
 }
 
 // Configurations for UpdateTestVariant task.
@@ -49,8 +49,8 @@ message UpdateTestVariantTask {
   // In each task, verdicts within the duration will be queried
   // and used to calculate the test variant's status.
   //
-  // For example, if the duration is 24 hours, Weetbix will use all the verdicts
-  // from the last 24 hours to calculate the variant's status.
+  // For example, if the duration is 24 hours, LUCI Analysis will use all
+  // the verdicts from the last 24 hours to calculate the variant's status.
   google.protobuf.Duration test_variant_status_update_duration = 2;
 }
 

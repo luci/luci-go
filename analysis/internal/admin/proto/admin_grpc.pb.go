@@ -23,10 +23,10 @@ type AdminClient interface {
 	// variants to the specified table.
 	//
 	// In common cases, bq export should be done automatically by cron job.
-	// This RPC is only used to back fill data that already in Weetbix Spanner to
-	// BigQuery. It doesn't work if the request asks for data before Weetbix
-	// result ingestion started. If such request arises, we need to add another
-	// Admin API for it.
+	// This RPC is only used to back fill data that already in LUCI Analysis
+	// Spanner to BigQuery. It doesn't work if the request asks for data before
+	// LUCI Analysis result ingestion started. If such request arises, we need
+	// to add another Admin API for it.
 	ExportTestVariants(ctx context.Context, in *ExportTestVariantsRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 }
 
@@ -40,7 +40,7 @@ func NewAdminClient(cc grpc.ClientConnInterface) AdminClient {
 
 func (c *adminClient) ExportTestVariants(ctx context.Context, in *ExportTestVariantsRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
 	out := new(emptypb.Empty)
-	err := c.cc.Invoke(ctx, "/weetbix.internal.admin.Admin/ExportTestVariants", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/luci.analysis.internal.admin.Admin/ExportTestVariants", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -55,10 +55,10 @@ type AdminServer interface {
 	// variants to the specified table.
 	//
 	// In common cases, bq export should be done automatically by cron job.
-	// This RPC is only used to back fill data that already in Weetbix Spanner to
-	// BigQuery. It doesn't work if the request asks for data before Weetbix
-	// result ingestion started. If such request arises, we need to add another
-	// Admin API for it.
+	// This RPC is only used to back fill data that already in LUCI Analysis
+	// Spanner to BigQuery. It doesn't work if the request asks for data before
+	// LUCI Analysis result ingestion started. If such request arises, we need
+	// to add another Admin API for it.
 	ExportTestVariants(context.Context, *ExportTestVariantsRequest) (*emptypb.Empty, error)
 	mustEmbedUnimplementedAdminServer()
 }
@@ -93,7 +93,7 @@ func _Admin_ExportTestVariants_Handler(srv interface{}, ctx context.Context, dec
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/weetbix.internal.admin.Admin/ExportTestVariants",
+		FullMethod: "/luci.analysis.internal.admin.Admin/ExportTestVariants",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(AdminServer).ExportTestVariants(ctx, req.(*ExportTestVariantsRequest))
@@ -105,7 +105,7 @@ func _Admin_ExportTestVariants_Handler(srv interface{}, ctx context.Context, dec
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
 var Admin_ServiceDesc = grpc.ServiceDesc{
-	ServiceName: "weetbix.internal.admin.Admin",
+	ServiceName: "luci.analysis.internal.admin.Admin",
 	HandlerType: (*AdminServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{

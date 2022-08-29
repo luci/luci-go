@@ -14,16 +14,16 @@
 
 syntax = "proto3";
 
-package weetbix.v1;
+package luci.analysis.v1;
 
 import "google/api/field_behavior.proto";
 import "google/protobuf/field_mask.proto";
 import "google/protobuf/timestamp.proto";
 import "go.chromium.org/luci/analysis/proto/v1/common.proto";
 
-option go_package = "go.chromium.org/luci/analysis/proto/v1;weetbixpb";
+option go_package = "go.chromium.org/luci/analysis/proto/v1;analysispb";
 
-// Provides methods to manipulate rules in Weetbix, used to associate
+// Provides methods to manipulate rules in LUCI Analysis, used to associate
 // failures with bugs.
 service Rules {
   // Retrieves a rule.
@@ -46,7 +46,7 @@ service Rules {
   rpc Update(UpdateRuleRequest) returns (Rule) {};
 
   // Looks up the rule associated with a given bug, without knowledge
-  // of the Weetbix project the rule is in.
+  // of the LUCI project the rule is in.
   // Designed to conform to https://google.aip.dev/136.
   rpc LookupBug(LookupBugRequest) returns (LookupBugResponse) {};
 }
@@ -73,14 +73,14 @@ message Rule {
     [(google.api.field_behavior) = REQUIRED];
 
   // The bug that the failures are associated with.
-  weetbix.v1.AssociatedBug bug = 5
+  luci.analysis.v1.AssociatedBug bug = 5
     [(google.api.field_behavior) = REQUIRED];
 
-  // Whether the bug should be updated by Weetbix, and whether failures
-  // should still be matched against the rule.
+  // Whether the bug should be updated by LUCI Analysis, and whether
+  // failures should still be matched against the rule.
   bool is_active = 6;
 
-  // Whether Weetbix should manage the priority and verified status
+  // Whether LUCI Analysis should manage the priority and verified status
   // of the associated bug based on the impact established via this rule.
   bool is_managing_bug = 14;
 
@@ -88,7 +88,7 @@ message Rule {
   // Until re-clustering is complete and has reduced the residual impact
   // of the source cluster, this cluster ID tells bug filing to ignore
   // the source cluster when determining whether new bugs need to be filed.
-  weetbix.v1.ClusterId source_cluster = 7;
+  luci.analysis.v1.ClusterId source_cluster = 7;
 
   // The time the rule was created.
   google.protobuf.Timestamp create_time = 8

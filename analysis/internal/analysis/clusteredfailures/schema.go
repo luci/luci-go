@@ -38,7 +38,7 @@ var schemaApplyer = bq.NewSchemaApplyer(caching.RegisterLRUCache(50))
 
 const partitionExpirationTime = 90 * 24 * time.Hour
 
-const rowMessage = "weetbix.bq.ClusteredFailureRow"
+const rowMessage = "luci.analysis.bq.ClusteredFailureRow"
 
 var tableMetadata *bigquery.TableMetadata
 

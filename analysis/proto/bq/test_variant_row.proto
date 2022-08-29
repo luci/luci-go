@@ -14,13 +14,13 @@
 
 syntax = "proto3";
 
-package weetbix.bq;
+package luci.analysis.bq;
 
 import "google/protobuf/timestamp.proto";
 import "go.chromium.org/luci/analysis/proto/analyzedtestvariant/analyzed_test_variant.proto";
 import "go.chromium.org/luci/analysis/proto/v1/common.proto";
 
-option go_package = "go.chromium.org/luci/analysis/proto/bq;weetbixpb";
+option go_package = "go.chromium.org/luci/analysis/proto/bq;bqpb";
 
 // Verdict represent results of a test variant within an invocation.
 message Verdict {
@@ -28,7 +28,7 @@ message Verdict {
   string invocation = 1;
 
   // Status of the verdict.
-  // String representation of weetbix.v1.VerdictStatus.
+  // String representation of luci.analysis.v1.VerdictStatus.
   string status = 2;
 
   // Invocation creation time.
@@ -36,8 +36,8 @@ message Verdict {
   // TODO: Add information about clusters and bugs.
 }
 
-// TestVariantRow represents a row in a BigQuery table for a Weetbix analyzed
-// test variant.
+// TestVariantRow represents a row in a BigQuery table for a LUCI Analysis
+// analyzed test variant.
 message TestVariantRow {
   // Can be used to refer to this test variant.
   // Format:
@@ -56,25 +56,25 @@ message TestVariantRow {
 
   // Description of one specific way of running the test,
   // e.g. a specific bucket, builder and a test suite.
-  repeated weetbix.v1.StringPair variant = 5;
+  repeated luci.analysis.v1.StringPair variant = 5;
 
   // Information about the test at the time of its execution.
-  weetbix.v1.TestMetadata test_metadata = 6;
+  luci.analysis.v1.TestMetadata test_metadata = 6;
 
   // Metadata for the test variant.
   // See luci.resultdb.v1.Tags for details.
-  repeated weetbix.v1.StringPair tags = 7;
+  repeated luci.analysis.v1.StringPair tags = 7;
 
   // A range of time. Flake statistics are calculated using test results
   // in the verdicts that were finalized within that range.
-  weetbix.v1.TimeRange time_range = 8;
+  luci.analysis.v1.TimeRange time_range = 8;
 
   // Status of the test variant.
-  // String representation of weetbix.analyzedtestvariant.Status.
+  // String representation of luci.analysis.analyzedtestvariant.Status.
   string status = 9;
 
   // Flakiness statistics of the test variant.
-  weetbix.analyzedtestvariant.FlakeStatistics flake_statistics = 10;
+  luci.analysis.analyzedtestvariant.FlakeStatistics flake_statistics = 10;
 
   // Verdicts of the test variant during the time range.
   repeated Verdict verdicts = 11;

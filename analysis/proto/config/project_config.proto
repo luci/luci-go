@@ -14,7 +14,7 @@
 
 syntax = "proto3";
 
-package weetbix.config;
+package luci.analysis.config;
 
 import "google/protobuf/timestamp.proto";
 
@@ -23,7 +23,7 @@ import "go.chromium.org/luci/analysis/proto/config/test_variant_analysis_config.
 
 option go_package = "go.chromium.org/luci/analysis/proto/config;configpb";
 
-// ProjectConfig is the project-specific configuration data for Weetbix.
+// ProjectConfig is the project-specific configuration data for LUCI Analysis.
 message ProjectConfig {
 
   // The project metadata (eg. display name).
@@ -38,7 +38,7 @@ message ProjectConfig {
   // Alternatively, if test name cluster's impact exceeds 134% of the given
   // threshold, a bug will also be filed for it.
   //
-  // Weetbix's bias towards reason clusters reflects the fact that bugs
+  // LUCI Analysis's bias towards reason clusters reflects the fact that bugs
   // filed for reasons should be better scoped and more actionable
   // (focus on one problem).
   ImpactThreshold bug_filing_threshold = 2;
@@ -47,7 +47,7 @@ message ProjectConfig {
   repeated RealmConfig realms = 3;
 
   // The last time this project configuration was updated.
-  // Weetbix sets and stores this value internally. Do not set
+  // LUCI Analysis sets and stores this value internally. Do not set
   // in your project's configuration file, it will be ignored.
   google.protobuf.Timestamp last_updated = 4;
 
@@ -241,8 +241,8 @@ message Clustering {
 // A rule used to cluster a test result by test name.
 message TestNameClusteringRule {
   // A human-readable name for the rule. This should be unique for each rule.
-  // This may be used by Weetbix to explain why it chose to cluster the test
-  // name in this way.
+  // This may be used by LUCI Analysis to explain why it chose to cluster the
+  // test name in this way.
   string name = 1;
 
   // The regular expression describing which test names should be clustered
@@ -317,7 +317,7 @@ message TestNameClusteringRule {
   //   to understand value-parameterised google tests.
   //
   // It is known that not all clusters can be precisely matched by
-  // a LIKE expression. Nonetheless, Weetbix prefers LIKE expressions
+  // a LIKE expression. Nonetheless, LUCI Analysis prefers LIKE expressions
   // as they are easier to comprehend and modify by users, and in
   // most cases, the added precision is not required.
   //
@@ -328,7 +328,7 @@ message TestNameClusteringRule {
   // to reduce differences between the suggested clusters and eventual
   // bug clusters).
   //
-  // Weetbix will automatically escape any '%' '_' and '\' in parts of
+  // LUCI Analysis will automatically escape any '%' '_' and '\' in parts of
   // the matched test name before substitution to ensure captured parts
   // of the test name are matched literally and not interpreted.
   string like_template = 3;

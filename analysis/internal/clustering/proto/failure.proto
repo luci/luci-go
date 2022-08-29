@@ -14,7 +14,7 @@
 
 syntax = "proto3";
 
-package weetbix.internal.clustering;
+package luci.analysis.internal.clustering;
 
 import "google/protobuf/timestamp.proto";
 import "google/protobuf/duration.proto";
@@ -31,18 +31,18 @@ message Chunk {
   repeated Failure failures = 1;
 }
 
-// Weetbix internal representation of an unexpected test failure.
+// LUCI Analysis internal representation of an unexpected test failure.
 // Next ID: 30.
 message Failure {
   // The identity of the test result, as defined by the source system.
-  weetbix.v1.TestResultId test_result_id = 1;
+  luci.analysis.v1.TestResultId test_result_id = 1;
 
   // Timestamp representing the start of the data retention period. This acts
   // as the partitioning key in time/date-partitioned tables.
   google.protobuf.Timestamp partition_time = 2;
 
   // The one-based index of this failure within the chunk. Assigned by
-  // Weetbix ingestion.
+  // LUCI Analysis ingestion.
   int64 chunk_index = 3;
 
   // Security realm of the test result.
@@ -56,24 +56,24 @@ message Failure {
 
   // key:value pairs to specify the way of running a particular test.
   // e.g. a specific bucket, builder and a test suite.
-  weetbix.v1.Variant variant = 6;
+  luci.analysis.v1.Variant variant = 6;
 
   // Metadata key value pairs for this test result.
   // It might describe this particular execution or the test case.
   // A key can be repeated.
-  repeated weetbix.v1.StringPair tags = 25;
+  repeated luci.analysis.v1.StringPair tags = 25;
 
   // Hash of the variant.
   // hex(sha256(''.join(sorted('%s:%s\n' for k, v in variant.items())))).
   string variant_hash = 7;
 
   // A failure reason describing why the test failed.
-  weetbix.v1.FailureReason failure_reason = 8;
+  luci.analysis.v1.FailureReason failure_reason = 8;
 
   // The bug tracking component corresponding to this test case, as identified
   // by the test results system. If no information is available, this is
   // unset.
-  weetbix.v1.BugTrackingComponent bug_tracking_component = 9;
+  luci.analysis.v1.BugTrackingComponent bug_tracking_component = 9;
 
   // The point in time when the test case started to execute.
   google.protobuf.Timestamp start_time = 10;
@@ -98,7 +98,7 @@ message Failure {
   // an infra failure). Can also be used to filter builds with incomplete
   // exonerations (e.g. build succeeded but some tests not exonerated).
   // This is the build corresponding to ingested_invocation_id.
-  weetbix.v1.BuildStatus build_status = 28;
+  luci.analysis.v1.BuildStatus build_status = 28;
 
   // Whether the build was critical to a presubmit run succeeding.
   // If the build was not part of a presubmit run, this is unset.
@@ -107,14 +107,14 @@ message Failure {
   // The unsubmitted changelists that were tested (if any).
   // Changelists are sorted in ascending (host, change, patchset) order.
   // Up to 10 changelists are captured.
-  repeated weetbix.v1.Changelist changelists = 23;
+  repeated luci.analysis.v1.Changelist changelists = 23;
 
   // The invocation from which this test result was ingested. This is
   // the top-level invocation that was ingested, an "invocation" being
   // a container of test results as identified by the source test result
   // system.
   //
-  // For ResultDB, Weetbix ingests invocations corresponding to
+  // For ResultDB, LUCI Analysis ingests invocations corresponding to
   // buildbucket builds.
   //
   // All test results ingested from the same invocation (i.e. with the
@@ -174,13 +174,13 @@ message Failure {
   bool is_test_run_blocked = 21;
 }
 
-// Weetbix internal representation of a test exoneration.
+// LUCI Analysis internal representation of a test exoneration.
 message TestExoneration {
   // The machine-readable reason for the exoneration.
-  weetbix.v1.ExonerationReason reason = 1;
+  luci.analysis.v1.ExonerationReason reason = 1;
 }
 
-// Weetbix internal representation of a presubmit run (e.g. LUCI CV Run).
+// LUCI Analysis internal representation of a presubmit run (e.g. LUCI CV Run).
 message PresubmitRun {
   // Identity of the presubmit run that contains this test result.
   // This should be unique per "CQ+1"/"CQ+2" attempt on gerrit.
@@ -194,7 +194,7 @@ message PresubmitRun {
   //
   // If the test result was not collected as part of a presubmit run,
   // this is unset.
-  weetbix.v1.PresubmitRunId presubmit_run_id = 1;
+  luci.analysis.v1.PresubmitRunId presubmit_run_id = 1;
 
   // The owner of the presubmit run (if any).
   // This is the owner of the CL on which CQ+1/CQ+2 was clicked
@@ -205,8 +205,8 @@ message PresubmitRun {
   string owner = 2;
 
   // The mode of the presubmit run. E.g. DRY_RUN, FULL_RUN, QUICK_DRY_RUN.
-  weetbix.v1.PresubmitRunMode mode = 3;
+  luci.analysis.v1.PresubmitRunMode mode = 3;
 
   // The presubmit run's ending status. E.g. SUCCESS, FAILURE, CANCELED.
-  weetbix.v1.PresubmitRunStatus status = 4;
+  luci.analysis.v1.PresubmitRunStatus status = 4;
 }

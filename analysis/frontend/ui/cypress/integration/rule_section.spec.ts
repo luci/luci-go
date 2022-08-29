@@ -20,7 +20,7 @@ describe('Rule Section', () => {
 
     setupTestRule();
 
-    cy.visit('/p/chromium/rules/4165d118c919a1016f42e80efe30db59');
+    cy.visit('/p/chromium/rules/ea5305bc5069b449ee43ee64d26d667f');
   });
 
   it('loads rule', () => {

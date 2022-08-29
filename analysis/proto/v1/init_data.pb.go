@@ -4,7 +4,7 @@
 // 	protoc        v3.17.3
 // source: go.chromium.org/luci/analysis/proto/v1/init_data.proto
 
-package weetbixpb
+package analysispb
 
 import prpc "go.chromium.org/luci/grpc/prpc"
 
@@ -39,7 +39,7 @@ type GenerateInitDataRequest struct {
 func (x *GenerateInitDataRequest) Reset() {
 	*x = GenerateInitDataRequest{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_infra_appengine_weetbix_proto_v1_init_data_proto_msgTypes[0]
+		mi := &file_go_chromium_org_luci_analysis_proto_v1_init_data_proto_msgTypes[0]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -52,7 +52,7 @@ func (x *GenerateInitDataRequest) String() string {
 func (*GenerateInitDataRequest) ProtoMessage() {}
 
 func (x *GenerateInitDataRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_infra_appengine_weetbix_proto_v1_init_data_proto_msgTypes[0]
+	mi := &file_go_chromium_org_luci_analysis_proto_v1_init_data_proto_msgTypes[0]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -65,7 +65,7 @@ func (x *GenerateInitDataRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GenerateInitDataRequest.ProtoReflect.Descriptor instead.
 func (*GenerateInitDataRequest) Descriptor() ([]byte, []int) {
-	return file_infra_appengine_weetbix_proto_v1_init_data_proto_rawDescGZIP(), []int{0}
+	return file_go_chromium_org_luci_analysis_proto_v1_init_data_proto_rawDescGZIP(), []int{0}
 }
 
 func (x *GenerateInitDataRequest) GetReferrerUrl() string {
@@ -87,7 +87,7 @@ type GenerateInitDataResponse struct {
 func (x *GenerateInitDataResponse) Reset() {
 	*x = GenerateInitDataResponse{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_infra_appengine_weetbix_proto_v1_init_data_proto_msgTypes[1]
+		mi := &file_go_chromium_org_luci_analysis_proto_v1_init_data_proto_msgTypes[1]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -100,7 +100,7 @@ func (x *GenerateInitDataResponse) String() string {
 func (*GenerateInitDataResponse) ProtoMessage() {}
 
 func (x *GenerateInitDataResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_infra_appengine_weetbix_proto_v1_init_data_proto_msgTypes[1]
+	mi := &file_go_chromium_org_luci_analysis_proto_v1_init_data_proto_msgTypes[1]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -113,7 +113,7 @@ func (x *GenerateInitDataResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GenerateInitDataResponse.ProtoReflect.Descriptor instead.
 func (*GenerateInitDataResponse) Descriptor() ([]byte, []int) {
-	return file_infra_appengine_weetbix_proto_v1_init_data_proto_rawDescGZIP(), []int{1}
+	return file_go_chromium_org_luci_analysis_proto_v1_init_data_proto_rawDescGZIP(), []int{1}
 }
 
 func (x *GenerateInitDataResponse) GetInitData() *InitData {
@@ -123,7 +123,8 @@ func (x *GenerateInitDataResponse) GetInitData() *InitData {
 	return nil
 }
 
-// The data describing the current state of the weetbix server and the user logged in.
+// The data describing the current state of the LUCI Analysis server and the
+// user logged in.
 // Data provided here can be used to initialise the client UI.
 type InitData struct {
 	state         protoimpl.MessageState
@@ -138,7 +139,7 @@ type InitData struct {
 func (x *InitData) Reset() {
 	*x = InitData{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_infra_appengine_weetbix_proto_v1_init_data_proto_msgTypes[2]
+		mi := &file_go_chromium_org_luci_analysis_proto_v1_init_data_proto_msgTypes[2]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -151,7 +152,7 @@ func (x *InitData) String() string {
 func (*InitData) ProtoMessage() {}
 
 func (x *InitData) ProtoReflect() protoreflect.Message {
-	mi := &file_infra_appengine_weetbix_proto_v1_init_data_proto_msgTypes[2]
+	mi := &file_go_chromium_org_luci_analysis_proto_v1_init_data_proto_msgTypes[2]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -164,7 +165,7 @@ func (x *InitData) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use InitData.ProtoReflect.Descriptor instead.
 func (*InitData) Descriptor() ([]byte, []int) {
-	return file_infra_appengine_weetbix_proto_v1_init_data_proto_rawDescGZIP(), []int{2}
+	return file_go_chromium_org_luci_analysis_proto_v1_init_data_proto_rawDescGZIP(), []int{2}
 }
 
 func (x *InitData) GetHostnames() *Hostnames {
@@ -201,7 +202,7 @@ type Hostnames struct {
 func (x *Hostnames) Reset() {
 	*x = Hostnames{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_infra_appengine_weetbix_proto_v1_init_data_proto_msgTypes[3]
+		mi := &file_go_chromium_org_luci_analysis_proto_v1_init_data_proto_msgTypes[3]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -214,7 +215,7 @@ func (x *Hostnames) String() string {
 func (*Hostnames) ProtoMessage() {}
 
 func (x *Hostnames) ProtoReflect() protoreflect.Message {
-	mi := &file_infra_appengine_weetbix_proto_v1_init_data_proto_msgTypes[3]
+	mi := &file_go_chromium_org_luci_analysis_proto_v1_init_data_proto_msgTypes[3]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -227,7 +228,7 @@ func (x *Hostnames) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Hostnames.ProtoReflect.Descriptor instead.
 func (*Hostnames) Descriptor() ([]byte, []int) {
-	return file_infra_appengine_weetbix_proto_v1_init_data_proto_rawDescGZIP(), []int{3}
+	return file_go_chromium_org_luci_analysis_proto_v1_init_data_proto_rawDescGZIP(), []int{3}
 }
 
 func (x *Hostnames) GetMonorailHostname() string {
@@ -250,7 +251,7 @@ type User struct {
 func (x *User) Reset() {
 	*x = User{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_infra_appengine_weetbix_proto_v1_init_data_proto_msgTypes[4]
+		mi := &file_go_chromium_org_luci_analysis_proto_v1_init_data_proto_msgTypes[4]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -263,7 +264,7 @@ func (x *User) String() string {
 func (*User) ProtoMessage() {}
 
 func (x *User) ProtoReflect() protoreflect.Message {
-	mi := &file_infra_appengine_weetbix_proto_v1_init_data_proto_msgTypes[4]
+	mi := &file_go_chromium_org_luci_analysis_proto_v1_init_data_proto_msgTypes[4]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -276,7 +277,7 @@ func (x *User) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use User.ProtoReflect.Descriptor instead.
 func (*User) Descriptor() ([]byte, []int) {
-	return file_infra_appengine_weetbix_proto_v1_init_data_proto_rawDescGZIP(), []int{4}
+	return file_go_chromium_org_luci_analysis_proto_v1_init_data_proto_rawDescGZIP(), []int{4}
 }
 
 func (x *User) GetEmail() string {
@@ -299,7 +300,7 @@ type AuthUrls struct {
 func (x *AuthUrls) Reset() {
 	*x = AuthUrls{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_infra_appengine_weetbix_proto_v1_init_data_proto_msgTypes[5]
+		mi := &file_go_chromium_org_luci_analysis_proto_v1_init_data_proto_msgTypes[5]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -312,7 +313,7 @@ func (x *AuthUrls) String() string {
 func (*AuthUrls) ProtoMessage() {}
 
 func (x *AuthUrls) ProtoReflect() protoreflect.Message {
-	mi := &file_infra_appengine_weetbix_proto_v1_init_data_proto_msgTypes[5]
+	mi := &file_go_chromium_org_luci_analysis_proto_v1_init_data_proto_msgTypes[5]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -325,7 +326,7 @@ func (x *AuthUrls) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use AuthUrls.ProtoReflect.Descriptor instead.
 func (*AuthUrls) Descriptor() ([]byte, []int) {
-	return file_infra_appengine_weetbix_proto_v1_init_data_proto_rawDescGZIP(), []int{5}
+	return file_go_chromium_org_luci_analysis_proto_v1_init_data_proto_rawDescGZIP(), []int{5}
 }
 
 func (x *AuthUrls) GetLogoutUrl() string {
@@ -335,81 +336,84 @@ func (x *AuthUrls) GetLogoutUrl() string {
 	return ""
 }
 
-var File_infra_appengine_weetbix_proto_v1_init_data_proto protoreflect.FileDescriptor
+var File_go_chromium_org_luci_analysis_proto_v1_init_data_proto protoreflect.FileDescriptor
 
-var file_infra_appengine_weetbix_proto_v1_init_data_proto_rawDesc = []byte{
-	0x0a, 0x30, 0x69, 0x6e, 0x66, 0x72, 0x61, 0x2f, 0x61, 0x70, 0x70, 0x65, 0x6e, 0x67, 0x69, 0x6e,
-	0x65, 0x2f, 0x77, 0x65, 0x65, 0x74, 0x62, 0x69, 0x78, 0x2f, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x2f,
-	0x76, 0x31, 0x2f, 0x69, 0x6e, 0x69, 0x74, 0x5f, 0x64, 0x61, 0x74, 0x61, 0x2e, 0x70, 0x72, 0x6f,
-	0x74, 0x6f, 0x12, 0x0a, 0x77, 0x65, 0x65, 0x74, 0x62, 0x69, 0x78, 0x2e, 0x76, 0x31, 0x22, 0x3c,
-	0x0a, 0x17, 0x47, 0x65, 0x6e, 0x65, 0x72, 0x61, 0x74, 0x65, 0x49, 0x6e, 0x69, 0x74, 0x44, 0x61,
-	0x74, 0x61, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x12, 0x21, 0x0a, 0x0c, 0x72, 0x65, 0x66,
-	0x65, 0x72, 0x72, 0x65, 0x72, 0x5f, 0x75, 0x72, 0x6c, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52,
-	0x0b, 0x72, 0x65, 0x66, 0x65, 0x72, 0x72, 0x65, 0x72, 0x55, 0x72, 0x6c, 0x22, 0x4d, 0x0a, 0x18,
-	0x47, 0x65, 0x6e, 0x65, 0x72, 0x61, 0x74, 0x65, 0x49, 0x6e, 0x69, 0x74, 0x44, 0x61, 0x74, 0x61,
-	0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x31, 0x0a, 0x09, 0x69, 0x6e, 0x69, 0x74,
-	0x5f, 0x64, 0x61, 0x74, 0x61, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x14, 0x2e, 0x77, 0x65,
-	0x65, 0x74, 0x62, 0x69, 0x78, 0x2e, 0x76, 0x31, 0x2e, 0x49, 0x6e, 0x69, 0x74, 0x44, 0x61, 0x74,
-	0x61, 0x52, 0x08, 0x69, 0x6e, 0x69, 0x74, 0x44, 0x61, 0x74, 0x61, 0x22, 0x98, 0x01, 0x0a, 0x08,
-	0x49, 0x6e, 0x69, 0x74, 0x44, 0x61, 0x74, 0x61, 0x12, 0x33, 0x0a, 0x09, 0x68, 0x6f, 0x73, 0x74,
-	0x6e, 0x61, 0x6d, 0x65, 0x73, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x15, 0x2e, 0x77, 0x65,
-	0x65, 0x74, 0x62, 0x69, 0x78, 0x2e, 0x76, 0x31, 0x2e, 0x48, 0x6f, 0x73, 0x74, 0x6e, 0x61, 0x6d,
-	0x65, 0x73, 0x52, 0x09, 0x68, 0x6f, 0x73, 0x74, 0x6e, 0x61, 0x6d, 0x65, 0x73, 0x12, 0x24, 0x0a,
-	0x04, 0x75, 0x73, 0x65, 0x72, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x10, 0x2e, 0x77, 0x65,
-	0x65, 0x74, 0x62, 0x69, 0x78, 0x2e, 0x76, 0x31, 0x2e, 0x55, 0x73, 0x65, 0x72, 0x52, 0x04, 0x75,
-	0x73, 0x65, 0x72, 0x12, 0x31, 0x0a, 0x09, 0x61, 0x75, 0x74, 0x68, 0x5f, 0x75, 0x72, 0x6c, 0x73,
-	0x18, 0x03, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x14, 0x2e, 0x77, 0x65, 0x65, 0x74, 0x62, 0x69, 0x78,
-	0x2e, 0x76, 0x31, 0x2e, 0x41, 0x75, 0x74, 0x68, 0x55, 0x72, 0x6c, 0x73, 0x52, 0x08, 0x61, 0x75,
-	0x74, 0x68, 0x55, 0x72, 0x6c, 0x73, 0x22, 0x38, 0x0a, 0x09, 0x48, 0x6f, 0x73, 0x74, 0x6e, 0x61,
-	0x6d, 0x65, 0x73, 0x12, 0x2b, 0x0a, 0x11, 0x6d, 0x6f, 0x6e, 0x6f, 0x72, 0x61, 0x69, 0x6c, 0x5f,
-	0x68, 0x6f, 0x73, 0x74, 0x6e, 0x61, 0x6d, 0x65, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x10,
-	0x6d, 0x6f, 0x6e, 0x6f, 0x72, 0x61, 0x69, 0x6c, 0x48, 0x6f, 0x73, 0x74, 0x6e, 0x61, 0x6d, 0x65,
-	0x22, 0x1c, 0x0a, 0x04, 0x55, 0x73, 0x65, 0x72, 0x12, 0x14, 0x0a, 0x05, 0x65, 0x6d, 0x61, 0x69,
-	0x6c, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x05, 0x65, 0x6d, 0x61, 0x69, 0x6c, 0x22, 0x29,
-	0x0a, 0x08, 0x41, 0x75, 0x74, 0x68, 0x55, 0x72, 0x6c, 0x73, 0x12, 0x1d, 0x0a, 0x0a, 0x6c, 0x6f,
-	0x67, 0x6f, 0x75, 0x74, 0x5f, 0x75, 0x72, 0x6c, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x09,
-	0x6c, 0x6f, 0x67, 0x6f, 0x75, 0x74, 0x55, 0x72, 0x6c, 0x32, 0x74, 0x0a, 0x11, 0x49, 0x6e, 0x69,
-	0x74, 0x44, 0x61, 0x74, 0x61, 0x47, 0x65, 0x6e, 0x65, 0x72, 0x61, 0x74, 0x6f, 0x72, 0x12, 0x5f,
-	0x0a, 0x10, 0x47, 0x65, 0x6e, 0x65, 0x72, 0x61, 0x74, 0x65, 0x49, 0x6e, 0x69, 0x74, 0x44, 0x61,
-	0x74, 0x61, 0x12, 0x23, 0x2e, 0x77, 0x65, 0x65, 0x74, 0x62, 0x69, 0x78, 0x2e, 0x76, 0x31, 0x2e,
-	0x47, 0x65, 0x6e, 0x65, 0x72, 0x61, 0x74, 0x65, 0x49, 0x6e, 0x69, 0x74, 0x44, 0x61, 0x74, 0x61,
-	0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x24, 0x2e, 0x77, 0x65, 0x65, 0x74, 0x62, 0x69,
-	0x78, 0x2e, 0x76, 0x31, 0x2e, 0x47, 0x65, 0x6e, 0x65, 0x72, 0x61, 0x74, 0x65, 0x49, 0x6e, 0x69,
-	0x74, 0x44, 0x61, 0x74, 0x61, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x00, 0x42,
-	0x2c, 0x5a, 0x2a, 0x69, 0x6e, 0x66, 0x72, 0x61, 0x2f, 0x61, 0x70, 0x70, 0x65, 0x6e, 0x67, 0x69,
-	0x6e, 0x65, 0x2f, 0x77, 0x65, 0x65, 0x74, 0x62, 0x69, 0x78, 0x2f, 0x70, 0x72, 0x6f, 0x74, 0x6f,
-	0x2f, 0x76, 0x31, 0x3b, 0x77, 0x65, 0x65, 0x74, 0x62, 0x69, 0x78, 0x70, 0x62, 0x62, 0x06, 0x70,
-	0x72, 0x6f, 0x74, 0x6f, 0x33,
+var file_go_chromium_org_luci_analysis_proto_v1_init_data_proto_rawDesc = []byte{
+	0x0a, 0x36, 0x67, 0x6f, 0x2e, 0x63, 0x68, 0x72, 0x6f, 0x6d, 0x69, 0x75, 0x6d, 0x2e, 0x6f, 0x72,
+	0x67, 0x2f, 0x6c, 0x75, 0x63, 0x69, 0x2f, 0x61, 0x6e, 0x61, 0x6c, 0x79, 0x73, 0x69, 0x73, 0x2f,
+	0x70, 0x72, 0x6f, 0x74, 0x6f, 0x2f, 0x76, 0x31, 0x2f, 0x69, 0x6e, 0x69, 0x74, 0x5f, 0x64, 0x61,
+	0x74, 0x61, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x12, 0x10, 0x6c, 0x75, 0x63, 0x69, 0x2e, 0x61,
+	0x6e, 0x61, 0x6c, 0x79, 0x73, 0x69, 0x73, 0x2e, 0x76, 0x31, 0x22, 0x3c, 0x0a, 0x17, 0x47, 0x65,
+	0x6e, 0x65, 0x72, 0x61, 0x74, 0x65, 0x49, 0x6e, 0x69, 0x74, 0x44, 0x61, 0x74, 0x61, 0x52, 0x65,
+	0x71, 0x75, 0x65, 0x73, 0x74, 0x12, 0x21, 0x0a, 0x0c, 0x72, 0x65, 0x66, 0x65, 0x72, 0x72, 0x65,
+	0x72, 0x5f, 0x75, 0x72, 0x6c, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x0b, 0x72, 0x65, 0x66,
+	0x65, 0x72, 0x72, 0x65, 0x72, 0x55, 0x72, 0x6c, 0x22, 0x53, 0x0a, 0x18, 0x47, 0x65, 0x6e, 0x65,
+	0x72, 0x61, 0x74, 0x65, 0x49, 0x6e, 0x69, 0x74, 0x44, 0x61, 0x74, 0x61, 0x52, 0x65, 0x73, 0x70,
+	0x6f, 0x6e, 0x73, 0x65, 0x12, 0x37, 0x0a, 0x09, 0x69, 0x6e, 0x69, 0x74, 0x5f, 0x64, 0x61, 0x74,
+	0x61, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x1a, 0x2e, 0x6c, 0x75, 0x63, 0x69, 0x2e, 0x61,
+	0x6e, 0x61, 0x6c, 0x79, 0x73, 0x69, 0x73, 0x2e, 0x76, 0x31, 0x2e, 0x49, 0x6e, 0x69, 0x74, 0x44,
+	0x61, 0x74, 0x61, 0x52, 0x08, 0x69, 0x6e, 0x69, 0x74, 0x44, 0x61, 0x74, 0x61, 0x22, 0xaa, 0x01,
+	0x0a, 0x08, 0x49, 0x6e, 0x69, 0x74, 0x44, 0x61, 0x74, 0x61, 0x12, 0x39, 0x0a, 0x09, 0x68, 0x6f,
+	0x73, 0x74, 0x6e, 0x61, 0x6d, 0x65, 0x73, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x1b, 0x2e,
+	0x6c, 0x75, 0x63, 0x69, 0x2e, 0x61, 0x6e, 0x61, 0x6c, 0x79, 0x73, 0x69, 0x73, 0x2e, 0x76, 0x31,
+	0x2e, 0x48, 0x6f, 0x73, 0x74, 0x6e, 0x61, 0x6d, 0x65, 0x73, 0x52, 0x09, 0x68, 0x6f, 0x73, 0x74,
+	0x6e, 0x61, 0x6d, 0x65, 0x73, 0x12, 0x2a, 0x0a, 0x04, 0x75, 0x73, 0x65, 0x72, 0x18, 0x02, 0x20,
+	0x01, 0x28, 0x0b, 0x32, 0x16, 0x2e, 0x6c, 0x75, 0x63, 0x69, 0x2e, 0x61, 0x6e, 0x61, 0x6c, 0x79,
+	0x73, 0x69, 0x73, 0x2e, 0x76, 0x31, 0x2e, 0x55, 0x73, 0x65, 0x72, 0x52, 0x04, 0x75, 0x73, 0x65,
+	0x72, 0x12, 0x37, 0x0a, 0x09, 0x61, 0x75, 0x74, 0x68, 0x5f, 0x75, 0x72, 0x6c, 0x73, 0x18, 0x03,
+	0x20, 0x01, 0x28, 0x0b, 0x32, 0x1a, 0x2e, 0x6c, 0x75, 0x63, 0x69, 0x2e, 0x61, 0x6e, 0x61, 0x6c,
+	0x79, 0x73, 0x69, 0x73, 0x2e, 0x76, 0x31, 0x2e, 0x41, 0x75, 0x74, 0x68, 0x55, 0x72, 0x6c, 0x73,
+	0x52, 0x08, 0x61, 0x75, 0x74, 0x68, 0x55, 0x72, 0x6c, 0x73, 0x22, 0x38, 0x0a, 0x09, 0x48, 0x6f,
+	0x73, 0x74, 0x6e, 0x61, 0x6d, 0x65, 0x73, 0x12, 0x2b, 0x0a, 0x11, 0x6d, 0x6f, 0x6e, 0x6f, 0x72,
+	0x61, 0x69, 0x6c, 0x5f, 0x68, 0x6f, 0x73, 0x74, 0x6e, 0x61, 0x6d, 0x65, 0x18, 0x01, 0x20, 0x01,
+	0x28, 0x09, 0x52, 0x10, 0x6d, 0x6f, 0x6e, 0x6f, 0x72, 0x61, 0x69, 0x6c, 0x48, 0x6f, 0x73, 0x74,
+	0x6e, 0x61, 0x6d, 0x65, 0x22, 0x1c, 0x0a, 0x04, 0x55, 0x73, 0x65, 0x72, 0x12, 0x14, 0x0a, 0x05,
+	0x65, 0x6d, 0x61, 0x69, 0x6c, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x05, 0x65, 0x6d, 0x61,
+	0x69, 0x6c, 0x22, 0x29, 0x0a, 0x08, 0x41, 0x75, 0x74, 0x68, 0x55, 0x72, 0x6c, 0x73, 0x12, 0x1d,
+	0x0a, 0x0a, 0x6c, 0x6f, 0x67, 0x6f, 0x75, 0x74, 0x5f, 0x75, 0x72, 0x6c, 0x18, 0x01, 0x20, 0x01,
+	0x28, 0x09, 0x52, 0x09, 0x6c, 0x6f, 0x67, 0x6f, 0x75, 0x74, 0x55, 0x72, 0x6c, 0x32, 0x80, 0x01,
+	0x0a, 0x11, 0x49, 0x6e, 0x69, 0x74, 0x44, 0x61, 0x74, 0x61, 0x47, 0x65, 0x6e, 0x65, 0x72, 0x61,
+	0x74, 0x6f, 0x72, 0x12, 0x6b, 0x0a, 0x10, 0x47, 0x65, 0x6e, 0x65, 0x72, 0x61, 0x74, 0x65, 0x49,
+	0x6e, 0x69, 0x74, 0x44, 0x61, 0x74, 0x61, 0x12, 0x29, 0x2e, 0x6c, 0x75, 0x63, 0x69, 0x2e, 0x61,
+	0x6e, 0x61, 0x6c, 0x79, 0x73, 0x69, 0x73, 0x2e, 0x76, 0x31, 0x2e, 0x47, 0x65, 0x6e, 0x65, 0x72,
+	0x61, 0x74, 0x65, 0x49, 0x6e, 0x69, 0x74, 0x44, 0x61, 0x74, 0x61, 0x52, 0x65, 0x71, 0x75, 0x65,
+	0x73, 0x74, 0x1a, 0x2a, 0x2e, 0x6c, 0x75, 0x63, 0x69, 0x2e, 0x61, 0x6e, 0x61, 0x6c, 0x79, 0x73,
+	0x69, 0x73, 0x2e, 0x76, 0x31, 0x2e, 0x47, 0x65, 0x6e, 0x65, 0x72, 0x61, 0x74, 0x65, 0x49, 0x6e,
+	0x69, 0x74, 0x44, 0x61, 0x74, 0x61, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x00,
+	0x42, 0x33, 0x5a, 0x31, 0x67, 0x6f, 0x2e, 0x63, 0x68, 0x72, 0x6f, 0x6d, 0x69, 0x75, 0x6d, 0x2e,
+	0x6f, 0x72, 0x67, 0x2f, 0x6c, 0x75, 0x63, 0x69, 0x2f, 0x61, 0x6e, 0x61, 0x6c, 0x79, 0x73, 0x69,
+	0x73, 0x2f, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x2f, 0x76, 0x31, 0x3b, 0x61, 0x6e, 0x61, 0x6c, 0x79,
+	0x73, 0x69, 0x73, 0x70, 0x62, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
 }
 
 var (
-	file_infra_appengine_weetbix_proto_v1_init_data_proto_rawDescOnce sync.Once
-	file_infra_appengine_weetbix_proto_v1_init_data_proto_rawDescData = file_infra_appengine_weetbix_proto_v1_init_data_proto_rawDesc
+	file_go_chromium_org_luci_analysis_proto_v1_init_data_proto_rawDescOnce sync.Once
+	file_go_chromium_org_luci_analysis_proto_v1_init_data_proto_rawDescData = file_go_chromium_org_luci_analysis_proto_v1_init_data_proto_rawDesc
 )
 
-func file_infra_appengine_weetbix_proto_v1_init_data_proto_rawDescGZIP() []byte {
-	file_infra_appengine_weetbix_proto_v1_init_data_proto_rawDescOnce.Do(func() {
-		file_infra_appengine_weetbix_proto_v1_init_data_proto_rawDescData = protoimpl.X.CompressGZIP(file_infra_appengine_weetbix_proto_v1_init_data_proto_rawDescData)
+func file_go_chromium_org_luci_analysis_proto_v1_init_data_proto_rawDescGZIP() []byte {
+	file_go_chromium_org_luci_analysis_proto_v1_init_data_proto_rawDescOnce.Do(func() {
+		file_go_chromium_org_luci_analysis_proto_v1_init_data_proto_rawDescData = protoimpl.X.CompressGZIP(file_go_chromium_org_luci_analysis_proto_v1_init_data_proto_rawDescData)
 	})
-	return file_infra_appengine_weetbix_proto_v1_init_data_proto_rawDescData
+	return file_go_chromium_org_luci_analysis_proto_v1_init_data_proto_rawDescData
 }
 
-var file_infra_appengine_weetbix_proto_v1_init_data_proto_msgTypes = make([]protoimpl.MessageInfo, 6)
-var file_infra_appengine_weetbix_proto_v1_init_data_proto_goTypes = []interface{}{
-	(*GenerateInitDataRequest)(nil),  // 0: weetbix.v1.GenerateInitDataRequest
-	(*GenerateInitDataResponse)(nil), // 1: weetbix.v1.GenerateInitDataResponse
-	(*InitData)(nil),                 // 2: weetbix.v1.InitData
-	(*Hostnames)(nil),                // 3: weetbix.v1.Hostnames
-	(*User)(nil),                     // 4: weetbix.v1.User
-	(*AuthUrls)(nil),                 // 5: weetbix.v1.AuthUrls
+var file_go_chromium_org_luci_analysis_proto_v1_init_data_proto_msgTypes = make([]protoimpl.MessageInfo, 6)
+var file_go_chromium_org_luci_analysis_proto_v1_init_data_proto_goTypes = []interface{}{
+	(*GenerateInitDataRequest)(nil),  // 0: luci.analysis.v1.GenerateInitDataRequest
+	(*GenerateInitDataResponse)(nil), // 1: luci.analysis.v1.GenerateInitDataResponse
+	(*InitData)(nil),                 // 2: luci.analysis.v1.InitData
+	(*Hostnames)(nil),                // 3: luci.analysis.v1.Hostnames
+	(*User)(nil),                     // 4: luci.analysis.v1.User
+	(*AuthUrls)(nil),                 // 5: luci.analysis.v1.AuthUrls
 }
-var file_infra_appengine_weetbix_proto_v1_init_data_proto_depIdxs = []int32{
-	2, // 0: weetbix.v1.GenerateInitDataResponse.init_data:type_name -> weetbix.v1.InitData
-	3, // 1: weetbix.v1.InitData.hostnames:type_name -> weetbix.v1.Hostnames
-	4, // 2: weetbix.v1.InitData.user:type_name -> weetbix.v1.User
-	5, // 3: weetbix.v1.InitData.auth_urls:type_name -> weetbix.v1.AuthUrls
-	0, // 4: weetbix.v1.InitDataGenerator.GenerateInitData:input_type -> weetbix.v1.GenerateInitDataRequest
-	1, // 5: weetbix.v1.InitDataGenerator.GenerateInitData:output_type -> weetbix.v1.GenerateInitDataResponse
+var file_go_chromium_org_luci_analysis_proto_v1_init_data_proto_depIdxs = []int32{
+	2, // 0: luci.analysis.v1.GenerateInitDataResponse.init_data:type_name -> luci.analysis.v1.InitData
+	3, // 1: luci.analysis.v1.InitData.hostnames:type_name -> luci.analysis.v1.Hostnames
+	4, // 2: luci.analysis.v1.InitData.user:type_name -> luci.analysis.v1.User
+	5, // 3: luci.analysis.v1.InitData.auth_urls:type_name -> luci.analysis.v1.AuthUrls
+	0, // 4: luci.analysis.v1.InitDataGenerator.GenerateInitData:input_type -> luci.analysis.v1.GenerateInitDataRequest
+	1, // 5: luci.analysis.v1.InitDataGenerator.GenerateInitData:output_type -> luci.analysis.v1.GenerateInitDataResponse
 	5, // [5:6] is the sub-list for method output_type
 	4, // [4:5] is the sub-list for method input_type
 	4, // [4:4] is the sub-list for extension type_name
@@ -417,13 +421,13 @@ var file_infra_appengine_weetbix_proto_v1_init_data_proto_depIdxs = []int32{
 	0, // [0:4] is the sub-list for field type_name
 }
 
-func init() { file_infra_appengine_weetbix_proto_v1_init_data_proto_init() }
-func file_infra_appengine_weetbix_proto_v1_init_data_proto_init() {
-	if File_infra_appengine_weetbix_proto_v1_init_data_proto != nil {
+func init() { file_go_chromium_org_luci_analysis_proto_v1_init_data_proto_init() }
+func file_go_chromium_org_luci_analysis_proto_v1_init_data_proto_init() {
+	if File_go_chromium_org_luci_analysis_proto_v1_init_data_proto != nil {
 		return
 	}
 	if !protoimpl.UnsafeEnabled {
-		file_infra_appengine_weetbix_proto_v1_init_data_proto_msgTypes[0].Exporter = func(v interface{}, i int) interface{} {
+		file_go_chromium_org_luci_analysis_proto_v1_init_data_proto_msgTypes[0].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*GenerateInitDataRequest); i {
 			case 0:
 				return &v.state
@@ -435,7 +439,7 @@ func file_infra_appengine_weetbix_proto_v1_init_data_proto_init() {
 				return nil
 			}
 		}
-		file_infra_appengine_weetbix_proto_v1_init_data_proto_msgTypes[1].Exporter = func(v interface{}, i int) interface{} {
+		file_go_chromium_org_luci_analysis_proto_v1_init_data_proto_msgTypes[1].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*GenerateInitDataResponse); i {
 			case 0:
 				return &v.state
@@ -447,7 +451,7 @@ func file_infra_appengine_weetbix_proto_v1_init_data_proto_init() {
 				return nil
 			}
 		}
-		file_infra_appengine_weetbix_proto_v1_init_data_proto_msgTypes[2].Exporter = func(v interface{}, i int) interface{} {
+		file_go_chromium_org_luci_analysis_proto_v1_init_data_proto_msgTypes[2].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*InitData); i {
 			case 0:
 				return &v.state
@@ -459,7 +463,7 @@ func file_infra_appengine_weetbix_proto_v1_init_data_proto_init() {
 				return nil
 			}
 		}
-		file_infra_appengine_weetbix_proto_v1_init_data_proto_msgTypes[3].Exporter = func(v interface{}, i int) interface{} {
+		file_go_chromium_org_luci_analysis_proto_v1_init_data_proto_msgTypes[3].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*Hostnames); i {
 			case 0:
 				return &v.state
@@ -471,7 +475,7 @@ func file_infra_appengine_weetbix_proto_v1_init_data_proto_init() {
 				return nil
 			}
 		}
-		file_infra_appengine_weetbix_proto_v1_init_data_proto_msgTypes[4].Exporter = func(v interface{}, i int) interface{} {
+		file_go_chromium_org_luci_analysis_proto_v1_init_data_proto_msgTypes[4].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*User); i {
 			case 0:
 				return &v.state
@@ -483,7 +487,7 @@ func file_infra_appengine_weetbix_proto_v1_init_data_proto_init() {
 				return nil
 			}
 		}
-		file_infra_appengine_weetbix_proto_v1_init_data_proto_msgTypes[5].Exporter = func(v interface{}, i int) interface{} {
+		file_go_chromium_org_luci_analysis_proto_v1_init_data_proto_msgTypes[5].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*AuthUrls); i {
 			case 0:
 				return &v.state
@@ -500,20 +504,20 @@ func file_infra_appengine_weetbix_proto_v1_init_data_proto_init() {
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
-			RawDescriptor: file_infra_appengine_weetbix_proto_v1_init_data_proto_rawDesc,
+			RawDescriptor: file_go_chromium_org_luci_analysis_proto_v1_init_data_proto_rawDesc,
 			NumEnums:      0,
 			NumMessages:   6,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
-		GoTypes:           file_infra_appengine_weetbix_proto_v1_init_data_proto_goTypes,
-		DependencyIndexes: file_infra_appengine_weetbix_proto_v1_init_data_proto_depIdxs,
-		MessageInfos:      file_infra_appengine_weetbix_proto_v1_init_data_proto_msgTypes,
+		GoTypes:           file_go_chromium_org_luci_analysis_proto_v1_init_data_proto_goTypes,
+		DependencyIndexes: file_go_chromium_org_luci_analysis_proto_v1_init_data_proto_depIdxs,
+		MessageInfos:      file_go_chromium_org_luci_analysis_proto_v1_init_data_proto_msgTypes,
 	}.Build()
-	File_infra_appengine_weetbix_proto_v1_init_data_proto = out.File
-	file_infra_appengine_weetbix_proto_v1_init_data_proto_rawDesc = nil
-	file_infra_appengine_weetbix_proto_v1_init_data_proto_goTypes = nil
-	file_infra_appengine_weetbix_proto_v1_init_data_proto_depIdxs = nil
+	File_go_chromium_org_luci_analysis_proto_v1_init_data_proto = out.File
+	file_go_chromium_org_luci_analysis_proto_v1_init_data_proto_rawDesc = nil
+	file_go_chromium_org_luci_analysis_proto_v1_init_data_proto_goTypes = nil
+	file_go_chromium_org_luci_analysis_proto_v1_init_data_proto_depIdxs = nil
 }
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -542,7 +546,7 @@ func NewInitDataGeneratorPRPCClient(client *prpc.Client) InitDataGeneratorClient
 
 func (c *initDataGeneratorPRPCClient) GenerateInitData(ctx context.Context, in *GenerateInitDataRequest, opts ...grpc.CallOption) (*GenerateInitDataResponse, error) {
 	out := new(GenerateInitDataResponse)
-	err := c.client.Call(ctx, "weetbix.v1.InitDataGenerator", "GenerateInitData", in, out, opts...)
+	err := c.client.Call(ctx, "luci.analysis.v1.InitDataGenerator", "GenerateInitData", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -559,7 +563,7 @@ func NewInitDataGeneratorClient(cc grpc.ClientConnInterface) InitDataGeneratorCl
 
 func (c *initDataGeneratorClient) GenerateInitData(ctx context.Context, in *GenerateInitDataRequest, opts ...grpc.CallOption) (*GenerateInitDataResponse, error) {
 	out := new(GenerateInitDataResponse)
-	err := c.cc.Invoke(ctx, "/weetbix.v1.InitDataGenerator/GenerateInitData", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/luci.analysis.v1.InitDataGenerator/GenerateInitData", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -595,7 +599,7 @@ func _InitDataGenerator_GenerateInitData_Handler(srv interface{}, ctx context.Co
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/weetbix.v1.InitDataGenerator/GenerateInitData",
+		FullMethod: "/luci.analysis.v1.InitDataGenerator/GenerateInitData",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(InitDataGeneratorServer).GenerateInitData(ctx, req.(*GenerateInitDataRequest))
@@ -604,7 +608,7 @@ func _InitDataGenerator_GenerateInitData_Handler(srv interface{}, ctx context.Co
 }
 
 var _InitDataGenerator_serviceDesc = grpc.ServiceDesc{
-	ServiceName: "weetbix.v1.InitDataGenerator",
+	ServiceName: "luci.analysis.v1.InitDataGenerator",
 	HandlerType: (*InitDataGeneratorServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{

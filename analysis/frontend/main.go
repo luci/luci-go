@@ -51,7 +51,7 @@ import (
 	"go.chromium.org/luci/analysis/internal/services/testvariantbqexporter"
 	"go.chromium.org/luci/analysis/internal/services/testvariantupdator"
 	"go.chromium.org/luci/analysis/internal/span"
-	weetbixpb "go.chromium.org/luci/analysis/proto/v1"
+	analysispb "go.chromium.org/luci/analysis/proto/v1"
 	"go.chromium.org/luci/analysis/rpc"
 )
 
@@ -165,12 +165,12 @@ func main() {
 		if err != nil {
 			return errors.Annotate(err, "creating analysis client").Err()
 		}
-		weetbixpb.RegisterClustersServer(srv.PRPC, rpc.NewClustersServer(ac))
-		weetbixpb.RegisterRulesServer(srv.PRPC, rpc.NewRulesSever())
-		weetbixpb.RegisterProjectsServer(srv.PRPC, rpc.NewProjectsServer())
-		weetbixpb.RegisterInitDataGeneratorServer(srv.PRPC, rpc.NewInitDataGeneratorServer())
-		weetbixpb.RegisterTestVariantsServer(srv.PRPC, rpc.NewTestVariantsServer())
-		weetbixpb.RegisterTestHistoryServer(srv.PRPC, rpc.NewTestHistoryServer())
+		analysispb.RegisterClustersServer(srv.PRPC, rpc.NewClustersServer(ac))
+		analysispb.RegisterRulesServer(srv.PRPC, rpc.NewRulesSever())
+		analysispb.RegisterProjectsServer(srv.PRPC, rpc.NewProjectsServer())
+		analysispb.RegisterInitDataGeneratorServer(srv.PRPC, rpc.NewInitDataGeneratorServer())
+		analysispb.RegisterTestVariantsServer(srv.PRPC, rpc.NewTestVariantsServer())
+		analysispb.RegisterTestHistoryServer(srv.PRPC, rpc.NewTestHistoryServer())
 		adminpb.RegisterAdminServer(srv.PRPC, admin.CreateServer())
 
 		// GAE crons.

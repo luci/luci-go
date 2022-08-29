@@ -14,7 +14,7 @@
 
 syntax = "proto3";
 
-package weetbix.internal.pagination;
+package luci.analysis.internal.pagination;
 
 option go_package = "go.chromium.org/luci/analysis/internal/pagination/proto;paginationpb";
 

@@ -43,7 +43,7 @@ import (
 // Only the LRU Cache has the methods to do this.
 var projectsCache = caching.RegisterLRUCache(1)
 
-const projectConfigKind = "weetbix.ProjectConfig"
+const projectConfigKind = "luci.analysis.ProjectConfig"
 
 // ProjectCacheExpiry defines how often project configuration stored
 // in the in-process cache is refreshed from datastore.
@@ -69,7 +69,7 @@ var (
 
 type cachedProjectConfig struct {
 	_extra datastore.PropertyMap `gae:"-,extra"`
-	_kind  string                `gae:"$kind,weetbix.ProjectConfig"`
+	_kind  string                `gae:"$kind,luci.analysis.ProjectConfig"`
 
 	ID     string      `gae:"$id"` // The name of the project for which the config is.
 	Config []byte      `gae:",noindex"`

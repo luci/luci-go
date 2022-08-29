@@ -32,7 +32,7 @@ describe('Bug Page', () => {
   });
 
   it('multiple matching rules found', () => {
-    cy.intercept('POST', '/prpc/weetbix.v1.Rules/LookupBug', (req) => {
+    cy.intercept('POST', '/prpc/luci.analysis.v1.Rules/LookupBug', (req) => {
       const requestBody = req.body;
       assert.deepEqual(requestBody, { system: 'monorail', id: 'chromium/1234' });
 
@@ -40,7 +40,7 @@ describe('Bug Page', () => {
         // This is a real rule that exists in the dev database, the
         // same used for rule section UI tests.
         rules: [
-          'projects/chromium/rules/4165d118c919a1016f42e80efe30db59',
+          'projects/chromium/rules/ea5305bc5069b449ee43ee64d26d667f',
           'projects/chromiumos/rules/1234567890abcedf1234567890abcdef',
         ],
       };

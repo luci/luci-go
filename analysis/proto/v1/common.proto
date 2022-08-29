@@ -14,12 +14,12 @@
 
 syntax = "proto3";
 
-package weetbix.v1;
+package luci.analysis.v1;
 
 import "google/api/field_behavior.proto";
 import "google/protobuf/timestamp.proto";
 
-option go_package = "go.chromium.org/luci/analysis/proto/v1;weetbixpb";
+option go_package = "go.chromium.org/luci/analysis/proto/v1;analysispb";
 
 // A range of timestamps.
 message TimeRange {
@@ -75,7 +75,7 @@ message BugTrackingComponent {
   // If the bug tracking system is monorail, this is the component as the
   // user would see it, e.g. "Infra>Test>Flakiness". For monorail, the bug
   // tracking project (e.g. "chromium") is not encoded, but assumed to be
-  // specified in the project's Weetbix configuration.
+  // specified in the project's LUCI Analysis configuration.
   string component = 2;
 }
 

@@ -14,7 +14,7 @@
 
 syntax = "proto3";
 
-package weetbix.internal.tasks;
+package luci.analysis.internal.tasks;
 
 import "google/protobuf/timestamp.proto";
 import "go.chromium.org/luci/resultdb/proto/v1/invocation.proto";
@@ -35,11 +35,11 @@ message IngestTestResults {
   google.protobuf.Timestamp partition_time = 3;
 
   // The build that is being ingested.
-  weetbix.internal.ingestion.control.BuildResult build = 8;
+  luci.analysis.internal.ingestion.control.BuildResult build = 8;
 
   // Context about the presubmit run the build was a part of. Only
   // populated if the build is a presubmit run.
-  weetbix.internal.ingestion.control.PresubmitResult presubmit_run = 9;
+  luci.analysis.internal.ingestion.control.PresubmitResult presubmit_run = 9;
 
   // The page token value to use when calling QueryTestVariants.
   // For the first task, this should be "". For subsequent tasks,
@@ -102,7 +102,7 @@ message ExportTestVariants {
 
   // Represents a function Variant -> bool.
   // Test variants satisfy this predicate are exported.
-  weetbix.analyzedtestvariant.Predicate predicate = 5;
+  luci.analysis.analyzedtestvariant.Predicate predicate = 5;
 
   // Time range of the task.
   // The ranges serves 2 purposes:
@@ -113,7 +113,7 @@ message ExportTestVariants {
   //   the range, and compute the flake_statistics using those verdicts.
   //   * Note that a row can have a narrower time_range, if the test variant's
   //     status changes within the time_range.
-  weetbix.v1.TimeRange time_range = 6;
+  luci.analysis.v1.TimeRange time_range = 6;
 }
 
 // Payload of the ReclusterChunks task.

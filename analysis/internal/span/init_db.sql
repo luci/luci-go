@@ -445,7 +445,7 @@ CREATE TABLE TestResults (
   -- The status of the build that contained this test result. Can be used
   -- to filter incomplete results (e.g. where build was cancelled or had
   -- an infra failure).
-  -- See weetbix.v1.BuildStatus.
+  -- See luci.analysis.v1.BuildStatus.
   BuildStatus INT64 NOT NULL,
 
   -- The owner of the presubmit run.
@@ -575,7 +575,7 @@ CREATE TABLE IngestedInvocations (
   -- The status of the build that contained this test result. Can be used
   -- to filter incomplete results (e.g. where build was cancelled or had
   -- an infra failure).
-  -- See weetbix.v1.BuildStatus.
+  -- See luci.analysis.v1.BuildStatus.
   BuildStatus INT64,
 
   -- The owner of the presubmit run.

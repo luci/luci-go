@@ -14,7 +14,7 @@
 
 syntax = "proto3";
 
-package weetbix.internal.clustering;
+package luci.analysis.internal.clustering;
 
 option go_package = "go.chromium.org/luci/analysis/internal/clustering/proto;clusteringpb";
 

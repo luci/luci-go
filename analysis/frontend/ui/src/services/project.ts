@@ -21,7 +21,7 @@ export const getProjectsService = () => {
 
 // A service to handle projects related gRPC requests.
 export class ProjectService {
-  private static SERVICE = 'weetbix.v1.Projects';
+  private static SERVICE = 'luci.analysis.v1.Projects';
 
   client: AuthorizedPrpcClient;
 
@@ -57,7 +57,7 @@ export interface GetProjectConfigRequest {
   name: string;
 }
 
-// See weetbix.v1.Projects.GetProjectConfigResponse.Monorail for documentation.
+// See luci.analysis.v1.Projects.GetProjectConfigResponse.Monorail for documentation.
 export interface Monorail {
   // The monorail project used for this LUCI project.
   project: string;
@@ -67,7 +67,7 @@ export interface Monorail {
   displayPrefix: string;
 }
 
-// See weetbix.v1.Projects.ProjectConfig for documentation.
+// See luci.analysis.v1.Projects.ProjectConfig for documentation.
 export interface ProjectConfig {
   // The format is: `projects/{project}/config`.
   name: string;

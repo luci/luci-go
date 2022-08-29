@@ -14,7 +14,7 @@
 
 syntax = "proto3";
 
-package weetbix.analyzedtestvariant;
+package luci.analysis.analyzedtestvariant;
 
 import "go.chromium.org/luci/analysis/proto/analyzedtestvariant/analyzed_test_variant.proto";
 import "go.chromium.org/luci/analysis/proto/v1/predicate.proto";
@@ -28,7 +28,7 @@ message Predicate {
   string test_id_regexp = 1;
 
   // A test variant must have a variant satisfying this predicate.
-  weetbix.v1.VariantPredicate variant = 2;
+  luci.analysis.v1.VariantPredicate variant = 2;
 
   // A test variant must have this status.
   Status status = 3;

@@ -18,7 +18,7 @@
 // 	protoc        v3.17.3
 // source: go.chromium.org/luci/analysis/proto/v1/project.proto
 
-package weetbixpb
+package analysispb
 
 import (
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
@@ -43,7 +43,7 @@ type Project struct {
 	// Format: projects/{project}.
 	// See also https://google.aip.dev/122.
 	Name string `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
-	// The display name to be used in the project selection page of Weetbix.
+	// The display name to be used in the project selection page of LUCI Analysis.
 	// If not provided, the Title case of the project's Luci project ID will be used.
 	DisplayName string `protobuf:"bytes,2,opt,name=display_name,json=displayName,proto3" json:"display_name,omitempty"`
 	// The project id in luci, e.g. "chromium".
@@ -53,7 +53,7 @@ type Project struct {
 func (x *Project) Reset() {
 	*x = Project{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_infra_appengine_weetbix_proto_v1_project_proto_msgTypes[0]
+		mi := &file_go_chromium_org_luci_analysis_proto_v1_project_proto_msgTypes[0]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -66,7 +66,7 @@ func (x *Project) String() string {
 func (*Project) ProtoMessage() {}
 
 func (x *Project) ProtoReflect() protoreflect.Message {
-	mi := &file_infra_appengine_weetbix_proto_v1_project_proto_msgTypes[0]
+	mi := &file_go_chromium_org_luci_analysis_proto_v1_project_proto_msgTypes[0]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -79,7 +79,7 @@ func (x *Project) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Project.ProtoReflect.Descriptor instead.
 func (*Project) Descriptor() ([]byte, []int) {
-	return file_infra_appengine_weetbix_proto_v1_project_proto_rawDescGZIP(), []int{0}
+	return file_go_chromium_org_luci_analysis_proto_v1_project_proto_rawDescGZIP(), []int{0}
 }
 
 func (x *Project) GetName() string {
@@ -103,41 +103,43 @@ func (x *Project) GetProject() string {
 	return ""
 }
 
-var File_infra_appengine_weetbix_proto_v1_project_proto protoreflect.FileDescriptor
+var File_go_chromium_org_luci_analysis_proto_v1_project_proto protoreflect.FileDescriptor
 
-var file_infra_appengine_weetbix_proto_v1_project_proto_rawDesc = []byte{
-	0x0a, 0x2e, 0x69, 0x6e, 0x66, 0x72, 0x61, 0x2f, 0x61, 0x70, 0x70, 0x65, 0x6e, 0x67, 0x69, 0x6e,
-	0x65, 0x2f, 0x77, 0x65, 0x65, 0x74, 0x62, 0x69, 0x78, 0x2f, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x2f,
-	0x76, 0x31, 0x2f, 0x70, 0x72, 0x6f, 0x6a, 0x65, 0x63, 0x74, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f,
-	0x12, 0x0a, 0x77, 0x65, 0x65, 0x74, 0x62, 0x69, 0x78, 0x2e, 0x76, 0x31, 0x22, 0x5a, 0x0a, 0x07,
-	0x50, 0x72, 0x6f, 0x6a, 0x65, 0x63, 0x74, 0x12, 0x12, 0x0a, 0x04, 0x6e, 0x61, 0x6d, 0x65, 0x18,
-	0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x04, 0x6e, 0x61, 0x6d, 0x65, 0x12, 0x21, 0x0a, 0x0c, 0x64,
-	0x69, 0x73, 0x70, 0x6c, 0x61, 0x79, 0x5f, 0x6e, 0x61, 0x6d, 0x65, 0x18, 0x02, 0x20, 0x01, 0x28,
-	0x09, 0x52, 0x0b, 0x64, 0x69, 0x73, 0x70, 0x6c, 0x61, 0x79, 0x4e, 0x61, 0x6d, 0x65, 0x12, 0x18,
-	0x0a, 0x07, 0x70, 0x72, 0x6f, 0x6a, 0x65, 0x63, 0x74, 0x18, 0x03, 0x20, 0x01, 0x28, 0x09, 0x52,
-	0x07, 0x70, 0x72, 0x6f, 0x6a, 0x65, 0x63, 0x74, 0x42, 0x2c, 0x5a, 0x2a, 0x69, 0x6e, 0x66, 0x72,
-	0x61, 0x2f, 0x61, 0x70, 0x70, 0x65, 0x6e, 0x67, 0x69, 0x6e, 0x65, 0x2f, 0x77, 0x65, 0x65, 0x74,
-	0x62, 0x69, 0x78, 0x2f, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x2f, 0x76, 0x31, 0x3b, 0x77, 0x65, 0x65,
-	0x74, 0x62, 0x69, 0x78, 0x70, 0x62, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
+var file_go_chromium_org_luci_analysis_proto_v1_project_proto_rawDesc = []byte{
+	0x0a, 0x34, 0x67, 0x6f, 0x2e, 0x63, 0x68, 0x72, 0x6f, 0x6d, 0x69, 0x75, 0x6d, 0x2e, 0x6f, 0x72,
+	0x67, 0x2f, 0x6c, 0x75, 0x63, 0x69, 0x2f, 0x61, 0x6e, 0x61, 0x6c, 0x79, 0x73, 0x69, 0x73, 0x2f,
+	0x70, 0x72, 0x6f, 0x74, 0x6f, 0x2f, 0x76, 0x31, 0x2f, 0x70, 0x72, 0x6f, 0x6a, 0x65, 0x63, 0x74,
+	0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x12, 0x10, 0x6c, 0x75, 0x63, 0x69, 0x2e, 0x61, 0x6e, 0x61,
+	0x6c, 0x79, 0x73, 0x69, 0x73, 0x2e, 0x76, 0x31, 0x22, 0x5a, 0x0a, 0x07, 0x50, 0x72, 0x6f, 0x6a,
+	0x65, 0x63, 0x74, 0x12, 0x12, 0x0a, 0x04, 0x6e, 0x61, 0x6d, 0x65, 0x18, 0x01, 0x20, 0x01, 0x28,
+	0x09, 0x52, 0x04, 0x6e, 0x61, 0x6d, 0x65, 0x12, 0x21, 0x0a, 0x0c, 0x64, 0x69, 0x73, 0x70, 0x6c,
+	0x61, 0x79, 0x5f, 0x6e, 0x61, 0x6d, 0x65, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x52, 0x0b, 0x64,
+	0x69, 0x73, 0x70, 0x6c, 0x61, 0x79, 0x4e, 0x61, 0x6d, 0x65, 0x12, 0x18, 0x0a, 0x07, 0x70, 0x72,
+	0x6f, 0x6a, 0x65, 0x63, 0x74, 0x18, 0x03, 0x20, 0x01, 0x28, 0x09, 0x52, 0x07, 0x70, 0x72, 0x6f,
+	0x6a, 0x65, 0x63, 0x74, 0x42, 0x33, 0x5a, 0x31, 0x67, 0x6f, 0x2e, 0x63, 0x68, 0x72, 0x6f, 0x6d,
+	0x69, 0x75, 0x6d, 0x2e, 0x6f, 0x72, 0x67, 0x2f, 0x6c, 0x75, 0x63, 0x69, 0x2f, 0x61, 0x6e, 0x61,
+	0x6c, 0x79, 0x73, 0x69, 0x73, 0x2f, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x2f, 0x76, 0x31, 0x3b, 0x61,
+	0x6e, 0x61, 0x6c, 0x79, 0x73, 0x69, 0x73, 0x70, 0x62, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f,
+	0x33,
 }
 
 var (
-	file_infra_appengine_weetbix_proto_v1_project_proto_rawDescOnce sync.Once
-	file_infra_appengine_weetbix_proto_v1_project_proto_rawDescData = file_infra_appengine_weetbix_proto_v1_project_proto_rawDesc
+	file_go_chromium_org_luci_analysis_proto_v1_project_proto_rawDescOnce sync.Once
+	file_go_chromium_org_luci_analysis_proto_v1_project_proto_rawDescData = file_go_chromium_org_luci_analysis_proto_v1_project_proto_rawDesc
 )
 
-func file_infra_appengine_weetbix_proto_v1_project_proto_rawDescGZIP() []byte {
-	file_infra_appengine_weetbix_proto_v1_project_proto_rawDescOnce.Do(func() {
-		file_infra_appengine_weetbix_proto_v1_project_proto_rawDescData = protoimpl.X.CompressGZIP(file_infra_appengine_weetbix_proto_v1_project_proto_rawDescData)
+func file_go_chromium_org_luci_analysis_proto_v1_project_proto_rawDescGZIP() []byte {
+	file_go_chromium_org_luci_analysis_proto_v1_project_proto_rawDescOnce.Do(func() {
+		file_go_chromium_org_luci_analysis_proto_v1_project_proto_rawDescData = protoimpl.X.CompressGZIP(file_go_chromium_org_luci_analysis_proto_v1_project_proto_rawDescData)
 	})
-	return file_infra_appengine_weetbix_proto_v1_project_proto_rawDescData
+	return file_go_chromium_org_luci_analysis_proto_v1_project_proto_rawDescData
 }
 
-var file_infra_appengine_weetbix_proto_v1_project_proto_msgTypes = make([]protoimpl.MessageInfo, 1)
-var file_infra_appengine_weetbix_proto_v1_project_proto_goTypes = []interface{}{
-	(*Project)(nil), // 0: weetbix.v1.Project
+var file_go_chromium_org_luci_analysis_proto_v1_project_proto_msgTypes = make([]protoimpl.MessageInfo, 1)
+var file_go_chromium_org_luci_analysis_proto_v1_project_proto_goTypes = []interface{}{
+	(*Project)(nil), // 0: luci.analysis.v1.Project
 }
-var file_infra_appengine_weetbix_proto_v1_project_proto_depIdxs = []int32{
+var file_go_chromium_org_luci_analysis_proto_v1_project_proto_depIdxs = []int32{
 	0, // [0:0] is the sub-list for method output_type
 	0, // [0:0] is the sub-list for method input_type
 	0, // [0:0] is the sub-list for extension type_name
@@ -145,13 +147,13 @@ var file_infra_appengine_weetbix_proto_v1_project_proto_depIdxs = []int32{
 	0, // [0:0] is the sub-list for field type_name
 }
 
-func init() { file_infra_appengine_weetbix_proto_v1_project_proto_init() }
-func file_infra_appengine_weetbix_proto_v1_project_proto_init() {
-	if File_infra_appengine_weetbix_proto_v1_project_proto != nil {
+func init() { file_go_chromium_org_luci_analysis_proto_v1_project_proto_init() }
+func file_go_chromium_org_luci_analysis_proto_v1_project_proto_init() {
+	if File_go_chromium_org_luci_analysis_proto_v1_project_proto != nil {
 		return
 	}
 	if !protoimpl.UnsafeEnabled {
-		file_infra_appengine_weetbix_proto_v1_project_proto_msgTypes[0].Exporter = func(v interface{}, i int) interface{} {
+		file_go_chromium_org_luci_analysis_proto_v1_project_proto_msgTypes[0].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*Project); i {
 			case 0:
 				return &v.state
@@ -168,18 +170,18 @@ func file_infra_appengine_weetbix_proto_v1_project_proto_init() {
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
-			RawDescriptor: file_infra_appengine_weetbix_proto_v1_project_proto_rawDesc,
+			RawDescriptor: file_go_chromium_org_luci_analysis_proto_v1_project_proto_rawDesc,
 			NumEnums:      0,
 			NumMessages:   1,
 			NumExtensions: 0,
 			NumServices:   0,
 		},
-		GoTypes:           file_infra_appengine_weetbix_proto_v1_project_proto_goTypes,
-		DependencyIndexes: file_infra_appengine_weetbix_proto_v1_project_proto_depIdxs,
-		MessageInfos:      file_infra_appengine_weetbix_proto_v1_project_proto_msgTypes,
+		GoTypes:           file_go_chromium_org_luci_analysis_proto_v1_project_proto_goTypes,
+		DependencyIndexes: file_go_chromium_org_luci_analysis_proto_v1_project_proto_depIdxs,
+		MessageInfos:      file_go_chromium_org_luci_analysis_proto_v1_project_proto_msgTypes,
 	}.Build()
-	File_infra_appengine_weetbix_proto_v1_project_proto = out.File
-	file_infra_appengine_weetbix_proto_v1_project_proto_rawDesc = nil
-	file_infra_appengine_weetbix_proto_v1_project_proto_goTypes = nil
-	file_infra_appengine_weetbix_proto_v1_project_proto_depIdxs = nil
+	File_go_chromium_org_luci_analysis_proto_v1_project_proto = out.File
+	file_go_chromium_org_luci_analysis_proto_v1_project_proto_rawDesc = nil
+	file_go_chromium_org_luci_analysis_proto_v1_project_proto_goTypes = nil
+	file_go_chromium_org_luci_analysis_proto_v1_project_proto_depIdxs = nil
 }

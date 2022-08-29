@@ -23,7 +23,7 @@ export const getRulesService = () : RulesService => {
 // For handling errors, import:
 // import { GrpcError } from '@chopsui/prpc-client';
 export class RulesService {
-  private static SERVICE = 'weetbix.v1.Rules';
+  private static SERVICE = 'luci.analysis.v1.Rules';
 
   client: AuthorizedPrpcClient;
 

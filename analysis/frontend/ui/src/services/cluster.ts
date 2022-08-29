@@ -22,7 +22,7 @@ export const getClustersService = () => {
 
 // A service to handle cluster-related gRPC requests.
 export class ClustersService {
-  private static SERVICE = 'weetbix.v1.Clusters';
+  private static SERVICE = 'luci.analysis.v1.Clusters';
 
   client: AuthorizedPrpcClient;
 
@@ -184,7 +184,7 @@ export interface QueryClusterFailuresResponse {
 
 // The reason a test result was exonerated.
 export type ExonerationReason =
-    // The exoneration reason is not known to Weetbix.
+    // The exoneration reason is not known to LUCI Analysis.
     'EXONERATION_REASON_UNSPECIFIED'
     // Similar unexpected results were observed in presubmit run(s) for other,
     // unrelated CL(s). (This is suggestive of the issue being present
@@ -208,14 +208,14 @@ export type ExonerationReason =
     // pass.
     | 'UNEXPECTED_PASS';
 
-// Refer to weetbix.v1.PresubmitRunMode for documentation.
+// Refer to luci.analysis.v1.PresubmitRunMode for documentation.
 export type PresubmitRunMode =
     'PRESUBMIT_RUN_MODE_UNSPECIFIED'
     | 'DRY_RUN'
     | 'FULL_RUN'
     | 'QUICK_DRY_RUN';
 
-// Refer to weetbix.v1.BuildStatus for documentation.
+// Refer to luci.analysis.v1.BuildStatus for documentation.
 export type BuildStatus =
     'BUILD_STATUS_UNSPECIFIED'
     | 'BUILD_STATUS_SUCCESS'
@@ -223,7 +223,7 @@ export type BuildStatus =
     | 'BUILD_STATUS_INFRA_FAILURE'
     | 'BUILD_STATUS_CANCELED';
 
-// Refer to weetbix.v1.ClusterFailureGroup.Exoneration for documentation.
+// Refer to luci.analysis.v1.ClusterFailureGroup.Exoneration for documentation.
 export interface Exoneration {
   // The machine-readable reason for the exoneration.
   reason: ExonerationReason;
@@ -244,13 +244,13 @@ export interface Variant {
 }
 
 // Identity of a presubmit run.
-// Refer to weetbix.v1.PresubmitRunId for documentation.
+// Refer to luci.analysis.v1.PresubmitRunId for documentation.
 export interface PresubmitRunId {
   system?: string;
   id?: string;
 }
 
-// Refer to weetbix.v1.ClusterFailureGroup.PresubmitRun for documentation.
+// Refer to luci.analysis.v1.ClusterFailureGroup.PresubmitRun for documentation.
 export interface PresubmitRun {
   // Identity of the presubmit run that contains this test result.
   presubmitRunId: PresubmitRunId;
@@ -271,7 +271,7 @@ export interface Changelist {
   patchset: number;
 }
 
-// Refer to weetbix.v1.DistinctClusterFailure for documentation.
+// Refer to luci.analysis.v1.DistinctClusterFailure for documentation.
 export interface DistinctClusterFailure {
   // The identity of the test.
   testId: string;
@@ -303,7 +303,7 @@ export interface DistinctClusterFailure {
   // a container of test results as identified by the source test result
   // system.
   //
-  // For ResultDB, Weetbix ingests invocations corresponding to
+  // For ResultDB, LUCI Analysis ingests invocations corresponding to
   // buildbucket builds.
   ingestedInvocationId: string;
 

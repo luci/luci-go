@@ -14,14 +14,14 @@
 
 syntax = "proto3";
 
-package weetbix.bq;
+package luci.analysis.bq;
 
 import "google/protobuf/timestamp.proto";
 import "go.chromium.org/luci/analysis/proto/v1/common.proto";
 import "go.chromium.org/luci/analysis/proto/v1/changelist.proto";
 import "go.chromium.org/luci/analysis/proto/v1/failure_reason.proto";
 
-option go_package = "go.chromium.org/luci/analysis/proto/bq;weetbixpb";
+option go_package = "go.chromium.org/luci/analysis/proto/bq;bqpb";
 
 // ClusteredFailureRow represents a row in a BigQuery table for a clustered
 // test failure.
@@ -120,11 +120,11 @@ message ClusteredFailureRow {
   bool is_included_with_high_priority = 8;
 
   // The chunk this failure was processed and stored in. Assigned by
-  // Weetbix ingestion.
+  // LUCI Analysis ingestion.
   string chunk_id = 9;
 
   // The zero-based index of this failure within the chunk. Assigned by
-  // Weetbix ingestion.
+  // LUCI Analysis ingestion.
   int64 chunk_index = 10;
 
   // Security realm of the test result.
@@ -139,24 +139,24 @@ message ClusteredFailureRow {
   // key:value pairs to specify the way of running a particular test.
   // e.g. a specific bucket, builder and a test suite.
   // For ResultDB, this is the known field.
-  repeated weetbix.v1.StringPair variant = 13;
+  repeated luci.analysis.v1.StringPair variant = 13;
 
   // Metadata key value pairs for this test result.
   // It might describe this particular execution or the test case.
   // A key can be repeated.
-  repeated weetbix.v1.StringPair tags = 32;
+  repeated luci.analysis.v1.StringPair tags = 32;
 
   // Hash of the variant.
   // hex(sha256(''.join(sorted('%s:%s\n' for k, v in variant.items())))).
   string variant_hash = 14;
 
   // A failure reason describing why the test failed.
-  weetbix.v1.FailureReason failure_reason = 15;
+  luci.analysis.v1.FailureReason failure_reason = 15;
 
   // The bug tracking component corresponding to this test case, as identified
   // by the test results system. If no information is available, this is
   // unset.
-  weetbix.v1.BugTrackingComponent bug_tracking_component = 16;
+  luci.analysis.v1.BugTrackingComponent bug_tracking_component = 16;
 
   // The point in time when the test case started to execute.
   google.protobuf.Timestamp start_time = 17;
@@ -171,7 +171,7 @@ message ClusteredFailureRow {
   message TestExoneration {
     // Machine-readable reasons describing why the test failure was exonerated
     // (if any).
-    weetbix.v1.ExonerationReason reason = 1;
+    luci.analysis.v1.ExonerationReason reason = 1;
   }
 
   // The exonerations applied to the test verdict.
@@ -191,7 +191,7 @@ message ClusteredFailureRow {
   //
   // If the test result was not collected as part of a presubmit run,
   // this is unset.
-  weetbix.v1.PresubmitRunId presubmit_run_id = 20;
+  luci.analysis.v1.PresubmitRunId presubmit_run_id = 20;
 
   // The owner of the presubmit run (if any).
   // This is the owner of the CL on which CQ+1/CQ+2 was clicked
@@ -209,7 +209,7 @@ message ClusteredFailureRow {
   string presubmit_run_mode = 34;
 
   // The presubmit run's ending status.
-  // Notionally weetbix.v1.PresubmitRunStatus, but string so that
+  // Notionally luci.analysis.v1.PresubmitRunStatus, but string so that
   // we can chop off the "PRESUBMIT_RUN_STATUS_" prefix and have
   // only the status, e.g. SUCCESS, FAILURE, CANCELED.
   // If this test result does not relate to a presubmit run, this field
@@ -224,8 +224,8 @@ message ClusteredFailureRow {
   // an infra failure). Can also be used to filter builds with incomplete
   // exonerations (e.g. build succeeded but some tests not exonerated).
   // This is the build corresponding to ingested_invocation_id.
-  // Notionally weetbix.v1.BuildStatus, but string so that we can chop off
-  // the BUILD_STATUS_ prefix that would otherwise appear on every value.
+  // Notionally luci.analysis.v1.BuildStatus, but string so that we can chop
+  // off the BUILD_STATUS_ prefix that would otherwise appear on every value.
   string build_status = 36;
 
   // Whether the build was critical to a presubmit run succeeding.
@@ -241,14 +241,14 @@ message ClusteredFailureRow {
   // The unsubmitted changelists that were tested (if any).
   // Changelists are sorted in ascending (host, change, patchset) order.
   // Up to 10 changelists are captured.
-  repeated weetbix.v1.Changelist changelists = 38;
+  repeated luci.analysis.v1.Changelist changelists = 38;
 
   // The invocation from which this test result was ingested. This is
   // the top-level invocation that was ingested, an "invocation" being
   // a container of test results as identified by the source test result
   // system.
   //
-  // For ResultDB, Weetbix ingests invocations corresponding to
+  // For ResultDB, LUCI Analysis ingests invocations corresponding to
   // buildbucket builds.
   //
   // All test results ingested from the same invocation (i.e. with the

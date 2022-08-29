@@ -14,7 +14,7 @@
 
 syntax = "proto3";
 
-package weetbix.v1;
+package luci.analysis.v1;
 
 import "google/api/field_behavior.proto";
 import "google/protobuf/duration.proto";
@@ -23,7 +23,7 @@ import "go.chromium.org/luci/analysis/proto/v1/common.proto";
 import "go.chromium.org/luci/analysis/proto/v1/predicate.proto";
 import "go.chromium.org/luci/analysis/proto/v1/test_verdict.proto";
 
-option go_package = "go.chromium.org/luci/analysis/proto/v1;weetbixpb";
+option go_package = "go.chromium.org/luci/analysis/proto/v1;analysispb";
 
 // Provide methods to read test histories.
 service TestHistory {
@@ -61,7 +61,7 @@ message QueryTestHistoryRequest {
     [(google.api.field_behavior) = REQUIRED];
 
   // Required. A test verdict in the response must satisfy this predicate.
-  weetbix.v1.TestVerdictPredicate predicate = 3
+  luci.analysis.v1.TestVerdictPredicate predicate = 3
     [(google.api.field_behavior) = REQUIRED];
 
   // The maximum number of entries to return.
@@ -84,7 +84,7 @@ message QueryTestHistoryResponse {
   // The list of test verdicts.
   // Test verdicts will be ordered by `partition_time` DESC, `variant_hash` ASC,
   // `invocation_id` ASC.
-  repeated weetbix.v1.TestVerdict verdicts = 1;
+  repeated luci.analysis.v1.TestVerdict verdicts = 1;
 
   // This field will be set if there are more results to return.
   // To get the next page of data, send the same request again, but include this
@@ -105,7 +105,7 @@ message QueryTestHistoryStatsRequest {
     [(google.api.field_behavior) = REQUIRED];
 
   // Required. A test verdict in the response must satisfy this predicate.
-  weetbix.v1.TestVerdictPredicate predicate = 3
+  luci.analysis.v1.TestVerdictPredicate predicate = 3
     [(google.api.field_behavior) = REQUIRED];
 
   // The maximum number of entries to return.
@@ -207,7 +207,7 @@ message QueryVariantsResponse {
     string variant_hash = 1;
 
     // The definition of the variant.
-    weetbix.v1.Variant variant = 2;
+    luci.analysis.v1.Variant variant = 2;
   }
 
   // A list of variants. Ordered by variant hash.

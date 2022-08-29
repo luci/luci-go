@@ -14,9 +14,9 @@
 
 syntax = "proto3";
 
-package weetbix.v1;
+package luci.analysis.v1;
 
-option go_package = "go.chromium.org/luci/analysis/proto/v1;weetbixpb";
+option go_package = "go.chromium.org/luci/analysis/proto/v1;analysispb";
 
 message Project {
 
@@ -25,7 +25,7 @@ message Project {
     // See also https://google.aip.dev/122.
     string name = 1;
 
-    // The display name to be used in the project selection page of Weetbix.
+    // The display name to be used in the project selection page of LUCI Analysis.
     // If not provided, the Title case of the project's Luci project ID will be used.
     string display_name = 2;
 

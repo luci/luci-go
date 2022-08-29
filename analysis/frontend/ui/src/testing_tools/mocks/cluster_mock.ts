@@ -83,7 +83,7 @@ export const getMockSuggestedClusterSummary = (id: string): ClusterSummary => {
 
 export const mockQueryClusterSummaries = (request: QueryClusterSummariesRequest, response: QueryClusterSummariesResponse) => {
   fetchMock.post({
-    url: 'http://localhost/prpc/weetbix.v1.Clusters/QueryClusterSummaries',
+    url: 'http://localhost/prpc/luci.analysis.v1.Clusters/QueryClusterSummaries',
     body: request,
   }, {
     headers: {
@@ -101,7 +101,7 @@ export const mockQueryClusterFailures = (parent: string, failures: DistinctClust
     failures: failures,
   };
   fetchMock.post({
-    url: 'http://localhost/prpc/weetbix.v1.Clusters/QueryClusterFailures',
+    url: 'http://localhost/prpc/luci.analysis.v1.Clusters/QueryClusterFailures',
     body: request,
   }, {
     headers: {

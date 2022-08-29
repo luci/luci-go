@@ -14,7 +14,7 @@
 
 syntax = "proto3";
 
-package weetbix.analyzedtestvariant;
+package luci.analysis.analyzedtestvariant;
 
 import "google/api/field_behavior.proto";
 import "go.chromium.org/luci/analysis/proto/v1/common.proto";
@@ -28,14 +28,14 @@ enum Status {
   // Not to be used in actual test variants; serves as a default value for an unset field.
   STATUS_UNSPECIFIED = 0;
 
-  // The test variant has unexpected results, but Weetbix cannot determine
+  // The test variant has unexpected results, but LUCI Analysis cannot determine
   // If it is FLAKY or CONSISTENTLY_UNEXPECTED.
   // This status can be used when
   // * in in-build flakiness cases, a test variant with flaky results in a build
   //   is newly detected but the service has not been notified if the build
   //   contributes to a CL's submission or not.
-  //   *  Note that this does not apply to Chromium flaky analysis because for
-  //      Chromium Weetbix only ingests test results from builds contribute to
+  //   *  Note that this does not apply to flaky analysis currently because
+  //      for now we only ingest test results from builds contributing to
   //      CL submissions.
   // * in cross-build flakiness cases, a test variant is newly detected in a build
   //   where all of its results are unexpected.
@@ -98,18 +98,18 @@ message AnalyzedTestVariant {
 
   // Description of one specific way of running the test,
   // e.g. a specific bucket, builder and a test suite.
-  weetbix.v1.Variant variant = 5;
+  luci.analysis.v1.Variant variant = 5;
 
   // Information about the test at the time of its execution.
-  weetbix.v1.TestMetadata test_metadata = 6;
+  luci.analysis.v1.TestMetadata test_metadata = 6;
 
   // Metadata for the test variant.
   // See luci.resultdb.v1.Tags for details.
-  repeated weetbix.v1.StringPair tags = 7;
+  repeated luci.analysis.v1.StringPair tags = 7;
 
   // A range of time. Flake statistics are calculated using test results
   // within that range.
-  weetbix.v1.TimeRange time_range = 8;
+  luci.analysis.v1.TimeRange time_range = 8;
 
   // Status of the test valiant.
   Status status = 9;

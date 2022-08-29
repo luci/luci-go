@@ -27,7 +27,7 @@ export const createMockProjectConfig = (): ProjectConfig => {
 };
 
 export const mockFetchProjectConfig = () => {
-  fetchMock.post('http://localhost/prpc/weetbix.v1.Projects/GetConfig', {
+  fetchMock.post('http://localhost/prpc/luci.analysis.v1.Projects/GetConfig', {
     headers: {
       'X-Prpc-Grpc-Code': '0',
     },

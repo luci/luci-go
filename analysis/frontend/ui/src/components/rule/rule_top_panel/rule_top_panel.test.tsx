@@ -32,7 +32,7 @@ describe('Test RuleTopPanel component', () => {
     mockFetchProjectConfig();
     mockFetchAuthState();
     const mockRule = createDefaultMockRule();
-    fetchMock.post('http://localhost/prpc/weetbix.v1.Clusters/GetReclusteringProgress', {
+    fetchMock.post('http://localhost/prpc/luci.analysis.v1.Clusters/GetReclusteringProgress', {
       headers: {
         'X-Prpc-Grpc-Code': '0',
       },
@@ -44,7 +44,7 @@ describe('Test RuleTopPanel component', () => {
       },
       body: ')]}\'' + JSON.stringify(createMockBug()),
     });
-    fetchMock.post('http://localhost/prpc/weetbix.v1.Rules/Get', {
+    fetchMock.post('http://localhost/prpc/luci.analysis.v1.Rules/Get', {
       headers: {
         'X-Prpc-Grpc-Code': '0',
       },

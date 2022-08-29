@@ -70,7 +70,7 @@ describe('Test RuleEditDialog component', () => {
       ...mockRule,
       ruleDefinition: 'new rule definition',
     };
-    fetchMock.post('http://localhost/prpc/weetbix.v1.Rules/Update', {
+    fetchMock.post('http://localhost/prpc/luci.analysis.v1.Rules/Update', {
       headers: {
         'X-Prpc-Grpc-Code': '0',
       },
@@ -78,7 +78,7 @@ describe('Test RuleEditDialog component', () => {
     });
 
     fireEvent.click(screen.getByText('Save'));
-    await waitFor(() => fetchMock.lastCall() !== undefined && fetchMock.lastCall()![0] === 'http://localhost/prpc/weetbix.v1.Rules/Update');
+    await waitFor(() => fetchMock.lastCall() !== undefined && fetchMock.lastCall()![0] === 'http://localhost/prpc/luci.analysis.v1.Rules/Update');
 
     expect(fetchMock.lastCall()![1]!.body).toEqual('{"rule":{"name":"projects/chromium/rules/ce83f8395178a0f2edad59fc1a167818",' +
         '"ruleDefinition":"new rule definition"},' +

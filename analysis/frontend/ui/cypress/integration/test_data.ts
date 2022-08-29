@@ -28,10 +28,10 @@ export function setupTestRule() {
         // Set initial rule state.
         cy.request({
             method: 'POST',
-            url:  '/prpc/weetbix.v1.Rules/Update',
+            url:  '/prpc/luci.analysis.v1.Rules/Update',
             body: {
                 rule: {
-                    name: 'projects/chromium/rules/4165d118c919a1016f42e80efe30db59',
+                    name: 'projects/chromium/rules/ea5305bc5069b449ee43ee64d26d667f',
                     ruleDefinition: 'test = "cypress test 1"',
                     bug: {
                         system: 'monorail',

@@ -40,7 +40,7 @@ describe('Test ReclusteringProgressIndicator component', () => {
 
   it('given an finished progress, then should not display', async () => {
     mockFetchAuthState();
-    fetchMock.post('http://localhost/prpc/weetbix.v1.Clusters/GetReclusteringProgress', {
+    fetchMock.post('http://localhost/prpc/luci.analysis.v1.Clusters/GetReclusteringProgress', {
       headers: {
         'X-Prpc-Grpc-Code': '0',
       },
@@ -58,7 +58,7 @@ describe('Test ReclusteringProgressIndicator component', () => {
 
   it('given a progress, then should display percentage', async () => {
     mockFetchAuthState();
-    fetchMock.post('http://localhost/prpc/weetbix.v1.Clusters/GetReclusteringProgress', {
+    fetchMock.post('http://localhost/prpc/luci.analysis.v1.Clusters/GetReclusteringProgress', {
       headers: {
         'X-Prpc-Grpc-Code': '0',
       },
@@ -79,7 +79,7 @@ describe('Test ReclusteringProgressIndicator component', () => {
 
   it('when progress is done after being on screen, then should display button to refresh analysis', async () => {
     mockFetchAuthState();
-    fetchMock.postOnce('http://localhost/prpc/weetbix.v1.Clusters/GetReclusteringProgress', {
+    fetchMock.postOnce('http://localhost/prpc/luci.analysis.v1.Clusters/GetReclusteringProgress', {
       headers: {
         'X-Prpc-Grpc-Code': '0',
       },
@@ -94,7 +94,7 @@ describe('Test ReclusteringProgressIndicator component', () => {
     await screen.findByRole('alert');
     await screen.findByText('80%');
 
-    fetchMock.postOnce('http://localhost/prpc/weetbix.v1.Clusters/GetReclusteringProgress', {
+    fetchMock.postOnce('http://localhost/prpc/luci.analysis.v1.Clusters/GetReclusteringProgress', {
       headers: {
         'X-Prpc-Grpc-Code': '0',
       },

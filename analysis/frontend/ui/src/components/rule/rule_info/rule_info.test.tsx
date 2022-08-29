@@ -81,7 +81,7 @@ describe('Test RuleInfo component', () => {
       ...mockRule,
       isActive: false,
     };
-    fetchMock.post('http://localhost/prpc/weetbix.v1.Rules/Update', {
+    fetchMock.post('http://localhost/prpc/luci.analysis.v1.Rules/Update', {
       headers: {
         'X-Prpc-Grpc-Code': '0',
       },
@@ -90,7 +90,7 @@ describe('Test RuleInfo component', () => {
 
     fireEvent.click(screen.getByText('Confirm'));
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    await waitFor(() => fetchMock.lastCall() !== undefined && fetchMock.lastCall()![0] === 'http://localhost/prpc/weetbix.v1.Rules/Update');
+    await waitFor(() => fetchMock.lastCall() !== undefined && fetchMock.lastCall()![0] === 'http://localhost/prpc/luci.analysis.v1.Rules/Update');
 
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     expect(fetchMock.lastCall()![1]!.body).toEqual('{"rule":{"name":"projects/chromium/rules/ce83f8395178a0f2edad59fc1a167818",' +

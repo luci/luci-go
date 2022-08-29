@@ -44,7 +44,7 @@ export const createDefaultMockListRulesResponse = (): ListRulesResponse => {
 };
 
 export const mockFetchRules = () => {
-  fetchMock.post('http://localhost/prpc/weetbix.v1.Rules/List', {
+  fetchMock.post('http://localhost/prpc/luci.analysis.v1.Rules/List', {
     headers: {
       'X-Prpc-Grpc-Code': '0',
     },

@@ -14,11 +14,11 @@
 
 syntax = "proto3";
 
-package weetbix.v1;
+package luci.analysis.v1;
 
 import "go.chromium.org/luci/analysis/proto/v1/common.proto";
 
-option go_package = "go.chromium.org/luci/analysis/proto/v1;weetbixpb";
+option go_package = "go.chromium.org/luci/analysis/proto/v1;analysispb";
 
 // Represents a function Variant -> bool.
 message VariantPredicate {
@@ -51,7 +51,7 @@ message TestVerdictPredicate {
   //
   // If no filter is specified, all verdicts are returned (regardless of
   // submitted status).
-  weetbix.v1.SubmittedFilter submitted_filter = 3;
+  luci.analysis.v1.SubmittedFilter submitted_filter = 3;
 
   // Optional. Specify a range of timestamps to query the test history from.
   //

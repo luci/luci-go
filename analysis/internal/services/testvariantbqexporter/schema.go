@@ -27,7 +27,7 @@ import (
 	pb "go.chromium.org/luci/analysis/proto/v1"
 )
 
-const rowMessage = "weetbix.bq.TestVariantRow"
+const rowMessage = "luci.analysis.bq.TestVariantRow"
 
 const partitionExpirationTime = 540 * 24 * time.Hour
 

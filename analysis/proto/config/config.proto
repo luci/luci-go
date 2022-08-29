@@ -14,11 +14,11 @@
 
 syntax = "proto3";
 
-package weetbix.config;
+package luci.analysis.config;
 
 option go_package = "go.chromium.org/luci/analysis/proto/config;configpb";
 
-// Config is the service-wide configuration data for Weetbix.
+// Config is the service-wide configuration data for LUCI Analysis.
 message Config {
   // The endpoint for Monorail APIs.
   string monorail_hostname = 1;
@@ -41,8 +41,8 @@ message Config {
   // If this is unset or zero, re-clustering is disabled.
   int64 reclustering_interval_minutes = 4;
 
-  // Controls whether Weetbix will interact with bug-filing systems.
-  // Can be used to stop Weetbix auto-bug filing and updates in
+  // Controls whether LUCI Analysis will interact with bug-filing systems.
+  // Can be used to stop LUCI Analysis auto-bug filing and updates in
   // response to a problem.
   bool bug_updates_enabled = 5;
 }

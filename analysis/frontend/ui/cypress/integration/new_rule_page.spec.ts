@@ -24,7 +24,7 @@ describe('New Rule Page', () => {
     cy.get('new-rule-page').get('[data-cy=bug-number-textbox]').get('[type=text]').type('{selectall}101');
     cy.get('new-rule-page').get('[data-cy=rule-definition-textbox]').get('textarea').type('{selectall}test = "create test 1"');
 
-    cy.intercept('POST', '/prpc/weetbix.v1.Rules/Create', (req) => {
+    cy.intercept('POST', '/prpc/luci.analysis.v1.Rules/Create', (req) => {
       const requestBody = req.body;
       assert.strictEqual(requestBody.rule.ruleDefinition, 'test = "create test 1"');
       assert.deepEqual(requestBody.rule.bug, { system: 'monorail', id: 'chromium/101' });
@@ -34,7 +34,7 @@ describe('New Rule Page', () => {
         project: 'chromium',
         // This is a real rule that exists in the dev database, the
         // same used for rule section UI tests.
-        ruleId: '4165d118c919a1016f42e80efe30db59',
+        ruleId: 'ea5305bc5069b449ee43ee64d26d667f',
       };
       // Construct pRPC response.
       const body = ')]}\'' + JSON.stringify(response);
@@ -58,7 +58,7 @@ describe('New Rule Page', () => {
     cy.get('new-rule-page').get('[data-cy=bug-system-dropdown]').contains('crbug.com');
     cy.get('new-rule-page').get('[data-cy=bug-number-textbox]').get('[type=text]').type('{selectall}101');
 
-    cy.intercept('POST', '/prpc/weetbix.v1.Rules/Create', (req) => {
+    cy.intercept('POST', '/prpc/luci.analysis.v1.Rules/Create', (req) => {
       const requestBody = req.body;
       assert.strictEqual(requestBody.rule.ruleDefinition, 'test = CREATE_TEST_2');
       assert.deepEqual(requestBody.rule.bug, { system: 'monorail', id: 'chromium/101' });
@@ -68,7 +68,7 @@ describe('New Rule Page', () => {
         project: 'chromium',
         // This is a real rule that exists in the dev database, the
         // same used for rule section UI tests.
-        ruleId: '4165d118c919a1016f42e80efe30db59',
+        ruleId: 'ea5305bc5069b449ee43ee64d26d667f',
       };
       // Construct pRPC response.
       const body = ')]}\'' + JSON.stringify(response);
