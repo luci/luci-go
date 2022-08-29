@@ -53,6 +53,8 @@ var priorityRE = regexp.MustCompile(`^Pri-([0123])$`)
 var AutomationUsers = []string{
 	"users/3816576959", // chops-weetbix@appspot.gserviceaccount.com
 	"users/4149141945", // chops-weetbix-dev@appspot.gserviceaccount.com
+	"users/3371420746", // luci-analysis@appspot.gserviceaccount.com
+	"users/1503471452", // luci-analysis-dev@appspot.gserviceaccount.com
 }
 
 // ChromiumDefaultAssignee is the default issue assignee for chromium.
