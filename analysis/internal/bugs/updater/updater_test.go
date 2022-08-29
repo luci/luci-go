@@ -187,8 +187,8 @@ func TestRun(t *testing.T) {
 				IsActive:        true,
 				IsManagingBug:   true,
 				SourceCluster:   sourceClusterID,
-				CreationUser:    rules.WeetbixSystem,
-				LastUpdatedUser: rules.WeetbixSystem,
+				CreationUser:    rules.LUCIAnalysisSystem,
+				LastUpdatedUser: rules.LUCIAnalysisSystem,
 			}
 
 			expectedBugSummary := "Failed to connect to 100.1.1.105."
@@ -470,8 +470,8 @@ func TestRun(t *testing.T) {
 					SourceCluster:   suggestedClusters[0].ClusterID,
 					IsActive:        true,
 					IsManagingBug:   true,
-					CreationUser:    rules.WeetbixSystem,
-					LastUpdatedUser: rules.WeetbixSystem,
+					CreationUser:    rules.LUCIAnalysisSystem,
+					LastUpdatedUser: rules.LUCIAnalysisSystem,
 				},
 				{
 					Project:         "chromium",
@@ -480,8 +480,8 @@ func TestRun(t *testing.T) {
 					SourceCluster:   suggestedClusters[1].ClusterID,
 					IsActive:        true,
 					IsManagingBug:   true,
-					CreationUser:    rules.WeetbixSystem,
-					LastUpdatedUser: rules.WeetbixSystem,
+					CreationUser:    rules.LUCIAnalysisSystem,
+					LastUpdatedUser: rules.LUCIAnalysisSystem,
 				},
 				{
 					Project:         "chromium",
@@ -490,8 +490,8 @@ func TestRun(t *testing.T) {
 					SourceCluster:   suggestedClusters[2].ClusterID,
 					IsActive:        true,
 					IsManagingBug:   true,
-					CreationUser:    rules.WeetbixSystem,
-					LastUpdatedUser: rules.WeetbixSystem,
+					CreationUser:    rules.LUCIAnalysisSystem,
+					LastUpdatedUser: rules.LUCIAnalysisSystem,
 				},
 			}
 

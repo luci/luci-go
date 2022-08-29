@@ -264,8 +264,8 @@ func TestSpan(t *testing.T) {
 				return commitTime.In(time.UTC), err
 			}
 			r := NewRule(100).Build()
-			r.CreationUser = WeetbixSystem
-			r.LastUpdatedUser = WeetbixSystem
+			r.CreationUser = LUCIAnalysisSystem
+			r.LastUpdatedUser = LUCIAnalysisSystem
 
 			Convey(`Valid`, func() {
 				testExists := func(expectedRule FailureAssociationRule) {
@@ -283,7 +283,7 @@ func TestSpan(t *testing.T) {
 				Convey(`With Source Cluster`, func() {
 					So(r.SourceCluster.Algorithm, ShouldNotBeEmpty)
 					So(r.SourceCluster.ID, ShouldNotBeNil)
-					commitTime, err := testCreate(r, WeetbixSystem)
+					commitTime, err := testCreate(r, LUCIAnalysisSystem)
 					So(err, ShouldBeNil)
 
 					expectedRule := *r
@@ -308,7 +308,7 @@ func TestSpan(t *testing.T) {
 				})
 				Convey(`With Buganizer Bug`, func() {
 					r.BugID = bugs.BugID{System: "buganizer", ID: "1234567890"}
-					commitTime, err := testCreate(r, WeetbixSystem)
+					commitTime, err := testCreate(r, LUCIAnalysisSystem)
 					So(err, ShouldBeNil)
 
 					expectedRule := *r
@@ -319,7 +319,7 @@ func TestSpan(t *testing.T) {
 				})
 				Convey(`With Monorail Bug`, func() {
 					r.BugID = bugs.BugID{System: "monorail", ID: "project/1234567890"}
-					commitTime, err := testCreate(r, WeetbixSystem)
+					commitTime, err := testCreate(r, LUCIAnalysisSystem)
 					So(err, ShouldBeNil)
 
 					expectedRule := *r
@@ -332,29 +332,29 @@ func TestSpan(t *testing.T) {
 			Convey(`With invalid Project`, func() {
 				Convey(`Missing`, func() {
 					r.Project = ""
-					_, err := testCreate(r, WeetbixSystem)
+					_, err := testCreate(r, LUCIAnalysisSystem)
 					So(err, ShouldErrLike, "project must be valid")
 				})
 				Convey(`Invalid`, func() {
 					r.Project = "!"
-					_, err := testCreate(r, WeetbixSystem)
+					_, err := testCreate(r, LUCIAnalysisSystem)
 					So(err, ShouldErrLike, "project must be valid")
 				})
 			})
 			Convey(`With invalid Rule Definition`, func() {
 				r.RuleDefinition = "invalid"
-				_, err := testCreate(r, WeetbixSystem)
+				_, err := testCreate(r, LUCIAnalysisSystem)
 				So(err, ShouldErrLike, "rule definition is not valid")
 			})
 			Convey(`With invalid Bug ID`, func() {
 				r.BugID.System = ""
-				_, err := testCreate(r, WeetbixSystem)
+				_, err := testCreate(r, LUCIAnalysisSystem)
 				So(err, ShouldErrLike, "bug ID is not valid")
 			})
 			Convey(`With invalid Source Cluster`, func() {
 				So(r.SourceCluster.ID, ShouldNotBeNil)
 				r.SourceCluster.Algorithm = ""
-				_, err := testCreate(r, WeetbixSystem)
+				_, err := testCreate(r, LUCIAnalysisSystem)
 				So(err, ShouldErrLike, "source cluster ID is not valid")
 			})
 			Convey(`With invalid User`, func() {
@@ -418,20 +418,20 @@ func TestSpan(t *testing.T) {
 				Convey(`With invalid Rule Definition`, func() {
 					r.RuleDefinition = "invalid"
 					updatePredicate := true
-					_, err := testUpdate(r, updatePredicate, WeetbixSystem)
+					_, err := testUpdate(r, updatePredicate, LUCIAnalysisSystem)
 					So(err, ShouldErrLike, "rule definition is not valid")
 				})
 				Convey(`With invalid Bug ID`, func() {
 					r.BugID.System = ""
 					updatePredicate := false
-					_, err := testUpdate(r, updatePredicate, WeetbixSystem)
+					_, err := testUpdate(r, updatePredicate, LUCIAnalysisSystem)
 					So(err, ShouldErrLike, "bug ID is not valid")
 				})
 				Convey(`With invalid Source Cluster`, func() {
 					So(r.SourceCluster.ID, ShouldNotBeNil)
 					r.SourceCluster.Algorithm = ""
 					updatePredicate := false
-					_, err := testUpdate(r, updatePredicate, WeetbixSystem)
+					_, err := testUpdate(r, updatePredicate, LUCIAnalysisSystem)
 					So(err, ShouldErrLike, "source cluster ID is not valid")
 				})
 			})

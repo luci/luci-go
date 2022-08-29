@@ -34,7 +34,7 @@ describe('Test TimestampInfoBar component', () => {
     await waitFor(() => screen.getByTestId('timestamp-info-bar-create'));
 
     expect(screen.getByTestId('timestamp-info-bar-create'))
-        .toHaveTextContent('Created by Weetbix a few seconds ago');
+        .toHaveTextContent('Created by LUCI Analysis a few seconds ago');
     expect(screen.getByTestId('timestamp-info-bar-update'))
         .toHaveTextContent('Last modified by user@example.com a few seconds ago');
   });

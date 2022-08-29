@@ -36,7 +36,7 @@ import { getIssuesService, Issue, GetIssueRequest } from '../../../../services/m
 import { linkToCluster } from '../../../../tools/urlHandling/links';
 
 /**
- * RuleSection displays a rule tracked by Weetbix.
+ * RuleSection displays a rule tracked by LUCI Analysis.
  * @fires rulechanged
  */
 @customElement('rule-section')
@@ -113,8 +113,8 @@ export class RuleSection extends LitElement {
             }
         };
         const formatUser = (user: string): TemplateResult => {
-            if (user == 'weetbix') {
-                return html`Weetbix`;
+            if (user == 'system') {
+                return html`LUCI Analysis`;
             } else if (user.endsWith('@google.com')) {
                 const ldap = user.substr(0, user.length - '@google.com'.length);
                 return html`<a href="http://who/${ldap}">${ldap}</a>`;

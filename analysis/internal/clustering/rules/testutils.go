@@ -56,7 +56,7 @@ func NewRule(uniqifier int) *RuleBuilder {
 		IsActive:             true,
 		IsManagingBug:        true,
 		CreationTime:         time.Date(1900, 1, 2, 3, 4, 5, uniqifier, time.UTC),
-		CreationUser:         WeetbixSystem,
+		CreationUser:         LUCIAnalysisSystem,
 		LastUpdated:          time.Date(1900, 1, 2, 3, 4, 7, uniqifier, time.UTC),
 		LastUpdatedUser:      "user@google.com",
 		PredicateLastUpdated: time.Date(1900, 1, 2, 3, 4, 6, uniqifier, time.UTC),

@@ -40,12 +40,12 @@ const RuleIDRePattern = `[0-9a-f]{32}`
 var RuleIDRe = regexp.MustCompile(`^` + RuleIDRePattern + `$`)
 
 // UserRe matches valid users. These are email addresses or the special
-// value "weetbix".
-var UserRe = regexp.MustCompile(`^weetbix|([a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+)$`)
+// value "system".
+var UserRe = regexp.MustCompile(`^system|([a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+)$`)
 
-// WeetbixSystem is the special user that identifies changes made by the
-// Weetbix system itself in audit fields.
-const WeetbixSystem = "weetbix"
+// LUCIAnalysisSystem is the special user that identifies changes made by the
+// LUCI Analysis system itself in audit fields.
+const LUCIAnalysisSystem = "system"
 
 // StartingEpoch is the rule last updated time used for projects that have
 // no rules (active or otherwise). It is deliberately different from the
@@ -96,7 +96,7 @@ type FailureAssociationRule struct {
 	// BugID is the identifier of the bug that the failures are
 	// associated with.
 	BugID bugs.BugID `json:"bugId"`
-	// Whether the bug should be updated by Weetbix, and whether failures
+	// Whether the bug should be updated by LUCI Analysis, and whether failures
 	// should still be matched against the rule.
 	IsActive bool `json:"isActive"`
 	// Whether this rule should manage the priority and verified status
@@ -128,8 +128,8 @@ func Read(ctx context.Context, project string, id string) (*FailureAssociationRu
 	return rs[0], nil
 }
 
-// ReadAll reads all Weetbix failure association rules in a given project.
-// This method is not expected to scale -- for testing use only.
+// ReadAll reads all LUCI Analysis failure association rules in a given
+// project. This method is not expected to scale -- for testing use only.
 func ReadAll(ctx context.Context, project string) ([]*FailureAssociationRule, error) {
 	whereClause := `Project = @project`
 	params := map[string]interface{}{
@@ -142,7 +142,8 @@ func ReadAll(ctx context.Context, project string) ([]*FailureAssociationRule, er
 	return rs, nil
 }
 
-// ReadActive reads all active Weetbix failure association rules in the given LUCI project.
+// ReadActive reads all active LUCI Analysis failure association rules in
+// the given LUCI project.
 func ReadActive(ctx context.Context, project string) ([]*FailureAssociationRule, error) {
 	whereClause := `Project = @project AND IsActive`
 	params := map[string]interface{}{

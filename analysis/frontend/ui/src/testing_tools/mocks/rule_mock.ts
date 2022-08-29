@@ -36,7 +36,7 @@ export const createDefaultMockRule = (): Rule => {
       id: '78ff0812026b30570ca730b1541125ea',
     },
     createTime: dayjs().toISOString(),
-    createUser: 'weetbix',
+    createUser: 'system',
     lastUpdateTime: dayjs().toISOString(),
     lastUpdateUser: 'user@example.com',
     predicateLastUpdateTime: '2022-01-31T03:36:14.896430Z',

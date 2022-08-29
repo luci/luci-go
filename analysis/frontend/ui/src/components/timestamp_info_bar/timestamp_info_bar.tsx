@@ -34,8 +34,8 @@ const FormattedUsername = ({ username }: FormattedUsernameProps) => {
   if (!username) {
     return <></>;
   }
-  if (username == 'weetbix') {
-    return <>Weetbix</>;
+  if (username == 'system') {
+    return <>LUCI Analysis</>;
   } else if (username.endsWith('@google.com')) {
     const ldap = username.substring(0, username.length - '@google.com'.length);
     return <Link target="_blank" href={`http://who/${ldap}`}>{ldap}</Link>;
