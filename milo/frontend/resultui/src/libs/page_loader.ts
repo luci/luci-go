@@ -75,6 +75,12 @@ export class PageLoader<T> {
     return this.loadPromise;
   }
 
+  async loadRemainingPages() {
+    while (!this.loadedAll) {
+      await this.loadNextPage();
+    }
+  }
+
   private async loadNextPageInternal() {
     if (this.loadedAll) {
       return null;

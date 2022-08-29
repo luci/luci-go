@@ -66,6 +66,7 @@
   },
   "devDependencies": {
     "@open-wc/testing": "^2.5.33",
+    "@testing-library/react": "^13.3.0",
     "@types/chai": "^4.2.22",
     "@types/codemirror": "^5.60.5",
     "@types/copy-webpack-plugin": "^8.0.1",

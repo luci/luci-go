@@ -13,15 +13,20 @@
 // limitations under the License.
 
 import { observer } from 'mobx-react-lite';
+import { useEffect } from 'react';
 
 import { getURLPathForBuilder } from '../../libs/build_utils';
-import { BuilderID } from '../../services/buildbucket';
+import { useStore } from '../../store';
 
-export interface BuilderListProps {
-  readonly groupedBuilders: { [bucketId: string]: BuilderID[] | undefined };
-}
+export const BuilderList = observer(() => {
+  const { groupedBuilders, builderLoader } = useStore().searchPage;
 
-export const BuilderList = observer(({ groupedBuilders }: BuilderListProps) => {
+  useEffect(() => {
+    if (builderLoader) {
+      builderLoader.loadRemainingPages();
+    }
+  }, [builderLoader]);
+
   return (
     <>
       {Object.entries(groupedBuilders).map(([bucketId, builders]) => (
@@ -36,6 +41,11 @@ export const BuilderList = observer(({ groupedBuilders }: BuilderListProps) => {
           </ul>
         </div>
       ))}
+      {(builderLoader?.isLoading ?? true) && (
+        <span>
+          Loading <milo-dot-spinner></milo-dot-spinner>
+        </span>
+      )}
     </>
   );
 });

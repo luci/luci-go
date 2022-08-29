@@ -18,9 +18,10 @@ import { CacheProvider, EmotionCache } from '@emotion/react';
 import { Search } from '@mui/icons-material';
 import { FormControl, InputAdornment, MenuItem, Select, TextField } from '@mui/material';
 import { customElement } from 'lit-element';
+import { debounce } from 'lodash-es';
 import { observable } from 'mobx';
 import { observer } from 'mobx-react-lite';
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { createRoot, Root } from 'react-dom/client';
 
 import '../../components/dot_spinner';
@@ -48,8 +49,23 @@ export const SearchPage = observer(() => {
   const [searchQuery, setSearchQuery] = useState(pageState.searchQuery);
   const [project, setProject] = useState(pageState.testProject);
 
-  const timeoutId = useRef(0);
-  useEffect(() => () => window.clearTimeout(timeoutId.current), []);
+  // Update the search query in the pageStore after a slight delay to avoid
+  // updating the list or triggering network requests too frequently.
+  const executeSearch = useCallback(
+    debounce(
+      (newSearchQuery: string) => pageState.setSearchQuery(newSearchQuery),
+      SEARCH_DELAY[pageState.searchTarget]
+    ),
+    [pageState, pageState.searchTarget]
+  );
+
+  useEffect(() => {
+    executeSearch(searchQuery);
+    // Execute search cancel the previous call automatically when the next call
+    // is scheduled. However, when the search target is changed, executeSearch
+    // itself is updated. Therefore we need to cancel the search explicitly.
+    return () => executeSearch.cancel();
+  }, [executeSearch, searchQuery]);
 
   const searchTarget = pageState.searchTarget;
 
@@ -82,9 +98,7 @@ export const SearchPage = observer(() => {
           <TextField
             label="project"
             value={project}
-            onChange={(e) => {
-              setProject(e.target.value);
-            }}
+            onChange={(e) => setProject(e.target.value)}
             onKeyDown={(e) => {
               if (!['Tab', 'Enter'].includes(e.key)) {
                 return;
@@ -109,17 +123,7 @@ export const SearchPage = observer(() => {
         <TextField
           value={searchQuery}
           placeholder={SEARCH_HINT[searchTarget]}
-          onChange={(e) => {
-            setSearchQuery(e.target.value);
-
-            // Update the search query after a slight delay to avoid updating
-            // the list too frequently.
-            window.clearTimeout(timeoutId.current);
-            timeoutId.current = window.setTimeout(
-              () => pageState.setSearchQuery(e.target.value),
-              SEARCH_DELAY[searchTarget]
-            );
-          }}
+          onChange={(e) => setSearchQuery(e.target.value)}
           autoFocus
           variant="outlined"
           size="small"
@@ -139,24 +143,7 @@ export const SearchPage = observer(() => {
           }}
         />
       </FormControl>
-      <div css={{ marginTop: '20px' }}>
-        {searchTarget === SearchTarget.Builders ? (
-          <>
-            <BuilderList groupedBuilders={pageState.groupedBuilders} />
-            {(pageState.builderLoader?.isLoading ?? true) && (
-              <span>
-                Loading <milo-dot-spinner></milo-dot-spinner>
-              </span>
-            )}
-          </>
-        ) : (
-          <TestList
-            project={pageState.testProject}
-            searchQuery={pageState.searchQuery}
-            testLoader={pageState.testLoader}
-          />
-        )}
-      </div>
+      <div css={{ marginTop: '20px' }}>{searchTarget === SearchTarget.Builders ? <BuilderList /> : <TestList />}</div>
     </div>
   );
 });

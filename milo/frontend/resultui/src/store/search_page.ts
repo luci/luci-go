@@ -13,8 +13,9 @@
 // limitations under the License.
 
 import { groupBy } from 'lodash-es';
-import { reaction } from 'mobx';
+import { computed } from 'mobx';
 import { addDisposer, types } from 'mobx-state-tree';
+import { keepAlive } from 'mobx-utils';
 
 import { PageLoader } from '../libs/page_loader';
 import { BuilderID, BuildersService } from '../services/buildbucket';
@@ -96,35 +97,9 @@ export const SearchPage = types
     setTestProject(newTestProject: string) {
       self.testProject = newTestProject;
     },
-    afterCreate: function () {
-      addDisposer(
-        self,
-        reaction(
-          () => self.builderLoader,
-          async (builderLoader) => {
-            if (!builderLoader) {
-              return;
-            }
-            while (!builderLoader.loadedAll) {
-              await builderLoader.loadNextPage();
-            }
-          },
-          { fireImmediately: true }
-        )
-      );
-
-      addDisposer(
-        self,
-        reaction(
-          () => [self.searchTarget, self.testLoader] as const,
-          ([searchTarget, testLoader]) => {
-            if (searchTarget !== SearchTarget.Tests) {
-              return;
-            }
-            testLoader?.loadFirstPage();
-          },
-          { fireImmediately: true }
-        )
-      );
+    afterCreate() {
+      // These computed properties contains internal caches. Keep them alive.
+      addDisposer(self, keepAlive(computed(() => self.builderLoader)));
+      addDisposer(self, keepAlive(computed(() => self.testLoader)));
     },
   }));

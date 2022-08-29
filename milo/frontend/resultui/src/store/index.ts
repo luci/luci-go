@@ -15,7 +15,7 @@
 import { PrpcClientOptions, RpcCode } from '@chopsui/prpc-client';
 import stableStringify from 'fast-json-stable-stringify';
 import { computed, reaction, untracked } from 'mobx';
-import { addDisposer, Instance, SnapshotIn, SnapshotOut, types } from 'mobx-state-tree';
+import { addDisposer, Instance, isAlive, SnapshotIn, SnapshotOut, types } from 'mobx-state-tree';
 import { keepAlive } from 'mobx-utils';
 import { createContext, useContext } from 'react';
 
@@ -33,7 +33,7 @@ import { UserConfig } from './user_config';
 const MAY_REQUIRE_SIGNIN_ERROR_CODE = [RpcCode.NOT_FOUND, RpcCode.PERMISSION_DENIED, RpcCode.UNAUTHENTICATED];
 
 export const Store = types
-  .model({
+  .model('Store', {
     timestamp: Date.now(),
     selectedTabId: types.maybe(types.string),
     // Use number instead of boolean because previousPage.disconnectedCallback
@@ -75,7 +75,7 @@ export const Store = types
       // access token is updated.
       return new PrpcClientExt(
         opts,
-        () => untracked(() => self.authState?.accessToken || ''),
+        () => untracked(() => (isAlive(self) && self.authState?.accessToken) || ''),
         (e) => {
           if (MAY_REQUIRE_SIGNIN_ERROR_CODE.includes(e.code)) {
             attachTags(e, MAY_REQUIRE_SIGNIN);

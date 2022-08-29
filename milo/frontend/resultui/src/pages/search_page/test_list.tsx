@@ -13,17 +13,18 @@
 // limitations under the License.
 
 import { observer } from 'mobx-react-lite';
+import { useEffect } from 'react';
 
 import '../../components/dot_spinner';
-import { PageLoader } from '../../libs/page_loader';
+import { useStore } from '../../store';
 
-export interface TestListProps {
-  readonly project: string;
-  readonly searchQuery: string;
-  readonly testLoader: PageLoader<string> | null;
-}
+export const TestList = observer(() => {
+  const { testProject, searchQuery, testLoader } = useStore().searchPage;
 
-export const TestList = observer(({ project, searchQuery, testLoader }: TestListProps) => {
+  useEffect(() => {
+    testLoader?.loadFirstPage();
+  }, [testLoader]);
+
   if (!searchQuery) {
     return <></>;
   }
@@ -42,21 +43,23 @@ export const TestList = observer(({ project, searchQuery, testLoader }: TestList
       <ul>
         {testLoader.items.map((testId) => (
           <li key={testId}>
-            <a href={`/ui/test/${encodeURIComponent(project)}/${encodeURIComponent(testId)}`} target="_blank">
+            <a href={`/ui/test/${encodeURIComponent(testProject)}/${encodeURIComponent(testId)}`} target="_blank">
               {testId}
             </a>
           </li>
         ))}
       </ul>
-      {testLoader?.isLoading ? (
+      {testLoader?.isLoading ?? true ? (
         <div>
           Loading
           <milo-dot-spinner></milo-dot-spinner>
         </div>
       ) : (
-        <span className="active-text" onClick={() => testLoader?.loadNextPage()}>
-          [load more]
-        </span>
+        !testLoader.loadedAll && (
+          <span className="active-text" onClick={() => testLoader?.loadNextPage()}>
+            [load more]
+          </span>
+        )
       )}
     </>
   );

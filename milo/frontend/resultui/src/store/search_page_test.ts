@@ -19,7 +19,6 @@ import sinon from 'sinon';
 
 import { CacheOption } from '../libs/cached_fn';
 import { PrpcClientExt } from '../libs/prpc_client_ext';
-import { deferred } from '../libs/utils';
 import { BuildersService, ListBuildersRequest } from '../services/buildbucket';
 import { ListBuildersResponse } from '../services/milo_internal';
 import { QueryTestsRequest, QueryTestsResponse, TestHistoryService } from '../services/weetbix';
@@ -89,6 +88,7 @@ describe('SearchPage', () => {
       listBuildersStub.callsFake(async ({ pageToken }) => listBuilderResponses[pageToken || 'page1']);
       searchPage = SearchPage.create();
       searchPage.setDependencies(buildersService, null);
+      searchPage.builderLoader?.loadRemainingPages();
 
       when(() => Boolean(searchPage.builderLoader?.loadedAll), done);
     });
@@ -165,30 +165,22 @@ describe('SearchPage', () => {
     it('e2e', async () => {
       searchPage.setSearchTarget(SearchTarget.Tests);
       searchPage.setTestProject('testProject');
+      searchPage.setSearchQuery('substr');
       expect(queryTestsStub.callCount).to.eq(0);
 
-      // The first page should be loaded automatically when the searchQuery is
-      // set.
-      const [promise1, resolve1] = deferred();
-      queryTestsStub.onCall(0).callsFake(async () => {
-        resolve1();
-        return { testIds: ['testId1substr1', 'testId1substr2'], nextPageToken: 'page2' };
-      });
-      searchPage.setSearchQuery('substr');
-      await promise1;
-      expect(queryTestsStub.callCount).to.eq(1);
+      // The subsequent page loads should be handled correctly.
+      queryTestsStub.onCall(0).resolves({ testIds: ['testId1substr1', 'testId1substr2'], nextPageToken: 'page2' });
+      queryTestsStub.onCall(1).resolves({ testIds: ['testId1substr3', 'testId1substr4'], nextPageToken: 'page3' });
+      queryTestsStub.onCall(2).resolves({ testIds: ['testId1substr3', 'testId1substr4'] });
+      await searchPage.testLoader?.loadNextPage();
+      await searchPage.testLoader?.loadNextPage();
+      await searchPage.testLoader?.loadNextPage();
+      expect(queryTestsStub.callCount).to.eq(3);
       expect(queryTestsStub.getCall(0).args[0]).to.deep.eq({
         project: 'testProject',
         testIdSubstring: 'substr',
         pageToken: undefined,
       });
-
-      // The subsequent page loads should be handled correctly.
-      queryTestsStub.onCall(1).resolves({ testIds: ['testId1substr3', 'testId1substr4'], nextPageToken: 'page3' });
-      queryTestsStub.onCall(2).resolves({ testIds: ['testId1substr3', 'testId1substr4'] });
-      await searchPage.testLoader?.loadNextPage();
-      await searchPage.testLoader?.loadNextPage();
-      expect(queryTestsStub.callCount).to.eq(3);
       expect(queryTestsStub.getCall(1).args[0]).to.deep.eq({
         project: 'testProject',
         testIdSubstring: 'substr',
@@ -202,13 +194,11 @@ describe('SearchPage', () => {
 
       // When the search query is reset, trigger a fresh page load with the new
       // query.
-      const [promise2, resolve2] = deferred();
       queryTestsStub.onCall(3).callsFake(async () => {
-        resolve2();
         return { testIds: ['testId1substr1'] };
       });
       searchPage.setSearchQuery('substr1');
-      await promise2;
+      await searchPage.testLoader?.loadNextPage();
 
       expect(queryTestsStub.callCount).to.eq(4);
       expect(queryTestsStub.getCall(3).args[0]).to.deep.eq({
