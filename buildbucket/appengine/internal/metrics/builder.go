@@ -17,8 +17,6 @@ package metrics
 import (
 	"context"
 	"fmt"
-	"hash/fnv"
-	"reflect"
 	"strings"
 	"time"
 
@@ -29,69 +27,12 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/sync/parallel"
 	"go.chromium.org/luci/common/tsmon"
-	"go.chromium.org/luci/common/tsmon/target"
-	tsmonpb "go.chromium.org/luci/common/tsmon/ts_mon_proto"
-	"go.chromium.org/luci/common/tsmon/types"
 	"go.chromium.org/luci/gae/service/datastore"
 
 	"go.chromium.org/luci/buildbucket/appengine/model"
 	pb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/buildbucket/protoutil"
 )
-
-// Builder is a metric target that represents a LUCI Builder.
-type Builder struct {
-	// Project is the LUCI project of the Builder.
-	Project string
-	// Bucket is the bucket name of the Builder.
-	Bucket string
-	// Builder is the name of the Builder.
-	Builder string
-
-	// ServiceName is the Cloud project ID of the Buildbucket service.
-	ServiceName string
-	// JobName is the Cloud service module ID of the Buildbucket service.
-	JobName string
-	// InstanceID is the ID of the worker instance that reported the Builder
-	// to metrics.
-	InstanceID string
-}
-
-// Clone returns a deep copy.
-func (b *Builder) Clone() types.Target {
-	clone := *b
-	return &clone
-}
-
-// Type returns the metric type identification.
-func (b *Builder) Type() types.TargetType {
-	return types.TargetType{Name: "buildbucket.Builder", Type: reflect.TypeOf(&Builder{})}
-}
-
-// Hash computes a hash of the Builder object.
-func (b *Builder) Hash() uint64 {
-	h := fnv.New64a()
-	h.Write([]byte(b.Project))
-	h.Write([]byte(b.Bucket))
-	h.Write([]byte(b.Builder))
-	h.Write([]byte(b.ServiceName))
-	h.Write([]byte(b.JobName))
-	h.Write([]byte(b.InstanceID))
-	return h.Sum64()
-}
-
-// PopulateProto populates root labels into the proto for the target fields.
-func (b *Builder) PopulateProto(d *tsmonpb.MetricsCollection) {
-	d.RootLabels = []*tsmonpb.MetricsCollection_RootLabels{
-		target.RootLabel("project", b.Project),
-		target.RootLabel("bucket", b.Bucket),
-		target.RootLabel("builder", b.Builder),
-
-		target.RootLabel("service_name", b.ServiceName),
-		target.RootLabel("job_name", b.JobName),
-		target.RootLabel("instance_id", b.InstanceID),
-	}
-}
 
 // ReportBuilderMetrics computes and reports Builder metrics.
 func ReportBuilderMetrics(ctx context.Context) error {

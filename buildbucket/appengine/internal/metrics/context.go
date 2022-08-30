@@ -17,6 +17,7 @@ package metrics
 import (
 	"context"
 
+	bbmetrics "go.chromium.org/luci/buildbucket/metrics"
 	"go.chromium.org/luci/common/tsmon/target"
 )
 
@@ -38,7 +39,7 @@ func WithBuilder(ctx context.Context, project, bucket, builder string) context.C
 	}
 	info := val.(*serviceInfo)
 
-	return target.Set(ctx, &Builder{
+	return target.Set(ctx, &bbmetrics.BuilderTarget{
 		Project: project,
 		Bucket:  bucket,
 		Builder: builder,
