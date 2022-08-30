@@ -39,4 +39,14 @@ type Env struct {
 	// Deprecated. Do not use in new code. It should only be used during migration
 	// from CQDaemon which doesn't have equivalent -dev environment.
 	IsGAEDev bool
+
+	// GAEInfo is populated if LUCI CV runs on GAE.
+	GAEInfo struct {
+		// CloudProject is the name of the Google Cloud Project LUCI CV runs in.
+		CloudProject string
+		// ServiceName is the name of the micro-service in the GAE app.
+		ServiceName string
+		// InstanceID is the ID of the instance that runs LUCI CV.
+		InstanceID string
+	}
 }

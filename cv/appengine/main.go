@@ -88,6 +88,16 @@ func main() {
 		env := &common.Env{
 			LogicalHostname: srv.Options.CloudProject + ".appspot.com",
 			IsGAEDev:        srv.Options.CloudProject == "luci-change-verifier-dev",
+			GAEInfo: struct {
+				CloudProject string
+				ServiceName  string
+				InstanceID   string
+			}{
+				CloudProject: srv.Options.CloudProject,
+				// TODO(yiwzhang): have a more reliable way to get the GAE service name.
+				ServiceName: srv.Options.TsMonJobName,
+				InstanceID:  srv.Options.Hostname,
+			},
 		}
 		env.HTTPAddressBase = "https://" + env.LogicalHostname
 		if !srv.Options.Prod {

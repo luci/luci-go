@@ -132,6 +132,15 @@ func (t *Test) SetUp() (context.Context, func()) {
 		t.Env = &common.Env{
 			LogicalHostname: "luci-change-verifier" + gaeTopLevelDomain,
 			HTTPAddressBase: "https://luci-change-verifier" + gaeTopLevelDomain,
+			GAEInfo: struct {
+				CloudProject string
+				ServiceName  string
+				InstanceID   string
+			}{
+				CloudProject: "luci-change-verifier",
+				ServiceName:  "test-service",
+				InstanceID:   "test-instance",
+			},
 		}
 	}
 
