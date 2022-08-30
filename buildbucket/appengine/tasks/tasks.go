@@ -92,6 +92,7 @@ func init() {
 		Queue:     "swarming-build-create",
 	})
 
+	// TODO(crbug.com/1356766): remove it after bq-exporter runs in Go.
 	tq.RegisterTaskClass(tq.TaskClass{
 		ID: "export-bigquery",
 		Custom: func(ctx context.Context, m proto.Message) (*tq.CustomPayload, error) {
@@ -196,7 +197,19 @@ func init() {
 			return SyncBuild(ctx, t.GetBuildId(), t.GetGeneration())
 		},
 	})
+
+	tq.RegisterTaskClass(tq.TaskClass{
+		ID:        "export-bigquery-go",
+		Kind:      tq.Transactional,
+		Prototype: (*taskdefs.ExportBigQueryGo)(nil),
+		Queue:     "backend-go-default",
+		Handler: func(ctx context.Context, payload proto.Message) error {
+			t := payload.(*taskdefs.ExportBigQueryGo)
+			return ExportBuild(ctx, t.BuildId)
+		},
+	})
 }
+
 
 // CancelSwarmingTask enqueues a task queue task to cancel the given Swarming
 // task.
@@ -252,14 +265,19 @@ func SyncSwarmingBuildTask(ctx context.Context, task *taskdefs.SyncSwarmingBuild
 	})
 }
 
-// ExportBigQuery enqueues a task queue task to export the given build to
-// BigQuery.
-func ExportBigQuery(ctx context.Context, task *taskdefs.ExportBigQuery) error {
-	if task.GetBuildId() == 0 {
-		return errors.Reason("build_id is required").Err()
+// ExportBigQuery enqueues a task queue task to export the given build to Bq.
+// TODO(crbug.com/1356766): routeToGo will be removed once migration is done.
+func ExportBigQuery(ctx context.Context, buildID int64, routeToGo bool) error {
+	if buildID <= 0 {
+		return errors.Reason("build_id is invalid").Err()
+	}
+	if routeToGo {
+		return tq.AddTask(ctx, &tq.Task{
+			Payload: &taskdefs.ExportBigQueryGo{BuildId: buildID},
+		})
 	}
 	return tq.AddTask(ctx, &tq.Task{
-		Payload: task,
+		Payload:  &taskdefs.ExportBigQuery{BuildId: buildID},
 	})
 }
 

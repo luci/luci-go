@@ -565,9 +565,7 @@ func sendOnBuildCompletion(ctx context.Context, bld *model.Build) error {
 	}); err != nil {
 		return errors.Annotate(err, "failed to enqueue resultDB finalization task: %d", bld.ID).Err()
 	}
-	if err := ExportBigQuery(ctx, &taskdefs.ExportBigQuery{
-		BuildId: bld.ID,
-	}); err != nil {
+	if err := ExportBigQuery(ctx, bld.ID, strings.Contains(bld.ExperimentsString(), buildbucket.ExperimentBqExporterGo)); err != nil {
 		return errors.Annotate(err, "failed to enqueue bigquery export task: %d", bld.ID).Err()
 	}
 	if err := NotifyPubSub(ctx, bld); err != nil {

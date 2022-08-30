@@ -42,7 +42,14 @@ message SyncSwarmingBuildTask {
 }
 
 // A task to export a build to BigQuery.
+// TODO(crbug.com/1356766): remove it after bq-exporter runs in Go.
 message ExportBigQuery {
+  // ID of a build in the datastore. See model.Build.
+  int64 build_id = 1;
+}
+
+// A task to export a build to BigQuery.
+message ExportBigQueryGo {
   // ID of a build in the datastore. See model.Build.
   int64 build_id = 1;
 }

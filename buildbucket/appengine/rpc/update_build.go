@@ -17,8 +17,10 @@ package rpc
 import (
 	"context"
 	"fmt"
+	"strings"
 	"time"
 
+	"go.chromium.org/luci/buildbucket"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/structpb"
@@ -432,11 +434,10 @@ func updateEntities(ctx context.Context, req *pb.UpdateBuildRequest, parentID in
 		case isEndedStatus:
 			b.ClearLease()
 			shouldCancelChildren = true
-			bqTask := &taskdefs.ExportBigQuery{BuildId: b.ID}
 			invTask := &taskdefs.FinalizeResultDB{BuildId: b.ID}
 			err := parallel.FanOutIn(func(tks chan<- func() error) {
 				tks <- func() error { return tasks.NotifyPubSub(ctx, b) }
-				tks <- func() error { return tasks.ExportBigQuery(ctx, bqTask) }
+				tks <- func() error { return tasks.ExportBigQuery(ctx, b.ID, strings.Contains(b.ExperimentsString(), buildbucket.ExperimentBqExporterGo)) }
 				tks <- func() error { return tasks.FinalizeResultDB(ctx, invTask) }
 			})
 			if err != nil {

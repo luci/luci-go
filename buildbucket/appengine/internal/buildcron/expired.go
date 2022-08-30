@@ -16,6 +16,7 @@ package buildcron
 
 import (
 	"context"
+	"strings"
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
@@ -23,6 +24,7 @@ import (
 	"go.chromium.org/luci/common/sync/parallel"
 	"go.chromium.org/luci/gae/service/datastore"
 
+	"go.chromium.org/luci/buildbucket"
 	"go.chromium.org/luci/buildbucket/appengine/internal/metrics"
 	"go.chromium.org/luci/buildbucket/appengine/model"
 	"go.chromium.org/luci/buildbucket/appengine/tasks"
@@ -67,7 +69,7 @@ func expireBuilds(ctx context.Context, bs []*model.Build, mr parallel.MultiRunne
 				b := b
 				workC <- func() error { return tasks.NotifyPubSub(ctx, b) }
 				workC <- func() error {
-					return tasks.ExportBigQuery(ctx, &taskdefs.ExportBigQuery{BuildId: b.ID})
+					return tasks.ExportBigQuery(ctx, b.ID, strings.Contains(b.ExperimentsString(), buildbucket.ExperimentBqExporterGo))
 				}
 				workC <- func() error {
 					return tasks.FinalizeResultDB(ctx, &taskdefs.FinalizeResultDB{BuildId: b.ID})

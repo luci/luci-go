@@ -132,34 +132,32 @@ func TestTasks(t *testing.T) {
 
 		Convey("ExportBigQuery", func() {
 			Convey("invalid", func() {
-				Convey("nil", func() {
-					So(ExportBigQuery(ctx, nil), ShouldErrLike, "build_id is required")
-					So(sch.Tasks(), ShouldBeEmpty)
-				})
-
-				Convey("empty", func() {
-					task := &taskdef.ExportBigQuery{}
-					So(ExportBigQuery(ctx, task), ShouldErrLike, "build_id is required")
-					So(sch.Tasks(), ShouldBeEmpty)
-				})
 
 				Convey("zero", func() {
-					task := &taskdef.ExportBigQuery{
-						BuildId: 0,
-					}
-					So(ExportBigQuery(ctx, task), ShouldErrLike, "build_id is required")
+
+					So(ExportBigQuery(ctx, 0, false), ShouldErrLike, "build_id is invalid")
 					So(sch.Tasks(), ShouldBeEmpty)
 				})
 			})
 
-			Convey("valid", func() {
-				task := &taskdef.ExportBigQuery{
-					BuildId: 1,
-				}
+			Convey("valid - to python", func() {
 				So(datastore.RunInTransaction(ctx, func(ctx context.Context) error {
-					return ExportBigQuery(ctx, task)
+					return ExportBigQuery(ctx, 1, false)
 				}, nil), ShouldBeNil)
 				So(sch.Tasks(), ShouldHaveLength, 1)
+				So(sch.Tasks().Payloads()[0],  ShouldResembleProto, &taskdef.ExportBigQuery{
+					BuildId: 1,
+				})
+			})
+
+			Convey("valid - to Go", func() {
+				So(datastore.RunInTransaction(ctx, func(ctx context.Context) error {
+					return ExportBigQuery(ctx, 1, true)
+				}, nil), ShouldBeNil)
+				So(sch.Tasks(), ShouldHaveLength, 1)
+				So(sch.Tasks().Payloads()[0],  ShouldResembleProto, &taskdef.ExportBigQueryGo{
+					BuildId: 1,
+				})
 			})
 		})
 

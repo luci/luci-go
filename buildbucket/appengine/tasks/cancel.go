@@ -17,6 +17,7 @@ package tasks
 import (
 	"context"
 	"fmt"
+	"strings"
 	"time"
 
 	"golang.org/x/sync/errgroup"
@@ -181,9 +182,7 @@ func Cancel(ctx context.Context, bID int64) (*model.Build, error) {
 				return errors.Annotate(err, "failed to enqueue resultdb finalization task: %d", bld.ID).Err()
 			}
 		}
-		if err := ExportBigQuery(ctx, &taskdefs.ExportBigQuery{
-			BuildId: bld.ID,
-		}); err != nil {
+		if err := ExportBigQuery(ctx, bld.ID, strings.Contains(bld.ExperimentsString(), buildbucket.ExperimentBqExporterGo)); err != nil {
 			return errors.Annotate(err, "failed to enqueue bigquery export task: %d", bld.ID).Err()
 		}
 		if err := NotifyPubSub(ctx, bld); err != nil {
