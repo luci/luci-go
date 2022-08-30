@@ -61,10 +61,10 @@ export class ImageDiffArtifactPage extends MobxLitElement implements BeforeEnter
 
   @computed
   private get diffArtifact$() {
-    if (!this.store.resultDb) {
+    if (!this.store.services.resultDb) {
       return fromPromise(Promise.race([]));
     }
-    return fromPromise(this.store.resultDb.getArtifact({ name: this.diffArtifactName }));
+    return fromPromise(this.store.services.resultDb.getArtifact({ name: this.diffArtifactName }));
   }
   @computed private get diffArtifact() {
     return unwrapObservable(this.diffArtifact$, null);
@@ -72,10 +72,10 @@ export class ImageDiffArtifactPage extends MobxLitElement implements BeforeEnter
 
   @computed
   private get expectedArtifact$() {
-    if (!this.store.resultDb) {
+    if (!this.store.services.resultDb) {
       return fromPromise(Promise.race([]));
     }
-    return fromPromise(this.store.resultDb.getArtifact({ name: this.expectedArtifactName }));
+    return fromPromise(this.store.services.resultDb.getArtifact({ name: this.expectedArtifactName }));
   }
   @computed private get expectedArtifact() {
     return unwrapObservable(this.expectedArtifact$, null);
@@ -83,10 +83,10 @@ export class ImageDiffArtifactPage extends MobxLitElement implements BeforeEnter
 
   @computed
   private get actualArtifact$() {
-    if (!this.store.resultDb) {
+    if (!this.store.services.resultDb) {
       return fromPromise(Promise.race([]));
     }
-    return fromPromise(this.store.resultDb.getArtifact({ name: this.actualArtifactName }));
+    return fromPromise(this.store.services.resultDb.getArtifact({ name: this.actualArtifactName }));
   }
   @computed private get actualArtifact() {
     return unwrapObservable(this.actualArtifact$, null);

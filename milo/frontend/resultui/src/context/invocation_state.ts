@@ -174,13 +174,13 @@ export class InvocationState {
 
   @computed
   private get invocation$(): IPromiseBasedObservable<Invocation> {
-    if (!this.store.resultDb || !this.invocationName) {
+    if (!this.store.services.resultDb || !this.invocationName) {
       // Returns a promise that never resolves when resultDb isn't ready.
       return fromPromise(Promise.race([]));
     }
     const invId = this.invocationId;
     return fromPromise(
-      this.store.resultDb.getInvocation({ name: this.invocationName }).catch((e) => {
+      this.store.services.resultDb.getInvocation({ name: this.invocationName }).catch((e) => {
         throw new QueryInvocationError(invId!, e);
       })
     );
@@ -207,10 +207,13 @@ export class InvocationState {
 
   @computed({ keepAlive: true })
   get testLoader(): TestLoader | null {
-    if (this.isDisposed || !this.invocationName || !this.store.resultDb) {
+    if (this.isDisposed || !this.invocationName || !this.store.services.resultDb) {
       return null;
     }
-    return new TestLoader({ invocations: [this.invocationName], resultLimit: RESULT_LIMIT }, this.store.resultDb);
+    return new TestLoader(
+      { invocations: [this.invocationName], resultLimit: RESULT_LIMIT },
+      this.store.services.resultDb
+    );
   }
 
   @computed get variantGroups() {

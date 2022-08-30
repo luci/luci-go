@@ -29,7 +29,7 @@ describe('BuilderList', () => {
   afterEach(() => timer.restore());
 
   it('should start loading all builders', () => {
-    const store = Store.create({ authState: { identity: ANONYMOUS_IDENTITY } });
+    const store = Store.create({ authState: { value: { identity: ANONYMOUS_IDENTITY } } });
     after(() => destroy(store));
     timer.runAll();
     const loadRemainingPagesStub = sinon.stub(store.searchPage.builderLoader!, 'loadRemainingPages');

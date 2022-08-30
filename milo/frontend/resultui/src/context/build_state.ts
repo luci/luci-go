@@ -156,7 +156,7 @@ export class BuildState {
   private buildQueryTime = this.store.timestamp;
   @computed({ keepAlive: true })
   private get build$(): IPromiseBasedObservable<BuildExt> {
-    if (this.isDisposed || !this.store.buildsService || (!this.buildId && (!this.builderIdParam || !this.buildNum))) {
+    if (this.isDisposed || !this.store.services.builds || (!this.buildId && (!this.builderIdParam || !this.buildNum))) {
       // Returns a promise that never resolves when the dependencies aren't
       // ready.
       return fromPromise(Promise.race([]));
@@ -184,7 +184,7 @@ export class BuildState {
       : { builder: this.builderIdParam, buildNumber: this.buildNum!, fields: BUILD_FIELD_MASK };
 
     return fromPromise(
-      this.store.buildsService
+      this.store.services.builds
         .getBuild(req, cacheOpt)
         .catch((e) => {
           if (e instanceof GrpcError && e.code === RpcCode.NOT_FOUND) {
@@ -213,8 +213,8 @@ export class BuildState {
       // twice.
       .filter((b) => !b.startsWith('commit/git/'))
       .map((b) =>
-        this.store
-          .buildsService!.searchBuilds({
+        this.store.services
+          .builds!.searchBuilds({
             predicate: { tags: [{ key: 'buildset', value: b }] },
             fields: SEARCH_BUILD_FIELD_MASK,
             pageSize: 1000,
@@ -246,7 +246,7 @@ export class BuildState {
   @observable.ref selectedBlamelistPinIndex = 0;
 
   private getQueryBlamelistResIterFn(gitilesCommit: GitilesCommit, multiProjectSupport = false) {
-    if (!this.store.milo || !this.build) {
+    if (!this.store.services.milo || !this.build) {
       // eslint-disable-next-line require-yield
       return async function* () {
         await Promise.race([]);
@@ -257,7 +257,7 @@ export class BuildState {
       builder: this.build.builder,
       multiProjectSupport,
     };
-    const milo = this.store.milo;
+    const milo = this.store.services.milo;
     async function* streamBlamelist() {
       let res: QueryBlamelistResponse;
       do {
@@ -297,10 +297,10 @@ export class BuildState {
       return fromPromise(Promise.race([]));
     }
 
-    if (!this.store.buildersService || !this.build?.builder) {
+    if (!this.store.services.builders || !this.build?.builder) {
       return fromPromise(Promise.race([]));
     }
-    return fromPromise(this.store.buildersService.getBuilder({ id: this.build.builder }));
+    return fromPromise(this.store.services.builders.getBuilder({ id: this.build.builder }));
   }
 
   @computed
@@ -317,7 +317,7 @@ export class BuildState {
 
   @computed({ keepAlive: true })
   private get permittedActions$() {
-    if (this.isDisposed || !this.store.milo || !this.realm) {
+    if (this.isDisposed || !this.store.services.milo || !this.realm) {
       // Returns a promise that never resolves when the dependencies aren't
       // ready.
       return fromPromise(Promise.race([]));
@@ -327,7 +327,7 @@ export class BuildState {
     this.store.timestamp;
 
     return fromPromise(
-      this.store.milo.batchCheckPermissions({
+      this.store.services.milo.batchCheckPermissions({
         realm: this.realm,
         permissions: [CANCEL_BUILD_PERM, ADD_BUILD_PERM],
       })
@@ -342,7 +342,7 @@ export class BuildState {
 
   @computed({ keepAlive: true })
   private get projectCfg$() {
-    if (this.isDisposed || !this.store.milo || !this.build?.builder?.project) {
+    if (this.isDisposed || !this.store.services.milo || !this.build?.builder?.project) {
       // Returns a promise that never resolves when the dependencies aren't
       // ready.
       return fromPromise(Promise.race([]));
@@ -352,7 +352,7 @@ export class BuildState {
     this.store.timestamp;
 
     return fromPromise(
-      this.store.milo.getProjectCfg({
+      this.store.services.milo.getProjectCfg({
         project: this.build?.builder.project,
       })
     );

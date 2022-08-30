@@ -43,10 +43,10 @@ export class RawArtifactPageElement extends MiloBaseElement {
 
   @computed
   private get artifact$() {
-    if (!this.store.resultDb) {
+    if (!this.store.services.resultDb) {
       return fromPromise(Promise.race([]));
     }
-    return fromPromise(this.store.resultDb.getArtifact({ name: constructArtifactName(this.artifactIdent) }));
+    return fromPromise(this.store.services.resultDb.getArtifact({ name: constructArtifactName(this.artifactIdent) }));
   }
 
   @computed

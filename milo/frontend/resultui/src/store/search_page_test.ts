@@ -14,15 +14,16 @@
 
 import { expect } from 'chai';
 import { when } from 'mobx';
-import { destroy, Instance } from 'mobx-state-tree';
+import { destroy, Instance, types } from 'mobx-state-tree';
 import sinon from 'sinon';
 
 import { CacheOption } from '../libs/cached_fn';
-import { PrpcClientExt } from '../libs/prpc_client_ext';
-import { BuildersService, ListBuildersRequest } from '../services/buildbucket';
-import { ListBuildersResponse } from '../services/milo_internal';
-import { QueryTestsRequest, QueryTestsResponse, TestHistoryService } from '../services/weetbix';
+import { ListBuildersRequest } from '../services/buildbucket';
+import { ANONYMOUS_IDENTITY, ListBuildersResponse } from '../services/milo_internal';
+import { QueryTestsRequest, QueryTestsResponse } from '../services/weetbix';
+import { AuthStateStore } from './auth_state';
 import { SearchPage, SearchTarget } from './search_page';
+import { ServicesStore } from './services';
 
 const listBuilderResponses: { [pageToken: string]: ListBuildersResponse } = {
   page1: {
@@ -73,34 +74,38 @@ const listBuilderResponses: { [pageToken: string]: ListBuildersResponse } = {
   },
 };
 
+const TestStore = types.model('TestStore', {
+  authState: types.optional(AuthStateStore, { id: 'AuthStateStore', value: { identity: ANONYMOUS_IDENTITY } }),
+  services: types.optional(ServicesStore, { id: 'ServicesStore', authState: 'AuthStateStore' }),
+  searchPage: types.optional(SearchPage, { services: 'ServicesStore' }),
+});
+
 describe('SearchPage', () => {
   describe('search builders', () => {
-    let searchPage: Instance<typeof SearchPage>;
+    let testStore: Instance<typeof TestStore>;
     let listBuildersStub: sinon.SinonStub<
       [req: ListBuildersRequest, cacheOpt?: CacheOption | undefined],
       Promise<ListBuildersResponse>
     >;
 
     beforeEach((done) => {
-      const buildersService = new BuildersService(new PrpcClientExt({}, () => ''));
-      listBuildersStub = sinon.stub(buildersService, 'listBuilders');
+      testStore = TestStore.create();
+      listBuildersStub = sinon.stub(testStore.services.builders!, 'listBuilders');
 
       listBuildersStub.callsFake(async ({ pageToken }) => listBuilderResponses[pageToken || 'page1']);
-      searchPage = SearchPage.create();
-      searchPage.setDependencies(buildersService, null);
-      searchPage.builderLoader?.loadRemainingPages();
+      testStore.searchPage.builderLoader?.loadRemainingPages();
 
-      when(() => Boolean(searchPage.builderLoader?.loadedAll), done);
+      when(() => Boolean(testStore.searchPage.builderLoader?.loadedAll), done);
     });
 
-    afterEach(() => destroy(searchPage));
+    afterEach(() => destroy(testStore));
 
     it('should load builders correctly', () => {
       expect(listBuildersStub.callCount).to.eq(3);
       expect(listBuildersStub.getCall(0).args[0]).to.deep.eq({ pageSize: 1000, pageToken: undefined });
       expect(listBuildersStub.getCall(1).args[0]).to.deep.eq({ pageSize: 1000, pageToken: 'page2' });
       expect(listBuildersStub.getCall(2).args[0]).to.deep.eq({ pageSize: 1000, pageToken: 'page3' });
-      expect(searchPage.builders).to.deep.eq([
+      expect(testStore.searchPage.builders).to.deep.eq([
         ['project1/bucket1/builder1', { project: 'project1', bucket: 'bucket1', builder: 'builder1' }],
         ['project1/bucket1/builder2', { project: 'project1', bucket: 'bucket1', builder: 'builder2' }],
         ['project1/bucket2/builder1', { project: 'project1', bucket: 'bucket2', builder: 'builder1' }],
@@ -113,7 +118,7 @@ describe('SearchPage', () => {
     });
 
     it('should group builders correctly', () => {
-      expect(searchPage.groupedBuilders).to.deep.equal({
+      expect(testStore.searchPage.groupedBuilders).to.deep.equal({
         'project1/bucket1': [
           { project: 'project1', bucket: 'bucket1', builder: 'builder1' },
           { project: 'project1', bucket: 'bucket1', builder: 'builder2' },
@@ -134,9 +139,9 @@ describe('SearchPage', () => {
     });
 
     it('should filter builders correctly', () => {
-      searchPage.setSearchQuery('ject1/bucket2/bui');
+      testStore.searchPage.setSearchQuery('ject1/bucket2/bui');
 
-      expect(searchPage.groupedBuilders).to.deep.equal({
+      expect(testStore.searchPage.groupedBuilders).to.deep.equal({
         'project1/bucket2': [
           { project: 'project1', bucket: 'bucket2', builder: 'builder1' },
           { project: 'project1', bucket: 'bucket2', builder: 'builder2' },
@@ -146,35 +151,32 @@ describe('SearchPage', () => {
   });
 
   describe('search tests', () => {
-    let searchPage: Instance<typeof SearchPage>;
+    let testStore: Instance<typeof TestStore>;
     let queryTestsStub: sinon.SinonStub<
       [req: QueryTestsRequest, cacheOpt?: CacheOption | undefined],
       Promise<QueryTestsResponse>
     >;
 
     beforeEach(() => {
-      const testHistoryService = new TestHistoryService(new PrpcClientExt({}, () => ''));
-      queryTestsStub = sinon.stub(testHistoryService, 'queryTests');
-
-      searchPage = SearchPage.create();
-      searchPage.setDependencies(null, testHistoryService);
+      testStore = TestStore.create();
+      queryTestsStub = sinon.stub(testStore.services.testHistory!, 'queryTests');
     });
 
-    afterEach(() => destroy(searchPage));
+    afterEach(() => destroy(testStore));
 
     it('e2e', async () => {
-      searchPage.setSearchTarget(SearchTarget.Tests);
-      searchPage.setTestProject('testProject');
-      searchPage.setSearchQuery('substr');
+      testStore.searchPage.setSearchTarget(SearchTarget.Tests);
+      testStore.searchPage.setTestProject('testProject');
+      testStore.searchPage.setSearchQuery('substr');
       expect(queryTestsStub.callCount).to.eq(0);
 
       // The subsequent page loads should be handled correctly.
       queryTestsStub.onCall(0).resolves({ testIds: ['testId1substr1', 'testId1substr2'], nextPageToken: 'page2' });
       queryTestsStub.onCall(1).resolves({ testIds: ['testId1substr3', 'testId1substr4'], nextPageToken: 'page3' });
       queryTestsStub.onCall(2).resolves({ testIds: ['testId1substr3', 'testId1substr4'] });
-      await searchPage.testLoader?.loadNextPage();
-      await searchPage.testLoader?.loadNextPage();
-      await searchPage.testLoader?.loadNextPage();
+      await testStore.searchPage.testLoader?.loadNextPage();
+      await testStore.searchPage.testLoader?.loadNextPage();
+      await testStore.searchPage.testLoader?.loadNextPage();
       expect(queryTestsStub.callCount).to.eq(3);
       expect(queryTestsStub.getCall(0).args[0]).to.deep.eq({
         project: 'testProject',
@@ -197,8 +199,8 @@ describe('SearchPage', () => {
       queryTestsStub.onCall(3).callsFake(async () => {
         return { testIds: ['testId1substr1'] };
       });
-      searchPage.setSearchQuery('substr1');
-      await searchPage.testLoader?.loadNextPage();
+      testStore.searchPage.setSearchQuery('substr1');
+      await testStore.searchPage.testLoader?.loadNextPage();
 
       expect(queryTestsStub.callCount).to.eq(4);
       expect(queryTestsStub.getCall(3).args[0]).to.deep.eq({

@@ -67,7 +67,6 @@ export class ResultEntryElement extends MobxLitElement {
   }
 
   @observable.ref private shouldRenderContent = false;
-
   @observable.ref private tagExpanded = false;
 
   @computed
@@ -98,12 +97,13 @@ export class ResultEntryElement extends MobxLitElement {
 
   @computed
   private get resultArtifacts$(): IPromiseBasedObservable<ListArtifactsResponse> {
-    if (!this.store.resultDb) {
+    const resultdb = this.store.services.resultDb;
+    if (!resultdb) {
       // Returns a promise that never resolves when resultDb isn't ready.
       return fromPromise(Promise.race([]));
     }
     // TODO(weiweilin): handle pagination.
-    return fromPromise(this.store.resultDb.listArtifacts({ parent: this.testResult.name }));
+    return fromPromise(resultdb.listArtifacts({ parent: this.testResult.name }));
   }
 
   @computed private get resultArtifacts() {
@@ -111,12 +111,13 @@ export class ResultEntryElement extends MobxLitElement {
   }
 
   @computed private get invArtifacts$() {
-    if (!this.store.resultDb) {
+    const resultdb = this.store.services.resultDb;
+    if (!resultdb) {
       // Returns a promise that never resolves when resultDb isn't ready.
       return fromPromise(Promise.race([]));
     }
     // TODO(weiweilin): handle pagination.
-    return fromPromise(this.store.resultDb.listArtifacts({ parent: 'invocations/' + this.parentInvId }));
+    return fromPromise(resultdb.listArtifacts({ parent: 'invocations/' + this.parentInvId }));
   }
 
   @computed private get invArtifacts() {
@@ -311,9 +312,9 @@ export class ResultEntryElement extends MobxLitElement {
   }
 
   protected render = reportRenderError(this, () => {
-    let duration: string = "No duration";
-    let compactDuration: string = "N/A";
-    let durationUnits: string = "";
+    let duration = 'No duration';
+    let compactDuration = 'N/A';
+    let durationUnits = '';
     if (this.duration) {
       duration = displayDuration(this.duration);
       [compactDuration, durationUnits] = displayCompactDuration(this.duration);
@@ -321,9 +322,7 @@ export class ResultEntryElement extends MobxLitElement {
     return html`
       <milo-expandable-entry .expanded=${this.expanded} .onToggle=${(expanded: boolean) => (this.expanded = expanded)}>
         <span id="header" slot="header">
-          <div class="duration ${durationUnits}" title=${duration}>
-            ${compactDuration}
-          </div>
+          <div class="duration ${durationUnits}" title=${duration}>${compactDuration}</div>
           run #${this.id}
           <span class=${this.testResult.expected ? 'expected' : 'unexpected'}>
             ${this.testResult.expected ? 'expectedly' : 'unexpectedly'}

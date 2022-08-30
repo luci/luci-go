@@ -90,7 +90,7 @@ export class TestVariantEntryElement extends MobxLitElement implements RenderPla
 
   @computed
   private get clustersByResultId$() {
-    if (!this.invState.project || !this.store.clustersService) {
+    if (!this.invState.project || !this.store.services.clusters) {
       return fromPromise(Promise.race([]));
     }
 
@@ -105,7 +105,7 @@ export class TestVariantEntryElement extends MobxLitElement implements RenderPla
     }
 
     return fromPromise(
-      this.store.clustersService
+      this.store.services.clusters
         .cluster(
           {
             project: this.invState.project,

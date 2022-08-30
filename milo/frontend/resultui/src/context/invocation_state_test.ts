@@ -67,8 +67,10 @@ describe('InvocationState', () => {
 
     const store = {
       selectedTabId: '',
-      resultDb: {
-        queryTestVariants: queryTestVariantsStub as typeof ResultDb.prototype.queryTestVariants,
+      services: {
+        resultDb: {
+          queryTestVariants: queryTestVariantsStub as typeof ResultDb.prototype.queryTestVariants,
+        },
       },
     } as StoreInstance;
 

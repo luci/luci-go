@@ -53,7 +53,7 @@ export class LoginPageElement extends MobxLitElement implements BeforeEnterObser
   connectedCallback() {
     super.connectedCallback();
     when(
-      () => ![undefined, ANONYMOUS_IDENTITY].includes(this.store.userIdentity),
+      () => ![undefined, ANONYMOUS_IDENTITY].includes(this.store.authState.userIdentity),
       () => Router.go(this.redirectUri)
     );
   }

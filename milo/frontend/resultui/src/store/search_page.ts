@@ -18,8 +18,8 @@ import { addDisposer, types } from 'mobx-state-tree';
 import { keepAlive } from 'mobx-utils';
 
 import { PageLoader } from '../libs/page_loader';
-import { BuilderID, BuildersService } from '../services/buildbucket';
-import { TestHistoryService } from '../services/weetbix';
+import { BuilderID } from '../services/buildbucket';
+import { ServicesStore } from './services';
 
 export const enum SearchTarget {
   Builders,
@@ -28,18 +28,16 @@ export const enum SearchTarget {
 
 export const SearchPage = types
   .model('SearchPage', {
+    services: types.safeReference(ServicesStore),
+
     searchTarget: types.frozen<SearchTarget>(SearchTarget.Builders),
     searchQuery: '',
 
     testProject: 'chromium',
   })
-  .volatile(() => ({
-    testHistoryService: null as TestHistoryService | null,
-    buildersService: null as BuildersService | null,
-  }))
   .views((self) => ({
     get builderLoader() {
-      const buildersService = self.buildersService;
+      const buildersService = self.services?.builders;
       if (!buildersService) {
         return null;
       }
@@ -66,7 +64,7 @@ export const SearchPage = types
       return groupBy(this.filteredBuilders, (b) => `${b.project}/${b.bucket}`);
     },
     get testLoader() {
-      const testHistoryService = self.testHistoryService;
+      const testHistoryService = self.services?.testHistory;
       const project = self.testProject;
       const testIdSubstring = self.searchQuery;
       if (!testHistoryService || !project || !testIdSubstring) {
@@ -84,9 +82,8 @@ export const SearchPage = types
     },
   }))
   .actions((self) => ({
-    setDependencies(buildersService: BuildersService | null, testHistoryService: TestHistoryService | null) {
-      self.buildersService = buildersService;
-      self.testHistoryService = testHistoryService;
+    setDependencies(deps: Pick<typeof self, 'services'>) {
+      Object.assign(self, deps);
     },
     setSearchTarget(newSearchTarget: SearchTarget) {
       self.searchTarget = newSearchTarget;

@@ -77,14 +77,16 @@ describe('Test Count Indicator', () => {
     queryTestVariantsStub.onCall(0).resolves({ testVariants: [variant1, variant2, variant3], nextPageToken: 'next' });
     queryTestVariantsStub.onCall(1).resolves({ testVariants: [variant4, variant5] });
 
-    const appState = {
+    const store = {
       selectedTabId: '',
-      resultDb: {
-        queryTestVariants: queryTestVariantsStub as typeof ResultDb.prototype.queryTestVariants,
+      services: {
+        resultDb: {
+          queryTestVariants: queryTestVariantsStub as typeof ResultDb.prototype.queryTestVariants,
+        },
       },
     } as StoreInstance;
 
-    const invocationState = new InvocationState(appState);
+    const invocationState = new InvocationState(store);
     invocationState.invocationId = 'invocation-id';
     after(() => invocationState.dispose());
 

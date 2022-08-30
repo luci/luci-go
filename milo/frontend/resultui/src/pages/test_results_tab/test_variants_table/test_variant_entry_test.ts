@@ -92,9 +92,9 @@ describe('test_variant_entry_test', () => {
   afterEach(fixtureCleanup);
 
   it('should only query the necessary clusters', async () => {
-    const store = Store.create({ authState: { identity: ANONYMOUS_IDENTITY } });
+    const store = Store.create({ authState: { value: { identity: ANONYMOUS_IDENTITY } } });
     after(() => destroy(store));
-    const clusterStub = sinon.stub(store.clustersService!, 'cluster');
+    const clusterStub = sinon.stub(store.services.clusters!, 'cluster');
     clusterStub.onCall(0).resolves({
       clusteringVersion,
       clusteredTestResults: [
@@ -161,9 +161,9 @@ describe('test_variant_entry_test', () => {
   });
 
   it('should work properly if failed to query clusters from weetbix', async () => {
-    const store = Store.create({ authState: { identity: ANONYMOUS_IDENTITY } });
+    const store = Store.create({ authState: { value: { identity: ANONYMOUS_IDENTITY } } });
     after(() => destroy(store));
-    const clusterStub = sinon.stub(store.clustersService!, 'cluster');
+    const clusterStub = sinon.stub(store.services.clusters!, 'cluster');
     clusterStub.onCall(0).rejects(new GrpcError(RpcCode.PERMISSION_DENIED, 'not allowed'));
 
     const tv: TestVariant = {

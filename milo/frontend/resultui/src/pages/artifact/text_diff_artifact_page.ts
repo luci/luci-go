@@ -48,10 +48,10 @@ export class TextDiffArtifactPageElement extends MobxLitElement {
 
   @computed
   private get artifact$() {
-    if (!this.store.resultDb) {
+    if (!this.store.services.resultDb) {
       return fromPromise(Promise.race([]));
     }
-    return fromPromise(this.store.resultDb.getArtifact({ name: constructArtifactName(this.artifactIdent) }));
+    return fromPromise(this.store.services.resultDb.getArtifact({ name: constructArtifactName(this.artifactIdent) }));
   }
   @computed private get artifact() {
     return unwrapObservable(this.artifact$, null);
@@ -59,7 +59,7 @@ export class TextDiffArtifactPageElement extends MobxLitElement {
 
   @computed
   private get content$() {
-    if (!this.store.resultDb || !this.artifact) {
+    if (!this.store.services.resultDb || !this.artifact) {
       return fromPromise(Promise.race([]));
     }
     return fromPromise(

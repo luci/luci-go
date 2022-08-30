@@ -43,12 +43,12 @@ export class BuildersPageRowElement extends MiloBaseElement {
   }
 
   @computed private get recentBuilds$(): IPromiseBasedObservable<readonly Build[]> {
-    if (!this.store?.milo) {
+    if (!this.store?.services.milo) {
       return fromPromise(Promise.race([]));
     }
 
     return fromPromise(
-      this.store.milo
+      this.store.services.milo
         .queryRecentBuilds({
           builder: this.builder,
           pageSize: this.numOfBuilds,
@@ -62,12 +62,12 @@ export class BuildersPageRowElement extends MiloBaseElement {
   }
 
   @computed private get builderStats$(): IPromiseBasedObservable<BuilderStats> {
-    if (!this.store?.milo) {
+    if (!this.store?.services.milo) {
       return fromPromise(Promise.race([]));
     }
 
     return fromPromise(
-      this.store.milo.queryBuilderStats({
+      this.store.services.milo.queryBuilderStats({
         builder: this.builder,
       })
     );

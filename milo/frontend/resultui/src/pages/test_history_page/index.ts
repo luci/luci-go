@@ -88,9 +88,9 @@ export class TestHistoryPageElement extends MiloBaseElement implements BeforeEnt
     // Set up TestHistoryPageState.
     this.addDisposer(
       reaction(
-        () => [this.realm, this.testId, this.store?.testHistoryService],
+        () => [this.realm, this.testId, this.store?.services.testHistory],
         () => {
-          if (!this.realm || !this.testId || !this.store.testHistoryService || !this.store.resultDb) {
+          if (!this.realm || !this.testId || !this.store.services.testHistory || !this.store.services.resultDb) {
             return;
           }
 
@@ -100,8 +100,8 @@ export class TestHistoryPageElement extends MiloBaseElement implements BeforeEnt
           this.pageState = new TestHistoryPageState(
             this.realm,
             this.testId,
-            this.store.testHistoryService,
-            this.store.resultDb
+            this.store.services.testHistory,
+            this.store.services.resultDb
           );
           this.pageState.filterText = filterText;
           // Emulate @property() update.

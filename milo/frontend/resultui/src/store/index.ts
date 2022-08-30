@@ -12,25 +12,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { PrpcClientOptions, RpcCode } from '@chopsui/prpc-client';
 import stableStringify from 'fast-json-stable-stringify';
-import { computed, reaction, untracked } from 'mobx';
-import { addDisposer, Instance, isAlive, SnapshotIn, SnapshotOut, types } from 'mobx-state-tree';
-import { keepAlive } from 'mobx-utils';
+import { Instance, SnapshotIn, SnapshotOut, types } from 'mobx-state-tree';
 import { createContext, useContext } from 'react';
 
-import { MAY_REQUIRE_SIGNIN } from '../common_tags';
 import { createContextLink } from '../libs/context';
-import { PrpcClientExt } from '../libs/prpc_client_ext';
-import { attachTags } from '../libs/tag';
-import { BuilderID, BuildersService, BuildsService } from '../services/buildbucket';
-import { AuthState, MiloInternal } from '../services/milo_internal';
-import { ResultDb } from '../services/resultdb';
-import { ClustersService, TestHistoryService } from '../services/weetbix';
+import { BuilderID } from '../services/buildbucket';
+import { AuthStateStore } from './auth_state';
 import { SearchPage } from './search_page';
+import { ServicesStore } from './services';
 import { UserConfig } from './user_config';
-
-const MAY_REQUIRE_SIGNIN_ERROR_CODE = [RpcCode.NOT_FOUND, RpcCode.PERMISSION_DENIED, RpcCode.UNAUTHENTICATED];
 
 export const Store = types
   .model('Store', {
@@ -48,9 +39,12 @@ export const Store = types
      */
     hasSettingsDialog: 0,
     showSettingsDialog: false,
-    authState: types.maybe(types.frozen<AuthState>()),
     banners: types.array(types.frozen<unknown>()),
+
+    authState: types.optional(AuthStateStore, {}),
     userConfig: types.optional(UserConfig, {}),
+    services: types.optional(ServicesStore, {}),
+
     searchPage: types.optional(SearchPage, {}),
   })
   .volatile(() => {
@@ -69,68 +63,7 @@ export const Store = types
       redirectSw: undefined as ServiceWorkerRegistration | null | undefined,
     };
   })
-  .views((self) => {
-    function makeClient(opts: PrpcClientOptions) {
-      // Don't track the access token so services won't be refreshed when the
-      // access token is updated.
-      return new PrpcClientExt(
-        opts,
-        () => untracked(() => (isAlive(self) && self.authState?.accessToken) || ''),
-        (e) => {
-          if (MAY_REQUIRE_SIGNIN_ERROR_CODE.includes(e.code)) {
-            attachTags(e, MAY_REQUIRE_SIGNIN);
-          }
-          throw e;
-        }
-      );
-    }
-
-    return {
-      get userIdentity() {
-        return self.authState?.identity;
-      },
-      get resultDb() {
-        if (!this.userIdentity) {
-          return null;
-        }
-        return new ResultDb(makeClient({ host: CONFIGS.RESULT_DB.HOST }));
-      },
-      get testHistoryService() {
-        if (!this.userIdentity) {
-          return null;
-        }
-        return new TestHistoryService(makeClient({ host: CONFIGS.WEETBIX.HOST }));
-      },
-      get milo() {
-        if (!this.userIdentity) {
-          return null;
-        }
-        return new MiloInternal(makeClient({ host: '' }));
-      },
-      get buildsService() {
-        if (!this.userIdentity) {
-          return null;
-        }
-        return new BuildsService(makeClient({ host: CONFIGS.BUILDBUCKET.HOST }));
-      },
-      get buildersService() {
-        if (!this.userIdentity) {
-          return null;
-        }
-        return new BuildersService(makeClient({ host: CONFIGS.BUILDBUCKET.HOST }));
-      },
-      get clustersService() {
-        if (!this.userIdentity) {
-          return null;
-        }
-        return new ClustersService(makeClient({ host: CONFIGS.WEETBIX.HOST }));
-      },
-    };
-  })
   .actions((self) => ({
-    setAuthState(authState: AuthState | null) {
-      self.authState = authState || undefined;
-    },
     setRedirectSw(redirectSw: ServiceWorkerRegistration | null) {
       self.redirectSw = redirectSw;
     },
@@ -156,24 +89,8 @@ export const Store = types
       self.showSettingsDialog = show;
     },
     afterCreate() {
-      addDisposer(
-        self,
-        reaction(
-          () => [self.buildersService, self.testHistoryService] as const,
-          ([buildersService, testHistoryService]) => {
-            self.searchPage.setDependencies(buildersService || null, testHistoryService || null);
-          },
-          { fireImmediately: true }
-        )
-      );
-
-      // These computed properties contains internal caches. Keep them alive.
-      addDisposer(self, keepAlive(computed(() => self.resultDb)));
-      addDisposer(self, keepAlive(computed(() => self.testHistoryService)));
-      addDisposer(self, keepAlive(computed(() => self.milo)));
-      addDisposer(self, keepAlive(computed(() => self.buildsService)));
-      addDisposer(self, keepAlive(computed(() => self.buildersService)));
-      addDisposer(self, keepAlive(computed(() => self.clustersService)));
+      self.services.setDependencies({ authState: self.authState });
+      self.searchPage.setDependencies({ services: self.services });
     },
   }));
 

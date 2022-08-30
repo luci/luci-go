@@ -42,7 +42,7 @@ export const refreshAuthChannel = new BroadcastChannel('refresh-auth-channel');
 
 function redirectToLogin(err: ErrorEvent, ele: PageLayoutElement) {
   if (
-    ele.store.authState?.identity === ANONYMOUS_IDENTITY &&
+    ele.store.authState.value?.identity === ANONYMOUS_IDENTITY &&
     hasTags(err.error, MAY_REQUIRE_SIGNIN) &&
     !hasTags(err.error, OPTIONAL_RESOURCE)
   ) {
@@ -104,7 +104,7 @@ export class PageLayoutElement extends MiloBaseElement implements BeforeEnterObs
 
     let firstUpdate = true;
     getAuthStateCache()
-      .then((authState) => this.store.setAuthState(authState))
+      .then((authState) => this.store.authState.setValue(authState))
       .finally(() => {
         if (!this.isConnected) {
           return;
@@ -146,15 +146,16 @@ export class PageLayoutElement extends MiloBaseElement implements BeforeEnterObs
   private async scheduleAuthStateUpdate(forceUpdate = false) {
     const scheduleId = {};
     this.lastScheduleId = scheduleId;
+    const authState = this.store.authState.value;
 
     let validDuration = 0;
-    if (!forceUpdate && this.store.authState) {
-      if (!this.store.authState.accessTokenExpiry) {
+    if (!forceUpdate && authState) {
+      if (!authState.accessTokenExpiry) {
         return;
       }
       // Refresh the access token 10s earlier to prevent the token from
       // expiring before the new token is returned.
-      validDuration = this.store.authState.accessTokenExpiry * 1000 - Date.now() - 10000;
+      validDuration = authState.accessTokenExpiry * 1000 - Date.now() - 10000;
     }
 
     await timeout(validDuration);
@@ -171,7 +172,7 @@ export class PageLayoutElement extends MiloBaseElement implements BeforeEnterObs
     }
 
     setAuthStateCache(newAuthState);
-    this.store.setAuthState(newAuthState);
+    this.store.authState.setValue(newAuthState);
   }
 
   protected render() {
@@ -212,11 +213,11 @@ export class PageLayoutElement extends MiloBaseElement implements BeforeEnterObs
           >settings</mwc-icon
         >
         <div id="signin">
-          ${this.store.authState
+          ${this.store.authState.value
             ? html`<milo-signin
-                .identity=${this.store.authState.identity}
-                .email=${this.store.authState.email}
-                .picture=${this.store.authState.picture}
+                .identity=${this.store.authState.value.identity}
+                .email=${this.store.authState.value.email}
+                .picture=${this.store.authState.value.picture}
               ></milo-signin>`
             : ''}
         </div>

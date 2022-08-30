@@ -32,8 +32,8 @@ describe('BuildState', () => {
 
     beforeEach(() => {
       const builderId = { project: 'proj', bucket: 'bucket', builder: 'builder' };
-      store = Store.create({ authState: { identity: ANONYMOUS_IDENTITY } });
-      getBuildStub = sinon.stub(store.buildsService!, 'getBuild');
+      store = Store.create({ authState: { value: { identity: ANONYMOUS_IDENTITY } } });
+      getBuildStub = sinon.stub(store.services.builds!, 'getBuild');
       getBuildStub.onCall(0).resolves({ number: 1, id: '2', builder: builderId } as Build);
       getBuildStub.onCall(1).resolves({ number: 1, id: '2', builder: builderId } as Build);
 
@@ -43,8 +43,8 @@ describe('BuildState', () => {
     });
 
     afterEach(() => {
-      destroy(store);
       buildState.dispose();
+      destroy(store);
     });
 
     it('should accept cache when first querying build', async () => {
@@ -72,13 +72,12 @@ describe('BuildState', () => {
 
   it('ignore builderIdParam when buildNumOrIdParam is a buildId', async () => {
     const builderId = { project: 'proj', bucket: 'bucket', builder: 'builder' };
-    const store = Store.create({ authState: { identity: ANONYMOUS_IDENTITY } });
-    after(() => destroy(store));
+    const store = Store.create({ authState: { value: { identity: ANONYMOUS_IDENTITY } } });
 
-    const getBuildStub = sinon.stub(store.buildsService!, 'getBuild');
-    const getBuilderStub = sinon.stub(store.buildersService!, 'getBuilder');
-    const getProjectCfgStub = sinon.stub(store.milo!, 'getProjectCfg');
-    const batchCheckPermissionsStub = sinon.stub(store.milo!, 'batchCheckPermissions');
+    const getBuildStub = sinon.stub(store.services.builds!, 'getBuild');
+    const getBuilderStub = sinon.stub(store.services.builders!, 'getBuilder');
+    const getProjectCfgStub = sinon.stub(store.services.milo!, 'getProjectCfg');
+    const batchCheckPermissionsStub = sinon.stub(store.services.milo!, 'batchCheckPermissions');
     getBuildStub.onCall(0).resolves({ number: 1, id: '123', builder: builderId } as Build);
     getBuilderStub.onCall(0).resolves({ id: builderId, config: {} });
     getProjectCfgStub.onCall(0).resolves({});
@@ -90,6 +89,7 @@ describe('BuildState', () => {
 
     after(() => {
       buildState.dispose();
+      destroy(store);
     });
 
     const disposer = autorun(() => {

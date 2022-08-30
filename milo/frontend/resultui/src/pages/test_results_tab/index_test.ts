@@ -73,20 +73,21 @@ class ContextProvider extends LitElement {
 
 describe('Test Results Tab', () => {
   it('should load the first page of test variants when connected', async () => {
-    const store = Store.create({ authState: { identity: ANONYMOUS_IDENTITY } });
-    after(() => destroy(store));
-
-    const queryTestVariantsStub = sinon.stub(store.resultDb!, 'queryTestVariants');
+    const store = Store.create({ authState: { value: { identity: ANONYMOUS_IDENTITY } } });
+    const queryTestVariantsStub = sinon.stub(store.services.resultDb!, 'queryTestVariants');
     queryTestVariantsStub.onCall(0).resolves({ testVariants: [variant1, variant2, variant3], nextPageToken: 'next' });
     queryTestVariantsStub.onCall(1).resolves({ testVariants: [variant4, variant5] });
-    const getInvocationStub = sinon.stub(store.resultDb!, 'getInvocation');
+    const getInvocationStub = sinon.stub(store.services.resultDb!, 'getInvocation');
     getInvocationStub.returns(Promise.race([]));
 
     const invocationState = new InvocationState(store);
     invocationState.invocationId = 'invocation-id';
-    after(() => invocationState.dispose());
 
-    after(fixtureCleanup);
+    after(() => {
+      fixtureCleanup();
+      invocationState.dispose();
+      destroy(store);
+    });
     const provider = await fixture<ContextProvider>(html`
       <milo-test-context-provider .store=${store} .invocationState=${invocationState}>
         <milo-test-results-tab></milo-test-results-tab>
@@ -114,16 +115,16 @@ describe('Test Results Tab', () => {
     let tab: TestResultsTabElement;
 
     beforeEach(async () => {
-      store = Store.create({ authState: { identity: ANONYMOUS_IDENTITY } });
+      store = Store.create({ authState: { value: { identity: ANONYMOUS_IDENTITY } } });
 
-      queryTestVariantsStub = sinon.stub(store.resultDb!, 'queryTestVariants');
+      queryTestVariantsStub = sinon.stub(store.services.resultDb!, 'queryTestVariants');
       queryTestVariantsStub.onCall(0).resolves({ testVariants: [variant1], nextPageToken: 'next0' });
       queryTestVariantsStub.onCall(1).resolves({ testVariants: [variant2], nextPageToken: 'next1' });
       queryTestVariantsStub.onCall(2).resolves({ testVariants: [variant3], nextPageToken: 'next2' });
       queryTestVariantsStub.onCall(3).resolves({ testVariants: [variant4], nextPageToken: 'next3' });
       queryTestVariantsStub.onCall(4).resolves({ testVariants: [variant5] });
 
-      const getInvocationStub = sinon.stub(store.resultDb!, 'getInvocation');
+      const getInvocationStub = sinon.stub(store.services.resultDb!, 'getInvocation');
       getInvocationStub.returns(Promise.race([]));
 
       invocationState = new InvocationState(store);
@@ -138,11 +139,11 @@ describe('Test Results Tab', () => {
     });
 
     afterEach(() => {
-      destroy(store);
+      fixtureCleanup();
       invocationState.dispose();
+      destroy(store);
       const url = `${window.location.protocol}//${window.location.host}${window.location.pathname}`;
       window.history.replaceState(null, '', url);
-      fixtureCleanup();
     });
 
     it('should trigger automatic loading when visiting the tab for the first time', async () => {

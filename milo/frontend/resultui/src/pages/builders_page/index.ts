@@ -51,7 +51,7 @@ export class BuildersPageElement extends MiloBaseElement implements BeforeEnterO
   @observable.ref private isLoading = false;
 
   @computed private get listBuildersResIter(): AsyncIterableIterator<ListBuildersResponse> {
-    if (!this.store.milo) {
+    if (!this.store.services.milo) {
       return (async function* () {
         yield Promise.race([]);
       })();
@@ -61,7 +61,7 @@ export class BuildersPageElement extends MiloBaseElement implements BeforeEnterO
       project: this.project,
       group: this.group,
     };
-    const milo = this.store.milo;
+    const milo = this.store.services.milo;
 
     async function* streamListBuildersRes() {
       let res: ListBuildersResponse;

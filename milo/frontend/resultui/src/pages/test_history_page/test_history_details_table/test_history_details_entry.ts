@@ -64,11 +64,11 @@ export class TestHistoryDetailsEntryElement extends MobxLitElement implements Re
 
   @computed
   private get testVariant$() {
-    if (!this.store.resultDb) {
+    if (!this.store.services.resultDb) {
       return fromPromise(Promise.race([]));
     }
     const verdict = this.verdictBundle.verdict;
-    const testVariant = this.store.resultDb
+    const testVariant = this.store.services.resultDb
       .batchGetTestVariants({
         invocation: 'invocations/' + verdict.invocationId,
         testVariants: [

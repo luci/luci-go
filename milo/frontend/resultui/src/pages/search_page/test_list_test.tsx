@@ -30,7 +30,7 @@ describe('TestList', () => {
   afterEach(() => timer.restore());
 
   it('should load the first page of test', () => {
-    const store = Store.create({ authState: { identity: ANONYMOUS_IDENTITY } });
+    const store = Store.create({ authState: { value: { identity: ANONYMOUS_IDENTITY } } });
     store.searchPage.setSearchQuery('test-id');
     store.searchPage.setSearchTarget(SearchTarget.Tests);
     after(() => destroy(store));
