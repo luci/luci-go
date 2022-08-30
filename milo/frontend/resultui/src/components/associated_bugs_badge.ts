@@ -108,6 +108,14 @@ export class WeetbixClustersBadgeElement extends MiloBaseElement {
         overflow: hidden;
         text-overflow: ellipsis;
         vertical-align: sub;
+        color: white;
+        padding: 0.25em 0.4em;
+        font-size: 75%;
+        font-weight: 700;
+        line-height: 13px;
+        text-align: center;
+        white-space: nowrap;
+        border-radius: 0.25rem;
       }
     `,
   ];
