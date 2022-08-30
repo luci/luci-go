@@ -92,7 +92,7 @@ func TestProjects(t *testing.T) {
 				authState.IdentityPermissions = removePermission(authState.IdentityPermissions, perms.PermGetConfig)
 
 				response, err := server.GetConfig(ctx, request)
-				So(err, ShouldBeRPCPermissionDenied, "caller does not have permission weetbix.config.get")
+				So(err, ShouldBeRPCPermissionDenied, "caller does not have permission analysis.config.get")
 				So(response, ShouldBeNil)
 			})
 			Convey("Valid request", func() {

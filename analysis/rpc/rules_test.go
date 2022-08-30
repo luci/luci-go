@@ -148,7 +148,7 @@ func TestRules(t *testing.T) {
 				}
 
 				rule, err := srv.Get(ctx, request)
-				So(err, ShouldBeRPCPermissionDenied, "caller does not have permission weetbix.rules.get")
+				So(err, ShouldBeRPCPermissionDenied, "caller does not have permission analysis.rules.get")
 				So(rule, ShouldBeNil)
 			})
 			Convey("Rule exists", func() {
@@ -279,7 +279,7 @@ func TestRules(t *testing.T) {
 				authState.IdentityPermissions = removePermission(authState.IdentityPermissions, perms.PermListRules)
 
 				response, err := srv.List(ctx, request)
-				So(err, ShouldBeRPCPermissionDenied, "caller does not have permission weetbix.rules.list")
+				So(err, ShouldBeRPCPermissionDenied, "caller does not have permission analysis.rules.list")
 				So(response, ShouldBeNil)
 			})
 			Convey("Non-Empty", func() {
@@ -379,7 +379,7 @@ func TestRules(t *testing.T) {
 				authState.IdentityPermissions = removePermission(authState.IdentityPermissions, perms.PermUpdateRule)
 
 				rule, err := srv.Update(ctx, request)
-				So(err, ShouldBeRPCPermissionDenied, "caller does not have permission weetbix.rules.update")
+				So(err, ShouldBeRPCPermissionDenied, "caller does not have permission analysis.rules.update")
 				So(rule, ShouldBeNil)
 			})
 			Convey("Success", func() {
@@ -568,7 +568,7 @@ func TestRules(t *testing.T) {
 				authState.IdentityPermissions = removePermission(authState.IdentityPermissions, perms.PermCreateRule)
 
 				rule, err := srv.Create(ctx, request)
-				So(err, ShouldBeRPCPermissionDenied, "caller does not have permission weetbix.rules.create")
+				So(err, ShouldBeRPCPermissionDenied, "caller does not have permission analysis.rules.create")
 				So(rule, ShouldBeNil)
 			})
 			Convey("Success", func() {

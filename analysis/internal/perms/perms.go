@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package perms defines permissions used to control access to Weetbix
+// Package perms defines permissions used to control access to LUCI Analysis
 // resources, and related methods.
 package perms
 
@@ -27,13 +27,14 @@ import (
 // Permissions that should usually be granted to all users that can view
 // a project.
 var (
-	// Grants access to reading individual Weetbix rules in a LUCI project,
-	// except for the rule definition (i.e. 'reason LIKE "%criteria%"'.).
+	// Grants access to reading individual LUCI Analysis rules in a LUCI
+	// project, except for the rule definition (i.e.
+	// 'reason LIKE "%criteria%"'.).
 	//
 	// This also permits the user to see the identity of the configured
 	// issue tracker for a project. (This is available via the URL
 	// provided for bugs on a rule and via a separate config RPC.)
-	PermGetRule = realms.RegisterPermission("weetbix.rules.get")
+	PermGetRule = realms.RegisterPermission("analysis.rules.get")
 
 	// Grants access to listing all rules in a LUCI project,
 	// except for the rule definition (i.e. 'reason LIKE "%criteria%"'.).
@@ -41,7 +42,7 @@ var (
 	// This also permits the user to see the identity of the configured
 	// issue tracker for a project. (This is available via the URL
 	// provided for bugs on a rule.)
-	PermListRules = realms.RegisterPermission("weetbix.rules.list")
+	PermListRules = realms.RegisterPermission("analysis.rules.list")
 
 	// Grants permission to get a cluster in a project.
 	// This encompasses the cluster ID and aggregated impact for
@@ -51,10 +52,10 @@ var (
 	// having "resultdb.testResults.list" permission in ResultDB
 	// for the realm of the test result.
 	//
-	// This permission also allows the user to obtain Weetbix's
+	// This permission also allows the user to obtain LUCI Analysis's
 	// progress reclustering failures to reflect new rules, configuration
 	// and algorithms.
-	PermGetCluster = realms.RegisterPermission("weetbix.clusters.get")
+	PermGetCluster = realms.RegisterPermission("analysis.clusters.get")
 
 	// Grants permission to list all clusters in a project.
 	// This encompasses the cluster identifier and aggregated impact for
@@ -62,49 +63,50 @@ var (
 	// More detailed cluster information, including cluster definition
 	// and failures is contingent on being able to see failures in the
 	// cluster.
-	PermListClusters = realms.RegisterPermission("weetbix.clusters.list")
+	PermListClusters = realms.RegisterPermission("analysis.clusters.list")
 
 	// PermGetClustersByFailure allows the user to obtain the cluster
 	// identit(ies) matching a given failure.
-	PermGetClustersByFailure = realms.RegisterPermission("weetbix.clusters.getByFailure")
+	PermGetClustersByFailure = realms.RegisterPermission("analysis.clusters.getByFailure")
 
 	// Grants permission to get project configuration, such
 	// as the configured monorail issue tracker. Controls the
-	// visibility of the project in the Weetbix main page.
+	// visibility of the project in the LUCI Analysis main page.
 	//
-	// Can be assumed this is also granted wherever a project has
-	// a weetbix.rules.* or weetbix.clusters.* CRUD permission;
-	// many parts of Weetbix rely on Weetbix configuration and
+	// Can be assumed this is also granted wherever the user has
+	// been granted one of the analysis.rules.* or analysis.clusters.*
+	// create/update/list/get permissions for a project;
+	// many parts of LUCI Analysis rely on LUCI Analysis configuration and
 	// there is no need to perform gratuitous access checks.
-	PermGetConfig = realms.RegisterPermission("weetbix.config.get")
+	PermGetConfig = realms.RegisterPermission("analysis.config.get")
 )
 
 // The following permission grants view access to the rule definition,
 // which could be sensitive if test names or failure reasons reveal
 // sensitive product or hardware data.
 var (
-	// Grants access to reading the rule definition of Weetbix rules.
-	PermGetRuleDefinition = realms.RegisterPermission("weetbix.rules.getDefinition")
+	// Grants access to reading the rule definition of LUCI Analysis rules.
+	PermGetRuleDefinition = realms.RegisterPermission("analysis.rules.getDefinition")
 )
 
 // Mutating permissions.
 var (
 	// Grants permission to create a rule.
 	// Should be granted only to trusted project contributors.
-	PermCreateRule = realms.RegisterPermission("weetbix.rules.create")
+	PermCreateRule = realms.RegisterPermission("analysis.rules.create")
 
 	// Grants permission to update all rules in a project.
 	// Permission to update a rule also implies permission to get the rule
 	// and view the rule definition as the modified rule is returned in the
 	// response to the UpdateRule RPC.
 	// Should be granted only to trusted project contributors.
-	PermUpdateRule = realms.RegisterPermission("weetbix.rules.update")
+	PermUpdateRule = realms.RegisterPermission("analysis.rules.update")
 )
 
 // Permissions used to control costs.
 var (
 	// Grants permission to perform expensive queries (that hit BigQuery).
-	PermExpensiveClusterQueries = realms.RegisterPermission("weetbix.clusters.expensiveQueries")
+	PermExpensiveClusterQueries = realms.RegisterPermission("analysis.clusters.expensiveQueries")
 )
 
 // Permissions used to control access to test results.

@@ -170,14 +170,14 @@ func TestClusters(t *testing.T) {
 				authState.IdentityPermissions = removePermission(authState.IdentityPermissions, perms.PermGetClustersByFailure)
 
 				response, err := server.Cluster(ctx, request)
-				So(err, ShouldBeRPCPermissionDenied, "caller does not have permission weetbix.clusters.getByFailure")
+				So(err, ShouldBeRPCPermissionDenied, "caller does not have permission analysis.clusters.getByFailure")
 				So(response, ShouldBeNil)
 			})
 			Convey("Not authorised to get rule", func() {
 				authState.IdentityPermissions = removePermission(authState.IdentityPermissions, perms.PermGetRule)
 
 				response, err := server.Cluster(ctx, request)
-				So(err, ShouldBeRPCPermissionDenied, "caller does not have permission weetbix.rules.get")
+				So(err, ShouldBeRPCPermissionDenied, "caller does not have permission analysis.rules.get")
 				So(response, ShouldBeNil)
 			})
 			Convey("With a valid request", func() {
@@ -450,14 +450,14 @@ func TestClusters(t *testing.T) {
 				authState.IdentityPermissions = removePermission(authState.IdentityPermissions, perms.PermGetCluster)
 
 				response, err := server.BatchGet(ctx, request)
-				So(err, ShouldBeRPCPermissionDenied, "caller does not have permission weetbix.clusters.get")
+				So(err, ShouldBeRPCPermissionDenied, "caller does not have permission analysis.clusters.get")
 				So(response, ShouldBeNil)
 			})
 			Convey("Not authorised to perform expensive queries", func() {
 				authState.IdentityPermissions = removePermission(authState.IdentityPermissions, perms.PermExpensiveClusterQueries)
 
 				response, err := server.BatchGet(ctx, request)
-				So(err, ShouldBeRPCPermissionDenied, "caller does not have permission weetbix.clusters.expensiveQueries")
+				So(err, ShouldBeRPCPermissionDenied, "caller does not have permission analysis.clusters.expensiveQueries")
 				So(response, ShouldBeNil)
 			})
 			Convey("With a valid request", func() {
@@ -670,21 +670,21 @@ func TestClusters(t *testing.T) {
 				authState.IdentityPermissions = removePermission(authState.IdentityPermissions, perms.PermListClusters)
 
 				response, err := server.QueryClusterSummaries(ctx, request)
-				So(err, ShouldBeRPCPermissionDenied, "caller does not have permission weetbix.clusters.list")
+				So(err, ShouldBeRPCPermissionDenied, "caller does not have permission analysis.clusters.list")
 				So(response, ShouldBeNil)
 			})
 			Convey("Not authorised to perform expensive queries", func() {
 				authState.IdentityPermissions = removePermission(authState.IdentityPermissions, perms.PermExpensiveClusterQueries)
 
 				response, err := server.QueryClusterSummaries(ctx, request)
-				So(err, ShouldBeRPCPermissionDenied, "caller does not have permission weetbix.clusters.expensiveQueries")
+				So(err, ShouldBeRPCPermissionDenied, "caller does not have permission analysis.clusters.expensiveQueries")
 				So(response, ShouldBeNil)
 			})
 			Convey("Not authorised to get rules", func() {
 				authState.IdentityPermissions = removePermission(authState.IdentityPermissions, perms.PermGetRule)
 
 				response, err := server.QueryClusterSummaries(ctx, request)
-				So(err, ShouldBeRPCPermissionDenied, "caller does not have permission weetbix.rules.get")
+				So(err, ShouldBeRPCPermissionDenied, "caller does not have permission analysis.rules.get")
 				So(response, ShouldBeNil)
 			})
 			Convey("Not authorised to list test results in any realm", func() {
@@ -846,7 +846,7 @@ func TestClusters(t *testing.T) {
 				authState.IdentityPermissions = removePermission(authState.IdentityPermissions, perms.PermGetCluster)
 
 				response, err := server.GetReclusteringProgress(ctx, request)
-				So(err, ShouldBeRPCPermissionDenied, "caller does not have permission weetbix.clusters.get")
+				So(err, ShouldBeRPCPermissionDenied, "caller does not have permission analysis.clusters.get")
 				So(response, ShouldBeNil)
 			})
 			Convey("With a valid request", func() {
@@ -936,14 +936,14 @@ func TestClusters(t *testing.T) {
 				authState.IdentityPermissions = removePermission(authState.IdentityPermissions, perms.PermGetCluster)
 
 				response, err := server.QueryClusterFailures(ctx, request)
-				So(err, ShouldBeRPCPermissionDenied, "caller does not have permission weetbix.clusters.get")
+				So(err, ShouldBeRPCPermissionDenied, "caller does not have permission analysis.clusters.get")
 				So(response, ShouldBeNil)
 			})
 			Convey("Not authorised to perform expensive queries", func() {
 				authState.IdentityPermissions = removePermission(authState.IdentityPermissions, perms.PermExpensiveClusterQueries)
 
 				response, err := server.QueryClusterFailures(ctx, request)
-				So(err, ShouldBeRPCPermissionDenied, "caller does not have permission weetbix.clusters.expensiveQueries")
+				So(err, ShouldBeRPCPermissionDenied, "caller does not have permission analysis.clusters.expensiveQueries")
 				So(response, ShouldBeNil)
 			})
 			Convey("Not authorised to list test results in any realm", func() {
