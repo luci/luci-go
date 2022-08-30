@@ -20,6 +20,7 @@ import (
 	"fmt"
 
 	"go.chromium.org/luci/auth/identity"
+	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/config/server/cfgmodule"
@@ -41,6 +42,7 @@ import (
 	_ "go.chromium.org/luci/server/tq/txn/datastore"
 
 	"go.chromium.org/luci/buildbucket/appengine/internal/buildcron"
+	"go.chromium.org/luci/buildbucket/appengine/internal/clients"
 	"go.chromium.org/luci/buildbucket/appengine/internal/config"
 	"go.chromium.org/luci/buildbucket/appengine/internal/metrics"
 	"go.chromium.org/luci/buildbucket/appengine/rpc"
@@ -63,6 +65,13 @@ func main() {
 	server.Main(nil, mods, func(srv *server.Server) error {
 		o := srv.Options
 		srv.Context = metrics.WithServiceInfo(srv.Context, o.TsMonServiceName, o.TsMonJobName, o.Hostname)
+
+		// Install a global bigquery client.
+		bqClient, err := clients.NewBqClient(srv.Context, o.CloudProject)
+		if err != nil {
+			return errors.Annotate(err, "failed to initiate the global Bigquery client").Err()
+		}
+		srv.Context = clients.WithBqClient(srv.Context, bqClient)
 
 		srv.PRPC.Authenticator = &auth.Authenticator{
 			Methods: []auth.Method{

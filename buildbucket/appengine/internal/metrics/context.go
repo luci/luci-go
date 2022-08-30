@@ -20,7 +20,7 @@ import (
 	"go.chromium.org/luci/common/tsmon/target"
 )
 
-var serviceInfoCtxKey struct{}
+var serviceInfoCtxKey = "holds the service information"
 
 type serviceInfo struct {
 	service  string
