@@ -50,7 +50,7 @@ import { LoadTestVariantsError } from '../../models/test_loader';
 import { NOT_FOUND_URL, router } from '../../routes';
 import { BuilderID, BuildStatus, TEST_PRESENTATION_KEY } from '../../services/buildbucket';
 import { consumeStore, StoreInstance } from '../../store';
-import { UserConfig } from '../../store/user_config';
+import { UserConfig, UserConfigInstance } from '../../store/user_config';
 import colorClasses from '../../styles/color_classes.css';
 import commonStyle from '../../styles/common_style.css';
 
@@ -151,7 +151,7 @@ export class BuildPageElement extends MiloBaseElement implements BeforeEnterObse
   @provideInvocationState({ global: true })
   invocationState!: InvocationState;
 
-  @observable private uncommittedConfigs = UserConfig.create({});
+  @observable private uncommittedConfigs!: UserConfigInstance;
 
   // The page is visited via a short link.
   // The page will be redirected to the long link after the build is fetched.
@@ -218,6 +218,8 @@ export class BuildPageElement extends MiloBaseElement implements BeforeEnterObse
 
   connectedCallback() {
     super.connectedCallback();
+    this.uncommittedConfigs = UserConfig.create({});
+
     if (!this.isShortLink && !window.location.href.includes('javascript:')) {
       trackEvent(GA_CATEGORIES.NEW_BUILD_PAGE, GA_ACTIONS.PAGE_VISITED, window.location.href);
       trackEvent(GA_CATEGORIES.PROJECT_BUILD_PAGE, GA_ACTIONS.VISITED_NEW, this.builderIdParam!.project);
@@ -435,9 +437,6 @@ export class BuildPageElement extends MiloBaseElement implements BeforeEnterObse
           if (event.detail.action === 'save') {
             applySnapshot(this.store.userConfig, getSnapshot(this.uncommittedConfigs));
           }
-          // Reset uncommitted configs.
-          destroy(this.uncommittedConfigs);
-          this.uncommittedConfigs = UserConfig.create({});
           this.store.setShowSettingsDialog(false);
         }}
       >

@@ -191,7 +191,7 @@ export class TestHistoryDetailsTableElement extends MiloBaseElement {
                       }
 
                       this.tableHeaderEle?.style.removeProperty('--thdt-columns');
-                      this.store.userConfig.tests.columnWidths[col] = this.columnWidths[i] + delta;
+                      this.store.userConfig.tests.setColumWidth(col, this.columnWidths[i] + delta);
                     }
               }
               .sortByColumn=${this.sortByColumnFn(col)}
