@@ -16,8 +16,12 @@ ui-test:
 	cd frontend/ui; \
 	npm run jest
 
-deploy:
+build-frontend:
+	cd frontend/ui; \
+	npm ci && npm run build
+
+deploy: build-frontend
 	$(GAE_PY) upload -A chops-gofindit-dev
 
-deploy-prod:
+deploy-prod: build-frontend
 	$(GAE_PY) upload -A chops-gofindit
