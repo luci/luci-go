@@ -1024,7 +1024,7 @@ func buildFromScheduleRequest(ctx context.Context, req *pb.ScheduleBuildRequest,
 	}
 
 	setExecutable(req, cfg, b)
-	setInfra(req, cfg, b, globalCfg)
+	setInfra(req, cfg, b, globalCfg) // Requires setExecutable.
 	setInput(ctx, req, cfg, b)
 	setTags(req, b)
 	setTimeouts(req, cfg, b)
@@ -1045,6 +1045,15 @@ func setInfraAgent(build *pb.Build, globalCfg *pb.SettingsCfg) error {
 	setInfraAgentInputData(build, globalCfg)
 	if err := setInfraAgentSource(build, globalCfg); err != nil {
 		return err
+	}
+	// TODO(crbug.com/1345722) In the future, bbagent will entirely manage the
+	// user executable payload, which means Buildbucket should not specify the
+	// payload path.
+	// We should change the purpose field and use symbolic paths in the input
+	// like "$exe" and "$agentUtils".
+	// Reference: https://chromium-review.googlesource.com/c/infra/luci/luci-go/+/3792330/comments/734e18f7_b7f4726d
+	build.Infra.Buildbucket.Agent.Purposes = map[string]pb.BuildInfra_Buildbucket_Agent_Purpose{
+		"kitchen-checkout": pb.BuildInfra_Buildbucket_Agent_PURPOSE_EXE_PAYLOAD,
 	}
 	return nil
 }
@@ -1095,6 +1104,22 @@ func setInfraAgentInputData(build *pb.Build, globalCfg *pb.SettingsCfg) {
 			Package: p.PackageName,
 			Version: extractCipdVersion(p, build),
 		})
+	}
+
+	if build.Exe.GetCipdPackage() != "" || build.Exe.GetCipdVersion() != "" {
+		inputData["kitchen-checkout"] = &pb.InputDataRef{
+			DataType: &pb.InputDataRef_Cipd{
+				Cipd: &pb.InputDataRef_CIPD{
+					Server: cipdServer,
+					Specs: []*pb.InputDataRef_CIPD_PkgSpec{
+						{
+							Package: build.Exe.GetCipdPackage(),
+							Version: build.Exe.GetCipdVersion(),
+						},
+					},
+				},
+			},
+		}
 	}
 }
 

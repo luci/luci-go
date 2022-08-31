@@ -47,8 +47,10 @@ func (t *testBBClient) UpdateBuild(ctx context.Context, in *bbpb.UpdateBuildRequ
 
 var successResult = &cipdOut{
 	Result: map[string][]*cipdPkg{
-		"path_a": {{Package: "pkg_a", InstanceID: "instance_a"}},
-		"path_b": {{Package: "pkg_b", InstanceID: "instance_b"}}},
+		"path_a":        {{Package: "pkg_a", InstanceID: "instance_a"}},
+		"path_b":        {{Package: "pkg_b", InstanceID: "instance_b"}},
+		kitchenCheckout: {{Package: "package", InstanceID: "instance_k"}},
+	},
 }
 
 var testCase string
@@ -215,6 +217,7 @@ func TestDownloadCipdPackages(t *testing.T) {
 }
 
 func TestInstallCipdPackages(t *testing.T) {
+	t.Parallel()
 	resultsFilePath = filepath.Join(t.TempDir(), "cipd_ensure_results.json")
 	Convey("installCipdPackages", t, func() {
 		ctx := memory.Use(context.Background())
@@ -282,6 +285,55 @@ func TestInstallCipdPackages(t *testing.T) {
 			err := installCipdPackages(ctx, build, ".")
 			So(build.Infra.Buildbucket.Agent.Output.ResolvedData, ShouldBeNil)
 			So(err, ShouldErrLike, "Failed to run cipd ensure command")
+		})
+
+		Convey("handle kitchenCheckout", func() {
+			Convey("kitchenCheckout not in agent input", func() {
+				testCase = "success"
+				build.Exe = &bbpb.Executable{
+					CipdPackage: "package",
+					CipdVersion: "version",
+				}
+				cwd, err := os.Getwd()
+				So(err, ShouldBeNil)
+				So(installCipdPackages(ctx, build, cwd), ShouldBeNil)
+				So(build.Infra.Buildbucket.Agent.Purposes[kitchenCheckout], ShouldEqual, bbpb.BuildInfra_Buildbucket_Agent_PURPOSE_EXE_PAYLOAD)
+				So(build.Infra.Buildbucket.Agent.Output.ResolvedData[kitchenCheckout], ShouldResembleProto, &bbpb.ResolvedDataRef{
+					DataType: &bbpb.ResolvedDataRef_Cipd{
+						Cipd: &bbpb.ResolvedDataRef_CIPD{
+							Specs: []*bbpb.ResolvedDataRef_CIPD_PkgSpec{{Package: successResult.Result[kitchenCheckout][0].Package, Version: successResult.Result[kitchenCheckout][0].InstanceID}},
+						},
+					},
+				})
+			})
+			Convey("kitchenCheckout in agent input", func() {
+				testCase = "success"
+				build.Exe = &bbpb.Executable{
+					CipdPackage: "package",
+					CipdVersion: "version",
+				}
+				build.Infra.Buildbucket.Agent.Input.Data[kitchenCheckout] = &bbpb.InputDataRef{
+					DataType: &bbpb.InputDataRef_Cipd{
+						Cipd: &bbpb.InputDataRef_CIPD{
+							Specs: []*bbpb.InputDataRef_CIPD_PkgSpec{{Package: "package", Version: "version"}},
+						},
+					},
+				}
+				build.Infra.Buildbucket.Agent.Purposes = map[string]bbpb.BuildInfra_Buildbucket_Agent_Purpose{
+					kitchenCheckout: bbpb.BuildInfra_Buildbucket_Agent_PURPOSE_EXE_PAYLOAD,
+				}
+				cwd, err := os.Getwd()
+				So(err, ShouldBeNil)
+				So(installCipdPackages(ctx, build, cwd), ShouldBeNil)
+				So(build.Infra.Buildbucket.Agent.Purposes[kitchenCheckout], ShouldEqual, bbpb.BuildInfra_Buildbucket_Agent_PURPOSE_EXE_PAYLOAD)
+				So(build.Infra.Buildbucket.Agent.Output.ResolvedData[kitchenCheckout], ShouldResembleProto, &bbpb.ResolvedDataRef{
+					DataType: &bbpb.ResolvedDataRef_Cipd{
+						Cipd: &bbpb.ResolvedDataRef_CIPD{
+							Specs: []*bbpb.ResolvedDataRef_CIPD_PkgSpec{{Package: successResult.Result[kitchenCheckout][0].Package, Version: successResult.Result[kitchenCheckout][0].InstanceID}},
+						},
+					},
+				})
+			})
 		})
 	})
 }

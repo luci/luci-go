@@ -183,22 +183,32 @@ func installCipdPackages(ctx context.Context, build *bbpb.Build, workDir string)
 		fmt.Fprintf(&ensureFileBuilder, "%s %s\n", ver.PackageName, ver.InstanceID)
 	}
 
+	payloadPath := kitchenCheckout
+	for dir, purpose := range build.Infra.Buildbucket.Agent.GetPurposes() {
+		if purpose == bbpb.BuildInfra_Buildbucket_Agent_PURPOSE_EXE_PAYLOAD {
+			payloadPath = dir
+		}
+	}
+	payloadPathInAgentInput := false
 	for dir, pkgs := range inputData {
 		if pkgs.GetCipd() == nil {
 			continue
+		}
+		if dir == payloadPath {
+			payloadPathInAgentInput = true
 		}
 		fmt.Fprintf(&ensureFileBuilder, "@Subdir %s\n", dir)
 		for _, spec := range pkgs.GetCipd().Specs {
 			fmt.Fprintf(&ensureFileBuilder, "%s %s\n", spec.Package, spec.Version)
 		}
 	}
-	if build.Exe != nil {
-		fmt.Fprintf(&ensureFileBuilder, "@Subdir %s\n", kitchenCheckout)
+	if !payloadPathInAgentInput && build.Exe != nil {
+		fmt.Fprintf(&ensureFileBuilder, "@Subdir %s\n", payloadPath)
 		fmt.Fprintf(&ensureFileBuilder, "%s %s\n", build.Exe.CipdPackage, build.Exe.CipdVersion)
 		if build.Infra.Buildbucket.Agent.Purposes == nil {
 			build.Infra.Buildbucket.Agent.Purposes = make(map[string]bbpb.BuildInfra_Buildbucket_Agent_Purpose, 1)
 		}
-		build.Infra.Buildbucket.Agent.Purposes[kitchenCheckout] = bbpb.BuildInfra_Buildbucket_Agent_PURPOSE_EXE_PAYLOAD
+		build.Infra.Buildbucket.Agent.Purposes[payloadPath] = bbpb.BuildInfra_Buildbucket_Agent_PURPOSE_EXE_PAYLOAD
 	}
 
 	// TODO(crbug.com/1297809): Remove this redundant log once this feature development is done.

@@ -49,6 +49,7 @@ import (
 	"go.chromium.org/luci/buildbucket"
 	"go.chromium.org/luci/buildbucket/cmd/bbagent/bbinput"
 	bbpb "go.chromium.org/luci/buildbucket/proto"
+	"go.chromium.org/luci/buildbucket/protoutil"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
@@ -206,9 +207,9 @@ func parseHostBuildID(ctx context.Context, hostname *string, buildID *int64) (cl
 	check(ctx, errors.Annotate(err, "failed to fetch build").Err())
 	input := &bbpb.BBAgentArgs{
 		Build:                  build,
-		CacheDir:               build.Infra.Bbagent.CacheDir,
+		CacheDir:               protoutil.CacheDir(build),
 		KnownPublicGerritHosts: build.Infra.Buildbucket.KnownPublicGerritHosts,
-		PayloadPath:            build.Infra.Bbagent.PayloadPath,
+		PayloadPath:            protoutil.ExePayloadPath(build),
 	}
 	return clientInput{bbclient, input}, secrets
 }
