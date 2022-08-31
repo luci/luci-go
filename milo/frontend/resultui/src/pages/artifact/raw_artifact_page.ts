@@ -21,7 +21,7 @@ import '../../components/status_bar';
 import { MiloBaseElement } from '../../components/milo_base';
 import { consumer } from '../../libs/context';
 import { reportError, reportRenderError } from '../../libs/error_handler';
-import { unwrapObservable } from '../../libs/unwrap_observable';
+import { unwrapObservable } from '../../libs/milo_mobx_utils';
 import { ArtifactIdentifier, constructArtifactName } from '../../services/resultdb';
 import { consumeStore, StoreInstance } from '../../store';
 import commonStyle from '../../styles/common_style.css';

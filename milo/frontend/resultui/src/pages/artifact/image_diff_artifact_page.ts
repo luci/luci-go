@@ -23,7 +23,7 @@ import '../../components/status_bar';
 import '../../components/dot_spinner';
 import { consumer } from '../../libs/context';
 import { reportRenderError } from '../../libs/error_handler';
-import { unwrapObservable } from '../../libs/unwrap_observable';
+import { unwrapObservable } from '../../libs/milo_mobx_utils';
 import { NOT_FOUND_URL } from '../../routes';
 import { ArtifactIdentifier, constructArtifactName } from '../../services/resultdb';
 import { consumeStore, StoreInstance } from '../../store';

@@ -18,7 +18,6 @@ import { repeat } from 'lit-html/directives/repeat';
 import { makeObservable, observable } from 'mobx';
 
 import '../../components/dot_spinner';
-import { BuildState, consumeBuildState } from '../../context/build_state';
 import { GA_ACTIONS, GA_CATEGORIES, trackEvent } from '../../libs/analytics_utils';
 import { getURLPathForBuild, getURLPathForBuilder } from '../../libs/build_utils';
 import { BUILD_STATUS_CLASS_MAP, BUILD_STATUS_DISPLAY_MAP } from '../../libs/constants';
@@ -38,10 +37,6 @@ export class RelatedBuildsTabElement extends MobxLitElement {
   @consumeStore()
   store!: StoreInstance;
 
-  @observable.ref
-  @consumeBuildState()
-  buildState!: BuildState;
-
   constructor() {
     super();
     makeObservable(this);
@@ -54,10 +49,10 @@ export class RelatedBuildsTabElement extends MobxLitElement {
   }
 
   protected render = reportRenderError(this, () => {
-    if (this.buildState.relatedBuilds === null) {
+    if (this.store.buildPage.relatedBuilds === null) {
       return this.renderLoadingBar();
     }
-    if (this.buildState.relatedBuilds.length === 0) {
+    if (this.store.buildPage.relatedBuilds.length === 0) {
       return this.renderNoRelatedBuilds();
     }
     return html` ${this.renderBuildsetInfo()} ${this.renderRelatedBuildsTable()} `;
@@ -72,19 +67,19 @@ export class RelatedBuildsTabElement extends MobxLitElement {
   }
 
   private renderBuildsetInfo() {
-    if (this.buildState.build === null) {
+    if (this.store.buildPage.build === null) {
       return html``;
     }
     return html`
       <h3>Other builds with the same buildset</h3>
       <ul>
-        ${repeat(this.buildState.build.buildSets, (item, _) => html`<li>${item}</li>`)}
+        ${repeat(this.store.buildPage.build.buildSets, (item, _) => html`<li>${item}</li>`)}
       </ul>
     `;
   }
 
   private renderRelatedBuildsTable() {
-    if (this.buildState.relatedBuilds === null) {
+    if (this.store.buildPage.relatedBuilds === null) {
       return html``;
     }
     return html`
@@ -100,7 +95,7 @@ export class RelatedBuildsTabElement extends MobxLitElement {
           <th>Duration</th>
           <th>Summary</th>
         </tr>
-        ${repeat(this.buildState.relatedBuilds, (relatedBuild, _) => this.renderRelatedBuildRow(relatedBuild))}
+        ${repeat(this.store.buildPage.relatedBuilds, (relatedBuild, _) => this.renderRelatedBuildRow(relatedBuild))}
       </table>
     `;
   }

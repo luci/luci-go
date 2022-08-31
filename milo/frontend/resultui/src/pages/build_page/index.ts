@@ -26,7 +26,6 @@ import '../test_results_tab/count_indicator';
 import { OPTIONAL_RESOURCE } from '../../common_tags';
 import { MiloBaseElement } from '../../components/milo_base';
 import { TabDef } from '../../components/tab_bar';
-import { BuildState, GetBuildError, provideBuildState } from '../../context/build_state';
 import { InvocationState, provideInvocationState, QueryInvocationError } from '../../context/invocation_state';
 import { GA_ACTIONS, GA_CATEGORIES, trackEvent } from '../../libs/analytics_utils';
 import { getLegacyURLPathForBuild, getURLPathForBuilder, getURLPathForProject } from '../../libs/build_utils';
@@ -50,6 +49,7 @@ import { LoadTestVariantsError } from '../../models/test_loader';
 import { NOT_FOUND_URL, router } from '../../routes';
 import { BuilderID, BuildStatus, TEST_PRESENTATION_KEY } from '../../services/buildbucket';
 import { consumeStore, StoreInstance } from '../../store';
+import { GetBuildError } from '../../store/build_page';
 import { UserConfig, UserConfigInstance } from '../../store/user_config';
 import colorClasses from '../../styles/color_classes.css';
 import commonStyle from '../../styles/common_style.css';
@@ -78,26 +78,26 @@ function retryWithoutComputedInvId(err: ErrorEvent, ele: BuildPageElement) {
   let recovered = false;
   if (err.error instanceof LoadTestVariantsError) {
     // Ignore request using the old invocation ID.
-    if (!err.error.req.invocations.includes(`invocations/${ele.buildState.invocationId}`)) {
+    if (!err.error.req.invocations.includes(`invocations/${ele.store.buildPage.invocationId}`)) {
       recovered = true;
     }
 
     // Old builds don't support computed invocation ID.
     // Disable it and try again.
-    if (ele.buildState.useComputedInvId && !err.error.req.pageToken) {
-      ele.buildState.useComputedInvId = false;
+    if (ele.store.buildPage.useComputedInvId && !err.error.req.pageToken) {
+      ele.store.buildPage.useComputedInvId = false;
       recovered = true;
     }
   } else if (err.error instanceof QueryInvocationError) {
     // Ignore request using the old invocation ID.
-    if (err.error.invId !== ele.buildState.invocationId) {
+    if (err.error.invId !== ele.store.buildPage.invocationId) {
       recovered = true;
     }
 
     // Old builds don't support computed invocation ID.
     // Disable it and try again.
-    if (ele.buildState.useComputedInvId) {
-      ele.buildState.useComputedInvId = false;
+    if (ele.store.buildPage.useComputedInvId) {
+      ele.store.buildPage.useComputedInvId = false;
       recovered = true;
     }
   }
@@ -144,10 +144,6 @@ export class BuildPageElement extends MiloBaseElement implements BeforeEnterObse
   store!: StoreInstance;
 
   @observable.ref
-  @provideBuildState({ global: true })
-  buildState!: BuildState;
-
-  @observable.ref
   @provideInvocationState({ global: true })
   invocationState!: InvocationState;
 
@@ -163,7 +159,7 @@ export class BuildPageElement extends MiloBaseElement implements BeforeEnterObse
   @observable.ref private buildNumOrIdParam = '';
 
   @computed private get buildNumOrId() {
-    return this.buildState.build?.buildNumOrId || this.buildNumOrIdParam;
+    return this.store.buildPage.build?.buildNumOrId || this.buildNumOrIdParam;
   }
 
   @computed private get legacyUrl() {
@@ -204,14 +200,14 @@ export class BuildPageElement extends MiloBaseElement implements BeforeEnterObse
   }
 
   @computed private get faviconUrl() {
-    if (this.buildState.build) {
-      return `/static/common/favicon/${STATUS_FAVICON_MAP[this.buildState.build.status]}-32.png`;
+    if (this.store.buildPage.build) {
+      return `/static/common/favicon/${STATUS_FAVICON_MAP[this.store.buildPage.build.status]}-32.png`;
     }
     return '/static/common/favicon/milo-32.png';
   }
 
   @computed private get documentTitle() {
-    const status = this.buildState.build?.status;
+    const status = this.store.buildPage.build?.status;
     const statusDisplay = status ? BUILD_STATUS_DISPLAY_MAP[status] : 'loading';
     return `${statusDisplay} - ${this.builderIdParam?.builder || ''} ${this.buildNumOrId}`;
   }
@@ -229,20 +225,13 @@ export class BuildPageElement extends MiloBaseElement implements BeforeEnterObse
 
     this.addDisposer(
       reaction(
-        () => [this.store],
-        () => {
-          this.buildState?.dispose();
-          this.buildState = new BuildState(this.store);
-          this.buildState.builderIdParam = this.builderIdParam;
-          this.buildState.buildNumOrIdParam = this.buildNumOrIdParam;
-
-          // Emulate @property() update.
-          this.updated(new Map([['buildState', this.buildState]]));
+        () => [this.store, this.builderIdParam, this.buildNumOrIdParam] as const,
+        ([store, builderIdParam, builderNumOrIdParam]) => {
+          store.buildPage.setParams(builderIdParam!, builderNumOrIdParam);
         },
         { fireImmediately: true }
       )
     );
-    this.addDisposer(() => this.buildState.dispose());
 
     this.addDisposer(
       reaction(
@@ -261,13 +250,13 @@ export class BuildPageElement extends MiloBaseElement implements BeforeEnterObse
 
     this.addDisposer(
       autorun(() => {
-        this.invocationState.invocationId = this.buildState.invocationId;
-        this.invocationState.isComputedInvId = this.buildState.useComputedInvId;
+        this.invocationState.invocationId = this.store.buildPage.invocationId;
+        this.invocationState.isComputedInvId = this.store.buildPage.useComputedInvId;
         this.invocationState.presentationConfig =
-          this.buildState.build?.output?.properties?.[TEST_PRESENTATION_KEY] ||
-          this.buildState.build?.input?.properties?.[TEST_PRESENTATION_KEY] ||
+          this.store.buildPage.build?.output?.properties?.[TEST_PRESENTATION_KEY] ||
+          this.store.buildPage.build?.input?.properties?.[TEST_PRESENTATION_KEY] ||
           {};
-        this.invocationState.warning = this.buildState.build?.buildOrStepInfraFailed
+        this.invocationState.warning = this.store.buildPage.build?.buildOrStepInfraFailed
           ? 'Test results displayed here are likely incomplete because some steps have infra failed.'
           : '';
       })
@@ -277,11 +266,11 @@ export class BuildPageElement extends MiloBaseElement implements BeforeEnterObse
       // Redirect to the long link after the build is fetched.
       this.addDisposer(
         when(
-          reportError(this, () => this.buildState.build !== null),
+          reportError(this, () => this.store.buildPage.build !== null),
           () => {
-            const build = this.buildState.build!;
+            const build = this.store.buildPage.build!;
             if (build.number !== undefined) {
-              this.store.setBuildId(build.builder, build.number, build.id);
+              this.store.buildPage.setBuildId(build.builder, build.number, build.id);
             }
             const buildUrl = router.urlForName('build', {
               project: build.builder.project,
@@ -389,12 +378,12 @@ export class BuildPageElement extends MiloBaseElement implements BeforeEnterObse
   }
 
   @computed private get statusBarColor() {
-    const build = this.buildState.build;
+    const build = this.store.buildPage.build;
     return build ? BUILD_STATUS_COLOR_MAP[build.status] : 'var(--active-color)';
   }
 
   private renderBuildStatus() {
-    const build = this.buildState.build;
+    const build = this.store.buildPage.build;
     if (!build) {
       return html``;
     }
@@ -474,11 +463,11 @@ export class BuildPageElement extends MiloBaseElement implements BeforeEnterObse
           <span>&nbsp;/&nbsp;</span>
           <span>${this.buildNumOrId}</span>
         </div>
-        ${this.buildState.customBugLink === null
+        ${this.store.buildPage.customBugLink === null
           ? html``
           : html`
               <div class="delimiter"></div>
-              <a href=${this.buildState.customBugLink} target="_blank">File a bug</a>
+              <a href=${this.store.buildPage.customBugLink} target="_blank">File a bug</a>
             `}
         ${this.store.redirectSw === null
           ? html``
@@ -510,7 +499,7 @@ export class BuildPageElement extends MiloBaseElement implements BeforeEnterObse
       </div>
       <milo-status-bar
         .components=${[{ color: this.statusBarColor, weight: 1 }]}
-        .loading=${!this.buildState.build}
+        .loading=${!this.store.buildPage.build}
       ></milo-status-bar>
       <milo-tab-bar .tabs=${this.tabDefs} .selectedTabId=${this.store.selectedTabId}>
         <milo-trt-count-indicator slot="test-count-indicator"></milo-trt-count-indicator>

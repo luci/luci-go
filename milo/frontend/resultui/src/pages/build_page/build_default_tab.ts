@@ -18,7 +18,6 @@ import { customElement, html, LitElement } from 'lit-element';
 
 import '../../components/commit_entry';
 import '../../components/hotkey';
-import { BuildState, consumeBuildState } from '../../context/build_state';
 import { consumer } from '../../libs/context';
 import { router } from '../../routes';
 import { consumeStore, StoreInstance } from '../../store';
@@ -27,13 +26,12 @@ import { consumeStore, StoreInstance } from '../../store';
 @consumer
 export class BuildDefaultTabElement extends LitElement {
   @consumeStore() store!: StoreInstance;
-  @consumeBuildState() buildState!: BuildState;
 
   connectedCallback() {
     super.connectedCallback();
     const newUrl = router.urlForName(this.store.userConfig.build.defaultTabName, {
-      ...this.buildState.builderIdParam!,
-      build_num_or_id: this.buildState.buildNumOrIdParam!,
+      ...this.store.buildPage.builderIdParam!,
+      build_num_or_id: this.store.buildPage.buildNumOrIdParam!,
     });
 
     // Prevent the router from pushing the history state.

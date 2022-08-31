@@ -30,7 +30,6 @@ import '../../components/relative_timestamp';
 import '../../components/timestamp';
 import '../test_results_tab/test_variants_table/test_variant_entry';
 import './steps_tab/step_list';
-import { BuildState, consumeBuildState } from '../../context/build_state';
 import { consumeInvocationState, InvocationState } from '../../context/invocation_state';
 import { GA_ACTIONS, GA_CATEGORIES, trackEvent } from '../../libs/analytics_utils';
 import {
@@ -64,10 +63,6 @@ export class OverviewTabElement extends MobxLitElement {
   store!: StoreInstance;
 
   @observable.ref
-  @consumeBuildState()
-  buildState!: BuildState;
-
-  @observable.ref
   @consumeInvocationState()
   invocationState!: InvocationState;
 
@@ -90,9 +85,9 @@ export class OverviewTabElement extends MobxLitElement {
   }
 
   private renderActionButtons() {
-    const build = this.buildState.build!;
+    const build = this.store.buildPage.build!;
 
-    const canRetry = this.buildState.permittedActions[ADD_BUILD_PERM] ?? false;
+    const canRetry = this.store.buildPage.permittedActions[ADD_BUILD_PERM] ?? false;
 
     if (build.endTime) {
       return html`
@@ -105,7 +100,7 @@ export class OverviewTabElement extends MobxLitElement {
       `;
     }
 
-    const canCancel = build.cancelTime === null && this.buildState.permittedActions[CANCEL_BUILD_PERM];
+    const canCancel = build.cancelTime === null && this.store.buildPage.permittedActions[CANCEL_BUILD_PERM];
     let tooltip = '';
     if (!canCancel) {
       tooltip =
@@ -125,10 +120,10 @@ export class OverviewTabElement extends MobxLitElement {
   }
 
   private renderCanaryWarning() {
-    if (!this.buildState.build?.isCanary) {
+    if (!this.store.buildPage.build?.isCanary) {
       return html``;
     }
-    if ([BuildStatus.Failure, BuildStatus.InfraFailure].indexOf(this.buildState.build!.status) === -1) {
+    if ([BuildStatus.Failure, BuildStatus.InfraFailure].indexOf(this.store.buildPage.build!.status) === -1) {
       return html``;
     }
     return html`
@@ -140,7 +135,7 @@ export class OverviewTabElement extends MobxLitElement {
   }
 
   private renderCancelSchedule() {
-    const build = this.buildState.build!;
+    const build = this.store.buildPage.build!;
     if (!build?.cancelTime || build?.endTime) {
       return html``;
     }
@@ -165,21 +160,21 @@ export class OverviewTabElement extends MobxLitElement {
 
   private async cancelBuild(reason: string) {
     await this.store.services.builds!.cancelBuild({
-      id: this.buildState.build!.id,
+      id: this.store.buildPage.build!.id,
       summaryMarkdown: reason,
     });
-    this.store.refresh();
+    this.store.refreshTime.refresh();
   }
 
   private async retryBuild() {
     const build = await this.store.services.builds!.scheduleBuild({
-      templateBuildId: this.buildState.build!.id,
+      templateBuildId: this.store.buildPage.build!.id,
     });
     Router.go(getURLPathForBuild(build));
   }
 
   private renderSummary() {
-    const build = this.buildState.build!;
+    const build = this.store.buildPage.build!;
     if (!build.summaryMarkdown) {
       return html`
         <div id="summary-html" class="${BUILD_STATUS_CLASS_MAP[build.status]}-bg">
@@ -196,7 +191,7 @@ export class OverviewTabElement extends MobxLitElement {
   }
 
   private renderBuilderDescription() {
-    const descriptionHtml = this.buildState.builder?.config.descriptionHtml;
+    const descriptionHtml = this.store.buildPage.builder?.config.descriptionHtml;
     if (!descriptionHtml) {
       return html``;
     }
@@ -219,7 +214,7 @@ export class OverviewTabElement extends MobxLitElement {
   }
 
   private renderInput() {
-    const input = this.buildState.build?.input;
+    const input = this.store.buildPage.build?.input;
     if (!input?.gitilesCommit && !input?.gerritChanges) {
       return html``;
     }
@@ -242,7 +237,7 @@ export class OverviewTabElement extends MobxLitElement {
   }
 
   private renderOutput() {
-    const output = this.buildState.build?.output;
+    const output = this.store.buildPage.build?.output;
     if (!output?.gitilesCommit) {
       return html``;
     }
@@ -255,8 +250,8 @@ export class OverviewTabElement extends MobxLitElement {
   }
 
   private renderBuildPackages() {
-    const experiments = this.buildState.build?.input?.experiments;
-    const agent = this.buildState.build?.infra?.buildbucket?.agent;
+    const experiments = this.store.buildPage.build?.input?.experiments;
+    const agent = this.store.buildPage.build?.infra?.buildbucket?.agent;
     if (!experiments?.includes('luci.buildbucket.agent.cipd_installation') || !agent) {
       return html``;
     }
@@ -373,7 +368,7 @@ export class OverviewTabElement extends MobxLitElement {
   }
 
   private renderInfra() {
-    const build = this.buildState.build!;
+    const build = this.store.buildPage.build!;
     const botLink = build.infra?.swarming ? getBotLink(build.infra.swarming) : null;
     return html`
       <h3>Infra</h3>
@@ -431,8 +426,8 @@ export class OverviewTabElement extends MobxLitElement {
 
     const testLoader = this.invocationState.testLoader;
     const testsTabUrl = router.urlForName('build-test-results', {
-      ...this.buildState.builderIdParam!,
-      build_num_or_id: this.buildState.buildNumOrIdParam!,
+      ...this.store.buildPage.builderIdParam!,
+      build_num_or_id: this.store.buildPage.buildNumOrIdParam!,
     });
 
     // Overview tab is more crowded than the test results tab.
@@ -493,8 +488,8 @@ export class OverviewTabElement extends MobxLitElement {
 
   private renderSteps() {
     const stepsUrl = router.urlForName('build-steps', {
-      ...this.buildState.builderIdParam,
-      build_num_or_id: this.buildState.buildNumOrIdParam!,
+      ...this.store.buildPage.builderIdParam,
+      build_num_or_id: this.store.buildPage.buildNumOrIdParam!,
     });
     return html`
       <div>
@@ -536,7 +531,7 @@ export class OverviewTabElement extends MobxLitElement {
   }
 
   private renderTiming() {
-    const build = this.buildState.build!;
+    const build = this.store.buildPage.build!;
 
     return html`
       <h3>Timing</h3>
@@ -589,7 +584,7 @@ export class OverviewTabElement extends MobxLitElement {
   }
 
   private renderTags() {
-    const tags = this.buildState.build?.tags;
+    const tags = this.store.buildPage.build?.tags;
     if (!tags) {
       return html``;
     }
@@ -602,7 +597,7 @@ export class OverviewTabElement extends MobxLitElement {
   }
 
   private renderExperiments() {
-    const experiments = this.buildState.build?.input?.experiments;
+    const experiments = this.store.buildPage.build?.input?.experiments;
     if (!experiments) {
       return html``;
     }
@@ -615,7 +610,7 @@ export class OverviewTabElement extends MobxLitElement {
   }
 
   private renderBuildLogs() {
-    const logs = this.buildState.build?.output?.logs;
+    const logs = this.store.buildPage.build?.output?.logs;
     if (!logs) {
       return html``;
     }
@@ -628,7 +623,7 @@ export class OverviewTabElement extends MobxLitElement {
   }
 
   protected render() {
-    const build = this.buildState.build;
+    const build = this.store.buildPage.build;
     if (!build) {
       return html``;
     }

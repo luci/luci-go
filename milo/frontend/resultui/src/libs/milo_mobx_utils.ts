@@ -1,4 +1,4 @@
-// Copyright 2021 The LUCI Authors.
+// Copyright 2022 The LUCI Authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import { computed, IComputedValueOptions, observable } from 'mobx';
+import { addDisposer, IAnyStateTreeNode } from 'mobx-state-tree';
 import { IPromiseBasedObservable, PENDING, REJECTED } from 'mobx-utils';
 
 /**
@@ -29,4 +31,39 @@ export function unwrapObservable<T>(observable: IPromiseBasedObservable<T>, defa
     default:
       return observable.value;
   }
+}
+
+/**
+ * A wrapper around mobx `computed(() => {...}, {..., keepAlive: true})` that
+ * ensures the computed value can be properly GCed when `target` is destroyed.
+ */
+export function keepAliveComputed<T>(
+  target: IAnyStateTreeNode,
+  func: () => T,
+  opts: IComputedValueOptions<T | null> = {}
+) {
+  const isAlive = observable.box(true);
+  const ret = computed(
+    () => {
+      // Ensure the computed value doesn't observe anything else other than
+      // `isAlive` when `target` is no longer alive.
+      if (!isAlive.get()) {
+        return null;
+      }
+      return func();
+    },
+    {
+      ...opts,
+      keepAlive: true,
+    }
+  );
+
+  addDisposer(target, () => {
+    isAlive.set(false);
+
+    // Re-evaluate the computed value so it no longer have any external
+    // dependencies.
+    ret.get();
+  });
+  return ret;
 }

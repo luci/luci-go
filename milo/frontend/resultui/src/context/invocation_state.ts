@@ -18,9 +18,9 @@ import { autorun, comparer, computed, makeObservable, observable } from 'mobx';
 import { fromPromise, IPromiseBasedObservable } from 'mobx-utils';
 
 import { createContextLink } from '../libs/context';
+import { unwrapObservable } from '../libs/milo_mobx_utils';
 import { parseTestResultSearchQuery } from '../libs/queries/tr_search_query';
 import { InnerTag, TAG_SOURCE } from '../libs/tag';
-import { unwrapObservable } from '../libs/unwrap_observable';
 import { TestLoader } from '../models/test_loader';
 import { VariantGroup } from '../pages/test_results_tab/test_variants_table';
 import { router } from '../routes';

@@ -22,7 +22,6 @@ import '../../components/dot_spinner';
 import '../../components/hotkey';
 import { CommitEntryElement } from '../../components/commit_entry';
 import { MiloBaseElement } from '../../components/milo_base';
-import { BuildState, consumeBuildState } from '../../context/build_state';
 import { GA_ACTIONS, GA_CATEGORIES, trackEvent } from '../../libs/analytics_utils';
 import { getGitilesRepoURL } from '../../libs/build_utils';
 import { consumer } from '../../libs/context';
@@ -39,10 +38,6 @@ export class BlamelistTabElement extends MiloBaseElement {
   @consumeStore()
   store!: StoreInstance;
 
-  @observable.ref
-  @consumeBuildState()
-  buildState!: BuildState;
-
   @observable.ref private commits: GitCommit[] = [];
   @observable.ref private endOfPage = false;
   @observable.ref private precedingCommit?: GitCommit;
@@ -51,7 +46,7 @@ export class BlamelistTabElement extends MiloBaseElement {
   @computed
   private get queryBlamelistResIter() {
     const iterFn =
-      this.buildState.queryBlamelistResIterFns[this.buildState.selectedBlamelistPinIndex] ||
+      this.store.buildPage.queryBlamelistResIterFns?.[this.store.buildPage.selectedBlamelistPinIndex] ||
       async function* () {
         yield Promise.race([]);
       };
@@ -69,7 +64,7 @@ export class BlamelistTabElement extends MiloBaseElement {
 
   @computed
   get selectedBlamelistPin() {
-    return this.buildState.build?.blamelistPins[this.buildState.selectedBlamelistPinIndex];
+    return this.store.buildPage.build?.blamelistPins[this.store.buildPage.selectedBlamelistPinIndex];
   }
 
   @computed
@@ -148,7 +143,7 @@ export class BlamelistTabElement extends MiloBaseElement {
   private readonly toggleAllEntriesByHotkey = () => this.toggleAllEntries(!this.allEntriesWereExpanded);
 
   protected render = reportRenderError(this, () => {
-    if (this.buildState.build && !this.selectedBlamelistPin) {
+    if (this.store.buildPage.build && !this.selectedBlamelistPin) {
       return html`
         <div id="no-blamelist">
           Blamelist is not available because the build has no associated gitiles commit.<br />
@@ -163,11 +158,11 @@ export class BlamelistTabElement extends MiloBaseElement {
           <select
             id="repo-select"
             @input=${(e: InputEvent) =>
-              (this.buildState.selectedBlamelistPinIndex = Number((e.target as HTMLOptionElement).value))}
+              this.store.buildPage.setSelectedBlamelist(Number((e.target as HTMLOptionElement).value))}
           >
-            ${this.buildState.build?.blamelistPins.map(
+            ${this.store.buildPage.build?.blamelistPins.map(
               (pin, i) => html`
-                <option value=${i} ?selected=${this.buildState.selectedBlamelistPinIndex === i}>
+                <option value=${i} ?selected=${this.store.buildPage.selectedBlamelistPinIndex === i}>
                   ${getGitilesRepoURL(pin)}
                 </option>
               `

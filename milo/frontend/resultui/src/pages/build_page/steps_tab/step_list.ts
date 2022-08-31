@@ -20,7 +20,6 @@ import { computed, makeObservable, observable, reaction } from 'mobx';
 import '../../../components/dot_spinner';
 import './step_entry';
 import { MiloBaseElement } from '../../../components/milo_base';
-import { BuildState, consumeBuildState } from '../../../context/build_state';
 import { consumer } from '../../../libs/context';
 import { errorHandler, forwardWithoutMsg, reportRenderError } from '../../../libs/error_handler';
 import { BuildStatus } from '../../../services/buildbucket';
@@ -36,23 +35,19 @@ export class BuildPageStepListElement extends MiloBaseElement {
   @consumeStore()
   store!: StoreInstance;
 
-  @observable.ref
-  @consumeBuildState()
-  buildState!: BuildState;
-
   @computed private get stepsConfig() {
     return this.store.userConfig.build.steps;
   }
 
   @computed private get loaded() {
-    return this.buildState.build !== null;
+    return this.store.buildPage.build !== null;
   }
 
   @computed private get noStepText() {
     if (!this.loaded) {
       return '';
     }
-    const rootSteps = this.buildState.build?.rootSteps;
+    const rootSteps = this.store.buildPage.build?.rootSteps;
     if (this.stepsConfig.showSucceededSteps) {
       return !rootSteps?.length ? 'No steps.' : '';
     }
@@ -84,8 +79,9 @@ export class BuildPageStepListElement extends MiloBaseElement {
 
   protected render = reportRenderError(this, () => {
     return html`
-      ${this.buildState.build?.rootSteps.map((step) => html`<milo-bp-step-entry .step=${step}></milo-bp-step-entry>`) ||
-      ''}
+      ${this.store.buildPage.build?.rootSteps.map(
+        (step) => html`<milo-bp-step-entry .step=${step}></milo-bp-step-entry>`
+      ) || ''}
       <div class="list-entry" style=${styleMap({ display: this.noStepText ? '' : 'none' })}>${this.noStepText}</div>
       <div id="load" class="list-entry" style=${styleMap({ display: this.loaded ? 'none' : '' })}>
         Loading <milo-dot-spinner></milo-dot-spinner>

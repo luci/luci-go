@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import { fromPromise } from 'mobx-utils';
+
 import { BuildStatus } from '../services/buildbucket';
 import { InvocationState, TestStatus, TestVariantStatus } from '../services/resultdb';
 import { TestVerdictStatus } from '../services/weetbix';
@@ -190,3 +192,6 @@ export const PREDEFINED_TIME_INTERVALS = Object.freeze([
   43200000, // 12hr
   86400000, // 24hr
 ]);
+
+export const NEVER_PROMISE = new Promise<never>(() => {});
+export const NEVER_OBSERVABLE = fromPromise(NEVER_PROMISE);

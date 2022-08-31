@@ -31,7 +31,6 @@ import { autorun, makeObservable, observable } from 'mobx';
 import '../../components/dot_spinner';
 import { MiloBaseElement } from '../../components/milo_base';
 import { HideTooltipEventDetail, ShowTooltipEventDetail } from '../../components/tooltip';
-import { BuildState, consumeBuildState } from '../../context/build_state';
 import { GA_ACTIONS, GA_CATEGORIES, trackEvent } from '../../libs/analytics_utils';
 import { BUILD_STATUS_CLASS_MAP, PREDEFINED_TIME_INTERVALS } from '../../libs/constants';
 import { consumer } from '../../libs/context';
@@ -95,10 +94,6 @@ export class TimelineTabElement extends MiloBaseElement {
   @consumeStore()
   store!: StoreInstance;
 
-  @observable.ref
-  @consumeBuildState()
-  buildState!: BuildState;
-
   @observable.ref private totalWidth!: number;
   @observable.ref private bodyWidth!: number;
 
@@ -138,11 +133,11 @@ export class TimelineTabElement extends MiloBaseElement {
   }
 
   protected render = reportRenderError(this, () => {
-    if (!this.buildState.build) {
+    if (!this.store.buildPage.build) {
       return html`<div id="load">Loading <milo-dot-spinner></milo-load-spinner></div>`;
     }
 
-    if (this.buildState.build.steps.length === 0) {
+    if (this.store.buildPage.build.steps.length === 0) {
       return html`<div id="no-steps">No steps were run.</div>`;
     }
 
@@ -150,7 +145,7 @@ export class TimelineTabElement extends MiloBaseElement {
   });
 
   private renderTimeline = reportError(this, () => {
-    const build = this.buildState.build;
+    const build = this.store.buildPage.build;
     if (!build || !build.startTime || build.steps.length === 0) {
       return;
     }
@@ -185,7 +180,7 @@ export class TimelineTabElement extends MiloBaseElement {
   });
 
   private renderHeader() {
-    const build = this.buildState.build!;
+    const build = this.store.buildPage.build!;
 
     this.headerEle = document.createElement('div');
     const svg = d3Select(this.headerEle)
@@ -219,7 +214,7 @@ export class TimelineTabElement extends MiloBaseElement {
   }
 
   private renderFooter() {
-    const build = this.buildState.build!;
+    const build = this.store.buildPage.build!;
 
     this.footerEle = document.createElement('div');
     const svg = d3Select(this.footerEle)
@@ -245,7 +240,7 @@ export class TimelineTabElement extends MiloBaseElement {
   }
 
   private renderSidePanel() {
-    const build = this.buildState.build!;
+    const build = this.store.buildPage.build!;
 
     this.sidePanelEle = document.createElement('div');
     const svg = d3Select(this.sidePanelEle)
@@ -309,7 +304,7 @@ export class TimelineTabElement extends MiloBaseElement {
   }
 
   private renderBody() {
-    const build = this.buildState.build!;
+    const build = this.store.buildPage.build!;
 
     this.bodyEle = document.createElement('div');
     const svg = d3Select(this.bodyEle)
@@ -455,7 +450,7 @@ export class TimelineTabElement extends MiloBaseElement {
                 <td>Started:</td>
                 <td>
                   ${(step.startTime || this.now).toFormat(NUMERIC_TIME_FORMAT)}
-                  (after ${displayDuration((step.startTime || this.now).diff(this.buildState.build!.startTime!))})
+                  (after ${displayDuration((step.startTime || this.now).diff(this.store.buildPage.build!.startTime!))})
                 </td>
               </tr>
               <tr>
@@ -463,7 +458,7 @@ export class TimelineTabElement extends MiloBaseElement {
                 <td>${
                   step.endTime
                     ? step.endTime.toFormat(NUMERIC_TIME_FORMAT) +
-                      ` (after ${displayDuration(step.endTime.diff(this.buildState.build!.startTime!))})`
+                      ` (after ${displayDuration(step.endTime.diff(this.store.buildPage.build!.startTime!))})`
                     : 'N/A'
                 }</td>
               </tr>

@@ -12,15 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import stableStringify from 'fast-json-stable-stringify';
 import { Instance, SnapshotIn, SnapshotOut, types } from 'mobx-state-tree';
 import { createContext, useContext } from 'react';
 
 import { createContextLink } from '../libs/context';
-import { BuilderID } from '../services/buildbucket';
 import { AuthStateStore } from './auth_state';
+import { BuildPage } from './build_page';
 import { SearchPage } from './search_page';
 import { ServicesStore } from './services';
+import { Timestamp } from './timestamp';
 import { UserConfig } from './user_config';
 
 export const Store = types
@@ -41,34 +41,24 @@ export const Store = types
     showSettingsDialog: false,
     banners: types.array(types.frozen<unknown>()),
 
+    refreshTime: types.optional(Timestamp, {}),
     authState: types.optional(AuthStateStore, {}),
     userConfig: types.optional(UserConfig, {}),
     services: types.optional(ServicesStore, {}),
 
     searchPage: types.optional(SearchPage, {}),
+    buildPage: types.optional(BuildPage, {}),
   })
-  .volatile(() => {
-    const cachedBuildId = new Map<string, string>();
-    return {
-      setBuildId(builderId: BuilderID, buildNum: number, buildId: string) {
-        cachedBuildId.set(stableStringify([builderId, buildNum]), buildId);
-      },
-      getBuildId(builderId: BuilderID, buildNum: number) {
-        return cachedBuildId.get(stableStringify([builderId, buildNum]));
-      },
-      /**
-       * undefined means it's not initialized yet.
-       * null means there's no such service worker.
-       */
-      redirectSw: undefined as ServiceWorkerRegistration | null | undefined,
-    };
-  })
+  .volatile(() => ({
+    /**
+     * undefined means it's not initialized yet.
+     * null means there's no such service worker.
+     */
+    redirectSw: undefined as ServiceWorkerRegistration | null | undefined,
+  }))
   .actions((self) => ({
     setRedirectSw(redirectSw: ServiceWorkerRegistration | null) {
       self.redirectSw = redirectSw;
-    },
-    refresh() {
-      self.timestamp = Date.now();
     },
     setSelectedTabId(tabId: string) {
       self.selectedTabId = tabId;
@@ -91,6 +81,7 @@ export const Store = types
     afterCreate() {
       self.services.setDependencies({ authState: self.authState });
       self.searchPage.setDependencies({ services: self.services });
+      self.buildPage.setDependencies({ refreshTime: self.refreshTime, services: self.services });
     },
   }));
 
