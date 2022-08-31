@@ -1,0 +1,84 @@
+/* Copyright 2022 The LUCI Authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+.section {
+  padding-top: 2rem;
+  padding-bottom: 2rem;
+  padding-left: 1rem;
+  padding-right: 1rem;
+  border-bottom: 1px solid lightgray;
+}
+
+.section:first-child {
+  padding-top: 0rem;
+}
+
+.section:last-child {
+  padding-bottom: 0rem;
+  border-bottom: none;
+}
+
+.roundedTabs .MuiTabs-flexContainer {
+  border-bottom: 1px solid lightgray;
+}
+
+.roundedTabs .roundedTab {
+  text-transform: none;
+  padding-left: 2rem;
+  padding-right: 2rem;
+  border-left: 1px solid lightgray;
+  border-right: 1px solid lightgray;
+  border-top: 1px solid lightgray;
+  border-top-left-radius: 0.5rem;
+  border-top-right-radius: 0.5rem;
+  background-color: gainsboro;
+  opacity: 80%;
+}
+
+.roundedTab + .roundedTab {
+  margin-left: 0.5rem;
+}
+
+.roundedTab.Mui-selected {
+  background-color: transparent;
+  opacity: 100%;
+}
+
+.roundedTab:disabled{
+  background: repeating-linear-gradient(
+    135deg,
+    gainsboro,
+    gainsboro 1rem,
+    lightgray 1rem,
+    lightgray 2rem
+  )
+}
+
+.tabPanel {
+  border-left: 1px solid lightgray;
+  border-right: 1px solid lightgray;
+  border-bottom: 1px solid lightgray;
+  border-bottom-left-radius: 0.5rem;
+  border-bottom-right-radius: 0.5rem;
+}
+
+.tabPanelContents {
+  padding: 2rem;
+}
+
+.dataPlaceholder {
+  font-size: 0.6em;
+  opacity: 40%;
+}

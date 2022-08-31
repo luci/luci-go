@@ -1,0 +1,12 @@
+indexes:
+
+- kind: Suspect
+  ancestor: yes
+  properties:
+  - name: score
+    direction: desc
+
+- kind: SingleRerun
+  properties:
+  - name: rerun_build
+  - name: start_time

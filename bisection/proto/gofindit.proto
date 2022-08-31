@@ -1,0 +1,345 @@
+// Copyright 2022 The LUCI Authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+
+syntax = "proto3";
+
+package gofindit;
+
+import "google/api/field_behavior.proto";
+import "google/protobuf/timestamp.proto";
+import "go.chromium.org/luci/buildbucket/proto/builder_common.proto";
+import "go.chromium.org/luci/buildbucket/proto/common.proto";
+
+option go_package = "go.chromium.org/luci/bisection/proto;gofindit";
+
+
+// GoFinditService contains API called from GoFindit clients such as
+// SoM, Milo, ... to query or trigger analysis
+service GoFinditService {
+  // GetAnalysis is used to get an analysis by analysis ID.
+  rpc GetAnalysis(GetAnalysisRequest) returns (Analysis);
+
+  // QueryAnalysis is used to query for the status and result of analyses.
+  // The user can pass in the failure information to retrieve the analyses.
+  rpc QueryAnalysis(QueryAnalysisRequest) returns (QueryAnalysisResponse);
+
+  // TriggerAnalysis is used to trigger an analysis for a failed build.
+  // This RPC is called from a GoFindit client like SoM or Milo.
+  // If an existing analysis is found for the same failure, no new analysis
+  // will be triggered.
+  rpc TriggerAnalysis(TriggerAnalysisRequest) returns (TriggerAnalysisResponse);
+
+  // Update the information of an analysis.
+  // At the mean time, it is only used for update the bugs associated with an
+  // analysis.
+  // Mainly used by SoM, since GoFindit does not have any information about
+  // bugs created by sheriffs.
+  rpc UpdateAnalysis(UpdateAnalysisRequest) returns (Analysis);
+}
+
+// GoFinditBotService contains API called from bots, used to update
+// the progress on analysis
+service GoFinditBotService {
+  // RPC called from bots to update the analysis progress
+  rpc UpdateAnalysisProgress(UpdateAnalysisProgressRequest) returns (UpdateAnalysisProgressResponse);
+}
+
+message GetAnalysisRequest {
+  // ID of the analysis
+  int64 analysis_id = 1 [(google.api.field_behavior) = REQUIRED];
+}
+
+message QueryAnalysisRequest {
+  // The build failure information to query for the analyses.
+  BuildFailure build_failure = 1;
+}
+
+message QueryAnalysisResponse {
+  // The analyses corresponding to the QueryAnalysisRequest.
+  repeated Analysis analyses = 1;
+}
+
+message TriggerAnalysisRequest {
+  // failure for which to trigger the analysis.
+  BuildFailure build_failure = 1;
+  // Optionally, the client can pass the bug associated with the failure.
+  // Findit will update the bug with analysis progress/result.
+  // This is mainly for SoM, which has information about bugs associated
+  // with a failure.
+  repeated BugInfo bug_info = 2;
+}
+
+message TriggerAnalysisResponse {
+  // The analysis result corresponding to the request.
+  // It is either a new analysis or an existing one.
+  Analysis result = 1;
+  // is_new_analysis will be set to true if a new analysis is triggered.
+  // It will be set to false if an existing analysis is used instead.
+  bool is_new_analysis = 2;
+}
+
+// Update the information of an analysis.
+// At the mean time, it is only used for update the bugs associated with an
+// analysis.
+// GoFindit will comment on the bug with analysis progress/results.
+// Note: Existing bugs associated with the analysis will be replaced.
+message UpdateAnalysisRequest {
+  // ID of the analysis
+  string analysis_id = 1 [(google.api.field_behavior) = REQUIRED];
+  repeated BugInfo bug_info = 2;
+}
+
+// RPC called from bots to update the analysis progress
+message UpdateAnalysisProgressRequest {
+  // The analysis that the bot runs
+  int64 analysis_id = 1;
+  // Bot id
+  string bot_id = 2;
+  // BuildbucketID of the rerun build
+  // We use this to determine which rerun build to map back.
+  int64 bbid = 3;
+  // The revision that the bot runs
+  buildbucket.v2.GitilesCommit gitiles_commit = 4;
+  // Result of the rerun
+  RerunResult rerun_result = 5;
+}
+
+message UpdateAnalysisProgressResponse {
+  // The next revision for the bot to run.
+  // This is because we can compile faster when the same bot runs
+  // multiple revisions.
+  // If this is not set, then there is no further revision to run.
+  // The bot can finish and be released.
+  buildbucket.v2.GitilesCommit next_revision_to_run = 1;
+}
+
+// Analysis result contains result of an analysis
+message Analysis {
+  // Id to identify this analysis
+  int64 analysis_id = 1;
+  // The failure associated with the analysis.
+  BuildFailure build_failure = 2;
+  // Status of the analysis
+  AnalysisStatus status = 3;
+  // Buildbucket ID for the last passed build
+  int64 last_passed_bbid = 4;
+  // Buildbucket ID for the first failed build
+  int64 first_failed_bbid = 5;
+  // Timestamp for the created time of the analysis
+  google.protobuf.Timestamp created_time = 6;
+  // Timestamp for the last updated time of the analysis
+  google.protobuf.Timestamp last_updated_time = 7;
+  // Timestamp for the end time of the analysis
+  google.protobuf.Timestamp end_time = 8;
+  // Result of heuristic analysis
+  HeuristicAnalysisResult heuristic_result = 9;
+  // Result of nth-section analysis
+  NthSectionAnalysisResult nth_section_result= 10;
+  // Optional, if status = FOUND
+  buildbucket.v2.GitilesCommit culprit = 11;
+  // Actions we have taken with the culprit.
+  // More than one action may be taken, for example, reverting the culprit and
+  // commenting on the bug.
+  repeated CulpritAction culprit_action = 12;
+  // Builder for the first failed build
+  buildbucket.v2.BuilderID builder = 13;
+  // Type of the failure associated with the analysis
+  BuildFailureType build_failure_type = 14;
+}
+
+message HeuristicAnalysisResult {
+  // The status of the heuristic analysis.
+  AnalysisStatus status = 1;
+  // One or more suspects of the heuristic analysis.
+  // This field exists only when status = FINISHED.
+  repeated HeuristicSuspect suspects = 2;
+  // Start time of heuristic analysis.
+  google.protobuf.Timestamp start_time = 3;
+  // End time of heuristic analysis.
+  google.protobuf.Timestamp end_time = 8;
+}
+
+message HeuristicSuspect {
+  // A suspect revision of heuristic analysis.
+  buildbucket.v2.GitilesCommit gitiles_commit = 1;
+  // Review URL for the commit
+  string reviewUrl = 2;
+  // Score is an integer representing the how confident we believe the suspect
+  // is indeed the culprit.
+	// A higher score means a stronger signal that the suspect is responsible for
+  // a failure.
+  int32 score = 3;
+  // The reason why heuristic analysis thinks the suspect is a possible culprit.
+  string justification = 4;
+  // Whether the suspect has been verified by the culprit verification component.
+  bool verified = 5;
+  // The level of confidence we have for the suspect.
+  SuspectConfidenceLevel confidence_level = 6;
+  // Title of the review for the commit
+  string reviewTitle = 7;
+}
+
+message NthSectionAnalysisResult {
+  // The status of the nth-section analysis.
+  AnalysisStatus status = 1;
+  // Timestamp for the start time of the nth-section analysis
+  google.protobuf.Timestamp start_time = 2;
+  // Timestamp for the last updated time of the nth-section analysis
+  google.protobuf.Timestamp last_updated_time = 3;
+  // Timestamp for the end time of the nth-section analysis
+  google.protobuf.Timestamp end_time = 4;
+  // Optional, the culprit GitilesCommit, when status = FOUND
+  buildbucket.v2.GitilesCommit culprit = 5;
+  // Optional, whether the culprit has been verified, when status = FOUND
+  bool verified = 6;
+  // Optional, when status = RUNNING.
+  // This is the possible range of the culprit.
+  // This will be updated as the nth-section progress.
+  RegressionRange remainingNthSectionRange = 7;
+  // Optional, when status = ERROR
+  string error_message = 8;
+  // List of the reruns that have been run so far for the nth-section.
+  // analysis.
+  // This is useful to analyse the nth-section progress.
+  // The runs are sorted by the start timestamp.
+  repeated SingleRerun reruns = 9;
+}
+
+enum AnalysisStatus {
+  ANALYSIS_STATUS_UNSPECIFIED = 0;
+  // The analysis has been created, but not yet started.
+  CREATED = 1;
+  // The analysis is running, but results have not been finalised.
+  RUNNING = 2;
+  // The analysis has finished and found the culprit/suspects
+  FOUND = 3;
+  // The analysis has finished but no culprit/suspect has been found
+  NOTFOUND = 4;
+  // The analysis results in an error
+  ERROR = 5;
+}
+
+// An action that GoFindit has taken with the culprit
+message CulpritAction {
+  CulpritActionType action_type = 1;
+  // URL to the revert CL, if action_type = CULPRIT_AUTO_REVERTED
+  // or REVERT_CL_CREATED
+  string revert_cl_url = 2;
+  // URL to the bug, if action_type = BUG_COMMENTED
+  string bug_url = 3;
+}
+
+enum CulpritActionType {
+  CULPRIT_ACTION_TYPE_UNSPECIFIED = 0;
+  // No action has been taken with the culprit
+  NO_ACTION = 1;
+  // The culprit was auto reverted by GoFindit
+  CULPRIT_AUTO_REVERTED = 2;
+  // The revert CL for the culprit was created.
+  // Maybe waiting for a human to review or for the verification process
+  // to finish.
+  REVERT_CL_CREATED = 3;
+  // GoFindit made a comment on the culprit CL
+  CULPRIT_CL_COMMENTED = 4;
+  // GoFindit commented on the bug for the failure
+  BUG_COMMENTED = 5;
+}
+
+// Regression range is (last_passed..first_failed]
+message RegressionRange {
+  buildbucket.v2.GitilesCommit last_passed = 1;
+  buildbucket.v2.GitilesCommit first_failed = 2;
+  // How many revisions between last passed (exclusively) and first failed (inclusively).
+  int32 number_of_revisions = 3;
+}
+
+// NthSection run contains information about a single rerun in n-section.
+// The same bot may be reused for multiple rerun (to speed up compilation time)
+message SingleRerun {
+  // Timestamp for the created time of the rerun
+  google.protobuf.Timestamp start_time = 1;
+  // Timestamp for the last updated time of the rerun.
+  google.protobuf.Timestamp last_updated_time = 2;
+  // Timestamp for the end time of the rerun
+  google.protobuf.Timestamp end_time = 3;
+  // Buildbucket ID of the rerun build.
+  int64 bbid = 4;
+  // Task id of the rerun
+  string task_id = 5;
+  // Id of the bot
+  string bot_id = 6;
+  // Result of the rerun
+  RerunResult rerun_result = 7;
+}
+
+// RerunResult contains the result of one rerun.
+// It is for the bots to update result back to GoFindit.
+message RerunResult {
+  // Status of the rerun
+  RerunStatus rerun_status = 1;
+  // Error message, in case of FAILED or INFRA_FAILED status
+  string error_message = 2;
+}
+
+// Build failure record a failure in a build.
+message BuildFailure {
+  // Buildbucket id for the failed build
+  int64 bbid = 1;
+  // failed_step_name should be 'compile' for compile failures.
+  string failed_step_name = 2;
+}
+
+// Information about a bug associated with a failure.
+message BugInfo {
+  oneof bug {
+    MonorailBugInfo monorail_bug_info = 1;
+    BuganizerBugInfo buganizer_bug_info = 2;
+  }
+}
+
+message MonorailBugInfo {
+  // The project of the bug, e.g. chromium
+  string project = 1;
+  // Monorail bug ID
+  int32 bug_id = 2;
+}
+
+message BuganizerBugInfo {
+  // Buganizer bug ID
+  int64 bug_id = 1;
+}
+
+enum RerunStatus {
+  RERUN_STATUS_UNSPECIFIED = 0;
+  IN_PROGRESS = 1;
+  PASSED = 2;
+  FAILED = 3;
+  INFRA_FAILED = 4;
+}
+
+enum SuspectConfidenceLevel {
+  SUSPECT_CONFIDENCE_LEVEL_UNSPECIFIED = 0;
+  LOW = 1;
+  MEDIUM = 2;
+  HIGH = 3;
+}
+
+enum BuildFailureType {
+  BUILD_FAILURE_TYPE_UNSPECIFIED = 0;
+  COMPILE = 1;
+  TEST = 2;
+  INFRA = 3;
+  OTHER = 4;
+}
