@@ -81,6 +81,7 @@ export const Store = types
     },
     afterCreate() {
       self.services.setDependencies({ authState: self.authState });
+      self.userConfig.enableCaching();
       self.searchPage.setDependencies({ services: self.services });
       self.buildPage.setDependencies({
         currentTime: self.currentTime,

@@ -29,7 +29,7 @@ import {
 import { TransientKeySet } from './transient_key_set';
 
 export const V1_CACHE_KEY = 'user-configs-v1';
-const V2_CACHE_KEY = 'user-config-v2';
+export const V2_CACHE_KEY = 'user-config-v2';
 const DEFAULT_TRANSIENT_KEY_TTL = Duration.fromObject({ week: 4 }).toMillis();
 
 export interface UserConfigEnv {
@@ -264,6 +264,7 @@ export const UserConfig = types
         console.warn('encountered an error when restoring user configs from the v1, ignoring it');
       }
       storage.removeItem(V1_CACHE_KEY);
+      storage.setItem(V2_CACHE_KEY, JSON.stringify(getSnapshot(self)));
     },
     restoreConfig(storage: Storage) {
       try {
@@ -278,7 +279,7 @@ export const UserConfig = types
         storage.removeItem(V2_CACHE_KEY);
       }
     },
-    afterCreate() {
+    enableCaching() {
       const env: UserConfigEnv = getEnv(self) || {};
       const storage = env.storage || window.localStorage;
       const ttl = env.transientKeysTTL || DEFAULT_TRANSIENT_KEY_TTL;

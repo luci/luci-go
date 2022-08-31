@@ -18,7 +18,7 @@ import { destroy, types } from 'mobx-state-tree';
 import sinon, { SinonFakeTimers } from 'sinon';
 
 import { FakeStorage } from '../libs/test_utils/fake_storage';
-import { BuildStepsConfig, UserConfig, V1_CACHE_KEY } from './user_config';
+import { BuildStepsConfig, UserConfig, V1_CACHE_KEY, V2_CACHE_KEY } from './user_config';
 
 describe('BuildStepsConfig', () => {
   it('should set pins recursively', async () => {
@@ -102,26 +102,48 @@ describe('UserConfig', () => {
       })
     );
     const transientKeysTTL = Duration.fromObject({ hour: 1 }).toMillis();
-    const store = UserConfig.create({}, { storage, transientKeysTTL });
-    after(() => destroy(store));
+    const store1 = UserConfig.create({}, { storage, transientKeysTTL });
+    store1.enableCaching();
+    after(() => destroy(store1));
 
-    expect(store.build.defaultTabName).to.eq('build-test-results');
-    expect(store.build.inputProperties.isFolded('inputKey1')).to.be.true;
-    expect(store.build.inputProperties.isFolded('inputKey2')).to.be.false;
-    expect(store.build.outputProperties.isFolded('outputKey1')).to.be.true;
-    expect(store.build.outputProperties.isFolded('outputKey2')).to.be.false;
-    expect(store.build.steps.expandSucceededByDefault).to.be.true;
-    expect(store.build.steps.showDebugLogs).to.be.false;
-    expect(store.build.steps.showSucceededSteps).to.be.true;
-    expect(store.build.steps.stepIsPinned('parent')).to.be.true;
-    expect(store.build.steps.stepIsPinned('parent|child')).to.be.false;
-    expect(store.tests.columnWidths).to.deep.eq({
+    expect(store1.build.defaultTabName).to.eq('build-test-results');
+    expect(store1.build.inputProperties.isFolded('inputKey1')).to.be.true;
+    expect(store1.build.inputProperties.isFolded('inputKey2')).to.be.false;
+    expect(store1.build.outputProperties.isFolded('outputKey1')).to.be.true;
+    expect(store1.build.outputProperties.isFolded('outputKey2')).to.be.false;
+    expect(store1.build.steps.expandSucceededByDefault).to.be.true;
+    expect(store1.build.steps.showDebugLogs).to.be.false;
+    expect(store1.build.steps.showSucceededSteps).to.be.true;
+    expect(store1.build.steps.stepIsPinned('parent')).to.be.true;
+    expect(store1.build.steps.stepIsPinned('parent|child')).to.be.false;
+    expect(store1.tests.columnWidths).to.deep.eq({
       'v.test_suite': 350, // coming from the default V1 configuration.
       'v.column1': 300,
       'v.column2': 400,
     });
-
     expect(storage.getItem(V1_CACHE_KEY)).to.be.null;
+
+    // Should store the config to the new cache location even when there's no
+    // user initiated action.
+    expect(storage.getItem(V2_CACHE_KEY)).to.not.be.null;
+    const store2 = UserConfig.create({}, { storage, transientKeysTTL });
+    store2.enableCaching();
+    after(() => destroy(store2));
+    expect(store2.build.defaultTabName).to.eq('build-test-results');
+    expect(store2.build.inputProperties.isFolded('inputKey1')).to.be.true;
+    expect(store2.build.inputProperties.isFolded('inputKey2')).to.be.false;
+    expect(store2.build.outputProperties.isFolded('outputKey1')).to.be.true;
+    expect(store2.build.outputProperties.isFolded('outputKey2')).to.be.false;
+    expect(store2.build.steps.expandSucceededByDefault).to.be.true;
+    expect(store2.build.steps.showDebugLogs).to.be.false;
+    expect(store2.build.steps.showSucceededSteps).to.be.true;
+    expect(store2.build.steps.stepIsPinned('parent')).to.be.true;
+    expect(store2.build.steps.stepIsPinned('parent|child')).to.be.false;
+    expect(store2.tests.columnWidths).to.deep.eq({
+      'v.test_suite': 350, // coming from the default V1 configuration.
+      'v.column1': 300,
+      'v.column2': 400,
+    });
   });
 
   it('should persist config to storage correctly', () => {
@@ -129,6 +151,7 @@ describe('UserConfig', () => {
     const setItemSpy = sinon.spy(storage, 'setItem');
     const transientKeysTTL = Duration.fromObject({ hour: 2 }).toMillis();
     const store1 = UserConfig.create({}, { storage, transientKeysTTL });
+    store1.enableCaching();
     after(() => destroy(store1));
 
     store1.build.steps.setStepPin('parent|child', true);
@@ -153,6 +176,7 @@ describe('UserConfig', () => {
     expect(setItemSpy.callCount).to.eq(2); // Writes should be batched together.
 
     const store2 = UserConfig.create({}, { storage, transientKeysTTL });
+    store2.enableCaching();
     after(() => destroy(store2));
 
     // Keys that were stale.
@@ -177,6 +201,9 @@ describe('UserConfig', () => {
         modifyDefaultBuildTabNameFromParent(tabName: string) {
           self.userConfig.build.setDefaultTab(tabName);
         },
+        afterCreate() {
+          self.userConfig.enableCaching();
+        },
       }));
 
     const storage = new FakeStorage();
@@ -190,6 +217,7 @@ describe('UserConfig', () => {
     timer.tick(Duration.fromObject({ hour: 1 }).toMillis());
 
     const store2 = UserConfig.create({}, { storage });
+    store2.enableCaching();
     after(() => destroy(store2));
     expect(store2.build.defaultTabName).to.eq('new tab name');
   });
