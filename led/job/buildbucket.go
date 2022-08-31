@@ -19,6 +19,7 @@ import (
 	"google.golang.org/protobuf/types/known/structpb"
 
 	bbpb "go.chromium.org/luci/buildbucket/proto"
+	"go.chromium.org/luci/buildbucket/protoutil"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/luciexe/exe"
 )
@@ -82,6 +83,14 @@ func (b *Buildbucket) updateBuildbucketAgentPayloadPath(newPath string) {
 // from b.BbagentArgs.
 func (b *Buildbucket) UpdateBuildFromBbagentArgs() {
 	b.EnsureBasics()
+
+	if b.BbagentArgs.Build.Infra.GetBbagent() == nil {
+		b.BbagentArgs.Build.Infra.Bbagent = &bbpb.BuildInfra_BBAgent{
+			PayloadPath: b.BbagentArgs.PayloadPath,
+			CacheDir:    b.BbagentArgs.CacheDir,
+		}
+	}
+
 	b.BbagentArgs.Build.Infra.Buildbucket.KnownPublicGerritHosts = b.BbagentArgs.KnownPublicGerritHosts
 	b.updateBuildbucketAgentPayloadPath(b.BbagentArgs.PayloadPath)
 }
@@ -89,5 +98,18 @@ func (b *Buildbucket) UpdateBuildFromBbagentArgs() {
 // UpdatePayloadPath updates the payload path of the led build.
 func (b *Buildbucket) UpdatePayloadPath(newPath string) {
 	b.BbagentArgs.PayloadPath = newPath
+	if b.BbagentArgs.Build.Infra.GetBbagent() == nil {
+		b.BbagentArgs.Build.Infra.Bbagent = &bbpb.BuildInfra_BBAgent{}
+	}
+	b.BbagentArgs.Build.Infra.Bbagent.PayloadPath = newPath
 	b.updateBuildbucketAgentPayloadPath(newPath)
+}
+
+// PayloadPath returns the payload path of the led build.
+func (b *Buildbucket) PayloadPath() string {
+	return protoutil.ExePayloadPath(b.BbagentArgs.GetBuild())
+}
+
+func (b *Buildbucket) CacheDir() string {
+	return protoutil.CacheDir(b.BbagentArgs.GetBuild())
 }

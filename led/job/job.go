@@ -435,7 +435,7 @@ func (jd *Definition) FlattenToSwarming(ctx context.Context, uid, parentTaskId s
 		for i, cache := range caches {
 			baseProperties.NamedCaches[i] = &swarmingpb.NamedCacheEntry{
 				Name:     cache.Name,
-				DestPath: path.Join(bb.BbagentArgs.CacheDir, cache.Path),
+				DestPath: path.Join(bb.CacheDir(), cache.Path),
 			}
 		}
 	}
@@ -449,7 +449,7 @@ func (jd *Definition) FlattenToSwarming(ctx context.Context, uid, parentTaskId s
 		baseProperties.CipdInputs = append(baseProperties.CipdInputs, &swarmingpb.CIPDPackage{
 			PackageName: exe.CipdPackage,
 			Version:     exe.CipdVersion,
-			DestPath:    bb.BbagentArgs.PayloadPath,
+			DestPath:    bb.PayloadPath(),
 		})
 	}
 
