@@ -6200,20 +6200,7 @@ func TestScheduleBuild(t *testing.T) {
 							},
 							OnPath: []string{"cipd_bin_packages/subdir", "cipd_bin_packages/subdir/bin"},
 						},
-						"kitchen-checkout": {
-							DataType: &pb.InputDataRef_Cipd{
-								Cipd: &pb.InputDataRef_CIPD{
-									Server: "cipd server",
-									Specs: []*pb.InputDataRef_CIPD_PkgSpec{
-										{Package: "exe", Version: "exe-version"},
-									},
-								},
-							},
-						},
 					},
-				},
-				Purposes: map[string]pb.BuildInfra_Buildbucket_Agent_Purpose{
-					"kitchen-checkout": pb.BuildInfra_Buildbucket_Agent_PURPOSE_EXE_PAYLOAD,
 				},
 			})
 		})

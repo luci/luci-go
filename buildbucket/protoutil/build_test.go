@@ -81,34 +81,3 @@ func TestSetStatus(t *testing.T) {
 		})
 	})
 }
-
-func TestExePayloadPath(t *testing.T) {
-	t.Parallel()
-
-	Convey("from agent.purposes", t, func() {
-		b := &pb.Build{
-			Infra: &pb.BuildInfra{
-				Buildbucket: &pb.BuildInfra_Buildbucket{
-					Agent: &pb.BuildInfra_Buildbucket_Agent{
-						Purposes: map[string]pb.BuildInfra_Buildbucket_Agent_Purpose{
-							"kitchen-checkout": pb.BuildInfra_Buildbucket_Agent_PURPOSE_EXE_PAYLOAD,
-						},
-					},
-				},
-			},
-		}
-		So(ExePayloadPath(b), ShouldEqual, "kitchen-checkout")
-	})
-
-	Convey("from agent.purposes", t, func() {
-		b := &pb.Build{
-			Infra: &pb.BuildInfra{
-				Bbagent: &pb.BuildInfra_BBAgent{
-					CacheDir:    "cache",
-					PayloadPath: "kitchen-checkout",
-				},
-			},
-		}
-		So(ExePayloadPath(b), ShouldEqual, "kitchen-checkout")
-	})
-}

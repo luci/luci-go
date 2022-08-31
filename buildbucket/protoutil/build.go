@@ -90,23 +90,3 @@ func SetStatus(now time.Time, b *pb.Build, st pb.Status) {
 		}
 	}
 }
-
-// ExePayloadPath returns the payload path of the build.
-func ExePayloadPath(b *pb.Build) string {
-	payloadPath := ""
-	for p, purpose := range b.GetInfra().GetBuildbucket().GetAgent().GetPurposes() {
-		if purpose == pb.BuildInfra_Buildbucket_Agent_PURPOSE_EXE_PAYLOAD {
-			payloadPath = p
-		}
-	}
-
-	if payloadPath == "" {
-		payloadPath = b.GetInfra().GetBbagent().GetPayloadPath()
-	}
-	return payloadPath
-}
-
-// CacheDir returns the cache dir of the build.
-func CacheDir(b *pb.Build) string {
-	return b.GetInfra().GetBbagent().GetCacheDir()
-}
