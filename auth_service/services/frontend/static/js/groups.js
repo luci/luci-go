@@ -41,6 +41,12 @@ const splitItemList = (list) => {
   return list.split('\n').map((item) => item.trim()).filter((item) => !!item);
 };
 
+// True if string looks like a glob pattern (and not a group member name).
+const isGlob = (item) => {
+  // Glob patterns contain '*' and '[]' not allowed in member names.
+  return item.search(/[\*\[\]]/) != -1;
+};
+
 // Sets classes for invalid element.
 const setInvalid = (formObj, errorMsg) => {
   formObj.element.classList.add('is-invalid');
@@ -69,13 +75,12 @@ const validators = {
   ],
   'membersAndGlobsList': [
     (value) => {
-      // TODO(cjacomet): Check globs here as well.
-      return splitItemList(value).every((item) => {membersRe.test('user:' + item)});
+      return splitItemList(value).every((item) => membersRe.test(item));
     },
   ],
   'groupList': [
     (value) => {
-      return splitItemList(value).every((item) => {groupsRe.test(item)});
+      return splitItemList(value).every((item) => groupsRe.test(item));
     },
     'Invalid group name.'
   ],
@@ -259,18 +264,47 @@ class GroupForm {
       return formFieldObj
     });
 
-
     // Event listener to trigger validation workflow when form submit event
     // happens.
     this.form.addEventListener('submit', (event) => {
       event.preventDefault();
       this.valid = true;
-      this.fields.forEach((formField) => { this.validate(formField);  });
-      // If valid -> submit w/ json
+      this.fields.forEach((formField) => { this.validate(formField); });
       if (this.valid) {
-        // TODO(cjacomet): Setup request and make GroupCreate API call.
+        const authGroup = this.createAuthGroupFromForm();
+
+        this.doSubmit(authGroup).then(() => {
+          location.reload();
+        }).catch((error) =>{
+          console.log(error);
+          alert(error);
+        });
       }
     })
+  }
+
+  createAuthGroupFromForm() {
+    const formValues = this.fields.reduce((map, obj) => {
+      map[obj.element.id] = obj.element.value.trim();
+      return map;
+    }, {});
+    // Create group vs update group.
+    const groupName = this instanceof NewGroupForm ? formValues['group-name-box'] : this.groupName;
+    let membersList = [];
+    let globsList = [];
+    splitItemList(formValues['membersAndGlobs']).forEach((item) => { isGlob(item) ? globsList.push(item) : membersList.push(item); });
+    const subGroups = splitItemList(formValues['nested']);
+    const desc = formValues['description-box'];
+    const ownersVal = formValues['owners-box'];
+
+    return {
+      "name": groupName,
+      "members": common.addPrefixToItems('user', membersList),
+      "globs": common.addPrefixToItems('user', globsList),
+      "nested": subGroups,
+      "description": desc,
+      "owners": ownersVal,
+    };
   }
 
   // returns a resolved promise, the subclass should override this when
@@ -305,6 +339,8 @@ class EditGroupForm extends GroupForm {
   constructor(groupName) {
     // Call parent constructor.
     super('#edit-group-form-template', groupName);
+
+    this.groupEtag = "";
   }
 
   // Get group response and build the form.
@@ -318,8 +354,10 @@ class EditGroupForm extends GroupForm {
   buildForm(group) {
     const groupClone = { ...group };
 
-    const members = (groupClone.members ? groupClone.members.map((member) => common.stripPrefix('user', member)) : []);
-    const globs = (groupClone.globs ? groupClone.globs.map((glob) => common.stripPrefix('user', glob)) : []);
+    this.groupEtag = groupClone.etag;
+
+    const members = (groupClone.members ? common.stripPrefixFromItems('user', groupClone.members) : []);
+    const globs = (groupClone.globs ? common.stripPrefixFromItems('user', groupClone.globs) : []);
     const membersAndGlobs = [].concat(members, globs);
 
     // TODO(cjacomet): Assert that membersAndGlobs can be split.
@@ -367,6 +405,11 @@ class EditGroupForm extends GroupForm {
       }
     })
   }
+
+  doSubmit(authGroup) {
+    authGroup.etag = this.groupEtag;
+    return api.groupUpdate(authGroup);
+  }
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -374,6 +417,10 @@ class EditGroupForm extends GroupForm {
 class NewGroupForm extends GroupForm {
   constructor() {
     super('#new-group-form-template', '');
+  }
+
+  doSubmit(authGroup) {
+    return api.groupCreate(authGroup);
   }
 }
 

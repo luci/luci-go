@@ -17,18 +17,6 @@ var common = (function () {
 
   var exports = {};
 
-  // Strips '<prefix>:' from a string if it starts with it.
-  exports.stripPrefix = (prefix, str) => {
-    if (!str) {
-      return '';
-    }
-    if (str.slice(0, prefix.length + 1) == prefix + ':') {
-      return str.slice(prefix.length + 1, str.length);
-    } else {
-      return str;
-    }
-  };
-
   // Converts UTC timestamp (in microseconds) to a readable string in local TZ.
   exports.utcTimestampToString = (utc) => {
     return (new Date(utc)).toLocaleString();
@@ -50,6 +38,33 @@ var common = (function () {
     var match = new RegExp(
       '[?&]' + name + '=([^&]*)').exec(window.location.search);
     return match && decodeURIComponent(match[1].replace(/\+/g, ' '));
+  };
+
+  // Appends '<prefix>:' to a string if it doesn't have a prefix.
+  exports.addPrefix = (prefix, str) => {
+    return str.indexOf(':') == -1 ? prefix + ':' + str : str;
+  };
+
+  // Applies 'addPrefix' to each item of a list.
+  exports.addPrefixToItems = (prefix, items) => {
+    return items.map((item) => exports.addPrefix(prefix, item));
+  };
+
+  // Strips '<prefix>:' from a string if it starts with it.
+  exports.stripPrefix = (prefix, str) => {
+    if (!str) {
+      return '';
+    }
+    if (str.slice(0, prefix.length + 1) == prefix + ':') {
+      return str.slice(prefix.length + 1, str.length);
+    } else {
+      return str;
+    }
+  };
+
+  // Applies 'stripPrefix' to each item of a list.
+  exports.stripPrefixFromItems = (prefix, items) => {
+    return items.map((item) => exports.stripPrefix(prefix, item));
   };
 
   return exports;

@@ -152,6 +152,16 @@ var api = (function() {
     return call('auth.service.Groups', 'DeleteGroup', {'name': name, 'etag': etag});
   };
 
+  // Create a group.
+  exports.groupCreate = function(authGroup) {
+    return call('auth.service.Groups', 'CreateGroup', {'group': authGroup});
+  }
+
+  // Update a group.
+  exports.groupUpdate = function(authGroup) {
+    return call('auth.service.Groups', 'UpdateGroup', {'group': authGroup});
+  }
+
   // Get all allowlists.
   exports.ipAllowlists = function() {
     return call('auth.service.Allowlists', 'ListAllowlists');
