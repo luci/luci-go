@@ -21,6 +21,7 @@ import (
 
 	"google.golang.org/protobuf/encoding/prototext"
 
+	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/auth_service/api/configspb"
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/config/validation"
@@ -42,8 +43,8 @@ func validateAllowlist(ctx *validation.Context, configSet, path string, content 
 		return nil
 	}
 
+	// Allowlist validation.
 	allowlists := stringset.New(len(cfg.GetIpAllowlists()))
-
 	for _, a := range cfg.GetIpAllowlists() {
 		switch name := a.GetName(); {
 		case !ipAllowlistNameRE.MatchString(name):
@@ -70,5 +71,26 @@ func validateAllowlist(ctx *validation.Context, configSet, path string, content 
 			}
 		}
 	}
+
+	// Assignment validation
+	idents := stringset.New(len(cfg.GetAssignments()))
+	for _, a := range cfg.GetAssignments() {
+		ident := a.GetIdentity()
+		alName := a.GetIpAllowlistName()
+
+		// Checks if valid Identity.
+		if _, err := identity.MakeIdentity(ident); err != nil {
+			ctx.Error(err)
+		}
+		if !allowlists.Has(alName) {
+			ctx.Errorf("unknown allowlist %s", alName)
+		}
+		if idents.Has(ident) {
+			ctx.Errorf("identity %s defined twice", ident)
+		}
+		idents.Add(ident)
+	}
+
+	// TODO(cjacomet): Resolve allowlist includes.
 	return nil
 }

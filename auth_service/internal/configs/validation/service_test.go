@@ -48,15 +48,17 @@ func TestAllowlistConfigValidation(t *testing.T) {
 				includes: "region99"
 				subnets: "108.177.31.12"
 			}
-
 			ip_allowlists {
 				name: "chromium-test-dev-bots"
 				includes: "bots"
 			}
-
 			ip_allowlists {
 				name: "region99"
 				subnets: "127.0.0.1/20"
+			}
+			assignments {
+				identity: "user:test-user@google.com"
+				ip_allowlist_name: "bots"
 			}
 		`
 
@@ -152,6 +154,46 @@ func TestAllowlistConfigValidation(t *testing.T) {
 			errs := vctx.Finalize().(*validation.Error).Errors
 			So(errs, ShouldContainErr, "invalid CIDR address")
 			So(errs, ShouldContainErr, "unable to parse ip for subnet")
+		})
+
+		Convey("Bad Identity format", func() {
+			badCfg := `
+				assignments {
+					identity: "test-user@example.com"
+					ip_allowlist_name: "bots"
+				}
+			`
+			So(validateAllowlist(vctx, configSet, path, []byte(badCfg)), ShouldBeNil)
+			So(vctx.Finalize(), ShouldErrLike, "bad identity")
+		})
+
+		Convey("Unknown allowlist in assignment", func() {
+			badCfg := `
+				assignments {
+					identity: "user:test-user@example.com"
+					ip_allowlist_name: "bots"
+				}
+			`
+			So(validateAllowlist(vctx, configSet, path, []byte(badCfg)), ShouldBeNil)
+			So(vctx.Finalize(), ShouldErrLike, "unknown allowlist")
+		})
+
+		Convey("Identity defined twice", func() {
+			badCfg := `
+				ip_allowlists {
+					name: "bots"
+				}
+				assignments {
+					identity: "user:test-user@example.com"
+					ip_allowlist_name: "bots"
+				}
+				assignments {
+					identity: "user:test-user@example.com"
+					ip_allowlist_name: "bots"
+				}
+			`
+			So(validateAllowlist(vctx, configSet, path, []byte(badCfg)), ShouldBeNil)
+			So(vctx.Finalize(), ShouldErrLike, "defined twice")
 		})
 	})
 }
