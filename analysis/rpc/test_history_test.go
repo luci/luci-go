@@ -60,7 +60,7 @@ func TestTestHistoryServer(t *testing.T) {
 			},
 		})
 
-		referenceTime := time.Date(2022, time.January, 1, 0, 0, 0, 0, time.UTC)
+		referenceTime := splitTime.Add(time.Hour * 24 * 2)
 		day := 24 * time.Hour
 
 		var1 := pbutil.Variant("key1", "val1", "key2", "val1")
@@ -153,7 +153,10 @@ func TestTestHistoryServer(t *testing.T) {
 		})
 		So(err, ShouldBeNil)
 
-		server := NewTestHistoryServer()
+		// It is too hard to create two temporary databases in this testing
+		// context. Route both sets of queries to the same database backend.
+		oldDatabaseContext := func(ctx context.Context) context.Context { return ctx }
+		server := NewTestHistoryServer(oldDatabaseContext)
 
 		Convey("Query", func() {
 			req := &pb.QueryTestHistoryRequest{

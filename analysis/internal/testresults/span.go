@@ -39,10 +39,10 @@ const GerritHostnameSuffix = "-review.googlesource.com"
 var (
 	// minTimestamp is the minimum Timestamp value in Spanner.
 	// https://cloud.google.com/spanner/docs/reference/standard-sql/data-types#timestamp_type
-	minSpannerTimestamp = time.Date(1, time.January, 1, 0, 0, 0, 0, time.UTC)
+	MinSpannerTimestamp = time.Date(1, time.January, 1, 0, 0, 0, 0, time.UTC)
 	// maxSpannerTimestamp is the max Timestamp value in Spanner.
 	// https://cloud.google.com/spanner/docs/reference/standard-sql/data-types#timestamp_type
-	maxSpannerTimestamp = time.Date(9999, time.December, 31, 23, 59, 59, 999999999, time.UTC)
+	MaxSpannerTimestamp = time.Date(9999, time.December, 31, 23, 59, 59, 999999999, time.UTC)
 )
 
 // Changelist represents a gerrit changelist.
@@ -444,12 +444,12 @@ func (opts ReadTestHistoryOptions) statement(ctx context.Context, tmpl string, p
 	if opts.TimeRange.GetEarliest() != nil {
 		params["afterTime"] = opts.TimeRange.GetEarliest().AsTime()
 	} else {
-		params["afterTime"] = minSpannerTimestamp
+		params["afterTime"] = MinSpannerTimestamp
 	}
 	if opts.TimeRange.GetLatest() != nil {
 		params["beforeTime"] = opts.TimeRange.GetLatest().AsTime()
 	} else {
-		params["beforeTime"] = maxSpannerTimestamp
+		params["beforeTime"] = MaxSpannerTimestamp
 	}
 
 	switch p := opts.VariantPredicate.GetPredicate().(type) {

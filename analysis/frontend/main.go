@@ -44,6 +44,7 @@ import (
 	"go.chromium.org/luci/analysis/internal/analyzedtestvariants"
 	"go.chromium.org/luci/analysis/internal/clustering/reclustering/orchestrator"
 	"go.chromium.org/luci/analysis/internal/config"
+	"go.chromium.org/luci/analysis/internal/legacydb"
 	"go.chromium.org/luci/analysis/internal/metrics"
 	"go.chromium.org/luci/analysis/internal/services/reclustering"
 	"go.chromium.org/luci/analysis/internal/services/resultcollector"
@@ -137,6 +138,7 @@ func main() {
 		gaeemulation.NewModuleFromFlags(),     // Needed by cfgmodule.
 		secrets.NewModuleFromFlags(),          // Needed by encryptedcookies.
 		spanmodule.NewModuleFromFlags(),
+		legacydb.NewModuleFromFlags(),
 		tq.NewModuleFromFlags(),
 	}
 	server.Main(nil, modules, func(srv *server.Server) error {
@@ -165,13 +167,27 @@ func main() {
 		if err != nil {
 			return errors.Annotate(err, "creating analysis client").Err()
 		}
+
 		analysispb.RegisterClustersServer(srv.PRPC, rpc.NewClustersServer(ac))
 		analysispb.RegisterRulesServer(srv.PRPC, rpc.NewRulesSever())
 		analysispb.RegisterProjectsServer(srv.PRPC, rpc.NewProjectsServer())
 		analysispb.RegisterInitDataGeneratorServer(srv.PRPC, rpc.NewInitDataGeneratorServer())
 		analysispb.RegisterTestVariantsServer(srv.PRPC, rpc.NewTestVariantsServer())
-		analysispb.RegisterTestHistoryServer(srv.PRPC, rpc.NewTestHistoryServer())
 		adminpb.RegisterAdminServer(srv.PRPC, admin.CreateServer())
+
+		// Test History service needs to connect back to an old Spanner
+		// database to service some queries.
+		legacyCl := legacydb.LegacyClient(srv.Context)
+		installOldDatabase := func(ctx context.Context) context.Context {
+			if legacyCl != nil {
+				// Route queries to the old database to the old database.
+				return spanmodule.UseClient(ctx, legacyCl)
+			}
+			// Route queries in the time range of the old database
+			// to the old database.
+			return ctx
+		}
+		analysispb.RegisterTestHistoryServer(srv.PRPC, rpc.NewTestHistoryServer(installOldDatabase))
 
 		// GAE crons.
 		cron.RegisterHandler("read-config", config.Update)

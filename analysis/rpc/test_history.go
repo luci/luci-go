@@ -41,19 +41,22 @@ var pageSizeLimiter = pagination.PageSizeLimiter{
 
 // testHistoryServer implements pb.TestHistoryServer.
 type testHistoryServer struct {
+	backend *testHistoryBackend
 }
 
 // NewTestHistoryServer returns a new pb.TestHistoryServer.
-func NewTestHistoryServer() pb.TestHistoryServer {
+func NewTestHistoryServer(oldDatabaseCtx func(context.Context) context.Context) pb.TestHistoryServer {
 	return &pb.DecoratedTestHistory{
-		Service:  &testHistoryServer{},
+		Service: &testHistoryServer{
+			backend: &testHistoryBackend{oldDatabaseCtx: oldDatabaseCtx},
+		},
 		Postlude: gRPCifyAndLogPostlude,
 	}
 }
 
 // Retrieves test verdicts for a given test ID in a given project and in a given
 // range of time.
-func (*testHistoryServer) Query(ctx context.Context, req *pb.QueryTestHistoryRequest) (*pb.QueryTestHistoryResponse, error) {
+func (s *testHistoryServer) Query(ctx context.Context, req *pb.QueryTestHistoryRequest) (*pb.QueryTestHistoryResponse, error) {
 	if err := validateQueryTestHistoryRequest(req); err != nil {
 		return nil, invalidArgumentError(err)
 	}
@@ -75,7 +78,7 @@ func (*testHistoryServer) Query(ctx context.Context, req *pb.QueryTestHistoryReq
 		PageToken:        req.PageToken,
 	}
 
-	verdicts, nextPageToken, err := testresults.ReadTestHistory(span.Single(ctx), opts)
+	verdicts, nextPageToken, err := s.backend.ReadTestHistory(ctx, opts)
 	if err != nil {
 		return nil, err
 	}
@@ -107,7 +110,7 @@ func validateQueryTestHistoryRequest(req *pb.QueryTestHistoryRequest) error {
 
 // Retrieves a summary of test verdicts for a given test ID in a given project
 // and in a given range of times.
-func (*testHistoryServer) QueryStats(ctx context.Context, req *pb.QueryTestHistoryStatsRequest) (*pb.QueryTestHistoryStatsResponse, error) {
+func (s *testHistoryServer) QueryStats(ctx context.Context, req *pb.QueryTestHistoryStatsRequest) (*pb.QueryTestHistoryStatsResponse, error) {
 	if err := validateQueryTestHistoryStatsRequest(req); err != nil {
 		return nil, invalidArgumentError(err)
 	}
@@ -129,7 +132,7 @@ func (*testHistoryServer) QueryStats(ctx context.Context, req *pb.QueryTestHisto
 		PageToken:        req.PageToken,
 	}
 
-	groups, nextPageToken, err := testresults.ReadTestHistoryStats(span.Single(ctx), opts)
+	groups, nextPageToken, err := s.backend.ReadTestHistoryStats(ctx, opts)
 	if err != nil {
 		return nil, err
 	}
