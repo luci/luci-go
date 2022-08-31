@@ -51,7 +51,7 @@ export class BuildPageStepListElement extends MiloBaseElement {
     if (this.stepsConfig.showSucceededSteps) {
       return !rootSteps?.length ? 'No steps.' : '';
     }
-    return !rootSteps?.find((s) => s.status !== BuildStatus.Success) ? 'All steps succeeded.' : '';
+    return !rootSteps?.find((s) => s.data.status !== BuildStatus.Success) ? 'All steps succeeded.' : '';
   }
 
   constructor() {

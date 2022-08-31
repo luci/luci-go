@@ -14,7 +14,7 @@
 
 import { GrpcError, RpcCode } from '@chopsui/prpc-client';
 import stableStringify from 'fast-json-stable-stringify';
-import { Instance, SnapshotIn, SnapshotOut, types } from 'mobx-state-tree';
+import { cast, Instance, SnapshotIn, SnapshotOut, types } from 'mobx-state-tree';
 import { fromPromise } from 'mobx-utils';
 
 import { getGitilesRepoURL, renderBugUrlTemplate } from '../libs/build_utils';
@@ -22,7 +22,6 @@ import { NEVER_OBSERVABLE, POTENTIALLY_EXPIRED } from '../libs/constants';
 import * as iter from '../libs/iter_utils';
 import { keepAliveComputed, unwrapObservable } from '../libs/milo_mobx_utils';
 import { attachTags, InnerTag, TAG_SOURCE } from '../libs/tag';
-import { BuildExt } from '../models/build_ext';
 import {
   ADD_BUILD_PERM,
   Build,
@@ -35,6 +34,7 @@ import {
 } from '../services/buildbucket';
 import { QueryBlamelistRequest, QueryBlamelistResponse } from '../services/milo_internal';
 import { getInvIdFromBuildId, getInvIdFromBuildNum } from '../services/resultdb';
+import { BuildState, BuildStateInstance } from './build_state';
 import { ServicesStore } from './services';
 import { Timestamp } from './timestamp';
 
@@ -54,6 +54,7 @@ export class GetBuildError extends Error implements InnerTag {
 
 export const BuildPage = types
   .model('BuildPage', {
+    currentTime: types.safeReference(Timestamp),
     refreshTime: types.safeReference(Timestamp),
     services: types.safeReference(ServicesStore),
 
@@ -72,6 +73,11 @@ export const BuildPage = types
     useComputedInvId: true,
 
     selectedBlamelistPinIndex: 0,
+
+    // Properties that provide a mounting point for computed models so they can
+    // have references to some other properties in the tree.
+    _build: types.maybe(BuildState),
+    _relatedBuilds: types.array(BuildState),
   })
   .volatile(() => {
     const cachedBuildId = new Map<string, string>();
@@ -100,6 +106,14 @@ export const BuildPage = types
       const cached =
         self.builderIdParam && this.buildNum !== null ? self.getBuildId(self.builderIdParam, this.buildNum) : null;
       return cached || (self.buildNumOrIdParam?.startsWith('b') ? self.buildNumOrIdParam.slice(1) : null);
+    },
+  }))
+  .actions((self) => ({
+    _setBuild(build: Build) {
+      self._build = cast({ data: build, currentTime: self.currentTime?.id });
+    },
+    _setRelatedBuilds(builds: readonly Build[]) {
+      self._relatedBuilds = cast(builds.map((data) => ({ data, currentTime: self.currentTime?.id })));
     },
   }))
   .views((self) => {
@@ -139,7 +153,10 @@ export const BuildPage = types
             }
             throw new GetBuildError(e);
           })
-          .then((b) => new BuildExt(b))
+          .then((b) => {
+            self._setBuild(b);
+            return self._build!;
+          })
       );
     });
     return {
@@ -154,7 +171,7 @@ export const BuildPage = types
         if (self.build === null) {
           return null;
         }
-        const invIdFromBuild = self.build.infra?.resultdb?.invocation?.slice('invocations/'.length) || '';
+        const invIdFromBuild = self.build?.data.infra?.resultdb?.invocation?.slice('invocations/'.length) || '';
         return fromPromise(Promise.resolve(invIdFromBuild));
       } else if (self.buildId) {
         // Favor ID over builder + number to ensure cache hit when the build
@@ -197,24 +214,24 @@ export const BuildPage = types
               buildMap.set(build.id, build);
             }
           }
-          return [...buildMap.values()]
-            .sort((b1, b2) =>
-              b1.id.length === b2.id.length ? b1.id.localeCompare(b2.id) : b1.id.length - b2.id.length
-            )
-            .map((b) => new BuildExt(b));
+          const builds = [...buildMap.values()].sort((b1, b2) =>
+            b1.id.length === b2.id.length ? b1.id.localeCompare(b2.id) : b1.id.length - b2.id.length
+          );
+          self._setRelatedBuilds(builds);
+          return self._relatedBuilds;
         })
       );
     });
 
     const builder = keepAliveComputed(self, () => {
-      if (!self.services?.builders || !self.build?.builder) {
+      if (!self.services?.builders || !self.build?.data.builder) {
         return null;
       }
-      return fromPromise(self.services.builders.getBuilder({ id: self.build.builder }));
+      return fromPromise(self.services.builders.getBuilder({ id: self.build.data.builder }));
     });
 
     const permittedActions = keepAliveComputed(self, () => {
-      if (!self.services?.milo || !self.build?.builder) {
+      if (!self.services?.milo || !self.build?.data.builder) {
         return null;
       }
 
@@ -223,14 +240,14 @@ export const BuildPage = types
 
       return fromPromise(
         self.services.milo.batchCheckPermissions({
-          realm: `${self.build.builder.project}:${self.build.builder.bucket}`,
+          realm: `${self.build.data.builder.project}:${self.build.data.builder.bucket}`,
           permissions: [CANCEL_BUILD_PERM, ADD_BUILD_PERM],
         })
       );
     });
 
     const projectCfg = keepAliveComputed(self, () => {
-      if (!self.services?.milo || !self.build?.builder?.project) {
+      if (!self.services?.milo || !self.build?.data.builder?.project) {
         return NEVER_OBSERVABLE;
       }
 
@@ -239,7 +256,7 @@ export const BuildPage = types
 
       return fromPromise(
         self.services.milo.getProjectCfg({
-          project: self.build?.builder.project,
+          project: self.build?.data.builder.project,
         })
       );
     });
@@ -248,7 +265,7 @@ export const BuildPage = types
       get invocationId() {
         return unwrapObservable(invocationId.get() || NEVER_OBSERVABLE, null);
       },
-      get relatedBuilds(): readonly BuildExt[] | null {
+      get relatedBuilds(): readonly BuildStateInstance[] | null {
         return unwrapObservable(relatedBuilds.get() || NEVER_OBSERVABLE, null);
       },
       get builder() {
@@ -266,7 +283,7 @@ export const BuildPage = types
           return null;
         }
 
-        return renderBugUrlTemplate(this.projectCfg.bugUrlTemplate, self.build);
+        return renderBugUrlTemplate(this.projectCfg.bugUrlTemplate, self.build.data);
       },
       get gitilesCommitRepo() {
         if (!self.build?.associatedGitilesCommit) {
@@ -286,7 +303,7 @@ export const BuildPage = types
       }
       let req: QueryBlamelistRequest = {
         gitilesCommit,
-        builder: self.build.builder,
+        builder: self.build.data.builder,
         multiProjectSupport,
       };
       const milo = self.services.milo;
@@ -319,7 +336,7 @@ export const BuildPage = types
     };
   })
   .actions((self) => ({
-    setDependencies(deps: Pick<typeof self, 'refreshTime' | 'services'>) {
+    setDependencies(deps: Pick<typeof self, 'currentTime' | 'refreshTime' | 'services'>) {
       Object.assign<typeof self, Partial<typeof self>>(self, deps);
     },
     setUseComputedInvId(useComputed: boolean) {

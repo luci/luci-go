@@ -26,13 +26,12 @@ import '../../../components/pin_toggle';
 import { MiloBaseElement } from '../../../components/milo_base';
 import { HideTooltipEventDetail, ShowTooltipEventDetail } from '../../../components/tooltip';
 import { consumeInvocationState, InvocationState } from '../../../context/invocation_state';
-import { GA_ACTIONS, GA_CATEGORIES, trackEvent } from '../../../libs/analytics_utils';
 import { BUILD_STATUS_CLASS_MAP, BUILD_STATUS_DISPLAY_MAP, BUILD_STATUS_ICON_MAP } from '../../../libs/constants';
 import { lazyRendering, RenderPlaceHolder } from '../../../libs/observer_element';
 import { displayCompactDuration, displayDuration, NUMERIC_TIME_FORMAT } from '../../../libs/time_utils';
-import { StepExt } from '../../../models/step_ext';
 import { BuildStatus } from '../../../services/buildbucket';
 import { consumeStore, StoreInstance } from '../../../store';
+import { BuildStepStateInstance } from '../../../store/build_state';
 import colorClasses from '../../../styles/color_classes.css';
 import commonStyle from '../../../styles/common_style.css';
 
@@ -50,7 +49,7 @@ export class BuildPageStepEntryElement extends MiloBaseElement implements Render
   @consumeInvocationState()
   invState!: InvocationState;
 
-  @observable.ref step!: StepExt;
+  @observable.ref step!: BuildStepStateInstance;
 
   @observable.ref private _expanded = false;
   get expanded() {
@@ -66,11 +65,11 @@ export class BuildPageStepEntryElement extends MiloBaseElement implements Render
   @observable.ref private shouldRenderContent = false;
 
   @computed private get isPinned() {
-    return this.store.userConfig.build.steps.stepIsPinned(this.step.name);
+    return this.store.userConfig.build.steps.stepIsPinned(this.step.data.name);
   }
 
   @computed private get isCriticalStep() {
-    return this.step.status !== BuildStatus.Success || this.isPinned;
+    return this.step.data.status !== BuildStatus.Success || this.isPinned;
   }
 
   private expandSubSteps = false;
@@ -83,7 +82,7 @@ export class BuildPageStepEntryElement extends MiloBaseElement implements Render
   }
 
   @computed private get logs() {
-    const logs = this.step.logs || [];
+    const logs = this.step.data.logs || [];
     return this.store.userConfig.build.steps.showDebugLogs ? logs : logs.filter((log) => !log.name.startsWith('$'));
   }
 
@@ -99,12 +98,12 @@ export class BuildPageStepEntryElement extends MiloBaseElement implements Render
     return html`
       <div
         id="summary"
-        class="${BUILD_STATUS_CLASS_MAP[this.step.status]}-bg"
+        class="${BUILD_STATUS_CLASS_MAP[this.step.data.status]}-bg"
         style=${styleMap({ display: this.step.summary ? '' : 'none' })}
       >
         ${this.step.summary}
       </div>
-      <ul id="log-links" style=${styleMap({ display: this.step.logs?.length ? '' : 'none' })}>
+      <ul id="log-links" style=${styleMap({ display: this.step.data.logs?.length ? '' : 'none' })}>
         ${this.logs.map((log) => html`<li><milo-log .log=${log}></li>`)}
       </ul>
       ${this.step.children?.map(
@@ -118,8 +117,7 @@ export class BuildPageStepEntryElement extends MiloBaseElement implements Render
       return html` <span class="duration" title="No duration">N/A</span> `;
     }
 
-    let compactDuration: string, compactDurationUnits: string;
-    [compactDuration, compactDurationUnits] = displayCompactDuration(this.step.duration);
+    const [compactDuration, compactDurationUnits] = displayCompactDuration(this.step.duration);
 
     return html`
       <div
@@ -169,12 +167,6 @@ export class BuildPageStepEntryElement extends MiloBaseElement implements Render
     `;
   }
 
-  private trackInteraction = () => {
-    if (this.invState.testLoader?.hasAssociatedUnexpectedResults(this.step.name)) {
-      trackEvent(GA_CATEGORIES.STEP_WITH_UNEXPECTED_RESULTS, GA_ACTIONS.INSPECT_TEST, VISIT_ID);
-    }
-  };
-
   connectedCallback() {
     super.connectedCallback();
     this.addDisposer(
@@ -196,9 +188,6 @@ export class BuildPageStepEntryElement extends MiloBaseElement implements Render
         { fireImmediately: true }
       )
     );
-
-    this.addEventListener('click', this.trackInteraction);
-    this.addDisposer(() => this.removeEventListener('click', this.trackInteraction));
   }
 
   firstUpdated() {
@@ -209,7 +198,7 @@ export class BuildPageStepEntryElement extends MiloBaseElement implements Render
       this.expanded = true;
 
       // Keep the pin setting fresh.
-      this.store.userConfig.build.steps.setStepPin(this.step.name, this.isPinned);
+      this.store.userConfig.build.steps.setStepPin(this.step.data.name, this.isPinned);
     }
   }
 
@@ -223,27 +212,27 @@ export class BuildPageStepEntryElement extends MiloBaseElement implements Render
         <span id="header" slot="header">
           <mwc-icon
             id="status-indicator"
-            class=${BUILD_STATUS_CLASS_MAP[this.step.status]}
-            title=${BUILD_STATUS_DISPLAY_MAP[this.step.status]}
+            class=${BUILD_STATUS_CLASS_MAP[this.step.data.status]}
+            title=${BUILD_STATUS_DISPLAY_MAP[this.step.data.status]}
           >
-            ${BUILD_STATUS_ICON_MAP[this.step.status]}
+            ${BUILD_STATUS_ICON_MAP[this.step.data.status]}
           </mwc-icon>
           ${this.renderDuration()}
           <div
             id="header-text"
             class=${classMap({
-              [`${BUILD_STATUS_CLASS_MAP[this.step.status]}-bg`]:
-                this.step.status !== BuildStatus.Success && !(this.expanded && this.step.summary),
+              [`${BUILD_STATUS_CLASS_MAP[this.step.data.status]}-bg`]:
+                this.step.data.status !== BuildStatus.Success && !(this.expanded && this.step.summary),
             })}
           >
-            <b>${this.step.index + 1}. ${this.step.selfName}</b>
+            <b>${this.step.data.index + 1}. ${this.step.data.selfName}</b>
             <milo-pin-toggle
               .pinned=${this.isPinned}
               title="Pin/unpin the step. The configuration is shared across all builds."
               class="hidden-icon"
               style=${styleMap({ visibility: this.isPinned ? 'visible' : '' })}
               @click=${(e: Event) => {
-                this.store.userConfig.build.steps.setStepPin(this.step.name, !this.isPinned);
+                this.store.userConfig.build.steps.setStepPin(this.step.data.name, !this.isPinned);
                 e.stopPropagation();
                 // Users are not consuming the step info when (un)setting the
                 // pins, don't record step interaction.
@@ -251,13 +240,10 @@ export class BuildPageStepEntryElement extends MiloBaseElement implements Render
             >
             </milo-pin-toggle>
             <milo-copy-to-clipboard
-              .textToCopy=${this.step.name}
+              .textToCopy=${this.step.data.name}
               title="Copy the step name."
               class="hidden-icon"
-              @click=${(e: Event) => {
-                e.stopPropagation();
-                this.trackInteraction();
-              }}
+              @click=${(e: Event) => e.stopPropagation()}
             ></milo-copy-to-clipboard>
             <span id="header-markdown">${this.step.header}</span>
             ${this.step.header !== null && this.step.header.title !== ''
@@ -265,10 +251,7 @@ export class BuildPageStepEntryElement extends MiloBaseElement implements Render
                   .textToCopy=${this.step.header.title}
                   title="Copy the step header."
                   class="hidden-icon"
-                  @click=${(e: Event) => {
-                    e.stopPropagation();
-                    this.trackInteraction();
-                  }}
+                  @click=${(e: Event) => e.stopPropagation()}
                 ></milo-copy-to-clipboard>`
               : html``}
           </div>

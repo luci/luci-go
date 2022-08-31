@@ -66,6 +66,10 @@ export class OverviewTabElement extends MobxLitElement {
   @consumeInvocationState()
   invocationState!: InvocationState;
 
+  @computed private get build() {
+    return this.store.buildPage.build;
+  }
+
   @observable.ref private showRetryDialog = false;
   @observable.ref private showCancelDialog = false;
 
@@ -123,7 +127,7 @@ export class OverviewTabElement extends MobxLitElement {
     if (!this.store.buildPage.build?.isCanary) {
       return html``;
     }
-    if ([BuildStatus.Failure, BuildStatus.InfraFailure].indexOf(this.store.buildPage.build!.status) === -1) {
+    if ([BuildStatus.Failure, BuildStatus.InfraFailure].indexOf(this.store.buildPage.build!.data.status) === -1) {
       return html``;
     }
     return html`
@@ -135,24 +139,23 @@ export class OverviewTabElement extends MobxLitElement {
   }
 
   private renderCancelSchedule() {
-    const build = this.store.buildPage.build!;
-    if (!build?.cancelTime || build?.endTime) {
+    if (!this.build?.cancelTime || this.build?.endTime) {
       return html``;
     }
 
-    // We have gracePeriod since Feb 2021. It's safe to use ! since all new
-    // (not-terminated) builds should have gracePeriod defined.
     // TODO(weiweilin): refresh the build automatically once we reached
     // scheduledCancelTime.
-    const scheduledCancelTime = build
-      .cancelTime!.plus(build.gracePeriod!)
+    const scheduledCancelTime = this.build.cancelTime
+      // We have gracePeriod since Feb 2021. It's safe to use ! since all new
+      // (not-terminated) builds should have gracePeriod defined.
+      .plus(this.build.gracePeriod!)
       // Add min_update_interval (currently always 30s).
       // TODO(crbug/1299302): read min_update_interval from buildbucket.
       .plus({ seconds: 30 });
 
     return html`
       <div id="scheduled-cancel">
-        This build was scheduled to be canceled by ${build.canceledBy || 'unknown'}
+        This build was scheduled to be canceled by ${this.build.data.canceledBy || 'unknown'}
         <milo-relative-timestamp .timestamp=${scheduledCancelTime}></milo-relative-timestamp>.
       </div>
     `;
@@ -160,7 +163,7 @@ export class OverviewTabElement extends MobxLitElement {
 
   private async cancelBuild(reason: string) {
     await this.store.services.builds!.cancelBuild({
-      id: this.store.buildPage.build!.id,
+      id: this.build!.data.id,
       summaryMarkdown: reason,
     });
     this.store.refreshTime.refresh();
@@ -168,13 +171,13 @@ export class OverviewTabElement extends MobxLitElement {
 
   private async retryBuild() {
     const build = await this.store.services.builds!.scheduleBuild({
-      templateBuildId: this.store.buildPage.build!.id,
+      templateBuildId: this.build!.data!.id,
     });
     Router.go(getURLPathForBuild(build));
   }
 
   private renderSummary() {
-    const build = this.store.buildPage.build!;
+    const build = this.build!.data!;
     if (!build.summaryMarkdown) {
       return html`
         <div id="summary-html" class="${BUILD_STATUS_CLASS_MAP[build.status]}-bg">
@@ -214,7 +217,7 @@ export class OverviewTabElement extends MobxLitElement {
   }
 
   private renderInput() {
-    const input = this.store.buildPage.build?.input;
+    const input = this.build?.data.input;
     if (!input?.gitilesCommit && !input?.gerritChanges) {
       return html``;
     }
@@ -237,7 +240,7 @@ export class OverviewTabElement extends MobxLitElement {
   }
 
   private renderOutput() {
-    const output = this.store.buildPage.build?.output;
+    const output = this.build?.data.output;
     if (!output?.gitilesCommit) {
       return html``;
     }
@@ -250,8 +253,8 @@ export class OverviewTabElement extends MobxLitElement {
   }
 
   private renderBuildPackages() {
-    const experiments = this.store.buildPage.build?.input?.experiments;
-    const agent = this.store.buildPage.build?.infra?.buildbucket?.agent;
+    const experiments = this.build?.data.input?.experiments;
+    const agent = this.build?.data.infra?.buildbucket?.agent;
     if (!experiments?.includes('luci.buildbucket.agent.cipd_installation') || !agent) {
       return html``;
     }
@@ -368,7 +371,7 @@ export class OverviewTabElement extends MobxLitElement {
   }
 
   private renderInfra() {
-    const build = this.store.buildPage.build!;
+    const build = this.store.buildPage.build!.data;
     const botLink = build.infra?.swarming ? getBotLink(build.infra.swarming) : null;
     return html`
       <h3>Infra</h3>
@@ -403,7 +406,7 @@ export class OverviewTabElement extends MobxLitElement {
                 <tr>
                   <td>Ancestor Builds:</td>
                   <td>
-                    ${build.ancestorIds.length === 0
+                    ${!build.ancestorIds?.length
                       ? 'no ancestor builds'
                       : build.ancestorIds.map((id) => html`<a href="/b/${id}">${id}</a> `)}
                   </td>
@@ -413,7 +416,7 @@ export class OverviewTabElement extends MobxLitElement {
         }
         <tr>
           <td>Recipe:</td>
-          <td><milo-link .link=${build.recipeLink} target="_blank"></milo-link></td>
+          <td><milo-link .link=${this.build!.recipeLink} target="_blank"></milo-link></td>
         </tr>
       </table>
     `;
@@ -584,7 +587,7 @@ export class OverviewTabElement extends MobxLitElement {
   }
 
   private renderTags() {
-    const tags = this.store.buildPage.build?.tags;
+    const tags = this.build?.data.tags;
     if (!tags) {
       return html``;
     }
@@ -597,7 +600,7 @@ export class OverviewTabElement extends MobxLitElement {
   }
 
   private renderExperiments() {
-    const experiments = this.store.buildPage.build?.input?.experiments;
+    const experiments = this.build?.data.input?.experiments;
     if (!experiments) {
       return html``;
     }
@@ -610,7 +613,7 @@ export class OverviewTabElement extends MobxLitElement {
   }
 
   private renderBuildLogs() {
-    const logs = this.store.buildPage.build?.output?.logs;
+    const logs = this.build?.data.output?.logs;
     if (!logs) {
       return html``;
     }
@@ -623,7 +626,7 @@ export class OverviewTabElement extends MobxLitElement {
   }
 
   protected render() {
-    const build = this.store.buildPage.build;
+    const build = this.store.buildPage.build?.data;
     if (!build) {
       return html``;
     }

@@ -25,8 +25,9 @@ import { consumer } from '../../libs/context';
 import { errorHandler, forwardWithoutMsg, reportRenderError } from '../../libs/error_handler';
 import { renderMarkdown } from '../../libs/markdown_utils';
 import { displayDuration, NUMERIC_TIME_FORMAT } from '../../libs/time_utils';
-import { BuildExt } from '../../models/build_ext';
+import { Build } from '../../services/buildbucket';
 import { consumeStore, StoreInstance } from '../../store';
+import { BuildStateInstance } from '../../store/build_state';
 import commonStyle from '../../styles/common_style.css';
 
 @customElement('milo-related-builds-tab')
@@ -100,25 +101,25 @@ export class RelatedBuildsTabElement extends MobxLitElement {
     `;
   }
 
-  private renderRelatedBuildRow(build: BuildExt) {
+  private renderRelatedBuildRow(build: BuildStateInstance) {
     return html`
       <tr>
-        <td>${build.builder.project}</td>
-        <td>${build.builder.bucket}</td>
-        <td><a href=${getURLPathForBuilder(build.builder)}>${build.builder.builder}</a></td>
-        <td>${this.renderBuildLink(build)}</td>
-        <td class="status ${BUILD_STATUS_CLASS_MAP[build.status]}">
-          ${BUILD_STATUS_DISPLAY_MAP[build.status] || 'unknown'}
+        <td>${build.data.builder.project}</td>
+        <td>${build.data.builder.bucket}</td>
+        <td><a href=${getURLPathForBuilder(build.data.builder)}>${build.data.builder.builder}</a></td>
+        <td>${this.renderBuildLink(build.data)}</td>
+        <td class="status ${BUILD_STATUS_CLASS_MAP[build.data.status]}">
+          ${BUILD_STATUS_DISPLAY_MAP[build.data.status] || 'unknown'}
         </td>
         <td>${build.createTime.toFormat(NUMERIC_TIME_FORMAT)}</td>
         <td>${displayDuration(build.pendingDuration) || 'N/A'}</td>
         <td>${(build.executionDuration && displayDuration(build.executionDuration)) || 'N/A'}</td>
-        <td>${renderMarkdown(build.summaryMarkdown || '')}</td>
+        <td>${renderMarkdown(build.data.summaryMarkdown || '')}</td>
       </tr>
     `;
   }
 
-  private renderBuildLink(build: BuildExt) {
+  private renderBuildLink(build: Build) {
     const display = build.number ? build.number : build.id;
     return html`<a href=${getURLPathForBuild(build)}>${display}</a>`;
   }

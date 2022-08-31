@@ -147,6 +147,10 @@ export class BuildPageElement extends MiloBaseElement implements BeforeEnterObse
   @provideInvocationState({ global: true })
   invocationState!: InvocationState;
 
+  @computed private get build() {
+    return this.store.buildPage.build;
+  }
+
   @observable private uncommittedConfigs!: UserConfigInstance;
 
   // The page is visited via a short link.
@@ -200,14 +204,14 @@ export class BuildPageElement extends MiloBaseElement implements BeforeEnterObse
   }
 
   @computed private get faviconUrl() {
-    if (this.store.buildPage.build) {
-      return `/static/common/favicon/${STATUS_FAVICON_MAP[this.store.buildPage.build.status]}-32.png`;
+    if (this.build?.data) {
+      return `/static/common/favicon/${STATUS_FAVICON_MAP[this.build?.data.status]}-32.png`;
     }
     return '/static/common/favicon/milo-32.png';
   }
 
   @computed private get documentTitle() {
-    const status = this.store.buildPage.build?.status;
+    const status = this.build?.data?.status;
     const statusDisplay = status ? BUILD_STATUS_DISPLAY_MAP[status] : 'loading';
     return `${statusDisplay} - ${this.builderIdParam?.builder || ''} ${this.buildNumOrId}`;
   }
@@ -253,10 +257,10 @@ export class BuildPageElement extends MiloBaseElement implements BeforeEnterObse
         this.invocationState.invocationId = this.store.buildPage.invocationId;
         this.invocationState.isComputedInvId = this.store.buildPage.useComputedInvId;
         this.invocationState.presentationConfig =
-          this.store.buildPage.build?.output?.properties?.[TEST_PRESENTATION_KEY] ||
-          this.store.buildPage.build?.input?.properties?.[TEST_PRESENTATION_KEY] ||
+          this.build?.data.output?.properties?.[TEST_PRESENTATION_KEY] ||
+          this.build?.data.input?.properties?.[TEST_PRESENTATION_KEY] ||
           {};
-        this.invocationState.warning = this.store.buildPage.build?.buildOrStepInfraFailed
+        this.invocationState.warning = this.build?.buildOrStepInfraFailed
           ? 'Test results displayed here are likely incomplete because some steps have infra failed.'
           : '';
       })
@@ -266,9 +270,9 @@ export class BuildPageElement extends MiloBaseElement implements BeforeEnterObse
       // Redirect to the long link after the build is fetched.
       this.addDisposer(
         when(
-          reportError(this, () => this.store.buildPage.build !== null),
+          reportError(this, () => Boolean(this.build?.data)),
           () => {
-            const build = this.store.buildPage.build!;
+            const build = this.build!.data!;
             if (build.number !== undefined) {
               this.store.buildPage.setBuildId(build.builder, build.number, build.id);
             }
@@ -276,7 +280,7 @@ export class BuildPageElement extends MiloBaseElement implements BeforeEnterObse
               project: build.builder.project,
               bucket: build.builder.bucket,
               builder: build.builder.builder,
-              build_num_or_id: build.buildNumOrId,
+              build_num_or_id: this.build!.buildNumOrId,
             });
 
             const newUrl = buildUrl + this.urlSuffix;
@@ -378,7 +382,7 @@ export class BuildPageElement extends MiloBaseElement implements BeforeEnterObse
   }
 
   @computed private get statusBarColor() {
-    const build = this.store.buildPage.build;
+    const build = this.store.buildPage.build?.data;
     return build ? BUILD_STATUS_COLOR_MAP[build.status] : 'var(--active-color)';
   }
 
@@ -388,18 +392,18 @@ export class BuildPageElement extends MiloBaseElement implements BeforeEnterObse
       return html``;
     }
     return html`
-      <i class="status ${BUILD_STATUS_CLASS_MAP[build.status]}">
-        ${BUILD_STATUS_DISPLAY_MAP[build.status] || 'unknown status'}
+      <i class="status ${BUILD_STATUS_CLASS_MAP[build.data.status]}">
+        ${BUILD_STATUS_DISPLAY_MAP[build.data.status] || 'unknown status'}
       </i>
       ${(() => {
-        switch (build.status) {
+        switch (build.data.status) {
           case BuildStatus.Scheduled:
             return `since ${build.createTime.toFormat(LONG_TIME_FORMAT)}`;
           case BuildStatus.Started:
             return `since ${build.startTime!.toFormat(LONG_TIME_FORMAT)}`;
           case BuildStatus.Canceled:
             return `after ${displayDuration(build.endTime!.diff(build.createTime))} by ${
-              build.canceledBy || 'unknown'
+              build.data.canceledBy || 'unknown'
             }`;
           case BuildStatus.Failure:
           case BuildStatus.InfraFailure:

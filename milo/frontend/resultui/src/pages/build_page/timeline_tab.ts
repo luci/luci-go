@@ -38,8 +38,8 @@ import { errorHandler, forwardWithoutMsg, reportError, reportRenderError } from 
 import { enumerate } from '../../libs/iter_utils';
 import { displayDuration, NUMERIC_TIME_FORMAT } from '../../libs/time_utils';
 import { roundDown } from '../../libs/utils';
-import { StepExt } from '../../models/step_ext';
 import { consumeStore, StoreInstance } from '../../store';
+import { BuildStepStateInstance } from '../../store/build_state';
 import commonStyle from '../../styles/common_style.css';
 
 const MARGIN = 10;
@@ -68,23 +68,6 @@ const LIST_ITEM_X_OFFSET = STEP_MARGIN + TEXT_MARGIN + BORDER_SIZE;
 const LIST_ITEM_Y_OFFSET = STEP_MARGIN + (STEP_HEIGHT - LIST_ITEM_HEIGHT) / 2;
 
 const V_GRID_LINE_MAX_GAP = 80;
-
-/**
- * A utility function that helps assigning appropriate list numbers to steps.
- * For example, if a step is the 1st child of the 2nd root step, the list number
- * would be '2.1. '.
- *
- * @param rootSteps a list of root steps.
- * @yields A tuple consist of the list number and the step.
- */
-export function* traverseStepList(rootSteps: readonly StepExt[], prefix = ''): IterableIterator<[string, StepExt]> {
-  for (const step of rootSteps.values()) {
-    const listNum = prefix + (step.index + 1) + '.';
-    yield [listNum, step];
-
-    yield* traverseStepList(step.children, listNum);
-  }
-}
 
 @customElement('milo-timeline-tab')
 @errorHandler(forwardWithoutMsg)
@@ -258,10 +241,10 @@ export class TimelineTabElement extends MiloBaseElement {
       .tickFormat(() => '');
     svg.append('g').attr('class', 'grid').call(horizontalGridLines);
 
-    for (const [i, [listNum, step]] of enumerate(traverseStepList(build.rootSteps))) {
+    for (const [i, step] of enumerate(build.steps)) {
       const stepGroup = svg
         .append('g')
-        .attr('class', BUILD_STATUS_CLASS_MAP[step.status])
+        .attr('class', BUILD_STATUS_CLASS_MAP[step.data.status])
         .attr('transform', `translate(0, ${i * ROW_HEIGHT})`);
 
       const rect = stepGroup
@@ -275,14 +258,14 @@ export class TimelineTabElement extends MiloBaseElement {
       const listItem = stepGroup
         .append('foreignObject')
         .attr('class', 'not-intractable')
-        .attr('x', LIST_ITEM_X_OFFSET + step.depth * STEP_IDENT)
+        .attr('x', LIST_ITEM_X_OFFSET + step.data.depth * STEP_IDENT)
         .attr('y', LIST_ITEM_Y_OFFSET)
         .attr('height', STEP_HEIGHT - LIST_ITEM_Y_OFFSET)
         .attr('width', LIST_ITEM_WIDTH);
-      listItem.append('xhtml:span').text(listNum + ' ');
-      const stepText = listItem.append('xhtml:span').text(step.selfName);
+      listItem.append('xhtml:span').text(step.data.listNumber + ' ');
+      const stepText = listItem.append('xhtml:span').text(step.data.selfName);
 
-      if (step.logs?.[0].viewUrl) {
+      if (step.data.logs?.[0].viewUrl) {
         stepText.attr('class', 'hyperlink');
       }
     }
@@ -327,13 +310,13 @@ export class TimelineTabElement extends MiloBaseElement {
       .tickFormat(() => '');
     svg.append('g').attr('class', 'grid').call(horizontalGridLines);
 
-    for (const [i, [listNum, step]] of enumerate(traverseStepList(build.rootSteps))) {
+    for (const [i, step] of enumerate(build.steps)) {
       const start = this.scaleTime(step.startTime?.toMillis() || this.nowTimestamp);
       const end = this.scaleTime(step.endTime?.toMillis() || this.nowTimestamp);
 
       const stepGroup = svg
         .append('g')
-        .attr('class', BUILD_STATUS_CLASS_MAP[step.status])
+        .attr('class', BUILD_STATUS_CLASS_MAP[step.data.status])
         .attr('transform', `translate(${start}, ${i * ROW_HEIGHT})`);
 
       // Add extra width so tiny steps are visible.
@@ -354,7 +337,7 @@ export class TimelineTabElement extends MiloBaseElement {
         .attr('text-anchor', isWide || !nearEnd ? 'start' : 'end')
         .attr('x', isWide ? TEXT_MARGIN : nearEnd ? -TEXT_MARGIN : width + TEXT_MARGIN)
         .attr('y', STEP_TEXT_OFFSET)
-        .text(listNum + ' ' + step.selfName);
+        .text(step.data.listNumber + ' ' + step.data.selfName);
 
       // Wail until the next event cycle so stepText is rendered when we call
       // this.getBBox();
@@ -427,9 +410,9 @@ export class TimelineTabElement extends MiloBaseElement {
    */
   private installStepInteractionHandlers<T extends BaseType>(
     ele: Selection<T, unknown, null, undefined>,
-    step: StepExt
+    step: BuildStepStateInstance
   ) {
-    const logUrl = step.logs?.[0].viewUrl;
+    const logUrl = step.data.logs?.[0].viewUrl;
     if (logUrl) {
       ele.attr('class', ele.attr('class') + ' clickable').on('click', (e: MouseEvent) => {
         e.stopPropagation();

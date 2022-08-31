@@ -18,9 +18,9 @@ import { css, customElement, LitElement } from 'lit-element';
 import './step_entry';
 import { provider } from '../../../libs/context';
 import { IntersectionNotifier, provideNotifier } from '../../../libs/observer_element';
-import { StepExt } from '../../../models/step_ext';
 import { BuildStatus } from '../../../services/buildbucket';
 import { Store } from '../../../store';
+import { BuildStepState } from '../../../store/build_state';
 
 @customElement('milo-bp-step-entry-test-notifier-provider')
 @provider
@@ -43,15 +43,17 @@ class NotifierProviderElement extends LitElement {
 
 describe('bp_step_entry', () => {
   it('can render a step without start time', async () => {
-    const step = new StepExt({
-      step: {
+    const step = BuildStepState.create({
+      id: 'stepname',
+      data: {
         name: 'stepname',
         status: BuildStatus.Scheduled,
         startTime: undefined,
+        listNumber: '1.',
+        selfName: 'stepname',
+        depth: 0,
+        index: 0,
       },
-      selfName: 'stepname',
-      depth: 0,
-      index: 0,
     });
     await fixture<NotifierProviderElement>(html`
       <milo-bp-step-entry-test-notifier-provider>

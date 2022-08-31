@@ -25,7 +25,9 @@ import { UserConfig } from './user_config';
 
 export const Store = types
   .model('Store', {
-    timestamp: Date.now(),
+    currentTime: types.optional(Timestamp, {}),
+    refreshTime: types.optional(Timestamp, {}),
+
     selectedTabId: types.maybe(types.string),
     // Use number instead of boolean because previousPage.disconnectedCallback
     // might be called after currentPage.disconnectedCallback.
@@ -41,7 +43,6 @@ export const Store = types
     showSettingsDialog: false,
     banners: types.array(types.frozen<unknown>()),
 
-    refreshTime: types.optional(Timestamp, {}),
     authState: types.optional(AuthStateStore, {}),
     userConfig: types.optional(UserConfig, {}),
     services: types.optional(ServicesStore, {}),
@@ -81,7 +82,11 @@ export const Store = types
     afterCreate() {
       self.services.setDependencies({ authState: self.authState });
       self.searchPage.setDependencies({ services: self.services });
-      self.buildPage.setDependencies({ refreshTime: self.refreshTime, services: self.services });
+      self.buildPage.setDependencies({
+        currentTime: self.currentTime,
+        refreshTime: self.refreshTime,
+        services: self.services,
+      });
     },
   }));
 

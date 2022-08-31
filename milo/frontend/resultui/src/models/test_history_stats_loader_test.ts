@@ -12,7 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { assert } from 'chai';
+import { assert, expect } from 'chai';
+import chaiSubset from 'chai-subset';
 import { DateTime } from 'luxon';
 import sinon from 'sinon';
 
@@ -24,6 +25,8 @@ import {
   TestHistoryService,
 } from '../services/weetbix';
 import { TestHistoryStatsLoader } from './test_history_stats_loader';
+
+chai.use(chaiSubset);
 
 function createGroup(timestamp: string, variantHash: string): QueryTestHistoryStatsResponseGroup {
   return {
@@ -71,14 +74,14 @@ describe('TestHistoryStatsLoader', () => {
     // The loader should get the 2nd page because it's unclear that all the
     // entries from 2021-11-05 had been loaded after getting the first page.
     assert.deepEqual(stub.getCalls().length, 2);
-    assert.deepIncludeProperties(stub.getCall(0).args[0], {
+    expect(stub.getCall(0).args[0]).containSubset({
       project: 'project',
       testId: 'test-id',
       predicate: {
         subRealm: 'realm',
       },
     });
-    assert.deepIncludeProperties(stub.getCall(1).args[0], {
+    expect(stub.getCall(1).args[0]).containSubset({
       project: 'project',
       testId: 'test-id',
       predicate: {
@@ -104,7 +107,7 @@ describe('TestHistoryStatsLoader', () => {
     // Load all entries created on or after 2021-11-04.
     await statsLoader.loadUntil(1);
     assert.deepEqual(stub.getCalls().length, 3);
-    assert.deepIncludeProperties(stub.getCall(2).args[0], {
+    expect(stub.getCall(2).args[0]).containSubset({
       project: 'project',
       testId: 'test-id',
       predicate: {

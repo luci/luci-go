@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import { DateTime } from 'luxon';
 import { Instance, SnapshotIn, SnapshotOut, types } from 'mobx-state-tree';
 
 export const Timestamp = types
@@ -19,6 +20,11 @@ export const Timestamp = types
     id: types.optional(types.identifier, () => `Timestamp/${Math.random()}`),
     value: types.optional(types.number, () => Date.now()),
   })
+  .views((self) => ({
+    get dateTime() {
+      return DateTime.fromMillis(self.value);
+    },
+  }))
   .actions((self) => ({
     refresh() {
       self.value = Date.now();
