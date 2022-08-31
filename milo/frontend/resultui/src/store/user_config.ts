@@ -242,6 +242,7 @@ export const TestsConfig = types
 
 export const UserConfig = types
   .model('UserConfig', {
+    id: types.optional(types.identifier, () => `UserConfig/${Math.random()}`),
     build: types.optional(BuildConfig, {}),
     tests: types.optional(TestsConfig, {}),
   })
@@ -257,7 +258,7 @@ export const UserConfig = types
         }
         const configV1 = merge({}, DEFAULT_USER_CONFIGS_V1, JSON.parse(configV1Str)) as UserConfigsV1;
         const configV2 = configV1ToV2(configV1);
-        applySnapshot(self, configV2);
+        applySnapshot(self, { ...configV2, id: self.id });
       } catch (e) {
         console.error(e);
         console.warn('encountered an error when restoring user configs from the v1, ignoring it');
@@ -270,7 +271,7 @@ export const UserConfig = types
         if (snapshotStr === null) {
           return;
         }
-        applySnapshot(self, JSON.parse(snapshotStr));
+        applySnapshot(self, { ...JSON.parse(snapshotStr), id: self.id });
       } catch (e) {
         console.error(e);
         console.warn('encountered an error when restoring user configs from the cache, deleting it');

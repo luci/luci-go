@@ -20,6 +20,7 @@ import { renderMarkdown } from '../libs/markdown_utils';
 import { parseProtoDuration } from '../libs/time_utils';
 import { BLAMELIST_PIN_KEY, Build, BuildStatus, GitilesCommit, Step } from '../services/buildbucket';
 import { Timestamp } from './timestamp';
+import { UserConfig } from './user_config';
 
 export interface StepExt extends Step {
   /**
@@ -37,9 +38,15 @@ export const BuildStepState = types
     id: types.identifier,
     data: types.frozen<StepExt>(),
     currentTime: types.safeReference(Timestamp),
+    userConfig: types.safeReference(UserConfig),
 
     _children: types.array(types.late((): IAnyModelType => BuildStepState)),
   })
+  .actions((self) => ({
+    setIsPinned(pinned: boolean) {
+      self.userConfig?.build.steps.setStepPin(self.data.name, pinned);
+    },
+  }))
   .views((self) => ({
     get children() {
       return self._children as IMSTArray<typeof BuildStepState>;
@@ -168,6 +175,19 @@ export const BuildStepState = types
     get summary() {
       return this.summaryParts[1];
     },
+    get filteredLogs() {
+      const logs = self.data.logs || [];
+
+      return self.userConfig?.build.steps.showDebugLogs ?? true
+        ? logs
+        : logs.filter((log) => !log.name.startsWith('$'));
+    },
+    get isPinned() {
+      return self.userConfig?.build.steps.stepIsPinned(self.data.name);
+    },
+    get isCritical() {
+      return self.data.status !== BuildStatus.Success || this.isPinned;
+    },
   }));
 
 export type BuildStepStateInstance = Instance<typeof BuildStepState>;
@@ -178,6 +198,7 @@ export const BuildState = types
   .model('BuildState', {
     data: types.frozen<Build>(),
     currentTime: types.safeReference(Timestamp),
+    userConfig: types.safeReference(UserConfig),
 
     _steps: types.array(BuildStepState),
     _rootSteps: types.array(types.reference(BuildStepState)),
@@ -329,6 +350,7 @@ export const BuildState = types
           id: step.name,
           data: { ...step, listNumber, depth, index, selfName },
           currentTime: self.currentTime?.id,
+          userConfig: self.userConfig?.id,
           _children: [],
         };
 

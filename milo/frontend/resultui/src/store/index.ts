@@ -86,6 +86,7 @@ export const Store = types
         currentTime: self.currentTime,
         refreshTime: self.refreshTime,
         services: self.services,
+        userConfig: self.userConfig,
       });
     },
   }));

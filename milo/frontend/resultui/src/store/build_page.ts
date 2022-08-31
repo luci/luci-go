@@ -37,6 +37,7 @@ import { getInvIdFromBuildId, getInvIdFromBuildNum } from '../services/resultdb'
 import { BuildState, BuildStateInstance } from './build_state';
 import { ServicesStore } from './services';
 import { Timestamp } from './timestamp';
+import { UserConfig } from './user_config';
 
 export const enum SearchTarget {
   Builders,
@@ -57,6 +58,7 @@ export const BuildPage = types
     currentTime: types.safeReference(Timestamp),
     refreshTime: types.safeReference(Timestamp),
     services: types.safeReference(ServicesStore),
+    userConfig: types.safeReference(UserConfig),
 
     /**
      * The builder ID of the build.
@@ -110,7 +112,7 @@ export const BuildPage = types
   }))
   .actions((self) => ({
     _setBuild(build: Build) {
-      self._build = cast({ data: build, currentTime: self.currentTime?.id });
+      self._build = cast({ data: build, currentTime: self.currentTime?.id, userConfig: self.userConfig?.id });
     },
     _setRelatedBuilds(builds: readonly Build[]) {
       self._relatedBuilds = cast(builds.map((data) => ({ data, currentTime: self.currentTime?.id })));
@@ -336,7 +338,7 @@ export const BuildPage = types
     };
   })
   .actions((self) => ({
-    setDependencies(deps: Pick<typeof self, 'currentTime' | 'refreshTime' | 'services'>) {
+    setDependencies(deps: Pick<typeof self, 'currentTime' | 'refreshTime' | 'services' | 'userConfig'>) {
       Object.assign<typeof self, Partial<typeof self>>(self, deps);
     },
     setUseComputedInvId(useComputed: boolean) {

@@ -17,7 +17,7 @@ import { css, customElement } from 'lit-element';
 import { html, render } from 'lit-html';
 import { classMap } from 'lit-html/directives/class-map';
 import { styleMap } from 'lit-html/directives/style-map';
-import { computed, makeObservable, observable, reaction } from 'mobx';
+import { makeObservable, observable, reaction } from 'mobx';
 
 import '../../../components/copy_to_clipboard';
 import '../../../components/expandable_entry';
@@ -64,14 +64,6 @@ export class BuildPageStepEntryElement extends MiloBaseElement implements Render
 
   @observable.ref private shouldRenderContent = false;
 
-  @computed private get isPinned() {
-    return this.store.userConfig.build.steps.stepIsPinned(this.step.data.name);
-  }
-
-  @computed private get isCriticalStep() {
-    return this.step.data.status !== BuildStatus.Success || this.isPinned;
-  }
-
   private expandSubSteps = false;
   toggleAllSteps(expand: boolean) {
     this.expanded = expand;
@@ -79,11 +71,6 @@ export class BuildPageStepEntryElement extends MiloBaseElement implements Render
     this.shadowRoot!.querySelectorAll<BuildPageStepEntryElement>('milo-bp-step-entry').forEach((e) =>
       e.toggleAllSteps(expand)
     );
-  }
-
-  @computed private get logs() {
-    const logs = this.step.data.logs || [];
-    return this.store.userConfig.build.steps.showDebugLogs ? logs : logs.filter((log) => !log.name.startsWith('$'));
   }
 
   constructor() {
@@ -103,8 +90,8 @@ export class BuildPageStepEntryElement extends MiloBaseElement implements Render
       >
         ${this.step.summary}
       </div>
-      <ul id="log-links" style=${styleMap({ display: this.step.data.logs?.length ? '' : 'none' })}>
-        ${this.logs.map((log) => html`<li><milo-log .log=${log}></li>`)}
+      <ul id="log-links" style=${styleMap({ display: this.step.filteredLogs.length ? '' : 'none' })}>
+        ${this.step.filteredLogs.map((log) => html`<li><milo-log .log=${log}></li>`)}
       </ul>
       ${this.step.children?.map(
         (child) => html`<milo-bp-step-entry .step=${child} .expanded=${this.expandSubSteps}></milo-bp-step-entry>`
@@ -171,9 +158,9 @@ export class BuildPageStepEntryElement extends MiloBaseElement implements Render
     super.connectedCallback();
     this.addDisposer(
       reaction(
-        () => this.isCriticalStep,
+        () => this.step.isCritical,
         () => {
-          this.style['display'] = `var(--${this.isCriticalStep ? '' : 'non-'}critical-build-step-display, block)`;
+          this.style['display'] = `var(--${this.step.isCritical ? '' : 'non-'}critical-build-step-display, block)`;
         },
         { fireImmediately: true }
       )
@@ -194,11 +181,11 @@ export class BuildPageStepEntryElement extends MiloBaseElement implements Render
     if (!this.step.succeededRecursively) {
       this.expanded = true;
     }
-    if (this.isPinned) {
+    if (this.step.isPinned) {
       this.expanded = true;
 
       // Keep the pin setting fresh.
-      this.store.userConfig.build.steps.setStepPin(this.step.data.name, this.isPinned);
+      this.step.setIsPinned(this.step.isPinned);
     }
   }
 
@@ -227,15 +214,13 @@ export class BuildPageStepEntryElement extends MiloBaseElement implements Render
           >
             <b>${this.step.data.index + 1}. ${this.step.data.selfName}</b>
             <milo-pin-toggle
-              .pinned=${this.isPinned}
+              .pinned=${this.step.isPinned}
               title="Pin/unpin the step. The configuration is shared across all builds."
               class="hidden-icon"
-              style=${styleMap({ visibility: this.isPinned ? 'visible' : '' })}
+              style=${styleMap({ visibility: this.step.isPinned ? 'visible' : '' })}
               @click=${(e: Event) => {
-                this.store.userConfig.build.steps.setStepPin(this.step.data.name, !this.isPinned);
+                this.step.setIsPinned(!this.step.isPinned);
                 e.stopPropagation();
-                // Users are not consuming the step info when (un)setting the
-                // pins, don't record step interaction.
               }}
             >
             </milo-pin-toggle>
