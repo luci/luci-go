@@ -61,20 +61,7 @@
               "purposes": {
                 "kitchen-checkout": "PURPOSE_EXE_PAYLOAD"
               }
-            },
-            "known_public_gerrit_hosts": [
-              "android.googlesource.com",
-              "boringssl.googlesource.com",
-              "chromium.googlesource.com",
-              "dart.googlesource.com",
-              "dawn.googlesource.com",
-              "fuchsia.googlesource.com",
-              "go.googlesource.com",
-              "llvm.googlesource.com",
-              "pdfium.googlesource.com",
-              "skia.googlesource.com",
-              "webrtc.googlesource.com"
-            ]
+            }
           },
           "swarming": {
             "hostname": "chromium-swarm-dev.appspot.com",
@@ -124,10 +111,6 @@
           "logdog": {
             "hostname": "luci-logdog-dev.appspot.com",
             "project": "infra"
-          },
-          "bbagent": {
-            "payload_path": "kitchen-checkout",
-            "cache_dir": "cache"
           }
         },
         "exe": {

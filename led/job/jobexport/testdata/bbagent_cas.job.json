@@ -111,9 +111,6 @@
           "logdog": {
             "hostname": "luci-logdog-dev.appspot.com",
             "project": "infra"
-          },
-          "bbagent": {
-            "cache_dir": "cache"
           }
         },
         "exe": {

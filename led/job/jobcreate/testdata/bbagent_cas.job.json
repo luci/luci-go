@@ -124,10 +124,6 @@
           "logdog": {
             "hostname": "luci-logdog-dev.appspot.com",
             "project": "infra"
-          },
-          "bbagent": {
-            "payload_path": "kitchen-checkout",
-            "cache_dir": "cache"
           }
         },
         "exe": {
