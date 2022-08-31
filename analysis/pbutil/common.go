@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package pbutil contains methods for manipulating Weetbix protos.
+// Package pbutil contains methods for manipulating LUCI Analysis protos.
 package pbutil
 
 import (

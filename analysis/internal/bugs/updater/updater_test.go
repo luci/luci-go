@@ -106,7 +106,7 @@ func TestRun(t *testing.T) {
 		}
 
 		opts := updateOptions{
-			appID:              "chops-weetbix-test",
+			appID:              "luci-analysis-test",
 			project:            project,
 			analysisClient:     ac,
 			monorailClient:     mc,
@@ -245,7 +245,7 @@ func TestRun(t *testing.T) {
 					So(f.Issues[0].Comments[0].Content, ShouldContainSubstring, expectedContent)
 				}
 				// Expect a link to the bug and the rule.
-				So(f.Issues[0].Comments[1].Content, ShouldContainSubstring, "https://chops-weetbix-test.appspot.com/b/chromium/100")
+				So(f.Issues[0].Comments[1].Content, ShouldContainSubstring, "https://luci-analysis-test.appspot.com/b/chromium/100")
 			}
 
 			Convey("1d unexpected failures", func() {

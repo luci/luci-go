@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package config implements app-level configs for Weetbix.
+// Package config implements app-level configs for LUCI Analysis.
 package config
 
 import (

@@ -27,7 +27,7 @@ import (
 
 // ProjectNotExistsErr is returned if the dataset for the given project
 // does not exist.
-var ProjectNotExistsErr = errors.New("project does not exist in Weetbix or analysis is not yet available")
+var ProjectNotExistsErr = errors.New("project does not exist in LUCI Analysis or analysis is not yet available")
 
 // InvalidArgumentTag is used to indicate that one of the query options
 // is invalid.
@@ -43,7 +43,7 @@ func NewClient(ctx context.Context, gcpProject string) (*Client, error) {
 	return &Client{client: client}, nil
 }
 
-// Client may be used to read Weetbix clusters.
+// Client may be used to read LUCI Analysis clusters.
 type Client struct {
 	client *bigquery.Client
 }

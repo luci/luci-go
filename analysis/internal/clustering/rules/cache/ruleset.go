@@ -60,7 +60,7 @@ type Ruleset struct {
 	// The LUCI Project.
 	Project string
 	// ActiveRulesSorted is the set of active failure association rules
-	// (should be used by Weetbix for matching), sorted in descending
+	// (should be used by LUCI Analysis for matching), sorted in descending
 	// PredicateLastUpdated time order.
 	ActiveRulesSorted []*CachedRule
 	// ActiveRulesByID stores active failure association

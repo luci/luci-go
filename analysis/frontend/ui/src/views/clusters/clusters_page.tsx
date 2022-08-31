@@ -19,7 +19,7 @@ import Container from '@mui/material/Container';
 import HelpTooltip from '../../components/help_tooltip/help_tooltip';
 import ClustersTable from '../../components/clusters_table/clusters_table';
 
-const rulesDescription = 'Clusters are groups of related test failures. Weetbix\'s clusters ' +
+const rulesDescription = 'Clusters are groups of related test failures. LUCI Analysis\'s clusters ' +
   'comprise clusters identified by algorithms (based on test name or failure reason) ' +
   'and clusters defined by a failure association rule (where the cluster contains all failures ' +
   'associated with a specific bug).';

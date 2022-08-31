@@ -61,7 +61,7 @@ import (
 
 const testProject = "testproject"
 
-// scenario represents a Weetbix system state used for testing.
+// scenario represents a LUCI Analysis system state used for testing.
 type scenario struct {
 	// clusteringState stores the test result-cluster inclusions
 	// for each test result in each chunk, and related metadata.
@@ -77,7 +77,7 @@ type scenario struct {
 	rulesVersion rules.Version
 	// rules are the failure association rules.
 	rules []*rules.FailureAssociationRule
-	// testResults are the actual test failures ingested by Weetbix,
+	// testResults are the actual test failures ingested by LUCI Analysis,
 	// organised in chunks by object ID.
 	testResultsByObjectID map[string]*cpb.Chunk
 }
@@ -789,8 +789,9 @@ func (b *chunkBuilder) buildBQExport() []*bqpb.ClusteredFailureRow {
 	return result
 }
 
-// scenarioBuilder is used to generate Weetbix system states used for testing.
-// Each scenario represents a consistent state of the Weetbix system, i.e.
+// scenarioBuilder is used to generate LUCI Analysis system states used for
+// testing. Each scenario represents a consistent state of the LUCI Analysis
+// system, i.e.
 // - where the clustering state matches the configured rules, and
 // - the BigQuery exports match the clustering state, and the test results
 //   in the chunk store.

@@ -31,7 +31,7 @@ func readProjectConfig(ctx context.Context, project string) (*compiledcfg.Projec
 	cfg, err := compiledcfg.Project(ctx, project, time.Time{})
 	if err != nil {
 		if err == compiledcfg.NotExistsErr {
-			return nil, failedPreconditionError(errors.New("project does not exist in Weetbix"))
+			return nil, failedPreconditionError(errors.New("project does not exist in LUCI Analysis"))
 		}
 		// GRPCifyAndLog will log this, and report an internal error to the caller.
 		return nil, errors.Annotate(err, "obtain project config").Err()

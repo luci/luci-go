@@ -89,47 +89,47 @@ describe.each<ExtractorTestCase>([{
   shouldExtractPresubmitRunId: false,
 }, {
   failure: newMockFailure().build(),
-  filter: 'Without Weetbix Exoneration',
+  filter: 'Without LUCI Analysis Exoneration',
   shouldExtractIngestedInvocationId: false,
   shouldExtractPresubmitRunId: false,
 }, {
   failure: newMockFailure().ingestedInvocationBlocked().build(),
-  filter: 'Without Weetbix Exoneration',
+  filter: 'Without LUCI Analysis Exoneration',
   shouldExtractIngestedInvocationId: true,
   shouldExtractPresubmitRunId: true,
 }, {
   failure: newMockFailure().ingestedInvocationBlocked().notPresubmitCritical().build(),
-  filter: 'Without Weetbix Exoneration',
+  filter: 'Without LUCI Analysis Exoneration',
   shouldExtractIngestedInvocationId: true,
   shouldExtractPresubmitRunId: false,
 }, {
   failure: newMockFailure().ingestedInvocationBlocked().dryRun().build(),
-  filter: 'Without Weetbix Exoneration',
+  filter: 'Without LUCI Analysis Exoneration',
   shouldExtractIngestedInvocationId: true,
   shouldExtractPresubmitRunId: false,
 }, {
   failure: newMockFailure().exonerateOccursOnOtherCLs().build(),
-  filter: 'Without Weetbix Exoneration',
+  filter: 'Without LUCI Analysis Exoneration',
   shouldExtractIngestedInvocationId: false,
   shouldExtractPresubmitRunId: false,
 }, {
   failure: newMockFailure().ingestedInvocationBlocked().exonerateOccursOnOtherCLs().build(),
-  filter: 'Without Weetbix Exoneration',
+  filter: 'Without LUCI Analysis Exoneration',
   shouldExtractIngestedInvocationId: true,
   shouldExtractPresubmitRunId: true,
 }, {
   failure: newMockFailure().ingestedInvocationBlocked().exonerateOccursOnOtherCLs().notPresubmitCritical().build(),
-  filter: 'Without Weetbix Exoneration',
+  filter: 'Without LUCI Analysis Exoneration',
   shouldExtractIngestedInvocationId: true,
   shouldExtractPresubmitRunId: false,
 }, {
   failure: newMockFailure().exonerateNotCritical().build(),
-  filter: 'Without Weetbix Exoneration',
+  filter: 'Without LUCI Analysis Exoneration',
   shouldExtractIngestedInvocationId: false,
   shouldExtractPresubmitRunId: false,
 }, {
   failure: newMockFailure().ingestedInvocationBlocked().exonerateNotCritical().build(),
-  filter: 'Without Weetbix Exoneration',
+  filter: 'Without LUCI Analysis Exoneration',
   shouldExtractIngestedInvocationId: false,
   shouldExtractPresubmitRunId: false,
 }, {

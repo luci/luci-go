@@ -34,7 +34,7 @@ describe('test TopBar component', () => {
         <TopBar />,
     );
 
-    await screen.findAllByText('Weetbix');
+    await screen.findAllByText('LUCI Analysis');
 
     expect(screen.getByText(window.email)).toBeInTheDocument();
   });
@@ -46,7 +46,7 @@ describe('test TopBar component', () => {
         '/p/:project',
     );
 
-    await screen.findAllByText('Weetbix');
+    await screen.findAllByText('LUCI Analysis');
 
     expect(screen.getAllByText('Clusters')).toHaveLength(2);
     expect(screen.getAllByText('Rules')).toHaveLength(2);

@@ -42,7 +42,7 @@ const (
 var (
 	buildCounter = metric.NewCounter(
 		"weetbix/ingestion/pubsub/buildbucket_builds",
-		"The number of buildbucket builds received by Weetbix from PubSub.",
+		"The number of buildbucket builds received by LUCI Analysis from PubSub.",
 		nil,
 		// The LUCI Project.
 		field.String("project"),
@@ -51,9 +51,9 @@ var (
 )
 
 // BuildbucketPubSubHandler accepts and process buildbucket Pub/Sub messages.
-// As of Aug 2021, Weetbix subscribes to this Pub/Sub topic to get completed
-// Chromium CI builds.
-// For CQ builds, Weetbix uses CV Pub/Sub as the entrypoint.
+// LUCI Analysis ingests buildbucket builds upon completion, with the
+// caveat that for builds related to CV runs, we also wait for the
+// CV run to complete (via CV Pub/Sub).
 func BuildbucketPubSubHandler(ctx *router.Context) {
 	project := "unknown"
 	status := "unknown"

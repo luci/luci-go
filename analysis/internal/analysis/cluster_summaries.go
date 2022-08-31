@@ -125,7 +125,7 @@ func (c *Client) QueryClusterSummaries(ctx context.Context, luciProject string, 
 				CONCAT(chunk_id, '/', COALESCE(chunk_index, 0)) as unique_test_result_id,
 				(build_critical AND
 				-- Exonerated for a reason other than NOT_CRITICAL or UNEXPECTED_PASS.
-				-- Passes are not ingested by Weetbix, but if a test has both an unexpected pass
+				-- Passes are not ingested by LUCI Analysis, but if a test has both an unexpected pass
 				-- and an unexpected failure, it will be exonerated for the unexpected pass.
 				(STRUCT('OCCURS_ON_MAINLINE' as Reason) in UNNEST(exonerations) OR
 					STRUCT('OCCURS_ON_OTHER_CLS' as Reason) in UNNEST(exonerations)))

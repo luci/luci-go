@@ -76,7 +76,8 @@ func (*clustersServer) Cluster(ctx context.Context, req *pb.ClusterRequest) (*pb
 	// We could make an implementation that gracefully degrades if
 	// perms.PermGetRule is not available (i.e. by not returning the
 	// bug associated with a rule cluster), but there is currently no point.
-	// All Weetbix roles currently always grants both permissions together.
+	// All LUCI Analysis roles currently always grants both permissions
+	// together.
 	if err := perms.VerifyProjectPermissions(ctx, req.Project, perms.PermGetClustersByFailure, perms.PermGetRule); err != nil {
 		return nil, err
 	}
@@ -203,7 +204,7 @@ func (c *clustersServer) BatchGet(ctx context.Context, req *pb.BatchGetClustersR
 	if err != nil {
 		if err == analysis.ProjectNotExistsErr {
 			return nil, appstatus.Error(codes.NotFound,
-				"Weetbix BigQuery dataset not provisioned for project or cluster analysis is not yet available")
+				"LUCI Analysis BigQuery dataset not provisioned for project or cluster analysis is not yet available")
 		}
 		return nil, err
 	}
@@ -424,9 +425,10 @@ func (c *clustersServer) QueryClusterSummaries(ctx context.Context, req *pb.Quer
 	// TODO(b/239768873): Provide some sort of fallback for users who do not
 	// have permission to run expensive queries if no filters are applied.
 
-	// We could make an implementation that gracefully deals with the situation where the user
-	// does not have perms.PermGetRule, but there is currently no point as the Weetbix reader
-	// role currently always grants PermGetRule with PermListClusters.
+	// We could make an implementation that gracefully deals with the situation
+	// where the user does not have perms.PermGetRule, but there is currently
+	// no point as the LUCI Analysis reader role currently always grants
+	// PermGetRule with PermListClusters.
 	if err := perms.VerifyProjectPermissions(ctx, req.Project, perms.PermListClusters, perms.PermExpensiveClusterQueries, perms.PermGetRule); err != nil {
 		return nil, err
 	}
@@ -487,7 +489,7 @@ func (c *clustersServer) QueryClusterSummaries(ctx context.Context, req *pb.Quer
 			if err != nil {
 				if err == analysis.ProjectNotExistsErr {
 					bqErr = appstatus.Error(codes.NotFound,
-						"Weetbix BigQuery dataset not provisioned for project or cluster analysis is not yet available")
+						"LUCI Analysis BigQuery dataset not provisioned for project or cluster analysis is not yet available")
 					return nil
 				}
 				if analysis.InvalidArgumentTag.In(err) {
@@ -588,7 +590,7 @@ func (c *clustersServer) QueryClusterFailures(ctx context.Context, req *pb.Query
 	if err != nil {
 		if err == analysis.ProjectNotExistsErr {
 			return nil, appstatus.Error(codes.NotFound,
-				"Weetbix BigQuery dataset not provisioned for project or clustered failures not yet available")
+				"LUCI Analysis BigQuery dataset not provisioned for project or clustered failures not yet available")
 		}
 		return nil, errors.Annotate(err, "query cluster failures").Err()
 	}

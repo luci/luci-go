@@ -88,7 +88,8 @@ func (b *RuleBuilder) WithActive(active bool) *RuleBuilder {
 	return b
 }
 
-// WithBugManaged specifies whether the rule's bug will be managed by Weetbix.
+// WithBugManaged specifies whether the rule's bug will be managed by
+// LUCI Analysis.
 func (b *RuleBuilder) WithBugManaged(value bool) *RuleBuilder {
 	b.rule.IsManagingBug = value
 	return b

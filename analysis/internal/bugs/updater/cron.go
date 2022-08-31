@@ -84,8 +84,9 @@ const workerCount = 8
 // to reflect this analysis.
 // Simulate, if true, avoids any changes being applied to monorail and logs
 // the changes which would be made instead. This must be set when running
-// on developer computers as Weetbix-initiated monorail changes will appear
-// on monorail as the developer themselves rather than the Weetbix service.
+// on developer computers as LUCI Analysis-initiated monorail changes will
+// appear on monorail as the developer themselves rather than the
+// LUCI Analysis service.
 // This leads to bugs errounously being detected as having manual priority
 // changes.
 func UpdateAnalysisAndBugs(ctx context.Context, monorailHost, gcpProject string, simulate, enable bool) (retErr error) {
@@ -185,7 +186,7 @@ type updateOptions struct {
 }
 
 // updateAnalysisAndBugsForProject updates BigQuery analysis, and
-// Weetbix-managed bugs for a particular LUCI project.
+// LUCI Analysis-managed bugs for a particular LUCI project.
 func updateAnalysisAndBugsForProject(ctx context.Context, opts updateOptions) error {
 	// Capture the current state of re-clustering before running analysis.
 	// This will reflect how up-to-date our analysis is when it completes.

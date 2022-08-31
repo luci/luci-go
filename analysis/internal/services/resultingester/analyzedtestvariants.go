@@ -214,7 +214,7 @@ func hasUnexpectedFailures(tv *rdbpb.TestVariant) bool {
 	for _, trb := range tv.Results {
 		tr := trb.Result
 		if !tr.Expected && tr.Status != rdbpb.TestStatus_PASS && tr.Status != rdbpb.TestStatus_SKIP {
-			// If any result is an unexpected failure, Weetbix should save this test variant.
+			// If any result is an unexpected failure, LUCI Analysis should save this test variant.
 			return true
 		}
 	}
@@ -256,9 +256,8 @@ func derivedStatus(tvStatus rdbpb.TestVariantStatus) (atvpb.Status, error) {
 	case tvStatus == rdbpb.TestVariantStatus_FLAKY:
 		// The new test variant has flaky results in a build, the analyzed test
 		// variant becomes flaky.
-		// Note that this is only true if Weetbix knows the the ingested test
-		// results are from builds contribute to CL submissions. Which is true for
-		// Chromium, the only project Weetbix supports now.
+		// Note that this is only true if LUCI Analysis knows the the ingested
+		// test results are from builds contribute to CL submissions.
 		return atvpb.Status_FLAKY, nil
 	case tvStatus == rdbpb.TestVariantStatus_UNEXPECTED || tvStatus == rdbpb.TestVariantStatus_EXONERATED:
 		return atvpb.Status_HAS_UNEXPECTED_RESULTS, nil

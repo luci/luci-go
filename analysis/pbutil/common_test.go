@@ -28,7 +28,7 @@ func TestCommon(t *testing.T) {
 	Convey("PresubmitRunModeFromString", t, func() {
 		// Confirm a mapping exists for every mode defined by LUCI CV.
 		// This test is designed to break if LUCI CV extends the set of
-		// allowed values, without a corresponding update to Weetbix.
+		// allowed values, without a corresponding update to LUCI Analysis.
 		for _, mode := range bigquery.Mode_name {
 			if mode == "MODE_UNSPECIFIED" {
 				continue
@@ -41,12 +41,13 @@ func TestCommon(t *testing.T) {
 	Convey("PresubmitRunStatusFromLUCICV", t, func() {
 		// Confirm a mapping exists for every run status defined by LUCI CV.
 		// This test is designed to break if LUCI CV extends the set of
-		// allowed values, without a corresponding update to Weetbix.
+		// allowed values, without a corresponding update to LUCI Analysis.
 		for _, v := range cvv0.Run_Status_value {
 			runStatus := cvv0.Run_Status(v)
 			if runStatus&cvv0.Run_ENDED_MASK == 0 {
-				// Not a run ended status. Weetbix should not have to deal
-				// with these, as Weetbix only ingests completed runs.
+				// Not a run ended status. LUCI Analysis should not have to
+				// deal with these, as LUCI Analysis only ingests completed
+				// runs.
 				continue
 			}
 			if runStatus == cvv0.Run_ENDED_MASK {

@@ -90,7 +90,7 @@ func prepareTemplates(opts *server.Options) *templates.Bundle {
 }
 
 // requireAuth is middleware that forces the user to login and checks the
-// user is authorised to use Weetbix before handling any request.
+// user is authorised to use LUCI Analysis before handling any request.
 // If the user is not authorised, a standard "access is denied" page is
 // displayed that allows the user to logout and login again with new
 // credentials.

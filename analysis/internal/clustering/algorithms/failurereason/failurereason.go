@@ -13,7 +13,7 @@
 // limitations under the License.
 
 // Package failurereason contains the failure reason clustering algorithm
-// for Weetbix.
+// for LUCI Analysis.
 //
 // This algorithm removes ips, temp file names, numbers and other such tokens
 // to cluster similar reasons together.
@@ -40,8 +40,8 @@ import (
 const AlgorithmVersion = 4
 
 // AlgorithmName is the identifier for the clustering algorithm.
-// Weetbix requires all clustering algorithms to have a unique identifier.
-// Must match the pattern ^[a-z0-9-.]{1,32}$.
+// LUCI Analysis requires all clustering algorithms to have a unique
+// identifier. Must match the pattern ^[a-z0-9-.]{1,32}$.
 //
 // The AlgorithmName must encode the algorithm version, so that each version
 // of an algorithm has a different name.

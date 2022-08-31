@@ -63,7 +63,7 @@ const AlgorithmsVersion = 1 + failurereason.AlgorithmVersion +
 	testname.AlgorithmVersion + rulesalgorithm.AlgorithmVersion
 
 // suggestingAlgorithms is the set of clustering algorithms used by
-// Weetbix to generate suggested clusters.
+// LUCI Analysis to generate suggested clusters.
 // When an algorithm is added or removed from the set,
 // or when an algorithm is updated, ensure the AlgorithmsVersion
 // above increments.
@@ -73,14 +73,14 @@ var suggestingAlgorithms = []Algorithm{
 }
 
 // rulesAlgorithm is the rules-based clustering algorithm used by
-// Weetbix. When this algorithm is changed, ensure the AlgorithmsVersion
+// LUCI Analysis. When this algorithm is changed, ensure the AlgorithmsVersion
 // above increments.
 var rulesAlgorithm = rulesalgorithm.Algorithm{}
 
-// The set of all algorithms known by Weetbix.
+// The set of all algorithms known by LUCI Analysis.
 var algorithmNames map[string]struct{}
 
-// The set of all suggested algorithms known by Weetbix.
+// The set of all suggested algorithms known by LUCI Analysis.
 var suggestedAlgorithmNames map[string]struct{}
 
 func init() {
@@ -115,7 +115,7 @@ func Cluster(config *compiledcfg.ProjectConfig, ruleset *cache.Ruleset, existing
 	if existing.AlgorithmsVersion > AlgorithmsVersion {
 		// We are running out-of-date clustering algorithms. Do not
 		// try to improve on the existing clustering. This can
-		// happen if we are rolling out a new version of Weetbix.
+		// happen if we are rolling out a new version of LUCI Analysis.
 		return existing
 	}
 

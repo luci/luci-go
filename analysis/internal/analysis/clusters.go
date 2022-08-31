@@ -274,7 +274,7 @@ type ImpactfulClusterReadOptions struct {
 	Project string
 	// Thresholds is the set of thresholds, which if any are met
 	// or exceeded, should result in the cluster being returned.
-	// Thresholds are applied based on the residual pre-Weetbix (exoneration)
+	// Thresholds are applied based on the residual actual
 	// cluster impact.
 	Thresholds *configpb.ImpactThreshold
 	// AlwaysIncludeBugClusters controls whether to include analysis for all

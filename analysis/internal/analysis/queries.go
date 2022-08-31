@@ -39,7 +39,7 @@ const clusterAnalysis = `
 	  -- Presubmit run and tryjob is critical, and
 	  (r.build_critical AND
 		-- Exonerated for a reason other than NOT_CRITICAL or UNEXPECTED_PASS.
-		-- Passes are not ingested by Weetbix, but if a test has both an unexpected pass
+		-- Passes are not ingested by LUCI Analysis, but if a test has both an unexpected pass
 		-- and an unexpected failure, it will be exonerated for the unexpected pass.
 		(EXISTS
 		  (SELECT TRUE FROM UNNEST(r.exonerations) e

@@ -54,7 +54,7 @@ func SpannerTestContext(tb testing.TB) context.Context {
 	return spantest.SpannerTestContext(tb, cleanupDatabase)
 }
 
-// findInitScript returns path //weetbix/internal/span/init_db.sql.
+// findInitScript returns path //analysis/internal/span/init_db.sql.
 func findInitScript() (string, error) {
 	ancestor, err := filepath.Abs(".")
 	if err != nil {

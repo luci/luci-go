@@ -95,19 +95,19 @@ func ReadReclusteringProgress(ctx context.Context, project string) (*Reclusterin
 	}, nil
 }
 
-// IsReclusteringToNewAlgorithms returns whether Weetbix's
+// IsReclusteringToNewAlgorithms returns whether LUCI Analysis's
 // clustering output is being updated to use a newer standard of
-// algorithms and is not yet stable. The algorithms version Weetbix
+// algorithms and is not yet stable. The algorithms version LUCI Analysis
 // is re-clustering to is accessible via LatestAlgorithmsVersion.
 func (p *ReclusteringProgress) IsReclusteringToNewAlgorithms() bool {
 	return p.Last.AlgorithmsVersion < p.Next.AlgorithmsVersion
 }
 
-// IsReclusteringToNewConfig returns whether Weetbix's
+// IsReclusteringToNewConfig returns whether LUCI Analysis's
 // clustering output is in the process of being updated to a later
 // configuration standard and is not yet stable.
-// The configuration version Weetbix is re-clustering to is accessible
-// via LatestConfigVersion.
+// The configuration version LUCI Analysis is re-clustering to is
+// accessible via LatestConfigVersion.
 // Clients using re-clustering output should verify they are using
 // the configuration version defined by LatestConfigVersion when
 // interpreting the output.
@@ -115,7 +115,7 @@ func (p *ReclusteringProgress) IsReclusteringToNewConfig() bool {
 	return p.Last.ConfigVersion.Before(p.Next.ConfigVersion)
 }
 
-// IncorporatesRulesVersion returns returns whether Weetbix
+// IncorporatesRulesVersion returns returns whether LUCI Analysis
 // clustering output incorporates all rule changes up to
 // the given predicate last updated time. Later changes
 // may also be included, in full or in part.

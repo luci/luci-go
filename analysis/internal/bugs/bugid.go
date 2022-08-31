@@ -34,7 +34,7 @@ var MonorailBugIDRe = regexp.MustCompile(`^([a-z0-9\-_]+)/([1-9][0-9]*)$`)
 // the b/), like 1234567890.
 var BuganizerBugIDRe = regexp.MustCompile(`^([1-9][0-9]*)$`)
 
-// BugID represents the identity of a bug managed by Weetbix.
+// BugID represents the identity of a bug managed by LUCI Analysis.
 type BugID struct {
 	// System is the bug tracking system of the bug. This is either
 	// "monorail" or "buganizer".

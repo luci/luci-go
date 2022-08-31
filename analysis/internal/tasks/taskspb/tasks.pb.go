@@ -409,7 +409,7 @@ type ExportTestVariants struct {
 	// - Test variants satisfy the predicate within the time_range are exported.
 	// - Each row uses this time_range as their default time range*. Meaning each row
 	//   contains the information of the test variants within the time range,
-	//   especially, the row contains the verdicts that weetbix ingested within
+	//   especially, the row contains the verdicts that LUCI Analysis ingested within
 	//   the range, and compute the flake_statistics using those verdicts.
 	//   * Note that a row can have a narrower time_range, if the test variant's
 	//     status changes within the time_range.

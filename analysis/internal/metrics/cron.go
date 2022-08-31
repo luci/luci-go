@@ -48,7 +48,7 @@ var (
 				" build result."+
 				" Age is measured as hours since the presubmit run result was"+
 				" recorded. Only recent data (age < %v hours) is included."+
-				" Used to measure Weetbix's performance joining to"+
+				" Used to measure LUCI Analysis's performance joining to"+
 				" buildbucket builds.", control.JoinStatsHours),
 		&types.MetricMetadata{Units: "hours ago"},
 		distribution.FixedWidthBucketer(1, control.JoinStatsHours),
@@ -66,8 +66,8 @@ var (
 				" Age is measured as hours since the buildbucket build"+
 				" result was recorded. Only recent data (age < %v hours)"+
 				" is included."+
-				" Used to measure Weetbix's performance joining to presubmit"+
-				" runs.", control.JoinStatsHours),
+				" Used to measure LUCI Analysis's performance joining to"+
+				" presubmit runs.", control.JoinStatsHours),
 		&types.MetricMetadata{Units: "hours ago"},
 		distribution.FixedWidthBucketer(1, control.JoinStatsHours),
 		// The LUCI Project.

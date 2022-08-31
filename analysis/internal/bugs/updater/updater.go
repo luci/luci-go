@@ -54,13 +54,13 @@ const testnameThresholdInflationPercent = 34
 // merged-into graph when handling a bug marked as duplicate.
 var mergeIntoCycleErr = errors.New("a cycle was detected in the bug merged-into graph")
 
-// mergeIntoCycleMessage is the message posted on bugs when Weetbix cannot
-// deal with a bug marked as the duplicate of another.
-const mergeIntoCycleMessage = "Weetbix cannot merge the failure association" +
-	" rule for this bug into the rule for the merged-into bug, because a" +
-	" cycle was detected in the bug merged-into graph. Please manually" +
-	" resolve the cycle, or update rules manually and archive the rule" +
-	" for this bug."
+// mergeIntoCycleMessage is the message posted on bugs when LUCI Analysis
+// cannot deal with a bug marked as the duplicate of another.
+const mergeIntoCycleMessage = "LUCI Analysis cannot merge the failure" +
+	" association rule for this bug into the rule for the merged-into bug," +
+	" because a cycle was detected in the bug merged-into graph. Please" +
+	" manually resolve the cycle, or update rules manually and archive the" +
+	" rule for this bug."
 
 // BugManager implements bug creation and bug updates for a bug-tracking
 // system. The BugManager determines bug content and priority given a
@@ -77,7 +77,7 @@ type BugManager interface {
 	// merged-into graph).
 	GetMergedInto(ctx context.Context, bug bugs.BugID) (*bugs.BugID, error)
 	// Unduplicate updates a bug to no longer be a duplicate of
-	// another a bug. This provides a way for Weetbix to surface
+	// another a bug. This provides a way for LUCI Analysis to surface
 	// duplicate bugs it cannot deal with for human intervention.
 	Unduplicate(ctx context.Context, bug bugs.BugID, message string) error
 }
@@ -239,8 +239,8 @@ func (b *BugUpdater) Run(ctx context.Context, progress *runs.ReclusteringProgres
 	}
 
 	// Handle rules which need to be archived because the bugs were:
-	// - Verified for >30 days and managed by Weetbix, OR
-	// - In any closed state for > 30 days and not managed by Weetbix, OR
+	// - Verified for >30 days and managed by LUCI Analysis, OR
+	// - In any closed state for > 30 days and not managed by LUCI Analysis, OR
 	// -
 	if err := b.archiveRules(ctx, ruleIDsToArchive); err != nil {
 		return errors.Annotate(err, "archive rules").Err()

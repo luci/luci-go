@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package pbutil contains methods for manipulating Weetbix protos.
+// Package pbutil contains methods for manipulating LUCI Analysis protos.
 package pbutil
 
 import (
@@ -22,15 +22,15 @@ import (
 	pb "go.chromium.org/luci/analysis/proto/v1"
 )
 
-// TestResultIDFromResultDB returns a Weetbix TestResultId corresponding to the
-// supplied ResultDB test result name.
+// TestResultIDFromResultDB returns a LUCI Analysis TestResultId corresponding
+// to the supplied ResultDB test result name.
 // The format of name should be:
 // "invocations/{INVOCATION_ID}/tests/{URL_ESCAPED_TEST_ID}/results/{RESULT_ID}".
 func TestResultIDFromResultDB(name string) *pb.TestResultId {
 	return &pb.TestResultId{System: "resultdb", Id: name}
 }
 
-// VariantFromResultDB returns a Weetbix Variant corresponding to the
+// VariantFromResultDB returns a LUCI Analysis Variant corresponding to the
 // supplied ResultDB Variant.
 func VariantFromResultDB(v *rdbpb.Variant) *pb.Variant {
 	if v == nil {
@@ -41,7 +41,7 @@ func VariantFromResultDB(v *rdbpb.Variant) *pb.Variant {
 }
 
 // VariantToResultDB returns a ResultDB Variant corresponding to the
-// supplied Weetbix Variant.
+// supplied LUCI Analysis Variant.
 func VariantToResultDB(v *pb.Variant) *rdbpb.Variant {
 	if v == nil {
 		return &rdbpb.Variant{Def: make(map[string]string)}
@@ -54,8 +54,8 @@ func VariantHash(v *pb.Variant) string {
 	return pbutil.VariantHash(VariantToResultDB(v))
 }
 
-// StringPairFromResultDB returns a Weetbix StringPair corresponding to the
-// supplied ResultDB StringPair.
+// StringPairFromResultDB returns a LUCI Analysis StringPair corresponding to
+// the supplied ResultDB StringPair.
 func StringPairFromResultDB(v []*rdbpb.StringPair) []*pb.StringPair {
 	pairs := []*pb.StringPair{}
 	for _, pair := range v {
@@ -64,8 +64,8 @@ func StringPairFromResultDB(v []*rdbpb.StringPair) []*pb.StringPair {
 	return pairs
 }
 
-// FailureReasonFromResultDB returns a Weetbix FailureReason corresponding to the
-// supplied ResultDB FailureReason.
+// FailureReasonFromResultDB returns a LUCI Analysis FailureReason
+// corresponding to the supplied ResultDB FailureReason.
 func FailureReasonFromResultDB(fr *rdbpb.FailureReason) *pb.FailureReason {
 	if fr == nil {
 		return nil
@@ -75,7 +75,7 @@ func FailureReasonFromResultDB(fr *rdbpb.FailureReason) *pb.FailureReason {
 	}
 }
 
-// TestMetadataFromResultDB converts a ResultDB TestMetadata to a Weetbix
+// TestMetadataFromResultDB converts a ResultDB TestMetadata to a LUCI Analysis
 // TestMetadata.
 func TestMetadataFromResultDB(rdbTmd *rdbpb.TestMetadata) *pb.TestMetadata {
 	if rdbTmd == nil {
@@ -97,8 +97,8 @@ func TestMetadataFromResultDB(rdbTmd *rdbpb.TestMetadata) *pb.TestMetadata {
 	return tmd
 }
 
-// TestResultStatus returns the Weetbix test result status corresponding
-// to the given ResultDB test result status.
+// TestResultStatusFromResultDB returns the LUCI Analysis test result status
+// corresponding to the given ResultDB test result status.
 func TestResultStatusFromResultDB(s rdbpb.TestStatus) pb.TestResultStatus {
 	switch s {
 	case rdbpb.TestStatus_ABORT:
@@ -117,7 +117,7 @@ func TestResultStatusFromResultDB(s rdbpb.TestStatus) pb.TestResultStatus {
 }
 
 // ExonerationReasonFromResultDB converts a ResultDB ExonerationReason to a
-// Weetbix ExonerationReason.
+// LUCI Analysis ExonerationReason.
 func ExonerationReasonFromResultDB(s rdbpb.ExonerationReason) pb.ExonerationReason {
 	switch s {
 	case rdbpb.ExonerationReason_NOT_CRITICAL:

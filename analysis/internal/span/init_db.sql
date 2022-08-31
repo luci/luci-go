@@ -13,7 +13,7 @@
 -- limitations under the License.
 
 --------------------------------------------------------------------------------
--- This script initializes a Weetbix Spanner database.
+-- This script initializes a LUCI Analysis Spanner database.
 
 -- Stores a test variant.
 -- The test variant should be:
@@ -162,17 +162,17 @@ CREATE TABLE FailureAssociationRules (
   RuleDefinition STRING(4096) NOT NULL,
   -- The time the rule was created.
   CreationTime TIMESTAMP NOT NULL OPTIONS (allow_commit_timestamp=true),
-  -- The user which created the rule. If this was auto-filed by Weetbix
-  -- itself, this is the special value 'weetbix'. Otherwise, it is
+  -- The user which created the rule. If this was auto-filed by LUCI Analysis
+  -- itself, this is the special value 'system'. Otherwise, it is
   -- an email address.
   -- 320 is the maximum length of an email address (64 for local part,
   -- 1 for the '@', and 255 for the domain part).
   CreationUser STRING(320) NOT NULL,
   -- The last time the rule was updated.
   LastUpdated TIMESTAMP NOT NULL OPTIONS (allow_commit_timestamp=true),
-  -- The user which last updated this rule. If this was Weetbix itself,
+  -- The user which last updated this rule. If this was LUCI Analysis itself,
   -- (e.g. in case of an auto-filed bug which was created and never
-  -- modified) this is 'weetbix'. Otherwise, it is an email address.
+  -- modified) this is 'system'. Otherwise, it is an email address.
   LastUpdatedUser STRING(320) NOT NULL,
   -- The time the rule was last updated in a way that caused the
   -- matched failures to change, i.e. because of a change to RuleDefinition
@@ -190,8 +190,8 @@ CREATE TABLE FailureAssociationRules (
   -- by the bug tracking system itself. For monorail, the scheme is
   -- {project}/{numeric_id}, for buganizer, the scheme is {numeric_id}.
   BugId STRING(255) NOT NULL,
-  -- Whether the bug must still be updated by Weetbix, and whether failures
-  -- should still be matched against this rule. The only allowed
+  -- Whether the bug must still be updated by LUCI Analysis, and whether
+  -- failures should still be matched against this rule. The only allowed
   -- values are true or NULL (to indicate false). Only if the bug has
   -- been closed and no failures have been observed for a while should
   -- this be NULL. This makes it easy to retrofit a NULL_FILTERED index
@@ -380,10 +380,10 @@ CREATE TABLE TestResults (
   -- This has the same value as luci.resultdb.v1.TestResult.test_id.
   TestId STRING(MAX) NOT NULL,
 
-  -- Partition time, as determined by Weetbix ingestion. Start time of the
-  -- ingested build (for postsubmit results) or start time of the presubmit run
-  -- (for presubmit results). Defines date/time axis of test results plotted
-  -- by date/time.
+  -- Partition time, as determined by LUCI Analysis ingestion.
+  -- Start time of the ingested build (for postsubmit results) or start time
+  -- of the presubmit run (for presubmit results). Defines date/time axis of
+  -- test results plotted by date/time, and start of data retention period.
   -- Including as part of Primary Key allows direct filtering of data for test
   -- to last N days. This could be used to improve performance for tests with
   -- many results, or allow experimentation with keeping longer histories
@@ -567,9 +567,9 @@ CREATE TABLE IngestedInvocations (
   -- must be at least one character.
   SubRealm STRING(62) NOT NULL,
 
-  -- Partition time, as determined by Weetbix ingestion. Start time of the
-  -- ingested build (for postsubmit results) or start time of the presubmit run
-  -- (for presubmit results).
+  -- Partition time, as determined by LUCI Analysis ingestion. Start time of
+  -- the ingested build (for postsubmit results) or start time of the
+  -- presubmit run (for presubmit results).
   PartitionTime TIMESTAMP NOT NULL,
 
   -- The status of the build that contained this test result. Can be used

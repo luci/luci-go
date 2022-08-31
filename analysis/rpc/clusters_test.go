@@ -279,7 +279,7 @@ func TestClusters(t *testing.T) {
 
 				// Verify
 				So(response, ShouldBeNil)
-				So(err, ShouldBeRPCFailedPrecondition, "project does not exist in Weetbix")
+				So(err, ShouldBeRPCFailedPrecondition, "project does not exist in LUCI Analysis")
 			})
 		})
 		Convey("BatchGet", func() {
@@ -583,7 +583,7 @@ func TestClusters(t *testing.T) {
 
 					// Verify
 					So(response, ShouldBeNil)
-					So(err, ShouldBeRPCNotFound, "Weetbix BigQuery dataset not provisioned for project or cluster analysis is not yet available")
+					So(err, ShouldBeRPCNotFound, "LUCI Analysis BigQuery dataset not provisioned for project or cluster analysis is not yet available")
 				})
 				Convey("With project not configured", func() {
 					err := config.SetTestProjectConfig(ctx, map[string]*configpb.ProjectConfig{})
@@ -594,7 +594,7 @@ func TestClusters(t *testing.T) {
 
 					// Verify
 					So(response, ShouldBeNil)
-					So(err, ShouldBeRPCFailedPrecondition, "project does not exist in Weetbix")
+					So(err, ShouldBeRPCFailedPrecondition, "project does not exist in LUCI Analysis")
 				})
 			})
 		})
@@ -779,7 +779,7 @@ func TestClusters(t *testing.T) {
 
 					// Verify
 					So(response, ShouldBeNil)
-					So(err, ShouldBeRPCNotFound, "Weetbix BigQuery dataset not provisioned for project or cluster analysis is not yet available")
+					So(err, ShouldBeRPCNotFound, "LUCI Analysis BigQuery dataset not provisioned for project or cluster analysis is not yet available")
 				})
 				Convey("Failure filter syntax is invalid", func() {
 					request.FailureFilter = "test_id::"
@@ -1136,7 +1136,7 @@ func TestClusters(t *testing.T) {
 
 					// Verify
 					So(response, ShouldBeNil)
-					So(err, ShouldBeRPCNotFound, "Weetbix BigQuery dataset not provisioned for project or clustered failures not yet available")
+					So(err, ShouldBeRPCNotFound, "LUCI Analysis BigQuery dataset not provisioned for project or clustered failures not yet available")
 				})
 			})
 		})

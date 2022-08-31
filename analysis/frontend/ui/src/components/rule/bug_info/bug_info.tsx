@@ -58,7 +58,7 @@ const createIssueServiceRequest = (bug: AssociatedBug): GetIssueRequest => {
 const bugStatusColor = (status: string): MuiDefaultColor => {
   // In monorail, bug statuses are configurable per system. Right now,
   // we don't have a configurable mapping from status to semantic in
-  // Weetbix. We will try to recognise common terminology and fall
+  // LUCI Analysis. We will try to recognise common terminology and fall
   // back to "other" status otherwise.
   status = status.toLowerCase();
   const unassigned = ['new', 'untriaged', 'available'];

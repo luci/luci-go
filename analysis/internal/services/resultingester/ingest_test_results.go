@@ -57,12 +57,14 @@ const (
 	resultIngestionTaskClass = "result-ingestion"
 	resultIngestionQueue     = "result-ingestion"
 
-	// ingestionEarliest is the oldest data that may be ingested by Weetbix.
+	// ingestionEarliest is the oldest data that may be ingested by
+	// LUCI Analysis.
 	// This is an offset relative to the current time, and should be kept
 	// in sync with the data retention period in Spanner and BigQuery.
 	ingestionEarliest = -90 * 24 * time.Hour
 
-	// ingestionLatest is the newest data that may be ingested by Weetbix.
+	// ingestionLatest is the newest data that may be ingested by
+	// LUCI Analysis.
 	// This is an offset relative to the current time. It is designed to
 	// allow for clock drift.
 	ingestionLatest = 24 * time.Hour
@@ -71,7 +73,7 @@ const (
 var (
 	taskCounter = metric.NewCounter(
 		"weetbix/ingestion/task_completion",
-		"The number of completed Weetbix ingestion tasks, by build project and outcome.",
+		"The number of completed LUCI Analysis ingestion tasks, by build project and outcome.",
 		nil,
 		// The LUCI Project.
 		field.String("project"),
@@ -205,7 +207,7 @@ func (i *resultIngester) ingestTestResults(ctx context.Context, payload *taskspb
 	code := status.Code(err)
 	if code == codes.NotFound {
 		// Build not found, end the task gracefully.
-		logging.Warningf(ctx, "Buildbucket build %s/%d for project %s not found (or Weetbix does not have access to read it).",
+		logging.Warningf(ctx, "Buildbucket build %s/%d for project %s not found (or LUCI Analysis does not have access to read it).",
 			payload.Build.Host, payload.Build.Id, payload.Build.Project)
 		taskCounter.Add(ctx, 1, payload.Build.Project, "ignored_no_bb_access")
 		return nil
@@ -227,9 +229,9 @@ func (i *resultIngester) ingestTestResults(ctx context.Context, payload *taskspb
 		// build (TaskIndex > 0), we made it past this check before.
 		if len(build.AncestorIds) > 0 {
 			// If the build has an ancestor build, see if its immediate
-			// ancestor is accessible by Weetbix and has a ResultDB invocation
-			// (likely indicating it includes the test results from this
-			// build).
+			// ancestor is accessible by LUCI Analysis and has a ResultDB
+			// invocation (likely indicating it includes the test results
+			// from this build).
 			included, err := includedByAncestorBuild(ctx, payload.Build.Host, build.AncestorIds[len(build.AncestorIds)-1], payload.Build.Project)
 			if err != nil {
 				return transient.Tag.Apply(err)
@@ -254,7 +256,7 @@ func (i *resultIngester) ingestTestResults(ctx context.Context, payload *taskspb
 	code = status.Code(err)
 	if code == codes.NotFound {
 		// Invocation not found, end the task gracefully.
-		logging.Warningf(ctx, "Invocation %s for project %s not found (or Weetbix does not have access to read it).",
+		logging.Warningf(ctx, "Invocation %s for project %s not found (or LUCI Analysis does not have access to read it).",
 			invName, payload.Build.Project)
 		taskCounter.Add(ctx, 1, payload.Build.Project, "ignored_no_resultdb_access")
 		return nil
@@ -366,10 +368,10 @@ func includedByAncestorBuild(ctx context.Context, buildHost string, buildID int6
 	rootBuild, err := retrieveBuild(ctx, buildHost, buildID)
 	code := status.Code(err)
 	if code == codes.NotFound {
-		logging.Warningf(ctx, "Buildbucket ancestor build %s/%d for project %s not found (or Weetbix does not have access to read it).",
+		logging.Warningf(ctx, "Buildbucket ancestor build %s/%d for project %s not found (or LUCI Analysis does not have access to read it).",
 			buildHost, buildID, project)
-		// Weetbix won't be able to retrieve the ancestor build to ingest it,
-		// even if it did include the test results from this build.
+		// LUCI Analysis won't be able to retrieve the ancestor build to
+		// ingest it, even if it did include the test results from this build.
 
 		ancestorCounter.Add(ctx, 1, project, "no_bb_access_to_ancestor")
 		return false, nil
@@ -463,7 +465,7 @@ func ingestForClustering(ctx context.Context, clustering *ingestion.Ingester, pa
 
 	if _, err := config.Project(ctx, payload.Build.Project); err != nil {
 		if err == config.NotExistsErr {
-			// Project not configured in Weetbix, ignore it.
+			// Project not configured in LUCI Analysis, ignore it.
 			return nil
 		} else {
 			// Transient error.

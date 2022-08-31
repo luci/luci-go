@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package compiledcfg contains compiled versions of the Weetbix config.
+// Package compiledcfg contains compiled versions of the LUCI Analysis config.
 // (E.g. Regular expressions are compiled for efficiency.)
 package compiledcfg
 
@@ -37,7 +37,7 @@ var configCache = caching.RegisterLRUCache(0)
 // for the specified project.
 var NotExistsErr = errors.New("no config exists for the specified project")
 
-// ProjectConfig is a compiled version of Weetbix project configuration.
+// ProjectConfig is a compiled version of LUCI Analysis project configuration.
 type ProjectConfig struct {
 	// Config is the raw, uncompiled, configuration.
 	Config *configpb.ProjectConfig

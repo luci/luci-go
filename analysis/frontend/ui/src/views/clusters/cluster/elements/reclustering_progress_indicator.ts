@@ -37,7 +37,7 @@ import {
 } from '../../../../tools/progress_tools';
 
 /**
- * ReclusteringProgressIndicator displays the progress Weetbix is making
+ * ReclusteringProgressIndicator displays the progress LUCI Analysis is making
  * re-clustering test results to reflect current algorithms and
  * the current rule.
  */
@@ -148,7 +148,7 @@ export class ReclusteringProgressIndicator extends LitElement {
         if (progressPerMille < 1000) {
             content = html`
             <span class="progress-description" data-cy="reclustering-progress-description">
-                Weetbix is re-clustering test results to reflect ${reclusteringTarget} (${progressText}). Cluster impact may be out-of-date.
+                LUCI Analysis is re-clustering test results to reflect ${reclusteringTarget} (${progressText}). Cluster impact may be out-of-date.
                 <span class="last-updated">
                     Last update ${this.lastRefreshed?.toLocaleString(DateTime.TIME_WITH_SECONDS)}.
                 </span>
@@ -156,7 +156,7 @@ export class ReclusteringProgressIndicator extends LitElement {
         } else {
             content = html`
             <span class="progress-description" data-cy="reclustering-progress-description">
-                Weetbix has finished re-clustering test results. Updated cluster impact is now available.
+                LUCI Analysis has finished re-clustering test results. Updated cluster impact is now available.
             </span>
             <mwc-button outlined @click=${this.refreshAnalysis}>
                 View Updated Impact

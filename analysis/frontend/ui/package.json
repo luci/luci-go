@@ -1,7 +1,7 @@
 {
-  "name": "weetbix",
+  "name": "luci-analysis",
   "version": "1.0.0",
-  "description": "Weetbix UI",
+  "description": "LUCI Analysis UI",
   "private": true,
   "scripts": {
     "build": "tsc --noEmit --skipLibCheck && node esbuild.mjs",

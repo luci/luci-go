@@ -23,7 +23,7 @@ import (
 )
 
 // DatasetForProject returns the name of the BigQuery dataset that contains
-// the given project's data, in the Weetbix GCP project.
+// the given project's data, in the LUCI Analysis GCP project.
 func DatasetForProject(luciProject string) (string, error) {
 	// The returned dataset may be used in SQL expressions, so we want to
 	// be absolutely sure no SQL Injection is possible.

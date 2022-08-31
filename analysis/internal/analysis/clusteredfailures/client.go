@@ -94,7 +94,7 @@ func (s *Client) Close() (reterr error) {
 // Client provides methods to export clustered failures to BigQuery
 // via the BigQuery Write API.
 type Client struct {
-	// projectID is the name of the GCP project that contains Weetbix datasets.
+	// projectID is the name of the GCP project that contains LUCI Analysis datasets.
 	projectID string
 	bqClient  *bigquery.Client
 	mwClient  *managedwriter.Client

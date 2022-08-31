@@ -47,7 +47,7 @@ const (
 var (
 	cvRunCounter = metric.NewCounter(
 		"weetbix/ingestion/pubsub/cv_runs",
-		"The number of CV runs received by Weetbix from PubSub.",
+		"The number of CV runs received by LUCI Analysis from PubSub.",
 		nil,
 		// The LUCI Project.
 		field.String("project"),
@@ -99,7 +99,7 @@ func cvPubSubHandlerImpl(ctx context.Context, request *http.Request) (project st
 		return "unknown", false, errors.Annotate(err, "failed to parse run ID").Err()
 	}
 
-	// We do not check if the project is configured in Weetbix,
+	// We do not check if the project is configured in LUCI Analysis,
 	// as CV runs can include projects from other projects.
 	// It is the projects of these builds that the data
 	// gets ingested into.

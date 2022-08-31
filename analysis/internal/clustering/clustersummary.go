@@ -15,7 +15,7 @@
 package clustering
 
 // ClusterSummary captures information about a cluster.
-// This is a subset of the information captured by Weetbix for failures.
+// This is a subset of the information captured by LUCI Analysis for failures.
 type ClusterSummary struct {
 	// Example is an example failure contained within the cluster.
 	Example Failure

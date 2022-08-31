@@ -12,7 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package testname contains the test name-based clustering algorithm for Weetbix.
+// Package testname contains the test name-based clustering algorithm for
+// LUCI Analysis.
 package testname
 
 import (
@@ -31,8 +32,8 @@ import (
 const AlgorithmVersion = 3
 
 // AlgorithmName is the identifier for the clustering algorithm.
-// Weetbix requires all clustering algorithms to have a unique identifier.
-// Must match the pattern ^[a-z0-9-.]{1,32}$.
+// LUCI Analysis requires all clustering algorithms to have a unique
+// identifier. Must match the pattern ^[a-z0-9-.]{1,32}$.
 //
 // The AlgorithmName must encode the algorithm version, so that each version
 // of an algorithm has a different name.

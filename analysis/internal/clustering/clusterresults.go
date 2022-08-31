@@ -27,7 +27,7 @@ type ClusterResults struct {
 	// e.g.: v1 -> {reason-v1}, v2 -> {reason-v1, testname-v1},
 	// v3 -> {reason-v2, testname-v1}.)
 	AlgorithmsVersion int64
-	// ConfigVersion is the version of Weetbix project configuration
+	// ConfigVersion is the version of LUCI Analysis project configuration
 	// used to cluster the test results. Clustering algorithms can rely
 	// on the configuration to alter their behaviour, so changes to
 	// the configuration should trigger re-clustering of test results.

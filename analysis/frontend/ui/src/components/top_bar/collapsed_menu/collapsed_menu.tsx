@@ -114,7 +114,7 @@ const CollapsedMenu = ({ pages }: Props) => {
           textDecoration: 'none',
         }}
       >
-        Weetbix
+        LUCI Analysis
       </Typography>
     </>
   );

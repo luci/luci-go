@@ -131,12 +131,12 @@ const ReclusteringProgressIndicator = ({
     if (progressPerMille < 1000) {
       return (
         <>
-          <p>Weetbix is re-clustering test results to reflect {reclusteringTarget} ({progressText}). Cluster impact may be out-of-date.</p>
+          <p>LUCI Analysis is re-clustering test results to reflect {reclusteringTarget} ({progressText}). Cluster impact may be out-of-date.</p>
           <small> Last update {lastRefreshed.local().toString()}.</small>
         </>
       );
     } else {
-      return 'Weetbix has finished re-clustering test results. Updated cluster impact is now available.';
+      return 'LUCI Analysis has finished re-clustering test results. Updated cluster impact is now available.';
     }
   };
   return (

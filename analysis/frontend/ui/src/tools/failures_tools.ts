@@ -189,7 +189,7 @@ export const criticalFailuresExoneratedIdsExtractor = (): FeatureExtractor => {
 
 // Returns whether the failure was exonerated for a reason other than it occurred
 // on other CLs or on mainline.
-const isExoneratedByNonWeetbix = (exonerations: Exoneration[] | undefined): boolean => {
+const isExoneratedByNonLUCIAnalysis = (exonerations: Exoneration[] | undefined): boolean => {
   if (exonerations === undefined) {
     return false;
   }
@@ -208,18 +208,20 @@ const isExoneratedByNonWeetbix = (exonerations: Exoneration[] | undefined): bool
 export const rejectedIngestedInvocationIdsExtractor = (impactFilter: ImpactFilter): FeatureExtractor => {
   return (failure) => {
     const values: Set<string> = new Set();
-    // If neither Weetbix nor all exoneration is ignored, we want actual impact.
+    // If neither LUCI Analysis nor all exoneration is ignored, we want
+    // actual impact.
     // This requires exclusion of all exonerated test results, as well as
     // test results from builds which passed (which implies the test results
     // could not have caused the presubmit run to fail).
     if (((failure.exonerations !== undefined && failure.exonerations.length > 0) || failure.buildStatus != 'BUILD_STATUS_FAILURE') &&
-                !(impactFilter.ignoreWeetbixExoneration || impactFilter.ignoreAllExoneration)) {
+                !(impactFilter.ignoreLUCIAnalysisExoneration || impactFilter.ignoreAllExoneration)) {
       return values;
     }
-    // If not all exoneration is ignored, it means we want actual or without weetbix impact.
-    // All exonerations not made by weetbix should be applied, those made by Weetbix should not
-    // be applied (or will have already been applied).
-    if (isExoneratedByNonWeetbix(failure.exonerations) &&
+    // If not all exoneration is ignored, it means we want actual or without
+    // LUCI Analysis impact.
+    // All test results exonerated (except those exonerated by LUCI Analysis)
+    // should be ignored.
+    if (isExoneratedByNonLUCIAnalysis(failure.exonerations) &&
         !impactFilter.ignoreAllExoneration) {
       return values;
     }
@@ -238,17 +240,20 @@ export const rejectedIngestedInvocationIdsExtractor = (impactFilter: ImpactFilte
 export const rejectedPresubmitRunIdsExtractor = (impactFilter: ImpactFilter): FeatureExtractor => {
   return (failure) => {
     const values: Set<string> = new Set();
-    // If neither Weetbix nor all exoneration is ignored, we want actual impact.
+    // If neither LUCI Analysis nor all exoneration is ignored, we want
+    // actual impact.
     // This requires exclusion of all exonerated test results, as well as
     // test results from builds which passed (which implies the test results
     // could not have caused the presubmit run to fail).
     if (((failure.exonerations !== undefined && failure.exonerations.length > 0) || failure.buildStatus != 'BUILD_STATUS_FAILURE') &&
-                !(impactFilter.ignoreWeetbixExoneration || impactFilter.ignoreAllExoneration)) {
+                !(impactFilter.ignoreLUCIAnalysisExoneration || impactFilter.ignoreAllExoneration)) {
       return values;
     }
-    // If not all exoneration is ignored, it means we want actual or without weetbix impact.
-    // All test results exonerated, but not exonerated by weetbix should be ignored.
-    if (isExoneratedByNonWeetbix(failure.exonerations) &&
+    // If not all exoneration is ignored, it means we want actual or without
+    // LUCI Analysis impact.
+    // All test results exonerated (except those exonerated by LUCI Analysis)
+    // should be ignored.
+    if (isExoneratedByNonLUCIAnalysis(failure.exonerations) &&
         !impactFilter.ignoreAllExoneration) {
       return values;
     }
@@ -352,29 +357,29 @@ export const countAndSortFailures = (groups: FailureGroup[], impactFilter: Impac
 // calculating impact for failures.
 export interface ImpactFilter {
     name: string;
-    ignoreWeetbixExoneration: boolean;
+    ignoreLUCIAnalysisExoneration: boolean;
     ignoreAllExoneration: boolean;
     ignoreIngestedInvocationBlocked: boolean;
 }
 export const ImpactFilters: ImpactFilter[] = [
   {
     name: 'Actual Impact',
-    ignoreWeetbixExoneration: false,
+    ignoreLUCIAnalysisExoneration: false,
     ignoreAllExoneration: false,
     ignoreIngestedInvocationBlocked: false,
   }, {
-    name: 'Without Weetbix Exoneration',
-    ignoreWeetbixExoneration: true,
+    name: 'Without LUCI Analysis Exoneration',
+    ignoreLUCIAnalysisExoneration: true,
     ignoreAllExoneration: false,
     ignoreIngestedInvocationBlocked: false,
   }, {
     name: 'Without All Exoneration',
-    ignoreWeetbixExoneration: true,
+    ignoreLUCIAnalysisExoneration: true,
     ignoreAllExoneration: true,
     ignoreIngestedInvocationBlocked: false,
   }, {
     name: 'Without Any Retries',
-    ignoreWeetbixExoneration: true,
+    ignoreLUCIAnalysisExoneration: true,
     ignoreAllExoneration: true,
     ignoreIngestedInvocationBlocked: true,
   },

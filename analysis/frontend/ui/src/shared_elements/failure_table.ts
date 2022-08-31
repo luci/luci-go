@@ -59,7 +59,7 @@ import {
 // Indent of each level of grouping in the table in pixels.
 const levelIndent = 10;
 
-// FailureTable lists the failures in a cluster tracked by Weetbix.
+// FailureTable lists the failures in a cluster tracked by LUCI Analysis.
 @customElement('failure-table')
 export class FailureTable extends LitElement {
   @property()

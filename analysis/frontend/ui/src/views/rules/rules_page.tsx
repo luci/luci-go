@@ -20,7 +20,7 @@ import Container from '@mui/material/Container';
 import HelpTooltip from '../../components/help_tooltip/help_tooltip';
 import RulesTable from '../../components/rules_table/rules_table';
 
-const rulesDescription = 'Rules define an association between failures and bugs. Weetbix uses these ' +
+const rulesDescription = 'Rules define an association between failures and bugs. LUCI Analysis uses these ' +
   'associations to calculate bug impact, automatically adjust bug priority and verified status, and ' +
   'to surface bugs for failures in the MILO test results UI.';
 

@@ -95,8 +95,8 @@ export class RuleSection extends LitElement {
         const bugStatusClass = (status: string): string => {
             // In monorail, bug statuses are configurable per system. Right now,
             // we don't have a configurable mapping from status to semantic in
-            // Weetbix. We will try to recognise common terminology and fall
-            // back to "other" status otherwise.
+            // LUCI Analysis. We will try to recognise common terminology and
+            // fall back to "other" status otherwise.
             status = status.toLowerCase();
             const unassigned = ['new', 'untriaged', 'available'];
             const assigned = ['accepted', 'assigned', 'started', 'externaldependency'];
@@ -179,7 +179,7 @@ export class RuleSection extends LitElement {
             </div>
         </div>
         <mwc-dialog class="rule-edit-dialog" .open="${this.editingRule}" @closed="${this.editRuleClosed}">
-            <div class="edit-title">Edit Rule Definition <mwc-icon class="inline-icon" title="Weetbix rule definitions describe the failures associated with a bug. Rules follow a subset of BigQuery Standard SQL's boolean expression syntax.">help_outline</mwc-icon></div>
+            <div class="edit-title">Edit Rule Definition <mwc-icon class="inline-icon" title="LUCI Analysis rule definitions describe the failures associated with a bug. Rules follow a subset of BigQuery Standard SQL's boolean expression syntax.">help_outline</mwc-icon></div>
             <div class="validation-error" data-cy="rule-definition-validation-error">${this.validationMessage}</div>
             <mwc-textarea id="rule-definition" label="Rule Definition" maxLength="4096" required data-cy="rule-definition-textbox"></mwc-textarea>
             <div>

@@ -22,7 +22,7 @@ import (
 	"go.chromium.org/luci/server/router"
 )
 
-// Handlers provides methods servicing Weetbix HTTP routes.
+// Handlers provides methods servicing LUCI Analysis HTTP routes.
 type Handlers struct {
 	cloudProject string
 	// prod is set when running in production (not a dev workstation).

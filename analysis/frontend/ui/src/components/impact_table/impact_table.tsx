@@ -26,7 +26,7 @@ import HelpTooltip from '../help_tooltip/help_tooltip';
 
 const userClsFailedPresubmitTooltipText = 'The number of distinct developer changelists that failed at least one presubmit (CQ) run because of failure(s) in this cluster.';
 const criticalFailuresExoneratedTooltipText = 'The number of failures on test variants which were configured to be presubmit-blocking, which were exonerated (i.e. did not actually block presubmit) because infrastructure determined the test variant to be failing or too flaky at tip-of-tree. If this number is non-zero, it means a test variant which was configured to be presubmit-blocking is not stable enough to do so, and should be fixed or made non-blocking.';
-const totalFailuresTooltipText = 'The total number of test results in this cluster. Weetbix only clusters test results which are unexpected and have a status of crash, abort or fail.';
+const totalFailuresTooltipText = 'The total number of test results in this cluster. LUCI Analysis only clusters test results which are unexpected and have a status of crash, abort or fail.';
 
 interface Props {
     cluster: Cluster;

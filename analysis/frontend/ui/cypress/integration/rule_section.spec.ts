@@ -24,7 +24,7 @@ describe('Rule Section', () => {
   });
 
   it('loads rule', () => {
-    cy.get('[data-testid=bug-summary]').contains('Weetbix Cypress Test Bug');
+    cy.get('[data-testid=bug-summary]').contains('LUCI Analysis Cypress Test Bug');
     cy.get('[data-testid=bug-status]').contains('Verified');
     cy.get('[data-testid=rule-definition]').contains('test = "cypress test 1"');
     cy.get('[data-testid=rule-archived]').contains('No');
@@ -36,7 +36,7 @@ describe('Rule Section', () => {
     cy.get('[data-testid=rule-input]').type('{selectall}test = "cypress test 2"');
     cy.get('[data-testid=rule-edit-dialog-save]').click();
     cy.get('[data-testid=rule-definition]').contains('test = "cypress test 2"');
-    cy.get('[data-testid=reclustering-progress-description]').contains('Weetbix is re-clustering test results');
+    cy.get('[data-testid=reclustering-progress-description]').contains('LUCI Analysis is re-clustering test results');
   });
 
   it('validation error while editing rule definition', () => {
@@ -53,7 +53,7 @@ describe('Rule Section', () => {
     cy.get('[data-testid=bug-number').type('{selectall}920869');
     cy.get('[data-testid=bug-edit-dialog-save]').click();
     cy.get('[data-testid=bug]').contains('crbug.com/920869');
-    cy.get('[data-testid=bug-summary]').contains('Weetbix Cypress Alternate Test Bug');
+    cy.get('[data-testid=bug-summary]').contains('LUCI Analysis Cypress Alternate Test Bug');
     cy.get('[data-testid=bug-status]').contains('Fixed');
   });
 

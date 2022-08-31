@@ -424,7 +424,7 @@ func validateBugAgainstConfig(cfg *compiledcfg.ProjectConfig, bug bugs.BugID) er
 			return fmt.Errorf("bug not in expected monorail project (%s)", cfg.Config.Monorail.Project)
 		}
 	case bugs.BuganizerSystem:
-		// Buganizer bugs are permitted for all Weetbix projects.
+		// Buganizer bugs are permitted for all LUCI Analysis projects.
 	default:
 		return fmt.Errorf("unsupported bug system: %s", bug.System)
 	}

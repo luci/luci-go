@@ -32,7 +32,8 @@ type authState struct {
 	// The URL of the user avatar. Optional, default "".
 	Picture string `json:"picture"`
 	// The token that authorizes and authenticates the requests.
-	// Used for authenticating to many LUCI services, including Weetbix.
+	// Used for authenticating to many LUCI services, including
+	// LUCI Analysis.
 	AccessToken string `json:"accessToken"`
 	// Expiration time (unix timestamp) of the access token.
 	// If zero, the access token does not expire.

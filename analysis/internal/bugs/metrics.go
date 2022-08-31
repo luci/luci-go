@@ -22,7 +22,7 @@ import (
 
 var (
 	// BugsCreatedCounter is the metric that counts the number of bugs
-	// created by Weetbix, by project and bug-filing system.
+	// created by LUCI Analysis, by project and bug-filing system.
 	BugsCreatedCounter = metric.NewCounter("weetbix/bug_updater/bugs_created",
 		"The number of bugs created by auto-bug filing, "+
 			"by LUCI Project and bug-filing system.",

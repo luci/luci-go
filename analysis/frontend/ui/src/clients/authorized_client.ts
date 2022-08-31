@@ -22,15 +22,15 @@ export class AuthorizedPrpcClient {
   useIDToken: boolean;
 
   // Initialises a new AuthorizedPrpcClient that connects to host.
-  // To connect to Weetbix, leave host unspecified.
+  // To connect to LUCI Analysis, leave host unspecified.
   constructor(host?: string, useIDToken?: boolean) {
-    // Only allow insecure connections in Weetbix in local development,
+    // Only allow insecure connections in LUCI Analysis in local development,
     // where risk of man-in-the-middle attack to server is negligible.
     const insecure = document.location.protocol === 'http:' && !host;
     const hostname = document.location.hostname;
     if (insecure && hostname !== 'localhost' && hostname !== '127.0.0.1') {
       // Server misconfiguration.
-      throw new Error('Weetbix should never be served over http: outside local development.');
+      throw new Error('LUCI Analysis should never be served over http: outside local development.');
     }
     this.client = new PrpcClient({
       host: host,

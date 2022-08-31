@@ -25,9 +25,9 @@ import (
 
 func TestResultDB(t *testing.T) {
 	Convey("TestResultStatusFromResultDB", t, func() {
-		// Confirm Weetbix handles every test status defined by ResultDB.
+		// Confirm LUCI Analysis handles every test status defined by ResultDB.
 		// This test is designed to break if ResultDB extends the set of
-		// allowed values, without a corresponding update to Weetbix.
+		// allowed values, without a corresponding update to LUCI Analysis.
 		for _, v := range rdbpb.TestStatus_value {
 			rdbStatus := rdbpb.TestStatus(v)
 			if rdbStatus == rdbpb.TestStatus_STATUS_UNSPECIFIED {
@@ -39,9 +39,10 @@ func TestResultDB(t *testing.T) {
 		}
 	})
 	Convey("ExonerationReasonFromResultDB", t, func() {
-		// Confirm Weetbix handles every exoneration reason defined by ResultDB.
+		// Confirm LUCI Analysis handles every exoneration reason defined by
+		// ResultDB.
 		// This test is designed to break if ResultDB extends the set of
-		// allowed values, without a corresponding update to Weetbix.
+		// allowed values, without a corresponding update to LUCI Analysis.
 		for _, v := range rdbpb.ExonerationReason_value {
 			rdbReason := rdbpb.ExonerationReason(v)
 			if rdbReason == rdbpb.ExonerationReason_EXONERATION_REASON_UNSPECIFIED {

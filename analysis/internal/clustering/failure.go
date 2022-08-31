@@ -22,7 +22,7 @@ import (
 )
 
 // Failure captures the minimal information required to cluster a failure.
-// This is a subset of the information captured by Weetbix for failures.
+// This is a subset of the information captured by LUCI Analysis for failures.
 type Failure struct {
 	// The name of the test that failed.
 	TestID string
@@ -31,7 +31,7 @@ type Failure struct {
 }
 
 // FailureFromProto extracts failure information relevant for clustering from
-// a Weetbix failure proto.
+// a LUCI Analysis failure proto.
 func FailureFromProto(f *cpb.Failure) *Failure {
 	result := &Failure{
 		TestID: f.TestId,
@@ -43,7 +43,7 @@ func FailureFromProto(f *cpb.Failure) *Failure {
 }
 
 // FailuresFromProtos extracts failure information relevant for clustering
-// from a set of Weetbix failure protos.
+// from a set of LUCI Analysis failure protos.
 func FailuresFromProtos(protos []*cpb.Failure) []*Failure {
 	result := make([]*Failure, len(protos))
 	for i, p := range protos {

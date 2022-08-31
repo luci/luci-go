@@ -24,7 +24,7 @@ import {
   ProjectConfig,
 } from '../services/project';
 
-// BugPicker lists the failure association rules configured in Weetbix.
+// BugPicker lists the failure association rules configured in LUCI Analysis.
 @customElement('bug-picker')
 export class BugPicker extends LitElement {
     @property()

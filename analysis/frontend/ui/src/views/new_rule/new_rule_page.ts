@@ -44,10 +44,10 @@ import { BugPicker } from '../../shared_elements/bug_picker';
 import { linkToRule } from '../../tools/urlHandling/links';
 
 /**
- * NewRulePage displays a page for creating a new rule in Weetbix.
+ * NewRulePage displays a page for creating a new rule in LUCI Analysis.
  * This is implemented as a page and not a pop-up dialog, as it will make it
  * easier for external integrations that want to link to the new rule
- * page in Weetbix from a failure (e.g. from a failure in MILO).
+ * page in LUCI Analysis from a failure (e.g. from a failure in MILO).
  */
 @customElement('new-rule-page')
 export class NewRulePage extends LitElement {

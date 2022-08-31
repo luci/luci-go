@@ -136,9 +136,9 @@ const RuleInfo = ({ project, rule }: Props) => {
           'Impact and recent failures are not available for archived rules.'+
           ' Automatic bug priority updates and auto-closure will also cease.'+
           ' You can restore archived rules at any time.' :
-          'Weetbix automatically archives rules when the associated bug has'+
-          ' been closed for 30 days. Please make sure the associated bug is'+
-          ' no longer closed to avoid this rule being automatically'+
+          'LUCI Analysis automatically archives rules when the associated'+
+          ' bug has been closed for 30 days. Please make sure the associated'+
+          ' bug is no longer closed to avoid this rule being automatically'+
           ' re-archived.'
         }
         onConfirm={onArchiveConfirm}

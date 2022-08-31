@@ -39,7 +39,7 @@ describe('test CollapsedMenu component', () => {
         <CollapsedMenu pages={pages}/>,
     );
 
-    await screen.findByText('Weetbix');
+    await screen.findByText('LUCI Analysis');
 
     expect(screen.getByText('Clusters')).toBeInTheDocument();
   });
@@ -51,7 +51,7 @@ describe('test CollapsedMenu component', () => {
         </TopBarContextProvider>,
     );
 
-    await screen.findByText('Weetbix');
+    await screen.findByText('LUCI Analysis');
 
     expect(screen.getByTestId('collapsed-menu')).not.toBeVisible();
 

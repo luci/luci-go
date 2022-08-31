@@ -30,7 +30,7 @@ import (
 )
 
 // Client returns a new BigQuery client for use with the given GCP project,
-// that authenticates as Weetbix itself. Only use this method if the
+// that authenticates as LUCI Analysis itself. Only use this method if the
 // specification of the BigQuery dataset to access is not under the
 // control of the project (e.g. via configuration).
 func Client(ctx context.Context, gcpProject string) (*bigquery.Client, error) {

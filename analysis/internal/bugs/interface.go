@@ -42,8 +42,9 @@ type BugUpdateResponse struct {
 
 	// ShouldArchive indicates if the rule for this bug should be archived.
 	// This should be set if:
-	// - The bug is managed by Weetbix (IsManagingBug = true) and it has
-	//   been marked as Closed (verified) by Weetbix for the last 30 days.
+	// - The bug is managed by LUCI Analysis (IsManagingBug = true) and it has
+	//   been marked as Closed (verified) by LUCI Analysis for the last 30
+	//   days.
 	// - The bug is managed by the user (IsManagingBug = false), and the
 	//   bug has been closed for the last 30 days.
 	ShouldArchive bool

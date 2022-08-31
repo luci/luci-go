@@ -18,7 +18,7 @@
 // - Well-known and understood syntax and semantics.
 // - Ability to leverage existing high-quality documentation to communicate
 //   language concepts to end-users.
-// - Simplified debugging of Weetbix (by allowing direct copy- paste of
+// - Simplified debugging of LUCI Analysis (by allowing direct copy- paste of
 //   expressions into BigQuery to verify clustering is correct).
 // - Possibility of using BigQuery as an execution engine in future.
 //

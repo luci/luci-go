@@ -104,7 +104,7 @@ const TopBar = () => {
               textDecoration: 'none',
             }}
           >
-            Weetbix
+            LUCI Analysis
           </Typography>
           <CollapsedMenu pages={pages}/>
           <Box sx={{ flexGrow: 1, display: { xs: 'none', md: 'flex' } }}>

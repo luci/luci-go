@@ -124,7 +124,7 @@ func TestProjects(t *testing.T) {
 				response, err := server.GetConfig(ctx, request)
 
 				// Verify
-				So(err, ShouldBeRPCFailedPrecondition, "project does not exist in Weetbix")
+				So(err, ShouldBeRPCFailedPrecondition, "project does not exist in LUCI Analysis")
 				So(response, ShouldBeNil)
 			})
 		})

@@ -345,7 +345,7 @@ func TestRules(t *testing.T) {
 				response, err := srv.List(ctx, request)
 
 				// Verify
-				So(err, ShouldBeRPCFailedPrecondition, "project does not exist in Weetbix")
+				So(err, ShouldBeRPCFailedPrecondition, "project does not exist in LUCI Analysis")
 				So(response, ShouldBeNil)
 			})
 		})

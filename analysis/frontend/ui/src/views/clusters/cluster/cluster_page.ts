@@ -33,7 +33,7 @@ import { NavigateFunction } from 'react-router-dom';
 import { Cluster, BatchGetClustersRequest, getClustersService } from '../../../services/cluster';
 import { RuleChangedEvent } from './elements/rule_section';
 
-// ClusterPage lists the clusters tracked by Weetbix.
+// ClusterPage lists the clusters tracked by LUCI Analysis.
 @customElement('cluster-page')
 export class ClusterPage extends LitElement {
 
