@@ -15,7 +15,9 @@
 package validation
 
 import (
+	"net"
 	"regexp"
+	"strings"
 
 	"google.golang.org/protobuf/encoding/prototext"
 
@@ -51,7 +53,22 @@ func validateAllowlist(ctx *validation.Context, configSet, path string, content 
 		default:
 			allowlists.Add(name)
 		}
-		// TODO(cjacomet): Validate subnets.
+
+		// Validate subnets, check that the format is valid.
+		// Either in CIDR format or just a textual representation
+		// of an IP.
+		// e.g. "192.0.0.1", "127.0.0.1/23"
+		for _, subnet := range a.Subnets {
+			if strings.Contains(subnet, "/") {
+				if _, _, err := net.ParseCIDR(subnet); err != nil {
+					ctx.Error(err)
+				}
+			} else {
+				if ip := net.ParseIP(subnet); ip == nil {
+					ctx.Errorf("unable to parse ip for subnet: %s", subnet)
+				}
+			}
+		}
 	}
 	return nil
 }

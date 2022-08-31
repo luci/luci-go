@@ -46,6 +46,7 @@ func TestAllowlistConfigValidation(t *testing.T) {
 			ip_allowlists {
 				name: "bots"
 				includes: "region99"
+				subnets: "108.177.31.12"
 			}
 
 			ip_allowlists {
@@ -115,6 +116,42 @@ func TestAllowlistConfigValidation(t *testing.T) {
 			errs := vctx.Finalize().(*validation.Error).Errors
 			So(errs, ShouldContainErr, "ip allowlist is defined twice")
 			So(errs, ShouldContainErr, "invalid ip allowlist name")
+		})
+
+		Convey("Bad CIDR format", func() {
+			badCfg := `
+				ip_allowlists {
+					name: "bots"
+					subnets: "not a subnet/"
+				}
+			`
+			So(validateAllowlist(vctx, configSet, path, []byte(badCfg)), ShouldBeNil)
+			So(vctx.Finalize(), ShouldErrLike, "invalid CIDR address")
+		})
+
+		Convey("Bad standard IP format", func() {
+			badCfg := `
+				ip_allowlists {
+					name: "bots"
+					subnets: "not a subnet"
+				}
+			`
+			So(validateAllowlist(vctx, configSet, path, []byte(badCfg)), ShouldBeNil)
+			So(vctx.Finalize(), ShouldErrLike, "unable to parse ip for subnet")
+		})
+
+		Convey("Multiple subnet errors in one vctx", func() {
+			badCfg := `
+				ip_allowlists {
+					name: "bots"
+					subnets: "not a subnet/"
+					subnets: "not a subnet"
+				}
+			`
+			So(validateAllowlist(vctx, configSet, path, []byte(badCfg)), ShouldBeNil)
+			errs := vctx.Finalize().(*validation.Error).Errors
+			So(errs, ShouldContainErr, "invalid CIDR address")
+			So(errs, ShouldContainErr, "unable to parse ip for subnet")
 		})
 	})
 }
