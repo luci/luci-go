@@ -85,7 +85,7 @@ function retryWithoutComputedInvId(err: ErrorEvent, ele: BuildPageElement) {
     // Old builds don't support computed invocation ID.
     // Disable it and try again.
     if (ele.store.buildPage.useComputedInvId && !err.error.req.pageToken) {
-      ele.store.buildPage.useComputedInvId = false;
+      ele.store.buildPage.setUseComputedInvId(false);
       recovered = true;
     }
   } else if (err.error instanceof QueryInvocationError) {
@@ -97,7 +97,7 @@ function retryWithoutComputedInvId(err: ErrorEvent, ele: BuildPageElement) {
     // Old builds don't support computed invocation ID.
     // Disable it and try again.
     if (ele.store.buildPage.useComputedInvId) {
-      ele.store.buildPage.useComputedInvId = false;
+      ele.store.buildPage.setUseComputedInvId(false);
       recovered = true;
     }
   }

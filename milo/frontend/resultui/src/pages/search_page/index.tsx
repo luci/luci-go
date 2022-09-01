@@ -24,7 +24,6 @@ import { observer } from 'mobx-react-lite';
 import { useCallback, useEffect, useState } from 'react';
 import { createRoot, Root } from 'react-dom/client';
 
-import '../../components/dot_spinner';
 import { consumer } from '../../libs/context';
 import { consumeStore, StoreContext, StoreInstance, useStore } from '../../store';
 import { SearchTarget } from '../../store/search_page';

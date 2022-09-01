@@ -92,7 +92,7 @@ export class StepsTabElement extends MiloBaseElement {
               type="checkbox"
               ?checked=${this.stepsConfig.expandSucceededByDefault}
               @change=${(e: MouseEvent) => {
-                this.stepsConfig.expandSucceededByDefault = (e.target as HTMLInputElement).checked;
+                this.stepsConfig.setExpandSucceededByDefault((e.target as HTMLInputElement).checked);
               }}
             />
             <label for="expand-by-default">Expand by default</label>

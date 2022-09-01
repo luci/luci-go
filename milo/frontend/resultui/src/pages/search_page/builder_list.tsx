@@ -15,6 +15,7 @@
 import { observer } from 'mobx-react-lite';
 import { useEffect } from 'react';
 
+import '../../components/dot_spinner';
 import { getURLPathForBuilder } from '../../libs/build_utils';
 import { useStore } from '../../store';
 
