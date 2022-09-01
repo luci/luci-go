@@ -37,6 +37,7 @@ import (
 	"go.chromium.org/luci/cv/internal/configs/srvcfg"
 	"go.chromium.org/luci/cv/internal/cvtesting"
 	gf "go.chromium.org/luci/cv/internal/gerrit/gerritfake"
+	"go.chromium.org/luci/cv/internal/metrics"
 	"go.chromium.org/luci/cv/internal/run"
 	"go.chromium.org/luci/cv/internal/run/eventpb"
 	"go.chromium.org/luci/cv/internal/run/impl/state"
@@ -56,6 +57,7 @@ func TestStart(t *testing.T) {
 
 		const (
 			lProject           = "chromium"
+			configGroupName    = "combinable"
 			gerritHost         = "chromium-review.googlesource.com"
 			committers         = "committer-group"
 			dryRunners         = "dry-runner-group"
@@ -69,7 +71,7 @@ func TestStart(t *testing.T) {
 			Builder: "cool_tester",
 		}
 		prjcfgtest.Create(ctx, lProject, &cfgpb.Config{ConfigGroups: []*cfgpb.ConfigGroup{{
-			Name: "combinable",
+			Name: configGroupName,
 			CombineCls: &cfgpb.CombineCLs{
 				StabilizationDelay: durationpb.New(stabilizationDelay),
 			},
@@ -155,7 +157,6 @@ func TestStart(t *testing.T) {
 		Convey("Starts when Run is PENDING", func() {
 			res, err := h.Start(ctx, rs)
 			So(err, ShouldBeNil)
-			So(res.SideEffectFn, ShouldBeNil)
 			So(res.PreserveEvents, ShouldBeFalse)
 
 			So(res.State.Status, ShouldEqual, run.Status_RUNNING)
@@ -186,6 +187,9 @@ func TestStart(t *testing.T) {
 			So(res.State.OngoingLongOps.GetOps()[res.State.NewLongOpIDs[0]].GetExecuteTryjobs(), ShouldNotBeNil)
 			So(res.State.OngoingLongOps.GetOps()[res.State.NewLongOpIDs[1]].GetPostStartMessage(), ShouldBeTrue)
 
+			So(res.SideEffectFn, ShouldNotBeNil)
+			So(datastore.RunInTransaction(ctx, res.SideEffectFn, nil), ShouldBeNil)
+			So(ct.TSMonSentValue(ctx, metrics.Public.RunStarted, lProject, configGroupName, string(run.DryRun)), ShouldEqual, 1)
 			So(ct.TSMonSentDistr(ctx, metricPickupLatencyS, lProject).Sum(),
 				ShouldAlmostEqual, startLatency.Seconds())
 			So(ct.TSMonSentDistr(ctx, metricPickupLatencyAdjustedS, lProject).Sum(),
@@ -207,7 +211,7 @@ func TestStart(t *testing.T) {
 			}), ShouldBeNil)
 			res, err := h.Start(ctx, rs)
 			So(err, ShouldBeNil)
-			So(res.SideEffectFn, ShouldBeNil)
+			So(res.SideEffectFn, ShouldNotBeNil)
 			So(res.PreserveEvents, ShouldBeFalse)
 
 			So(res.State.Status, ShouldEqual, run.Status_RUNNING)

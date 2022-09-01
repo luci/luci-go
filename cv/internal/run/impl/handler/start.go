@@ -26,11 +26,13 @@ import (
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/gae/filter/txndefer"
 	"go.chromium.org/luci/gae/service/datastore"
 
 	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/configs/prjcfg"
 	"go.chromium.org/luci/cv/internal/gerrit"
+	"go.chromium.org/luci/cv/internal/metrics"
 	"go.chromium.org/luci/cv/internal/migration/migrationcfg"
 	"go.chromium.org/luci/cv/internal/run"
 	"go.chromium.org/luci/cv/internal/run/eventpb"
@@ -159,8 +161,16 @@ func (impl *Impl) Start(ctx context.Context, rs *state.RunState) (*Result, error
 			Started: &run.LogEntry_Started{},
 		},
 	})
-	recordPickupLatency(ctx, rs, cg)
-	return &Result{State: rs}, nil
+
+	return &Result{
+		State: rs,
+		SideEffectFn: func(ctx context.Context) error {
+			txndefer.Defer(ctx, func(ctx context.Context) {
+				reportStartMetrics(ctx, rs, cg)
+			})
+			return nil
+		},
+	}, nil
 }
 
 func (impl *Impl) onCompletedPostStartMessage(ctx context.Context, rs *state.RunState, op *run.OngoingLongOps_Op, result *eventpb.LongOpCompleted) (*Result, error) {
@@ -231,14 +241,16 @@ func validateRunOptions(rs *state.RunState) (reasons []string, isValid bool) {
 	return reasons, false
 }
 
-func recordPickupLatency(ctx context.Context, rs *state.RunState, cg *prjcfg.ConfigGroup) {
+func reportStartMetrics(ctx context.Context, rs *state.RunState, cg *prjcfg.ConfigGroup) {
+	project := rs.ID.LUCIProject()
+	metrics.Public.RunStarted.Add(ctx, 1, project, rs.ConfigGroupID.Name(), string(rs.Mode))
 	delay := rs.StartTime.Sub(rs.CreateTime)
-	metricPickupLatencyS.Add(ctx, delay.Seconds(), rs.ID.LUCIProject())
+	metricPickupLatencyS.Add(ctx, delay.Seconds(), project)
 
 	if d := cg.Content.GetCombineCls().GetStabilizationDelay(); d != nil {
 		delay -= d.AsDuration()
 	}
-	metricPickupLatencyAdjustedS.Add(ctx, delay.Seconds(), rs.ID.LUCIProject())
+	metricPickupLatencyAdjustedS.Add(ctx, delay.Seconds(), project)
 
 	if delay >= 1*time.Minute {
 		logging.Warningf(ctx, "Too large adjusted pickup delay: %s", delay)
