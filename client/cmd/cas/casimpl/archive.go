@@ -115,7 +115,7 @@ func (c *archiveRun) doArchive(ctx context.Context) error {
 
 	root, err := getRoot(c.paths)
 	if err != nil {
-		if err := writeExitResult(c.dumpJSON, IOError); err != nil {
+		if err := writeExitResult(c.dumpJSON, IOError, ""); err != nil {
 			return errors.Annotate(err, "failed to write json file").Err()
 		}
 		return err
@@ -128,7 +128,7 @@ func (c *archiveRun) doArchive(ctx context.Context) error {
 
 	client, err := c.authFlags.NewRBEClient(ctx, c.casFlags.Addr, c.casFlags.Instance, false)
 	if err != nil {
-		if err := writeExitResult(c.dumpJSON, ClientError); err != nil {
+		if err := writeExitResult(c.dumpJSON, ClientError, ""); err != nil {
 			return errors.Annotate(err, "failed to write json file").Err()
 		}
 		return errors.Annotate(err, "failed to create cas client").Err()
@@ -138,8 +138,9 @@ func (c *archiveRun) doArchive(ctx context.Context) error {
 	start := time.Now()
 
 	rootDg, entries, _, err := client.ComputeMerkleTree(root, "", "", &is, filemetadata.NewNoopCache())
+
 	if err != nil {
-		if err := writeExitResult(c.dumpJSON, IOError); err != nil {
+		if err := writeExitResult(c.dumpJSON, IOError, ""); err != nil {
 			return errors.Annotate(err, "failed to write json file").Err()
 		}
 		return errors.Annotate(err, "failed to call ComputeMerkleTree").Err()
@@ -149,7 +150,7 @@ func (c *archiveRun) doArchive(ctx context.Context) error {
 	start = time.Now()
 	uploadedDigests, moved, err := client.UploadIfMissing(ctx, entries...)
 	if err != nil {
-		if err := writeExitResult(c.dumpJSON, RPCError); err != nil {
+		if err := writeExitResult(c.dumpJSON, RPCError, ""); err != nil {
 			return errors.Annotate(err, "failed to write json file").Err()
 		}
 		return errors.Annotate(err, "failed to call UploadIfMissing").Err()
@@ -158,7 +159,7 @@ func (c *archiveRun) doArchive(ctx context.Context) error {
 
 	if dd := c.dumpDigest; dd != "" {
 		if err := ioutil.WriteFile(dd, []byte(rootDg.String()), 0600); err != nil {
-			if err := writeExitResult(c.dumpJSON, IOError); err != nil {
+			if err := writeExitResult(c.dumpJSON, IOError, ""); err != nil {
 				return errors.Annotate(err, "failed to write json file").Err()
 			}
 			return errors.Annotate(err, "failed to dump digest").Err()
@@ -192,11 +193,10 @@ func (c *archiveRun) doArchive(ctx context.Context) error {
 
 func (c *archiveRun) Run(a subcommands.Application, args []string, env subcommands.Env) int {
 	ctx := cli.GetContext(a, c, env)
-
 	if err := c.parse(a, args); err != nil {
 		errors.Log(ctx, err)
 		fmt.Fprintf(a.GetErr(), "%s: %s\n", a.GetName(), err)
-		if err := writeExitResult(c.dumpJSON, ArgumentsInvalid); err != nil {
+		if err := writeExitResult(c.dumpJSON, ArgumentsInvalid, ""); err != nil {
 			fmt.Fprintf(a.GetErr(), "failed to write json file")
 		}
 		return 1

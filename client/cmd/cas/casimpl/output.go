@@ -45,7 +45,7 @@ const (
 )
 
 // writeExitResult writes the status msg
-func writeExitResult(path string, statusCode StatusCode) error {
+func writeExitResult(path string, statusCode StatusCode, digest string) error {
 	if path == "" {
 		return nil
 	}
@@ -60,15 +60,25 @@ func writeExitResult(path string, statusCode StatusCode) error {
 		Unknown:             "unknown",
 	}
 
-	body, err := json.Marshal(struct {
-		Result string `json:"result"`
-	}{
-		Result: toString[statusCode],
-	})
+	type ErrorDetails struct {
+		Digest string `json:"digest,omitempty"`
+	}
+
+	var body struct {
+		Result       string       `json:"result"`
+		ErrorDetails ErrorDetails `json:"error_details,omitempty"`
+	}
+
+	body.Result = toString[statusCode]
+	if digest != "" {
+		body.ErrorDetails = ErrorDetails{Digest: digest}
+	}
+
+	out, err := json.Marshal(body)
 	if err != nil {
 		return errors.Annotate(err, "failed to marshal json").Err()
 	}
-	if err := ioutil.WriteFile(path, body, 0600); err != nil {
+	if err := ioutil.WriteFile(path, out, 0600); err != nil {
 		return errors.Annotate(err, "failed to write json").Err()
 	}
 	return nil

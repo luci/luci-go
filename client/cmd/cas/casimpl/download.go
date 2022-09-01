@@ -21,6 +21,7 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"regexp"
 	"runtime"
 	"sort"
 	"sync"
@@ -101,6 +102,24 @@ func (r *downloadRun) parse(a subcommands.Application, args []string) error {
 	r.dir = filepath.Clean(r.dir)
 
 	return nil
+}
+
+func extractErrorCode(err error) (StatusCode, string) {
+	errorCode := RPCError
+	digest := ""
+	if e, ok := status.FromError(err); ok {
+		if e.Code() == codes.PermissionDenied {
+			errorCode = AuthenticationError
+		} else if e.Code() == codes.NotFound {
+			errorCode = DigestInvalid
+		}
+		re := regexp.MustCompile(`Digest ([0-9a-z]*/\d*) not found in the CAS`)
+		parts := re.FindStringSubmatch(e.Message())
+		if parts != nil {
+			digest = parts[1]
+		}
+	}
+	return errorCode, digest
 }
 
 func createDirectories(ctx context.Context, root string, outputs map[string]*client.TreeOutput) error {
@@ -312,7 +331,7 @@ func (r *downloadRun) doDownload(ctx context.Context) (rerr error) {
 
 	d, err := digest.NewFromString(r.digest)
 	if err != nil {
-		if err := writeExitResult(r.dumpJSON, DigestInvalid); err != nil {
+		if err := writeExitResult(r.dumpJSON, DigestInvalid, r.digest); err != nil {
 			return errors.Annotate(err, "failed to write json file").Err()
 		}
 		return errors.Annotate(err, "failed to parse digest: %s", r.digest).Err()
@@ -320,23 +339,15 @@ func (r *downloadRun) doDownload(ctx context.Context) (rerr error) {
 
 	c, err := r.authFlags.NewRBEClient(ctx, r.casFlags.Addr, r.casFlags.Instance, true)
 	if err != nil {
-		if err := writeExitResult(r.dumpJSON, ClientError); err != nil {
+		if err := writeExitResult(r.dumpJSON, ClientError, ""); err != nil {
 			return errors.Annotate(err, "failed to write json file").Err()
 		}
 		return err
 	}
-
 	rootDir := &repb.Directory{}
 	if _, err := c.ReadProto(ctx, d, rootDir); err != nil {
-		errorCode := RPCError
-		if e, ok := status.FromError(err); ok {
-			if e.Code() == codes.PermissionDenied {
-				errorCode = AuthenticationError
-			} else if e.Code() == codes.NotFound {
-				errorCode = DigestInvalid
-			}
-		}
-		if err := writeExitResult(r.dumpJSON, errorCode); err != nil {
+		errorCode, digest := extractErrorCode(err)
+		if err := writeExitResult(r.dumpJSON, errorCode, digest); err != nil {
 			return errors.Annotate(err, "failed to write json file").Err()
 		}
 		return errors.Annotate(err, "failed to read root directory proto").Err()
@@ -345,7 +356,7 @@ func (r *downloadRun) doDownload(ctx context.Context) (rerr error) {
 	start := time.Now()
 	dirs, err := c.GetDirectoryTree(ctx, d.ToProto())
 	if err != nil {
-		if err := writeExitResult(r.dumpJSON, RPCError); err != nil {
+		if err := writeExitResult(r.dumpJSON, RPCError, ""); err != nil {
 			return errors.Annotate(err, "failed to write json file").Err()
 		}
 		return errors.Annotate(err, "failed to call GetDirectoryTree").Err()
@@ -361,7 +372,8 @@ func (r *downloadRun) doDownload(ctx context.Context) (rerr error) {
 
 	outputs, err := c.FlattenTree(t, r.dir)
 	if err != nil {
-		if err := writeExitResult(r.dumpJSON, RPCError); err != nil {
+		errorCode, digest := extractErrorCode(err)
+		if err := writeExitResult(r.dumpJSON, errorCode, digest); err != nil {
 			return errors.Annotate(err, "failed to write json file").Err()
 		}
 		return errors.Annotate(err, "failed to call FlattenTree").Err()
@@ -381,7 +393,7 @@ func (r *downloadRun) doDownload(ctx context.Context) (rerr error) {
 
 		diskcache, err = cache.New(r.cachePolicies, r.cacheDir, crypto.SHA256)
 		if err != nil {
-			if err := writeExitResult(r.dumpJSON, IOError); err != nil {
+			if err := writeExitResult(r.dumpJSON, IOError, ""); err != nil {
 				return errors.Annotate(err, "failed to write json file").Err()
 			}
 			return errors.Annotate(err, "failed to create initialize cache").Err()
@@ -435,7 +447,7 @@ func (r *downloadRun) doDownload(ctx context.Context) (rerr error) {
 
 		if output.SymlinkTarget != "" {
 			if err := os.Symlink(output.SymlinkTarget, path); err != nil {
-				if err := writeExitResult(r.dumpJSON, IOError); err != nil {
+				if err := writeExitResult(r.dumpJSON, IOError, ""); err != nil {
 					return errors.Annotate(err, "failed to write json file").Err()
 				}
 				return errors.Annotate(err, "failed to create symlink").Err()
@@ -455,7 +467,7 @@ func (r *downloadRun) doDownload(ctx context.Context) (rerr error) {
 			}
 
 			if err := diskcache.Hardlink(cache.HexDigest(output.Digest.Hash), path, os.FileMode(mode)); err != nil {
-				if err := writeExitResult(r.dumpJSON, IOError); err != nil {
+				if err := writeExitResult(r.dumpJSON, IOError, ""); err != nil {
 					return errors.Annotate(err, "failed to write json file").Err()
 				}
 				return err
@@ -476,7 +488,7 @@ func (r *downloadRun) doDownload(ctx context.Context) (rerr error) {
 		start := time.Now()
 
 		if err := copySmallFilesFromCache(ctx, kvs, smallFiles); err != nil {
-			if err := writeExitResult(r.dumpJSON, IOError); err != nil {
+			if err := writeExitResult(r.dumpJSON, IOError, ""); err != nil {
 				return errors.Annotate(err, "failed to write json file").Err()
 			}
 			return err
@@ -498,7 +510,8 @@ func (r *downloadRun) doDownload(ctx context.Context) (rerr error) {
 
 	start = time.Now()
 	if _, err := c.DownloadFiles(ctx, "", to); err != nil {
-		if err := writeExitResult(r.dumpJSON, RPCError); err != nil {
+		errorCode, digest := extractErrorCode(err)
+		if err := writeExitResult(r.dumpJSON, errorCode, digest); err != nil {
 			return errors.Annotate(err, "failed to write json file").Err()
 		}
 		return errors.Annotate(err, "failed to download files").Err()
@@ -508,7 +521,7 @@ func (r *downloadRun) doDownload(ctx context.Context) (rerr error) {
 	if diskcache != nil {
 		start = time.Now()
 		if err := cacheOutputFiles(ctx, diskcache, kvs, to); err != nil {
-			if err := writeExitResult(r.dumpJSON, IOError); err != nil {
+			if err := writeExitResult(r.dumpJSON, IOError, ""); err != nil {
 				return errors.Annotate(err, "failed to write json file").Err()
 			}
 			return err
@@ -518,7 +531,7 @@ func (r *downloadRun) doDownload(ctx context.Context) (rerr error) {
 
 	start = time.Now()
 	if err := copyFiles(ctx, dups, to); err != nil {
-		if err := writeExitResult(r.dumpJSON, IOError); err != nil {
+		if err := writeExitResult(r.dumpJSON, IOError, ""); err != nil {
 			return errors.Annotate(err, "failed to write json file").Err()
 		}
 		return err
@@ -553,7 +566,7 @@ func (r *downloadRun) Run(a subcommands.Application, args []string, env subcomma
 	if err := r.parse(a, args); err != nil {
 		errors.Log(ctx, err)
 		fmt.Fprintf(a.GetErr(), "%s: %s\n", a.GetName(), err)
-		if err := writeExitResult(r.dumpJSON, ArgumentsInvalid); err != nil {
+		if err := writeExitResult(r.dumpJSON, ArgumentsInvalid, ""); err != nil {
 			fmt.Fprintf(a.GetErr(), "failed to write json file")
 		}
 		return 1
