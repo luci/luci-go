@@ -31,11 +31,13 @@ import (
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/common/trace"
+	"go.chromium.org/luci/gae/filter/txndefer"
 	"go.chromium.org/luci/gae/service/datastore"
 
 	"go.chromium.org/luci/cv/internal/changelist"
 	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/configs/prjcfg"
+	"go.chromium.org/luci/cv/internal/metrics"
 	"go.chromium.org/luci/cv/internal/prjmanager"
 	"go.chromium.org/luci/cv/internal/prjmanager/prjpb"
 	"go.chromium.org/luci/cv/internal/run"
@@ -228,6 +230,9 @@ func (rb *Creator) createTransactionally(ctx context.Context, clMutator *changel
 	if err := rb.save(ctx, clMutator, pm, rm); err != nil {
 		return nil, err
 	}
+	txndefer.Defer(ctx, func(ctx context.Context) {
+		metrics.Public.RunCreated.Add(ctx, 1, rb.LUCIProject, rb.ConfigGroupID.Name(), string(rb.Mode))
+	})
 	return rb.run, nil
 }
 

@@ -35,6 +35,7 @@ import (
 	"go.chromium.org/luci/cv/internal/gerrit"
 	gf "go.chromium.org/luci/cv/internal/gerrit/gerritfake"
 	"go.chromium.org/luci/cv/internal/gerrit/trigger"
+	"go.chromium.org/luci/cv/internal/metrics"
 	"go.chromium.org/luci/cv/internal/prjmanager"
 	"go.chromium.org/luci/cv/internal/prjmanager/pmtest"
 	"go.chromium.org/luci/cv/internal/prjmanager/prjpb"
@@ -344,6 +345,9 @@ func TestRunBuilder(t *testing.T) {
 			So(err, ShouldBeNil)
 			So(entries, ShouldHaveLength, 1)
 			So(entries[0].GetCreated().GetConfigGroupId(), ShouldResemble, string(expectedRun.ConfigGroupID))
+
+			// Created metric is sent.
+			So(ct.TSMonSentValue(ctx, metrics.Public.RunCreated, lProject, "cq-group", string(run.DryRun)), ShouldEqual, 1)
 
 			// Both PM and RM must be notified about new Run.
 			pmtest.AssertInEventbox(ctx, lProject, &prjpb.Event{Event: &prjpb.Event_RunCreated{RunCreated: &prjpb.RunCreated{
