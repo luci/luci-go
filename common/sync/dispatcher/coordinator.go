@@ -20,6 +20,7 @@ import (
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/sync/dispatcher/buffer"
 )
 
@@ -65,8 +66,9 @@ func (state *coordinatorState) dbg(msg string, args ...interface{}) {
 // may have bellow issues:
 // * it prevents the QPSLimit from replenishing tokens during sendBatches;
 // * it may causes sendBatches to send an additional nil batch after sending
-//   batches, while sendBatches should only try to send a nil batch if it doesn't
-//   have any batch to send.
+//
+//	batches, while sendBatches should only try to send a nil batch if it doesn't
+//	have any batch to send.
 func (state *coordinatorState) sendBatches(ctx context.Context, now, prevLastSend time.Time, send SendFn) (lastSend time.Time, delay time.Duration) {
 	lastSend = prevLastSend
 	if state.canceled {
@@ -133,8 +135,8 @@ func (state *coordinatorState) sendBatches(ctx context.Context, now, prevLastSen
 
 // getNextTimingEvent returns a clock.Timer channel which will activate when the
 // later of the following happen:
-//   * buffer.NextSendTime or MinQPS, whichever is earlier
-//   * nextQPSToken
+//   - buffer.NextSendTime or MinQPS, whichever is earlier
+//   - nextQPSToken
 //
 // So resetDuration = max(min(MinQPS, nextSendTime), nextQPSToken)
 func (state *coordinatorState) getNextTimingEvent(now time.Time, nextQPSToken time.Duration) <-chan clock.TimerResult {
@@ -222,7 +224,10 @@ func (state *coordinatorState) handleResult(ctx context.Context, result workerRe
 // all of the internal channels of the external Channel object in one big select
 // loop.
 func (state *coordinatorState) run(ctx context.Context, send SendFn) {
-	defer close(state.drainCh)
+	defer func() {
+		logging.Debugf(ctx, "closing drainCh")
+		close(state.drainCh)
+	}()
 	if state.opts.DrainedFn != nil {
 		defer state.opts.DrainedFn()
 	}
@@ -261,6 +266,7 @@ loop:
 		select {
 		case <-doneCh:
 			state.dbg("  GOT CANCEL (via context)")
+			logging.Debugf(ctx, "GOT CANCEL (via context)")
 			state.canceled = true
 			state.buf.Flush(now)
 
@@ -270,6 +276,7 @@ loop:
 		case itm, ok := <-state.getWorkChannel():
 			if !ok {
 				state.dbg("  GOT DRAIN")
+				logging.Debugf(ctx, "GOT DRAIN")
 				state.closed = true
 				state.buf.Flush(now)
 				continue
