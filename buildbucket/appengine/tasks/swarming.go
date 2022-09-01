@@ -713,6 +713,11 @@ func computeTaskSlice(build *model.Build) ([]*swarming.SwarmingRpcsTaskSlice, er
 	}
 	sort.Ints(expSecs)
 
+	// TODO(vadimsh): Remove this when no longer needed, ETA Oct 2022. This is
+	// used to load test Swarming's slice expiration mechanism.
+	sliceWaitForCapacity := build.Proto.GetWaitForCapacity() &&
+		strings.Contains(build.ExperimentsString(), buildbucket.ExperimentWaitForCapacity)
+
 	// Create extra task slices by copying the base task slice. Adding the
 	// corresponding expiration and desired dimensions
 	lastExp := 0
@@ -723,8 +728,9 @@ func computeTaskSlice(build *model.Build) ([]*swarming.SwarmingRpcsTaskSlice, er
 			return nil, err
 		}
 		taskSlices[i] = &swarming.SwarmingRpcsTaskSlice{
-			ExpirationSecs: int64(sec - lastExp),
-			Properties:     prop,
+			WaitForCapacity: sliceWaitForCapacity,
+			ExpirationSecs:  int64(sec - lastExp),
+			Properties:      prop,
 		}
 		// dims[i] should be added into all previous non-expired task slices.
 		for j := 0; j <= i; j++ {

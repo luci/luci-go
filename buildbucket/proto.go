@@ -65,6 +65,7 @@ const (
 	ExperimentNonProduction       = "luci.non_production"
 	ExperimentParentTracking      = "luci.buildbucket.parent_tracking"
 	ExperimentRecipePY3           = "luci.recipes.use_python3"
+	ExperimentWaitForCapacity     = "luci.buildbucket.wait_for_capacity_in_slices"
 )
 
 var (
