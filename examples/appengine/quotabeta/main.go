@@ -12,12 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package main contains a GAE app demonstrating how to use the server/quota
+// Package main contains a GAE app demonstrating how to use the server/quotabeta
 // module to implement rate limiting for requests. Navigate to /rpcexplorer
 // to try out quota operations.
 //
 // Not intended to be run locally. A local demo can be found under
-// server/quota/example.
+// server/quotabeta/example.
 package main
 
 import (
@@ -25,13 +25,13 @@ import (
 	"go.chromium.org/luci/server"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/module"
-	"go.chromium.org/luci/server/quota"
-	quotapb "go.chromium.org/luci/server/quota/proto"
-	"go.chromium.org/luci/server/quota/quotaconfig"
+	quota "go.chromium.org/luci/server/quotabeta"
+	quotapb "go.chromium.org/luci/server/quotabeta/proto"
+	"go.chromium.org/luci/server/quotabeta/quotaconfig"
 	"go.chromium.org/luci/server/redisconn"
 
-	pb "go.chromium.org/luci/examples/appengine/quota/proto"
-	"go.chromium.org/luci/examples/appengine/quota/rpc"
+	pb "go.chromium.org/luci/examples/appengine/quotabeta/proto"
+	"go.chromium.org/luci/examples/appengine/quotabeta/rpc"
 )
 
 func main() {

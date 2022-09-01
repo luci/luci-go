@@ -28,7 +28,7 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/config/validation"
 
-	pb "go.chromium.org/luci/server/quota/proto"
+	pb "go.chromium.org/luci/server/quotabeta/proto"
 )
 
 // ErrNotFound must be returned by Interface.Get implementations when the named

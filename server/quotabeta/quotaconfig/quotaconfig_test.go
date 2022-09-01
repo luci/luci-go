@@ -20,7 +20,7 @@ import (
 
 	"go.chromium.org/luci/config/validation"
 
-	pb "go.chromium.org/luci/server/quota/proto"
+	pb "go.chromium.org/luci/server/quotabeta/proto"
 
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"

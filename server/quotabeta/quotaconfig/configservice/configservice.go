@@ -28,8 +28,8 @@ import (
 	"go.chromium.org/luci/config/validation"
 	"go.chromium.org/luci/server/caching"
 
-	pb "go.chromium.org/luci/server/quota/proto"
-	"go.chromium.org/luci/server/quota/quotaconfig"
+	pb "go.chromium.org/luci/server/quotabeta/proto"
+	"go.chromium.org/luci/server/quotabeta/quotaconfig"
 )
 
 // Ensure configService implements Interface at compile-time.

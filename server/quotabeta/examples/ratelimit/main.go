@@ -25,9 +25,9 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/server"
 	"go.chromium.org/luci/server/module"
-	"go.chromium.org/luci/server/quota"
-	pb "go.chromium.org/luci/server/quota/proto"
-	"go.chromium.org/luci/server/quota/quotaconfig"
+	quota "go.chromium.org/luci/server/quotabeta"
+	pb "go.chromium.org/luci/server/quotabeta/proto"
+	"go.chromium.org/luci/server/quotabeta/quotaconfig"
 	"go.chromium.org/luci/server/redisconn"
 	"go.chromium.org/luci/server/router"
 )

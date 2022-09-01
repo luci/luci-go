@@ -27,9 +27,9 @@ import (
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/grpc/appstatus"
 	"go.chromium.org/luci/server/auth"
-	"go.chromium.org/luci/server/quota"
+	"go.chromium.org/luci/server/quotabeta"
 
-	pb "go.chromium.org/luci/examples/appengine/quota/proto"
+	pb "go.chromium.org/luci/examples/appengine/quotabeta/proto"
 )
 
 // Demo implements pb.DemoServer. Requires a quotaconfig.Interface in the

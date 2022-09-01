@@ -25,9 +25,9 @@ import (
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
-	"go.chromium.org/luci/server/quota"
-	pb "go.chromium.org/luci/server/quota/proto"
-	"go.chromium.org/luci/server/quota/quotaconfig"
+	"go.chromium.org/luci/server/quotabeta"
+	pb "go.chromium.org/luci/server/quotabeta/proto"
+	"go.chromium.org/luci/server/quotabeta/quotaconfig"
 	"go.chromium.org/luci/server/redisconn"
 
 	. "github.com/smartystreets/goconvey/convey"

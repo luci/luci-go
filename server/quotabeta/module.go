@@ -22,7 +22,7 @@ import (
 	"go.chromium.org/luci/server/module"
 	"go.chromium.org/luci/server/redisconn"
 
-	pb "go.chromium.org/luci/server/quota/proto"
+	pb "go.chromium.org/luci/server/quotabeta/proto"
 )
 
 // ModuleName is the globally-unique name for this module.

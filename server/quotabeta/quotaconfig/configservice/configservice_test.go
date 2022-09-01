@@ -27,8 +27,8 @@ import (
 	"go.chromium.org/luci/server/caching"
 	"go.chromium.org/luci/server/caching/cachingtest"
 
-	pb "go.chromium.org/luci/server/quota/proto"
-	"go.chromium.org/luci/server/quota/quotaconfig"
+	pb "go.chromium.org/luci/server/quotabeta/proto"
+	"go.chromium.org/luci/server/quotabeta/quotaconfig"
 
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"

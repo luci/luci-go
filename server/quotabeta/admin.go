@@ -33,8 +33,8 @@ import (
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/redisconn"
 
-	pb "go.chromium.org/luci/server/quota/proto"
-	"go.chromium.org/luci/server/quota/quotaconfig"
+	pb "go.chromium.org/luci/server/quotabeta/proto"
+	"go.chromium.org/luci/server/quotabeta/quotaconfig"
 )
 
 // getEntry is a *template.Template for a Lua script which gets the given quota
