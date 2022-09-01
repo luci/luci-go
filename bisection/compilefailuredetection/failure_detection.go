@@ -46,9 +46,7 @@ func AnalyzeBuild(c context.Context, bbid int64) (bool, error) {
 		return false, err
 	}
 
-	// We only care about builds with compile failure
-	if !hasCompileStepStatus(c, build, buildbucketpb.Status_FAILURE) {
-		logging.Infof(c, "No compile step for build %d", bbid)
+	if !shouldAnalyzeBuild(c, build) {
 		return false, nil
 	}
 
@@ -80,6 +78,24 @@ func AnalyzeBuild(c context.Context, bbid int64) (bool, error) {
 		return false, err
 	}
 	return true, nil
+}
+
+func shouldAnalyzeBuild(c context.Context, build *buildbucketpb.Build) bool {
+	// We only care about failed build
+	// Note: We already check for status = bbv1.ResultFailure during pubsub ingestion.
+	// But bbv1.ResultFailure is true for both failure and infra failure
+	// So we need to check it here.
+	if build.Status != buildbucketpb.Status_FAILURE {
+		logging.Infof(c, "Build %d does not have FAILURE status", build.Id)
+		return false
+	}
+
+	// We only care about builds with compile failure
+	if !hasCompileStepStatus(c, build, buildbucketpb.Status_FAILURE) {
+		logging.Infof(c, "No compile step for build %d", build.Id)
+		return false
+	}
+	return true
 }
 
 // Search builds older than refBuild to find the last passed and first failed builds
@@ -116,10 +132,10 @@ func getLastPassedFirstFailedBuilds(c context.Context, refBuild *buildbucketpb.B
 		// Search this batch of older builds for the last passed and first failed build
 		for _, oldBuild := range olderBuilds {
 			// We found the last passed build
-			if oldBuild.Status == buildbucketpb.Status_SUCCESS || hasCompileStepStatus(c, oldBuild, buildbucketpb.Status_SUCCESS) {
+			if oldBuild.Status == buildbucketpb.Status_SUCCESS && hasCompileStepStatus(c, oldBuild, buildbucketpb.Status_SUCCESS) {
 				return oldBuild, firstFailedBuild, nil
 			}
-			if hasCompileStepStatus(c, oldBuild, buildbucketpb.Status_FAILURE) {
+			if oldBuild.Status == buildbucketpb.Status_FAILURE && hasCompileStepStatus(c, oldBuild, buildbucketpb.Status_FAILURE) {
 				firstFailedBuild = oldBuild
 			}
 		}

@@ -56,6 +56,21 @@ func TestFailureDetection(t *testing.T) {
 		})
 	})
 
+	Convey("Should analyze build", t, func() {
+		build := &buildbucketpb.Build{}
+		c := context.Background()
+		So(shouldAnalyzeBuild(c, build), ShouldBeFalse)
+		build.Status = buildbucketpb.Status_FAILURE
+		So(shouldAnalyzeBuild(c, build), ShouldBeFalse)
+		build.Steps = []*buildbucketpb.Step{
+			{
+				Name:   "compile",
+				Status: buildbucketpb.Status_FAILURE,
+			},
+		}
+		So(shouldAnalyzeBuild(c, build), ShouldBeTrue)
+	})
+
 	Convey("GetLastPassedFirstFailedBuild", t, func() {
 		c := context.Background()
 		ctl := gomock.NewController(t)
@@ -98,9 +113,29 @@ func TestFailureDetection(t *testing.T) {
 					{
 						Id:     121,
 						Status: buildbucketpb.Status_INFRA_FAILURE,
+						Steps: []*buildbucketpb.Step{
+							{
+								Name:   "compile",
+								Status: buildbucketpb.Status_FAILURE,
+							},
+						},
 					},
 					{
 						Id:     120,
+						Status: buildbucketpb.Status_INFRA_FAILURE,
+					},
+					{
+						Id:     119,
+						Status: buildbucketpb.Status_SUCCESS,
+						Steps: []*buildbucketpb.Step{
+							{
+								Name:   "compile",
+								Status: buildbucketpb.Status_FAILURE,
+							},
+						},
+					},
+					{
+						Id:     118,
 						Status: buildbucketpb.Status_SUCCESS,
 						Steps: []*buildbucketpb.Step{
 							{
@@ -114,7 +149,7 @@ func TestFailureDetection(t *testing.T) {
 			mc.Client.EXPECT().SearchBuilds(gomock.Any(), gomock.Any(), gomock.Any()).Return(res, nil).Times(1)
 			lastPassedBuild, firstFailedBuild, err := getLastPassedFirstFailedBuilds(c, &buildbucketpb.Build{Id: 123})
 			So(err, ShouldBeNil)
-			So(lastPassedBuild.Id, ShouldEqual, 120)
+			So(lastPassedBuild.Id, ShouldEqual, 118)
 			So(firstFailedBuild.Id, ShouldEqual, 122)
 		})
 
