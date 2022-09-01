@@ -54,6 +54,10 @@ var (
 		field.String("project"))
 )
 
+// workerCount is the number of workers to use to update
+// analysis and bugs for different LUCI Projects concurrently.
+const workerCount = 8
+
 // AnalysisClient is an interface for building and accessing cluster analysis.
 type AnalysisClient interface {
 	// RebuildAnalysis rebuilds analysis from the latest clustered test
@@ -76,11 +80,34 @@ func init() {
 	}, statusGauge, durationGauge)
 }
 
-// workerCount is the number of workers to use to update
-// analysis and bugs for different LUCI Projects concurrently.
-const workerCount = 8
+// NewHandler initialises a new Handler instance.
+func NewHandler(cloudProject string, prod bool) *Handler {
+	return &Handler{cloudProject: cloudProject, prod: prod}
+}
 
-// UpdateAnalysisAndBugs updates BigQuery analysis, and then updates bugs
+// Handler handles the update-analysis-and-bugs cron job.
+type Handler struct {
+	cloudProject string
+	// prod is set when running in production (not a dev workstation).
+	prod bool
+}
+
+// CronHandler handles the update-analysis-and-bugs cron job.
+func (h *Handler) CronHandler(ctx context.Context) error {
+	cfg, err := config.Get(ctx)
+	if err != nil {
+		return errors.Annotate(err, "get config").Err()
+	}
+	simulate := !h.prod
+	enabled := cfg.BugUpdatesEnabled
+	err = updateAnalysisAndBugs(ctx, cfg.MonorailHostname, h.cloudProject, simulate, enabled)
+	if err != nil {
+		return errors.Annotate(err, "update bugs").Err()
+	}
+	return nil
+}
+
+// updateAnalysisAndBugs updates BigQuery analysis, and then updates bugs
 // to reflect this analysis.
 // Simulate, if true, avoids any changes being applied to monorail and logs
 // the changes which would be made instead. This must be set when running
@@ -89,7 +116,7 @@ const workerCount = 8
 // LUCI Analysis service.
 // This leads to bugs errounously being detected as having manual priority
 // changes.
-func UpdateAnalysisAndBugs(ctx context.Context, monorailHost, gcpProject string, simulate, enable bool) (retErr error) {
+func updateAnalysisAndBugs(ctx context.Context, monorailHost, gcpProject string, simulate, enable bool) (retErr error) {
 	projectCfg, err := config.Projects(ctx)
 	if err != nil {
 		return err

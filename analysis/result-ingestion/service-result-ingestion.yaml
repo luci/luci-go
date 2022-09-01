@@ -14,14 +14,13 @@
 
 runtime: go116
 instance_class: F4
-service: default
+service: result-ingestion
 
-# Currently optimised for the backend. If frontend latency becomes
-# an issue, we can split backend into a separate service.
 automatic_scaling:
   target_throughput_utilization: 0.90
   target_cpu_utilization: 0.90
-  max_concurrent_requests: 20
+  # Limited to 5 to ensure GAE remains within memory limits.
+  max_concurrent_requests: 5
 
 # Note: this is interpreted by gae.py, it maps the app ID being deployed to
 # values of ${...} vars.
@@ -48,10 +47,6 @@ luci_gae_vars:
 
 # IMPORTANT: Except for /static, keep in sync between app.yaml and service-result-ingestion.yaml.
 handlers:
-- url: /static
-  static_dir: ui/dist
-  secure: always
-
 - url: /_ah/push-handlers/.*
   script: auto
   login: admin

@@ -8,7 +8,11 @@ build:
   - run: ['make', 'release']
     cwd: ${inputsdir}/frontend/ui
 
+  - copy: ${inputsdir}/dispatch.yaml
+    dest: ${contextdir}/dispatch.yaml
   # This packages all Go code, including the frontend code from
   # frontend/ui/dist.
   - go_gae_bundle: ${inputsdir}/frontend/app.yaml
     dest: ${contextdir}/frontend
+  - go_gae_bundle: ${inputsdir}/result-ingestion/service-result-ingestion.yaml
+    dest: ${contextdir}/result-ingestion

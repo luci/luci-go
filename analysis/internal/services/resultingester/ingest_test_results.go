@@ -32,7 +32,6 @@ import (
 	"go.chromium.org/luci/server"
 	"go.chromium.org/luci/server/span"
 	"go.chromium.org/luci/server/tq"
-	"golang.org/x/sync/semaphore"
 	"google.golang.org/genproto/protobuf/field_mask"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -178,13 +177,6 @@ func Schedule(ctx context.Context, task *taskspb.IngestTestResults) {
 	})
 }
 
-// requestLimiter limits the number of concurrent result ingestion requests.
-// This is to ensure the instance remains within GAE memory limits.
-// These requests are larger than others and latency is not critical,
-// so using a semaphore to limit throughput was deemed overall better than
-// limiting the number of concurrent requests to the instance as a whole.
-var requestLimiter = semaphore.NewWeighted(5)
-
 func (i *resultIngester) ingestTestResults(ctx context.Context, payload *taskspb.IngestTestResults) error {
 	if err := validateRequest(ctx, payload); err != nil {
 		project := "(unknown)"
@@ -194,13 +186,6 @@ func (i *resultIngester) ingestTestResults(ctx context.Context, payload *taskspb
 		taskCounter.Add(ctx, 1, project, "failed_validation")
 		return tq.Fatal.Apply(err)
 	}
-
-	// Limit the number of concurrent requests in the following section.
-	err := requestLimiter.Acquire(ctx, 1)
-	if err != nil {
-		return transient.Tag.Apply(err)
-	}
-	defer requestLimiter.Release(1)
 
 	// Buildbucket build only has builder, infra.resultdb, status populated.
 	build, err := retrieveBuild(ctx, payload.Build.Host, payload.Build.Id)

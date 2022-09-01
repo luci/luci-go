@@ -19,41 +19,16 @@ import (
 	"net/http"
 
 	"go.chromium.org/luci/auth/identity"
-	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
-	"go.chromium.org/luci/config/server/cfgmodule"
-	"go.chromium.org/luci/grpc/prpc"
 	"go.chromium.org/luci/server"
 	"go.chromium.org/luci/server/auth"
-	"go.chromium.org/luci/server/cron"
-	"go.chromium.org/luci/server/encryptedcookies"
 	_ "go.chromium.org/luci/server/encryptedcookies/session/datastore"
-	"go.chromium.org/luci/server/gaeemulation"
-	"go.chromium.org/luci/server/module"
 	"go.chromium.org/luci/server/router"
-	"go.chromium.org/luci/server/secrets"
-	spanmodule "go.chromium.org/luci/server/span"
 	"go.chromium.org/luci/server/templates"
-	"go.chromium.org/luci/server/tq"
 
-	"go.chromium.org/luci/analysis/app"
 	"go.chromium.org/luci/analysis/frontend/handlers"
-	"go.chromium.org/luci/analysis/internal/admin"
-	adminpb "go.chromium.org/luci/analysis/internal/admin/proto"
-	"go.chromium.org/luci/analysis/internal/analysis"
-	"go.chromium.org/luci/analysis/internal/analyzedtestvariants"
-	"go.chromium.org/luci/analysis/internal/clustering/reclustering/orchestrator"
 	"go.chromium.org/luci/analysis/internal/config"
-	"go.chromium.org/luci/analysis/internal/legacydb"
-	"go.chromium.org/luci/analysis/internal/metrics"
-	"go.chromium.org/luci/analysis/internal/services/reclustering"
-	"go.chromium.org/luci/analysis/internal/services/resultcollector"
-	"go.chromium.org/luci/analysis/internal/services/resultingester"
-	"go.chromium.org/luci/analysis/internal/services/testvariantbqexporter"
-	"go.chromium.org/luci/analysis/internal/services/testvariantupdator"
-	"go.chromium.org/luci/analysis/internal/span"
-	analysispb "go.chromium.org/luci/analysis/proto/v1"
-	"go.chromium.org/luci/analysis/rpc"
+	analysisserver "go.chromium.org/luci/analysis/server"
 )
 
 // authGroup is the name of the LUCI Auth group that controls whether the user
@@ -130,87 +105,18 @@ func pageBase(srv *server.Server) router.MiddlewareChain {
 	)
 }
 
+// Entrypoint for the default service.
 func main() {
-	modules := []module.Module{
-		cfgmodule.NewModuleFromFlags(),
-		cron.NewModuleFromFlags(),
-		encryptedcookies.NewModuleFromFlags(), // Required for auth sessions.
-		gaeemulation.NewModuleFromFlags(),     // Needed by cfgmodule.
-		secrets.NewModuleFromFlags(),          // Needed by encryptedcookies.
-		spanmodule.NewModuleFromFlags(),
-		legacydb.NewModuleFromFlags(),
-		tq.NewModuleFromFlags(),
-	}
-	server.Main(nil, modules, func(srv *server.Server) error {
+	analysisserver.Main(func(srv *server.Server) error {
+		// Only the frontend service serves frontend UI. This is because
+		// the frontend relies upon other assets (javascript, files) and
+		// it is annoying to deploy them with every backend service.
 		mw := pageBase(srv)
-
 		handlers := handlers.NewHandlers(srv.Options.CloudProject, srv.Options.Prod)
 		handlers.RegisterRoutes(srv.Routes, mw)
 		srv.Routes.Static("/static/", mw, http.Dir("./ui/dist"))
 		// Anything that is not found, serve app html and let the client side router handle it.
 		srv.Routes.NotFound(mw, handlers.IndexPage)
-
-		// Register pPRC servers.
-		srv.PRPC.AccessControl = prpc.AllowOriginAll
-		srv.PRPC.Authenticator = &auth.Authenticator{
-			Methods: []auth.Method{
-				&auth.GoogleOAuth2Method{
-					Scopes: []string{"https://www.googleapis.com/auth/userinfo.email"},
-				},
-			},
-		}
-		// TODO(crbug/1082369): Remove this workaround once field masks can be decoded.
-		srv.PRPC.HackFixFieldMasksForJSON = true
-		srv.RegisterUnaryServerInterceptor(span.SpannerDefaultsInterceptor())
-
-		ac, err := analysis.NewClient(srv.Context, srv.Options.CloudProject)
-		if err != nil {
-			return errors.Annotate(err, "creating analysis client").Err()
-		}
-
-		analysispb.RegisterClustersServer(srv.PRPC, rpc.NewClustersServer(ac))
-		analysispb.RegisterRulesServer(srv.PRPC, rpc.NewRulesSever())
-		analysispb.RegisterProjectsServer(srv.PRPC, rpc.NewProjectsServer())
-		analysispb.RegisterInitDataGeneratorServer(srv.PRPC, rpc.NewInitDataGeneratorServer())
-		analysispb.RegisterTestVariantsServer(srv.PRPC, rpc.NewTestVariantsServer())
-		adminpb.RegisterAdminServer(srv.PRPC, admin.CreateServer())
-
-		// Test History service needs to connect back to an old Spanner
-		// database to service some queries.
-		legacyCl := legacydb.LegacyClient(srv.Context)
-		installOldDatabase := func(ctx context.Context) context.Context {
-			if legacyCl != nil {
-				// Route queries to the old database to the old database.
-				return spanmodule.UseClient(ctx, legacyCl)
-			}
-			// Route queries in the time range of the old database
-			// to the old database.
-			return ctx
-		}
-		analysispb.RegisterTestHistoryServer(srv.PRPC, rpc.NewTestHistoryServer(installOldDatabase))
-
-		// GAE crons.
-		cron.RegisterHandler("read-config", config.Update)
-		cron.RegisterHandler("update-analysis-and-bugs", handlers.UpdateAnalysisAndBugs)
-		cron.RegisterHandler("export-test-variants", testvariantbqexporter.ScheduleTasks)
-		cron.RegisterHandler("purge-test-variants", analyzedtestvariants.Purge)
-		cron.RegisterHandler("reclustering", orchestrator.CronHandler)
-		cron.RegisterHandler("global-metrics", metrics.GlobalMetrics)
-
-		// Pub/Sub subscription endpoints.
-		srv.Routes.POST("/_ah/push-handlers/buildbucket", nil, app.BuildbucketPubSubHandler)
-		srv.Routes.POST("/_ah/push-handlers/cvrun", nil, app.CVRunPubSubHandler)
-
-		// Register task queue tasks.
-		if err := reclustering.RegisterTaskHandler(srv); err != nil {
-			return errors.Annotate(err, "register reclustering").Err()
-		}
-		if err := resultingester.RegisterTaskHandler(srv); err != nil {
-			return errors.Annotate(err, "register result ingester").Err()
-		}
-		resultcollector.RegisterTaskClass()
-		testvariantbqexporter.RegisterTaskClass()
-		testvariantupdator.RegisterTaskClass()
 
 		return nil
 	})
