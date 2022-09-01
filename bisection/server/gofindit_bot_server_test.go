@@ -54,8 +54,13 @@ func TestUpdateAnalysisProgress(t *testing.T) {
 	Convey("UpdateAnalysisProgress", t, func() {
 		// Setup the models
 		// Set up suspects
+		heuristicAnalysis := &gfim.CompileHeuristicAnalysis{}
+		So(datastore.Put(c, heuristicAnalysis), ShouldBeNil)
+		datastore.GetTestable(c).CatchupIndexes()
+
 		suspect := &gfim.Suspect{
-			Score: 10,
+			ParentAnalysis: datastore.KeyForObj(c, heuristicAnalysis),
+			Score:          10,
 			GitilesCommit: bbpb.GitilesCommit{
 				Host:    "chromium.googlesource.com",
 				Project: "chromium/src",

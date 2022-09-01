@@ -41,7 +41,7 @@ func (server *GoFinditBotServer) UpdateAnalysisProgress(c context.Context, req *
 	if err != nil {
 		return nil, status.Errorf(codes.InvalidArgument, "Invalid request: %s", err)
 	}
-	logging.Infof(c, "Update analysis with rerun_build_id = %d analysis_id = %d", req.Bbid, req.AnalysisId)
+	logging.Infof(c, "Update analysis with rerun_build_id = %d analysis_id = %d gitiles_commit=%v ", req.Bbid, req.AnalysisId, req.GitilesCommit)
 
 	// Get rerun model
 	rerunModel := &gfim.CompileRerunBuild{
@@ -71,7 +71,8 @@ func (server *GoFinditBotServer) UpdateAnalysisProgress(c context.Context, req *
 
 	// Get the suspect for the rerun build
 	suspect := &gfim.Suspect{
-		Id: rerunModel.Suspect.IntID(),
+		Id:             rerunModel.Suspect.IntID(),
+		ParentAnalysis: rerunModel.Suspect.Parent(),
 	}
 	err = datastore.Get(c, suspect)
 	if err != nil {
