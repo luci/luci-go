@@ -46,7 +46,7 @@ func newRunsClient(ctx context.Context, host string) (Client, error) {
 		}), nil
 }
 
-// Client defines a subset of CV API consumed by Weebtix.
+// Client defines a subset of CV API consumed by LUCI Analysis.
 type Client interface {
 	GetRun(ctx context.Context, in *cvv0.GetRunRequest, opts ...grpc.CallOption) (*cvv0.Run, error)
 }

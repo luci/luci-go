@@ -24,11 +24,14 @@ import (
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/common/tsmon/field"
 	"go.chromium.org/luci/common/tsmon/metric"
 	cvv0 "go.chromium.org/luci/cv/api/v0"
 	cvv1 "go.chromium.org/luci/cv/api/v1"
 	"go.chromium.org/luci/server/router"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/encoding/protojson"
 
 	"go.chromium.org/luci/analysis/internal/cv"
@@ -105,10 +108,18 @@ func cvPubSubHandlerImpl(ctx context.Context, request *http.Request) (project st
 	// gets ingested into.
 
 	run, err := getRun(ctx, psRun)
-	switch {
-	case err != nil:
+	code := status.Code(err)
+	if code == codes.NotFound {
+		logging.Warningf(ctx, "CV run %s for project %s not found (or Weetbix does not have access to read it).",
+			runID, project)
+		// Treat as a permanent error.
 		return project, false, errors.Annotate(err, "failed to get run").Err()
-	case run.GetCreateTime() == nil:
+	}
+	if err != nil {
+		// Treat as transient error.
+		return project, false, transient.Tag.Apply(errors.Annotate(err, "failed to get run").Err())
+	}
+	if run.GetCreateTime() == nil {
 		return project, false, errors.New("could not get create time for the run")
 	}
 
