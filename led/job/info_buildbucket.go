@@ -168,7 +168,7 @@ func (b bbInfo) TaskPayloadSource() (cipdPkg, cipdVers string) {
 }
 
 func (b bbInfo) TaskPayloadPath() (path string) {
-	return b.GetBbagentArgs().PayloadPath
+	return b.PayloadPath()
 }
 
 func (b bbInfo) TaskPayloadCmd() (args []string) {

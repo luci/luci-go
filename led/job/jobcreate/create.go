@@ -81,6 +81,7 @@ func FromNewTaskRequest(ctx context.Context, r *swarming.SwarmingRpcsNewTaskRequ
 			bb.BbagentArgs = bbagentArgsFromBuild(bld)
 		default:
 			bb.BbagentArgs, err = getBbagentArgsFromCMD(ctx, cmd, authClient)
+			bb.UpdateBuildFromBbagentArgs()
 		}
 
 	case "kitchen":
@@ -140,7 +141,7 @@ func FromNewTaskRequest(ctx context.Context, r *swarming.SwarmingRpcsNewTaskRequ
 			bb.BbagentArgs.Build.Exe.Cmd = []string{arg}
 		}
 
-		dropRecipePackage(&bb.CipdPackages, bb.BbagentArgs.PayloadPath)
+		dropRecipePackage(&bb.CipdPackages, bb.PayloadPath())
 
 		props := bb.BbagentArgs.GetBuild().GetInput().GetProperties()
 		// everything in here is reflected elsewhere in the Build and will be
