@@ -254,7 +254,8 @@ func (x *CommitPosition) GetPosition() int64 {
 // Commit positions are assumed to increase from earliest to latest.
 // Note that if both earliest and latest are set, their host/project/ref must
 // be identical.
-// Used for specifying ranges to query in ResultDB.GetTestResultHistory.
+//
+// Currently unused.
 type CommitPositionRange struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -313,7 +314,8 @@ func (x *CommitPositionRange) GetLatest() *CommitPosition {
 }
 
 // A range of timestamps.
-// Used for specifying ranges to query in ResultDB.GetTestResultHistory.
+//
+// Currently unused.
 type TimeRange struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache

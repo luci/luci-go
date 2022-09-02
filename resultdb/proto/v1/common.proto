@@ -84,7 +84,8 @@ message CommitPosition {
 // Commit positions are assumed to increase from earliest to latest.
 // Note that if both earliest and latest are set, their host/project/ref must
 // be identical.
-// Used for specifying ranges to query in ResultDB.GetTestResultHistory.
+//
+// Currently unused.
 message CommitPositionRange {
   // The lowest commit position to include in the range.
   CommitPosition earliest = 1;
@@ -94,7 +95,8 @@ message CommitPositionRange {
 }
 
 // A range of timestamps.
-// Used for specifying ranges to query in ResultDB.GetTestResultHistory.
+//
+// Currently unused.
 message TimeRange {
   // The oldest timestamp to include in the range.
   google.protobuf.Timestamp earliest = 1;

@@ -210,23 +210,6 @@ func (s *DecoratedResultDB) QueryArtifacts(ctx context.Context, req *QueryArtifa
 	return
 }
 
-func (s *DecoratedResultDB) GetTestResultHistory(ctx context.Context, req *GetTestResultHistoryRequest) (rsp *GetTestResultHistoryResponse, err error) {
-	if s.Prelude != nil {
-		var newCtx context.Context
-		newCtx, err = s.Prelude(ctx, "GetTestResultHistory", req)
-		if err == nil {
-			ctx = newCtx
-		}
-	}
-	if err == nil {
-		rsp, err = s.Service.GetTestResultHistory(ctx, req)
-	}
-	if s.Postlude != nil {
-		err = s.Postlude(ctx, "GetTestResultHistory", rsp, err)
-	}
-	return
-}
-
 func (s *DecoratedResultDB) QueryTestVariants(ctx context.Context, req *QueryTestVariantsRequest) (rsp *QueryTestVariantsResponse, err error) {
 	if s.Prelude != nil {
 		var newCtx context.Context

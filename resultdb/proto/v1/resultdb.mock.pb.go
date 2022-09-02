@@ -11,41 +11,6 @@ import (
 	grpc "google.golang.org/grpc"
 )
 
-// MockisGetTestResultHistoryRequest_Range is a mock of isGetTestResultHistoryRequest_Range interface.
-type MockisGetTestResultHistoryRequest_Range struct {
-	ctrl     *gomock.Controller
-	recorder *MockisGetTestResultHistoryRequest_RangeMockRecorder
-}
-
-// MockisGetTestResultHistoryRequest_RangeMockRecorder is the mock recorder for MockisGetTestResultHistoryRequest_Range.
-type MockisGetTestResultHistoryRequest_RangeMockRecorder struct {
-	mock *MockisGetTestResultHistoryRequest_Range
-}
-
-// NewMockisGetTestResultHistoryRequest_Range creates a new mock instance.
-func NewMockisGetTestResultHistoryRequest_Range(ctrl *gomock.Controller) *MockisGetTestResultHistoryRequest_Range {
-	mock := &MockisGetTestResultHistoryRequest_Range{ctrl: ctrl}
-	mock.recorder = &MockisGetTestResultHistoryRequest_RangeMockRecorder{mock}
-	return mock
-}
-
-// EXPECT returns an object that allows the caller to indicate expected use.
-func (m *MockisGetTestResultHistoryRequest_Range) EXPECT() *MockisGetTestResultHistoryRequest_RangeMockRecorder {
-	return m.recorder
-}
-
-// isGetTestResultHistoryRequest_Range mocks base method.
-func (m *MockisGetTestResultHistoryRequest_Range) isGetTestResultHistoryRequest_Range() {
-	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "isGetTestResultHistoryRequest_Range")
-}
-
-// isGetTestResultHistoryRequest_Range indicates an expected call of isGetTestResultHistoryRequest_Range.
-func (mr *MockisGetTestResultHistoryRequest_RangeMockRecorder) isGetTestResultHistoryRequest_Range() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "isGetTestResultHistoryRequest_Range", reflect.TypeOf((*MockisGetTestResultHistoryRequest_Range)(nil).isGetTestResultHistoryRequest_Range))
-}
-
 // MockResultDBClient is a mock of ResultDBClient interface.
 type MockResultDBClient struct {
 	ctrl     *gomock.Controller
@@ -167,26 +132,6 @@ func (mr *MockResultDBClientMockRecorder) GetTestResult(ctx, in interface{}, opt
 	mr.mock.ctrl.T.Helper()
 	varargs := append([]interface{}{ctx, in}, opts...)
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTestResult", reflect.TypeOf((*MockResultDBClient)(nil).GetTestResult), varargs...)
-}
-
-// GetTestResultHistory mocks base method.
-func (m *MockResultDBClient) GetTestResultHistory(ctx context.Context, in *GetTestResultHistoryRequest, opts ...grpc.CallOption) (*GetTestResultHistoryResponse, error) {
-	m.ctrl.T.Helper()
-	varargs := []interface{}{ctx, in}
-	for _, a := range opts {
-		varargs = append(varargs, a)
-	}
-	ret := m.ctrl.Call(m, "GetTestResultHistory", varargs...)
-	ret0, _ := ret[0].(*GetTestResultHistoryResponse)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// GetTestResultHistory indicates an expected call of GetTestResultHistory.
-func (mr *MockResultDBClientMockRecorder) GetTestResultHistory(ctx, in interface{}, opts ...interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	varargs := append([]interface{}{ctx, in}, opts...)
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTestResultHistory", reflect.TypeOf((*MockResultDBClient)(nil).GetTestResultHistory), varargs...)
 }
 
 // ListArtifacts mocks base method.
@@ -465,21 +410,6 @@ func (m *MockResultDBServer) GetTestResult(arg0 context.Context, arg1 *GetTestRe
 func (mr *MockResultDBServerMockRecorder) GetTestResult(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTestResult", reflect.TypeOf((*MockResultDBServer)(nil).GetTestResult), arg0, arg1)
-}
-
-// GetTestResultHistory mocks base method.
-func (m *MockResultDBServer) GetTestResultHistory(arg0 context.Context, arg1 *GetTestResultHistoryRequest) (*GetTestResultHistoryResponse, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetTestResultHistory", arg0, arg1)
-	ret0, _ := ret[0].(*GetTestResultHistoryResponse)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// GetTestResultHistory indicates an expected call of GetTestResultHistory.
-func (mr *MockResultDBServerMockRecorder) GetTestResultHistory(arg0, arg1 interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTestResultHistory", reflect.TypeOf((*MockResultDBServer)(nil).GetTestResultHistory), arg0, arg1)
 }
 
 // ListArtifacts mocks base method.
