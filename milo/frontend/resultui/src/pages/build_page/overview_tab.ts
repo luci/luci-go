@@ -13,13 +13,10 @@
 // limitations under the License.
 
 import '@material/mwc-button';
-import '@material/mwc-dialog';
 import '@material/mwc-textarea';
 import { MobxLitElement } from '@adobe/lit-mobx';
-import { TextArea } from '@material/mwc-textarea';
-import { Router } from '@vaadin/router';
 import { css, customElement, html, TemplateResult } from 'lit-element';
-import { computed, makeObservable, observable } from 'mobx';
+import { action, computed, makeObservable, observable } from 'mobx';
 
 import '../../components/build_tag_row';
 import '../../components/expandable_entry';
@@ -29,6 +26,8 @@ import '../../components/property_viewer';
 import '../../components/relative_timestamp';
 import '../../components/timestamp';
 import '../test_results_tab/test_variants_table/test_variant_entry';
+import './cancel_build_dialog';
+import './retry_build_dialog';
 import './steps_tab/step_list';
 import { consumeInvocationState, InvocationState } from '../../context/invocation_state';
 import { GA_ACTIONS, GA_CATEGORIES, trackEvent } from '../../libs/analytics_utils';
@@ -39,7 +38,6 @@ import {
   getURLForGerritChange,
   getURLForGitilesCommit,
   getURLForSwarmingTask,
-  getURLPathForBuild,
 } from '../../libs/build_utils';
 import { BUILD_STATUS_CLASS_MAP, BUILD_STATUS_DISPLAY_MAP } from '../../libs/constants';
 import { consumer } from '../../libs/context';
@@ -54,6 +52,12 @@ import colorClasses from '../../styles/color_classes.css';
 import commonStyle from '../../styles/common_style.css';
 
 const MAX_DISPLAYED_UNEXPECTED_TESTS = 10;
+
+const enum Dialog {
+  None,
+  CancelBuild,
+  RetryBuild,
+}
 
 @customElement('milo-overview-tab')
 @consumer
@@ -70,8 +74,10 @@ export class OverviewTabElement extends MobxLitElement {
     return this.store.buildPage.build;
   }
 
-  @observable.ref private showRetryDialog = false;
-  @observable.ref private showCancelDialog = false;
+  @observable.ref private activeDialog = Dialog.None;
+  @action private setActiveDialog(dialog: Dialog) {
+    this.activeDialog = dialog;
+  }
 
   @computed private get columnGetters() {
     return this.invocationState.columnKeys.map((col) => createTVPropGetter(col));
@@ -97,7 +103,7 @@ export class OverviewTabElement extends MobxLitElement {
       return html`
         <h3>Actions</h3>
         <div title=${canRetry ? '' : 'You have no permission to retry this build.'}>
-          <mwc-button dense unelevated @click=${() => (this.showRetryDialog = true)} ?disabled=${!canRetry}>
+          <mwc-button dense unelevated @click=${() => this.setActiveDialog(Dialog.RetryBuild)} ?disabled=${!canRetry}>
             Retry Build
           </mwc-button>
         </div>
@@ -116,7 +122,7 @@ export class OverviewTabElement extends MobxLitElement {
     return html`
       <h3>Actions</h3>
       <div title=${tooltip}>
-        <mwc-button dense unelevated @click=${() => (this.showCancelDialog = true)} ?disabled=${!canCancel}>
+        <mwc-button dense unelevated @click=${() => this.setActiveDialog(Dialog.CancelBuild)} ?disabled=${!canCancel}>
           Cancel Build
         </mwc-button>
       </div>
@@ -159,21 +165,6 @@ export class OverviewTabElement extends MobxLitElement {
         <milo-relative-timestamp .timestamp=${scheduledCancelTime}></milo-relative-timestamp>.
       </div>
     `;
-  }
-
-  private async cancelBuild(reason: string) {
-    await this.store.services.builds!.cancelBuild({
-      id: this.build!.data.id,
-      summaryMarkdown: reason,
-    });
-    this.store.refreshTime.refresh();
-  }
-
-  private async retryBuild() {
-    const build = await this.store.services.builds!.scheduleBuild({
-      templateBuildId: this.build!.data!.id,
-    });
-    Router.go(getURLPathForBuild(build));
   }
 
   private renderSummary() {
@@ -632,35 +623,14 @@ export class OverviewTabElement extends MobxLitElement {
     }
 
     return html`
-      <mwc-dialog
-        heading="Retry Build"
-        ?open=${this.showRetryDialog}
-        @closed=${async (event: CustomEvent<{ action: string }>) => {
-          if (event.detail.action === 'retry') {
-            await this.retryBuild();
-          }
-          this.showRetryDialog = false;
-        }}
-      >
-        <p>Note: this doesn't trigger anything else (e.g. CQ).</p>
-        <mwc-button slot="primaryAction" dialogAction="retry" dense unelevated>Retry</mwc-button>
-        <mwc-button slot="secondaryAction" dialogAction="dismiss">Dismiss</mwc-button>
-      </mwc-dialog>
-      <mwc-dialog
-        heading="Cancel Build"
-        ?open=${this.showCancelDialog}
-        @closed=${async (event: CustomEvent<{ action: string }>) => {
-          if (event.detail.action === 'cancel') {
-            const reason = (this.shadowRoot!.getElementById('cancel-reason') as TextArea).value;
-            await this.cancelBuild(reason);
-          }
-          this.showCancelDialog = false;
-        }}
-      >
-        <mwc-textarea id="cancel-reason" label="Reason" required></mwc-textarea>
-        <mwc-button slot="primaryAction" dialogAction="cancel" dense unelevated>Confirm</mwc-button>
-        <mwc-button slot="secondaryAction" dialogAction="dismiss">Dismiss</mwc-button>
-      </mwc-dialog>
+      <milo-bp-retry-build-dialog
+        ?open=${this.activeDialog === Dialog.RetryBuild}
+        @close=${() => this.setActiveDialog(Dialog.None)}
+      ></milo-bp-retry-build-dialog>
+      <milo-bp-cancel-build-dialog
+        ?open=${this.activeDialog === Dialog.CancelBuild}
+        @close=${() => this.setActiveDialog(Dialog.None)}
+      ></milo-bp-cancel-build-dialog>
       <div id="main">
         <div class="first-column">
           ${this.renderCanaryWarning()}${this.renderCancelSchedule()}
@@ -733,14 +703,6 @@ export class OverviewTabElement extends MobxLitElement {
       }
       #status {
         font-weight: 500;
-      }
-
-      :host > mwc-dialog {
-        margin: 0 0;
-      }
-      #cancel-reason {
-        width: 500px;
-        height: 200px;
       }
 
       #canary-warning {

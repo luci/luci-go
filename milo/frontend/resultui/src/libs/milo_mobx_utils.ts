@@ -13,8 +13,10 @@
 // limitations under the License.
 
 import { computed, IComputedValueOptions, observable } from 'mobx';
-import { addDisposer, IAnyStateTreeNode } from 'mobx-state-tree';
+import { addDisposer, flow, IAnyStateTreeNode, isAlive } from 'mobx-state-tree';
 import { IPromiseBasedObservable, PENDING, REJECTED } from 'mobx-utils';
+
+import { NEVER_PROMISE } from './constants';
 
 /**
  * Unwraps the value in a promise based observable.
@@ -66,4 +68,29 @@ export function keepAliveComputed<T>(
     ret.get();
   });
   return ret;
+}
+
+/**
+ * The same as `flow` from `mobx-state-tree` except that
+ * 1. it takes a target node, and
+ * 2. it will only call `.next(...)` on the generator when the target is alive.
+ */
+// Use the same signature as `flow` from `mobx-state-tree`, which uses `any`.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export function aliveFlow<R, Args extends any[]>(
+  target: IAnyStateTreeNode,
+  generator: Parameters<typeof flow<R, Args>>[0]
+): ReturnType<typeof flow<R, Args>> {
+  return flow(function* (...args) {
+    const gen = generator(...args);
+    let next = gen.next();
+    while (!next.done) {
+      const resolved = yield next.value;
+      if (!isAlive(target)) {
+        yield NEVER_PROMISE;
+      }
+      next = gen.next(resolved);
+    }
+    return next.value;
+  });
 }

@@ -19,13 +19,13 @@ import { Search } from '@mui/icons-material';
 import { FormControl, InputAdornment, MenuItem, Select, TextField } from '@mui/material';
 import { customElement } from 'lit-element';
 import { debounce } from 'lodash-es';
-import { observable } from 'mobx';
+import { makeObservable, observable } from 'mobx';
 import { observer } from 'mobx-react-lite';
 import { useCallback, useEffect, useState } from 'react';
 import { createRoot, Root } from 'react-dom/client';
 
 import { consumer } from '../../libs/context';
-import { consumeStore, StoreContext, StoreInstance, useStore } from '../../store';
+import { consumeStore, StoreInstance, StoreProvider, useStore } from '../../store';
 import { SearchTarget } from '../../store/search_page';
 import commonStyle from '../../styles/common_style.css';
 import { BuilderList } from './builder_list';
@@ -158,6 +158,7 @@ export class SearchPageElement extends MobxLitElement {
 
   constructor() {
     super();
+    makeObservable(this);
     this.parent = document.createElement('div');
     const child = document.createElement('div');
     this.root = createRoot(child);
@@ -171,9 +172,9 @@ export class SearchPageElement extends MobxLitElement {
   protected render() {
     this.root.render(
       <CacheProvider value={this.cache}>
-        <StoreContext.Provider value={this.store}>
+        <StoreProvider value={this.store}>
           <SearchPage></SearchPage>
-        </StoreContext.Provider>
+        </StoreProvider>
       </CacheProvider>
     );
     return this.parent;

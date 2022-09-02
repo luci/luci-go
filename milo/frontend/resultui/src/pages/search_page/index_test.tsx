@@ -17,7 +17,7 @@ import { expect } from 'chai';
 import { destroy, protect, unprotect } from 'mobx-state-tree';
 import * as sinon from 'sinon';
 
-import { Store, StoreContext } from '../../store';
+import { Store, StoreProvider } from '../../store';
 import { SearchTarget } from '../../store/search_page';
 import { SearchPage } from '.';
 
@@ -36,9 +36,9 @@ describe('SearchPage', () => {
     protect(store);
 
     render(
-      <StoreContext.Provider value={store}>
+      <StoreProvider value={store}>
         <SearchPage />
-      </StoreContext.Provider>
+      </StoreProvider>
     );
 
     fireEvent.change(screen.getByRole('textbox'), { target: { value: 'builder' } });
@@ -65,9 +65,9 @@ describe('SearchPage', () => {
     protect(store);
 
     render(
-      <StoreContext.Provider value={store}>
+      <StoreProvider value={store}>
         <SearchPage />
-      </StoreContext.Provider>
+      </StoreProvider>
     );
 
     fireEvent.change(screen.getByRole('textbox'), { target: { value: 'builder' } });

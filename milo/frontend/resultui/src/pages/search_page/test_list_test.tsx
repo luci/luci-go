@@ -18,7 +18,7 @@ import { destroy } from 'mobx-state-tree';
 import * as sinon from 'sinon';
 
 import { ANONYMOUS_IDENTITY } from '../../services/milo_internal';
-import { Store, StoreContext } from '../../store';
+import { Store, StoreProvider } from '../../store';
 import { SearchTarget } from '../../store/search_page';
 import { TestList } from './test_list';
 
@@ -37,9 +37,9 @@ describe('TestList', () => {
     const loadFirstPagesStub = sinon.stub(store.searchPage.testLoader!, 'loadFirstPage');
 
     render(
-      <StoreContext.Provider value={store}>
+      <StoreProvider value={store}>
         <TestList />
-      </StoreContext.Provider>
+      </StoreProvider>
     );
 
     timer.runAll();

@@ -99,6 +99,7 @@ export type StoreSnapshotOut = SnapshotOut<typeof Store>;
 export const [provideStore, consumeStore] = createContextLink<StoreInstance>();
 
 export const StoreContext = createContext<StoreInstance | null>(null);
+export const StoreProvider = StoreContext.Provider;
 
 export function useStore() {
   const context = useContext(StoreContext);

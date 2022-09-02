@@ -18,7 +18,7 @@ import { destroy } from 'mobx-state-tree';
 import * as sinon from 'sinon';
 
 import { ANONYMOUS_IDENTITY } from '../../services/milo_internal';
-import { Store, StoreContext } from '../../store';
+import { Store, StoreProvider } from '../../store';
 import { BuilderList } from './builder_list';
 
 describe('BuilderList', () => {
@@ -35,9 +35,9 @@ describe('BuilderList', () => {
     const loadRemainingPagesStub = sinon.stub(store.searchPage.builderLoader!, 'loadRemainingPages');
 
     render(
-      <StoreContext.Provider value={store}>
+      <StoreProvider value={store}>
         <BuilderList />
-      </StoreContext.Provider>
+      </StoreProvider>
     );
 
     timer.runAll();

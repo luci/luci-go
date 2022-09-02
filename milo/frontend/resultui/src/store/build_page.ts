@@ -20,7 +20,7 @@ import { fromPromise } from 'mobx-utils';
 import { getGitilesRepoURL, renderBugUrlTemplate } from '../libs/build_utils';
 import { NEVER_OBSERVABLE, POTENTIALLY_EXPIRED } from '../libs/constants';
 import * as iter from '../libs/iter_utils';
-import { keepAliveComputed, unwrapObservable } from '../libs/milo_mobx_utils';
+import { aliveFlow, keepAliveComputed, unwrapObservable } from '../libs/milo_mobx_utils';
 import { attachTags, InnerTag, TAG_SOURCE } from '../libs/tag';
 import {
   ADD_BUILD_PERM,
@@ -351,6 +351,28 @@ export const BuildPage = types
     setSelectedBlamelist(pinIndex: number) {
       self.selectedBlamelistPinIndex = pinIndex;
     },
+    retryBuild: aliveFlow(self, function* () {
+      if (!self.build?.data.id || !self.services?.builds) {
+        return null;
+      }
+
+      const call = self.services.builds.scheduleBuild({
+        templateBuildId: self.build.data.id,
+      });
+      const build: Awaited<typeof call> = yield call;
+      return build;
+    }),
+    cancelBuild: aliveFlow(self, function* (reason: string) {
+      if (!self.build?.data.id || !reason || !self.services?.builds) {
+        return;
+      }
+
+      yield self.services.builds.cancelBuild({
+        id: self.build.data.id,
+        summaryMarkdown: reason,
+      });
+      self.refreshTime?.refresh();
+    }),
   }));
 
 export type BuildPageInstance = Instance<typeof BuildPage>;
