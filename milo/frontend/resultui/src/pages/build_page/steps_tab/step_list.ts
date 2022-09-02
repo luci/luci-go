@@ -15,17 +15,17 @@
 import '@material/mwc-button';
 import { css, customElement, html } from 'lit-element';
 import { styleMap } from 'lit-html/directives/style-map';
-import { computed, makeObservable, observable, reaction } from 'mobx';
+import { computed, makeObservable, observable } from 'mobx';
 
 import '../../../components/dot_spinner';
-import './step_entry';
+import './step_cluster';
 import { MiloBaseElement } from '../../../components/milo_base';
 import { consumer } from '../../../libs/context';
 import { errorHandler, forwardWithoutMsg, reportRenderError } from '../../../libs/error_handler';
 import { BuildStatus } from '../../../services/buildbucket';
 import { consumeStore, StoreInstance } from '../../../store';
 import commonStyle from '../../../styles/common_style.css';
-import { BuildPageStepEntryElement } from './step_entry';
+import { BuildPageStepClusterElement } from './step_cluster';
 
 @customElement('milo-bp-step-list')
 @errorHandler(forwardWithoutMsg)
@@ -59,28 +59,19 @@ export class BuildPageStepListElement extends MiloBaseElement {
     makeObservable(this);
   }
 
+  private expandSubSteps = false;
   toggleAllSteps(expand: boolean) {
-    this.shadowRoot!.querySelectorAll<BuildPageStepEntryElement>('milo-bp-step-entry').forEach((e) =>
+    this.expandSubSteps = expand;
+    this.shadowRoot!.querySelectorAll<BuildPageStepClusterElement>('milo-bp-step-cluster').forEach((e) =>
       e.toggleAllSteps(expand)
-    );
-  }
-
-  connectedCallback() {
-    super.connectedCallback();
-    this.addDisposer(
-      reaction(
-        () => this.stepsConfig.showSucceededSteps,
-        (showSucceededSteps) =>
-          this.style.setProperty('--non-critical-build-step-display', showSucceededSteps ? 'block' : 'none'),
-        { fireImmediately: true }
-      )
     );
   }
 
   protected render = reportRenderError(this, () => {
     return html`
-      ${this.store.buildPage.build?.rootSteps.map(
-        (step) => html`<milo-bp-step-entry .step=${step}></milo-bp-step-entry>`
+      ${this.store.buildPage.build?.clusteredRootSteps.map(
+        (cluster) =>
+          html`<milo-bp-step-cluster .steps=${cluster} .expanded=${this.expandSubSteps}></milo-bp-step-cluster>`
       ) || ''}
       <div class="list-entry" style=${styleMap({ display: this.noStepText ? '' : 'none' })}>${this.noStepText}</div>
       <div id="load" class="list-entry" style=${styleMap({ display: this.loaded ? 'none' : '' })}>
@@ -94,10 +85,6 @@ export class BuildPageStepListElement extends MiloBaseElement {
     css`
       :host {
         display: block;
-      }
-
-      milo-bp-step-entry {
-        margin-bottom: 2px;
       }
 
       .list-entry {

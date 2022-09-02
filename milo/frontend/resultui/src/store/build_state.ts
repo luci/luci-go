@@ -14,7 +14,8 @@
 
 import { render } from 'lit-html';
 import { DateTime, Duration } from 'luxon';
-import { IAnyModelType, IMSTArray, Instance, SnapshotIn, SnapshotOut, types } from 'mobx-state-tree';
+import { untracked } from 'mobx';
+import { IAnyModelType, Instance, SnapshotIn, SnapshotOut, types } from 'mobx-state-tree';
 
 import { renderMarkdown } from '../libs/markdown_utils';
 import { parseProtoDuration } from '../libs/time_utils';
@@ -35,41 +36,14 @@ export interface StepExt extends Step {
 
 export const BuildStepState = types
   .model('BuildStepState', {
-    id: types.identifier,
+    id: types.optional(types.identifier, () => `BuildStepState/${Math.random()}`),
     data: types.frozen<StepExt>(),
     currentTime: types.safeReference(Timestamp),
     userConfig: types.safeReference(UserConfig),
 
-    _children: types.array(types.late((): IAnyModelType => BuildStepState)),
+    _children: types.array(types.reference(types.late((): IAnyModelType => BuildStepState))),
   })
-  .actions((self) => ({
-    setIsPinned(pinned: boolean) {
-      self.userConfig?.build.steps.setStepPin(self.data.name, pinned);
-    },
-  }))
   .views((self) => ({
-    get children() {
-      return self._children as IMSTArray<typeof BuildStepState>;
-    },
-    /**
-     * true iff the step and all of its descendants succeeded.
-     */
-    get succeededRecursively(): boolean {
-      if (self.data.status !== BuildStatus.Success) {
-        return false;
-      }
-      return this.children.every((child) => child.succeededRecursively);
-    },
-    /**
-     * true iff the step or one of its descendants failed (status Failure or
-     * InfraFailure).
-     */
-    get failed(): boolean {
-      if (self.data.status === BuildStatus.Failure || self.data.status === BuildStatus.InfraFailure) {
-        return true;
-      }
-      return this.children.some((child) => child.failed);
-    },
     get _currentTime() {
       return self.currentTime?.dateTime || DateTime.now();
     },
@@ -188,14 +162,79 @@ export const BuildStepState = types
     get isCritical() {
       return self.data.status !== BuildStatus.Success || this.isPinned;
     },
+  }))
+  .actions((self) => ({
+    setIsPinned(pinned: boolean) {
+      self.userConfig?.build.steps.setStepPin(self.data.name, pinned);
+    },
+  }))
+  // These computed properties contain force resolved (via down-casting `any`)
+  // self-referential types. Keep them last so TSC doesn't complain.
+  .views((self) => ({
+    get children() {
+      return self._children as ReadonlyArray<Instance<typeof BuildStepState>>;
+    },
+    /**
+     * true iff the step and all of its descendants succeeded.
+     */
+    get succeededRecursively(): boolean {
+      if (self.data.status !== BuildStatus.Success) {
+        return false;
+      }
+      return this.children.every((child) => child.succeededRecursively);
+    },
+    /**
+     * true iff the step or one of its descendants failed (status Failure or
+     * InfraFailure).
+     */
+    get failed(): boolean {
+      if (self.data.status === BuildStatus.Failure || self.data.status === BuildStatus.InfraFailure) {
+        return true;
+      }
+      return this.children.some((child) => child.failed);
+    },
+    get clusteredChildren() {
+      return untracked(() => clusterBuildSteps(this.children));
+    },
   }));
 
 export type BuildStepStateInstance = Instance<typeof BuildStepState>;
 export type BuildStepStateSnapshotIn = SnapshotIn<typeof BuildStepState>;
 export type BuildStepStateSnapshotOut = SnapshotOut<typeof BuildStepState>;
 
+/**
+ * Split the steps into multiple groups such that each group maximally contains
+ * consecutive steps that share the same criticality.
+ *
+ * Note that this function intentionally does not react to (i.e. untrack) the
+ * steps' criticality, so that a change it the steps' criticality (e.g. when
+ * the step is pinned/unpinned) does not trigger a rerun of the function.
+ */
+export function clusterBuildSteps(
+  steps: readonly BuildStepStateInstance[]
+): readonly (readonly BuildStepStateInstance[])[] {
+  const clusters: BuildStepStateInstance[][] = [];
+  for (const step of steps) {
+    let lastCluster = clusters[clusters.length - 1];
+
+    // Do not react to the change of a step's criticality because updating the
+    // cluster base on the internal state of the step is confusing.
+    // e.g. it can leads to the steps being re-clustered when users (un)pin a
+    // step.
+    const criticalityChanged = untracked(() => step.isCritical !== lastCluster?.[0]?.isCritical);
+
+    if (criticalityChanged) {
+      lastCluster = [];
+      clusters.push(lastCluster);
+    }
+    lastCluster.push(step);
+  }
+  return clusters;
+}
+
 export const BuildState = types
   .model('BuildState', {
+    id: types.optional(types.identifier, () => `BuildState/${Math.random()}`),
     data: types.frozen<Build>(),
     currentTime: types.safeReference(Timestamp),
     userConfig: types.safeReference(UserConfig),
@@ -327,6 +366,9 @@ export const BuildState = types
     get timeSinceEnded(): Duration | null {
       return this.endTime ? this._currentTime.diff(this.endTime) : null;
     },
+    get clusteredRootSteps() {
+      return untracked(() => clusterBuildSteps(this.rootSteps));
+    },
   }))
   .actions((self) => ({
     afterCreate() {
@@ -347,7 +389,7 @@ export const BuildState = types
         const index = (parent?._children || rootStepIds).length;
         const listNumber = `${parent?.data.listNumber || ''}${index + 1}.`;
         const stepState = {
-          id: step.name,
+          id: `${self.id}/BuildStepState/${step.name}`,
           data: { ...step, listNumber, depth, index, selfName },
           currentTime: self.currentTime?.id,
           userConfig: self.userConfig?.id,
@@ -357,9 +399,9 @@ export const BuildState = types
         stepStates.push(stepState);
         stepMap.set(step.name, stepState);
         if (!parent) {
-          rootStepIds.push(selfName);
+          rootStepIds.push(stepState.id);
         } else {
-          parent._children!.push(stepState);
+          parent._children!.push(stepState.id);
         }
       }
 

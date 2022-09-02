@@ -17,12 +17,13 @@ import { css, customElement } from 'lit-element';
 import { html, render } from 'lit-html';
 import { classMap } from 'lit-html/directives/class-map';
 import { styleMap } from 'lit-html/directives/style-map';
-import { makeObservable, observable, reaction } from 'mobx';
+import { computed, makeObservable, observable, reaction } from 'mobx';
 
 import '../../../components/copy_to_clipboard';
 import '../../../components/expandable_entry';
 import '../../../components/log';
 import '../../../components/pin_toggle';
+import './step_cluster';
 import { MiloBaseElement } from '../../../components/milo_base';
 import { HideTooltipEventDetail, ShowTooltipEventDetail } from '../../../components/tooltip';
 import { consumeInvocationState, InvocationState } from '../../../context/invocation_state';
@@ -34,6 +35,7 @@ import { consumeStore, StoreInstance } from '../../../store';
 import { BuildStepStateInstance } from '../../../store/build_state';
 import colorClasses from '../../../styles/color_classes.css';
 import commonStyle from '../../../styles/common_style.css';
+import { BuildPageStepClusterElement } from './step_cluster';
 
 /**
  * Renders a step.
@@ -52,7 +54,8 @@ export class BuildPageStepEntryElement extends MiloBaseElement implements Render
   @observable.ref step!: BuildStepStateInstance;
 
   @observable.ref private _expanded = false;
-  get expanded() {
+
+  @computed get expanded() {
     return this._expanded;
   }
   set expanded(newVal) {
@@ -64,11 +67,9 @@ export class BuildPageStepEntryElement extends MiloBaseElement implements Render
 
   @observable.ref private shouldRenderContent = false;
 
-  private expandSubSteps = false;
   toggleAllSteps(expand: boolean) {
     this.expanded = expand;
-    this.expandSubSteps = expand;
-    this.shadowRoot!.querySelectorAll<BuildPageStepEntryElement>('milo-bp-step-entry').forEach((e) =>
+    this.shadowRoot!.querySelectorAll<BuildPageStepClusterElement>('milo-bp-step-cluster').forEach((e) =>
       e.toggleAllSteps(expand)
     );
   }
@@ -93,8 +94,8 @@ export class BuildPageStepEntryElement extends MiloBaseElement implements Render
       <ul id="log-links" style=${styleMap({ display: this.step.filteredLogs.length ? '' : 'none' })}>
         ${this.step.filteredLogs.map((log) => html`<li><milo-log .log=${log}></li>`)}
       </ul>
-      ${this.step.children?.map(
-        (child) => html`<milo-bp-step-entry .step=${child} .expanded=${this.expandSubSteps}></milo-bp-step-entry>`
+      ${this.step.clusteredChildren.map(
+        (cluster) => html`<milo-bp-step-cluster .steps=${cluster}></milo-bp-step-cluster>`
       ) || ''}
     `;
   }
@@ -158,19 +159,9 @@ export class BuildPageStepEntryElement extends MiloBaseElement implements Render
     super.connectedCallback();
     this.addDisposer(
       reaction(
-        () => this.step.isCritical,
-        () => {
-          this.style['display'] = `var(--${this.step.isCritical ? '' : 'non-'}critical-build-step-display, block)`;
-        },
-        { fireImmediately: true }
-      )
-    );
-    this.addDisposer(
-      reaction(
         () => this.store.userConfig.build.steps.expandSucceededByDefault,
         (expandSucceededByDefault) => {
           this.expanded = expandSucceededByDefault;
-          this.expandSubSteps = true;
         },
         { fireImmediately: true }
       )
@@ -251,7 +242,7 @@ export class BuildPageStepEntryElement extends MiloBaseElement implements Render
     colorClasses,
     css`
       :host {
-        display: none;
+        display: block;
         min-height: 24px;
       }
 
@@ -333,14 +324,6 @@ export class BuildPageStepEntryElement extends MiloBaseElement implements Render
 
       #log-links > li {
         list-style-type: circle;
-      }
-
-      milo-bp-step-entry {
-        margin-bottom: 2px;
-
-        /* Always render all child steps. */
-        --non-critical-build-step-display: block;
-        --critical-build-step-display: block;
       }
     `,
   ];

@@ -17,15 +17,22 @@ import { expect } from 'chai';
 import chaiSubset from 'chai-subset';
 import { render } from 'lit-html';
 import { DateTime } from 'luxon';
+import { action, computed, makeAutoObservable } from 'mobx';
+import { destroy, types } from 'mobx-state-tree';
 import * as sinon from 'sinon';
 
 import { renderMarkdown } from '../libs/markdown_utils';
 import { Build, BuildStatus, Step } from '../services/buildbucket';
-import { BuildState, BuildStepState, BuildStepStateInstance } from './build_state';
+import { BuildState, BuildStepState, BuildStepStateInstance, clusterBuildSteps, StepExt } from './build_state';
 
 chai.use(chaiSubset);
 
-describe('StepExt', () => {
+const StepStateTest = types.model('StepStateTest', {
+  steps: types.array(BuildStepState),
+  targetStep: types.reference(BuildStepState),
+});
+
+describe('BuildStepState', () => {
   function createStep(index: number, name: string, status = BuildStatus.Success, summaryMarkdown = '') {
     const nameSegs = name.split('|');
     return {
@@ -43,114 +50,115 @@ describe('StepExt', () => {
     };
   }
 
-  describe('succeededRecursively', () => {
-    it('succeeded step with no children should return true', async () => {
-      const step = BuildStepState.create(createStep(0, 'child', BuildStatus.Success));
-      expect(step.succeededRecursively).to.be.true;
+  describe('succeededRecursively/failed', () => {
+    it('succeeded step with no children', async () => {
+      const store = StepStateTest.create({
+        steps: [createStep(0, 'parent', BuildStatus.Success)],
+        targetStep: 'parent',
+      });
+      after(() => destroy(store));
+      expect(store.targetStep.succeededRecursively).to.be.true;
+      expect(store.targetStep.failed).to.be.false;
     });
 
-    it('succeeded step with only succeeded children should return true', async () => {
-      const step = BuildStepState.create({
-        ...createStep(0, 'parent', BuildStatus.Success),
-        _children: [
+    it('failed step with no children', async () => {
+      const store = StepStateTest.create({
+        steps: [createStep(0, 'parent', BuildStatus.Failure)],
+        targetStep: 'parent',
+      });
+      after(() => destroy(store));
+      expect(store.targetStep.succeededRecursively).to.be.false;
+      expect(store.targetStep.failed).to.be.true;
+    });
+
+    it('infra-failed step with no children', async () => {
+      const store = StepStateTest.create({
+        steps: [createStep(0, 'parent', BuildStatus.InfraFailure)],
+        targetStep: 'parent',
+      });
+      after(() => destroy(store));
+      expect(store.targetStep.succeededRecursively).to.be.false;
+      expect(store.targetStep.failed).to.be.true;
+    });
+
+    it('non-(infra-)failed step with no children', async () => {
+      const store = StepStateTest.create({
+        steps: [createStep(0, 'parent', BuildStatus.Canceled)],
+        targetStep: 'parent',
+      });
+      after(() => destroy(store));
+      expect(store.targetStep.succeededRecursively).to.be.false;
+      expect(store.targetStep.failed).to.be.false;
+    });
+
+    it('succeeded step with only succeeded children', async () => {
+      const store = StepStateTest.create({
+        steps: [
+          { ...createStep(0, 'parent', BuildStatus.Success), _children: ['parent|child1', 'parent|child2'] },
           createStep(0, 'parent|child1', BuildStatus.Success),
           createStep(1, 'parent|child2', BuildStatus.Success),
         ],
+        targetStep: 'parent',
       });
-      expect(step.succeededRecursively).to.be.true;
+      after(() => destroy(store));
+      expect(store.targetStep.succeededRecursively).to.be.true;
+      expect(store.targetStep.failed).to.be.false;
     });
 
-    it('succeeded step with failed child should return false', async () => {
-      const step = BuildStepState.create({
-        ...createStep(0, 'parent', BuildStatus.Success),
-        _children: [
+    it('succeeded step with failed child', async () => {
+      const store = StepStateTest.create({
+        steps: [
+          { ...createStep(0, 'parent', BuildStatus.Success), _children: ['parent|child1', 'parent|child2'] },
           createStep(0, 'parent|child1', BuildStatus.Success),
           createStep(1, 'parent|child2', BuildStatus.Failure),
         ],
+        targetStep: 'parent',
       });
-      expect(step.succeededRecursively).to.be.false;
+      after(() => destroy(store));
+      expect(store.targetStep.succeededRecursively).to.be.false;
+      expect(store.targetStep.failed).to.be.true;
     });
 
-    it('succeeded step with non-succeeded child should return false', async () => {
-      const step = BuildStepState.create({
-        ...createStep(0, 'parent', BuildStatus.Success),
-        _children: [
+    it('succeeded step with non-succeeded child', async () => {
+      const store = StepStateTest.create({
+        steps: [
+          { ...createStep(0, 'parent', BuildStatus.Success), _children: ['parent|child1', 'parent|child2'] },
           createStep(0, 'parent|child1', BuildStatus.Success),
           createStep(1, 'parent|child2', BuildStatus.Started),
         ],
+        targetStep: 'parent',
       });
-      expect(step.succeededRecursively).to.be.false;
+      after(() => destroy(store));
+      expect(store.targetStep.succeededRecursively).to.be.false;
+      expect(store.targetStep.failed).to.be.false;
     });
 
-    it('failed step with no children should return false', async () => {
-      const step = BuildStepState.create(createStep(0, 'parent', BuildStatus.Failure));
-      expect(step.succeededRecursively).to.be.false;
-    });
-
-    it('failed step with succeeded children should return false', async () => {
-      const step = BuildStepState.create({
-        ...createStep(0, 'parent', BuildStatus.Failure),
-        _children: [
+    it('failed step with succeeded children', async () => {
+      const store = StepStateTest.create({
+        steps: [
+          { ...createStep(0, 'parent', BuildStatus.Failure), _children: ['parent|child1', 'parent|child2'] },
           createStep(0, 'parent|child1', BuildStatus.Success),
           createStep(1, 'parent|child2', BuildStatus.Success),
         ],
+        targetStep: 'parent',
       });
-      expect(step.succeededRecursively).to.be.false;
-    });
-  });
-
-  describe('failed', () => {
-    it('succeeded step with no children should return false', async () => {
-      const step = BuildStepState.create(createStep(0, 'child', BuildStatus.Success));
-      expect(step.failed).to.be.false;
+      after(() => destroy(store));
+      expect(store.targetStep.succeededRecursively).to.be.false;
+      expect(store.targetStep.failed).to.be.true;
     });
 
-    it('succeeded step with only succeeded children should return false', async () => {
-      const step = BuildStepState.create({
-        ...createStep(0, 'parent', BuildStatus.Success),
-        _children: [
+    it('infra-failed step with succeeded children', async () => {
+      const store = StepStateTest.create({
+        steps: [
+          { ...createStep(0, 'parent', BuildStatus.InfraFailure), _children: ['parent|child1', 'parent|child2'] },
           createStep(0, 'parent|child1', BuildStatus.Success),
           createStep(1, 'parent|child2', BuildStatus.Success),
         ],
+        targetStep: 'parent',
       });
-      expect(step.failed).to.be.false;
-    });
-
-    it('succeeded step with failed child should return true', async () => {
-      const step = BuildStepState.create({
-        ...createStep(0, 'parent', BuildStatus.Success),
-        _children: [
-          createStep(0, 'parent|child1', BuildStatus.Success),
-          createStep(1, 'parent|child2', BuildStatus.Failure),
-        ],
-      });
-      expect(step.failed).to.be.true;
-    });
-
-    it('failed step with no children should return true', async () => {
-      const step = BuildStepState.create(createStep(0, 'parent', BuildStatus.Failure));
-      expect(step.failed).to.be.true;
-    });
-
-    it('infra-failed step with no children should return true', async () => {
-      const step = BuildStepState.create(createStep(0, 'parent', BuildStatus.InfraFailure));
-      expect(step.failed).to.be.true;
-    });
-
-    it('non-(infra-)failed step with no children should return false', async () => {
-      const step = BuildStepState.create(createStep(0, 'parent', BuildStatus.Canceled));
-      expect(step.failed).to.be.false;
-    });
-
-    it('failed step with succeeded children should return true', async () => {
-      const step = BuildStepState.create({
-        ...createStep(0, 'parent', BuildStatus.Failure),
-        _children: [
-          createStep(0, 'parent|child1', BuildStatus.Success),
-          createStep(1, 'parent|child2', BuildStatus.Success),
-        ],
-      });
-      expect(step.failed).to.be.true;
+      after(() => destroy(store));
+      expect(store.targetStep.succeededRecursively).to.be.false;
+      expect(store.targetStep.failed).to.be.true;
     });
   });
 
@@ -170,36 +178,42 @@ describe('StepExt', () => {
 
     it('for no summary', async () => {
       const step = BuildStepState.create(createStep(0, 'step', BuildStatus.Success, undefined));
+      after(() => destroy(step));
       expect(step.header).to.be.null;
       expect(step.summary).to.be.null;
     });
 
     it('for empty summary', async () => {
       const step = BuildStepState.create(createStep(0, 'step', BuildStatus.Success, ''));
+      after(() => destroy(step));
       expect(step.header).to.be.null;
       expect(step.summary).to.be.null;
     });
 
     it('for text summary', async () => {
       const step = BuildStepState.create(createStep(0, 'step', BuildStatus.Success, 'this is some text'));
+      after(() => destroy(step));
       expect(step.header?.innerHTML).to.be.eq('this is some text');
       expect(step.summary).to.be.null;
     });
 
     it('for header and content separated by <br/>', async () => {
       const step = BuildStepState.create(createStep(0, 'step', BuildStatus.Success, 'header<br/>content'));
+      after(() => destroy(step));
       expect(step.header?.innerHTML).to.be.eq(getExpectedHeaderHTML('header'));
       expect(step.summary?.innerHTML).to.be.eq(getExpectedBodyHTML('content'));
     });
 
     it('for header and content separated by <br/>, header is empty', async () => {
       const step = BuildStepState.create(createStep(0, 'step', BuildStatus.Success, '<br/>body'));
+      after(() => destroy(step));
       expect(step.header).to.be.null;
       expect(step.summary?.innerHTML).to.be.eq(getExpectedBodyHTML('body'));
     });
 
     it('for header and content separated by <br/>, body is empty', async () => {
       const step = BuildStepState.create(createStep(0, 'step', BuildStatus.Success, 'header<br/>'));
+      after(() => destroy(step));
       expect(step.header?.innerHTML).to.be.eq(getExpectedHeaderHTML('header'));
       expect(step.summary).to.be.null;
     });
@@ -208,6 +222,7 @@ describe('StepExt', () => {
       const step = BuildStepState.create(
         createStep(0, 'step', BuildStatus.Success, '<a href="http://google.com">Link</a><br/>content')
       );
+      after(() => destroy(step));
       expect(step.header?.innerHTML).to.be.eq(getExpectedHeaderHTML('<a href="http://google.com">Link</a>'));
       expect(step.summary?.innerHTML).to.be.eq(getExpectedBodyHTML('content'));
     });
@@ -221,6 +236,7 @@ describe('StepExt', () => {
           '<span>span</span><i>i</i><b>b</b><strong>strong</strong><br/>content'
         )
       );
+      after(() => destroy(step));
       expect(step.header?.innerHTML).to.be.eq(
         getExpectedHeaderHTML('<span>span</span><i>i</i><b>b</b><strong>strong</strong>')
       );
@@ -231,6 +247,7 @@ describe('StepExt', () => {
       const step = BuildStepState.create(
         createStep(0, 'step', BuildStatus.Success, '<ul><li>item</li></ul><br/>content')
       );
+      after(() => destroy(step));
       expect(step.header).to.be.null;
       expect(step.summary?.innerHTML).to.be.eq(getExpectedBodyHTML('<ul><li>item</li></ul><br/>content'));
     });
@@ -239,6 +256,7 @@ describe('StepExt', () => {
       const step = BuildStepState.create(
         createStep(0, 'step', BuildStatus.Success, '<ul><li>item1</li><li>item2</li></ul>')
       );
+      after(() => destroy(step));
       expect(step.header).to.be.null;
       expect(step.summary?.innerHTML).to.be.eq(getExpectedBodyHTML('<ul><li>item1</li><li>item2</li></ul>'));
     });
@@ -247,6 +265,7 @@ describe('StepExt', () => {
       const step = BuildStepState.create(
         createStep(0, 'step', BuildStatus.Success, '<div>header<br/>other</div>content')
       );
+      after(() => destroy(step));
       expect(step.header?.innerHTML).to.be.eq(getExpectedHeaderHTML('header'));
       expect(step.summary?.innerHTML).to.be.eq(getExpectedBodyHTML('<div>other</div>content'));
     });
@@ -255,13 +274,75 @@ describe('StepExt', () => {
       const step = BuildStepState.create(
         createStep(0, 'step', BuildStatus.Success, '<div><div>header<br/>other</div></div>content')
       );
+      after(() => destroy(step));
       expect(step.header).to.be.null;
       expect(step.summary?.innerHTML).to.be.eq(getExpectedBodyHTML('<div><div>header<br/>other</div></div>content'));
     });
   });
 });
 
-describe('BuildExt', () => {
+describe('clusterBuildSteps', () => {
+  function createStep(id: string, isCritical: boolean) {
+    return {
+      id,
+      isCritical,
+    } as Partial<BuildStepStateInstance> as BuildStepStateInstance;
+  }
+
+  it('should cluster build steps correctly', () => {
+    const clusteredSteps = clusterBuildSteps([
+      createStep('1', false),
+      createStep('2', false),
+      createStep('3', false),
+      createStep('4', true),
+      createStep('5', false),
+      createStep('6', false),
+      createStep('7', true),
+      createStep('8', true),
+      createStep('9', false),
+      createStep('10', true),
+      createStep('11', true),
+    ]);
+    expect(clusteredSteps).to.deep.eq([
+      [createStep('1', false), createStep('2', false), createStep('3', false)],
+      [createStep('4', true)],
+      [createStep('5', false), createStep('6', false)],
+      [createStep('7', true), createStep('8', true)],
+      [createStep('9', false)],
+      [createStep('10', true), createStep('11', true)],
+    ]);
+  });
+
+  it("should cluster build steps correctly when there're no steps", () => {
+    const clusteredSteps = clusterBuildSteps([]);
+    expect(clusteredSteps).to.deep.eq([]);
+  });
+
+  it("should cluster build steps correctly when there's a single step", () => {
+    const clusteredSteps = clusterBuildSteps([createStep('1', false)]);
+    expect(clusteredSteps).to.deep.eq([[createStep('1', false)]]);
+  });
+
+  it('should not re-cluster steps when the criticality is updated', () => {
+    const step1 = makeAutoObservable(createStep('1', false));
+    const step2 = makeAutoObservable(createStep('2', false));
+    const step3 = makeAutoObservable(createStep('3', false));
+
+    const computedCluster = computed(() => clusterBuildSteps([step1, step2, step3]), { keepAlive: true });
+
+    const clustersBeforeUpdate = clusterBuildSteps([step1, step2, step3]);
+    expect(clustersBeforeUpdate).to.deep.eq([[step1, step2, step3]]);
+    expect(computedCluster.get()).to.deep.eq(clustersBeforeUpdate);
+
+    action(() => ((step2 as Mutable<typeof step2>).isCritical = true))();
+    const clustersAfterUpdate = clusterBuildSteps([step1, step2, step3]);
+    expect(clustersAfterUpdate).to.deep.eq([[step1], [step2], [step3]]);
+
+    expect(computedCluster.get()).to.deep.eq(clustersBeforeUpdate);
+  });
+});
+
+describe('BuildState', () => {
   it('should build step-tree correctly', async () => {
     const time = '2020-11-01T21:43:03.351951Z';
     const build = BuildState.create({
@@ -280,6 +361,7 @@ describe('BuildExt', () => {
         ] as readonly Step[],
       } as Build,
     });
+    after(() => destroy(build));
 
     expect(build.rootSteps).containSubset([
       {
@@ -289,9 +371,9 @@ describe('BuildExt', () => {
           listNumber: '1.',
           depth: 0,
           index: 0,
-        },
+        } as Partial<StepExt>,
         children: [] as BuildStepStateInstance[],
-      },
+      } as Partial<BuildStepStateInstance>,
       {
         data: {
           name: 'root2',
@@ -404,6 +486,7 @@ describe('BuildExt', () => {
           executionTimeout: '20s',
         } as Build,
       });
+      after(() => destroy(build));
 
       expect(build.pendingDuration.toISO()).to.be.eq('PT10S');
       expect(build.isPending).to.be.true;
@@ -425,6 +508,7 @@ describe('BuildExt', () => {
           executionTimeout: '20s',
         } as Build,
       });
+      after(() => destroy(build));
 
       expect(build.pendingDuration.toISO()).to.be.eq('PT10S');
       expect(build.isPending).to.be.false;
@@ -446,6 +530,7 @@ describe('BuildExt', () => {
           executionTimeout: '20s',
         } as Build,
       });
+      after(() => destroy(build));
 
       expect(build.pendingDuration.toISO()).to.be.eq('PT20S');
       expect(build.isPending).to.be.false;
@@ -467,6 +552,7 @@ describe('BuildExt', () => {
           executionTimeout: '20s',
         } as Build,
       });
+      after(() => destroy(build));
 
       expect(build.pendingDuration.toISO()).to.be.eq('PT10S');
       expect(build.isPending).to.be.false;
@@ -489,6 +575,7 @@ describe('BuildExt', () => {
           executionTimeout: '20s',
         } as Build,
       });
+      after(() => destroy(build));
 
       expect(build.pendingDuration.toISO()).to.be.eq('PT10S');
       expect(build.isPending).to.be.false;
@@ -511,6 +598,7 @@ describe('BuildExt', () => {
           executionTimeout: '20s',
         } as Build,
       });
+      after(() => destroy(build));
 
       expect(build.pendingDuration.toISO()).to.be.eq('PT10S');
       expect(build.isPending).to.be.false;
@@ -531,6 +619,7 @@ describe('BuildExt', () => {
           executionTimeout: '20s',
         } as Build,
       });
+      after(() => destroy(build));
 
       expect(build.pendingDuration.toISO()).to.be.eq('PT40S');
       expect(build.isPending).to.be.true;
@@ -552,6 +641,7 @@ describe('BuildExt', () => {
           executionTimeout: '20s',
         } as Build,
       });
+      after(() => destroy(build));
 
       expect(build.pendingDuration.toISO()).to.be.eq('PT30S');
       expect(build.isPending).to.be.false;
@@ -574,6 +664,7 @@ describe('BuildExt', () => {
           executionTimeout: '20s',
         } as Build,
       });
+      after(() => destroy(build));
 
       expect(build.pendingDuration.toISO()).to.be.eq('PT30S');
       expect(build.isPending).to.be.false;

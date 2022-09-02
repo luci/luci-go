@@ -24,7 +24,7 @@ import { consumer } from '../../../libs/context';
 import { errorHandler, forwardWithoutMsg, reportRenderError } from '../../../libs/error_handler';
 import { consumeStore, StoreInstance } from '../../../store';
 import commonStyle from '../../../styles/common_style.css';
-import { BuildPageStepEntryElement } from './step_entry';
+import { BuildPageStepListElement } from './step_list';
 
 @customElement('milo-steps-tab')
 @errorHandler(forwardWithoutMsg)
@@ -47,7 +47,7 @@ export class StepsTabElement extends MiloBaseElement {
   private allStepsWereExpanded = false;
   private toggleAllSteps(expand: boolean) {
     this.allStepsWereExpanded = expand;
-    this.shadowRoot!.querySelector<BuildPageStepEntryElement>('milo-bp-step-list')!.toggleAllSteps(expand);
+    this.shadowRoot!.querySelector<BuildPageStepListElement>('milo-bp-step-list')!.toggleAllSteps(expand);
   }
   private readonly toggleAllStepsByHotkey = () => this.toggleAllSteps(!this.allStepsWereExpanded);
 
