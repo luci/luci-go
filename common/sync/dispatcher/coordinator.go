@@ -231,14 +231,25 @@ func (state *coordinatorState) run(ctx context.Context, send SendFn) {
 	if state.opts.DrainedFn != nil {
 		defer state.opts.DrainedFn()
 	}
-	defer state.opts.DropFn(nil, true)
-	defer close(state.resultCh)
-	defer state.timer.Stop()
+	defer func() {
+		logging.Debugf(ctx, "final drop")
+		state.opts.DropFn(nil, true)
+	}()
+	defer func() {
+		logging.Debugf(ctx, "closing resultCh")
+		defer close(state.resultCh)
+	}()
+	defer func() {
+		logging.Debugf(ctx, "stopping timer")
+		state.timer.Stop()
+	}()
 
 	var lastSend time.Time
 loop:
 	for {
 		state.dbg("LOOP (closed: %t, canceled: %t): buf.Stats[%+v]",
+			state.closed, state.canceled, state.buf.Stats())
+		logging.Debugf(ctx, "LOOP (closed: %t, canceled: %t): buf.Stats[%+v]",
 			state.closed, state.canceled, state.buf.Stats())
 
 		now := clock.Now(ctx)
@@ -334,4 +345,5 @@ loop:
 	}
 
 	state.dbg("DONE")
+	logging.Debugf(ctx, "DONE")
 }
