@@ -36,7 +36,7 @@ func MakeCLResourceID(clid common.CLID) ResourceID {
 //
 // Returns:
 //  * new time-limited context,
-//  * best-effort lease cancelation func,
+//  * best-effort lease cancellation func,
 //  * and an error, if any.
 func ApplyOnCL(ctx context.Context, clid common.CLID, duration time.Duration, requester string) (context.Context, func(), error) {
 	leaseExpireTime := clock.Now(ctx).Add(duration)

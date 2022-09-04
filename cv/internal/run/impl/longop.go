@@ -172,32 +172,32 @@ type longOpCancellationChecker struct {
 
 	// Internal state.
 
-	// state is atomically updated int which stores state of the cancelation
+	// state is atomically updated int which stores state of the cancellation
 	// checker:
-	//  * cancelationCheckerInitial
-	//  * cancelationCheckerStarted
-	//  * cancelationCheckerRequested
+	//  * cancellationCheckerInitial
+	//  * cancellationCheckerStarted
+	//  * cancellationCheckerRequested
 	state int32
 }
 
 const (
-	cancelationCheckerInitial   = 0
-	cancelationCheckerStarted   = 1
-	cancelationCheckerRequested = 2
+	cancellationCheckerInitial   = 0
+	cancellationCheckerStarted   = 1
+	cancellationCheckerRequested = 2
 )
 
 // check quickly and cheaply checks whether cancellation was requested.
 //
 // Does not block on anything.
 func (l *longOpCancellationChecker) check() bool {
-	return atomic.LoadInt32(&l.state) == cancelationCheckerRequested
+	return atomic.LoadInt32(&l.state) == cancellationCheckerRequested
 }
 
-// start spawns a goroutine checking if cancelation was requested.
+// start spawns a goroutine checking if cancellation was requested.
 //
 // Returns a stop function, which should be called to free resources.
 func (l *longOpCancellationChecker) start(ctx context.Context, initial *run.Run, opID string) (stop func()) {
-	if !atomic.CompareAndSwapInt32(&l.state, cancelationCheckerInitial, cancelationCheckerStarted) {
+	if !atomic.CompareAndSwapInt32(&l.state, cancellationCheckerInitial, cancellationCheckerStarted) {
 		panic(fmt.Errorf("start called more than once"))
 	}
 	switch {
@@ -256,7 +256,7 @@ func (l *longOpCancellationChecker) reevaluate(ctx context.Context, opID string,
 	switch {
 	case err == datastore.ErrNoSuchEntity:
 		logging.Errorf(ctx, "Run was unexpectedly deleted")
-		atomic.StoreInt32(&l.state, cancelationCheckerRequested)
+		atomic.StoreInt32(&l.state, cancellationCheckerRequested)
 		return false
 	case err != nil && ctx.Err() != nil:
 		// Context was cancelled or expired.
@@ -266,11 +266,11 @@ func (l *longOpCancellationChecker) reevaluate(ctx context.Context, opID string,
 		return true
 	case r.OngoingLongOps == nil || r.OngoingLongOps.GetOps()[opID] == nil:
 		logging.Warningf(ctx, "Reloaded Run no longer has this operation")
-		atomic.StoreInt32(&l.state, cancelationCheckerRequested)
+		atomic.StoreInt32(&l.state, cancellationCheckerRequested)
 		return false
 	case r.OngoingLongOps.GetOps()[opID].GetCancelRequested():
-		logging.Warningf(ctx, "Cancelation request detected")
-		atomic.StoreInt32(&l.state, cancelationCheckerRequested)
+		logging.Warningf(ctx, "Cancellation request detected")
+		atomic.StoreInt32(&l.state, cancellationCheckerRequested)
 		return false
 	default:
 		return true
