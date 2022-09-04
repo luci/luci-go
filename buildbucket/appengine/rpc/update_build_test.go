@@ -542,7 +542,7 @@ func TestUpdateBuild(t *testing.T) {
 			So(b.Proto.Output.Properties, ShouldBeNil)
 		}
 		m := model.HardcodedBuildMask("output.properties", "steps", "tags", "infra")
-		So(model.LoadBuildDetails(ctx, m, b.Proto), ShouldBeNil)
+		So(model.LoadBuildDetails(ctx, m, nil, b.Proto), ShouldBeNil)
 		return b
 	}
 

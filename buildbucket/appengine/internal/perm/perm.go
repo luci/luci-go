@@ -150,7 +150,7 @@ func HasInBucket(ctx context.Context, perm realms.Permission, project, bucket st
 		return nil
 	}
 
-	// For compatibility with legacy ALCs, administrators have implicit access to
+	// For compatibility with legacy ACLs, administrators have implicit access to
 	// everything. Log when this rule is invoked, since it's surprising and it
 	// something we might want to get rid of after everything is migrated to
 	// Realms.
@@ -237,4 +237,94 @@ func BucketsByPerm(ctx context.Context, p realms.Permission, project string) (bu
 // CanUpdateBuild returns whether the caller has a permission to update builds.
 func CanUpdateBuild(ctx context.Context) (bool, error) {
 	return auth.IsMember(ctx, UpdateBuildAllowedUsers)
+}
+
+// hasInBuilderBoolean is a wrapper around HasInBuilder that handles denied/not-found errors
+// and returns false instead of an error in those cases.
+func hasInBuilderBoolean(ctx context.Context, p realms.Permission, builderID *pb.BuilderID) (bool, error) {
+	err := HasInBuilder(ctx, p, builderID)
+	if err == nil {
+		return true, nil
+	}
+	status, ok := appstatus.Get(err)
+	if ok && (status.Code() == codes.PermissionDenied || status.Code() == codes.NotFound) {
+		return false, nil
+	}
+	return false, err
+}
+
+// GetFirstAvailablePerm returns the first permission in the given list which is granted to
+// the user for the given builder. Returns an error if the user has none of the permissions.
+func GetFirstAvailablePerm(ctx context.Context, builderID *pb.BuilderID, perms ...realms.Permission) (realms.Permission, error) {
+	if len(perms) == 0 {
+		panic("at least one permission must be provided")
+	}
+	// Look at each permission in turn except for the last one.
+	for _, perm := range perms[:len(perms)-1] {
+		if ok, err := hasInBuilderBoolean(ctx, perm, builderID); err != nil {
+			return realms.Permission{}, err
+		} else if ok {
+			return perm, nil
+		}
+	}
+
+	// If the user doesn't have any permissions at all, we want to throw an error, so use
+	// HasInBuilder instead of the boolean version.
+	lastPerm := perms[len(perms)-1]
+	if err := HasInBuilder(ctx, lastPerm, builderID); err != nil {
+		return realms.Permission{}, err
+	}
+	return lastPerm, nil
+}
+
+// getCachedPerm is a simple caching wrapper to check whether the user has a permission in
+// a given bucket cache (map of bucket names to broadest Build read permission).
+//
+// Returns an error if the user does not have at least bbperms.BuildsList.
+func getCachedPerm(ctx context.Context, bucketPermCache map[string]realms.Permission, builderID *pb.BuilderID) (realms.Permission, error) {
+	qualifiedBucket := protoutil.FormatBucketID(builderID.GetProject(), builderID.GetBucket())
+	_, cached := bucketPermCache[qualifiedBucket]
+	if !cached {
+		broadestBuildReadPerm, err := GetFirstAvailablePerm(ctx, builderID, bbperms.BuildsGet, bbperms.BuildsGetLimited, bbperms.BuildsList)
+		if err != nil {
+			return realms.Permission{}, err
+		}
+		bucketPermCache[qualifiedBucket] = broadestBuildReadPerm
+	}
+	return bucketPermCache[qualifiedBucket], nil
+}
+
+// RedactBuild redacts fields from the given build based on whether the user has
+// appropriate permissions to see those fields.
+// The relevant permissions are:
+//   bbperms.BuildsGet: can see all fields
+//   bbperms.BuildsGetLimited: can see a limited set of fields excluding detailed builder output
+//   bbperms.BuildsList: can see only basic fields required to list builds
+//
+// Returns an error if the user does not have at least bbperms.BuildsList.
+//
+// For efficiency in the case where multiple builds are going to be redacted at once, the caller
+// may optionally supply a bucket cache (map of bucket names to broadest Build read permission).
+func RedactBuild(ctx context.Context, bucketPermCache map[string]realms.Permission, build *pb.Build) error {
+	if bucketPermCache == nil {
+		bucketPermCache = make(map[string]realms.Permission)
+	}
+	builderID := build.GetBuilder()
+	broadestPerm, err := getCachedPerm(ctx, bucketPermCache, builderID)
+	if err != nil {
+		return err
+	}
+	var redactionMask *model.BuildMask
+	switch {
+	case broadestPerm == bbperms.BuildsGet:
+		return nil
+	case broadestPerm == bbperms.BuildsGetLimited:
+		redactionMask = model.GetLimitedBuildMask
+	case broadestPerm == bbperms.BuildsList:
+		redactionMask = model.ListOnlyBuildMask
+	}
+	if err := redactionMask.Trim(build); err != nil {
+		return err
+	}
+	return nil
 }

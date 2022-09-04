@@ -19,7 +19,9 @@ import (
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/grpc/appstatus"
+	"go.chromium.org/luci/server/auth/realms"
 
+	"go.chromium.org/luci/buildbucket/appengine/internal/perm"
 	"go.chromium.org/luci/buildbucket/appengine/internal/search"
 	"go.chromium.org/luci/buildbucket/appengine/model"
 
@@ -145,7 +147,12 @@ func (*Builds) SearchBuilds(ctx context.Context, req *pb.SearchBuildsRequest) (*
 	if err != nil {
 		return nil, err
 	}
-	if err = model.LoadBuildDetails(ctx, mask, rsp.Builds...); err != nil {
+
+	bucketPermCache := make(map[string]realms.Permission)
+	err = model.LoadBuildDetails(ctx, mask, func(b *pb.Build) error {
+		return perm.RedactBuild(ctx, bucketPermCache, b)
+	}, rsp.Builds...)
+	if err != nil {
 		return nil, err
 	}
 	return rsp, nil

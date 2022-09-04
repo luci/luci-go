@@ -281,7 +281,7 @@ func scheduleRequestFromTemplate(ctx context.Context, req *pb.ScheduleBuildReque
 	}
 
 	b := bld.ToSimpleBuildProto(ctx)
-	if err := model.LoadBuildDetails(ctx, templateBuildMask, b); err != nil {
+	if err := model.LoadBuildDetails(ctx, templateBuildMask, nil, b); err != nil {
 		return nil, err
 	}
 
@@ -1480,7 +1480,10 @@ func (*Builds) ScheduleBuild(ctx context.Context, req *pb.ScheduleBuildRequest) 
 		// Dry run build is not saved in datastore, return the proto right away.
 		return blds[0].Proto, nil
 	}
-	return blds[0].ToProto(ctx, m)
+
+	// No need to redact the response here, because we're effectively just sending
+	// the caller's inputs back to them.
+	return blds[0].ToProto(ctx, m, nil)
 }
 
 // scheduleBuilds handles requests to schedule builds.
@@ -1541,8 +1544,10 @@ func (*Builds) scheduleBuilds(ctx context.Context, globalCfg *pb.SettingsCfg, re
 			i := i
 			bld := bld
 			work <- func() error {
+				// Note: We don't redact the Build response here because we expect any user with
+				// BuildsAdd permission should also have BuildsGet.
 				// TODO(crbug/1042991): Don't re-read freshly written entities (see ToProto).
-				ret[i], merr[origI] = bld.ToProto(ctx, masks[origI])
+				ret[i], merr[origI] = bld.ToProto(ctx, masks[origI], nil)
 				return nil
 			}
 		}

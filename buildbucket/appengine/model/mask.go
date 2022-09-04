@@ -47,6 +47,46 @@ var defaultFieldMask = fieldmaskpb.FieldMask{
 	},
 }
 
+// The field mask to use for callers who have the BuildsList permission but not BuildsGet or
+// BuildsGetLimited.
+// These callers should only be able to see fields specified in this mask.
+// TODO(crbug/1353534): Implement these as proto field annotations instead.
+var listOnlyFieldMask = fieldmaskpb.FieldMask{
+	Paths: []string{
+		"ancestor_ids",
+		"can_outlive_parent",
+		"id",
+		"status",
+		"status_details",
+	},
+}
+
+// The field mask to use for callers who have the BuildsGetLimited permission but not BuildsGet.
+// These callers should only be able to see fields specified in this mask.
+// TODO(crbug/1353534): Implement these as proto field annotations instead.
+var getLimitedFieldMask = fieldmaskpb.FieldMask{
+	Paths: []string{
+		"ancestor_ids",
+		"builder",
+		"can_outlive_parent",
+		"cancel_time",
+		"create_time",
+		"critical",
+		"end_time",
+		"id",
+		"infra.resultdb",
+		"input.gerrit_changes",
+		"input.gitiles_commit",
+		"number",
+		"start_time",
+		"status",
+		"status_details",
+		// TODO(crbug/1353534): Add a limited/sanitized version of summary_markdown once we've
+		// made a decision on how best to implement that.
+		"update_time",
+	},
+}
+
 // Used just for their type information.
 var (
 	buildPrototype       = pb.Build{}
@@ -58,6 +98,16 @@ var NoopBuildMask = &BuildMask{m: mask.All(&buildPrototype)}
 
 // DefaultBuildMask is the default mask to use for read requests.
 var DefaultBuildMask = HardcodedBuildMask(defaultFieldMask.Paths...)
+
+// ListOnlyBuildMask is an extra mask to hide fields from callers who have the BuildsList
+// permission but not BuildsGet or BuildsGetLimited.
+// These callers should only be able to see fields specified in this mask.
+var ListOnlyBuildMask = HardcodedBuildMask(listOnlyFieldMask.Paths...)
+
+// GetLimitedBuildMask is an extra mask to hide fields from callers who have the BuildsGetLimited
+// permission but not BuildsGet.
+// These callers should only be able to see fields specified in this mask.
+var GetLimitedBuildMask = HardcodedBuildMask(getLimitedFieldMask.Paths...)
 
 // BuildMask knows how to filter pb.Build proto messages.
 type BuildMask struct {

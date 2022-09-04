@@ -114,9 +114,17 @@ func (*Builds) GetBuild(ctx context.Context, req *pb.GetBuildRequest) (*pb.Build
 	if err != nil {
 		return nil, err
 	}
-	if err := perm.HasInBuilder(ctx, bbperms.BuildsGet, bld.Proto.Builder); err != nil {
+
+	// User needs BuildsGet or BuildsGetLimited permission to call this endpoint.
+	readPerm, err := perm.GetFirstAvailablePerm(ctx, bld.Proto.Builder, bbperms.BuildsGet, bbperms.BuildsGetLimited)
+	if err != nil {
 		return nil, err
 	}
 
-	return bld.ToProto(ctx, m)
+	return bld.ToProto(ctx, m, func(b *pb.Build) error {
+		if readPerm == bbperms.BuildsGet {
+			return nil
+		}
+		return perm.RedactBuild(ctx, nil, b)
+	})
 }

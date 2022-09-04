@@ -22,7 +22,15 @@ var (
 	BuildsAdd = realms.RegisterPermission("buildbucket.builds.add")
 	// BuildsGet allows to see all information about a build.
 	BuildsGet = realms.RegisterPermission("buildbucket.builds.get")
+	// BuildsGetLimited allows to see a limited set of information about a build.
+	BuildsGetLimited = realms.RegisterPermission("buildbucket.builds.getLimited")
 	// BuildsList allows to list and search builds in a bucket.
+	// Note that the ability to search on certain fields may leak information that
+	// would otherwise be redacted if the user only had this permission (and not
+	// BuildsGet or BuildsGetLimited). Since there's nothing too sensitive in the
+	// fields that can be used as predicates, and it's expensive to check permissions
+	// upfront on every project/bucket being searched, we just live with this flaw
+	// for now.
 	BuildsList = realms.RegisterPermission("buildbucket.builds.list")
 	// BuildsCancel allows to cancel a build.
 	BuildsCancel = realms.RegisterPermission("buildbucket.builds.cancel")

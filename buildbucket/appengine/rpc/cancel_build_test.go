@@ -18,7 +18,9 @@ import (
 	"context"
 	"testing"
 
+	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/fieldmaskpb"
+	"google.golang.org/protobuf/types/known/structpb"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/auth/identity"
@@ -119,13 +121,6 @@ func TestCancelBuild(t *testing.T) {
 			})
 
 			Convey("found", func() {
-				ctx = auth.WithState(ctx, &authtest.FakeState{
-					Identity: userID,
-					FakeDB: authtest.NewFakeDB(
-						authtest.MockPermission(userID, "project:bucket", bbperms.BuildsGet),
-						authtest.MockPermission(userID, "project:bucket", bbperms.BuildsCancel),
-					),
-				})
 				now := testclock.TestRecentTimeLocal
 				ctx, _ = testclock.UseTime(ctx, now)
 				So(datastore.Put(ctx, &model.Bucket{
@@ -133,7 +128,7 @@ func TestCancelBuild(t *testing.T) {
 					Parent: model.ProjectKey(ctx, "project"),
 					Proto:  &pb.Bucket{},
 				}), ShouldBeNil)
-				So(datastore.Put(ctx, &model.Build{
+				build := &model.Build{
 					Proto: &pb.Build{
 						Id: 1,
 						Builder: &pb.BuilderID{
@@ -142,39 +137,173 @@ func TestCancelBuild(t *testing.T) {
 							Builder: "builder",
 						},
 						Status: pb.Status_STARTED,
-					},
-				}), ShouldBeNil)
-				req := &pb.CancelBuildRequest{
-					Id:              1,
-					SummaryMarkdown: "summary",
-					Mask: &pb.BuildMask{
-						Fields: &fieldmaskpb.FieldMask{
-							Paths: []string{
-								"id",
-								"builder",
-								"update_time",
-								"cancel_time",
-								"status",
-								"summary_markdown",
+						Input: &pb.Build_Input{
+							GerritChanges: []*pb.GerritChange{
+								{Host: "h1"},
+								{Host: "h2"},
 							},
 						},
 					},
 				}
-				rsp, err := srv.CancelBuild(ctx, req)
-				So(err, ShouldBeNil)
-				So(rsp, ShouldResembleProto, &pb.Build{
-					Id: 1,
-					Builder: &pb.BuilderID{
-						Project: "project",
-						Bucket:  "bucket",
-						Builder: "builder",
+				So(datastore.Put(ctx, build), ShouldBeNil)
+				key := datastore.KeyForObj(ctx, build)
+				s, err := proto.Marshal(&pb.Build{
+					Steps: []*pb.Step{
+						{
+							Name: "step",
+						},
 					},
-					UpdateTime:      timestamppb.New(now),
-					CancelTime:      timestamppb.New(now),
-					Status:          pb.Status_STARTED,
-					SummaryMarkdown: "summary",
 				})
-				So(sch.Tasks(), ShouldHaveLength, 1)
+				So(err, ShouldBeNil)
+				So(datastore.Put(ctx, &model.BuildSteps{
+					Build:    key,
+					Bytes:    s,
+					IsZipped: false,
+				}), ShouldBeNil)
+				So(datastore.Put(ctx, &model.BuildInfra{
+					Build: key,
+					Proto: &pb.BuildInfra{
+						Buildbucket: &pb.BuildInfra_Buildbucket{
+							Hostname: "example.com",
+						},
+						Resultdb: &pb.BuildInfra_ResultDB{
+							Hostname:   "rdb.example.com",
+							Invocation: "bb-12345",
+						},
+					},
+				}), ShouldBeNil)
+				So(datastore.Put(ctx, &model.BuildInputProperties{
+					Build: key,
+					Proto: &structpb.Struct{
+						Fields: map[string]*structpb.Value{
+							"input": {
+								Kind: &structpb.Value_StringValue{
+									StringValue: "input value",
+								},
+							},
+						},
+					},
+				}), ShouldBeNil)
+				So(datastore.Put(ctx, &model.BuildOutputProperties{
+					Build: key,
+					Proto: &structpb.Struct{
+						Fields: map[string]*structpb.Value{
+							"output": {
+								Kind: &structpb.Value_StringValue{
+									StringValue: "output value",
+								},
+							},
+						},
+					},
+				}), ShouldBeNil)
+
+				Convey("found with BuildsList permission only", func() {
+					ctx = auth.WithState(ctx, &authtest.FakeState{
+						Identity: userID,
+						FakeDB: authtest.NewFakeDB(
+							authtest.MockPermission(userID, "project:bucket", bbperms.BuildsList),
+							authtest.MockPermission(userID, "project:bucket", bbperms.BuildsCancel),
+						),
+					})
+					req := &pb.CancelBuildRequest{
+						Id:              1,
+						SummaryMarkdown: "summary",
+						Mask: &pb.BuildMask{
+							AllFields: true,
+						},
+					}
+					rsp, err := srv.CancelBuild(ctx, req)
+					So(err, ShouldBeNil)
+					So(rsp, ShouldResembleProto, &pb.Build{
+						Id:     1,
+						Status: pb.Status_STARTED,
+					})
+					So(sch.Tasks(), ShouldHaveLength, 1)
+				})
+
+				Convey("found with BuildsGetLimited permission only", func() {
+					ctx = auth.WithState(ctx, &authtest.FakeState{
+						Identity: userID,
+						FakeDB: authtest.NewFakeDB(
+							authtest.MockPermission(userID, "project:bucket", bbperms.BuildsGetLimited),
+							authtest.MockPermission(userID, "project:bucket", bbperms.BuildsCancel),
+						),
+					})
+					req := &pb.CancelBuildRequest{
+						Id:              1,
+						SummaryMarkdown: "summary",
+						Mask: &pb.BuildMask{
+							AllFields: true,
+						},
+					}
+					rsp, err := srv.CancelBuild(ctx, req)
+					So(err, ShouldBeNil)
+					So(rsp, ShouldResembleProto, &pb.Build{
+						Id: 1,
+						Builder: &pb.BuilderID{
+							Project: "project",
+							Bucket:  "bucket",
+							Builder: "builder",
+						},
+						Input: &pb.Build_Input{
+							GerritChanges: []*pb.GerritChange{
+								{Host: "h1"},
+								{Host: "h2"},
+							},
+						},
+						Infra: &pb.BuildInfra{
+							Resultdb: &pb.BuildInfra_ResultDB{
+								Hostname:   "rdb.example.com",
+								Invocation: "bb-12345",
+							},
+						},
+						UpdateTime: timestamppb.New(now),
+						CancelTime: timestamppb.New(now),
+						Status:     pb.Status_STARTED,
+					})
+					So(sch.Tasks(), ShouldHaveLength, 1)
+				})
+
+				Convey("found with BuildsGet permission", func() {
+					ctx = auth.WithState(ctx, &authtest.FakeState{
+						Identity: userID,
+						FakeDB: authtest.NewFakeDB(
+							authtest.MockPermission(userID, "project:bucket", bbperms.BuildsGet),
+							authtest.MockPermission(userID, "project:bucket", bbperms.BuildsCancel),
+						),
+					})
+					req := &pb.CancelBuildRequest{
+						Id:              1,
+						SummaryMarkdown: "summary",
+						Mask: &pb.BuildMask{
+							Fields: &fieldmaskpb.FieldMask{
+								Paths: []string{
+									"id",
+									"builder",
+									"update_time",
+									"cancel_time",
+									"status",
+									"summary_markdown",
+								},
+							},
+						},
+					}
+					rsp, err := srv.CancelBuild(ctx, req)
+					So(err, ShouldBeNil)
+					So(rsp, ShouldResembleProto, &pb.Build{
+						Id: 1,
+						Builder: &pb.BuilderID{
+							Project: "project",
+							Bucket:  "bucket",
+							Builder: "builder",
+						},
+						UpdateTime:      timestamppb.New(now),
+						CancelTime:      timestamppb.New(now),
+						Status:          pb.Status_STARTED,
+						SummaryMarkdown: "summary",
+					})
+					So(sch.Tasks(), ShouldHaveLength, 1)
+				})
 			})
 		})
 	})

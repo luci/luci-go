@@ -437,7 +437,9 @@ func updateEntities(ctx context.Context, req *pb.UpdateBuildRequest, parentID in
 			invTask := &taskdefs.FinalizeResultDB{BuildId: b.ID}
 			err := parallel.FanOutIn(func(tks chan<- func() error) {
 				tks <- func() error { return tasks.NotifyPubSub(ctx, b) }
-				tks <- func() error { return tasks.ExportBigQuery(ctx, b.ID, strings.Contains(b.ExperimentsString(), buildbucket.ExperimentBqExporterGo)) }
+				tks <- func() error {
+					return tasks.ExportBigQuery(ctx, b.ID, strings.Contains(b.ExperimentsString(), buildbucket.ExperimentBqExporterGo))
+				}
 				tks <- func() error { return tasks.FinalizeResultDB(ctx, invTask) }
 			})
 			if err != nil {
@@ -581,5 +583,7 @@ func (*Builds) UpdateBuild(ctx context.Context, req *pb.UpdateBuildRequest) (*pb
 		}
 	}
 
-	return build.ToProto(ctx, readMask)
+	// We don't need to redact the build details here, because this can only be called
+	// by the specific machine that has the update token for this build.
+	return build.ToProto(ctx, readMask, nil)
 }

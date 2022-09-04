@@ -19,6 +19,7 @@ import (
 	"testing"
 
 	"google.golang.org/genproto/protobuf/field_mask"
+	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/structpb"
 
 	"go.chromium.org/luci/auth/identity"
@@ -259,6 +260,7 @@ func TestSearchBuilds(t *testing.T) {
 			FakeDB: authtest.NewFakeDB(
 				authtest.MockPermission(userID, "project:bucket", bbperms.BuildersList),
 				authtest.MockPermission(userID, "project:bucket", bbperms.BuildsList),
+				authtest.MockPermission(userID, "project:bucket", bbperms.BuildsGet),
 			),
 		})
 		datastore.GetTestable(ctx).AutoIndex(true)
@@ -276,6 +278,13 @@ func TestSearchBuilds(t *testing.T) {
 					Project: "project",
 					Bucket:  "bucket",
 					Builder: "builder",
+				},
+				SummaryMarkdown: "foo summary",
+				Input: &pb.Build_Input{
+					GerritChanges: []*pb.GerritChange{
+						{Host: "h1"},
+						{Host: "h2"},
+					},
 				},
 			},
 			BucketID:  "project/bucket",
@@ -319,7 +328,12 @@ func TestSearchBuilds(t *testing.T) {
 							Bucket:  "bucket",
 							Builder: "builder",
 						},
-						Input: &pb.Build_Input{},
+						Input: &pb.Build_Input{
+							GerritChanges: []*pb.GerritChange{
+								{Host: "h1"},
+								{Host: "h2"},
+							},
+						},
 					},
 				},
 			}
@@ -364,6 +378,10 @@ func TestSearchBuilds(t *testing.T) {
 					{
 						Id: 1,
 						Input: &pb.Build_Input{
+							GerritChanges: []*pb.GerritChange{
+								{Host: "h1"},
+								{Host: "h2"},
+							},
 							Properties: &structpb.Struct{
 								Fields: map[string]*structpb.Value{
 									"input": {
@@ -387,6 +405,136 @@ func TestSearchBuilds(t *testing.T) {
 				},
 			}
 			So(rsp, ShouldResembleProto, expectedRsp)
+		})
+
+		Convey("search builds with limited access", func() {
+			key := datastore.KeyForObj(ctx, &model.Build{ID: 1})
+			s, err := proto.Marshal(&pb.Build{
+				Steps: []*pb.Step{
+					{
+						Name: "step",
+					},
+				},
+			})
+			So(err, ShouldBeNil)
+			So(datastore.Put(ctx, &model.BuildSteps{
+				Build:    key,
+				Bytes:    s,
+				IsZipped: false,
+			}), ShouldBeNil)
+			So(datastore.Put(ctx, &model.BuildInfra{
+				Build: key,
+				Proto: &pb.BuildInfra{
+					Buildbucket: &pb.BuildInfra_Buildbucket{
+						Hostname: "example.com",
+					},
+					Resultdb: &pb.BuildInfra_ResultDB{
+						Hostname:   "rdb.example.com",
+						Invocation: "bb-12345",
+					},
+				},
+			}), ShouldBeNil)
+			So(datastore.Put(ctx, &model.BuildInputProperties{
+				Build: key,
+				Proto: &structpb.Struct{
+					Fields: map[string]*structpb.Value{
+						"input": {
+							Kind: &structpb.Value_StringValue{
+								StringValue: "input value",
+							},
+						},
+					},
+				},
+			}), ShouldBeNil)
+			So(datastore.Put(ctx, &model.BuildOutputProperties{
+				Build: key,
+				Proto: &structpb.Struct{
+					Fields: map[string]*structpb.Value{
+						"output": {
+							Kind: &structpb.Value_StringValue{
+								StringValue: "output value",
+							},
+						},
+					},
+				},
+			}), ShouldBeNil)
+
+			req := &pb.SearchBuildsRequest{
+				Mask: &pb.BuildMask{
+					AllFields: true,
+				},
+			}
+
+			Convey("BuildsGetLimited only", func() {
+				ctx = auth.WithState(ctx, &authtest.FakeState{
+					Identity: userID,
+					FakeDB: authtest.NewFakeDB(
+						authtest.MockPermission(userID, "project:bucket", bbperms.BuildersList),
+						authtest.MockPermission(userID, "project:bucket", bbperms.BuildsGetLimited),
+					),
+				})
+
+				rsp, err := srv.SearchBuilds(ctx, req)
+				So(err, ShouldBeNil)
+				expectedRsp := &pb.SearchBuildsResponse{
+					Builds: []*pb.Build{
+						{
+							Id: 1,
+							Builder: &pb.BuilderID{
+								Project: "project",
+								Bucket:  "bucket",
+								Builder: "builder",
+							},
+							Input: &pb.Build_Input{
+								GerritChanges: []*pb.GerritChange{
+									{Host: "h1"},
+									{Host: "h2"},
+								},
+							},
+							Infra: &pb.BuildInfra{
+								Resultdb: &pb.BuildInfra_ResultDB{
+									Hostname:   "rdb.example.com",
+									Invocation: "bb-12345",
+								},
+							},
+						},
+						{
+							Id: 2,
+							Builder: &pb.BuilderID{
+								Project: "project",
+								Bucket:  "bucket",
+								Builder: "builder2",
+							},
+							Input: &pb.Build_Input{},
+						},
+					},
+				}
+				So(rsp, ShouldResembleProto, expectedRsp)
+			})
+
+			Convey("BuildsList only", func() {
+				ctx = auth.WithState(ctx, &authtest.FakeState{
+					Identity: userID,
+					FakeDB: authtest.NewFakeDB(
+						authtest.MockPermission(userID, "project:bucket", bbperms.BuildersList),
+						authtest.MockPermission(userID, "project:bucket", bbperms.BuildsList),
+					),
+				})
+
+				rsp, err := srv.SearchBuilds(ctx, req)
+				So(err, ShouldBeNil)
+				expectedRsp := &pb.SearchBuildsResponse{
+					Builds: []*pb.Build{
+						{
+							Id: 1,
+						},
+						{
+							Id: 2,
+						},
+					},
+				}
+				So(rsp, ShouldResembleProto, expectedRsp)
+			})
 		})
 	})
 }

@@ -322,21 +322,21 @@ func TestBuild(t *testing.T) {
 			Convey("mask", func() {
 				Convey("include", func() {
 					m := HardcodedBuildMask("id")
-					p, err := b.ToProto(ctx, m)
+					p, err := b.ToProto(ctx, m, nil)
 					So(err, ShouldBeNil)
 					So(p.Id, ShouldEqual, 1)
 				})
 
 				Convey("exclude", func() {
 					m := HardcodedBuildMask("builder")
-					p, err := b.ToProto(ctx, m)
+					p, err := b.ToProto(ctx, m, nil)
 					So(err, ShouldBeNil)
 					So(p.Id, ShouldEqual, 0)
 				})
 			})
 
 			Convey("tags", func() {
-				p, err := b.ToProto(ctx, m)
+				p, err := b.ToProto(ctx, m, nil)
 				So(err, ShouldBeNil)
 				So(p.Tags, ShouldResembleProto, []*pb.StringPair{
 					{
@@ -352,7 +352,7 @@ func TestBuild(t *testing.T) {
 			})
 
 			Convey("infra", func() {
-				p, err := b.ToProto(ctx, m)
+				p, err := b.ToProto(ctx, m, nil)
 				So(err, ShouldBeNil)
 				So(p.Infra, ShouldResembleProto, &pb.BuildInfra{
 					Buildbucket: &pb.BuildInfra_Buildbucket{
@@ -363,7 +363,7 @@ func TestBuild(t *testing.T) {
 			})
 
 			Convey("input properties", func() {
-				p, err := b.ToProto(ctx, m)
+				p, err := b.ToProto(ctx, m, nil)
 				So(err, ShouldBeNil)
 				So(p.Input.Properties, ShouldResembleProtoJSON, `{"input": "input value"}`)
 				So(b.Proto.Input, ShouldBeNil)
@@ -382,7 +382,7 @@ func TestBuild(t *testing.T) {
 						},
 					},
 				}), ShouldBeNil)
-				p, err := b.ToProto(ctx, m)
+				p, err := b.ToProto(ctx, m, nil)
 				So(err, ShouldBeNil)
 				So(p.Output.Properties, ShouldResembleProtoJSON, `{"output": "output value"}`)
 				So(b.Proto.Output, ShouldBeNil)
@@ -402,7 +402,7 @@ func TestBuild(t *testing.T) {
 					Bytes:    s,
 					IsZipped: false,
 				}), ShouldBeNil)
-				p, err := b.ToProto(ctx, m)
+				p, err := b.ToProto(ctx, m, nil)
 				So(err, ShouldBeNil)
 				So(p.Steps, ShouldResembleProto, []*pb.Step{
 					{

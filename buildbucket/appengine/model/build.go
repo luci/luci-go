@@ -313,17 +313,18 @@ func (b *Build) Save(withMeta bool) (datastore.PropertyMap, error) {
 	return p, nil
 }
 
-// ToProto returns the *pb.Build representation of this build.
-func (b *Build) ToProto(ctx context.Context, m *BuildMask) (*pb.Build, error) {
+// ToProto returns the *pb.Build representation of this build after applying the
+// provided mask and redaction function.
+func (b *Build) ToProto(ctx context.Context, m *BuildMask, redact func(*pb.Build) error) (*pb.Build, error) {
 	build := b.ToSimpleBuildProto(ctx)
-	if err := LoadBuildDetails(ctx, m, build); err != nil {
+	if err := LoadBuildDetails(ctx, m, redact, build); err != nil {
 		return nil, err
 	}
 	return build, nil
 }
 
 // ToSimpleBuildProto returns the *pb.Build without loading steps, infra,
-// input/output properties.
+// input/output properties. Unlike ToProto, does not support redaction of fields.
 func (b *Build) ToSimpleBuildProto(ctx context.Context) *pb.Build {
 	p := proto.Clone(b.Proto).(*pb.Build)
 	p.Tags = make([]*pb.StringPair, 0, len(b.Tags))
@@ -354,8 +355,8 @@ func (b *Build) ClearLease() {
 }
 
 // LoadBuildDetails loads the details of the given builds, trimming them
-// according to the mask.
-func LoadBuildDetails(ctx context.Context, m *BuildMask, builds ...*pb.Build) error {
+// according to the specified mask and redaction function.
+func LoadBuildDetails(ctx context.Context, m *BuildMask, redact func(*pb.Build) error, builds ...*pb.Build) error {
 	l := len(builds)
 	inf := make([]*BuildInfra, 0, l)
 	inp := make([]*BuildInputProperties, 0, l)
@@ -407,10 +408,15 @@ func LoadBuildDetails(ctx context.Context, m *BuildMask, builds ...*pb.Build) er
 		p.Output.Properties = out[i].Proto
 		p.Steps, err = stp[i].ToProto(ctx)
 		if err != nil {
-			return errors.Annotate(err, "error fetching steps for build %q", p).Err()
+			return errors.Annotate(err, "error fetching steps for build %q", p.Id).Err()
+		}
+		if redact != nil {
+			if err = redact(p); err != nil {
+				return errors.Annotate(err, "error redacting build %q", p.Id).Err()
+			}
 		}
 		if err = m.Trim(p); err != nil {
-			return errors.Annotate(err, "error trimming fields for %q", p).Err()
+			return errors.Annotate(err, "error trimming fields for build %q", p.Id).Err()
 		}
 	}
 	return nil

@@ -62,13 +62,17 @@ func (*Builds) CancelBuild(ctx context.Context, req *pb.CancelBuildRequest) (*pb
 		return nil, err
 	}
 
+	redact := func(b *pb.Build) error {
+		return perm.RedactBuild(ctx, nil, b)
+	}
+
 	if protoutil.IsEnded(bld.Proto.Status) {
-		return bld.ToProto(ctx, m)
+		return bld.ToProto(ctx, m, redact)
 	}
 
 	bld, err = tasks.StartCancel(ctx, req.Id, req.SummaryMarkdown)
 	if err != nil {
 		return nil, err
 	}
-	return bld.ToProto(ctx, m)
+	return bld.ToProto(ctx, m, redact)
 }

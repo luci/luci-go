@@ -42,9 +42,9 @@ func ExportBuild(ctx context.Context, buildID int64) error {
 	case err != nil:
 		return errors.Annotate(err, "error fetching builds").Tag(transient.Tag).Err()
 	}
-	p, err := b.ToProto(ctx, model.NoopBuildMask)
+	p, err := b.ToProto(ctx, model.NoopBuildMask, nil)
 	if err != nil {
-		return errors.Annotate(err,"failed to convert build to proto").Err()
+		return errors.Annotate(err, "failed to convert build to proto").Err()
 	}
 
 	// Clear fields that we don't want in BigQuery.
@@ -65,7 +65,7 @@ func ExportBuild(ctx context.Context, buildID int64) error {
 
 	row := &lucibq.Row{
 		InsertID: strconv.FormatInt(p.Id, 10),
-		Message: p,
+		Message:  p,
 	}
 	if err := clients.GetBqClient(ctx).Insert(ctx, "raw", "completed_builds", row); err != nil {
 		if pme, _ := err.(bigquery.PutMultiError); len(pme) != 0 {
