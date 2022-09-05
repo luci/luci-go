@@ -16,7 +16,7 @@ import { MobxLitElement } from '@adobe/lit-mobx';
 import createCache from '@emotion/cache';
 import { CacheProvider, EmotionCache } from '@emotion/react';
 import { Search } from '@mui/icons-material';
-import { FormControl, InputAdornment, MenuItem, Select, TextField } from '@mui/material';
+import { Box, FormControl, InputAdornment, MenuItem, Select, TextField } from '@mui/material';
 import { customElement } from 'lit-element';
 import { debounce } from 'lodash-es';
 import { makeObservable, observable } from 'mobx';
@@ -69,14 +69,8 @@ export const SearchPage = observer(() => {
   const searchTarget = pageState.searchTarget;
 
   return (
-    <div css={{ padding: '20px 30px' }}>
-      <FormControl
-        css={{
-          display: 'grid',
-          margin: '0 200px',
-          gridTemplateColumns: '110px auto 1fr',
-        }}
-      >
+    <Box sx={{ px: 6, py: 5 }}>
+      <Box sx={{ display: 'grid', mx: 20, gridTemplateColumns: 'auto auto 1fr' }}>
         <Select
           value={searchTarget}
           onChange={(e) => pageState.setSearchTarget(e.target.value as SearchTarget)}
@@ -117,33 +111,35 @@ export const SearchPage = observer(() => {
             }}
           />
         ) : (
-          <div></div>
+          <Box></Box>
         )}
-        <TextField
-          value={searchQuery}
-          placeholder={SEARCH_HINT[searchTarget]}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          autoFocus
-          variant="outlined"
-          size="small"
-          InputProps={{
-            startAdornment: (
-              <InputAdornment position="start">
-                <Search />
-              </InputAdornment>
-            ),
-          }}
-          sx={{
-            marginLeft: '-1px',
-            '& .MuiOutlinedInput-notchedOutline': {
-              borderTopLeftRadius: 0,
-              borderBottomLeftRadius: 0,
-            },
-          }}
-        />
-      </FormControl>
-      <div css={{ marginTop: '20px' }}>{searchTarget === SearchTarget.Builders ? <BuilderList /> : <TestList />}</div>
-    </div>
+        <FormControl>
+          <TextField
+            value={searchQuery}
+            placeholder={SEARCH_HINT[searchTarget]}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            autoFocus
+            variant="outlined"
+            size="small"
+            InputProps={{
+              startAdornment: (
+                <InputAdornment position="start">
+                  <Search />
+                </InputAdornment>
+              ),
+            }}
+            sx={{
+              marginLeft: '-1px',
+              '& .MuiOutlinedInput-notchedOutline': {
+                borderTopLeftRadius: 0,
+                borderBottomLeftRadius: 0,
+              },
+            }}
+          />
+        </FormControl>
+      </Box>
+      <Box sx={{ mt: 5 }}>{searchTarget === SearchTarget.Builders ? <BuilderList /> : <TestList />}</Box>
+    </Box>
   );
 });
 

@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import { Box, Typography } from '@mui/material';
 import { observer } from 'mobx-react-lite';
 import { useEffect } from 'react';
 
@@ -31,8 +32,8 @@ export const BuilderList = observer(() => {
   return (
     <>
       {Object.entries(groupedBuilders).map(([bucketId, builders]) => (
-        <div key={bucketId}>
-          <h3>{bucketId}</h3>
+        <Box key={bucketId}>
+          <Typography variant="h6">{bucketId}</Typography>
           <ul>
             {builders?.map((builder) => (
               <li key={builder.builder}>
@@ -40,12 +41,12 @@ export const BuilderList = observer(() => {
               </li>
             ))}
           </ul>
-        </div>
+        </Box>
       ))}
       {(builderLoader?.isLoading ?? true) && (
-        <span>
+        <Typography component="span">
           Loading <milo-dot-spinner></milo-dot-spinner>
-        </span>
+        </Typography>
       )}
     </>
   );

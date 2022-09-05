@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import { Typography } from '@mui/material';
 import { observer } from 'mobx-react-lite';
 import { useEffect } from 'react';
 
@@ -31,10 +32,10 @@ export const TestList = observer(() => {
 
   if (!testLoader?.loadedFirstPage) {
     return (
-      <div>
+      <Typography component="span">
         Loading
         <milo-dot-spinner></milo-dot-spinner>
-      </div>
+      </Typography>
     );
   }
 
@@ -50,15 +51,15 @@ export const TestList = observer(() => {
         ))}
       </ul>
       {testLoader?.isLoading ?? true ? (
-        <div>
+        <Typography component="span">
           Loading
           <milo-dot-spinner></milo-dot-spinner>
-        </div>
+        </Typography>
       ) : (
         !testLoader.loadedAll && (
-          <span className="active-text" onClick={() => testLoader?.loadNextPage()}>
+          <Typography component="span" className="active-text" onClick={() => testLoader?.loadNextPage()}>
             [load more]
-          </span>
+          </Typography>
         )
       )}
     </>
