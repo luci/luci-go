@@ -2280,7 +2280,7 @@ type ClustersClient interface {
 	// impact from these ssh failures is in each cluster. This is useful when
 	// investigating specific problems, or ownership areas of the tests.
 	//
-	// Please consult WeetbLUCI Analysisix owners before adding additional calls
+	// Please consult LUCI Analysis owners before adding additional calls
 	// to this RPC, as the implementation currently calls back to BigQuery and as
 	// such, is not cost-optimised if many queries are to be made.
 	//
@@ -2454,7 +2454,7 @@ type ClustersServer interface {
 	// impact from these ssh failures is in each cluster. This is useful when
 	// investigating specific problems, or ownership areas of the tests.
 	//
-	// Please consult WeetbLUCI Analysisix owners before adding additional calls
+	// Please consult LUCI Analysis owners before adding additional calls
 	// to this RPC, as the implementation currently calls back to BigQuery and as
 	// such, is not cost-optimised if many queries are to be made.
 	//
