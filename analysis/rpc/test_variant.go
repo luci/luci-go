@@ -20,9 +20,11 @@ import (
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/resultdb/rdbperms"
 	"go.chromium.org/luci/server/span"
 
 	"go.chromium.org/luci/analysis/internal/config"
+	"go.chromium.org/luci/analysis/internal/perms"
 	"go.chromium.org/luci/analysis/internal/testresults"
 	"go.chromium.org/luci/analysis/pbutil"
 	pb "go.chromium.org/luci/analysis/proto/v1"
@@ -57,6 +59,15 @@ func (*testVariantsServer) QueryFailureRate(ctx context.Context, req *pb.QueryTe
 		TestVariants: req.TestVariants,
 		AsAtTime:     now,
 	}
+
+	var err error
+	// Query all subrealms the caller can see test results in.
+	const subRealm = ""
+	opts.SubRealms, err = perms.QuerySubRealmsNonEmpty(ctx, req.Project, subRealm, nil, rdbperms.PermListTestResults)
+	if err != nil {
+		return nil, err
+	}
+
 	ctx, cancel := span.ReadOnlyTransaction(ctx)
 	defer cancel()
 	response, err := testresults.QueryFailureRate(ctx, opts)

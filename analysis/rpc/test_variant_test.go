@@ -22,6 +22,7 @@ import (
 	"go.chromium.org/luci/common/clock/testclock"
 	. "go.chromium.org/luci/common/testing/assertions"
 	"go.chromium.org/luci/gae/impl/memory"
+	"go.chromium.org/luci/resultdb/rdbperms"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
 	"go.chromium.org/luci/server/secrets"
@@ -41,10 +42,17 @@ func TestTestVariantsServer(t *testing.T) {
 
 		// For user identification.
 		ctx = authtest.MockAuthConfig(ctx)
-		ctx = auth.WithState(ctx, &authtest.FakeState{
+		authState := &authtest.FakeState{
 			Identity:       "user:someone@example.com",
 			IdentityGroups: []string{"luci-analysis-access"},
-		})
+			IdentityPermissions: []authtest.RealmPermission{
+				{
+					Realm:      "project:realm",
+					Permission: rdbperms.PermListTestResults,
+				},
+			},
+		}
+		ctx = auth.WithState(ctx, authState)
 		ctx = secrets.Use(ctx, &testsecrets.Store{})
 
 		// Provides datastore implementation needed for project config.
@@ -63,9 +71,7 @@ func TestTestVariantsServer(t *testing.T) {
 			request := &pb.QueryTestVariantFailureRateRequest{}
 
 			response, err := server.QueryFailureRate(ctx, request)
-			st, _ := grpcStatus.FromError(err)
-			So(st.Code(), ShouldEqual, codes.PermissionDenied)
-			So(st.Message(), ShouldEqual, "not a member of luci-analysis-access")
+			So(err, ShouldBeRPCPermissionDenied, "not a member of luci-analysis-access")
 			So(response, ShouldBeNil)
 		})
 		Convey("QueryFailureRate", func() {
@@ -81,8 +87,7 @@ func TestTestVariantsServer(t *testing.T) {
 				ctx, _ := testclock.UseTime(ctx, asAtTime)
 
 				response, err := server.QueryFailureRate(ctx, request)
-				st, _ := grpcStatus.FromError(err)
-				So(st.Code(), ShouldEqual, codes.OK)
+				So(err, ShouldBeNil)
 
 				expectedResult := testresults.QueryFailureRateSampleResponse()
 				So(response, ShouldResembleProto, expectedResult)
@@ -100,8 +105,7 @@ func TestTestVariantsServer(t *testing.T) {
 				ctx, _ := testclock.UseTime(ctx, asAtTime)
 
 				response, err := server.QueryFailureRate(ctx, request)
-				st, _ := grpcStatus.FromError(err)
-				So(st.Code(), ShouldEqual, codes.OK)
+				So(err, ShouldBeNil)
 
 				expectedResult := testresults.QueryFailureRateSampleResponse()
 				for _, tv := range expectedResult.TestVariants {
@@ -109,6 +113,27 @@ func TestTestVariantsServer(t *testing.T) {
 					tv.Variant = nil
 				}
 				So(response, ShouldResembleProto, expectedResult)
+			})
+			Convey("No list test results permission", func() {
+				authState.IdentityPermissions = []authtest.RealmPermission{
+					{
+						// This permission is for a project other than the one
+						// being queried.
+						Realm:      "otherproject:realm",
+						Permission: rdbperms.PermListTestResults,
+					},
+				}
+
+				project, asAtTime, tvs := testresults.QueryFailureRateSampleRequest()
+				request := &pb.QueryTestVariantFailureRateRequest{
+					Project:      project,
+					TestVariants: tvs,
+				}
+				ctx, _ := testclock.UseTime(ctx, asAtTime)
+
+				response, err := server.QueryFailureRate(ctx, request)
+				So(err, ShouldBeRPCPermissionDenied, "caller does not have permissions [resultdb.testResults.list] in any realm")
+				So(response, ShouldBeNil)
 			})
 			Convey("Invalid input", func() {
 				// This checks at least one case of invalid input is detected, sufficient to verify

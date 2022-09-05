@@ -41,9 +41,18 @@ const (
 
 // QueryFailureRateOptions specifies options for QueryFailureRate().
 type QueryFailureRateOptions struct {
-	Project      string
+	// Project is the LUCI Project to query.
+	Project string
+	// SubRealms are the realms (of the form "ci", NOT "chromium:ci")
+	// within the project to query.
+	SubRealms []string
+	// TestVariants are the test variants to query.
 	TestVariants []*pb.TestVariantIdentifier
-	AsAtTime     time.Time
+	// AsAtTime is latest parititon time to include in the results;
+	// outside of testing contexts, this should be the current time.
+	// QueryTestVariants returns data for the 5 * 24 weekday hour
+	// period leading up to this time.
+	AsAtTime time.Time
 }
 
 // QueryFailureRate queries the failure rate of nominated test variants.
@@ -63,10 +72,12 @@ func QueryFailureRate(ctx context.Context, opts QueryFailureRateOptions) (*pb.Qu
 			batch := b
 			c <- func() error {
 				var err error
+				batchOpts := opts
+				batchOpts.TestVariants = batch.input
 				// queryFailureRateShard ensures test variants appear
 				// in the output in the same order as they appear in the
 				// input.
-				batch.output, err = queryFailureRateShard(ctx, opts.Project, batch.input, intervals)
+				batch.output, err = queryFailureRateShard(ctx, batchOpts, intervals)
 				return err
 			}
 		}
@@ -118,14 +129,14 @@ func partitionIntoBatches(tvs []*pb.TestVariantIdentifier) []*batch {
 
 // queryFailureRateShard reads failure rate statistics for test variants.
 // Must be called in a spanner transactional context.
-func queryFailureRateShard(ctx context.Context, project string, testVariants []*pb.TestVariantIdentifier, intervals []interval) ([]*pb.TestVariantFailureRateAnalysis, error) {
+func queryFailureRateShard(ctx context.Context, opts QueryFailureRateOptions, intervals []interval) ([]*pb.TestVariantFailureRateAnalysis, error) {
 	type testVariant struct {
 		TestID      string
 		VariantHash string
 	}
 
-	tvs := make([]testVariant, 0, len(testVariants))
-	for _, ptv := range testVariants {
+	tvs := make([]testVariant, 0, len(opts.TestVariants))
+	for _, ptv := range opts.TestVariants {
 		variantHash := ptv.VariantHash
 		if variantHash == "" {
 			variantHash = pbutil.VariantHash(ptv.Variant)
@@ -142,8 +153,9 @@ func queryFailureRateShard(ctx context.Context, project string, testVariants []*
 		return nil, err
 	}
 	stmt.Params = map[string]interface{}{
-		"project":             project,
+		"project":             opts.Project,
 		"testVariants":        tvs,
+		"subRealms":           opts.SubRealms,
 		"afterPartitionTime":  queryStartTime(intervals),
 		"beforePartitionTime": queryEndTime(intervals),
 		"skip":                int64(pb.TestResultStatus_SKIP),
@@ -179,8 +191,8 @@ func queryFailureRateShard(ctx context.Context, project string, testVariants []*
 		}
 
 		analysis.TestId = testID
-		analysis.Variant = testVariants[index].Variant
-		analysis.VariantHash = testVariants[index].VariantHash
+		analysis.Variant = opts.TestVariants[index].Variant
+		analysis.VariantHash = opts.TestVariants[index].VariantHash
 		analysis.IntervalStats = toPBIntervalStats(intervalStats, intervals)
 		analysis.RunFlakyVerdictExamples = toPBVerdictExamples(runFlakyExamples)
 		analysis.RecentVerdicts = toPBRecentVerdicts(recentVerdicts)
@@ -492,6 +504,7 @@ WITH test_variant_verdicts AS (
 						AND PartitionTime >= @afterPartitionTime
 						AND PartitionTime < @beforePartitionTime
 						AND TestId = tv.TestId And VariantHash = tv.VariantHash
+						AND SubRealm IN UNNEST(@subRealms)
 						-- Exclude skipped results.
 						AND Status <> @skip
 						-- Exclude test results testing multiple CLs, as

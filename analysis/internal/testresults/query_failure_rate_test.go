@@ -41,6 +41,7 @@ func TestQueryFailureRate(t *testing.T) {
 		project, asAtTime, tvs := QueryFailureRateSampleRequest()
 		opts := QueryFailureRateOptions{
 			Project:      project,
+			SubRealms:    []string{"realm"},
 			TestVariants: tvs,
 			AsAtTime:     asAtTime,
 		}
@@ -55,6 +56,18 @@ func TestQueryFailureRate(t *testing.T) {
 		})
 		Convey("Project filter works correctly", func() {
 			opts.Project = "none"
+			expectedResult.TestVariants = []*pb.TestVariantFailureRateAnalysis{
+				emptyAnalysis("test_id", var1),
+				emptyAnalysis("test_id", var3),
+			}
+
+			result, err := QueryFailureRate(txn, opts)
+			So(err, ShouldBeNil)
+			So(result, ShouldResembleProto, expectedResult)
+		})
+		Convey("Realm filter works correctly", func() {
+			// No data exists in this realm.
+			opts.SubRealms = []string{"otherrealm"}
 			expectedResult.TestVariants = []*pb.TestVariantFailureRateAnalysis{
 				emptyAnalysis("test_id", var1),
 				emptyAnalysis("test_id", var3),
