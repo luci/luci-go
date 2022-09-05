@@ -28,14 +28,14 @@ import { getURLPathForBuild } from '../../libs/build_utils';
 import { consumer } from '../../libs/context';
 import { consumeStore, StoreInstance, StoreProvider, useStore } from '../../store';
 import commonStyle from '../../styles/common_style.css';
-import { globalStyleCache } from '../../styles/global_cache';
 
 export interface RetryBuildDialogProps {
   readonly open: boolean;
   readonly onClose?: () => void;
+  readonly container?: HTMLDivElement;
 }
 
-export const RetryBuildDialog = observer(({ open, onClose }: RetryBuildDialogProps) => {
+export const RetryBuildDialog = observer(({ open, onClose, container }: RetryBuildDialogProps) => {
   const pageState = useStore().buildPage;
 
   const handleConfirm = useCallback(async () => {
@@ -47,22 +47,20 @@ export const RetryBuildDialog = observer(({ open, onClose }: RetryBuildDialogPro
   }, [pageState]);
 
   return (
-    <CacheProvider value={globalStyleCache}>
-      <Dialog onClose={onClose} open={open} fullWidth maxWidth="sm">
-        <DialogTitle>Retry Build</DialogTitle>
-        <DialogContent>
-          <DialogContentText>Note: this doesn't trigger anything else (e.g. CQ).</DialogContentText>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={onClose} variant="text">
-            Dismiss
-          </Button>
-          <Button onClick={handleConfirm} variant="contained">
-            Confirm
-          </Button>
-        </DialogActions>
-      </Dialog>
-    </CacheProvider>
+    <Dialog onClose={onClose} open={open} fullWidth maxWidth="sm" container={container}>
+      <DialogTitle>Retry Build</DialogTitle>
+      <DialogContent>
+        <DialogContentText>Note: this doesn't trigger anything else (e.g. CQ).</DialogContentText>
+      </DialogContent>
+      <DialogActions>
+        <Button onClick={onClose} variant="text">
+          Dismiss
+        </Button>
+        <Button onClick={handleConfirm} variant="contained">
+          Confirm
+        </Button>
+      </DialogActions>
+    </Dialog>
   );
 });
 
@@ -109,6 +107,7 @@ export class BuildPageRetryBuildDialogElement extends MobxLitElement {
           <RetryBuildDialog
             open={this.open}
             onClose={() => this.dispatchEvent(new Event('close', { bubbles: false }))}
+            container={this.parent}
           ></RetryBuildDialog>
         </StoreProvider>
       </CacheProvider>

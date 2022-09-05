@@ -26,14 +26,14 @@ import '../../components/dot_spinner';
 import { consumer } from '../../libs/context';
 import { consumeStore, StoreInstance, StoreProvider, useStore } from '../../store';
 import commonStyle from '../../styles/common_style.css';
-import { globalStyleCache } from '../../styles/global_cache';
 
 export interface CancelBuildDialogProps {
   readonly open: boolean;
   readonly onClose?: () => void;
+  readonly container?: HTMLDivElement;
 }
 
-export const CancelBuildDialog = observer(({ open, onClose }: CancelBuildDialogProps) => {
+export const CancelBuildDialog = observer(({ open, onClose, container }: CancelBuildDialogProps) => {
   const pageState = useStore().buildPage;
   const [reason, setReason] = useState('');
   const [showError, setShowErr] = useState(false);
@@ -53,35 +53,33 @@ export const CancelBuildDialog = observer(({ open, onClose }: CancelBuildDialogP
   };
 
   return (
-    <CacheProvider value={globalStyleCache}>
-      <Dialog onClose={onClose} open={open} fullWidth maxWidth="sm">
-        <DialogTitle>Cancel Build</DialogTitle>
-        <DialogContent>
-          <TextField
-            label="Reason"
-            value={reason}
-            error={showError}
-            helperText={showError ? 'Reason is required' : ''}
-            onChange={(e) => handleUpdate(e.target.value)}
-            autoFocus
-            required
-            margin="dense"
-            fullWidth
-            multiline
-            minRows={4}
-            maxRows={10}
-          />
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={onClose} variant="text">
-            Dismiss
-          </Button>
-          <Button onClick={handleConfirm} variant="contained">
-            Confirm
-          </Button>
-        </DialogActions>
-      </Dialog>
-    </CacheProvider>
+    <Dialog onClose={onClose} open={open} fullWidth maxWidth="sm" container={container}>
+      <DialogTitle>Cancel Build</DialogTitle>
+      <DialogContent>
+        <TextField
+          label="Reason"
+          value={reason}
+          error={showError}
+          helperText={showError ? 'Reason is required' : ''}
+          onChange={(e) => handleUpdate(e.target.value)}
+          autoFocus
+          required
+          margin="dense"
+          fullWidth
+          multiline
+          minRows={4}
+          maxRows={10}
+        />
+      </DialogContent>
+      <DialogActions>
+        <Button onClick={onClose} variant="text">
+          Dismiss
+        </Button>
+        <Button onClick={handleConfirm} variant="contained">
+          Confirm
+        </Button>
+      </DialogActions>
+    </Dialog>
   );
 });
 
@@ -128,6 +126,7 @@ export class BuildPageCancelBuildDialogElement extends MobxLitElement {
           <CancelBuildDialog
             open={this.open}
             onClose={() => this.dispatchEvent(new Event('close', { bubbles: false }))}
+            container={this.parent}
           ></CancelBuildDialog>
         </StoreProvider>
       </CacheProvider>

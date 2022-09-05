@@ -35,11 +35,11 @@ import { createRoot, Root } from 'react-dom/client';
 import '../../components/dot_spinner';
 import { consumer } from '../../libs/context';
 import { consumeStore, StoreInstance, StoreProvider, useStore } from '../../store';
-import { globalStyleCache } from '../../styles/global_cache';
 
 export interface ChangeConfigDialogProps {
   readonly open: boolean;
   readonly onClose?: () => void;
+  readonly container?: HTMLDivElement;
 }
 
 // An array of [buildTabName, buildTabLabel] tuples.
@@ -53,7 +53,7 @@ const TAB_NAME_LABEL_TUPLES = Object.freeze([
   ['build-blamelist', 'Blamelist'],
 ] as const);
 
-export const ChangeConfigDialog = observer(({ open, onClose }: ChangeConfigDialogProps) => {
+export const ChangeConfigDialog = observer(({ open, onClose, container }: ChangeConfigDialogProps) => {
   const buildConfig = useStore().userConfig.build;
   const [tabName, setTabName] = useState(() => buildConfig.defaultTabName);
 
@@ -71,44 +71,40 @@ export const ChangeConfigDialog = observer(({ open, onClose }: ChangeConfigDialo
   }, [open, buildConfig]);
 
   return (
-    <CacheProvider value={globalStyleCache}>
-      <Dialog onClose={onClose} open={open} fullWidth maxWidth="sm">
-        <DialogTitle>Settings</DialogTitle>
-        <DialogContent sx={{ display: 'grid', gridTemplateColumns: 'auto 1fr', gap: 1 }}>
-          <Typography
-            sx={{ display: 'flex', justifyContent: 'center', alignContent: 'center', flexDirection: 'column' }}
-          >
-            Default tab:
-          </Typography>
-          <Select
-            value={tabName}
-            onChange={(e) => setTabName(e.target.value)}
-            input={<OutlinedInput size="small" />}
-            sx={{ width: '180px' }}
-          >
-            {TAB_NAME_LABEL_TUPLES.map(([tabName, label]) => (
-              <MenuItem key={tabName} value={tabName}>
-                {label}
-              </MenuItem>
-            ))}
-          </Select>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={onClose} variant="text">
-            Dismiss
-          </Button>
-          <Button
-            onClick={() => {
-              buildConfig.setDefaultTab(tabName);
-              onClose?.();
-            }}
-            variant="contained"
-          >
-            Confirm
-          </Button>
-        </DialogActions>
-      </Dialog>
-    </CacheProvider>
+    <Dialog onClose={onClose} open={open} fullWidth maxWidth="sm" container={container}>
+      <DialogTitle>Settings</DialogTitle>
+      <DialogContent sx={{ display: 'grid', gridTemplateColumns: 'auto 1fr', gap: 1 }}>
+        <Typography sx={{ display: 'flex', justifyContent: 'center', alignContent: 'center', flexDirection: 'column' }}>
+          Default tab:
+        </Typography>
+        <Select
+          value={tabName}
+          onChange={(e) => setTabName(e.target.value)}
+          input={<OutlinedInput size="small" />}
+          sx={{ width: '180px' }}
+        >
+          {TAB_NAME_LABEL_TUPLES.map(([tabName, label]) => (
+            <MenuItem key={tabName} value={tabName}>
+              {label}
+            </MenuItem>
+          ))}
+        </Select>
+      </DialogContent>
+      <DialogActions>
+        <Button onClick={onClose} variant="text">
+          Dismiss
+        </Button>
+        <Button
+          onClick={() => {
+            buildConfig.setDefaultTab(tabName);
+            onClose?.();
+          }}
+          variant="contained"
+        >
+          Confirm
+        </Button>
+      </DialogActions>
+    </Dialog>
   );
 });
 
@@ -155,6 +151,7 @@ export class BuildPageChangeConfigDialogElement extends MobxLitElement {
           <ChangeConfigDialog
             open={this.open}
             onClose={() => this.dispatchEvent(new Event('close', { bubbles: false }))}
+            container={this.parent}
           ></ChangeConfigDialog>
         </StoreProvider>
       </CacheProvider>
