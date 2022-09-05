@@ -23,7 +23,7 @@ import { Store, StoreProvider } from '../../store';
 import { BuildPageInstance } from '../../store/build_page';
 import { RetryBuildDialog } from './retry_build_dialog';
 
-describe('CancelBuildDialog', () => {
+describe('RetryBuildDialog', () => {
   let timer: sinon.SinonFakeTimers;
   let store: Instance<typeof Store>;
   let retryBuildStub: sinon.SinonStub<

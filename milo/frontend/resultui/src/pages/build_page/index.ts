@@ -12,17 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import '@material/mwc-button';
-import '@material/mwc-dialog';
-import '@material/mwc-icon';
 import { BeforeEnterObserver, PreventAndRedirectCommands, Router, RouterLocation } from '@vaadin/router';
 import { css, customElement, html } from 'lit-element';
 import { autorun, computed, makeObservable, observable, reaction, when } from 'mobx';
-import { applySnapshot, destroy, getSnapshot } from 'mobx-state-tree';
 
 import '../../components/status_bar';
 import '../../components/tab_bar';
 import '../test_results_tab/count_indicator';
+import './change_config_dialog';
 import { OPTIONAL_RESOURCE } from '../../common_tags';
 import { MiloBaseElement } from '../../components/milo_base';
 import { TabDef } from '../../components/tab_bar';
@@ -50,7 +47,6 @@ import { NOT_FOUND_URL, router } from '../../routes';
 import { BuilderID, BuildStatus, TEST_PRESENTATION_KEY } from '../../services/buildbucket';
 import { consumeStore, StoreInstance } from '../../store';
 import { GetBuildError } from '../../store/build_page';
-import { UserConfig, UserConfigInstance } from '../../store/user_config';
 import colorClasses from '../../styles/color_classes.css';
 import commonStyle from '../../styles/common_style.css';
 
@@ -62,17 +58,6 @@ const STATUS_FAVICON_MAP = Object.freeze({
   [BuildStatus.InfraFailure]: 'purple',
   [BuildStatus.Canceled]: 'teal',
 });
-
-// An array of [buildTabName, buildTabLabel] tuples.
-// Use an array of tuples instead of an Object to ensure order.
-const TAB_NAME_LABEL_TUPLES = Object.freeze([
-  Object.freeze(['build-overview', 'Overview']),
-  Object.freeze(['build-test-results', 'Test Results']),
-  Object.freeze(['build-steps', 'Steps & Logs']),
-  Object.freeze(['build-related-builds', 'Related Builds']),
-  Object.freeze(['build-timeline', 'Timeline']),
-  Object.freeze(['build-blamelist', 'Blamelist']),
-]);
 
 function retryWithoutComputedInvId(err: ErrorEvent, ele: BuildPageElement) {
   let recovered = false;
@@ -151,8 +136,6 @@ export class BuildPageElement extends MiloBaseElement implements BeforeEnterObse
     return this.store.buildPage.build;
   }
 
-  @observable private uncommittedConfigs!: UserConfigInstance;
-
   // The page is visited via a short link.
   // The page will be redirected to the long link after the build is fetched.
   private isShortLink = false;
@@ -218,7 +201,6 @@ export class BuildPageElement extends MiloBaseElement implements BeforeEnterObse
 
   connectedCallback() {
     super.connectedCallback();
-    this.uncommittedConfigs = UserConfig.create({});
 
     if (!this.isShortLink && !window.location.href.includes('javascript:')) {
       trackEvent(GA_CATEGORIES.NEW_BUILD_PAGE, GA_ACTIONS.PAGE_VISITED, window.location.href);
@@ -310,25 +292,10 @@ export class BuildPageElement extends MiloBaseElement implements BeforeEnterObse
         { fireImmediately: true }
       )
     );
-
-    // Sync uncommitted configs with committed configs whenever user opens the
-    // dialog.
-    this.addDisposer(
-      reaction(
-        () => this.store.showSettingsDialog,
-        (showSettingsDialog) => {
-          if (showSettingsDialog) {
-            applySnapshot(this.uncommittedConfigs, getSnapshot(this.store.userConfig));
-          }
-        },
-        { fireImmediately: true }
-      )
-    );
   }
 
   disconnectedCallback() {
     this.store.unregisterSettingsDialog();
-    destroy(this.uncommittedConfigs);
     super.disconnectedCallback();
   }
 
@@ -422,40 +389,10 @@ export class BuildPageElement extends MiloBaseElement implements BeforeEnterObse
     }
 
     return html`
-      <mwc-dialog
-        id="settings-dialog"
-        heading="Settings"
-        ?open=${this.store.showSettingsDialog}
-        @closed=${(event: CustomEvent<{ action: string }>) => {
-          if (event.detail.action === 'save') {
-            applySnapshot(this.store.userConfig, getSnapshot(this.uncommittedConfigs));
-          }
-          this.store.setShowSettingsDialog(false);
-        }}
-      >
-        <table>
-          <tr>
-            <td>Default tab:</td>
-            <td>
-              <select
-                id="default-tab-selector"
-                @change=${(e: InputEvent) =>
-                  this.uncommittedConfigs.build.setDefaultTab((e.target as HTMLOptionElement).value)}
-              >
-                ${TAB_NAME_LABEL_TUPLES.map(
-                  ([tabName, label]) => html`
-                    <option value=${tabName} ?selected=${tabName === this.uncommittedConfigs.build.defaultTabName}>
-                      ${label}
-                    </option>
-                  `
-                )}
-              </select>
-            </td>
-          </tr>
-          <mwc-button slot="primaryAction" dialogAction="save" dense unelevated>Save</mwc-button>
-          <mwc-button slot="secondaryAction" dialogAction="dismiss">Cancel</mwc-button>
-        </table>
-      </mwc-dialog>
+      <milo-bp-change-config-dialog
+        .open=${this.store.showSettingsDialog}
+        @close=${() => this.store.setShowSettingsDialog(false)}
+      ></milo-bp-change-config-dialog>
       <div id="build-summary">
         <div id="build-id">
           <span id="build-id-label">Build </span>
@@ -559,21 +496,6 @@ export class BuildPageElement extends MiloBaseElement implements BeforeEnterObse
 
       milo-trt-count-indicator {
         margin-right: -13px;
-      }
-
-      #settings-dialog {
-        --mdc-dialog-min-width: 600px;
-      }
-      #default-tab-selector {
-        display: inline-block;
-        margin-left: 10px;
-        padding: 0.375rem 0.75rem;
-        font-size: 1rem;
-        line-height: 1.5;
-        background-clip: padding-box;
-        border: 1px solid var(--divider-color);
-        border-radius: 0.25rem;
-        transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
       }
 
       #build-not-found-error {
