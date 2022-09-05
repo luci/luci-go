@@ -39,7 +39,7 @@ import (
 
 // allowGroup is a Chrome Infra Auth group, members of which are allowed to call
 // admin API.
-const allowGroup = "service-chops-weetbix-admins"
+const allowGroup = "service-luci-analysis-admins"
 
 // adminServer implements adminpb.AdminServer.
 type adminServer struct {

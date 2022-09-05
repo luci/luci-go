@@ -85,7 +85,7 @@ func TestCheckAllowed(t *testing.T) {
 		ctx := auth.WithState(context.Background(), &authtest.FakeState{
 			Identity: "anonymous:anonymous",
 		})
-		So(checkAllowed(ctx, ""), ShouldErrLike, "not a member of service-chops-weetbix-admins")
+		So(checkAllowed(ctx, ""), ShouldErrLike, "not a member of service-luci-analysis-admins")
 	})
 
 	Convey("without access", t, func() {
@@ -93,7 +93,7 @@ func TestCheckAllowed(t *testing.T) {
 			Identity:       "user:user@example.com",
 			IdentityGroups: []string{"unrelated_group"},
 		})
-		So(checkAllowed(ctx, ""), ShouldErrLike, "not a member of service-chops-weetbix-admins")
+		So(checkAllowed(ctx, ""), ShouldErrLike, "not a member of service-luci-analysis-admins")
 	})
 }
 

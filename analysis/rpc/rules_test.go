@@ -50,7 +50,7 @@ func TestRules(t *testing.T) {
 		ctx = authtest.MockAuthConfig(ctx)
 		authState := &authtest.FakeState{
 			Identity:       "user:someone@example.com",
-			IdentityGroups: []string{"weetbix-access"},
+			IdentityGroups: []string{"luci-analysis-access"},
 		}
 		ctx = auth.WithState(ctx, authState)
 		ctx = secrets.Use(ctx, &testsecrets.Store{})
@@ -111,10 +111,10 @@ func TestRules(t *testing.T) {
 		So(err, ShouldBeNil)
 
 		Convey("Unauthorised requests are rejected", func() {
-			// Ensure no access to weetbix-access.
+			// Ensure no access to luci-analysis-access.
 			ctx = auth.WithState(ctx, &authtest.FakeState{
 				Identity: "user:someone@example.com",
-				// Not a member of weetbix-access.
+				// Not a member of luci-analysis-access.
 				IdentityGroups: []string{"other-group"},
 			})
 
@@ -125,7 +125,7 @@ func TestRules(t *testing.T) {
 			}
 
 			rule, err := srv.Get(ctx, request)
-			So(err, ShouldBeRPCPermissionDenied, "not a member of weetbix-access")
+			So(err, ShouldBeRPCPermissionDenied, "not a member of luci-analysis-access")
 			So(rule, ShouldBeNil)
 		})
 		Convey("Get", func() {

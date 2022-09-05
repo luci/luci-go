@@ -24,7 +24,7 @@ import (
 	"google.golang.org/grpc/codes"
 )
 
-const allowGroup = "weetbix-access"
+const allowGroup = "luci-analysis-access"
 
 // Checks if this call is allowed, returns an error if it is.
 func checkAllowedPrelude(ctx context.Context, methodName string, req proto.Message) (context.Context, error) {

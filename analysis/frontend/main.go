@@ -32,8 +32,8 @@ import (
 )
 
 // authGroup is the name of the LUCI Auth group that controls whether the user
-// should have access to Weetbix.
-const authGroup = "weetbix-access"
+// should have access to LUCI Analysis.
+const authGroup = "luci-analysis-access"
 
 // prepareTemplates configures templates.Bundle used by all UI handlers.
 func prepareTemplates(opts *server.Options) *templates.Bundle {

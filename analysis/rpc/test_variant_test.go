@@ -43,7 +43,7 @@ func TestTestVariantsServer(t *testing.T) {
 		ctx = authtest.MockAuthConfig(ctx)
 		ctx = auth.WithState(ctx, &authtest.FakeState{
 			Identity:       "user:someone@example.com",
-			IdentityGroups: []string{"weetbix-access"},
+			IdentityGroups: []string{"luci-analysis-access"},
 		})
 		ctx = secrets.Use(ctx, &testsecrets.Store{})
 
@@ -54,7 +54,7 @@ func TestTestVariantsServer(t *testing.T) {
 		Convey("Unauthorised requests are rejected", func() {
 			ctx = auth.WithState(ctx, &authtest.FakeState{
 				Identity: "user:someone@example.com",
-				// Not a member of weetbix-access.
+				// Not a member of luci-analysis-access.
 				IdentityGroups: []string{"other-group"},
 			})
 
@@ -65,7 +65,7 @@ func TestTestVariantsServer(t *testing.T) {
 			response, err := server.QueryFailureRate(ctx, request)
 			st, _ := grpcStatus.FromError(err)
 			So(st.Code(), ShouldEqual, codes.PermissionDenied)
-			So(st.Message(), ShouldEqual, "not a member of weetbix-access")
+			So(st.Message(), ShouldEqual, "not a member of luci-analysis-access")
 			So(response, ShouldBeNil)
 		})
 		Convey("QueryFailureRate", func() {
