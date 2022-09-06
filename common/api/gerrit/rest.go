@@ -435,7 +435,27 @@ func (c *client) GetRefInfo(ctx context.Context, req *gerritpb.RefInfoRequest, o
 }
 
 func (c *client) GetMetaDiff(ctx context.Context, req *gerritpb.GetMetaDiffRequest, opts ...grpc.CallOption) (*gerritpb.MetaDiff, error) {
-	return nil, nil
+	if err := checkArgs(opts, req); err != nil {
+		return nil, err
+	}
+	changeID := gerritChangeIDForRouting(req.GetNumber(), req.GetProject())
+	path := fmt.Sprintf("/changes/%s/meta_diff", changeID)
+	params := url.Values{}
+	if req.GetOld() != "" {
+		params.Add("old", req.GetOld())
+	}
+	if req.GetMeta() != "" {
+		params.Add("meta", req.GetMeta())
+	}
+	for _, o := range req.Options {
+		params.Add("o", o.String())
+	}
+
+	var resp metaDiff
+	if _, err := c.call(ctx, "GET", path, params, nil, &resp, opts); err != nil {
+		return nil, err
+	}
+	return resp.ToProto()
 }
 
 // call executes a request to Gerrit REST API with JSON input/output.

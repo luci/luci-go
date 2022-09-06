@@ -1490,6 +1490,214 @@ func TestGerritError(t *testing.T) {
 	})
 }
 
+func TestGetMetaDiff(t *testing.T) {
+	t.Parallel()
+	ctx := context.Background()
+
+	sampleResp := `)]}'{
+	  "old_change_info": {
+		"_number": 1,
+		"project": "example/repo",
+		"status": "NEW",
+		"branch": "main",
+		"attention_set": {
+		  "22222": {
+			"account": {
+			  "_account_id": 22222
+			},
+			"last_update": "2014-01-02 18:37:10.000000000",
+			"reason": "ps#1: CQ dry run succeeded."
+		  }
+		},
+		"removed_from_attention_set": {
+		  "11111": {
+			"account": {
+			  "_account_id": 11111
+			},
+			"last_update": "2022-05-31 19:02:58.000000000",
+			"reason": "<GERRIT_ACCOUNT_11111> replied on the change",
+			"reason_account": {
+			  "_account_id": 11111
+			}
+		  }
+		},
+		"created": "2014-01-01 18:26:55.000000000",
+		"updated": "2014-01-01 20:23:59.000000000",
+		"meta_rev_id": "cafeefac",
+		"owner": {
+		  "_account_id": 1234567
+		},
+		"requirements": [
+		  {
+			"status": "OK",
+			"fallback_text": "Code-Owners",
+			"type": "code-owners"
+		  }
+		],
+		"submit_records": [
+		  {
+			"rule_name": "Code-Owners",
+			"status": "OK",
+			"requirements": [
+			  {
+				"status": "OK",
+				"fallback_text": "Code-Owners",
+				"type": "code-owners"
+			  }
+			]
+		  }
+		]
+	  },
+	  "new_change_info": {
+		"_number": 1,
+		"project": "example/repo",
+		"status": "NEW",
+		"branch": "main",
+		"attention_set": {
+		  "33333": {
+			"account": {
+			  "_account_id": 33333
+			},
+			"last_update": "2014-01-02 20:25:28.000000000",
+			"reason": "<GERRIT_ACCOUNT_33333> replied on the change",
+			"reason_account": {
+			  "_account_id": 33333
+			}
+		  }
+		},
+		"removed_from_attention_set": {
+		  "22222": {
+			"account": {
+			  "_account_id": 22222
+			},
+			"last_update": "2014-01-02 20:25:28.000000000",
+			"reason": "<GERRIT_ACCOUNT_22222> replied on the change",
+			"reason_account": {
+			  "_account_id": 22222
+			}
+		  }
+		},
+		"created": "2014-01-01 18:26:55.000000000",
+		"updated": "2014-01-01 20:25:28.000000000",
+		"meta_rev_id": "cafecafe",
+		"owner": {
+		  "_account_id": 1234567
+		},
+		"requirements": [
+		  {
+			"status": "OK",
+			"fallback_text": "Code-Owners",
+			"type": "code-owners"
+		  }
+		],
+		"submit_records": [
+		  {
+			"rule_name": "Code-Owners",
+			"status": "OK",
+			"requirements": [
+			  {
+				"status": "OK",
+				"fallback_text": "Code-Owners",
+				"type": "code-owners"
+			  }
+			]
+		  }
+		]
+	  },
+	  "added": {
+		"attention_set": {
+		  "33333": {
+			"account": {
+			  "_account_id": 33333
+			},
+			"last_update": "2022-05-31 20:25:28.000000000",
+			"reason": "<GERRIT_ACCOUNT_33333> replied on the change",
+			"reason_account": {
+			  "_account_id": 33333
+			}
+		  }
+		},
+		"removed_from_attention_set": {
+		  "22222": {
+			"account": {
+			  "_account_id": 22222
+			},
+			"last_update": "2022-05-31 20:25:28.000000000",
+			"reason": "<GERRIT_ACCOUNT_22222> replied on the change",
+			"reason_account": {
+			  "_account_id": 22222
+			}
+		  }
+		},
+		"updated": "2014-01-02 20:25:28.000000000",
+		"meta_rev_id": "cafecafe"
+	  },
+	  "removed": {
+		"attention_set": {
+		  "1147264": {
+			"account": {
+			  "_account_id": 1147264
+			},
+			"last_update": "2022-05-31 18:37:10.000000000",
+			"reason": "ps#1: CQ dry run succeeded."
+		  }
+		},
+		"removed_from_attention_set": {
+		  "22222": {
+			"account": {
+			  "_account_id": 22222
+			},
+			"last_update": "2014-01-02 19:02:58.000000000",
+			"reason": "<GERRIT_ACCOUNT_22222> replied on the change",
+			"reason_account": {
+			  "_account_id": 22222
+			}
+		  }
+		},
+		"updated": "2014-01-02 20:23:59.000000000",
+		"meta_rev_id": "cafeefac"
+	  }
+	}`
+
+	Convey("GetMetaDiff", t, func() {
+		Convey("Validates args", func() {
+			srv, c := newMockPbClient(func(w http.ResponseWriter, r *http.Request) {})
+			defer srv.Close()
+			_, err := c.GetMetaDiff(ctx, &gerritpb.GetMetaDiffRequest{})
+			So(err, ShouldErrLike, "number must be positive")
+		})
+
+		var actualRequest *http.Request
+		srv, c := newMockPbClient(func(w http.ResponseWriter, r *http.Request) {
+			actualRequest = r
+			w.WriteHeader(200)
+			w.Header().Set("Content-Type", "application/json")
+			fmt.Fprint(w, sampleResp)
+		})
+		defer srv.Close()
+		req := &gerritpb.GetMetaDiffRequest{Number: 1}
+
+		Convey("Works", func() {
+			resp, err := c.GetMetaDiff(ctx, req)
+			So(err, ShouldBeNil)
+			So(resp.OldChangeInfo.Number, ShouldEqual, 1)
+			So(resp.NewChangeInfo.Number, ShouldEqual, 1)
+			So(resp.Added.MetaRevID, ShouldEqual, resp.NewChangeInfo.MetaRevID)
+			So(resp.Removed.MetaRevID, ShouldEqual, resp.OldChangeInfo.MetaRevID)
+		})
+
+		Convey("Passes old and meta", func() {
+			req.Old = "mehmeh"
+			req.Meta = "booboo"
+			_, err := c.GetMetaDiff(ctx, req)
+			So(err, ShouldBeNil)
+			So(actualRequest.URL.Query()["old"], ShouldResemble, []string{"mehmeh"})
+			So(actualRequest.URL.Query()["meta"], ShouldResemble, []string{"booboo"})
+		})
+	})
+
+}
+
 func newMockPbClient(handler func(w http.ResponseWriter, r *http.Request)) (*httptest.Server, gerritpb.GerritClient) {
 	// TODO(tandrii): rename this func once newMockClient name is no longer used in the same package.
 	srv := httptest.NewServer(http.HandlerFunc(handler))

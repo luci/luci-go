@@ -668,3 +668,34 @@ func (ei *submitRequirementExpressionInfo) ToProto() *gerritpb.SubmitRequirement
 		ErrorMessage: ei.ErrorMessage,
 	}
 }
+
+type metaDiff struct {
+	Added         *changeInfo `json:"added"`
+	Removed       *changeInfo `json:"removed"`
+	OldChangeInfo *changeInfo `json:"old_change_info"`
+	NewChangeInfo *changeInfo `json:"new_change_info"`
+}
+
+func (md *metaDiff) ToProto() (*gerritpb.MetaDiff, error) {
+	var resp gerritpb.MetaDiff
+	var ci *gerritpb.ChangeInfo
+	var err error
+
+	if ci, err = md.Added.ToProto(); err != nil {
+		return nil, err
+	}
+	resp.Added = ci
+	if ci, err = md.Removed.ToProto(); err != nil {
+		return nil, err
+	}
+	resp.Removed = ci
+	if ci, err = md.OldChangeInfo.ToProto(); err != nil {
+		return nil, err
+	}
+	resp.OldChangeInfo = ci
+	if ci, err = md.NewChangeInfo.ToProto(); err != nil {
+		return nil, err
+	}
+	resp.NewChangeInfo = ci
+	return &resp, nil
+}
