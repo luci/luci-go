@@ -81,8 +81,14 @@ func ValidateResultLimit(resultLimit int32) error {
 type Query struct {
 	InvocationIDs invocations.IDSet
 	Predicate     *pb.TestVariantPredicate
-	ResultLimit   int // must be positive
-	PageSize      int // must be positive
+	// ResultLimit is a limit on the number of test results returned
+	// per test variant. Must be postiive.
+	ResultLimit int
+	// PageSize is a limit on the number of test variants returned
+	// per page. The actual number of test variants returned may be
+	// less than this, or even zero. (It may be zero even if there are
+	// more test variants in later pages). Must be positive.
+	PageSize int
 	// Consists of test variant status, test id and variant hash.
 	PageToken string
 	Mask      *mask.Mask
@@ -302,6 +308,11 @@ func (q *Query) fetchTestVariantsWithUnexpectedResults(ctx context.Context) (tvs
 
 	// Fetch test variants with unexpected results.
 	err = q.queryTestVariantsWithUnexpectedResults(ctx, func(tv *pb.TestVariant) error {
+		// Apply field mask.
+		if err := q.trim(tv); err != nil {
+			return err
+		}
+
 		tvs = append(tvs, tv)
 		return nil
 	})
@@ -309,7 +320,12 @@ func (q *Query) fetchTestVariantsWithUnexpectedResults(ctx context.Context) (tvs
 		return nil, "", err
 	}
 
-	if len(tvs) < q.PageSize {
+	if len(tvs) == q.PageSize {
+		// There could be more test variants to return.
+		last := tvs[len(tvs)-1]
+		nextPageToken = pagination.Token(last.Status.String(), last.TestId, last.VariantHash)
+	} else {
+		// We have finished reading all test variants with unexpected results.
 		if q.Predicate.GetStatus() != 0 {
 			// The query is for test variants with specific status, so the query reaches
 			// to its last results already.
@@ -320,14 +336,13 @@ func (q *Query) fetchTestVariantsWithUnexpectedResults(ctx context.Context) (tvs
 			// compute the nextPageToken for test variants with only expected results.
 			nextPageToken = pagination.Token(pb.TestVariantStatus_EXPECTED.String(), "", "")
 		}
-	} else {
-		// len(tvs) == q.PageSize
-		last := tvs[q.PageSize-1]
-		nextPageToken = pagination.Token(last.Status.String(), last.TestId, last.VariantHash)
 	}
 	return tvs, nextPageToken, nil
 }
 
+// queryTestResults returns a page of test results, calling f for each
+// test result read. Test results are returned in test variant order.
+// Within each test variant, unexpected results are returned first.
 func (q *Query) queryTestResults(ctx context.Context, limit int, f func(testId, variantHash string, variant *pb.Variant, tmd spanutil.Compressed, tvr *tvResult) error) (err error) {
 	ctx, ts := trace.StartSpan(ctx, "testvariants.Query.queryTestResults")
 	ts.Attribute("cr.dev/invocations", len(q.InvocationIDs))
@@ -355,9 +370,16 @@ func (q *Query) queryTestResults(ctx context.Context, limit int, f func(testId, 
 }
 
 // queryTestVariants queries a page of test variants, calling f for each
-// test variant read. The status of the test variant is not populated as
-// exonerations are not read.
-// finished is true if all test results from the invocation have been read.
+// test variant read. Unless this method returns an error, it is guaranteed
+// f will be called at least once, or finished will be set to true.
+// finished indicates all test results from the invocation have been read.
+//
+// The number of test results provided per test variant is limited based
+// on q.ResultLimit. Unexpected test results appear first in the
+// list of test results provided on each test variant.
+//
+// The status of the test variant is not populated as exonerations are
+// not read.
 func (q *Query) queryTestVariants(ctx context.Context, f func(*pb.TestVariant) error) (finished bool, err error) {
 	// Number of the total test results returned by the query.
 	trCount := 0
@@ -370,22 +392,45 @@ func (q *Query) queryTestVariants(ctx context.Context, f func(*pb.TestVariant) e
 	// Query q.PageSize+1 test results, so that in the case of all test results
 	// correspond to one test variant, we will return q.PageSize test variants
 	// instead of q.PageSize-1.
-	// TODO: Bug here. If the number of test results for a single test variant
-	// is larger than the page size, we will never make any forward progress.
 	pageSize := q.PageSize + 1
+
+	// Ensure we always make forward progress, by having enough test results
+	// to call the callback at least once.
+	if q.ResultLimit > pageSize {
+		pageSize = q.ResultLimit
+	}
+
+	// Number of test variants yielded so far. Used to ensure
+	// we never yield more test variants than the page size.
+	yieldCount := 0
+	yield := func(tv *pb.TestVariant) error {
+		yieldCount++
+		// Never yield more test variants to the caller than the requested
+		// query page size.
+		if yieldCount <= q.PageSize {
+			return f(tv)
+		}
+		return nil
+	}
+
 	err = q.queryTestResults(ctx, pageSize, func(testId, variantHash string, variant *pb.Variant, tmd spanutil.Compressed, tvr *tvResult) error {
+		trCount++
+
 		tr, err := q.toTestResultProto(tvr, testId)
 		if err != nil {
 			return err
 		}
 
 		var toYield *pb.TestVariant
-		trCount++
 		if current != nil {
 			if current.TestId == testId && current.VariantHash == variantHash {
-				current.Results = append(current.Results, &pb.TestResultBundle{
-					Result: tr,
-				})
+				// Another result within the same test variant.
+				if len(current.Results) < q.ResultLimit {
+					// Only append if within result limit.
+					current.Results = append(current.Results, &pb.TestResultBundle{
+						Result: tr,
+					})
+				}
 				return nil
 			}
 
@@ -405,23 +450,36 @@ func (q *Query) queryTestVariants(ctx context.Context, f func(*pb.TestVariant) e
 				},
 			},
 		}
+
 		if err := populateTestMetadata(current, tmd); err != nil {
 			return errors.Annotate(err, "error unmarshalling test_metadata for %s", current.TestId).Err()
 		}
 		if toYield != nil {
-			return f(toYield)
+			return yield(toYield)
 		}
 		return nil
 	})
 	if err != nil {
 		return false, err
 	}
-	if trCount < pageSize {
-		// All test variants exhausted.
-		err := f(current)
-		return true, err
+
+	if current != nil {
+		// Yield current if:
+		// - We finished reading all test results for the queried invocations, OR
+		// - We have ResultLimit test results for the test variant.
+		if len(current.Results) == q.ResultLimit || trCount < pageSize {
+			err := yield(current)
+			if err != nil {
+				return false, err
+			}
+		}
 	}
-	return false, nil
+
+	// We have finished if we have run out of test results in the queried
+	// invocations, and we managed to deliver all those test variants to
+	// the caller.
+	finished = trCount < pageSize && yieldCount <= q.PageSize
+	return finished, nil
 }
 
 func (q *Query) fetchTestVariantsWithOnlyExpectedResults(ctx context.Context) (tvs []*pb.TestVariant, nextPageToken string, err error) {
@@ -435,15 +493,17 @@ func (q *Query) fetchTestVariantsWithOnlyExpectedResults(ctx context.Context) (t
 		lastProcessedTestID = tv.TestId
 		lastProcessedVariantHash = tv.VariantHash
 
-		isExpected := true
-		for _, tr := range tv.Results {
-			isExpected = isExpected && tr.Result.Expected
-		}
-		if isExpected {
+		// Within the test variant, unexpected results appear first.
+		// So if the first result is expected, all are.
+		isOnlyExpected := tv.Results[0].Result.Expected
+		if isOnlyExpected {
 			tv.Status = pb.TestVariantStatus_EXPECTED
-			if len(tv.Results) > q.ResultLimit {
-				tv.Results = tv.Results[:q.ResultLimit]
+
+			// Apply field mask.
+			if err := q.trim(tv); err != nil {
+				return err
 			}
+
 			tvs = append(tvs, tv)
 		}
 		return nil
@@ -466,6 +526,9 @@ func (q *Query) fetchTestVariantsWithOnlyExpectedResults(ctx context.Context) (t
 func (q *Query) Fetch(ctx context.Context) (tvs []*pb.TestVariant, nextPageToken string, err error) {
 	if q.PageSize <= 0 {
 		panic("PageSize <= 0")
+	}
+	if q.ResultLimit <= 0 {
+		panic("ResultLimit <= 0")
 	}
 
 	status := int(q.Predicate.GetStatus())
@@ -512,20 +575,10 @@ func (q *Query) Fetch(ctx context.Context) (tvs []*pb.TestVariant, nextPageToken
 	}
 
 	if expected {
-		tvs, nextPageToken, err = q.fetchTestVariantsWithOnlyExpectedResults(ctx)
+		return q.fetchTestVariantsWithOnlyExpectedResults(ctx)
 	} else {
-		tvs, nextPageToken, err = q.fetchTestVariantsWithUnexpectedResults(ctx)
+		return q.fetchTestVariantsWithUnexpectedResults(ctx)
 	}
-	if err != nil {
-		return nil, "", err
-	}
-
-	for _, tv := range tvs {
-		if err := q.trim(tv); err != nil {
-			return nil, "", err
-		}
-	}
-	return tvs, nextPageToken, nil
 }
 
 var testVariantsWithUnexpectedResultsSQLTmpl = template.Must(template.New("testVariantsWithUnexpectedResultsSQL").Parse(`
@@ -637,7 +690,8 @@ var allTestResultsSQLTmpl = template.Must(template.New("allTestResultsSQL").Pars
 		(TestId > @afterTestId) OR
 		(TestId = @afterTestId AND VariantHash > @afterVariantHash)
 	)
-	ORDER BY TestId, VariantHash
+	-- Within a test variant, return the unexpected results first.
+	ORDER BY TestId, VariantHash, IsUnexpected DESC
 	LIMIT @limit
 `))
 
