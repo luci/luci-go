@@ -11,9 +11,12 @@ Follow the steps below to run a local instance.
     },
     "BUILDBUCKET": {
         "HOST": "<Buildbucket Host Name>" // e.g. "cr-buildbucket-dev.appspot.com"
-    }
+    },
     "WEETBIX": {
         "HOST": "<Weetbix Host Name>" // e.g. "chops-weetbix-dev.appspot.com"
+    },
+    "LUCI_ANALYSIS": {
+        "HOST": "<LUCI Analysis Host Name>" // e.g. "luci-analysis-dev.appspot.com"
     }
 }
 ```

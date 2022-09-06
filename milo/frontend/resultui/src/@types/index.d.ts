@@ -53,6 +53,9 @@ declare const CONFIGS: {
   readonly WEETBIX: {
     readonly HOST: string;
   };
+  readonly LUCI_ANALYSIS: {
+    readonly HOST: string;
+  };
 };
 
 /**

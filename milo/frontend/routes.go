@@ -278,6 +278,9 @@ func configsJSHandler(c *router.Context) error {
 		"Weetbix": map[string]string{
 			"Host": settings.GetWeetbix().GetHost(),
 		},
+		"LuciAnalysis": map[string]string{
+			"Host": settings.GetLuciAnalysis().GetHost(),
+		},
 	})
 
 	if err != nil {

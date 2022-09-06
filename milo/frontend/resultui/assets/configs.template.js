@@ -22,4 +22,7 @@ const CONFIGS = {
   WEETBIX: {
     HOST: "{{.Weetbix.Host}}",
   },
+  LUCI_ANALYSIS: {
+    HOST: "{{.LuciAnalysis.Host}}",
+  },
 };

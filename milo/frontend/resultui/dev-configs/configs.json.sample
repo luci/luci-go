@@ -8,5 +8,8 @@
     },
     "WEETBIX": {
         "HOST": "chops-weetbix-dev.appspot.com"
+    },
+    "LUCI_ANALYSIS": {
+        "HOST": "luci-analysis-dev.appspot.com"
     }
 }
