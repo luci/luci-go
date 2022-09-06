@@ -20,6 +20,7 @@ package compilefailureanalysis
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"go.chromium.org/luci/bisection/compilefailureanalysis/compilelog"
 	"go.chromium.org/luci/bisection/compilefailureanalysis/heuristic"
@@ -32,6 +33,7 @@ import (
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/gae/service/datastore"
+	"go.chromium.org/luci/gae/service/info"
 )
 
 // AnalyzeFailure receives failure information and perform analysis.
@@ -105,9 +107,12 @@ func AnalyzeFailure(
 	}
 
 	// Verifies heuristic analysis result.
-	// TODO (nqmtuan): Enable verifyHeuristicResults when we fully implemented
-	// the culprit verification. Enabling it now will create a lot of noises.
-	// verifyHeuristicResults(c, heuristicResult, firstFailedBuildID, analysis.Id)
+	if shouldVerifyHeuristicResult(c) {
+		if err := verifyHeuristicResults(c, heuristicResult, firstFailedBuildID, analysis.Id); err != nil {
+			// Do not return error here, just log
+			logging.Errorf(c, "Error verifying heuristic result for build %d: %s", firstFailedBuildID, err)
+		}
+	}
 
 	return analysis, nil
 }
@@ -144,7 +149,8 @@ func getHeuristicSuspectsToVerify(c context.Context, heuristicAnalysis *gfim.Com
 	}
 
 	// Get top 3 suspects to verify
-	nSuspects := 3
+	// TODO (nqmtuan): Increase nSuspects to 3, after we verify everything is working.
+	nSuspects := 1
 	if nSuspects > len(suspects) {
 		nSuspects = len(suspects)
 	}
@@ -176,4 +182,9 @@ func findRegressionRange(
 		FirstFailed: firstFailedBuild.GetInput().GetGitilesCommit(),
 		LastPassed:  lastPassedBuild.GetInput().GetGitilesCommit(),
 	}, nil
+}
+
+func shouldVerifyHeuristicResult(c context.Context) bool {
+	// TODO (nqmtuan): Enable for prod instead of dev. Waiting for crbug.com/1358790
+	return strings.HasSuffix(info.AppID(c), "-dev")
 }
