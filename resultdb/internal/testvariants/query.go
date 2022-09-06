@@ -220,9 +220,7 @@ func (q *Query) toTestResultProto(r *tvResult, testID string) (*pb.TestResult, e
 	// Populate Tags.
 	tr.Tags = make([]*pb.StringPair, len(r.Tags))
 	for i, p := range r.Tags {
-		if tr.Tags[i], err = pbutil.StringPairFromString(p); err != nil {
-			return nil, err
-		}
+		tr.Tags[i] = pbutil.StringPairFromStringUnvalidated(p)
 	}
 
 	return tr, nil

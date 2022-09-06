@@ -47,6 +47,22 @@ func TestStringPairs(t *testing.T) {
 			So(pair, ShouldResembleProto, &pb.StringPair{Key: "key/k", Value: "v"})
 		})
 	})
+	Convey(`StringPairFromStringUnvalidated`, t, func() {
+		Convey(`valid key:val string`, func() {
+			pair := StringPairFromStringUnvalidated("key/k:v")
+			So(pair, ShouldResembleProto, &pb.StringPair{Key: "key/k", Value: "v"})
+		})
+
+		Convey(`invalid string with no colon`, func() {
+			pair := StringPairFromStringUnvalidated("key/k")
+			So(pair, ShouldResembleProto, &pb.StringPair{Key: "key/k", Value: ""})
+		})
+
+		Convey(`invalid chars in key`, func() {
+			pair := StringPairFromStringUnvalidated("##key/k:v")
+			So(pair, ShouldResembleProto, &pb.StringPair{Key: "##key/k", Value: "v"})
+		})
+	})
 }
 
 func TestValidateStringPair(t *testing.T) {

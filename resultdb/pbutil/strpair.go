@@ -17,6 +17,7 @@ package pbutil
 import (
 	"fmt"
 	"sort"
+	"strings"
 
 	"go.chromium.org/luci/common/data/strpair"
 	"go.chromium.org/luci/common/errors"
@@ -103,6 +104,17 @@ func StringPairFromString(s string) (*pb.StringPair, error) {
 		return nil, doesNotMatch(stringPairRe)
 	}
 	return StringPair(m[1], m[3]), nil
+}
+
+// StringPairFromStringUnvalidated is like StringPairFromString, but doesn't
+// perform validation.
+func StringPairFromStringUnvalidated(s string) *pb.StringPair {
+	// TODO: Replace with strings.Cut(s, ":") when we have go 1.18.
+	parts := strings.SplitN(s, ":", 2)
+	if len(parts) != 2 {
+		return StringPair(s, "")
+	}
+	return StringPair(parts[0], parts[1])
 }
 
 // StringPairToString converts a StringPair to a key:val string.
