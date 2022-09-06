@@ -14,9 +14,10 @@
 
 import '@material/mwc-button';
 import { css, customElement, html } from 'lit-element';
-import { computed, makeObservable, observable } from 'mobx';
+import { makeObservable, observable } from 'mobx';
 
 import '../../../components/hotkey';
+import './step_display_config';
 import './step_list';
 import { MiloBaseElement } from '../../../components/milo_base';
 import { GA_ACTIONS, GA_CATEGORIES, trackEvent } from '../../../libs/analytics_utils';
@@ -40,10 +41,6 @@ export class StepsTabElement extends MiloBaseElement {
     trackEvent(GA_CATEGORIES.STEPS_TAB, GA_ACTIONS.TAB_VISITED, window.location.href);
   }
 
-  @computed private get stepsConfig() {
-    return this.store.userConfig.build.steps;
-  }
-
   private allStepsWereExpanded = false;
   private toggleAllSteps(expand: boolean) {
     this.allStepsWereExpanded = expand;
@@ -59,46 +56,7 @@ export class StepsTabElement extends MiloBaseElement {
   protected render = reportRenderError(this, () => {
     return html`
       <div id="header">
-        <div class="config-section">
-          Show:
-          <div class="config">
-            <input
-              id="succeeded"
-              type="checkbox"
-              ?checked=${this.stepsConfig.showSucceededSteps}
-              @change=${(e: MouseEvent) => {
-                this.stepsConfig.setShowSucceededSteps((e.target as HTMLInputElement).checked);
-              }}
-            />
-            <label for="succeeded" style="color: var(--success-color);">Succeeded Steps</label>
-          </div>
-          <div class="config">
-            <input
-              id="debug-logs"
-              type="checkbox"
-              ?checked=${this.stepsConfig.showDebugLogs}
-              @change=${(e: MouseEvent) => {
-                this.stepsConfig.setShowDebugLogs((e.target as HTMLInputElement).checked);
-              }}
-            />
-            <label for="debug-logs">Debug Logs</label>
-          </div>
-        </div>
-        <div class="config-section-delimiter"></div>
-        <div class="config-section">
-          <div class="config">
-            <input
-              id="expand-by-default"
-              type="checkbox"
-              ?checked=${this.stepsConfig.expandSucceededByDefault}
-              @change=${(e: MouseEvent) => {
-                this.stepsConfig.setExpandSucceededByDefault((e.target as HTMLInputElement).checked);
-              }}
-            />
-            <label for="expand-by-default">Expand by default</label>
-          </div>
-        </div>
-        <span></span>
+        <milo-bp-step-display-config></milo-bp-step-display-config>
         <milo-hotkey .key="x" .handler=${this.toggleAllStepsByHotkey} title="press x to expand/collapse all entries">
           <mwc-button class="action-button" dense unelevated @click=${() => this.toggleAllSteps(true)}>
             Expand All
@@ -117,7 +75,7 @@ export class StepsTabElement extends MiloBaseElement {
     css`
       #header {
         display: grid;
-        grid-template-columns: auto auto auto 1fr auto;
+        grid-template-columns: 1fr auto;
         grid-gap: 5px;
         height: 30px;
         padding: 5px 10px 3px 10px;
@@ -130,23 +88,6 @@ export class StepsTabElement extends MiloBaseElement {
       mwc-button {
         margin-top: 1px;
         width: var(--expand-button-width);
-      }
-
-      .config-section {
-        display: inline-block;
-        padding: 4px 5px 0;
-      }
-      .config {
-        display: inline-block;
-        margin: 0 5px;
-      }
-      .config:last-child {
-        margin-right: 0px;
-      }
-      .config-section-delimiter {
-        border-left: 1px solid var(--divider-color);
-        width: 0px;
-        height: 100%;
       }
 
       milo-bp-step-list {

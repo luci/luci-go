@@ -41,7 +41,7 @@ export class BuildPageStepClusterElement extends MiloBaseElement {
     return (
       this.steps.length > 1 &&
       !this.steps[0].isCritical &&
-      !this.store.userConfig.build.steps.showSucceededSteps &&
+      this.store.userConfig.build.steps.elideSucceededSteps &&
       !this.expanded
     );
   }
@@ -81,8 +81,8 @@ export class BuildPageStepClusterElement extends MiloBaseElement {
 
     this.addDisposer(
       reaction(
-        () => this.store.userConfig.build.steps.showSucceededSteps,
-        (showSucceededSteps) => this.setExpanded(showSucceededSteps)
+        () => this.store.userConfig.build.steps.elideSucceededSteps,
+        (elideSucceededSteps) => this.setExpanded(!elideSucceededSteps)
       )
     );
   }

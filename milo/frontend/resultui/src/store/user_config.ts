@@ -32,6 +32,13 @@ export const V1_CACHE_KEY = 'user-configs-v1';
 export const V2_CACHE_KEY = 'user-config-v2';
 const DEFAULT_TRANSIENT_KEY_TTL = Duration.fromObject({ week: 4 }).toMillis();
 
+export const enum ExpandStepOption {
+  All,
+  WithNonSuccessful,
+  NonSuccessful,
+  None,
+}
+
 export interface UserConfigEnv {
   readonly storage?: Storage;
   readonly transientKeysTTL?: number;
@@ -89,9 +96,7 @@ function configV1ToV2(v1: UserConfigsV1): UserConfigSnapshotIn {
   return {
     build: {
       steps: {
-        showSucceededSteps: v1.steps.showSucceededSteps,
         showDebugLogs: v1.steps.showDebugLogs,
-        expandSucceededByDefault: v1.steps.expandByDefault,
         _pinnedSteps: {
           _values: v1.steps.stepPinTime,
         },
@@ -116,9 +121,9 @@ function configV1ToV2(v1: UserConfigsV1): UserConfigSnapshotIn {
 
 export const BuildStepsConfig = types
   .model('BuildStepsConfig', {
-    showSucceededSteps: false,
+    elideSucceededSteps: true,
     showDebugLogs: false,
-    expandSucceededByDefault: false,
+    expandByDefault: ExpandStepOption.WithNonSuccessful,
     /**
      * SHOULD NOT BE ACCESSED DIRECTLY. Use the methods instead.
      */
@@ -131,14 +136,14 @@ export const BuildStepsConfig = types
     },
   }))
   .actions((self) => ({
-    setShowSucceededSteps(show: boolean) {
-      self.showSucceededSteps = show;
+    setElideSucceededSteps(elide: boolean) {
+      self.elideSucceededSteps = elide;
     },
     setShowDebugLogs(show: boolean) {
       self.showDebugLogs = show;
     },
-    setExpandSucceededByDefault(expand: boolean) {
-      self.expandSucceededByDefault = expand;
+    setExpandByDefault(opt: ExpandStepOption) {
+      self.expandByDefault = opt;
     },
 
     /**

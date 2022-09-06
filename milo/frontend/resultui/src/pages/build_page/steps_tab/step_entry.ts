@@ -33,6 +33,7 @@ import { displayCompactDuration, displayDuration, NUMERIC_TIME_FORMAT } from '..
 import { BuildStatus } from '../../../services/buildbucket';
 import { consumeStore, StoreInstance } from '../../../store';
 import { BuildStepStateInstance } from '../../../store/build_state';
+import { ExpandStepOption } from '../../../store/user_config';
 import colorClasses from '../../../styles/color_classes.css';
 import commonStyle from '../../../styles/common_style.css';
 import { BuildPageStepClusterElement } from './step_cluster';
@@ -159,9 +160,22 @@ export class BuildPageStepEntryElement extends MiloBaseElement implements Render
     super.connectedCallback();
     this.addDisposer(
       reaction(
-        () => this.store.userConfig.build.steps.expandSucceededByDefault,
-        (expandSucceededByDefault) => {
-          this.expanded = expandSucceededByDefault;
+        () => this.store.userConfig.build.steps.expandByDefault,
+        (opt) => {
+          switch (opt) {
+            case ExpandStepOption.All:
+              this.expanded = true;
+              break;
+            case ExpandStepOption.None:
+              this.expanded = false;
+              break;
+            case ExpandStepOption.NonSuccessful:
+              this.expanded = this.step.data.status !== BuildStatus.Success;
+              break;
+            case ExpandStepOption.WithNonSuccessful:
+              this.expanded = !this.step.succeededRecursively;
+              break;
+          }
         },
         { fireImmediately: true }
       )

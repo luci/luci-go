@@ -14,15 +14,13 @@
 
 import '@material/mwc-button';
 import { css, customElement, html } from 'lit-element';
-import { styleMap } from 'lit-html/directives/style-map';
-import { computed, makeObservable, observable } from 'mobx';
+import { makeObservable, observable } from 'mobx';
 
 import '../../../components/dot_spinner';
 import './step_cluster';
 import { MiloBaseElement } from '../../../components/milo_base';
 import { consumer } from '../../../libs/context';
 import { errorHandler, forwardWithoutMsg, reportRenderError } from '../../../libs/error_handler';
-import { BuildStatus } from '../../../services/buildbucket';
 import { consumeStore, StoreInstance } from '../../../store';
 import commonStyle from '../../../styles/common_style.css';
 import { BuildPageStepClusterElement } from './step_cluster';
@@ -34,25 +32,6 @@ export class BuildPageStepListElement extends MiloBaseElement {
   @observable.ref
   @consumeStore()
   store!: StoreInstance;
-
-  @computed private get stepsConfig() {
-    return this.store.userConfig.build.steps;
-  }
-
-  @computed private get loaded() {
-    return this.store.buildPage.build !== null;
-  }
-
-  @computed private get noStepText() {
-    if (!this.loaded) {
-      return '';
-    }
-    const rootSteps = this.store.buildPage.build?.rootSteps;
-    if (this.stepsConfig.showSucceededSteps) {
-      return !rootSteps?.length ? 'No steps.' : '';
-    }
-    return !rootSteps?.find((s) => s.data.status !== BuildStatus.Success) ? 'All steps succeeded.' : '';
-  }
 
   constructor() {
     super();
@@ -68,15 +47,20 @@ export class BuildPageStepListElement extends MiloBaseElement {
   }
 
   protected render = reportRenderError(this, () => {
+    const build = this.store.buildPage.build;
+    if (!build) {
+      return html` <div id="load" class="list-entry">Loading <milo-dot-spinner></milo-dot-spinner></div> `;
+    }
+
+    if (build.rootSteps.length === 0) {
+      return html` <div class="list-entry">No steps.</div> `;
+    }
+
     return html`
-      ${this.store.buildPage.build?.clusteredRootSteps.map(
+      ${build.clusteredRootSteps.map(
         (cluster) =>
           html`<milo-bp-step-cluster .steps=${cluster} .expanded=${this.expandSubSteps}></milo-bp-step-cluster>`
-      ) || ''}
-      <div class="list-entry" style=${styleMap({ display: this.noStepText ? '' : 'none' })}>${this.noStepText}</div>
-      <div id="load" class="list-entry" style=${styleMap({ display: this.loaded ? 'none' : '' })}>
-        Loading <milo-dot-spinner></milo-dot-spinner>
-      </div>
+      )}
     `;
   });
 

@@ -111,9 +111,7 @@ describe('UserConfig', () => {
     expect(store1.build.inputProperties.isFolded('inputKey2')).to.be.false;
     expect(store1.build.outputProperties.isFolded('outputKey1')).to.be.true;
     expect(store1.build.outputProperties.isFolded('outputKey2')).to.be.false;
-    expect(store1.build.steps.expandSucceededByDefault).to.be.true;
     expect(store1.build.steps.showDebugLogs).to.be.false;
-    expect(store1.build.steps.showSucceededSteps).to.be.true;
     expect(store1.build.steps.stepIsPinned('parent')).to.be.true;
     expect(store1.build.steps.stepIsPinned('parent|child')).to.be.false;
     expect(store1.tests.columnWidths).to.deep.eq({
@@ -134,9 +132,7 @@ describe('UserConfig', () => {
     expect(store2.build.inputProperties.isFolded('inputKey2')).to.be.false;
     expect(store2.build.outputProperties.isFolded('outputKey1')).to.be.true;
     expect(store2.build.outputProperties.isFolded('outputKey2')).to.be.false;
-    expect(store2.build.steps.expandSucceededByDefault).to.be.true;
     expect(store2.build.steps.showDebugLogs).to.be.false;
-    expect(store2.build.steps.showSucceededSteps).to.be.true;
     expect(store2.build.steps.stepIsPinned('parent')).to.be.true;
     expect(store2.build.steps.stepIsPinned('parent|child')).to.be.false;
     expect(store2.tests.columnWidths).to.deep.eq({

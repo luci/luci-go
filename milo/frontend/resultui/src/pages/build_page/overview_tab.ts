@@ -28,6 +28,7 @@ import '../../components/timestamp';
 import '../test_results_tab/test_variants_table/test_variant_entry';
 import './cancel_build_dialog';
 import './retry_build_dialog';
+import './steps_tab/step_display_config';
 import './steps_tab/step_list';
 import { consumeInvocationState, InvocationState } from '../../context/invocation_state';
 import { GA_ACTIONS, GA_CATEGORIES, trackEvent } from '../../libs/analytics_utils';
@@ -488,37 +489,7 @@ export class OverviewTabElement extends MobxLitElement {
     return html`
       <div>
         <h3>Steps & Logs (<a href=${stepsUrl}>View in Steps Tab</a>)</h3>
-        <div id="step-config">
-          Show:
-          <input
-            id="succeeded"
-            type="checkbox"
-            ?checked=${this.store.userConfig.build.steps.showSucceededSteps}
-            @change=${(e: MouseEvent) => {
-              this.store.userConfig.build.steps.setShowSucceededSteps((e.target as HTMLInputElement).checked);
-            }}
-          />
-          <label for="succeeded" style="color: var(--success-color);">Succeeded Steps</label>
-          <span>&nbsp;</span>
-          <input
-            id="debug-logs"
-            type="checkbox"
-            ?checked=${this.store.userConfig.build.steps.showDebugLogs}
-            @change=${(e: MouseEvent) => {
-              this.store.userConfig.build.steps.setShowDebugLogs((e.target as HTMLInputElement).checked);
-            }}
-          />
-          <label id="debug-logs-label" for="debug-logs">Debug Logs</label>
-          <input
-            id="expand-by-default"
-            type="checkbox"
-            ?checked=${this.store.userConfig.build.steps.expandSucceededByDefault}
-            @change=${(e: MouseEvent) => {
-              this.store.userConfig.build.steps.setExpandSucceededByDefault((e.target as HTMLInputElement).checked);
-            }}
-          />
-          <label for="expand-by-default">Expand by default</label>
-        </div>
+        <milo-bp-step-display-config></milo-bp-step-display-config>
         <milo-bp-step-list></milo-bp-step-list>
       </div>
     `;
@@ -745,14 +716,6 @@ export class OverviewTabElement extends MobxLitElement {
 
       #step-buttons {
         float: right;
-      }
-
-      #step-config {
-        margin-bottom: 10px;
-      }
-
-      #debug-logs-label {
-        margin-right: 50px;
       }
 
       milo-property-viewer {
