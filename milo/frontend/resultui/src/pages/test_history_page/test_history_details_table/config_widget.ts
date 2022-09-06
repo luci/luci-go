@@ -17,18 +17,19 @@ import '@material/mwc-dialog';
 import '@material/mwc-icon';
 import { MobxLitElement } from '@adobe/lit-mobx';
 import { css, customElement, html } from 'lit-element';
-import { makeObservable, observable } from 'mobx';
+import { computed, makeObservable, observable } from 'mobx';
 
-import { consumeTestHistoryPageState, TestHistoryPageState } from '../../../context/test_history_page_state';
 import { consumer } from '../../../libs/context';
+import { consumeStore, StoreInstance } from '../../../store';
 import commonStyle from '../../../styles/common_style.css';
 
 @customElement('milo-thdt-config-widget')
 @consumer
 export class TestHistoryDetailsTableConfigWidgetElement extends MobxLitElement {
-  @observable.ref
-  @consumeTestHistoryPageState()
-  pageState!: TestHistoryPageState;
+  @observable.ref @consumeStore() store!: StoreInstance;
+  @computed get pageState() {
+    return this.store.testHistoryPage;
+  }
 
   // These properties are frequently updated.
   // Don't set them as observables so updating them won't have big performance

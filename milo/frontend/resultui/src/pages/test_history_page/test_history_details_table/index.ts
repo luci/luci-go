@@ -23,7 +23,6 @@ import '../../../components/dot_spinner';
 import '../../../components/column_header';
 import './test_history_details_entry';
 import { MiloBaseElement } from '../../../components/milo_base';
-import { consumeTestHistoryPageState, TestHistoryPageState } from '../../../context/test_history_page_state';
 import { consumer } from '../../../libs/context';
 import { reportErrorAsync } from '../../../libs/error_handler';
 import { createTVPropGetter, getPropKeyLabel } from '../../../services/resultdb';
@@ -39,7 +38,9 @@ import { TestHistoryDetailsEntryElement } from './test_history_details_entry';
 @consumer
 export class TestHistoryDetailsTableElement extends MiloBaseElement {
   @observable.ref @consumeStore() store!: StoreInstance;
-  @observable.ref @consumeTestHistoryPageState() pageState!: TestHistoryPageState;
+  @computed get pageState() {
+    return this.store.testHistoryPage;
+  }
 
   @computed private get columnGetters() {
     return this.pageState.columnKeys.map((col) => createTVPropGetter(col));

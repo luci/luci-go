@@ -20,6 +20,7 @@ import { AuthStateStore } from './auth_state';
 import { BuildPage } from './build_page';
 import { SearchPage } from './search_page';
 import { ServicesStore } from './services';
+import { TestHistoryPage } from './test_history_page';
 import { Timestamp } from './timestamp';
 import { UserConfig } from './user_config';
 
@@ -49,6 +50,7 @@ export const Store = types
 
     searchPage: types.optional(SearchPage, {}),
     buildPage: types.optional(BuildPage, {}),
+    testHistoryPage: types.optional(TestHistoryPage, {}),
   })
   .volatile(() => ({
     /**
@@ -88,6 +90,10 @@ export const Store = types
         refreshTime: self.refreshTime,
         services: self.services,
         userConfig: self.userConfig,
+      });
+      self.testHistoryPage.setDependencies({
+        refreshTime: self.refreshTime,
+        services: self.services,
       });
     },
   }));

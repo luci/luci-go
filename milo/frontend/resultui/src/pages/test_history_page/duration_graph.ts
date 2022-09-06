@@ -14,20 +14,23 @@
 
 import { css, customElement, html, svg, SVGTemplateResult } from 'lit-element';
 import { Duration } from 'luxon';
-import { makeObservable, observable } from 'mobx';
+import { computed, makeObservable, observable } from 'mobx';
 
 import { MiloBaseElement } from '../../components/milo_base';
-import { consumeTestHistoryPageState, TestHistoryPageState } from '../../context/test_history_page_state';
 import { consumer } from '../../libs/context';
 import { displayDuration, parseProtoDuration } from '../../libs/time_utils';
 import { QueryTestHistoryStatsResponseGroup } from '../../services/weetbix';
+import { consumeStore, StoreInstance } from '../../store';
 import commonStyle from '../../styles/common_style.css';
 import { CELL_PADDING, CELL_SIZE, INNER_CELL_SIZE } from './constants';
 
 @customElement('milo-th-duration-graph')
 @consumer
 export class TestHistoryDurationGraphElement extends MiloBaseElement {
-  @observable.ref @consumeTestHistoryPageState() pageState!: TestHistoryPageState;
+  @observable.ref @consumeStore() store!: StoreInstance;
+  @computed get pageState() {
+    return this.store.testHistoryPage;
+  }
 
   constructor() {
     super();
@@ -84,18 +87,7 @@ export class TestHistoryDurationGraphElement extends MiloBaseElement {
 
   private renderEntries(group: QueryTestHistoryStatsResponseGroup) {
     const averageDurationMs = parseProtoDuration(group.passedAvgDuration!);
-    if (!this.pageState.durationInitialized) {
-      this.pageState.maxDurationMs = averageDurationMs;
-      this.pageState.minDurationMs = averageDurationMs;
-      this.pageState.durationInitialized = true;
-    } else {
-      if (averageDurationMs > this.pageState.maxDurationMs) {
-        this.pageState.maxDurationMs = averageDurationMs;
-      }
-      if (averageDurationMs < this.pageState.minDurationMs) {
-        this.pageState.minDurationMs = averageDurationMs;
-      }
-    }
+    this.pageState.setDuration(averageDurationMs);
 
     return svg`
       <rect
@@ -105,9 +97,7 @@ export class TestHistoryDurationGraphElement extends MiloBaseElement {
         height=${INNER_CELL_SIZE}
         fill=${this.pageState.scaleDurationColor(averageDurationMs)}
         style="cursor: pointer;"
-        @click=${() => {
-          this.pageState.selectedGroup = group;
-        }}
+        @click=${() => this.pageState.setSelectedGroup(group)}
       >
         <title>Average Duration: ${displayDuration(
           Duration.fromMillis(averageDurationMs)

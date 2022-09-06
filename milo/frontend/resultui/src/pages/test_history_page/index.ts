@@ -17,7 +17,7 @@ import '@material/mwc-icon';
 import { BeforeEnterObserver, PreventAndRedirectCommands, RouterLocation } from '@vaadin/router';
 import { css, customElement, html } from 'lit-element';
 import { styleMap } from 'lit-html/directives/style-map';
-import { makeObservable, observable, reaction } from 'mobx';
+import { computed, makeObservable, observable, reaction } from 'mobx';
 
 import '../../components/dot_spinner';
 import '../../components/overlay';
@@ -33,10 +33,10 @@ import './filter_box';
 import './status_graph';
 import './variant_def_table';
 import { MiloBaseElement } from '../../components/milo_base';
-import { GraphType, provideTestHistoryPageState, TestHistoryPageState } from '../../context/test_history_page_state';
 import { consumer, provider } from '../../libs/context';
 import { NOT_FOUND_URL } from '../../routes';
 import { consumeStore, StoreInstance } from '../../store';
+import { GraphType } from '../../store/test_history_page';
 import commonStyle from '../../styles/common_style.css';
 import { TestHistoryDetailsTableElement } from './test_history_details_table';
 
@@ -50,7 +50,9 @@ const LOADING_VARIANT_INFO_TOOLTIP =
 @consumer
 export class TestHistoryPageElement extends MiloBaseElement implements BeforeEnterObserver {
   @observable.ref @consumeStore() store!: StoreInstance;
-  @observable.ref @provideTestHistoryPageState() pageState!: TestHistoryPageState;
+  @computed get pageState() {
+    return this.store.testHistoryPage;
+  }
 
   @observable.ref private realm!: string;
   @observable.ref private testId!: string;
@@ -81,31 +83,19 @@ export class TestHistoryPageElement extends MiloBaseElement implements BeforeEnt
   connectedCallback() {
     super.connectedCallback();
 
-    const banner = html`Test history data before 2022-05-17 is not available.`;
-    this.store.addBanner(banner);
-    this.addDisposer(() => this.store.removeBanner(banner));
-
     // Set up TestHistoryPageState.
     this.addDisposer(
       reaction(
         () => [this.realm, this.testId, this.store?.services.testHistory],
         () => {
-          if (!this.realm || !this.testId || !this.store.services.testHistory || !this.store.services.resultDb) {
+          if (!this.realm || !this.testId) {
             return;
           }
 
           const filterText = this.pageState ? this.pageState.filterText : this.initialFilterText;
-          this.pageState?.dispose();
 
-          this.pageState = new TestHistoryPageState(
-            this.realm,
-            this.testId,
-            this.store.services.testHistory,
-            this.store.services.resultDb
-          );
-          this.pageState.filterText = filterText;
-          // Emulate @property() update.
-          this.updated(new Map([['pageState', this.pageState]]));
+          this.pageState.setParams(this.realm, this.testId);
+          this.pageState.setFilterText(filterText);
         },
         {
           fireImmediately: true,
@@ -129,6 +119,22 @@ export class TestHistoryPageElement extends MiloBaseElement implements BeforeEnt
           const newUrl = `${location.protocol}//${location.host}${location.pathname}${newQueryStr}`;
           window.history.replaceState(null, '', newUrl);
         },
+        { fireImmediately: true }
+      )
+    );
+
+    this.addDisposer(
+      reaction(
+        () => this.pageState.entriesLoader,
+        (loader) => loader?.loadFirstPage(),
+        { fireImmediately: true }
+      )
+    );
+
+    this.addDisposer(
+      reaction(
+        () => this.pageState.variantsLoader,
+        (loader) => loader?.loadFirstPage(),
         { fireImmediately: true }
       )
     );
@@ -161,10 +167,6 @@ export class TestHistoryPageElement extends MiloBaseElement implements BeforeEnt
   }
 
   private renderBody() {
-    if (!this.pageState) {
-      return html``;
-    }
-
     return html`
       <milo-th-filter-box></milo-th-filter-box>
       <milo-th-graph-config></milo-th-graph-config>
@@ -187,10 +189,6 @@ export class TestHistoryPageElement extends MiloBaseElement implements BeforeEnt
   }
 
   private renderVariantCount() {
-    if (!this.pageState) {
-      return html``;
-    }
-
     return html`
       <div id="variant-count">
         Showing
@@ -199,9 +197,9 @@ export class TestHistoryPageElement extends MiloBaseElement implements BeforeEnt
         <i>match${this.pageState.filteredVariants.length === 1 ? '' : 'es'} the filter</i>.
         <span>
           ${
-            !(this.pageState.variantLoader?.isLoading ?? true) && !this.pageState.variantLoader?.loadedAll
+            !(this.pageState.variantsLoader?.isLoading ?? true) && !this.pageState.variantsLoader?.loadedAll
               ? html`
-                  <span class="active-text" @click=${() => this.pageState.variantLoader?.loadNextPage()}>
+                  <span class="active-text" @click=${() => this.pageState.variantsLoader?.loadNextPage()}>
                     [load more]
                   </span>
                   <mwc-icon class="inline-icon" title=${LOADING_VARIANT_INFO_TOOLTIP}>info</mwc-icon>
@@ -209,7 +207,7 @@ export class TestHistoryPageElement extends MiloBaseElement implements BeforeEnt
               : ''
           }
           ${
-            this.pageState.variantLoader?.isLoading ?? true
+            this.pageState.variantsLoader?.isLoading ?? true
               ? html` <span class="active-text">loading <milo-dot-spinner></milo-dot-spinner></span>`
               : ''
           }
@@ -218,14 +216,10 @@ export class TestHistoryPageElement extends MiloBaseElement implements BeforeEnt
   }
 
   private renderOverlay() {
-    if (!this.pageState) {
-      return html``;
-    }
-
     return html`
       <milo-overlay
-        .show=${this.pageState.selectedGroup !== null}
-        @dismiss=${() => (this.pageState.selectedGroup = null)}
+        .show=${Boolean(this.pageState.selectedGroup)}
+        @dismiss=${() => this.pageState.setSelectedGroup(null)}
       >
         <div id="thdt-container">
           <div id="thdt-header">
@@ -241,10 +235,10 @@ export class TestHistoryPageElement extends MiloBaseElement implements BeforeEnt
             </milo-hotkey>
             <milo-hotkey
               .key="esc"
-              .handler=${() => (this.pageState.selectedGroup = null)}
+              .handler=${() => this.pageState.setSelectedGroup(null)}
               title="press esc to close the test variant details table"
             >
-              <mwc-icon id="close-tvt" @click=${() => (this.pageState.selectedGroup = null)}>close</mwc-icon>
+              <mwc-icon id="close-tvt" @click=${() => this.pageState.setSelectedGroup(null)}>close</mwc-icon>
             </milo-hotkey>
           </div>
           <milo-test-history-details-table></milo-test-history-details-table>

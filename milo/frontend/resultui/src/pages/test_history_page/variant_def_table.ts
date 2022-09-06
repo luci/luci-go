@@ -13,17 +13,20 @@
 // limitations under the License.
 
 import { css, customElement, html } from 'lit-element';
-import { makeObservable, observable } from 'mobx';
+import { computed, makeObservable, observable } from 'mobx';
 
 import { MiloBaseElement } from '../../components/milo_base';
-import { consumeTestHistoryPageState, TestHistoryPageState } from '../../context/test_history_page_state';
 import { consumer } from '../../libs/context';
+import { consumeStore, StoreInstance } from '../../store';
 import { CELL_SIZE, X_AXIS_HEIGHT } from './constants';
 
 @customElement('milo-th-variant-def-table')
 @consumer
 export class TestHistoryVariantDefTableElement extends MiloBaseElement {
-  @observable @consumeTestHistoryPageState() pageState!: TestHistoryPageState;
+  @observable.ref @consumeStore() store!: StoreInstance;
+  @computed get pageState() {
+    return this.store.testHistoryPage;
+  }
 
   constructor() {
     super();

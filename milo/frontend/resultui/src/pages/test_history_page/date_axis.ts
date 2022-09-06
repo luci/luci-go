@@ -17,18 +17,21 @@ import { css, customElement, html } from 'lit-element';
 import { computed, makeObservable, observable } from 'mobx';
 
 import { MiloBaseElement } from '../../components/milo_base';
-import { consumeTestHistoryPageState, TestHistoryPageState } from '../../context/test_history_page_state';
 import { consumer } from '../../libs/context';
+import { consumeStore, StoreInstance } from '../../store';
 import { CELL_SIZE, X_AXIS_HEIGHT } from './constants';
 
 @customElement('milo-th-date-axis')
 @consumer
 export class TestHistoryDateAxisElement extends MiloBaseElement {
-  @observable.ref @consumeTestHistoryPageState() pageState!: TestHistoryPageState;
+  @observable.ref @consumeStore() store!: StoreInstance;
+  @computed get pageState() {
+    return this.store.testHistoryPage;
+  }
 
   private readonly dayAdjuster = new ResizeObserver(() => {
     const days = Math.floor((this.getBoundingClientRect().width - 2) / CELL_SIZE);
-    this.pageState.days = days;
+    this.pageState.setDays(days);
   });
 
   constructor() {

@@ -18,19 +18,18 @@ import { styleMap } from 'lit-html/directives/style-map';
 import { computed, makeObservable, observable } from 'mobx';
 
 import { MiloBaseElement } from '../../components/milo_base';
-import {
-  consumeTestHistoryPageState,
-  GraphType,
-  TestHistoryPageState,
-  XAxisType,
-} from '../../context/test_history_page_state';
 import { consumer } from '../../libs/context';
+import { consumeStore, StoreInstance } from '../../store';
+import { GraphType, XAxisType } from '../../store/test_history_page';
 import commonStyle from '../../styles/common_style.css';
 
 @customElement('milo-th-graph-config')
 @consumer
 export class TestHistoryGraphConfigElement extends MiloBaseElement {
-  @observable.ref @consumeTestHistoryPageState() pageState!: TestHistoryPageState;
+  @observable.ref @consumeStore() store!: StoreInstance;
+  @computed get pageState() {
+    return this.store.testHistoryPage;
+  }
 
   @computed private get shouldShowCountFilter() {
     return this.pageState.graphType === GraphType.STATUS && this.pageState.xAxisType === XAxisType.DATE;
@@ -47,7 +46,7 @@ export class TestHistoryGraphConfigElement extends MiloBaseElement {
         <label>Show:</label>
         <select
           @input=${(e: InputEvent) => {
-            this.pageState.graphType = (e.target as HTMLOptionElement).value as GraphType;
+            this.pageState.setGraphType((e.target as HTMLOptionElement).value as GraphType);
           }}
         >
           <option ?selected=${this.pageState.graphType === GraphType.STATUS} value=${GraphType.STATUS}>Status</option>
@@ -73,7 +72,7 @@ export class TestHistoryGraphConfigElement extends MiloBaseElement {
         <select
           disabled
           @input=${(e: InputEvent) => {
-            this.pageState.xAxisType = (e.target as HTMLOptionElement).value as XAxisType;
+            this.pageState.setXAxisType((e.target as HTMLOptionElement).value as XAxisType);
           }}
         >
           <option ?selected=${this.pageState.xAxisType === XAxisType.COMMIT} value=${XAxisType.COMMIT}>Commit</option>
@@ -87,7 +86,7 @@ export class TestHistoryGraphConfigElement extends MiloBaseElement {
             id="unexpected-toggle"
             type="checkbox"
             ?checked=${this.pageState.countUnexpected}
-            @change=${(e: Event) => (this.pageState.countUnexpected = (e.target as HTMLInputElement).checked)}
+            @change=${(e: Event) => this.pageState.setCountUnexpected((e.target as HTMLInputElement).checked)}
           />
           <label for="unexpected-toggle" style="color: var(--failure-color);">Unexpected</label>
         </div>
@@ -96,7 +95,7 @@ export class TestHistoryGraphConfigElement extends MiloBaseElement {
             id="unexpectedly-skipped-toggle"
             type="checkbox"
             ?checked=${this.pageState.countUnexpectedlySkipped}
-            @change=${(e: Event) => (this.pageState.countUnexpectedlySkipped = (e.target as HTMLInputElement).checked)}
+            @change=${(e: Event) => this.pageState.setCountUnexpectedlySkipped((e.target as HTMLInputElement).checked)}
           />
           <label for="unexpectedly-skipped-toggle" style="color: var(--critical-failure-color);"
             >Unexpectedly Skipped</label
@@ -107,7 +106,7 @@ export class TestHistoryGraphConfigElement extends MiloBaseElement {
             id="flaky-toggle"
             type="checkbox"
             ?checked=${this.pageState.countFlaky}
-            @change=${(e: Event) => (this.pageState.countFlaky = (e.target as HTMLInputElement).checked)}
+            @change=${(e: Event) => this.pageState.setCountFlaky((e.target as HTMLInputElement).checked)}
           />
           <label for="flaky-toggle" style="color: var(--warning-color);">Flaky</label>
         </div>
@@ -116,7 +115,7 @@ export class TestHistoryGraphConfigElement extends MiloBaseElement {
             id="exonerated-toggle"
             type="checkbox"
             ?checked=${this.pageState.countExonerated}
-            @change=${(e: Event) => (this.pageState.countExonerated = (e.target as HTMLInputElement).checked)}
+            @change=${(e: Event) => this.pageState.setCountExonerated((e.target as HTMLInputElement).checked)}
           />
           <label for="exonerated-toggle" style="color: var(--exonerated-color);">Exonerated</label>
         </div>

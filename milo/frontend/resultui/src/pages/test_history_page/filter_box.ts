@@ -21,9 +21,9 @@ import { computed, makeObservable, observable } from 'mobx';
 import '../../components/auto_complete';
 import '../../components/hotkey';
 import { SuggestionEntry } from '../../components/auto_complete';
-import { consumeTestHistoryPageState, TestHistoryPageState } from '../../context/test_history_page_state';
 import { consumer } from '../../libs/context';
 import { suggestTestHistoryFilterQuery } from '../../libs/queries/th_filter_query';
+import { consumeStore, StoreInstance } from '../../store';
 
 /**
  * An element that let the user search tests in the test history view with DSL.
@@ -31,9 +31,10 @@ import { suggestTestHistoryFilterQuery } from '../../libs/queries/th_filter_quer
 @customElement('milo-th-filter-box')
 @consumer
 export class TestHistoryFilterBoxElement extends MobxLitElement {
-  @observable.ref
-  @consumeTestHistoryPageState()
-  pageState!: TestHistoryPageState;
+  @observable.ref @consumeStore() store!: StoreInstance;
+  @computed get pageState() {
+    return this.store.testHistoryPage;
+  }
 
   @observable.ref private uncommittedFilterText = '';
 
@@ -54,7 +55,7 @@ export class TestHistoryFilterBoxElement extends MobxLitElement {
   }
 
   commitFilter() {
-    this.pageState.filterText = this.uncommittedFilterText;
+    this.pageState.setFilterText(this.uncommittedFilterText);
   }
 
   connectedCallback() {

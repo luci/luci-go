@@ -50,9 +50,9 @@ export class TestHistoryStatsLoader {
   @observable.ref private targetDateIndex = 0;
 
   /**
-   * variant hash -> (date index -> stats)
+   * `${variantHash}/${dateIndex}` -> stats
    */
-  @observable private readonly cache = new Map<string, Map<number, QueryTestHistoryStatsResponseGroup>>();
+  @observable.shallow private readonly cache = new Map<string, QueryTestHistoryStatsResponseGroup>();
 
   /**
    * The worker that populates `cache`.
@@ -103,10 +103,7 @@ export class TestHistoryStatsLoader {
       const groups = res.groups || [];
       for (const group of groups) {
         const dateIndex = this.getDateIndex(DateTime.fromISO(group.partitionTime));
-        if (!this.cache.has(group.variantHash)) {
-          this.cache.set(group.variantHash, new Map());
-        }
-        this.cache.get(group.variantHash)!.set(dateIndex, group);
+        this.cache.set(`${group.variantHash}/${dateIndex}`, group);
       }
 
       if (!res.nextPageToken) {
@@ -139,7 +136,7 @@ export class TestHistoryStatsLoader {
       return null;
     }
 
-    const stats = this.cache.get(variantHash)?.get(dateIndex);
+    const stats = this.cache.get(`${variantHash}/${dateIndex}`);
     if (!stats) {
       // This variant hash doesn't exist. Return empty stats.
       return {

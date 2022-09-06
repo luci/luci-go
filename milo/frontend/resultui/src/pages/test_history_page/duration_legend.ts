@@ -26,10 +26,10 @@ import { css, customElement, html } from 'lit-element';
 import { computed, makeObservable, observable } from 'mobx';
 
 import { MiloBaseElement } from '../../components/milo_base';
-import { consumeTestHistoryPageState, TestHistoryPageState } from '../../context/test_history_page_state';
 import { HOUR_MS, MINUTE_MS, PREDEFINED_TIME_INTERVALS, SECOND_MS } from '../../libs/constants';
 import { consumer } from '../../libs/context';
 import { roundUp } from '../../libs/utils';
+import { consumeStore, StoreInstance } from '../../store';
 import { CELL_SIZE, X_AXIS_HEIGHT } from './constants';
 
 const DURATION_LEGEND_PADDING = 10;
@@ -40,7 +40,10 @@ const MIN_TICK_SIZE = 20;
 @customElement('milo-th-duration-legend')
 @consumer
 export class TestHistoryDurationLegendElement extends MiloBaseElement {
-  @observable.ref @consumeTestHistoryPageState() pageState!: TestHistoryPageState;
+  @observable.ref @consumeStore() store!: StoreInstance;
+  @computed get pageState() {
+    return this.store.testHistoryPage;
+  }
 
   @computed private get scaleDurationY() {
     return scaleTime()
