@@ -479,7 +479,7 @@ message ChangeInfo {
   ReviewerStatusMap reviewers = 17;
 
   // The SHA-1 of the NoteDb meta ref.
-  string metaRevID = 18;
+  string meta_rev_id = 18;
 
   // The evaluation results of the submit requirements for this change.
   repeated SubmitRequirementResultInfo submit_requirements = 20;

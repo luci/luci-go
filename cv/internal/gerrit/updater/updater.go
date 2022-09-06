@@ -105,7 +105,7 @@ func (u *updaterBackend) HasChanged(cvCurrent, backendCurrent *changelist.Snapsh
 		// be different. See a real example in https://crbug.com/1294440.
 		// Use meta_rev_id which is the sha1 of go/NoteDB to detect whether the
 		// snapshot has changed in the Gerrit backend.
-		return cvInfo.GetMetaRevID() != backendInfo.GetMetaRevID()
+		return cvInfo.GetMetaRevId() != backendInfo.GetMetaRevId()
 	}
 }
 

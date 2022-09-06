@@ -184,7 +184,7 @@ func TestGetChange(t *testing.T) {
 				CurrentRevision: "deadbeef",
 				Submittable:     true,
 				IsPrivate:       true,
-				MetaRevID:       "cafecafe",
+				MetaRevId:       "cafecafe",
 				Hashtags:        []string{"example_tag"},
 				Revisions: map[string]*gerritpb.RevisionInfo{
 					"deadbeef": {
@@ -1682,8 +1682,8 @@ func TestGetMetaDiff(t *testing.T) {
 			So(err, ShouldBeNil)
 			So(resp.OldChangeInfo.Number, ShouldEqual, 1)
 			So(resp.NewChangeInfo.Number, ShouldEqual, 1)
-			So(resp.Added.MetaRevID, ShouldEqual, resp.NewChangeInfo.MetaRevID)
-			So(resp.Removed.MetaRevID, ShouldEqual, resp.OldChangeInfo.MetaRevID)
+			So(resp.Added.MetaRevId, ShouldEqual, resp.NewChangeInfo.MetaRevId)
+			So(resp.Removed.MetaRevId, ShouldEqual, resp.OldChangeInfo.MetaRevId)
 		})
 
 		Convey("Passes old and meta", func() {

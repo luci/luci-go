@@ -111,7 +111,7 @@ func (ci *changeInfo) ToProto() (*gerritpb.ChangeInfo, error) {
 		CurrentRevision:    ci.CurrentRevision,
 		Submittable:        ci.Submittable,
 		IsPrivate:          ci.IsPrivate,
-		MetaRevID:          ci.MetaRevID,
+		MetaRevId:          ci.MetaRevID,
 		Created:            timestamppb.New(ci.Created.Time),
 		Updated:            timestamppb.New(ci.Updated.Time),
 		RevertOf:           ci.RevertOf,

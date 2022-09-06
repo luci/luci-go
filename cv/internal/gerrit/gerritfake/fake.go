@@ -169,7 +169,8 @@ func WithCIs(host string, acls AccessCheck, cis ...*gerritpb.ChangeInfo) *Fake {
 //
 // Changes are added by reference. Primarily useful to construct Fake with CLs
 // on several hosts, e.g.:
-//   fake := WithCIs(hostA, aclA, ciA1, ciA2).AddFrom(hostB, aclB, ciB1)
+//
+//	fake := WithCIs(hostA, aclA, ciA1, ciA2).AddFrom(hostB, aclB, ciB1)
 func (f *Fake) AddFrom(other *Fake) *Fake {
 	f.m.Lock()
 	defer f.m.Unlock()
@@ -257,10 +258,10 @@ func Rev(ch, ps int) string {
 // RelatedChange returns ChangeAndCommit for the GetRelatedChangesResponse.
 //
 // Parents can be specified in several ways:
-//  * gerritpb.CommitInfo_Parent
-//  * gerritpb.CommitInfo
-//  * "<change>_<patchset>", e.g. "123_4"
-//  * "<revision>" (without underscores).
+//   - gerritpb.CommitInfo_Parent
+//   - gerritpb.CommitInfo
+//   - "<change>_<patchset>", e.g. "123_4"
+//   - "<revision>" (without underscores).
 func RelatedChange(change, ps, curPs int, parents ...interface{}) *gerritpb.GetRelatedChangesResponse_ChangeAndCommit {
 	prs := make([]*gerritpb.CommitInfo_Parent, len(parents))
 	for i, pi := range parents {
@@ -598,7 +599,7 @@ func U(username string) *gerritpb.AccountInfo {
 // MetaRevID sets .MetaRevID for the given change.
 func MetaRevID(metaRevID string) CIModifier {
 	return func(ci *gerritpb.ChangeInfo) {
-		ci.MetaRevID = metaRevID
+		ci.MetaRevId = metaRevID
 	}
 }
 
@@ -690,8 +691,8 @@ func (f *Fake) DeleteChange(host string, change int) {
 // parents, which are considered dependencies of the child CL.
 //
 // Child and each parent can be specified as either:
-//  * Change or ChangeInfo, in which case their current patchset is used,
-//  * <change>_<patchset>, e.g. "10_3".
+//   - Change or ChangeInfo, in which case their current patchset is used,
+//   - <change>_<patchset>, e.g. "10_3".
 func (f *Fake) SetDependsOn(host string, child interface{}, parents ...interface{}) {
 	f.m.Lock()
 	defer f.m.Unlock()
