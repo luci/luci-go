@@ -50,7 +50,7 @@ import (
 // readBufferSize is size of a buffer used to read Google Storage files.
 //
 // Larger values mean fewer Google Storage RPC calls, but more memory usage.
-const readBufferSize = 4 * 1024 * 1024
+const readBufferSize = 64 * 1024 * 1024
 
 // StorageServer extends StorageServer RPC interface with some methods used
 // internally by other CIPD server modules.
