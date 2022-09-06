@@ -416,7 +416,7 @@ func TestQueryTestVariants(t *testing.T) {
 			So(nextToken, ShouldEqual, pagination.Token("EXPECTED", "T8", "e3b0c44298fc1c14"))
 
 			nextToken = page(nextToken, 1, []string{"50/T9/e3b0c44298fc1c14"})
-			So(nextToken, ShouldEqual, "CghFWFBFQ1RFRAoCVHoKEGUzYjBjNDQyOThmYzFjMTQ=")
+			So(nextToken, ShouldEqual, "CghFWFBFQ1RFRAoCVHkKEGUzYjBjNDQyOThmYzFjMTQ=")
 
 			nextToken = page(nextToken, 0, []string{})
 			So(nextToken, ShouldEqual, "")
