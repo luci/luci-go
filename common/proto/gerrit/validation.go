@@ -49,6 +49,7 @@ func (r *SetReviewRequest) Validate() error {
 	return nil
 }
 
+// Validate returns an error if n is invalid.
 func (n *NotifyDetails) Validate() error {
 	for _, r := range n.GetRecipients() {
 		if err := r.Validate(); err != nil {
@@ -58,6 +59,7 @@ func (n *NotifyDetails) Validate() error {
 	return nil
 }
 
+// Validate returns an error if n is invalid.
 func (n *NotifyDetails_Recipient) Validate() error {
 	if n.GetRecipientType() == NotifyDetails_RECIPIENT_TYPE_UNSPECIFIED {
 		return errors.New("must specify recipient type")
@@ -65,6 +67,7 @@ func (n *NotifyDetails_Recipient) Validate() error {
 	return nil
 }
 
+// Validate returns an error if r is invalid.
 func (r *AttentionSetRequest) Validate() error {
 	if r.Number <= 0 {
 		return errors.New("number must be positive")
@@ -75,6 +78,7 @@ func (r *AttentionSetRequest) Validate() error {
 	return r.GetInput().Validate()
 }
 
+// Validate returns an error if i is invalid.
 func (i *AttentionSetInput) Validate() error {
 	if i.GetUser() == "" {
 		return errors.New("user is required")
@@ -83,4 +87,14 @@ func (i *AttentionSetInput) Validate() error {
 		return errors.New("reason is required")
 	}
 	return nil
+}
+
+// Validate returns an error if r is invalid.
+func (r *GetMetaDiffRequest) Validate() error {
+	switch {
+	case r.Number <= 0:
+		return errors.New("number must be positive")
+	default:
+		return nil
+	}
 }

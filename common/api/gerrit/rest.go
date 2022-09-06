@@ -434,6 +434,10 @@ func (c *client) GetRefInfo(ctx context.Context, req *gerritpb.RefInfoRequest, o
 	return &resp, nil
 }
 
+func (c *client) GetMetaDiff(ctx context.Context, req *gerritpb.GetMetaDiffRequest, opts ...grpc.CallOption) (*gerritpb.MetaDiff, error) {
+	return nil, nil
+}
+
 // call executes a request to Gerrit REST API with JSON input/output.
 // If data is nil, request will be made without a body.
 //

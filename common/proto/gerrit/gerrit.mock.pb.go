@@ -236,6 +236,26 @@ func (mr *MockGerritClientMockRecorder) GetMergeable(ctx, in interface{}, opts .
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetMergeable", reflect.TypeOf((*MockGerritClient)(nil).GetMergeable), varargs...)
 }
 
+// GetMetaDiff mocks base method.
+func (m *MockGerritClient) GetMetaDiff(ctx context.Context, in *GetMetaDiffRequest, opts ...grpc.CallOption) (*MetaDiff, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{ctx, in}
+	for _, a := range opts {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "GetMetaDiff", varargs...)
+	ret0, _ := ret[0].(*MetaDiff)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetMetaDiff indicates an expected call of GetMetaDiff.
+func (mr *MockGerritClientMockRecorder) GetMetaDiff(ctx, in interface{}, opts ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{ctx, in}, opts...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetMetaDiff", reflect.TypeOf((*MockGerritClient)(nil).GetMetaDiff), varargs...)
+}
+
 // GetPureRevert mocks base method.
 func (m *MockGerritClient) GetPureRevert(ctx context.Context, in *GetPureRevertRequest, opts ...grpc.CallOption) (*PureRevertInfo, error) {
 	m.ctrl.T.Helper()
@@ -607,6 +627,21 @@ func (m *MockGerritServer) GetMergeable(arg0 context.Context, arg1 *GetMergeable
 func (mr *MockGerritServerMockRecorder) GetMergeable(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetMergeable", reflect.TypeOf((*MockGerritServer)(nil).GetMergeable), arg0, arg1)
+}
+
+// GetMetaDiff mocks base method.
+func (m *MockGerritServer) GetMetaDiff(arg0 context.Context, arg1 *GetMetaDiffRequest) (*MetaDiff, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetMetaDiff", arg0, arg1)
+	ret0, _ := ret[0].(*MetaDiff)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetMetaDiff indicates an expected call of GetMetaDiff.
+func (mr *MockGerritServerMockRecorder) GetMetaDiff(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetMetaDiff", reflect.TypeOf((*MockGerritServer)(nil).GetMetaDiff), arg0, arg1)
 }
 
 // GetPureRevert mocks base method.

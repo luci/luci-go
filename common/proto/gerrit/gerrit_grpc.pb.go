@@ -65,6 +65,10 @@ type GerritClient interface {
 	//
 	// https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#get-pure-revert
 	GetPureRevert(ctx context.Context, in *GetPureRevertRequest, opts ...grpc.CallOption) (*PureRevertInfo, error)
+	// Retrieves the difference between two historical states of a change.
+	//
+	// https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#get-meta-diff
+	GetMetaDiff(ctx context.Context, in *GetMetaDiffRequest, opts ...grpc.CallOption) (*MetaDiff, error)
 	// Create a new empty change.
 	//
 	// https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#create-change
@@ -194,6 +198,15 @@ func (c *gerritClient) GetRelatedChanges(ctx context.Context, in *GetRelatedChan
 func (c *gerritClient) GetPureRevert(ctx context.Context, in *GetPureRevertRequest, opts ...grpc.CallOption) (*PureRevertInfo, error) {
 	out := new(PureRevertInfo)
 	err := c.cc.Invoke(ctx, "/gerrit.Gerrit/GetPureRevert", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *gerritClient) GetMetaDiff(ctx context.Context, in *GetMetaDiffRequest, opts ...grpc.CallOption) (*MetaDiff, error) {
+	out := new(MetaDiff)
+	err := c.cc.Invoke(ctx, "/gerrit.Gerrit/GetMetaDiff", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -349,6 +362,10 @@ type GerritServer interface {
 	//
 	// https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#get-pure-revert
 	GetPureRevert(context.Context, *GetPureRevertRequest) (*PureRevertInfo, error)
+	// Retrieves the difference between two historical states of a change.
+	//
+	// https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#get-meta-diff
+	GetMetaDiff(context.Context, *GetMetaDiffRequest) (*MetaDiff, error)
 	// Create a new empty change.
 	//
 	// https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#create-change
@@ -426,6 +443,9 @@ func (UnimplementedGerritServer) GetRelatedChanges(context.Context, *GetRelatedC
 }
 func (UnimplementedGerritServer) GetPureRevert(context.Context, *GetPureRevertRequest) (*PureRevertInfo, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetPureRevert not implemented")
+}
+func (UnimplementedGerritServer) GetMetaDiff(context.Context, *GetMetaDiffRequest) (*MetaDiff, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetMetaDiff not implemented")
 }
 func (UnimplementedGerritServer) CreateChange(context.Context, *CreateChangeRequest) (*ChangeInfo, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method CreateChange not implemented")
@@ -631,6 +651,24 @@ func _Gerrit_GetPureRevert_Handler(srv interface{}, ctx context.Context, dec fun
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(GerritServer).GetPureRevert(ctx, req.(*GetPureRevertRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Gerrit_GetMetaDiff_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetMetaDiffRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(GerritServer).GetMetaDiff(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/gerrit.Gerrit/GetMetaDiff",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(GerritServer).GetMetaDiff(ctx, req.(*GetMetaDiffRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -875,6 +913,10 @@ var Gerrit_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetPureRevert",
 			Handler:    _Gerrit_GetPureRevert_Handler,
+		},
+		{
+			MethodName: "GetMetaDiff",
+			Handler:    _Gerrit_GetMetaDiff_Handler,
 		},
 		{
 			MethodName: "CreateChange",

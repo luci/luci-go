@@ -86,6 +86,11 @@ service Gerrit {
   // https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#get-pure-revert
   rpc GetPureRevert(GetPureRevertRequest) returns (PureRevertInfo);
 
+  // Retrieves the difference between two historical states of a change.
+  //
+  // https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#get-meta-diff
+  rpc GetMetaDiff(GetMetaDiffRequest) returns (MetaDiff);
+
   /////////////////////////////////////////////////////////////////////////////
   //                            Change mutation RPCs.
   //
@@ -1472,4 +1477,40 @@ message SubmitRequirementExpressionInfo {
   // If evaluating the submit requirement failed, this field will contains
   // an error message describing why it failed.
   string error_message = 5;
+}
+
+// Information to retrieve the diff between two historical states of a change.
+//
+// If `old is omitted, the parent of the `meta` SHA-1 is used.
+// If `meta` is omitted, the current state of the change is used.
+// If both are omitted, the difference between the current state of the change
+// and its previous state is returned.
+message GetMetaDiffRequest {
+  // The Gerrit project.
+  // Specifying this field is optional, but encouraged because it requires less
+  // work on the Gerrit side.
+  string project = 1;
+  // Change number.
+  int64 number = 2;
+  // The SHA-1 of the old state to retrieve the diff to the state specified by
+  // `meta`.
+  string old = 3;
+  // The SHA-1 of the new state to retrieve the diff to the state specified by
+  // `old`.
+  string meta = 4;
+
+  // What to include in `old_change_info` and `new_change_info` of the response.
+  repeated QueryOption options = 5;
+}
+
+// Difference between two historical states of a change.
+message MetaDiff {
+  // Change props added between the two states.
+  ChangeInfo added = 1;
+  // Change props removed between the two states.
+  ChangeInfo removed = 2;
+  // ChangeInfo of the old state.
+  ChangeInfo old_change_info = 3;
+  // ChangeInfo of the new state.
+  ChangeInfo new_change_info = 4;
 }
