@@ -25,7 +25,7 @@ import { HideTooltipEventDetail, ShowTooltipEventDetail } from '../../../compone
 import { consumer } from '../../../libs/context';
 import { displayCompactDuration, displayDuration } from '../../../libs/time_utils';
 import { consumeStore, StoreInstance } from '../../../store';
-import { BuildStepStateInstance } from '../../../store/build_state';
+import { StepExt } from '../../../store/build_state';
 import commonStyle from '../../../styles/common_style.css';
 import { BuildPageStepEntryElement } from './step_entry';
 
@@ -33,7 +33,7 @@ import { BuildPageStepEntryElement } from './step_entry';
 @consumer
 export class BuildPageStepClusterElement extends MiloBaseElement {
   @observable.ref @consumeStore() store!: StoreInstance;
-  @observable.ref steps!: readonly BuildStepStateInstance[];
+  @observable.ref steps!: readonly StepExt[];
 
   @observable.ref private expanded = false;
 
@@ -96,8 +96,8 @@ export class BuildPageStepClusterElement extends MiloBaseElement {
       return;
     }
 
-    const firstStepLabel = this.steps[0].data.index + 1;
-    const lastStepLabel = this.steps[this.steps.length - 1].data.index + 1;
+    const firstStepLabel = this.steps[0].index + 1;
+    const lastStepLabel = this.steps[this.steps.length - 1].index + 1;
 
     return html`
       <div id="elided-steps" @click=${() => this.setExpanded(true)}>

@@ -39,7 +39,7 @@ import { enumerate } from '../../libs/iter_utils';
 import { displayDuration, NUMERIC_TIME_FORMAT } from '../../libs/time_utils';
 import { roundDown } from '../../libs/utils';
 import { consumeStore, StoreInstance } from '../../store';
-import { BuildStepStateInstance } from '../../store/build_state';
+import { StepExt } from '../../store/build_state';
 import commonStyle from '../../styles/common_style.css';
 
 const MARGIN = 10;
@@ -244,7 +244,7 @@ export class TimelineTabElement extends MiloBaseElement {
     for (const [i, step] of enumerate(build.steps)) {
       const stepGroup = svg
         .append('g')
-        .attr('class', BUILD_STATUS_CLASS_MAP[step.data.status])
+        .attr('class', BUILD_STATUS_CLASS_MAP[step.status])
         .attr('transform', `translate(0, ${i * ROW_HEIGHT})`);
 
       const rect = stepGroup
@@ -258,14 +258,14 @@ export class TimelineTabElement extends MiloBaseElement {
       const listItem = stepGroup
         .append('foreignObject')
         .attr('class', 'not-intractable')
-        .attr('x', LIST_ITEM_X_OFFSET + step.data.depth * STEP_IDENT)
+        .attr('x', LIST_ITEM_X_OFFSET + step.depth * STEP_IDENT)
         .attr('y', LIST_ITEM_Y_OFFSET)
         .attr('height', STEP_HEIGHT - LIST_ITEM_Y_OFFSET)
         .attr('width', LIST_ITEM_WIDTH);
-      listItem.append('xhtml:span').text(step.data.listNumber + ' ');
-      const stepText = listItem.append('xhtml:span').text(step.data.selfName);
+      listItem.append('xhtml:span').text(step.listNumber + ' ');
+      const stepText = listItem.append('xhtml:span').text(step.selfName);
 
-      if (step.data.logs?.[0].viewUrl) {
+      if (step.logs[0]?.viewUrl) {
         stepText.attr('class', 'hyperlink');
       }
     }
@@ -316,7 +316,7 @@ export class TimelineTabElement extends MiloBaseElement {
 
       const stepGroup = svg
         .append('g')
-        .attr('class', BUILD_STATUS_CLASS_MAP[step.data.status])
+        .attr('class', BUILD_STATUS_CLASS_MAP[step.status])
         .attr('transform', `translate(${start}, ${i * ROW_HEIGHT})`);
 
       // Add extra width so tiny steps are visible.
@@ -337,7 +337,7 @@ export class TimelineTabElement extends MiloBaseElement {
         .attr('text-anchor', isWide || !nearEnd ? 'start' : 'end')
         .attr('x', isWide ? TEXT_MARGIN : nearEnd ? -TEXT_MARGIN : width + TEXT_MARGIN)
         .attr('y', STEP_TEXT_OFFSET)
-        .text(step.data.listNumber + ' ' + step.data.selfName);
+        .text(step.listNumber + ' ' + step.selfName);
 
       // Wail until the next event cycle so stepText is rendered when we call
       // this.getBBox();
@@ -410,9 +410,9 @@ export class TimelineTabElement extends MiloBaseElement {
    */
   private installStepInteractionHandlers<T extends BaseType>(
     ele: Selection<T, unknown, null, undefined>,
-    step: BuildStepStateInstance
+    step: StepExt
   ) {
-    const logUrl = step.data.logs?.[0].viewUrl;
+    const logUrl = step.logs[0]?.viewUrl;
     if (logUrl) {
       ele.attr('class', ele.attr('class') + ' clickable').on('click', (e: MouseEvent) => {
         e.stopPropagation();

@@ -32,7 +32,7 @@ import { lazyRendering, RenderPlaceHolder } from '../../../libs/observer_element
 import { displayCompactDuration, displayDuration, NUMERIC_TIME_FORMAT } from '../../../libs/time_utils';
 import { BuildStatus } from '../../../services/buildbucket';
 import { consumeStore, StoreInstance } from '../../../store';
-import { BuildStepStateInstance } from '../../../store/build_state';
+import { StepExt } from '../../../store/build_state';
 import { ExpandStepOption } from '../../../store/user_config';
 import colorClasses from '../../../styles/color_classes.css';
 import commonStyle from '../../../styles/common_style.css';
@@ -52,7 +52,7 @@ export class BuildPageStepEntryElement extends MiloBaseElement implements Render
   @consumeInvocationState()
   invState!: InvocationState;
 
-  @observable.ref step!: BuildStepStateInstance;
+  @observable.ref step!: StepExt;
 
   @observable.ref private _expanded = false;
 
@@ -87,7 +87,7 @@ export class BuildPageStepEntryElement extends MiloBaseElement implements Render
     return html`
       <div
         id="summary"
-        class="${BUILD_STATUS_CLASS_MAP[this.step.data.status]}-bg"
+        class="${BUILD_STATUS_CLASS_MAP[this.step.status]}-bg"
         style=${styleMap({ display: this.step.summary ? '' : 'none' })}
       >
         ${this.step.summary}
@@ -170,7 +170,7 @@ export class BuildPageStepEntryElement extends MiloBaseElement implements Render
               this.expanded = false;
               break;
             case ExpandStepOption.NonSuccessful:
-              this.expanded = this.step.data.status !== BuildStatus.Success;
+              this.expanded = this.step.status !== BuildStatus.Success;
               break;
             case ExpandStepOption.WithNonSuccessful:
               this.expanded = !this.step.succeededRecursively;
@@ -204,20 +204,20 @@ export class BuildPageStepEntryElement extends MiloBaseElement implements Render
         <span id="header" slot="header">
           <mwc-icon
             id="status-indicator"
-            class=${BUILD_STATUS_CLASS_MAP[this.step.data.status]}
-            title=${BUILD_STATUS_DISPLAY_MAP[this.step.data.status]}
+            class=${BUILD_STATUS_CLASS_MAP[this.step.status]}
+            title=${BUILD_STATUS_DISPLAY_MAP[this.step.status]}
           >
-            ${BUILD_STATUS_ICON_MAP[this.step.data.status]}
+            ${BUILD_STATUS_ICON_MAP[this.step.status]}
           </mwc-icon>
           ${this.renderDuration()}
           <div
             id="header-text"
             class=${classMap({
-              [`${BUILD_STATUS_CLASS_MAP[this.step.data.status]}-bg`]:
-                this.step.data.status !== BuildStatus.Success && !(this.expanded && this.step.summary),
+              [`${BUILD_STATUS_CLASS_MAP[this.step.status]}-bg`]:
+                this.step.status !== BuildStatus.Success && !(this.expanded && this.step.summary),
             })}
           >
-            <b>${this.step.data.index + 1}. ${this.step.data.selfName}</b>
+            <b>${this.step.index + 1}. ${this.step.selfName}</b>
             <milo-pin-toggle
               .pinned=${this.step.isPinned}
               title="Pin/unpin the step. The configuration is shared across all builds."
@@ -230,7 +230,7 @@ export class BuildPageStepEntryElement extends MiloBaseElement implements Render
             >
             </milo-pin-toggle>
             <milo-copy-to-clipboard
-              .textToCopy=${this.step.data.name}
+              .textToCopy=${this.step.name}
               title="Copy the step name."
               class="hidden-icon"
               @click=${(e: Event) => e.stopPropagation()}
