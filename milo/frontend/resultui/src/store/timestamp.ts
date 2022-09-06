@@ -17,7 +17,7 @@ import { Instance, SnapshotIn, SnapshotOut, types } from 'mobx-state-tree';
 
 export const Timestamp = types
   .model('Timestamp', {
-    id: types.optional(types.identifier, () => `Timestamp/${Math.random()}`),
+    id: types.optional(types.identifierNumber, () => Math.random()),
     value: types.optional(types.number, () => Date.now()),
   })
   .views((self) => ({

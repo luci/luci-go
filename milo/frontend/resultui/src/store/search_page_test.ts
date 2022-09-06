@@ -75,9 +75,9 @@ const listBuilderResponses: { [pageToken: string]: ListBuildersResponse } = {
 };
 
 const TestStore = types.model('TestStore', {
-  authState: types.optional(AuthStateStore, { id: 'AuthStateStore', value: { identity: ANONYMOUS_IDENTITY } }),
-  services: types.optional(ServicesStore, { id: 'ServicesStore', authState: 'AuthStateStore' }),
-  searchPage: types.optional(SearchPage, { services: 'ServicesStore' }),
+  authState: types.optional(AuthStateStore, { id: 0, value: { identity: ANONYMOUS_IDENTITY } }),
+  services: types.optional(ServicesStore, { id: 0, authState: 0 }),
+  searchPage: types.optional(SearchPage, { services: 0 }),
 });
 
 describe('SearchPage', () => {

@@ -44,7 +44,6 @@ class NotifierProviderElement extends LitElement {
 describe('bp_step_entry', () => {
   it('can render a step without start time', async () => {
     const step = BuildStepState.create({
-      id: 'stepname',
       data: {
         name: 'stepname',
         status: BuildStatus.Scheduled,

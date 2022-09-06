@@ -18,7 +18,7 @@ import { AuthState } from '../services/milo_internal';
 
 export const AuthStateStore = types
   .model('AuthStateStore', {
-    id: types.optional(types.identifier, () => `AuthStateStore/${Math.random()}`),
+    id: types.optional(types.identifierNumber, () => Math.random()),
     value: types.maybe(types.frozen<AuthState>()),
   })
   .views((self) => ({

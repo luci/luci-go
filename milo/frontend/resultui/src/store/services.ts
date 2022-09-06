@@ -30,7 +30,7 @@ const MAY_REQUIRE_SIGNIN_ERROR_CODE = [RpcCode.NOT_FOUND, RpcCode.PERMISSION_DEN
 
 export const ServicesStore = types
   .model('ServicesStore', {
-    id: types.optional(types.identifier, () => `ServicesStore/${Math.random()}`),
+    id: types.optional(types.identifierNumber, () => Math.random()),
     authState: types.safeReference(AuthStateStore),
   })
   .views((self) => {

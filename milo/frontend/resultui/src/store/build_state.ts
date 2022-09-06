@@ -36,7 +36,7 @@ export interface StepExt extends Step {
 
 export const BuildStepState = types
   .model('BuildStepState', {
-    id: types.optional(types.identifier, () => `BuildStepState/${Math.random()}`),
+    id: types.optional(types.identifierNumber, () => Math.random()),
     data: types.frozen<StepExt>(),
     currentTime: types.safeReference(Timestamp),
     userConfig: types.safeReference(UserConfig),
@@ -234,7 +234,7 @@ export function clusterBuildSteps(
 
 export const BuildState = types
   .model('BuildState', {
-    id: types.optional(types.identifier, () => `BuildState/${Math.random()}`),
+    id: types.optional(types.identifierNumber, () => Math.random()),
     data: types.frozen<Build>(),
     currentTime: types.safeReference(Timestamp),
     userConfig: types.safeReference(UserConfig),
@@ -373,7 +373,7 @@ export const BuildState = types
   .actions((self) => ({
     afterCreate() {
       const stepStates: BuildStepStateSnapshotIn[] = [];
-      const rootStepIds: string[] = [];
+      const rootStepIds: number[] = [];
 
       // Map step name -> BuildStepStateSnapshotIn.
       const stepMap = new Map<string, BuildStepStateSnapshotIn>();
@@ -389,7 +389,7 @@ export const BuildState = types
         const index = (parent?._children || rootStepIds).length;
         const listNumber = `${parent?.data.listNumber || ''}${index + 1}.`;
         const stepState = {
-          id: `${self.id}/BuildStepState/${step.name}`,
+          id: Math.random(),
           data: { ...step, listNumber, depth, index, selfName },
           currentTime: self.currentTime?.id,
           userConfig: self.userConfig?.id,

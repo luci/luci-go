@@ -247,7 +247,7 @@ export const TestsConfig = types
 
 export const UserConfig = types
   .model('UserConfig', {
-    id: types.optional(types.identifier, () => `UserConfig/${Math.random()}`),
+    id: types.optional(types.identifierNumber, () => Math.random()),
     build: types.optional(BuildConfig, {}),
     tests: types.optional(TestsConfig, {}),
   })

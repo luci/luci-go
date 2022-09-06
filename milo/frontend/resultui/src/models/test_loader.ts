@@ -49,7 +49,6 @@ export class LoadTestVariantsError extends Error implements InnerTag {
 
   constructor(readonly req: QueryTestVariantsRequest, source: Error) {
     super(source.message);
-    makeObservable(this);
 
     this[TAG_SOURCE] = source;
   }
