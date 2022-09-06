@@ -18,13 +18,13 @@ import (
 	"context"
 
 	"cloud.google.com/go/bigquery"
-	"go.chromium.org/luci/common/errors"
-	"go.chromium.org/luci/common/trace"
 	"google.golang.org/api/iterator"
 
 	"go.chromium.org/luci/analysis/internal/aip"
 	"go.chromium.org/luci/analysis/internal/bqutil"
 	"go.chromium.org/luci/analysis/internal/clustering"
+	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/trace"
 )
 
 var ClusteredFailuresTable = aip.NewTable().WithColumns(
@@ -36,6 +36,8 @@ var ClusteredFailuresTable = aip.NewTable().WithColumns(
 	aip.NewColumn().WithName("cluster_id").WithDatabaseName("cluster_id").Filterable().Build(),
 	aip.NewColumn().WithName("variant_hash").WithDatabaseName("variant_hash").Filterable().Build(),
 	aip.NewColumn().WithName("test_run_id").WithDatabaseName("test_run_id").Filterable().Build(),
+	aip.NewColumn().WithName("variant").WithDatabaseName("variant").KeyValue().Filterable().Build(),
+	aip.NewColumn().WithName("tags").WithDatabaseName("tags").KeyValue().Filterable().Build(),
 ).Build()
 
 var ClusterSummariesTable = aip.NewTable().WithColumns(

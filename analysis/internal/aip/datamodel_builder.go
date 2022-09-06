@@ -42,6 +42,14 @@ func (c *ColumnBuilder) WithDatabaseName(name string) *ColumnBuilder {
 	return c
 }
 
+// KeyValue specifies this column is an array of structs with two string members: key and value.
+// The key is exposed as a field on the column name, the value can be queried with :, = and !=
+// Example query: tag.key=value
+func (c *ColumnBuilder) KeyValue() *ColumnBuilder {
+	c.column.keyValue = true
+	return c
+}
+
 // Sortable specifies this column can be sorted on.
 func (c *ColumnBuilder) Sortable() *ColumnBuilder {
 	c.column.sortable = true

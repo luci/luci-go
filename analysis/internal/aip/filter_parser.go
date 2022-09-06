@@ -270,7 +270,7 @@ type Term struct {
 
 func (v *Term) String() string {
 	var s strings.Builder
-	s.WriteString(fmt.Sprintf("term{"))
+	s.WriteString("term{")
 	if v.Negated {
 		s.WriteString("-")
 	}

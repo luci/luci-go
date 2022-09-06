@@ -45,6 +45,9 @@ type Column struct {
 	// ImplicitFilter controls whether this field is searched implicitly
 	// in AIP-160 filter expressions.
 	implicitFilter bool
+
+	// Whether this column is an array of structs with two string members: key and value.
+	keyValue bool
 }
 
 // Table represents the schema of a Database table, view or query.

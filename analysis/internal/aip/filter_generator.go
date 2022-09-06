@@ -144,7 +144,34 @@ func (w *whereClause) restrictionQuery(restriction *Restriction) (string, error)
 		return "", fmt.Errorf("invalid comparable")
 	}
 	if len(restriction.Comparable.Member.Fields) > 0 {
-		return "", fmt.Errorf("fields not implemented yet")
+		column, err := w.table.FilterableColumnByName(restriction.Comparable.Member.Value)
+		if err != nil {
+			return "", err
+		}
+		if !column.keyValue {
+			return "", fmt.Errorf("fields are only supported for key value columns.  Try removing the '.' from after your column named %q", column.name)
+		}
+		if len(restriction.Comparable.Member.Fields) > 1 {
+			return "", fmt.Errorf("expected only a single '.' in keyvalue column named %q", column.name)
+		}
+		key := w.bind(restriction.Comparable.Member.Fields[0])
+		if restriction.Comparator == ":" {
+			value, err := w.likeArgValue(restriction.Arg)
+			if err != nil {
+				return "", err
+			}
+			return fmt.Sprintf("(EXISTS (SELECT key, value FROM UNNEST(%s) WHERE key = %s AND value LIKE %s))", column.databaseName, key, value), nil
+		}
+		value, err := w.argValue(restriction.Arg)
+		if err != nil {
+			return "", err
+		}
+		if restriction.Comparator == "=" {
+			return fmt.Sprintf("(EXISTS (SELECT key, value FROM UNNEST(%s) WHERE key = %s AND value = %s))", column.databaseName, key, value), nil
+		} else if restriction.Comparator == "!=" {
+			return fmt.Sprintf("(EXISTS (SELECT key, value FROM UNNEST(%s) WHERE key = %s AND value <> %s))", column.databaseName, key, value), nil
+		}
+		return "", fmt.Errorf("comparator operator not implemented for fields yet")
 	}
 	if restriction.Comparator == "" {
 		arg, err := w.likeComparableValue(restriction.Comparable)

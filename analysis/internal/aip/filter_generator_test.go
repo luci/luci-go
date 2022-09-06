@@ -18,6 +18,7 @@ import (
 	"testing"
 
 	. "github.com/smartystreets/goconvey/convey"
+
 	. "go.chromium.org/luci/common/testing/assertions"
 )
 
@@ -27,6 +28,7 @@ func TestWhereClause(t *testing.T) {
 			NewColumn().WithName("foo").WithDatabaseName("db_foo").FilterableImplicitly().Build(),
 			NewColumn().WithName("bar").WithDatabaseName("db_bar").FilterableImplicitly().Build(),
 			NewColumn().WithName("baz").WithDatabaseName("db_baz").Filterable().Build(),
+			NewColumn().WithName("kv").WithDatabaseName("db_kv").KeyValue().Filterable().Build(),
 			NewColumn().WithName("unfilterable").WithDatabaseName("unfilterable").Build(),
 		).Build()
 
@@ -93,6 +95,60 @@ func TestWhereClause(t *testing.T) {
 				})
 				So(result, ShouldEqual, "(db_foo LIKE @p_0 OR db_bar LIKE @p_0)")
 			})
+			Convey("key value contains operator", func() {
+				filter, err := ParseFilter("kv.key:somevalue")
+				So(err, ShouldEqual, nil)
+
+				result, pars, err := table.WhereClause(filter, "p_")
+				So(err, ShouldBeNil)
+				So(pars, ShouldResemble, []QueryParameter{
+					{
+						Name:  "p_0",
+						Value: "key",
+					},
+					{
+						Name:  "p_1",
+						Value: "%somevalue%",
+					},
+				})
+				So(result, ShouldEqual, "(EXISTS (SELECT key, value FROM UNNEST(db_kv) WHERE key = @p_0 AND value LIKE @p_1))")
+			})
+			Convey("key value equal operator", func() {
+				filter, err := ParseFilter("kv.key=somevalue")
+				So(err, ShouldEqual, nil)
+
+				result, pars, err := table.WhereClause(filter, "p_")
+				So(err, ShouldBeNil)
+				So(pars, ShouldResemble, []QueryParameter{
+					{
+						Name:  "p_0",
+						Value: "key",
+					},
+					{
+						Name:  "p_1",
+						Value: "somevalue",
+					},
+				})
+				So(result, ShouldEqual, "(EXISTS (SELECT key, value FROM UNNEST(db_kv) WHERE key = @p_0 AND value = @p_1))")
+			})
+			Convey("key value not equal operator", func() {
+				filter, err := ParseFilter("kv.key!=somevalue")
+				So(err, ShouldEqual, nil)
+
+				result, pars, err := table.WhereClause(filter, "p_")
+				So(err, ShouldBeNil)
+				So(pars, ShouldResemble, []QueryParameter{
+					{
+						Name:  "p_0",
+						Value: "key",
+					},
+					{
+						Name:  "p_1",
+						Value: "somevalue",
+					},
+				})
+				So(result, ShouldEqual, "(EXISTS (SELECT key, value FROM UNNEST(db_kv) WHERE key = @p_0 AND value <> @p_1))")
+			})
 			Convey("unsupported composite to LIKE", func() {
 				filter, err := ParseFilter("foo:(somevalue)")
 				So(err, ShouldEqual, nil)
@@ -112,7 +168,7 @@ func TestWhereClause(t *testing.T) {
 				So(err, ShouldEqual, nil)
 
 				_, _, err = table.WhereClause(filter, "p_")
-				So(err, ShouldErrLike, "fields not implemented yet")
+				So(err, ShouldErrLike, "fields are only supported for key value columns")
 			})
 			Convey("unsupported field RHS", func() {
 				filter, err := ParseFilter("foo=blah.baz")
