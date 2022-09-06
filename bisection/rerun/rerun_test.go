@@ -91,7 +91,12 @@ func TestRerun(t *testing.T) {
 			},
 		}
 		mc.Client.EXPECT().GetBuild(gomock.Any(), gomock.Any(), gomock.Any()).Return(res, nil).AnyTimes()
-		props, dimens, err := getRerunPropertiesAndDimensions(c, 1234, 4646418413256704, []string{"target"})
+		extraProps := map[string]interface{}{
+			"analysis_id":     4646418413256704,
+			"compile_targets": []string{"target"},
+			"bisection_host":  "luci-bisection.appspot.com",
+		}
+		props, dimens, err := getRerunPropertiesAndDimensions(c, 1234, extraProps)
 		So(err, ShouldBeNil)
 		So(props, ShouldResemble, &structpb.Struct{
 			Fields: map[string]*structpb.Value{
@@ -104,6 +109,7 @@ func TestRerun(t *testing.T) {
 				}),
 				"analysis_id":     structpb.NewNumberValue(4646418413256704),
 				"compile_targets": structpb.NewListValue(&structpb.ListValue{Values: []*structpb.Value{structpb.NewStringValue("target")}}),
+				"bisection_host":  structpb.NewStringValue("luci-bisection.appspot.com"),
 			},
 		})
 		So(dimens, ShouldResemble, []*bbpb.RequestedDimension{

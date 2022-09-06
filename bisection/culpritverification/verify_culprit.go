@@ -27,6 +27,7 @@ import (
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/gae/service/datastore"
+	"go.chromium.org/luci/gae/service/info"
 )
 
 // VerifySuspect verifies if a suspect is indeed the culprit.
@@ -41,8 +42,17 @@ func VerifySuspect(c context.Context, suspect *gfim.Suspect, failedBuildID int64
 	}
 	failedTargets := compileFailure.OutputTargets
 
+	// Get rerun build property
+	props := map[string]interface{}{
+		"analysis_id":    analysisID,
+		"bisection_host": info.AppID(c),
+	}
+	if len(failedTargets) > 0 {
+		props["compile_targets"] = failedTargets
+	}
+
 	// Verify the suspect
-	suspectBuild, parentBuild, err := VerifyCommit(c, &suspect.GitilesCommit, failedBuildID, analysisID, failedTargets)
+	suspectBuild, parentBuild, err := VerifyCommit(c, &suspect.GitilesCommit, failedBuildID, props)
 	if err != nil {
 		logging.Errorf(c, "Error triggering rerun for build %d: %s", failedBuildID, err)
 		return err
@@ -112,7 +122,7 @@ func createRerunBuildModel(c context.Context, build *buildbucketpb.Build, suspec
 // Returns 2 builds:
 // - The 1st build is the rerun build for the commit
 // - The 2nd build is the rerun build for the parent commit
-func VerifyCommit(c context.Context, commit *buildbucketpb.GitilesCommit, failedBuildID int64, analysisID int64, compileTargets []string) (*buildbucketpb.Build, *buildbucketpb.Build, error) {
+func VerifyCommit(c context.Context, commit *buildbucketpb.GitilesCommit, failedBuildID int64, props map[string]interface{}) (*buildbucketpb.Build, *buildbucketpb.Build, error) {
 	// Query Gitiles to get parent commit
 	repoUrl := gitiles.GetRepoUrl(c, commit)
 	p, err := gitiles.GetParentCommit(c, repoUrl, commit.Id)
@@ -127,12 +137,12 @@ func VerifyCommit(c context.Context, commit *buildbucketpb.GitilesCommit, failed
 	}
 
 	// Trigger a rerun with commit and parent commit
-	build1, err := rerun.TriggerRerun(c, commit, failedBuildID, analysisID, compileTargets)
+	build1, err := rerun.TriggerRerun(c, commit, failedBuildID, props)
 	if err != nil {
 		return nil, nil, err
 	}
 
-	build2, err := rerun.TriggerRerun(c, parentCommit, failedBuildID, analysisID, compileTargets)
+	build2, err := rerun.TriggerRerun(c, parentCommit, failedBuildID, props)
 	if err != nil {
 		return nil, nil, err
 	}
