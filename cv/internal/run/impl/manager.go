@@ -51,11 +51,11 @@ import (
 	"go.chromium.org/luci/cv/internal/tryjob"
 )
 
-// maxEventsPerBatch limits the number of incoming events the PM will process at
-// once.
+// maxEventsPerBatch limits the number of incoming events that the RM will
+// process at once.
 //
-// This shouldn't be hit in practice under normal operation. This is chosen such
-// that RM can read these events and make some progress in 1 minute.
+// This shouldn't be hit in practice under normal operation. This is chosen
+// such that RM can read these events and make some progress in 1 minute.
 const maxEventsPerBatch = 10000
 
 // RunManager manages Runs.
@@ -142,13 +142,15 @@ func New(
 }
 
 var ignoreErrTag = errors.BoolTag{
-	Key: errors.NewTagKey("intentionally ignored rm error"),
+	Key: errors.NewTagKey("intentionally ignored RM error"),
 }
 
 var pokeInterval = 5 * time.Minute
 
 var fakeHandlerKey = "Fake Run Events Handler"
 
+// manageRun periodically processes the events sent for a specific Run, thus
+// moving the Run along its lifecycle.
 func (rm *RunManager) manageRun(ctx context.Context, runID common.RunID) error {
 	proc := &runProcessor{
 		runID:        runID,
@@ -322,7 +324,7 @@ func (tr *triageResult) triage(ctx context.Context, item eventbox.Event, eventLo
 		panic(err)
 	}
 	eventLog.WriteString(fmt.Sprintf("%T: ", e.GetEvent()))
-	// use compact json to make log short.
+	// Use compact JSON to make log short.
 	eventLog.WriteString((protojson.MarshalOptions{Multiline: false}).Format(e))
 	if pa := e.GetProcessAfter().AsTime(); pa.After(clock.Now(ctx)) {
 		if tr.nextReadyEventTime.IsZero() || pa.Before(tr.nextReadyEventTime) {
@@ -363,7 +365,7 @@ func (tr *triageResult) triage(ctx context.Context, item eventbox.Event, eventLo
 			logging.Errorf(ctx, "crbug/1289448: multiple submission completed events received.\nexisting: %s\nnew: %s", existing, new)
 		}
 		if existing == nil || new.GetResult() > existing.GetResult() {
-			// only override if the new result is worse than the existing one.
+			// Only override if the new result is worse than the existing one.
 			tr.submissionCompletedEvent.event = item
 			tr.submissionCompletedEvent.sc = new
 		}
@@ -514,16 +516,16 @@ func applyResult(res *handler.Result, events eventbox.Events, transitions []even
 func (rp *runProcessor) enqueueNextPoke(ctx context.Context, startingStatus run.Status, nextReadyEventTime time.Time) error {
 	switch now := clock.Now(ctx); {
 	case run.IsEnded(startingStatus):
-		// Do not enqueue the next poke if run is ended at the beginning of the
-		// state transition. Not using the end state after the state transition
-		// here because CV may fail to save the state which may require the
-		// recursive poke to unblock the Run.
+		// Do not enqueue the next poke if the Run is ended at the beginning of
+		// the state transition. Not using the end state after the state
+		// transition here because CV may fail to save the state which may
+		// require the recursive poke to unblock the Run.
 		return nil
 	case nextReadyEventTime.IsZero():
 		return rp.runNotifier.PokeAfter(ctx, rp.runID, pokeInterval)
 	case now.After(nextReadyEventTime):
-		// It is possible that by this time, next ready event is already overdue.
-		// Invoke Run Manager immediately.
+		// It is possible that by this time, next ready event is already
+		// overdue; invoke Run Manager immediately.
 		return rp.runNotifier.Invoke(ctx, rp.runID, time.Time{})
 	case nextReadyEventTime.Before(now.Add(pokeInterval)):
 		return rp.runNotifier.Invoke(ctx, rp.runID, nextReadyEventTime)

@@ -51,7 +51,7 @@ func (impl *Impl) OnTryjobsUpdated(ctx context.Context, rs *state.RunState, tryj
 	case run.IsEnded(status):
 		fallthrough
 	case status == run.Status_WAITING_FOR_SUBMISSION || status == run.Status_SUBMITTING:
-		logging.Debugf(ctx, "Ignoring Tryjobs event because Run is in %s", status)
+		logging.Debugf(ctx, "Ignoring Tryjobs event because Run is in status %s", status)
 		return &Result{State: rs}, nil
 	case status != run.Status_RUNNING:
 		return nil, errors.Reason("expected RUNNING status, got %s", status).Err()
@@ -59,7 +59,7 @@ func (impl *Impl) OnTryjobsUpdated(ctx context.Context, rs *state.RunState, tryj
 		logging.Debugf(ctx, "Ignoring Tryjobs event because UseCVTryjobExecutor is set to false")
 		return &Result{State: rs}, nil
 	case hasExecuteTryjobLongOp(rs):
-		// Process this event after the current tryjob executor finish running.
+		// Process this event after the current tryjob executor finishes running.
 		return &Result{State: rs, PreserveEvents: true}, nil
 	default:
 		tryjobs.Dedupe()
@@ -75,7 +75,7 @@ func (impl *Impl) onCompletedExecuteTryjobs(ctx context.Context, rs *state.RunSt
 	rs = rs.ShallowCopy()
 	rs.RemoveCompletedLongOp(opID)
 	if rs.Status != run.Status_RUNNING {
-		logging.Warningf(ctx, "long operation to execute tryjobs has completed but Run is %s.", rs.Status)
+		logging.Warningf(ctx, "long operation to execute Tryjobs has completed but Run is %s.", rs.Status)
 		return &Result{State: rs}, nil
 	}
 	var (
@@ -105,14 +105,14 @@ func (impl *Impl) onCompletedExecuteTryjobs(ctx context.Context, rs *state.RunSt
 			} else {
 				rs.Tryjobs = proto.Clone(rs.Tryjobs).(*run.Tryjobs)
 			}
-			rs.Tryjobs.State = es // copy the execution state to Run entity
+			rs.Tryjobs.State = es // Copy the execution state to Run entity
 			switch executionStatus := es.GetStatus(); {
 			case executionStatus == tryjob.ExecutionState_SUCCEEDED && rs.Mode == run.FullRun:
 				rs.Status = run.Status_WAITING_FOR_SUBMISSION
 				return impl.OnReadyForSubmission(ctx, rs)
 			case executionStatus == tryjob.ExecutionState_SUCCEEDED:
-				// TODO(crbug/1242951): new patchset run should not leave any message
-				// on CL to spam users.
+				// TODO(crbug/1242951): NewPatchsetRuns should not leave any message
+				// on CL, to avoid spamming users.
 				runStatus = run.Status_SUCCEEDED
 				msg = "This CL has passed the run"
 				attentionReason = "Run succeeded"
@@ -121,7 +121,7 @@ func (impl *Impl) onCompletedExecuteTryjobs(ctx context.Context, rs *state.RunSt
 				msg = "This CL has failed the run. Reason:\n\n" + es.FailureReason
 				attentionReason = "Tryjobs failed"
 			case executionStatus == tryjob.ExecutionState_RUNNING:
-				// tryjobs are still running. No change to run status
+				// Tryjobs are still running. No change to run status.
 			case executionStatus == tryjob.ExecutionState_STATUS_UNSPECIFIED:
 				panic(fmt.Errorf("execution status is not specified"))
 			default:

@@ -173,6 +173,8 @@ type longOpCancellationChecker struct {
 	// Internal state.
 
 	// state is atomically updated int which stores state of the cancellation
+	//
+	// state is atomically updated int which stores state of the cancelation
 	// checker:
 	//  * cancellationCheckerInitial
 	//  * cancellationCheckerStarted

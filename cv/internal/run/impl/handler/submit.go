@@ -295,11 +295,11 @@ func (impl *Impl) tryResumeSubmission(ctx context.Context, rs *state.RunState, s
 		var status run.Status
 		switch submittedCnt := len(rs.Submission.GetSubmittedCls()); {
 		case submittedCnt > 0 && submittedCnt == len(rs.Submission.GetCls()):
-			// fully submitted
+			// Fully submitted
 			status = run.Status_SUCCEEDED
 		default: // None submitted or partially submitted
 			status = run.Status_FAILED
-			// synthesize submission completed event with permanent failure.
+			// Make a submission completed event with permanent failure.
 			if clFailures := sc.GetClFailures(); clFailures != nil {
 				rs.Submission = proto.Clone(rs.Submission).(*run.Submission)
 				rs.Submission.FailedCls = make([]int64, len(clFailures.GetFailures()))
@@ -355,7 +355,7 @@ func (impl *Impl) tryResumeSubmission(ctx context.Context, rs *state.RunState, s
 		}, nil
 	default:
 		// Presumably another task is working on the submission at this time.
-		// So wake up RM as soon as the submission expires. Meanwhile, don't
+		// So, wake up RM as soon as the submission expires. Meanwhile, don't
 		// consume the event as the retries of submission task will process
 		// this event. It's probably a race condition that this task sees this
 		// event first.
@@ -526,7 +526,7 @@ func (impl *Impl) cancelNotSubmittedCLTriggers(ctx context.Context, runID common
 				errs[i] = impl.cancelCLTriggers(ctx, runID, []*run.RunCL{failedCL}, runCLExternalIDs, cg, meta)
 			}()
 		}
-		// cancel triggers of CLs that CV won't try to submit.
+		// Cancel triggers of CLs that CV won't try to submit.
 		var sb strings.Builder
 		// TODO(yiwzhang): Once CV learns how to submit multiple CLs in parallel,
 		// this should be optimized to print out failed CLs that each pending CL

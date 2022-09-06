@@ -94,9 +94,9 @@ var ErrTransientSubmissionFailure = errors.New("submission failed transiently", 
 // Submission is considered as failure if this Run no longer holds the submit
 // queue or can't submit all CLs within deadline.
 //
-// Returns `ErrTransientSubmissionFailure` or error happened when reporting
-// final result to Run Manager or releasing submit queue only. Rest of the error
-// happended during the submission will be reported to Run Manager as
+// Returns `ErrTransientSubmissionFailure` or error that happened when reporting
+// final result to Run Manager, or releasing submit queue only. The rest of the
+// errors that happened during the submission will be reported to Run Manager as
 // part of the submission result.
 func (s RunCLsSubmitter) Submit(ctx context.Context) error {
 	switch cur, err := CurrentRun(ctx, s.runID.LUCIProject()); {
@@ -219,6 +219,7 @@ func (s RunCLsSubmitter) submitCLs(ctx context.Context, cls []*run.RunCL) *event
 	}
 }
 
+// submitCL makes a request to Gerrit to submit (merge) the CL.
 func (s RunCLsSubmitter) submitCL(ctx context.Context, cl *run.RunCL) error {
 	gc, err := s.gFactory.MakeClient(ctx, cl.Detail.GetGerrit().GetHost(), s.runID.LUCIProject())
 	if err != nil {
@@ -263,6 +264,7 @@ func (s RunCLsSubmitter) submitCL(ctx context.Context, cl *run.RunCL) error {
 	return submitErr
 }
 
+// Determines the type of submission completion result based on the given error.
 func classifyErr(ctx context.Context, err error) *eventpb.SubmissionCompleted {
 	switch {
 	case err == nil:
@@ -297,7 +299,7 @@ const (
 		"from Gerrit: %s"
 )
 
-// classifyGerritErr returns message to be posted on the CL for the given
+// classifyGerritErr returns the message to be posted on the CL for the given
 // submission error and whether the error is transient.
 func classifyGerritErr(ctx context.Context, err error) (msg string, isTransient bool) {
 	grpcStatus, ok := status.FromError(errors.Unwrap(err))
@@ -308,7 +310,7 @@ func classifyGerritErr(ctx context.Context, err error) (msg string, isTransient 
 	case codes.PermissionDenied:
 		return permDeniedMsg, false
 	case codes.FailedPrecondition:
-		// Gerrit returns 409. Either because change can't be merged, or
+		// Gerrit returns 409. Either because the change can't be merged, or
 		// this revision isn't the latest.
 		return fmt.Sprintf(failedPreconditionMsgFmt, msg), false
 	case codes.ResourceExhausted:

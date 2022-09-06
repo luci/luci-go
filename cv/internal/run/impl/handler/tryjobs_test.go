@@ -85,7 +85,7 @@ func TestOnTryjobsUpdated(t *testing.T) {
 					Deadline: timestamppb.New(ct.Clock.Now().UTC().Add(maxTryjobExecutorDuration)),
 					Work: &run.OngoingLongOps_Op_ExecuteTryjobs{
 						ExecuteTryjobs: &tryjob.ExecuteTryjobsPayload{
-							TryjobsUpdated: []int64{456, 789}, // also deduped 456
+							TryjobsUpdated: []int64{456, 789}, // Also deduped 456
 						},
 					},
 				})

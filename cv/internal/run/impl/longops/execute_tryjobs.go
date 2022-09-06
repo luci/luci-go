@@ -25,7 +25,7 @@ import (
 	"go.chromium.org/luci/cv/internal/tryjob/execute"
 )
 
-// ExecuteTryjobsOp executes the tryjob requirement for the given run.
+// ExecuteTryjobsOp executes the Tryjob Requirement for the given Run.
 type ExecuteTryjobsOp struct {
 	*Base
 	RunNotifier *run.Notifier

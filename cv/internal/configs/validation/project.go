@@ -453,7 +453,7 @@ func validateTryjobVerifier(ctx *validation.Context, v *cfgpb.Verifiers_Tryjob, 
 					ctx.Errorf("location_regexp_exclude is not combinable with tryjob run in %s mode", analyzerRun)
 				}
 			}
-			// TODO(crbug/1191855): See if CV should loose the following restrictions.
+			// TODO(crbug/1191855): See if CV should loosen the following restrictions.
 			if b.TriggeredBy != "" {
 				ctx.Errorf("triggered_by is not combinable with mode_allowlist")
 			}
@@ -707,7 +707,7 @@ func validatePrincipalID(id string) error {
 
 	switch chunks[0] {
 	case "group":
-		return nil // any non-empty group name is ok
+		return nil // Any non-empty group name is OK
 	case "user":
 		// Should be a valid identity.
 		_, err := identity.MakeIdentity(id)
