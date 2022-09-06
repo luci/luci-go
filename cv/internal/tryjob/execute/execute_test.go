@@ -96,6 +96,7 @@ func TestPrepExecutionPlan(t *testing.T) {
 						TransientFailureWeight: 1,
 					}).
 					build()
+
 				Convey("Succeeded", func() {
 					tj := ensureTryjob(ctx, tjID, def, tryjob.Status_ENDED, tryjob.Result_SUCCEEDED)
 					plan := prepPlan(execState, tjID)
@@ -164,7 +165,7 @@ func TestPrepExecutionPlan(t *testing.T) {
 						})
 					})
 					Convey("Critical and can NOT retry", func() {
-						// Quota doesn't allow retrying permanent failure
+						// Quota doesn't allow retrying permanent failure.
 						tj = ensureTryjob(ctx, tjID, def, tryjob.Status_ENDED, tryjob.Result_FAILED_PERMANENTLY)
 						plan := prepPlan(execState, tjID)
 						So(plan.isEmpty(), ShouldBeTrue)
@@ -264,17 +265,17 @@ func TestPrepExecutionPlan(t *testing.T) {
 					}).
 					build()
 
-				Convey("Has non ended critical tryjobs", func() {
+				Convey("Has non-ended critical Tryjobs", func() {
 					ensureTryjob(ctx, 101, builder1Def, tryjob.Status_ENDED, tryjob.Result_SUCCEEDED)
 					ensureTryjob(ctx, 201, builder2Def, tryjob.Status_ENDED, tryjob.Result_SUCCEEDED)
-					// 301 has not completed
+					// 301 has not completed.
 					plan := prepPlan(execState, 101, 201)
 					So(plan.isEmpty(), ShouldBeTrue)
 					So(execState.Status, ShouldEqual, tryjob.ExecutionState_RUNNING)
 				})
 				Convey("Execution ends when all critical tryjob ended", func() {
 					ensureTryjob(ctx, 101, builder1Def, tryjob.Status_ENDED, tryjob.Result_SUCCEEDED)
-					// 201 (non-critical) has not completed
+					// 201 (non-critical) has not completed.
 					ensureTryjob(ctx, 301, builder3Def, tryjob.Status_ENDED, tryjob.Result_SUCCEEDED)
 					plan := prepPlan(execState, 101, 301)
 					So(plan.isEmpty(), ShouldBeTrue)
@@ -282,7 +283,7 @@ func TestPrepExecutionPlan(t *testing.T) {
 				})
 				Convey("Failed critical Tryjob fails the execution", func() {
 					ensureTryjob(ctx, 101, builder1Def, tryjob.Status_ENDED, tryjob.Result_FAILED_PERMANENTLY)
-					// one critical tryjob is still running.
+					// One critical tryjob is still running.
 					ensureTryjob(ctx, 301, builder3Def, tryjob.Status_TRIGGERED, tryjob.Result_UNKNOWN)
 					plan := prepPlan(execState, 101, 301)
 					So(plan.isEmpty(), ShouldBeTrue)
@@ -291,7 +292,7 @@ func TestPrepExecutionPlan(t *testing.T) {
 				})
 				Convey("Can retry multiple", func() {
 					ensureTryjob(ctx, 101, builder1Def, tryjob.Status_ENDED, tryjob.Result_FAILED_TRANSIENTLY)
-					// 201 has not completed
+					// 201 has not completed.
 					ensureTryjob(ctx, 301, builder3Def, tryjob.Status_ENDED, tryjob.Result_FAILED_TRANSIENTLY)
 					plan := prepPlan(execState, 101, 301)
 					So(plan.isEmpty(), ShouldBeFalse)
@@ -316,7 +317,7 @@ func TestPrepExecutionPlan(t *testing.T) {
 				},
 			}
 
-			Convey("Noop if current version newer than target version", func() {
+			Convey("No-op if current version newer than target version", func() {
 				execState := newExecStateBuilder().
 					withRequirementVersion(int(r.Tryjobs.GetRequirementVersion()) + 1).
 					build()
@@ -600,7 +601,7 @@ func TestExecutePlan(t *testing.T) {
 					})
 			})
 
-			Convey("When Tryjob can't be reused thus launch a new Tryjob", func() {
+			Convey("When Tryjob can't be reused, thus launch a new Tryjob", func() {
 				execState, err := executor.executePlan(ctx, &plan{
 					triggerNewAttempt: []planItem{
 						{

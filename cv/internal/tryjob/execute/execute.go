@@ -34,7 +34,7 @@ import (
 )
 
 // Executor reacts to changes in the external world and tries to fulfills the
-// tryjob requirement.
+// Tryjob requirement.
 type Executor struct {
 	// Backend is the Tryjob backend that Executor will search reusable Tryjobs
 	// from and launch new Tryjobs.
@@ -77,7 +77,7 @@ func (e *Executor) Do(ctx context.Context, r *run.Run, payload *tryjob.ExecuteTr
 	case execState.GetStatus() == tryjob.ExecutionState_SUCCEEDED:
 		fallthrough
 	case execState.GetStatus() == tryjob.ExecutionState_FAILED:
-		logging.Warningf(ctx, "Tryjob Executor is invoked after execution has ended")
+		logging.Warningf(ctx, "Tryjob Executor was invoked after execution has ended")
 		return nil
 	}
 
@@ -172,8 +172,8 @@ func (e *Executor) handleUpdatedTryjobs(ctx context.Context, tryjobs []int64, ex
 	}
 	var (
 		p                         plan
-		failedIndices             []int            // critical tryjobs only
-		failedTryjobs             []*tryjob.Tryjob // critical tryjobs only
+		failedIndices             []int            // Critical Tryjobs only
+		failedTryjobs             []*tryjob.Tryjob // Critical Tryjobs only
 		hasNonEndedCriticalTryjob bool
 		endedTryjobLogs           []*tryjob.ExecutionLogEntry_TryjobSnapshot
 	)
@@ -187,7 +187,7 @@ func (e *Executor) handleUpdatedTryjobs(ctx context.Context, tryjobs []int64, ex
 		case !updated:
 			continue
 		}
-		// Only process a tryjob that has been updated and its latest attempt
+		// Only process a Tryjob that has been updated and its latest Attempt
 		// has ended.
 		switch attempt := tryjob.LatestAttempt(exec); {
 		case attempt.Status == tryjob.Status_ENDED && attempt.GetResult().GetStatus() == tryjob.Result_SUCCEEDED:
@@ -196,13 +196,14 @@ func (e *Executor) handleUpdatedTryjobs(ctx context.Context, tryjobs []int64, ex
 			failedIndices = append(failedIndices, i)
 			failedTryjobs = append(failedTryjobs, tryjobByID[common.TryjobID(attempt.TryjobId)])
 			endedTryjobLogs = append(endedTryjobLogs, makeLogTryjobSnapshotFromAttempt(definition, attempt))
-		case attempt.Status == tryjob.Status_ENDED: // non critical failure
+		case attempt.Status == tryjob.Status_ENDED: // Non-critical failure.
 			endedTryjobLogs = append(endedTryjobLogs, makeLogTryjobSnapshotFromAttempt(definition, attempt))
 		case attempt.Status == tryjob.Status_CANCELLED:
-			// This SHOULD happen during race condition as a Tryjob is cancelled by
-			// LUCI CV iff a new patchset is uploaded. In that case, Run SHOULD be
-			// cancelled and try executor should never be invoked. Do nothing apart
-			// from logging here and Run should be cancelled very soon.
+			// This SHOULD only happen during race condition as a Tryjob is
+			// cancelled by LUCI CV iff a new patchset is uploaded. In that
+			// case, Run SHOULD be cancelled and Tryjob Executor should never
+			// be invoked. So, do nothing apart from logging here, as the Run
+			// should be cancelled very soon.
 			endedTryjobLogs = append(endedTryjobLogs, makeLogTryjobSnapshotFromAttempt(definition, attempt))
 		case attempt.Status == tryjob.Status_UNTRIGGERED && attempt.Reused:
 			// Normally happens when this Run reuses a PENDING Tryjob from
@@ -212,9 +213,9 @@ func (e *Executor) handleUpdatedTryjobs(ctx context.Context, tryjobs []int64, ex
 				execution:  exec,
 			})
 		case attempt.Status == tryjob.Status_UNTRIGGERED && !definition.GetCritical():
-			// Ignore failure when launching non-critical tryjobs.
+			// Ignore failure when launching non-critical Tryjobs.
 		case attempt.Status == tryjob.Status_UNTRIGGERED:
-			// If a critical tryjob fails to launch, then this Run should have
+			// If a critical Tryjob failed to launch, then this Run should have
 			// failed already. So, this code path should never be exercised.
 			panic(fmt.Errorf("critical tryjob %d failed to launch but tryjob executor was asked to update this Tryjob", attempt.GetTryjobId()))
 		default:
@@ -235,7 +236,7 @@ func (e *Executor) handleUpdatedTryjobs(ctx context.Context, tryjobs []int64, ex
 
 	switch hasFailed, hasNewAttemptToTrigger := len(failedIndices) > 0, len(p.triggerNewAttempt) > 0; {
 	case !hasFailed && !hasNewAttemptToTrigger && !hasNonEndedCriticalTryjob:
-		// All critical tryjobs have completed successfully.
+		// All critical Tryjobs have completed successfully.
 		execState.Status = tryjob.ExecutionState_SUCCEEDED
 		return execState, nil, nil
 	case hasFailed:
@@ -272,9 +273,9 @@ func updateLatestAttempt(exec *tryjob.ExecutionState_Execution, tryjobsByIDs map
 func hasLatestAttemptEnded(exec *tryjob.ExecutionState_Execution) bool {
 	attempt := tryjob.LatestAttempt(exec)
 	if attempt == nil {
-		return false // hasn't launched any new attempt
+		return false // hasn't launched any new Attempt
 	}
-	// only look at the latest attempt
+	// Only look at the latest Attempt.
 	switch attempt.Status {
 	case tryjob.Status_STATUS_UNSPECIFIED:
 		panic(fmt.Errorf("attempt status not specified for Tryjob %d", attempt.TryjobId))

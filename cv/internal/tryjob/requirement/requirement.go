@@ -352,12 +352,13 @@ func isModeAllowed(mode run.Mode, allowedModes []string) bool {
 	return false
 }
 
-// makeRands makes `n` new pseudo-random generators to be used for the tryjob
-// requirement computation's random selections (experiment, equivalentBuilder)
+// makeRands makes `n` new pseudo-random generators to be used for the Tryjob
+// Requirement computation's random selections (experiment, equivalentBuilder)
 //
 // The generators are seeded deterministically based on the set of CLs (their
 // IDs, specifically) and their trigger times.
-// We do it this way so that recomputing the requirement for the same run yields
+//
+// We do it this way so that recomputing the Requirement for the same Run yields
 // the same result, but triggering the same set of CLs subsequent times has a
 // chance of generating a different set of random selections.
 func makeRands(in Input, n int) []*rand.Rand {
@@ -405,7 +406,7 @@ const (
 )
 
 // shouldInclude decides based on the configuration whether a given builder
-// should be skipped in generating the requirement.
+// should be skipped in generating the Requirement.
 func shouldInclude(ctx context.Context, in Input, dm *definitionMaker, useEquivalent bool, b *cfgpb.Verifiers_Tryjob_Builder, incl stringset.Set, owners []string) (inclusionResult, ComputationFailure, error) {
 	switch ps := isPresubmit(b); {
 	case in.RunOptions.GetSkipTryjobs() && !ps:
@@ -415,8 +416,8 @@ func shouldInclude(ctx context.Context, in Input, dm *definitionMaker, useEquiva
 		return skipBuilder, nil, nil
 	}
 
-	// If the builder is triggered by another builder, it does not need to
-	// be considered as a required tryjob.
+	// If the builder is triggered by another builder, it does not need to be
+	// considered as a required Tryjob.
 	if b.TriggeredBy != "" {
 		return skipBuilder, nil, nil
 	}
@@ -433,7 +434,7 @@ func shouldInclude(ctx context.Context, in Input, dm *definitionMaker, useEquiva
 			}, nil
 		}
 		dm.equivalence = mainOnly
-		dm.criticality = true // explicitly included builder is always critical
+		dm.criticality = true // Explicitly included builder is always critical.
 		return includeBuilder, nil, nil
 	}
 
@@ -472,8 +473,8 @@ func shouldInclude(ctx context.Context, in Input, dm *definitionMaker, useEquiva
 		return skipBuilder, nil, err
 	}
 
-	// Only evaluate LocationFilters iff the total file count is fewer than 1000
-	// to save latency on large file count use case. Otherwise, treat
+	// Only evaluate LocationFilters iff the total file count is fewer than
+	// 1000 to save latency on large file count use case. Otherwise, treat
 	// LocationFilter as not specified.
 	var locationFilterSpecified, locationFilterMatched bool
 	var totalFileCnt int
@@ -602,7 +603,7 @@ func getIncludablesAndTriggeredBy(builders []*cfgpb.Verifiers_Tryjob_Builder) (i
 	return includable, triggeredByOther
 }
 
-// Compute computes the tryjob requirement to verify the run.
+// Compute computes the Tryjob Requirement to verify the run.
 func Compute(ctx context.Context, in Input) (*ComputationResult, error) {
 	ret := &ComputationResult{Requirement: &tryjob.Requirement{
 		RetryConfig: in.ConfigGroup.GetVerifiers().GetTryjob().GetRetryConfig(),

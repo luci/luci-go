@@ -36,11 +36,11 @@ type updaterBackend interface {
 	// Kind identifies the backend.
 	//
 	// It's also the first part of the Tryjob's ExternalID, e.g. "buildbucket".
-	// Must not contain a slash.
+	// Must NOT contain a slash.
 	Kind() string
 	// Update should fetch the Tryjob given the current entity in Datastore.
 	//
-	// MUST not modify the given Tryjob object.
+	// MUST NOT modify the given Tryjob object.
 	Update(ctx context.Context, saved *tryjob.Tryjob) (tryjob.Status, *tryjob.Result, error)
 }
 
@@ -94,12 +94,12 @@ func (u *Updater) handleTask(ctx context.Context, task *tryjob.UpdateTryjobTask)
 		switch err := datastore.Get(ctx, tj); {
 		case err == nil:
 			if task.GetExternalId() != "" && task.GetExternalId() != string(tj.ExternalID) {
-				return errors.Reason("the given internal and external ids for the tryjob do not match").Err()
+				return errors.Reason("the given internal and external IDs for the Tryjob do not match").Err()
 			}
 		case err == datastore.ErrNoSuchEntity:
-			return errors.Annotate(err, "unknown Tryjob with id %d", task.Id).Err()
+			return errors.Annotate(err, "unknown Tryjob with ID %d", task.Id).Err()
 		default:
-			return errors.Annotate(err, "loading Tryjob with id %d", task.Id).Tag(transient.Tag).Err()
+			return errors.Annotate(err, "loading Tryjob with ID %d", task.Id).Tag(transient.Tag).Err()
 		}
 	case task.GetExternalId() != "":
 		var err error

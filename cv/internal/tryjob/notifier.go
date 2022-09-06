@@ -105,8 +105,8 @@ func (n *Notifier) ScheduleUpdate(ctx context.Context, id common.TryjobID, eid E
 	case eid != "":
 		taskTitle = fmt.Sprintf("eid-%s", eid)
 	}
-	// id will be set, but eid may not be. In such case, it's up to the task to
-	// resolve it.
+	// `id` will be set, but `eid` may not be. In this case, it's up to the
+	// task to resolve it.
 	return n.Bindings.tqd.AddTask(ctx, &tq.Task{
 		Title:   taskTitle,
 		Payload: &UpdateTryjobTask{ExternalId: string(eid), Id: int64(id)},

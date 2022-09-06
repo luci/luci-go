@@ -30,12 +30,13 @@ import (
 	. "go.chromium.org/luci/common/testing/assertions"
 )
 
-type mockRN struct {
+// mockRMNotifier is a fake Run Manager Notifier used in Updater for tests.
+type mockRMNotifier struct {
 	notifiedRuns common.RunIDs
 }
 
-func (r *mockRN) NotifyTryjobsUpdated(ctx context.Context, run common.RunID, _ *tryjob.TryjobUpdatedEvents) error {
-	r.notifiedRuns = append(r.notifiedRuns, run)
+func (n *mockRMNotifier) NotifyTryjobsUpdated(ctx context.Context, run common.RunID, _ *tryjob.TryjobUpdatedEvents) error {
+	n.notifiedRuns = append(n.notifiedRuns, run)
 	return nil
 }
 
@@ -44,6 +45,7 @@ type returnValues struct {
 	r   *tryjob.Result
 	err error
 }
+
 type mockBackend struct {
 	returns []*returnValues
 }
@@ -98,7 +100,7 @@ func TestHandleTask(t *testing.T) {
 		ctx, clean := ct.SetUp()
 		defer clean()
 
-		rn := &mockRN{}
+		rn := &mockRMNotifier{}
 		mb := &mockBackend{}
 		updater := NewUpdater(tryjob.NewNotifier(ct.TQDispatcher), rn)
 		updater.RegisterBackend(mb)
@@ -123,12 +125,12 @@ func TestHandleTask(t *testing.T) {
 				So(err, ShouldBeNil)
 				originalEVersion := tj.EVersion
 				mb.returns = []*returnValues{{tryjob.Status_ENDED, &tryjob.Result{Status: tryjob.Result_SUCCEEDED}, nil}}
-				Convey("by internal id", func() {
+				Convey("by internal ID", func() {
 					So(updater.handleTask(ctx, &tryjob.UpdateTryjobTask{
 						Id: int64(tj.ID),
 					}), ShouldBeNil)
 				})
-				Convey("by external id", func() {
+				Convey("by external ID", func() {
 					So(updater.handleTask(ctx, &tryjob.UpdateTryjobTask{
 						ExternalId: string(tj.ExternalID),
 					}), ShouldBeNil)
@@ -203,28 +205,28 @@ func TestHandleTask(t *testing.T) {
 			tj, err := makeTryjob(ctx)
 			So(err, ShouldBeNil)
 
-			Convey("update a tryjob with an id that doesn't exist", func() {
+			Convey("update a tryjob with an ID that doesn't exist", func() {
 				So(datastore.Delete(ctx, tj), ShouldBeNil)
 				So(updater.handleTask(ctx, &tryjob.UpdateTryjobTask{
 					Id: int64(tj.ID),
-				}), ShouldErrLike, "unknown Tryjob with id")
+				}), ShouldErrLike, "unknown Tryjob with ID")
 				So(rn.notifiedRuns, ShouldHaveLength, 0)
 			})
-			Convey("update a tryjob with an external id that doesn't exist", func() {
+			Convey("update a tryjob with an external ID that doesn't exist", func() {
 				So(updater.handleTask(ctx, &tryjob.UpdateTryjobTask{
 					ExternalId: string(tryjob.MustBuildbucketID("does-not-exist.example.com", 1)),
 				}), ShouldErrLike, "unknown Tryjob with ExternalID")
 				So(rn.notifiedRuns, ShouldHaveLength, 0)
 			})
-			Convey("update a tryjob with neither internal nor external id", func() {
+			Convey("update a tryjob with neither internal nor external ID", func() {
 				So(updater.handleTask(ctx, &tryjob.UpdateTryjobTask{}), ShouldErrLike, "expected at least one of {Id, ExternalId}")
 				So(rn.notifiedRuns, ShouldHaveLength, 0)
 			})
-			Convey("update a tryjob with mismatching internal and external ids", func() {
+			Convey("update a tryjob with mismatching internal and external IDs", func() {
 				So(updater.handleTask(ctx, &tryjob.UpdateTryjobTask{
 					Id:         int64(tj.ID),
 					ExternalId: string(tryjob.MustBuildbucketID("cr-buildbucket.example.com", 1)),
-				}), ShouldErrLike, "the given internal and external ids for the tryjob do not match")
+				}), ShouldErrLike, "the given internal and external IDs for the Tryjob do not match")
 				So(rn.notifiedRuns, ShouldHaveLength, 0)
 			})
 		})

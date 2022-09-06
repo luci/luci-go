@@ -43,9 +43,9 @@ const (
 
 // canReuseTryjob checks if a given Tryjob can be reused.
 //
-// Tryjob *can* be reused iff the Tryjob ends successfully and is fresh
-// enough (i.e created within `staleTryjobAge`). Tryjob *may* be reused
-// if the tryjob is fresh enough and still running or hasn't started yet.
+// Tryjob *can* be reused iff the Tryjob ends successfully and is fresh enough
+// (i.e created within `staleTryjobAge`). Tryjob *may* be reused if the Tryjob
+// is fresh enough and still running or hasn't started yet.
 func canReuseTryjob(ctx context.Context, tj *tryjob.Tryjob, mode run.Mode) reusability {
 	switch status := tj.Status; {
 	case status == tryjob.Status_STATUS_UNSPECIFIED:
@@ -55,7 +55,6 @@ func canReuseTryjob(ctx context.Context, tj *tryjob.Tryjob, mode run.Mode) reusa
 	case status == tryjob.Status_TRIGGERED && isTryjobStale(ctx, tj):
 		return reuseDenied
 	case status == tryjob.Status_TRIGGERED:
-		// tryjob output may change anytime that changes the reusability
 		return reuseMaybe
 	case status == tryjob.Status_ENDED && canReuseResult(ctx, tj, mode):
 		return reuseAllowed
@@ -70,7 +69,7 @@ func canReuseTryjob(ctx context.Context, tj *tryjob.Tryjob, mode run.Mode) reusa
 	}
 }
 
-// canReuseResult checks if the result of the tryjob can be reused.
+// canReuseResult checks if the result of the Tryjob can be reused.
 func canReuseResult(ctx context.Context, tj *tryjob.Tryjob, mode run.Mode) bool {
 	switch result := tj.Result; {
 	case tj.Status != tryjob.Status_ENDED:
@@ -81,7 +80,7 @@ func canReuseResult(ctx context.Context, tj *tryjob.Tryjob, mode run.Mode) bool 
 	case isTryjobStale(ctx, tj):
 		return false
 	case result.GetStatus() != tryjob.Result_SUCCEEDED:
-		return false // only succeeded tryjob can be reused.
+		return false // Only a succeeded Tryjob can be reused.
 	case isModeAllowed(mode, result.GetOutput().GetReusability().GetModeAllowlist()):
 		return true
 	}
@@ -92,13 +91,13 @@ func isTryjobStale(ctx context.Context, tj *tryjob.Tryjob) bool {
 	createTime := tj.Result.GetCreateTime()
 	if createTime == nil {
 		logging.Errorf(ctx, "Tryjob %d has nil create time when checking whether tryjob is stale", tj.ID)
-		return true // Be defensive. Consider tryjob stale.
+		return true // Be defensive. Consider Tryjob stale.
 	}
 	return clock.Now(ctx).Sub(createTime.AsTime()) >= staleTryjobAge
 }
 
 func isModeAllowed(mode run.Mode, allowlist []string) bool {
-	if len(allowlist) == 0 { // empty list means allowing all modes
+	if len(allowlist) == 0 { // Empty list means allowing all modes.
 		return true
 	}
 	for _, allowed := range allowlist {

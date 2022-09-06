@@ -89,7 +89,7 @@ func (w *worker) queryForCandidates(ctx context.Context, definitions []*tryjob.D
 			panic(fmt.Errorf("tryjob %d has zero entity create time", tj.ID))
 		default:
 			if existing, ok := candidates[def]; !ok || tj.EntityCreateTime.After(existing.EntityCreateTime) {
-				// pick the latest one.
+				// Pick the latest one.
 				candidates[def] = tj
 			}
 		}
