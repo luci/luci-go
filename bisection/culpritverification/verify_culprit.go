@@ -17,6 +17,7 @@ package culpritverification
 
 import (
 	"context"
+	"fmt"
 
 	"go.chromium.org/luci/bisection/internal/gitiles"
 	gfim "go.chromium.org/luci/bisection/model"
@@ -45,7 +46,7 @@ func VerifySuspect(c context.Context, suspect *gfim.Suspect, failedBuildID int64
 	// Get rerun build property
 	props := map[string]interface{}{
 		"analysis_id":    analysisID,
-		"bisection_host": info.AppID(c),
+		"bisection_host": fmt.Sprintf("%s.appspot.com", info.AppID(c)),
 	}
 	if len(failedTargets) > 0 {
 		props["compile_targets"] = failedTargets
