@@ -16,46 +16,25 @@ package aggrmetrics
 
 import (
 	"context"
-	"math"
+	"sync"
 	"time"
+
+	"golang.org/x/sync/errgroup"
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry/transient"
+	"go.chromium.org/luci/common/sync/parallel"
 	"go.chromium.org/luci/common/tsmon/distribution"
-	"go.chromium.org/luci/common/tsmon/field"
-	"go.chromium.org/luci/common/tsmon/metric"
 	"go.chromium.org/luci/common/tsmon/types"
 	"go.chromium.org/luci/gae/service/datastore"
 
 	"go.chromium.org/luci/cv/internal/common"
+	"go.chromium.org/luci/cv/internal/configs/prjcfg"
+	"go.chromium.org/luci/cv/internal/metrics"
 	"go.chromium.org/luci/cv/internal/run"
-)
-
-var (
-	// TODO(tandrii): remove "internal" from metrics below and make it available
-	// to users once we are comfortable with its target & fields.
-	metricActiveRunsCount = metric.NewInt(
-		"cv/internal/runs/active/count",
-		"Count of active Runs.",
-		nil,
-		field.String("project"),
-		field.String("status"),
-	)
-	metricActiveRunsDurationsS = metric.NewNonCumulativeDistribution(
-		"cv/internal/runs/active/durations",
-		"Ages of active Runs",
-		&types.MetricMetadata{Units: types.Seconds},
-		// Bucketer for 1s .. ~7d range.
-		//
-		// Not accurate above 1h.
-		// TODO(tandrii): add another metric with a fixed width bucketer spanning
-		// range up to 2 hours, which is what most projects care about.
-		distribution.GeometricBucketer(math.Pow(10, 0.06), 100),
-		field.String("project"),
-	)
 )
 
 const (
@@ -77,91 +56,156 @@ type runsAggregator struct {
 // metrics implements aggregator interface.
 func (r *runsAggregator) metrics() []types.Metric {
 	return []types.Metric{
-		metricActiveRunsCount,
-		metricActiveRunsDurationsS,
+		metrics.Public.ActiveRunCount,
+		metrics.Public.ActiveRunDuration,
 	}
 }
 
 // metrics implements aggregator interface.
-func (r *runsAggregator) prepare(ctx context.Context, activeProjects stringset.Set) (reportFunc, error) {
-	now := clock.Now(ctx)
-	keys, err := loadActiveRuns(ctx, maxRuns+1)
-	switch {
-	case err != nil:
-		return nil, err
-	case len(keys) == maxRuns+1:
-		// Outright refuse sending incomplete data.
-		logging.Errorf(ctx, "FIXME: too many active runs (>%d) to report aggregated metrics for", maxRuns)
-		return nil, errors.New("too many active Runs")
-	}
-	stats := make(map[string]*projectStat, len(activeProjects))
-	for p := range activeProjects {
-		stats[p] = newProjectStat()
-	}
-	err = iterRuns(ctx, keys, maxRunsWorkingSet, func(r *run.Run) {
-		name := r.ID.LUCIProject()
-		p, exists := stats[name]
-		if !exists {
-			// Although rare, this can happen if a new project has just been added.
-			p = newProjectStat()
-			stats[name] = p
+func (r *runsAggregator) prepare(ctx context.Context, enabledProjects stringset.Set) (reportFunc, error) {
+	eg, ectx := errgroup.WithContext(ctx)
+	var activeRunKeys []*datastore.Key
+	var runStats *runStats
+	eg.Go(func() (err error) {
+		switch activeRunKeys, err = loadActiveRunKeys(ectx, maxRuns+1); {
+		case err != nil:
+			return err
+		case len(activeRunKeys) == maxRuns+1:
+			// Outright refuse sending incomplete data.
+			logging.Errorf(ctx, "FIXME: too many active runs (>%d) to report aggregated metrics for", maxRuns)
+			return errors.New("too many active Runs")
+		default:
+			return nil
 		}
-		p.add(r, now)
+	})
+	eg.Go(func() (err error) {
+		runStats, err = initRunStats(ectx, enabledProjects.ToSlice())
+		return err
+	})
+	if err := eg.Wait(); err != nil {
+		return nil, err
+	}
+
+	now := clock.Now(ctx)
+	err := iterRuns(ctx, activeRunKeys, maxRunsWorkingSet, func(r *run.Run) {
+		runStats.addActive(r, now)
 	})
 	if err != nil {
 		return nil, err
 	}
-	return func(ctx context.Context) {
-		for project, ps := range stats {
-			ps.report(ctx, project)
-		}
-	}, nil
+	return runStats.report, nil
 }
 
-type projectStat struct {
-	byStatus      map[run.Status]int64
-	sinceCreation *distribution.Distribution
+type runStats struct {
+	activeRunCounts    map[runFields]int64
+	activeRunDurations map[runFields]*distribution.Distribution
 }
 
-func newProjectStat() *projectStat {
-	return &projectStat{
-		// Always set Status_RUNNING to 0, as this way all projects will always be
-		// reported.
-		byStatus:      map[run.Status]int64{run.Status_RUNNING: 0},
-		sinceCreation: distribution.New(metricActiveRunsDurationsS.Bucketer()),
+type runFields struct {
+	project, configGroup, mode string
+}
+
+func makeRunFields(r *run.Run) runFields {
+	return runFields{
+		project:     r.ID.LUCIProject(),
+		configGroup: r.ConfigGroupID.Name(),
+		mode:        string(r.Mode),
 	}
 }
 
-func (p *projectStat) add(r *run.Run, now time.Time) {
+func (f runFields) toMetricFields() []interface{} {
+	return []interface{}{f.project, f.configGroup, f.mode}
+}
+
+func initRunStats(ctx context.Context, projects []string) (*runStats, error) {
+	rs := &runStats{
+		activeRunCounts:    make(map[runFields]int64),
+		activeRunDurations: make(map[runFields]*distribution.Distribution),
+	}
+	var rsMu sync.Mutex
+	// TODO: Support `GetLatestMetas` and `GetConfigGroups` in prjcfg package
+	// and use those APIs instead of parallel.WorkPool to reduce the call to
+	// datastore.
+	err := parallel.WorkPool(min(8, len(projects)), func(work chan<- func() error) {
+		for _, project := range projects {
+			project := project
+			work <- func() error {
+				switch meta, err := prjcfg.GetLatestMeta(ctx, project); {
+				case err != nil:
+					return err
+				case meta.Status != prjcfg.StatusEnabled:
+					// race condition: by the time Project config is loaded, the Project
+					// is disabled, skipping this Project as we won't expect any
+					// non-ended runs from this Project. Even if there's any, they will
+					// be ended very soon.
+					return nil
+				default:
+					rsMu.Lock()
+					defer rsMu.Unlock()
+					// pre-populate all combinations of
+					// project+config_group+(DRY_RUN|FULL_RUN) so that zero value is
+					// reported.
+					for _, cgName := range meta.ConfigGroupNames {
+						for _, standardMode := range []run.Mode{run.DryRun, run.FullRun} {
+							f := runFields{
+								project:     project,
+								configGroup: cgName,
+								mode:        string(standardMode),
+							}
+							rs.activeRunCounts[f] = 0
+							rs.activeRunDurations[f] = distribution.New(metrics.Public.ActiveRunDuration.Bucketer())
+						}
+					}
+					return nil
+				}
+			}
+		}
+	})
+	if err != nil {
+		return nil, err
+	}
+	return rs, nil
+}
+
+func (rs *runStats) addActive(r *run.Run, now time.Time) {
 	switch {
 	case run.IsEnded(r.Status):
 		// Since the Run is loaded after the query, the Run may be already finished.
-		// Such Runs are no longer active and shouldn't be reported.
+		// Such Runs are no longer considered active and shouldn't be reported.
 		return
-	case r.CreateTime.After(now):
+	case r.StartTime.After(now):
 		// This should be rare, yet may happen if this process' time is
-		// somewhat behind time of a concurrent process which has just created a new
-		// Run. It's better to skip this newly created Run for later than report a
+		// somewhat behind time of a concurrent process which has just started a new
+		// Run. It's better to skip this newly started Run for later than report a
 		// negative duration for it.
 		return
 	}
-	p.byStatus[r.Status]++
-	p.sinceCreation.Add(now.Sub(r.CreateTime).Seconds())
-}
-
-func (p *projectStat) report(ctx context.Context, project string) {
-	for code, cnt := range p.byStatus {
-		status := run.Status_name[int32(code)]
-		metricActiveRunsCount.Set(ctx, cnt, project, status)
+	runFields := makeRunFields(r)
+	rs.activeRunCounts[runFields] = rs.activeRunCounts[runFields] + 1
+	if _, ok := rs.activeRunDurations[runFields]; !ok {
+		rs.activeRunDurations[runFields] = distribution.New(metrics.Public.ActiveRunDuration.Bucketer())
 	}
-	metricActiveRunsDurationsS.Set(ctx, p.sinceCreation, project)
+	rs.activeRunDurations[runFields].Add(now.Sub(r.StartTime).Seconds())
 }
 
-// loadActiveRuns returns only the keys of the active Runs.
+func (rs *runStats) report(ctx context.Context) {
+	for fields, cnt := range rs.activeRunCounts {
+		metrics.Public.ActiveRunCount.Set(ctx, cnt, fields.toMetricFields()...)
+	}
+	for fields, dist := range rs.activeRunDurations {
+		metrics.Public.ActiveRunDuration.Set(ctx, dist, fields.toMetricFields()...)
+	}
+}
+
+// loadActiveRunKeys returns only the keys of the active Runs.
 //
 // This is a cheap query in Datastore, both in terms of time and $ cost.
-func loadActiveRuns(ctx context.Context, limit int32) ([]*datastore.Key, error) {
-	q := datastore.NewQuery(common.RunKind).Limit(limit).KeysOnly(true).Lt("Status", run.Status_ENDED_MASK)
+func loadActiveRunKeys(ctx context.Context, limit int32) ([]*datastore.Key, error) {
+	q := datastore.NewQuery(common.RunKind).
+		Limit(limit).
+		KeysOnly(true).
+		Lt("Status", run.Status_ENDED_MASK).
+		Gt("Status", run.Status_PENDING)
 	var out []*datastore.Key
 	switch err := datastore.GetAll(ctx, q, &out); {
 	case ctx.Err() != nil:

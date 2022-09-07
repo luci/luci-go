@@ -16,6 +16,8 @@ package aggrmetrics
 
 import (
 	"fmt"
+	"math/rand"
+	"strconv"
 	"testing"
 	"time"
 
@@ -23,8 +25,12 @@ import (
 	"go.chromium.org/luci/common/tsmon/distribution"
 	"go.chromium.org/luci/gae/service/datastore"
 
+	cfgpb "go.chromium.org/luci/cv/api/config/v2"
 	"go.chromium.org/luci/cv/internal/common"
+	"go.chromium.org/luci/cv/internal/configs/prjcfg"
+	"go.chromium.org/luci/cv/internal/configs/prjcfg/prjcfgtest"
 	"go.chromium.org/luci/cv/internal/cvtesting"
+	"go.chromium.org/luci/cv/internal/metrics"
 	"go.chromium.org/luci/cv/internal/run"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -41,18 +47,33 @@ func TestRunAggregator(t *testing.T) {
 		// Truncate current time to seconds to deal with integer delays.
 		ct.Clock.Set(ct.Clock.Now().UTC().Add(time.Second).Truncate(time.Second))
 
-		runsSent := func(project, status string) interface{} {
-			return ct.TSMonSentValue(ctx, metricActiveRunsCount, project, status)
+		activeRunCountSent := func(project, configGroup string, mode run.Mode) interface{} {
+			return ct.TSMonSentValue(ctx, metrics.Public.ActiveRunCount, project, configGroup, string(mode))
 		}
-		durationsSent := func(project string) *distribution.Distribution {
-			return ct.TSMonSentDistr(ctx, metricActiveRunsDurationsS, project)
+		activeRunDurationSent := func(project, configGroup string, mode run.Mode) *distribution.Distribution {
+			return ct.TSMonSentDistr(ctx, metrics.Public.ActiveRunDuration, project, configGroup, string(mode))
 		}
 
-		putRun := func(i byte, p string, s run.Status, ct time.Time) {
+		const lProject = "test_proj"
+		const configGroupName = "foo"
+		seededRand := rand.New(rand.NewSource(ct.Clock.Now().Unix()))
+
+		prjcfgtest.Create(ctx, lProject, &cfgpb.Config{
+			ConfigGroups: []*cfgpb.ConfigGroup{
+				{
+					Name: configGroupName,
+				},
+			},
+		})
+
+		putRun := func(project, configGroup string, mode run.Mode, s run.Status, ct, st time.Time) {
 			err := datastore.Put(ctx, &run.Run{
-				ID:         common.MakeRunID(p, ct, 1, []byte{i}),
-				CreateTime: ct,
-				Status:     s,
+				ID:            common.MakeRunID(project, ct, 1, []byte(strconv.Itoa(seededRand.Int()))),
+				ConfigGroupID: prjcfg.MakeConfigGroupID("deedbeef", configGroup),
+				Mode:          mode,
+				CreateTime:    ct,
+				StartTime:     st,
+				Status:        s,
 			})
 			if err != nil {
 				panic(err)
@@ -66,69 +87,97 @@ func TestRunAggregator(t *testing.T) {
 			f(ctx)
 		}
 
-		Convey("Active projects get data reported even when there are no active Runs", func() {
-			prepareAndReport("v8")
-			So(runsSent("v8", "RUNNING"), ShouldEqual, 0)
-			So(durationsSent("v8").Count(), ShouldEqual, 0)
-			So(ct.TSMonStore.GetAll(ctx), ShouldHaveLength, 2)
+		Convey("Skip reporting for disabled project", func() {
+			prjcfgtest.Disable(ctx, lProject)
+			prepareAndReport(lProject)
+			So(ct.TSMonStore.GetAll(ctx), ShouldBeEmpty)
 		})
 
-		Convey("Active projects with various run kinds", func() {
-			putRun(1, "v8", run.Status_RUNNING, ct.Clock.Now().Add(-time.Second))
-			putRun(2, "v8", run.Status_RUNNING, ct.Clock.Now().Add(-time.Minute))
-			putRun(3, "v8", run.Status_SUBMITTING, ct.Clock.Now().Add(-time.Hour))
-			putRun(4, "fuchsia", run.Status_WAITING_FOR_SUBMISSION, ct.Clock.Now().Add(-time.Second))
-			putRun(5, "fuchsia", run.Status_WAITING_FOR_SUBMISSION, ct.Clock.Now().Add(-time.Second))
-			prepareAndReport("v8", "fuchsia")
+		Convey("Enabled projects get zero data reported when no interested Runs", func() {
+			prepareAndReport(lProject)
+			So(activeRunCountSent(lProject, configGroupName, run.DryRun), ShouldEqual, 0)
+			So(activeRunCountSent(lProject, configGroupName, run.FullRun), ShouldEqual, 0)
+			So(activeRunDurationSent(lProject, configGroupName, run.DryRun).Count(), ShouldEqual, 0)
+			So(activeRunDurationSent(lProject, configGroupName, run.FullRun).Count(), ShouldEqual, 0)
+			So(ct.TSMonStore.GetAll(ctx), ShouldHaveLength, 4)
+		})
 
-			So(runsSent("v8", "RUNNING"), ShouldEqual, 2)
-			So(runsSent("v8", "SUBMITTING"), ShouldEqual, 1)
-			So(durationsSent("v8").Sum(), ShouldEqual, (time.Second + time.Minute + time.Hour).Seconds())
-			So(durationsSent("v8").Count(), ShouldEqual, 3)
+		Convey("Report active Runs", func() {
+			now := ct.Clock.Now()
+			// Dry Run
+			putRun(lProject, configGroupName, run.DryRun, run.Status_PENDING, now.Add(-time.Second), time.Time{}) // pending runs won't be reported
+			putRun(lProject, configGroupName, run.DryRun, run.Status_RUNNING, now.Add(-time.Minute), now.Add(-time.Minute))
+			putRun(lProject, configGroupName, run.DryRun, run.Status_SUCCEEDED, now.Add(-time.Hour), now.Add(-time.Hour)) // ended run won't be reported
 
-			So(runsSent("fuchsia", "RUNNING"), ShouldEqual, 0)
-			So(runsSent("fuchsia", "WAITING_FOR_SUBMISSION"), ShouldEqual, 2)
-			So(durationsSent("fuchsia").Sum(), ShouldEqual, 2)
-			So(durationsSent("fuchsia").Count(), ShouldEqual, 2)
+			// Quick DryRun
+			putRun(lProject, configGroupName, run.QuickDryRun, run.Status_RUNNING, now.Add(-2*time.Second), now.Add(-time.Second))
+
+			// Full Run
+			putRun(lProject, configGroupName, run.FullRun, run.Status_WAITING_FOR_SUBMISSION, now.Add(-time.Minute), now.Add(-time.Minute))
+			putRun(lProject, configGroupName, run.FullRun, run.Status_SUBMITTING, now.Add(-time.Hour), now.Add(-time.Hour))
+			putRun(lProject, configGroupName, run.FullRun, run.Status_CANCELLED, now.Add(-time.Hour), now.Add(-time.Hour)) // ended run won't be reported
+
+			prepareAndReport(lProject)
+			So(activeRunCountSent(lProject, configGroupName, run.DryRun), ShouldEqual, 1)
+			So(activeRunDurationSent(lProject, configGroupName, run.DryRun).Count(), ShouldEqual, 1)
+			So(activeRunDurationSent(lProject, configGroupName, run.DryRun).Sum(), ShouldEqual, (time.Minute).Seconds())
+
+			So(activeRunCountSent(lProject, configGroupName, run.QuickDryRun), ShouldEqual, 1)
+			So(activeRunDurationSent(lProject, configGroupName, run.QuickDryRun).Count(), ShouldEqual, 1)
+			So(activeRunDurationSent(lProject, configGroupName, run.QuickDryRun).Sum(), ShouldEqual, (time.Second).Seconds())
+
+			So(activeRunCountSent(lProject, configGroupName, run.FullRun), ShouldEqual, 2)
+			So(activeRunDurationSent(lProject, configGroupName, run.FullRun).Count(), ShouldEqual, 2)
+			So(activeRunDurationSent(lProject, configGroupName, run.FullRun).Sum(), ShouldEqual, (time.Hour + time.Minute).Seconds())
 
 			So(ct.TSMonStore.GetAll(ctx), ShouldHaveLength, 6)
 		})
 
-		putManyRuns := func(n int) map[string]int {
-			projects := map[string]int{}
-			for i := 0; i < n; i++ {
-				id := byte(i % 128)
-				project := fmt.Sprintf("p-%04d", i/128)
-				created := ct.Clock.Now().Add(-time.Duration(id) * time.Second)
-				projects[project]++
-				putRun(id, project, run.Status_RUNNING, created)
+		putManyRuns := func(n, numProject, numConfigGroup int) {
+			for projectID := 0; projectID < numProject; projectID++ {
+				cfg := &cfgpb.Config{
+					ConfigGroups: make([]*cfgpb.ConfigGroup, numConfigGroup),
+				}
+				for cgID := 0; cgID < numConfigGroup; cgID++ {
+					cfg.ConfigGroups[cgID] = &cfgpb.ConfigGroup{
+						Name: fmt.Sprintf("cg-%03d", cgID),
+					}
+				}
+				prjcfgtest.Create(ctx, fmt.Sprintf("p-%03d", projectID), cfg)
 			}
-			return projects
+
+			for i := 0; i < n; i++ {
+				project := fmt.Sprintf("p-%03d", i%numProject)
+				configGroup := fmt.Sprintf("cg-%03d", (i/numProject)%numConfigGroup)
+				created := ct.Clock.Now().Add(-time.Duration(i) * time.Second)
+				started := ct.Clock.Now().Add(-time.Duration(i) * time.Second)
+				putRun(project, configGroup, run.DryRun, run.Status_RUNNING, created, started)
+			}
 		}
 
 		Convey("Can handle a lot of Runs and projects", func() {
-			projects := putManyRuns(maxRuns)
+			numProject := 16
+			numConfigGroup := 8
+			So(numProject*numConfigGroup, ShouldBeLessThan, maxRuns)
+			putManyRuns(maxRuns, numProject, numConfigGroup)
 			prepareAndReport()
 
-			// First project should have all its Runs reported.
-			So(runsSent("p-0000", "RUNNING"), ShouldEqual, 128)
-			So(durationsSent("p-0000").Sum(), ShouldEqual, 127*128/2) // 0 + 1 + 2 + ... + 127
-			So(durationsSent("p-0000").Count(), ShouldEqual, 128)
-
-			// But projects at the end of the lexicographic order may have nothing
-			// reported due to maxRuns limit.
 			reportedCnt := 0
-			for p := range projects {
-				v := runsSent(p, "RUNNING")
-				if v != nil {
-					reportedCnt += int(v.(int64))
+			for projectID := 0; projectID < numProject; projectID++ {
+				for cgID := 0; cgID < numConfigGroup; cgID++ {
+					project := fmt.Sprintf("p-%03d", projectID)
+					configGroup := fmt.Sprintf("cg-%03d", cgID)
+					So(activeRunCountSent(project, configGroup, run.DryRun), ShouldBeGreaterThan, 0)
+					reportedCnt += int(activeRunCountSent(project, configGroup, run.DryRun).(int64))
+					So(activeRunDurationSent(project, configGroup, run.DryRun).Sum(), ShouldBeGreaterThan, 0)
+					So(activeRunDurationSent(project, configGroup, run.DryRun).Count(), ShouldBeGreaterThan, 0)
 				}
 			}
 			So(reportedCnt, ShouldEqual, maxRuns)
 		})
 
 		Convey("Refuses to report anything if there are too many active Runs", func() {
-			putManyRuns(maxRuns + 1)
+			putManyRuns(maxRuns+1, 16, 8)
 			ra := runsAggregator{}
 			_, err := ra.prepare(ctx, stringset.Set{})
 			So(err, ShouldErrLike, "too many active Runs")
