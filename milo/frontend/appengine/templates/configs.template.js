@@ -8,4 +8,7 @@ var CONFIGS = Object.freeze({
   WEETBIX: Object.freeze({
     HOST: "{{.Weetbix.Host}}",
   }),
+  LUCI_ANALYSIS: Object.freeze({
+    HOST: "{{.LuciAnalysis.Host}}",
+  }),
 });
