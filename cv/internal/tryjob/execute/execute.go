@@ -25,17 +25,21 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry/transient"
+	"go.chromium.org/luci/gae/filter/txndefer"
 	"go.chromium.org/luci/gae/service/datastore"
 
 	"go.chromium.org/luci/cv/internal/common"
+	"go.chromium.org/luci/cv/internal/metrics"
 	"go.chromium.org/luci/cv/internal/run"
 	"go.chromium.org/luci/cv/internal/tryjob"
 	"go.chromium.org/luci/cv/internal/tryjob/requirement"
 )
 
-// Executor reacts to changes in the external world and tries to fulfills the
+// Executor reacts to changes in the external world and tries to fulfill the
 // Tryjob requirement.
 type Executor struct {
+	// Env is the environment that LUCI runs in.
+	Env *common.Env
 	// Backend is the Tryjob backend that Executor will search reusable Tryjobs
 	// from and launch new Tryjobs.
 	Backend TryjobBackend
@@ -45,6 +49,12 @@ type Executor struct {
 	ShouldStop func() bool
 	// logEntries records what has happened during the execution.
 	logEntries []*tryjob.ExecutionLogEntry
+	// stagedMetricReportFns temporally stores metrics reporting functions.
+	//
+	// Those functions will be called after the transaction to update the
+	// execution state succeeds to ensure LUCI CV doesn't over-report when it
+	// encounters failure and retries.
+	stagedMetricReportFns []func(context.Context)
 }
 
 // TryjobBackend encapsulates the interactions with a Tryjob backend.
@@ -67,6 +77,11 @@ func (e *Executor) Do(ctx context.Context, r *run.Run, payload *tryjob.ExecuteTr
 		logging.Warningf(ctx, "crbug/1312255: Tryjob Executor is invoked when UseCVTryjobExecutor is set to false. It's likely caused by a race condition when reverting the migration config setting")
 		return nil
 	}
+
+	// clearing the stateful properties in case the same executor instance gets
+	// reused unexpectedly.
+	e.logEntries = nil
+	e.stagedMetricReportFns = nil
 
 	execState, stateVer, err := tryjob.LoadExecutionState(ctx, r.ID)
 	switch {
@@ -98,7 +113,17 @@ func (e *Executor) Do(ctx context.Context, r *run.Run, payload *tryjob.ExecuteTr
 	var innerErr error
 	err = datastore.RunInTransaction(ctx, func(ctx context.Context) (err error) {
 		defer func() { innerErr = err }()
-		return tryjob.SaveExecutionState(ctx, r.ID, execState, stateVer, e.logEntries)
+		if err := tryjob.SaveExecutionState(ctx, r.ID, execState, stateVer, e.logEntries); err != nil {
+			return err
+		}
+		if len(e.stagedMetricReportFns) > 0 {
+			txndefer.Defer(ctx, func(ctx context.Context) {
+				for _, reportFn := range e.stagedMetricReportFns {
+					reportFn(ctx)
+				}
+			})
+		}
+		return nil
 	}, nil)
 	switch {
 	case innerErr != nil:
@@ -364,10 +389,19 @@ func (e *Executor) executePlan(ctx context.Context, p *plan, r *run.Run, execSta
 		}
 
 		var criticalLaunchFailures map[*tryjob.Definition]string
+		project, configGroup := r.ID.LUCIProject(), r.ConfigGroupID.Name()
 		for i, tj := range tryjobs {
 			def, exec := definitions[i], executions[i]
 			attempt := convertToAttempt(tj, r.ID)
 			exec.Attempts = append(exec.Attempts, attempt)
+			if !attempt.Reused && attempt.Status != tryjob.Status_UNTRIGGERED {
+				isRetry := len(exec.Attempts) > 1
+				e.stagedMetricReportFns = append(e.stagedMetricReportFns, func(ctx context.Context) {
+					metrics.RunWithBuilderTarget(ctx, e.Env, def, func(ctx context.Context) {
+						metrics.Public.TryjobLaunched.Add(ctx, 1, project, configGroup, def.GetCritical(), isRetry)
+					})
+				})
+			}
 			if attempt.Status == tryjob.Status_UNTRIGGERED && def.GetCritical() {
 				if criticalLaunchFailures == nil {
 					criticalLaunchFailures = make(map[*tryjob.Definition]string)

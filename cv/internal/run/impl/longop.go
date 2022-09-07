@@ -146,6 +146,7 @@ func (rm *RunManager) doLongOperationWithDeadline(ctx context.Context, opBase *l
 	case *run.OngoingLongOps_Op_ExecuteTryjobs:
 		op = &longops.ExecuteTryjobsOp{
 			Base:        opBase,
+			Env:         rm.env,
 			RunNotifier: rm.runNotifier,
 			Backend: &bbfacade.Facade{
 				ClientFactory: rm.bbFactory,

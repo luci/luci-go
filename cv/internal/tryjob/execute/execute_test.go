@@ -34,7 +34,9 @@ import (
 	bbfacade "go.chromium.org/luci/cv/internal/buildbucket/facade"
 	"go.chromium.org/luci/cv/internal/changelist"
 	"go.chromium.org/luci/cv/internal/common"
+	"go.chromium.org/luci/cv/internal/configs/prjcfg"
 	"go.chromium.org/luci/cv/internal/cvtesting"
+	"go.chromium.org/luci/cv/internal/metrics"
 	"go.chromium.org/luci/cv/internal/run"
 	"go.chromium.org/luci/cv/internal/tryjob"
 
@@ -49,7 +51,9 @@ func TestPrepExecutionPlan(t *testing.T) {
 		ctx, cancel := ct.SetUp()
 		defer cancel()
 
-		executor := &Executor{}
+		executor := &Executor{
+			Env: ct.Env,
+		}
 
 		Convey("Tryjobs Updated", func() {
 			const builderFoo = "foo"
@@ -426,7 +430,9 @@ func TestExecutePlan(t *testing.T) {
 		defer cancel()
 
 		Convey("Discard tryjobs", func() {
-			executor := &Executor{}
+			executor := &Executor{
+				Env: ct.Env,
+			}
 			const bbHost = "buildbucket.example.com"
 			def := &tryjob.Definition{
 				Backend: &tryjob.Definition_Buildbucket_{
@@ -480,23 +486,25 @@ func TestExecutePlan(t *testing.T) {
 
 		Convey("Trigger new attempt", func() {
 			const (
-				lProject     = "test_proj"
-				bbHost       = "buildbucket.example.com"
-				buildID      = 9524107902457
-				clid         = 34586452134
-				gHost        = "example-review.com"
-				gRepo        = "repo/a"
-				gChange      = 123
-				gPatchset    = 5
-				gMinPatchset = 4
+				lProject        = "test_proj"
+				configGroupName = "test_config_group"
+				bbHost          = "buildbucket.example.com"
+				buildID         = 9524107902457
+				clid            = 34586452134
+				gHost           = "example-review.com"
+				gRepo           = "repo/a"
+				gChange         = 123
+				gPatchset       = 5
+				gMinPatchset    = 4
 			)
 			now := ct.Clock.Now().UTC()
 			var runID = common.MakeRunID(lProject, now.Add(-1*time.Hour), 1, []byte("abcd"))
 			r := &run.Run{
-				ID:     runID,
-				Mode:   run.DryRun,
-				CLs:    common.CLIDs{clid},
-				Status: run.Status_RUNNING,
+				ID:            runID,
+				ConfigGroupID: prjcfg.MakeConfigGroupID("deedbeef", configGroupName),
+				Mode:          run.DryRun,
+				CLs:           common.CLIDs{clid},
+				Status:        run.Status_RUNNING,
 			}
 			runCL := &run.RunCL{
 				ID:  clid,
@@ -539,6 +547,7 @@ func TestExecutePlan(t *testing.T) {
 			}
 			ct.BuildbucketFake.AddBuilder(bbHost, builder, nil)
 			executor := &Executor{
+				Env: ct.Env,
 				Backend: &bbfacade.Facade{
 					ClientFactory: ct.BuildbucketFake.NewClientFactory(),
 				},
@@ -599,6 +608,7 @@ func TestExecutePlan(t *testing.T) {
 							Reused:     true,
 						},
 					})
+				So(executor.stagedMetricReportFns, ShouldBeEmpty)
 			})
 
 			Convey("When Tryjob can't be reused, thus launch a new Tryjob", func() {
@@ -618,6 +628,11 @@ func TestExecutePlan(t *testing.T) {
 				So(attempt.GetExternalId(), ShouldNotBeEmpty)
 				So(attempt.GetStatus(), ShouldEqual, tryjob.Status_TRIGGERED)
 				So(attempt.GetReused(), ShouldBeFalse)
+				So(executor.stagedMetricReportFns, ShouldHaveLength, 1)
+				executor.stagedMetricReportFns[0](ctx)
+				metrics.RunWithBuilderTarget(ctx, ct.Env, def, func(ctx context.Context) {
+					So(ct.TSMonSentValue(ctx, metrics.Public.TryjobLaunched, lProject, configGroupName, true, false), ShouldEqual, 1)
+				})
 			})
 
 			Convey("Fail the execution if encounter launch failure", func() {
@@ -645,6 +660,7 @@ func TestExecutePlan(t *testing.T) {
 				So(attempt.GetStatus(), ShouldEqual, tryjob.Status_UNTRIGGERED)
 				So(execState.Status, ShouldEqual, tryjob.ExecutionState_FAILED)
 				So(execState.FailureReason, ShouldContainSubstring, "Failed to launch tryjob")
+				So(executor.stagedMetricReportFns, ShouldBeEmpty)
 			})
 		})
 	})
