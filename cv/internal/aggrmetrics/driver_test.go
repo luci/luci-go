@@ -43,7 +43,7 @@ func TestDriver(t *testing.T) {
 		ct := cvtesting.Test{}
 		ctx, cancel := ct.SetUp()
 		defer cancel()
-		_ = New(ctx, ct.TQDispatcher)
+		_ = New(ctx, ct.Env, ct.TQDispatcher)
 	})
 
 	Convey("Driver works", t, func() {

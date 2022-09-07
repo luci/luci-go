@@ -182,7 +182,7 @@ func main() {
 		cron.RegisterHandler("refresh-config", func(ctx context.Context) error {
 			return refreshConfig(ctx, pcr)
 		})
-		aggregator := aggrmetrics.New(srv.Context, &tq.Default)
+		aggregator := aggrmetrics.New(srv.Context, env, &tq.Default)
 		cron.RegisterHandler("aggregate-metrics", func(ctx context.Context) error {
 			return aggregator.Cron(ctx)
 		})

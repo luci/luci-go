@@ -44,11 +44,12 @@ const (
 )
 
 // New creates a new Driver for metrics aggregation.
-func New(ctx context.Context, tqd *tq.Dispatcher) *Driver {
+func New(ctx context.Context, env *common.Env, tqd *tq.Dispatcher) *Driver {
 	d := &Driver{
 		aggregators: []aggregator{
 			&runsAggregator{},
 			&pmReporter{},
+			&builderPresenceAggregator{env: env},
 		},
 		lastFlush: clock.Now(ctx),
 	}
