@@ -595,6 +595,10 @@ func SubcommandContextWithParams(params CommandParams) *subcommands.Command {
 			c.Flags.BoolVar(
 				&c.exposeSystemAccount, "expose-system-account", false,
 				`Exposes non-default "system" LUCI logical account to emulate Swarming environment.`)
+			c.Flags.BoolVar(
+				&c.disableGitAuth, "disable-git-auth", false,
+				"Toggles whether to attempt configuration of the git credentials environment\n"+
+					"for the subprocess.")
 			return c
 		},
 	}
@@ -607,6 +611,7 @@ type contextRun struct {
 	actViaRealm         string
 	tokenServerHost     string
 	exposeSystemAccount bool
+	disableGitAuth      bool
 }
 
 func (c *contextRun) Run(a subcommands.Application, args []string, env subcommands.Env) int {
@@ -658,7 +663,7 @@ func (c *contextRun) Run(a subcommands.Application, args []string, env subcomman
 		ID:                  "luci-auth",
 		Options:             opts,
 		ExposeSystemAccount: c.exposeSystemAccount,
-		EnableGitAuth:       true,
+		EnableGitAuth:       !c.disableGitAuth,
 		EnableDockerAuth:    true,
 		EnableGCEEmulation:  true,
 		EnableFirebaseAuth:  true,
