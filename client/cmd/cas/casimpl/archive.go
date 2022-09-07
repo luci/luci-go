@@ -56,7 +56,6 @@ working directory, '-paths :foo' is sufficient.`,
 			c.Flags.Var(&c.paths, "paths", "File(s)/Directory(ies) to archive. Specify as <working directory>:<relative path to file/dir>")
 			c.Flags.StringVar(&c.dumpDigest, "dump-digest", "", "Dump uploaded CAS root digest to file in the format of '<Hash>/<Size>'")
 			c.Flags.StringVar(&c.dumpJSON, "dump-json", "", "Dump upload stats to json file.")
-			c.Flags.StringVar(&c.dumpJSON, "dump-stats-json", "", "Dump upload stats to json file (deprecated).")
 			return &c
 		},
 	}

@@ -63,7 +63,6 @@ Tree is referenced by their digest "<digest hash>/<size bytes>"`,
 			c.Flags.StringVar(&c.digest, "digest", "", `Digest of root directory proto "<digest hash>/<size bytes>".`)
 			c.Flags.StringVar(&c.dir, "dir", "", "Directory to download tree.")
 			c.Flags.StringVar(&c.dumpJSON, "dump-json", "", "Dump download stats to json file.")
-			c.Flags.StringVar(&c.dumpJSON, "dump-stats-json", "", "Dump upload stats to json file (deprecated).")
 			if newSmallFileCache != nil {
 				c.Flags.StringVar(&c.kvs, "kvs-dir", "", "Cache dir for small files.")
 			}
