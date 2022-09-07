@@ -103,7 +103,7 @@ func findNewPatchsetRunTrigger(input *FindInput) *run.Trigger {
 	default:
 		return &run.Trigger{
 			Mode:  string(run.NewPatchsetRun),
-			Email: currentRev.GetUploader().GetEmail(),
+			Email: input.ChangeInfo.Owner.Email,
 			Time:  currentRev.GetCreated(),
 		}
 	}

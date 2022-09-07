@@ -309,12 +309,14 @@ func TestFindCQTrigger(t *testing.T) {
 
 func TestFindNewPatchsetRunTrigger(t *testing.T) {
 	t.Parallel()
+	owner := gf.U("owner")
 	uploader1 := gf.U("ul-1")
 	uploader2 := gf.U("ul-2")
 	ts1 := testclock.TestRecentTimeUTC
 	ts2 := ts1.Add(30 * time.Minute)
 	// Create change info.
 	ci := &gerritpb.ChangeInfo{
+		Owner:           owner,
 		Status:          gerritpb.ChangeStatus_NEW,
 		CurrentRevision: "deadbeef~2",
 		Revisions: map[string]*gerritpb.RevisionInfo{
@@ -365,7 +367,7 @@ func TestFindNewPatchsetRunTrigger(t *testing.T) {
 					&run.Trigger{
 						Mode:  string(run.NewPatchsetRun),
 						Time:  timestamppb.New(ts2),
-						Email: uploader2.Email,
+						Email: owner.Email,
 					},
 				)
 			})

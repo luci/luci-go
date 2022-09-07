@@ -61,6 +61,7 @@ func shouldResembleTriagedCL(actual interface{}, expected ...interface{}) string
 	buf := strings.Builder{}
 	for _, err := range []string{
 		ShouldResemble(a.cqReady, b.cqReady),
+		ShouldResemble(a.nprReady, b.nprReady),
 		ShouldResemble(a.runIndexes, b.runIndexes),
 		cvtesting.SafeShouldResemble(a.deps, b.deps),
 		ShouldResembleProto(a.pcl, b.pcl),
@@ -87,6 +88,9 @@ func TestCLsTriage(t *testing.T) {
 		fullRun := func(t time.Time) *run.Trigger {
 			return &run.Trigger{Mode: string(run.FullRun), Time: timestamppb.New(t)}
 		}
+		newPatchsetTrigger := func(t time.Time) *run.Trigger {
+			return &run.Trigger{Mode: string(run.NewPatchsetRun), Time: timestamppb.New(t)}
+		}
 
 		sup := &simplePMState{
 			pb: &prjpb.PState{},
@@ -94,10 +98,19 @@ func TestCLsTriage(t *testing.T) {
 				{ID: "hash/singular", Content: &cfgpb.ConfigGroup{}},
 				{ID: "hash/combinable", Content: &cfgpb.ConfigGroup{CombineCls: &cfgpb.CombineCLs{}}},
 				{ID: "hash/another", Content: &cfgpb.ConfigGroup{}},
+				{ID: "hash/npr", Content: &cfgpb.ConfigGroup{
+					Verifiers: &cfgpb.Verifiers{
+						Tryjob: &cfgpb.Verifiers_Tryjob{
+							Builders: []*cfgpb.Verifiers_Tryjob_Builder{
+								{Name: "nprBuilder", ModeAllowlist: []string{string(run.NewPatchsetRun)}},
+							},
+						},
+					},
+				}},
 			},
 		}
 		pm := pmState{sup}
-		const singIdx, combIdx, anotherIdx = 0, 1, 2
+		const singIdx, combIdx, anotherIdx, nprIdx = 0, 1, 2, 3
 
 		do := func(c *prjpb.Component) map[int64]*clInfo {
 			sup.pb.Components = []*prjpb.Component{c} // include it in backup
@@ -138,7 +151,7 @@ func TestCLsTriage(t *testing.T) {
 				Convey("ready may also be in 1+ Runs", func() {
 					cls := do(&prjpb.Component{
 						Clids: []int64{1},
-						Pruns: []*prjpb.PRun{{Id: "r1", Clids: []int64{1}}},
+						Pruns: []*prjpb.PRun{{Id: "r1", Clids: []int64{1}, Mode: string(run.DryRun)}},
 					})
 					So(cls, ShouldHaveLength, 1)
 					expected.runIndexes = []int32{0}
@@ -198,7 +211,7 @@ func TestCLsTriage(t *testing.T) {
 				Convey("not even if inside 1+ Runs", func() {
 					cls := do(&prjpb.Component{
 						Clids: []int64{1},
-						Pruns: []*prjpb.PRun{{Id: "r1", Clids: []int64{1}}},
+						Pruns: []*prjpb.PRun{{Id: "r1", Clids: []int64{1}, Mode: string(run.DryRun)}},
 					})
 					So(cls, ShouldHaveLength, 1)
 					expected.runIndexes = []int32{0}
@@ -224,7 +237,7 @@ func TestCLsTriage(t *testing.T) {
 									},
 								},
 							},
-							ApplyTo: &prjpb.PurgeReason_AllActiveTriggers{AllActiveTriggers: true},
+							ApplyTo: &prjpb.PurgeReason_Triggers{Triggers: &run.Triggers{CqVoteTrigger: dryRun(epoch)}},
 						}},
 						cqReady: false,
 						deps:    nil, // not checked.
@@ -235,7 +248,7 @@ func TestCLsTriage(t *testing.T) {
 				Convey("not even if inside 1+ Runs, but Run protects from purging", func() {
 					cls := do(&prjpb.Component{
 						Clids: []int64{1},
-						Pruns: []*prjpb.PRun{{Id: "r1", Clids: []int64{1}}},
+						Pruns: []*prjpb.PRun{{Id: "r1", Clids: []int64{1}, Mode: string(run.DryRun)}},
 					})
 					So(cls, ShouldHaveLength, 1)
 					expected.runIndexes = []int32{0}
@@ -245,6 +258,111 @@ func TestCLsTriage(t *testing.T) {
 			})
 		})
 
+		Convey("Typical 1 CL component with new patchset run enabled", func() {
+			sup.pb.Pcls = []*prjpb.PCL{{
+				Clid:               1,
+				ConfigGroupIndexes: []int32{nprIdx},
+				Status:             prjpb.PCL_OK,
+				Triggers: &run.Triggers{
+					CqVoteTrigger:         dryRun(epoch),
+					NewPatchsetRunTrigger: newPatchsetTrigger(epoch),
+				},
+				Submitted: false,
+				Deps:      nil,
+			}}
+			Convey("new patchset upload on CL with CQ vote run being purged", func() {
+				sup.pb.PurgingCls = append(sup.pb.PurgingCls, &prjpb.PurgingCL{
+					Clid: 1,
+					ApplyTo: &prjpb.PurgingCL_Triggers{
+						Triggers: &run.Triggers{
+							CqVoteTrigger: dryRun(epoch),
+						},
+					},
+				})
+				expected := &clInfo{
+					pcl:        pm.MustPCL(1),
+					runIndexes: nil,
+					purgingCL: &prjpb.PurgingCL{
+						Clid: 1,
+						ApplyTo: &prjpb.PurgingCL_Triggers{
+							Triggers: &run.Triggers{
+								CqVoteTrigger: dryRun(epoch),
+							},
+						},
+					},
+
+					triagedCL: triagedCL{
+						purgeReasons: nil,
+						cqReady:      false,
+						nprReady:     true,
+						deps:         &triagedDeps{},
+					},
+				}
+
+				cls := do(&prjpb.Component{Clids: []int64{1}})
+				So(cls, ShouldHaveLength, 1)
+				So(cls[1], shouldResembleTriagedCL, expected)
+			})
+
+			Convey("new patch upload on CL with NPR being purged", func() {
+				sup.pb.PurgingCls = append(sup.pb.PurgingCls, &prjpb.PurgingCL{
+					Clid: 1,
+					ApplyTo: &prjpb.PurgingCL_Triggers{
+						Triggers: &run.Triggers{
+							NewPatchsetRunTrigger: newPatchsetTrigger(epoch),
+						},
+					},
+				})
+				expected := &clInfo{
+					pcl:        pm.MustPCL(1),
+					runIndexes: nil,
+					purgingCL: &prjpb.PurgingCL{
+						Clid: 1,
+						ApplyTo: &prjpb.PurgingCL_Triggers{
+							Triggers: &run.Triggers{
+								NewPatchsetRunTrigger: newPatchsetTrigger(epoch),
+							},
+						},
+					},
+					triagedCL: triagedCL{
+						purgeReasons: nil,
+						cqReady:      true,
+						nprReady:     false,
+						deps:         &triagedDeps{},
+					},
+				}
+				cls := do(&prjpb.Component{Clids: []int64{1}})
+				So(cls, ShouldHaveLength, 1)
+				So(cls[1], shouldResembleTriagedCL, expected)
+
+			})
+		})
+		Convey("Triage with ongoing New Pachset Run", func() {
+			sup.pb.Pcls = []*prjpb.PCL{{
+				Clid:               1,
+				ConfigGroupIndexes: []int32{nprIdx},
+				Status:             prjpb.PCL_OK,
+				Triggers: &run.Triggers{
+					NewPatchsetRunTrigger: newPatchsetTrigger(epoch),
+				},
+				Submitted: false,
+				Deps:      nil,
+			}}
+			expected := &clInfo{
+				pcl:        pm.MustPCL(1),
+				runIndexes: []int32{0},
+				triagedCL: triagedCL{
+					purgeReasons: nil,
+					nprReady:     true,
+				},
+			}
+			cls := do(&prjpb.Component{
+				Clids: []int64{1},
+				Pruns: []*prjpb.PRun{{Id: "r1", Clids: []int64{1}, Mode: string(run.NewPatchsetRun)}},
+			})
+			So(cls, ShouldHaveLength, 1)
+			So(cls[1], shouldResembleTriagedCL, expected)
+		})
 		Convey("Single CL Runs: typical CL stack", func() {
 			// CL 3 depends on 2, which in turn depends 1.
 			// Start configuration is each one is Dry-run triggered.
@@ -295,15 +413,21 @@ func TestCLsTriage(t *testing.T) {
 				}
 			})
 
-			Convey("Full Run on #3 is purged if its deps aren't submitted", func() {
-				sup.PCL(3).Triggers = &run.Triggers{CqVoteTrigger: fullRun(epoch)}
+			Convey("Full Run on #3 is purged if its deps aren't submitted, but NPR is not affected", func() {
+				sup.PCL(1).Triggers = &run.Triggers{CqVoteTrigger: dryRun(epoch), NewPatchsetRunTrigger: newPatchsetTrigger(epoch)}
+				sup.PCL(2).Triggers = &run.Triggers{CqVoteTrigger: dryRun(epoch), NewPatchsetRunTrigger: newPatchsetTrigger(epoch)}
+				sup.PCL(3).Triggers = &run.Triggers{CqVoteTrigger: fullRun(epoch), NewPatchsetRunTrigger: newPatchsetTrigger(epoch)}
 				cls := do(&prjpb.Component{Clids: []int64{1, 2, 3}})
 				So(cls[1].cqReady, ShouldBeTrue)
 				So(cls[2].cqReady, ShouldBeTrue)
+				So(cls[1].nprReady, ShouldBeTrue)
+				So(cls[2].nprReady, ShouldBeTrue)
+				So(cls[3].nprReady, ShouldBeTrue)
 				So(cls[3], shouldResembleTriagedCL, &clInfo{
 					pcl: sup.PCL(3),
 					triagedCL: triagedCL{
-						cqReady: false,
+						cqReady:  false,
+						nprReady: true,
 						purgeReasons: []*prjpb.PurgeReason{{
 							ClError: &changelist.CLError{
 								Kind: &changelist.CLError_InvalidDeps_{
@@ -335,7 +459,7 @@ func TestCLsTriage(t *testing.T) {
 				sup.PCL(3).Triggers = &run.Triggers{CqVoteTrigger: fullRun(epoch)}
 				cls := do(&prjpb.Component{
 					Clids: []int64{1, 2, 3},
-					Pruns: []*prjpb.PRun{{Id: "r1", Clids: []int64{1}}},
+					Pruns: []*prjpb.PRun{{Id: "r1", Clids: []int64{1}, Mode: string(run.FullRun)}},
 				})
 				So(cls[2].cqReady, ShouldBeTrue)
 				So(cls[2].deps, cvtesting.SafeShouldResemble, &triagedDeps{
