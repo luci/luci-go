@@ -84,10 +84,11 @@ func (s *resultDBServer) BatchGetTestVariants(ctx context.Context, in *pb.BatchG
 	// Query test variants with an empty predicate and a list of test IDs,
 	// which will match all variants with those IDs, regardless of status.
 	q := testvariants.Query{
-		InvocationIDs: invs,
-		TestIDs:       testIDs,
-		Predicate:     &pb.TestVariantPredicate{},
-		ResultLimit:   testvariants.AdjustResultLimit(in.ResultLimit),
+		InvocationIDs:      invs,
+		TestIDs:            testIDs,
+		Predicate:          &pb.TestVariantPredicate{},
+		ResultLimit:        testvariants.AdjustResultLimit(in.ResultLimit),
+		ResponseLimitBytes: testvariants.DefaultResponseLimitBytes,
 		// Number chosen fairly arbitrarily.
 		PageSize:  1000,
 		PageToken: "",

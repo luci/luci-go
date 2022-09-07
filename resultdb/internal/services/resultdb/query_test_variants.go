@@ -56,12 +56,13 @@ func (s *resultDBServer) QueryTestVariants(ctx context.Context, in *pb.QueryTest
 
 	// Query test variants.
 	q := testvariants.Query{
-		InvocationIDs: invs,
-		Predicate:     in.Predicate,
-		ResultLimit:   testvariants.AdjustResultLimit(in.ResultLimit),
-		PageSize:      pagination.AdjustPageSize(in.PageSize),
-		PageToken:     in.PageToken,
-		Mask:          readMask,
+		InvocationIDs:      invs,
+		Predicate:          in.Predicate,
+		ResultLimit:        testvariants.AdjustResultLimit(in.ResultLimit),
+		PageSize:           pagination.AdjustPageSize(in.PageSize),
+		ResponseLimitBytes: testvariants.DefaultResponseLimitBytes,
+		PageToken:          in.PageToken,
+		Mask:               readMask,
 	}
 
 	var tvs []*pb.TestVariant

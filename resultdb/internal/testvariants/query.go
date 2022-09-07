@@ -41,6 +41,10 @@ const (
 	// It is required to prevent client-caused OOMs.
 	resultLimitMax     = 100
 	resultLimitDefault = 10
+
+	// DefaultResponseLimitBytes is the default soft limit on the number of bytes
+	// that should be returned by a Test Variants query.
+	DefaultResponseLimitBytes = 20 * 1000 * 1000 // 20 MB
 )
 
 // AllFields is a field mask that selects all TestVariant fields.
@@ -89,6 +93,11 @@ type Query struct {
 	// less than this, or even zero. (It may be zero even if there are
 	// more test variants in later pages). Must be positive.
 	PageSize int
+	// ResponseLimitBytes is the soft limit on the number of bytes returned
+	// by a query. The soft limit is on JSON-serialised form of the
+	// result. A page will be truncated once it exceeds this value.
+	// Must be positive.
+	ResponseLimitBytes int
 	// Consists of test variant status, test id and variant hash.
 	PageToken string
 	Mask      *mask.Mask
@@ -302,6 +311,7 @@ func (q *Query) queryTestVariantsWithUnexpectedResults(ctx context.Context, f fu
 }
 
 func (q *Query) fetchTestVariantsWithUnexpectedResults(ctx context.Context) (tvs []*pb.TestVariant, nextPageToken string, err error) {
+	responseSize := 0
 	tvs = make([]*pb.TestVariant, 0, q.PageSize)
 
 	// Fetch test variants with unexpected results.
@@ -312,13 +322,19 @@ func (q *Query) fetchTestVariantsWithUnexpectedResults(ctx context.Context) (tvs
 		}
 
 		tvs = append(tvs, tv)
+
+		// Apply soft repsonse size limit.
+		responseSize += estimateTestVariantSize(tv)
+		if responseSize > q.ResponseLimitBytes {
+			return responseLimitReachedErr
+		}
 		return nil
 	})
-	if err != nil {
+	if err != nil && err != responseLimitReachedErr {
 		return nil, "", err
 	}
 
-	if len(tvs) == q.PageSize {
+	if len(tvs) == q.PageSize || err == responseLimitReachedErr {
 		// There could be more test variants to return.
 		last := tvs[len(tvs)-1]
 		nextPageToken = pagination.Token(last.Status.String(), last.TestId, last.VariantHash)
@@ -480,7 +496,12 @@ func (q *Query) queryTestVariants(ctx context.Context, f func(*pb.TestVariant) e
 	return finished, nil
 }
 
+// responseLimitReachedErr is an error returned to avoid iterating over more
+// results when the soft response size limit has been reached.
+var responseLimitReachedErr = errors.New("terminating iteration early as response size limit reached")
+
 func (q *Query) fetchTestVariantsWithOnlyExpectedResults(ctx context.Context) (tvs []*pb.TestVariant, nextPageToken string, err error) {
+	responseSize := 0
 	tvs = make([]*pb.TestVariant, 0, q.PageSize)
 
 	// The last test variant we have completely processed.
@@ -503,10 +524,16 @@ func (q *Query) fetchTestVariantsWithOnlyExpectedResults(ctx context.Context) (t
 			}
 
 			tvs = append(tvs, tv)
+
+			// Apply soft repsonse size limit.
+			responseSize += estimateTestVariantSize(tv)
+			if responseSize > q.ResponseLimitBytes {
+				return responseLimitReachedErr
+			}
 		}
 		return nil
 	})
-	if err != nil {
+	if err != nil && err != responseLimitReachedErr {
 		return nil, "", err
 	}
 
@@ -527,6 +554,9 @@ func (q *Query) Fetch(ctx context.Context) (tvs []*pb.TestVariant, nextPageToken
 	}
 	if q.ResultLimit <= 0 {
 		panic("ResultLimit <= 0")
+	}
+	if q.ResponseLimitBytes <= 0 {
+		panic("ResponseLimitBytes <= 0")
 	}
 
 	status := int(q.Predicate.GetStatus())
@@ -700,4 +730,13 @@ func populateTestMetadata(tv *pb.TestVariant, tmd spanutil.Compressed) error {
 
 	tv.TestMetadata = &pb.TestMetadata{}
 	return proto.Unmarshal(tmd, tv.TestMetadata)
+}
+
+// estimateTestVariantSize estimates the size of a test variant in
+// a pRPC response (pRPC responses use JSON serialisation).
+func estimateTestVariantSize(tv *pb.TestVariant) int {
+	// Estimate the size of a JSON-serialised test variant,
+	// as the sum of the sizes of its fields, plus
+	// an overhead (for JSON grammar and the field names).
+	return 1000 + proto.Size(tv)
 }
