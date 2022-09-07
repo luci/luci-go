@@ -56,7 +56,7 @@ func TestTriage(t *testing.T) {
 		const lProject = "v8"
 
 		const stabilizationDelay = 5 * time.Minute
-		const singIdx, combIdx, anotherIdx = 0, 1, 2
+		const singIdx, combIdx, anotherIdx, nprIdx = 0, 1, 2, 3
 		cfg := &cfgpb.Config{
 			ConfigGroups: []*cfgpb.ConfigGroup{
 				{Name: "singular"},
@@ -64,6 +64,15 @@ func TestTriage(t *testing.T) {
 					StabilizationDelay: durationpb.New(stabilizationDelay),
 				}},
 				{Name: "another"},
+				{Name: "newPatchsetRun",
+					Verifiers: &cfgpb.Verifiers{
+						Tryjob: &cfgpb.Verifiers_Tryjob{
+							Builders: []*cfgpb.Verifiers_Tryjob_Builder{
+								{Name: "nprBuilder", ModeAllowlist: []string{string(run.NewPatchsetRun)}},
+							},
+						},
+					},
+				},
 			},
 		}
 		prjcfgtest.Create(ctx, lProject, cfg)
@@ -108,13 +117,20 @@ func TestTriage(t *testing.T) {
 				mods = append(mods, gf.CQ(+2, triggerTime, u))
 			case run.DryRun:
 				mods = append(mods, gf.CQ(+1, triggerTime, u))
+			case run.NewPatchsetRun:
 			default:
 				panic(fmt.Errorf("unsupported %s", mode))
 			}
 			ci := gf.CI(clid, mods...)
-			trs := trigger.Find(&trigger.FindInput{ChangeInfo: ci, ConfigGroup: nil})
-			So(trs.GetCqVoteTrigger(), ShouldNotBeNil)
-			So(trs.GetCqVoteTrigger().GetMode(), ShouldResemble, string(mode))
+			trs := trigger.Find(&trigger.FindInput{ChangeInfo: ci, ConfigGroup: cfg.GetConfigGroups()[grpIndex]})
+			switch mode {
+			case run.NewPatchsetRun:
+				So(grpIndex, ShouldEqual, nprIdx)
+				So(trs.GetNewPatchsetRunTrigger(), ShouldNotBeNil)
+			default:
+				So(trs.GetCqVoteTrigger(), ShouldNotBeNil)
+				So(trs.GetCqVoteTrigger().GetMode(), ShouldResemble, string(mode))
+			}
 			cl := &changelist.CL{
 				ID:       common.CLID(clid),
 				EVersion: 1,
@@ -131,8 +147,14 @@ func TestTriage(t *testing.T) {
 			}
 			So(datastore.Put(ctx, cl), ShouldBeNil)
 			pclTriggers := proto.Clone(trs).(*run.Triggers)
-			pclTriggers.CqVoteTrigger.Email = ""
-			pclTriggers.CqVoteTrigger.GerritAccountId = 0
+			if pclTriggers.GetNewPatchsetRunTrigger() != nil {
+				pclTriggers.NewPatchsetRunTrigger.Email = ""
+				pclTriggers.NewPatchsetRunTrigger.GerritAccountId = 0
+			}
+			if pclTriggers.GetCqVoteTrigger() != nil {
+				pclTriggers.CqVoteTrigger.Email = ""
+				pclTriggers.CqVoteTrigger.GerritAccountId = 0
+			}
 			return cl, &prjpb.PCL{
 				Clid:               int64(clid),
 				Eversion:           1,
@@ -149,7 +171,7 @@ func TestTriage(t *testing.T) {
 			oldC := &prjpb.Component{
 				Clids: []int64{33},
 				// Component already has a Run, so no action required.
-				Pruns:          []*prjpb.PRun{{Id: "id", Clids: []int64{33}}},
+				Pruns:          []*prjpb.PRun{{Id: "id", Clids: []int64{33}, Mode: string(run.DryRun)}},
 				TriageRequired: true,
 			}
 			res := mustTriage(oldC)
@@ -167,7 +189,7 @@ func TestTriage(t *testing.T) {
 					ClError: &changelist.CLError{ // => must purge.
 						Kind: &changelist.CLError_OwnerLacksEmail{OwnerLacksEmail: true},
 					},
-					ApplyTo: &prjpb.PurgeReason_AllActiveTriggers{AllActiveTriggers: true},
+					ApplyTo: &prjpb.PurgeReason_Triggers{Triggers: dryRun(ct.Clock.Now())},
 				}},
 			}}
 			oldC := &prjpb.Component{Clids: []int64{33}}
@@ -178,6 +200,40 @@ func TestTriage(t *testing.T) {
 				So(res.NewValue, ShouldResembleProto, markTriaged(oldC))
 				So(res.CLsToPurge, ShouldHaveLength, 1)
 				So(res.RunsToCreate, ShouldBeEmpty)
+			})
+			Convey("singular group, does not affect NPR", func() {
+				_, pcl := putPCL(33, nprIdx, run.DryRun, ct.Clock.Now())
+				pm.pb.Pcls[0] = pcl
+				pcl.PurgeReasons = []*prjpb.PurgeReason{{
+					ClError: &changelist.CLError{
+						Kind: &changelist.CLError_SelfCqDepend{},
+					},
+					ApplyTo: &prjpb.PurgeReason_Triggers{Triggers: dryRun(ct.Clock.Now())},
+				}}
+				res := mustTriage(oldC)
+				So(res.NewValue, ShouldResembleProto, markTriaged(oldC))
+				So(res.CLsToPurge, ShouldHaveLength, 1)
+				So(res.RunsToCreate, ShouldHaveLength, 1)
+				So(res.RunsToCreate[0].Mode, ShouldEqual, run.NewPatchsetRun)
+			})
+			Convey("singular group, purge NPR trigger and let dry run continue", func() {
+				_, pcl := putPCL(33, nprIdx, run.DryRun, ct.Clock.Now())
+				pm.pb.Pcls[0] = pcl
+				pcl.PurgeReasons = []*prjpb.PurgeReason{{
+					ClError: &changelist.CLError{
+						Kind: &changelist.CLError_OwnerLacksEmail{},
+					},
+					ApplyTo: &prjpb.PurgeReason_Triggers{
+						Triggers: &run.Triggers{
+							NewPatchsetRunTrigger: pcl.GetTriggers().GetNewPatchsetRunTrigger(),
+						},
+					},
+				}}
+				res := mustTriage(oldC)
+				So(res.NewValue, ShouldResembleProto, markTriaged(oldC))
+				So(res.CLsToPurge, ShouldHaveLength, 1)
+				So(res.RunsToCreate, ShouldHaveLength, 1)
+				So(res.RunsToCreate[0].Mode, ShouldEqual, run.DryRun)
 			})
 			Convey("combinable group -- obey stabilization_delay", func() {
 				pm.pb.Pcls[0].ConfigGroupIndexes = []int32{combIdx}
@@ -255,6 +311,66 @@ func TestTriage(t *testing.T) {
 		})
 
 		Convey("Creates Runs", func() {
+			Convey("CQVote and NPR triggers", func() {
+				_, pcl := putPCL(33, nprIdx, run.DryRun, ct.Clock.Now())
+				pm.pb.Pcls = []*prjpb.PCL{pcl}
+				oldC := &prjpb.Component{Clids: []int64{33}, TriageRequired: true}
+				res := mustTriage(oldC)
+				So(res.NewValue, ShouldResembleProto, markTriaged(oldC))
+				So(res.CLsToPurge, ShouldBeEmpty)
+				So(res.RunsToCreate, ShouldHaveLength, 2)
+				rc := res.RunsToCreate[0]
+				So(rc.ConfigGroupID.Name(), ShouldResemble, "newPatchsetRun")
+				So(rc.Mode, ShouldResemble, run.DryRun)
+				So(rc.InputCLs, ShouldHaveLength, 1)
+				rc = res.RunsToCreate[1]
+				So(rc.InputCLs[0].ID, ShouldEqual, 33)
+				So(rc.ConfigGroupID.Name(), ShouldResemble, "newPatchsetRun")
+				So(rc.Mode, ShouldResemble, run.NewPatchsetRun)
+				So(rc.InputCLs, ShouldHaveLength, 1)
+				So(rc.InputCLs[0].ID, ShouldEqual, 33)
+			})
+			Convey("NPR Only", func() {
+				Convey("OK", func() {
+					var pcl *prjpb.PCL
+					_, pcl = putPCL(33, nprIdx, run.NewPatchsetRun, ct.Clock.Now())
+
+					pm.pb.Pcls = []*prjpb.PCL{pcl}
+					oldC := &prjpb.Component{Clids: []int64{33}, TriageRequired: true}
+					res := mustTriage(oldC)
+					So(res.NewValue, ShouldResembleProto, markTriaged(oldC))
+					So(res.CLsToPurge, ShouldBeEmpty)
+					So(res.RunsToCreate, ShouldHaveLength, 1)
+					rc := res.RunsToCreate[0]
+					So(rc.ConfigGroupID.Name(), ShouldResemble, "newPatchsetRun")
+					So(rc.Mode, ShouldResemble, run.NewPatchsetRun)
+					So(rc.InputCLs, ShouldHaveLength, 1)
+					So(rc.InputCLs[0].ID, ShouldEqual, 33)
+				})
+
+				Convey("Noop when Run already exists", func() {
+					var pcl *prjpb.PCL
+					_, pcl = putPCL(33, nprIdx, run.NewPatchsetRun, ct.Clock.Now())
+
+					pm.pb.Pcls = []*prjpb.PCL{pcl}
+					oldC := &prjpb.Component{Clids: []int64{33}, TriageRequired: true, Pruns: makePrunsWithMode(run.NewPatchsetRun, "run-id", 33)}
+					res := mustTriage(oldC)
+					So(res.NewValue, ShouldResembleProto, markTriaged(oldC))
+					So(res.CLsToPurge, ShouldBeEmpty)
+					So(res.RunsToCreate, ShouldBeEmpty)
+				})
+
+				Convey("EVersion mismatch is an ErrOutdatedPMState", func() {
+					cl, pcl := putPCL(33, nprIdx, run.NewPatchsetRun, ct.Clock.Now())
+					cl.EVersion = 2
+					So(datastore.Put(ctx, cl), ShouldBeNil)
+					pm.pb.Pcls = []*prjpb.PCL{pcl}
+					err := failTriage(&prjpb.Component{Clids: []int64{33}, TriageRequired: true})
+					So(itriager.IsErrOutdatedPMState(err), ShouldBeTrue)
+					So(err, ShouldErrLike, "EVersion changed 1 => 2")
+				})
+
+			})
 			Convey("Singular", func() {
 				Convey("OK", func() {
 					_, pcl := putPCL(33, singIdx, run.DryRun, ct.Clock.Now())
@@ -542,6 +658,10 @@ func sortRunsToCreateByFirstCL(res *itriager.Result) {
 // makePruns is readability sugar to create 0+ pruns slice.
 // Example use: makePruns("first", 31, 32, "second", 44, "third", 11).
 func makePruns(runIDthenCLIDs ...interface{}) []*prjpb.PRun {
+	return makePrunsWithMode(run.DryRun, runIDthenCLIDs...)
+}
+
+func makePrunsWithMode(m run.Mode, runIDthenCLIDs ...interface{}) []*prjpb.PRun {
 	var out []*prjpb.PRun
 	var cur *prjpb.PRun
 	const sentinel = "<$sentinel>"
@@ -571,7 +691,7 @@ func makePruns(runIDthenCLIDs ...interface{}) []*prjpb.PRun {
 			if v == "" {
 				panic("empty run ID")
 			}
-			cur = &prjpb.PRun{Id: string(v)}
+			cur = &prjpb.PRun{Id: string(v), Mode: string(m)}
 		case int64:
 			if cur == nil {
 				panic("CLIDs must follow a string RunID")

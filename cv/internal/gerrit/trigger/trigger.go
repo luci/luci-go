@@ -60,8 +60,9 @@ type FindInput struct {
 // Find computes the triggers corresponding to a given CL.
 //
 // It will return the highest priority trigger based on CQ+1 and CQ+2 votes,
-// and in the future it will optionally return an additional trigger for the
-// most recently uploaded patchset.
+// if the CQ label is non-zero, and an additional trigger for the most recently
+// uploaded patchset if new patchset runs are enabled and a run has not yet been
+// completed for such a patchset.
 //
 // CQ+2 a.k.a. Full Run takes priority of CQ+1 a.k.a Dry Run, even if CQ+1 vote
 // is newer. Among several equal votes, the earliest is selected as the
@@ -71,7 +72,8 @@ type FindInput struct {
 // on the *triggering* CQ vote also voted on the additional label, then the
 // additional mode is selected instead of the standard Dry/Full Run.
 //
-// Returns up to one trigger based on a vote on the Commit-Queue label.
+// Returns up to one trigger based on a vote on the Commit-Queue label, plus up
+// to one trigger for the new patchset.
 func Find(input *FindInput) *run.Triggers {
 	cqTrigger := findCQTrigger(input)
 	nprTrigger := findNewPatchsetRunTrigger(input)

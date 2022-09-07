@@ -17,6 +17,7 @@ package triager
 import (
 	"context"
 	"fmt"
+	"sort"
 	"strings"
 	"time"
 
@@ -88,17 +89,72 @@ type runStage struct {
 }
 
 func (rs *runStage) stageNewRunsFrom(ctx context.Context, clid int64, info *clInfo) ([]*runcreator.Creator, time.Time, error) {
-	// Only start with ready CLs. Non-ready ones can't form new Runs anyway.
-	if !info.cqReady {
+	if !info.cqReady && !info.nprReady {
 		return nil, time.Time{}, nil
 	}
+	var runs []*runcreator.Creator
+	var retTime time.Time
+	if info.cqReady {
+		switch cqRuns, t, err := rs.stageNewCQVoteRunsFrom(ctx, clid, info); {
+		case err != nil:
+			return nil, time.Time{}, err
+		default:
+			runs = append(runs, cqRuns...)
+			retTime = earliest(t, retTime)
+		}
+	}
+	if info.nprReady {
+		switch nprRuns, t, err := rs.stageNewPatchsetRunsFrom(ctx, clid, info); {
+		case err != nil:
+			return nil, time.Time{}, err
+		default:
+			runs = append(runs, nprRuns...)
+			retTime = earliest(t, retTime)
+		}
+	}
+	return runs, retTime, nil
+}
+
+func (rs *runStage) stageNewPatchsetRunsFrom(ctx context.Context, clid int64, info *clInfo) ([]*runcreator.Creator, time.Time, error) {
+	cgIndex := info.pcl.GetConfigGroupIndexes()[0]
+	cg := rs.pm.ConfigGroup(cgIndex)
+
+	combo := &combo{}
+	combo.add(info, useNewPatchsetTrigger)
+
+	if runs := combo.overlappingRuns(); len(runs) > 0 {
+		for idx := range runs {
+			if rs.c.Pruns[idx].Mode == string(run.NewPatchsetRun) {
+				// A run exists with the same mode and CL, wait for it to end.
+				return nil, time.Time{}, nil
+			}
+		}
+	}
+
+	rc, err := rs.makeCreator(ctx, combo, cg, useNewPatchsetTrigger)
+	if err != nil {
+		return nil, time.Time{}, err
+	}
+
+	switch exists, nextCheck, err := checkExisting(ctx, rc, *combo, useNewPatchsetTrigger); {
+	case err != nil:
+		return nil, time.Time{}, err
+	case !exists:
+		return []*runcreator.Creator{rc}, time.Time{}, nil
+	default:
+		return nil, nextCheck, nil
+	}
+}
+
+func (rs *runStage) stageNewCQVoteRunsFrom(ctx context.Context, clid int64, info *clInfo) ([]*runcreator.Creator, time.Time, error) {
+	// Only start with ready CLs. Non-ready ones can't form new Runs anyway.
 
 	if !rs.markVisited(clid) {
 		return nil, time.Time{}, nil
 	}
 
 	combo := combo{}
-	combo.add(info)
+	combo.add(info, useCQVoteTrigger)
 
 	cgIndex := info.pcl.GetConfigGroupIndexes()[0]
 	cg := rs.pm.ConfigGroup(cgIndex)
@@ -139,8 +195,14 @@ func (rs *runStage) stageNewRunsFrom(ctx context.Context, clid int64, info *clIn
 	// Check whether combo overlaps with any existing Runs.
 	// TODO(tandrii): support >1 concurrent Run on the same CL(s).
 	if runs := combo.overlappingRuns(); len(runs) > 0 {
-		for runIndex, sharedCLsCount := range runs { // take the first and only Run
+		for runIndex, sharedCLsCount := range runs {
 			prun := rs.c.GetPruns()[runIndex]
+			switch run.Mode(prun.Mode) {
+			case run.DryRun, run.FullRun, run.QuickDryRun:
+			default:
+				continue
+			}
+
 			switch l := len(prun.GetClids()); {
 			case l < sharedCLsCount:
 				panic("impossible")
@@ -190,44 +252,18 @@ func (rs *runStage) stageNewRunsFrom(ctx context.Context, clid int64, info *clIn
 		panic("unreachable")
 	}
 
-	rc, err := rs.makeCreator(ctx, &combo, cg)
+	rc, err := rs.makeCreator(ctx, &combo, cg, useCQVoteTrigger)
 	if err != nil {
 		return nil, time.Time{}, err
 	}
 
-	// Check if Run about to be created already exists in order to detect avoid
-	// infinite retries if CL triggers are somehow re-used.
-	existing := run.Run{ID: rc.ExpectedRunID()}
-	switch err := datastore.Get(ctx, &existing); {
-	case err == datastore.ErrNoSuchEntity:
-		// This is the expected case.
-		// NOTE: actual creation may still fail due to a race, and that's fine.
-		return []*runcreator.Creator{rc}, time.Time{}, nil
+	switch exists, nextCheck, err := checkExisting(ctx, rc, combo, useCQVoteTrigger); {
 	case err != nil:
-		return nil, time.Time{}, errors.Annotate(err, "failed to check for existing Run %q", existing.ID).Tag(transient.Tag).Err()
-	case !run.IsEnded(existing.Status):
-		// The Run already exists. Most likely another triager called from another
-		// TQ was first. Check again in a few seconds, at which point PM should
-		// incorporate existing Run into its state.
-		logging.Warningf(ctx, "Run %q already exists. If this warning persists, there is a bug in PM which appears to not see this Run", existing.ID)
-		return nil, clock.Now(ctx).Add(5 * time.Second), nil
+		return nil, time.Time{}, err
+	case !exists:
+		return []*runcreator.Creator{rc}, time.Time{}, nil
 	default:
-		since := clock.Since(ctx, existing.EndTime)
-		if since < time.Minute {
-			logging.Warningf(ctx, "Recently finalized Run %q already exists, will check later", existing.ID)
-			return nil, existing.EndTime.Add(time.Minute), nil
-		}
-		logging.Warningf(ctx, "Run %q already exists, finalized %s ago; will purge CLs with reused triggers", existing.ID, since)
-		for _, info := range combo.all {
-			info.addPurgeReason(info.pcl.Triggers.GetCqVoteTrigger(), &changelist.CLError{
-				Kind: &changelist.CLError_ReusedTrigger_{
-					ReusedTrigger: &changelist.CLError_ReusedTrigger{
-						Run: string(existing.ID),
-					},
-				},
-			})
-		}
-		return nil, time.Time{}, nil
+		return nil, nextCheck, nil
 	}
 }
 
@@ -270,7 +306,7 @@ func (rs *runStage) expandCombo(clid int64, result *combo) {
 	if !rs.markVisited(clid) {
 		return
 	}
-	result.add(info)
+	result.add(info, useCQVoteTrigger)
 	rs.expandComboVisited(info, result)
 }
 
@@ -300,12 +336,12 @@ func (rs *runStage) postponeExpandingExistingRunScope(ctx context.Context, combo
 	return nil, time.Time{}, nil
 }
 
-func (rs *runStage) makeCreator(ctx context.Context, combo *combo, cg *prjcfg.ConfigGroup) (*runcreator.Creator, error) {
+func (rs *runStage) makeCreator(ctx context.Context, combo *combo, cg *prjcfg.ConfigGroup, chooseTrigger func(ts *run.Triggers) *run.Trigger) (*runcreator.Creator, error) {
 	latestIndex := -1
 	cls := make([]*changelist.CL, len(combo.all))
 	for i, info := range combo.all {
 		cls[i] = &changelist.CL{ID: common.CLID(info.pcl.GetClid())}
-		if info == combo.latestTriggeredByCQVote {
+		if info == combo.latestTriggered {
 			latestIndex = i
 		}
 	}
@@ -325,7 +361,11 @@ func (rs *runStage) makeCreator(ctx context.Context, combo *combo, cg *prjcfg.Co
 
 	bcls := make([]runcreator.CL, len(cls))
 	var opts *run.Options
+	var incompleteRuns common.RunIDs
 	for i, cl := range cls {
+		for _, ri := range combo.all[i].runIndexes {
+			incompleteRuns = append(incompleteRuns, common.RunID(rs.c.Pruns[ri].Id))
+		}
 		pcl := combo.all[i].pcl
 		exp, act := pcl.GetEversion(), cl.EVersion
 		if exp != act {
@@ -334,13 +374,13 @@ func (rs *runStage) makeCreator(ctx context.Context, combo *combo, cg *prjcfg.Co
 		opts = run.MergeOptions(opts, run.ExtractOptions(cl.Snapshot))
 
 		// Restore email, which Project Manager doesn't track inside PCLs.
-		tr := trigger.Find(&trigger.FindInput{
+		tr := chooseTrigger(trigger.Find(&trigger.FindInput{
 			ChangeInfo:  cl.Snapshot.GetGerrit().GetInfo(),
 			ConfigGroup: cg.Content,
-		}).GetCqVoteTrigger()
-		pclT := pcl.GetTriggers().GetCqVoteTrigger()
+		}))
+		pclT := chooseTrigger(pcl.GetTriggers())
 		if tr.GetMode() != pclT.GetMode() {
-			panic(fmt.Errorf("inconsistent Trigger in PM (%s) vs freshly extracted (%s)", pcl.GetTriggers().GetCqVoteTrigger(), tr))
+			panic(fmt.Errorf("inconsistent Trigger in PM (%s) vs freshly extracted (%s)", pclT, tr))
 		}
 
 		bcls[i] = runcreator.CL{
@@ -350,15 +390,16 @@ func (rs *runStage) makeCreator(ctx context.Context, combo *combo, cg *prjcfg.Co
 			Snapshot:         cl.Snapshot,
 		}
 	}
-	cqTrigger := combo.latestTriggeredByCQVote.pcl.GetTriggers().GetCqVoteTrigger()
+	t := chooseTrigger(combo.latestTriggered.pcl.GetTriggers())
+	sort.Sort(incompleteRuns)
 	return &runcreator.Creator{
 		ConfigGroupID:            cg.ID,
 		LUCIProject:              cg.ProjectString(),
-		Mode:                     run.Mode(cqTrigger.GetMode()),
-		CreateTime:               cqTrigger.GetTime().AsTime(),
+		Mode:                     run.Mode(t.GetMode()),
+		CreateTime:               t.GetTime().AsTime(),
 		Owner:                    owner,
 		Options:                  opts,
-		ExpectedIncompleteRunIDs: nil, // no Run is expected
+		ExpectedIncompleteRunIDs: incompleteRuns,
 		OperationID:              fmt.Sprintf("PM-%d", mathrand.Int63(ctx)),
 		InputCLs:                 bcls,
 	}, nil
@@ -377,12 +418,13 @@ func (rs *runStage) markVisited(clid int64) bool {
 //
 // The CLs in a combo are a subset of those from the component.
 type combo struct {
-	all                     []*clInfo
-	clids                   map[int64]struct{}
-	notReady                []*clInfo
-	withNotYetLoadedDeps    *clInfo // nil if none; any one otherwise.
-	latestTriggeredByCQVote *clInfo
-	maxTriggeredTime        time.Time
+	all                  []*clInfo
+	clids                map[int64]struct{}
+	notReady             []*clInfo
+	withNotYetLoadedDeps *clInfo // nil if none; any one otherwise.
+	latestTriggered      *clInfo
+	latestTrigger        *run.Trigger
+	maxTriggeredTime     time.Time
 }
 
 func (c combo) String() string {
@@ -406,15 +448,15 @@ func (c combo) String() string {
 		}
 		sb.WriteRune(']')
 	}
-	if c.latestTriggeredByCQVote != nil {
-		t := c.latestTriggeredByCQVote.pcl.GetTriggers().GetCqVoteTrigger()
-		fmt.Fprintf(&sb, " latestTriggered=%d at %s", c.latestTriggeredByCQVote.pcl.GetClid(), t.GetTime().AsTime())
+	if c.latestTriggered != nil {
+		t := c.latestTrigger
+		fmt.Fprintf(&sb, " latestTriggered=%d at %s", c.latestTriggered.pcl.GetClid(), t.GetTime().AsTime())
 	}
 	sb.WriteRune(')')
 	return sb.String()
 }
 
-func (c *combo) add(info *clInfo) {
+func (c *combo) add(info *clInfo, chooseTrigger func(ts *run.Triggers) *run.Trigger) {
 	c.all = append(c.all, info)
 	if c.clids == nil {
 		c.clids = map[int64]struct{}{info.pcl.GetClid(): {}}
@@ -429,12 +471,13 @@ func (c *combo) add(info *clInfo) {
 	if info.deps != nil && len(info.deps.notYetLoaded) > 0 {
 		c.withNotYetLoadedDeps = info
 	}
-	trig := info.pcl.GetTriggers().GetCqVoteTrigger()
+	trig := chooseTrigger(info.pcl.GetTriggers())
 	if pb := trig.GetTime(); pb != nil {
 		t := pb.AsTime()
 		if c.maxTriggeredTime.IsZero() || t.After(c.maxTriggeredTime) {
 			c.maxTriggeredTime = t
-			c.latestTriggeredByCQVote = info
+			c.latestTriggered = info
+			c.latestTrigger = trig
 		}
 	}
 }
@@ -478,4 +521,52 @@ func (c *combo) overlappingRuns() map[int32]int {
 		}
 	}
 	return res
+}
+
+// checkExisting checks whether the run to create already exists.
+//
+// if it does exist, it decides when to triage again.
+func checkExisting(ctx context.Context, rc *runcreator.Creator, combo combo, useTrigger func(*run.Triggers) *run.Trigger) (bool, time.Time, error) {
+	// Check if Run about to be created already exists in order to detect avoid
+	// infinite retries if CL triggers are somehow re-used.
+	existing := run.Run{ID: rc.ExpectedRunID()}
+	switch err := datastore.Get(ctx, &existing); {
+	case err == datastore.ErrNoSuchEntity:
+		// This is the expected case.
+		// NOTE: actual creation may still fail due to a race, and that's fine.
+		return false, time.Time{}, nil
+	case err != nil:
+		return false, time.Time{}, errors.Annotate(err, "failed to check for existing Run %q", existing.ID).Tag(transient.Tag).Err()
+	case !run.IsEnded(existing.Status):
+		// The Run already exists. Most likely another triager called from another
+		// TQ was first. Check again in a few seconds, at which point PM should
+		// incorporate existing Run into its state.
+		logging.Warningf(ctx, "Run %q already exists. If this warning persists, there is a bug in PM which appears to not see this Run", existing.ID)
+		return true, clock.Now(ctx).Add(5 * time.Second), nil
+	default:
+		since := clock.Since(ctx, existing.EndTime)
+		if since < time.Minute {
+			logging.Warningf(ctx, "Recently finalized Run %q already exists, will check later", existing.ID)
+			return true, existing.EndTime.Add(time.Minute), nil
+		}
+		logging.Warningf(ctx, "Run %q already exists, finalized %s ago; will purge CLs with reused triggers", existing.ID, since)
+		for _, info := range combo.all {
+			info.addPurgeReason(useTrigger(info.pcl.Triggers), &changelist.CLError{
+				Kind: &changelist.CLError_ReusedTrigger_{
+					ReusedTrigger: &changelist.CLError_ReusedTrigger{
+						Run: string(existing.ID),
+					},
+				},
+			})
+		}
+		return true, time.Time{}, nil
+	}
+}
+
+func useNewPatchsetTrigger(ts *run.Triggers) *run.Trigger {
+	return ts.GetNewPatchsetRunTrigger()
+}
+
+func useCQVoteTrigger(ts *run.Triggers) *run.Trigger {
+	return ts.GetCqVoteTrigger()
 }

@@ -65,11 +65,13 @@ func isActiveStandalonePCL(pcl *prjpb.PCL, now time.Time) bool {
 	}
 
 	cutoff := now.Add(-common.MaxTriggerAge)
-	tr := pcl.GetTriggers().GetCqVoteTrigger()
-	if tr == nil {
+	switch {
+	case pcl.GetTriggers().GetCqVoteTrigger().GetTime().AsTime().After(cutoff):
+	case pcl.GetTriggers().GetNewPatchsetRunTrigger().GetTime().AsTime().After(cutoff):
+	default:
 		return false
 	}
-	return tr.GetTime().AsTime().After(cutoff)
+	return true
 }
 
 // categorizeCLs computes categorizedCLs based on current State.
