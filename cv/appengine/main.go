@@ -129,7 +129,7 @@ func main() {
 			ClientFactory: bbFactory,
 		}
 
-		tryjobUpdater := tjupdate.NewUpdater(tryjobNotifier, runNotifier)
+		tryjobUpdater := tjupdate.NewUpdater(env, tryjobNotifier, runNotifier)
 		tryjobUpdater.RegisterBackend(bbFacade)
 		tryjobCancellator := tjcancel.NewCancellator(tryjobNotifier)
 		tryjobCancellator.RegisterBackend(bbFacade)

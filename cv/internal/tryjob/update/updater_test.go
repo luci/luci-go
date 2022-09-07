@@ -19,11 +19,17 @@ import (
 	"math/rand"
 	"testing"
 
+	bbpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/gae/service/datastore"
 
+	"go.chromium.org/luci/cv/api/recipe/v1"
+	apiv0pb "go.chromium.org/luci/cv/api/v0"
 	"go.chromium.org/luci/cv/internal/common"
+	"go.chromium.org/luci/cv/internal/configs/prjcfg"
 	"go.chromium.org/luci/cv/internal/cvtesting"
+	"go.chromium.org/luci/cv/internal/metrics"
+	"go.chromium.org/luci/cv/internal/run"
 	"go.chromium.org/luci/cv/internal/tryjob"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -88,10 +94,25 @@ func makeTryjobWithStatus(ctx context.Context, status tryjob.Status) (*tryjob.Tr
 
 func makeTryjobWithDetails(ctx context.Context, buildID int64, status tryjob.Status, triggerer common.RunID, reusers common.RunIDs) (*tryjob.Tryjob, error) {
 	tj := tryjob.MustBuildbucketID("cr-buildbucket.example.com", buildID).MustCreateIfNotExists(ctx)
+	tj.Definition = tryjobDef
 	tj.LaunchedBy = triggerer
 	tj.ReusedBy = reusers
 	tj.Status = status
 	return tj, datastore.Put(ctx, tj)
+}
+
+var tryjobDef = &tryjob.Definition{
+	Backend: &tryjob.Definition_Buildbucket_{
+		Buildbucket: &tryjob.Definition_Buildbucket{
+			Host: "cr-buildbucket.example.com",
+			Builder: &bbpb.BuilderID{
+				Project: "test",
+				Bucket:  "test_bucket",
+				Builder: "test_builder",
+			},
+		},
+	},
+	Critical: true,
 }
 
 func TestHandleTask(t *testing.T) {
@@ -102,7 +123,7 @@ func TestHandleTask(t *testing.T) {
 
 		rn := &mockRMNotifier{}
 		mb := &mockBackend{}
-		updater := NewUpdater(tryjob.NewNotifier(ct.TQDispatcher), rn)
+		updater := NewUpdater(ct.Env, tryjob.NewNotifier(ct.TQDispatcher), rn)
 		updater.RegisterBackend(mb)
 
 		Convey("noop", func() {
@@ -123,6 +144,30 @@ func TestHandleTask(t *testing.T) {
 			Convey("status and result", func() {
 				tj, err := makeTryjob(ctx)
 				So(err, ShouldBeNil)
+				r := &run.Run{
+					ID:            tj.LaunchedBy,
+					ConfigGroupID: prjcfg.MakeConfigGroupID("deedbeef", "test_config_group"),
+					Tryjobs: &run.Tryjobs{
+						State: &tryjob.ExecutionState{
+							Requirement: &tryjob.Requirement{
+								Definitions: []*tryjob.Definition{tryjobDef},
+							},
+							Executions: []*tryjob.ExecutionState_Execution{
+								{
+									Attempts: []*tryjob.ExecutionState_Execution_Attempt{
+										{
+											TryjobId:   int64(tj.ID),
+											ExternalId: string(tj.ExternalID),
+											Status:     tj.Status,
+											Result:     tj.Result,
+										},
+									},
+								},
+							},
+						},
+					},
+				}
+				So(datastore.Put(ctx, r), ShouldBeNil)
 				originalEVersion := tj.EVersion
 				mb.returns = []*returnValues{{tryjob.Status_ENDED, &tryjob.Result{Status: tryjob.Result_SUCCEEDED}, nil}}
 				Convey("by internal ID", func() {
@@ -143,6 +188,9 @@ func TestHandleTask(t *testing.T) {
 				So(tj.EVersion, ShouldEqual, originalEVersion+1)
 				So(tj.Status, ShouldEqual, tryjob.Status_ENDED)
 				So(tj.Result.Status, ShouldEqual, tryjob.Result_SUCCEEDED)
+				metrics.RunWithBuilderTarget(ctx, ct.Env, tryjobDef, func(ctx context.Context) {
+					So(ct.TSMonSentValue(ctx, metrics.Public.TryjobEnded, "test", "test_config_group", true, false, string(apiv0pb.Tryjob_Result_SUCCEEDED)), ShouldEqual, 1)
+				})
 			})
 
 			Convey("result only", func() {
@@ -150,7 +198,7 @@ func TestHandleTask(t *testing.T) {
 				So(err, ShouldBeNil)
 
 				originalEVersion := tj.EVersion
-				mb.returns = []*returnValues{{tryjob.Status_TRIGGERED, &tryjob.Result{Status: tryjob.Result_SUCCEEDED}, nil}}
+				mb.returns = []*returnValues{{tryjob.Status_TRIGGERED, &tryjob.Result{Status: tryjob.Result_UNKNOWN}, nil}}
 				So(updater.handleTask(ctx, &tryjob.UpdateTryjobTask{Id: int64(tj.ID)}), ShouldBeNil)
 				So(rn.notifiedRuns, ShouldHaveLength, 1)
 				So(rn.notifiedRuns[0], ShouldEqual, tj.LaunchedBy)
@@ -158,7 +206,8 @@ func TestHandleTask(t *testing.T) {
 				tj = tj.ExternalID.MustCreateIfNotExists(ctx)
 				So(tj.EVersion, ShouldEqual, originalEVersion+1)
 				So(tj.Status, ShouldEqual, tryjob.Status_TRIGGERED)
-				So(tj.Result.Status, ShouldEqual, tryjob.Result_SUCCEEDED)
+				So(tj.Result.Status, ShouldEqual, tryjob.Result_UNKNOWN)
+				So(ct.TSMonStore.GetAll(ctx), ShouldBeEmpty)
 			})
 
 			Convey("status only", func() {
@@ -175,19 +224,36 @@ func TestHandleTask(t *testing.T) {
 				So(tj.EVersion, ShouldEqual, originalEVersion+1)
 				So(tj.Status, ShouldEqual, tryjob.Status_TRIGGERED)
 				So(tj.Result, ShouldBeNil)
+				So(ct.TSMonStore.GetAll(ctx), ShouldBeEmpty)
 			})
+
+			Convey("don't emit metrics if tryjob is already in end status", func() {
+				tj, err := makeTryjobWithStatus(ctx, tryjob.Status_ENDED)
+				So(err, ShouldBeNil)
+
+				mb.returns = []*returnValues{{tryjob.Status_ENDED, &tryjob.Result{
+					Status: tryjob.Result_SUCCEEDED,
+					Output: &recipe.Output{
+						Retry: recipe.Output_OUTPUT_RETRY_DENIED,
+					},
+				}, nil}}
+				So(updater.handleTask(ctx, &tryjob.UpdateTryjobTask{Id: int64(tj.ID)}), ShouldBeNil)
+				So(ct.TSMonStore.GetAll(ctx), ShouldBeEmpty)
+			})
+
 			Convey("and notifying triggerer and reuser Runs", func() {
 				buildID := int64(rand.Int31())
 				triggerer := makeTestRunID(ctx, buildID)
 				reusers := common.RunIDs{makeTestRunID(ctx, buildID+100), makeTestRunID(ctx, buildID+200)}
-				tj, err := makeTryjobWithDetails(ctx, buildID, tryjob.Status_TRIGGERED, triggerer, reusers)
+				tj, err := makeTryjobWithDetails(ctx, buildID, tryjob.Status_PENDING, triggerer, reusers)
 				So(err, ShouldBeNil)
 
-				mb.returns = []*returnValues{{tryjob.Status_ENDED, &tryjob.Result{Status: tryjob.Result_SUCCEEDED}, nil}}
+				mb.returns = []*returnValues{{tryjob.Status_TRIGGERED, &tryjob.Result{Status: tryjob.Result_UNKNOWN}, nil}}
 				So(updater.handleTask(ctx, &tryjob.UpdateTryjobTask{Id: int64(tj.ID)}), ShouldBeNil)
 				// Should have called notifier thrice.
 				So(rn.notifiedRuns, ShouldHaveLength, 3)
 				So(rn.notifiedRuns.Equal(common.RunIDs{triggerer, reusers[0], reusers[1]}), ShouldBeTrue)
+				So(ct.TSMonStore.GetAll(ctx), ShouldBeEmpty)
 			})
 			Convey("and notifying reuser Run with no triggerer Run", func() {
 				buildID := int64(rand.Int31())
@@ -199,6 +265,7 @@ func TestHandleTask(t *testing.T) {
 				So(updater.handleTask(ctx, &tryjob.UpdateTryjobTask{Id: int64(tj.ID)}), ShouldBeNil)
 				So(rn.notifiedRuns, ShouldHaveLength, 1)
 				So(rn.notifiedRuns[0], ShouldEqual, reusers[0])
+				So(ct.TSMonStore.GetAll(ctx), ShouldBeEmpty)
 			})
 		})
 		Convey("fails to", func() {

@@ -26,9 +26,13 @@ import (
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/retry/transient"
+	"go.chromium.org/luci/gae/filter/txndefer"
 	"go.chromium.org/luci/gae/service/datastore"
 
 	"go.chromium.org/luci/cv/internal/common"
+	"go.chromium.org/luci/cv/internal/metrics"
+	"go.chromium.org/luci/cv/internal/rpc/versioning"
+	"go.chromium.org/luci/cv/internal/run"
 	"go.chromium.org/luci/cv/internal/tryjob"
 )
 
@@ -51,6 +55,7 @@ type rmNotifier interface {
 
 // Updater knows how to update Tryjobs, notifying other CV parts as needed.
 type Updater struct {
+	env        *common.Env
 	rmNotifier rmNotifier
 
 	rwmutex  sync.RWMutex // guards `backends`
@@ -60,8 +65,9 @@ type Updater struct {
 // NewUpdater creates a new Updater.
 //
 // Starts without backends, but they should be added via RegisterBackend().
-func NewUpdater(tn *tryjob.Notifier, rm rmNotifier) *Updater {
+func NewUpdater(env *common.Env, tn *tryjob.Notifier, rm rmNotifier) *Updater {
 	u := &Updater{
+		env:        env,
 		rmNotifier: rm,
 		backends:   make(map[string]updaterBackend, 1),
 	}
@@ -133,13 +139,39 @@ func (u *Updater) handleTask(ctx context.Context, task *tryjob.UpdateTryjobTask)
 		defer func() {
 			innerErr = err
 		}()
-		tj = &tryjob.Tryjob{ID: common.TryjobID(tj.ID)}
+		tj := &tryjob.Tryjob{ID: common.TryjobID(tj.ID)}
 		if err := datastore.Get(ctx, tj); err != nil {
 			return errors.Annotate(err, "failed to load Tryjob %d", tj.ID).Tag(transient.Tag).Err()
 		}
 		if loadedEVer != tj.EVersion {
 			// A parallel task must have already updated this Tryjob; retry.
 			return errors.Reason("the tryjob data has changed").Tag(transient.Tag).Err()
+		}
+
+		if tj.LaunchedBy != "" && status == tryjob.Status_ENDED && tj.Status != status {
+			// Tryjob launched by CV has transitioned to end status
+			r := &run.Run{ID: tj.LaunchedBy}
+			if err := datastore.Get(ctx, r); err != nil {
+				return errors.Annotate(err, "failed to load Run %s", r.ID).Tag(transient.Tag).Err()
+			}
+			project, configGroup := r.ID.LUCIProject(), r.ConfigGroupID.Name()
+			isRetry := true
+			for _, exec := range r.Tryjobs.GetState().GetExecutions() {
+				if len(exec.GetAttempts()) > 0 && exec.GetAttempts()[0].TryjobId == int64(tj.ID) {
+					isRetry = false
+					break
+				}
+			}
+			txndefer.Defer(ctx, func(ctx context.Context) {
+				metrics.RunWithBuilderTarget(ctx, u.env, tj.Definition, func(ctx context.Context) {
+					metrics.Public.TryjobEnded.Add(ctx, 1,
+						project,
+						configGroup,
+						tj.Definition.GetCritical(),
+						isRetry,
+						string(versioning.TryjobResultStatusV0(tj.Result.GetStatus())))
+				})
+			})
 		}
 		tj.EntityUpdateTime = datastore.RoundTime(clock.Now(ctx).UTC())
 		tj.EVersion++
@@ -166,7 +198,7 @@ func (u *Updater) handleTask(ctx context.Context, task *tryjob.UpdateTryjobTask)
 	case innerErr != nil:
 		return innerErr
 	case err != nil:
-		return errors.Annotate(err, "failed to commit transaction updating tryjob %v", tj.ExternalID).Tag(transient.Tag).Err()
+		return errors.Annotate(err, "failed to commit transaction updating tryjob %d", tj.ID).Tag(transient.Tag).Err()
 	}
 	return nil
 }
