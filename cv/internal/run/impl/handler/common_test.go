@@ -29,13 +29,16 @@ import (
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/errors"
 	cfgpb "go.chromium.org/luci/cv/api/config/v2"
+	apiv0pb "go.chromium.org/luci/cv/api/v0"
 	"go.chromium.org/luci/cv/internal/changelist"
 	"go.chromium.org/luci/cv/internal/common"
+	"go.chromium.org/luci/cv/internal/configs/prjcfg"
 	"go.chromium.org/luci/cv/internal/configs/prjcfg/prjcfgtest"
 	"go.chromium.org/luci/cv/internal/cvtesting"
 	gcancel "go.chromium.org/luci/cv/internal/gerrit/cancel"
 	gf "go.chromium.org/luci/cv/internal/gerrit/gerritfake"
 	"go.chromium.org/luci/cv/internal/gerrit/trigger"
+	"go.chromium.org/luci/cv/internal/metrics"
 	"go.chromium.org/luci/cv/internal/prjmanager"
 	"go.chromium.org/luci/cv/internal/prjmanager/pmtest"
 	"go.chromium.org/luci/cv/internal/run"
@@ -61,11 +64,13 @@ func TestEndRun(t *testing.T) {
 		rid := common.MakeRunID("infra", ct.Clock.Now(), 1, []byte("deadbeef"))
 		rs := &state.RunState{
 			Run: run.Run{
-				ID:         rid,
-				Status:     run.Status_RUNNING,
-				CreateTime: ct.Clock.Now().Add(-2 * time.Minute),
-				StartTime:  ct.Clock.Now().Add(-1 * time.Minute),
-				CLs:        common.CLIDs{1},
+				ID:            rid,
+				Status:        run.Status_RUNNING,
+				ConfigGroupID: prjcfg.MakeConfigGroupID("deadbeef", "main"),
+				CreateTime:    ct.Clock.Now().Add(-2 * time.Minute),
+				StartTime:     ct.Clock.Now().Add(-1 * time.Minute),
+				Mode:          run.DryRun,
+				CLs:           common.CLIDs{1},
 				OngoingLongOps: &run.OngoingLongOps{
 					Ops: map[string]*run.OngoingLongOps_Op{
 						"11-22": {
@@ -104,6 +109,9 @@ func TestEndRun(t *testing.T) {
 		pmtest.AssertReceivedRunFinished(ctx, rid)
 		pmtest.AssertReceivedCLsNotified(ctx, rid.LUCIProject(), []*changelist.CL{&cl})
 		So(deps.clUpdater.refreshedCLs, ShouldResemble, common.MakeCLIDs(clid))
+		So(ct.TSMonSentValue(ctx, metrics.Public.RunEnded, "infra", "main", string(run.DryRun), string(apiv0pb.Run_FAILED), true), ShouldEqual, 1)
+		So(ct.TSMonSentDistr(ctx, metrics.Public.RunDuration, "infra", "main", string(run.DryRun), string(apiv0pb.Run_FAILED)).Sum(), ShouldAlmostEqual, (1 * time.Minute).Seconds())
+		So(ct.TSMonSentDistr(ctx, metrics.Public.RunTotalDuration, "infra", "main", string(run.DryRun), string(apiv0pb.Run_FAILED), true).Sum(), ShouldAlmostEqual, (2 * time.Minute).Seconds())
 
 		Convey("Publish RunEnded event", func() {
 			var task *pubsub.PublishRunEndedTask

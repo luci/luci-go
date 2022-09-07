@@ -38,6 +38,8 @@ import (
 	"go.chromium.org/luci/cv/internal/configs/prjcfg"
 	"go.chromium.org/luci/cv/internal/gerrit"
 	"go.chromium.org/luci/cv/internal/gerrit/cancel"
+	"go.chromium.org/luci/cv/internal/metrics"
+	"go.chromium.org/luci/cv/internal/rpc/versioning"
 	"go.chromium.org/luci/cv/internal/run"
 	"go.chromium.org/luci/cv/internal/run/impl/state"
 )
@@ -88,10 +90,33 @@ func (impl *Impl) endRun(ctx context.Context, rs *state.RunState, st run.Status)
 			// this logic should be revisited.
 			return impl.Publisher.RunEnded(ctx, rs.ID, rs.Status, rs.EVersion+1)
 		},
+		func(ctx context.Context) error {
+			txndefer.Defer(ctx, func(ctx context.Context) {
+				commonFields := []interface{}{
+					rs.ID.LUCIProject(),
+					rs.ConfigGroupID.Name(),
+					string(rs.Mode),
+					string(versioning.RunStatusV0(rs.Status)), // translate to public status
+				}
+				successfullyStarted := !rs.StartTime.IsZero()
+				startAwareFields := append(commonFields, successfullyStarted)
+				metrics.Public.RunEnded.Add(ctx, 1, startAwareFields...)
+				if successfullyStarted {
+					// Some run might not start successfully. E.g. user doesn't have the
+					// privilege to start the Run, those Runs will be created but ended
+					// by CV right away. Therefore, when the duration calculation (end-
+					// start) is not applicable for those Runs.
+					metrics.Public.RunDuration.Add(ctx, rs.EndTime.Sub(rs.StartTime).Seconds(), commonFields...)
+				}
+				metrics.Public.RunTotalDuration.Add(ctx, rs.EndTime.Sub(rs.CreateTime).Seconds(), startAwareFields...)
+			})
+			return nil
+		},
 	)
 }
 
-// removeRunFromCLs atomically updates state of CL entities involved in this Run.
+// removeRunFromCLs atomically updates state of CL entities involved in this
+// Run.
 //
 // For each CL:
 //   * marks its Snapshot as outdated, which prevents Project Manager from

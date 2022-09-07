@@ -68,6 +68,7 @@ var Public = struct {
 		field.String("config_group"),
 		field.String("mode"),
 		field.String("status"),
+		field.Bool("successfully_started"),
 	),
 	RunDuration: metric.NewCumulativeDistribution(
 		"cv/runs/ended/durations",
@@ -90,6 +91,7 @@ var Public = struct {
 		field.String("config_group"),
 		field.String("mode"),
 		field.String("status"),
+		field.Bool("successfully_started"),
 	),
 	ActiveRunCount: metric.NewInt(
 		"cv/runs/active",
