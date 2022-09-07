@@ -15,8 +15,8 @@
 import { DateTime } from 'luxon';
 import { comparer, computed, makeObservable, observable, untracked } from 'mobx';
 
+import { TestHistoryService, TestVerdict } from '../services/luci_analysis';
 import { Variant } from '../services/resultdb';
-import { TestHistoryService, TestVerdict } from '../services/weetbix';
 
 /**
  * Test history loader for a specific variant.

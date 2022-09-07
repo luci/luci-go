@@ -21,9 +21,10 @@ import { MAY_REQUIRE_SIGNIN } from '../common_tags';
 import { PrpcClientExt } from '../libs/prpc_client_ext';
 import { attachTags } from '../libs/tag';
 import { BuildersService, BuildsService } from '../services/buildbucket';
+import { TestHistoryService } from '../services/luci_analysis';
 import { MiloInternal } from '../services/milo_internal';
 import { ResultDb } from '../services/resultdb';
-import { ClustersService, TestHistoryService } from '../services/weetbix';
+import { ClustersService } from '../services/weetbix';
 import { AuthStateStore, AuthStateStoreInstance } from './auth_state';
 
 const MAY_REQUIRE_SIGNIN_ERROR_CODE = [RpcCode.NOT_FOUND, RpcCode.PERMISSION_DENIED, RpcCode.UNAUTHENTICATED];
@@ -60,7 +61,7 @@ export const ServicesStore = types
         if (!self.authState?.userIdentity) {
           return null;
         }
-        return new TestHistoryService(makeClient({ host: CONFIGS.WEETBIX.HOST }));
+        return new TestHistoryService(makeClient({ host: CONFIGS.LUCI_ANALYSIS.HOST }));
       },
       get milo() {
         if (!self.authState?.userIdentity) {

@@ -19,7 +19,7 @@ import { computed, makeObservable, observable } from 'mobx';
 import { MiloBaseElement } from '../../components/milo_base';
 import { consumer } from '../../libs/context';
 import { displayDuration, parseProtoDuration } from '../../libs/time_utils';
-import { QueryTestHistoryStatsResponseGroup } from '../../services/weetbix';
+import { QueryTestHistoryStatsResponseGroup } from '../../services/luci_analysis';
 import { consumeStore, StoreInstance } from '../../store';
 import commonStyle from '../../styles/common_style.css';
 import { CELL_PADDING, CELL_SIZE, INNER_CELL_SIZE } from './constants';

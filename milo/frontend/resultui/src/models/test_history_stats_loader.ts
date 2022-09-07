@@ -20,7 +20,7 @@ import {
   QueryTestHistoryStatsResponseGroup,
   TestHistoryService,
   VariantPredicate,
-} from '../services/weetbix';
+} from '../services/luci_analysis';
 
 /**
  * A helper class that facilitate loading the test history stats and retrieving

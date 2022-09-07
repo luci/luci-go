@@ -23,7 +23,7 @@ import {
   QueryTestHistoryResponse,
   TestHistoryService,
   TestVerdictStatus,
-} from '../services/weetbix';
+} from '../services/luci_analysis';
 import { TestHistoryVariantLoader } from './test_history_variant_loader';
 
 chai.use(chaiSubset);
