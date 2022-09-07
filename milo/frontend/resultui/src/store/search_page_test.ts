@@ -19,8 +19,8 @@ import sinon from 'sinon';
 
 import { CacheOption } from '../libs/cached_fn';
 import { ListBuildersRequest } from '../services/buildbucket';
-import { QueryTestsRequest, QueryTestsResponse } from '../services/luci_analysis';
 import { ANONYMOUS_IDENTITY, ListBuildersResponse } from '../services/milo_internal';
+import { QueryTestsRequest, QueryTestsResponse } from '../services/weetbix';
 import { AuthStateStore } from './auth_state';
 import { SearchPage, SearchTarget } from './search_page';
 import { ServicesStore } from './services';

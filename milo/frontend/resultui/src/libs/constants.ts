@@ -15,8 +15,8 @@
 import { fromPromise } from 'mobx-utils';
 
 import { BuildStatus } from '../services/buildbucket';
-import { TestVerdictStatus } from '../services/luci_analysis';
 import { InvocationState, TestStatus, TestVariantStatus } from '../services/resultdb';
+import { TestVerdictStatus } from '../services/weetbix';
 
 export const NEW_MILO_VERSION_EVENT_TYPE = 'new-milo-version';
 
