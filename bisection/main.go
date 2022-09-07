@@ -51,8 +51,8 @@ import (
 )
 
 const (
-	ACCESS_GROUP         = "gofindit-access"
-	ACCESS_GROUP_FOR_BOT = "gofindit-bot-access"
+	ACCESS_GROUP         = "luci-bisection-access"
+	ACCESS_GROUP_FOR_BOT = "luci-bisection-bot-access"
 )
 
 // checkAccess is middleware that checks if the user is authorized to
