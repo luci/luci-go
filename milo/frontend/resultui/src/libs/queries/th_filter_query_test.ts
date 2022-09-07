@@ -14,7 +14,7 @@
 
 import { assert } from 'chai';
 
-import { Variant } from '../../services/weetbix';
+import { Variant } from '../../services/luci_analysis';
 import { parseVariantFilter, parseVariantPredicate, suggestTestHistoryFilterQuery } from './th_filter_query';
 
 const entry1 = {

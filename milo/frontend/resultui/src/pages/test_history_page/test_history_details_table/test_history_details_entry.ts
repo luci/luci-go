@@ -28,8 +28,8 @@ import { lazyRendering, RenderPlaceHolder } from '../../../libs/observer_element
 import { sanitizeHTML } from '../../../libs/sanitize_html';
 import { LONG_TIME_FORMAT, SHORT_TIME_FORMAT } from '../../../libs/time_utils';
 import { router } from '../../../routes';
+import { TestVerdictBundle } from '../../../services/luci_analysis';
 import { RESULT_LIMIT } from '../../../services/resultdb';
-import { TestVerdictBundle } from '../../../services/weetbix';
 import { consumeStore, StoreInstance } from '../../../store';
 import colorClasses from '../../../styles/color_classes.css';
 import commonStyle from '../../../styles/common_style.css';

@@ -17,8 +17,8 @@
 import { html } from 'lit-html';
 
 import { Suggestion } from '../../components/auto_complete';
+import { VariantPredicate } from '../../services/luci_analysis';
 import { Variant } from '../../services/resultdb';
-import { VariantPredicate } from '../../services/weetbix';
 import { highlight } from '../lit_utils';
 import { KV_SYNTAX_EXPLANATION, parseKeyValue } from './utils';
 

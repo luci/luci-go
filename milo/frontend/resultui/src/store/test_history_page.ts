@@ -21,14 +21,14 @@ import { keepAliveComputed } from '../libs/milo_mobx_utils';
 import { PageLoader } from '../libs/page_loader';
 import { parseVariantFilter, parseVariantPredicate, VariantFilter } from '../libs/queries/th_filter_query';
 import { TestHistoryStatsLoader } from '../models/test_history_stats_loader';
-import { getCriticalVariantKeys } from '../services/resultdb';
 import {
   QueryTestHistoryStatsResponseGroup,
   TestVerdictBundle,
   TestVerdictStatus,
   Variant,
   VariantPredicate,
-} from '../services/weetbix';
+} from '../services/luci_analysis';
+import { getCriticalVariantKeys } from '../services/resultdb';
 import { ServicesStore } from './services';
 import { Timestamp } from './timestamp';
 
