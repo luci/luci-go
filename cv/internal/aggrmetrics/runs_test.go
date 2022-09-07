@@ -47,6 +47,15 @@ func TestRunAggregator(t *testing.T) {
 		// Truncate current time to seconds to deal with integer delays.
 		ct.Clock.Set(ct.Clock.Now().UTC().Add(time.Second).Truncate(time.Second))
 
+		pendingRunCountSent := func(project, configGroup string, mode run.Mode) interface{} {
+			return ct.TSMonSentValue(ctx, metrics.Public.PendingRunCount, project, configGroup, string(mode))
+		}
+		pendingRunDurationSent := func(project, configGroup string, mode run.Mode) *distribution.Distribution {
+			return ct.TSMonSentDistr(ctx, metrics.Public.PendingRunDuration, project, configGroup, string(mode))
+		}
+		maxPendingRunAgeSent := func(project, configGroup string, mode run.Mode) interface{} {
+			return ct.TSMonSentValue(ctx, metrics.Public.MaxPendingRunAge, project, configGroup, string(mode))
+		}
 		activeRunCountSent := func(project, configGroup string, mode run.Mode) interface{} {
 			return ct.TSMonSentValue(ctx, metrics.Public.ActiveRunCount, project, configGroup, string(mode))
 		}
@@ -95,11 +104,50 @@ func TestRunAggregator(t *testing.T) {
 
 		Convey("Enabled projects get zero data reported when no interested Runs", func() {
 			prepareAndReport(lProject)
+			So(pendingRunCountSent(lProject, configGroupName, run.DryRun), ShouldEqual, 0)
+			So(pendingRunCountSent(lProject, configGroupName, run.FullRun), ShouldEqual, 0)
+			So(pendingRunDurationSent(lProject, configGroupName, run.DryRun).Count(), ShouldEqual, 0)
+			So(pendingRunDurationSent(lProject, configGroupName, run.FullRun).Count(), ShouldEqual, 0)
+			So(maxPendingRunAgeSent(lProject, configGroupName, run.DryRun), ShouldEqual, 0)
+			So(maxPendingRunAgeSent(lProject, configGroupName, run.FullRun), ShouldEqual, 0)
 			So(activeRunCountSent(lProject, configGroupName, run.DryRun), ShouldEqual, 0)
 			So(activeRunCountSent(lProject, configGroupName, run.FullRun), ShouldEqual, 0)
 			So(activeRunDurationSent(lProject, configGroupName, run.DryRun).Count(), ShouldEqual, 0)
 			So(activeRunDurationSent(lProject, configGroupName, run.FullRun).Count(), ShouldEqual, 0)
-			So(ct.TSMonStore.GetAll(ctx), ShouldHaveLength, 4)
+
+			So(ct.TSMonStore.GetAll(ctx), ShouldHaveLength, 10)
+		})
+
+		Convey("Report pending Runs", func() {
+			now := ct.Clock.Now()
+			// Dry Run
+			putRun(lProject, configGroupName, run.DryRun, run.Status_PENDING, now.Add(-time.Second), time.Time{})
+			putRun(lProject, configGroupName, run.DryRun, run.Status_PENDING, now.Add(-time.Minute), time.Time{})
+			putRun(lProject, configGroupName, run.DryRun, run.Status_RUNNING, now.Add(-time.Hour), now.Add(-time.Hour)) // active run won't be reported
+
+			// Quick DryRun
+			putRun(lProject, configGroupName, run.QuickDryRun, run.Status_PENDING, now.Add(-2*time.Second), time.Time{})
+
+			// Full Run
+			putRun(lProject, configGroupName, run.FullRun, run.Status_PENDING, now.Add(-time.Minute), time.Time{})
+			putRun(lProject, configGroupName, run.FullRun, run.Status_PENDING, now.Add(-time.Hour), time.Time{})
+			putRun(lProject, configGroupName, run.FullRun, run.Status_SUCCEEDED, now.Add(-time.Hour), now.Add(-time.Hour)) // ended run won't be reported
+
+			prepareAndReport(lProject)
+			So(pendingRunCountSent(lProject, configGroupName, run.DryRun), ShouldEqual, 2)
+			So(pendingRunDurationSent(lProject, configGroupName, run.DryRun).Count(), ShouldEqual, 2)
+			So(pendingRunDurationSent(lProject, configGroupName, run.DryRun).Sum(), ShouldEqual, float64((time.Second + time.Minute).Milliseconds()))
+			So(maxPendingRunAgeSent(lProject, configGroupName, run.DryRun), ShouldEqual, time.Minute.Milliseconds())
+
+			So(pendingRunCountSent(lProject, configGroupName, run.QuickDryRun), ShouldEqual, 1)
+			So(pendingRunDurationSent(lProject, configGroupName, run.QuickDryRun).Count(), ShouldEqual, 1)
+			So(pendingRunDurationSent(lProject, configGroupName, run.QuickDryRun).Sum(), ShouldEqual, float64((2 * time.Second).Milliseconds()))
+			So(maxPendingRunAgeSent(lProject, configGroupName, run.QuickDryRun), ShouldEqual, (2 * time.Second).Milliseconds())
+
+			So(pendingRunCountSent(lProject, configGroupName, run.FullRun), ShouldEqual, 2)
+			So(pendingRunDurationSent(lProject, configGroupName, run.FullRun).Count(), ShouldEqual, 2)
+			So(pendingRunDurationSent(lProject, configGroupName, run.FullRun).Sum(), ShouldEqual, float64((time.Hour + time.Minute).Milliseconds()))
+			So(maxPendingRunAgeSent(lProject, configGroupName, run.FullRun), ShouldEqual, time.Hour.Milliseconds())
 		})
 
 		Convey("Report active Runs", func() {
@@ -129,8 +177,6 @@ func TestRunAggregator(t *testing.T) {
 			So(activeRunCountSent(lProject, configGroupName, run.FullRun), ShouldEqual, 2)
 			So(activeRunDurationSent(lProject, configGroupName, run.FullRun).Count(), ShouldEqual, 2)
 			So(activeRunDurationSent(lProject, configGroupName, run.FullRun).Sum(), ShouldEqual, (time.Hour + time.Minute).Seconds())
-
-			So(ct.TSMonStore.GetAll(ctx), ShouldHaveLength, 6)
 		})
 
 		putManyRuns := func(n, numProject, numConfigGroup int) {

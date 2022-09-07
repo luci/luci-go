@@ -56,6 +56,9 @@ type runsAggregator struct {
 // metrics implements aggregator interface.
 func (r *runsAggregator) metrics() []types.Metric {
 	return []types.Metric{
+		metrics.Public.PendingRunCount,
+		metrics.Public.PendingRunDuration,
+		metrics.Public.MaxPendingRunAge,
 		metrics.Public.ActiveRunCount,
 		metrics.Public.ActiveRunDuration,
 	}
@@ -64,10 +67,27 @@ func (r *runsAggregator) metrics() []types.Metric {
 // metrics implements aggregator interface.
 func (r *runsAggregator) prepare(ctx context.Context, enabledProjects stringset.Set) (reportFunc, error) {
 	eg, ectx := errgroup.WithContext(ctx)
+	var pendingRunKeys []*datastore.Key
 	var activeRunKeys []*datastore.Key
 	var runStats *runStats
 	eg.Go(func() (err error) {
-		switch activeRunKeys, err = loadActiveRunKeys(ectx, maxRuns+1); {
+		q := datastore.NewQuery(common.RunKind).Eq("Status", run.Status_PENDING)
+		switch pendingRunKeys, err = loadRunKeys(ectx, q, maxRuns+1); {
+		case err != nil:
+			return err
+		case len(pendingRunKeys) == maxRuns+1:
+			// Outright refuse sending incomplete data.
+			logging.Errorf(ctx, "FIXME: too many pending runs (>%d) to report aggregated metrics for", maxRuns)
+			return errors.New("too many pending Runs")
+		default:
+			return nil
+		}
+	})
+	eg.Go(func() (err error) {
+		q := datastore.NewQuery(common.RunKind).
+			Lt("Status", run.Status_ENDED_MASK).
+			Gt("Status", run.Status_PENDING)
+		switch activeRunKeys, err = loadRunKeys(ectx, q, maxRuns+1); {
 		case err != nil:
 			return err
 		case len(activeRunKeys) == maxRuns+1:
@@ -86,19 +106,30 @@ func (r *runsAggregator) prepare(ctx context.Context, enabledProjects stringset.
 		return nil, err
 	}
 
+	eg, ectx = errgroup.WithContext(ctx)
 	now := clock.Now(ctx)
-	err := iterRuns(ctx, activeRunKeys, maxRunsWorkingSet, func(r *run.Run) {
-		runStats.addActive(r, now)
+	eg.Go(func() error {
+		return iterRuns(ectx, pendingRunKeys, maxRunsWorkingSet, func(r *run.Run) {
+			runStats.addPending(r, now)
+		})
 	})
-	if err != nil {
+	eg.Go(func() error {
+		return iterRuns(ectx, activeRunKeys, maxRunsWorkingSet, func(r *run.Run) {
+			runStats.addActive(r, now)
+		})
+	})
+	if err := eg.Wait(); err != nil {
 		return nil, err
 	}
 	return runStats.report, nil
 }
 
 type runStats struct {
-	activeRunCounts    map[runFields]int64
-	activeRunDurations map[runFields]*distribution.Distribution
+	pendingRunCounts    map[runFields]int64
+	pendingRunDurations map[runFields]*distribution.Distribution
+	maxPendingRunAge    map[runFields]time.Duration
+	activeRunCounts     map[runFields]int64
+	activeRunDurations  map[runFields]*distribution.Distribution
 }
 
 type runFields struct {
@@ -119,8 +150,11 @@ func (f runFields) toMetricFields() []interface{} {
 
 func initRunStats(ctx context.Context, projects []string) (*runStats, error) {
 	rs := &runStats{
-		activeRunCounts:    make(map[runFields]int64),
-		activeRunDurations: make(map[runFields]*distribution.Distribution),
+		pendingRunCounts:    make(map[runFields]int64),
+		pendingRunDurations: make(map[runFields]*distribution.Distribution),
+		maxPendingRunAge:    make(map[runFields]time.Duration),
+		activeRunCounts:     make(map[runFields]int64),
+		activeRunDurations:  make(map[runFields]*distribution.Distribution),
 	}
 	var rsMu sync.Mutex
 	// TODO: Support `GetLatestMetas` and `GetConfigGroups` in prjcfg package
@@ -154,6 +188,9 @@ func initRunStats(ctx context.Context, projects []string) (*runStats, error) {
 							}
 							rs.activeRunCounts[f] = 0
 							rs.activeRunDurations[f] = distribution.New(metrics.Public.ActiveRunDuration.Bucketer())
+							rs.pendingRunCounts[f] = 0
+							rs.pendingRunDurations[f] = distribution.New(metrics.Public.PendingRunDuration.Bucketer())
+							rs.maxPendingRunAge[f] = time.Duration(0)
 						}
 					}
 					return nil
@@ -165,6 +202,31 @@ func initRunStats(ctx context.Context, projects []string) (*runStats, error) {
 		return nil, err
 	}
 	return rs, nil
+}
+
+func (rs *runStats) addPending(r *run.Run, now time.Time) {
+	switch {
+	case r.Status != run.Status_PENDING:
+		// Since the Run is loaded after the query, the Run might change the status.
+		// Ignore this type of runs.
+		return
+	case r.CreateTime.After(now):
+		// This should be rare, yet may happen if this process' time is
+		// somewhat behind time of a concurrent process which has just created a new
+		// Run. It's better to skip this newly created Run for later than report a
+		// negative duration for it.
+		return
+	}
+	runFields := makeRunFields(r)
+	rs.pendingRunCounts[runFields] = rs.pendingRunCounts[runFields] + 1
+	if _, ok := rs.pendingRunDurations[runFields]; !ok {
+		rs.pendingRunDurations[runFields] = distribution.New(metrics.Public.PendingRunDuration.Bucketer())
+	}
+	dur := now.Sub(r.CreateTime)
+	rs.pendingRunDurations[runFields].Add(float64(dur.Milliseconds()))
+	if rs.maxPendingRunAge[runFields] == 0 || dur > rs.maxPendingRunAge[runFields] {
+		rs.maxPendingRunAge[runFields] = dur
+	}
 }
 
 func (rs *runStats) addActive(r *run.Run, now time.Time) {
@@ -189,6 +251,15 @@ func (rs *runStats) addActive(r *run.Run, now time.Time) {
 }
 
 func (rs *runStats) report(ctx context.Context) {
+	for fields, cnt := range rs.pendingRunCounts {
+		metrics.Public.PendingRunCount.Set(ctx, cnt, fields.toMetricFields()...)
+	}
+	for fields, dist := range rs.pendingRunDurations {
+		metrics.Public.PendingRunDuration.Set(ctx, dist, fields.toMetricFields()...)
+	}
+	for fields, dur := range rs.maxPendingRunAge {
+		metrics.Public.MaxPendingRunAge.Set(ctx, dur.Milliseconds(), fields.toMetricFields()...)
+	}
 	for fields, cnt := range rs.activeRunCounts {
 		metrics.Public.ActiveRunCount.Set(ctx, cnt, fields.toMetricFields()...)
 	}
@@ -197,22 +268,16 @@ func (rs *runStats) report(ctx context.Context) {
 	}
 }
 
-// loadActiveRunKeys returns only the keys of the active Runs.
-//
-// This is a cheap query in Datastore, both in terms of time and $ cost.
-func loadActiveRunKeys(ctx context.Context, limit int32) ([]*datastore.Key, error) {
-	q := datastore.NewQuery(common.RunKind).
-		Limit(limit).
-		KeysOnly(true).
-		Lt("Status", run.Status_ENDED_MASK).
-		Gt("Status", run.Status_PENDING)
+// loadRunKeys returns only the keys of the Runs matching the given query.
+func loadRunKeys(ctx context.Context, q *datastore.Query, limit int32) ([]*datastore.Key, error) {
+	q = q.Limit(limit).KeysOnly(true)
 	var out []*datastore.Key
 	switch err := datastore.GetAll(ctx, q, &out); {
 	case ctx.Err() != nil:
 		logging.Warningf(ctx, "%s while fetching %s", ctx.Err(), q)
 		return nil, ctx.Err()
 	case err != nil:
-		return nil, errors.Annotate(err, "failed to fetch active Runs").Tag(transient.Tag).Err()
+		return nil, errors.Annotate(err, "failed to fetch Runs").Tag(transient.Tag).Err()
 	case len(out) == int(limit):
 		logging.Errorf(ctx, "FIXME: %s fetched exactly the limit of Runs; reported data is incomplete", q)
 	}

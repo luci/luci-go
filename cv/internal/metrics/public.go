@@ -38,7 +38,7 @@ var Public = struct {
 	ActiveRunDuration  metric.NonCumulativeDistribution
 	PendingRunCount    metric.Int
 	PendingRunDuration metric.NonCumulativeDistribution
-	MaxPendingRunAge   metric.Float
+	MaxPendingRunAge   metric.Int
 
 	TryjobLaunched        metric.Counter
 	TryjobEnded           metric.Counter
@@ -127,10 +127,10 @@ var Public = struct {
 		field.String("config_group"),
 		field.String("mode"),
 	),
-	MaxPendingRunAge: metric.NewFloat(
+	MaxPendingRunAge: metric.NewInt(
 		"cv/runs/max_pending_age",
 		"The age of the oldest run that has been created but not started yet (aka age of the oldest pending run)",
-		&types.MetricMetadata{Units: types.Seconds},
+		&types.MetricMetadata{Units: types.Milliseconds},
 		field.String("project"),
 		field.String("config_group"),
 		field.String("mode"),
