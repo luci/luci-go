@@ -29,11 +29,11 @@ cd frontend/ui
 npm test
 ```
 
-### Running GoFindit
-In the root gofindit directory, run
+### Running LUCI Bisection
+In the root bisection directory, run
 ```
 go run main.go -cloud-project chops-gofindit-dev
 ```
 
-This will start a web server running at http://localhost:8800. Navigate to this URL using your preferred browser. Once you "log in", the GoFindit frontend
+This will start a web server running at http://localhost:8800. Navigate to this URL using your preferred browser. Once you "log in", the LUCI Bisection frontend
 should load.

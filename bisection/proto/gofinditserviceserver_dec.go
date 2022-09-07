@@ -57,6 +57,23 @@ func (s *DecoratedGoFinditService) QueryAnalysis(ctx context.Context, req *Query
 	return
 }
 
+func (s *DecoratedGoFinditService) ListAnalyses(ctx context.Context, req *ListAnalysesRequest) (rsp *ListAnalysesResponse, err error) {
+	if s.Prelude != nil {
+		var newCtx context.Context
+		newCtx, err = s.Prelude(ctx, "ListAnalyses", req)
+		if err == nil {
+			ctx = newCtx
+		}
+	}
+	if err == nil {
+		rsp, err = s.Service.ListAnalyses(ctx, req)
+	}
+	if s.Postlude != nil {
+		err = s.Postlude(ctx, "ListAnalyses", rsp, err)
+	}
+	return
+}
+
 func (s *DecoratedGoFinditService) TriggerAnalysis(ctx context.Context, req *TriggerAnalysisRequest) (rsp *TriggerAnalysisResponse, err error) {
 	if s.Prelude != nil {
 		var newCtx context.Context

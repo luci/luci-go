@@ -24,11 +24,23 @@ import (
 
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/common/pagination"
+	"go.chromium.org/luci/common/pagination/dscursor"
+	"go.chromium.org/luci/common/sync/parallel"
 	"go.chromium.org/luci/gae/service/datastore"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
+
+var listAnalysesPageTokenVault = dscursor.NewVault([]byte("LUCIBisection.v1.ListAnalyses"))
+
+// Max and default page sizes for ListAnalyses - the proto should be updated
+// to reflect any changes to these values
+var listAnalysesPageSizeLimiter = PageSizeLimiter{
+	Max:     200,
+	Default: 50,
+}
 
 // GoFinditServer implements the proto service GoFinditService.
 type GoFinditServer struct{}
@@ -181,5 +193,91 @@ func validateQueryAnalysisRequest(req *gfipb.QueryAnalysisRequest) error {
 	if req.BuildFailure.GetBbid() == 0 {
 		return status.Errorf(codes.InvalidArgument, "BuildFailure bbid must not be empty")
 	}
+	return nil
+}
+
+// ListAnalyses returns existing analyses
+func (server *GoFinditServer) ListAnalyses(c context.Context, req *gfipb.ListAnalysesRequest) (*gfipb.ListAnalysesResponse, error) {
+	// Validate the request
+	if err := validateListAnalysesRequest(req); err != nil {
+		return nil, err
+	}
+
+	// Decode cursor from page token
+	cursor, err := listAnalysesPageTokenVault.Cursor(c, req.PageToken)
+	switch err {
+	case pagination.ErrInvalidPageToken:
+		return nil, status.Errorf(codes.InvalidArgument, "Invalid page token")
+	case nil:
+		// Continue
+	default:
+		return nil, err
+	}
+
+	// Override the page size if necessary
+	pageSize := int(listAnalysesPageSizeLimiter.Adjust(req.PageSize))
+
+	// Construct the query
+	q := datastore.NewQuery("CompileFailureAnalysis").Order("-create_time").Start(cursor)
+
+	// Query datastore for compile failure analyses
+	compileFailureAnalyses := make([]*gfim.CompileFailureAnalysis, 0, pageSize)
+	var nextCursor datastore.Cursor
+	err = datastore.Run(c, q, func(compileFailureAnalysis *gfim.CompileFailureAnalysis, getCursor datastore.CursorCB) error {
+		compileFailureAnalyses = append(compileFailureAnalyses, compileFailureAnalysis)
+
+		// Check whether the page size limit has been reached
+		if len(compileFailureAnalyses) == pageSize {
+			nextCursor, err = getCursor()
+			if err != nil {
+				return err
+			}
+			return datastore.Stop
+		}
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	// Construct the next page token
+	nextPageToken, err := listAnalysesPageTokenVault.PageToken(c, nextCursor)
+	if err != nil {
+		return nil, err
+	}
+
+	// Get the result for each compile failure analysis
+	analyses := make([]*gfipb.Analysis, len(compileFailureAnalyses))
+	err = parallel.FanOutIn(func(workC chan<- func() error) {
+		for i, compileFailureAnalysis := range compileFailureAnalyses {
+			i := i
+			compileFailureAnalysis := compileFailureAnalysis
+			workC <- func() error {
+				analysis, err := GetAnalysisResult(c, compileFailureAnalysis)
+				if err != nil {
+					logging.Errorf(c, "Could not get analysis data for analysis %d: %s",
+						compileFailureAnalysis.Id, err)
+					return err
+				}
+				analyses[i] = analysis
+				return nil
+			}
+		}
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return &gfipb.ListAnalysesResponse{
+		Analyses:      analyses,
+		NextPageToken: nextPageToken,
+	}, nil
+}
+
+func validateListAnalysesRequest(req *gfipb.ListAnalysesRequest) error {
+	if req.PageSize < 0 {
+		return status.Errorf(codes.InvalidArgument, "Page size can't be negative")
+	}
+
 	return nil
 }
