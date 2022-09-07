@@ -122,7 +122,7 @@ func TestObservesProjectLifetime(t *testing.T) {
 			So(mustLoadState().EVersion, ShouldEqual, 1)
 			for i := 0; i < 10; i++ {
 				So(ct.TQ.Tasks(), ShouldHaveLength, 1)
-				ct.TQ.Run(ctx, tqtesting.StopAfterTask(TaskClassID))
+				ct.TQ.Run(ctx, tqtesting.StopAfterTask(taskClassID))
 			}
 			So(mustLoadState().EVersion, ShouldEqual, 11)
 		})
@@ -159,7 +159,7 @@ func TestObservesProjectLifetime(t *testing.T) {
 			So(mustLoadState().EVersion, ShouldEqual, 1)
 
 			prjcfgtest.Disable(ctx, lProject)
-			ct.TQ.Run(ctx, tqtesting.StopAfterTask(TaskClassID))
+			ct.TQ.Run(ctx, tqtesting.StopAfterTask(taskClassID))
 
 			So(datastore.Get(ctx, &State{LuciProject: lProject}), ShouldEqual, datastore.ErrNoSuchEntity)
 			So(ct.TQ.Tasks(), ShouldBeEmpty)

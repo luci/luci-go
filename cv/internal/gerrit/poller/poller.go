@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package implements stateful Gerrit polling.
+// Package poller implements stateful Gerrit polling.
 package poller
 
 import (
@@ -38,7 +38,7 @@ import (
 	"go.chromium.org/luci/cv/internal/gerrit/gobmap"
 )
 
-const TaskClassID = "poll-gerrit"
+const taskClassID = "poll-gerrit"
 
 // pmNotifier encapsulates interaction with Project Manager by the Poller.
 //
@@ -66,7 +66,7 @@ type Poller struct {
 func New(tqd *tq.Dispatcher, g gerrit.Factory, clUpdater CLUpdater, pm pmNotifier) *Poller {
 	p := &Poller{tqd, g, clUpdater, pm}
 	tqd.RegisterTaskClass(tq.TaskClass{
-		ID:           TaskClassID,
+		ID:           taskClassID,
 		Prototype:    &PollGerritTask{},
 		Queue:        "poll-gerrit",
 		Quiet:        true,
