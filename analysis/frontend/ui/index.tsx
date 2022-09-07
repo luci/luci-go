@@ -20,11 +20,15 @@ import React from 'react';
 import ReactDOM from 'react-dom';
 import { BrowserRouter } from 'react-router-dom';
 
+import createInnerHTMLSanitizingPolicy from '@chopsui/trusted-types-policy';
+
 import App from './App';
 
 dayjs.extend(relativeTime);
 dayjs.extend(UTC);
 dayjs.extend(localizedFormat);
+
+createInnerHTMLSanitizingPolicy();
 
 ReactDOM.render(
     <BrowserRouter>

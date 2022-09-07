@@ -50,6 +50,7 @@
   },
   "dependencies": {
     "@chopsui/prpc-client": "^1.1.0",
+    "@chopsui/trusted-types-policy": "^0.3.4",
     "@emotion/react": "^11.8.2",
     "@fontsource/roboto": "^4.5.3",
     "@material/mwc-button": "^0.25.3",
