@@ -20,7 +20,6 @@ import (
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
-	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/sync/dispatcher/buffer"
 )
 
@@ -109,7 +108,13 @@ func (state *coordinatorState) sendBatches(ctx context.Context, now, prevLastSen
 		} else {
 			// No more batches.
 
-			// But before break, check if the minimal frequency has reached, if yes we
+			// If there will be no more batches in the future, break.
+			if state.closed {
+				res.CancelAt(now)
+				break
+			}
+
+			// Otherwise, check if the minimal frequency has reached, if yes we
 			// need to send a nil batch.
 			minInterval := durationFromLimit(state.opts.MinQPS)
 			if minInterval > 0 && now.Sub(lastSend) >= minInterval {
@@ -142,14 +147,19 @@ func (state *coordinatorState) sendBatches(ctx context.Context, now, prevLastSen
 func (state *coordinatorState) getNextTimingEvent(now time.Time, nextQPSToken time.Duration) <-chan clock.TimerResult {
 	var resetDuration time.Duration
 	var msg string
+	nextSendReached := false
 
-	if nextSend := state.buf.NextSendTime(); !nextSend.IsZero() && nextSend.After(now) {
-		resetDuration = nextSend.Sub(now)
-		msg = "waiting on batch.NextSendTime"
+	if nextSend := state.buf.NextSendTime(); !nextSend.IsZero() {
+		if nextSend.After(now) {
+			resetDuration = nextSend.Sub(now)
+			msg = "waiting on batch.NextSendTime"
+		} else {
+			nextSendReached = true
+		}
 	}
 
 	minInterval := durationFromLimit(state.opts.MinQPS)
-	if minInterval > 0 && (resetDuration == 0 || minInterval < resetDuration) {
+	if !nextSendReached && minInterval > 0 && (resetDuration == 0 || minInterval < resetDuration) {
 		resetDuration = minInterval
 		msg = "waiting on MinQPS"
 	}
@@ -224,32 +234,18 @@ func (state *coordinatorState) handleResult(ctx context.Context, result workerRe
 // all of the internal channels of the external Channel object in one big select
 // loop.
 func (state *coordinatorState) run(ctx context.Context, send SendFn) {
-	defer func() {
-		logging.Debugf(ctx, "closing drainCh")
-		close(state.drainCh)
-	}()
+	defer close(state.drainCh)
 	if state.opts.DrainedFn != nil {
 		defer state.opts.DrainedFn()
 	}
-	defer func() {
-		logging.Debugf(ctx, "final drop")
-		state.opts.DropFn(nil, true)
-	}()
-	defer func() {
-		logging.Debugf(ctx, "closing resultCh")
-		defer close(state.resultCh)
-	}()
-	defer func() {
-		logging.Debugf(ctx, "stopping timer")
-		state.timer.Stop()
-	}()
+	defer state.opts.DropFn(nil, true)
+	defer close(state.resultCh)
+	defer state.timer.Stop()
 
 	var lastSend time.Time
 loop:
 	for {
 		state.dbg("LOOP (closed: %t, canceled: %t): buf.Stats[%+v]",
-			state.closed, state.canceled, state.buf.Stats())
-		logging.Debugf(ctx, "LOOP (closed: %t, canceled: %t): buf.Stats[%+v]",
 			state.closed, state.canceled, state.buf.Stats())
 
 		now := clock.Now(ctx)
@@ -277,7 +273,6 @@ loop:
 		select {
 		case <-doneCh:
 			state.dbg("  GOT CANCEL (via context)")
-			logging.Debugf(ctx, "GOT CANCEL (via context)")
 			state.canceled = true
 			state.buf.Flush(now)
 
@@ -287,7 +282,6 @@ loop:
 		case itm, ok := <-state.getWorkChannel():
 			if !ok {
 				state.dbg("  GOT DRAIN")
-				logging.Debugf(ctx, "GOT DRAIN")
 				state.closed = true
 				state.buf.Flush(now)
 				continue
@@ -345,5 +339,4 @@ loop:
 	}
 
 	state.dbg("DONE")
-	logging.Debugf(ctx, "DONE")
 }

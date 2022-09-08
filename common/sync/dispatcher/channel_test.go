@@ -671,37 +671,76 @@ func TestSizeBasedChannel(t *testing.T) {
 }
 
 func TestMinQPS(t *testing.T) {
-	Convey(`send w/ minimal frequency`, t, func() {
-		ctx := context.Background() // uses real time!
-		ctx, dbg := dbgIfVerbose(ctx)
+	t.Parallel()
+	Convey(`TestMinQPS`, t, func() {
+		Convey(`send w/ minimal frequency`, func() {
+			ctx := context.Background() // uses real time!
+			ctx, dbg := dbgIfVerbose(ctx)
 
-		numNilBatches := 0
+			numNilBatches := 0
 
-		ch, err := NewChannel(ctx, &Options{
-			MinQPS: rate.Every(100 * time.Millisecond),
-			DropFn: noDrop,
-			Buffer: buffer.Options{
-				MaxLeases:     1,
-				BatchItemsMax: 1,
-				FullBehavior:  &buffer.BlockNewItems{MaxItems: 20},
-			},
-			testingDbg: dbg,
-		}, func(batch *buffer.Batch) (err error) {
-			if batch == nil {
-				numNilBatches++
+			ch, err := NewChannel(ctx, &Options{
+				MinQPS: rate.Every(100 * time.Millisecond),
+				DropFn: noDrop,
+				Buffer: buffer.Options{
+					MaxLeases:     1,
+					BatchItemsMax: 1,
+					FullBehavior:  &buffer.BlockNewItems{MaxItems: 20},
+				},
+				testingDbg: dbg,
+			}, func(batch *buffer.Batch) (err error) {
+				if batch == nil {
+					numNilBatches++
+				}
+				return
+			})
+			So(err, ShouldBeNil)
+
+			for i := 0; i < 20; i++ {
+				switch i {
+				case 9:
+					time.Sleep(2 * time.Second) // to make a gap that ch is empty.
+				}
+				ch.C <- i
 			}
-			return
+			ch.CloseAndDrain(ctx)
+			So(numNilBatches, ShouldBeGreaterThan, 0)
 		})
-		So(err, ShouldBeNil)
 
-		for i := 0; i < 20; i++ {
-			switch i {
-			case 9:
-				time.Sleep(2 * time.Second) // to make a gap that ch is empty.
+		Convey(`send w/ minimal frequency non block`, func() {
+			ctx := context.Background() // uses real time!
+			ctx, dbg := dbgIfVerbose(ctx)
+
+			mu := sync.Mutex{}
+			numNilBatch := 0
+			minWaitDuration := 100 * time.Millisecond
+
+			ch, err := NewChannel(ctx, &Options{
+				MinQPS: rate.Every(minWaitDuration),
+				DropFn: noDrop,
+				Buffer: buffer.Options{
+					MaxLeases:     1,
+					BatchItemsMax: 1,
+					FullBehavior:  &buffer.BlockNewItems{MaxItems: 20},
+				},
+				testingDbg: dbg,
+			}, func(batch *buffer.Batch) (err error) {
+				mu.Lock()
+				if batch == nil {
+					numNilBatch++
+				}
+				mu.Unlock()
+				time.Sleep(200 * time.Millisecond)
+				return
+			})
+			So(err, ShouldBeNil)
+
+			for i := 0; i < 20; i++ {
+				ch.C <- i
 			}
-			ch.C <- i
-		}
-		ch.CloseAndDrain(ctx)
-		So(numNilBatches, ShouldBeGreaterThan, 0)
+			ch.CloseAndDrain(ctx)
+
+			So(numNilBatch, ShouldEqual, 0)
+		})
 	})
 }
