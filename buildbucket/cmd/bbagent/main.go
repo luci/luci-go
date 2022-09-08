@@ -371,7 +371,7 @@ func finalizeBuild(ctx context.Context, bbclient BuildsClient, finalBuild *bbpb.
 }
 
 func mainImpl() int {
-	ctx := logging.SetLevel(gologger.StdConfig.Use(context.Background()), logging.Debug)
+	ctx := logging.SetLevel(gologger.StdConfig.Use(context.Background()), logging.Info)
 
 	hostname := flag.String("host", "", "Buildbucket server hostname")
 	buildID := flag.Int64("build-id", 0, "Buildbucket build ID")
@@ -568,7 +568,6 @@ func mainImpl() int {
 			finalBuild = build
 		}
 	}
-	logging.Debugf(cctx, "starting CloseAndDrain")
 	buildsCh.CloseAndDrain(cctx)
 
 	// Now that the builds channel has been closed, update bb directly.
