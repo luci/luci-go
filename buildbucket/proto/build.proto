@@ -128,7 +128,7 @@ message Build {
 
   // Identifier of the build, unique per LUCI deployment.
   // IDs are monotonically decreasing.
-  int64 id = 1;
+  int64 id = 1 [ (google.api.field_behavior) = OUTPUT_ONLY ];
 
   // Required. The builder this build belongs to.
   //
@@ -152,28 +152,32 @@ message Build {
   // necessarily reflect source-code order. For example, force builds
   // or rebuilds can allocate new, higher, numbers, but build an older-
   // than-HEAD version of the source.
-  int32 number = 3;
+  int32 number = 3 [ (google.api.field_behavior) = OUTPUT_ONLY ];
 
   // Verified LUCI identity that created this build.
-  string created_by = 4;
+  string created_by = 4 [ (google.api.field_behavior) = OUTPUT_ONLY ];
 
   // Verified LUCI identity that canceled this build.
-  string canceled_by = 23;
+  string canceled_by = 23 [ (google.api.field_behavior) = OUTPUT_ONLY ];
 
   // When the build was created.
-  google.protobuf.Timestamp create_time = 6;
+  google.protobuf.Timestamp create_time = 6
+      [ (google.api.field_behavior) = OUTPUT_ONLY ];
   // When the build started.
   // Required iff status is STARTED, SUCCESS or FAILURE.
-  google.protobuf.Timestamp start_time = 7;
+  google.protobuf.Timestamp start_time = 7
+      [ (google.api.field_behavior) = OUTPUT_ONLY ];
   // When the build ended.
   // Present iff status is terminal.
   // MUST NOT be before start_time.
-  google.protobuf.Timestamp end_time = 8;
+  google.protobuf.Timestamp end_time = 8
+      [ (google.api.field_behavior) = OUTPUT_ONLY ];
   // When the build was most recently updated.
   //
   // RPC: can be > end_time if, e.g. new tags were attached to a completed
   // build.
-  google.protobuf.Timestamp update_time = 9;
+  google.protobuf.Timestamp update_time = 9
+      [ (google.api.field_behavior) = OUTPUT_ONLY ];
   // When the cancel process of the build started.
   // Note it's not the time that the cancellation completed, which would be
   // tracked by end_time.
@@ -203,7 +207,8 @@ message Build {
   //Additionally, the Buildbucket service itself will launch an asynchronous
   // task to terminate the build via the backend API (e.g. Swarming cancelation)
   // if bbagent cannot successfully terminate the exe in time.
-  google.protobuf.Timestamp cancel_time = 32;
+  google.protobuf.Timestamp cancel_time = 32
+      [ (google.api.field_behavior) = OUTPUT_ONLY ];
 
   // Status of the build.
   // Must be specified, i.e. not STATUS_UNSPECIFIED.
@@ -539,7 +544,7 @@ message BuildInfra {
     repeated RequestedDimension requested_dimensions = 6;
 
     // Buildbucket hostname, e.g. "cr-buildbucket.appspot.com".
-    string hostname = 7;
+    string hostname = 7 [ (google.api.field_behavior) = OUTPUT_ONLY ];
 
     enum ExperimentReason {
       // This value is unused (i.e. if you see this, it's a bug).
@@ -664,7 +669,7 @@ message BuildInfra {
 
     // Swarming task id.
     // Not guaranteed to be populated at the build creation time.
-    string task_id = 2;
+    string task_id = 2 [ (google.api.field_behavior) = OUTPUT_ONLY ];
 
     // Swarming run id of the parent task from which this build is triggered.
     // If set, swarming promises to ensure this build won't outlive its parent
@@ -732,7 +737,7 @@ message BuildInfra {
 
     // Name of the invocation for results of this build.
     // Typically "invocations/build:<build_id>".
-    string invocation = 2;
+    string invocation = 2 [(google.api.field_behavior) = OUTPUT_ONLY];
   }
 
   // BBAgent-specific information.
