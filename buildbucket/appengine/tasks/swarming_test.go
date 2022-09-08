@@ -574,6 +574,46 @@ func TestSyncBuild(t *testing.T) {
 				})
 			})
 
+			Convey("cancel incomplete steps for an ended build", func() {
+				mockSwarm.EXPECT().GetTaskResult(ctx, "task_id").Return(&swarming.SwarmingRpcsTaskResult{
+					State:       "BOT_DIED",
+					StartedTs:   "2018-01-29T21:15:02.649750",
+					CompletedTs: "2018-01-30T00:15:18.162860"}, nil)
+				steps := model.BuildSteps{
+					ID: 1,
+					Build: datastore.KeyForObj(ctx, &model.Build{ID: 123}),
+				}
+				So(steps.FromProto([]*pb.Step{
+					{Name: "step1", Status: pb.Status_SUCCESS},
+					{Name: "step2", Status: pb.Status_STARTED},
+				}), ShouldBeNil)
+				So(datastore.Put(ctx, &steps), ShouldBeNil)
+
+				err := syncBuildWithTaskResult(ctx, 123, "task_id", mockSwarm)
+				So(err, ShouldBeNil)
+				failedBuild := &model.Build{ID: 123}
+				So(datastore.Get(ctx, failedBuild), ShouldBeNil)
+				So(failedBuild.Status, ShouldEqual, pb.Status_INFRA_FAILURE)
+				allSteps := &model.BuildSteps{
+					ID: 1,
+					Build: datastore.KeyForObj(ctx, &model.Build{ID: 123}),
+				}
+				So(datastore.Get(ctx, allSteps), ShouldBeNil)
+				mSteps, err := allSteps.ToProto(ctx)
+				So(err, ShouldBeNil)
+				So(mSteps, ShouldResembleProto, []*pb.Step{
+					{
+						Name: "step1",
+						Status: pb.Status_SUCCESS,
+					},
+					{
+						Name: "step2",
+						Status: pb.Status_CANCELED,
+						EndTime: &timestamppb.Timestamp{Seconds: 1517271318, Nanos: 162860000},
+					},
+				})
+			})
+
 			var cases = []struct {
 				fakeTaskResult *swarming.SwarmingRpcsTaskResult
 				expected       *expectedBuildFields

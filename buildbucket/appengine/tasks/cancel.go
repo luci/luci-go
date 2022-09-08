@@ -203,7 +203,7 @@ func Cancel(ctx context.Context, bID int64) (*model.Build, error) {
 		if cancelSteps {
 			switch changed, err := stp.CancelIncomplete(ctx, timestamppb.New(now)); {
 			case err != nil:
-				return errors.Annotate(err, "failed to fetch build steps: %d", bld.ID).Err()
+				return errors.Annotate(err, "failed to mark steps cancelled: %d", bld.ID).Err()
 			case changed:
 				toPut = append(toPut, stp)
 			}

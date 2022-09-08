@@ -320,7 +320,17 @@ func syncBuildWithTaskResult(ctx context.Context, buildID int64, taskID string, 
 			metrics.BuildStarted(ctx, bld)
 		case protoutil.IsEnded(bld.Proto.Status):
 			steps := &model.BuildSteps{Build: datastore.KeyForObj(ctx, bld)}
-			if changed, _ := steps.CancelIncomplete(ctx, bld.Proto.EndTime); changed {
+			// If the build has no steps, CancelIncomplete will return false.
+			if err := model.GetIgnoreMissing(ctx, steps); err != nil {
+				return transient.Tag.Apply(errors.Annotate(err, "failed to fetch steps for build %d", bld.ID).Err())
+			}
+			switch changed, err := steps.CancelIncomplete(ctx, bld.Proto.EndTime); {
+			case err != nil:
+				// The steps are fetched from datastore and should always be valid in
+				// CancelIncomplete. But in case of any errors, we can just log it here
+				// instead of rethrowing it to make the entire flow fail or retry.
+				logging.Errorf(ctx, "failed to mark steps cancelled for build %d: %s", bld.ID, err)
+			case changed:
 				toPut = append(toPut, steps)
 			}
 			if err := sendOnBuildCompletion(ctx, bld); err != nil {
