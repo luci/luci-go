@@ -18,8 +18,10 @@ import (
 	"github.com/golang/protobuf/proto"
 	"google.golang.org/protobuf/types/known/structpb"
 
+	"go.chromium.org/luci/buildbucket"
 	bbpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/buildbucket/protoutil"
+	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/luciexe/exe"
 )
@@ -112,4 +114,10 @@ func (b *Buildbucket) PayloadPath() string {
 
 func (b *Buildbucket) CacheDir() string {
 	return protoutil.CacheDir(b.BbagentArgs.GetBuild())
+}
+
+// BbagentDownloadCIPDPkgs returns a bool on whether bbagent is responsible for
+// downloading CIPD packages.
+func (b *Buildbucket) BbagentDownloadCIPDPkgs() bool {
+	return !b.LegacyKitchen && stringset.NewFromSlice(b.GetBbagentArgs().GetBuild().GetInput().GetExperiments()...).Has(buildbucket.ExperimentBBAgentDownloadCipd)
 }

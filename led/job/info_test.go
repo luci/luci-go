@@ -29,13 +29,13 @@ func TestGetCurrentIsolated(t *testing.T) {
 
 	Convey(`GetCurrentIsolated`, t, func() {
 		Convey(`none (bb)`, func() {
-			current, err := testBBJob().Info().CurrentIsolated()
+			current, err := testBBJob(false).Info().CurrentIsolated()
 			So(err, ShouldBeNil)
 			So(current, ShouldBeNil)
 		})
 
 		Convey(`CasUserPayload`, func() {
-			jd := testBBJob()
+			jd := testBBJob(false)
 			jd.GetBuildbucket().BbagentArgs = &bbpb.BBAgentArgs{
 				Build: &bbpb.Build{
 					Infra: &bbpb.BuildInfra{

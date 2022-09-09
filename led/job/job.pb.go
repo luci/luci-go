@@ -48,7 +48,8 @@ type Buildbucket struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	BbagentArgs      *proto.BBAgentArgs    `protobuf:"bytes,1,opt,name=bbagent_args,json=bbagentArgs,proto3" json:"bbagent_args,omitempty"`
+	BbagentArgs *proto.BBAgentArgs `protobuf:"bytes,1,opt,name=bbagent_args,json=bbagentArgs,proto3" json:"bbagent_args,omitempty"`
+	// Deprecated for Buildbucket v2 builds.
 	CipdPackages     []*api.CIPDPackage    `protobuf:"bytes,2,rep,name=cipd_packages,json=cipdPackages,proto3" json:"cipd_packages,omitempty"`
 	EnvVars          []*api.StringPair     `protobuf:"bytes,3,rep,name=env_vars,json=envVars,proto3" json:"env_vars,omitempty"`
 	EnvPrefixes      []*api.StringListPair `protobuf:"bytes,4,rep,name=env_prefixes,json=envPrefixes,proto3" json:"env_prefixes,omitempty"`

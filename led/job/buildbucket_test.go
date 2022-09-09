@@ -29,7 +29,7 @@ func TestBBEnsureBasics(t *testing.T) {
 	t.Parallel()
 
 	Convey(`Buildbucket.EnsureBasics`, t, func() {
-		jd := testBBJob()
+		jd := testBBJob(false)
 		So(jd.GetBuildbucket().GetBbagentArgs().GetBuild(), ShouldBeNil)
 
 		jd.GetBuildbucket().EnsureBasics()
@@ -42,7 +42,7 @@ func TestWriteProperties(t *testing.T) {
 	t.Parallel()
 
 	Convey(`Buildbucket.WriteProperties`, t, func() {
-		jd := testBBJob()
+		jd := testBBJob(false)
 		So(jd.GetBuildbucket().GetBbagentArgs().GetBuild().GetInput().GetProperties(), ShouldBeNil)
 
 		jd.GetBuildbucket().WriteProperties(map[string]interface{}{
@@ -60,7 +60,7 @@ func TestUpdateBuildFromBbagentArgs(t *testing.T) {
 	t.Parallel()
 
 	Convey(`UpdateBuildFromBbagentArgs`, t, func() {
-		bb := testBBJob().GetBuildbucket()
+		bb := testBBJob(false).GetBuildbucket()
 		So(bb.GetBbagentArgs().GetBuild().GetInfra().GetBuildbucket().GetAgent(), ShouldBeNil)
 
 		bb.BbagentArgs = &bbpb.BBAgentArgs{
@@ -85,7 +85,7 @@ func TestUpdatePayloadPath(t *testing.T) {
 	t.Parallel()
 
 	Convey(`UpdatePayloadPath`, t, func() {
-		bb := testBBJob().GetBuildbucket()
+		bb := testBBJob(false).GetBuildbucket()
 
 		bb.BbagentArgs = &bbpb.BBAgentArgs{
 			PayloadPath: "payload_path",

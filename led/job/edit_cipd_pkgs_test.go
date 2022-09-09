@@ -18,6 +18,7 @@ import (
 	"testing"
 
 	. "github.com/smartystreets/goconvey/convey"
+	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestEditCIPDPkgs(t *testing.T) {
@@ -83,6 +84,22 @@ func TestEditCIPDPkgs(t *testing.T) {
 					})
 				}
 			},
+		},
+
+		{
+			name: "edit v2 build",
+			fn: func(jd *Definition) {
+				if b := jd.GetBuildbucket(); b != nil && b.BbagentDownloadCIPDPkgs() {
+					err := jd.Edit(func(je Editor) {
+						je.CIPDPkgs(CIPDPkgs{
+							"subdir:some/pkg": "version",
+						})
+					})
+					So(err, ShouldErrLike, "not supported for Buildbucket v2 builds")
+					return
+				}
+			},
+			v2Build: true,
 		},
 	})
 }

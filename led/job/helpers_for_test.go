@@ -22,6 +22,8 @@ import (
 	. "github.com/smartystreets/goconvey/convey"
 	"google.golang.org/protobuf/types/known/durationpb"
 
+	"go.chromium.org/luci/buildbucket"
+	bbpb "go.chromium.org/luci/buildbucket/proto"
 	api "go.chromium.org/luci/swarming/proto/api"
 )
 
@@ -31,6 +33,8 @@ type testCase struct {
 
 	// These control if the test is disabled for one of the test types.
 	skipBB bool
+	// If true, the job should be for a v2 Buildbucket build.
+	v2Build bool
 
 	skipSW       bool // skips all swarming tests
 	skipSWEmpty  bool // skips just swarming tests with an empty Task
@@ -51,12 +55,25 @@ const (
 	swSlice3Exp = swSlice3ExpSecs * time.Second // relative: 600-240 = 360
 )
 
-func testBBJob() *Definition {
-	return &Definition{JobType: &Definition_Buildbucket{
+func testBBJob(v2Build bool) *Definition {
+	jd := &Definition{JobType: &Definition_Buildbucket{
 		Buildbucket: &Buildbucket{
 			Name: "default-task-name",
 		},
 	}}
+	if v2Build {
+		jd.GetBuildbucket().BbagentArgs = &bbpb.BBAgentArgs{
+			Build: &bbpb.Build{
+				Input: &bbpb.Build_Input{
+					Experiments: []string{
+						buildbucket.ExperimentBBAgentDownloadCipd,
+					},
+				},
+			},
+		}
+		jd.GetBuildbucket().LegacyKitchen = false
+	}
+	return jd
 }
 
 func testSWJob(sliceExps ...time.Duration) *Definition {
@@ -97,7 +114,7 @@ func runCases(t *testing.T, opName string, tests []testCase) {
 		Convey(`bb`, func() {
 			for _, tc := range tests {
 				ConveyIf(!tc.skipBB, tc.name, func() {
-					tc.fn(testBBJob())
+					tc.fn(testBBJob(tc.v2Build))
 				})
 			}
 		})

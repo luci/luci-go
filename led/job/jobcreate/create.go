@@ -84,6 +84,13 @@ func FromNewTaskRequest(ctx context.Context, r *swarming.SwarmingRpcsNewTaskRequ
 			bb.UpdateBuildFromBbagentArgs()
 		}
 
+		// This check is only here because of bbCommonFromTaskRequest.
+		// TODO(crbug.com/1219018): remove this check after bbCommonFromTaskRequest
+		// is only used for long bbagent arg case.
+		if bb.BbagentDownloadCIPDPkgs() {
+			bb.CipdPackages = nil
+		}
+
 	case "kitchen":
 		bb := &job.Buildbucket{LegacyKitchen: true}
 		ret.JobType = &job.Definition_Buildbucket{Buildbucket: bb}
@@ -141,7 +148,9 @@ func FromNewTaskRequest(ctx context.Context, r *swarming.SwarmingRpcsNewTaskRequ
 			bb.BbagentArgs.Build.Exe.Cmd = []string{arg}
 		}
 
-		dropRecipePackage(&bb.CipdPackages, bb.PayloadPath())
+		if !bb.BbagentDownloadCIPDPkgs() {
+			dropRecipePackage(&bb.CipdPackages, bb.PayloadPath())
+		}
 
 		props := bb.BbagentArgs.GetBuild().GetInput().GetProperties()
 		// everything in here is reflected elsewhere in the Build and will be

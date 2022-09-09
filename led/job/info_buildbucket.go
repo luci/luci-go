@@ -19,6 +19,7 @@ import (
 	"google.golang.org/protobuf/proto"
 
 	bbpb "go.chromium.org/luci/buildbucket/proto"
+	"go.chromium.org/luci/common/errors"
 	swarmingpb "go.chromium.org/luci/swarming/proto/api"
 )
 
@@ -81,9 +82,12 @@ func (b bbInfo) Dimensions() (ExpiringDimensions, error) {
 }
 
 func (b bbInfo) CIPDPkgs() (ret CIPDPkgs, err error) {
-	ret = CIPDPkgs{}
-	ret.fromList(b.CipdPackages)
-	return
+	if !b.BbagentDownloadCIPDPkgs() {
+		ret = CIPDPkgs{}
+		ret.fromList(b.CipdPackages)
+		return
+	}
+	return nil, errors.Reason("not supported for Buildbucket v2 builds").Err()
 }
 
 func (b bbInfo) Env() (ret map[string]string, err error) {

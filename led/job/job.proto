@@ -31,6 +31,7 @@ import "go.chromium.org/luci/swarming/proto/api/swarming.proto";
 message Buildbucket {
   buildbucket.v2.BBAgentArgs bbagent_args = 1;
 
+  // Deprecated for Buildbucket v2 builds.
   repeated swarming.v1.CIPDPackage cipd_packages = 2;
 
   repeated swarming.v1.StringPair env_vars = 3;

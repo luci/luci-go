@@ -28,7 +28,6 @@ import (
 	"google.golang.org/protobuf/types/known/durationpb"
 	durpb "google.golang.org/protobuf/types/known/durationpb"
 
-	"go.chromium.org/luci/buildbucket"
 	"go.chromium.org/luci/buildbucket/cmd/bbagent/bbinput"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/data/rand/cryptorand"
@@ -308,19 +307,18 @@ func (jd *Definition) generateCommand(ctx context.Context, ks KitchenSupport) ([
 func (jd *Definition) generateCIPDInputs() (cipdInputs []*swarmingpb.CIPDPackage) {
 	cipdInputs = ([]*swarmingpb.CIPDPackage)(nil)
 	bb := jd.GetBuildbucket()
-	if bb.LegacyKitchen {
+	if !bb.BbagentDownloadCIPDPkgs() {
 		cipdInputs = append(cipdInputs, bb.CipdPackages...)
 		return
 	}
 
-	if !stringset.NewFromSlice(bb.GetBbagentArgs().GetBuild().GetInput().GetExperiments()...).Has(buildbucket.ExperimentBBAgentDownloadCipd) {
-		cipdInputs = append(cipdInputs, bb.CipdPackages...)
-		return
-	}
-
-	for _, pck := range bb.CipdPackages {
-		if pck.GetDestPath() == "." {
-			cipdInputs = append(cipdInputs, pck)
+	if agentSrc := bb.BbagentArgs.GetBuild().GetInfra().GetBuildbucket().GetAgent().GetSource(); agentSrc != nil {
+		if cipdSource := agentSrc.GetCipd(); cipdSource != nil {
+			cipdInputs = append(cipdInputs, &swarmingpb.CIPDPackage{
+				DestPath:    ".",
+				PackageName: cipdSource.Package,
+				Version:     cipdSource.Version,
+			})
 		}
 	}
 	return

@@ -312,8 +312,11 @@ func (bbe *buildbucketEditor) Properties(props map[string]string, auto bool) {
 
 func (bbe *buildbucketEditor) CIPDPkgs(cipdPkgs CIPDPkgs) {
 	bbe.tweak(func() error {
-		cipdPkgs.updateCipdPkgs(&bbe.bb.CipdPackages)
-		return nil
+		if !bbe.bb.BbagentDownloadCIPDPkgs() {
+			cipdPkgs.updateCipdPkgs(&bbe.bb.CipdPackages)
+			return nil
+		}
+		return errors.Reason("not supported for Buildbucket v2 builds").Err()
 	})
 }
 
