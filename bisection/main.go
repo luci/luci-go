@@ -22,6 +22,7 @@ import (
 	"net/http"
 
 	"go.chromium.org/luci/bisection/compilefailureanalysis"
+	"go.chromium.org/luci/bisection/compilefailuredetection"
 	"go.chromium.org/luci/bisection/frontend/handlers"
 	"go.chromium.org/luci/bisection/model"
 	gfipb "go.chromium.org/luci/bisection/proto"
@@ -38,6 +39,7 @@ import (
 	"go.chromium.org/luci/server/auth/openid"
 	"go.chromium.org/luci/server/encryptedcookies"
 	"go.chromium.org/luci/server/templates"
+	"go.chromium.org/luci/server/tq"
 
 	// Store auth sessions in the datastore.
 	_ "go.chromium.org/luci/server/encryptedcookies/session/datastore"
@@ -141,6 +143,7 @@ func main() {
 		gaeemulation.NewModuleFromFlags(),
 		encryptedcookies.NewModuleFromFlags(), // Required for auth sessions.
 		secrets.NewModuleFromFlags(),          // Needed by encryptedcookies.
+		tq.NewModuleFromFlags(),
 	}
 
 	server.Main(nil, modules, func(srv *server.Server) error {
@@ -179,6 +182,8 @@ func main() {
 			Service: &gfis.GoFinditBotServer{},
 			Prelude: checkBotAPIAccess,
 		})
+
+		compilefailuredetection.RegisterTaskClass()
 
 		srv.Routes.GET("/test", mwc, func(c *router.Context) {
 			// For testing the flow

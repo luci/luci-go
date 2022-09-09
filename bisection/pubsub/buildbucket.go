@@ -21,14 +21,14 @@ import (
 	"fmt"
 	"net/http"
 
-	"go.chromium.org/luci/bisection/compilefailuredetection"
-
+	taskpb "go.chromium.org/luci/bisection/task/proto"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/server/router"
 
 	bbv1 "go.chromium.org/luci/common/api/buildbucket/buildbucket/v1"
+	"go.chromium.org/luci/server/tq"
 )
 
 type pubsubMessage struct {
@@ -90,9 +90,19 @@ func buildbucketPubSubHandlerImpl(c context.Context, r *http.Request) error {
 		return nil
 	}
 
-	if _, err = compilefailuredetection.AnalyzeBuild(c, bbmsg.Build.Id); err != nil {
-		return fmt.Errorf("failure in analyzing build %d: %w", bbmsg.Build.Id, err)
+	// Create a task for task queue
+	err = tq.AddTask(c, &tq.Task{
+		Title: fmt.Sprintf("failed_build_%d", bbmsg.Build.Id),
+		Payload: &taskpb.FailedBuildIngestionTask{
+			Bbid: bbmsg.Build.Id,
+		},
+	})
+
+	if err != nil {
+		logging.Errorf(c, "Failed creating task in task queue for build %d", bbmsg.Build.Id)
+		return err
 	}
+
 	return nil
 }
 

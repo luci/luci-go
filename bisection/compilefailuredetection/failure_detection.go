@@ -24,14 +24,47 @@ import (
 	"go.chromium.org/luci/bisection/internal/buildbucket"
 	"go.chromium.org/luci/bisection/model"
 	gfipb "go.chromium.org/luci/bisection/proto"
+	tpb "go.chromium.org/luci/bisection/task/proto"
 	"go.chromium.org/luci/bisection/util"
 
 	"go.chromium.org/luci/gae/service/datastore"
 
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/common/retry/transient"
+	"go.chromium.org/luci/server/tq"
+	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/fieldmaskpb"
 )
+
+const (
+	taskClass = "build-failure-ingestion"
+	queue     = "build-failure-ingestion"
+)
+
+// RegisterTaskClass registers the task class for tq dispatcher.
+func RegisterTaskClass() {
+	tq.RegisterTaskClass(tq.TaskClass{
+		ID:        taskClass,
+		Prototype: (*tpb.FailedBuildIngestionTask)(nil),
+		Queue:     queue,
+		Kind:      tq.NonTransactional,
+		Handler: func(c context.Context, payload proto.Message) error {
+			task := payload.(*tpb.FailedBuildIngestionTask)
+			logging.Infof(c, "Processing failed build task with id = %d", task.GetBbid())
+			_, err := AnalyzeBuild(c, task.GetBbid())
+			if err != nil {
+				logging.Errorf(c, "Error processing failed build task with id = %d: %s", task.GetBbid(), err)
+				// If the error is not transient, there is no point retrying
+				if transient.Tag.In(err) {
+					return nil
+				}
+				return err
+			}
+			return nil
+		},
+	})
+}
 
 // AnalyzeBuild analyzes a build and trigger an analysis if necessary.
 // Returns true if a new analysis is triggered, returns false otherwise.
