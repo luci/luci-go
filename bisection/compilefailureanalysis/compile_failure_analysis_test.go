@@ -242,9 +242,9 @@ func TestVerifyCulprit(t *testing.T) {
 
 		suspects, err := getHeuristicSuspectsToVerify(c, heuristicAnalysis)
 		So(err, ShouldBeNil)
-		So(len(suspects), ShouldEqual, 1)
+		So(len(suspects), ShouldEqual, 3)
 		So(suspects[0].Score, ShouldEqual, 4)
-		// So(suspects[1].Score, ShouldEqual, 3)
-		// So(suspects[2].Score, ShouldEqual, 2)
+		So(suspects[1].Score, ShouldEqual, 3)
+		So(suspects[2].Score, ShouldEqual, 2)
 	})
 }

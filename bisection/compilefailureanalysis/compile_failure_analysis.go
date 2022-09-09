@@ -20,7 +20,6 @@ package compilefailureanalysis
 import (
 	"context"
 	"fmt"
-	"strings"
 
 	"go.chromium.org/luci/bisection/compilefailureanalysis/compilelog"
 	"go.chromium.org/luci/bisection/compilefailureanalysis/heuristic"
@@ -149,8 +148,7 @@ func getHeuristicSuspectsToVerify(c context.Context, heuristicAnalysis *gfim.Com
 	}
 
 	// Get top 3 suspects to verify
-	// TODO (nqmtuan): Increase nSuspects to 3, after we verify everything is working.
-	nSuspects := 1
+	nSuspects := 3
 	if nSuspects > len(suspects) {
 		nSuspects = len(suspects)
 	}
@@ -185,6 +183,7 @@ func findRegressionRange(
 }
 
 func shouldVerifyHeuristicResult(c context.Context) bool {
-	// TODO (nqmtuan): Enable for prod instead of dev. Waiting for crbug.com/1358790
-	return strings.HasSuffix(info.AppID(c), "-dev")
+	appID := info.AppID(c)
+	// TODO (nqmtuan): Remove chops-gofindit when luci-bisection app is ready
+	return appID == "chops-gofindit" || appID == "luci-bisection"
 }
