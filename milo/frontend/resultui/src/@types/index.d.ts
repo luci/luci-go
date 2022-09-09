@@ -50,9 +50,6 @@ declare const CONFIGS: {
   readonly BUILDBUCKET: {
     readonly HOST: string;
   };
-  readonly WEETBIX: {
-    readonly HOST: string;
-  };
   readonly LUCI_ANALYSIS: {
     readonly HOST: string;
   };

@@ -30,8 +30,8 @@ import { unwrapObservable } from '../../../libs/milo_mobx_utils';
 import { lazyRendering, RenderPlaceHolder } from '../../../libs/observer_element';
 import { sanitizeHTML } from '../../../libs/sanitize_html';
 import { attachTags, hasTags } from '../../../libs/tag';
+import { Cluster } from '../../../services/luci_analysis';
 import { RESULT_LIMIT, TestStatus, TestVariant } from '../../../services/resultdb';
-import { Cluster } from '../../../services/weetbix';
 import { consumeStore, StoreInstance } from '../../../store';
 import colorClasses from '../../../styles/color_classes.css';
 import commonStyle from '../../../styles/common_style.css';
@@ -136,7 +136,7 @@ export class TestVariantEntryElement extends MobxLitElement implements RenderPla
       if (!hasTags(err, MAY_REQUIRE_SIGNIN)) {
         console.error(err);
       }
-      // Weetbix integration should not break the rest of the component.
+      // LUCI-Analysis integration should not break the rest of the component.
       return [];
     }
   }

@@ -15,9 +15,9 @@
 import { expect, fixture, fixtureCleanup, html, oneEvent } from '@open-wc/testing/index-no-side-effects';
 
 import './associated_bugs_badge';
-import { Cluster } from '../services/weetbix';
-import { WeetbixClustersBadgeElement } from './associated_bugs_badge';
-import { WeetbixClustersTooltipElement } from './associated_bugs_tooltip';
+import { Cluster } from '../services/luci_analysis';
+import { AssociatedBugsBadgeElement } from './associated_bugs_badge';
+import { AssociatedBugsTooltipElement } from './associated_bugs_tooltip';
 import { ShowTooltipEventDetail } from './tooltip';
 
 const cluster1: Cluster = {
@@ -63,7 +63,7 @@ describe('associated_bugs_badge_test', () => {
   afterEach(fixtureCleanup);
 
   it('should remove duplicated bugs', async () => {
-    const ele = await fixture<WeetbixClustersBadgeElement>(html`
+    const ele = await fixture<AssociatedBugsBadgeElement>(html`
       <milo-associated-bugs-badge .clusters=${[cluster1, cluster2, cluster3, cluster1]}></milo-associated-bugs-badge>
     `);
 
@@ -72,7 +72,7 @@ describe('associated_bugs_badge_test', () => {
   });
 
   it('should render a list on hover', async () => {
-    const ele = await fixture<WeetbixClustersBadgeElement>(html`
+    const ele = await fixture<AssociatedBugsBadgeElement>(html`
       <milo-associated-bugs-badge .clusters=${[cluster1, cluster2, cluster3]}></milo-associated-bugs-badge>
     `);
 
@@ -80,9 +80,7 @@ describe('associated_bugs_badge_test', () => {
     ele.shadowRoot!.querySelector('.badge')!.dispatchEvent(new MouseEvent('mouseover'));
     const event: CustomEvent<ShowTooltipEventDetail> = await listener;
 
-    const tooltip = event.detail.tooltip.querySelector(
-      'milo-associated-bugs-tooltip'
-    )! as WeetbixClustersTooltipElement;
+    const tooltip = event.detail.tooltip.querySelector('milo-associated-bugs-tooltip')! as AssociatedBugsTooltipElement;
 
     expect(tooltip.clusters).to.deep.equal([cluster1, cluster2, cluster3]);
   });

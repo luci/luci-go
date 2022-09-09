@@ -18,11 +18,11 @@ import { css, customElement } from 'lit-element';
 import { html } from 'lit-html';
 import { makeObservable, observable } from 'mobx';
 
-import { Cluster, makeRuleLink } from '../services/weetbix';
+import { Cluster, makeRuleLink } from '../services/luci_analysis';
 import commonStyle from '../styles/common_style.css';
 
 @customElement('milo-associated-bugs-tooltip')
-export class WeetbixClustersTooltipElement extends MobxLitElement {
+export class AssociatedBugsTooltipElement extends MobxLitElement {
   @observable.ref project!: string;
   @observable.ref clusters!: readonly Cluster[];
 

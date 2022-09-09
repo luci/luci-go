@@ -19,9 +19,6 @@ const CONFIGS = {
   BUILDBUCKET: {
     HOST: "{{.Buildbucket.Host}}",
   },
-  WEETBIX: {
-    HOST: "{{.Weetbix.Host}}",
-  },
   LUCI_ANALYSIS: {
     HOST: "{{.LuciAnalysis.Host}}",
   },

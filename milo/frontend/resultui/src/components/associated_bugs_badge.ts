@@ -18,13 +18,13 @@ import { html, render } from 'lit-html';
 import { computed, makeObservable, observable, reaction } from 'mobx';
 
 import './associated_bugs_tooltip';
-import { AssociatedBug, Cluster } from '../services/weetbix';
+import { AssociatedBug, Cluster } from '../services/luci_analysis';
 import commonStyle from '../styles/common_style.css';
 import { MiloBaseElement } from './milo_base';
 import { HideTooltipEventDetail, ShowTooltipEventDetail } from './tooltip';
 
 @customElement('milo-associated-bugs-badge')
-export class WeetbixClustersBadgeElement extends MiloBaseElement {
+export class AssociatedBugsBadgeElement extends MiloBaseElement {
   @observable.ref project!: string;
   @observable.ref clusters!: readonly Cluster[];
 

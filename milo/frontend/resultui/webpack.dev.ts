@@ -88,7 +88,6 @@ export default merge(common, {
         const config = configsTemplate
           .replace('{{.ResultDB.Host}}', appConfigs.RESULT_DB.HOST)
           .replace('{{.Buildbucket.Host}}', appConfigs.BUILDBUCKET.HOST)
-          .replace('{{.Weetbix.Host}}', appConfigs.WEETBIX.HOST)
           .replace('{{.LuciAnalysis.Host}}', appConfigs.LUCI_ANALYSIS.HOST);
         res.send(config);
       });

@@ -22,9 +22,9 @@ import './test_variant_entry';
 import { ExpandableEntry } from '../../../components/expandable_entry';
 import { provider } from '../../../libs/context';
 import { Notifier, provideNotifier } from '../../../libs/observer_element';
+import { Cluster } from '../../../services/luci_analysis';
 import { ANONYMOUS_IDENTITY } from '../../../services/milo_internal';
 import { TestResultBundle, TestStatus, TestVariant, TestVariantStatus } from '../../../services/resultdb';
-import { Cluster } from '../../../services/weetbix';
 import { provideStore, Store, StoreInstance } from '../../../store';
 import { TestVariantEntryElement } from './test_variant_entry';
 
@@ -160,7 +160,7 @@ describe('test_variant_entry_test', () => {
     ]);
   });
 
-  it('should work properly if failed to query clusters from weetbix', async () => {
+  it('should work properly if failed to query clusters from luci-analysis', async () => {
     const store = Store.create({ authState: { value: { identity: ANONYMOUS_IDENTITY } } });
     after(() => destroy(store));
     const clusterStub = sinon.stub(store.services.clusters!, 'cluster');
