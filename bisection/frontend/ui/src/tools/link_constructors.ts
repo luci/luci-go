@@ -13,7 +13,7 @@
 // limitations under the License.
 
 
-import { GitilesCommit } from '../services/luci_bisection';
+import { BuilderID, GitilesCommit } from '../services/luci_bisection';
 
 export interface ExternalLink {
   linkText: string;
@@ -24,6 +24,13 @@ export const linkToBuild = (buildID: string) => {
   return {
     linkText: buildID,
     url: `https://ci.chromium.org/b/${buildID}`,
+  };
+};
+
+export const linkToBuilder = ({ project, bucket, builder }: BuilderID) => {
+  return {
+    linkText: `${project}/${bucket}/${builder}`,
+    url: `https://ci.chromium.org/p/${project}/builders/${bucket}/${builder}`,
   };
 };
 

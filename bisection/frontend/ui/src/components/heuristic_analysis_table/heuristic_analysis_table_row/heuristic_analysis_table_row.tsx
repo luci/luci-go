@@ -48,7 +48,7 @@ export const HeuristicAnalysisTableRow = ({ suspect }: Props) => {
   return (
     <>
       <TableRow data-testid='heuristic_analysis_table_row'>
-        <TableCell rowSpan={reasonCount} className='overviewCell'>
+        <TableCell rowSpan={reasonCount} className='overview-cell'>
           <Link
             href={reviewUrl}
             target='_blank'
@@ -58,10 +58,14 @@ export const HeuristicAnalysisTableRow = ({ suspect }: Props) => {
             {suspectDescription}
           </Link>
         </TableCell>
-        <TableCell rowSpan={reasonCount} className='overviewCell'>
+        <TableCell rowSpan={reasonCount} className='overview-cell'>
           {confidenceLevel}
         </TableCell>
-        <TableCell rowSpan={reasonCount} className='overviewCell' align='right'>
+        <TableCell
+          rowSpan={reasonCount}
+          className='overview-cell'
+          align='right'
+        >
           {score}
         </TableCell>
         {reasonCount > 0 && <TableCell>{reasons[0]}</TableCell>}

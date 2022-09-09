@@ -42,6 +42,16 @@ export class LUCIBisectionService {
       request
     );
   }
+
+  async listAnalyses(
+    request: ListAnalysesRequest
+  ): Promise<ListAnalysesResponse> {
+    return this.client.call(
+      LUCIBisectionService.SERVICE,
+      'ListAnalyses',
+      request
+    );
+  }
 }
 
 export type AnalysisStatus =
@@ -89,11 +99,24 @@ export interface QueryAnalysisResponse {
   analyses: Analysis[];
 }
 
+export interface ListAnalysesRequest {
+  pageSize?: number;
+  pageToken?: string;
+}
+
+export interface ListAnalysesResponse {
+  analyses: Analysis[];
+  nextPageToken: string;
+}
+
 export interface Analysis {
   analysisId: string;
   status: AnalysisStatus;
   lastPassedBbid: string;
   firstFailedBbid: string;
+  createdTime: string;
+  lastUpdatedTime: string;
+  endTime: string;
   heuristicResult?: HeuristicAnalysisResult;
   nthSectionResult?: NthSectionAnalysisResult;
   culprit?: GitilesCommit;

@@ -23,34 +23,27 @@ import TableContainer from '@mui/material/TableContainer';
 import TableHead from '@mui/material/TableHead';
 import TableRow from '@mui/material/TableRow';
 
+import { HeuristicAnalysisTableRow } from './heuristic_analysis_table_row/heuristic_analysis_table_row';
+import { NoDataMessageRow } from '../no_data_message_row/no_data_message_row';
 import {
   HeuristicAnalysisResult,
   HeuristicSuspect,
   isAnalysisComplete,
 } from '../../services/luci_bisection';
-import { HeuristicAnalysisTableRow } from './heuristic_analysis_table_row/heuristic_analysis_table_row';
 
 interface Props {
   result?: HeuristicAnalysisResult;
 }
 
-const NoDataMessageRow = (message: string) => {
-  return (
-    <TableRow>
-      <TableCell colSpan={4} className='dataPlaceholder'>
-        {message}
-      </TableCell>
-    </TableRow>
-  );
-};
-
 function getInProgressRow() {
-  return NoDataMessageRow('Heuristic analysis is in progress');
+  return (
+    <NoDataMessageRow message='Heuristic analysis is in progress' columns={4} />
+  );
 }
 
 function getRows(suspects: HeuristicSuspect[] | undefined) {
   if (!suspects || suspects.length == 0) {
-    return NoDataMessageRow('No suspects to display');
+    return <NoDataMessageRow message='No suspects to display' columns={4} />;
   } else {
     return suspects.map((suspect) => (
       <HeuristicAnalysisTableRow
@@ -63,8 +56,8 @@ function getRows(suspects: HeuristicSuspect[] | undefined) {
 
 export const HeuristicAnalysisTable = ({ result }: Props) => {
   return (
-    <TableContainer component={Paper} className='heuristicTableContainer'>
-      <Table className='heuristicTable' size='small'>
+    <TableContainer component={Paper} className='heuristic-table-container'>
+      <Table className='heuristic-table' size='small'>
         <TableHead>
           <TableRow>
             <TableCell>Suspect CL</TableCell>

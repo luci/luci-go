@@ -24,6 +24,7 @@ import TableContainer from '@mui/material/TableContainer';
 import TableHead from '@mui/material/TableHead';
 import TableRow from '@mui/material/TableRow';
 
+import { NoDataMessageRow } from '../no_data_message_row/no_data_message_row';
 import { PrimeSuspect } from '../../services/luci_bisection';
 
 interface Props {
@@ -32,7 +33,7 @@ interface Props {
 
 export const SuspectsOverview = ({ suspects }: Props) => {
   return (
-    <TableContainer className='suspectsOverview' component={Paper}>
+    <TableContainer className='suspects-overview' component={Paper}>
       <Table>
         <TableHead>
           <TableRow>
@@ -59,11 +60,7 @@ export const SuspectsOverview = ({ suspects }: Props) => {
             </TableRow>
           ))}
           {suspects.length === 0 && (
-            <TableRow>
-              <TableCell colSpan={3} className='dataPlaceholder'>
-                No suspects to display
-              </TableCell>
-            </TableRow>
+            <NoDataMessageRow message='No suspects to display' columns={3} />
           )}
         </TableBody>
       </Table>

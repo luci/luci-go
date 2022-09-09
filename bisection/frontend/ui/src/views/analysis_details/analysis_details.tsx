@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-
 import './analysis_details.css';
 
 import { useState } from 'react';
@@ -21,7 +20,8 @@ import { useQuery } from 'react-query';
 
 import Alert from '@mui/material/Alert';
 import AlertTitle from '@mui/material/AlertTitle';
-import LinearProgress from '@mui/material/LinearProgress';
+import Box from '@mui/material/Box';
+import CircularProgress from '@mui/material/CircularProgress';
 import Tab from '@mui/material/Tab';
 import Tabs from '@mui/material/Tabs';
 import Typography from '@mui/material/Typography';
@@ -47,8 +47,8 @@ function TabPanel(props: TabPanelProps) {
   const { children, value, name } = props;
 
   return (
-    <div hidden={value !== name} className='tabPanel'>
-      {value === name && <div className='tabPanelContents'>{children}</div>}
+    <div hidden={value !== name} className='tab-panel'>
+      {value === name && <div className='tab-panel-contents'>{children}</div>}
     </div>
   );
 }
@@ -71,7 +71,7 @@ export const AnalysisDetailsPage = () => {
 
   const { bbid } = useParams();
 
-  const gfiService = getLUCIBisectionService();
+  const bisectionService = getLUCIBisectionService();
 
   const {
     isLoading,
@@ -87,7 +87,7 @@ export const AnalysisDetailsPage = () => {
       },
     };
 
-    return await gfiService.queryAnalysis(request);
+    return await bisectionService.queryAnalysis(request);
   });
 
   let analysis = null;
@@ -108,14 +108,19 @@ export const AnalysisDetailsPage = () => {
                   Build not found, No analysis for that build, etc */}
             An error occurred when querying for the analysis details using build
             ID "{bbid}":
-            <br />
-            {`${error}`}
+            <Box sx={{ padding: '1rem' }}>{`${error}`}</Box>
           </Alert>
         </div>
       )}
       {isLoading && (
-        // TODO: update layout so this loading bar spans the entire screen
-        <LinearProgress />
+        <Box
+          display='flex'
+          justifyContent='center'
+          alignItems='center'
+          height='80vh'
+        >
+          <CircularProgress />
+        </Box>
       )}
       {isSuccess && (
         <>
@@ -151,21 +156,21 @@ export const AnalysisDetailsPage = () => {
               value={currentTab}
               onChange={handleTabChange}
               aria-label='Analysis components tabs'
-              className='roundedTabs'
+              className='rounded-tabs'
             >
               <Tab
-                className='roundedTab'
+                className='rounded-tab'
                 value={AnalysisComponentTabs.HEURISTIC}
                 label={AnalysisComponentTabs.HEURISTIC}
               />
               <Tab
-                className='roundedTab'
+                className='rounded-tab'
                 disabled
                 value={AnalysisComponentTabs.NTH_SECTION}
                 label={AnalysisComponentTabs.NTH_SECTION}
               />
               <Tab
-                className='roundedTab'
+                className='rounded-tab'
                 disabled
                 value={AnalysisComponentTabs.CULPRIT_VERIFICATION}
                 label={AnalysisComponentTabs.CULPRIT_VERIFICATION}

@@ -13,15 +13,13 @@
  * limitations under the License.
  */
 
-[role=tablist] > .nav-tab {
-  font-size: 0.8rem;
+ .analyses-table-container {
+  width: 100%;
+  overflow: auto;
+  white-space: nowrap;
 }
 
-[role=tablist] > .logo-nav-tab {
-  font-size: 1.3rem;
-  text-transform: none;
-}
-
-.page-content {
-  padding: 2rem;
+.analyses-table tr>th {
+  background-color: #1976d2;
+  color: white;
 }

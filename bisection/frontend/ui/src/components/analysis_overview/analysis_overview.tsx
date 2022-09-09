@@ -26,6 +26,7 @@ import { PlainTable } from '../plain_table/plain_table';
 import {
   ExternalLink,
   linkToBuild,
+  linkToBuilder,
   linkToCommit,
   linkToCommitRange,
 } from '../../tools/link_constructors';
@@ -80,6 +81,7 @@ function getBugLinks(analysis: Analysis): ExternalLink[] {
 
 export const AnalysisOverview = ({ analysis }: Props) => {
   const buildLink = linkToBuild(analysis.firstFailedBbid);
+  const builderLink = linkToBuilder(analysis.builder);
   const suspectRange = getSuspectRange(analysis);
   const bugLinks = getBugLinks(analysis);
   return (
@@ -112,7 +114,16 @@ export const AnalysisOverview = ({ analysis }: Props) => {
             <TableCell>{analysis.status}</TableCell>
             <TableCell variant='head'>Builder</TableCell>
             <TableCell>
-              {`${analysis.builder.project}/${analysis.builder.bucket}/${analysis.builder.builder}`}
+              {analysis.builder && (
+                <Link
+                  href={builderLink.url}
+                  target='_blank'
+                  rel='noreferrer'
+                  underline='always'
+                >
+                  {builderLink.linkText}
+                </Link>
+              )}
             </TableCell>
           </TableRow>
           <TableRow>
@@ -142,7 +153,7 @@ export const AnalysisOverview = ({ analysis }: Props) => {
                 <TableCell variant='head'>Related bugs</TableCell>
                 <TableCell colSpan={3}>
                   {bugLinks.map((bugLink) => (
-                    <span className='bugLink' key={bugLink.url}>
+                    <span className='bug-link' key={bugLink.url}>
                       <Link
                         href={bugLink.url}
                         target='_blank'

@@ -30,11 +30,11 @@
   border-bottom: none;
 }
 
-.roundedTabs .MuiTabs-flexContainer {
+.rounded-tabs .MuiTabs-flexContainer {
   border-bottom: 1px solid lightgray;
 }
 
-.roundedTabs .roundedTab {
+.rounded-tabs .rounded-tab {
   text-transform: none;
   padding-left: 2rem;
   padding-right: 2rem;
@@ -47,16 +47,16 @@
   opacity: 80%;
 }
 
-.roundedTab + .roundedTab {
+.rounded-tab + .rounded-tab {
   margin-left: 0.5rem;
 }
 
-.roundedTab.Mui-selected {
+.rounded-tab.Mui-selected {
   background-color: transparent;
   opacity: 100%;
 }
 
-.roundedTab:disabled{
+.rounded-tab:disabled{
   background: repeating-linear-gradient(
     135deg,
     gainsboro,
@@ -66,7 +66,7 @@
   )
 }
 
-.tabPanel {
+.tab-panel {
   border-left: 1px solid lightgray;
   border-right: 1px solid lightgray;
   border-bottom: 1px solid lightgray;
@@ -74,11 +74,6 @@
   border-bottom-right-radius: 0.5rem;
 }
 
-.tabPanelContents {
+.tab-panel-contents {
   padding: 2rem;
-}
-
-.dataPlaceholder {
-  font-size: 0.6em;
-  opacity: 40%;
 }

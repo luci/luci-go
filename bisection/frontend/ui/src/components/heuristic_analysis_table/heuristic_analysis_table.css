@@ -13,13 +13,13 @@
  * limitations under the License.
  */
 
-.heuristicTableContainer {
+.heuristic-table-container {
   width: 100%;
   overflow: auto;
   white-space: nowrap;
 }
 
-.heuristicTable tr>th {
+.heuristic-table tr>th {
   background-color: darkgray;
   color: white;
 }

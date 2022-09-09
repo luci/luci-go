@@ -21,6 +21,9 @@ export const getMockAnalysis = (id: string): Analysis => {
     status: 'FOUND',
     lastPassedBbid: '0',
     firstFailedBbid: id,
+    createdTime: '2022-09-06T07:13:16.398865Z',
+    lastUpdatedTime: '2022-09-06T07:13:16.893998Z',
+    endTime: '2022-09-06T07:13:16.893998Z',
     builder: {
       project: 'chromium/test',
       bucket: 'ci',

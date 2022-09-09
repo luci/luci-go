@@ -60,14 +60,14 @@ export const BaseLayout = () => {
         <Toolbar>
           <Tabs value={currentTab} textColor='inherit'>
             <Tab
-              className='logoNavTab'
+              className='logo-nav-tab'
               component={Link}
               label='LUCI Bisection'
               value='/'
               to='/'
             />
             <Tab
-              className='navTab'
+              className='nav-tab'
               component={Link}
               label='New Analysis'
               value='/trigger'
@@ -77,7 +77,7 @@ export const BaseLayout = () => {
               disabled
             />
             <Tab
-              className='navTab'
+              className='nav-tab'
               component={Link}
               label='Statistics'
               value='/statistics'
@@ -90,7 +90,7 @@ export const BaseLayout = () => {
           {/* TODO: add login/logout links */}
         </Toolbar>
       </AppBar>
-      <Container className='pageContent'>
+      <Container className='page-content'>
         <Outlet />
       </Container>
     </Box>
