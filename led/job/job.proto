@@ -36,6 +36,8 @@ message Buildbucket {
 
   repeated swarming.v1.StringPair env_vars = 3;
   repeated swarming.v1.StringListPair env_prefixes = 4;
+  // Deprecated.
+  // TODO(crbug.com/1345722): remove this.
   repeated string extra_tags = 5;
 
   google.protobuf.Duration bot_ping_tolerance = 7;

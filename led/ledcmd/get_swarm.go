@@ -75,7 +75,7 @@ func GetFromSwarmingTask(ctx context.Context, authClient *http.Client, bld *bbpb
 
 	jd, err := jobcreate.FromNewTaskRequest(
 		ctx, taskRequestToNewTaskRequest(req), opts.Name,
-		opts.SwarmingHost, opts.KitchenSupport, opts.PriorityDiff, bld, authClient)
+		opts.SwarmingHost, opts.KitchenSupport, opts.PriorityDiff, bld, nil, authClient)
 	if err != nil {
 		return nil, err
 	}

@@ -48,7 +48,7 @@ func readTestFixture(fixtureBaseName string) *job.Definition {
 	jd, err := FromNewTaskRequest(
 		context.Background(), req,
 		"test_name", "swarming.example.com",
-		job.NoKitchenSupport(), 10, nil, nil)
+		job.NoKitchenSupport(), 10, nil, nil, nil)
 	So(err, ShouldBeNil)
 	So(jd, ShouldNotBeNil)
 
@@ -139,6 +139,12 @@ func TestCreateBBagent(t *testing.T) {
 			SchedulingTimeout: durationpb.New(time.Hour),
 			ExecutionTimeout:  durationpb.New(2 * time.Hour),
 			GracePeriod:       durationpb.New(time.Minute),
+			Tags: []*bbpb.StringPair{
+				{
+					Key:   "k",
+					Value: "v",
+				},
+			},
 		}
 		data, err := ioutil.ReadFile(fmt.Sprintf("testdata/%s.json", "bbagent_cas"))
 		So(err, ShouldBeNil)
@@ -155,7 +161,7 @@ func TestCreateBBagent(t *testing.T) {
 		jd, err := FromNewTaskRequest(
 			context.Background(), req,
 			"test_name", "swarming.example.com",
-			job.NoKitchenSupport(), 10, bld, nil)
+			job.NoKitchenSupport(), 10, bld, []string{"k:v"}, nil)
 		So(err, ShouldBeNil)
 		So(jd, ShouldNotBeNil)
 

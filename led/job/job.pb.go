@@ -50,12 +50,14 @@ type Buildbucket struct {
 
 	BbagentArgs *proto.BBAgentArgs `protobuf:"bytes,1,opt,name=bbagent_args,json=bbagentArgs,proto3" json:"bbagent_args,omitempty"`
 	// Deprecated for Buildbucket v2 builds.
-	CipdPackages     []*api.CIPDPackage    `protobuf:"bytes,2,rep,name=cipd_packages,json=cipdPackages,proto3" json:"cipd_packages,omitempty"`
-	EnvVars          []*api.StringPair     `protobuf:"bytes,3,rep,name=env_vars,json=envVars,proto3" json:"env_vars,omitempty"`
-	EnvPrefixes      []*api.StringListPair `protobuf:"bytes,4,rep,name=env_prefixes,json=envPrefixes,proto3" json:"env_prefixes,omitempty"`
-	ExtraTags        []string              `protobuf:"bytes,5,rep,name=extra_tags,json=extraTags,proto3" json:"extra_tags,omitempty"`
-	BotPingTolerance *durationpb.Duration  `protobuf:"bytes,7,opt,name=bot_ping_tolerance,json=botPingTolerance,proto3" json:"bot_ping_tolerance,omitempty"`
-	Containment      *api.Containment      `protobuf:"bytes,8,opt,name=containment,proto3" json:"containment,omitempty"`
+	CipdPackages []*api.CIPDPackage    `protobuf:"bytes,2,rep,name=cipd_packages,json=cipdPackages,proto3" json:"cipd_packages,omitempty"`
+	EnvVars      []*api.StringPair     `protobuf:"bytes,3,rep,name=env_vars,json=envVars,proto3" json:"env_vars,omitempty"`
+	EnvPrefixes  []*api.StringListPair `protobuf:"bytes,4,rep,name=env_prefixes,json=envPrefixes,proto3" json:"env_prefixes,omitempty"`
+	// Deprecated.
+	// TODO(crbug.com/1345722): remove this.
+	ExtraTags        []string             `protobuf:"bytes,5,rep,name=extra_tags,json=extraTags,proto3" json:"extra_tags,omitempty"`
+	BotPingTolerance *durationpb.Duration `protobuf:"bytes,7,opt,name=bot_ping_tolerance,json=botPingTolerance,proto3" json:"bot_ping_tolerance,omitempty"`
+	Containment      *api.Containment     `protobuf:"bytes,8,opt,name=containment,proto3" json:"containment,omitempty"`
 	// Indicates that this build should be generated as a legacy kitchen task when
 	// launched.
 	LegacyKitchen bool `protobuf:"varint,9,opt,name=legacy_kitchen,json=legacyKitchen,proto3" json:"legacy_kitchen,omitempty"`

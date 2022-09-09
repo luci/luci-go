@@ -25,6 +25,7 @@ import (
 
 	bbpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/data/stringset"
+	"go.chromium.org/luci/common/data/strpair"
 	"go.chromium.org/luci/common/errors"
 	swarmingpb "go.chromium.org/luci/swarming/proto/api"
 )
@@ -65,8 +66,16 @@ func (bbe *buildbucketEditor) Tags(values []string) {
 
 	bbe.tweak(func() (err error) {
 		if err = validateTags(values); err == nil {
-			bbe.bb.ExtraTags = append(bbe.bb.ExtraTags, values...)
-			sort.Strings(bbe.bb.ExtraTags)
+			tags := bbe.bb.BbagentArgs.Build.Tags
+			for _, tag := range values {
+				k, v := strpair.Parse(tag)
+				tags = append(tags, &bbpb.StringPair{
+					Key:   k,
+					Value: v,
+				})
+			}
+			sort.Slice(tags, func(i, j int) bool { return tags[i].Key < tags[j].Key })
+			bbe.bb.BbagentArgs.Build.Tags = tags
 		}
 		return nil
 	})

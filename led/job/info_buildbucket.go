@@ -19,6 +19,7 @@ import (
 	"google.golang.org/protobuf/proto"
 
 	bbpb "go.chromium.org/luci/buildbucket/proto"
+	"go.chromium.org/luci/common/data/strpair"
 	"go.chromium.org/luci/common/errors"
 	swarmingpb "go.chromium.org/luci/swarming/proto/api"
 )
@@ -114,9 +115,12 @@ func (b bbInfo) PrefixPathEnv() (ret []string, err error) {
 }
 
 func (b bbInfo) Tags() (ret []string) {
-	if len(b.ExtraTags) > 0 {
+	lenTags := len(b.GetBbagentArgs().GetBuild().GetTags())
+	if lenTags > 0 {
 		ret = make([]string, len(b.ExtraTags))
-		copy(ret, b.ExtraTags)
+		for _, t := range b.BbagentArgs.Build.Tags {
+			ret = append(ret, strpair.Format(t.Key, t.Value))
+		}
 	}
 	return
 }

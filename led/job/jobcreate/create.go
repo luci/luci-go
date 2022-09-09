@@ -18,6 +18,7 @@ import (
 	"context"
 	"net/http"
 	"path"
+	"sort"
 	"strconv"
 	"strings"
 
@@ -26,6 +27,7 @@ import (
 	"go.chromium.org/luci/buildbucket/cmd/bbagent/bbinput"
 	bbpb "go.chromium.org/luci/buildbucket/proto"
 	swarming "go.chromium.org/luci/common/api/swarming/swarming/v1"
+	"go.chromium.org/luci/common/data/strpair"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/grpc/prpc"
 	"go.chromium.org/luci/led/job"
@@ -56,7 +58,7 @@ func detectMode(r *swarming.SwarmingRpcsNewTaskRequest) string {
 // If the task's first slice looks like either a bbagent or kitchen-based
 // Buildbucket task, the returned Definition will have the `buildbucket`
 // field populated, otherwise the `swarming` field will be populated.
-func FromNewTaskRequest(ctx context.Context, r *swarming.SwarmingRpcsNewTaskRequest, name, swarmingHost string, ks job.KitchenSupport, priorityDiff int, bld *bbpb.Build, authClient *http.Client) (ret *job.Definition, err error) {
+func FromNewTaskRequest(ctx context.Context, r *swarming.SwarmingRpcsNewTaskRequest, name, swarmingHost string, ks job.KitchenSupport, priorityDiff int, bld *bbpb.Build, extraTags []string, authClient *http.Client) (ret *job.Definition, err error) {
 	if len(r.TaskSlices) == 0 {
 		return nil, errors.New("swarming tasks without task slices are not supported")
 	}
@@ -137,6 +139,20 @@ func FromNewTaskRequest(ctx context.Context, r *swarming.SwarmingRpcsNewTaskRequ
 		bb.BbagentArgs.Build.Number = 0
 		bb.BbagentArgs.Build.Status = 0
 		bb.BbagentArgs.Build.UpdateTime = nil
+
+		bb.BbagentArgs.Build.Tags = nil
+		if len(extraTags) > 0 {
+			tags := make([]*bbpb.StringPair, 0, len(extraTags))
+			for _, tag := range extraTags {
+				k, v := strpair.Parse(tag)
+				tags = append(tags, &bbpb.StringPair{
+					Key:   k,
+					Value: v,
+				})
+			}
+			sort.Slice(tags, func(i, j int) bool { return tags[i].Key < tags[j].Key })
+			bb.BbagentArgs.Build.Tags = tags
+		}
 
 		// drop the executable path; it's canonically represented by
 		// out.BBAgentArgs.PayloadPath and out.BBAgentArgs.Build.Exe.
