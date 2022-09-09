@@ -92,10 +92,11 @@ export class TestHistoryPageElement extends MiloBaseElement implements BeforeEnt
             return;
           }
 
-          const filterText = this.pageState ? this.pageState.filterText : this.initialFilterText;
-
           this.pageState.setParams(this.realm, this.testId);
-          this.pageState.setFilterText(filterText);
+          if (this.initialFilterText) {
+            this.pageState.setFilterText(this.initialFilterText);
+            this.initialFilterText = '';
+          }
         },
         {
           fireImmediately: true,
@@ -107,9 +108,8 @@ export class TestHistoryPageElement extends MiloBaseElement implements BeforeEnt
     this.addDisposer(
       reaction(
         () => {
-          const filterText = this.pageState ? this.pageState.filterText : this.initialFilterText;
           const newSearchParams = new URLSearchParams({
-            ...(!filterText ? {} : { q: filterText }),
+            ...(!this.pageState.filterText ? {} : { q: this.pageState.filterText }),
           });
           const newSearchParamsStr = newSearchParams.toString();
           return newSearchParamsStr ? '?' + newSearchParamsStr : '';
