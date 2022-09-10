@@ -18,20 +18,62 @@ import (
 	"context"
 	"strings"
 
+	"google.golang.org/genproto/googleapis/api/annotations"
+	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/reflect/protoreflect"
+	"google.golang.org/protobuf/types/descriptorpb"
+
+	"go.chromium.org/luci/buildbucket/appengine/model"
+	pb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/proto/protowalk"
 	"go.chromium.org/luci/grpc/appstatus"
-
-	"go.chromium.org/luci/buildbucket/appengine/model"
-	pb "go.chromium.org/luci/buildbucket/proto"
 )
 
+type CreateBuildChecker struct{}
+
+var _ protowalk.FieldProcessor = (*CreateBuildChecker)(nil)
+
+func (*CreateBuildChecker) Process(field protoreflect.FieldDescriptor, msg protoreflect.Message) (data protowalk.ResultData, applied bool) {
+	cbfb := proto.GetExtension(field.Options().(*descriptorpb.FieldOptions), pb.E_CreateBuildFieldOption).(*pb.CreateBuildFieldOption)
+	switch cbfb.FieldBehavior {
+	case annotations.FieldBehavior_OUTPUT_ONLY:
+		msg.Clear(field)
+		return protowalk.ResultData{Message: "cleared OUTPUT_ONLY field"}, true
+	case annotations.FieldBehavior_REQUIRED:
+		return protowalk.ResultData{Message: "required", IsErr: true}, true
+	default:
+		panic("unsupported field behavior")
+	}
+}
+
+func init() {
+	protowalk.RegisterFieldProcessor(&CreateBuildChecker{}, func(field protoreflect.FieldDescriptor) protowalk.ProcessAttr {
+		if fo := field.Options().(*descriptorpb.FieldOptions); fo != nil {
+			if cbfb := proto.GetExtension(fo, pb.E_CreateBuildFieldOption).(*pb.CreateBuildFieldOption); cbfb != nil {
+				switch cbfb.FieldBehavior {
+				case annotations.FieldBehavior_OUTPUT_ONLY:
+					return protowalk.ProcessIfSet
+				case annotations.FieldBehavior_REQUIRED:
+					return protowalk.ProcessIfUnset
+				default:
+					panic("unsupported field behavior")
+				}
+			}
+		}
+		return protowalk.ProcessNever
+	})
+}
+
 func validateCreateBuildRequest(ctx context.Context, wellKnownExperiments stringset.Set, req *pb.CreateBuildRequest) (*model.BuildMask, error) {
-	if procRes := protowalk.Fields(req, &protowalk.OutputOnlyProcessor{}, &protowalk.DeprecatedProcessor{}); procRes != nil {
+	if procRes := protowalk.Fields(req, &protowalk.DeprecatedProcessor{}, &protowalk.OutputOnlyProcessor{}, &protowalk.RequiredProcessor{}, &CreateBuildChecker{}); procRes != nil {
 		if resStrs := procRes.Strings(); len(resStrs) > 0 {
 			logging.Infof(ctx, strings.Join(resStrs, ". "))
+		}
+		if err := procRes.Err(); err != nil {
+			return nil, err
 		}
 	}
 

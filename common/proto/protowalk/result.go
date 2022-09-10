@@ -18,6 +18,8 @@ import (
 	"fmt"
 
 	"go.chromium.org/luci/common/proto/reflectutil"
+
+	"go.chromium.org/luci/common/errors"
 )
 
 // ResultData is the data produced from the FieldProcessor.
@@ -26,6 +28,9 @@ type ResultData struct {
 	// the nature of the violation or correction (depends on the FieldProcessor
 	// implementation).
 	Message string
+
+	// IsErr is a flag for if the processed result should be considered as an error.
+	IsErr bool
 }
 
 func (d ResultData) String() string {
@@ -43,6 +48,13 @@ type Result struct {
 
 func (r Result) String() string {
 	return fmt.Sprintf("%s: %s", r.Path, r.Data)
+}
+
+func (r Result) Err() error {
+	if r.Data.IsErr {
+		return errors.New(r.String())
+	}
+	return nil
 }
 
 // Results holds a slice of Result structs for each FieldProcessor passed in.
@@ -68,4 +80,15 @@ func (r Results) Strings() []string {
 	}
 
 	return ret
+}
+
+// Err returns the error for all processors.
+func (r Results) Err() error {
+	merr := make(errors.MultiError, 0)
+	for _, v := range r {
+		for _, rslt := range v {
+			merr.MaybeAdd(rslt.Err())
+		}
+	}
+	return merr.AsError()
 }

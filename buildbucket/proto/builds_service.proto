@@ -502,7 +502,7 @@ message CancelBuildRequest {
 // A request message for CreateBuild rpc.
 message CreateBuildRequest {
   // The Build to be created.
-  Build build = 1;
+  Build build = 1  [(google.api.field_behavior) = REQUIRED];
 
   // A unique identifier for this request.
   // A random UUID is recommended.

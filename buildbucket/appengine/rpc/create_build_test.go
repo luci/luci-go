@@ -25,6 +25,7 @@ import (
 	"go.chromium.org/luci/common/data/stringset"
 
 	. "github.com/smartystreets/goconvey/convey"
+	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestValidateCreateBuildRequest(t *testing.T) {
@@ -141,6 +142,33 @@ func TestValidateCreateBuildRequest(t *testing.T) {
 			_, err := validateCreateBuildRequest(ctx, wellknownExps, req)
 			So(err, ShouldBeNil)
 			So(req.Build.Id, ShouldEqual, 0)
+		})
+
+		Convey("CreateBuild specified output_only fields are cleared", func() {
+			req.Build.Status = pb.Status_SCHEDULED
+			req.Build.SummaryMarkdown = "random string"
+			_, err := validateCreateBuildRequest(ctx, wellknownExps, req)
+			So(err, ShouldBeNil)
+			So(req.Build.Status, ShouldEqual, pb.Status_STATUS_UNSPECIFIED)
+			So(req.Build.SummaryMarkdown, ShouldEqual, "")
+		})
+
+		Convey("CreateBuild ensures required fields", func() {
+			Convey("top level required fields are ensured", func() {
+				req.Build.Infra = nil
+				_, err := validateCreateBuildRequest(ctx, wellknownExps, req)
+				So(err, ShouldErrLike, ".build.infra: required")
+			})
+
+			Convey("sub fields are required if their upper level is non nil", func() {
+				req.Build.Infra.Resultdb = nil
+				_, err := validateCreateBuildRequest(ctx, wellknownExps, req)
+				So(err, ShouldBeNil)
+
+				req.Build.Infra.Resultdb = &pb.BuildInfra_ResultDB{}
+				_, err = validateCreateBuildRequest(ctx, wellknownExps, req)
+				So(err, ShouldErrLike, ".build.infra.resultdb.hostname: required")
+			})
 		})
 	})
 }

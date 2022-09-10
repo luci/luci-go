@@ -25,7 +25,7 @@ import (
 // aip.dev/203#required, namely that it produces a Report for unset
 // fields marked like:
 //
-//   type name = <tag> [(google.api.field_behavior) = REQUIRED];
+//	type name = <tag> [(google.api.field_behavior) = REQUIRED];
 //
 // NOTE: In LUCI code, it's recommended to use "protoc-gen-validate" (i.e. PGV)
 // annotations to indicate required fields. The PGV generated code is easier to
@@ -36,7 +36,7 @@ var _ FieldProcessor = RequiredProcessor{}
 
 // Process implements FieldProcessor.
 func (RequiredProcessor) Process(field protoreflect.FieldDescriptor, msg protoreflect.Message) (data ResultData, applied bool) {
-	return ResultData{Message: "required"}, true
+	return ResultData{Message: "required", IsErr: true}, true
 }
 
 func init() {

@@ -18,6 +18,7 @@ import (
 	"testing"
 
 	. "github.com/smartystreets/goconvey/convey"
+	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestRequired(t *testing.T) {
@@ -39,7 +40,9 @@ func TestRequired(t *testing.T) {
 				{},
 			},
 		}
-		So(Fields(msg, &RequiredProcessor{}).Strings(), ShouldResemble, []string{
+
+		res := Fields(msg, &RequiredProcessor{})
+		So(res.Strings(), ShouldResemble, []string{
 			`.req: required`,
 			`.single_inner.req: required`,
 			`.map_inner["schwoot"].req: required`,
@@ -47,5 +50,6 @@ func TestRequired(t *testing.T) {
 			`.map_inner["schwoot"].multi_embed[0].req: required`,
 			`.multi_deprecated[0].req: required`,
 		})
+		So(res.Err(), ShouldErrLike, "required")
 	})
 }
