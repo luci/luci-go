@@ -64,9 +64,9 @@ var errStaleOrNoAccess = errors.Annotate(gerrit.ErrStaleData, "either no access 
 //
 // fetch is a single-use object:
 //
-//  f := fetcher{...}
-//  if err := f.fetch(ctx); err != nil {...}
-//  // Do something with `f.toUpdate`.
+//	f := fetcher{...}
+//	if err := f.fetch(ctx); err != nil {...}
+//	// Do something with `f.toUpdate`.
 type fetcher struct {
 	// Dependencies & input. Must be set.
 	gFactory                     gerrit.Factory
@@ -268,14 +268,14 @@ func (f *fetcher) setLikelyNoAccess(ctx context.Context) error {
 	case prior.IsZero():
 		// This is the first time CL.
 		noAccessAt = now.Add(noAccessGraceDuration)
-		err = f.recheckAccessLater(ctx, noAccessGraceRetryDelay)
+		err = f.reschedule(ctx, noAccessGraceRetryDelay)
 	case prior.Before(now):
 		// Keep noAccessAt as is, it's now considered certain.
 		noAccessAt = prior
 	default:
 		// Keep noAccessAt as is, but schedule yet another refresh.
 		noAccessAt = prior
-		err = f.recheckAccessLater(ctx, noAccessGraceRetryDelay)
+		err = f.reschedule(ctx, noAccessGraceRetryDelay)
 	}
 	f.setNoAccessAt(now, noAccessAt)
 	return err
@@ -293,8 +293,8 @@ func (f *fetcher) setNoAccessAt(now, noAccessAt time.Time) {
 	}
 }
 
-// rescheduleLater schedules the same task with a delay.
-func (f *fetcher) recheckAccessLater(ctx context.Context, delay time.Duration) error {
+// reschedule reschedules the same task with a delay.
+func (f *fetcher) reschedule(ctx context.Context, delay time.Duration) error {
 	t := &changelist.UpdateCLTask{
 		LuciProject: f.luciProject,
 		ExternalId:  string(f.externalID),
