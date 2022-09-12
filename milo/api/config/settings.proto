@@ -88,11 +88,7 @@ message Settings {
   }
   ResultDB resultdb = 5;
 
-  message Weetbix {
-    // host is the hostname of the Weetbix instance we're pointing to (sans scheme).
-    string host = 1;
-  }
-  Weetbix weetbix = 6;
+  reserved 6; // weetbix
 
   message LuciAnalysis {
     // host is the hostname of the LUCI Analysis instance we're pointing to (sans scheme).
