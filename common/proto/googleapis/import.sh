@@ -9,6 +9,8 @@ PROTOS_TO_IMPORT=(
   google/api/http.proto
   google/api/resource.proto
 
+  google/cloud/security/privateca/v1/resources.proto
+
   google/rpc/code.proto
   google/rpc/error_details.proto
   google/rpc/status.proto
@@ -16,6 +18,7 @@ PROTOS_TO_IMPORT=(
   google/type/color.proto
   google/type/date.proto
   google/type/dayofweek.proto
+  google/type/expr.proto
   google/type/latlng.proto
   google/type/money.proto
   google/type/postal_address.proto
