@@ -14,6 +14,8 @@
 
 package common
 
+import "go.chromium.org/luci/server"
+
 // Env describes where CV runs at.
 type Env struct {
 	// LogicalHostname is CV hostname referred to in configs.
@@ -49,4 +51,28 @@ type Env struct {
 		// InstanceID is the ID of the instance that runs LUCI CV.
 		InstanceID string
 	}
+}
+
+// MakeEnv creates a new `Env` from server options.
+func MakeEnv(opts server.Options) *Env {
+	env := &Env{
+		LogicalHostname: opts.CloudProject + ".appspot.com",
+		IsGAEDev:        opts.CloudProject == "luci-change-verifier-dev",
+		GAEInfo: struct {
+			CloudProject string
+			ServiceName  string
+			InstanceID   string
+		}{
+			CloudProject: opts.CloudProject,
+			// TODO(yiwzhang): have a more reliable way to get the GAE service name.
+			ServiceName: opts.TsMonJobName,
+			InstanceID:  opts.Hostname,
+		},
+	}
+	env.HTTPAddressBase = "https://" + env.LogicalHostname
+	if !opts.Prod {
+		// Local development.
+		env.HTTPAddressBase = "http://" + opts.HTTPAddr
+	}
+	return env
 }

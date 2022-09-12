@@ -43,7 +43,6 @@ import (
 
 	migrationpb "go.chromium.org/luci/cv/api/migration"
 	apiv0pb "go.chromium.org/luci/cv/api/v0"
-	"go.chromium.org/luci/cv/internal/aggrmetrics"
 	"go.chromium.org/luci/cv/internal/buildbucket"
 	bbfacade "go.chromium.org/luci/cv/internal/buildbucket/facade"
 	bblistener "go.chromium.org/luci/cv/internal/buildbucket/listener"
@@ -85,26 +84,7 @@ func main() {
 	}
 
 	server.Main(nil, modules, func(srv *server.Server) error {
-		env := &common.Env{
-			LogicalHostname: srv.Options.CloudProject + ".appspot.com",
-			IsGAEDev:        srv.Options.CloudProject == "luci-change-verifier-dev",
-			GAEInfo: struct {
-				CloudProject string
-				ServiceName  string
-				InstanceID   string
-			}{
-				CloudProject: srv.Options.CloudProject,
-				// TODO(yiwzhang): have a more reliable way to get the GAE service name.
-				ServiceName: srv.Options.TsMonJobName,
-				InstanceID:  srv.Options.Hostname,
-			},
-		}
-		env.HTTPAddressBase = "https://" + env.LogicalHostname
-		if !srv.Options.Prod {
-			// Local development.
-			env.HTTPAddressBase = "http://" + srv.Options.HTTPAddr
-		}
-
+		env := common.MakeEnv(srv.Options)
 		gFactory, err := gerrit.NewFactory(
 			srv.Context,
 			// 3 US mirrors should suffice, effectively replicating a "quorum".
@@ -181,10 +161,6 @@ func main() {
 		pcr := prjcfg.NewRefresher(&tq.Default, pmNotifier, env)
 		cron.RegisterHandler("refresh-config", func(ctx context.Context) error {
 			return refreshConfig(ctx, pcr)
-		})
-		aggregator := aggrmetrics.New(srv.Context, env, &tq.Default)
-		cron.RegisterHandler("aggregate-metrics", func(ctx context.Context) error {
-			return aggregator.Cron(ctx)
 		})
 		kickNewListenersFn := bblistener.Register(&tq.Default, srv.Options.CloudProject, tryjobNotifier)
 		cron.RegisterHandler("kick-bb-pubsub-listeners", func(ctx context.Context) error {
