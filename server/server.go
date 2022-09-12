@@ -47,41 +47,41 @@
 //
 // Usage example:
 //
-//   import (
-//     ...
+//	import (
+//	  ...
 //
-//     "go.chromium.org/luci/server"
-//     "go.chromium.org/luci/server/gaeemulation"
-//     "go.chromium.org/luci/server/module"
-//     "go.chromium.org/luci/server/redisconn"
-//   )
+//	  "go.chromium.org/luci/server"
+//	  "go.chromium.org/luci/server/gaeemulation"
+//	  "go.chromium.org/luci/server/module"
+//	  "go.chromium.org/luci/server/redisconn"
+//	)
 //
-//   func main() {
-//     modules := []module.Module{
-//       gaeemulation.NewModuleFromFlags(),
-//       redisconn.NewModuleFromFlags(),
-//     }
-//     server.Main(nil, modules, func(srv *server.Server) error {
-//       // Initialize global state, change root context (if necessary).
-//       if err := initializeGlobalStuff(srv.Context); err != nil {
-//         return err
-//       }
-//       srv.Context = injectGlobalStuff(srv.Context)
+//	func main() {
+//	  modules := []module.Module{
+//	    gaeemulation.NewModuleFromFlags(),
+//	    redisconn.NewModuleFromFlags(),
+//	  }
+//	  server.Main(nil, modules, func(srv *server.Server) error {
+//	    // Initialize global state, change root context (if necessary).
+//	    if err := initializeGlobalStuff(srv.Context); err != nil {
+//	      return err
+//	    }
+//	    srv.Context = injectGlobalStuff(srv.Context)
 //
-//       // Install regular HTTP routes.
-//       srv.Routes.GET("/", nil, func(c *router.Context) {
-//         // ...
-//       })
+//	    // Install regular HTTP routes.
+//	    srv.Routes.GET("/", nil, func(c *router.Context) {
+//	      // ...
+//	    })
 //
-//       // Install pRPC services.
-//       servicepb.RegisterSomeServer(srv.PRPC, &SomeServer{})
-//       return nil
-//     })
-//   }
+//	    // Install pRPC services.
+//	    servicepb.RegisterSomeServer(srv.PRPC, &SomeServer{})
+//	    return nil
+//	  })
+//	}
 //
 // More examples can be found in the code search: https://source.chromium.org/search?q=%22server.Main(nil,%20modules,%22
 //
-// Known modules
+// # Known modules
 //
 // The following modules (in alphabetical order) are a part of the LUCI
 // repository and can be used in any server binary:
@@ -150,14 +150,14 @@
 // authenticate requests using OAuth2 access tokens. Modules can add more
 // interceptors to the default interceptor chain.
 //
-// Security considerations
+// # Security considerations
 //
 // The expected deployment environments are Kubernetes, Google App Engine and
 // Google Cloud Run. In all cases the server is expected to be behind a load
 // balancer (or a series of load balancers) that terminates TLS and sets
 // X-Forwarded-For header as:
 //
-//   [<untrusted part>,]<IP that connected to the LB>,<unimportant>[,<more>].
+//	[<untrusted part>,]<IP that connected to the LB>,<unimportant>[,<more>].
 //
 // Where <untrusted part> may be present if the original request from the
 // Internet comes with X-Forwarded-For header. The IP specified there is not
@@ -257,7 +257,9 @@ const (
 	// Path of the health check endpoint.
 	healthEndpoint = "/healthz"
 	// Log a warning if health check is slower than this.
-	healthTimeLogThreshold = 50 * time.Millisecond
+	healthTimeLogThreshold    = 50 * time.Millisecond
+	defaultTsMonFlushInterval = 60 * time.Second
+	defaultTsMonFlushTimeout  = 15 * time.Second
 )
 
 var (
@@ -357,9 +359,11 @@ type Options struct {
 
 	TraceSampling string // what portion of traces to upload to Stackdriver (ignored on GAE)
 
-	TsMonAccount     string // service account to flush metrics as
-	TsMonServiceName string // service name of tsmon target
-	TsMonJobName     string // job name of tsmon target
+	TsMonAccount       string        // service account to flush metrics as
+	TsMonServiceName   string        // service name of tsmon target
+	TsMonJobName       string        // job name of tsmon target
+	TsMonFlushInterval time.Duration // how often to flush metrics
+	TsMonFlushTimeout  time.Duration // timeout for flushing
 
 	ProfilingDisable   bool   // set to true to explicitly disable Stackdriver Profiler
 	ProfilingServiceID string // service name to associated with profiles in Stackdriver Profiler
@@ -393,6 +397,12 @@ func (o *Options) Register(f *flag.FlagSet) {
 	}
 	if o.ShutdownDelay == 0 {
 		o.ShutdownDelay = 15 * time.Second
+	}
+	if o.TsMonFlushInterval == 0 {
+		o.TsMonFlushInterval = defaultTsMonFlushInterval
+	}
+	if o.TsMonFlushTimeout == 0 {
+		o.TsMonFlushTimeout = defaultTsMonFlushTimeout
 	}
 	f.BoolVar(&o.Prod, "prod", o.Prod, "Switch the server into production mode")
 	f.StringVar(&o.HTTPAddr, "http-addr", o.HTTPAddr, "Address to bind the main listening socket to or '-' to disable")
@@ -484,6 +494,18 @@ func (o *Options) Register(f *flag.FlagSet) {
 		o.TsMonJobName,
 		"Job name of tsmon target (disables tsmon if not set)",
 	)
+	f.DurationVar(
+		&o.TsMonFlushInterval,
+		"ts-mon-flush-interval",
+		o.TsMonFlushInterval,
+		fmt.Sprintf("How often to flush tsmon metrics. Default to %s if < 1s or unset", o.TsMonFlushInterval),
+	)
+	f.DurationVar(
+		&o.TsMonFlushTimeout,
+		"ts-mon-flush-timeout",
+		o.TsMonFlushTimeout,
+		fmt.Sprintf("Timeout for tsmon flush. Default to %s if < 1s or unset. Must be shorter than --ts-mon-flush-interval.", o.TsMonFlushTimeout),
+	)
 	f.BoolVar(
 		&o.ProfilingDisable,
 		"profiling-disable",
@@ -520,15 +542,16 @@ func (o *Options) Register(f *flag.FlagSet) {
 // Does nothing if GAE_VERSION is not set.
 //
 // Equivalent to passing the following flags:
-//   -prod
-//   -http-addr 0.0.0.0:${PORT}
-//   -admin-addr -
-//   -shutdown-delay 0s
-//   -cloud-project ${GOOGLE_CLOUD_PROJECT}
-//   -cloud-region <derived from the region code in GAE_APPLICATION>
-//   -service-account-json :gce
-//   -ts-mon-service-name ${GOOGLE_CLOUD_PROJECT}
-//   -ts-mon-job-name ${GAE_SERVICE}
+//
+//	-prod
+//	-http-addr 0.0.0.0:${PORT}
+//	-admin-addr -
+//	-shutdown-delay 0s
+//	-cloud-project ${GOOGLE_CLOUD_PROJECT}
+//	-cloud-region <derived from the region code in GAE_APPLICATION>
+//	-service-account-json :gce
+//	-ts-mon-service-name ${GOOGLE_CLOUD_PROJECT}
+//	-ts-mon-job-name ${GAE_SERVICE}
 //
 // Additionally the hostname and -container-image-id (used in metric and trace
 // fields) are derived from available GAE_* env vars to be semantically similar
@@ -1529,9 +1552,9 @@ func (s *Server) rootMiddleware(c *router.Context, next router.Handler) {
 //
 // To support per-request log grouping in Stackdriver Logs UI there must be
 // two different log streams:
-//   * A stream with top-level HTTP request entries (conceptually like Apache's
+//   - A stream with top-level HTTP request entries (conceptually like Apache's
 //     access.log, i.e. with one log entry per request).
-//   * A stream with logs produced within requests (correlated with HTTP request
+//   - A stream with logs produced within requests (correlated with HTTP request
 //     logs via the trace ID field).
 //
 // Both streams are expected to have a particular format and use particular
@@ -1871,13 +1894,24 @@ func (s *Server) initTSMon() error {
 		customMonitor = monitor.NewNilMonitor()
 	}
 
+	interval := int(s.Options.TsMonFlushInterval.Seconds())
+	if interval == 0 {
+		interval = int(defaultTsMonFlushInterval.Seconds())
+	}
+	timeout := int(s.Options.TsMonFlushTimeout.Seconds())
+	if timeout == 0 {
+		timeout = int(defaultTsMonFlushTimeout.Seconds())
+	}
+	if timeout >= interval {
+		return errors.Reason("-ts-mon-flush-timeout (%ds) must be shorter than -ts-mon-flush-interval (%ds)", timeout, interval).Err()
+	}
 	s.tsmon = &tsmon.State{
 		CustomMonitor: customMonitor,
 		Settings: &tsmon.Settings{
 			Enabled:            true,
 			ProdXAccount:       s.Options.TsMonAccount,
-			FlushIntervalSec:   60,
-			FlushTimeoutSec:    15, // we are flushing in background, can wait
+			FlushIntervalSec:   interval,
+			FlushTimeoutSec:    timeout,
 			ReportRuntimeStats: true,
 		},
 		Target: func(c context.Context) target.Task {
@@ -1983,7 +2017,7 @@ func (s *Server) initTracing() error {
 			errorDedup.lock.Lock()
 			defer errorDedup.lock.Unlock()
 
-			errorDedup.count += 1
+			errorDedup.count++
 
 			if errorDedup.report.IsZero() || time.Since(errorDedup.report) > 5*time.Minute {
 				if errorDedup.report.IsZero() {

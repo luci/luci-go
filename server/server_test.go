@@ -676,6 +676,8 @@ func newTestServer(ctx context.Context, o *Options) (srv *testServer, err error)
 	opts.CloudProject = testCloudProjectID
 	opts.TsMonServiceName = "service-name"
 	opts.TsMonJobName = "namespace/job"
+	opts.TsMonFlushInterval = 234 * time.Second
+	opts.TsMonFlushTimeout = 123 * time.Second
 	opts.ContainerImageID = "registry/image:" + testImageVersion
 	opts.EnableExperiments = []string{testExperiment.String()}
 
