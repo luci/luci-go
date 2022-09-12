@@ -20,6 +20,7 @@ import (
 	"net/http"
 
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/retry"
 	"go.chromium.org/luci/grpc/prpc"
 	"go.chromium.org/luci/server/auth"
 	"google.golang.org/grpc"
@@ -66,16 +67,28 @@ func NewClient(ctx context.Context, host string) (*Client, error) {
 		return nil, err
 	}
 
+	updateClient, err := newClient(ctx, host)
+	if err != nil {
+		return nil, err
+	}
+	// We do not want to retry monorail operations that mutate issues.
+	// When monorail has an outage, the updates may occur despite
+	// the service returning an exception. This may result in
+	// bug creation and update spam, which we would like to avoid.
+	updateClient.Options.Retry = retry.None
+
 	return &Client{
-		issuesClient:   mpb.NewIssuesPRPCClient(client),
-		projectsClient: mpb.NewProjectsPRPCClient(client),
+		updateIssuesClient: mpb.NewIssuesPRPCClient(updateClient),
+		issuesClient:       mpb.NewIssuesPRPCClient(client),
+		projectsClient:     mpb.NewProjectsPRPCClient(client),
 	}, nil
 }
 
 // Client is a client to communicate with the Monorail issue tracker.
 type Client struct {
-	issuesClient   mpb.IssuesClient
-	projectsClient mpb.ProjectsClient
+	updateIssuesClient mpb.IssuesClient
+	issuesClient       mpb.IssuesClient
+	projectsClient     mpb.ProjectsClient
 }
 
 // GetIssue retrieves the details of a monorail issue. Name should
@@ -128,7 +141,7 @@ func (c *Client) BatchGetIssues(ctx context.Context, names []string) ([]*mpb.Iss
 // MakeIssue creates the given issue in monorail, adding the specified
 // description.
 func (c *Client) MakeIssue(ctx context.Context, req *mpb.MakeIssueRequest) (*mpb.Issue, error) {
-	issue, err := c.issuesClient.MakeIssue(ctx, req)
+	issue, err := c.updateIssuesClient.MakeIssue(ctx, req)
 	if err != nil {
 		return nil, errors.Annotate(err, "MakeIssue").Err()
 	}
@@ -165,7 +178,7 @@ func (c *Client) ListComments(ctx context.Context, name string) ([]*mpb.Comment,
 
 // ModifyIssues modifies the given issue.
 func (c *Client) ModifyIssues(ctx context.Context, req *mpb.ModifyIssuesRequest) error {
-	_, err := c.issuesClient.ModifyIssues(ctx, req)
+	_, err := c.updateIssuesClient.ModifyIssues(ctx, req)
 	if err != nil {
 		return errors.Annotate(err, "ModifyIssues").Err()
 	}

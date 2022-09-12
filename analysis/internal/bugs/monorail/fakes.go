@@ -52,8 +52,9 @@ func UseFakeIssuesClient(ctx context.Context, store *FakeIssuesStore, user strin
 	issuesClient := &fakeIssuesClient{store: store, user: user}
 	projectsClient := &fakeProjectsClient{store: store}
 	return context.WithValue(ctx, &testMonorailClientKey, &Client{
-		issuesClient:   mpb.IssuesClient(issuesClient),
-		projectsClient: mpb.ProjectsClient(projectsClient),
+		updateIssuesClient: mpb.IssuesClient(issuesClient),
+		issuesClient:       mpb.IssuesClient(issuesClient),
+		projectsClient:     mpb.ProjectsClient(projectsClient),
 	})
 }
 
