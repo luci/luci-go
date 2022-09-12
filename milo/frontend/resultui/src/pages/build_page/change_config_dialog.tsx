@@ -81,6 +81,7 @@ export const ChangeConfigDialog = observer(({ open, onClose, container }: Change
           value={tabName}
           onChange={(e) => setTabName(e.target.value)}
           input={<OutlinedInput size="small" />}
+          MenuProps={{ disablePortal: true }}
           sx={{ width: '180px' }}
         >
           {TAB_NAME_LABEL_TUPLES.map(([tabName, label]) => (

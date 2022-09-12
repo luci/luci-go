@@ -71,11 +71,7 @@ const LabeledCheckBox = ({ label, checked, onChange, sx }: LabeledCheckBoxProps)
   );
 };
 
-export interface StepDisplayConfigProps {
-  readonly container?: HTMLDivElement;
-}
-
-export const StepDisplayConfig = observer(({ container }: StepDisplayConfigProps) => {
+export const StepDisplayConfig = observer(() => {
   const stepsConfig = useStore().userConfig.build.steps;
 
   return (
@@ -109,9 +105,7 @@ export const StepDisplayConfig = observer(({ container }: StepDisplayConfigProps
           <Select
             value={stepsConfig.expandByDefault}
             onChange={(e) => stepsConfig.setExpandByDefault(e.target.value as ExpandStepOption)}
-            MenuProps={{
-              container,
-            }}
+            MenuProps={{ disablePortal: true }}
             sx={{
               fontSize: '14px',
               '& .MuiSelect-select': {
@@ -157,7 +151,7 @@ export class BuildPageStepDisplayConfigElement extends MobxLitElement {
     this.root.render(
       <CacheProvider value={this.cache}>
         <StoreProvider value={this.store}>
-          <StepDisplayConfig container={this.parent} />
+          <StepDisplayConfig />
         </StoreProvider>
       </CacheProvider>
     );
