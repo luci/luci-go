@@ -75,7 +75,7 @@ func NewClient(ctx context.Context, host string) (*Client, error) {
 	// When monorail has an outage, the updates may occur despite
 	// the service returning an exception. This may result in
 	// bug creation and update spam, which we would like to avoid.
-	updateClient.Options.Retry = retry.None
+	updateClient.Options = &prpc.Options{Retry: retry.None}
 
 	return &Client{
 		updateIssuesClient: mpb.NewIssuesPRPCClient(updateClient),
