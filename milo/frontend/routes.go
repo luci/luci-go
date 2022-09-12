@@ -61,7 +61,7 @@ func Run(srv *server.Server, templatePath string) {
 
 	r.GET("/", htmlMW, frontpageHandler)
 	r.GET("/p", baseMW, movedPermanently("/"))
-	r.GET("/search", htmlMW, handleError(searchHandler))
+	r.GET("/search", htmlMW, redirect("/ui/search", http.StatusFound))
 	r.GET("/opensearch.xml", baseMW, searchXMLHandler)
 
 	// Artifacts.

@@ -34,6 +34,7 @@ func TestFilterVisibleBuilders(t *testing.T) {
 	Convey(`FilterVisibleBuilders`, t, func() {
 		s := &authtest.FakeState{
 			FakeDB: authtest.NewFakeDB(
+				authtest.MockPermission(testIdentity, "proj1:bucket1", bbperms.BuildersList),
 				authtest.MockPermission(testIdentity, "proj2:bucket1", bbperms.BuildersList),
 			),
 			Identity: testIdentity,
@@ -44,6 +45,11 @@ func TestFilterVisibleBuilders(t *testing.T) {
 			{
 				Project: "proj1",
 				Bucket:  "bucket1",
+				Builder: "builder1",
+			},
+			{
+				Project: "proj1",
+				Bucket:  "bucket2",
 				Builder: "builder1",
 			},
 			{
@@ -63,9 +69,29 @@ func TestFilterVisibleBuilders(t *testing.T) {
 			},
 		}
 
-		visibleBuilders, err := filterVisibleBuilders(ctx, builders)
+		visibleBuilders, err := FilterVisibleBuilders(ctx, builders, "")
 		So(err, ShouldBeNil)
 		So(visibleBuilders, ShouldResemble, []*buildbucketpb.BuilderID{
+			{
+				Project: "proj1",
+				Bucket:  "bucket1",
+				Builder: "builder1",
+			},
+			{
+				Project: "proj2",
+				Bucket:  "bucket1",
+				Builder: "builder1",
+			},
+			{
+				Project: "proj2",
+				Bucket:  "bucket1",
+				Builder: "builder2",
+			},
+		})
+
+		visibleBuildersInProj2, err := FilterVisibleBuilders(ctx, builders, "proj2")
+		So(err, ShouldBeNil)
+		So(visibleBuildersInProj2, ShouldResemble, []*buildbucketpb.BuilderID{
 			{
 				Project: "proj2",
 				Bucket:  "bucket1",

@@ -17,26 +17,53 @@ package backend
 import (
 	"context"
 	"encoding/base64"
+	"encoding/json"
 	"sort"
 	"strings"
+	"time"
 
 	"go.chromium.org/luci/auth/identity"
-	"go.chromium.org/luci/buildbucket/bbperms"
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/grpc/appstatus"
 	milopb "go.chromium.org/luci/milo/api/service/v1"
+	"go.chromium.org/luci/milo/buildsource/buildbucket"
 	"go.chromium.org/luci/milo/common"
 	"go.chromium.org/luci/server/auth"
-	"go.chromium.org/luci/server/auth/realms"
+	"go.chromium.org/luci/server/caching"
+	"go.chromium.org/luci/server/caching/layered"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/protobuf/proto"
+)
+
+const (
+	// Keep the builders in cache for 10 mins to speed up repeated page loads and
+	// reduce stress on buildbucket side.
+	// But this also means newly added/removed builders would take 10 mins to
+	// propagate.
+	// Cache duration can be adjusted if needed.
+	builderCacheDuration = 10 * time.Minute
+
+	// Refresh the builders cache if the cache TTL falls below this threshold.
+	builderCacheRefreshThreshold = builderCacheDuration - time.Minute
 )
 
 var listBuildersPageSize = PageSizeLimiter{
 	Max:     1000,
 	Default: 100,
+}
+
+var buildbucketBuildersCache = layered.Cache{
+	ProcessLRUCache: caching.RegisterLRUCache(64),
+	GlobalNamespace: "buildbucket-builders-v4",
+	Marshal:         json.Marshal,
+	Unmarshal: func(blob []byte) (interface{}, error) {
+		res := make([]*buildbucketpb.BuilderID, 0)
+		err := json.Unmarshal(blob, &res)
+		return res, err
+	},
 }
 
 // ListBuilders implements milopb.MiloInternal service
@@ -53,16 +80,18 @@ func (s *MiloInternalService) ListBuilders(ctx context.Context, req *milopb.List
 		return nil, appstatus.BadRequest(err)
 	}
 
-	// Perform ACL check.
-	allowed, err := common.IsAllowed(ctx, req.Project)
-	if err != nil {
-		return nil, err
-	}
-	if !allowed {
-		if auth.CurrentIdentity(ctx) == identity.AnonymousIdentity {
-			return nil, appstatus.Error(codes.Unauthenticated, "not logged in")
+	// Perform ACL check when the project is specified.
+	if req.Project != "" {
+		allowed, err := common.IsAllowed(ctx, req.Project)
+		if err != nil {
+			return nil, err
 		}
-		return nil, appstatus.Error(codes.PermissionDenied, "no access to the project")
+		if !allowed {
+			if auth.CurrentIdentity(ctx) == identity.AnonymousIdentity {
+				return nil, appstatus.Error(codes.Unauthenticated, "not logged in")
+			}
+			return nil, appstatus.Error(codes.PermissionDenied, "no access to the project")
+		}
 	}
 
 	pageSize := int(listBuildersPageSize.Adjust(req.PageSize))
@@ -74,47 +103,47 @@ func (s *MiloInternalService) ListBuilders(ctx context.Context, req *milopb.List
 }
 
 func (s *MiloInternalService) listProjectBuilders(ctx context.Context, project string, pageSize int, pageToken *milopb.ListBuildersPageToken) (_ *milopb.ListBuildersResponse, err error) {
-	res := &milopb.ListBuildersResponse{}
+	res := &milopb.ListBuildersResponse{
+		Builders: make([]*buildbucketpb.BuilderItem, 0, pageSize),
+	}
 
 	// First, query buildbucket and return all builders defined in the project.
-	if pageToken == nil || pageToken.NextBuildbucketPageToken != "" {
-		buildersClient, err := s.GetBuildersClient(ctx, auth.AsCredentialsForwarder)
+	if pageToken == nil || pageToken.NextBuildbucketBuilderIndex != 0 {
+		builders, err := s.GetAllVisibleBuilders(ctx, project)
 		if err != nil {
 			return nil, err
 		}
 
-		bbRes, err := buildersClient.ListBuilders(ctx, &buildbucketpb.ListBuildersRequest{
-			Project:   project,
-			PageSize:  int32(pageSize),
-			PageToken: pageToken.GetNextBuildbucketPageToken(),
-		})
-		if err != nil {
-			return nil, err
+		pageStart := int(pageToken.GetNextBuildbucketBuilderIndex())
+		pageEnd := pageStart + pageSize
+		if pageEnd > len(builders) {
+			pageEnd = len(builders)
 		}
 
-		for _, builder := range bbRes.Builders {
+		for _, builder := range builders[pageStart:pageEnd] {
 			res.Builders = append(res.Builders, &buildbucketpb.BuilderItem{
-				Id: builder.Id,
+				Id: builder,
 			})
 		}
 
 		// If there are more internal builders, populate `res.NextPageToken` and
 		// return.
-		if bbRes.NextPageToken != "" {
+		if len(builders) > pageEnd {
 			nextPageToken, err := serializeListBuildersPageToken(&milopb.ListBuildersPageToken{
-				NextBuildbucketPageToken: bbRes.NextPageToken,
+				NextBuildbucketBuilderIndex: int32(pageEnd),
 			})
 			if err != nil {
 				return nil, err
 			}
-
 			res.NextPageToken = nextPageToken
-			return res, nil
 		}
 	}
 
+	if project == "" {
+		return res, nil
+	}
+
 	// Then, return external builders referenced in the project consoles.
-	cachedPerms := make(map[string]bool)
 	remaining := pageSize - len(res.Builders)
 	if remaining > 0 {
 		project := &common.Project{ID: project}
@@ -130,31 +159,26 @@ func (s *MiloInternalService) listProjectBuilders(ctx context.Context, project s
 			}
 		}
 
-		// Append up to `remaining` external builders to `res.Builders`.
-		i := int(pageToken.GetNextMiloBuilderIndex())
-		for ; i < len(project.ExternalBuilderIDs) && remaining > 0; i++ {
-			bid := externalBuilders[i]
-
-			realm := realms.Join(bid.Project, bid.Bucket)
-			allowed, ok := cachedPerms[realm]
-			if !ok {
-				allowed, err = auth.HasPermission(ctx, bbperms.BuildersList, realm, nil)
-				if err != nil {
-					return nil, err
-				}
-				cachedPerms[realm] = allowed
-			}
-
-			if allowed {
-				res.Builders = append(res.Builders, &buildbucketpb.BuilderItem{Id: bid})
-				remaining--
-			}
+		externalBuilders, err = buildbucket.FilterVisibleBuilders(ctx, externalBuilders, "")
+		if err != nil {
+			return nil, err
 		}
 
-		// Populate `res.NextPageToken`.
-		if i < len(project.ExternalBuilderIDs) {
+		pageStart := int(pageToken.GetNextMiloBuilderIndex())
+		pageEnd := pageStart + remaining
+		if pageEnd > len(externalBuilders) {
+			pageEnd = len(externalBuilders)
+		}
+
+		for _, builder := range externalBuilders[pageStart:pageEnd] {
+			res.Builders = append(res.Builders, &buildbucketpb.BuilderItem{
+				Id: builder,
+			})
+		}
+
+		if len(externalBuilders) > pageEnd {
 			nextPageToken, err := serializeListBuildersPageToken(&milopb.ListBuildersPageToken{
-				NextMiloBuilderIndex: int32(i),
+				NextMiloBuilderIndex: int32(pageEnd),
 			})
 			if err != nil {
 				return nil, err
@@ -207,37 +231,29 @@ func (s *MiloInternalService) listGroupBuilders(ctx context.Context, project str
 		}
 	}
 
-	// Populate `res.Builders`.
-	cachedPerms := make(map[string]bool)
-	i := int(pageToken.GetNextMiloBuilderIndex())
-	remaining := pageSize
-	for ; i < len(con.Builders) && remaining > 0; i++ {
-		bid := builders[i]
-		realm := realms.Join(bid.Project, bid.Bucket)
-		allowed, ok := cachedPerms[realm]
-		if !ok {
-			allowed, err = auth.HasPermission(ctx, bbperms.BuildersList, realm, nil)
-			if err != nil {
-				return nil, err
-			}
-			cachedPerms[realm] = allowed
-		}
-
-		if allowed {
-			res.Builders = append(res.Builders, &buildbucketpb.BuilderItem{Id: bid})
-			remaining--
-		}
+	builders, err = buildbucket.FilterVisibleBuilders(ctx, builders, "")
+	if err != nil {
+		return nil, err
+	}
+	pageStart := int(pageToken.GetNextMiloBuilderIndex())
+	pageEnd := pageStart + pageSize
+	if pageEnd > len(builders) {
+		pageEnd = len(builders)
 	}
 
-	// Populate `res.NextPageToken`.
-	if i < len(con.Builders) {
+	for _, builder := range builders[pageStart:pageEnd] {
+		res.Builders = append(res.Builders, &buildbucketpb.BuilderItem{
+			Id: builder,
+		})
+	}
+
+	if len(builders) > pageEnd {
 		nextPageToken, err := serializeListBuildersPageToken(&milopb.ListBuildersPageToken{
-			NextMiloBuilderIndex: int32(i),
+			NextMiloBuilderIndex: int32(pageEnd),
 		})
 		if err != nil {
 			return nil, err
 		}
-
 		res.NextPageToken = nextPageToken
 	}
 
@@ -248,8 +264,8 @@ func validateListBuildersRequest(req *milopb.ListBuildersRequest) error {
 	switch {
 	case req.PageSize < 0:
 		return errors.Reason("page_size can not be negative").Err()
-	case req.Project == "":
-		return errors.Reason("project is required").Err()
+	case req.Project == "" && req.Group != "":
+		return errors.Reason("project is required when group is specified").Err()
 	default:
 		return nil
 	}
@@ -267,13 +283,13 @@ func validateListBuildersPageToken(req *milopb.ListBuildersRequest) (*milopb.Lis
 
 	// Should not have NextBuildbucketPageToken and NextMiloBuilderIndex at the
 	// same time.
-	if token.NextBuildbucketPageToken != "" && token.NextMiloBuilderIndex != 0 {
+	if token.NextBuildbucketBuilderIndex != 0 && token.NextMiloBuilderIndex != 0 {
 		return nil, errors.Reason("invalid page_token").Err()
 	}
 
 	// NextBuildbucketPageToken should only be defined when listing all builders
 	// in the project.
-	if req.Group != "" && token.NextBuildbucketPageToken != "" {
+	if req.Group != "" && token.NextBuildbucketBuilderIndex != 0 {
 		return nil, errors.Reason("invalid page_token").Err()
 	}
 
@@ -293,4 +309,61 @@ func parseListBuildersPageToken(tokenStr string) (token *milopb.ListBuildersPage
 func serializeListBuildersPageToken(token *milopb.ListBuildersPageToken) (string, error) {
 	bytes, err := proto.Marshal(token)
 	return base64.RawStdEncoding.EncodeToString(bytes), err
+}
+
+// GetAllVisibleBuilders returns all cached buildbucket builders. If the cache expired,
+// refresh it with Milo's credential.
+func (s *MiloInternalService) GetAllVisibleBuilders(c context.Context, project string, opt ...layered.Option) ([]*buildbucketpb.BuilderID, error) {
+	settings, err := s.GetSettings(c)
+	if err != nil {
+		return nil, err
+	}
+	host := settings.GetBuildbucket().GetHost()
+	if host == "" {
+		return nil, errors.New("buildbucket host is missing in config")
+	}
+
+	builders, err := buildbucketBuildersCache.GetOrCreate(c, host, func() (v interface{}, exp time.Duration, err error) {
+		start := time.Now()
+
+		buildersClient, err := s.GetBuildersClient(c, host, auth.AsSelf)
+		if err != nil {
+			return nil, 0, err
+		}
+
+		// Get all the Builder IDs from buildbucket.
+		bids := make([]*buildbucketpb.BuilderID, 0)
+		req := &buildbucketpb.ListBuildersRequest{PageSize: 1000}
+		for {
+			r, err := buildersClient.ListBuilders(c, req)
+			if err != nil {
+				return nil, 0, err
+			}
+
+			for _, builder := range r.Builders {
+				bids = append(bids, builder.Id)
+			}
+
+			if r.NextPageToken == "" {
+				break
+			}
+			req.PageToken = r.NextPageToken
+		}
+
+		logging.Infof(c, "listing all builders from buildbucket took %v", time.Since(start))
+
+		return bids, builderCacheDuration, nil
+	}, opt...)
+	if err != nil {
+		return nil, err
+	}
+
+	return buildbucket.FilterVisibleBuilders(c, builders.([]*buildbucketpb.BuilderID), project)
+}
+
+// UpdateBuilderCache updates the builders cache if the cache TTL falls below
+// builderCacheRefreshThreshold.
+func (s *MiloInternalService) UpdateBuilderCache(c context.Context) error {
+	_, err := s.GetAllVisibleBuilders(c, "", layered.WithMinTTL(builderCacheRefreshThreshold))
+	return err
 }

@@ -161,10 +161,12 @@ message QueryRecentBuildsResponse {
 
 // A request message for `ListBuilders` RPC.
 message ListBuildersRequest {
-  // Required. The project to query the builders from.
+  // Required only when `group` is specified. The project to query the builders
+  // from.
   //
-  // Note that external builders that are referenced by the consoles in the
-  // project will also be included in the response.
+  // When specified, query all builders in the project as well as any external
+  // builders  referenced by the consoles in the project.
+  // When omitted, query all builders in any project.
   string project = 1;
 
   // Optional. The group/console to query the builders from.
@@ -207,14 +209,13 @@ message ListBuildersResponse {
 
 // A stateless page token for `ListBuilders` RPC.
 message ListBuildersPageToken {
-  // The next buildbucket `ListBuilders` RPC page token if there are still
-  // builders from buildbucket to be returned.
+  // The index of the next builder from all cached builders from buildbucket.
   //
   // Should not coexist with `NextMiloBuilderIndex`.
-  string next_buildbucket_page_token = 1;
+  int32 next_buildbucket_builder_index = 3;
   // The index of the next builder from Milo project definition.
   //
-  // Should not coexist with `NextBuildbucketPageToken`.
+  // Should not coexist with `NextBuildbucketBuilderIndex`.
   int32 next_milo_builder_index = 2;
 }
 

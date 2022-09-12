@@ -16,7 +16,6 @@ package main
 
 import (
 	"context"
-	"errors"
 	"net/http"
 	"time"
 
@@ -28,6 +27,7 @@ import (
 	"go.chromium.org/luci/config/server/cfgmodule"
 	"go.chromium.org/luci/grpc/appstatus"
 	"go.chromium.org/luci/grpc/prpc"
+	"go.chromium.org/luci/milo/api/config"
 	milopb "go.chromium.org/luci/milo/api/service/v1"
 	"go.chromium.org/luci/milo/backend"
 	"go.chromium.org/luci/milo/buildsource/buildbucket"
@@ -61,11 +61,15 @@ func main() {
 		frontend.Run(srv, "templates")
 		cron.RegisterHandler("update-config", frontend.UpdateConfigHandler)
 		cron.RegisterHandler("update-pools", buildbucket.UpdatePools)
-		cron.RegisterHandler("update-builders", buildbucket.UpdateBuilders)
+		cron.RegisterHandler("update-builders", frontend.UpdateBuilders)
 		cron.RegisterHandler("delete-builds", buildbucket.DeleteOldBuilds)
 		cron.RegisterHandler("sync-builds", buildbucket.SyncBuilds)
 		milopb.RegisterMiloInternalServer(srv.PRPC, &milopb.DecoratedMiloInternal{
 			Service: &backend.MiloInternalService{
+				GetSettings: func(c context.Context) (*config.Settings, error) {
+					settings := common.GetSettings(c)
+					return settings, nil
+				},
 				GetGitilesClient: func(c context.Context, host string, as auth.RPCAuthorityKind) (gitilespb.GitilesClient, error) {
 					t, err := auth.GetRPCTransport(c, as)
 					if err != nil {
@@ -78,13 +82,7 @@ func main() {
 
 					return client, nil
 				},
-				GetBuildersClient: func(c context.Context, as auth.RPCAuthorityKind) (buildbucketpb.BuildersClient, error) {
-					settings := common.GetSettings(c)
-					host := settings.GetBuildbucket().GetHost()
-					if host == "" {
-						return nil, errors.New("missing buildbucket host in settings")
-					}
-
+				GetBuildersClient: func(c context.Context, host string, as auth.RPCAuthorityKind) (buildbucketpb.BuildersClient, error) {
 					t, err := auth.GetRPCTransport(c, as)
 					if err != nil {
 						return nil, err
