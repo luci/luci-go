@@ -21,7 +21,14 @@ build-frontend:
 	npm ci && npm run build
 
 deploy: build-frontend
-	$(GAE_PY) upload -A chops-gofindit-dev
+	$(GAE_PY) upload -A luci-bisection-dev
 
 deploy-prod: build-frontend
+	$(GAE_PY) upload -A luci-bisection
+
+# TODO (nqmtuan): Remove those command after gofindit apps are turned off
+deploy-gofindit: build-frontend
+	$(GAE_PY) upload -A chops-gofindit-dev
+
+deploy-gofindit-prod: build-frontend
 	$(GAE_PY) upload -A chops-gofindit

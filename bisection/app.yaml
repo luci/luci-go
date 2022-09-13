@@ -4,6 +4,7 @@ runtime: go116
 # values of ${...} vars.
 # Reference: https://chromium.googlesource.com/infra/luci/luci-go/+/HEAD/examples/appengine/helloworld_v2/app.yaml
 luci_gae_vars:
+  # TODO (nqmtuan): Remove gofindit after the apps are turned down
   chops-gofindit-dev:
     AUTH_SERVICE_HOST: chrome-infra-auth-dev.appspot.com
     OAUTH_CLIENT_ID: 68570714943-khbhofqbfrtppep12vc0n33viee97o2i.apps.googleusercontent.com
@@ -15,6 +16,18 @@ luci_gae_vars:
     OAUTH_CLIENT_ID: 662477201230-59qlg57msier1po1dshpt3r21g4hlrq7.apps.googleusercontent.com
     OAUTH_CLIENT_SECRET: sm://oauth-client-secret
     OAUTH_REDIRECT_URL: https://chops-gofindit.appspot.com/auth/openid/callback
+    TINK_AEAD_KEY: sm://tink-aead-primary
+  luci-bisection-dev:
+    AUTH_SERVICE_HOST: chrome-infra-auth-dev.appspot.com
+    OAUTH_CLIENT_ID: 87540392498-pc1q4ttejqk41ius7d67sskjjk1g6jsr.apps.googleusercontent.com
+    OAUTH_CLIENT_SECRET: sm://oauth-client-secret
+    OAUTH_REDIRECT_URL: https://luci-bisection-dev.appspot.com/auth/openid/callback
+    TINK_AEAD_KEY: sm://tink-aead-primary
+  luci-bisection:
+    AUTH_SERVICE_HOST: chrome-infra-auth.appspot.com
+    OAUTH_CLIENT_ID: 1080949892740-rs81jinf3677ocl04l1q7c8ga3vp4kll.apps.googleusercontent.com
+    OAUTH_CLIENT_SECRET: sm://oauth-client-secret
+    OAUTH_REDIRECT_URL: https://luci-bisection.appspot.com/auth/openid/callback
     TINK_AEAD_KEY: sm://tink-aead-primary
 
 handlers:
