@@ -57,7 +57,7 @@ export class StepsTabElement extends MiloBaseElement {
     return html`
       <div id="header">
         <milo-bp-step-display-config></milo-bp-step-display-config>
-        <milo-hotkey .key="x" .handler=${this.toggleAllStepsByHotkey} title="press x to expand/collapse all entries">
+        <milo-hotkey .key=${'x'} .handler=${this.toggleAllStepsByHotkey} title="press x to expand/collapse all entries">
           <mwc-button class="action-button" dense unelevated @click=${() => this.toggleAllSteps(true)}>
             Expand All
           </mwc-button>

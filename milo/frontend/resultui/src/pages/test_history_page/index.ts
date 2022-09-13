@@ -226,7 +226,7 @@ export class TestHistoryPageElement extends MiloBaseElement implements BeforeEnt
             <milo-thdt-config-widget id="thdt-config-widget"></milo-thdt-config-widget>
             <div><!-- GAP --></div>
             <milo-hotkey
-              .key="x"
+              .key=${'x'}
               .handler=${this.toggleAllVariantsByHotkey}
               title="press x to expand/collapse all entries"
             >
@@ -234,7 +234,7 @@ export class TestHistoryPageElement extends MiloBaseElement implements BeforeEnt
               <mwc-button dense unelevated @click=${() => this.toggleAllVariants(false)}>Collapse All</mwc-button>
             </milo-hotkey>
             <milo-hotkey
-              .key="esc"
+              .key=${'esc'}
               .handler=${() => this.pageState.setSelectedGroup(null)}
               title="press esc to close the test variant details table"
             >

@@ -169,7 +169,11 @@ export class BlamelistTabElement extends MiloBaseElement {
             )}
           </select>
         </div>
-        <milo-hotkey .key="x" .handler=${this.toggleAllEntriesByHotkey} title="press x to expand/collapse all entries">
+        <milo-hotkey
+          .key=${'x'}
+          .handler=${this.toggleAllEntriesByHotkey}
+          title="press x to expand/collapse all entries"
+        >
           <mwc-button class="action-button" dense unelevated @click=${() => this.toggleAllEntries(true)}>
             Expand All
           </mwc-button>

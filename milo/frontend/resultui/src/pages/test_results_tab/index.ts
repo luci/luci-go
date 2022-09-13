@@ -138,7 +138,11 @@ export class TestResultsTabElement extends MiloBaseElement {
         <milo-tvt-config-widget class="filters-container"></milo-tvt-config-widget>
         <div class="filters-container-delimiter"></div>
         <milo-trt-search-box></milo-trt-search-box>
-        <milo-hotkey .key="x" .handler=${this.toggleAllVariantsByHotkey} title="press x to expand/collapse all entries">
+        <milo-hotkey
+          .key=${'x'}
+          .handler=${this.toggleAllVariantsByHotkey}
+          title="press x to expand/collapse all entries"
+        >
           <mwc-button dense unelevated @click=${() => this.toggleAllVariants(true)}>Expand All</mwc-button>
           <mwc-button dense unelevated @click=${() => this.toggleAllVariants(false)}>Collapse All</mwc-button>
         </milo-hotkey>

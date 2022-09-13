@@ -105,7 +105,7 @@ export class ImageDiffViewerElement extends MiloBaseElement {
       <div id="pixel-viewers" style=${styleMap({ display: this.showPixelViewers ? '' : 'none' })}>
         <milo-hotkey
           id="close-viewers-instruction"
-          .key="esc"
+          .key=${'esc'}
           .handler=${() => (this.showPixelViewers = false)}
           @click=${() => (this.showPixelViewers = false)}
         >

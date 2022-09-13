@@ -66,7 +66,7 @@ export class TestHistoryFilterBoxElement extends MobxLitElement {
   protected render() {
     return html`
       <milo-hotkey
-        .key="/"
+        .key=${'/'}
         .handler=${() => {
           // Set a tiny timeout to ensure '/' isn't recorded by the input box.
           setTimeout(() => this.shadowRoot?.getElementById('input-box')!.focus());

@@ -54,7 +54,7 @@ export class TestResultTabSearchBoxElement extends MobxLitElement {
   protected render() {
     return html`
       <milo-hotkey
-        .key="/"
+        .key=${'/'}
         .handler=${() => {
           // Set a tiny timeout to ensure '/' isn't recorded by the input box.
           setTimeout(() => this.shadowRoot?.getElementById('search-box')!.focus());
