@@ -172,7 +172,7 @@ func (e *Executor) prepExecutionPlan(ctx context.Context, execState *tryjob.Exec
 	case hasTryjobsUpdated && reqmtChanged:
 		panic(fmt.Errorf("the Executor can't handle updates to Requirement and Tryjobs at the same time"))
 	case hasTryjobsUpdated:
-		logging.Debugf(ctx, "received update for tryjobs %s", tryjobsUpdated)
+		logging.Debugf(ctx, "received update for tryjobs %v", tryjobsUpdated)
 		return e.handleUpdatedTryjobs(ctx, tryjobsUpdated, execState)
 	case reqmtChanged && r.Tryjobs.GetRequirementVersion() <= execState.GetRequirementVersion():
 		logging.Errorf(ctx, "Tryjob Executor is executing a Requirement that is either later than or equal to the requested Requirement version. current: %d, got: %d ", r.Tryjobs.GetRequirementVersion(), execState.GetRequirementVersion())
