@@ -84,18 +84,6 @@ export class ResultEntryElement extends MobxLitElement {
   }
 
   @computed
-  private get swarmingTask() {
-    const match = this.parentInvId.match(/^task-(.+)-([0-9a-f]+)$/);
-    if (!match) {
-      return null;
-    }
-    return {
-      host: match[1],
-      id: match[2],
-    };
-  }
-
-  @computed
   private get resultArtifacts$(): IPromiseBasedObservable<ListArtifactsResponse> {
     const resultdb = this.store.services.resultDb;
     if (!resultdb) {
@@ -328,18 +316,7 @@ export class ResultEntryElement extends MobxLitElement {
             ${this.testResult.expected ? 'expectedly' : 'unexpectedly'}
             ${TEST_STATUS_DISPLAY_MAP[this.testResult.status]}
           </span>
-          ${this.swarmingTask
-            ? html`
-                in task:
-                <a
-                  href="https://${this.swarmingTask.host}/task?id=${this.swarmingTask.id}"
-                  target="_blank"
-                  @click=${(e: Event) => e.stopPropagation()}
-                >
-                  ${this.swarmingTask.id}
-                </a>
-              `
-            : ''}
+          ${this.renderParentLink()}
           ${this.clusters.length && this.project
             ? html`<milo-associated-bugs-badge
                 .project=${this.project}
@@ -351,6 +328,42 @@ export class ResultEntryElement extends MobxLitElement {
       </milo-expandable-entry>
     `;
   });
+
+  private renderParentLink() {
+    const matchSwarming = this.parentInvId.match(/^task-(.+)-([0-9a-f]+)$/);
+    if (matchSwarming) {
+      return html`
+        in task:
+        <a
+          href="https://${matchSwarming[1]}/task?id=${matchSwarming[2]}"
+          target="_blank"
+          @click=${(e: Event) => e.stopPropagation()}
+        >
+          ${matchSwarming[2]}
+        </a>
+      `;
+    }
+
+    // There's an alternative format for build invocation:
+    // `build-${builderIdHash}-${buildNum}`.
+    // We don't match that because:
+    // 1. we can't get back the build link because the builderID is hashed, and
+    // 2. typically those invocations are only used as wrapper invocations that
+    // points to the `build-${buildId}` for the same build for speeding up
+    // queries when buildId is not yet known to the client. We don't expect them
+    // to be used here.
+    const matchBuild = this.parentInvId.match(/^build-([0-9]+)$/);
+    if (matchBuild) {
+      return html`
+        in build:
+        <a href="/ui/b/${matchBuild[1]}" target="_blank" @click=${(e: Event) => e.stopPropagation()}>
+          ${matchBuild[1]}
+        </a>
+      `;
+    }
+
+    return null;
+  }
 
   static styles = [
     commonStyle,
