@@ -21,18 +21,25 @@ import (
 	"testing"
 
 	"google.golang.org/protobuf/encoding/prototext"
+	"google.golang.org/protobuf/types/known/wrapperspb"
 
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/config/cfgclient"
 	"go.chromium.org/luci/config/validation"
+	"go.chromium.org/luci/gae/filter/txndefer"
 	"go.chromium.org/luci/gae/impl/memory"
+	"go.chromium.org/luci/gae/service/datastore"
 
+	"go.chromium.org/luci/buildbucket/appengine/model"
 	pb "go.chromium.org/luci/buildbucket/proto"
 
 	. "github.com/smartystreets/goconvey/convey"
+
+	. "go.chromium.org/luci/common/testing/assertions"
 )
 
-func TestProject(t *testing.T) {
+func TestValidateProject(t *testing.T) {
 	t.Parallel()
 
 	Convey("validate buildbucket cfg", t, func() {
@@ -544,5 +551,341 @@ func TestProject(t *testing.T) {
 			So(allErrs, ShouldContainSubstring, `key "is_luci": reserved key`)
 			So(allErrs, ShouldContainSubstring, `key "is_experimental": reserved key`)
 		})
+	})
+}
+
+func TestUpdateProject(t *testing.T) {
+	t.Parallel()
+
+	// Strips the Proto field from each of the given *model.Bucket, returning a
+	// slice whose ith index is the stripped *pb.Bucket value.
+	// Needed because model.Bucket.Proto can only be compared with ShouldResembleProto
+	// while model.Bucket can only be compared with ShouldResemble.
+	stripBucketProtos := func(buckets []*model.Bucket) []*pb.Bucket {
+		ret := make([]*pb.Bucket, len(buckets))
+		for i, bkt := range buckets {
+			if bkt == nil {
+				ret[i] = nil
+			} else {
+				ret[i] = bkt.Proto
+				bkt.Proto = nil
+			}
+		}
+		return ret
+	}
+	stripBuilderProtos := func(buckets []*model.Builder) []*pb.BuilderConfig {
+		ret := make([]*pb.BuilderConfig, len(buckets))
+		for i, bldr := range buckets {
+			if bldr == nil {
+				ret[i] = nil
+			} else {
+				ret[i] = bldr.Config
+				bldr.Config = nil
+			}
+		}
+		return ret
+	}
+
+	Convey("update", t, func() {
+		ctx := memory.UseWithAppID(context.Background(), "fake-cr-buildbucket")
+		ctx = cfgclient.Use(ctx, &fakeCfgClient{})
+		datastore.GetTestable(ctx).AutoIndex(true)
+		datastore.GetTestable(ctx).Consistent(true)
+		ctx = txndefer.FilterRDS(ctx)
+		origChromiumCfg, origChromiumRev, origDartCfg, origDartRev, origV8Cfg, origV8Rev :=
+			chromiumBuildbucketCfg, chromiumRevision, dartBuildbucketCfg, dartRevision, v8BuildbucketCfg, v8Revision
+		restoreCfgVars := func() {
+			chromiumBuildbucketCfg, chromiumRevision = origChromiumCfg, origChromiumRev
+			dartBuildbucketCfg, dartRevision = origDartCfg, origDartRev
+			v8BuildbucketCfg, v8Revision = origV8Cfg, origV8Rev
+		}
+
+		// Datastore is empty. Mimic the first time receiving configs and store all
+		// of them into Datastore.
+		So(UpdateProjectCfg(ctx), ShouldBeNil)
+		var actualBkts []*model.Bucket
+		So(datastore.GetAll(ctx, datastore.NewQuery(model.BucketKind), &actualBkts), ShouldBeNil)
+		So(len(actualBkts), ShouldEqual, 5)
+		So(stripBucketProtos(actualBkts), ShouldResembleProto, []*pb.Bucket{
+			{
+				Name: "master.tryserver.chromium.linux",
+			},
+			{
+				Name: "master.tryserver.chromium.win",
+			},
+			{
+				Name: "try",
+				Swarming: &pb.Swarming{
+					Builders: []*pb.BuilderConfig{},
+					TaskTemplateCanaryPercentage: &wrapperspb.UInt32Value{Value: uint32(10)},
+				},
+			},
+			{
+				Name: "try",
+				Swarming: &pb.Swarming{
+					Builders: []*pb.BuilderConfig{},
+				},
+			},
+			{
+				Name: "master.tryserver.v8",
+			},
+		})
+
+		So(actualBkts, ShouldResemble, []*model.Bucket{
+			{
+				ID:"master.tryserver.chromium.linux",
+				Parent: model.ProjectKey(ctx, "chromium"),
+				Schema: CurrentBucketSchemaVersion,
+				Revision: "deadbeef",
+			},
+			{
+				ID:"master.tryserver.chromium.win",
+				Parent: model.ProjectKey(ctx, "chromium"),
+				Schema: CurrentBucketSchemaVersion,
+				Revision: "deadbeef",
+			},
+			{
+				ID:"try",
+				Parent: model.ProjectKey(ctx, "chromium"),
+				Schema: CurrentBucketSchemaVersion,
+				Revision: "deadbeef",
+			},
+			{
+				ID:"try",
+				Parent: model.ProjectKey(ctx, "dart"),
+				Schema: CurrentBucketSchemaVersion,
+				Revision: "deadbeef",
+			},
+			{
+				ID:"master.tryserver.v8",
+				Parent: model.ProjectKey(ctx, "v8"),
+				Schema: CurrentBucketSchemaVersion,
+				Revision: "sha1:502558141dd8e90ed88de7f1bf3fa430d4128966",
+			},
+		})
+
+		var actualBuilders []*model.Builder
+		So(datastore.GetAll(ctx, datastore.NewQuery(model.BuilderKind), &actualBuilders), ShouldBeNil)
+		So(len(actualBuilders), ShouldEqual, 2)
+		expectedBuilder1 := &pb.BuilderConfig	{
+			Name: "linux",
+			Dimensions: []string{"os:Linux", "pool:luci.chromium.try"},
+			SwarmingHost: "swarming.example.com",
+			TaskTemplateCanaryPercentage: &wrapperspb.UInt32Value{Value: uint32(10)},
+			Exe: &pb.Executable{
+				CipdPackage: "infra/recipe_bundle",
+				CipdVersion:  "refs/heads/main",
+				Cmd: []string{"luciexe"},
+			},
+		}
+		expectedBuilder2 := &pb.BuilderConfig {
+			Name: "linux",
+			Dimensions: []string{"pool:Dart.LUCI"},
+			Exe: &pb.Executable{
+				CipdPackage: "infra/recipe_bundle",
+				CipdVersion:  "refs/heads/main",
+				Cmd: []string{"luciexe"},
+			},
+		}
+		expectedBldrHash1, _ := computeBuilderHash(expectedBuilder1)
+		expectedBldrHash2, _ := computeBuilderHash(expectedBuilder2)
+		So(stripBuilderProtos(actualBuilders), ShouldResembleProto, []*pb.BuilderConfig{expectedBuilder1, expectedBuilder2})
+		So(actualBuilders, ShouldResemble, []*model.Builder{
+			{
+				ID: "linux",
+				Parent: model.BucketKey(ctx, "chromium", "try"),
+				ConfigHash:expectedBldrHash1,
+			},
+			{
+				ID: "linux",
+				Parent: model.BucketKey(ctx, "dart", "try"),
+				ConfigHash: expectedBldrHash2,
+			},
+		})
+
+		Convey("with existing", func() {
+			defer restoreCfgVars()
+
+			// Add master.tryserver.chromium.mac
+			// Update luci.chromium.try
+			// Delete master.tryserver.chromium.win
+			chromiumBuildbucketCfg = `
+        buckets {
+          name: "master.tryserver.chromium.linux"
+        }
+        buckets {
+          name: "master.tryserver.chromium.mac"
+        }
+        buckets {
+          name: "try"
+          swarming {
+            task_template_canary_percentage { value: 10 }
+            builders {
+              name: "linux"
+              swarming_host: "swarming.updated.example.com"
+              task_template_canary_percentage { value: 10 }
+              dimensions: "os:Linux"
+							exe {
+								cipd_version: "refs/heads/main"
+								cipd_package: "infra/recipe_bundle"
+								cmd: ["luciexe"]
+							}
+            }
+          }
+        }
+			`
+			chromiumRevision = "new!"
+			// Delete the entire v8 cfg
+			v8BuildbucketCfg = ""
+
+			So(UpdateProjectCfg(ctx), ShouldBeNil)
+			var actualBkts []*model.Bucket
+			So(datastore.GetAll(ctx, datastore.NewQuery(model.BucketKind), &actualBkts), ShouldBeNil)
+			So(len(actualBkts), ShouldEqual, 4)
+			So(stripBucketProtos(actualBkts), ShouldResembleProto, []*pb.Bucket{
+				{
+					Name: "master.tryserver.chromium.linux",
+				},
+				{
+					Name: "master.tryserver.chromium.mac",
+				},
+				{
+					Name: "try",
+					Swarming: &pb.Swarming{
+						Builders: []*pb.BuilderConfig{},
+						TaskTemplateCanaryPercentage: &wrapperspb.UInt32Value{Value: uint32(10)},
+					},
+				},
+				{
+					Name: "try",
+					Swarming: &pb.Swarming{
+						Builders: []*pb.BuilderConfig{},
+					},
+				},
+			})
+			So(actualBkts, ShouldResemble, []*model.Bucket{
+				{
+					ID:"master.tryserver.chromium.linux",
+					Parent: model.ProjectKey(ctx, "chromium"),
+					Schema: CurrentBucketSchemaVersion,
+					Revision: "new!",
+				},
+				{
+					ID:"master.tryserver.chromium.mac",
+					Parent: model.ProjectKey(ctx, "chromium"),
+					Schema: CurrentBucketSchemaVersion,
+					Revision: "new!",
+				},
+				{
+					ID:"try",
+					Parent: model.ProjectKey(ctx, "chromium"),
+					Schema: CurrentBucketSchemaVersion,
+					Revision: "new!",
+				},
+				{
+					ID:"try",
+					Parent: model.ProjectKey(ctx, "dart"),
+					Schema: CurrentBucketSchemaVersion,
+					Revision: "deadbeef",
+				},
+			})
+
+			var actualBuilders []*model.Builder
+			So(datastore.GetAll(ctx, datastore.NewQuery(model.BuilderKind), &actualBuilders), ShouldBeNil)
+			So(len(actualBuilders), ShouldEqual, 2)
+			expectedBuilder1 := &pb.BuilderConfig	{
+				Name: "linux",
+				Dimensions: []string{"os:Linux", "pool:luci.chromium.try"},
+				SwarmingHost: "swarming.updated.example.com",
+				TaskTemplateCanaryPercentage: &wrapperspb.UInt32Value{Value: uint32(10)},
+				Exe: &pb.Executable{
+					CipdPackage: "infra/recipe_bundle",
+					CipdVersion:  "refs/heads/main",
+					Cmd: []string{"luciexe"},
+				},
+			}
+			expectedBuilder2 := &pb.BuilderConfig {
+				Name: "linux",
+				Dimensions: []string{"pool:Dart.LUCI"},
+				Exe: &pb.Executable{
+					CipdPackage: "infra/recipe_bundle",
+					CipdVersion:  "refs/heads/main",
+					Cmd: []string{"luciexe"},
+				},
+			}
+			expectedBldrHash1, _ := computeBuilderHash(expectedBuilder1)
+			expectedBldrHash2, _ := computeBuilderHash(expectedBuilder2)
+			So(stripBuilderProtos(actualBuilders), ShouldResembleProto, []*pb.BuilderConfig{expectedBuilder1, expectedBuilder2})
+			So(actualBuilders, ShouldResemble, []*model.Builder{
+				{
+					ID: "linux",
+					Parent: model.BucketKey(ctx, "chromium", "try"),
+					ConfigHash:expectedBldrHash1,
+				},
+				{
+					ID: "linux",
+					Parent: model.BucketKey(ctx, "dart", "try"),
+					ConfigHash: expectedBldrHash2,
+				},
+			})
+		})
+
+		Convey("with broken configs", func() {
+			defer restoreCfgVars()
+
+			// Delete chromium and v8 configs
+			chromiumBuildbucketCfg = ""
+			v8BuildbucketCfg = ""
+
+			dartBuildbucketCfg = "broken bucket cfg"
+			dartBuildbucketCfg = "new!"
+
+			So(UpdateProjectCfg(ctx), ShouldBeNil)
+
+			// We must not delete buckets or builders defined in a project that
+			// currently have a broken config.
+			var actualBkts []*model.Bucket
+			So(datastore.GetAll(ctx, datastore.NewQuery(model.BucketKind), &actualBkts), ShouldBeNil)
+			So(len(actualBkts), ShouldEqual, 1)
+			So(stripBucketProtos(actualBkts), ShouldResembleProto, []*pb.Bucket{
+				{
+					Name: "try",
+					Swarming: &pb.Swarming{
+						Builders: []*pb.BuilderConfig{},
+					},
+				},
+			})
+			So(actualBkts, ShouldResemble, []*model.Bucket{
+				{
+					ID:"try",
+					Parent: model.ProjectKey(ctx, "dart"),
+					Schema: CurrentBucketSchemaVersion,
+					Revision: "deadbeef",
+				},
+			})
+
+			var actualBuilders []*model.Builder
+			So(datastore.GetAll(ctx, datastore.NewQuery(model.BuilderKind), &actualBuilders), ShouldBeNil)
+			So(len(actualBuilders), ShouldEqual, 1)
+			dartBuilder := &pb.BuilderConfig {
+				Name: "linux",
+				Dimensions: []string{"pool:Dart.LUCI"},
+				Exe: &pb.Executable{
+					CipdPackage: "infra/recipe_bundle",
+					CipdVersion:  "refs/heads/main",
+					Cmd: []string{"luciexe"},
+				},
+			}
+			dartBuilderHash, _ := computeBuilderHash(dartBuilder)
+			So(stripBuilderProtos(actualBuilders), ShouldResembleProto, []*pb.BuilderConfig{dartBuilder})
+			So(actualBuilders, ShouldResemble, []*model.Builder{
+				{
+					ID: "linux",
+					Parent: model.BucketKey(ctx, "dart", "try"),
+					ConfigHash: dartBuilderHash,
+				},
+			})
+		})
+
 	})
 }

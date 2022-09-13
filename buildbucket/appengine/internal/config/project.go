@@ -15,6 +15,10 @@
 package config
 
 import (
+	"context"
+	"crypto/sha1"
+	"crypto/sha256"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"regexp"
@@ -23,12 +27,17 @@ import (
 	"time"
 
 	"google.golang.org/protobuf/encoding/prototext"
+	"google.golang.org/protobuf/proto"
 
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/data/strpair"
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/config/cfgclient"
 	"go.chromium.org/luci/config/validation"
+	"go.chromium.org/luci/gae/service/datastore"
 
+	"go.chromium.org/luci/buildbucket/appengine/model"
 	pb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/buildbucket/protoutil"
 )
@@ -36,6 +45,8 @@ import (
 // maximumExpiration is the maximum allowed expiration_secs for a builder
 // dimensions field.
 const maximumExpiration = 21 * (24 * time.Hour)
+
+const CurrentBucketSchemaVersion = 13
 
 var (
 	authGroupNameRegex = regexp.MustCompile(`^([a-z\-]+/)?[0-9a-z_\-\.@]{1,100}$`)
@@ -57,6 +68,176 @@ var (
 
 	experimentNameRE = regexp.MustCompile(`^[a-z][a-z0-9_]*(?:\.[a-z][a-z0-9_]*)*$`)
 )
+
+// UpdateProjectCfg fetches all projects' Buildbucket configs from luci-config
+// and update into Datastore.
+func UpdateProjectCfg(ctx context.Context) error {
+	cfgs, err := cfgclient.Client(ctx).GetProjectConfigs(ctx, "${appid}.cfg", false)
+	if err != nil {
+		return errors.Annotate(err, "while fetching project configs").Err()
+	}
+
+	var bucketKeys []*datastore.Key
+	if err := datastore.GetAll(ctx, datastore.NewQuery(model.BucketKind), &bucketKeys); err != nil {
+		return errors.Annotate(err, "failed to fetch all bucket keys").Err()
+	}
+	bucketsToDelete := make(map[string]map[string]*datastore.Key) // project -> bucket -> bucket keys
+	for _, bk := range bucketKeys {
+		project := bk.Parent().StringID()
+		if _, ok := bucketsToDelete[project]; !ok {
+			bucketsToDelete[project] = make(map[string]*datastore.Key)
+		}
+		bucketsToDelete[project][bk.StringID()] = bk
+	}
+
+	for _, cfg := range cfgs {
+		project := cfg.Meta.ConfigSet.Project()
+		pCfg := &pb.BuildbucketCfg{}
+		if err := prototext.Unmarshal([]byte(cfg.Content), pCfg); err != nil {
+			logging.Errorf(ctx, "config of project %s is broken: %s", project, err)
+			// If a project config is broken, we don't delete the already stored buckets.
+			delete(bucketsToDelete, project)
+			continue
+		}
+
+		revision := cfg.Meta.Revision
+		// revision is empty in file-system mode. Use SHA1 of the config as revision.
+		if revision == "" {
+			cntHash := sha1.Sum([]byte(cfg.Content))
+			revision = "sha1:" + hex.EncodeToString(cntHash[:])
+		}
+
+		for _, cfgBucket := range pCfg.Buckets {
+			cfgBktName := shortBucketName(cfgBucket.Name)
+			storedBucket := &model.Bucket{
+				ID:     cfgBktName,
+				Parent: model.ProjectKey(ctx, project),
+			}
+			delete(bucketsToDelete[project], cfgBktName)
+			if err := model.GetIgnoreMissing(ctx, storedBucket); err != nil{
+				return err
+			}
+
+			if storedBucket.Schema == CurrentBucketSchemaVersion && storedBucket.Revision == revision {
+				continue
+			}
+
+			var builders []*model.Builder
+			bktKey := model.BucketKey(ctx, project, cfgBktName)
+			if err := datastore.GetAll(ctx, datastore.NewQuery(model.BuilderKind).Ancestor(bktKey), &builders); err != nil {
+				return errors.Annotate(err, "failed to fetch builders for %s.%s", project, cfgBktName).Err()
+			}
+
+			// Builders that in the current Datastore.
+			// The map item will be dynamically removed when iterating on builder
+			// configs in order to know which builders no longer exist in the latest configs.
+			bldrMap := make(map[string]*model.Builder) // full builder name -> *model.Builder
+			for _, bldr := range builders {
+				bldrMap[bldr.FullBuilderName()] = bldr
+			}
+			buildersToPut := make([]*model.Builder, 0, len(builders))
+			for _, cfgBuilder := range cfgBucket.GetSwarming().GetBuilders() {
+				if !checkPoolDimExists(cfgBuilder) {
+					cfgBuilder.Dimensions = append(cfgBuilder.Dimensions, fmt.Sprintf("pool:luci.%s.%s", project, cfgBktName))
+				}
+
+				cfgBldrName := fmt.Sprintf("%s.%s.%s", project, cfgBktName, cfgBuilder.Name)
+				cfgBuilderHash, err := computeBuilderHash(cfgBuilder)
+				if err != nil {
+					return errors.Annotate(err, "while computing hash for builder:%s", cfgBldrName).Err()
+				}
+				if bldr, ok := bldrMap[cfgBldrName]; ok {
+					delete(bldrMap, cfgBldrName)
+					if bldr.ConfigHash == cfgBuilderHash {
+						continue
+					}
+				}
+				buildersToPut = append(buildersToPut, &model.Builder{
+					ID:     cfgBuilder.Name,
+					Parent: bktKey,
+					Config: cfgBuilder,
+					ConfigHash: cfgBuilderHash,
+				})
+			}
+
+			// Update buckets, builders and delete non-existent builders.
+			err := datastore.RunInTransaction(ctx, func(ctx context.Context) error {
+				if len(cfgBucket.Swarming.GetBuilders()) != 0 {
+					// Trim builders. They're stored in separate Builder entities.
+					cfgBucket.Swarming.Builders = []*pb.BuilderConfig{}
+				}
+				if err := datastore.Put(ctx, &model.Bucket{
+					ID: cfgBktName,
+					Parent: model.ProjectKey(ctx, project),
+					Schema: CurrentBucketSchemaVersion,
+					Revision: revision,
+					Proto: cfgBucket,
+				}); err != nil {
+					return errors.Annotate(err, "failed to put bucket").Err()
+				}
+
+				if err := datastore.Put(ctx, buildersToPut); err != nil {
+					return errors.Annotate(err, "failed to put %d builders",len(buildersToPut)).Err()
+				}
+
+				var bldrsToDel []*model.Builder
+				for _, bldr := range bldrMap {
+					bldrsToDel = append(bldrsToDel, bldr)
+				}
+				if err := datastore.Delete(ctx, bldrsToDel); err != nil {
+					return errors.Annotate(err, "failed to delete %d builders", len(bldrsToDel)).Err()
+				}
+				return nil
+			}, nil)
+			if err != nil {
+				return errors.Annotate(err, "while in transaction for bucket %s.%s", project, cfgBktName).Err()
+			}
+		}
+	}
+
+	// Delete non-existent buckets (and all associated builders).
+	var toDelete []*datastore.Key
+	for _, bktMap := range bucketsToDelete {
+		for _, bktKey := range bktMap {
+			bldrKeys := []*datastore.Key{}
+			if err := datastore.GetAll(ctx, datastore.NewQuery(model.BuilderKind).Ancestor(bktKey), &bldrKeys); err != nil {
+				return err
+			}
+			toDelete = append(toDelete, bldrKeys...)
+			toDelete = append(toDelete, bktKey)
+		}
+	}
+	return datastore.Delete(ctx, toDelete)
+}
+
+// checkPoolDimExists check if the pool dimension exists in the builder config.
+func checkPoolDimExists(cfgBuilder *pb.BuilderConfig) bool {
+	for _, dim := range cfgBuilder.GetDimensions() {
+		if strings.HasPrefix(dim, "pool:") {
+			return true
+		}
+	}
+	return false
+}
+
+// shortBucketName returns bucket name without "luci.<project_id>." prefix.
+func shortBucketName (name string) string {
+	parts := strings.SplitN(name, ".", 3)
+	if len(parts) == 3 && parts[0] == "luci"{
+		return parts[2]
+	}
+	return name
+}
+
+// computeBuilderHash computes BuilderConfig hash.
+func computeBuilderHash(cfg *pb.BuilderConfig) (string, error) {
+	bCfg, err := proto.Marshal(cfg)
+	if err != nil {
+		return "", err
+	}
+	sha256Bldr := sha256.Sum256(bCfg)
+	return hex.EncodeToString(sha256Bldr[:]), nil
+}
 
 // validateProjectCfg implements validation.Func and validates the content of
 // Buildbucket project config file.

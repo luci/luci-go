@@ -57,6 +57,11 @@ type Builder struct {
 	ConfigHash string `gae:"config_hash"`
 }
 
+// FullBuilderName return the builder name in the format of "<project>.<bucket>.<builder>".
+func (b *Builder) FullBuilderName() string {
+	return fmt.Sprintf("%s.%s.%s", b.Parent.Parent().StringID(), b.Parent.StringID(), b.ID)
+}
+
 // BuilderKey returns a datastore key of a builder.
 func BuilderKey(ctx context.Context, project, bucket, builder string) *datastore.Key {
 	return datastore.KeyForObj(ctx, &Builder{
