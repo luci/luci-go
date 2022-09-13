@@ -6,5 +6,5 @@ inputsdir: ../../cv
 build:
   - go_gae_bundle: ${inputsdir}/appengine/app.yaml
     dest: ${contextdir}/default
-  - go_gae_bundle: ${inputsdir}/monitor/service-monitor.yaml
+  - go_gae_bundle: ${inputsdir}/appengine/monitor/service-monitor.yaml
     dest: ${contextdir}/monitor
