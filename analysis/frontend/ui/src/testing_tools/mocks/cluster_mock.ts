@@ -22,13 +22,18 @@ import {
   QueryClusterFailuresRequest,
   QueryClusterFailuresResponse,
   DistinctClusterFailure,
-} from '../../services/cluster';
+  BatchGetClustersRequest,
+  BatchGetClustersResponse,
+} from '@/services/cluster';
 
-export const getMockCluster = (id: string): Cluster => {
+export const getMockCluster = (id: string,
+    project = 'testproject',
+    algorithm = 'reason-v2',
+    title = ''): Cluster => {
   return {
-    'name': `projects/testproject/clusters/rules-v2/${id}`,
+    'name': `projects/${project}/clusters/${algorithm}/${id}`,
     'hasExample': true,
-    'title': '',
+    'title': title,
     'userClsFailedPresubmit': {
       'oneDay': { 'nominal': '98' },
       'threeDay': { 'nominal': '158' },
@@ -67,10 +72,10 @@ export const getMockRuleClusterSummary = (id: string): ClusterSummary => {
   };
 };
 
-export const getMockSuggestedClusterSummary = (id: string): ClusterSummary => {
+export const getMockSuggestedClusterSummary = (id: string, algorithm = 'reason-v3'): ClusterSummary => {
   return {
     'clusterId': {
-      'algorithm': 'reason-v3',
+      'algorithm': algorithm,
       'id': id,
     },
     'bug': undefined,
@@ -84,6 +89,35 @@ export const getMockSuggestedClusterSummary = (id: string): ClusterSummary => {
 export const mockQueryClusterSummaries = (request: QueryClusterSummariesRequest, response: QueryClusterSummariesResponse) => {
   fetchMock.post({
     url: 'http://localhost/prpc/luci.analysis.v1.Clusters/QueryClusterSummaries',
+    body: request,
+  }, {
+    headers: {
+      'X-Prpc-Grpc-Code': '0',
+    },
+    body: ')]}\'' + JSON.stringify(response),
+  }, { overwriteRoutes: true });
+};
+
+export const mockBatchGetCluster = (
+    project: string,
+    algorithm: string,
+    id: string,
+    responseCluster: Cluster) => {
+  const request: BatchGetClustersRequest = {
+    parent: `projects/${encodeURIComponent(project)}`,
+    names: [
+      `projects/${encodeURIComponent(project)}/clusters/${encodeURIComponent(algorithm)}/${encodeURIComponent(id)}`,
+    ],
+  };
+
+  const response: BatchGetClustersResponse = {
+    clusters: [
+      responseCluster,
+    ],
+  };
+
+  fetchMock.post({
+    url: 'http://localhost/prpc/luci.analysis.v1.Clusters/BatchGet',
     body: request,
   }, {
     headers: {

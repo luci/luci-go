@@ -21,9 +21,9 @@ describe('Home page', () => {
   it('Loads the project list', () => {
     cy.get('h1')
         .should('contain', 'Projects');
-    cy.get('project-card')
+    cy.get('#project-cards')
         .then((cardElement) => {
-            expect(cardElement).to.exist
+          expect(cardElement).to.exist;
         });
   });
 });

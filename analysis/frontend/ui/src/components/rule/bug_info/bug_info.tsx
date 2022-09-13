@@ -29,7 +29,7 @@ import Paper from '@mui/material/Paper';
 import Switch from '@mui/material/Switch';
 import Typography from '@mui/material/Typography';
 
-import { useMutateRule } from '../../../hooks/useMutateRule';
+import { useMutateRule } from '../../../hooks/use_mutate_rule';
 import { AssociatedBug } from '../../../services/shared_models';
 import {
   GetIssueRequest,

@@ -27,6 +27,7 @@ module.exports = {
   transformIgnorePatterns: ['/node_modules/(?!(lit-element|lit-html|@material|lit|@lit|node-fetch|data-uri-to-buffer|fetch-blob|formdata-polyfill)/)'],
   moduleNameMapper: {
     '\\.(css|less)$': 'identity-obj-proxy',
+    '@/(.*)': '<rootDir>/src/$1',
   },
   setupFiles: [
     './src/testing_tools/setUpEnv.ts',

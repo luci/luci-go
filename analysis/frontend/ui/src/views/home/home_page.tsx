@@ -1,0 +1,82 @@
+// Copyright 2022 The LUCI Authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+import { Link, LinkProps } from 'react-router-dom';
+
+import Container from '@mui/material/Container';
+import Grid from '@mui/material/Grid';
+import { styled } from '@mui/material/styles';
+
+import CentralizedProgress from '@/components/centralized_progress/centralized_progress';
+import ErrorAlert from '@/components/error_alert/error_alert';
+import useFetchProjects from '@/hooks/use_fetch_projects';
+
+const ProjectCard = styled(Link)<LinkProps>(() => ({
+  'padding': '1rem',
+  'display': 'flex',
+  'justify-content': 'center',
+  'align-items': 'center',
+  'box-shadow': '0px 2px 1px -1px rgb(0 0 0 / 20%), 0px 1px 1px 0px rgb(0 0 0 / 14%), 0px 1px 3px 0px rgb(0 0 0 / 12%)',
+  'font-weight': 'bold',
+  'font-size': '1.5rem',
+  'text-decoration': 'none',
+  'color': 'black',
+  'border-radius': '4px',
+  'transition': 'transform .2s',
+  'height': '100%',
+  '&:hover': {
+    'transform': 'scale(1.1)',
+  },
+}));
+
+const HomePage = () => {
+  const { isError, error, isLoading, data: projects } = useFetchProjects();
+  return (
+    <Container maxWidth="xl">
+      <h1>Projects</h1>
+      {
+        isLoading && (
+          <CentralizedProgress />
+        )
+      }
+      {
+        isError && (
+          <Grid container item>
+            <ErrorAlert
+              errorTitle="Failed to load projects"
+              errorText={`An error has occured while trying to fetch projects: ${error}`}
+              showError />
+          </Grid>
+        )
+      }
+      <Grid container spacing={2} id="project-cards">
+        {
+          projects && projects.map((project) => (
+            <Grid
+              key={project.name}
+              item xs={2}>
+              <ProjectCard
+                to={`/p/${project.project}/clusters`}
+              >
+                {project.displayName}
+              </ProjectCard>
+            </Grid>
+          ))
+        }
+      </Grid>
+    </Container>
+  );
+};
+
+export default HomePage;

@@ -25,13 +25,13 @@ import Dialog from '@mui/material/Dialog';
 import DialogActions from '@mui/material/DialogActions';
 import DialogContent from '@mui/material/DialogContent';
 import DialogTitle from '@mui/material/DialogTitle';
-import TextField from '@mui/material/TextField';
 
-import { useMutateRule } from '../../../hooks/useMutateRule';
+import { useMutateRule } from '@/hooks/use_mutate_rule';
 import {
   Rule,
   UpdateRuleRequest,
-} from '../../../services/rules';
+} from '@/services/rules';
+import RuleEditInput from '@/components/rule_edit_input/rule_edit_input';
 
 interface Props {
     open: boolean;
@@ -78,21 +78,10 @@ const RuleEditDialog = ({
       fullWidth>
       <DialogTitle>Edit rule definition</DialogTitle>
       <DialogContent>
-        <TextField
-          id="rule-definition-input"
-          label="Definition"
-          multiline
-          margin="dense"
-          rows={4}
-          value={currentRuleDefinition}
-          onChange={handleDefinitionChange}
-          fullWidth
-          variant="filled"
-          inputProps={{ 'data-testid': 'rule-input' }}/>
-        <small>
-            Supported is AND, OR, =,{'<>'}, NOT, IN, LIKE, parentheses and <a href="https://cloud.google.com/bigquery/docs/reference/standard-sql/functions-and-operators#regexp_contains">REGEXP_CONTAINS</a>.
-            Valid identifiers are <em>test</em> and <em>reason</em>.
-        </small>
+        <RuleEditInput
+          definition={currentRuleDefinition}
+          onDefinitionChange={handleDefinitionChange}
+        />
       </DialogContent>
       <DialogActions>
         <Button

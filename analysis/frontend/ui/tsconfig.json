@@ -22,7 +22,11 @@
                 "name": "ts-lit-plugin",
                 "strict": true
             }
-        ]
+        ],
+        "paths": {
+            "@/*": ["./src/*"],
+            "@app/*": ["./*"],
+        }
     },
     "include": [
         "src/**/*.ts", "src/**/*.tsx",

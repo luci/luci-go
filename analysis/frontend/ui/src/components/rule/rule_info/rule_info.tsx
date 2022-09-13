@@ -19,25 +19,25 @@ import Archive from '@mui/icons-material/Archive';
 import Edit from '@mui/icons-material/Edit';
 import Unarchive from '@mui/icons-material/Unarchive';
 import LoadingButton from '@mui/lab/LoadingButton';
+import Box from '@mui/material/Box';
 import Container from '@mui/material/Container';
 import Grid from '@mui/material/Grid';
-import Box from '@mui/material/Box';
 import IconButton from '@mui/material/IconButton';
 import Link from '@mui/material/Link';
 import Paper from '@mui/material/Paper';
 import Typography from '@mui/material/Typography';
 
-import { useMutateRule } from '../../../hooks/useMutateRule';
+import CodeBlock from '@/components/codeblock/codeblock';
+import ConfirmDialog from '@/components/confirm_dialog/confirm_dialog';
+import GridLabel from '@/components/grid_label/grid_label';
+import HelpTooltip from '@/components/help_tooltip/help_tooltip';
+import RuleEditDialog from '@/components/rule/rule_edit_dialog/rule_edit_dialog';
+import { useMutateRule } from '@/hooks/use_mutate_rule';
 import {
   Rule,
   UpdateRuleRequest,
-} from '../../../services/rules';
-import { linkToCluster } from '../../../tools/urlHandling/links';
-import CodeBlock from '../../codeblock/codeblock';
-import ConfirmDialog from '../../confirm_dialog/confirm_dialog';
-import GridLabel from '../../grid_label/grid_label';
-import HelpTooltip from '../../help_tooltip/help_tooltip';
-import RuleEditDialog from '../rule_edit_dialog/rule_edit_dialog';
+} from '@/services/rules';
+import { linkToCluster } from '@/tools/urlHandling/links';
 
 const definitionTooltipText = 'The failures matched by this rule.';
 const archivedTooltipText = 'Archived failure association rules do not match failures. If a rule is no longer needed, it should be archived.';

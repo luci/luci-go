@@ -25,7 +25,6 @@ module.exports = {
     'prettier',
     'google',
     'plugin:@typescript-eslint/recommended',
-    'plugin:jest/recommended',
     'plugin:import/recommended',
     'plugin:import/typescript',
     'plugin:jsx-a11y/recommended',
@@ -34,7 +33,25 @@ module.exports = {
     'react': {
       'version': 'detect',
     },
+    'import/parsers': {
+      '@typescript-eslint/parser': ['.ts', '.tsx'],
+    },
+    'import/resolver': {
+      'typescript': {},
+    },
   },
+  'overrides': [
+    {
+      'files': ['src/**/*.test.tsx'],
+      'plugins': ['jest'],
+      'extends': ['plugin:jest/recommended'],
+    },
+    {
+      'files': ['cypress/**'],
+      'plugins': ['cypress'],
+      'extends': ['plugin:cypress/recommended'],
+    },
+  ],
   'parser': '@typescript-eslint/parser',
   'parserOptions': {
     'ecmaFeatures': {
@@ -47,8 +64,8 @@ module.exports = {
     'react',
     '@typescript-eslint',
     'prettier',
-    'jest',
     'jsx-a11y',
+    'import',
   ],
   'rules': {
     'quotes': ['error', 'single'],
@@ -56,6 +73,7 @@ module.exports = {
     'object-curly-spacing': ['error', 'always', { 'objectsInObjects': true }],
     'require-jsdoc': 0,
     'import/order': ['error'],
+    'import/no-unresolved': 'error',
     'no-trailing-spaces': 'error',
     'no-console': ['error', { allow: ['error'] }],
     'eol-last': ['error', 'always'],

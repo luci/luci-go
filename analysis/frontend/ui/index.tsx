@@ -12,12 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+/* eslint-disable import/no-named-as-default-member */
+
 import dayjs from 'dayjs';
 import localizedFormat from 'dayjs/plugin/localizedFormat';
 import relativeTime from 'dayjs/plugin/relativeTime';
 import UTC from 'dayjs/plugin/utc';
-import React from 'react';
-import ReactDOM from 'react-dom';
+import * as React from 'react';
+import * as ReactDOM from 'react-dom';
 import { BrowserRouter } from 'react-router-dom';
 
 import createInnerHTMLSanitizingPolicy from '@chopsui/trusted-types-policy';

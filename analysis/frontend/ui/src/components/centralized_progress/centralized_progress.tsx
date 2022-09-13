@@ -12,31 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import './cluster_page';
-import '../../../../web_component_types';
+import CircularProgress from '@mui/material/CircularProgress';
+import Grid from '@mui/material/Grid';
 
-import { useCallback } from 'react';
-import {
-  useNavigate,
-  useParams,
-} from 'react-router-dom';
-
-const ClusterPageWrapper = () => {
-  const { project, algorithm, id } = useParams();
-  const navigate = useNavigate();
-  const elementRef = useCallback((node) => {
-    if (node !== null) {
-      node.navigate = navigate;
-    }
-  }, [navigate]);
+const CentralizedProgress = () => {
   return (
-    <cluster-page
-      ref={elementRef}
-      project={project}
-      clusterAlgorithm={algorithm || 'rules-v2'}
-      clusterId={id}
-    />
+    <Grid container item alignItems="center" justifyContent="center">
+      <CircularProgress />
+    </Grid>
   );
 };
 
-export default ClusterPageWrapper;
+export default CentralizedProgress;

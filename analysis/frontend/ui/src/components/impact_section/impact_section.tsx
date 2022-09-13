@@ -12,17 +12,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { useQuery } from 'react-query';
 import { useParams } from 'react-router-dom';
 
-import Container from '@mui/material/Container';
 import CircularProgress from '@mui/material/CircularProgress';
+import Container from '@mui/material/Container';
 import Grid from '@mui/material/Grid';
 import Paper from '@mui/material/Paper';
 
-import { getClustersService, BatchGetClustersRequest } from '../../services/cluster';
-import ErrorAlert from '../error_alert/error_alert';
-import ImpactTable from '../impact_table/impact_table';
+import ErrorAlert from '@/components/error_alert/error_alert';
+import ImpactTable from '@/components/impact_table/impact_table';
+import useFetchCluster from '@/hooks/use_fetch_cluster';
 
 const ImpactSection = () => {
   const { project, algorithm, id } = useParams();
@@ -30,21 +29,13 @@ const ImpactSection = () => {
   if (!currentAlgorithm) {
     currentAlgorithm = 'rules';
   }
-  const clustersService = getClustersService();
-  const { isLoading, isError, isSuccess, data: cluster, error } = useQuery(['cluster', project, currentAlgorithm, id], async () => {
-    const request: BatchGetClustersRequest = {
-      parent: `projects/${encodeURIComponent(project || '')}`,
-      names: [
-        `projects/${encodeURIComponent(project || '')}/clusters/${encodeURIComponent(currentAlgorithm || '')}/${encodeURIComponent(id || '')}`,
-      ],
-    };
-
-    const response = await clustersService.batchGet(request);
-
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    return response.clusters![0];
-  });
-
+  const {
+    isLoading,
+    isError,
+    isSuccess,
+    data: cluster,
+    error,
+  } = useFetchCluster(project, currentAlgorithm, id);
   return (
     <Paper elevation={3} sx={{ pt: 1, pb: 4 }}>
       <Container maxWidth={false}>

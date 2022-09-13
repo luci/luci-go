@@ -15,7 +15,7 @@
 import Grid from '@mui/material/Grid';
 import LinearProgress from '@mui/material/LinearProgress';
 
-import useFetchRule from '../../../hooks/useFetchRule';
+import useFetchRule from '../../../hooks/use_fetch_rule';
 import ErrorAlert from '../../error_alert/error_alert';
 import ReclusteringProgressIndicator from '../../reclustering_progress_indicator/reclustering_progress_indicator';
 import TimestampInfoBar from '../../timestamp_info_bar/timestamp_info_bar';

@@ -24,31 +24,18 @@ import {
   waitFor,
 } from '@testing-library/react';
 
-import { Rule } from '../../../services/rules';
-import { identityFunction } from '../../../testing_tools/functions';
-import { renderWithClient } from '../../../testing_tools/libs/mock_rquery';
-import { mockFetchAuthState } from '../../../testing_tools/mocks/authstate_mock';
-import { createDefaultMockRule } from '../../../testing_tools/mocks/rule_mock';
 import RuleEditDialog from './rule_edit_dialog';
+
+import { Rule } from '@/services/rules';
+import { identityFunction } from '@/testing_tools/functions';
+import { renderWithClient } from '@/testing_tools/libs/mock_rquery';
+import { mockFetchAuthState } from '@/testing_tools/mocks/authstate_mock';
+import { createDefaultMockRule } from '@/testing_tools/mocks/rule_mock';
 
 describe('Test RuleEditDialog component', () => {
   afterEach(() => {
     fetchMock.mockClear();
     fetchMock.reset();
-  });
-
-  it('given a rule, should display the rule\'s current text', async () => {
-    const mockRule = createDefaultMockRule();
-
-    renderWithClient(
-        <RuleEditDialog
-          open
-          rule={mockRule}
-          setOpen={identityFunction}/>,
-    );
-    await screen.findByTestId('rule-input');
-
-    expect(screen.getByText(mockRule.ruleDefinition)).toBeInTheDocument();
   });
 
   it('when modifying the rule\'s text, then should update the rule', async () => {

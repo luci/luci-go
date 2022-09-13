@@ -28,11 +28,11 @@ import DialogContent from '@mui/material/DialogContent';
 import DialogTitle from '@mui/material/DialogTitle';
 import LinearProgress from '@mui/material/LinearProgress';
 
-import useFetchRule from '../../../hooks/useFetchRule';
-import { useMutateRule } from '../../../hooks/useMutateRule';
-import { UpdateRuleRequest } from '../../../services/rules';
-import BugPicker from '../../bug_picker/bug_picker';
-import ErrorAlert from '../../error_alert/error_alert';
+import useFetchRule from '@/hooks/use_fetch_rule';
+import { useMutateRule } from '@/hooks/use_mutate_rule';
+import { UpdateRuleRequest } from '@/services/rules';
+import BugPicker from '@/components/bug_picker/bug_picker';
+import ErrorAlert from '@/components/error_alert/error_alert';
 
 interface Props {
     open: boolean;

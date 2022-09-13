@@ -24,8 +24,11 @@ import MenuItem from '@mui/material/MenuItem';
 import Select, { SelectChangeEvent } from '@mui/material/Select';
 import TextField from '@mui/material/TextField';
 
-import { getProjectsService, GetProjectConfigRequest } from '../../services/project';
-import ErrorAlert from '../error_alert/error_alert';
+import ErrorAlert from '@/components/error_alert/error_alert';
+import {
+  GetProjectConfigRequest,
+  getProjectsService,
+} from '@/services/project';
 
 interface Props {
     bugSystem: string;
@@ -58,6 +61,7 @@ const getBugNumber = (bugId: string): string => {
  * This is needed because mui's <Select> doesn't compare string correctly in typescript.
  */
 enum BugSystems {
+    EMPTY = '',
     MONORAIL = 'monorail',
     BUGANIZER = 'buganizer',
 }
@@ -72,6 +76,9 @@ enum BugSystems {
  */
 const getStaticBugSystem = (bugSystem: string): string => {
   switch (bugSystem) {
+    case '': {
+      return BugSystems.EMPTY;
+    }
     case 'monorail': {
       return BugSystems.MONORAIL;
     }
@@ -160,7 +167,7 @@ const BugPicker = ({
   };
 
   return (
-    <Grid container item columnSpacing={1} sx={{ mt: 1 }}>
+    <Grid container item columnSpacing={1}>
       <Grid item xs={6}>
         <FormControl variant="standard" fullWidth>
           <InputLabel id="bug-picker_select-bug-tracker-label">Bug tracker</InputLabel>

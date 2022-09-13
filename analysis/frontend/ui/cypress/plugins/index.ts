@@ -21,13 +21,13 @@
 
 export default (
     _: Cypress.PluginEvents,
-    config: Cypress.PluginConfigOptions
+    config: Cypress.PluginConfigOptions,
 ) => {
-    return Object.assign({}, config, {
-        fixturesFolder: 'cypress/fixtures',
-        integrationFolder: 'cypress/integration',
-        screenshotsFolder: 'cypress/screenshots',
-        videosFolder: 'cypress/videos',
-        supportFile: 'cypress/support/index.js',
-    });
+  return Object.assign({}, config, {
+    fixturesFolder: 'cypress/fixtures',
+    integrationFolder: 'cypress/integration',
+    screenshotsFolder: 'cypress/screenshots',
+    videosFolder: 'cypress/videos',
+    supportFile: 'cypress/support/index.js',
+  });
 };

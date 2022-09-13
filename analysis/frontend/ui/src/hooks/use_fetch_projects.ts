@@ -12,11 +12,18 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import './home_page';
-import '../../../web_component_types';
+import { useQuery } from 'react-query';
 
-const HomePageWrapper = () => {
-  return (<home-page></home-page>);
+import { getProjectsService, ListProjectsRequest } from '@/services/project';
+
+const useFetchProjects = () => {
+  const service = getProjectsService();
+  const request: ListProjectsRequest = {};
+  return useQuery('projects', async () => {
+    const response = await service.list(request);
+    // Chromium milestone projects are explicitly ignored by the backend, match this in the frontend.
+    return response.projects?.filter((p) => !/^(chromium|chrome)-m[0-9]+$/.test(p.project)) || null;
+  });
 };
 
-export default HomePageWrapper;
+export default useFetchProjects;

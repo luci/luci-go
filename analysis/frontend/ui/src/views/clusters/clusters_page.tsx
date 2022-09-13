@@ -16,8 +16,8 @@ import { useParams } from 'react-router-dom';
 
 import Grid from '@mui/material/Grid';
 import Container from '@mui/material/Container';
-import HelpTooltip from '../../components/help_tooltip/help_tooltip';
-import ClustersTable from '../../components/clusters_table/clusters_table';
+import HelpTooltip from '@/components/help_tooltip/help_tooltip';
+import ClustersTable from '@/components/clusters_table/clusters_table';
 
 const rulesDescription = 'Clusters are groups of related test failures. LUCI Analysis\'s clusters ' +
   'comprise clusters identified by algorithms (based on test name or failure reason) ' +
