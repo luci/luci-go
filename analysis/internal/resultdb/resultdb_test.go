@@ -34,40 +34,6 @@ func TestResultDB(t *testing.T) {
 		So(err, ShouldBeNil)
 
 		inv := "invocations/build-87654321"
-		Convey(`QueryTestVariantsMany`, func() {
-			req := &rdbpb.QueryTestVariantsRequest{
-				Invocations: []string{inv},
-				PageSize:    1000,
-				Predicate: &rdbpb.TestVariantPredicate{
-					Status: rdbpb.TestVariantStatus_UNEXPECTED_MASK,
-				},
-			}
-
-			res := &rdbpb.QueryTestVariantsResponse{
-				TestVariants: []*rdbpb.TestVariant{
-					{
-						TestId:      "ninja://test1",
-						VariantHash: "hash1",
-						Status:      rdbpb.TestVariantStatus_UNEXPECTED,
-					},
-					{
-						TestId:      "ninja://test2",
-						VariantHash: "hash2",
-						Status:      rdbpb.TestVariantStatus_FLAKY,
-					},
-				},
-			}
-			mc.QueryTestVariants(req, res)
-
-			maxPages := 1
-			var tvs []*rdbpb.TestVariant
-			err := rc.QueryTestVariantsMany(mc.Ctx, req, func(res []*rdbpb.TestVariant) error {
-				tvs = append(tvs, res...)
-				return nil
-			}, maxPages)
-			So(err, ShouldBeNil)
-			So(len(tvs), ShouldEqual, 2)
-		})
 
 		Convey(`GetInvocation`, func() {
 			realm := "realm"

@@ -125,7 +125,7 @@ func createOrUpdateAnalyzedTestVariantsPage(ctx context.Context, realm, builder 
 	ks := testVariantKeySet(realm, tvs)
 	_, err := span.ReadWriteTransaction(ctx, func(ctx context.Context) error {
 		found := make(map[testVariantKey]*atvpb.AnalyzedTestVariant)
-		err := analyzedtestvariants.ReadStatusAndTags(ctx, ks, func(atv *atvpb.AnalyzedTestVariant) error {
+		err := analyzedtestvariants.ReadSummary(ctx, ks, func(atv *atvpb.AnalyzedTestVariant) error {
 			k := testVariantKey{atv.TestId, atv.VariantHash}
 			found[k] = atv
 			return nil
@@ -163,7 +163,12 @@ func createOrUpdateAnalyzedTestVariantsPage(ctx context.Context, realm, builder 
 					logging.Errorf(ctx, "Update test variant %s: %s", tvStr, err)
 					continue
 				}
-				if ns == atv.Status && len(nts) == 0 {
+				updateTmd := updateTestMetadata(tv.TestMetadata, atv.TestMetadata)
+				if err != nil {
+					logging.Errorf(ctx, "Update test metadata %s: %s", tvStr, err)
+					continue
+				}
+				if ns == atv.Status && len(nts) == 0 && !updateTmd {
 					continue
 				}
 
@@ -184,6 +189,16 @@ func createOrUpdateAnalyzedTestVariantsPage(ctx context.Context, realm, builder 
 						vals["NextUpdateTaskEnqueueTime"] = now
 						tvToEnQTime[k] = now
 					}
+				}
+				if updateTmd {
+					var tmd []byte
+					if tv.TestMetadata != nil {
+						tmd, err = proto.Marshal(pbutil.TestMetadataFromResultDB(tv.TestMetadata))
+						if err != nil {
+							panic(fmt.Sprintf("failed to marshal TestMetadata to bytes: %q", err))
+						}
+					}
+					vals["TestMetadata"] = spanutil.Compressed(tmd)
 				}
 				ms = append(ms, spanutil.UpdateMap("AnalyzedTestVariants", vals))
 			}
@@ -288,6 +303,35 @@ func updatedStatus(derived, old atvpb.Status) (atvpb.Status, error) {
 	default:
 		return atvpb.Status_STATUS_UNSPECIFIED, fmt.Errorf("unsupported updated Status")
 	}
+}
+
+// updatedTestMetadata returns if the test metadata for the test variant should be
+// replaced. It returns true if the ingested test variant (new) has metadata, and
+// that metadata is different from what is currently stored (old).
+func updateTestMetadata(new *rdbpb.TestMetadata, old *pb.TestMetadata) bool {
+	if new == nil {
+		// Keep the existing metadata (if any).
+		return false
+	}
+	if old == nil {
+		// Replace the existing metadata.
+		return true
+	}
+	updated := false
+	if new.Name != old.Name {
+		updated = true
+	}
+	if (new.Location != nil) != (old.Location != nil) {
+		updated = true
+	}
+	if new.Location != nil && old.Location != nil {
+		if (new.Location.FileName != old.Location.FileName) ||
+			(new.Location.Line != old.Location.Line) ||
+			(new.Location.Repo != old.Location.Repo) {
+			updated = true
+		}
+	}
+	return updated
 }
 
 func extractRequiredTags(tv *rdbpb.TestVariant) []*pb.StringPair {

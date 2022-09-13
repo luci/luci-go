@@ -20,22 +20,32 @@ import (
 	"time"
 
 	"cloud.google.com/go/spanner"
+	"google.golang.org/protobuf/proto"
 
+	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/server/span"
 
 	spanutil "go.chromium.org/luci/analysis/internal/span"
 	atvpb "go.chromium.org/luci/analysis/proto/analyzedtestvariant"
+	pb "go.chromium.org/luci/analysis/proto/v1"
 )
 
-// ReadStatusAndTags reads AnalyzedTestVariant rows by keys.
-func ReadStatusAndTags(ctx context.Context, ks spanner.KeySet, f func(*atvpb.AnalyzedTestVariant) error) error {
-	fields := []string{"Realm", "TestId", "VariantHash", "Status", "Tags"}
+// ReadSummary reads AnalyzedTestVariant rows by keys.
+func ReadSummary(ctx context.Context, ks spanner.KeySet, f func(*atvpb.AnalyzedTestVariant) error) error {
+	fields := []string{"Realm", "TestId", "VariantHash", "Status", "Tags", "TestMetadata"}
 	var b spanutil.Buffer
 	return span.Read(ctx, "AnalyzedTestVariants", ks, fields).Do(
 		func(row *spanner.Row) error {
+			var tmd spanutil.Compressed
 			tv := &atvpb.AnalyzedTestVariant{}
-			if err := b.FromSpanner(row, &tv.Realm, &tv.TestId, &tv.VariantHash, &tv.Status, &tv.Tags); err != nil {
+			if err := b.FromSpanner(row, &tv.Realm, &tv.TestId, &tv.VariantHash, &tv.Status, &tv.Tags, &tmd); err != nil {
 				return err
+			}
+			if len(tmd) > 0 {
+				tv.TestMetadata = &pb.TestMetadata{}
+				if err := proto.Unmarshal(tmd, tv.TestMetadata); err != nil {
+					return errors.Annotate(err, "error unmarshalling test_metadata for %s", tv.Name).Err()
+				}
 			}
 			return f(tv)
 		},

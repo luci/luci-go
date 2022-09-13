@@ -85,7 +85,7 @@ func TestMetadataFromResultDB(rdbTmd *rdbpb.TestMetadata) *pb.TestMetadata {
 	tmd := &pb.TestMetadata{
 		Name: rdbTmd.Name,
 	}
-	loc := tmd.GetLocation()
+	loc := rdbTmd.GetLocation()
 	if loc != nil {
 		tmd.Location = &pb.TestLocation{
 			Repo:     loc.Repo,

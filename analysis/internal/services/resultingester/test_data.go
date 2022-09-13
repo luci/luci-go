@@ -27,8 +27,23 @@ import (
 )
 
 var sampleVar = pbutil.Variant("k1", "v1")
-var sampleTmd = &rdbpb.TestMetadata{
-	Name: "test_new_failure",
+
+var originalTmd = &rdbpb.TestMetadata{
+	Name: "original_name",
+	Location: &rdbpb.TestLocation{
+		Repo:     "old_repo",
+		FileName: "old_file_name",
+		Line:     567,
+	},
+}
+
+var updatedTmd = &rdbpb.TestMetadata{
+	Name: "updated_name",
+	Location: &rdbpb.TestLocation{
+		Repo:     "repo",
+		FileName: "file_name",
+		Line:     456,
+	},
 }
 
 func mockedGetBuildRsp(inv string) *bbpb.Build {
@@ -155,10 +170,11 @@ func mockedQueryTestVariantsRsp() *rdbpb.QueryTestVariantsResponse {
 				},
 			},
 			{
-				TestId:      "ninja://test_known_flake",
-				VariantHash: "hash_2",
-				Status:      rdbpb.TestVariantStatus_UNEXPECTED,
-				Variant:     pbutil.Variant("k1", "v2"),
+				TestId:       "ninja://test_known_flake",
+				VariantHash:  "hash_2",
+				Status:       rdbpb.TestVariantStatus_UNEXPECTED,
+				Variant:      pbutil.Variant("k1", "v2"),
+				TestMetadata: updatedTmd,
 				Results: []*rdbpb.TestResultBundle{
 					{
 						Result: &rdbpb.TestResult{
@@ -177,7 +193,7 @@ func mockedQueryTestVariantsRsp() *rdbpb.QueryTestVariantsResponse {
 				VariantHash:  "hash_1",
 				Status:       rdbpb.TestVariantStatus_UNEXPECTED,
 				Variant:      pbutil.Variant("k1", "v1"),
-				TestMetadata: sampleTmd,
+				TestMetadata: updatedTmd,
 				Results: []*rdbpb.TestResultBundle{
 					{
 						Result: &rdbpb.TestResult{

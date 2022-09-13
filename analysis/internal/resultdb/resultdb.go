@@ -22,7 +22,6 @@ import (
 	"go.chromium.org/luci/grpc/prpc"
 	rdbpb "go.chromium.org/luci/resultdb/proto/v1"
 	"go.chromium.org/luci/server/auth"
-	"google.golang.org/protobuf/proto"
 )
 
 // mockResultDBClientKey is the context key indicates using mocked resultb client in tests.
@@ -67,33 +66,6 @@ func NewClient(ctx context.Context, host string) (*Client, error) {
 // QueryTestVariants queries a single page of test variants.
 func (c *Client) QueryTestVariants(ctx context.Context, req *rdbpb.QueryTestVariantsRequest) (*rdbpb.QueryTestVariantsResponse, error) {
 	return c.client.QueryTestVariants(ctx, req)
-}
-
-// QueryTestVariantsMany queries test variants and advances the page automatically.
-//
-// f is called once per page of test variants.
-func (c *Client) QueryTestVariantsMany(ctx context.Context, req *rdbpb.QueryTestVariantsRequest, f func([]*rdbpb.TestVariant) error, maxPages int) error {
-	// Copy the request to avoid aliasing issues when we update the page token.
-	req = proto.Clone(req).(*rdbpb.QueryTestVariantsRequest)
-
-	for page := 0; page < maxPages; page++ {
-		rsp, err := c.client.QueryTestVariants(ctx, req)
-		if err != nil {
-			return err
-		}
-
-		if err = f(rsp.TestVariants); err != nil {
-			return err
-		}
-
-		req.PageToken = rsp.GetNextPageToken()
-		if req.PageToken == "" {
-			// No more test variants.
-			break
-		}
-	}
-
-	return nil
 }
 
 // GetInvocation retrieves the invocation.

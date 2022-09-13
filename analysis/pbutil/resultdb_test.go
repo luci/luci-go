@@ -18,12 +18,40 @@ import (
 	"testing"
 
 	. "github.com/smartystreets/goconvey/convey"
+	. "go.chromium.org/luci/common/testing/assertions"
 	rdbpb "go.chromium.org/luci/resultdb/proto/v1"
 
 	pb "go.chromium.org/luci/analysis/proto/v1"
 )
 
 func TestResultDB(t *testing.T) {
+	Convey("FailureReasonFromResultDB", t, func() {
+		rdbFailureReason := &rdbpb.FailureReason{
+			PrimaryErrorMessage: "Some error message.",
+		}
+		fr := FailureReasonFromResultDB(rdbFailureReason)
+		So(fr, ShouldResembleProto, &pb.FailureReason{
+			PrimaryErrorMessage: "Some error message.",
+		})
+	})
+	Convey("TestMetadataFromResultDB", t, func() {
+		rdbTestMetadata := &rdbpb.TestMetadata{
+			Name: "name",
+			Location: &rdbpb.TestLocation{
+				Repo:     "repo",
+				FileName: "fileName",
+				Line:     123,
+			},
+		}
+		tmd := TestMetadataFromResultDB(rdbTestMetadata)
+		So(tmd, ShouldResembleProto, &pb.TestMetadata{
+			Name: "name",
+			Location: &pb.TestLocation{
+				Repo:     "repo",
+				FileName: "fileName",
+				Line:     123,
+			}})
+	})
 	Convey("TestResultStatusFromResultDB", t, func() {
 		// Confirm LUCI Analysis handles every test status defined by ResultDB.
 		// This test is designed to break if ResultDB extends the set of
