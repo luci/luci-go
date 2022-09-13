@@ -31,7 +31,7 @@ const (
 )
 
 // activeProjects returns LUCI projects currently active in CV.
-func activeProjects(ctx context.Context) (stringset.Set, error) {
+func activeProjects(ctx context.Context) ([]string, error) {
 	out, err := activeProjectsCache.GetOrCreate(ctx, activeProjectsKey, func() (interface{}, time.Duration, error) {
 		out, err := prjcfg.GetAllProjectIDs(ctx, true /* enabled only*/)
 		return out, activeProjectsTTL, err
@@ -39,7 +39,7 @@ func activeProjects(ctx context.Context) (stringset.Set, error) {
 	if err != nil {
 		return nil, err
 	}
-	return stringset.NewFromSlice(out.([]string)...), nil
+	return stringset.NewFromSlice(out.([]string)...).ToSortedSlice(), nil
 }
 
 // activeProjectsCache caches active projects to avoid hammering Datastore on

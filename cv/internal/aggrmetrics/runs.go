@@ -22,7 +22,6 @@ import (
 	"golang.org/x/sync/errgroup"
 
 	"go.chromium.org/luci/common/clock"
-	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry/transient"
@@ -64,8 +63,8 @@ func (r *runsAggregator) metrics() []types.Metric {
 	}
 }
 
-// metrics implements aggregator interface.
-func (r *runsAggregator) prepare(ctx context.Context, enabledProjects stringset.Set) (reportFunc, error) {
+// report implements aggregator interface.
+func (r *runsAggregator) report(ctx context.Context, projects []string) error {
 	eg, ectx := errgroup.WithContext(ctx)
 	var pendingRunKeys []*datastore.Key
 	var activeRunKeys []*datastore.Key
@@ -99,11 +98,11 @@ func (r *runsAggregator) prepare(ctx context.Context, enabledProjects stringset.
 		}
 	})
 	eg.Go(func() (err error) {
-		runStats, err = initRunStats(ectx, enabledProjects.ToSlice())
+		runStats, err = initRunStats(ectx, projects)
 		return err
 	})
 	if err := eg.Wait(); err != nil {
-		return nil, err
+		return err
 	}
 
 	eg, ectx = errgroup.WithContext(ctx)
@@ -119,9 +118,10 @@ func (r *runsAggregator) prepare(ctx context.Context, enabledProjects stringset.
 		})
 	})
 	if err := eg.Wait(); err != nil {
-		return nil, err
+		return err
 	}
-	return runStats.report, nil
+	runStats.report(ctx)
+	return nil
 }
 
 type runStats struct {

@@ -16,10 +16,8 @@ package aggrmetrics
 
 import (
 	"context"
-	"sync"
 
 	bbutil "go.chromium.org/luci/buildbucket/protoutil"
-	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/sync/parallel"
 	"go.chromium.org/luci/common/tsmon/types"
 	"go.chromium.org/luci/hardcoded/chromeinfra"
@@ -39,20 +37,8 @@ func (t *builderPresenceAggregator) metrics() []types.Metric {
 	return []types.Metric{metrics.Public.TryjobBuilderPresence}
 }
 
-type builderInfo struct {
-	configGroup       string
-	definition        *tryjob.Definition
-	includableOnly    bool
-	hasLocationFilter bool
-	experimental      bool
-}
-
-// metrics implements aggregator interface.
-func (t *builderPresenceAggregator) prepare(ctx context.Context, activeProjects stringset.Set) (reportFunc, error) {
-	projects := activeProjects.ToSlice()
-	infosByProject := make(map[string][]builderInfo, len(projects))
-	var infosByProjectMu sync.Mutex
-
+// report implements aggregator interface.
+func (t *builderPresenceAggregator) report(ctx context.Context, projects []string) error {
 	err := parallel.WorkPool(min(8, len(projects)), func(work chan<- func() error) {
 		for _, project := range projects {
 			project := project
@@ -70,61 +56,43 @@ func (t *builderPresenceAggregator) prepare(ctx context.Context, activeProjects 
 				if err != nil {
 					return err
 				}
-				builderInfos, err := computeBuilderInfos(cgs)
-				if err != nil {
-					return err
+				for _, cg := range cgs {
+					if err := reportBuilders(ctx, t.env, project, cg); err != nil {
+						return err
+					}
 				}
-				infosByProjectMu.Lock()
-				infosByProject[project] = builderInfos
-				infosByProjectMu.Unlock()
 				return nil
 			}
 		}
 	})
-	if err != nil {
-		return nil, err
-	}
-	return func(ctx context.Context) {
-		for project, builderInfos := range infosByProject {
-			for _, builderInfo := range builderInfos {
-				metrics.RunWithBuilderTarget(ctx, t.env, builderInfo.definition, func(ctx context.Context) {
-					metrics.Public.TryjobBuilderPresence.Set(ctx, true,
-						project,
-						builderInfo.configGroup,
-						builderInfo.includableOnly,
-						builderInfo.hasLocationFilter,
-						builderInfo.experimental,
-					)
-				})
-			}
-		}
-	}, nil
+	return err
 }
 
-func computeBuilderInfos(cgs []*prjcfg.ConfigGroup) ([]builderInfo, error) {
-	var ret []builderInfo
-	for _, cg := range cgs {
-		cgName := cg.Content.GetName()
-		for _, b := range cg.Content.GetVerifiers().GetTryjob().GetBuilders() {
-			builderID, err := bbutil.ParseBuilderID(b.GetName())
-			if err != nil {
-				return nil, err
-			}
-			ret = append(ret, builderInfo{
-				configGroup: cgName,
-				definition: &tryjob.Definition{
-					Backend: &tryjob.Definition_Buildbucket_{
-						Buildbucket: &tryjob.Definition_Buildbucket{
-							Host:    chromeinfra.BuildbucketHost,
-							Builder: builderID,
-						},
-					},
-				},
-				includableOnly:    b.GetIncludableOnly(),
-				hasLocationFilter: len(b.GetLocationFilters()) > 0 || (len(b.GetLocationRegexp())+len(b.GetLocationRegexpExclude()) > 0),
-				experimental:      b.GetExperimentPercentage() > 0,
-			})
+func reportBuilders(ctx context.Context, env *common.Env, project string, cg *prjcfg.ConfigGroup) error {
+	cgName := cg.Content.GetName()
+	for _, b := range cg.Content.GetVerifiers().GetTryjob().GetBuilders() {
+		builderID, err := bbutil.ParseBuilderID(b.GetName())
+		if err != nil {
+			return err
 		}
+		// Synthesize definition.
+		def := &tryjob.Definition{
+			Backend: &tryjob.Definition_Buildbucket_{
+				Buildbucket: &tryjob.Definition_Buildbucket{
+					Host:    chromeinfra.BuildbucketHost,
+					Builder: builderID,
+				},
+			},
+		}
+		metrics.RunWithBuilderTarget(ctx, env, def, func(ctx context.Context) {
+			metrics.Public.TryjobBuilderPresence.Set(ctx, true,
+				project,
+				cgName,
+				b.GetIncludableOnly(),
+				len(b.GetLocationFilters()) > 0 || (len(b.GetLocationRegexp())+len(b.GetLocationRegexpExclude()) > 0),
+				b.GetExperimentPercentage() > 0,
+			)
+		})
 	}
-	return ret, nil
+	return nil
 }

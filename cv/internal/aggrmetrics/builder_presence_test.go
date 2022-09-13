@@ -21,7 +21,6 @@ import (
 
 	bbpb "go.chromium.org/luci/buildbucket/proto"
 	bbutil "go.chromium.org/luci/buildbucket/protoutil"
-	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/hardcoded/chromeinfra"
 
 	cfgpb "go.chromium.org/luci/cv/api/config/v2"
@@ -82,21 +81,20 @@ func TestBuilderPresenceAggregator(t *testing.T) {
 
 		prjcfgtest.Create(ctx, lProject, config)
 
-		prepareAndReport := func(active ...string) {
+		mustReport := func(active ...string) {
 			bpa := builderPresenceAggregator{env: ct.Env}
-			reportFn, err := bpa.prepare(ctx, stringset.NewFromSlice(active...))
+			err := bpa.report(ctx, active)
 			So(err, ShouldBeNil)
-			reportFn(ctx)
 		}
 
 		Convey("Skip disabled project", func() {
 			prjcfgtest.Disable(ctx, lProject)
-			prepareAndReport(lProject)
+			mustReport(lProject)
 			So(ct.TSMonStore.GetAll(ctx), ShouldBeEmpty)
 		})
 
 		Convey("Plain builder", func() {
-			prepareAndReport(lProject)
+			mustReport(lProject)
 			metrics.RunWithBuilderTarget(ctx, ct.Env, tryjobDef, func(ctx context.Context) {
 				So(ct.TSMonSentValue(ctx, metrics.Public.TryjobBuilderPresence, lProject, configGroupName, false, false, false), ShouldBeTrue)
 			})
@@ -105,7 +103,7 @@ func TestBuilderPresenceAggregator(t *testing.T) {
 		Convey("Includable only builder", func() {
 			builder.IncludableOnly = true
 			prjcfgtest.Update(ctx, lProject, config)
-			prepareAndReport(lProject)
+			mustReport(lProject)
 			metrics.RunWithBuilderTarget(ctx, ct.Env, tryjobDef, func(ctx context.Context) {
 				So(ct.TSMonSentValue(ctx, metrics.Public.TryjobBuilderPresence, lProject, configGroupName, true, false, false), ShouldBeTrue)
 			})
@@ -116,7 +114,7 @@ func TestBuilderPresenceAggregator(t *testing.T) {
 				PathRegexp: `.*\.md`,
 			})
 			prjcfgtest.Update(ctx, lProject, config)
-			prepareAndReport(lProject)
+			mustReport(lProject)
 			metrics.RunWithBuilderTarget(ctx, ct.Env, tryjobDef, func(ctx context.Context) {
 				So(ct.TSMonSentValue(ctx, metrics.Public.TryjobBuilderPresence, lProject, configGroupName, false, true, false), ShouldBeTrue)
 			})
@@ -125,7 +123,7 @@ func TestBuilderPresenceAggregator(t *testing.T) {
 		Convey("Experimental", func() {
 			builder.ExperimentPercentage = 99.9
 			prjcfgtest.Update(ctx, lProject, config)
-			prepareAndReport(lProject)
+			mustReport(lProject)
 			metrics.RunWithBuilderTarget(ctx, ct.Env, tryjobDef, func(ctx context.Context) {
 				So(ct.TSMonSentValue(ctx, metrics.Public.TryjobBuilderPresence, lProject, configGroupName, false, false, true), ShouldBeTrue)
 			})
@@ -188,7 +186,7 @@ func TestBuilderPresenceAggregator(t *testing.T) {
 					},
 				},
 			})
-			prepareAndReport("prj-0", "prj-1", "prj-2")
+			mustReport("prj-0", "prj-1", "prj-2")
 			So(ct.TSMonStore.GetAll(ctx), ShouldHaveLength, builderCount)
 		})
 	})

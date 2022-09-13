@@ -21,7 +21,6 @@ import (
 	"testing"
 	"time"
 
-	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/tsmon/distribution"
 	"go.chromium.org/luci/gae/service/datastore"
 
@@ -89,21 +88,20 @@ func TestRunAggregator(t *testing.T) {
 			}
 		}
 
-		prepareAndReport := func(active ...string) {
+		mustReport := func(active ...string) {
 			ra := runsAggregator{}
-			f, err := ra.prepare(ctx, stringset.NewFromSlice(active...))
+			err := ra.report(ctx, active)
 			So(err, ShouldBeNil)
-			f(ctx)
 		}
 
 		Convey("Skip reporting for disabled project", func() {
 			prjcfgtest.Disable(ctx, lProject)
-			prepareAndReport(lProject)
+			mustReport(lProject)
 			So(ct.TSMonStore.GetAll(ctx), ShouldBeEmpty)
 		})
 
 		Convey("Enabled projects get zero data reported when no interested Runs", func() {
-			prepareAndReport(lProject)
+			mustReport(lProject)
 			So(pendingRunCountSent(lProject, configGroupName, run.DryRun), ShouldEqual, 0)
 			So(pendingRunCountSent(lProject, configGroupName, run.FullRun), ShouldEqual, 0)
 			So(pendingRunDurationSent(lProject, configGroupName, run.DryRun).Count(), ShouldEqual, 0)
@@ -133,7 +131,7 @@ func TestRunAggregator(t *testing.T) {
 			putRun(lProject, configGroupName, run.FullRun, run.Status_PENDING, now.Add(-time.Hour), time.Time{})
 			putRun(lProject, configGroupName, run.FullRun, run.Status_SUCCEEDED, now.Add(-time.Hour), now.Add(-time.Hour)) // ended run won't be reported
 
-			prepareAndReport(lProject)
+			mustReport(lProject)
 			So(pendingRunCountSent(lProject, configGroupName, run.DryRun), ShouldEqual, 2)
 			So(pendingRunDurationSent(lProject, configGroupName, run.DryRun).Count(), ShouldEqual, 2)
 			So(pendingRunDurationSent(lProject, configGroupName, run.DryRun).Sum(), ShouldEqual, float64((time.Second + time.Minute).Milliseconds()))
@@ -165,7 +163,7 @@ func TestRunAggregator(t *testing.T) {
 			putRun(lProject, configGroupName, run.FullRun, run.Status_SUBMITTING, now.Add(-time.Hour), now.Add(-time.Hour))
 			putRun(lProject, configGroupName, run.FullRun, run.Status_CANCELLED, now.Add(-time.Hour), now.Add(-time.Hour)) // ended run won't be reported
 
-			prepareAndReport(lProject)
+			mustReport(lProject)
 			So(activeRunCountSent(lProject, configGroupName, run.DryRun), ShouldEqual, 1)
 			So(activeRunDurationSent(lProject, configGroupName, run.DryRun).Count(), ShouldEqual, 1)
 			So(activeRunDurationSent(lProject, configGroupName, run.DryRun).Sum(), ShouldEqual, (time.Minute).Seconds())
@@ -206,7 +204,7 @@ func TestRunAggregator(t *testing.T) {
 			numConfigGroup := 8
 			So(numProject*numConfigGroup, ShouldBeLessThan, maxRuns)
 			putManyRuns(maxRuns, numProject, numConfigGroup)
-			prepareAndReport()
+			mustReport()
 
 			reportedCnt := 0
 			for projectID := 0; projectID < numProject; projectID++ {
@@ -225,8 +223,7 @@ func TestRunAggregator(t *testing.T) {
 		Convey("Refuses to report anything if there are too many active Runs", func() {
 			putManyRuns(maxRuns+1, 16, 8)
 			ra := runsAggregator{}
-			_, err := ra.prepare(ctx, stringset.Set{})
-			So(err, ShouldErrLike, "too many active Runs")
+			So(ra.report(ctx, []string{lProject}), ShouldErrLike, "too many active Runs")
 			So(ct.TSMonStore.GetAll(ctx), ShouldBeEmpty)
 		})
 	})

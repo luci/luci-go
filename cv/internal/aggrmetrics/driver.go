@@ -17,75 +17,53 @@ package aggrmetrics
 import (
 	"context"
 	"sync"
-	"time"
 
-	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
-	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/tsmon"
+	"go.chromium.org/luci/common/tsmon/types"
+
 	"go.chromium.org/luci/cv/internal/common"
-	"go.chromium.org/luci/server/tq"
-)
-
-const (
-	// reportTTL limits for how long the data remains valid.
-	//
-	// If tsmon doesn't flush for this much time since the report is prepared,
-	// the report will be discarded.
-	//
-	// It should be longer than a typical tsmon flush interval and should
-	// account the fact that Driver.MinuteCron() and tsmon flush aren't
-	// synchronized.
-	reportTTL = 2 * time.Minute
-
-	// noFlushForTooLong defines threshold for emitting error to logs on
-	// unusually long durations without a tsmon flush.
-	noFlushForTooLong = 10 * time.Minute
 )
 
 // New creates a new Driver for metrics aggregation.
-func New(ctx context.Context, env *common.Env, tqd *tq.Dispatcher) *Driver {
+func New(env *common.Env) *Driver {
 	d := &Driver{
 		aggregators: []aggregator{
 			&runsAggregator{},
 			&pmReporter{},
 			&builderPresenceAggregator{env: env},
 		},
-		lastFlush: clock.Now(ctx),
 	}
-	tsmon.RegisterCallbackIn(ctx, d.tsmonCallback)
 	return d
 }
 
 // Driver takes care of invoking aggregators and correctly working with
-// aggregated metrics, specifically resetting them after they are sent to avoid
-// tsmon continuously sending of old values long after they were computed.
+// aggregated metrics.
 type Driver struct {
 	aggregators []aggregator
-
-	m              sync.Mutex
-	nextReports    []reportFunc
-	nextExpireTime time.Time
-	lastFlush      time.Time
 }
 
-// Cron is expected to be called once per minute, e.g., by GAE cron.
-//
-// Although there can be more than 1 CV process, e.g., 2+ GAE instances,
-// it's expected that cron will call at most 1 CV process at a time.
-func (d *Driver) Cron(ctx context.Context) error {
-	// Use short timeout to make overlap less likely.
-	ctx, cancel := clock.WithTimeout(ctx, 30*time.Second)
-	defer cancel()
+type aggregator interface {
+	// metrics must return of metrics set by the aggregator, which should be reset
+	// after the tsmon flush.
+	metrics() []types.Metric
 
+	// report should aggregate CV's state and report the tsmon metrics for the
+	// provided projects.
+	report(ctx context.Context, projects []string) error
+}
+
+// Cron reports all the aggregated metrics for all active projects.
+//
+// Resets all known reporting metrics at the beginning. It is expected to be
+// called once per minute, e.g., by GAE cron.
+func (d *Driver) Cron(ctx context.Context) error {
+	d.resetMetrics(ctx)
 	active, err := activeProjects(ctx)
 	if err != nil {
 		return err
 	}
 
-	startTime := clock.Now(ctx)
-
-	reports := make([]reportFunc, len(d.aggregators))
 	errs := errors.NewLazyMultiError(len(d.aggregators))
 	var wg sync.WaitGroup
 	wg.Add(len(d.aggregators))
@@ -93,75 +71,14 @@ func (d *Driver) Cron(ctx context.Context) error {
 		i, a := i, a
 		go func() {
 			defer wg.Done()
-			switch f, err := a.prepare(ctx, active); {
-			case err != nil:
+			if err := a.report(ctx, active); err != nil {
 				errs.Assign(i, err)
-			default:
-				reports[i] = f
 			}
 		}()
 	}
 	wg.Wait()
 
-	// Save successfully produced reports regardless of errors.
-	if reports = removeNils(reports); len(reports) > 0 {
-		d.stageReports(ctx, reports, startTime)
-	}
 	return common.MostSevereError(errs.Get())
-}
-
-func (d *Driver) stageReports(ctx context.Context, reports []reportFunc, start time.Time) {
-	d.m.Lock()
-	defer d.m.Unlock()
-	expire := start.Add(reportTTL)
-	// Ensure we aren't overwriting newer report, just in case the prior cron
-	// invocation somehow got stuck, e.g. due to a buggy aggregator.
-	if !d.nextExpireTime.IsZero() {
-		lastStagedStart := d.nextExpireTime.Add(-reportTTL)
-		if lastStagedStart.After(start) {
-			logging.Errorf(ctx, "aggrmetrics.MinuteCron was stuck since %s, newer report %s is already prepared", start, lastStagedStart)
-			return
-		}
-		logging.Warningf(ctx, "aggrmetrics.MinuteCron overwriting unsent report of %s with %s", lastStagedStart, start)
-		// Overwriting report means that data points are lost. This is fine once in
-		// a while, but bad if this happens all the time on a GAE instance.
-		// Detect the latter by checking when the last Flush happened.
-		if delay := clock.Since(ctx, d.lastFlush); delay > noFlushForTooLong {
-			logging.Errorf(ctx, "aggrmetrics weren't flushed for a long time: %s", delay)
-		}
-	}
-	d.nextReports = reports
-	d.nextExpireTime = expire
-}
-
-// tsmonCallback resets old data from registered metrics and possibly sets new
-// data.
-//
-// It's called by tsmon flush implementation on all CV processes, but the new
-// values should normally be set on just one of them on whichever MinuteCron()
-// was called last.
-func (d *Driver) tsmonCallback(ctx context.Context) {
-	d.m.Lock()
-	defer d.m.Unlock()
-	// In all cases, reset all metrics.
-	d.resetMetrics(ctx)
-
-	now := clock.Now(ctx)
-	d.lastFlush = now
-	// Decide if a report should be made.
-	switch {
-	case d.nextExpireTime.IsZero():
-		return
-	case d.nextExpireTime.Before(now):
-		logging.Warningf(ctx, "aggrmetrics dropping expired report of %s", d.nextExpireTime)
-	default:
-		// Do the reporting.
-		for _, f := range d.nextReports {
-			f(ctx)
-		}
-	}
-	d.nextExpireTime = time.Time{}
-	d.nextReports = nil
 }
 
 func (d *Driver) resetMetrics(ctx context.Context) {

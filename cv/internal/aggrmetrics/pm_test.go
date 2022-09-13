@@ -17,14 +17,15 @@ package aggrmetrics
 import (
 	"testing"
 
-	"go.chromium.org/luci/common/data/stringset"
+	"google.golang.org/protobuf/types/known/timestamppb"
+
+	"go.chromium.org/luci/gae/service/datastore"
+
 	"go.chromium.org/luci/cv/internal/changelist"
 	"go.chromium.org/luci/cv/internal/cvtesting"
 	"go.chromium.org/luci/cv/internal/prjmanager"
 	"go.chromium.org/luci/cv/internal/prjmanager/prjpb"
 	"go.chromium.org/luci/cv/internal/run"
-	"go.chromium.org/luci/gae/service/datastore"
-	"google.golang.org/protobuf/types/known/timestamppb"
 
 	. "github.com/smartystreets/goconvey/convey"
 )
@@ -63,9 +64,7 @@ func TestPMReporter(t *testing.T) {
 		), ShouldBeNil)
 
 		r := pmReporter{}
-		reportFunc, err := r.prepare(ctx, stringset.NewFromSlice("small", "empty"))
-		So(err, ShouldBeNil)
-		reportFunc(ctx)
+		So(r.report(ctx, []string{"small", "empty"}), ShouldBeNil)
 		So(ct.TSMonSentValue(ctx, metricPMEntitySize, "small"), ShouldBeBetween, 80, 90)
 		So(ct.TSMonSentValue(ctx, metricPMEntitySize, "empty"), ShouldBeBetween, 40, 50)
 	})

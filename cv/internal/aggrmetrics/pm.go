@@ -17,7 +17,6 @@ package aggrmetrics
 import (
 	"context"
 
-	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry/transient"
@@ -75,11 +74,11 @@ func (*pmReporter) metrics() []types.Metric {
 	}
 }
 
-// metrics implements aggregator interface.
-func (*pmReporter) prepare(ctx context.Context, activeProjects stringset.Set) (reportFunc, error) {
-	if activeProjects.Len() > maxProjects {
+// report implements aggregator interface.
+func (*pmReporter) report(ctx context.Context, projects []string) error {
+	if len(projects) > maxProjects {
 		logging.Errorf(ctx, "FIXME: too many active projects (>%d) to report metrics for", maxProjects)
-		return nil, errors.New("too many active projects")
+		return errors.New("too many active projects")
 	}
 
 	// We need to load & decode Datastore entities as prjmanager.Project objects
@@ -94,43 +93,31 @@ func (*pmReporter) prepare(ctx context.Context, activeProjects stringset.Set) (r
 	//
 	// Finally, behind the scenes, datastore library should optimize this to load
 	// only N entities instead of 2*N.
-	eSizes := make([]projectEntitySizeEstimator, activeProjects.Len())
-	entities := make([]prjmanager.Project, activeProjects.Len())
+	eSizes := make([]projectEntitySizeEstimator, len(projects))
+	entities := make([]prjmanager.Project, len(projects))
 	i := 0
-	for p := range activeProjects {
+	for _, p := range projects {
 		eSizes[i].ID = p
 		entities[i].ID = p
 		i++
 	}
 	err := datastore.Get(ctx, eSizes, entities)
 	if err != nil {
-		return nil, errors.Annotate(err, "failed to fetch all active projects").Tag(transient.Tag).Err()
+		return errors.Annotate(err, "failed to fetch all projects").Tag(transient.Tag).Err()
 	}
 
-	stats := make([]struct {
-		cls, deps, components int64
-	}, len(entities))
 	for i, e := range entities {
+		project := eSizes[i].ID
+		metricPMEntitySize.Set(ctx, eSizes[i].bytes, project)
+		metricPMStateCLs.Set(ctx, int64(len(e.State.GetPcls())), project)
+		metricPMStateComponents.Set(ctx, int64(len(e.State.GetComponents())), project)
 		deps := 0
 		for _, pcl := range e.State.GetPcls() {
 			deps += len(pcl.GetDeps())
 		}
-		stats[i].cls = int64(len(e.State.GetPcls()))
-		stats[i].deps = int64(deps)
-		stats[i].components = int64(len(e.State.GetComponents()))
+		metricPMStateDeps.Set(ctx, int64(deps), project)
 	}
-	// Free memory, since decoded Project entities can use be 1MB or more.
-	entities = nil
-
-	return func(ctx context.Context) {
-		for i, stat := range stats {
-			project := eSizes[i].ID
-			metricPMEntitySize.Set(ctx, eSizes[i].bytes, project)
-			metricPMStateCLs.Set(ctx, stat.cls, project)
-			metricPMStateDeps.Set(ctx, stat.deps, project)
-			metricPMStateComponents.Set(ctx, stat.components, project)
-		}
-	}, nil
+	return nil
 }
 
 type projectEntitySizeEstimator struct {
