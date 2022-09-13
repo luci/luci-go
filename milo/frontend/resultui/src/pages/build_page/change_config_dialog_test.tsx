@@ -85,7 +85,7 @@ describe('ChangeConfigDialog', () => {
 
     fireEvent.mouseDown(screen.getByRole('button', { name: 'Test Results' }));
     await timer.runToLastAsync();
-    fireEvent.click(screen.getByRole('option', { name: 'Timeline' }));
+    fireEvent.click(screen.getByText('Timeline'));
     await timer.runToLastAsync();
 
     expect(screen.queryByRole('button', { name: 'Test Results' })).to.be.null;
@@ -117,7 +117,7 @@ describe('ChangeConfigDialog', () => {
 
     fireEvent.mouseDown(screen.getByRole('button', { name: 'Test Results' }));
     await timer.runToLastAsync();
-    fireEvent.click(screen.getByRole('option', { name: 'Timeline' }));
+    fireEvent.click(screen.getByText('Timeline'));
     await timer.runToLastAsync();
 
     expect(screen.queryByRole('button', { name: 'Test Results' })).to.be.null;
