@@ -63,3 +63,5 @@ entrypoint: >
   -analytics-id ${ANALYTICS_ID}
   -dsmapper-mapper-queue dsmapper
   -dsmapper-control-queue default
+  -ts-mon-flush-interval 1m
+  -ts-mon-flush-timeout 55s
