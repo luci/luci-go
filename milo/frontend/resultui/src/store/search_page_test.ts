@@ -90,7 +90,7 @@ describe('SearchPage', () => {
 
     beforeEach((done) => {
       testStore = TestStore.create();
-      listBuildersStub = sinon.stub(testStore.services.builders!, 'listBuilders');
+      listBuildersStub = sinon.stub(testStore.services.milo!, 'listBuilders');
 
       listBuildersStub.callsFake(async ({ pageToken }) => listBuilderResponses[pageToken || 'page1']);
       testStore.searchPage.builderLoader?.loadRemainingPages();
@@ -102,9 +102,9 @@ describe('SearchPage', () => {
 
     it('should load builders correctly', () => {
       expect(listBuildersStub.callCount).to.eq(3);
-      expect(listBuildersStub.getCall(0).args[0]).to.deep.eq({ pageSize: 1000, pageToken: undefined });
-      expect(listBuildersStub.getCall(1).args[0]).to.deep.eq({ pageSize: 1000, pageToken: 'page2' });
-      expect(listBuildersStub.getCall(2).args[0]).to.deep.eq({ pageSize: 1000, pageToken: 'page3' });
+      expect(listBuildersStub.getCall(0).args[0]).to.deep.eq({ pageSize: 10000, pageToken: undefined });
+      expect(listBuildersStub.getCall(1).args[0]).to.deep.eq({ pageSize: 10000, pageToken: 'page2' });
+      expect(listBuildersStub.getCall(2).args[0]).to.deep.eq({ pageSize: 10000, pageToken: 'page3' });
       expect(testStore.searchPage.builders).to.deep.eq([
         ['project1/bucket1/builder1', { project: 'project1', bucket: 'bucket1', builder: 'builder1' }],
         ['project1/bucket1/builder2', { project: 'project1', bucket: 'bucket1', builder: 'builder2' }],

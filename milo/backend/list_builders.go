@@ -51,7 +51,7 @@ const (
 )
 
 var listBuildersPageSize = PageSizeLimiter{
-	Max:     1000,
+	Max:     10000,
 	Default: 100,
 }
 

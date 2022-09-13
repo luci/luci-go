@@ -100,7 +100,7 @@ export interface QueryRecentBuildsResponse {
 }
 
 export interface ListBuildersRequest {
-  readonly project: string;
+  readonly project?: string;
   readonly group?: string;
   readonly pageSize?: number;
   readonly pageToken?: string;

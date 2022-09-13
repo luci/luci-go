@@ -37,15 +37,15 @@ export const SearchPage = types
   })
   .views((self) => ({
     get builderLoader() {
-      const buildersService = self.services?.builders;
-      if (!buildersService) {
+      const milo = self.services?.milo;
+      if (!milo) {
         return null;
       }
 
       return new PageLoader<BuilderID>(async (pageToken) => {
-        const res = await buildersService.listBuilders({
+        const res = await milo.listBuilders({
           pageToken,
-          pageSize: 1000,
+          pageSize: 10000,
         });
         return [res.builders?.map((b) => b.id) || [], res.nextPageToken];
       });

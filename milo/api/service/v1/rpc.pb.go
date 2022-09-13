@@ -479,7 +479,7 @@ type ListBuildersRequest struct {
 	//
 	// The service may return fewer than this value.
 	// If unspecified, at most 100 builders will be returned.
-	// The maximum value is 1000; values above 1000 will be coerced to 1000.
+	// The maximum value is 10000; values above 10000 will be coerced to 10000.
 	PageSize int32 `protobuf:"varint,3,opt,name=page_size,json=pageSize,proto3" json:"page_size,omitempty"`
 	// Optional. A page token, received from a previous `ListBuilders`
 	// call. Provide this to retrieve the subsequent page.
