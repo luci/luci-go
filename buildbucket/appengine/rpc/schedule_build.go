@@ -253,6 +253,8 @@ var templateBuildMask = model.HardcodedBuildMask(
 	"builder",
 	"critical",
 	"exe",
+	"infra.buildbucket.requested_dimensions",
+	"infra.swarming.priority",
 	"input.experimental",
 	"input.gerrit_changes",
 	"input.gitiles_commit",
@@ -289,6 +291,8 @@ func scheduleRequestFromTemplate(ctx context.Context, req *pb.ScheduleBuildReque
 		GitilesCommit: b.Input.GitilesCommit,
 		Properties:    b.Input.Properties,
 		Tags:          b.Tags,
+		Dimensions:    b.Infra.GetBuildbucket().GetRequestedDimensions(),
+		Priority:      b.Infra.GetSwarming().GetPriority(),
 	}
 
 	ret.Experiments = make(map[string]bool, len(bld.Experiments))
@@ -310,6 +314,9 @@ func scheduleRequestFromTemplate(ctx context.Context, req *pb.ScheduleBuildReque
 	}
 	if len(req.Tags) > 0 {
 		ret.Tags = nil
+	}
+	if len(req.Dimensions) > 0 {
+		ret.Dimensions = nil
 	}
 	proto.Merge(ret, req)
 	ret.TemplateBuildId = 0

@@ -2392,6 +2392,140 @@ func TestScheduleBuild(t *testing.T) {
 			})
 		})
 
+		Convey("requested dimensions", func() {
+			So(datastore.Put(ctx, &model.Build{
+				Proto: &pb.Build{
+					Id: 1,
+					Builder: &pb.BuilderID{
+						Project: "project",
+						Bucket:  "bucket",
+						Builder: "builder",
+					},
+				},
+				Experiments: []string{"-" + bb.ExperimentBBCanarySoftware},
+			}), ShouldBeNil)
+			So(datastore.Put(ctx, &model.BuildInfra{
+				Build: datastore.MakeKey(ctx, "Build", 1),
+				Proto: &pb.BuildInfra{
+					Buildbucket: &pb.BuildInfra_Buildbucket{
+						RequestedDimensions: []*pb.RequestedDimension{
+							{Key: "key_in_db", Value: "value_in_db"},
+						},
+					},
+				},
+			}), ShouldBeNil)
+
+			Convey("ok", func() {
+				req := &pb.ScheduleBuildRequest{
+					TemplateBuildId: 1,
+				}
+				ret, err := scheduleRequestFromTemplate(ctx, req)
+				So(err, ShouldBeNil)
+				So(ret, ShouldResembleProto, &pb.ScheduleBuildRequest{
+					Builder: &pb.BuilderID{
+						Project: "project",
+						Bucket:  "bucket",
+						Builder: "builder",
+					},
+					Dimensions: []*pb.RequestedDimension{
+						{Key: "key_in_db", Value: "value_in_db"},
+					},
+					Experiments: map[string]bool{
+						bb.ExperimentBBCanarySoftware: false,
+						bb.ExperimentNonProduction:    false,
+					},
+				})
+			})
+
+			Convey("override", func() {
+				req := &pb.ScheduleBuildRequest{
+					TemplateBuildId: 1,
+					Dimensions: []*pb.RequestedDimension{
+						{Key: "key_in_req", Value: "value_in_req"},
+					},
+				}
+				ret, err := scheduleRequestFromTemplate(ctx, req)
+				So(err, ShouldBeNil)
+				So(ret, ShouldResembleProto, &pb.ScheduleBuildRequest{
+					Builder: &pb.BuilderID{
+						Project: "project",
+						Bucket:  "bucket",
+						Builder: "builder",
+					},
+					Dimensions: []*pb.RequestedDimension{
+						{Key: "key_in_req", Value: "value_in_req"},
+					},
+					Experiments: map[string]bool{
+						bb.ExperimentBBCanarySoftware: false,
+						bb.ExperimentNonProduction:    false,
+					},
+				})
+			})
+		})
+
+		Convey("priority", func() {
+			So(datastore.Put(ctx, &model.Build{
+				Proto: &pb.Build{
+					Id: 1,
+					Builder: &pb.BuilderID{
+						Project: "project",
+						Bucket:  "bucket",
+						Builder: "builder",
+					},
+				},
+				Experiments: []string{"-" + bb.ExperimentBBCanarySoftware},
+			}), ShouldBeNil)
+			So(datastore.Put(ctx, &model.BuildInfra{
+				Build: datastore.MakeKey(ctx, "Build", 1),
+				Proto: &pb.BuildInfra{
+					Swarming: &pb.BuildInfra_Swarming{
+						Priority: int32(30),
+					},
+				},
+			}), ShouldBeNil)
+
+			Convey("ok", func() {
+				req := &pb.ScheduleBuildRequest{
+					TemplateBuildId: 1,
+				}
+				ret, err := scheduleRequestFromTemplate(ctx, req)
+				So(err, ShouldBeNil)
+				So(ret, ShouldResembleProto, &pb.ScheduleBuildRequest{
+					Builder: &pb.BuilderID{
+						Project: "project",
+						Bucket:  "bucket",
+						Builder: "builder",
+					},
+					Priority: int32(30),
+					Experiments: map[string]bool{
+						bb.ExperimentBBCanarySoftware: false,
+						bb.ExperimentNonProduction:    false,
+					},
+				})
+			})
+
+			Convey("override", func() {
+				req := &pb.ScheduleBuildRequest{
+					TemplateBuildId: 1,
+					Priority: int32(25),
+				}
+				ret, err := scheduleRequestFromTemplate(ctx, req)
+				So(err, ShouldBeNil)
+				So(ret, ShouldResembleProto, &pb.ScheduleBuildRequest{
+					Builder: &pb.BuilderID{
+						Project: "project",
+						Bucket:  "bucket",
+						Builder: "builder",
+					},
+					Priority: int32(25),
+					Experiments: map[string]bool{
+						bb.ExperimentBBCanarySoftware: false,
+						bb.ExperimentNonProduction:    false,
+					},
+				})
+			})
+		})
+
 		Convey("ok", func() {
 			So(datastore.Put(ctx, &model.Build{
 				Proto: &pb.Build{
