@@ -84,16 +84,12 @@ func validateExpirationDuration(d *durationpb.Duration) error {
 func validateRequestedDimension(dim *pb.RequestedDimension) error {
 	var err error
 	switch {
-	case teeErr(validateExpirationDuration(dim.GetExpiration()), &err) != nil:
-		return errors.Annotate(err, "expiration").Err()
-	case dim.GetKey() == "":
-		return errors.Reason("key must be specified").Err()
+	case teeErr(validateDimension(dim), &err) != nil:
+		return err
 	case dim.Key == "caches":
 		return errors.Annotate(errors.Reason("caches may only be specified in builder configs (cr-buildbucket.cfg)").Err(), "key").Err()
 	case dim.Key == "pool":
 		return errors.Annotate(errors.Reason("pool may only be specified in builder configs (cr-buildbucket.cfg)").Err(), "key").Err()
-	case dim.Value == "":
-		return errors.Reason("value must be specified").Err()
 	default:
 		return nil
 	}
