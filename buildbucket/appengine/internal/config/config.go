@@ -78,6 +78,15 @@ func validateSwarmingSettings(ctx *validation.Context, s *pb.SwarmingSettings) {
 		ctx.Exit()
 	}
 
+	for i, pkg := range s.AlternativeAgentPackages {
+		ctx.Enter("alternative_agent_packages #%d", i)
+		validatePackage(ctx, pkg)
+		if len(pkg.OmitOnExperiment) == 0 && len(pkg.IncludeOnExperiment) == 0 {
+			ctx.Errorf("alternative_agent_package must set constraints on either omit_on_experiment or include_on_experiment")
+		}
+		ctx.Exit()
+	}
+
 	if bbPkg := s.BbagentPackage; bbPkg != nil {
 		ctx.Enter("bbagent_package")
 		validatePackage(ctx, bbPkg)

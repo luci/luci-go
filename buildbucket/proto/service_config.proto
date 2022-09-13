@@ -93,6 +93,12 @@ message SwarmingSettings {
 
   // CIPD package of kitchen binary. DEPRECATED. TODO(nodir): remove.
   Package kitchen_package = 7;
+
+  // Package of alternative buildbucket agent sources.
+  // They should only be used in certain situations (i.e. in an experiment),
+  // so they should have constraints on either omit_on_experiment
+  // or include_on_experiment.
+  repeated Package alternative_agent_packages = 9;
 }
 
 message LogDogSettings {

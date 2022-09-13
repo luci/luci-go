@@ -1045,8 +1045,11 @@ func buildFromScheduleRequest(ctx context.Context, req *pb.ScheduleBuildRequest,
 // The build.Builder, build.Canary, build.Exe, and build.Infra.Buildbucket must be set.
 func setInfraAgent(build *pb.Build, globalCfg *pb.SettingsCfg) error {
 	build.Infra.Buildbucket.Agent = &pb.BuildInfra_Buildbucket_Agent{}
-	setInfraAgentInputData(build, globalCfg)
-	if err := setInfraAgentSource(build, globalCfg); err != nil {
+	experiments := stringset.NewFromSlice(build.GetInput().GetExperiments()...)
+	builderID := protoutil.FormatBuilderID(build.Builder)
+
+	setInfraAgentInputData(build, globalCfg, experiments, builderID)
+	if err := setInfraAgentSource(build, globalCfg, experiments, builderID); err != nil {
 		return err
 	}
 	// TODO(crbug.com/1345722) In the future, bbagent will entirely manage the
@@ -1065,7 +1068,7 @@ func setInfraAgent(build *pb.Build, globalCfg *pb.SettingsCfg) error {
 // In the future, they can be also from per-builder-level or per-request-level.
 // Mutates the given *pb.Build.
 // The build.Builder, build.Canary, build.Exe, and build.Infra.Buildbucket.Agent must be set
-func setInfraAgentInputData(build *pb.Build, globalCfg *pb.SettingsCfg) {
+func setInfraAgentInputData(build *pb.Build, globalCfg *pb.SettingsCfg, experiments stringset.Set, builderID string) {
 	inputData := make(map[string]*pb.InputDataRef)
 	build.Infra.Buildbucket.Agent.Input = &pb.BuildInfra_Buildbucket_Agent_Input{
 		Data: inputData,
@@ -1075,12 +1078,9 @@ func setInfraAgentInputData(build *pb.Build, globalCfg *pb.SettingsCfg) {
 		return
 	}
 	cipdServer := globalCfg.GetCipd().GetServer()
-	id := protoutil.FormatBuilderID(build.Builder)
-
-	experiments := stringset.NewFromSlice(build.GetInput().GetExperiments()...)
 
 	for _, p := range userPackages {
-		if !builderMatches(id, p.Builders) {
+		if !builderMatches(builderID, p.Builders) {
 			continue
 		}
 
@@ -1130,8 +1130,26 @@ func setInfraAgentInputData(build *pb.Build, globalCfg *pb.SettingsCfg) {
 // In the future, they can be also from per-builder-level or per-request-level.
 // Mutates the given *pb.Build.
 // The build.Canary, build.Infra.Buildbucket.Agent must be set
-func setInfraAgentSource(build *pb.Build, globalCfg *pb.SettingsCfg) error {
+func setInfraAgentSource(build *pb.Build, globalCfg *pb.SettingsCfg, experiments stringset.Set, builderID string) error {
 	bbagent := globalCfg.GetSwarming().GetBbagentPackage()
+	bbagentAlternatives := make([]*pb.SwarmingSettings_Package, 0, len(globalCfg.GetSwarming().GetAlternativeAgentPackages()))
+	for _, p := range globalCfg.GetSwarming().GetAlternativeAgentPackages() {
+		if !builderMatches(builderID, p.Builders) {
+			continue
+		}
+
+		if !experimentsMatch(experiments, p.GetIncludeOnExperiment(), p.GetOmitOnExperiment()) {
+			continue
+		}
+
+		bbagentAlternatives = append(bbagentAlternatives, p)
+	}
+	if len(bbagentAlternatives) > 1 {
+		return errors.Reason("cannot decide buildbucket agent source").Err()
+	}
+	if len(bbagentAlternatives) == 1 {
+		bbagent = bbagentAlternatives[0]
+	}
 	if bbagent == nil {
 		return nil
 	}

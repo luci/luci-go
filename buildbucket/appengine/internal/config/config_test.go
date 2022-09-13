@@ -90,6 +90,20 @@ func TestConfig(t *testing.T) {
 			So(vctx.Finalize().Error(), ShouldContainSubstring, "(swarming / user_packages #0): package_name is required")
 		})
 
+		Convey("invalid alternative_agent_packages", func() {
+			content := []byte(`
+				swarming {
+					milo_hostname: "ci.chromium.org"
+					alternative_agent_packages {
+						package_name: "bbagent_alternative"
+						version: "git_revision:c84736ceb5ddcc3f6e6d1e6c4d602bb024ceb1b2"
+					}
+				}
+			`)
+			So(validateSettingsCfg(vctx, configSet, path, content), ShouldBeNil)
+			So(vctx.Finalize().Error(), ShouldContainSubstring, "alternative_agent_package must set constraints on either omit_on_experiment or include_on_experiment")
+		})
+
 		Convey("no /${platform} in bbagent", func() {
 			content := []byte(`
 				swarming {
@@ -179,6 +193,11 @@ func TestConfig(t *testing.T) {
 					user_packages {
 						package_name: "infra/3pp/tools/git/${platform}"
 						version: "version:2@2.33.0.chromium.6"
+					}
+					alternative_agent_packages {
+						package_name: "infra/tools/luci/bbagent_alternative/${platform}"
+						version: "git_revision:60be805bf35a766cdf7d80bdf0a066dce30691e8"
+						include_on_experiment: "luci.buildbucket.use_bbagent_alternative"
 					}
 				}
 				logdog {

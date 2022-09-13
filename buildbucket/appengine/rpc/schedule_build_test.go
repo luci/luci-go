@@ -6354,6 +6354,11 @@ func TestScheduleBuild(t *testing.T) {
 
 		Convey("bad bbagent cfg", func() {
 			b := &pb.Build{
+				Builder: &pb.BuilderID{
+					Project: "project",
+					Bucket:  "bucket",
+					Builder: "builder",
+				},
 				Exe: &pb.Executable{
 					CipdPackage: "exe",
 					CipdVersion: "exe-version",
@@ -6377,6 +6382,11 @@ func TestScheduleBuild(t *testing.T) {
 
 		Convey("empty settings", func() {
 			b := &pb.Build{
+				Builder: &pb.BuilderID{
+					Project: "project",
+					Bucket:  "bucket",
+					Builder: "builder",
+				},
 				Exe: &pb.Executable{
 					CipdPackage: "exe",
 					CipdVersion: "exe-version",
@@ -6389,6 +6399,93 @@ func TestScheduleBuild(t *testing.T) {
 			So(err, ShouldBeNil)
 			So(b.Infra.Buildbucket.Agent.Source, ShouldBeNil)
 			So(b.Infra.Buildbucket.Agent.Input.Data, ShouldBeEmpty)
+		})
+
+		Convey("bbagent alternative", func() {
+			b := &pb.Build{
+				Builder: &pb.BuilderID{
+					Project: "project",
+					Bucket:  "bucket",
+					Builder: "builder",
+				},
+				Canary: true,
+				Exe: &pb.Executable{
+					CipdPackage: "exe",
+					CipdVersion: "exe-version",
+				},
+				Infra: &pb.BuildInfra{
+					Buildbucket: &pb.BuildInfra_Buildbucket{},
+				},
+				Input: &pb.Build_Input{
+					Experiments: []string{"omit", "include"},
+				},
+			}
+			Convey("cannot decide bbagent", func() {
+				cfg := &pb.SettingsCfg{
+					Swarming: &pb.SwarmingSettings{
+						BbagentPackage: &pb.SwarmingSettings_Package{
+							PackageName:   "infra/tools/luci/bbagent/${platform}",
+							Version:       "version",
+							VersionCanary: "canary-version",
+						},
+						AlternativeAgentPackages: []*pb.SwarmingSettings_Package{
+							{
+								PackageName:         "bbagent_alternative/${platform}",
+								Version:             "version",
+								IncludeOnExperiment: []string{"include"},
+							},
+							{
+								PackageName:         "bbagent_alternative_2/${platform}",
+								Version:             "version",
+								IncludeOnExperiment: []string{"include"},
+							},
+						},
+					},
+					Cipd: &pb.CipdSettings{
+						Server: "cipd server",
+					},
+				}
+				err := setInfraAgent(b, cfg)
+				So(err, ShouldErrLike, "cannot decide buildbucket agent source")
+			})
+			Convey("pass", func() {
+				cfg := &pb.SettingsCfg{
+					Swarming: &pb.SwarmingSettings{
+						BbagentPackage: &pb.SwarmingSettings_Package{
+							PackageName:   "infra/tools/luci/bbagent/${platform}",
+							Version:       "version",
+							VersionCanary: "canary-version",
+						},
+						AlternativeAgentPackages: []*pb.SwarmingSettings_Package{
+							{
+								PackageName:         "bbagent_alternative/${platform}",
+								Version:             "version",
+								IncludeOnExperiment: []string{"include"},
+							},
+						},
+					},
+					Cipd: &pb.CipdSettings{
+						Server: "cipd server",
+					},
+				}
+				err := setInfraAgent(b, cfg)
+				So(err, ShouldBeNil)
+				So(b.Infra.Buildbucket.Agent, ShouldResembleProto, &pb.BuildInfra_Buildbucket_Agent{
+					Source: &pb.BuildInfra_Buildbucket_Agent_Source{
+						DataType: &pb.BuildInfra_Buildbucket_Agent_Source_Cipd{
+							Cipd: &pb.BuildInfra_Buildbucket_Agent_Source_CIPD{
+								Package: "bbagent_alternative/${platform}",
+								Version: "version",
+								Server:  "cipd server",
+							},
+						},
+					},
+					Input: &pb.BuildInfra_Buildbucket_Agent_Input{},
+					Purposes: map[string]pb.BuildInfra_Buildbucket_Agent_Purpose{
+						"kitchen-checkout": pb.BuildInfra_Buildbucket_Agent_PURPOSE_EXE_PAYLOAD,
+					},
+				})
+			})
 		})
 	})
 }
