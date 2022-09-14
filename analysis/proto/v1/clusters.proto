@@ -492,4 +492,10 @@ message DistinctClusterFailure {
 
     // The number of test results which have these properties.
     int32 count = 11;
+
+    // The tags of the test result.
+    // This contains supplemental information about the tests as it was uploaded with
+    // the test result.  The information varies by project and by test/variant.
+    // Examples of tags are monorail_component (Chromium) or kernel_version (ChromeOS)
+    repeated luci.analysis.v1.StringPair tags = 12;
 }

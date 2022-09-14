@@ -320,4 +320,15 @@ export interface DistinctClusterFailure {
 
   // The number of test results in the group.
   count : number;
+
+  // The tags of the test result.
+  // This contains supplemental information about the tests as it was uploaded with
+  // the test result.  The information varies by project and by test/variant.
+  // Examples of tags are monorail_component (Chromium) or kernel_version (ChromeOS)
+  tags: Tag[]
+}
+
+interface Tag {
+  key?: string;
+  value?: string;
 }

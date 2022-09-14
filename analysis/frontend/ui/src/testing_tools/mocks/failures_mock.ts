@@ -29,6 +29,7 @@ class ClusterFailureBuilder {
     this.failure = {
       testId: 'ninja://dir/test.param',
       variant: undefined,
+      tags: [],
       presubmitRun: {
         presubmitRunId: { system: 'cv', id: 'presubmitRunId' },
         owner: 'user',

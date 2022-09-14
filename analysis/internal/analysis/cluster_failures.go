@@ -18,12 +18,12 @@ import (
 	"context"
 
 	"cloud.google.com/go/bigquery"
-	"go.chromium.org/luci/common/errors"
-	"go.chromium.org/luci/common/trace"
 	"google.golang.org/api/iterator"
 
 	"go.chromium.org/luci/analysis/internal/bqutil"
 	"go.chromium.org/luci/analysis/internal/clustering"
+	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/trace"
 )
 
 type ClusterFailure struct {
@@ -42,6 +42,7 @@ type ClusterFailure struct {
 	IngestedInvocationID        bigquery.NullString `json:"ingestedInvocationId"`
 	IsIngestedInvocationBlocked bigquery.NullBool   `json:"isIngestedInvocationBlocked"`
 	Count                       int32               `json:"count"`
+	Tags                        []*Tag              `json:"tags"`
 }
 
 type Exoneration struct {
@@ -50,6 +51,11 @@ type Exoneration struct {
 }
 
 type Variant struct {
+	Key   bigquery.NullString `json:"key"`
+	Value bigquery.NullString `json:"value"`
+}
+
+type Tag struct {
 	Key   bigquery.NullString `json:"key"`
 	Value bigquery.NullString `json:"value"`
 }
@@ -114,14 +120,17 @@ func (c *Client) ReadClusterFailures(ctx context.Context, opts ReadClusterFailur
 			ANY_VALUE(r.build_critical) as IsBuildCritical,
 			r.ingested_invocation_id as IngestedInvocationID,
 			ANY_VALUE(r.is_ingested_invocation_blocked) as IsIngestedInvocationBlocked,
-			count(*) as Count
+			count(*) as Count,
+			ANY_VALUE(r.tags) as Tags
 		FROM latest_failures_7d
 		GROUP BY
 			r.realm,
 			r.ingested_invocation_id,
 			r.test_id,
 			r.variant_hash,
-			r.partition_time
+			r.partition_time,
+			-- Group by tags content, but this is an array so need to convert it to a string first.
+			ARRAY_TO_STRING(ARRAY((SELECT CONCAT(key, "=", value) FROM UNNEST(r.tags) ORDER BY key, value)), ":")
 		ORDER BY r.partition_time DESC
 		LIMIT 2000
 	`)
