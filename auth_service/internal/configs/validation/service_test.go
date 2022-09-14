@@ -195,5 +195,72 @@ func TestAllowlistConfigValidation(t *testing.T) {
 			So(validateAllowlist(vctx, configSet, path, []byte(badCfg)), ShouldBeNil)
 			So(vctx.Finalize(), ShouldErrLike, "defined twice")
 		})
+
+		Convey("Validate allowlist unknown includes", func() {
+			badCfg := `
+				ip_allowlists {
+					name: "bots"
+					subnets: []
+					includes: ["unknown"]
+				}
+			`
+			So(validateAllowlist(vctx, configSet, path, []byte(badCfg)), ShouldBeNil)
+			So(vctx.Finalize(), ShouldErrLike, "contains unknown allowlist")
+		})
+
+		Convey("Validate allowlist includes cycle 1", func() {
+			badCfg := `
+				ip_allowlists {
+					name: "abc"
+					subnets: []
+					includes: ["abc"]
+				}
+			`
+			So(validateAllowlist(vctx, configSet, path, []byte(badCfg)), ShouldBeNil)
+			So(vctx.Finalize(), ShouldErrLike, "part of an included cycle")
+		})
+
+		Convey("Validate allowlist includes cycle 2", func() {
+			badCfg := `
+				ip_allowlists {
+					name: "abc"
+					subnets: []
+					includes: ["def"]
+				}
+				ip_allowlists {
+					name: "def"
+					subnets: []
+					includes: ["abc"]
+				}
+			`
+			So(validateAllowlist(vctx, configSet, path, []byte(badCfg)), ShouldBeNil)
+			So(vctx.Finalize(), ShouldErrLike, "part of an included cycle")
+		})
+
+		Convey("Validate allowlist includes diamond", func() {
+			goodCfg := `
+				ip_allowlists {
+					name: "abc"
+					subnets: []
+					includes: ["middle1", "middle2"]
+				}
+				ip_allowlists {
+					name: "middle1"
+					subnets: []
+					includes: ["inner"]
+				}
+				ip_allowlists {
+					name: "middle2"
+					subnets: []
+					includes: ["inner"]
+				}
+				ip_allowlists {
+					name: "inner"
+					subnets: []
+				}
+			`
+			So(validateAllowlist(vctx, configSet, path, []byte(goodCfg)), ShouldBeNil)
+			So(vctx.Finalize(), ShouldBeNil)
+		})
 	})
 }

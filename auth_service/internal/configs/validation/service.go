@@ -15,6 +15,7 @@
 package validation
 
 import (
+	"fmt"
 	"net"
 	"regexp"
 	"strings"
@@ -90,7 +91,60 @@ func validateAllowlist(ctx *validation.Context, configSet, path string, content 
 		}
 		idents.Add(ident)
 	}
-
-	// TODO(cjacomet): Resolve allowlist includes.
+	resolveAllowlistIncludes(ctx, cfg.GetIpAllowlists())
 	return nil
+}
+
+// TODO(cjacomet): Abstract vctx out to be able to use this when updating the allowlist cfg in datastore.
+// resolveAllowlistIncludes validates the includes of all allowlists and generates a map {allowlistName: []subnets}.
+func resolveAllowlistIncludes(vctx *validation.Context, allowlists []*configspb.IPAllowlistConfig_IPAllowlist) {
+	allowlistsByName := make(map[string]*configspb.IPAllowlistConfig_IPAllowlist, len(allowlists))
+	for _, al := range allowlists {
+		allowlistsByName[al.GetName()] = al
+	}
+
+	subnetMap := make(map[string][]string, len(allowlists))
+	for _, al := range allowlists {
+		subnetMap[al.GetName()] = getSubnetsRecursive(vctx, al, make([]string, 0, len(allowlists)), allowlistsByName, subnetMap)
+	}
+}
+
+// getSubnetsRecursive does a depth first search traversal to find all transitively included subnets for a given allowlist.
+func getSubnetsRecursive(vctx *validation.Context, al *configspb.IPAllowlistConfig_IPAllowlist, visiting []string, allowlistsByName map[string]*configspb.IPAllowlistConfig_IPAllowlist, subnetMap map[string][]string) []string {
+	alName := al.GetName()
+
+	// If we've already seen this allowlist before.
+	if val, ok := subnetMap[alName]; ok {
+		return val
+	}
+
+	// Cycle check.
+	if contains(visiting, alName) {
+		errorCycle := fmt.Sprintf("%s -> %s", strings.Join(visiting, " -> "), alName)
+		vctx.Errorf("IP allowlist is part of an included cycle %s", errorCycle)
+		return []string{}
+	}
+
+	visiting = append(visiting, alName)
+	subnets := stringset.NewFromSlice(al.GetSubnets()...)
+	for _, inc := range al.GetIncludes() {
+		val, ok := allowlistsByName[inc]
+		if !ok {
+			vctx.Errorf("IP Allowlist contains unknown allowlist %s", inc)
+			continue
+		}
+
+		resolved := getSubnetsRecursive(vctx, val, visiting, allowlistsByName, subnetMap)
+		subnets.AddAll(resolved)
+	}
+	return subnets.ToSortedSlice()
+}
+
+func contains(s []string, val string) bool {
+	for _, v := range s {
+		if v == val {
+			return true
+		}
+	}
+	return false
 }
