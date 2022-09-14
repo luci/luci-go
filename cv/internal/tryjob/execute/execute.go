@@ -397,7 +397,7 @@ func (e *Executor) executePlan(ctx context.Context, p *plan, r *run.Run, execSta
 			if !attempt.Reused && attempt.Status != tryjob.Status_UNTRIGGERED {
 				isRetry := len(exec.Attempts) > 1
 				e.stagedMetricReportFns = append(e.stagedMetricReportFns, func(ctx context.Context) {
-					metrics.RunWithBuilderTarget(ctx, e.Env, def, func(ctx context.Context) {
+					tryjob.RunWithBuilderMetricsTarget(ctx, e.Env, def, func(ctx context.Context) {
 						metrics.Public.TryjobLaunched.Add(ctx, 1, project, configGroup, def.GetCritical(), isRetry)
 					})
 				})

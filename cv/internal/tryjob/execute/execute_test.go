@@ -630,7 +630,7 @@ func TestExecutePlan(t *testing.T) {
 				So(attempt.GetReused(), ShouldBeFalse)
 				So(executor.stagedMetricReportFns, ShouldHaveLength, 1)
 				executor.stagedMetricReportFns[0](ctx)
-				metrics.RunWithBuilderTarget(ctx, ct.Env, def, func(ctx context.Context) {
+				tryjob.RunWithBuilderMetricsTarget(ctx, ct.Env, def, func(ctx context.Context) {
 					So(ct.TSMonSentValue(ctx, metrics.Public.TryjobLaunched, lProject, configGroupName, true, false), ShouldEqual, 1)
 				})
 			})

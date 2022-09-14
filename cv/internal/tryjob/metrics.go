@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package metrics
+package tryjob
 
 import (
 	"context"
@@ -22,13 +22,13 @@ import (
 	"go.chromium.org/luci/common/tsmon/target"
 
 	"go.chromium.org/luci/cv/internal/common"
-	"go.chromium.org/luci/cv/internal/tryjob"
 )
 
-// RunWithBuilderTarget executes `cb` under the context of a Builder target.
+// RunWithBuilderMetricsTarget executes `cb` under the context of a Builder
+// metrics target.
 //
 // It is normally used to report metrics using Builder Target.
-func RunWithBuilderTarget(ctx context.Context, env *common.Env, def *tryjob.Definition, cb func(context.Context)) {
+func RunWithBuilderMetricsTarget(ctx context.Context, env *common.Env, def *Definition, cb func(context.Context)) {
 	if def.GetBuildbucket() == nil {
 		panic(errors.Reason("only Buildbucket backend is supported. Got %T", def.GetBackend()))
 	}

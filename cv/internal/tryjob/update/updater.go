@@ -163,7 +163,7 @@ func (u *Updater) handleTask(ctx context.Context, task *tryjob.UpdateTryjobTask)
 				}
 			}
 			txndefer.Defer(ctx, func(ctx context.Context) {
-				metrics.RunWithBuilderTarget(ctx, u.env, tj.Definition, func(ctx context.Context) {
+				tryjob.RunWithBuilderMetricsTarget(ctx, u.env, tj.Definition, func(ctx context.Context) {
 					metrics.Public.TryjobEnded.Add(ctx, 1,
 						project,
 						configGroup,

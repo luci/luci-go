@@ -95,7 +95,7 @@ func TestBuilderPresenceAggregator(t *testing.T) {
 
 		Convey("Plain builder", func() {
 			mustReport(lProject)
-			metrics.RunWithBuilderTarget(ctx, ct.Env, tryjobDef, func(ctx context.Context) {
+			tryjob.RunWithBuilderMetricsTarget(ctx, ct.Env, tryjobDef, func(ctx context.Context) {
 				So(ct.TSMonSentValue(ctx, metrics.Public.TryjobBuilderPresence, lProject, configGroupName, false, false, false), ShouldBeTrue)
 			})
 		})
@@ -104,7 +104,7 @@ func TestBuilderPresenceAggregator(t *testing.T) {
 			builder.IncludableOnly = true
 			prjcfgtest.Update(ctx, lProject, config)
 			mustReport(lProject)
-			metrics.RunWithBuilderTarget(ctx, ct.Env, tryjobDef, func(ctx context.Context) {
+			tryjob.RunWithBuilderMetricsTarget(ctx, ct.Env, tryjobDef, func(ctx context.Context) {
 				So(ct.TSMonSentValue(ctx, metrics.Public.TryjobBuilderPresence, lProject, configGroupName, true, false, false), ShouldBeTrue)
 			})
 		})
@@ -115,7 +115,7 @@ func TestBuilderPresenceAggregator(t *testing.T) {
 			})
 			prjcfgtest.Update(ctx, lProject, config)
 			mustReport(lProject)
-			metrics.RunWithBuilderTarget(ctx, ct.Env, tryjobDef, func(ctx context.Context) {
+			tryjob.RunWithBuilderMetricsTarget(ctx, ct.Env, tryjobDef, func(ctx context.Context) {
 				So(ct.TSMonSentValue(ctx, metrics.Public.TryjobBuilderPresence, lProject, configGroupName, false, true, false), ShouldBeTrue)
 			})
 		})
@@ -124,7 +124,7 @@ func TestBuilderPresenceAggregator(t *testing.T) {
 			builder.ExperimentPercentage = 99.9
 			prjcfgtest.Update(ctx, lProject, config)
 			mustReport(lProject)
-			metrics.RunWithBuilderTarget(ctx, ct.Env, tryjobDef, func(ctx context.Context) {
+			tryjob.RunWithBuilderMetricsTarget(ctx, ct.Env, tryjobDef, func(ctx context.Context) {
 				So(ct.TSMonSentValue(ctx, metrics.Public.TryjobBuilderPresence, lProject, configGroupName, false, false, true), ShouldBeTrue)
 			})
 		})

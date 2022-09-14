@@ -188,7 +188,7 @@ func TestHandleTask(t *testing.T) {
 				So(tj.EVersion, ShouldEqual, originalEVersion+1)
 				So(tj.Status, ShouldEqual, tryjob.Status_ENDED)
 				So(tj.Result.Status, ShouldEqual, tryjob.Result_SUCCEEDED)
-				metrics.RunWithBuilderTarget(ctx, ct.Env, tryjobDef, func(ctx context.Context) {
+				tryjob.RunWithBuilderMetricsTarget(ctx, ct.Env, tryjobDef, func(ctx context.Context) {
 					So(ct.TSMonSentValue(ctx, metrics.Public.TryjobEnded, "test", "test_config_group", true, false, string(apiv0pb.Tryjob_Result_SUCCEEDED)), ShouldEqual, 1)
 				})
 			})

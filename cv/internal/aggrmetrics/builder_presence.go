@@ -84,7 +84,7 @@ func reportBuilders(ctx context.Context, env *common.Env, project string, cg *pr
 				},
 			},
 		}
-		metrics.RunWithBuilderTarget(ctx, env, def, func(ctx context.Context) {
+		tryjob.RunWithBuilderMetricsTarget(ctx, env, def, func(ctx context.Context) {
 			metrics.Public.TryjobBuilderPresence.Set(ctx, true,
 				project,
 				cgName,
