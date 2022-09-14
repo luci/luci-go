@@ -17,11 +17,11 @@ import { render, screen } from '@testing-library/react';
 
 import { Analysis } from '../../services/luci_bisection';
 import { AnalysisOverview } from './analysis_overview';
-import { getMockAnalysis } from '../../testing_tools/mocks/analysis_mock';
+import { createMockAnalysis } from '../../testing_tools/mocks/analysis_mock';
 
 describe('Test AnalysisOverview component', () => {
   test('if all analysis summary details are displayed', async () => {
-    const mockAnalysis = getMockAnalysis('1');
+    const mockAnalysis = createMockAnalysis('1');
 
     render(<AnalysisOverview analysis={mockAnalysis} />);
 
@@ -68,7 +68,7 @@ describe('Test AnalysisOverview component', () => {
   });
 
   test('if there are no bugs, then related bugs section is not shown', async () => {
-    let mockAnalysis = getMockAnalysis('2');
+    let mockAnalysis = createMockAnalysis('2');
     mockAnalysis.culpritAction = [];
 
     const { container } = render(<AnalysisOverview analysis={mockAnalysis} />);
@@ -81,7 +81,7 @@ describe('Test AnalysisOverview component', () => {
   });
 
   test('if there is a culprit for the analysis, then it should be the suspect range', async () => {
-    let mockAnalysis = getMockAnalysis('3');
+    let mockAnalysis = createMockAnalysis('3');
     mockAnalysis.culprit = {
       host: 'testHost',
       project: 'testProject',
@@ -99,7 +99,7 @@ describe('Test AnalysisOverview component', () => {
   });
 
   test('if there is a culprit for only the nth section analysis, then it should be the suspect range', async () => {
-    let mockAnalysis = getMockAnalysis('4');
+    let mockAnalysis = createMockAnalysis('4');
     mockAnalysis.nthSectionResult!.culprit = {
       host: 'testHost',
       project: 'testProject',
@@ -117,7 +117,7 @@ describe('Test AnalysisOverview component', () => {
   });
 
   test('if there is no data for the suspect range, then the table cell should be empty', async () => {
-    let mockAnalysis = getMockAnalysis('5');
+    let mockAnalysis = createMockAnalysis('5');
     mockAnalysis.nthSectionResult = undefined;
 
     render(<AnalysisOverview analysis={mockAnalysis} />);

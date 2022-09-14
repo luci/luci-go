@@ -12,17 +12,21 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import fetchMock from 'fetch-mock-jest';
+import { AuthState } from '../../api/auth_state';
 
-import { PrimeSuspect } from '../../services/luci_bisection';
-
-export const createMockPrimeSuspect = (commitID: string): PrimeSuspect => {
+export const createMockAuthState = (): AuthState => {
   return {
-    cl: {
-      commitID: commitID,
-      title: `Mock suspect CL ${commitID}`,
-      reviewURL: `https://chromium-review.googlesource.com/mock_suspect_summary/${commitID}`,
-    },
-    culpritStatus: 'VERIFYING',
-    accuseSource: 'Heuristic',
+    identity: 'user:user@example.com',
+    email: 'user@example.com',
+    picture: '',
+    accessToken: 'token_text_access',
+    accessTokenExpiry: 1648105586,
+    idToken: 'token_text',
+    idTokenExpiry: 1648105586,
   };
+};
+
+export const mockFetchAuthState = () => {
+  fetchMock.get('/api/authState', createMockAuthState());
 };

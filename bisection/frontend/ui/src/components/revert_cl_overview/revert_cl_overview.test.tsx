@@ -18,11 +18,11 @@ import { render, screen } from '@testing-library/react';
 
 import { RevertCL } from '../../services/luci_bisection';
 import { RevertCLOverview } from './revert_cl_overview';
-import { getMockRevertCL } from '../../testing_tools/mocks/revert_cl_mock';
+import { createMockRevertCL } from '../../testing_tools/mocks/revert_cl_mock';
 
 describe('Test ChangeListOverview component', () => {
   test('if all change list details are displayed', async () => {
-    const mockRevertCL = getMockRevertCL('12835');
+    const mockRevertCL = createMockRevertCL('12835');
 
     render(<RevertCLOverview revertCL={mockRevertCL} />);
 

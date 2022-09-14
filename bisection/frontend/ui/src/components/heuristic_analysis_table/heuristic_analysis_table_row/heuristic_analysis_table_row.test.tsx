@@ -20,11 +20,11 @@ import TableBody from '@mui/material/TableBody';
 
 import { HeuristicAnalysisTableRow } from './heuristic_analysis_table_row';
 import { HeuristicSuspect } from '../../../services/luci_bisection';
-import { getMockHeuristicSuspect } from '../../../testing_tools/mocks/heuristic_suspect_mock';
+import { createMockHeuristicSuspect } from '../../../testing_tools/mocks/heuristic_suspect_mock';
 
 describe('Test HeuristicAnalysisTable component', () => {
   test('if the details for a heuristic suspect are displayed', async () => {
-    const mockSuspect: HeuristicSuspect = getMockHeuristicSuspect('ac52e3');
+    const mockSuspect: HeuristicSuspect = createMockHeuristicSuspect('ac52e3');
 
     render(
       <Table>

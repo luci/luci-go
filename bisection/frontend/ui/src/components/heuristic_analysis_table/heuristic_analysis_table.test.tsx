@@ -17,14 +17,14 @@ import '@testing-library/jest-dom';
 import { render, screen } from '@testing-library/react';
 
 import { HeuristicAnalysisTable } from './heuristic_analysis_table';
-import { getMockHeuristicSuspect } from '../../testing_tools/mocks/heuristic_suspect_mock';
+import { createMockHeuristicSuspect } from '../../testing_tools/mocks/heuristic_suspect_mock';
 import { HeuristicAnalysisResult } from '../../services/luci_bisection';
 
 describe('Test HeuristicAnalysisTable component', () => {
   test('if heuristic suspects are displayed', async () => {
     const mockSuspects = [
-      getMockHeuristicSuspect('ac52e3'),
-      getMockHeuristicSuspect('673e20'),
+      createMockHeuristicSuspect('ac52e3'),
+      createMockHeuristicSuspect('673e20'),
     ];
 
     const mockHeuristicAnalysisResult: HeuristicAnalysisResult = {

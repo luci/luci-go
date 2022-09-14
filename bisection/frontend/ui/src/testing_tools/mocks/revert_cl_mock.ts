@@ -15,7 +15,7 @@
 
 import { RevertCL } from '../../services/luci_bisection';
 
-export const getMockRevertCL = (commitID: string): RevertCL => {
+export const createMockRevertCL = (commitID: string): RevertCL => {
   return {
     cl: {
       commitID: commitID,

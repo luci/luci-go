@@ -15,7 +15,9 @@
 
 import { HeuristicSuspect } from '../../services/luci_bisection';
 
-export const getMockHeuristicSuspect = (commitID: string): HeuristicSuspect => {
+export const createMockHeuristicSuspect = (
+  commitID: string
+): HeuristicSuspect => {
   return {
     gitilesCommit: {
       host: 'not.a.real.host',

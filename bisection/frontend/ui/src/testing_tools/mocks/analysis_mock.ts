@@ -12,10 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-
 import { Analysis } from '../../services/luci_bisection';
 
-export const getMockAnalysis = (id: string): Analysis => {
+export const createMockAnalysis = (id: string): Analysis => {
   return {
     analysisId: id,
     status: 'FOUND',
