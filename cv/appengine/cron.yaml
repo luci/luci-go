@@ -1,11 +1,18 @@
 cron:
 - description: Kick off refresh of LUCI Projects and shared service-wide configs.
+  target: default
   url: /internal/cron/refresh-config
   schedule: every 1 minutes
 - description: Sweep transactionally created TQ tasks which would otherwise might be forgotten.
+  target: default
   url: /internal/tasks/c/sweep
   schedule: every 1 minutes
+- description: Report aggregated metrics.
+  target: monitor
+  url: /internal/cron/report-aggregated-metrics
+  schedule: every 1 minutes
 - description: Kick off tasks to listen to Buildbucket Pubsub
+  target: default
   url: /internal/cron/kick-bb-pubsub-listeners
   # The interval should be in sync with the listener running duration defined
   # in `bblistener.ListenDuration` to ensure continuous Buildbucket Pubsub
