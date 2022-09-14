@@ -120,6 +120,9 @@ type CompileFailureAnalysis struct {
 	LastPassedBuildId int64 `gae:"last_passed_build_id"`
 	// Initial regression range to find the culprit
 	InitialRegressionRange *gofinditpb.RegressionRange `gae:"initial_regression_range"`
+	// Key to the heuristic suspects that was verified by Culprit verification
+	// In some rare cases, there are more than 1 culprit for the regression range.
+	VerifiedCulprits []*datastore.Key `gae:"verified_culprits"`
 }
 
 // CompileFailureInRerunBuild is a compile failure in a rerun build.

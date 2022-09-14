@@ -86,6 +86,14 @@ func (server *GoFinditBotServer) UpdateAnalysisProgress(c context.Context, req *
 		return nil, status.Errorf(codes.Internal, "error updating suspect %s", err)
 	}
 
+	if suspect.VerificationStatus == gfim.SuspectVerificationStatus_ConfirmedCulprit {
+		err = updateSuspectAsConfirmedCulprit(c, suspect)
+		if err != nil {
+			logging.Errorf(c, "Error updating suspect as confirmed culprit for rerun build %d: %s", req.Bbid, err)
+			return nil, status.Errorf(codes.Internal, "error updating suspect as confirmed culprit %s", err)
+		}
+	}
+
 	return &gfipb.UpdateAnalysisProgressResponse{}, nil
 }
 
@@ -120,6 +128,27 @@ func updateSuspect(c context.Context, suspect *gfim.Suspect) error {
 	suspectStatus := getSuspectStatus(c, rerunStatus, parentRerunStatus)
 	suspect.VerificationStatus = suspectStatus
 	return datastore.Put(c, suspect)
+}
+
+// updateSuspectAsConfirmedCulprit update the suspect as the confirmed culprit of analysis
+func updateSuspectAsConfirmedCulprit(c context.Context, suspect *gfim.Suspect) error {
+	analysisKey := suspect.ParentAnalysis.Parent()
+	analysis := &gfim.CompileFailureAnalysis{
+		Id: analysisKey.IntID(),
+	}
+	err := datastore.Get(c, analysis)
+	if err != nil {
+		return err
+	}
+	verifiedCulprits := analysis.VerifiedCulprits
+	verifiedCulprits = append(verifiedCulprits, datastore.KeyForObj(c, suspect))
+	if len(verifiedCulprits) > 1 {
+		// Just log the warning here, as it is a rare case
+		logging.Warningf(c, "found more than 2 suspects for analysis %d", analysis.Id)
+	}
+	analysis.VerifiedCulprits = verifiedCulprits
+	analysis.Status = gfipb.AnalysisStatus_FOUND
+	return datastore.Put(c, analysis)
 }
 
 func getSuspectStatus(c context.Context, rerunStatus gfipb.RerunStatus, parentRerunStatus gfipb.RerunStatus) gfim.SuspectVerificationStatus {

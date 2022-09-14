@@ -177,6 +177,25 @@ func GetAnalysisResult(c context.Context, analysis *gfim.CompileFailureAnalysis)
 
 	result.HeuristicResult = heuristicResult
 
+	// Get culprits
+	culprits := make([]*gfipb.Culprit, len(analysis.VerifiedCulprits))
+	for i, culprit := range analysis.VerifiedCulprits {
+		suspect := &gfim.Suspect{
+			Id:             culprit.IntID(),
+			ParentAnalysis: culprit.Parent(),
+		}
+		err = datastore.Get(c, suspect)
+		if err != nil {
+			return nil, err
+		}
+		culprits[i] = &gfipb.Culprit{
+			Commit:      &suspect.GitilesCommit,
+			ReviewUrl:   suspect.ReviewUrl,
+			ReviewTitle: suspect.ReviewTitle,
+		}
+	}
+	result.Culprits = culprits
+
 	// TODO (nqmtuan): query for nth-section result
 
 	// TODO (aredulla): get culprit actions, such as the revert CL for the culprit

@@ -25,6 +25,7 @@ import (
 	. "github.com/smartystreets/goconvey/convey"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"github.com/google/tink/go/aead"
@@ -39,6 +40,7 @@ func TestQueryAnalysis(t *testing.T) {
 	t.Parallel()
 	server := &GoFinditServer{}
 	c := memory.Use(context.Background())
+	datastore.GetTestable(c).AutoIndex(true)
 
 	Convey("No BuildFailure Info", t, func() {
 		req := &gfipb.QueryAnalysisRequest{}
@@ -99,11 +101,30 @@ func TestQueryAnalysis(t *testing.T) {
 		So(datastore.Put(c, compileFailure), ShouldBeNil)
 		datastore.GetTestable(c).CatchupIndexes()
 
+		suspect := &model.Suspect{
+			GitilesCommit: buildbucketpb.GitilesCommit{
+				Host:    "host1",
+				Project: "proj1",
+				Id:      "123xyz",
+			},
+			ReviewUrl:   "http://this/is/review/url",
+			ReviewTitle: "This is review title",
+		}
+		So(datastore.Put(c, suspect), ShouldBeNil)
+		datastore.GetTestable(c).CatchupIndexes()
+
 		compileFailureAnalysis := &model.CompileFailureAnalysis{
 			CompileFailure:     datastore.KeyForObj(c, compileFailure),
 			FirstFailedBuildId: 119,
+			VerifiedCulprits:   []*datastore.Key{datastore.KeyForObj(c, suspect)},
 		}
 		So(datastore.Put(c, compileFailureAnalysis), ShouldBeNil)
+		datastore.GetTestable(c).CatchupIndexes()
+
+		heuristicAnalysis := &model.CompileHeuristicAnalysis{
+			ParentAnalysis: datastore.KeyForObj(c, compileFailureAnalysis),
+		}
+		So(datastore.Put(c, heuristicAnalysis), ShouldBeNil)
 		datastore.GetTestable(c).CatchupIndexes()
 
 		req := &gfipb.QueryAnalysisRequest{
@@ -124,6 +145,16 @@ func TestQueryAnalysis(t *testing.T) {
 			Builder: "android",
 		})
 		So(analysis.BuildFailureType, ShouldEqual, gfipb.BuildFailureType_COMPILE)
+		So(len(analysis.Culprits), ShouldEqual, 1)
+		So(proto.Equal(analysis.Culprits[0], &gfipb.Culprit{
+			Commit: &buildbucketpb.GitilesCommit{
+				Host:    "host1",
+				Project: "proj1",
+				Id:      "123xyz",
+			},
+			ReviewUrl:   "http://this/is/review/url",
+			ReviewTitle: "This is review title",
+		}), ShouldBeTrue)
 	})
 
 	Convey("Analysis found for a similar failure", t, func() {

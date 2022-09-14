@@ -153,6 +153,7 @@ message UpdateAnalysisProgressResponse {
 
 // Analysis result contains result of an analysis
 message Analysis {
+  reserved 11, 12;
   // Id to identify this analysis
   int64 analysis_id = 1;
   // The failure associated with the analysis.
@@ -173,16 +174,27 @@ message Analysis {
   HeuristicAnalysisResult heuristic_result = 9;
   // Result of nth-section analysis
   NthSectionAnalysisResult nth_section_result= 10;
-  // Optional, if status = FOUND
-  buildbucket.v2.GitilesCommit culprit = 11;
-  // Actions we have taken with the culprit.
-  // More than one action may be taken, for example, reverting the culprit and
-  // commenting on the bug.
-  repeated CulpritAction culprit_action = 12;
   // Builder for the first failed build
   buildbucket.v2.BuilderID builder = 13;
   // Type of the failure associated with the analysis
   BuildFailureType build_failure_type = 14;
+  // The culprits for the analysis
+  // For some rare cases, we may get more than one culprits for a regression range.
+  // So we set it as repeated field.
+  repeated Culprit culprits = 15;
+}
+
+message Culprit {
+  // The gitiles commit for the culprit
+  buildbucket.v2.GitilesCommit commit = 1;
+  // The review URL for the culprit  
+  string review_url = 2;
+  // The review title for the culprit
+  string review_title = 3;
+  // Actions we have taken with the culprit.
+  // More than one action may be taken, for example, reverting the culprit and
+  // commenting on the bug.
+  repeated CulpritAction culprit_action = 4;
 }
 
 message HeuristicAnalysisResult {

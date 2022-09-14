@@ -54,7 +54,13 @@ func TestUpdateAnalysisProgress(t *testing.T) {
 	Convey("UpdateAnalysisProgress", t, func() {
 		// Setup the models
 		// Set up suspects
-		heuristicAnalysis := &gfim.CompileHeuristicAnalysis{}
+		analysis := &gfim.CompileFailureAnalysis{}
+		So(datastore.Put(c, analysis), ShouldBeNil)
+		datastore.GetTestable(c).CatchupIndexes()
+
+		heuristicAnalysis := &gfim.CompileHeuristicAnalysis{
+			ParentAnalysis: datastore.KeyForObj(c, analysis),
+		}
 		So(datastore.Put(c, heuristicAnalysis), ShouldBeNil)
 		datastore.GetTestable(c).CatchupIndexes()
 
@@ -156,6 +162,12 @@ func TestUpdateAnalysisProgress(t *testing.T) {
 		So(singleRerun2.Status, ShouldEqual, gfipb.RerunStatus_PASSED)
 		datastore.Get(c, suspect)
 		So(suspect.VerificationStatus, ShouldEqual, gfim.SuspectVerificationStatus_ConfirmedCulprit)
+
+		err = datastore.Get(c, analysis)
+		So(err, ShouldBeNil)
+		So(analysis.Status, ShouldEqual, gfipb.AnalysisStatus_FOUND)
+		So(len(analysis.VerifiedCulprits), ShouldEqual, 1)
+		So(analysis.VerifiedCulprits[0], ShouldResemble, datastore.KeyForObj(c, suspect))
 	})
 
 	Convey("verifyUpdateAnalysisProgressRequest", t, func() {
