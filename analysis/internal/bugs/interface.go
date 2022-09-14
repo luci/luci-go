@@ -50,6 +50,23 @@ type BugUpdateResponse struct {
 	ShouldArchive bool
 }
 
+// UpdateDuplicateSourceRequest represents a request to update the source
+// bug of a duplicate bug (source bug, destination bug) pair, after
+// LUCI Analysis has attempted to merge the failure association rule
+// of the source to the destination.
+type UpdateDuplicateSourceRequest struct {
+	// Bug is the source bug that was merged-into another bug.
+	Bug BugID
+	// ErrorMessage is the error that occured handling the duplicate bug.
+	// If this is set, it will be posted to the bug and bug will marked as
+	// no longer a duplicate to avoid repeately triggering the same error.
+	ErrorMessage string
+	// DestinationRuleID is the rule ID for the destination bug, that the rule
+	// for the source bug was merged into.
+	// Only populated if Error is unset.
+	DestinationRuleID string
+}
+
 var ErrCreateSimulated = errors.New("CreateNew did not create a bug as the bug manager is in simulation mode")
 
 // CreateRequest captures key details of a cluster and its impact,

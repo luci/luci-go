@@ -68,7 +68,7 @@ type BugManager struct {
 // NewBugManager initialises a new bug manager, using the specified
 // monorail client.
 func NewBugManager(client *Client, appID, project string, projectCfg *configpb.ProjectConfig) (*BugManager, error) {
-	g, err := NewGenerator(appID, projectCfg)
+	g, err := NewGenerator(appID, project, projectCfg)
 	if err != nil {
 		return nil, errors.Annotate(err, "create issue generator").Err()
 	}
@@ -233,12 +233,12 @@ func (m *BugManager) GetMergedInto(ctx context.Context, bug bugs.BugID) (*bugs.B
 
 // Unduplicate updates the given bug to no longer be marked as duplicating
 // another bug, posting the given message on the bug.
-func (m *BugManager) Unduplicate(ctx context.Context, bug bugs.BugID, message string) error {
-	if bug.System != bugs.MonorailSystem {
+func (m *BugManager) UpdateDuplicateSource(ctx context.Context, request bugs.UpdateDuplicateSourceRequest) error {
+	if request.Bug.System != bugs.MonorailSystem {
 		// Indicates an implementation error with the caller.
 		panic("monorail bug manager can only deal with monorail bugs")
 	}
-	req, err := m.generator.MarkAvailable(bug.ID, message)
+	req, err := m.generator.UpdateDuplicateSource(request.Bug.ID, request.ErrorMessage, request.DestinationRuleID)
 	if err != nil {
 		return errors.Annotate(err, "mark issue as available").Err()
 	}
@@ -246,7 +246,26 @@ func (m *BugManager) Unduplicate(ctx context.Context, bug bugs.BugID, message st
 		logging.Debugf(ctx, "Would update Monorail issue: %s", textPBMultiline.Format(req))
 	} else {
 		if err := m.client.ModifyIssues(ctx, req); err != nil {
-			return errors.Annotate(err, "failed to unduplicate monorail issue %s", bug.ID).Err()
+			return errors.Annotate(err, "failed to update duplicate source monorail issue %s", request.Bug.ID).Err()
+		}
+	}
+	return nil
+}
+
+func (m *BugManager) UpdateDuplicateDestination(ctx context.Context, destinationBug bugs.BugID) error {
+	if destinationBug.System != bugs.MonorailSystem {
+		// Indicates an implementation error with the caller.
+		panic("monorail bug manager can only deal with monorail bugs")
+	}
+	req, err := m.generator.UpdateDuplicateDestination(destinationBug.ID)
+	if err != nil {
+		return errors.Annotate(err, "mark issue as available").Err()
+	}
+	if m.Simulate {
+		logging.Debugf(ctx, "Would update Monorail issue: %s", textPBMultiline.Format(req))
+	} else {
+		if err := m.client.ModifyIssues(ctx, req); err != nil {
+			return errors.Annotate(err, "failed to update duplicate destination monorail issue %s", destinationBug.ID).Err()
 		}
 	}
 	return nil

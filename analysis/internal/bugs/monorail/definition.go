@@ -33,6 +33,14 @@ const (
 
 This bug has been automatically filed by LUCI Analysis in response to a cluster of test failures.`
 
+	SourceBugRuleUpdatedTemplate = `Because this bug was merged into another bug, LUCI Analysis has` +
+		` merged the failure association rule for this bug into the rule for the canonical bug.
+
+See failure impact and configure the failure association rule for the canoncial bug at: %s`
+
+	DestinationBugRuleUpdatedMessage = `Because another bug was merged into this bug, LUCI Analysis has` +
+		` merged the failure association rule for that bug into the rule for this bug.`
+
 	LinkTemplate = `See failure impact and configure the failure association rule for this bug at: %s`
 )
 
@@ -99,6 +107,9 @@ var ArchivedStatuses = map[string]struct{}{
 type Generator struct {
 	// The GAE app id, e.g. "luci-analysis".
 	appID string
+	// The LUCI project for which we are generating bug updates. This
+	// is distinct from the monorail project.
+	project string
 	// The monorail configuration to use.
 	monorailCfg *configpb.MonorailProject
 	// The threshold at which bugs are filed. Used here as the threshold
@@ -107,12 +118,13 @@ type Generator struct {
 }
 
 // NewGenerator initialises a new Generator.
-func NewGenerator(appID string, projectCfg *configpb.ProjectConfig) (*Generator, error) {
+func NewGenerator(appID, project string, projectCfg *configpb.ProjectConfig) (*Generator, error) {
 	if len(projectCfg.Monorail.Priorities) == 0 {
 		return nil, fmt.Errorf("invalid configuration for monorail project %q; no monorail priorities configured", projectCfg.Monorail.Project)
 	}
 	return &Generator{
 		appID:              appID,
+		project:            project,
 		monorailCfg:        projectCfg.Monorail,
 		bugFilingThreshold: projectCfg.BugFilingThreshold,
 	}, nil
@@ -194,9 +206,10 @@ func (g *Generator) PrepareLinkComment(bugName string) (*mpb.ModifyIssuesRequest
 	return result, nil
 }
 
-// MarkAvailable prepares a request that puts the bug in an
-// available state and adds the given message.
-func (g *Generator) MarkAvailable(bugName, message string) (*mpb.ModifyIssuesRequest, error) {
+// UpdateDuplicateSource updates the source bug of a (source, destination)
+// duplicate bug pair, after LUCI Analysis has attempted to merge their
+// failure association rules.
+func (g *Generator) UpdateDuplicateSource(bugName, errorMessage, destinationRuleID string) (*mpb.ModifyIssuesRequest, error) {
 	name, err := toMonorailIssueName(bugName)
 	if err != nil {
 		return nil, err
@@ -205,20 +218,58 @@ func (g *Generator) MarkAvailable(bugName, message string) (*mpb.ModifyIssuesReq
 	delta := &mpb.IssueDelta{
 		Issue: &mpb.Issue{
 			Name: name,
-			Status: &mpb.Issue_StatusValue{
-				Status: "Available",
-			},
 		},
 		UpdateMask: &field_mask.FieldMask{
-			Paths: []string{"status"},
+			Paths: []string{},
 		},
 	}
+	var comment string
+	if errorMessage != "" {
+		delta.Issue.Status = &mpb.Issue_StatusValue{
+			Status: "Available",
+		}
+		delta.UpdateMask.Paths = append(delta.UpdateMask.Paths, "status")
+		comment = strings.Join([]string{errorMessage, g.linkToRuleComment(bugName)}, "\n\n")
+	} else {
+		bugLink := fmt.Sprintf("https://%s.appspot.com/p/%s/rules/%s", g.appID, g.project, destinationRuleID)
+		comment = fmt.Sprintf(SourceBugRuleUpdatedTemplate, bugLink)
+	}
+
 	req := &mpb.ModifyIssuesRequest{
 		Deltas: []*mpb.IssueDelta{
 			delta,
 		},
 		NotifyType:     mpb.NotifyType_EMAIL,
-		CommentContent: strings.Join([]string{message, g.linkToRuleComment(bugName)}, "\n\n"),
+		CommentContent: comment,
+	}
+	return req, nil
+}
+
+// UpdateDuplicateDestination updates the destination bug of a
+// (source, destination) duplicate bug pair, after LUCI Analysis has attempted
+// to merge their failure association rules.
+func (g *Generator) UpdateDuplicateDestination(bugName string) (*mpb.ModifyIssuesRequest, error) {
+	name, err := toMonorailIssueName(bugName)
+	if err != nil {
+		return nil, err
+	}
+
+	delta := &mpb.IssueDelta{
+		Issue: &mpb.Issue{
+			Name: name,
+		},
+		UpdateMask: &field_mask.FieldMask{
+			Paths: []string{},
+		},
+	}
+
+	comment := strings.Join([]string{DestinationBugRuleUpdatedMessage, g.linkToRuleComment(bugName)}, "\n\n")
+	req := &mpb.ModifyIssuesRequest{
+		Deltas: []*mpb.IssueDelta{
+			delta,
+		},
+		NotifyType:     mpb.NotifyType_EMAIL,
+		CommentContent: comment,
 	}
 	return req, nil
 }

@@ -76,10 +76,23 @@ type BugManager interface {
 	// is merged into (if it exists and there is no cycle in the bug
 	// merged-into graph).
 	GetMergedInto(ctx context.Context, bug bugs.BugID) (*bugs.BugID, error)
-	// Unduplicate updates a bug to no longer be a duplicate of
-	// another a bug. This provides a way for LUCI Analysis to surface
-	// duplicate bugs it cannot deal with for human intervention.
-	Unduplicate(ctx context.Context, bug bugs.BugID, message string) error
+	// UpdateDuplicateSource updates the source bug of a duplicate
+	// bug relationship.
+	// It normally posts a message advising the user LUCI Analysis
+	// has merged the rule for the source bug to the destination
+	// (merged-into) bug, and provides a new link to the failure
+	// association rule.
+	// If a cycle was detected, it instead posts a message that the
+	// duplicate bug could not be handled and marks the bug no
+	// longer a duplicate to break the cycle.
+	UpdateDuplicateSource(ctx context.Context, request bugs.UpdateDuplicateSourceRequest) error
+	// UpdateDuplicateDestination updates the destination bug of a duplicate
+	// bug relationship.
+	// It posts a message advising the user LUCI Analysis
+	// has merged the rule for the source bug to the destination
+	// (merged-into) bug, and provides a link to the failure
+	// association rule.
+	UpdateDuplicateDestination(ctx context.Context, destinationBug bugs.BugID) error
 }
 
 // BugUpdater performs updates to Monorail bugs and failure association
@@ -249,14 +262,8 @@ func (b *BugUpdater) Run(ctx context.Context, progress *runs.ReclusteringProgres
 	// Handle bugs marked as duplicate.
 	for _, bug := range duplicateBugs {
 		err := b.handleDuplicateBug(ctx, bug)
-		if err != nil && err != mergeIntoCycleErr {
+		if err != nil {
 			return errors.Annotate(err, "handling bug (%s) marked as duplicate", bug).Err()
-		}
-		if err == mergeIntoCycleErr {
-			err := b.unduplicateBug(ctx, bug, mergeIntoCycleMessage)
-			if err != nil {
-				return errors.Annotate(err, "unduplicating bug %s", bug).Err()
-			}
 		}
 	}
 
@@ -380,15 +387,27 @@ func (b *BugUpdater) archiveRules(ctx context.Context, ruleIDs []string) error {
 
 // handleDuplicateBug handles a duplicate bug, merging its failure association
 // rule with the bug it is ultimately merged into (creating the rule if it does
-// not exist). The original rule is disabled.
+// not exist). The original rule is archived.
 func (b *BugUpdater) handleDuplicateBug(ctx context.Context, bug bugs.BugID) error {
 	// Chase the bug merged-into graph until we find the sink of the graph.
 	// (The canonical bug of the chain of duplicate bugs.)
 	destBug, err := b.resolveMergedIntoBug(ctx, bug)
 	if err != nil {
-		// E.g. a cycle was found in the graph.
+		if err == mergeIntoCycleErr {
+			request := bugs.UpdateDuplicateSourceRequest{
+				Bug:          bug,
+				ErrorMessage: mergeIntoCycleMessage,
+			}
+			if err := b.updateDuplicateSource(ctx, request); err != nil {
+				return errors.Annotate(err, "update source bug after a cycle was found").Err()
+			}
+			return nil
+		}
 		return err
 	}
+
+	var destinationBugRuleID string
+
 	f := func(ctx context.Context) error {
 		sourceRule, _, err := readRuleForBugAndProject(ctx, bug, b.project)
 		if err != nil {
@@ -425,8 +444,11 @@ func (b *BugUpdater) handleDuplicateBug(ctx context.Context, bug bugs.BugID) err
 				// Indicates validation error. Should never happen.
 				return err
 			}
+
+			destinationBugRuleID = sourceRule.RuleID
 			return nil
 		} else {
+			// The bug we are a duplicate of already has a rule.
 			if destinationRule.IsActive {
 				// Merge the source and destination rules with an "OR".
 				// Note that this is only valid because OR is the operator
@@ -456,12 +478,32 @@ func (b *BugUpdater) handleDuplicateBug(ctx context.Context, bug bugs.BugID) err
 			// Update the rule on the destination rule.
 			destinationRule.IsActive = true
 			err = rules.Update(ctx, destinationRule, updatePredicate, rules.LUCIAnalysisSystem)
-			return err
+			if err != nil {
+				return err
+			}
+
+			destinationBugRuleID = destinationRule.RuleID
+			return nil
 		}
 	}
 	// Update source and destination rules in one transaction, to ensure
 	// consistency.
 	_, err = span.ReadWriteTransaction(ctx, f)
+	if err != nil {
+		return err
+	}
+
+	request := bugs.UpdateDuplicateSourceRequest{
+		Bug:               bug,
+		DestinationRuleID: destinationBugRuleID,
+	}
+	if err := b.updateDuplicateSource(ctx, request); err != nil {
+		return errors.Annotate(err, "updating source bug").Err()
+	}
+	if err := b.updateDuplicateDestination(ctx, destBug); err != nil {
+		return errors.Annotate(err, "updating destination bug %s", destBug).Err()
+	}
+
 	return err
 }
 
@@ -509,16 +551,37 @@ func (b *BugUpdater) resolveMergedIntoBug(ctx context.Context, bug bugs.BugID) (
 	return mergedIntoBug, nil
 }
 
-// unduplicateBug attempts to unduplicate a bug, posting the given message
-// on the bug. This allows the system to push back and surface errors
-// when it cannot handle a bug being deduplicated into another and the user
-// needs to manually intervene.
-func (b *BugUpdater) unduplicateBug(ctx context.Context, bug bugs.BugID, message string) error {
-	manager, ok := b.managers[bug.System]
+// updateDuplicateSource updates the source bug of a duplicate
+// bug pair (source bug, destination bug).
+// It either posts a message notifying the user the rule was successfully
+// merged to the destination, or notifies the user of the error and
+// marks the bug no longer a duplicate (to avoid repeated attempts to
+// handle the problematic duplicate bug).
+func (b *BugUpdater) updateDuplicateSource(ctx context.Context, request bugs.UpdateDuplicateSourceRequest) error {
+	manager, ok := b.managers[request.Bug.System]
 	if !ok {
-		return fmt.Errorf("encountered unknown bug system: %q", bug.System)
+		return fmt.Errorf("encountered unknown bug system: %q", request.Bug.System)
 	}
-	err := manager.Unduplicate(ctx, bug, message)
+	err := manager.UpdateDuplicateSource(ctx, request)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+// updateDuplicateDestination updates the destination bug of a duplicate
+// bug pair (source bug, destination bug).
+// It posts a message notifying the user the rule was successfully
+// merged to the destination.
+func (b *BugUpdater) updateDuplicateDestination(ctx context.Context, destinationBug bugs.BugID) error {
+	manager, ok := b.managers[destinationBug.System]
+	if !ok {
+		// Not all destination bug systems need to be supported
+		// in order to be able to merge a bug there. We simply
+		// won't be able to post an update there.
+		return nil
+	}
+	err := manager.UpdateDuplicateDestination(ctx, destinationBug)
 	if err != nil {
 		return err
 	}

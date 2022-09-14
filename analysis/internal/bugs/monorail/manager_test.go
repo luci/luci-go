@@ -587,7 +587,7 @@ func TestManager(t *testing.T) {
 				So(result, ShouldBeNil)
 			})
 		})
-		Convey("Unduplicate", func() {
+		Convey("UpdateDuplicateSource", func() {
 			c := NewCreateRequest()
 			c.Impact = ChromiumP2Impact()
 			bug, err := bm.Create(ctx, c)
@@ -601,13 +601,51 @@ func TestManager(t *testing.T) {
 				Issue: "projects/testproject/issues/99",
 			}
 
+			Convey("With ErrorMessage", func() {
+				request := bugs.UpdateDuplicateSourceRequest{
+					Bug:          bugs.BugID{System: bugs.MonorailSystem, ID: "chromium/100"},
+					ErrorMessage: "Some error.",
+				}
+				err = bm.UpdateDuplicateSource(ctx, request)
+				So(err, ShouldBeNil)
+
+				So(f.Issues[0].Issue.Status.Status, ShouldNotEqual, DuplicateStatus)
+				So(f.Issues[0].Comments, ShouldHaveLength, 3)
+				So(f.Issues[0].Comments[2].Content, ShouldContainSubstring, "Some error.")
+				So(f.Issues[0].Comments[2].Content, ShouldContainSubstring,
+					"https://luci-analysis-test.appspot.com/b/chromium/100")
+			})
+			Convey("Without ErrorMessage", func() {
+				request := bugs.UpdateDuplicateSourceRequest{
+					Bug:               bugs.BugID{System: bugs.MonorailSystem, ID: "chromium/100"},
+					DestinationRuleID: "12345abcdef",
+				}
+				err = bm.UpdateDuplicateSource(ctx, request)
+				So(err, ShouldBeNil)
+
+				So(f.Issues[0].Issue.Status.Status, ShouldEqual, DuplicateStatus)
+				So(f.Issues[0].Comments, ShouldHaveLength, 3)
+				So(f.Issues[0].Comments[2].Content, ShouldContainSubstring, "merged the failure association rule for this bug into the rule for the canonical bug.")
+				So(f.Issues[0].Comments[2].Content, ShouldContainSubstring,
+					"https://luci-analysis-test.appspot.com/p/luciproject/rules/12345abcdef")
+			})
+		})
+		Convey("UpdateDuplicateDestination", func() {
+			c := NewCreateRequest()
+			c.Impact = ChromiumP2Impact()
+			bug, err := bm.Create(ctx, c)
+			So(err, ShouldBeNil)
+			So(bug, ShouldEqual, "chromium/100")
+			So(f.Issues, ShouldHaveLength, 1)
+			So(f.Issues[0].Comments, ShouldHaveLength, 2)
+
 			bugID := bugs.BugID{System: bugs.MonorailSystem, ID: "chromium/100"}
-			err = bm.Unduplicate(ctx, bugID, "Some comment.")
+			err = bm.UpdateDuplicateDestination(ctx, bugID)
 			So(err, ShouldBeNil)
 
 			So(f.Issues[0].Issue.Status, ShouldNotEqual, DuplicateStatus)
 			So(f.Issues[0].Comments, ShouldHaveLength, 3)
-			So(f.Issues[0].Comments[2].Content, ShouldContainSubstring, "Some comment.")
+			So(f.Issues[0].Comments[2].Content, ShouldContainSubstring, "merged the failure association rule for that bug into the rule for this bug.")
 			So(f.Issues[0].Comments[2].Content, ShouldContainSubstring,
 				"https://luci-analysis-test.appspot.com/b/chromium/100")
 		})

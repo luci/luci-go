@@ -709,6 +709,13 @@ func TestRun(t *testing.T) {
 					expectedRules[1].IsActive = false
 					expectedRules[2].RuleDefinition = "reason LIKE \"want foofoo, got bar\" OR\nreason LIKE \"want foo, got bar\""
 					expectRules(expectedRules)
+
+					So(f.Issues[1].Comments, ShouldHaveLength, 3)
+					So(f.Issues[1].Comments[2].Content, ShouldContainSubstring, "LUCI Analysis has merged the failure association rule for this bug into the rule for the canonical bug.")
+					So(f.Issues[1].Comments[2].Content, ShouldContainSubstring, expectedRules[2].RuleID)
+
+					So(f.Issues[2].Comments, ShouldHaveLength, 3)
+					So(f.Issues[2].Comments[2].Content, ShouldContainSubstring, "LUCI Analysis has merged the failure association rule for that bug into the rule for this bug.")
 				})
 				Convey("Bug marked as duplicate of bug without a rule in this project", func() {
 					// Setup
@@ -742,6 +749,10 @@ func TestRun(t *testing.T) {
 						expectedRules[1].BugID = bugs.BugID{System: "buganizer", ID: "1234"}
 						expectedRules[1].IsManagingBug = false // Let the other rule continue to manage the bug.
 						expectRules(expectedRules)
+
+						So(f.Issues[1].Comments, ShouldHaveLength, 3)
+						So(f.Issues[1].Comments[2].Content, ShouldContainSubstring, "LUCI Analysis has merged the failure association rule for this bug into the rule for the canonical bug.")
+						So(f.Issues[1].Comments[2].Content, ShouldContainSubstring, expectedRules[1].RuleID)
 					})
 					Convey("Bug not managed by a rule in another project", func() {
 						// Act
@@ -752,6 +763,10 @@ func TestRun(t *testing.T) {
 						expectedRules[1].BugID = bugs.BugID{System: "buganizer", ID: "1234"}
 						expectedRules[1].IsManagingBug = true
 						expectRules(expectedRules)
+
+						So(f.Issues[1].Comments, ShouldHaveLength, 3)
+						So(f.Issues[1].Comments[2].Content, ShouldContainSubstring, "LUCI Analysis has merged the failure association rule for this bug into the rule for the canonical bug.")
+						So(f.Issues[1].Comments[2].Content, ShouldContainSubstring, expectedRules[1].RuleID)
 					})
 				})
 				Convey("Bug marked as duplicate in a cycle", func() {
@@ -781,14 +796,16 @@ func TestRun(t *testing.T) {
 					// Verify
 					// Issue one kicked out of duplicate status.
 					So(issueOne.Status.Status, ShouldNotEqual, monorail.DuplicateStatus)
-					So(f.Issues[1].Comments, ShouldHaveLength, 3)
-					So(f.Issues[1].Comments[2].Content, ShouldContainSubstring, "a cycle was detected in the bug merged-into graph")
 
 					// As the cycle is now broken, issue two is merged into
 					// issue one.
 					expectedRules[1].RuleDefinition = "reason LIKE \"want foo, got bar\" OR\nreason LIKE \"want foofoo, got bar\""
 					expectedRules[2].IsActive = false
 					expectRules(expectedRules)
+
+					So(f.Issues[1].Comments, ShouldHaveLength, 4)
+					So(f.Issues[1].Comments[2].Content, ShouldContainSubstring, "a cycle was detected in the bug merged-into graph")
+					So(f.Issues[1].Comments[3].Content, ShouldContainSubstring, "LUCI Analysis has merged the failure association rule for that bug into the rule for this bug.")
 				})
 				Convey("Bug marked as archived should archive rule", func() {
 					issueOne := f.Issues[1].Issue
