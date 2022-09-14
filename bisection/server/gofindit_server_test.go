@@ -101,7 +101,7 @@ func TestQueryAnalysis(t *testing.T) {
 
 		compileFailureAnalysis := &model.CompileFailureAnalysis{
 			CompileFailure:     datastore.KeyForObj(c, compileFailure),
-			FirstFailedBuildId: 123,
+			FirstFailedBuildId: 119,
 		}
 		So(datastore.Put(c, compileFailureAnalysis), ShouldBeNil)
 		datastore.GetTestable(c).CatchupIndexes()

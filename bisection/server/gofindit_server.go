@@ -122,20 +122,20 @@ func GetAnalysisResult(c context.Context, analysis *gfim.CompileFailureAnalysis)
 		LastPassedBbid:  analysis.LastPassedBuildId,
 	}
 
-	// Check whether the analysis has an associated first failed build
-	if analysis.FirstFailedBuildId != 0 {
-		// Add details from first failed build
-		firstFailedBuild, err := GetBuild(c, analysis.FirstFailedBuildId)
+	// Populate Builder and BuildFailureType data
+	if analysis.CompileFailure != nil && analysis.CompileFailure.Parent() != nil {
+		// Add details from associated compile failure
+		failedBuild, err := GetBuild(c, analysis.CompileFailure.Parent().IntID())
 		if err != nil {
 			return nil, err
 		}
-		if firstFailedBuild != nil {
+		if failedBuild != nil {
 			result.Builder = &buildbucketpb.BuilderID{
-				Project: firstFailedBuild.Project,
-				Bucket:  firstFailedBuild.Bucket,
-				Builder: firstFailedBuild.Builder,
+				Project: failedBuild.Project,
+				Bucket:  failedBuild.Bucket,
+				Builder: failedBuild.Builder,
 			}
-			result.BuildFailureType = firstFailedBuild.BuildFailureType
+			result.BuildFailureType = failedBuild.BuildFailureType
 		}
 	}
 
