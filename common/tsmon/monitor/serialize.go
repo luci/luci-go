@@ -103,8 +103,23 @@ func SerializeDataSet(c types.Cell) *pb.MetricsDataSet {
 
 	if c.Units.IsSpecified() {
 		d.Annotations = &pb.Annotations{
-			Unit:      proto.String(string(c.Units)),
-			Timestamp: proto.Bool(c.Units.IsTime()),
+			Unit: proto.String(string(c.Units)),
+			// Annotation.Timestamp can be true only if ValueType == Int or
+			// Float types. Distribution is a collection of Float values, and is
+			// often used to track the durations of certain events, such as
+			// RPC duration.
+			//
+			// However, distribution itself is not a time value, and, therefore,
+			// Annotation.Timestamp must not be True in any metrics with
+			// ValueType_DISTRIBUTION.
+			//
+			// This sets isTimeUnit with False for distribution metrics, so that
+			// the monitoring UI will display the time unit string beside
+			// the Y-Axis for distribution metrics. It won't be able to adjust
+			// the time scale, though.
+			Timestamp: proto.Bool(
+				*d.ValueType != pb.ValueType_DISTRIBUTION && c.Units.IsTime(),
+			),
 		}
 	}
 	return &d

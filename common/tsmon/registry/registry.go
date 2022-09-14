@@ -49,8 +49,8 @@ func Add(m types.Metric) {
 
 	if _, ok := registry[key]; ok {
 		panic(fmt.Sprintf(
-			"A metric with %q and %q was already registered",
-			m.Info().Name, m.Info().TargetType,
+			"A metric %q with target %q was already registered",
+			m.Info().Name, m.Info().TargetType.Name,
 		))
 	}
 	registry[key] = m

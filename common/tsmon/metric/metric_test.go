@@ -379,3 +379,26 @@ func TestMetricWithRegistry(t *testing.T) {
 		})
 	})
 }
+
+func TestMetricsWithTimeUnit(t *testing.T) {
+	t.Parallel()
+	anno := &types.MetricMetadata{Units: types.Seconds}
+
+	Convey("check", t, func() {
+		Convey("with types that time unit can be given to", func() {
+			NewInt("time/int", "desc", anno)
+			NewCounter("time/counter", "desc", anno)
+			NewFloat("time/float", "desc", anno)
+			NewFloatCounter("time/float_counter", "desc", anno)
+
+			bkt := distribution.FixedWidthBucketer(10, 20)
+			NewCumulativeDistribution("time/cdist", "desc", anno, bkt)
+			NewNonCumulativeDistribution("time/ncdist", "desc", anno, bkt)
+		})
+
+		Convey("with types that should panic if a time unit is given", func() {
+			So(func() { NewString("time/string", "desc", anno) }, ShouldPanic)
+			So(func() { NewBool("time/bool", "desc", anno) }, ShouldPanic)
+		})
+	})
+}

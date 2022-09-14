@@ -373,4 +373,126 @@ func TestSerializeCell(t *testing.T) {
 			}},
 		}})
 	})
+
+	Convey("CumulativeDistribution", t, func() {
+		d := distribution.New(distribution.FixedWidthBucketer(10, 20))
+		d.Add(1024)
+		ret := SerializeCells([]types.Cell{{
+			MetricInfo: types.MetricInfo{
+				Name:        "foo",
+				Description: "bar",
+				Fields:      []field.Field{},
+				ValueType:   types.CumulativeDistributionType,
+			},
+			MetricMetadata: types.MetricMetadata{
+				Units: types.Seconds,
+			},
+			CellData: types.CellData{
+				FieldVals: []interface{}{},
+				Target:    &target.Task{},
+				ResetTime: reset,
+				Value:     d,
+			},
+		}}, now)
+		So(ret, ShouldResemble, []*pb.MetricsCollection{{
+			RootLabels: emptyTaskRootLabels,
+			MetricsDataSet: []*pb.MetricsDataSet{{
+				MetricName:      proto.String("/chrome/infra/foo"),
+				FieldDescriptor: []*pb.MetricsDataSet_MetricFieldDescriptor{},
+				StreamKind:      pb.StreamKind_CUMULATIVE.Enum(),
+				ValueType:       pb.ValueType_DISTRIBUTION.Enum(),
+				Description:     proto.String("bar"),
+				Annotations: &pb.Annotations{
+					Unit: proto.String(string(types.Seconds)),
+					// serializeCells() should have set timestamp with true,
+					// although it is types.Seconds.
+					Timestamp: proto.Bool(false),
+				},
+				Data: []*pb.MetricsData{{
+					Value: &pb.MetricsData_DistributionValue{
+						DistributionValue: &pb.MetricsData_Distribution{
+							Count: proto.Int64(1),
+							Mean:  proto.Float64(1024),
+							BucketOptions: &pb.MetricsData_Distribution_LinearBuckets{
+								LinearBuckets: &pb.MetricsData_Distribution_LinearOptions{
+									NumFiniteBuckets: proto.Int32(20),
+									Width:            proto.Float64(10),
+									Offset:           proto.Float64(0),
+								},
+							},
+							BucketCount: []int64{
+								0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+								0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+								0, 1,
+							},
+						},
+					},
+					Field:          []*pb.MetricsData_MetricField{},
+					StartTimestamp: resetTS,
+					EndTimestamp:   nowTS,
+				}},
+			}},
+		}})
+	})
+
+	Convey("NonCumulativeDistribution", t, func() {
+		d := distribution.New(distribution.FixedWidthBucketer(10, 20))
+		d.Add(1024)
+		ret := SerializeCells([]types.Cell{{
+			MetricInfo: types.MetricInfo{
+				Name:        "foo",
+				Description: "bar",
+				Fields:      []field.Field{},
+				ValueType:   types.NonCumulativeDistributionType,
+			},
+			MetricMetadata: types.MetricMetadata{
+				Units: types.Seconds,
+			},
+			CellData: types.CellData{
+				FieldVals: []interface{}{},
+				Target:    &target.Task{},
+				ResetTime: reset,
+				Value:     d,
+			},
+		}}, now)
+		So(ret, ShouldResemble, []*pb.MetricsCollection{{
+			RootLabels: emptyTaskRootLabels,
+			MetricsDataSet: []*pb.MetricsDataSet{{
+				MetricName:      proto.String("/chrome/infra/foo"),
+				FieldDescriptor: []*pb.MetricsDataSet_MetricFieldDescriptor{},
+				StreamKind:      pb.StreamKind_GAUGE.Enum(),
+				ValueType:       pb.ValueType_DISTRIBUTION.Enum(),
+				Description:     proto.String("bar"),
+				Annotations: &pb.Annotations{
+					Unit: proto.String(string(types.Seconds)),
+					// serializeCells() should have set timestamp with true,
+					// although it is types.Seconds.
+					Timestamp: proto.Bool(false),
+				},
+				Data: []*pb.MetricsData{{
+					Value: &pb.MetricsData_DistributionValue{
+						DistributionValue: &pb.MetricsData_Distribution{
+							Count: proto.Int64(1),
+							Mean:  proto.Float64(1024),
+							BucketOptions: &pb.MetricsData_Distribution_LinearBuckets{
+								LinearBuckets: &pb.MetricsData_Distribution_LinearOptions{
+									NumFiniteBuckets: proto.Int32(20),
+									Width:            proto.Float64(10),
+									Offset:           proto.Float64(0),
+								},
+							},
+							BucketCount: []int64{
+								0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+								0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+								0, 1,
+							},
+						},
+					},
+					Field:          []*pb.MetricsData_MetricField{},
+					StartTimestamp: nowTS,
+					EndTimestamp:   nowTS,
+				}},
+			}},
+		}})
+	})
 }

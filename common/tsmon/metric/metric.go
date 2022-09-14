@@ -23,25 +23,27 @@
 // correct types, or the setter function will panic.
 //
 // Example:
-//   var (
-//     requests = metric.NewCounterWithTargetType("myapp/requests",
-//       "Number of requests",
-//       nil,
-//       field.String("status"),
-//       types.TaskType),
-//   )
-//   ...
-//   func handleRequest() {
-//     if success {
-//       requests.Add(1, "success")
-//     } else {
-//       requests.Add(1, "failure")
-//     }
-//   }
+//
+//	var (
+//	  requests = metric.NewCounterWithTargetType("myapp/requests",
+//	    "Number of requests",
+//	    nil,
+//	    field.String("status"),
+//	    types.TaskType),
+//	)
+//	...
+//	func handleRequest() {
+//	  if success {
+//	    requests.Add(1, "success")
+//	  } else {
+//	    requests.Add(1, "failure")
+//	  }
+//	}
 package metric
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"go.chromium.org/luci/common/tsmon"
@@ -215,9 +217,16 @@ func NewString(name string, description string, metadata *types.MetricMetadata, 
 }
 
 // NewStringWithTargetType returns a new string-valued metric with a given TargetType
+//
+// Panics if metadata is set with a timestamp unit.
 func NewStringWithTargetType(name string, targetType types.TargetType, description string, metadata *types.MetricMetadata, fields ...field.Field) String {
 	if metadata == nil {
 		metadata = &types.MetricMetadata{}
+	}
+	if metadata.Units.IsTime() {
+		panic(fmt.Errorf(
+			"timeunit %q cannot be given to string-valued metric %q",
+			metadata.Units, name))
 	}
 	m := &stringMetric{metric{
 		MetricInfo: types.MetricInfo{
@@ -239,9 +248,16 @@ func NewBool(name string, description string, metadata *types.MetricMetadata, fi
 }
 
 // NewBoolWithTargetType returns a new bool-valued metric with a given TargetType.
+//
+// Panics if metadata is set with a timestamp unit.
 func NewBoolWithTargetType(name string, targetType types.TargetType, description string, metadata *types.MetricMetadata, fields ...field.Field) Bool {
 	if metadata == nil {
 		metadata = &types.MetricMetadata{}
+	}
+	if metadata.Units.IsTime() {
+		panic(fmt.Errorf(
+			"timeunit %q cannot be given to bool-valued metric %q",
+			metadata.Units, name))
 	}
 	m := &boolMetric{metric{
 		MetricInfo: types.MetricInfo{
