@@ -20,7 +20,7 @@ import Link from '@mui/material/Link';
 import TableCell from '@mui/material/TableCell';
 import TableRow from '@mui/material/TableRow';
 
-import { getCommitShortHash } from '../../../tools/link_constructors';
+import { getCommitShortHash } from '../../../tools/commit_formatters';
 import { HeuristicSuspect } from '../../../services/luci_bisection';
 
 interface Props {

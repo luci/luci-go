@@ -27,7 +27,7 @@ import TableRow from '@mui/material/TableRow';
 
 import { NoDataMessageRow } from '../no_data_message_row/no_data_message_row';
 import { Analysis } from '../../services/luci_bisection';
-import { linkToBuilder } from '../../tools/link_constructors';
+import { EMPTY_LINK, linkToBuilder } from '../../tools/link_constructors';
 import {
   getFormattedDuration,
   getFormattedTimestamp,
@@ -42,7 +42,11 @@ interface AnalysisTableProps {
 }
 
 const AnalysisRow = ({ analysis }: AnalysisRowProps) => {
-  const builderLink = linkToBuilder(analysis.builder);
+  let builderLink = EMPTY_LINK;
+  if (analysis.builder) {
+    builderLink = linkToBuilder(analysis.builder);
+  }
+
   return (
     <TableRow key={analysis.analysisId} hover>
       <TableCell>

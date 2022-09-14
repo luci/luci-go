@@ -24,6 +24,7 @@ import { Analysis } from '../../services/luci_bisection';
 import { PlainTable } from '../plain_table/plain_table';
 
 import {
+  EMPTY_LINK,
   ExternalLink,
   linkToBuild,
   linkToBuilder,
@@ -47,7 +48,11 @@ function getSuspectRange(analysis: Analysis): ExternalLink {
       return linkToCommit(result.culprit);
     }
 
-    if (result.remainingNthSectionRange) {
+    if (
+      result.remainingNthSectionRange &&
+      result.remainingNthSectionRange.lastPassed &&
+      result.remainingNthSectionRange.firstFailed
+    ) {
       return linkToCommitRange(
         result.remainingNthSectionRange.lastPassed,
         result.remainingNthSectionRange.firstFailed
@@ -55,10 +60,7 @@ function getSuspectRange(analysis: Analysis): ExternalLink {
     }
   }
 
-  return {
-    linkText: '',
-    url: '',
-  };
+  return EMPTY_LINK;
 }
 
 function getBugLinks(analysis: Analysis): ExternalLink[] {
@@ -80,10 +82,19 @@ function getBugLinks(analysis: Analysis): ExternalLink[] {
 }
 
 export const AnalysisOverview = ({ analysis }: Props) => {
-  const buildLink = linkToBuild(analysis.firstFailedBbid);
-  const builderLink = linkToBuilder(analysis.builder);
+  let buildLink = EMPTY_LINK;
+  if (analysis.firstFailedBbid) {
+    buildLink = linkToBuild(analysis.firstFailedBbid);
+  }
+
+  let builderLink = EMPTY_LINK;
+  if (analysis.builder) {
+    builderLink = linkToBuilder(analysis.builder);
+  }
+
   const suspectRange = getSuspectRange(analysis);
   const bugLinks = getBugLinks(analysis);
+
   return (
     <TableContainer>
       <PlainTable>
@@ -99,14 +110,16 @@ export const AnalysisOverview = ({ analysis }: Props) => {
             <TableCell>{analysis.analysisId}</TableCell>
             <TableCell variant='head'>Buildbucket ID</TableCell>
             <TableCell>
-              <Link
-                href={buildLink.url}
-                target='_blank'
-                rel='noreferrer'
-                underline='always'
-              >
-                {buildLink.linkText}
-              </Link>
+              {analysis.firstFailedBbid && (
+                <Link
+                  href={buildLink.url}
+                  target='_blank'
+                  rel='noreferrer'
+                  underline='always'
+                >
+                  {buildLink.linkText}
+                </Link>
+              )}
             </TableCell>
           </TableRow>
           <TableRow>

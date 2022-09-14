@@ -12,49 +12,52 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-
+import { getCommitShortHash } from './commit_formatters';
 import { BuilderID, GitilesCommit } from '../services/luci_bisection';
+
+export const EMPTY_LINK: ExternalLink = {
+  linkText: '',
+  url: '',
+};
 
 export interface ExternalLink {
   linkText: string;
   url: string;
 }
 
-export const linkToBuild = (buildID: string) => {
+export const linkToBuild = (buildID: string): ExternalLink => {
   return {
     linkText: buildID,
     url: `https://ci.chromium.org/b/${buildID}`,
   };
 };
 
-export const linkToBuilder = ({ project, bucket, builder }: BuilderID) => {
+export const linkToBuilder = (builderID: BuilderID): ExternalLink => {
+  const { project, bucket, builder } = builderID;
   return {
     linkText: `${project}/${bucket}/${builder}`,
     url: `https://ci.chromium.org/p/${project}/builders/${bucket}/${builder}`,
   };
 };
 
-export const linkToCommit = (commit: GitilesCommit) => {
+export const linkToCommit = (commit: GitilesCommit): ExternalLink => {
+  const { host, project, id } = commit;
   return {
-    linkText: getCommitShortHash(commit.id),
-    url: `https://${commit.host}/${commit.project}/+log/${commit.id}$`,
+    linkText: getCommitShortHash(id),
+    url: `https://${host}/${project}/+log/${id}`,
   };
 };
 
 export const linkToCommitRange = (
   lastPassed: GitilesCommit,
   firstFailed: GitilesCommit
-) => {
+): ExternalLink => {
   const host = lastPassed.host;
   const project = lastPassed.project;
   const lastPassedShortHash = getCommitShortHash(lastPassed.id);
   const firstFailedShortHash = getCommitShortHash(firstFailed.id);
   return {
     linkText: `${lastPassedShortHash} ... ${firstFailedShortHash}`,
-    url: `https://${host}/${project}/+log/${lastPassedShortHash}..${firstFailedShortHash}`,
+    url: `https://${host}/${project}/+log/${lastPassed.id}..${firstFailed.id}`,
   };
-};
-
-export const getCommitShortHash = (commitID: string) => {
-  return commitID.substring(0, 7);
 };
