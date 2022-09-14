@@ -6,7 +6,7 @@ This is an example ReactJS app that you can copy/paste in your project.
 It uses multiple state-management solutions, you can opt out of any of them.
 It also has all the configurations in place for you to start developing your app without the need of any wiring.
 
-It follows the recommendations mentioned in [Luci test react recommendations](go/luci-test-tools-reactjs).
+It follows the recommendations mentioned in [Luci test react recommendations](http://go/luci-test-tools-reactjs).
 
 The gist of those recommendations are:
 1. ReactJS as the base framework.
