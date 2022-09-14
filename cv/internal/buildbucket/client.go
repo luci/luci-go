@@ -47,7 +47,7 @@ type ClientFactory interface {
 
 // NewClientFactory returns Factory for use in production.
 func NewClientFactory() ClientFactory {
-	return prpcClientFactory{}
+	return makeInstrumentedFactory(prpcClientFactory{})
 }
 
 type prpcClientFactory struct{}
