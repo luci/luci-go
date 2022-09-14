@@ -1,13 +1,11 @@
 cron:
 
 - description: TQ sweeper
-  # TODO(crbug/1042991): Target backend-go once it exists.
   target: default-go
   url: /internal/tasks/c/sweep
   schedule: every 1 minutes
 
-- description: update configs from luci-config
-  # TODO(crbug/1042991): Target backend-go once it exists.
+- description: update the service config from luci-config
   target: default-go
   url: /internal/cron/update_config
   schedule: every 10 minutes
@@ -27,10 +25,15 @@ cron:
   url: /internal/cron/delete_builds
   schedule: every 1 minutes
 
+- description: update buckets and builders from all project configs
+  target: default-go
+  url: /internal/cron/update_project_config
+  schedule: every 5 minutes
+
 - description: update buckets
   target: backend
   url: /internal/cron/buildbucket/update_buckets
-  schedule: every 1 minutes
+  schedule: every 24 hours
 
 - description: report builder metrics
   target: monitor

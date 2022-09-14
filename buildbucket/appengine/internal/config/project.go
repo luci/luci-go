@@ -69,6 +69,12 @@ var (
 	experimentNameRE = regexp.MustCompile(`^[a-z][a-z0-9_]*(?:\.[a-z][a-z0-9_]*)*$`)
 )
 
+// changeLog is a temporary struct to track all changes in UpdateProjectCfg.
+type changeLog struct {
+	item string
+	action string
+}
+
 // UpdateProjectCfg fetches all projects' Buildbucket configs from luci-config
 // and update into Datastore.
 func UpdateProjectCfg(ctx context.Context) error {
@@ -81,6 +87,8 @@ func UpdateProjectCfg(ctx context.Context) error {
 	if err := datastore.GetAll(ctx, datastore.NewQuery(model.BucketKind), &bucketKeys); err != nil {
 		return errors.Annotate(err, "failed to fetch all bucket keys").Err()
 	}
+
+	var changes []*changeLog
 	bucketsToDelete := make(map[string]map[string]*datastore.Key) // project -> bucket -> bucket keys
 	for _, bk := range bucketKeys {
 		project := bk.Parent().StringID()
@@ -187,6 +195,15 @@ func UpdateProjectCfg(ctx context.Context) error {
 				if err := datastore.Delete(ctx, bldrsToDel); err != nil {
 					return errors.Annotate(err, "failed to delete %d builders", len(bldrsToDel)).Err()
 				}
+
+				// TODO(crbug.com/1362157) Delete after the correctness is proved in Prod.
+				changes = append(changes, &changeLog{item: project+"."+cfgBktName, action: "put"})
+				for _, bldr := range buildersToPut {
+					changes = append(changes, &changeLog{item: bldr.FullBuilderName(), action: "put"})
+				}
+				for _, bldr := range bldrsToDel {
+					changes = append(changes, &changeLog{item: bldr.FullBuilderName(), action: "delete"})
+				}
 				return nil
 			}, nil)
 			if err != nil {
@@ -205,6 +222,19 @@ func UpdateProjectCfg(ctx context.Context) error {
 			}
 			toDelete = append(toDelete, bldrKeys...)
 			toDelete = append(toDelete, bktKey)
+		}
+	}
+
+	// TODO(crbug.com/1362157) Delete after the correctness is proved in Prod.
+	for _, bkt := range toDelete {
+		changes = append(changes, &changeLog{item: bkt.Parent().StringID()+"."+bkt.StringID(), action: "delete"})
+	}
+	if len(changes) == 0 {
+		logging.Debugf(ctx, "No changes this time.")
+	} else {
+		logging.Debugf(ctx, "Made %d changes:", len(changes))
+		for _, change := range changes {
+			logging.Debugf(ctx, "%s, Action:%s", change.item, change.action)
 		}
 	}
 	return datastore.Delete(ctx, toDelete)

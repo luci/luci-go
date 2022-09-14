@@ -101,6 +101,7 @@ func main() {
 		cron.RegisterHandler("delete_builds", buildcron.DeleteOldBuilds)
 		cron.RegisterHandler("expire_builds", buildcron.TimeoutExpiredBuilds)
 		cron.RegisterHandler("update_config", config.UpdateSettingsCfg)
+		cron.RegisterHandler("update_project_config", config.UpdateProjectCfg)
 		cron.RegisterHandler("reset_expired_leases", buildcron.ResetExpiredLeases)
 
 		// PubSub push handler processing messages
