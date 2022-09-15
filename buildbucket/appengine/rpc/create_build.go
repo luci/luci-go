@@ -120,12 +120,12 @@ func validateBucketConstraints(ctx context.Context, b *pb.Build) error {
 		}
 	}
 	if !poolAllowed {
-		return errors.Reason("build.infra.swarming.dimension['pool'] %s: not allowed", pool).Err()
+		return errors.Reason("build.infra.swarming.dimension['pool']: %s not allowed", pool).Err()
 	}
 
 	sa := b.GetInfra().GetSwarming().GetTaskServiceAccount()
 	if sa == "" || !allowedSAs.Has(sa) {
-		return errors.Reason("build.infra.swarming.task_service_account %s: not allowed", sa).Err()
+		return errors.Reason("build.infra.swarming.task_service_account: %s not allowed", sa).Err()
 	}
 	return nil
 }
@@ -661,7 +661,7 @@ func generateBuildNumbers(ctx context.Context, builds []*model.Build) error {
 	return merr.AsError()
 }
 
-// CreateBuild handles a request to schedule a build. Implements pb.BuildsServer.
+// CreateBuild handles a request to create a build. Implements pb.BuildsServer.
 func (*Builds) CreateBuild(ctx context.Context, req *pb.CreateBuildRequest) (*pb.Build, error) {
 	if err := perm.HasInBucket(ctx, bbperms.BuildsCreate, req.Build.Builder.Project, req.Build.Builder.Bucket); err != nil {
 		return nil, err
@@ -673,10 +673,32 @@ func (*Builds) CreateBuild(ctx context.Context, req *pb.CreateBuildRequest) (*pb
 	}
 	wellKnownExperiments := protoutil.WellKnownExperiments(globalCfg)
 
-	_, err = validateCreateBuildRequest(ctx, wellKnownExperiments, req)
+	m, err := validateCreateBuildRequest(ctx, wellKnownExperiments, req)
 	if err != nil {
 		return nil, appstatus.BadRequest(err)
 	}
 
-	return nil, errors.New("not implemented")
+	// Bucket -> Builder -> *pb.BuilderConfig.
+	cfgs, err := fetchBuilderConfigs(ctx, []*pb.BuilderID{req.Build.Builder})
+	if err != nil {
+		return nil, errors.Annotate(err, "error fetching builder config").Err()
+	}
+
+	bld := &model.Build{
+		Proto: req.Build,
+	}
+	bc := &buildCreator{
+		globalCfg:      globalCfg,
+		blds:           []*model.Build{bld},
+		cfgs:           cfgs,
+		idxMapBldToReq: []int{0},
+		reqIDs:         []string{req.RequestId},
+		merr:           make(errors.MultiError, 1),
+	}
+	blds, err := bc.createBuilds(ctx)
+	if err != nil {
+		return nil, errors.Annotate(err, "error creating build").Err()
+	}
+
+	return blds[0].ToProto(ctx, m, nil)
 }

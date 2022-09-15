@@ -16,148 +16,158 @@ package rpc
 
 import (
 	"context"
+	"math/rand"
 	"testing"
 
 	"google.golang.org/protobuf/types/known/durationpb"
 	"google.golang.org/protobuf/types/known/fieldmaskpb"
 	"google.golang.org/protobuf/types/known/structpb"
 
+	"go.chromium.org/luci/common/clock/testclock"
+	"go.chromium.org/luci/common/data/rand/mathrand"
 	"go.chromium.org/luci/common/data/stringset"
+	"go.chromium.org/luci/gae/filter/txndefer"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
+	"go.chromium.org/luci/server/auth"
+	"go.chromium.org/luci/server/auth/authtest"
+	"go.chromium.org/luci/server/tq"
 
+	"go.chromium.org/luci/buildbucket/appengine/internal/config"
+	"go.chromium.org/luci/buildbucket/appengine/internal/metrics"
 	"go.chromium.org/luci/buildbucket/appengine/model"
+	"go.chromium.org/luci/buildbucket/appengine/rpc/testutil"
+	"go.chromium.org/luci/buildbucket/bbperms"
 	pb "go.chromium.org/luci/buildbucket/proto"
 
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
 )
 
+func validCreateBuildRequest() *pb.CreateBuildRequest {
+	return &pb.CreateBuildRequest{
+		Build: &pb.Build{
+			Builder: &pb.BuilderID{
+				Project: "project",
+				Bucket:  "bucket",
+				Builder: "builder",
+			},
+			Infra: &pb.BuildInfra{
+				Bbagent: &pb.BuildInfra_BBAgent{
+					PayloadPath: "kitchen-checkout",
+					CacheDir:    "cache",
+				},
+				Buildbucket: &pb.BuildInfra_Buildbucket{
+					Agent: &pb.BuildInfra_Buildbucket_Agent{
+						Source: &pb.BuildInfra_Buildbucket_Agent_Source{
+							DataType: &pb.BuildInfra_Buildbucket_Agent_Source_Cipd{
+								Cipd: &pb.BuildInfra_Buildbucket_Agent_Source_CIPD{
+									Package: "infra/tools/luci/bbagent/${platform}",
+									Version: "canary-version",
+									Server:  "cipd server",
+								},
+							},
+						},
+						Input: &pb.BuildInfra_Buildbucket_Agent_Input{
+							Data: map[string]*pb.InputDataRef{
+								"path_a": {
+									DataType: &pb.InputDataRef_Cipd{
+										Cipd: &pb.InputDataRef_CIPD{
+											Specs: []*pb.InputDataRef_CIPD_PkgSpec{{Package: "pkg_a", Version: "latest"}},
+										},
+									},
+									OnPath: []string{"path_a/bin", "path_a"},
+								},
+								"path_b": {
+									DataType: &pb.InputDataRef_Cipd{
+										Cipd: &pb.InputDataRef_CIPD{
+											Specs: []*pb.InputDataRef_CIPD_PkgSpec{{Package: "pkg_b", Version: "latest"}},
+										},
+									},
+									OnPath: []string{"path_b/bin", "path_b"},
+								},
+							},
+						},
+					},
+				},
+				Swarming: &pb.BuildInfra_Swarming{
+					Hostname: "host",
+					Priority: 25,
+					TaskDimensions: []*pb.RequestedDimension{
+						{
+							Key:   "pool",
+							Value: "example.pool",
+						},
+					},
+					TaskServiceAccount: "example@account.com",
+					Caches: []*pb.BuildInfra_Swarming_CacheEntry{
+						{
+							Name: "builder_1809c38861a9996b1748e4640234fbd089992359f6f23f62f68deb98528f5f2b_v2",
+							Path: "builder",
+							WaitForWarmCache: &durationpb.Duration{
+								Seconds: 240,
+							},
+						},
+					},
+				},
+				Logdog: &pb.BuildInfra_LogDog{
+					Hostname: "host",
+					Project:  "project",
+				},
+				Resultdb: &pb.BuildInfra_ResultDB{
+					Hostname: "host",
+				},
+			},
+			Input: &pb.Build_Input{
+				Properties: &structpb.Struct{
+					Fields: map[string]*structpb.Value{
+						"key": {
+							Kind: &structpb.Value_StringValue{
+								StringValue: "value",
+							},
+						},
+					},
+				},
+				GerritChanges: []*pb.GerritChange{
+					{
+						Host:     "h1",
+						Project:  "b",
+						Change:   1,
+						Patchset: 1,
+					},
+				},
+				Experiments: []string{"customized.exp.name", "luci.wellknown.exp"},
+			},
+			Exe: &pb.Executable{
+				Cmd: []string{"recipes"},
+			},
+		},
+		RequestId: "request_id",
+	}
+}
+
 func TestValidateCreateBuildRequest(t *testing.T) {
 	t.Parallel()
 	Convey("validateCreateBuildRequest", t, func() {
-		req := &pb.CreateBuildRequest{
-			Build: &pb.Build{
-				Builder: &pb.BuilderID{
-					Project: "project",
-					Bucket:  "bucket",
-					Builder: "builder",
-				},
-				Infra: &pb.BuildInfra{
-					Bbagent: &pb.BuildInfra_BBAgent{
-						PayloadPath: "kitchen-checkout",
-						CacheDir:    "cache",
-					},
-					Buildbucket: &pb.BuildInfra_Buildbucket{
-						Agent: &pb.BuildInfra_Buildbucket_Agent{
-							Source: &pb.BuildInfra_Buildbucket_Agent_Source{
-								DataType: &pb.BuildInfra_Buildbucket_Agent_Source_Cipd{
-									Cipd: &pb.BuildInfra_Buildbucket_Agent_Source_CIPD{
-										Package: "infra/tools/luci/bbagent/${platform}",
-										Version: "canary-version",
-										Server:  "cipd server",
-									},
-								},
-							},
-							Input: &pb.BuildInfra_Buildbucket_Agent_Input{
-								Data: map[string]*pb.InputDataRef{
-									"path_a": {
-										DataType: &pb.InputDataRef_Cipd{
-											Cipd: &pb.InputDataRef_CIPD{
-												Specs: []*pb.InputDataRef_CIPD_PkgSpec{{Package: "pkg_a", Version: "latest"}},
-											},
-										},
-										OnPath: []string{"path_a/bin", "path_a"},
-									},
-									"path_b": {
-										DataType: &pb.InputDataRef_Cipd{
-											Cipd: &pb.InputDataRef_CIPD{
-												Specs: []*pb.InputDataRef_CIPD_PkgSpec{{Package: "pkg_b", Version: "latest"}},
-											},
-										},
-										OnPath: []string{"path_b/bin", "path_b"},
-									},
-								},
-							},
-						},
-					},
-					Swarming: &pb.BuildInfra_Swarming{
-						Hostname: "host",
-						Priority: 25,
-
-						TaskDimensions: []*pb.RequestedDimension{
-							{
-								Key:   "pool",
-								Value: "example.pool",
-							},
-						},
-						TaskServiceAccount: "example@account.com",
-						Caches: []*pb.BuildInfra_Swarming_CacheEntry{
-							{
-								Name: "builder_1809c38861a9996b1748e4640234fbd089992359f6f23f62f68deb98528f5f2b_v2",
-								Path: "builder",
-								WaitForWarmCache: &durationpb.Duration{
-									Seconds: 240,
-								},
-							},
-						},
-					},
-					Logdog: &pb.BuildInfra_LogDog{
-						Hostname: "host",
-						Project:  "project",
-					},
-					Resultdb: &pb.BuildInfra_ResultDB{
-						Hostname: "host",
-					},
-				},
-				Input: &pb.Build_Input{
-					Properties: &structpb.Struct{
-						Fields: map[string]*structpb.Value{
-							"key": {
-								Kind: &structpb.Value_StringValue{
-									StringValue: "value",
-								},
-							},
-						},
-					},
-					GerritChanges: []*pb.GerritChange{
-						{
-							Host:     "h1",
-							Project:  "b",
-							Change:   1,
-							Patchset: 1,
-						},
-					},
-					Experiments: []string{"customized.exp.name", "luci.wellknown.exp"},
-				},
-				Exe: &pb.Executable{
-					Cmd: []string{"recipes"},
-				},
-			},
-			RequestId: "request_id",
-		}
+		req := validCreateBuildRequest()
 		wellknownExps := stringset.NewFromSlice("luci.wellknown.exp")
 		ctx := memory.Use(context.Background())
 		datastore.GetTestable(ctx).AutoIndex(true)
 		datastore.GetTestable(ctx).Consistent(true)
 
-		So(datastore.Put(ctx, &model.Bucket{
-			ID:     "bucket",
-			Parent: model.ProjectKey(ctx, "project"),
-			Proto: &pb.Bucket{
-				Acls: []*pb.Acl{
-					{
-						Identity: "user:caller@example.com",
-						Role:     pb.Acl_SCHEDULER,
-					},
-				},
-				Name: "bucket",
-				Constraints: &pb.Bucket_Constraints{
-					Pools:           []string{"example.pool"},
-					ServiceAccounts: []string{"example@account.com"},
+		testutil.PutBucket(ctx, "project", "bucket", &pb.Bucket{
+			Acls: []*pb.Acl{
+				{
+					Identity: "user:caller@example.com",
+					Role:     pb.Acl_SCHEDULER,
 				},
 			},
-		}), ShouldBeNil)
+			Name: "bucket",
+			Constraints: &pb.Bucket_Constraints{
+				Pools:           []string{"example.pool"},
+				ServiceAccounts: []string{"example@account.com"},
+			},
+		})
 
 		Convey("works", func() {
 			_, err := validateCreateBuildRequest(ctx, wellknownExps, req)
@@ -472,6 +482,71 @@ func TestValidateCreateBuildRequest(t *testing.T) {
 			})
 		})
 
+		Convey("BucketConstraints", func() {
+			Convey("no bucket constraints", func() {
+				testutil.PutBucket(ctx, "project", "bucket", nil)
+
+				ctx = auth.WithState(ctx, &authtest.FakeState{
+					Identity: "user:someone@example.com",
+					IdentityPermissions: []authtest.RealmPermission{
+						{Realm: "project:bucket", Permission: bbperms.BuildsCreate},
+					},
+				})
+				_, err := validateCreateBuildRequest(ctx, wellknownExps, req)
+				So(err, ShouldErrLike, `constraints for project:bucket not found`)
+			})
+			Convey("pool not allowed", func() {
+				testutil.PutBucket(ctx, "project", "bucket", &pb.Bucket{
+					Constraints: &pb.Bucket_Constraints{
+						Pools:           []string{"different.pool"},
+						ServiceAccounts: []string{"example@account.com"},
+					}})
+
+				ctx = auth.WithState(ctx, &authtest.FakeState{
+					Identity: "user:someone@example.com",
+					IdentityPermissions: []authtest.RealmPermission{
+						{Realm: "project:bucket", Permission: bbperms.BuildsCreate},
+					},
+				})
+				_, err := validateCreateBuildRequest(ctx, wellknownExps, req)
+				So(err, ShouldErrLike, `build.infra.swarming.dimension['pool']: example.pool not allowed`)
+			})
+			Convey("service account not allowed", func() {
+				testutil.PutBucket(ctx, "project", "bucket", &pb.Bucket{
+					Constraints: &pb.Bucket_Constraints{
+						Pools:           []string{"example.pool"},
+						ServiceAccounts: []string{"different@account.com"},
+					}})
+
+				ctx = auth.WithState(ctx, &authtest.FakeState{
+					Identity: "user:someone@example.com",
+					IdentityPermissions: []authtest.RealmPermission{
+						{Realm: "project:bucket", Permission: bbperms.BuildsCreate},
+					},
+				})
+				_, err := validateCreateBuildRequest(ctx, wellknownExps, req)
+				So(err, ShouldErrLike, `build.infra.swarming.task_service_account: example@account.com not allowed`)
+			})
+		})
+
+		Convey("invalid request", func() {
+			testutil.PutBucket(ctx, "project", "bucket", &pb.Bucket{
+				Constraints: &pb.Bucket_Constraints{
+					Pools:           []string{"example.pool"},
+					ServiceAccounts: []string{"example@account.com"},
+				}})
+
+			ctx = auth.WithState(ctx, &authtest.FakeState{
+				Identity: "user:someone@example.com",
+				IdentityPermissions: []authtest.RealmPermission{
+					{Realm: "project:bucket", Permission: bbperms.BuildsCreate},
+				},
+			})
+			req.RequestId = "request/id"
+			_, err := validateCreateBuildRequest(ctx, wellknownExps, req)
+			So(err, ShouldErrLike, `request_id cannot contain '/'`)
+		})
+
 		Convey("CreateBuild specified output_only fields are cleared", func() {
 			req.Build.Status = pb.Status_SCHEDULED
 			req.Build.SummaryMarkdown = "random string"
@@ -496,6 +571,77 @@ func TestValidateCreateBuildRequest(t *testing.T) {
 				req.Build.Infra.Resultdb = &pb.BuildInfra_ResultDB{}
 				_, err = validateCreateBuildRequest(ctx, wellknownExps, req)
 				So(err, ShouldErrLike, ".build.infra.resultdb.hostname: required")
+			})
+		})
+	})
+}
+
+func TestCreatBuild(t *testing.T) {
+	Convey("CreatBuild", t, func() {
+		srv := &Builds{}
+		ctx := txndefer.FilterRDS(memory.Use(context.Background()))
+		ctx = metrics.WithServiceInfo(ctx, "svc", "job", "ins")
+		ctx = mathrand.Set(ctx, rand.New(rand.NewSource(0)))
+		ctx, _ = testclock.UseTime(ctx, testclock.TestRecentTimeUTC)
+		ctx, sch := tq.TestingContext(ctx, nil)
+		datastore.GetTestable(ctx).AutoIndex(true)
+		datastore.GetTestable(ctx).Consistent(true)
+		ctx = auth.WithState(ctx, &authtest.FakeState{
+			Identity: "user:caller@example.com",
+		})
+		So(config.SetTestSettingsCfg(ctx, &pb.SettingsCfg{
+			Experiment: &pb.ExperimentSettings{
+				Experiments: []*pb.ExperimentSettings_Experiment{
+					{
+						Name: "luci.wellknown.exp",
+					},
+				},
+			},
+		}), ShouldBeNil)
+
+		req := validCreateBuildRequest()
+
+		Convey("passes", func() {
+			ctx = auth.WithState(ctx, &authtest.FakeState{
+				Identity: "user:someone@example.com",
+				IdentityPermissions: []authtest.RealmPermission{
+					{Realm: "project:bucket", Permission: bbperms.BuildsCreate},
+				},
+			})
+			testutil.PutBucket(ctx, "project", "bucket", &pb.Bucket{
+				Constraints: &pb.Bucket_Constraints{
+					Pools:           []string{"example.pool"},
+					ServiceAccounts: []string{"example@account.com"},
+				}})
+			testutil.PutBuilder(ctx, "project", "bucket", "builder")
+
+			b, err := srv.CreateBuild(ctx, req)
+			So(b, ShouldNotBeNil)
+			So(err, ShouldBeNil)
+			So(sch.Tasks(), ShouldHaveLength, 1)
+
+			// Check datastore.
+			bld := &model.Build{ID: b.Id}
+			So(datastore.Get(ctx, bld), ShouldBeNil)
+		})
+
+		Convey("fails", func() {
+			Convey("permission denied", func() {
+				ctx = auth.WithState(ctx, &authtest.FakeState{
+					Identity: "user:someone@example.com",
+					IdentityPermissions: []authtest.RealmPermission{
+						{Realm: "project:bucket", Permission: bbperms.BuildersGet},
+					},
+				})
+				testutil.PutBucket(ctx, "project", "bucket", &pb.Bucket{
+					Constraints: &pb.Bucket_Constraints{
+						Pools:           []string{"example.pool"},
+						ServiceAccounts: []string{"example@account.com"},
+					}})
+				testutil.PutBuilder(ctx, "project", "bucket", "builder")
+				bld, err := srv.CreateBuild(ctx, req)
+				So(bld, ShouldBeNil)
+				So(err, ShouldErrLike, `does not have permission "buildbucket.builds.create" in bucket "project/bucket"`)
 			})
 		})
 	})
