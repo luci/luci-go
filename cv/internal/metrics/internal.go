@@ -40,7 +40,7 @@ var Internal = struct {
 		field.String("canonical_code"), // grpc.Code of the result as string in UPPER_CASE.
 	),
 	BuildbucketRPCDurations: metric.NewCumulativeDistribution(
-		"cv/internal/buildbucket_rpc/duration",
+		"cv/internal/buildbucket_rpc/durations",
 		"Distribution of RPC duration (in milliseconds).",
 		&types.MetricMetadata{Units: types.Milliseconds},
 		// Bucketer for 1ms..10m range since CV isn't going to wait longer than 10m
