@@ -183,6 +183,7 @@ func (p *Purger) purgeWithDeadline(ctx context.Context, task *prjpb.PurgeCLTask)
 		LuciProject: task.GetLuciProject(),
 		ExternalId:  string(cl.ExternalID),
 		Id:          int64(cl.ID),
+		Requester:   changelist.UpdateCLTask_CL_PURGER,
 	})
 }
 

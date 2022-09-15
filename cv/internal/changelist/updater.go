@@ -38,15 +38,14 @@ import (
 )
 
 const (
-	// BatchCLUpdateTaskClass is the Task Class ID of the BatchUpdateCLTask,
+	// BatchUpdateCLTaskClass is the Task Class ID of the BatchUpdateCLTask,
 	// which is enqueued only during a transaction.
 	BatchUpdateCLTaskClass = "batch-update-cl"
-	// CLUpdateTaskClass is the Task Class ID of the UpdateCLTask.
+	// UpdateCLTaskClass is the Task Class ID of the UpdateCLTask.
 	UpdateCLTaskClass = "update-cl"
 
 	// blindRefreshInterval sets interval between blind refreshes of a CL.
 	blindRefreshInterval = time.Minute
-	BlindRefreshInterval = blindRefreshInterval
 
 	// knownRefreshInterval sets interval between refreshes of a CL when
 	// updatedHint is known.
@@ -83,15 +82,7 @@ type UpdaterBackend interface {
 	LookupApplicableConfig(ctx context.Context, saved *CL) (*ApplicableConfig, error)
 
 	// Fetch fetches the CL in the context of a given project.
-	//
-	// If a given cl.ID is 0, it means the CL entity doesn't exist in Datastore.
-	// The cl.ExternalID is always set.
-	//
-	// UpdatedHint, if not zero time, is the backend-originating timestamp of the
-	// most recent CL update time. It's sourced by CV by e.g. polling or PubSub
-	// subscription. It is useful to detect and work around backend's eventual
-	// consistency.
-	Fetch(ctx context.Context, cl *CL, luciProject string, updatedHint time.Time) (UpdateFields, error)
+	Fetch(ctx context.Context, input *FetchInput) (UpdateFields, error)
 
 	// HasChanged decides whether the CL in the backend has changed from existing
 	// snapshot in LUCI CV.
@@ -102,6 +93,37 @@ type UpdaterBackend interface {
 	// For example, Gerrit backend may wish to retry out of quota errors without
 	// logging detailed stacktrace.
 	TQErrorSpec() common.TQIfy
+}
+
+// FetchInput an input for UpdaterBackend.Fetch.
+//
+// It contains fields for what to fetch with meta information.
+type FetchInput struct {
+	// CL of the ChangeList to fetch a snapshot of.
+	//
+	// If CL.ID in the input is 0, it means the CL entity doesn't exist in
+	// Datastore. The cl.ExternalID is always set.
+	CL *CL
+	// Project is the LUCI project to use the scoped account of for the fetch
+	// operation to be performed.
+	Project string
+	// UpdatedHint, if not zero time, is the backend-originating timestamp of
+	// the most recent CL update time. It's sourced by CV by e.g. polling or
+	// PubSub subscription. It is useful to detect and work around backend's
+	// eventual consistency.
+	UpdatedHint time.Time
+	// Requester identifies various scenarios that issued the Fetch invocation.
+	Requester UpdateCLTask_Requester
+}
+
+// NewFetchInput returns FetchInput for a given CL and UpdateCLTask.
+func NewFetchInput(cl *CL, task *UpdateCLTask) *FetchInput {
+	return &FetchInput{
+		CL:          cl,
+		Project:     task.GetLuciProject(),
+		UpdatedHint: common.PB2TimeNillable(task.GetUpdatedHint()),
+		Requester:   task.GetRequester(),
+	}
 }
 
 // UpdateFields defines what parts of CL to update.
@@ -149,6 +171,7 @@ func (u UpdateFields) shouldUpdateSnapshot(cl *CL, backend UpdaterBackend) bool 
 	}
 }
 
+// Apply applies the UpdatedFields to a given CL.
 func (u UpdateFields) Apply(cl *CL, backend UpdaterBackend) (changed bool) {
 	if u.ApplicableConfig != nil && !cl.ApplicableConfig.SemanticallyEqual(u.ApplicableConfig) {
 		cl.ApplicableConfig = u.ApplicableConfig
@@ -271,13 +294,14 @@ func (u *Updater) RegisterBackend(b UpdaterBackend) {
 // entities if Schedule() was used for each CL.
 //
 // Otherwise, enqueues 1 TQ task per CL non-transactionally and in parallel.
-func (u *Updater) ScheduleBatch(ctx context.Context, luciProject string, cls []*CL) error {
+func (u *Updater) ScheduleBatch(ctx context.Context, luciProject string, cls []*CL, requester UpdateCLTask_Requester) error {
 	tasks := make([]*UpdateCLTask, len(cls))
 	for i, cl := range cls {
 		tasks[i] = &UpdateCLTask{
 			LuciProject: luciProject,
 			ExternalId:  string(cl.ExternalID),
 			Id:          int64(cl.ID),
+			Requester:   requester,
 		}
 	}
 
@@ -308,6 +332,9 @@ func (u *Updater) ScheduleDelayed(ctx context.Context, payload *UpdateCLTask, de
 		Delay:   delay,
 		Title:   makeTQTitleForHumans(payload),
 	}
+	if payload.Requester == UpdateCLTask_REQUESTER_CLASS_UNSPECIFIED {
+		panic(fmt.Errorf("UpdateCLTask unspecified: %s", payload))
+	}
 	if datastore.CurrentTransaction(ctx) == nil {
 		task.DeduplicationKey = makeTaskDeduplicationKey(ctx, payload, delay)
 	}
@@ -321,7 +348,7 @@ func (u *Updater) ScheduleDelayed(ctx context.Context, payload *UpdateCLTask, de
 //
 // Returns a sorted slice of Deps by their CL ID, ready to be stored as
 // CL.Snapshot.Deps.
-func (u *Updater) ResolveAndScheduleDepsUpdate(ctx context.Context, luciProject string, deps map[ExternalID]DepKind) ([]*Dep, error) {
+func (u *Updater) ResolveAndScheduleDepsUpdate(ctx context.Context, luciProject string, deps map[ExternalID]DepKind, requester UpdateCLTask_Requester) ([]*Dep, error) {
 	// Optimize for the most frequent case whereby deps are already known to CV
 	// and were updated recently enough that no task scheduling is even necessary.
 
@@ -353,7 +380,7 @@ func (u *Updater) ResolveAndScheduleDepsUpdate(ctx context.Context, luciProject 
 				if err := d.createIfNotExists(ctx, u.mutator, luciProject); err != nil {
 					return err
 				}
-				if err := d.schedule(ctx, u, luciProject); err != nil {
+				if err := d.schedule(ctx, u, luciProject, requester); err != nil {
 					return err
 				}
 				ret[i] = d.resolvedDep
@@ -437,7 +464,7 @@ func (u *Updater) handleCLWithBackend(ctx context.Context, task *UpdateCLTask, c
 	case err != nil:
 		return err
 	case !skip:
-		updateFields, err = backend.Fetch(ctx, cl, task.GetLuciProject(), common.PB2TimeNillable(task.GetUpdatedHint()))
+		updateFields, err = backend.Fetch(ctx, NewFetchInput(cl, task))
 		switch {
 		case err != nil && errors.Unwrap(err) == gerrit.ErrOutOfQuota && task.GetLuciProject() == "chromeos":
 			// HACK: don't retry on out of quota error, instead schedule another task
@@ -685,7 +712,8 @@ func makeTaskDeduplicationKey(ctx context.Context, t *UpdateCLTask, delay time.D
 // log of the process (which is where logging.Logf calls go into).
 //
 // For example, the title for the task with all the field specified:
-//   "proj/gerrit/chromium/1111111/u2016-02-03T04:05:06Z"
+//
+//	"proj/gerrit/chromium/1111111/u2016-02-03T04:05:06Z"
 func makeTQTitleForHumans(t *UpdateCLTask) string {
 	var sb strings.Builder
 	sb.WriteString(t.GetLuciProject())
@@ -781,11 +809,13 @@ func (d *resolvingDep) createIfNotExists(ctx context.Context, m *Mutator, luciPr
 	return nil
 }
 
-func (d *resolvingDep) schedule(ctx context.Context, u *Updater, luciProject string) error {
+func (d *resolvingDep) schedule(ctx context.Context, u *Updater, luciProject string, requester UpdateCLTask_Requester) error {
 	return u.Schedule(ctx, &UpdateCLTask{
 		ExternalId:  string(d.eid),
 		Id:          d.resolvedDep.GetClid(),
 		LuciProject: luciProject,
+		Requester:   requester,
+		IsForDep:    true,
 	})
 }
 

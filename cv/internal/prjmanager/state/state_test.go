@@ -76,6 +76,7 @@ func (ct ctest) runCLUpdaterAs(ctx context.Context, change int64, lProject strin
 	So(ct.clUpdater.TestingForceUpdate(ctx, &changelist.UpdateCLTask{
 		LuciProject: lProject,
 		ExternalId:  string(changelist.MustGobID(ct.gHost, change)),
+		Requester:   changelist.UpdateCLTask_RUN_POKE,
 	}), ShouldBeNil)
 	eid, err := changelist.GobID(ct.gHost, change)
 	So(err, ShouldBeNil)

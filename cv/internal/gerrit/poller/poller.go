@@ -287,7 +287,9 @@ func (p *Poller) updateConfig(ctx context.Context, s *State, meta prjcfg.Meta) e
 	proposed := partitionConfig(cgs)
 	toUse, discarded := reuseIfPossible(s.QueryStates.GetStates(), proposed)
 	for _, d := range discarded {
-		if err := p.notifyOnUnmatchedCLs(ctx, s.LuciProject, d.GetHost(), d.Changes); err != nil {
+		if err := p.notifyOnUnmatchedCLs(
+			ctx, s.LuciProject, d.GetHost(), d.Changes,
+			changelist.UpdateCLTask_UPDATE_CONFIG); err != nil {
 			return err
 		}
 	}

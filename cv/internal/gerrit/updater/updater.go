@@ -16,7 +16,6 @@ package updater
 
 import (
 	"context"
-	"time"
 
 	"go.chromium.org/luci/cv/internal/changelist"
 	"go.chromium.org/luci/cv/internal/common"
@@ -57,8 +56,8 @@ func (u *updaterBackend) LookupApplicableConfig(ctx context.Context, saved *chan
 }
 
 // Fetch implements the changelist.UpdaterBackend.
-func (u *updaterBackend) Fetch(ctx context.Context, cl *changelist.CL, luciProject string, updatedHint time.Time) (changelist.UpdateFields, error) {
-	gHost, gChange, err := cl.ExternalID.ParseGobID()
+func (u *updaterBackend) Fetch(ctx context.Context, in *changelist.FetchInput) (changelist.UpdateFields, error) {
+	gHost, gChange, err := in.CL.ExternalID.ParseGobID()
 	if err != nil {
 		return changelist.UpdateFields{}, err
 	}
@@ -68,17 +67,18 @@ func (u *updaterBackend) Fetch(ctx context.Context, cl *changelist.CL, luciProje
 		scheduleRefresh:              u.clUpdater.ScheduleDelayed,
 		resolveAndScheduleDepsUpdate: u.clUpdater.ResolveAndScheduleDepsUpdate,
 
-		luciProject: luciProject,
-		externalID:  cl.ExternalID,
+		project:     in.Project,
+		externalID:  in.CL.ExternalID,
 		host:        gHost,
 		change:      gChange,
-		updatedHint: updatedHint,
+		updatedHint: in.UpdatedHint,
+		requester:   in.Requester,
 	}
-	if cl.ID > 0 {
-		f.priorCL = cl
+	if in.CL.ID > 0 {
+		f.priorCL = in.CL
 	}
 
-	f.g, err = f.gFactory.MakeClient(ctx, f.host, f.luciProject)
+	f.g, err = f.gFactory.MakeClient(ctx, f.host, f.project)
 	if err != nil {
 		return changelist.UpdateFields{}, err
 	}

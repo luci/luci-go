@@ -437,6 +437,7 @@ func (a *AdminServer) RefreshProjectCLs(ctx context.Context, req *adminpb.Refres
 					LuciProject: req.GetProject(),
 					ExternalId:  string(cl.ExternalID),
 					Id:          int64(cl.ID),
+					Requester:   changelist.UpdateCLTask_RPC_ADMIN,
 				}
 				return a.clUpdater.Schedule(ctx, payload)
 			}

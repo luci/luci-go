@@ -33,7 +33,7 @@ import (
 // notifying PM.
 const maxLoadCLBatchSize = 100
 
-func (p *Poller) notifyOnMatchedCLs(ctx context.Context, luciProject, host string, changes []*gerritpb.ChangeInfo, forceNotifyPM bool) error {
+func (p *Poller) notifyOnMatchedCLs(ctx context.Context, luciProject, host string, changes []*gerritpb.ChangeInfo, forceNotifyPM bool, requester changelist.UpdateCLTask_Requester) error {
 	if len(changes) == 0 {
 		return nil
 	}
@@ -57,6 +57,7 @@ func (p *Poller) notifyOnMatchedCLs(ctx context.Context, luciProject, host strin
 				LuciProject: luciProject,
 				ExternalId:  string(changelist.MustGobID(host, c.GetNumber())),
 				UpdatedHint: c.GetUpdated(),
+				Requester:   requester,
 			}
 			work <- func() error {
 				return p.clUpdater.Schedule(ctx, payload)
@@ -66,7 +67,7 @@ func (p *Poller) notifyOnMatchedCLs(ctx context.Context, luciProject, host strin
 	return common.MostSevereError(errs)
 }
 
-func (p *Poller) notifyOnUnmatchedCLs(ctx context.Context, luciProject, host string, changes []int64) error {
+func (p *Poller) notifyOnUnmatchedCLs(ctx context.Context, luciProject, host string, changes []int64, requester changelist.UpdateCLTask_Requester) error {
 	if len(changes) == 0 {
 		return nil
 	}
@@ -80,6 +81,7 @@ func (p *Poller) notifyOnUnmatchedCLs(ctx context.Context, luciProject, host str
 			payload := &changelist.UpdateCLTask{
 				LuciProject: luciProject,
 				ExternalId:  string(changelist.MustGobID(host, c)),
+				Requester:   requester,
 			}
 			// Distribute these tasks in time to avoid high peaks (e.g. see
 			// https://crbug.com/1211057).
@@ -96,10 +98,10 @@ func (p *Poller) notifyOnUnmatchedCLs(ctx context.Context, luciProject, host str
 // with existing CL entity.
 //
 // For Gerrit Changes without a CL entity, either:
-//  * the Gerrit CL Updater will create it in the future and hence also notify
-//    the PM;
-//  * or if the Gerrit CL updater doesn't do it, then there is no point
-//    notifying the PM anyway.
+//   - the Gerrit CL Updater will create it in the future and hence also notify
+//     the PM;
+//   - or if the Gerrit CL updater doesn't do it, then there is no point
+//     notifying the PM anyway.
 //
 // Obtains EVersion of each CL before notify a PM. Unfortunately, this loads a
 // lot of information we don't need, such as Snapshot. So, load CLs in batches

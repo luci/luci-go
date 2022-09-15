@@ -72,11 +72,12 @@ type fetcher struct {
 	gFactory                     gerrit.Factory
 	g                            gerrit.Client
 	scheduleRefresh              func(context.Context, *changelist.UpdateCLTask, time.Duration) error
-	resolveAndScheduleDepsUpdate func(ctx context.Context, luciProject string, deps map[changelist.ExternalID]changelist.DepKind) ([]*changelist.Dep, error)
-	luciProject                  string
+	resolveAndScheduleDepsUpdate func(ctx context.Context, project string, deps map[changelist.ExternalID]changelist.DepKind, requester changelist.UpdateCLTask_Requester) ([]*changelist.Dep, error)
+	project                      string
 	host                         string
 	change                       int64
 	updatedHint                  time.Time
+	requester                    changelist.UpdateCLTask_Requester
 	externalID                   changelist.ExternalID
 	priorCL                      *changelist.CL // not-nil, if CL already exists in Datastore.
 
@@ -108,7 +109,7 @@ func (f *fetcher) fetch(ctx context.Context) error {
 	}
 
 	f.toUpdate.Snapshot = &changelist.Snapshot{
-		LuciProject:        f.luciProject,
+		LuciProject:        f.project,
 		ExternalUpdateTime: ci.GetUpdated(),
 		Metadata: metadata.Extract(
 			ci.GetRevisions()[ci.GetCurrentRevision()].GetCommit().GetMessage(),
@@ -120,7 +121,7 @@ func (f *fetcher) fetch(ctx context.Context) error {
 			},
 		},
 	}
-	f.toUpdate.DelAccess = []string{f.luciProject}
+	f.toUpdate.DelAccess = []string{f.project}
 	if err := f.fetchPostChangeInfo(ctx, ci); err != nil {
 		return err
 	}
@@ -205,7 +206,7 @@ func (f *fetcher) fetchChangeInfo(ctx context.Context, opts ...gerritpb.QueryOpt
 	case err != nil:
 		return nil, err
 	case !watched:
-		logging.Warningf(ctx, "Gerrit host %q is not watched by project %q [%s]", f.host, f.luciProject, f)
+		logging.Warningf(ctx, "Gerrit host %q is not watched by project %q [%s]", f.host, f.project, f)
 		return nil, f.setCertainNoAccess(ctx)
 	}
 
@@ -241,8 +242,8 @@ func (f *fetcher) fetchChangeInfo(ctx context.Context, opts ...gerritpb.QueryOpt
 	switch {
 	case err != nil:
 		return nil, err
-	case !f.toUpdate.ApplicableConfig.HasProject(f.luciProject):
-		logging.Debugf(ctx, "%s is not watched by the %q project", f, f.luciProject)
+	case !f.toUpdate.ApplicableConfig.HasProject(f.project):
+		logging.Debugf(ctx, "%s is not watched by the %q project", f, f.project)
 		return nil, f.setCertainNoAccess(ctx)
 	}
 
@@ -284,7 +285,7 @@ func (f *fetcher) setLikelyNoAccess(ctx context.Context) error {
 func (f *fetcher) setNoAccessAt(now, noAccessAt time.Time) {
 	f.toUpdate.AddDependentMeta = &changelist.Access{
 		ByProject: map[string]*changelist.Access_Project{
-			f.luciProject: {
+			f.project: {
 				UpdateTime:   timestamppb.New(now),
 				NoAccessTime: timestamppb.New(noAccessAt),
 				NoAccess:     true,
@@ -296,10 +297,11 @@ func (f *fetcher) setNoAccessAt(now, noAccessAt time.Time) {
 // reschedule reschedules the same task with a delay.
 func (f *fetcher) reschedule(ctx context.Context, delay time.Duration) error {
 	t := &changelist.UpdateCLTask{
-		LuciProject: f.luciProject,
+		LuciProject: f.project,
 		ExternalId:  string(f.externalID),
 		Id:          int64(f.clidIfKnown()),
 		UpdatedHint: common.Time2PBNillable(f.updatedHint),
+		Requester:   f.requester,
 	}
 	return f.scheduleRefresh(ctx, t, delay)
 }
@@ -564,7 +566,7 @@ func (f *fetcher) resolveDeps(ctx context.Context) error {
 	if depsCnt := len(depsMap); depsCnt > 500 {
 		logging.Warningf(ctx, "CL has high number of dependency CLs. Deps count: %d", depsCnt)
 	}
-	resolved, err := f.resolveAndScheduleDepsUpdate(ctx, f.luciProject, depsMap)
+	resolved, err := f.resolveAndScheduleDepsUpdate(ctx, f.project, depsMap, f.requester)
 	if err != nil {
 		return err
 	}
@@ -614,7 +616,7 @@ func (f *fetcher) isStale(ctx context.Context, externalUpdateTime *timestamppb.T
 
 // Checks whether this LUCI project watches any repo on this Gerrit host.
 func (f *fetcher) isHostWatched(ctx context.Context) (bool, error) {
-	meta, err := prjcfg.GetLatestMeta(ctx, f.luciProject)
+	meta, err := prjcfg.GetLatestMeta(ctx, f.project)
 	if err != nil {
 		return false, err
 	}
@@ -660,7 +662,7 @@ func (f *fetcher) priorNoAccessTime() time.Time {
 	if f.priorCL == nil {
 		return time.Time{}
 	}
-	t := f.priorCL.Access.GetByProject()[f.luciProject].GetNoAccessTime()
+	t := f.priorCL.Access.GetByProject()[f.project].GetNoAccessTime()
 	if t == nil {
 		return time.Time{}
 	}

@@ -31,6 +31,7 @@ import (
 	gerritpb "go.chromium.org/luci/common/proto/gerrit"
 	"go.chromium.org/luci/common/retry/transient"
 
+	"go.chromium.org/luci/cv/internal/changelist"
 	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/gerrit"
 )
@@ -100,7 +101,7 @@ func (p *Poller) doFullQuery(ctx context.Context, q singleQuery) error {
 	after := started.Add(-common.MaxTriggerAge)
 	changes, err := q.fetch(ctx, after, q.qs.gerritString(queryLimited))
 	// There can be partial result even if err != nil.
-	switch err2 := p.notifyOnMatchedCLs(ctx, q.luciProject, q.qs.GetHost(), changes, true); {
+	switch err2 := p.notifyOnMatchedCLs(ctx, q.luciProject, q.qs.GetHost(), changes, true, changelist.UpdateCLTask_FULL_POLL_MATCHED); {
 	case err != nil:
 		return err
 	case err2 != nil:
@@ -111,7 +112,7 @@ func (p *Poller) doFullQuery(ctx context.Context, q singleQuery) error {
 	if diff := common.DifferenceSorted(q.qs.Changes, cur); len(diff) != 0 {
 		// `diff` changes are no longer matching the limited query,
 		// so they were probably updated since.
-		if err := p.notifyOnUnmatchedCLs(ctx, q.luciProject, q.qs.GetHost(), diff); err != nil {
+		if err := p.notifyOnUnmatchedCLs(ctx, q.luciProject, q.qs.GetHost(), diff, changelist.UpdateCLTask_FULL_POLL_UNMATCHED); err != nil {
 			return err
 		}
 	}
@@ -139,7 +140,7 @@ func (p *Poller) doIncrementalQuery(ctx context.Context, q singleQuery) error {
 	// abandoned).
 	changes, err := q.fetch(ctx, after, q.qs.gerritString(queryAll))
 	// There can be partial result even if err != nil.
-	switch err2 := p.notifyOnMatchedCLs(ctx, q.luciProject, q.qs.GetHost(), changes, false); {
+	switch err2 := p.notifyOnMatchedCLs(ctx, q.luciProject, q.qs.GetHost(), changes, false, changelist.UpdateCLTask_INCR_POLL_MATCHED); {
 	case err != nil:
 		return err
 	case err2 != nil:

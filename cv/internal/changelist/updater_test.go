@@ -157,6 +157,7 @@ func TestUpdaterSchedule(t *testing.T) {
 				LuciProject: "proj",
 				Id:          123,
 				UpdatedHint: timestamppb.New(ct.Clock.Now().Add(-time.Second)),
+				Requester:   UpdateCLTask_RUN_POKE,
 			}
 			delay := time.Minute
 			So(u.ScheduleDelayed(ctx, t, delay), ShouldBeNil)
@@ -207,22 +208,24 @@ func TestUpdaterBatch(t *testing.T) {
 				LuciProject: "proj",
 				ExternalId:  "foo/a/1",
 				Id:          int64(clA.ID),
+				Requester:   UpdateCLTask_RUN_POKE,
 			},
 			&UpdateCLTask{
 				LuciProject: "proj",
 				ExternalId:  "foo/b/2",
 				Id:          int64(clB.ID),
+				Requester:   UpdateCLTask_RUN_POKE,
 			},
 		}
 
 		Convey("outside of a transaction, enqueues individual tasks", func() {
 			Convey("special case of just one task", func() {
-				err := u.ScheduleBatch(ctx, "proj", []*CL{clA})
+				err := u.ScheduleBatch(ctx, "proj", []*CL{clA}, UpdateCLTask_RUN_POKE)
 				So(err, ShouldBeNil)
 				So(sortedTQPayloads(), ShouldResembleProto, expectedPayloads[:1])
 			})
 			Convey("multiple", func() {
-				err := u.ScheduleBatch(ctx, "proj", []*CL{clA, clB})
+				err := u.ScheduleBatch(ctx, "proj", []*CL{clA, clB}, UpdateCLTask_RUN_POKE)
 				So(err, ShouldBeNil)
 				So(sortedTQPayloads(), ShouldResembleProto, expectedPayloads)
 			})
@@ -230,7 +233,7 @@ func TestUpdaterBatch(t *testing.T) {
 
 		Convey("inside of a transaction, enqueues just one task", func() {
 			err := datastore.RunInTransaction(ctx, func(ctx context.Context) error {
-				return u.ScheduleBatch(ctx, "proj", []*CL{clA, clB})
+				return u.ScheduleBatch(ctx, "proj", []*CL{clA, clB}, UpdateCLTask_RUN_POKE)
 			}, nil)
 			So(err, ShouldBeNil)
 			So(ct.TQ.Tasks(), ShouldHaveLength, 1)
@@ -811,7 +814,7 @@ func TestUpdaterResolveAndScheduleDepsUpdate(t *testing.T) {
 		So(datastore.Put(ctx, clOld, clUpToDate, clUpToDateDiffProject), ShouldBeNil)
 
 		Convey("no deps", func() {
-			deps, err := u.ResolveAndScheduleDepsUpdate(ctx, lProject, nil)
+			deps, err := u.ResolveAndScheduleDepsUpdate(ctx, lProject, nil, UpdateCLTask_RUN_POKE)
 			So(err, ShouldBeNil)
 			So(deps, ShouldBeEmpty)
 		})
@@ -822,7 +825,7 @@ func TestUpdaterResolveAndScheduleDepsUpdate(t *testing.T) {
 				clOld.ExternalID:                 DepKind_HARD,
 				clUpToDate.ExternalID:            DepKind_HARD,
 				clUpToDateDiffProject.ExternalID: DepKind_SOFT,
-			})
+			}, UpdateCLTask_RUN_POKE)
 			So(err, ShouldBeNil)
 			So(deps, ShouldResembleProto, sortDeps([]*Dep{
 				{Clid: int64(clBareBones.ID), Kind: DepKind_SOFT},
@@ -838,7 +841,7 @@ func TestUpdaterResolveAndScheduleDepsUpdate(t *testing.T) {
 			deps, err := u.ResolveAndScheduleDepsUpdate(ctx, lProject, map[ExternalID]DepKind{
 				"new/1": DepKind_SOFT,
 				"new/2": DepKind_HARD,
-			})
+			}, UpdateCLTask_RUN_POKE)
 			So(err, ShouldBeNil)
 			cl1 := ExternalID("new/1").MustCreateIfNotExists(ctx)
 			cl2 := ExternalID("new/2").MustCreateIfNotExists(ctx)
@@ -855,7 +858,7 @@ func TestUpdaterResolveAndScheduleDepsUpdate(t *testing.T) {
 				"new/2":                DepKind_HARD,
 				clBareBones.ExternalID: DepKind_HARD,
 				clUpToDate.ExternalID:  DepKind_SOFT,
-			})
+			}, UpdateCLTask_RUN_POKE)
 			So(err, ShouldBeNil)
 			cl1 := ExternalID("new/1").MustCreateIfNotExists(ctx)
 			cl2 := ExternalID("new/2").MustCreateIfNotExists(ctx)
@@ -878,7 +881,7 @@ func TestUpdaterResolveAndScheduleDepsUpdate(t *testing.T) {
 				depCLMap[depCLs[i].ExternalID] = DepKind_HARD
 			}
 
-			deps, err := u.ResolveAndScheduleDepsUpdate(ctx, lProject, depCLMap)
+			deps, err := u.ResolveAndScheduleDepsUpdate(ctx, lProject, depCLMap, UpdateCLTask_RUN_POKE)
 			So(err, ShouldBeNil)
 			expectedDeps := make([]*Dep, clCount)
 			for i, depCL := range depCLs {
@@ -909,7 +912,7 @@ type fakeUpdaterBackend struct {
 
 	// Fetch related fields:
 	fetchCL          *CL // copy
-	fetchLUCIProject string
+	fetchProject     string
 	fetchUpdatedHint time.Time
 	fetchResult      UpdateFields
 	fetchError       error
@@ -948,18 +951,18 @@ func (f *fakeUpdaterBackend) wasFetchCalled() bool {
 	return f.fetchCL != nil
 }
 
-func (f *fakeUpdaterBackend) Fetch(ctx context.Context, cl *CL, luciProject string, updatedHint time.Time) (UpdateFields, error) {
+func (f *fakeUpdaterBackend) Fetch(ctx context.Context, in *FetchInput) (UpdateFields, error) {
 	So(f.wasFetchCalled(), ShouldBeFalse)
 
 	// Check contract with a backend:
-	So(cl, ShouldNotBeNil)
-	So(cl.ExternalID, ShouldNotBeEmpty)
+	So(in.CL, ShouldNotBeNil)
+	So(in.CL.ExternalID, ShouldNotBeEmpty)
 
 	// Shallow-copy to catch some mistakes in test.
 	f.fetchCL = &CL{}
-	*f.fetchCL = *cl
-	f.fetchLUCIProject = luciProject
-	f.fetchUpdatedHint = updatedHint
+	*f.fetchCL = *in.CL
+	f.fetchProject = in.Project
+	f.fetchUpdatedHint = in.UpdatedHint
 	return f.fetchResult, f.fetchError
 }
 

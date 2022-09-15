@@ -396,7 +396,7 @@ type clUpdaterMock struct {
 	refreshedCLs common.CLIDs
 }
 
-func (c *clUpdaterMock) ScheduleBatch(ctx context.Context, luciProject string, cls []*changelist.CL) error {
+func (c *clUpdaterMock) ScheduleBatch(ctx context.Context, luciProject string, cls []*changelist.CL, requester changelist.UpdateCLTask_Requester) error {
 	c.m.Lock()
 	for _, cl := range cls {
 		c.refreshedCLs = append(c.refreshedCLs, cl.ID)

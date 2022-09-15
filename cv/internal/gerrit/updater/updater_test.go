@@ -174,6 +174,11 @@ func TestUpdaterBackendFetch(t *testing.T) {
 			gRepo         = "depot_tools"
 			gChange       = 123
 		)
+		task := &changelist.UpdateCLTask{
+			LuciProject: lProject,
+			UpdatedHint: timestamppb.New(time.Time{}),
+			Requester:   changelist.UpdateCLTask_RUN_POKE,
+		}
 
 		prjcfgtest.Create(ctx, lProject, singleRepoConfig(gHost, gRepo))
 		gobmaptest.Update(ctx, lProject)
@@ -225,7 +230,7 @@ func TestUpdaterBackendFetch(t *testing.T) {
 				})
 			})
 
-			res, err := gu.Fetch(ctx, &newCL, lProject, time.Time{})
+			res, err := gu.Fetch(ctx, changelist.NewFetchInput(&newCL, task))
 			So(err, ShouldBeNil)
 
 			So(res.AddDependentMeta, ShouldBeNil)
@@ -286,7 +291,7 @@ func TestUpdaterBackendFetch(t *testing.T) {
 						c.Info.Updated = timestamppb.New(ct.Clock.Now())
 					})
 
-					res2, err := gu.Fetch(ctx, &existingCL, lProject, time.Time{})
+					res2, err := gu.Fetch(ctx, changelist.NewFetchInput(&existingCL, task))
 					So(err, ShouldBeNil)
 					// Only the ChangeInfo & ExternalUpdateTime must change.
 					expectedCI := ct.GFake.GetChange(gHost, gChange).Info
@@ -309,7 +314,7 @@ func TestUpdaterBackendFetch(t *testing.T) {
 						gf.Updated(ct.Clock.Now())(c.Info)
 					})
 
-					res2, err := gu.Fetch(ctx, &existingCL, lProject, time.Time{})
+					res2, err := gu.Fetch(ctx, changelist.NewFetchInput(&existingCL, task))
 					So(err, ShouldBeNil)
 					So(res2.Snapshot.GetGerrit().GetFiles(), ShouldResemble, []string{"new.file"})
 					So(res2.Snapshot.GetGerrit().GetSoftDeps(), ShouldResemble, []*changelist.GerritSoftDep{{Change: 444, Host: gHost}})
@@ -336,7 +341,7 @@ func TestUpdaterBackendFetch(t *testing.T) {
 			ct.GFake.SetDependsOn(gHost, ci, "55_1")
 			ct.GFake.SetDependsOn(gHost, "55_1", "54_3")
 
-			res, err := gu.Fetch(ctx, &newCL, lProject, time.Time{})
+			res, err := gu.Fetch(ctx, changelist.NewFetchInput(&newCL, task))
 			So(err, ShouldBeNil)
 
 			So(res.Snapshot.GetGerrit().GetGitDeps(), ShouldResembleProto, []*changelist.GerritGitDep{
@@ -368,7 +373,7 @@ func TestUpdaterBackendFetch(t *testing.T) {
 						gf.CI(gChange, gf.Project(gRepo), gf.Ref("refs/heads/main"), gf.Status(s),
 							gf.Desc("All deps and files are ignored for such CL.\n\nCq-Depend: 44"),
 						)))
-					res, err := gu.Fetch(ctx, &newCL, lProject, time.Time{})
+					res, err := gu.Fetch(ctx, changelist.NewFetchInput(&newCL, task))
 					So(err, ShouldBeNil)
 					So(res.Snapshot.GetGerrit().GetInfo().GetStatus(), ShouldResemble, s)
 					So(res.Snapshot.GetGerrit().GetFiles(), ShouldBeNil)
@@ -381,7 +386,7 @@ func TestUpdaterBackendFetch(t *testing.T) {
 					gChange, gf.Project(gRepo), gf.Ref("refs/heads/main"), gf.Files("a.txt"),
 					gf.Status(gerritpb.ChangeStatus_NEW),
 				)))
-				res, err := gu.Fetch(ctx, &newCL, lProject, time.Time{})
+				res, err := gu.Fetch(ctx, changelist.NewFetchInput(&newCL, task))
 				So(err, ShouldBeNil)
 				So(res.Snapshot.GetGerrit().GetFiles(), ShouldResemble, []string{"a.txt"})
 
@@ -396,7 +401,7 @@ func TestUpdaterBackendFetch(t *testing.T) {
 					gf.Status(gerritpb.ChangeStatus_ABANDONED)(c.Info)
 					gf.Updated(ct.Clock.Now())(c.Info)
 				})
-				res, err = gu.Fetch(ctx, &newCL, lProject, time.Time{})
+				res, err = gu.Fetch(ctx, changelist.NewFetchInput(&newCL, task))
 				So(err, ShouldBeNil)
 				// CV doesn't care about files of ABANDONED CLs.
 				So(res.Snapshot.GetGerrit().GetFiles(), ShouldBeEmpty)
@@ -408,7 +413,7 @@ func TestUpdaterBackendFetch(t *testing.T) {
 					gf.Status(gerritpb.ChangeStatus_NEW)(c.Info)
 					gf.Updated(ct.Clock.Now())(c.Info)
 				})
-				res, err = gu.Fetch(ctx, &newCL, lProject, time.Time{})
+				res, err = gu.Fetch(ctx, changelist.NewFetchInput(&newCL, task))
 				So(err, ShouldBeNil)
 				So(res.Snapshot.GetGerrit().GetFiles(), ShouldResemble, []string{"a.txt"})
 			})
@@ -422,8 +427,8 @@ func TestUpdaterBackendFetch(t *testing.T) {
 			)))
 
 			Convey("CL's updated timestamp is before updatedHint", func() {
-				updatedHint := staleUpdateTime.Add(time.Minute)
-				_, err := gu.Fetch(ctx, &newCL, lProject, updatedHint)
+				task.UpdatedHint = timestamppb.New(staleUpdateTime.Add(time.Minute))
+				_, err := gu.Fetch(ctx, changelist.NewFetchInput(&newCL, task))
 				So(err, ShouldErrLike, gerrit.ErrStaleData)
 			})
 
@@ -435,7 +440,7 @@ func TestUpdaterBackendFetch(t *testing.T) {
 						ExternalUpdateTime: timestamppb.New(staleUpdateTime.Add(time.Minute)),
 					},
 				}
-				_, err := gu.Fetch(ctx, &existingCL, lProject, time.Time{})
+				_, err := gu.Fetch(ctx, changelist.NewFetchInput(&existingCL, task))
 				So(err, ShouldErrLike, gerrit.ErrStaleData)
 			})
 		})
@@ -449,7 +454,7 @@ func TestUpdaterBackendFetch(t *testing.T) {
 			ct.GFake.AddFrom(gf.WithCIs(gHost, gfACLmock, gf.CI(gChange, gf.Ref("refs/heads/main"), gf.Project(gRepo))))
 
 			// First time 404 isn't certain.
-			res, err := gu.Fetch(ctx, &newCL, lProject, time.Time{})
+			res, err := gu.Fetch(ctx, changelist.NewFetchInput(&newCL, task))
 			So(err, ShouldBeNil)
 			So(res.Snapshot, ShouldBeNil)
 			So(res.ApplicableConfig, ShouldBeNil)
@@ -469,7 +474,7 @@ func TestUpdaterBackendFetch(t *testing.T) {
 				ct.Clock.Add(noAccessGraceRetryDelay)
 				// Because 403 can be caused due to stale ACLs on a stale mirror.
 				gfResponse = status.New(codes.PermissionDenied, "403")
-				res2, err := gu.Fetch(ctx, &cl, lProject, time.Time{})
+				res2, err := gu.Fetch(ctx, changelist.NewFetchInput(&cl, task))
 				So(err, ShouldBeNil)
 				// res2 must be the same, except for the .UpdateTime.
 				So(res2.AddDependentMeta.GetByProject()[lProject].UpdateTime, ShouldResembleProto, timestamppb.New(ct.Clock.Now()))
@@ -482,7 +487,7 @@ func TestUpdaterBackendFetch(t *testing.T) {
 
 			Convey("still no access after grace duration", func() {
 				ct.Clock.Add(noAccessGraceDuration + time.Second)
-				res2, err := gu.Fetch(ctx, &cl, lProject, time.Time{})
+				res2, err := gu.Fetch(ctx, changelist.NewFetchInput(&cl, task))
 				So(err, ShouldBeNil)
 				// res2 must be the same, except for the .UpdateTime.
 				So(res2.AddDependentMeta.GetByProject()[lProject].UpdateTime, ShouldResembleProto, timestamppb.New(ct.Clock.Now()))
@@ -499,7 +504,7 @@ func TestUpdaterBackendFetch(t *testing.T) {
 				// At a later time, the CL "magically" appears, e.g. if ACLs are fixed.
 				gfResponse = status.New(codes.OK, "OK")
 				ct.Clock.Add(time.Minute)
-				res2, err := gu.Fetch(ctx, &newCL, lProject, time.Time{})
+				res2, err := gu.Fetch(ctx, changelist.NewFetchInput(&newCL, task))
 				So(err, ShouldBeNil)
 				// The previous record of lack of Access must be expunged.
 				So(res2.AddDependentMeta, ShouldBeNil)
@@ -516,7 +521,7 @@ func TestUpdaterBackendFetch(t *testing.T) {
 
 					gfResponse = status.New(codes.NotFound, "not found, again")
 					ct.Clock.Add(time.Minute)
-					res3, err := gu.Fetch(ctx, &newCL, lProject, time.Time{})
+					res3, err := gu.Fetch(ctx, changelist.NewFetchInput(&newCL, task))
 					So(err, ShouldBeNil)
 
 					So(res3.Snapshot, ShouldBeNil)         // nothing to update
@@ -533,7 +538,7 @@ func TestUpdaterBackendFetch(t *testing.T) {
 		Convey("Not watched CL", func() {
 			Convey("Gerrit host is not watched", func() {
 				bogusCL := changelist.CL{ExternalID: changelist.MustGobID("404.example.com", 404)}
-				res, err := gu.Fetch(ctx, &bogusCL, lProject, time.Time{})
+				res, err := gu.Fetch(ctx, changelist.NewFetchInput(&bogusCL, task))
 				So(err, ShouldBeNil)
 				So(res.Snapshot, ShouldBeNil)
 				So(res.ApplicableConfig, ShouldBeNil)
@@ -547,7 +552,7 @@ func TestUpdaterBackendFetch(t *testing.T) {
 			})
 			Convey("Only the ref isn't watched", func() {
 				ct.GFake.AddFrom(gf.WithCIs(gHost, gf.ACLPublic(), gf.CI(gChange, gf.Ref("refs/un/watched"), gf.Project(gRepo))))
-				res, err := gu.Fetch(ctx, &newCL, lProject, time.Time{})
+				res, err := gu.Fetch(ctx, changelist.NewFetchInput(&newCL, task))
 				So(err, ShouldBeNil)
 				// Although technically, LUCI project currently has access,
 				// we mark it as lacking access from CV's PoV.
@@ -566,7 +571,7 @@ func TestUpdaterBackendFetch(t *testing.T) {
 					return status.New(codes.ResourceExhausted, "doesn't matter")
 				}
 				ct.GFake.AddFrom(gf.WithCIs(gHost, fakeResponseStatus, gf.CI(gChange, gf.Ref("refs/heads/main"), gf.Project(gRepo))))
-				_, err := gu.Fetch(ctx, &newCL, lProject, time.Time{})
+				_, err := gu.Fetch(ctx, changelist.NewFetchInput(&newCL, task))
 				So(err, ShouldErrLike, gerrit.ErrOutOfQuota)
 			})
 			Convey("ListFiles or GetRelatedChanges fails", func() {
@@ -580,7 +585,7 @@ func TestUpdaterBackendFetch(t *testing.T) {
 					return status.New(codes.OK, "ok")
 				}
 				ct.GFake.AddFrom(gf.WithCIs(gHost, fakeResponseStatus, gf.CI(gChange, gf.Ref("refs/heads/main"), gf.Project(gRepo))))
-				_, err := gu.Fetch(ctx, &newCL, lProject, time.Time{})
+				_, err := gu.Fetch(ctx, changelist.NewFetchInput(&newCL, task))
 				So(err, ShouldErrLike, "2nd call failed")
 			})
 		})

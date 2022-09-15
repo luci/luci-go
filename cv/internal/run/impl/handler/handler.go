@@ -115,7 +115,7 @@ type RM interface {
 
 // CLUpdater encapsulates interaction with CL Updater by the Run events handler.
 type CLUpdater interface {
-	ScheduleBatch(ctx context.Context, luciProject string, cls []*changelist.CL) error
+	ScheduleBatch(ctx context.Context, luciProject string, cls []*changelist.CL, requester changelist.UpdateCLTask_Requester) error
 }
 
 // TryjobNotifier encapsulates interaction with Tryjob components by the Run

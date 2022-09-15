@@ -33,6 +33,27 @@ message UpdateCLTask {
   string external_id = 3;
 
   google.protobuf.Timestamp updated_hint = 4;
+
+  enum Requester {
+    REQUESTER_CLASS_UNSPECIFIED = 0;
+    INCR_POLL_MATCHED = 1;
+    FULL_POLL_MATCHED = 2;
+    FULL_POLL_UNMATCHED = 3;
+    PUBSUB_POLL = 4;
+    CL_PURGER = 5;
+    RPC_ADMIN = 6;
+    RUN_POKE = 7;
+    RUN_REMOVAL = 8;
+    CANCEL_CL_TRIGGER = 9;
+    UPDATE_CONFIG = 10;
+  }
+  // Requester identifies various scenarios that enqueue UpdateCLTask(s).
+  //
+  // This is used to track UpdateCLTask(s) by the requester for monitoring
+  // purposes.
+  Requester requester = 5;
+  // True if the UpdateCLTask was enqueued to resolve a dependency.
+  bool is_for_dep = 6;
 }
 
 // BatchUpdateCLTask is for updating many CLs.

@@ -25,6 +25,7 @@ import (
 	"go.chromium.org/luci/common/sync/parallel"
 	"go.chromium.org/luci/gae/service/datastore"
 
+	"go.chromium.org/luci/cv/internal/changelist"
 	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/configs/prjcfg"
 	"go.chromium.org/luci/cv/internal/gerrit"
@@ -92,7 +93,9 @@ func (impl *Impl) Poke(ctx context.Context, rs *state.RunState) (*Result, error)
 		case err != nil:
 			return nil, err
 		case ok:
-			if err := impl.CLUpdater.ScheduleBatch(ctx, rs.ID.LUCIProject(), cls); err != nil {
+			if err := impl.CLUpdater.ScheduleBatch(
+				ctx, rs.ID.LUCIProject(), cls,
+				changelist.UpdateCLTask_RUN_POKE); err != nil {
 				return nil, err
 			}
 			rs.LatestCLsRefresh = datastore.RoundTime(clock.Now(ctx).UTC())

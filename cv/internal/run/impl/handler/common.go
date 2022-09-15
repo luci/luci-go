@@ -119,10 +119,10 @@ func (impl *Impl) endRun(ctx context.Context, rs *state.RunState, st run.Status)
 // Run.
 //
 // For each CL:
-//   * marks its Snapshot as outdated, which prevents Project Manager from
+//   - marks its Snapshot as outdated, which prevents Project Manager from
 //     operating on potentially outdated CL Snapshots;
-//   * schedules refresh of CL snapshot;
-//   * removes Run's ID from the list of CL's IncompleteRuns.
+//   - schedules refresh of CL snapshot;
+//   - removes Run's ID from the list of CL's IncompleteRuns.
 func (impl *Impl) removeRunFromCLs(ctx context.Context, runID common.RunID, clids common.CLIDs) error {
 	muts, err := impl.CLMutator.BeginBatch(ctx, runID.LUCIProject(), clids)
 	if err != nil {
@@ -138,7 +138,7 @@ func (impl *Impl) removeRunFromCLs(ctx context.Context, runID common.RunID, clid
 	if err != nil {
 		return err
 	}
-	return impl.CLUpdater.ScheduleBatch(ctx, runID.LUCIProject(), cls)
+	return impl.CLUpdater.ScheduleBatch(ctx, runID.LUCIProject(), cls, changelist.UpdateCLTask_RUN_REMOVAL)
 }
 
 type reviewInputMeta struct {
@@ -202,7 +202,7 @@ func (impl *Impl) cancelCLTriggers(ctx context.Context, runID common.RunID, toCa
 		}
 	})
 	if len(forceRefresh) != 0 {
-		if ferr := impl.CLUpdater.ScheduleBatch(ctx, runID.LUCIProject(), forceRefresh); ferr != nil {
+		if ferr := impl.CLUpdater.ScheduleBatch(ctx, runID.LUCIProject(), forceRefresh, changelist.UpdateCLTask_CANCEL_CL_TRIGGER); ferr != nil {
 			logging.Warningf(ctx, "Failed to schedule best-effort force refresh of %d CLs: %s", len(forceRefresh), ferr)
 		}
 	}
