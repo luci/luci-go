@@ -262,15 +262,8 @@ var templateBuildMask = model.HardcodedBuildMask(
 	"tags",
 )
 
-// scheduleRequestFromTemplate returns a request with fields populated by the
-// given template_build_id if there is one. Fields set in the request override
-// fields populated from the template. Does not modify the incoming request.
-func scheduleRequestFromTemplate(ctx context.Context, req *pb.ScheduleBuildRequest) (*pb.ScheduleBuildRequest, error) {
-	if req.GetTemplateBuildId() == 0 {
-		return req, nil
-	}
-
-	bld, err := getBuild(ctx, req.TemplateBuildId)
+func scheduleRequestFromBuildID(ctx context.Context, bID int64) (*pb.ScheduleBuildRequest, error) {
+	bld, err := getBuild(ctx, bID)
 	if err != nil {
 		return nil, err
 	}
@@ -300,6 +293,21 @@ func scheduleRequestFromTemplate(ctx context.Context, req *pb.ScheduleBuildReque
 		ret.Experiments[exp] = enabled
 		return true
 	})
+	return ret, nil
+}
+
+// scheduleRequestFromTemplate returns a request with fields populated by the
+// given template_build_id if there is one. Fields set in the request override
+// fields populated from the template. Does not modify the incoming request.
+func scheduleRequestFromTemplate(ctx context.Context, req *pb.ScheduleBuildRequest) (*pb.ScheduleBuildRequest, error) {
+	if req.GetTemplateBuildId() == 0 {
+		return req, nil
+	}
+
+	ret, err := scheduleRequestFromBuildID(ctx, req.TemplateBuildId)
+	if err != nil {
+		return nil, err
+	}
 
 	// proto.Merge concatenates repeated fields. Here the desired behavior is replacement,
 	// so clear slices from the return value before merging, if specified in the request.
