@@ -108,7 +108,7 @@ func withTempDir(l logging.Logger, dir, prefix string, fn func(string) error) er
 // The specification path is: <EnvRoot>/<SpecHash>/EnvironmentStampPath, so our
 // EnvRoot is two directories up.
 //
-// We export EnvSpecPath as an asbolute path. However, since someone else
+// We export EnvSpecPath as an absolute path. However, since someone else
 // could have overridden it or exported their own, let's make sure.
 func EnvRootFromStampPath(path string) (string, error) {
 	if err := filesystem.AbsPath(&path); err != nil {

@@ -100,7 +100,7 @@ func TestFind(t *testing.T) {
 				if tc.err == "" {
 					So(err, ShouldBeNil)
 
-					// Success case. Version will be cahced.
+					// Success case. Version will be cached.
 					version, err := interp.GetVersion(c)
 					So(err, ShouldBeNil)
 					So(filepath.Base(interp.Python), ShouldEqual, tc.found)

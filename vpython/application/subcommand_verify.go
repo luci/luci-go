@@ -47,7 +47,7 @@ func (cr *verifyCommandRun) Run(app subcommands.Application, args []string, env 
 	a := getApplication(c, args)
 
 	return run(c, func(c context.Context) error {
-		// Make sure that we can resolve the referenced specifiction.
+		// Make sure that we can resolve the referenced specification.
 		if err := a.opts.ResolveSpec(c); err != nil {
 			return errors.Annotate(err, "failed to resolve specification").Err()
 		}
