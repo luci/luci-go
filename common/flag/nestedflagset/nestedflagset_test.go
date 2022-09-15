@@ -76,8 +76,8 @@ func TestNestedFlagSet(t *testing.T) {
 	})
 }
 
-// Example to demonstrate NestedFlagSet usage.
-func ExampleNestedFlagSet() {
+// ExampleFlagSet demonstrates nestedflagset.FlagSet usage.
+func ExampleFlagSet() {
 	nfs := &FlagSet{}
 	s := nfs.F.String("str", "", "Nested string option.")
 	i := nfs.F.Int("int", 0, "Nested integer option.")
