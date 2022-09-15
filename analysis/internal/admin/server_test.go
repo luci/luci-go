@@ -103,10 +103,10 @@ func TestValidateExportTestVariantsRequest(t *testing.T) {
 		ctx := context.Background()
 		ctx = memory.Use(ctx)
 		config.SetTestProjectConfig(ctx, createProjectsConfig())
-		realm := "chromium:try"
-		cloudProject := "cloudProject"
-		dataset := "dataset"
-		table := "table"
+		const realm = "chromium:try"
+		const cloudProject = "cloudProject"
+		const dataset = "dataset"
+		const table = "table"
 		start := time.Date(2021, 11, 12, 0, 0, 0, 0, time.UTC)
 		end := start.Add(24 * time.Hour)
 
@@ -270,10 +270,10 @@ func TestExportTestVariants(t *testing.T) {
 	ctx = memory.Use(ctx)
 	config.SetTestProjectConfig(ctx, createProjectsConfig())
 
-	realm := "chromium:try"
-	cloudProject := "cloudProject"
-	dataset := "dataset"
-	table := "table"
+	const realm = "chromium:try"
+	const cloudProject = "cloudProject"
+	const dataset = "dataset"
+	const table = "table"
 	start := time.Date(2021, 11, 12, 0, 0, 0, 0, time.UTC)
 	end := start.Add(2 * time.Hour)
 	req := &adminpb.ExportTestVariantsRequest{

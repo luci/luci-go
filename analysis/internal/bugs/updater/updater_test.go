@@ -70,7 +70,7 @@ func TestRun(t *testing.T) {
 		mc, err := monorail.NewClient(monorail.UseFakeIssuesClient(ctx, f, user), "myhost")
 		So(err, ShouldBeNil)
 
-		project := "chromium"
+		const project = "chromium"
 		monorailCfg := monorail.ChromiumTestConfig()
 		thres := &configpb.ImpactThreshold{
 			// Should be more onerous than the "keep-open" thresholds

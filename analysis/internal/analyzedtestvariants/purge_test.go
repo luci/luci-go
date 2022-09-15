@@ -32,13 +32,13 @@ import (
 func TestPurge(t *testing.T) {
 	Convey(`TestPurge`, t, func() {
 		ctx := testutil.SpannerTestContext(t)
-		realm := "chromium:ci"
-		tID1 := "ninja://test1"
-		tID2 := "ninja://test2"
-		tID3 := "ninja://test3"
-		tID4 := "ninja://test4"
-		tID5 := "ninja://test5"
-		vh := "varianthash"
+		const realm = "chromium:ci"
+		const tID1 = "ninja://test1"
+		const tID2 = "ninja://test2"
+		const tID3 = "ninja://test3"
+		const tID4 = "ninja://test4"
+		const tID5 = "ninja://test5"
+		const vh = "varianthash"
 		now := clock.Now(ctx)
 		ms := []*spanner.Mutation{
 			// Active flaky test variants are not deleted.
