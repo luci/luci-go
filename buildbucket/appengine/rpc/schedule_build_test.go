@@ -47,6 +47,7 @@ import (
 	"go.chromium.org/luci/buildbucket/appengine/internal/config"
 	"go.chromium.org/luci/buildbucket/appengine/internal/metrics"
 	"go.chromium.org/luci/buildbucket/appengine/model"
+	"go.chromium.org/luci/buildbucket/appengine/rpc/testutil"
 	taskdefs "go.chromium.org/luci/buildbucket/appengine/tasks/defs"
 	"go.chromium.org/luci/buildbucket/bbperms"
 	pb "go.chromium.org/luci/buildbucket/proto"
@@ -120,29 +121,12 @@ func TestScheduleBuild(t *testing.T) {
 		datastore.GetTestable(ctx).AutoIndex(true)
 		datastore.GetTestable(ctx).Consistent(true)
 
-		So(datastore.Put(ctx, &model.Builder{
-			Parent: model.BucketKey(ctx, "project", "bucket 1"),
-			ID:     "builder 1",
-			Config: &pb.BuilderConfig{
-				Name: "builder 1",
-			},
-		}), ShouldBeNil)
-		So(datastore.Put(ctx, &model.Builder{
-			Parent: model.BucketKey(ctx, "project", "bucket 1"),
-			ID:     "builder 2",
-			Config: &pb.BuilderConfig{
-				Name: "builder 2",
-			},
-		}), ShouldBeNil)
-
-		So(datastore.Put(ctx, &model.Bucket{
-			Parent: model.ProjectKey(ctx, "project"),
-			ID:     "bucket 1",
-			Proto: &pb.Bucket{
-				Name:     "bucket 1",
-				Swarming: &pb.Swarming{},
-			},
-		}), ShouldBeNil)
+		testutil.PutBuilder(ctx, "project", "bucket 1", "builder 1")
+		testutil.PutBuilder(ctx, "project", "bucket 1", "builder 2")
+		testutil.PutBucket(ctx, "project", "bucket 1", &pb.Bucket{
+			Swarming: &pb.Swarming{},
+		})
+		testutil.PutBucket(ctx, "project", "bucket 2", nil)
 		So(datastore.Put(ctx, &model.Bucket{
 			Parent: model.ProjectKey(ctx, "project"),
 			ID:     "bucket 2",
@@ -434,13 +418,7 @@ func TestScheduleBuild(t *testing.T) {
 			})
 
 			Convey("dynamic", func() {
-				So(datastore.Put(ctx, &model.Bucket{
-					Parent: model.ProjectKey(ctx, "project"),
-					ID:     "bucket",
-					Proto: &pb.Bucket{
-						Name: "bucket",
-					},
-				}), ShouldBeNil)
+				testutil.PutBucket(ctx, "project", "bucket", nil)
 				req := &pb.ScheduleBuildRequest{
 					Builder: &pb.BuilderID{
 						Project: "project",
@@ -516,20 +494,8 @@ func TestScheduleBuild(t *testing.T) {
 		})
 
 		Convey("dry run", func() {
-			So(datastore.Put(ctx, &model.Builder{
-				Parent: model.BucketKey(ctx, "project", "bucket"),
-				ID:     "builder",
-				Config: &pb.BuilderConfig{
-					Name: "builder",
-				},
-			}), ShouldBeNil)
-			So(datastore.Put(ctx, &model.Bucket{
-				Parent: model.ProjectKey(ctx, "project"),
-				ID:     "bucket",
-				Proto: &pb.Bucket{
-					Name: "bucket",
-				},
-			}), ShouldBeNil)
+			testutil.PutBuilder(ctx, "project", "bucket", "builder")
+			testutil.PutBucket(ctx, "project", "bucket", nil)
 
 			Convey("mixed", func() {
 				reqs := []*pb.ScheduleBuildRequest{
@@ -673,20 +639,8 @@ func TestScheduleBuild(t *testing.T) {
 					},
 				},
 			}
-			So(datastore.Put(ctx, &model.Builder{
-				Parent: model.BucketKey(ctx, "project", "bucket"),
-				ID:     "builder",
-				Config: &pb.BuilderConfig{
-					Name: "builder",
-				},
-			}), ShouldBeNil)
-			So(datastore.Put(ctx, &model.Bucket{
-				Parent: model.ProjectKey(ctx, "project"),
-				ID:     "bucket",
-				Proto: &pb.Bucket{
-					Name: "bucket",
-				},
-			}), ShouldBeNil)
+			testutil.PutBuilder(ctx, "project", "bucket", "builder")
+			testutil.PutBucket(ctx, "project", "bucket", nil)
 
 			blds, err := scheduleBuilds(ctx, globalCfg, req)
 			So(err, ShouldBeNil)
@@ -833,28 +787,9 @@ func TestScheduleBuild(t *testing.T) {
 					Critical: pb.Trinary_NO,
 				},
 			}
-			So(datastore.Put(ctx, &model.Builder{
-				Parent: model.BucketKey(ctx, "project", "static bucket"),
-				ID:     "static builder",
-				Config: &pb.BuilderConfig{
-					Name: "static builder",
-				},
-			}), ShouldBeNil)
-			So(datastore.Put(ctx, &model.Bucket{
-				Parent: model.ProjectKey(ctx, "project"),
-				ID:     "static bucket",
-				Proto: &pb.Bucket{
-					Name:     "static bucket",
-					Swarming: &pb.Swarming{},
-				},
-			}), ShouldBeNil)
-			So(datastore.Put(ctx, &model.Bucket{
-				Parent: model.ProjectKey(ctx, "project"),
-				ID:     "dynamic bucket",
-				Proto: &pb.Bucket{
-					Name: "dynamic bucket",
-				},
-			}), ShouldBeNil)
+			testutil.PutBuilder(ctx, "project", "static bucket", "static builder")
+			testutil.PutBucket(ctx, "project", "static bucket", &pb.Bucket{Swarming: &pb.Swarming{}})
+			testutil.PutBucket(ctx, "project", "dynamic bucket", nil)
 
 			blds, err := scheduleBuilds(ctx, globalCfg, reqs...)
 			So(err, ShouldBeNil)
@@ -1178,13 +1113,7 @@ func TestScheduleBuild(t *testing.T) {
 						Name: "builder",
 					},
 				}), ShouldBeNil)
-			So(datastore.Put(ctx, &model.Bucket{
-				Parent: model.ProjectKey(ctx, "project"),
-				ID:     "bucket",
-				Proto: &pb.Bucket{
-					Name: "bucket",
-				},
-			}), ShouldBeNil)
+			testutil.PutBucket(ctx, "project", "bucket", nil)
 
 			blds, err := scheduleBuilds(ctx, globalCfg, reqs...)
 			So(err.(errors.MultiError), ShouldHaveLength, 2)
@@ -1330,20 +1259,9 @@ func TestScheduleBuild(t *testing.T) {
 			So(err, ShouldBeNil)
 			tk := base64.RawURLEncoding.EncodeToString(tkeBytes)
 
-			So(datastore.Put(ctx, &model.Builder{
-				Parent: model.BucketKey(ctx, "project", "bucket"),
-				ID:     "builder",
-				Config: &pb.BuilderConfig{
-					Name: "builder",
-				},
-			}), ShouldBeNil)
-			So(datastore.Put(ctx, &model.Bucket{
-				Parent: model.ProjectKey(ctx, "project"),
-				ID:     "bucket",
-				Proto: &pb.Bucket{
-					Name: "bucket",
-				},
-			}), ShouldBeNil)
+			testutil.PutBuilder(ctx, "project", "bucket", "builder")
+			testutil.PutBuilder(ctx, "project", "bucket", "builder")
+			testutil.PutBucket(ctx, "project", "bucket", nil)
 
 			So(datastore.Put(ctx, &model.Build{
 				Proto: &pb.Build{
@@ -1509,11 +1427,7 @@ func TestScheduleBuild(t *testing.T) {
 			),
 		})
 
-		So(datastore.Put(ctx, &model.Bucket{
-			ID:     "bucket",
-			Parent: model.ProjectKey(ctx, "project"),
-			Proto:  &pb.Bucket{},
-		}), ShouldBeNil)
+		testutil.PutBucket(ctx, "project", "bucket", nil)
 
 		Convey("nil", func() {
 			ret, err := scheduleRequestFromTemplate(ctx, nil)
@@ -2488,7 +2402,7 @@ func TestScheduleBuild(t *testing.T) {
 			Convey("override", func() {
 				req := &pb.ScheduleBuildRequest{
 					TemplateBuildId: 1,
-					Priority: int32(25),
+					Priority:        int32(25),
 				}
 				ret, err := scheduleRequestFromTemplate(ctx, req)
 				So(err, ShouldBeNil)
@@ -4859,13 +4773,7 @@ func TestScheduleBuild(t *testing.T) {
 					),
 				})
 
-				So(datastore.Put(ctx, &model.Bucket{
-					ID:     "bucket",
-					Parent: model.ProjectKey(ctx, "project"),
-					Proto: &pb.Bucket{
-						Name: "bucket",
-					},
-				}), ShouldBeNil)
+				testutil.PutBucket(ctx, "project", "bucket", nil)
 				req := &pb.ScheduleBuildRequest{
 					Builder: &pb.BuilderID{
 						Project: "project",
@@ -4900,14 +4808,9 @@ func TestScheduleBuild(t *testing.T) {
 					),
 				})
 
-				So(datastore.Put(ctx, &model.Bucket{
-					ID:     "bucket",
-					Parent: model.ProjectKey(ctx, "project"),
-					Proto: &pb.Bucket{
-						Name:     "bucket",
-						Swarming: &pb.Swarming{},
-					},
-				}), ShouldBeNil)
+				testutil.PutBucket(ctx, "project", "bucket", &pb.Bucket{
+					Swarming: &pb.Swarming{},
+				})
 				req := &pb.ScheduleBuildRequest{
 					Builder: &pb.BuilderID{
 						Project: "project",
@@ -4924,13 +4827,7 @@ func TestScheduleBuild(t *testing.T) {
 				})
 
 				Convey("exists", func() {
-					So(datastore.Put(ctx, &model.Builder{
-						Parent: model.BucketKey(ctx, "project", "bucket"),
-						ID:     "builder",
-						Config: &pb.BuilderConfig{
-							Name: "builder",
-						},
-					}), ShouldBeNil)
+					testutil.PutBuilder(ctx, "project", "bucket", "builder")
 					So(datastore.Put(ctx, &model.Build{
 						ID: 9021868963221667745,
 						Proto: &pb.Build{
@@ -5088,13 +4985,7 @@ func TestScheduleBuild(t *testing.T) {
 						},
 						RequestId: "id",
 					}
-					So(datastore.Put(ctx, &model.Builder{
-						Parent: model.BucketKey(ctx, "project", "bucket"),
-						ID:     "builder",
-						Config: &pb.BuilderConfig{
-							Name: "builder",
-						},
-					}), ShouldBeNil)
+					testutil.PutBuilder(ctx, "project", "bucket", "builder")
 
 					Convey("deduplication", func() {
 						So(datastore.Put(ctx, &model.RequestID{
@@ -5211,14 +5102,10 @@ func TestScheduleBuild(t *testing.T) {
 						authtest.MockPermission(userID, "project:bucket", bbperms.BuildsAdd),
 					),
 				})
-				So(datastore.Put(ctx, &model.Bucket{
-					ID:     "bucket",
-					Parent: model.ProjectKey(ctx, "project"),
-					Proto: &pb.Bucket{
-						Name:     "bucket",
-						Swarming: &pb.Swarming{},
-					},
-				}), ShouldBeNil)
+				testutil.PutBucket(ctx, "project", "bucket", &pb.Bucket{
+					Name:     "bucket",
+					Swarming: &pb.Swarming{},
+				})
 				So(datastore.Put(ctx, &model.Build{
 					ID: 1000,
 					Proto: &pb.Build{
@@ -5305,14 +5192,10 @@ func TestScheduleBuild(t *testing.T) {
 			},
 		}
 
-		So(datastore.Put(ctx, &model.Bucket{
-			ID:     "bucket",
-			Parent: model.ProjectKey(ctx, "project"),
-			Proto: &pb.Bucket{
-				Name:     "bucket",
-				Swarming: &pb.Swarming{},
-			},
-		}), ShouldBeNil)
+		testutil.PutBucket(ctx, "project", "bucket", &pb.Bucket{
+			Name:     "bucket",
+			Swarming: &pb.Swarming{},
+		})
 		So(datastore.Put(ctx, &model.Build{
 			ID: 1000,
 			Proto: &pb.Build{
@@ -5839,11 +5722,8 @@ func TestScheduleBuild(t *testing.T) {
 				So(err, ShouldBeNil)
 				tk := base64.RawURLEncoding.EncodeToString(tkeBytes)
 				Convey("ended parent", func() {
-					So(datastore.Put(ctx, &model.Bucket{
-						ID:     "bucket",
-						Parent: model.ProjectKey(ctx, "project"),
-						Proto:  &pb.Bucket{},
-					}), ShouldBeNil)
+					testutil.PutBucket(ctx, "project", "bucket", nil)
+
 					So(datastore.Put(ctx, &model.Build{
 						Proto: &pb.Build{
 							Id: 1,
@@ -5863,11 +5743,7 @@ func TestScheduleBuild(t *testing.T) {
 				})
 
 				Convey("OK", func() {
-					So(datastore.Put(ctx, &model.Bucket{
-						ID:     "bucket",
-						Parent: model.ProjectKey(ctx, "project"),
-						Proto:  &pb.Bucket{},
-					}), ShouldBeNil)
+					testutil.PutBucket(ctx, "project", "bucket", nil)
 					So(datastore.Put(ctx, &model.Build{
 						Proto: &pb.Build{
 							Id: 1,

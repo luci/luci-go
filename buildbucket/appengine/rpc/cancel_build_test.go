@@ -33,6 +33,7 @@ import (
 	"go.chromium.org/luci/server/tq"
 
 	"go.chromium.org/luci/buildbucket/appengine/model"
+	"go.chromium.org/luci/buildbucket/appengine/rpc/testutil"
 	"go.chromium.org/luci/buildbucket/bbperms"
 	pb "go.chromium.org/luci/buildbucket/proto"
 
@@ -95,11 +96,7 @@ func TestCancelBuild(t *testing.T) {
 						authtest.MockPermission(userID, "project:bucket", bbperms.BuildsGet),
 					),
 				})
-				So(datastore.Put(ctx, &model.Bucket{
-					ID:     "bucket",
-					Parent: model.ProjectKey(ctx, "project"),
-					Proto:  &pb.Bucket{},
-				}), ShouldBeNil)
+				testutil.PutBucket(ctx, "project", "bucket 1", nil)
 				So(datastore.Put(ctx, &model.Build{
 					Proto: &pb.Build{
 						Id: 1,
@@ -123,11 +120,7 @@ func TestCancelBuild(t *testing.T) {
 			Convey("found", func() {
 				now := testclock.TestRecentTimeLocal
 				ctx, _ = testclock.UseTime(ctx, now)
-				So(datastore.Put(ctx, &model.Bucket{
-					ID:     "bucket",
-					Parent: model.ProjectKey(ctx, "project"),
-					Proto:  &pb.Bucket{},
-				}), ShouldBeNil)
+				testutil.PutBucket(ctx, "project", "bucket", nil)
 				build := &model.Build{
 					Proto: &pb.Build{
 						Id: 1,

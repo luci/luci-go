@@ -27,6 +27,7 @@ import (
 	"google.golang.org/protobuf/types/known/structpb"
 
 	"go.chromium.org/luci/buildbucket/appengine/model"
+	"go.chromium.org/luci/buildbucket/appengine/rpc/testutil"
 	"go.chromium.org/luci/buildbucket/bbperms"
 	pb "go.chromium.org/luci/buildbucket/proto"
 
@@ -60,11 +61,7 @@ func TestGetBuild(t *testing.T) {
 			})
 
 			Convey("with build entity", func() {
-				So(datastore.Put(ctx, &model.Bucket{
-					ID:     "bucket",
-					Parent: model.ProjectKey(ctx, "project"),
-					Proto:  &pb.Bucket{},
-				}), ShouldBeNil)
+				testutil.PutBucket(ctx, "project", "bucket", nil)
 				build := &model.Build{
 					Proto: &pb.Build{
 						Id: 1,
@@ -337,11 +334,7 @@ func TestGetBuild(t *testing.T) {
 						authtest.MockPermission(userID, "project:bucket", bbperms.BuildsGet),
 					),
 				})
-				So(datastore.Put(ctx, &model.Bucket{
-					ID:     "bucket",
-					Parent: model.ProjectKey(ctx, "project"),
-					Proto:  &pb.Bucket{},
-				}), ShouldBeNil)
+				testutil.PutBucket(ctx, "project", "bucket", nil)
 				So(datastore.Put(ctx, &model.TagIndex{
 					ID: ":2:build_address:luci.project.bucket/builder/1",
 					Entries: []model.TagIndexEntry{

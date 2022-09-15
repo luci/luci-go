@@ -31,6 +31,7 @@ import (
 
 	bb "go.chromium.org/luci/buildbucket"
 	"go.chromium.org/luci/buildbucket/appengine/model"
+	"go.chromium.org/luci/buildbucket/appengine/rpc/testutil"
 	"go.chromium.org/luci/buildbucket/bbperms"
 	pb "go.chromium.org/luci/buildbucket/proto"
 
@@ -265,12 +266,7 @@ func TestSearchBuilds(t *testing.T) {
 		})
 		datastore.GetTestable(ctx).AutoIndex(true)
 		datastore.GetTestable(ctx).Consistent(true)
-
-		So(datastore.Put(ctx, &model.Bucket{
-			ID:     "bucket",
-			Parent: model.ProjectKey(ctx, "project"),
-			Proto:  &pb.Bucket{},
-		}), ShouldBeNil)
+		testutil.PutBucket(ctx, "project", "bucket", nil)
 		So(datastore.Put(ctx, &model.Build{
 			Proto: &pb.Build{
 				Id: 1,
