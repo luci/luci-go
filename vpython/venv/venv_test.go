@@ -153,7 +153,7 @@ func TestResolvePythonInterpreter(t *testing.T) {
 
 		pythons := []*resolvedInterpreter{}
 		tryAddPython := func(majorVersion, minorVersion int) {
-			ri := resolveFromPath(python.Version{majorVersion, minorVersion, 0})
+			ri := resolveFromPath(python.Version{Major: majorVersion, Minor: minorVersion, Patch: 0})
 
 			// Ignore interpreters without '.' in the filename. Such binaries
 			// are usually just symlinks to binaries named with the specific
