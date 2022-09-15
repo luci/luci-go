@@ -35,7 +35,7 @@ describe('Test FailureTableHead', () => {
 
     await (screen.findByTestId('failure_table_head'));
 
-    expect(screen.getByText('User Cls Failed Presubmit')).toBeInTheDocument();
+    expect(screen.getByText('User CLs Failed Presubmit')).toBeInTheDocument();
     expect(screen.getByText('Builds Failed')).toBeInTheDocument();
     expect(screen.getByText('Presubmit-Blocking Failures Exonerated')).toBeInTheDocument();
     expect(screen.getByText('Total Failures')).toBeInTheDocument();

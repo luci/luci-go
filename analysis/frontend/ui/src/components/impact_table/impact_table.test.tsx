@@ -27,7 +27,7 @@ describe('Test ImpactTable component', () => {
     const cluster = getMockCluster('1234567890abcdef1234567890abcdef');
     render(<ImpactTable cluster={cluster} />);
 
-    await screen.findByText('User Cls Failed Presubmit');
+    await screen.findByText('User CLs Failed Presubmit');
     // Check for 7d unexpected failures total.
     expect(screen.getByText('15800')).toBeInTheDocument();
 

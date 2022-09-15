@@ -41,7 +41,7 @@ const FailuresTableHead = ({
             active={sortMetric === 'presubmitRejects'}
             direction={isAscending ? 'asc' : 'desc'}
             onClick={() => toggleSort('presubmitRejects')}>
-              User Cls Failed Presubmit
+              User CLs Failed Presubmit
           </TableSortLabel>
         </TableCell>
         <TableCell

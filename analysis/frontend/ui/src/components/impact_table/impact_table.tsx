@@ -50,7 +50,7 @@ const ImpactTable = ({ cluster }: Props) => {
         </TableHead>
         <TableBody>
           <TableRow>
-            <TableCell>User Cls Failed Presubmit <HelpTooltip text={userClsFailedPresubmitTooltipText} /></TableCell>
+            <TableCell>User CLs Failed Presubmit <HelpTooltip text={userClsFailedPresubmitTooltipText} /></TableCell>
             <TableCell align="right">{metric(cluster.userClsFailedPresubmit.oneDay)}</TableCell>
             <TableCell align="right">{metric(cluster.userClsFailedPresubmit.threeDay)}</TableCell>
             <TableCell align="right">{metric(cluster.userClsFailedPresubmit.sevenDay)}</TableCell>

@@ -25,6 +25,7 @@ import ListItemText from '@mui/material/ListItemText';
 import Menu from '@mui/material/Menu';
 import MenuItem from '@mui/material/MenuItem';
 import Tooltip from '@mui/material/Tooltip';
+import FeedbackIcon from '@mui/icons-material/Feedback';
 
 const UserActions = () => {
   const [anchorElUser, setAnchorElUser] = React.useState<null | HTMLElement>(null);
@@ -39,6 +40,14 @@ const UserActions = () => {
 
   return (
     <Box sx={{ flexGrow: 0, display: 'flex', alignItems: 'center' }}>
+      <Tooltip title="Send feedback">
+        <Button
+          href="https://goto.google.com/luci-analysis-bug"
+          target="_blank"
+          sx={{ color: 'white'}}
+          endIcon={<FeedbackIcon />}>
+        </Button>
+      </Tooltip>
       <Tooltip title="Open settings">
         <Button
           onClick={handleOpenUserMenu}
