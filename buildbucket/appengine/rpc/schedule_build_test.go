@@ -52,7 +52,6 @@ import (
 	pb "go.chromium.org/luci/buildbucket/proto"
 
 	. "github.com/smartystreets/goconvey/convey"
-
 	. "go.chromium.org/luci/common/testing/assertions"
 )
 
@@ -153,55 +152,47 @@ func TestScheduleBuild(t *testing.T) {
 		}), ShouldBeNil)
 
 		Convey("bucket not found", func() {
-			reqs := []*pb.ScheduleBuildRequest{
+			bldrIDs := []*pb.BuilderID{
 				{
-					Builder: &pb.BuilderID{
-						Project: "project",
-						Bucket:  "bucket 3",
-						Builder: "builder 1",
-					},
+					Project: "project",
+					Bucket:  "bucket 3",
+					Builder: "builder 1",
 				},
 			}
-			bldrs, err := fetchBuilderConfigs(ctx, reqs)
-			So(len(err.(errors.MultiError)), ShouldEqual, len(reqs))
+			bldrs, err := fetchBuilderConfigs(ctx, bldrIDs)
+			So(len(err.(errors.MultiError)), ShouldEqual, len(bldrIDs))
 			So(err, ShouldErrLike, "bucket not found")
 			So(bldrs["project/bucket 3"]["builder 1"], ShouldBeNil)
 		})
 
 		Convey("builder not found", func() {
-			reqs := []*pb.ScheduleBuildRequest{
+			bldrIDs := []*pb.BuilderID{
 				{
-					Builder: &pb.BuilderID{
-						Project: "project",
-						Bucket:  "bucket 1",
-						Builder: "builder 3",
-					},
+					Project: "project",
+					Bucket:  "bucket 1",
+					Builder: "builder 3",
 				},
 			}
-			bldrs, err := fetchBuilderConfigs(ctx, reqs)
-			So(len(err.(errors.MultiError)), ShouldEqual, len(reqs))
+			bldrs, err := fetchBuilderConfigs(ctx, bldrIDs)
+			So(len(err.(errors.MultiError)), ShouldEqual, len(bldrIDs))
 			So(err, ShouldErrLike, "builder not found")
 			So(bldrs["project/bucket 3"]["builder 1"], ShouldBeNil)
 		})
 
 		Convey("one found and the other not found", func() {
-			reqs := []*pb.ScheduleBuildRequest{
+			bldrIDs := []*pb.BuilderID{
 				{
-					Builder: &pb.BuilderID{
-						Project: "project",
-						Bucket:  "bucket 1",
-						Builder: "builder 1",
-					},
+					Project: "project",
+					Bucket:  "bucket 1",
+					Builder: "builder 1",
 				},
 				{
-					Builder: &pb.BuilderID{
-						Project: "project",
-						Bucket:  "bucket 1",
-						Builder: "builder 100",
-					},
+					Project: "project",
+					Bucket:  "bucket 1",
+					Builder: "builder 100",
 				},
 			}
-			bldrs, err := fetchBuilderConfigs(ctx, reqs)
+			bldrs, err := fetchBuilderConfigs(ctx, bldrIDs)
 			So(err.(errors.MultiError)[1], ShouldErrLike, "builder not found")
 			So(bldrs["project/bucket 3"]["builder 1"], ShouldBeNil)
 			So(bldrs["project/bucket 1"]["builder 1"], ShouldResembleProto, &pb.BuilderConfig{
@@ -210,31 +201,27 @@ func TestScheduleBuild(t *testing.T) {
 		})
 
 		Convey("dynamic", func() {
-			reqs := []*pb.ScheduleBuildRequest{
+			bldrIDs := []*pb.BuilderID{
 				{
-					Builder: &pb.BuilderID{
-						Project: "project",
-						Bucket:  "bucket 2",
-						Builder: "builder 1",
-					},
+					Project: "project",
+					Bucket:  "bucket 2",
+					Builder: "builder 1",
 				},
 			}
-			bldrs, err := fetchBuilderConfigs(ctx, reqs)
+			bldrs, err := fetchBuilderConfigs(ctx, bldrIDs)
 			So(err, ShouldBeNil)
 			So(bldrs["project/bucket 2"]["builder 1"], ShouldBeNil)
 		})
 
 		Convey("one", func() {
-			reqs := []*pb.ScheduleBuildRequest{
+			bldrIDs := []*pb.BuilderID{
 				{
-					Builder: &pb.BuilderID{
-						Project: "project",
-						Bucket:  "bucket 1",
-						Builder: "builder 1",
-					},
+					Project: "project",
+					Bucket:  "bucket 1",
+					Builder: "builder 1",
 				},
 			}
-			bldrs, err := fetchBuilderConfigs(ctx, reqs)
+			bldrs, err := fetchBuilderConfigs(ctx, bldrIDs)
 			So(err, ShouldBeNil)
 			So(bldrs["project/bucket 1"]["builder 1"], ShouldResembleProto, &pb.BuilderConfig{
 				Name: "builder 1",
@@ -242,30 +229,24 @@ func TestScheduleBuild(t *testing.T) {
 		})
 
 		Convey("many", func() {
-			reqs := []*pb.ScheduleBuildRequest{
+			bldrIDs := []*pb.BuilderID{
 				{
-					Builder: &pb.BuilderID{
-						Project: "project",
-						Bucket:  "bucket 1",
-						Builder: "builder 1",
-					},
+					Project: "project",
+					Bucket:  "bucket 1",
+					Builder: "builder 1",
 				},
 				{
-					Builder: &pb.BuilderID{
-						Project: "project",
-						Bucket:  "bucket 1",
-						Builder: "builder 2",
-					},
+					Project: "project",
+					Bucket:  "bucket 1",
+					Builder: "builder 2",
 				},
 				{
-					Builder: &pb.BuilderID{
-						Project: "project",
-						Bucket:  "bucket 2",
-						Builder: "builder 1",
-					},
+					Project: "project",
+					Bucket:  "bucket 2",
+					Builder: "builder 1",
 				},
 			}
-			bldrs, err := fetchBuilderConfigs(ctx, reqs)
+			bldrs, err := fetchBuilderConfigs(ctx, bldrIDs)
 			So(err, ShouldBeNil)
 			So(bldrs["project/bucket 1"]["builder 1"], ShouldResembleProto, &pb.BuilderConfig{
 				Name: "builder 1",

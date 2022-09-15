@@ -29,31 +29,20 @@ import (
 	"google.golang.org/protobuf/encoding/protojson"
 	"google.golang.org/protobuf/types/known/durationpb"
 	"google.golang.org/protobuf/types/known/structpb"
-	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/cipd/common"
-	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/data/rand/mathrand"
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/data/strpair"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/sync/parallel"
-	"go.chromium.org/luci/gae/service/datastore"
-	"go.chromium.org/luci/gae/service/info"
 	"go.chromium.org/luci/grpc/appstatus"
-	"go.chromium.org/luci/server/auth"
 
 	bb "go.chromium.org/luci/buildbucket"
-	"go.chromium.org/luci/buildbucket/appengine/internal/buildid"
 	"go.chromium.org/luci/buildbucket/appengine/internal/config"
-	"go.chromium.org/luci/buildbucket/appengine/internal/metrics"
 	"go.chromium.org/luci/buildbucket/appengine/internal/perm"
-	"go.chromium.org/luci/buildbucket/appengine/internal/resultdb"
-	"go.chromium.org/luci/buildbucket/appengine/internal/search"
 	"go.chromium.org/luci/buildbucket/appengine/model"
-	"go.chromium.org/luci/buildbucket/appengine/tasks"
-	taskdefs "go.chromium.org/luci/buildbucket/appengine/tasks/defs"
 	"go.chromium.org/luci/buildbucket/bbperms"
 	pb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/buildbucket/protoutil"
@@ -336,9 +325,9 @@ func scheduleRequestFromTemplate(ctx context.Context, req *pb.ScheduleBuildReque
 // requests in a map of Bucket ID -> Builder name -> *pb.BuilderConfig.
 //
 // A single returned error means a global error which applies to every request.
-// Otherwise, it would be a MultiError where len(MultiError) equals to len(reqs).
-func fetchBuilderConfigs(ctx context.Context, reqs []*pb.ScheduleBuildRequest) (map[string]map[string]*pb.BuilderConfig, error) {
-	merr := make(errors.MultiError, len(reqs))
+// Otherwise, it would be a MultiError where len(MultiError) equals to len(builderIDs).
+func fetchBuilderConfigs(ctx context.Context, builderIDs []*pb.BuilderID) (map[string]map[string]*pb.BuilderConfig, error) {
+	merr := make(errors.MultiError, len(builderIDs))
 	var bcks []*model.Bucket
 
 	// bckCfgs and bldrCfgs use a double-pointer because GetIgnoreMissing will
@@ -350,31 +339,31 @@ func fetchBuilderConfigs(ctx context.Context, reqs []*pb.ScheduleBuildRequest) (
 	bldrCfgs := map[string]map[string]**pb.BuilderConfig{} // Bucket ID -> Builder name -> **pb.BuilderConfig
 
 	idxMap := map[string]map[string][]int{} // Bucket ID -> Builder name -> a list of index
-	for i, req := range reqs {
-		bucket := protoutil.FormatBucketID(req.Builder.Project, req.Builder.Bucket)
+	for i, bldr := range builderIDs {
+		bucket := protoutil.FormatBucketID(bldr.Project, bldr.Bucket)
 		if _, ok := bldrCfgs[bucket]; !ok {
 			bldrCfgs[bucket] = make(map[string]**pb.BuilderConfig)
 			idxMap[bucket] = map[string][]int{}
 		}
-		if _, ok := bldrCfgs[bucket][req.Builder.Builder]; ok {
-			idxMap[bucket][req.Builder.Builder] = append(idxMap[bucket][req.Builder.Builder], i)
+		if _, ok := bldrCfgs[bucket][bldr.Builder]; ok {
+			idxMap[bucket][bldr.Builder] = append(idxMap[bucket][bldr.Builder], i)
 			continue
 		}
 		if _, ok := bckCfgs[bucket]; !ok {
 			b := &model.Bucket{
-				Parent: model.ProjectKey(ctx, req.Builder.Project),
-				ID:     req.Builder.Bucket,
+				Parent: model.ProjectKey(ctx, bldr.Project),
+				ID:     bldr.Bucket,
 			}
 			bckCfgs[bucket] = &b.Proto
 			bcks = append(bcks, b)
 		}
 		b := &model.Builder{
-			Parent: model.BucketKey(ctx, req.Builder.Project, req.Builder.Bucket),
-			ID:     req.Builder.Builder,
+			Parent: model.BucketKey(ctx, bldr.Project, bldr.Bucket),
+			ID:     bldr.Builder,
 		}
-		bldrCfgs[bucket][req.Builder.Builder] = &b.Config
+		bldrCfgs[bucket][bldr.Builder] = &b.Config
 		bldrs = append(bldrs, b)
-		idxMap[bucket][req.Builder.Builder] = append(idxMap[bucket][req.Builder.Builder], i)
+		idxMap[bucket][bldr.Builder] = append(idxMap[bucket][bldr.Builder], i)
 	}
 
 	// Note; this will fill in bckCfgs and bldrCfgs.
@@ -427,48 +416,6 @@ func fetchBuilderConfigs(ctx context.Context, reqs []*pb.ScheduleBuildRequest) (
 		return ret, nil
 	}
 	return ret, merr.AsError()
-}
-
-// generateBuildNumbers mutates the given builds, setting build numbers and
-// build address tags.
-//
-// It would return a MultiError (if any) where len(MultiError) equals to len(reqs).
-func generateBuildNumbers(ctx context.Context, builds []*model.Build) error {
-	merr := make(errors.MultiError, len(builds))
-	seq := make(map[string][]*model.Build)
-	idxMap := make(map[string][]int) // BuilderID -> a list of index
-	for i, b := range builds {
-		name := protoutil.FormatBuilderID(b.Proto.Builder)
-		seq[name] = append(seq[name], b)
-		idxMap[name] = append(idxMap[name], i)
-	}
-	_ = parallel.WorkPool(min(64, len(builds)), func(work chan<- func() error) {
-		for name, blds := range seq {
-			name := name
-			blds := blds
-			work <- func() error {
-				n, err := model.GenerateSequenceNumbers(ctx, name, len(blds))
-				if err != nil {
-					for _, idx := range idxMap[name] {
-						merr[idx] = err
-					}
-					return nil
-				}
-				for i, b := range blds {
-					b.Proto.Number = n + int32(i)
-					addr := fmt.Sprintf("build_address:luci.%s.%s/%s/%d", b.Proto.Builder.Project, b.Proto.Builder.Bucket, b.Proto.Builder.Builder, b.Proto.Number)
-					b.Tags = append(b.Tags, addr)
-					sort.Strings(b.Tags)
-				}
-				return nil
-			}
-		}
-	})
-
-	if merr.First() == nil {
-		return nil
-	}
-	return merr.AsError()
 }
 
 // builderMatches returns whether or not the given builder matches the given
@@ -1213,13 +1160,13 @@ func scheduleBuilds(ctx context.Context, globalCfg *pb.SettingsCfg, reqs ...*pb.
 		}
 	}
 
-	now := clock.Now(ctx).UTC()
-	user := auth.CurrentIdentity(ctx)
-	appID := info.AppID(ctx) // e.g. cr-buildbucket
-
 	merr := make(errors.MultiError, len(reqs))
 	// Bucket -> Builder -> *pb.BuilderConfig.
-	cfgs, err := fetchBuilderConfigs(ctx, reqs)
+	bldrIDs := make([]*pb.BuilderID, 0, len(reqs))
+	for _, req := range reqs {
+		bldrIDs = append(bldrIDs, req.Builder)
+	}
+	cfgs, err := fetchBuilderConfigs(ctx, bldrIDs)
 	if me, ok := err.(errors.MultiError); ok {
 		merr = mergeErrs(merr, me, "error fetching builders", func(i int) int { return i })
 	} else if err != nil {
@@ -1227,15 +1174,7 @@ func scheduleBuilds(ctx context.Context, globalCfg *pb.SettingsCfg, reqs ...*pb.
 	}
 
 	validReq, idxMapBlds := getValidReqs(reqs, merr)
-	var idxMapNums []int
 	blds := make([]*model.Build, len(validReq))
-	nums := make([]*model.Build, 0, len(validReq))
-	var ids []int64
-	if dryRun {
-		ids = make([]int64, len(validReq))
-	} else {
-		ids = buildid.NewBuildIDs(ctx, now, len(validReq))
-	}
 
 	_, pBld, err := validateBuildToken(ctx, 0, false)
 	if err != nil {
@@ -1261,20 +1200,7 @@ func scheduleBuilds(ctx context.Context, globalCfg *pb.SettingsCfg, reqs ...*pb.
 		build := buildFromScheduleRequest(ctx, reqs[i], ancestors, cfg, globalCfg)
 
 		blds[i] = &model.Build{
-			ID:         ids[i],
-			CreatedBy:  user,
-			CreateTime: now,
-			Proto:      build,
-		}
-
-		if !dryRun {
-			// Set proto field values which can only be determined at creation-time.
-			blds[i].Proto.CreatedBy = string(user)
-			blds[i].Proto.CreateTime = timestamppb.New(now)
-			blds[i].Proto.Id = ids[i]
-			blds[i].Proto.Infra.Buildbucket.Hostname = fmt.Sprintf("%s.appspot.com", appID)
-			blds[i].Proto.Infra.Logdog.Prefix = fmt.Sprintf("buildbucket/%s/%d", appID, blds[i].Proto.Id)
-			protoutil.SetStatus(now, blds[i].Proto, pb.Status_SCHEDULED)
+			Proto: build,
 		}
 
 		setExperimentsFromProto(blds[i])
@@ -1292,141 +1218,27 @@ func scheduleBuilds(ctx context.Context, globalCfg *pb.SettingsCfg, reqs ...*pb.
 			merr[origI] = appstatus.BadRequest(errors.Reason("build %d contains more than 6 unique expirations", i).Err())
 			continue
 		}
-
-		if cfg.GetBuildNumbers() == pb.Toggle_YES {
-			idxMapNums = append(idxMapNums, origI)
-			nums = append(nums, blds[i])
-		}
 	}
 	if dryRun {
-		return blds, nil
-	}
-	if err := generateBuildNumbers(ctx, nums); err != nil {
-		me := err.(errors.MultiError)
-		merr = mergeErrs(merr, me, "error generating build numbers", func(idx int) int { return idxMapNums[idx] })
-	}
-
-	validBlds, idxMapValidBlds := getValidBlds(blds, merr, idxMapBlds)
-	err = parallel.FanOutIn(func(work chan<- func() error) {
-		work <- func() error { return model.UpdateBuilderStat(ctx, validBlds, now) }
-		if rdbHost := globalCfg.GetResultdb().GetHostname(); rdbHost != "" {
-			work <- func() error { return resultdb.CreateInvocations(ctx, validBlds, cfgs, rdbHost) }
+		if merr.First() == nil {
+			return blds, nil
 		}
-		work <- func() error { return search.UpdateTagIndex(ctx, validBlds) }
-	})
-	if err != nil {
-		errs := err.(errors.MultiError)
-		for _, e := range errs {
-			if me, ok := e.(errors.MultiError); ok {
-				merr = mergeErrs(merr, me, "", func(idx int) int { return idxMapValidBlds[idx] })
-			} else {
-				return nil, e // top-level error
-			}
-		}
+		return blds, merr
 	}
 
-	// This parallel work isn't combined with the above parallel work to ensure build entities and Swarming
-	// task creation tasks are only created if everything else has succeeded (since everything can't be done
-	// in one transaction).
-	_ = parallel.WorkPool(min(64, len(validBlds)), func(work chan<- func() error) {
-		for i, b := range validBlds {
-			origI := idxMapValidBlds[i]
-			if merr[origI] != nil {
-				validBlds[i] = nil
-				continue
-			}
-
-			b := b
-			reqID := reqs[origI].RequestId
-			bucket := fmt.Sprintf("%s/%s", reqs[origI].Builder.Project, reqs[origI].Builder.Bucket)
-			cfg := cfgs[bucket][reqs[origI].Builder.Builder]
-			work <- func() error {
-				toPut := []interface{}{
-					b,
-					&model.BuildInfra{
-						Build: datastore.KeyForObj(ctx, b),
-						Proto: b.Proto.Infra,
-					},
-					&model.BuildInputProperties{
-						Build: datastore.KeyForObj(ctx, b),
-						Proto: b.Proto.Input.Properties,
-					},
-				}
-				r := model.NewRequestID(ctx, b.ID, now, reqID)
-
-				// Write the entities and trigger a task queue task to create the Swarming task.
-				err := datastore.RunInTransaction(ctx, func(ctx context.Context) error {
-					// Deduplicate by request ID.
-					if reqID != "" {
-						switch err := datastore.Get(ctx, r); {
-						case err == datastore.ErrNoSuchEntity:
-							toPut = append(toPut, r)
-						case err != nil:
-							return errors.Annotate(err, "failed to deduplicate request ID: %d", b.ID).Err()
-						default:
-							b.ID = r.BuildID
-							if err := datastore.Get(ctx, b); err != nil {
-								return errors.Annotate(err, "failed to fetch deduplicated build: %d", b.ID).Err()
-							}
-							return nil
-						}
-					}
-
-					// Request was not a duplicate.
-					switch err := datastore.Get(ctx, &model.Build{ID: b.ID}); {
-					case err == nil:
-						return appstatus.Errorf(codes.AlreadyExists, "build already exists: %d", b.ID)
-					case err != datastore.ErrNoSuchEntity:
-						return errors.Annotate(err, "failed to fetch build: %d", b.ID).Err()
-					}
-
-					if err := datastore.Put(ctx, toPut...); err != nil {
-						return errors.Annotate(err, "failed to store build: %d", b.ID).Err()
-					}
-
-					if cfg == nil {
-						return nil
-					}
-
-					if stringset.NewFromSlice(b.Proto.Input.Experiments...).Has(bb.ExperimentBackendGo) {
-						if err := tasks.CreateSwarmingBuildTask(ctx, &taskdefs.CreateSwarmingBuildTask{
-							BuildId: b.ID,
-						}); err != nil {
-							return errors.Annotate(err, "failed to enqueue CreateSwarmingBuildTask: %d", b.ID).Err()
-						}
-					} else {
-						if err := tasks.CreateSwarmingTask(ctx, &taskdefs.CreateSwarmingTask{
-							BuildId: b.ID,
-						}); err != nil {
-							return errors.Annotate(err, "failed to enqueue CreateSwarmingTask: %d", b.ID).Err()
-						}
-					}
-					return nil
-				}, nil)
-
-				// Record any error happened in the above transaction.
-				if err != nil {
-					validBlds[i] = nil
-					merr[origI] = err
-					return nil
-				}
-				metrics.BuildCreated(ctx, b)
-				return nil
-			}
-		}
-	})
-
-	if merr.First() == nil {
-		return validBlds, nil
+	reqIDs := make([]string, 0, len(reqs))
+	for _, req := range reqs {
+		reqIDs = append(reqIDs, req.RequestId)
 	}
-	// Map back to final results to make sure len(resBlds) always equal to len(reqs).
-	resBlds := make([]*model.Build, len(reqs))
-	for i, bld := range validBlds {
-		if merr[idxMapValidBlds[i]] == nil {
-			resBlds[idxMapValidBlds[i]] = bld
-		}
+	bc := &buildCreator{
+		globalCfg:      globalCfg,
+		blds:           blds,
+		cfgs:           cfgs,
+		idxMapBldToReq: idxMapBlds,
+		reqIDs:         reqIDs,
+		merr:           merr,
 	}
-	return resBlds, merr
+	return bc.createBuilds(ctx)
 }
 
 // normalizeSchedule converts deprecated fields to non-deprecated ones.
@@ -1619,24 +1431,6 @@ func getValidReqs(reqs []*pb.ScheduleBuildRequest, errs errors.MultiError) ([]*p
 		}
 	}
 	return validReqs, idxMap
-}
-
-// getValidBlds returns a list of valid builds where its corresponding error is nil.
-// as well as an index map where idxMap[returnedIndex] == originalIndex.
-func getValidBlds(blds []*model.Build, origErrs errors.MultiError, idxMapBlds []int) ([]*model.Build, []int) {
-	if len(blds) != len(idxMapBlds) {
-		panic("The length of blds and the length of idxMapBlds must be the same.")
-	}
-	var validBlds []*model.Build
-	var idxMap []int
-	for i, bld := range blds {
-		origI := idxMapBlds[i]
-		if origErrs[origI] == nil {
-			idxMap = append(idxMap, origI)
-			validBlds = append(validBlds, bld)
-		}
-	}
-	return validBlds, idxMap
 }
 
 func extractCipdVersion(p *pb.SwarmingSettings_Package, b *pb.Build) string {

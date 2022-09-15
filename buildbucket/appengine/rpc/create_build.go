@@ -17,6 +17,7 @@ package rpc
 import (
 	"context"
 	"fmt"
+	"sort"
 	"strings"
 	"time"
 
@@ -26,16 +27,29 @@ import (
 	"google.golang.org/protobuf/types/descriptorpb"
 
 	cipdCommon "go.chromium.org/luci/cipd/common"
+	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/proto/protowalk"
+	"go.chromium.org/luci/common/sync/parallel"
 	"go.chromium.org/luci/gae/service/datastore"
+	"go.chromium.org/luci/gae/service/info"
 	"go.chromium.org/luci/grpc/appstatus"
+	"go.chromium.org/luci/server/auth"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/protobuf/types/known/timestamppb"
 
+	bb "go.chromium.org/luci/buildbucket"
+	"go.chromium.org/luci/buildbucket/appengine/internal/buildid"
 	"go.chromium.org/luci/buildbucket/appengine/internal/config"
+	"go.chromium.org/luci/buildbucket/appengine/internal/metrics"
 	"go.chromium.org/luci/buildbucket/appengine/internal/perm"
+	"go.chromium.org/luci/buildbucket/appengine/internal/resultdb"
+	"go.chromium.org/luci/buildbucket/appengine/internal/search"
 	"go.chromium.org/luci/buildbucket/appengine/model"
+	"go.chromium.org/luci/buildbucket/appengine/tasks"
+	taskdefs "go.chromium.org/luci/buildbucket/appengine/tasks/defs"
 	"go.chromium.org/luci/buildbucket/bbperms"
 	pb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/buildbucket/protoutil"
@@ -407,6 +421,244 @@ func validateCreateBuildRequest(ctx context.Context, wellKnownExperiments string
 	}
 
 	return m, nil
+}
+
+type buildCreator struct {
+	globalCfg *pb.SettingsCfg
+	// Valid builds to be saved in datastore. The len(blds) <= len(reqIDs)
+	blds []*model.Build
+	// Builder configs referenced by the given requests in a map of
+	// Bucket ID -> Builder name -> *pb.BuilderConfig.
+	cfgs map[string]map[string]*pb.BuilderConfig
+	// idxMapBldToReq is an index map of index of blds -> index of reqIDs.
+	idxMapBldToReq []int
+	// RequestIDs of each request.
+	reqIDs []string
+	// errors when creating the builds.
+	merr errors.MultiError
+}
+
+// createBuilds saves the builds to datastore and triggers swarming task creation
+// tasks for each saved build.
+// A single returned error means a top-level error.
+// Otherwise, it would be a MultiError where len(MultiError) equals to len(bc.reqIDs).
+func (bc *buildCreator) createBuilds(ctx context.Context) ([]*model.Build, error) {
+	now := clock.Now(ctx).UTC()
+	user := auth.CurrentIdentity(ctx)
+	appID := info.AppID(ctx) // e.g. cr-buildbucket
+	ids := buildid.NewBuildIDs(ctx, now, len(bc.blds))
+	nums := make([]*model.Build, 0, len(bc.blds))
+	var idxMapNums []int
+
+	for i := range bc.blds {
+		bc.blds[i].ID = ids[i]
+		bc.blds[i].CreatedBy = user
+		bc.blds[i].CreateTime = now
+
+		// Set proto field values which can only be determined at creation-time.
+		bc.blds[i].Proto.CreatedBy = string(user)
+		bc.blds[i].Proto.CreateTime = timestamppb.New(now)
+		bc.blds[i].Proto.Id = ids[i]
+		bc.blds[i].Proto.Infra.Buildbucket.Hostname = fmt.Sprintf("%s.appspot.com", appID)
+		bc.blds[i].Proto.Infra.Logdog.Prefix = fmt.Sprintf("buildbucket/%s/%d", appID, bc.blds[i].Proto.Id)
+		protoutil.SetStatus(now, bc.blds[i].Proto, pb.Status_SCHEDULED)
+
+		bldr := bc.blds[i].Proto.Builder
+		bucket := protoutil.FormatBucketID(bldr.Project, bldr.Bucket)
+		cfg := bc.cfgs[bucket][bldr.Builder]
+		if cfg.GetBuildNumbers() == pb.Toggle_YES {
+			idxMapNums = append(idxMapNums, bc.idxMapBldToReq[i])
+			nums = append(nums, bc.blds[i])
+		}
+	}
+
+	if err := generateBuildNumbers(ctx, nums); err != nil {
+		me := err.(errors.MultiError)
+		bc.merr = mergeErrs(bc.merr, me, "error generating build numbers", func(idx int) int { return idxMapNums[idx] })
+	}
+
+	validBlds, idxMapValidBlds := getValidBlds(bc.blds, bc.merr, bc.idxMapBldToReq)
+	err := parallel.FanOutIn(func(work chan<- func() error) {
+		work <- func() error { return model.UpdateBuilderStat(ctx, validBlds, now) }
+		if rdbHost := bc.globalCfg.GetResultdb().GetHostname(); rdbHost != "" {
+			work <- func() error { return resultdb.CreateInvocations(ctx, validBlds, bc.cfgs, rdbHost) }
+		}
+		work <- func() error { return search.UpdateTagIndex(ctx, validBlds) }
+	})
+	if err != nil {
+		errs := err.(errors.MultiError)
+		for _, e := range errs {
+			if me, ok := e.(errors.MultiError); ok {
+				bc.merr = mergeErrs(bc.merr, me, "", func(idx int) int { return idxMapValidBlds[idx] })
+			} else {
+				return nil, e // top-level error
+			}
+		}
+	}
+
+	// This parallel work isn't combined with the above parallel work to ensure build entities and Swarming
+	// task creation tasks are only created if everything else has succeeded (since everything can't be done
+	// in one transaction).
+	_ = parallel.WorkPool(min(64, len(validBlds)), func(work chan<- func() error) {
+		for i, b := range validBlds {
+			origI := idxMapValidBlds[i]
+			if bc.merr[origI] != nil {
+				validBlds[i] = nil
+				continue
+			}
+
+			b := b
+			reqID := bc.reqIDs[origI]
+			bldr := b.Proto.Builder
+			bucket := fmt.Sprintf("%s/%s", bldr.Project, bldr.Bucket)
+			cfg := bc.cfgs[bucket][bldr.Builder]
+			work <- func() error {
+				toPut := []interface{}{
+					b,
+					&model.BuildInfra{
+						Build: datastore.KeyForObj(ctx, b),
+						Proto: b.Proto.Infra,
+					},
+					&model.BuildInputProperties{
+						Build: datastore.KeyForObj(ctx, b),
+						Proto: b.Proto.Input.Properties,
+					},
+				}
+				r := model.NewRequestID(ctx, b.ID, now, reqID)
+
+				// Write the entities and trigger a task queue task to create the Swarming task.
+				err := datastore.RunInTransaction(ctx, func(ctx context.Context) error {
+					// Deduplicate by request ID.
+					if reqID != "" {
+						switch err := datastore.Get(ctx, r); {
+						case err == datastore.ErrNoSuchEntity:
+							toPut = append(toPut, r)
+						case err != nil:
+							return errors.Annotate(err, "failed to deduplicate request ID: %d", b.ID).Err()
+						default:
+							b.ID = r.BuildID
+							if err := datastore.Get(ctx, b); err != nil {
+								return errors.Annotate(err, "failed to fetch deduplicated build: %d", b.ID).Err()
+							}
+							return nil
+						}
+					}
+
+					// Request was not a duplicate.
+					switch err := datastore.Get(ctx, &model.Build{ID: b.ID}); {
+					case err == nil:
+						return appstatus.Errorf(codes.AlreadyExists, "build already exists: %d", b.ID)
+					case err != datastore.ErrNoSuchEntity:
+						return errors.Annotate(err, "failed to fetch build: %d", b.ID).Err()
+					}
+
+					if err := datastore.Put(ctx, toPut...); err != nil {
+						return errors.Annotate(err, "failed to store build: %d", b.ID).Err()
+					}
+
+					if cfg == nil {
+						return nil
+					}
+
+					if stringset.NewFromSlice(b.Proto.Input.Experiments...).Has(bb.ExperimentBackendGo) {
+						if err := tasks.CreateSwarmingBuildTask(ctx, &taskdefs.CreateSwarmingBuildTask{
+							BuildId: b.ID,
+						}); err != nil {
+							return errors.Annotate(err, "failed to enqueue CreateSwarmingBuildTask: %d", b.ID).Err()
+						}
+					} else {
+						if err := tasks.CreateSwarmingTask(ctx, &taskdefs.CreateSwarmingTask{
+							BuildId: b.ID,
+						}); err != nil {
+							return errors.Annotate(err, "failed to enqueue CreateSwarmingTask: %d", b.ID).Err()
+						}
+					}
+					return nil
+				}, nil)
+
+				// Record any error happened in the above transaction.
+				if err != nil {
+					validBlds[i] = nil
+					bc.merr[origI] = err
+					return nil
+				}
+				metrics.BuildCreated(ctx, b)
+				return nil
+			}
+		}
+	})
+
+	if bc.merr.First() == nil {
+		return validBlds, nil
+	}
+	// Map back to final results to make sure len(resBlds) always equal to len(reqs).
+	resBlds := make([]*model.Build, len(bc.reqIDs))
+	for i, bld := range validBlds {
+		if bc.merr[idxMapValidBlds[i]] == nil {
+			resBlds[idxMapValidBlds[i]] = bld
+		}
+	}
+	return resBlds, bc.merr
+}
+
+// getValidBlds returns a list of valid builds where its corresponding error is nil.
+// as well as an index map where idxMap[returnedIndex] == originalIndex.
+func getValidBlds(blds []*model.Build, origErrs errors.MultiError, idxMapBldToReq []int) ([]*model.Build, []int) {
+	if len(blds) != len(idxMapBldToReq) {
+		panic("The length of blds and the length of idxMapBldToReq must be the same.")
+	}
+	var validBlds []*model.Build
+	var idxMap []int
+	for i, bld := range blds {
+		origI := idxMapBldToReq[i]
+		if origErrs[origI] == nil {
+			idxMap = append(idxMap, origI)
+			validBlds = append(validBlds, bld)
+		}
+	}
+	return validBlds, idxMap
+}
+
+// generateBuildNumbers mutates the given builds, setting build numbers and
+// build address tags.
+//
+// It would return a MultiError (if any) where len(MultiError) equals to len(reqs).
+func generateBuildNumbers(ctx context.Context, builds []*model.Build) error {
+	merr := make(errors.MultiError, len(builds))
+	seq := make(map[string][]*model.Build)
+	idxMap := make(map[string][]int) // BuilderID -> a list of index
+	for i, b := range builds {
+		name := protoutil.FormatBuilderID(b.Proto.Builder)
+		seq[name] = append(seq[name], b)
+		idxMap[name] = append(idxMap[name], i)
+	}
+	_ = parallel.WorkPool(min(64, len(builds)), func(work chan<- func() error) {
+		for name, blds := range seq {
+			name := name
+			blds := blds
+			work <- func() error {
+				n, err := model.GenerateSequenceNumbers(ctx, name, len(blds))
+				if err != nil {
+					for _, idx := range idxMap[name] {
+						merr[idx] = err
+					}
+					return nil
+				}
+				for i, b := range blds {
+					b.Proto.Number = n + int32(i)
+					addr := fmt.Sprintf("build_address:luci.%s.%s/%s/%d", b.Proto.Builder.Project, b.Proto.Builder.Bucket, b.Proto.Builder.Builder, b.Proto.Number)
+					b.Tags = append(b.Tags, addr)
+					sort.Strings(b.Tags)
+				}
+				return nil
+			}
+		}
+	})
+
+	if merr.First() == nil {
+		return nil
+	}
+	return merr.AsError()
 }
 
 // CreateBuild handles a request to schedule a build. Implements pb.BuildsServer.
