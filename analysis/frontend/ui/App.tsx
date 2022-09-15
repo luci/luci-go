@@ -13,7 +13,6 @@
 // limitations under the License.
 
 import './styles/style.css';
-import './src/views/bug/bug_page/bug_page.ts';
 
 import * as React from 'react';
 import {
@@ -28,7 +27,6 @@ import {
 import FeedbackSnackbar from './src/components/error_snackbar/feedback_snackbar';
 import { SnackbarContextWrapper } from './src/context/snackbar_context';
 import BaseLayout from './src/layouts/base';
-import BugPageWrapper from './src/views/bug/bug_page/bug_page_wrapper';
 import ClusterPage from './src/views/clusters/cluster/cluster_page';
 import ClustersPage from './src/views/clusters/clusters_page';
 import NotFoundPage from './src/views/errors/not_found_page';
@@ -36,6 +34,7 @@ import HomePage from './src/views/home/home_page';
 import NewRulePage from './src/views/new_rule/new_rule';
 import Rule from './src/views/rule/rule';
 import RulesPage from './src/views/rules/rules_page';
+import BugPage from './src/views/bug/bug_page/bug_page';
 
 const queryClient = new QueryClient(
     {
@@ -54,7 +53,7 @@ const App = () => {
         <Routes>
           <Route path='/' element={<BaseLayout />}>
             <Route index element={<HomePage />} />
-            <Route path='b/:bugTracker/:id' element={<BugPageWrapper />} />
+            <Route path='b/:bugTracker/:id' element={<BugPage />} />
             <Route path='p/:project'>
               <Route path='rules'>
                 <Route index element={<RulesPage />} />
