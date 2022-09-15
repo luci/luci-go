@@ -887,5 +887,61 @@ func TestUpdateProject(t *testing.T) {
 			})
 		})
 
+		Convey("dart config return error", func() {
+			defer restoreCfgVars()
+
+			// Delete chromium and v8 configs
+			chromiumBuildbucketCfg = ""
+			v8BuildbucketCfg = ""
+
+			// luci-config return server error when fetching dart config.
+			dartBuildbucketCfg = "error"
+
+			So(UpdateProjectCfg(ctx), ShouldBeNil)
+
+			// Don't delete the stored buckets and builders when luci-config returns
+			// an error for fetching that project config.
+			var actualBkts []*model.Bucket
+			So(datastore.GetAll(ctx, datastore.NewQuery(model.BucketKind), &actualBkts), ShouldBeNil)
+			So(len(actualBkts), ShouldEqual, 1)
+			So(stripBucketProtos(actualBkts), ShouldResembleProto, []*pb.Bucket{
+				{
+					Name: "try",
+					Swarming: &pb.Swarming{
+						Builders: []*pb.BuilderConfig{},
+					},
+				},
+			})
+			So(actualBkts, ShouldResemble, []*model.Bucket{
+				{
+					ID:"try",
+					Parent: model.ProjectKey(ctx, "dart"),
+					Schema: CurrentBucketSchemaVersion,
+					Revision: "deadbeef",
+				},
+			})
+
+			var actualBuilders []*model.Builder
+			So(datastore.GetAll(ctx, datastore.NewQuery(model.BuilderKind), &actualBuilders), ShouldBeNil)
+			So(len(actualBuilders), ShouldEqual, 1)
+			dartBuilder := &pb.BuilderConfig {
+				Name: "linux",
+				Dimensions: []string{"pool:Dart.LUCI"},
+				Exe: &pb.Executable{
+					CipdPackage: "infra/recipe_bundle",
+					CipdVersion:  "refs/heads/main",
+					Cmd: []string{"luciexe"},
+				},
+			}
+			dartBuilderHash, _ := computeBuilderHash(dartBuilder)
+			So(stripBuilderProtos(actualBuilders), ShouldResembleProto, []*pb.BuilderConfig{dartBuilder})
+			So(actualBuilders, ShouldResemble, []*model.Builder{
+				{
+					ID: "linux",
+					Parent: model.BucketKey(ctx, "dart", "try"),
+					ConfigHash: dartBuilderHash,
+				},
+			})
+		})
 	})
 }

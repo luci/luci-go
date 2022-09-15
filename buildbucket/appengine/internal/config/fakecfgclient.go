@@ -78,40 +78,74 @@ type fakeCfgClient struct {
 	luciconfig.Interface
 }
 
-func (*fakeCfgClient) GetProjectConfigs(ctx context.Context, path string, metaOnly bool) ([]luciconfig.Config, error) {
-	if path == "${appid}.cfg" {
-		chromiumCfg := luciconfig.Config{
+func (*fakeCfgClient) GetConfig(ctx context.Context, configSet luciconfig.Set, path string, metaOnly bool) (*luciconfig.Config, error) {
+	switch configSet {
+	case "projects/chromium":
+		return &luciconfig.Config{
 			Meta: luciconfig.Meta{
 				ConfigSet:"projects/chromium",
 				Path: "fake-cr-buildbucket.cfg",
 				Revision: chromiumRevision,
 			},
 			Content: chromiumBuildbucketCfg,
+		}, nil
+	case "projects/dart":
+		if dartBuildbucketCfg == "error" {
+			return nil, errors.New("internal server error")
 		}
-		dartCfg := luciconfig.Config{
+		return &luciconfig.Config{
 			Meta: luciconfig.Meta{
 				ConfigSet:"projects/dart",
 				Path: "fake-cr-buildbucket.cfg",
 				Revision: dartRevision,
 			},
 			Content: dartBuildbucketCfg,
-		}
-		v8Cfg := luciconfig.Config{
+		}, nil
+	case "projects/v8":
+		return &luciconfig.Config{
 			Meta: luciconfig.Meta{
 				ConfigSet:"projects/v8",
 				Path: "fake-cr-buildbucket.cfg",
 				Revision: v8Revision,
 			},
 			Content: v8BuildbucketCfg,
-		}
-		configs := []luciconfig.Config{chromiumCfg, dartCfg, v8Cfg}
-		configsToReturn := []luciconfig.Config{}
-		for _, cfg := range configs {
-			if cfg.Content != "" {
-				configsToReturn = append(configsToReturn, cfg)
-			}
-		}
-		return configsToReturn, nil
+		}, nil
+	default:
+		return nil, nil
 	}
-	return nil, errors.New("not found")
+}
+
+func (*fakeCfgClient) GetProjectConfigs(ctx context.Context, path string, metaOnly bool) ([]luciconfig.Config, error) {
+	if path != "${appid}.cfg" {
+		return nil, errors.New("not found")
+	}
+	var configsToReturn []luciconfig.Config
+	if chromiumBuildbucketCfg != "" {
+		configsToReturn = append(configsToReturn, luciconfig.Config{
+			Meta: luciconfig.Meta{
+				ConfigSet:"projects/chromium",
+				Path: "fake-cr-buildbucket.cfg",
+				Revision: chromiumRevision,
+			},
+		})
+	}
+	if dartBuildbucketCfg != "" {
+		configsToReturn = append(configsToReturn, luciconfig.Config{
+			Meta: luciconfig.Meta{
+				ConfigSet:"projects/dart",
+				Path: "fake-cr-buildbucket.cfg",
+				Revision: dartRevision,
+			},
+		})
+	}
+	if v8BuildbucketCfg != "" {
+		configsToReturn = append(configsToReturn, luciconfig.Config{
+			Meta: luciconfig.Meta{
+				ConfigSet:"projects/v8",
+				Path: "fake-cr-buildbucket.cfg",
+				Revision: v8Revision,
+			},
+		})
+	}
+	return configsToReturn, nil
 }

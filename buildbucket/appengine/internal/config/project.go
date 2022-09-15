@@ -33,6 +33,8 @@ import (
 	"go.chromium.org/luci/common/data/strpair"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/common/sync/parallel"
+	"go.chromium.org/luci/config"
 	"go.chromium.org/luci/config/cfgclient"
 	"go.chromium.org/luci/config/validation"
 	"go.chromium.org/luci/gae/service/datastore"
@@ -78,9 +80,34 @@ type changeLog struct {
 // UpdateProjectCfg fetches all projects' Buildbucket configs from luci-config
 // and update into Datastore.
 func UpdateProjectCfg(ctx context.Context) error {
-	cfgs, err := cfgclient.Client(ctx).GetProjectConfigs(ctx, "${appid}.cfg", false)
+	client := cfgclient.Client(ctx)
+	// Cannot fetch all projects configs at once because luci-config still uses
+	// GAEv1 in Python2 framework, which has a response size limit on ~35MB.
+	// Have to first fetch all projects config metadata and then fetch the actual
+	// config in parallel.
+	cfgMetas, err := client.GetProjectConfigs(ctx, "${appid}.cfg", true)
 	if err != nil {
-		return errors.Annotate(err, "while fetching project configs").Err()
+		return errors.Annotate(err, "while fetching project configs' metadata").Err()
+	}
+	cfgs := make([]*config.Config, len(cfgMetas))
+	err = parallel.WorkPool(min(64, len(cfgMetas)), func(work chan<- func() error) {
+	for i, meta := range cfgMetas {
+		i := i
+		cfgSet := meta.ConfigSet
+		work <- func() error {
+			cfg, err := client.GetConfig(ctx, cfgSet, "${appid}.cfg", false)
+			if err != nil {
+				return errors.Annotate(err, "failed to fetch the project config for %s", string(cfgSet)).Err()
+			}
+			cfgs[i] = cfg
+			return nil
+		}
+		}
+	})
+	if err != nil {
+		// Just log the error, and continue to update configs for those which don't
+		// have errors.
+		logging.Errorf(ctx, err.Error())
 	}
 
 	var bucketKeys []*datastore.Key
@@ -98,20 +125,24 @@ func UpdateProjectCfg(ctx context.Context) error {
 		bucketsToDelete[project][bk.StringID()] = bk
 	}
 
-	for _, cfg := range cfgs {
-		project := cfg.Meta.ConfigSet.Project()
+	for i, meta := range cfgMetas {
+		project := meta.ConfigSet.Project()
+		if cfgs[i] == nil || cfgs[i].Content == "" {
+			delete(bucketsToDelete, project)
+			continue
+		}
 		pCfg := &pb.BuildbucketCfg{}
-		if err := prototext.Unmarshal([]byte(cfg.Content), pCfg); err != nil {
+		if err := prototext.Unmarshal([]byte(cfgs[i].Content), pCfg); err != nil {
 			logging.Errorf(ctx, "config of project %s is broken: %s", project, err)
 			// If a project config is broken, we don't delete the already stored buckets.
 			delete(bucketsToDelete, project)
 			continue
 		}
 
-		revision := cfg.Meta.Revision
+		revision := meta.Revision
 		// revision is empty in file-system mode. Use SHA1 of the config as revision.
 		if revision == "" {
-			cntHash := sha1.Sum([]byte(cfg.Content))
+			cntHash := sha1.Sum([]byte(cfgs[i].Content))
 			revision = "sha1:" + hex.EncodeToString(cntHash[:])
 		}
 
@@ -238,6 +269,13 @@ func UpdateProjectCfg(ctx context.Context) error {
 		}
 	}
 	return datastore.Delete(ctx, toDelete)
+}
+
+func min(i, j int) int {
+	if i < j {
+		return i
+	}
+	return j
 }
 
 // checkPoolDimExists check if the pool dimension exists in the builder config.
