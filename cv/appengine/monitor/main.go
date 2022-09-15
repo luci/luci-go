@@ -70,17 +70,19 @@ func main() {
 		state := tsmon.NewState()
 		state.SetStore(store.NewInMemory(&target))
 		state.InhibitGlobalCallbacksOnFlush()
-		ctx := tsmon.WithState(srv.Context, state)
-		mon, err := newMonitor(ctx, opts.TsMonAccount)
+
+		mon, err := newMonitor(srv.Context, opts.TsMonAccount)
 		if err != nil {
 			return errors.Annotate(err, "failed to initiate monitoring client").Err()
 		}
-		aggregator := aggrmetrics.New(env)
 
 		cron.RegisterHandler("report-aggregated-metrics", func(ctx context.Context) error {
 			ctx, cancel := context.WithTimeout(ctx, aggregateMetricsCronTimeout)
 			defer cancel()
 
+			// Override the state to avoid using the default state from the server.
+			ctx = tsmon.WithState(ctx, state)
+			aggregator := aggrmetrics.New(env)
 			start := clock.Now(ctx)
 			if err := aggregator.Cron(ctx); err != nil {
 				return errors.Annotate(err, "failed to compute aggregation metrics").Err()
