@@ -30,6 +30,8 @@ import (
 	"go.chromium.org/luci/cv/internal/tryjob"
 )
 
+// startTryjobs triggers Tryjobs for the given Definitions by either reusing
+// existing Tryjobs or launching new ones.
 func (e *Executor) startTryjobs(ctx context.Context, r *run.Run, definitions []*tryjob.Definition, executions []*tryjob.ExecutionState_Execution) ([]*tryjob.Tryjob, error) {
 	cls, err := run.LoadRunCLs(ctx, r.ID, r.CLs)
 	if err != nil {
@@ -71,9 +73,10 @@ func (e *Executor) startTryjobs(ctx context.Context, r *run.Run, definitions []*
 	return ret, nil
 }
 
-// worker implements the workflow to trigger tryjobs for the given definitions
-// by searching for Tryjobs that can be reused first and then launch new
-// Tryjobs if nothing can be reused.
+// worker implements the workflow to trigger Tryjobs for the given Definitions.
+//
+// It does this by searching for Tryjobs that can be reused first, and then
+// launching new Tryjobs if nothing can be reused.
 type worker struct {
 	run              *run.Run
 	cls              []*run.RunCL
@@ -100,7 +103,7 @@ func (w *worker) makeBaseTryjob(ctx context.Context) *tryjob.Tryjob {
 	}
 }
 
-// makePendingTryjob makes a pending tryjob that is triggered by this Run.
+// makePendingTryjob makes a pending Tryjob that is triggered by this Run.
 func (w *worker) makePendingTryjob(ctx context.Context, def *tryjob.Definition) *tryjob.Tryjob {
 	tj := w.makeBaseTryjob(ctx)
 	tj.Definition = def
@@ -109,6 +112,10 @@ func (w *worker) makePendingTryjob(ctx context.Context, def *tryjob.Definition) 
 	return tj
 }
 
+// start triggers Tryjobs for the given Definitions.
+//
+// First it searches for any Tryjobs that can be reused, then launches
+// new Tryjobs for Definitions where nothing can be reused.
 func (w *worker) start(ctx context.Context, definitions []*tryjob.Definition) ([]*tryjob.Tryjob, error) {
 	reuse, err := w.findReuse(ctx, definitions)
 	if err != nil {
@@ -134,7 +141,7 @@ func (w *worker) start(ctx context.Context, definitions []*tryjob.Definition) ([
 	}
 
 	if len(tryjobsToLaunch) > 0 {
-		// Save the newly created tryjobs and ensure Tryjob IDs are populated.
+		// Save the newly created Tryjobs and ensure Tryjob IDs are populated.
 		var newlyCreatedTryjobs []*tryjob.Tryjob
 		for _, tj := range tryjobsToLaunch {
 			if tj.ID == 0 {
@@ -150,10 +157,11 @@ func (w *worker) start(ctx context.Context, definitions []*tryjob.Definition) ([
 		if err != nil {
 			return nil, err
 		}
-		// copy the launched tryjobs to the returned tryjobs at the corresponding
-		// location.
+		// Copy the launched Tryjobs to the returned Tryjobs at the
+		// corresponding location.
 		if reusedTryjobsCount+len(tryjobsToLaunch) != len(definitions) {
-			panic(fmt.Errorf("impossible; requested %d tryjob definition, reused %d tryjobs but launched %d new tryjobs", len(definitions), reusedTryjobsCount, len(tryjobsToLaunch)))
+			panic(fmt.Errorf("impossible; requested %d Tryjob Definition, reused %d Tryjobs but launched %d new Tryjobs",
+				len(definitions), reusedTryjobsCount, len(tryjobsToLaunch)))
 		}
 		idx := 0
 		for i, tj := range ret {
@@ -169,13 +177,14 @@ func (w *worker) start(ctx context.Context, definitions []*tryjob.Definition) ([
 
 type findReuseFn func(context.Context, []*tryjob.Definition) (map[*tryjob.Definition]*tryjob.Tryjob, error)
 
+// findReuse finds Tryjobs that shall be reused.
 func (w *worker) findReuse(ctx context.Context, definitions []*tryjob.Definition) (map[*tryjob.Definition]*tryjob.Tryjob, error) {
 	if len(w.findReuseFns) == 0 {
 		return nil, nil
 	}
 	ret := make(map[*tryjob.Definition]*tryjob.Tryjob, len(definitions))
 	remainingDefinitions := make([]*tryjob.Definition, 0, len(definitions))
-	// start with tryjobs definitions that enable reuse.
+	// Start with Tryjobs' Definitions that enable reuse.
 	for _, def := range definitions {
 		if !def.GetDisableReuse() {
 			remainingDefinitions = append(remainingDefinitions, def)
@@ -190,8 +199,8 @@ func (w *worker) findReuse(ctx context.Context, definitions []*tryjob.Definition
 		for def, tj := range reuse {
 			ret[def] = tj
 		}
-		// reuse remainingDefinitions slice  and filter out the definitions that
-		// have found reuse Tryjobs.
+		// Reuse the `remainingDefinitions` slice and filter out the
+		// Definitions that have found reuse Tryjobs.
 		tmp := remainingDefinitions[:0]
 		for _, def := range remainingDefinitions {
 			if _, ok := reuse[def]; !ok {

@@ -51,12 +51,12 @@ type Tryjob struct {
 	EVersion int64 `gae:",noindex"`
 	// EntityCreateTime is the timestamp when this entity was created.
 	//
-	// NOTE: this is not the backend's tryjob creation time, which is stored in
+	// NOTE: This is not the backend's tryjob creation time, which is stored in
 	// .Result.CreateTime.
 	EntityCreateTime time.Time `gae:",noindex"`
 	// UpdateTime is the timestamp when this entity was last updated.
 	//
-	// NOTE: this is not the backend's tryjob update time, which is stored in
+	// NOTE: This is not the backend's tryjob update time, which is stored in
 	// .Result.UpdateTime.
 	EntityUpdateTime time.Time `gae:",noindex"`
 
@@ -177,6 +177,7 @@ func (t *Tryjob) AllWatchingRuns() common.RunIDs {
 	return append(ret, t.ReusedBy...)
 }
 
+// IsEnded checks whether the Tryjob's status is final (can not change again).
 func (t *Tryjob) IsEnded() bool {
 	switch t.Status {
 	case Status_CANCELLED, Status_ENDED, Status_UNTRIGGERED:

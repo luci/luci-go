@@ -27,6 +27,8 @@ import (
 	"go.chromium.org/luci/cv/internal/common"
 )
 
+// executionState is a Datastore model which stores an `ExecutionState`
+// along with the associated metadata.
 type executionState struct {
 	_kind string         `gae:"$kind,TryjobExecutionState"`
 	_id   int64          `gae:"$id,1"`
@@ -55,7 +57,7 @@ type executionLog struct {
 	Entries *ExecutionLogEntries
 }
 
-// LoadExecutionState loads the execution state of the given Run.
+// LoadExecutionState loads the ExecutionState of the given Run.
 //
 // Returns nil state and 0 version if execution state never exists for this
 // Run before.
@@ -71,7 +73,7 @@ func LoadExecutionState(ctx context.Context, rid common.RunID) (state *Execution
 	}
 }
 
-// SaveExecutionState saves new execution state and logs for the run.
+// SaveExecutionState saves new ExecutionState and logs for the run.
 //
 // Fails if the current version of the state is different from the provided
 // `expectedVersion`. This typically means the state has changed since the

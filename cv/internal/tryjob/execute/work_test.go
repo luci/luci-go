@@ -213,7 +213,7 @@ func TestWorker(t *testing.T) {
 				},
 			}
 
-			// initialize a definitions of 3 builder.
+			// Initialize Definitions of 3 builders.
 			definitions := make([]*tryjob.Definition, 3)
 			for i := range definitions {
 				definitions[i] = proto.Clone(baseDef).(*tryjob.Definition)

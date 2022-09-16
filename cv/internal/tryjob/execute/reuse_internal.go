@@ -28,6 +28,7 @@ import (
 	"go.chromium.org/luci/cv/internal/tryjob"
 )
 
+// findReuseInCV returns reusable Tryjob candidates from CV datastore.
 func (w *worker) findReuseInCV(ctx context.Context, definitions []*tryjob.Definition) (map[*tryjob.Definition]*tryjob.Tryjob, error) {
 	candidates, err := w.queryForCandidates(ctx, definitions)
 	switch {
@@ -69,6 +70,8 @@ func (w *worker) findReuseInCV(ctx context.Context, definitions []*tryjob.Defini
 	return candidates, nil
 }
 
+// queryForCandidates makes a DS query to find Tryjob candidates for reuse that
+// have a matching reuse key.
 func (w *worker) queryForCandidates(ctx context.Context, definitions []*tryjob.Definition) (map[*tryjob.Definition]*tryjob.Tryjob, error) {
 	q := datastore.NewQuery(tryjob.TryjobKind).Eq("ReuseKey", w.reuseKey)
 	luciProject := w.run.ID.LUCIProject()
@@ -79,11 +82,12 @@ func (w *worker) queryForCandidates(ctx context.Context, definitions []*tryjob.D
 		case def == nil:
 		case w.knownTryjobIDs.Has(tj.ID):
 		case tj.LUCIProject() != luciProject:
-			// Ensures Run only reuse the Tryjob that its belonging LUCI Project
-			// has access to. This check may provide false negative result but it's
-			// good enough because currently, it's very unlikely for a Run from
-			// Project A to reuse a Tryjob triggered by a Run from Project B. Project
-			// A and Project B should watch a disjoint set of Gerrit refs.
+			// Ensures Run only reuse the Tryjob that its belonging LUCI
+			// Project has access to. This check may give a false negative
+			// result but it's good enough, because currently it's very
+			// unlikely for a Run from Project A to reuse a Tryjob triggered by
+			// a Run from Project B. Project A and Project B should watch a
+			// disjoint set of Gerrit refs.
 		case canReuseTryjob(ctx, tj, mode) == reuseDenied:
 		case tj.EntityCreateTime.IsZero():
 			panic(fmt.Errorf("tryjob %d has zero entity create time", tj.ID))
@@ -101,6 +105,8 @@ func (w *worker) queryForCandidates(ctx context.Context, definitions []*tryjob.D
 	return candidates, nil
 }
 
+// matchDefinitions returns a Definition that matches the given Tryjob from the
+// given list of Definitions.
 func matchDefinitions(tj *tryjob.Tryjob, definitions []*tryjob.Definition) *tryjob.Definition {
 	for _, def := range definitions {
 		switch {

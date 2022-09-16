@@ -33,12 +33,12 @@ func (is intSet) has(value int) bool {
 	return ret
 }
 
-// composeReason puts together information about failing tryjobs.
+// composeReason make a human-readable string explaining about failing Tryjobs.
 func composeReason(tryjobs []*tryjob.Tryjob) string {
 	switch len(tryjobs) {
 	case 0:
 		panic(fmt.Errorf("composeReason called without tryjobs"))
-	case 1: // optimize for most common case
+	case 1: // Optimize for most common case: one failed tryjob.
 		tj := tryjobs[0]
 		restricted := tj.Definition.GetResultVisibility() == cfgpb.CommentLevel_COMMENT_LEVEL_RESTRICTED
 		var sb strings.Builder
@@ -80,6 +80,7 @@ func composeReason(tryjobs []*tryjob.Tryjob) string {
 	}
 }
 
+// composeLaunchFailureReason makes a string explaining tryjob launch failures.
 func composeLaunchFailureReason(launchFailures map[*tryjob.Definition]string) string {
 	if len(launchFailures) == 0 {
 		panic(fmt.Errorf("expected non-empty launch failures"))

@@ -87,6 +87,7 @@ func canReuseResult(ctx context.Context, tj *tryjob.Tryjob, mode run.Mode) bool 
 	return false
 }
 
+// isTryjobStale checks whether the Tryjob is too old to use.
 func isTryjobStale(ctx context.Context, tj *tryjob.Tryjob) bool {
 	createTime := tj.Result.GetCreateTime()
 	if createTime == nil {
@@ -96,6 +97,7 @@ func isTryjobStale(ctx context.Context, tj *tryjob.Tryjob) bool {
 	return clock.Now(ctx).Sub(createTime.AsTime()) >= staleTryjobAge
 }
 
+// isModeAllowed checks whether the Run Mode is in the given allowlist.
 func isModeAllowed(mode run.Mode, allowlist []string) bool {
 	if len(allowlist) == 0 { // Empty list means allowing all modes.
 		return true
@@ -108,7 +110,7 @@ func isModeAllowed(mode run.Mode, allowlist []string) bool {
 	return false
 }
 
-// computeReuseKey computes the reuse key for a tryjob based on the CLs it
+// computeReuseKey computes the reuse key for a Tryjob based on the CLs it
 // involves.
 func computeReuseKey(cls []*run.RunCL) string {
 	clPatchsets := make([][]byte, len(cls))

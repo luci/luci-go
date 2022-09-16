@@ -27,12 +27,14 @@ import (
 	"go.chromium.org/luci/cv/internal/tryjob"
 )
 
+// findReuseInBackend finds reusable Tryjobs by querying the backend (e.g.
+// Buildbucket).
 func (w *worker) findReuseInBackend(ctx context.Context, definitions []*tryjob.Definition) (map[*tryjob.Definition]*tryjob.Tryjob, error) {
 	candidates := make(map[*tryjob.Definition]*tryjob.Tryjob, len(definitions))
 	err := w.backend.Search(ctx, w.cls, definitions, w.run.ID.LUCIProject(), func(tj *tryjob.Tryjob) bool {
 		switch candidate, ok := candidates[tj.Definition]; {
 		case ok:
-			// matching Tryjob already found.
+			// Matching Tryjob already found.
 			if tj.Result.GetCreateTime().AsTime().After(candidate.Result.GetCreateTime().AsTime()) {
 				panic(fmt.Errorf("backend.Search should return tryjob from newest to oldest; However, got %s before %s", candidate.Result, tj.Result))
 			}
@@ -69,8 +71,8 @@ func (w *worker) findReuseInBackend(ctx context.Context, definitions []*tryjob.D
 				tj = w.makeBaseTryjob(ctx)
 				tryjobs[i] = tj
 			} else {
-				// Tryjob already in datastore. This shouldn't normally happen but be
-				// defensive here when it actually happens.
+				// The Tryjob already in datastore. This shouldn't normally
+				// happen but be defensive here when it actually happens.
 				tj.EVersion++
 				tj.EntityUpdateTime = clock.Now(ctx).UTC()
 				logging.Warningf(ctx, "tryjob %q was found reusable in backend, but "+

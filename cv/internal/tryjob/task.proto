@@ -18,8 +18,12 @@ package cv.internal.tryjob;
 
 option go_package = "go.chromium.org/luci/cv/internal/tryjob;tryjob";
 
-// UpdateTryjobTask checks the status of a Tryjob and updates its Datastore
-// entity, and notifies Runs which care about this Tryjob.
+// UpdateTryjobTask checks the status of a Tryjob and updates and saves the
+// Datastore entity, and notifies Runs which care about this Tryjob.
+//
+// It does NOT involve deciding next actions to take based on changes in Tryjob
+// state; e.g. it doesn't involve triggering retries or ending the Run; the
+// Tryjob Executor is responsible for this, see also ExecuteTryjobsPayload.
 //
 // Queue: "tryjob-update".
 message UpdateTryjobTask {
@@ -27,11 +31,11 @@ message UpdateTryjobTask {
   int64 id = 1;
 
   // external_id is the ID that identifies the Tryjob in the backend.
-  // e.g. in the case of buildbucket, it's the build ID.
+  // e.g. in the case of Buildbucket, it's the build ID.
   string external_id = 2;
 }
 
-// CancelStaleTryjobs cancels all tryjobs that are intended to verify the given
+// CancelStaleTryjobs cancels all Tryjobs that are intended to verify the given
 // CL, that are now stale because a new non-trivial patchset has been uploaded.
 //
 // Queue: "cancel-stale-tryjobs"
@@ -44,11 +48,11 @@ message CancelStaleTryjobsTask {
   int32 previous_min_equiv_patchset = 2;
 
   // current_min_equiv_patchset is the patchset at or after which the
-  // associated tryjobs are no longer considered stale.
+  // associated Tryjobs are no longer considered stale.
   int32 current_min_equiv_patchset = 3;
 }
 
-// ExecuteTryjobsPayload is the payload of the long op task that invokes
+// ExecuteTryjobsPayload is the payload of the long-op task that invokes
 // the Tryjob Executor.
 //
 // The payload contains the event happens outside so that Tryjob Executor could
@@ -57,10 +61,10 @@ message CancelStaleTryjobsTask {
 // Exactly one event should be provided. Not using oneof for the sake of
 // simplicity.
 message ExecuteTryjobsPayload {
-  // RequirementChanged indicates the tryjobs requirement of the run has
+  // RequirementChanged indicates the Tryjob Requirement of the Run has
   // changed.
   bool requirement_changed = 1;
-  // TryjobsUpdated contains ids of all tryjobs that have status update.
+  // TryjobsUpdated contains IDs of all Tryjobs that have status updates.
   repeated int64 tryjobs_updated = 2;
 }
 

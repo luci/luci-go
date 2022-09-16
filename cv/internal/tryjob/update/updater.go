@@ -12,7 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// tjupdate updates the Tryjob entity by querying backend system.
+// Package tjupdate contains Updater, which handles an UpdateTryjobTask.
+//
+// This involves updating a Tryjob by querying the backend system, and updating
+// Tryjob entities in Datastore.
 package tjupdate
 
 import (
@@ -48,7 +51,7 @@ type updaterBackend interface {
 	Update(ctx context.Context, saved *tryjob.Tryjob) (tryjob.Status, *tryjob.Result, error)
 }
 
-// rmNotifier abstracts out Run Manager notifier.
+// rmNotifier abstracts out the Run Manager's Notifier.
 type rmNotifier interface {
 	NotifyTryjobsUpdated(context.Context, common.RunID, *tryjob.TryjobUpdatedEvents) error
 }
@@ -93,6 +96,10 @@ func (u *Updater) RegisterBackend(b updaterBackend) {
 	u.backends[kind] = b
 }
 
+// handleTask handles an UpdateTryjobTask.
+//
+// This task involves checking the status of a Tryjob and updating its
+// Datastore entity, and notifying Runs which care about this Tryjob.
 func (u *Updater) handleTask(ctx context.Context, task *tryjob.UpdateTryjobTask) error {
 	tj := &tryjob.Tryjob{ID: common.TryjobID(task.Id)}
 	switch {
