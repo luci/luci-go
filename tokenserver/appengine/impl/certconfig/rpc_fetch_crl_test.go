@@ -30,7 +30,6 @@ import (
 	"go.chromium.org/luci/tokenserver/appengine/impl/utils"
 
 	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestFetchCRLRPC(t *testing.T) {
@@ -68,9 +67,9 @@ func TestFetchCRLRPC(t *testing.T) {
 					cert_path: "certs/fake.ca.crt"
 				}
 			`)
-			// Use it, must fail.
+			// Use it, must succeed without doing anything.
 			err := callFetchCRL("Puppet CA: fake.ca", false)
-			So(err, ShouldErrLike, "doesn't have CRL defined")
+			So(err, ShouldBeNil)
 		})
 
 		Convey("FetchCRL works (der, no etags)", func() {

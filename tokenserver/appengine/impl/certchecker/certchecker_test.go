@@ -23,11 +23,14 @@ import (
 	"testing"
 	"time"
 
+	"google.golang.org/protobuf/proto"
+
 	"go.chromium.org/luci/appengine/gaetesting"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/data/rand/cryptorand"
 	"go.chromium.org/luci/gae/service/datastore"
+	"go.chromium.org/luci/tokenserver/api/admin/v1"
 	"go.chromium.org/luci/tokenserver/appengine/impl/certconfig"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -44,15 +47,23 @@ func TestCertChecker(t *testing.T) {
 		pkey, caCert, err := generateCA(ctx, "Some CA: ca-name.fake")
 		So(err, ShouldBeNil)
 
+		// Generate phony CA config.
+		configBlob, _ := proto.Marshal(&admin.CertificateAuthorityConfig{
+			UniqueId: 0,
+			Cn:       "Some CA: ca-name.fake",
+			CrlUrl:   "http://example.com",
+		})
+
 		// Nothing in the datastore yet.
 		checker, err := GetCertChecker(ctx, "Some CA: ca-name.fake")
 		So(err, ShouldNotBeNil)
 
 		// Put it into the datastore.
 		caEntity := certconfig.CA{
-			CN:    "Some CA: ca-name.fake",
-			Cert:  caCert,
-			Ready: true,
+			CN:     "Some CA: ca-name.fake",
+			Config: configBlob,
+			Cert:   caCert,
+			Ready:  true,
 		}
 		err = datastore.Put(ctx, &caEntity)
 		So(err, ShouldBeNil)

@@ -196,7 +196,7 @@ func (ch *CertChecker) GetCA(c context.Context) (*certconfig.CA, error) {
 // revocation status.
 //
 // It returns nil error iff cert was directly signed by the CA, not expired yet,
-// and its serial number is not in the CA's CRL.
+// and its serial number is not in the CA's CRL (if CA's CRL is configured).
 //
 // On success also returns *certconfig.CA instance used to check the
 // certificate, since 'GetCA' may return another instance (in case certconfig.CA
@@ -217,14 +217,6 @@ func (ch *CertChecker) CheckCertificate(c context.Context, cert *x509.Certificat
 		return nil, err
 	}
 
-	// Did we fetch its CRL at least once?
-	if !ca.Ready {
-		return nil, Error{
-			error:  fmt.Errorf("CRL of CA %q is not ready yet", ch.CN),
-			Reason: NotReadyCA,
-		}
-	}
-
 	// Verify the signature.
 	if cert.Issuer.CommonName != ca.ParsedCert.Subject.CommonName {
 		return nil, Error{
@@ -239,14 +231,24 @@ func (ch *CertChecker) CheckCertificate(c context.Context, cert *x509.Certificat
 		}
 	}
 
-	// Check the revocation list.
-	switch revoked, err := ch.CRL.IsRevokedSN(c, cert.SerialNumber); {
-	case err != nil:
-		return nil, err
-	case revoked:
-		return nil, Error{
-			error:  fmt.Errorf("certificate with SN %s has been revoked", cert.SerialNumber),
-			Reason: CertificateRevoked,
+	// Check the revocation list if it is configured in the CA config.
+	if ca.ParsedConfig.CrlUrl != "" {
+		// Check we fetched the CRL already.
+		if !ca.Ready {
+			return nil, Error{
+				error:  fmt.Errorf("CRL of CA %q is not ready yet", ch.CN),
+				Reason: NotReadyCA,
+			}
+		}
+		// Check if the serial number is in the last fetched CRL.
+		switch revoked, err := ch.CRL.IsRevokedSN(c, cert.SerialNumber); {
+		case err != nil:
+			return nil, err
+		case revoked:
+			return nil, Error{
+				error:  fmt.Errorf("certificate with SN %s has been revoked", cert.SerialNumber),
+				Reason: CertificateRevoked,
+			}
 		}
 	}
 

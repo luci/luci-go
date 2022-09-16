@@ -46,7 +46,7 @@ var crlFetchDefaultScopes = []string{
 type FetchCRLRPC struct {
 }
 
-// FetchCRL makes the server fetch a CRL for some CA.
+// FetchCRL makes the server fetch a CRL for some CA if it is configured.
 func (r *FetchCRLRPC) FetchCRL(c context.Context, req *admin.FetchCRLRequest) (*admin.FetchCRLResponse, error) {
 	// Grab a corresponding CA entity. It contains URL of CRL to fetch.
 	ca := &CA{CN: req.Cn}
@@ -62,8 +62,11 @@ func (r *FetchCRLRPC) FetchCRL(c context.Context, req *admin.FetchCRLRequest) (*
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "broken CA config in the datastore - %s", err)
 	}
+
+	// No CRL is fine, just don't do anything. The empty response indicates
+	// there's no CRL.
 	if cfg.CrlUrl == "" {
-		return nil, status.Errorf(codes.NotFound, "CA %q doesn't have CRL defined", ca.CN)
+		return &admin.FetchCRLResponse{}, nil
 	}
 
 	// Grab info about last processed CRL, if any.
