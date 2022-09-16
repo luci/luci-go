@@ -35,6 +35,7 @@ import (
 
 	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/gerrit"
+	"go.chromium.org/luci/cv/internal/metrics"
 )
 
 const (
@@ -485,8 +486,9 @@ func (u *Updater) handleCLWithBackend(ctx context.Context, task *UpdateCLTask, c
 	}
 
 	// Transactionally update the CL.
+	var changed bool
 	transClbk := func(latest *CL) error {
-		if changed := updateFields.Apply(latest, backend); !changed {
+		if changed = updateFields.Apply(latest, backend); !changed {
 			// Someone, possibly even us in case of Datastore transaction retry, has
 			// already updated this CL.
 			return ErrStopMutation
@@ -498,7 +500,34 @@ func (u *Updater) handleCLWithBackend(ctx context.Context, task *UpdateCLTask, c
 	} else {
 		_, err = u.mutator.Update(ctx, task.GetLuciProject(), id, transClbk)
 	}
-	return err
+
+	if err != nil {
+		return err
+	}
+
+	switch {
+	case updateFields.Snapshot == nil:
+		// Skip reporting the fetch metrics. It's either the fetch operation
+		// failed or skipped.
+	case skip:
+		// Fetch was not performed; skip reporting the metrics.
+	case changed:
+		// Report the latency metrics only if the fetch actually returned
+		// new data. If the data was the same as the existing snapshot,
+		// the fetch wasn't needed, indeed.
+		delay := clock.Now(ctx).Sub(updateFields.Snapshot.ExternalUpdateTime.AsTime()).Seconds()
+		if delay < 0 {
+			logging.Errorf(ctx, "negative CL fetch duration (%d) detected", delay)
+			delay = 0
+		}
+		metrics.Internal.CLIngestionLatency.Add(
+			ctx, delay, task.GetRequester().String(), task.GetIsForDep())
+		fallthrough
+	default:
+		metrics.Internal.CLIngestionAttempted.Add(
+			ctx, 1, task.GetRequester().String(), changed, task.GetIsForDep())
+	}
+	return nil
 }
 
 // trySkippingFetch checks if a fetch from the backend can be skipped.

@@ -33,6 +33,7 @@ import (
 
 	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/cvtesting"
+	"go.chromium.org/luci/cv/internal/metrics"
 
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
@@ -265,7 +266,7 @@ func TestUpdaterHappyPath(t *testing.T) {
 
 		b.fetchResult = UpdateFields{
 			Snapshot: &Snapshot{
-				ExternalUpdateTime:    timestamppb.New(ct.Clock.Now()),
+				ExternalUpdateTime:    timestamppb.New(ct.Clock.Now().Add(-1 * time.Second)),
 				Patchset:              2,
 				MinEquivalentPatchset: 1,
 				LuciProject:           "luci-project",
@@ -284,7 +285,14 @@ func TestUpdaterHappyPath(t *testing.T) {
 		So(u.handleCL(ctx, &UpdateCLTask{
 			LuciProject: "luci-project",
 			ExternalId:  "fake/123",
+			Requester:   UpdateCLTask_PUBSUB_POLL,
 		}), ShouldBeNil)
+
+		// Ensure that it reported metrics for the CL fetch events.
+		So(ct.TSMonSentValue(ctx, metrics.Internal.CLIngestionAttempted,
+			UpdateCLTask_PUBSUB_POLL.String(), true, false), ShouldEqual, 1)
+		So(ct.TSMonSentDistr(ctx, metrics.Internal.CLIngestionLatency,
+			UpdateCLTask_PUBSUB_POLL.String(), false).Sum(), ShouldAlmostEqual, 1)
 
 		// Ensure CL is created with correct data.
 		cl, err := ExternalID("fake/123").Load(ctx)
@@ -404,8 +412,26 @@ func TestUpdaterFetchedNoNewData(t *testing.T) {
 			}
 		})
 
-		err := u.handleCL(ctx, &UpdateCLTask{LuciProject: "luci-project", ExternalId: "fake/1"})
+		err := u.handleCL(ctx, &UpdateCLTask{
+			LuciProject: "luci-project",
+			ExternalId:  "fake/1",
+			Requester:   UpdateCLTask_PUBSUB_POLL})
+
 		So(err, ShouldBeNil)
+
+		// Check the monitoring data
+		if b.fetchResult.IsEmpty() {
+			// Empty fetched result implies that it didn't even perform
+			// a fetch. Hence, no metrics should have been reported.
+			So(ct.TSMonStore.GetAll(ctx), ShouldBeNil)
+		} else {
+			// This is the case where a fetch was performed but
+			// the data was actually the same as the existing snapshot.
+			So(ct.TSMonSentValue(ctx, metrics.Internal.CLIngestionAttempted,
+				UpdateCLTask_PUBSUB_POLL.String(), false, false), ShouldEqual, 1)
+			So(ct.TSMonSentDistr(ctx, metrics.Internal.CLIngestionLatency,
+				UpdateCLTask_PUBSUB_POLL.String(), false), ShouldBeNil)
+		}
 
 		// CL entity shouldn't change and notifications should not be emitted.
 		cl2 := reloadCL(ctx, cl)

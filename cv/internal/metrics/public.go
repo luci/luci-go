@@ -25,7 +25,7 @@ import (
 	"go.chromium.org/luci/common/tsmon/types"
 )
 
-const numBucket = 100
+const nBuckets = 100
 
 // Public contains a collection of public LUCI CV metric definitions.
 var Public = struct {
@@ -75,7 +75,7 @@ var Public = struct {
 		"The distribution of time elapsed from Run start to Run end",
 		&types.MetricMetadata{Units: types.Seconds},
 		// Bucketer for 1s .. 2d range.
-		distribution.GeometricBucketer(math.Pow(float64(2*24*time.Hour/time.Second), 1.0/numBucket), numBucket),
+		distribution.GeometricBucketer(math.Pow(float64(2*24*time.Hour/time.Second), 1.0/nBuckets), nBuckets),
 		field.String("project"),
 		field.String("config_group"),
 		field.String("mode"),
@@ -86,7 +86,7 @@ var Public = struct {
 		"The distribution of time elapsed from Run creation to Run end",
 		&types.MetricMetadata{Units: types.Seconds},
 		// Bucketer for 1s .. 2d range.
-		distribution.GeometricBucketer(math.Pow(float64(2*24*time.Hour/time.Second), 1.0/numBucket), numBucket),
+		distribution.GeometricBucketer(math.Pow(float64(2*24*time.Hour/time.Second), 1.0/nBuckets), nBuckets),
 		field.String("project"),
 		field.String("config_group"),
 		field.String("mode"),
@@ -106,7 +106,7 @@ var Public = struct {
 		"The distribution of all the currently active run durations (started but not ended yet)",
 		&types.MetricMetadata{Units: types.Seconds},
 		// Bucketer for 1s .. 2d range.
-		distribution.GeometricBucketer(math.Pow(float64(2*24*time.Hour/time.Second), 1.0/numBucket), numBucket),
+		distribution.GeometricBucketer(math.Pow(float64(2*24*time.Hour/time.Second), 1.0/nBuckets), nBuckets),
 		field.String("project"),
 		field.String("config_group"),
 		field.String("mode"),
@@ -124,7 +124,7 @@ var Public = struct {
 		"The distribution of all the currently pending Run durations (created but not started yet)",
 		&types.MetricMetadata{Units: types.Milliseconds},
 		// Bucketer for 1ms .. 2h range.
-		distribution.GeometricBucketer(math.Pow(float64(2*time.Hour/time.Millisecond), 1.0/numBucket), numBucket),
+		distribution.GeometricBucketer(math.Pow(float64(2*time.Hour/time.Millisecond), 1.0/nBuckets), nBuckets),
 		field.String("project"),
 		field.String("config_group"),
 		field.String("mode"),
