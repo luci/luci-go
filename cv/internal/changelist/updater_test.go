@@ -290,9 +290,9 @@ func TestUpdaterHappyPath(t *testing.T) {
 
 		// Ensure that it reported metrics for the CL fetch events.
 		So(ct.TSMonSentValue(ctx, metrics.Internal.CLIngestionAttempted,
-			UpdateCLTask_PUBSUB_POLL.String(), true, false), ShouldEqual, 1)
+			UpdateCLTask_PUBSUB_POLL.String(), true, false, "luci-project"), ShouldEqual, 1)
 		So(ct.TSMonSentDistr(ctx, metrics.Internal.CLIngestionLatency,
-			UpdateCLTask_PUBSUB_POLL.String(), false).Sum(), ShouldAlmostEqual, 1)
+			UpdateCLTask_PUBSUB_POLL.String(), false, "luci-project").Sum(), ShouldAlmostEqual, 1)
 
 		// Ensure CL is created with correct data.
 		cl, err := ExternalID("fake/123").Load(ctx)
@@ -428,9 +428,9 @@ func TestUpdaterFetchedNoNewData(t *testing.T) {
 			// This is the case where a fetch was performed but
 			// the data was actually the same as the existing snapshot.
 			So(ct.TSMonSentValue(ctx, metrics.Internal.CLIngestionAttempted,
-				UpdateCLTask_PUBSUB_POLL.String(), false, false), ShouldEqual, 1)
+				UpdateCLTask_PUBSUB_POLL.String(), false, false, "luci-project"), ShouldEqual, 1)
 			So(ct.TSMonSentDistr(ctx, metrics.Internal.CLIngestionLatency,
-				UpdateCLTask_PUBSUB_POLL.String(), false), ShouldBeNil)
+				UpdateCLTask_PUBSUB_POLL.String(), false, "luci-project"), ShouldBeNil)
 		}
 
 		// CL entity shouldn't change and notifications should not be emitted.

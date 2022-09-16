@@ -68,6 +68,8 @@ var Internal = struct {
 		field.Bool("changed"),
 		// True if the ingestion was to retrieve the snapshot of a dep CL.
 		field.Bool("dep"),
+		// The LUCI project
+		field.String("project"),
 	),
 	CLIngestionLatency: metric.NewCumulativeDistribution(
 		"cv/internal/changelist/ingestion_latency",
@@ -81,5 +83,6 @@ var Internal = struct {
 		),
 		field.String("requester"),
 		field.Bool("dep"),
+		field.String("project"),
 	),
 }

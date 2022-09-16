@@ -522,11 +522,13 @@ func (u *Updater) handleCLWithBackend(ctx context.Context, task *UpdateCLTask, c
 			delay = 0
 		}
 		metrics.Internal.CLIngestionLatency.Add(
-			ctx, delay, task.GetRequester().String(), task.GetIsForDep())
+			ctx, delay, task.GetRequester().String(), task.GetIsForDep(),
+			task.GetLuciProject())
 		fallthrough
 	default:
 		metrics.Internal.CLIngestionAttempted.Add(
-			ctx, 1, task.GetRequester().String(), changed, task.GetIsForDep())
+			ctx, 1, task.GetRequester().String(), changed, task.GetIsForDep(),
+			task.GetLuciProject())
 	}
 	return nil
 }
