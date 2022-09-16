@@ -565,6 +565,9 @@ func (d *Dispatcher) RegisterTaskClass(cls TaskClass) TaskClassRef {
 // task class is registered.
 func (d *Dispatcher) TaskClassRef(id string) TaskClassRef {
 	impl, _, _ := d.classByID(id)
+	if impl == nil {
+		return nil
+	}
 	return impl
 }
 

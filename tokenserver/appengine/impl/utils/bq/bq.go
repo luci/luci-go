@@ -132,7 +132,7 @@ func (ins *Inserter) HandlePubSubPush(ctx context.Context, body io.Reader) error
 	// Deserialize the row into a corresponding proto type.
 	cls := tq.Default.TaskClassRef(table)
 	if cls == nil {
-		return errors.Annotate(err, "unrecognized task class %q", table).Err()
+		return errors.Reason("unrecognized task class %q", table).Err()
 	}
 	row := cls.Definition().Prototype.ProtoReflect().New().Interface()
 	if err := protojson.Unmarshal(msg.Message.Data, row); err != nil {
