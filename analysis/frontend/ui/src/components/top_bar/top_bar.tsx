@@ -17,10 +17,11 @@ import {
   useMemo,
 } from 'react';
 import {
-  Link,
+  Link as RouterLink,
   useParams,
 } from 'react-router-dom';
 
+import Link from '@mui/material/Link';
 import RuleIcon from '@mui/icons-material/Rule';
 import SpokeIcon from '@mui/icons-material/Spoke';
 import AppBar from '@mui/material/AppBar';
@@ -30,7 +31,6 @@ import Button from '@mui/material/Button';
 import { OverridableComponent } from '@mui/material/OverridableComponent';
 import { SvgIconTypeMap } from '@mui/material/SvgIcon';
 import Toolbar from '@mui/material/Toolbar';
-import Typography from '@mui/material/Typography';
 
 import { DynamicComponentNoProps } from '@/tools/rendering_tools';
 
@@ -93,25 +93,24 @@ const TopBar = () => {
           }}>
             <Logo />
           </Box>
-          <Typography
+          <Link 
             variant="h6"
             noWrap
-            component="a"
-            href="/"
+            component={RouterLink}
+            to="/"
+            underline="none"
+            color="inherit"
             sx={{
               mr: 2,
               display: { xs: 'none', md: 'flex' },
-              color: 'inherit',
-              textDecoration: 'none',
-            }}
-          >
+            }}>
             LUCI Analysis
-          </Typography>
+          </Link>
           <CollapsedMenu pages={pages}/>
           <Box sx={{ flexGrow: 1, display: { xs: 'none', md: 'flex' } }}>
             {pages.map((page) => (
               <Button
-                component={Link}
+                component={RouterLink}
                 to={page.url}
                 key={page.title}
                 onClick={handleCloseNavMenu}
