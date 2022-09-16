@@ -102,6 +102,7 @@ func saveResultsToDatastore(c context.Context, analysis *gfim.CompileHeuristicAn
 		suspect := &gfim.Suspect{
 			ParentAnalysis: datastore.KeyForObj(c, analysis),
 			ReviewUrl:      item.ReviewUrl,
+			ReviewTitle:    item.ReviewTitle,
 			Score:          item.Justification.GetScore(),
 			Justification:  item.Justification.GetReasons(),
 			GitilesCommit: buildbucketpb.GitilesCommit{
