@@ -130,7 +130,7 @@ const NewRulePage = () => {
       onError(error) {
         if ( error instanceof GrpcError &&
           error.code === RpcCode.INVALID_ARGUMENT) {
-          setValidationError(null);
+          setValidationError(error);
         } else {
           setSnack({
             open: true,
