@@ -86,7 +86,7 @@ describe('SearchPage', () => {
     expect(setSearchQuerySpy.getCall(0).args).to.deep.eq(['test-id']);
   });
 
-  it('should read params from URL', () => {
+  it('should read params from URL', async () => {
     const url = new URLExt(window.location.href)
       .setSearchParam('t', SearchTarget.Tests)
       .setSearchParam('tp', 'project')
@@ -101,6 +101,14 @@ describe('SearchPage', () => {
         <SearchPage />
       </StoreProvider>
     );
+
+    expect(store.searchPage.searchTarget).to.eq(SearchTarget.Tests);
+    expect(store.searchPage.testProject).to.eq('project');
+    expect(store.searchPage.searchQuery).to.eq('query');
+
+    // Ensure that the filters are not overwritten after all event hooks are
+    // executed.
+    await timer.runAllAsync();
 
     expect(store.searchPage.searchTarget).to.eq(SearchTarget.Tests);
     expect(store.searchPage.testProject).to.eq('project');

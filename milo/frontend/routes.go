@@ -175,7 +175,9 @@ func redirect(pathTemplate string, status int) router.Handler {
 	interpolator := createInterpolator(pathTemplate)
 	return func(c *router.Context) {
 		path := interpolator(c.Params)
-		http.Redirect(c.Writer, c.Request, path, status)
+		url := *c.Request.URL
+		url.Path = path
+		http.Redirect(c.Writer, c.Request, url.String(), status)
 	}
 }
 

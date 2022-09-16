@@ -38,7 +38,7 @@ _self.addEventListener('fetch', (event) => {
     // Artifact link.
     url.pathname.match(/^\/artifact\//) ||
     // Search page.
-    url.pathname.match(/^\/search\//);
+    url.pathname.match(/^\/search(\/|$)/);
 
   if (isResultUI) {
     url.pathname = '/ui' + url.pathname;

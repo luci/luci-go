@@ -53,15 +53,21 @@ export const SearchPage = observer(() => {
     const searchParams = new URLSearchParams(window.location.search);
 
     const t = searchParams.get('t');
-    if (t && Object.values(SearchTarget).includes(t as SearchTarget)) {
+    if (t !== null && Object.values(SearchTarget).includes(t as SearchTarget)) {
       pageState.setSearchTarget(t as SearchTarget);
     }
 
     const tp = searchParams.get('tp');
-    tp && pageState.setTestProject(tp);
+    if (tp !== null) {
+      pageState.setTestProject(tp);
+      setProject(tp);
+    }
 
     const q = searchParams.get('q');
-    q && pageState.setSearchQuery(q);
+    if (q !== null) {
+      pageState.setSearchQuery(q);
+      setSearchQuery(q);
+    }
   }, [pageState]);
 
   useEffect(() => {
