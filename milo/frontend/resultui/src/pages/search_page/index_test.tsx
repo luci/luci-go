@@ -17,6 +17,7 @@ import { expect } from 'chai';
 import { destroy, protect, unprotect } from 'mobx-state-tree';
 import * as sinon from 'sinon';
 
+import { URLExt } from '../../libs/utils';
 import { Store, StoreProvider } from '../../store';
 import { SearchTarget } from '../../store/search_page';
 import { SearchPage } from '.';
@@ -26,7 +27,11 @@ describe('SearchPage', () => {
   beforeEach(() => {
     timer = sinon.useFakeTimers();
   });
-  afterEach(() => timer.restore());
+  afterEach(() => {
+    timer.restore();
+    const url = `${window.location.protocol}//${window.location.host}${window.location.pathname}`;
+    window.history.replaceState(null, '', url);
+  });
 
   it('should throttle search query updates', () => {
     const store = Store.create({});
@@ -79,5 +84,46 @@ describe('SearchPage', () => {
 
     expect(setSearchQuerySpy.callCount).to.eq(1);
     expect(setSearchQuerySpy.getCall(0).args).to.deep.eq(['test-id']);
+  });
+
+  it('should read params from URL', () => {
+    const url = new URLExt(window.location.href)
+      .setSearchParam('t', SearchTarget.Tests)
+      .setSearchParam('tp', 'project')
+      .setSearchParam('q', 'query');
+    window.history.replaceState(null, '', url);
+
+    const store = Store.create({});
+    after(() => destroy(store));
+
+    render(
+      <StoreProvider value={store}>
+        <SearchPage />
+      </StoreProvider>
+    );
+
+    expect(store.searchPage.searchTarget).to.eq(SearchTarget.Tests);
+    expect(store.searchPage.testProject).to.eq('project');
+    expect(store.searchPage.searchQuery).to.eq('query');
+  });
+
+  it('should sync params with URL', async () => {
+    const store = Store.create({});
+    after(() => destroy(store));
+
+    render(
+      <StoreProvider value={store}>
+        <SearchPage />
+      </StoreProvider>
+    );
+
+    expect(window.location.search).to.eq('');
+    fireEvent.change(screen.getByRole('textbox'), { target: { value: 'query' } });
+    store.searchPage.setSearchTarget(SearchTarget.Tests);
+    store.searchPage.setTestProject('project');
+
+    await timer.runAllAsync();
+
+    expect(window.location.search).to.eq('?t=TESTS&tp=project&q=query');
   });
 });

@@ -26,6 +26,7 @@ import { consumeInvocationState, InvocationState } from '../../context/invocatio
 import { GA_ACTIONS, GA_CATEGORIES, trackEvent } from '../../libs/analytics_utils';
 import { consumer } from '../../libs/context';
 import { errorHandler, forwardWithoutMsg, reportRenderError } from '../../libs/error_handler';
+import { URLExt } from '../../libs/utils';
 import { consumeStore, StoreInstance } from '../../store';
 import commonStyle from '../../styles/common_style.css';
 import { TestVariantsTableElement } from './test_variants_table';
@@ -84,25 +85,21 @@ export class TestResultsTabElement extends MiloBaseElement {
     this.addDisposer(
       reaction(
         () => {
-          const displayedCols = this.invocationState.columnKeys.join(',');
-          const defaultCols = this.invocationState.defaultColumnKeys.join(',');
-          const sortingKeys = this.invocationState.sortingKeys.join(',');
-          const defaultSortingKeys = this.invocationState.defaultSortingKeys.join(',');
-          const groupingKeys = this.invocationState.groupingKeys.join(',');
-          const defaultGroupingKeys = this.invocationState.defaultGroupingKeys.join(',');
-
-          const newSearchParams = new URLSearchParams({
-            ...(!this.invocationState.searchText ? {} : { q: this.invocationState.searchText }),
-            ...(displayedCols === defaultCols ? {} : { cols: displayedCols }),
-            ...(sortingKeys === defaultSortingKeys ? {} : { sortby: sortingKeys }),
-            ...(groupingKeys === defaultGroupingKeys ? {} : { groupby: groupingKeys }),
-          });
-          const newSearchParamsStr = newSearchParams.toString();
-          return newSearchParamsStr ? '?' + newSearchParamsStr : '';
+          const newUrl = new URLExt(window.location.href)
+            .setSearchParam('q', this.invocationState.searchText)
+            .setSearchParam('cols', this.invocationState.columnKeys.join(','))
+            .setSearchParam('sortby', this.invocationState.sortingKeys.join(','))
+            .setSearchParam('groupby', this.invocationState.groupingKeys.join(','))
+            // Make the URL shorter.
+            .removeMatchedParams({
+              q: '',
+              cols: this.invocationState.defaultColumnKeys.join(','),
+              sortby: this.invocationState.defaultSortingKeys.join(','),
+              groupby: this.invocationState.defaultGroupingKeys.join(','),
+            });
+          return newUrl.toString();
         },
-        (newQueryStr) => {
-          const location = window.location;
-          const newUrl = `${location.protocol}//${location.host}${location.pathname}${newQueryStr}`;
+        (newUrl) => {
           window.history.replaceState(null, '', newUrl);
         },
         { fireImmediately: true }

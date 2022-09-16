@@ -25,8 +25,9 @@ import { useCallback, useEffect, useState } from 'react';
 import { createRoot, Root } from 'react-dom/client';
 
 import { consumer } from '../../libs/context';
+import { URLExt } from '../../libs/utils';
 import { consumeStore, StoreInstance, StoreProvider, useStore } from '../../store';
-import { SearchTarget } from '../../store/search_page';
+import { DEFAULT_SEARCH_TARGET, DEFAULT_TEST_PROJECT, SearchTarget } from '../../store/search_page';
 import commonStyle from '../../styles/common_style.css';
 import { BuilderList } from './builder_list';
 import { TestList } from './test_list';
@@ -48,6 +49,31 @@ export const SearchPage = observer(() => {
   const [searchQuery, setSearchQuery] = useState(pageState.searchQuery);
   const [project, setProject] = useState(pageState.testProject);
 
+  useEffect(() => {
+    const searchParams = new URLSearchParams(window.location.search);
+
+    const t = searchParams.get('t');
+    if (t && Object.values(SearchTarget).includes(t as SearchTarget)) {
+      pageState.setSearchTarget(t as SearchTarget);
+    }
+
+    const tp = searchParams.get('tp');
+    tp && pageState.setTestProject(tp);
+
+    const q = searchParams.get('q');
+    q && pageState.setSearchQuery(q);
+  }, [pageState]);
+
+  useEffect(() => {
+    const url = new URLExt(window.location.href)
+      .setSearchParam('t', pageState.searchTarget)
+      .setSearchParam('tp', pageState.testProject)
+      .setSearchParam('q', pageState.searchQuery)
+      // Make the URL shorter.
+      .removeMatchedParams({ t: DEFAULT_SEARCH_TARGET, tp: DEFAULT_TEST_PROJECT, q: '' });
+    window.history.replaceState(null, '', url);
+  }, [pageState.searchTarget, pageState.testProject, pageState.searchQuery]);
+
   // Update the search query in the pageStore after a slight delay to avoid
   // updating the list or triggering network requests too frequently.
   const executeSearch = useCallback(
@@ -59,7 +85,9 @@ export const SearchPage = observer(() => {
   );
 
   useEffect(() => {
-    executeSearch(searchQuery);
+    if (searchQuery !== pageState.searchQuery) {
+      executeSearch(searchQuery);
+    }
     // Execute search cancel the previous call automatically when the next call
     // is scheduled. However, when the search target is changed, executeSearch
     // itself is updated. Therefore we need to cancel the search explicitly.

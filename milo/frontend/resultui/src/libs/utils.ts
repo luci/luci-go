@@ -16,14 +16,25 @@
 // webpage-only objects like `window`, `document`.
 
 /**
- * Extend URL with methods that can be chained.
+ * Extend URL with some helper methods.
  */
-export class ChainableURL extends URL {
-  withSearchParam(key: string, value: string, override = false) {
-    if (override) {
-      this.searchParams.set(key, value);
-    } else {
-      this.searchParams.append(key, value);
+export class URLExt extends URL {
+  setSearchParam(key: string, value: string) {
+    this.searchParams.set(key, value);
+    return this;
+  }
+
+  /**
+   * Remove the key from the search param if the value matches the provided
+   * value. This is useful for removing unnecessary search params (e.g. when
+   * the value matches the default value anyway).
+   */
+  removeMatchedParams(params: { [key: string]: string }) {
+    for (const [key, value] of Object.entries(params)) {
+      const existingValues = this.searchParams.getAll(key);
+      if (existingValues.length === 1 && existingValues[0] === value) {
+        this.searchParams.delete(key);
+      }
     }
     return this;
   }

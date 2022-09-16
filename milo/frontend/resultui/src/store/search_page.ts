@@ -21,19 +21,22 @@ import { PageLoader } from '../libs/page_loader';
 import { BuilderID } from '../services/buildbucket';
 import { ServicesStore } from './services';
 
-export const enum SearchTarget {
-  Builders,
-  Tests,
+export enum SearchTarget {
+  Builders = 'BUILDERS',
+  Tests = 'TESTS',
 }
+
+export const DEFAULT_SEARCH_TARGET = SearchTarget.Builders;
+export const DEFAULT_TEST_PROJECT = 'chromium';
 
 export const SearchPage = types
   .model('SearchPage', {
     services: types.safeReference(ServicesStore),
 
-    searchTarget: types.frozen<SearchTarget>(SearchTarget.Builders),
+    searchTarget: types.frozen<SearchTarget>(DEFAULT_SEARCH_TARGET),
     searchQuery: '',
 
-    testProject: 'chromium',
+    testProject: DEFAULT_TEST_PROJECT,
   })
   .views((self) => ({
     get builderLoader() {
