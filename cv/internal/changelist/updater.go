@@ -334,7 +334,8 @@ func (u *Updater) ScheduleDelayed(ctx context.Context, payload *UpdateCLTask, de
 		Title:   makeTQTitleForHumans(payload),
 	}
 	if payload.Requester == UpdateCLTask_REQUESTER_CLASS_UNSPECIFIED {
-		panic(fmt.Errorf("UpdateCLTask unspecified: %s", payload))
+		// TODO(crbug.com/1358208): make this panic,
+		logging.Warningf(ctx, "crbug/1358208: UpdateCLTask unspecified: %s", payload)
 	}
 	if datastore.CurrentTransaction(ctx) == nil {
 		task.DeduplicationKey = makeTaskDeduplicationKey(ctx, payload, delay)
