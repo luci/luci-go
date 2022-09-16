@@ -60,8 +60,8 @@ export const SearchPage = types
       ]);
     },
     get filteredBuilders() {
-      const searchQuery = self.searchQuery.toLowerCase();
-      return this.builders?.filter(([bid]) => bid.includes(searchQuery)).map(([_, builder]) => builder);
+      const parts = self.searchQuery.toLowerCase().split(' ');
+      return this.builders?.filter(([bid]) => parts.every((part) => bid.includes(part))).map(([_, builder]) => builder);
     },
     get groupedBuilders() {
       return groupBy(this.filteredBuilders, (b) => `${b.project}/${b.bucket}`);

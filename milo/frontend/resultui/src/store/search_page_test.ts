@@ -148,6 +148,17 @@ describe('SearchPage', () => {
         ],
       });
     });
+
+    it('should support fuzzy search', () => {
+      testStore.searchPage.setSearchQuery('JECT1 Cket2');
+
+      expect(testStore.searchPage.groupedBuilders).to.deep.equal({
+        'project1/bucket2': [
+          { project: 'project1', bucket: 'bucket2', builder: 'builder1' },
+          { project: 'project1', bucket: 'bucket2', builder: 'builder2' },
+        ],
+      });
+    });
   });
 
   describe('search tests', () => {
