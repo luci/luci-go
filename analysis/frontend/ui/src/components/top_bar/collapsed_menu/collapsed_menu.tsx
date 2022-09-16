@@ -24,10 +24,10 @@ import Menu from '@mui/material/Menu';
 import MenuItem from '@mui/material/MenuItem';
 import Typography from '@mui/material/Typography';
 
-import { DynamicComponentNoProps } from '../../../tools/rendering_tools';
-import Logo from '../logo/logo';
-import { AppBarPage } from '../top_bar';
-import { TopBarContext } from '../top_bar_context';
+import Logo from '@/components/top_bar/logo/logo';
+import { AppBarPage } from '@/components/top_bar/top_bar';
+import { TopBarContext } from '@/components/top_bar/top_bar_context';
+import { DynamicComponentNoProps } from '@/tools/rendering_tools';
 
 interface Props {
   pages: AppBarPage[];

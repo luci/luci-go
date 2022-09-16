@@ -19,12 +19,13 @@ import fetchMock from 'fetch-mock-jest';
 
 import { screen } from '@testing-library/react';
 
-import { renderWithRouterAndClient } from '../../../testing_tools/libs/mock_router';
-import { mockFetchAuthState } from '../../../testing_tools/mocks/authstate_mock';
-import { createMockBug } from '../../../testing_tools/mocks/bug_mock';
-import { createMockDoneProgress } from '../../../testing_tools/mocks/progress_mock';
-import { mockFetchProjectConfig } from '../../../testing_tools/mocks/projects_mock';
-import { createDefaultMockRule } from '../../../testing_tools/mocks/rule_mock';
+import { renderWithRouterAndClient } from '@/testing_tools/libs/mock_router';
+import { mockFetchAuthState } from '@/testing_tools/mocks/authstate_mock';
+import { createMockBug } from '@/testing_tools/mocks/bug_mock';
+import { createMockDoneProgress } from '@/testing_tools/mocks/progress_mock';
+import { mockFetchProjectConfig } from '@/testing_tools/mocks/projects_mock';
+import { createDefaultMockRule } from '@/testing_tools/mocks/rule_mock';
+
 import RuleTopPanel from './rule_top_panel';
 
 describe('Test RuleTopPanel component', () => {

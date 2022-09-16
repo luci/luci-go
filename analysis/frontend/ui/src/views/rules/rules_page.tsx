@@ -12,13 +12,17 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { useParams, Link } from 'react-router-dom';
+import {
+  Link,
+  useParams,
+} from 'react-router-dom';
 
 import Button from '@mui/material/Button';
-import Grid from '@mui/material/Grid';
 import Container from '@mui/material/Container';
-import HelpTooltip from '../../components/help_tooltip/help_tooltip';
-import RulesTable from '../../components/rules_table/rules_table';
+import Grid from '@mui/material/Grid';
+
+import HelpTooltip from '@/components/help_tooltip/help_tooltip';
+import RulesTable from '@/components/rules_table/rules_table';
 
 const rulesDescription = 'Rules define an association between failures and bugs. LUCI Analysis uses these ' +
   'associations to calculate bug impact, automatically adjust bug priority and verified status, and ' +

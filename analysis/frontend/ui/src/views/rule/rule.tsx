@@ -17,9 +17,9 @@ import { useParams } from 'react-router-dom';
 import Container from '@mui/material/Container';
 import Grid from '@mui/material/Grid';
 
-import ImpactSection from '../../components/impact_section/impact_section';
-import RecentFailuresSection from '../../components/recent_failures_section/recent_failures_section';
-import RuleTopPanel from '../../components/rule/rule_top_panel/rule_top_panel';
+import ImpactSection from '@/components/impact_section/impact_section';
+import RecentFailuresSection from '@/components/recent_failures_section/recent_failures_section';
+import RuleTopPanel from '@/components/rule/rule_top_panel/rule_top_panel';
 
 const Rule = () => {
   const { project, id } = useParams();

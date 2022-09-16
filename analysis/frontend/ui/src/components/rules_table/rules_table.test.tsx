@@ -17,9 +17,10 @@ import 'node-fetch';
 
 import { screen } from '@testing-library/react';
 
-import { renderWithRouterAndClient } from '../../testing_tools/libs/mock_router';
-import { mockFetchAuthState } from '../../testing_tools/mocks/authstate_mock';
-import { mockFetchRules } from '../../testing_tools/mocks/rules_mock';
+import { renderWithRouterAndClient } from '@/testing_tools/libs/mock_router';
+import { mockFetchAuthState } from '@/testing_tools/mocks/authstate_mock';
+import { mockFetchRules } from '@/testing_tools/mocks/rules_mock';
+
 import RulesTable from './rules_table';
 
 describe('Test RulesTable component', () => {

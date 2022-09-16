@@ -25,7 +25,8 @@ import {
   createMockVariantGroups,
   newMockFailure,
   newMockGroup,
-} from '../../../../testing_tools/mocks/failures_mock';
+} from '@/testing_tools/mocks/failures_mock';
+
 import FailuresTableRows from './failures_table_rows';
 
 describe('Test FailureTableRows component', () => {

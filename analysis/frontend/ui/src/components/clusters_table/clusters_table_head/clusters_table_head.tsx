@@ -16,7 +16,8 @@ import TableCell from '@mui/material/TableCell';
 import TableHead from '@mui/material/TableHead';
 import TableRow from '@mui/material/TableRow';
 import TableSortLabel from '@mui/material/TableSortLabel';
-import { SortableMetricName } from '../../../services/cluster';
+
+import { SortableMetricName } from '@/services/cluster';
 
 interface Props {
     toggleSort: (metric: SortableMetricName) => void,

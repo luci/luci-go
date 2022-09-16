@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { AuthorizedPrpcClient } from '../clients/authorized_client';
+import { AuthorizedPrpcClient } from '@/clients/authorized_client';
 
 declare global {
     interface Window { monorailHostname: string | undefined; }

@@ -18,7 +18,8 @@ import { screen } from '@testing-library/react';
 import {
   renderWithRouter,
   renderWithRouterAndClient,
-} from '../../testing_tools/libs/mock_router';
+} from '@/testing_tools/libs/mock_router';
+
 import TopBar from './top_bar';
 
 describe('test TopBar component', () => {

@@ -21,14 +21,12 @@ import {
 } from '@testing-library/react';
 
 import {
-  GroupKey,
-} from '../../../tools/failures_tools';
-
-import {
   createDefaultMockFailureGroup,
   createDefaultMockFailureGroupWithChildren,
   createMockVariantGroups,
-} from '../../../testing_tools/mocks/failures_mock';
+} from '@/testing_tools/mocks/failures_mock';
+import { GroupKey } from '@/tools/failures_tools';
+
 import FailuresTableGroup from './failures_table_group';
 
 describe('Test FailureTableGroup component', () => {

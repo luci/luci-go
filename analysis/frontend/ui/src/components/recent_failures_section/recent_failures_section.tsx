@@ -17,7 +17,7 @@ import { useParams } from 'react-router-dom';
 import Container from '@mui/material/Container';
 import Paper from '@mui/material/Paper';
 
-import FailuresTable from '../failures_table/failures_table';
+import FailuresTable from '@/components/failures_table/failures_table';
 
 const RecentFailuresSection = () => {
   const { project, algorithm, id } = useParams();

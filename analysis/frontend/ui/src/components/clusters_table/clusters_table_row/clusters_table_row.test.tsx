@@ -14,15 +14,14 @@
 
 import '@testing-library/jest-dom';
 
-import {
-  screen,
-} from '@testing-library/react';
+import { screen } from '@testing-library/react';
 
+import { renderWithRouterAndClient } from '@/testing_tools/libs/mock_router';
 import {
   getMockRuleClusterSummary,
   getMockSuggestedClusterSummary,
-} from '../../../testing_tools/mocks/cluster_mock';
-import { renderWithRouterAndClient } from '../../../testing_tools/libs/mock_router';
+} from '@/testing_tools/mocks/cluster_mock';
+
 import ClustersTableRow from './clusters_table_row';
 
 describe('Test ClustersTableRow component', () => {

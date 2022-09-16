@@ -13,7 +13,10 @@
 // limitations under the License.
 
 import dayjs from 'dayjs';
-import { ReactNode, useState } from 'react';
+import {
+  ReactNode,
+  useState,
+} from 'react';
 
 import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
 import ArrowRightIcon from '@mui/icons-material/ArrowRight';
@@ -23,13 +26,16 @@ import Link from '@mui/material/Link';
 import TableCell from '@mui/material/TableCell';
 import TableRow from '@mui/material/TableRow';
 
+import { DistinctClusterFailure } from '@/services/cluster';
 import {
   FailureGroup,
   GroupKey,
   VariantGroup,
-} from '../../../../tools/failures_tools';
-import { failureLink, testHistoryLink } from '../../../../tools/urlHandling/links';
-import { DistinctClusterFailure } from '../../../../services/cluster';
+} from '@/tools/failures_tools';
+import {
+  failureLink,
+  testHistoryLink,
+} from '@/tools/urlHandling/links';
 
 interface Props {
   project: string;

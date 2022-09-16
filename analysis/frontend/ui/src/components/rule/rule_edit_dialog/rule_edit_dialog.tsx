@@ -26,12 +26,12 @@ import DialogActions from '@mui/material/DialogActions';
 import DialogContent from '@mui/material/DialogContent';
 import DialogTitle from '@mui/material/DialogTitle';
 
+import RuleEditInput from '@/components/rule_edit_input/rule_edit_input';
 import { useMutateRule } from '@/hooks/use_mutate_rule';
 import {
   Rule,
   UpdateRuleRequest,
 } from '@/services/rules';
-import RuleEditInput from '@/components/rule_edit_input/rule_edit_input';
 
 interface Props {
     open: boolean;

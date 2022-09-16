@@ -24,12 +24,13 @@ import {
   waitFor,
 } from '@testing-library/react';
 
-import { renderWithClient } from '../../testing_tools/libs/mock_rquery';
-import { mockFetchAuthState } from '../../testing_tools/mocks/authstate_mock';
+import { renderWithClient } from '@/testing_tools/libs/mock_rquery';
+import { mockFetchAuthState } from '@/testing_tools/mocks/authstate_mock';
 import {
   createMockDoneProgress,
   createMockProgress,
-} from '../../testing_tools/mocks/progress_mock';
+} from '@/testing_tools/mocks/progress_mock';
+
 import ReclusteringProgressIndicator from './reclustering_progress_indicator';
 
 describe('Test ReclusteringProgressIndicator component', () => {

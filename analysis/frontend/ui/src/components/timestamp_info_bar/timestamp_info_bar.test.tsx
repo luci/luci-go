@@ -20,7 +20,8 @@ import {
   waitFor,
 } from '@testing-library/react';
 
-import { createDefaultMockRule } from '../../testing_tools/mocks/rule_mock';
+import { createDefaultMockRule } from '@/testing_tools/mocks/rule_mock';
+
 import TimestampInfoBar from './timestamp_info_bar';
 
 describe('Test TimestampInfoBar component', () => {

@@ -14,7 +14,10 @@
 
 import { useQuery } from 'react-query';
 
-import { BatchGetClustersRequest, getClustersService } from '@/services/cluster';
+import {
+  BatchGetClustersRequest,
+  getClustersService,
+} from '@/services/cluster';
 
 type StringOrUndefined = string | undefined;
 

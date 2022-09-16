@@ -15,15 +15,15 @@
 import fetchMock from 'fetch-mock-jest';
 
 import {
-  Cluster,
-  ClusterSummary,
-  QueryClusterSummariesRequest,
-  QueryClusterSummariesResponse,
-  QueryClusterFailuresRequest,
-  QueryClusterFailuresResponse,
-  DistinctClusterFailure,
   BatchGetClustersRequest,
   BatchGetClustersResponse,
+  Cluster,
+  ClusterSummary,
+  DistinctClusterFailure,
+  QueryClusterFailuresRequest,
+  QueryClusterFailuresResponse,
+  QueryClusterSummariesRequest,
+  QueryClusterSummariesResponse,
 } from '@/services/cluster';
 
 export const getMockCluster = (id: string,

@@ -22,7 +22,8 @@ import {
   FailureGroup,
   GroupKey,
   VariantGroup,
-} from '../../../tools/failures_tools';
+} from '@/tools/failures_tools';
+
 import FailuresTableRows from './failures_table_rows/failures_table_rows';
 
 const renderGroup = (

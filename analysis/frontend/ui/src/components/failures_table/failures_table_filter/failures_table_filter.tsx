@@ -24,10 +24,10 @@ import Select, { SelectChangeEvent } from '@mui/material/Select';
 import {
   FailureFilter,
   FailureFilters,
-  VariantGroup,
   ImpactFilter,
   ImpactFilters,
-} from '../../../tools/failures_tools';
+  VariantGroup,
+} from '@/tools/failures_tools';
 
 interface Props {
     failureFilter: FailureFilter,

@@ -28,7 +28,10 @@ import { renderWithRouterAndClient } from '../../../testing_tools/libs/mock_rout
 import { mockFetchAuthState } from '../../../testing_tools/mocks/authstate_mock';
 import { createMockBug } from '../../../testing_tools/mocks/bug_mock';
 import { mockFetchProjectConfig } from '../../../testing_tools/mocks/projects_mock';
-import { createDefaultMockRule, mockFetchRule } from '../../../testing_tools/mocks/rule_mock';
+import {
+  createDefaultMockRule,
+  mockFetchRule,
+} from '../../../testing_tools/mocks/rule_mock';
 import BugInfo from './bug_info';
 
 describe('Test BugInfo component', () => {

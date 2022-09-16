@@ -17,8 +17,8 @@ import { useParams } from 'react-router-dom';
 import Grid from '@mui/material/Grid';
 
 import ClusterInfo from '@/components/cluster/cluster_info/cluster_info';
-import ReclusteringProgressIndicator from '@/components/reclustering_progress_indicator/reclustering_progress_indicator';
 import ErrorAlert from '@/components/error_alert/error_alert';
+import ReclusteringProgressIndicator from '@/components/reclustering_progress_indicator/reclustering_progress_indicator';
 
 const ClusterTopPanel = () => {
   const { project } = useParams();

@@ -21,14 +21,18 @@ import {
   screen,
 } from '@testing-library/react';
 
-import { QueryClusterSummariesRequest, QueryClusterSummariesResponse } from '../../services/cluster';
-import { renderWithRouterAndClient } from '../../testing_tools/libs/mock_router';
-import { mockFetchAuthState } from '../../testing_tools/mocks/authstate_mock';
 import {
-  getMockSuggestedClusterSummary,
+  QueryClusterSummariesRequest,
+  QueryClusterSummariesResponse,
+} from '@/services/cluster';
+import { renderWithRouterAndClient } from '@/testing_tools/libs/mock_router';
+import { mockFetchAuthState } from '@/testing_tools/mocks/authstate_mock';
+import {
   getMockRuleClusterSummary,
+  getMockSuggestedClusterSummary,
   mockQueryClusterSummaries,
-} from '../../testing_tools/mocks/cluster_mock';
+} from '@/testing_tools/mocks/cluster_mock';
+
 import ClustersTable from './clusters_table';
 
 describe('Test ClustersTable component', () => {

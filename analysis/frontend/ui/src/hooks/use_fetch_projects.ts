@@ -14,7 +14,10 @@
 
 import { useQuery } from 'react-query';
 
-import { getProjectsService, ListProjectsRequest } from '@/services/project';
+import {
+  getProjectsService,
+  ListProjectsRequest,
+} from '@/services/project';
 
 const useFetchProjects = () => {
   const service = getProjectsService();

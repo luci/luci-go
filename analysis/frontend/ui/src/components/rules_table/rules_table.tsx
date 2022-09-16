@@ -13,23 +13,25 @@
 // limitations under the License.
 
 import dayjs from 'dayjs';
-
 import { useQuery } from 'react-query';
 import { Link as RouterLink } from 'react-router-dom';
 
 import Box from '@mui/material/Box';
+import LinearProgress from '@mui/material/LinearProgress';
+import Link from '@mui/material/Link';
 import Table from '@mui/material/Table';
 import TableBody from '@mui/material/TableBody';
 import TableCell from '@mui/material/TableCell';
 import TableContainer from '@mui/material/TableContainer';
 import TableHead from '@mui/material/TableHead';
 import TableRow from '@mui/material/TableRow';
-import LinearProgress from '@mui/material/LinearProgress';
-import Link from '@mui/material/Link';
 
-import { getRulesService, ListRulesRequest } from '../../services/rules';
-import { linkToRule } from '../../tools/urlHandling/links';
-import ErrorAlert from '../error_alert/error_alert';
+import ErrorAlert from '@/components/error_alert/error_alert';
+import {
+  getRulesService,
+  ListRulesRequest,
+} from '@/services/rules';
+import { linkToRule } from '@/tools/urlHandling/links';
 
 interface Props {
   project: string;

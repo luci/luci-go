@@ -13,15 +13,15 @@
 // limitations under the License.
 
 import dayjs from 'dayjs';
-import { DistinctClusterFailure } from '../../services/cluster';
 
+import { DistinctClusterFailure } from '@/services/cluster';
 import {
   FailureGroup,
   GroupKey,
-  VariantGroup,
   ImpactFilter,
   ImpactFilters,
-} from '../../tools/failures_tools';
+  VariantGroup,
+} from '@/tools/failures_tools';
 
 class ClusterFailureBuilder {
   failure: DistinctClusterFailure;

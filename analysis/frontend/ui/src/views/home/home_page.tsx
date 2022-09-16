@@ -12,7 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Link, LinkProps } from 'react-router-dom';
+import {
+  Link,
+  LinkProps,
+} from 'react-router-dom';
 
 import Container from '@mui/material/Container';
 import Grid from '@mui/material/Grid';

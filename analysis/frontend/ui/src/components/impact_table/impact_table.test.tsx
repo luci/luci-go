@@ -19,7 +19,8 @@ import {
   screen,
 } from '@testing-library/react';
 
-import { getMockCluster } from '../../testing_tools/mocks/cluster_mock';
+import { getMockCluster } from '@/testing_tools/mocks/cluster_mock';
+
 import ImpactTable from './impact_table';
 
 describe('Test ImpactTable component', () => {

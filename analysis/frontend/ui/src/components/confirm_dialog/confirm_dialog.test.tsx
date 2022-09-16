@@ -19,7 +19,8 @@ import {
   screen,
 } from '@testing-library/react';
 
-import { identityFunction } from '../../testing_tools/functions';
+import { identityFunction } from '@/testing_tools/functions';
+
 import ConfirmDialog from './confirm_dialog';
 
 describe('Test ConfirmDialog component', () => {

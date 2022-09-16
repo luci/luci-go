@@ -30,7 +30,6 @@ import Switch from '@mui/material/Switch';
 import Typography from '@mui/material/Typography';
 
 import { useMutateRule } from '../../../hooks/use_mutate_rule';
-import { AssociatedBug } from '../../../services/shared_models';
 import {
   GetIssueRequest,
   getIssuesService,
@@ -39,6 +38,7 @@ import {
   Rule,
   UpdateRuleRequest,
 } from '../../../services/rules';
+import { AssociatedBug } from '../../../services/shared_models';
 import { MuiDefaultColor } from '../../../types/mui_types';
 import ErrorAlert from '../../error_alert/error_alert';
 import GridLabel from '../../grid_label/grid_label';

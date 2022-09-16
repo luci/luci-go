@@ -24,13 +24,13 @@ import {
   waitFor,
 } from '@testing-library/react';
 
-import RuleEditDialog from './rule_edit_dialog';
-
 import { Rule } from '@/services/rules';
 import { identityFunction } from '@/testing_tools/functions';
 import { renderWithClient } from '@/testing_tools/libs/mock_rquery';
 import { mockFetchAuthState } from '@/testing_tools/mocks/authstate_mock';
 import { createDefaultMockRule } from '@/testing_tools/mocks/rule_mock';
+
+import RuleEditDialog from './rule_edit_dialog';
 
 describe('Test RuleEditDialog component', () => {
   afterEach(() => {

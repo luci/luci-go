@@ -14,7 +14,13 @@
 
 import dayjs from 'dayjs';
 import isSameOrAfter from 'dayjs/plugin/isSameOrAfter';
-import { getClustersService, GetReclusteringProgressRequest, ReclusteringProgress, ClusteringVersion } from '../services/cluster';
+
+import {
+  ClusteringVersion,
+  getClustersService,
+  GetReclusteringProgressRequest,
+  ReclusteringProgress,
+} from '@/services/cluster';
 
 dayjs.extend(isSameOrAfter);
 

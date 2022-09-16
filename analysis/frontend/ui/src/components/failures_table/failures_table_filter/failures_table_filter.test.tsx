@@ -19,9 +19,10 @@ import {
   screen,
 } from '@testing-library/react';
 
-import { identityFunction } from '../../../testing_tools/functions';
-import { createMockVariantGroups } from '../../../testing_tools/mocks/failures_mock';
-import { defaultImpactFilter } from '../../../tools/failures_tools';
+import { identityFunction } from '@/testing_tools/functions';
+import { createMockVariantGroups } from '@/testing_tools/mocks/failures_mock';
+import { defaultImpactFilter } from '@/tools/failures_tools';
+
 import FailuresTableFilter from './failures_table_filter';
 
 describe('Test FailureTableFilter component', () => {

@@ -17,14 +17,14 @@ import fetchMock from 'fetch-mock-jest';
 
 import { screen } from '@testing-library/react';
 
-import ImpactSection from './impact_section';
-
 import { renderWithRouterAndClient } from '@/testing_tools/libs/mock_router';
 import { mockFetchAuthState } from '@/testing_tools/mocks/authstate_mock';
 import {
   getMockCluster,
   mockBatchGetCluster,
 } from '@/testing_tools/mocks/cluster_mock';
+
+import ImpactSection from './impact_section';
 
 describe('test ImpactSection component', () => {
   beforeEach(() => {

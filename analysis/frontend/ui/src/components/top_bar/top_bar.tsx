@@ -32,7 +32,8 @@ import { SvgIconTypeMap } from '@mui/material/SvgIcon';
 import Toolbar from '@mui/material/Toolbar';
 import Typography from '@mui/material/Typography';
 
-import { DynamicComponentNoProps } from '../../tools/rendering_tools';
+import { DynamicComponentNoProps } from '@/tools/rendering_tools';
+
 import CollapsedMenu from './collapsed_menu/collapsed_menu';
 import Logo from './logo/logo';
 import {

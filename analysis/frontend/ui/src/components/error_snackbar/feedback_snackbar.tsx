@@ -20,7 +20,7 @@ import Snackbar from '@mui/material/Snackbar';
 import {
   SnackbarContext,
   snackContextDefaultState,
-} from '../../context/snackbar_context';
+} from '@/context/snackbar_context';
 
 const FeedbackSnackbar = () => {
   const { snack, setSnack } = useContext(SnackbarContext);

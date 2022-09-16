@@ -12,8 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { AuthorizedPrpcClient } from '../clients/authorized_client';
-import { AssociatedBug, ClusterId } from './shared_models';
+import { AuthorizedPrpcClient } from '@/clients/authorized_client';
+
+import {
+  AssociatedBug,
+  ClusterId,
+} from './shared_models';
 
 export const getRulesService = () : RulesService => {
   const client = new AuthorizedPrpcClient();

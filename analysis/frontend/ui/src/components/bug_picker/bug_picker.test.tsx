@@ -18,10 +18,11 @@ import fetchMock from 'fetch-mock-jest';
 
 import { screen } from '@testing-library/react';
 
-import { identityFunction } from '../../testing_tools/functions';
-import { renderWithRouterAndClient } from '../../testing_tools/libs/mock_router';
-import { mockFetchAuthState } from '../../testing_tools/mocks/authstate_mock';
-import { mockFetchProjectConfig } from '../../testing_tools/mocks/projects_mock';
+import { identityFunction } from '@/testing_tools/functions';
+import { renderWithRouterAndClient } from '@/testing_tools/libs/mock_router';
+import { mockFetchAuthState } from '@/testing_tools/mocks/authstate_mock';
+import { mockFetchProjectConfig } from '@/testing_tools/mocks/projects_mock';
+
 import BugPicker from './bug_picker';
 
 describe('Test BugPicker component', () => {

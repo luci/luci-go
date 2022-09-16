@@ -72,7 +72,15 @@ module.exports = {
     'semi': ['error', 'always'],
     'object-curly-spacing': ['error', 'always', { 'objectsInObjects': true }],
     'require-jsdoc': 0,
-    'import/order': ['error'],
+    'import/order': ['error', {
+      'pathGroups': [
+        {
+          'pattern': '@/**',
+          'group': 'external',
+          'position': 'after',
+        },
+      ],
+    }],
     'import/no-unresolved': 'error',
     'no-trailing-spaces': 'error',
     'no-console': ['error', { allow: ['error'] }],

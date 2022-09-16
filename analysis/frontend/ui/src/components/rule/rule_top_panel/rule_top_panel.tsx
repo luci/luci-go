@@ -15,12 +15,12 @@
 import Grid from '@mui/material/Grid';
 import LinearProgress from '@mui/material/LinearProgress';
 
-import useFetchRule from '../../../hooks/use_fetch_rule';
-import ErrorAlert from '../../error_alert/error_alert';
-import ReclusteringProgressIndicator from '../../reclustering_progress_indicator/reclustering_progress_indicator';
-import TimestampInfoBar from '../../timestamp_info_bar/timestamp_info_bar';
-import BugInfo from '../bug_info/bug_info';
-import RuleInfo from '../rule_info/rule_info';
+import ErrorAlert from '@/components/error_alert/error_alert';
+import ReclusteringProgressIndicator from '@/components/reclustering_progress_indicator/reclustering_progress_indicator';
+import BugInfo from '@/components/rule/bug_info/bug_info';
+import RuleInfo from '@/components/rule/rule_info/rule_info';
+import TimestampInfoBar from '@/components/timestamp_info_bar/timestamp_info_bar';
+import useFetchRule from '@/hooks/use_fetch_rule';
 
 interface Props {
     project: string;

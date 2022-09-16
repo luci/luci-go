@@ -19,7 +19,8 @@ import {
   screen,
 } from '@testing-library/react';
 
-import { identityFunction } from '../../../testing_tools/functions';
+import { identityFunction } from '@/testing_tools/functions';
+
 import FailuresTableHead from './failures_table_head';
 
 describe('Test FailureTableHead', () => {

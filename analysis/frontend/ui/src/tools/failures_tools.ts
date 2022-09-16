@@ -14,7 +14,11 @@
 
 import dayjs from 'dayjs';
 import { nanoid } from 'nanoid';
-import { DistinctClusterFailure, Exoneration } from '../services/cluster';
+
+import {
+  DistinctClusterFailure,
+  Exoneration,
+} from '@/services/cluster';
 
 /**
  * Creates a list of distinct variants found in the list of failures provided.
@@ -347,8 +351,8 @@ export const groupAndCountFailures = (
             key: v.key,
             value: failure.variant?.def[v.key] ||
                 // multiple values for tags are comma separated.
-                failure.tags?.filter(t => v.key == t.key).map(t => t.value || '').join(', ') ||
-                ''
+                failure.tags?.filter((t) => v.key == t.key).map((t) => t.value || '').join(', ') ||
+                '',
           };
           return key;
         });

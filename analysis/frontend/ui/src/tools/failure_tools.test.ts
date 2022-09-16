@@ -14,8 +14,12 @@
 // limitations under the License.
 
 
-import { DistinctClusterFailure } from '../services/cluster';
-import { impactFilterNamed, newMockFailure, newMockGroup } from '../testing_tools/mocks/failures_mock';
+import { DistinctClusterFailure } from '@/services/cluster';
+import {
+  impactFilterNamed,
+  newMockFailure,
+  newMockGroup,
+} from '@/testing_tools/mocks/failures_mock';
 import {
   FailureGroup,
   groupFailures,

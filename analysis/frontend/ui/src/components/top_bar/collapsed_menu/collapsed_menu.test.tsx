@@ -20,9 +20,10 @@ import {
   screen,
 } from '@testing-library/react';
 
-import { renderWithRouter } from '../../../testing_tools/libs/mock_router';
-import { AppBarPage } from '../top_bar';
-import { TopBarContextProvider } from '../top_bar_context';
+import { AppBarPage } from '@/components/top_bar/top_bar';
+import { TopBarContextProvider } from '@/components/top_bar/top_bar_context';
+import { renderWithRouter } from '@/testing_tools/libs/mock_router';
+
 import CollapsedMenu from './collapsed_menu';
 
 describe('test CollapsedMenu component', () => {

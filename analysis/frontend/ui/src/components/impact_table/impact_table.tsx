@@ -20,9 +20,11 @@ import TableContainer from '@mui/material/TableContainer';
 import TableHead from '@mui/material/TableHead';
 import TableRow from '@mui/material/TableRow';
 
-import { Cluster, Counts } from '../../services/cluster';
-import HelpTooltip from '../help_tooltip/help_tooltip';
-
+import HelpTooltip from '@/components/help_tooltip/help_tooltip';
+import {
+  Cluster,
+  Counts,
+} from '@/services/cluster';
 
 const userClsFailedPresubmitTooltipText = 'The number of distinct developer changelists that failed at least one presubmit (CQ) run because of failure(s) in this cluster.';
 const criticalFailuresExoneratedTooltipText = 'The number of failures on test variants which were configured to be presubmit-blocking, which were exonerated (i.e. did not actually block presubmit) because infrastructure determined the test variant to be failing or too flaky at tip-of-tree. If this number is non-zero, it means a test variant which was configured to be presubmit-blocking is not stable enough to do so, and should be fixed or made non-blocking.';

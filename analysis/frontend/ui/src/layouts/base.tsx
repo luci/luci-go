@@ -14,7 +14,7 @@
 
 import { Outlet } from 'react-router-dom';
 
-import TopBar from '../components/top_bar/top_bar';
+import TopBar from '@/components/top_bar/top_bar';
 
 declare global {
     interface Window {

@@ -13,12 +13,13 @@
 // limitations under the License.
 
 import { Link as RouterLink } from 'react-router-dom';
+
 import Link from '@mui/material/Link';
 import TableCell from '@mui/material/TableCell';
 import TableRow from '@mui/material/TableRow';
 
-import { linkToCluster } from '../../../tools/urlHandling/links';
-import { ClusterSummary } from '../../../services/cluster';
+import { ClusterSummary } from '@/services/cluster';
+import { linkToCluster } from '@/tools/urlHandling/links';
 
 interface Props {
   project: string,

@@ -12,9 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {
-  useState,
-} from 'react';
+import { useState } from 'react';
 import { useQuery } from 'react-query';
 import { useSearchParams } from 'react-router-dom';
 
@@ -23,12 +21,16 @@ import Grid from '@mui/material/Grid';
 import Table from '@mui/material/Table';
 import TableBody from '@mui/material/TableBody';
 
-import { getClustersService, QueryClusterSummariesRequest, SortableMetricName } from '../../services/cluster';
+import ErrorAlert from '@/components/error_alert/error_alert';
+import {
+  getClustersService,
+  QueryClusterSummariesRequest,
+  SortableMetricName,
+} from '@/services/cluster';
 
-import ErrorAlert from '../error_alert/error_alert';
 import ClustersTableFilter from './clusters_table_filter/clusters_table_filter';
-import ClustersTableRow from './clusters_table_row/clusters_table_row';
 import ClustersTableHead from './clusters_table_head/clusters_table_head';
+import ClustersTableRow from './clusters_table_row/clusters_table_row';
 
 interface Props {
     project: string;

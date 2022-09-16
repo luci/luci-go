@@ -19,10 +19,10 @@ import {
   screen,
 } from '@testing-library/react';
 
-import RuleEditInput from './rule_edit_input';
-
-import { createDefaultMockRule } from '@/testing_tools/mocks/rule_mock';
 import { identityFunction } from '@/testing_tools/functions';
+import { createDefaultMockRule } from '@/testing_tools/mocks/rule_mock';
+
+import RuleEditInput from './rule_edit_input';
 
 describe('test RuleEditInput component', () => {
   it('given a rule, should display the rule\'s current text', async () => {

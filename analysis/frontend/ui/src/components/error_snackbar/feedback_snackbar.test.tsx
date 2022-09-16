@@ -22,8 +22,9 @@ import {
 import {
   Snack,
   SnackbarContext,
-} from '../../context/snackbar_context';
-import { identityFunction } from '../../testing_tools/functions';
+} from '@/context/snackbar_context';
+import { identityFunction } from '@/testing_tools/functions';
+
 import FeedbackSnackbar from './feedback_snackbar';
 
 describe('Test ErrorSnackbar component', () => {

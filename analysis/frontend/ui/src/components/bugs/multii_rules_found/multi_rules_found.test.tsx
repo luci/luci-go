@@ -15,9 +15,9 @@ import '@testing-library/jest-dom';
 
 import { screen } from '@testing-library/react';
 
-import MultiRulesFound from './multi_rules_found';
-
 import { renderWithRouter } from '@/testing_tools/libs/mock_router';
+
+import MultiRulesFound from './multi_rules_found';
 
 describe('test MultiRulesFound component', () => {
   it('given a list rules, should display links to their details', async () => {

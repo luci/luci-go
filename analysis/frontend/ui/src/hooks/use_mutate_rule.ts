@@ -18,11 +18,11 @@ import {
   useQueryClient,
 } from 'react-query';
 
-import { SnackbarContext } from '../context/snackbar_context';
+import { SnackbarContext } from '@/context/snackbar_context';
 import {
   getRulesService,
   UpdateRuleRequest,
-} from '../services/rules';
+} from '@/services/rules';
 
 type MutationCallback = () => void;
 

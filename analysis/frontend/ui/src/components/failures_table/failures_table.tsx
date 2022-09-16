@@ -17,9 +17,7 @@ import {
   useState,
 } from 'react';
 import { useQuery } from 'react-query';
-import {
-  useUpdateEffect,
-} from 'react-use';
+import { useUpdateEffect } from 'react-use';
 
 import CircularProgress from '@mui/material/CircularProgress';
 import Grid from '@mui/material/Grid';
@@ -27,7 +25,8 @@ import { SelectChangeEvent } from '@mui/material/Select';
 import Table from '@mui/material/Table';
 import TableBody from '@mui/material/TableBody';
 
-import { getClustersService } from '../../services/cluster';
+import ErrorAlert from '@/components/error_alert/error_alert';
+import { getClustersService } from '@/services/cluster';
 import {
   countAndSortFailures,
   countDistictVariantValues,
@@ -36,14 +35,14 @@ import {
   FailureFilter,
   FailureFilters,
   FailureGroup,
-  VariantGroup,
   groupAndCountFailures,
   ImpactFilter,
   ImpactFilters,
   MetricName,
   sortFailureGroups,
-} from '../../tools/failures_tools';
-import ErrorAlert from '../error_alert/error_alert';
+  VariantGroup,
+} from '@/tools/failures_tools';
+
 import FailuresTableFilter from './failures_table_filter/failures_table_filter';
 import FailuresTableGroup from './failures_table_group/failures_table_group';
 import FailuresTableHead from './failures_table_head/failures_table_head';

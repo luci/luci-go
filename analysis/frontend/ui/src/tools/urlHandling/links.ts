@@ -12,8 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { DistinctClusterFailure, Changelist } from '../../services/cluster';
-import { ClusterId } from '../../services/shared_models';
+import {
+  Changelist,
+  DistinctClusterFailure,
+} from '@/services/cluster';
+import { ClusterId } from '@/services/shared_models';
 
 export const linkToCluster = (project: string, c: ClusterId): string => {
   if (c.algorithm.startsWith('rules-') || c.algorithm == 'rules') {

@@ -15,9 +15,9 @@
 import '@testing-library/jest-dom';
 
 import {
+  fireEvent,
   render,
   screen,
-  fireEvent,
 } from '@testing-library/react';
 
 import HelpTooltip from './help_tooltip';

@@ -23,10 +23,11 @@ import {
   waitFor,
 } from '@testing-library/react';
 
-import { Rule } from '../../../services/rules';
-import { renderWithRouterAndClient } from '../../../testing_tools/libs/mock_router';
-import { mockFetchAuthState } from '../../../testing_tools/mocks/authstate_mock';
-import { createDefaultMockRule } from '../../../testing_tools/mocks/rule_mock';
+import { Rule } from '@/services/rules';
+import { renderWithRouterAndClient } from '@/testing_tools/libs/mock_router';
+import { mockFetchAuthState } from '@/testing_tools/mocks/authstate_mock';
+import { createDefaultMockRule } from '@/testing_tools/mocks/rule_mock';
+
 import RuleInfo from './rule_info';
 
 describe('Test RuleInfo component', () => {

@@ -14,7 +14,7 @@
 
 import fetchMock from 'fetch-mock-jest';
 
-import { ProjectConfig } from '../../services/project';
+import { ProjectConfig } from '@/services/project';
 
 export const createMockProjectConfig = (): ProjectConfig => {
   return {

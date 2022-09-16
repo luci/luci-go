@@ -21,14 +21,15 @@ import {
   screen,
 } from '@testing-library/react';
 
-import { renderWithRouterAndClient } from '../../testing_tools/libs/mock_router';
+import { renderWithRouterAndClient } from '@/testing_tools/libs/mock_router';
+import { mockFetchAuthState } from '@/testing_tools/mocks/authstate_mock';
+import { mockQueryClusterFailures } from '@/testing_tools/mocks/cluster_mock';
 import {
   createDefaultMockFailures,
   newMockFailure,
-} from '../../testing_tools/mocks/failures_mock';
-import { mockFetchAuthState } from '../../testing_tools/mocks/authstate_mock';
-import { FailureFilters } from '../../tools/failures_tools';
-import { mockQueryClusterFailures } from '../../testing_tools/mocks/cluster_mock';
+} from '@/testing_tools/mocks/failures_mock';
+import { FailureFilters } from '@/tools/failures_tools';
+
 import FailuresTable from './failures_table';
 
 describe('Test FailureTable component', () => {

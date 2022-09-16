@@ -14,7 +14,7 @@
 
 import dayjs from 'dayjs';
 
-import { Issue } from '../../services/monorail';
+import { Issue } from '@/services/monorail';
 
 export const createMockBug = (): Issue => {
   return {
