@@ -136,7 +136,7 @@ func execImpl(c context.Context, argv []string, env environ.Env, dir string, set
 		}
 	}
 
-	ch := make(chan os.Signal)
+	ch := make(chan os.Signal, 1)
 	signal.Notify(ch, os.Interrupt)
 	go func() {
 		<-ch
