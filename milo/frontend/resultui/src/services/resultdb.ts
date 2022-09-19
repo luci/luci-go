@@ -240,63 +240,6 @@ export interface TestResultBundle {
   readonly result: TestResult;
 }
 
-export interface CommitPosition {
-  readonly host: string;
-  readonly project: string;
-  readonly ref: string;
-  readonly position: number;
-}
-
-export interface CommitPositionRange {
-  readonly earliest?: CommitPosition;
-  readonly latest?: CommitPosition;
-}
-
-export interface TimeRange {
-  readonly earliest?: string;
-  readonly latest?: string;
-}
-
-export interface GetTestResultHistoryRequest {
-  readonly realm: string;
-  readonly testIdRegexp: string;
-  readonly variantPredicate?: VariantPredicate;
-  readonly pageSize?: number;
-  readonly pageToken?: string;
-  readonly timeRange?: TimeRange;
-  readonly commitPositionRange?: CommitPositionRange;
-}
-
-export interface GetTestResultHistoryResponseEntry {
-  readonly commitPosition: CommitPosition;
-  readonly invocationTimestamp: string;
-  readonly result: TestResult;
-}
-
-export interface GetTestResultHistoryResponse {
-  readonly entries?: readonly GetTestResultHistoryResponseEntry[];
-  readonly nextPageToken: string;
-}
-
-export interface QueryUniqueTestVariantsRequest {
-  readonly realm: string;
-  readonly testId: string;
-  readonly pageSize?: number;
-  readonly pageToken?: string;
-}
-
-export interface UniqueTestVariant {
-  readonly realm: string;
-  readonly testId: string;
-  readonly variantHash: string;
-  readonly variant?: Variant;
-}
-
-export interface QueryUniqueTestVariantsResponse {
-  readonly variants?: readonly UniqueTestVariant[];
-  readonly nextPageToken?: string;
-}
-
 export interface TestVariantIdentifier {
   readonly testId: string;
   readonly variantHash: string;
@@ -353,14 +296,6 @@ export class ResultDb {
 
   async queryTestVariants(req: QueryTestVariantsRequest, cacheOpt: CacheOption = {}) {
     return (await this.cachedCallFn(cacheOpt, 'QueryTestVariants', req)) as QueryTestVariantsResponse;
-  }
-
-  async getTestResultHistory(req: GetTestResultHistoryRequest, cacheOpt: CacheOption = {}) {
-    return (await this.cachedCallFn(cacheOpt, 'GetTestResultHistory', req)) as GetTestResultHistoryResponse;
-  }
-
-  async queryUniqueTestVariants(req: QueryUniqueTestVariantsRequest, cacheOpt: CacheOption = {}) {
-    return (await this.cachedCallFn(cacheOpt, 'QueryUniqueTestVariants', req)) as QueryUniqueTestVariantsResponse;
   }
 
   async batchGetTestVariants(req: BatchGetTestVariantsRequest, cacheOpt: CacheOption = {}) {
