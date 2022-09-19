@@ -5,7 +5,11 @@
 import { createRoot } from 'react-dom/client';
 import { BrowserRouter } from 'react-router-dom';
 
+import createInnerHTMLSanitizingPolicy from '@chopsui/trusted-types-policy';
+
 import App from './App';
+
+createInnerHTMLSanitizingPolicy();
 
 const container = document.getElementById('app-root');
 // Below ESlint is disabled based on ReactJS recommendation
