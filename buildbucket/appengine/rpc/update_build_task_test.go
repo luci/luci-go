@@ -39,6 +39,203 @@ import (
 	. "go.chromium.org/luci/common/testing/assertions"
 )
 
+func TestValidateBuildTask(t *testing.T) {
+	t.Parallel()
+
+	Convey("ValidateBuildTask", t, func() {
+		tk, _ := buildtoken.GenerateToken(1, pb.TokenBody_TASK)
+		t0 := testclock.TestRecentTimeUTC
+		ctx := memory.Use(context.Background())
+		build := &model.Build{
+			ID: 1,
+			Proto: &pb.Build{
+				Id: 1,
+				Builder: &pb.BuilderID{
+					Project: "project",
+					Bucket:  "bucket",
+					Builder: "builder",
+				},
+				Status: pb.Status_STARTED,
+			},
+			CreateTime:  t0,
+			UpdateToken: tk,
+		}
+		bk := datastore.KeyForObj(ctx, build)
+		infra := &model.BuildInfra{
+			Build: bk,
+			Proto: &pb.BuildInfra{},
+		}
+		So(datastore.Put(ctx, build, infra), ShouldBeNil)
+		Convey("backend not in build infra", func() {
+			req := &pb.UpdateBuildTaskRequest{
+				BuildId: "1",
+				Task: &pb.Task{
+					Id: &pb.TaskID{
+						Id:     "1",
+						Target: "swarming",
+					},
+				},
+			}
+			result, err := validateBuildTask(ctx, req, build)
+			expected := &pb.BuildInfra{
+				Backend: &pb.BuildInfra_Backend{
+					Task: &pb.Task{
+						Id: &pb.TaskID{
+							Id:     "1",
+							Target: "swarming",
+						},
+					},
+				},
+			}
+			So(err, ShouldBeNil)
+			So(result.Infra, ShouldResembleProto, expected)
+		})
+		Convey("task not in build infra", func() {
+			infra := &model.BuildInfra{
+				Build: bk,
+				Proto: &pb.BuildInfra{
+					Backend: &pb.BuildInfra_Backend{},
+				},
+			}
+			So(datastore.Put(ctx, infra), ShouldBeNil)
+			expected := &pb.BuildInfra{
+				Backend: &pb.BuildInfra_Backend{
+					Task: &pb.Task{
+						Id: &pb.TaskID{
+							Id:     "2",
+							Target: "other",
+						},
+					},
+				},
+			}
+			req := &pb.UpdateBuildTaskRequest{
+				BuildId: "1",
+				Task: &pb.Task{
+					Id: &pb.TaskID{
+						Id:     "2",
+						Target: "other",
+					},
+				},
+			}
+			result, err := validateBuildTask(ctx, req, build)
+			So(err, ShouldBeNil)
+			So(result.Infra, ShouldResembleProto, expected)
+		})
+		Convey("task id target mismatch", func() {
+			infra := &model.BuildInfra{
+				Build: bk,
+				Proto: &pb.BuildInfra{
+					Backend: &pb.BuildInfra_Backend{
+						Task: &pb.Task{
+							Id: &pb.TaskID{
+								Id:     "2",
+								Target: "other",
+							},
+						},
+					},
+				},
+			}
+			So(datastore.Put(ctx, infra), ShouldBeNil)
+			req := &pb.UpdateBuildTaskRequest{
+				BuildId: "1",
+				Task: &pb.Task{
+					Id: &pb.TaskID{
+						Id:     "1",
+						Target: "other",
+					},
+				},
+			}
+			_, err := validateBuildTask(ctx, req, build)
+			So(err, ShouldBeError)
+		})
+		Convey("task is complete and success", func() {
+			infra := &model.BuildInfra{
+				Build: bk,
+				Proto: &pb.BuildInfra{
+					Backend: &pb.BuildInfra_Backend{
+						Task: &pb.Task{
+							Status: pb.Status_SUCCESS,
+							Id: &pb.TaskID{
+								Id:     "1",
+								Target: "swarming",
+							},
+						},
+					},
+				},
+			}
+			So(datastore.Put(ctx, infra), ShouldBeNil)
+			req := &pb.UpdateBuildTaskRequest{
+				BuildId: "1",
+				Task: &pb.Task{
+					Id: &pb.TaskID{
+						Id:     "1",
+						Target: "swarming",
+					},
+				},
+			}
+			_, err := validateBuildTask(ctx, req, build)
+			So(err, ShouldBeError)
+		})
+		Convey("task is cancelled", func() {
+			infra := &model.BuildInfra{
+				Build: bk,
+				Proto: &pb.BuildInfra{
+					Backend: &pb.BuildInfra_Backend{
+						Task: &pb.Task{
+							Status: pb.Status_CANCELED,
+							Id: &pb.TaskID{
+								Id:     "1",
+								Target: "swarming",
+							},
+						},
+					},
+				},
+			}
+			So(datastore.Put(ctx, infra), ShouldBeNil)
+			req := &pb.UpdateBuildTaskRequest{
+				BuildId: "1",
+				Task: &pb.Task{
+					Id: &pb.TaskID{
+						Id:     "1",
+						Target: "swarming",
+					},
+				},
+			}
+			_, err := validateBuildTask(ctx, req, build)
+			So(err, ShouldBeError)
+		})
+		Convey("task is running", func() {
+			infra := &model.BuildInfra{
+				Build: bk,
+				Proto: &pb.BuildInfra{
+					Backend: &pb.BuildInfra_Backend{
+						Task: &pb.Task{
+							Status: pb.Status_STARTED,
+							Id: &pb.TaskID{
+								Id:     "1",
+								Target: "swarming",
+							},
+						},
+					},
+				},
+			}
+			So(datastore.Put(ctx, infra), ShouldBeNil)
+			req := &pb.UpdateBuildTaskRequest{
+				BuildId: "1",
+				Task: &pb.Task{
+					Id: &pb.TaskID{
+						Id:     "1",
+						Target: "swarming",
+					},
+				},
+			}
+			_, err := validateBuildTask(ctx, req, build)
+			So(err, ShouldBeNil)
+		})
+
+	})
+}
+
 func TestValidateTaskUpdate(t *testing.T) {
 	t.Parallel()
 
