@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/ban-ts-comment */
 // Copyright 2022 The LUCI Authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -12,16 +11,17 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+/* eslint-disable @typescript-eslint/ban-ts-comment */
 
+import {
+  TextDecoder,
+  TextEncoder,
+} from 'util';
 import dayjs from 'dayjs';
 import localizedFormat from 'dayjs/plugin/localizedFormat';
 import relativeTime from 'dayjs/plugin/relativeTime';
 import UTC from 'dayjs/plugin/utc';
 import fetch from 'node-fetch';
-import {
-  TextDecoder,
-  TextEncoder,
-} from 'util';
 
 /**
  * jsdom doesn't have those by default, we need to add them for fetch testing.

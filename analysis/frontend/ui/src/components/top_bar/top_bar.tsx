@@ -93,7 +93,7 @@ const TopBar = () => {
           }}>
             <Logo />
           </Box>
-          <Link 
+          <Link
             variant="h6"
             noWrap
             component={RouterLink}
