@@ -74,7 +74,6 @@ var (
 		{buildbucketBuildTestData, "buildbucket.build", "pages/build.html"},
 		{consoleTestData, "console", "pages/console.html"},
 		{Frontpage, "frontpage", "pages/frontpage.html"},
-		{Search, "search", "pages/search.html"},
 		{builderPageData, "builder", "pages/builder.html"},
 		{relatedBuildsTableTestData, "widget", "widgets/related_builds_table.html"},
 	}
@@ -292,29 +291,6 @@ func Frontpage() []TestBundle {
 					},
 				},
 			},
-		},
-	}
-}
-
-func Search() []TestBundle {
-	data := templates.Args{
-		"ciService": ui.CIService{
-			BuilderGroups: []ui.BuilderGroup{
-				{
-					Name: "Example main A",
-					Builders: []ui.Link{
-						*ui.NewLink("Example builder", "/main1/buildera", "Example label"),
-						*ui.NewLink("Example builder 2", "/main1/builderb", "Example label 2"),
-					},
-				},
-			},
-		},
-		"error": "couldn't find ice cream",
-	}
-	return []TestBundle{
-		{
-			Description: "Basic search page",
-			Data:        data,
 		},
 	}
 }
