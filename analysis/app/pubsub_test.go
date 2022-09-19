@@ -18,7 +18,6 @@ import (
 	"bytes"
 	"encoding/json"
 	"io"
-	"io/ioutil"
 
 	// Needed to ensure task class is registered.
 	_ "go.chromium.org/luci/analysis/internal/services/resultingester"
@@ -32,5 +31,5 @@ func makeReq(blob []byte) io.ReadCloser {
 		Attributes map[string]interface{}
 	}{struct{ Data []byte }{Data: blob}, nil}
 	jmsg, _ := json.Marshal(msg)
-	return ioutil.NopCloser(bytes.NewReader(jmsg))
+	return io.NopCloser(bytes.NewReader(jmsg))
 }

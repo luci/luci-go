@@ -16,7 +16,7 @@ package config
 
 import (
 	"context"
-	"io/ioutil"
+	"os"
 	"testing"
 	"time"
 
@@ -40,7 +40,7 @@ func TestServiceConfigValidator(t *testing.T) {
 	}
 
 	Convey("config template is valid", t, func() {
-		content, err := ioutil.ReadFile(
+		content, err := os.ReadFile(
 			"../../configs/services/luci-analysis-dev/config-template.cfg",
 		)
 		So(err, ShouldBeNil)
@@ -123,7 +123,7 @@ func TestProjectConfigValidator(t *testing.T) {
 	}
 
 	Convey("config template is valid", t, func() {
-		content, err := ioutil.ReadFile(
+		content, err := os.ReadFile(
 			"../../configs/projects/chromium/luci-analysis-dev-template.cfg",
 		)
 		So(err, ShouldBeNil)
