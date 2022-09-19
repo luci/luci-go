@@ -8,9 +8,11 @@ queue:
 
 - name: bq-export
   rate: 30/s
+  target: default
 
 - name: kick-manage-project
   rate: 500/s
+  target: default
 
 - name: manage-project
   rate: 30/s
@@ -18,9 +20,11 @@ queue:
     min_backoff_seconds: 1
     max_backoff_seconds: 5
     task_age_limit: 1h
+  target: default
 
 - name: kick-manage-run
   rate: 500/s
+  target: default
 
 - name: manage-run
   rate: 30/s
@@ -28,6 +32,7 @@ queue:
     min_backoff_seconds: 1
     max_backoff_seconds: 5
     task_age_limit: 1h
+  target: default
 
 - name: manage-run-long-op
   rate: 30/s
@@ -35,18 +40,22 @@ queue:
     min_backoff_seconds: 5
     max_backoff_seconds: 10
     task_age_limit: 1h
+  target: default
 
 - name: poll-gerrit
   rate: 10/s
   retry_parameters:
     min_backoff_seconds: 1
     task_age_limit: 1h
+  target: default
 
 - name: purge-project-cl
   rate: 30/s
+  target: default
 
 - name: refresh-project-config
   rate: 20/s
+  target: default
 
 - name: update-cl
   rate: 500/s
@@ -54,21 +63,27 @@ queue:
     min_backoff_seconds: 1
     max_backoff_seconds: 300
     task_age_limit: 1h
+  target: default
 
 - name: notify-on-cl-updated
   rate: 30/s
+  target: default
 
 - name: tq-sweep
   rate: 500/s
+  target: default
 
 - name: listen-bb-pubsub
   rate: 10/s
+  target: default
 
 - name: update-tryjob
   rate: 30/s
+  target: default
 
 - name: cancel-stale-tryjobs
   rate: 30/s
+  target: default
 
 ###############################################################################
 # Special queues not critical for production.
@@ -78,7 +93,9 @@ queue:
 # See admin API and its implementation.
 - name: dsmapper
   rate: 100/s
+  target: default
 
 # Default queue is for rare tasks, e.g. admin tasks.
 - name: default
   rate: 1/s
+  target: default
