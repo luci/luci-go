@@ -294,16 +294,17 @@ func syncBuildWithTaskResult(ctx context.Context, buildID int64, taskID string, 
 		return failBuild(ctx, buildID, fmt.Sprintf("Swarming task %s unexpectedly disappeared", taskID))
 	}
 
-	err = datastore.RunInTransaction(ctx, func(ctx context.Context) error {
-		bld := &model.Build{
-			ID: buildID,
-		}
+	var statusChanged bool
+	bld := &model.Build{
+		ID: buildID,
+	}
+	err = datastore.RunInTransaction(ctx, func(ctx context.Context) (err error) {
 		infra := &model.BuildInfra{Build: datastore.KeyForObj(ctx, bld)}
 		if err := datastore.Get(ctx, bld, infra); err != nil {
 			return transient.Tag.Apply(errors.Annotate(err, "failed to fetch build or buildInfra: %d", bld.ID).Err())
 		}
 
-		statusChanged, err := updateBuildFromTaskResult(ctx, bld, infra, taskResult)
+		statusChanged, err = updateBuildFromTaskResult(ctx, bld, infra, taskResult)
 		if err != nil {
 			return tq.Fatal.Apply(err)
 		}
@@ -317,7 +318,6 @@ func syncBuildWithTaskResult(ctx context.Context, buildID int64, taskID string, 
 			if err := NotifyPubSub(ctx, bld); err != nil {
 				return transient.Tag.Apply(err)
 			}
-			metrics.BuildStarted(ctx, bld)
 		case protoutil.IsEnded(bld.Proto.Status):
 			steps := &model.BuildSteps{Build: datastore.KeyForObj(ctx, bld)}
 			// If the build has no steps, CancelIncomplete will return false.
@@ -336,14 +336,19 @@ func syncBuildWithTaskResult(ctx context.Context, buildID int64, taskID string, 
 			if err := sendOnBuildCompletion(ctx, bld); err != nil {
 				return transient.Tag.Apply(err)
 			}
-			metrics.BuildCompleted(ctx, bld)
 		}
 		return transient.Tag.Apply(datastore.Put(ctx, toPut...))
 	}, nil)
-	if err != nil {
-		return err
+
+	switch {
+	case err != nil:
+	case !statusChanged:
+	case bld.Status == pb.Status_STARTED:
+		metrics.BuildStarted(ctx, bld)
+	case protoutil.IsEnded(bld.Status):
+		metrics.BuildCompleted(ctx, bld)
 	}
-	return nil
+	return err
 }
 
 // updateBuildFromTaskResult mutate the build and infra entities according to
@@ -367,9 +372,8 @@ func updateBuildFromTaskResult(ctx context.Context, bld *model.Build, infra *mod
 	sort.Slice(sw.BotDimensions, func(i, j int) bool {
 		if sw.BotDimensions[i].Key == sw.BotDimensions[j].Key {
 			return sw.BotDimensions[i].Value < sw.BotDimensions[j].Value
-		} else {
-			return sw.BotDimensions[i].Key < sw.BotDimensions[j].Key
 		}
+		return sw.BotDimensions[i].Key < sw.BotDimensions[j].Key
 	})
 
 	now := clock.Now(ctx)
@@ -542,19 +546,22 @@ func failBuild(ctx context.Context, buildID int64, msg string) error {
 		ID: buildID,
 	}
 
+	var changedToEnded bool
 	err := datastore.RunInTransaction(ctx, func(ctx context.Context) error {
 		switch err := datastore.Get(ctx, bld); {
 		case err == datastore.ErrNoSuchEntity:
 			logging.Warningf(ctx, "build %d not found: %s", buildID, err)
 			return nil
 		case err != nil:
-			return transient.Tag.Apply(errors.Annotate(err, "failed to fetch build: %d", bld.ID).Err())
+			return errors.Annotate(err, "failed to fetch build: %d", bld.ID).Err()
 		}
+
+		changedToEnded = !protoutil.IsEnded(bld.Proto.Status)
 		protoutil.SetStatus(clock.Now(ctx), bld.Proto, pb.Status_INFRA_FAILURE)
 		bld.Proto.SummaryMarkdown = msg
 
 		if err := sendOnBuildCompletion(ctx, bld); err != nil {
-			return transient.Tag.Apply(err)
+			return err
 		}
 
 		return datastore.Put(ctx, bld)
@@ -562,7 +569,9 @@ func failBuild(ctx context.Context, buildID int64, msg string) error {
 	if err != nil {
 		return transient.Tag.Apply(errors.Annotate(err, "failed to terminate build: %d", buildID).Err())
 	}
-	metrics.BuildCompleted(ctx, bld)
+	if changedToEnded {
+		metrics.BuildCompleted(ctx, bld)
+	}
 	return nil
 }
 
