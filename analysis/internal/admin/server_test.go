@@ -102,7 +102,7 @@ func TestValidateExportTestVariantsRequest(t *testing.T) {
 	Convey("TestValidateExportTestVariantsRequest", t, func() {
 		ctx := context.Background()
 		ctx = memory.Use(ctx)
-		config.SetTestProjectConfig(ctx, createProjectsConfig())
+		So(config.SetTestProjectConfig(ctx, createProjectsConfig()), ShouldBeNil)
 		const realm = "chromium:try"
 		const cloudProject = "cloudProject"
 		const dataset = "dataset"
