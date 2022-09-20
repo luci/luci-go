@@ -42,6 +42,7 @@ import {
 } from '../../libs/error_handler';
 import { attachTags, hasTags } from '../../libs/tag';
 import { displayDuration, LONG_TIME_FORMAT } from '../../libs/time_utils';
+import { unwrapOrElse } from '../../libs/utils';
 import { LoadTestVariantsError } from '../../models/test_loader';
 import { NOT_FOUND_URL, router } from '../../routes';
 import { BuilderID, BuildStatus, TEST_PRESENTATION_KEY } from '../../services/buildbucket';
@@ -151,6 +152,18 @@ export class BuildPageElement extends MiloBaseElement implements BeforeEnterObse
 
   @computed private get legacyUrl() {
     return getLegacyURLPathForBuild(this.builderIdParam!, this.buildNumOrId);
+  }
+
+  @computed private get customBugLink() {
+    return unwrapOrElse(
+      () => this.store.buildPage.customBugLink,
+      (err) => {
+        console.error('failed to get the custom bug link', err);
+        // Failing to get the bug link is Ok. Some users (e.g. CrOS partners)
+        // may have access to the build but not the project configuration.
+        return null;
+      }
+    );
   }
 
   constructor() {
@@ -404,11 +417,11 @@ export class BuildPageElement extends MiloBaseElement implements BeforeEnterObse
           <span>&nbsp;/&nbsp;</span>
           <span>${this.buildNumOrId}</span>
         </div>
-        ${this.store.buildPage.customBugLink === null
+        ${this.customBugLink === null
           ? html``
           : html`
               <div class="delimiter"></div>
-              <a href=${this.store.buildPage.customBugLink} target="_blank">File a bug</a>
+              <a href=${this.customBugLink} target="_blank">File a bug</a>
             `}
         ${this.store.redirectSw === null
           ? html``

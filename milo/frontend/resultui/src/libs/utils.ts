@@ -40,6 +40,18 @@ export class URLExt extends URL {
   }
 }
 
+/**
+ * A utility function that allowing uses a callback to handle the exception
+ * instead of using try-catch. This makes writing functional code easier.
+ */
+export function unwrapOrElse<T>(fn: () => T, onErr: (err: unknown) => T): T {
+  try {
+    return fn();
+  } catch (e) {
+    return onErr(e);
+  }
+}
+
 // Generates URL for collecting feedback.
 export function genFeedbackUrl() {
   const feedbackComment =
