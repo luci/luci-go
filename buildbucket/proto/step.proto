@@ -106,4 +106,9 @@ message Step {
   //
   // BigQuery: excluded from rows.
   string summary_markdown = 7;
+
+  // Arbitrary annotations for the step.
+  // One key may have multiple values, which is why this is not a map<string,string>.
+  // Indexed by the server, see also BuildPredicate.tags.
+  repeated StringPair tags = 8;
 }
