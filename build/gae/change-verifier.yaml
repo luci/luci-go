@@ -8,3 +8,5 @@ build:
     dest: ${contextdir}/default
   - go_gae_bundle: ${inputsdir}/appengine/monitor/service-monitor.yaml
     dest: ${contextdir}/monitor
+  - go_gae_bundle: ${inputsdir}/appengine/listener/service-listener.yaml
+    dest: ${contextdir}/listener
