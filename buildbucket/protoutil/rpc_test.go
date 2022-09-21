@@ -27,7 +27,7 @@ func TestParseGetBuildRequest(t *testing.T) {
 	t.Parallel()
 
 	Convey("ParseGetBuildRequest", t, func() {
-		Convey("build id", func() {
+		Convey("build ID", func() {
 			req, err := ParseGetBuildRequest("1234567890")
 			So(err, ShouldBeNil)
 			So(req, ShouldResembleProto, &pb.GetBuildRequest{Id: 1234567890})

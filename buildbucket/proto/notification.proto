@@ -20,7 +20,7 @@ message Notification {
   // Useful if a service listens to both prod and dev instances of buildbucket.
   string app_id = 2;
 
-  // Buildbucket build id.
+  // Buildbucket build ID.
   // Use GetBuild rpc to load the contents.
   int64 build_id = 3;
 

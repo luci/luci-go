@@ -610,7 +610,7 @@ func TestUpdateBuild(t *testing.T) {
 			}},
 		}
 
-		Convey("permission deined, if sender is not in updater group", func() {
+		Convey("permission denied, if sender is not in updater group", func() {
 			s.Identity = "anonymous:anonymous"
 			So(updateBuild(ctx, req), ShouldHaveRPCCode, codes.PermissionDenied)
 		})

@@ -86,7 +86,7 @@ func cmdLS(p Params) *subcommands.Command {
 
 				Can be specified multiple times. All provided values must match.
 
-				Each value is in the form of `+"`[+-]experiment_name`"+`, where "+" indiciates "must have"
+				Each value is in the form of `+"`[+-]experiment_name`"+`, where "+" indicates "must have"
 				and "-" indicates "must not have".
 
 				As a special case, "+luci.non_production" implies "-exp=true".

@@ -54,7 +54,7 @@ func (b *Builds) Batch(ctx context.Context, req *pb.BatchRequest) (*pb.BatchResp
 	readReqs := 0
 	writeReqs := 0
 
-	// record the mapping of indices in to indices in original req.
+	// Record the mapping of indices in to indices in original req.
 	goIndices := make([]int, 0, len(req.Requests))
 	schIndices := make([]int, 0, len(req.Requests))
 	for i, r := range req.Requests {

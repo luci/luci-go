@@ -37,7 +37,7 @@ type Notification struct {
 	// e.g. "cr-buildbucket".
 	// Useful if a service listens to both prod and dev instances of buildbucket.
 	AppId string `protobuf:"bytes,2,opt,name=app_id,json=appId,proto3" json:"app_id,omitempty"`
-	// Buildbucket build id.
+	// Buildbucket build ID.
 	// Use GetBuild rpc to load the contents.
 	BuildId int64 `protobuf:"varint,3,opt,name=build_id,json=buildId,proto3" json:"build_id,omitempty"`
 	// User-defined opaque blob specified in NotificationConfig.user_data.

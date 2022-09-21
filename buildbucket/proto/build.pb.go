@@ -167,7 +167,7 @@ func (BuildInfra_Buildbucket_Agent_Purpose) EnumDescriptor() ([]byte, []int) {
 	return file_go_chromium_org_luci_buildbucket_proto_build_proto_rawDescGZIP(), []int{3, 0, 0, 0}
 }
 
-// A single build, identified by an int64 id.
+// A single build, identified by an int64 ID.
 // Belongs to a builder.
 //
 // RPC: see Builds service for build creation and retrieval.
@@ -255,7 +255,7 @@ type Build struct {
 	// which we plan to implement at some point as a mitigation for this.
 	//
 	//Additionally, the Buildbucket service itself will launch an asynchronous
-	// task to terminate the build via the backend API (e.g. Swarming cancelation)
+	// task to terminate the build via the backend API (e.g. Swarming cancellation)
 	// if bbagent cannot successfully terminate the exe in time.
 	CancelTime *timestamppb.Timestamp `protobuf:"bytes,32,opt,name=cancel_time,json=cancelTime,proto3" json:"cancel_time,omitempty"`
 	// Status of the build.
@@ -350,7 +350,7 @@ type Build struct {
 	//
 	// A build that can outlive its parent can also outlive its parent's ancestors.
 	CanOutliveParent bool `protobuf:"varint,30,opt,name=can_outlive_parent,json=canOutliveParent,proto3" json:"can_outlive_parent,omitempty"`
-	// Ids of the build’s ancestors. This includes all parents/grandparents/etc.
+	// IDs of the build's ancestors. This includes all parents/grandparents/etc.
 	// This is ordered from top-to-bottom so `ancestor_ids[0]` is the root of
 	// the builds tree, and `ancestor_ids[-1]` is this build's immediate parent.
 	// This does not include any "siblings" at higher levels of the tree, just
@@ -592,7 +592,7 @@ type InputDataRef struct {
 	// Subdirectories relative to the root of `ref` which should be set as a prefix to
 	// the $PATH variable.
 	//
-	// A substitude of `env_prefixes` in SwarmingRpcsTaskProperties field -
+	// A substitute of `env_prefixes` in SwarmingRpcsTaskProperties field -
 	// https://chromium.googlesource.com/infra/luci/luci-go/+/0048a84944e872776fba3542aa96d5943ae64bab/common/api/swarming/swarming/v1/swarming-gen.go#1495
 	OnPath []string `protobuf:"bytes,3,rep,name=on_path,json=onPath,proto3" json:"on_path,omitempty"`
 }
@@ -2270,7 +2270,7 @@ type BuildInfra_Buildbucket_Agent_Input struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// maps relative-to-root directory to the data
+	// Maps relative-to-root directory to the data.
 	//
 	// For now, data is only allowed at the 'leaves', e.g. you cannot
 	// specify data at "a/b/c" and "a/b" (but "a/b/c" and "a/q" would be OK).
@@ -2325,7 +2325,7 @@ type BuildInfra_Buildbucket_Agent_Output struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// maps relative-to-root directory to the fully-resolved ref.
+	// Maps relative-to-root directory to the fully-resolved ref.
 	//
 	// This will always have 1:1 mapping to Agent.Input.data
 	ResolvedData  map[string]*ResolvedDataRef `protobuf:"bytes,1,rep,name=resolved_data,json=resolvedData,proto3" json:"resolved_data,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`

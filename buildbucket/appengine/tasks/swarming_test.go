@@ -237,7 +237,7 @@ func TestTaskDef(t *testing.T) {
 				},
 			},
 		}
-		Convey("empty swarming cach", func() {
+		Convey("empty swarming cache", func() {
 			prefixes := computeEnvPrefixes(b)
 			So(prefixes, ShouldResemble, []*swarming.SwarmingRpcsStringListPair{})
 		})
@@ -485,32 +485,32 @@ func TestSyncBuild(t *testing.T) {
 
 			Convey("swarming task creation success but update build fail", func() {
 				mockSwarm.EXPECT().CreateTask(gomock.Any(), gomock.Any()).DoAndReturn(func(ctx context.Context, req *swarming.SwarmingRpcsNewTaskRequest) (*swarming.SwarmingRpcsTaskRequestMetadata, error) {
-					// hack to make the build update fail when trying to update build with the new task id.
-					inf.Proto.Swarming.TaskId = "old task id"
+					// Hack to make the build update fail when trying to update build with the new task ID.
+					inf.Proto.Swarming.TaskId = "old task ID"
 					So(datastore.Put(ctx, inf), ShouldBeNil)
-					return &swarming.SwarmingRpcsTaskRequestMetadata{TaskId: "new task id"}, nil
+					return &swarming.SwarmingRpcsTaskRequestMetadata{TaskId: "new task ID"}, nil
 				})
 
 				err := SyncBuild(ctx, 123, 0)
-				So(err, ShouldErrLike, "failed to update build 123: build already has a task old task id")
+				So(err, ShouldErrLike, "failed to update build 123: build already has a task old task ID")
 				currentInfra := &model.BuildInfra{Build: datastore.KeyForObj(ctx, &model.Build{
 					ID: 123,
 				})}
 				So(datastore.Get(ctx, currentInfra), ShouldBeNil)
-				So(currentInfra.Proto.Swarming.TaskId, ShouldEqual, "old task id")
+				So(currentInfra.Proto.Swarming.TaskId, ShouldEqual, "old task ID")
 				// One task should be pushed into CancelSwarmingTask queue since update build failed.
 				So(sch.Tasks(), ShouldHaveLength, 1)
 				So(sch.Tasks().Payloads()[0], ShouldResembleProto, &taskdefs.CancelSwarmingTask{
 					Hostname: "swarm",
-					TaskId:   "new task id",
+					TaskId:   "new task ID",
 					Realm:    "proj:bucket",
 				})
 			})
 
 			Convey("create swarming - cancel swarming task fail", func() {
 				mockSwarm.EXPECT().CreateTask(gomock.Any(), gomock.Any()).DoAndReturn(func(ctx context.Context, req *swarming.SwarmingRpcsNewTaskRequest) (*swarming.SwarmingRpcsTaskRequestMetadata, error) {
-					// hack to make the build update and the equeueing CancelSwarmingTask fail
-					inf.Proto.Swarming.TaskId = "old task id"
+					// Hack to make the build update and the equeueing CancelSwarmingTask fail.
+					inf.Proto.Swarming.TaskId = "old task ID"
 					So(datastore.Put(ctx, inf), ShouldBeNil)
 					return &swarming.SwarmingRpcsTaskRequestMetadata{TaskId: ""}, nil
 				})
@@ -524,7 +524,7 @@ func TestSyncBuild(t *testing.T) {
 			inf.Proto.Swarming.TaskId = "task_id"
 			So(datastore.Put(ctx, inf), ShouldBeNil)
 
-			Convey("not existing task id", func() {
+			Convey("non-existing task ID", func() {
 				mockSwarm.EXPECT().GetTaskResult(ctx, "task_id").Return(nil, &googleapi.Error{Code: 404})
 				err := syncBuildWithTaskResult(ctx, 123, "task_id", mockSwarm)
 				So(err, ShouldBeNil)
@@ -580,7 +580,7 @@ func TestSyncBuild(t *testing.T) {
 					StartedTs:   "2018-01-29T21:15:02.649750",
 					CompletedTs: "2018-01-30T00:15:18.162860"}, nil)
 				steps := model.BuildSteps{
-					ID: 1,
+					ID:    1,
 					Build: datastore.KeyForObj(ctx, &model.Build{ID: 123}),
 				}
 				So(steps.FromProto([]*pb.Step{
@@ -595,7 +595,7 @@ func TestSyncBuild(t *testing.T) {
 				So(datastore.Get(ctx, failedBuild), ShouldBeNil)
 				So(failedBuild.Status, ShouldEqual, pb.Status_INFRA_FAILURE)
 				allSteps := &model.BuildSteps{
-					ID: 1,
+					ID:    1,
 					Build: datastore.KeyForObj(ctx, &model.Build{ID: 123}),
 				}
 				So(datastore.Get(ctx, allSteps), ShouldBeNil)
@@ -603,12 +603,12 @@ func TestSyncBuild(t *testing.T) {
 				So(err, ShouldBeNil)
 				So(mSteps, ShouldResembleProto, []*pb.Step{
 					{
-						Name: "step1",
+						Name:   "step1",
 						Status: pb.Status_SUCCESS,
 					},
 					{
-						Name: "step2",
-						Status: pb.Status_CANCELED,
+						Name:    "step2",
+						Status:  pb.Status_CANCELED,
 						EndTime: &timestamppb.Timestamp{Seconds: 1517271318, Nanos: 162860000},
 					},
 				})

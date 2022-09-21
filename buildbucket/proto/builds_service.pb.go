@@ -36,13 +36,13 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
-// A request message for GetBuild rpc.
+// A request message for GetBuild RPC.
 type GetBuildRequest struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// Build id.
+	// Build ID.
 	// Mutually exclusive with builder and number.
 	Id int64 `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
 	// Builder of the build.
@@ -140,7 +140,7 @@ func (x *GetBuildRequest) GetMask() *BuildMask {
 	return nil
 }
 
-// A request message for SearchBuilds rpc.
+// A request message for SearchBuilds RPC.
 type SearchBuildsRequest struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -241,7 +241,7 @@ func (x *SearchBuildsRequest) GetPageToken() string {
 	return ""
 }
 
-// A response message for SearchBuilds rpc.
+// A response message for SearchBuilds RPC.
 type SearchBuildsResponse struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -249,7 +249,7 @@ type SearchBuildsResponse struct {
 
 	// Search results.
 	//
-	// Ordered by build id, descending. Ids are monotonically decreasing, so in
+	// Ordered by build ID, descending. IDs are monotonically decreasing, so in
 	// other words the order is newest-to-oldest.
 	Builds []*Build `protobuf:"bytes,1,rep,name=builds,proto3" json:"builds,omitempty"`
 	// Value for SearchBuildsRequest.page_token to continue searching.
@@ -302,7 +302,7 @@ func (x *SearchBuildsResponse) GetNextPageToken() string {
 	return ""
 }
 
-// A request message for Batch rpc.
+// A request message for Batch RPC.
 type BatchRequest struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -357,7 +357,7 @@ func (x *BatchRequest) GetRequests() []*BatchRequest_Request {
 	return nil
 }
 
-// A response message for Batch rpc.
+// A response message for Batch RPC.
 type BatchResponse struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -406,7 +406,7 @@ func (x *BatchResponse) GetResponses() []*BatchResponse_Response {
 	return nil
 }
 
-// A request message for UpdateBuild rpc.
+// A request message for UpdateBuild RPC.
 type UpdateBuildRequest struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -505,7 +505,7 @@ func (x *UpdateBuildRequest) GetMask() *BuildMask {
 	return nil
 }
 
-// A request message for ScheduleBuild rpc.
+// A request message for ScheduleBuild RPC.
 //
 // Next ID: 22.
 type ScheduleBuildRequest struct {
@@ -877,7 +877,7 @@ func (x *ScheduleBuildRequest) GetCanOutliveParent() Trinary {
 	return Trinary_UNSET
 }
 
-// A request message for CancelBuild rpc.
+// A request message for CancelBuild RPC.
 type CancelBuildRequest struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -961,7 +961,7 @@ func (x *CancelBuildRequest) GetMask() *BuildMask {
 	return nil
 }
 
-// A request message for CreateBuild rpc.
+// A request message for CreateBuild RPC.
 type CreateBuildRequest struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -1033,7 +1033,7 @@ func (x *CreateBuildRequest) GetMask() *BuildMask {
 	return nil
 }
 
-// A request message for SynthesizeBuild rpc.
+// A request message for SynthesizeBuild RPC.
 type SynthesizeBuildRequest struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -1268,14 +1268,14 @@ type BuildPredicate struct {
 	//   `ScheduleBuildRequest.experiments`). Well-known experiments are always
 	//   considered to be available.
 	Experiments []string `protobuf:"bytes,11,rep,name=experiments,proto3" json:"experiments,omitempty"`
-	// A build id.
+	// A build ID.
 	//
 	// Returned builds will be descendants of this build (e.g. "100" means
 	// "any build transitively scheduled starting from build 100").
 	//
 	// Mutually exclusive with `child_of`.
 	DescendantOf int64 `protobuf:"varint,12,opt,name=descendant_of,json=descendantOf,proto3" json:"descendant_of,omitempty"`
-	// A build id.
+	// A build ID.
 	//
 	// Returned builds will be only the immediate children of this build.
 	//
@@ -1469,7 +1469,7 @@ type UpdateBuildTaskRequest struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// A build id.
+	// A build ID.
 	BuildId string `protobuf:"bytes,1,opt,name=build_id,json=buildId,proto3" json:"build_id,omitempty"`
 	// Task
 	Task *Task `protobuf:"bytes,2,opt,name=task,proto3" json:"task,omitempty"`

@@ -211,7 +211,7 @@ func validateInfraBuildbucket(ib *pb.BuildInfra_Buildbucket) error {
 
 func validateCaches(caches []*pb.BuildInfra_Swarming_CacheEntry) error {
 	names := stringset.New(len(caches))
-	pathes := stringset.New(len(caches))
+	paths := stringset.New(len(caches))
 	for i, cache := range caches {
 		switch {
 		case cache.Name == "":
@@ -224,7 +224,7 @@ func validateCaches(caches []*pb.BuildInfra_Swarming_CacheEntry) error {
 			return errors.Reason(fmt.Sprintf("%dth cache: path unspecified", i)).Err()
 		case strings.Contains(cache.Path, "\\"):
 			return errors.Reason(fmt.Sprintf("%dth cache: path must use POSIX format", i)).Err()
-		case !pathes.Add(cache.Path):
+		case !paths.Add(cache.Path):
 			return errors.Reason(fmt.Sprintf("duplicated cache path: %s", cache.Path)).Err()
 		case cache.WaitForWarmCache.AsDuration()%(60*time.Second) != 0:
 			return errors.Reason(fmt.Sprintf("%dth cache: wait_for_warm_cache must be multiples of 60 seconds.", i)).Err()

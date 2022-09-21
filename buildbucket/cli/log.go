@@ -53,7 +53,7 @@ func cmdLog(p Params) *subcommands.Command {
 			Argument STEP is a build step name, e.g. "bot_update".
 			Use | as parent-child separator, e.g. "parent|child".
 
-			Arguments LOG is one ore more log names of the STEP. They will be multiplexed
+			Arguments LOG is one or more log names of the STEP. They will be multiplexed
 			by time. Defaults to stdout and stderr.
 			Log "stderr" is printed to stderr.
 		`),

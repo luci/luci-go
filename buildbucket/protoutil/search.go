@@ -26,7 +26,7 @@ import (
 	pb "go.chromium.org/luci/buildbucket/proto"
 )
 
-// Search searches for builds continuously, sending findings to buildC
+// Search searches for builds continuously, sending findings to `buildC`
 // until the search is exhausted or context is canceled.
 // The builds are ordered newest-to-oldest and deduplicated.
 //
@@ -143,7 +143,7 @@ func searchBuilds(ctx context.Context, buildC chan<- *pb.Build, client pb.Builds
 func searchResponses(ctx context.Context, resC chan<- *pb.SearchBuildsResponse, client pb.BuildsClient, req *pb.SearchBuildsRequest) error {
 	req = proto.Clone(req).(*pb.SearchBuildsRequest)
 
-	// Ensure next_page_token and build id are requested
+	// Ensure next_page_token and build ID are requested.
 	if paths := req.GetFields().GetPaths(); len(paths) > 0 {
 		pathSet := stringset.NewFromSlice(paths...)
 		pathSet.Add("next_page_token")

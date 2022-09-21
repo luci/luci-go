@@ -121,7 +121,7 @@ func TestValidateBuildTask(t *testing.T) {
 			So(err, ShouldBeNil)
 			So(result.Infra, ShouldResembleProto, expected)
 		})
-		Convey("task id target mismatch", func() {
+		Convey("task ID target mismatch", func() {
 			infra := &model.BuildInfra{
 				Build: bk,
 				Proto: &pb.BuildInfra{
@@ -261,7 +261,7 @@ func TestValidateTaskUpdate(t *testing.T) {
 			}
 			So(validateUpdateBuildTaskRequest(ctx, req), ShouldBeError)
 		})
-		Convey("is missing build id", func() {
+		Convey("is missing build ID", func() {
 			req := &pb.UpdateBuildTaskRequest{
 				Task: &pb.Task{
 					Status: pb.Status_STARTED,
@@ -273,7 +273,7 @@ func TestValidateTaskUpdate(t *testing.T) {
 			}
 			So(validateUpdateBuildTaskRequest(ctx, req), ShouldBeError)
 		})
-		Convey("is missing task id", func() {
+		Convey("is missing task ID", func() {
 			req := &pb.UpdateBuildTaskRequest{
 				BuildId: "1",
 				Task: &pb.Task{
@@ -370,13 +370,13 @@ func TestUpdateBuildTask(t *testing.T) {
 
 		t0 := testclock.TestRecentTimeUTC
 
-		// helper function to call UpdateBuild.
+		// Helper function to call UpdateBuild.
 		updateBuildTask := func(ctx context.Context, req *pb.UpdateBuildTaskRequest) error {
 			_, err := srv.UpdateBuildTask(ctx, req)
 			return err
 		}
 
-		// create and save a sample build in the datastore
+		// Create and save a sample build in the datastore.
 		build := &model.Build{
 			ID: 1,
 			Proto: &pb.Build{

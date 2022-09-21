@@ -162,7 +162,7 @@ func TestValidateTags(t *testing.T) {
 		})
 
 		Convey("id", func() {
-			Convey("invalid id", func() {
+			Convey("invalid ID", func() {
 				cm := &pb.GitilesCommit{
 					Host:    "host",
 					Project: "project",
@@ -196,7 +196,7 @@ func TestValidateTags(t *testing.T) {
 				So(err, ShouldErrLike, "ref must match")
 			})
 
-			Convey("valid, but w/ invalid id", func() {
+			Convey("valid, but w/ invalid ID", func() {
 				cm := &pb.GitilesCommit{
 					Host:    "host",
 					Project: "project",
@@ -208,7 +208,7 @@ func TestValidateTags(t *testing.T) {
 			})
 		})
 
-		Convey("neither id nor ref", func() {
+		Convey("neither ID nor ref", func() {
 			cm := &pb.GitilesCommit{
 				Host:    "host",
 				Project: "project",

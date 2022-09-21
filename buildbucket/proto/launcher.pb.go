@@ -103,7 +103,7 @@ type BBAgentArgs struct {
 
 	// Path to the user executable.
 	//
-	// Deprecated. Superceded by payload_path and `build.exe.cmd`.
+	// Deprecated. Superseded by payload_path and `build.exe.cmd`.
 	ExecutablePath string `protobuf:"bytes,1,opt,name=executable_path,json=executablePath,proto3" json:"executable_path,omitempty"`
 	// Path to the base of the user executable package.
 	//

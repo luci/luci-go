@@ -171,6 +171,7 @@ func getBuild(ctx context.Context, id int64) (*model.Build, error) {
 }
 
 // validateTags validates build tags.
+//
 // tagValidationMode should be one of the enum - TagNew, TagAppend
 // Note: Duplicate tags can pass the validation, which will be eventually deduplicated when storing into DB.
 func validateTags(tags []*pb.StringPair, m tagValidationMode) error {
@@ -293,11 +294,12 @@ func valdiateTokenPurposeMatchesHeader(purpose pb.TokenBody_Purpose, header stri
 
 // validateToken validates the update token from the header.
 //
-// bID is mainly used to retrieve the build with the old build token
-// for validation, if known (i.e. in UpdateBuild, bID can be retrieved from
+// `bID` is mainly used to retrieve the build with the old build token
+// for validation, if known (i.e. in UpdateBuild, `bID` can be retrieved from
 // the request).
+//
 // It can also be 0, witch means we only rely on the build token itself to be
-// self-validating (i.e. when schedule a child build).
+// self-validating (i.e. when scheduling a child build).
 //
 // requireToken is a flag to indicate if the build token is required. For example
 // build token is required in UpdateBuild, but in ScheduleBuild, build token is
@@ -311,7 +313,7 @@ func validateToken(ctx context.Context, bID int64, requireToken bool, tokenHeade
 	md, _ := metadata.FromIncomingContext(ctx)
 	buildToks := md.Get(tokenHeader)
 
-	// Only want to perform this validation when token is BuildbucketTokenHeader
+	// We only want to perform this validation when token is BuildbucketTokenHeader.
 	if len(buildToks) == 0 && tokenHeader == buildbucket.BuildbucketTokenHeader {
 		// TODO(crbug.com/1031205): remove buildbucket.BuildTokenHeader.
 		buildToks = md.Get(buildbucket.BuildTokenHeader)
@@ -361,19 +363,19 @@ func validateToken(ctx context.Context, bID int64, requireToken bool, tokenHeade
 		return nil, nil, err
 	}
 
-	// validate it against the token stored in the build entity.
+	// Validate it against the token stored in the build entity.
 	if subtle.ConstantTimeCompare([]byte(bldTok), []byte(bld.UpdateToken)) == 1 {
 		return tokBody, bld, nil
 	}
 	return nil, nil, perm.NotFoundErr(ctx)
 }
 
-// validateBuildToken validates the update token for the UpdateBuild RPC
+// validateBuildToken validates the update token for the UpdateBuild RPC.
 func validateBuildToken(ctx context.Context, bID int64, requireToken bool) (*pb.TokenBody, *model.Build, error) {
 	return validateToken(ctx, bID, requireToken, buildbucket.BuildbucketTokenHeader)
 }
 
-// validateBuildTaskToken validates the update token for the UpdateBuildTask RPC
+// validateBuildTaskToken validates the update token for the UpdateBuildTask RPC.
 func validateBuildTaskToken(ctx context.Context, bID string) (*pb.TokenBody, *model.Build, error) {
 	intBuildID, err := strconv.ParseInt(bID, 0, 64)
 	if err != nil {

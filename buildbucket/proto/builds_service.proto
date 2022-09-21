@@ -111,9 +111,9 @@ service Builds {
   rpc UpdateBuildTask(UpdateBuildTaskRequest) returns (Task) {};
 }
 
-// A request message for GetBuild rpc.
+// A request message for GetBuild RPC.
 message GetBuildRequest {
-  // Build id.
+  // Build ID.
   // Mutually exclusive with builder and number.
   int64 id = 1;
 
@@ -144,7 +144,7 @@ message GetBuildRequest {
   BuildMask mask = 101;
 }
 
-// A request message for SearchBuilds rpc.
+// A request message for SearchBuilds RPC.
 message SearchBuildsRequest {
   // Returned builds must satisfy this predicate. Required.
   BuildPredicate predicate = 1;
@@ -175,11 +175,11 @@ message SearchBuildsRequest {
   string page_token = 102;
 }
 
-// A response message for SearchBuilds rpc.
+// A response message for SearchBuilds RPC.
 message SearchBuildsResponse {
   // Search results.
   //
-  // Ordered by build id, descending. Ids are monotonically decreasing, so in
+  // Ordered by build ID, descending. IDs are monotonically decreasing, so in
   // other words the order is newest-to-oldest.
   repeated Build builds = 1;
 
@@ -187,7 +187,7 @@ message SearchBuildsResponse {
   string next_page_token = 100;
 }
 
-// A request message for Batch rpc.
+// A request message for Batch RPC.
 message BatchRequest {
 
   // One request in a batch.
@@ -210,7 +210,7 @@ message BatchRequest {
   repeated Request requests = 1;
 }
 
-// A response message for Batch rpc.
+// A response message for Batch RPC.
 message BatchResponse {
 
   // Response a BatchRequest.Response.
@@ -230,7 +230,7 @@ message BatchResponse {
   repeated Response responses = 1;
 }
 
-// A request message for UpdateBuild rpc.
+// A request message for UpdateBuild RPC.
 message UpdateBuildRequest {
   // Build to update, with new field values.
   Build build = 1;
@@ -265,7 +265,7 @@ message UpdateBuildRequest {
   BuildMask mask = 101;
 }
 
-// A request message for ScheduleBuild rpc.
+// A request message for ScheduleBuild RPC.
 //
 // Next ID: 22.
 message ScheduleBuildRequest {
@@ -479,7 +479,7 @@ message ScheduleBuildRequest {
   Trinary can_outlive_parent = 21;
 }
 
-// A request message for CancelBuild rpc.
+// A request message for CancelBuild RPC.
 message CancelBuildRequest {
   // ID of the build to cancel.
   int64 id = 1;
@@ -499,7 +499,7 @@ message CancelBuildRequest {
   BuildMask mask = 101;
 }
 
-// A request message for CreateBuild rpc.
+// A request message for CreateBuild RPC.
 message CreateBuildRequest {
   // The Build to be created.
   Build build = 1  [(google.api.field_behavior) = REQUIRED];
@@ -516,7 +516,7 @@ message CreateBuildRequest {
   BuildMask mask = 3;
 }
 
-// A request message for SynthesizeBuild rpc.
+// A request message for SynthesizeBuild RPC.
 message SynthesizeBuildRequest {
   // ID of a build to use as the template.
   // Mutually exclusive with builder.
@@ -636,7 +636,7 @@ message BuildPredicate {
   //   considered to be available.
   repeated string experiments = 11;
 
-  // A build id.
+  // A build ID.
   //
   // Returned builds will be descendants of this build (e.g. "100" means
   // "any build transitively scheduled starting from build 100").
@@ -644,7 +644,7 @@ message BuildPredicate {
   // Mutually exclusive with `child_of`.
   int64 descendant_of = 12;
 
-  // A build id.
+  // A build ID.
   //
   // Returned builds will be only the immediate children of this build.
   //
@@ -661,7 +661,7 @@ message BuildRange {
 }
 
 message UpdateBuildTaskRequest {
-  // A build id.
+  // A build ID.
   string build_id = 1 [(google.api.field_behavior) = REQUIRED];
 
   // Task

@@ -797,7 +797,7 @@ func setInfra(req *pb.ScheduleBuildRequest, cfg *pb.BuilderConfig, build *pb.Bui
 	}
 
 	// Requested caches have precedence over global caches.
-	// Apply global caches whose names and paths weren't overriden.
+	// Apply global caches whose names and paths weren't overridden.
 	for _, c := range globalCaches {
 		if !names.Has(c.Name) && !paths.Has(c.Path) {
 			taskCaches = append(taskCaches, configuredCacheToTaskCache(c))

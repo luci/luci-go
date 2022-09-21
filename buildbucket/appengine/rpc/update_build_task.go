@@ -63,9 +63,9 @@ func validateUpdateBuildTaskRequest(ctx context.Context, req *pb.UpdateBuildTask
 	return nil
 }
 
-// ensures that the taskID provided in the request matches the taskID that is
-// stored in the build model. If there is no task associated with the build,
-// the task is associated here.
+// validateBuildTask ensures that the taskID provided in the request matches
+// the taskID that is stored in the build model. If there is no task associated
+// with the build, the task is associated here.
 func validateBuildTask(ctx context.Context, req *pb.UpdateBuildTaskRequest, build *model.Build) (*pb.Build, error) {
 
 	// create a new build mask to read infra
@@ -85,7 +85,7 @@ func validateBuildTask(ctx context.Context, req *pb.UpdateBuildTaskRequest, buil
 		bld.Infra.Backend.Task = &pb.Task{}
 	} else if bld.Infra.Backend.Task.Id.GetId() != req.Task.Id.GetId() ||
 		bld.Infra.Backend.Task.Id.GetTarget() != req.Task.Id.GetTarget() {
-		return nil, errors.Reason("task id in reuqest does not match task id associated with build").Err()
+		return nil, errors.Reason("task ID in request does not match task ID associated with build").Err()
 	}
 	if protoutil.IsEnded(bld.Infra.Backend.Task.Status) {
 		return nil, appstatus.Errorf(codes.FailedPrecondition, "cannot update an ended task")
@@ -104,10 +104,10 @@ func (*Builds) UpdateBuildTask(ctx context.Context, req *pb.UpdateBuildTaskReque
 		return nil, appstatus.BadRequest(errors.Annotate(err, "invalid build").Err())
 	}
 
-	// pre-check if the task can be updated before updating it with a transaction.
-	// ensures that the taskID provided in the request matches the taskID that is
+	// Pre-check if the task can be updated before updating it with a transaction.
+	// Ensures that the taskID provided in the request matches the taskID that is
 	// stored in the build model. If there is no task associated with the build model,
-	// the task is associated here in buildInfra.Infra.Backend.Task
+	// the task is associated here in buildInfra.Infra.Backend.Task.
 	build, err := validateBuildTask(ctx, req, bld)
 	if err != nil {
 		return nil, errors.Annotate(err, "invalid task").Err()
