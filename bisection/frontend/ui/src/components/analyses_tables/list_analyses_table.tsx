@@ -16,93 +16,35 @@ import './analyses_table.css';
 
 import { useState } from 'react';
 import { useQuery } from 'react-query';
-import { Link as RouterLink } from 'react-router-dom';
 
 import Alert from '@mui/material/Alert';
 import AlertTitle from '@mui/material/AlertTitle';
 import Box from '@mui/material/Box';
 import CircularProgress from '@mui/material/CircularProgress';
-import Link from '@mui/material/Link';
 import Paper from '@mui/material/Paper';
 import Table from '@mui/material/Table';
 import TableBody from '@mui/material/TableBody';
 import TableCell from '@mui/material/TableCell';
 import TableContainer from '@mui/material/TableContainer';
 import TableHead from '@mui/material/TableHead';
-import TableRow from '@mui/material/TableRow';
 import TablePagination from '@mui/material/TablePagination';
+import TableRow from '@mui/material/TableRow';
 import Typography from '@mui/material/Typography';
 
+import { AnalysisTableRow } from './analysis_table_row/analysis_table_row';
 import { NoDataMessageRow } from '../no_data_message_row/no_data_message_row';
+
 import {
   Analysis,
   getLUCIBisectionService,
   ListAnalysesRequest,
 } from '../../services/luci_bisection';
-import { EMPTY_LINK, linkToBuilder } from '../../tools/link_constructors';
-import {
-  getFormattedDuration,
-  getFormattedTimestamp,
-} from '../../tools/timestamp_formatters';
-
-interface Props {
-  analysis: Analysis;
-}
 
 interface DisplayedRowsLabelProps {
   from: number;
 }
 
-export const AnalysesTableRow = ({ analysis }: Props) => {
-  let builderLink = EMPTY_LINK;
-  if (analysis.builder) {
-    builderLink = linkToBuilder(analysis.builder);
-  }
-
-  return (
-    <TableRow key={analysis.analysisId} hover>
-      <TableCell>
-        <Link
-          component={RouterLink}
-          to={`/analysis/b/${analysis.firstFailedBbid}`}
-        >
-          {analysis.firstFailedBbid}
-        </Link>
-      </TableCell>
-      <TableCell>{getFormattedTimestamp(analysis.createdTime)}</TableCell>
-      <TableCell>{analysis.status}</TableCell>
-      <TableCell>{analysis.buildFailureType}</TableCell>
-      <TableCell>
-        {getFormattedDuration(analysis.createdTime, analysis.endTime)}
-      </TableCell>
-      <TableCell>
-        {analysis.builder && (
-          <Link
-            href={builderLink.url}
-            target='_blank'
-            rel='noreferrer'
-            underline='always'
-          >
-            {builderLink.linkText}
-          </Link>
-        )}
-      </TableCell>
-      {/* TODO: add culprit CL information */}
-    </TableRow>
-  );
-};
-
-function getRows(analyses: Analysis[]) {
-  if (analyses.length == 0) {
-    return <NoDataMessageRow message='No analyses to display' columns={6} />;
-  } else {
-    return analyses.map((analysis) => (
-      <AnalysesTableRow key={analysis.analysisId} analysis={analysis} />
-    ));
-  }
-}
-
-export const AnalysesTable = () => {
+export const ListAnalysesTable = () => {
   // TODO: implement sorting & filtering for certain columns
 
   // The current page of analyses
@@ -124,7 +66,7 @@ export const AnalysesTable = () => {
   const {
     isLoading,
     isError,
-    data: analyses,
+    data: response,
     error,
     isFetching,
     isPreviousData,
@@ -137,22 +79,23 @@ export const AnalysesTable = () => {
         pageToken: pageTokens.get(startIndex) || '',
       };
 
-      const response = await bisectionService.listAnalyses(request);
-
-      // Record the page token for the next page of analyses
-      if (response.nextPageToken != null) {
-        const nextPageStartIndex = (page + 1) * pageSize;
-        setPageTokens(
-          new Map(pageTokens.set(nextPageStartIndex, response.nextPageToken))
-        );
-      }
-
-      return response.analyses;
+      return await bisectionService.listAnalyses(request);
     },
     {
       keepPreviousData: true,
+      onSuccess: (response) => {
+        // Record the page token for the next page of analyses
+        if (response.nextPageToken != null) {
+          const nextPageStartIndex = (page + 1) * pageSize;
+          setPageTokens(
+            new Map(pageTokens.set(nextPageStartIndex, response.nextPageToken))
+          );
+        }
+      },
     }
   );
+
+  const analyses: Analysis[] = response?.analyses || [];
 
   const handleChangePage = (_: React.MouseEvent | null, newPage: number) => {
     setPage(newPage);
@@ -175,12 +118,7 @@ export const AnalysesTable = () => {
 
   if (isLoading) {
     return (
-      <Box
-        display='flex'
-        justifyContent='center'
-        alignItems='center'
-        height='80vh'
-      >
+      <Box display='flex' justifyContent='center' alignItems='center'>
         <CircularProgress />
       </Box>
     );
@@ -214,10 +152,21 @@ export const AnalysesTable = () => {
               <TableCell>Failure type</TableCell>
               <TableCell>Duration</TableCell>
               <TableCell>Builder</TableCell>
-              {/* TODO: add column for culprit once culprit information is available */}
+              {/* TODO: add column header for culprit once culprit information is available */}
             </TableRow>
           </TableHead>
-          <TableBody>{getRows(analyses)}</TableBody>
+          <TableBody>
+            {analyses.length > 0 ? (
+              analyses.map((analysis) => (
+                <AnalysisTableRow
+                  key={analysis.analysisId}
+                  analysis={analysis}
+                />
+              ))
+            ) : (
+              <NoDataMessageRow message='No analyses found' columns={6} />
+            )}
+          </TableBody>
         </Table>
       </TableContainer>
       {analyses.length > 0 && (

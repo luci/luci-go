@@ -22,7 +22,7 @@ import { HeuristicAnalysisTableRow } from './heuristic_analysis_table_row';
 import { HeuristicSuspect } from '../../../services/luci_bisection';
 import { createMockHeuristicSuspect } from '../../../testing_tools/mocks/heuristic_suspect_mock';
 
-describe('Test HeuristicAnalysisTable component', () => {
+describe('Test HeuristicAnalysisTableRow component', () => {
   test('if the details for a heuristic suspect are displayed', async () => {
     const mockSuspect: HeuristicSuspect = createMockHeuristicSuspect('ac52e3');
 

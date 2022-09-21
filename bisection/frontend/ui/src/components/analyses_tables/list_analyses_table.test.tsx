@@ -18,7 +18,7 @@ import '@testing-library/jest-dom';
 import { screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
-import { AnalysesTable } from './analyses_table';
+import { ListAnalysesTable } from './list_analyses_table';
 import { Analysis } from '../../services/luci_bisection';
 import { createMockAnalysis } from '../../testing_tools/mocks/analysis_mock';
 import {
@@ -46,7 +46,7 @@ describe('Test AnalysesTable component', () => {
     ];
     mockFetchAnalyses(mockAnalyses, '');
 
-    renderWithRouterAndClient(<AnalysesTable />);
+    renderWithRouterAndClient(<ListAnalysesTable />);
 
     await screen.findByText('Buildbucket ID');
 
@@ -65,7 +65,7 @@ describe('Test AnalysesTable component', () => {
     }
     mockFetchAnalyses(firstPageMockAnalyses, 'test-token');
 
-    renderWithRouterAndClient(<AnalysesTable />);
+    renderWithRouterAndClient(<ListAnalysesTable />);
 
     await screen.findByText('Rows per page:');
 
@@ -97,18 +97,18 @@ describe('Test AnalysesTable component', () => {
     const mockAnalyses: Analysis[] = [];
     mockFetchAnalyses(mockAnalyses, '');
 
-    renderWithRouterAndClient(<AnalysesTable />);
+    renderWithRouterAndClient(<ListAnalysesTable />);
 
     await screen.findByText('Buildbucket ID');
 
     expect(screen.queryAllByRole('link')).toHaveLength(0);
-    expect(screen.getByText('No analyses to display')).toBeInTheDocument();
+    expect(screen.getByText('No analyses found')).toBeInTheDocument();
   });
 
   test('if an appropriate message is displayed for an error', async () => {
     mockErrorFetchingAnalyses();
 
-    renderWithRouterAndClient(<AnalysesTable />);
+    renderWithRouterAndClient(<ListAnalysesTable />);
 
     await screen.findByRole('alert');
 

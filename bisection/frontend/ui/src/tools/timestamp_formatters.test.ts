@@ -12,14 +12,26 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { getFormattedDuration } from './timestamp_formatters';
+import {
+  getFormattedDuration,
+  getFormattedTimestamp,
+} from './timestamp_formatters';
 
 describe('Test timestamp tools', () => {
-  test('if duration formatting is correct', () => {
-    const start = '2022-09-06T07:13:12.435231Z';
-    const end = '2022-09-06T07:13:16.893998Z';
+  const start = '2022-09-06T07:13:12.435231Z';
+  const end = '2022-09-06T07:13:16.893998Z';
 
-    const duration = getFormattedDuration(start, end);
-    expect(duration).toBe('00:00:04');
+  test('if duration formatting is correct', () => {
+    expect(getFormattedDuration(start, end)).toBe('00:00:04');
+  });
+
+  test('if calculating duration is skipped appropriately', () => {
+    expect(getFormattedDuration(end, start)).toBe('');
+    expect(getFormattedDuration(start, '')).toBe('');
+    expect(getFormattedDuration('', end)).toBe('');
+  });
+
+  test('if timestamp formatting skips empty strings', () => {
+    expect(getFormattedTimestamp('')).toBe('');
   });
 });

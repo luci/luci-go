@@ -83,6 +83,7 @@ export const AnalysisDetailsPage = () => {
     const request: QueryAnalysisRequest = {
       buildFailure: {
         bbid: bbid!,
+        // TODO: update this once other failure types are analyzed
         failedStepName: 'compile',
       },
     };
@@ -91,8 +92,13 @@ export const AnalysisDetailsPage = () => {
   });
 
   let analysis = null;
-  if (isSuccess && response) {
-    analysis = response!.analyses[0];
+  if (
+    isSuccess &&
+    response &&
+    response.analyses &&
+    response.analyses.length > 0
+  ) {
+    analysis = response.analyses[0];
   }
 
   // TODO: display alert if the build ID queried is not the first failed build

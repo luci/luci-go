@@ -12,7 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Analysis } from '../../services/luci_bisection';
+import fetchMock from 'fetch-mock-jest';
+
+import { Analysis, QueryAnalysisResponse } from '../../services/luci_bisection';
 
 export const createMockAnalysis = (id: string): Analysis => {
   return {
@@ -62,4 +64,37 @@ export const createMockAnalysis = (id: string): Analysis => {
       },
     },
   };
+};
+
+const createMockQueryAnalysisResponse = (
+  analyses: Analysis[]
+): QueryAnalysisResponse => {
+  return {
+    analyses: analyses,
+  };
+};
+
+export const mockQueryAnalysis = (mockAnalyses: Analysis[]) => {
+  fetchMock.post(
+    'http://localhost/prpc/gofindit.GoFinditService/QueryAnalysis',
+    {
+      headers: {
+        'X-Prpc-Grpc-Code': '0',
+      },
+      body:
+        ")]}'" + JSON.stringify(createMockQueryAnalysisResponse(mockAnalyses)),
+    },
+    { overwriteRoutes: true }
+  );
+};
+
+export const mockErrorQueryingAnalysis = () => {
+  fetchMock.post(
+    'http://localhost/prpc/gofindit.GoFinditService/QueryAnalysis',
+    {
+      headers: {
+        'X-Prpc-Grpc-Code': '2',
+      },
+    }
+  );
 };

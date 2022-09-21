@@ -16,11 +16,27 @@ import { FC, ReactElement } from 'react';
 import { QueryClient, QueryClientProvider } from 'react-query';
 import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
 
-import { render } from '@testing-library/react';
+import { render, RenderResult } from '@testing-library/react';
 
 interface Props {
   children?: ReactElement;
 }
+
+/**
+ * Renders a component wrapped with a mock Router.
+ *
+ * @param ui The component to render.
+ * @param route The route that the current component is at, defaults to '/'.
+ * @return The render result.
+ */
+export const renderWithRouter = (
+  ui: React.ReactElement<any, string | React.JSXElementConstructor<any>>,
+  route = '/'
+): RenderResult => {
+  window.history.pushState({}, 'Test page', route);
+
+  return render(ui, { wrapper: Router });
+};
 
 /**
  * Renders a component with a mock router and a mock query client.

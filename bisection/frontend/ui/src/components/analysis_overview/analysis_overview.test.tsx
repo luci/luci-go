@@ -44,12 +44,13 @@ describe('Test AnalysisOverview component', () => {
     });
 
     // check the builder is displayed correctly
-    const fieldLabel = screen.getByText(new RegExp(`^(builder)$`, 'i'));
+    expect(mockAnalysis.builder).not.toBe(undefined);
+    const fieldLabel = screen.getByText(new RegExp('^(builder)$', 'i'));
     expect(fieldLabel).toBeInTheDocument();
     const builderText = fieldLabel.nextSibling?.textContent || '';
-    expect(builderText).toContain(mockAnalysis.builder.project);
-    expect(builderText).toContain(mockAnalysis.builder.bucket);
-    expect(builderText).toContain(mockAnalysis.builder.builder);
+    expect(builderText).toContain(mockAnalysis.builder!.project);
+    expect(builderText).toContain(mockAnalysis.builder!.bucket);
+    expect(builderText).toContain(mockAnalysis.builder!.builder);
 
     // check the suspect range is displayed correctly
     verifySuspectRangeLink(mockAnalysis);

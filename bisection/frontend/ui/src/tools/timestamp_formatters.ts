@@ -25,10 +25,25 @@ dayjs.extend(timezone);
 dayjs.extend(advancedFormat);
 
 export function getFormattedDuration(start: string, end: string): string {
-  const diff = dayjs.duration(dayjs(end).diff(dayjs(start)));
+  if (!start || !end) {
+    return '';
+  }
+
+  const startTime = dayjs(start);
+  const endTime = dayjs(end);
+
+  if (endTime < startTime) {
+    return '';
+  }
+
+  const diff = dayjs.duration(endTime.diff(startTime));
   return diff.format('HH:mm:ss');
 }
 
 export function getFormattedTimestamp(datetime: string): string {
+  if (!datetime) {
+    return '';
+  }
+
   return dayjs(datetime).format('HH:mm:ss ddd, MMM DD YYYY z');
 }

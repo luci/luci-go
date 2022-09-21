@@ -121,7 +121,7 @@ export interface Analysis {
   nthSectionResult?: NthSectionAnalysisResult;
   culprit?: GitilesCommit;
   culpritAction?: CulpritAction[];
-  builder: BuilderID;
+  builder?: BuilderID;
   buildFailureType: BuildFailureType;
 }
 
