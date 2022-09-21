@@ -179,8 +179,8 @@ message Condition {
 // assignment via project configuration files, others may do it dynamically by
 // accepting a realm when a resource is created via an RPC.
 //
-// There are two special realms (both optional) that a project can have:
-// "<project>:@root" and "<project>:@legacy".
+// There are three special realms (all optional) that a project can have:
+// "<project>:@root", "<project>:@legacy" and "<project>:@project".
 //
 // The root realm should be used as a fallback when an existing resource points
 // to a realm that doesn't exist. Without the root realm, such resources become
@@ -191,6 +191,12 @@ message Condition {
 // realms mechanism was introduced in case the service can't figure out a more
 // appropriate realm based on resource's properties. The service must clearly
 // document when and how it uses the legacy realm (if it uses it at all).
+//
+// The project realm should be used as the realm for 'project global' resources,
+// for example, the project configuration itself, or derivations thereof. Some
+// LUCI services may use bindings in this realm to allow federation of
+// administration responsibilities to the project (rather than relying on
+// exclusively LUCI service administrators).
 //
 // The actual list of (<principal>, <permission>) pairs is defined via a list of
 // bindings, where each binding basically says "all these principals have all
@@ -212,7 +218,7 @@ message Condition {
 message Realm {
   // Name of the realm as "<project>:<realm>" string, where:
   //   "<project>" matches `^([a-z0-9\-_]{1,100}|@internal)$`.
-  //   "<realm>" matches `^([a-z0-9_\.\-/]{1,400}|@root|@legacy)$`.
+  //   "<realm>" matches `^([a-z0-9_\.\-/]{1,400}|@root|@legacy|@project)$`.
   string name = 1;
 
   // A list of bindings in lexicographical order of their `permissions` fields.

@@ -78,6 +78,15 @@ const (
 	// handling of legacy realms. You should always pass them to HasPermission()
 	// explicitly when checking permissions of legacy resources.
 	LegacyRealm = "@legacy"
+
+	// ProjectRealm is an alias for "@project".
+	//
+	// The project realm is used to store realms-aware resources which are global
+	// to the entire project, for example the configuration of the project itself,
+	// or derevations thereof. The root realm is explicitly NOT recommended for
+	// this because there's no way to grant permissions in the root realm without
+	// also implicitly granting them in ALL other realms.
+	ProjectRealm = "@project"
 )
 
 // ValidateRealmName validates a realm name (either full or project-scoped).
@@ -105,9 +114,9 @@ func ValidateRealmName(realm string, scope RealmNameScope) error {
 		panic(fmt.Sprintf("invalid RealmNameScope %q", scope))
 	}
 
-	if realm != RootRealm && realm != LegacyRealm && !realmNameRe.MatchString(realm) {
-		return errors.Reason("bad %s realm name %q - the realm name should match %q or be %q or %q",
-			scope, realm, realmNameRe, RootRealm, LegacyRealm).Err()
+	if realm != RootRealm && realm != LegacyRealm && realm != ProjectRealm && !realmNameRe.MatchString(realm) {
+		return errors.Reason("bad %s realm name %q - the realm name should match %q or be %q, %q or %q",
+			scope, realm, realmNameRe, RootRealm, LegacyRealm, ProjectRealm).Err()
 	}
 
 	return nil

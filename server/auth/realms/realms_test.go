@@ -47,11 +47,13 @@ func TestValidateRealmName(t *testing.T) {
 		So(call("something-blah:a/b/c"), ShouldBeNil)
 		So(call("something-blah:@root"), ShouldBeNil)
 		So(call("something-blah:@legacy"), ShouldBeNil)
+		So(call("something-blah:@project"), ShouldBeNil)
 
 		So(call("@internal:realm"), ShouldBeNil)
 		So(call("@internal:a/b/c"), ShouldBeNil)
 		So(call("@internal:@root"), ShouldBeNil)
 		So(call("@internal:@legacy"), ShouldBeNil)
+		So(call("@internal:@project"), ShouldBeNil)
 
 		So(call("realm"), ShouldErrLike, "should be <project>:<realm>")
 		So(call("BLAH:realm"), ShouldErrLike, "bad project name")
@@ -69,6 +71,7 @@ func TestValidateRealmName(t *testing.T) {
 		So(call("a/b/c"), ShouldBeNil)
 		So(call("@root"), ShouldBeNil)
 		So(call("@legacy"), ShouldBeNil)
+		So(call("@project"), ShouldBeNil)
 
 		So(call("blah:realm"), ShouldNotBeNil)
 		So(call(":realm"), ShouldNotBeNil)

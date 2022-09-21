@@ -21,5 +21,5 @@ package protocol
 //   appengine/components/components/auth/proto/replication.proto
 //   appengine/components/components/auth/proto/security_config.proto
 //
-// Commit: 3e5637331758eb161692e25e7ce9a470171cf346
+// Commit: ac88a1823845bd0601b94d250495dd3c4b7e28ea
 // Modifications: see import_luci_py.sh
