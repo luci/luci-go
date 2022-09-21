@@ -16,8 +16,11 @@ package model
 
 import (
 	"fmt"
+	"strings"
 
 	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/reflect/protoreflect"
+	"google.golang.org/protobuf/types/descriptorpb"
 	"google.golang.org/protobuf/types/known/fieldmaskpb"
 
 	pb "go.chromium.org/luci/buildbucket/proto"
@@ -47,46 +50,6 @@ var defaultFieldMask = fieldmaskpb.FieldMask{
 	},
 }
 
-// The field mask to use for callers who have the BuildsList permission but not BuildsGet or
-// BuildsGetLimited.
-// These callers should only be able to see fields specified in this mask.
-// TODO(crbug/1353534): Implement these as proto field annotations instead.
-var listOnlyFieldMask = fieldmaskpb.FieldMask{
-	Paths: []string{
-		"ancestor_ids",
-		"can_outlive_parent",
-		"id",
-		"status",
-		"status_details",
-	},
-}
-
-// The field mask to use for callers who have the BuildsGetLimited permission but not BuildsGet.
-// These callers should only be able to see fields specified in this mask.
-// TODO(crbug/1353534): Implement these as proto field annotations instead.
-var getLimitedFieldMask = fieldmaskpb.FieldMask{
-	Paths: []string{
-		"ancestor_ids",
-		"builder",
-		"can_outlive_parent",
-		"cancel_time",
-		"create_time",
-		"critical",
-		"end_time",
-		"id",
-		"infra.resultdb",
-		"input.gerrit_changes",
-		"input.gitiles_commit",
-		"number",
-		"start_time",
-		"status",
-		"status_details",
-		// TODO(crbug/1353534): Add a limited/sanitized version of summary_markdown once we've
-		// made a decision on how best to implement that.
-		"update_time",
-	},
-}
-
 // Used just for their type information.
 var (
 	buildPrototype       = pb.Build{}
@@ -102,12 +65,12 @@ var DefaultBuildMask = HardcodedBuildMask(defaultFieldMask.Paths...)
 // ListOnlyBuildMask is an extra mask to hide fields from callers who have the BuildsList
 // permission but not BuildsGet or BuildsGetLimited.
 // These callers should only be able to see fields specified in this mask.
-var ListOnlyBuildMask = HardcodedBuildMask(listOnlyFieldMask.Paths...)
+var ListOnlyBuildMask = HardcodedBuildMask(BuildFieldsWithVisibility(pb.BuildFieldVisibility_BUILDS_LIST_PERMISSION)...)
 
 // GetLimitedBuildMask is an extra mask to hide fields from callers who have the BuildsGetLimited
 // permission but not BuildsGet.
 // These callers should only be able to see fields specified in this mask.
-var GetLimitedBuildMask = HardcodedBuildMask(getLimitedFieldMask.Paths...)
+var GetLimitedBuildMask = HardcodedBuildMask(BuildFieldsWithVisibility(pb.BuildFieldVisibility_BUILDS_GET_LIMITED_PERMISSION)...)
 
 // BuildMask knows how to filter pb.Build proto messages.
 type BuildMask struct {
@@ -251,6 +214,46 @@ func newLegacyBuildMask(legacyPrefix string, fields *fieldmaskpb.FieldMask) (*Bu
 // constants or in tests.
 func HardcodedBuildMask(fields ...string) *BuildMask {
 	return &BuildMask{m: mask.MustFromReadMask(&buildPrototype, fields...)}
+}
+
+// BuildFieldsWithVisibility returns a list of Build fields that are visible
+// with the specified level of read permission. For example, the following:
+//   BuildFieldsWithVisibility(pb.BuildFieldVisibility_BUILDS_GET_LIMITED_PERMISSION)
+// will return a list of Build fields (including nested fields) that have been
+// annotated with either of the following field options:
+//   [(visible_with) = BUILDS_GET_LIMITED_PERMISSION]
+//   [(visible_with) = BUILDS_LIST_PERMISSION]
+// Note that visibility permissions are strictly ordered: if a user has the
+// GetLimited permission, that implies they also have the List permission.
+func BuildFieldsWithVisibility(visibility pb.BuildFieldVisibility) []string {
+	paths := make([]string, 0, 16)
+	findFieldPathsWithVisibility(buildPrototype.ProtoReflect().Descriptor(), []string{}, visibility, &paths)
+	return paths
+}
+
+func findFieldPathsWithVisibility(md protoreflect.MessageDescriptor, path []string, visibility pb.BuildFieldVisibility, outPaths *[]string) {
+	fields := md.Fields()
+	for i := 0; i < fields.Len(); i++ {
+		fd := fields.Get(i)
+		name := string(fd.Name())
+		opts := fd.Options().(*descriptorpb.FieldOptions)
+		fieldVisibility := proto.GetExtension(opts, pb.E_VisibleWith).(pb.BuildFieldVisibility)
+		if fieldVisibility.Number() >= visibility.Number() {
+			*outPaths = append(*outPaths, strings.Join(append(path, name), "."))
+		}
+		// Simplifying hack: since we currently only need recursion to depth 1,
+		// don't recurse into child messages if there is any path prefix.
+		// This allows us to avoid implementing cycle detection.
+		// If, in future, we want to give extended access to fields nested more
+		// than 1 message deep, this hack will need to be extended.
+		// Since field visibility fails closed, this isn't a security risk.
+		if len(path) > 0 {
+			continue
+		}
+		if fd.Kind() == protoreflect.MessageKind {
+			findFieldPathsWithVisibility(fd.Message(), append(path, name), visibility, outPaths)
+		}
+	}
 }
 
 // Includes returns true if the given field path is included in the mask

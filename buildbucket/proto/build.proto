@@ -22,6 +22,7 @@ import "google/api/field_behavior.proto";
 import "google/protobuf/duration.proto";
 import "google/protobuf/timestamp.proto";
 import "google/protobuf/struct.proto";
+import "go.chromium.org/luci/buildbucket/proto/build_field_visibility.proto";
 import "go.chromium.org/luci/buildbucket/proto/builder_common.proto";
 import "go.chromium.org/luci/buildbucket/proto/common.proto";
 import "go.chromium.org/luci/buildbucket/proto/field_option.proto";
@@ -65,7 +66,7 @@ message Build {
     //
     // V1 equivalent: supersedes "revision" property and "buildset"
     // tag that starts with "commit/gitiles/".
-    GitilesCommit gitiles_commit = 2;
+    GitilesCommit gitiles_commit = 2 [ (visible_with) = BUILDS_GET_LIMITED_PERMISSION ];
 
     // Gerrit patchsets to run against.
     // Usually present in tryjobs, set by CQ, Gerrit, git-cl-try.
@@ -73,7 +74,7 @@ message Build {
     //
     // V1 equivalent: supersedes patch_* properties and "buildset"
     // tag that starts with "patch/gerrit/".
-    repeated GerritChange gerrit_changes = 3;
+    repeated GerritChange gerrit_changes = 3 [ (visible_with) = BUILDS_GET_LIMITED_PERMISSION ];
 
     // DEPRECATED
     //
@@ -129,13 +130,15 @@ message Build {
 
   // Identifier of the build, unique per LUCI deployment.
   // IDs are monotonically decreasing.
-  int64 id = 1 [ (google.api.field_behavior) = OUTPUT_ONLY ];
+  int64 id = 1 [ (google.api.field_behavior) = OUTPUT_ONLY,
+                 (visible_with) = BUILDS_LIST_PERMISSION ];
 
   // Required. The builder this build belongs to.
   //
   // Tuple (builder.project, builder.bucket) defines build ACL
   // which may change after build has ended.
-  BuilderID builder = 2 [ (buildbucket.v2.create_build_field_option).field_behavior = REQUIRED ];
+  BuilderID builder = 2 [ (buildbucket.v2.create_build_field_option).field_behavior = REQUIRED,
+                          (visible_with) = BUILDS_GET_LIMITED_PERMISSION ];
 
   // Human-readable identifier of the build with the following properties:
   // - unique within the builder
@@ -153,7 +156,8 @@ message Build {
   // necessarily reflect source-code order. For example, force builds
   // or rebuilds can allocate new, higher, numbers, but build an older-
   // than-HEAD version of the source.
-  int32 number = 3 [ (google.api.field_behavior) = OUTPUT_ONLY ];
+  int32 number = 3 [ (google.api.field_behavior) = OUTPUT_ONLY,
+                     (visible_with) = BUILDS_GET_LIMITED_PERMISSION ];
 
   // Verified LUCI identity that created this build.
   string created_by = 4 [ (google.api.field_behavior) = OUTPUT_ONLY ];
@@ -163,22 +167,26 @@ message Build {
 
   // When the build was created.
   google.protobuf.Timestamp create_time = 6
-      [ (google.api.field_behavior) = OUTPUT_ONLY ];
+      [ (google.api.field_behavior) = OUTPUT_ONLY,
+        (visible_with) = BUILDS_GET_LIMITED_PERMISSION ];
   // When the build started.
   // Required iff status is STARTED, SUCCESS or FAILURE.
   google.protobuf.Timestamp start_time = 7
-      [ (google.api.field_behavior) = OUTPUT_ONLY ];
+      [ (google.api.field_behavior) = OUTPUT_ONLY,
+        (visible_with) = BUILDS_GET_LIMITED_PERMISSION ];
   // When the build ended.
   // Present iff status is terminal.
   // MUST NOT be before start_time.
   google.protobuf.Timestamp end_time = 8
-      [ (google.api.field_behavior) = OUTPUT_ONLY ];
+      [ (google.api.field_behavior) = OUTPUT_ONLY,
+        (visible_with) = BUILDS_GET_LIMITED_PERMISSION ];
   // When the build was most recently updated.
   //
   // RPC: can be > end_time if, e.g. new tags were attached to a completed
   // build.
   google.protobuf.Timestamp update_time = 9
-      [ (google.api.field_behavior) = OUTPUT_ONLY ];
+      [ (google.api.field_behavior) = OUTPUT_ONLY,
+        (visible_with) = BUILDS_GET_LIMITED_PERMISSION ];
   // When the cancel process of the build started.
   // Note it's not the time that the cancellation completed, which would be
   // tracked by end_time.
@@ -209,7 +217,8 @@ message Build {
   // task to terminate the build via the backend API (e.g. Swarming cancelation)
   // if bbagent cannot successfully terminate the exe in time.
   google.protobuf.Timestamp cancel_time = 32
-      [ (google.api.field_behavior) = OUTPUT_ONLY ];
+      [ (google.api.field_behavior) = OUTPUT_ONLY,
+        (visible_with) = BUILDS_GET_LIMITED_PERMISSION ];
 
   // Status of the build.
   // Must be specified, i.e. not STATUS_UNSPECIFIED.
@@ -217,7 +226,8 @@ message Build {
   // RPC: Responses have most current status.
   //
   // BigQuery: Final status of the build. Cannot be SCHEDULED or STARTED.
-  Status status = 12 [ (buildbucket.v2.create_build_field_option).field_behavior = OUTPUT_ONLY ];
+  Status status = 12 [ (buildbucket.v2.create_build_field_option).field_behavior = OUTPUT_ONLY,
+                       (visible_with) = BUILDS_LIST_PERMISSION ];
 
   // Human-readable summary of the build in Markdown format
   // (https://spec.commonmark.org/0.28/).
@@ -231,11 +241,13 @@ message Build {
   // the input gitiles_commit or gerrit_changes.
   // For example, if a pre-submit build has failed, CQ MAY still land the CL.
   // For example, if a post-submit build has failed, CLs MAY continue landing.
-  Trinary critical = 21;
+  Trinary critical = 21 [ (visible_with) = BUILDS_GET_LIMITED_PERMISSION ];
 
   // Machine-readable details of the current status.
   // Human-readable status reason is available in summary_markdown.
-  StatusDetails status_details = 22 [ (buildbucket.v2.create_build_field_option).field_behavior = OUTPUT_ONLY ];
+  StatusDetails status_details = 22
+      [ (buildbucket.v2.create_build_field_option).field_behavior = OUTPUT_ONLY,
+        (visible_with) = BUILDS_LIST_PERMISSION ];
 
   // Input to the build executable.
   Input input = 15 [ (buildbucket.v2.create_build_field_option).field_behavior = REQUIRED ];
@@ -317,14 +329,16 @@ message Build {
   // cancel it some time after the parent build reaches a terminal status.
   //
   // A build that can outlive its parent can also outlive its parent's ancestors.
-  bool can_outlive_parent = 30;
+  bool can_outlive_parent = 30 [ (visible_with) = BUILDS_LIST_PERMISSION ];
 
   // Ids of the build’s ancestors. This includes all parents/grandparents/etc.
   // This is ordered from top-to-bottom so `ancestor_ids[0]` is the root of
   // the builds tree, and `ancestor_ids[-1]` is this build's immediate parent.
   // This does not include any "siblings" at higher levels of the tree, just
   // the direct chain of ancestors from root to this build.
-  repeated int64 ancestor_ids = 31 [ (google.api.field_behavior) = OUTPUT_ONLY ];
+  repeated int64 ancestor_ids = 31 [
+    (google.api.field_behavior) = OUTPUT_ONLY,
+    (visible_with) = BUILDS_LIST_PERMISSION ];
 }
 
 message InputDataRef {
@@ -803,7 +817,7 @@ message BuildInfra {
   Swarming swarming = 2 [ (buildbucket.v2.create_build_field_option).field_behavior = REQUIRED ];
   LogDog logdog = 3 [ (buildbucket.v2.create_build_field_option).field_behavior = REQUIRED ];
   Recipe recipe = 4;
-  ResultDB resultdb = 5;
+  ResultDB resultdb = 5 [ (visible_with) = BUILDS_GET_LIMITED_PERMISSION ];
   BBAgent bbagent = 6;
   Backend backend = 7;
 }

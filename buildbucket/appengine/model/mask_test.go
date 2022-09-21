@@ -425,6 +425,39 @@ func TestBuildMask(t *testing.T) {
 			So(b, ShouldResembleProto, &build)
 		})
 	})
+
+	Convey("sanity check mask for list-only permission", t, func() {
+		expectedFields := []string{
+			"id",
+			"status",
+			"status_details",
+			"can_outlive_parent",
+			"ancestor_ids",
+		}
+		So(BuildFieldsWithVisibility(pb.BuildFieldVisibility_BUILDS_LIST_PERMISSION), ShouldResemble, expectedFields)
+	})
+
+	Convey("sanity check mask for get-limited permission", t, func() {
+		expectedFields := []string{
+			"id",
+			"builder",
+			"number",
+			"create_time",
+			"start_time",
+			"end_time",
+			"update_time",
+			"cancel_time",
+			"status",
+			"critical",
+			"status_details",
+			"input.gitiles_commit",
+			"input.gerrit_changes",
+			"infra.resultdb",
+			"can_outlive_parent",
+			"ancestor_ids",
+		}
+		So(BuildFieldsWithVisibility(pb.BuildFieldVisibility_BUILDS_GET_LIMITED_PERMISSION), ShouldResemble, expectedFields)
+	})
 }
 
 func asStructPb(v interface{}) *structpb.Struct {
