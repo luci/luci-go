@@ -23,6 +23,7 @@ import (
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/proto/protowalk"
+	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/grpc/appstatus"
 
 	"go.chromium.org/luci/buildbucket/appengine/model"
@@ -71,7 +72,7 @@ func validateBuildTask(ctx context.Context, req *pb.UpdateBuildTaskRequest, buil
 	// create a new build mask to read infra
 	mask, _ := model.NewBuildMask("", nil, &pb.BuildMask{
 		Fields: &fieldmaskpb.FieldMask{
-			Paths: []string{"infra"},
+			Paths: []string{"id", "infra"},
 		},
 	})
 	bld, err := build.ToProto(ctx, mask, nil)
@@ -94,6 +95,28 @@ func validateBuildTask(ctx context.Context, req *pb.UpdateBuildTaskRequest, buil
 	return bld, nil
 }
 
+func updateTaskEntity(ctx context.Context, req *pb.UpdateBuildTaskRequest, build *pb.Build) error {
+	txErr := datastore.RunInTransaction(ctx, func(ctx context.Context) error {
+		b, err := getBuild(ctx, build.Id)
+		if err != nil {
+			if _, isAppStatusErr := appstatus.Get(err); isAppStatusErr {
+				return err
+			}
+			return appstatus.Errorf(codes.Internal, "failed to get build %d: %s", build.Id, err)
+		}
+		bk := datastore.KeyForObj(ctx, b)
+		infra := &model.BuildInfra{
+			Build: bk,
+			Proto: build.Infra,
+		}
+		toSave := []interface{}{infra}
+		return datastore.Put(ctx, toSave)
+	}, nil)
+
+	return txErr
+	// TODO [randymaldonado@] send pubsub notifications and update metrics.
+}
+
 func (*Builds) UpdateBuildTask(ctx context.Context, req *pb.UpdateBuildTaskRequest) (*pb.Task, error) {
 	if err := validateUpdateBuildTaskRequest(ctx, req); err != nil {
 		return nil, appstatus.Errorf(codes.InvalidArgument, "%s", err)
@@ -111,6 +134,15 @@ func (*Builds) UpdateBuildTask(ctx context.Context, req *pb.UpdateBuildTaskReque
 	build, err := validateBuildTask(ctx, req, bld)
 	if err != nil {
 		return nil, errors.Annotate(err, "invalid task").Err()
+	}
+
+	err = updateTaskEntity(ctx, req, build)
+	if err != nil {
+		if _, isAppStatusErr := appstatus.Get(err); isAppStatusErr {
+			return nil, err
+		} else {
+			return nil, appstatus.Errorf(codes.Internal, "failed to update the build entity: %s", err)
+		}
 	}
 
 	return build.Infra.Backend.Task, nil

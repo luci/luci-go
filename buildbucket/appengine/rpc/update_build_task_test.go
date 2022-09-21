@@ -437,3 +437,72 @@ func TestUpdateBuildTask(t *testing.T) {
 		})
 	})
 }
+
+func TestUpdateTaskEntity(t *testing.T) {
+	t.Parallel()
+	Convey("UpdateTaskEntity", t, func() {
+		ctx := memory.Use(context.Background())
+		tk, _ := buildtoken.GenerateToken(1, pb.TokenBody_TASK)
+		t0 := testclock.TestRecentTimeUTC
+
+		taskProto := &pb.Task{
+			Status: pb.Status_STARTED,
+			Id: &pb.TaskID{
+				Id:     "1",
+				Target: "swarming",
+			},
+		}
+		req := &pb.UpdateBuildTaskRequest{
+			BuildId: "1",
+			Task:    taskProto,
+		}
+		infraProto := &pb.BuildInfra{
+			Backend: &pb.BuildInfra_Backend{
+				Task: taskProto,
+			},
+		}
+		buildProto := &pb.Build{
+			Id: 1,
+			Builder: &pb.BuilderID{
+				Project: "project",
+				Bucket:  "bucket",
+				Builder: "builder",
+			},
+			Infra: infraProto,
+		}
+		buildModel := &model.Build{
+			ID:          1,
+			Proto:       buildProto,
+			CreateTime:  t0,
+			UpdateToken: tk,
+		}
+
+		Convey("normal task save", func() {
+			So(datastore.Put(ctx, buildModel), ShouldBeNil)
+			err := updateTaskEntity(ctx, req, buildProto)
+			So(err, ShouldBeNil)
+			bk := datastore.KeyForObj(ctx, &model.Build{ID: 1})
+			resultInfraModel := &model.BuildInfra{
+				Build: bk,
+			}
+			result := datastore.Get(ctx, resultInfraModel)
+			So(result, ShouldBeNil)
+			So(resultInfraModel.Proto, ShouldResembleProto, &pb.BuildInfra{
+				Backend: &pb.BuildInfra_Backend{
+					Task: &pb.Task{
+						Status: pb.Status_STARTED,
+						Id: &pb.TaskID{
+							Id:     "1",
+							Target: "swarming",
+						},
+					},
+				},
+			})
+		})
+		Convey("empty build proto", func() {
+			emptyBuildProto := &pb.Build{}
+			err := updateTaskEntity(ctx, req, emptyBuildProto)
+			So(err, ShouldBeError)
+		})
+	})
+}
