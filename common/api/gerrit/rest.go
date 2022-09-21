@@ -32,6 +32,7 @@ import (
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/emptypb"
 
+	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	gerritpb "go.chromium.org/luci/common/proto/gerrit"
@@ -539,10 +540,11 @@ func (c *client) callRaw(
 	case err == context.DeadlineExceeded:
 		return -1, []byte{}, status.Errorf(codes.DeadlineExceeded, "deadline exceeded")
 	case err == context.Canceled:
-		// TODO(crbug/1240360): Dump the stacktrace to investigate why the error is
-		// context.Canceled while context.DeadlineExceeded is expected. Remove
-		// after the investigation is done.
-		errors.Log(ctx, errors.Annotate(err, "crbug/1240360: gerrit call failed because of canceled context").Err())
+		// TODO(crbug/1289476): Remove this HACK that tries to identify Gerrit
+		// timeout after fixing the bug in the clock package.
+		if deadline, ok := ctx.Deadline(); ok && clock.Now(ctx).After(deadline) {
+			return -1, []byte{}, status.Errorf(codes.DeadlineExceeded, "deadline exceeded")
+		}
 		return -1, []byte{}, status.Errorf(codes.Canceled, "context is cancelled")
 	case err != nil:
 		return -1, []byte{}, status.Errorf(codes.Internal, "failed to execute %s HTTP request: %s", method, err)

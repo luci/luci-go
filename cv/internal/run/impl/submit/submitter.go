@@ -289,7 +289,8 @@ const (
 		"error: %s\nHint: rebasing CL in Gerrit UI and re-submitting usually " +
 		"works"
 	gerritTimeoutMsg = "Failed to submit this CL because Gerrit took too " +
-		"long to respond."
+		"long to respond. If this error persists after retries, rebasing and " +
+		"then re-submitting your CL might help."
 	permDeniedMsg = "Failed to submit this CL due to permission denied. " +
 		"Please contact your project admin to grant the submit access to " +
 		"your LUCI project scoped account in Gerrit config."
