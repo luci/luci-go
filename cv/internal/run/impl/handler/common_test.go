@@ -209,6 +209,109 @@ func TestCancelTriggers(t *testing.T) {
 	})
 }
 
+func TestCheckRunCreate(t *testing.T) {
+	t.Parallel()
+	Convey("CheckRunCreate", t, func() {
+		ct := &cvtesting.Test{}
+		ctx, cancel := ct.SetUp()
+		defer cancel()
+		const clid = 1
+		const gHost = "x-review.example.com"
+		const gRepo = "luci-go"
+		const gChange = 123
+		const lProject = "infra"
+
+		prjcfgtest.Create(ctx, lProject, &cfgpb.Config{
+			ConfigGroups: []*cfgpb.ConfigGroup{
+				{
+					Name: "main",
+					Gerrit: []*cfgpb.ConfigGroup_Gerrit{{
+						Url: "https://" + gHost,
+						Projects: []*cfgpb.ConfigGroup_Gerrit_Project{
+							{Name: gRepo, RefRegexp: []string{"refs/heads/.+"}},
+						},
+					}},
+				},
+			},
+		})
+		cgs, err := prjcfgtest.MustExist(ctx, lProject).GetConfigGroups(ctx)
+
+		cg := cgs[0]
+
+		ci := gf.CI(gChange, gf.CQ(+2))
+		rid := common.MakeRunID("infra", ct.Clock.Now(), 1, []byte("deadbeef"))
+		rs := &state.RunState{
+			Run: run.Run{
+				ID:            rid,
+				Status:        run.Status_RUNNING,
+				ConfigGroupID: prjcfg.MakeConfigGroupID("deadbeef", "main"),
+				CreateTime:    ct.Clock.Now().Add(-2 * time.Minute),
+				StartTime:     ct.Clock.Now().Add(-1 * time.Minute),
+				CLs:           common.CLIDs{1},
+			},
+		}
+		cl := changelist.CL{
+			ID:             clid,
+			ExternalID:     changelist.MustGobID(gHost, gChange),
+			IncompleteRuns: common.RunIDs{rid},
+			EVersion:       3,
+			UpdateTime:     ct.Clock.Now().UTC(),
+			Snapshot: &changelist.Snapshot{
+				Kind: &changelist.Snapshot_Gerrit{Gerrit: &changelist.Gerrit{
+					Host: gHost,
+					Info: ci,
+				}},
+				LuciProject:        lProject,
+				ExternalUpdateTime: timestamppb.New(ct.Clock.Now()),
+			},
+		}
+		triggers := trigger.Find(&trigger.FindInput{ChangeInfo: ci, ConfigGroup: cg.Content})
+		So(triggers.GetCqVoteTrigger(), ShouldResembleProto, &run.Trigger{
+			Time:            timestamppb.New(testclock.TestRecentTimeUTC.Add(10 * time.Hour)),
+			Mode:            string(run.FullRun),
+			Email:           "user-1@example.com",
+			GerritAccountId: 1,
+		})
+		rcl := run.RunCL{
+			ID:         clid,
+			Run:        datastore.MakeKey(ctx, common.RunKind, string(rid)),
+			ExternalID: cl.ExternalID,
+			Detail:     cl.Snapshot,
+			Trigger:    triggers.GetCqVoteTrigger(),
+		}
+		So(datastore.Put(ctx, &cl, &rcl), ShouldBeNil)
+		rcls, cls := []*run.RunCL{&rcl}, []*changelist.CL{&cl}
+		So(err, ShouldBeNil)
+
+		Convey("Returns empty metas for new patchset run", func() {
+			rs.Mode = run.NewPatchsetRun
+			ok, err := checkRunCreate(ctx, rs, cg, rcls, cls)
+			So(err, ShouldBeNil)
+			So(ok, ShouldBeFalse)
+			So(rs.OngoingLongOps.Ops, ShouldHaveLength, 1)
+			So(rs.OngoingLongOps.Ops, ShouldContainKey, "1-1")
+			reqs := rs.OngoingLongOps.Ops["1-1"].GetCancelTriggers().GetRequests()
+			So(reqs, ShouldHaveLength, 1)
+			So(reqs[0].Message, ShouldEqual, "")
+			So(reqs[0].AddToAttention, ShouldBeEmpty)
+		})
+		Convey("Populates metas for other modes", func() {
+			rs.Mode = run.DryRun
+			ok, err := checkRunCreate(ctx, rs, cg, rcls, cls)
+			So(err, ShouldBeNil)
+			So(ok, ShouldBeFalse)
+			So(rs.OngoingLongOps.Ops, ShouldHaveLength, 1)
+			So(rs.OngoingLongOps.Ops, ShouldContainKey, "1-1")
+			reqs := rs.OngoingLongOps.Ops["1-1"].GetCancelTriggers().GetRequests()
+			So(reqs, ShouldHaveLength, 1)
+			So(reqs[0].Message, ShouldEqual, "CV cannot start a Run for `user-1@example.com` because the user is neither the CL owner nor a committer.")
+			So(reqs[0].AddToAttention, ShouldResemble, []run.OngoingLongOps_Op_TriggersCancellation_Whom{
+				run.OngoingLongOps_Op_TriggersCancellation_OWNER,
+				run.OngoingLongOps_Op_TriggersCancellation_CQ_VOTERS})
+		})
+	})
+}
+
 type dependencies struct {
 	pm         *prjmanager.Notifier
 	rm         *run.Notifier

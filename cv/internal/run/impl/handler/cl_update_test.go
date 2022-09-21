@@ -79,6 +79,7 @@ func TestOnCLsUpdated(t *testing.T) {
 				Status:        run.Status_RUNNING,
 				ConfigGroupID: prjcfgtest.MustExist(ctx, lProject).ConfigGroupIDs[0],
 				CLs:           common.CLIDs{1, 2},
+				Mode:          run.DryRun,
 			},
 		}
 		updateCL := func(clID common.CLID, ci *gerritpb.ChangeInfo, ap *changelist.ApplicableConfig, acc *changelist.Access) changelist.CL {

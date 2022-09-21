@@ -43,6 +43,7 @@ func TestCheckRunCLs(t *testing.T) {
 		gerritHost = "chromium-review.googlesource.com"
 		committers = "committer-group"
 		dryRunners = "dry-runner-group"
+		npRunners  = "new-patchset-runner-group"
 	)
 
 	Convey("CheckRunCreate", t, func() {
@@ -53,8 +54,9 @@ func TestCheckRunCLs(t *testing.T) {
 			Content: &cfgpb.ConfigGroup{
 				Verifiers: &cfgpb.Verifiers{
 					GerritCqAbility: &cfgpb.Verifiers_GerritCQAbility{
-						CommitterList:    []string{committers},
-						DryRunAccessList: []string{dryRunners},
+						CommitterList:            []string{committers},
+						DryRunAccessList:         []string{dryRunners},
+						NewPatchsetRunAccessList: []string{npRunners},
 					},
 				},
 			},
@@ -72,6 +74,9 @@ func TestCheckRunCLs(t *testing.T) {
 		}
 		addDryRunner := func(email string) {
 			addMember(email, dryRunners)
+		}
+		addNPRunner := func(email string) {
+			addMember(email, npRunners)
 		}
 
 		// test helpers
@@ -411,6 +416,18 @@ func TestCheckRunCLs(t *testing.T) {
 					So(res.Failure(cl), ShouldNotContainSubstring, dep1URL)
 					So(res.Failure(cl), ShouldContainSubstring, dep2URL)
 				})
+			})
+		})
+
+		Convey("mode == NewPatchsetRun", func() {
+			tr, owner := "t@example.org", "t@example.org"
+			cl := addCL(tr, owner, run.NewPatchsetRun)
+			Convey("owner is disallowed", func() {
+				mustFailWith(cl, "CL owner is not in the allowlist.")
+			})
+			Convey("owner is allowed", func() {
+				addNPRunner(owner)
+				mustOK()
 			})
 		})
 

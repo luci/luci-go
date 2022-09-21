@@ -318,6 +318,7 @@ message Verifiers {
   Fake fake = 5;
 
 
+  // Next tag: 6.
   message GerritCQAbility {
     // Required. List of chrome-infra-auth groups, whose members are authorized
     // to trigger full CQ runs.
@@ -331,6 +332,12 @@ message Verifiers {
     //
     // Typically, such groups are named "project-<name>-tryjob-access".
     repeated string dry_run_access_list = 2;
+
+    // Optional, but required to use auto-triggered runs on new patchset upload,
+    // it defines a list of chrome-infra-auth groups whose members are
+    // authorized to trigger a new patchset runs. That is, CV will check the
+    // owner of the CL when a new patchset is uploaded against these.
+    repeated string new_patchset_run_access_list = 5;
 
     // Optional. allow_submit_with_open_deps controls how CQ full run behaves
     // when current Gerrit CL has open dependencies (not yet submitted CLs on

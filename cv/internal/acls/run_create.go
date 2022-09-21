@@ -64,6 +64,7 @@ type runCreateChecker struct {
 	allowOwnerIfSubmittable cfgpb.Verifiers_GerritCQAbility_CQAction
 	commGroups              []string // committer groups
 	dryGroups               []string // dry-runner groups
+	newPatchsetGroups       []string // new patchset run groups
 
 	owner          identity.Identity // the CL owner
 	triggerer      identity.Identity // the Run triggerer
@@ -132,6 +133,8 @@ func (ck runCreateChecker) canCreateRun(ctx context.Context) (evalResult, error)
 		return ck.canCreateFullRun(ctx)
 	case run.DryRun, run.QuickDryRun:
 		return ck.canCreateDryRun(ctx)
+	case run.NewPatchsetRun:
+		return ck.canCreateNewPatchsetRun(ctx)
 	default:
 		panic(fmt.Errorf("unknown mode %q", ck.runMode))
 	}
@@ -173,6 +176,17 @@ func (ck runCreateChecker) canCreateFullRun(ctx context.Context) (evalResult, er
 		return noWithReason(noLGTMReason(ctx, ck.cl)), nil
 	}
 	return yes, nil
+}
+
+func (ck runCreateChecker) canCreateNewPatchsetRun(ctx context.Context) (evalResult, error) {
+	switch isNPRunner, err := ck.isNewPatchsetRunner(ctx, ck.owner); {
+	case err != nil:
+		return no, err
+	case isNPRunner:
+		return yes, nil
+	default:
+		return noWithReason("CL owner is not in the allowlist."), nil
+	}
 }
 
 func (ck runCreateChecker) canCreateDryRun(ctx context.Context) (evalResult, error) {
@@ -234,6 +248,13 @@ func (ck runCreateChecker) isDryRunner(ctx context.Context, id identity.Identity
 		return false, nil
 	}
 	return auth.GetState(ctx).DB().IsMember(ctx, id, ck.dryGroups)
+}
+
+func (ck runCreateChecker) isNewPatchsetRunner(ctx context.Context, id identity.Identity) (bool, error) {
+	if len(ck.newPatchsetGroups) == 0 {
+		return false, nil
+	}
+	return auth.GetState(ctx).DB().IsMember(ctx, id, ck.newPatchsetGroups)
 }
 
 func (ck runCreateChecker) isCommitter(ctx context.Context, id identity.Identity) (bool, error) {
@@ -310,6 +331,7 @@ func evaluateCLs(ctx context.Context, cg *prjcfg.ConfigGroup, trs []*run.Trigger
 			allowOwnerIfSubmittable: gVerifier.GetAllowOwnerIfSubmittable(),
 			commGroups:              gVerifier.GetCommitterList(),
 			dryGroups:               gVerifier.GetDryRunAccessList(),
+			newPatchsetGroups:       gVerifier.GetNewPatchsetRunAccessList(),
 
 			owner:          owner,
 			triggerer:      triggerer,

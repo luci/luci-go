@@ -122,7 +122,7 @@ var (
 	configGroupNameRegexp    = regexp.MustCompile("^[a-zA-Z][a-zA-Z0-9_-]{0,39}$")
 	modeNameRegexp           = regexp.MustCompile("^[a-zA-Z][a-zA-Z0-9_-]{0,39}$")
 	analyzerRun              = "ANALYZER_RUN"
-	standardModes            = stringset.NewFromSlice(analyzerRun, "DRY_RUN", "FULL_RUN")
+	standardModes            = stringset.NewFromSlice(analyzerRun, "DRY_RUN", "FULL_RUN", "NEW_PATCHSET_RUN")
 	analyzerLocationReRegexp = regexp.MustCompile(`^(https://([a-z\-]+)\-review\.googlesource\.com/([a-z0-9_\-/]+)+/\[\+\]/)?\.\+(\\\.[a-z]+)?$`)
 )
 
@@ -334,23 +334,31 @@ func validateVerifiers(ctx *validation.Context, v *cfgpb.Verifiers, supportedMod
 				ctx.Exit()
 			}
 		}
+		for i, l := range v.GerritCqAbility.NewPatchsetRunAccessList {
+			if l == "" {
+				ctx.Enter("new_patchset_run_access_list #%d", i+1)
+				ctx.Errorf("must not be empty string")
+				ctx.Exit()
+			}
+		}
 		ctx.Exit()
 	}
 	if v.Tryjob != nil && len(v.Tryjob.Builders) > 0 {
 		ctx.Enter("tryjob")
-		validateTryjobVerifier(ctx, v.Tryjob, supportedModes)
+		validateTryjobVerifier(ctx, v, supportedModes)
 		ctx.Exit()
 	}
 }
 
-func validateTryjobVerifier(ctx *validation.Context, v *cfgpb.Verifiers_Tryjob, supportedModes stringset.Set) {
-	if v.RetryConfig != nil {
+func validateTryjobVerifier(ctx *validation.Context, v *cfgpb.Verifiers, supportedModes stringset.Set) {
+	vt := v.Tryjob
+	if vt.RetryConfig != nil {
 		ctx.Enter("retry_config")
-		validateTryjobRetry(ctx, v.RetryConfig)
+		validateTryjobRetry(ctx, vt.RetryConfig)
 		ctx.Exit()
 	}
 
-	switch v.CancelStaleTryjobs {
+	switch vt.CancelStaleTryjobs {
 	case cfgpb.Toggle_YES:
 		ctx.Errorf("`cancel_stale_tryjobs: YES` matches default CQ behavior now; please remove")
 	case cfgpb.Toggle_NO:
@@ -362,7 +370,7 @@ func validateTryjobVerifier(ctx *validation.Context, v *cfgpb.Verifiers_Tryjob, 
 	// Validation of builders is done in two passes: local and global.
 
 	visitBuilders := func(cb func(b *cfgpb.Verifiers_Tryjob_Builder)) {
-		for i, b := range v.Builders {
+		for i, b := range vt.Builders {
 			enter(ctx, "builders", i, b.Name)
 			cb(b)
 			ctx.Exit()
@@ -375,10 +383,10 @@ func validateTryjobVerifier(ctx *validation.Context, v *cfgpb.Verifiers_Tryjob, 
 	equi := stringset.Set{} // equivalent_to builder names.
 	// Subset of builders that can be triggered directly
 	// and which can be relied upon to trigger other builders.
-	canStartTriggeringTree := make([]string, 0, len(v.Builders))
+	canStartTriggeringTree := make([]string, 0, len(vt.Builders))
 	triggersMap := map[string][]string{} // who triggers whom.
 	// Find config by name.
-	cfgByName := make(map[string]*cfgpb.Verifiers_Tryjob_Builder, len(v.Builders))
+	cfgByName := make(map[string]*cfgpb.Verifiers_Tryjob_Builder, len(vt.Builders))
 
 	visitBuilders(func(b *cfgpb.Verifiers_Tryjob_Builder) {
 		validateBuilderName(ctx, b.Name, names)
@@ -432,6 +440,10 @@ func validateTryjobVerifier(ctx *validation.Context, v *cfgpb.Verifiers_Tryjob, 
 				case !supportedModes.Has(m):
 					ctx.Enter("mode_allowlist #%d", i+1)
 					ctx.Errorf("must be one of %s", supportedModes.ToSortedSlice())
+					ctx.Exit()
+				case m == "NEW_PATCHSET_RUN" && len(v.GetGerritCqAbility().GetNewPatchsetRunAccessList()) == 0:
+					ctx.Enter("mode_allowlist #%d", i+1)
+					ctx.Errorf("mode NEW_PATCHSET_RUN cannot be used unless a new_patchset_run_access_list is set")
 					ctx.Exit()
 				case m == analyzerRun:
 					isAnalyzer = true

@@ -100,6 +100,7 @@ func TestPoke(t *testing.T) {
 				CLs:                 common.CLIDs{gChange},
 				ConfigGroupID:       prjcfgtest.MustExist(ctx, lProject).ConfigGroupIDs[0],
 				UseCVTryjobExecutor: true,
+				Mode:                run.DryRun,
 			},
 		}
 

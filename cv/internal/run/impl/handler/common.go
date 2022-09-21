@@ -333,11 +333,19 @@ func checkRunCreate(ctx context.Context, rs *state.RunState, cg *prjcfg.ConfigGr
 		rs.LogInfof(ctx, "Run failed", b.String())
 		metas := make(map[common.CLID]reviewInputMeta, len(cls))
 		for _, cl := range cls {
-			metas[cl.ID] = reviewInputMeta{
-				message:        aclResult.Failure(cl),
-				notify:         gerrit.Whoms{gerrit.Owner, gerrit.CQVoters},
-				addToAttention: gerrit.Whoms{gerrit.Owner, gerrit.CQVoters},
-				reason:         "CQ/CV Run failed",
+			switch rs.Mode {
+			case run.NewPatchsetRun:
+				// silently
+				metas[cl.ID] = reviewInputMeta{}
+			case run.DryRun, run.QuickDryRun, run.FullRun:
+				metas[cl.ID] = reviewInputMeta{
+					message:        aclResult.Failure(cl),
+					notify:         gerrit.Whoms{gerrit.Owner, gerrit.CQVoters},
+					addToAttention: gerrit.Whoms{gerrit.Owner, gerrit.CQVoters},
+					reason:         "CQ/CV Run failed",
+				}
+			default:
+				panic(errors.Reason("unknown run mode %s", rs.Mode).Err())
 			}
 		}
 		scheduleTriggersCancellation(ctx, rs, metas, run.Status_FAILED)

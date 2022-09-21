@@ -20,6 +20,7 @@ import (
 	"testing"
 
 	"google.golang.org/protobuf/encoding/prototext"
+	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/durationpb"
 
 	"go.chromium.org/luci/config/validation"
@@ -661,13 +662,28 @@ func TestTryjobValidation(t *testing.T) {
 	ctx := context.Background()
 
 	Convey("Validate Tryjob Verifier Config", t, func() {
-		validate := func(textPB string) error {
+		validate := func(textPB string, parentPB ...string) error {
 			vctx := &validation.Context{Context: ctx}
-			cfg := cfgpb.Verifiers_Tryjob{}
-			if err := prototext.Unmarshal([]byte(textPB), &cfg); err != nil {
-				panic(err)
+			v := cfgpb.Verifiers{}
+			switch len(parentPB) {
+			case 0:
+			case 1:
+				if err := prototext.Unmarshal([]byte(parentPB[0]), &v); err != nil {
+					panic(err)
+				}
+			default:
+				panic("expected at most one parentPB")
 			}
-			validateTryjobVerifier(vctx, &cfg, standardModes)
+			cfg := cfgpb.Verifiers_Tryjob{}
+			switch err := prototext.Unmarshal([]byte(textPB), &cfg); {
+			case err != nil:
+				panic(err)
+			case v.Tryjob == nil:
+				v.Tryjob = &cfg
+			default:
+				proto.Merge(v.Tryjob, &cfg)
+			}
+			validateTryjobVerifier(vctx, &v, standardModes)
 			return vctx.Finalize()
 		}
 
@@ -825,6 +841,13 @@ func TestTryjobValidation(t *testing.T) {
 					mode_allowlist: "FULL_RUN"
 				}`), ShouldErrLike,
 				"must be one of")
+
+			So(validate(`
+				builders {
+					name: "a/b/c"
+					mode_allowlist: "NEW_PATCHSET_RUN"
+				}`), ShouldErrLike,
+				"cannot be used unless a new_patchset_run_access_list is set")
 
 			Convey("contains ANALYZER_RUN", func() {
 				So(validate(`
