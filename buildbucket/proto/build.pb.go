@@ -254,7 +254,7 @@ type Build struct {
 	// interrupt handlers. There is a bug on file (crbug.com/1311821)
 	// which we plan to implement at some point as a mitigation for this.
 	//
-	//Additionally, the Buildbucket service itself will launch an asynchronous
+	// Additionally, the Buildbucket service itself will launch an asynchronous
 	// task to terminate the build via the backend API (e.g. Swarming cancellation)
 	// if bbagent cannot successfully terminate the exe in time.
 	CancelTime *timestamppb.Timestamp `protobuf:"bytes,32,opt,name=cancel_time,json=cancelTime,proto3" json:"cancel_time,omitempty"`

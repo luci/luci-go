@@ -291,6 +291,21 @@ func validateStep(step *pb.Step, parent *pb.Step, buildStatus pb.Status) error {
 		}
 	}
 
+	for i, tag := range step.Tags {
+		switch {
+		case tag.Key == "":
+			return errors.Reason("tags[%d].key: required", i).Err()
+		case strings.HasPrefix(tag.Key, "luci."):
+			return errors.Reason("tags[%d].key: reserved prefix 'luci.'", i).Err()
+		case tag.Value == "":
+			return errors.Reason("tags[%d].value: required", i).Err()
+		case len(tag.Key) > 256:
+			return errors.Reason("tags[%d].key: len > 256", i).Err()
+		case len(tag.Value) > 1024:
+			return errors.Reason("tags[%d].value: len > 1024", i).Err()
+		}
+	}
+
 	// NOTE: We used to validate consistency of timestamps and status between
 	// parent and child. However with client-side protocols such as luciexe, the
 	// parent and child steps may actually belong to separate processes on the

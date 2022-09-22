@@ -427,6 +427,42 @@ func TestValidateStep(t *testing.T) {
 				So(validateStep(step, nil, bStatus), ShouldErrLike, `logs[1].name: duplicate: "name"`)
 			})
 		})
+
+		Convey("with tags", func() {
+			step.Status = pb.Status_STARTED
+			step.StartTime = t
+
+			Convey("missing key", func() {
+				step.Tags = []*pb.StringPair{{Value: "hi"}}
+				So(validateStep(step, nil, bStatus), ShouldErrLike, "tags[0].key: required")
+			})
+
+			Convey("reserved key", func() {
+				step.Tags = []*pb.StringPair{{Key: "luci.something", Value: "hi"}}
+				So(validateStep(step, nil, bStatus), ShouldErrLike, "tags[0].key: reserved prefix")
+			})
+
+			Convey("missing value", func() {
+				step.Tags = []*pb.StringPair{{Key: "my-service.tag"}}
+				So(validateStep(step, nil, bStatus), ShouldErrLike, "tags[0].value: required")
+			})
+
+			Convey("long key", func() {
+				step.Tags = []*pb.StringPair{{
+					// len=297
+					Key: ("my-service.my-service.my-service.my-service.my-service.my-service.my-service.my-service.my-service." +
+						"my-service.my-service.my-service.my-service.my-service.my-service.my-service.my-service.my-service." +
+						"my-service.my-service.my-service.my-service.my-service.my-service.my-service.my-service.my-service."),
+					Value: "yo",
+				}}
+				So(validateStep(step, nil, bStatus), ShouldErrLike, "tags[0].key: len > 256")
+			})
+
+			Convey("long value", func() {
+				step.Tags = []*pb.StringPair{{Key: "my-service.tag", Value: strings.Repeat("derp", 500)}}
+				So(validateStep(step, nil, bStatus), ShouldErrLike, "tags[0].value: len > 1024")
+			})
+		})
 	})
 }
 

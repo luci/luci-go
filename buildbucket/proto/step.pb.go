@@ -89,8 +89,28 @@ type Step struct {
 	// BigQuery: excluded from rows.
 	SummaryMarkdown string `protobuf:"bytes,7,opt,name=summary_markdown,json=summaryMarkdown,proto3" json:"summary_markdown,omitempty"`
 	// Arbitrary annotations for the step.
+	//
 	// One key may have multiple values, which is why this is not a map<string,string>.
-	// Indexed by the server, see also BuildPredicate.tags.
+	//
+	// These are NOT interpreted by Buildbucket.
+	//
+	// Tag keys SHOULD indicate the domain/system that interprets them, e.g.:
+	//
+	//   my_service.category = COMPILE
+	//
+	// Rather than
+	//
+	//   is_compile = true
+	//
+	// This will help contextualize the tag values when looking at a build (who
+	// set this tag? who will interpret this tag?))
+	//
+	// The 'luci.' key prefix is reserved for LUCI's own usage.
+	//
+	// The Key may not exceed 256 bytes.
+	// The Value may not exceed 1024 bytes.
+	//
+	// Key and Value may not be empty.
 	Tags []*StringPair `protobuf:"bytes,8,rep,name=tags,proto3" json:"tags,omitempty"`
 }
 
