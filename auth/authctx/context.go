@@ -543,12 +543,13 @@ func (ac *Context) writeDockerConfig() error {
 	defer f.Close()
 	config := map[string]map[string]string{
 		"credHelpers": {
-			"us.gcr.io":          "luci",
-			"staging-k8s.gcr.io": "luci",
-			"asia.gcr.io":        "luci",
-			"gcr.io":             "luci",
-			"marketplace.gcr.io": "luci",
-			"eu.gcr.io":          "luci",
+			"us.gcr.io":                  "luci",
+			"staging-k8s.gcr.io":         "luci",
+			"asia.gcr.io":                "luci",
+			"gcr.io":                     "luci",
+			"marketplace.gcr.io":         "luci",
+			"eu.gcr.io":                  "luci",
+			"us-central1-docker.pkg.dev": "luci",
 		},
 	}
 	if err := json.NewEncoder(f).Encode(&config); err != nil {
