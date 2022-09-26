@@ -189,7 +189,7 @@ func TestHandleTask(t *testing.T) {
 				So(tj.Status, ShouldEqual, tryjob.Status_ENDED)
 				So(tj.Result.Status, ShouldEqual, tryjob.Result_SUCCEEDED)
 				tryjob.RunWithBuilderMetricsTarget(ctx, ct.Env, tryjobDef, func(ctx context.Context) {
-					So(ct.TSMonSentValue(ctx, metrics.Public.TryjobEnded, "test", "test_config_group", true, false, string(apiv0pb.Tryjob_Result_SUCCEEDED)), ShouldEqual, 1)
+					So(ct.TSMonSentValue(ctx, metrics.Public.TryjobEnded, "test", "test_config_group", true, false, apiv0pb.Tryjob_Result_SUCCEEDED.String()), ShouldEqual, 1)
 				})
 			})
 

@@ -109,9 +109,9 @@ func TestEndRun(t *testing.T) {
 		pmtest.AssertReceivedRunFinished(ctx, rid)
 		pmtest.AssertReceivedCLsNotified(ctx, rid.LUCIProject(), []*changelist.CL{&cl})
 		So(deps.clUpdater.refreshedCLs, ShouldResemble, common.MakeCLIDs(clid))
-		So(ct.TSMonSentValue(ctx, metrics.Public.RunEnded, "infra", "main", string(run.DryRun), string(apiv0pb.Run_FAILED), true), ShouldEqual, 1)
-		So(ct.TSMonSentDistr(ctx, metrics.Public.RunDuration, "infra", "main", string(run.DryRun), string(apiv0pb.Run_FAILED)).Sum(), ShouldAlmostEqual, (1 * time.Minute).Seconds())
-		So(ct.TSMonSentDistr(ctx, metrics.Public.RunTotalDuration, "infra", "main", string(run.DryRun), string(apiv0pb.Run_FAILED), true).Sum(), ShouldAlmostEqual, (2 * time.Minute).Seconds())
+		So(ct.TSMonSentValue(ctx, metrics.Public.RunEnded, "infra", "main", string(run.DryRun), apiv0pb.Run_FAILED.String(), true), ShouldEqual, 1)
+		So(ct.TSMonSentDistr(ctx, metrics.Public.RunDuration, "infra", "main", string(run.DryRun), apiv0pb.Run_FAILED.String()).Sum(), ShouldAlmostEqual, (1 * time.Minute).Seconds())
+		So(ct.TSMonSentDistr(ctx, metrics.Public.RunTotalDuration, "infra", "main", string(run.DryRun), apiv0pb.Run_FAILED.String(), true).Sum(), ShouldAlmostEqual, (2 * time.Minute).Seconds())
 
 		Convey("Publish RunEnded event", func() {
 			var task *pubsub.PublishRunEndedTask

@@ -96,7 +96,7 @@ func (impl *Impl) endRun(ctx context.Context, rs *state.RunState, st run.Status)
 					rs.ID.LUCIProject(),
 					rs.ConfigGroupID.Name(),
 					string(rs.Mode),
-					string(versioning.RunStatusV0(rs.Status)), // translate to public status
+					versioning.RunStatusV0(rs.Status).String(), // translate to public status
 				}
 				successfullyStarted := !rs.StartTime.IsZero()
 				startAwareFields := append(commonFields, successfullyStarted)

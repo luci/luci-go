@@ -176,7 +176,8 @@ func (u *Updater) handleTask(ctx context.Context, task *tryjob.UpdateTryjobTask)
 						configGroup,
 						tj.Definition.GetCritical(),
 						isRetry,
-						string(versioning.TryjobResultStatusV0(tj.Result.GetStatus())))
+						versioning.TryjobResultStatusV0(tj.Result.GetStatus()).String(),
+					)
 				})
 			})
 		}
