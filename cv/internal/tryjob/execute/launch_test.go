@@ -228,6 +228,62 @@ func TestLaunch(t *testing.T) {
 			So(datastore.Get(ctx, tj), ShouldBeNil)
 			So(tj.Status, ShouldEqual, tryjob.Status_UNTRIGGERED)
 		})
+		Convey("Launched Tryjob has CL in submission order", func() {
+			depCL := &run.RunCL{
+				ID: clid + 1,
+				Detail: &changelist.Snapshot{
+					Patchset:              gPatchset,
+					MinEquivalentPatchset: gMinPatchset,
+					Kind: &changelist.Snapshot_Gerrit{
+						Gerrit: &changelist.Gerrit{
+							Host: gHost,
+							Info: &gerritpb.ChangeInfo{
+								Project: gRepo,
+								Number:  gChange + 1,
+								Owner: &gerritpb.AccountInfo{
+									Email: "owner@example.com",
+								},
+							},
+						},
+					},
+				},
+				Trigger: &run.Trigger{
+					Mode:  string(run.DryRun),
+					Email: "triggerer@example.com",
+				},
+			}
+			w.cls[0].Detail.Deps = []*changelist.Dep{
+				{Clid: int64(depCL.ID), Kind: changelist.DepKind_HARD},
+			}
+			w.cls[0].Detail.GetGerrit().GitDeps = []*changelist.GerritGitDep{
+				{Change: depCL.Detail.GetGerrit().GetInfo().GetNumber(), Immediate: true},
+			}
+			w.cls = append(w.cls, depCL)
+			tj := w.makePendingTryjob(ctx, defFoo)
+			So(datastore.RunInTransaction(ctx, func(ctx context.Context) error {
+				return tryjob.SaveTryjobs(ctx, []*tryjob.Tryjob{tj}, nil)
+			}, nil), ShouldBeNil)
+			tryjobs, err := w.launchTryjobs(ctx, []*tryjob.Tryjob{tj})
+			So(err, ShouldBeNil)
+			So(tryjobs, ShouldHaveLength, 1)
+			eid := tryjobs[0].ExternalID
+			So(eid, ShouldNotBeEmpty)
+			So(eid.MustLoad(ctx), ShouldNotBeNil)
+			So(tryjobs[0].Status, ShouldEqual, tryjob.Status_TRIGGERED)
+			host, buildID, err := eid.ParseBuildbucketID()
+			So(err, ShouldBeNil)
+			So(host, ShouldEqual, bbHost)
+			bbClient, err := ct.BuildbucketFake.NewClientFactory().MakeClient(ctx, bbHost, lProject)
+			So(err, ShouldBeNil)
+			build, err := bbClient.GetBuild(ctx, &bbpb.GetBuildRequest{Id: buildID})
+			So(err, ShouldBeNil)
+			So(build.Input.GetGerritChanges(), ShouldResembleProto, []*bbpb.GerritChange{
+				// Dep CL is listed first even though in the worker it is after the
+				// dependent CL.
+				{Host: gHost, Project: gRepo, Change: depCL.Detail.GetGerrit().GetInfo().GetNumber(), Patchset: gPatchset},
+				{Host: gHost, Project: gRepo, Change: w.cls[0].Detail.GetGerrit().GetInfo().GetNumber(), Patchset: gPatchset},
+			})
+		})
 	})
 }
 

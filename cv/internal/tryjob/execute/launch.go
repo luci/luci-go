@@ -33,6 +33,8 @@ import (
 	"go.chromium.org/luci/gae/service/datastore"
 
 	"go.chromium.org/luci/cv/internal/common"
+	"go.chromium.org/luci/cv/internal/run"
+	"go.chromium.org/luci/cv/internal/run/impl/submit"
 	"go.chromium.org/luci/cv/internal/tryjob"
 )
 
@@ -61,12 +63,14 @@ func (w *worker) launchTryjobs(ctx context.Context, tryjobs []*tryjob.Tryjob) ([
 			toBeLaunched[i] = tj
 		}
 	}
-
+	clsInOrder, err := submit.ComputeOrder(w.cls)
+	if err != nil {
+		return nil, err
+	}
 	launchFailures := make(map[*tryjob.Tryjob]error)
-
 	_ = retry.Retry(clock.Tag(ctx, launchRetryClockTag), retryFactory, func() error {
 		var hasFatal bool
-		launchFailures, hasFatal = w.tryLaunchTryjobsOnce(ctx, toBeLaunched)
+		launchFailures, hasFatal = w.tryLaunchTryjobsOnce(ctx, toBeLaunched, clsInOrder)
 		switch {
 		case len(launchFailures) == 0:
 			return nil
@@ -129,9 +133,9 @@ func (w *worker) launchTryjobs(ctx context.Context, tryjobs []*tryjob.Tryjob) ([
 
 // tryLaunchTryjobsOnce attempts to launch Tryjobs once using the backend, and
 // returns failures.
-func (w *worker) tryLaunchTryjobsOnce(ctx context.Context, tryjobs []*tryjob.Tryjob) (failures map[*tryjob.Tryjob]error, hasFatal bool) {
+func (w *worker) tryLaunchTryjobsOnce(ctx context.Context, tryjobs []*tryjob.Tryjob, cls []*run.RunCL) (failures map[*tryjob.Tryjob]error, hasFatal bool) {
 	launchLogs := make([]*tryjob.ExecutionLogEntry_TryjobSnapshot, 0, len(tryjobs))
-	err := w.backend.Launch(ctx, tryjobs, w.run, w.cls)
+	err := w.backend.Launch(ctx, tryjobs, w.run, cls)
 	switch merrs, ok := err.(errors.MultiError); {
 	case err == nil:
 		for _, tj := range tryjobs {
