@@ -32,7 +32,6 @@ import (
 	"go.chromium.org/luci/resultdb/internal/testresults"
 	"go.chromium.org/luci/resultdb/internal/testutil"
 	"go.chromium.org/luci/resultdb/internal/testutil/insert"
-	"go.chromium.org/luci/resultdb/internal/uniquetestvariants"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 
@@ -168,12 +167,6 @@ func TestBatchCreateTestResults(t *testing.T) {
 				row, err := testresults.Read(span.Single(ctx), expected.Name)
 				So(err, ShouldBeNil)
 				So(row, ShouldResembleProto, expected)
-
-				// variant should be recorded
-				utvID := uniquetestvariants.UniqueTestVariantID{Realm: "", TestID: row.TestId, VariantHash: row.VariantHash}
-				utv, err := uniquetestvariants.Read(span.Single(ctx), utvID)
-				So(err, ShouldBeNil)
-				So(utv.Variant, ShouldResembleProto, expected.Variant)
 
 				var invCommonTestIDPrefix string
 				var invVars []string

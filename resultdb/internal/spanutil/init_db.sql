@@ -107,7 +107,12 @@ CREATE TABLE Invocations (
   -- The deadline, but is NULL if the invocation is not active.
   ActiveDeadline TIMESTAMP AS (IF(State = 1, Deadline, NULL)) STORED,
 
-) PRIMARY KEY (InvocationId);
+) PRIMARY KEY (InvocationId), 
+-- Add TTL of 1.5 years to Invocations table. The row deletion policy
+-- configured in the parent table will also take effect on the interleaved child
+-- tables (Artifacts, IncludedInvocations, TestExonerations, TestResults,
+-- TestResultCounts).
+  ROW DELETION POLICY (OLDER_THAN(CreateTime, INTERVAL 540 DAY));
 
 -- Used by test results history to find a history of test results ordered by
 -- invocation timestamp.
@@ -323,41 +328,3 @@ CREATE TABLE TestResultCounts (
   TestResultCount INT64,
 ) PRIMARY KEY (InvocationId, ShardId),
   INTERLEAVE IN PARENT Invocations ON DELETE CASCADE;
-
--- Stores unique test variants.
--- Each unique test variant is identified with its Realm, TestId, and
--- VariantHash.
---
--- Allows us to reterive variants associated with a test without going through
--- the TestResults table.
-CREATE TABLE UniqueTestVariants (
-  Realm STRING(64) NOT NULL,
-  TestId STRING(MAX) NOT NULL,
-  VariantHash STRING(16) NOT NULL,
-  Variant ARRAY<STRING(MAX)>,
-
-  -- When the last test result in the same Realm with the same TestId and
-  -- VariantHash was recorded.
-  -- The timestamp does not need to be very accurate. To reduce the number of
-  -- writes, the service may decide not to update the timestamp if the timestamp
-  -- was updated recently.
-  -- Records will be deleted after 60 days.
-  LastRecordTime TIMESTAMP NOT NULL OPTIONS (
-    allow_commit_timestamp = true
-  ),
-) PRIMARY KEY(Realm, TestId, VariantHash);
-
--- The following DDL query needs to be uncommented when applied to real Spanner
--- instances. But it is commented out for Cloud Spanner Emulator:
--- https://github.com/GoogleCloudPlatform/cloud-spanner-emulator/issues/32
-
--- Add TTL for 2 months to UniqueTestVariants table.
--- ALTER TABLE UniqueTestVariants
---     ADD ROW DELETION POLICY (OLDER_THAN(LastRecordTime, INTERVAL 60 DAY));
-
--- Add TTL for 1.5 years to Invocations table. The row deletion policy
--- configured in the parent table will also take effect on the interleaved child
--- tables (Artifacts, IncludedInvocations, TestExonerations, TestResults,
--- TestResultCounts).
--- ALTER TABLE Invocations
---     ADD ROW DELETION POLICY (OLDER_THAN(CreateTime, INTERVAL 540 DAY));
