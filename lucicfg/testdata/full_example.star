@@ -139,7 +139,8 @@ luci.builder(
         enable = True,
         bq_exports = [
             resultdb.export_test_results(
-                bq_table = "luci-resultdb.my-awesome-project.all_test_results",
+                bq_table = "luci-resultdb|my-awesome-project|all_test_results",
+                bq_table_separator = "|",
                 predicate = resultdb.test_result_predicate(
                     test_id_regexp = "ninja:.*",
                     unexpected_only = True,
