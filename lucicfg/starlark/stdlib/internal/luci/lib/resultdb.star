@@ -58,12 +58,19 @@ def _history_options(*, by_timestamp = False):
         use_invocation_timestamp = by_timestamp,
     )
 
-def _bq_export(bq_table = None, bq_table_separator = "."):
-    project, dataset, table = validate.string(
-        "bq_table",
-        bq_table,
-        regexp = r"^([^{0}]+)\{0}([^{0}]+)\{0}([^{0}]+)$".format(bq_table_separator),
-    ).split(bq_table_separator)
+def _bq_export(bq_table = None):
+    if type(bq_table) == "tuple":
+      if len(bq_table) != 3:
+        fail("Expected tuple of length 3, got %s" % (bq_table,))
+      project, dataset, table = bq_table
+    elif type(bq_table) == "string":
+      project, dataset, table = validate.string(
+          "bq_table",
+          bq_table,
+          regexp = r"^([^.]+)\.([^.]+)\.([^.]+)$",
+      ).split(".")
+    else:
+      fail("Unsupported bq_table type %s" % type(bq_table))
 
     return resultdb_pb.BigQueryExport(
         project = project,
@@ -74,24 +81,21 @@ def _bq_export(bq_table = None, bq_table_separator = "."):
 def _export_test_results(
         *,
         bq_table = None,
-        predicate = None,
-        bq_table_separator = "."):
+        predicate = None):
     """Defines a mapping between a test results and a BigQuery table for them.
 
     Args:
-      bq_table: string of the form `<project>.<dataset>.<table>`
-        where the parts respresent the BigQuery-enabled gcp project, dataset and
-        table to export results. If you must use a separator other than `.`,
-        use the `bq_table_separator` argument (see below).
+      bq_table: Tuple of `(project, dataset, table)`; OR a string of the form
+        `<project>.<dataset>.<table>` where the parts represent the
+        BigQuery-enabled gcp project, dataset and table to export results.
       predicate: A predicate_pb.TestResultPredicate() proto. If given, specifies
         the subset of test results to export to the above table, instead of all.
         Use resultdb.test_result_predicate(...) to generate this, if needed.
-      bq_table_separator: Separator to use in `bq_table`. Defaults to `.`.
 
     Returns:
       A populated resultdb_pb.BigQueryExport() proto.
     """
-    ret = _bq_export(bq_table, bq_table_separator)
+    ret = _bq_export(bq_table)
     ret.test_results = resultdb_pb.BigQueryExport.TestResults(
         predicate = validate.type(
             "predicate",
