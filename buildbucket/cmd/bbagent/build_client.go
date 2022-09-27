@@ -61,6 +61,7 @@ var readMask = &bbpb.BuildMask{
 	Fields: &fieldmaskpb.FieldMask{
 		Paths: []string{
 			"id",
+			"status",
 			"cancel_time",
 			"start_time",
 			"update_time",
