@@ -33,17 +33,17 @@ import (
 	"go.chromium.org/luci/cv/internal/tryjob"
 )
 
-// AcceptedAdditionalPropKeys are additional properties keys that if present
-// in the requested properties of the build, LUCI CV should still consider the
-// build as reusable.
+// AcceptedAdditionalPropKeys are additional properties keys that, if present
+// in the requested properties of the build, indicate that LUCI CV should still
+// consider the build as reusable.
 //
 // LUCI CV checks requested properties rather than input properties because
-// LUCI CV only cares about whether the properties used by a build is different
-// from the pre-defined properties in Project Config (assuming change in
-// properties may result in change in build result). Requested properties are
-// properties provided in ScheduleBuild which currently is the only way
-// to add/modify build properties. LUCI CV premits certain keys which are either
-// added by LUCI CV itself or known that they won't change build behavior.
+// LUCI CV only cares about whether the properties used by a build are
+// different from the pre-defined properties in Project Config (assuming change
+// in properties may result in change in build result). Requested properties
+// are properties provided in ScheduleBuild, which currently is the only way to
+// add/modify build properties. LUCI CV permits certain keys which are either
+// added by LUCI CV itself, or known to not change build behavior.
 var AcceptedAdditionalPropKeys = stringset.NewFromSlice(
 	"$recipe_engine/cq",
 	"$recipe_engine/cv", // future proof
@@ -89,6 +89,7 @@ func init() {
 //   * host: A, build: 100, create time: now
 //   * host: B, build: 1001, create time: now - 3min
 //   * host: A, build: 101, create time: now - 2min
+//
 // TODO(yiwzhang): ensure `cb` get called from newest to oldest builds across
 // all hosts.
 //

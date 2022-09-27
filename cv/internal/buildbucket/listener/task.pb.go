@@ -35,8 +35,8 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
-// ListenBBPubsubTask listens to Buildbucket Pubsub and schedules tasks to
-// update Tryjobs LUCI CV is interested in.
+// ListenBBPubsubTask listens to Buildbucket Pub/Sub and schedules tasks to
+// update Tryjobs that LUCI CV is interested in.
 //
 // Queue: "listen-bb-pubsub".
 type ListenBBPubsubTask struct {
@@ -44,7 +44,7 @@ type ListenBBPubsubTask struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// Duration defines how long the listener should listen to Pubsub
+	// Duration defines how long the listener should listen to Pub/Sub
 	// notifications.
 	Duration *durationpb.Duration `protobuf:"bytes,1,opt,name=duration,proto3" json:"duration,omitempty"`
 }

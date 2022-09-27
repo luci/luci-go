@@ -26,7 +26,7 @@ import (
 func ParseBuilderID(s string) (*buildbucketpb.BuilderID, error) {
 	parts := strings.Split(s, "/")
 	if len(parts) != 3 {
-		return nil, fmt.Errorf("builder id in unexpected format: %q, expected <project>/<bucket>/<builder>", s)
+		return nil, fmt.Errorf("builder ID in unexpected format: %q, expected <project>/<bucket>/<builder>", s)
 	}
 	return &buildbucketpb.BuilderID{
 		Project: parts[0],

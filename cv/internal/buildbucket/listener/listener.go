@@ -38,19 +38,19 @@ import (
 )
 
 const (
-	// NumConcurrentListeners defines the number of Buildbucket Pubsub listeners
-	// that runs concurrently.
+	// NumConcurrentListeners defines the number of Buildbucket Pub/Sub
+	// listeners that run concurrently.
 	//
 	// Increase this value if the notification processing speed can't keep up
 	// with the incoming speed.
 	NumConcurrentListeners = 5
-	// SubscriptionID is the default subscription ID for listening to Buildbucket
-	// build updates.
+	// SubscriptionID is the default subscription ID for listening to
+	// Buildbucket build updates.
 	SubscriptionID = "buildbucket-builds"
 	// ListenDuration is how long each listener will running for.
 	//
 	// This should be in sync with the interval of the cron job that kicks the
-	// listener to ensure continuous processing of Buildbucket pubsub events
+	// listener to ensure continuous processing of Buildbucket Pub/Sub events.
 	ListenDuration = 5 * time.Minute
 )
 
@@ -59,7 +59,7 @@ type tryjobNotifier interface {
 	ScheduleUpdate(context.Context, common.TryjobID, tryjob.ExternalID) error
 }
 
-// Register register tasks for listener and returns a function to kick off
+// Register registers tasks for listener and returns a function to kick off
 // `NumConcurrentListeners` listeners.
 func Register(tqd *tq.Dispatcher, projectID string, tjNotifier tryjobNotifier) func(context.Context) error {
 	_ = tqd.RegisterTaskClass(tq.TaskClass{

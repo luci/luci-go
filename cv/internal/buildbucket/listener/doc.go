@@ -12,6 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package bblistener listens to build updates notification from Buildbucket
-// Pubsub.
+// Package bblistener listens to build update notifications from Buildbucket
+// Pub/Sub.
 package bblistener

@@ -20,12 +20,12 @@ option go_package = "go.chromium.org/luci/cv/internal/buildbucket/listener;bblis
 
 import "google/protobuf/duration.proto";
 
-// ListenBBPubsubTask listens to Buildbucket Pubsub and schedules tasks to
-// update Tryjobs LUCI CV is interested in.
+// ListenBBPubsubTask listens to Buildbucket Pub/Sub and schedules tasks to
+// update Tryjobs that LUCI CV is interested in.
 //
 // Queue: "listen-bb-pubsub".
 message ListenBBPubsubTask {
-  // Duration defines how long the listener should listen to Pubsub
+  // Duration defines how long the listener should listen to Pub/Sub
   // notifications.
   google.protobuf.Duration duration = 1;
 }
