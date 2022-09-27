@@ -273,7 +273,7 @@ func (b *bqExporter) exportTextArtifactsToBigQuery(ctx context.Context, ins inse
 
 	eg.Go(func() error {
 		defer close(batchC)
-		return b.artifactRowInputToBatch(ctx, rowC, batchC)
+		return errors.Annotate(b.artifactRowInputToBatch(ctx, rowC, batchC), "artifact row input to batch").Err()
 	})
 
 	eg.Go(func() error {
