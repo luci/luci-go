@@ -12,17 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import './analysis_overview.css';
-
 import Link from '@mui/material/Link';
 import TableBody from '@mui/material/TableBody';
 import TableCell from '@mui/material/TableCell';
 import TableContainer from '@mui/material/TableContainer';
 import TableRow from '@mui/material/TableRow';
 
-import { Analysis } from '../../services/luci_bisection';
 import { PlainTable } from '../plain_table/plain_table';
 
+import { Analysis } from '../../services/luci_bisection';
 import {
   EMPTY_LINK,
   ExternalLink,
@@ -36,16 +34,20 @@ interface Props {
   analysis: Analysis;
 }
 
-function getSuspectRange(analysis: Analysis): ExternalLink {
-  if (analysis.culprit) {
-    return linkToCommit(analysis.culprit);
+function getSuspectRange(analysis: Analysis): ExternalLink[] {
+  if (analysis.culprits && analysis.culprits.length > 0) {
+    let culpritLinks: ExternalLink[] = [];
+    analysis.culprits.forEach((culprit) => {
+      culpritLinks.push(linkToCommit(culprit.commit));
+    });
+    return culpritLinks;
   }
 
   if (analysis.nthSectionResult) {
     const result = analysis.nthSectionResult;
 
     if (result.culprit) {
-      return linkToCommit(result.culprit);
+      return [linkToCommit(result.culprit)];
     }
 
     if (
@@ -53,26 +55,33 @@ function getSuspectRange(analysis: Analysis): ExternalLink {
       result.remainingNthSectionRange.lastPassed &&
       result.remainingNthSectionRange.firstFailed
     ) {
-      return linkToCommitRange(
-        result.remainingNthSectionRange.lastPassed,
-        result.remainingNthSectionRange.firstFailed
-      );
+      return [
+        linkToCommitRange(
+          result.remainingNthSectionRange.lastPassed,
+          result.remainingNthSectionRange.firstFailed
+        ),
+      ];
     }
   }
 
-  return EMPTY_LINK;
+  return [];
 }
 
 function getBugLinks(analysis: Analysis): ExternalLink[] {
   let bugLinks: ExternalLink[] = [];
 
-  if (analysis.culpritAction) {
-    analysis.culpritAction.forEach((action) => {
-      if (action.actionType === 'BUG_COMMENTED' && action.bugUrl) {
-        // TODO: construct short link text for bug
-        bugLinks.push({
-          linkText: action.bugUrl,
-          url: action.bugUrl,
+  // Get the bug links from the actions for each culprit
+  if (analysis.culprits) {
+    analysis.culprits.forEach((culprit) => {
+      if (culprit.culpritAction) {
+        culprit.culpritAction.forEach((action) => {
+          if (action.actionType === 'BUG_COMMENTED' && action.bugUrl) {
+            // TODO: construct short link text for bug
+            bugLinks.push({
+              linkText: action.bugUrl,
+              url: action.bugUrl,
+            });
+          }
         });
       }
     });
@@ -142,15 +151,19 @@ export const AnalysisOverview = ({ analysis }: Props) => {
           <TableRow>
             <TableCell variant='head'>Suspect range</TableCell>
             <TableCell>
-              <Link
-                data-testid='analysis_overview_suspect_range'
-                href={suspectRange.url}
-                target='_blank'
-                rel='noreferrer'
-                underline='always'
-              >
-                {suspectRange.linkText}
-              </Link>
+              {suspectRange.map((suspectLink) => (
+                <span className='span-link' key={suspectLink.url}>
+                  <Link
+                    data-testid='analysis_overview_suspect_range'
+                    href={suspectLink.url}
+                    target='_blank'
+                    rel='noreferrer'
+                    underline='always'
+                  >
+                    {suspectLink.linkText}
+                  </Link>
+                </span>
+              ))}
             </TableCell>
             <TableCell variant='head'>Failure type</TableCell>
             <TableCell>{analysis.buildFailureType}</TableCell>
@@ -166,8 +179,9 @@ export const AnalysisOverview = ({ analysis }: Props) => {
                 <TableCell variant='head'>Related bugs</TableCell>
                 <TableCell colSpan={3}>
                   {bugLinks.map((bugLink) => (
-                    <span className='bug-link' key={bugLink.url}>
+                    <span className='span-link' key={bugLink.url}>
                       <Link
+                        data-testid='analysis_overview_bug_link'
                         href={bugLink.url}
                         target='_blank'
                         rel='noreferrer'

@@ -20,6 +20,7 @@ import { Link, matchPath, Outlet, useLocation } from 'react-router-dom';
 import AppBar from '@mui/material/AppBar';
 import Box from '@mui/material/Box';
 import Container from '@mui/material/Container';
+import Grid from '@mui/material/Grid';
 import Tab from '@mui/material/Tab';
 import Tabs from '@mui/material/Tabs';
 import Toolbar from '@mui/material/Toolbar';
@@ -90,8 +91,12 @@ export const BaseLayout = () => {
           {/* TODO: add login/logout links */}
         </Toolbar>
       </AppBar>
-      <Container className='page-content'>
-        <Outlet />
+      <Container maxWidth={false} sx={{ marginTop: '2rem' }}>
+        <Grid container justifyContent='center'>
+          <Grid item xs={12} xl={9}>
+            <Outlet />
+          </Grid>
+        </Grid>
       </Container>
     </Box>
   );

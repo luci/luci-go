@@ -27,6 +27,7 @@ import Tabs from '@mui/material/Tabs';
 import Typography from '@mui/material/Typography';
 
 import { AnalysisOverview } from '../../components/analysis_overview/analysis_overview';
+import { CulpritsTable } from '../../components/culprits_table/culprits_table';
 import { HeuristicAnalysisTable } from '../../components/heuristic_analysis_table/heuristic_analysis_table';
 // TODO: uncomment below once revert CL and prime suspect information is added to the analysis response
 // import { RevertCLOverview } from '../../components/revert_cl_overview/revert_cl_overview';
@@ -131,11 +132,19 @@ export const AnalysisDetailsPage = () => {
       {isSuccess && (
         <>
           <div className='section'>
-            <Typography variant='h4' gutterBottom>
+            <Typography variant='h5' gutterBottom>
               Analysis Details
             </Typography>
             <AnalysisOverview analysis={analysis!} />
           </div>
+          {analysis!.culprits && analysis!.culprits.length > 0 && (
+            <div className='section'>
+              <Typography variant='h5' gutterBottom>
+                Culprit Details
+              </Typography>
+              <CulpritsTable culprits={analysis!.culprits!} />
+            </div>
+          )}
           {/* TODO: add revert CL and prime suspect information to the analysis
                     response, then display it below
           {analysis.revertCL! && (
@@ -155,7 +164,7 @@ export const AnalysisDetailsPage = () => {
             </div>
           )} */}
           <div className='section'>
-            <Typography variant='h4' gutterBottom>
+            <Typography variant='h5' gutterBottom>
               Analysis Components
             </Typography>
             <Tabs

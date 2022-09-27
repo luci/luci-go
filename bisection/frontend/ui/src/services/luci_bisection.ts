@@ -119,10 +119,9 @@ export interface Analysis {
   endTime: string;
   heuristicResult?: HeuristicAnalysisResult;
   nthSectionResult?: NthSectionAnalysisResult;
-  culprit?: GitilesCommit;
-  culpritAction?: CulpritAction[];
   builder?: BuilderID;
   buildFailureType: BuildFailureType;
+  culprits?: Culprit[];
 }
 
 export interface BuildFailure {
@@ -167,6 +166,13 @@ export interface GitilesCommit {
 export interface RegressionRange {
   lastPassed: GitilesCommit;
   firstFailed: GitilesCommit;
+}
+
+export interface Culprit {
+  commit: GitilesCommit;
+  reviewUrl: string;
+  reviewTitle?: string;
+  culpritAction?: CulpritAction[];
 }
 
 export interface CulpritAction {

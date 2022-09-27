@@ -152,7 +152,7 @@ export const ListAnalysesTable = () => {
               <TableCell>Failure type</TableCell>
               <TableCell>Duration</TableCell>
               <TableCell>Builder</TableCell>
-              {/* TODO: add column header for culprit once culprit information is available */}
+              <TableCell>Culprit CL</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
@@ -164,7 +164,7 @@ export const ListAnalysesTable = () => {
                 />
               ))
             ) : (
-              <NoDataMessageRow message='No analyses found' columns={6} />
+              <NoDataMessageRow message='No analyses found' columns={7} />
             )}
           </TableBody>
         </Table>

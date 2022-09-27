@@ -66,6 +66,11 @@ describe('Test AnalysisTableRow component', () => {
     expect(builderLink.textContent).toContain(mockAnalysis.builder!.bucket);
     expect(builderLink.textContent).toContain(mockAnalysis.builder!.builder);
     expect(builderLink.getAttribute('href')).not.toBe('');
+
+    // Check there is no link for culprits
+    expect(
+      screen.queryAllByTestId('analysis_table_row_culprit_link')
+    ).toHaveLength(0);
   });
 
   test('if missing builder information is handled', async () => {
@@ -88,9 +93,53 @@ describe('Test AnalysisTableRow component', () => {
     expect(analysisLink.textContent).toBe(mockAnalysis.firstFailedBbid);
 
     // Check there is no link to a builder
-    const builderLink = screen.queryAllByTestId(
-      'analysis_table_row_builder_link'
+    expect(
+      screen.queryAllByTestId('analysis_table_row_builder_link')
+    ).toHaveLength(0);
+  });
+
+  test('if culprit information is displayed', async () => {
+    const mockAnalysis: Analysis = createMockAnalysis('125');
+    mockAnalysis.culprits = [
+      {
+        commit: {
+          host: 'testHost',
+          project: 'testProject',
+          ref: 'test/ref/dev',
+          id: 'abc123abc123',
+          position: '307',
+        },
+        reviewTitle: 'Added new feature to improve testing',
+        reviewUrl:
+          'https://chromium-review.googlesource.com/placeholder/+/123456',
+      },
+      {
+        commit: {
+          host: 'testHost',
+          project: 'testProject',
+          ref: 'test/ref/dev',
+          id: 'ghi789ghi789',
+          position: '523',
+        },
+        reviewTitle: 'Added new feature to improve testing again',
+        reviewUrl:
+          'https://chromium-review.googlesource.com/placeholder/+/234567',
+      },
+    ];
+
+    renderWithRouter(
+      <Table>
+        <TableBody>
+          <AnalysisTableRow analysis={mockAnalysis} />
+        </TableBody>
+      </Table>
     );
-    expect(builderLink).toHaveLength(0);
+
+    await screen.findByTestId('analysis_table_row');
+
+    // Check there is a link for each culprit
+    expect(
+      screen.queryAllByTestId('analysis_table_row_culprit_link')
+    ).toHaveLength(mockAnalysis.culprits.length);
   });
 });

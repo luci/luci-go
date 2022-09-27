@@ -18,18 +18,67 @@ import Link from '@mui/material/Link';
 import TableCell from '@mui/material/TableCell';
 import TableRow from '@mui/material/TableRow';
 
-import { Analysis } from '../../../services/luci_bisection';
+import {
+  Analysis,
+  AnalysisStatus,
+  Culprit,
+} from '../../../services/luci_bisection';
+import { getCommitShortHash } from '../../../tools/commit_formatters';
 import { EMPTY_LINK, linkToBuilder } from '../../../tools/link_constructors';
 import {
   getFormattedDuration,
   getFormattedTimestamp,
 } from '../../../tools/timestamp_formatters';
 
-interface AnalysisTableRowProps {
+interface AnalysisTableProps {
   analysis: Analysis;
 }
 
-export const AnalysisTableRow = ({ analysis }: AnalysisTableRowProps) => {
+interface CulpritsTableCellProps {
+  culprits: Culprit[] | undefined;
+  status: AnalysisStatus;
+}
+
+const CulpritsTableCell = ({ culprits, status }: CulpritsTableCellProps) => {
+  if (culprits == null || culprits.length === 0) {
+    return (
+      <TableCell className='data-placeholder'>
+        {status === 'FOUND' && 'Culprit found (not verified)'}
+      </TableCell>
+    );
+  }
+
+  const culpritLinks = culprits.map((culprit) => {
+    let description = getCommitShortHash(culprit.commit.id);
+    if (culprit.reviewTitle) {
+      description += `: ${culprit.reviewTitle}`;
+    }
+    return {
+      linkText: description,
+      url: culprit.reviewUrl,
+    };
+  });
+
+  return (
+    <TableCell>
+      {culpritLinks.map((culpritLink) => (
+        <span className='span-link' key={culpritLink.url}>
+          <Link
+            data-testid='analysis_table_row_culprit_link'
+            href={culpritLink.url}
+            target='_blank'
+            rel='noreferrer'
+            underline='always'
+          >
+            {culpritLink.linkText}
+          </Link>
+        </span>
+      ))}
+    </TableCell>
+  );
+};
+
+export const AnalysisTableRow = ({ analysis }: AnalysisTableProps) => {
   let builderLink = EMPTY_LINK;
   if (analysis.builder) {
     builderLink = linkToBuilder(analysis.builder);
@@ -68,7 +117,10 @@ export const AnalysisTableRow = ({ analysis }: AnalysisTableRowProps) => {
           </Link>
         )}
       </TableCell>
-      {/* TODO: add culprit CL information */}
+      <CulpritsTableCell
+        culprits={analysis.culprits}
+        status={analysis.status}
+      />
     </TableRow>
   );
 };

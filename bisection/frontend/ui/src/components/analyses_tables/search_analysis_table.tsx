@@ -114,7 +114,7 @@ export const SearchAnalysisTable = ({ bbid }: Props) => {
               <TableCell>Failure type</TableCell>
               <TableCell>Duration</TableCell>
               <TableCell>Builder</TableCell>
-              {/* TODO: add column header for culprit once culprit information is available */}
+              <TableCell>Culprit CL</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
@@ -123,7 +123,7 @@ export const SearchAnalysisTable = ({ bbid }: Props) => {
             ) : (
               <NoDataMessageRow
                 message={`No analysis found for build ${bbid}`}
-                columns={6}
+                columns={7}
               />
             )}
           </TableBody>

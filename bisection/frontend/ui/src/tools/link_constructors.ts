@@ -44,7 +44,7 @@ export const linkToCommit = (commit: GitilesCommit): ExternalLink => {
   const { host, project, id } = commit;
   return {
     linkText: getCommitShortHash(id),
-    url: `https://${host}/${project}/+log/${id}`,
+    url: `https://${host}/${project}/+/${id}`,
   };
 };
 

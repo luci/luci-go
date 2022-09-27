@@ -50,7 +50,7 @@ describe('Test link constructors', () => {
     };
     expect(linkToCommit(mockCommit)).toStrictEqual({
       linkText: '123456a',
-      url: 'https://mockHost/mockProject/+log/123456abcdef',
+      url: 'https://mockHost/mockProject/+/123456abcdef',
     });
   });
 

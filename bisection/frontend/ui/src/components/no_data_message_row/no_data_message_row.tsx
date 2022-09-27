@@ -12,8 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import './no_data_message_row.css';
-
 import TableCell from '@mui/material/TableCell';
 import TableRow from '@mui/material/TableRow';
 

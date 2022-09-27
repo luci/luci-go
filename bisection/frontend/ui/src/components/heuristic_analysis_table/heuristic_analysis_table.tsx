@@ -42,7 +42,7 @@ function getInProgressRow() {
 }
 
 function getRows(suspects: HeuristicSuspect[] | undefined) {
-  if (!suspects || suspects.length == 0) {
+  if (!suspects || suspects.length === 0) {
     return <NoDataMessageRow message='No suspects to display' columns={4} />;
   } else {
     return suspects.map((suspect) => (

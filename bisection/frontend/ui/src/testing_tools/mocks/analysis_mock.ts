@@ -31,16 +31,6 @@ export const createMockAnalysis = (id: string): Analysis => {
       builder: 'mock-builder-cc64',
     },
     buildFailureType: 'COMPILE',
-    culpritAction: [
-      {
-        actionType: 'BUG_COMMENTED',
-        bugUrl: 'https://crbug.com/testProject/11223344',
-      },
-      {
-        actionType: 'BUG_COMMENTED',
-        bugUrl: 'https://buganizer.corp.google.com/99887766',
-      },
-    ],
     heuristicResult: {
       status: 'NOTFOUND',
     },

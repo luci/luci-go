@@ -14,10 +14,7 @@
  */
 
 .section {
-  padding-top: 2rem;
-  padding-bottom: 2rem;
-  padding-left: 1rem;
-  padding-right: 1rem;
+  padding: 3rem;
   border-bottom: 1px solid lightgray;
 }
 
