@@ -80,6 +80,36 @@ func TestManager(t *testing.T) {
 			c := NewCreateRequest()
 			c.Impact = ChromiumLowP1Impact()
 
+			expectedIssue := &mpb.Issue{
+				Name:             "projects/chromium/issues/100",
+				Summary:          "Tests are failing: ClusterID",
+				Reporter:         AutomationUsers[0],
+				State:            mpb.IssueContentState_ACTIVE,
+				Status:           &mpb.Issue_StatusValue{Status: "Untriaged"},
+				StatusModifyTime: timestamppb.New(now),
+				FieldValues: []*mpb.FieldValue{
+					{
+						// Type field.
+						Field: "projects/chromium/fieldDefs/10",
+						Value: "Bug",
+					},
+					{
+						// Priority field.
+						Field: "projects/chromium/fieldDefs/11",
+						Value: "1",
+					},
+				},
+				Components: []*mpb.Issue_ComponentValue{
+					{Component: "projects/chromium/componentDefs/Blink>Layout"},
+					{Component: "projects/chromium/componentDefs/Blink>Network"},
+				},
+				Labels: []*mpb.Issue_LabelValue{{
+					Label: "LUCI-Analysis-Auto-Filed",
+				}, {
+					Label: "Restrict-View-Google",
+				}},
+			}
+
 			Convey("With reason-based failure cluster", func() {
 				reason := `Expected equality of these values:
 					"Expected_Value"
@@ -94,35 +124,9 @@ func TestManager(t *testing.T) {
 				So(len(f.Issues), ShouldEqual, 1)
 				issue := f.Issues[0]
 
-				So(issue.Issue, ShouldResembleProto, &mpb.Issue{
-					Name:             "projects/chromium/issues/100",
-					Summary:          "Tests are failing: Expected equality of these values: \"Expected_Value\" my_expr.evaluate(123) Which is: \"Unexpected_Value\"",
-					Reporter:         AutomationUsers[0],
-					State:            mpb.IssueContentState_ACTIVE,
-					Status:           &mpb.Issue_StatusValue{Status: "Untriaged"},
-					StatusModifyTime: timestamppb.New(now),
-					FieldValues: []*mpb.FieldValue{
-						{
-							// Type field.
-							Field: "projects/chromium/fieldDefs/10",
-							Value: "Bug",
-						},
-						{
-							// Priority field.
-							Field: "projects/chromium/fieldDefs/11",
-							Value: "1",
-						},
-					},
-					Components: []*mpb.Issue_ComponentValue{
-						{Component: "projects/chromium/componentDefs/Blink>Layout"},
-						{Component: "projects/chromium/componentDefs/Blink>Network"},
-					},
-					Labels: []*mpb.Issue_LabelValue{{
-						Label: "LUCI-Analysis-Auto-Filed",
-					}, {
-						Label: "Restrict-View-Google",
-					}},
-				})
+				expectedIssue.Summary = "Tests are failing: Expected equality of these values: \"Expected_Value\" my_expr.evaluate(123) Which is: \"Unexpected_Value\""
+
+				So(issue.Issue, ShouldResembleProto, expectedIssue)
 				So(len(issue.Comments), ShouldEqual, 2)
 				So(issue.Comments[0].Content, ShouldContainSubstring, reason)
 				So(issue.Comments[0].Content, ShouldNotContainSubstring, "ClusterIDShouldNotAppearInOutput")
@@ -140,40 +144,28 @@ func TestManager(t *testing.T) {
 				So(len(f.Issues), ShouldEqual, 1)
 				issue := f.Issues[0]
 
-				So(issue.Issue, ShouldResembleProto, &mpb.Issue{
-					Name:             "projects/chromium/issues/100",
-					Summary:          "Tests are failing: ninja://:blink_web_tests/media/my-suite/my-test.html",
-					Reporter:         AutomationUsers[0],
-					State:            mpb.IssueContentState_ACTIVE,
-					Status:           &mpb.Issue_StatusValue{Status: "Untriaged"},
-					StatusModifyTime: timestamppb.New(now),
-					FieldValues: []*mpb.FieldValue{
-						{
-							// Type field.
-							Field: "projects/chromium/fieldDefs/10",
-							Value: "Bug",
-						},
-						{
-							// Priority field.
-							Field: "projects/chromium/fieldDefs/11",
-							Value: "1",
-						},
-					},
-					Components: []*mpb.Issue_ComponentValue{
-						{Component: "projects/chromium/componentDefs/Blink>Layout"},
-						{Component: "projects/chromium/componentDefs/Blink>Network"},
-					},
-					Labels: []*mpb.Issue_LabelValue{{
-						Label: "LUCI-Analysis-Auto-Filed",
-					}, {
-						Label: "Restrict-View-Google",
-					}},
-				})
+				expectedIssue.Summary = "Tests are failing: ninja://:blink_web_tests/media/my-suite/my-test.html"
+				So(issue.Issue, ShouldResembleProto, expectedIssue)
 				So(len(issue.Comments), ShouldEqual, 2)
 				So(issue.Comments[0].Content, ShouldContainSubstring, "ninja://:blink_web_tests/media/my-suite/my-test.html")
 				// Link to cluster page should appear in output.
 				So(issue.Comments[1].Content, ShouldContainSubstring, "https://luci-analysis-test.appspot.com/b/chromium/100")
 				So(issue.NotifyCount, ShouldEqual, 1)
+			})
+			Convey("Without Restrict-View-Google", func() {
+				monorailCfgs.FileWithoutRestrictViewGoogle = true
+
+				bug, err := bm.Create(ctx, c)
+				So(err, ShouldBeNil)
+				So(bug, ShouldEqual, "chromium/100")
+				So(len(f.Issues), ShouldEqual, 1)
+				issue := f.Issues[0]
+
+				// No Restrict-View-Google label.
+				expectedIssue.Labels = []*mpb.Issue_LabelValue{{
+					Label: "LUCI-Analysis-Auto-Filed",
+				}}
+				So(issue.Issue, ShouldResembleProto, expectedIssue)
 			})
 			Convey("Does nothing if in simulation mode", func() {
 				bm.Simulate = true

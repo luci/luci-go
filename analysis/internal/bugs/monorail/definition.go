@@ -145,10 +145,14 @@ func (g *Generator) PrepareNew(impact *bugs.ClusterImpact, description *clusteri
 		},
 		Labels: []*mpb.Issue_LabelValue{{
 			Label: autoFiledLabel,
-		}, {
-			Label: restrictViewLabel,
 		}},
 	}
+	if !g.monorailCfg.FileWithoutRestrictViewGoogle {
+		issue.Labels = append(issue.Labels, &mpb.Issue_LabelValue{
+			Label: restrictViewLabel,
+		})
+	}
+
 	for _, fv := range g.monorailCfg.DefaultFieldValues {
 		issue.FieldValues = append(issue.FieldValues, &mpb.FieldValue{
 			Field: fmt.Sprintf("projects/%s/fieldDefs/%v", g.monorailCfg.Project, fv.FieldId),

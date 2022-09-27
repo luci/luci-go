@@ -117,6 +117,11 @@ message MonorailProject {
   // The preferred hostname to use in links to monorail. For example,
   // "bugs.chromium.org" or "bugs.fuchsia.dev".
   string monorail_hostname = 7;
+
+  // Whether the Restrict-View-Google tag should be omitted on new
+  // auto-filed bugs. This makes those bugs publically visible.
+  // If unset, defaults to filing with Restrict-View-Google.
+  bool file_without_restrict_view_google = 8;
 }
 
 // MonorailFieldValue describes a monorail field/value pair.
