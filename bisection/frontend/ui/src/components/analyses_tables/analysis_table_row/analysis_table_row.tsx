@@ -43,7 +43,7 @@ const CulpritsTableCell = ({ culprits, status }: CulpritsTableCellProps) => {
   if (culprits == null || culprits.length === 0) {
     return (
       <TableCell className='data-placeholder'>
-        {status === 'FOUND' && 'Culprit found (not verified)'}
+        {status === 'SUSPECTFOUND' && 'Suspect found (not verified)'}
       </TableCell>
     );
   }

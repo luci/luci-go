@@ -28,7 +28,7 @@ describe('Test HeuristicAnalysisTable component', () => {
     ];
 
     const mockHeuristicAnalysisResult: HeuristicAnalysisResult = {
-      status: 'FOUND',
+      status: 'SUSPECTFOUND',
       suspects: mockSuspects,
     };
 

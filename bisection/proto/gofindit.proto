@@ -261,12 +261,14 @@ enum AnalysisStatus {
   CREATED = 1;
   // The analysis is running, but results have not been finalised.
   RUNNING = 2;
-  // The analysis has finished and found the culprit/suspects
+  // The analysis has finished and found (and verified) the culprit
   FOUND = 3;
   // The analysis has finished but no culprit/suspect has been found
   NOTFOUND = 4;
   // The analysis results in an error
   ERROR = 5;
+  // The analysis found some suspects
+  SUSPECTFOUND = 6;
 }
 
 // An action that GoFindit has taken with the culprit

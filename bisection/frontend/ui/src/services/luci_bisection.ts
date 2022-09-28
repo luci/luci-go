@@ -60,7 +60,8 @@ export type AnalysisStatus =
   | 'RUNNING'
   | 'FOUND'
   | 'NOTFOUND'
-  | 'ERROR';
+  | 'ERROR'
+  | 'SUSPECTFOUND';
 
 export type SuspectConfidenceLevel =
   | 'SUSPECT_CONFIDENCE_LEVEL_UNSPECIFIED'
@@ -87,6 +88,7 @@ export function isAnalysisComplete(status: AnalysisStatus) {
     'FOUND',
     'NOTFOUND',
     'ERROR',
+    'SUSPECTFOUND',
   ];
   return completeStatuses.includes(status);
 }

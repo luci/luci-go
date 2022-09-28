@@ -87,7 +87,7 @@ func Analyze(
 
 	// Updates heuristic analysis
 	if len(analysisResult.Items) > 0 {
-		heuristicAnalysis.Status = gfipb.AnalysisStatus_FOUND
+		heuristicAnalysis.Status = gfipb.AnalysisStatus_SUSPECTFOUND
 		err = saveResultsToDatastore(c, heuristicAnalysis, analysisResult, rr.LastPassed.Host, rr.LastPassed.Project, rr.LastPassed.Ref)
 		if err != nil {
 			return nil, fmt.Errorf("Failed to store result in datastore: %w", err)

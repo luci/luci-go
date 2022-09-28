@@ -213,7 +213,7 @@ func TestVerifyCulprit(t *testing.T) {
 
 	Convey("getHeuristicSuspectsToVerify", t, func() {
 		heuristicAnalysis := &model.CompileHeuristicAnalysis{
-			Status: gofindit.AnalysisStatus_FOUND,
+			Status: gofindit.AnalysisStatus_SUSPECTFOUND,
 		}
 
 		So(datastore.Put(c, heuristicAnalysis), ShouldBeNil)
