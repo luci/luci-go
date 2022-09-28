@@ -553,36 +553,25 @@ func TestCompute(t *testing.T) {
 		})
 		Convey("experimental", func() {
 			in := makeInput(ctx, []*cfgpb.Verifiers_Tryjob_Builder{
-				builderConfigGenerator{Name: "test-proj/test/expbuilder", ExperimentPercentage: 100}.generate(),
-				// The CLID and timestamp hardcoded in the mockBuilderConfig
-				// generate function make this deterministically not selected.
-				builderConfigGenerator{Name: "test-proj/test/expbuilder-notselected", ExperimentPercentage: 1}.generate(),
+				builderConfigGenerator{Name: "test-proj/test/expbuilder", ExperimentPercentage: 20}.generate(),
 			})
 
-			res, err := Compute(ctx, *in)
-			So(err, ShouldBeNil)
-			So(res.ComputationFailure, ShouldBeNil)
-			So(res.Requirement, ShouldResembleProto, &tryjob.Requirement{
-				RetryConfig: &cfgpb.Verifiers_Tryjob_RetryConfig{
-					SingleQuota: 2,
-					GlobalQuota: 8,
-				},
-				Definitions: []*tryjob.Definition{
-					{
-						Backend: &tryjob.Definition_Buildbucket_{
-							Buildbucket: &tryjob.Definition_Buildbucket{
-								Host: "cr-buildbucket.appspot.com",
-								Builder: &buildbucketpb.BuilderID{
-									Project: "test-proj",
-									Bucket:  "test",
-									Builder: "expbuilder",
-								},
-							},
-						},
-						Experimental: true,
-					},
-				},
-			})
+			selected := 0
+
+			baseCLID := int(in.CLs[0].ID)
+			for i := 0; i < 1000; i++ {
+				in.CLs[0].ID = common.CLID(baseCLID + i)
+				res, err := Compute(ctx, *in)
+				So(err, ShouldBeNil)
+				if len(res.Requirement.GetDefinitions()) > 0 {
+					So(res.Requirement.GetDefinitions(), ShouldHaveLength, 1)
+					def := res.Requirement.GetDefinitions()[0]
+					So(def.GetCritical(), ShouldBeFalse)
+					So(def.GetExperimental(), ShouldBeTrue)
+					selected++
+				}
+			}
+			So(selected, ShouldBeBetween, 150, 250) // expecting 1000*20%=200
 		})
 		Convey("with location matching", func() {
 			Convey("empty change after location exclusions skips builder", func() {

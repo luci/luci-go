@@ -366,7 +366,7 @@ func makeRands(in Input, n int) []*rand.Rand {
 	// security purposes, and it's faster than SHA.
 	h := crypto.MD5.New()
 	buf := make([]byte, 8)
-	cls := make([]*run.RunCL, 0, len(in.CLs))
+	cls := make([]*run.RunCL, len(in.CLs))
 	copy(cls, in.CLs)
 	sort.Slice(cls, func(i, j int) bool { return cls[i].ID < cls[j].ID })
 	var err error
