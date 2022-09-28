@@ -7,17 +7,20 @@ luci_gae_vars:
   chrome-infra-auth-dev:
     ROOT_SECRET: sm://root-secret
     TS_MON_ACCOUNT: app-engine-metric-publishers@prodx-mon-chrome-infra.google.com.iam.gserviceaccount.com
+    CONFIG_SERVICE_HOST: luci-config.appspot.com
 
 inbound_services:
 - warmup
 
 handlers:
-- url: /.*
+- url: /internal.*
   script: auto
   secure: always
+  login: admin
 
 entrypoint: >
   main
   -cloud-error-reporting
   -root-secret ${ROOT_SECRET}
   -ts-mon-account ${TS_MON_ACCOUNT}
+  -config-service-host ${CONFIG_SERVICE_HOST}

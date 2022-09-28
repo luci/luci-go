@@ -18,13 +18,30 @@
 package main
 
 import (
+	"context"
+
 	"go.chromium.org/luci/server"
+	"go.chromium.org/luci/server/cron"
+	"go.chromium.org/luci/server/module"
+
+	// Ensure registration of validation rules.
+	// NOTE: this must go before anything that depends on validation globals, e.g. cfgcache.Register in srvcfg.
+	_ "go.chromium.org/luci/auth_service/internal/configs/validation"
 
 	"go.chromium.org/luci/auth_service/impl"
+	"go.chromium.org/luci/auth_service/internal/configs/srvcfg"
 )
 
 func main() {
-	impl.Main(nil, func(srv *server.Server) error {
+	modules := []module.Module{
+		cron.NewModuleFromFlags(),
+	}
+
+	impl.Main(modules, func(srv *server.Server) error {
+		// Register cron.
+		cron.RegisterHandler("update-config", func(ctx context.Context) error {
+			return srvcfg.Update(ctx)
+		})
 		return nil
 	})
 }

@@ -17,6 +17,7 @@ package impl
 
 import (
 	"go.chromium.org/luci/auth"
+	"go.chromium.org/luci/config/server/cfgmodule"
 	"go.chromium.org/luci/hardcoded/chromeinfra"
 	"go.chromium.org/luci/server"
 	"go.chromium.org/luci/server/gaeemulation"
@@ -45,6 +46,7 @@ func Main(modules []module.Module, cb func(srv *server.Server) error) {
 		gaeemulation.NewModuleFromFlags(), // for accessing Datastore
 		secrets.NewModuleFromFlags(),      // for accessing Cloud Secret Manager
 		tq.NewModuleFromFlags(),
+		cfgmodule.NewModuleFromFlags(), // for accessing luci-cfg configs.
 	}, modules...)
 
 	server.Main(opts, modules, func(srv *server.Server) error {
