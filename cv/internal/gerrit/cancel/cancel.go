@@ -503,12 +503,18 @@ func (c *change) postGerritMsg(ctx context.Context, ci *gerritpb.ChangeInfo, msg
 	attention := makeGerritAttentionSetInputs(addAttn, ci, reason)
 	var gerritErr error
 	outerErr := c.gf.MakeMirrorIterator(ctx).RetryIfStale(func(opt grpc.CallOption) error {
+		// Do not post message with tag so that Gerrit will always display these
+		// messages. Otherwise, users may falsely believe LUCI CV is not doing
+		// anything to handle their CLs because Gerrit will hide old messages with
+		// the same tag (See: crbug.com/1359521). The message in trigger
+		// cancellation normally contains the result for the Run (e.g. passing or
+		// why the Run fails) so it is a good indication of LUCI CV is working fine
+		// without introducing too much noise.
 		_, gerritErr = c.gc.SetReview(ctx, &gerritpb.SetReviewRequest{
 			Number:     c.Number,
 			Project:    c.Project,
 			RevisionId: ci.GetCurrentRevision(),
 			Message:    gerrit.TruncateMessage(msg),
-			Tag:        c.RunMode.GerritMessageTag(),
 			// Set `Notify` to NONE because LUCI CV has the knowledge on all the
 			// accounts to notify. All of them are included through `NotifyDetails`.
 			// Therefore, there is no point using the special enum provided via
