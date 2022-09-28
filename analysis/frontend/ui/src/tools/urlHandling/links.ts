@@ -55,3 +55,15 @@ export const clName = (cl: Changelist) => {
 export const testHistoryLink = (project: string, testId: string, query: string) => {
   return `https://ci.chromium.org/ui/test/${encodeURIComponent(project)}/${encodeURIComponent(testId)}?q=${encodeURIComponent(query)}`;
 };
+
+// loginLink constructs a URL to login to LUCI Analysis, with a redirect to
+// the given absolute URL (which should start with "/").
+export const loginLink = (redirectTarget: string) => {
+  return window.loginUrl + '?r=' + encodeURIComponent(redirectTarget);
+};
+
+// loginLink constructs a URL to logout from LUCI Analysis, with a redirect to
+// the given absolute URL (which should start with "/").
+export const logoutLink = (redirectTarget: string) => {
+  return window.logoutUrl + '?r=' + encodeURIComponent(redirectTarget);
+};

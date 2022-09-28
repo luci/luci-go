@@ -22,12 +22,12 @@ import {
   screen,
 } from '@testing-library/react';
 
-import { Issue } from '../../../services/monorail';
-import { Rule } from '../../../services/rules';
-import { renderWithRouterAndClient } from '../../../testing_tools/libs/mock_router';
-import { mockFetchAuthState } from '../../../testing_tools/mocks/authstate_mock';
-import { createMockBug } from '../../../testing_tools/mocks/bug_mock';
-import { mockFetchProjectConfig } from '../../../testing_tools/mocks/projects_mock';
+import { Issue } from '@/services/monorail';
+import { Rule } from '@/services/rules';
+import { renderWithRouterAndClient } from '@/testing_tools/libs/mock_router';
+import { mockFetchAuthState } from '@/testing_tools/mocks/authstate_mock';
+import { createMockBug } from '@/testing_tools/mocks/bug_mock';
+import { mockFetchProjectConfig } from '@/testing_tools/mocks/projects_mock';
 import {
   createDefaultMockRule,
   mockFetchRule,

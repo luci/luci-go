@@ -18,6 +18,7 @@ import {
   BatchGetClustersRequest,
   getClustersService,
 } from '@/services/cluster';
+import { prpcRetrier } from '@/services/shared_models';
 
 type StringOrUndefined = string | undefined;
 
@@ -40,6 +41,8 @@ const useFetchCluster = (
 
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     return response.clusters![0];
+  }, {
+    retry: prpcRetrier,
   });
 };
 

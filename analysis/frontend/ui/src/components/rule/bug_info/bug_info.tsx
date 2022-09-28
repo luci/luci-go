@@ -29,21 +29,24 @@ import Paper from '@mui/material/Paper';
 import Switch from '@mui/material/Switch';
 import Typography from '@mui/material/Typography';
 
-import { useMutateRule } from '../../../hooks/use_mutate_rule';
+import { useMutateRule } from '@/hooks/use_mutate_rule';
 import {
   GetIssueRequest,
   getIssuesService,
-} from '../../../services/monorail';
+} from '@/services/monorail';
 import {
   Rule,
   UpdateRuleRequest,
-} from '../../../services/rules';
-import { AssociatedBug } from '../../../services/shared_models';
-import { MuiDefaultColor } from '../../../types/mui_types';
-import ErrorAlert from '../../error_alert/error_alert';
-import GridLabel from '../../grid_label/grid_label';
-import HelpTooltip from '../../help_tooltip/help_tooltip';
-import BugEditDialog from '../bug_edit_dialog/bug_edit_dialog';
+} from '@/services/rules';
+import {
+  AssociatedBug,
+  prpcRetrier,
+} from '@/services/shared_models';
+import { MuiDefaultColor } from '@/types/mui_types';
+import GridLabel from '@/components/grid_label/grid_label';
+import HelpTooltip from '@/components/help_tooltip/help_tooltip';
+import LoadErrorAlert from '@/components/load_error_alert/load_error_alert';
+import BugEditDialog from '@/components/rule/bug_edit_dialog/bug_edit_dialog';
 
 const createIssueServiceRequest = (bug: AssociatedBug): GetIssueRequest => {
   const parts = bug.id.split('/');
@@ -93,13 +96,15 @@ const BugInfo = ({
 
   const isMonorail = (rule.bug.system == 'monorail');
   const requestName = rule.bug.system + '/' + rule.bug.id;
-  const { isLoading, isError, data: issue, error } = useQuery(['bug', requestName],
+  const { isLoading, data: issue, error } = useQuery(['bug', requestName],
       async () => {
         if (isMonorail) {
           const fetchBugRequest = createIssueServiceRequest(rule.bug);
           return await issueService.getIssue(fetchBugRequest);
         }
         return null;
+      }, {
+        retry: prpcRetrier,
       },
   );
 
@@ -159,12 +164,11 @@ const BugInfo = ({
           )
         }
         {
-          isError && (
+          error && (
             <Container>
-              <ErrorAlert
-                showError={true}
-                errorTitle='Failed to load bug details.'
-                errorText={`Failed to load bug details due to: ${error}`}/>
+              <LoadErrorAlert
+                entityName='bug details'
+                error={error}/>
             </Container>
           )
         }

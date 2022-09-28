@@ -18,6 +18,7 @@ import {
   getProjectsService,
   ListProjectsRequest,
 } from '@/services/project';
+import { prpcRetrier } from '@/services/shared_models';
 
 const useFetchProjects = () => {
   const service = getProjectsService();
@@ -26,6 +27,8 @@ const useFetchProjects = () => {
     const response = await service.list(request);
     // Chromium milestone projects are explicitly ignored by the backend, match this in the frontend.
     return response.projects?.filter((p) => !/^(chromium|chrome)-m[0-9]+$/.test(p.project)) || null;
+  }, {
+    retry: prpcRetrier,
   });
 };
 

@@ -21,12 +21,13 @@ import Grid from '@mui/material/Grid';
 import Table from '@mui/material/Table';
 import TableBody from '@mui/material/TableBody';
 
-import ErrorAlert from '@/components/error_alert/error_alert';
+import LoadErrorAlert from '@/components/load_error_alert/load_error_alert';
 import {
   getClustersService,
   QueryClusterSummariesRequest,
   SortableMetricName,
 } from '@/services/cluster';
+import { prpcRetrier } from '@/services/shared_models';
 
 import ClustersTableFilter from './clusters_table_filter/clusters_table_filter';
 import ClustersTableHead from './clusters_table_head/clusters_table_head';
@@ -48,7 +49,6 @@ const ClustersTable = ({
 
   const {
     isLoading,
-    isError,
     isSuccess,
     data: clusters,
     error,
@@ -62,9 +62,10 @@ const ClustersTable = ({
         };
 
         return await clustersService.queryClusterSummaries(request);
+      }, {
+        retry: prpcRetrier,
       },
   );
-
 
   const onFailureFilterChanged = (filter: string) => {
     setSearchParams({ 'q': filter }, { replace: true });
@@ -116,11 +117,11 @@ const ClustersTable = ({
         )
       }
       {
-        isError && (
-          <ErrorAlert
-            errorTitle="Failed to load failures"
-            errorText={`Loading cluster failures failed due to: ${error}`}
-            showError/>
+        error && (
+          <LoadErrorAlert
+            entityName="clusters"
+            error={error}
+          />
         )
       }
       {

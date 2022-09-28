@@ -27,6 +27,7 @@ import Typography from '@mui/material/Typography';
 
 import CodeBlock from '@/components/codeblock/codeblock';
 import ErrorAlert from '@/components/error_alert/error_alert';
+import LoadErrorAlert from '@/components/load_error_alert/load_error_alert';
 import useFetchCluster from '@/hooks/use_fetch_cluster';
 import { Cluster } from '@/services/cluster';
 
@@ -89,7 +90,6 @@ const ClusterInfo = () => {
 
   const {
     isLoading,
-    isError,
     isSuccess,
     data: cluster,
     error,
@@ -140,11 +140,11 @@ const ClusterInfo = () => {
           )
         }
         {
-          isError && (
-            <ErrorAlert
-              errorText={`Got an error while loading the cluster: ${error}`}
-              errorTitle="Failed to load cluster"
-              showError/>
+          error && (
+            <LoadErrorAlert
+              entityName="cluster"
+              error={error}
+            />
           )
         }
         {

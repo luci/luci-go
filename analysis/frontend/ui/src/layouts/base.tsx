@@ -18,10 +18,12 @@ import TopBar from '@/components/top_bar/top_bar';
 
 declare global {
     interface Window {
+      isAnonymous: boolean;
       avatar: string;
       fullName: string;
       email: string;
       logoutUrl: string;
+      loginUrl: string;
     }
 }
 

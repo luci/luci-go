@@ -12,16 +12,39 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import { GrpcError, RpcCode } from '@chopsui/prpc-client';
+
 // Contains data models shared between multiple services.
 
 export interface ClusterId {
-    algorithm: string;
-    id: string;
+  algorithm: string;
+  id: string;
 }
 
 export interface AssociatedBug {
-    system: string;
-    id: string;
-    linkText: string;
-    url: string;
+  system: string;
+  id: string;
+  linkText: string;
+  url: string;
+}
+
+export function isRetriable(e: GrpcError) : boolean {
+  // The following codes indicate transient errors that are retriable. See:
+  // https://source.chromium.org/chromium/infra/infra/+/main:go/src/go.chromium.org/luci/grpc/grpcutil/errors.go;l=176?q=codeToStatus&type=cs
+  switch (e.code) {
+    case RpcCode.INTERNAL:
+      return true;
+    case RpcCode.UNKNOWN:
+      return true;
+    case RpcCode.UNAVAILABLE:
+      return true;
+  }
+  return false;
+}
+
+export function prpcRetrier(_failureCount: number, e: Error) : boolean {
+  if (e instanceof GrpcError && isRetriable(e)) {
+    return true;
+  }
+  return false;
 }

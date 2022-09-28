@@ -20,39 +20,21 @@ import {
 
 import { renderWithRouter } from '@/testing_tools/libs/mock_router';
 
-import UserActions from './user_actions';
+import LoginButton from './login_button';
 
 describe('test UserActions component', () => {
   beforeAll(() => {
     window.loginUrl = '/login';
-    window.logoutUrl = '/logout';
   });
 
-  it('when logged in, should display user email and logout url', async () => {
-    window.isAnonymous = false;
-    window.email = 'test@google.com';
-    window.avatar = '/example.png';
-    window.fullName = 'Test Name';
-
+  it('login in button should link to the login page', async () => {
     renderWithRouter(
-        <UserActions />,
-    );
-
-    await screen.getByText(window.email);
-
-    expect(screen.getByRole('img')).toHaveAttribute('src', window.avatar);
-    expect(screen.getByRole('img')).toHaveAttribute('alt', window.fullName);
-  });
-
-  it('when logged out, should show the login in button', async () => {
-    window.isAnonymous = true;
-
-    renderWithRouter(
-        <UserActions />,
+        <LoginButton />,
+        '/someurl',
     );
 
     await screen.getByText('Log in');
 
-    expect(screen.getByTestId('login_button')).toBeVisible();
+    expect(screen.getByTestId('login_button')).toHaveAttribute('href', '/login?r=%2Fsomeurl');
   });
 });

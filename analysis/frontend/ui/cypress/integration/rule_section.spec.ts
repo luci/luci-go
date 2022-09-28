@@ -16,7 +16,8 @@ import { setupTestRule } from './test_data';
 describe('Rule Section', () => {
   beforeEach(() => {
     // Login.
-    cy.visit('/').contains('LOGIN').click();
+    cy.visit('/').contains('Log in').click();
+    cy.contains('LOGIN').click();
 
     setupTestRule();
 

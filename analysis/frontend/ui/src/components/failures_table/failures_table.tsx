@@ -25,7 +25,7 @@ import { SelectChangeEvent } from '@mui/material/Select';
 import Table from '@mui/material/Table';
 import TableBody from '@mui/material/TableBody';
 
-import ErrorAlert from '@/components/error_alert/error_alert';
+import LoadErrorAlert from '@/components/load_error_alert/load_error_alert';
 import { getClustersService } from '@/services/cluster';
 import {
   countAndSortFailures,
@@ -42,6 +42,7 @@ import {
   sortFailureGroups,
   VariantGroup,
 } from '@/tools/failures_tools';
+import { prpcRetrier } from '@/services/shared_models';
 
 import FailuresTableFilter from './failures_table_filter/failures_table_filter';
 import FailuresTableGroup from './failures_table_group/failures_table_group';
@@ -70,7 +71,6 @@ const FailuresTable = ({
 
   const {
     isLoading,
-    isError,
     data: failures,
     error,
   } = useQuery(
@@ -81,6 +81,8 @@ const FailuresTable = ({
           parent: `projects/${project}/clusters/${clusterAlgorithm}/${clusterId}/failures`,
         });
         return response.failures || [];
+      }, {
+        retry: prpcRetrier,
       });
 
   useEffect( () => {
@@ -143,20 +145,20 @@ const FailuresTable = ({
     }
   };
 
-  if (isLoading) {
+  if (error) {
+    return (
+      <LoadErrorAlert
+        entityName="recent failures"
+        error={error}
+      />
+    );
+  }
+
+  if (isLoading || !failures) {
     return (
       <Grid container item alignItems="center" justifyContent="center">
         <CircularProgress />
       </Grid>
-    );
-  }
-
-  if (isError || !failures) {
-    return (
-      <ErrorAlert
-        errorTitle="Failed to load failures"
-        errorText={`Loading cluster failures failed due to: ${error}`}
-        showError/>
     );
   }
 

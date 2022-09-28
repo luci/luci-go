@@ -12,21 +12,26 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { useQuery } from 'react-query';
+import {
+  useLocation,
+} from 'react-router-dom';
 
-import { getRulesService } from '@/services/rules';
-import { prpcRetrier } from '@/services/shared_models';
+import Button from '@mui/material/Button';
+import { loginLink } from '@/tools/urlHandling/links';
 
-const useFetchRule = (ruleId: string | undefined, project: string | undefined) => {
-  const rulesService = getRulesService();
+const LoginButton = () => {
+  const location = useLocation();
 
-  return useQuery(['rule', project, ruleId], async () => await rulesService.get(
-      {
-        name: `projects/${project}/rules/${ruleId}`,
-      },
-  ), {
-    retry: prpcRetrier,
-  });
+  return (
+    <Button
+      data-testid="login_button"
+      href={loginLink(location.pathname + location.search + location.hash)}
+      key="log in"
+      sx={{ color: 'white' }}
+    >
+      Log in
+    </Button>
+  );
 };
 
-export default useFetchRule;
+export default LoginButton;

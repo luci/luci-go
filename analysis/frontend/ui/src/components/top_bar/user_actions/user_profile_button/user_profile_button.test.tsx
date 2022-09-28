@@ -15,44 +15,51 @@
 import '@testing-library/jest-dom';
 
 import {
+  fireEvent,
   screen,
 } from '@testing-library/react';
 
 import { renderWithRouter } from '@/testing_tools/libs/mock_router';
 
-import UserActions from './user_actions';
+import UserProfileButton from './user_profile_button';
 
 describe('test UserActions component', () => {
   beforeAll(() => {
-    window.loginUrl = '/login';
     window.logoutUrl = '/logout';
   });
 
-  it('when logged in, should display user email and logout url', async () => {
-    window.isAnonymous = false;
+  it('should display user email and logout url', async () => {
     window.email = 'test@google.com';
     window.avatar = '/example.png';
     window.fullName = 'Test Name';
 
     renderWithRouter(
-        <UserActions />,
+        <UserProfileButton />,
+        '/someurl',
     );
 
     await screen.getByText(window.email);
 
     expect(screen.getByRole('img')).toHaveAttribute('src', window.avatar);
     expect(screen.getByRole('img')).toHaveAttribute('alt', window.fullName);
+    expect(screen.getByTestId('useractions_logout')).toHaveAttribute('href', '/logout?r=%2Fsomeurl');
   });
 
-  it('when logged out, should show the login in button', async () => {
-    window.isAnonymous = true;
+  it('clicking on email button then should display logout url', async () => {
+    window.email = 'test@google.com';
+    window.avatar = '/example.png';
+    window.fullName = 'Test Name';
 
     renderWithRouter(
-        <UserActions />,
+        <UserProfileButton />,
     );
 
-    await screen.getByText('Log in');
+    await screen.getByText(window.email);
 
-    expect(screen.getByTestId('login_button')).toBeVisible();
+    expect(screen.getByTestId('user-settings-menu')).not.toBeVisible();
+
+    await fireEvent.click(screen.getByText(window.email));
+
+    expect(screen.getByTestId('user-settings-menu')).toBeVisible();
   });
 });

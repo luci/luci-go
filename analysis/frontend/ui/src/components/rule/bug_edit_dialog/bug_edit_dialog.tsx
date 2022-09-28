@@ -30,6 +30,7 @@ import LinearProgress from '@mui/material/LinearProgress';
 
 import BugPicker from '@/components/bug_picker/bug_picker';
 import ErrorAlert from '@/components/error_alert/error_alert';
+import LoadErrorAlert from '@/components/load_error_alert/load_error_alert';
 import useFetchRule from '@/hooks/use_fetch_rule';
 import { useMutateRule } from '@/hooks/use_mutate_rule';
 import { UpdateRuleRequest } from '@/services/rules';
@@ -45,7 +46,7 @@ const BugEditDialog = ({
 }: Props) => {
   const { project, id: ruleId } = useParams();
 
-  const { isLoading, isError, data: rule, error } = useFetchRule(ruleId, project);
+  const { isLoading, data: rule, error } = useFetchRule(ruleId, project);
 
   const [bugSystem, setBugSystem] = useState('');
   const [bugId, setBugId] = useState('');
@@ -68,11 +69,15 @@ const BugEditDialog = ({
       showError/>;
   }
 
-  if (isError || !rule) {
-    return <ErrorAlert
-      errorText={`An erro occured while fetching the rule: ${error}`}
-      errorTitle="Failed to load rule"
-      showError/>;
+  if (error) {
+    return <LoadErrorAlert
+      entityName="rule"
+      error={error}
+    />;
+  }
+
+  if (isLoading || !rule) {
+    return <LinearProgress />;
   }
 
   const handleBugSystemChanged = (bugSystem: string) => {
@@ -103,10 +108,6 @@ const BugEditDialog = ({
     };
     mutateRule.mutate(request);
   };
-
-  if (isLoading) {
-    return <LinearProgress />;
-  }
 
   return (
     <>

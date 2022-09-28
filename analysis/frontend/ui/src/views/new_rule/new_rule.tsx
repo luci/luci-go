@@ -81,7 +81,7 @@ const NewRulePage = () => {
   if (!project) {
     return (
       <ErrorAlert
-        errorTitle="Project not found!"
+        errorTitle="Project not found"
         errorText="A project is required to create a rule, please check the URL and try again."
         showError
       />

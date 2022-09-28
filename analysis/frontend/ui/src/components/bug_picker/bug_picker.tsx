@@ -25,10 +25,12 @@ import Select, { SelectChangeEvent } from '@mui/material/Select';
 import TextField from '@mui/material/TextField';
 
 import ErrorAlert from '@/components/error_alert/error_alert';
+import LoadErrorAlert from '@/components/load_error_alert/load_error_alert';
 import {
   GetProjectConfigRequest,
   getProjectsService,
 } from '@/services/project';
+import { prpcRetrier } from '@/services/shared_models';
 
 interface Props {
     bugSystem: string;
@@ -101,7 +103,6 @@ const BugPicker = ({
 
   const {
     isLoading,
-    isError,
     data: projectConfig,
     error,
   } = useQuery(['projectconfig', project], async () => {
@@ -115,6 +116,7 @@ const BugPicker = ({
     return await projectService.getConfig(request);
   }, {
     enabled: !!project,
+    retry: prpcRetrier,
   });
 
   if (!project) {
@@ -128,7 +130,7 @@ const BugPicker = ({
 
   const selectedBugSystem = getStaticBugSystem(bugSystem);
 
-  if (isLoading) {
+  if (isLoading || !projectConfig) {
     return (
       <Grid container justifyContent="center">
         <CircularProgress data-testid="circle-loading" />
@@ -136,11 +138,11 @@ const BugPicker = ({
     );
   }
 
-  if (isError || !projectConfig) {
-    return <ErrorAlert
-      showError
-      errorTitle="Failed to load project config"
-      errorText={`An error occured while fetching the project config: ${error}`}/>;
+  if (error) {
+    return <LoadErrorAlert
+      entityName="project config"
+      error={error}
+    />;
   }
 
   const monorailSystem = getMonorailSystem(bugId);

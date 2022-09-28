@@ -24,7 +24,7 @@ import {
   waitFor,
 } from '@testing-library/react';
 
-import { renderWithClient } from '@/testing_tools/libs/mock_rquery';
+import { renderWithRouterAndClient } from '@/testing_tools/libs/mock_router';
 import { mockFetchAuthState } from '@/testing_tools/mocks/authstate_mock';
 import {
   createMockDoneProgress,
@@ -47,7 +47,7 @@ describe('Test ReclusteringProgressIndicator component', () => {
       },
       body: ')]}\''+JSON.stringify(createMockDoneProgress()),
     });
-    renderWithClient(
+    renderWithRouterAndClient(
         <ReclusteringProgressIndicator
           project='chromium'
           hasRule
@@ -65,7 +65,7 @@ describe('Test ReclusteringProgressIndicator component', () => {
       },
       body: ')]}\''+JSON.stringify(createMockProgress(800)),
     });
-    renderWithClient(
+    renderWithRouterAndClient(
         <ReclusteringProgressIndicator
           project='chromium'
           hasRule
@@ -86,7 +86,7 @@ describe('Test ReclusteringProgressIndicator component', () => {
       },
       body: ')]}\''+JSON.stringify(createMockProgress(800)),
     });
-    renderWithClient(
+    renderWithRouterAndClient(
         <ReclusteringProgressIndicator
           project='chromium'
           hasRule

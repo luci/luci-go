@@ -19,7 +19,7 @@ import Container from '@mui/material/Container';
 import Grid from '@mui/material/Grid';
 import Paper from '@mui/material/Paper';
 
-import ErrorAlert from '@/components/error_alert/error_alert';
+import LoadErrorAlert from '@/components/load_error_alert/load_error_alert';
 import ImpactTable from '@/components/impact_table/impact_table';
 import useFetchCluster from '@/hooks/use_fetch_cluster';
 
@@ -31,7 +31,6 @@ const ImpactSection = () => {
   }
   const {
     isLoading,
-    isError,
     isSuccess,
     data: cluster,
     error,
@@ -48,11 +47,11 @@ const ImpactSection = () => {
           )
         }
         {
-          isError && (
-            <ErrorAlert
-              errorText={`Got an error while loading the cluster: ${error}`}
-              errorTitle="Failed to load cluster"
-              showError/>
+          error && (
+            <LoadErrorAlert
+              entityName="cluster impact"
+              error={error}
+            />
           )
         }
         {

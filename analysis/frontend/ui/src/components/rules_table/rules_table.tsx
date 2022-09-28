@@ -26,12 +26,13 @@ import TableContainer from '@mui/material/TableContainer';
 import TableHead from '@mui/material/TableHead';
 import TableRow from '@mui/material/TableRow';
 
-import ErrorAlert from '@/components/error_alert/error_alert';
+import LoadErrorAlert from '@/components/load_error_alert/load_error_alert';
 import {
   getRulesService,
   ListRulesRequest,
 } from '@/services/rules';
 import { linkToRule } from '@/tools/urlHandling/links';
+import { prpcRetrier } from '@/services/shared_models';
 
 interface Props {
   project: string;
@@ -39,33 +40,37 @@ interface Props {
 
 const RulesTable = ({ project } : Props ) => {
   const rulesService = getRulesService();
-  const { isLoading, isError, data: rules, error } = useQuery(['rules', project], async () => {
-    const request: ListRulesRequest = {
-      parent: `projects/${encodeURIComponent(project || '')}`,
-    };
+  const { isLoading, data: rules, error } = useQuery(['rules', project],
+      async () => {
+        const request: ListRulesRequest = {
+          parent: `projects/${encodeURIComponent(project || '')}`,
+        };
 
-    const response = await rulesService.list(request);
+        const response = await rulesService.list(request);
 
-    const rules = response.rules || [];
-    const sortedRules = rules.sort((a, b)=> {
-      // These are RFC 3339-formatted date/time strings.
-      // Because they are all use the same timezone, and RFC 3339
-      // date/times are specified from most significant to least
-      // significant, any string sort that produces a lexicographical
-      // ordering should also sort by time.
-      return b.lastUpdateTime.localeCompare(a.lastUpdateTime);
-    });
-    return sortedRules;
-  });
+        const rules = response.rules || [];
+        const sortedRules = rules.sort((a, b)=> {
+          // These are RFC 3339-formatted date/time strings.
+          // Because they are all use the same timezone, and RFC 3339
+          // date/times are specified from most significant to least
+          // significant, any string sort that produces a lexicographical
+          // ordering should also sort by time.
+          return b.lastUpdateTime.localeCompare(a.lastUpdateTime);
+        });
+        return sortedRules;
+      }, {
+        retry: prpcRetrier,
+      },
+  );
   if (isLoading) {
     return <LinearProgress />;
   }
 
-  if (isError || rules === undefined) {
-    return <ErrorAlert
-      errorText={`Got an error while loading rules: ${error}`}
-      errorTitle="Failed to load rules"
-      showError/>;
+  if (error) {
+    return <LoadErrorAlert
+      entityName='rules'
+      error={error}
+    />;
   }
 
   return (
@@ -80,13 +85,15 @@ const RulesTable = ({ project } : Props ) => {
         </TableHead>
         <TableBody>
           {
-            rules.map((rule) => (
-              <TableRow key={rule.ruleId}>
-                <TableCell><Link component={RouterLink} to={linkToRule(rule.project, rule.ruleId)} underline="hover">{rule.ruleDefinition}</Link></TableCell>
-                <TableCell><Link href={rule.bug.url} underline="hover">{rule.bug.linkText}</Link></TableCell>
-                <TableCell>{dayjs.utc(rule.lastUpdateTime).local().fromNow()}</TableCell>
-              </TableRow>
-            ))
+            rules && (
+              rules.map((rule) => (
+                <TableRow key={rule.ruleId}>
+                  <TableCell><Link component={RouterLink} to={linkToRule(rule.project, rule.ruleId)} underline="hover">{rule.ruleDefinition}</Link></TableCell>
+                  <TableCell><Link href={rule.bug.url} underline="hover">{rule.bug.linkText}</Link></TableCell>
+                  <TableCell>{dayjs.utc(rule.lastUpdateTime).local().fromNow()}</TableCell>
+                </TableRow>
+              ))
+            )
           }
         </TableBody>
       </Table>

@@ -15,7 +15,8 @@
 describe('Home page', () => {
   beforeEach(() => {
     // Login.
-    cy.visit('/').contains('LOGIN').click();
+    cy.visit('/').contains('Log in').click();
+    cy.contains('LOGIN').click();
   });
 
   it('Loads the project list', () => {

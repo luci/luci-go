@@ -14,7 +14,9 @@
 
 describe('Clusters Page', () => {
   beforeEach(() => {
-    cy.visit('/').contains('LOGIN').click();
+    cy.visit('/').contains('Log in').click();
+    cy.contains('LOGIN').click();
+
     cy.get('body').contains('Logout');
     cy.visit('/p/chromium/clusters');
   });

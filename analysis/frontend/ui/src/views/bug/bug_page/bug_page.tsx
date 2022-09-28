@@ -25,12 +25,14 @@ import Paper from '@mui/material/Paper';
 
 import MultiRulesFound from '@/components/bugs/multii_rules_found/multi_rules_found';
 import ErrorAlert from '@/components/error_alert/error_alert';
+import LoadErrorAlert from '@/components/load_error_alert/load_error_alert';
 import {
   getRulesService,
   LookupBugRequest,
   parseRuleName,
 } from '@/services/rules';
 import { linkToRule } from '@/tools/urlHandling/links';
+import { prpcRetrier } from '@/services/shared_models';
 
 const BugPage = () => {
   const { bugTracker, id } = useParams();
@@ -62,6 +64,7 @@ const BugPage = () => {
     return await service.lookupBug(request);
   }, {
     enabled: !!(bugSystem && bugId),
+    retry: prpcRetrier,
   });
 
   if (!bugTracker || !bugId) {
@@ -97,10 +100,9 @@ const BugPage = () => {
         )}
         {
           error && (
-            <ErrorAlert
-              errorTitle="Failed to lookup bug"
-              errorText={`Failed to lookup bug data due to: ${error}`}
-              showError
+            <LoadErrorAlert
+              entityName="bug"
+              error={error}
             />
           )
         }

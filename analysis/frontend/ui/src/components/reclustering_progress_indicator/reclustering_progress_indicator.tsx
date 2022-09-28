@@ -26,6 +26,10 @@ import Alert from '@mui/material/Alert';
 import Button from '@mui/material/Button';
 import Grid from '@mui/material/Grid';
 
+import LoadErrorAlert from '@/components/load_error_alert/load_error_alert';
+
+import { prpcRetrier } from '@/services/shared_models';
+
 import {
   fetchProgress,
   noProgressToShow,
@@ -35,7 +39,6 @@ import {
   progressToRulesVersion,
 } from '../../tools/progress_tools';
 import CircularProgressWithLabel from '../circular_progress_with_label/circular_progress_with_label';
-import ErrorAlert from '../error_alert/error_alert';
 
 interface Props {
     project: string;
@@ -55,7 +58,7 @@ const ReclusteringProgressIndicator = ({
   const [reclusteringTarget, setReclusteringTarget] = useState('');
   const queryClient = useQueryClient();
 
-  const { isError, isLoading, data: progress, error } = useQuery(
+  const { isLoading, data: progress, error } = useQuery(
       ['reclusteringProgress', project],
       async () => {
         return await fetchProgress(project);
@@ -67,6 +70,7 @@ const ReclusteringProgressIndicator = ({
           }
           return 1000;
         },
+        retry: prpcRetrier,
         onSuccess: () => {
           setLastRefreshed(dayjs());
         },
@@ -101,18 +105,18 @@ const ReclusteringProgressIndicator = ({
     }
   }, [progressPerMille]);
 
+  if (error) {
+    return (
+      <LoadErrorAlert
+        entityName='reclustering progress'
+        error={error}
+      />
+    );
+  }
+
   if (isLoading && !progress) {
     // no need to show anything if there is no progress and we are still loading
     return <></>;
-  }
-
-  if (isError || !progress) {
-    return (
-      <ErrorAlert
-        errorText={`Failed to load reclustering progress${error ? ' due to ' + error : '.'}`}
-        errorTitle="Loading reclustering progress failed"
-        showError/>
-    );
   }
 
   const handleRefreshAnalysis = () => {

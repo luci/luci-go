@@ -13,19 +13,25 @@
 // limitations under the License.
 
 import {
-  Link,
   LinkProps,
+  Link as RouterLink,
 } from 'react-router-dom';
 
 import Container from '@mui/material/Container';
 import Grid from '@mui/material/Grid';
 import { styled } from '@mui/material/styles';
 
+import {
+  Alert,
+  AlertTitle,
+  Link,
+} from '@mui/material';
 import CentralizedProgress from '@/components/centralized_progress/centralized_progress';
-import ErrorAlert from '@/components/error_alert/error_alert';
+import LoadErrorAlert from '@/components/load_error_alert/load_error_alert';
 import useFetchProjects from '@/hooks/use_fetch_projects';
+import { loginLink } from '@/tools/urlHandling/links';
 
-const ProjectCard = styled(Link)<LinkProps>(() => ({
+const ProjectCard = styled(RouterLink)<LinkProps>(() => ({
   'padding': '1rem',
   'display': 'flex',
   'justify-content': 'center',
@@ -44,22 +50,31 @@ const ProjectCard = styled(Link)<LinkProps>(() => ({
 }));
 
 const HomePage = () => {
-  const { isError, error, isLoading, data: projects } = useFetchProjects();
+  const { error, isLoading, data: projects } = useFetchProjects();
   return (
     <Container maxWidth="xl">
       <h1>Projects</h1>
+      {
+        window.isAnonymous && (
+          <Alert
+            severity="info"
+            sx={{ mb: 2 }}>
+            <AlertTitle>Some projects may be hidden</AlertTitle>
+            Please <Link href={loginLink('/')}>log in</Link> to view all projects you have access to.
+          </Alert>
+        )
+      }
       {
         isLoading && (
           <CentralizedProgress />
         )
       }
       {
-        isError && (
+        error && (
           <Grid container item>
-            <ErrorAlert
-              errorTitle="Failed to load projects"
-              errorText={`An error has occured while trying to fetch projects: ${error}`}
-              showError />
+            <LoadErrorAlert
+              entityName="projects"
+              error={error} />
           </Grid>
         )
       }

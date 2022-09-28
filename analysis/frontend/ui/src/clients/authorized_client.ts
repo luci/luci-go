@@ -43,20 +43,22 @@ export class AuthorizedPrpcClient {
         [key: string]: string;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } | undefined): Promise<any> {
-    // Although PrpcClient allows us to pass a token to the constructor,
-    // we prefer to inject it at request time to ensure the most recent
-    // token is used.
-    const authState = await obtainAuthState();
-    let token: string;
-    if (this.useIDToken) {
-      token = authState.idToken;
-    } else {
-      token = authState.accessToken;
+    if (!window.isAnonymous) {
+      // Although PrpcClient allows us to pass a token to the constructor,
+      // we prefer to inject it at request time to ensure the most recent
+      // token is used.
+      const authState = await obtainAuthState();
+      let token: string;
+      if (this.useIDToken) {
+        token = authState.idToken;
+      } else {
+        token = authState.accessToken;
+      }
+      additionalHeaders = {
+        Authorization: 'Bearer ' + token,
+        ...additionalHeaders,
+      };
     }
-    additionalHeaders = {
-      Authorization: 'Bearer ' + token,
-      ...additionalHeaders,
-    };
     return this.client.call(service, method, message, additionalHeaders);
   }
 }
