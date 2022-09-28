@@ -90,6 +90,8 @@ func init() {
 //   * host: B, build: 1001, create time: now - 3min
 //   * host: A, build: 101, create time: now - 2min
 //
+// TODO(crbug/1369200): Fix the edge case that may cause Search failing to
+// return newer builds before older builds across different patchsets.
 // TODO(yiwzhang): ensure `cb` get called from newest to oldest builds across
 // all hosts.
 //

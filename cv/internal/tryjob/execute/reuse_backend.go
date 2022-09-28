@@ -35,7 +35,7 @@ func (w *worker) findReuseInBackend(ctx context.Context, definitions []*tryjob.D
 		case ok:
 			// Matching Tryjob already found.
 			if tj.Result.GetCreateTime().AsTime().After(candidate.Result.GetCreateTime().AsTime()) {
-				logging.Errorf(ctx, "backend.Search should return tryjob from newest to oldest; However, got %s before %s; please file a Buildbucket bug to investigate.", candidate.Result, tj.Result)
+				logging.Errorf(ctx, "FIXME(crbug/1369200): backend.Search is expected to return tryjob from newest to oldest; However, got %s before %s.", candidate.Result, tj.Result)
 			}
 		case w.knownExternalIDs.Has(string(tj.ExternalID)):
 		case canReuseTryjob(ctx, tj, w.run.Mode) == reuseDenied:
