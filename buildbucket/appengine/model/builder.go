@@ -84,7 +84,7 @@ type BuilderStat struct {
 
 	// LastScheduled is the last time we received a valid build scheduling request
 	// for this builder. Probabilistically update when scheduling a build.
-	LastScheduled time.Time `gae:"last_scheduled"`
+	LastScheduled time.Time `gae:"last_scheduled,noindex"`
 }
 
 // UpdateBuilderStat updates or creates datastore BuilderStat entities.
