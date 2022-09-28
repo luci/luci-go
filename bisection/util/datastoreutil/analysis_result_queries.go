@@ -12,8 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// TODO (nqmtuan): Perhaps move this file to a different util package
-package server
+package datastoreutil
 
 import (
 	"context"

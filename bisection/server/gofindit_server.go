@@ -21,6 +21,7 @@ import (
 	"go.chromium.org/luci/bisection/compilefailureanalysis/heuristic"
 	gfim "go.chromium.org/luci/bisection/model"
 	gfipb "go.chromium.org/luci/bisection/proto"
+	"go.chromium.org/luci/bisection/util/datastoreutil"
 
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/logging"
@@ -76,7 +77,7 @@ func (server *GoFinditServer) QueryAnalysis(c context.Context, req *gfipb.QueryA
 	bbid := req.BuildFailure.GetBbid()
 	logging.Infof(c, "QueryAnalysis for build %d", bbid)
 
-	analysis, err := GetAnalysisForBuild(c, bbid)
+	analysis, err := datastoreutil.GetAnalysisForBuild(c, bbid)
 	if err != nil {
 		logging.Errorf(c, "Could not query analysis for build %d: %s", bbid, err)
 		return nil, status.Errorf(codes.Internal, "failed to get analysis for build %d: %s", bbid, err)
@@ -125,7 +126,7 @@ func GetAnalysisResult(c context.Context, analysis *gfim.CompileFailureAnalysis)
 	// Populate Builder and BuildFailureType data
 	if analysis.CompileFailure != nil && analysis.CompileFailure.Parent() != nil {
 		// Add details from associated compile failure
-		failedBuild, err := GetBuild(c, analysis.CompileFailure.Parent().IntID())
+		failedBuild, err := datastoreutil.GetBuild(c, analysis.CompileFailure.Parent().IntID())
 		if err != nil {
 			return nil, err
 		}
@@ -139,7 +140,7 @@ func GetAnalysisResult(c context.Context, analysis *gfim.CompileFailureAnalysis)
 		}
 	}
 
-	heuristicAnalysis, err := GetHeuristicAnalysis(c, analysis)
+	heuristicAnalysis, err := datastoreutil.GetHeuristicAnalysis(c, analysis)
 	if err != nil {
 		return nil, err
 	}
@@ -148,7 +149,7 @@ func GetAnalysisResult(c context.Context, analysis *gfim.CompileFailureAnalysis)
 		return result, nil
 	}
 
-	suspects, err := GetSuspects(c, heuristicAnalysis)
+	suspects, err := datastoreutil.GetSuspects(c, heuristicAnalysis)
 	if err != nil {
 		return nil, err
 	}

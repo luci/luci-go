@@ -23,6 +23,7 @@ import (
 	"go.chromium.org/luci/bisection/model"
 	gfim "go.chromium.org/luci/bisection/model"
 	gfipb "go.chromium.org/luci/bisection/proto"
+	"go.chromium.org/luci/bisection/util/datastoreutil"
 
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/clock"
@@ -68,6 +69,13 @@ func Analyze(
 	}
 	signal.CalculateDependencyMap(c)
 
+	// Update CompileFailure with failed files from signal
+	err = updateFailedFiles(c, heuristicAnalysis, signal)
+	if err != nil {
+		logging.Errorf(c, "error in updateFailedFiles: %s", err)
+		return nil, err
+	}
+
 	analysisResult, err := AnalyzeChangeLogs(c, signal, changelogs)
 	if err != nil {
 		return nil, fmt.Errorf("Error in justifying changelogs %w", err)
@@ -94,6 +102,19 @@ func Analyze(
 	}
 
 	return heuristicAnalysis, nil
+}
+
+func updateFailedFiles(c context.Context, heuristicAnalysis *gfim.CompileHeuristicAnalysis, signal *gfim.CompileFailureSignal) error {
+	cfModel, err := datastoreutil.GetCompileFailureForAnalysis(c, heuristicAnalysis.ParentAnalysis.IntID())
+	if err != nil {
+		return err
+	}
+	keys := make([]string, 0, len(signal.Files))
+	for k := range signal.Files {
+		keys = append(keys, k)
+	}
+	cfModel.FailedFiles = keys
+	return datastore.Put(c, cfModel)
 }
 
 func saveResultsToDatastore(c context.Context, analysis *gfim.CompileHeuristicAnalysis, result *gfim.HeuristicAnalysisResult, gitilesHost string, gitilesProject string, gitilesRef string) error {

@@ -81,6 +81,9 @@ type CompileFailure struct {
 	// This is to speed up the compilation process, as we only want to rerun failed targets.
 	OutputTargets []string `gae:"output_targets"`
 
+	// The list of source files resulting in compile failures
+	FailedFiles []string `gae:"failed_files"`
+
 	// Compile rule, e.g. ACTION, CXX, etc.
 	// For chromium builds, it can be found in json.output[ninja_info] log of
 	// compile step.

@@ -19,11 +19,12 @@ import (
 	"context"
 	"fmt"
 
+	"go.chromium.org/luci/bisection/compilefailureanalysis/heuristic"
 	"go.chromium.org/luci/bisection/internal/gitiles"
 	gfim "go.chromium.org/luci/bisection/model"
 	gfipb "go.chromium.org/luci/bisection/proto"
 	"go.chromium.org/luci/bisection/rerun"
-	"go.chromium.org/luci/bisection/server"
+	"go.chromium.org/luci/bisection/util/datastoreutil"
 
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/logging"
@@ -36,12 +37,29 @@ import (
 // recipe, so we can identify the analysis in buildbucket.
 func VerifySuspect(c context.Context, suspect *gfim.Suspect, failedBuildID int64, analysisID int64) error {
 	logging.Infof(c, "Verifying suspect %d for build %d", datastore.KeyForObj(c, suspect).IntID(), failedBuildID)
+
 	// Get failed compile targets
-	compileFailure, err := server.GetCompileFailureForAnalysis(c, analysisID)
+	compileFailure, err := datastoreutil.GetCompileFailureForAnalysis(c, analysisID)
 	if err != nil {
 		return err
 	}
 	failedTargets := compileFailure.OutputTargets
+
+	// Get the changelog for the suspect
+	repoURL := gitiles.GetRepoUrl(c, &suspect.GitilesCommit)
+	changeLogs, err := gitiles.GetChangeLogsForSingleRevision(c, repoURL, suspect.GitilesCommit.Id)
+	if err != nil {
+		// This is non-critical, we just log and continue
+		logging.Errorf(c, "Cannot get changelog for revision %s: %s", suspect.GitilesCommit.Id, err)
+	} else {
+		// Check if any failed files is newly added in the change log.
+		// If it is the case, the parent revision cannot compile failed targets.
+		// In such cases, we do not pass the failed targets to recipe, instead
+		// we will compile all targets.
+		if hasNewTarget(c, compileFailure.FailedFiles, changeLogs) {
+			failedTargets = []string{}
+		}
+	}
 
 	// Get rerun build property
 	props := map[string]interface{}{
@@ -76,6 +94,19 @@ func VerifySuspect(c context.Context, suspect *gfim.Suspect, failedBuildID int64
 		return err
 	}
 	return nil
+}
+
+func hasNewTarget(c context.Context, failedFiles []string, changelog *gfim.ChangeLog) bool {
+	for _, file := range failedFiles {
+		for _, diff := range changelog.ChangeLogDiffs {
+			if diff.Type == gfim.ChangeType_ADD || diff.Type == gfim.ChangeType_COPY || diff.Type == gfim.ChangeType_RENAME {
+				if heuristic.IsSameFile(diff.NewPath, file) {
+					return true
+				}
+			}
+		}
+	}
+	return false
 }
 
 func createRerunBuildModel(c context.Context, build *buildbucketpb.Build, suspect *gfim.Suspect) (*gfim.CompileRerunBuild, error) {

@@ -69,6 +69,19 @@ func GetChangeLogs(c context.Context, repoUrl string, startRevision string, endR
 	return changeLogs, nil
 }
 
+// GetChangeLogsForSingleRevision returns the change log for a single revision
+func GetChangeLogsForSingleRevision(c context.Context, repoURL string, revision string) (*model.ChangeLog, error) {
+	startRevision := fmt.Sprintf("%s^", revision)
+	changeLogs, err := GetChangeLogs(c, repoURL, startRevision, revision)
+	if err != nil {
+		return nil, err
+	}
+	if len(changeLogs) != 1 {
+		return nil, fmt.Errorf("expected exactly 1 changelog for revision %s. Got %d", revision, len(changeLogs))
+	}
+	return changeLogs[0], nil
+}
+
 // GetParentCommit queries gitiles for the parent commit of a particular commit.
 // Parent commit is the commit right before the child commit.
 func GetParentCommit(c context.Context, repoURL string, childCommit string) (string, error) {

@@ -183,3 +183,35 @@ func TestVerifySuspect(t *testing.T) {
 		So(len(singleReruns), ShouldEqual, 1)
 	})
 }
+
+func TestHasNewTargets(t *testing.T) {
+	cls := &model.ChangeLog{
+		ChangeLogDiffs: []model.ChangeLogDiff{
+			{
+				Type:    model.ChangeType_ADD,
+				NewPath: "src/device/bluetooth/floss/bluetooth_gatt_service_floss.h",
+			},
+			{
+				Type:    model.ChangeType_RENAME,
+				NewPath: "src/device/bluetooth/floss/bluetooth_gatt_service_floss_1.h",
+			},
+			{
+				Type:    model.ChangeType_COPY,
+				NewPath: "src/device/bluetooth/floss/bluetooth_gatt_service_floss_2.h",
+			},
+			{
+				Type:    model.ChangeType_MODIFY,
+				NewPath: "src/device/bluetooth/floss/bluetooth_gatt_service_floss_3.h",
+			},
+		},
+	}
+
+	c := context.Background()
+
+	Convey("Has New Targets", t, func() {
+		So(hasNewTarget(c, []string{"device/bluetooth/floss/bluetooth_gatt_service_floss.h"}, cls), ShouldBeTrue)
+		So(hasNewTarget(c, []string{"device/bluetooth/floss/bluetooth_gatt_service_floss_1.h"}, cls), ShouldBeTrue)
+		So(hasNewTarget(c, []string{"device/bluetooth/floss/bluetooth_gatt_service_floss_2.h"}, cls), ShouldBeTrue)
+		So(hasNewTarget(c, []string{"device/bluetooth/floss/bluetooth_gatt_service_floss_3.h"}, cls), ShouldBeFalse)
+	})
+}
