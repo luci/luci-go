@@ -29,6 +29,8 @@ import (
 	bbpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/common/sync/parallel"
 
 	"go.chromium.org/luci/cv/api/recipe/v1"
@@ -130,6 +132,9 @@ func (f *Facade) schedule(ctx context.Context, host string, r *run.Run, cls []*r
 			tj.Result = result
 		case *bbpb.BatchResponse_Response_Error:
 			ret.Assign(i, status.ErrorProto(res.GetError()))
+		case nil:
+			logging.Errorf(ctx, "FIXME(crbug/1359509): received nil response at index %d for batch request:\n%s", i, batchReq)
+			return transient.Tag.Apply(errors.New("unexpected nil response from Buildbucket"))
 		default:
 			panic(fmt.Errorf("unexpected response type: %T", res.GetResponse()))
 		}
