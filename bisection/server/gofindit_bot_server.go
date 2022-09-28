@@ -148,6 +148,7 @@ func updateSuspectAsConfirmedCulprit(c context.Context, suspect *gfim.Suspect) e
 	}
 	analysis.VerifiedCulprits = verifiedCulprits
 	analysis.Status = gfipb.AnalysisStatus_FOUND
+	analysis.EndTime = clock.Now(c)
 	return datastore.Put(c, analysis)
 }
 

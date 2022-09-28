@@ -90,6 +90,9 @@ func AnalyzeFailure(
 	heuristicResult, e := heuristic.Analyze(c, analysis, regression_range, compileLogs)
 	if e != nil {
 		logging.Errorf(c, "Error during heuristic analysis for build %d: %v", e)
+		analysis.Status = gfipb.AnalysisStatus_ERROR
+		analysis.EndTime = clock.Now(c)
+		datastore.Put(c, analysis)
 		// As we only run heuristic analysis now, returns the error if heuristic
 		// analysis failed.
 		return nil, e

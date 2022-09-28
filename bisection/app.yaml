@@ -1,4 +1,5 @@
 runtime: go116
+instance_class: F4
 
 # Note: this is interpreted by gae.py, it maps the app ID being deployed to
 # values of ${...} vars.
