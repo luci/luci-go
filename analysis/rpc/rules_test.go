@@ -355,6 +355,10 @@ func TestRules(t *testing.T) {
 					Realm:      "testproject:@root",
 					Permission: perms.PermUpdateRule,
 				},
+				{
+					Realm:      "testproject:@root",
+					Permission: perms.PermGetRuleDefinition,
+				},
 			}
 			request := &pb.UpdateRuleRequest{
 				Rule: &pb.Rule{
@@ -380,6 +384,13 @@ func TestRules(t *testing.T) {
 
 				rule, err := srv.Update(ctx, request)
 				So(err, ShouldBeRPCPermissionDenied, "caller does not have permission analysis.rules.update")
+				So(rule, ShouldBeNil)
+			})
+			Convey("No rule definition permission", func() {
+				authState.IdentityPermissions = removePermission(authState.IdentityPermissions, perms.PermGetRuleDefinition)
+
+				rule, err := srv.Update(ctx, request)
+				So(err, ShouldBeRPCPermissionDenied, "caller does not have permission analysis.rules.getDefinition")
 				So(rule, ShouldBeNil)
 			})
 			Convey("Success", func() {

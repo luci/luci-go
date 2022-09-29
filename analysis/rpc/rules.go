@@ -19,11 +19,6 @@ import (
 	"fmt"
 	"time"
 
-	"go.chromium.org/luci/common/errors"
-	"go.chromium.org/luci/common/logging"
-	"go.chromium.org/luci/grpc/appstatus"
-	"go.chromium.org/luci/server/auth"
-	"go.chromium.org/luci/server/span"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/timestamppb"
@@ -35,6 +30,11 @@ import (
 	"go.chromium.org/luci/analysis/internal/perms"
 	configpb "go.chromium.org/luci/analysis/proto/config"
 	pb "go.chromium.org/luci/analysis/proto/v1"
+	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/grpc/appstatus"
+	"go.chromium.org/luci/server/auth"
+	"go.chromium.org/luci/server/span"
 )
 
 // Rules implements pb.RulesServer.
@@ -210,7 +210,7 @@ func (*rulesServer) Update(ctx context.Context, req *pb.UpdateRuleRequest) (*pb.
 	if err != nil {
 		return nil, invalidArgumentError(err)
 	}
-	if err := perms.VerifyProjectPermissions(ctx, project, perms.PermUpdateRule); err != nil {
+	if err := perms.VerifyProjectPermissions(ctx, project, perms.PermUpdateRule, perms.PermGetRuleDefinition); err != nil {
 		return nil, err
 	}
 
