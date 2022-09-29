@@ -18,7 +18,7 @@ ui-test:
 
 build-frontend:
 	cd frontend/ui; \
-	npm ci && npm run build
+	make release
 
 deploy: build-frontend
 	$(GAE_PY) upload -A luci-bisection-dev

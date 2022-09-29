@@ -1,0 +1,12 @@
+name: luci-go/luci-bisection
+extends: ../gae.yaml
+
+inputsdir: ../../bisection
+
+build:
+  # This builds the frontend code, updating ${inputsdir}/frontend/ui/dist.
+  - run: ['make', 'release']
+    cwd: ${inputsdir}/frontend/ui
+
+  - go_gae_bundle: ${inputsdir}/app.yaml
+    dest: ${contextdir}/bisection
