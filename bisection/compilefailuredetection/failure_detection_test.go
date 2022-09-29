@@ -318,22 +318,8 @@ func TestFailureDetection(t *testing.T) {
 			CreateTime: &timestamppb.Timestamp{Seconds: 100},
 		}
 
-		lastPassedBuild := &buildbucketpb.Build{
-			Id: 8000,
-			Builder: &buildbucketpb.BuilderID{
-				Project: "chromium",
-				Bucket:  "ci",
-				Builder: "ios",
-			},
-			Number:     121,
-			Status:     buildbucketpb.Status_FAILURE,
-			StartTime:  &timestamppb.Timestamp{Seconds: 100},
-			EndTime:    &timestamppb.Timestamp{Seconds: 101},
-			CreateTime: &timestamppb.Timestamp{Seconds: 100},
-		}
-
 		Convey("There is no existing analysis", func() {
-			check, cf, e := analysisExists(c, build, lastPassedBuild, firstFailedBuild)
+			check, cf, e := analysisExists(c, build, firstFailedBuild)
 			So(check, ShouldBeTrue)
 			So(cf, ShouldNotBeNil)
 			So(e, ShouldBeNil)
@@ -364,7 +350,7 @@ func TestFailureDetection(t *testing.T) {
 			}
 			So(datastore.Put(c, compile_failure_analysis), ShouldBeNil)
 			datastore.GetTestable(c).CatchupIndexes()
-			check, cf, e := analysisExists(c, build, lastPassedBuild, firstFailedBuild)
+			check, cf, e := analysisExists(c, build, firstFailedBuild)
 			So(check, ShouldBeFalse)
 			So(e, ShouldBeNil)
 			So(cf, ShouldNotBeNil)

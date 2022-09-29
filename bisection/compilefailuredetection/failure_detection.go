@@ -92,13 +92,13 @@ func AnalyzeBuild(c context.Context, bbid int64) (bool, error) {
 	}
 
 	// Check if we need to trigger a new analysis.
-	yes, cf, err := analysisExists(c, build, lastPassedBuild, firstFailedBuild)
+	yes, cf, err := analysisExists(c, build, firstFailedBuild)
 	if err != nil {
 		return false, err
 	}
 	// We don't need to trigger a new analysis.
 	if !yes {
-		logging.Infof(c, "There is already an analysis for regression range (%d, %d). No new analysis will be triggered for build %d", lastPassedBuild.Id, firstFailedBuild.Id, bbid)
+		logging.Infof(c, "There is already an analysis for first failed build %d. No new analysis will be triggered for build %d", firstFailedBuild.Id, bbid)
 		return false, nil
 	}
 
@@ -188,19 +188,19 @@ func getLastPassedFirstFailedBuilds(c context.Context, refBuild *buildbucketpb.B
 }
 
 // analysisExists checks if we need to trigger a new analysis.
-// The function checks if there has been an analysis with the regression range.
+// The function checks if there has been an analysis associated with the firstFailedBuild.
 // Returns true if a new analysis should be triggered, returns false otherwise.
 // Also return the compileFailure model associated with the failure for convenience.
 // Note that this function also create/update the associated CompileFailureModel
-func analysisExists(c context.Context, refFailedBuild *buildbucketpb.Build, lastPassedBuild *buildbucketpb.Build, firstFailedBuild *buildbucketpb.Build) (bool, *model.CompileFailure, error) {
-	logging.Infof(c, "check analysisExists for range (%d, %d)", lastPassedBuild.Id, firstFailedBuild.Id)
+func analysisExists(c context.Context, refFailedBuild *buildbucketpb.Build, firstFailedBuild *buildbucketpb.Build) (bool, *model.CompileFailure, error) {
+	logging.Infof(c, "check analysisExists for firstFailedBuild %d", firstFailedBuild.Id)
 
 	// Create a CompileFailure record in datastore if necessary
 	compileFailure, err := createCompileFailureModel(c, refFailedBuild)
 
-	// Search in datastore if there is already an analysis with the same regression range
+	// Search in datastore if there is already an analysis with the first failed build.
 	// If not, trigger an analysis
-	analysis, err := searchAnalysis(c, lastPassedBuild.Id, firstFailedBuild.Id)
+	analysis, err := searchAnalysis(c, firstFailedBuild.Id)
 
 	if err != nil {
 		return false, nil, err
@@ -289,20 +289,20 @@ func createCompileFailureModel(c context.Context, failedBuild *buildbucketpb.Bui
 	return compileFailure, nil
 }
 
-func searchAnalysis(c context.Context, lastPassedBuildId int64, firstFailedBuildId int64) (*model.CompileFailureAnalysis, error) {
-	q := datastore.NewQuery("CompileFailureAnalysis").Eq("last_passed_build_id", lastPassedBuildId).Eq("first_failed_build_id", firstFailedBuildId)
+func searchAnalysis(c context.Context, firstFailedBuildId int64) (*model.CompileFailureAnalysis, error) {
+	q := datastore.NewQuery("CompileFailureAnalysis").Eq("first_failed_build_id", firstFailedBuildId)
 	analyses := []*model.CompileFailureAnalysis{}
 	err := datastore.GetAll(c, q, &analyses)
 	if err != nil {
-		logging.Errorf(c, "Error querying datastore for analysis for range (%d, %d): %s", lastPassedBuildId, firstFailedBuildId, err)
+		logging.Errorf(c, "Error querying datastore for analysis for first_failed_build_id %d: %s", firstFailedBuildId, err)
 		return nil, err
 	}
 	if len(analyses) == 0 {
 		return nil, nil
 	}
-	// There should only be at most one analysis for a range.
+	// There should only be at most one analysis firstFailedBuildId.
 	if len(analyses) > 1 {
-		logging.Warningf(c, "Found more than one analysis form range (%d, %d)", lastPassedBuildId, firstFailedBuildId)
+		logging.Warningf(c, "Found more than one analysis for first_failed_build_id %d", firstFailedBuildId)
 	}
 	return analyses[0], nil
 }
