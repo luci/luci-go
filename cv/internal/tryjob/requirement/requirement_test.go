@@ -573,6 +573,25 @@ func TestCompute(t *testing.T) {
 			}
 			So(selected, ShouldBeBetween, 150, 250) // expecting 1000*20%=200
 		})
+
+		Convey("experimental but explicitly included ", func() {
+			in := makeInput(ctx, []*cfgpb.Verifiers_Tryjob_Builder{
+				builderConfigGenerator{Name: "test-proj/test/expbuilder", ExperimentPercentage: 0.001}.generate(),
+			})
+			in.RunOptions.IncludedTryjobs = append(in.RunOptions.IncludedTryjobs, "test-proj/test:expbuilder")
+
+			baseCLID := int(in.CLs[0].ID)
+			for i := 0; i < 10; i++ { // should include the definition all the time.
+				in.CLs[0].ID = common.CLID(baseCLID + i)
+				res, err := Compute(ctx, *in)
+				So(err, ShouldBeNil)
+				So(res.Requirement.GetDefinitions(), ShouldHaveLength, 1)
+				def := res.Requirement.GetDefinitions()[0]
+				So(def.GetCritical(), ShouldBeTrue)
+				So(def.GetExperimental(), ShouldBeTrue)
+			}
+		})
+
 		Convey("with location matching", func() {
 			Convey("empty change after location exclusions skips builder", func() {
 				in := makeInput(ctx, []*cfgpb.Verifiers_Tryjob_Builder{builderConfigGenerator{

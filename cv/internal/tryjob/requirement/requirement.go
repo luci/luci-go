@@ -407,7 +407,7 @@ const (
 
 // shouldInclude decides based on the configuration whether a given builder
 // should be skipped in generating the Requirement.
-func shouldInclude(ctx context.Context, in Input, dm *definitionMaker, useEquivalent bool, b *cfgpb.Verifiers_Tryjob_Builder, incl stringset.Set, owners []string) (inclusionResult, ComputationFailure, error) {
+func shouldInclude(ctx context.Context, in Input, dm *definitionMaker, experimentSelected, useEquivalent bool, b *cfgpb.Verifiers_Tryjob_Builder, incl stringset.Set, owners []string) (inclusionResult, ComputationFailure, error) {
 	switch ps := isPresubmit(b); {
 	case in.RunOptions.GetSkipTryjobs() && !ps:
 		return skipBuilder, nil, nil
@@ -454,6 +454,10 @@ func shouldInclude(ctx context.Context, in Input, dm *definitionMaker, useEquiva
 		dm.equivalence = equivalentOnly
 		dm.criticality = true // explicitly included builder is always critical
 		return includeBuilder, nil, nil
+	}
+
+	if b.GetExperimentPercentage() != 0 && !experimentSelected {
+		return skipBuilder, nil, nil
 	}
 
 	if b.IncludableOnly {
@@ -642,12 +646,12 @@ func Compute(ctx context.Context, in Input) (*ComputationResult, error) {
 	// Utilize multiple cores.
 	err := parallel.WorkPool(min(len(builders), runtime.NumCPU()), func(work chan<- func() error) {
 		for i, builder := range builders {
-			if expPercentage := builder.GetExperimentPercentage(); expPercentage != 0 && experimentRand.Float32()*100 > expPercentage {
-				// skip this experimental builder.
-				continue
-			}
 			i, builder := i, builder
-			useEquivalent := false
+			var experimentSelected bool
+			var useEquivalent bool
+			if expPercentage := builder.GetExperimentPercentage(); expPercentage != 0 {
+				experimentSelected = experimentRand.Float32()*100 <= expPercentage
+			}
 			if equiPercentage := builder.GetEquivalentTo().GetPercentage(); equiPercentage != 0 {
 				useEquivalent = equivalentBuilderRand.Float32()*100 <= equiPercentage
 			}
@@ -661,7 +665,7 @@ func Compute(ctx context.Context, in Input) (*ComputationResult, error) {
 				} else {
 					dm.skipStaleCheck = builder.GetCancelStale() == cfgpb.Toggle_NO
 				}
-				switch r, compFail, err := shouldInclude(ctx, in, dm, useEquivalent, builder, explicitlyIncluded, allOwnerEmails); {
+				switch r, compFail, err := shouldInclude(ctx, in, dm, experimentSelected, useEquivalent, builder, explicitlyIncluded, allOwnerEmails); {
 				case err != nil:
 					return err
 				case compFail != nil:
