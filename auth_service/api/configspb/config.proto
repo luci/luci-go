@@ -47,3 +47,27 @@ message IPAllowlistConfig {
   // A mapping "identity name -> IP allowlist name".
   repeated Assignment assignments = 2;
 }
+
+// NOTE: There is another copy of this message, please be sure to keep both in
+// sync.
+//
+// https://chromium.googlesource.com/infra/luci/luci-py/+/refs/heads/main/appengine/auth_service/proto/config.proto#114
+//
+// Legacy config, this is maintained to support clients still utilizing
+// https://crsrc.org/i/luci/client/utils/oauth.py;l=419;drc=173496da114efb94dceedb58e588b9c58dabc5e9
+//
+// Global config. Includes OAuth client_id allowlist and token server URL.
+//
+// Provided via 'oauth.cfg' config file.
+message OAuthConfig {
+  // ClientID returned by /auth/api/v1/server/oauth_config endpoint to clients.
+  string primary_client_id = 1;
+  // Client secret (that's not really a secret, since it is visible) returned
+  // by /auth/api/v1/server/oauth_config endpoint to clients. Corresponding
+  // callback URL must be localhost or urn:ietf:wg:oauth:2.0:oob.
+  string primary_client_secret = 2;
+  // Allowlist of all accepted client_ids (in addition to the primary one).
+  repeated string client_ids = 3;
+  // URL of a token server to use to generate delegation tokens.
+  string token_server_url = 4;
+}
