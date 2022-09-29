@@ -24,7 +24,6 @@ import (
 	. "go.chromium.org/luci/common/testing/assertions"
 )
 
-
 func TestAllowlistConfigValidation(t *testing.T) {
 	t.Parallel()
 
@@ -84,7 +83,7 @@ func TestAllowlistConfigValidation(t *testing.T) {
 			So(vctx.Finalize(), ShouldErrLike, "invalid ip allowlist name")
 		})
 
-		Convey("Catches duplicate allowlist bug", func(){
+		Convey("Catches duplicate allowlist bug", func() {
 			badCfg := `
 				ip_allowlists {
 					name: "bots"
@@ -99,25 +98,6 @@ func TestAllowlistConfigValidation(t *testing.T) {
 			`
 			So(validateAllowlist(vctx, configSet, path, []byte(badCfg)), ShouldBeNil)
 			So(vctx.Finalize(), ShouldErrLike, "ip allowlist is defined twice")
-		})
-
-		Convey("Catches multiple errors", func() {
-			badCfg := `
-				ip_allowlists {
-					name: "bots"
-				}
-				ip_allowlists {
-					name: "?!chromium-test-dev-bots"
-					includes: "bots"
-				}
-				ip_allowlists {
-					name: "bots"
-				}
-			`
-			So(validateAllowlist(vctx, configSet, path, []byte(badCfg)), ShouldBeNil)
-			errs := vctx.Finalize().(*validation.Error).Errors
-			So(errs, ShouldContainErr, "ip allowlist is defined twice")
-			So(errs, ShouldContainErr, "invalid ip allowlist name")
 		})
 
 		Convey("Bad CIDR format", func() {
@@ -140,20 +120,6 @@ func TestAllowlistConfigValidation(t *testing.T) {
 			`
 			So(validateAllowlist(vctx, configSet, path, []byte(badCfg)), ShouldBeNil)
 			So(vctx.Finalize(), ShouldErrLike, "unable to parse ip for subnet")
-		})
-
-		Convey("Multiple subnet errors in one vctx", func() {
-			badCfg := `
-				ip_allowlists {
-					name: "bots"
-					subnets: "not a subnet/"
-					subnets: "not a subnet"
-				}
-			`
-			So(validateAllowlist(vctx, configSet, path, []byte(badCfg)), ShouldBeNil)
-			errs := vctx.Finalize().(*validation.Error).Errors
-			So(errs, ShouldContainErr, "invalid CIDR address")
-			So(errs, ShouldContainErr, "unable to parse ip for subnet")
 		})
 
 		Convey("Bad Identity format", func() {
