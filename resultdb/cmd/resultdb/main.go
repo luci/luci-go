@@ -18,10 +18,14 @@ import (
 	"flag"
 
 	"go.chromium.org/luci/common/flag/stringmapflag"
+	"go.chromium.org/luci/config/server/cfgmodule"
 	"go.chromium.org/luci/server"
+	"go.chromium.org/luci/server/module"
+	quota "go.chromium.org/luci/server/quotabeta"
 
 	"go.chromium.org/luci/resultdb/internal"
 	"go.chromium.org/luci/resultdb/internal/artifactcontent"
+	"go.chromium.org/luci/resultdb/internal/rpcquota"
 	"go.chromium.org/luci/resultdb/internal/services/resultdb"
 )
 
@@ -46,7 +50,15 @@ func main() {
 
 	artifactcontent.RegisterRBEInstanceFlag(flag.CommandLine, &opts.ArtifactRBEInstance)
 
-	internal.Main(func(srv *server.Server) error {
+	modules := []module.Module{
+		// rpcquota and cfgmodule must be installed before quota, so
+		// they need to be passed here rather than declared as
+		// Dependencies of quota.
+		rpcquota.NewModuleFromFlags(),
+		cfgmodule.NewModuleFromFlags(),
+		quota.NewModuleFromFlags(),
+	}
+	internal.MainWithModules(modules, func(srv *server.Server) error {
 		return resultdb.InitServer(srv, opts)
 	})
 }

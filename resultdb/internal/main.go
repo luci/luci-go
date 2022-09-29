@@ -28,7 +28,12 @@ import (
 
 // Main registers all dependencies and runs a service.
 func Main(init func(srv *server.Server) error) {
-	modules := []module.Module{
+	MainWithModules([]module.Module{}, init)
+}
+
+// MainWithModules is like Main, but accepts additional modules to register.
+func MainWithModules(modules []module.Module, init func(srv *server.Server) error) {
+	defaultModules := []module.Module{
 		gerritauth.NewModuleFromFlags(),
 		limiter.NewModuleFromFlags(),
 		redisconn.NewModuleFromFlags(),
@@ -36,6 +41,7 @@ func Main(init func(srv *server.Server) error) {
 		span.NewModuleFromFlags(),
 		tq.NewModuleFromFlags(),
 	}
+	modules = append(modules, defaultModules...)
 	server.Main(nil, modules, func(srv *server.Server) error {
 		srv.PRPC.Authenticator = &auth.Authenticator{
 			Methods: []auth.Method{
