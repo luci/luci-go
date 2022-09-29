@@ -18,17 +18,18 @@
 package main
 
 import (
+	// Ensure registration of validation rules.
+	// NOTE: this must go before anything that depends on validation globals, e.g. cfgcache.Register in srvcfg.
+	"go.chromium.org/luci/auth_service/internal/configs/validation"
+
 	"context"
 
 	"go.chromium.org/luci/server"
 	"go.chromium.org/luci/server/cron"
 	"go.chromium.org/luci/server/module"
 
-	// Ensure registration of validation rules.
-	// NOTE: this must go before anything that depends on validation globals, e.g. cfgcache.Register in srvcfg.
-	_ "go.chromium.org/luci/auth_service/internal/configs/validation"
-
 	"go.chromium.org/luci/auth_service/impl"
+	"go.chromium.org/luci/auth_service/impl/model"
 	"go.chromium.org/luci/auth_service/internal/configs/srvcfg"
 )
 
@@ -40,7 +41,21 @@ func main() {
 	impl.Main(modules, func(srv *server.Server) error {
 		// Register cron.
 		cron.RegisterHandler("update-config", func(ctx context.Context) error {
-			return srvcfg.Update(ctx)
+			if err := srvcfg.Update(ctx); err != nil {
+				return err
+			}
+			cfg, err := srvcfg.Get(ctx)
+			if err != nil {
+				return err
+			}
+			subnets, err := validation.GetSubnets(cfg.IpAllowlists)
+			if err != nil {
+				return err
+			}
+			if err := model.UpdateAllowlistEntities(ctx, subnets, true); err != nil {
+				return err
+			}
+			return nil
 		})
 		return nil
 	})

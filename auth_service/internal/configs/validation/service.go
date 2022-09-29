@@ -45,8 +45,8 @@ func validateAllowlist(ctx *validation.Context, configSet, path string, content 
 	if err := validateAllowlistCfg(&cfg); err != nil {
 		ctx.Error(err)
 	}
-	_, err := resolveAllowlistIncludes(cfg.GetIpAllowlists())
-	if err != nil {
+
+	if _, err := GetSubnets(cfg.GetIpAllowlists()); err != nil {
 		ctx.Error(err)
 	}
 	return nil
@@ -104,8 +104,8 @@ func validateAllowlistCfg(cfg *configspb.IPAllowlistConfig) error {
 	return nil
 }
 
-// resolveAllowlistIncludes validates the includes of all allowlists and generates a map {allowlistName: []subnets}.
-func resolveAllowlistIncludes(allowlists []*configspb.IPAllowlistConfig_IPAllowlist) (map[string][]string, error) {
+// GetSubnets validates the includes of all allowlists and generates a map {allowlistName: []subnets}.
+func GetSubnets(allowlists []*configspb.IPAllowlistConfig_IPAllowlist) (map[string][]string, error) {
 	allowlistsByName := make(map[string]*configspb.IPAllowlistConfig_IPAllowlist, len(allowlists))
 	for _, al := range allowlists {
 		allowlistsByName[al.GetName()] = al

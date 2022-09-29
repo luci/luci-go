@@ -33,6 +33,7 @@ import (
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/sync/parallel"
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/server/auth"
@@ -376,6 +377,15 @@ func isExternalAuthGroupName(name string) bool {
 func makeAuthGroup(ctx context.Context, id string) *AuthGroup {
 	return &AuthGroup{
 		Kind:   "AuthGroup",
+		ID:     id,
+		Parent: RootKey(ctx),
+	}
+}
+
+// makeAuthIPAllowlist is a convenience function for creating an AuthIPAllowlist with the given ID.
+func makeAuthIPAllowlist(ctx context.Context, id string) *AuthIPAllowlist {
+	return &AuthIPAllowlist{
+		Kind:   "AuthIPWhitelist",
 		ID:     id,
 		Parent: RootKey(ctx),
 	}
@@ -940,11 +950,7 @@ func DeleteAuthGroup(ctx context.Context, groupName string, etag string) error {
 // Returns datastore.ErrNoSuchEntity if the allowlist given is not present.
 // Returns an annotated error for other errors.
 func GetAuthIPAllowlist(ctx context.Context, allowlistName string) (*AuthIPAllowlist, error) {
-	authIPAllowlist := &AuthIPAllowlist{
-		Kind:   "AuthIPWhitelist",
-		ID:     allowlistName,
-		Parent: RootKey(ctx),
-	}
+	authIPAllowlist := makeAuthIPAllowlist(ctx, allowlistName)
 
 	switch err := datastore.Get(ctx, authIPAllowlist); {
 	case err == nil:
@@ -968,6 +974,84 @@ func GetAllAuthIPAllowlists(ctx context.Context) ([]*AuthIPAllowlist, error) {
 		return nil, errors.Annotate(err, "error getting all AuthIPAllowlist entities").Err()
 	}
 	return authIPAllowlists, nil
+}
+
+// UpdateAllowlistEntities updates all the entities in datastore from ip_allowlist.cfg.
+//
+// TODO(crbug/1336135): Remove dryrun checks when turning off Python Auth Service.
+func UpdateAllowlistEntities(ctx context.Context, subnetMap map[string][]string, dryRun bool) error {
+	return runAuthDBChange(ctx, func(ctx context.Context, commitEntity commitAuthEntity) error {
+		oldAllowlists, err := GetAllAuthIPAllowlists(ctx)
+		if err != nil {
+			return err
+		}
+		oldAllowlistMap := make(map[string]*AuthIPAllowlist, len(oldAllowlists))
+		oldAllowlistSet := stringset.New(len(oldAllowlists))
+		for _, al := range oldAllowlists {
+			oldAllowlistSet.Add(al.ID)
+			oldAllowlistMap[al.ID] = al
+		}
+
+		updatedAllowlistSet := stringset.New(len(subnetMap))
+		for id := range subnetMap {
+			updatedAllowlistSet.Add(id)
+		}
+
+		currentIdentity := auth.CurrentIdentity(ctx)
+		now := clock.Now(ctx).UTC()
+
+		toCreate := updatedAllowlistSet.Difference(oldAllowlistSet)
+		for id := range toCreate {
+			entity := makeAuthIPAllowlist(ctx, id)
+
+			entity.Subnets = subnetMap[id]
+			entity.Description = "Imported from ip_allowlist.cfg"
+
+			creator := currentIdentity
+			createdTS := now
+
+			entity.CreatedBy = string(creator)
+			entity.CreatedTS = createdTS
+
+			if dryRun {
+				logging.Infof(ctx, "creating:\n%+v", entity)
+			} else {
+				if err := commitEntity(entity, createdTS, creator, false); err != nil {
+					return err
+				}
+			}
+		}
+
+		toUpdate := oldAllowlistSet.Intersect(updatedAllowlistSet)
+		for id := range toUpdate {
+			if len(oldAllowlistMap[id].Subnets) == len(subnetMap[id]) && oldAllowlistSet.HasAll(subnetMap[id]...) {
+				continue
+			}
+			entity := oldAllowlistMap[id]
+			entity.Subnets = subnetMap[id]
+
+			if dryRun {
+				logging.Infof(ctx, "updating:\n%+v", entity)
+			} else {
+				if err := commitEntity(entity, now, currentIdentity, false); err != nil {
+					return err
+				}
+			}
+		}
+
+		toDelete := oldAllowlistSet.Difference(updatedAllowlistSet)
+		for id := range toDelete {
+			if dryRun {
+				logging.Infof(ctx, "deleting:\n%v", id)
+			} else {
+				if err := commitEntity(oldAllowlistMap[id], now, currentIdentity, true); err != nil {
+					return err
+				}
+			}
+		}
+
+		return nil
+	})
 }
 
 // GetAuthGlobalConfig returns the AuthGlobalConfig datastore entity.

@@ -1096,6 +1096,169 @@ func TestGetAllAuthIPAllowlists(t *testing.T) {
 	})
 }
 
+func TestUpdateAllowlistEntities(t *testing.T) {
+	t.Parallel()
+
+	Convey("Testing UpdateAllowlistEntities", t, func() {
+		ctx := auth.WithState(memory.Use(context.Background()), &authtest.FakeState{
+			Identity:       "user:someone@example.com",
+			IdentityGroups: []string{AdminGroup},
+		})
+		ctx = clock.Set(ctx, testclock.New(testCreatedTS))
+		ctx = info.SetImageVersion(ctx, "test-version")
+		ctx, taskScheduler := tq.TestingContext(txndefer.FilterRDS(ctx), nil)
+
+		So(datastore.Put(ctx,
+			testIPAllowlist(ctx, "test-allowlist-1", nil),
+			testIPAllowlist(ctx, "test-allowlist-2", []string{"0.0.0.0/24", "127.0.0.1/20"}),
+		), ShouldBeNil)
+
+		baseSubnetMap := map[string][]string{
+			"test-allowlist-1": {"127.0.0.1/10", "127.0.0.1/20"},
+			"test-allowlist-2": {"0.0.0.0/24", "127.0.0.1/20"},
+		}
+		baseAllowlistSlice := []*AuthIPAllowlist{
+			{
+				AuthVersionedEntityMixin: AuthVersionedEntityMixin{
+					ModifiedTS:    testCreatedTS,
+					ModifiedBy:    "user:someone@example.com",
+					AuthDBRev:     1,
+					AuthDBPrevRev: 1337,
+				},
+				Kind:        "AuthIPWhitelist",
+				ID:          "test-allowlist-1",
+				Parent:      RootKey(ctx),
+				Subnets:     []string{"127.0.0.1/10", "127.0.0.1/20"},
+				Description: fmt.Sprintf("This is a test AuthIPAllowlist %q.", "test-allowlist-1"),
+				CreatedTS:   testCreatedTS,
+				CreatedBy:   "user:test-creator@example.com",
+			},
+			{
+				AuthVersionedEntityMixin: AuthVersionedEntityMixin{
+					ModifiedTS:    testCreatedTS,
+					ModifiedBy:    "user:someone@example.com",
+					AuthDBRev:     1,
+					AuthDBPrevRev: 1337,
+				},
+				Kind:        "AuthIPWhitelist",
+				ID:          "test-allowlist-2",
+				Parent:      RootKey(ctx),
+				Subnets:     []string{"0.0.0.0/24", "127.0.0.1/20"},
+				Description: fmt.Sprintf("This is a test AuthIPAllowlist %q.", "test-allowlist-2"),
+				CreatedTS:   testCreatedTS,
+				CreatedBy:   "user:test-creator@example.com",
+			},
+		}
+
+		allowlistToCreate := &AuthIPAllowlist{
+			AuthVersionedEntityMixin: AuthVersionedEntityMixin{
+				ModifiedTS:    testCreatedTS,
+				ModifiedBy:    "user:someone@example.com",
+				AuthDBRev:     1,
+				AuthDBPrevRev: 0,
+			},
+			Kind:        "AuthIPWhitelist",
+			ID:          "test-allowlist-3",
+			Parent:      RootKey(ctx),
+			Subnets:     []string{"123.4.5.6"},
+			Description: "Imported from ip_allowlist.cfg",
+			CreatedTS:   testCreatedTS,
+			CreatedBy:   "user:someone@example.com",
+		}
+
+		Convey("Create allowlist entity", func() {
+			baseSubnetMap["test-allowlist-3"] = []string{"123.4.5.6"}
+			So(UpdateAllowlistEntities(ctx, baseSubnetMap, false), ShouldBeNil)
+			allowlists, err := GetAllAuthIPAllowlists(ctx)
+			So(err, ShouldBeNil)
+			expectedSlice := append(baseAllowlistSlice, allowlistToCreate)
+			So(allowlists, ShouldResemble, expectedSlice)
+		})
+
+		Convey("Update allowlist entity", func() {
+			baseSubnetMap["test-allowlist-1"] = []string{"122.22.44.66"}
+			So(UpdateAllowlistEntities(ctx, baseSubnetMap, false), ShouldBeNil)
+			allowlists, err := GetAllAuthIPAllowlists(ctx)
+			baseAllowlistSlice[0].Subnets = []string{"122.22.44.66"}
+			So(err, ShouldBeNil)
+			So(allowlists, ShouldResemble, baseAllowlistSlice)
+		})
+
+		Convey("Delete allowlist entity", func() {
+			delete(baseSubnetMap, "test-allowlist-1")
+			So(UpdateAllowlistEntities(ctx, baseSubnetMap, false), ShouldBeNil)
+			allowlists, err := GetAllAuthIPAllowlists(ctx)
+			expectedSlice := baseAllowlistSlice[1:]
+			So(err, ShouldBeNil)
+			So(allowlists, ShouldResemble, expectedSlice)
+		})
+
+		Convey("Multiple allowlist entity changes", func() {
+			baseSubnetMap["test-allowlist-3"] = []string{"123.4.5.6"}
+			baseSubnetMap["test-allowlist-1"] = []string{"122.22.44.66"}
+			delete(baseSubnetMap, "test-allowlist-2")
+			So(UpdateAllowlistEntities(ctx, baseSubnetMap, false), ShouldBeNil)
+			allowlists, err := GetAllAuthIPAllowlists(ctx)
+			allowlist0Copy := *baseAllowlistSlice[0]
+			allowlist0Copy.Subnets = baseSubnetMap["test-allowlist-1"]
+			expectedAllowlists := []*AuthIPAllowlist{&allowlist0Copy, allowlistToCreate}
+			So(err, ShouldBeNil)
+			So(allowlists, ShouldResemble, expectedAllowlists)
+
+			state1, err := GetReplicationState(ctx)
+			So(err, ShouldBeNil)
+			So(state1.AuthDBRev, ShouldEqual, 1)
+			tasks := taskScheduler.Tasks()
+			So(tasks, ShouldHaveLength, 1)
+			task := tasks[0]
+			So(task.Class, ShouldEqual, "process-change-task")
+			So(task.Payload, ShouldResembleProto, &taskspb.ProcessChangeTask{AuthDbRev: 1})
+
+			entities, err := getAllDatastoreEntities(ctx, "AuthIPWhitelistHistory", HistoricalRevisionKey(ctx, 1))
+			So(err, ShouldBeNil)
+			So(entities, ShouldHaveLength, 3)
+			historicalEntity := entities[0]
+			So(getDatastoreKey(historicalEntity).String(), ShouldEqual, "dev~app::/AuthGlobalConfig,\"root\"/Rev,1/AuthIPWhitelistHistory,\"test-allowlist-1\"")
+			So(getStringProp(historicalEntity, "description"), ShouldEqual, baseAllowlistSlice[0].Description)
+			So(getStringSliceProp(historicalEntity, "subnets"), ShouldResemble, allowlist0Copy.Subnets)
+			So(getStringProp(historicalEntity, "modified_by"), ShouldEqual, "user:someone@example.com")
+			So(getTimeProp(historicalEntity, "modified_ts").Unix(), ShouldEqual, testCreatedTS.Unix())
+			So(getInt64Prop(historicalEntity, "auth_db_rev"), ShouldEqual, 1)
+			So(getInt64Prop(historicalEntity, "auth_db_prev_rev"), ShouldEqual, 1337)
+			So(getStringProp(historicalEntity, "auth_db_change_comment"), ShouldEqual, "Go pRPC API")
+			So(getStringProp(historicalEntity, "auth_db_app_version"), ShouldEqual, "test-version")
+
+			historicalEntity = entities[1]
+			So(getDatastoreKey(historicalEntity).String(), ShouldEqual, "dev~app::/AuthGlobalConfig,\"root\"/Rev,1/AuthIPWhitelistHistory,\"test-allowlist-2\"")
+			So(getStringProp(historicalEntity, "description"), ShouldEqual, baseAllowlistSlice[1].Description)
+			So(getStringSliceProp(historicalEntity, "subnets"), ShouldResemble, baseAllowlistSlice[1].Subnets)
+			So(getStringProp(historicalEntity, "modified_by"), ShouldEqual, "user:someone@example.com")
+			So(getTimeProp(historicalEntity, "modified_ts").Unix(), ShouldEqual, testCreatedTS.Unix())
+			So(getInt64Prop(historicalEntity, "auth_db_rev"), ShouldEqual, 1)
+			So(getInt64Prop(historicalEntity, "auth_db_prev_rev"), ShouldEqual, 1337)
+			So(getStringProp(historicalEntity, "auth_db_change_comment"), ShouldEqual, "Go pRPC API")
+			So(getStringProp(historicalEntity, "auth_db_app_version"), ShouldEqual, "test-version")
+			So(getBoolProp(historicalEntity, "auth_db_deleted"), ShouldBeTrue)
+
+			historicalEntity = entities[2]
+			So(getDatastoreKey(historicalEntity).String(), ShouldEqual, "dev~app::/AuthGlobalConfig,\"root\"/Rev,1/AuthIPWhitelistHistory,\"test-allowlist-3\"")
+			So(getStringProp(historicalEntity, "description"), ShouldEqual, allowlistToCreate.Description)
+			So(getStringSliceProp(historicalEntity, "subnets"), ShouldResemble, allowlistToCreate.Subnets)
+			So(getStringProp(historicalEntity, "modified_by"), ShouldEqual, "user:someone@example.com")
+			So(getTimeProp(historicalEntity, "modified_ts").Unix(), ShouldEqual, testCreatedTS.Unix())
+			So(getInt64Prop(historicalEntity, "auth_db_rev"), ShouldEqual, 1)
+			So(getProp(historicalEntity, "auth_db_prev_rev"), ShouldBeNil)
+			So(getStringProp(historicalEntity, "auth_db_change_comment"), ShouldEqual, "Go pRPC API")
+			So(getStringProp(historicalEntity, "auth_db_app_version"), ShouldEqual, "test-version")
+
+			// Check no properties are indexed.
+			for k := range historicalEntity {
+				So(isPropIndexed(historicalEntity, k), ShouldBeFalse)
+			}
+		})
+	})
+}
+
 func TestGetAuthGlobalConfig(t *testing.T) {
 	t.Parallel()
 
