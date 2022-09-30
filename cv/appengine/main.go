@@ -41,6 +41,9 @@ import (
 	// Using datastore for user sessions.
 	_ "go.chromium.org/luci/server/encryptedcookies/session/datastore"
 
+	// Ensure registration of validation rules before registering cfgcache.
+	_ "go.chromium.org/luci/cv/internal/configs/validation"
+
 	migrationpb "go.chromium.org/luci/cv/api/migration"
 	apiv0pb "go.chromium.org/luci/cv/api/v0"
 	"go.chromium.org/luci/cv/internal/buildbucket"
@@ -52,7 +55,6 @@ import (
 	"go.chromium.org/luci/cv/internal/common/tree"
 	"go.chromium.org/luci/cv/internal/configs/prjcfg"
 	"go.chromium.org/luci/cv/internal/configs/srvcfg"
-	_ "go.chromium.org/luci/cv/internal/configs/validation" // Ensure registration of validation rules.
 	"go.chromium.org/luci/cv/internal/gerrit"
 	gerritupdater "go.chromium.org/luci/cv/internal/gerrit/updater"
 	"go.chromium.org/luci/cv/internal/migration"
