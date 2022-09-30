@@ -17,9 +17,11 @@ package validation
 import (
 	"google.golang.org/protobuf/encoding/prototext"
 
+	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/config/validation"
 
 	migrationpb "go.chromium.org/luci/cv/api/migration"
+	listenerpb "go.chromium.org/luci/cv/settings/listener"
 )
 
 // validateMigrationSettings validates a migration-settings file.
@@ -51,5 +53,36 @@ func validateMigrationSettings(ctx *validation.Context, configSet, path string, 
 		validateRegexp(ctx, "project_regexp_exclude", u.GetProjectRegexpExclude())
 		ctx.Exit()
 	}
+	return nil
+}
+
+// validateListenerSettings validates a listener-settings file.
+func validateListenerSettings(ctx *validation.Context, configSet, path string, content []byte) error {
+	ctx.SetFile(path)
+	cfg := listenerpb.Settings{}
+	if err := prototext.Unmarshal(content, &cfg); err != nil {
+		ctx.Error(err)
+		return nil
+	}
+	if err := cfg.Validate(); err != nil {
+		// TODO(crbug.com/1369189): enter context for the proto field path.
+		ctx.Error(err)
+		return nil
+	}
+	hosts := stringset.New(0)
+	for i, sub := range cfg.GetGerritSubscriptions() {
+		ctx.Enter("gerrit_subscriptions #%d", i+1)
+		id := sub.GetSubscriptionId()
+		if id == "" {
+			id = sub.GetHost()
+		}
+		if !hosts.Add(id) {
+			ctx.Errorf("duplicate subscription ID %q", id)
+		}
+		ctx.Exit()
+	}
+	// TODO(crbug.com/1358208): check if listener-settings.cfg has
+	// a subscription for all the Gerrit hosts, if the LUCI project is
+	// enabled in the pubsub listener.
 	return nil
 }

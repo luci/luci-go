@@ -34,8 +34,12 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
-// UpdateTryjobTask checks the status of a Tryjob and updates its Datastore
-// entity, and notifies Runs which care about this Tryjob.
+// UpdateTryjobTask checks the status of a Tryjob and updates and saves the
+// Datastore entity, and notifies Runs which care about this Tryjob.
+//
+// It does NOT involve deciding next actions to take based on changes in Tryjob
+// state; e.g. it doesn't involve triggering retries or ending the Run; the
+// Tryjob Executor is responsible for this, see also ExecuteTryjobsPayload.
 //
 // Queue: "tryjob-update".
 type UpdateTryjobTask struct {
@@ -46,7 +50,7 @@ type UpdateTryjobTask struct {
 	// id is the Tryjob entity datastore ID. Internal to CV.
 	Id int64 `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
 	// external_id is the ID that identifies the Tryjob in the backend.
-	// e.g. in the case of buildbucket, it's the build ID.
+	// e.g. in the case of Buildbucket, it's the build ID.
 	ExternalId string `protobuf:"bytes,2,opt,name=external_id,json=externalId,proto3" json:"external_id,omitempty"`
 }
 
@@ -96,7 +100,7 @@ func (x *UpdateTryjobTask) GetExternalId() string {
 	return ""
 }
 
-// CancelStaleTryjobs cancels all tryjobs that are intended to verify the given
+// CancelStaleTryjobs cancels all Tryjobs that are intended to verify the given
 // CL, that are now stale because a new non-trivial patchset has been uploaded.
 //
 // Queue: "cancel-stale-tryjobs"
@@ -111,7 +115,7 @@ type CancelStaleTryjobsTask struct {
 	// running at.
 	PreviousMinEquivPatchset int32 `protobuf:"varint,2,opt,name=previous_min_equiv_patchset,json=previousMinEquivPatchset,proto3" json:"previous_min_equiv_patchset,omitempty"`
 	// current_min_equiv_patchset is the patchset at or after which the
-	// associated tryjobs are no longer considered stale.
+	// associated Tryjobs are no longer considered stale.
 	CurrentMinEquivPatchset int32 `protobuf:"varint,3,opt,name=current_min_equiv_patchset,json=currentMinEquivPatchset,proto3" json:"current_min_equiv_patchset,omitempty"`
 }
 
@@ -168,7 +172,7 @@ func (x *CancelStaleTryjobsTask) GetCurrentMinEquivPatchset() int32 {
 	return 0
 }
 
-// ExecuteTryjobsPayload is the payload of the long op task that invokes
+// ExecuteTryjobsPayload is the payload of the long-op task that invokes
 // the Tryjob Executor.
 //
 // The payload contains the event happens outside so that Tryjob Executor could
@@ -181,10 +185,10 @@ type ExecuteTryjobsPayload struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// RequirementChanged indicates the tryjobs requirement of the run has
+	// RequirementChanged indicates the Tryjob Requirement of the Run has
 	// changed.
 	RequirementChanged bool `protobuf:"varint,1,opt,name=requirement_changed,json=requirementChanged,proto3" json:"requirement_changed,omitempty"`
-	// TryjobsUpdated contains ids of all tryjobs that have status update.
+	// TryjobsUpdated contains IDs of all Tryjobs that have status updates.
 	TryjobsUpdated []int64 `protobuf:"varint,2,rep,packed,name=tryjobs_updated,json=tryjobsUpdated,proto3" json:"tryjobs_updated,omitempty"`
 }
 

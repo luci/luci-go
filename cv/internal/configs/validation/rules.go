@@ -34,6 +34,7 @@ func init() {
 func addRules(r *validation.RuleSet) {
 	r.Add("regex:projects/[^/]+", "commit-queue.cfg", validateProject)
 	r.Add("services/commit-queue", "migration-settings.cfg", validateMigrationSettings)
+	r.Add("services/${appid}", "listener-settings.cfg", validateListenerSettings)
 }
 
 // regexpCompileCached is the caching version of regexp.Compile.

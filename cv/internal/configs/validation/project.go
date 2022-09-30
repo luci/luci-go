@@ -223,6 +223,9 @@ func validateGerrit(ctx *validation.Context, g *cfgpb.ConfigGroup_Gerrit) {
 				ctx.Errorf("duplicate project in the same gerrit: %q", p.Name)
 			}
 		}
+		// TODO(crbug.com/1358208): check if listener-settings.cfg has
+		// a subscription for all the Gerrit hosts, if the LUCI project is
+		// enabled in the pubsub listener.
 		ctx.Exit()
 	}
 }
