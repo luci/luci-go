@@ -60,6 +60,7 @@ def source_file_filter(input_api):
     r'.+/pb\.discovery\.go$',
     r'.+/pb\.discovery_test\.go$',
     r'.+\.pb\.go$',
+    r'.+\.pb\.validate\.go$',
     r'.+\.pb_test\.go$',
     r'.+_dec\.go$',
     r'.+_mux\.go$',
