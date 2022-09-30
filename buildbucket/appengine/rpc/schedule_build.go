@@ -1381,8 +1381,8 @@ func (*Builds) scheduleBuilds(ctx context.Context, globalCfg *pb.SettingsCfg, re
 			if bld == nil {
 				continue
 			}
-			origI := idxMapValidReqs[i]
 			i := i
+			origI := idxMapValidReqs[i]
 			bld := bld
 			work <- func() error {
 				// Note: We don't redact the Build response here because we expect any user with

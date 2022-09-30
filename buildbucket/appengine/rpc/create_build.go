@@ -501,13 +501,14 @@ func (bc *buildCreator) createBuilds(ctx context.Context) ([]*model.Build, error
 	// in one transaction).
 	_ = parallel.WorkPool(min(64, len(validBlds)), func(work chan<- func() error) {
 		for i, b := range validBlds {
+			i := i
+			b := b
 			origI := idxMapValidBlds[i]
 			if bc.merr[origI] != nil {
 				validBlds[i] = nil
 				continue
 			}
 
-			b := b
 			reqID := bc.reqIDs[origI]
 			bldr := b.Proto.Builder
 			bucket := fmt.Sprintf("%s/%s", bldr.Project, bldr.Bucket)
@@ -594,8 +595,9 @@ func (bc *buildCreator) createBuilds(ctx context.Context) ([]*model.Build, error
 	// Map back to final results to make sure len(resBlds) always equal to len(reqs).
 	resBlds := make([]*model.Build, len(bc.reqIDs))
 	for i, bld := range validBlds {
-		if bc.merr[idxMapValidBlds[i]] == nil {
-			resBlds[idxMapValidBlds[i]] = bld
+		origI := idxMapValidBlds[i]
+		if bc.merr[origI] == nil {
+			resBlds[origI] = bld
 		}
 	}
 	return resBlds, bc.merr
