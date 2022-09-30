@@ -169,7 +169,13 @@ message GetRunRequest {
 // The Run state and outstanding events come from different entities
 // read in parallel.
 message GetRunResponse {
-  // State. Next tag: 23.
+  message CL {
+    int64 id = 1;
+    string external_id = 2;
+    cv.internal.changelist.Snapshot detail = 3;
+    cv.internal.run.Trigger trigger = 4;
+  }
+  // State. Next tag: 24.
   string id = 1;
   int64 eversion = 2;
   string mode = 3;
@@ -180,8 +186,8 @@ message GetRunResponse {
   google.protobuf.Timestamp end_time = 8;
   string owner = 9;
   string config_group_id = 10;
-  repeated int64 cls = 11;
-  repeated string external_cls = 15;
+  reserved 11, 15;
+  repeated CL cls = 23;
   cv.internal.run.Options options = 16;
   repeated string cancellation_reasons = 22;
   cv.internal.run.Tryjobs tryjobs = 17;

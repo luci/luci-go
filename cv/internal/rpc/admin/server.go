@@ -596,15 +596,20 @@ func loadRunAndEvents(ctx context.Context, rid common.RunID, shouldSkip func(r *
 	}
 
 	eg, ctx := errgroup.WithContext(ctx)
-	var externalIDs []string
+	var cls []*adminpb.GetRunResponse_CL
 	eg.Go(func() error {
 		switch rcls, err := run.LoadRunCLs(ctx, r.ID, r.CLs); {
 		case err != nil:
 			return errors.Annotate(err, "failed to fetch RunCLs").Err()
 		default:
-			externalIDs = make([]string, len(rcls))
+			cls = make([]*adminpb.GetRunResponse_CL, len(rcls))
 			for i, rcl := range rcls {
-				externalIDs[i] = string(rcl.ExternalID)
+				cls[i] = &adminpb.GetRunResponse_CL{
+					Id:         int64(rcl.ID),
+					ExternalId: string(rcl.ExternalID),
+					Detail:     rcl.Detail,
+					Trigger:    rcl.Trigger,
+				}
 			}
 			return nil
 		}
@@ -651,8 +656,7 @@ func loadRunAndEvents(ctx context.Context, rid common.RunID, shouldSkip func(r *
 		EndTime:             common.Time2PBNillable(r.EndTime),
 		Owner:               string(r.Owner),
 		ConfigGroupId:       string(r.ConfigGroupID),
-		Cls:                 common.CLIDsAsInt64s(r.CLs),
-		ExternalCls:         externalIDs,
+		Cls:                 cls,
 		Options:             r.Options,
 		CancellationReasons: r.CancellationReasons,
 		Tryjobs:             r.Tryjobs,
