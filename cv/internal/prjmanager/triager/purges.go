@@ -63,7 +63,6 @@ func stagePurges(ctx context.Context, cls map[int64]*clInfo, pm pmState) ([]*prj
 			}
 			out = append(out, &prjpb.PurgeCLTask{
 				PurgeReasons: info.purgeReasons,
-				Reasons:      clErrors, // For backwards compatibility only.
 				PurgingCl:    purgingCl,
 			})
 		}

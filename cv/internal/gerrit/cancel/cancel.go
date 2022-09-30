@@ -67,7 +67,7 @@ type Input struct {
 	// Trigger identifies the triggering vote. Required.
 	//
 	// Removed only after all other votes on CQ label are removed.
-	Trigger *run.Trigger
+	Triggers *run.Triggers
 	// LUCIProject is the project that initiates this cancellation.
 	//
 	// The project scoped account of this LUCI project SHOULD have the permission
@@ -125,8 +125,10 @@ func (in *Input) panicIfInvalid() {
 	switch {
 	case in.CL.Snapshot == nil:
 		err = fmt.Errorf("cl.Snapshot must be non-nil")
-	case in.Trigger == nil:
+	case in.Triggers == nil:
 		err = fmt.Errorf("trigger must be non-nil")
+	case in.Triggers.CqVoteTrigger == nil && in.Triggers.NewPatchsetRunTrigger == nil:
+		err = fmt.Errorf("at least one of {CqVoteTrigger, NewPatchsetRunTrigger} must be non-nil")
 	case in.LUCIProject != in.CL.Snapshot.GetLuciProject():
 		err = fmt.Errorf("mismatched LUCI Project: got %q in input and %q in CL snapshot", in.LUCIProject, in.CL.Snapshot.GetLuciProject())
 	case len(in.ConfigGroups) == 0:
@@ -186,36 +188,39 @@ func Cancel(ctx context.Context, in Input) error {
 	if err != nil {
 		return err
 	}
-
-	switch run.Mode(in.Trigger.GetMode()) {
-	case run.NewPatchsetRun:
-		updatedCL, err := cancelByUpdatingCLEntity(ctx, client, &in)
+	cl := in.CL
+	if in.Triggers.GetNewPatchsetRunTrigger() != nil {
+		cl, err = cancelByUpdatingCLEntity(ctx, &in)
 		if err != nil {
 			return err
 		}
-		if in.Message != "" {
-			c := makeChange(client, &in, updatedCL)
-			leaseCtx, close, lErr := lease.ApplyOnCL(ctx, in.CL.ID, in.LeaseDuration, in.Requester)
-			if lErr != nil {
-				return lErr
-			}
-			defer close()
-			return c.postGerritMsg(
-				leaseCtx, updatedCL.Snapshot.GetGerrit().GetInfo(), in.Message, in.Trigger, in.Notify, in.AddToAttentionSet, in.AttentionReason)
-		}
+	}
+	if in.Message == "" && in.Triggers.GetCqVoteTrigger() == nil {
 		return nil
-	case run.FullRun, run.DryRun, run.QuickDryRun:
-		if err := ensurePSLatestInCV(ctx, in.CL); err != nil {
+	}
+
+	leaseCtx, close, lErr := lease.ApplyOnCL(ctx, cl.ID, in.LeaseDuration, in.Requester)
+	if lErr != nil {
+		return lErr
+	}
+	defer close()
+
+	switch {
+	case in.Triggers.GetCqVoteTrigger() != nil:
+		if err := ensurePSLatestInCV(ctx, cl); err != nil {
 			return err
 		}
-		leaseCtx, close, lErr := lease.ApplyOnCL(ctx, in.CL.ID, in.LeaseDuration, in.Requester)
-		if lErr != nil {
-			return lErr
-		}
-		defer close()
-		return cancelLeased(leaseCtx, client, &in)
+		return cancelLeased(leaseCtx, client, &in, cl)
+	case in.Message != "":
+		// If there is a CQ Vote trigger to purge, cancelLeased() will have
+		// taken care of posting any appropriate message.
+		// If the Cancel() call _only_ applies to an NPR trigger, _and_
+		// a message has been specified, then this function needs to post a
+		// message.
+		return makeChange(client, &in, cl).postGerritMsg(
+			leaseCtx, cl.Snapshot.GetGerrit().GetInfo(), in.Message, in.Triggers.NewPatchsetRunTrigger, in.Notify, in.AddToAttentionSet, in.AttentionReason)
 	default:
-		panic(fmt.Errorf("unexpected RunMode %s", in.Trigger.GetMode()))
+		panic("unreachable")
 	}
 }
 
@@ -223,7 +228,6 @@ func makeChange(client gerrit.Client, in *Input, cl *changelist.CL) *change {
 	return &change{
 		Host:        cl.Snapshot.GetGerrit().GetHost(),
 		LUCIProject: in.LUCIProject,
-		RunMode:     run.Mode(in.Trigger.GetMode()),
 		Project:     cl.Snapshot.GetGerrit().GetInfo().GetProject(),
 		Number:      cl.Snapshot.GetGerrit().GetInfo().GetNumber(),
 		Revision:    cl.Snapshot.GetGerrit().GetInfo().GetCurrentRevision(),
@@ -232,7 +236,7 @@ func makeChange(client gerrit.Client, in *Input, cl *changelist.CL) *change {
 	}
 }
 
-func cancelByUpdatingCLEntity(ctx context.Context, client gerrit.Client, in *Input) (*changelist.CL, error) {
+func cancelByUpdatingCLEntity(ctx context.Context, in *Input) (*changelist.CL, error) {
 	return in.CLMutator.Update(ctx, in.LUCIProject, in.CL.ID, func(cl *changelist.CL) error {
 		switch {
 		case cl.TriggerNewPatchsetRunAfterPS < in.CL.Snapshot.GetPatchset():
@@ -250,19 +254,19 @@ var failMessage = "CV failed to unset the " + trigger.CQLabelName +
 	" label on your behalf. Please unvote and revote on the " +
 	trigger.CQLabelName + " label to retry."
 
-func cancelLeased(ctx context.Context, client gerrit.Client, in *Input) error {
-	c := makeChange(client, in, in.CL)
+func cancelLeased(ctx context.Context, client gerrit.Client, in *Input, cl *changelist.CL) error {
+	c := makeChange(client, in, cl)
 	logging.Infof(ctx, "Canceling triggers on %s/%d", c.Host, c.Number)
-	ci, err := c.getLatest(ctx, in.CL.Snapshot.GetGerrit().GetInfo().GetUpdated().AsTime())
+	ci, err := c.getLatest(ctx, cl.Snapshot.GetGerrit().GetInfo().GetUpdated().AsTime())
 	switch {
 	case err != nil:
 		return err
 	case ci.GetCurrentRevision() != c.Revision:
-		return errors.Reason("failed to cancel because ps %d is not current for %s/%d", in.CL.Snapshot.GetPatchset(), c.Host, c.Number).Tag(ErrPreconditionFailedTag).Err()
+		return errors.Reason("failed to cancel because ps %d is not current for %s/%d", cl.Snapshot.GetPatchset(), c.Host, c.Number).Tag(ErrPreconditionFailedTag).Err()
 	}
 
 	labelsToRemove := stringset.NewFromSlice(trigger.CQLabelName)
-	if l := in.Trigger.GetAdditionalLabel(); l != "" {
+	if l := in.Triggers.GetCqVoteTrigger().GetAdditionalLabel(); l != "" {
 		labelsToRemove.Add(l)
 	}
 	for _, cg := range in.ConfigGroups {
@@ -277,7 +281,7 @@ func cancelLeased(ctx context.Context, client gerrit.Client, in *Input) error {
 		return true
 	})
 
-	removeErr := c.removeVotesAndPostMsg(ctx, ci, in.Trigger, in.Message, in.Notify, in.AddToAttentionSet, in.AttentionReason)
+	removeErr := c.removeVotesAndPostMsg(ctx, ci, in.Triggers.GetCqVoteTrigger(), in.Message, in.Notify, in.AddToAttentionSet, in.AttentionReason)
 	if removeErr == nil || !ErrPermanentTag.In(removeErr) {
 		return removeErr
 	}
@@ -290,7 +294,7 @@ func cancelLeased(ctx context.Context, client gerrit.Client, in *Input) error {
 		msgBuilder.WriteString("\n\n")
 	}
 	msgBuilder.WriteString(failMessage)
-	if err := c.postCancelMessage(ctx, ci, msgBuilder.String(), in.Trigger, in.RunCLExternalIDs, in.Notify, in.AddToAttentionSet, in.AttentionReason); err != nil {
+	if err := c.postCancelMessage(ctx, ci, msgBuilder.String(), in.Triggers.GetCqVoteTrigger(), in.RunCLExternalIDs, in.Notify, in.AddToAttentionSet, in.AttentionReason); err != nil {
 		// Return the original error, but add details from just posting a message.
 		return errors.Annotate(removeErr, "even just posting message also failed: %s", err).Err()
 	}
@@ -316,7 +320,6 @@ type change struct {
 	Project     string
 	Number      int64
 	Revision    string
-	RunMode     run.Mode
 
 	gf gerrit.Factory
 	gc gerrit.Client
@@ -415,7 +418,7 @@ func (c *change) removeVotesAndPostMsg(ctx context.Context, ci *gerritpb.ChangeI
 			needRemoveTriggerVote = true
 			continue
 		}
-		if err := c.removeVote(ctx, voter); err != nil {
+		if err := c.removeVote(ctx, voter, run.Mode(t.GetMode())); err != nil {
 			nonTriggeringVotesRemovalErrs = append(nonTriggeringVotesRemovalErrs, err)
 		}
 	}
@@ -428,22 +431,23 @@ func (c *change) removeVotesAndPostMsg(ctx context.Context, ci *gerritpb.ChangeI
 
 	if needRemoveTriggerVote {
 		// Remove the triggering vote last.
-		if err := c.removeVote(ctx, t.GetGerritAccountId()); err != nil {
+		if err := c.removeVote(ctx, t.GetGerritAccountId(), run.Mode(t.GetMode())); err != nil {
 			return err
 		}
 	}
 	return c.postGerritMsg(ctx, ci, msg, t, notify, addAttn, reason)
 }
 
-func (c *change) removeVote(ctx context.Context, accountID int64) error {
+func (c *change) removeVote(ctx context.Context, accountID int64, mode run.Mode) error {
 	var gerritErr error
+
 	outerErr := c.gf.MakeMirrorIterator(ctx).RetryIfStale(func(opt grpc.CallOption) error {
 		_, gerritErr = c.gc.SetReview(ctx, &gerritpb.SetReviewRequest{
 			Number:     c.Number,
 			Project:    c.Project,
 			RevisionId: c.Revision,
 			Labels:     c.votesToRemove[accountID],
-			Tag:        c.RunMode.GerritMessageTag(),
+			Tag:        mode.GerritMessageTag(),
 			Notify:     gerritpb.Notify_NOTIFY_NONE,
 			OnBehalfOf: accountID,
 		}, opt)

@@ -287,13 +287,8 @@ func (s *State) validatePurgeCLTasks(c *prjpb.Component, ts []*prjpb.PurgeCLTask
 			panic(fmt.Errorf("clid must be set"))
 		case m.HasI64(id):
 			panic(fmt.Errorf("duplicated clid %d", id))
-		case len(t.GetPurgeReasons()) == 0 && len(t.GetReasons()) == 0:
+		case len(t.GetPurgeReasons()) == 0:
 			panic(fmt.Errorf("at least 1 reason must be given"))
-		}
-		for i, r := range t.GetReasons() {
-			if r.GetKind() == nil {
-				panic(fmt.Errorf("Reason #%d is nil", i))
-			}
 		}
 		for i, r := range t.GetPurgeReasons() {
 			if r.GetClError().GetKind() == nil {
@@ -355,7 +350,6 @@ func (s *State) populatePurgeCLTasks(ctx context.Context, ts []*prjpb.PurgeCLTas
 		id := t.GetPurgingCl().GetClid()
 		pcl := s.PB.GetPcls()[s.pclIndex[common.CLID(id)]]
 
-		t.Trigger = pcl.GetTriggers().GetCqVoteTrigger()
 		t.LuciProject = s.PB.GetLuciProject()
 		t.PurgingCl.Deadline = deadline
 		t.PurgingCl.OperationId = fmt.Sprintf("%d-%d", opInt, id)

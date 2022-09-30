@@ -160,6 +160,7 @@ func (impl *Impl) cancelCLTriggers(ctx context.Context, runID common.RunID, toCa
 	for i, runCL := range toCancel {
 		clids[i] = runCL.ID
 	}
+
 	cls, err := changelist.LoadCLsByIDs(ctx, clids)
 	if err != nil {
 		return err
@@ -169,12 +170,12 @@ func (impl *Impl) cancelCLTriggers(ctx context.Context, runID common.RunID, toCa
 	var forceRefresh []*changelist.CL
 	var lock sync.Mutex
 	err = parallel.WorkPool(min(len(toCancel), 10), func(work chan<- func() error) {
-		for i := range toCancel {
+		for i := range cls {
 			i := i
 			work <- func() error {
 				err := cancel.Cancel(ctx, cancel.Input{
 					CL:                cls[i],
-					Trigger:           toCancel[i].Trigger,
+					Triggers:          (&run.Triggers{}).WithTrigger(toCancel[i].Trigger),
 					LUCIProject:       luciProject,
 					Message:           meta.message,
 					Requester:         "Run Manager",

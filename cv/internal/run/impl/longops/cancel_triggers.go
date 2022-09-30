@@ -148,7 +148,7 @@ func (op *CancelTriggersOp) Do(ctx context.Context) (*eventpb.LongOpCompleted, e
 func (op *CancelTriggersOp) loadInputs(ctx context.Context) error {
 	var (
 		clsToCancel         []*changelist.CL
-		triggers            map[common.CLID]*run.Trigger
+		triggers            map[common.CLID]*run.Triggers
 		cfg                 *prjcfg.ConfigGroup
 		allRunCLExternalIDs []changelist.ExternalID
 	)
@@ -167,10 +167,10 @@ func (op *CancelTriggersOp) loadInputs(ctx context.Context) error {
 		if err != nil {
 			return err
 		}
-		triggers = make(map[common.CLID]*run.Trigger, len(runCLs))
+		triggers = make(map[common.CLID]*run.Triggers, len(runCLs))
 		allRunCLExternalIDs = make([]changelist.ExternalID, len(runCLs))
 		for i, runCL := range runCLs {
-			triggers[runCL.ID] = runCL.Trigger
+			triggers[runCL.ID] = triggers[runCL.ID].WithTrigger(runCL.Trigger)
 			allRunCLExternalIDs[i] = runCL.ExternalID
 		}
 		return nil
@@ -190,7 +190,7 @@ func (op *CancelTriggersOp) loadInputs(ctx context.Context) error {
 		cl, req := clsToCancel[i], requests[i]
 		op.inputs[i] = cancel.Input{
 			CL:                cl,
-			Trigger:           triggers[cl.ID],
+			Triggers:          triggers[cl.ID],
 			LUCIProject:       luciProject,
 			Message:           req.Message,
 			Requester:         "Trigger Cancellation",

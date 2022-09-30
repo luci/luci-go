@@ -17,6 +17,7 @@ package clpurger
 import (
 	"context"
 	"fmt"
+	"strings"
 	"time"
 
 	"google.golang.org/protobuf/proto"
@@ -85,32 +86,8 @@ func (p *Purger) Schedule(ctx context.Context, t *prjpb.PurgeCLTask) error {
 func (p *Purger) PurgeCL(ctx context.Context, task *prjpb.PurgeCLTask) error {
 	now := clock.Now(ctx)
 
-	if len(task.GetPurgeReasons()) == 0 && len(task.GetReasons()) == 0 {
+	if len(task.GetPurgeReasons()) == 0 {
 		return errors.Reason("no reasons given in %s", task).Err()
-	}
-	pr := &prjpb.PurgeReason{}
-	switch t := task.GetTrigger(); run.Mode(t.GetMode()) {
-	case "":
-		pr.ApplyTo = &prjpb.PurgeReason_AllActiveTriggers{AllActiveTriggers: true}
-	case run.NewPatchsetRun:
-		pr.ApplyTo = &prjpb.PurgeReason_Triggers{Triggers: &run.Triggers{
-			NewPatchsetRunTrigger: t,
-		}}
-	case run.DryRun, run.QuickDryRun, run.FullRun:
-		pr.ApplyTo = &prjpb.PurgeReason_Triggers{Triggers: &run.Triggers{
-			NewPatchsetRunTrigger: t,
-		}}
-	default:
-		panic(fmt.Errorf("unexpected trigger mode %q", t.GetMode()))
-	}
-
-	if len(task.GetReasons()) > 0 && len(task.GetPurgeReasons()) == 0 {
-		for _, r := range task.GetReasons() {
-			task.PurgeReasons = append(task.PurgeReasons, &prjpb.PurgeReason{
-				ClError: r,
-				ApplyTo: pr.GetApplyTo(),
-			})
-		}
 	}
 
 	d := task.GetPurgingCl().GetDeadline()
@@ -135,22 +112,20 @@ func (p *Purger) purgeWithDeadline(ctx context.Context, task *prjpb.PurgeCLTask)
 	if err := datastore.Get(ctx, cl); err != nil {
 		return errors.Annotate(err, "failed to load %d", cl.ID).Tag(transient.Tag).Err()
 	}
-	if !needsPurging(ctx, cl, task) {
-		return nil
-	}
 
 	configGroups, err := loadConfigGroups(ctx, task)
 	if err != nil {
 		return nil
 	}
-	// TODO(robertocn): Use the trigger information in the purge reason.
-	// Perform one cancellation per trigger in parallel.
-	msg, err := usertext.SFormatPurgeReasons(ctx, task.GetPurgeReasons(), cl, run.Mode(task.GetTrigger().GetMode()))
-	if err != nil {
+	purgeTriggers, msg, err := triggersToPurge(ctx, configGroups[0].Content, cl, task)
+	switch {
+	case err != nil:
 		return errors.Annotate(err, "CL %d of project %q", cl.ID, task.GetLuciProject()).Err()
+	case purgeTriggers == nil:
+		return nil
 	}
-	logging.Debugf(ctx, "proceeding to purge CL due to\n%s", msg)
 
+	logging.Debugf(ctx, "proceeding to purge CL due to\n%s", msg)
 	err = cancel.Cancel(ctx, cancel.Input{
 		LUCIProject:       task.GetLuciProject(),
 		CL:                cl,
@@ -159,13 +134,14 @@ func (p *Purger) purgeWithDeadline(ctx context.Context, task *prjpb.PurgeCLTask)
 		AddToAttentionSet: gerrit.Whoms{gerrit.Owner, gerrit.CQVoters},
 		AttentionReason:   "CV can't start a new Run as requested",
 		Requester:         "prjmanager/clpurger",
-		Trigger:           task.GetTrigger(),
+		Triggers:          purgeTriggers,
 		Message:           msg,
 		RunCLExternalIDs:  nil, // there is no Run.
 		ConfigGroups:      configGroups,
 		GFactory:          p.gFactory,
 		CLMutator:         p.clMutator,
 	})
+
 	switch {
 	case err == nil:
 		logging.Debugf(ctx, "purging done")
@@ -187,37 +163,64 @@ func (p *Purger) purgeWithDeadline(ctx context.Context, task *prjpb.PurgeCLTask)
 	})
 }
 
-func needsPurging(ctx context.Context, cl *changelist.CL, task *prjpb.PurgeCLTask) bool {
+func triggersToPurge(ctx context.Context, cg *cfgpb.ConfigGroup, cl *changelist.CL, task *prjpb.PurgeCLTask) (*run.Triggers, string, error) {
 	if cl.Snapshot == nil {
 		logging.Warningf(ctx, "CL without Snapshot can't be purged\n%s", task)
-		return false
+		return nil, "", nil
 	}
 	if p := cl.Snapshot.GetLuciProject(); p != task.GetLuciProject() {
 		logging.Warningf(ctx, "CL now belongs to different project %q", p)
-		return false
+		return nil, "", nil
 	}
 	if cl.Snapshot.GetGerrit() == nil {
 		panic(fmt.Errorf("CL %d has non-Gerrit snapshot", cl.ID))
 	}
 	ci := cl.Snapshot.GetGerrit().GetInfo()
-	// We can't avoid entirely races with users modifying the CL (e.g. removing CQ
-	// votes). But do a best effort check that Trigger's timestamp is still the
-	// same to the best of CV's knowledge. Note that this ignores potentially
-	// configured additional modes such as run.QuickDryRun.
-	switch t := trigger.Find(&trigger.FindInput{ChangeInfo: ci, ConfigGroup: &cfgpb.ConfigGroup{}}).GetCqVoteTrigger(); {
-	case t == nil:
-		logging.Debugf(ctx, "CL is no longer triggered")
-		return false
-	case !proto.Equal(t.GetTime(), task.GetTrigger().GetTime()):
-		logging.Debugf(
-			ctx,
-			"CL has different trigger time \n%s\n, but expected\n %s",
-			t.GetTime().AsTime(),
-			task.GetTrigger().GetTime().AsTime(),
-		)
-		return false
+	currentTriggers := trigger.Find(&trigger.FindInput{ChangeInfo: ci, ConfigGroup: cg})
+	if currentTriggers == nil {
+		return nil, "", nil
 	}
-	return true
+
+	ret := &run.Triggers{}
+	var sb strings.Builder
+	for _, pr := range task.GetPurgeReasons() {
+		taskNPRTrigger := pr.GetTriggers().GetNewPatchsetRunTrigger()
+		taskCQVTrigger := pr.GetTriggers().GetCqVoteTrigger()
+		var clErrorMode run.Mode
+		switch {
+		case pr.GetAllActiveTriggers():
+			ret = currentTriggers
+			switch {
+			// If multiple triggers are being purged, the mode of the CQ Vote
+			// trigger takes precedence for the purposes of formatting.
+			case ret.GetCqVoteTrigger() != nil:
+				clErrorMode = run.Mode(ret.GetCqVoteTrigger().GetMode())
+			case ret.GetNewPatchsetRunTrigger() != nil:
+				clErrorMode = run.Mode(ret.GetNewPatchsetRunTrigger().GetMode())
+			}
+		// If we are purging a specific trigger, only proceed if the trigger to
+		// purge has not been updated since the task was scheduled.
+		// Note that we can't entirely avoid races with users modifying the CL.
+		case taskNPRTrigger != nil && proto.Equal(currentTriggers.GetNewPatchsetRunTrigger().GetTime(), taskNPRTrigger.GetTime()):
+			ret.NewPatchsetRunTrigger = taskNPRTrigger
+			clErrorMode = run.Mode(taskNPRTrigger.GetMode())
+		case taskCQVTrigger != nil && proto.Equal(currentTriggers.GetCqVoteTrigger().GetTime(), taskCQVTrigger.GetTime()):
+			ret.CqVoteTrigger = taskCQVTrigger
+			clErrorMode = run.Mode(taskCQVTrigger.GetMode())
+		default:
+			continue
+		}
+		if sb.Len() > 0 {
+			sb.WriteRune('\n')
+		}
+		if err := usertext.FormatCLError(ctx, pr.GetClError(), cl, clErrorMode, &sb); err != nil {
+			return nil, "", err
+		}
+	}
+	if ret.CqVoteTrigger == nil && ret.NewPatchsetRunTrigger == nil {
+		return nil, "", nil
+	}
+	return ret, sb.String(), nil
 }
 
 func loadConfigGroups(ctx context.Context, task *prjpb.PurgeCLTask) ([]*prjcfg.ConfigGroup, error) {

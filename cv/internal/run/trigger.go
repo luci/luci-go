@@ -51,3 +51,23 @@ func HasTriggerChanged(old *Trigger, ts *Triggers, clURL string) string {
 		return ""
 	}
 }
+
+// WithTrigger assigns the given Trigger to the correct slot of the Triggers
+// struct depending on the trigger mode. I.e. distinguish CQ Vote triggers from
+// New Patchset triggers.
+//
+// Returns a reference to the modified/instantiated Triggers.
+func (ts *Triggers) WithTrigger(t *Trigger) *Triggers {
+	if ts == nil {
+		ts = &Triggers{}
+	}
+	switch Mode(t.Mode) {
+	case DryRun, FullRun, QuickDryRun:
+		ts.CqVoteTrigger = t
+	case NewPatchsetRun:
+		ts.NewPatchsetRunTrigger = t
+	default:
+		panic(fmt.Errorf("unsupported mode %s", t.Mode))
+	}
+	return ts
+}

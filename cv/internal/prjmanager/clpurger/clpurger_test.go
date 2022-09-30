@@ -35,6 +35,7 @@ import (
 	"go.chromium.org/luci/cv/internal/prjmanager"
 	"go.chromium.org/luci/cv/internal/prjmanager/pmtest"
 	"go.chromium.org/luci/cv/internal/prjmanager/prjpb"
+	"go.chromium.org/luci/cv/internal/run"
 	"go.chromium.org/luci/cv/internal/tryjob"
 	"go.chromium.org/luci/cv/internal/tryjob/tjcancel"
 
@@ -112,7 +113,6 @@ func TestPurgeCL(t *testing.T) {
 				Deadline:    timestamppb.New(ct.Clock.Now().Add(10 * time.Minute)),
 				ApplyTo:     &prjpb.PurgingCL_AllActiveTriggers{AllActiveTriggers: true},
 			},
-			Trigger: trigger.Find(&trigger.FindInput{ChangeInfo: ci, ConfigGroup: cfg.GetConfigGroups()[0]}).GetCqVoteTrigger(),
 			PurgeReasons: []*prjpb.PurgeReason{{
 				ClError: &changelist.CLError{
 					Kind: &changelist.CLError_OwnerLacksEmail{OwnerLacksEmail: true},
@@ -121,7 +121,6 @@ func TestPurgeCL(t *testing.T) {
 			}},
 			ConfigGroups: []string{string(cfgMeta.ConfigGroupIDs[0])},
 		}
-		So(task.Trigger, ShouldNotBeNil)
 
 		schedule := func() error {
 			return datastore.RunInTransaction(ctx, func(tCtx context.Context) error {
@@ -131,12 +130,76 @@ func TestPurgeCL(t *testing.T) {
 
 		ct.Clock.Add(time.Minute)
 
-		Convey("Happy path: cancel trigger, schedule CL refresh, and notify PM", func() {
+		Convey("Purge one trigger, then the other", func() {
+			task.PurgeReasons = []*prjpb.PurgeReason{
+				{
+					ClError: &changelist.CLError{
+						Kind: &changelist.CLError_InvalidDeps_{
+							InvalidDeps: &changelist.CLError_InvalidDeps{
+								Unwatched: []*changelist.Dep{
+									{Clid: 1, Kind: changelist.DepKind_HARD},
+								},
+							},
+						},
+					},
+					ApplyTo: &prjpb.PurgeReason_Triggers{
+						Triggers: trigger.Find(&trigger.FindInput{ChangeInfo: ci, ConfigGroup: &cfgpb.ConfigGroup{}}),
+					},
+				},
+			}
 			So(schedule(), ShouldBeNil)
 			ct.TQ.Run(ctx, tqtesting.StopAfterTask(prjpb.PurgeProjectCLTaskClass))
 
 			ciAfter := ct.GFake.GetChange(gHost, change).Info
-			So(trigger.Find(&trigger.FindInput{ChangeInfo: ciAfter, ConfigGroup: cfg.GetConfigGroups()[0]}), ShouldBeNil)
+			triggersAfter := trigger.Find(&trigger.FindInput{
+				ChangeInfo:                   ciAfter,
+				ConfigGroup:                  cfg.GetConfigGroups()[0],
+				TriggerNewPatchsetRunAfterPS: loadCL().TriggerNewPatchsetRunAfterPS,
+			})
+			So(triggersAfter, ShouldNotBeNil)
+			So(triggersAfter.CqVoteTrigger, ShouldBeNil)
+			So(triggersAfter.NewPatchsetRunTrigger, ShouldNotBeNil)
+			So(ciAfter, gf.ShouldLastMessageContain, "its deps are not watched")
+			So(fakeCLUpdater.scheduledTasks, ShouldHaveLength, 1)
+			assertPMNotified("op")
+
+			task.PurgeReasons = []*prjpb.PurgeReason{
+				{
+					ClError: &changelist.CLError{
+						Kind: &changelist.CLError_UnsupportedMode{
+							UnsupportedMode: string(run.NewPatchsetRun)},
+					},
+					ApplyTo: &prjpb.PurgeReason_Triggers{
+						Triggers: &run.Triggers{
+							NewPatchsetRunTrigger: triggersAfter.GetNewPatchsetRunTrigger(),
+						},
+					},
+				},
+			}
+			So(schedule(), ShouldBeNil)
+			ct.TQ.Run(ctx, tqtesting.StopAfterTask(prjpb.PurgeProjectCLTaskClass))
+
+			ciAfter = ct.GFake.GetChange(gHost, change).Info
+			triggersAfter = trigger.Find(&trigger.FindInput{
+				ChangeInfo:                   ciAfter,
+				ConfigGroup:                  cfg.GetConfigGroups()[0],
+				TriggerNewPatchsetRunAfterPS: loadCL().TriggerNewPatchsetRunAfterPS,
+			})
+			So(triggersAfter, ShouldBeNil)
+			So(ciAfter, gf.ShouldLastMessageContain, "is not supported")
+			So(fakeCLUpdater.scheduledTasks, ShouldHaveLength, 2)
+			assertPMNotified("op")
+		})
+		Convey("Happy path: cancel both triggers, schedule CL refresh, and notify PM", func() {
+			So(schedule(), ShouldBeNil)
+			ct.TQ.Run(ctx, tqtesting.StopAfterTask(prjpb.PurgeProjectCLTaskClass))
+
+			ciAfter := ct.GFake.GetChange(gHost, change).Info
+			So(trigger.Find(&trigger.FindInput{
+				ChangeInfo:                   ciAfter,
+				ConfigGroup:                  cfg.GetConfigGroups()[0],
+				TriggerNewPatchsetRunAfterPS: loadCL().TriggerNewPatchsetRunAfterPS,
+			}), ShouldBeNil)
 			So(ciAfter, gf.ShouldLastMessageContain, "owner doesn't have a preferred email")
 
 			So(fakeCLUpdater.scheduledTasks, ShouldHaveLength, 1)
@@ -180,10 +243,10 @@ func TestPurgeCL(t *testing.T) {
 			Convey("Trigger is no longer matching latest CL Snapshot", func() {
 				// Simulate old trigger for CQ+1, while snapshot contains CQ+2.
 				gf.CQ(+1, ct.Clock.Now().Add(-time.Hour), gf.U("user-1"))(ci)
-				task.Trigger = trigger.Find(&trigger.FindInput{
-					ChangeInfo:  ci,
-					ConfigGroup: cfg.GetConfigGroups()[0],
-				}).GetCqVoteTrigger()
+				// Simulate NPR finished earlier.
+				cl := loadCL()
+				cl.TriggerNewPatchsetRunAfterPS = 2
+				So(datastore.Put(ctx, cl), ShouldBeNil)
 
 				So(schedule(), ShouldBeNil)
 				ct.TQ.Run(ctx, tqtesting.StopAfterTask(prjpb.PurgeProjectCLTaskClass))
@@ -208,6 +271,16 @@ func makeConfig(gHost string, gRepo string) *cfgpb.Config {
 							{
 								Name:      gRepo,
 								RefRegexp: []string{"refs/heads/main"},
+							},
+						},
+					},
+				},
+				Verifiers: &cfgpb.Verifiers{
+					Tryjob: &cfgpb.Verifiers_Tryjob{
+						Builders: []*cfgpb.Verifiers_Tryjob_Builder{
+							{
+								Name:          "linter",
+								ModeAllowlist: []string{string(run.NewPatchsetRun)},
 							},
 						},
 					},

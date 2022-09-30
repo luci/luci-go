@@ -72,7 +72,7 @@ type Result struct {
 
 	// CLsToPurge must contain PurgeCLTasks tasks with with these (sub)fields set:
 	//  * .PurgingCL.Clid
-	//  * .Reasons
+	//  * .PurgeReasons
 	CLsToPurge []*prjpb.PurgeCLTask
 }
 

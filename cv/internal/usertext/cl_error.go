@@ -26,38 +26,8 @@ import (
 
 	"go.chromium.org/luci/cv/internal/changelist"
 	"go.chromium.org/luci/cv/internal/common"
-	"go.chromium.org/luci/cv/internal/prjmanager/prjpb"
 	"go.chromium.org/luci/cv/internal/run"
 )
-
-// SFormatPurgeReasons applies FormatCLErrors to the given reasons and returns a
-// string.
-func SFormatPurgeReasons(ctx context.Context, reasons []*prjpb.PurgeReason, cl *changelist.CL, mode run.Mode) (string, error) {
-	var clErrors []*changelist.CLError
-	for _, pr := range reasons {
-		clErrors = append(clErrors, pr.GetClError())
-	}
-	var sb strings.Builder
-	if err := FormatCLErrors(ctx, clErrors, cl, mode, &sb); err != nil {
-		return "", err
-	}
-	return sb.String(), nil
-}
-
-// FormatCLError formats 1 CL error by writing it into strings.Builder.
-//
-// mode should be specified if known.
-func FormatCLErrors(ctx context.Context, reasons []*changelist.CLError, cl *changelist.CL, mode run.Mode, sb *strings.Builder) error {
-	for i, r := range reasons {
-		if err := FormatCLError(ctx, r, cl, mode, sb); err != nil {
-			return err
-		}
-		if i > 0 {
-			sb.WriteRune('\n')
-		}
-	}
-	return nil
-}
 
 // SFormatCLError is the same as FormatCLError but returns a string.
 func SFormatCLError(ctx context.Context, reason *changelist.CLError, cl *changelist.CL, mode run.Mode) (string, error) {
