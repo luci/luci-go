@@ -26,7 +26,6 @@ import (
 	"google.golang.org/api/option"
 	"google.golang.org/grpc"
 
-	bbv1pb "go.chromium.org/luci/common/api/buildbucket/buildbucket/v1"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/retry/transient"
 	. "go.chromium.org/luci/common/testing/assertions"
@@ -38,29 +37,31 @@ import (
 	. "github.com/smartystreets/goconvey/convey"
 )
 
-func TestParseExternalID(t *testing.T) {
+func TestParseData(t *testing.T) {
 	t.Parallel()
-	Convey("works", t, func() {
-		original := tryjob.MustBuildbucketID("buildbucket.example.com", 123456789)
-		extracted, err := parseExternalID(context.Background(), toPubsubMessageData(original))
-		So(err, ShouldBeNil)
-		So(extracted, ShouldEqual, original)
-	})
-	Convey("no ID", t, func() {
-		buildJSON, err := json.Marshal(&bbv1pb.LegacyApiBuildResponseMessage{Build: &bbv1pb.LegacyApiCommonBuildMessage{}})
-		So(err, ShouldBeNil)
-		message := &pubsub.Message{Data: buildJSON}
-		eid, err := parseExternalID(context.Background(), message.Data)
-		So(err, ShouldErrLike, "missing build details")
-		So(eid, ShouldEqual, tryjob.ExternalID(""))
-	})
-	Convey("no Build", t, func() {
-		buildJSON, err := json.Marshal(&bbv1pb.LegacyApiBuildResponseMessage{})
-		So(err, ShouldBeNil)
-		message := &pubsub.Message{Data: buildJSON}
-		eid, err := parseExternalID(context.Background(), message.Data)
-		So(err, ShouldErrLike, "missing build details")
-		So(eid, ShouldEqual, tryjob.ExternalID(""))
+	Convey("parseData", t, func() {
+		Convey("handles valid expected input", func() {
+			json := `{"hostname": "buildbucket.example.com", ` +
+				`"build": {"id": "123456789", "other": "ignored", "ancestor_ids": ["111111"]}}`
+			extracted, err := parseData(context.Background(), []byte(json))
+			So(err, ShouldBeNil)
+			So(extracted, ShouldResemble, &notificationMessage{
+				Hostname: "buildbucket.example.com",
+				Build:    &buildMessage{ID: 123456789, AncestorIDs: []string{"111111"}},
+			})
+		})
+		Convey("with no build ID gives error", func() {
+			json := `{"hostname": "buildbucket.example.com", "build": {"other": "ignored"}}`
+			data, err := parseData(context.Background(), []byte(json))
+			So(err, ShouldErrLike, "missing build details")
+			So(data, ShouldBeNil)
+		})
+		Convey("with no build details gives error", func() {
+			json := `{"hostname": "buildbucket.example.com"}`
+			data, err := parseData(context.Background(), []byte(json))
+			So(err, ShouldErrLike, "missing build details")
+			So(data, ShouldBeNil)
+		})
 	})
 }
 
@@ -209,19 +210,20 @@ func TestListener(t *testing.T) {
 	})
 }
 
+// toPubsubMessageData constructs sample message JSON for tests.
 func toPubsubMessageData(eid tryjob.ExternalID) []byte {
 	host, id, err := eid.ParseBuildbucketID()
 	if err != nil {
 		panic(err)
 	}
-	buildJSON, err := json.Marshal(buildMessage{
-		Build:    &bbv1pb.LegacyApiCommonBuildMessage{Id: id},
+	json, err := json.Marshal(notificationMessage{
+		Build:    &buildMessage{ID: id},
 		Hostname: host,
 	})
 	if err != nil {
 		panic(err)
 	}
-	return buildJSON
+	return json
 }
 
 type testTryjobNotifier struct {

@@ -25,7 +25,6 @@ import (
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/durationpb"
 
-	bbv1pb "go.chromium.org/luci/common/api/buildbucket/buildbucket/v1"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
@@ -151,7 +150,11 @@ func (l *listener) start(ctx context.Context) error {
 }
 
 func (l *listener) processMsg(ctx context.Context, msg *pubsub.Message) error {
-	eid, err := parseExternalID(ctx, msg.Data)
+	parsed, err := parseData(ctx, msg.Data)
+	if err != nil {
+		return err
+	}
+	eid, err := tryjob.BuildbucketID(parsed.Hostname, parsed.Build.ID)
 	if err != nil {
 		return err
 	}
@@ -167,21 +170,33 @@ func (l *listener) processMsg(ctx context.Context, msg *pubsub.Message) error {
 	return nil
 }
 
-type buildMessage struct {
-	Build    *bbv1pb.LegacyApiCommonBuildMessage `json:"build"`
-	Hostname string                              `json:"hostname"`
+// notificationMessage contains expected data from Buildbucket Pub/Sub.
+type notificationMessage struct {
+	Build    *buildMessage `json:"build"`
+	Hostname string        `json:"hostname"`
 }
 
-func parseExternalID(ctx context.Context, data []byte) (tryjob.ExternalID, error) {
-	build := &buildMessage{}
-	if err := json.Unmarshal(data, build); err != nil {
-		return "", errors.Annotate(err, "while unmarshalling build notification").Err()
-	}
+// buildMessage contains parts of the build message inside Buildbucket Pub/Sub
+// data that are relevant to CV.
+type buildMessage struct {
+	ID int64 `json:"id,string"`
+	// Note that AncestorIDs is list of string because build IDs are formatted
+	// as strings in JSON; however Go json.Unmarshal doesn't support converting
+	// JSON list of string to []int64.
+	AncestorIDs []string `json:"ancestor_ids,omitempty"`
+}
 
-	if build.Build == nil || build.Hostname == "" || build.Build.Id == 0 {
-		return "", errors.Reason("missing build details in pubsub message: %s", data).Err()
+// parseData extracts the relevant information from the Pub/Sub message data.
+func parseData(ctx context.Context, data []byte) (*notificationMessage, error) {
+	message := &notificationMessage{}
+	// Extra fields that are not in the struct are ignored by json.Unmarshal.
+	if err := json.Unmarshal(data, message); err != nil {
+		return nil, errors.Annotate(err, "while unmarshalling build notification").Err()
 	}
-	return tryjob.BuildbucketID(build.Hostname, build.Build.Id)
+	if message.Build == nil || message.Hostname == "" || message.Build.ID == 0 {
+		return nil, errors.Reason("missing build details in pubsub message: %s", data).Err()
+	}
+	return message, nil
 }
 
 func (l *listener) reportStats(ctx context.Context) {
