@@ -66,26 +66,18 @@ Releases are automatically pushed to luci-bisection-dev on commit by the
 builder.
 
 ### Prod instance
-To push to prod, the steps are:
 
+To push to prod:
 1. Get an `infra_internal` checkout
-2. `cd data/gae`
-3. To get the latest changes: `git checkout main && git pull`
-4. `vim apps/luci-bisection/channels.json`
-5. Modify the "stable" version in
-   [channels.json](https://chrome-internal.googlesource.com/infradata/gae/+/HEAD/apps/luci-bisection/channels.json)
-   (e.g. by reusing the current staging version).
-6. Run `./main.star` to regenerate the Makefile.
-7. Create a CL and add release notes to the description, as follows:
-    1. Get the commit hashes from the old and new versions. E.g. in channels.json,
-       if you changed the stable version from "`12097-7a7a05d`" to "`12104-214c2d1`",
-       the old commit hash is `7a7a05d` and the new commit hash is `214c2d1`. These
-       correspond to commits in the
-       [infra/luci/luci-go](https://chromium.googlesource.com/infra/luci/luci-go/) repo.
-    2. Run git log between these two commits:
-        ```
-        git log 7a7a05d..214c2d1 --date=short --first-parent --format='%ad %ae %s'
-        ```
-    3. Add the resulting command line and output to the CL description. Example:
-       https://crrev.com/i/2962041
-8. Mail and land the CL.
+1. Change to the `data/gae` directory:
+    * `cd data/gae`
+1. Get the latest changes from the `main` branch:
+    * `git checkout main && git pull`
+1. Switch to a local branch:
+    * `git checkout -b <local-branch-name>`
+1. Create the CL to update the "canary" and "stable" version:
+    1. `./scripts/promote.py luci-bisection --canary --stable --commit`
+    1. `git cl upload`
+    * this will create a CL like [this one](https://chrome-internal-review.googlesource.com/c/infradata/gae/+/5008853)
+1. Mail and land the CL.
+    * If you want to rollback prod to the previous version, rollback this CL.
