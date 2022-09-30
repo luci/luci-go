@@ -21,7 +21,7 @@ option go_package = "go.chromium.org/luci/cv/settings/listener;listenerpb";
 
 // Settings defines fields for configuring listener settings.
 message Settings {
-  message ReceiverSettings {
+  message ReceiveSettings {
     // The number of goroutines that Listener will spawn for the subscription.
     //
     // 10, if unset.
@@ -55,7 +55,7 @@ message Settings {
     string subscription_id = 2;
 
     // Configuration for the pubsub receive function.
-    ReceiverSettings receiver_settings = 3;
+    ReceiveSettings receive_settings = 3;
   }
 
   // Subscriptions for the Gerrit hosts that have enabled Gerrit Pub/Sub.

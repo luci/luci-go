@@ -168,22 +168,22 @@ var _ interface {
 	ErrorName() string
 } = SettingsValidationError{}
 
-// Validate checks the field values on Settings_ReceiverSettings with the rules
+// Validate checks the field values on Settings_ReceiveSettings with the rules
 // defined in the proto definition for this message. If any rules are
 // violated, the first error encountered is returned, or nil if there are no violations.
-func (m *Settings_ReceiverSettings) Validate() error {
+func (m *Settings_ReceiveSettings) Validate() error {
 	return m.validate(false)
 }
 
-// ValidateAll checks the field values on Settings_ReceiverSettings with the
+// ValidateAll checks the field values on Settings_ReceiveSettings with the
 // rules defined in the proto definition for this message. If any rules are
 // violated, the result is a list of violation errors wrapped in
-// Settings_ReceiverSettingsMultiError, or nil if none found.
-func (m *Settings_ReceiverSettings) ValidateAll() error {
+// Settings_ReceiveSettingsMultiError, or nil if none found.
+func (m *Settings_ReceiveSettings) ValidateAll() error {
 	return m.validate(true)
 }
 
-func (m *Settings_ReceiverSettings) validate(all bool) error {
+func (m *Settings_ReceiveSettings) validate(all bool) error {
 	if m == nil {
 		return nil
 	}
@@ -195,19 +195,19 @@ func (m *Settings_ReceiverSettings) validate(all bool) error {
 	// no validation rules for MaxOutstandingMessages
 
 	if len(errors) > 0 {
-		return Settings_ReceiverSettingsMultiError(errors)
+		return Settings_ReceiveSettingsMultiError(errors)
 	}
 
 	return nil
 }
 
-// Settings_ReceiverSettingsMultiError is an error wrapping multiple validation
-// errors returned by Settings_ReceiverSettings.ValidateAll() if the
-// designated constraints aren't met.
-type Settings_ReceiverSettingsMultiError []error
+// Settings_ReceiveSettingsMultiError is an error wrapping multiple validation
+// errors returned by Settings_ReceiveSettings.ValidateAll() if the designated
+// constraints aren't met.
+type Settings_ReceiveSettingsMultiError []error
 
 // Error returns a concatenation of all the error messages it wraps.
-func (m Settings_ReceiverSettingsMultiError) Error() string {
+func (m Settings_ReceiveSettingsMultiError) Error() string {
 	var msgs []string
 	for _, err := range m {
 		msgs = append(msgs, err.Error())
@@ -216,11 +216,11 @@ func (m Settings_ReceiverSettingsMultiError) Error() string {
 }
 
 // AllErrors returns a list of validation violation errors.
-func (m Settings_ReceiverSettingsMultiError) AllErrors() []error { return m }
+func (m Settings_ReceiveSettingsMultiError) AllErrors() []error { return m }
 
-// Settings_ReceiverSettingsValidationError is the validation error returned by
-// Settings_ReceiverSettings.Validate if the designated constraints aren't met.
-type Settings_ReceiverSettingsValidationError struct {
+// Settings_ReceiveSettingsValidationError is the validation error returned by
+// Settings_ReceiveSettings.Validate if the designated constraints aren't met.
+type Settings_ReceiveSettingsValidationError struct {
 	field  string
 	reason string
 	cause  error
@@ -228,24 +228,24 @@ type Settings_ReceiverSettingsValidationError struct {
 }
 
 // Field function returns field value.
-func (e Settings_ReceiverSettingsValidationError) Field() string { return e.field }
+func (e Settings_ReceiveSettingsValidationError) Field() string { return e.field }
 
 // Reason function returns reason value.
-func (e Settings_ReceiverSettingsValidationError) Reason() string { return e.reason }
+func (e Settings_ReceiveSettingsValidationError) Reason() string { return e.reason }
 
 // Cause function returns cause value.
-func (e Settings_ReceiverSettingsValidationError) Cause() error { return e.cause }
+func (e Settings_ReceiveSettingsValidationError) Cause() error { return e.cause }
 
 // Key function returns key value.
-func (e Settings_ReceiverSettingsValidationError) Key() bool { return e.key }
+func (e Settings_ReceiveSettingsValidationError) Key() bool { return e.key }
 
 // ErrorName returns error name.
-func (e Settings_ReceiverSettingsValidationError) ErrorName() string {
-	return "Settings_ReceiverSettingsValidationError"
+func (e Settings_ReceiveSettingsValidationError) ErrorName() string {
+	return "Settings_ReceiveSettingsValidationError"
 }
 
 // Error satisfies the builtin error interface
-func (e Settings_ReceiverSettingsValidationError) Error() string {
+func (e Settings_ReceiveSettingsValidationError) Error() string {
 	cause := ""
 	if e.cause != nil {
 		cause = fmt.Sprintf(" | caused by: %v", e.cause)
@@ -257,14 +257,14 @@ func (e Settings_ReceiverSettingsValidationError) Error() string {
 	}
 
 	return fmt.Sprintf(
-		"invalid %sSettings_ReceiverSettings.%s: %s%s",
+		"invalid %sSettings_ReceiveSettings.%s: %s%s",
 		key,
 		e.field,
 		e.reason,
 		cause)
 }
 
-var _ error = Settings_ReceiverSettingsValidationError{}
+var _ error = Settings_ReceiveSettingsValidationError{}
 
 var _ interface {
 	Field() string
@@ -272,7 +272,7 @@ var _ interface {
 	Key() bool
 	Cause() error
 	ErrorName() string
-} = Settings_ReceiverSettingsValidationError{}
+} = Settings_ReceiveSettingsValidationError{}
 
 // Validate checks the field values on Settings_GerritSubscription with the
 // rules defined in the proto definition for this message. If any rules are
@@ -321,11 +321,11 @@ func (m *Settings_GerritSubscription) validate(all bool) error {
 	// no validation rules for SubscriptionId
 
 	if all {
-		switch v := interface{}(m.GetReceiverSettings()).(type) {
+		switch v := interface{}(m.GetReceiveSettings()).(type) {
 		case interface{ ValidateAll() error }:
 			if err := v.ValidateAll(); err != nil {
 				errors = append(errors, Settings_GerritSubscriptionValidationError{
-					field:  "ReceiverSettings",
+					field:  "ReceiveSettings",
 					reason: "embedded message failed validation",
 					cause:  err,
 				})
@@ -333,16 +333,16 @@ func (m *Settings_GerritSubscription) validate(all bool) error {
 		case interface{ Validate() error }:
 			if err := v.Validate(); err != nil {
 				errors = append(errors, Settings_GerritSubscriptionValidationError{
-					field:  "ReceiverSettings",
+					field:  "ReceiveSettings",
 					reason: "embedded message failed validation",
 					cause:  err,
 				})
 			}
 		}
-	} else if v, ok := interface{}(m.GetReceiverSettings()).(interface{ Validate() error }); ok {
+	} else if v, ok := interface{}(m.GetReceiveSettings()).(interface{ Validate() error }); ok {
 		if err := v.Validate(); err != nil {
 			return Settings_GerritSubscriptionValidationError{
-				field:  "ReceiverSettings",
+				field:  "ReceiveSettings",
 				reason: "embedded message failed validation",
 				cause:  err,
 			}

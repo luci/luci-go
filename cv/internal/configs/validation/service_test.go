@@ -100,7 +100,7 @@ func TestListenerConfigValidation(t *testing.T) {
 			cfg := []byte(`
 				gerrit_subscriptions {
 					host: "chromium-review.googlesource.com"
-					receiver_settings: {
+					receive_settings: {
 						num_goroutines: 100
 						max_outstanding_messages: 5000
 					}
@@ -108,7 +108,7 @@ func TestListenerConfigValidation(t *testing.T) {
 				gerrit_subscriptions {
 					host: "pigweed-review.googlesource.com"
 					subscription_id: "pigweed_gerrit"
-					receiver_settings: {
+					receive_settings: {
 						num_goroutines: 100
 						max_outstanding_messages: 5000
 					}
