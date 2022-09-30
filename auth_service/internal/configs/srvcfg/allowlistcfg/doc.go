@@ -12,5 +12,5 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package srvcfg contains code to work with service configs.
-package srvcfg
+// Package allowlistcfg contains code to work with ip_allowlist.cfg.
+package allowlistcfg
