@@ -249,7 +249,8 @@ func (rs *runStage) stageNewCQVoteRunsFrom(ctx context.Context, clid int64, info
 				return rs.postponeExpandingExistingRunScope(ctx, &combo, prun)
 			}
 		}
-		panic("unreachable")
+		// It is normal that a CQ Run "overlaps" a New Patchset Run, treat it as
+		// if there were no overlap.
 	}
 
 	rc, err := rs.makeCreator(ctx, &combo, cg, useCQVoteTrigger)

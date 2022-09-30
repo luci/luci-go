@@ -292,9 +292,36 @@ func TestOnCompletedExecuteTryjobs(t *testing.T) {
 					So(res.SideEffectFn, ShouldBeNil)
 					So(res.PreserveEvents, ShouldBeFalse)
 				})
+				Convey("New Patchset Run, no message is posted", func() {
+					rs.Mode = run.NewPatchsetRun
+					res, err := h.OnLongOpCompleted(ctx, rs, result)
+					So(err, ShouldBeNil)
+					So(res.State.Status, ShouldEqual, run.Status_RUNNING)
+					So(res.State.Tryjobs, ShouldResembleProto, &run.Tryjobs{
+						State: &tryjob.ExecutionState{
+							Status: tryjob.ExecutionState_SUCCEEDED,
+						},
+					})
+					So(res.State.OngoingLongOps.GetOps(), ShouldHaveLength, 1)
+					for _, op := range res.State.OngoingLongOps.GetOps() {
+						So(op.GetCancelTriggers(), ShouldNotBeNil)
+						So(op.GetCancelTriggers().GetRequests(), ShouldResembleProto, []*run.OngoingLongOps_Op_TriggersCancellation_Request{
+							{Clid: int64(rs.CLs[0])},
+						})
+						So(op.GetCancelTriggers().GetRunStatusIfSucceeded(), ShouldEqual, run.Status_SUCCEEDED)
+					}
+					So(res.SideEffectFn, ShouldBeNil)
+					So(res.PreserveEvents, ShouldBeFalse)
+				})
 			})
 
 			Convey("Tryjob execution failed", func() {
+				Convey("On CQ Vote Run", func() {
+					rs.Mode = run.DryRun
+				})
+				Convey("On New Patchset Run", func() {
+					rs.Mode = run.NewPatchsetRun
+				})
 				err := datastore.RunInTransaction(ctx, func(ctx context.Context) error {
 					return tryjob.SaveExecutionState(ctx, rs.ID, &tryjob.ExecutionState{
 						Status:        tryjob.ExecutionState_FAILED,

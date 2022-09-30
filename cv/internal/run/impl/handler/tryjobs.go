@@ -111,11 +111,15 @@ func (impl *Impl) onCompletedExecuteTryjobs(ctx context.Context, rs *state.RunSt
 				rs.Status = run.Status_WAITING_FOR_SUBMISSION
 				return impl.OnReadyForSubmission(ctx, rs)
 			case executionStatus == tryjob.ExecutionState_SUCCEEDED:
-				// TODO(crbug/1242951): NewPatchsetRuns should not leave any message
-				// on CL, to avoid spamming users.
 				runStatus = run.Status_SUCCEEDED
-				msg = "This CL has passed the run"
-				attentionReason = "Run succeeded"
+				switch rs.Mode {
+				case run.DryRun, run.FullRun, run.QuickDryRun:
+					msg = "This CL has passed the run"
+					attentionReason = "Run succeeded"
+				case run.NewPatchsetRun:
+				default:
+					panic(fmt.Errorf("unsupported mode %s", rs.Mode))
+				}
 			case executionStatus == tryjob.ExecutionState_FAILED:
 				runStatus = run.Status_FAILED
 				msg = "This CL has failed the run. Reason:\n\n" + es.FailureReason
@@ -133,11 +137,14 @@ func (impl *Impl) onCompletedExecuteTryjobs(ctx context.Context, rs *state.RunSt
 	}
 
 	if run.IsEnded(runStatus) {
-		meta := reviewInputMeta{
-			message:        msg,
-			notify:         gerrit.Whoms{gerrit.Owner, gerrit.CQVoters},
-			addToAttention: gerrit.Whoms{gerrit.Owner, gerrit.CQVoters},
-			reason:         attentionReason,
+		var meta reviewInputMeta
+		if msg != "" && attentionReason != "" {
+			meta = reviewInputMeta{
+				message:        msg,
+				notify:         gerrit.Whoms{gerrit.Owner, gerrit.CQVoters},
+				addToAttention: gerrit.Whoms{gerrit.Owner, gerrit.CQVoters},
+				reason:         attentionReason,
+			}
 		}
 		metas := make(map[common.CLID]reviewInputMeta, len(rs.CLs))
 		for _, cl := range rs.CLs {

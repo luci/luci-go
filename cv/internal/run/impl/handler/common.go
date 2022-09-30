@@ -81,7 +81,13 @@ func (impl *Impl) endRun(ctx context.Context, rs *state.RunState, st run.Status)
 			return impl.PM.NotifyRunFinished(ctx, rs.ID)
 		},
 		func(ctx context.Context) error {
-			return impl.BQExporter.Schedule(ctx, rs.ID)
+			switch rs.Mode {
+			case run.NewPatchsetRun:
+				// Do not export NPRs.
+				return nil
+			default:
+				return impl.BQExporter.Schedule(ctx, rs.ID)
+			}
 		},
 		func(ctx context.Context) error {
 			// If this Run is successfully ended (i.e. saved successfully to

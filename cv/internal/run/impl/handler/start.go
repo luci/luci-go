@@ -144,12 +144,15 @@ func (impl *Impl) Start(ctx context.Context, rs *state.RunState) (*Result, error
 		return &Result{State: rs}, nil
 	}
 
-	rs.EnqueueLongOp(&run.OngoingLongOps_Op{
-		Deadline: timestamppb.New(clock.Now(ctx).UTC().Add(maxPostStartMessageDuration)),
-		Work: &run.OngoingLongOps_Op_PostStartMessage{
-			PostStartMessage: true,
-		},
-	})
+	// New patchset runs should be quiet.
+	if rs.Mode != run.NewPatchsetRun {
+		rs.EnqueueLongOp(&run.OngoingLongOps_Op{
+			Deadline: timestamppb.New(clock.Now(ctx).UTC().Add(maxPostStartMessageDuration)),
+			Work: &run.OngoingLongOps_Op_PostStartMessage{
+				PostStartMessage: true,
+			},
+		})
+	}
 	// Note that it is inevitable that duplicate pickup latency metric maybe
 	// emitted for the same Run if the state transition fails later that
 	// causes a retry.

@@ -383,24 +383,26 @@ func (s *State) setTriggers(ci *gerritpb.ChangeInfo, pcl *prjpb.PCL) {
 		cg = &cfgpb.ConfigGroup{}
 	}
 	ts := trigger.Find(&trigger.FindInput{ChangeInfo: ci, ConfigGroup: cg})
-	t := ts.GetCqVoteTrigger()
-	if t == nil {
+	if ts == nil {
 		return
 	}
-	switch mode := run.Mode(t.GetMode()); mode {
-	case "", run.DryRun, run.FullRun, run.QuickDryRun:
-	default:
-		err := &changelist.CLError{
-			Kind: &changelist.CLError_UnsupportedMode{UnsupportedMode: string(mode)},
+
+	for _, modeString := range []string{ts.GetCqVoteTrigger().GetMode(), ts.GetNewPatchsetRunTrigger().GetMode()} {
+		switch run.Mode(modeString) {
+		case "", run.DryRun, run.FullRun, run.QuickDryRun, run.NewPatchsetRun:
+		default:
+			err := &changelist.CLError{
+				Kind: &changelist.CLError_UnsupportedMode{UnsupportedMode: string(modeString)},
+			}
+			pcl.PurgeReasons = append(pcl.PurgeReasons, &prjpb.PurgeReason{
+				ClError: err,
+				ApplyTo: &prjpb.PurgeReason_Triggers{
+					Triggers: ts,
+				},
+			})
+			pcl.Errors = append(pcl.Errors, err)
+			return
 		}
-		pcl.PurgeReasons = append(pcl.PurgeReasons, &prjpb.PurgeReason{
-			ClError: err,
-			ApplyTo: &prjpb.PurgeReason_Triggers{
-				Triggers: &run.Triggers{CqVoteTrigger: t},
-			},
-		})
-		pcl.Errors = append(pcl.Errors, err)
-		return
 	}
 
 	// Project Manager doesn't care about email or Gerrit account.

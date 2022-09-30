@@ -58,6 +58,11 @@ func (m Mode) BQAttemptMode() bqpb.Mode {
 		return bqpb.Mode_FULL_RUN
 	case QuickDryRun:
 		return bqpb.Mode_QUICK_DRY_RUN
+	case NewPatchsetRun:
+		// TODO(robertocn): Remove this hack, either by adding a supported mode in bq
+		// export, or by filtering out NPRs from the response to CQD when it calls
+		// FetchActiveRuns().
+		return bqpb.Mode_MODE_UNSPECIFIED
 	default:
 		panic(fmt.Sprintf("unknown RunMode %q", m))
 	}

@@ -67,12 +67,18 @@ func (impl *Impl) OnCQDVerificationCompleted(ctx context.Context, rs *state.RunS
 		rs.LogInfo(ctx, logEntryCQDVerifiedLabel, usertext.OnFullRunSucceeded(rs.Mode))
 		return impl.OnReadyForSubmission(ctx, rs)
 	case migrationpb.ReportVerifiedRunRequest_ACTION_DRY_RUN_OK:
-		msg, reason := usertext.OnRunSucceeded(rs.Mode)
-		meta := reviewInputMeta{
-			notify:         gerrit.Whoms{gerrit.Owner, gerrit.CQVoters},
-			message:        msg,
-			addToAttention: gerrit.Whoms{gerrit.CQVoters},
-			reason:         reason,
+		var meta reviewInputMeta
+		switch rs.Mode {
+		case run.NewPatchsetRun:
+			// Succeed quitely.
+		default:
+			msg, reason := usertext.OnRunSucceeded(rs.Mode)
+			meta = reviewInputMeta{
+				notify:         gerrit.Whoms{gerrit.Owner, gerrit.CQVoters},
+				message:        msg,
+				addToAttention: gerrit.Whoms{gerrit.CQVoters},
+				reason:         reason,
+			}
 		}
 		if err := impl.cancelTriggers(ctx, rs, meta); err != nil {
 			return nil, err
