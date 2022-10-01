@@ -28,6 +28,7 @@ type IDTokenClaims struct {
 	EmailVerified bool   `json:"email_verified"`
 	Exp           int64  `json:"exp"`
 	Iss           string `json:"iss"`
+	Nonce         string `json:"nonce"`
 	Sub           string `json:"sub"`
 }
 

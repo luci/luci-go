@@ -35,6 +35,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"os"
 	"path/filepath"
 	"strings"
 	"sync"
@@ -354,6 +355,18 @@ type Options struct {
 	// Default: none.
 	ClientSecret string
 
+	// LoginSessionsHost is a hostname of a service that implements LoginSessions
+	// pRPC service to use for performing interactive OAuth login flow instead
+	// of using OOB redirect URI.
+	//
+	// Matters only when using UserCredentialsMethod method. When used, the stdout
+	// must be attached to a real terminal (i.e. not redirected to a file or
+	// pipe). This is a precaution against using this login method on bots or from
+	// scripts which is never correct and can be dangerous.
+	//
+	// Default: none
+	LoginSessionsHost string
+
 	// ServiceAccountJSONPath is a path to a JSON blob with a private key to use.
 	//
 	// Can also be set to GCEServiceAccount (':gce') to indicate that the GCE VM
@@ -457,6 +470,12 @@ func (opts *Options) PopulateDefaults() {
 	}
 	if opts.MinTokenLifetime == 0 {
 		opts.MinTokenLifetime = 2 * time.Minute
+	}
+
+	// TODO(vadimsh): This is temporary, to simplify the rollout of new login
+	// flow that replaces OOB flow.
+	if opts.LoginSessionsHost == "" {
+		opts.LoginSessionsHost = os.Getenv("LUCI_AUTH_LOGIN_SESSIONS_HOST")
 	}
 
 	// TODO(vadimsh): Check SecretsDir permissions. It should be 0700.
@@ -1507,8 +1526,21 @@ func makeBaseTokenProvider(ctx context.Context, opts *Options, scopes []string, 
 
 	switch opts.Method {
 	case UserCredentialsMethod:
-		// Note: supports ID tokens and OAuth access tokens at the same time.
-		// Ignores audience (it always matches ClientID).
+		if opts.ClientID == "" || opts.ClientSecret == "" {
+			return nil, fmt.Errorf("OAuth client is not configured, can't use interactive login")
+		}
+		// Note: both LoginSessionTokenProvider and UserAuthTokenProvider support
+		// ID tokens and OAuth access tokens at the same time. They ignore audience
+		// (it always matches ClientID).
+		if opts.LoginSessionsHost != "" {
+			return internal.NewLoginSessionTokenProvider(
+				ctx,
+				opts.LoginSessionsHost,
+				opts.ClientID,
+				opts.ClientSecret,
+				scopes,
+				opts.Transport)
+		}
 		return internal.NewUserAuthTokenProvider(
 			ctx,
 			opts.ClientID,

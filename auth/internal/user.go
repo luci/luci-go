@@ -20,6 +20,7 @@ import (
 	"time"
 
 	"golang.org/x/oauth2"
+	"golang.org/x/oauth2/google"
 
 	"go.chromium.org/luci/common/gcloud/googleoauth"
 	"go.chromium.org/luci/common/logging"
@@ -38,12 +39,9 @@ func NewUserAuthTokenProvider(ctx context.Context, clientID, clientSecret string
 		config: &oauth2.Config{
 			ClientID:     clientID,
 			ClientSecret: clientSecret,
-			Endpoint: oauth2.Endpoint{
-				AuthURL:  "https://accounts.google.com/o/oauth2/auth",
-				TokenURL: "https://accounts.google.com/o/oauth2/token",
-			},
-			RedirectURL: "urn:ietf:wg:oauth:2.0:oob",
-			Scopes:      scopes,
+			Endpoint:     google.Endpoint,
+			RedirectURL:  "urn:ietf:wg:oauth:2.0:oob",
+			Scopes:       scopes,
 		},
 		cacheKey: CacheKey{
 			Key:    fmt.Sprintf("user/%s", clientID),
@@ -70,10 +68,6 @@ func (p *userAuthTokenProvider) CacheKey(ctx context.Context) (*CacheKey, error)
 }
 
 func (p *userAuthTokenProvider) MintToken(ctx context.Context, base *Token) (*Token, error) {
-	if p.config.ClientID == "" || p.config.ClientSecret == "" {
-		return nil, fmt.Errorf("OAuth client is not set, can't use 3-legged login flow")
-	}
-
 	// The list of scopes is displayed on the consent page as well, but show it
 	// in the terminal too, for clarity.
 	fmt.Println("Getting a refresh token with following OAuth scopes:")
@@ -97,17 +91,23 @@ func (p *userAuthTokenProvider) MintToken(ctx context.Context, base *Token) (*To
 	if err != nil {
 		return nil, err
 	}
-	return processProviderReply(ctx, tok, "")
+	processed, _, err := processProviderReply(ctx, tok, "")
+	return processed, err
 }
 
 func (p *userAuthTokenProvider) RefreshToken(ctx context.Context, prev, base *Token) (*Token, error) {
+	return refreshToken(ctx, prev, base, p.config)
+}
+
+func refreshToken(ctx context.Context, prev, base *Token, cfg *oauth2.Config) (*Token, error) {
 	// Clear expiration time to force token refresh. Do not use 0 since it means
 	// that token never expires.
 	t := prev.Token
 	t.Expiry = time.Unix(1, 0)
-	switch newTok, err := grabToken(p.config.TokenSource(ctx, &t)); {
+	switch newTok, err := grabToken(cfg.TokenSource(ctx, &t)); {
 	case err == nil:
-		return processProviderReply(ctx, newTok, prev.Email)
+		tok, _, err := processProviderReply(ctx, newTok, prev.Email)
+		return tok, err
 	case transient.Tag.In(err):
 		logging.Warningf(ctx, "Transient error when refreshing the token - %s", err)
 		return nil, err
@@ -121,7 +121,7 @@ func (p *userAuthTokenProvider) RefreshToken(ctx context.Context, prev, base *To
 // useful information from it.
 //
 // May make an RPC to the token info endpoint.
-func processProviderReply(ctx context.Context, tok *oauth2.Token, email string) (*Token, error) {
+func processProviderReply(ctx context.Context, tok *oauth2.Token, email string) (*Token, *IDTokenClaims, error) {
 	// If have the ID token, parse its payload to see the expiry and the email.
 	// Note that we don't verify the signature. We just got the token from the
 	// provider we trust.
@@ -130,7 +130,7 @@ func processProviderReply(ctx context.Context, tok *oauth2.Token, email string) 
 	var err error
 	if idToken, _ = tok.Extra("id_token").(string); idToken != "" {
 		if claims, err = ParseIDTokenClaims(idToken); err != nil {
-			return nil, err
+			return nil, nil, err
 		}
 	} else {
 		idToken = NoIDToken
@@ -143,7 +143,7 @@ func processProviderReply(ctx context.Context, tok *oauth2.Token, email string) 
 		// If we still don't know the email associated with the credentials, make
 		// an RPC to the token info endpoint to get it.
 		if email, err = grabEmail(ctx, tok); err != nil {
-			return nil, err
+			return nil, nil, err
 		}
 	}
 
@@ -167,7 +167,7 @@ func processProviderReply(ctx context.Context, tok *oauth2.Token, email string) 
 		Token:   *tok,
 		IDToken: idToken,
 		Email:   email,
-	}, nil
+	}, claims, nil
 }
 
 // grabEmail fetches an email associated with the given token.

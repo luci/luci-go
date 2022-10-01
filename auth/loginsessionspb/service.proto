@@ -1,0 +1,255 @@
+// Copyright 2022 The LUCI Authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package luci.auth.loginsessions;
+
+option go_package = "go.chromium.org/luci/auth/loginsessionspb";
+
+import "google/protobuf/duration.proto";
+import "google/protobuf/timestamp.proto";
+
+
+// LoginSessions service allows creating and polling login sessions.
+//
+// A login session is essentially a short-lived container for an OAuth2
+// authorization code. A native client-side program creates a login session
+// via CreateLoginSession and asks the user to complete the login through
+// the web UI exposed by the login session server (see `login_flow_url` field).
+//
+// The user performs the browser-based login flow that results in an OAuth2
+// authorization code placed in the login session.
+//
+// Meanwhile, the program that created the session is periodically checking its
+// status. As soon as it notices there's an authorization code available, it
+// exchanges this code for a full set of OAuth2 tokens (an access token,
+// a refresh token and an ID token).
+//
+// This protocol is intended for use **only** by native clients. The backend
+// will reply with PERMISSION_DENIED errors if it detects the calls are coming
+// from a browser.
+service LoginSessions {
+  // CreateLoginSession creates a new login session in PENDING state.
+  //
+  // The returned message contains a new session with auto-generated random `id`
+  // and `password`. It's the only reply that has `password` populated. Both
+  // `id` and `password` are needed to get the up-to-date state of the session
+  // in GetLoginSession.
+  //
+  // Returns:
+  //   INVALID_ARGUMENT: when missing required fields.
+  //   PERMISSION_DENIED: when `oauth_client_id` is not recognized or some
+  //       requested scopes are forbidden from use.
+  rpc CreateLoginSession(CreateLoginSessionRequest) returns (LoginSession);
+
+  // GetLoginSession returns the current up-to-date state of a login session.
+  //
+  // The state changes based on interaction with the user in the browser (via
+  // a flow launched by visiting `login_flow_url`) and with passage of time.
+  //
+  // Returns:
+  //   INVALID_ARGUMENT: when missing required fields.
+  //   NOT_FOUND: if the session is not found, expired long time ago or the
+  //       password doesn't match.
+  rpc GetLoginSession(GetLoginSessionRequest) returns (LoginSession);
+}
+
+
+// Inputs for CreateLoginSession
+message CreateLoginSessionRequest {
+  // An OAuth2 client ID that should be known to the login sessions server.
+  //
+  // The eventual outcome of the login protocol is a set of tokens associated
+  // with this OAuth2 client (e.g. the ID token will have this client as
+  // `aud` claim).
+  //
+  // This client ID also identifies the application information that the user
+  // will see at the OAuth2 consent screen.
+  //
+  // Required.
+  string oauth_client_id = 1;
+
+  // A list of OAuth2 scopes to get the refresh and access tokens with.
+  //
+  // The server may deny usage of some sensitive scopes. This set of scopes
+  // defined what the user will see at the OAuth2 consent screen.
+  //
+  // Required.
+  repeated string oauth_scopes = 2;
+
+  // A `code_challenge` parameter for PKCE protocol using S256 method.
+  //
+  // See https://tools.ietf.org/html/rfc7636. It should be a base64 URL-encoded
+  // SHA256 digest of a `code_verifier` random string (that the caller should
+  // not disclose anywhere).
+  //
+  // Required.
+  string oauth_s256_code_challenge = 3;
+
+  // A name of the native program that started the flow.
+  //
+  // Will be shown on the confirmation web page in the login session UI to
+  // provide some best-effort context around what opened the login session.
+  // It is **not a security mechanism**, just an FYI for the user.
+  //
+  // Optional.
+  string executable_name = 4;
+
+  // A hostname of the machine that started the flow.
+  //
+  // Used for the same purpose as `executable_name` to give some context around
+  // what opened the login session. It is **not a security mechanism**, just
+  // an FYI for the user.
+  //
+  // Optional.
+  string client_hostname = 5;
+}
+
+
+// Inputs for GetLoginSession.
+message GetLoginSessionRequest {
+  // ID of the login session to get the state of. Required.
+  string login_session_id = 1;
+  // The password returned by CreateLoginSession. Required.
+  bytes login_session_password = 2;
+}
+
+
+// Represents a login session whose eventual outcome if an OAuth2 authorization
+// code.
+message LoginSession {
+  // Globally identifies this session.
+  //
+  // It is a randomly generated URL-safe string. Knowing it is enough to
+  // complete the login session via the web UI. Should be used only by the user
+  // that started the login flow.
+  //
+  // It will also appear as a `nonce` claim in the ID token produced by the
+  // protocol.
+  string id = 1;
+
+  // Password is required to call GetLoginSession.
+  //
+  // It is populated only in the response from CreateLoginSession. It exists
+  // to make sure that only whoever created the session can check its status.
+  // Must not be shared or stored.
+  bytes password = 2;
+
+  // A session starts in PENDING state and then moves to one of other states
+  // (all of them are final) in response to user actions or passage of time.
+  enum State {
+    STATE_UNSPECIFIED = 0;
+    PENDING = 1;
+    CANCELED = 2;
+    SUCCEEDED = 3;
+    FAILED = 4;
+    EXPIRED = 5;
+  }
+  State state = 3;
+
+  // When the session was created. Always populated.
+  google.protobuf.Timestamp created = 4;
+  // When the session will expire. Always populated.
+  google.protobuf.Timestamp expiry = 5;
+  // When the session moved to a final state. Populated for finished sessions.
+  google.protobuf.Timestamp completed = 6;
+
+  // A full URL to a webpage the user should visit to perform the login flow.
+  //
+  // It encodes `id` inside. Always populated.
+  //
+  // Knowing it is enough to complete the login session via the web UI. Should
+  // be used only by the user that started the login flow.
+  string login_flow_url = 7;
+
+  // How often the caller should poll the session status via GetLoginSession.
+  //
+  // It is a mechanism to adjust the global poll rate without redeploying
+  // new clients.
+  //
+  // Populated for sessions in PENDING state. The caller is allowed to ignore it
+  // if absolutely necessary.
+  google.protobuf.Duration poll_interval = 8;
+
+  // The active confirmation code.
+  //
+  // The user will be asked to provide this code by the web UI as the final step
+  // of the login flow. The code should be shown to the user by the native
+  // program in the terminal. This code is very short lived (~ 1 min) and the
+  // native program should periodically fetch and show the most recent code.
+  //
+  // The purpose of this mechanism is to make sure the user is completing the
+  // flow they have actually started in their own terminal. It makes phishing
+  // attempts harder, since the target of a phishing attack should not only
+  // click through the web UI login flow initiated from a link (which is
+  // relatively easy to arrange), but also actively copy-paste an up-to-date
+  // code that expires very fast (making "asynchronous" phishing attempts
+  // relatively hard to perform).
+  //
+  // Populated only if the session is still in PENDING state.
+  string confirmation_code = 9;
+
+  // When the confirmation code expires, as duration since when the request to
+  // get it completed.
+  //
+  // It is a relative time (instead of an absolute timestamp) to avoid relying
+  // on clock synchronization between the backend and the client machine. Since
+  // the code expires pretty fast, even small differences in clocks may cause
+  // issues.
+  //
+  // This value is always sufficiently larger than zero (to give the user some
+  // time to use it). The server will prepare a new code in advance if the
+  // existing one expires soon. See confirmation_code_refresh below. During such
+  // transitions both codes are valid.
+  //
+  // Populated only if the session is still in PENDING state.
+  google.protobuf.Duration confirmation_code_expiry = 10;
+
+  // When the confirmation code will be refreshed (approximately).
+  //
+  // A "refresh" in this context means GetLoginSession will start returning
+  // a new code. It happens somewhat before the previous code expires. That way
+  // the user always sees a code that is sufficiently fresh to be copy-pasted
+  // into the confirmation web page in a leisurely pace.
+  //
+  // Populated only if the session is still in PENDING state.
+  google.protobuf.Duration confirmation_code_refresh = 11;
+
+  // The OAuth2 authorization code that can be exchanged for OAuth2 tokens.
+  //
+  // Populated only for sessions in SUCCEEDED state. Getting this code is the
+  // goal of LoginSessions service. Knowing this code, an OAuth2 client secret
+  // (which is usually hardcoded in the native program code) and the PKCE code
+  // verifier secret (which was used to derive `oauth_s256_code_challenge`) is
+  // enough to get all OAuth2 tokens.
+  //
+  // Must not be shared.
+  string oauth_authorization_code = 12;
+
+  // An URL that should be used as `redirect_url` parameter when calling the
+  // authorization server token endpoint when exchanging the authorization code
+  // for tokens.
+  //
+  // Populated only for sessions in SUCCEEDED state. It is usually a static
+  // well-known URL pointing to a page on the login sessions service domain,
+  // but it is returned with the session to avoid hardcoding dependencies on
+  // implementation details of the login sessions server.
+  string oauth_redirect_url = 13;
+
+  // An optional error message if the login flow failed.
+  //
+  // Populated only for sessions in FAILED state.
+  string oauth_error = 14;
+}
