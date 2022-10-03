@@ -28,8 +28,6 @@ import (
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
-	"github.com/google/tink/go/aead"
-	"github.com/google/tink/go/keyset"
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
@@ -213,11 +211,7 @@ func TestListAnalyses(t *testing.T) {
 	Convey("List existing analyses", t, func() {
 		// Set up context and AEAD so that page tokens can be generated
 		c := memory.Use(context.Background())
-		keyHandle, err := keyset.NewHandle(aead.AES256GCMKeyTemplate())
-		So(err, ShouldBeNil)
-		testAEAD, err := aead.New(keyHandle)
-		So(err, ShouldBeNil)
-		c = secrets.SetPrimaryTinkAEADForTest(c, testAEAD)
+		c = secrets.GeneratePrimaryTinkAEADForTest(c)
 
 		// Prepares datastore
 		failureAnalysis1 := &model.CompileFailureAnalysis{

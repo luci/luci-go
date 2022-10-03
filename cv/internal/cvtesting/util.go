@@ -28,8 +28,6 @@ import (
 	"time"
 
 	nativeDatastore "cloud.google.com/go/datastore"
-	"github.com/google/tink/go/aead"
-	"github.com/google/tink/go/keyset"
 	"google.golang.org/api/option"
 	"google.golang.org/protobuf/proto"
 
@@ -177,7 +175,7 @@ func (t *Test) SetUp() (context.Context, func()) {
 	// callback function can honor the verbose mode.
 	ctx = t.setTestClockTimerCB(ctx)
 	ctx = caching.WithEmptyProcessCache(ctx)
-	ctx = SetUpSecrets(ctx)
+	ctx = secrets.GeneratePrimaryTinkAEADForTest(ctx)
 
 	if t.TQDispatcher != nil {
 		panic("TQDispatcher must not be set")
@@ -540,17 +538,4 @@ func (t *Test) AddMember(email, group string) {
 func (t *Test) ResetMockedAuthDB(ctx context.Context) {
 	t.authDB = authtest.NewFakeDB()
 	serverauth.GetState(ctx).(*authtest.FakeState).FakeDB = t.authDB
-}
-
-// SetUpSecrets initializes server/secrets with AEAD crypto key.
-func SetUpSecrets(ctx context.Context) context.Context {
-	kh, err := keyset.NewHandle(aead.AES256GCMKeyTemplate())
-	if err != nil {
-		panic(err)
-	}
-	aead, err := aead.New(kh)
-	if err != nil {
-		panic(err)
-	}
-	return secrets.SetPrimaryTinkAEADForTest(ctx, aead)
 }

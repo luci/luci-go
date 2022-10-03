@@ -58,11 +58,8 @@ func TestAEAD(t *testing.T) {
 			_, err = Decrypt(ctx, []byte("ignored"), []byte("ignored"))
 			So(err, ShouldEqual, ErrNoPrimaryAEAD)
 
-			aead, err := aead.New(kh)
-			So(err, ShouldBeNil)
-
-			ctx = SetPrimaryTinkAEADForTest(ctx, aead)
-			So(PrimaryTinkAEAD(ctx).Unwrap(), ShouldEqual, aead)
+			ctx = GeneratePrimaryTinkAEADForTest(ctx)
+			So(PrimaryTinkAEAD(ctx).Unwrap(), ShouldNotBeNil)
 
 			ciphertext, err := Encrypt(ctx,
 				[]byte("secret-to-be-encrypted"),

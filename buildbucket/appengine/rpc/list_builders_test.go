@@ -20,9 +20,6 @@ import (
 
 	"google.golang.org/grpc/codes"
 
-	"github.com/google/tink/go/aead"
-	"github.com/google/tink/go/keyset"
-
 	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
@@ -46,11 +43,7 @@ func TestListBuilders(t *testing.T) {
 	Convey("ListBuilders", t, func() {
 		srv := &Builders{}
 		ctx := memory.Use(context.Background())
-		kh, err := keyset.NewHandle(aead.AES256GCMKeyTemplate())
-		So(err, ShouldBeNil)
-		aead, err := aead.New(kh)
-		So(err, ShouldBeNil)
-		ctx = secrets.SetPrimaryTinkAEADForTest(ctx, aead)
+		ctx = secrets.GeneratePrimaryTinkAEADForTest(ctx)
 		datastore.GetTestable(ctx).AutoIndex(true)
 		datastore.GetTestable(ctx).Consistent(true)
 

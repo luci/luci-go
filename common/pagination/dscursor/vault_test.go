@@ -19,8 +19,6 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/google/tink/go/aead"
-	"github.com/google/tink/go/keyset"
 	"go.chromium.org/luci/common/pagination"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
@@ -41,11 +39,7 @@ func TestPagination(t *testing.T) {
 		ctx := memory.Use(context.Background())
 		datastore.GetTestable(ctx).Consistent(true)
 
-		kh, err := keyset.NewHandle(aead.AES256GCMKeyTemplate())
-		So(err, ShouldBeNil)
-		aead, err := aead.New(kh)
-		So(err, ShouldBeNil)
-		ctx = secrets.SetPrimaryTinkAEADForTest(ctx, aead)
+		ctx = secrets.GeneratePrimaryTinkAEADForTest(ctx)
 
 		for i := 1; i < 11; i++ {
 			err := datastore.Put(ctx, &TestEntity{ID: i, Value: fmt.Sprintf("%d", i)})

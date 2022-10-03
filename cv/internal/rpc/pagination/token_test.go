@@ -22,7 +22,7 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/common/clock/testclock"
-	"go.chromium.org/luci/cv/internal/cvtesting"
+	"go.chromium.org/luci/server/secrets"
 
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
@@ -30,7 +30,7 @@ import (
 
 func TestPageTokens(t *testing.T) {
 	t.Parallel()
-	ctx := cvtesting.SetUpSecrets(context.Background())
+	ctx := secrets.GeneratePrimaryTinkAEADForTest(context.Background())
 
 	Convey("Page token round trip", t, func() {
 		Convey("not empty", func() {

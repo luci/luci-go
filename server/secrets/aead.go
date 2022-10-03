@@ -37,7 +37,7 @@ import (
 // wasn't set.
 //
 // For test code, it happens if the test context wasn't prepared correctly. See
-// SetPrimaryTinkAEADForTest.
+// GeneratePrimaryTinkAEADForTest for generating a random key for tests.
 var ErrNoPrimaryAEAD = errors.New("the primary AEAD primitive is not configured")
 
 // A never-shrinking, never-expiring cache of loaded *AEADHandle.
@@ -98,17 +98,25 @@ func (h *AEADHandle) Decrypt(ciphertext, additionalData []byte) ([]byte, error) 
 // depends on a presence of an AEAD implementation must check that the return
 // value of PrimaryTinkAEAD is not nil during startup.
 //
-// Tests can use SetPrimaryTinkAEADForTest to mock the return value of
-// PrimaryTinkAEAD.
+// Tests can use GeneratePrimaryTinkAEADForTest to prepare a context with some
+// randomly generated key.
 func PrimaryTinkAEAD(ctx context.Context) *AEADHandle {
 	val, _ := ctx.Value(&primaryAEADCtxKey).(*AEADHandle)
 	return val
 }
 
-// SetPrimaryTinkAEADForTest mocks the value returned by PrimaryTinkAEAD.
+// GeneratePrimaryTinkAEADForTest generates a new key and sets it as primary.
 //
 // Must be used only in tests.
-func SetPrimaryTinkAEADForTest(ctx context.Context, aead tink.AEAD) context.Context {
+func GeneratePrimaryTinkAEADForTest(ctx context.Context) context.Context {
+	kh, err := keyset.NewHandle(aead.AES256GCMKeyTemplate())
+	if err != nil {
+		panic(err)
+	}
+	aead, err := aead.New(kh)
+	if err != nil {
+		panic(err)
+	}
 	handle := &AEADHandle{}
 	handle.val.Store(aead)
 	return setPrimaryTinkAEAD(ctx, handle)

@@ -20,8 +20,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/google/tink/go/aead"
-	"github.com/google/tink/go/keyset"
 	. "github.com/smartystreets/goconvey/convey"
 	"go.chromium.org/luci/buildbucket/bbperms"
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
@@ -42,12 +40,7 @@ func TestQueryRecentBuilds(t *testing.T) {
 	Convey(`TestQueryRecentBuilds`, t, func() {
 		ctx := memory.Use(context.Background())
 		ctx = common.SetUpTestGlobalCache(ctx)
-
-		kh, err := keyset.NewHandle(aead.AES256GCMKeyTemplate())
-		So(err, ShouldBeNil)
-		aead, err := aead.New(kh)
-		So(err, ShouldBeNil)
-		ctx = secrets.SetPrimaryTinkAEADForTest(ctx, aead)
+		ctx = secrets.GeneratePrimaryTinkAEADForTest(ctx)
 
 		datastore.GetTestable(ctx).AddIndexes(&datastore.IndexDefinition{
 			Kind: "BuildSummary",
@@ -98,7 +91,7 @@ func TestQueryRecentBuilds(t *testing.T) {
 			createFakeBuild(builder1, 0, 998, baseTime.AddDate(0, 0, -1), milostatus.InfraFailure),
 		}
 
-		err = datastore.Put(ctx, builds)
+		err := datastore.Put(ctx, builds)
 		So(err, ShouldBeNil)
 
 		Convey(`get all recent builds`, func() {

@@ -19,9 +19,6 @@ import (
 	"net/url"
 	"testing"
 
-	"github.com/google/tink/go/aead"
-	"github.com/google/tink/go/keyset"
-
 	. "github.com/smartystreets/goconvey/convey"
 )
 
@@ -29,13 +26,7 @@ func TestPagination(t *testing.T) {
 	t.Parallel()
 
 	Convey("URLSafeEncrypt/Decrypt", t, func() {
-		ctx := context.Background()
-
-		kh, err := keyset.NewHandle(aead.AES256GCMKeyTemplate())
-		So(err, ShouldBeNil)
-		aead, err := aead.New(kh)
-		So(err, ShouldBeNil)
-		ctx = SetPrimaryTinkAEADForTest(ctx, aead)
+		ctx := GeneratePrimaryTinkAEADForTest(context.Background())
 
 		Convey("The encrypted string should be URL safe", func() {
 			encrypted, err := URLSafeEncrypt(ctx, []byte("sensitive data %=?/&"), []byte("additional data"))
