@@ -2551,7 +2551,7 @@ break CQ. This can be done by asking lucicfg to track only Tricium config:
 * **equivalent_builder**: an optional alternative builder for the CQ to choose instead. If provided, the CQ will choose only one of the equivalent builders as required based purely on the given CL and CL's owner and **regardless** of the possibly already completed try jobs.
 * **equivalent_builder_percentage**: a percentage expressing probability of the CQ triggering `equivalent_builder` instead of `builder`. A choice itself is made deterministically based on CL alone, hereby all CQ attempts on all patchsets of a given CL will trigger the same builder, assuming CQ config doesn't change in the mean time. Note that if `equivalent_builder_whitelist` is also specified, the choice over which of the two builders to trigger will be made only for CLs owned by the accounts in the whitelisted group. Defaults to 0, meaning the equivalent builder is never triggered by the CQ, but an existing build can be re-used.
 * **equivalent_builder_whitelist**: a group name with accounts to enable the equivalent builder substitution for. If set, only CLs that are owned by someone from this group have a chance to be verified by the equivalent builder. All other CLs are verified via the main builder.
-* **mode_allowlist**: a list of modes that CQ will trigger this verifier for. CQ supports `cq.MODE_DRY_RUN` and `cq.MODE_FULL_RUN` out of the box. Additional Run modes can be defined via `luci.cq_group(additional_modes=...)`.
+* **mode_allowlist**: a list of modes that CQ will trigger this verifier for. CQ supports `cq.MODE_DRY_RUN` and `cq.MODE_FULL_RUN`, and `cq.MODE_NEW_PATCHSET_RUN` out of the box. Additional Run modes can be defined via `luci.cq_group(additional_modes=...)`.
 
 
 
@@ -2642,6 +2642,9 @@ Similarly some roles can be assigned to individual users, other only to groups.
 | acl.SCHEDULER_OWNER |project, bucket |groups, users |Full access to Scheduler jobs, including ability to abort them. |
 | acl.CQ_COMMITTER |project, cq_group |groups |Committing approved CLs via CQ. |
 | acl.CQ_DRY_RUNNER |project, cq_group |groups |Executing presubmit tests for CLs via CQ. |
+| acl.CQ_NEW_PATCHSET_RUN_TRIGGERER |project, cq_group |groups |Having CV automatically run certain tryjobs (e.g. static analyzers) when
+a member uploads a new patchset to a CL monitored by CV and the feature
+is enabled. |
 
 
 
@@ -2740,7 +2743,7 @@ Defines a mapping between a test results and a BigQuery table for them.
 
 #### Arguments {#resultdb.export-test-results-args}
 
-* **bq_table**: string of the form `<project>.<dataset>.<table>` where the parts respresent the BigQuery-enabled gcp project, dataset and table to export results.
+* **bq_table**: Tuple of `(project, dataset, table)`; OR a string of the form `<project>.<dataset>.<table>` where the parts represent the BigQuery-enabled gcp project, dataset and table to export results.
 * **predicate**: A predicate_pb.TestResultPredicate() proto. If given, specifies the subset of test results to export to the above table, instead of all. Use [resultdb.test_result_predicate(...)](#resultdb.test-result-predicate) to generate this, if needed.
 
 

@@ -260,6 +260,11 @@ luci.builder(
         "luci.enable_new_beta_feature": 32,
     },
 )
+luci.builder(
+    name = "website-preview",
+    bucket = "try",
+    executable = "main/recipe",
+)
 
 luci.builder(
     name = "spell-checker",
@@ -445,6 +450,7 @@ luci.cq_group(
     acls = [
         acl.entry(acl.CQ_COMMITTER, groups = ["committers"]),
         acl.entry(acl.CQ_DRY_RUNNER, groups = ["dry-runners"]),
+        acl.entry(acl.CQ_NEW_PATCHSET_RUN_TRIGGERER, groups = ["new-patchset-runners"]),
     ],
     allow_submit_with_open_deps = True,
     allow_owner_if_submittable = cq.ACTION_COMMIT,
@@ -471,6 +477,11 @@ luci.cq_group(
             builder = "another-project:try/zzz",
             includable_only = True,
             owner_whitelist = ["another-project-committers"],
+        ),
+        luci.cq_tryjob_verifier(
+            builder = "website-preview",
+            owner_whitelist = ["project-contributor"],
+            mode_allowlist = [cq.MODE_NEW_PATCHSET_RUN],
         ),
         luci.cq_tryjob_verifier(
             builder = "spell-checker",
@@ -570,6 +581,7 @@ lucicfg.emit(
 #       committer_list: "admins"
 #       committer_list: "committers"
 #       dry_run_access_list: "dry-runners"
+#       new_patchset_run_access_list: "new-patchset-runners"
 #       allow_submit_with_open_deps: true
 #       allow_owner_if_submittable: COMMIT
 #     }
@@ -633,6 +645,11 @@ lucicfg.emit(
 #         name: "infra/try/spell-checker"
 #         owner_whitelist_group: "project-contributor"
 #         mode_allowlist: "ANALYZER_RUN"
+#       }
+#       builders {
+#         name: "infra/try/website-preview"
+#         owner_whitelist_group: "project-contributor"
+#         mode_allowlist: "NEW_PATCHSET_RUN"
 #       }
 #       retry_config {
 #         single_quota: 1
@@ -1115,6 +1132,24 @@ lucicfg.emit(
 #     }
 #     builders {
 #       name: "spell-checker"
+#       swarming_host: "chromium-swarm.appspot.com"
+#       exe {
+#         cipd_package: "recipe/bundles/main"
+#         cipd_version: "refs/heads/main"
+#         cmd: "luciexe"
+#         wrapper: "path/to/wrapper"
+#       }
+#       properties:
+#         '{'
+#         '  "recipe": "main/recipe"'
+#         '}'
+#       experiments {
+#         key: "luci.recipes.use_python3"
+#         value: 100
+#       }
+#     }
+#     builders {
+#       name: "website-preview"
 #       swarming_host: "chromium-swarm.appspot.com"
 #       exe {
 #         cipd_package: "recipe/bundles/main"

@@ -171,8 +171,8 @@ def _run_mode(
     Returns:
       cq.run_mode struct.
     """
-    if name in ("DRY_RUN", "FULL_RUN"):
-        fail('bad "mode_name": "DRY_RUN" and "FULL_RUN" are reserved by CQ')
+    if name in ("DRY_RUN", "FULL_RUN", "NEW_PATCHSET_RUN"):
+        fail('bad "mode_name": "DRY_RUN", "FULL_RUN" and "NEW_PATCHSET_RUN" are reserved by CQ')
     return _run_mode_ctor(
         name = validate.string(
             "mode_name",
@@ -438,6 +438,7 @@ cq = struct(
     MODE_QUICK_DRY_RUN = "QUICK_DRY_RUN",
     MODE_FULL_RUN = "FULL_RUN",
     MODE_ANALYZER_RUN = "ANALYZER_RUN",
+    MODE_NEW_PATCHSET_RUN = "NEW_PATCHSET_RUN",
 )
 
 cqimpl = struct(

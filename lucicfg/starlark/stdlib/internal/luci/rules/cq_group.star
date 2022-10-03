@@ -154,7 +154,7 @@ def _cq_group(
 
     graph.add_node(key, props = {
         "watch": watch,
-        "acls": aclimpl.validate_acls(acls, allowed_roles = [acl.CQ_COMMITTER, acl.CQ_DRY_RUNNER]),
+        "acls": aclimpl.validate_acls(acls, allowed_roles = [acl.CQ_COMMITTER, acl.CQ_DRY_RUNNER, acl.CQ_NEW_PATCHSET_RUN_TRIGGERER]),
         "allow_submit_with_open_deps": validate.bool(
             "allow_submit_with_open_deps",
             allow_submit_with_open_deps,

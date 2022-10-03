@@ -988,6 +988,7 @@ def _cq_config_group(cq_group, project, triggering_map):
     gerrit_cq_ability = cq_pb.Verifiers.GerritCQAbility(
         committer_list = [a.group for a in filter_acls(acls, [acl.CQ_COMMITTER])],
         dry_run_access_list = [a.group for a in filter_acls(acls, [acl.CQ_DRY_RUNNER])],
+        new_patchset_run_access_list = [a.group for a in filter_acls(acls, [acl.CQ_NEW_PATCHSET_RUN_TRIGGERER])],
         allow_submit_with_open_deps = cq_group.props.allow_submit_with_open_deps,
         allow_owner_if_submittable = cq_group.props.allow_owner_if_submittable,
     )

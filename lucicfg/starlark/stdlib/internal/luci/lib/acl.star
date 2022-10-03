@@ -248,6 +248,8 @@ def _binding_dicts(acls):
     per_role = {}  # role -> {roles: [role], groups: [], users: [], projects: []}.
     for e in _normalize_acls(acls):
         role = e.role.realms_role
+        if not role:
+            continue
 
         binding = per_role.get(role)
         if not binding:
@@ -360,6 +362,18 @@ acl = struct(
         "CQ_DRY_RUNNER",
         groups_only = True,
         realms_role = "role/cq.dryRunner",
+    ),
+
+    # Having CV automatically run certain tryjobs (e.g. static analyzers) when
+    # a member uploads a new patchset to a CL monitored by CV and the feature
+    # is enabled.
+    #
+    # DocTags:
+    #  cq_role, groups_only.
+    CQ_NEW_PATCHSET_RUN_TRIGGERER = _role(
+        "CQ_NEW_PATCHSET_RUN_TRIGGERER",
+        groups_only = True,
+        realms_role = None,
     ),
 )
 

@@ -297,7 +297,8 @@ def _cq_tryjob_verifier(
         by someone from this group have a chance to be verified by the
         equivalent builder. All other CLs are verified via the main builder.
       mode_allowlist: a list of modes that CQ will trigger this verifier for.
-        CQ supports `cq.MODE_DRY_RUN` and `cq.MODE_FULL_RUN` out of the box.
+        CQ supports `cq.MODE_DRY_RUN` and `cq.MODE_FULL_RUN`, and
+        `cq.MODE_NEW_PATCHSET_RUN` out of the box.
         Additional Run modes can be defined via
         `luci.cq_group(additional_modes=...)`.
     """
