@@ -172,11 +172,11 @@ func (b *Bundler) Log(ctx context.Context, m proto.Message) {
 	case b.draining:
 		recordDrop(ctx, buf.tableID, 1, errors.New("draining already"), "DRAINING")
 	default:
-		select {
-		case buf.disp.C <- blob:
-		case <-ctx.Done():
-			recordDrop(ctx, buf.tableID, 1, ctx.Err(), "CONTEXT_DEADLINE")
-		}
+		// Note: we explicitly do not select on ctx.Done() since often the context
+		// is already expired (e.g. when logging from handlers that have reached the
+		// deadline). Sending to the channel here should be fast, since buffer's
+		// FullBehavior is set to DropOldestBatch, i.e. it never really blocks.
+		buf.disp.C <- blob
 	}
 }
 
