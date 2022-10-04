@@ -60,11 +60,29 @@ func TestPredefinedTypes(t *testing.T) {
 		Convey("swarming", func() {
 			So(GetSwarming(c), ShouldBeNil)
 
-			c = SetSwarming(c, &Swarming{SecretBytes: []byte("foo")})
-			data, _ := getCurrent(c).sections["swarming"]
-			So(string(*data), ShouldEqual, `{"secret_bytes":"Zm9v"}`)
-
-			So(GetSwarming(c), ShouldResembleProto, &Swarming{SecretBytes: []byte("foo")})
+			s := &Swarming{
+				SecretBytes: []byte("foo"),
+				Task: &Task{
+					Server: "https://backend.appspot.com",
+					TaskId: "task_id",
+					BotDimensions: []string{
+						"k1:v1",
+					},
+				},
+			}
+			c = SetSwarming(c, s)
+			data := getCurrent(c).sections["swarming"]
+			var v interface{}
+			So(json.Unmarshal(*data, &v), ShouldBeNil)
+			So(v, ShouldResemble, map[string]interface{}{
+				"secret_bytes": "Zm9v",
+				"task": map[string]interface{}{
+					"server":         "https://backend.appspot.com",
+					"task_id":        "task_id",
+					"bot_dimensions": []interface{}{"k1:v1"},
+				},
+			})
+			So(GetSwarming(c), ShouldResembleProto, s)
 		})
 
 		Convey("resultdb", func() {
@@ -98,7 +116,7 @@ func TestPredefinedTypes(t *testing.T) {
 				Name: "test:realm",
 			}
 			c = SetRealm(c, r)
-			data, _ := getCurrent(c).sections["realm"]
+			data := getCurrent(c).sections["realm"]
 			So(string(*data), ShouldEqual, `{"name":"test:realm"}`)
 			So(GetRealm(c), ShouldResembleProto, r)
 			proj, realm := CurrentRealm(c)
@@ -114,7 +132,7 @@ func TestPredefinedTypes(t *testing.T) {
 				ScheduleBuildToken: "a token",
 			}
 			c = SetBuildbucket(c, b)
-			data, _ := getCurrent(c).sections["buildbucket"]
+			data := getCurrent(c).sections["buildbucket"]
 			var v interface{}
 			So(json.Unmarshal(*data, &v), ShouldBeNil)
 			So(v, ShouldResemble, map[string]interface{}{

@@ -48,8 +48,30 @@ message Swarming {
   // task triggerer directly to the task. The bytes will not appear on any
   // swarming UI, or be visible to any users of the swarming service.
   bytes secret_bytes = 1 [json_name = "secret_bytes"];
+
+  // Information of the swarming task.
+  Task task = 2 [json_name = "task"];
 }
 
+// Task is a struct that contains the information relates to the current task.
+message Task {
+  // Server managing the task.
+  // E.g. https://chromium-swarm.appspot.com.
+  string server = 1 [json_name = "server"];
+
+  // ID of the current task.
+  //
+  // In the case of a swarming task, this is the id of the overall task, which
+  // ends with 0.
+  string task_id = 2 [json_name = "task_id"];
+
+  // A snapshot of dimensions of the bot that is currently running the task at
+  // the time the task was picked up.
+  //
+  // Each element is a string in the format of "<key>:<value>".
+  // E.g. "id:bot_id".
+  repeated string bot_dimensions = 3 [json_name = "bot_dimensions"];
+}
 
 // LUCIExe is a struct that may be used with the "luciexe" section of
 // LUCI_CONTEXT.
