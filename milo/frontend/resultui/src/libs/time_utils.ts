@@ -42,7 +42,11 @@ export function displayDuration(duration: Duration) {
   return parts.join(' ');
 }
 
-export function displayCompactDuration(duration: Duration): [string, string] {
+export function displayCompactDuration(duration: Duration | null): [string, string] {
+  if (duration === null) {
+    return ['N/A', ''];
+  }
+
   const shifted = duration.shiftTo('days', 'hours', 'minutes', 'seconds', 'milliseconds');
   if (shifted.days >= 1) {
     return [`${(shifted.days + shifted.hours / 24).toFixed(1)}d`, 'd'];

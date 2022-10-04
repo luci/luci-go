@@ -16,14 +16,14 @@ import '@material/mwc-icon';
 import { css, customElement, html } from 'lit-element';
 import { render } from 'lit-html';
 import { styleMap } from 'lit-html/directives/style-map';
-import { Duration } from 'luxon';
+import { DateTime } from 'luxon';
 import { action, computed, makeObservable, observable, reaction } from 'mobx';
 
 import './step_entry';
 import { MiloBaseElement } from '../../../components/milo_base';
 import { HideTooltipEventDetail, ShowTooltipEventDetail } from '../../../components/tooltip';
 import { consumer } from '../../../libs/context';
-import { displayCompactDuration, displayDuration } from '../../../libs/time_utils';
+import { displayCompactDuration, displayDuration, NUMERIC_TIME_FORMAT } from '../../../libs/time_utils';
 import { consumeStore, StoreInstance } from '../../../store';
 import { StepExt } from '../../../store/build_state';
 import commonStyle from '../../../styles/common_style.css';
@@ -46,16 +46,36 @@ export class BuildPageStepClusterElement extends MiloBaseElement {
     );
   }
 
-  @computed private get stepWithDurationCount() {
-    return this.steps.filter((s) => s.startTime).length;
+  @computed private get startTime() {
+    return this.steps.reduce((earliest: DateTime | null, step) => {
+      if (!earliest) {
+        return step.startTime;
+      }
+      if (!step.startTime) {
+        return earliest;
+      }
+      return step.startTime < earliest ? step.startTime : earliest;
+    }, null);
   }
 
-  @computed private get totalDuration() {
-    return this.steps.reduce((total, s) => total.plus(s.duration), Duration.fromMillis(0));
+  @computed private get endTime() {
+    return this.steps.reduce((latest: DateTime | null, step) => {
+      if (!latest) {
+        return step.endTime;
+      }
+      if (!step.endTime) {
+        return latest;
+      }
+      return step.endTime > latest ? step.endTime : latest;
+    }, null);
   }
 
-  @computed private get avgDuration() {
-    return Duration.fromMillis(this.totalDuration.toMillis() / this.stepWithDurationCount);
+  @computed get duration() {
+    if (!this.startTime || !this.endTime) {
+      return null;
+    }
+
+    return this.endTime.diff(this.startTime);
   }
 
   @action private setExpanded(expand: boolean) {
@@ -112,7 +132,7 @@ export class BuildPageStepClusterElement extends MiloBaseElement {
   }
 
   private renderDuration() {
-    const [compactDuration, compactDurationUnits] = displayCompactDuration(this.totalDuration);
+    const [compactDuration, compactDurationUnits] = displayCompactDuration(this.duration);
 
     return html`
       <div
@@ -144,16 +164,16 @@ export class BuildPageStepClusterElement extends MiloBaseElement {
     return html`
       <table>
         <tr>
-          <td>Total Duration:</td>
-          <td>${displayDuration(this.totalDuration)}</td>
+          <td>Started:</td>
+          <td>${this.startTime ? this.startTime.toFormat(NUMERIC_TIME_FORMAT) : 'N/A'}</td>
         </tr>
         <tr>
-          <td>Average Duration:</td>
-          <td>${displayDuration(this.avgDuration)}</td>
+          <td>Ended:</td>
+          <td>${this.endTime ? this.endTime.toFormat(NUMERIC_TIME_FORMAT) : 'N/A'}</td>
         </tr>
         <tr>
-          <td>Steps w/o Duration:</td>
-          <td>${this.steps.length - this.stepWithDurationCount}</td>
+          <td>Duration:</td>
+          <td>${this.duration ? displayDuration(this.duration) : 'N/A'}</td>
         </tr>
       </div>
     `;

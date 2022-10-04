@@ -50,6 +50,9 @@ describe('Time Utils Tests', () => {
   });
 
   describe('displayCompactDuration', () => {
+    it("should display correct duration when it's null", async () => {
+      assert.deepEqual(displayCompactDuration(null), ['N/A', '']);
+    });
     it('should display correct duration in days', async () => {
       const duration = Duration.fromISO('P3DT11H');
       assert.deepEqual(displayCompactDuration(duration), ['3.5d', 'd']);
