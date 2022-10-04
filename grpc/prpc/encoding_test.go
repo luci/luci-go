@@ -144,7 +144,7 @@ func TestEncoding(t *testing.T) {
 			So(rec.Code, ShouldEqual, http.StatusInternalServerError)
 			So(rec.Header().Get(HeaderGRPCCode), ShouldEqual, "13")
 			So(rec.Header().Get(headerContentType), ShouldEqual, "text/plain")
-			So(rec.Body.String(), ShouldEqual, "Internal Server Error\n")
+			So(rec.Body.String(), ShouldEqual, "Internal server error\n")
 			So(log, memlogger.ShouldHaveLog, logging.Error, "prpc: responding with Internal error: errmsg")
 		})
 
@@ -153,7 +153,7 @@ func TestEncoding(t *testing.T) {
 			So(rec.Code, ShouldEqual, http.StatusInternalServerError)
 			So(rec.Header().Get(HeaderGRPCCode), ShouldEqual, "2")
 			So(rec.Header().Get(headerContentType), ShouldEqual, "text/plain")
-			So(rec.Body.String(), ShouldEqual, "Internal Server Error\n")
+			So(rec.Body.String(), ShouldEqual, "Unknown server error\n")
 			So(log, memlogger.ShouldHaveLog, logging.Error, "prpc: responding with Unknown error: errmsg")
 		})
 

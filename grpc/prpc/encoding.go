@@ -215,8 +215,25 @@ func writeError(ctx context.Context, w http.ResponseWriter, err error, format Fo
 	if httpStatus < 500 {
 		logging.Warningf(ctx, "prpc: responding with %s error: %s", st.Code(), st.Message())
 	} else {
-		// Hide potential implementation details from the user.
-		body = http.StatusText(httpStatus)
+		// Hide potential implementation details from the user. Only codes that
+		// result in HTTP status >= 500 are possible here.
+		// See https://cloud.google.com/apis/design/errors.
+		switch st.Code() {
+		case codes.DataLoss:
+			body = "Unrecoverable data loss or data corruption"
+		case codes.Unknown:
+			body = "Unknown server error"
+		case codes.Internal:
+			body = "Internal server error"
+		case codes.Unimplemented:
+			body = "API method not implemented by the server"
+		case codes.Unavailable:
+			body = "Service unavailable"
+		case codes.DeadlineExceeded:
+			body = "Request deadline exceeded"
+		default:
+			body = "Server error"
+		}
 
 		// Log everything about the error.
 		logging.Errorf(ctx, "prpc: responding with %s error: %s", st.Code(), st.Message())

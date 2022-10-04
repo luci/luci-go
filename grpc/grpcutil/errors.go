@@ -177,7 +177,7 @@ var codeToStatus = map[codes.Code]int{
 	codes.OK:                 http.StatusOK,
 	codes.Canceled:           499,
 	codes.InvalidArgument:    http.StatusBadRequest,
-	codes.DataLoss:           http.StatusGone,
+	codes.DataLoss:           http.StatusInternalServerError,
 	codes.Internal:           http.StatusInternalServerError,
 	codes.Unknown:            http.StatusInternalServerError,
 	codes.DeadlineExceeded:   http.StatusGatewayTimeout,
