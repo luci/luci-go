@@ -8,7 +8,7 @@ This is the rewrite in Golang of the Python2 version of Findit (findit-for-me.ap
 
 To run the server locally, firstly you need to authenticate
 ```
-gcloud config set project chops-gofindit-dev
+gcloud config set project luci-bisection-dev
 gcloud auth application-default login
 ```
 and

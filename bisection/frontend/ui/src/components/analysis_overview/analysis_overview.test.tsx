@@ -43,6 +43,18 @@ describe('Test AnalysisOverview component', () => {
       );
     });
 
+    // check the timestamp cells are displayed
+    const timestampFields = ['created time', 'end time'];
+    const timeFormat = new RegExp(
+      '^\\d{2}:[0-5]\\d:[0-5]\\d [A-Z][a-z]{2}, [A-Z][a-z]{2} [0-3]\\d \\d{4} [A-Z]+\\+\\d{2}$'
+    );
+    timestampFields.forEach((field) => {
+      const fieldLabel = screen.getByText(new RegExp(`^(${field})$`, 'i'));
+      expect(fieldLabel).toBeInTheDocument();
+      // just check the format; the actual value will depend on timezone
+      expect(fieldLabel.nextSibling?.textContent).toMatch(timeFormat);
+    });
+
     // check the builder is displayed correctly
     expect(mockAnalysis.builder).not.toBe(undefined);
     const fieldLabel = screen.getByText(new RegExp('^(builder)$', 'i'));

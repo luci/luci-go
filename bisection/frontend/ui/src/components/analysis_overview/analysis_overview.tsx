@@ -29,6 +29,7 @@ import {
   linkToCommit,
   linkToCommitRange,
 } from '../../tools/link_constructors';
+import { getFormattedTimestamp } from '../../tools/timestamp_formatters';
 
 interface Props {
   analysis: Analysis;
@@ -132,8 +133,8 @@ export const AnalysisOverview = ({ analysis }: Props) => {
             </TableCell>
           </TableRow>
           <TableRow>
-            <TableCell variant='head'>Status</TableCell>
-            <TableCell>{analysis.status}</TableCell>
+            <TableCell variant='head'>Created time</TableCell>
+            <TableCell>{getFormattedTimestamp(analysis.createdTime)}</TableCell>
             <TableCell variant='head'>Builder</TableCell>
             <TableCell>
               {analysis.builder && (
@@ -147,6 +148,16 @@ export const AnalysisOverview = ({ analysis }: Props) => {
                 </Link>
               )}
             </TableCell>
+          </TableRow>
+          <TableRow>
+            <TableCell variant='head'>End time</TableCell>
+            <TableCell>{getFormattedTimestamp(analysis.endTime)}</TableCell>
+            <TableCell variant='head'>Failure type</TableCell>
+            <TableCell>{analysis.buildFailureType}</TableCell>
+          </TableRow>
+          <TableRow>
+            <TableCell variant='head'>Status</TableCell>
+            <TableCell>{analysis.status}</TableCell>
           </TableRow>
           <TableRow>
             <TableCell variant='head'>Suspect range</TableCell>
@@ -165,8 +176,6 @@ export const AnalysisOverview = ({ analysis }: Props) => {
                 </span>
               ))}
             </TableCell>
-            <TableCell variant='head'>Failure type</TableCell>
-            <TableCell>{analysis.buildFailureType}</TableCell>
           </TableRow>
           {bugLinks.length > 0 && (
             <>
