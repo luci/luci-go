@@ -175,9 +175,18 @@ func redirect(pathTemplate string, status int) router.Handler {
 	interpolator := createInterpolator(pathTemplate)
 	return func(c *router.Context) {
 		path := interpolator(c.Params)
-		url := *c.Request.URL
-		url.Path = path
-		http.Redirect(c.Writer, c.Request, url.String(), status)
+		targetURL := *c.Request.URL
+
+		// Use RawPath instead of Path to ensure the path is not doubled encoded.
+		targetURL.RawPath = path
+		unescaped, err := url.PathUnescape(path)
+		if err != nil {
+			// The URL returned from interpolator is always in the escaped form.
+			panic(err)
+		}
+		targetURL.Path = unescaped
+
+		http.Redirect(c.Writer, c.Request, targetURL.String(), status)
 	}
 }
 

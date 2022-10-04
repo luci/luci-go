@@ -21,6 +21,7 @@ import (
 	"html/template"
 	"io/ioutil"
 	"net/http"
+	"net/http/httptest"
 	"net/url"
 	"os"
 	"path/filepath"
@@ -39,6 +40,7 @@ import (
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
+	"go.chromium.org/luci/server/router"
 	"go.chromium.org/luci/server/settings"
 	"go.chromium.org/luci/server/templates"
 
@@ -492,6 +494,28 @@ func TestCreateInterpolator(t *testing.T) {
 
 			path := interpolator(params)
 			So(path, ShouldEqual, "/component1/"+url.PathEscape(":?/ +"))
+		})
+	})
+}
+
+func TestRedirect(t *testing.T) {
+	Convey("Test redirect", t, func() {
+		client := &http.Client{
+			// Don't follow the redirect. We want to test the response directly.
+			CheckRedirect: func(req *http.Request, via []*http.Request) error {
+				return http.ErrUseLastResponse
+			},
+		}
+
+		r := router.New()
+		ts := httptest.NewServer(r)
+
+		Convey("Should not double-encode params", func() {
+			r.GET("/foo/:param", router.NewMiddlewareChain(), redirect("/bar/:param", http.StatusFound))
+			res, err := client.Get(ts.URL + "/foo/" + url.PathEscape(":? "))
+			So(err, ShouldBeNil)
+			So(res.StatusCode, ShouldEqual, http.StatusFound)
+			So(res.Header.Get("Location"), ShouldEqual, "/bar/"+url.PathEscape(":? "))
 		})
 	})
 }
