@@ -19,15 +19,13 @@ import (
 	"flag"
 	"testing"
 
+	. "github.com/smartystreets/goconvey/convey"
+
 	bbpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging/memlogger"
 	"go.chromium.org/luci/gae/impl/memory"
-	"go.chromium.org/luci/lucictx"
 	"go.chromium.org/luci/luciexe"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestReadyToFinalize(t *testing.T) {
@@ -47,41 +45,5 @@ func TestReadyToFinalize(t *testing.T) {
 		So(isReady, ShouldEqual, false)
 
 	})
-}
 
-func TestBackFillTaskInfo(t *testing.T) {
-	Convey("backFillTaskInfo", t, func() {
-		ctx := lucictx.SetSwarming(context.Background(), &lucictx.Swarming{
-			Task: &lucictx.Task{
-				BotDimensions: []string{
-					"cpu:x86",
-					"cpu:x86-64",
-					"id:bot_id",
-				},
-			},
-		})
-
-		build := &bbpb.Build{
-			Infra: &bbpb.BuildInfra{
-				Swarming: &bbpb.BuildInfra_Swarming{},
-			},
-		}
-		input := clientInput{input: &bbpb.BBAgentArgs{Build: build}}
-
-		So(backFillTaskInfo(ctx, input), ShouldEqual, 0)
-		So(build.Infra.Swarming.BotDimensions, ShouldResembleProto, []*bbpb.StringPair{
-			{
-				Key:   "cpu",
-				Value: "x86",
-			},
-			{
-				Key:   "cpu",
-				Value: "x86-64",
-			},
-			{
-				Key:   "id",
-				Value: "bot_id",
-			},
-		})
-	})
 }
