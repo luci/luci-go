@@ -486,11 +486,6 @@ func mainImpl() int {
 		}
 	}
 
-	// print swarming context to confirm it has the values we want.
-	// TODO(crbug.com/1367892): delete me.
-	swarmingCtx := lucictx.GetSwarming(ctx)
-	logging.Infof(ctx, "swarming.task context: %q", swarmingCtx.GetTask())
-
 	exeArgs := processExeArgs(ctx, bbclientInput)
 	dispatcherOpts, dispatcherErrCh := channelOpts(cctx)
 	canceledBuildCh := newCloseOnceCh()
