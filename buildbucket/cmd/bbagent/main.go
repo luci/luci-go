@@ -214,6 +214,40 @@ func parseHostBuildID(ctx context.Context, hostname *string, buildID *int64) (cl
 	return clientInput{bbclient, input}, secrets
 }
 
+// backendTaskInfoExists checks if the backend task info exists in build proto.
+//
+// Currently only check input.Infra.Swarming.BotDimensions.
+// TODO(crbug.com/1370221): also check the info from input.Infra.Backend.Task.
+func backendTaskInfoExists(ci clientInput) bool {
+	return len(ci.input.Build.GetInfra().GetSwarming().GetBotDimensions()) > 0
+}
+
+// backFillTaskInfo gets the task info from LUCI_CONTEXT and backs fill it to input.Build.
+//
+// Currently only read from swarming part of LUCI_CONTEXT and only update
+// input.Infra.Swarming.BotDimensions.
+// TODO(crbug.com/1370221): read LUCI_CONTEXT based on the backend task target,
+// and then update input.Infra.Backend.Task.
+func backFillTaskInfo(ctx context.Context, ci clientInput) int {
+	swarmingCtx := lucictx.GetSwarming(ctx)
+	if swarmingCtx == nil || swarmingCtx.GetTask() == nil || len(swarmingCtx.Task.GetBotDimensions()) == 0 {
+		logging.Errorf(ctx, "incomplete swarming context")
+		return 1
+	}
+
+	botDimensions := make([]*bbpb.StringPair, 0, len(swarmingCtx.Task.BotDimensions))
+	for _, dim := range swarmingCtx.Task.BotDimensions {
+		parts := strings.Split(dim, ":")
+		if len(parts) != 2 {
+			logging.Errorf(ctx, "bot_dimensions in swarming context is broken")
+			return 1
+		}
+		botDimensions = append(botDimensions, &bbpb.StringPair{Key: parts[0], Value: parts[1]})
+	}
+	ci.input.Build.Infra.Swarming.BotDimensions = botDimensions
+	return 0
+}
+
 // prepareInputBuild sets status=STARTED and adds log entries
 func prepareInputBuild(ctx context.Context, build, updatedBuild *bbpb.Build) {
 	build.Status = updatedBuild.Status
@@ -482,6 +516,13 @@ func mainImpl() int {
 	// Downloading cipd packages if any.
 	if stringset.NewFromSlice(bbclientInput.input.Build.Input.Experiments...).Has(buildbucket.ExperimentBBAgentDownloadCipd) {
 		if retcode := downloadCipdPackages(cctx, cwd, bbclientInput); retcode != 0 {
+			return retcode
+		}
+	}
+
+	// Backfill backend task info if they are missing.
+	if !backendTaskInfoExists(bbclientInput) {
+		if retcode := backFillTaskInfo(ctx, bbclientInput); retcode != 0 {
 			return retcode
 		}
 	}
