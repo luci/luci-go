@@ -13,12 +13,13 @@
 // limitations under the License.
 
 // Package lucictx implements a Go client for the protocol defined here:
-//   https://github.com/luci/luci-py/blob/master/client/LUCI_CONTEXT.md
+//
+//	https://github.com/luci/luci-py/blob/master/client/LUCI_CONTEXT.md
 //
 // It differs from the python client in a couple ways:
-//   * The initial LUCI_CONTEXT value is captured once at application start.
-//   * Writes are cached into the golang context.Context, not a global variable.
-//   * The LUCI_CONTEXT environment variable is not changed automatically when
+//   - The initial LUCI_CONTEXT value is captured once at application start.
+//   - Writes are cached into the golang context.Context, not a global variable.
+//   - The LUCI_CONTEXT environment variable is not changed automatically when
 //     using the Set function. To pass the new context on to a child process,
 //     you must use the Export function to dump the current context state to
 //     disk and call exported.SetInCmd(cmd) to configure new command's
@@ -148,7 +149,10 @@ func Lookup(ctx context.Context, section string, out proto.Message) (bool, error
 	if data == nil {
 		return false, nil
 	}
-	if err := jsonpb.Unmarshal(bytes.NewReader(*data), protoV1.MessageV1(out)); err != nil {
+	unmarshaler := &jsonpb.Unmarshaler{
+		AllowUnknownFields: true,
+	}
+	if err := unmarshaler.Unmarshal(bytes.NewReader(*data), protoV1.MessageV1(out)); err != nil {
 		return true, errors.Annotate(err, "failed to unmarshal json: %s", string(*data)).Err()
 	}
 	return true, nil

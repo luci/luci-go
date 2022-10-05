@@ -131,6 +131,17 @@ func TestLUCIContextMethods(t *testing.T) {
 				So(Get(c, "hi", h), ShouldBeNil)
 				So(h, ShouldResembleProto, &TestStructure{HelloThere: 0})
 			})
+
+			Convey("allow unknown field", func() {
+				blob := json.RawMessage(`{"hello_there":10, "unknown_field": "unknown"}`)
+				newLctx := externalContext.clone()
+				newLctx.sections["hi"] = &blob
+				c := context.WithValue(context.Background(), &lctxKey, newLctx)
+
+				h := &TestStructure{}
+				So(Get(c, "hi", h), ShouldBeNil)
+				So(h, ShouldResembleProto, &TestStructure{HelloThere: 10})
+			})
 		})
 
 		Convey("Export", func() {
