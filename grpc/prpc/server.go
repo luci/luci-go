@@ -278,7 +278,7 @@ func (s *Server) authenticate() router.Middleware {
 				code = codes.Unauthenticated
 			}
 		}
-		writeError(c.Context, c.Writer, withCode(err, code), format)
+		writeError(c.Context, c.Writer, status.Error(code, err.Error()), format)
 	}
 }
 
@@ -399,13 +399,13 @@ func (s *Server) call(c *router.Context, service *service, method grpc.MethodDes
 
 	methodCtx, cancelFunc, err := parseHeader(c.Context, c.Request.Header, c.Request.Host)
 	if err != nil {
-		r.err = withStatus(err, http.StatusBadRequest)
+		r.err = protocolErr(codes.InvalidArgument, http.StatusBadRequest, "bad request headers: %s", err)
 		return
 	}
 	defer cancelFunc()
 
 	if r.acceptsGZip, err = acceptsGZipResponse(c.Request.Header); err != nil {
-		r.err = withStatus(err, http.StatusBadRequest)
+		r.err = protocolErr(codes.InvalidArgument, http.StatusBadRequest, "bad Accept headers: %s", err)
 		return
 	}
 

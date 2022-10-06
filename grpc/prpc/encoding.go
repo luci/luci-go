@@ -50,7 +50,11 @@ func responseFormat(acceptHeader string) (Format, *protocolError) {
 
 	parsed, err := parseAccept(acceptHeader)
 	if err != nil {
-		return FormatBinary, errorf(http.StatusBadRequest, "Accept header: %s", err)
+		return FormatBinary, protocolErr(
+			codes.InvalidArgument,
+			http.StatusBadRequest,
+			"bad Accept header: %s", err,
+		)
 	}
 	formats := make(acceptFormatSlice, 0, len(parsed))
 	for _, at := range parsed {
@@ -62,9 +66,10 @@ func responseFormat(acceptHeader string) (Format, *protocolError) {
 		formats = append(formats, acceptFormat{f, at.QualityFactor})
 	}
 	if len(formats) == 0 {
-		return FormatBinary, errorf(
+		return FormatBinary, protocolErr(
+			codes.InvalidArgument,
 			http.StatusNotAcceptable,
-			"Accept header: specified media types are not not supported. Supported types: %q, %q, %q, %q.",
+			"bad Accept header: specified media types are not not supported. Supported types: %q, %q, %q, %q.",
 			FormatBinary.MediaType(),
 			FormatJSONPB.MediaType(),
 			FormatText.MediaType(),
@@ -124,28 +129,33 @@ func writeMessage(ctx context.Context, w http.ResponseWriter, msg proto.Message,
 
 	body, err := marshalMessage(msg, format, true)
 	if err != nil {
-		writeError(ctx, w, withCode(err, codes.Internal), format)
+		writeError(ctx, w, status.Error(codes.Internal, err.Error()), format)
 		return
 	}
 
 	w.Header().Set(HeaderGRPCCode, strconv.Itoa(int(codes.OK)))
 	w.Header().Set(headerContentType, format.MediaType())
+
+	// Errors below most commonly happen if the client disconnects. The header
+	// is already written. There is nothing more we can do other than just log
+	// them.
+
 	if allowGZip && len(body) > gzipThreshold {
 		w.Header().Set("Content-Encoding", "gzip")
 
 		gz := getGZipWriter(w)
 		defer returnGZipWriter(gz)
 		if _, err := gz.Write(body); err != nil {
-			logging.WithError(err).Errorf(ctx, "prpc: failed to write or compress the response body")
+			logging.Warningf(ctx, "prpc: failed to write or compress the response body: %s", err)
 			return
 		}
 		if err := gz.Close(); err != nil {
-			logging.WithError(err).Errorf(ctx, "prpc: failed to close gzip.Writer")
+			logging.Warningf(ctx, "prpc: failed to close gzip.Writer: %s", err)
 			return
 		}
 	} else {
 		if _, err := w.Write(body); err != nil {
-			logging.WithError(err).Errorf(ctx, "prpc: failed to write response body")
+			logging.Warningf(ctx, "prpc: failed to write response body: %s", err)
 			return
 		}
 	}
@@ -157,7 +167,7 @@ func errorStatus(err error) (st *status.Status, httpStatus int) {
 	}
 
 	if perr, ok := err.(*protocolError); ok {
-		st = status.New(codes.InvalidArgument, perr.err.Error())
+		st = status.New(perr.code, perr.err)
 		httpStatus = perr.status
 		return
 	}
@@ -213,7 +223,7 @@ func writeError(ctx context.Context, w http.ResponseWriter, err error, format Fo
 
 	body := st.Message()
 	if httpStatus < 500 {
-		logging.Warningf(ctx, "prpc: responding with %s error: %s", st.Code(), st.Message())
+		logging.Warningf(ctx, "prpc: responding with %s error (HTTP %d): %s", st.Code(), httpStatus, st.Message())
 	} else {
 		// Hide potential implementation details from the user. Only codes that
 		// result in HTTP status >= 500 are possible here.
@@ -236,7 +246,7 @@ func writeError(ctx context.Context, w http.ResponseWriter, err error, format Fo
 		}
 
 		// Log everything about the error.
-		logging.Errorf(ctx, "prpc: responding with %s error: %s", st.Code(), st.Message())
+		logging.Errorf(ctx, "prpc: responding with %s error (HTTP %d): %s", st.Code(), httpStatus, st.Message())
 		errors.Log(ctx, err)
 	}
 
@@ -244,13 +254,10 @@ func writeError(ctx context.Context, w http.ResponseWriter, err error, format Fo
 	w.Header().Set(headerContentType, "text/plain")
 	w.WriteHeader(httpStatus)
 	if _, err := io.WriteString(w, body); err != nil {
-		logging.WithError(err).Errorf(ctx, "prpc: failed to write response body")
-		// The header is already written. There is nothing more we can do.
+		// This error most commonly happens if the client disconnects. The header is
+		// already written. There is nothing more we can do other than log it.
+		logging.Warningf(ctx, "prpc: failed to write response body: %s", err)
 		return
 	}
 	io.WriteString(w, "\n")
-}
-
-func withCode(err error, c codes.Code) error {
-	return status.Error(c, err.Error())
 }

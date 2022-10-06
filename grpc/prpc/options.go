@@ -28,26 +28,38 @@ import (
 
 // Options controls how RPC requests are sent.
 type Options struct {
-	Retry retry.Factory // RPC retrial.
+	// Retry controls a strategy for retrying transient RPC errors and deadlines.
+	//
+	// Each call to this factory should return a new retry.Iterator to use for
+	// controlling retry loop of a single RPC call.
+	Retry retry.Factory
 
 	// UserAgent is the value of User-Agent HTTP header.
+	//
 	// If empty, DefaultUserAgent is used.
 	UserAgent string
-	Insecure  bool // if true, use HTTP instead of HTTPS.
 
-	// PerRPCTimeout, if > 0, is a timeout that is applied to each RPC. If the
-	// client Context has a shorter deadline, this timeout will not be applied.
-	// Otherwise, if this timeout is hit, the RPC round will be considered
-	// transient.
+	// Insecure can be set to true to use HTTP instead of HTTPS.
+	//
+	// Useful for local tests.
+	Insecure bool
+
+	// PerRPCTimeout, if > 0, is a timeout that is applied to each call attempt.
+	//
+	// If the context passed to the call has a shorter deadline, this timeout will
+	// not be applied. Otherwise, if this timeout is hit, the RPC call attempt
+	// will be considered as failed transiently and it may be retried just like
+	// any other transient error per Retry policy.
 	PerRPCTimeout time.Duration
 
-	// AcceptContentSubtype defines Content-Type over the wire for accepting
-	// responses.
+	// AcceptContentSubtype defines acceptable Content-Type of responses.
+	//
 	// Valid values are "binary" and "json". Empty value defaults to "binary".
 	// It can be overridden on per-call basis via CallAcceptContentSubtype().
 	AcceptContentSubtype string
 
 	// Debug is a flag indicate if we want to print more logs for debug purpose.
+	//
 	// Right now we use this option to print the raw requests when certain
 	// failures occur.
 	Debug bool

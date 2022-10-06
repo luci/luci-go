@@ -16,31 +16,38 @@ package prpc
 
 import (
 	"fmt"
+
+	"google.golang.org/grpc/codes"
 )
 
 // protocolError is returned if a pRPC request is malformed.
+//
+// This error exists on a boundary between gRPC and HTTP protocols and thus has
+// two codes: gRPC code (when it is interpreted by a gRPC client) and HTTP code
+// (when it is interpreted by an HTTP client).
 type protocolError struct {
-	err    error
-	status int // HTTP status to use in response.
+	err    string     // the error message
+	code   codes.Code // gRPC code to use in the response
+	status int        // HTTP status to use in response
 }
 
 func (e *protocolError) Error() string {
 	return fmt.Sprintf("pRPC: %s", e.err)
 }
 
-// withStatus wraps an error with an HTTP status.
-// If err is nil, returns nil.
-func withStatus(err error, status int) *protocolError {
-	if _, ok := err.(*protocolError); ok {
-		panic("protocolError in protocolError")
+// protocolErr creates a new protocol error for given gRPC status code.
+//
+// The error will be returned with the given HTTP status.
+func protocolErr(code codes.Code, status int, format string, a ...interface{}) *protocolError {
+	if code == codes.OK {
+		panic("need a real error code, not OK")
 	}
-	if err == nil {
-		return nil
+	if status < 400 {
+		panic("need an HTTP status code indicating an error")
 	}
-	return &protocolError{err, status}
-}
-
-// errorf creates a new protocol error.
-func errorf(status int, format string, a ...interface{}) *protocolError {
-	return withStatus(fmt.Errorf(format, a...), status)
+	return &protocolError{
+		err:    fmt.Sprintf(format, a...),
+		code:   code,
+		status: status,
+	}
 }

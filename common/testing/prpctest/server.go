@@ -68,6 +68,11 @@ func (s *Server) Start(c context.Context) {
 
 // NewClient returns a prpc.Client configured to use the Server.
 func (s *Server) NewClient() (*prpc.Client, error) {
+	return s.NewClientWithOptions(nil)
+}
+
+// NewClientWithOptions returns a prpc.Client configured to use the Server.
+func (s *Server) NewClientWithOptions(opts *prpc.Options) (*prpc.Client, error) {
 	if s.HTTP == nil {
 		return nil, errors.New("not running")
 	}
@@ -77,11 +82,17 @@ func (s *Server) NewClient() (*prpc.Client, error) {
 		return nil, fmt.Errorf("failed to parse server URL: %s", err)
 	}
 
+	if opts == nil {
+		opts = &prpc.Options{Insecure: true}
+	} else {
+		cpy := *opts
+		opts = &cpy
+		opts.Insecure = true
+	}
+
 	return &prpc.Client{
-		Host: u.Host,
-		Options: &prpc.Options{
-			Insecure: true,
-		},
+		Host:    u.Host,
+		Options: opts,
 	}, nil
 }
 

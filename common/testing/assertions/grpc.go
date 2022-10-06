@@ -191,6 +191,15 @@ func ShouldBeRPCAborted(actual interface{}, expected ...interface{}) string {
 	return ShouldHaveRPCCode(actual, prepend(codes.Aborted, expected)...)
 }
 
+// ShouldBeRPCDeadlineExceeded asserts that "actual" is an error that has a gRPC
+// code value of codes.DeadlineExceeded.
+//
+// One additional "expected" string may be optionally included. If included, the
+// gRPC error's message is asserted to contain the expected string.
+func ShouldBeRPCDeadlineExceeded(actual interface{}, expected ...interface{}) string {
+	return ShouldHaveRPCCode(actual, prepend(codes.DeadlineExceeded, expected)...)
+}
+
 func prepend(c codes.Code, exp []interface{}) []interface{} {
 	args := make([]interface{}, len(exp)+1)
 	args[0] = c

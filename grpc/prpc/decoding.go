@@ -18,17 +18,20 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"net/http"
 	"reflect"
 
 	"github.com/golang/protobuf/jsonpb"
 	"github.com/golang/protobuf/proto"
+	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
 	luciproto "go.chromium.org/luci/common/proto"
+	"go.chromium.org/luci/grpc/grpcutil"
 )
 
 // This file implements decoding of HTTP requests to RPC parameters.
@@ -36,7 +39,9 @@ import (
 const headerContentType = "Content-Type"
 
 // readMessage decodes a protobuf message from an HTTP request.
+//
 // Does not close the request body.
+//
 // fixFieldMasksForJSON indicates whether to attempt a workaround for
 // https://github.com/golang/protobuf/issues/745 for requests with FormatJSONPB.
 // TODO(crbug/1082369): Remove this workaround once field masks can be decoded.
@@ -44,14 +49,18 @@ func readMessage(r *http.Request, msg proto.Message, fixFieldMasksForJSON bool) 
 	format, err := FormatFromContentType(r.Header.Get(headerContentType))
 	if err != nil {
 		// Spec: http://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.4.16
-		return errorf(http.StatusUnsupportedMediaType, "Content-Type header: %s", err)
+		return protocolErr(
+			codes.InvalidArgument,
+			http.StatusUnsupportedMediaType,
+			"bad Content-Type header: %s", err,
+		)
 	}
 
 	var buf []byte
 	if r.Header.Get("Content-Encoding") == "gzip" {
 		reader, err := getGZipReader(r.Body)
 		if err != nil {
-			return errorf(http.StatusBadRequest, "failed to start decompressing gzip request body: %s", err)
+			return requestReadErr(err, "failed to start decompressing gzip request body")
 		}
 		buf, err = ioutil.ReadAll(reader)
 		if err == nil {
@@ -59,12 +68,12 @@ func readMessage(r *http.Request, msg proto.Message, fixFieldMasksForJSON bool) 
 		}
 		returnGZipReader(reader)
 		if err != nil {
-			return errorf(http.StatusBadRequest, "could not read or decompress request body: %s", err)
+			return requestReadErr(err, "could not read or decompress request body")
 		}
 	} else {
 		buf, err = ioutil.ReadAll(r.Body)
 		if err != nil {
-			return errorf(http.StatusBadRequest, "could not read request body: %s", err)
+			return requestReadErr(err, "could not read request body")
 		}
 	}
 
@@ -93,9 +102,25 @@ func readMessage(r *http.Request, msg proto.Message, fixFieldMasksForJSON bool) 
 		panic(fmt.Errorf("impossible: invalid format %v", format))
 	}
 	if err != nil {
-		return errorf(http.StatusBadRequest, "could not decode body: %s", err)
+		return protocolErr(
+			codes.InvalidArgument,
+			http.StatusBadRequest,
+			"could not decode body: %s", err,
+		)
 	}
 	return nil
+}
+
+// requestReadErr interprets an error from reading and unzipping of a request.
+func requestReadErr(err error, msg string) *protocolError {
+	code := codes.InvalidArgument
+	switch errors.Unwrap(err) {
+	case io.ErrUnexpectedEOF, context.Canceled:
+		code = codes.Canceled
+	case context.DeadlineExceeded:
+		code = codes.DeadlineExceeded
+	}
+	return protocolErr(code, grpcutil.CodeStatus(code), "%s: %s", msg, err)
 }
 
 // parseHeader parses HTTP headers and derives a new context.

@@ -82,13 +82,13 @@ func TestEncoding(t *testing.T) {
 		test("foo/bar;q=0.1,{json}", FormatJSONPB, nil)
 
 		// only unsupported types
-		const err406 = "pRPC: Accept header: specified media types are not not supported"
+		const err406 = "pRPC: bad Accept header: specified media types are not not supported"
 		test(ContentTypePRPC+"; boo=true", 0, err406)
 		test(ContentTypePRPC+"; encoding=blah", 0, err406)
 		test("x", 0, err406)
 		test("x,y", 0, err406)
 
-		test("x//y", 0, "pRPC: Accept header: specified media types are not not supported")
+		test("x//y", 0, "pRPC: bad Accept header: specified media types are not not supported")
 	})
 
 	Convey("writeMessage", t, func() {
@@ -136,7 +136,7 @@ func TestEncoding(t *testing.T) {
 			So(rec.Header().Get(HeaderGRPCCode), ShouldEqual, "5")
 			So(rec.Header().Get(headerContentType), ShouldEqual, "text/plain")
 			So(rec.Body.String(), ShouldEqual, "not found\n")
-			So(log, memlogger.ShouldHaveLog, logging.Warning, "prpc: responding with NotFound error: not found")
+			So(log, memlogger.ShouldHaveLog, logging.Warning, "prpc: responding with NotFound error (HTTP 404): not found")
 		})
 
 		Convey("internal error", func() {
@@ -145,7 +145,7 @@ func TestEncoding(t *testing.T) {
 			So(rec.Header().Get(HeaderGRPCCode), ShouldEqual, "13")
 			So(rec.Header().Get(headerContentType), ShouldEqual, "text/plain")
 			So(rec.Body.String(), ShouldEqual, "Internal server error\n")
-			So(log, memlogger.ShouldHaveLog, logging.Error, "prpc: responding with Internal error: errmsg")
+			So(log, memlogger.ShouldHaveLog, logging.Error, "prpc: responding with Internal error (HTTP 500): errmsg")
 		})
 
 		Convey("unknown error", func() {
@@ -154,7 +154,7 @@ func TestEncoding(t *testing.T) {
 			So(rec.Header().Get(HeaderGRPCCode), ShouldEqual, "2")
 			So(rec.Header().Get(headerContentType), ShouldEqual, "text/plain")
 			So(rec.Body.String(), ShouldEqual, "Unknown server error\n")
-			So(log, memlogger.ShouldHaveLog, logging.Error, "prpc: responding with Unknown error: errmsg")
+			So(log, memlogger.ShouldHaveLog, logging.Error, "prpc: responding with Unknown error (HTTP 500): errmsg")
 		})
 
 		Convey("status details", func() {

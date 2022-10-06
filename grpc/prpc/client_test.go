@@ -389,10 +389,10 @@ func TestClient(t *testing.T) {
 
 				So(log, shouldHaveMessagesLike,
 					expectedCallLogEntry(client),
-					memlogger.LogEntry{Level: logging.Warning, Msg: "RPC failed transiently. Will retry in 0"},
+					memlogger.LogEntry{Level: logging.Warning, Msg: "RPC failed transiently"},
 
 					expectedCallLogEntry(client),
-					memlogger.LogEntry{Level: logging.Warning, Msg: "RPC failed transiently. Will retry in 0"},
+					memlogger.LogEntry{Level: logging.Warning, Msg: "RPC failed transiently"},
 
 					expectedCallLogEntry(client),
 				)
@@ -408,13 +408,13 @@ func TestClient(t *testing.T) {
 
 				So(log, shouldHaveMessagesLike,
 					expectedCallLogEntry(client),
-					memlogger.LogEntry{Level: logging.Warning, Msg: "RPC failed transiently. Will retry in 0"},
+					memlogger.LogEntry{Level: logging.Warning, Msg: "RPC failed transiently"},
 
 					expectedCallLogEntry(client),
-					memlogger.LogEntry{Level: logging.Warning, Msg: "RPC failed transiently. Will retry in 0"},
+					memlogger.LogEntry{Level: logging.Warning, Msg: "RPC failed transiently"},
 
 					expectedCallLogEntry(client),
-					memlogger.LogEntry{Level: logging.Warning, Msg: "RPC failed transiently. Will retry in 0"},
+					memlogger.LogEntry{Level: logging.Warning, Msg: "RPC failed transiently"},
 
 					expectedCallLogEntry(client),
 					memlogger.LogEntry{Level: logging.Warning, Msg: "RPC failed permanently"},
@@ -430,13 +430,13 @@ func TestClient(t *testing.T) {
 
 				So(log, shouldHaveMessagesLike,
 					expectedCallLogEntry(client),
-					memlogger.LogEntry{Level: logging.Warning, Msg: "RPC failed transiently. Will retry in 0"},
+					memlogger.LogEntry{Level: logging.Warning, Msg: "RPC failed transiently"},
 
 					expectedCallLogEntry(client),
-					memlogger.LogEntry{Level: logging.Warning, Msg: "RPC failed transiently. Will retry in 0"},
+					memlogger.LogEntry{Level: logging.Warning, Msg: "RPC failed transiently"},
 
 					expectedCallLogEntry(client),
-					memlogger.LogEntry{Level: logging.Warning, Msg: "RPC failed transiently. Will retry in 0"},
+					memlogger.LogEntry{Level: logging.Warning, Msg: "RPC failed transiently"},
 
 					expectedCallLogEntry(client),
 					memlogger.LogEntry{Level: logging.Warning, Msg: "RPC failed permanently"},

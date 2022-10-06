@@ -21,14 +21,17 @@ import (
 	"strings"
 	"sync"
 	"testing"
+	"time"
 
-	"github.com/golang/protobuf/proto"
 	"google.golang.org/genproto/googleapis/rpc/errdetails"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/proto"
 
+	"go.chromium.org/luci/common/logging/gologger"
+	"go.chromium.org/luci/common/retry"
 	"go.chromium.org/luci/common/testing/prpctest"
 	"go.chromium.org/luci/grpc/prpc"
 
@@ -41,18 +44,26 @@ type service struct {
 	err        error
 	outgoingMD metadata.MD
 
+	sleep func() time.Duration
+
 	m          sync.Mutex
 	incomingMD metadata.MD
 }
 
-func (s *service) Greet(c context.Context, req *HelloRequest) (*HelloReply, error) {
-	md, _ := metadata.FromIncomingContext(c)
+func (s *service) Greet(ctx context.Context, req *HelloRequest) (*HelloReply, error) {
+	md, _ := metadata.FromIncomingContext(ctx)
 	s.m.Lock()
 	s.incomingMD = md.Copy()
+	var sleep time.Duration
+	if s.sleep != nil {
+		sleep = s.sleep()
+	}
 	s.m.Unlock()
 
+	time.Sleep(sleep)
+
 	if s.outgoingMD != nil {
-		if err := prpc.SetHeader(c, s.outgoingMD); err != nil {
+		if err := prpc.SetHeader(ctx, s.outgoingMD); err != nil {
 			return nil, status.Errorf(codes.Internal, "%s", err)
 		}
 	}
@@ -66,31 +77,35 @@ func (s *service) getIncomingMD() metadata.MD {
 	return s.incomingMD
 }
 
+func newTestClient(ctx context.Context, svc *service, opts *prpc.Options) (*prpctest.Server, HelloClient) {
+	ts := prpctest.Server{}
+	RegisterHelloServer(&ts, svc)
+	ts.Start(ctx)
+
+	prpcClient, err := ts.NewClientWithOptions(opts)
+	if err != nil {
+		panic(err)
+	}
+
+	ts.EnableResponseCompression = true
+	prpcClient.EnableRequestCompression = true
+
+	return &ts, NewHelloClient(prpcClient)
+}
+
 func TestEndToEnd(t *testing.T) {
+	t.Parallel()
+
 	Convey(`A client/server for the Greet service`, t, func() {
-		c := context.Background()
+		ctx := gologger.StdConfig.Use(context.Background())
 		svc := service{}
-
-		// Create a client/server for Greet service.
-		ts := prpctest.Server{}
-		RegisterHelloServer(&ts, &svc)
-		ts.Start(c)
+		ts, client := newTestClient(ctx, &svc, nil)
 		defer ts.Close()
-
-		prpcClient, err := ts.NewClient()
-		if err != nil {
-			panic(err)
-		}
-
-		ts.EnableResponseCompression = true
-		prpcClient.EnableRequestCompression = true
-
-		client := NewHelloClient(prpcClient)
 
 		Convey(`Can round-trip a hello message`, func() {
 			svc.R = &HelloReply{Message: "sup"}
 
-			resp, err := client.Greet(c, &HelloRequest{Name: "round-trip"})
+			resp, err := client.Greet(ctx, &HelloRequest{Name: "round-trip"})
 			So(err, ShouldBeRPCOK)
 			So(resp, ShouldResembleProto, svc.R)
 		})
@@ -102,7 +117,7 @@ func TestEndToEnd(t *testing.T) {
 			_, err := rand.Read(msg)
 			So(err, ShouldBeNil)
 
-			resp, err := client.Greet(c, &HelloRequest{Name: hex.EncodeToString(msg)})
+			resp, err := client.Greet(ctx, &HelloRequest{Name: hex.EncodeToString(msg)})
 			So(err, ShouldBeRPCOK)
 			So(resp, ShouldResembleProto, svc.R)
 		})
@@ -114,7 +129,7 @@ func TestEndToEnd(t *testing.T) {
 
 			svc.R = &HelloReply{Message: hex.EncodeToString(msg)}
 
-			resp, err := client.Greet(c, &HelloRequest{Name: "hi"})
+			resp, err := client.Greet(ctx, &HelloRequest{Name: "hi"})
 			So(err, ShouldBeRPCOK)
 			So(resp, ShouldResembleProto, svc.R)
 		})
@@ -122,12 +137,12 @@ func TestEndToEnd(t *testing.T) {
 		Convey(`Can round-trip status details`, func() {
 			detail := &errdetails.DebugInfo{Detail: "x"}
 
-			s := status.New(codes.Internal, "internal")
+			s := status.New(codes.AlreadyExists, "already exists")
 			s, err := s.WithDetails(detail)
 			So(err, ShouldBeNil)
 			svc.err = s.Err()
 
-			_, err = client.Greet(c, &HelloRequest{Name: "round-trip"})
+			_, err = client.Greet(ctx, &HelloRequest{Name: "round-trip"})
 			details := status.Convert(err).Details()
 			So(details, ShouldResembleProto, []proto.Message{detail})
 		})
@@ -142,8 +157,8 @@ func TestEndToEnd(t *testing.T) {
 
 			var respMD metadata.MD
 
-			c = metadata.NewOutgoingContext(c, md)
-			resp, err := client.Greet(c, &HelloRequest{Name: "round-trip"}, grpc.Header(&respMD))
+			ctx = metadata.NewOutgoingContext(ctx, md)
+			resp, err := client.Greet(ctx, &HelloRequest{Name: "round-trip"}, grpc.Header(&respMD))
 			So(err, ShouldBeRPCOK)
 			So(resp, ShouldResembleProto, svc.R)
 
@@ -158,6 +173,122 @@ func TestEndToEnd(t *testing.T) {
 				"binary-bin":   {string([]byte{0, 1, 2, 3})},
 				"multival-key": {"val 1", "val 2"},
 			})
+		})
+	})
+}
+
+func TestTimeouts(t *testing.T) {
+	t.Parallel()
+
+	Convey(`A client/server for the Greet service`, t, func() {
+		ctx := gologger.StdConfig.Use(context.Background())
+		svc := service{R: &HelloReply{Message: "sup"}}
+		ts, client := newTestClient(ctx, &svc, &prpc.Options{
+			Retry: func() retry.Iterator {
+				return &retry.ExponentialBackoff{
+					Limited: retry.Limited{
+						Delay:   time.Millisecond,
+						Retries: 5,
+					},
+				}
+			},
+			PerRPCTimeout: 50 * time.Millisecond,
+		})
+		defer ts.Close()
+
+		Convey(`Gives up after N retries`, func() {
+			svc.sleep = func() time.Duration {
+				return 100 * time.Millisecond // larger than the per-RPC timeout
+			}
+
+			_, err := client.Greet(ctx, &HelloRequest{})
+			So(err, ShouldBeRPCDeadlineExceeded)
+		})
+
+		Convey(`Succeeds after N retries`, func() {
+			attempt := 0
+			svc.sleep = func() time.Duration {
+				attempt += 1
+				if attempt > 3 {
+					return 0
+				}
+				return 100 * time.Millisecond
+			}
+
+			_, err := client.Greet(ctx, &HelloRequest{})
+			So(err, ShouldBeRPCOK)
+		})
+
+		Convey(`Gives up on overall timeout`, func() {
+			svc.sleep = func() time.Duration {
+				return 100 * time.Millisecond // larger than the per-RPC timeout
+			}
+
+			ctx, cancel := context.WithTimeout(ctx, 100*time.Millisecond)
+			defer cancel()
+
+			_, err := client.Greet(ctx, &HelloRequest{})
+			So(err, ShouldBeRPCDeadlineExceeded)
+		})
+
+		Convey(`Respected DEADLINE_EXCEEDED response code`, func() {
+			svc.err = status.Errorf(codes.DeadlineExceeded, "internal deadline exceeded")
+
+			_, err := client.Greet(ctx, &HelloRequest{})
+			So(err, ShouldBeRPCDeadlineExceeded)
+		})
+	})
+}
+
+func TestVerySmallTimeouts(t *testing.T) {
+	t.Parallel()
+
+	Convey(`A client/server for the Greet service`, t, func() {
+		ctx := gologger.StdConfig.Use(context.Background())
+		svc := service{}
+		ts, client := newTestClient(ctx, &svc, &prpc.Options{
+			PerRPCTimeout: 10 * time.Millisecond,
+		})
+		defer ts.Close()
+
+		// There should be either no error or DeadlineExceeded error (depending on
+		// how speedy is the test runner). There should never be any other errors.
+		// This test is inherently non-deterministic since it depends on various
+		// places in net/http network guts that can abort the connection.
+
+		Convey(`Round-trip a hello message`, func() {
+			svc.R = &HelloReply{Message: "sup"}
+
+			_, err := client.Greet(ctx, &HelloRequest{Name: "round-trip"})
+			if err != nil {
+				So(err, ShouldBeRPCDeadlineExceeded)
+			}
+		})
+
+		Convey(`Send a giant message with compression`, func() {
+			svc.R = &HelloReply{Message: "sup"}
+
+			msg := make([]byte, 10*1024*1024)
+			_, err := rand.Read(msg)
+			So(err, ShouldBeNil)
+
+			_, err = client.Greet(ctx, &HelloRequest{Name: hex.EncodeToString(msg)})
+			if err != nil {
+				So(err, ShouldBeRPCDeadlineExceeded)
+			}
+		})
+
+		Convey(`Receive a giant message with compression`, func() {
+			msg := make([]byte, 10*1024*1024)
+			_, err := rand.Read(msg)
+			So(err, ShouldBeNil)
+
+			svc.R = &HelloReply{Message: hex.EncodeToString(msg)}
+
+			_, err = client.Greet(ctx, &HelloRequest{Name: "hi"})
+			if err != nil {
+				So(err, ShouldBeRPCDeadlineExceeded)
+			}
 		})
 	})
 }

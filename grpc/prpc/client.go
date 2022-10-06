@@ -27,7 +27,6 @@ import (
 	"strings"
 	"sync"
 	"time"
-	"unicode/utf8"
 
 	"golang.org/x/sync/semaphore"
 
@@ -302,13 +301,15 @@ func (c *Client) call(ctx context.Context, options *Options, in []byte) ([]byte,
 	// Send the request in a retry loop. Use transient.Tag to propagate the retry
 	// signal from the loop body.
 	err = retry.Retry(ctx, transient.Only(options.Retry), func() (err error) {
+		// Note: `buf` is reset inside, it is safe to reuse it across attempts.
 		contentType, err = c.attemptCall(ctx, options, req, buf)
-		return
+		// Retry on regular transient errors and on per-RPC deadline. If this is
+		// a global deadline (i.e. `ctx` expired), the retry loop will just exit.
+		return grpcutil.WrapIfTransientOr(err, codes.DeadlineExceeded)
 	}, func(err error, sleepTime time.Duration) {
 		logging.Fields{
-			logging.ErrorKey: err,
-			"sleepTime":      sleepTime,
-		}.Warningf(ctx, "RPC failed transiently. Will retry in %s", sleepTime)
+			"sleepTime": sleepTime,
+		}.Warningf(ctx, "RPC failed transiently (retry in %s): %s", sleepTime, err)
 	})
 
 	// Parse the response content type, verify it is what we expect.
@@ -333,13 +334,14 @@ func (c *Client) call(ctx context.Context, options *Options, in []byte) ([]byte,
 			err = status.Error(codes.Unknown, cerr.Error())
 		}
 
-		// Unwrap the error since we wrap it in attemptCall exclusively to attach
+		// Unwrap the error since we wrap it in retry.Retry exclusively to attach
 		// a retry signal. call(...) **must** return standard unwrapped gRPC errors.
 		err = errors.Unwrap(err)
 
-		// Convert the error into status.Error if it wasn't a status before.
-		if status.Code(err) == codes.Unknown {
-			err = status.Convert(err).Err()
+		// Convert the error into status.Error (with Unknown code) if it wasn't
+		// a status before.
+		if status, ok := status.FromError(err); !ok {
+			err = status.Err()
 		}
 
 		// Log only on unexpected codes.
@@ -352,7 +354,7 @@ func (c *Client) call(ctx context.Context, options *Options, in []byte) ([]byte,
 				}
 			}
 			if !ignore {
-				logging.WithError(err).Warningf(ctx, "RPC failed permanently: %s", err)
+				logging.Warningf(ctx, "RPC failed permanently: %s", err)
 				if options.Debug {
 					if code == codes.InvalidArgument && strings.Contains(err.Error(), "could not decode body") {
 						logging.Warningf(ctx, "Original request size: %d", len(in))
@@ -391,8 +393,7 @@ func (c *Client) concurrencySem() *semaphore.Weighted {
 //
 // Writes the raw response to the provided buffer, returns its content type.
 //
-// Returns gRPC errors. They may be wrapped and tagged with transient.Tag if
-// they should be retried.
+// Returns gRPC errors.
 func (c *Client) attemptCall(ctx context.Context, options *Options, req *http.Request, buf *bytes.Buffer) (contentType string, err error) {
 	// Wait until there's an execution slot available.
 	if sem := c.concurrencySem(); sem != nil {
@@ -421,15 +422,30 @@ func (c *Client) attemptCall(ctx context.Context, options *Options, req *http.Re
 		defer cancel()
 	}
 
+	// On errors prefer the context error if the per-RPC context expired. It is
+	// a more consistent representation of what is happening. The other error is
+	// more chaotic, depending on when exactly the context expires.
+	defer func() {
+		if err != nil {
+			switch cerr := ctx.Err(); {
+			case cerr == context.DeadlineExceeded:
+				err = status.Error(codes.DeadlineExceeded, "prpc: attempt deadline exceeded")
+			case cerr == context.Canceled:
+				err = status.Error(codes.Canceled, "prpc: attempt canceled")
+			case cerr != nil:
+				err = status.Error(codes.Unknown, cerr.Error())
+			}
+		}
+	}()
+
 	// If we have a request deadline, propagate it to the server.
 	if !requestDeadline.IsZero() {
 		delta := requestDeadline.Sub(now)
 		if delta <= 0 {
 			// The request has already expired. This will likely never happen, since
 			// the outer Retry loop will have expired, but there is a very slight
-			// possibility of a race. No need to tag as transient, there's no time
-			// left to retry it.
-			return "", status.Error(codes.DeadlineExceeded, "prpc: overall deadline exceeded")
+			// possibility of a race.
+			return "", status.Error(codes.DeadlineExceeded, "prpc: attempt deadline exceeded")
 		}
 		logging.Debugf(ctx, "RPC %s/%s.%s [deadline %s]", options.host, options.serviceName, options.methodName, delta)
 		req.Header.Set(HeaderTimeout, EncodeTimeout(delta))
@@ -446,23 +462,25 @@ func (c *Client) attemptCall(ctx context.Context, options *Options, req *http.Re
 	// Send the request.
 	req.Body, _ = req.GetBody()
 	res, err := client.Do(req.WithContext(ctx))
-	if res != nil && res.Body != nil {
-		// TODO(vadimsh): Maybe we should drain the body first to enable the
-		// connection reuse. Mostly relevant for RPCs aborted via the context
-		// cancelation.
-		defer res.Body.Close()
+	if err == nil {
+		defer func() {
+			// Drain the body before closing it to enable HTTP connection reuse. This
+			// is all best effort cleanup, don't check errors.
+			io.Copy(io.Discard, res.Body)
+			res.Body.Close()
+		}()
 	}
 	if c.testPostHTTP != nil {
 		err = c.testPostHTTP(ctx, err)
 	}
 	if err != nil {
-		return "", transientHTTPError(err, "when sending request")
+		return "", status.Errorf(codes.Internal, "prpc: sending request: %s", err)
 	}
 
 	if options.resHeaderMetadata != nil {
 		md, err := headersIntoMetadata(res.Header)
 		if err != nil {
-			return "", status.Errorf(codes.Internal, "prpc: headers: %s", err)
+			return "", status.Errorf(codes.Internal, "prpc: decoding headers: %s", err)
 		}
 		*options.resHeaderMetadata = md
 	}
@@ -472,24 +490,21 @@ func (c *Client) attemptCall(ctx context.Context, options *Options, req *http.Re
 	if options.resTrailerMetadata != nil {
 		md, err := headersIntoMetadata(res.Trailer)
 		if err != nil {
-			return "", status.Errorf(codes.Internal, "prpc: trailers: %s", err)
+			return "", status.Errorf(codes.Internal, "prpc: decoding trailers: %s", err)
 		}
 		*options.resTrailerMetadata = md
 	}
 
 	// Read the RPC status (perhaps with details). This is nil on success.
 	err = c.readStatus(res, buf)
-	if grpcutil.IsTransientCode(status.Code(err)) {
-		err = transient.Tag.Apply(err)
-	}
+
 	return res.Header.Get("Content-Type"), err
 }
 
 // readResponseBody copies the response body into dest.
 //
-// If the response body size exceeds the limits or the declared size, returns
-// ErrResponseTooBig. All other errors (including context errors) when reading
-// the body are tagged as transient.
+// Returns gRPC errors. If the response body size exceeds the limits or the
+// declared size, returns ErrResponseTooBig (which is also a gRPC error).
 func (c *Client) readResponseBody(ctx context.Context, dest *bytes.Buffer, r *http.Response) error {
 	limit := c.MaxContentLength
 	if limit <= 0 {
@@ -508,7 +523,7 @@ func (c *Client) readResponseBody(ctx context.Context, dest *bytes.Buffer, r *ht
 
 	limitedBody := io.LimitReader(r.Body, int64(limit))
 	if _, err := dest.ReadFrom(limitedBody); err != nil {
-		return transientHTTPError(err, "when reading response")
+		return status.Errorf(codes.Internal, "prpc: reading response: %s", err)
 	}
 
 	// If there is more data in the body Reader, it means that the response
@@ -578,15 +593,7 @@ func (c *Client) readErrorMessage(bodyBuf *bytes.Buffer) string {
 		limit = 256
 	}
 	if len(ret) > limit {
-		// Note: we can't use strings.ToValidUTF8 here yet because it exists only
-		// in go1.13 and this code still needs to execute on go1.11 (for GAE). See
-		// also https://stackoverflow.com/a/52784785.
-		return strings.Map(func(r rune) rune {
-			if r == utf8.RuneError {
-				return -1
-			}
-			return r
-		}, string(ret[:limit])) + "..."
+		return strings.ToValidUTF8(string(ret[:limit]), "") + "..."
 	}
 
 	return string(ret)
@@ -682,19 +689,4 @@ func (c *Client) prepareRequest(options *Options, md metadata.MD, requestMessage
 			return ioutil.NopCloser(bytes.NewReader(body)), nil
 		},
 	}, nil
-}
-
-// transientHTTPError transforms and annotates errors from http.Client.
-//
-// Tries to recognize context errors.
-func transientHTTPError(err error, msg string) error {
-	switch errors.Unwrap(err) {
-	case context.DeadlineExceeded:
-		err = status.Errorf(codes.DeadlineExceeded, "prpc: %s: attempt deadline exceeded", msg)
-	case context.Canceled:
-		err = status.Errorf(codes.Canceled, "prpc: %s: attempt canceled", msg)
-	default:
-		err = status.Errorf(codes.Internal, "prpc: %s: %s", msg, err)
-	}
-	return transient.Tag.Apply(err)
 }
