@@ -26,6 +26,7 @@ import (
 	"go.chromium.org/luci/analysis/internal/analyzedtestvariants"
 	"go.chromium.org/luci/analysis/internal/bugs/updater"
 	"go.chromium.org/luci/analysis/internal/clustering/reclustering/orchestrator"
+	"go.chromium.org/luci/analysis/internal/clustering/rules"
 	"go.chromium.org/luci/analysis/internal/config"
 	"go.chromium.org/luci/analysis/internal/legacydb"
 	"go.chromium.org/luci/analysis/internal/metrics"
@@ -123,6 +124,7 @@ func Main(init func(srv *luciserver.Server) error) {
 		cron.RegisterHandler("purge-test-variants", analyzedtestvariants.Purge)
 		cron.RegisterHandler("reclustering", orchestrator.CronHandler)
 		cron.RegisterHandler("global-metrics", metrics.GlobalMetrics)
+		cron.RegisterHandler("clear-rules-users", rules.ClearRulesUsers)
 
 		// Pub/Sub subscription endpoints.
 		srv.Routes.POST("/_ah/push-handlers/buildbucket", nil, app.BuildbucketPubSubHandler)

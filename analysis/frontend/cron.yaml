@@ -42,3 +42,6 @@ cron:
 - description: "Global metrics reporting."
   url: /internal/cron/global-metrics
   schedule: every 10 minutes synchronized
+- description: "Clear user columns in FailureAssociationRules table."
+  url: /internal/cron/clear-rules-users
+  schedule: every 1 hours synchronized
