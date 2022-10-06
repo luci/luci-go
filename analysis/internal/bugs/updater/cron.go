@@ -36,22 +36,23 @@ import (
 )
 
 var (
-	// statusGauge reports the status of the bug updater job.
+	// statusGauge reports the most recent status of the bug updater job.
 	// Reports either "success" or "failure".
-	statusGauge = metric.NewString("weetbix/bug_updater/status",
+	statusGauge = metric.NewString("analysis/bug_updater/status",
 		"Whether automatic bug updates are succeeding, by LUCI Project.",
 		nil,
 		// The LUCI project.
 		field.String("project"),
 	)
 
-	durationGauge = metric.NewFloat("weetbix/bug_updater/duration",
+	durationGauge = metric.NewFloat("analysis/bug_updater/duration",
 		"How long it is taking to update bugs, by LUCI Project.",
 		&types.MetricMetadata{
 			Units: types.Seconds,
 		},
 		// The LUCI project.
-		field.String("project"))
+		field.String("project"),
+	)
 )
 
 // workerCount is the number of workers to use to update

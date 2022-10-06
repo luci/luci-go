@@ -42,7 +42,7 @@ import (
 )
 
 var (
-	chunkGauge = metric.NewInt("weetbix/clustering/reclustering/chunk_count",
+	chunkGauge = metric.NewInt("analysis/clustering/reclustering/chunk_count",
 		"The estimated number of chunks, by LUCI Project.",
 		&types.MetricMetadata{
 			Units: "chunks",
@@ -51,7 +51,7 @@ var (
 		field.String("project"),
 	)
 
-	workersGauge = metric.NewInt("weetbix/clustering/reclustering/worker_count",
+	workersGauge = metric.NewInt("analysis/clustering/reclustering/worker_count",
 		"The number of workers performing reclustering, by LUCI Project.",
 		&types.MetricMetadata{
 			Units: "workers",
@@ -60,7 +60,7 @@ var (
 		field.String("project"),
 	)
 
-	progressGauge = metric.NewFloat("weetbix/clustering/reclustering/progress",
+	progressGauge = metric.NewFloat("analysis/clustering/reclustering/progress",
 		"The progress re-clustering, measured from 0 to 1, by LUCI Project.",
 		&types.MetricMetadata{
 			Units: "completions",
@@ -69,7 +69,7 @@ var (
 		field.String("project"),
 	)
 
-	lastCompletedGauge = metric.NewInt("weetbix/clustering/reclustering/last_completed",
+	lastCompletedGauge = metric.NewInt("analysis/clustering/reclustering/last_completed",
 		"UNIX timstamp of the last completed re-clustering, by LUCI Project. "+
 			"Not reported until at least one re-clustering completes.",
 		&types.MetricMetadata{
@@ -82,7 +82,7 @@ var (
 	// statusGauge reports the status of the orchestrator run. This covers
 	// only the orchestrator and not the success/failure of workers.
 	// Valid values are: "disabled", "success", "failure".
-	statusGauge = metric.NewString("weetbix/clustering/reclustering/orchestrator_status",
+	statusGauge = metric.NewString("analysis/clustering/reclustering/orchestrator_status",
 		"Whether the orchestrator is enabled and succeeding.",
 		nil)
 )

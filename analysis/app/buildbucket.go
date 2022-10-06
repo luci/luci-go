@@ -41,7 +41,7 @@ const (
 
 var (
 	buildCounter = metric.NewCounter(
-		"weetbix/ingestion/pubsub/buildbucket_builds",
+		"analysis/ingestion/pubsub/buildbucket_builds",
 		"The number of buildbucket builds received by LUCI Analysis from PubSub.",
 		nil,
 		// The LUCI Project.

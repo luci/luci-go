@@ -49,7 +49,7 @@ const (
 
 var (
 	cvRunCounter = metric.NewCounter(
-		"weetbix/ingestion/pubsub/cv_runs",
+		"analysis/ingestion/pubsub/cv_runs",
 		"The number of CV runs received by LUCI Analysis from PubSub.",
 		nil,
 		// The LUCI Project.
@@ -110,7 +110,7 @@ func cvPubSubHandlerImpl(ctx context.Context, request *http.Request) (project st
 	run, err := getRun(ctx, psRun)
 	code := status.Code(err)
 	if code == codes.NotFound {
-		logging.Warningf(ctx, "CV run %s for project %s not found (or Weetbix does not have access to read it).",
+		logging.Warningf(ctx, "CV run %s for project %s not found (or LUCI Analysis does not have access to read it).",
 			runID, project)
 		// Treat as a permanent error.
 		return project, false, errors.Annotate(err, "failed to get run").Err()

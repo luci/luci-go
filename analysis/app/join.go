@@ -37,7 +37,7 @@ import (
 // We define the following metrics to monitor the performance of that join.
 var (
 	cvPresubmitBuildInputCounter = metric.NewCounter(
-		"weetbix/ingestion/join/cv_presubmit_builds_input",
+		"analysis/ingestion/join/cv_presubmit_builds_input",
 		"The number of unique presubmit builds for which CV Run Completion was received."+
 			" Broken down by project of the CV run.",
 		nil,
@@ -45,7 +45,7 @@ var (
 		field.String("project"))
 
 	cvPresubmitBuildOutputCounter = metric.NewCounter(
-		"weetbix/ingestion/join/cv_presubmit_builds_output",
+		"analysis/ingestion/join/cv_presubmit_builds_output",
 		"The number of presubmit builds which were successfully joined and for which ingestion was queued."+
 			" Broken down by project of the CV run.",
 		nil,
@@ -53,7 +53,7 @@ var (
 		field.String("project"))
 
 	bbPresubmitBuildInputCounter = metric.NewCounter(
-		"weetbix/ingestion/join/bb_presubmit_builds_input",
+		"analysis/ingestion/join/bb_presubmit_builds_input",
 		"The number of unique presubmit build for which buildbucket build completion was received."+
 			" Broken down by project of the buildbucket build.",
 		nil,
@@ -61,7 +61,7 @@ var (
 		field.String("project"))
 
 	bbPresubmitBuildOutputCounter = metric.NewCounter(
-		"weetbix/ingestion/join/bb_presubmit_builds_output",
+		"analysis/ingestion/join/bb_presubmit_builds_output",
 		"The number of presubmit builds which were successfully joined and for which ingestion was queued."+
 			" Broken down by project of the buildbucket build.",
 		nil,
@@ -73,7 +73,7 @@ var (
 // monitor only the output flow (same as input flow).
 var (
 	outputCIBuildCounter = metric.NewCounter(
-		"weetbix/ingestion/join/ci_builds_output",
+		"analysis/ingestion/join/ci_builds_output",
 		"The number of CI builds for which ingestion was queued.",
 		nil,
 		// The LUCI Project.

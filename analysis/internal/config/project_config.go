@@ -60,7 +60,7 @@ var NotExistsErr = errors.New("no config exists for the specified project")
 
 var (
 	importAttemptCounter = metric.NewCounter(
-		"weetbix/project_config/import_attempt",
+		"analysis/project_config/import_attempt",
 		"The number of import attempts of project config",
 		nil,
 		// status can be "success" or "failure".

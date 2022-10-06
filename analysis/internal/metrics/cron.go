@@ -33,14 +33,14 @@ import (
 
 var (
 	activeRulesGauge = metric.NewInt(
-		"weetbix/clustering/active_rules",
+		"analysis/clustering/active_rules",
 		"The total number of active rules, by LUCI project.",
 		&types.MetricMetadata{Units: "rules"},
 		// The LUCI Project.
 		field.String("project"))
 
 	joinToBuildGauge = metric.NewNonCumulativeDistribution(
-		"weetbix/ingestion/join/to_build_result_by_hour",
+		"analysis/ingestion/join/to_build_result_by_hour",
 		fmt.Sprintf(
 			"The age distribution of presubmit builds with a presubmit"+
 				" result recorded, broken down by project of the presubmit "+
@@ -57,7 +57,7 @@ var (
 		field.Bool("joined"))
 
 	joinToPresubmitGauge = metric.NewNonCumulativeDistribution(
-		"weetbix/ingestion/join/to_presubmit_result_by_hour",
+		"analysis/ingestion/join/to_presubmit_result_by_hour",
 		fmt.Sprintf(
 			"The age distribution of presubmit builds with a buildbucket"+
 				" build result recorded, broken down by project of the"+

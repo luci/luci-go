@@ -71,7 +71,7 @@ const (
 
 var (
 	taskCounter = metric.NewCounter(
-		"weetbix/ingestion/task_completion",
+		"analysis/ingestion/task_completion",
 		"The number of completed LUCI Analysis ingestion tasks, by build project and outcome.",
 		nil,
 		// The LUCI Project.
@@ -82,7 +82,7 @@ var (
 		field.String("outcome"))
 
 	ancestorCounter = metric.NewCounter(
-		"weetbix/ingestion/ancestor_build_status",
+		"analysis/ingestion/ancestor_build_status",
 		"The status retrieving ancestor builds in ingestion tasks, by build project.",
 		nil,
 		// The LUCI Project.
