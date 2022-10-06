@@ -188,8 +188,8 @@ export const criticalFailuresExoneratedIdsExtractor = (): FeatureExtractor => {
         // (as it implies the test is not critical), or the
         // exoneration reason UNEXPECTED_PASS as the test is considered
         // passing.
-        if (f.exonerations[i].reason == 'OCCURS_ON_MAINLINE' ||
-              f.exonerations[i].reason == 'OCCURS_ON_OTHER_CLS') {
+        // TODO(b/250541091): Temporarily exclude OCCURS_ON_MAINLINE.
+        if (f.exonerations[i].reason == 'OCCURS_ON_OTHER_CLS') {
           exoneratedByCQ = true;
         }
       }
@@ -214,8 +214,8 @@ const isExoneratedByNonLUCIAnalysis = (exonerations: Exoneration[] | undefined):
   }
   let hasOtherExoneration = false;
   for (let i = 0; i < exonerations.length; i++) {
-    if (exonerations[i].reason != 'OCCURS_ON_MAINLINE' &&
-          exonerations[i].reason != 'OCCURS_ON_OTHER_CLS') {
+    // TODO(b/250541091): Temporarily exclude OCCURS_ON_MAINLINE.
+    if (exonerations[i].reason != 'OCCURS_ON_OTHER_CLS') {
       hasOtherExoneration = true;
     }
   }

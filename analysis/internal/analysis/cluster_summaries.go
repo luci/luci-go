@@ -129,8 +129,8 @@ func (c *Client) QueryClusterSummaries(ctx context.Context, luciProject string, 
 				-- Exonerated for a reason other than NOT_CRITICAL or UNEXPECTED_PASS.
 				-- Passes are not ingested by LUCI Analysis, but if a test has both an unexpected pass
 				-- and an unexpected failure, it will be exonerated for the unexpected pass.
-				(STRUCT('OCCURS_ON_MAINLINE' as Reason) in UNNEST(exonerations) OR
-					STRUCT('OCCURS_ON_OTHER_CLS' as Reason) in UNNEST(exonerations)))
+				-- TODO(b/250541091): Temporarily exclude OCCURS_ON_MAINLINE.
+				(STRUCT('OCCURS_ON_OTHER_CLS' as Reason) in UNNEST(exonerations)))
 				AS is_critical_and_exonerated,
 				IF(is_ingested_invocation_blocked AND build_critical AND presubmit_run_mode = 'FULL_RUN' AND
 				ARRAY_LENGTH(exonerations) = 0 AND build_status = 'FAILURE' AND presubmit_run_owner = 'user',

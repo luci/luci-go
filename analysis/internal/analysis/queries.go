@@ -43,7 +43,8 @@ const clusterAnalysis = `
 		-- and an unexpected failure, it will be exonerated for the unexpected pass.
 		(EXISTS
 		  (SELECT TRUE FROM UNNEST(r.exonerations) e
-		  WHERE e.Reason = 'OCCURS_ON_MAINLINE' OR e.Reason = 'OCCURS_ON_OTHER_CLS'))) as is_critical_and_exonerated,
+		  -- TODO(b/250541091): Temporarily exclude OCCURS_ON_MAINLINE.
+		  WHERE e.Reason = 'OCCURS_ON_OTHER_CLS'))) as is_critical_and_exonerated,
 	  r.test_id,
 	  r.failure_reason,
 	  r.bug_tracking_component,
