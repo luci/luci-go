@@ -27,6 +27,7 @@ import (
 	"strings"
 
 	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 
 	"go.chromium.org/luci/auth/identity"
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
@@ -71,6 +72,9 @@ func ShortenEmail(email string) string {
 // and the underlying error was a 403 or 404.
 // * Otherwise, tag the error with the original error code.
 func TagGRPC(c context.Context, err error) error {
+	if err == nil {
+		return nil
+	}
 	loggedIn := auth.CurrentIdentity(c) != identity.AnonymousIdentity
 	code := grpcutil.Code(err)
 	if code == codes.NotFound || code == codes.PermissionDenied {
@@ -80,7 +84,7 @@ func TagGRPC(c context.Context, err error) error {
 		}
 		return errors.Reason("not logged in").Tag(grpcutil.UnauthenticatedTag).Err()
 	}
-	return grpcutil.ToGRPCErr(err)
+	return status.Error(code, err.Error())
 }
 
 // ParseIntFromForm parses an integer from a form.

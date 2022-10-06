@@ -18,10 +18,11 @@ import (
 	"errors"
 	"testing"
 
-	lucierr "go.chromium.org/luci/common/errors"
-	"go.chromium.org/luci/common/retry/transient"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+
+	lucierr "go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/retry/transient"
 
 	. "github.com/smartystreets/goconvey/convey"
 )

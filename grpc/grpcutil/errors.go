@@ -18,7 +18,6 @@ import (
 	"context"
 	"net/http"
 
-	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
@@ -137,7 +136,8 @@ var codeToStatus = map[codes.Code]int{
 }
 
 // CodeStatus maps gRPC codes to HTTP status codes.
-// Falls back to http.StatusInternalServerError.
+//
+// Falls back to http.StatusInternalServerError if the code is unrecognized.
 func CodeStatus(code codes.Code) int {
 	if status, ok := codeToStatus[code]; ok {
 		return status
@@ -147,7 +147,7 @@ func CodeStatus(code codes.Code) int {
 
 // Code returns the gRPC code for a given error.
 //
-// In addition to the functionality of grpc.Code, this will unwrap any wrapped
+// In addition to the functionality of status.Code, this will unwrap any wrapped
 // errors before asking for its code.
 //
 // If the error is a MultiError containing more than one type of error code,
@@ -172,15 +172,7 @@ func Code(err error) codes.Code {
 		}
 		return code
 	}
-	// TODO(nodir): use status.FromError
-	return grpc.Code(errors.Unwrap(err))
-}
-
-// ToGRPCErr is a shorthand for status.Errorf(Code(err), "%s", err)
-//
-// TODO(vadimsh): Remove.
-func ToGRPCErr(err error) error {
-	return status.Errorf(Code(err), "%s", err)
+	return status.Code(errors.Unwrap(err))
 }
 
 // IsTransientCode returns true if a given gRPC code is codes.Internal,
@@ -208,17 +200,16 @@ func IsTransientCode(code codes.Code) bool {
 //     defer func() { err = grpcutil.GRPCifyAndLogErr(c, err) }()
 //     ...
 //   }
-func GRPCifyAndLogErr(c context.Context, err error) error {
+func GRPCifyAndLogErr(ctx context.Context, err error) error {
 	if err == nil {
 		return nil
 	}
 	if _, yep := status.FromError(err); yep {
 		return err
 	}
-	grpcErr := ToGRPCErr(err)
-	code := grpc.Code(grpcErr)
+	code := Code(err)
 	if code == codes.Internal || code == codes.Unknown {
-		errors.Log(c, err)
+		errors.Log(ctx, err)
 	}
-	return grpcErr
+	return status.Error(code, err.Error())
 }
