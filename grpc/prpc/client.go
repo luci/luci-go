@@ -466,7 +466,7 @@ func (c *Client) attemptCall(ctx context.Context, options *Options, req *http.Re
 		defer func() {
 			// Drain the body before closing it to enable HTTP connection reuse. This
 			// is all best effort cleanup, don't check errors.
-			io.Copy(io.Discard, res.Body)
+			io.Copy(ioutil.Discard, res.Body)
 			res.Body.Close()
 		}()
 	}
