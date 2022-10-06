@@ -27,6 +27,7 @@ import (
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/metadata"
+	"google.golang.org/grpc/status"
 
 	"go.chromium.org/luci/auth"
 	"go.chromium.org/luci/common/cli"
@@ -152,7 +153,7 @@ func call(c context.Context, client *prpc.Client, req *request, out io.Writer) (
 	// Send the request.
 	res, err := client.CallWithFormats(c, req.service, req.method, message, inf, outf, grpc.Header(&hmd))
 	if err != nil {
-		return nil, &exitCode{err, int(grpc.Code(err))}
+		return nil, &exitCode{err, int(status.Code(err))}
 	}
 
 	// Read response.

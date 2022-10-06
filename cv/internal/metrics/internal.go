@@ -39,7 +39,7 @@ var Internal = struct {
 		field.String("project"),
 		field.String("host"),
 		field.String("method"),
-		field.String("canonical_code"), // grpc.Code of the result as string in UPPER_CASE.
+		field.String("canonical_code"), // status.Code of the result as string in UPPER_CASE.
 	),
 	BuildbucketRPCDurations: metric.NewCumulativeDistribution(
 		"cv/internal/buildbucket_rpc/durations",
@@ -52,7 +52,7 @@ var Internal = struct {
 		field.String("project"),
 		field.String("host"),
 		field.String("method"),
-		field.String("canonical_code"), // grpc.Code of the result as string in UPPER_CASE.
+		field.String("canonical_code"), // status.Code of the result as string in UPPER_CASE.
 	),
 
 	CLIngestionAttempted: metric.NewCounter(

@@ -19,7 +19,7 @@ import (
 	"sort"
 	"strings"
 
-	"google.golang.org/grpc"
+	"google.golang.org/grpc/status"
 	"google.golang.org/grpc/codes"
 
 	"go.chromium.org/luci/auth/identity"
@@ -61,7 +61,7 @@ func fetchPrefixMetadata(c context.Context, pfx string) (*prefixMetadataBlock, e
 	meta, err := state(c).services.PublicRepo.GetInheritedPrefixMetadata(c, &api.PrefixRequest{
 		Prefix: pfx,
 	})
-	switch grpc.Code(err) {
+	switch status.Code(err) {
 	case codes.OK:
 		break // handled below
 	case codes.PermissionDenied:

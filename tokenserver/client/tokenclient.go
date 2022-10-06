@@ -21,6 +21,7 @@ import (
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
@@ -125,7 +126,7 @@ func (c *Client) MintMachineToken(ctx context.Context, req *minter.MachineTokenR
 
 	// Fatal pRPC-level error or transient error in case retries didn't help.
 	if err != nil {
-		code := grpc.Code(err)
+		code := status.Code(err)
 		err = RPCError{
 			error:    err,
 			GrpcCode: code,

@@ -25,6 +25,7 @@ import (
 	"cloud.google.com/go/pubsub/pstest"
 	"google.golang.org/api/option"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/retry/transient"
@@ -75,7 +76,7 @@ func TestListener(t *testing.T) {
 
 		srv := pstest.NewServer()
 		defer srv.Close()
-		conn, err := grpc.Dial(srv.Addr, grpc.WithInsecure())
+		conn, err := grpc.Dial(srv.Addr, grpc.WithTransportCredentials(insecure.NewCredentials()))
 		So(err, ShouldBeNil)
 		defer conn.Close()
 		client, err := pubsub.NewClient(ctx, "testProj", option.WithGRPCConn(conn))

@@ -21,8 +21,8 @@ import (
 	"strconv"
 	"strings"
 
-	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 
 	"github.com/maruel/subcommands"
 
@@ -172,7 +172,7 @@ func gerritResolver(ctx context.Context) changeResolver {
 				gerritpb.QueryOption_CURRENT_REVISION,
 			},
 		})
-		if grpc.Code(err) == codes.Unauthenticated {
+		if status.Code(err) == codes.Unauthenticated {
 			return "", 0, errors.Annotate(err,
 				"Gerrit host %q requires authentication and URL did not include project and/or patchset. "+
 					"Please include the project and patchset you want in your URL (patchset can be "+

@@ -23,7 +23,6 @@ import (
 	"strings"
 	"sync"
 
-	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/proto"
@@ -129,7 +128,7 @@ func (impl *repoImpl) registerProcessor(p processing.Processor) {
 func (impl *repoImpl) packageReader(c context.Context, ref *api.ObjectRef) (*processing.PackageReader, error) {
 	// Get slow Google Storage based ReaderAt.
 	rawReader, err := impl.cas.GetReader(c, ref)
-	switch code := grpc.Code(err); {
+	switch code := status.Code(err); {
 	case code == codes.NotFound:
 		return nil, errors.Annotate(err, "package instance is not in the storage").Err()
 	case code != codes.OK:
@@ -545,7 +544,7 @@ func (impl *repoImpl) DeletePackage(c context.Context, r *api.PackageRequest) (r
 		return nil, err
 	}
 	if _, err := impl.checkRole(c, "", api.Role_OWNER); err != nil {
-		if grpc.Code(err) == codes.PermissionDenied {
+		if status.Code(err) == codes.PermissionDenied {
 			return nil, status.Errorf(codes.PermissionDenied,
 				"package deletion is allowed only to service administrators")
 		}
@@ -594,7 +593,7 @@ func (impl *repoImpl) RegisterInstance(c context.Context, r *api.Instance) (resp
 	uploadOp, err := impl.cas.BeginUpload(c, &api.BeginUploadRequest{
 		Object: r.Instance,
 	})
-	switch code := grpc.Code(err); {
+	switch code := status.Code(err); {
 	case code == codes.AlreadyExists:
 		break // the object is already there
 	case code == codes.OK:
@@ -1674,9 +1673,9 @@ func (l *legacyInstance) FromInstance(inst *api.Instance) *legacyInstance {
 // grpc-tagged errors produced via grpcutil.
 func adaptGrpcErr(h func(*router.Context) error) router.Handler {
 	return func(ctx *router.Context) {
-		err := grpcutil.GRPCifyAndLogErr(ctx.Context, h(ctx))
-		if code := grpc.Code(err); code != codes.OK {
-			http.Error(ctx.Writer, grpc.ErrorDesc(err), grpcutil.CodeStatus(code))
+		err := status.Convert(grpcutil.GRPCifyAndLogErr(ctx.Context, h(ctx)))
+		if err.Code() != codes.OK {
+			http.Error(ctx.Writer, err.Message(), grpcutil.CodeStatus(err.Code()))
 		}
 	}
 }
@@ -1979,7 +1978,7 @@ func (impl *repoImpl) handleLegacyClientInfo(ctx *router.Context) error {
 		Instance: common.InstanceIDToObjectRef(iid),
 	})
 
-	switch grpc.Code(err) {
+	switch status.Code(err) {
 	case codes.OK:
 		return replyWithJSON(w, map[string]interface{}{
 			"status":   "SUCCESS",
@@ -1992,11 +1991,11 @@ func (impl *repoImpl) handleLegacyClientInfo(ctx *router.Context) error {
 			},
 		})
 	case codes.NotFound:
-		return replyWithError(w, "INSTANCE_NOT_FOUND", "%s", grpc.ErrorDesc(err))
+		return replyWithError(w, "INSTANCE_NOT_FOUND", "%s", status.Convert(err).Message())
 	case codes.FailedPrecondition:
 		return replyWithError(w, "NOT_EXTRACTED_YET", "the client binary is not extracted yet, try later")
 	case codes.Aborted:
-		return replyWithError(w, "ERROR", "the client binary is not available: %s", grpc.ErrorDesc(err))
+		return replyWithError(w, "ERROR", "the client binary is not available: %s", status.Convert(err).Message())
 	default:
 		return err // the legacy client recognizes other codes just fine
 	}
@@ -2050,7 +2049,7 @@ func (impl *repoImpl) handleLegacyInstance(ctx *router.Context) error {
 		})
 	}
 
-	switch grpc.Code(err) {
+	switch status.Code(err) {
 	case codes.OK:
 		return replyWithJSON(w, map[string]interface{}{
 			"status":    "SUCCESS",
@@ -2058,7 +2057,7 @@ func (impl *repoImpl) handleLegacyInstance(ctx *router.Context) error {
 			"instance":  (&legacyInstance{}).FromInstance(inst.Instance),
 		})
 	case codes.NotFound:
-		return replyWithError(w, "INSTANCE_NOT_FOUND", "%s", grpc.ErrorDesc(err))
+		return replyWithError(w, "INSTANCE_NOT_FOUND", "%s", status.Convert(err).Message())
 	default:
 		return err // the legacy client recognizes other codes just fine
 	}
@@ -2086,16 +2085,16 @@ func (impl *repoImpl) handleLegacyResolve(ctx *router.Context) error {
 		Version: r.FormValue("version"),
 	})
 
-	switch grpc.Code(err) {
+	switch status.Code(err) {
 	case codes.OK:
 		return replyWithJSON(w, map[string]string{
 			"status":      "SUCCESS",
 			"instance_id": common.ObjectRefToInstanceID(resp.Instance),
 		})
 	case codes.NotFound:
-		return replyWithError(w, "INSTANCE_NOT_FOUND", "%s", grpc.ErrorDesc(err))
+		return replyWithError(w, "INSTANCE_NOT_FOUND", "%s", status.Convert(err).Message())
 	case codes.FailedPrecondition:
-		return replyWithError(w, "AMBIGUOUS_VERSION", "%s", grpc.ErrorDesc(err))
+		return replyWithError(w, "AMBIGUOUS_VERSION", "%s", status.Convert(err).Message())
 	default:
 		return err // the legacy client recognizes other codes just fine
 	}

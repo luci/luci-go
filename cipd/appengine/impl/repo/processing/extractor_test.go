@@ -21,8 +21,8 @@ import (
 	"strings"
 	"testing"
 
-	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 
 	api "go.chromium.org/luci/cipd/api/cipd/v1"
 	"go.chromium.org/luci/cipd/appengine/impl/gs"
@@ -116,7 +116,7 @@ func TestExtractor(t *testing.T) {
 
 		Convey("Internal error when initiating the upload", func() {
 			cas.BeginUploadImpl = func(_ context.Context, r *api.BeginUploadRequest) (*api.UploadOperation, error) {
-				return nil, grpc.Errorf(codes.Internal, "boo")
+				return nil, status.Errorf(codes.Internal, "boo")
 			}
 			_, err := ex.Run(ctx, "test/file")
 			So(err, ShouldErrLike, `failed to open a CAS upload: rpc error: code = Internal desc = boo`)
@@ -125,7 +125,7 @@ func TestExtractor(t *testing.T) {
 
 		Convey("Internal error when finalizing the upload", func() {
 			cas.FinishUploadImpl = func(_ context.Context, r *api.FinishUploadRequest) (*api.UploadOperation, error) {
-				return nil, grpc.Errorf(codes.Internal, "boo")
+				return nil, status.Errorf(codes.Internal, "boo")
 			}
 			_, err := ex.Run(ctx, "test/file")
 			So(err, ShouldErrLike, `failed to finalize the CAS upload: rpc error: code = Internal desc = boo`)

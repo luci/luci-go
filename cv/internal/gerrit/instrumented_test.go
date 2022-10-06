@@ -23,8 +23,8 @@ import (
 	"testing"
 	"time"
 
-	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/logging"
@@ -99,7 +99,7 @@ func TestInstrumentedFactory(t *testing.T) {
 
 		mockDelay, mockHTTPCode, mockResp = time.Millisecond, http.StatusNotFound, ""
 		_, err = c2.GetChange(ctx, &gerritpb.GetChangeRequest{Number: 1})
-		So(grpc.Code(err), ShouldEqual, codes.NotFound)
+		So(status.Code(err), ShouldEqual, codes.NotFound)
 		So(tsmonSentCounter(ctx, metricCount, "prj2", gHost, "GetChange", "NOT_FOUND"), ShouldEqual, 1)
 		d2 := tsmonSentDistr(ctx, metricDurationMS, "prj2", gHost, "GetChange", "NOT_FOUND")
 		So(d2.Sum(), ShouldEqual, mockDelay.Milliseconds())

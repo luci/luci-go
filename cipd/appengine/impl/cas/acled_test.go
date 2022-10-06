@@ -19,8 +19,8 @@ import (
 	"fmt"
 	"testing"
 
-	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 
 	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/server/auth"
@@ -95,9 +95,9 @@ func TestACLDecorator(t *testing.T) {
 			state.Identity = cs.caller
 			_, err := cs.request()
 			if cs.allowed {
-				So(grpc.Code(err), ShouldEqual, codes.Unimplemented)
+				So(status.Code(err), ShouldEqual, codes.Unimplemented)
 			} else {
-				So(grpc.Code(err), ShouldEqual, codes.PermissionDenied)
+				So(status.Code(err), ShouldEqual, codes.PermissionDenied)
 			}
 		})
 	}

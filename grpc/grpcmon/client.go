@@ -43,7 +43,7 @@ var (
 		"Total number of RPCs.",
 		nil,
 		field.String("method"),         // full name of the grpc method
-		field.String("canonical_code")) // grpc.Code of the result in string
+		field.String("canonical_code")) // status.Code of the result in string
 
 	grpcClientDuration = metric.NewCumulativeDistribution(
 		"grpc/client/duration",

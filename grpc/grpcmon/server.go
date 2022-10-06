@@ -22,6 +22,7 @@ import (
 	gcode "google.golang.org/genproto/googleapis/rpc/code"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/tsmon/distribution"
@@ -36,7 +37,7 @@ var (
 		"Total number of RPCs.",
 		nil,
 		field.String("method"),         // full name of the grpc method
-		field.Int("code"),              // grpc.Code of the result
+		field.Int("code"),              // status.Code of the result
 		field.String("canonical_code")) // String representation of the code above
 
 	grpcServerDuration = metric.NewCumulativeDistribution(
@@ -45,7 +46,7 @@ var (
 		&types.MetricMetadata{Units: types.Milliseconds},
 		distribution.DefaultBucketer,
 		field.String("method"),         // full name of the grpc method
-		field.Int("code"),              // grpc.Code of the result
+		field.Int("code"),              // status.Code of the result
 		field.String("canonical_code")) // String representation of the code above
 )
 
@@ -63,7 +64,7 @@ func UnaryServerInterceptor(ctx context.Context, req interface{}, info *grpc.Una
 		code := codes.OK
 		switch {
 		case err != nil:
-			code = grpc.Code(err)
+			code = status.Code(err)
 		case panicking:
 			code = codes.Internal
 		}

@@ -19,13 +19,14 @@ import (
 	"fmt"
 	"net/http"
 
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/proto"
+
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/retry"
 	"go.chromium.org/luci/grpc/prpc"
 	"go.chromium.org/luci/server/auth"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/protobuf/proto"
 
 	mpb "go.chromium.org/luci/analysis/internal/bugs/monorail/api_proto"
 )
@@ -193,7 +194,7 @@ func (c *Client) GetComponentExistsAndActive(ctx context.Context, project string
 	}
 	response, err := c.projectsClient.GetComponentDef(ctx, request)
 	if err != nil {
-		if grpc.Code(err) == codes.NotFound {
+		if status.Code(err) == codes.NotFound {
 			return false, nil
 		}
 		return false, errors.Annotate(err, "fetching components").Err()

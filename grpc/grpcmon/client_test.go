@@ -22,6 +22,7 @@ import (
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/status"
 
 	"go.chromium.org/luci/common/clock"
@@ -90,7 +91,7 @@ func TestClientRPCStatsMonitor(t *testing.T) {
 		// construct a client
 		conn, err := grpc.Dial(
 			l.Addr().String(),
-			grpc.WithInsecure(),
+			grpc.WithTransportCredentials(insecure.NewCredentials()),
 			grpc.WithBlock(),
 			grpc.WithStatsHandler(&ClientRPCStatsMonitor{}),
 		)

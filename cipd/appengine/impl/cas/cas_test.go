@@ -23,8 +23,8 @@ import (
 	"testing"
 	"time"
 
-	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/proto"
 
 	"go.chromium.org/luci/common/errors"
@@ -88,7 +88,7 @@ func TestGetReader(t *testing.T) {
 			HashAlgo:  api.HashAlgo_SHA256,
 			HexDigest: "zzz",
 		})
-		So(grpc.Code(err), ShouldEqual, codes.InvalidArgument)
+		So(status.Code(err), ShouldEqual, codes.InvalidArgument)
 		So(err, ShouldErrLike, "bad ref")
 	})
 
@@ -97,7 +97,7 @@ func TestGetReader(t *testing.T) {
 			HashAlgo:  api.HashAlgo_SHA256,
 			HexDigest: strings.Repeat("b", 64),
 		})
-		So(grpc.Code(err), ShouldEqual, codes.NotFound)
+		So(status.Code(err), ShouldEqual, codes.NotFound)
 		So(err, ShouldErrLike, "can't read the object")
 	})
 }
@@ -138,7 +138,7 @@ func TestGetObjectURL(t *testing.T) {
 				HexDigest: "zzz",
 			},
 		})
-		So(grpc.Code(err), ShouldEqual, codes.InvalidArgument)
+		So(status.Code(err), ShouldEqual, codes.InvalidArgument)
 		So(err, ShouldErrLike, "bad 'object' field")
 	})
 
@@ -150,7 +150,7 @@ func TestGetObjectURL(t *testing.T) {
 			},
 			DownloadFilename: "abc\ndef",
 		})
-		So(grpc.Code(err), ShouldEqual, codes.InvalidArgument)
+		So(status.Code(err), ShouldEqual, codes.InvalidArgument)
 		So(err, ShouldErrLike, "bad 'download_filename' field")
 	})
 
@@ -162,7 +162,7 @@ func TestGetObjectURL(t *testing.T) {
 				HexDigest: strings.Repeat("a", 64),
 			},
 		})
-		So(grpc.Code(err), ShouldEqual, codes.NotFound)
+		So(status.Code(err), ShouldEqual, codes.NotFound)
 		So(err, ShouldErrLike, "blah")
 	})
 
@@ -174,7 +174,7 @@ func TestGetObjectURL(t *testing.T) {
 				HexDigest: strings.Repeat("a", 64),
 			},
 		})
-		So(grpc.Code(err), ShouldEqual, codes.Unknown)
+		So(status.Code(err), ShouldEqual, codes.Unknown)
 		So(err, ShouldErrLike, "internal")
 	})
 }
@@ -321,7 +321,7 @@ func TestBeginUpload(t *testing.T) {
 					HexDigest: strings.Repeat("a", 64),
 				},
 			})
-			So(grpc.Code(err), ShouldEqual, codes.AlreadyExists)
+			So(status.Code(err), ShouldEqual, codes.AlreadyExists)
 		})
 
 		Convey("Bad object", func() {
@@ -330,7 +330,7 @@ func TestBeginUpload(t *testing.T) {
 					HashAlgo: 1234,
 				},
 			})
-			So(grpc.Code(err), ShouldEqual, codes.InvalidArgument)
+			So(status.Code(err), ShouldEqual, codes.InvalidArgument)
 			So(err, ShouldErrLike, "bad 'object'")
 		})
 
@@ -338,7 +338,7 @@ func TestBeginUpload(t *testing.T) {
 			_, err := impl.BeginUpload(ctx, &api.BeginUploadRequest{
 				HashAlgo: 1234,
 			})
-			So(grpc.Code(err), ShouldEqual, codes.InvalidArgument)
+			So(status.Code(err), ShouldEqual, codes.InvalidArgument)
 			So(err, ShouldErrLike, "bad 'hash_algo'")
 		})
 
@@ -350,7 +350,7 @@ func TestBeginUpload(t *testing.T) {
 				},
 				HashAlgo: 333, // something else
 			})
-			So(grpc.Code(err), ShouldEqual, codes.InvalidArgument)
+			So(status.Code(err), ShouldEqual, codes.InvalidArgument)
 			So(err, ShouldErrLike, "'hash_algo' and 'object.hash_algo' do not match")
 		})
 	})
@@ -465,7 +465,7 @@ func TestFinishUpload(t *testing.T) {
 						HexDigest: strings.Repeat("a", 64),
 					},
 				})
-				So(grpc.Code(err), ShouldEqual, codes.Internal)
+				So(status.Code(err), ShouldEqual, codes.Internal)
 
 				// Status untouched.
 				entity := upload.Operation{ID: 1}
@@ -798,7 +798,7 @@ func TestFinishUpload(t *testing.T) {
 					HashAlgo: 1234,
 				},
 			})
-			So(grpc.Code(err), ShouldEqual, codes.InvalidArgument)
+			So(status.Code(err), ShouldEqual, codes.InvalidArgument)
 			So(err, ShouldErrLike, "bad 'force_hash' field")
 		})
 
@@ -806,7 +806,7 @@ func TestFinishUpload(t *testing.T) {
 			_, err := impl.FinishUpload(ctx, &api.FinishUploadRequest{
 				UploadOperationId: "zzz",
 			})
-			So(grpc.Code(err), ShouldEqual, codes.NotFound)
+			So(status.Code(err), ShouldEqual, codes.NotFound)
 			So(err, ShouldErrLike, "no such upload operation")
 		})
 	})
@@ -879,7 +879,7 @@ func TestCancelUpload(t *testing.T) {
 			_, err = impl.CancelUpload(ctx, &api.CancelUploadRequest{
 				UploadOperationId: op.OperationId,
 			})
-			So(grpc.Code(err), ShouldEqual, codes.FailedPrecondition)
+			So(status.Code(err), ShouldEqual, codes.FailedPrecondition)
 			So(err, ShouldErrLike, "the operation is in state VERIFYING and can't be canceled")
 		})
 	})

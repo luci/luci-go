@@ -40,7 +40,7 @@ var (
 		field.String("luci_project"),
 		field.String("host"),
 		field.String("method"),
-		field.String("canonical_code"), // grpc.Code of the result as string in UPPER_CASE.
+		field.String("canonical_code"), // status.Code of the result as string in UPPER_CASE.
 	)
 
 	metricDurationMS = metric.NewCumulativeDistribution(
@@ -57,7 +57,7 @@ var (
 		field.String("luci_project"),
 		field.String("host"),
 		field.String("method"),
-		field.String("canonical_code"), // grpc.Code of the result as string in UPPER_CASE.
+		field.String("canonical_code"), // status.Code of the result as string in UPPER_CASE.
 	)
 )
 

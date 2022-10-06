@@ -23,6 +23,7 @@ import (
 	"cloud.google.com/go/pubsub/pstest"
 	"google.golang.org/api/option"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
@@ -61,7 +62,7 @@ func NewTestPSServer(ctx context.Context) (*TestPSServer, error) {
 	ret.subName = fmt.Sprintf("projects/%s/subscriptions/%s", ret.ProjID, ret.SubID)
 	ret.topicName = fmt.Sprintf("projects/%s/topics/%s", ret.ProjID, ret.topicID)
 	ret.Server = pstest.NewServer()
-	conn, err := grpc.Dial(ret.Server.Addr, grpc.WithInsecure())
+	conn, err := grpc.Dial(ret.Server.Addr, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
 		return nil, err
 	}

@@ -40,6 +40,7 @@ import (
 	dbpb "google.golang.org/genproto/googleapis/spanner/admin/database/v1"
 	inspb "google.golang.org/genproto/googleapis/spanner/admin/instance/v1"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 
 	"go.chromium.org/luci/auth"
 	"go.chromium.org/luci/common/clock"
@@ -234,7 +235,7 @@ type Emulator struct {
 func (e *Emulator) opts() []option.ClientOption {
 	return []option.ClientOption{
 		option.WithEndpoint(e.hostport),
-		option.WithGRPCDialOption(grpc.WithInsecure()),
+		option.WithGRPCDialOption(grpc.WithTransportCredentials(insecure.NewCredentials())),
 		option.WithoutAuthentication(),
 	}
 }

@@ -22,6 +22,7 @@ import (
 	"io/ioutil"
 
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/protobuf/encoding/protojson"
 
 	"go.chromium.org/luci/common/errors"
@@ -91,7 +92,7 @@ func Run(ctx context.Context, stdin io.ReadCloser, run RunLoop) error {
 	}
 	conn, err := grpc.DialContext(ctx,
 		fmt.Sprintf("127.0.0.1:%d", handshake.PB.Port),
-		grpc.WithInsecure(),
+		grpc.WithTransportCredentials(insecure.NewCredentials()),
 		grpc.WithBlock(),
 		grpc.WithPerRPCCredentials(&pluginPerRPCCredentials{handshake.PB.Ticket}),
 	)

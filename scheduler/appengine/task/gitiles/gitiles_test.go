@@ -25,8 +25,8 @@ import (
 	"github.com/golang/mock/gomock"
 	"github.com/golang/protobuf/proto"
 
-	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/common/errors"
@@ -427,9 +427,9 @@ func TestTriggerBuild(t *testing.T) {
 			})
 
 			Convey("force push wiping out prior HEAD", func() {
-				expectLog("1111", "001d", 50, nil, grpc.Errorf(codes.NotFound, "not found"))
+				expectLog("1111", "001d", 50, nil, status.Errorf(codes.NotFound, "not found"))
 				expectLog("1111", "", 1, log("1111"))
-				expectLog("001d", "", 1, nil, grpc.Errorf(codes.NotFound, "not found"))
+				expectLog("001d", "", 1, nil, status.Errorf(codes.NotFound, "not found"))
 				So(m.LaunchTask(c, ctl), ShouldBeNil)
 				So(loadNoError(), ShouldResemble, strmap{
 					"refs/heads/master": "1111",
@@ -438,8 +438,8 @@ func TestTriggerBuild(t *testing.T) {
 			})
 
 			Convey("race 1", func() {
-				expectLog("1111", "001d", 50, nil, grpc.Errorf(codes.NotFound, "not found"))
-				expectLog("1111", "", 1, nil, grpc.Errorf(codes.NotFound, "not found"))
+				expectLog("1111", "001d", 50, nil, status.Errorf(codes.NotFound, "not found"))
+				expectLog("1111", "", 1, nil, status.Errorf(codes.NotFound, "not found"))
 				So(transient.Tag.In(m.LaunchTask(c, ctl)), ShouldBeTrue)
 				So(loadNoError(), ShouldResemble, strmap{
 					"refs/heads/master": "001d", // no change.
@@ -447,8 +447,8 @@ func TestTriggerBuild(t *testing.T) {
 			})
 
 			Convey("race or fluke", func() {
-				expectLog("1111", "001d", 50, nil, grpc.Errorf(codes.NotFound, "not found"))
-				expectLog("1111", "", 1, nil, grpc.Errorf(codes.NotFound, "not found"))
+				expectLog("1111", "001d", 50, nil, status.Errorf(codes.NotFound, "not found"))
+				expectLog("1111", "", 1, nil, status.Errorf(codes.NotFound, "not found"))
 				So(m.LaunchTask(c, ctl), ShouldNotBeNil)
 				So(loadNoError(), ShouldResemble, strmap{
 					"refs/heads/master": "001d",

@@ -20,7 +20,6 @@ import (
 	"github.com/golang/protobuf/proto"
 	"github.com/smartystreets/assertions"
 	"github.com/smartystreets/goconvey/convey"
-	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
@@ -94,7 +93,7 @@ func ShouldHaveRPCCode(actual interface{}, expected ...interface{}) string {
 	}
 
 	if errLike != "" {
-		return convey.ShouldContainSubstring(grpc.ErrorDesc(aerr), errLike)
+		return convey.ShouldContainSubstring(status.Convert(aerr).Message(), errLike)
 	}
 	return ""
 }

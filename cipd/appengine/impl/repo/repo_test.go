@@ -28,8 +28,8 @@ import (
 	"github.com/julienschmidt/httprouter"
 
 	statuspb "google.golang.org/genproto/googleapis/rpc/status"
-	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
@@ -131,19 +131,19 @@ func TestMetadataFetching(t *testing.T) {
 
 		Convey("GetPrefixMetadata bad prefix", func() {
 			resp, err := callGet("a//", "user:top-owner@example.com")
-			So(grpc.Code(err), ShouldEqual, codes.InvalidArgument)
+			So(status.Code(err), ShouldEqual, codes.InvalidArgument)
 			So(resp, ShouldBeNil)
 		})
 
 		Convey("GetInheritedPrefixMetadata bad prefix", func() {
 			resp, err := callGetInherited("a//", "user:top-owner@example.com")
-			So(grpc.Code(err), ShouldEqual, codes.InvalidArgument)
+			So(status.Code(err), ShouldEqual, codes.InvalidArgument)
 			So(resp, ShouldBeNil)
 		})
 
 		Convey("GetPrefixMetadata no metadata, caller has access", func() {
 			resp, err := callGet("a/b", "user:top-owner@example.com")
-			So(grpc.Code(err), ShouldEqual, codes.NotFound)
+			So(status.Code(err), ShouldEqual, codes.NotFound)
 			So(resp, ShouldBeNil)
 		})
 
@@ -155,31 +155,31 @@ func TestMetadataFetching(t *testing.T) {
 
 		Convey("GetPrefixMetadata no metadata, caller has no access", func() {
 			resp, err := callGet("a/b", "user:someone-else@example.com")
-			So(grpc.Code(err), ShouldEqual, codes.PermissionDenied)
+			So(status.Code(err), ShouldEqual, codes.PermissionDenied)
 			So(resp, ShouldBeNil)
 			// Existing metadata that the caller has no access to produces same error,
 			// so unauthorized callers can't easily distinguish between the two.
 			resp, err = callGet("a/b/c/d", "user:someone-else@example.com")
-			So(grpc.Code(err), ShouldEqual, codes.PermissionDenied)
+			So(status.Code(err), ShouldEqual, codes.PermissionDenied)
 			So(resp, ShouldBeNil)
 			// Same for completely unknown prefix.
 			resp, err = callGet("zzz", "user:someone-else@example.com")
-			So(grpc.Code(err), ShouldEqual, codes.PermissionDenied)
+			So(status.Code(err), ShouldEqual, codes.PermissionDenied)
 			So(resp, ShouldBeNil)
 		})
 
 		Convey("GetInheritedPrefixMetadata no metadata, caller has no access", func() {
 			resp, err := callGetInherited("a/b", "user:someone-else@example.com")
-			So(grpc.Code(err), ShouldEqual, codes.PermissionDenied)
+			So(status.Code(err), ShouldEqual, codes.PermissionDenied)
 			So(resp, ShouldBeNil)
 			// Existing metadata that the caller has no access to produces same error,
 			// so unauthorized callers can't easily distinguish between the two.
 			resp, err = callGetInherited("a/b/c/d", "user:someone-else@example.com")
-			So(grpc.Code(err), ShouldEqual, codes.PermissionDenied)
+			So(status.Code(err), ShouldEqual, codes.PermissionDenied)
 			So(resp, ShouldBeNil)
 			// Same for completely unknown prefix.
 			resp, err = callGetInherited("zzz", "user:someone-else@example.com")
-			So(grpc.Code(err), ShouldEqual, codes.PermissionDenied)
+			So(status.Code(err), ShouldEqual, codes.PermissionDenied)
 			So(resp, ShouldBeNil)
 		})
 	})
@@ -287,7 +287,7 @@ func TestMetadataUpdating(t *testing.T) {
 			meta, err := callUpdate("user:top-owner@example.com", &api.PrefixMetadata{
 				Prefix: "a/b//",
 			})
-			So(grpc.Code(err), ShouldEqual, codes.InvalidArgument)
+			So(status.Code(err), ShouldEqual, codes.InvalidArgument)
 			So(meta, ShouldBeNil)
 
 			meta, err = callUpdate("user:top-owner@example.com", &api.PrefixMetadata{
@@ -296,7 +296,7 @@ func TestMetadataUpdating(t *testing.T) {
 					{Role: api.Role_READER, Principals: []string{"huh?"}},
 				},
 			})
-			So(grpc.Code(err), ShouldEqual, codes.InvalidArgument)
+			So(status.Code(err), ShouldEqual, codes.InvalidArgument)
 			So(meta, ShouldBeNil)
 		})
 
@@ -304,14 +304,14 @@ func TestMetadataUpdating(t *testing.T) {
 			meta, err := callUpdate("user:unknown@example.com", &api.PrefixMetadata{
 				Prefix: "a/b",
 			})
-			So(grpc.Code(err), ShouldEqual, codes.PermissionDenied)
+			So(status.Code(err), ShouldEqual, codes.PermissionDenied)
 			So(meta, ShouldBeNil)
 
 			// Same as completely unknown prefix.
 			meta, err = callUpdate("user:unknown@example.com", &api.PrefixMetadata{
 				Prefix: "zzz",
 			})
-			So(grpc.Code(err), ShouldEqual, codes.PermissionDenied)
+			So(status.Code(err), ShouldEqual, codes.PermissionDenied)
 			So(meta, ShouldBeNil)
 		})
 
@@ -323,12 +323,12 @@ func TestMetadataUpdating(t *testing.T) {
 
 			// If the caller is a prefix owner, they see NotFound.
 			meta, err := callUpdate("user:top-owner@example.com", m)
-			So(grpc.Code(err), ShouldEqual, codes.NotFound)
+			So(status.Code(err), ShouldEqual, codes.NotFound)
 			So(meta, ShouldBeNil)
 
 			// Other callers just see regular PermissionDenined.
 			meta, err = callUpdate("user:unknown@example.com", m)
-			So(grpc.Code(err), ShouldEqual, codes.PermissionDenied)
+			So(status.Code(err), ShouldEqual, codes.PermissionDenied)
 			So(meta, ShouldBeNil)
 		})
 
@@ -339,7 +339,7 @@ func TestMetadataUpdating(t *testing.T) {
 
 			m.Fingerprint = "" // indicates the caller is expecting to create a new one
 			meta, err := callUpdate("user:top-owner@example.com", m)
-			So(grpc.Code(err), ShouldEqual, codes.AlreadyExists)
+			So(status.Code(err), ShouldEqual, codes.AlreadyExists)
 			So(meta, ShouldBeNil)
 		})
 
@@ -355,7 +355,7 @@ func TestMetadataUpdating(t *testing.T) {
 
 			// Trying to do it again fails, 'm' is stale now.
 			_, err = callUpdate("user:top-owner@example.com", m)
-			So(grpc.Code(err), ShouldEqual, codes.FailedPrecondition)
+			So(status.Code(err), ShouldEqual, codes.FailedPrecondition)
 		})
 	})
 }
@@ -422,7 +422,7 @@ func TestGetRolesInPrefix(t *testing.T) {
 
 		Convey("Bad prefix", func() {
 			_, err := call("///", "user:writer@example.com")
-			So(grpc.Code(err), ShouldEqual, codes.InvalidArgument)
+			So(status.Code(err), ShouldEqual, codes.InvalidArgument)
 			So(err, ShouldErrLike, "bad 'prefix'")
 		})
 	})
@@ -692,19 +692,19 @@ func TestHideUnhidePackage(t *testing.T) {
 
 		Convey("Bad package name", func() {
 			_, err := impl.HidePackage(ctx, &api.PackageRequest{Package: "///"})
-			So(grpc.Code(err), ShouldEqual, codes.InvalidArgument)
+			So(status.Code(err), ShouldEqual, codes.InvalidArgument)
 			So(err, ShouldErrLike, "invalid package name")
 		})
 
 		Convey("No access", func() {
 			_, err := impl.HidePackage(ctx, &api.PackageRequest{Package: "zzz"})
-			So(grpc.Code(err), ShouldEqual, codes.PermissionDenied)
+			So(status.Code(err), ShouldEqual, codes.PermissionDenied)
 			So(err, ShouldErrLike, "not allowed to see it")
 		})
 
 		Convey("Missing package", func() {
 			_, err := impl.HidePackage(ctx, &api.PackageRequest{Package: "a/b/c"})
-			So(grpc.Code(err), ShouldEqual, codes.NotFound)
+			So(status.Code(err), ShouldEqual, codes.NotFound)
 			So(err, ShouldErrLike, "no such package")
 		})
 	})
@@ -754,7 +754,7 @@ func TestDeletePackage(t *testing.T) {
 			_, err = impl.DeletePackage(as("root@example.com"), &api.PackageRequest{
 				Package: "a/b",
 			})
-			So(grpc.Code(err), ShouldEqual, codes.NotFound)
+			So(status.Code(err), ShouldEqual, codes.NotFound)
 			So(err, ShouldErrLike, "no such package")
 		})
 
@@ -762,7 +762,7 @@ func TestDeletePackage(t *testing.T) {
 			_, err := impl.DeletePackage(as("someone@example.com"), &api.PackageRequest{
 				Package: "a/b",
 			})
-			So(grpc.Code(err), ShouldEqual, codes.PermissionDenied)
+			So(status.Code(err), ShouldEqual, codes.PermissionDenied)
 			So(err, ShouldErrLike, "is not allowed to see it")
 		})
 
@@ -770,13 +770,13 @@ func TestDeletePackage(t *testing.T) {
 			_, err := impl.DeletePackage(as("non-root-owner@example.com"), &api.PackageRequest{
 				Package: "a/b",
 			})
-			So(grpc.Code(err), ShouldEqual, codes.PermissionDenied)
+			So(status.Code(err), ShouldEqual, codes.PermissionDenied)
 			So(err, ShouldErrLike, "allowed only to service administrators")
 		})
 
 		Convey("Bad package name", func() {
 			_, err := impl.DeletePackage(ctx, &api.PackageRequest{Package: "///"})
-			So(grpc.Code(err), ShouldEqual, codes.InvalidArgument)
+			So(status.Code(err), ShouldEqual, codes.InvalidArgument)
 			So(err, ShouldErrLike, "invalid package name")
 		})
 	})
@@ -864,7 +864,7 @@ func TestRegisterInstance(t *testing.T) {
 
 			// Mock "already have it in the storage" response.
 			cas.BeginUploadImpl = func(context.Context, *api.BeginUploadRequest) (*api.UploadOperation, error) {
-				return nil, grpc.Errorf(codes.AlreadyExists, "already uploaded")
+				return nil, status.Errorf(codes.AlreadyExists, "already uploaded")
 			}
 
 			// The instance is already uploaded => registers it in the datastore.
@@ -915,7 +915,7 @@ func TestRegisterInstance(t *testing.T) {
 			_, err := impl.RegisterInstance(ctx, &api.Instance{
 				Package: "//a",
 			})
-			So(grpc.Code(err), ShouldEqual, codes.InvalidArgument)
+			So(status.Code(err), ShouldEqual, codes.InvalidArgument)
 			So(err, ShouldErrLike, "bad 'package'")
 		})
 
@@ -927,7 +927,7 @@ func TestRegisterInstance(t *testing.T) {
 					HexDigest: "abc",
 				},
 			})
-			So(grpc.Code(err), ShouldEqual, codes.InvalidArgument)
+			So(status.Code(err), ShouldEqual, codes.InvalidArgument)
 			So(err, ShouldErrLike, "bad 'instance'")
 		})
 
@@ -936,13 +936,13 @@ func TestRegisterInstance(t *testing.T) {
 				Package:  "some/other/root",
 				Instance: inst.Instance,
 			})
-			So(grpc.Code(err), ShouldEqual, codes.PermissionDenied)
+			So(status.Code(err), ShouldEqual, codes.PermissionDenied)
 			So(err, ShouldErrLike, `prefix "some/other/root" doesn't exist or "user:owner@example.com" is not allowed to see it`)
 		})
 
 		Convey("No owner access", func() {
 			_, err := impl.RegisterInstance(as("reader@example.com"), inst)
-			So(grpc.Code(err), ShouldEqual, codes.PermissionDenied)
+			So(status.Code(err), ShouldEqual, codes.PermissionDenied)
 			So(err, ShouldErrLike, `"user:reader@example.com" has no required WRITER role in prefix "a/b"`)
 		})
 	})
@@ -1235,7 +1235,7 @@ func TestListInstances(t *testing.T) {
 			_, err := impl.ListInstances(ctx, &api.ListInstancesRequest{
 				Package: "///",
 			})
-			So(grpc.Code(err), ShouldEqual, codes.InvalidArgument)
+			So(status.Code(err), ShouldEqual, codes.InvalidArgument)
 			So(err, ShouldErrLike, "invalid package name")
 		})
 
@@ -1244,7 +1244,7 @@ func TestListInstances(t *testing.T) {
 				Package:  "a/b",
 				PageSize: -1,
 			})
-			So(grpc.Code(err), ShouldEqual, codes.InvalidArgument)
+			So(status.Code(err), ShouldEqual, codes.InvalidArgument)
 			So(err, ShouldErrLike, "it should be non-negative")
 		})
 
@@ -1253,7 +1253,7 @@ func TestListInstances(t *testing.T) {
 				Package:   "a/b",
 				PageToken: "zzzz",
 			})
-			So(grpc.Code(err), ShouldEqual, codes.InvalidArgument)
+			So(status.Code(err), ShouldEqual, codes.InvalidArgument)
 			So(err, ShouldErrLike, "invalid cursor")
 		})
 
@@ -1261,14 +1261,14 @@ func TestListInstances(t *testing.T) {
 			_, err := impl.ListInstances(ctx, &api.ListInstancesRequest{
 				Package: "z",
 			})
-			So(grpc.Code(err), ShouldEqual, codes.PermissionDenied)
+			So(status.Code(err), ShouldEqual, codes.PermissionDenied)
 		})
 
 		Convey("No package", func() {
 			_, err := impl.ListInstances(ctx, &api.ListInstancesRequest{
 				Package: "a/missing",
 			})
-			So(grpc.Code(err), ShouldEqual, codes.NotFound)
+			So(status.Code(err), ShouldEqual, codes.NotFound)
 		})
 
 		Convey("Empty listing", func() {
@@ -1377,7 +1377,7 @@ func TestSearchInstances(t *testing.T) {
 			_, err := impl.SearchInstances(ctx, &api.SearchInstancesRequest{
 				Package: "///",
 			})
-			So(grpc.Code(err), ShouldEqual, codes.InvalidArgument)
+			So(status.Code(err), ShouldEqual, codes.InvalidArgument)
 			So(err, ShouldErrLike, "invalid package name")
 		})
 
@@ -1386,7 +1386,7 @@ func TestSearchInstances(t *testing.T) {
 				Package:  "a/b",
 				PageSize: -1,
 			})
-			So(grpc.Code(err), ShouldEqual, codes.InvalidArgument)
+			So(status.Code(err), ShouldEqual, codes.InvalidArgument)
 			So(err, ShouldErrLike, "it should be non-negative")
 		})
 
@@ -1395,7 +1395,7 @@ func TestSearchInstances(t *testing.T) {
 				Package:   "a/b",
 				PageToken: "zzzz",
 			})
-			So(grpc.Code(err), ShouldEqual, codes.InvalidArgument)
+			So(status.Code(err), ShouldEqual, codes.InvalidArgument)
 			So(err, ShouldErrLike, "invalid cursor")
 		})
 
@@ -1403,7 +1403,7 @@ func TestSearchInstances(t *testing.T) {
 			_, err := impl.SearchInstances(ctx, &api.SearchInstancesRequest{
 				Package: "a/b",
 			})
-			So(grpc.Code(err), ShouldEqual, codes.InvalidArgument)
+			So(status.Code(err), ShouldEqual, codes.InvalidArgument)
 			So(err, ShouldErrLike, "bad 'tags': cannot be empty")
 		})
 
@@ -1412,7 +1412,7 @@ func TestSearchInstances(t *testing.T) {
 				Package: "a/b",
 				Tags:    []*api.Tag{{Key: "", Value: "zz"}},
 			})
-			So(grpc.Code(err), ShouldEqual, codes.InvalidArgument)
+			So(status.Code(err), ShouldEqual, codes.InvalidArgument)
 			So(err, ShouldErrLike, `bad tag in 'tags': invalid tag key in ":zz"`)
 		})
 
@@ -1421,7 +1421,7 @@ func TestSearchInstances(t *testing.T) {
 				Package: "z",
 				Tags:    []*api.Tag{{Key: "a", Value: "b"}},
 			})
-			So(grpc.Code(err), ShouldEqual, codes.PermissionDenied)
+			So(status.Code(err), ShouldEqual, codes.PermissionDenied)
 		})
 
 		Convey("No package", func() {
@@ -1429,7 +1429,7 @@ func TestSearchInstances(t *testing.T) {
 				Package: "a/missing",
 				Tags:    []*api.Tag{{Key: "a", Value: "b"}},
 			})
-			So(grpc.Code(err), ShouldEqual, codes.NotFound)
+			So(status.Code(err), ShouldEqual, codes.NotFound)
 		})
 
 		Convey("Empty results", func() {
@@ -1560,7 +1560,7 @@ func TestRefs(t *testing.T) {
 						HexDigest: digest,
 					},
 				})
-				So(grpc.Code(err), ShouldEqual, codes.InvalidArgument)
+				So(status.Code(err), ShouldEqual, codes.InvalidArgument)
 				So(err, ShouldErrLike, "bad 'name'")
 			})
 			Convey("DeleteRef", func() {
@@ -1568,7 +1568,7 @@ func TestRefs(t *testing.T) {
 					Name:    "bad:ref:name",
 					Package: "a/b/c",
 				})
-				So(grpc.Code(err), ShouldEqual, codes.InvalidArgument)
+				So(status.Code(err), ShouldEqual, codes.InvalidArgument)
 				So(err, ShouldErrLike, "bad 'name'")
 			})
 		})
@@ -1583,7 +1583,7 @@ func TestRefs(t *testing.T) {
 						HexDigest: digest,
 					},
 				})
-				So(grpc.Code(err), ShouldEqual, codes.InvalidArgument)
+				So(status.Code(err), ShouldEqual, codes.InvalidArgument)
 				So(err, ShouldErrLike, "bad 'package'")
 			})
 			Convey("DeleteRef", func() {
@@ -1591,14 +1591,14 @@ func TestRefs(t *testing.T) {
 					Name:    "latest",
 					Package: "///",
 				})
-				So(grpc.Code(err), ShouldEqual, codes.InvalidArgument)
+				So(status.Code(err), ShouldEqual, codes.InvalidArgument)
 				So(err, ShouldErrLike, "bad 'package'")
 			})
 			Convey("ListRefs", func() {
 				_, err := impl.ListRefs(ctx, &api.ListRefsRequest{
 					Package: "///",
 				})
-				So(grpc.Code(err), ShouldEqual, codes.InvalidArgument)
+				So(status.Code(err), ShouldEqual, codes.InvalidArgument)
 				So(err, ShouldErrLike, "bad 'package'")
 			})
 		})
@@ -1613,7 +1613,7 @@ func TestRefs(t *testing.T) {
 						HexDigest: digest,
 					},
 				})
-				So(grpc.Code(err), ShouldEqual, codes.PermissionDenied)
+				So(status.Code(err), ShouldEqual, codes.PermissionDenied)
 				So(err, ShouldErrLike, "is not allowed to see it")
 			})
 			Convey("DeleteRef", func() {
@@ -1621,14 +1621,14 @@ func TestRefs(t *testing.T) {
 					Name:    "latest",
 					Package: "z",
 				})
-				So(grpc.Code(err), ShouldEqual, codes.PermissionDenied)
+				So(status.Code(err), ShouldEqual, codes.PermissionDenied)
 				So(err, ShouldErrLike, "is not allowed to see it")
 			})
 			Convey("ListRefs", func() {
 				_, err := impl.ListRefs(ctx, &api.ListRefsRequest{
 					Package: "z",
 				})
-				So(grpc.Code(err), ShouldEqual, codes.PermissionDenied)
+				So(status.Code(err), ShouldEqual, codes.PermissionDenied)
 				So(err, ShouldErrLike, "is not allowed to see it")
 			})
 		})
@@ -1643,7 +1643,7 @@ func TestRefs(t *testing.T) {
 						HexDigest: digest,
 					},
 				})
-				So(grpc.Code(err), ShouldEqual, codes.NotFound)
+				So(status.Code(err), ShouldEqual, codes.NotFound)
 				So(err, ShouldErrLike, "no such package")
 			})
 			Convey("DeleteRef", func() {
@@ -1651,14 +1651,14 @@ func TestRefs(t *testing.T) {
 					Name:    "latest",
 					Package: "a/b/z",
 				})
-				So(grpc.Code(err), ShouldEqual, codes.NotFound)
+				So(status.Code(err), ShouldEqual, codes.NotFound)
 				So(err, ShouldErrLike, "no such package")
 			})
 			Convey("ListRefs", func() {
 				_, err := impl.ListRefs(ctx, &api.ListRefsRequest{
 					Package: "a/b/z",
 				})
-				So(grpc.Code(err), ShouldEqual, codes.NotFound)
+				So(status.Code(err), ShouldEqual, codes.NotFound)
 				So(err, ShouldErrLike, "no such package")
 			})
 		})
@@ -1672,7 +1672,7 @@ func TestRefs(t *testing.T) {
 					HexDigest: "123",
 				},
 			})
-			So(grpc.Code(err), ShouldEqual, codes.InvalidArgument)
+			So(status.Code(err), ShouldEqual, codes.InvalidArgument)
 			So(err, ShouldErrLike, "bad 'instance'")
 		})
 
@@ -1685,7 +1685,7 @@ func TestRefs(t *testing.T) {
 					HexDigest: strings.Repeat("b", 40),
 				},
 			})
-			So(grpc.Code(err), ShouldEqual, codes.NotFound)
+			So(status.Code(err), ShouldEqual, codes.NotFound)
 			So(err, ShouldErrLike, "no such instance")
 		})
 
@@ -1699,7 +1699,7 @@ func TestRefs(t *testing.T) {
 					HexDigest: digest,
 				},
 			})
-			So(grpc.Code(err), ShouldEqual, codes.FailedPrecondition)
+			So(status.Code(err), ShouldEqual, codes.FailedPrecondition)
 			So(err, ShouldErrLike, "the instance is not ready yet, pending processors: proc")
 		})
 
@@ -1713,7 +1713,7 @@ func TestRefs(t *testing.T) {
 					HexDigest: digest,
 				},
 			})
-			So(grpc.Code(err), ShouldEqual, codes.Aborted)
+			So(status.Code(err), ShouldEqual, codes.Aborted)
 			So(err, ShouldErrLike, "some processors failed to process this instance: proc")
 		})
 	})
@@ -1819,7 +1819,7 @@ func TestTags(t *testing.T) {
 					Instance: objRef,
 					Tags:     tags("a:0"),
 				})
-				So(grpc.Code(err), ShouldEqual, codes.InvalidArgument)
+				So(status.Code(err), ShouldEqual, codes.InvalidArgument)
 				So(err, ShouldErrLike, "bad 'package'")
 			})
 			Convey("DetachTags", func() {
@@ -1828,7 +1828,7 @@ func TestTags(t *testing.T) {
 					Instance: objRef,
 					Tags:     tags("a:0"),
 				})
-				So(grpc.Code(err), ShouldEqual, codes.InvalidArgument)
+				So(status.Code(err), ShouldEqual, codes.InvalidArgument)
 				So(err, ShouldErrLike, "bad 'package'")
 			})
 		})
@@ -1839,7 +1839,7 @@ func TestTags(t *testing.T) {
 					Package: "a/b/c",
 					Tags:    tags("a:0"),
 				})
-				So(grpc.Code(err), ShouldEqual, codes.InvalidArgument)
+				So(status.Code(err), ShouldEqual, codes.InvalidArgument)
 				So(err, ShouldErrLike, "bad 'instance'")
 			})
 			Convey("DetachTags", func() {
@@ -1847,7 +1847,7 @@ func TestTags(t *testing.T) {
 					Package: "a/b/c",
 					Tags:    tags("a:0"),
 				})
-				So(grpc.Code(err), ShouldEqual, codes.InvalidArgument)
+				So(status.Code(err), ShouldEqual, codes.InvalidArgument)
 				So(err, ShouldErrLike, "bad 'instance'")
 			})
 		})
@@ -1858,7 +1858,7 @@ func TestTags(t *testing.T) {
 					Package:  "a/b/c",
 					Instance: objRef,
 				})
-				So(grpc.Code(err), ShouldEqual, codes.InvalidArgument)
+				So(status.Code(err), ShouldEqual, codes.InvalidArgument)
 				So(err, ShouldErrLike, "cannot be empty")
 			})
 			Convey("DetachTags", func() {
@@ -1866,7 +1866,7 @@ func TestTags(t *testing.T) {
 					Package:  "a/b/c",
 					Instance: objRef,
 				})
-				So(grpc.Code(err), ShouldEqual, codes.InvalidArgument)
+				So(status.Code(err), ShouldEqual, codes.InvalidArgument)
 				So(err, ShouldErrLike, "cannot be empty")
 			})
 		})
@@ -1878,7 +1878,7 @@ func TestTags(t *testing.T) {
 					Instance: objRef,
 					Tags:     []*api.Tag{{Key: ":"}},
 				})
-				So(grpc.Code(err), ShouldEqual, codes.InvalidArgument)
+				So(status.Code(err), ShouldEqual, codes.InvalidArgument)
 				So(err, ShouldErrLike, `invalid tag key`)
 			})
 			Convey("DetachTags", func() {
@@ -1887,7 +1887,7 @@ func TestTags(t *testing.T) {
 					Instance: objRef,
 					Tags:     []*api.Tag{{Key: ":"}},
 				})
-				So(grpc.Code(err), ShouldEqual, codes.InvalidArgument)
+				So(status.Code(err), ShouldEqual, codes.InvalidArgument)
 				So(err, ShouldErrLike, `invalid tag key`)
 			})
 		})
@@ -1899,7 +1899,7 @@ func TestTags(t *testing.T) {
 					Instance: objRef,
 					Tags:     tags("good:tag"),
 				})
-				So(grpc.Code(err), ShouldEqual, codes.PermissionDenied)
+				So(status.Code(err), ShouldEqual, codes.PermissionDenied)
 				So(err, ShouldErrLike, "has no required WRITER role")
 			})
 			Convey("DetachTags", func() {
@@ -1908,7 +1908,7 @@ func TestTags(t *testing.T) {
 					Instance: objRef,
 					Tags:     tags("good:tag"),
 				})
-				So(grpc.Code(err), ShouldEqual, codes.PermissionDenied)
+				So(status.Code(err), ShouldEqual, codes.PermissionDenied)
 				So(err, ShouldErrLike, "has no required OWNER role")
 			})
 		})
@@ -1920,7 +1920,7 @@ func TestTags(t *testing.T) {
 					Instance: objRef,
 					Tags:     tags("a:0"),
 				})
-				So(grpc.Code(err), ShouldEqual, codes.NotFound)
+				So(status.Code(err), ShouldEqual, codes.NotFound)
 				So(err, ShouldErrLike, "no such package")
 			})
 			Convey("DetachTags", func() {
@@ -1929,7 +1929,7 @@ func TestTags(t *testing.T) {
 					Instance: objRef,
 					Tags:     tags("a:0"),
 				})
-				So(grpc.Code(err), ShouldEqual, codes.NotFound)
+				So(status.Code(err), ShouldEqual, codes.NotFound)
 				So(err, ShouldErrLike, "no such package")
 			})
 		})
@@ -1945,7 +1945,7 @@ func TestTags(t *testing.T) {
 					Instance: missingRef,
 					Tags:     tags("a:0"),
 				})
-				So(grpc.Code(err), ShouldEqual, codes.NotFound)
+				So(status.Code(err), ShouldEqual, codes.NotFound)
 				So(err, ShouldErrLike, "no such instance")
 			})
 			Convey("DetachTags", func() {
@@ -1955,7 +1955,7 @@ func TestTags(t *testing.T) {
 					Instance: missingRef,
 					Tags:     tags("a:0"),
 				})
-				So(grpc.Code(err), ShouldEqual, codes.NotFound)
+				So(status.Code(err), ShouldEqual, codes.NotFound)
 				So(err, ShouldErrLike, "no such instance")
 			})
 		})
@@ -2092,7 +2092,7 @@ func TestInstanceMetadata(t *testing.T) {
 					Instance: objRef,
 					Metadata: md("k:0", "k:1"),
 				})
-				So(grpc.Code(err), ShouldEqual, codes.InvalidArgument)
+				So(status.Code(err), ShouldEqual, codes.InvalidArgument)
 				So(err, ShouldErrLike, "bad 'package'")
 			})
 			Convey("DetachMetadata", func() {
@@ -2101,7 +2101,7 @@ func TestInstanceMetadata(t *testing.T) {
 					Instance: objRef,
 					Metadata: md("k:0", "k:1"),
 				})
-				So(grpc.Code(err), ShouldEqual, codes.InvalidArgument)
+				So(status.Code(err), ShouldEqual, codes.InvalidArgument)
 				So(err, ShouldErrLike, "bad 'package'")
 			})
 			Convey("ListMetadata", func() {
@@ -2109,7 +2109,7 @@ func TestInstanceMetadata(t *testing.T) {
 					Package:  "a/b//",
 					Instance: objRef,
 				})
-				So(grpc.Code(err), ShouldEqual, codes.InvalidArgument)
+				So(status.Code(err), ShouldEqual, codes.InvalidArgument)
 				So(err, ShouldErrLike, "bad 'package'")
 			})
 		})
@@ -2120,7 +2120,7 @@ func TestInstanceMetadata(t *testing.T) {
 					Package:  "a/b/c",
 					Metadata: md("k:0", "k:1"),
 				})
-				So(grpc.Code(err), ShouldEqual, codes.InvalidArgument)
+				So(status.Code(err), ShouldEqual, codes.InvalidArgument)
 				So(err, ShouldErrLike, "bad 'instance'")
 			})
 			Convey("DetachMetadata", func() {
@@ -2128,14 +2128,14 @@ func TestInstanceMetadata(t *testing.T) {
 					Package:  "a/b/c",
 					Metadata: md("k:0", "k:1"),
 				})
-				So(grpc.Code(err), ShouldEqual, codes.InvalidArgument)
+				So(status.Code(err), ShouldEqual, codes.InvalidArgument)
 				So(err, ShouldErrLike, "bad 'instance'")
 			})
 			Convey("ListMetadata", func() {
 				_, err := impl.ListMetadata(as("reader@example.com"), &api.ListMetadataRequest{
 					Package: "a/b/c",
 				})
-				So(grpc.Code(err), ShouldEqual, codes.InvalidArgument)
+				So(status.Code(err), ShouldEqual, codes.InvalidArgument)
 				So(err, ShouldErrLike, "bad 'instance'")
 			})
 		})
@@ -2146,7 +2146,7 @@ func TestInstanceMetadata(t *testing.T) {
 					Package:  "a/b/c",
 					Instance: objRef,
 				})
-				So(grpc.Code(err), ShouldEqual, codes.InvalidArgument)
+				So(status.Code(err), ShouldEqual, codes.InvalidArgument)
 				So(err, ShouldErrLike, "cannot be empty")
 			})
 			Convey("DetachMetadata", func() {
@@ -2154,7 +2154,7 @@ func TestInstanceMetadata(t *testing.T) {
 					Package:  "a/b/c",
 					Instance: objRef,
 				})
-				So(grpc.Code(err), ShouldEqual, codes.InvalidArgument)
+				So(status.Code(err), ShouldEqual, codes.InvalidArgument)
 				So(err, ShouldErrLike, "cannot be empty")
 			})
 		})
@@ -2166,7 +2166,7 @@ func TestInstanceMetadata(t *testing.T) {
 					Instance: objRef,
 					Metadata: md("ZZZ:0"),
 				})
-				So(grpc.Code(err), ShouldEqual, codes.InvalidArgument)
+				So(status.Code(err), ShouldEqual, codes.InvalidArgument)
 				So(err, ShouldErrLike, `invalid metadata key`)
 			})
 			Convey("DetachMetadata", func() {
@@ -2175,7 +2175,7 @@ func TestInstanceMetadata(t *testing.T) {
 					Instance: objRef,
 					Metadata: md("ZZZ:0"),
 				})
-				So(grpc.Code(err), ShouldEqual, codes.InvalidArgument)
+				So(status.Code(err), ShouldEqual, codes.InvalidArgument)
 				So(err, ShouldErrLike, `invalid metadata key`)
 			})
 			Convey("ListMetadata", func() {
@@ -2184,7 +2184,7 @@ func TestInstanceMetadata(t *testing.T) {
 					Instance: objRef,
 					Keys:     []string{"ZZZ"},
 				})
-				So(grpc.Code(err), ShouldEqual, codes.InvalidArgument)
+				So(status.Code(err), ShouldEqual, codes.InvalidArgument)
 				So(err, ShouldErrLike, `invalid metadata key`)
 			})
 		})
@@ -2196,7 +2196,7 @@ func TestInstanceMetadata(t *testing.T) {
 					Instance: objRef,
 					Metadata: md("k:" + strings.Repeat("z", 512*1024+1)),
 				})
-				So(grpc.Code(err), ShouldEqual, codes.InvalidArgument)
+				So(status.Code(err), ShouldEqual, codes.InvalidArgument)
 				So(err, ShouldErrLike, `metadata with key "k": the metadata value is too long`)
 			})
 			Convey("DetachMetadata", func() {
@@ -2205,7 +2205,7 @@ func TestInstanceMetadata(t *testing.T) {
 					Instance: objRef,
 					Metadata: md("k:" + strings.Repeat("z", 512*1024+1)),
 				})
-				So(grpc.Code(err), ShouldEqual, codes.InvalidArgument)
+				So(status.Code(err), ShouldEqual, codes.InvalidArgument)
 				So(err, ShouldErrLike, `metadata with key "k": the metadata value is too long`)
 			})
 		})
@@ -2218,7 +2218,7 @@ func TestInstanceMetadata(t *testing.T) {
 				Instance: objRef,
 				Metadata: m,
 			})
-			So(grpc.Code(err), ShouldEqual, codes.InvalidArgument)
+			So(status.Code(err), ShouldEqual, codes.InvalidArgument)
 			So(err, ShouldErrLike, `metadata with key "k": bad content type "zzz zzz`)
 		})
 
@@ -2230,7 +2230,7 @@ func TestInstanceMetadata(t *testing.T) {
 					{Fingerprint: "bad"},
 				},
 			})
-			So(grpc.Code(err), ShouldEqual, codes.InvalidArgument)
+			So(status.Code(err), ShouldEqual, codes.InvalidArgument)
 			So(err, ShouldErrLike, `bad metadata fingerprint "bad"`)
 		})
 
@@ -2241,7 +2241,7 @@ func TestInstanceMetadata(t *testing.T) {
 					Instance: objRef,
 					Metadata: md("k:0", "k:1"),
 				})
-				So(grpc.Code(err), ShouldEqual, codes.PermissionDenied)
+				So(status.Code(err), ShouldEqual, codes.PermissionDenied)
 				So(err, ShouldErrLike, "has no required WRITER role")
 			})
 			Convey("DetachMetadata", func() {
@@ -2250,7 +2250,7 @@ func TestInstanceMetadata(t *testing.T) {
 					Instance: objRef,
 					Metadata: md("k:0", "k:1"),
 				})
-				So(grpc.Code(err), ShouldEqual, codes.PermissionDenied)
+				So(status.Code(err), ShouldEqual, codes.PermissionDenied)
 				So(err, ShouldErrLike, "has no required OWNER role")
 			})
 			Convey("ListMetadata", func() {
@@ -2258,7 +2258,7 @@ func TestInstanceMetadata(t *testing.T) {
 					Package:  "a/b/c",
 					Instance: objRef,
 				})
-				So(grpc.Code(err), ShouldEqual, codes.PermissionDenied)
+				So(status.Code(err), ShouldEqual, codes.PermissionDenied)
 				So(err, ShouldErrLike, "is not allowed to see it")
 			})
 		})
@@ -2270,7 +2270,7 @@ func TestInstanceMetadata(t *testing.T) {
 					Instance: objRef,
 					Metadata: md("k:0", "k:1"),
 				})
-				So(grpc.Code(err), ShouldEqual, codes.NotFound)
+				So(status.Code(err), ShouldEqual, codes.NotFound)
 				So(err, ShouldErrLike, "no such package")
 			})
 			Convey("DetachMetadata", func() {
@@ -2279,7 +2279,7 @@ func TestInstanceMetadata(t *testing.T) {
 					Instance: objRef,
 					Metadata: md("k:0", "k:1"),
 				})
-				So(grpc.Code(err), ShouldEqual, codes.NotFound)
+				So(status.Code(err), ShouldEqual, codes.NotFound)
 				So(err, ShouldErrLike, "no such package")
 			})
 			Convey("ListMetadata", func() {
@@ -2287,7 +2287,7 @@ func TestInstanceMetadata(t *testing.T) {
 					Package:  "a/b/c/missing",
 					Instance: objRef,
 				})
-				So(grpc.Code(err), ShouldEqual, codes.NotFound)
+				So(status.Code(err), ShouldEqual, codes.NotFound)
 				So(err, ShouldErrLike, "no such package")
 			})
 		})
@@ -2303,7 +2303,7 @@ func TestInstanceMetadata(t *testing.T) {
 					Instance: missingRef,
 					Metadata: md("k:0", "k:1"),
 				})
-				So(grpc.Code(err), ShouldEqual, codes.NotFound)
+				So(status.Code(err), ShouldEqual, codes.NotFound)
 				So(err, ShouldErrLike, "no such instance")
 			})
 			Convey("DetachMetadata", func() {
@@ -2312,7 +2312,7 @@ func TestInstanceMetadata(t *testing.T) {
 					Instance: missingRef,
 					Metadata: md("k:0", "k:1"),
 				})
-				So(grpc.Code(err), ShouldEqual, codes.NotFound)
+				So(status.Code(err), ShouldEqual, codes.NotFound)
 				So(err, ShouldErrLike, "no such instance")
 			})
 			Convey("ListMetadata", func() {
@@ -2320,7 +2320,7 @@ func TestInstanceMetadata(t *testing.T) {
 					Package:  "a/b/c",
 					Instance: missingRef,
 				})
-				So(grpc.Code(err), ShouldEqual, codes.NotFound)
+				So(status.Code(err), ShouldEqual, codes.NotFound)
 				So(err, ShouldErrLike, "no such instance")
 			})
 		})
@@ -2385,7 +2385,7 @@ func TestResolveVersion(t *testing.T) {
 				Package: "///",
 				Version: "latest",
 			})
-			So(grpc.Code(err), ShouldEqual, codes.InvalidArgument)
+			So(status.Code(err), ShouldEqual, codes.InvalidArgument)
 			So(err, ShouldErrLike, "bad 'package'")
 		})
 
@@ -2394,7 +2394,7 @@ func TestResolveVersion(t *testing.T) {
 				Package: "a/pkg",
 				Version: "::",
 			})
-			So(grpc.Code(err), ShouldEqual, codes.InvalidArgument)
+			So(status.Code(err), ShouldEqual, codes.InvalidArgument)
 			So(err, ShouldErrLike, "bad 'version'")
 		})
 
@@ -2403,7 +2403,7 @@ func TestResolveVersion(t *testing.T) {
 				Package: "b",
 				Version: "latest",
 			})
-			So(grpc.Code(err), ShouldEqual, codes.PermissionDenied)
+			So(status.Code(err), ShouldEqual, codes.PermissionDenied)
 			So(err, ShouldErrLike, "is not allowed to see it")
 		})
 
@@ -2412,7 +2412,7 @@ func TestResolveVersion(t *testing.T) {
 				Package: "a/b",
 				Version: "latest",
 			})
-			So(grpc.Code(err), ShouldEqual, codes.NotFound)
+			So(status.Code(err), ShouldEqual, codes.NotFound)
 			So(err, ShouldErrLike, "no such package")
 		})
 
@@ -2421,7 +2421,7 @@ func TestResolveVersion(t *testing.T) {
 				Package: "a/pkg",
 				Version: strings.Repeat("f", 40),
 			})
-			So(grpc.Code(err), ShouldEqual, codes.NotFound)
+			So(status.Code(err), ShouldEqual, codes.NotFound)
 			So(err, ShouldErrLike, "no such instance")
 		})
 
@@ -2430,7 +2430,7 @@ func TestResolveVersion(t *testing.T) {
 				Package: "a/pkg",
 				Version: "missing",
 			})
-			So(grpc.Code(err), ShouldEqual, codes.NotFound)
+			So(status.Code(err), ShouldEqual, codes.NotFound)
 			So(err, ShouldErrLike, "no such ref")
 		})
 
@@ -2439,7 +2439,7 @@ func TestResolveVersion(t *testing.T) {
 				Package: "a/pkg",
 				Version: "ver:missing",
 			})
-			So(grpc.Code(err), ShouldEqual, codes.NotFound)
+			So(status.Code(err), ShouldEqual, codes.NotFound)
 			So(err, ShouldErrLike, "no such tag")
 		})
 
@@ -2448,7 +2448,7 @@ func TestResolveVersion(t *testing.T) {
 				Package: "a/pkg",
 				Version: "ver:ambiguous",
 			})
-			So(grpc.Code(err), ShouldEqual, codes.FailedPrecondition)
+			So(status.Code(err), ShouldEqual, codes.FailedPrecondition)
 			So(err, ShouldErrLike, "ambiguity when resolving the tag")
 		})
 	})
@@ -2506,7 +2506,7 @@ func TestGetInstanceURLAndDownloads(t *testing.T) {
 					Package:  "///",
 					Instance: inst.Proto().Instance,
 				})
-				So(grpc.Code(err), ShouldEqual, codes.InvalidArgument)
+				So(status.Code(err), ShouldEqual, codes.InvalidArgument)
 				So(err, ShouldErrLike, "bad 'package'")
 			})
 
@@ -2518,7 +2518,7 @@ func TestGetInstanceURLAndDownloads(t *testing.T) {
 						HexDigest: "huh",
 					},
 				})
-				So(grpc.Code(err), ShouldEqual, codes.InvalidArgument)
+				So(status.Code(err), ShouldEqual, codes.InvalidArgument)
 				So(err, ShouldErrLike, "bad 'instance'")
 			})
 
@@ -2527,7 +2527,7 @@ func TestGetInstanceURLAndDownloads(t *testing.T) {
 					Package:  "b",
 					Instance: inst.Proto().Instance,
 				})
-				So(grpc.Code(err), ShouldEqual, codes.PermissionDenied)
+				So(status.Code(err), ShouldEqual, codes.PermissionDenied)
 				So(err, ShouldErrLike, "is not allowed to see it")
 			})
 
@@ -2536,7 +2536,7 @@ func TestGetInstanceURLAndDownloads(t *testing.T) {
 					Package:  "a/missing",
 					Instance: inst.Proto().Instance,
 				})
-				So(grpc.Code(err), ShouldEqual, codes.NotFound)
+				So(status.Code(err), ShouldEqual, codes.NotFound)
 				So(err, ShouldErrLike, "no such package")
 			})
 
@@ -2548,7 +2548,7 @@ func TestGetInstanceURLAndDownloads(t *testing.T) {
 						HexDigest: strings.Repeat("f", 40),
 					},
 				})
-				So(grpc.Code(err), ShouldEqual, codes.NotFound)
+				So(status.Code(err), ShouldEqual, codes.NotFound)
 				So(err, ShouldErrLike, "no such instance")
 			})
 		})
@@ -2722,7 +2722,7 @@ func TestDescribeInstance(t *testing.T) {
 				Package:  "///",
 				Instance: inst.Proto().Instance,
 			})
-			So(grpc.Code(err), ShouldEqual, codes.InvalidArgument)
+			So(status.Code(err), ShouldEqual, codes.InvalidArgument)
 			So(err, ShouldErrLike, "bad 'package'")
 		})
 
@@ -2734,7 +2734,7 @@ func TestDescribeInstance(t *testing.T) {
 					HexDigest: "huh",
 				},
 			})
-			So(grpc.Code(err), ShouldEqual, codes.InvalidArgument)
+			So(status.Code(err), ShouldEqual, codes.InvalidArgument)
 			So(err, ShouldErrLike, "bad 'instance'")
 		})
 
@@ -2743,7 +2743,7 @@ func TestDescribeInstance(t *testing.T) {
 				Package:  "b",
 				Instance: inst.Proto().Instance,
 			})
-			So(grpc.Code(err), ShouldEqual, codes.PermissionDenied)
+			So(status.Code(err), ShouldEqual, codes.PermissionDenied)
 			So(err, ShouldErrLike, "is not allowed to see it")
 		})
 
@@ -2752,7 +2752,7 @@ func TestDescribeInstance(t *testing.T) {
 				Package:  "a/missing",
 				Instance: inst.Proto().Instance,
 			})
-			So(grpc.Code(err), ShouldEqual, codes.NotFound)
+			So(status.Code(err), ShouldEqual, codes.NotFound)
 			So(err, ShouldErrLike, "no such package")
 		})
 
@@ -2764,7 +2764,7 @@ func TestDescribeInstance(t *testing.T) {
 					HexDigest: strings.Repeat("f", 40),
 				},
 			})
-			So(grpc.Code(err), ShouldEqual, codes.NotFound)
+			So(status.Code(err), ShouldEqual, codes.NotFound)
 			So(err, ShouldErrLike, "no such instance")
 		})
 	})
@@ -3216,26 +3216,26 @@ func TestClientBootstrap(t *testing.T) {
 
 			Convey("Bad package name", func() {
 				_, err := call("not/a/client", goodDigest)
-				So(grpc.Code(err), ShouldEqual, codes.InvalidArgument)
+				So(status.Code(err), ShouldEqual, codes.InvalidArgument)
 				So(err, ShouldErrLike, "not a CIPD client package")
 			})
 
 			Convey("Bad instance ref", func() {
 				_, err := call(goodPkg, "not-an-id")
-				So(grpc.Code(err), ShouldEqual, codes.InvalidArgument)
+				So(status.Code(err), ShouldEqual, codes.InvalidArgument)
 				So(err, ShouldErrLike, "invalid SHA256 hex digest")
 			})
 
 			Convey("Missing instance", func() {
 				_, err := call(goodPkg, strings.Repeat("e", 64))
-				So(grpc.Code(err), ShouldEqual, codes.NotFound)
+				So(status.Code(err), ShouldEqual, codes.NotFound)
 				So(err, ShouldErrLike, "no such instance")
 			})
 
 			Convey("No access", func() {
 				ctx = as("someone@example.com")
 				_, err := call(goodPkg, goodDigest)
-				So(grpc.Code(err), ShouldEqual, codes.PermissionDenied)
+				So(status.Code(err), ShouldEqual, codes.PermissionDenied)
 				So(err, ShouldErrLike, "not allowed to see it")
 			})
 
@@ -3245,7 +3245,7 @@ func TestClientBootstrap(t *testing.T) {
 				datastore.Put(ctx, inst)
 
 				_, err := call(goodPkg, goodDigest)
-				So(grpc.Code(err), ShouldEqual, codes.FailedPrecondition)
+				So(status.Code(err), ShouldEqual, codes.FailedPrecondition)
 				So(err, ShouldErrLike, "the instance is not ready yet")
 			})
 
@@ -3253,7 +3253,7 @@ func TestClientBootstrap(t *testing.T) {
 				setup(nil, "BOOM")
 
 				_, err := call(goodPkg, goodDigest)
-				So(grpc.Code(err), ShouldEqual, codes.Aborted)
+				So(status.Code(err), ShouldEqual, codes.Aborted)
 				So(err, ShouldErrLike, "some processors failed to process this instance")
 			})
 		})

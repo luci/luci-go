@@ -20,6 +20,7 @@ import (
 	"testing"
 
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/stats"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -63,7 +64,7 @@ func TestWithMultiStatsHandler(t *testing.T) {
 		connect := func(opt grpc.DialOption) *grpc.ClientConn {
 			conn, err := grpc.Dial(
 				l.Addr().String(),
-				grpc.WithInsecure(),
+				grpc.WithTransportCredentials(insecure.NewCredentials()),
 				grpc.WithBlock(),
 				opt,
 			)

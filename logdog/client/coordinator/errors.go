@@ -17,8 +17,8 @@ package coordinator
 import (
 	"errors"
 
-	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
 
 var (
@@ -35,7 +35,7 @@ func normalizeError(err error) error {
 	if err == nil {
 		return nil
 	}
-	switch grpc.Code(err) {
+	switch status.Code(err) {
 	case codes.NotFound:
 		return ErrNoSuchStream
 

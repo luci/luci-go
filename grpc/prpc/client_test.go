@@ -366,7 +366,7 @@ func TestClient(t *testing.T) {
 
 				// Have it logged by default
 				err := client.Call(ctx, "prpc.Greeter", "SayHello", req, res)
-				So(grpc.Code(err), ShouldEqual, codes.NotFound)
+				So(status.Code(err), ShouldEqual, codes.NotFound)
 				So(log, shouldHaveMessagesLike,
 					expectedCallLogEntry(client),
 					memlogger.LogEntry{Level: logging.Warning, Msg: "RPC failed permanently"})
@@ -375,7 +375,7 @@ func TestClient(t *testing.T) {
 
 				// And don't have it if using ExpectedCode.
 				err = client.Call(ctx, "prpc.Greeter", "SayHello", req, res, ExpectedCode(codes.NotFound))
-				So(grpc.Code(err), ShouldEqual, codes.NotFound)
+				So(status.Code(err), ShouldEqual, codes.NotFound)
 				So(log, shouldHaveMessagesLike, expectedCallLogEntry(client))
 			})
 
@@ -403,8 +403,8 @@ func TestClient(t *testing.T) {
 				defer server.Close()
 
 				err := client.Call(ctx, "prpc.Greeter", "SayHello", req, res)
-				So(grpc.Code(err), ShouldEqual, codes.Internal)
-				So(grpc.ErrorDesc(err), ShouldEqual, "Server misbehaved")
+				So(status.Code(err), ShouldEqual, codes.Internal)
+				So(status.Convert(err).Message(), ShouldEqual, "Server misbehaved")
 
 				So(log, shouldHaveMessagesLike,
 					expectedCallLogEntry(client),
@@ -426,7 +426,7 @@ func TestClient(t *testing.T) {
 				defer server.Close()
 
 				err := client.Call(ctx, "prpc.Greeter", "SayHello", req, res)
-				So(grpc.Code(err), ShouldEqual, codes.Internal)
+				So(status.Code(err), ShouldEqual, codes.Internal)
 
 				So(log, shouldHaveMessagesLike,
 					expectedCallLogEntry(client),
@@ -448,7 +448,7 @@ func TestClient(t *testing.T) {
 				defer server.Close()
 
 				err := client.Call(ctx, "prpc.Greeter", "SayHello", req, res)
-				So(grpc.Code(err), ShouldEqual, codes.Unavailable)
+				So(status.Code(err), ShouldEqual, codes.Unavailable)
 			})
 
 			Convey("Forbidden", func(c C) {
@@ -460,8 +460,8 @@ func TestClient(t *testing.T) {
 				defer server.Close()
 
 				err := client.Call(ctx, "prpc.Greeter", "SayHello", req, res)
-				So(grpc.Code(err), ShouldEqual, codes.PermissionDenied)
-				So(grpc.ErrorDesc(err), ShouldEqual, "Access denied")
+				So(status.Code(err), ShouldEqual, codes.PermissionDenied)
+				So(status.Convert(err).Message(), ShouldEqual, "Access denied")
 
 				So(log, shouldHaveMessagesLike,
 					expectedCallLogEntry(client),
@@ -477,7 +477,7 @@ func TestClient(t *testing.T) {
 				defer server.Close()
 
 				err := client.Call(ctx, "prpc.Greeter", "SayHello", req, res)
-				So(grpc.Code(err), ShouldEqual, codes.Canceled)
+				So(status.Code(err), ShouldEqual, codes.Canceled)
 			})
 
 			Convey("Concurrency limit", func(c C) {
