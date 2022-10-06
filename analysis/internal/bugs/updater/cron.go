@@ -36,6 +36,20 @@ import (
 )
 
 var (
+	// runsCounter is the metric that counts the number of bug filing
+	// runs by LUCI Analysis, by project and outcome.
+	runsCounter = metric.NewCounter("analysis/bug_updater/runs",
+		"The number of auto-bug filing runs completed, "+
+			"by LUCI Project and status.",
+		&types.MetricMetadata{
+			Units: "runs",
+		},
+		// The LUCI project.
+		field.String("project"),
+		// The run status.
+		field.String("status"), // success | failure
+	)
+
 	// statusGauge reports the most recent status of the bug updater job.
 	// Reports either "success" or "failure".
 	statusGauge = metric.NewString("analysis/bug_updater/status",
@@ -133,6 +147,7 @@ func updateAnalysisAndBugs(ctx context.Context, monorailHost, gcpProject string,
 			project := key.(string)
 			status := value.(string)
 			statusGauge.Set(ctx, status, project)
+			runsCounter.Add(ctx, 1, project, status)
 			return true // continue iteration
 		})
 	}()
