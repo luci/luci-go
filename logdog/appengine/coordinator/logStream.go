@@ -22,13 +22,13 @@ import (
 	"time"
 
 	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"google.golang.org/protobuf/proto"
 
 	"go.chromium.org/luci/common/errors"
 	ds "go.chromium.org/luci/gae/service/datastore"
-	"go.chromium.org/luci/grpc/grpcutil"
 	"go.chromium.org/luci/logdog/api/logpb"
 	"go.chromium.org/luci/logdog/common/types"
 )
@@ -47,7 +47,7 @@ import (
 const CurrentSchemaVersion = "3"
 
 // ErrPathNotFound is the canonical error returned when a Log Stream Path is not found.
-var ErrPathNotFound = grpcutil.Errf(codes.NotFound, "path not found")
+var ErrPathNotFound = status.Error(codes.NotFound, "path not found")
 
 // LogStream is the primary datastore model containing information and state of
 // an individual log stream.

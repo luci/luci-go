@@ -17,6 +17,10 @@ package services
 import (
 	"context"
 
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/types/known/durationpb"
+
 	ds "go.chromium.org/luci/gae/service/datastore"
 
 	logdog "go.chromium.org/luci/logdog/api/endpoints/coordinator/services/v1"
@@ -25,10 +29,6 @@ import (
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
 	log "go.chromium.org/luci/common/logging"
-	"go.chromium.org/luci/grpc/grpcutil"
-
-	"google.golang.org/grpc/codes"
-	"google.golang.org/protobuf/types/known/durationpb"
 )
 
 // LoadStream loads the log stream state.
@@ -41,7 +41,7 @@ func (s *server) LoadStream(c context.Context, req *logdog.LoadStreamRequest) (*
 	id := coordinator.HashID(req.Id)
 	if err := id.Normalize(); err != nil {
 		log.WithError(err).Errorf(c, "Invalid stream ID.")
-		return nil, grpcutil.Errf(codes.InvalidArgument, "Invalid ID (%s): %s", id, err)
+		return nil, status.Errorf(codes.InvalidArgument, "Invalid ID (%s): %s", id, err)
 	}
 
 	ls := &coordinator.LogStream{ID: coordinator.HashID(req.Id)}
@@ -52,11 +52,11 @@ func (s *server) LoadStream(c context.Context, req *logdog.LoadStreamRequest) (*
 			log.WithError(err).Errorf(c, "No such entity in datastore.")
 
 			// The state isn't registered, so this stream does not exist.
-			return nil, grpcutil.Errf(codes.NotFound, "Log stream was not found.")
+			return nil, status.Errorf(codes.NotFound, "Log stream was not found.")
 		}
 
 		log.WithError(err).Errorf(c, "Failed to load log stream.")
-		return nil, grpcutil.Internal
+		return nil, status.Error(codes.Internal, "internal server error")
 	}
 
 	// The log stream and state loaded successfully.

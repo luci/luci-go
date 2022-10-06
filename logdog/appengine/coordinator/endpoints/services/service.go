@@ -19,10 +19,12 @@ import (
 	"sync"
 
 	"github.com/golang/protobuf/proto"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
+
 	"go.chromium.org/luci/common/data/rand/mathrand"
 	"go.chromium.org/luci/common/errors"
 	log "go.chromium.org/luci/common/logging"
-	"go.chromium.org/luci/grpc/grpcutil"
 	logdog "go.chromium.org/luci/logdog/api/endpoints/coordinator/services/v1"
 	"go.chromium.org/luci/logdog/appengine/coordinator"
 	"go.chromium.org/luci/logdog/appengine/coordinator/endpoints"
@@ -93,9 +95,9 @@ func New(settings ServerSettings) logdog.ServicesServer {
 		Prelude: func(c context.Context, methodName string, req proto.Message) (context.Context, error) {
 			switch yes, err := coordinator.CheckServiceUser(c); {
 			case err != nil:
-				return nil, grpcutil.Internal
+				return nil, status.Error(codes.Internal, "internal server error")
 			case !yes:
-				return nil, grpcutil.PermissionDenied
+				return nil, status.Error(codes.PermissionDenied, "not a service")
 			default:
 				return maybeEnterProjectNamespace(c, req)
 			}

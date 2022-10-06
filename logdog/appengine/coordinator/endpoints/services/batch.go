@@ -18,14 +18,15 @@ import (
 	"context"
 	"sync"
 
-	"go.chromium.org/luci/logdog/api/endpoints/coordinator/services/v1"
+	"github.com/golang/protobuf/proto"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
+
+	logdog "go.chromium.org/luci/logdog/api/endpoints/coordinator/services/v1"
 
 	"go.chromium.org/luci/common/gcloud/gae"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/sync/parallel"
-	"go.chromium.org/luci/grpc/grpcutil"
-
-	"github.com/golang/protobuf/proto"
 )
 
 // The maximum, AppEngine response size, minus 1MB for overhead.
@@ -130,7 +131,7 @@ func (s *server) processBatchEntry(c context.Context, e *logdog.BatchRequest_Ent
 		})
 
 	default:
-		err = grpcutil.InvalidArgument
+		err = status.Error(codes.InvalidArgument, "unrecognized subrequest")
 	}
 
 	// If we encountered an error, populate value with an Error.

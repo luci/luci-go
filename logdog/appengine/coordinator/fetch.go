@@ -18,11 +18,11 @@ import (
 	"context"
 
 	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	ds "go.chromium.org/luci/gae/service/datastore"
-	"go.chromium.org/luci/grpc/grpcutil"
 	"go.chromium.org/luci/logdog/common/types"
 	"go.chromium.org/luci/server/auth/realms"
 )
@@ -44,7 +44,7 @@ type MetadataFetcher struct {
 func (f *MetadataFetcher) FetchWithACLCheck(ctx context.Context) error {
 	if err := f.Path.Validate(); err != nil {
 		logging.WithError(err).Errorf(ctx, "Invalid path supplied.")
-		return grpcutil.Errf(codes.InvalidArgument, "invalid path value")
+		return status.Error(codes.InvalidArgument, "invalid path value")
 	}
 	prefix, _ := f.Path.Split()
 
@@ -85,7 +85,7 @@ func (f *MetadataFetcher) FetchWithACLCheck(ctx context.Context) error {
 		return PermissionDeniedErr(ctx)
 	case prefixErr != nil:
 		logging.WithError(prefixErr).Errorf(ctx, "Failed to fetch LogPrefix")
-		return grpcutil.Internal
+		return status.Error(codes.Internal, "internal server error")
 	}
 
 	// Old prefixes have no realm set. Fallback to "@legacy".
@@ -104,13 +104,13 @@ func (f *MetadataFetcher) FetchWithACLCheck(ctx context.Context) error {
 	switch {
 	case streamErr == ds.ErrNoSuchEntity || stateErr == ds.ErrNoSuchEntity:
 		logging.Warningf(ctx, "Log stream does not exist.")
-		return grpcutil.Errf(codes.NotFound, "stream path not found")
+		return status.Error(codes.NotFound, "stream path not found")
 	case streamErr != nil:
 		logging.WithError(streamErr).Errorf(ctx, "Failed to fetch LogStream")
-		return grpcutil.Internal
+		return status.Error(codes.Internal, "internal server error")
 	case stateErr != nil:
 		logging.WithError(stateErr).Errorf(ctx, "Failed to fetch LogStream")
-		return grpcutil.Internal
+		return status.Error(codes.Internal, "internal server error")
 	}
 
 	return nil

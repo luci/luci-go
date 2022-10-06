@@ -17,15 +17,15 @@ package services
 import (
 	"context"
 
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/types/known/emptypb"
+
 	"go.chromium.org/luci/common/clock"
 	log "go.chromium.org/luci/common/logging"
 	ds "go.chromium.org/luci/gae/service/datastore"
-	"go.chromium.org/luci/grpc/grpcutil"
 	logdog "go.chromium.org/luci/logdog/api/endpoints/coordinator/services/v1"
 	"go.chromium.org/luci/logdog/appengine/coordinator"
-
-	"google.golang.org/grpc/codes"
-	"google.golang.org/protobuf/types/known/emptypb"
 )
 
 func (b *server) ArchiveStream(c context.Context, req *logdog.ArchiveStreamRequest) (*emptypb.Empty, error) {
@@ -40,15 +40,15 @@ func (b *server) ArchiveStream(c context.Context, req *logdog.ArchiveStreamReque
 
 	id := coordinator.HashID(req.Id)
 	if err := id.Normalize(); err != nil {
-		return nil, grpcutil.Errf(codes.InvalidArgument, "Invalid ID (%s): %s", id, err)
+		return nil, status.Errorf(codes.InvalidArgument, "Invalid ID (%s): %s", id, err)
 	}
 
 	// Verify that the request is minimially valid.
 	switch {
 	case req.IndexUrl == "":
-		return nil, grpcutil.Errf(codes.InvalidArgument, "missing required index archive URL")
+		return nil, status.Errorf(codes.InvalidArgument, "missing required index archive URL")
 	case req.StreamUrl == "":
-		return nil, grpcutil.Errf(codes.InvalidArgument, "missing required stream archive URL")
+		return nil, status.Errorf(codes.InvalidArgument, "missing required stream archive URL")
 	}
 
 	lst := coordinator.NewLogStreamState(c, id)
@@ -78,7 +78,7 @@ func (b *server) ArchiveStream(c context.Context, req *logdog.ArchiveStreamReque
 			log.Fields{
 				"state": as,
 			}.Errorf(c, "Log stream archival is not tasked.")
-			ierr = grpcutil.Errf(codes.FailedPrecondition, "Log stream has not tasked an archival.")
+			ierr = status.Errorf(codes.FailedPrecondition, "Log stream has not tasked an archival.")
 			return ierr
 		}
 
@@ -126,7 +126,7 @@ func (b *server) ArchiveStream(c context.Context, req *logdog.ArchiveStreamReque
 	}
 	if err != nil {
 		log.WithError(err).Errorf(c, "Internal error.")
-		return nil, grpcutil.Internal
+		return nil, status.Error(codes.Internal, "internal server error")
 	}
 
 	return &emptypb.Empty{}, nil

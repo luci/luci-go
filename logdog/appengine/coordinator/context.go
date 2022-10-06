@@ -18,14 +18,14 @@ import (
 	"context"
 	"fmt"
 
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
+
 	log "go.chromium.org/luci/common/logging"
 	cfglib "go.chromium.org/luci/config"
 	"go.chromium.org/luci/gae/service/info"
-	"go.chromium.org/luci/grpc/grpcutil"
 	"go.chromium.org/luci/logdog/api/config/svcconfig"
 	"go.chromium.org/luci/logdog/server/config"
-
-	"google.golang.org/grpc/codes"
 )
 
 var projectConfigCtxKey = "logdog.coordinator.ProjectConfig"
@@ -43,7 +43,7 @@ func WithProjectNamespace(c *context.Context, project string) error {
 
 	if err := cfglib.ValidateProjectName(project); err != nil {
 		log.WithError(err).Errorf(ctx, "Project name is invalid.")
-		return grpcutil.Errf(codes.InvalidArgument, "Project name is invalid: %s", err)
+		return status.Errorf(codes.InvalidArgument, "Project name is invalid: %s", err)
 	}
 
 	// Load the project config, thus verifying the project exists.
@@ -63,7 +63,7 @@ func WithProjectNamespace(c *context.Context, project string) error {
 		// The configuration attempt failed to load. This is an internal error,
 		// and is safe to return because it's not contingent on the existence (or
 		// lack thereof) of the project.
-		return grpcutil.Internal
+		return status.Error(codes.Internal, "internal server error")
 	}
 
 	// All future datastore queries are scoped to this project.
@@ -75,7 +75,7 @@ func WithProjectNamespace(c *context.Context, project string) error {
 			"project":    project,
 			"namespace":  pns,
 		}.Errorf(ctx, "Failed to set namespace.")
-		return grpcutil.Internal
+		return status.Error(codes.Internal, "internal server error")
 	}
 
 	// Store the project config in the context to avoid fetching it again.

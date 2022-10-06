@@ -19,6 +19,7 @@ import (
 
 	"github.com/golang/protobuf/proto"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 
 	"go.chromium.org/luci/grpc/grpcutil"
 	logdog "go.chromium.org/luci/logdog/api/endpoints/coordinator/logs/v1"
@@ -45,7 +46,7 @@ func New() logdog.LogsServer {
 			// don't.
 			project := req.(endpoints.ProjectBoundMessage).GetMessageProject()
 			if project == "" {
-				return nil, grpcutil.Errf(codes.InvalidArgument, "project is required")
+				return nil, status.Error(codes.InvalidArgument, "project is required")
 			}
 			if err := coordinator.WithProjectNamespace(&ctx, project); err != nil {
 				return nil, grpcutil.GRPCifyAndLogErr(ctx, err)

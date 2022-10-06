@@ -18,6 +18,10 @@ import (
 	"context"
 	"time"
 
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/types/known/timestamppb"
+
 	logdog "go.chromium.org/luci/logdog/api/endpoints/coordinator/logs/v1"
 	"go.chromium.org/luci/logdog/api/logpb"
 	"go.chromium.org/luci/logdog/appengine/coordinator"
@@ -30,11 +34,7 @@ import (
 	log "go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry"
 	"go.chromium.org/luci/common/retry/transient"
-	"go.chromium.org/luci/grpc/grpcutil"
 	"go.chromium.org/luci/server/auth/realms"
-
-	"google.golang.org/grpc/codes"
-	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 const (
@@ -89,10 +89,10 @@ func (s *server) getImpl(c context.Context, req *logdog.GetRequest, tail bool) (
 	if fetcher.Stream.Purged {
 		switch yes, err := coordinator.CheckAdminUser(c); {
 		case err != nil:
-			return nil, grpcutil.Internal
+			return nil, status.Error(codes.Internal, "internal server error")
 		case !yes:
 			log.Warningf(c, "Non-superuser requested purged log.")
-			return nil, grpcutil.Errf(codes.NotFound, "path not found")
+			return nil, status.Errorf(codes.NotFound, "path not found")
 		}
 	}
 
@@ -108,7 +108,7 @@ func (s *server) getImpl(c context.Context, req *logdog.GetRequest, tail bool) (
 		resp.Desc, err = fetcher.Stream.DescriptorProto()
 		if err != nil {
 			log.WithError(err).Errorf(c, "Failed to deserialize descriptor protobuf.")
-			return nil, grpcutil.Internal
+			return nil, status.Error(codes.Internal, "internal server error")
 		}
 	}
 
@@ -116,7 +116,7 @@ func (s *server) getImpl(c context.Context, req *logdog.GetRequest, tail bool) (
 	startTime := clock.Now(c)
 	if err := s.getLogs(c, req, &resp, tail, fetcher.Stream, fetcher.State); err != nil {
 		log.WithError(err).Errorf(c, "Failed to get logs.")
-		return nil, grpcutil.Internal
+		return nil, status.Error(codes.Internal, "internal server error")
 	}
 
 	log.Fields{

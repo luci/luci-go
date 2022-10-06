@@ -18,6 +18,8 @@ import (
 	"context"
 
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/runtime/paniccatcher"
@@ -31,7 +33,7 @@ func UnaryServerPanicCatcherInterceptor(ctx context.Context, req interface{}, in
 		logging.Fields{
 			"panic.error": p.Reason,
 		}.Errorf(ctx, "Caught panic during handling of %q: %s\n%s", info.FullMethod, p.Reason, p.Stack)
-		err = Internal
+		err = status.Error(codes.Internal, "panic in the request handler")
 	})
 	return handler(ctx, req)
 }

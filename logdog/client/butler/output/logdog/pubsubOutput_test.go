@@ -24,6 +24,8 @@ import (
 	"testing"
 	"time"
 
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/common/logging"
@@ -33,7 +35,6 @@ import (
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/data/recordio"
 	gcps "go.chromium.org/luci/common/gcloud/pubsub"
-	"go.chromium.org/luci/grpc/grpcutil"
 	"go.chromium.org/luci/logdog/api/logpb"
 
 	"cloud.google.com/go/pubsub"
@@ -172,12 +173,15 @@ func TestOutput(t *testing.T) {
 		})
 
 		Convey(`Will return an error if Publish failed non-transiently.`, func() {
-			tt.err = func() error { return grpcutil.InvalidArgument }
-			So(o.SendBundle(bundle), ShouldEqual, grpcutil.InvalidArgument)
+			err := status.Error(codes.InvalidArgument, "boom")
+			tt.err = func() error { return err }
+			So(o.SendBundle(bundle), ShouldEqual, err)
 		})
 
 		Convey(`Will retry indefinitely if Publish fails transiently (Context deadline).`, func() {
 			const retries = 30
+
+			stopErr := status.Error(codes.InvalidArgument, "boom")
 
 			// Advance our clock each time there is a delay up until count.
 			count := 0
@@ -195,14 +199,14 @@ func TestOutput(t *testing.T) {
 				default:
 					// Done retrying, don't expire Contexts anymore. Consume the message
 					// when it is sent.
-					tt.err = func() error { return grpcutil.InvalidArgument }
+					tt.err = func() error { return stopErr }
 				}
 			})
 
 			// Time our our RPC. Because of our timer callback, this will always be
 			// hit.
 			o.RPCTimeout = 30 * time.Second
-			So(o.SendBundle(bundle), ShouldEqual, grpcutil.InvalidArgument)
+			So(o.SendBundle(bundle), ShouldEqual, stopErr)
 			So(count, ShouldEqual, retries)
 		})
 
@@ -214,19 +218,21 @@ func TestOutput(t *testing.T) {
 				tc.Add(d)
 			})
 
+			stopErr := status.Error(codes.NotFound, "boom")
+
 			count := 0
 			tt.msgC = nil
 			tt.err = func() error {
 				count++
 				if count < retries {
-					return grpcutil.Internal
+					return status.Error(codes.Internal, "internal server error")
 				}
-				return grpcutil.NotFound // Non-transient.
+				return stopErr // Non-transient.
 			}
 
 			// Time our our RPC. Because of our timer callback, this will always be
 			// hit.
-			So(o.SendBundle(bundle), ShouldEqual, grpcutil.NotFound)
+			So(o.SendBundle(bundle), ShouldEqual, stopErr)
 			So(count, ShouldEqual, retries)
 		})
 	})

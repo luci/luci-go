@@ -17,6 +17,9 @@ package logs
 import (
 	"context"
 
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
+
 	logdog "go.chromium.org/luci/logdog/api/endpoints/coordinator/logs/v1"
 	"go.chromium.org/luci/logdog/appengine/coordinator"
 	"go.chromium.org/luci/logdog/common/types"
@@ -24,10 +27,7 @@ import (
 	"go.chromium.org/luci/common/clock"
 	log "go.chromium.org/luci/common/logging"
 	ds "go.chromium.org/luci/gae/service/datastore"
-	"go.chromium.org/luci/grpc/grpcutil"
 	"go.chromium.org/luci/server/auth/realms"
-
-	"google.golang.org/grpc/codes"
 )
 
 const (
@@ -43,12 +43,12 @@ func (s *server) Query(c context.Context, req *logdog.QueryRequest) (*logdog.Que
 	canSeePurged := true
 	switch yes, err := coordinator.CheckAdminUser(c); {
 	case err != nil:
-		return nil, grpcutil.Internal
+		return nil, status.Error(codes.Internal, "internal server error")
 	case !yes:
 		canSeePurged = false
 		if req.Purged == logdog.QueryRequest_YES {
 			log.Errorf(c, "Non-superuser requested to see purged logs. Denying.")
-			return nil, grpcutil.Errf(codes.InvalidArgument, "non-admin user cannot request purged log streams")
+			return nil, status.Errorf(codes.InvalidArgument, "non-admin user cannot request purged log streams")
 		}
 	}
 
@@ -93,7 +93,7 @@ type queryRunner struct {
 
 func (r *queryRunner) runQuery(resp *logdog.QueryResponse) error {
 	if r.limit == 0 {
-		return grpcutil.Errf(codes.InvalidArgument, "query limit is zero")
+		return status.Errorf(codes.InvalidArgument, "query limit is zero")
 	}
 
 	if int(r.req.MaxResults) > 0 && r.limit > int(r.req.MaxResults) {
@@ -106,7 +106,7 @@ func (r *queryRunner) runQuery(resp *logdog.QueryResponse) error {
 			log.ErrorKey: err,
 			"path":       r.req.Path,
 		}.Errorf(r.ctx, "Invalid query path.")
-		return grpcutil.Errf(codes.InvalidArgument, "invalid query `path`")
+		return status.Errorf(codes.InvalidArgument, "invalid query `path`")
 	}
 
 	pfx := &coordinator.LogPrefix{ID: coordinator.LogPrefixID(q.Prefix)}
@@ -115,7 +115,7 @@ func (r *queryRunner) runQuery(resp *logdog.QueryResponse) error {
 			return coordinator.PermissionDeniedErr(r.ctx)
 		}
 		log.WithError(err).Errorf(r.ctx, "Failed to fetch LogPrefix")
-		return grpcutil.Internal
+		return status.Error(codes.Internal, "internal server error")
 	}
 
 	// Old prefixes have no realm set. Fallback to "@legacy".
@@ -134,7 +134,7 @@ func (r *queryRunner) runQuery(resp *logdog.QueryResponse) error {
 	// should never happen. If it does, it indicates some kind of a corruption.
 	if resp.Project != r.req.Project {
 		log.Errorf(r.ctx, "Expected a realm in project %q, but saw %q", r.req.Project, realm)
-		return grpcutil.Internal
+		return status.Error(codes.Internal, "internal server error")
 	}
 
 	if err := q.SetCursor(r.ctx, r.req.Next); err != nil {
@@ -142,13 +142,13 @@ func (r *queryRunner) runQuery(resp *logdog.QueryResponse) error {
 			log.ErrorKey: err,
 			"cursor":     r.req.Next,
 		}.Errorf(r.ctx, "Failed to SetCursor.")
-		return grpcutil.Errf(codes.InvalidArgument, "invalid `next` value")
+		return status.Errorf(codes.InvalidArgument, "invalid `next` value")
 	}
 
 	q.OnlyContentType(r.req.ContentType)
 	if st := r.req.StreamType; st != nil {
 		if err := q.OnlyStreamType(st.Value); err != nil {
-			return grpcutil.Errf(codes.InvalidArgument, "invalid query `streamType`: %s", st.Value)
+			return status.Errorf(codes.InvalidArgument, "invalid query `streamType`: %s", st.Value)
 		}
 	}
 
@@ -175,7 +175,7 @@ func (r *queryRunner) runQuery(resp *logdog.QueryResponse) error {
 				"key":        k,
 				"value":      v,
 			}.Errorf(r.ctx, "Invalid tag constraint.")
-			return grpcutil.Errf(codes.InvalidArgument, "invalid tag constraint: %q", k)
+			return status.Errorf(codes.InvalidArgument, "invalid tag constraint: %q", k)
 		}
 	}
 	q.MustHaveTags(r.req.Tags)
@@ -242,13 +242,13 @@ func (r *queryRunner) runQuery(resp *logdog.QueryResponse) error {
 		log.Fields{
 			log.ErrorKey: err,
 		}.Errorf(r.ctx, "Failed to execute query.")
-		return grpcutil.Errf(codes.Internal, "failed to execute query: %s", err)
+		return status.Errorf(codes.Internal, "failed to execute query: %s", err)
 	}
 
 	if len(logStreamStates) > 0 {
 		if err := ds.Get(r.ctx, logStreamStates); err != nil {
 			log.WithError(err).Errorf(r.ctx, "Failed to load log stream states.")
-			return grpcutil.Errf(codes.Internal, "failed to load log stream states: %s", err)
+			return status.Errorf(codes.Internal, "failed to load log stream states: %s", err)
 		}
 		for i, state := range logStreamStates {
 			fillStateFromLogStreamState(respLogStreamStates[i], state)

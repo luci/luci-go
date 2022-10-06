@@ -22,6 +22,8 @@ import (
 	"sync"
 	"time"
 
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/emptypb"
 
@@ -99,7 +101,7 @@ func (s *server) taskArchival(c context.Context, state *coordinator.LogStreamSta
 		log.Fields{
 			log.ErrorKey: err,
 		}.Errorf(c, "Failed to Put() LogStream.")
-		return grpcutil.Internal
+		return status.Error(codes.Internal, "internal server error")
 	}
 
 	project := string(coordinator.ProjectFromNamespace(state.Parent.Namespace()))
@@ -107,14 +109,14 @@ func (s *server) taskArchival(c context.Context, state *coordinator.LogStreamSta
 	t, err := tqTask(&logdog.ArchiveTask{Project: project, Id: id, Realm: realm})
 	if err != nil {
 		log.WithError(err).Errorf(c, "could not create archival task")
-		return grpcutil.Internal
+		return status.Error(codes.Internal, "internal server error")
 	}
 	t.Delay = delay
 	queueName, queueNumber := s.getNextArchiveQueueName(c)
 
 	if err := taskqueue.Add(c, queueName, t); err != nil {
 		log.WithError(err).Errorf(c, "could not task archival")
-		return grpcutil.Internal
+		return status.Error(codes.Internal, "internal server error")
 	}
 
 	metricCreateTask.Add(c, 1, project, queueNumber)

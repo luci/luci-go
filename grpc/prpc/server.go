@@ -413,7 +413,7 @@ func (s *Server) call(c *router.Context, service *service, method grpc.MethodDes
 
 	out, err := method.Handler(service.impl, methodCtx, func(in interface{}) error {
 		if in == nil {
-			return grpcutil.Errf(codes.Internal, "input message is nil")
+			return status.Errorf(codes.Internal, "input message is nil")
 		}
 		// Do not collapse it to one line. There is implicit err type conversion.
 		if perr := readMessage(c.Request, in.(proto.Message), s.HackFixFieldMasksForJSON); perr != nil {

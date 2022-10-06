@@ -19,14 +19,14 @@ import (
 	"errors"
 	"testing"
 
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/types/known/timestamppb"
+
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/testing/prpctest"
-	"go.chromium.org/luci/grpc/grpcutil"
 	logdog "go.chromium.org/luci/logdog/api/endpoints/coordinator/logs/v1"
 	"go.chromium.org/luci/logdog/api/logpb"
-
-	"google.golang.org/grpc/codes"
-	"google.golang.org/protobuf/types/known/timestamppb"
 
 	. "github.com/smartystreets/goconvey/convey"
 
@@ -247,7 +247,7 @@ func TestStreamGet(t *testing.T) {
 
 				Convey(`Will return ErrNoSuchStream if the stream is not found.`, func() {
 					svc.GH = func(*logdog.GetRequest) (*logdog.GetResponse, error) {
-						return nil, grpcutil.NotFound
+						return nil, status.Error(codes.NotFound, "not found")
 					}
 
 					_, err := s.Get(c)
@@ -256,7 +256,7 @@ func TestStreamGet(t *testing.T) {
 
 				Convey(`Will return ErrNoAccess if unauthenticated.`, func() {
 					svc.GH = func(*logdog.GetRequest) (*logdog.GetResponse, error) {
-						return nil, grpcutil.Unauthenticated
+						return nil, status.Error(codes.Unauthenticated, "unauthenticated")
 					}
 
 					_, err := s.Get(c)
@@ -265,7 +265,7 @@ func TestStreamGet(t *testing.T) {
 
 				Convey(`Will return ErrNoAccess if permission is denied.`, func() {
 					svc.GH = func(*logdog.GetRequest) (*logdog.GetResponse, error) {
-						return nil, grpcutil.PermissionDenied
+						return nil, status.Error(codes.PermissionDenied, "boom")
 					}
 
 					_, err := s.Get(c)
@@ -315,7 +315,7 @@ func TestStreamGet(t *testing.T) {
 
 				Convey(`Will return ErrNoSuchStream if the stream is not found.`, func() {
 					svc.GH = func(*logdog.GetRequest) (*logdog.GetResponse, error) {
-						return nil, grpcutil.NotFound
+						return nil, status.Error(codes.NotFound, "not found")
 					}
 
 					_, err := s.State(c)
@@ -324,7 +324,7 @@ func TestStreamGet(t *testing.T) {
 
 				Convey(`Will return ErrNoAccess if unauthenticated.`, func() {
 					svc.GH = func(*logdog.GetRequest) (*logdog.GetResponse, error) {
-						return nil, grpcutil.Unauthenticated
+						return nil, status.Error(codes.Unauthenticated, "unauthenticated")
 					}
 
 					_, err := s.State(c)
@@ -333,7 +333,7 @@ func TestStreamGet(t *testing.T) {
 
 				Convey(`Will return ErrNoAccess if permission is denied.`, func() {
 					svc.GH = func(*logdog.GetRequest) (*logdog.GetResponse, error) {
-						return nil, grpcutil.PermissionDenied
+						return nil, status.Error(codes.PermissionDenied, "boom")
 					}
 
 					_, err := s.State(c)
@@ -439,7 +439,7 @@ func TestStreamGet(t *testing.T) {
 
 				Convey(`Will return ErrNoSuchStream if the stream is not found.`, func() {
 					svc.TH = func(*logdog.TailRequest) (*logdog.GetResponse, error) {
-						return nil, grpcutil.NotFound
+						return nil, status.Error(codes.NotFound, "not found")
 					}
 
 					_, err := s.Tail(c)
@@ -448,7 +448,7 @@ func TestStreamGet(t *testing.T) {
 
 				Convey(`Will return ErrNoAccess if unauthenticated.`, func() {
 					svc.TH = func(*logdog.TailRequest) (*logdog.GetResponse, error) {
-						return nil, grpcutil.Unauthenticated
+						return nil, status.Error(codes.Unauthenticated, "unauthenticated")
 					}
 
 					_, err := s.Tail(c)
@@ -457,7 +457,7 @@ func TestStreamGet(t *testing.T) {
 
 				Convey(`Will return ErrNoAccess if permission is denied.`, func() {
 					svc.TH = func(*logdog.TailRequest) (*logdog.GetResponse, error) {
-						return nil, grpcutil.PermissionDenied
+						return nil, status.Error(codes.PermissionDenied, "boom")
 					}
 
 					_, err := s.Tail(c)
@@ -571,7 +571,7 @@ func TestStreamGet(t *testing.T) {
 
 						Convey(`Will return an error if the Get fails.`, func() {
 							svc.GH = func(req *logdog.GetRequest) (*logdog.GetResponse, error) {
-								return nil, grpcutil.Errf(codes.InvalidArgument, "test error")
+								return nil, status.Errorf(codes.InvalidArgument, "test error")
 							}
 
 							_, err := s.Tail(c, Complete())

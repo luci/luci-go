@@ -18,10 +18,10 @@ import (
 	"context"
 
 	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 
 	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/common/logging"
-	"go.chromium.org/luci/grpc/grpcutil"
 	"go.chromium.org/luci/logdog/common/types"
 	"go.chromium.org/luci/logdog/server/config"
 	"go.chromium.org/luci/server/auth"
@@ -42,9 +42,9 @@ var (
 // If the request is anonymous, it is an Unauthenticated error instead.
 func PermissionDeniedErr(ctx context.Context) error {
 	if id := auth.CurrentIdentity(ctx); id.Kind() == identity.Anonymous {
-		return grpcutil.Unauthenticated
+		return status.Error(codes.Unauthenticated, "Authentication required.")
 	}
-	return grpcutil.Errf(codes.PermissionDenied,
+	return status.Errorf(codes.PermissionDenied,
 		"The resource doesn't exist or you do not have permission to access it.")
 }
 
@@ -65,14 +65,14 @@ func CheckPermission(ctx context.Context, perm realms.Permission, prefix types.S
 	project := Project(ctx)
 	if projInRealm, _ := realms.Split(realm); projInRealm != project {
 		logging.Errorf(ctx, "Unexpectedly checking realm %q in a context of project %q", realm, project)
-		return grpcutil.Internal
+		return status.Error(codes.Internal, "internal server error")
 	}
 
 	// Do the realms ACL check.
 	switch granted, err := auth.HasPermission(ctx, perm, realm, nil); {
 	case err != nil:
 		logging.WithError(err).Errorf(ctx, "failed to check realms ACL")
-		return grpcutil.Internal
+		return status.Error(codes.Internal, "internal server error")
 	case granted:
 		logging.Debugf(ctx, "Permission granted")
 		return nil

@@ -18,19 +18,19 @@ import (
 	"context"
 	"crypto/subtle"
 
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/types/known/emptypb"
+
 	ds "go.chromium.org/luci/gae/service/datastore"
 
 	"go.chromium.org/luci/common/clock"
 	log "go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/tsmon/field"
 	"go.chromium.org/luci/common/tsmon/metric"
-	"go.chromium.org/luci/grpc/grpcutil"
 	logdog "go.chromium.org/luci/logdog/api/endpoints/coordinator/services/v1"
 	"go.chromium.org/luci/logdog/appengine/coordinator"
 	"go.chromium.org/luci/logdog/common/types"
-
-	"google.golang.org/grpc/codes"
-	"google.golang.org/protobuf/types/known/emptypb"
 )
 
 var (
@@ -50,12 +50,12 @@ func (s *server) TerminateStream(c context.Context, req *logdog.TerminateStreamR
 	}.Infof(c, "Request to terminate log stream.")
 
 	if req.TerminalIndex < 0 {
-		return nil, grpcutil.Errf(codes.InvalidArgument, "Negative terminal index.")
+		return nil, status.Errorf(codes.InvalidArgument, "Negative terminal index.")
 	}
 
 	id := coordinator.HashID(req.Id)
 	if err := id.Normalize(); err != nil {
-		return nil, grpcutil.Errf(codes.InvalidArgument, "Invalid ID (%s): %s", id, err)
+		return nil, status.Errorf(codes.InvalidArgument, "Invalid ID (%s): %s", id, err)
 	}
 
 	// Initialize our log stream state.
@@ -66,17 +66,17 @@ func (s *server) TerminateStream(c context.Context, req *logdog.TerminateStreamR
 	if err := ds.Get(c, ls); err != nil {
 		log.WithError(err).Errorf(c, "Failed to load log stream.")
 		if err == ds.ErrNoSuchEntity {
-			return nil, grpcutil.Errf(codes.NotFound, "log stream doesn't exist")
+			return nil, status.Errorf(codes.NotFound, "log stream doesn't exist")
 		}
-		return nil, grpcutil.Internal
+		return nil, status.Error(codes.Internal, "internal server error")
 	}
 	pfx := &coordinator.LogPrefix{ID: coordinator.LogPrefixID(types.StreamName(ls.Prefix))}
 	if err := ds.Get(c, pfx); err != nil {
 		log.WithError(err).Errorf(c, "Failed to load log stream prefix.")
 		if err == ds.ErrNoSuchEntity {
-			return nil, grpcutil.Errf(codes.Internal, "prefix is not registered")
+			return nil, status.Errorf(codes.Internal, "prefix is not registered")
 		}
-		return nil, grpcutil.Internal
+		return nil, status.Error(codes.Internal, "internal server error")
 	}
 
 	// Transactionally validate and update the terminal index.
@@ -84,17 +84,17 @@ func (s *server) TerminateStream(c context.Context, req *logdog.TerminateStreamR
 		if err := ds.Get(c, lst); err != nil {
 			if err == ds.ErrNoSuchEntity {
 				log.Debugf(c, "Log stream state not found.")
-				return grpcutil.Errf(codes.NotFound, "Log stream %q is not registered", id)
+				return status.Errorf(codes.NotFound, "Log stream %q is not registered", id)
 			}
 
 			log.WithError(err).Errorf(c, "Failed to load LogEntry.")
-			return grpcutil.Internal
+			return status.Error(codes.Internal, "internal server error")
 		}
 
 		switch {
 		case subtle.ConstantTimeCompare(lst.Secret, req.Secret) != 1:
 			log.Errorf(c, "Secrets do not match.")
-			return grpcutil.Errf(codes.InvalidArgument, "Request secret doesn't match the stream secret.")
+			return status.Errorf(codes.InvalidArgument, "Request secret doesn't match the stream secret.")
 
 		case lst.Terminated():
 			// Succeed if this is non-conflicting (idempotent).
@@ -108,7 +108,7 @@ func (s *server) TerminateStream(c context.Context, req *logdog.TerminateStreamR
 			log.Fields{
 				"terminalIndex": lst.TerminalIndex,
 			}.Warningf(c, "Log stream is already incompatibly terminated.")
-			return grpcutil.Errf(codes.FailedPrecondition, "Log stream is incompatibly terminated.")
+			return status.Errorf(codes.FailedPrecondition, "Log stream is incompatibly terminated.")
 
 		default:
 			// Everything looks good, let's proceed...
@@ -121,7 +121,7 @@ func (s *server) TerminateStream(c context.Context, req *logdog.TerminateStreamR
 				log.Fields{
 					log.ErrorKey: err,
 				}.Errorf(c, "Failed to Put() LogStream.")
-				return grpcutil.Internal
+				return status.Error(codes.Internal, "internal server error")
 			}
 		}
 

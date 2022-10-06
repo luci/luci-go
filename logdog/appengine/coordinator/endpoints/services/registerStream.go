@@ -25,7 +25,6 @@ import (
 	log "go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/tsmon/field"
 	"go.chromium.org/luci/common/tsmon/metric"
-	"go.chromium.org/luci/grpc/grpcutil"
 	logdog "go.chromium.org/luci/logdog/api/endpoints/coordinator/services/v1"
 	"go.chromium.org/luci/logdog/api/logpb"
 	"go.chromium.org/luci/logdog/appengine/coordinator"
@@ -35,6 +34,7 @@ import (
 
 	"github.com/golang/protobuf/proto"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
 
 // Archival task delay for archiving gracefully terminated streams.
@@ -82,14 +82,14 @@ func (s *server) RegisterStream(c context.Context, req *logdog.RegisterStreamReq
 				log.ErrorKey:   err,
 				"protoVersion": req.ProtoVersion,
 			}.Errorf(c, "Failed to unmarshal descriptor protobuf.")
-			return nil, grpcutil.Errf(codes.InvalidArgument, "Failed to unmarshal protobuf.")
+			return nil, status.Errorf(codes.InvalidArgument, "Failed to unmarshal protobuf.")
 		}
 
 	default:
 		log.Fields{
 			"protoVersion": req.ProtoVersion,
 		}.Errorf(c, "Unrecognized protobuf version.")
-		return nil, grpcutil.Errf(codes.InvalidArgument, "Unrecognized protobuf version: %q", req.ProtoVersion)
+		return nil, status.Errorf(codes.InvalidArgument, "Unrecognized protobuf version: %q", req.ProtoVersion)
 	}
 
 	path = desc.Path()
@@ -103,7 +103,7 @@ func (s *server) RegisterStream(c context.Context, req *logdog.RegisterStreamReq
 	log.Infof(c, "Registration request for log stream.")
 
 	if err := desc.Validate(true); err != nil {
-		return nil, grpcutil.Errf(codes.InvalidArgument, "Invalid log stream descriptor: %s", err)
+		return nil, status.Errorf(codes.InvalidArgument, "Invalid log stream descriptor: %s", err)
 	}
 	prefix, _ := path.Split()
 
@@ -111,13 +111,13 @@ func (s *server) RegisterStream(c context.Context, req *logdog.RegisterStreamReq
 	cfg, err := config.Config(c)
 	if err != nil {
 		log.WithError(err).Errorf(c, "Failed to load configuration.")
-		return nil, grpcutil.Internal
+		return nil, status.Error(codes.Internal, "internal server error")
 	}
 
 	pcfg, err := coordinator.ProjectConfig(c)
 	if err != nil {
 		log.WithError(err).Errorf(c, "Failed to load current project configuration.")
-		return nil, grpcutil.Internal
+		return nil, status.Error(codes.Internal, "internal server error")
 	}
 
 	// Load our Prefix. It must be registered.
@@ -129,9 +129,9 @@ func (s *server) RegisterStream(c context.Context, req *logdog.RegisterStreamReq
 	if err := ds.Get(c, pfx); err != nil {
 		log.WithError(err).Errorf(c, "Failed to load log stream prefix.")
 		if err == ds.ErrNoSuchEntity {
-			return nil, grpcutil.Errf(codes.FailedPrecondition, "prefix is not registered")
+			return nil, status.Errorf(codes.FailedPrecondition, "prefix is not registered")
 		}
-		return nil, grpcutil.Internal
+		return nil, status.Error(codes.Internal, "internal server error")
 	}
 
 	// If we're past prefix's expiration, reject this stream.
@@ -149,14 +149,14 @@ func (s *server) RegisterStream(c context.Context, req *logdog.RegisterStreamReq
 		log.Fields{
 			"expiration": expirationTime,
 		}.Errorf(c, "The log stream Prefix has expired.")
-		return nil, grpcutil.Errf(codes.FailedPrecondition, "prefix has expired")
+		return nil, status.Errorf(codes.FailedPrecondition, "prefix has expired")
 	}
 
 	// The prefix secret must match the request secret. If it does, we know this
 	// is a legitimate registration attempt.
 	if subtle.ConstantTimeCompare(pfx.Secret, req.Secret) != 1 {
 		log.Errorf(c, "Request secret does not match prefix secret.")
-		return nil, grpcutil.Errf(codes.InvalidArgument, "invalid secret")
+		return nil, status.Errorf(codes.InvalidArgument, "invalid secret")
 	}
 
 	// Check for registration, and that the prefix did not expire
@@ -203,7 +203,7 @@ func (s *server) RegisterStream(c context.Context, req *logdog.RegisterStreamReq
 				log.Fields{
 					log.ErrorKey: err,
 				}.Errorf(c, "Failed to load descriptor into LogStream.")
-				return grpcutil.Errf(codes.InvalidArgument, "Failed to load descriptor.")
+				return status.Errorf(codes.InvalidArgument, "Failed to load descriptor.")
 			}
 
 			// If our registration request included a terminal index, terminate the
@@ -224,7 +224,7 @@ func (s *server) RegisterStream(c context.Context, req *logdog.RegisterStreamReq
 				log.Fields{
 					log.ErrorKey: err,
 				}.Errorf(c, "Failed to Put LogStream.")
-				return grpcutil.Internal
+				return status.Error(codes.Internal, "internal server error")
 			}
 
 			// Send archival task.

@@ -19,13 +19,13 @@ import (
 	"time"
 
 	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/data/rand/cryptorand"
 	"go.chromium.org/luci/common/gcloud/pubsub"
 	log "go.chromium.org/luci/common/logging"
 	ds "go.chromium.org/luci/gae/service/datastore"
-	"go.chromium.org/luci/grpc/grpcutil"
 	logdog "go.chromium.org/luci/logdog/api/endpoints/coordinator/registration/v1"
 	"go.chromium.org/luci/logdog/appengine/coordinator"
 	"go.chromium.org/luci/logdog/appengine/coordinator/endpoints"
@@ -39,26 +39,26 @@ func getTopicAndExpiration(c context.Context, req *logdog.RegisterPrefixRequest)
 	cfg, err := config.Config(c)
 	if err != nil {
 		log.WithError(err).Errorf(c, "Failed to load service configuration.")
-		return "", 0, grpcutil.Internal
+		return "", 0, status.Error(codes.Internal, "internal server error")
 	}
 
 	pcfg, err := coordinator.ProjectConfig(c)
 	if err != nil {
 		log.WithError(err).Errorf(c, "Failed to load project configuration.")
-		return "", 0, grpcutil.Internal
+		return "", 0, status.Error(codes.Internal, "internal server error")
 	}
 
 	// Determine our Pub/Sub topic.
 	cfgTransport := cfg.Transport
 	if cfgTransport == nil {
 		log.Errorf(c, "Missing transport configuration.")
-		return "", 0, grpcutil.Internal
+		return "", 0, status.Error(codes.Internal, "internal server error")
 	}
 
 	cfgTransportPubSub := cfgTransport.GetPubsub()
 	if cfgTransportPubSub == nil {
 		log.Errorf(c, "Missing transport Pub/Sub configuration.")
-		return "", 0, grpcutil.Internal
+		return "", 0, status.Error(codes.Internal, "internal server error")
 	}
 
 	pubsubTopic := pubsub.NewTopic(cfgTransportPubSub.Project, cfgTransportPubSub.Topic)
@@ -67,7 +67,7 @@ func getTopicAndExpiration(c context.Context, req *logdog.RegisterPrefixRequest)
 			log.ErrorKey: err,
 			"topic":      pubsubTopic,
 		}.Errorf(c, "Invalid transport Pub/Sub topic.")
-		return "", 0, grpcutil.Internal
+		return "", 0, status.Error(codes.Internal, "internal server error")
 	}
 
 	expiration := endpoints.MinDuration(req.Expiration, cfg.Coordinator.PrefixExpiration, pcfg.PrefixExpiration)
@@ -89,7 +89,7 @@ func (s *server) RegisterPrefix(c context.Context, req *logdog.RegisterPrefixReq
 	if req.Realm != "" {
 		if err := realms.ValidateRealmName(req.Realm, realms.ProjectScope); err != nil {
 			log.WithError(err).Warningf(c, "Invalid realm.")
-			return nil, grpcutil.Errf(codes.InvalidArgument, "%s", err)
+			return nil, status.Errorf(codes.InvalidArgument, "%s", err)
 		}
 		realm = realms.Join(req.Project, req.Realm)
 	} else {
@@ -100,7 +100,7 @@ func (s *server) RegisterPrefix(c context.Context, req *logdog.RegisterPrefixReq
 	prefix := types.StreamName(req.Prefix)
 	if err := prefix.Validate(); err != nil {
 		log.WithError(err).Warningf(c, "Invalid prefix.")
-		return nil, grpcutil.Errf(codes.InvalidArgument, "invalid prefix")
+		return nil, status.Errorf(codes.InvalidArgument, "invalid prefix")
 	}
 
 	// Check the caller is allowed to register prefixes in the requested realm.
@@ -111,7 +111,7 @@ func (s *server) RegisterPrefix(c context.Context, req *logdog.RegisterPrefixReq
 	pubsubTopic, expiration, err := getTopicAndExpiration(c, req)
 	if err != nil {
 		log.WithError(err).Errorf(c, "Cannot get pubsubTopic")
-		return nil, grpcutil.Errf(codes.Internal, "unable to get pubsubTopic")
+		return nil, status.Errorf(codes.Internal, "unable to get pubsubTopic")
 	}
 
 	// Determine our prefix expiration. This must be > 0, else there will be no
@@ -121,7 +121,7 @@ func (s *server) RegisterPrefix(c context.Context, req *logdog.RegisterPrefixReq
 	// our project and service configurations.
 	if expiration <= 0 {
 		log.Errorf(c, "Refusing to register prefix in expired state.")
-		return nil, grpcutil.Errf(codes.InvalidArgument, "no prefix expiration defined")
+		return nil, status.Errorf(codes.InvalidArgument, "no prefix expiration defined")
 	}
 
 	// prep our response with the pubsubTopic
@@ -144,11 +144,11 @@ func (s *server) RegisterPrefix(c context.Context, req *logdog.RegisterPrefixReq
 			return resp, nil
 		}
 		log.Errorf(c, "The prefix is already registered (non-transactional).")
-		return nil, grpcutil.AlreadyExists
+		return nil, status.Error(codes.AlreadyExists, "the prefix is already registered")
 
 	default:
 		log.WithError(err).Errorf(c, "Failed to check for existing prefix (non-transactional).")
-		return nil, grpcutil.Internal
+		return nil, status.Error(codes.Internal, "internal server error")
 	}
 
 	// The prefix doesn't appear to be registered. Prepare to transactionally
@@ -156,7 +156,7 @@ func (s *server) RegisterPrefix(c context.Context, req *logdog.RegisterPrefixReq
 	secret := make(types.PrefixSecret, types.PrefixSecretLength)
 	if _, err := cryptorand.Read(c, []byte(secret)); err != nil {
 		log.WithError(err).Errorf(c, "Failed to generate prefix secret.")
-		return nil, grpcutil.Internal
+		return nil, status.Error(codes.Internal, "internal server error")
 	}
 
 	pfx.Created = clock.Now(c).UTC()
@@ -168,7 +168,7 @@ func (s *server) RegisterPrefix(c context.Context, req *logdog.RegisterPrefixReq
 	pfx.OpNonce = req.OpNonce
 	if err := pfx.Validate(); err != nil {
 		log.WithError(err).Errorf(c, "Invalid LogPrefix.")
-		return nil, grpcutil.Errf(codes.InvalidArgument, "LogPrefix definition invalid")
+		return nil, status.Errorf(codes.InvalidArgument, "LogPrefix definition invalid")
 	}
 	resp.Secret = pfx.Secret
 
@@ -185,16 +185,16 @@ func (s *server) RegisterPrefix(c context.Context, req *logdog.RegisterPrefixReq
 				return nil
 			}
 			log.Errorf(c, "The prefix is already registered (transactional).")
-			return grpcutil.AlreadyExists
+			return status.Error(codes.AlreadyExists, "the prefix is already registered")
 
 		default:
 			log.WithError(err).Errorf(c, "Failed to check for existing prefix (transactional).")
-			return grpcutil.Internal
+			return status.Error(codes.Internal, "internal server error")
 		}
 
 		if err := ds.Put(c, pfx); err != nil {
 			log.WithError(err).Errorf(c, "Failed to register prefix.")
-			return grpcutil.Internal
+			return status.Error(codes.Internal, "internal server error")
 		}
 
 		log.Infof(c, "The prefix was successfully registered.")

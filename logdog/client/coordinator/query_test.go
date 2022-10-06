@@ -21,11 +21,12 @@ import (
 	"testing"
 	"time"
 
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/testing/prpctest"
-	"go.chromium.org/luci/grpc/grpcutil"
 	logdog "go.chromium.org/luci/logdog/api/endpoints/coordinator/logs/v1"
 	"go.chromium.org/luci/logdog/api/logpb"
 
@@ -229,7 +230,7 @@ func TestClientQuery(t *testing.T) {
 
 			Convey(`Will return ErrNoAccess if unauthenticated.`, func() {
 				svc.H = func(*logdog.QueryRequest) (*logdog.QueryResponse, error) {
-					return nil, grpcutil.Unauthenticated
+					return nil, status.Error(codes.Unauthenticated, "unauthenticated")
 				}
 
 				So(client.Query(c, project, path, q, accumulate), ShouldEqual, ErrNoAccess)
@@ -237,7 +238,7 @@ func TestClientQuery(t *testing.T) {
 
 			Convey(`Will return ErrNoAccess if permission denied.`, func() {
 				svc.H = func(*logdog.QueryRequest) (*logdog.QueryResponse, error) {
-					return nil, grpcutil.Unauthenticated
+					return nil, status.Error(codes.Unauthenticated, "unauthenticated")
 				}
 
 				So(client.Query(c, project, path, q, accumulate), ShouldEqual, ErrNoAccess)

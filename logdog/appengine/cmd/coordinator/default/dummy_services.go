@@ -17,14 +17,13 @@ package main
 import (
 	"context"
 
-	"go.chromium.org/luci/grpc/grpcutil"
+	"github.com/golang/protobuf/proto"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
+
 	logsPb "go.chromium.org/luci/logdog/api/endpoints/coordinator/logs/v1"
 	registrationPb "go.chromium.org/luci/logdog/api/endpoints/coordinator/registration/v1"
 	servicesPb "go.chromium.org/luci/logdog/api/endpoints/coordinator/services/v1"
-
-	"github.com/golang/protobuf/proto"
-
-	"google.golang.org/grpc/codes"
 )
 
 // dummyLogsService is a logsPb.Service implementation that always returns
@@ -53,7 +52,7 @@ var dummyServicesService = &servicesPb.DecoratedServices{
 // directed directed at this dummy service should be automatically routed to
 // the implementing GAE service through "dispatch.yaml".
 func dummyServicePrelude(c context.Context, methodName string, req proto.Message) (context.Context, error) {
-	return nil, grpcutil.Errf(codes.FailedPrecondition,
+	return nil, status.Errorf(codes.FailedPrecondition,
 		"This pRPC endpoint cannot be handled by the default service. It should have been routed to the "+
 			"appropriate service via dispatch. This error indicates that the routing is not working as intended. "+
 			"Please report this error to the maintainers.")
