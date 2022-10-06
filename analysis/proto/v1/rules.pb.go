@@ -60,6 +60,13 @@ type Rule struct {
 	// as 32 lowercase hexadecimal characters.
 	RuleId string `protobuf:"bytes,3,opt,name=rule_id,json=ruleId,proto3" json:"rule_id,omitempty"`
 	// The rule predicate, defining which failures are being associated.
+	// For example, 'reason LIKE "Some error: %"'.
+	//
+	// analysis/internal/clustering/rules/lang/lang.go contains the
+	// EBNF grammar for the language used to define rule predicates;
+	// it is a subset of Google Standard SQL.
+	//
+	// The maximum allowed length is 65536 characters.
 	RuleDefinition string `protobuf:"bytes,4,opt,name=rule_definition,json=ruleDefinition,proto3" json:"rule_definition,omitempty"`
 	// The bug that the failures are associated with.
 	Bug *AssociatedBug `protobuf:"bytes,5,opt,name=bug,proto3" json:"bug,omitempty"`

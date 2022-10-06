@@ -54,12 +54,26 @@ const testnameThresholdInflationPercent = 34
 // merged-into graph when handling a bug marked as duplicate.
 var mergeIntoCycleErr = errors.New("a cycle was detected in the bug merged-into graph")
 
+// ruleDefinitionTooLongErr is the error returned if merging two failure
+// association rules results in a rule that is too long.
+var ruleDefinitionTooLongErr = errors.New("the merged rule definition is too long")
+
 // mergeIntoCycleMessage is the message posted on bugs when LUCI Analysis
-// cannot deal with a bug marked as the duplicate of another.
+// cannot deal with a bug marked as the duplicate of another because of
+// a duplicate bug.
 const mergeIntoCycleMessage = "LUCI Analysis cannot merge the failure" +
 	" association rule for this bug into the rule for the merged-into bug," +
 	" because a cycle was detected in the bug merged-into graph. Please" +
 	" manually resolve the cycle, or update rules manually and archive the" +
+	" rule for this bug."
+
+// ruleDefinitionTooLongMessage is the message posted on bugs when
+// LUCI Analysis cannot deal with a bug marked as the duplicate of another
+// because the merged rule would be too long.
+const ruleDefinitionTooLongMessage = "LUCI Analysis cannot merge the failure" +
+	" association rule for this bug into the rule for the merged-into bug," +
+	" because the merged failure association rule would be too long. Please" +
+	" manually update the rule for the merged-into bug and archive the" +
 	" rule for this bug."
 
 // BugManager implements bug creation and bug updates for a bug-tracking
@@ -262,7 +276,23 @@ func (b *BugUpdater) Run(ctx context.Context, progress *runs.ReclusteringProgres
 	// Handle bugs marked as duplicate.
 	for _, bug := range duplicateBugs {
 		err := b.handleDuplicateBug(ctx, bug)
-		if err != nil {
+		if err == mergeIntoCycleErr {
+			request := bugs.UpdateDuplicateSourceRequest{
+				Bug:          bug,
+				ErrorMessage: mergeIntoCycleMessage,
+			}
+			if err := b.updateDuplicateSource(ctx, request); err != nil {
+				return errors.Annotate(err, "update source bug after a cycle was found").Err()
+			}
+		} else if err == ruleDefinitionTooLongErr {
+			request := bugs.UpdateDuplicateSourceRequest{
+				Bug:          bug,
+				ErrorMessage: ruleDefinitionTooLongMessage,
+			}
+			if err := b.updateDuplicateSource(ctx, request); err != nil {
+				return errors.Annotate(err, "update source bug after merging rule definition was found too long").Err()
+			}
+		} else if err != nil {
 			return errors.Annotate(err, "handling bug (%s) marked as duplicate", bug).Err()
 		}
 	}
@@ -393,16 +423,7 @@ func (b *BugUpdater) handleDuplicateBug(ctx context.Context, bug bugs.BugID) err
 	// (The canonical bug of the chain of duplicate bugs.)
 	destBug, err := b.resolveMergedIntoBug(ctx, bug)
 	if err != nil {
-		if err == mergeIntoCycleErr {
-			request := bugs.UpdateDuplicateSourceRequest{
-				Bug:          bug,
-				ErrorMessage: mergeIntoCycleMessage,
-			}
-			if err := b.updateDuplicateSource(ctx, request); err != nil {
-				return errors.Annotate(err, "update source bug after a cycle was found").Err()
-			}
-			return nil
-		}
+		// May return mergeIntoCycleErr.
 		return err
 	}
 
@@ -451,15 +472,15 @@ func (b *BugUpdater) handleDuplicateBug(ctx context.Context, bug bugs.BugID) err
 			// The bug we are a duplicate of already has a rule.
 			if destinationRule.IsActive {
 				// Merge the source and destination rules with an "OR".
-				// Note that this is only valid because OR is the operator
-				// with the lowest precedence in our language.
-				// Otherwise we would have to be concerned about inserting
-				// parentheses.
-				destinationRule.RuleDefinition =
-					destinationRule.RuleDefinition + " OR\n" + sourceRule.RuleDefinition
+				mergedRule, err := lang.Merge(destinationRule.RuleDefinition, sourceRule.RuleDefinition)
 				if err != nil {
 					return errors.Annotate(err, "merging rules").Err()
 				}
+				if len(mergedRule) > rules.MaxRuleDefinitionLength {
+					// The merged rule is too long to store.
+					return ruleDefinitionTooLongErr
+				}
+				destinationRule.RuleDefinition = mergedRule
 			} else {
 				// Else: an inactive rule does not match any failures, so we should
 				// use only the rule from the source bug.

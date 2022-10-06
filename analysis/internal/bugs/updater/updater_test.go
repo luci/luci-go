@@ -701,21 +701,83 @@ func TestRun(t *testing.T) {
 						Issue: issueTwo.Name,
 					}
 
-					// Act
-					err = updateAnalysisAndBugsForProject(ctx, opts)
-					So(err, ShouldBeNil)
+					Convey("Happy path", func() {
+						// Act
+						err = updateAnalysisAndBugsForProject(ctx, opts)
+						So(err, ShouldBeNil)
 
-					// Verify
-					expectedRules[1].IsActive = false
-					expectedRules[2].RuleDefinition = "reason LIKE \"want foofoo, got bar\" OR\nreason LIKE \"want foo, got bar\""
-					expectRules(expectedRules)
+						// Verify
+						expectedRules[1].IsActive = false
+						expectedRules[2].RuleDefinition = "reason LIKE \"want foo, got bar\" OR\nreason LIKE \"want foofoo, got bar\""
+						expectRules(expectedRules)
 
-					So(f.Issues[1].Comments, ShouldHaveLength, 3)
-					So(f.Issues[1].Comments[2].Content, ShouldContainSubstring, "LUCI Analysis has merged the failure association rule for this bug into the rule for the canonical bug.")
-					So(f.Issues[1].Comments[2].Content, ShouldContainSubstring, expectedRules[2].RuleID)
+						So(f.Issues[1].Comments, ShouldHaveLength, 3)
+						So(f.Issues[1].Comments[2].Content, ShouldContainSubstring, "LUCI Analysis has merged the failure association rule for this bug into the rule for the canonical bug.")
+						So(f.Issues[1].Comments[2].Content, ShouldContainSubstring, expectedRules[2].RuleID)
 
-					So(f.Issues[2].Comments, ShouldHaveLength, 3)
-					So(f.Issues[2].Comments[2].Content, ShouldContainSubstring, "LUCI Analysis has merged the failure association rule for that bug into the rule for this bug.")
+						So(f.Issues[2].Comments, ShouldHaveLength, 3)
+						So(f.Issues[2].Comments[2].Content, ShouldContainSubstring, "LUCI Analysis has merged the failure association rule for that bug into the rule for this bug.")
+					})
+					Convey("Bugs are in a duplicate bug cycle", func() {
+						// Note that this is a simple cycle with only two bugs.
+						// The implementation allows for larger cycles, however.
+						issueTwo.Status.Status = monorail.DuplicateStatus
+						issueTwo.MergedIntoIssueRef = &api_proto.IssueRef{
+							Issue: issueOne.Name,
+						}
+
+						// Act
+						err = updateAnalysisAndBugsForProject(ctx, opts)
+						So(err, ShouldBeNil)
+
+						// Verify
+						// Issue one kicked out of duplicate status.
+						So(issueOne.Status.Status, ShouldNotEqual, monorail.DuplicateStatus)
+
+						// As the cycle is now broken, issue two is merged into
+						// issue one.
+						expectedRules[1].RuleDefinition = "reason LIKE \"want foo, got bar\" OR\nreason LIKE \"want foofoo, got bar\""
+						expectedRules[2].IsActive = false
+						expectRules(expectedRules)
+
+						So(f.Issues[1].Comments, ShouldHaveLength, 4)
+						So(f.Issues[1].Comments[2].Content, ShouldContainSubstring, "a cycle was detected in the bug merged-into graph")
+						So(f.Issues[1].Comments[3].Content, ShouldContainSubstring, "LUCI Analysis has merged the failure association rule for that bug into the rule for this bug.")
+					})
+					Convey("Merged rule would be too long", func() {
+						// Setup
+						// Make one of the rules we will be merging very close
+						// to the rule length limit.
+						longRule := fmt.Sprintf("test = \"%s\"", strings.Repeat("a", rules.MaxRuleDefinitionLength-10))
+
+						_, err := span.ReadWriteTransaction(ctx, func(ctx context.Context) error {
+							issueOneRule, err := rules.ReadByBug(ctx, bugs.BugID{System: "monorail", ID: "chromium/101"})
+							if err != nil {
+								return err
+							}
+							issueOneRule[0].RuleDefinition = longRule
+
+							const updatePredicate = true
+							return rules.Update(ctx, issueOneRule[0], updatePredicate, rules.LUCIAnalysisSystem)
+						})
+						So(err, ShouldBeNil)
+
+						// Act
+						err = updateAnalysisAndBugsForProject(ctx, opts)
+						So(err, ShouldBeNil)
+
+						// Verify
+						// Rules should not have changed (except for the update we made).
+						expectedRules[1].RuleDefinition = longRule
+						expectRules(expectedRules)
+
+						// Issue one kicked out of duplicate status.
+						So(issueOne.Status.Status, ShouldNotEqual, monorail.DuplicateStatus)
+
+						// Comment should appear on the bug.
+						So(f.Issues[1].Comments, ShouldHaveLength, 3)
+						So(f.Issues[1].Comments[2].Content, ShouldContainSubstring, "the merged failure association rule would be too long")
+					})
 				})
 				Convey("Bug marked as duplicate of bug without a rule in this project", func() {
 					// Setup
@@ -768,44 +830,6 @@ func TestRun(t *testing.T) {
 						So(f.Issues[1].Comments[2].Content, ShouldContainSubstring, "LUCI Analysis has merged the failure association rule for this bug into the rule for the canonical bug.")
 						So(f.Issues[1].Comments[2].Content, ShouldContainSubstring, expectedRules[1].RuleID)
 					})
-				})
-				Convey("Bug marked as duplicate in a cycle", func() {
-					// Setup
-					// Note that this is a simple cycle with only two bugs.
-					// The implementation allows for larger cycles, however.
-					issueOne := f.Issues[1].Issue
-					So(issueOne.Name, ShouldEqual, "projects/chromium/issues/101")
-
-					issueTwo := f.Issues[2].Issue
-					So(issueTwo.Name, ShouldEqual, "projects/chromium/issues/102")
-
-					issueOne.Status.Status = monorail.DuplicateStatus
-					issueOne.MergedIntoIssueRef = &api_proto.IssueRef{
-						Issue: issueTwo.Name,
-					}
-
-					issueTwo.Status.Status = monorail.DuplicateStatus
-					issueTwo.MergedIntoIssueRef = &api_proto.IssueRef{
-						Issue: issueOne.Name,
-					}
-
-					// Act
-					err = updateAnalysisAndBugsForProject(ctx, opts)
-					So(err, ShouldBeNil)
-
-					// Verify
-					// Issue one kicked out of duplicate status.
-					So(issueOne.Status.Status, ShouldNotEqual, monorail.DuplicateStatus)
-
-					// As the cycle is now broken, issue two is merged into
-					// issue one.
-					expectedRules[1].RuleDefinition = "reason LIKE \"want foo, got bar\" OR\nreason LIKE \"want foofoo, got bar\""
-					expectedRules[2].IsActive = false
-					expectRules(expectedRules)
-
-					So(f.Issues[1].Comments, ShouldHaveLength, 4)
-					So(f.Issues[1].Comments[2].Content, ShouldContainSubstring, "a cycle was detected in the bug merged-into graph")
-					So(f.Issues[1].Comments[3].Content, ShouldContainSubstring, "LUCI Analysis has merged the failure association rule for that bug into the rule for this bug.")
 				})
 				Convey("Bug marked as archived should archive rule", func() {
 					issueOne := f.Issues[1].Issue

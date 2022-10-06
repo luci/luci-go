@@ -69,6 +69,13 @@ message Rule {
     [(google.api.field_behavior) = OUTPUT_ONLY];
 
   // The rule predicate, defining which failures are being associated.
+  // For example, 'reason LIKE "Some error: %"'.
+  //
+  // analysis/internal/clustering/rules/lang/lang.go contains the
+  // EBNF grammar for the language used to define rule predicates;
+  // it is a subset of Google Standard SQL.
+  //
+  // The maximum allowed length is 65536 characters.
   string rule_definition = 4
     [(google.api.field_behavior) = REQUIRED];
 

@@ -36,6 +36,9 @@ import (
 // formed rule IDs.
 const RuleIDRePattern = `[0-9a-f]{32}`
 
+// MaxRuleDefinitionLength is the maximum length of a rule definition.
+const MaxRuleDefinitionLength = 65536
+
 // RuleIDRe matches validly formed rule IDs.
 var RuleIDRe = regexp.MustCompile(`^` + RuleIDRePattern + `$`)
 
@@ -444,6 +447,9 @@ func validateRule(r *FailureAssociationRule) error {
 		return errors.Annotate(r.BugID.Validate(), "bug ID is not valid").Err()
 	case r.SourceCluster.Validate() != nil && !r.SourceCluster.IsEmpty():
 		return errors.Annotate(r.SourceCluster.Validate(), "source cluster ID is not valid").Err()
+	}
+	if len(r.RuleDefinition) > MaxRuleDefinitionLength {
+		return errors.Reason("rule definition exceeds maximum length of %v", MaxRuleDefinitionLength).Err()
 	}
 	_, err := lang.Parse(r.RuleDefinition)
 	if err != nil {

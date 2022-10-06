@@ -159,7 +159,7 @@ CREATE TABLE FailureAssociationRules (
   -- 128-bit ID, encoded as 32 lowercase hexadecimal characters.
   RuleId STRING(32) NOT NULL,
   -- The rule predicate, defining which failures are being associated.
-  RuleDefinition STRING(4096) NOT NULL,
+  RuleDefinition STRING(65536) NOT NULL,
   -- The time the rule was created.
   CreationTime TIMESTAMP NOT NULL OPTIONS (allow_commit_timestamp=true),
   -- The user which created the rule. If this was auto-filed by LUCI Analysis

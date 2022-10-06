@@ -346,6 +346,11 @@ func TestSpan(t *testing.T) {
 				_, err := testCreate(r, LUCIAnalysisSystem)
 				So(err, ShouldErrLike, "rule definition is not valid")
 			})
+			Convey(`With too long Rule Definition`, func() {
+				r.RuleDefinition = strings.Repeat(" ", MaxRuleDefinitionLength+1)
+				_, err := testCreate(r, LUCIAnalysisSystem)
+				So(err, ShouldErrLike, "rule definition exceeds maximum length of 65536")
+			})
 			Convey(`With invalid Bug ID`, func() {
 				r.BugID.System = ""
 				_, err := testCreate(r, LUCIAnalysisSystem)
