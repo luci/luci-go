@@ -23,6 +23,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/url"
+	"os"
 	"strconv"
 	"strings"
 	"sync"
@@ -474,7 +475,7 @@ func (c *Client) attemptCall(ctx context.Context, options *Options, req *http.Re
 		err = c.testPostHTTP(ctx, err)
 	}
 	if err != nil {
-		return "", status.Errorf(codes.Internal, "prpc: sending request: %s", err)
+		return "", status.Errorf(codeForErr(err), "prpc: sending request: %s", err)
 	}
 
 	if options.resHeaderMetadata != nil {
@@ -523,7 +524,7 @@ func (c *Client) readResponseBody(ctx context.Context, dest *bytes.Buffer, r *ht
 
 	limitedBody := io.LimitReader(r.Body, int64(limit))
 	if _, err := dest.ReadFrom(limitedBody); err != nil {
-		return status.Errorf(codes.Internal, "prpc: reading response: %s", err)
+		return status.Errorf(codeForErr(err), "prpc: reading response: %s", err)
 	}
 
 	// If there is more data in the body Reader, it means that the response
@@ -535,6 +536,21 @@ func (c *Client) readResponseBody(ctx context.Context, dest *bytes.Buffer, r *ht
 	}
 
 	return nil
+}
+
+// codeForErr decided a gRPC status code based on an http.Client error.
+//
+// In particular it recognizes IO timeouts and returns them as DeadlineExceeded
+// code. This is necessary since it appears http.Client can sometimes fail with
+// an IO timeout error even before the parent context.Context expires (probably
+// has something to do with converting the context deadline into a timeout
+// duration for the IO calls). When this happens, we still need to return
+// DeadlineExceeded error.
+func codeForErr(err error) codes.Code {
+	if os.IsTimeout(err) {
+		return codes.DeadlineExceeded
+	}
+	return codes.Internal
 }
 
 // readStatus retrieves the detailed status from the response.

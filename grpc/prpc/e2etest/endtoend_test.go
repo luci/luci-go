@@ -178,7 +178,6 @@ func TestEndToEnd(t *testing.T) {
 }
 
 func TestTimeouts(t *testing.T) {
-	t.Skip("flaky: https://ci.chromium.org/b/8800998028172140769")
 	t.Parallel()
 
 	Convey(`A client/server for the Greet service`, t, func() {
@@ -193,13 +192,13 @@ func TestTimeouts(t *testing.T) {
 					},
 				}
 			},
-			PerRPCTimeout: 50 * time.Millisecond,
+			PerRPCTimeout: 5 * time.Millisecond,
 		})
 		defer ts.Close()
 
 		Convey(`Gives up after N retries`, func() {
 			svc.sleep = func() time.Duration {
-				return 100 * time.Millisecond // larger than the per-RPC timeout
+				return 500 * time.Millisecond // much larger than the per-RPC timeout
 			}
 
 			_, err := client.Greet(ctx, &HelloRequest{})
@@ -213,7 +212,7 @@ func TestTimeouts(t *testing.T) {
 				if attempt > 3 {
 					return 0
 				}
-				return 100 * time.Millisecond
+				return 500 * time.Millisecond
 			}
 
 			_, err := client.Greet(ctx, &HelloRequest{})
@@ -222,10 +221,10 @@ func TestTimeouts(t *testing.T) {
 
 		Convey(`Gives up on overall timeout`, func() {
 			svc.sleep = func() time.Duration {
-				return 100 * time.Millisecond // larger than the per-RPC timeout
+				return 500 * time.Millisecond // much larger than the per-RPC timeout
 			}
 
-			ctx, cancel := context.WithTimeout(ctx, 100*time.Millisecond)
+			ctx, cancel := context.WithTimeout(ctx, 20*time.Millisecond)
 			defer cancel()
 
 			_, err := client.Greet(ctx, &HelloRequest{})
@@ -242,7 +241,6 @@ func TestTimeouts(t *testing.T) {
 }
 
 func TestVerySmallTimeouts(t *testing.T) {
-	t.Skip("flaky: https://ci.chromium.org/b/8800999854244291649")
 	t.Parallel()
 
 	Convey(`A client/server for the Greet service`, t, func() {
