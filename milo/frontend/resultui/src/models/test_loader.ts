@@ -173,20 +173,23 @@ export class TestLoader {
   private firstLoadPromise?: Promise<void>;
 
   loadFirstPageOfTestVariants() {
-    return this.firstLoadPromise || this.loadNextTestVariants();
+    // Use a smaller page size when loading the first page for faster page load.
+    // After that, use a larger page size because that reduce the number of
+    // roundtrips when doing client-side search.
+    return this.firstLoadPromise || this.loadNextTestVariants(1000);
   }
 
   /**
    * Load at least one test variant unless the last page is reached.
    */
-  loadNextTestVariants() {
+  loadNextTestVariants(pageSize = 10000) {
     if (this.stage === LoadingStage.Done) {
       return this.loadPromise;
     }
 
     this.loadingReqCount++;
     this.loadPromise = this.loadPromise
-      .then(() => this.loadNextTestVariantsInternal())
+      .then(() => this.loadNextTestVariantsInternal(pageSize))
       .then(() => {
         this.loadingReqCount--;
       });
@@ -203,12 +206,12 @@ export class TestLoader {
    * @precondition there should not exist a running instance of
    * this.loadNextTestVariantsInternal
    */
-  private async loadNextTestVariantsInternal() {
+  private async loadNextTestVariantsInternal(pageSize: number) {
     const beforeCount = this.testVariantCount;
 
     // Load pages until the next expected status is at least the one we're after.
     do {
-      await this.loadNextPage();
+      await this.loadNextPage(pageSize);
     } while (!this.loadedAllVariants && this.testVariantCount === beforeCount);
   }
 
@@ -218,12 +221,12 @@ export class TestLoader {
    * @precondition there should not exist a running instance of
    * this.loadMoreInternal
    */
-  private async loadNextPage() {
+  private async loadNextPage(pageSize: number) {
     if (this.nextPageToken === undefined) {
       return;
     }
 
-    const req = { ...this.req, pageToken: this.nextPageToken };
+    const req = { ...this.req, pageSize, pageToken: this.nextPageToken };
     let res: QueryTestVariantsResponse;
     try {
       res = await this.resultDb.queryTestVariants(req);

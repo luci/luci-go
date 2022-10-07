@@ -132,7 +132,7 @@ describe('TestLoader', () => {
       assert.deepEqual(testLoader.unfilteredFlakyVariantsCount, 1);
       assert.strictEqual(testLoader.stage, LoadingStage.LoadingFlaky);
       assert.strictEqual(stub.callCount, 1);
-      assert.deepEqual(stub.getCall(0).args[0], { ...req, pageToken: '' });
+      assert.deepEqual(stub.getCall(0).args[0], { ...req, pageSize: 10000, pageToken: '' });
 
       await testLoader.loadNextTestVariants();
       assert.deepEqual(testLoader.unexpectedTestVariants, [variant1, variant2]);
@@ -148,7 +148,7 @@ describe('TestLoader', () => {
       assert.deepEqual(testLoader.expectedTestVariants, []);
       assert.strictEqual(testLoader.stage, LoadingStage.LoadingExpected);
       assert.strictEqual(stub.callCount, 2);
-      assert.deepEqual(stub.getCall(1).args[0], { ...req, pageToken: 'page2' });
+      assert.deepEqual(stub.getCall(1).args[0], { ...req, pageSize: 10000, pageToken: 'page2' });
 
       await testLoader.loadNextTestVariants();
       assert.deepEqual(testLoader.unexpectedTestVariants, [variant1, variant2]);
@@ -167,7 +167,7 @@ describe('TestLoader', () => {
       assert.deepEqual(testLoader.unfilteredFlakyVariantsCount, 2);
       assert.strictEqual(testLoader.stage, LoadingStage.LoadingExpected);
       assert.strictEqual(stub.callCount, 3);
-      assert.deepEqual(stub.getCall(2).args[0], { ...req, pageToken: 'page3' });
+      assert.deepEqual(stub.getCall(2).args[0], { ...req, pageSize: 10000, pageToken: 'page3' });
 
       await testLoader.loadNextTestVariants();
       assert.deepEqual(testLoader.unexpectedTestVariants, [variant1, variant2]);
@@ -186,7 +186,7 @@ describe('TestLoader', () => {
       assert.deepEqual(testLoader.unfilteredFlakyVariantsCount, 2);
       assert.strictEqual(testLoader.stage, LoadingStage.Done);
       assert.strictEqual(stub.callCount, 4);
-      assert.deepEqual(stub.getCall(3).args[0], { ...req, pageToken: 'page4' });
+      assert.deepEqual(stub.getCall(3).args[0], { ...req, pageSize: 10000, pageToken: 'page4' });
 
       // Should not load when the iterator is exhausted.
       await testLoader.loadNextTestVariants();
@@ -306,10 +306,10 @@ describe('TestLoader', () => {
       assert.strictEqual(testLoader.stage, LoadingStage.Done);
 
       assert.strictEqual(stub.callCount, 4);
-      assert.deepEqual(stub.getCall(0).args[0], { ...req, pageToken: '' });
-      assert.deepEqual(stub.getCall(1).args[0], { ...req, pageToken: 'page2' });
-      assert.deepEqual(stub.getCall(2).args[0], { ...req, pageToken: 'page3' });
-      assert.deepEqual(stub.getCall(3).args[0], { ...req, pageToken: 'page4' });
+      assert.deepEqual(stub.getCall(0).args[0], { ...req, pageSize: 10000, pageToken: '' });
+      assert.deepEqual(stub.getCall(1).args[0], { ...req, pageSize: 10000, pageToken: 'page2' });
+      assert.deepEqual(stub.getCall(2).args[0], { ...req, pageSize: 10000, pageToken: 'page3' });
+      assert.deepEqual(stub.getCall(3).args[0], { ...req, pageSize: 10000, pageToken: 'page4' });
     });
 
     it('loadFirstPageOfTestVariants should work correctly', async () => {
