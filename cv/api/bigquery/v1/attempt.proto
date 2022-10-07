@@ -138,6 +138,9 @@ message GerritChange {
   }
   // Whether CQ tried to submit this change and the result of the operation.
   SubmitStatus submit_status = 8;
+
+  // The owner of the CL.
+  string owner = 9;
 }
 
 enum Mode {

@@ -83,6 +83,8 @@ func send(ctx context.Context, env *common.Env, client cvbq.Client, id common.Ru
 	// builds, CV can't populate all of the fields of Attempt without the
 	// information from CQDaemon; so for finished Attempts reported by
 	// CQDaemon, we can fill in the remaining fields.
+	//
+	// TODO(crbug/1225047): After CQDaemon turn-down, this will be unnecessary.
 	switch cqda, err := fetchCQDAttempt(ctx, r); {
 	case err != nil:
 		return err
@@ -155,6 +157,9 @@ func makeAttempt(ctx context.Context, r *run.Run, cls []*run.RunCL) (*cvbqpb.Att
 // toGerritChange creates a GerritChange for the given RunCL.
 //
 // This includes the submit status of the CL.
+//
+// TODO(crbug.com/1371662): Populate the field Owner with
+// `cl.Detail.GetGerrit().GetInfo().GetOwner()`.
 func toGerritChange(cl *run.RunCL, submitted, failed common.CLIDsSet, mode run.Mode) *cvbqpb.GerritChange {
 	detail := cl.Detail
 	ci := detail.GetGerrit().GetInfo()
