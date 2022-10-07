@@ -178,6 +178,7 @@ func TestEndToEnd(t *testing.T) {
 }
 
 func TestTimeouts(t *testing.T) {
+	t.Skip("flaky: https://ci.chromium.org/b/8800998028172140769")
 	t.Parallel()
 
 	Convey(`A client/server for the Greet service`, t, func() {
@@ -241,6 +242,7 @@ func TestTimeouts(t *testing.T) {
 }
 
 func TestVerySmallTimeouts(t *testing.T) {
+	t.Skip("flaky: https://ci.chromium.org/b/8800999854244291649")
 	t.Parallel()
 
 	Convey(`A client/server for the Greet service`, t, func() {
