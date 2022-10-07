@@ -45,7 +45,7 @@ import (
 
 func TestGenerateSignedURL(t *testing.T) {
 	Convey(`TestGenerateSignedURL`, t, func(c C) {
-		ctx := testutil.TestingContext()
+		ctx := testutil.SpannerTestContext(t)
 
 		ctx, _ = testclock.UseTime(ctx, testclock.TestRecentTimeUTC)
 		ctx = secrets.Use(ctx, &testsecrets.Store{})
@@ -60,7 +60,21 @@ func TestGenerateSignedURL(t *testing.T) {
 			Identity: identity.AnonymousIdentity,
 		})
 
+		newArt := func(parentID, artID, hash string, gcsUri string) {
+			testutil.MustApply(ctx,
+				insert.Artifact("inv", parentID, artID, map[string]interface{}{
+					"ContentType": "text/plain",
+					"Size":        1234,
+					"RBECASHash":  hash,
+					"GcsURI":      gcsUri,
+				}),
+			)
+		}
+
+		testutil.MustApply(ctx, insert.Invocation("inv", pb.Invocation_FINALIZED, nil))
+
 		Convey(`Basic case`, func() {
+			newArt("", "a", "hash", "")
 			url, exp, err := s.GenerateSignedURL(ctx, "request.example.com", "invocations/inv/artifacts/a")
 			So(err, ShouldBeNil)
 			So(url, ShouldStartWith, "https://results.usercontent.example.com/invocations/inv/artifacts/a?token=")
@@ -68,10 +82,19 @@ func TestGenerateSignedURL(t *testing.T) {
 		})
 
 		Convey(`Escaped test id`, func() {
+			newArt("tr/t/t/r", "a", "hash", "")
 			url, exp, err := s.GenerateSignedURL(ctx, "request.example.com", "invocations/inv/tests/t%2Ft/results/r/artifacts/a")
 			So(err, ShouldBeNil)
 			So(url, ShouldStartWith, "https://results.usercontent.example.com/invocations/inv/tests/t%2Ft/results/r/artifacts/a?token=")
 			So(exp, ShouldResemble, clock.Now(ctx).UTC().Add(time.Hour))
+		})
+
+		Convey(`Artifact with GcsUri`, func() {
+			newArt("", "b", "", "gs://test/file.txt")
+			url, exp, err := s.GenerateSignedURL(ctx, "request.example.com", "invocations/inv/artifacts/b")
+			So(err, ShouldBeNil)
+			So(url, ShouldStartWith, "https://console.developers.google.com/storage/browser/test/file.txt")
+			So(exp, ShouldResemble, clock.Now(ctx).UTC().Add(7*24*time.Hour))
 		})
 	})
 }

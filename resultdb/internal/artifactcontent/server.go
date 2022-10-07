@@ -36,6 +36,7 @@ import (
 	"go.chromium.org/luci/server/span"
 	"go.chromium.org/luci/server/tokens"
 
+	"go.chromium.org/luci/common/runtime/paniccatcher"
 	"go.chromium.org/luci/resultdb/internal/artifacts"
 	"go.chromium.org/luci/resultdb/internal/invocations"
 	"go.chromium.org/luci/resultdb/internal/spanutil"
@@ -247,7 +248,22 @@ func (r *contentRequest) writeContentHeaders() {
 // GenerateSignedURL generates a signed HTTPS URL back to this server.
 // The returned token works only with the same artifact name.
 func (s *Server) GenerateSignedURL(ctx context.Context, requestHost, artifactName string) (url string, expiration time.Time, err error) {
+	ctx = trySingle(ctx)
+	art, err := artifacts.Read(ctx, artifactName)
+	if err != nil {
+		return "", time.Time{}, err
+	}
+
 	now := clock.Now(ctx).UTC()
+
+	if art.GcsUri != "" {
+		// TODO: Validate whether the path belongs to the realm and change this to
+		// use signed url instead.
+		// Currently return the GCS url directly (gated by the bucket ACL)
+		gcsURI := strings.Replace(art.GcsUri, "gs://",
+			"https://console.developers.google.com/storage/browser/", 1)
+		return gcsURI, now.Add(7 * 24 * time.Hour), nil
+	}
 
 	tok, err := artifactNameTokenKind.Generate(ctx, []byte(artifactName), nil, artifactNameTokenKind.Expiration)
 	if err != nil {
@@ -271,4 +287,15 @@ func (s *Server) GenerateSignedURL(ctx context.Context, requestHost, artifactNam
 	url = fmt.Sprintf("%s://%s/%s?token=%s", scheme, hostname, artifactName, tok)
 	expiration = now.Add(artifactNameTokenKind.Expiration)
 	return
+}
+
+// Try to get a derived context with a single-use read-only tx.
+// Returns the original ctx if the ctx already holds a tx.
+func trySingle(ctx context.Context) (ret context.Context) {
+	defer paniccatcher.Catch(func(p *paniccatcher.Panic) {
+		logging.Warningf(ctx,
+			"Caught panic - ctx already holds a tx. Returning original ctx.")
+		ret = ctx
+	})
+	return span.Single(ctx)
 }
