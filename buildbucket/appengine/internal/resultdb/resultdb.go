@@ -38,6 +38,11 @@ import (
 
 var mockRecorderClientKey = "used in tests only for setting the mock recorder client"
 
+// SetMockRecorder set the mock resultDB recorder client for testing purpose.
+func SetMockRecorder(ctx context.Context, mock rdbPb.RecorderClient) context.Context {
+	return context.WithValue(ctx, &mockRecorderClientKey, mock)
+}
+
 // CreateInvocations creates resultdb invocations for each build.
 // build.Proto.Infra.Resultdb must not be nil.
 //

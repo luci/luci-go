@@ -54,7 +54,7 @@ func TestCreateInvocations(t *testing.T) {
 		ctl := gomock.NewController(t)
 		defer ctl.Finish()
 		mockClient := rdbPb.NewMockRecorderClient(ctl)
-		ctx := context.WithValue(context.Background(), &mockRecorderClientKey, mockClient)
+		ctx := SetMockRecorder(context.Background(), mockClient)
 		ctx = cfgclient.Use(ctx, &fakeCfgClient{})
 		ctx = memory.UseInfo(ctx, "cr-buildbucket-dev")
 

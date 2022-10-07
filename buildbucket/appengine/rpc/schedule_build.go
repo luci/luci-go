@@ -1210,7 +1210,7 @@ func scheduleBuilds(ctx context.Context, globalCfg *pb.SettingsCfg, reqs ...*pb.
 		cfg := cfgs[bucket][validReq[i].Builder.Builder]
 
 		// TODO(crbug.com/1042991): Parallelize build creation from requests if necessary.
-		build := buildFromScheduleRequest(ctx, reqs[i], ancestors, cfg, globalCfg)
+		build := buildFromScheduleRequest(ctx, reqs[origI], ancestors, cfg, globalCfg)
 
 		blds[i] = &model.Build{
 			Proto: build,

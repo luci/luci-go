@@ -22,7 +22,10 @@ import (
 	"testing"
 	"time"
 
+	"github.com/golang/mock/gomock"
+	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
+	grpcStatus "google.golang.org/grpc/status"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/durationpb"
 	"google.golang.org/protobuf/types/known/structpb"
@@ -35,10 +38,12 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/logging/memlogger"
+	luciCmProto "go.chromium.org/luci/common/proto"
 	"go.chromium.org/luci/common/tsmon"
 	"go.chromium.org/luci/gae/filter/txndefer"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
+	rdbPb "go.chromium.org/luci/resultdb/proto/v1"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
 	"go.chromium.org/luci/server/tq"
@@ -46,6 +51,7 @@ import (
 	bb "go.chromium.org/luci/buildbucket"
 	"go.chromium.org/luci/buildbucket/appengine/internal/config"
 	"go.chromium.org/luci/buildbucket/appengine/internal/metrics"
+	"go.chromium.org/luci/buildbucket/appengine/internal/resultdb"
 	"go.chromium.org/luci/buildbucket/appengine/model"
 	"go.chromium.org/luci/buildbucket/appengine/rpc/testutil"
 	taskdefs "go.chromium.org/luci/buildbucket/appengine/tasks/defs"
@@ -5268,7 +5274,7 @@ func TestScheduleBuild(t *testing.T) {
 		})
 
 		Convey("many", func() {
-			Convey("one of them not found", func() {
+			Convey("one of TemplateBuildId builds not found", func() {
 				reqs := []*pb.ScheduleBuildRequest{
 					{
 						TemplateBuildId: 1000,
@@ -5303,7 +5309,7 @@ func TestScheduleBuild(t *testing.T) {
 				So(err, ShouldNotBeNil)
 				So(err, ShouldHaveSameTypeAs, errors.MultiError{})
 				So(err[0], ShouldBeNil)
-				So(err[1], ShouldErrLike, "not found")
+				So(err[1], ShouldErrLike, `requested resource not found or "user:caller@example.com" does not have permission to view it`)
 				So(err[2], ShouldBeNil)
 				So(rsp, ShouldResembleProto, []*pb.Build{
 					{
@@ -5319,6 +5325,180 @@ func TestScheduleBuild(t *testing.T) {
 					nil,
 					{
 						Id:         9021868963222163297,
+						Builder:    &pb.BuilderID{Project: "project", Bucket: "bucket", Builder: "builder"},
+						Number:     2,
+						CreatedBy:  string(userID),
+						Status:     pb.Status_SCHEDULED,
+						CreateTime: timestamppb.New(testclock.TestRecentTimeUTC),
+						UpdateTime: timestamppb.New(testclock.TestRecentTimeUTC),
+						Input:      &pb.Build_Input{},
+					},
+				})
+			})
+
+			Convey("one of builds missing builderCfg", func() {
+				So(datastore.Put(ctx, &model.Build{
+					ID: 1010,
+					Proto: &pb.Build{
+						Id: 1010,
+						Builder: &pb.BuilderID{
+							Project: "project",
+							Bucket:  "bucket",
+							Builder: "miss_builder_cfg",
+						},
+					},
+				}), ShouldBeNil)
+
+				reqs := []*pb.ScheduleBuildRequest{
+					{
+						TemplateBuildId: 1000,
+						Tags: []*pb.StringPair{
+							{
+								Key:   "buildset",
+								Value: "buildset",
+							},
+						},
+					},
+					{
+						TemplateBuildId: 1010,
+					},
+					{
+						TemplateBuildId: 1000,
+						Tags: []*pb.StringPair{
+							{
+								Key:   "buildset",
+								Value: "buildset",
+							},
+						},
+					},
+				}
+
+				rsp, err := srv.scheduleBuilds(ctx, globalCfg, reqs)
+				So(err, ShouldNotBeNil)
+				So(err, ShouldHaveSameTypeAs, errors.MultiError{})
+				So(err[0], ShouldBeNil)
+				So(err[1], ShouldErrLike, `builder not found: "miss_builder_cfg"`)
+				So(err[2], ShouldBeNil)
+				So(rsp, ShouldResembleProto, []*pb.Build{
+					{
+						Id:         9021868963222163313,
+						Builder:    &pb.BuilderID{Project: "project", Bucket: "bucket", Builder: "builder"},
+						Number:     1,
+						CreatedBy:  string(userID),
+						Status:     pb.Status_SCHEDULED,
+						CreateTime: timestamppb.New(testclock.TestRecentTimeUTC),
+						UpdateTime: timestamppb.New(testclock.TestRecentTimeUTC),
+						Input:      &pb.Build_Input{},
+					},
+					nil,
+					{
+						Id:         9021868963222163297,
+						Builder:    &pb.BuilderID{Project: "project", Bucket: "bucket", Builder: "builder"},
+						Number:     2,
+						CreatedBy:  string(userID),
+						Status:     pb.Status_SCHEDULED,
+						CreateTime: timestamppb.New(testclock.TestRecentTimeUTC),
+						UpdateTime: timestamppb.New(testclock.TestRecentTimeUTC),
+						Input:      &pb.Build_Input{},
+					},
+				})
+
+			})
+
+			Convey("one of builds failed in `createBuilds` part", func() {
+				So(datastore.Put(ctx, &model.Build{
+					ID: 1011,
+					Proto: &pb.Build{
+						Id: 1011,
+						Builder: &pb.BuilderID{
+							Project: "project",
+							Bucket:  "bucket",
+							Builder: "builder_with_rdb",
+						},
+					},
+				}), ShouldBeNil)
+				bqExports := []*rdbPb.BigQueryExport{}
+				historyOptions := &rdbPb.HistoryOptions{UseInvocationTimestamp: true}
+				So(datastore.Put(ctx, &model.Builder{
+					Parent: model.BucketKey(ctx, "project", "bucket"),
+					ID:     "builder_with_rdb",
+					Config: &pb.BuilderConfig{
+						BuildNumbers: pb.Toggle_YES,
+						Name:         "builder_with_rdb",
+						Resultdb: &pb.BuilderConfig_ResultDB{
+							Enable: true,
+							HistoryOptions: historyOptions,
+							BqExports: bqExports,
+						},
+					},
+				}), ShouldBeNil)
+
+				ctl := gomock.NewController(t)
+				defer ctl.Finish()
+				mockRdbClient := rdbPb.NewMockRecorderClient(ctl)
+				ctx = resultdb.SetMockRecorder(ctx, mockRdbClient)
+				mockRdbClient.EXPECT().CreateInvocation(gomock.Any(), luciCmProto.MatcherEqual(
+					&rdbPb.CreateInvocationRequest{
+						InvocationId: "build-9021868963221610321",
+						Invocation: &rdbPb.Invocation{
+							BigqueryExports:  bqExports,
+							ProducerResource: "//app.appspot.com/builds/9021868963221610321",
+							HistoryOptions:   historyOptions,
+							Realm:            "project:bucket",
+						},
+						RequestId: "build-9021868963221610321",
+					}), gomock.Any()).Return(nil, grpcStatus.Error(codes.Internal, "internal error"))
+
+				reqs := []*pb.ScheduleBuildRequest{
+					{
+						TemplateBuildId: 1000,
+						Tags: []*pb.StringPair{
+							{
+								Key:   "buildset",
+								Value: "buildset",
+							},
+						},
+					},
+					{
+						TemplateBuildId: 1011,
+						Tags: []*pb.StringPair{
+							{
+								Key:   "buildset",
+								Value: "buildset",
+							},
+						},
+					},
+					{
+						TemplateBuildId: 1000,
+						Tags: []*pb.StringPair{
+							{
+								Key:   "buildset",
+								Value: "buildset",
+							},
+						},
+					},
+				}
+
+				rsp, err := srv.scheduleBuilds(ctx, globalCfg, reqs)
+				So(err, ShouldNotBeNil)
+				So(err, ShouldHaveSameTypeAs, errors.MultiError{})
+				So(err[0], ShouldBeNil)
+				So(err[1], ShouldErrLike, "failed to create the invocation for build id: 9021868963221610321: rpc error: code = Internal desc = internal error")
+				So(err[2], ShouldBeNil)
+				So(rsp, ShouldResembleProto, []*pb.Build{
+					{
+						Id:         9021868963221610337,
+						Builder:    &pb.BuilderID{Project: "project", Bucket: "bucket", Builder: "builder"},
+						Number:     1,
+						CreatedBy:  string(userID),
+						Status:     pb.Status_SCHEDULED,
+						CreateTime: timestamppb.New(testclock.TestRecentTimeUTC),
+						UpdateTime: timestamppb.New(testclock.TestRecentTimeUTC),
+						Input:      &pb.Build_Input{},
+					},
+					nil,
+					{
+						Id:         9021868963221610305,
 						Builder:    &pb.BuilderID{Project: "project", Bucket: "bucket", Builder: "builder"},
 						Number:     2,
 						CreatedBy:  string(userID),
