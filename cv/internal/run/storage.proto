@@ -382,6 +382,7 @@ message OngoingLongOps {
         OWNER = 1;
         REVIEWERS = 2;
         CQ_VOTERS = 3;
+        PS_UPLOADER = 4;
       }
 
       // Request is the trigger cancellation request of a CL.

@@ -16,6 +16,7 @@ package handler
 
 import (
 	"context"
+	"fmt"
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
@@ -70,7 +71,7 @@ func (impl *Impl) OnCQDVerificationCompleted(ctx context.Context, rs *state.RunS
 		var meta reviewInputMeta
 		switch rs.Mode {
 		case run.NewPatchsetRun:
-			// Succeed quitely.
+			// Succeed quietly.
 		default:
 			msg, reason := usertext.OnRunSucceeded(rs.Mode)
 			meta = reviewInputMeta{
@@ -88,11 +89,15 @@ func (impl *Impl) OnCQDVerificationCompleted(ctx context.Context, rs *state.RunS
 		return &Result{State: rs, SideEffectFn: se}, nil
 	case migrationpb.ReportVerifiedRunRequest_ACTION_FAIL:
 		_, reason := usertext.OnRunFailed(rs.Mode)
+		whoms := rs.Mode.GerritNotifyTargets()
+		if rs.Mode == run.NewPatchsetRun {
+			panic(fmt.Errorf("%s not supported by CQD", rs.Mode))
+		}
 		meta := reviewInputMeta{
-			notify:  gerrit.Whoms{gerrit.Owner, gerrit.CQVoters},
+			notify:  whoms,
 			message: vr.Payload.FinalMessage,
 			// Add the same set of group/people to the attention set.
-			addToAttention: gerrit.Whoms{gerrit.Owner, gerrit.CQVoters},
+			addToAttention: whoms,
 			reason:         reason,
 		}
 		if err := impl.cancelTriggers(ctx, rs, meta); err != nil {

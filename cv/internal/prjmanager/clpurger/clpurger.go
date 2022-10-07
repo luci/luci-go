@@ -125,13 +125,25 @@ func (p *Purger) purgeWithDeadline(ctx context.Context, task *prjpb.PurgeCLTask)
 		return nil
 	}
 
+	var whoms gerrit.Whoms
+	if cqMode := purgeTriggers.GetCqVoteTrigger().GetMode(); cqMode != "" {
+		whoms = append(whoms, run.Mode(cqMode).GerritNotifyTargets()...)
+	}
+	if nprMode := purgeTriggers.GetNewPatchsetRunTrigger().GetMode(); nprMode != "" {
+		whoms = append(whoms, run.Mode(nprMode).GerritNotifyTargets()...)
+	}
+	if len(whoms) == 0 {
+		panic(fmt.Errorf("expected the trigger(s) to purge to have a RunMode"))
+	}
+
+	whoms.Dedupe()
 	logging.Debugf(ctx, "proceeding to purge CL due to\n%s", msg)
 	err = cancel.Cancel(ctx, cancel.Input{
 		LUCIProject:       task.GetLuciProject(),
 		CL:                cl,
 		LeaseDuration:     time.Minute,
-		Notify:            gerrit.Whoms{gerrit.Owner, gerrit.CQVoters},
-		AddToAttentionSet: gerrit.Whoms{gerrit.Owner, gerrit.CQVoters},
+		Notify:            whoms,
+		AddToAttentionSet: whoms,
 		AttentionReason:   "CV can't start a new Run as requested",
 		Requester:         "prjmanager/clpurger",
 		Triggers:          purgeTriggers,

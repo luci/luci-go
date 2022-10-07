@@ -28,7 +28,6 @@ import (
 	"go.chromium.org/luci/cv/internal/changelist"
 	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/configs/prjcfg"
-	"go.chromium.org/luci/cv/internal/gerrit"
 	"go.chromium.org/luci/cv/internal/migration/migrationcfg"
 	"go.chromium.org/luci/cv/internal/run"
 	"go.chromium.org/luci/cv/internal/run/impl/state"
@@ -56,11 +55,12 @@ func (impl *Impl) Poke(ctx context.Context, rs *state.RunState) (*Result, error)
 				return nil, err
 			}
 			rims := make(map[common.CLID]reviewInputMeta, len(rs.CLs))
+			whoms := rs.Mode.GerritNotifyTargets()
 			for _, cid := range rs.CLs {
 				rims[common.CLID(cid)] = reviewInputMeta{
-					notify: gerrit.Whoms{gerrit.Owner, gerrit.CQVoters},
+					notify: whoms,
 					// Add the same set of group/people to the attention set.
-					addToAttention: gerrit.Whoms{gerrit.Owner, gerrit.CQVoters},
+					addToAttention: whoms,
 					reason:         submissionFailureAttentionReason,
 					message:        fmt.Sprintf(persistentTreeStatusAppFailureTemplate, cg.Content.GetVerifiers().GetTreeStatus().GetUrl()),
 				}

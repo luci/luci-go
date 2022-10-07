@@ -31,7 +31,6 @@ import (
 	cvbqpb "go.chromium.org/luci/cv/api/bigquery/v1"
 	migrationpb "go.chromium.org/luci/cv/api/migration"
 	"go.chromium.org/luci/cv/internal/common"
-	"go.chromium.org/luci/cv/internal/gerrit"
 	"go.chromium.org/luci/cv/internal/migration"
 	"go.chromium.org/luci/cv/internal/run"
 	"go.chromium.org/luci/cv/internal/run/eventpb"
@@ -139,10 +138,11 @@ func (impl *Impl) onCompletedExecuteTryjobs(ctx context.Context, rs *state.RunSt
 	if run.IsEnded(runStatus) {
 		var meta reviewInputMeta
 		if msg != "" && attentionReason != "" {
+			whoms := rs.Mode.GerritNotifyTargets()
 			meta = reviewInputMeta{
 				message:        msg,
-				notify:         gerrit.Whoms{gerrit.Owner, gerrit.CQVoters},
-				addToAttention: gerrit.Whoms{gerrit.Owner, gerrit.CQVoters},
+				notify:         whoms,
+				addToAttention: whoms,
 				reason:         attentionReason,
 			}
 		}

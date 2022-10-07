@@ -31,7 +31,6 @@ import (
 
 	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/configs/prjcfg"
-	"go.chromium.org/luci/cv/internal/gerrit"
 	"go.chromium.org/luci/cv/internal/metrics"
 	"go.chromium.org/luci/cv/internal/migration/migrationcfg"
 	"go.chromium.org/luci/cv/internal/run"
@@ -78,10 +77,11 @@ func (impl *Impl) Start(ctx context.Context, rs *state.RunState) (*Result, error
 				msgBuilder.WriteString(reason)
 			}
 		}
+		whoms := rs.Mode.GerritNotifyTargets()
 		meta := reviewInputMeta{
 			message:        msgBuilder.String(),
-			notify:         gerrit.Whoms{gerrit.Owner, gerrit.CQVoters},
-			addToAttention: gerrit.Whoms{gerrit.Owner, gerrit.CQVoters},
+			notify:         whoms,
+			addToAttention: whoms,
 			reason:         "Failed to start the run",
 		}
 		metas := make(map[common.CLID]reviewInputMeta, len(rs.CLs))
@@ -129,10 +129,11 @@ func (impl *Impl) Start(ctx context.Context, rs *state.RunState) (*Result, error
 		rs.LogInfof(ctx, "Tryjob", "LUCI CV is managing the Tryjobs for this Run")
 		enqueueRequirementChangedTask(ctx, rs)
 	default:
+		whoms := rs.Mode.GerritNotifyTargets()
 		meta := reviewInputMeta{
 			message:        fmt.Sprintf("Failed to compute tryjob requirement. Reason:\n\n%s", result.ComputationFailure.Reason()),
-			notify:         gerrit.Whoms{gerrit.Owner, gerrit.CQVoters},
-			addToAttention: gerrit.Whoms{gerrit.Owner, gerrit.CQVoters},
+			notify:         whoms,
+			addToAttention: whoms,
 			reason:         "Computing tryjob requirement failed",
 		}
 		metas := make(map[common.CLID]reviewInputMeta, len(cls))
@@ -212,10 +213,11 @@ func (impl *Impl) onCompletedPostStartMessage(ctx context.Context, rs *state.Run
 		panic(fmt.Errorf("unexpected LongOpCompleted status: %s", result.GetStatus()))
 	}
 
+	whoms := rs.Mode.GerritNotifyTargets()
 	msgPrefix, attentionReason := usertext.OnRunFailed(rs.Mode)
 	meta := reviewInputMeta{
-		notify:         gerrit.Whoms{gerrit.Owner, gerrit.CQVoters},
-		addToAttention: gerrit.Whoms{gerrit.Owner, gerrit.CQVoters},
+		notify:         whoms,
+		addToAttention: whoms,
 		reason:         attentionReason,
 		message:        msgPrefix + "\n\n" + failRunReason,
 	}

@@ -265,6 +265,8 @@ func fromGerritWhoms(whoms gerrit.Whoms) []run.OngoingLongOps_Op_TriggersCancell
 			ret[i] = run.OngoingLongOps_Op_TriggersCancellation_REVIEWERS
 		case gerrit.CQVoters:
 			ret[i] = run.OngoingLongOps_Op_TriggersCancellation_CQ_VOTERS
+		case gerrit.PSUploader:
+			ret[i] = run.OngoingLongOps_Op_TriggersCancellation_PS_UPLOADER
 		default:
 			panic(fmt.Errorf("unknown gerrit.Whom; got %s", whom))
 		}

@@ -29,7 +29,6 @@ import (
 
 	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/configs/prjcfg"
-	"go.chromium.org/luci/cv/internal/gerrit"
 	"go.chromium.org/luci/cv/internal/gerrit/cfgmatcher"
 	"go.chromium.org/luci/cv/internal/gerrit/trigger"
 	"go.chromium.org/luci/cv/internal/run"
@@ -144,10 +143,11 @@ func (impl *Impl) UpdateConfig(ctx context.Context, rs *state.RunState, hash str
 			case err != nil:
 				return nil, err
 			case !result.OK():
+				whoms := rs.Mode.GerritNotifyTargets()
 				meta := reviewInputMeta{
 					message:        fmt.Sprintf("Config has changed while Run is still running.However, the Tryjob requirement became invalid. Detailed reason:\n\n%s", result.ComputationFailure.Reason()),
-					notify:         gerrit.Whoms{gerrit.Owner, gerrit.CQVoters},
-					addToAttention: gerrit.Whoms{gerrit.Owner, gerrit.CQVoters},
+					notify:         whoms,
+					addToAttention: whoms,
 					reason:         "Computing tryjob requirement failed",
 				}
 				metas := make(map[common.CLID]reviewInputMeta, len(rs.CLs))

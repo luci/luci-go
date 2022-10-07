@@ -316,11 +316,20 @@ func TestOnCompletedExecuteTryjobs(t *testing.T) {
 			})
 
 			Convey("Tryjob execution failed", func() {
+				var whoms []run.OngoingLongOps_Op_TriggersCancellation_Whom
 				Convey("On CQ Vote Run", func() {
 					rs.Mode = run.DryRun
+					whoms = []run.OngoingLongOps_Op_TriggersCancellation_Whom{
+						run.OngoingLongOps_Op_TriggersCancellation_OWNER,
+						run.OngoingLongOps_Op_TriggersCancellation_CQ_VOTERS,
+					}
 				})
 				Convey("On New Patchset Run", func() {
 					rs.Mode = run.NewPatchsetRun
+					whoms = []run.OngoingLongOps_Op_TriggersCancellation_Whom{
+						run.OngoingLongOps_Op_TriggersCancellation_OWNER,
+						run.OngoingLongOps_Op_TriggersCancellation_PS_UPLOADER,
+					}
 				})
 				err := datastore.RunInTransaction(ctx, func(ctx context.Context) error {
 					return tryjob.SaveExecutionState(ctx, rs.ID, &tryjob.ExecutionState{
@@ -343,16 +352,10 @@ func TestOnCompletedExecuteTryjobs(t *testing.T) {
 					So(op.GetCancelTriggers(), ShouldNotBeNil)
 					So(op.GetCancelTriggers().GetRequests(), ShouldResembleProto, []*run.OngoingLongOps_Op_TriggersCancellation_Request{
 						{
-							Clid:    int64(rs.CLs[0]),
-							Message: "This CL has failed the run. Reason:\n\nbuild 12345 failed",
-							Notify: []run.OngoingLongOps_Op_TriggersCancellation_Whom{
-								run.OngoingLongOps_Op_TriggersCancellation_OWNER,
-								run.OngoingLongOps_Op_TriggersCancellation_CQ_VOTERS,
-							},
-							AddToAttention: []run.OngoingLongOps_Op_TriggersCancellation_Whom{
-								run.OngoingLongOps_Op_TriggersCancellation_OWNER,
-								run.OngoingLongOps_Op_TriggersCancellation_CQ_VOTERS,
-							},
+							Clid:                 int64(rs.CLs[0]),
+							Message:              "This CL has failed the run. Reason:\n\nbuild 12345 failed",
+							Notify:               whoms,
+							AddToAttention:       whoms,
 							AddToAttentionReason: "Tryjobs failed",
 						},
 					})

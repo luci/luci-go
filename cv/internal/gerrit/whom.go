@@ -32,6 +32,9 @@ const (
 	Reviewers Whom = 2
 	// CQVoters are the users who have voted on CQ label to trigger a CV Run.
 	CQVoters Whom = 3
+	// PSUploader is the user who uploaded the patch that triggered a
+	// "New Patchset" Run.
+	PSUploader Whom = 4
 )
 
 func (w Whom) String() string {
@@ -42,6 +45,8 @@ func (w Whom) String() string {
 		return "reviewers"
 	case CQVoters:
 		return "CQ label voters"
+	case PSUploader:
+		return "patchset uploader"
 	default:
 		return fmt.Sprintf("whom[%d]", w)
 	}
@@ -49,6 +54,24 @@ func (w Whom) String() string {
 
 // Whoms is a collection of `Whom`s.
 type Whoms []Whom
+
+// Dedupe removes duplicates and sorts the whoms in-place.
+func (whoms Whoms) Dedupe() {
+	if len(whoms) <= 1 {
+		return
+	}
+	whomMap := make(map[Whom]struct{}, len(whoms))
+	for _, w := range whoms {
+		whomMap[w] = struct{}{}
+	}
+	whoms = whoms[:0]
+	for w := range whomMap {
+		whoms = append(whoms, w)
+	}
+	sort.Slice(whoms, func(i, j int) bool {
+		return whoms[i] < whoms[j]
+	})
+}
 
 // ToAccountIDsSorted translates whom to actual Gerrit account ids in a CL.
 func (whoms Whoms) ToAccountIDsSorted(ci *gerritpb.ChangeInfo) []int64 {
@@ -67,6 +90,8 @@ func (whoms Whoms) ToAccountIDsSorted(ci *gerritpb.ChangeInfo) []int64 {
 					accountSet[vote.GetUser().GetAccountId()] = struct{}{}
 				}
 			}
+		case PSUploader:
+			accountSet[ci.GetRevisions()[ci.GetCurrentRevision()].GetUploader().GetAccountId()] = struct{}{}
 		default:
 			panic(fmt.Sprintf("unknown whom: %s", whom))
 		}

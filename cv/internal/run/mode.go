@@ -18,6 +18,7 @@ import (
 	"fmt"
 
 	bqpb "go.chromium.org/luci/cv/api/bigquery/v1"
+	"go.chromium.org/luci/cv/internal/gerrit"
 )
 
 // Mode dictates the behavior of this Run.
@@ -100,5 +101,23 @@ func (m Mode) GerritMessageTag() string {
 		return prefix + "new-patchset-run"
 	default:
 		panic(fmt.Sprintf("unknown RunMode %q", m))
+	}
+}
+
+// GerritNotifyTargets gets the default set of user roles to notify depending on
+// the given RunMode.
+//
+// In general, for CQ runs (dry or else), it would notify the owner of the CL
+// and those who triggered the run by voting on the cq label; and in the case of
+// Runs triggered by uploading a new patchset, it would notify the owner of the
+// CL and the uploader of the given patchset.
+func (m Mode) GerritNotifyTargets() gerrit.Whoms {
+	switch m {
+	case NewPatchsetRun:
+		return gerrit.Whoms{gerrit.Owner, gerrit.PSUploader}
+	case DryRun, FullRun, QuickDryRun:
+		return gerrit.Whoms{gerrit.Owner, gerrit.CQVoters}
+	default:
+		panic(fmt.Errorf("unsupported mode %s", m))
 	}
 }
