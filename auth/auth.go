@@ -33,7 +33,6 @@ package auth
 
 import (
 	"context"
-	"fmt"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -57,19 +56,15 @@ import (
 )
 
 var (
-	// ErrLoginRequired is returned by Transport() in case long term credentials
-	// are not cached and the user must go through interactive login.
+	// ErrLoginRequired is returned by Transport or GetAccessToken in case long
+	// term credentials are not cached and the user must go through an interactive
+	// login flow.
 	ErrLoginRequired = errors.New("interactive login is required")
 
-	// ErrInsufficientAccess is returned by Login() or Transport() if an access
-	// token can't be minted for given OAuth scopes. For example if a GCE instance
+	// ErrInsufficientAccess is returned by Login or Transport if an access token
+	// can't be minted for given OAuth scopes. For example if a GCE instance
 	// wasn't granted access to requested scopes when it was created.
 	ErrInsufficientAccess = internal.ErrInsufficientAccess
-
-	// ErrBadCredentials is returned by authenticating RoundTripper if service
-	// account key used to generate access tokens is revoked, malformed or can not
-	// be read from disk.
-	ErrBadCredentials = internal.ErrBadCredentials
 
 	// ErrNoEmail is returned by GetEmail() if the cached credentials are not
 	// associated with some particular email. This may happen, for example, when
@@ -372,8 +367,8 @@ type Options struct {
 	// Can also be set to GCEServiceAccount (':gce') to indicate that the GCE VM
 	// service account should be used instead. Useful in CLI interfaces. This
 	// works only if Method is set to AutoSelectMethod (which is the default for
-	// most CLI apps). If GCEServiceAccount is used on non-GCE machine,
-	// authenticator methods return ErrBadCredentials.
+	// most CLI apps). If GCEServiceAccount is used on a machine without GCE
+	// metadata server, authenticator methods return an error.
 	//
 	// Used only with ServiceAccountMethod.
 	ServiceAccountJSONPath string
@@ -483,7 +478,7 @@ func (opts *Options) PopulateDefaults() {
 		var err error
 		opts.SecretsDir, err = filepath.Abs(opts.SecretsDir)
 		if err != nil {
-			panic(fmt.Errorf("failed to get abs path to token cache dir: %s", err))
+			panic(errors.Annotate(err, "failed to get abs path to token cache dir").Err())
 		}
 	}
 }
@@ -695,12 +690,15 @@ func (a *Authenticator) GetAccessToken(lifetime time.Duration) (*oauth2.Token, e
 		var err error
 		tok, err = a.refreshToken(tok, lifetime+5*time.Second)
 		if err != nil {
-			return nil, err
+			if err == ErrLoginRequired {
+				return nil, err
+			}
+			return nil, errors.Annotate(err, "failed to refresh auth token").Err()
 		}
 		// Note: no randomization here. It is a sanity check that verifies
 		// refreshToken did its job.
 		if internal.TokenExpiresIn(a.ctx, tok, lifetime) {
-			return nil, fmt.Errorf("auth: failed to refresh the token")
+			return nil, errors.Reason("failed to refresh auth token: still stale even after refresh").Err()
 		}
 	}
 
@@ -772,12 +770,14 @@ func (a *Authenticator) GetEmail() (string, error) {
 	// Pass -1 as lifetime to force trigger the refresh right now.
 	tok, err = a.refreshToken(tok, -1)
 	switch {
-	case err != nil:
+	case err == ErrLoginRequired:
 		return "", err
+	case err != nil:
+		return "", errors.Annotate(err, "failed to refresh auth token").Err()
 	case tok.Email == internal.NoEmail:
 		return "", ErrNoEmail
 	case tok.Email == internal.UnknownEmail: // this must not happen, but let's be cautious
-		return "", fmt.Errorf("internal error when fetching the email, see logs")
+		return "", errors.Reason("internal error when fetching the email, see logs").Err()
 	default:
 		return tok.Email, nil
 	}
@@ -904,7 +904,7 @@ type perRPCCreds struct {
 	a *Authenticator
 }
 
-func (creds perRPCCreds) GetRequestMetadata(c context.Context, uri ...string) (map[string]string, error) {
+func (creds perRPCCreds) GetRequestMetadata(ctx context.Context, uri ...string) (map[string]string, error) {
 	if len(uri) == 0 {
 		panic("perRPCCreds: no URI given")
 	}
@@ -1120,7 +1120,7 @@ func (a *Authenticator) doLoginIfRequired(requiresAuth bool) (useAuth bool, err 
 	case effectiveMode == OptionalLogin:
 		return false, nil // we can skip auth in OptionalLogin if we have no token
 	case effectiveMode != InteractiveLogin:
-		return false, fmt.Errorf("invalid mode argument: %s", effectiveMode)
+		return false, errors.Reason("invalid mode argument: %s", effectiveMode).Err()
 	}
 	if err := a.Login(); err != nil {
 		return false, err
@@ -1527,7 +1527,7 @@ func makeBaseTokenProvider(ctx context.Context, opts *Options, scopes []string, 
 	switch opts.Method {
 	case UserCredentialsMethod:
 		if opts.ClientID == "" || opts.ClientSecret == "" {
-			return nil, fmt.Errorf("OAuth client is not configured, can't use interactive login")
+			return nil, errors.Reason("OAuth client is not configured, can't use interactive login").Err()
 		}
 		// Note: both LoginSessionTokenProvider and UserAuthTokenProvider support
 		// ID tokens and OAuth access tokens at the same time. They ignore audience
@@ -1570,7 +1570,7 @@ func makeBaseTokenProvider(ctx context.Context, opts *Options, scopes []string, 
 			audience,
 			opts.Transport)
 	default:
-		return nil, fmt.Errorf("auth: unrecognized authentication method: %s", opts.Method)
+		return nil, errors.Reason("unrecognized authentication method: %s", opts.Method).Err()
 	}
 }
 

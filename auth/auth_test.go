@@ -346,11 +346,13 @@ func TestRefreshToken(t *testing.T) {
 
 		// Attempting to use expired cached token triggers a refresh that fails.
 		_, err := auth.GetAccessToken(time.Minute)
-		So(err, ShouldEqual, ErrBadCredentials)
+		So(err, ShouldErrLike,
+			"failed to refresh auth token: invalid or unavailable service account credentials")
 
 		// Same happens when trying to grab an email.
 		_, err = auth.GetEmail()
-		So(err, ShouldEqual, ErrBadCredentials)
+		So(err, ShouldErrLike,
+			"failed to refresh auth token: invalid or unavailable service account credentials")
 	})
 
 	Convey("Test transient errors when refreshing, success", t, func() {
