@@ -21,6 +21,8 @@ import (
 	"fmt"
 	"os"
 
+	// To make sure there's crypto/rand.altGetRandom we'll alias with go:linkname.
+	_ "crypto/rand"
 	// To use go:linkname.
 	_ "unsafe"
 )
