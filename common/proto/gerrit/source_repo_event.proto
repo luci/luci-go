@@ -1,0 +1,75 @@
+// Copyright 2020 The Chromium Authors. All rights reserved.
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
+
+syntax = "proto3";
+
+package gerrit;
+
+option go_package = "go.chromium.org/luci/common/proto/gerrit;gerritpb";
+
+// Cloud Pub/Sub message payload for all events in Source Repo API.
+message SourceRepoEvent {
+  // The name of the repo that has changed. Values are of the form
+  // `projects/<project>/repos/<repo>`.
+  string name = 1;
+
+  // URL to clone the repository from Google Cloud Source Repositories.
+  string url = 2;
+
+  // An event that changed references.
+  message RefUpdateEvent {
+    // The user who performed the ref updates.
+    string email = 1;
+
+    // An update on a reference.
+    message RefUpdate {
+      // The name of the reference. Values are of the form `refs/...` (e.g.
+      // `refs/heads/master`).
+      string ref_name = 1;
+
+      // The type of the update.
+      enum UpdateType {
+        UPDATE_TYPE_UNSPECIFIED = 0;
+        // Create a new ref.
+        CREATE = 1;
+        // Update the object that the ref points to.
+        UPDATE_FAST_FORWARD = 2;
+        // Update the object that the ref points to forcibly.
+        UPDATE_NON_FAST_FORWARD = 3;
+        // Delete the ref.
+        DELETE = 4;
+      }
+
+      // The type of the update.
+      UpdateType update_type = 2;
+
+      // The previous object ID that the ref pointed to.
+      string old_id = 3;
+
+      // The new object ID that the ref points to.
+      string new_id = 4;
+    }
+
+    // Updates on references, keyed by the names of the references.
+    map<string, RefUpdate> ref_updates = 2;
+  }
+
+  // An event that created a repository.
+  message CreateRepoEvent {
+  }
+
+  // An event that deleted a repository.
+  message DeleteRepoEvent {
+  }
+
+  // The timestamp that this event happened.
+  string event_time = 3;
+
+  // The detail data of the event.
+  oneof event {
+    RefUpdateEvent ref_update_event = 4;
+    CreateRepoEvent create_repo_event = 5;
+    DeleteRepoEvent delete_repo_event = 6;
+  }
+}
