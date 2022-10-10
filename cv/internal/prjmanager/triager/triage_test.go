@@ -56,7 +56,7 @@ func TestTriage(t *testing.T) {
 		const lProject = "v8"
 
 		const stabilizationDelay = 5 * time.Minute
-		const singIdx, combIdx, anotherIdx, nprIdx = 0, 1, 2, 3
+		const singIdx, combIdx, anotherIdx, nprIdx, nprCombIdx = 0, 1, 2, 3, 4
 		cfg := &cfgpb.Config{
 			ConfigGroups: []*cfgpb.ConfigGroup{
 				{Name: "singular"},
@@ -72,6 +72,16 @@ func TestTriage(t *testing.T) {
 							},
 						},
 					},
+				},
+				{Name: "newPatchsetRunCombi",
+					Verifiers: &cfgpb.Verifiers{
+						Tryjob: &cfgpb.Verifiers_Tryjob{
+							Builders: []*cfgpb.Verifiers_Tryjob_Builder{
+								{Name: "nprBuilder", ModeAllowlist: []string{string(run.NewPatchsetRun)}},
+							},
+						},
+					},
+					CombineCls: &cfgpb.CombineCLs{StabilizationDelay: durationpb.New(stabilizationDelay)},
 				},
 			},
 		}
@@ -125,7 +135,7 @@ func TestTriage(t *testing.T) {
 			trs := trigger.Find(&trigger.FindInput{ChangeInfo: ci, ConfigGroup: cfg.GetConfigGroups()[grpIndex]})
 			switch mode {
 			case run.NewPatchsetRun:
-				So(grpIndex, ShouldEqual, nprIdx)
+				So(grpIndex, ShouldBeGreaterThanOrEqualTo, nprIdx)
 				So(trs.GetNewPatchsetRunTrigger(), ShouldNotBeNil)
 			default:
 				So(trs.GetCqVoteTrigger(), ShouldNotBeNil)
@@ -216,6 +226,27 @@ func TestTriage(t *testing.T) {
 				So(res.RunsToCreate, ShouldHaveLength, 1)
 				So(res.RunsToCreate[0].Mode, ShouldEqual, run.NewPatchsetRun)
 			})
+			Convey("NPR trigger only", func() {
+				_, pcl := putPCL(33, nprIdx, run.NewPatchsetRun, ct.Clock.Now())
+				pm.pb.Pcls[0] = pcl
+				pcl.PurgeReasons = []*prjpb.PurgeReason{{
+					ClError: &changelist.CLError{
+						Kind: &changelist.CLError_UnsupportedMode{},
+					},
+					ApplyTo: &prjpb.PurgeReason_Triggers{
+						Triggers: &run.Triggers{
+							NewPatchsetRunTrigger: &run.Trigger{
+								Mode: string(run.NewPatchsetRun),
+								Time: timestamppb.New(ct.Clock.Now()),
+							},
+						},
+					},
+				}}
+				res := mustTriage(oldC)
+				So(res.NewValue, ShouldResembleProto, markTriaged(oldC))
+				So(res.CLsToPurge, ShouldHaveLength, 1)
+				So(res.RunsToCreate, ShouldHaveLength, 0)
+			})
 			Convey("singular group, purge NPR trigger and let dry run continue", func() {
 				_, pcl := putPCL(33, nprIdx, run.DryRun, ct.Clock.Now())
 				pm.pb.Pcls[0] = pcl
@@ -249,6 +280,27 @@ func TestTriage(t *testing.T) {
 				res = mustTriage(oldC)
 				c.DecisionTime = nil
 				So(res.NewValue, ShouldResembleProto, c)
+				So(res.CLsToPurge, ShouldHaveLength, 1)
+				So(res.RunsToCreate, ShouldBeEmpty)
+			})
+			Convey("NewPatchsetRun combinable group -- ignore stabilization_delay", func() {
+				_, pcl := putPCL(33, nprCombIdx, run.NewPatchsetRun, ct.Clock.Now())
+				pm.pb.Pcls[0] = pcl
+				pcl.PurgeReasons = []*prjpb.PurgeReason{{
+					ClError: &changelist.CLError{
+						Kind: &changelist.CLError_UnsupportedMode{},
+					},
+					ApplyTo: &prjpb.PurgeReason_Triggers{
+						Triggers: &run.Triggers{
+							NewPatchsetRunTrigger: &run.Trigger{
+								Mode: string(run.NewPatchsetRun),
+								Time: timestamppb.New(ct.Clock.Now()),
+							},
+						},
+					},
+				}}
+				res := mustTriage(oldC)
+				So(res.NewValue, ShouldResembleProto, markTriaged(oldC))
 				So(res.CLsToPurge, ShouldHaveLength, 1)
 				So(res.RunsToCreate, ShouldBeEmpty)
 			})

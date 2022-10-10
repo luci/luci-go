@@ -69,6 +69,9 @@ func stagePurges(ctx context.Context, cls map[int64]*clInfo, pm pmState) ([]*prj
 	}
 	return out, next
 }
+func (ci *clInfo) isTriggered() bool {
+	return ci.pcl.GetTriggers().GetCqVoteTrigger() != nil || ci.pcl.GetTriggers().GetNewPatchsetRunTrigger() != nil
+}
 
 // purgeETA returns the earliest time a CL may be purged and Zero time if CL
 // should not be purged at all.
@@ -80,14 +83,26 @@ func purgeETA(info *clInfo, now time.Time, pm pmState) time.Time {
 		// In case of bad config, waiting doesn't help.
 		return now
 	}
-	cg := pm.ConfigGroup(info.pcl.GetConfigGroupIndexes()[0])
-	d := cg.Content.GetCombineCls().GetStabilizationDelay()
-	if d == nil {
-		return now
+	if !info.isTriggered() {
+		panic(fmt.Errorf("CL %d is not triggered and thus can't be purged (reasons: %s)", info.pcl.GetClid(), info.purgeReasons))
 	}
-	t := info.lastCQVoteTriggered()
-	if t.IsZero() {
-		panic(fmt.Errorf("CL %d which is not triggered can't be purged (reasons: %s)", info.pcl.GetClid(), info.purgeReasons))
+	var eta time.Time
+	if info.pcl.GetTriggers().GetNewPatchsetRunTrigger() != nil {
+		eta = earliest(eta, now)
 	}
-	return t.Add(d.AsDuration())
+	if info.pcl.GetTriggers().GetCqVoteTrigger() != nil {
+		cg := pm.ConfigGroup(info.pcl.GetConfigGroupIndexes()[0])
+		d := cg.Content.GetCombineCls().GetStabilizationDelay()
+		if d == nil {
+			eta = earliest(eta, now)
+		} else {
+
+			t := info.lastCQVoteTriggered()
+			if t.IsZero() {
+				panic(fmt.Errorf("impossible: CQ label is triggered but triggering time is zero"))
+			}
+			eta = earliest(eta, t.Add(d.AsDuration()))
+		}
+	}
+	return eta
 }
