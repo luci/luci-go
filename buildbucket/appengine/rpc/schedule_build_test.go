@@ -1307,9 +1307,6 @@ func TestScheduleBuild(t *testing.T) {
 					},
 				},
 				CanOutliveParent: pb.Trinary_NO,
-				Swarming: &pb.ScheduleBuildRequest_Swarming{
-					ParentRunId: "parent_run_id",
-				},
 			}
 			ctx := metadata.NewIncomingContext(ctx, metadata.Pairs(bb.BuildbucketTokenHeader, tk))
 			blds, err := scheduleBuilds(ctx, globalCfg, req)
@@ -1383,10 +1380,6 @@ func TestScheduleBuild(t *testing.T) {
 							Value: "buildset",
 						},
 						{
-							Key:   "parent_task_id",
-							Value: "parent_run_id",
-						},
-						{
 							Key:   "user_agent",
 							Value: "gerrit",
 						},
@@ -1410,7 +1403,6 @@ func TestScheduleBuild(t *testing.T) {
 					Tags: []string{
 						"builder:builder",
 						"buildset:buildset",
-						"parent_task_id:parent_run_id",
 						"user_agent:gerrit",
 					},
 					Project: "project",

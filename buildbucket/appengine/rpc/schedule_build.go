@@ -770,17 +770,11 @@ func setInfra(req *pb.ScheduleBuildRequest, cfg *pb.BuilderConfig, build *pb.Bui
 		},
 		Swarming: &pb.BuildInfra_Swarming{
 			Hostname:           cfg.GetSwarmingHost(),
+			ParentRunId:        req.GetSwarming().GetParentRunId(),
 			Priority:           int32(cfg.GetPriority()),
 			TaskServiceAccount: cfg.GetServiceAccount(),
 		},
 	}
-
-	// Only set build.Infra.Swarming.ParentRunId if buildbucket doesn't track
-	// the build's parent/child relationship.
-	if len(build.GetAncestorIds()) == 0 && req.GetSwarming().GetParentRunId() != "" {
-		build.Infra.Swarming.ParentRunId = req.Swarming.ParentRunId
-	}
-
 	if build.Infra.Swarming.Priority == 0 {
 		build.Infra.Swarming.Priority = 30
 	}
@@ -907,13 +901,6 @@ func setTags(req *pb.ScheduleBuildRequest, build *pb.Build) {
 	}
 	for _, ch := range req.GetGerritChanges() {
 		tags.Add("buildset", protoutil.GerritBuildSet(ch))
-	}
-	// Make `parent_task_id` a tag if buildbucket tracks the build's parent/child
-	// relationship.
-	// TODO(crbug.com/1031205): Use the parent build's task_id to populate the
-	// tag.
-	if len(build.AncestorIds) > 0 && req.GetSwarming().GetParentRunId() != "" {
-		tags.Add("parent_task_id", req.Swarming.ParentRunId)
 	}
 	build.Tags = protoutil.StringPairs(tags)
 }
