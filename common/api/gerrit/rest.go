@@ -151,6 +151,9 @@ func (c *client) GetChange(ctx context.Context, req *gerritpb.GetChangeRequest, 
 	for _, o := range req.Options {
 		params.Add("o", o.String())
 	}
+	if meta := req.GetMeta(); meta != "" {
+		params.Add("meta", meta)
+	}
 
 	var resp changeInfo
 	if _, err := c.call(ctx, "GET", path, params, nil, &resp, opts); err != nil {
@@ -576,7 +579,16 @@ func (c *client) callRaw(
 	case http.StatusNotFound:
 		return res.StatusCode, body, status.Errorf(codes.NotFound, "not found")
 
-	case http.StatusConflict:
+	// Both codes are mapped to codes.FailedPrecondition so that apps using
+	// this Gerrit client wouldn't be able to distinguish them by the grpc code.
+	// However,
+	// - http.StatusConflict(409) is returned by mutation Gerrit APIs only, but
+	// - http.StatusPreconditionFailed(412) is returned by the fetch APIs only.
+	//
+	// Hence, apps shouldn't have to distinguish them from
+	// codes.FailedPrecondition. If Gerrit changes the rest APIs so that a
+	// single API can return both of them, then this can be revisited.
+	case http.StatusConflict, http.StatusPreconditionFailed:
 		// Gerrit returns error message in the response body.
 		return res.StatusCode, body, status.Errorf(codes.FailedPrecondition, "%s", string(body))
 

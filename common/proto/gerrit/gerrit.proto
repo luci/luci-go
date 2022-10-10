@@ -357,13 +357,24 @@ message GetChangeRequest {
   // Change number.
   int64 number = 1;
 
+  // What to include in the response.
+  repeated QueryOption options = 2;
+
   // The Gerrit project.
   // Specifying this field is optional, but encouraged because it requires less
   // work on the Gerrit side.
   string project = 3;
 
-  // What to include in the response.
-  repeated QueryOption options = 2;
+  // The SHA-1 of a historical NoteDB snapshot of the change to retrieve.
+  //
+  // If the SHA-1 is not reachable from the serving Gerrit replica,
+  // status code 412 is returned.
+  // If the given value is not a valid NoteDB SHA-1,
+  // status code 400 is returned.
+  //
+  // If omitted, GetChange will return the latest snapshot known by the serving
+  // Gerrit replica.
+  string meta = 4;
 }
 
 // Information about an account.

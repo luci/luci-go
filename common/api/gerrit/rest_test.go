@@ -562,6 +562,17 @@ func TestGetChange(t *testing.T) {
 					[]string{"DETAILED_ACCOUNTS", "ALL_COMMITS"},
 				)
 			})
+
+			Convey("Meta", func() {
+				req.Meta = "deadbeef"
+				_, err := c.GetChange(ctx, req)
+				So(err, ShouldBeNil)
+				So(
+					actualRequest.URL.Query()["meta"],
+					ShouldResemble,
+					[]string{"deadbeef"},
+				)
+			})
 		})
 	})
 }
@@ -1470,6 +1481,17 @@ func TestGerritError(t *testing.T) {
 			_, err := c.SubmitChange(ctx, req)
 			So(grpcutil.Code(err), ShouldEqual, codes.FailedPrecondition)
 			So(err, ShouldErrLike, "block by Verified")
+		})
+		Convey("HTTP 412 ", func() {
+			srv, c := newMockPbClient(func(w http.ResponseWriter, r *http.Request) {
+				w.WriteHeader(412)
+				w.Header().Set("Content-Type", "text/plain")
+				_, _ = w.Write([]byte("precondition failed"))
+			})
+			defer srv.Close()
+			_, err := c.SubmitChange(ctx, req)
+			So(grpcutil.Code(err), ShouldEqual, codes.FailedPrecondition)
+			So(err, ShouldErrLike, "precondition failed")
 		})
 		Convey("HTTP 429 ", func() {
 			srv, c := newMockPbClient(func(w http.ResponseWriter, r *http.Request) {
