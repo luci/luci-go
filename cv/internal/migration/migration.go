@@ -234,7 +234,7 @@ func (m *MigrationServer) FetchActiveRuns(ctx context.Context, req *migrationpb.
 	}
 
 	resp = &migrationpb.FetchActiveRunsResponse{}
-	if resp.ActiveRuns, err = fetchActiveRuns(ctx, req.GetLuciProject()); err != nil {
+	if resp.ActiveRuns, err = fetchActiveRunsForMigration(ctx, req.GetLuciProject()); err != nil {
 		return nil, err
 	}
 	return resp, nil

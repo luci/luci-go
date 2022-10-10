@@ -204,6 +204,8 @@ func TestDiscoversCLs(t *testing.T) {
 			gf.CI(33, gf.CQ(+2), gf.Project(gRepo), gf.Updated(ct.Clock.Now().Add(-2*incrementalPollOverlap))),
 			gf.CI(34, gf.CQ(+1), gf.Project(gRepo), gf.Updated(ct.Clock.Now().Add(-1*incrementalPollOverlap))),
 			gf.CI(35, gf.CQ(+1), gf.Project(gRepo), gf.Updated(ct.Clock.Now().Add(-1*time.Millisecond))),
+			// No CQ vote. This will not show up on a full query, but only on an incremental.
+			gf.CI(36, gf.Project(gRepo), gf.Updated(ct.Clock.Now().Add(-time.Minute))),
 
 			// These must not be matched.
 			gf.CI(40, gf.CQ(+2), gf.Project(gRepo), gf.Updated(ct.Clock.Now().Add(-common.MaxTriggerAge-time.Second))),
@@ -321,21 +323,21 @@ func TestDiscoversCLs(t *testing.T) {
 				So(datastore.Put(ctx, s), ShouldBeNil)
 				So(p.poll(ctx, lProject, ct.Clock.Now()), ShouldBeNil)
 
-				So(clUpdater.peekScheduledChanges(), ShouldResemble, []int{34, 35})
+				So(clUpdater.peekScheduledChanges(), ShouldResemble, []int{34, 35, 36})
 
 				qs := mustLoadState().QueryStates.GetStates()[0]
 				So(qs.GetLastIncrTime().AsTime(), ShouldResemble, ct.Clock.Now().UTC())
-				So(qs.GetChanges(), ShouldResemble, []int64{31, 32, 33, 34, 35})
+				So(qs.GetChanges(), ShouldResemble, []int64{31, 32, 33, 34, 35, 36})
 			})
 
 			Convey("Even if CL is already known, schedules update tasks", func() {
-				s.QueryStates.GetStates()[0].Changes = []int64{31, 32, 33, 34, 35}
+				s.QueryStates.GetStates()[0].Changes = []int64{31, 32, 33, 34, 35, 36}
 				So(datastore.Put(ctx, s), ShouldBeNil)
 				So(p.poll(ctx, lProject, ct.Clock.Now()), ShouldBeNil)
 
 				qs := mustLoadState().QueryStates.GetStates()[0]
 				So(qs.GetLastIncrTime().AsTime(), ShouldResemble, ct.Clock.Now().UTC())
-				So(qs.GetChanges(), ShouldResemble, []int64{31, 32, 33, 34, 35})
+				So(qs.GetChanges(), ShouldResemble, []int64{31, 32, 33, 34, 35, 36})
 			})
 		})
 	})

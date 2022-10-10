@@ -34,7 +34,7 @@ import (
 	"go.chromium.org/luci/cv/internal/run"
 )
 
-func fetchActiveRuns(ctx context.Context, project string) ([]*migrationpb.ActiveRun, error) {
+func fetchActiveRunsForMigration(ctx context.Context, project string) ([]*migrationpb.ActiveRun, error) {
 	runs, _, err := run.ProjectQueryBuilder{Project: project, Status: run.Status_RUNNING}.LoadRuns(ctx)
 	switch {
 	case err != nil:
@@ -207,6 +207,8 @@ func saveVerifiedCQDRun(ctx context.Context, req *migrationpb.ReportVerifiedRunR
 //  * Run has associated VerifiedCQDRun
 //  * Run has been scheduled to cancel the Run trigger
 //  * Run uses LUCI CV to execute tryjobs
+//  * Run is triggered by the upload of a new patchset (as opposed to based on
+//    a CQ +1/+2 vote).
 //
 // Modifies the Runs slice in place, but also returns it for readability.
 func pruneInactiveRuns(ctx context.Context, in []*run.Run) ([]*run.Run, error) {

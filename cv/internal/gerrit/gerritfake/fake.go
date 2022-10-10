@@ -393,6 +393,21 @@ func PS(ps int) CIModifier {
 	}
 }
 
+// PSWithUploader does the same as PS, but attaches a user and creation
+// timestamp to the patchset.
+func PSWithUploader(ps int, username string, creationTime time.Time) CIModifier {
+	barePS := PS(ps)
+	return func(ci *gerritpb.ChangeInfo) {
+		barePS(ci)
+		for _, ri := range ci.GetRevisions() {
+			if int(ri.GetNumber()) == ps {
+				ri.Uploader = U(username)
+				ri.Created = timestamppb.New(creationTime)
+			}
+		}
+	}
+}
+
 // AllRevs ensures ChangeInfo has a RevisionInfo per each revision
 // corresponding to patchsets 1..current.
 func AllRevs() CIModifier {

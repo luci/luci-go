@@ -154,7 +154,7 @@ func TestFetchActiveRuns(t *testing.T) {
 				},
 			)
 			So(err, ShouldBeNil)
-			runs, err := fetchActiveRuns(ctx, "chromium")
+			runs, err := fetchActiveRunsForMigration(ctx, "chromium")
 			So(err, ShouldBeNil)
 			So(runs, ShouldHaveLength, 1)
 			So(runs[0], ShouldResembleProto, &migrationpb.ActiveRun{
@@ -211,7 +211,7 @@ func TestFetchActiveRuns(t *testing.T) {
 					func(context.Context) error { return nil },
 				)
 				So(err, ShouldBeNil)
-				runs, err := fetchActiveRuns(ctx, "chromium")
+				runs, err := fetchActiveRunsForMigration(ctx, "chromium")
 				So(err, ShouldBeNil)
 				So(runs, ShouldHaveLength, 0)
 			})
@@ -228,7 +228,7 @@ func TestFetchActiveRuns(t *testing.T) {
 				},
 			)
 			So(err, ShouldBeNil)
-			runs, err := fetchActiveRuns(ctx, "chromium")
+			runs, err := fetchActiveRunsForMigration(ctx, "chromium")
 			So(err, ShouldBeNil)
 			So(runs, ShouldHaveLength, 0)
 		})
@@ -255,7 +255,7 @@ func TestFetchActiveRuns(t *testing.T) {
 				},
 			)
 			So(err, ShouldBeNil)
-			runs, err := fetchActiveRuns(ctx, "chromium")
+			runs, err := fetchActiveRunsForMigration(ctx, "chromium")
 			So(err, ShouldBeNil)
 			So(runs, ShouldHaveLength, 1)
 			So(runs[0].Id, ShouldEqual, "chromium/1111111111111-deadbeef")
@@ -273,7 +273,7 @@ func TestFetchActiveRuns(t *testing.T) {
 				},
 			)
 			So(err, ShouldBeNil)
-			runs, err := fetchActiveRuns(ctx, "chromium")
+			runs, err := fetchActiveRunsForMigration(ctx, "chromium")
 			So(err, ShouldBeNil)
 			So(runs, ShouldHaveLength, 1)
 			So(runs[0].Id, ShouldEqual, "chromium/1111111111111-deadbeef")
@@ -326,7 +326,7 @@ func TestFetchActiveRuns(t *testing.T) {
 				Mode:   run.DryRun,
 				CLs:    common.CLIDs{runCLID},
 			}), ShouldBeNil)
-			runs, err := fetchActiveRuns(ctx, "chromium")
+			runs, err := fetchActiveRunsForMigration(ctx, "chromium")
 			So(err, ShouldBeNil)
 			So(runs, ShouldHaveLength, 1)
 			So(runs[0].Cls, ShouldHaveLength, 1)

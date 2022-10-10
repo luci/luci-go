@@ -125,6 +125,14 @@ type Test struct {
 	authDB *authtest.FakeDB
 }
 
+type testingContextKeyType struct{}
+
+// IsTestingContext checks if the given context was derived from one created by
+// cvtesting.Test.SetUp().
+func IsTestingContext(ctx context.Context) bool {
+	return ctx.Value(testingContextKeyType{}) != nil
+}
+
 func (t *Test) SetUp() (context.Context, func()) {
 	if t.Env == nil {
 		t.Env = &common.Env{
@@ -143,7 +151,7 @@ func (t *Test) SetUp() (context.Context, func()) {
 	}
 
 	t.setMaxDuration()
-	ctxShared := context.Background()
+	ctxShared := context.WithValue(context.Background(), testingContextKeyType{}, struct{}{})
 	// Don't set the deadline (timeout) into the context given to the test,
 	// as it may interfere with test clock.
 	ctx, cancel := context.WithCancel(ctxShared)

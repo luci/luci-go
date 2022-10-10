@@ -73,6 +73,7 @@ const (
 	fastClockFlagName    = "cv.fastclock"
 	committers           = "committer-group"
 	dryRunners           = "dry-runner-group"
+	newPatchsetRunners   = "new-patchset-runner-group"
 )
 
 var (
@@ -169,7 +170,6 @@ func (t *Test) SetUp() (ctx context.Context, deferme func()) {
 	_ = pmimpl.New(t.PMNotifier, t.RunNotifier, clMutator, gFactory, clUpdater)
 	_ = runimpl.New(t.RunNotifier, t.PMNotifier, tjNotifier, clMutator, clUpdater, gFactory, bbFactory, t.TreeFake.Client(), t.BQFake, t.Env)
 	_ = tjcancel.NewCancellator(tjNotifier)
-
 	t.MigrationServer = &migration.MigrationServer{
 		RunNotifier: t.RunNotifier,
 		GFactory:    gFactory,
@@ -457,6 +457,11 @@ func (t *Test) AddDryRunner(email string) {
 	t.AddMember(email, dryRunners)
 }
 
+// AddNewPatchsetRunner adds a given member into the new-patchset-runner group.
+func (t *Test) AddNewPatchsetRunner(email string) {
+	t.AddMember(email, newPatchsetRunners)
+}
+
 // LogPhase emits easy to recognize log like
 // ===========================
 // PHASE: ....
@@ -486,8 +491,9 @@ func MakeCfgSingular(cgName, gHost, gRepo, gRef string) *cfgpb.Config {
 				},
 				Verifiers: &cfgpb.Verifiers{
 					GerritCqAbility: &cfgpb.Verifiers_GerritCQAbility{
-						CommitterList:    []string{committers},
-						DryRunAccessList: []string{dryRunners},
+						CommitterList:            []string{committers},
+						DryRunAccessList:         []string{dryRunners},
+						NewPatchsetRunAccessList: []string{newPatchsetRunners},
 					},
 				},
 			},
