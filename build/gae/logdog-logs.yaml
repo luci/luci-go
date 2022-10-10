@@ -1,0 +1,11 @@
+name: luci-go/logdog-logs
+extends: ../gae.yaml
+
+inputsdir: ../../logdog/appengine/cmd/coordinator
+
+sources:
+  - ../../logdog
+
+build:
+  - copy: ${inputsdir}/logs/module-logs.yaml
+    dest: ${contextdir}/logs/module-logs.yaml

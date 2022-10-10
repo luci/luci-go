@@ -13,8 +13,10 @@
 # limitations under the License.
 
 service: logs
-runtime: go1.15
 env: flex
+
+# See ../README.md for why it is custom and for implications for deployment.
+runtime: custom
 
 luci_gae_vars:
   luci-logdog-dev:

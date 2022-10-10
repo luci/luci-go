@@ -29,8 +29,12 @@ The [logs](logs/) service exposes the
 [Logs API](../../../api/endpoints/coordinator/logs/v1/) for log stream querying
 and consumption.
 
-It is a AppEngine Flex instance, since Flex is the only supported type of
-AppEngine instance that can use gRPC, and gRPC is needed to read from BigTable.
+It is a AppEngine Flex instance using "custom" runtime, since Flex is the only
+supported type of AppEngine instance that can stream responses to the clients,
+and we do that when clients read unfinalized logs. It is a custom runtime,
+because Flex doesn't support Go runtimes newer than go1.15. To use a newer
+version we need to build a Docker image ourselves (which requires specifying
+"custom" runtime).
 
 ### Services
 
@@ -49,13 +53,18 @@ The [static](static/) service hosts static content, including:
 
 ## Deployment
 
-Similar to other LUCI GAE apps:
+Prefer to use [the deployment automation]. In particular, there's no other easy
+way to deploy `logs` module, since it uses a custom Docker image (because the
+latest GAE Flex Go runtime is stuck in the past on go1.15 version and we have to
+bring our own image to use a newer version).
+
+To deploy other modules from the local checkout, you can use `gae.py` tool.
+E.g. to update all modules other than `logs`:
 
 ```shell
 cd coordinator
-gae.py upload -A luci-logdog-dev
+gae.py upload -A luci-logdog-dev default services static
 gae.py switch -A luci-logdog-dev
-
-# Or if you want to update a single module only, e.g. "logs".
-gae.py upload -A luci-logdog-dev logs
 ```
+
+[the deployment automation]: https://chrome-internal.googlesource.com/infradata/gae
