@@ -656,7 +656,8 @@ message Verifiers {
       reserved 12, 13; // mode_regexp[_exclude]
 
       // If set, require this builder only if the Run mode matches
-      // one of the modes in this list. Optional.
+      // one of the modes in this list. If unset, it implies that only FULL_RUN
+      // and DRY_RUN are allowed, and temporarily QUICK_DRY_RUN. Optional.
       repeated string mode_allowlist = 14;
     }
 

@@ -83,6 +83,12 @@ func ModeFromBQAttempt(m bqpb.Mode) (Mode, error) {
 	}
 }
 
+// DefaultAllowedModes is the list of RunModes implied by an empty ModeAllowList
+// in tryjob verifier configuration.
+func DefaultAllowedModes() []string {
+	return []string{string(DryRun), string(FullRun), string(QuickDryRun)}
+}
+
 // GerritMessageTag returns corresponding value for the Gerrit message tag.
 //
 // Tag value set by CQDaemon sadly became part of the API surface, see

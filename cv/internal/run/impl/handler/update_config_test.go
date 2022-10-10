@@ -149,6 +149,7 @@ func TestUpdateConfig(t *testing.T) {
 					RequirementComputedAt: timestamppb.New(triggerTime.Add(1 * time.Minute)),
 				},
 				UseCVTryjobExecutor: true,
+				Mode:                run.DryRun,
 			},
 		}
 		runCLs, err := run.LoadRunCLs(ctx, rs.ID, rs.CLs)

@@ -1571,7 +1571,8 @@ type Verifiers_Tryjob_Builder struct {
 	// uploaded the CL) is a member of at least one of these groups.
 	OwnerWhitelistGroup []string `protobuf:"bytes,8,rep,name=owner_whitelist_group,json=ownerWhitelistGroup,proto3" json:"owner_whitelist_group,omitempty"`
 	// If set, require this builder only if the Run mode matches
-	// one of the modes in this list. Optional.
+	// one of the modes in this list. If unset, it implies that only FULL_RUN
+	// and DRY_RUN are allowed, and temporarily QUICK_DRY_RUN. Optional.
 	ModeAllowlist []string `protobuf:"bytes,14,rep,name=mode_allowlist,json=modeAllowlist,proto3" json:"mode_allowlist,omitempty"`
 }
 

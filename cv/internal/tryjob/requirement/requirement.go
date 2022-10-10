@@ -341,8 +341,7 @@ func (dm *definitionMaker) make() *tryjob.Definition {
 
 func isModeAllowed(mode run.Mode, allowedModes []string) bool {
 	if len(allowedModes) == 0 {
-		// If allowedModes is unspecified, a builder is allowed in all modes.
-		return true
+		allowedModes = run.DefaultAllowedModes()
 	}
 	for _, allowed := range allowedModes {
 		if string(mode) == allowed {
