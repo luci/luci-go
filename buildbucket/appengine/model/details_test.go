@@ -290,4 +290,54 @@ func TestDetails(t *testing.T) {
 			})
 		})
 	})
+
+	// TODO(yuanjunh@): clean up these tests after new BuildOutputProperties
+	// deployment to 100%.
+	Convey("BuildOutputProperties in transition stage", t, func() {
+		// Mimic the case when 20% traffic on new model and 80% traffic on old model.
+		type BuildOutputPropertiesV2 struct {
+			_kind string `gae:"$kind,BuildOutputProperties"`
+			_id int `gae:"$id,1"`
+			Build *datastore.Key `gae:"$parent"`
+			Proto *structpb.Struct `gae:"properties,legacy"`
+
+			ChunkCount int `gae:"chunk_count,noindex"`
+		}
+
+		ctx := memory.Use(context.Background())
+		datastore.GetTestable(ctx).AutoIndex(true)
+		datastore.GetTestable(ctx).Consistent(true)
+
+		prop, err := structpb.NewStruct(map[string]interface{}{"key": "value"})
+		So(err, ShouldBeNil)
+		Convey("write with new model, read with the old model", func() {
+			outInNew := &BuildOutputPropertiesV2 {
+				Build: datastore.KeyForObj(ctx, &Build{ID: 123}),
+				Proto: prop,
+				ChunkCount: 0,
+			}
+			So(datastore.Put(ctx, outInNew), ShouldBeNil)
+
+			outInOld := &BuildOutputProperties{
+				Build: datastore.KeyForObj(ctx, &Build{ID: 123}),
+			}
+			So(datastore.Get(ctx, outInOld), ShouldBeNil)
+			So(outInOld.Proto, ShouldResembleProto, prop)
+		})
+
+		Convey("write with old model, read with the new model", func() {
+			outInOld := &BuildOutputProperties {
+				Build: datastore.KeyForObj(ctx, &Build{ID: 123}),
+				Proto: prop,
+			}
+			So(datastore.Put(ctx, outInOld), ShouldBeNil)
+
+			outInNew := &BuildOutputPropertiesV2{
+				Build: datastore.KeyForObj(ctx, &Build{ID: 123}),
+			}
+			So(datastore.Get(ctx, outInNew), ShouldBeNil)
+			So(outInNew.Proto, ShouldResembleProto, prop)
+			So(outInNew.ChunkCount, ShouldEqual, 0)
+		})
+	})
 }

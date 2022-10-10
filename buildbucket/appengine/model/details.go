@@ -95,6 +95,7 @@ type BuildInputProperties struct {
 // BuildOutputProperties is a representation of a build proto's output field's
 // properties field in the datastore.
 type BuildOutputProperties struct {
+	_ datastore.PropertyMap `gae:"-,extra"`
 	_kind string `gae:"$kind,BuildOutputProperties"`
 	// ID is always 1 because only one such entity exists.
 	ID int `gae:"$id,1"`
