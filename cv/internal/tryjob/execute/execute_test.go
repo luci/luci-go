@@ -177,7 +177,7 @@ func TestPrepExecutionPlan(t *testing.T) {
 							makeAttempt(tjID, tryjob.Status_ENDED, tryjob.Result_FAILED_PERMANENTLY),
 						})
 						So(execState.Status, ShouldEqual, tryjob.ExecutionState_FAILED)
-						So(execState.FailureReason, ShouldContainSubstring, "Tryjob `test/bucket/foo` has failed")
+						So(execState.FailureReason, ShouldContainSubstring, "Tryjob [test/bucket/foo](https://buildbucket.example.com/build/9223372036854775706) has failed")
 						So(executor.logEntries, ShouldResembleProto, []*tryjob.ExecutionLogEntry{
 							{
 								Time: timestamppb.New(ct.Clock.Now().UTC()),
@@ -292,7 +292,7 @@ func TestPrepExecutionPlan(t *testing.T) {
 					plan := prepPlan(execState, 101, 301)
 					So(plan.isEmpty(), ShouldBeTrue)
 					So(execState.Status, ShouldEqual, tryjob.ExecutionState_FAILED)
-					So(execState.FailureReason, ShouldContainSubstring, "Tryjob `test/bucket/builder1` has failed")
+					So(execState.FailureReason, ShouldContainSubstring, "Tryjob [test/bucket/builder1](https://buildbucket.example.com/build/9223372036854775706) has failed")
 				})
 				Convey("Can retry multiple", func() {
 					ensureTryjob(ctx, 101, builder1Def, tryjob.Status_ENDED, tryjob.Result_FAILED_TRANSIENTLY)

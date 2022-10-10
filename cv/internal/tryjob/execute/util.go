@@ -42,37 +42,43 @@ func composeReason(tryjobs []*tryjob.Tryjob) string {
 		tj := tryjobs[0]
 		restricted := tj.Definition.GetResultVisibility() == cfgpb.CommentLevel_COMMENT_LEVEL_RESTRICTED
 		var sb strings.Builder
-		sb.WriteString("Tryjob ")
-		if !restricted {
-			sb.WriteString("`")
-			sb.WriteString(getBuilderName(tj.Definition, tj.Result))
-			sb.WriteString("` ")
-		}
-		sb.WriteString("has failed: ")
-		sb.WriteString(tj.ExternalID.MustURL())
-		if sm := tj.Result.GetBuildbucket().GetSummaryMarkdown(); sm != "" && !restricted {
-			for _, line := range strings.Split(sm, "\n") {
-				sb.WriteString("\n\t") // indent.
-				sb.WriteString(line)
+		if restricted {
+			writeMDLink(&sb, "Tryjob", tj.ExternalID.MustURL())
+			sb.WriteString(" has failed")
+		} else {
+			sb.WriteString("Tryjob ")
+			writeMDLink(&sb, getBuilderName(tj.Definition, tj.Result), tj.ExternalID.MustURL())
+			sb.WriteString(" has failed")
+			if sm := tj.Result.GetBuildbucket().GetSummaryMarkdown(); sm != "" {
+				sb.WriteString(" with summary:\n\n")
+				sb.WriteString("---\n")
+				sb.WriteString(sm)
 			}
 		}
 		return sb.String()
 	default:
 		var sb strings.Builder
 		sb.WriteString("Failed Tryjobs:")
+		// restrict the result visibility if any tryjob has restricted result
+		// visibility
+		var restricted bool
 		for _, tj := range tryjobs {
-			restricted := tj.Definition.GetResultVisibility() == cfgpb.CommentLevel_COMMENT_LEVEL_RESTRICTED
-			sb.WriteString("\n* ")
-			if !restricted {
-				sb.WriteString("`")
-				sb.WriteString(getBuilderName(tj.Definition, tj.Result))
-				sb.WriteString("`: ")
+			if tj.Definition.GetResultVisibility() == cfgpb.CommentLevel_COMMENT_LEVEL_RESTRICTED {
+				restricted = true
+				break
 			}
-			sb.WriteString(tj.ExternalID.MustURL())
-			if sm := tj.Result.GetBuildbucket().GetSummaryMarkdown(); sm != "" && !restricted {
-				for _, line := range strings.Split(sm, "\n") {
-					sb.WriteString("\n\t") // indent.
-					sb.WriteString(line)
+		}
+		for _, tj := range tryjobs {
+			sb.WriteString("\n* ")
+			if restricted {
+				sb.WriteString(tj.ExternalID.MustURL())
+			} else {
+				writeMDLink(&sb, getBuilderName(tj.Definition, tj.Result), tj.ExternalID.MustURL())
+				if sm := tj.Result.GetBuildbucket().GetSummaryMarkdown(); sm != "" {
+					sb.WriteString(". Summary:\n\n")
+					sb.WriteString("---\n")
+					sb.WriteString(sm)
+					sb.WriteString("\n\n---")
 				}
 			}
 		}
@@ -163,6 +169,14 @@ func getBuilderName(def *tryjob.Definition, result *tryjob.Result) string {
 		}
 	}
 	panic(fmt.Errorf("impossible; can't get builder name from definition and result. Definition: %s; Result: %s", def, result))
+}
+
+func writeMDLink(sb *strings.Builder, text, url string) {
+	sb.WriteString("[")
+	sb.WriteString(text)
+	sb.WriteString("](")
+	sb.WriteString(url)
+	sb.WriteString(")")
 }
 
 func makeLogTryjobSnapshot(def *tryjob.Definition, tj *tryjob.Tryjob, reused bool) *tryjob.ExecutionLogEntry_TryjobSnapshot {

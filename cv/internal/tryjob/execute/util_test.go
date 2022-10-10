@@ -64,7 +64,7 @@ func TestComposeReason(t *testing.T) {
 							},
 						},
 					})
-					So(r, ShouldEqual, "Tryjob has failed: https://test.com/build/123456790")
+					So(r, ShouldEqual, "[Tryjob](https://test.com/build/123456790) has failed")
 				})
 				Convey("not restricted", func() {
 					r := composeReason([]*tryjob.Tryjob{
@@ -89,12 +89,12 @@ func TestComposeReason(t *testing.T) {
 							},
 						},
 					})
-					So(r, ShouldEqual, "Tryjob `test_proj/test_bucket/test_builder` has failed: https://test.com/build/123456790\n\tA couple\n\tof lines\n\twith public details")
+					So(r, ShouldEqual, "Tryjob [test_proj/test_bucket/test_builder](https://test.com/build/123456790) has failed with summary:\n\n---\nA couple\nof lines\nwith public details")
 				})
 			})
 
-			Convey("multiple", func() {
-				r := composeReason([]*tryjob.Tryjob{
+			Convey("multiple tryjobs", func() {
+				tjs := []*tryjob.Tryjob{
 					// restricted.
 					{
 						ExternalID: tryjob.MustBuildbucketID("test.com", 123456790),
@@ -156,8 +156,18 @@ func TestComposeReason(t *testing.T) {
 							},
 						},
 					},
+				}
+
+				Convey("all public visibility", func() {
+					r := composeReason(tjs[1:])
+					So(r, ShouldEqual, "Failed Tryjobs:\n* [test_proj/test_bucket/test_builder](https://test.com/build/123456791)\n* [test_proj/test_bucket/test_builder](https://test.com/build/123456792). Summary:\n\n---\nA couple\nof lines\nwith public details\n\n---")
 				})
-				So(r, ShouldEqual, "Failed Tryjobs:\n* https://test.com/build/123456790\n* `test_proj/test_bucket/test_builder`: https://test.com/build/123456791\n* `test_proj/test_bucket/test_builder`: https://test.com/build/123456792\n\tA couple\n\tof lines\n\twith public details")
+
+				Convey("with one restricted visibility", func() {
+					r := composeReason(tjs)
+					So(r, ShouldEqual, "Failed Tryjobs:\n* https://test.com/build/123456790\n* https://test.com/build/123456791\n* https://test.com/build/123456792")
+				})
+
 			})
 		})
 	})
