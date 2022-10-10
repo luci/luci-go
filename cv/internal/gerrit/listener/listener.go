@@ -46,17 +46,19 @@ type scheduler interface {
 // Listener fetches and process messages from the subscriptions configured
 // in the settings.
 type Listener struct {
-	sbers    map[string]*subscriber
-	sch      scheduler
-	psClient *pubsub.Client
+	sbers     map[string]*subscriber
+	sch       scheduler
+	psClient  *pubsub.Client
+	prjFinder *projectFinder
 }
 
 // NewListener constructs a Listener.
 func NewListener(psClient *pubsub.Client, sch scheduler) *Listener {
 	return &Listener{
-		psClient: psClient,
-		sbers:    make(map[string]*subscriber),
-		sch:      sch,
+		sbers:     make(map[string]*subscriber),
+		sch:       sch,
+		psClient:  psClient,
+		prjFinder: &projectFinder{},
 	}
 }
 
@@ -68,6 +70,8 @@ func (l *Listener) Run(ctx context.Context) {
 		if err != nil {
 			// log the error and retry it after the interval.
 			logging.Errorf(ctx, "GetListenerConfig: %s", err)
+		} else if err := l.prjFinder.reload(gcfg.GetEnabledProjectRegexps()); err != nil {
+			logging.Errorf(ctx, "Listener: projectFinder.reload: %s", err)
 		} else if err := l.reload(ctx, gcfg.GetGerritSubscriptions()); err != nil {
 			logging.Errorf(ctx, "Listener.reload: %s", err.Error())
 		}
@@ -101,7 +105,7 @@ func (l *Listener) reload(ctx context.Context, settings []*listenerpb.Settings_G
 
 		switch sber, ok := l.sbers[host]; {
 		case !ok:
-			sber = newGerritSubscriber(l.psClient, l.sch, setting)
+			sber = newGerritSubscriber(l.psClient, l.sch, l.prjFinder, setting)
 			if err := sber.start(ctx); err != nil {
 				startErrs.Assign(i, err)
 			}
@@ -111,7 +115,7 @@ func (l *Listener) reload(ctx context.Context, settings []*listenerpb.Settings_G
 		// start a new one.
 		case !sameGerritSubscriberSettings(sber, setting):
 			wg.Add(1)
-			newSber := newGerritSubscriber(l.psClient, l.sch, setting)
+			newSber := newGerritSubscriber(l.psClient, l.sch, l.prjFinder, setting)
 			l.sbers[host] = newSber
 
 			go func() {

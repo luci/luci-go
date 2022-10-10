@@ -43,10 +43,10 @@ func TestGerrit(t *testing.T) {
 		settings := &listenerpb.Settings_GerritSubscription{Host: "example.org"}
 
 		Convey("create a reference to subscription", func() {
-			sber := newGerritSubscriber(client, &testScheduler{}, settings)
+			sber := newGerritSubscriber(client, &testScheduler{}, &projectFinder{}, settings)
 			So(sber.sub.ID(), ShouldEqual, "example.org")
 			settings.SubscriptionId = "my-sub"
-			sber = newGerritSubscriber(client, &testScheduler{}, settings)
+			sber = newGerritSubscriber(client, &testScheduler{}, &projectFinder{}, settings)
 			So(sber.sub.ID(), ShouldEqual, "my-sub")
 
 			Convey("with receive settings", func() {
@@ -54,7 +54,7 @@ func TestGerrit(t *testing.T) {
 					NumGoroutines:          defaultNumGoroutines + 1,
 					MaxOutstandingMessages: defaultMaxOutstandingMessages + 1,
 				}
-				sber = newGerritSubscriber(client, &testScheduler{}, settings)
+				sber = newGerritSubscriber(client, &testScheduler{}, &projectFinder{}, settings)
 				So(sber.sameReceiveSettings(settings.ReceiveSettings), ShouldBeTrue)
 			})
 		})
@@ -64,7 +64,7 @@ func TestGerrit(t *testing.T) {
 				NumGoroutines:          1,
 				MaxOutstandingMessages: 2,
 			}
-			sber := newGerritSubscriber(client, &testScheduler{}, settings)
+			sber := newGerritSubscriber(client, &testScheduler{}, &projectFinder{}, settings)
 			check := func() bool {
 				return sameGerritSubscriberSettings(sber, settings)
 			}
@@ -86,7 +86,7 @@ func TestGerrit(t *testing.T) {
 			Convey("with different host", func() {
 				settings.Host = "example.org"
 				settings.SubscriptionId = "example-sub"
-				sber := newGerritSubscriber(client, &testScheduler{}, settings)
+				sber := newGerritSubscriber(client, &testScheduler{}, &projectFinder{}, settings)
 
 				// same subscription ID, but different host.
 				settings.Host = "example-2.org"

@@ -19,6 +19,7 @@ import (
 	"time"
 
 	"go.chromium.org/luci/common/clock"
+	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry/transient"
@@ -78,18 +79,23 @@ type mapPart struct {
 // atomically.
 // Changes to individual Gerrit repos are atomic.  This means that
 // IF Update() is in progress from config versions 1 to 2, identified by
-//   hashes h1 and h2, respectively,
+//
+//	hashes h1 and h2, respectively,
+//
 // AND both h1 and h2 watch specific Gerrit repo, possibly among many others,
 // THEN a concurrent Lookup(host,repo,...) is guaranteed to return either
 // based on @h1 or based on @h2.
 //
 // However, there is no atomicity across entire project config. This means that
 // IF Update() is in progress from config versions 1 to 2, identified by
-//   hashes h1 and h2, respectively,
+//
+//	hashes h1 and h2, respectively,
+//
 // THEN two sequential calls to Lookup with different Gerrit repos may return
 // results based on @h2 at first and @h1 for the second, ie:
-//   Lookup(host1,repoA,...) -> @h2
-//   Lookup(host1,repoB,...) -> @h1
+//
+//	Lookup(host1,repoA,...) -> @h2
+//	Lookup(host1,repoB,...) -> @h1
 //
 // Thus, a failed Update() may leave gobmap in a corrupted state, whereby some
 // Gerrit repos may represent old and some new config versions. In such a
@@ -106,6 +112,18 @@ func Update(ctx context.Context, meta *prjcfg.Meta, cgs []*prjcfg.ConfigGroup) e
 	}
 	defer cleanup()
 	return update(ctx, meta, cgs)
+}
+
+// getAll returns the gob map entities matching given host and repo.
+func getAll(ctx context.Context, host, repo string) ([]*mapPart, error) {
+	hostRepo := host + "/" + repo
+	parentKey := datastore.MakeKey(ctx, parentKind, hostRepo)
+	q := datastore.NewQuery(mapKind).Ancestor(parentKey)
+	mps := []*mapPart{}
+	if err := datastore.GetAll(ctx, q, &mps); err != nil {
+		return nil, errors.Annotate(err, hostRepo).Tag(transient.Tag).Err()
+	}
+	return mps, nil
 }
 
 // leaseExclusive obtains exclusive lease on the gob map for the LUCI project.
@@ -251,12 +269,9 @@ func internalGroups(configGroups []*prjcfg.ConfigGroup) map[string]*cfgmatcher.G
 // Always returns non-nil object, even if there are no watching projects.
 func Lookup(ctx context.Context, host, repo, ref string) (*changelist.ApplicableConfig, error) {
 	// Fetch all MapPart entities for the given host and repo.
-	hostRepo := host + "/" + repo
-	parentKey := datastore.MakeKey(ctx, parentKind, hostRepo)
-	q := datastore.NewQuery(mapKind).Ancestor(parentKey)
-	mps := []*mapPart{}
-	if err := datastore.GetAll(ctx, q, &mps); err != nil {
-		return nil, errors.Annotate(err, "failed to fetch MapParts for %s", hostRepo).Tag(transient.Tag).Err()
+	mps, err := getAll(ctx, host, repo)
+	if err != nil {
+		return nil, errors.Annotate(err, "failed to fetch MapParts").Err()
 	}
 
 	// For each MapPart entity, inspect the Groups to determine which configs
@@ -275,4 +290,21 @@ func Lookup(ctx context.Context, host, repo, ref string) (*changelist.Applicable
 		}
 	}
 	return ac, nil
+}
+
+// LookupProjects returns all the LUCI projects that have at least one
+// applicable config for a given host and repo.
+//
+// Returns a sorted slice with a unique set of the LUCI projects.
+func LookupProjects(ctx context.Context, host, repo string) ([]string, error) {
+	// Fetch all MapPart entities for the given host and repo.
+	mps, err := getAll(ctx, host, repo)
+	if err != nil {
+		return nil, errors.Annotate(err, "failed to fetch MapParts").Err()
+	}
+	prjs := stringset.New(len(mps))
+	for _, mp := range mps {
+		prjs.Add(mp.Project)
+	}
+	return prjs.ToSortedSlice(), nil
 }

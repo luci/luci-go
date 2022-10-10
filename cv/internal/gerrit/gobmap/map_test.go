@@ -154,6 +154,18 @@ func TestGobMapUpdateAndLookup(t *testing.T) {
 				lookup(ctx, "cr-review.gs.com", "cr/src", "refs/branch-heads/beta"),
 				ShouldBeEmpty)
 		})
+
+		Convey("LookupProjects with the matched repo", func() {
+			prjs, err := LookupProjects(ctx, "cr-review.gs.com", "cr/src")
+			So(err, ShouldBeNil)
+			So(prjs, ShouldResemble, []string{"chromium"})
+		})
+
+		Convey("LookupProjects with an unmated repo", func() {
+			prjs, err := LookupProjects(ctx, "cr-review.gs.com", "cr2/src")
+			So(err, ShouldBeNil)
+			So(prjs, ShouldBeEmpty)
+		})
 	})
 
 	Convey("Lookup again returns nothing for disabled project", t, func() {

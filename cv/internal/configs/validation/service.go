@@ -15,6 +15,8 @@
 package validation
 
 import (
+	"regexp"
+
 	"google.golang.org/protobuf/encoding/prototext"
 
 	"go.chromium.org/luci/common/data/stringset"
@@ -78,6 +80,13 @@ func validateListenerSettings(ctx *validation.Context, configSet, path string, c
 		}
 		if !hosts.Add(id) {
 			ctx.Errorf("duplicate subscription ID %q", id)
+		}
+		ctx.Exit()
+	}
+	for i, r := range cfg.GetEnabledProjectRegexps() {
+		ctx.Enter("enabled_project_regexps #%d", i+1)
+		if _, err := regexp.Compile(r); err != nil {
+			ctx.Errorf(err.Error())
 		}
 		ctx.Exit()
 	}

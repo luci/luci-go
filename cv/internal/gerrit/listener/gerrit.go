@@ -24,8 +24,9 @@ import (
 
 // gerritProcessor implements processor interface for Gerrit subscription.
 type gerritProcessor struct {
-	sch  scheduler
-	host string
+	sch       scheduler
+	host      string
+	prjFinder *projectFinder
 }
 
 // process processes a given Gerrit pubsub message and schedules UpdateCLTask(s)
@@ -35,14 +36,18 @@ func (p *gerritProcessor) process(ctx context.Context, m *pubsub.Message) {
 	m.Ack()
 }
 
-func newGerritSubscriber(c *pubsub.Client, sch scheduler, settings *listenerpb.Settings_GerritSubscription) *subscriber {
+func newGerritSubscriber(c *pubsub.Client, sch scheduler, prjFinder *projectFinder, settings *listenerpb.Settings_GerritSubscription) *subscriber {
 	subID := settings.GetSubscriptionId()
 	if subID == "" {
 		subID = settings.GetHost()
 	}
 	sber := &subscriber{
-		sub:  c.Subscription(subID),
-		proc: &gerritProcessor{sch: sch, host: settings.GetHost()},
+		sub: c.Subscription(subID),
+		proc: &gerritProcessor{
+			sch:       sch,
+			host:      settings.GetHost(),
+			prjFinder: prjFinder,
+		},
 	}
 	sber.sub.ReceiveSettings.NumGoroutines = defaultNumGoroutines
 	sber.sub.ReceiveSettings.MaxOutstandingMessages = defaultMaxOutstandingMessages
