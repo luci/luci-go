@@ -1,0 +1,71 @@
+// Copyright 2022 The LUCI Authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package luci.server.loginsessions;
+
+import "google/protobuf/timestamp.proto";
+
+import "go.chromium.org/luci/auth/loginsessionspb/service.proto";
+
+option go_package = "go.chromium.org/luci/server/loginsessions/internal/statepb";
+
+
+// LoginSession is stored in the datastore.
+//
+// It is a superset of luci.auth.loginsessions.LoginSession from the public API
+// that has additional internal fields.
+message LoginSession {
+  // Unique ID of the session, matches luci.auth.loginsessions.LoginSession.
+  string id = 1;
+  // Password protecting access to GetLoginSession RPC.
+  bytes password = 2;
+  // The current session state.
+  luci.auth.loginsessions.LoginSession.State state = 3;
+
+  // When the session was created. Always populated.
+  google.protobuf.Timestamp created = 4;
+  // When the session will expire. Always populated.
+  google.protobuf.Timestamp expiry = 5;
+  // When the session moved to a final state. Populated for finished sessions.
+  google.protobuf.Timestamp completed = 6;
+
+  // Details provided in CreateLoginSessionRequest. Always populated.
+  string oauth_client_id = 7;
+  repeated string oauth_scopes = 8;
+  string oauth_s256_code_challenge = 9;
+  string executable_name = 10;
+  string client_hostname = 11;
+
+  // Active (non-expired) confirmation codes.
+  message ConfirmationCode {
+    string code = 1;
+    google.protobuf.Timestamp expiry = 2;
+    google.protobuf.Timestamp refresh = 3;
+  }
+  repeated ConfirmationCode confirmation_codes = 12;
+
+  // The outcome of the protocol.
+  string oauth_authorization_code = 13;
+  string oauth_redirect_url = 14;
+  string oauth_error = 15;
+}
+
+
+// OpenIDState is encrypted and used as `state` in OpenID Connect protocol.
+message OpenIDState {
+  string login_session_id = 1;
+  string login_cookie_value = 2;
+}
