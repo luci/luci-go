@@ -118,7 +118,6 @@ func RemoveUnusedGerritInfo(ci *gerritpb.ChangeInfo) {
 		}
 		r.Description = ""
 		// TODO(crbug/1260615): erase commit message after CQDaemon is gone.
-		r.Uploader = nil
 		r.Files = nil
 	}
 
