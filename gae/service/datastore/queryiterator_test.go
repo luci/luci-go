@@ -207,7 +207,7 @@ func TestStartQueryIterator(t *testing.T) {
 		})
 
 		Convey("errors from raw datastore", func() {
-			dq = dq.Eq("$err_single", "Query fail").Eq("$err_single_idx", 0)
+			dq = dq.Eq("@err_single", "Query fail").Eq("@err_single_idx", 0)
 			fq, err := dq.Finalize()
 			So(err, ShouldBeNil)
 			qi := startQueryIterator(ctx, fq)

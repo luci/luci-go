@@ -102,8 +102,8 @@ func (f *fakeDatastore) Run(fq *FinalizedQuery, cb RawRunCB) error {
 	}
 
 	for i := int32(0); i < lim; i++ {
-		if v, ok := fq.eqFilts["$err_single"]; ok {
-			idx := fq.eqFilts["$err_single_idx"][0].Value().(int64)
+		if v, ok := fq.eqFilts["@err_single"]; ok {
+			idx := fq.eqFilts["@err_single_idx"][0].Value().(int64)
 			if idx == int64(i) {
 				return errors.New(v[0].Value().(string))
 			}
@@ -1353,7 +1353,7 @@ func TestRun(t *testing.T) {
 			})
 
 			Convey("early abort on error", func() {
-				q = q.Eq("$err_single", "Query fail").Eq("$err_single_idx", 3)
+				q = q.Eq("@err_single", "Query fail").Eq("@err_single_idx", 3)
 				i := 0
 				So(Run(c, q, func(c CommonStruct) {
 					i++
@@ -2097,7 +2097,7 @@ var (
 )
 
 func (f *fakeDatastore2) Run(fq *FinalizedQuery, cb RawRunCB) error {
-	if _, ok := fq.eqFilts["$err_single"]; ok {
+	if _, ok := fq.eqFilts["@err_single"]; ok {
 		return errors.New("errors in fakeDatastore")
 	}
 
@@ -2201,7 +2201,7 @@ func TestRunMulti(t *testing.T) {
 		Convey("errors in one running query", func() {
 			queries := []*Query{
 				NewQuery("Foo").Eq("values", "aa"),
-				NewQuery("Foo").Eq("$err_single", "error"),
+				NewQuery("Foo").Eq("@err_single", "error"),
 			}
 			var foos []*Foo
 			err := RunMulti(c, queries, func(foo *Foo) error {

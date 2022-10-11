@@ -333,6 +333,12 @@ var queryTests = []queryTest{
 		"",
 		func(err error) { So(err, ShouldEqual, ErrNullQuery) },
 		nil},
+
+	{"reject pseudofield $id",
+		nq().Lt("$id", 10),
+		"",
+		func(err error) { So(err, ShouldErrLike, "rejecting field") },
+		nil},
 }
 
 func TestQueries(t *testing.T) {

@@ -40,6 +40,15 @@ var (
 // Query is a builder-object for building a datastore query. It may represent
 // an invalid query, but the error will only be observable when you call
 // Finalize.
+//
+// Fields like "$id" are technically usable at the datastore level, but using
+// them through the non-raw interface is likely a mistake.
+//
+// For example, instead of using:
+// >  datastore.NewQuery(...).Lte("$id", ...)
+// One should use:
+// >  datastore.NewQuery(...).Lte("__key__", ...)
+//
 type Query struct {
 	queryFields
 
@@ -314,9 +323,17 @@ func (q *Query) Eq(field string, values ...interface{}) *Query {
 	})
 }
 
+// reserved checks whether a field is reserved.
+//
+// Set the q.err as a side-effect if field is invalid.
 func (q *Query) reserved(field string) bool {
 	if field == "__key__" || field == "__scatter__" {
 		return false
+	}
+	if strings.HasPrefix(field, "$") {
+		q.err = fmt.Errorf(
+			`LUCI fields such as "$id" and "$kind" are not real fields: rejecting field %q`, field)
+		return true
 	}
 	if field == "" {
 		q.err = fmt.Errorf(
