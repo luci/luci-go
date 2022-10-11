@@ -616,7 +616,7 @@ func TestUpdateProject(t *testing.T) {
 			{
 				Name: "try",
 				Swarming: &pb.Swarming{
-					Builders: []*pb.BuilderConfig{},
+					Builders:                     []*pb.BuilderConfig{},
 					TaskTemplateCanaryPercentage: &wrapperspb.UInt32Value{Value: uint32(10)},
 				},
 			},
@@ -633,33 +633,33 @@ func TestUpdateProject(t *testing.T) {
 
 		So(actualBkts, ShouldResemble, []*model.Bucket{
 			{
-				ID:"master.tryserver.chromium.linux",
-				Parent: model.ProjectKey(ctx, "chromium"),
-				Schema: CurrentBucketSchemaVersion,
+				ID:       "master.tryserver.chromium.linux",
+				Parent:   model.ProjectKey(ctx, "chromium"),
+				Schema:   CurrentBucketSchemaVersion,
 				Revision: "deadbeef",
 			},
 			{
-				ID:"master.tryserver.chromium.win",
-				Parent: model.ProjectKey(ctx, "chromium"),
-				Schema: CurrentBucketSchemaVersion,
+				ID:       "master.tryserver.chromium.win",
+				Parent:   model.ProjectKey(ctx, "chromium"),
+				Schema:   CurrentBucketSchemaVersion,
 				Revision: "deadbeef",
 			},
 			{
-				ID:"try",
-				Parent: model.ProjectKey(ctx, "chromium"),
-				Schema: CurrentBucketSchemaVersion,
+				ID:       "try",
+				Parent:   model.ProjectKey(ctx, "chromium"),
+				Schema:   CurrentBucketSchemaVersion,
 				Revision: "deadbeef",
 			},
 			{
-				ID:"try",
-				Parent: model.ProjectKey(ctx, "dart"),
-				Schema: CurrentBucketSchemaVersion,
+				ID:       "try",
+				Parent:   model.ProjectKey(ctx, "dart"),
+				Schema:   CurrentBucketSchemaVersion,
 				Revision: "deadbeef",
 			},
 			{
-				ID:"master.tryserver.v8",
-				Parent: model.ProjectKey(ctx, "v8"),
-				Schema: CurrentBucketSchemaVersion,
+				ID:       "master.tryserver.v8",
+				Parent:   model.ProjectKey(ctx, "v8"),
+				Schema:   CurrentBucketSchemaVersion,
 				Revision: "sha1:502558141dd8e90ed88de7f1bf3fa430d4128966",
 			},
 		})
@@ -667,24 +667,24 @@ func TestUpdateProject(t *testing.T) {
 		var actualBuilders []*model.Builder
 		So(datastore.GetAll(ctx, datastore.NewQuery(model.BuilderKind), &actualBuilders), ShouldBeNil)
 		So(len(actualBuilders), ShouldEqual, 2)
-		expectedBuilder1 := &pb.BuilderConfig	{
-			Name: "linux",
-			Dimensions: []string{"os:Linux", "pool:luci.chromium.try"},
-			SwarmingHost: "swarming.example.com",
+		expectedBuilder1 := &pb.BuilderConfig{
+			Name:                         "linux",
+			Dimensions:                   []string{"os:Linux", "pool:luci.chromium.try"},
+			SwarmingHost:                 "swarming.example.com",
 			TaskTemplateCanaryPercentage: &wrapperspb.UInt32Value{Value: uint32(10)},
 			Exe: &pb.Executable{
 				CipdPackage: "infra/recipe_bundle",
-				CipdVersion:  "refs/heads/main",
-				Cmd: []string{"luciexe"},
+				CipdVersion: "refs/heads/main",
+				Cmd:         []string{"luciexe"},
 			},
 		}
-		expectedBuilder2 := &pb.BuilderConfig {
-			Name: "linux",
+		expectedBuilder2 := &pb.BuilderConfig{
+			Name:       "linux",
 			Dimensions: []string{"pool:Dart.LUCI"},
 			Exe: &pb.Executable{
 				CipdPackage: "infra/recipe_bundle",
-				CipdVersion:  "refs/heads/main",
-				Cmd: []string{"luciexe"},
+				CipdVersion: "refs/heads/main",
+				Cmd:         []string{"luciexe"},
 			},
 		}
 		expectedBldrHash1, _ := computeBuilderHash(expectedBuilder1)
@@ -692,13 +692,13 @@ func TestUpdateProject(t *testing.T) {
 		So(stripBuilderProtos(actualBuilders), ShouldResembleProto, []*pb.BuilderConfig{expectedBuilder1, expectedBuilder2})
 		So(actualBuilders, ShouldResemble, []*model.Builder{
 			{
-				ID: "linux",
-				Parent: model.BucketKey(ctx, "chromium", "try"),
-				ConfigHash:expectedBldrHash1,
+				ID:         "linux",
+				Parent:     model.BucketKey(ctx, "chromium", "try"),
+				ConfigHash: expectedBldrHash1,
 			},
 			{
-				ID: "linux",
-				Parent: model.BucketKey(ctx, "dart", "try"),
+				ID:         "linux",
+				Parent:     model.BucketKey(ctx, "dart", "try"),
 				ConfigHash: expectedBldrHash2,
 			},
 		})
@@ -752,7 +752,7 @@ func TestUpdateProject(t *testing.T) {
 				{
 					Name: "try",
 					Swarming: &pb.Swarming{
-						Builders: []*pb.BuilderConfig{},
+						Builders:                     []*pb.BuilderConfig{},
 						TaskTemplateCanaryPercentage: &wrapperspb.UInt32Value{Value: uint32(10)},
 					},
 				},
@@ -765,27 +765,27 @@ func TestUpdateProject(t *testing.T) {
 			})
 			So(actualBkts, ShouldResemble, []*model.Bucket{
 				{
-					ID:"master.tryserver.chromium.linux",
-					Parent: model.ProjectKey(ctx, "chromium"),
-					Schema: CurrentBucketSchemaVersion,
+					ID:       "master.tryserver.chromium.linux",
+					Parent:   model.ProjectKey(ctx, "chromium"),
+					Schema:   CurrentBucketSchemaVersion,
 					Revision: "new!",
 				},
 				{
-					ID:"master.tryserver.chromium.mac",
-					Parent: model.ProjectKey(ctx, "chromium"),
-					Schema: CurrentBucketSchemaVersion,
+					ID:       "master.tryserver.chromium.mac",
+					Parent:   model.ProjectKey(ctx, "chromium"),
+					Schema:   CurrentBucketSchemaVersion,
 					Revision: "new!",
 				},
 				{
-					ID:"try",
-					Parent: model.ProjectKey(ctx, "chromium"),
-					Schema: CurrentBucketSchemaVersion,
+					ID:       "try",
+					Parent:   model.ProjectKey(ctx, "chromium"),
+					Schema:   CurrentBucketSchemaVersion,
 					Revision: "new!",
 				},
 				{
-					ID:"try",
-					Parent: model.ProjectKey(ctx, "dart"),
-					Schema: CurrentBucketSchemaVersion,
+					ID:       "try",
+					Parent:   model.ProjectKey(ctx, "dart"),
+					Schema:   CurrentBucketSchemaVersion,
 					Revision: "deadbeef",
 				},
 			})
@@ -793,24 +793,24 @@ func TestUpdateProject(t *testing.T) {
 			var actualBuilders []*model.Builder
 			So(datastore.GetAll(ctx, datastore.NewQuery(model.BuilderKind), &actualBuilders), ShouldBeNil)
 			So(len(actualBuilders), ShouldEqual, 2)
-			expectedBuilder1 := &pb.BuilderConfig	{
-				Name: "linux",
-				Dimensions: []string{"os:Linux", "pool:luci.chromium.try"},
-				SwarmingHost: "swarming.updated.example.com",
+			expectedBuilder1 := &pb.BuilderConfig{
+				Name:                         "linux",
+				Dimensions:                   []string{"os:Linux", "pool:luci.chromium.try"},
+				SwarmingHost:                 "swarming.updated.example.com",
 				TaskTemplateCanaryPercentage: &wrapperspb.UInt32Value{Value: uint32(10)},
 				Exe: &pb.Executable{
 					CipdPackage: "infra/recipe_bundle",
-					CipdVersion:  "refs/heads/main",
-					Cmd: []string{"luciexe"},
+					CipdVersion: "refs/heads/main",
+					Cmd:         []string{"luciexe"},
 				},
 			}
-			expectedBuilder2 := &pb.BuilderConfig {
-				Name: "linux",
+			expectedBuilder2 := &pb.BuilderConfig{
+				Name:       "linux",
 				Dimensions: []string{"pool:Dart.LUCI"},
 				Exe: &pb.Executable{
 					CipdPackage: "infra/recipe_bundle",
-					CipdVersion:  "refs/heads/main",
-					Cmd: []string{"luciexe"},
+					CipdVersion: "refs/heads/main",
+					Cmd:         []string{"luciexe"},
 				},
 			}
 			expectedBldrHash1, _ := computeBuilderHash(expectedBuilder1)
@@ -818,13 +818,13 @@ func TestUpdateProject(t *testing.T) {
 			So(stripBuilderProtos(actualBuilders), ShouldResembleProto, []*pb.BuilderConfig{expectedBuilder1, expectedBuilder2})
 			So(actualBuilders, ShouldResemble, []*model.Builder{
 				{
-					ID: "linux",
-					Parent: model.BucketKey(ctx, "chromium", "try"),
-					ConfigHash:expectedBldrHash1,
+					ID:         "linux",
+					Parent:     model.BucketKey(ctx, "chromium", "try"),
+					ConfigHash: expectedBldrHash1,
 				},
 				{
-					ID: "linux",
-					Parent: model.BucketKey(ctx, "dart", "try"),
+					ID:         "linux",
+					Parent:     model.BucketKey(ctx, "dart", "try"),
 					ConfigHash: expectedBldrHash2,
 				},
 			})
@@ -857,9 +857,9 @@ func TestUpdateProject(t *testing.T) {
 			})
 			So(actualBkts, ShouldResemble, []*model.Bucket{
 				{
-					ID:"try",
-					Parent: model.ProjectKey(ctx, "dart"),
-					Schema: CurrentBucketSchemaVersion,
+					ID:       "try",
+					Parent:   model.ProjectKey(ctx, "dart"),
+					Schema:   CurrentBucketSchemaVersion,
 					Revision: "deadbeef",
 				},
 			})
@@ -867,21 +867,21 @@ func TestUpdateProject(t *testing.T) {
 			var actualBuilders []*model.Builder
 			So(datastore.GetAll(ctx, datastore.NewQuery(model.BuilderKind), &actualBuilders), ShouldBeNil)
 			So(len(actualBuilders), ShouldEqual, 1)
-			dartBuilder := &pb.BuilderConfig {
-				Name: "linux",
+			dartBuilder := &pb.BuilderConfig{
+				Name:       "linux",
 				Dimensions: []string{"pool:Dart.LUCI"},
 				Exe: &pb.Executable{
 					CipdPackage: "infra/recipe_bundle",
-					CipdVersion:  "refs/heads/main",
-					Cmd: []string{"luciexe"},
+					CipdVersion: "refs/heads/main",
+					Cmd:         []string{"luciexe"},
 				},
 			}
 			dartBuilderHash, _ := computeBuilderHash(dartBuilder)
 			So(stripBuilderProtos(actualBuilders), ShouldResembleProto, []*pb.BuilderConfig{dartBuilder})
 			So(actualBuilders, ShouldResemble, []*model.Builder{
 				{
-					ID: "linux",
-					Parent: model.BucketKey(ctx, "dart", "try"),
+					ID:         "linux",
+					Parent:     model.BucketKey(ctx, "dart", "try"),
 					ConfigHash: dartBuilderHash,
 				},
 			})
@@ -914,9 +914,9 @@ func TestUpdateProject(t *testing.T) {
 			})
 			So(actualBkts, ShouldResemble, []*model.Bucket{
 				{
-					ID:"try",
-					Parent: model.ProjectKey(ctx, "dart"),
-					Schema: CurrentBucketSchemaVersion,
+					ID:       "try",
+					Parent:   model.ProjectKey(ctx, "dart"),
+					Schema:   CurrentBucketSchemaVersion,
 					Revision: "deadbeef",
 				},
 			})
@@ -924,21 +924,21 @@ func TestUpdateProject(t *testing.T) {
 			var actualBuilders []*model.Builder
 			So(datastore.GetAll(ctx, datastore.NewQuery(model.BuilderKind), &actualBuilders), ShouldBeNil)
 			So(len(actualBuilders), ShouldEqual, 1)
-			dartBuilder := &pb.BuilderConfig {
-				Name: "linux",
+			dartBuilder := &pb.BuilderConfig{
+				Name:       "linux",
 				Dimensions: []string{"pool:Dart.LUCI"},
 				Exe: &pb.Executable{
 					CipdPackage: "infra/recipe_bundle",
-					CipdVersion:  "refs/heads/main",
-					Cmd: []string{"luciexe"},
+					CipdVersion: "refs/heads/main",
+					Cmd:         []string{"luciexe"},
 				},
 			}
 			dartBuilderHash, _ := computeBuilderHash(dartBuilder)
 			So(stripBuilderProtos(actualBuilders), ShouldResembleProto, []*pb.BuilderConfig{dartBuilder})
 			So(actualBuilders, ShouldResemble, []*model.Builder{
 				{
-					ID: "linux",
-					Parent: model.BucketKey(ctx, "dart", "try"),
+					ID:         "linux",
+					Parent:     model.BucketKey(ctx, "dart", "try"),
 					ConfigHash: dartBuilderHash,
 				},
 			})

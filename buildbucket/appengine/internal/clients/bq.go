@@ -34,6 +34,7 @@ type BqClient interface {
 type bqClientImpl struct {
 	client *bigquery.Client
 }
+
 // Ensure bqClientImpl implements BqClient.
 var _ BqClient = &bqClientImpl{}
 
@@ -65,4 +66,3 @@ func WithBqClient(ctx context.Context, client BqClient) context.Context {
 func GetBqClient(ctx context.Context) BqClient {
 	return ctx.Value(&bqClientCtxKey).(BqClient)
 }
-

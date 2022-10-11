@@ -43,8 +43,8 @@ func (f *FakeBqClient) Insert(ctx context.Context, dataset, table string, row *l
 	return nil
 }
 
-func (f *FakeBqClient) GetRows(dataset, table string) []*lucibq.Row{
+func (f *FakeBqClient) GetRows(dataset, table string) []*lucibq.Row {
 	f.mu.RLock()
 	defer f.mu.RUnlock()
-	return f.data[dataset + "." + table]
+	return f.data[dataset+"."+table]
 }

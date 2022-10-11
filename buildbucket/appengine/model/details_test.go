@@ -296,9 +296,9 @@ func TestDetails(t *testing.T) {
 	Convey("BuildOutputProperties in transition stage", t, func() {
 		// Mimic the case when 20% traffic on new model and 80% traffic on old model.
 		type BuildOutputPropertiesV2 struct {
-			_kind string `gae:"$kind,BuildOutputProperties"`
-			_id int `gae:"$id,1"`
-			Build *datastore.Key `gae:"$parent"`
+			_kind string           `gae:"$kind,BuildOutputProperties"`
+			_id   int              `gae:"$id,1"`
+			Build *datastore.Key   `gae:"$parent"`
 			Proto *structpb.Struct `gae:"properties,legacy"`
 
 			ChunkCount int `gae:"chunk_count,noindex"`
@@ -311,9 +311,9 @@ func TestDetails(t *testing.T) {
 		prop, err := structpb.NewStruct(map[string]interface{}{"key": "value"})
 		So(err, ShouldBeNil)
 		Convey("write with new model, read with the old model", func() {
-			outInNew := &BuildOutputPropertiesV2 {
-				Build: datastore.KeyForObj(ctx, &Build{ID: 123}),
-				Proto: prop,
+			outInNew := &BuildOutputPropertiesV2{
+				Build:      datastore.KeyForObj(ctx, &Build{ID: 123}),
+				Proto:      prop,
 				ChunkCount: 0,
 			}
 			So(datastore.Put(ctx, outInNew), ShouldBeNil)
@@ -326,7 +326,7 @@ func TestDetails(t *testing.T) {
 		})
 
 		Convey("write with old model, read with the new model", func() {
-			outInOld := &BuildOutputProperties {
+			outInOld := &BuildOutputProperties{
 				Build: datastore.KeyForObj(ctx, &Build{ID: 123}),
 				Proto: prop,
 			}

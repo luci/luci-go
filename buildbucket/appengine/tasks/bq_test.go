@@ -59,25 +59,25 @@ func TestBQ(t *testing.T) {
 					Bucket:  "bucket",
 					Builder: "builder",
 				},
-				Status:     pb.Status_CANCELED,
+				Status: pb.Status_CANCELED,
 			},
 		}
 		bk := datastore.KeyForObj(ctx, b)
 		bs := &model.BuildSteps{ID: 1, Build: bk}
 		So(bs.FromProto([]*pb.Step{
 			{
-				Name: "step",
+				Name:            "step",
 				SummaryMarkdown: "summary",
 				Logs: []*pb.Log{{
-					Name: "log1",
-					Url: "url",
+					Name:    "log1",
+					Url:     "url",
 					ViewUrl: "view_url",
 				},
 				},
 			},
 		}), ShouldBeNil)
 		bi := &model.BuildInfra{
-			ID: 1,
+			ID:    1,
 			Build: bk,
 			Proto: &pb.BuildInfra{
 				Buildbucket: &pb.BuildInfra_Buildbucket{
@@ -120,13 +120,13 @@ func TestBQ(t *testing.T) {
 					Bucket:  "bucket",
 					Builder: "builder",
 				},
-				Status:     pb.Status_CANCELED,
-				Steps:  []*pb.Step{{
+				Status: pb.Status_CANCELED,
+				Steps: []*pb.Step{{
 					Name: "step",
 					Logs: []*pb.Log{{Name: "log1"}},
 				}},
-				Infra: &pb.BuildInfra{Buildbucket: &pb.BuildInfra_Buildbucket{}},
-				Input: &pb.Build_Input{},
+				Infra:  &pb.BuildInfra{Buildbucket: &pb.BuildInfra_Buildbucket{}},
+				Input:  &pb.Build_Input{},
 				Output: &pb.Build_Output{},
 			})
 		})

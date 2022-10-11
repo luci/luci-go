@@ -73,7 +73,7 @@ var (
 
 // changeLog is a temporary struct to track all changes in UpdateProjectCfg.
 type changeLog struct {
-	item string
+	item   string
 	action string
 }
 
@@ -91,17 +91,17 @@ func UpdateProjectCfg(ctx context.Context) error {
 	}
 	cfgs := make([]*config.Config, len(cfgMetas))
 	err = parallel.WorkPool(min(64, len(cfgMetas)), func(work chan<- func() error) {
-	for i, meta := range cfgMetas {
-		i := i
-		cfgSet := meta.ConfigSet
-		work <- func() error {
-			cfg, err := client.GetConfig(ctx, cfgSet, "${appid}.cfg", false)
-			if err != nil {
-				return errors.Annotate(err, "failed to fetch the project config for %s", string(cfgSet)).Err()
+		for i, meta := range cfgMetas {
+			i := i
+			cfgSet := meta.ConfigSet
+			work <- func() error {
+				cfg, err := client.GetConfig(ctx, cfgSet, "${appid}.cfg", false)
+				if err != nil {
+					return errors.Annotate(err, "failed to fetch the project config for %s", string(cfgSet)).Err()
+				}
+				cfgs[i] = cfg
+				return nil
 			}
-			cfgs[i] = cfg
-			return nil
-		}
 		}
 	})
 	if err != nil {
@@ -153,7 +153,7 @@ func UpdateProjectCfg(ctx context.Context) error {
 				Parent: model.ProjectKey(ctx, project),
 			}
 			delete(bucketsToDelete[project], cfgBktName)
-			if err := model.GetIgnoreMissing(ctx, storedBucket); err != nil{
+			if err := model.GetIgnoreMissing(ctx, storedBucket); err != nil {
 				return err
 			}
 
@@ -192,9 +192,9 @@ func UpdateProjectCfg(ctx context.Context) error {
 					}
 				}
 				buildersToPut = append(buildersToPut, &model.Builder{
-					ID:     cfgBuilder.Name,
-					Parent: bktKey,
-					Config: cfgBuilder,
+					ID:         cfgBuilder.Name,
+					Parent:     bktKey,
+					Config:     cfgBuilder,
 					ConfigHash: cfgBuilderHash,
 				})
 			}
@@ -206,17 +206,17 @@ func UpdateProjectCfg(ctx context.Context) error {
 					cfgBucket.Swarming.Builders = []*pb.BuilderConfig{}
 				}
 				if err := datastore.Put(ctx, &model.Bucket{
-					ID: cfgBktName,
-					Parent: model.ProjectKey(ctx, project),
-					Schema: CurrentBucketSchemaVersion,
+					ID:       cfgBktName,
+					Parent:   model.ProjectKey(ctx, project),
+					Schema:   CurrentBucketSchemaVersion,
 					Revision: revision,
-					Proto: cfgBucket,
+					Proto:    cfgBucket,
 				}); err != nil {
 					return errors.Annotate(err, "failed to put bucket").Err()
 				}
 
 				if err := datastore.Put(ctx, buildersToPut); err != nil {
-					return errors.Annotate(err, "failed to put %d builders",len(buildersToPut)).Err()
+					return errors.Annotate(err, "failed to put %d builders", len(buildersToPut)).Err()
 				}
 
 				var bldrsToDel []*model.Builder
@@ -228,7 +228,7 @@ func UpdateProjectCfg(ctx context.Context) error {
 				}
 
 				// TODO(crbug.com/1362157) Delete after the correctness is proved in Prod.
-				changes = append(changes, &changeLog{item: project+"."+cfgBktName, action: "put"})
+				changes = append(changes, &changeLog{item: project + "." + cfgBktName, action: "put"})
 				for _, bldr := range buildersToPut {
 					changes = append(changes, &changeLog{item: bldr.FullBuilderName(), action: "put"})
 				}
@@ -258,7 +258,7 @@ func UpdateProjectCfg(ctx context.Context) error {
 
 	// TODO(crbug.com/1362157) Delete after the correctness is proved in Prod.
 	for _, bkt := range toDelete {
-		changes = append(changes, &changeLog{item: bkt.Parent().StringID()+"."+bkt.StringID(), action: "delete"})
+		changes = append(changes, &changeLog{item: bkt.Parent().StringID() + "." + bkt.StringID(), action: "delete"})
 	}
 	if len(changes) == 0 {
 		logging.Debugf(ctx, "No changes this time.")
@@ -289,9 +289,9 @@ func checkPoolDimExists(cfgBuilder *pb.BuilderConfig) bool {
 }
 
 // shortBucketName returns bucket name without "luci.<project_id>." prefix.
-func shortBucketName (name string) string {
+func shortBucketName(name string) string {
 	parts := strings.SplitN(name, ".", 3)
-	if len(parts) == 3 && parts[0] == "luci"{
+	if len(parts) == 3 && parts[0] == "luci" {
 		return parts[2]
 	}
 	return name

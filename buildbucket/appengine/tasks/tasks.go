@@ -210,7 +210,6 @@ func init() {
 	})
 }
 
-
 // CancelSwarmingTask enqueues a task queue task to cancel the given Swarming
 // task.
 func CancelSwarmingTask(ctx context.Context, task *taskdefs.CancelSwarmingTask) error {
@@ -277,7 +276,7 @@ func ExportBigQuery(ctx context.Context, buildID int64, routeToGo bool) error {
 		})
 	}
 	return tq.AddTask(ctx, &tq.Task{
-		Payload:  &taskdefs.ExportBigQuery{BuildId: buildID},
+		Payload: &taskdefs.ExportBigQuery{BuildId: buildID},
 	})
 }
 

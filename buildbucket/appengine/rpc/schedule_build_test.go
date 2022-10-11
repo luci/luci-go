@@ -5418,9 +5418,9 @@ func TestScheduleBuild(t *testing.T) {
 						BuildNumbers: pb.Toggle_YES,
 						Name:         "builder_with_rdb",
 						Resultdb: &pb.BuilderConfig_ResultDB{
-							Enable: true,
+							Enable:         true,
 							HistoryOptions: historyOptions,
-							BqExports: bqExports,
+							BqExports:      bqExports,
 						},
 					},
 				}), ShouldBeNil)

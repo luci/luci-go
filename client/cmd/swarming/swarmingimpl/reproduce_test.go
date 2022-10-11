@@ -101,25 +101,25 @@ func TestPrepareTaskRequestEnvironment(t *testing.T) {
 			Command:     []string{"rbd", "stream", "-test-id-prefix", "--isolated-output=${ISOLATED_OUTDIR}/chicken-output.json"},
 			RelativeCwd: relativeCwd,
 			Env: []*swarming.SwarmingRpcsStringPair{
-				&swarming.SwarmingRpcsStringPair{
+				{
 					Key:   "key",
 					Value: "value1",
 				},
-				&swarming.SwarmingRpcsStringPair{
+				{
 					Key:   "replaceKey",
 					Value: "value2",
 				},
-				&swarming.SwarmingRpcsStringPair{
+				{
 					Key:   "removeKey",
 					Value: "",
 				},
 			},
 			EnvPrefixes: []*swarming.SwarmingRpcsStringListPair{
-				&swarming.SwarmingRpcsStringListPair{
+				{
 					Key:   "PATH",
 					Value: []string{".task_template_packages", ".task_template_packages/zoo"},
 				},
-				&swarming.SwarmingRpcsStringListPair{
+				{
 					Key:   "CHICKENS",
 					Value: []string{"egg", "rooster"},
 				},
@@ -129,17 +129,17 @@ func TestPrepareTaskRequestEnvironment(t *testing.T) {
 			},
 			CipdInput: &swarming.SwarmingRpcsCipdInput{
 				Packages: []*swarming.SwarmingRpcsCipdPackage{
-					&swarming.SwarmingRpcsCipdPackage{
+					{
 						PackageName: "infra/tools/luci-auth/${platform}",
 						Path:        ".task_template_packages",
 						Version:     "git_revision:41a7e9bcbf18718dcda83dd5c6188cfc44271e70",
 					},
-					&swarming.SwarmingRpcsCipdPackage{
+					{
 						PackageName: "infra/tools/luci/logdog/butler/${platform}",
 						Path:        ".",
 						Version:     "git_revision:e1abc57be62d198b5c2f487bfb2fa2d2eb0e867c",
 					},
-					&swarming.SwarmingRpcsCipdPackage{
+					{
 						PackageName: "infra/tools/luci/logchicken/${platform}",
 						Path:        "",
 						Version:     "git_revision:e1abc57be62d198b5c2f487bfb2fa2d2eb0e867d",
@@ -182,7 +182,7 @@ func TestPrepareTaskRequestEnvironment(t *testing.T) {
 		So(fetchedCASFiles, ShouldBeTrue)
 
 		So(cipdSlicesByPath, ShouldResemble, map[string]ensure.PackageSlice{
-			"": ensure.PackageSlice{
+			"": {
 				ensure.PackageDef{
 					PackageTemplate:   "infra/tools/luci/logdog/butler/${platform}",
 					UnresolvedVersion: "git_revision:e1abc57be62d198b5c2f487bfb2fa2d2eb0e867c",
@@ -192,7 +192,7 @@ func TestPrepareTaskRequestEnvironment(t *testing.T) {
 					UnresolvedVersion: "git_revision:e1abc57be62d198b5c2f487bfb2fa2d2eb0e867d",
 				},
 			},
-			".task_template_packages": ensure.PackageSlice{
+			".task_template_packages": {
 				ensure.PackageDef{
 					PackageTemplate:   "infra/tools/luci-auth/${platform}",
 					UnresolvedVersion: "git_revision:41a7e9bcbf18718dcda83dd5c6188cfc44271e70",

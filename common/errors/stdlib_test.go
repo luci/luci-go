@@ -47,7 +47,7 @@ func TestErrorAs(t *testing.T) {
 			So(As(newFakeError, &dst), ShouldBeTrue)
 			So(newFakeError == dst, ShouldBeTrue)
 		})
-		Convey("wrapped error", func () {
+		Convey("wrapped error", func() {
 			var dst *fakeError
 			newFakeError := &fakeError{}
 			wrappedError := Annotate(newFakeError, "8ed2d02c-a8c0-4b8e-b734-bf30cb88d0c6").Err()

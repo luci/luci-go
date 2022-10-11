@@ -119,10 +119,10 @@ func TestTeeFilteredLogger(t *testing.T) {
 			return func(_ context.Context) logging.Logger { return l }
 		}
 		filtereds := []Filtered{
-			Filtered{makeFactory(lD), logging.Debug},
-			Filtered{makeFactory(lI), logging.Info},
-			Filtered{makeFactory(lW), logging.Warning},
-			Filtered{makeFactory(lE), logging.Error},
+			{makeFactory(lD), logging.Debug},
+			{makeFactory(lI), logging.Info},
+			{makeFactory(lW), logging.Warning},
+			{makeFactory(lE), logging.Error},
 		}
 		ctx := UseFiltered(context.Background(), filtereds...)
 		// The context level is ignored, even we set it.

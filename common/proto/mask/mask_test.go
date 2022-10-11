@@ -78,12 +78,12 @@ func TestFromFieldMask(t *testing.T) {
 			assertMaskEqual(actual, &Mask{
 				descriptor: testMsgDescriptor,
 				children: map[string]*Mask{
-					"str": &Mask{},
-					"num": &Mask{},
+					"str": {},
+					"num": {},
 					"msg": {
 						descriptor: testMsgDescriptor,
 						children: map[string]*Mask{
-							"num": &Mask{},
+							"num": {},
 						},
 					},
 				},
@@ -95,14 +95,14 @@ func TestFromFieldMask(t *testing.T) {
 			assertMaskEqual(actual, &Mask{
 				descriptor: testMsgDescriptor,
 				children: map[string]*Mask{
-					"map_str_msg": &Mask{
+					"map_str_msg": {
 						descriptor: testMsgDescriptor.Fields().ByName(protoreflect.Name("map_str_msg")).Message(),
 						isRepeated: true,
 						children: map[string]*Mask{
-							"some_key": &Mask{
+							"some_key": {
 								descriptor: testMsgDescriptor,
 								children: map[string]*Mask{
-									"str": &Mask{},
+									"str": {},
 								},
 							},
 						},
@@ -111,7 +111,7 @@ func TestFromFieldMask(t *testing.T) {
 						descriptor: testMsgDescriptor.Fields().ByName(protoreflect.Name("map_str_num")).Message(),
 						isRepeated: true,
 						children: map[string]*Mask{
-							"another_key": &Mask{},
+							"another_key": {},
 						},
 					},
 				},
@@ -127,15 +127,15 @@ func TestFromFieldMask(t *testing.T) {
 						descriptor: testMsgDescriptor,
 						isRepeated: true,
 						children: map[string]*Mask{
-							"*": &Mask{
+							"*": {
 								descriptor: testMsgDescriptor,
 								children: map[string]*Mask{
-									"str": &Mask{},
+									"str": {},
 								},
 							},
 						},
 					},
-					"nums": &Mask{
+					"nums": {
 						isRepeated: true,
 					},
 				},

@@ -19,8 +19,8 @@ import (
 	"sort"
 	"strings"
 
-	"google.golang.org/grpc/status"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 
 	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/server/auth"

@@ -145,7 +145,7 @@ func TestTasks(t *testing.T) {
 					return ExportBigQuery(ctx, 1, false)
 				}, nil), ShouldBeNil)
 				So(sch.Tasks(), ShouldHaveLength, 1)
-				So(sch.Tasks().Payloads()[0],  ShouldResembleProto, &taskdef.ExportBigQuery{
+				So(sch.Tasks().Payloads()[0], ShouldResembleProto, &taskdef.ExportBigQuery{
 					BuildId: 1,
 				})
 			})
@@ -155,7 +155,7 @@ func TestTasks(t *testing.T) {
 					return ExportBigQuery(ctx, 1, true)
 				}, nil), ShouldBeNil)
 				So(sch.Tasks(), ShouldHaveLength, 1)
-				So(sch.Tasks().Payloads()[0],  ShouldResembleProto, &taskdef.ExportBigQueryGo{
+				So(sch.Tasks().Payloads()[0], ShouldResembleProto, &taskdef.ExportBigQueryGo{
 					BuildId: 1,
 				})
 			})

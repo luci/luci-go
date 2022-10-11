@@ -215,12 +215,12 @@ func TestList(t *testing.T) {
 		})
 		So(err, ShouldBeNil)
 		So(res.Files, ShouldResemble, []*git.File{
-			&git.File{
+			{
 				Mode: 33188,
 				Id:   "7e5b457d492b50762386611fc7f1302f23b313cf",
 				Path: "foo.txt",
 			},
-			&git.File{
+			{
 				Mode: 33188,
 				Id:   "a07e845539145d1fb697c20b75689b25e266d6d6",
 				Path: "bar.txt",

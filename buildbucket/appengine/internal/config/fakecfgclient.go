@@ -83,9 +83,9 @@ func (*fakeCfgClient) GetConfig(ctx context.Context, configSet luciconfig.Set, p
 	case "projects/chromium":
 		return &luciconfig.Config{
 			Meta: luciconfig.Meta{
-				ConfigSet:"projects/chromium",
-				Path: "fake-cr-buildbucket.cfg",
-				Revision: chromiumRevision,
+				ConfigSet: "projects/chromium",
+				Path:      "fake-cr-buildbucket.cfg",
+				Revision:  chromiumRevision,
 			},
 			Content: chromiumBuildbucketCfg,
 		}, nil
@@ -95,18 +95,18 @@ func (*fakeCfgClient) GetConfig(ctx context.Context, configSet luciconfig.Set, p
 		}
 		return &luciconfig.Config{
 			Meta: luciconfig.Meta{
-				ConfigSet:"projects/dart",
-				Path: "fake-cr-buildbucket.cfg",
-				Revision: dartRevision,
+				ConfigSet: "projects/dart",
+				Path:      "fake-cr-buildbucket.cfg",
+				Revision:  dartRevision,
 			},
 			Content: dartBuildbucketCfg,
 		}, nil
 	case "projects/v8":
 		return &luciconfig.Config{
 			Meta: luciconfig.Meta{
-				ConfigSet:"projects/v8",
-				Path: "fake-cr-buildbucket.cfg",
-				Revision: v8Revision,
+				ConfigSet: "projects/v8",
+				Path:      "fake-cr-buildbucket.cfg",
+				Revision:  v8Revision,
 			},
 			Content: v8BuildbucketCfg,
 		}, nil
@@ -123,27 +123,27 @@ func (*fakeCfgClient) GetProjectConfigs(ctx context.Context, path string, metaOn
 	if chromiumBuildbucketCfg != "" {
 		configsToReturn = append(configsToReturn, luciconfig.Config{
 			Meta: luciconfig.Meta{
-				ConfigSet:"projects/chromium",
-				Path: "fake-cr-buildbucket.cfg",
-				Revision: chromiumRevision,
+				ConfigSet: "projects/chromium",
+				Path:      "fake-cr-buildbucket.cfg",
+				Revision:  chromiumRevision,
 			},
 		})
 	}
 	if dartBuildbucketCfg != "" {
 		configsToReturn = append(configsToReturn, luciconfig.Config{
 			Meta: luciconfig.Meta{
-				ConfigSet:"projects/dart",
-				Path: "fake-cr-buildbucket.cfg",
-				Revision: dartRevision,
+				ConfigSet: "projects/dart",
+				Path:      "fake-cr-buildbucket.cfg",
+				Revision:  dartRevision,
 			},
 		})
 	}
 	if v8BuildbucketCfg != "" {
 		configsToReturn = append(configsToReturn, luciconfig.Config{
 			Meta: luciconfig.Meta{
-				ConfigSet:"projects/v8",
-				Path: "fake-cr-buildbucket.cfg",
-				Revision: v8Revision,
+				ConfigSet: "projects/v8",
+				Path:      "fake-cr-buildbucket.cfg",
+				Revision:  v8Revision,
 			},
 		})
 	}

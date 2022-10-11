@@ -207,7 +207,7 @@ func TestSearchRuns(t *testing.T) {
 				Predicate: &apiv0pb.RunPredicate{
 					Project: projectName,
 					GerritChanges: []*apiv0pb.GerritChange{
-						&apiv0pb.GerritChange{Host: gHost, Change: 1},
+						{Host: gHost, Change: 1},
 					},
 				},
 			})
@@ -222,7 +222,7 @@ func TestSearchRuns(t *testing.T) {
 				Predicate: &apiv0pb.RunPredicate{
 					Project: projectName,
 					GerritChanges: []*apiv0pb.GerritChange{
-						&apiv0pb.GerritChange{Host: gHost, Change: 1, Patchset: 3},
+						{Host: gHost, Change: 1, Patchset: 3},
 					},
 				},
 			})
@@ -235,7 +235,7 @@ func TestSearchRuns(t *testing.T) {
 			_, err := srv.SearchRuns(ctx, &apiv0pb.SearchRunsRequest{
 				Predicate: &apiv0pb.RunPredicate{
 					GerritChanges: []*apiv0pb.GerritChange{
-						&apiv0pb.GerritChange{Host: gHost, Change: 1},
+						{Host: gHost, Change: 1},
 					},
 				},
 			})
@@ -248,7 +248,7 @@ func TestSearchRuns(t *testing.T) {
 				Predicate: &apiv0pb.RunPredicate{
 					Project: projectName,
 					GerritChanges: []*apiv0pb.GerritChange{
-						&apiv0pb.GerritChange{Host: gHost, Change: 1},
+						{Host: gHost, Change: 1},
 					},
 				},
 			})
@@ -264,11 +264,11 @@ func TestSearchRuns(t *testing.T) {
 				Predicate: &apiv0pb.RunPredicate{
 					Project: projectName,
 					GerritChanges: []*apiv0pb.GerritChange{
-						&apiv0pb.GerritChange{
+						{
 							Host:   gHost,
 							Change: 2,
 						},
-						&apiv0pb.GerritChange{
+						{
 							Host:   gHost,
 							Change: 3,
 						},
@@ -288,11 +288,11 @@ func TestSearchRuns(t *testing.T) {
 				Predicate: &apiv0pb.RunPredicate{
 					Project: projectName,
 					GerritChanges: []*apiv0pb.GerritChange{
-						&apiv0pb.GerritChange{
+						{
 							Host:   gHost,
 							Change: 1,
 						},
-						&apiv0pb.GerritChange{
+						{
 							Host:   gHost,
 							Change: 2,
 						},

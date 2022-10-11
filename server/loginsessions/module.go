@@ -138,7 +138,7 @@ func (m *loginSessionsModule) Initialize(ctx context.Context, host module.Host, 
 		store = &internal.MemorySessionStore{}
 		provider = func(context.Context, string) (*internal.OAuthClient, error) {
 			return &internal.OAuthClient{
-				ProviderName: "Google Accounts",
+				ProviderName:          "Google Accounts",
 				AuthorizationEndpoint: internal.GoogleAuthorizationEndpoint,
 			}, nil
 		}
