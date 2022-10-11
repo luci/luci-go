@@ -53,7 +53,7 @@ content {{.arg1}} {{.arg2}}
 		for k, v := range assets {
 			path := filepath.Join(dir, filepath.FromSlash(k))
 			So(os.MkdirAll(filepath.Dir(path), 0777), ShouldBeNil)
-			So(ioutil.WriteFile(path, []byte(v), 0666), ShouldBeNil)
+			So(os.WriteFile(path, []byte(v), 0666), ShouldBeNil)
 		}
 
 		loaderTest(conv, FileSystemLoader(dir))

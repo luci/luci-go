@@ -22,7 +22,6 @@ import (
 	"fmt"
 	"hash"
 	"io"
-	"io/ioutil"
 	"os"
 	"runtime"
 	"sort"
@@ -641,7 +640,7 @@ func (b *blobFile) SymlinkTarget() (string, error) { return "", nil }
 func (b *blobFile) WinAttrs() fs.WinAttrs          { return 0 }
 
 func (b *blobFile) Open() (io.ReadCloser, error) {
-	return ioutil.NopCloser(bytes.NewReader(b.blob)), nil
+	return io.NopCloser(bytes.NewReader(b.blob)), nil
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -662,7 +661,7 @@ func (f *fileInZip) prefetch() error {
 		return errors.Annotate(err, "prefetching %q", f.z.Name).Tag(cipderr.IO).Err()
 	}
 	defer r.Close()
-	f.body, err = ioutil.ReadAll(r)
+	f.body, err = io.ReadAll(r)
 	if err != nil {
 		return errors.Annotate(err, "prefetching %q", f.z.Name).Tag(cipderr.IO).Err()
 	}
@@ -719,7 +718,7 @@ func (f *fileInZip) Open() (io.ReadCloser, error) {
 		return nil, errors.Reason("%q: opening a symlink is not allowed", f.Name()).Tag(cipderr.IO).Err()
 	}
 	if f.body != nil {
-		return ioutil.NopCloser(bytes.NewReader(f.body)), nil
+		return io.NopCloser(bytes.NewReader(f.body)), nil
 	}
 	r, err := f.z.Open()
 	if err != nil {

@@ -18,7 +18,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/base64"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"testing"
 	"time"
@@ -41,7 +41,7 @@ func TestDecoding(t *testing.T) {
 		var msg HelloRequest
 		read := func(contentType string, body []byte) *protocolError {
 			req := &http.Request{
-				Body:   ioutil.NopCloser(bytes.NewBuffer(body)),
+				Body:   io.NopCloser(bytes.NewBuffer(body)),
 				Header: http.Header{},
 			}
 			req.Header.Set("Content-Type", contentType)

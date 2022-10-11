@@ -18,7 +18,7 @@ import (
 	"context"
 	"flag"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"os"
 	"os/signal"
 	"path"
@@ -82,7 +82,7 @@ func TestMain(m *testing.M) {
 		out := flag.String("output", "", "write the output here")
 		flag.Parse()
 
-		data, err := ioutil.ReadAll(os.Stdin)
+		data, err := io.ReadAll(os.Stdin)
 		if err != nil {
 			panic(err)
 		}
@@ -98,7 +98,7 @@ func TestMain(m *testing.M) {
 			if err != nil {
 				panic(err)
 			}
-			if err := ioutil.WriteFile(*out, outData, 0666); err != nil {
+			if err := os.WriteFile(*out, outData, 0666); err != nil {
 				panic(err)
 			}
 		}

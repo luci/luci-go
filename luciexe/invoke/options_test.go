@@ -254,7 +254,7 @@ func TestOptionsCacheDir(t *testing.T) {
 
 			Convey(`bad override (not a dir)`, func() {
 				o.CacheDir = filepath.Join(tdir, "cache")
-				So(ioutil.WriteFile(o.CacheDir, []byte("not a dir"), 0666), ShouldBeNil)
+				So(os.WriteFile(o.CacheDir, []byte("not a dir"), 0666), ShouldBeNil)
 				_, _, err := o.rationalize(ctx)
 				So(err, ShouldErrLike, "checking CacheDir: path is not a directory")
 			})
@@ -286,14 +286,14 @@ func TestOptionsCollectOutput(t *testing.T) {
 			Convey(`already exists`, func() {
 				outPath := filepath.Join(tdir, "output.pb")
 				o.CollectOutputPath = outPath
-				So(ioutil.WriteFile(outPath, nil, 0666), ShouldBeNil)
+				So(os.WriteFile(outPath, nil, 0666), ShouldBeNil)
 				_, _, err := o.rationalize(ctx)
 				So(err, ShouldErrLike, "CollectOutputPath points to an existing file")
 			})
 
 			Convey(`parent is not a dir`, func() {
 				parDir := filepath.Join(tdir, "parent")
-				So(ioutil.WriteFile(parDir, nil, 0666), ShouldBeNil)
+				So(os.WriteFile(parDir, nil, 0666), ShouldBeNil)
 				o.CollectOutputPath = filepath.Join(parDir, "out.pb")
 
 				_, _, err := o.rationalize(ctx)
@@ -319,7 +319,7 @@ func TestOptionsCollectOutput(t *testing.T) {
 				_, err = luciexe.ReadBuildFile(lo.collectPath)
 				So(err, ShouldErrLike, "opening build file")
 
-				So(ioutil.WriteFile(lo.args[1], expectedData, 0666), ShouldBeNil)
+				So(os.WriteFile(lo.args[1], expectedData, 0666), ShouldBeNil)
 
 				build, err := luciexe.ReadBuildFile(lo.collectPath)
 				So(err, ShouldBeNil)
@@ -450,7 +450,7 @@ func TestOptionsExtraDirs(t *testing.T) {
 
 		Convey(`provided BaseDir is not a directory`, func() {
 			o.BaseDir = filepath.Join(tdir, "base")
-			So(ioutil.WriteFile(o.BaseDir, []byte("not a dir"), 0666), ShouldBeNil)
+			So(os.WriteFile(o.BaseDir, []byte("not a dir"), 0666), ShouldBeNil)
 			_, _, err := o.rationalize(ctx)
 			So(err, ShouldErrLike, "checking BaseDir: path is not a directory")
 		})

@@ -19,7 +19,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"net/url"
 	"strings"
@@ -117,14 +116,14 @@ func hitEndpoint(ctx context.Context, endpoint string, params map[string]string)
 	resp, err := client.Do(req.WithContext(ctx))
 	if resp != nil {
 		defer func() {
-			io.Copy(ioutil.Discard, resp.Body)
+			io.Copy(io.Discard, resp.Body)
 			resp.Body.Close()
 		}()
 	}
 	if err != nil {
 		return nil, errors.Annotate(err, "failed to call %q", endpoint).Tag(transient.Tag).Err()
 	}
-	blob, err := ioutil.ReadAll(resp.Body)
+	blob, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return nil, errors.Annotate(err, "failed to read the response from %q", endpoint).Tag(transient.Tag).Err()
 	}

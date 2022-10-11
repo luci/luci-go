@@ -19,7 +19,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"mime"
 	"net/http"
 	"sort"
@@ -292,7 +291,7 @@ func (l *BigQueryEventLogger) RegisterSink(ctx context.Context, disp *tq.Dispatc
 
 // HandlePubSubPush handles incoming PubSub push messages produced by the sink.
 func (l *BigQueryEventLogger) HandlePubSubPush(ctx context.Context, body io.Reader) error {
-	blob, err := ioutil.ReadAll(body)
+	blob, err := io.ReadAll(body)
 	if err != nil {
 		return errors.Annotate(err, "failed to read the request body").Err()
 	}

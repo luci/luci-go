@@ -20,7 +20,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -554,7 +553,7 @@ func (c *client) callRaw(
 	}
 	defer res.Body.Close()
 
-	body, err := ioutil.ReadAll(res.Body)
+	body, err := io.ReadAll(res.Body)
 	if err != nil {
 		return res.StatusCode, []byte{}, status.Errorf(codes.Internal, "failed to read response: %s", err)
 	}

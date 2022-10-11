@@ -24,7 +24,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"reflect"
 	"strings"
@@ -474,7 +474,7 @@ func (d *Dispatcher) handler(payload proto.Message) (handler, error) {
 // request with status 202 in case of a fatal error (to stop retries).
 func (d *Dispatcher) processHTTPRequest(c *router.Context) {
 	headers := taskqueue.ParseRequestHeaders(c.Request.Header)
-	body, err := ioutil.ReadAll(c.Request.Body)
+	body, err := io.ReadAll(c.Request.Body)
 	if err != nil {
 		httpReply(c, false, 500, "Failed to read request body: %s", err)
 		return

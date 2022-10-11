@@ -21,7 +21,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"regexp"
 	"strings"
@@ -171,7 +170,7 @@ func ComputeRecipients(c context.Context, notifications []ToNotify, inputBlame [
 			}
 
 			defer response.Body.Close()
-			bytes, err := ioutil.ReadAll(response.Body)
+			bytes, err := io.ReadAll(response.Body)
 			if err != nil {
 				return nil, errors.Annotate(err, "failed to read response body from %q", url).Err()
 			}
@@ -483,7 +482,7 @@ func SendEmail(c context.Context, task proto.Message) error {
 		if err != nil {
 			return err
 		}
-		buf, err := ioutil.ReadAll(r)
+		buf, err := io.ReadAll(r)
 		if err != nil {
 			return err
 		}

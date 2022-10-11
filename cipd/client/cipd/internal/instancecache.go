@@ -20,7 +20,6 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"math/rand"
 	"os"
 	"sync"
@@ -598,7 +597,7 @@ func (c *InstanceCache) readState(ctx context.Context, state *messages.InstanceC
 		panic(fmt.Sprintf("failed to convert path %q: %v", instanceCacheStateFilename, err))
 	}
 
-	stateBytes, err := ioutil.ReadFile(statePath)
+	stateBytes, err := os.ReadFile(statePath)
 	sync := false
 	switch {
 	case os.IsNotExist(err):

@@ -16,7 +16,7 @@ package main
 
 import (
 	"context"
-	"io/ioutil"
+	"os"
 	"os/exec"
 
 	"go.chromium.org/luci/common/errors"
@@ -58,7 +58,7 @@ func (*SystemdStrategy) autostart(c context.Context, path, user string, python s
 	logging.Infof(c, "installing: %s", systemdCfg)
 	// 0644 allows the systemd config to be read by all users.
 	// Useful when SSHing to the instance.
-	if err := ioutil.WriteFile(systemdCfg, []byte(s), 0644); err != nil {
+	if err := os.WriteFile(systemdCfg, []byte(s), 0644); err != nil {
 		return errors.Annotate(err, "failed to write: %s", systemdCfg).Err()
 	}
 

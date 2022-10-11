@@ -163,7 +163,7 @@ func TestLUCIContextMethods(t *testing.T) {
 				So(ok, ShouldBeTrue)
 
 				// There's a valid JSON there.
-				blob, err := ioutil.ReadFile(path)
+				blob, err := os.ReadFile(path)
 				So(err, ShouldBeNil)
 				So(string(blob), ShouldEqual, `{"hi": {"hello_there": 10}}`)
 

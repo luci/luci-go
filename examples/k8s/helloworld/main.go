@@ -18,7 +18,7 @@ import (
 	"context"
 	"encoding/base64"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"time"
 
@@ -159,7 +159,7 @@ func main() {
 			resp, err := client.Get("http://example.com")
 			if err == nil {
 				defer resp.Body.Close()
-				blob, err = ioutil.ReadAll(resp.Body)
+				blob, err = io.ReadAll(resp.Body)
 			}
 			if err != nil {
 				http.Error(c.Writer, err.Error(), 500)

@@ -16,7 +16,7 @@ package artifactcontent
 
 import (
 	"context"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -138,7 +138,7 @@ func TestServeContent(t *testing.T) {
 				Writer:  rec,
 			})
 			res = rec.Result()
-			rawContents, err := ioutil.ReadAll(res.Body)
+			rawContents, err := io.ReadAll(res.Body)
 			So(err, ShouldBeNil)
 			defer res.Body.Close()
 			return res, string(rawContents)

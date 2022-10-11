@@ -17,7 +17,7 @@ package internal
 import (
 	"bytes"
 	"context"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"sync"
 )
@@ -40,7 +40,7 @@ type testTransport struct {
 func (t *testTransport) RoundTrip(r *http.Request) (*http.Response, error) {
 	t.lock.Lock()
 	defer t.lock.Unlock()
-	body, err := ioutil.ReadAll(r.Body)
+	body, err := io.ReadAll(r.Body)
 	r.Body.Close()
 	if err != nil {
 		return nil, err
@@ -48,6 +48,6 @@ func (t *testTransport) RoundTrip(r *http.Request) (*http.Response, error) {
 	code, resp := t.cb(r, string(body))
 	return &http.Response{
 		StatusCode: code,
-		Body:       ioutil.NopCloser(bytes.NewReader([]byte(resp))),
+		Body:       io.NopCloser(bytes.NewReader([]byte(resp))),
 	}, nil
 }

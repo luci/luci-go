@@ -16,7 +16,7 @@ package main
 
 import (
 	"context"
-	"io/ioutil"
+	"io"
 	"os"
 	"strings"
 
@@ -90,9 +90,9 @@ func (c *commonFlags) commonMain(ctx context.Context) (*cloudkms.KeyManagementCl
 
 func readInput(file string) ([]byte, error) {
 	if file == "-" {
-		return ioutil.ReadAll(os.Stdin)
+		return io.ReadAll(os.Stdin)
 	}
-	return ioutil.ReadFile(file)
+	return os.ReadFile(file)
 }
 
 func readInputFd(file string) (*os.File, error) {
@@ -107,7 +107,7 @@ func writeOutput(file string, data []byte) error {
 		_, err := os.Stdout.Write(data)
 		return err
 	}
-	return ioutil.WriteFile(file, data, 0664)
+	return os.WriteFile(file, data, 0664)
 }
 
 // cryptoKeysPathComponents are the path components necessary for API calls related to

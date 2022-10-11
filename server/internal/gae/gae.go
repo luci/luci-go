@@ -37,7 +37,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/url"
 	"os"
@@ -222,7 +222,7 @@ func postToServiceBridge(ctx context.Context, tickets *Tickets, body []byte) ([]
 			"X-Google-Rpc-Service-Deadline": []string{strconv.FormatFloat(timeout.Seconds(), 'f', -1, 64)},
 			"Content-Type":                  []string{"application/octet-stream"},
 		},
-		Body:          ioutil.NopCloser(bytes.NewReader(body)),
+		Body:          io.NopCloser(bytes.NewReader(body)),
 		ContentLength: int64(len(body)),
 		Host:          url.Host,
 	}
@@ -239,7 +239,7 @@ func postToServiceBridge(ctx context.Context, tickets *Tickets, body []byte) ([]
 	}
 	defer res.Body.Close()
 
-	switch body, err := ioutil.ReadAll(res.Body); {
+	switch body, err := io.ReadAll(res.Body); {
 	case err != nil:
 		return nil, errors.Annotate(err, "failed to read HTTP %d response", res.StatusCode).Err()
 	case res.StatusCode != 200:

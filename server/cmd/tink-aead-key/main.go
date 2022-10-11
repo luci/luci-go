@@ -25,7 +25,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"os"
 	"strconv"
 	"strings"
@@ -76,7 +76,7 @@ func (a *fileSystemAccessor) Read() ([]byte, error) {
 	if _, err := a.f.Seek(0, os.SEEK_SET); err != nil {
 		return nil, err
 	}
-	return ioutil.ReadAll(a.f)
+	return io.ReadAll(a.f)
 }
 
 func (a *fileSystemAccessor) Write(blob []byte) error {

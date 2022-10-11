@@ -18,7 +18,6 @@ import (
 	"context"
 	"crypto"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -240,7 +239,7 @@ func copySmallFilesFromCache(ctx context.Context, kvs smallFileCache, smallFiles
 			if file.IsExecutable {
 				mode = 0o700
 			}
-			if err := ioutil.WriteFile(file.Path, value, os.FileMode(mode)); err != nil {
+			if err := os.WriteFile(file.Path, value, os.FileMode(mode)); err != nil {
 				return errors.Annotate(err, "failed to write file").Err()
 			}
 		}
@@ -263,7 +262,7 @@ func cacheSmallFiles(ctx context.Context, kvs smallFileCache, outputs []*client.
 				b, err := func() ([]byte, error) {
 					ch <- struct{}{}
 					defer func() { <-ch }()
-					return ioutil.ReadFile(output.Path)
+					return os.ReadFile(output.Path)
 				}()
 
 				if err != nil {

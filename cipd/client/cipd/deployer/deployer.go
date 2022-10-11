@@ -267,7 +267,7 @@ func (d *description) matches(subdir, pkg string) bool {
 
 // readDescription reads and decodes description JSON from io.Reader.
 func readDescription(r io.Reader) (desc *description, err error) {
-	blob, err := ioutil.ReadAll(r)
+	blob, err := io.ReadAll(r)
 	if err == nil {
 		err = json.Unmarshal(blob, &desc)
 	}
@@ -1026,7 +1026,7 @@ func (d *deployerImpl) getCurrentInstanceID(packageDir string) (string, error) {
 	var err error
 	if runtime.GOOS == "windows" {
 		var bytes []byte
-		bytes, err = ioutil.ReadFile(filepath.Join(packageDir, currentTxt))
+		bytes, err = os.ReadFile(filepath.Join(packageDir, currentTxt))
 		if err == nil {
 			current = strings.TrimSpace(string(bytes))
 		}

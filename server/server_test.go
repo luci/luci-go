@@ -18,6 +18,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"net"
 	"net/http"
@@ -362,7 +363,7 @@ func TestServer(t *testing.T) {
 
 				resp, err := client.Do(req)
 				c.So(err, ShouldBeNil)
-				ioutil.ReadAll(resp.Body)
+				io.ReadAll(resp.Body)
 				resp.Body.Close()
 			})
 
@@ -467,7 +468,7 @@ func TestOptions(t *testing.T) {
 			}`
 
 			opts := Options{AuthDBPath: filepath.Join(tmpDir, "authdb.textpb")}
-			So(ioutil.WriteFile(opts.AuthDBPath, []byte(body), 0600), ShouldBeNil)
+			So(os.WriteFile(opts.AuthDBPath, []byte(body), 0600), ShouldBeNil)
 
 			testRequestHandler(&opts, func(rc *router.Context) {
 				db := auth.GetState(rc.Context).DB()
@@ -781,7 +782,7 @@ func (s *testServer) get(uri string, headers map[string]string, timeout time.Dur
 		}
 		defer res.Body.Close()
 		var blob []byte
-		if blob, err = ioutil.ReadAll(res.Body); err != nil {
+		if blob, err = io.ReadAll(res.Body); err != nil {
 			return
 		}
 		if res.StatusCode >= 400 {

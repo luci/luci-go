@@ -18,7 +18,6 @@ import (
 	"context"
 	"errors"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"strings"
 	"testing"
@@ -40,7 +39,7 @@ type fakeRoundTripper struct {
 
 func (t *fakeRoundTripper) RoundTrip(req *http.Request) (*http.Response, error) {
 	t.tc.Add(t.duration)
-	io.Copy(ioutil.Discard, req.Body)
+	io.Copy(io.Discard, req.Body)
 	return &t.resp, t.err
 }
 
@@ -57,7 +56,7 @@ func TestHTTPRoundTripper(t *testing.T) {
 		Convey("successful request", func() {
 			rt.duration = time.Millisecond * 42
 			rt.resp.StatusCode = 200
-			rt.resp.Body = ioutil.NopCloser(strings.NewReader("12345678"))
+			rt.resp.Body = io.NopCloser(strings.NewReader("12345678"))
 			rt.resp.ContentLength = 8
 
 			req, _ := http.NewRequest("GET", "https://www.example.com", strings.NewReader("12345"))

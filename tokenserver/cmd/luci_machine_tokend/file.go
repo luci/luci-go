@@ -17,7 +17,6 @@ package main
 import (
 	"context"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"sync/atomic"
 	"time"
@@ -37,7 +36,7 @@ func AtomicWriteFile(ctx context.Context, path string, body []byte, perm os.File
 	tmp := fmt.Sprintf(
 		"%s.%d_%d_%d.tmp", path, os.Getpid(),
 		atomic.AddInt32(&counter, 1), time.Now().UnixNano())
-	if err := ioutil.WriteFile(tmp, body, perm); err != nil {
+	if err := os.WriteFile(tmp, body, perm); err != nil {
 		return err
 	}
 

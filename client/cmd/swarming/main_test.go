@@ -17,7 +17,6 @@ package main
 import (
 	"encoding/base64"
 	"encoding/json"
-	"io/ioutil"
 	"log"
 	"os"
 	"path/filepath"
@@ -87,7 +86,7 @@ func triggerTask(t *testing.T, args []string) *swarming.SwarmingRpcsTaskRequestM
 	jsonPath := filepath.Join(dir, "out.json")
 	sbDir := t.TempDir()
 	sbPath := filepath.Join(sbDir, "secret_bytes.txt")
-	err := ioutil.WriteFile(sbPath, []byte("This is secret!"), 0600)
+	err := os.WriteFile(sbPath, []byte("This is secret!"), 0600)
 	So(err, ShouldBeNil)
 	args = append(args, []string{
 		"-d", "pool=infra.tests",
@@ -111,7 +110,7 @@ func triggerTask(t *testing.T, args []string) *swarming.SwarmingRpcsTaskRequestM
 
 // readTriggerResults reads TriggerResults from output json file.
 func readTriggerResults(jsonPath string) *swarmingimpl.TriggerResults {
-	resultsJSON, err := ioutil.ReadFile(jsonPath)
+	resultsJSON, err := os.ReadFile(jsonPath)
 	So(err, ShouldBeNil)
 
 	results := &swarmingimpl.TriggerResults{}
@@ -124,7 +123,7 @@ func readTriggerResults(jsonPath string) *swarmingimpl.TriggerResults {
 func testCollectCommand(t *testing.T, taskID string) {
 	dir := t.TempDir()
 	So(runCmd(t, "collect", "-output-dir", dir, taskID), ShouldEqual, 0)
-	out, err := ioutil.ReadFile(filepath.Join(dir, taskID, "out"))
+	out, err := os.ReadFile(filepath.Join(dir, taskID, "out"))
 	So(err, ShouldBeNil)
 	So(string(out), ShouldResemble, "hi\n")
 }
@@ -187,7 +186,7 @@ func TestSpawnTasksCommand(t *testing.T) {
 		// prepare input file.
 		dir := t.TempDir()
 		inputPath := filepath.Join(dir, "input.json")
-		err := ioutil.WriteFile(inputPath, []byte(spawnTaskInputJSON), 0600)
+		err := os.WriteFile(inputPath, []byte(spawnTaskInputJSON), 0600)
 		So(err, ShouldBeNil)
 
 		outputPath := filepath.Join(dir, "output.json")

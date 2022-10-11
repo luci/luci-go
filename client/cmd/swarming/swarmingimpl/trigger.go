@@ -20,7 +20,6 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
-	"io/ioutil"
 	"log"
 	"net/url"
 	"os"
@@ -368,7 +367,7 @@ func (c *triggerRun) processTriggerOptions(commands []string, env subcommands.En
 
 	var secretBytesEnc string
 	if c.secretBytesPath != "" {
-		secretBytes, err := ioutil.ReadFile(c.secretBytesPath)
+		secretBytes, err := os.ReadFile(c.secretBytesPath)
 		if err != nil {
 			return nil, errors.Annotate(err, "failed to read secret bytes from %s", c.secretBytesPath).Err()
 		}

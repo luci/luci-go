@@ -19,7 +19,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"os"
 	"path"
 	"path/filepath"
@@ -161,7 +160,7 @@ func loadIncludedIsolate(isolateDir, include string) (*Configs, error) {
 	if runtime.GOOS == "windows" && (strings.ToLower(includedIsolate)[0] != strings.ToLower(isolateDir)[0]) {
 		return nil, errors.New("can't reference a .isolate file from another drive")
 	}
-	content, err := ioutil.ReadFile(includedIsolate)
+	content, err := os.ReadFile(includedIsolate)
 	if err != nil {
 		return nil, err
 	}

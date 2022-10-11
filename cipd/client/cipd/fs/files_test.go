@@ -16,6 +16,7 @@ package fs
 
 import (
 	"context"
+	"io"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -56,7 +57,7 @@ func TestScanFileSystem(t *testing.T) {
 				defer r.Close()
 			}
 			So(err, ShouldBeNil)
-			buf, err := ioutil.ReadAll(r)
+			buf, err := io.ReadAll(r)
 			So(err, ShouldBeNil)
 			So(buf, ShouldResemble, []byte("12345"))
 		})
@@ -169,7 +170,7 @@ func TestScanFileSystem(t *testing.T) {
 			So(err, ShouldBeNil)
 			defer rc.Close()
 
-			data, err := ioutil.ReadAll(rc)
+			data, err := io.ReadAll(rc)
 			So(err, ShouldBeNil)
 
 			So(string(data), ShouldResemble, "hello")
@@ -306,7 +307,7 @@ func mkDir(root string, path string) {
 func writeFile(root string, path string, data string, mode os.FileMode) {
 	abs := filepath.Join(root, filepath.FromSlash(path))
 	os.MkdirAll(filepath.Dir(abs), 0777)
-	err := ioutil.WriteFile(abs, []byte(data), mode)
+	err := os.WriteFile(abs, []byte(data), mode)
 	if err != nil {
 		panic("Failed to write a temp file")
 	}
@@ -411,7 +412,7 @@ func checkBunchOfFiles(destDir, tempDir string) {
 		defer r.Close()
 	}
 	So(err, ShouldBeNil)
-	data, err := ioutil.ReadAll(r)
+	data, err := io.ReadAll(r)
 	So(err, ShouldBeNil)
 	So(data, ShouldResemble, []byte("a data"))
 
@@ -446,7 +447,7 @@ func TestExistingDestination(t *testing.T) {
 		defer os.RemoveAll(tempDir)
 
 		readFromDest := func(name string) string {
-			b, err := ioutil.ReadFile(filepath.Join(destDir, name))
+			b, err := os.ReadFile(filepath.Join(destDir, name))
 			So(err, ShouldBeNil)
 			return string(b)
 		}
@@ -585,7 +586,7 @@ func TestNewDestination(t *testing.T) {
 			// Create dest directory manually with some stuff.
 			err := os.Mkdir(destDir, 0777)
 			So(err, ShouldBeNil)
-			err = ioutil.WriteFile(filepath.Join(destDir, "data"), []byte("data"), 0666)
+			err = os.WriteFile(filepath.Join(destDir, "data"), []byte("data"), 0666)
 			So(err, ShouldBeNil)
 
 			// Now deploy something to it.
@@ -601,7 +602,7 @@ func TestNewDestination(t *testing.T) {
 			// Create dest directory manually with some stuff.
 			err := os.Mkdir(destDir, 0777)
 			So(err, ShouldBeNil)
-			err = ioutil.WriteFile(filepath.Join(destDir, "data"), []byte("data"), 0666)
+			err = os.WriteFile(filepath.Join(destDir, "data"), []byte("data"), 0666)
 			So(err, ShouldBeNil)
 
 			// Now attempt deploy something to it, but roll back.

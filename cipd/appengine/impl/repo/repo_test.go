@@ -17,7 +17,7 @@ package repo
 import (
 	"context"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -1052,7 +1052,7 @@ func TestProcessors(t *testing.T) {
 				rd, _, err := r.Open("file2")
 				So(err, ShouldBeNil)
 				defer rd.Close()
-				blob, err := ioutil.ReadAll(rd)
+				blob, err := io.ReadAll(rd)
 				So(err, ShouldBeNil)
 				So(string(blob), ShouldEqual, "blah")
 

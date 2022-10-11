@@ -18,7 +18,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"reflect"
 	"regexp"
 	"strings"
@@ -322,7 +322,7 @@ func NormalizeJSON(data string, obj bool) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	bufdat, err := ioutil.ReadAll(dec.Buffered())
+	bufdat, err := io.ReadAll(dec.Buffered())
 	if err != nil {
 		panic(err)
 	}

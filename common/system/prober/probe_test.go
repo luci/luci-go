@@ -17,7 +17,6 @@ package prober
 import (
 	"context"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -102,7 +101,7 @@ func TestSystemProbe(t *testing.T) {
 			if err := os.MkdirAll(dir, 0755); err != nil {
 				t.Fatalf("Failed to create base directory [%s]: %s", dir, err)
 			}
-			if err := ioutil.WriteFile(path, []byte("fake"), 0755); err != nil {
+			if err := os.WriteFile(path, []byte("fake"), 0755); err != nil {
 				t.Fatalf("Failed to create executable: %s", err)
 			}
 			return

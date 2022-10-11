@@ -19,7 +19,6 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"io/ioutil"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
@@ -63,7 +62,7 @@ func Run(ctx context.Context, stdin io.ReadCloser, run RunLoop) error {
 		handshakeCh <- handshakeAndErr{handshake, err}
 
 		// Wait until the host decides to terminate the plugin by closing the stdin.
-		io.Copy(ioutil.Discard, stdin)
+		io.Copy(io.Discard, stdin)
 	}()
 	defer func() { <-stdinDone }() // don't leak the goroutine on return
 

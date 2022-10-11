@@ -18,7 +18,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"testing"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -130,7 +129,7 @@ func TestLimitedClient(t *testing.T) {
 			So(err, ShouldBeNil)
 			defer r.Close()
 
-			d, err := ioutil.ReadAll(r)
+			d, err := io.ReadAll(r)
 			So(err, ShouldBeNil)
 			So(d, ShouldResemble, data)
 		})
@@ -144,7 +143,7 @@ func TestLimitedClient(t *testing.T) {
 					So(err, ShouldBeNil)
 					defer r.Close()
 
-					d, err := ioutil.ReadAll(r)
+					d, err := io.ReadAll(r)
 					So(err, ShouldBeNil)
 					So(d, ShouldResemble, data)
 				})
@@ -154,7 +153,7 @@ func TestLimitedClient(t *testing.T) {
 					So(err, ShouldBeNil)
 					defer r.Close()
 
-					d, err := ioutil.ReadAll(r)
+					d, err := io.ReadAll(r)
 					So(err, ShouldBeNil)
 					So(d, ShouldResemble, data[3:9])
 				})
@@ -164,7 +163,7 @@ func TestLimitedClient(t *testing.T) {
 					So(err, ShouldBeNil)
 					defer r.Close()
 
-					d, err := ioutil.ReadAll(r)
+					d, err := io.ReadAll(r)
 					So(err, ShouldBeNil)
 					So(d, ShouldResemble, data[3:9])
 				})
@@ -179,7 +178,7 @@ func TestLimitedClient(t *testing.T) {
 				So(err, ShouldBeNil)
 				defer r.Close()
 
-				d, err := ioutil.ReadAll(r)
+				d, err := io.ReadAll(r)
 				So(err, ShouldBeNil)
 				So(d, ShouldResemble, data)
 				So(trc.totalReaders, ShouldEqual, 6) // One for each, plus real EOF.
@@ -190,7 +189,7 @@ func TestLimitedClient(t *testing.T) {
 				So(err, ShouldBeNil)
 				defer r.Close()
 
-				d, err := ioutil.ReadAll(r)
+				d, err := io.ReadAll(r)
 				So(err, ShouldBeNil)
 				So(d, ShouldResemble, data[3:9])
 				So(trc.totalReaders, ShouldEqual, 3)
@@ -201,7 +200,7 @@ func TestLimitedClient(t *testing.T) {
 				So(err, ShouldBeNil)
 				defer r.Close()
 
-				d, err := ioutil.ReadAll(r)
+				d, err := io.ReadAll(r)
 				So(err, ShouldBeNil)
 				So(d, ShouldResemble, data[3:8])
 				So(trc.totalReaders, ShouldEqual, 3)
@@ -219,7 +218,7 @@ func TestLimitedClient(t *testing.T) {
 				defer r.Close()
 
 				trc.readErr = errors.New("test error")
-				_, err = ioutil.ReadAll(r)
+				_, err = io.ReadAll(r)
 				So(err, ShouldEqual, trc.readErr)
 			})
 
@@ -229,7 +228,7 @@ func TestLimitedClient(t *testing.T) {
 				defer r.Close()
 
 				trc.closeErr = errors.New("test error")
-				_, err = ioutil.ReadAll(r)
+				_, err = io.ReadAll(r)
 				So(err, ShouldEqual, trc.closeErr)
 			})
 		})

@@ -125,7 +125,7 @@ func TestDownload(t *testing.T) {
 			So(err, ShouldBeNil)
 
 			_, _ = out.Seek(0, io.SeekStart)
-			fetched, err := ioutil.ReadAll(out)
+			fetched, err := io.ReadAll(out)
 			So(err, ShouldBeNil)
 			So(string(fetched), ShouldEqual, "file data")
 			So(common.HexDigest(h), ShouldEqual, "86f3c70fb6673cf303d2206db5f23c237b665d5df9d3e44efef5114845fc9f59")
@@ -209,7 +209,7 @@ func (s *expectedHTTPCallHandler) ServeHTTP(w http.ResponseWriter, r *http.Reque
 	}
 
 	// Read body and essential headers.
-	body, err := ioutil.ReadAll(r.Body)
+	body, err := io.ReadAll(r.Body)
 	s.c.So(err, ShouldBeNil)
 	ignorelist := map[string]bool{
 		"Accept-Encoding": true,

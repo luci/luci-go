@@ -16,6 +16,7 @@ package sink
 
 import (
 	"context"
+	"io"
 	"io/ioutil"
 	"net/http"
 	"os"
@@ -141,7 +142,7 @@ func TestArtifactChannel(t *testing.T) {
 			So(req, ShouldNotBeNil)
 			So(req.URL.String(), ShouldEqual,
 				"https://"+cfg.ArtifactStreamHost+"/invocations/inv/artifacts/art1")
-			body, err := ioutil.ReadAll(req.Body)
+			body, err := io.ReadAll(req.Body)
 			So(err, ShouldBeNil)
 			So(body, ShouldResemble, []byte("content-foo-bar"))
 		})
@@ -210,7 +211,7 @@ func TestUploadTask(t *testing.T) {
 
 		Convey("fails", func() {
 			// the artifact content changed.
-			So(ioutil.WriteFile(fArt.GetFilePath(), []byte("surprise!!"), 0), ShouldBeNil)
+			So(os.WriteFile(fArt.GetFilePath(), []byte("surprise!!"), 0), ShouldBeNil)
 			_, err := ut.CreateRequest()
 			So(err, ShouldErrLike, "the size of the artifact contents changed")
 

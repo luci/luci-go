@@ -3,7 +3,7 @@ package build
 import (
 	"bytes"
 	"context"
-	"io/ioutil"
+	"os"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -78,7 +78,7 @@ func TestMain(t *testing.T) {
 		}
 
 		getFinal := func() *bbpb.Build {
-			data, err := ioutil.ReadFile(finalBuildPath)
+			data, err := os.ReadFile(finalBuildPath)
 			So(err, ShouldBeNil)
 			ret := &bbpb.Build{}
 			So(protojson.Unmarshal(data, ret), ShouldBeNil)

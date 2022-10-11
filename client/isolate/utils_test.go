@@ -15,7 +15,7 @@
 package isolate
 
 import (
-	"io/ioutil"
+	"io"
 	"log"
 	"os"
 	"testing"
@@ -49,7 +49,7 @@ func TestUniqueMergeSortedStrings(t *testing.T) {
 
 func TestAssert(t *testing.T) {
 	Convey(`Helper function for test assertion.`, t, func() {
-		log.SetOutput(ioutil.Discard)
+		log.SetOutput(io.Discard)
 		defer log.SetOutput(os.Stderr)
 
 		wasPanic := func(f func()) (yes bool) {

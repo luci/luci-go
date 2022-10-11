@@ -15,7 +15,6 @@
 package filesystem
 
 import (
-	"io/ioutil"
 	"os"
 	"path"
 	"path/filepath"
@@ -84,7 +83,7 @@ func (n nativePath) rel(other nativePath) (nativePath, error) {
 }
 
 func (n nativePath) read() ([]byte, error) {
-	return ioutil.ReadFile(n.s())
+	return os.ReadFile(n.s())
 }
 
 func (n nativePath) toLUCI() luciPath {

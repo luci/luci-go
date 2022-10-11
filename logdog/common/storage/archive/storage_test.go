@@ -19,7 +19,6 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"testing"
 
 	"go.chromium.org/luci/common/errors"
@@ -214,7 +213,7 @@ func (c *fakeGSClient) NewReader(p gs.Path, offset, length int64) (io.ReadCloser
 		}
 		data = data[:length]
 	}
-	return ioutil.NopCloser(&errReader{bytes.NewReader(data), readerErr}), nil
+	return io.NopCloser(&errReader{bytes.NewReader(data), readerErr}), nil
 }
 
 func testArchiveStorage(t *testing.T, limit int64) {

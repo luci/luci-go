@@ -18,7 +18,6 @@ import (
 	"context"
 	"hash"
 	"io"
-	"io/ioutil"
 	"sync"
 	"sync/atomic"
 
@@ -69,7 +68,7 @@ func (s *mockedStorage) upload(ctx context.Context, url string, data io.ReadSeek
 	if s.err != nil {
 		return s.err
 	}
-	blob, err := ioutil.ReadAll(data)
+	blob, err := io.ReadAll(data)
 	if err == nil {
 		s.putStored(url, string(blob))
 	}

@@ -18,7 +18,6 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net/http"
 
 	"go.chromium.org/luci/common/errors"
@@ -79,7 +78,7 @@ func NewRequest(ctx context.Context, c *http.Client, rFn retry.Factory, rgen Req
 		errorHandler = func(resp *http.Response, err error) error {
 			if resp != nil {
 				// Drain and close the resp.Body.
-				io.Copy(ioutil.Discard, resp.Body)
+				io.Copy(io.Discard, resp.Body)
 				resp.Body.Close()
 			}
 			return err

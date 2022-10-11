@@ -21,7 +21,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"strings"
 	"time"
@@ -207,7 +207,7 @@ func (p *luciContextTokenProvider) doRPC(ctx context.Context, method string, req
 		return transient.Tag.Apply(err)
 	}
 	defer httpResp.Body.Close()
-	respBody, err := ioutil.ReadAll(httpResp.Body)
+	respBody, err := io.ReadAll(httpResp.Body)
 	if err != nil {
 		return transient.Tag.Apply(err)
 	}

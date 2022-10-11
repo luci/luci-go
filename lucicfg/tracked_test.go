@@ -35,7 +35,7 @@ func TestFindTrackedFiles(t *testing.T) {
 		touch := func(p string) {
 			p = filepath.Join(tmp, filepath.FromSlash(p))
 			So(os.MkdirAll(filepath.Dir(p), 0700), ShouldBeNil)
-			So(ioutil.WriteFile(p, nil, 0600), ShouldBeNil)
+			So(os.WriteFile(p, nil, 0600), ShouldBeNil)
 		}
 
 		files := []string{

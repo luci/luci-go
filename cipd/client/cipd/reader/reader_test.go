@@ -134,7 +134,7 @@ func TestPackageReading(t *testing.T) {
 			defer r.Close()
 		}
 		So(err, ShouldBeNil)
-		manifest, err := ioutil.ReadAll(r)
+		manifest, err := io.ReadAll(r)
 		So(err, ShouldBeNil)
 
 		goodManifest := `{

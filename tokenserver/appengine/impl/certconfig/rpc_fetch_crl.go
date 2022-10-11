@@ -19,7 +19,7 @@ import (
 	"crypto/x509"
 	"encoding/pem"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"time"
 
@@ -160,7 +160,7 @@ func fetchCRL(c context.Context, cfg *admin.CertificateAuthorityConfig, knownETa
 	}
 
 	// Read the body in its entirety (plus new etag, if any).
-	blob, err = ioutil.ReadAll(resp.Body)
+	blob, err = io.ReadAll(resp.Body)
 	if err != nil {
 		return nil, "", transient.Tag.Apply(err)
 	}

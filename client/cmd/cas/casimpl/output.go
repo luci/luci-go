@@ -18,7 +18,8 @@ import (
 	"bytes"
 	"compress/zlib"
 	"encoding/json"
-	"io/ioutil"
+	"io"
+	"os"
 	"sort"
 
 	"go.chromium.org/luci/common/errors"
@@ -78,7 +79,7 @@ func writeExitResult(path string, statusCode StatusCode, digest string) error {
 	if err != nil {
 		return errors.Annotate(err, "failed to marshal json").Err()
 	}
-	if err := ioutil.WriteFile(path, out, 0600); err != nil {
+	if err := os.WriteFile(path, out, 0600); err != nil {
 		return errors.Annotate(err, "failed to write json").Err()
 	}
 	return nil
@@ -115,7 +116,7 @@ func writeStats(path string, hot, cold []int64) error {
 	if err != nil {
 		return errors.Annotate(err, "failed to marshal json").Err()
 	}
-	if err := ioutil.WriteFile(path, statsJSON, 0600); err != nil {
+	if err := os.WriteFile(path, statsJSON, 0600); err != nil {
 		return errors.Annotate(err, "failed to write json").Err()
 	}
 
@@ -179,7 +180,7 @@ func unpack(data []byte) ([]int64, error) {
 	}
 	defer r.Close()
 
-	data, err = ioutil.ReadAll(r)
+	data, err = io.ReadAll(r)
 	if err != nil {
 		return nil, errors.Annotate(err, "failed to read all").Err()
 	}

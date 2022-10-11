@@ -19,7 +19,6 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"sync"
@@ -48,7 +47,7 @@ func TestNewRequestGET(t *testing.T) {
 		serverCalls := 0
 		ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			serverCalls++
-			content, err := ioutil.ReadAll(r.Body)
+			content, err := io.ReadAll(r.Body)
 			c.So(err, ShouldBeNil)
 			c.So(content, ShouldResemble, []byte{})
 			if serverCalls == 1 {
@@ -64,7 +63,7 @@ func TestNewRequestGET(t *testing.T) {
 		clientCalls := 0
 		clientReq := NewRequest(ctx, http.DefaultClient, fast, httpReq, func(resp *http.Response) error {
 			clientCalls++
-			content, err := ioutil.ReadAll(resp.Body)
+			content, err := io.ReadAll(resp.Body)
 			So(err, ShouldBeNil)
 			So(string(content), ShouldResemble, "Hello, client\n")
 			So(resp.Body.Close(), ShouldBeNil)
@@ -87,7 +86,7 @@ func TestNewRequestPOST(t *testing.T) {
 		serverCalls := 0
 		ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			serverCalls++
-			content, err := ioutil.ReadAll(r.Body)
+			content, err := io.ReadAll(r.Body)
 			c.So(err, ShouldBeNil)
 			// The same data is sent twice.
 			c.So(string(content), ShouldResemble, "foo bar")
@@ -104,7 +103,7 @@ func TestNewRequestPOST(t *testing.T) {
 		clientCalls := 0
 		clientReq := NewRequest(ctx, http.DefaultClient, fast, httpReq, func(resp *http.Response) error {
 			clientCalls++
-			content, err := ioutil.ReadAll(resp.Body)
+			content, err := io.ReadAll(resp.Body)
 			So(err, ShouldBeNil)
 			So(string(content), ShouldResemble, "Hello, client\n")
 			So(resp.Body.Close(), ShouldBeNil)

@@ -16,7 +16,7 @@ package auth
 
 import (
 	"context"
-	"io/ioutil"
+	"io"
 	"math/rand"
 	"net/http"
 	"net/http/httptest"
@@ -529,7 +529,7 @@ func TestTransport(t *testing.T) {
 		// Initial call will mint new token.
 		resp, err := client.Get(ts.URL + "/1")
 		So(err, ShouldBeNil)
-		ioutil.ReadAll(resp.Body)
+		io.ReadAll(resp.Body)
 		defer resp.Body.Close()
 
 		// Minted token is now cached.
@@ -546,14 +546,14 @@ func TestTransport(t *testing.T) {
 		clock.Get(ctx).(testclock.TestClock).Add(40 * time.Minute)
 		resp, err = client.Get(ts.URL + "/2")
 		So(err, ShouldBeNil)
-		ioutil.ReadAll(resp.Body)
+		io.ReadAll(resp.Body)
 		defer resp.Body.Close()
 
 		// 30 min later (70 min since the start) it is expired and refreshed.
 		clock.Get(ctx).(testclock.TestClock).Add(30 * time.Minute)
 		resp, err = client.Get(ts.URL + "/3")
 		So(err, ShouldBeNil)
-		ioutil.ReadAll(resp.Body)
+		io.ReadAll(resp.Body)
 		defer resp.Body.Close()
 
 		tok, err = auth.currentToken()
@@ -608,7 +608,7 @@ func TestOptionalLogin(t *testing.T) {
 		// Initial call uses existing cached token.
 		resp, err := client.Get(ts.URL + "/1")
 		So(err, ShouldBeNil)
-		ioutil.ReadAll(resp.Body)
+		io.ReadAll(resp.Body)
 		defer resp.Body.Close()
 
 		// It expires at ~60 minutes, refresh fails, authenticator switches to
@@ -616,7 +616,7 @@ func TestOptionalLogin(t *testing.T) {
 		clock.Get(ctx).(testclock.TestClock).Add(65 * time.Minute)
 		resp, err = client.Get(ts.URL + "/2")
 		So(err, ShouldBeNil)
-		ioutil.ReadAll(resp.Body)
+		io.ReadAll(resp.Body)
 		defer resp.Body.Close()
 
 		// Bad token is removed from the cache.

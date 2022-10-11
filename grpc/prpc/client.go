@@ -20,7 +20,6 @@ import (
 	"encoding/base64"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"net/url"
 	"os"
@@ -467,7 +466,7 @@ func (c *Client) attemptCall(ctx context.Context, options *Options, req *http.Re
 		defer func() {
 			// Drain the body before closing it to enable HTTP connection reuse. This
 			// is all best effort cleanup, don't check errors.
-			io.Copy(ioutil.Discard, res.Body)
+			io.Copy(io.Discard, res.Body)
 			res.Body.Close()
 		}()
 	}
@@ -702,7 +701,7 @@ func (c *Client) prepareRequest(options *Options, md metadata.MD, requestMessage
 		Header:        headers,
 		ContentLength: int64(len(body)),
 		GetBody: func() (io.ReadCloser, error) {
-			return ioutil.NopCloser(bytes.NewReader(body)), nil
+			return io.NopCloser(bytes.NewReader(body)), nil
 		},
 	}, nil
 }

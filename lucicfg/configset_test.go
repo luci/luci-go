@@ -43,8 +43,8 @@ func TestConfigSet(t *testing.T) {
 		}
 
 		So(os.Mkdir(path("subdir"), 0700), ShouldBeNil)
-		So(ioutil.WriteFile(path("a.cfg"), []byte("a\n"), 0600), ShouldBeNil)
-		So(ioutil.WriteFile(path("subdir", "b.cfg"), []byte("b\n"), 0600), ShouldBeNil)
+		So(os.WriteFile(path("a.cfg"), []byte("a\n"), 0600), ShouldBeNil)
+		So(os.WriteFile(path("subdir", "b.cfg"), []byte("b\n"), 0600), ShouldBeNil)
 
 		Convey("Reading", func() {
 			Convey("Success", func() {

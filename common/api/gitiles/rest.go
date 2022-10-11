@@ -20,7 +20,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/url"
 	"sort"
@@ -308,7 +308,7 @@ func (c *client) getRaw(ctx context.Context, urlPath string, query url.Values) (
 	}
 
 	defer r.Body.Close()
-	body, err := ioutil.ReadAll(r.Body)
+	body, err := io.ReadAll(r.Body)
 	if err != nil {
 		return r.Header, nil, status.Errorf(codes.Internal, "could not read response body: %s", err)
 	}

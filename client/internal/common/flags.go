@@ -19,7 +19,6 @@ import (
 	"errors"
 	"flag"
 	"io"
-	"io/ioutil"
 	"log"
 
 	"go.chromium.org/luci/common/logging"
@@ -42,7 +41,7 @@ func (d *Flags) Init(f *flag.FlagSet) {
 func (d *Flags) Parse() error {
 	if !d.Verbose {
 		log.SetFlags(0)
-		log.SetOutput(ioutil.Discard)
+		log.SetOutput(io.Discard)
 	}
 	if d.Quiet && d.Verbose {
 		return errors.New("can't use both -quiet and -verbose")

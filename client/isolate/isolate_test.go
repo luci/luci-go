@@ -15,7 +15,7 @@
 package isolate
 
 import (
-	"io/ioutil"
+	"io"
 	"log"
 	"os"
 	"path/filepath"
@@ -29,7 +29,7 @@ import (
 )
 
 func init() {
-	log.SetOutput(ioutil.Discard)
+	log.SetOutput(io.Discard)
 }
 
 func TestReplaceVars(t *testing.T) {
@@ -97,7 +97,7 @@ func TestProcessIsolateFile(t *testing.T) {
 		secondDir := filepath.Join(tmpDir, "secondDir")
 		So(os.Mkdir(baseDir, 0700), ShouldBeNil)
 		So(os.Mkdir(secondDir, 0700), ShouldBeNil)
-		So(ioutil.WriteFile(filepath.Join(baseDir, "foo"), []byte("foo"), 0600), ShouldBeNil)
+		So(os.WriteFile(filepath.Join(baseDir, "foo"), []byte("foo"), 0600), ShouldBeNil)
 		// Note that for "secondDir", its separator is omitted intentionally.
 		isolate := `{
 			'variables': {
@@ -112,7 +112,7 @@ func TestProcessIsolateFile(t *testing.T) {
 		outDir := filepath.Join(tmpDir, "out")
 		So(os.Mkdir(outDir, 0700), ShouldBeNil)
 		isolatePath := filepath.Join(outDir, "my.isolate")
-		So(ioutil.WriteFile(isolatePath, []byte(isolate), 0600), ShouldBeNil)
+		So(os.WriteFile(isolatePath, []byte(isolate), 0600), ShouldBeNil)
 
 		opts := &ArchiveOptions{
 			Isolate: isolatePath,
@@ -133,7 +133,7 @@ func TestProcessIsolateFile(t *testing.T) {
 		So(os.Mkdir(dir1, 0700), ShouldBeNil)
 		dir2 := filepath.Join(tmpDir, "dir2")
 		So(os.Mkdir(dir2, 0700), ShouldBeNil)
-		So(ioutil.WriteFile(filepath.Join(dir2, "foo"), []byte("foo"), 0600), ShouldBeNil)
+		So(os.WriteFile(filepath.Join(dir2, "foo"), []byte("foo"), 0600), ShouldBeNil)
 		isolate := `{
 			'variables': {
 				'files': [
@@ -148,7 +148,7 @@ func TestProcessIsolateFile(t *testing.T) {
 		outDir := filepath.Join(tmpDir, "out")
 		So(os.Mkdir(outDir, 0700), ShouldBeNil)
 		isolatePath := filepath.Join(outDir, "my.isolate")
-		So(ioutil.WriteFile(isolatePath, []byte(isolate), 0600), ShouldBeNil)
+		So(os.WriteFile(isolatePath, []byte(isolate), 0600), ShouldBeNil)
 
 		opts := &ArchiveOptions{
 			Isolate:             isolatePath,
@@ -176,8 +176,8 @@ func TestProcessIsolateFile(t *testing.T) {
 		So(os.Mkdir(isolDir, 0700), ShouldBeNil)
 		dir2 := filepath.Join(isolDir, "dir2")
 		So(os.Mkdir(dir2, 0700), ShouldBeNil)
-		So(ioutil.WriteFile(filepath.Join(dir1, "foo"), []byte("foo"), 0600), ShouldBeNil)
-		So(ioutil.WriteFile(filepath.Join(dir2, "bar"), []byte("bar"), 0600), ShouldBeNil)
+		So(os.WriteFile(filepath.Join(dir1, "foo"), []byte("foo"), 0600), ShouldBeNil)
+		So(os.WriteFile(filepath.Join(dir2, "bar"), []byte("bar"), 0600), ShouldBeNil)
 		isolate := `{
 			'variables': {
 				'files': [
@@ -189,7 +189,7 @@ func TestProcessIsolateFile(t *testing.T) {
 		}`
 
 		isolatePath := filepath.Join(isolDir, "my.isolate")
-		So(ioutil.WriteFile(isolatePath, []byte(isolate), 0600), ShouldBeNil)
+		So(os.WriteFile(isolatePath, []byte(isolate), 0600), ShouldBeNil)
 
 		opts := &ArchiveOptions{
 			Isolate:             isolatePath,

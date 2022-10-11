@@ -15,7 +15,7 @@
 package roundtripper
 
 import (
-	"io/ioutil"
+	"io"
 	"net/http"
 	"reflect"
 	"testing"
@@ -78,7 +78,7 @@ func TestStringRoundTripper(t *testing.T) {
 		So(err, ShouldBeNil)
 		So(rsp, ShouldNotBeNil)
 		So(rsp.StatusCode, ShouldEqual, http.StatusOK)
-		b, err := ioutil.ReadAll(rsp.Body)
+		b, err := io.ReadAll(rsp.Body)
 		So(err, ShouldBeNil)
 		So(string(b), ShouldEqual, "test")
 	})

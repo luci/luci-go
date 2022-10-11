@@ -17,7 +17,7 @@ package processing
 import (
 	"bytes"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"strings"
 	"testing"
 
@@ -55,7 +55,7 @@ func TestPackageReader(t *testing.T) {
 		fr, actualSize, err := pkg.Open("file2")
 		So(err, ShouldBeNil)
 		So(actualSize, ShouldEqual, 4)
-		blob, err := ioutil.ReadAll(fr)
+		blob, err := io.ReadAll(fr)
 		So(err, ShouldBeNil)
 		So(string(blob), ShouldEqual, "blah")
 	})

@@ -21,7 +21,6 @@ import (
 	"fmt"
 	"hash"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"strconv"
 	"strings"
@@ -421,7 +420,7 @@ func (v *digestVerifier) ReadVerify(ctx context.Context) (err error) {
 	defer func() { ts.End(err) }()
 
 	// Read until the end.
-	if _, err := io.Copy(ioutil.Discard, v); err != nil {
+	if _, err := io.Copy(io.Discard, v); err != nil {
 		return err
 	}
 

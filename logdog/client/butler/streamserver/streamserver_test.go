@@ -20,7 +20,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net"
 	"testing"
 
@@ -171,7 +170,7 @@ func TestListenerStreamServer(t *testing.T) {
 				So(props, ShouldNotBeNil)
 
 				// Consume all of the data in the stream.
-				recvData, _ := ioutil.ReadAll(stream)
+				recvData, _ := io.ReadAll(stream)
 				So(recvData, ShouldResemble, content)
 			})
 

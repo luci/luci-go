@@ -103,7 +103,7 @@ func newTestApp(ctx context.Context) (t *testApp, err error) {
 		}
 	`
 	authDBPath := filepath.Join(tempDir, "authdb.txt")
-	if err := ioutil.WriteFile(authDBPath, []byte(authDBTextProto), 0666); err != nil {
+	if err := os.WriteFile(authDBPath, []byte(authDBTextProto), 0666); err != nil {
 		return nil, err
 	}
 

@@ -112,7 +112,7 @@ func TestInstanceCache(t *testing.T) {
 		}
 
 		readSrc := func(src pkg.Source) string {
-			buf, err := ioutil.ReadAll(io.NewSectionReader(src, 0, src.Size()))
+			buf, err := io.ReadAll(io.NewSectionReader(src, 0, src.Size()))
 			So(err, ShouldBeNil)
 			return string(buf)
 		}

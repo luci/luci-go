@@ -18,7 +18,6 @@ import (
 	"bytes"
 	"compress/gzip"
 	"io"
-	"io/ioutil"
 	"sync"
 
 	"google.golang.org/protobuf/proto"
@@ -80,7 +79,7 @@ func GetDescriptorSet(serviceName string) (*descriptorpb.FileDescriptorSet, erro
 		}
 
 		var uncompressed []byte
-		uncompressed, e.err = ioutil.ReadAll(unGzip)
+		uncompressed, e.err = io.ReadAll(unGzip)
 		if e.err != nil {
 			return
 		}

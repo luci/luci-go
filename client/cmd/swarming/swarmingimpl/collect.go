@@ -19,7 +19,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -192,7 +191,7 @@ func (c *collectRun) Parse(args *[]string) error {
 
 	// Validate arguments.
 	if c.jsonInput != "" {
-		data, err := ioutil.ReadFile(c.jsonInput)
+		data, err := os.ReadFile(c.jsonInput)
 		if err != nil {
 			return errors.Annotate(err, "reading json input").Err()
 		}
@@ -520,7 +519,7 @@ func (c *collectRun) main(_ subcommands.Application, taskIDs []string) error {
 		if err != nil {
 			return err
 		}
-		if err := ioutil.WriteFile(c.taskSummaryJSON, jsonSummary, 0644); err != nil {
+		if err := os.WriteFile(c.taskSummaryJSON, jsonSummary, 0644); err != nil {
 			return err
 		}
 	}

@@ -39,13 +39,13 @@ func TestOutput(t *testing.T) {
 		}
 
 		read := func(p string) string {
-			body, err := ioutil.ReadFile(path(p))
+			body, err := os.ReadFile(path(p))
 			So(err, ShouldBeNil)
 			return string(body)
 		}
 
 		write := func(p, body string) {
-			So(ioutil.WriteFile(path(p), []byte(body), 0600), ShouldBeNil)
+			So(os.WriteFile(path(p), []byte(body), 0600), ShouldBeNil)
 		}
 
 		original := map[string][]byte{

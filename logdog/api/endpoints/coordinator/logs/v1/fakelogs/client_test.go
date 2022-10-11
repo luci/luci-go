@@ -17,7 +17,7 @@ package fakelogs
 import (
 	"context"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"testing"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -101,7 +101,7 @@ func TestFakeLogs(t *testing.T) {
 
 			client := &coordinator.Client{C: c, Host: "testing-host.example.com"}
 			stream := client.Stream(Project, "some/prefix/+/some/path")
-			data, err := ioutil.ReadAll(stream.Fetcher(ctx, &fetcher.Options{
+			data, err := io.ReadAll(stream.Fetcher(ctx, &fetcher.Options{
 				RequireCompleteStream: true,
 			}).Reader())
 			So(err, ShouldErrLike, nil)
@@ -134,7 +134,7 @@ func TestFakeLogs(t *testing.T) {
 
 			client := &coordinator.Client{C: c, Host: "testing-host.example.com"}
 			stream := client.Stream(Project, "some/prefix/+/some/path")
-			data, err := ioutil.ReadAll(stream.Fetcher(ctx, &fetcher.Options{
+			data, err := io.ReadAll(stream.Fetcher(ctx, &fetcher.Options{
 				RequireCompleteStream: true,
 			}).Reader())
 			So(err, ShouldErrLike, nil)

@@ -16,7 +16,7 @@ package luciexe
 
 import (
 	"flag"
-	"io/ioutil"
+	"io"
 	"testing"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -28,7 +28,7 @@ func TestOutputFlag(t *testing.T) {
 
 	Convey(`OutputFlag`, t, func() {
 		fs := &flag.FlagSet{}
-		fs.SetOutput(ioutil.Discard)
+		fs.SetOutput(io.Discard)
 		of := AddOutputFlagToSet(fs)
 
 		Convey(`good`, func() {

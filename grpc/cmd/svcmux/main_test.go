@@ -53,10 +53,10 @@ func TestMain(t *testing.T) {
 			)
 			So(err, ShouldBeNil)
 
-			want, err := ioutil.ReadFile(goldenFile)
+			want, err := os.ReadFile(goldenFile)
 			So(err, ShouldBeNil)
 
-			got, err := ioutil.ReadFile(output)
+			got, err := os.ReadFile(output)
 			So(err, ShouldBeNil)
 
 			So(string(got), ShouldEqual, string(want))

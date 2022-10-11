@@ -19,7 +19,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 
 	"go.chromium.org/luci/common/logging"
@@ -131,11 +131,11 @@ func fetchJSON(ctx context.Context, client *http.Client, val interface{}, f func
 		return transient.Tag.Apply(err)
 	}
 	defer func() {
-		ioutil.ReadAll(resp.Body)
+		io.ReadAll(resp.Body)
 		resp.Body.Close()
 	}()
 	if resp.StatusCode >= 300 {
-		body, _ := ioutil.ReadAll(resp.Body)
+		body, _ := io.ReadAll(resp.Body)
 		// Opportunistically try to unmarshal the response. Works with JSON APIs.
 		if val != nil {
 			json.Unmarshal(body, val)

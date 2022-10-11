@@ -17,7 +17,6 @@ package fs
 import (
 	"bytes"
 	"io"
-	"io/ioutil"
 	"time"
 
 	"go.chromium.org/luci/cipd/common/cipderr"
@@ -94,5 +93,5 @@ func (f *testFile) Open() (io.ReadCloser, error) {
 		return nil, errors.Reason("%q: can't open symlink", f.Name()).Tag(cipderr.IO).Err()
 	}
 	r := bytes.NewReader([]byte(f.data))
-	return ioutil.NopCloser(r), nil
+	return io.NopCloser(r), nil
 }

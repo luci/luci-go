@@ -17,7 +17,6 @@ package httpmitm
 import (
 	"bytes"
 	"io"
-	"io/ioutil"
 	"net/http"
 )
 
@@ -71,14 +70,14 @@ func (t *Transport) RoundTrip(req *http.Request) (*http.Response, error) {
 	// from.
 	origBody := reqCopy.Body
 	if origBody != nil {
-		reqCopy.Body = ioutil.NopCloser(io.TeeReader(origBody, &bodyBuf))
+		reqCopy.Body = io.NopCloser(io.TeeReader(origBody, &bodyBuf))
 	}
 	reqCopy.Write(&buf)
 	if origBody != nil {
 		if err := origBody.Close(); err != nil {
 			t.callback(Request, nil, err)
 		}
-		reqCopy.Body = ioutil.NopCloser(&bodyBuf)
+		reqCopy.Body = io.NopCloser(&bodyBuf)
 	}
 	t.callback(Request, buf.Bytes(), nil)
 
@@ -96,7 +95,7 @@ func (t *Transport) RoundTrip(req *http.Request) (*http.Response, error) {
 	body := res.Body
 	if body != nil {
 		bodyBuf.Reset()
-		res.Body = ioutil.NopCloser(io.TeeReader(body, &bodyBuf))
+		res.Body = io.NopCloser(io.TeeReader(body, &bodyBuf))
 		defer body.Close()
 	}
 
@@ -104,7 +103,7 @@ func (t *Transport) RoundTrip(req *http.Request) (*http.Response, error) {
 	res.Write(&buf)
 	t.callback(Response, buf.Bytes(), nil)
 	if body != nil {
-		res.Body = ioutil.NopCloser(&bodyBuf)
+		res.Body = io.NopCloser(&bodyBuf)
 	}
 	return res, nil
 }

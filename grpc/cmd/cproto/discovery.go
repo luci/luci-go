@@ -19,7 +19,6 @@ import (
 	"compress/gzip"
 	"fmt"
 	"go/build"
-	"io/ioutil"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -117,7 +116,7 @@ func genDiscoveryFile(output, goPkg string, desc []*descriptorpb.FileDescriptorP
 		return errors.Annotate(err, "failed to gofmt the generated discovery file").Err()
 	}
 
-	return ioutil.WriteFile(output, formatted, 0666)
+	return os.WriteFile(output, formatted, 0666)
 }
 
 // asByteArray converts blob to a valid []byte Go literal.

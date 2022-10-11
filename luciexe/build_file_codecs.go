@@ -16,7 +16,6 @@ package luciexe
 
 import (
 	"io"
-	"io/ioutil"
 	"os"
 	"path"
 	"sort"
@@ -63,7 +62,7 @@ func (buildFileCodecBinary) Enc(build *bbpb.Build, w io.Writer) error {
 	return err
 }
 func (buildFileCodecBinary) Dec(build *bbpb.Build, r io.Reader) error {
-	data, err := ioutil.ReadAll(r)
+	data, err := io.ReadAll(r)
 	if err != nil {
 		return err
 	}
@@ -81,7 +80,7 @@ func (buildFileCodecText) Enc(build *bbpb.Build, w io.Writer) error {
 	return proto.MarshalText(w, build)
 }
 func (buildFileCodecText) Dec(build *bbpb.Build, r io.Reader) error {
-	data, err := ioutil.ReadAll(r)
+	data, err := io.ReadAll(r)
 	if err != nil {
 		return err
 	}

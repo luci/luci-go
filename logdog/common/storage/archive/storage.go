@@ -27,7 +27,6 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"sort"
 	"sync/atomic"
 
@@ -346,7 +345,7 @@ func loadIndex(c context.Context, client gs.Client, path gs.Path, cache storage.
 			}
 		}()
 
-		if indexData, err = ioutil.ReadAll(r); err != nil {
+		if indexData, err = io.ReadAll(r); err != nil {
 			log.WithError(err).Errorf(c, "Failed to read index.")
 			return nil, errors.Annotate(err, "failed to read index").Err()
 		}

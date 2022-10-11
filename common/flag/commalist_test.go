@@ -16,7 +16,7 @@ package flag
 
 import (
 	"flag"
-	"io/ioutil"
+	"io"
 	"testing"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -27,7 +27,7 @@ func TestCommaList(t *testing.T) {
 	Convey("Given a FlagSet with a CommaList flag", t, func() {
 		fs := flag.NewFlagSet("test", flag.ContinueOnError)
 		fs.Usage = func() {}
-		fs.SetOutput(ioutil.Discard)
+		fs.SetOutput(io.Discard)
 		var s []string
 		fs.Var(CommaList(&s), "list", "Some list")
 		Convey("When parsing with flag absent", func() {

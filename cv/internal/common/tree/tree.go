@@ -19,7 +19,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"strings"
 	"time"
@@ -100,7 +100,7 @@ func (c httpClientImpl) FetchLatest(ctx context.Context, endpoint string) (Statu
 		return Status{}, errors.Annotate(err, "failed to get latest tree status from %s", url).Tag(transient.Tag).Err()
 	}
 	defer resp.Body.Close()
-	bs, err := ioutil.ReadAll(resp.Body)
+	bs, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return Status{}, errors.Annotate(err, "failed to read response body from %s", url).Tag(transient.Tag).Err()
 	}

@@ -17,7 +17,7 @@ package casviewer
 import (
 	"context"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -105,7 +105,7 @@ func TestHandlers(t *testing.T) {
 			defer resp.Body.Close()
 
 			So(resp.StatusCode, ShouldEqual, http.StatusOK)
-			_, err = ioutil.ReadAll(resp.Body)
+			_, err = io.ReadAll(resp.Body)
 			So(err, ShouldBeNil)
 		})
 

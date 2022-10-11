@@ -27,7 +27,6 @@ import (
 	"flag"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"os"
 	"time"
@@ -86,7 +85,7 @@ func run(ctx context.Context) error {
 		if err != nil {
 			return err
 		}
-		return ioutil.WriteFile(*outputFile, blob, 0600)
+		return os.WriteFile(*outputFile, blob, 0600)
 	}
 
 	logging.Infof(ctx, "AuthDB proto:")
@@ -106,7 +105,7 @@ func fetchAuthDB(ctx context.Context, client *http.Client, authServiceURL string
 	if err != nil {
 		return nil, errors.Annotate(err, "failed to send the request to the auth service").Err()
 	}
-	body, err := ioutil.ReadAll(resp.Body)
+	body, err := io.ReadAll(resp.Body)
 	resp.Body.Close()
 	if err != nil {
 		return nil, errors.Annotate(err, "failed to read the response from the auth service").Err()

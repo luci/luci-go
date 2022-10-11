@@ -1078,7 +1078,7 @@ func TestEnsurePackage(t *testing.T) {
 			_, err := ensurePackages(common.PinSliceBySubdir{"": {pin}})
 			So(err, ShouldBeNil)
 
-			body, err = ioutil.ReadFile(filepath.Join(client.Root, "test_name"))
+			body, err = os.ReadFile(filepath.Join(client.Root, "test_name"))
 			So(err, ShouldBeNil)
 			So(string(body), ShouldEqual, testFileBody)
 		})
@@ -1208,11 +1208,11 @@ func TestMaybeUpdateClient(t *testing.T) {
 		}
 
 		writeFile := func(path, body string) {
-			So(ioutil.WriteFile(path, []byte(body), 0777), ShouldBeNil)
+			So(os.WriteFile(path, []byte(body), 0777), ShouldBeNil)
 		}
 
 		readFile := func(path string) string {
-			body, err := ioutil.ReadFile(path)
+			body, err := os.ReadFile(path)
 			So(err, ShouldBeNil)
 			return string(body)
 		}
@@ -1432,7 +1432,7 @@ func TestNewClientFromEnv(t *testing.T) {
 
 	Convey("With default config file", t, func() {
 		cfg := filepath.Join(t.TempDir(), "cipd.cfg")
-		err := ioutil.WriteFile(cfg, []byte(`
+		err := os.WriteFile(cfg, []byte(`
 		plugins: {
 			admission: {
 				cmd: "something"
@@ -1454,7 +1454,7 @@ func TestNewClientFromEnv(t *testing.T) {
 
 		Convey("With CIPD_CONFIG_FILE", func() {
 			cfg2 := filepath.Join(t.TempDir(), "cipd_2.cfg")
-			err := ioutil.WriteFile(cfg2, []byte(`
+			err := os.WriteFile(cfg2, []byte(`
 			plugins: {
 				admission: {
 					cmd: "override"

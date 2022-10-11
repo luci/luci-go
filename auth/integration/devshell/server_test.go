@@ -18,7 +18,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net"
 	"strconv"
 	"strings"
@@ -74,7 +74,7 @@ func call(conn net.Conn, req string) string {
 		panic(err)
 	}
 
-	blob, err := ioutil.ReadAll(conn)
+	blob, err := io.ReadAll(conn)
 	if err != nil {
 		panic(err)
 	}

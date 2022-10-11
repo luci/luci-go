@@ -17,7 +17,7 @@ package authdbimpl
 import (
 	"context"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/url"
 
@@ -96,7 +96,7 @@ func pubSubPull(c *router.Context) {
 // messages not signed by currently configured auth service.
 func pubSubPush(c *router.Context) {
 	processPubSubRequest(c.Context, c.Writer, c.Request, func(ctx context.Context, srv authService, serviceURL string) (*service.Notification, error) {
-		body, err := ioutil.ReadAll(c.Request.Body)
+		body, err := io.ReadAll(c.Request.Body)
 		if err != nil {
 			return nil, err
 		}

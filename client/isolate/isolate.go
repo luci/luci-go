@@ -15,7 +15,6 @@
 package isolate
 
 import (
-	"io/ioutil"
 	"log"
 	"os"
 	"path/filepath"
@@ -185,7 +184,7 @@ func processDependencies(deps []string, isolateDir string, opts *ArchiveOptions)
 
 // ProcessIsolate parses an isolate file, returning the list of dependencies
 func ProcessIsolate(opts *ArchiveOptions) ([]string, string, error) {
-	content, err := ioutil.ReadFile(opts.Isolate)
+	content, err := os.ReadFile(opts.Isolate)
 	if err != nil {
 		return nil, "", errors.Annotate(err, "failed to read file: %s", opts.Isolate).Err()
 	}
@@ -207,7 +206,7 @@ func ProcessIsolate(opts *ArchiveOptions) ([]string, string, error) {
 //
 // TODO(crbug.com/1193375): remove after migrating to RBE's cas package.
 func ProcessIsolateForCAS(opts *ArchiveOptions) ([]string, string, error) {
-	content, err := ioutil.ReadFile(opts.Isolate)
+	content, err := os.ReadFile(opts.Isolate)
 	if err != nil {
 		return nil, "", errors.Annotate(err, "failed to call ReadFile: %s", opts.Isolate).Err()
 	}

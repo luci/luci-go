@@ -17,7 +17,6 @@ package datastore
 import (
 	"fmt"
 	"io"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -29,7 +28,7 @@ import (
 // ParseIndexYAML parses the contents of a index YAML file into a list of
 // IndexDefinitions.
 func ParseIndexYAML(content io.Reader) ([]*IndexDefinition, error) {
-	serialized, err := ioutil.ReadAll(content)
+	serialized, err := io.ReadAll(content)
 	if err != nil {
 		return nil, err
 	}

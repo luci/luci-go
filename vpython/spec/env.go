@@ -15,7 +15,7 @@
 package spec
 
 import (
-	"io/ioutil"
+	"os"
 	"sort"
 
 	"go.chromium.org/luci/vpython/api/vpython"
@@ -28,7 +28,7 @@ import (
 // LoadEnvironment loads an environment file text protobuf from the supplied
 // path.
 func LoadEnvironment(path string, environment *vpython.Environment) error {
-	content, err := ioutil.ReadFile(path)
+	content, err := os.ReadFile(path)
 	if err != nil {
 		return errors.Annotate(err, "failed to load file from: %s", path).Err()
 	}

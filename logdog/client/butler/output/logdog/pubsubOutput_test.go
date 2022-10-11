@@ -19,7 +19,7 @@ import (
 	"compress/zlib"
 	"context"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"sync"
 	"testing"
 	"time"
@@ -114,7 +114,7 @@ func deconstructMessage(msg *pubsub.Message) (*logpb.ButlerMetadata, *logpb.Butl
 		}
 		defer r.Close()
 
-		data, err = ioutil.ReadAll(r)
+		data, err = io.ReadAll(r)
 		if err != nil {
 			return nil, nil, fmt.Errorf("test: failed to read compressed data: %s", err)
 		}

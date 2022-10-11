@@ -27,7 +27,6 @@ import (
 	"flag"
 	"fmt"
 	"go/build"
-	"io/ioutil"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -147,7 +146,7 @@ package {{.PackageName}}
 
 import (
 	"go/build"
-	"io/ioutil"
+	"os"
 	"path/filepath"
 	"testing"
 )
@@ -164,7 +163,7 @@ func TestAssets(t *testing.T) {
 	for name := range Assets() {
 		GetAsset(name) // for code coverage
 		path := filepath.Join(pkg.Dir, filepath.FromSlash(name))
-		blob, err := ioutil.ReadFile(path)
+		blob, err := os.ReadFile(path)
 		if err != nil {
 			t.Errorf("can't read file with assets %q (%s) - %s", name, path, err)
 			fail = true
@@ -293,7 +292,7 @@ func findAssets(pkgDir string, exts []string) (assetMap, error) {
 		if err != nil {
 			return err
 		}
-		blob, err := ioutil.ReadFile(path)
+		blob, err := os.ReadFile(path)
 		if err != nil {
 			return err
 		}
@@ -349,7 +348,7 @@ func generate(t *template.Template, pkgName string, assets assetMap, assetExts [
 		return fmt.Errorf("can't gofmt %s - %s", path, err)
 	}
 
-	return ioutil.WriteFile(path, formatted, 0666)
+	return os.WriteFile(path, formatted, 0666)
 }
 
 // gofmt applies "gofmt -s" to the content of the buffer.

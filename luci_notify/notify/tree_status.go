@@ -18,7 +18,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -119,7 +119,7 @@ func getHttp(c context.Context, url string) ([]byte, error) {
 	}
 
 	defer response.Body.Close()
-	bytes, err := ioutil.ReadAll(response.Body)
+	bytes, err := io.ReadAll(response.Body)
 	if err != nil {
 		return nil, errors.Annotate(err, "failed to read response body from %q", url).Err()
 	}

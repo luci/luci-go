@@ -39,7 +39,7 @@ func TestBoto(t *testing.T) {
 		}
 
 		read := func() string {
-			buf, err := ioutil.ReadFile(filepath.Join(tmpDir, ".boto"))
+			buf, err := os.ReadFile(filepath.Join(tmpDir, ".boto"))
 			So(err, ShouldBeNil)
 			return string(buf)
 		}

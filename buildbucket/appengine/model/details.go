@@ -18,7 +18,7 @@ import (
 	"bytes"
 	"compress/zlib"
 	"context"
-	"io/ioutil"
+	"io"
 
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/structpb"
@@ -95,8 +95,8 @@ type BuildInputProperties struct {
 // BuildOutputProperties is a representation of a build proto's output field's
 // properties field in the datastore.
 type BuildOutputProperties struct {
-	_ datastore.PropertyMap `gae:"-,extra"`
-	_kind string `gae:"$kind,BuildOutputProperties"`
+	_     datastore.PropertyMap `gae:"-,extra"`
+	_kind string                `gae:"$kind,BuildOutputProperties"`
 	// ID is always 1 because only one such entity exists.
 	ID int `gae:"$id,1"`
 	// Build is the key for the build this entity belongs to.
@@ -189,7 +189,7 @@ func (s *BuildSteps) ToProto(ctx context.Context) ([]*pb.Step, error) {
 		if err != nil {
 			return nil, errors.Annotate(err, "error creating reader for %q", datastore.KeyForObj(ctx, s)).Err()
 		}
-		b, err = ioutil.ReadAll(r)
+		b, err = io.ReadAll(r)
 		if err != nil {
 			return nil, errors.Annotate(err, "error reading %q", datastore.KeyForObj(ctx, s)).Err()
 		}

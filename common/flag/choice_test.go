@@ -16,7 +16,7 @@ package flag
 
 import (
 	"flag"
-	"io/ioutil"
+	"io"
 	"testing"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -27,7 +27,7 @@ func TestChoice(t *testing.T) {
 	Convey("Given a FlagSet with a Choice flag", t, func() {
 		fs := flag.NewFlagSet("test", flag.ContinueOnError)
 		fs.Usage = func() {}
-		fs.SetOutput(ioutil.Discard)
+		fs.SetOutput(io.Discard)
 		var s string
 		fs.Var(NewChoice(&s, "Apple", "Orange"), "fruit", "")
 		Convey("When parsing with flag absent", func() {

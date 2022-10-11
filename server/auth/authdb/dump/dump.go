@@ -20,7 +20,7 @@ import (
 	"context"
 	"crypto/sha512"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"time"
 
@@ -273,7 +273,7 @@ func (f *Fetcher) fetchFromGCS(ctx context.Context, client *http.Client, rel str
 	}
 	defer resp.Body.Close()
 
-	blob, err := ioutil.ReadAll(resp.Body)
+	blob, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return 0, nil, errors.Annotate(err, "GET %s", url).Err()
 	}

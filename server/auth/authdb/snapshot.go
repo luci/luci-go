@@ -17,7 +17,6 @@ package authdb
 import (
 	"context"
 	"io"
-	"io/ioutil"
 	"net"
 	"strings"
 
@@ -75,7 +74,7 @@ func Revision(db DB) int64 {
 // SnapshotDBFromTextProto constructs SnapshotDB by loading it from a text proto
 // with AuthDB message.
 func SnapshotDBFromTextProto(r io.Reader) (*SnapshotDB, error) {
-	blob, err := ioutil.ReadAll(r)
+	blob, err := io.ReadAll(r)
 	if err != nil {
 		return nil, errors.Annotate(err, "failed to read the file").Err()
 	}

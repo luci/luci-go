@@ -16,7 +16,7 @@ package engine
 
 import (
 	"encoding/json"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -105,7 +105,7 @@ func TestConfigureTopic(t *testing.T) {
 			idx++
 			ctx.So(r.Method+" "+r.URL.Path, ShouldEqual, call.Call)
 			if call.Request != "" {
-				blob, err := ioutil.ReadAll(r.Body)
+				blob, err := io.ReadAll(r.Body)
 				ctx.So(err, ShouldBeNil)
 				expected := make(map[string]interface{})
 				received := make(map[string]interface{})

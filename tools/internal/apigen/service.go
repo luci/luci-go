@@ -108,7 +108,7 @@ func loadService(c context.Context, path string) (service, error) {
 		return nil, fmt.Errorf("unable to stat YAML config at [%s]: %s", yamlPath, err)
 	}
 
-	configData, err := ioutil.ReadFile(yamlPath)
+	configData, err := os.ReadFile(yamlPath)
 	if err != nil {
 		return nil, fmt.Errorf("failed to read YAML config at [%s]: %s", yamlPath, err)
 	}

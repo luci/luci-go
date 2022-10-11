@@ -17,7 +17,6 @@ package recorder
 import (
 	"context"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -117,7 +116,7 @@ func TestCreateArtifact(t *testing.T) {
 				Request: &http.Request{
 					Header: http.Header{},
 					URL:    u,
-					Body:   ioutil.NopCloser(strings.NewReader(content)),
+					Body:   io.NopCloser(strings.NewReader(content)),
 				},
 				Writer: rec,
 			}

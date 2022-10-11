@@ -18,7 +18,7 @@ package main
 import (
 	"context"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"sync"
 	"time"
@@ -212,7 +212,7 @@ func main() {
 // pubsubPushHandler handles incoming PubSub messages.
 func pubsubPushHandler(c *router.Context) {
 	rc := requestContext(*c)
-	body, err := ioutil.ReadAll(rc.Request.Body)
+	body, err := io.ReadAll(rc.Request.Body)
 	if err != nil {
 		rc.fail(500, "Failed to read the request: %s", err)
 		return

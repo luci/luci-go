@@ -356,7 +356,7 @@ func mkDir(root string, path string) {
 func writeFile(root string, path string, data string, mode os.FileMode) {
 	abs := filepath.Join(root, filepath.FromSlash(path))
 	os.MkdirAll(filepath.Dir(abs), 0777)
-	err := ioutil.WriteFile(abs, []byte(data), mode)
+	err := os.WriteFile(abs, []byte(data), mode)
 	if err != nil {
 		panic("Failed to write a temp file")
 	}

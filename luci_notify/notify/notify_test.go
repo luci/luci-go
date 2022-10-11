@@ -18,7 +18,7 @@ import (
 	"bytes"
 	"compress/gzip"
 	"context"
-	"io/ioutil"
+	"io"
 	"sort"
 	"testing"
 
@@ -765,7 +765,7 @@ func TestComputeRecipients(t *testing.T) {
 func decompress(gzipped []byte) string {
 	r, err := gzip.NewReader(bytes.NewReader(gzipped))
 	So(err, ShouldBeNil)
-	buf, err := ioutil.ReadAll(r)
+	buf, err := io.ReadAll(r)
 	So(err, ShouldBeNil)
 	return string(buf)
 }

@@ -18,7 +18,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -585,7 +585,7 @@ func TestRestCreateChange(t *testing.T) {
 		var actualBody []byte
 		srv, c := newMockPbClient(func(w http.ResponseWriter, r *http.Request) {
 			// ignore errors here, but verify body later.
-			actualBody, _ = ioutil.ReadAll(r.Body)
+			actualBody, _ = io.ReadAll(r.Body)
 			w.WriteHeader(201)
 			w.Header().Set("Content-Type", "application/json")
 			fmt.Fprint(w, `)]}'`)
@@ -673,7 +673,7 @@ func TestRestChangeEditFileContent(t *testing.T) {
 		srv, c := newMockPbClient(func(w http.ResponseWriter, r *http.Request) {
 			actualURL = r.URL
 			// ignore errors here, but verify body later.
-			actualBody, _ = ioutil.ReadAll(r.Body)
+			actualBody, _ = io.ReadAll(r.Body)
 			// API returns 204 on success.
 			w.WriteHeader(204)
 		})
@@ -702,7 +702,7 @@ func TestAddReviewer(t *testing.T) {
 		srv, c := newMockPbClient(func(w http.ResponseWriter, r *http.Request) {
 			actualURL = r.URL
 			// ignore the error because body contents will be checked
-			actualBody, _ = ioutil.ReadAll(r.Body)
+			actualBody, _ = io.ReadAll(r.Body)
 			w.WriteHeader(200)
 			w.Header().Set("Content-Type", "application/json")
 			fmt.Fprint(w, `)]}'
@@ -797,7 +797,7 @@ func TestSetReview(t *testing.T) {
 		var actualRawBody []byte
 		srv, c := newMockPbClient(func(w http.ResponseWriter, r *http.Request) {
 			actualURL = r.URL
-			actualRawBody, _ = ioutil.ReadAll(r.Body)
+			actualRawBody, _ = io.ReadAll(r.Body)
 			w.WriteHeader(200)
 			w.Header().Set("Content-Type", "application/json")
 			fmt.Fprint(w, `)]}'
@@ -898,7 +898,7 @@ func TestAddToAttentionSet(t *testing.T) {
 		srv, c := newMockPbClient(func(w http.ResponseWriter, r *http.Request) {
 			actualURL = r.URL
 			// ignore the error because body contents will be checked
-			actualBody, _ = ioutil.ReadAll(r.Body)
+			actualBody, _ = io.ReadAll(r.Body)
 			w.WriteHeader(200)
 			w.Header().Set("Content-Type", "application/json")
 			fmt.Fprint(w, `)]}'

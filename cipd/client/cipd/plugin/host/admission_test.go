@@ -18,7 +18,6 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"os"
 	"strings"
 	"sync"
@@ -54,7 +53,7 @@ func init() {
 		switch mode {
 		case "NOT_CONNECTING":
 			// Block until stdin closes (which indicates the host is closing us).
-			io.Copy(ioutil.Discard, os.Stdin)
+			io.Copy(io.Discard, os.Stdin)
 			return nil
 		case "CRASHING_WHEN_CONNECTING":
 			os.Exit(2)

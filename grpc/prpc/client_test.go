@@ -17,7 +17,7 @@ package prpc
 import (
 	"context"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"strconv"
@@ -57,7 +57,7 @@ func sayHello(c C) http.HandlerFunc {
 			c.So(timeout, ShouldEqual, "10000000u")
 		}
 
-		reqBody, err := ioutil.ReadAll(r.Body)
+		reqBody, err := io.ReadAll(r.Body)
 		c.So(err, ShouldBeNil)
 
 		var req HelloRequest
@@ -256,7 +256,7 @@ func TestClient(t *testing.T) {
 					gz, err := gzip.NewReader(r.Body)
 					c.So(err, ShouldBeNil)
 					defer gz.Close()
-					reqBody, err := ioutil.ReadAll(gz)
+					reqBody, err := io.ReadAll(gz)
 					c.So(err, ShouldBeNil)
 
 					var actualReq HelloRequest

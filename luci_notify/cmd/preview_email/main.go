@@ -19,7 +19,6 @@ import (
 	"context"
 	"flag"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
@@ -161,7 +160,7 @@ func readTemplateBundle(ctx context.Context, templateRootDir string) *mailtmpl.B
 			DefinitionURL: "file://" + filepath.ToSlash(path),
 		}
 
-		contents, err := ioutil.ReadFile(path)
+		contents, err := os.ReadFile(path)
 		if err != nil {
 			return errors.Annotate(err, "failed to read %q", path).Err()
 		}

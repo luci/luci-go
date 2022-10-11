@@ -17,7 +17,7 @@ package auth
 import (
 	"bytes"
 	"context"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"strings"
 	"testing"
@@ -627,7 +627,7 @@ func (m *clientRPCTransportMock) RoundTrip(req *http.Request) (*http.Response, e
 	code := 500
 	resp := "internal error"
 	if req.Body != nil {
-		body, err := ioutil.ReadAll(req.Body)
+		body, err := io.ReadAll(req.Body)
 		req.Body.Close()
 		if err != nil {
 			return nil, err
@@ -639,6 +639,6 @@ func (m *clientRPCTransportMock) RoundTrip(req *http.Request) (*http.Response, e
 	}
 	return &http.Response{
 		StatusCode: code,
-		Body:       ioutil.NopCloser(bytes.NewReader([]byte(resp))),
+		Body:       io.NopCloser(bytes.NewReader([]byte(resp))),
 	}, nil
 }

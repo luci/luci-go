@@ -17,7 +17,7 @@ package cli
 import (
 	"context"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"os"
 
 	"github.com/maruel/subcommands"
@@ -93,7 +93,7 @@ func (r *rpcRun) Run(a subcommands.Application, args []string, env subcommands.E
 
 func (r *rpcRun) rpc(ctx context.Context) error {
 	// Prepare arguments.
-	in, err := ioutil.ReadAll(os.Stdin)
+	in, err := io.ReadAll(os.Stdin)
 	if err != nil {
 		return err
 	}

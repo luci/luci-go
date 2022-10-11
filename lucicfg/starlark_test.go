@@ -19,7 +19,6 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -66,7 +65,7 @@ func TestAllStarlark(t *testing.T) {
 		Skip:     "support",
 
 		Executor: func(t *testing.T, path string, predeclared starlark.StringDict) error {
-			blob, err := ioutil.ReadFile(path)
+			blob, err := os.ReadFile(path)
 			if err != nil {
 				return err
 			}
@@ -255,7 +254,7 @@ func readCommentBlock(script, hdr string) string {
 // updateExpected updates the expected generated config stored in the comment
 // block at the end of the *.star file.
 func updateExpected(path, exp string) error {
-	blob, err := ioutil.ReadFile(path)
+	blob, err := os.ReadFile(path)
 	if err != nil {
 		return err
 	}
@@ -278,7 +277,7 @@ func updateExpected(path, exp string) error {
 		blob = append(blob, '\n')
 	}
 
-	return ioutil.WriteFile(path, blob, 0666)
+	return os.WriteFile(path, blob, 0666)
 }
 
 // errorOnDiff emits an error to T and returns true if got != exp.

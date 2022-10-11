@@ -21,7 +21,6 @@ import (
 	"context"
 	"flag"
 	"io"
-	"io/ioutil"
 	"math"
 	"os"
 	"strings"
@@ -177,7 +176,7 @@ func (cmd *cmdRunDumpIndex) Run(baseApp subcommands.Application, args []string, 
 	}
 	defer reader.Close()
 
-	data, err := ioutil.ReadAll(reader)
+	data, err := io.ReadAll(reader)
 	if err != nil {
 		log.WithError(err).Errorf(c, "Failed to read index data from GS.")
 		return 1

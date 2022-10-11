@@ -21,7 +21,6 @@ import (
 	"flag"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"os"
 	"sync"
 
@@ -107,7 +106,7 @@ func mkOutputHandler(exeArgs []string, build *bbpb.Build) func() {
 }
 
 func buildFrom(in io.Reader, build *bbpb.Build) {
-	data, err := ioutil.ReadAll(in)
+	data, err := io.ReadAll(in)
 	if err != nil {
 		panic(errors.Annotate(err, "reading Build from stdin").Err())
 	}

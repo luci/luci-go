@@ -16,7 +16,7 @@ package main
 
 import (
 	"fmt"
-	"io/ioutil"
+	"io"
 	"os"
 	"os/signal"
 	"text/template"
@@ -64,7 +64,7 @@ func main() {
 		go func() {
 			defer close(done)
 			var err error
-			data, err = ioutil.ReadAll(os.Stdin)
+			data, err = io.ReadAll(os.Stdin)
 			if err != nil {
 				panic(err)
 			}

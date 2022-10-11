@@ -18,7 +18,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -230,7 +230,7 @@ func installCipdPackages(ctx context.Context, build *bbpb.Build, workDir string)
 	}
 	defer resultsFile.Close()
 	cipdOutputs := cipdOut{}
-	jsonResults, err := ioutil.ReadAll(resultsFile)
+	jsonResults, err := io.ReadAll(resultsFile)
 	if err != nil {
 		return err
 	}

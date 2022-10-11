@@ -17,7 +17,7 @@ package streamclient
 import (
 	"context"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net"
 	"os"
 	"os/exec"
@@ -107,7 +107,7 @@ func runWireProtocolTest(ctx context.Context, dataChan <-chan net.Conn, client *
 				Timestamp:   clockflag.Time(testclock.TestRecentTimeUTC),
 			})
 
-			body, err := ioutil.ReadAll(conn)
+			body, err := io.ReadAll(conn)
 			So(err, ShouldBeNil)
 			So(body, ShouldResemble, []byte("hello world!!"))
 		})
@@ -169,7 +169,7 @@ func runWireProtocolTest(ctx context.Context, dataChan <-chan net.Conn, client *
 					Timestamp:   clockflag.Time(testclock.TestRecentTimeUTC),
 				})
 
-				body, err := ioutil.ReadAll(conn)
+				body, err := io.ReadAll(conn)
 				So(err, ShouldBeNil)
 				So(body, ShouldResemble, []byte("hello world!!"))
 			})
@@ -195,7 +195,7 @@ func runWireProtocolTest(ctx context.Context, dataChan <-chan net.Conn, client *
 					Timestamp:   clockflag.Time(testclock.TestRecentTimeUTC),
 				})
 
-				body, err := ioutil.ReadAll(conn)
+				body, err := io.ReadAll(conn)
 				So(err, ShouldBeNil)
 				So(body, ShouldResemble, []byte("hello world!!"))
 			})

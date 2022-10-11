@@ -16,7 +16,7 @@ package flag
 
 import (
 	"flag"
-	"io/ioutil"
+	"io"
 	"reflect"
 	"testing"
 )
@@ -47,6 +47,6 @@ func TestParseJSONMap(t *testing.T) {
 func testFlagSet() *flag.FlagSet {
 	fs := flag.NewFlagSet("test", flag.ContinueOnError)
 	fs.Usage = func() {}
-	fs.SetOutput(ioutil.Discard)
+	fs.SetOutput(io.Discard)
 	return fs
 }

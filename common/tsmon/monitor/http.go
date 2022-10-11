@@ -18,7 +18,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/url"
 
@@ -96,7 +96,7 @@ func (m *httpMonitor) Send(ctx context.Context, cells []types.Cell) (err error) 
 		return resp.Body.Close()
 	}, func(resp *http.Response, oErr error) error {
 		if resp != nil {
-			body, err := ioutil.ReadAll(resp.Body)
+			body, err := io.ReadAll(resp.Body)
 			if err != nil {
 				logging.WithError(err).Warningf(ctx, "Failed to read error response body")
 			} else {

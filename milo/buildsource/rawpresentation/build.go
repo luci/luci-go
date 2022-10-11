@@ -19,7 +19,7 @@ import (
 	"compress/zlib"
 	"context"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"time"
 
 	"google.golang.org/protobuf/proto"
@@ -182,7 +182,7 @@ func (as *AnnotationStream) populateCache(c context.Context) error {
 			).Err()
 		}
 
-		if data, err = ioutil.ReadAll(z); err != nil {
+		if data, err = io.ReadAll(z); err != nil {
 			return errors.Annotate(
 				err, "Datagram is marked as compressed, but failed to decompress",
 			).Err()

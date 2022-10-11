@@ -17,7 +17,7 @@ package recordio
 import (
 	"bytes"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"testing"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -43,7 +43,7 @@ func TestFrameHeaderSize(t *testing.T) {
 					Convey(fmt.Sprintf(`Frame size %d.`, base), func() {
 						data := bytes.Repeat([]byte{0x55}, int(base))
 
-						amt, err := WriteFrame(ioutil.Discard, data)
+						amt, err := WriteFrame(io.Discard, data)
 						if err != nil {
 							panic(err)
 						}
@@ -66,7 +66,7 @@ func TestFrameHeaderSize(t *testing.T) {
 					prev, first = base, false
 
 					Convey(fmt.Sprintf(`Frame size %d.`, base), func() {
-						amt, err := writeFrameHeader(ioutil.Discard, uint64(base))
+						amt, err := writeFrameHeader(io.Discard, uint64(base))
 						if err != nil {
 							panic(err)
 						}

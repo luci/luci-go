@@ -18,8 +18,8 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"os"
+
 	"google.golang.org/api/googleapi"
 
 	"github.com/maruel/subcommands"
@@ -109,7 +109,7 @@ func (b *botTasksRun) main(_ subcommands.Application) error {
 		if err != nil {
 			return err
 		}
-		if err := ioutil.WriteFile(b.outfile, j, 0644); err != nil {
+		if err := os.WriteFile(b.outfile, j, 0644); err != nil {
 			return err
 		}
 	}

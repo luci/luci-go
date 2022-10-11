@@ -19,7 +19,6 @@ import (
 	"compress/zlib"
 	"encoding/json"
 	"io"
-	"io/ioutil"
 	"time"
 
 	"google.golang.org/protobuf/encoding/protojson"
@@ -108,7 +107,7 @@ func (p *ProcessingResult) ReadResultIntoStruct(s *structpb.Struct) error {
 	if err != nil {
 		return errors.Annotate(err, "failed to open the blob for zlib decompression").Err()
 	}
-	blob, err := ioutil.ReadAll(z)
+	blob, err := io.ReadAll(z)
 	if err != nil {
 		z.Close()
 		return errors.Annotate(err, "failed to decompress the result").Err()

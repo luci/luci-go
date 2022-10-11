@@ -17,7 +17,6 @@ package sink
 import (
 	"context"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"strconv"
 	"sync"
@@ -103,7 +102,7 @@ func (t *uploadTask) CreateRequest() (*pb.CreateArtifactRequest, error) {
 
 	// contents
 	if fp := t.art.GetFilePath(); fp != "" {
-		if req.Artifact.Contents, err = ioutil.ReadFile(fp); err != nil {
+		if req.Artifact.Contents, err = os.ReadFile(fp); err != nil {
 			return nil, err
 		}
 	}

@@ -19,7 +19,7 @@ package roundtripper
 import (
 	"bytes"
 	"encoding/json"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"reflect"
 	"strings"
@@ -45,7 +45,7 @@ func (t *StringRoundTripper) RoundTrip(req *http.Request) (*http.Response, error
 	}
 	code, rsp := t.Handler(req)
 	return &http.Response{
-		Body:       ioutil.NopCloser(strings.NewReader(rsp)),
+		Body:       io.NopCloser(strings.NewReader(rsp)),
 		StatusCode: code,
 	}, nil
 }
@@ -91,7 +91,7 @@ func (t *JSONRoundTripper) RoundTrip(req *http.Request) (*http.Response, error) 
 		panic(errors.Annotate(err, "failed to marshal *http.Response.Body").Err())
 	}
 	return &http.Response{
-		Body:       ioutil.NopCloser(bytes.NewReader(b)),
+		Body:       io.NopCloser(bytes.NewReader(b)),
 		StatusCode: code,
 	}, nil
 }

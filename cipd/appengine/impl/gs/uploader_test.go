@@ -16,7 +16,7 @@ package gs
 
 import (
 	"context"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -58,7 +58,7 @@ func TestUploader(t *testing.T) {
 			c.So(r.URL.Path, ShouldEqual, "/file")
 			c.So(r.Header.Get("Content-Range"), ShouldEqual, next.ContentRange)
 
-			body, err := ioutil.ReadAll(r.Body)
+			body, err := io.ReadAll(r.Body)
 			So(err, ShouldBeNil)
 			if len(body) == 0 {
 				body = nil

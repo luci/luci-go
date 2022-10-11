@@ -20,7 +20,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"path/filepath"
 	"sort"
 	"strconv"
@@ -224,7 +223,7 @@ func SubNotify(ctx context.Context, body io.Reader) error {
 // unpackMsg unpacks swarming-go pubsub message and extracts message id,
 // swarming hostname, creation time, task id and build id.
 func unpackMsg(ctx context.Context, body io.Reader) (*notification, error) {
-	blob, err := ioutil.ReadAll(body)
+	blob, err := io.ReadAll(body)
 	if err != nil {
 		return nil, errors.Annotate(err, "failed to read the request body").Tag(transient.Tag).Err()
 	}

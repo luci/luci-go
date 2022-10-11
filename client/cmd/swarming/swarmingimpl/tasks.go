@@ -18,7 +18,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"os"
 
 	"google.golang.org/api/googleapi"
@@ -124,7 +123,7 @@ func (t *tasksRun) main(_ subcommands.Application) error {
 		if err != nil {
 			return err
 		}
-		if err = ioutil.WriteFile(t.outfile, j, 0644); err != nil {
+		if err = os.WriteFile(t.outfile, j, 0644); err != nil {
 			return err
 		}
 	}

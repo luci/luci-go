@@ -21,7 +21,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -80,7 +79,7 @@ func makeReq(build bbv1.LegacyApiCommonBuildMessage) io.ReadCloser {
 		},
 	}
 	jmsg, _ := json.Marshal(msg)
-	return ioutil.NopCloser(bytes.NewReader(jmsg))
+	return io.NopCloser(bytes.NewReader(jmsg))
 }
 
 func TestPubSub(t *testing.T) {

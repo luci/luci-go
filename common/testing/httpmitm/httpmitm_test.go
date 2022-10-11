@@ -17,7 +17,7 @@ package httpmitm
 import (
 	"bytes"
 	"errors"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"regexp"
@@ -116,7 +116,7 @@ func TestTransport(t *testing.T) {
 			So(records[1], shouldRecord, Response, false,
 				"(?s:HTTP/1.1 200 OK\r\n(.+:.+\r\n)*\r\nHello, client!)")
 
-			body, err := ioutil.ReadAll(resp.Body)
+			body, err := io.ReadAll(resp.Body)
 			So(err, ShouldBeNil)
 			So(string(body), ShouldEqual, "Hello, client!")
 			So(resp.StatusCode, ShouldEqual, http.StatusOK)
@@ -136,7 +136,7 @@ func TestTransport(t *testing.T) {
 			So(records[1], shouldRecord, Response, false,
 				"(?s:HTTP/1.1 500 Internal Server Error\r\n(.+:.+\r\n)*\r\nFailure!)")
 
-			body, err := ioutil.ReadAll(resp.Body)
+			body, err := io.ReadAll(resp.Body)
 			So(err, ShouldBeNil)
 			So(string(body), ShouldEqual, "Failure!\n")
 			So(resp.StatusCode, ShouldEqual, http.StatusInternalServerError)

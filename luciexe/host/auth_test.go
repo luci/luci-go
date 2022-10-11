@@ -18,7 +18,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
@@ -104,7 +103,7 @@ func TestAuth(t *testing.T) {
 					gitHome := os.Getenv("INFRA_GIT_WRAPPER_HOME")
 					So(gitHome, ShouldNotEqual, "")
 
-					cfg, err := ioutil.ReadFile(filepath.Join(gitHome, ".gitconfig"))
+					cfg, err := os.ReadFile(filepath.Join(gitHome, ".gitconfig"))
 					So(err, ShouldBeNil)
 
 					So(string(cfg), ShouldContainSubstring, "email = task@example.com")

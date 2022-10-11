@@ -21,7 +21,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"regexp"
 	"strconv"
@@ -730,7 +729,7 @@ func (d *Dispatcher) InstallTasksRoutes(r *router.Router, prefix string) {
 	// compatibility with "appengine/tq" which used totally different URL format.
 	prefix = strings.TrimRight(prefix, "/") + "/*path"
 	r.POST(prefix, mw, func(c *router.Context) {
-		body, err := ioutil.ReadAll(c.Request.Body)
+		body, err := io.ReadAll(c.Request.Body)
 		if err != nil {
 			httpReply(c, 500, "Failed to read the request", err)
 		} else {

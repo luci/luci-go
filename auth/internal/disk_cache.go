@@ -19,6 +19,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -200,7 +201,7 @@ func (c *DiskTokenCache) readCacheFile(path string) (*cacheFile, error) {
 	case err != nil:
 		return nil, err
 	}
-	blob, err := ioutil.ReadAll(f)
+	blob, err := io.ReadAll(f)
 	f.Close()
 	if err != nil {
 		return nil, err

@@ -19,7 +19,7 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"fmt"
-	"io/ioutil"
+	"os"
 
 	"golang.org/x/oauth2/google"
 	"golang.org/x/oauth2/jwt"
@@ -53,7 +53,7 @@ func (p *serviceAccountTokenProvider) jwtConfig(ctx context.Context) (*jwt.Confi
 	if p.path != "" {
 		var err error
 		logging.Debugf(ctx, "Reading private key from %s", p.path)
-		jsonKey, err = ioutil.ReadFile(p.path)
+		jsonKey, err = os.ReadFile(p.path)
 		if err != nil {
 			return nil, err
 		}

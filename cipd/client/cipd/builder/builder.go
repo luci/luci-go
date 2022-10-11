@@ -18,7 +18,6 @@ import (
 	"bytes"
 	"context"
 	"io"
-	"io/ioutil"
 	"os"
 	"path"
 	"strings"
@@ -339,7 +338,7 @@ func (m *manifestFile) SymlinkTarget() (string, error) {
 }
 
 func (m *manifestFile) Open() (io.ReadCloser, error) {
-	return ioutil.NopCloser(bytes.NewReader(*m)), nil
+	return io.NopCloser(bytes.NewReader(*m)), nil
 }
 
 // makeManifestFile generates a package manifest file and returns it as

@@ -89,7 +89,7 @@ func (cfg *TempDBConfig) readDDLStatements() ([]string, error) {
 		return nil, nil
 	}
 
-	contents, err := ioutil.ReadFile(cfg.InitScriptPath)
+	contents, err := os.ReadFile(cfg.InitScriptPath)
 	if err != nil {
 		return nil, err
 	}

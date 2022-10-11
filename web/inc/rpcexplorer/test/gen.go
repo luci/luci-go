@@ -19,6 +19,7 @@ package main
 
 import (
 	"fmt"
+	"io"
 	"io/ioutil"
 	"os"
 	"os/exec"
@@ -46,7 +47,7 @@ func run() error {
 		return fmt.Errorf("protoc: %s", err)
 	}
 
-	descBytes, err := ioutil.ReadAll(descFile)
+	descBytes, err := io.ReadAll(descFile)
 	if err != nil {
 		return err
 	}

@@ -17,7 +17,7 @@ package dscache
 import (
 	"bytes"
 	"compress/zlib"
-	"io/ioutil"
+	"io"
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/gae/internal/zstd"
@@ -104,7 +104,7 @@ func decodeItemValue(val []byte, kc ds.KeyContext) (ds.PropertyMap, error) {
 		if err != nil {
 			return nil, err
 		}
-		if data, err = ioutil.ReadAll(reader); err != nil {
+		if data, err = io.ReadAll(reader); err != nil {
 			return nil, err
 		}
 		if err = reader.Close(); err != nil {

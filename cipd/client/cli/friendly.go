@@ -124,7 +124,7 @@ func (c *installationSiteConfig) write(path string) error {
 	if err != nil {
 		return err
 	}
-	return ioutil.WriteFile(path, blob, 0666)
+	return os.WriteFile(path, blob, 0666)
 }
 
 // readConfig reads config, returning default one if missing.

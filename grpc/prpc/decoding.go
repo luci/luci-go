@@ -19,7 +19,6 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"reflect"
 
@@ -62,7 +61,7 @@ func readMessage(r *http.Request, msg proto.Message, fixFieldMasksForJSON bool) 
 		if err != nil {
 			return requestReadErr(err, "failed to start decompressing gzip request body")
 		}
-		buf, err = ioutil.ReadAll(reader)
+		buf, err = io.ReadAll(reader)
 		if err == nil {
 			err = reader.Close() // this just checks the checksum
 		}
@@ -71,7 +70,7 @@ func readMessage(r *http.Request, msg proto.Message, fixFieldMasksForJSON bool) 
 			return requestReadErr(err, "could not read or decompress request body")
 		}
 	} else {
-		buf, err = ioutil.ReadAll(r.Body)
+		buf, err = io.ReadAll(r.Body)
 		if err != nil {
 			return requestReadErr(err, "could not read request body")
 		}

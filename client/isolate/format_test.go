@@ -17,7 +17,6 @@ package isolate
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -445,7 +444,7 @@ func TestLoadIsolateAsConfigWithIncludes(t *testing.T) {
 		tmpDir := t.TempDir()
 		err := os.Mkdir(filepath.Join(tmpDir, "inc"), 0777)
 		So(err, ShouldBeNil)
-		err = ioutil.WriteFile(filepath.Join(tmpDir, "inc", "included.isolate"), []byte(sampleIncIsolateData), 0777)
+		err = os.WriteFile(filepath.Join(tmpDir, "inc", "included.isolate"), []byte(sampleIncIsolateData), 0777)
 		So(err, ShouldBeNil)
 
 		// Test failures.

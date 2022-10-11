@@ -17,7 +17,7 @@ package bbfacade
 import (
 	"context"
 	"fmt"
-	"io/ioutil"
+	"os"
 	"testing"
 	"time"
 
@@ -242,7 +242,7 @@ func TestParseOutput(t *testing.T) {
 }
 
 func loadTestBuild(fixtureBaseName string) *bbpb.Build {
-	data, err := ioutil.ReadFile(fmt.Sprintf("testdata/%s.json", fixtureBaseName))
+	data, err := os.ReadFile(fmt.Sprintf("testdata/%s.json", fixtureBaseName))
 	if err != nil {
 		panic(err)
 	}

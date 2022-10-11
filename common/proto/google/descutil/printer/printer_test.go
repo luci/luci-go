@@ -16,7 +16,7 @@ package printer
 
 import (
 	"bytes"
-	"io/ioutil"
+	"os"
 	"strings"
 	"testing"
 
@@ -36,11 +36,11 @@ func TestPrinter(t *testing.T) {
 	t.Parallel()
 
 	Convey("Printer", t, func() {
-		protoFile, err := ioutil.ReadFile("../internal/util.proto")
+		protoFile, err := os.ReadFile("../internal/util.proto")
 		So(err, ShouldBeNil)
 		protoFileLines := strings.Split(string(protoFile), "\n")
 
-		descFileBytes, err := ioutil.ReadFile("../internal/util.desc")
+		descFileBytes, err := os.ReadFile("../internal/util.desc")
 		So(err, ShouldBeNil)
 
 		var desc descriptorpb.FileDescriptorSet

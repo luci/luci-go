@@ -18,7 +18,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/url"
 	"sync"
@@ -73,7 +73,7 @@ func fetchDevAccount(gaeCtx context.Context) (string, error) {
 		return "", err
 	}
 	defer func() {
-		ioutil.ReadAll(resp.Body)
+		io.ReadAll(resp.Body)
 		resp.Body.Close()
 	}()
 	if resp.StatusCode >= 500 {

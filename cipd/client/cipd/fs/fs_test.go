@@ -17,6 +17,7 @@ package fs
 import (
 	"context"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -238,7 +239,7 @@ func TestEnsureFile(t *testing.T) {
 		So(EnsureFile(ctx, fs, fs.join("path"), strings.NewReader("blah")), ShouldBeNil)
 
 		// Read and verify the content of the first file.
-		content, err := ioutil.ReadAll(fd)
+		content, err := io.ReadAll(fd)
 		So(err, ShouldBeNil)
 		So(content, ShouldResemble, []byte("huh"))
 
@@ -554,7 +555,7 @@ func (f *tempFileSystemImpl) read(rel string) string {
 	f.c.So(err, ShouldBeNil)
 	defer fd.Close()
 
-	data, err := ioutil.ReadAll(fd)
+	data, err := io.ReadAll(fd)
 	f.c.So(err, ShouldBeNil)
 	return string(data)
 }

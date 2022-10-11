@@ -1937,8 +1937,8 @@ indexes:
 			writePath2 := filepath.Join(filepath.Dir(sameLevelDir), "index.yaml")
 
 			setup := func() {
-				ioutil.WriteFile(writePath1, []byte(yaml1), 0600)
-				ioutil.WriteFile(writePath2, []byte(yaml2), 0600)
+				os.WriteFile(writePath1, []byte(yaml1), 0600)
+				os.WriteFile(writePath2, []byte(yaml2), 0600)
 			}
 
 			cleanup := func() {
@@ -1957,7 +1957,7 @@ indexes:
 			writePath := filepath.Join(filepath.Dir(filepath.Dir(sameLevelDir)), "index.yaml")
 
 			setup := func() {
-				ioutil.WriteFile(writePath, []byte(yaml2), 0600)
+				os.WriteFile(writePath, []byte(yaml2), 0600)
 			}
 
 			cleanup := func() {
@@ -1979,7 +1979,7 @@ indexes:
 			writePath := filepath.Join(writeDir, "index.yml")
 
 			setup := func() {
-				ioutil.WriteFile(writePath, []byte(yaml2), 0600)
+				os.WriteFile(writePath, []byte(yaml2), 0600)
 			}
 
 			cleanup := func() {
@@ -1997,7 +1997,7 @@ indexes:
 			writePath := filepath.Join(sameLevelDir, "index.yaml")
 
 			setup := func() {
-				ioutil.WriteFile(writePath, []byte(yaml2), 0600)
+				os.WriteFile(writePath, []byte(yaml2), 0600)
 			}
 
 			cleanup := func() {

@@ -20,7 +20,6 @@ import (
 	"context"
 	"flag"
 	"io"
-	"io/ioutil"
 	"os"
 	"runtime/debug"
 	"time"
@@ -228,7 +227,7 @@ func runUserCb(ctx context.Context, userArgs []string, state *State, cb func(con
 }
 
 func readStdinBuild(stdin io.Reader) (*bbpb.Build, error) {
-	data, err := ioutil.ReadAll(stdin)
+	data, err := io.ReadAll(stdin)
 	if err != nil {
 		return nil, errors.Annotate(err, "reading *Build from stdin").Err()
 	}

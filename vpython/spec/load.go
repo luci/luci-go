@@ -17,7 +17,6 @@ package spec
 import (
 	"bufio"
 	"context"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -56,7 +55,7 @@ const (
 
 // Load loads an specification file text protobuf from the supplied path.
 func Load(path string, spec *vpython.Spec) error {
-	content, err := ioutil.ReadFile(path)
+	content, err := os.ReadFile(path)
 	if err != nil {
 		return errors.Annotate(err, "failed to load file from: %s", path).Err()
 	}

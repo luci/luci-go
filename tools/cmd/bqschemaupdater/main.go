@@ -335,7 +335,7 @@ func loadProtoDescription(ctx context.Context, dir string, goModules, importPath
 	}
 
 	// Read the resulting descriptor.
-	descBytes, err := ioutil.ReadFile(descFile)
+	descBytes, err := os.ReadFile(descFile)
 	if err != nil {
 		return nil, err
 	}

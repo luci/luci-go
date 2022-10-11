@@ -18,7 +18,6 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
@@ -186,7 +185,7 @@ func useDevServerKey(ctx context.Context) tink.AEAD {
 
 	// Store it so encrypted blobs survive the dev server restart.
 	logging.Infof(ctx, "Generated new dev server Tink key at %s", path)
-	if err := ioutil.WriteFile(path, buf.Bytes(), 0600); err != nil {
+	if err := os.WriteFile(path, buf.Bytes(), 0600); err != nil {
 		logging.Warningf(ctx, "Failed to store dev server Tink key %s: %s", path, err)
 	}
 
@@ -194,7 +193,7 @@ func useDevServerKey(ctx context.Context) tink.AEAD {
 }
 
 func loadDevServerKey(path string) (tink.AEAD, error) {
-	blob, err := ioutil.ReadFile(path)
+	blob, err := os.ReadFile(path)
 	if err != nil {
 		return nil, err
 	}

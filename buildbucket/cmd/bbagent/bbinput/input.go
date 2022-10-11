@@ -18,7 +18,7 @@ import (
 	"bytes"
 	"compress/zlib"
 	"encoding/base64"
-	"io/ioutil"
+	"io"
 
 	"github.com/golang/protobuf/proto"
 	bbpb "go.chromium.org/luci/buildbucket/proto"
@@ -40,7 +40,7 @@ func Parse(encodedData string) (*bbpb.BBAgentArgs, error) {
 	if err != nil {
 		return nil, errors.Annotate(err, "opening zlib reader").Err()
 	}
-	decompressed, err := ioutil.ReadAll(decompressing)
+	decompressed, err := io.ReadAll(decompressing)
 	if err != nil {
 		return nil, errors.Annotate(err, "decompressing zlib").Err()
 	}

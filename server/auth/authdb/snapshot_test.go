@@ -18,7 +18,6 @@ import (
 	"context"
 	"encoding/json"
 	"flag"
-	"io/ioutil"
 	"math/rand"
 	"net"
 	"net/http"
@@ -535,7 +534,7 @@ func randString(min, max int, seen stringset.Set) string {
 }
 
 func readTestDB(path string) *protocol.AuthDB {
-	blob, err := ioutil.ReadFile(path)
+	blob, err := os.ReadFile(path)
 	if err != nil {
 		panic(err)
 	}

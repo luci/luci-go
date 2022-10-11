@@ -16,7 +16,7 @@ package gae
 
 import (
 	"context"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -78,7 +78,7 @@ func TestCall(t *testing.T) {
 		var headers http.Header
 
 		So(call(req, res, func(rw http.ResponseWriter, req *http.Request) {
-			body, _ = ioutil.ReadAll(req.Body)
+			body, _ = io.ReadAll(req.Body)
 			headers = req.Header.Clone()
 			respond(rw, &remotepb.Response{
 				Response: marshal(&gaebasepb.StringProto{Value: proto.String("res")}),

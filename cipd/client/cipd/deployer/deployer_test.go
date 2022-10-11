@@ -235,11 +235,11 @@ func TestDeployInstanceSymlinkMode(t *testing.T) {
 				"some/symlink:../.cipd/pkgs/0/_current/some/symlink",
 			})
 			// Ensure symlinks are actually traversable.
-			body, err := ioutil.ReadFile(filepath.Join(tempDir, "some", "file", "path"))
+			body, err := os.ReadFile(filepath.Join(tempDir, "some", "file", "path"))
 			So(err, ShouldBeNil)
 			So(string(body), ShouldEqual, "data a")
 			// Symlink to symlink is traversable too.
-			body, err = ioutil.ReadFile(filepath.Join(tempDir, "some", "symlink"))
+			body, err = os.ReadFile(filepath.Join(tempDir, "some", "symlink"))
 			So(err, ShouldBeNil)
 			So(string(body), ShouldEqual, "data b")
 
@@ -269,11 +269,11 @@ func TestDeployInstanceSymlinkMode(t *testing.T) {
 				})
 
 				// Ensure symlinks are actually traversable.
-				body, err := ioutil.ReadFile(filepath.Join(tempDir, "subdir", "some", "file", "path"))
+				body, err := os.ReadFile(filepath.Join(tempDir, "subdir", "some", "file", "path"))
 				So(err, ShouldBeNil)
 				So(string(body), ShouldEqual, "data a")
 				// Symlink to symlink is traversable too.
-				body, err = ioutil.ReadFile(filepath.Join(tempDir, "subdir", "some", "symlink"))
+				body, err = os.ReadFile(filepath.Join(tempDir, "subdir", "some", "symlink"))
 				So(err, ShouldBeNil)
 				So(string(body), ShouldEqual, "data b")
 			})
@@ -298,11 +298,11 @@ func TestDeployInstanceSymlinkMode(t *testing.T) {
 				"some/symlink:executable",
 			})
 			// Ensure symlinks are actually traversable.
-			body, err := ioutil.ReadFile(filepath.Join(tempDir, "some", "file", "path"))
+			body, err := os.ReadFile(filepath.Join(tempDir, "some", "file", "path"))
 			So(err, ShouldBeNil)
 			So(string(body), ShouldEqual, "data a")
 			// Symlink to symlink is traversable too.
-			body, err = ioutil.ReadFile(filepath.Join(tempDir, "some", "symlink"))
+			body, err = os.ReadFile(filepath.Join(tempDir, "some", "symlink"))
 			So(err, ShouldBeNil)
 			So(string(body), ShouldEqual, "data b")
 			// manifest lists actual install mode
@@ -2392,7 +2392,7 @@ func isEmptyDir(path string) bool {
 // readFile reads content of an existing text file. Root path is provided as
 // a native path, rel - as a slash-separated path.
 func readFile(root, rel string) string {
-	body, err := ioutil.ReadFile(filepath.Join(root, filepath.FromSlash(rel)))
+	body, err := os.ReadFile(filepath.Join(root, filepath.FromSlash(rel)))
 	So(err, ShouldBeNil)
 	return string(body)
 }

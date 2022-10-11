@@ -116,7 +116,7 @@ func defaultExecutor(t *testing.T, path string, predeclared starlark.StringDict)
 	th := starlark.Thread{}
 	HookThread(&th, t)
 
-	code, err := ioutil.ReadFile(path)
+	code, err := os.ReadFile(path)
 	if err != nil {
 		return err
 	}
@@ -138,7 +138,7 @@ func materializeAssertStar() (cleanup func(), err error) {
 		return nil, err
 	}
 
-	err = ioutil.WriteFile(
+	err = os.WriteFile(
 		filepath.Join(tmp, "assert.star"),
 		vendored.GetAsset("starlarktest/assert.star"),
 		0600)

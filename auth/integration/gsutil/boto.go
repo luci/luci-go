@@ -16,7 +16,6 @@ package gsutil
 
 import (
 	"bytes"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 
@@ -74,7 +73,7 @@ func (b *Boto) Write(path string) error {
 		opts("provider_token_uri", b.ProviderTokenURI)
 	}
 
-	return ioutil.WriteFile(path, buf.Bytes(), 0600)
+	return os.WriteFile(path, buf.Bytes(), 0600)
 }
 
 // PrepareStateDir prepares a directory (based on b.StateDir) for gsutil to keep

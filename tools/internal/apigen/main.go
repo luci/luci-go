@@ -22,6 +22,7 @@ import (
 	"errors"
 	"flag"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"net/http"
 	"net/url"
@@ -154,7 +155,7 @@ func retryHTTP(c context.Context, u url.URL, method, body string) ([]byte, error
 			Header: http.Header{},
 		}
 		if len(body) > 0 {
-			req.Body = ioutil.NopCloser(bytes.NewBuffer([]byte(body)))
+			req.Body = io.NopCloser(bytes.NewBuffer([]byte(body)))
 			req.ContentLength = int64(len(body))
 			req.Header.Add("Content-Type", "application/json")
 		}
@@ -165,7 +166,7 @@ func retryHTTP(c context.Context, u url.URL, method, body string) ([]byte, error
 		}
 		if resp.Body != nil {
 			defer resp.Body.Close()
-			output, err = ioutil.ReadAll(resp.Body)
+			output, err = io.ReadAll(resp.Body)
 			if err != nil {
 				return err
 			}
@@ -302,7 +303,7 @@ func (a *Application) generateAPI(c context.Context, item *directoryItem, discov
 
 	gendir := augPath(tmpdir, "gen")
 	headerPath := augPath(tmpdir, "header.txt")
-	if err := ioutil.WriteFile(headerPath, []byte(a.license), 0644); err != nil {
+	if err := os.WriteFile(headerPath, []byte(a.license), 0644); err != nil {
 		return err
 	}
 

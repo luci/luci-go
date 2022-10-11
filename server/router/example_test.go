@@ -17,7 +17,7 @@ package router_test
 import (
 	"context"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"math/rand"
 	"net/http"
 	"net/http/httptest"
@@ -51,7 +51,7 @@ func makeRequest(client *http.Client, url string) string {
 		panic(err)
 	}
 	defer res.Body.Close()
-	p, err := ioutil.ReadAll(res.Body)
+	p, err := io.ReadAll(res.Body)
 	if err != nil {
 		panic(err)
 	}

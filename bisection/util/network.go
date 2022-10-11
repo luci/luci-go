@@ -18,7 +18,7 @@ package util
 import (
 	"context"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"time"
 
@@ -45,7 +45,7 @@ func SendHttpRequest(c context.Context, req *http.Request, timeout time.Duration
 		return "", fmt.Errorf("Bad response code: %v", status)
 	}
 
-	body, err := ioutil.ReadAll(resp.Body)
+	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return "", fmt.Errorf("Cannot get response body %w", err)
 	}

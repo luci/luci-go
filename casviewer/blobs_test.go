@@ -16,7 +16,7 @@ package casviewer
 
 import (
 	"context"
-	"io/ioutil"
+	"io"
 	"net/http/httptest"
 	"testing"
 
@@ -88,7 +88,7 @@ func TestBlobs(t *testing.T) {
 			err = renderTree(ctx, w, cl, &bd, testInstance)
 
 			So(err, ShouldBeNil)
-			body, err := ioutil.ReadAll(w.Body)
+			body, err := io.ReadAll(w.Body)
 			So(err, ShouldBeNil)
 			// body should contain file name, hash, size.
 			So(string(body), ShouldContainSubstring, d.Files[0].Name)
@@ -119,7 +119,7 @@ func TestBlobs(t *testing.T) {
 			err = returnBlob(ctx, w, cl, &bd, "test.txt")
 
 			So(err, ShouldBeNil)
-			body, err := ioutil.ReadAll(w.Body)
+			body, err := io.ReadAll(w.Body)
 			So(err, ShouldBeNil)
 			So(body, ShouldResemble, b)
 		})

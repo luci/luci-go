@@ -19,7 +19,7 @@ import (
 	"compress/gzip"
 	"context"
 	"encoding/hex"
-	"io/ioutil"
+	"io"
 	"sort"
 	"strings"
 
@@ -105,7 +105,7 @@ func loadState(c context.Context, jobID, repo string) (map[string]string, error)
 		if err != nil {
 			return nil, err
 		}
-		uncompressed, err := ioutil.ReadAll(unGzip)
+		uncompressed, err := io.ReadAll(unGzip)
 		if err != nil {
 			return nil, err
 		}

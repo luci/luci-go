@@ -20,7 +20,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net/http"
 
 	"cloud.google.com/go/bigquery"
@@ -108,7 +107,7 @@ func NewInserter(ctx context.Context, projectID string) (*Inserter, error) {
 
 // HandlePubSubPush handles incoming PubSub push request.
 func (ins *Inserter) HandlePubSubPush(ctx context.Context, body io.Reader) error {
-	blob, err := ioutil.ReadAll(body)
+	blob, err := io.ReadAll(body)
 	if err != nil {
 		return errors.Annotate(err, "failed to read the request body").Err()
 	}

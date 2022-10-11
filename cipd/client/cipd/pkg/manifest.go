@@ -17,7 +17,6 @@ package pkg
 import (
 	"encoding/json"
 	"io"
-	"io/ioutil"
 
 	"go.chromium.org/luci/cipd/common/cipderr"
 	"go.chromium.org/luci/common/errors"
@@ -104,7 +103,7 @@ type VersionFile struct {
 
 // ReadManifest reads and decodes manifest JSON from io.Reader.
 func ReadManifest(r io.Reader) (Manifest, error) {
-	blob, err := ioutil.ReadAll(r)
+	blob, err := io.ReadAll(r)
 	if err != nil {
 		return Manifest{}, errors.Annotate(err, "reading manifest file").Tag(cipderr.IO).Err()
 	}

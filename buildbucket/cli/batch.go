@@ -18,7 +18,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"os"
 	"reflect"
 	"time"
@@ -75,7 +75,7 @@ func (r *batchRun) Run(a subcommands.Application, args []string, env subcommands
 		return r.done(ctx, fmt.Errorf("unexpected argument"))
 	}
 
-	requestBytes, err := ioutil.ReadAll(os.Stdin)
+	requestBytes, err := io.ReadAll(os.Stdin)
 	if err != nil {
 		return r.done(ctx, errors.Annotate(err, "failed to read stdin").Err())
 	}

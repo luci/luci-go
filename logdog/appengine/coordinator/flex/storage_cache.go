@@ -18,7 +18,7 @@ import (
 	"bytes"
 	"compress/zlib"
 	"context"
-	"io/ioutil"
+	"io"
 	"time"
 
 	log "go.chromium.org/luci/common/logging"
@@ -69,7 +69,7 @@ func (sc *StorageCache) Get(c context.Context, key storage.CacheKey) ([]byte, bo
 		}
 		defer zr.Close()
 
-		if data, err = ioutil.ReadAll(zr); err != nil {
+		if data, err = io.ReadAll(zr); err != nil {
 			log.Fields{
 				log.ErrorKey: err,
 				"key":        key,

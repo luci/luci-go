@@ -33,7 +33,7 @@ func TestGitConfig(t *testing.T) {
 
 		gen := func(name string, cfg gitConfig) string {
 			So(cfg.Write(filepath.Join(tmp, name)), ShouldBeNil)
-			body, err := ioutil.ReadFile(filepath.Join(tmp, name))
+			body, err := os.ReadFile(filepath.Join(tmp, name))
 			So(err, ShouldBeNil)
 			return string(body)
 		}

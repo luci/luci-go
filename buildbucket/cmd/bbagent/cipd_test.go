@@ -18,7 +18,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -97,7 +96,7 @@ func TestHelperProcess(t *testing.T) {
 	case "success":
 		// Mock the generated json file of `cipd ensure` command.
 		jsonRs, _ := json.Marshal(successResult)
-		if err := ioutil.WriteFile(os.Getenv("RESULTS_FILE"), jsonRs, 0666); err != nil {
+		if err := os.WriteFile(os.Getenv("RESULTS_FILE"), jsonRs, 0666); err != nil {
 			fmt.Fprintf(os.Stderr, "Errors in preparing data for tests\n")
 		}
 

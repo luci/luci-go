@@ -15,7 +15,7 @@
 package starlarkproto
 
 import (
-	"io/ioutil"
+	"os"
 	"testing"
 
 	"go.starlark.net/resolve"
@@ -45,7 +45,7 @@ func TestAllStarlark(t *testing.T) {
 				if err := starlark.UnpackPositionalArgs("read", args, kwargs, 1, &path); err != nil {
 					return nil, err
 				}
-				body, err := ioutil.ReadFile(path)
+				body, err := os.ReadFile(path)
 				return starlark.String(body), err
 			}),
 		},

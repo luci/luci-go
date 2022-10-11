@@ -20,7 +20,6 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"io"
-	"io/ioutil"
 	"os"
 	"testing"
 	"time"
@@ -339,7 +338,7 @@ func readZip(data []byte) []zippedFile {
 		if err != nil {
 			panic("Failed to open file inside zip")
 		}
-		body, err := ioutil.ReadAll(reader)
+		body, err := io.ReadAll(reader)
 		if err != nil {
 			panic("Failed to read zipped file")
 		}

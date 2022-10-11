@@ -527,7 +527,7 @@ func DefaultConfigFilePath() string {
 
 // loadConfigFile reads and parses the configuration file.
 func loadConfigFile(path string) (*configpb.ClientConfig, error) {
-	blob, err := ioutil.ReadFile(path)
+	blob, err := os.ReadFile(path)
 	if err != nil {
 		return nil, err
 	}
@@ -1123,7 +1123,7 @@ func (c *clientImpl) ensureClientVersionInfo(ctx context.Context, fs fs.FileSyst
 	}
 
 	verFile := version.GetVersionFile(clientExe)
-	if data, err := ioutil.ReadFile(verFile); err == nil && bytes.Equal(expect, data) {
+	if data, err := os.ReadFile(verFile); err == nil && bytes.Equal(expect, data) {
 		return // up to date
 	}
 

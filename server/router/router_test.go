@@ -17,7 +17,6 @@ package router
 import (
 	"context"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -163,7 +162,7 @@ func TestRouter(t *testing.T) {
 				So(err, ShouldBeNil)
 				defer res.Body.Close()
 				So(res.StatusCode, ShouldEqual, http.StatusOK)
-				p, err := ioutil.ReadAll(res.Body)
+				p, err := io.ReadAll(res.Body)
 				So(err, ShouldBeNil)
 				So(string(p), ShouldEqual, strings.Join(
 					[]string{"a:before", "b:before", "handler", "b:after", "a:after"},
@@ -188,7 +187,7 @@ func TestRouter(t *testing.T) {
 				So(err, ShouldBeNil)
 				defer res.Body.Close()
 				So(res.StatusCode, ShouldEqual, http.StatusOK)
-				p, err := ioutil.ReadAll(res.Body)
+				p, err := io.ReadAll(res.Body)
 				So(err, ShouldBeNil)
 				So(string(p), ShouldEqual, "Hello, 世界")
 			})

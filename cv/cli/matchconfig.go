@@ -17,7 +17,6 @@ package cli
 import (
 	"context"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"strings"
 
@@ -184,7 +183,7 @@ func (r *matchConfigRun) validateArgs(ctx context.Context, args []string) error 
 }
 
 func loadAndValidateConfig(ctx context.Context, cfgPath string) (*cfgpb.Config, error) {
-	in, err := ioutil.ReadFile(cfgPath)
+	in, err := os.ReadFile(cfgPath)
 	if err != nil {
 		return nil, err
 	}

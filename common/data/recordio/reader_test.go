@@ -20,7 +20,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"testing"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -110,7 +109,7 @@ func TestReader(t *testing.T) {
 			So(err, ShouldBeNil)
 			So(c, ShouldEqual, 4)
 
-			d, err := ioutil.ReadAll(fr)
+			d, err := io.ReadAll(fr)
 			So(err, ShouldBeNil)
 			So(d, ShouldResemble, data[0])
 
@@ -118,7 +117,7 @@ func TestReader(t *testing.T) {
 			So(err, ShouldBeNil)
 			So(c, ShouldEqual, 6)
 
-			d, err = ioutil.ReadAll(fr)
+			d, err = io.ReadAll(fr)
 			So(err, ShouldBeNil)
 			So(d, ShouldResemble, data[1])
 		})

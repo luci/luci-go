@@ -19,7 +19,6 @@ import (
 	"context"
 	"encoding/json"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"testing"
 
@@ -59,5 +58,5 @@ func makeBBReq(build bbv1.LegacyApiCommonBuildMessage, hostname string) io.ReadC
 		Attributes map[string]interface{}
 	}{struct{ Data []byte }{Data: bm}, nil}
 	jmsg, _ := json.Marshal(msg)
-	return ioutil.NopCloser(bytes.NewReader(jmsg))
+	return io.NopCloser(bytes.NewReader(jmsg))
 }

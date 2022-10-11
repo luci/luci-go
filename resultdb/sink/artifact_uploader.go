@@ -21,7 +21,6 @@ import (
 	"encoding/hex"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"os"
 
@@ -89,12 +88,12 @@ func (u *artifactUploader) StreamUpload(ctx context.Context, t *uploadTask, upda
 		// Prevent the file handler from being closed by Client.Do. The file handler, body,
 		// will be closed by the defer function above. With NopCloser(), GetBody() can
 		// simply reset the cursor and return the handler w/o reopening the file.
-		req.Body = ioutil.NopCloser(body)
+		req.Body = io.NopCloser(body)
 		req.GetBody = func() (io.ReadCloser, error) {
 			if _, err := body.Seek(0, io.SeekStart); err != nil {
 				return nil, err
 			}
-			return ioutil.NopCloser(body), nil
+			return io.NopCloser(body), nil
 		}
 
 		st, err := fh.Stat()

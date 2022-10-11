@@ -208,7 +208,7 @@ func run(ctx context.Context, inputDir string) error {
 // Returns it as a map: *.proto path in the registry => FileDescriptorProto,
 // as well as a raw byte blob.
 func loadDescriptorSet(path string) (map[string]*descriptorpb.FileDescriptorProto, []byte, error) {
-	blob, err := ioutil.ReadFile(path)
+	blob, err := os.ReadFile(path)
 	if err != nil {
 		return nil, nil, err
 	}

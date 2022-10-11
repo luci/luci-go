@@ -16,7 +16,6 @@ package builder
 
 import (
 	"io"
-	"io/ioutil"
 	"path/filepath"
 	"regexp"
 	"sort"
@@ -81,7 +80,7 @@ type PackageChunkDef struct {
 // It substitutes %{...} strings in the definition with corresponding values
 // from 'vars' map.
 func LoadPackageDef(r io.Reader, vars map[string]string) (PackageDef, error) {
-	data, err := ioutil.ReadAll(r)
+	data, err := io.ReadAll(r)
 	if err != nil {
 		return PackageDef{}, errors.Annotate(err, "reading package definition file").Tag(cipderr.IO).Err()
 	}

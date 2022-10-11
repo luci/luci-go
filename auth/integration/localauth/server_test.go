@@ -20,7 +20,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"strings"
 	"testing"
@@ -189,7 +188,7 @@ func TestProtocol(t *testing.T) {
 			req := goodOAuthRequest()
 
 			body := `not a json`
-			req.Body = ioutil.NopCloser(bytes.NewBufferString(body))
+			req.Body = io.NopCloser(bytes.NewBufferString(body))
 			req.ContentLength = int64(len(body))
 
 			So(call(req), ShouldEqual, `HTTP 400: Not JSON body - invalid character 'o' in literal null (expecting 'u')`)
@@ -199,7 +198,7 @@ func TestProtocol(t *testing.T) {
 			req := goodOAuthRequest()
 
 			body := strings.Repeat("z", 64*1024+1)
-			req.Body = ioutil.NopCloser(bytes.NewBufferString(body))
+			req.Body = io.NopCloser(bytes.NewBufferString(body))
 			req.ContentLength = int64(len(body))
 
 			So(call(req), ShouldEqual, `HTTP 400: Expecting 'Content-Length' header, <64Kb`)
@@ -321,7 +320,7 @@ func call(req *http.Request) interface{} {
 	}
 	defer resp.Body.Close()
 
-	blob, err := ioutil.ReadAll(resp.Body)
+	blob, err := io.ReadAll(resp.Body)
 	if err != nil {
 		panic(err)
 	}

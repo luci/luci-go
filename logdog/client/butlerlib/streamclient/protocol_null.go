@@ -21,7 +21,7 @@ import (
 	"go.chromium.org/luci/logdog/client/butlerlib/streamproto"
 )
 
-// Similar to ioutil.Discard, but also implements Close and WriteDatagram.
+// Similar to io.Discard, but also implements Close and WriteDatagram.
 type nullWriterT int
 
 var nullWriter interface {

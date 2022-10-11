@@ -17,7 +17,7 @@ package casimpl
 import (
 	"context"
 	"fmt"
-	"io/ioutil"
+	"os"
 	"time"
 
 	"github.com/bazelbuild/remote-apis-sdks/go/pkg/command"
@@ -157,7 +157,7 @@ func (c *archiveRun) doArchive(ctx context.Context) error {
 	logging.Infof(ctx, "UploadIfMissing took %s, moved %d bytes", time.Since(start), moved)
 
 	if dd := c.dumpDigest; dd != "" {
-		if err := ioutil.WriteFile(dd, []byte(rootDg.String()), 0600); err != nil {
+		if err := os.WriteFile(dd, []byte(rootDg.String()), 0600); err != nil {
 			if err := writeExitResult(c.dumpJSON, IOError, ""); err != nil {
 				return errors.Annotate(err, "failed to write json file").Err()
 			}

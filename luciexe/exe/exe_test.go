@@ -18,6 +18,7 @@ import (
 	"bytes"
 	"compress/zlib"
 	"context"
+	"io"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -73,7 +74,7 @@ func TestExe(t *testing.T) {
 				if decompress {
 					r, err := zlib.NewReader(bytes.NewBufferString(dg))
 					So(err, ShouldBeNil)
-					data, err = ioutil.ReadAll(r)
+					data, err = io.ReadAll(r)
 					So(err, ShouldBeNil)
 				} else {
 					data = []byte(dg)
@@ -245,7 +246,7 @@ func TestExe(t *testing.T) {
 						},
 					},
 				})
-				data, err := ioutil.ReadFile(outFile)
+				data, err := os.ReadFile(outFile)
 				So(err, ShouldBeNil)
 				So(string(data), ShouldResemble,
 					"`\f\x82\x01\x13\n\x11\n\x0f\n\x04some\x12\a\x1a\x05thing\xa2\x01\x03Hi.")
@@ -266,7 +267,7 @@ func TestExe(t *testing.T) {
 						Properties: &structpb.Struct{},
 					},
 				})
-				data, err := ioutil.ReadFile(outFile)
+				data, err := os.ReadFile(outFile)
 				So(err, ShouldBeNil)
 				So(string(data), ShouldResemble,
 					"status: SUCCESS\nsummary_markdown: \"Hi.\"\noutput: <\n  properties: <\n  >\n>\n")
@@ -287,7 +288,7 @@ func TestExe(t *testing.T) {
 						Properties: &structpb.Struct{},
 					},
 				})
-				data, err := ioutil.ReadFile(outFile)
+				data, err := os.ReadFile(outFile)
 				So(err, ShouldBeNil)
 				So(string(data), ShouldResemble,
 					"{\n  \"status\": \"SUCCESS\",\n  \"summary_markdown\": \"Hi.\",\n  \"output\": {\n    \"properties\": {\n      }\n  }\n}")
@@ -327,7 +328,7 @@ func TestExe(t *testing.T) {
 					return errors.New("bad stuff")
 				})
 				So(exitCode, ShouldEqual, 1)
-				data, err := ioutil.ReadFile(outFile)
+				data, err := os.ReadFile(outFile)
 				So(err, ShouldBeNil)
 				So(string(data), ShouldResemble,
 					"{\n  \"status\": \"FAILURE\",\n  \"summary_markdown\": \"Hi.\\n\\nFinal error: bad stuff\",\n  \"output\": {\n    \"properties\": {\n      }\n  }\n}")

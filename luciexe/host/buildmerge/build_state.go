@@ -18,7 +18,7 @@ import (
 	"bytes"
 	"compress/zlib"
 	"context"
-	"io/ioutil"
+	"io"
 	"sync"
 
 	"google.golang.org/protobuf/proto"
@@ -136,7 +136,7 @@ func (t *buildStateTracker) parseBuild(data []byte) (*bbpb.Build, error) {
 		if err != nil {
 			return nil, errors.Annotate(err, "constructing decompressor for Build").Err()
 		}
-		data, err = ioutil.ReadAll(z)
+		data, err = io.ReadAll(z)
 		if err != nil {
 			return nil, errors.Annotate(err, "decompressing Build").Err()
 		}
