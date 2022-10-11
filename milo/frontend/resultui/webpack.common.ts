@@ -30,6 +30,9 @@ const config: Configuration = {
     publicPath: '/ui/',
     filename: ({ chunk }) => (chunk?.name === 'root-sw' ? '[name].js' : 'immutable/[name].[contenthash].bundle.js'),
     chunkFilename: 'immutable/[name].[contenthash].bundle.js',
+    trustedTypes: {
+      policyName: 'milo#webpack',
+    },
   },
   module: {
     rules: [

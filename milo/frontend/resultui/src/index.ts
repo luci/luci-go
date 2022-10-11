@@ -12,12 +12,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import createInnerHTMLSanitizingPolicy from '@chopsui/trusted-types-policy';
 import { configure } from 'mobx';
 import { Workbox } from 'workbox-window';
 
 import './stackdriver_errors';
 import './routes';
 import { NEW_MILO_VERSION_EVENT_TYPE } from './libs/constants';
+import { createStaticTrustedURL } from './libs/utils';
+
+createInnerHTMLSanitizingPolicy();
 
 // TODO(crbug/1347294): encloses all state modifying actions in mobx actions
 // then delete this.
@@ -27,7 +31,8 @@ window.SW_PROMISE = new Promise((resolve) => {
   // Don't cache resources in development mode. Otherwise we will need to
   // refresh the page manually for changes to take effect.
   if (ENABLE_UI_SW && 'serviceWorker' in navigator) {
-    const wb = new Workbox('/ui/service-worker.js');
+    const wb = new Workbox(createStaticTrustedURL('sw-js-static', '/ui/service-worker.js'));
+
     wb.register().then((registration) => {
       // eslint-disable-next-line no-console
       console.log('UI SW registered: ', registration);
@@ -58,7 +63,11 @@ if ('serviceWorker' in navigator) {
     window.addEventListener(
       'load',
       async () => {
-        const registration = await navigator.serviceWorker.register('/root-sw.js');
+        const registration = await navigator.serviceWorker.register(
+          // cast to string because TypeScript doesn't allow us to use
+          // TrustedScriptURL here
+          createStaticTrustedURL('root-sw-js-static', '/root-sw.js') as string
+        );
         // eslint-disable-next-line no-console
         console.log('Root SW registered: ', registration);
       },

@@ -163,3 +163,23 @@ export function deferred<T = void>(): [
   });
   return [promise, resolvePromise!, rejectPromise!];
 }
+
+/**
+ * Converts a static string into a TrustedScriptURL if `self.trustedTypes` is
+ * defined.
+ *
+ * @param policy the policy name to create the trusted script URL under.
+ * @param staticUrl a static string that represents the URL.
+ * @returns a TrustedScriptURL if `self.trustedTypes` is defined, `staticUrl`
+ *  otherwise.
+ */
+export function createStaticTrustedURL<T extends string>(
+  policy: string,
+  // Force the URL to be a static string so the function can't be misused to
+  // trust URLs from user input.
+  staticUrl: string extends T ? never : T
+) {
+  return (
+    self.trustedTypes?.createPolicy(policy, { createScriptURL: (_) => staticUrl }).createScriptURL('') || staticUrl
+  );
+}

@@ -24,6 +24,7 @@
   "dependencies": {
     "@adobe/lit-mobx": "^1.0.1",
     "@chopsui/prpc-client": "^1.1.0",
+    "@chopsui/trusted-types-policy": "^0.3.4",
     "@emotion/cache": "^11.9.3",
     "@emotion/react": "^11.9.3",
     "@emotion/styled": "^11.9.3",
