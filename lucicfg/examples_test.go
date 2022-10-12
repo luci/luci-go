@@ -19,7 +19,7 @@ import (
 	"context"
 	"flag"
 	"fmt"
-	"io/ioutil"
+	"os"
 	"path/filepath"
 	"testing"
 
@@ -30,9 +30,9 @@ var regen = flag.Bool("test.regen", false, "regenerated configs")
 
 func TestExamples(t *testing.T) {
 	t.Parallel()
-	fi, err := ioutil.ReadDir("examples")
+	fi, err := os.ReadDir("examples")
 	if err != nil {
-		t.Fatalf("ioutil.ReadDir: %s", err)
+		t.Fatalf("os.ReadDir: %s", err)
 	}
 	for _, f := range fi {
 		if f.IsDir() {

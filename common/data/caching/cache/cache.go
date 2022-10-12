@@ -136,9 +136,9 @@ func New(policies Policies, path string, h crypto.Hash) (*Cache, error) {
 		// Do not use os.RemoveAll, due to strange 'Access Denied' error on windows
 		// in os.MkDir after os.RemoveAll.
 		// crbug.com/932396#c123
-		files, err := ioutil.ReadDir(path)
+		files, err := os.ReadDir(path)
 		if err != nil {
-			return nil, errors.Annotate(err, "failed to call ioutil.ReadDir(%s)", path).Err()
+			return nil, errors.Annotate(err, "failed to call os.ReadDir(%s)", path).Err()
 		}
 
 		for _, file := range files {

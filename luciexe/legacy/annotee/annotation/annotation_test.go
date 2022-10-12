@@ -18,7 +18,6 @@ import (
 	"bufio"
 	"flag"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"sort"
@@ -109,7 +108,7 @@ func normalize(s string) string {
 func superfluous(touched stringset.Set) ([]string, error) {
 	var paths []string
 
-	files, err := ioutil.ReadDir(testExpDir)
+	files, err := os.ReadDir(testExpDir)
 	if err != nil {
 		return nil, fmt.Errorf("failed to read directory %q: %v", testExpDir, err)
 	}
