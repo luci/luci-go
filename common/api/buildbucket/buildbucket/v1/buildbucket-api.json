@@ -465,6 +465,13 @@
       "description": "Describes model.Build, see its docstring.",
       "id": "LegacyApiCommonBuildMessage",
       "properties": {
+        "ancestor_ids": {
+          "items": {
+            "format": "int64",
+            "type": "string"
+          },
+          "type": "array"
+        },
         "bucket": {
           "required": true,
           "type": "string"

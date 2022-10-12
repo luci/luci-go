@@ -217,6 +217,7 @@
                 "ALL",
                 "BOT_DIED",
                 "CANCELED",
+                "CLIENT_ERROR",
                 "COMPLETED",
                 "COMPLETED_FAILURE",
                 "COMPLETED_SUCCESS",
@@ -230,6 +231,7 @@
                 "TIMED_OUT"
               ],
               "enumDescriptions": [
+                "",
                 "",
                 "",
                 "",
@@ -666,6 +668,7 @@
                 "ALL",
                 "BOT_DIED",
                 "CANCELED",
+                "CLIENT_ERROR",
                 "COMPLETED",
                 "COMPLETED_FAILURE",
                 "COMPLETED_SUCCESS",
@@ -679,6 +682,7 @@
                 "TIMED_OUT"
               ],
               "enumDescriptions": [
+                "",
                 "",
                 "",
                 "",
@@ -784,6 +788,7 @@
                 "ALL",
                 "BOT_DIED",
                 "CANCELED",
+                "CLIENT_ERROR",
                 "COMPLETED",
                 "COMPLETED_FAILURE",
                 "COMPLETED_SUCCESS",
@@ -797,6 +802,7 @@
                 "TIMED_OUT"
               ],
               "enumDescriptions": [
+                "",
                 "",
                 "",
                 "",
@@ -899,6 +905,7 @@
                 "ALL",
                 "BOT_DIED",
                 "CANCELED",
+                "CLIENT_ERROR",
                 "COMPLETED",
                 "COMPLETED_FAILURE",
                 "COMPLETED_SUCCESS",
@@ -912,6 +919,7 @@
                 "TIMED_OUT"
               ],
               "enumDescriptions": [
+                "",
                 "",
                 "",
                 "",
@@ -1677,6 +1685,7 @@
           "enum": [
             "BOT_DIED",
             "CANCELED",
+            "CLIENT_ERROR",
             "COMPLETED",
             "EXPIRED",
             "INVALID",
@@ -1687,6 +1696,7 @@
             "TIMED_OUT"
           ],
           "enumDescriptions": [
+            "",
             "",
             "",
             "",
@@ -1950,6 +1960,9 @@
           "format": "date-time",
           "type": "string"
         },
+        "bot_logs_cloud_project": {
+          "type": "string"
+        },
         "bot_version": {
           "type": "string"
         },
@@ -2006,6 +2019,19 @@
         "internal_failure": {
           "type": "boolean"
         },
+        "missing_cas": {
+          "items": {
+            "$ref": "SwarmingRpcsCASReference"
+          },
+          "type": "array"
+        },
+        "missing_cipd": {
+          "description": "A CIPD package to install in the run dir before task execution.",
+          "items": {
+            "$ref": "SwarmingRpcsCipdPackage"
+          },
+          "type": "array"
+        },
         "modified_ts": {
           "format": "date-time",
           "type": "string"
@@ -2038,6 +2064,7 @@
           "enum": [
             "BOT_DIED",
             "CANCELED",
+            "CLIENT_ERROR",
             "COMPLETED",
             "EXPIRED",
             "INVALID",
@@ -2048,6 +2075,7 @@
             "TIMED_OUT"
           ],
           "enumDescriptions": [
+            "",
             "",
             "",
             "",
@@ -2068,10 +2096,6 @@
           "type": "array"
         },
         "task_id": {
-          "type": "string"
-        },
-        "try_number": {
-          "format": "int64",
           "type": "string"
         },
         "user": {
@@ -2107,6 +2131,7 @@
             "enum": [
               "BOT_DIED",
               "CANCELED",
+              "CLIENT_ERROR",
               "COMPLETED",
               "EXPIRED",
               "INVALID",
@@ -2117,6 +2142,7 @@
               "TIMED_OUT"
             ],
             "enumDescriptions": [
+              "",
               "",
               "",
               "",

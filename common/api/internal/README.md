@@ -12,4 +12,4 @@ Cloud Endpoints v1 APIs. Note that copied `gensupport` still depends on public
 bits of `google-api-go-client.git`, so if  they drift apart too much, stuff
 will break.
 
-[google-api-go-client.git]: https://code.googlesource.com/google-api-go-client.git/+/00e9aafd2753ed5b3c6e84d4f37e33780e75fa5f/internal/gensupport/
+[google-api-go-client.git]: https://code.googlesource.com/google-api-go-client.git/+/master/internal/gensupport/

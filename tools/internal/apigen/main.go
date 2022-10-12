@@ -354,6 +354,13 @@ func (a *Application) generateAPI(c context.Context, item *directoryItem, discov
 				line = strings.ReplaceAll(line,
 					`"google.golang.org/api/internal/gensupport"`,
 					`"go.chromium.org/luci/common/api/internal/gensupport"`)
+				// This is forbidden. We'll replace symbols imported from it.
+				if line == "\tinternal \"google.golang.org/api/internal\"" {
+					continue
+				}
+				// This is the only symbol imported from `internal`.
+				line = strings.ReplaceAll(line, "internal.Version", "\"luci-go\"")
+				// Finish writing the line to the output.
 				filtered.WriteString(line)
 				filtered.WriteRune('\n')
 				continue

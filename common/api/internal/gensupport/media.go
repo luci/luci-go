@@ -8,12 +8,14 @@ import (
 	"bytes"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"mime"
 	"mime/multipart"
 	"net/http"
 	"net/textproto"
 	"strings"
 	"sync"
+	"time"
 
 	"google.golang.org/api/googleapi"
 )
@@ -61,7 +63,7 @@ func (cs *contentSniffer) ContentType() (string, bool) {
 	}
 	cs.sniffed = true
 	// If ReadAll hits EOF, it returns err==nil.
-	cs.start, cs.err = io.ReadAll(io.LimitReader(cs.r, sniffBuffSize))
+	cs.start, cs.err = ioutil.ReadAll(io.LimitReader(cs.r, sniffBuffSize))
 
 	// Don't try to detect the content type based on possibly incomplete data.
 	if cs.err != nil {
@@ -216,12 +218,13 @@ func PrepareUpload(media io.Reader, chunkSize int) (r io.Reader, mb *MediaBuffer
 // code only.
 type MediaInfo struct {
 	// At most one of Media and MediaBuffer will be set.
-	media           io.Reader
-	buffer          *MediaBuffer
-	singleChunk     bool
-	mType           string
-	size            int64 // mediaSize, if known.  Used only for calls to progressUpdater_.
-	progressUpdater googleapi.ProgressUpdater
+	media              io.Reader
+	buffer             *MediaBuffer
+	singleChunk        bool
+	mType              string
+	size               int64 // mediaSize, if known.  Used only for calls to progressUpdater_.
+	progressUpdater    googleapi.ProgressUpdater
+	chunkRetryDeadline time.Duration
 }
 
 // NewInfoFromMedia should be invoked from the Media method of a call. It returns a
@@ -233,6 +236,7 @@ func NewInfoFromMedia(r io.Reader, options []googleapi.MediaOption) *MediaInfo {
 	if !opts.ForceEmptyContentType {
 		r, mi.mType = DetermineContentType(r, opts.ContentType)
 	}
+	mi.chunkRetryDeadline = opts.ChunkRetryDeadline
 	mi.media, mi.buffer, mi.singleChunk = PrepareUpload(r, opts.ChunkSize)
 	return mi
 }
@@ -294,8 +298,8 @@ func (mi *MediaInfo) UploadRequest(reqHeaders http.Header, body io.Reader) (newB
 		}
 		if fb != nil && fm != nil {
 			getBody = func() (io.ReadCloser, error) {
-				rb := io.NopCloser(fb())
-				rm := io.NopCloser(fm())
+				rb := ioutil.NopCloser(fb())
+				rm := ioutil.NopCloser(fm())
 				var mimeBoundary string
 				if _, params, err := mime.ParseMediaType(ctype); err == nil {
 					mimeBoundary = params["boundary"]
@@ -355,6 +359,7 @@ func (mi *MediaInfo) ResumableUpload(locURI string) *ResumableUpload {
 				mi.progressUpdater(curr, mi.size)
 			}
 		},
+		ChunkRetryDeadline: mi.chunkRetryDeadline,
 	}
 }
 

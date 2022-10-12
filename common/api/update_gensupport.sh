@@ -16,6 +16,18 @@
 set -e
 
 cd $(dirname $0)
+
+# It is important to use the exact same code as used by
+# `google-api-go-generator` binary which is pulled in tools.go from
+#`google.golang.org/api` module. Otherwise we may be generating incompatible
+# code.
+api_mod_dir=$(go mod download -json google.golang.org/api | \
+  python3 -c "import sys, json; print(json.load(sys.stdin)['Dir'])")
+
+# Copy internal/gensupport package from there into our tree.
 rm -f internal/gensupport/*.go
-cp ../../../../../.vendor/src/google.golang.org/api/internal/gensupport/* internal/gensupport
+cp ${api_mod_dir}/internal/gensupport/* internal/gensupport
 chmod -R u+w internal/gensupport
+
+# We don't really care about tests nor can really run them with a partial copy.
+rm internal/gensupport/*_test.go
