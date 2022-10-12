@@ -77,8 +77,8 @@ func GetAssertedInfo(ctx context.Context) *AssertedInfo {
 type AuthMethod struct {
 	// Header is a name of the request header to check for JWTs.
 	Header string
-	// SignerAccount is an email of a trusted Gerrit service account.
-	SignerAccount string
+	// SignerAccounts are emails of services account that sign Gerrit JWTs.
+	SignerAccounts []string
 	// Audience is an expected "aud" field of JWTs.
 	Audience string
 
@@ -93,7 +93,7 @@ var _ interface {
 // gerritJWT is a body of the JWT token produced by Gerrit.
 type gerritJWT struct {
 	Aud            string         `json:"aud"`
-	Iss            string         `json:"iss"` // note: we ignore it currently
+	Iss            string         `json:"iss"`
 	Exp            int64          `json:"exp"`
 	AssertedUser   AssertedUser   `json:"asserted_user"`
 	AssertedChange AssertedChange `json:"asserted_change"`
@@ -101,7 +101,7 @@ type gerritJWT struct {
 
 // isConfigured is true if the method is fully configured and active.
 func (m *AuthMethod) isConfigured() bool {
-	return m.Header != "" && m.SignerAccount != ""
+	return m.Header != "" && len(m.SignerAccounts) != 0
 }
 
 // Authenticate extracts user information from the incoming request.
@@ -117,11 +117,29 @@ func (m *AuthMethod) Authenticate(ctx context.Context, r *http.Request) (*auth.U
 		return nil, nil, nil // skip, no auth header
 	}
 
+	// Peek inside the token to see what account it was supposedly signed by.
+	var unverifiedTok gerritJWT
+	if err := jwt.UnsafeDecode(encodedJWT, &unverifiedTok); err != nil {
+		return nil, nil, errors.Annotate(err, "bad Gerrit JWT").Err()
+	}
+
+	// It must be one of the accounts we know.
+	knownIssuer := ""
+	for _, email := range m.SignerAccounts {
+		if email == unverifiedTok.Iss {
+			knownIssuer = email
+			break
+		}
+	}
+	if knownIssuer == "" {
+		return nil, nil, errors.Reason("bad Gerrit JWT: unrecognized issuer %q", unverifiedTok.Iss).Err()
+	}
+
 	// Grab the signing keys we trust. Note: this usually hits the process cache.
 	certs := m.testCerts
 	if certs == nil {
 		var err error
-		certs, err = signing.FetchCertificatesForServiceAccount(ctx, m.SignerAccount)
+		certs, err = signing.FetchCertificatesForServiceAccount(ctx, knownIssuer)
 		if err != nil {
 			return nil, nil, errors.Annotate(err, "could not fetch Gerrit public keys").Err()
 		}
@@ -178,8 +196,12 @@ func (m *AuthMethod) Authenticate(ctx context.Context, r *http.Request) (*auth.U
 // It is part of auth.Warmable interface.
 func (m *AuthMethod) Warmup(ctx context.Context) error {
 	if m.isConfigured() && m.testCerts == nil {
-		_, err := signing.FetchCertificatesForServiceAccount(ctx, m.SignerAccount)
-		return err
+		var merr errors.MultiError
+		for _, email := range m.SignerAccounts {
+			_, err := signing.FetchCertificatesForServiceAccount(ctx, email)
+			merr.MaybeAdd(err)
+		}
+		return merr.AsError()
 	}
 	return nil
 }

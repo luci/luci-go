@@ -33,6 +33,7 @@ entrypoint: >
   -cloud-error-reporting
   -config-service-host luci-config.appspot.com
   -gerrit-auth-signer-account gerritcodereview@system.gserviceaccount.com
+  -gerrit-auth-signer-account git-gerrit@system.gserviceaccount.com
   -gerrit-auth-audience https://api.cr.dev
   -root-secret sm://root-secret
   -primary-tink-aead-key sm://tink-aead-primary

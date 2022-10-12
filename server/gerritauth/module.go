@@ -19,6 +19,7 @@ import (
 	"flag"
 
 	"go.chromium.org/luci/common/errors"
+	luciflag "go.chromium.org/luci/common/flag"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/server/module"
 	"go.chromium.org/luci/server/warmup"
@@ -39,10 +40,10 @@ type ModuleOptions struct {
 	// Default is "X-Gerrit-Auth".
 	Header string
 
-	// SignerAccount is an email of a trusted Gerrit service account.
+	// SignerAccounts are emails of services account that sign Gerrit JWTs.
 	//
 	// If empty, authentication based on Gerrit JWTs will be disabled.
-	SignerAccount string
+	SignerAccounts []string
 
 	// Audience is an expected "aud" field of JWTs.
 	//
@@ -61,17 +62,16 @@ func (o *ModuleOptions) Register(f *flag.FlagSet) {
 		o.Header,
 		`Name of the request header to check for JWTs.`,
 	)
-	f.StringVar(
-		&o.SignerAccount,
+	f.Var(luciflag.StringSlice(&o.SignerAccounts),
 		"gerrit-auth-signer-account",
-		o.SignerAccount,
-		`Email of a trusted Gerrit service account. If empty, authentication based on Gerrit JWTs will be disabled.`,
+		"Email of a Gerrit service account trusted to sign Gerrit JWT tokens. "+
+			"May be specified multiple times. If empty, authentication based on Gerrit JWTs will be disabled.",
 	)
 	f.StringVar(
 		&o.Audience,
 		"gerrit-auth-audience",
 		o.Audience,
-		`Expected "aud" field of the JWTs. Required if -gerrit-auth-signer-account is not empty.`,
+		`Expected "aud" field of the JWTs. Required if -gerrit-auth-signer-account is used.`,
 	)
 }
 
@@ -111,7 +111,7 @@ func (*serverModule) Dependencies() []module.Dependency {
 
 // Initialize is part of module.Module interface.
 func (m *serverModule) Initialize(ctx context.Context, host module.Host, opts module.HostOptions) (context.Context, error) {
-	if m.opts.SignerAccount != "" {
+	if len(m.opts.SignerAccounts) != 0 {
 		if m.opts.Audience == "" {
 			return nil, errors.Reason("-gerrit-auth-audience is required when -gerrit-auth-signer-account is used").Err()
 		}
@@ -124,7 +124,7 @@ func (m *serverModule) Initialize(ctx context.Context, host module.Host, opts mo
 		method = &Method
 	}
 	method.Header = m.opts.Header
-	method.SignerAccount = m.opts.SignerAccount
+	method.SignerAccounts = m.opts.SignerAccounts
 	method.Audience = m.opts.Audience
 
 	if method.isConfigured() {

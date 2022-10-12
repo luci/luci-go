@@ -57,10 +57,10 @@ func TestAuthMethod(t *testing.T) {
 		goodKeyID := signer.KeyNameForTest()
 
 		method := AuthMethod{
-			Header:        expectedHeader,
-			SignerAccount: "unused-in-the-test",
-			Audience:      expectedAudience,
-			testCerts:     certs,
+			Header:         expectedHeader,
+			SignerAccounts: []string{"trusted-issuer"},
+			Audience:       expectedAudience,
+			testCerts:      certs,
 		}
 
 		prepareJWT := func(tok gerritJWT) string {
@@ -85,6 +85,7 @@ func TestAuthMethod(t *testing.T) {
 
 		Convey("Success", func() {
 			user, err := call(prepareJWT(gerritJWT{
+				Iss:            "trusted-issuer",
 				Aud:            expectedAudience,
 				Exp:            now.Add(5 * time.Minute).Unix(),
 				AssertedUser:   assertedUser,
@@ -103,6 +104,7 @@ func TestAuthMethod(t *testing.T) {
 
 		Convey("Success, but no preferred email", func() {
 			user, err := call(prepareJWT(gerritJWT{
+				Iss: "trusted-issuer",
 				Aud: expectedAudience,
 				Exp: now.Add(5 * time.Minute).Unix(),
 				AssertedUser: AssertedUser{
@@ -124,7 +126,7 @@ func TestAuthMethod(t *testing.T) {
 		})
 
 		Convey("Unconfigured", func() {
-			method.SignerAccount = ""
+			method.SignerAccounts = nil
 			user, err := call("ignored")
 			So(err, ShouldBeNil)
 			So(user, ShouldBeNil)
@@ -142,8 +144,20 @@ func TestAuthMethod(t *testing.T) {
 			So(err, ShouldErrLike, "bad Gerrit JWT")
 		})
 
+		Convey("Unrecognized issuer", func() {
+			_, err := call(prepareJWT(gerritJWT{
+				Iss:            "unknown-issuer",
+				Aud:            expectedAudience,
+				Exp:            now.Add(5 * time.Minute).Unix(),
+				AssertedUser:   assertedUser,
+				AssertedChange: assertedChange,
+			}))
+			So(err, ShouldErrLike, "bad Gerrit JWT")
+		})
+
 		Convey("Bad audience", func() {
 			_, err := call(prepareJWT(gerritJWT{
+				Iss:            "trusted-issuer",
 				Aud:            "wrong-audience",
 				Exp:            now.Add(5 * time.Minute).Unix(),
 				AssertedUser:   assertedUser,
@@ -154,6 +168,7 @@ func TestAuthMethod(t *testing.T) {
 
 		Convey("Expired token", func() {
 			_, err := call(prepareJWT(gerritJWT{
+				Iss:            "trusted-issuer",
 				Aud:            expectedAudience,
 				Exp:            now.Add(-5 * time.Minute).Unix(),
 				AssertedUser:   assertedUser,
@@ -164,6 +179,7 @@ func TestAuthMethod(t *testing.T) {
 
 		Convey("No emails", func() {
 			_, err := call(prepareJWT(gerritJWT{
+				Iss:            "trusted-issuer",
 				Aud:            expectedAudience,
 				Exp:            now.Add(5 * time.Minute).Unix(),
 				AssertedChange: assertedChange,
@@ -173,6 +189,7 @@ func TestAuthMethod(t *testing.T) {
 
 		Convey("Invalid email", func() {
 			_, err := call(prepareJWT(gerritJWT{
+				Iss: "trusted-issuer",
 				Aud: expectedAudience,
 				Exp: now.Add(5 * time.Minute).Unix(),
 				AssertedUser: AssertedUser{

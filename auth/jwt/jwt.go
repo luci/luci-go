@@ -36,6 +36,21 @@ type SignatureVerifier interface {
 	CheckSignature(keyID string, signed, signature []byte) error
 }
 
+// UnsafeDecode extracts the payload of a JWT **without verifying it**.
+//
+// It must always be followed by VerifyAndDecode. Useful to "peek" inside the
+// token to see who it was supposedly signed by.
+func UnsafeDecode(jwt string, dest interface{}) error {
+	chunks := strings.Split(jwt, ".")
+	if len(chunks) != 3 {
+		return errors.Reason("bad JWT: expected 3 components separated by '.'").Tag(NotJWT).Err()
+	}
+	if err := unmarshalB64JSON(chunks[1], dest); err != nil {
+		return errors.Annotate(err, "bad JWT: bad body").Err()
+	}
+	return nil
+}
+
 // VerifyAndDecode deconstructs the token, verifies its signature using the
 // given `verifier` and on success deserializes its body into `dest`.
 //
@@ -43,7 +58,7 @@ type SignatureVerifier interface {
 // all. Other errors (like signature verification check errors) are returned
 // without this tag.
 //
-// Doesn't interpret any JWT claims in the body, just deserializes them indo
+// Doesn't interpret any JWT claims in the body, just deserializes them into
 // `dest`. The caller is responsible for checking them.
 func VerifyAndDecode(jwt string, dest interface{}, verifier SignatureVerifier) error {
 	chunks := strings.Split(jwt, ".")
