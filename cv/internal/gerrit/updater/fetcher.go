@@ -76,7 +76,7 @@ type fetcher struct {
 	project                      string
 	host                         string
 	change                       int64
-	updatedHint                  time.Time
+	hint                         *changelist.UpdateCLTask_Hint
 	requester                    changelist.UpdateCLTask_Requester
 	externalID                   changelist.ExternalID
 	priorCL                      *changelist.CL // not-nil, if CL already exists in Datastore.
@@ -300,7 +300,7 @@ func (f *fetcher) reschedule(ctx context.Context, delay time.Duration) error {
 		LuciProject: f.project,
 		ExternalId:  string(f.externalID),
 		Id:          int64(f.clidIfKnown()),
-		UpdatedHint: common.Time2PBNillable(f.updatedHint),
+		Hint:        f.hint,
 		Requester:   f.requester,
 	}
 	return f.scheduleRefresh(ctx, t, delay)
@@ -603,9 +603,10 @@ func (f *fetcher) depsToExternalIDs() (map[changelist.ExternalID]changelist.DepK
 func (f *fetcher) isStale(ctx context.Context, externalUpdateTime *timestamppb.Timestamp) bool {
 	t := externalUpdateTime.AsTime()
 	storedTS := f.priorSnapshot().GetExternalUpdateTime()
+	hintedTS := f.hint.GetExternalUpdateTime()
 	switch {
-	case !f.updatedHint.IsZero() && f.updatedHint.After(t):
-		logging.Debugf(ctx, "Fetched last Gerrit update of %s, but %s expected (%s)", t, f.updatedHint, f)
+	case hintedTS != nil && hintedTS.AsTime().After(t):
+		logging.Debugf(ctx, "Fetched last Gerrit update of %s, but %s expected (%s)", t, hintedTS.AsTime(), f)
 	case storedTS != nil && storedTS.AsTime().After(t):
 		logging.Debugf(ctx, "Fetched last Gerrit update of %s, but %s was already seen & stored (%s)", t, storedTS.AsTime(), f)
 	default:

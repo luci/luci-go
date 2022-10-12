@@ -176,7 +176,7 @@ func TestUpdaterBackendFetch(t *testing.T) {
 		)
 		task := &changelist.UpdateCLTask{
 			LuciProject: lProject,
-			UpdatedHint: timestamppb.New(time.Time{}),
+			Hint:        &changelist.UpdateCLTask_Hint{ExternalUpdateTime: timestamppb.New(time.Time{})},
 			Requester:   changelist.UpdateCLTask_RUN_POKE,
 		}
 
@@ -427,7 +427,7 @@ func TestUpdaterBackendFetch(t *testing.T) {
 			)))
 
 			Convey("CL's updated timestamp is before updatedHint", func() {
-				task.UpdatedHint = timestamppb.New(staleUpdateTime.Add(time.Minute))
+				task.Hint.ExternalUpdateTime = timestamppb.New(staleUpdateTime.Add(time.Minute))
 				_, err := gu.Fetch(ctx, changelist.NewFetchInput(&newCL, task))
 				So(err, ShouldErrLike, gerrit.ErrStaleData)
 			})

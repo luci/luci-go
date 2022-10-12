@@ -115,15 +115,19 @@ type FetchInput struct {
 	UpdatedHint time.Time
 	// Requester identifies various scenarios that issued the Fetch invocation.
 	Requester UpdateCLTask_Requester
+	Hint      *UpdateCLTask_Hint
 }
 
 // NewFetchInput returns FetchInput for a given CL and UpdateCLTask.
 func NewFetchInput(cl *CL, task *UpdateCLTask) *FetchInput {
 	return &FetchInput{
-		CL:          cl,
-		Project:     task.GetLuciProject(),
-		UpdatedHint: common.PB2TimeNillable(task.GetUpdatedHint()),
-		Requester:   task.GetRequester(),
+		CL:      cl,
+		Project: task.GetLuciProject(),
+		// TODO(crbug.com/1358208): replace the below by `Hint: task.GetHint()`,
+		Hint: &UpdateCLTask_Hint{
+			ExternalUpdateTime: task.getUpdateTimeHint(),
+		},
+		Requester: task.GetRequester(),
 	}
 }
 
@@ -539,10 +543,11 @@ func (u *Updater) handleCLWithBackend(ctx context.Context, task *UpdateCLTask, c
 // NOTE: UpdateFields may be set if fetch can be skipped, meaning CL entity
 // should be updated in Datastore.
 func (u *Updater) trySkippingFetch(ctx context.Context, task *UpdateCLTask, cl *CL, backend UpdaterBackend) (bool, UpdateFields, error) {
-	if cl.ID == 0 || cl.Snapshot == nil || cl.Snapshot.GetOutdated() != nil || task.GetUpdatedHint() == nil {
+	hintedTS := task.getUpdateTimeHint()
+	if cl.ID == 0 || cl.Snapshot == nil || cl.Snapshot.GetOutdated() != nil || hintedTS == nil {
 		return false, UpdateFields{}, nil
 	}
-	if task.GetUpdatedHint().AsTime().After(cl.Snapshot.GetExternalUpdateTime().AsTime()) {
+	if hintedTS.AsTime().After(cl.Snapshot.GetExternalUpdateTime().AsTime()) {
 		// There is no confidence that Snapshot is up-to-date, so proceed fetching
 		// anyway.
 
@@ -688,6 +693,21 @@ func (u *Updater) backendFor(cl *CL) (UpdaterBackend, error) {
 
 // makeTaskDeduplicationKey returns TQ task deduplication key.
 func makeTaskDeduplicationKey(ctx context.Context, t *UpdateCLTask, delay time.Duration) string {
+	var sb strings.Builder
+	sb.WriteString("v0")
+	sb.WriteRune('\n')
+	sb.WriteString(t.GetLuciProject())
+	sb.WriteRune('\n')
+
+	// Prefer ExternalID if both ID and ExternalID are known, as the most frequent
+	// use-case for update via PubSub/Polling, which specifies ExternalID and may
+	// not resolve it to internal ID just yet.
+	uniqArg := t.GetExternalId()
+	if uniqArg == "" {
+		uniqArg = strconv.FormatInt(t.GetId(), 16)
+	}
+	sb.WriteString(uniqArg)
+
 	// Dedup in the short term to avoid excessive number of refreshes,
 	// but ensure eventually calling Schedule with the same payload results in a
 	// new task. This is done by de-duping only within a single "epoch" window,
@@ -706,27 +726,13 @@ func makeTaskDeduplicationKey(ctx context.Context, t *UpdateCLTask, delay time.D
 	// Furthermore, de-dup window differs based on whether updatedHint is given
 	// or it's a blind refresh.
 	interval := blindRefreshInterval
-	if t.GetUpdatedHint() != nil {
+	if t.getUpdateTimeHint() != nil {
 		interval = knownRefreshInterval
-	}
-	// Prefer ExternalID if both ID and ExternalID are known, as the most frequent
-	// use-case for update via PubSub/Polling, which specifies ExternalID and may
-	// not resolve it to internal ID just yet.
-	uniqArg := t.GetExternalId()
-	if uniqArg == "" {
-		uniqArg = strconv.FormatInt(t.GetId(), 16)
 	}
 	epochOffset := common.DistributeOffset(interval, "update-cl", t.GetLuciProject(), uniqArg)
 	epochTS := clock.Now(ctx).Add(delay).Truncate(interval).Add(interval + epochOffset)
-
-	var sb strings.Builder
-	sb.WriteString("v0")
-	sb.WriteRune('\n')
-	sb.WriteString(t.GetLuciProject())
-	sb.WriteRune('\n')
-	sb.WriteString(uniqArg)
 	_, _ = fmt.Fprintf(&sb, "\n%x", epochTS.UnixNano())
-	if h := t.GetUpdatedHint(); h != nil {
+	if h := t.getUpdateTimeHint(); h != nil {
 		_, _ = fmt.Fprintf(&sb, "\n%x", h.AsTime().UnixNano())
 	}
 	return sb.String()
@@ -762,7 +768,7 @@ func makeTQTitleForHumans(t *UpdateCLTask) string {
 		}
 		sb.WriteString(eid)
 	}
-	if h := t.GetUpdatedHint(); h != nil {
+	if h := t.getUpdateTimeHint(); h != nil {
 		sb.WriteString("/u")
 		sb.WriteString(h.AsTime().UTC().Format(time.RFC3339))
 	}

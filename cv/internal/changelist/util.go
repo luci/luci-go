@@ -17,6 +17,8 @@ package changelist
 import (
 	"context"
 
+	timestamppb "google.golang.org/protobuf/types/known/timestamppb"
+
 	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/common/errors"
 	gerritpb "go.chromium.org/luci/common/proto/gerrit"
@@ -208,4 +210,16 @@ func (s *Snapshot) IsSubmitted() (bool, error) {
 		return false, errors.New("non-Gerrit CLs not supported")
 	}
 	return g.GetInfo().GetStatus() == gerritpb.ChangeStatus_MERGED, nil
+}
+
+func (t *UpdateCLTask) getUpdateTimeHint() *timestamppb.Timestamp {
+	// TODO(crbug.com/1358208: remove this function
+	if t == nil {
+		return nil
+	}
+
+	if t := t.GetHint().GetExternalUpdateTime(); t != nil {
+		return t
+	}
+	return t.GetUpdatedHint()
 }

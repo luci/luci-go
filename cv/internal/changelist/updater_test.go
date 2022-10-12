@@ -39,6 +39,10 @@ import (
 	. "go.chromium.org/luci/common/testing/assertions"
 )
 
+func externalTime(t time.Time) *UpdateCLTask_Hint {
+	return &UpdateCLTask_Hint{ExternalUpdateTime: timestamppb.New(t)}
+}
+
 func TestUpdaterSchedule(t *testing.T) {
 	t.Parallel()
 
@@ -48,7 +52,6 @@ func TestUpdaterSchedule(t *testing.T) {
 		defer cancel()
 
 		Convey("Correctly generate dedup keys for Updater TQ tasks", func() {
-
 			Convey("Diff CLIDs have diff dedup keys", func() {
 				t := &UpdateCLTask{LuciProject: "proj", Id: 7}
 				k1 := makeTaskDeduplicationKey(ctx, t, 0)
@@ -76,9 +79,9 @@ func TestUpdaterSchedule(t *testing.T) {
 
 			Convey("Diff updatedHint have diff dedup keys", func() {
 				t := &UpdateCLTask{LuciProject: "proj", ExternalId: "kind1/foo/23"}
-				t.UpdatedHint = timestamppb.New(ct.Clock.Now())
+				t.Hint = externalTime(ct.Clock.Now())
 				k1 := makeTaskDeduplicationKey(ctx, t, 0)
-				t.UpdatedHint = timestamppb.New(ct.Clock.Now().Add(time.Second))
+				t.Hint = externalTime(ct.Clock.Now().Add(time.Second))
 				k2 := makeTaskDeduplicationKey(ctx, t, 0)
 				So(k1, ShouldNotResemble, k2)
 			})
@@ -148,7 +151,7 @@ func TestUpdaterSchedule(t *testing.T) {
 			So(makeTQTitleForHumans(&UpdateCLTask{
 				LuciProject: "proj",
 				ExternalId:  "gerrit/chromium-review.googlesource.com/1111111",
-				UpdatedHint: timestamppb.New(testclock.TestRecentTimeUTC),
+				Hint:        externalTime(testclock.TestRecentTimeUTC),
 			}), ShouldResemble, "proj/gerrit/chromium/1111111/u2016-02-03T04:05:06Z")
 		})
 
@@ -157,7 +160,7 @@ func TestUpdaterSchedule(t *testing.T) {
 			t := &UpdateCLTask{
 				LuciProject: "proj",
 				Id:          123,
-				UpdatedHint: timestamppb.New(ct.Clock.Now().Add(-time.Second)),
+				Hint:        externalTime(ct.Clock.Now().Add(-time.Second)),
 				Requester:   UpdateCLTask_RUN_POKE,
 			}
 			delay := time.Minute
@@ -670,7 +673,7 @@ func TestUpdaterAvoidsFetchWhenPossible(t *testing.T) {
 		task := &UpdateCLTask{
 			LuciProject: "luci-project",
 			ExternalId:  string(cl.ExternalID),
-			UpdatedHint: timestamppb.New(ct.Clock.Now()),
+			Hint:        externalTime(ct.Clock.Now()),
 		}
 		// Typically, ApplicableConfig config (i.e. which LUCI project watch this
 		// CL) doesn't change, too.
@@ -740,7 +743,7 @@ func TestUpdaterAvoidsFetchWhenPossible(t *testing.T) {
 				So(b.wasFetchCalled(), ShouldBeTrue)
 			})
 			Convey("snapshot might be old", func(c C) {
-				task.UpdatedHint = nil
+				task.Hint = nil
 				saveCLAndRun()
 				So(b.wasFetchCalled(), ShouldBeTrue)
 			})

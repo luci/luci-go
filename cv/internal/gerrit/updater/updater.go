@@ -67,12 +67,12 @@ func (u *updaterBackend) Fetch(ctx context.Context, in *changelist.FetchInput) (
 		scheduleRefresh:              u.clUpdater.ScheduleDelayed,
 		resolveAndScheduleDepsUpdate: u.clUpdater.ResolveAndScheduleDepsUpdate,
 
-		project:     in.Project,
-		externalID:  in.CL.ExternalID,
-		host:        gHost,
-		change:      gChange,
-		updatedHint: in.UpdatedHint,
-		requester:   in.Requester,
+		project:    in.Project,
+		externalID: in.CL.ExternalID,
+		host:       gHost,
+		change:     gChange,
+		hint:       in.Hint,
+		requester:  in.Requester,
 	}
 	if in.CL.ID > 0 {
 		f.priorCL = in.CL

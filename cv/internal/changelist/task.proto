@@ -32,6 +32,7 @@ message UpdateCLTask {
   int64 id = 2; // internal CLID
   string external_id = 3;
 
+  // TODO(crbug.com/1358208): remove updated_hint.
   google.protobuf.Timestamp updated_hint = 4;
 
   enum Requester {
@@ -54,6 +55,14 @@ message UpdateCLTask {
   Requester requester = 5;
   // True if the UpdateCLTask was enqueued to resolve a dependency.
   bool is_for_dep = 6;
+
+  message Hint {
+    // The external update time of the Snapshot to fetch.
+    google.protobuf.Timestamp external_update_time = 1;
+  }
+
+  // Hint provides various hints for the snapshot to be fetched.
+  Hint hint = 7;
 }
 
 // BatchUpdateCLTask is for updating many CLs.

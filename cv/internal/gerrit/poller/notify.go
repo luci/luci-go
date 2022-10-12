@@ -57,6 +57,7 @@ func (p *Poller) notifyOnMatchedCLs(ctx context.Context, luciProject, host strin
 				LuciProject: luciProject,
 				ExternalId:  string(changelist.MustGobID(host, c.GetNumber())),
 				UpdatedHint: c.GetUpdated(),
+				Hint:        &changelist.UpdateCLTask_Hint{ExternalUpdateTime: c.GetUpdated()},
 				Requester:   requester,
 			}
 			work <- func() error {
