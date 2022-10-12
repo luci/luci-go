@@ -38,7 +38,7 @@ require (
 	github.com/gorhill/cronexpr v0.0.0-20180427100037-88b0669f7d75
 	github.com/jordan-wright/email v4.0.1-0.20210109023952-943e75fe5223+incompatible
 	github.com/julienschmidt/httprouter v1.3.0
-	github.com/klauspost/compress v1.15.11
+	github.com/klauspost/compress v1.15.9
 	github.com/luci/gtreap v0.0.0-20161228054646-35df89791e8f
 	github.com/maruel/subcommands v1.1.1
 	github.com/mattn/go-tty v0.0.4

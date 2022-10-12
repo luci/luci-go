@@ -30,43 +30,43 @@ set -e
 # updated all at once.
 
 deps=(
-  github.com/alicebob/miniredis/v2
-  github.com/danjacques/gofslock
-  github.com/dustin/go-humanize
-  github.com/envoyproxy/protoc-gen-validate
-  github.com/golang/protobuf
-  github.com/gomodule/redigo
-  github.com/google/go-cmp
-  github.com/google/tink/go
-  github.com/google/uuid
-  github.com/gorhill/cronexpr
-  github.com/jordan-wright/email
-  github.com/julienschmidt/httprouter
-  github.com/klauspost/compress
-  github.com/luci/gtreap
-  github.com/maruel/subcommands
-  github.com/mattn/go-tty
-  github.com/mgutz/ansi
-  github.com/Microsoft/go-winio
-  github.com/mitchellh/go-homedir
-  github.com/op/go-logging
-  github.com/pmezard/go-difflib
-  github.com/protocolbuffers/txtpbfmt
-  github.com/russross/blackfriday/v2
-  github.com/sergi/go-diff
-  github.com/smartystreets/assertions
-  github.com/smartystreets/goconvey
-  github.com/yosuke-furukawa/json5
-  go.starlark.net
-  google.golang.org/grpc
-  google.golang.org/grpc/cmd/protoc-gen-go-grpc
-  google.golang.org/protobuf
-  gopkg.in/yaml.v2
+  github.com/alicebob/miniredis/v2@latest
+  github.com/danjacques/gofslock@latest
+  github.com/dustin/go-humanize@latest
+  github.com/envoyproxy/protoc-gen-validate@latest
+  github.com/golang/protobuf@latest
+  github.com/gomodule/redigo@latest
+  github.com/google/go-cmp@latest
+  github.com/google/tink/go@latest
+  github.com/google/uuid@latest
+  github.com/gorhill/cronexpr@latest
+  github.com/jordan-wright/email@latest
+  github.com/julienschmidt/httprouter@latest
+  github.com/klauspost/compress@v1.15.9  # newer versions don't support go1.16
+  github.com/luci/gtreap@latest
+  github.com/maruel/subcommands@latest
+  github.com/mattn/go-tty@latest
+  github.com/mgutz/ansi@latest
+  github.com/Microsoft/go-winio@latest
+  github.com/mitchellh/go-homedir@latest
+  github.com/op/go-logging@latest
+  github.com/pmezard/go-difflib@latest
+  github.com/protocolbuffers/txtpbfmt@latest
+  github.com/russross/blackfriday/v2@latest
+  github.com/sergi/go-diff@latest
+  github.com/smartystreets/assertions@latest
+  github.com/smartystreets/goconvey@latest
+  github.com/yosuke-furukawa/json5@latest
+  go.starlark.net@latest
+  google.golang.org/grpc@latest
+  google.golang.org/grpc/cmd/protoc-gen-go-grpc@latest
+  google.golang.org/protobuf@latest
+  gopkg.in/yaml.v2@latest
 )
 
 for mod in ${deps[@]}; do
-  echo go get -d ${mod}@latest
-  go get -d ${mod}@latest
+  echo go get -d ${mod}
+  go get -d ${mod}
 done
 
 echo go mod tidy -compat=1.17
