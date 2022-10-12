@@ -39,9 +39,9 @@ func TestCaseSensitive(t *testing.T) {
 		So(err, ShouldBeNil)
 
 		// No garbage left around.
-		fis, err := ioutil.ReadDir(fs.join(""))
+		entries, err := os.ReadDir(fs.join(""))
 		So(err, ShouldBeNil)
-		So(fis, ShouldHaveLength, 0)
+		So(entries, ShouldHaveLength, 0)
 	})
 }
 

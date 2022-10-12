@@ -19,7 +19,6 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 
@@ -194,11 +193,11 @@ func initInstallationSite(rootDir, defaultServiceURL string, force bool) (*insta
 	}
 
 	// Attempting to use in a non empty directory?
-	items, err := ioutil.ReadDir(rootDir)
+	entries, err := os.ReadDir(rootDir)
 	if err != nil && !os.IsNotExist(err) {
 		return nil, errors.Annotate(err, "bad site root dir").Tag(cipderr.IO).Err()
 	}
-	if len(items) != 0 {
+	if len(entries) != 0 {
 		msg := fmt.Sprintf("directory %s is not empty", rootDir)
 		if !force {
 			return nil, errors.New(msg, cipderr.BadArgument)

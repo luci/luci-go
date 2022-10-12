@@ -19,7 +19,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -533,7 +532,7 @@ func (d *deployerImpl) CheckDeployed(ctx context.Context, subdir, pkgname string
 func (d *deployerImpl) FindDeployed(ctx context.Context) (common.PinSliceBySubdir, error) {
 	// Directories with packages are direct children of .cipd/pkgs/.
 	pkgs := filepath.Join(d.fs.Root(), filepath.FromSlash(packagesDir))
-	infos, err := ioutil.ReadDir(pkgs)
+	entries, err := os.ReadDir(pkgs)
 	if err != nil {
 		if os.IsNotExist(err) {
 			return nil, nil
@@ -542,12 +541,12 @@ func (d *deployerImpl) FindDeployed(ctx context.Context) (common.PinSliceBySubdi
 	}
 
 	found := common.PinMapBySubdir{}
-	for _, info := range infos {
-		if !info.IsDir() {
+	for _, entry := range entries {
+		if !entry.IsDir() {
 			continue
 		}
 		// Read the description and the 'current' link.
-		pkgPath := filepath.Join(pkgs, info.Name())
+		pkgPath := filepath.Join(pkgs, entry.Name())
 		desc, err := d.readDescription(ctx, pkgPath)
 		if err != nil || desc == nil {
 			continue
@@ -968,7 +967,7 @@ func (b byLenThenAlpha) Less(i, j int) bool {
 // Duplicate detection always prefers the folder with the shortest path name
 // that sorts alphabetically earlier.
 func (d *deployerImpl) resolveValidPackageDirs(ctx context.Context, pkgsAbsDir string) (numbered numSet, all map[description]string) {
-	files, err := ioutil.ReadDir(pkgsAbsDir)
+	files, err := os.ReadDir(pkgsAbsDir)
 	if err != nil && !os.IsNotExist(err) {
 		logging.Errorf(ctx, "Can't read packages dir %q: %s", pkgsAbsDir, err)
 		return

@@ -541,7 +541,7 @@ func (f *fsImpl) Replace(ctx context.Context, oldpath, newpath string) error {
 }
 
 func (f *fsImpl) CleanupTrash(ctx context.Context) {
-	trashed, err := ioutil.ReadDir(f.trash)
+	trashed, err := os.ReadDir(f.trash)
 	if err != nil {
 		if os.IsNotExist(err) {
 			return

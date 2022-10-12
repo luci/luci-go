@@ -2385,8 +2385,8 @@ func scanDirAndSkipGuts(root string) (out []string) {
 
 // isEmptyDir return true if 'path' refers to an empty directory.
 func isEmptyDir(path string) bool {
-	infos, err := ioutil.ReadDir(path)
-	return err == nil && len(infos) == 0
+	entries, err := os.ReadDir(path)
+	return err == nil && len(entries) == 0
 }
 
 // readFile reads content of an existing text file. Root path is provided as
