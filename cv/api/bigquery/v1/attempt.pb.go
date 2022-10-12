@@ -570,7 +570,7 @@ type GerritChange struct {
 	Mode Mode `protobuf:"varint,7,opt,name=mode,proto3,enum=bigquery.Mode" json:"mode,omitempty"`
 	// Whether CQ tried to submit this change and the result of the operation.
 	SubmitStatus GerritChange_SubmitStatus `protobuf:"varint,8,opt,name=submit_status,json=submitStatus,proto3,enum=bigquery.GerritChange_SubmitStatus" json:"submit_status,omitempty"`
-	// The owner of the CL.
+	// The owner (email address) of the CL.
 	Owner string `protobuf:"bytes,9,opt,name=owner,proto3" json:"owner,omitempty"`
 }
 

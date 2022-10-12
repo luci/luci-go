@@ -120,6 +120,10 @@ func TestMakeAttempt(t *testing.T) {
 							Number:  gChange,
 							Project: gRepo,
 							Ref:     gRef,
+							Owner: &gerritpb.AccountInfo{
+								Name:  "Foo Bar",
+								Email: "foobar@example.com",
+							},
 						},
 					},
 				},
@@ -240,6 +244,7 @@ func TestMakeAttempt(t *testing.T) {
 						TriggerTime:                timestamppb.New(epoch),
 						Mode:                       cvbqpb.Mode_FULL_RUN,
 						SubmitStatus:               cvbqpb.GerritChange_SUCCESS,
+						Owner:                      "foobar@example.com",
 					},
 				},
 				Builds: []*cvbqpb.Build{

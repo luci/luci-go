@@ -157,9 +157,6 @@ func makeAttempt(ctx context.Context, r *run.Run, cls []*run.RunCL) (*cvbqpb.Att
 // toGerritChange creates a GerritChange for the given RunCL.
 //
 // This includes the submit status of the CL.
-//
-// TODO(crbug.com/1371662): Populate the field Owner with
-// `cl.Detail.GetGerrit().GetInfo().GetOwner()`.
 func toGerritChange(cl *run.RunCL, submitted, failed common.CLIDsSet, mode run.Mode) *cvbqpb.GerritChange {
 	detail := cl.Detail
 	ci := detail.GetGerrit().GetInfo()
@@ -172,6 +169,7 @@ func toGerritChange(cl *run.RunCL, submitted, failed common.CLIDsSet, mode run.M
 		TriggerTime:                cl.Trigger.Time,
 		Mode:                       mode.BQAttemptMode(),
 		SubmitStatus:               cvbqpb.GerritChange_PENDING,
+		Owner:                      ci.GetOwner().GetEmail(),
 	}
 
 	if mode == run.FullRun {
