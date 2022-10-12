@@ -26,6 +26,7 @@ luci_gae_vars:
     DS_CACHE: redis
     VPC_CONNECTOR: projects/luci-milo-dev/locations/us-central1/connectors/connector
     ANALYTICS_ID: UA-55762617-26
+    LOGIN_SESSIONS_ROOT_URL: https://luci-milo-dev.appspot.com
 
 vpc_access_connector:
   name: ${VPC_CONNECTOR}
@@ -95,3 +96,4 @@ entrypoint: >
   -redis-addr ${REDIS_ADDR}
   -ds-cache ${DS_CACHE}
   -analytics-id ${ANALYTICS_ID}
+  -login-sessions-root-url ${LOGIN_SESSIONS_ROOT_URL}

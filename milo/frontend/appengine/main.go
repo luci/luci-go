@@ -39,6 +39,7 @@ import (
 	"go.chromium.org/luci/server/cron"
 	"go.chromium.org/luci/server/encryptedcookies"
 	"go.chromium.org/luci/server/gaeemulation"
+	"go.chromium.org/luci/server/loginsessions"
 	"go.chromium.org/luci/server/module"
 	"go.chromium.org/luci/server/redisconn"
 	"go.chromium.org/luci/server/secrets"
@@ -56,6 +57,7 @@ func main() {
 		gaeemulation.NewModuleFromFlags(),
 		redisconn.NewModuleFromFlags(),
 		analytics.NewModuleFromFlags(),
+		loginsessions.NewModuleFromFlags(),
 	}
 	server.Main(nil, modules, func(srv *server.Server) error {
 		frontend.Run(srv, "templates")
