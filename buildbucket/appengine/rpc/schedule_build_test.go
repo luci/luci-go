@@ -1286,6 +1286,16 @@ func TestScheduleBuild(t *testing.T) {
 			bld := &model.Build{ID: 1}
 			So(datastore.Get(ctx, bld), ShouldBeNil)
 
+			key := datastore.KeyForObj(ctx, bld)
+			So(datastore.Put(ctx, &model.BuildInfra{
+				Build: key,
+				Proto: &pb.BuildInfra{
+					Swarming: &pb.BuildInfra_Swarming{
+						TaskId: "544239050",
+					},
+				},
+			}), ShouldBeNil)
+
 			req := &pb.ScheduleBuildRequest{
 				Builder: &pb.BuilderID{
 					Project: "project",
@@ -1380,6 +1390,10 @@ func TestScheduleBuild(t *testing.T) {
 							Value: "buildset",
 						},
 						{
+							Key:   "parent_task_id",
+							Value: "544239051",
+						},
+						{
 							Key:   "user_agent",
 							Value: "gerrit",
 						},
@@ -1403,6 +1417,7 @@ func TestScheduleBuild(t *testing.T) {
 					Tags: []string{
 						"builder:builder",
 						"buildset:buildset",
+						"parent_task_id:544239051",
 						"user_agent:gerrit",
 					},
 					Project: "project",
@@ -4377,7 +4392,7 @@ func TestScheduleBuild(t *testing.T) {
 		Convey("nil", func() {
 			b := &pb.Build{}
 
-			setTags(nil, b)
+			setTags(nil, b, "")
 			So(b.Tags, ShouldResemble, []*pb.StringPair{})
 		})
 
@@ -4397,7 +4412,7 @@ func TestScheduleBuild(t *testing.T) {
 			normalizeSchedule(req)
 			b := &pb.Build{}
 
-			setTags(req, b)
+			setTags(req, b, "")
 			So(b.Tags, ShouldResemble, []*pb.StringPair{
 				{
 					Key:   "key1",
@@ -4421,7 +4436,7 @@ func TestScheduleBuild(t *testing.T) {
 			normalizeSchedule(req)
 			b := &pb.Build{}
 
-			setTags(req, b)
+			setTags(req, b, "")
 			So(b.Tags, ShouldResemble, []*pb.StringPair{
 				{
 					Key:   "builder",
@@ -4442,7 +4457,7 @@ func TestScheduleBuild(t *testing.T) {
 			normalizeSchedule(req)
 			b := &pb.Build{}
 
-			setTags(req, b)
+			setTags(req, b, "")
 			So(b.Tags, ShouldResemble, []*pb.StringPair{
 				{
 					Key:   "buildset",
@@ -4466,7 +4481,7 @@ func TestScheduleBuild(t *testing.T) {
 			normalizeSchedule(req)
 			b := &pb.Build{}
 
-			setTags(req, b)
+			setTags(req, b, "")
 			So(b.Tags, ShouldResemble, []*pb.StringPair{
 				{
 					Key:   "gitiles_ref",
@@ -4489,7 +4504,7 @@ func TestScheduleBuild(t *testing.T) {
 				normalizeSchedule(req)
 				b := &pb.Build{}
 
-				setTags(req, b)
+				setTags(req, b, "")
 				So(b.Tags, ShouldResemble, []*pb.StringPair{
 					{
 						Key:   "buildset",
@@ -4516,7 +4531,7 @@ func TestScheduleBuild(t *testing.T) {
 				normalizeSchedule(req)
 				b := &pb.Build{}
 
-				setTags(req, b)
+				setTags(req, b, "")
 				So(b.Tags, ShouldResemble, []*pb.StringPair{
 					{
 						Key:   "buildset",
@@ -4569,7 +4584,7 @@ func TestScheduleBuild(t *testing.T) {
 			normalizeSchedule(req)
 			b := &pb.Build{}
 
-			setTags(req, b)
+			setTags(req, b, "")
 			So(b.Tags, ShouldResemble, []*pb.StringPair{
 				{
 					Key:   "builder",

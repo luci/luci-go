@@ -69,7 +69,7 @@ func synthesizeBuild(ctx context.Context, schReq *pb.ScheduleBuildRequest) (*pb.
 		return nil, errors.Annotate(err, "failed to get builder config").Err()
 	}
 
-	bld := buildFromScheduleRequest(ctx, schReq, nil, bldrCfg.Config, globalCfg)
+	bld := buildFromScheduleRequest(ctx, schReq, nil, "", bldrCfg.Config, globalCfg)
 
 	if bktCfg.Proto.GetShadow() != "" && bktCfg.Proto.Shadow != builder.Bucket {
 		bld.Builder.Bucket = bktCfg.Proto.Shadow

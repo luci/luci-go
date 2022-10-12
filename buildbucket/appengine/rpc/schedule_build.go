@@ -888,7 +888,7 @@ func setInput(ctx context.Context, req *pb.ScheduleBuildRequest, cfg *pb.Builder
 
 // setTags computes the tags from the given request, setting them in the proto.
 // Mutates the given *pb.Build.
-func setTags(req *pb.ScheduleBuildRequest, build *pb.Build) {
+func setTags(req *pb.ScheduleBuildRequest, build *pb.Build, pRunID string) {
 	tags := protoutil.StringPairMap(req.GetTags())
 	if req.GetBuilder() != nil {
 		tags.Add("builder", req.Builder.Builder)
@@ -901,6 +901,17 @@ func setTags(req *pb.ScheduleBuildRequest, build *pb.Build) {
 	}
 	for _, ch := range req.GetGerritChanges() {
 		tags.Add("buildset", protoutil.GerritBuildSet(ch))
+	}
+	// Make `parent_task_id` a tag if buildbucket tracks the build's parent/child
+	// relationship.
+	if len(build.AncestorIds) > 0 {
+		// TODO(crbug.com/1031205): Remove this to always use the parent build's
+		// task_id to populate the tag.
+		if req.GetSwarming().GetParentRunId() != "" {
+			tags.Add("parent_task_id", req.Swarming.ParentRunId)
+		} else if pRunID != "" {
+			tags.Add("parent_task_id", pRunID)
+		}
 	}
 	build.Tags = protoutil.StringPairs(tags)
 }
@@ -959,7 +970,7 @@ func setTimeouts(req *pb.ScheduleBuildRequest, cfg *pb.BuilderConfig, build *pb.
 // buildFromScheduleRequest returns a build proto created from the given
 // request and builder config. Sets fields except those which can only be
 // determined at creation time.
-func buildFromScheduleRequest(ctx context.Context, req *pb.ScheduleBuildRequest, ancestors []int64, cfg *pb.BuilderConfig, globalCfg *pb.SettingsCfg) (b *pb.Build) {
+func buildFromScheduleRequest(ctx context.Context, req *pb.ScheduleBuildRequest, ancestors []int64, pRunID string, cfg *pb.BuilderConfig, globalCfg *pb.SettingsCfg) (b *pb.Build) {
 	b = &pb.Build{
 		Builder:         req.Builder,
 		Critical:        cfg.GetCritical(),
@@ -984,7 +995,7 @@ func buildFromScheduleRequest(ctx context.Context, req *pb.ScheduleBuildRequest,
 	setExecutable(req, cfg, b)
 	setInfra(req, cfg, b, globalCfg) // Requires setExecutable.
 	setInput(ctx, req, cfg, b)
-	setTags(req, b)
+	setTags(req, b, pRunID)
 	setTimeouts(req, cfg, b)
 	setExperiments(ctx, req, cfg, globalCfg, b)         // Requires setExecutable, setInfra, setInput.
 	if err := setInfraAgent(b, globalCfg); err != nil { // Requires setExecutable, setInfra, setExperiments.
@@ -1191,13 +1202,27 @@ func scheduleBuilds(ctx context.Context, globalCfg *pb.SettingsCfg, reqs ...*pb.
 		ancestors = append(ancestors, pBld.ID)
 	}
 
+	pRunID := ""
+	if pBld != nil {
+		parentBuildMask := model.HardcodedBuildMask("infra.swarming.task_id")
+		pBuild := pBld.ToSimpleBuildProto(ctx)
+		if err := model.LoadBuildDetails(ctx, parentBuildMask, nil, pBuild); err != nil {
+			return nil, err
+		}
+
+		pRunID = pBuild.GetInfra().GetSwarming().GetTaskId()
+		if pRunID != "" {
+			pRunID = pRunID[:len(pRunID)-1] + "1"
+		}
+	}
+
 	for i := range blds {
 		origI := idxMapBlds[i]
 		bucket := fmt.Sprintf("%s/%s", validReq[i].Builder.Project, validReq[i].Builder.Bucket)
 		cfg := cfgs[bucket][validReq[i].Builder.Builder]
 
 		// TODO(crbug.com/1042991): Parallelize build creation from requests if necessary.
-		build := buildFromScheduleRequest(ctx, reqs[origI], ancestors, cfg, globalCfg)
+		build := buildFromScheduleRequest(ctx, reqs[origI], ancestors, pRunID, cfg, globalCfg)
 
 		blds[i] = &model.Build{
 			Proto: build,
