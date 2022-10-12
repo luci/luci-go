@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//go:generate go install go.chromium.org/luci/grpc/cmd/cproto
 //go:generate cproto -use-grpc-plugin
 
 // Package snooperpb contains LUCI's self-reporting local gRPC server API

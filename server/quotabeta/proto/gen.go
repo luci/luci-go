@@ -15,6 +15,5 @@
 // Package proto exports proto definitions required by the quota library.
 package proto
 
-//go:generate go install go.chromium.org/luci/grpc/cmd/cproto go.chromium.org/luci/grpc/cmd/svcdec
 //go:generate cproto
 //go:generate svcdec -type QuotaAdminServer

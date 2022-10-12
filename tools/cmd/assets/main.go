@@ -17,7 +17,6 @@
 // be used only for small files, like HTML templates.
 //
 // This utility is used via `go generate`. Corresponding incantation:
-//   //go:generate go install go.chromium.org/luci/tools/cmd/assets
 //   //go:generate assets
 package main
 

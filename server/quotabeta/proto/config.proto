@@ -4,7 +4,7 @@
 
 syntax = "proto3";
 
-option go_package = "go.chromium.org/luci/server/quota/proto";
+option go_package = "go.chromium.org/luci/server/quotabeta/proto";
 
 package proto;
 

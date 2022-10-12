@@ -14,5 +14,4 @@
 
 package main
 
-//go:generate go install go.chromium.org/luci/tools/cmd/assets
 //go:generate assets

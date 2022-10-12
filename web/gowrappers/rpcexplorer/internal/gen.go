@@ -14,6 +14,6 @@
 
 //go:generate ../../../web.py gulp-app rpcexplorer clean
 //go:generate ../../../web.py build rpcexplorer
-//go:generate go run go.chromium.org/luci/tools/cmd/assets -dest-pkg . ../../../dist/rpcexplorer
+//go:generate assets -dest-pkg . ../../../dist/rpcexplorer
 
 package internal
