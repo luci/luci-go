@@ -626,7 +626,7 @@ func computeSwarmingNewTaskReq(ctx context.Context, build *model.Build) (*swarmi
 	// luci.buildbucket.parent_tracking after this experiment is on globally and
 	// we're ready to remove it.
 	if sw.ParentRunId != "" && (len(build.Proto.AncestorIds) == 0 ||
-		strings.Contains(build.ExperimentsString(), buildbucket.ExperimentParentTracking)) {
+		!strings.Contains(build.ExperimentsString(), buildbucket.ExperimentParentTracking)) {
 		taskReq.ParentTaskId = sw.ParentRunId
 	}
 
