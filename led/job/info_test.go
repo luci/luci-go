@@ -64,7 +64,7 @@ func TestGetCurrentIsolated(t *testing.T) {
 			}
 			current, err := jd.Info().CurrentIsolated()
 			So(err, ShouldBeNil)
-			So(current, ShouldResemble, &api.CASReference{Digest: &api.Digest{Hash: "hash"}})
+			So(current, ShouldResembleProto, &api.CASReference{Digest: &api.Digest{Hash: "hash"}})
 		})
 
 		Convey(`Swarming`, func() {
@@ -82,7 +82,7 @@ func TestGetCurrentIsolated(t *testing.T) {
 					}
 					current, err := jd.Info().CurrentIsolated()
 					So(err, ShouldBeNil)
-					So(current, ShouldResemble, &api.CASReference{Digest: &api.Digest{Hash: "hash"}})
+					So(current, ShouldResembleProto, &api.CASReference{Digest: &api.Digest{Hash: "hash"}})
 				})
 
 				Convey(`slice+CasUserPayload (match)`, func() {
@@ -99,7 +99,7 @@ func TestGetCurrentIsolated(t *testing.T) {
 					}
 					current, err := jd.Info().CurrentIsolated()
 					So(err, ShouldBeNil)
-					So(current, ShouldResemble, &api.CASReference{Digest: &api.Digest{Hash: "hash"}})
+					So(current, ShouldResembleProto, &api.CASReference{Digest: &api.Digest{Hash: "hash"}})
 				})
 
 				Convey(`slice+CasUserPayload (mismatch)`, func() {

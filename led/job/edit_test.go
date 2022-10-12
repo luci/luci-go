@@ -578,7 +578,7 @@ func TestGitilesCommit(t *testing.T) {
 				SoHLEdit(jd, func(je HighLevelEditor) {
 					je.GitilesCommit(&bbpb.GitilesCommit{Id: "deadbeef"})
 				})
-				So(jd.HighLevelInfo().GitilesCommit(), ShouldResemble, &bbpb.GitilesCommit{
+				So(jd.HighLevelInfo().GitilesCommit(), ShouldResembleProto, &bbpb.GitilesCommit{
 					Id: "deadbeef",
 				})
 			},

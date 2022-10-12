@@ -390,30 +390,26 @@ func TestButler(t *testing.T) {
 					}
 
 					So(b.AddStream(newTestStream(), desc), ShouldBeNil)
-					So(b.bundler.GetStreamDescs(), ShouldResemble, map[string]*logpb.LogStreamDescriptor{
-						"stdout": {
-							Name:        "stdout",
-							ContentType: "test/data",
-							Timestamp:   desc.Timestamp,
-							Tags: map[string]string{
-								"foo": "bar",
-								"baz": "override",
-							},
+					So(b.bundler.GetStreamDescs()["stdout"], ShouldResembleProto, &logpb.LogStreamDescriptor{
+						Name:        "stdout",
+						ContentType: "test/data",
+						Timestamp:   desc.Timestamp,
+						Tags: map[string]string{
+							"foo": "bar",
+							"baz": "override",
 						},
 					})
 				})
 
 				Convey(`Will apply global tags if the stream has none (nil).`, func() {
 					So(b.AddStream(newTestStream(), desc), ShouldBeNil)
-					So(b.bundler.GetStreamDescs(), ShouldResemble, map[string]*logpb.LogStreamDescriptor{
-						"stdout": {
-							Name:        "stdout",
-							ContentType: "test/data",
-							Timestamp:   desc.Timestamp,
-							Tags: map[string]string{
-								"foo": "bar",
-								"baz": "qux",
-							},
+					So(b.bundler.GetStreamDescs()["stdout"], ShouldResembleProto, &logpb.LogStreamDescriptor{
+						Name:        "stdout",
+						ContentType: "test/data",
+						Timestamp:   desc.Timestamp,
+						Tags: map[string]string{
+							"foo": "bar",
+							"baz": "qux",
 						},
 					})
 				})
