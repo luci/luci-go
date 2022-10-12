@@ -230,3 +230,60 @@ func TestAllowlistConfigValidation(t *testing.T) {
 		})
 	})
 }
+
+func TestOAuthConfigValidation(t *testing.T) {
+	t.Parallel()
+
+	ctx := context.Background()
+
+	Convey("Validate oauth.cfg", t, func() {
+		vctx := &validation.Context{Context: ctx}
+		path := "oauth.cfg"
+		configSet := ""
+
+		Convey("Loading bad proto", func() {
+			content := []byte(` bad: "config" `)
+			So(validateOAuth(vctx, configSet, path, content), ShouldBeNil)
+			So(vctx.Finalize().Error(), ShouldContainSubstring, "unknown field")
+		})
+
+		const okCfg = `
+			# Realistic config.
+			token_server_url: "https://example-token-server.appspot.com"
+
+			primary_client_id: "123456.apps.example.com"
+			primary_client_secret: "superdupersecret"
+
+			client_ids: "12345-ranodmtext.apps.example.com"
+			client_ids: "6789-morerandomtext.apps.example.com"
+		`
+
+		Convey("OK", func() {
+			Convey("Fully loaded", func() {
+				So(validateOAuth(vctx, configSet, path, []byte(okCfg)), ShouldBeNil)
+				So(vctx.Finalize(), ShouldBeNil)
+			})
+
+			Convey("empty", func() {
+				So(validateOAuth(vctx, configSet, path, []byte{}), ShouldBeNil)
+				So(vctx.Finalize(), ShouldBeNil)
+			})
+		})
+
+		Convey("Bad URL Scheme in Token Server URL (appspot)", func() {
+			badCfg := `
+				token_server_url: "http://example-token-server.appspot.com"
+			`
+			So(validateOAuth(vctx, configSet, path, []byte(badCfg)), ShouldBeNil)
+			So(vctx.Finalize(), ShouldErrLike, "only https:// scheme is accepted for appspot hosts, it can be omitted")
+		})
+
+		Convey("Bad URL Scheme in Token Server URL ", func() {
+			badCfg := `
+				token_server_url: "ftp://example-token-server.appspot.com"
+			`
+			So(validateOAuth(vctx, configSet, path, []byte(badCfg)), ShouldBeNil)
+			So(vctx.Finalize(), ShouldErrLike, "only http:// or https:// scheme is accepted")
+		})
+	})
+}

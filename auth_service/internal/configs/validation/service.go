@@ -26,6 +26,7 @@ import (
 	"go.chromium.org/luci/auth_service/api/configspb"
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/lhttp"
 	"go.chromium.org/luci/config/validation"
 )
 
@@ -99,6 +100,24 @@ func validateAllowlistCfg(cfg *configspb.IPAllowlistConfig) error {
 			return errors.New(fmt.Sprintf("identity %s defined twice", ident))
 		}
 		idents.Add(ident)
+	}
+
+	return nil
+}
+
+func validateOAuth(ctx *validation.Context, configSet, path string, content []byte) error {
+	cfg := configspb.OAuthConfig{}
+
+	if err := prototext.Unmarshal(content, &cfg); err != nil {
+		ctx.Error(err)
+		return nil
+	}
+
+	ctx.SetFile(path)
+	if cfg.GetTokenServerUrl() != "" {
+		if _, err := lhttp.CheckURL(cfg.GetTokenServerUrl()); err != nil {
+			ctx.Error(err)
+		}
 	}
 
 	return nil
