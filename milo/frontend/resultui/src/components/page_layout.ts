@@ -18,12 +18,11 @@ import '@material/mwc-snackbar';
 import { BeforeEnterObserver, Router } from '@vaadin/router';
 import { BroadcastChannel } from 'broadcast-channel';
 import { css, customElement, html } from 'lit-element';
-import { styleMap } from 'lit-html/directives/style-map';
 import { makeObservable, observable, reaction } from 'mobx';
 import { destroy } from 'mobx-state-tree';
 
-import './signin';
 import './tooltip';
+import './top_bar';
 import { getAuthStateCache, setAuthStateCache } from '../auth_state_cache';
 import { MAY_REQUIRE_SIGNIN, OPTIONAL_RESOURCE } from '../common_tags';
 import { NEW_MILO_VERSION_EVENT_TYPE } from '../libs/constants';
@@ -31,7 +30,7 @@ import { provider } from '../libs/context';
 import { errorHandler, handleLocally } from '../libs/error_handler';
 import { ProgressiveNotifier, provideNotifier } from '../libs/observer_element';
 import { hasTags } from '../libs/tag';
-import { genFeedbackUrl, timeout } from '../libs/utils';
+import { timeout } from '../libs/utils';
 import { router } from '../routes';
 import { ANONYMOUS_IDENTITY, queryAuthState } from '../services/milo_internal';
 import { provideStore, Store } from '../store';
@@ -191,37 +190,7 @@ export class PageLayoutElement extends MiloBaseElement implements BeforeEnterObs
       </mwc-snackbar>
       <milo-tooltip></milo-tooltip>
       ${this.store.banners.map((banner) => html`<div class="banner-container">${banner}</div>`)}
-      <div id="container">
-        <div id="title-container">
-          <a href="/" id="title-link">
-            <img id="chromium-icon" src="https://storage.googleapis.com/chrome-infra/lucy-small.png" />
-            <span id="headline">LUCI</span>
-          </a>
-        </div>
-        <mwc-icon
-          id="feedback"
-          title="Send Feedback"
-          class="interactive-icon"
-          @click=${() => window.open(genFeedbackUrl())}
-          >feedback</mwc-icon
-        >
-        <mwc-icon
-          class="interactive-icon"
-          title="Settings"
-          @click=${() => this.store.setShowSettingsDialog(true)}
-          style=${styleMap({ display: this.store.hasSettingsDialog > 0 ? '' : 'none' })}
-          >settings</mwc-icon
-        >
-        <div id="signin">
-          ${this.store.authState.value
-            ? html`<milo-signin
-                .identity=${this.store.authState.value.identity}
-                .email=${this.store.authState.value.email}
-                .picture=${this.store.authState.value.picture}
-              ></milo-signin>`
-            : ''}
-        </div>
-      </div>
+      <milo-top-bar></milo-top-bar>
       <slot></slot>
     `;
   }
@@ -229,12 +198,6 @@ export class PageLayoutElement extends MiloBaseElement implements BeforeEnterObs
   static styles = [
     commonStyle,
     css`
-      #container {
-        box-sizing: border-box;
-        height: 52px;
-        padding: 10px 0;
-        display: flex;
-      }
       .banner-container {
         width: 100%;
         box-sizing: border-box;
@@ -243,49 +206,6 @@ export class PageLayoutElement extends MiloBaseElement implements BeforeEnterObs
         text-align: center;
         font-weight: bold;
         font-size: 12px;
-      }
-
-      #title-container {
-        display: flex;
-        flex: 1 1 100%;
-        align-items: center;
-        margin-left: 14px;
-      }
-      #title-link {
-        display: flex;
-        align-items: center;
-        text-decoration: none;
-      }
-      #chromium-icon {
-        display: inline-block;
-        width: 32px;
-        height: 32px;
-        margin-right: 8px;
-      }
-      #headline {
-        color: var(--light-text-color);
-        font-family: 'Google Sans', 'Helvetica Neue', sans-serif;
-        font-size: 18px;
-        font-weight: 300;
-        letter-spacing: 0.25px;
-      }
-      #signin {
-        margin-right: 14px;
-        flex-shrink: 0;
-      }
-      .interactive-icon {
-        cursor: pointer;
-        height: 32px;
-        width: 32px;
-        --mdc-icon-size: 28px;
-        margin-top: 2px;
-        margin-right: 14px;
-        position: relative;
-        color: black;
-        opacity: 0.6;
-      }
-      .interactive-icon:hover {
-        opacity: 0.8;
       }
     `,
   ];
