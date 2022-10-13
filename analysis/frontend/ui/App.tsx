@@ -30,6 +30,7 @@ import BaseLayout from './src/layouts/base';
 import ClusterPage from './src/views/clusters/cluster/cluster_page';
 import ClustersPage from './src/views/clusters/clusters_page';
 import NotFoundPage from './src/views/errors/not_found_page';
+import HelpPage from './src/views/help/help_page';
 import HomePage from './src/views/home/home_page';
 import NewRulePage from './src/views/new_rule/new_rule';
 import Rule from './src/views/rule/rule';
@@ -53,6 +54,7 @@ const App = () => {
         <Routes>
           <Route path='/' element={<BaseLayout />}>
             <Route index element={<HomePage />} />
+            <Route path='help' element={<HelpPage />} />
             <Route path='b/:bugTracker/:id' element={<BugPage />} />
             <Route path='p/:project'>
               <Route path='rules'>

@@ -15,6 +15,7 @@
 import { ChangeEvent } from 'react';
 
 import TextField from '@mui/material/TextField';
+import Link from '@mui/material/Link';
 
 interface Props {
   definition: string;
@@ -41,7 +42,7 @@ const RuleEditInput = ({
       <small>
         Supported is AND, OR, =,{'<>'}, NOT, IN, LIKE, parentheses and&nbsp;
         <a href="https://cloud.google.com/bigquery/docs/reference/standard-sql/functions-and-operators#regexp_contains">REGEXP_CONTAINS</a>.
-        Valid identifiers are <em>test</em> and <em>reason</em>.
+        Valid identifiers are <em>test</em> and <em>reason</em>. <Link href="/help#rules" target="_blank">More information</Link>.
       </small>
     </>
   );
