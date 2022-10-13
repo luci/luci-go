@@ -1312,6 +1312,10 @@ func TestScheduleBuild(t *testing.T) {
 						Value: "buildset",
 					},
 					{
+						Key:   "buildset",
+						Value: "buildset",
+					},
+					{
 						Key:   "user_agent",
 						Value: "gerrit",
 					},
@@ -1384,6 +1388,10 @@ func TestScheduleBuild(t *testing.T) {
 						{
 							Key:   "builder",
 							Value: "builder",
+						},
+						{
+							Key:   "buildset",
+							Value: "buildset",
 						},
 						{
 							Key:   "buildset",

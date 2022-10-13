@@ -1233,7 +1233,10 @@ func scheduleBuilds(ctx context.Context, globalCfg *pb.SettingsCfg, reqs ...*pb.
 		blds[i].PubSubCallback.Topic = validReq[i].GetNotify().GetPubsubTopic()
 		blds[i].PubSubCallback.UserData = validReq[i].GetNotify().GetUserData()
 		// Tags are stored in the outer struct (see model/build.go).
-		blds[i].Tags = protoutil.StringPairMap(blds[i].Proto.Tags).Format()
+		tags := protoutil.StringPairMap(blds[i].Proto.Tags).Format()
+		tags = stringset.NewFromSlice(tags...).ToSlice() // Deduplicate tags.
+		sort.Strings(tags)
+		blds[i].Tags = tags
 
 		exp := make(map[int64]struct{})
 		for _, d := range blds[i].Proto.Infra.GetSwarming().GetTaskDimensions() {
