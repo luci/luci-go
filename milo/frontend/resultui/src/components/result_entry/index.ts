@@ -30,7 +30,7 @@ import { TEST_STATUS_DISPLAY_MAP } from '../../libs/constants';
 import { consumer } from '../../libs/context';
 import { reportRenderError } from '../../libs/error_handler';
 import { unwrapObservable } from '../../libs/milo_mobx_utils';
-import { sanitizeHTML } from '../../libs/sanitize_html';
+import { renderSanitizedHTML } from '../../libs/sanitize_html';
 import { displayCompactDuration, displayDuration, parseProtoDuration } from '../../libs/time_utils';
 import { getRawArtifactUrl, router } from '../../routes';
 import { Cluster, makeClusterLink } from '../../services/luci_analysis';
@@ -177,7 +177,7 @@ export class ResultEntryElement extends MobxLitElement {
             .artifacts=${this.artifactsMapping}
             .finalized=${this.invArtifacts$.state !== PENDING && this.resultArtifacts$.state !== PENDING}
           >
-            ${sanitizeHTML(this.testResult.summaryHtml)}
+            ${renderSanitizedHTML(this.testResult.summaryHtml)}
           </milo-artifact-provider>
         </div>
       </milo-expandable-entry>

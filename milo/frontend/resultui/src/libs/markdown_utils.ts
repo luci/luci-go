@@ -15,14 +15,10 @@
 import MarkdownIt from 'markdown-it';
 
 import { defaultTarget } from './markdown_it_plugins/default_target';
-import { sanitizeHTML } from './sanitize_html';
+import { renderSanitizedHTML } from './sanitize_html';
 
 const md = MarkdownIt({ html: true, linkify: true }).use(defaultTarget, '_blank');
 
 export function renderMarkdown(markdown: string) {
-  return sanitizeHTML(renderMarkdownUnsanitized(markdown));
-}
-
-export function renderMarkdownUnsanitized(markdown: string): string {
-  return md.render(markdown);
+  return renderSanitizedHTML(md.render(markdown));
 }

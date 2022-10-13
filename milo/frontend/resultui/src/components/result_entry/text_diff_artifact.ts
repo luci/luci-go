@@ -23,7 +23,7 @@ import '../expandable_entry';
 import { ARTIFACT_LENGTH_LIMIT } from '../../libs/constants';
 import { reportRenderError } from '../../libs/error_handler';
 import { unwrapObservable } from '../../libs/milo_mobx_utils';
-import { sanitizeHTML } from '../../libs/sanitize_html';
+import { renderSanitizedHTML } from '../../libs/sanitize_html';
 import { urlSetSearchQueryParam } from '../../libs/utils';
 import { getRawArtifactUrl, router } from '../../routes';
 import { Artifact } from '../../services/resultdb';
@@ -70,7 +70,7 @@ export class TextDiffArtifactElement extends MobxLitElement {
           (<a href=${getRawArtifactUrl(this.artifact.name)} target="_blank">view raw</a>)
         </span>
         <div id="content" slot="content">
-          ${sanitizeHTML(Diff2Html.html(this.content || '', { drawFileList: false }))}
+          ${renderSanitizedHTML(Diff2Html.html(this.content || '', { drawFileList: false }))}
         </div>
       </milo-expandable-entry>
     `;

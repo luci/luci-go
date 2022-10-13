@@ -24,7 +24,7 @@ import { ARTIFACT_LENGTH_LIMIT } from '../../libs/constants';
 import { consumer } from '../../libs/context';
 import { reportRenderError } from '../../libs/error_handler';
 import { unwrapObservable } from '../../libs/milo_mobx_utils';
-import { sanitizeHTML } from '../../libs/sanitize_html';
+import { renderSanitizedHTML } from '../../libs/sanitize_html';
 import { urlSetSearchQueryParam } from '../../libs/utils';
 import { getRawArtifactUrl } from '../../routes';
 import { ArtifactIdentifier, constructArtifactName } from '../../services/resultdb';
@@ -91,7 +91,7 @@ export class TextDiffArtifactPageElement extends MobxLitElement {
           type="text/css"
           href="https://cdn.jsdelivr.net/npm/diff2html/bundles/css/diff2html.min.css"
         />
-        ${sanitizeHTML(Diff2Html.html(this.content || '', { drawFileList: false, outputFormat: 'side-by-side' }))}
+        ${renderSanitizedHTML(Diff2Html.html(this.content || '', { drawFileList: false, outputFormat: 'side-by-side' }))}
       </div>
     `;
   });

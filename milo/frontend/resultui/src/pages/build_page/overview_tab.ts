@@ -26,6 +26,7 @@ import '../../components/property_viewer';
 import '../../components/relative_timestamp';
 import '../../components/timestamp';
 import '../test_results_tab/test_variants_table/test_variant_entry';
+import './build_packages_info';
 import './cancel_build_dialog';
 import './retry_build_dialog';
 import './steps_tab/step_display_config';
@@ -35,7 +36,6 @@ import { GA_ACTIONS, GA_CATEGORIES, trackEvent } from '../../libs/analytics_util
 import {
   getBotLink,
   getBuildbucketLink,
-  getCipdLink,
   getURLForGerritChange,
   getURLForGitilesCommit,
   getURLForSwarmingTask,
@@ -43,7 +43,7 @@ import {
 import { BUILD_STATUS_CLASS_MAP, BUILD_STATUS_DISPLAY_MAP } from '../../libs/constants';
 import { consumer } from '../../libs/context';
 import { renderMarkdown } from '../../libs/markdown_utils';
-import { sanitizeHTML } from '../../libs/sanitize_html';
+import { renderSanitizedHTML } from '../../libs/sanitize_html';
 import { displayDuration } from '../../libs/time_utils';
 import { router } from '../../routes';
 import { ADD_BUILD_PERM, BuildStatus, CANCEL_BUILD_PERM, GitilesCommit } from '../../services/buildbucket';
@@ -192,7 +192,7 @@ export class OverviewTabElement extends MobxLitElement {
     }
     return html`
       <h3>Builder Info</h3>
-      <div id="builder-description">${sanitizeHTML(descriptionHtml)}</div>
+      <div id="builder-description">${renderSanitizedHTML(descriptionHtml)}</div>
     `;
   }
 
@@ -240,124 +240,6 @@ export class OverviewTabElement extends MobxLitElement {
       <h3>Output</h3>
       <table>
         ${this.renderRevision(output.gitilesCommit)}
-      </table>
-    `;
-  }
-
-  private renderBuildPackages() {
-    const experiments = this.build?.data.input?.experiments;
-    const agent = this.build?.data.infra?.buildbucket?.agent;
-    if (!experiments?.includes('luci.buildbucket.agent.cipd_installation') || !agent) {
-      return html``;
-    }
-
-    const inputCipdHtml = [];
-    for (const dir in agent.input.data) {
-      const specs = agent.input.data[dir]?.cipd.specs;
-      if (!specs?.length) {
-        continue;
-      }
-      if (dir) {
-        inputCipdHtml.push(
-          html`<tr>
-            <td colspan="2"><br />@Subdir ${dir}</td>
-          </tr>`
-        );
-      }
-      for (const pkgSpec of specs) {
-        inputCipdHtml.push(
-          html`<tr>
-            <td>${pkgSpec.package}</td>
-            <td>${pkgSpec.version}</td>
-          </tr>`
-        );
-      }
-    }
-
-    const resolvedCipdHtml = [];
-    for (const dir in agent.output?.resolvedData) {
-      const specs = agent.output?.resolvedData[dir]?.cipd.specs;
-      if (!specs?.length) {
-        continue;
-      }
-      if (dir) {
-        resolvedCipdHtml.push(
-          html`<tr>
-            <td colspan="2"><br />@Subdir ${dir}</td>
-          </tr>`
-        );
-      }
-      for (const pkgSpec of specs) {
-        resolvedCipdHtml.push(
-          html`<tr>
-            <td>${pkgSpec.package}</td>
-            <td><milo-link .link=${getCipdLink(pkgSpec.package, pkgSpec.version)} target="_blank"></milo-link></td>
-          </tr>`
-        );
-      }
-    }
-
-    return html`
-      <h3>Build Packages Info</h3>
-      <table id="build-pkgs-table">
-        <tbody>
-          ${agent.output?.status === BuildStatus.Success
-            ? ''
-            : html`
-                <tr>
-                  <td>Status</td>
-                  ${agent.output?.status}
-                  <td><br /></td>
-                </tr>
-                <tr>
-                  <td>Summary</td>
-                  ${agent.output?.summaryHtml}
-                  <td><br /></td>
-                </tr>
-              `}
-          <tr>
-            <td>Agent Platform</td>
-            <td>${agent.output?.agentPlatform || 'N/A'}</td>
-          </tr>
-
-          <tr>
-            <td>Download Duration</td>
-            <td>${agent.output?.totalDuration || 'N/A'}</td>
-          </tr>
-          <tr>
-            <td>Requested CIPD Manifest</td>
-            <td>
-              <milo-expandable-entry .contentRuler="none" .expanded=${false}>
-                <div slot="content" class="nav-scrollbar">
-                  <table class="nested-manifest-table">
-                    <tr>
-                      <td>$ServiceURL https://chrome-infra-packages.appspot.com/<br /></td>
-                    </tr>
-                    ${inputCipdHtml}
-                  </table>
-                </div>
-              </milo-expandable-entry>
-            </td>
-          </tr>
-
-          ${agent.output
-            ? html`<tr>
-                <td>Resolved CIPD Manifest</td>
-                <td>
-                  <milo-expandable-entry .contentRuler="none" .expanded=${false}>
-                    <div slot="content" class="nav-scrollbar">
-                      <table class="nested-manifest-table">
-                        <tr>
-                          <td>$ServiceURL https://chrome-infra-packages.appspot.com/</td>
-                        </tr>
-                        ${resolvedCipdHtml}
-                      </table>
-                    </div>
-                  </milo-expandable-entry>
-                </td>
-              </tr>`
-            : ''}
-        </tbody>
       </table>
     `;
   }
@@ -621,7 +503,7 @@ export class OverviewTabElement extends MobxLitElement {
             .properties=${build.output?.properties || {}}
             .config=${this.store.userConfig.build.outputProperties}
           ></milo-property-viewer>
-          ${this.renderBuildPackages()}
+          <milo-bp-build-packages-info .build=${build}></milo-bp-build-packages-info>
         </div>
       </div>
     `;
@@ -732,33 +614,6 @@ export class OverviewTabElement extends MobxLitElement {
         vertical-align: bottom;
         width: 16px;
         height: 16px;
-      }
-
-      #build-pkgs-table {
-        width: 100%;
-        text-align: left;
-        table-layout: fixed;
-      }
-      #build-pkgs-table td {
-        padding: 0.1em 1em 0.1em 1em;
-      }
-      #build-pkgs-table > tbody > tr:nth-child(even) {
-        background-color: var(--block-background-color);
-      }
-
-      #build-pkgs-table td:first-child {
-        width: 20%;
-        min-width: 10%;
-        max-width: 50%;
-      }
-
-      .nav-scrollbar {
-        overflow-x: scroll;
-        white-space: nowrap;
-      }
-
-      .nested-manifest-table {
-        text-align: left;
       }
     `,
   ];

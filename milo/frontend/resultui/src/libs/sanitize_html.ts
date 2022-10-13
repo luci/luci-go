@@ -36,10 +36,27 @@ domPurify.addHook('afterSanitizeAttributes', (node) => {
 });
 
 /**
+ * Sanitizes the input HTML string.
+ */
+function sanitizeHTML(html: string) {
+  return domPurify.sanitize(html, { ADD_ATTR: ['target', 'artifact-id', 'inv-level'], ADD_TAGS: ['text-artifact'] });
+}
+
+/**
  * Sanitizes the input HTML string and renders it.
  */
-export function sanitizeHTML(html: string) {
-  return unsafeHTML(
-    domPurify.sanitize(html, { ADD_ATTR: ['target', 'artifact-id', 'inv-level'], ADD_TAGS: ['text-artifact'] })
-  );
+export function renderSanitizedHTML(html: string) {
+  return unsafeHTML(sanitizeHTML(html));
+}
+
+const defaultHtmlPolicy = window.trustedTypes?.createPolicy('default-html', {
+  createHTML: sanitizeHTML,
+});
+
+/**
+ * Sanitizes the input HTML string and convert it to TrustedHTML if
+ * `window.trustedTypes` is defined.
+ */
+export function renderTrustedHTML(html: string) {
+  return defaultHtmlPolicy?.createHTML(html) || sanitizeHTML(html);
 }
