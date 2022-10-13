@@ -57,6 +57,7 @@ func TestBackFillTaskInfo(t *testing.T) {
 					"cpu:x86",
 					"cpu:x86-64",
 					"id:bot_id",
+					"gcp:google.com:chromecompute",
 				},
 			},
 		})
@@ -81,6 +82,10 @@ func TestBackFillTaskInfo(t *testing.T) {
 			{
 				Key:   "id",
 				Value: "bot_id",
+			},
+			{
+				Key:   "gcp",
+				Value: "google.com:chromecompute",
 			},
 		})
 	})

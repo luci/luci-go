@@ -237,10 +237,10 @@ func backFillTaskInfo(ctx context.Context, ci clientInput) int {
 
 	botDimensions := make([]*bbpb.StringPair, 0, len(swarmingCtx.Task.BotDimensions))
 	for _, dim := range swarmingCtx.Task.BotDimensions {
-		parts := strings.Split(dim, ":")
+		parts := strings.SplitN(dim, ":", 2)
 		if len(parts) != 2 {
-			logging.Errorf(ctx, "bot_dimensions in swarming context is broken")
-			return 1
+			logging.Errorf(ctx, "bot_dimensions %s in swarming context is malformatted", dim)
+			continue
 		}
 		botDimensions = append(botDimensions, &bbpb.StringPair{Key: parts[0], Value: parts[1]})
 	}
