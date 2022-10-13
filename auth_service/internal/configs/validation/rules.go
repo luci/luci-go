@@ -19,6 +19,6 @@ import (
 )
 
 func init() {
-	validation.Rules.Add("${appid}", "ip_allowlist.cfg", validateAllowlist)
-	validation.Rules.Add("${appid}", "oauth.cfg", validateOAuth)
+	validation.Rules.Add("services/${appid}", "ip_allowlist.cfg", validateAllowlist)
+	validation.Rules.Add("services/${appid}", "oauth.cfg", validateOAuth)
 }

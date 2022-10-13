@@ -46,6 +46,8 @@ import (
 	"go.chromium.org/luci/server/router"
 	"go.chromium.org/luci/server/templates"
 
+	// Ensure registration of validation rules.
+	_ "go.chromium.org/luci/auth_service/internal/configs/validation"
 	// Store auth sessions in the datastore.
 	_ "go.chromium.org/luci/server/encryptedcookies/session/datastore"
 )
