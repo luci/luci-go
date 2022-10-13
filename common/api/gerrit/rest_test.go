@@ -945,6 +945,109 @@ func TestAddToAttentionSet(t *testing.T) {
 	})
 }
 
+func TestRevertChange(t *testing.T) {
+	t.Parallel()
+	ctx := context.Background()
+
+	Convey("RevertChange", t, func() {
+		Convey("Validate args", func() {
+			srv, c := newMockPbClient(func(w http.ResponseWriter, r *http.Request) {})
+			defer srv.Close()
+
+			_, err := c.RevertChange(ctx, &gerritpb.RevertChangeRequest{})
+			So(err, ShouldErrLike, "number must be positive")
+		})
+
+		Convey("OK", func() {
+			req := &gerritpb.RevertChangeRequest{
+				Number: 3964,
+				Message: "This is the message added to the revert CL.",
+			}
+
+			expectedChange := &gerritpb.ChangeInfo{
+				Number: 3965,
+				Owner: &gerritpb.AccountInfo{
+					AccountId:       1000096,
+					Name:            "John Doe",
+					Email:           "jdoe@example.com",
+					SecondaryEmails: []string{"johndoe@chromium.org"},
+					Username:        "jdoe",
+				},
+				Project:         "example/repo",
+				Ref:             "refs/heads/master",
+				Status:          gerritpb.ChangeStatus_NEW,
+				Created: timestamppb.New(parseTime("2014-05-05T07:15:44.639000000Z")),
+				Updated: timestamppb.New(parseTime("2014-05-05T07:15:44.639000000Z")),
+				Messages: []*gerritpb.ChangeMessageInfo{
+					{
+						Id: "YH-egE",
+						Author: &gerritpb.AccountInfo{
+							AccountId: 1000096,
+							Name:      "John Doe",
+							Email:     "john.doe@example.com",
+							Username:  "jdoe",
+						},
+						Date:    timestamppb.New(parseTime("2013-03-23T21:34:02.419000000Z")),
+						Message: "Patch Set 1:\n\nThis is the message added to the revert CL.",
+					},
+				},
+			}
+
+			var actualRequest *http.Request
+			srv, c := newMockPbClient(func(w http.ResponseWriter, r *http.Request) {
+				actualRequest = r
+				w.WriteHeader(200)
+				w.Header().Set("Content-Type", "application/json")
+				fmt.Fprint(w, `)]}'{
+					"_number": 3965,
+					"status": "NEW",
+					"owner": {
+						"_account_id":      1000096,
+						"name":             "John Doe",
+						"email":            "jdoe@example.com",
+						"secondary_emails": ["johndoe@chromium.org"],
+						"username":         "jdoe"
+					},
+					"created":   "2014-05-05 07:15:44.639000000",
+					"updated":   "2014-05-05 07:15:44.639000000",
+					"project": "example/repo",
+					"branch":  "master",
+					"messages": [
+						{
+							"id": "YH-egE",
+							"author": {
+								"_account_id": 1000096,
+								"name": "John Doe",
+								"email": "john.doe@example.com",
+								"username": "jdoe"
+							},
+							"date": "2013-03-23 21:34:02.419000000",
+							"message": "Patch Set 1:\n\nThis is the message added to the revert CL.",
+							"_revision_number": 1
+						}
+					]
+				}`)
+			})
+			defer srv.Close()
+
+			Convey("Basic", func() {
+				res, err := c.RevertChange(ctx, req)
+				So(err, ShouldBeNil)
+				So(res, ShouldResemble, expectedChange)
+				So(actualRequest.URL.EscapedPath(), ShouldEqual, "/changes/3964/revert")
+			})
+
+			Convey("With project", func() {
+				req.Project = "infra/luci"
+				res, err := c.RevertChange(ctx, req)
+				So(err, ShouldBeNil)
+				So(res, ShouldResembleProto, expectedChange)
+				So(actualRequest.URL.EscapedPath(), ShouldEqual, "/changes/infra%2Fluci~3964/revert")
+			})
+		})
+	})
+}
+
 func TestGetMergeable(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()

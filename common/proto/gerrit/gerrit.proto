@@ -143,6 +143,11 @@ service Gerrit {
   // https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#submit-change
   rpc SubmitChange(SubmitChangeRequest) returns (ChangeInfo);
 
+  // Revert a change.
+  //
+  // https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#revert-change
+  rpc RevertChange(RevertChangeRequest) returns (ChangeInfo);
+
   // Abandon a change.
   //
   // https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#abandon-change
@@ -882,6 +887,26 @@ message ChangeEditPublishRequest {
   //
   // Optional, but recommended for better routing and faster RPC execution.
   string project = 2;
+}
+
+// Information for reverting a change.
+//
+// Fields are a subset of arguments from:
+// https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#revert-change
+// https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#revert-input
+message RevertChangeRequest {
+  // The change number.
+  int64 number = 1;
+
+  // The project of this change. For example, "chromium/src".
+  //
+  // Optional, but recommended for better routing and faster RPC execution.
+  string project = 2;
+
+  // Message to be added as review comment to the change when reverting the change.
+  //
+  // Optional
+  string message = 3;
 }
 
 // Information for abandoning a change.

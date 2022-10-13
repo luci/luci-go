@@ -49,6 +49,14 @@ func (r *SetReviewRequest) Validate() error {
 	return nil
 }
 
+// Validate returns an error if r is invalid.
+func (r *RevertChangeRequest) Validate() error {
+	if r.Number <= 0 {
+		return errors.New("number must be positive")
+	}
+	return nil
+}
+
 // Validate returns an error if n is invalid.
 func (n *NotifyDetails) Validate() error {
 	for _, r := range n.GetRecipients() {

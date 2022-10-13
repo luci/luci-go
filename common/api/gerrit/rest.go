@@ -297,6 +297,22 @@ func (c *client) SubmitChange(ctx context.Context, req *gerritpb.SubmitChangeReq
 	return resp.ToProto()
 }
 
+func (c *client) RevertChange(ctx context.Context, req *gerritpb.RevertChangeRequest, opts ...grpc.CallOption) (*gerritpb.ChangeInfo, error) {
+	if err := checkArgs(opts, req); err != nil {
+		return nil, err
+	}
+
+	var resp changeInfo
+	path := fmt.Sprintf("/changes/%s/revert", gerritChangeIDForRouting(req.Number, req.Project))
+	data := map[string]string{
+		"message": req.Message,
+	}
+	if _, err := c.call(ctx, "POST", path, url.Values{}, &data, &resp, opts); err != nil {
+		return nil, errors.Annotate(err, "revert change").Err()
+	}
+	return resp.ToProto()
+}
+
 func (c *client) AbandonChange(ctx context.Context, req *gerritpb.AbandonChangeRequest, opts ...grpc.CallOption) (*gerritpb.ChangeInfo, error) {
 	var resp changeInfo
 	path := fmt.Sprintf("/changes/%s/abandon", gerritChangeIDForRouting(req.Number, req.Project))

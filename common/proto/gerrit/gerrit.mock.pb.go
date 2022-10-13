@@ -396,6 +396,26 @@ func (mr *MockGerritClientMockRecorder) ListProjects(ctx, in interface{}, opts .
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListProjects", reflect.TypeOf((*MockGerritClient)(nil).ListProjects), varargs...)
 }
 
+// RevertChange mocks base method.
+func (m *MockGerritClient) RevertChange(ctx context.Context, in *RevertChangeRequest, opts ...grpc.CallOption) (*ChangeInfo, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{ctx, in}
+	for _, a := range opts {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "RevertChange", varargs...)
+	ret0, _ := ret[0].(*ChangeInfo)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// RevertChange indicates an expected call of RevertChange.
+func (mr *MockGerritClientMockRecorder) RevertChange(ctx, in interface{}, opts ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{ctx, in}, opts...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RevertChange", reflect.TypeOf((*MockGerritClient)(nil).RevertChange), varargs...)
+}
+
 // SetReview mocks base method.
 func (m *MockGerritClient) SetReview(ctx context.Context, in *SetReviewRequest, opts ...grpc.CallOption) (*ReviewResult, error) {
 	m.ctrl.T.Helper()
@@ -747,6 +767,21 @@ func (m *MockGerritServer) ListProjects(arg0 context.Context, arg1 *ListProjects
 func (mr *MockGerritServerMockRecorder) ListProjects(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListProjects", reflect.TypeOf((*MockGerritServer)(nil).ListProjects), arg0, arg1)
+}
+
+// RevertChange mocks base method.
+func (m *MockGerritServer) RevertChange(arg0 context.Context, arg1 *RevertChangeRequest) (*ChangeInfo, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "RevertChange", arg0, arg1)
+	ret0, _ := ret[0].(*ChangeInfo)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// RevertChange indicates an expected call of RevertChange.
+func (mr *MockGerritServerMockRecorder) RevertChange(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RevertChange", reflect.TypeOf((*MockGerritServer)(nil).RevertChange), arg0, arg1)
 }
 
 // SetReview mocks base method.

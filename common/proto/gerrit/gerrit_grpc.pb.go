@@ -109,6 +109,10 @@ type GerritClient interface {
 	//
 	// https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#submit-change
 	SubmitChange(ctx context.Context, in *SubmitChangeRequest, opts ...grpc.CallOption) (*ChangeInfo, error)
+	// Revert a change.
+	//
+	// https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#revert-change
+	RevertChange(ctx context.Context, in *RevertChangeRequest, opts ...grpc.CallOption) (*ChangeInfo, error)
 	// Abandon a change.
 	//
 	// https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#abandon-change
@@ -298,6 +302,15 @@ func (c *gerritClient) SubmitChange(ctx context.Context, in *SubmitChangeRequest
 	return out, nil
 }
 
+func (c *gerritClient) RevertChange(ctx context.Context, in *RevertChangeRequest, opts ...grpc.CallOption) (*ChangeInfo, error) {
+	out := new(ChangeInfo)
+	err := c.cc.Invoke(ctx, "/gerrit.Gerrit/RevertChange", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *gerritClient) AbandonChange(ctx context.Context, in *AbandonChangeRequest, opts ...grpc.CallOption) (*ChangeInfo, error) {
 	out := new(ChangeInfo)
 	err := c.cc.Invoke(ctx, "/gerrit.Gerrit/AbandonChange", in, out, opts...)
@@ -406,6 +419,10 @@ type GerritServer interface {
 	//
 	// https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#submit-change
 	SubmitChange(context.Context, *SubmitChangeRequest) (*ChangeInfo, error)
+	// Revert a change.
+	//
+	// https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#revert-change
+	RevertChange(context.Context, *RevertChangeRequest) (*ChangeInfo, error)
 	// Abandon a change.
 	//
 	// https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#abandon-change
@@ -477,6 +494,9 @@ func (UnimplementedGerritServer) AddToAttentionSet(context.Context, *AttentionSe
 }
 func (UnimplementedGerritServer) SubmitChange(context.Context, *SubmitChangeRequest) (*ChangeInfo, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method SubmitChange not implemented")
+}
+func (UnimplementedGerritServer) RevertChange(context.Context, *RevertChangeRequest) (*ChangeInfo, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method RevertChange not implemented")
 }
 func (UnimplementedGerritServer) AbandonChange(context.Context, *AbandonChangeRequest) (*ChangeInfo, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method AbandonChange not implemented")
@@ -839,6 +859,24 @@ func _Gerrit_SubmitChange_Handler(srv interface{}, ctx context.Context, dec func
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Gerrit_RevertChange_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(RevertChangeRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(GerritServer).RevertChange(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/gerrit.Gerrit/RevertChange",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(GerritServer).RevertChange(ctx, req.(*RevertChangeRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _Gerrit_AbandonChange_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(AbandonChangeRequest)
 	if err := dec(in); err != nil {
@@ -957,6 +995,10 @@ var Gerrit_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "SubmitChange",
 			Handler:    _Gerrit_SubmitChange_Handler,
+		},
+		{
+			MethodName: "RevertChange",
+			Handler:    _Gerrit_RevertChange_Handler,
 		},
 		{
 			MethodName: "AbandonChange",
