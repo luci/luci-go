@@ -18,8 +18,8 @@ import (
 	"context"
 	"fmt"
 	"sort"
+	"sync"
 
-	"golang.org/x/sync/errgroup"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/common/clock"
@@ -94,44 +94,48 @@ func send(ctx context.Context, env *common.Env, client cvbq.Client, id common.Ru
 		a = reconcileAttempts(a, cqda)
 	}
 
-	eg, ctx := errgroup.WithContext(ctx)
-	defer eg.Wait()
-
-	logging.Debugf(ctx, "CV exporting Run to CQ BQ table")
-	eg.Go(func() error {
+	var wg sync.WaitGroup
+	var exportErr error
+	wg.Add(2)
+	go func() {
+		defer wg.Done()
+		logging.Debugf(ctx, "CV exporting Run to CQ BQ table")
 		project := legacyProject
 		if env.IsGAEDev {
 			project = legacyProjectDev
 		}
-		err := client.SendRow(ctx, cvbq.Row{
+		exportErr = client.SendRow(ctx, cvbq.Row{
 			CloudProject: project,
 			Dataset:      legacyDataset,
 			Table:        legacyTable,
 			OperationID:  "run-" + string(id),
 			Payload:      a,
 		})
-		if err != nil {
-			return err
+		if exportErr == nil {
+			delay := clock.Since(ctx, r.EndTime).Milliseconds()
+			metrics.Internal.BigQueryExportDelay.Add(ctx, float64(delay),
+				r.ID.LUCIProject(),
+				r.ConfigGroupID.Name(),
+				string(r.Mode))
 		}
-		delay := clock.Since(ctx, r.EndTime).Milliseconds()
-		metrics.Internal.BigQueryExportDelay.Add(ctx, float64(delay),
-			r.ID.LUCIProject(),
-			r.ConfigGroupID.Name(),
-			string(r.Mode))
-		return nil
-	})
+	}()
 
-	// *Always* also export to the local CV dataset.
-	eg.Go(func() error {
-		return client.SendRow(ctx, cvbq.Row{
+	go func() {
+		defer wg.Done()
+		// *Always* export to the local CV dataset but the error won't fail the
+		// task.
+		err := client.SendRow(ctx, cvbq.Row{
 			Dataset:     CVDataset,
 			Table:       CVTable,
 			OperationID: "run-" + string(id),
 			Payload:     a,
 		})
-	})
-
-	return eg.Wait()
+		if err != nil {
+			logging.Errorf(ctx, "failed to export the Run to CV dataset: %s", err)
+		}
+	}()
+	wg.Wait()
+	return exportErr
 }
 
 func makeAttempt(ctx context.Context, r *run.Run, cls []*run.RunCL) (*cvbqpb.Attempt, error) {
