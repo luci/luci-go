@@ -20,7 +20,6 @@ import (
 	"context"
 	"io"
 
-	"github.com/klauspost/compress/zstd"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/structpb"
 	"google.golang.org/protobuf/types/known/timestamppb"
@@ -31,35 +30,6 @@ import (
 	pb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/buildbucket/protoutil"
 )
-
-// maxPropertySize is the maximum property size. Any properties larger than it
-// should be chunked into multiple entities to fit the Datastore size limit.
-// This value is smaller than the real Datastore limit (1048487 bytes) in order
-// to give some headroom.
-// Note: make it to var instead of const to favor our unit tests. Otherwise, it
-// will take up too much memory when covering different test cases (e.g,
-// compressed property bytes > 4 chunks)
-var maxPropertySize = 1000 * 1000
-
-// Globally shared zstd encoder and decoder. We use only their EncodeAll and
-// DecodeAll methods which are allowed to be used concurrently. Internally, both
-// the encode and the decoder have worker pools (limited by GOMAXPROCS) and each
-// concurrent EncodeAll/DecodeAll call temporary consumes one worker (so overall
-// we do not run more jobs that we have cores for).
-var (
-	zstdEncoder *zstd.Encoder
-	zstdDecoder *zstd.Decoder
-)
-
-func init() {
-	var err error
-	if zstdEncoder, err = zstd.NewWriter(nil); err != nil {
-		panic(err) // this is impossible
-	}
-	if zstdDecoder, err = zstd.NewReader(nil); err != nil {
-		panic(err) // this is impossible
-	}
-}
 
 // defaultStructValues defaults nil or empty values inside the given
 // structpb.Struct. Needed because structpb.Value cannot be marshaled to JSON
@@ -124,182 +94,15 @@ type BuildInputProperties struct {
 
 // BuildOutputProperties is a representation of a build proto's output field's
 // properties field in the datastore.
-//
-// Note: avoid directly access to BuildOutputProperties via datastore.Get and
-// datastore.Put, as it may be chunked if it exceeds maxPropertySize.
-// Please always use *BuildOutputProperties.Get and *BuildOutputProperties.Put.
 type BuildOutputProperties struct {
-	_ datastore.PropertyMap `gae:"-,extra"`
-	_kind string `gae:"$kind,BuildOutputProperties"`
-	// _id is always 1 because only one such entity exists.
-	_id int `gae:"$id,1"`
+	_     datastore.PropertyMap `gae:"-,extra"`
+	_kind string                `gae:"$kind,BuildOutputProperties"`
+	// ID is always 1 because only one such entity exists.
+	ID int `gae:"$id,1"`
 	// Build is the key for the build this entity belongs to.
 	Build *datastore.Key `gae:"$parent"`
 	// Proto is the structpb.Struct representation of the properties field.
 	Proto *structpb.Struct `gae:"properties,legacy"`
-
-	// ChunkCount indicates how many chunks this Proto is splitted into.
-	ChunkCount int `gae:"chunk_count,noindex"`
-}
-
-// OutputPropertiesKey returns a datastore key of a BuildOutputProperties.
-func OutputPropertiesKey(ctx context.Context, buildID int64) *datastore.Key {
-	return datastore.KeyForObj(ctx, &BuildOutputProperties{
-		Build: datastore.KeyForObj(ctx, &Build{ID: buildID}),
-	})
-}
-
-// PropertyChunk stores a chunk of serialized and compressed
-// BuildOutputProperties.Proto bytes.
-// In the future, it may expand to buildInputProperties.
-type PropertyChunk struct {
-	_kind string `gae:"$kind,PropertyChunk"`
-	// ID starts from 1 to N where N is BuildOutputProperties.ChunkCount.
-	ID int `gae:"$id"`
-	// The BuildOutputProperties entity that this entity belongs to.
-	Parent *datastore.Key `gae:"$parent"`
-
-	// chunked bytes
-	Bytes []byte `gae:"chunk,noindex"`
-}
-
-// chunkProp splits BuildOutputProperties into chunks and return them. The nil
-// return means it doesn't need to chunk.
-// Note: The caller is responsible for putting the chunks into Datastore.
-func (bo *BuildOutputProperties) chunkProp(c context.Context) ([]*PropertyChunk, error) {
-	if bo == nil || bo.Proto == nil || bo.Build == nil {
-		return nil, nil
-	}
-	propBytes, err := proto.Marshal(bo.Proto)
-	if err != nil {
-		return nil, errors.Annotate(err, "failed to marshal build output properties").Err()
-	}
-	if len(propBytes) <= maxPropertySize {
-		return nil, nil
-	}
-
-	// compress propBytes
-	compressed := make([]byte, 0, len(propBytes)/2) // hope for at least 2x compression
-	compressed = zstdEncoder.EncodeAll(propBytes, compressed)
-
-	// to round up the result of integer division.
-	count := (len(compressed) + maxPropertySize - 1) / maxPropertySize
-	chunks := make([]*PropertyChunk, count)
-	pk := datastore.KeyForObj(c, &BuildOutputProperties{
-		Build: datastore.KeyForObj(c, &Build{ID: bo.Build.IntID()}),
-	})
-	for i := 0; i < count; i++ {
-		idxStart := i * maxPropertySize
-		idxEnd := idxStart + maxPropertySize
-		if idxEnd > len(compressed) {
-			idxEnd = len(compressed)
-		}
-
-		chunks[i] = &PropertyChunk{
-			ID:     i + 1, // ID starts from 1.
-			Parent: pk,
-			Bytes:  compressed[idxStart:idxEnd],
-		}
-	}
-	return chunks, nil
-}
-
-// Get is a wrapper of `datastore.Get` to properly handle large properties.
-func (bo *BuildOutputProperties) Get(c context.Context) error {
-	if bo == nil || bo.Build == nil {
-		return nil
-	}
-
-	pk := datastore.KeyForObj(c, &BuildOutputProperties{
-		Build: datastore.KeyForObj(c, &Build{ID: bo.Build.IntID()}),
-	})
-	// Preemptively fetch up to 4 chunks to minimize Datastore RPC calls so that
-	// in most cases, it only needs one call.
-	const preFetchedChunkCnt = 4
-	chunks := make([]*PropertyChunk, preFetchedChunkCnt)
-	for i := 0; i < preFetchedChunkCnt; i++ {
-		chunks[i] = &PropertyChunk{
-			ID:     i + 1, // ID starts from 1.
-			Parent: pk,
-		}
-	}
-
-	if err := datastore.Get(c, bo, chunks); err != nil {
-		switch me, ok := err.(errors.MultiError); {
-		case !ok:
-			return err
-		case me[0] != nil:
-			return me[0]
-		case errors.Filter(me[1], datastore.ErrNoSuchEntity) != nil :
-			return errors.Annotate(me[1], "fail to fetch first %d chunks for BuildOutputProperties", preFetchedChunkCnt).Err()
-		}
-	}
-
-	// No chunks.
-	if bo.ChunkCount == 0 {
-		return nil
-	}
-
-	// Fetch the rest chunks.
-	if bo.ChunkCount - preFetchedChunkCnt > 0 {
-		for i := preFetchedChunkCnt+1; i <= bo.ChunkCount; i++ {
-			chunks = append(chunks, &PropertyChunk{
-				ID:     i,
-				Parent: pk,
-			})
-		}
-
-		if err := datastore.Get(c, chunks[preFetchedChunkCnt:]); err != nil {
-			return errors.Annotate(err, "failed to fetch the rest chunks for BuildOutputProperties").Err()
-		}
-	}
-	chunks = chunks[:bo.ChunkCount]
-
-
-	// Assemble proto bytes and restore to proto.
-	var compressedBytes []byte
-	for _, chunk := range chunks {
-		compressedBytes = append(compressedBytes, chunk.Bytes...)
-	}
-	var propBytes []byte
-	var err error
-	if propBytes, err = zstdDecoder.DecodeAll(compressedBytes, nil); err != nil {
-		return errors.Annotate(err, "failed to decompress output properties bytes").Err()
-	}
-	bo.Proto = &structpb.Struct{}
-	if err := proto.Unmarshal(propBytes, bo.Proto); err != nil {
-		return errors.Annotate(err, "failed to unmarshal outputProperties' chunks").Err()
-	}
-	bo.ChunkCount = 0
-	return nil
-}
-
-// Put is a wrapper of `datastore.Put` to properly handle large properties.
-// Suggest calling it in a transaction to correctly handle partial failures when
-// putting PropertyChunk and BuildOutputProperties.
-func (bo *BuildOutputProperties) Put(c context.Context) error {
-	if bo == nil || bo.Build == nil {
-		return nil
-	}
-
-	chunks, err := bo.chunkProp(c)
-	if err != nil {
-		return err
-	}
-
-	prop := bo.Proto
-	if len(chunks) != 0 {
-		bo.Proto = nil
-		bo.ChunkCount = len(chunks)
-	} else {
-		bo.ChunkCount = 0
-	}
-
-	if err := datastore.Put(c, bo, chunks); err != nil {
-		return err
-	}
-	bo.Proto = prop
-	return nil
 }
 
 // BuildStepsMaxBytes is the maximum length of BuildSteps.Bytes. If Bytes
