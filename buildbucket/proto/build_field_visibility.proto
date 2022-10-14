@@ -57,5 +57,5 @@ extend google.protobuf.FieldOptions {
   //
   // Note that we assume that users with GET_LIMITED also have LIST, and users
   // with GET also have GET_LIMITED and LIST.
-  BuildFieldVisibility visible_with = 50001;
+  BuildFieldVisibility visible_with = 910567;
 }
