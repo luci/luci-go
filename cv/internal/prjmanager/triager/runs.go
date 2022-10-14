@@ -376,8 +376,9 @@ func (rs *runStage) makeCreator(ctx context.Context, combo *combo, cg *prjcfg.Co
 
 		// Restore email, which Project Manager doesn't track inside PCLs.
 		tr := chooseTrigger(trigger.Find(&trigger.FindInput{
-			ChangeInfo:  cl.Snapshot.GetGerrit().GetInfo(),
-			ConfigGroup: cg.Content,
+			ChangeInfo:                   cl.Snapshot.GetGerrit().GetInfo(),
+			ConfigGroup:                  cg.Content,
+			TriggerNewPatchsetRunAfterPS: cl.TriggerNewPatchsetRunAfterPS,
 		}))
 		pclT := chooseTrigger(pcl.GetTriggers())
 		if tr.GetMode() != pclT.GetMode() {

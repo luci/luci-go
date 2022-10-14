@@ -298,7 +298,7 @@ func (s *State) makePCL(ctx context.Context, cl *changelist.CL) *prjpb.PCL {
 		pcl.Errors = append(pcl.Errors, err)
 	}
 
-	s.setTriggers(ci, pcl)
+	s.setTriggers(ci, pcl, cl.TriggerNewPatchsetRunAfterPS)
 
 	// Check for "Commit: false" footer after setting Trigger, because this should
 	// only have an effect in the case of an attempted full run.
@@ -365,9 +365,9 @@ func (s *State) tryUsingApplicableConfigGroups(ap *changelist.ApplicableConfig_P
 // setTriggers populates a PCL's .Triggers field with the triggers present in
 // the given ChangeInfo.
 //
-// It also validates that the trigger mode is allowed, and strips the account
+// It also validates that the trigger mode is allowed, and strips the
 // information from the triggerer.
-func (s *State) setTriggers(ci *gerritpb.ChangeInfo, pcl *prjpb.PCL) {
+func (s *State) setTriggers(ci *gerritpb.ChangeInfo, pcl *prjpb.PCL, latestPSRun int32) {
 	// Triggers are a function of a CL and applicable ConfigGroup, which may
 	// define additional modes.
 	// In case of misconfiguration, there may be 0 or 2+ applicable
@@ -382,7 +382,7 @@ func (s *State) setTriggers(ci *gerritpb.ChangeInfo, pcl *prjpb.PCL) {
 	} else {
 		cg = &cfgpb.ConfigGroup{}
 	}
-	ts := trigger.Find(&trigger.FindInput{ChangeInfo: ci, ConfigGroup: cg})
+	ts := trigger.Find(&trigger.FindInput{ChangeInfo: ci, ConfigGroup: cg, TriggerNewPatchsetRunAfterPS: latestPSRun})
 	if ts == nil {
 		return
 	}

@@ -188,7 +188,7 @@ func triggersToPurge(ctx context.Context, cg *cfgpb.ConfigGroup, cl *changelist.
 		panic(fmt.Errorf("CL %d has non-Gerrit snapshot", cl.ID))
 	}
 	ci := cl.Snapshot.GetGerrit().GetInfo()
-	currentTriggers := trigger.Find(&trigger.FindInput{ChangeInfo: ci, ConfigGroup: cg})
+	currentTriggers := trigger.Find(&trigger.FindInput{ChangeInfo: ci, ConfigGroup: cg, TriggerNewPatchsetRunAfterPS: cl.TriggerNewPatchsetRunAfterPS})
 	if currentTriggers == nil {
 		return nil, "", nil
 	}
