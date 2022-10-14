@@ -22,6 +22,7 @@ import (
 	"golang.org/x/sync/errgroup"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
+	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry/transient"
@@ -32,6 +33,7 @@ import (
 	"go.chromium.org/luci/cv/internal/common"
 	cvbq "go.chromium.org/luci/cv/internal/common/bq"
 	"go.chromium.org/luci/cv/internal/configs/prjcfg"
+	"go.chromium.org/luci/cv/internal/metrics"
 	"go.chromium.org/luci/cv/internal/migration"
 	"go.chromium.org/luci/cv/internal/run"
 	"go.chromium.org/luci/cv/internal/tryjob"
@@ -101,13 +103,22 @@ func send(ctx context.Context, env *common.Env, client cvbq.Client, id common.Ru
 		if env.IsGAEDev {
 			project = legacyProjectDev
 		}
-		return client.SendRow(ctx, cvbq.Row{
+		err := client.SendRow(ctx, cvbq.Row{
 			CloudProject: project,
 			Dataset:      legacyDataset,
 			Table:        legacyTable,
 			OperationID:  "run-" + string(id),
 			Payload:      a,
 		})
+		if err != nil {
+			return err
+		}
+		delay := clock.Since(ctx, r.EndTime).Milliseconds()
+		metrics.Internal.BigQueryExportDelay.Add(ctx, float64(delay),
+			r.ID.LUCIProject(),
+			r.ConfigGroupID.Name(),
+			string(r.Mode))
+		return nil
 	})
 
 	// *Always* also export to the local CV dataset.
