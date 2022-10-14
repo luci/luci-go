@@ -20,16 +20,15 @@ import (
 	"time"
 
 	. "github.com/smartystreets/goconvey/convey"
-	"go.chromium.org/luci/common/clock/testclock"
-	. "go.chromium.org/luci/common/testing/assertions"
 	"google.golang.org/genproto/protobuf/field_mask"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
-	mpb "go.chromium.org/luci/analysis/internal/bugs/monorail/api_proto"
-
 	"go.chromium.org/luci/analysis/internal/bugs"
+	mpb "go.chromium.org/luci/analysis/internal/bugs/monorail/api_proto"
 	"go.chromium.org/luci/analysis/internal/clustering"
 	configpb "go.chromium.org/luci/analysis/proto/config"
+	"go.chromium.org/luci/common/clock/testclock"
+	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func NewCreateRequest() *bugs.CreateRequest {
@@ -130,6 +129,9 @@ func TestManager(t *testing.T) {
 				So(len(issue.Comments), ShouldEqual, 2)
 				So(issue.Comments[0].Content, ShouldContainSubstring, reason)
 				So(issue.Comments[0].Content, ShouldNotContainSubstring, "ClusterIDShouldNotAppearInOutput")
+				// Links to help should appear in the issue description.
+				So(issue.Comments[0].Content, ShouldContainSubstring, "https://luci-analysis-test.appspot.com/help#new-bug-filed")
+				So(issue.Comments[0].Content, ShouldContainSubstring, "https://luci-analysis-test.appspot.com/help#feedback")
 				// Link to cluster page should appear in output.
 				So(issue.Comments[1].Content, ShouldContainSubstring, "https://luci-analysis-test.appspot.com/b/chromium/100")
 				So(issue.NotifyCount, ShouldEqual, 1)
@@ -148,6 +150,9 @@ func TestManager(t *testing.T) {
 				So(issue.Issue, ShouldResembleProto, expectedIssue)
 				So(len(issue.Comments), ShouldEqual, 2)
 				So(issue.Comments[0].Content, ShouldContainSubstring, "ninja://:blink_web_tests/media/my-suite/my-test.html")
+				// Links to help should appear in the issue description.
+				So(issue.Comments[0].Content, ShouldContainSubstring, "https://luci-analysis-test.appspot.com/help#new-bug-filed")
+				So(issue.Comments[0].Content, ShouldContainSubstring, "https://luci-analysis-test.appspot.com/help#feedback")
 				// Link to cluster page should appear in output.
 				So(issue.Comments[1].Content, ShouldContainSubstring, "https://luci-analysis-test.appspot.com/b/chromium/100")
 				So(issue.NotifyCount, ShouldEqual, 1)
@@ -245,6 +250,8 @@ func TestManager(t *testing.T) {
 							"- Test Results Failed (1-day) < 90\n"+
 							"LUCI Analysis has decreased the bug priority from 2 to 3.")
 					So(f.Issues[0].Comments[2].Content, ShouldContainSubstring,
+						"https://luci-analysis-test.appspot.com/help#priority-update")
+					So(f.Issues[0].Comments[2].Content, ShouldContainSubstring,
 						"https://luci-analysis-test.appspot.com/b/chromium/100")
 
 					// Does not notify.
@@ -273,6 +280,8 @@ func TestManager(t *testing.T) {
 							"- Test Results Failed (1-day) >= 550\n"+
 							"LUCI Analysis has increased the bug priority from 2 to 1.")
 					So(f.Issues[0].Comments[2].Content, ShouldContainSubstring,
+						"https://luci-analysis-test.appspot.com/help#priority-update")
+					So(f.Issues[0].Comments[2].Content, ShouldContainSubstring,
 						"https://luci-analysis-test.appspot.com/b/chromium/100")
 
 					// Notified the increase.
@@ -295,6 +304,8 @@ func TestManager(t *testing.T) {
 						"LUCI Analysis has increased the bug priority from 2 to 0."
 					So(f.Issues[0].Comments, ShouldHaveLength, 3)
 					So(f.Issues[0].Comments[2].Content, ShouldContainSubstring, expectedComment)
+					So(f.Issues[0].Comments[2].Content, ShouldContainSubstring,
+						"https://luci-analysis-test.appspot.com/help#priority-update")
 					So(f.Issues[0].Comments[2].Content, ShouldContainSubstring,
 						"https://luci-analysis-test.appspot.com/b/chromium/100")
 
@@ -385,6 +396,8 @@ func TestManager(t *testing.T) {
 					So(f.Issues[0].Comments, ShouldHaveLength, 3)
 					So(f.Issues[0].Comments[2].Content, ShouldContainSubstring, expectedComment)
 					So(f.Issues[0].Comments[2].Content, ShouldContainSubstring,
+						"https://luci-analysis-test.appspot.com/help#bug-verified")
+					So(f.Issues[0].Comments[2].Content, ShouldContainSubstring,
 						"https://luci-analysis-test.appspot.com/b/chromium/100")
 
 					// Verify repeated update has no effect.
@@ -437,6 +450,8 @@ func TestManager(t *testing.T) {
 							So(f.Issues[0].Comments, ShouldHaveLength, 5)
 							So(f.Issues[0].Comments[4].Content, ShouldContainSubstring, expectedComment)
 							So(f.Issues[0].Comments[4].Content, ShouldContainSubstring,
+								"https://luci-analysis-test.appspot.com/help#bug-reopened")
+							So(f.Issues[0].Comments[4].Content, ShouldContainSubstring,
 								"https://luci-analysis-test.appspot.com/b/chromium/100")
 
 							// Verify repeated update has no effect.
@@ -465,6 +480,10 @@ func TestManager(t *testing.T) {
 								"LUCI Analysis has decreased the bug priority from 2 to 3."
 							So(f.Issues[0].Comments, ShouldHaveLength, 5)
 							So(f.Issues[0].Comments[4].Content, ShouldContainSubstring, expectedComment)
+							So(f.Issues[0].Comments[4].Content, ShouldContainSubstring,
+								"https://luci-analysis-test.appspot.com/help#priority-update")
+							So(f.Issues[0].Comments[4].Content, ShouldContainSubstring,
+								"https://luci-analysis-test.appspot.com/help#bug-reopened")
 							So(f.Issues[0].Comments[4].Content, ShouldContainSubstring,
 								"https://luci-analysis-test.appspot.com/b/chromium/100")
 

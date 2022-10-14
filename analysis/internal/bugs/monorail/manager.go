@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// Package monorail contains monorail-specific logic for
+// creating and updating bugs.
 package monorail
 
 import (
@@ -19,15 +21,14 @@ import (
 	"fmt"
 	"regexp"
 
+	"google.golang.org/protobuf/encoding/prototext"
+
+	"go.chromium.org/luci/analysis/internal/bugs"
+	mpb "go.chromium.org/luci/analysis/internal/bugs/monorail/api_proto"
+	configpb "go.chromium.org/luci/analysis/proto/config"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
-	"google.golang.org/protobuf/encoding/prototext"
-
-	mpb "go.chromium.org/luci/analysis/internal/bugs/monorail/api_proto"
-
-	"go.chromium.org/luci/analysis/internal/bugs"
-	configpb "go.chromium.org/luci/analysis/proto/config"
 )
 
 // monorailRe matches monorail issue names, like

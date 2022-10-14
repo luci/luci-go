@@ -21,9 +21,8 @@ import (
 
 	"google.golang.org/genproto/protobuf/field_mask"
 
-	mpb "go.chromium.org/luci/analysis/internal/bugs/monorail/api_proto"
-
 	"go.chromium.org/luci/analysis/internal/bugs"
+	mpb "go.chromium.org/luci/analysis/internal/bugs/monorail/api_proto"
 	"go.chromium.org/luci/analysis/internal/clustering"
 	configpb "go.chromium.org/luci/analysis/proto/config"
 )
@@ -171,10 +170,16 @@ func (g *Generator) PrepareNew(impact *bugs.ClusterImpact, description *clusteri
 		})
 	}
 
+	commentary := Commentary{
+		Body: fmt.Sprintf(DescriptionTemplate, description.Description),
+		Footer: fmt.Sprintf("How to action this bug: https://%s.appspot.com/help#new-bug-filed\n"+
+			"Provide feedback: https://%s.appspot.com/help#feedback", g.appID, g.appID),
+	}
+
 	return &mpb.MakeIssueRequest{
 		Parent:      fmt.Sprintf("projects/%s", g.monorailCfg.Project),
 		Issue:       issue,
-		Description: fmt.Sprintf(DescriptionTemplate, description.Description),
+		Description: MergeCommentary(commentary),
 		NotifyType:  mpb.NotifyType_EMAIL,
 	}
 }
@@ -315,7 +320,7 @@ func (g *Generator) MakeUpdate(impact *bugs.ClusterImpact, issue *mpb.Issue, com
 		},
 	}
 
-	var commentary []string
+	var commentary []Commentary
 	notify := false
 	issueVerified := issueVerified(issue)
 	if !g.isCompatibleWithVerified(impact, issueVerified) {
@@ -353,14 +358,17 @@ func (g *Generator) MakeUpdate(impact *bugs.ClusterImpact, issue *mpb.Issue, com
 		panic("invalid monorail issue name: " + issue.Name)
 	}
 
-	commentary = append(commentary, g.linkToRuleComment(bugName))
+	c := Commentary{
+		Footer: g.linkToRuleComment(bugName),
+	}
+	commentary = append(commentary, c)
 
 	update := &mpb.ModifyIssuesRequest{
 		Deltas: []*mpb.IssueDelta{
 			delta,
 		},
 		NotifyType:     mpb.NotifyType_NO_NOTIFICATION,
-		CommentContent: strings.Join(commentary, "\n\n"),
+		CommentContent: MergeCommentary(commentary...),
 	}
 	if notify {
 		update.NotifyType = mpb.NotifyType_EMAIL
@@ -368,10 +376,11 @@ func (g *Generator) MakeUpdate(impact *bugs.ClusterImpact, issue *mpb.Issue, com
 	return update
 }
 
-func (g *Generator) prepareBugVerifiedUpdate(impact *bugs.ClusterImpact, issue *mpb.Issue, update *mpb.IssueDelta) string {
+func (g *Generator) prepareBugVerifiedUpdate(impact *bugs.ClusterImpact, issue *mpb.Issue, update *mpb.IssueDelta) Commentary {
 	resolved := g.clusterResolved(impact)
 	var status string
-	var message strings.Builder
+	var body strings.Builder
+	var trailer string
 	if resolved {
 		status = VerifiedStatus
 
@@ -380,9 +389,11 @@ func (g *Generator) prepareBugVerifiedUpdate(impact *bugs.ClusterImpact, issue *
 		// a priority lower than the lowest defined priority (i.e. bug verified.)
 		newPriorityIndex := len(g.monorailCfg.Priorities)
 
-		message.WriteString("Because:\n")
-		message.WriteString(g.priorityDecreaseJustification(oldPriorityIndex, newPriorityIndex))
-		message.WriteString("LUCI Analysis is marking the issue verified.")
+		body.WriteString("Because:\n")
+		body.WriteString(g.priorityDecreaseJustification(oldPriorityIndex, newPriorityIndex))
+		body.WriteString("LUCI Analysis is marking the issue verified.")
+
+		trailer = fmt.Sprintf("Why issues are verified: https://%s.appspot.com/help#bug-verified", g.appID)
 	} else {
 		if issue.GetOwner().GetUser() != "" {
 			status = AssignedStatus
@@ -390,24 +401,34 @@ func (g *Generator) prepareBugVerifiedUpdate(impact *bugs.ClusterImpact, issue *
 			status = UntriagedStatus
 		}
 
-		message.WriteString("Because:\n")
-		message.WriteString(g.explainThresholdsMet(impact, g.bugFilingThreshold))
-		message.WriteString("LUCI Analysis has re-opened the bug.")
+		body.WriteString("Because:\n")
+		body.WriteString(g.explainThresholdsMet(impact, g.bugFilingThreshold))
+		body.WriteString("LUCI Analysis has re-opened the bug.")
+
+		trailer = fmt.Sprintf("Why issues are re-opened: https://%s.appspot.com/help#bug-reopened", g.appID)
 	}
 	update.Issue.Status = &mpb.Issue_StatusValue{Status: status}
 	update.UpdateMask.Paths = append(update.UpdateMask.Paths, "status")
-	return message.String()
+
+	c := Commentary{
+		Body:   body.String(),
+		Footer: trailer,
+	}
+	return c
 }
 
-func prepareManualPriorityUpdate(issue *mpb.Issue, update *mpb.IssueDelta) string {
+func prepareManualPriorityUpdate(issue *mpb.Issue, update *mpb.IssueDelta) Commentary {
 	update.Issue.Labels = []*mpb.Issue_LabelValue{{
 		Label: manualPriorityLabel,
 	}}
 	update.UpdateMask.Paths = append(update.UpdateMask.Paths, "labels")
-	return fmt.Sprintf("The bug priority has been manually set. To re-enable automatic priority updates by LUCI Analysis, remove the %s label.", manualPriorityLabel)
+	c := Commentary{
+		Body: fmt.Sprintf("The bug priority has been manually set. To re-enable automatic priority updates by LUCI Analysis, remove the %s label.", manualPriorityLabel),
+	}
+	return c
 }
 
-func (g *Generator) preparePriorityUpdate(impact *bugs.ClusterImpact, issue *mpb.Issue, update *mpb.IssueDelta) string {
+func (g *Generator) preparePriorityUpdate(impact *bugs.ClusterImpact, issue *mpb.Issue, update *mpb.IssueDelta) Commentary {
 	newPriority := g.clusterPriority(impact)
 
 	update.Issue.FieldValues = []*mpb.FieldValue{
@@ -422,19 +443,21 @@ func (g *Generator) preparePriorityUpdate(impact *bugs.ClusterImpact, issue *mpb
 	oldPriorityIndex := g.indexOfPriority(oldPriority)
 	newPriorityIndex := g.indexOfPriority(newPriority)
 
+	var body strings.Builder
 	if newPriorityIndex < oldPriorityIndex {
-		var message strings.Builder
-		message.WriteString("Because:\n")
-		message.WriteString(g.priorityIncreaseJustification(impact, oldPriorityIndex, newPriorityIndex))
-		message.WriteString(fmt.Sprintf("LUCI Analysis has increased the bug priority from %v to %v.", oldPriority, newPriority))
-		return message.String()
+		body.WriteString("Because:\n")
+		body.WriteString(g.priorityIncreaseJustification(impact, oldPriorityIndex, newPriorityIndex))
+		body.WriteString(fmt.Sprintf("LUCI Analysis has increased the bug priority from %v to %v.", oldPriority, newPriority))
 	} else {
-		var message strings.Builder
-		message.WriteString("Because:\n")
-		message.WriteString(g.priorityDecreaseJustification(oldPriorityIndex, newPriorityIndex))
-		message.WriteString(fmt.Sprintf("LUCI Analysis has decreased the bug priority from %v to %v.", oldPriority, newPriority))
-		return message.String()
+		body.WriteString("Because:\n")
+		body.WriteString(g.priorityDecreaseJustification(oldPriorityIndex, newPriorityIndex))
+		body.WriteString(fmt.Sprintf("LUCI Analysis has decreased the bug priority from %v to %v.", oldPriority, newPriority))
 	}
+	c := Commentary{
+		Body:   body.String(),
+		Footer: fmt.Sprintf("Why priority is updated: https://%s.appspot.com/help#priority-updated", g.appID),
+	}
+	return c
 }
 
 // hasManuallySetPriority returns whether the the given issue has a manually
