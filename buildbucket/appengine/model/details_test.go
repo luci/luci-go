@@ -16,6 +16,7 @@ package model
 
 import (
 	"context"
+	"strconv"
 	"testing"
 
 	"google.golang.org/protobuf/proto"
@@ -291,53 +292,291 @@ func TestDetails(t *testing.T) {
 		})
 	})
 
-	// TODO(yuanjunh@): clean up these tests after new BuildOutputProperties
-	// deployment to 100%.
-	Convey("BuildOutputProperties in transition stage", t, func() {
-		// Mimic the case when 20% traffic on new model and 80% traffic on old model.
-		type BuildOutputPropertiesV2 struct {
-			_kind string           `gae:"$kind,BuildOutputProperties"`
-			_id   int              `gae:"$id,1"`
-			Build *datastore.Key   `gae:"$parent"`
-			Proto *structpb.Struct `gae:"properties,legacy"`
-
-			ChunkCount int `gae:"chunk_count,noindex"`
-		}
-
+	Convey("BuildOutputProperties", t, func() {
 		ctx := memory.Use(context.Background())
 		datastore.GetTestable(ctx).AutoIndex(true)
 		datastore.GetTestable(ctx).Consistent(true)
 
-		prop, err := structpb.NewStruct(map[string]interface{}{"key": "value"})
-		So(err, ShouldBeNil)
-		Convey("write with new model, read with the old model", func() {
-			outInNew := &BuildOutputPropertiesV2{
-				Build:      datastore.KeyForObj(ctx, &Build{ID: 123}),
-				Proto:      prop,
-				ChunkCount: 0,
-			}
-			So(datastore.Put(ctx, outInNew), ShouldBeNil)
-
-			outInOld := &BuildOutputProperties{
-				Build: datastore.KeyForObj(ctx, &Build{ID: 123}),
-			}
-			So(datastore.Get(ctx, outInOld), ShouldBeNil)
-			So(outInOld.Proto, ShouldResembleProto, prop)
-		})
-
-		Convey("write with old model, read with the new model", func() {
-			outInOld := &BuildOutputProperties{
+		Convey("normal", func() {
+			prop, err := structpb.NewStruct(map[string]interface{}{"key": "value"})
+			So(err, ShouldBeNil)
+			outProp := &BuildOutputProperties{
 				Build: datastore.KeyForObj(ctx, &Build{ID: 123}),
 				Proto: prop,
 			}
-			So(datastore.Put(ctx, outInOld), ShouldBeNil)
+			So(outProp.Put(ctx), ShouldBeNil)
 
-			outInNew := &BuildOutputPropertiesV2{
+			count, err := datastore.Count(ctx, datastore.NewQuery("PropertyChunk"))
+			So(err, ShouldBeNil)
+			So(count, ShouldEqual, 0)
+
+			outPropInDB := &BuildOutputProperties{
 				Build: datastore.KeyForObj(ctx, &Build{ID: 123}),
 			}
-			So(datastore.Get(ctx, outInNew), ShouldBeNil)
-			So(outInNew.Proto, ShouldResembleProto, prop)
-			So(outInNew.ChunkCount, ShouldEqual, 0)
+			So(outPropInDB.Get(ctx), ShouldBeNil)
+			So(outPropInDB.Proto, ShouldResembleProtoJSON, `{"key": "value"}`)
+			So(outPropInDB.ChunkCount, ShouldEqual, 0)
+
+			Convey("normal -> larger", func() {
+				larger := proto.Clone(prop).(*structpb.Struct)
+				larger.Fields["new_key"] = &structpb.Value{
+					Kind: &structpb.Value_StringValue{
+						StringValue: "new_value",
+					},
+				}
+
+				outProp.Proto = larger
+				So(outProp.Put(ctx), ShouldBeNil)
+				So(outProp.ChunkCount, ShouldEqual, 0)
+
+				outPropInDB := &BuildOutputProperties{
+					Build: outProp.Build,
+				}
+				So(outPropInDB.Get(ctx), ShouldBeNil)
+				So(outPropInDB.Proto, ShouldResembleProtoJSON, `{"key": "value", "new_key": "new_value"}`)
+			})
+
+			Convey("normal -> extreme large", func() {
+				larger, err := structpb.NewStruct(map[string]interface{}{})
+				So(err, ShouldBeNil)
+				k := "laaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaarge_key"
+				v := "laaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaarge_value"
+				for i := 0; i < 10000; i++ {
+					larger.Fields[k+strconv.Itoa(i)] = &structpb.Value{
+						Kind: &structpb.Value_StringValue{
+							StringValue: v,
+						},
+					}
+				}
+
+				outProp.Proto = larger
+				So(outProp.Put(ctx), ShouldBeNil)
+				So(outProp.ChunkCount, ShouldAlmostEqual, 1, 1)
+
+				outPropInDB := &BuildOutputProperties{
+					Build: outProp.Build,
+				}
+				So(outPropInDB.Get(ctx), ShouldBeNil)
+				So(outPropInDB.Proto, ShouldResembleProto, larger)
+			})
+		})
+
+		Convey("large", func() {
+			largeProps, err := structpb.NewStruct(map[string]interface{}{})
+			So(err, ShouldBeNil)
+			k := "laaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaarge_key"
+			v := "laaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaarge_value"
+			for i := 0; i < 10000; i++ {
+				largeProps.Fields[k+strconv.Itoa(i)] = &structpb.Value{
+					Kind: &structpb.Value_StringValue{
+						StringValue: v,
+					},
+				}
+			}
+			outProp := &BuildOutputProperties{
+				Build: datastore.KeyForObj(ctx, &Build{ID: 123}),
+				Proto: largeProps,
+			}
+			So(outProp.Put(ctx), ShouldBeNil)
+			So(outProp.Proto, ShouldResembleProto, largeProps)
+			So(outProp.ChunkCount, ShouldAlmostEqual, 1, 1)
+
+			count, err := datastore.Count(ctx, datastore.NewQuery("PropertyChunk"))
+			So(err, ShouldBeNil)
+			So(count, ShouldAlmostEqual, 1, 1)
+
+			outPropInDB := &BuildOutputProperties{
+				Build: datastore.KeyForObj(ctx, &Build{ID: 123}),
+			}
+			So(datastore.Get(ctx, outPropInDB), ShouldBeNil)
+			So(outPropInDB.ChunkCount, ShouldAlmostEqual, 1, 1)
+
+			So(outPropInDB.Get(ctx), ShouldBeNil)
+			So(outPropInDB.Proto, ShouldResembleProto, largeProps)
+			So(outPropInDB.ChunkCount, ShouldEqual, 0)
+
+			Convey("large -> small", func() {
+				prop, err := structpb.NewStruct(map[string]interface{}{"key": "value"})
+				So(err, ShouldBeNil)
+				// Proto got updated to a smaller one.
+				outProp.Proto = prop
+
+				So(outProp.Put(ctx), ShouldBeNil)
+				So(outProp.ChunkCount, ShouldEqual, 0)
+
+				outPropInDB := &BuildOutputProperties{
+					Build: outProp.Build,
+				}
+				So(outPropInDB.Get(ctx), ShouldBeNil)
+				So(outPropInDB.Proto, ShouldResembleProto, prop)
+				So(outPropInDB.ChunkCount, ShouldEqual, 0)
+			})
+
+			Convey("large -> larger", func() {
+				larger := proto.Clone(largeProps).(*structpb.Struct)
+				curLen := len(larger.Fields)
+				for i := 0; i < 10; i++ {
+					larger.Fields[k+strconv.Itoa(curLen+i)] = &structpb.Value{
+						Kind: &structpb.Value_StringValue{
+							StringValue: v,
+						},
+					}
+				}
+				// Proto got updated to an even larger one.
+				outProp.Proto = larger
+
+				So(outProp.Put(ctx), ShouldBeNil)
+				So(outProp.ChunkCount, ShouldAlmostEqual, 1, 1)
+				So(outProp.Proto, ShouldResembleProto, larger)
+
+				outPropInDB := &BuildOutputProperties{
+					Build: outProp.Build,
+				}
+				So(outPropInDB.Get(ctx), ShouldBeNil)
+				So(outPropInDB.Proto, ShouldResembleProto, larger)
+				So(outPropInDB.ChunkCount, ShouldEqual, 0)
+			})
+		})
+
+		Convey("too large (>1 chunks)", func() {
+			originMaxPropertySize := maxPropertySize
+			defer func() {
+				maxPropertySize = originMaxPropertySize
+			}()
+			// to avoid take up too much memory in testing.
+			maxPropertySize = 100
+
+			largeProps, err := structpb.NewStruct(map[string]interface{}{})
+			So(err, ShouldBeNil)
+			k := "largeeeeeee_key"
+			v := "largeeeeeee_value"
+
+			Convey(">1 and <4 chunks", func() {
+				for i := 0; i < 60; i++ {
+					largeProps.Fields[k+strconv.Itoa(i)] = &structpb.Value{
+						Kind: &structpb.Value_StringValue{
+							StringValue: v,
+						},
+					}
+				}
+				outProp := &BuildOutputProperties{
+					Build: datastore.KeyForObj(ctx, &Build{ID: 123}),
+					Proto: largeProps,
+				}
+				So(outProp.Put(ctx), ShouldBeNil)
+				So(outProp.Proto, ShouldResembleProto, largeProps)
+				So(outProp.ChunkCount, ShouldBeBetween, 1, 4)
+
+				count, err := datastore.Count(ctx, datastore.NewQuery("PropertyChunk"))
+				So(err, ShouldBeNil)
+				So(count, ShouldBeBetween, 1, 4)
+
+				outPropInDB := &BuildOutputProperties{
+					Build: datastore.KeyForObj(ctx, &Build{ID: 123}),
+				}
+				So(outPropInDB.Get(ctx), ShouldBeNil)
+				So(outPropInDB.Proto, ShouldResembleProto, largeProps)
+				So(outPropInDB.ChunkCount, ShouldEqual, 0)
+			})
+
+			Convey("~4 chunks", func() {
+				for i := 0; i < 120; i++ {
+					largeProps.Fields[k+strconv.Itoa(i)] = &structpb.Value{
+						Kind: &structpb.Value_StringValue{
+							StringValue: v,
+						},
+					}
+				}
+				outProp := &BuildOutputProperties{
+					Build: datastore.KeyForObj(ctx, &Build{ID: 123}),
+					Proto: largeProps,
+				}
+				So(outProp.Put(ctx), ShouldBeNil)
+				So(outProp.Proto, ShouldResembleProto, largeProps)
+				So(outProp.ChunkCount, ShouldAlmostEqual, 4, 2)
+
+				count, err := datastore.Count(ctx, datastore.NewQuery("PropertyChunk"))
+				So(err, ShouldBeNil)
+				So(count, ShouldAlmostEqual, 4, 2)
+
+				outPropInDB := &BuildOutputProperties{
+					Build: datastore.KeyForObj(ctx, &Build{ID: 123}),
+				}
+				So(outPropInDB.Get(ctx), ShouldBeNil)
+				So(outPropInDB.Proto, ShouldResembleProto, largeProps)
+				So(outPropInDB.ChunkCount, ShouldEqual, 0)
+			})
+
+			Convey("> 4 chunks", func() {
+				for i := 0; i < 500; i++ {
+					largeProps.Fields[k+strconv.Itoa(i)] = &structpb.Value{
+						Kind: &structpb.Value_StringValue{
+							StringValue: v,
+						},
+					}
+				}
+				outProp := &BuildOutputProperties{
+					Build: datastore.KeyForObj(ctx, &Build{ID: 123}),
+					Proto: largeProps,
+				}
+				So(outProp.Put(ctx), ShouldBeNil)
+				So(outProp.Proto, ShouldResembleProto, largeProps)
+				So(outProp.ChunkCount, ShouldBeGreaterThan, 4)
+
+				count, err := datastore.Count(ctx, datastore.NewQuery("PropertyChunk"))
+				So(err, ShouldBeNil)
+				So(count, ShouldBeGreaterThan, 4)
+
+				outPropInDB := &BuildOutputProperties{
+					Build: datastore.KeyForObj(ctx, &Build{ID: 123}),
+				}
+				So(outPropInDB.Get(ctx), ShouldBeNil)
+				So(outPropInDB.Proto, ShouldResembleProto, largeProps)
+				So(outPropInDB.ChunkCount, ShouldEqual, 0)
+
+				Convey("missing 2nd Chunk", func() {
+					// Originally, it has >4 chunks. Now, intentionally delete the 2nd chunk
+					chunk2 := &PropertyChunk{
+						ID: 2,
+						Parent: datastore.KeyForObj(ctx, &BuildOutputProperties{
+							Build: datastore.KeyForObj(ctx, &Build{ID: 123}),
+						}),
+					}
+					So(datastore.Delete(ctx, chunk2), ShouldBeNil)
+
+					outPropInDB := &BuildOutputProperties{
+						Build: datastore.KeyForObj(ctx, &Build{ID: 123}),
+					}
+					err = outPropInDB.Get(ctx)
+					So(err, ShouldErrLike, "failed to decompress output properties bytes")
+				})
+
+				Convey("missing 5nd Chunk", func() {
+					// Originally, it has >4 chunks. Now, intentionally delete the 5nd chunk
+					chunk5 := &PropertyChunk{
+						ID: 5,
+						Parent: datastore.KeyForObj(ctx, &BuildOutputProperties{
+							Build: datastore.KeyForObj(ctx, &Build{ID: 123}),
+						}),
+					}
+					So(datastore.Delete(ctx, chunk5), ShouldBeNil)
+
+					outPropInDB := &BuildOutputProperties{
+						Build: datastore.KeyForObj(ctx, &Build{ID: 123}),
+					}
+					err = outPropInDB.Get(ctx)
+					So(err, ShouldErrLike, "failed to fetch the rest chunks for BuildOutputProperties: datastore: no such entity")
+				})
+			})
+		})
+
+		Convey("BuildOutputProperties not exist", func() {
+			outProp := &BuildOutputProperties{
+				Build: datastore.KeyForObj(ctx, &Build{
+					ID: 999,
+				}),
+			}
+			So(outProp.Get(ctx), ShouldEqual, datastore.ErrNoSuchEntity)
 		})
 	})
 }
