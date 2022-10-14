@@ -72,10 +72,10 @@ func ParseParentID(parentID string) (testID, resultID string, err error) {
 	return parentID[:lastSlash], parentID[lastSlash+1:], nil
 }
 
-// Read reads an artifact from Spanner with GCS URI if one is available.
+// Read reads an artifact from Spanner.
 // If it does not exist, the returned error is annotated with NotFound GRPC
 // code.
-// Does not return artifact content.
+// Does not return artifact content or its location.
 func Read(ctx context.Context, name string) (*pb.Artifact, error) {
 	invIDStr, testID, resultID, artifactID, err := pbutil.ParseArtifactName(name)
 	if err != nil {
@@ -92,14 +92,10 @@ func Read(ctx context.Context, name string) (*pb.Artifact, error) {
 	// Populate fields from Artifacts table.
 	var contentType spanner.NullString
 	var size spanner.NullInt64
-	var gcsURI spanner.NullString
-
 	err = spanutil.ReadRow(ctx, "Artifacts", invID.Key(parentID, artifactID), map[string]interface{}{
 		"ContentType": &contentType,
 		"Size":        &size,
-		"GcsURI":      &gcsURI,
 	})
-
 	switch {
 	case spanner.ErrCode(err) == codes.NotFound:
 		return nil, appstatus.Attachf(err, codes.NotFound, "%s not found", ret.Name)
@@ -110,7 +106,6 @@ func Read(ctx context.Context, name string) (*pb.Artifact, error) {
 	default:
 		ret.ContentType = contentType.StringVal
 		ret.SizeBytes = size.Int64
-		ret.GcsUri = gcsURI.StringVal
 		return ret, nil
 	}
 }
