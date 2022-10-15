@@ -16,6 +16,7 @@ package model
 
 import (
 	"context"
+	"strconv"
 	"testing"
 
 	"google.golang.org/protobuf/proto"
@@ -385,6 +386,43 @@ func TestBuild(t *testing.T) {
 				p, err := b.ToProto(ctx, m, nil)
 				So(err, ShouldBeNil)
 				So(p.Output.Properties, ShouldResembleProtoJSON, `{"output": "output value"}`)
+				So(b.Proto.Output, ShouldBeNil)
+
+				Convey("one missing, one found", func() {
+					b1 :=  &pb.Build{
+						Id: 1,
+					}
+					b2 := &pb.Build{
+						Id: 2,
+					}
+					m := HardcodedBuildMask("output.properties")
+					So(LoadBuildDetails(ctx, m, nil, b1, b2), ShouldBeNil)
+					So(b1.Output.Properties, ShouldResembleProtoJSON, `{"output": "output value"}`)
+					So(b2.Output.GetProperties(), ShouldBeNil)
+				})
+			})
+
+			Convey("output properties(large)", func() {
+				largeProps, err := structpb.NewStruct(map[string]interface{}{})
+				So(err, ShouldBeNil)
+				k := "laaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaarge_key"
+				v := "laaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaarge_value"
+				for i := 0; i < 10000; i++ {
+					largeProps.Fields[k+strconv.Itoa(i)] = &structpb.Value{
+						Kind: &structpb.Value_StringValue{
+							StringValue: v,
+						},
+					}
+				}
+				outProp := &BuildOutputProperties{
+					Build: key,
+					Proto: largeProps,
+				}
+				So(outProp.Put(ctx), ShouldBeNil)
+
+				p, err := b.ToProto(ctx, m, nil)
+				So(err, ShouldBeNil)
+				So(p.Output.Properties, ShouldResembleProto, largeProps)
 				So(b.Proto.Output, ShouldBeNil)
 			})
 

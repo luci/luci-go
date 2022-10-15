@@ -26,6 +26,7 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/sync/parallel"
 	"go.chromium.org/luci/gae/service/datastore"
 
 	pb "go.chromium.org/luci/buildbucket/proto"
@@ -140,13 +141,6 @@ type BuildOutputProperties struct {
 
 	// ChunkCount indicates how many chunks this Proto is splitted into.
 	ChunkCount int `gae:"chunk_count,noindex"`
-}
-
-// OutputPropertiesKey returns a datastore key of a BuildOutputProperties.
-func OutputPropertiesKey(ctx context.Context, buildID int64) *datastore.Key {
-	return datastore.KeyForObj(ctx, &BuildOutputProperties{
-		Build: datastore.KeyForObj(ctx, &Build{ID: buildID}),
-	})
 }
 
 // PropertyChunk stores a chunk of serialized and compressed
@@ -272,6 +266,27 @@ func (bo *BuildOutputProperties) Get(c context.Context) error {
 	}
 	bo.ChunkCount = 0
 	return nil
+}
+
+// GetMultiOutputProperties fetches multiple BuildOutputProperties in parallel.
+func GetMultiOutputProperties(c context.Context, props ...*BuildOutputProperties) error {
+	nWorkers := 8
+	if len(props) < nWorkers {
+		nWorkers = len(props)
+	}
+
+	err := parallel.WorkPool(nWorkers, func(work chan<- func() error) {
+		for _, prop := range props {
+			prop := prop
+			if prop == nil || prop.Build == nil {
+				continue
+			}
+			work <- func() error {
+				return prop.Get(c)
+			}
+		}
+	})
+	return err
 }
 
 // Put is a wrapper of `datastore.Put` to properly handle large properties.

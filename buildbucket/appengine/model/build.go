@@ -387,12 +387,19 @@ func LoadBuildDetails(ctx context.Context, m *BuildMask, redact func(*pb.Build) 
 		}
 		appendIfIncluded("infra", inf[i])
 		appendIfIncluded("input.properties", inp[i])
-		appendIfIncluded("output.properties", out[i])
 		appendIfIncluded("steps", stp[i])
 	}
 
 	if err := GetIgnoreMissing(ctx, dets); err != nil {
 		return errors.Annotate(err, "error fetching build details").Err()
+	}
+
+	// For `output.properties`, should use *BuildOutputProperties.Get, instead of
+	// using datastore.Get directly.
+	if included["output.properties"] {
+		if err := errors.Filter(GetMultiOutputProperties(ctx, out...), datastore.ErrNoSuchEntity); err != nil {
+			return errors.Annotate(err, "error fetching build(s) output properties").Err()
+		}
 	}
 
 	var err error

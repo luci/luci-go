@@ -714,6 +714,38 @@ func TestUpdateBuild(t *testing.T) {
 
 		})
 
+		Convey("build.output.properties large", func() {
+			largeProps, err := structpb.NewStruct(map[string]interface{}{})
+			So(err, ShouldBeNil)
+			k := "laaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaarge_key"
+			v := "laaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaarge_value"
+			for i := 0; i < 10000; i++ {
+				largeProps.Fields[k+strconv.Itoa(i)] = &structpb.Value{
+					Kind: &structpb.Value_StringValue{
+						StringValue: v,
+					},
+				}
+			}
+			So(err, ShouldBeNil)
+			req.Build.Output = &pb.Build_Output{Properties: largeProps}
+
+			Convey("with mask", func() {
+				req.UpdateMask.Paths[0] = "build.output"
+				So(updateBuild(ctx, req), ShouldBeRPCOK)
+				b := getBuildWithDetails(ctx, req.Build.Id)
+				So(b.Proto.Output.Properties, ShouldResembleProto, largeProps)
+				count, err := datastore.Count(ctx, datastore.NewQuery("PropertyChunk"))
+				So(err, ShouldBeNil)
+				So(count, ShouldEqual, 1)
+			})
+
+			Convey("without mask", func() {
+				So(updateBuild(ctx, req), ShouldBeRPCOK)
+				b := getBuildWithDetails(ctx, req.Build.Id)
+				So(b.Proto.Output.Properties, ShouldBeNil)
+			})
+		})
+
 		Convey("build.steps", func() {
 			step := &pb.Step{
 				Name:      "step",

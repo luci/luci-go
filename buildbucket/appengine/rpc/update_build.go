@@ -395,6 +395,7 @@ func updateEntities(ctx context.Context, req *pb.UpdateBuildRequest, parentID in
 			return err
 		}
 		toSave := []interface{}{b}
+		var toSaveOutputProperties *model.BuildOutputProperties
 		bk := datastore.KeyForObj(ctx, b)
 
 		// output.properties
@@ -403,10 +404,10 @@ func updateEntities(ctx context.Context, req *pb.UpdateBuildRequest, parentID in
 			if req.Build.Output.GetProperties() != nil {
 				prop = req.Build.Output.Properties
 			}
-			toSave = append(toSave, &model.BuildOutputProperties{
+			toSaveOutputProperties = &model.BuildOutputProperties{
 				Build: bk,
 				Proto: prop,
-			})
+			}
 		}
 
 		now := clock.Now(ctx)
@@ -522,6 +523,12 @@ func updateEntities(ctx context.Context, req *pb.UpdateBuildRequest, parentID in
 				infra.Proto.Buildbucket.Agent.Purposes = req.Build.Infra.Buildbucket.Agent.Purposes
 			}
 			toSave = append(toSave, infra)
+		}
+
+		if toSaveOutputProperties != nil {
+			if err := toSaveOutputProperties.Put(ctx); err != nil {
+				return errors.Annotate(err, "failed to put BuildOutputProperties").Err()
+			}
 		}
 
 		return datastore.Put(ctx, toSave)

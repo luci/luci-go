@@ -23,6 +23,7 @@ import (
 	"google.golang.org/protobuf/types/known/structpb"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
+	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
 
@@ -577,6 +578,65 @@ func TestDetails(t *testing.T) {
 				}),
 			}
 			So(outProp.Get(ctx), ShouldEqual, datastore.ErrNoSuchEntity)
+		})
+
+		Convey("GetMultiOutputProperties", func() {
+			largeProps, err := structpb.NewStruct(map[string]interface{}{})
+			So(err, ShouldBeNil)
+			k := "laaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaarge_key"
+			v := "laaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaarge_value"
+			for i := 0; i < 10000; i++ {
+				largeProps.Fields[k+strconv.Itoa(i)] = &structpb.Value{
+					Kind: &structpb.Value_StringValue{
+						StringValue: v,
+					},
+				}
+			}
+			outProp1 := &BuildOutputProperties{
+				Build: datastore.KeyForObj(ctx, &Build{ID: 123}),
+				Proto: largeProps,
+			}
+			outProp2 := &BuildOutputProperties{
+				Build: datastore.KeyForObj(ctx, &Build{ID: 456}),
+				Proto: largeProps,
+			}
+			So(outProp1.Put(ctx), ShouldBeNil)
+			So(outProp2.Put(ctx), ShouldBeNil)
+
+			outPropInDB1 := &BuildOutputProperties{
+				Build: datastore.KeyForObj(ctx, &Build{ID: 123}),
+			}
+			outPropInDB2 := &BuildOutputProperties{
+				Build: datastore.KeyForObj(ctx, &Build{ID: 456}),
+			}
+			So(GetMultiOutputProperties(ctx, outPropInDB1, outPropInDB2), ShouldBeNil)
+			So(outPropInDB1.Proto, ShouldResembleProto, largeProps)
+			So(outPropInDB2.Proto, ShouldResembleProto, largeProps)
+
+			Convey("one empty, one found", func() {
+				outPropInDB1 := &BuildOutputProperties{}
+				outPropInDB2 := &BuildOutputProperties{
+					Build: datastore.KeyForObj(ctx, &Build{ID: 456}),
+				}
+				So(GetMultiOutputProperties(ctx, outPropInDB1, outPropInDB2), ShouldBeNil)
+				So(outPropInDB1.Proto, ShouldBeNil)
+				So(outPropInDB2.Proto, ShouldResembleProto, largeProps)
+			})
+
+			Convey("one not found, one found", func() {
+				outPropInDB1 := &BuildOutputProperties{
+					Build: datastore.KeyForObj(ctx, &Build{ID: 999}),
+				}
+				outPropInDB2 := &BuildOutputProperties{
+					Build: datastore.KeyForObj(ctx, &Build{ID: 456}),
+				}
+				err := GetMultiOutputProperties(ctx, outPropInDB1, outPropInDB2)
+				So(err, ShouldNotBeNil)
+				me, _ := err.(errors.MultiError)
+				So(me[0], ShouldErrLike, datastore.ErrNoSuchEntity)
+				So(outPropInDB1.Proto, ShouldBeNil)
+				So(outPropInDB2.Proto, ShouldResembleProto, largeProps)
+			})
 		})
 	})
 }
