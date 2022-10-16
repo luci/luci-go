@@ -237,21 +237,23 @@ func (c *clustersServer) BatchGet(ctx context.Context, req *pb.BatchGetClustersR
 		result := &pb.Cluster{
 			Name:       req.Names[i],
 			HasExample: ok,
-			UserClsFailedPresubmit: &pb.Cluster_MetricValues{
+			UserClsFailedPresubmit: &pb.Cluster_ImpactValues{
 				OneDay:   newCounts(c.PresubmitRejects1d),
 				ThreeDay: newCounts(c.PresubmitRejects3d),
 				SevenDay: newCounts(c.PresubmitRejects7d),
 			},
-			CriticalFailuresExonerated: &pb.Cluster_MetricValues{
+			CriticalFailuresExonerated: &pb.Cluster_ImpactValues{
 				OneDay:   newCounts(c.CriticalFailuresExonerated1d),
 				ThreeDay: newCounts(c.CriticalFailuresExonerated3d),
 				SevenDay: newCounts(c.CriticalFailuresExonerated7d),
 			},
-			Failures: &pb.Cluster_MetricValues{
+			Failures: &pb.Cluster_ImpactValues{
 				OneDay:   newCounts(c.Failures1d),
 				ThreeDay: newCounts(c.Failures3d),
 				SevenDay: newCounts(c.Failures7d),
 			},
+			UserClsWithFailures:          newCounts(c.DistinctUserCLsWithFailures7d),
+			PostsubmitBuildsWithFailures: newCounts(c.PostsubmitBuildsWithFailures7d),
 		}
 
 		if !clusterID.IsBugCluster() && ok {
@@ -289,8 +291,8 @@ func (c *clustersServer) BatchGet(ctx context.Context, req *pb.BatchGetClustersR
 	}, nil
 }
 
-func newCounts(counts analysis.Counts) *pb.Cluster_MetricValues_Counts {
-	return &pb.Cluster_MetricValues_Counts{Nominal: counts.Nominal}
+func newCounts(counts analysis.Counts) *pb.Cluster_Counts {
+	return &pb.Cluster_Counts{Nominal: counts.Nominal}
 }
 
 // failureAssociationRule returns the failure association rule for the

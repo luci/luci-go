@@ -26,18 +26,13 @@ import (
 
 	"cloud.google.com/go/bigquery"
 	. "github.com/smartystreets/goconvey/convey"
-	"go.chromium.org/luci/common/clock/testclock"
-	"go.chromium.org/luci/config/validation"
-	"go.chromium.org/luci/gae/impl/memory"
-	"go.chromium.org/luci/server/span"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/timestamppb"
-
-	"go.chromium.org/luci/analysis/internal/bugs/monorail/api_proto"
 
 	"go.chromium.org/luci/analysis/internal/analysis"
 	"go.chromium.org/luci/analysis/internal/bugs"
 	"go.chromium.org/luci/analysis/internal/bugs/monorail"
+	"go.chromium.org/luci/analysis/internal/bugs/monorail/api_proto"
 	"go.chromium.org/luci/analysis/internal/clustering"
 	"go.chromium.org/luci/analysis/internal/clustering/algorithms"
 	"go.chromium.org/luci/analysis/internal/clustering/algorithms/failurereason"
@@ -50,6 +45,10 @@ import (
 	"go.chromium.org/luci/analysis/internal/testutil"
 	configpb "go.chromium.org/luci/analysis/proto/config"
 	pb "go.chromium.org/luci/analysis/proto/v1"
+	"go.chromium.org/luci/common/clock/testclock"
+	"go.chromium.org/luci/config/validation"
+	"go.chromium.org/luci/gae/impl/memory"
+	"go.chromium.org/luci/server/span"
 )
 
 func TestRun(t *testing.T) {
@@ -162,7 +161,7 @@ func TestRun(t *testing.T) {
 			err = updateAnalysisAndBugsForProject(ctx, opts)
 			So(err, ShouldBeNil)
 		})
-		Convey("With a suggested cluster above impact thresold", func() {
+		Convey("With a suggested cluster", func() {
 			sourceClusterID := reasonClusterID(compiledCfg, "Failed to connect to 100.1.1.99.")
 			suggestedClusters[1].ClusterID = sourceClusterID
 			suggestedClusters[1].ExampleFailureReason = bigquery.NullString{StringVal: "Failed to connect to 100.1.1.105.", Valid: true}
@@ -170,7 +169,9 @@ func TestRun(t *testing.T) {
 				{Value: "network-test-1", Count: 10},
 				{Value: "network-test-2", Count: 10},
 			}
-			suggestedClusters[1].Failures7d.Nominal = 100
+			// Meets failure dispersion thresholds.
+			suggestedClusters[1].DistinctUserCLsWithFailures7d.Residual = 3
+
 			suggestedClusters[1].TopMonorailComponents = []analysis.TopCount{
 				{Value: "Blink>Layout", Count: 40},  // >30% of failures.
 				{Value: "Blink>Network", Count: 31}, // >30% of failures.
@@ -248,9 +249,30 @@ func TestRun(t *testing.T) {
 				So(f.Issues[0].Comments[1].Content, ShouldContainSubstring, "https://luci-analysis-test.appspot.com/b/chromium/100")
 			}
 
+			Convey("Dispersion threshold", func() {
+				// Meets impact threshold.
+				suggestedClusters[1].Failures1d.Residual = 100
+
+				Convey("Met via User CLs with failures", func() {
+					suggestedClusters[1].DistinctUserCLsWithFailures7d.Residual = 3
+					suggestedClusters[1].PostsubmitBuildsWithFailures7d.Residual = 0
+					test()
+				})
+				Convey("Met via Postsubmit builds with failures", func() {
+					suggestedClusters[1].DistinctUserCLsWithFailures7d.Residual = 0
+					suggestedClusters[1].PostsubmitBuildsWithFailures7d.Residual = 1
+					test()
+				})
+				Convey("Not met", func() {
+					suggestedClusters[1].DistinctUserCLsWithFailures7d.Residual = 0
+					suggestedClusters[1].PostsubmitBuildsWithFailures7d.Residual = 0
+					expectCreate = false
+					test()
+				})
+			})
 			Convey("1d unexpected failures", func() {
 				Convey("Reason cluster", func() {
-					Convey("Above thresold", func() {
+					Convey("Above threshold", func() {
 						suggestedClusters[1].Failures1d.Residual = 100
 						test()
 
@@ -275,7 +297,7 @@ func TestRun(t *testing.T) {
 
 					// 34% more impact is required for a test name cluster to
 					// be filed, compared to a failure reason cluster.
-					Convey("Above thresold", func() {
+					Convey("Above threshold", func() {
 						suggestedClusters[1].Failures1d.Residual = 134
 						test()
 
@@ -387,11 +409,13 @@ func TestRun(t *testing.T) {
 			suggestedClusters[2] = makeReasonCluster(compiledCfg, 2)
 			suggestedClusters[2].Failures3d.Residual = 400
 			suggestedClusters[2].Failures7d.Residual = 400
+			suggestedClusters[2].PostsubmitBuildsWithFailures7d.Residual = 1
 
 			// Test name cluster with 33% more impact.
 			suggestedClusters[1] = makeTestNameCluster(compiledCfg, 3)
 			suggestedClusters[1].Failures3d.Residual = 532
 			suggestedClusters[1].Failures7d.Residual = 532
+			suggestedClusters[1].PostsubmitBuildsWithFailures7d.Residual = 1
 
 			// Limit to one bug filed each time, so that
 			// we test change throttling.
@@ -428,7 +452,7 @@ func TestRun(t *testing.T) {
 				So(bugClusters[0].SourceCluster.IsTestNameCluster(), ShouldBeTrue)
 			})
 		})
-		Convey("With multiple suggested clusters above impact thresold", func() {
+		Convey("With multiple suggested clusters above impact threshold", func() {
 			expectBugClusters := func(count int) {
 				bugClusters, err := rules.ReadActive(span.Single(ctx), project)
 				So(err, ShouldBeNil)
@@ -439,13 +463,16 @@ func TestRun(t *testing.T) {
 			// code path coverage.
 			suggestedClusters[0] = makeTestNameCluster(compiledCfg, 0)
 			suggestedClusters[0].Failures7d.Residual = 940
+			suggestedClusters[0].PostsubmitBuildsWithFailures7d.Residual = 1
 			suggestedClusters[1] = makeReasonCluster(compiledCfg, 1)
 			suggestedClusters[1].Failures3d.Residual = 300
 			suggestedClusters[1].Failures7d.Residual = 300
+			suggestedClusters[1].PostsubmitBuildsWithFailures7d.Residual = 1
 			suggestedClusters[2] = makeReasonCluster(compiledCfg, 2)
 			suggestedClusters[2].Failures1d.Residual = 200
 			suggestedClusters[2].Failures3d.Residual = 200
 			suggestedClusters[2].Failures7d.Residual = 200
+			suggestedClusters[2].PostsubmitBuildsWithFailures7d.Residual = 1
 
 			// Limit to one bug filed each time, so that
 			// we test change throttling.

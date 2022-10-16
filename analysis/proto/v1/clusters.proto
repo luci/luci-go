@@ -236,30 +236,38 @@ message Cluster {
     // Not populated for rule-based clusters.
     string title = 3;
 
-    message MetricValues {
-        message Counts {
-            // The value of the metric (summed over all failures).
-            int64 nominal = 1;
-        }
+    message Counts {
+        // The value of the metric (summed over all failures).
+        int64 nominal = 1;
+    }
 
-        // The metric value for the last day.
+    message ImpactValues {
+        // The impact value for the last day.
         Counts one_day = 2;
-        // The metric value for the last three days.
+        // The impact value for the last three days.
         Counts three_day = 3;
-        // The metric value for the last week.
+        // The impact value for the last week.
         Counts seven_day = 4;
     }
 
     // The total number of user changelists which failed presubmit.
-    MetricValues user_cls_failed_presubmit = 4;
+    ImpactValues user_cls_failed_presubmit = 4;
 
     // The total number of failures in the cluster that occurred on tryjobs
     // that were critical (presubmit-blocking) and were exonerated for a
     // reason other than NOT_CRITICAL or UNEXPECTED_PASS.
-    MetricValues critical_failures_exonerated = 5;
+    ImpactValues critical_failures_exonerated = 5;
 
     // The total number of failures in the cluster.
-    MetricValues failures = 6;
+    ImpactValues failures = 6;
+
+    // The number of user changelists that had failures in this cluster,
+    // over the last week.
+    Counts user_cls_with_failures = 8;
+
+    // The number of postsubmit builds that had failures in this cluster,
+    // over the last week.
+    Counts postsubmit_builds_with_failures = 9;
 
     // The failure association rule equivalent to the cluster. Populated only
     // for suggested clusters where has_example = true.

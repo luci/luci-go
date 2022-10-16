@@ -23,17 +23,6 @@ import (
 
 	"cloud.google.com/go/bigquery"
 	. "github.com/smartystreets/goconvey/convey"
-	"go.chromium.org/luci/common/data/stringset"
-	"go.chromium.org/luci/common/errors"
-	. "go.chromium.org/luci/common/testing/assertions"
-	"go.chromium.org/luci/gae/impl/memory"
-	"go.chromium.org/luci/resultdb/rdbperms"
-	"go.chromium.org/luci/server/auth"
-	"go.chromium.org/luci/server/auth/authtest"
-	"go.chromium.org/luci/server/auth/realms"
-	"go.chromium.org/luci/server/caching"
-	"go.chromium.org/luci/server/secrets"
-	"go.chromium.org/luci/server/secrets/testsecrets"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/analysis/internal/analysis"
@@ -52,6 +41,17 @@ import (
 	"go.chromium.org/luci/analysis/pbutil"
 	configpb "go.chromium.org/luci/analysis/proto/config"
 	pb "go.chromium.org/luci/analysis/proto/v1"
+	"go.chromium.org/luci/common/data/stringset"
+	"go.chromium.org/luci/common/errors"
+	. "go.chromium.org/luci/common/testing/assertions"
+	"go.chromium.org/luci/gae/impl/memory"
+	"go.chromium.org/luci/resultdb/rdbperms"
+	"go.chromium.org/luci/server/auth"
+	"go.chromium.org/luci/server/auth/authtest"
+	"go.chromium.org/luci/server/auth/realms"
+	"go.chromium.org/luci/server/caching"
+	"go.chromium.org/luci/server/secrets"
+	"go.chromium.org/luci/server/secrets/testsecrets"
 )
 
 func TestClusters(t *testing.T) {
@@ -317,16 +317,18 @@ func TestClusters(t *testing.T) {
 						Algorithm: rulesalgorithm.AlgorithmName,
 						ID:        "11111100000000000000000000000000",
 					},
-					PresubmitRejects1d:           analysis.Counts{Nominal: 1},
-					PresubmitRejects3d:           analysis.Counts{Nominal: 2},
-					PresubmitRejects7d:           analysis.Counts{Nominal: 3},
-					CriticalFailuresExonerated1d: analysis.Counts{Nominal: 4},
-					CriticalFailuresExonerated3d: analysis.Counts{Nominal: 5},
-					CriticalFailuresExonerated7d: analysis.Counts{Nominal: 6},
-					Failures1d:                   analysis.Counts{Nominal: 7},
-					Failures3d:                   analysis.Counts{Nominal: 8},
-					Failures7d:                   analysis.Counts{Nominal: 9},
-					ExampleFailureReason:         bigquery.NullString{Valid: true, StringVal: "Example failure reason."},
+					PresubmitRejects1d:             analysis.Counts{Nominal: 1},
+					PresubmitRejects3d:             analysis.Counts{Nominal: 2},
+					PresubmitRejects7d:             analysis.Counts{Nominal: 3},
+					CriticalFailuresExonerated1d:   analysis.Counts{Nominal: 4},
+					CriticalFailuresExonerated3d:   analysis.Counts{Nominal: 5},
+					CriticalFailuresExonerated7d:   analysis.Counts{Nominal: 6},
+					Failures1d:                     analysis.Counts{Nominal: 7},
+					Failures3d:                     analysis.Counts{Nominal: 8},
+					Failures7d:                     analysis.Counts{Nominal: 9},
+					DistinctUserCLsWithFailures7d:  analysis.Counts{Nominal: 10},
+					PostsubmitBuildsWithFailures7d: analysis.Counts{Nominal: 11},
+					ExampleFailureReason:           bigquery.NullString{Valid: true, StringVal: "Example failure reason."},
 					TopTestIDs: []analysis.TopCount{
 						{Value: "TestID 1", Count: 2},
 						{Value: "TestID 2", Count: 1},
@@ -387,61 +389,71 @@ func TestClusters(t *testing.T) {
 					{
 						Name:       "projects/testproject/clusters/rules/11111100000000000000000000000000",
 						HasExample: true,
-						UserClsFailedPresubmit: &pb.Cluster_MetricValues{
-							OneDay:   &pb.Cluster_MetricValues_Counts{Nominal: 1},
-							ThreeDay: &pb.Cluster_MetricValues_Counts{Nominal: 2},
-							SevenDay: &pb.Cluster_MetricValues_Counts{Nominal: 3},
+						UserClsFailedPresubmit: &pb.Cluster_ImpactValues{
+							OneDay:   &pb.Cluster_Counts{Nominal: 1},
+							ThreeDay: &pb.Cluster_Counts{Nominal: 2},
+							SevenDay: &pb.Cluster_Counts{Nominal: 3},
 						},
-						CriticalFailuresExonerated: &pb.Cluster_MetricValues{
-							OneDay:   &pb.Cluster_MetricValues_Counts{Nominal: 4},
-							ThreeDay: &pb.Cluster_MetricValues_Counts{Nominal: 5},
-							SevenDay: &pb.Cluster_MetricValues_Counts{Nominal: 6},
+						CriticalFailuresExonerated: &pb.Cluster_ImpactValues{
+							OneDay:   &pb.Cluster_Counts{Nominal: 4},
+							ThreeDay: &pb.Cluster_Counts{Nominal: 5},
+							SevenDay: &pb.Cluster_Counts{Nominal: 6},
 						},
-						Failures: &pb.Cluster_MetricValues{
-							OneDay:   &pb.Cluster_MetricValues_Counts{Nominal: 7},
-							ThreeDay: &pb.Cluster_MetricValues_Counts{Nominal: 8},
-							SevenDay: &pb.Cluster_MetricValues_Counts{Nominal: 9},
+						Failures: &pb.Cluster_ImpactValues{
+							OneDay:   &pb.Cluster_Counts{Nominal: 7},
+							ThreeDay: &pb.Cluster_Counts{Nominal: 8},
+							SevenDay: &pb.Cluster_Counts{Nominal: 9},
 						},
+						UserClsWithFailures:          &pb.Cluster_Counts{Nominal: 10},
+						PostsubmitBuildsWithFailures: &pb.Cluster_Counts{Nominal: 11},
 					},
 					{
-						Name:                       "projects/testproject/clusters/rules/1111110000000000000000000000ffff",
-						HasExample:                 false,
-						UserClsFailedPresubmit:     emptyMetricValues(),
-						CriticalFailuresExonerated: emptyMetricValues(),
-						Failures:                   emptyMetricValues(),
+						Name:                         "projects/testproject/clusters/rules/1111110000000000000000000000ffff",
+						HasExample:                   false,
+						UserClsFailedPresubmit:       emptyMetricValues(),
+						CriticalFailuresExonerated:   emptyMetricValues(),
+						Failures:                     emptyMetricValues(),
+						UserClsWithFailures:          &pb.Cluster_Counts{},
+						PostsubmitBuildsWithFailures: &pb.Cluster_Counts{},
 					},
 					{
 						Name:       "projects/testproject/clusters/" + failurereason.AlgorithmName + "/" + hex.EncodeToString(reasonClusterID),
 						Title:      "Example failure reason %.",
 						HasExample: true,
-						UserClsFailedPresubmit: &pb.Cluster_MetricValues{
-							OneDay:   &pb.Cluster_MetricValues_Counts{},
-							ThreeDay: &pb.Cluster_MetricValues_Counts{},
-							SevenDay: &pb.Cluster_MetricValues_Counts{Nominal: 15},
+						UserClsFailedPresubmit: &pb.Cluster_ImpactValues{
+							OneDay:   &pb.Cluster_Counts{},
+							ThreeDay: &pb.Cluster_Counts{},
+							SevenDay: &pb.Cluster_Counts{Nominal: 15},
 						},
 						CriticalFailuresExonerated:       emptyMetricValues(),
 						Failures:                         emptyMetricValues(),
+						UserClsWithFailures:              &pb.Cluster_Counts{},
+						PostsubmitBuildsWithFailures:     &pb.Cluster_Counts{},
 						EquivalentFailureAssociationRule: `reason LIKE "Example failure reason %."`,
 					},
 					{
 						Name:       "projects/testproject/clusters/" + testname.AlgorithmName + "/cccccc00000000000000000000000001",
 						Title:      "(definition unavailable due to ongoing reclustering)",
 						HasExample: true,
-						UserClsFailedPresubmit: &pb.Cluster_MetricValues{
-							OneDay:   &pb.Cluster_MetricValues_Counts{},
-							ThreeDay: &pb.Cluster_MetricValues_Counts{},
-							SevenDay: &pb.Cluster_MetricValues_Counts{Nominal: 11},
+						UserClsFailedPresubmit: &pb.Cluster_ImpactValues{
+							OneDay:   &pb.Cluster_Counts{},
+							ThreeDay: &pb.Cluster_Counts{},
+							SevenDay: &pb.Cluster_Counts{Nominal: 11},
 						},
 						CriticalFailuresExonerated:       emptyMetricValues(),
 						Failures:                         emptyMetricValues(),
+						UserClsWithFailures:              &pb.Cluster_Counts{},
+						PostsubmitBuildsWithFailures:     &pb.Cluster_Counts{},
 						EquivalentFailureAssociationRule: ``,
 					},
 					{
-						Name:                       "projects/testproject/clusters/reason-v3/cccccc0000000000000000000000ffff",
-						HasExample:                 false,
-						UserClsFailedPresubmit:     emptyMetricValues(),
-						CriticalFailuresExonerated: emptyMetricValues(),
-						Failures:                   emptyMetricValues(),
+						Name:                         "projects/testproject/clusters/reason-v3/cccccc0000000000000000000000ffff",
+						HasExample:                   false,
+						UserClsFailedPresubmit:       emptyMetricValues(),
+						CriticalFailuresExonerated:   emptyMetricValues(),
+						Failures:                     emptyMetricValues(),
+						UserClsWithFailures:          &pb.Cluster_Counts{},
+						PostsubmitBuildsWithFailures: &pb.Cluster_Counts{},
 					},
 				},
 			}
@@ -1172,11 +1184,11 @@ func removePermission(perms []authtest.RealmPermission, permission realms.Permis
 	return result
 }
 
-func emptyMetricValues() *pb.Cluster_MetricValues {
-	return &pb.Cluster_MetricValues{
-		OneDay:   &pb.Cluster_MetricValues_Counts{},
-		ThreeDay: &pb.Cluster_MetricValues_Counts{},
-		SevenDay: &pb.Cluster_MetricValues_Counts{},
+func emptyMetricValues() *pb.Cluster_ImpactValues {
+	return &pb.Cluster_ImpactValues{
+		OneDay:   &pb.Cluster_Counts{},
+		ThreeDay: &pb.Cluster_Counts{},
+		SevenDay: &pb.Cluster_Counts{},
 	}
 }
 

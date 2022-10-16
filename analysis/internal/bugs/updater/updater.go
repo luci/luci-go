@@ -20,10 +20,6 @@ import (
 	"fmt"
 	"sort"
 
-	"go.chromium.org/luci/common/errors"
-	"go.chromium.org/luci/common/logging"
-	"go.chromium.org/luci/server/span"
-
 	"go.chromium.org/luci/analysis/internal/analysis"
 	"go.chromium.org/luci/analysis/internal/bugs"
 	"go.chromium.org/luci/analysis/internal/clustering"
@@ -34,6 +30,9 @@ import (
 	"go.chromium.org/luci/analysis/internal/clustering/runs"
 	"go.chromium.org/luci/analysis/internal/config/compiledcfg"
 	pb "go.chromium.org/luci/analysis/proto/v1"
+	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/server/span"
 )
 
 // testnameThresholdInflationPercent is the percentage factor by which
@@ -160,9 +159,12 @@ func (b *BugUpdater) Run(ctx context.Context, progress *runs.ReclusteringProgres
 	if impactValid {
 		// We want to read analysis for two categories of clusters:
 		// - Bug Clusters: to update the priority of filed bugs.
-		// - Impactful Suggested Clusters: if any suggested clusters have
-		//    reached the threshold to file a new bug for, we want to read
-		//    them, so we can file a bug.
+		// - Impactful Suggested Clusters: if any suggested clusters may be
+		//    near the threshold to file a new bug for, we want to
+		//    read them, so we can file a bug. (Note: the thresholding applied
+		//    here is weaker than the actual bug filing criteria which is
+		//    implemented in this package, it exists mainly to avoid pulling
+		//    back all suggested clusters).
 		clusters, err := b.analysisClient.ReadImpactfulClusters(ctx, analysis.ImpactfulClusterReadOptions{
 			Project:                  b.project,
 			Thresholds:               b.projectCfg.Config.BugFilingThreshold,
@@ -344,6 +346,15 @@ func (b *BugUpdater) fileNewBugs(ctx context.Context, clusters []*analysis.Clust
 		// suggested cluster to the bug cluster.
 		_, ok := blockedClusterIDs[cluster.ClusterID.Key()]
 		if ok {
+			// Do not file a bug.
+			continue
+		}
+
+		// Were the failures are confined to only automation CLs
+		// and/or 1-2 user CLs? In other words, are the failures in this
+		// clusters unlikely to be present in the tree?
+		if cluster.DistinctUserCLsWithFailures7d.Residual < 3 &&
+			cluster.PostsubmitBuildsWithFailures7d.Residual == 0 {
 			// Do not file a bug.
 			continue
 		}

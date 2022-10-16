@@ -21,15 +21,15 @@ import (
 	"time"
 
 	"cloud.google.com/go/bigquery"
-	"go.chromium.org/luci/common/errors"
-	"go.chromium.org/luci/common/logging"
-	"go.chromium.org/luci/common/trace"
 	"google.golang.org/api/iterator"
 
 	"go.chromium.org/luci/analysis/internal/bqutil"
 	"go.chromium.org/luci/analysis/internal/clustering"
 	"go.chromium.org/luci/analysis/internal/clustering/algorithms/rulesalgorithm"
 	configpb "go.chromium.org/luci/analysis/proto/config"
+	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/common/trace"
 )
 
 // Cluster contains detailed information about a cluster, including
@@ -53,6 +53,16 @@ type Cluster struct {
 	CriticalFailuresExonerated1d Counts `json:"criticalFailuresExonerated1d"`
 	CriticalFailuresExonerated3d Counts `json:"criticalFailuresExonerated3d"`
 	CriticalFailuresExonerated7d Counts `json:"criticalFailuresExonerated7d"`
+
+	// The number of distinct user (i.e not automation generated) CLs
+	// which have failures that are part of this cluster, over the last
+	// 7 days. If this is more than a couple, it is a good indicator the
+	// problem is really in the tree and not only on a few unsubmitted CLs.
+	DistinctUserCLsWithFailures7d Counts
+	// The number of postsubmit builds which have failures that are
+	// a part of this cluster. If this is non-zero, it is an indicator
+	// the problem is in the tree and not in a few unsubmitted CLs.
+	PostsubmitBuildsWithFailures7d Counts
 
 	// The realm(s) examples of the cluster are present in.
 	Realms               []string
@@ -175,7 +185,7 @@ func (c *Client) PurgeStaleRows(ctx context.Context, luciProject string) error {
 									)
 				-- Or is the latest (cluster, test result) entry, but test result
 				-- is no longer in cluster.
-				OR NOT cf1.is_included
+				OR NOT COALESCE(cf1.is_included, FALSE)
 			)
 	`)
 	q.DefaultDatasetID = dataset.DatasetID
@@ -234,7 +244,9 @@ func (c *Client) ReadClusters(ctx context.Context, luciProject string, clusterID
 		selectCounts("test_run_fails", "TestRunFails", "7d") +
 		selectCounts("failures", "Failures", "1d") +
 		selectCounts("failures", "Failures", "3d") +
-		selectCounts("failures", "Failures", "7d") + `
+		selectCounts("failures", "Failures", "7d") +
+		selectCounts("distinct_user_cls_with_failures", "DistinctUserCLsWithFailures", "7d") +
+		selectCounts("postsubmit_builds_with_failures", "PostsubmitBuildsWithFailures", "7d") + `
 		    realms as Realms,
 			example_failure_reason.primary_error_message as ExampleFailureReason,
 			top_test_ids as TopTestIDs
@@ -317,7 +329,9 @@ func (c *Client) ReadImpactfulClusters(ctx context.Context, opts ImpactfulCluste
 		selectCounts("test_run_fails", "TestRunFails", "7d") +
 		selectCounts("failures", "Failures", "1d") +
 		selectCounts("failures", "Failures", "3d") +
-		selectCounts("failures", "Failures", "7d") + `
+		selectCounts("failures", "Failures", "7d") +
+		selectCounts("distinct_user_cls_with_failures", "DistinctUserCLsWithFailures", "7d") +
+		selectCounts("postsubmit_builds_with_failures", "PostsubmitBuildsWithFailures", "7d") + `
 			example_failure_reason.primary_error_message as ExampleFailureReason,
 			top_test_ids as TopTestIDs,
 			ARRAY(

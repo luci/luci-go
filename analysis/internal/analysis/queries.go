@@ -49,6 +49,7 @@ const clusterAnalysis = `
 	  r.failure_reason,
 	  r.bug_tracking_component,
 	  r.test_run_id,
+	  r.ingested_invocation_id,
 	  r.partition_time >= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL 12 HOUR) as is_12h,
 	  r.partition_time >= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL 1 DAY) as is_1d,
 	  r.partition_time >= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL 3 DAY) as is_3d,
@@ -59,8 +60,9 @@ const clusterAnalysis = `
 	  IF(ARRAY_LENGTH(r.changelists)>0 AND r.presubmit_run_owner='user',
 		  CONCAT(r.changelists[OFFSET(0)].host, r.changelists[OFFSET(0)].change),
 		  NULL) as presubmit_run_user_cl_id,
-	  (r.is_ingested_invocation_blocked AND r.build_critical AND
+      (r.is_ingested_invocation_blocked AND r.build_critical AND
 		r.presubmit_run_mode = 'FULL_RUN') as is_presubmit_reject,
+	  r.changelists IS NULL OR ARRAY_LENGTH(r.changelists) = 0 AS is_postsubmit,
 	  r.is_test_run_blocked as is_test_run_fail,
 	FROM clustered_failures_latest
   )
@@ -69,7 +71,7 @@ const clusterAnalysis = `
 	  cluster_algorithm,
 	  cluster_id,
 
-	  -- 1 day metrics.
+	  -- 1 day impact.
 	  COUNT(DISTINCT IF(is_1d AND is_presubmit_reject AND NOT is_exonerated AND build_failed, presubmit_run_user_cl_id, NULL)) as presubmit_rejects_1d,
 	  COUNT(DISTINCT IF(is_1d AND is_presubmit_reject AND is_included_with_high_priority AND NOT is_exonerated AND build_failed, presubmit_run_user_cl_id, NULL)) as presubmit_rejects_residual_1d,
 	  COUNT(DISTINCT IF(is_1d AND is_test_run_fail, test_run_id, NULL)) as test_run_fails_1d,
@@ -79,7 +81,7 @@ const clusterAnalysis = `
 	  COUNTIF(is_1d AND is_critical_and_exonerated) as critical_failures_exonerated_1d,
 	  COUNTIF(is_1d AND is_critical_and_exonerated AND is_included_with_high_priority) as critical_failures_exonerated_residual_1d,
 
-	  -- 3 day metrics.
+	  -- 3 day impact.
 	  COUNT(DISTINCT IF(is_3d AND is_presubmit_reject AND NOT is_exonerated AND build_failed, presubmit_run_user_cl_id, NULL)) as presubmit_rejects_3d,
 	  COUNT(DISTINCT IF(is_3d AND is_presubmit_reject AND is_included_with_high_priority AND NOT is_exonerated AND build_failed, presubmit_run_user_cl_id, NULL)) as presubmit_rejects_residual_3d,
 	  COUNT(DISTINCT IF(is_3d AND is_test_run_fail, test_run_id, NULL)) as test_run_fails_3d,
@@ -89,7 +91,7 @@ const clusterAnalysis = `
 	  COUNTIF(is_3d AND is_critical_and_exonerated) as critical_failures_exonerated_3d,
 	  COUNTIF(is_3d AND is_critical_and_exonerated AND is_included_with_high_priority) as critical_failures_exonerated_residual_3d,
 
-	  -- 7 day metrics.
+	  -- 7 day impact.
 	  COUNT(DISTINCT IF(is_7d AND is_presubmit_reject AND NOT is_exonerated AND build_failed, presubmit_run_user_cl_id, NULL)) as presubmit_rejects_7d,
 	  COUNT(DISTINCT IF(is_7d AND is_presubmit_reject AND is_included_with_high_priority AND NOT is_exonerated AND build_failed, presubmit_run_user_cl_id, NULL)) as presubmit_rejects_residual_7d,
 	  COUNT(DISTINCT IF(is_7d AND is_test_run_fail, test_run_id, NULL)) as test_run_fails_7d,
@@ -98,6 +100,12 @@ const clusterAnalysis = `
 	  COUNTIF(is_7d AND is_included_with_high_priority) as failures_residual_7d,
 	  COUNTIF(is_7d AND is_critical_and_exonerated) as critical_failures_exonerated_7d,
 	  COUNTIF(is_7d AND is_critical_and_exonerated AND is_included_with_high_priority) as critical_failures_exonerated_residual_7d,
+
+	  -- Analysis of whether the cluster occurs within the tree or only in isolated CLs.
+	  COUNT(DISTINCT IF(is_7d, presubmit_run_user_cl_id, NULL)) as distinct_user_cls_with_failures_7d,
+	  COUNT(DISTINCT IF(is_7d AND is_postsubmit, ingested_invocation_id, NULL)) as postsubmit_builds_with_failures_7d,
+	  COUNT(DISTINCT IF(is_7d AND is_included_with_high_priority, presubmit_run_user_cl_id, NULL)) as distinct_user_cls_with_failures_residual_7d,
+	  COUNT(DISTINCT IF(is_7d AND is_postsubmit AND is_included_with_high_priority, ingested_invocation_id, NULL)) as postsubmit_builds_with_failures_residual_7d,
 
 	  -- Other analysis.
 	  ANY_VALUE(failure_reason) as example_failure_reason,
