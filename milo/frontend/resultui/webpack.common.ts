@@ -29,7 +29,12 @@ const config: Configuration = {
     path: path.resolve(__dirname, './out/'),
     publicPath: '/ui/',
     filename: ({ chunk }) => (chunk?.name === 'root-sw' ? '[name].js' : 'immutable/[name].[contenthash].bundle.js'),
-    chunkFilename: 'immutable/[name].[contenthash].bundle.js',
+    chunkFilename: ({ chunk }) =>
+      // workbox somehow caches the files with encoded URLs.
+      // Encode the name so the file can be properly cached by workbox so users
+      // will not hit 404 when they have an old version cached and a new version
+      // is published.
+      `immutable/${encodeURIComponent(chunk?.name || chunk?.id || '')}.[contenthash].bundle.js`,
     trustedTypes: {
       policyName: 'milo#webpack',
     },
