@@ -51,21 +51,6 @@ export const countDistictVariantValues = (failures: DistinctClusterFailure[]): V
       }
     }
   });
-  failures.forEach((failure) => {
-    if (failure.tags === undefined) {
-      return;
-    }
-    for (const t of failure.tags) {
-      const variant = variantGroups.filter((e) => e.key === t.key)?.[0];
-      if (!variant) {
-        variantGroups.push({ key: t.key || '', values: [t.value || ''], isSelected: false });
-      } else {
-        if (variant.values.indexOf(t.value || '') === -1) {
-          variant.values.push(t.value || '');
-        }
-      }
-    }
-  });
   return variantGroups;
 };
 
@@ -333,32 +318,24 @@ export const groupAndCountFailures = (
     variantGroups: VariantGroup[],
     failureFilter: FailureFilter,
 ): FailureGroup[] => {
-  if (!failures) {
-    return [];
+  if (failures) {
+    let currentFailures = failures;
+    if (failureFilter == 'Presubmit Failures') {
+      currentFailures = failures.filter((f) => f.presubmitRun);
+    } else if (failureFilter == 'Postsubmit Failures') {
+      currentFailures = failures.filter((f) => !f.presubmitRun);
+    }
+    const groups = groupFailures(currentFailures, (failure) => {
+      const variantValues = variantGroups.filter((v) => v.isSelected)
+          .map((v) => {
+            const key: GroupKey = { type: 'variant', key: v.key, value: failure.variant?.def[v.key] || '' };
+            return key;
+          });
+      return [...variantValues, { type: 'test', value: failure.testId || '' }];
+    });
+    return groups;
   }
-
-  let currentFailures = failures;
-  if (failureFilter == 'Presubmit Failures') {
-    currentFailures = failures.filter((f) => f.presubmitRun);
-  } else if (failureFilter == 'Postsubmit Failures') {
-    currentFailures = failures.filter((f) => !f.presubmitRun);
-  }
-  const groups = groupFailures(currentFailures, (failure) => {
-    const variantValues = variantGroups.filter((v) => v.isSelected)
-        .map((v) => {
-          const key: GroupKey = {
-            type: 'variant',
-            key: v.key,
-            value: failure.variant?.def[v.key] ||
-                // multiple values for tags are comma separated.
-                failure.tags?.filter((t) => v.key == t.key).map((t) => t.value || '').join(', ') ||
-                '',
-          };
-          return key;
-        });
-    return [...variantValues, { type: 'test', value: failure.testId || '' }];
-  });
-  return groups;
+  return [];
 };
 
 export const countAndSortFailures = (groups: FailureGroup[], impactFilter: ImpactFilter): FailureGroup[] => {
