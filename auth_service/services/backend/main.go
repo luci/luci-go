@@ -32,6 +32,7 @@ import (
 	"go.chromium.org/luci/auth_service/impl"
 	"go.chromium.org/luci/auth_service/impl/model"
 	"go.chromium.org/luci/auth_service/internal/configs/srvcfg/allowlistcfg"
+	"go.chromium.org/luci/auth_service/internal/configs/srvcfg/oauthcfg"
 )
 
 func main() {
@@ -40,8 +41,8 @@ func main() {
 	}
 
 	impl.Main(modules, func(srv *server.Server) error {
-		// Register cron.
 		cron.RegisterHandler("update-config", func(ctx context.Context) error {
+			// ip_allowlist.cfg handling.
 			if err := allowlistcfg.Update(ctx); err != nil {
 				return err
 			}
@@ -54,6 +55,18 @@ func main() {
 				return err
 			}
 			if err := model.UpdateAllowlistEntities(ctx, subnets, true); err != nil {
+				return err
+			}
+
+			// oauth.cfg handling.
+			if err := oauthcfg.Update(ctx); err != nil {
+				return err
+			}
+			oauthcfg, err := oauthcfg.Get(ctx)
+			if err != nil {
+				return err
+			}
+			if err := model.UpdateAuthGlobalConfig(ctx, oauthcfg, true); err != nil {
 				return err
 			}
 			return nil

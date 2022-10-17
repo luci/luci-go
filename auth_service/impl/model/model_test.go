@@ -21,6 +21,7 @@ import (
 	"testing"
 	"time"
 
+	"go.chromium.org/luci/auth_service/api/configspb"
 	"go.chromium.org/luci/auth_service/api/taskspb"
 	"go.chromium.org/luci/auth_service/impl/info"
 	"go.chromium.org/luci/gae/filter/txndefer"
@@ -252,6 +253,10 @@ func getStringSliceProp(pm datastore.PropertyMap, key string) []string {
 		vals = append(vals, p.Value().(string))
 	}
 	return vals
+}
+
+func getByteSliceProp(pm datastore.PropertyMap, key string) []byte {
+	return getProp(pm, key).([]byte)
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -1259,7 +1264,7 @@ func TestUpdateAllowlistEntities(t *testing.T) {
 	})
 }
 
-func TestGetAuthGlobalConfig(t *testing.T) {
+func TestAuthGlobalConfig(t *testing.T) {
 	t.Parallel()
 
 	Convey("Testing GetAuthGlobalConfig", t, func() {
@@ -1275,6 +1280,118 @@ func TestGetAuthGlobalConfig(t *testing.T) {
 		actual, err := GetAuthGlobalConfig(ctx)
 		So(err, ShouldBeNil)
 		So(actual, ShouldResemble, cfg)
+	})
+
+	Convey("Testing UpdateAuthGlobalConfig", t, func() {
+		ctx := auth.WithState(memory.Use(context.Background()), &authtest.FakeState{
+			Identity:       "user:someone@example.com",
+			IdentityGroups: []string{AdminGroup},
+		})
+		ctx = clock.Set(ctx, testclock.New(testCreatedTS))
+		ctx = info.SetImageVersion(ctx, "test-version")
+		ctx, taskScheduler := tq.TestingContext(txndefer.FilterRDS(ctx), nil)
+		cfgpb := &configspb.OAuthConfig{
+			PrimaryClientId:     "new-test-client-id",
+			PrimaryClientSecret: "new-test-client-secret",
+			ClientIds: []string{
+				"new-test-client-id-1",
+				"new-test-client-id-2",
+			},
+			TokenServerUrl: "https://new-token-server-url.example.com",
+		}
+
+		Convey("Creating new AuthGlobalConfig", func() {
+			So(UpdateAuthGlobalConfig(ctx, cfgpb, false), ShouldBeNil)
+			updatedCfg, err := GetAuthGlobalConfig(ctx)
+			So(err, ShouldBeNil)
+			So(updatedCfg, ShouldResemble, &AuthGlobalConfig{
+				AuthVersionedEntityMixin: AuthVersionedEntityMixin{
+					ModifiedTS:    testCreatedTS,
+					ModifiedBy:    "user:someone@example.com",
+					AuthDBRev:     1,
+					AuthDBPrevRev: 0,
+				},
+				Kind:                     "AuthGlobalConfig",
+				ID:                       "root",
+				OAuthClientID:            "new-test-client-id",
+				OAuthAdditionalClientIDs: []string{"new-test-client-id-1", "new-test-client-id-2"},
+				OAuthClientSecret:        "new-test-client-secret",
+				TokenServerURL:           "https://new-token-server-url.example.com",
+			})
+			state1, err := GetReplicationState(ctx)
+			So(err, ShouldBeNil)
+			So(state1.AuthDBRev, ShouldEqual, 1)
+			tasks := taskScheduler.Tasks()
+			So(tasks, ShouldHaveLength, 1)
+			task := tasks[0]
+			So(task.Class, ShouldEqual, "process-change-task")
+			So(task.Payload, ShouldResembleProto, &taskspb.ProcessChangeTask{AuthDbRev: 1})
+
+			entities, err := getAllDatastoreEntities(ctx, "AuthGlobalConfigHistory", HistoricalRevisionKey(ctx, 1))
+			So(err, ShouldBeNil)
+			So(entities, ShouldHaveLength, 1)
+			historicalEntity := entities[0]
+			So(getDatastoreKey(historicalEntity).String(), ShouldEqual, "dev~app::/AuthGlobalConfig,\"root\"/Rev,1/AuthGlobalConfigHistory,\"root\"")
+			So(getStringProp(historicalEntity, "oauth_client_id"), ShouldEqual, "new-test-client-id")
+			So(getStringProp(historicalEntity, "oauth_client_secret"), ShouldEqual, "new-test-client-secret")
+			So(getStringProp(historicalEntity, "token_server_url"), ShouldEqual, "https://new-token-server-url.example.com")
+			So(getStringSliceProp(historicalEntity, "oauth_additional_client_ids"), ShouldResemble, []string{"new-test-client-id-1", "new-test-client-id-2"})
+			So(getStringProp(historicalEntity, "modified_by"), ShouldEqual, "user:someone@example.com")
+			So(getTimeProp(historicalEntity, "modified_ts").Unix(), ShouldEqual, testCreatedTS.Unix())
+			So(getInt64Prop(historicalEntity, "auth_db_rev"), ShouldEqual, 1)
+			So(getProp(historicalEntity, "auth_db_prev_rev"), ShouldBeNil)
+			So(getStringProp(historicalEntity, "auth_db_change_comment"), ShouldEqual, "Go pRPC API")
+			So(getStringProp(historicalEntity, "auth_db_app_version"), ShouldEqual, "test-version")
+			So(getBoolProp(historicalEntity, "auth_db_deleted"), ShouldBeFalse)
+		})
+
+		Convey("Updating AuthGlobalConfig", func() {
+			So(datastore.Put(ctx, testAuthGlobalConfig(ctx)), ShouldBeNil)
+			So(UpdateAuthGlobalConfig(ctx, cfgpb, false), ShouldBeNil)
+			updatedCfg, err := GetAuthGlobalConfig(ctx)
+			So(err, ShouldBeNil)
+			So(updatedCfg, ShouldResemble, &AuthGlobalConfig{
+				AuthVersionedEntityMixin: AuthVersionedEntityMixin{
+					ModifiedTS:    testCreatedTS,
+					ModifiedBy:    "user:someone@example.com",
+					AuthDBRev:     1,
+					AuthDBPrevRev: 1337,
+				},
+				Kind:                     "AuthGlobalConfig",
+				ID:                       "root",
+				OAuthClientID:            "new-test-client-id",
+				OAuthAdditionalClientIDs: []string{"new-test-client-id-1", "new-test-client-id-2"},
+				OAuthClientSecret:        "new-test-client-secret",
+				TokenServerURL:           "https://new-token-server-url.example.com",
+				SecurityConfig:           testSecurityConfigBlob(),
+			})
+			state1, err := GetReplicationState(ctx)
+			So(err, ShouldBeNil)
+			So(state1.AuthDBRev, ShouldEqual, 1)
+			tasks := taskScheduler.Tasks()
+			So(tasks, ShouldHaveLength, 1)
+			task := tasks[0]
+			So(task.Class, ShouldEqual, "process-change-task")
+			So(task.Payload, ShouldResembleProto, &taskspb.ProcessChangeTask{AuthDbRev: 1})
+
+			entities, err := getAllDatastoreEntities(ctx, "AuthGlobalConfigHistory", HistoricalRevisionKey(ctx, 1))
+			So(err, ShouldBeNil)
+			So(entities, ShouldHaveLength, 1)
+			historicalEntity := entities[0]
+			So(getDatastoreKey(historicalEntity).String(), ShouldEqual, "dev~app::/AuthGlobalConfig,\"root\"/Rev,1/AuthGlobalConfigHistory,\"root\"")
+			So(getStringProp(historicalEntity, "oauth_client_id"), ShouldEqual, "new-test-client-id")
+			So(getStringProp(historicalEntity, "oauth_client_secret"), ShouldEqual, "new-test-client-secret")
+			So(getStringProp(historicalEntity, "token_server_url"), ShouldEqual, "https://new-token-server-url.example.com")
+			So(getByteSliceProp(historicalEntity, "security_config"), ShouldResemble, testSecurityConfigBlob())
+			So(getStringSliceProp(historicalEntity, "oauth_additional_client_ids"), ShouldResemble, []string{"new-test-client-id-1", "new-test-client-id-2"})
+			So(getStringProp(historicalEntity, "modified_by"), ShouldEqual, "user:someone@example.com")
+			So(getTimeProp(historicalEntity, "modified_ts").Unix(), ShouldEqual, testCreatedTS.Unix())
+			So(getInt64Prop(historicalEntity, "auth_db_rev"), ShouldEqual, 1)
+			So(getInt64Prop(historicalEntity, "auth_db_prev_rev"), ShouldEqual, 1337)
+			So(getStringProp(historicalEntity, "auth_db_change_comment"), ShouldEqual, "Go pRPC API")
+			So(getStringProp(historicalEntity, "auth_db_app_version"), ShouldEqual, "test-version")
+			So(getBoolProp(historicalEntity, "auth_db_deleted"), ShouldBeFalse)
+		})
 	})
 }
 

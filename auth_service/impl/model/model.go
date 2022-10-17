@@ -28,6 +28,7 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/auth/identity"
+	"go.chromium.org/luci/auth_service/api/configspb"
 	"go.chromium.org/luci/auth_service/api/rpcpb"
 	"go.chromium.org/luci/auth_service/impl/info"
 	"go.chromium.org/luci/common/clock"
@@ -388,6 +389,14 @@ func makeAuthIPAllowlist(ctx context.Context, id string) *AuthIPAllowlist {
 		Kind:   "AuthIPWhitelist",
 		ID:     id,
 		Parent: RootKey(ctx),
+	}
+}
+
+// makeAuthGlobalConfig is a convenience function for creating AuthGlobalConfig.
+func makeAuthGlobalConfig(ctx context.Context) *AuthGlobalConfig {
+	return &AuthGlobalConfig{
+		Kind: 	"AuthGlobalConfig",
+		ID: 	"root",
 	}
 }
 
@@ -1072,6 +1081,37 @@ func GetAuthGlobalConfig(ctx context.Context) (*AuthGlobalConfig, error) {
 	default:
 		return nil, errors.Annotate(err, "error getting AuthGlobalConfig").Err()
 	}
+}
+
+// UpdateAuthGlobalConfig updates the AuthGlobalConfig datastore entity.
+// If there is no AuthGlobalConfig entity present in the datastore, one will be
+// created.
+//
+// TODO(crbug/1336135): Remove dryrun checks when turning off Python Auth Service.
+func UpdateAuthGlobalConfig(ctx context.Context, cfg *configspb.OAuthConfig, dryRun bool) error {
+	return runAuthDBChange(ctx, func(ctx context.Context, commitEntity commitAuthEntity) error {
+		rootAuthGlobalCfg, err := GetAuthGlobalConfig(ctx)
+		if err != nil && err != datastore.ErrNoSuchEntity {
+			return err
+		}
+
+		if rootAuthGlobalCfg == nil {
+			rootAuthGlobalCfg = makeAuthGlobalConfig(ctx)
+		}
+		rootAuthGlobalCfg.OAuthClientID = cfg.GetPrimaryClientId()
+		rootAuthGlobalCfg.OAuthAdditionalClientIDs = cfg.GetClientIds()
+		rootAuthGlobalCfg.OAuthClientSecret = cfg.GetPrimaryClientSecret()
+		rootAuthGlobalCfg.TokenServerURL = cfg.GetTokenServerUrl()
+		// TODO(crbug/1336135): add security config assignment once validation is ready.
+		if dryRun {
+			logging.Infof(ctx, "updating:\n%+v", rootAuthGlobalCfg)
+		} else {
+			if err := commitEntity(rootAuthGlobalCfg, clock.Now(ctx).UTC(), auth.CurrentIdentity(ctx), false); err != nil {
+				return err
+			}
+		}
+		return nil
+	})
 }
 
 // GetAuthDBSnapshot returns the AuthDBSnapshot datastore entity.
