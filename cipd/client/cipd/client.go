@@ -81,7 +81,6 @@ import (
 	"go.chromium.org/luci/cipd/client/cipd/pkg"
 	"go.chromium.org/luci/cipd/client/cipd/platform"
 	"go.chromium.org/luci/cipd/client/cipd/plugin"
-	"go.chromium.org/luci/cipd/client/cipd/plugin/host"
 	"go.chromium.org/luci/cipd/client/cipd/reader"
 	"go.chromium.org/luci/cipd/client/cipd/template"
 	"go.chromium.org/luci/cipd/client/cipd/ui"
@@ -128,7 +127,7 @@ var (
 	// ClientPackage is a package with the CIPD client. Used during self-update.
 	ClientPackage = "infra/tools/cipd/${platform}"
 	// UserAgent is HTTP user agent string for CIPD client.
-	UserAgent = "cipd 2.6.10"
+	UserAgent = "cipd 2.6.11"
 )
 
 func init() {
@@ -546,6 +545,12 @@ func loadConfigFile(path string) (*configpb.ClientConfig, error) {
 	return cfg, nil
 }
 
+// initPluginHost creates a new plugin.Host.
+//
+// It is implemented in a separate client_plugin_host.go, allowing to statically
+// turn off the plugin system via build tags.
+var initPluginHost func(ctx context.Context) plugin.Host
+
 // NewClientFromEnv initializes CIPD client using given options and
 // applying settings from the environment and the configuration file on top
 // using ClientOptions' LoadFromEnv.
@@ -666,13 +671,19 @@ func NewClient(opts ClientOptions) (Client, error) {
 		if ctx == nil {
 			ctx = context.Background()
 		}
-		pluginHost = &host.Host{PluginsContext: ctx}
-		err := pluginHost.Initialize(plugin.Config{
-			ServiceURL: opts.ServiceURL,
-			Repository: repo,
-		})
-		if err != nil {
-			return nil, errors.Annotate(err, "initializing the plugin host").Err()
+		if initPluginHost != nil {
+			pluginHost = initPluginHost(ctx)
+		}
+		if pluginHost != nil {
+			err := pluginHost.Initialize(plugin.Config{
+				ServiceURL: opts.ServiceURL,
+				Repository: repo,
+			})
+			if err != nil {
+				return nil, errors.Annotate(err, "initializing the plugin host").Err()
+			}
+		} else {
+			logging.Warningf(ctx, "CIPD plugins are disabled, but an admission plugin is requested")
 		}
 	}
 
@@ -685,7 +696,7 @@ func NewClient(opts ClientOptions) (Client, error) {
 		pluginHost:    pluginHost,
 	}
 
-	if len(opts.AdmissionPlugin) != 0 {
+	if len(opts.AdmissionPlugin) != 0 && client.pluginHost != nil {
 		client.pluginAdmission, err = client.pluginHost.NewAdmissionPlugin(opts.AdmissionPlugin)
 		if err != nil {
 			return nil, errors.Annotate(err, "initializing the admission plugin").Err()
