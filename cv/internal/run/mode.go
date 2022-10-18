@@ -43,7 +43,7 @@ const (
 
 func (m Mode) Valid() bool {
 	switch m {
-	case DryRun, FullRun, QuickDryRun:
+	case DryRun, FullRun, QuickDryRun, NewPatchsetRun:
 		return true
 	default:
 		return false
