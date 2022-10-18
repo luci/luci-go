@@ -126,6 +126,7 @@ func NewFetchInput(cl *CL, task *UpdateCLTask) *FetchInput {
 		// TODO(crbug.com/1358208): replace the below by `Hint: task.GetHint()`,
 		Hint: &UpdateCLTask_Hint{
 			ExternalUpdateTime: task.getUpdateTimeHint(),
+			MetaRevId:          task.GetHint().GetMetaRevId(),
 		},
 		Requester: task.GetRequester(),
 	}
@@ -543,11 +544,22 @@ func (u *Updater) handleCLWithBackend(ctx context.Context, task *UpdateCLTask, c
 // NOTE: UpdateFields may be set if fetch can be skipped, meaning CL entity
 // should be updated in Datastore.
 func (u *Updater) trySkippingFetch(ctx context.Context, task *UpdateCLTask, cl *CL, backend UpdaterBackend) (bool, UpdateFields, error) {
-	hintedTS := task.getUpdateTimeHint()
-	if cl.ID == 0 || cl.Snapshot == nil || cl.Snapshot.GetOutdated() != nil || hintedTS == nil {
+	if cl.ID == 0 || cl.Snapshot == nil || cl.Snapshot.GetOutdated() != nil {
 		return false, UpdateFields{}, nil
 	}
-	if hintedTS.AsTime().After(cl.Snapshot.GetExternalUpdateTime().AsTime()) {
+
+	hintedTS := task.getUpdateTimeHint()
+	hintedRevID := task.GetHint().GetMetaRevId()
+	switch {
+	case hintedTS == nil && hintedRevID == "":
+		// fetch always if there is no hint available.
+		return false, UpdateFields{}, nil
+	case hintedRevID != "" && hintedRevID != cl.Snapshot.GetGerrit().GetInfo().GetMetaRevId():
+		// fetch always if MetaRev is different to the rev id of the stored
+		// snapshot. If the fetched snapshot is older than the stored snapshot,
+		// it will be skipped to update the DS entity with the fetched snapshot.
+		return false, UpdateFields{}, nil
+	case hintedTS != nil && hintedTS.AsTime().After(cl.Snapshot.GetExternalUpdateTime().AsTime()):
 		// There is no confidence that Snapshot is up-to-date, so proceed fetching
 		// anyway.
 
@@ -627,10 +639,15 @@ func (u *Updater) trySkippingFetch(ctx context.Context, task *UpdateCLTask, cl *
 		return false, toUpdate, nil
 	}
 
-	// Finally, do refresh if the CL entity is just really old.
-	if clock.Since(ctx, cl.UpdateTime) > autoRefreshAfter {
-		// Strictly speaking, cl.UpdateTime isn't just changed on refresh, but also
-		// whenever Run starts/ends. However, the start of Run is usually
+	// Finally, do refresh if the CL entity is just really old and the meta rev
+	// id is unset.
+	switch {
+	case hintedRevID != "":
+	// skip the fetch if the meta rev id is the same as the rev id of the stored
+	// snapshot.
+	case clock.Since(ctx, cl.UpdateTime) > autoRefreshAfter:
+		// Strictly speaking, cl.UpdateTime isn't just changed on refresh, but
+		// also whenever Run starts/ends. However, the start of Run is usually
 		// happenening right after recent refresh, and end of Run is usually
 		// followed by the refresh.
 		return false, toUpdate, nil
@@ -708,6 +725,18 @@ func makeTaskDeduplicationKey(ctx context.Context, t *UpdateCLTask, delay time.D
 	}
 	sb.WriteString(uniqArg)
 
+	// If the meta rev ID is set, dedup with a time window isn't necessary.
+	// 1) Gerrit guarantees one publish for each of CL update events.
+	// 2) # of redelivered messages should be low enough to ignore.
+	// 3) If the same message is redelivered multiple times, the backend
+	// will skip fetching the snapshot after the first message.
+	// 4) If it's concerned that retries can fast burn out Gerrit quota,
+	// pubsub retry config should be tuned, instead.
+	if revID := t.GetHint().GetMetaRevId(); revID != "" {
+		_, _ = fmt.Fprintf(&sb, "\n%s", revID)
+		return sb.String()
+	}
+
 	// Dedup in the short term to avoid excessive number of refreshes,
 	// but ensure eventually calling Schedule with the same payload results in a
 	// new task. This is done by de-duping only within a single "epoch" window,
@@ -749,9 +778,11 @@ func makeTaskDeduplicationKey(ctx context.Context, t *UpdateCLTask, delay time.D
 // log alone, as opposed to searching through much larger and separate stderr
 // log of the process (which is where logging.Logf calls go into).
 //
-// For example, the title for the task with all the field specified:
+// For example,
 //
+//	"proj/gerrit/chromium/1111111/u2016-02-03T04:05:06Z/deadbeef"
 //	"proj/gerrit/chromium/1111111/u2016-02-03T04:05:06Z"
+//	"proj/gerrit/chromium/1111111/deadbeef"
 func makeTQTitleForHumans(t *UpdateCLTask) string {
 	var sb strings.Builder
 	sb.WriteString(t.GetLuciProject())
@@ -768,9 +799,13 @@ func makeTQTitleForHumans(t *UpdateCLTask) string {
 		}
 		sb.WriteString(eid)
 	}
-	if h := t.getUpdateTimeHint(); h != nil {
+	if hintedTS := t.getUpdateTimeHint(); hintedTS != nil {
 		sb.WriteString("/u")
-		sb.WriteString(h.AsTime().UTC().Format(time.RFC3339))
+		sb.WriteString(hintedTS.AsTime().UTC().Format(time.RFC3339))
+	}
+	if hintedRevID := t.GetHint().GetMetaRevId(); hintedRevID != "" {
+		sb.WriteString("/")
+		sb.WriteString(hintedRevID)
 	}
 	return sb.String()
 }

@@ -440,8 +440,17 @@ func TestUpdaterBackendFetch(t *testing.T) {
 						ExternalUpdateTime: timestamppb.New(staleUpdateTime.Add(time.Minute)),
 					},
 				}
+
 				_, err := gu.Fetch(ctx, changelist.NewFetchInput(&existingCL, task))
 				So(err, ShouldErrLike, gerrit.ErrStaleData)
+
+				Convey("if MetaRevId was set, skip updating Snapshot", func() {
+					task.Hint.MetaRevId = "deadbeef"
+					res, err := gu.Fetch(ctx, changelist.NewFetchInput(&existingCL, task))
+					// The Fetch() should succeed with nil in toUpdate.Snapshot.
+					So(err, ShouldBeNil)
+					So(res.Snapshot, ShouldBeNil)
+				})
 			})
 		})
 
@@ -588,6 +597,20 @@ func TestUpdaterBackendFetch(t *testing.T) {
 				_, err := gu.Fetch(ctx, changelist.NewFetchInput(&newCL, task))
 				So(err, ShouldErrLike, "2nd call failed")
 			})
+		})
+
+		Convey("MetaRevID", func() {
+			expUpdateTime := ct.Clock.Now().Add(-time.Minute)
+			ci := gf.CI(
+				gChange,
+				gf.Project(gRepo),
+				gf.Ref("refs/heads/main"),
+				gf.PS(2),
+				gf.Updated(expUpdateTime),
+				gf.MetaRevID("deadbeef"),
+			)
+			ct.GFake.AddFrom(gf.WithCIs(gHost, gf.ACLPublic(), ci))
+			task.Hint.MetaRevId = "deadbeef"
 		})
 	})
 }

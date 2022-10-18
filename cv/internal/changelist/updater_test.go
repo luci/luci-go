@@ -26,6 +26,7 @@ import (
 
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/errors"
+	gerrit "go.chromium.org/luci/common/proto/gerrit"
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/server/tq"
@@ -129,6 +130,23 @@ func TestUpdaterSchedule(t *testing.T) {
 				t := &UpdateCLTask{LuciProject: "proj", ExternalId: "kind1/foo/23"}
 				k1 := makeTaskDeduplicationKey(ctx, t, 0)
 				k2 := makeTaskDeduplicationKey(ctx, t, blindRefreshInterval)
+				So(k1, ShouldNotResemble, k2)
+			})
+
+			Convey("Same CL with the same MetaRevId is de-duped", func() {
+				t := &UpdateCLTask{LuciProject: "proj", ExternalId: "kind1/foo/23"}
+				t.Hint = &UpdateCLTask_Hint{MetaRevId: "foo"}
+				k1 := makeTaskDeduplicationKey(ctx, t, 0)
+				k2 := makeTaskDeduplicationKey(ctx, t, 0)
+				So(k1, ShouldResemble, k2)
+			})
+
+			Convey("Same CL with the different MetaRevId is not de-duped", func() {
+				t := &UpdateCLTask{LuciProject: "proj", ExternalId: "kind1/foo/23"}
+				t.Hint = &UpdateCLTask_Hint{MetaRevId: "foo"}
+				k1 := makeTaskDeduplicationKey(ctx, t, 0)
+				t.Hint = &UpdateCLTask_Hint{MetaRevId: "bar"}
+				k2 := makeTaskDeduplicationKey(ctx, t, 0)
 				So(k1, ShouldNotResemble, k2)
 			})
 		})
@@ -719,6 +737,20 @@ func TestUpdaterAvoidsFetchWhenPossible(t *testing.T) {
 				So(cl2.Snapshot, ShouldResembleProto, cl.Snapshot)
 				So(cl2.ApplicableConfig, ShouldResembleProto, b.lookupACfgResult)
 			})
+
+			Convey("meta_rev_id is the same", func() {
+				Convey("even if the CL entity is really old", func(c C) {
+					ct.Clock.Add(autoRefreshAfter + time.Minute)
+				})
+
+				cl.Snapshot.Kind = &Snapshot_Gerrit{Gerrit: &Gerrit{
+					Info: &gerrit.ChangeInfo{MetaRevId: "deadbeef"},
+				}}
+				So(datastore.Put(ctx, cl), ShouldBeNil)
+				task.Hint.MetaRevId = "deadbeef"
+				So(u.handleCL(ctx, task), ShouldBeNil)
+				So(b.wasFetchCalled(), ShouldBeFalse)
+			})
 		})
 
 		Convey("doesn't skip Fetch because ...", func() {
@@ -772,6 +804,15 @@ func TestUpdaterAvoidsFetchWhenPossible(t *testing.T) {
 					},
 				}
 				saveCLAndRun()
+				So(b.wasFetchCalled(), ShouldBeTrue)
+			})
+			Convey("meta_rev_id is different", func() {
+				cl.Snapshot.Kind = &Snapshot_Gerrit{Gerrit: &Gerrit{
+					Info: &gerrit.ChangeInfo{MetaRevId: "deadbeef"},
+				}}
+				So(datastore.Put(ctx, cl), ShouldBeNil)
+				task.Hint.MetaRevId = "foo"
+				So(u.handleCL(ctx, task), ShouldBeNil)
 				So(b.wasFetchCalled(), ShouldBeTrue)
 			})
 		})

@@ -103,8 +103,12 @@ func (f *fetcher) fetch(ctx context.Context) error {
 	case err != nil:
 		return err
 	case ci == nil:
-		// Don't proceed to fetching the other details, likely because CV lacks
-		// access to the CL or this LUCI project is no longer watching the CL.
+		// Don't proceed to fetching the other details.
+		// It's likely due to one of the following.
+		// - CV lacks access to the CL
+		// - this LUCI project is no longer watching the CL
+		// - the task was hinted with an old MetaRevID due to a pubsub message
+		// delivered out of order
 		return nil
 	}
 
@@ -217,6 +221,7 @@ func (f *fetcher) fetchChangeInfo(ctx context.Context, opts ...gerritpb.QueryOpt
 			Number:  f.change,
 			Project: f.gerritProjectIfKnown(),
 			Options: opts,
+			Meta:    f.hint.GetMetaRevId(),
 		}, opt)
 		switch grpcutil.Code(err) {
 		case codes.OK:
@@ -226,6 +231,12 @@ func (f *fetcher) fetchChangeInfo(ctx context.Context, opts ...gerritpb.QueryOpt
 			return nil
 		case codes.NotFound, codes.PermissionDenied:
 			return errStaleOrNoAccess
+		// GetChange() returns codes.FailedPrecondition if meta is given
+		// but the SHA-1 is not reachable from the serving Gerrit replica.
+		//
+		// Return errStaleData to retry on it.
+		case codes.FailedPrecondition:
+			return gerrit.ErrStaleData
 		default:
 			return gerrit.UnhandledError(ctx, err, "failed to fetch %s", f)
 		}
@@ -239,12 +250,18 @@ func (f *fetcher) fetchChangeInfo(ctx context.Context, opts ...gerritpb.QueryOpt
 	}
 
 	f.toUpdate.ApplicableConfig, err = gobmap.Lookup(ctx, f.host, ci.GetProject(), ci.GetRef())
-	switch {
+	switch storedTS := f.priorSnapshot().GetExternalUpdateTime(); {
 	case err != nil:
 		return nil, err
 	case !f.toUpdate.ApplicableConfig.HasProject(f.project):
 		logging.Debugf(ctx, "%s is not watched by the %q project", f, f.project)
 		return nil, f.setCertainNoAccess(ctx)
+	case storedTS != nil && storedTS.AsTime().After(ci.GetUpdated().AsTime()):
+		// The fetched snapshot is fresh, but older than the prior snapshot.
+		// Then, skip updating the snapshot.
+		//
+		// It can happen pubsub messages were delivered out of order.
+		return nil, nil
 	}
 
 	return ci, nil
@@ -601,6 +618,13 @@ func (f *fetcher) depsToExternalIDs() (map[changelist.ExternalID]changelist.DepK
 // isStale returns true if given Gerrit updated timestamp is older than
 // the updateHint or the existing CL state.
 func (f *fetcher) isStale(ctx context.Context, externalUpdateTime *timestamppb.Timestamp) bool {
+	if f.hint.GetMetaRevId() != "" {
+		// If meta was set, it's always the fresh data of the snapshot.
+		//
+		// If it is an older snapshot than the stored snapshot,
+		// the snapshot update will be skipped.
+		return false
+	}
 	t := externalUpdateTime.AsTime()
 	storedTS := f.priorSnapshot().GetExternalUpdateTime()
 	hintedTS := f.hint.GetExternalUpdateTime()

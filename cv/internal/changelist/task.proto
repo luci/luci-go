@@ -59,6 +59,8 @@ message UpdateCLTask {
   message Hint {
     // The external update time of the Snapshot to fetch.
     google.protobuf.Timestamp external_update_time = 1;
+    // The meta rev ID of the Snapshot to fetch.
+    string meta_rev_id = 2;
   }
 
   // Hint provides various hints for the snapshot to be fetched.
