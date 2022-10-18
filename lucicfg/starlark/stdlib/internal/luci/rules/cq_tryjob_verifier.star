@@ -19,7 +19,7 @@ load("@stdlib//internal/lucicfg.star", "lucicfg")
 load("@stdlib//internal/re.star", "re")
 load("@stdlib//internal/validate.star", "validate")
 load("@stdlib//internal/luci/common.star", "keys", "kinds")
-load("@stdlib//internal/luci/lib/cq.star", "cq")
+load("@stdlib//internal/luci/lib/cq.star", "cq", "cqimpl")
 
 def _cq_tryjob_verifier(
         ctx,  # @unused
@@ -33,6 +33,7 @@ def _cq_tryjob_verifier(
         experiment_percentage = None,
         location_regexp = None,
         location_regexp_exclude = None,
+        location_filters = None,
         owner_whitelist = None,
         equivalent_builder = None,
         equivalent_builder_percentage = None,
@@ -55,8 +56,20 @@ def _cq_tryjob_verifier(
     The CQ can examine a set of files touched by the CL and decide to skip this
     verifier. Touching a file means either adding, modifying or removing it.
 
-    This is controlled by the `location_regexp` and `location_regexp_exclude`
-    fields:
+    This is controlled by the `location_filters` field.
+
+    location_filters is a list of filters, each of which includes regular
+    expressions for matching Gerrit host, project, and path. The Gerrit host,
+    Gerrit project and file path for each file in each CL are matched against
+    the filters; The last filter that matches all paterns determines whether
+    the file is considered included (not skipped) or excluded (skipped); if the
+    last matching LocationFilter has exclude set to true, then the builder is
+    skipped. If none of the LocationFilters match, then the file is considered
+    included if the first rule is an exclude rule; else the file is excluded.
+
+    Note that `location_regexp` and `location_regexp_exclude` is the deprecated
+    way to perform filtering. You may continue to use them but they are
+    mutually exclusive with `location_filter`. See crbug.com/1171945.
 
       * If `location_regexp` is specified and no file in a CL matches any of the
         `location_regexp`, then the CQ will not care about this verifier.
@@ -83,20 +96,19 @@ def _cq_tryjob_verifier(
 
       * For verifiers in CQ groups with `allow_submit_with_open_deps = True`.
 
-    NOTE: location_regexp and location_regexp_exclude are deprecated in favor
-    of location_filters.
-    TODO(crbug.com/1171945): Update this after location_filters is used.
-
     Please talk to CQ owners if these restrictions are limiting you.
 
     ##### Examples
 
-    Enable the verifier for all CLs touching any file in `third_party/WebKit`
-    directory of the `chromium/src` repo, but not directory itself:
+    Enable the verifier for all CLs touching any file in `third_party/blink`
+    directory of the `chromium/src` repo, but not the directory itself:
 
         luci.cq_tryjob_verifier(
-            location_regexp = [
-                'https://chromium-review.googlesource.com/chromium/src/[+]/third_party/WebKit/.+',
+            location_filters = [
+                cq.location_filter(
+                    gerrit_host_regexp = 'chromium-review.googlesource.com',
+                    gerrit_project_regexp = 'chromium/src'
+                    path_regexp = 'third_party/blink/.+')
             ],
         )
 
@@ -104,8 +116,17 @@ def _cq_tryjob_verifier(
     `all/` directory of the Gerrit project `repo`:
 
         luci.cq_tryjob_verifier(
-            location_regexp = ['https://example.com/repo/[+]/.+'],
-            location_regexp_exclude = ['https://example.com/repo/[+]/all/one.txt'],
+            location_filters = [
+                cq.location_filter(
+                    gerrit_host_regexp = 'example.com,
+                    gerrit_project_regexp = 'repo',
+                    path_regexp = '.+'),
+                cq.location_filter(
+                    gerrit_host_regexp = 'example.com,
+                    gerrit_project_regexp = 'repo',
+                    path_regexp = 'all/one.txt',
+                    exclude = True),
+            ],
         )
 
     Match a CL which touches at least one file other than `one.txt` in any
@@ -113,7 +134,13 @@ def _cq_tryjob_verifier(
     `location_regexp` defaults to `.*`:
 
         luci.cq_tryjob_verifier(
-            location_regexp_exclude = ['https://example.com/repo/[+]/all/one.txt'],
+            location_filters = [
+                cq.location_filter(
+                    gerrit_host_regexp = 'example.com,
+                    gerrit_project_regexp = 'repo',
+                    path_regexp = 'all/one.txt',
+                    exclude = True),
+            ],
         )
 
     #### Per-CL opt-in only builders
@@ -275,6 +302,7 @@ def _cq_tryjob_verifier(
       location_regexp_exclude: a list of regexps that define a set of files to
         completely skip when evaluating whether the verifier should be applied
         to a CL or not. See the explanation above for all details.
+      location_filters: a list of cq.location_filter(...).
       owner_whitelist: a list of groups with accounts of CL owners to enable
         this builder for. If set, only CLs owned by someone from any one of
         these groups will be verified by this builder.
@@ -311,6 +339,10 @@ def _cq_tryjob_verifier(
     for r in location_regexp_exclude:
         validate.string("location_regexp_exclude", r)
 
+    location_filters = validate.list("location_filters", location_filters)
+    for lf in location_filters:
+        cqimpl.validate_location_filter("location_filters", lf)
+
     # Note: CQ does this itself implicitly, but we want configs to be explicit.
     if location_regexp_exclude and not location_regexp:
         location_regexp = [".*"]
@@ -344,13 +376,25 @@ def _cq_tryjob_verifier(
     for m in mode_allowlist:
         validate.string("mode_allowlist", m)
 
+    # Validate location_filters used by analyzers.
+    # TODO(crbug/1202952): Remove these restrictions after Tricium is
+    # folded into CV.
+    if cq.MODE_ANALYZER_RUN in mode_allowlist:
+        _validate_analyzer_location(location_filters)
+
+    # location_filters and location_regexp cannot be used together;
+    # location_filters should replace location_regexp[_exclude].
+    if location_regexp and location_filters:
+        fail('"location_filters" can not be used together with "location_regexp" or "location_regexp_exclude"')
+
     # Fill location_filters in based on location_regexp and
-    # location_regexp_exclude.
-    location_filters = []
-    for r in location_regexp:
-        location_filters.append(_make_location_filter(r, exclude = False))
-    for r in location_regexp_exclude:
-        location_filters.append(_make_location_filter(r, exclude = True))
+    # location_regexp_exclude, if they are specified.
+    if len(location_filters) == 0:
+        location_filters = []
+        for r in location_regexp:
+            location_filters.append(_make_location_filter(r, exclude = False))
+        for r in location_regexp_exclude:
+            location_filters.append(_make_location_filter(r, exclude = True))
 
     # Validate location_filters used by analyzers.
     # TODO(crbug/1202952): Remove these restrictions after Tricium is
