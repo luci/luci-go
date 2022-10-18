@@ -188,8 +188,15 @@ func TestGetChange(t *testing.T) {
 				Hashtags:        []string{"example_tag"},
 				Revisions: map[string]*gerritpb.RevisionInfo{
 					"deadbeef": {
-						Number:      1,
-						Kind:        gerritpb.RevisionInfo_REWORK,
+						Number: 1,
+						Kind:   gerritpb.RevisionInfo_REWORK,
+						Uploader: &gerritpb.AccountInfo{
+							AccountId:       1000096,
+							Name:            "John Doe",
+							Email:           "jdoe@example.com",
+							SecondaryEmails: []string{"johndoe@chromium.org"},
+							Username:        "jdoe",
+						},
 						Ref:         "refs/changes/123",
 						Created:     timestamppb.New(parseTime("2016-03-29T17:47:23.751000000Z")),
 						Description: "first upload",
@@ -367,6 +374,13 @@ func TestGetChange(t *testing.T) {
 							"_number": 1,
 							"kind": "REWORK",
 							"ref": "refs/changes/123",
+							"uploader": {
+								"_account_id":      1000096,
+								"name":             "John Doe",
+								"email":            "jdoe@example.com",
+								"secondary_emails": ["johndoe@chromium.org"],
+								"username":         "jdoe"
+							},
 							"created": "2016-03-29 17:47:23.751000000",
 							"description": "first upload",
 							"files": {
@@ -960,7 +974,7 @@ func TestRevertChange(t *testing.T) {
 
 		Convey("OK", func() {
 			req := &gerritpb.RevertChangeRequest{
-				Number: 3964,
+				Number:  3964,
 				Message: "This is the message added to the revert CL.",
 			}
 
@@ -973,9 +987,9 @@ func TestRevertChange(t *testing.T) {
 					SecondaryEmails: []string{"johndoe@chromium.org"},
 					Username:        "jdoe",
 				},
-				Project:         "example/repo",
-				Ref:             "refs/heads/master",
-				Status:          gerritpb.ChangeStatus_NEW,
+				Project: "example/repo",
+				Ref:     "refs/heads/master",
+				Status:  gerritpb.ChangeStatus_NEW,
 				Created: timestamppb.New(parseTime("2014-05-05T07:15:44.639000000Z")),
 				Updated: timestamppb.New(parseTime("2014-05-05T07:15:44.639000000Z")),
 				Messages: []*gerritpb.ChangeMessageInfo{

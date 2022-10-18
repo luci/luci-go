@@ -301,6 +301,7 @@ func (fi *fileInfo) ToProto() *gerritpb.FileInfo {
 type revisionInfo struct {
 	Kind        string               `json:"kind"`
 	Number      int                  `json:"_number"`
+	Uploader    *accountInfo         `json:"uploader"`
 	Ref         string               `json:"ref"`
 	Created     Timestamp            `json:"created"`
 	Description string               `json:"description"`
@@ -311,6 +312,7 @@ type revisionInfo struct {
 func (ri *revisionInfo) ToProto() *gerritpb.RevisionInfo {
 	ret := &gerritpb.RevisionInfo{
 		Number:      int32(ri.Number),
+		Uploader:    ri.Uploader.ToProto(),
 		Ref:         ri.Ref,
 		Created:     timestamppb.New(ri.Created.Time),
 		Description: ri.Description,
@@ -334,8 +336,8 @@ func (ri *revisionInfo) ToProto() *gerritpb.RevisionInfo {
 type commitInfo struct {
 	Commit    string        `json:"commit"`
 	Parents   []*commitInfo `json:"parents"`
-	Author    AccountInfo   `json:"author"`
-	Committer AccountInfo   `json:"committer"`
+	Author    *accountInfo  `json:"author"`
+	Committer *accountInfo  `json:"committer"`
 	Subject   string        `json:"subject"`
 	Message   string        `json:"message"`
 }
