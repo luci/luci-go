@@ -39,6 +39,7 @@ import (
 func main() {
 	modules := []module.Module{
 		cfgmodule.NewModuleFromFlags(),
+		cron.NewModuleFromFlags(),
 		gaeemulation.NewModuleFromFlags(),
 		redisconn.NewModuleFromFlags(),
 		secrets.NewModuleFromFlags(),
