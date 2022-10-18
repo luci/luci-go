@@ -111,26 +111,6 @@ func (m *MigrationServer) ReportTryjobs(ctx context.Context, req *migrationpb.Re
 	return &emptypb.Empty{}, nil
 }
 
-func (m *MigrationServer) ReportUsedNetrc(ctx context.Context, req *migrationpb.ReportUsedNetrcRequest) (resp *emptypb.Empty, err error) {
-	defer func() { err = grpcutil.GRPCifyAndLogErr(ctx, err) }()
-	if ctx, err = m.checkAllowed(ctx); err != nil {
-		return nil, err
-	}
-	if req.AccessToken == "" || req.GerritHost == "" {
-		return nil, appstatus.Error(codes.InvalidArgument, "access_token and gerrit_host required")
-	}
-
-	project := "<UNKNOWN>"
-	if i := auth.CurrentIdentity(ctx); i.Kind() == identity.Project {
-		project = i.Value()
-	}
-	logging.Infof(ctx, "CQD[%s] uses netrc access token for %s", project, req.GerritHost)
-	if err = gerrit.SaveLegacyNetrcToken(ctx, req.GerritHost, req.AccessToken); err != nil {
-		return nil, err
-	}
-	return &emptypb.Empty{}, nil
-}
-
 func (m *MigrationServer) PostGerritMessage(ctx context.Context, req *migrationpb.PostGerritMessageRequest) (resp *migrationpb.PostGerritMessageResponse, err error) {
 	defer func() { err = grpcutil.GRPCifyAndLogErr(ctx, err) }()
 	if ctx, err = m.checkAllowed(ctx); err != nil {

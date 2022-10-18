@@ -58,9 +58,6 @@ type MigrationClient interface {
 	// FetchActiveRuns returns all currently RUNNING runs in CV for the given
 	// project.
 	FetchActiveRuns(ctx context.Context, in *FetchActiveRunsRequest, opts ...grpc.CallOption) (*FetchActiveRunsResponse, error)
-	// ReportUsedNetrc notifies CV of the legacy .netrc credentials used by
-	// CQDaemon.
-	ReportUsedNetrc(ctx context.Context, in *ReportUsedNetrcRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	// ReportTryjobs notifies CV of the tryjobs applicable to a Run.
 	ReportTryjobs(ctx context.Context, in *ReportTryjobsRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 }
@@ -103,15 +100,6 @@ func (c *migrationClient) PostGerritMessage(ctx context.Context, in *PostGerritM
 func (c *migrationClient) FetchActiveRuns(ctx context.Context, in *FetchActiveRunsRequest, opts ...grpc.CallOption) (*FetchActiveRunsResponse, error) {
 	out := new(FetchActiveRunsResponse)
 	err := c.cc.Invoke(ctx, "/migration.Migration/FetchActiveRuns", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *migrationClient) ReportUsedNetrc(ctx context.Context, in *ReportUsedNetrcRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
-	out := new(emptypb.Empty)
-	err := c.cc.Invoke(ctx, "/migration.Migration/ReportUsedNetrc", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -166,9 +154,6 @@ type MigrationServer interface {
 	// FetchActiveRuns returns all currently RUNNING runs in CV for the given
 	// project.
 	FetchActiveRuns(context.Context, *FetchActiveRunsRequest) (*FetchActiveRunsResponse, error)
-	// ReportUsedNetrc notifies CV of the legacy .netrc credentials used by
-	// CQDaemon.
-	ReportUsedNetrc(context.Context, *ReportUsedNetrcRequest) (*emptypb.Empty, error)
 	// ReportTryjobs notifies CV of the tryjobs applicable to a Run.
 	ReportTryjobs(context.Context, *ReportTryjobsRequest) (*emptypb.Empty, error)
 	mustEmbedUnimplementedMigrationServer()
@@ -189,9 +174,6 @@ func (UnimplementedMigrationServer) PostGerritMessage(context.Context, *PostGerr
 }
 func (UnimplementedMigrationServer) FetchActiveRuns(context.Context, *FetchActiveRunsRequest) (*FetchActiveRunsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method FetchActiveRuns not implemented")
-}
-func (UnimplementedMigrationServer) ReportUsedNetrc(context.Context, *ReportUsedNetrcRequest) (*emptypb.Empty, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method ReportUsedNetrc not implemented")
 }
 func (UnimplementedMigrationServer) ReportTryjobs(context.Context, *ReportTryjobsRequest) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ReportTryjobs not implemented")
@@ -281,24 +263,6 @@ func _Migration_FetchActiveRuns_Handler(srv interface{}, ctx context.Context, de
 	return interceptor(ctx, in, info, handler)
 }
 
-func _Migration_ReportUsedNetrc_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(ReportUsedNetrcRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(MigrationServer).ReportUsedNetrc(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/migration.Migration/ReportUsedNetrc",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(MigrationServer).ReportUsedNetrc(ctx, req.(*ReportUsedNetrcRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
 func _Migration_ReportTryjobs_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(ReportTryjobsRequest)
 	if err := dec(in); err != nil {
@@ -339,10 +303,6 @@ var Migration_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "FetchActiveRuns",
 			Handler:    _Migration_FetchActiveRuns_Handler,
-		},
-		{
-			MethodName: "ReportUsedNetrc",
-			Handler:    _Migration_ReportUsedNetrc_Handler,
 		},
 		{
 			MethodName: "ReportTryjobs",

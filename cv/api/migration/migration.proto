@@ -74,10 +74,6 @@ service Migration {
   // project.
   rpc FetchActiveRuns(FetchActiveRunsRequest) returns (FetchActiveRunsResponse);
 
-  // ReportUsedNetrc notifies CV of the legacy .netrc credentials used by
-  // CQDaemon.
-  rpc ReportUsedNetrc(ReportUsedNetrcRequest) returns (google.protobuf.Empty);
-
   // ReportTryjobs notifies CV of the tryjobs applicable to a Run.
   rpc ReportTryjobs(ReportTryjobsRequest) returns (google.protobuf.Empty);
 }
@@ -132,11 +128,6 @@ message PostGerritMessageRequest {
 }
 
 message PostGerritMessageResponse {
-}
-
-message ReportUsedNetrcRequest {
-  string gerrit_host = 1;
-  string access_token = 2;
 }
 
 message FetchActiveRunsRequest {
