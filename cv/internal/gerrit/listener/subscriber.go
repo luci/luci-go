@@ -16,12 +16,14 @@ package listener
 
 import (
 	"context"
+	"reflect"
 	"sync"
 
 	"cloud.google.com/go/pubsub"
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/common/retry/transient"
 	listenerpb "go.chromium.org/luci/cv/settings/listener"
 )
 
@@ -32,7 +34,7 @@ const (
 
 type processor interface {
 	// process processes a given pubsub message.
-	process(context.Context, *pubsub.Message)
+	process(context.Context, *pubsub.Message) error
 }
 
 // subscriber receives and processes messages from a given subscription.
@@ -80,13 +82,34 @@ func (s *subscriber) start(ctx context.Context) error {
 	s.done = make(chan struct{})
 	ch := make(chan struct{})
 
+	var procName string
+	switch t := reflect.TypeOf(s.proc); {
+	case t.Kind() == reflect.Ptr:
+		procName = t.Elem().Name()
+	default:
+		procName = t.Name()
+	}
+
 	go func() {
 		close(ch)
 		// cancel the context on exit.
 		defer cancel()
 		defer close(s.done)
 		err := s.sub.Receive(cctx, func(ctx context.Context, m *pubsub.Message) {
-			s.proc.process(ctx, m)
+			switch err := s.proc.process(ctx, m); {
+			case err == nil:
+				m.Ack()
+			case transient.Tag.In(err):
+				m.Nack()
+				logging.Warningf(cctx, "%s.process: transient error %s", procName, err)
+			default:
+				// Ack the message, if there is a permanent error, as retry
+				// will unlikely fix the error.
+				//
+				// Full poll should rediscover the lost event.
+				m.Ack()
+				logging.Errorf(cctx, "%s.process: permanent error %s", procName, err)
+			}
 		})
 		if err != nil {
 			// cctx may be no longer valid at this moment.

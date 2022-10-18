@@ -31,9 +31,9 @@ type gerritProcessor struct {
 
 // process processes a given Gerrit pubsub message and schedules UpdateCLTask(s)
 // for all the LUCI projects watching the Gerrit repo.
-func (p *gerritProcessor) process(ctx context.Context, m *pubsub.Message) {
+func (p *gerritProcessor) process(ctx context.Context, m *pubsub.Message) error {
 	// TODO: implement me
-	m.Ack()
+	return nil
 }
 
 func newGerritSubscriber(c *pubsub.Client, sch scheduler, prjFinder *projectFinder, settings *listenerpb.Settings_GerritSubscription) *subscriber {

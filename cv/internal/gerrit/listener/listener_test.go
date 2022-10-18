@@ -51,9 +51,9 @@ func TestGerritListener(t *testing.T) {
 			// the listener is fully loaded and functioning.
 			startC := make(chan struct{})
 			l.sbers["a.example.org"].proc = &testProcessor{
-				handler: func(_ context.Context, m *pubsub.Message) {
+				handler: func(_ context.Context, m *pubsub.Message) error {
 					close(startC)
-					m.Ack()
+					return nil
 				},
 			}
 			// let it run and wait until it serves the first pubsub msg.

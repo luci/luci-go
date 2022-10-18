@@ -31,11 +31,11 @@ import (
 )
 
 type testProcessor struct {
-	handler func(context.Context, *pubsub.Message)
+	handler func(context.Context, *pubsub.Message) error
 }
 
-func (p *testProcessor) process(ctx context.Context, m *pubsub.Message) {
-	p.handler(ctx, m)
+func (p *testProcessor) process(ctx context.Context, m *pubsub.Message) error {
+	return p.handler(ctx, m)
 }
 
 func mockPubSub(ctx context.Context) (*pubsub.Client, func()) {
@@ -68,20 +68,16 @@ func TestSubscriber(t *testing.T) {
 		client, closeFn := mockPubSub(ctx)
 		defer closeFn()
 		topic := mockTopicSub(ctx, client, "topic_1", "sub_id_1")
+		ch := make(chan struct{})
 		sber := &subscriber{
 			sub: client.Subscription("sub_id_1"),
-			proc: &testProcessor{handler: func(_ context.Context, m *pubsub.Message) {
-				m.Ack()
+			proc: &testProcessor{handler: func(_ context.Context, m *pubsub.Message) error {
+				close(ch)
+				return nil
 			}},
 		}
 
 		Convey("starts", func() {
-			ch := make(chan struct{})
-			sber.proc = &testProcessor{handler: func(_ context.Context, m *pubsub.Message) {
-				close(ch)
-				m.Ack()
-			}}
-
 			So(sber.isStopped(), ShouldBeTrue)
 			So(sber.start(ctx), ShouldBeNil)
 			So(sber.isStopped(), ShouldBeFalse)
