@@ -262,3 +262,20 @@ func TestCancelTriggers(t *testing.T) {
 		})
 	})
 }
+
+func TestGerritWhoms(t *testing.T) {
+	Convey("Test gerrit whoms conversion", t, func() {
+		for name, v := range run.OngoingLongOps_Op_TriggersCancellation_Whom_value {
+			switch name {
+			case "NONE":
+				So(func() {
+					_ = convertToGerritWhoms([]run.OngoingLongOps_Op_TriggersCancellation_Whom{run.OngoingLongOps_Op_TriggersCancellation_Whom(v)})
+				}, ShouldPanic)
+			default:
+				g := convertToGerritWhoms([]run.OngoingLongOps_Op_TriggersCancellation_Whom{run.OngoingLongOps_Op_TriggersCancellation_Whom(v)})
+				So(g, ShouldHaveLength, 1)
+				So(g[0], ShouldNotEqual, 0)
+			}
+		}
+	})
+}

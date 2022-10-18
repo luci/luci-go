@@ -220,6 +220,8 @@ func convertToGerritWhoms(whoms []run.OngoingLongOps_Op_TriggersCancellation_Who
 			ret[i] = gerrit.Reviewers
 		case run.OngoingLongOps_Op_TriggersCancellation_CQ_VOTERS:
 			ret[i] = gerrit.CQVoters
+		case run.OngoingLongOps_Op_TriggersCancellation_PS_UPLOADER:
+			ret[i] = gerrit.PSUploader
 		default:
 			panic(fmt.Errorf("unrecognized whom [%s] in trigger cancellation", whom))
 		}
