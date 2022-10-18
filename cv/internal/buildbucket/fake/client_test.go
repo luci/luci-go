@@ -46,9 +46,7 @@ func TestGetBuild(t *testing.T) {
 			lProject = "testProj"
 			buildID  = 12344
 		)
-
-		client, err := fake.NewClientFactory().MakeClient(ctx, bbHost, lProject)
-		So(err, ShouldBeNil)
+		client := fake.MustNewClient(ctx, bbHost, lProject)
 
 		epoch := clock.Now(ctx)
 		builderID := &bbpb.BuilderID{
@@ -95,8 +93,7 @@ func TestGetBuild(t *testing.T) {
 		})
 
 		Convey("No ACL", func() {
-			client, err := fake.NewClientFactory().MakeClient(ctx, bbHost, "anotherProj")
-			So(err, ShouldBeNil)
+			client := fake.MustNewClient(ctx, bbHost, "anotherProj")
 			res, err := client.GetBuild(ctx, &bbpb.GetBuildRequest{
 				Id: buildID,
 			})
@@ -139,9 +136,7 @@ func TestSearchBuild(t *testing.T) {
 			bbHost   = "buildbucket.example.com"
 			lProject = "testProj"
 		)
-
-		client, err := fake.NewClientFactory().MakeClient(ctx, bbHost, lProject)
-		So(err, ShouldBeNil)
+		client := fake.MustNewClient(ctx, bbHost, lProject)
 
 		const (
 			buildID          = 12344
@@ -343,9 +338,7 @@ func TestCancelBuild(t *testing.T) {
 			lProject = "testProj"
 			buildID  = 12344
 		)
-
-		client, err := fake.NewClientFactory().MakeClient(ctx, bbHost, lProject)
-		So(err, ShouldBeNil)
+		client := fake.MustNewClient(ctx, bbHost, lProject)
 
 		epoch := tc.Now()
 		tc.Add(1 * time.Minute)
@@ -402,8 +395,7 @@ func TestCancelBuild(t *testing.T) {
 		})
 
 		Convey("No ACL", func() {
-			client, err := fake.NewClientFactory().MakeClient(ctx, bbHost, "anotherProj")
-			So(err, ShouldBeNil)
+			client := fake.MustNewClient(ctx, bbHost, "anotherProj")
 			res, err := client.CancelBuild(ctx, &bbpb.CancelBuildRequest{
 				Id:              buildID,
 				SummaryMarkdown: "no longer needed",
@@ -485,10 +477,7 @@ func TestScheduleBuild(t *testing.T) {
 			map[string]interface{}{"foo": "bar"},
 		)
 
-		c, err := fake.NewClientFactory().MakeClient(ctx, bbHost, lProject)
-		So(err, ShouldBeNil)
-		client := c.(*Client)
-
+		client := fake.MustNewClient(ctx, bbHost, lProject)
 		Convey("Can schedule", func() {
 			Convey("Simple", func() {
 				res, err := client.scheduleBuild(ctx, &bbpb.ScheduleBuildRequest{
@@ -647,6 +636,77 @@ func TestScheduleBuild(t *testing.T) {
 	})
 }
 
+func TestUpdateBuild(t *testing.T) {
+	Convey("UpdateBuild", t, func() {
+		fake := &Fake{}
+		ctx, tc := testclock.UseTime(context.Background(), testclock.TestRecentTimeUTC)
+		const (
+			bbHost   = "buildbucket.example.com"
+			lProject = "testProj"
+		)
+		builderID := &bbpb.BuilderID{
+			Project: lProject,
+			Bucket:  "testBucket",
+			Builder: "testBuilder",
+		}
+		fake.AddBuilder(bbHost, builderID, nil)
+
+		client := fake.MustNewClient(ctx, bbHost, lProject)
+		initialBuild, err := client.scheduleBuild(ctx, &bbpb.ScheduleBuildRequest{
+			Builder: builderID,
+			Mask:    &bbpb.BuildMask{AllFields: true},
+		})
+		So(err, ShouldBeNil)
+		So(initialBuild.GetBuilder(), ShouldResembleProto, builderID)
+		epoch := tc.Now()
+
+		Convey("Can Update", func() {
+			tc.Add(2 * time.Second)
+			res, err := client.UpdateBuild(ctx, &bbpb.UpdateBuildRequest{
+				Build: NewConstructorFromBuild(initialBuild).
+					WithStatus(bbpb.Status_STARTED).
+					WithStartTime(epoch.Add(1 * time.Second)).
+					Construct(),
+			})
+			So(err, ShouldBeNil)
+
+			So(res, ShouldResembleProto, trimmedBuildWithDefaultMask(&bbpb.Build{
+				Id:         res.Id,
+				Builder:    builderID,
+				Status:     bbpb.Status_STARTED,
+				CreateTime: timestamppb.New(epoch),
+				StartTime:  timestamppb.New(epoch.Add(1 * time.Second)),
+				UpdateTime: timestamppb.New(epoch.Add(2 * time.Second)),
+				Input:      &bbpb.Build_Input{},
+				Infra: &bbpb.BuildInfra{
+					Buildbucket: &bbpb.BuildInfra_Buildbucket{
+						Hostname: bbHost,
+					},
+				},
+			}))
+		})
+
+		Convey("No ACL", func() {
+			client := fake.MustNewClient(ctx, bbHost, "anotherProj")
+			res, err := client.UpdateBuild(ctx, &bbpb.UpdateBuildRequest{
+				Build: initialBuild,
+			})
+			So(err, ShouldBeRPCNotFound)
+			So(res, ShouldBeNil)
+		})
+
+		Convey("Build not found", func() {
+			res, err := client.UpdateBuild(ctx, &bbpb.UpdateBuildRequest{
+				Build: &bbpb.Build{
+					Id: 123,
+				},
+			})
+			So(err, ShouldBeRPCNotFound)
+			So(res, ShouldBeNil)
+		})
+	})
+}
+
 func TestBatch(t *testing.T) {
 	Convey("Batch", t, func() {
 		fake := &Fake{}
@@ -655,9 +715,7 @@ func TestBatch(t *testing.T) {
 			bbHost   = "buildbucket.example.com"
 			lProject = "testProj"
 		)
-
-		client, err := fake.NewClientFactory().MakeClient(ctx, bbHost, lProject)
-		So(err, ShouldBeNil)
+		client := fake.MustNewClient(ctx, bbHost, lProject)
 
 		epoch := tc.Now()
 		tc.Add(1 * time.Minute)

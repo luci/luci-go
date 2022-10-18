@@ -23,6 +23,7 @@ import (
 	"time"
 
 	bbpb "go.chromium.org/luci/buildbucket/proto"
+	"go.chromium.org/luci/common/errors"
 	"google.golang.org/protobuf/proto"
 
 	"go.chromium.org/luci/cv/internal/buildbucket"
@@ -45,10 +46,26 @@ type Fake struct {
 	hosts   map[string]*fakeApp // hostname -> fakeApp
 }
 
+// NewClientFactory returns a factory that creates a client for this buildbucket
+// fake.
 func (f *Fake) NewClientFactory() buildbucket.ClientFactory {
 	return clientFactory{
 		fake: f,
 	}
+}
+
+// MustNewClient is a shorthand of `fake.NewClientFactory().MakeClient(...)`.
+//
+// Panics if fails to create new client.
+func (f *Fake) MustNewClient(ctx context.Context, host, luciProject string) *Client {
+	factory := clientFactory{
+		fake: f,
+	}
+	client, err := factory.MakeClient(ctx, host, luciProject)
+	if err != nil {
+		panic(errors.Annotate(err, "failed to create new buildbucket client").Err())
+	}
+	return client.(*Client)
 }
 
 // AddBuilder adds a new builder configuration to fake Buildbucket host.

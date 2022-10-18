@@ -65,10 +65,6 @@ func NewConstructorFromBuild(build *bbpb.Build) *BuildConstructor {
 		id:                  build.GetId(),
 		builderID:           proto.Clone(build.GetBuilder()).(*bbpb.BuilderID),
 		status:              build.GetStatus(),
-		createTime:          build.GetCreateTime().AsTime(),
-		startTime:           build.GetStartTime().AsTime(),
-		endTime:             build.GetEndTime().AsTime(),
-		updateTime:          build.GetUpdateTime().AsTime(),
 		timeout:             build.GetStatusDetails().GetTimeout() != nil,
 		summaryMarkdown:     build.GetSummaryMarkdown(),
 		gerritChanges:       make([]*bbpb.GerritChange, len(build.GetInput().GetGerritChanges())),
@@ -76,6 +72,19 @@ func NewConstructorFromBuild(build *bbpb.Build) *BuildConstructor {
 		requestedProperties: proto.Clone(build.GetInfra().GetBuildbucket().GetRequestedProperties()).(*structpb.Struct),
 
 		template: proto.Clone(build).(*bbpb.Build),
+	}
+
+	if createTime := build.GetCreateTime(); createTime != nil {
+		bc.createTime = createTime.AsTime()
+	}
+	if startTime := build.GetStartTime(); startTime != nil {
+		bc.startTime = startTime.AsTime()
+	}
+	if endTime := build.GetEndTime(); endTime != nil {
+		bc.endTime = endTime.AsTime()
+	}
+	if updateTime := build.GetUpdateTime(); updateTime != nil {
+		bc.updateTime = updateTime.AsTime()
 	}
 	for i, gc := range build.GetInput().GetGerritChanges() {
 		bc.gerritChanges[i] = proto.Clone(gc).(*bbpb.GerritChange)

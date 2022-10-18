@@ -289,6 +289,32 @@ func mkInputProps(builderCfg *bbpb.BuilderConfig, requestedProps *structpb.Struc
 	return ret, nil
 }
 
+// UpdateBuild updates the given build.
+func (c *Client) UpdateBuild(ctx context.Context, in *bbpb.UpdateBuildRequest) (*bbpb.Build, error) {
+	if in.GetUpdateMask() != nil {
+		return nil, status.Errorf(codes.Unimplemented, "UpdateBuild with update mask is not supported yet")
+	}
+	id := in.GetBuild().GetId()
+	switch build := c.fa.getBuild(id); {
+	case build == nil:
+		fallthrough
+	case !c.canAccessBuild(build):
+		projIdentity := identity.Identity(fmt.Sprintf("%s:%s", identity.Project, c.luciProject))
+		return nil, status.Errorf(codes.NotFound, "requested resource not found or %q does not have permission to view it", projIdentity)
+	}
+
+	build := c.fa.updateBuild(id, func(storedBuild *bbpb.Build) {
+		storedBuild.Reset()
+		proto.Merge(storedBuild, in.GetBuild())
+		storedBuild.UpdateTime = timestamppb.New(clock.Now(ctx).UTC())
+	})
+
+	if err := applyMask(build, in.GetMask()); err != nil {
+		return nil, err
+	}
+	return build, nil
+}
+
 // Batch implements buildbucket.Client.
 //
 // Supports:
