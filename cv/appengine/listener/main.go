@@ -16,6 +16,9 @@
 package main
 
 import (
+	"cloud.google.com/go/pubsub"
+
+	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/config/server/cfgmodule"
 	"go.chromium.org/luci/server"
 	"go.chromium.org/luci/server/gaeemulation"
@@ -23,6 +26,9 @@ import (
 	"go.chromium.org/luci/server/redisconn"
 	"go.chromium.org/luci/server/secrets"
 	"go.chromium.org/luci/server/tq"
+
+	"go.chromium.org/luci/cv/internal/changelist"
+	glistener "go.chromium.org/luci/cv/internal/gerrit/listener"
 )
 
 func main() {
@@ -35,6 +41,13 @@ func main() {
 	}
 
 	server.Main(nil, modules, func(srv *server.Server) error {
+		psc, err := pubsub.NewClient(srv.Context, srv.Options.CloudProject)
+		if err != nil {
+			return errors.Annotate(err, "pubsub.NewClient: %s", err).Err()
+		}
+		clUpdater := changelist.NewUpdater(&tq.Default, nil)
+		gListener := glistener.NewListener(psc, clUpdater)
+		srv.RunInBackground("luci.cv.listener.gerrit_subscriptions", gListener.Run)
 		return nil
 	})
 }
