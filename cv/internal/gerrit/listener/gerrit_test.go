@@ -18,10 +18,13 @@ import (
 	"context"
 	"testing"
 
+	"cloud.google.com/go/pubsub"
 	"go.chromium.org/luci/cv/internal/changelist"
+	"go.chromium.org/luci/cv/internal/cvtesting"
 	listenerpb "go.chromium.org/luci/cv/settings/listener"
 
 	. "github.com/smartystreets/goconvey/convey"
+	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 type testScheduler struct {
@@ -37,16 +40,19 @@ func TestGerrit(t *testing.T) {
 	t.Parallel()
 
 	Convey("gerritSubscriber", t, func() {
-		ctx := context.Background()
+		ct := cvtesting.Test{}
+		ctx, cancel := ct.SetUp()
+		defer cancel()
 		client, closeFn := mockPubSub(ctx)
 		defer closeFn()
+		finder := &projectFinder{}
 		settings := &listenerpb.Settings_GerritSubscription{Host: "example.org"}
 
 		Convey("create a reference to subscription", func() {
-			sber := newGerritSubscriber(client, &testScheduler{}, &projectFinder{}, settings)
+			sber := newGerritSubscriber(client, &testScheduler{}, finder, settings)
 			So(sber.sub.ID(), ShouldEqual, "example.org")
 			settings.SubscriptionId = "my-sub"
-			sber = newGerritSubscriber(client, &testScheduler{}, &projectFinder{}, settings)
+			sber = newGerritSubscriber(client, &testScheduler{}, finder, settings)
 			So(sber.sub.ID(), ShouldEqual, "my-sub")
 
 			Convey("with receive settings", func() {
@@ -54,7 +60,7 @@ func TestGerrit(t *testing.T) {
 					NumGoroutines:          defaultNumGoroutines + 1,
 					MaxOutstandingMessages: defaultMaxOutstandingMessages + 1,
 				}
-				sber = newGerritSubscriber(client, &testScheduler{}, &projectFinder{}, settings)
+				sber = newGerritSubscriber(client, &testScheduler{}, finder, settings)
 				So(sber.sameReceiveSettings(settings.ReceiveSettings), ShouldBeTrue)
 			})
 		})
@@ -64,7 +70,7 @@ func TestGerrit(t *testing.T) {
 				NumGoroutines:          1,
 				MaxOutstandingMessages: 2,
 			}
-			sber := newGerritSubscriber(client, &testScheduler{}, &projectFinder{}, settings)
+			sber := newGerritSubscriber(client, &testScheduler{}, finder, settings)
 			check := func() bool {
 				return sameGerritSubscriberSettings(sber, settings)
 			}
@@ -86,11 +92,57 @@ func TestGerrit(t *testing.T) {
 			Convey("with different host", func() {
 				settings.Host = "example.org"
 				settings.SubscriptionId = "example-sub"
-				sber := newGerritSubscriber(client, &testScheduler{}, &projectFinder{}, settings)
+				sber := newGerritSubscriber(client, &testScheduler{}, finder, settings)
 
 				// same subscription ID, but different host.
 				settings.Host = "example-2.org"
 				So(sameGerritSubscriberSettings(sber, settings), ShouldBeFalse)
+			})
+		})
+
+		Convey("processes", func() {
+			sch := &testScheduler{}
+			sber := newGerritSubscriber(client, sch, finder, settings)
+			msg := &pubsub.Message{}
+			createTestLUCIProject(ctx, "chromium", "https://example.org/", "abc/foo")
+			payload := []byte(`{
+				"name": "projects/project/repos/abc/foo",
+				"url": "https://example.org/p/project/r/abc/foo",
+				"eventTime": "2022-10-03T16:47:53.728031Z",
+				"refUpdateEvent": {
+					"email": "someone@example.org",
+					"refUpdates": {
+						"refs/changes/1/123/meta": {
+							"refName": "refs/changes/1/123/meta",
+							"updateType": "UPDATE_FAST_FORWARD",
+							"oldId": "deaf",
+							"newId": "feas"
+						}
+					}
+				}
+			}`)
+
+			Convey("empty", func() {
+				So(sber.proc.process(ctx, msg), ShouldBeNil)
+				So(sch.tasks, ShouldHaveLength, 0)
+			})
+			Convey("message from an unwatched repo", func() {
+				msg.Data = payload
+				So(sber.proc.process(ctx, msg), ShouldBeNil)
+				So(sch.tasks, ShouldHaveLength, 0)
+			})
+			Convey("message from a watched repo", func() {
+				So(finder.reload([]string{"chromium"}), ShouldBeNil)
+				msg.Data = payload
+				So(sber.proc.process(ctx, msg), ShouldBeNil)
+				So(sch.tasks, ShouldResembleProto, []*changelist.UpdateCLTask{
+					{
+						LuciProject: "chromium",
+						ExternalId:  "gerrit/example.org/123",
+						Requester:   changelist.UpdateCLTask_PUBSUB_POLL,
+						Hint:        &changelist.UpdateCLTask_Hint{MetaRevId: "feas"},
+					},
+				})
 			})
 		})
 	})

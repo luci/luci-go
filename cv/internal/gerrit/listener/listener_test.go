@@ -27,7 +27,7 @@ import (
 	. "github.com/smartystreets/goconvey/convey"
 )
 
-func TestGerritListener(t *testing.T) {
+func TestListener(t *testing.T) {
 	t.Parallel()
 
 	Convey("Listener", t, func() {
