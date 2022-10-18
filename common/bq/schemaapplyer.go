@@ -33,7 +33,7 @@ import (
 // See its documentation for description of the methods below.
 type Table interface {
 	FullyQualifiedName() string
-	Metadata(ctx context.Context) (md *bigquery.TableMetadata, err error)
+	Metadata(ctx context.Context, opts ...bigquery.TableMetadataOption) (md *bigquery.TableMetadata, err error)
 	Create(ctx context.Context, md *bigquery.TableMetadata) error
 	Update(ctx context.Context, md bigquery.TableMetadataToUpdate, etag string, opts ...bigquery.TableUpdateOption) (*bigquery.TableMetadata, error)
 }

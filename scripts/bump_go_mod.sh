@@ -24,12 +24,21 @@
 
 set -e
 
-# TODO(vadimsh): Add Google Cloud modules. They are interconnected in a way that
-# breaks Go modules: e.g. updating only one of them breaking compilation of
-# others (probably their go.mod isn't kept up-to-date). So they need to be
-# updated all at once.
-
 deps=(
+  cloud.google.com/go/bigquery@latest
+  cloud.google.com/go/bigtable@latest
+  cloud.google.com/go/cloudtasks@latest
+  cloud.google.com/go/compute@latest
+  cloud.google.com/go/datastore@latest
+  cloud.google.com/go/errorreporting@latest
+  cloud.google.com/go/iam@latest
+  cloud.google.com/go/kms@latest
+  cloud.google.com/go/logging@latest
+  cloud.google.com/go/profiler@latest
+  cloud.google.com/go/pubsub@latest
+  cloud.google.com/go/secretmanager@latest
+  cloud.google.com/go/spanner@latest
+  cloud.google.com/go/storage@latest
   github.com/alicebob/miniredis/v2@latest
   github.com/danjacques/gofslock@latest
   github.com/dustin/go-humanize@latest
@@ -58,8 +67,11 @@ deps=(
   github.com/smartystreets/goconvey@latest
   github.com/yosuke-furukawa/json5@latest
   go.starlark.net@latest
-  google.golang.org/grpc@latest
+  google.golang.org/api@latest
+  google.golang.org/appengine@d981f2f002  # "@latest" picks up quite old v1.6.7
+  google.golang.org/genproto@latest
   google.golang.org/grpc/cmd/protoc-gen-go-grpc@latest
+  google.golang.org/grpc@latest
   google.golang.org/protobuf@latest
   gopkg.in/yaml.v2@latest
 )

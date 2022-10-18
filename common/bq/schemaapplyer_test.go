@@ -47,7 +47,7 @@ func (t *tableMock) FullyQualifiedName() string {
 	return t.fullyQualifiedName
 }
 
-func (t *tableMock) Metadata(ctx context.Context) (*bigquery.TableMetadata, error) {
+func (t *tableMock) Metadata(ctx context.Context, opts ...bigquery.TableMetadataOption) (*bigquery.TableMetadata, error) {
 	t.mdCalls++
 	return t.md, t.mdErr
 }
