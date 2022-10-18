@@ -16,11 +16,15 @@
 package main
 
 import (
+	"context"
+	"time"
+
 	"cloud.google.com/go/pubsub"
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/config/server/cfgmodule"
 	"go.chromium.org/luci/server"
+	"go.chromium.org/luci/server/cron"
 	"go.chromium.org/luci/server/gaeemulation"
 	"go.chromium.org/luci/server/module"
 	"go.chromium.org/luci/server/redisconn"
@@ -28,6 +32,7 @@ import (
 	"go.chromium.org/luci/server/tq"
 
 	"go.chromium.org/luci/cv/internal/changelist"
+	"go.chromium.org/luci/cv/internal/configs/srvcfg"
 	glistener "go.chromium.org/luci/cv/internal/gerrit/listener"
 )
 
@@ -48,6 +53,16 @@ func main() {
 		clUpdater := changelist.NewUpdater(&tq.Default, nil)
 		gListener := glistener.NewListener(psc, clUpdater)
 		srv.RunInBackground("luci.cv.listener.gerrit_subscriptions", gListener.Run)
+
+		cron.RegisterHandler("refresh-listener-config", func(ctx context.Context) error {
+			return refreshConfig(ctx)
+		})
 		return nil
 	})
+}
+
+func refreshConfig(ctx context.Context) error {
+	ctx, cancel := context.WithTimeout(ctx, 1*time.Minute)
+	defer cancel()
+	return srvcfg.ImportConfig(ctx)
 }
