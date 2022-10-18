@@ -102,14 +102,14 @@ func loadCLs(ctx context.Context, cls []*CL) ([]*CL, error) {
 func RemoveUnusedGerritInfo(ci *gerritpb.ChangeInfo) {
 	const keepEmail = true
 	const removeEmail = false
-	cleanUser := func(u *gerritpb.AccountInfo, email bool) {
+	cleanUser := func(u *gerritpb.AccountInfo, keepEmail bool) {
 		if u == nil {
 			return
 		}
 		u.SecondaryEmails = nil
 		u.Name = ""
 		u.Username = ""
-		if email == removeEmail {
+		if !keepEmail {
 			u.Email = ""
 		}
 	}
@@ -118,6 +118,7 @@ func RemoveUnusedGerritInfo(ci *gerritpb.ChangeInfo) {
 		if r == nil {
 			return
 		}
+		cleanUser(r.GetUploader(), keepEmail)
 		r.Description = ""
 		// TODO(crbug/1260615): erase commit message after CQDaemon is gone.
 		r.Files = nil
