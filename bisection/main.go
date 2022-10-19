@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// package main implements the App Engine based HTTP server to handle request
-// to GoFindit
+// Package main implements the App Engine based HTTP server to handle request
+// to LUCI Bisection
 package main
 
 import (
@@ -33,6 +33,7 @@ import (
 	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/config/server/cfgmodule"
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/server"
 	"go.chromium.org/luci/server/auth"
@@ -140,6 +141,7 @@ func checkBotAPIAccess(ctx context.Context, methodName string, req proto.Message
 
 func main() {
 	modules := []module.Module{
+		cfgmodule.NewModuleFromFlags(),
 		gaeemulation.NewModuleFromFlags(),
 		encryptedcookies.NewModuleFromFlags(), // Required for auth sessions.
 		secrets.NewModuleFromFlags(),          // Needed by encryptedcookies.
