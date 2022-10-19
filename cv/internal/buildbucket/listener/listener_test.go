@@ -31,6 +31,7 @@ import (
 	"go.chromium.org/luci/common/retry/transient"
 	. "go.chromium.org/luci/common/testing/assertions"
 
+	"go.chromium.org/luci/cv/internal/buildbucket"
 	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/cvtesting"
 	"go.chromium.org/luci/cv/internal/tryjob"
@@ -46,22 +47,22 @@ func TestParseData(t *testing.T) {
 				`"build": {"id": "123456789", "other": "ignored"}}`
 			extracted, err := parseData(context.Background(), []byte(json))
 			So(err, ShouldBeNil)
-			So(extracted, ShouldResemble, &notificationMessage{
+			So(extracted, ShouldResemble, buildbucket.PubsubMessage{
 				Hostname: "buildbucket.example.com",
-				Build:    &buildMessage{ID: 123456789},
+				Build:    buildbucket.PubsubBuildMessage{ID: 123456789},
 			})
 		})
 		Convey("with no build ID gives error", func() {
 			json := `{"hostname": "buildbucket.example.com", "build": {"other": "ignored"}}`
 			data, err := parseData(context.Background(), []byte(json))
 			So(err, ShouldErrLike, "missing build details")
-			So(data, ShouldBeNil)
+			So(data, ShouldResemble, buildbucket.PubsubMessage{})
 		})
 		Convey("with no build details gives error", func() {
 			json := `{"hostname": "buildbucket.example.com"}`
 			data, err := parseData(context.Background(), []byte(json))
 			So(err, ShouldErrLike, "missing build details")
-			So(data, ShouldBeNil)
+			So(data, ShouldResemble, buildbucket.PubsubMessage{})
 		})
 	})
 }
@@ -217,8 +218,8 @@ func toPubsubMessageData(eid tryjob.ExternalID) []byte {
 	if err != nil {
 		panic(err)
 	}
-	json, err := json.Marshal(notificationMessage{
-		Build:    &buildMessage{ID: id},
+	json, err := json.Marshal(buildbucket.PubsubMessage{
+		Build:    buildbucket.PubsubBuildMessage{ID: id},
 		Hostname: host,
 	})
 	if err != nil {

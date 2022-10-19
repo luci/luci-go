@@ -32,6 +32,7 @@ import (
 	"go.chromium.org/luci/common/sync/parallel"
 	"go.chromium.org/luci/server/tq"
 
+	"go.chromium.org/luci/cv/internal/buildbucket"
 	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/tryjob"
 )
@@ -150,11 +151,11 @@ func (l *listener) start(ctx context.Context) error {
 }
 
 func (l *listener) processMsg(ctx context.Context, msg *pubsub.Message) error {
-	parsed, err := parseData(ctx, msg.Data)
+	parsedMsg, err := parseData(ctx, msg.Data)
 	if err != nil {
 		return err
 	}
-	eid, err := tryjob.BuildbucketID(parsed.Hostname, parsed.Build.ID)
+	eid, err := tryjob.BuildbucketID(parsedMsg.Hostname, parsedMsg.Build.ID)
 	if err != nil {
 		return err
 	}
@@ -170,27 +171,15 @@ func (l *listener) processMsg(ctx context.Context, msg *pubsub.Message) error {
 	return nil
 }
 
-// notificationMessage contains expected data from Buildbucket Pub/Sub.
-type notificationMessage struct {
-	Build    *buildMessage `json:"build"`
-	Hostname string        `json:"hostname"`
-}
-
-// buildMessage contains parts of the build message inside Buildbucket Pub/Sub
-// data that are relevant to CV.
-type buildMessage struct {
-	ID int64 `json:"id,string"`
-}
-
 // parseData extracts the relevant information from the Pub/Sub message data.
-func parseData(ctx context.Context, data []byte) (*notificationMessage, error) {
-	message := &notificationMessage{}
+func parseData(ctx context.Context, data []byte) (buildbucket.PubsubMessage, error) {
+	message := buildbucket.PubsubMessage{}
 	// Extra fields that are not in the struct are ignored by json.Unmarshal.
-	if err := json.Unmarshal(data, message); err != nil {
-		return nil, errors.Annotate(err, "while unmarshalling build notification").Err()
+	if err := json.Unmarshal(data, &message); err != nil {
+		return buildbucket.PubsubMessage{}, errors.Annotate(err, "while unmarshalling build pubsub message").Err()
 	}
-	if message.Build == nil || message.Hostname == "" || message.Build.ID == 0 {
-		return nil, errors.Reason("missing build details in pubsub message: %s", data).Err()
+	if message.Hostname == "" || message.Build.ID == 0 {
+		return buildbucket.PubsubMessage{}, errors.Reason("missing build details in pubsub message: %s", data).Err()
 	}
 	return message, nil
 }
