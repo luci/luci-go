@@ -35,6 +35,7 @@ import (
 	"go.chromium.org/luci/auth_service/impl/servers/changelogs"
 	"go.chromium.org/luci/auth_service/impl/servers/groups"
 	"go.chromium.org/luci/auth_service/impl/servers/internals"
+	"go.chromium.org/luci/auth_service/impl/servers/oauth"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/grpc/grpcutil"
 	"go.chromium.org/luci/server"
@@ -132,6 +133,7 @@ func main() {
 		// Legacy authdbrevision serving.
 		// TODO(cjacomet): Add smoke test for this endpoint
 		srv.Routes.GET("/auth_service/api/v1/authdb/revisions/:revID", mw, adaptGrpcErr(authdbServer.HandleLegacyAuthDBServing))
+		srv.Routes.GET("/auth/api/v1/server/oauth_config", mw, adaptGrpcErr(oauth.HandleLegacyOAuthEndpoint))
 		return nil
 	})
 }
