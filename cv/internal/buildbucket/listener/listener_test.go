@@ -43,12 +43,12 @@ func TestParseData(t *testing.T) {
 	Convey("parseData", t, func() {
 		Convey("handles valid expected input", func() {
 			json := `{"hostname": "buildbucket.example.com", ` +
-				`"build": {"id": "123456789", "other": "ignored", "ancestor_ids": ["111111"]}}`
+				`"build": {"id": "123456789", "other": "ignored"}}`
 			extracted, err := parseData(context.Background(), []byte(json))
 			So(err, ShouldBeNil)
 			So(extracted, ShouldResemble, &notificationMessage{
 				Hostname: "buildbucket.example.com",
-				Build:    &buildMessage{ID: 123456789, AncestorIDs: []string{"111111"}},
+				Build:    &buildMessage{ID: 123456789},
 			})
 		})
 		Convey("with no build ID gives error", func() {

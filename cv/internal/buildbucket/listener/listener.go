@@ -180,10 +180,6 @@ type notificationMessage struct {
 // data that are relevant to CV.
 type buildMessage struct {
 	ID int64 `json:"id,string"`
-	// Note that AncestorIDs is list of string because build IDs are formatted
-	// as strings in JSON; however Go json.Unmarshal doesn't support converting
-	// JSON list of string to []int64.
-	AncestorIDs []string `json:"ancestor_ids,omitempty"`
 }
 
 // parseData extracts the relevant information from the Pub/Sub message data.
