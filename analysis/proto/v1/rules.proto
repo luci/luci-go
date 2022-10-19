@@ -52,7 +52,6 @@ service Rules {
 }
 
 // A rule associating failures with a bug.
-// Next ID: 15.
 message Rule {
   // Can be used to refer to this rule, e.g. in RulesService.Get RPC.
   // Format: projects/{project}/rules/{rule_id}.
@@ -91,6 +90,10 @@ message Rule {
   // of the associated bug based on the impact established via this rule.
   bool is_managing_bug = 14;
 
+  // Determines whether LUCI Analysis is managing the bug priority updates
+  // of the bug.
+  bool is_managing_bug_priority = 15;
+
   // The suggested cluster this rule was created from (if any).
   // Until re-clustering is complete and has reduced the residual impact
   // of the source cluster, this cluster ID tells bug filing to ignore
@@ -126,6 +129,8 @@ message Rule {
   // has an up-to-date value before proceeding.
   // See also https://google.aip.dev/154.
   string etag = 12;
+
+  // Next ID: 16
 }
 
 message GetRuleRequest {

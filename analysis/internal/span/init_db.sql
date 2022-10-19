@@ -202,6 +202,14 @@ CREATE TABLE FailureAssociationRules (
   -- by this rule.
   -- The only allowed values are true or NULL (to indicate false).
   IsManagingBug BOOL,
+  -- Indicates whether we should update the priority of the bug
+  -- that is associated with this rule based on the cluster's impact.
+  -- This toggle has must have no effect if the IsManagingBug toggle is off.
+  -- This value should not be null.
+  -- This column has a default value of TRUE in prod, but it is commented
+  -- out here because spanner emulator doesn't support DEFAULT
+  -- expressions, see https://github.com/GoogleCloudPlatform/cloud-spanner-emulator/issues/71.
+  IsManagingBugPriority BOOL NOT NULL, -- DEFAULT TRUE,
   -- The suggested cluster this failure association rule was created from
   -- (if any) (part 1).
   -- This is the algorithm component of the suggested cluster this rule

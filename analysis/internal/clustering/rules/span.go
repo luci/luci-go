@@ -106,6 +106,10 @@ type FailureAssociationRule struct {
 	// of the associated bug based on the impact of the cluster defined
 	// by this rule.
 	IsManagingBug bool `json:"isManagingBug"`
+	// Whether the bug priority should be updated based on the cluster's impact.
+	// This flag is effective only if the IsManagingBug is true.
+	// The default value will be false.
+	IsManagingBugPriority bool `json:"isManagingBugPriority"`
 	// The suggested cluster this rule was created from (if any).
 	// Until re-clustering is complete and has reduced the residual impact
 	// of the source cluster, this cluster ID tells bug filing to ignore
@@ -234,7 +238,7 @@ func readWhere(ctx context.Context, whereClause string, params map[string]interf
 		SELECT Project, RuleId, RuleDefinition, BugSystem, BugId,
 		  CreationTime, LastUpdated, PredicateLastUpdated,
 		  CreationUser, LastUpdatedUser,
-		  IsActive, IsManagingBug,
+		  IsActive, IsManagingBug, IsManagingBugPriority,
 		  SourceClusterAlgorithm, SourceClusterId
 		FROM FailureAssociationRules
 		WHERE (` + whereClause + `)
@@ -250,11 +254,12 @@ func readWhere(ctx context.Context, whereClause string, params map[string]interf
 		var creationUser, lastUpdatedUser string
 		var isActive, isManagingBug spanner.NullBool
 		var sourceClusterAlgorithm, sourceClusterID string
+		var isManagingBugPriority bool
 		err := r.Columns(
 			&project, &ruleID, &ruleDefinition, &bugSystem, &bugID,
 			&creationTime, &lastUpdated, &predicateLastUpdated,
 			&creationUser, &lastUpdatedUser,
-			&isActive, &isManagingBug,
+			&isActive, &isManagingBug, &isManagingBugPriority,
 			&sourceClusterAlgorithm, &sourceClusterID,
 		)
 		if err != nil {
@@ -262,17 +267,18 @@ func readWhere(ctx context.Context, whereClause string, params map[string]interf
 		}
 
 		rule := &FailureAssociationRule{
-			Project:              project,
-			RuleID:               ruleID,
-			RuleDefinition:       ruleDefinition,
-			CreationTime:         creationTime,
-			CreationUser:         creationUser,
-			LastUpdated:          lastUpdated,
-			LastUpdatedUser:      lastUpdatedUser,
-			PredicateLastUpdated: predicateLastUpdated,
-			BugID:                bugs.BugID{System: bugSystem, ID: bugID},
-			IsActive:             isActive.Valid && isActive.Bool,
-			IsManagingBug:        isManagingBug.Valid && isManagingBug.Bool,
+			Project:               project,
+			RuleID:                ruleID,
+			RuleDefinition:        ruleDefinition,
+			CreationTime:          creationTime,
+			CreationUser:          creationUser,
+			LastUpdated:           lastUpdated,
+			LastUpdatedUser:       lastUpdatedUser,
+			PredicateLastUpdated:  predicateLastUpdated,
+			BugID:                 bugs.BugID{System: bugSystem, ID: bugID},
+			IsActive:              isActive.Valid && isActive.Bool,
+			IsManagingBug:         isManagingBug.Valid && isManagingBug.Bool,
+			IsManagingBugPriority: isManagingBugPriority,
 			SourceCluster: clustering.ClusterID{
 				Algorithm: sourceClusterAlgorithm,
 				ID:        sourceClusterID,
@@ -398,6 +404,7 @@ func Create(ctx context.Context, r *FailureAssociationRule, user string) error {
 		// IsActive uses the value 'NULL' to indicate false, and true to indicate true.
 		"IsActive":               spanner.NullBool{Bool: r.IsActive, Valid: r.IsActive},
 		"IsManagingBug":          r.IsManagingBug,
+		"IsManagingBugPriority":  r.IsManagingBugPriority,
 		"SourceClusterAlgorithm": r.SourceCluster.Algorithm,
 		"SourceClusterId":        r.SourceCluster.ID,
 	})
@@ -425,6 +432,7 @@ func Update(ctx context.Context, r *FailureAssociationRule, updatePredicate bool
 		"SourceClusterAlgorithm": r.SourceCluster.Algorithm,
 		"SourceClusterId":        r.SourceCluster.ID,
 		"IsManagingBug":          r.IsManagingBug,
+		"IsManagingBugPriority":  r.IsManagingBugPriority,
 	}
 	if updatePredicate {
 		update["RuleDefinition"] = r.RuleDefinition

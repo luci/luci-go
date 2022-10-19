@@ -164,8 +164,9 @@ func TestRules(t *testing.T) {
 							LinkText: "mybug.com/111",
 							Url:      "https://monorailhost.com/p/monorailproject/issues/detail?id=111",
 						},
-						IsActive:      true,
-						IsManagingBug: true,
+						IsActive:              true,
+						IsManagingBug:         true,
+						IsManagingBugPriority: true,
 						SourceCluster: &pb.ClusterId{
 							Algorithm: ruleManaged.SourceCluster.Algorithm,
 							Id:        ruleManaged.SourceCluster.ID,
@@ -234,8 +235,9 @@ func TestRules(t *testing.T) {
 							LinkText: "b/666",
 							Url:      "https://issuetracker.google.com/issues/666",
 						},
-						IsActive:      true,
-						IsManagingBug: true,
+						IsActive:              true,
+						IsManagingBug:         true,
+						IsManagingBugPriority: true,
 						SourceCluster: &pb.ClusterId{
 							Algorithm: ruleBuganizer.SourceCluster.Algorithm,
 							Id:        ruleBuganizer.SourceCluster.ID,
@@ -368,13 +370,14 @@ func TestRules(t *testing.T) {
 						System: "monorail",
 						Id:     "monorailproject/2",
 					},
-					IsManagingBug: false,
-					IsActive:      false,
+					IsManagingBug:         false,
+					IsManagingBugPriority: false,
+					IsActive:              false,
 				},
 				UpdateMask: &fieldmaskpb.FieldMask{
 					// On the client side, we use JSON equivalents, i.e. ruleDefinition,
 					// bug, isActive, isManagingBug.
-					Paths: []string{"rule_definition", "bug", "is_active", "is_managing_bug"},
+					Paths: []string{"rule_definition", "bug", "is_active", "is_managing_bug", "is_managing_bug_priority"},
 				},
 				Etag: ruleETag(ruleManaged, true /*includeDefinition*/),
 			}
@@ -408,6 +411,7 @@ func TestRules(t *testing.T) {
 						WithBug(bugs.BugID{System: "monorail", ID: "monorailproject/2"}).
 						WithActive(false).
 						WithBugManaged(false).
+						WithBugPriorityManaged(false).
 						// Accept whatever the new last updated time is.
 						WithLastUpdated(storedRule.LastUpdated).
 						WithLastUpdatedUser("someone@example.com").
@@ -533,6 +537,7 @@ func TestRules(t *testing.T) {
 					}
 					// Request we manage this bug.
 					request.Rule.IsManagingBug = true
+					request.Rule.IsManagingBugPriority = true
 					request.UpdateMask.Paths = []string{"bug", "is_managing_bug"}
 
 					rule, err := srv.Update(ctx, request)
@@ -566,8 +571,9 @@ func TestRules(t *testing.T) {
 						System: "monorail",
 						Id:     "monorailproject/2",
 					},
-					IsActive:      false,
-					IsManagingBug: true,
+					IsActive:              false,
+					IsManagingBug:         true,
+					IsManagingBugPriority: true,
 					SourceCluster: &pb.ClusterId{
 						Algorithm: testname.AlgorithmName,
 						Id:        strings.Repeat("aa", 16),
@@ -588,6 +594,7 @@ func TestRules(t *testing.T) {
 					WithRuleDefinition(`test = "create"`).
 					WithActive(false).
 					WithBugManaged(true).
+					WithBugPriorityManaged(true).
 					WithCreationUser("someone@example.com").
 					WithLastUpdatedUser("someone@example.com").
 					WithSourceCluster(clustering.ClusterID{
@@ -825,6 +832,7 @@ func TestRules(t *testing.T) {
 	BugID: "monorail:monorailproject/123456",
 	IsActive: false,
 	IsManagingBug: true,
+	IsManagingBugPriority: true,
 	SourceCluster: "testname-v3:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
 	LastUpdated: "1900-01-02T03:04:07Z"
 }`

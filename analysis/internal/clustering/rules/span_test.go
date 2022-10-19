@@ -92,6 +92,7 @@ func TestSpan(t *testing.T) {
 					WithProject("testproject2").
 					WithBug(bugID).
 					WithBugManaged(false).
+					WithBugPriorityManaged(false).
 					Build()
 				expectedRules := []*FailureAssociationRule{expectedRule, expectedRule2}
 				err := SetRulesForTesting(ctx, expectedRules)

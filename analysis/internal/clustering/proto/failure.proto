@@ -32,7 +32,6 @@ message Chunk {
 }
 
 // LUCI Analysis internal representation of an unexpected test failure.
-// Next ID: 30.
 message Failure {
   // The identity of the test result, as defined by the source system.
   luci.analysis.v1.TestResultId test_result_id = 1;
@@ -172,6 +171,8 @@ message Failure {
   // to see if the impact of this test run being blocked was
   // mitigated by exoneration.
   bool is_test_run_blocked = 21;
+
+  // Next ID: 30.
 }
 
 // LUCI Analysis internal representation of a test exoneration.

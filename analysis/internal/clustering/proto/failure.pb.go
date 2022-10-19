@@ -88,7 +88,6 @@ func (x *Chunk) GetFailures() []*Failure {
 }
 
 // LUCI Analysis internal representation of an unexpected test failure.
-// Next ID: 30.
 type Failure struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache

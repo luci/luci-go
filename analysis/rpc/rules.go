@@ -145,8 +145,9 @@ func (*rulesServer) Create(ctx context.Context, req *pb.CreateRuleRequest) (*pb.
 			System: req.Rule.Bug.GetSystem(),
 			ID:     req.Rule.Bug.GetId(),
 		},
-		IsActive:      req.Rule.GetIsActive(),
-		IsManagingBug: req.Rule.GetIsManagingBug(),
+		IsActive:              req.Rule.GetIsActive(),
+		IsManagingBug:         req.Rule.GetIsManagingBug(),
+		IsManagingBugPriority: req.Rule.GetIsManagingBugPriority(),
 		SourceCluster: clustering.ClusterID{
 			Algorithm: req.Rule.SourceCluster.GetAlgorithm(),
 			ID:        req.Rule.SourceCluster.GetId(),
@@ -271,6 +272,8 @@ func (*rulesServer) Update(ctx context.Context, req *pb.UpdateRuleRequest) (*pb.
 			case "is_managing_bug":
 				updatingManaged = true // Triggers validation.
 				rule.IsManagingBug = req.Rule.IsManagingBug
+			case "is_managing_bug_priority":
+				rule.IsManagingBugPriority = req.Rule.IsManagingBugPriority
 			default:
 				return invalidArgumentError(fmt.Errorf("unsupported field mask: %s", path))
 			}
@@ -343,9 +346,11 @@ func formatRule(r *rules.FailureAssociationRule) string {
 		"\tBugID: %q,\n"+
 		"\tIsActive: %v,\n"+
 		"\tIsManagingBug: %v,\n"+
+		"\tIsManagingBugPriority: %v,\n"+
 		"\tSourceCluster: %q\n"+
 		"\tLastUpdated: %q\n"+
-		"}", r.RuleDefinition, r.BugID, r.IsActive, r.IsManagingBug, r.SourceCluster, r.LastUpdated.Format(time.RFC3339Nano))
+		"}", r.RuleDefinition, r.BugID, r.IsActive, r.IsManagingBug,
+		r.IsManagingBugPriority, r.SourceCluster, r.LastUpdated.Format(time.RFC3339Nano))
 }
 
 // LookupBug looks up the rule associated with the given bug.
@@ -383,13 +388,14 @@ func createRulePB(r *rules.FailureAssociationRule, cfg *configpb.ProjectConfig, 
 		definition = r.RuleDefinition
 	}
 	return &pb.Rule{
-		Name:           ruleName(r.Project, r.RuleID),
-		Project:        r.Project,
-		RuleId:         r.RuleID,
-		RuleDefinition: definition,
-		Bug:            createAssociatedBugPB(r.BugID, cfg),
-		IsActive:       r.IsActive,
-		IsManagingBug:  r.IsManagingBug,
+		Name:                  ruleName(r.Project, r.RuleID),
+		Project:               r.Project,
+		RuleId:                r.RuleID,
+		RuleDefinition:        definition,
+		Bug:                   createAssociatedBugPB(r.BugID, cfg),
+		IsActive:              r.IsActive,
+		IsManagingBug:         r.IsManagingBug,
+		IsManagingBugPriority: r.IsManagingBugPriority,
 		SourceCluster: &pb.ClusterId{
 			Algorithm: r.SourceCluster.Algorithm,
 			Id:        r.SourceCluster.ID,

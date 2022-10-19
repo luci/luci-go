@@ -25,7 +25,6 @@ option go_package = "go.chromium.org/luci/analysis/proto/bq;bqpb";
 
 // ClusteredFailureRow represents a row in a BigQuery table for a clustered
 // test failure.
-// Next ID: 39.
 message ClusteredFailureRow {
   // The clustering algorithm which clustered the test failure.
   string cluster_algorithm = 1;
@@ -306,4 +305,6 @@ message ClusteredFailureRow {
   // to see if the impact of this test run being blocked was
   // mitigated by exoneration.
   bool is_test_run_blocked = 28;
+
+  // Next ID: 39.
 }

@@ -38,7 +38,6 @@ const (
 
 // ClusteredFailureRow represents a row in a BigQuery table for a clustered
 // test failure.
-// Next ID: 39.
 type ClusteredFailureRow struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
