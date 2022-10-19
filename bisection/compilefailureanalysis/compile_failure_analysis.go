@@ -23,7 +23,6 @@ import (
 
 	"go.chromium.org/luci/bisection/compilefailureanalysis/compilelog"
 	"go.chromium.org/luci/bisection/compilefailureanalysis/heuristic"
-	"go.chromium.org/luci/bisection/compilefailureanalysis/nthsection"
 	"go.chromium.org/luci/bisection/culpritverification"
 	"go.chromium.org/luci/bisection/internal/buildbucket"
 	gfim "go.chromium.org/luci/bisection/model"
@@ -80,11 +79,13 @@ func AnalyzeFailure(
 	}
 
 	// TODO (nqmtuan): run heuristic analysis and nth-section analysis in parallel
+	// TODO (nqmtuan): Enable n-th section analysis when it is ready
+	// Enabling it now will use up resources
 	// Nth-section analysis
-	_, e = nthsection.Analyze(c, analysis, regression_range)
-	if e != nil {
-		logging.Errorf(c, "Error during nthsection analysis: %v", e)
-	}
+	// _, e = nthsection.Analyze(c, analysis, regression_range)
+	// if e != nil {
+	// 	logging.Errorf(c, "Error during nthsection analysis: %v", e)
+	// }
 
 	// Heuristic analysis
 	heuristicResult, e := heuristic.Analyze(c, analysis, regression_range, compileLogs)

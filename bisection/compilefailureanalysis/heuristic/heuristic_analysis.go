@@ -19,10 +19,9 @@ import (
 	"fmt"
 
 	"go.chromium.org/luci/bisection/compilefailureanalysis/compilelog"
-	"go.chromium.org/luci/bisection/internal/gitiles"
-	"go.chromium.org/luci/bisection/model"
 	gfim "go.chromium.org/luci/bisection/model"
 	gfipb "go.chromium.org/luci/bisection/proto"
+	"go.chromium.org/luci/bisection/util/changelogutil"
 	"go.chromium.org/luci/bisection/util/datastoreutil"
 
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
@@ -48,7 +47,7 @@ func Analyze(
 	}
 
 	// Get changelogs for heuristic analysis
-	changelogs, err := getChangeLogs(c, rr)
+	changelogs, err := changelogutil.GetChangeLogs(c, rr)
 	if err != nil {
 		return nil, fmt.Errorf("Failed getting changelogs %w", err)
 	}
@@ -137,15 +136,6 @@ func saveResultsToDatastore(c context.Context, analysis *gfim.CompileHeuristicAn
 		suspects[i] = suspect
 	}
 	return datastore.Put(c, suspects)
-}
-
-// getChangeLogs queries Gitiles for changelogs in the regression range
-func getChangeLogs(c context.Context, rr *gfipb.RegressionRange) ([]*model.ChangeLog, error) {
-	if rr.LastPassed.Host != rr.FirstFailed.Host || rr.LastPassed.Project != rr.FirstFailed.Project {
-		return nil, fmt.Errorf("RepoURL for last pass and first failed commits must be same, but aren't: %v and %v", rr.LastPassed, rr.FirstFailed)
-	}
-	repoUrl := gitiles.GetRepoUrl(c, rr.LastPassed)
-	return gitiles.GetChangeLogs(c, repoUrl, rr.LastPassed.Id, rr.FirstFailed.Id)
 }
 
 // GetConfidenceLevel returns a description of how likely a suspect to be the

@@ -100,6 +100,20 @@ func TestDatastoreModel(t *testing.T) {
 				StartTime:      cl.Now(),
 				EndTime:        cl.Now(),
 				Status:         gofinditpb.AnalysisStatus_CREATED,
+				BlameList: &gofinditpb.BlameList{
+					Commits: []*gofinditpb.BlameListSingleCommit{
+						{
+							Commit:      "12345",
+							ReviewUrl:   "https://this/is/review/url/1",
+							ReviewTitle: "commit 1",
+						},
+						{
+							Commit:      "12346",
+							ReviewUrl:   "https://this/is/review/url/2",
+							ReviewTitle: "commit 2",
+						},
+					},
+				},
 			}
 			So(datastore.Put(c, nthsection_analysis), ShouldBeNil)
 

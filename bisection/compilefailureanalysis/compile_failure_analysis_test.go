@@ -133,10 +133,11 @@ func TestAnalyzeFailure(t *testing.T) {
 		datastore.GetAll(c, q, &heuristic_analyses)
 		So(len(heuristic_analyses), ShouldEqual, 1)
 
-		q = datastore.NewQuery("CompileNthSectionAnalysis").Ancestor(datastore.KeyForObj(c, compile_failure_analysis))
-		nthsection_analyses := []*model.CompileNthSectionAnalysis{}
-		datastore.GetAll(c, q, &nthsection_analyses)
-		So(len(nthsection_analyses), ShouldEqual, 1)
+		// TODO (nqmtuan): Enable n-th section analysis when it is ready
+		// q = datastore.NewQuery("CompileNthSectionAnalysis").Ancestor(datastore.KeyForObj(c, compile_failure_analysis))
+		// nthsection_analyses := []*model.CompileNthSectionAnalysis{}
+		// datastore.GetAll(c, q, &nthsection_analyses)
+		// So(len(nthsection_analyses), ShouldEqual, 1)
 	})
 }
 

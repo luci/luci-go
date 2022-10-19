@@ -253,6 +253,19 @@ message NthSectionAnalysisResult {
   // This is useful to analyse the nth-section progress.
   // The runs are sorted by the start timestamp.
   repeated SingleRerun reruns = 9;
+  // The blame list of commits to run the nthsection analysis on
+  // The commits are sorted by recency, with the most recent commit at the beginning.
+  BlameList blameList= 10;
+}
+
+message BlameList {
+  repeated BlameListSingleCommit commits = 1;
+}
+
+message BlameListSingleCommit {
+  string commit = 1;
+  string reviewUrl = 2;
+  string reviewTitle = 3;
 }
 
 enum AnalysisStatus {

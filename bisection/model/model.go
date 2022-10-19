@@ -234,4 +234,10 @@ type CompileNthSectionAnalysis struct {
 	EndTime time.Time `gae:"end_time"`
 	// Status of the analysis
 	Status gofinditpb.AnalysisStatus `gae:"status"`
+
+	// When storing protobuf message, datastore will compress the data if it is big
+	// https://source.corp.google.com/chops_infra_internal/infra/go/src/go.chromium.org/luci/gae/service/datastore/protos.go;l=88
+	// We can also declare zstd compression here, but there seems to be a bug where
+	// the message size is 0
+	BlameList *gofinditpb.BlameList `gae:"blame_list"`
 }

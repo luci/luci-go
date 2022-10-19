@@ -17,28 +17,62 @@ package nthsection
 import (
 	"context"
 
-	gfim "go.chromium.org/luci/bisection/model"
-	gfipb "go.chromium.org/luci/bisection/proto"
+	lbm "go.chromium.org/luci/bisection/model"
+	lbpb "go.chromium.org/luci/bisection/proto"
+	"go.chromium.org/luci/bisection/util/changelogutil"
 
 	"go.chromium.org/luci/common/clock"
+	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/gae/service/datastore"
 )
 
 func Analyze(
 	c context.Context,
-	cfa *gfim.CompileFailureAnalysis,
-	rr *gfipb.RegressionRange) (*gfim.CompileNthSectionAnalysis, error) {
+	cfa *lbm.CompileFailureAnalysis,
+	rr *lbpb.RegressionRange) (*lbm.CompileNthSectionAnalysis, error) {
 	// Create a new CompileNthSectionAnalysis Entity
-	nth_section_analysis := &gfim.CompileNthSectionAnalysis{
+	nthSectionAnalysis := &lbm.CompileNthSectionAnalysis{
 		ParentAnalysis: datastore.KeyForObj(c, cfa),
 		StartTime:      clock.Now(c),
-		Status:         gfipb.AnalysisStatus_CREATED,
+		Status:         lbpb.AnalysisStatus_CREATED,
 	}
 
-	if err := datastore.Put(c, nth_section_analysis); err != nil {
+	changeLogs, err := changelogutil.GetChangeLogs(c, rr)
+	if err != nil {
+		logging.Infof(c, "Cannot fetch changelog for analysis %d", cfa.Id)
+	}
+
+	err = updateBlameList(c, nthSectionAnalysis, changeLogs)
+	if err != nil {
 		return nil, err
 	}
 
-	// TODO (nqmtuan) implement nth section analysis
-	return nth_section_analysis, nil
+	return nthSectionAnalysis, nil
+}
+
+func updateBlameList(c context.Context, nthSectionAnalysis *lbm.CompileNthSectionAnalysis, changeLogs []*lbm.ChangeLog) error {
+	commits := []*lbpb.BlameListSingleCommit{}
+	for _, cl := range changeLogs {
+		reviewURL, err := cl.GetReviewUrl()
+		if err != nil {
+			// Just log, this is not important for nth-section analysis
+			logging.Errorf(c, "Error getting review URL: %s", err)
+		}
+
+		reviewTitle, err := cl.GetReviewTitle()
+		if err != nil {
+			// Just log, this is not important for nth-section analysis
+			logging.Errorf(c, "Error getting review title: %s", err)
+		}
+
+		commits = append(commits, &lbpb.BlameListSingleCommit{
+			Commit:      cl.Commit,
+			ReviewUrl:   reviewURL,
+			ReviewTitle: reviewTitle,
+		})
+	}
+	nthSectionAnalysis.BlameList = &lbpb.BlameList{
+		Commits: commits,
+	}
+	return datastore.Put(c, nthSectionAnalysis)
 }
