@@ -13,6 +13,12 @@
 // limitations under the License.
 
 ////////////////////////////////////////////////////////////////////////////////
+// Constants.
+
+const GROUP_ROOT_URL = "/groups/";
+const NEW_GROUP_PLACEHOLDER = "new!";
+
+////////////////////////////////////////////////////////////////////////////////
 // Utility functions.
 
 // Trims group description to fit single line.
@@ -26,6 +32,17 @@ const trimGroupDescription = (desc) => {
     firstLine = firstLine.slice(0, 55) + '...';
   }
   return firstLine;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+// Address bar manipulation.
+
+const getCurrentGroupInURL = () => {
+  let p = window.location.pathname;
+  if (p.startsWith(GROUP_ROOT_URL)) {
+    return p.slice(GROUP_ROOT_URL.length);
+  }
+  return '';
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -100,6 +117,9 @@ class GroupChooser {
 
     // Button for triggering create group workflow.
     this.createGroupBtn = document.querySelector("#create-group-btn");
+
+    // Set of known groups, used for checking group presence.
+    this.groupSet = new Set()
   }
 
   // Loads list of groups from a server.
@@ -113,6 +133,11 @@ class GroupChooser {
       .catch((err) => {
         console.log(err);
       });
+  }
+
+  // Checks if set of known groups contains queried group.
+  isKnownGroup(groupName) {
+    return this.groupSet.has(groupName);
   }
 
   // Sets groupList (group-chooser) element.
@@ -140,6 +165,7 @@ class GroupChooser {
 
     groups.map((group) => {
       addElement(group);
+      this.groupSet.add(group.name);
     });
   }
 
@@ -453,7 +479,14 @@ window.onload = () => {
   })
 
   const jumpToCurrentGroup = (selectDefault) => {
-    if (selectDefault) {
+    let current = getCurrentGroupInURL();
+    if (current == NEW_GROUP_PLACEHOLDER) {
+      startNewGroupFlow();
+      groupChooser.setSelection(null);
+    } else if (groupChooser.isKnownGroup(current)) {
+      // TODO(cjacomet): Make scroller center onto group selected.
+      groupChooser.setSelection(current);
+    } else if (selectDefault) {
       groupChooser.selectDefault();
     }
   };
