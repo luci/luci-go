@@ -33,13 +33,32 @@ func init() {
 		Handler: func(ctx context.Context, payload protoreflect.ProtoMessage) error {
 			task := payload.(*taskspb.ProcessChangeTask)
 			logging.Infof(ctx, "got revision %d", task.AuthDbRev)
-			return handleTask(ctx, payload.(*taskspb.ProcessChangeTask))
+			return handleProcessChangeTask(ctx, payload.(*taskspb.ProcessChangeTask))
 		},
 		Custom: func(ctx context.Context, payload protoreflect.ProtoMessage) (*tq.CustomPayload, error) {
 			task := payload.(*taskspb.ProcessChangeTask)
 			return &tq.CustomPayload{
 				Method:      "POST",
 				RelativeURI: fmt.Sprintf("/internal/auth/taskqueue/process-change/%d", task.AuthDbRev),
+			}, nil
+		},
+	})
+	tq.RegisterTaskClass(tq.TaskClass{
+		ID:        "replication-task",
+		Prototype: (*taskspb.ReplicationTask)(nil),
+		Kind:      tq.Transactional,
+		Queue:     "replication-queue",
+		Handler: func(ctx context.Context, payload protoreflect.ProtoMessage) error {
+			task := payload.(*taskspb.ReplicationTask)
+			logging.Infof(ctx, "got revision %d", task.AuthDbRev)
+			// TODO(crbug/1376603): Replace this noop function when replication is implemented.
+			return handleReplicationTask(ctx, payload.(*taskspb.ReplicationTask))
+		},
+		Custom: func(ctx context.Context, payload protoreflect.ProtoMessage) (*tq.CustomPayload, error) {
+			task := payload.(*taskspb.ReplicationTask)
+			return &tq.CustomPayload{
+				Method:      "POST",
+				RelativeURI: fmt.Sprintf("/internal/taskqueue/replication/%d", task.AuthDbRev),
 			}, nil
 		},
 	})

@@ -491,10 +491,13 @@ func TestCreateAuthGroup(t *testing.T) {
 				So(err, ShouldBeNil)
 				So(state1.AuthDBRev, ShouldEqual, 1)
 				tasks := taskScheduler.Tasks()
-				So(tasks, ShouldHaveLength, 1)
-				task := tasks[0]
-				So(task.Class, ShouldEqual, "process-change-task")
-				So(task.Payload, ShouldResembleProto, &taskspb.ProcessChangeTask{AuthDbRev: 1})
+				So(tasks, ShouldHaveLength, 2)
+				processChangeTask := tasks[0]
+				So(processChangeTask.Class, ShouldEqual, "process-change-task")
+				So(processChangeTask.Payload, ShouldResembleProto, &taskspb.ProcessChangeTask{AuthDbRev: 1})
+				replicationTask := tasks[1]
+				So(replicationTask.Class, ShouldEqual, "replication-task")
+				So(replicationTask.Payload, ShouldResembleProto, &taskspb.ReplicationTask{AuthDbRev: 1})
 			}
 
 			// Create a second group.
@@ -510,7 +513,7 @@ func TestCreateAuthGroup(t *testing.T) {
 				So(err, ShouldBeNil)
 				So(state2.AuthDBRev, ShouldEqual, 2)
 				tasks := taskScheduler.Tasks()
-				So(tasks, ShouldHaveLength, 2)
+				So(tasks, ShouldHaveLength, 4)
 			}
 
 			// Try to create another group the same as the second, which should fail.
@@ -522,7 +525,7 @@ func TestCreateAuthGroup(t *testing.T) {
 				So(err, ShouldBeNil)
 				So(state3.AuthDBRev, ShouldEqual, 2)
 				tasks := taskScheduler.Tasks()
-				So(tasks, ShouldHaveLength, 2)
+				So(tasks, ShouldHaveLength, 4)
 			}
 		})
 
@@ -789,10 +792,13 @@ func TestUpdateAuthGroup(t *testing.T) {
 			So(err, ShouldBeNil)
 			So(state.AuthDBRev, ShouldEqual, 11)
 			tasks := taskScheduler.Tasks()
-			So(tasks, ShouldHaveLength, 1)
-			task := tasks[0]
-			So(task.Class, ShouldEqual, "process-change-task")
-			So(task.Payload, ShouldResembleProto, &taskspb.ProcessChangeTask{AuthDbRev: 11})
+			So(tasks, ShouldHaveLength, 2)
+			processChangeTask := tasks[0]
+			So(processChangeTask.Class, ShouldEqual, "process-change-task")
+			So(processChangeTask.Payload, ShouldResembleProto, &taskspb.ProcessChangeTask{AuthDbRev: 11})
+			replicationTask := tasks[1]
+			So(replicationTask.Class, ShouldEqual, "replication-task")
+			So(replicationTask.Payload, ShouldResembleProto, &taskspb.ReplicationTask{AuthDbRev: 11})
 
 			// Update a group, should fail (due to bad etag) and *not* bump AuthDB revision.
 			_, err = UpdateAuthGroup(ctx, group, nil, "bad-etag")
@@ -801,7 +807,7 @@ func TestUpdateAuthGroup(t *testing.T) {
 			state, err = GetReplicationState(ctx)
 			So(err, ShouldBeNil)
 			So(state.AuthDBRev, ShouldEqual, 11)
-			So(taskScheduler.Tasks(), ShouldHaveLength, 1)
+			So(taskScheduler.Tasks(), ShouldHaveLength, 2)
 		})
 
 		Convey("creates historical group entities", func() {
@@ -1017,10 +1023,13 @@ func TestDeleteAuthGroup(t *testing.T) {
 			So(err, ShouldBeNil)
 			So(state1.AuthDBRev, ShouldEqual, 1)
 			tasks := taskScheduler.Tasks()
-			So(tasks, ShouldHaveLength, 1)
-			task := tasks[0]
-			So(task.Class, ShouldEqual, "process-change-task")
-			So(task.Payload, ShouldResembleProto, &taskspb.ProcessChangeTask{AuthDbRev: 1})
+			So(tasks, ShouldHaveLength, 2)
+			processChangeTask := tasks[0]
+			So(processChangeTask.Class, ShouldEqual, "process-change-task")
+			So(processChangeTask.Payload, ShouldResembleProto, &taskspb.ProcessChangeTask{AuthDbRev: 1})
+			replicationTask := tasks[1]
+			So(replicationTask.Class, ShouldEqual, "replication-task")
+			So(replicationTask.Payload, ShouldResembleProto, &taskspb.ReplicationTask{AuthDbRev: 1})
 		})
 
 		Convey("creates historical group entities", func() {
@@ -1214,10 +1223,13 @@ func TestUpdateAllowlistEntities(t *testing.T) {
 			So(err, ShouldBeNil)
 			So(state1.AuthDBRev, ShouldEqual, 1)
 			tasks := taskScheduler.Tasks()
-			So(tasks, ShouldHaveLength, 1)
-			task := tasks[0]
-			So(task.Class, ShouldEqual, "process-change-task")
-			So(task.Payload, ShouldResembleProto, &taskspb.ProcessChangeTask{AuthDbRev: 1})
+			So(tasks, ShouldHaveLength, 2)
+			processChangeTask := tasks[0]
+			So(processChangeTask.Class, ShouldEqual, "process-change-task")
+			So(processChangeTask.Payload, ShouldResembleProto, &taskspb.ProcessChangeTask{AuthDbRev: 1})
+			replicationTask := tasks[1]
+			So(replicationTask.Class, ShouldEqual, "replication-task")
+			So(replicationTask.Payload, ShouldResembleProto, &taskspb.ReplicationTask{AuthDbRev: 1})
 
 			entities, err := getAllDatastoreEntities(ctx, "AuthIPWhitelistHistory", HistoricalRevisionKey(ctx, 1))
 			So(err, ShouldBeNil)
@@ -1322,10 +1334,13 @@ func TestAuthGlobalConfig(t *testing.T) {
 			So(err, ShouldBeNil)
 			So(state1.AuthDBRev, ShouldEqual, 1)
 			tasks := taskScheduler.Tasks()
-			So(tasks, ShouldHaveLength, 1)
-			task := tasks[0]
-			So(task.Class, ShouldEqual, "process-change-task")
-			So(task.Payload, ShouldResembleProto, &taskspb.ProcessChangeTask{AuthDbRev: 1})
+			So(tasks, ShouldHaveLength, 2)
+			processChangeTask := tasks[0]
+			So(processChangeTask.Class, ShouldEqual, "process-change-task")
+			So(processChangeTask.Payload, ShouldResembleProto, &taskspb.ProcessChangeTask{AuthDbRev: 1})
+			replicationTask := tasks[1]
+			So(replicationTask.Class, ShouldEqual, "replication-task")
+			So(replicationTask.Payload, ShouldResembleProto, &taskspb.ReplicationTask{AuthDbRev: 1})
 
 			entities, err := getAllDatastoreEntities(ctx, "AuthGlobalConfigHistory", HistoricalRevisionKey(ctx, 1))
 			So(err, ShouldBeNil)
@@ -1369,10 +1384,13 @@ func TestAuthGlobalConfig(t *testing.T) {
 			So(err, ShouldBeNil)
 			So(state1.AuthDBRev, ShouldEqual, 1)
 			tasks := taskScheduler.Tasks()
-			So(tasks, ShouldHaveLength, 1)
-			task := tasks[0]
-			So(task.Class, ShouldEqual, "process-change-task")
-			So(task.Payload, ShouldResembleProto, &taskspb.ProcessChangeTask{AuthDbRev: 1})
+			So(tasks, ShouldHaveLength, 2)
+			processChangeTask := tasks[0]
+			So(processChangeTask.Class, ShouldEqual, "process-change-task")
+			So(processChangeTask.Payload, ShouldResembleProto, &taskspb.ProcessChangeTask{AuthDbRev: 1})
+			replicationTask := tasks[1]
+			So(replicationTask.Class, ShouldEqual, "replication-task")
+			So(replicationTask.Payload, ShouldResembleProto, &taskspb.ReplicationTask{AuthDbRev: 1})
 
 			entities, err := getAllDatastoreEntities(ctx, "AuthGlobalConfigHistory", HistoricalRevisionKey(ctx, 1))
 			So(err, ShouldBeNil)

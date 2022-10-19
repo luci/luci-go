@@ -395,8 +395,8 @@ func makeAuthIPAllowlist(ctx context.Context, id string) *AuthIPAllowlist {
 // makeAuthGlobalConfig is a convenience function for creating AuthGlobalConfig.
 func makeAuthGlobalConfig(ctx context.Context) *AuthGlobalConfig {
 	return &AuthGlobalConfig{
-		Kind: 	"AuthGlobalConfig",
-		ID: 	"root",
+		Kind: "AuthGlobalConfig",
+		ID:   "root",
 	}
 }
 
@@ -474,8 +474,11 @@ func runAuthDBChange(ctx context.Context, f func(context.Context, commitAuthEnti
 			return err
 		}
 
-		// Enqueue a backend task to process the AuthDB change.
-		return EnqueueProcessChangeTask(ctx, state.AuthDBRev)
+		// Enqueue two backend tasks, one to generate the changelog and one to replicate the updated AuthDB to clients.
+		if err := EnqueueProcessChangeTask(ctx, state.AuthDBRev); err != nil {
+			return err
+		}
+		return EnqueueReplicationTask(ctx, state.AuthDBRev)
 	}, nil)
 }
 

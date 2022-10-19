@@ -21,3 +21,7 @@ option go_package = "go.chromium.org/luci/auth_service/api/taskspb";
 message ProcessChangeTask {
   int64 auth_db_rev = 1;
 }
+
+message ReplicationTask {
+  int64 auth_db_rev = 1;
+}

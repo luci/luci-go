@@ -343,7 +343,7 @@ func EnqueueProcessChangeTask(ctx context.Context, authdbrev int64) error {
 	})
 }
 
-func handleTask(ctx context.Context, task *taskspb.ProcessChangeTask) error {
+func handleProcessChangeTask(ctx context.Context, task *taskspb.ProcessChangeTask) error {
 	// TODO(cjacomet): Implement
 	return nil
 }
