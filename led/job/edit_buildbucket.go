@@ -320,6 +320,10 @@ func (bbe *buildbucketEditor) Properties(props map[string]string, auto bool) {
 }
 
 func (bbe *buildbucketEditor) CIPDPkgs(cipdPkgs CIPDPkgs) {
+	if len(cipdPkgs) == 0 {
+		return
+	}
+
 	bbe.tweak(func() error {
 		if !bbe.bb.BbagentDownloadCIPDPkgs() {
 			cipdPkgs.updateCipdPkgs(&bbe.bb.CipdPackages)
