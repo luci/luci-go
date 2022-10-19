@@ -19,6 +19,7 @@ import (
 	"testing"
 
 	"cloud.google.com/go/bigquery"
+	"google.golang.org/protobuf/types/known/structpb"
 
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/errors"
@@ -105,6 +106,59 @@ func TestBQ(t *testing.T) {
 			err := ExportBuild(ctx1, 123)
 			So(err, ShouldErrLike, "transient error when inserting BQ for build 123")
 			So(transient.Tag.In(err), ShouldBeTrue)
+		})
+
+		Convey("output properties too large", func() {
+			originLimit := maxBuildSizeInBQ
+			maxBuildSizeInBQ = 10
+			defer func() {
+				maxBuildSizeInBQ = originLimit
+			}()
+			bo := &model.BuildOutputProperties{
+				Build: bk,
+				Proto: &structpb.Struct{
+					Fields: map[string]*structpb.Value{
+						"output": {
+							Kind: &structpb.Value_StringValue{
+								StringValue: "output value",
+							},
+						},
+					},
+				},
+			}
+			So(datastore.Put(ctx, bo), ShouldBeNil)
+
+			So(ExportBuild(ctx, 123), ShouldBeNil)
+			rows := fakeBq.GetRows("raw", "completed_builds")
+			So(len(rows), ShouldEqual, 1)
+			So(rows[0].InsertID, ShouldEqual, "123")
+			p, _ := rows[0].Message.(*pb.Build)
+			So(p, ShouldResembleProto, &pb.Build{
+				Id: 123,
+				Builder: &pb.BuilderID{
+					Project: "project",
+					Bucket:  "bucket",
+					Builder: "builder",
+				},
+				Status: pb.Status_CANCELED,
+				Steps: []*pb.Step{{
+					Name: "step",
+					Logs: []*pb.Log{{Name: "log1"}},
+				}},
+				Infra: &pb.BuildInfra{Buildbucket: &pb.BuildInfra_Buildbucket{}},
+				Input: &pb.Build_Input{},
+				Output: &pb.Build_Output{
+					Properties: &structpb.Struct{
+						Fields: map[string]*structpb.Value{
+							"strip_reason": {
+								Kind: &structpb.Value_StringValue{
+									StringValue: "output properties is stripped because it's too large which makes the whole build larger than BQ limit(10MB)",
+								},
+							},
+						},
+					},
+				},
+			})
 		})
 
 		Convey("success", func() {

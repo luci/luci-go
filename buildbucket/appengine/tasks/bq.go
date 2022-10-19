@@ -20,16 +20,26 @@ import (
 	"time"
 
 	"cloud.google.com/go/bigquery"
-	"go.chromium.org/luci/buildbucket/appengine/internal/clients"
-	"go.chromium.org/luci/gae/service/datastore"
-	"go.chromium.org/luci/server/tq"
+	"google.golang.org/protobuf/encoding/protojson"
+	"google.golang.org/protobuf/types/known/structpb"
 
 	lucibq "go.chromium.org/luci/common/bq"
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry/transient"
+	"go.chromium.org/luci/gae/service/datastore"
+	"go.chromium.org/luci/server/tq"
 
+	"go.chromium.org/luci/buildbucket/appengine/internal/clients"
 	"go.chromium.org/luci/buildbucket/appengine/model"
 )
+
+// maxBuildSizeInBQ is (10MB-5KB) as the maximum allowed request size in either
+// streaming API or storage write API is 10MB. And we want to leave 5KB buffer
+// room during message conversion.
+// Note: make it to var so that it can be tested in unit tests without taking up
+// too much memory.
+var maxBuildSizeInBQ = 10*1000*1000 - 5*1000
 
 // ExportBuild saves the build into BiqQuery.
 // The returned error has transient.Tag or tq.Fatal in order to tell tq to drop
@@ -56,6 +66,29 @@ func ExportBuild(ctx context.Context, buildID int64) error {
 			name := log.Name
 			log.Reset()
 			log.Name = name
+		}
+	}
+
+	// Check if the cleaned Build too large.
+	pj, err := protojson.Marshal(p)
+	if err != nil {
+		logging.Errorf(ctx, "failed to calculate Build size for %d: %s, continue to try to insert the build...", buildID, err)
+	}
+	// We only strip out the outputProperties here.
+	// Usually,large build size is caused by large outputProperties size since we
+	// only expanded the 1MB Datastore limit per field for BuildOutputProperties.
+	// If there are failures for any other fields, we'd like this job to continue
+	// to try so that we can be alerted.
+	if len(pj) > maxBuildSizeInBQ && p.Output.GetProperties() != nil {
+		logging.Warningf(ctx, "striping out outputProperties for build %d in BQ exporting", buildID)
+		p.Output.Properties = &structpb.Struct{
+			Fields: map[string]*structpb.Value{
+				"strip_reason": {
+					Kind: &structpb.Value_StringValue{
+						StringValue: "output properties is stripped because it's too large which makes the whole build larger than BQ limit(10MB)",
+					},
+				},
+			},
 		}
 	}
 
