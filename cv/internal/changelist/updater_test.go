@@ -314,6 +314,8 @@ func TestUpdaterHappyPath(t *testing.T) {
 			UpdateCLTask_PUBSUB_POLL.String(), true, false, "luci-project"), ShouldEqual, 1)
 		So(ct.TSMonSentDistr(ctx, metrics.Internal.CLIngestionLatency,
 			UpdateCLTask_PUBSUB_POLL.String(), false, "luci-project").Sum(), ShouldAlmostEqual, 1)
+		So(ct.TSMonSentDistr(ctx, metrics.Internal.CLIngestionLatencyWithoutFetch,
+			UpdateCLTask_PUBSUB_POLL.String(), false, "luci-project").Sum(), ShouldNotBeNil)
 
 		// Ensure CL is created with correct data.
 		cl, err := ExternalID("fake/123").Load(ctx)
@@ -451,6 +453,8 @@ func TestUpdaterFetchedNoNewData(t *testing.T) {
 			So(ct.TSMonSentValue(ctx, metrics.Internal.CLIngestionAttempted,
 				UpdateCLTask_PUBSUB_POLL.String(), false, false, "luci-project"), ShouldEqual, 1)
 			So(ct.TSMonSentDistr(ctx, metrics.Internal.CLIngestionLatency,
+				UpdateCLTask_PUBSUB_POLL.String(), false, "luci-project"), ShouldBeNil)
+			So(ct.TSMonSentDistr(ctx, metrics.Internal.CLIngestionLatencyWithoutFetch,
 				UpdateCLTask_PUBSUB_POLL.String(), false, "luci-project"), ShouldBeNil)
 		}
 

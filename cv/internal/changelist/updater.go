@@ -467,11 +467,14 @@ func (u *Updater) handleCLWithBackend(ctx context.Context, task *UpdateCLTask, c
 	// Save ID and ExternalID before giving CL to backend to avoid accidental corruption.
 	id, eid := cl.ID, cl.ExternalID
 	skip, updateFields, err := u.trySkippingFetch(ctx, task, cl, backend)
+	var fetchDuration time.Duration
 	switch {
 	case err != nil:
 		return err
 	case !skip:
+		now := clock.Now(ctx)
 		updateFields, err = backend.Fetch(ctx, NewFetchInput(cl, task))
+		fetchDuration = clock.Since(ctx, now)
 		switch {
 		case err != nil && errors.Unwrap(err) == gerrit.ErrOutOfQuota && task.GetLuciProject() == "chromeos":
 			// HACK: don't retry on out of quota error, instead schedule another task
@@ -521,14 +524,17 @@ func (u *Updater) handleCLWithBackend(ctx context.Context, task *UpdateCLTask, c
 		// Report the latency metrics only if the fetch actually returned
 		// new data. If the data was the same as the existing snapshot,
 		// the fetch wasn't needed, indeed.
-		delay := clock.Now(ctx).Sub(updateFields.Snapshot.ExternalUpdateTime.AsTime()).Seconds()
+		delay := clock.Now(ctx).Sub(updateFields.Snapshot.ExternalUpdateTime.AsTime())
 		if delay < 0 {
 			logging.Errorf(ctx, "negative CL fetch duration (%d) detected", delay)
 			delay = 0
 		}
 		metrics.Internal.CLIngestionLatency.Add(
-			ctx, delay, task.GetRequester().String(), task.GetIsForDep(),
+			ctx, delay.Seconds(), task.GetRequester().String(), task.GetIsForDep(),
 			task.GetLuciProject())
+		metrics.Internal.CLIngestionLatencyWithoutFetch.Add(
+			ctx, (delay - fetchDuration).Seconds(), task.GetRequester().String(),
+			task.GetIsForDep(), task.GetLuciProject())
 		fallthrough
 	default:
 		metrics.Internal.CLIngestionAttempted.Add(

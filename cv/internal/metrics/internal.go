@@ -26,11 +26,12 @@ import (
 
 // Internal contains a collection of metric definitions internal to LUCI CV.
 var Internal = struct {
-	BuildbucketRPCCount     metric.Counter
-	BuildbucketRPCDurations metric.CumulativeDistribution
-	CLIngestionAttempted    metric.Counter
-	CLIngestionLatency      metric.CumulativeDistribution
-	BigQueryExportDelay     metric.CumulativeDistribution
+	BuildbucketRPCCount            metric.Counter
+	BuildbucketRPCDurations        metric.CumulativeDistribution
+	CLIngestionAttempted           metric.Counter
+	CLIngestionLatency             metric.CumulativeDistribution
+	CLIngestionLatencyWithoutFetch metric.CumulativeDistribution
+	BigQueryExportDelay            metric.CumulativeDistribution
 }{
 	BuildbucketRPCCount: metric.NewCounter(
 		"cv/internal/buildbucket_rpc/count",
@@ -77,6 +78,21 @@ var Internal = struct {
 		"Distribution of the time elapsed "+
 			"from the time of a Gerrit update event occurrence "+
 			"to the time of the snapshot ingested in CV",
+		&types.MetricMetadata{Units: types.Seconds},
+		// Bucketer for 1s...8h range since anything above 8h is too bad.
+		distribution.GeometricBucketer(
+			math.Pow(float64(8*time.Hour/time.Second), 1.0/nBuckets), nBuckets,
+		),
+		field.String("requester"),
+		field.Bool("dep"),
+		field.String("project"),
+	),
+	CLIngestionLatencyWithoutFetch: metric.NewCumulativeDistribution(
+		"cv/internal/changelist/ingestion_latency_without_fetch",
+		"Distribution of the time elapsed "+
+			"from the time of a Gerrit update event occurrence "+
+			"to the time of the snapshot ingested in CV, but excluding "+
+			"the time taken to fetch the snapshot from the backend",
 		&types.MetricMetadata{Units: types.Seconds},
 		// Bucketer for 1s...8h range since anything above 8h is too bad.
 		distribution.GeometricBucketer(
