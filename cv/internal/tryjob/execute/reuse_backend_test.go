@@ -22,9 +22,9 @@ import (
 	"go.chromium.org/luci/common/data/stringset"
 	gerritpb "go.chromium.org/luci/common/proto/gerrit"
 	"go.chromium.org/luci/gae/service/datastore"
+	"google.golang.org/protobuf/types/known/timestamppb"
 
 	bbfacade "go.chromium.org/luci/cv/internal/buildbucket/facade"
-	bbfake "go.chromium.org/luci/cv/internal/buildbucket/fake"
 	"go.chromium.org/luci/cv/internal/changelist"
 	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/cvtesting"
@@ -45,7 +45,6 @@ func TestFindReuseInBackend(t *testing.T) {
 		const (
 			lProject     = "testProj"
 			bbHost       = "buildbucket.example.com"
-			buildID      = 9524107902457
 			reuseKey     = "cafecafe"
 			clid         = 34586452134
 			gHost        = "example-review.com"
@@ -102,37 +101,38 @@ func TestFindReuseInBackend(t *testing.T) {
 			},
 		}
 
-		now := ct.Clock.Now().UTC()
-		build := bbfake.NewBuildConstructor().
-			WithHost(bbHost).
-			WithID(buildID).
-			WithBuilderID(builder).
-			WithCreateTime(now.Add(-1 * time.Hour)).
-			WithStartTime(now.Add(-1 * time.Hour)).
-			WithEndTime(now.Add(-30 * time.Minute)).
-			WithUpdateTime(now.Add(-30 * time.Minute)).
-			WithStatus(bbpb.Status_SUCCESS).
-			AppendGerritChanges(&bbpb.GerritChange{
+		ct.BuildbucketFake.AddBuilder(bbHost, builder, nil)
+		bbClient := ct.BuildbucketFake.MustNewClient(ctx, bbHost, lProject)
+		build, err := bbClient.ScheduleBuild(ctx, &bbpb.ScheduleBuildRequest{
+			Builder: builder,
+			GerritChanges: []*bbpb.GerritChange{{
 				Host:     gHost,
 				Project:  gRepo,
 				Change:   gChange,
 				Patchset: gPatchset,
-			}).
-			Construct()
-		ct.BuildbucketFake.AddBuild(build)
+			}},
+		})
+		So(err, ShouldBeNil)
+		epoch := ct.Clock.Now().UTC()
+		build = ct.BuildbucketFake.MutateBuild(ctx, bbHost, build.GetId(), func(build *bbpb.Build) {
+			build.Status = bbpb.Status_SUCCESS
+			build.StartTime = timestamppb.New(epoch)
+			build.EndTime = timestamppb.New(epoch.Add(30 * time.Minute))
+		})
+		ct.Clock.Add(1 * time.Hour)
 
 		Convey("Found reuse", func() {
 			result, err := w.findReuseInBackend(ctx, []*tryjob.Definition{defFoo})
 			So(err, ShouldBeNil)
 			So(result, ShouldHaveLength, 1)
 			So(result, ShouldContainKey, defFoo)
-			eid := tryjob.MustBuildbucketID(bbHost, buildID)
+			eid := tryjob.MustBuildbucketID(bbHost, build.GetId())
 			So(result[defFoo], cvtesting.SafeShouldResemble, &tryjob.Tryjob{
 				ID:               tryjob.MustResolve(ctx, eid)[0],
 				ExternalID:       eid,
 				EVersion:         1,
-				EntityCreateTime: now,
-				EntityUpdateTime: now,
+				EntityCreateTime: datastore.RoundTime(ct.Clock.Now().UTC()),
+				EntityUpdateTime: datastore.RoundTime(ct.Clock.Now().UTC()),
 				ReuseKey:         reuseKey,
 				Definition:       defFoo,
 				CLPatchsets:      tryjob.CLPatchsets{tryjob.MakeCLPatchset(clid, gPatchset)},
@@ -143,7 +143,7 @@ func TestFindReuseInBackend(t *testing.T) {
 					UpdateTime: build.GetUpdateTime(),
 					Backend: &tryjob.Result_Buildbucket_{
 						Buildbucket: &tryjob.Result_Buildbucket{
-							Id:      buildID,
+							Id:      build.GetId(),
 							Builder: builder,
 							Status:  bbpb.Status_SUCCESS,
 						},
@@ -154,13 +154,17 @@ func TestFindReuseInBackend(t *testing.T) {
 		})
 
 		Convey("Multiple matches and picks latest", func() {
-			newerBuild := bbfake.NewConstructorFromBuild(build).
-				WithID(build.Id - 1).
-				WithCreateTime(build.GetCreateTime().AsTime().Add(10 * time.Minute)).WithStartTime(build.GetStartTime().AsTime().Add(10 * time.Minute)).
-				WithEndTime(build.GetEndTime().AsTime().Add(10 * time.Minute)).
-				WithUpdateTime(build.GetUpdateTime().AsTime().Add(10 * time.Minute)).
-				Construct()
-			ct.BuildbucketFake.AddBuild(newerBuild)
+			newerBuild, err := bbClient.ScheduleBuild(ctx, &bbpb.ScheduleBuildRequest{
+				Builder:       builder,
+				GerritChanges: build.GetInput().GetGerritChanges(),
+			})
+			So(err, ShouldBeNil)
+			epoch := ct.Clock.Now().UTC()
+			newerBuild = ct.BuildbucketFake.MutateBuild(ctx, bbHost, newerBuild.GetId(), func(build *bbpb.Build) {
+				build.Status = bbpb.Status_SUCCESS
+				build.StartTime = timestamppb.New(epoch)
+				build.EndTime = timestamppb.New(epoch.Add(10 * time.Minute))
+			})
 			result, err := w.findReuseInBackend(ctx, []*tryjob.Definition{defFoo})
 			So(err, ShouldBeNil)
 			So(result, ShouldHaveLength, 1)
@@ -169,21 +173,25 @@ func TestFindReuseInBackend(t *testing.T) {
 		})
 
 		Convey("Build already known", func() {
-			w.knownExternalIDs = stringset.NewFromSlice(string(tryjob.MustBuildbucketID(bbHost, buildID)))
+			w.knownExternalIDs = stringset.NewFromSlice(string(tryjob.MustBuildbucketID(bbHost, build.GetId())))
 			result, err := w.findReuseInBackend(ctx, []*tryjob.Definition{defFoo})
 			So(err, ShouldBeNil)
 			So(result, ShouldBeEmpty)
 		})
 
 		Convey("Not reusable", func() {
-			failedButNewerBuild := bbfake.NewConstructorFromBuild(build).
-				WithID(build.Id - 1).
-				WithCreateTime(build.GetCreateTime().AsTime().Add(10 * time.Minute)).WithStartTime(build.GetStartTime().AsTime().Add(10 * time.Minute)).
-				WithEndTime(build.GetEndTime().AsTime().Add(10 * time.Minute)).
-				WithUpdateTime(build.GetUpdateTime().AsTime().Add(10 * time.Minute)).
-				WithStatus(bbpb.Status_FAILURE). // failed build is not reusable
-				Construct()
-			ct.BuildbucketFake.AddBuild(failedButNewerBuild)
+			failedButNewerBuild, err := bbClient.ScheduleBuild(ctx, &bbpb.ScheduleBuildRequest{
+				Builder:       builder,
+				GerritChanges: build.GetInput().GetGerritChanges(),
+			})
+			So(err, ShouldBeNil)
+			epoch := ct.Clock.Now().UTC()
+			ct.BuildbucketFake.MutateBuild(ctx, bbHost, failedButNewerBuild.GetId(), func(build *bbpb.Build) {
+				build.Status = bbpb.Status_FAILURE // failed build is not reusable
+				build.StartTime = timestamppb.New(epoch)
+				build.EndTime = timestamppb.New(epoch.Add(10 * time.Minute))
+			})
+
 			result, err := w.findReuseInBackend(ctx, []*tryjob.Definition{defFoo})
 			So(err, ShouldBeNil)
 			So(result, ShouldHaveLength, 1)
@@ -192,7 +200,7 @@ func TestFindReuseInBackend(t *testing.T) {
 		})
 
 		Convey("Tryjob already exists", func() {
-			eid := tryjob.MustBuildbucketID(bbHost, buildID)
+			eid := tryjob.MustBuildbucketID(bbHost, build.GetId())
 			tj := eid.MustCreateIfNotExists(ctx)
 			ct.Clock.Add(10 * time.Second)
 			result, err := w.findReuseInBackend(ctx, []*tryjob.Definition{defFoo})
@@ -216,7 +224,7 @@ func TestFindReuseInBackend(t *testing.T) {
 					UpdateTime: build.GetUpdateTime(),
 					Backend: &tryjob.Result_Buildbucket_{
 						Buildbucket: &tryjob.Result_Buildbucket{
-							Id:      buildID,
+							Id:      build.GetId(),
 							Builder: builder,
 							Status:  bbpb.Status_SUCCESS,
 						},

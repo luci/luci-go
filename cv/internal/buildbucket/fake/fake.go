@@ -130,25 +130,6 @@ func (f *Fake) MutateBuild(ctx context.Context, host string, id int64, mutateFn 
 	return fakeApp.updateBuild(ctx, id, mutateFn)
 }
 
-// AddBuild adds a build to fake Buildbucket host.
-//
-// Reads Buildbucket hostname from `infra.buildbucket.hostname`.
-// Overwrites the existing build if the build with same ID already exists.
-//
-// TODO(yiwzhang): make it private so that external package should
-// always use schedule build to create new build s.t. the build ID
-// will be monotically decreasing.
-func (f *Fake) AddBuild(build *bbpb.Build) {
-	host := build.GetInfra().GetBuildbucket().GetHostname()
-	if host == "" {
-		panic(fmt.Errorf("missing host for build %d", build.Id))
-	}
-	fa := f.ensureApp(host)
-	fa.buildStoreMu.Lock()
-	fa.buildStore[build.GetId()] = build
-	fa.buildStoreMu.Unlock()
-}
-
 func (f *Fake) ensureApp(host string) *fakeApp {
 	f.hostsMu.Lock()
 	defer f.hostsMu.Unlock()

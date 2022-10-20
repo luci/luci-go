@@ -218,7 +218,11 @@ var supportedScheduleArguments = stringset.NewFromSlice(
 	"mask",
 )
 
-func (c *Client) scheduleBuild(ctx context.Context, in *bbpb.ScheduleBuildRequest) (*bbpb.Build, error) {
+// ScheduleBuild schedules a new build for the provided builder.
+//
+// The builder should be present in buildbucket fake. It can be added via
+// AddBuilder function.
+func (c *Client) ScheduleBuild(ctx context.Context, in *bbpb.ScheduleBuildRequest) (*bbpb.Build, error) {
 	var notSupportedArguments []string
 	in.ProtoReflect().Range(func(fd protoreflect.FieldDescriptor, v protoreflect.Value) bool {
 		if v.IsValid() && !supportedScheduleArguments.Has(string(fd.Name())) {
@@ -323,7 +327,7 @@ func (c *Client) Batch(ctx context.Context, in *bbpb.BatchRequest, opts ...grpc.
 				}
 			}
 		case *bbpb.BatchRequest_Request_ScheduleBuild:
-			if b, err := c.scheduleBuild(ctx, req.GetScheduleBuild()); err != nil {
+			if b, err := c.ScheduleBuild(ctx, req.GetScheduleBuild()); err != nil {
 				res.Response = &bbpb.BatchResponse_Response_Error{
 					Error: status.Convert(err).Proto(),
 				}

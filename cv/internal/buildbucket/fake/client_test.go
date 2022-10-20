@@ -30,7 +30,6 @@ import (
 
 	"go.chromium.org/luci/buildbucket/appengine/model"
 	bbpb "go.chromium.org/luci/buildbucket/proto"
-	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -44,40 +43,33 @@ func TestGetBuild(t *testing.T) {
 		const (
 			bbHost   = "buildbucket.example.com"
 			lProject = "testProj"
-			buildID  = 12344
 		)
 		client := fake.MustNewClient(ctx, bbHost, lProject)
 
-		epoch := clock.Now(ctx)
 		builderID := &bbpb.BuilderID{
 			Project: lProject,
 			Bucket:  "testBucket",
 			Builder: "testBuilder",
 		}
-		build := NewBuildConstructor().
-			WithID(buildID).
-			WithHost(bbHost).
-			WithBuilderID(builderID).
-			WithStatus(bbpb.Status_SUCCESS).
-			WithCreateTime(epoch).
-			WithStartTime(epoch.Add(1 * time.Minute)).
-			WithEndTime(epoch.Add(2 * time.Minute)).
-			WithUpdateTime(epoch.Add(2 * time.Minute)).
-			Construct()
-		fake.AddBuild(build)
+
+		fake.AddBuilder(bbHost, builderID, nil)
+		build, err := client.ScheduleBuild(ctx, &bbpb.ScheduleBuildRequest{
+			Builder: builderID,
+		})
+		So(err, ShouldBeNil)
 
 		Convey("Can get", func() {
 			Convey("Without mask", func() {
 				expected := proto.Clone(build).(*bbpb.Build)
 				res, err := client.GetBuild(ctx, &bbpb.GetBuildRequest{
-					Id: buildID,
+					Id: build.GetId(),
 				})
 				So(err, ShouldBeNil)
 				So(res, ShouldResembleProto, trimmedBuildWithDefaultMask(expected))
 			})
 			Convey("With mask", func() {
 				res, err := client.GetBuild(ctx, &bbpb.GetBuildRequest{
-					Id: buildID,
+					Id: build.GetId(),
 					Mask: &bbpb.BuildMask{
 						Fields: &fieldmaskpb.FieldMask{
 							Paths: []string{"id", "builder"},
@@ -86,7 +78,7 @@ func TestGetBuild(t *testing.T) {
 				})
 				So(err, ShouldBeNil)
 				So(res, ShouldResembleProto, &bbpb.Build{
-					Id:      buildID,
+					Id:      build.GetId(),
 					Builder: builderID,
 				})
 			})
@@ -95,7 +87,7 @@ func TestGetBuild(t *testing.T) {
 		Convey("No ACL", func() {
 			client := fake.MustNewClient(ctx, bbHost, "anotherProj")
 			res, err := client.GetBuild(ctx, &bbpb.GetBuildRequest{
-				Id: buildID,
+				Id: build.GetId(),
 			})
 			So(err, ShouldBeRPCNotFound)
 			So(res, ShouldBeNil)
@@ -118,7 +110,7 @@ func TestGetBuild(t *testing.T) {
 			})
 			Convey("Builder + build number", func() {
 				res, err := client.GetBuild(ctx, &bbpb.GetBuildRequest{
-					Id:      buildID,
+					Id:      build.GetId(),
 					Builder: builderID,
 				})
 				So(err, ShouldHaveRPCCode, codes.Unimplemented)
@@ -139,14 +131,12 @@ func TestSearchBuild(t *testing.T) {
 		client := fake.MustNewClient(ctx, bbHost, lProject)
 
 		const (
-			buildID          = 12344
 			gHost            = "example-review.googlesource.com"
 			gRepo            = "repo/example"
 			gChangeNum       = 546
 			gPatchset        = 6
 			gMinEquiPatchset = 2
 		)
-		epoch := clock.Now(ctx)
 		builderID := &bbpb.BuilderID{
 			Project: lProject,
 			Bucket:  "testBucket",
@@ -158,20 +148,15 @@ func TestSearchBuild(t *testing.T) {
 			Change:   gChangeNum,
 			Patchset: gPatchset,
 		}
-		build := NewBuildConstructor().
-			WithID(buildID).
-			WithHost(bbHost).
-			WithBuilderID(builderID).
-			WithStatus(bbpb.Status_SUCCESS).
-			WithCreateTime(epoch).
-			WithStartTime(epoch.Add(1 * time.Minute)).
-			WithEndTime(epoch.Add(2 * time.Minute)).
-			WithUpdateTime(epoch.Add(2 * time.Minute)).
-			AppendGerritChanges(gc).
-			Construct()
+
+		fake.AddBuilder(bbHost, builderID, nil)
+		build, err := client.ScheduleBuild(ctx, &bbpb.ScheduleBuildRequest{
+			Builder:       builderID,
+			GerritChanges: []*bbpb.GerritChange{gc},
+		})
+		So(err, ShouldBeNil)
 
 		Convey("Empty Predicate", func() {
-			fake.AddBuild(build)
 			res, err := client.SearchBuilds(ctx, &bbpb.SearchBuildsRequest{})
 			So(err, ShouldBeNil)
 			So(res, ShouldResembleProto, &bbpb.SearchBuildsResponse{
@@ -189,7 +174,6 @@ func TestSearchBuild(t *testing.T) {
 		})
 
 		Convey("Can apply Gerrit Change predicate", func() {
-			fake.AddBuild(build)
 			Convey("Match", func() {
 				res, err := client.SearchBuilds(ctx, &bbpb.SearchBuildsRequest{
 					Predicate: &bbpb.BuildPredicate{
@@ -228,10 +212,14 @@ func TestSearchBuild(t *testing.T) {
 		})
 
 		Convey("Can apply experimental predicate", func() {
-			build := NewConstructorFromBuild(build).
-				WithExperimental(true).
-				Construct()
-			fake.AddBuild(build)
+			build = fake.MutateBuild(ctx, bbHost, build.GetId(), func(b *bbpb.Build) {
+				if b.Input == nil {
+					b.Input = &bbpb.Build_Input{}
+				}
+				b.Input.Experimental = true
+				b.Input.Experiments = append(b.Input.Experiments, "luci.non_production")
+			})
+
 			Convey("Include experimental", func() {
 				res, err := client.SearchBuilds(ctx, &bbpb.SearchBuildsRequest{
 					Predicate: &bbpb.BuildPredicate{
@@ -254,10 +242,7 @@ func TestSearchBuild(t *testing.T) {
 		})
 
 		Convey("Different host", func() {
-			build := NewConstructorFromBuild(build).
-				WithHost("another-bb.example.com").
-				Construct()
-			fake.AddBuild(build)
+			client = fake.MustNewClient(ctx, "another-bb.example.com", lProject)
 			res, err := client.SearchBuilds(ctx, &bbpb.SearchBuildsRequest{})
 			So(err, ShouldBeNil)
 			So(res.GetBuilds(), ShouldBeEmpty)
@@ -265,22 +250,25 @@ func TestSearchBuild(t *testing.T) {
 		})
 
 		Convey("Different project", func() {
-			build := NewConstructorFromBuild(build).
-				WithBuilderID(&bbpb.BuilderID{
-					Project: "anotherProj",
-					Bucket:  "someBucket",
-					Builder: "someBuilder",
-				}).
-				Construct()
-			fake.AddBuild(build)
+			anotherBuilder := &bbpb.BuilderID{
+				Project: "anotherProj",
+				Bucket:  "someBucket",
+				Builder: "someBuilder",
+			}
+			fake.AddBuilder(bbHost, anotherBuilder, nil)
+			_, err := client.ScheduleBuild(ctx, &bbpb.ScheduleBuildRequest{
+				Builder:       anotherBuilder,
+				GerritChanges: []*bbpb.GerritChange{gc},
+			})
+			So(err, ShouldBeNil)
+
 			res, err := client.SearchBuilds(ctx, &bbpb.SearchBuildsRequest{})
 			So(err, ShouldBeNil)
-			So(res.GetBuilds(), ShouldBeEmpty)
+			So(res.GetBuilds(), ShouldHaveLength, 1)
 			So(res.GetNextPageToken(), ShouldBeEmpty)
 		})
 
 		Convey("Apply customized mask", func() {
-			fake.AddBuild(build)
 			fields, err := fieldmaskpb.New(build, "id")
 			So(err, ShouldBeNil)
 			res, err := client.SearchBuilds(ctx, &bbpb.SearchBuildsRequest{
@@ -290,17 +278,23 @@ func TestSearchBuild(t *testing.T) {
 			})
 			So(err, ShouldBeNil)
 			So(res, ShouldResembleProto, &bbpb.SearchBuildsResponse{
-				Builds: []*bbpb.Build{{Id: build.Id}},
+				Builds: []*bbpb.Build{{Id: build.GetId()}},
 			})
 		})
 
 		Convey("Paging", func() {
-			for i := 1; i <= 50; i++ {
-				build := NewConstructorFromBuild(build).WithID(int64(i)).Construct()
-				fake.AddBuild(build)
+			const totalBuilds = 50
+			// there's already one build in the store.
+			for i := 1; i < totalBuilds; i++ {
+				_, err := client.ScheduleBuild(ctx, &bbpb.ScheduleBuildRequest{
+					Builder:       builderID,
+					GerritChanges: []*bbpb.GerritChange{gc},
+				})
+				So(err, ShouldBeNil)
 			}
 
 			for _, pageSize := range []int{0, 20} { // 0 means  default size
+				buildCnt := 0
 				Convey(fmt.Sprintf("With size %d", pageSize), func() {
 					actualPageSize := pageSize
 					if actualPageSize == 0 {
@@ -309,20 +303,17 @@ func TestSearchBuild(t *testing.T) {
 					req := &bbpb.SearchBuildsRequest{
 						PageSize: int32(pageSize),
 					}
-					expectedID := int64(1)
 					for {
 						res, err := client.SearchBuilds(ctx, req)
 						So(err, ShouldBeNil)
 						So(len(res.GetBuilds()), ShouldBeLessThanOrEqualTo, actualPageSize)
-						for _, b := range res.GetBuilds() {
-							So(b.Id, ShouldEqual, expectedID)
-							expectedID++
-						}
+						buildCnt += len(res.GetBuilds())
 						if res.NextPageToken == "" {
 							break
 						}
 						req.PageToken = res.NextPageToken
 					}
+					So(buildCnt, ShouldEqual, totalBuilds)
 				})
 			}
 		})
@@ -336,40 +327,34 @@ func TestCancelBuild(t *testing.T) {
 		const (
 			bbHost   = "buildbucket.example.com"
 			lProject = "testProj"
-			buildID  = 12344
 		)
 		client := fake.MustNewClient(ctx, bbHost, lProject)
 
-		epoch := tc.Now()
 		tc.Add(1 * time.Minute)
 		builderID := &bbpb.BuilderID{
 			Project: lProject,
 			Bucket:  "testBucket",
 			Builder: "testBuilder",
 		}
-		build := NewBuildConstructor().
-			WithID(buildID).
-			WithHost(bbHost).
-			WithBuilderID(builderID).
-			WithStatus(bbpb.Status_SCHEDULED).
-			WithCreateTime(epoch).
-			WithUpdateTime(epoch).
-			Construct()
-		fake.AddBuild(build)
+		fake.AddBuilder(bbHost, builderID, nil)
+		build, err := client.ScheduleBuild(ctx, &bbpb.ScheduleBuildRequest{
+			Builder: builderID,
+		})
+		So(err, ShouldBeNil)
 
 		Convey("Can cancel", func() {
 			Convey("Without mask", func() {
 				res, err := client.CancelBuild(ctx, &bbpb.CancelBuildRequest{
-					Id:              buildID,
+					Id:              build.GetId(),
 					SummaryMarkdown: "no longer needed",
 				})
 				So(err, ShouldBeNil)
 				So(res, ShouldResembleProto, trimmedBuildWithDefaultMask(NewBuildConstructor().
-					WithID(buildID).
+					WithID(build.GetId()).
 					WithHost(bbHost).
 					WithBuilderID(builderID).
 					WithStatus(bbpb.Status_CANCELED).
-					WithCreateTime(epoch).
+					WithCreateTime(tc.Now()).
 					WithStartTime(tc.Now()).
 					WithEndTime(tc.Now()).
 					WithUpdateTime(tc.Now()).
@@ -378,7 +363,7 @@ func TestCancelBuild(t *testing.T) {
 			})
 			Convey("With mask", func() {
 				res, err := client.CancelBuild(ctx, &bbpb.CancelBuildRequest{
-					Id:              buildID,
+					Id:              build.GetId(),
 					SummaryMarkdown: "no longer needed",
 					Mask: &bbpb.BuildMask{
 						Fields: &fieldmaskpb.FieldMask{
@@ -388,7 +373,7 @@ func TestCancelBuild(t *testing.T) {
 				})
 				So(err, ShouldBeNil)
 				So(res, ShouldResembleProto, &bbpb.Build{
-					Id:     buildID,
+					Id:     build.GetId(),
 					Status: bbpb.Status_CANCELED,
 				})
 			})
@@ -397,7 +382,7 @@ func TestCancelBuild(t *testing.T) {
 		Convey("No ACL", func() {
 			client := fake.MustNewClient(ctx, bbHost, "anotherProj")
 			res, err := client.CancelBuild(ctx, &bbpb.CancelBuildRequest{
-				Id:              buildID,
+				Id:              build.GetId(),
 				SummaryMarkdown: "no longer needed",
 			})
 			So(err, ShouldBeRPCNotFound)
@@ -413,26 +398,24 @@ func TestCancelBuild(t *testing.T) {
 		})
 
 		Convey("Noop for build end with", func() {
-			for i, status := range []bbpb.Status{
+			for _, status := range []bbpb.Status{
 				bbpb.Status_SUCCESS,
 				bbpb.Status_FAILURE,
 				bbpb.Status_INFRA_FAILURE,
 				bbpb.Status_CANCELED,
 			} {
 				Convey(status.String(), func() {
-					endAt := tc.Now()
-					id := buildID + int64(i)
-					build = NewConstructorFromBuild(build).
-						WithID(id).
-						WithStatus(status).
-						WithSummaryMarkdown("ended already").
-						WithStartTime(endAt.Add(-10 * time.Second)).
-						WithEndTime(endAt).
-						Construct()
-					fake.AddBuild(build)
+					epoch := tc.Now()
+					tc.Add(3 * time.Minute)
+					fake.MutateBuild(ctx, bbHost, build.GetId(), func(b *bbpb.Build) {
+						b.Status = status
+						b.SummaryMarkdown = "ended already"
+						b.StartTime = timestamppb.New(epoch.Add(1 * time.Minute))
+						b.EndTime = timestamppb.New(epoch.Add(2 * time.Minute))
+					})
 					tc.Add(2 * time.Minute)
 					res, err := client.CancelBuild(ctx, &bbpb.CancelBuildRequest{
-						Id:              id,
+						Id:              build.GetId(),
 						SummaryMarkdown: "no longer needed",
 						Mask: &bbpb.BuildMask{
 							Fields: &fieldmaskpb.FieldMask{
@@ -442,12 +425,11 @@ func TestCancelBuild(t *testing.T) {
 					})
 					So(err, ShouldBeNil)
 					So(res, ShouldResembleProto, &bbpb.Build{
-						Id:              id,
+						Id:              build.GetId(),
 						Status:          status,
-						EndTime:         timestamppb.New(endAt),
+						EndTime:         timestamppb.New(epoch.Add(2 * time.Minute)),
 						SummaryMarkdown: "ended already",
 					})
-
 				})
 			}
 		})
@@ -480,7 +462,7 @@ func TestScheduleBuild(t *testing.T) {
 		client := fake.MustNewClient(ctx, bbHost, lProject)
 		Convey("Can schedule", func() {
 			Convey("Simple", func() {
-				res, err := client.scheduleBuild(ctx, &bbpb.ScheduleBuildRequest{
+				res, err := client.ScheduleBuild(ctx, &bbpb.ScheduleBuildRequest{
 					Builder: builderNoProp,
 				})
 				So(err, ShouldBeNil)
@@ -509,7 +491,7 @@ func TestScheduleBuild(t *testing.T) {
 					Change:   1,
 					Patchset: 2,
 				}
-				res, err := client.scheduleBuild(ctx, &bbpb.ScheduleBuildRequest{
+				res, err := client.ScheduleBuild(ctx, &bbpb.ScheduleBuildRequest{
 					Builder:       builderNoProp,
 					Properties:    props,
 					GerritChanges: []*bbpb.GerritChange{gc},
@@ -545,7 +527,7 @@ func TestScheduleBuild(t *testing.T) {
 					"cool": "awesome",
 				})
 				So(err, ShouldBeNil)
-				res, err := client.scheduleBuild(ctx, &bbpb.ScheduleBuildRequest{
+				res, err := client.ScheduleBuild(ctx, &bbpb.ScheduleBuildRequest{
 					Builder:    builderWithProp,
 					Properties: props,
 				})
@@ -568,7 +550,7 @@ func TestScheduleBuild(t *testing.T) {
 				}))
 			})
 			Convey("With mask", func() {
-				res, err := client.scheduleBuild(ctx, &bbpb.ScheduleBuildRequest{
+				res, err := client.ScheduleBuild(ctx, &bbpb.ScheduleBuildRequest{
 					Builder: builderNoProp,
 					Mask: &bbpb.BuildMask{
 						Fields: &fieldmaskpb.FieldMask{
@@ -590,7 +572,7 @@ func TestScheduleBuild(t *testing.T) {
 					if i%2 == 1 {
 						builder = builderWithProp
 					}
-					res, err := client.scheduleBuild(ctx, &bbpb.ScheduleBuildRequest{
+					res, err := client.ScheduleBuild(ctx, &bbpb.ScheduleBuildRequest{
 						Builder: builder,
 					})
 					So(err, ShouldBeNil)
@@ -599,13 +581,13 @@ func TestScheduleBuild(t *testing.T) {
 				}
 			})
 			Convey("Use requestID for deduplication", func() {
-				first, err := client.scheduleBuild(ctx, &bbpb.ScheduleBuildRequest{
+				first, err := client.ScheduleBuild(ctx, &bbpb.ScheduleBuildRequest{
 					RequestId: "foo",
 					Builder:   builderNoProp,
 				})
 				So(err, ShouldBeNil)
 				tc.Add(requestDeduplicationWindow / 2)
-				dup, err := client.scheduleBuild(ctx, &bbpb.ScheduleBuildRequest{
+				dup, err := client.ScheduleBuild(ctx, &bbpb.ScheduleBuildRequest{
 					RequestId: "foo",
 					Builder:   builderNoProp,
 				})
@@ -613,7 +595,7 @@ func TestScheduleBuild(t *testing.T) {
 				So(dup.Id, ShouldEqual, first.Id)
 				// Passes the deduplication window, should generate new build.
 				tc.Add(requestDeduplicationWindow)
-				newBuild, err := client.scheduleBuild(ctx, &bbpb.ScheduleBuildRequest{
+				newBuild, err := client.ScheduleBuild(ctx, &bbpb.ScheduleBuildRequest{
 					RequestId: "foo",
 					Builder:   builderNoProp,
 				})
@@ -623,7 +605,7 @@ func TestScheduleBuild(t *testing.T) {
 		})
 
 		Convey("Builder not found", func() {
-			res, err := client.scheduleBuild(ctx, &bbpb.ScheduleBuildRequest{
+			res, err := client.ScheduleBuild(ctx, &bbpb.ScheduleBuildRequest{
 				Builder: &bbpb.BuilderID{
 					Project: lProject,
 					Bucket:  "testBucket",
@@ -646,42 +628,41 @@ func TestBatch(t *testing.T) {
 		)
 		client := fake.MustNewClient(ctx, bbHost, lProject)
 
-		epoch := tc.Now()
-		tc.Add(1 * time.Minute)
-		buildFoo := NewBuildConstructor().
-			WithID(986).
-			WithHost(bbHost).
-			WithBuilderID(&bbpb.BuilderID{
-				Project: lProject,
-				Bucket:  "testBucket",
-				Builder: "builderFoo",
-			}).
-			WithStatus(bbpb.Status_SCHEDULED).
-			WithCreateTime(epoch).
-			Construct()
-		buildBar := NewBuildConstructor().
-			WithID(867).
-			WithHost(bbHost).
-			WithBuilderID(&bbpb.BuilderID{
-				Project: lProject,
-				Bucket:  "testBucket",
-				Builder: "builderFoo",
-			}).
-			WithStatus(bbpb.Status_SUCCESS).
-			WithCreateTime(epoch).
-			WithStartTime(epoch.Add(30 * time.Second)).
-			WithEndTime(epoch.Add(1 * time.Minute)).
-			Construct()
+		builderFoo := &bbpb.BuilderID{
+			Project: lProject,
+			Bucket:  "testBucket",
+			Builder: "foo",
+		}
+		builderBar := &bbpb.BuilderID{
+			Project: lProject,
+			Bucket:  "testBucket",
+			Builder: "bar",
+		}
 		builderBaz := &bbpb.BuilderID{
 			Project: lProject,
 			Bucket:  "testBucket",
 			Builder: "baz",
 		}
+		fake.AddBuilder(bbHost, builderFoo, nil)
+		fake.AddBuilder(bbHost, builderBar, nil)
 		fake.AddBuilder(bbHost, builderBaz, nil)
 
+		buildFoo, err := client.ScheduleBuild(ctx, &bbpb.ScheduleBuildRequest{
+			Builder: builderFoo,
+		})
+		So(err, ShouldBeNil)
+		buildBar, err := client.ScheduleBuild(ctx, &bbpb.ScheduleBuildRequest{
+			Builder: builderBar,
+		})
+		So(err, ShouldBeNil)
+		tc.Add(1 * time.Minute)
+		buildBar = fake.MutateBuild(ctx, bbHost, buildBar.GetId(), func(b *bbpb.Build) {
+			b.Status = bbpb.Status_SUCCESS
+			b.StartTime = timestamppb.New(tc.Now().Add(-30 * time.Second))
+			b.EndTime = timestamppb.New(tc.Now())
+		})
+
 		Convey("Batch succeeds", func() {
-			fake.AddBuild(buildFoo)
-			fake.AddBuild(buildBar)
 			res, err := client.Batch(ctx, &bbpb.BatchRequest{
 				Requests: []*bbpb.BatchRequest_Request{
 					{
@@ -710,7 +691,7 @@ func TestBatch(t *testing.T) {
 								Builder: builderBaz,
 								Mask: &bbpb.BuildMask{
 									Fields: &fieldmaskpb.FieldMask{
-										Paths: []string{"id", "builder", "status"},
+										Paths: []string{"builder", "status"},
 									},
 								},
 							},
@@ -738,7 +719,6 @@ func TestBatch(t *testing.T) {
 					{
 						Response: &bbpb.BatchResponse_Response_ScheduleBuild{
 							ScheduleBuild: &bbpb.Build{
-								Id:      math.MaxInt64 - 1,
 								Builder: builderBaz,
 								Status:  bbpb.Status_SCHEDULED,
 							},
@@ -749,8 +729,10 @@ func TestBatch(t *testing.T) {
 		})
 
 		Convey("Batch fails", func() {
-			fake.AddBuild(buildFoo)
-			// buildBar does not exist
+			// ScheduleBuild in fake buildbucket will start from math.MaxInt - 1, so
+			// there will never be a build in the fake with ID 12345 unless we
+			// schedule numerous number of builds.
+			const nonExistentBuildID = 12345
 			res, err := client.Batch(ctx, &bbpb.BatchRequest{
 				Requests: []*bbpb.BatchRequest_Request{
 					{
@@ -769,7 +751,7 @@ func TestBatch(t *testing.T) {
 					{
 						Request: &bbpb.BatchRequest_Request_GetBuild{
 							GetBuild: &bbpb.GetBuildRequest{
-								Id: buildBar.GetId(),
+								Id: nonExistentBuildID,
 							},
 						},
 					},

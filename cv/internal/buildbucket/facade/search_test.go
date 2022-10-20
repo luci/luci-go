@@ -19,12 +19,13 @@ import (
 	"time"
 
 	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/types/known/structpb"
+	"google.golang.org/protobuf/types/known/timestamppb"
 
 	bbpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/data/stringset"
 	gerritpb "go.chromium.org/luci/common/proto/gerrit"
 
-	bbfake "go.chromium.org/luci/cv/internal/buildbucket/fake"
 	"go.chromium.org/luci/cv/internal/changelist"
 	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/cvtesting"
@@ -51,9 +52,7 @@ func TestSearch(t *testing.T) {
 			gPatchset        = 10
 			gMinEquiPatchset = 5
 
-			bbHost  = "buildbucket.example.com"
-			buildID = 5555
-
+			bbHost   = "buildbucket.example.com"
 			lProject = "testProj"
 		)
 		builderID := &bbpb.BuilderID{
@@ -107,16 +106,14 @@ func TestSearch(t *testing.T) {
 			},
 		}
 
-		templateBuild := bbfake.NewBuildConstructor().
-			WithID(buildID).
-			WithHost(bbHost).
-			WithBuilderID(builderID).
-			WithStatus(bbpb.Status_SUCCESS).
-			WithCreateTime(epoch).
-			WithStartTime(epoch.Add(1 * time.Minute)).
-			WithEndTime(epoch.Add(2 * time.Minute)).
-			AppendGerritChanges(gc).
-			Construct()
+		ct.BuildbucketFake.AddBuilder(bbHost, builderID, nil)
+		ct.BuildbucketFake.AddBuilder(bbHost, equiBuilderID, nil)
+		bbClient := ct.BuildbucketFake.MustNewClient(ctx, bbHost, lProject)
+		commonMutateFn := func(build *bbpb.Build) {
+			build.Status = bbpb.Status_SUCCESS
+			build.StartTime = timestamppb.New(epoch.Add(1 * time.Minute))
+			build.EndTime = timestamppb.New(epoch.Add(2 * time.Minute))
+		}
 
 		Convey("Single Buildbucket host", func() {
 			searchAll := func() []*tryjob.Tryjob {
@@ -131,31 +128,46 @@ func TestSearch(t *testing.T) {
 			Convey("Match", func() {
 				var build *bbpb.Build
 				Convey("Simple", func() {
-					build = bbfake.NewConstructorFromBuild(templateBuild).Construct()
+					var err error
+					build, err = bbClient.ScheduleBuild(ctx, &bbpb.ScheduleBuildRequest{
+						Builder:       builderID,
+						GerritChanges: []*bbpb.GerritChange{gc},
+					})
+					So(err, ShouldBeNil)
+					build = ct.BuildbucketFake.MutateBuild(ctx, bbHost, build.GetId(), commonMutateFn)
 				})
-				Convey("With premitted additional properties", func() {
-					build = bbfake.NewConstructorFromBuild(templateBuild).
-						WithRequestedProperties(map[string]interface{}{
-							"$recipe_engine/cq": map[string]interface{}{
-								"active":   true,
-								"run_mode": "FULL_RUN",
-							},
-						}).
-						Construct()
+				Convey("With permitted additional properties", func() {
+					prop, err := structpb.NewStruct(map[string]interface{}{
+						"$recipe_engine/cq": map[string]interface{}{
+							"active":   true,
+							"run_mode": "FULL_RUN",
+						},
+					})
+					So(err, ShouldBeNil)
+					build, err = bbClient.ScheduleBuild(ctx, &bbpb.ScheduleBuildRequest{
+						Builder:       builderID,
+						Properties:    prop,
+						GerritChanges: []*bbpb.GerritChange{gc},
+					})
+					So(err, ShouldBeNil)
+					build = ct.BuildbucketFake.MutateBuild(ctx, bbHost, build.GetId(), commonMutateFn)
 				})
 				Convey("Match equivalent tryjob", func() {
-					build = bbfake.NewConstructorFromBuild(templateBuild).
-						WithBuilderID(equiBuilderID).
-						Construct()
+					var err error
+					build, err = bbClient.ScheduleBuild(ctx, &bbpb.ScheduleBuildRequest{
+						Builder:       equiBuilderID,
+						GerritChanges: []*bbpb.GerritChange{gc},
+					})
+					So(err, ShouldBeNil)
+					build = ct.BuildbucketFake.MutateBuild(ctx, bbHost, build.GetId(), commonMutateFn)
 				})
-				ct.BuildbucketFake.AddBuild(build)
 				results := searchAll()
 				So(results, ShouldHaveLength, 1)
 				tj := results[0]
 				So(tj.Result, ShouldNotBeNil)
 				tj.Result = nil
 				So(tj, cvtesting.SafeShouldResemble, &tryjob.Tryjob{
-					ExternalID: tryjob.MustBuildbucketID(bbHost, buildID),
+					ExternalID: tryjob.MustBuildbucketID(bbHost, build.GetId()),
 					Definition: definition,
 					Status:     tryjob.Status_ENDED,
 				})
@@ -166,11 +178,12 @@ func TestSearch(t *testing.T) {
 					for _, ps := range []int{3, 11, 20} {
 						So(ps < gMinEquiPatchset || ps > gPatchset, ShouldBeTrue)
 						gc.Patchset = int64(ps)
-						build := bbfake.NewConstructorFromBuild(templateBuild).
-							ResetGerritChanges().
-							AppendGerritChanges(gc).
-							Construct()
-						ct.BuildbucketFake.AddBuild(build)
+						build, err := bbClient.ScheduleBuild(ctx, &bbpb.ScheduleBuildRequest{
+							Builder:       builderID,
+							GerritChanges: []*bbpb.GerritChange{gc},
+						})
+						So(err, ShouldBeNil)
+						ct.BuildbucketFake.MutateBuild(ctx, bbHost, build.GetId(), commonMutateFn)
 						results := searchAll()
 						So(results, ShouldBeEmpty)
 					}
@@ -179,39 +192,49 @@ func TestSearch(t *testing.T) {
 				Convey("Mismatch CL", func() {
 					anotherChange := proto.Clone(gc).(*bbpb.GerritChange)
 					anotherChange.Change = anotherChange.Change + 50
-					build := bbfake.NewConstructorFromBuild(templateBuild).
-						ResetGerritChanges().
-						AppendGerritChanges(anotherChange).
-						Construct()
-					ct.BuildbucketFake.AddBuild(build)
+					build, err := bbClient.ScheduleBuild(ctx, &bbpb.ScheduleBuildRequest{
+						Builder:       builderID,
+						GerritChanges: []*bbpb.GerritChange{anotherChange},
+					})
+					So(err, ShouldBeNil)
+					ct.BuildbucketFake.MutateBuild(ctx, bbHost, build.GetId(), commonMutateFn)
 					results := searchAll()
 					So(results, ShouldBeEmpty)
 				})
 
 				Convey("Mismatch Builder", func() {
-					build := bbfake.NewConstructorFromBuild(templateBuild).
-						WithBuilderID(&bbpb.BuilderID{
-							Project: lProject,
-							Bucket:  "anotherBucket",
-							Builder: "anotherBuilder",
-						}).
-						Construct()
-					ct.BuildbucketFake.AddBuild(build)
+					anotherBuilder := &bbpb.BuilderID{
+						Project: lProject,
+						Bucket:  "anotherBucket",
+						Builder: "anotherBuilder",
+					}
+					ct.BuildbucketFake.AddBuilder(bbHost, anotherBuilder, nil)
+					build, err := bbClient.ScheduleBuild(ctx, &bbpb.ScheduleBuildRequest{
+						Builder:       anotherBuilder,
+						GerritChanges: []*bbpb.GerritChange{gc},
+					})
+					So(err, ShouldBeNil)
+					ct.BuildbucketFake.MutateBuild(ctx, bbHost, build.GetId(), commonMutateFn)
 					results := searchAll()
 					So(results, ShouldBeEmpty)
 				})
 
-				Convey("Not premitted additional properties", func() {
-					build := bbfake.NewConstructorFromBuild(templateBuild).
-						WithRequestedProperties(map[string]interface{}{
-							"$recipe_engine/cq": map[string]interface{}{
-								"active":   true,
-								"run_mode": "FULL_RUN",
-							}, // premitted
-							"foo": "bar", // not premitted
-						}).
-						Construct()
-					ct.BuildbucketFake.AddBuild(build)
+				Convey("Not permitted additional properties", func() {
+					prop, err := structpb.NewStruct(map[string]interface{}{
+						"$recipe_engine/cq": map[string]interface{}{
+							"active":   true,
+							"run_mode": "FULL_RUN",
+						}, // permitted
+						"foo": "bar", // not permitted
+					})
+					So(err, ShouldBeNil)
+					build, err := bbClient.ScheduleBuild(ctx, &bbpb.ScheduleBuildRequest{
+						Builder:       builderID,
+						Properties:    prop,
+						GerritChanges: []*bbpb.GerritChange{gc},
+					})
+					So(err, ShouldBeNil)
+					ct.BuildbucketFake.MutateBuild(ctx, bbHost, build.GetId(), commonMutateFn)
 					results := searchAll()
 					So(results, ShouldBeEmpty)
 				})
@@ -220,17 +243,24 @@ func TestSearch(t *testing.T) {
 					Convey("Build involves extra Gerrit change", func() {
 						anotherChange := proto.Clone(gc).(*bbpb.GerritChange)
 						anotherChange.Change = anotherChange.Change + 1
-						build := bbfake.NewConstructorFromBuild(templateBuild).
-							AppendGerritChanges(gc, anotherChange).
-							Construct()
-						ct.BuildbucketFake.AddBuild(build)
+						build, err := bbClient.ScheduleBuild(ctx, &bbpb.ScheduleBuildRequest{
+							Builder:       builderID,
+							GerritChanges: []*bbpb.GerritChange{gc, anotherChange},
+						})
+						So(err, ShouldBeNil)
+						ct.BuildbucketFake.MutateBuild(ctx, bbHost, build.GetId(), commonMutateFn)
 						results := searchAll()
 						So(results, ShouldBeEmpty)
 					})
 
 					Convey("Expecting extra Gerrit change", func() {
-						build := bbfake.NewConstructorFromBuild(templateBuild).Construct()
-						ct.BuildbucketFake.AddBuild(build)
+						build, err := bbClient.ScheduleBuild(ctx, &bbpb.ScheduleBuildRequest{
+							Builder:       builderID,
+							GerritChanges: []*bbpb.GerritChange{gc},
+						})
+						So(err, ShouldBeNil)
+						ct.BuildbucketFake.MutateBuild(ctx, bbHost, build.GetId(), commonMutateFn)
+
 						anotherChange := proto.Clone(gc).(*bbpb.GerritChange)
 						anotherChange.Change = anotherChange.Change + 1
 						anotherCL := &run.RunCL{
@@ -251,7 +281,7 @@ func TestSearch(t *testing.T) {
 							},
 						}
 						var tryjobs []*tryjob.Tryjob
-						err := f.Search(ctx, []*run.RunCL{cl, anotherCL}, []*tryjob.Definition{definition}, lProject, func(t *tryjob.Tryjob) bool {
+						err = f.Search(ctx, []*run.RunCL{cl, anotherCL}, []*tryjob.Definition{definition}, lProject, func(t *tryjob.Tryjob) bool {
 							tryjobs = append(tryjobs, t)
 							return true
 						})
@@ -280,29 +310,39 @@ func TestSearch(t *testing.T) {
 				Bucket:  "testBucket",
 				Builder: "bar",
 			}
+			allBuilds := make([]*bbpb.Build, 0, len(bbHosts)*numBuildsPerHost)
 			for _, bbHost := range bbHosts {
-				for buildID := 1; buildID <= numBuildsPerHost; buildID++ {
+				ct.BuildbucketFake.AddBuilder(bbHost, builderFoo, nil)
+				ct.BuildbucketFake.AddBuilder(bbHost, builderBar, nil)
+				bbClient = ct.BuildbucketFake.MustNewClient(ctx, bbHost, lProject)
+				for i := 1; i <= numBuildsPerHost; i++ {
+					epoch = ct.Clock.Now().UTC()
 					builder := builderFoo
-					if buildID%2 == 1 {
+					if i%2 == 1 {
 						builder = builderBar
 					}
-					build := bbfake.NewBuildConstructor().
-						WithID(int64(buildID)).
-						WithHost(bbHost).
-						WithBuilderID(builder).
-						WithStatus(bbpb.Status_SUCCESS).
-						// newer build has smaller buildID
-						WithCreateTime(epoch.Add(-time.Duration(buildID) * time.Minute)).
-						WithStartTime(epoch.Add(-2 * time.Duration(buildID) * time.Minute)).
-						WithEndTime(epoch.Add(-3 * time.Duration(buildID) * time.Minute)).
-						AppendGerritChanges(gc).
-						Construct()
-					ct.BuildbucketFake.AddBuild(build)
+					build, err := bbClient.ScheduleBuild(ctx, &bbpb.ScheduleBuildRequest{
+						Builder:       builder,
+						GerritChanges: []*bbpb.GerritChange{gc},
+					})
+					So(err, ShouldBeNil)
+					build = ct.BuildbucketFake.MutateBuild(ctx, bbHost, build.GetId(), func(build *bbpb.Build) {
+						build.Status = bbpb.Status_SUCCESS
+						build.StartTime = timestamppb.New(epoch.Add(1 * time.Minute))
+						build.EndTime = timestamppb.New(epoch.Add(2 * time.Minute))
+					})
+					allBuilds = append(allBuilds, build)
+					ct.Clock.Add(1 * time.Minute)
 				}
 			}
 			Convey("Search for builds from builderFoo", func() {
 				var definitions []*tryjob.Definition
 				expected := stringset.New(numBuildsPerHost / 2 * len(bbHosts))
+				for _, build := range allBuilds {
+					if proto.Equal(build.GetBuilder(), builderFoo) {
+						expected.Add(string(tryjob.MustBuildbucketID(build.GetInfra().GetBuildbucket().GetHostname(), build.GetId())))
+					}
+				}
 				for _, bbHost := range bbHosts {
 					definitions = append(definitions, &tryjob.Definition{
 						Backend: &tryjob.Definition_Buildbucket_{
@@ -312,9 +352,6 @@ func TestSearch(t *testing.T) {
 							},
 						},
 					})
-					for buildID := 2; buildID <= numBuildsPerHost; buildID += 2 {
-						expected.Add(string(tryjob.MustBuildbucketID(bbHost, int64(buildID))))
-					}
 				}
 				got := stringset.New(numBuildsPerHost / 2 * len(bbHosts))
 				err := f.Search(ctx, []*run.RunCL{cl}, definitions, lProject, func(t *tryjob.Tryjob) bool {
