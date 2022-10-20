@@ -17,18 +17,16 @@ package resultdb
 import (
 	"testing"
 
+	. "github.com/smartystreets/goconvey/convey"
 	"google.golang.org/grpc/codes"
 
-	"go.chromium.org/luci/server/auth"
-	"go.chromium.org/luci/server/auth/authtest"
-
+	. "go.chromium.org/luci/common/testing/assertions"
 	"go.chromium.org/luci/resultdb/internal/testutil"
 	"go.chromium.org/luci/resultdb/internal/testutil/insert"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 	"go.chromium.org/luci/resultdb/rdbperms"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
+	"go.chromium.org/luci/server/auth"
+	"go.chromium.org/luci/server/auth/authtest"
 )
 
 func TestValidateQueryArtifactsRequest(t *testing.T) {
@@ -109,6 +107,24 @@ func TestQueryArtifacts(t *testing.T) {
 			req.Invocations = []string{"invocations/invx"}
 			_, err := srv.QueryArtifacts(ctx, req)
 			So(err, ShouldHaveAppStatus, codes.PermissionDenied)
+		})
+
+		Convey(`ArtifactId filter works`, func() {
+			testutil.MustApply(ctx,
+				insert.Artifact("inv1", "", "a", nil),
+				insert.Artifact("inv1", "tr/t t/r", "aa", nil),
+				insert.Artifact("inv2", "", "baa", nil),
+				insert.Artifact("inv2", "tr/t t/r", "aaa", nil),
+			)
+
+			req.Predicate.ArtifactIdRegexp = "a+"
+
+			actual := mustFetchNames(req)
+			So(actual, ShouldResemble, []string{
+				"invocations/inv1/artifacts/a",
+				"invocations/inv1/tests/t%20t/results/r/artifacts/aa",
+				"invocations/inv2/tests/t%20t/results/r/artifacts/aaa",
+			})
 		})
 
 		Convey(`Reads test result artifacts by invocation with included invocation`, func() {
