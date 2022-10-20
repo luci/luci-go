@@ -85,9 +85,9 @@ func (e *AuthVersionedEntityMixin) etag() string {
 
 // makeHistoricalCopy returns a PropertyLoadSaver that represents a historical
 // copy of the provided entity at its current revision, plus some metadata:
-//   * whether the entity was deleted at this revision
-//   * a comment describing the change that created this entity version
-//   * the app version with which the change was created
+//   - whether the entity was deleted at this revision
+//   - a comment describing the change that created this entity version
+//   - the app version with which the change was created
 //
 // The copy of the entity has all of the same fields as the original, except
 // the kind is modified to end in History (e.g. AuthGroup becomes AuthGroupHistory),
@@ -783,12 +783,13 @@ func findReferencingGroups(ctx context.Context, groupName string) (stringset.Set
 // If the field mask is nil, all fields will be updated.
 //
 // Possible errors:
-//  ErrInvalidArgument if the field mask provided is invalid.
-//  ErrInvalidIdentity if any identities or globs specified in the update are invalid.
-//  datastore.ErrNoSuchEntity if the specified group does not exist.
-//  ErrPermissionDenied if the caller is not allowed to update the group.
-//  ErrConcurrentModification if the provided etag is not up-to-date.
-//  Annotated error for other errors.
+//
+//	ErrInvalidArgument if the field mask provided is invalid.
+//	ErrInvalidIdentity if any identities or globs specified in the update are invalid.
+//	datastore.ErrNoSuchEntity if the specified group does not exist.
+//	ErrPermissionDenied if the caller is not allowed to update the group.
+//	ErrConcurrentModification if the provided etag is not up-to-date.
+//	Annotated error for other errors.
 func UpdateAuthGroup(ctx context.Context, groupUpdate *AuthGroup, updateMask *fieldmaskpb.FieldMask, etag string) (*AuthGroup, error) {
 	// A nil updateMask means we should update all fields.
 	// If updateable fields are added to AuthGroup in future, they need to be
@@ -905,11 +906,12 @@ func UpdateAuthGroup(ctx context.Context, groupUpdate *AuthGroup, updateMask *fi
 // DeleteAuthGroup deletes the specified auth group.
 //
 // Possible errors:
-//  datastore.ErrNoSuchEntity if the specified group does not exist.
-//  ErrPermissionDenied if the caller is not allowed to delete the group.
-//  ErrConcurrentModification if the provided etag is not up-to-date.
-//  ErrReferencedEntity if the group is referenced by another group.
-//  Annotated error for other errors.
+//
+//	datastore.ErrNoSuchEntity if the specified group does not exist.
+//	ErrPermissionDenied if the caller is not allowed to delete the group.
+//	ErrConcurrentModification if the provided etag is not up-to-date.
+//	ErrReferencedEntity if the group is referenced by another group.
+//	Annotated error for other errors.
 func DeleteAuthGroup(ctx context.Context, groupName string, etag string) error {
 	// Disallow deletion of the admin group.
 	if groupName == AdminGroup {
@@ -1168,8 +1170,9 @@ func GetAuthDBSnapshotLatest(ctx context.Context) (*AuthDBSnapshotLatest, error)
 // Fetches a list of AuthDBShard entities and merges their payload.
 //
 // shardIDs:
-// 	a list of shard IDs as produced by shard_authdb.
-// 	comes in format "authdb_rev:sha256hash(blob)", e.g. 42:7F404D83A3F4405...
+//
+//	a list of shard IDs as produced by shard_authdb.
+//	comes in format "authdb_rev:sha256hash(blob)", e.g. 42:7F404D83A3F4405...
 //
 // Returns datastore.ErrNoSuchEntity if an AuthDBShard is not present.
 // Returns an annotated error for other errors.

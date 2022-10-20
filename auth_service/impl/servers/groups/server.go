@@ -134,10 +134,11 @@ func (*Server) DeleteGroup(ctx context.Context, request *rpcpb.DeleteGroupReques
 // GetSubgraph implements the corresponding RPC method.
 //
 // Possible Errors:
-//  Internal error for datastore access issues.
-//  NotFound error wrapping a graph.ErrNoSuchGroup if group is not present in groups graph.
-//  InvalidArgument error if the PrincipalKind is unspecified.
-//  Annotated error if the subgraph building fails, this may be an InvalidArgument or NotFound error.
+//
+//	Internal error for datastore access issues.
+//	NotFound error wrapping a graph.ErrNoSuchGroup if group is not present in groups graph.
+//	InvalidArgument error if the PrincipalKind is unspecified.
+//	Annotated error if the subgraph building fails, this may be an InvalidArgument or NotFound error.
 func (*Server) GetSubgraph(ctx context.Context, request *rpcpb.GetSubgraphRequest) (*rpcpb.Subgraph, error) {
 	// Get groups from datastore.
 	groups, err := model.GetAllAuthGroups(ctx)

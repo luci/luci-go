@@ -130,22 +130,26 @@ var (
 // Change types represent minimal indivisible changes. Large AuthDB change is
 // usually represented by (unordered) set of indivisible changes. For example,
 // an act of creation of a new AuthDB group produces following changes:
-//   ChangeGroupCreated
-//   ChangeGroupMembersAdded
-//   ChangeGroupGlobsAdded
-//   ChangeGroupNestedAdded
+//
+//	ChangeGroupCreated
+//	ChangeGroupMembersAdded
+//	ChangeGroupGlobsAdded
+//	ChangeGroupNestedAdded
 //
 // They are unordered, but UI sorts them based on change type integer. Thus
 // ChangeGroupCreated appears on top: it's represented by the smallest integer.
 //
 // Entity id has following format:
-//   <original_entity_kind>$<original_id>[$<subentity_id>]!<change_type>
+//
+//	<original_entity_kind>$<original_id>[$<subentity_id>]!<change_type>
+//
 // where:
-//   original_entity_kind: a kind of modified AuthDB entity (e.g 'AuthGroup')
-//   original_id: ID of modified AuthDB entity (e.g. 'Group name')
-//   subentity_id: optional identified of modified part of the entity, used for
-//     IP allowlist assignments entity (since it's just one big singleton).
-//   change_type: integer Change* (see below), e.g. '1100'.
+//
+//	original_entity_kind: a kind of modified AuthDB entity (e.g 'AuthGroup')
+//	original_id: ID of modified AuthDB entity (e.g. 'Group name')
+//	subentity_id: optional identified of modified part of the entity, used for
+//	  IP allowlist assignments entity (since it's just one big singleton).
+//	change_type: integer Change* (see below), e.g. '1100'.
 //
 // Such key structure makes 'diff_entity_by_key' operation idempotent. A hash of
 // entity body could have been used too, but having readable (and sortable) keys

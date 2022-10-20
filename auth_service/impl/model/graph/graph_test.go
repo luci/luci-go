@@ -26,6 +26,7 @@ import (
 
 ////////////////////////////////////////////////////////////////////////////////////////
 // Helper functions for tests.
+
 func testAuthGroup(name string, items ...string) *model.AuthGroup {
 	var globs, identities, nested []string
 	for _, item := range items {
