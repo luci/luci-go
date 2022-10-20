@@ -18,15 +18,24 @@ import {
   useState,
 } from 'react';
 
-import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
-import ArrowRightIcon from '@mui/icons-material/ArrowRight';
+import { styled } from '@mui/material/styles';
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
+import ChevronRightIcon from '@mui/icons-material/ChevronRight';
+import Chip from '@mui/material/Chip';
 import Grid from '@mui/material/Grid';
 import IconButton from '@mui/material/IconButton';
 import Link from '@mui/material/Link';
-import TableCell from '@mui/material/TableCell';
+import TableCell, { tableCellClasses } from '@mui/material/TableCell';
 import TableRow from '@mui/material/TableRow';
+import DoneIcon from '@mui/icons-material/Done';
+import RampLeftIcon from '@mui/icons-material/RampLeft';
+import CloseIcon from '@mui/icons-material/Close';
+import RemoveIcon from '@mui/icons-material/Remove';
 
-import { DistinctClusterFailure } from '@/services/cluster';
+import {
+  DistinctClusterFailure,
+  PresubmitRun,
+} from '@/services/cluster';
 import {
   FailureGroup,
   GroupKey,
@@ -35,7 +44,9 @@ import {
 import {
   failureLink,
   testHistoryLink,
+  presubmitRunLink,
 } from '@/tools/urlHandling/links';
+import CLList from '@/components/cl_list/cl_list';
 
 interface Props {
   project: string;
@@ -49,6 +60,12 @@ interface VariantPair {
   key: string;
   value: string;
 }
+
+const NarrowTableCell = styled(TableCell)(() => ({
+  [`&.${tableCellClasses.root}`]: {
+    padding: '6px 6px',
+  },
+}));
 
 const FailuresTableRows = ({
   project,
@@ -83,35 +100,139 @@ const FailuresTableRows = ({
     return 'V:' + encodeURIComponent(v.key || '') + '=' + encodeURIComponent(v.value);
   }).join(' ');
 
+  const presubmitRunIcon = (run: PresubmitRun) => {
+    if (run.status == 'PRESUBMIT_RUN_STATUS_SUCCEEDED') {
+      if (run.mode == 'FULL_RUN') {
+        return <RampLeftIcon/>;
+      } else {
+        return <DoneIcon/>;
+      }
+    } else if (run.status == 'PRESUBMIT_RUN_STATUS_FAILED') {
+      return <CloseIcon/>;
+    } else {
+      return <RemoveIcon/>;
+    }
+  };
+
+  const presubmitRunLabel = (run: PresubmitRun): string => {
+    if (run.status == 'PRESUBMIT_RUN_STATUS_SUCCEEDED') {
+      if (run.mode == 'FULL_RUN') {
+        return 'Submitted';
+      } else {
+        return 'Succeeded';
+      }
+    } else if (run.status == 'PRESUBMIT_RUN_STATUS_FAILED') {
+      return 'Failed';
+    } else {
+      return 'Canceled';
+    }
+  };
+
+  const trimmedInvocationId = (id: string): string => {
+    if (id.startsWith('build-')) {
+      return id.slice('build-'.length);
+    }
+    return id;
+  };
+
+  const verdictLabel = (failure: DistinctClusterFailure): string => {
+    if (failure.exonerations && failure.exonerations.length > 0) {
+      return 'Exonerated';
+    }
+    if (failure.isIngestedInvocationBlocked) {
+      return 'Unexpected';
+    }
+    return 'Flaky';
+  };
+
+  const verdictColor = (failure: DistinctClusterFailure) => {
+    if (failure.exonerations && failure.exonerations.length > 0) {
+      return 'info';
+    }
+    if (failure.isIngestedInvocationBlocked) {
+      return 'error';
+    }
+    return 'warning';
+  };
+
   return (
     <>
       <TableRow>
-        <TableCell
-          key={group.id}
-          sx={{
-            paddingLeft: `${20 * group.level}px`,
-            width: '60%',
-          }}
-          data-testid="failures_table_group_cell"
-        >
-          {group.failure ? (
-            <>
+        {group.failure ? (
+          <>
+            <NarrowTableCell
+              sx={{
+                padding: '0px',
+                width: `${20 * group.level}px`,
+              }}
+              data-testid="failures_table_group_cell"
+            >
+            </NarrowTableCell>
+            <NarrowTableCell
+              data-testid="failures_table_build_cell"
+            >
               <Link
                 aria-label="Failure invocation id"
                 sx={{ mr: 2 }}
                 href={failureLink(group.failure)}
                 target="_blank"
               >
-                {group.failure.ingestedInvocationId}
+                {trimmedInvocationId(group.failure.ingestedInvocationId)}
               </Link>
+            </NarrowTableCell>
+            <NarrowTableCell
+              data-testid="failures_table_verdict_cell"
+            >
+              <Chip
+                label={verdictLabel(group.failure)}
+                color={verdictColor(group.failure)}
+                size='small'
+                variant='outlined'
+              />
+            </NarrowTableCell>
+            <NarrowTableCell
+              data-testid="failures_table_variant_cell"
+            >
               <small data-testid="ungrouped_variants">
                 {ungroupedVariants(group.failure)
                     .map((v) => v && `${v.key}: ${v.value}`)
                     .filter((v) => v)
                     .join(', ')}
               </small>
-            </>
+            </NarrowTableCell>
+            <NarrowTableCell
+              data-testid="failures_table_cls_cell"
+            >
+              <CLList changelists={group.failure?.changelists || []} />
+            </NarrowTableCell>
+            <NarrowTableCell
+              data-testid="failures_table_presubmit_run_cell"
+            >
+              {group.failure.presubmitRun && (
+                <Chip
+                  icon={presubmitRunIcon(group.failure.presubmitRun)}
+                  label={presubmitRunLabel(group.failure.presubmitRun)}
+                  color='default'
+                  size='small'
+                  component='a'
+                  target='_blank'
+                  variant='outlined'
+                  clickable
+                  href={presubmitRunLink(group.failure.presubmitRun.presubmitRunId)}
+                />
+              )}
+            </NarrowTableCell>
+          </>
           ) : (
+          <NarrowTableCell
+            key={group.id}
+            sx={{
+              paddingLeft: `${20 * group.level}px`,
+              width: '60%',
+            }}
+            data-testid="failures_table_group_cell"
+            colSpan={6}
+          >
             <Grid
               container
               justifyContent="start"
@@ -124,7 +245,7 @@ const FailuresTableRows = ({
                   aria-label="Expand group"
                   onClick={() => toggleExpand()}
                 >
-                  {expanded ? <ArrowDropDownIcon /> : <ArrowRightIcon />}
+                  {expanded ? <ExpandMoreIcon /> : <ChevronRightIcon />}
                 </IconButton>
               </Grid>
               <Grid item sx={{ overflowWrap: 'anywhere' }}>
@@ -137,26 +258,19 @@ const FailuresTableRows = ({
                     sx={{ display: 'inline-flex' }}
                     aria-label='Test history link'
                     href={testHistoryLink(project, group.key.value, query)}
-                    underline='hover'
                     target="_blank">
                       History
                   </Link>
                 </>) : null}
               </Grid>
             </Grid>
-          )}
-        </TableCell>
-        <TableCell data-testid="failure_table_group_presubmitrejects">
+          </NarrowTableCell>
+        )}
+        <NarrowTableCell data-testid="failure_table_group_presubmitrejects">
           {group.failure ? (
             <>
               {group.failure.presubmitRun ? (
-                <Link
-                  aria-label="Presubmit rejects link"
-                  href={`https://luci-change-verifier.appspot.com/ui/run/${group.failure.presubmitRun.presubmitRunId.id}`}
-                  target="_blank"
-                >
-                  {group.presubmitRejects}
-                </Link>
+                group.presubmitRejects
               ) : (
                 '-'
               )}
@@ -164,11 +278,11 @@ const FailuresTableRows = ({
           ) : (
             group.presubmitRejects
           )}
-        </TableCell>
-        <TableCell className="number">{group.invocationFailures}</TableCell>
-        <TableCell className="number">{group.criticalFailuresExonerated}</TableCell>
-        <TableCell className="number">{group.failures}</TableCell>
-        <TableCell>{dayjs(group.latestFailureTime).fromNow()}</TableCell>
+        </NarrowTableCell>
+        <NarrowTableCell className="number">{group.invocationFailures}</NarrowTableCell>
+        <NarrowTableCell className="number">{group.criticalFailuresExonerated}</NarrowTableCell>
+        <NarrowTableCell className="number">{group.failures}</NarrowTableCell>
+        <NarrowTableCell>{dayjs(group.latestFailureTime).fromNow()}</NarrowTableCell>
       </TableRow>
       {/** Render the remaining rows in the group */}
       {expanded && children}

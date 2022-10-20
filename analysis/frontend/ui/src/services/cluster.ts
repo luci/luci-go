@@ -17,6 +17,7 @@ import { AuthorizedPrpcClient } from '@/clients/authorized_client';
 import {
   AssociatedBug,
   ClusterId,
+  Changelist,
 } from './shared_models';
 
 export const getClustersService = () => {
@@ -219,6 +220,13 @@ export type PresubmitRunMode =
     | 'FULL_RUN'
     | 'QUICK_DRY_RUN';
 
+// Refer to luci.analysis.v1.PresubmitRunStatus for documentation.
+export type PresubmitRunStatus =
+    'PRESUBMIT_RUN_STATUS_UNSPECIFIED'
+    | 'PRESUBMIT_RUN_STATUS_SUCCEEDED'
+    | 'PRESUBMIT_RUN_STATUS_FAILED'
+    | 'PRESUBMIT_RUN_STATUS_CANCELED';
+
 // Refer to luci.analysis.v1.BuildStatus for documentation.
 export type BuildStatus =
     'BUILD_STATUS_UNSPECIFIED'
@@ -262,17 +270,8 @@ export interface PresubmitRun {
   owner: string;
   // The mode of the presubmit run.
   mode: PresubmitRunMode;
-}
-
-export interface Changelist {
-  // Gerrit hostname, e.g. "chromium-review.googlesource.com".
-  host: string;
-
-  // Change number, encoded as a string, e.g. "12345".
-  change: string;
-
-  // Patchset number, e.g. 1.
-  patchset: number;
+  // The status of the presubmit run.
+  status: PresubmitRunStatus;
 }
 
 // Refer to luci.analysis.v1.DistinctClusterFailure for documentation.

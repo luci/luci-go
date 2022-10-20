@@ -28,6 +28,17 @@ export interface AssociatedBug {
   url: string;
 }
 
+export interface Changelist {
+  // Gerrit hostname, e.g. "chromium-review.googlesource.com".
+  host: string;
+
+  // Change number, encoded as a string, e.g. "12345".
+  change: string;
+
+  // Patchset number, e.g. 1.
+  patchset: number;
+}
+
 export function isRetriable(e: GrpcError) : boolean {
   // The following codes indicate transient errors that are retriable. See:
   // https://source.chromium.org/chromium/infra/infra/+/main:go/src/go.chromium.org/luci/grpc/grpcutil/errors.go;l=176?q=codeToStatus&type=cs

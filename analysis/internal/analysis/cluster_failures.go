@@ -18,30 +18,31 @@ import (
 	"context"
 
 	"cloud.google.com/go/bigquery"
-	"go.chromium.org/luci/common/errors"
-	"go.chromium.org/luci/common/trace"
 	"google.golang.org/api/iterator"
 
 	"go.chromium.org/luci/analysis/internal/bqutil"
 	"go.chromium.org/luci/analysis/internal/clustering"
+	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/trace"
 )
 
 type ClusterFailure struct {
-	Realm             bigquery.NullString `json:"realm"`
-	TestID            bigquery.NullString `json:"testId"`
-	Variant           []*Variant          `json:"variant"`
-	PresubmitRunID    *PresubmitRunID     `json:"presubmitRunId"`
-	PresubmitRunOwner bigquery.NullString `json:"presubmitRunOwner"`
-	PresubmitRunMode  bigquery.NullString `json:"presubmitRunMode"`
-	Changelists       []*Changelist
-	PartitionTime     bigquery.NullTimestamp `json:"partitionTime"`
-	Exonerations      []*Exoneration         `json:"exonerations"`
+	Realm              bigquery.NullString
+	TestID             bigquery.NullString
+	Variant            []*Variant
+	PresubmitRunID     *PresubmitRunID
+	PresubmitRunOwner  bigquery.NullString
+	PresubmitRunMode   bigquery.NullString
+	PresubmitRunStatus bigquery.NullString
+	Changelists        []*Changelist
+	PartitionTime      bigquery.NullTimestamp
+	Exonerations       []*Exoneration
 	// luci.analysis.v1.BuildStatus, without "BUILD_STATUS_" prefix.
-	BuildStatus                 bigquery.NullString `json:"buildStatus"`
-	IsBuildCritical             bigquery.NullBool   `json:"isBuildCritical"`
-	IngestedInvocationID        bigquery.NullString `json:"ingestedInvocationId"`
-	IsIngestedInvocationBlocked bigquery.NullBool   `json:"isIngestedInvocationBlocked"`
-	Count                       int32               `json:"count"`
+	BuildStatus                 bigquery.NullString
+	IsBuildCritical             bigquery.NullBool
+	IngestedInvocationID        bigquery.NullString
+	IsIngestedInvocationBlocked bigquery.NullBool
+	Count                       int32
 }
 
 type Exoneration struct {
@@ -107,6 +108,7 @@ func (c *Client) ReadClusterFailures(ctx context.Context, opts ReadClusterFailur
 			ANY_VALUE(r.presubmit_run_id) as PresubmitRunID,
 			ANY_VALUE(r.presubmit_run_owner) as PresubmitRunOwner,
 			ANY_VALUE(r.presubmit_run_mode) as PresubmitRunMode,
+			ANY_VALUE(r.presubmit_run_status) as PresubmitRunStatus,
 			ANY_VALUE(r.changelists) as Changelists,
 			r.partition_time as PartitionTime,
 			ANY_VALUE(r.exonerations) as Exonerations,

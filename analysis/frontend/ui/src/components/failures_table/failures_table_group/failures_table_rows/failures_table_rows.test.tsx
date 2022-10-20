@@ -57,9 +57,10 @@ describe('Test FailureTableRows component', () => {
     expect(screen.getByText(dayjs(mockGroup.latestFailureTime).fromNow())).toBeInTheDocument();
   });
 
-  it('given a group with a failure then should display links and variants', async () => {
+  it('given a group with a presubmit failure then should display failure details', async () => {
+    const failure = newMockFailure().ingestedInvocationBlocked().build();
     const mockGroup = newMockGroup({ type: 'leaf', value: 'testgroup' })
-        .withFailure(newMockFailure().build())
+        .withFailure(failure)
         .withFailures(2)
         .withPresubmitRejects(3)
         .withInvocationFailures(4)
@@ -78,7 +79,47 @@ describe('Test FailureTableRows component', () => {
 
     await screen.findByLabelText('Failure invocation id');
 
+    expect(screen.getByText('buildnumber')).toBeInTheDocument();
+    expect(screen.getByText('Unexpected')).toBeInTheDocument();
     expect(screen.getByTestId('ungrouped_variants')).toBeInTheDocument();
-    expect(screen.getByLabelText('Presubmit rejects link')).toBeInTheDocument();
+    expect(screen.getByText('123456 #7')).toBeInTheDocument();
+    expect(screen.getByText('Submitted')).toBeInTheDocument();
+
+    expect(screen.getByText(mockGroup.presubmitRejects)).toBeInTheDocument();
+    expect(screen.getByText(mockGroup.invocationFailures)).toBeInTheDocument();
+    expect(screen.getByText(mockGroup.criticalFailuresExonerated)).toBeInTheDocument();
+    expect(screen.getByText(mockGroup.failures)).toBeInTheDocument();
+    expect(screen.getByText(dayjs(mockGroup.latestFailureTime).fromNow())).toBeInTheDocument();
+  });
+
+  it('given a group with a postsubmit failure then should display failure details', async () => {
+    const failure = newMockFailure().withoutPresubmit().exonerateNotCritical().build();
+    const mockGroup = newMockGroup({ type: 'leaf', value: 'testgroup' })
+        .withFailure(failure)
+        .withFailures(2)
+        .withInvocationFailures(4)
+        .withCriticalFailuresExonerated(5)
+        .build();
+    render(
+        <table>
+          <tbody>
+            <FailuresTableRows
+              project='testproject'
+              group={mockGroup}
+              variantGroups={createMockVariantGroups()}/>
+          </tbody>
+        </table>,
+    );
+
+    await screen.findByLabelText('Failure invocation id');
+
+    expect(screen.getByText('buildnumber')).toBeInTheDocument();
+    expect(screen.getByText('Exonerated')).toBeInTheDocument();
+    expect(screen.getByTestId('ungrouped_variants')).toBeInTheDocument();
+
+    expect(screen.getByText(mockGroup.invocationFailures)).toBeInTheDocument();
+    expect(screen.getByText(mockGroup.criticalFailuresExonerated)).toBeInTheDocument();
+    expect(screen.getByText(mockGroup.failures)).toBeInTheDocument();
+    expect(screen.getByText(dayjs(mockGroup.latestFailureTime).fromNow())).toBeInTheDocument();
   });
 });

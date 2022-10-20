@@ -33,6 +33,7 @@ class ClusterFailureBuilder {
         presubmitRunId: { system: 'cv', id: 'presubmitRunId' },
         owner: 'user',
         mode: 'FULL_RUN',
+        status: 'PRESUBMIT_RUN_STATUS_SUCCEEDED',
       },
       changelists: [{
         host: 'clproject-review.googlesource.com',
@@ -43,7 +44,7 @@ class ClusterFailureBuilder {
       exonerations: undefined,
       buildStatus: 'BUILD_STATUS_SUCCESS',
       isBuildCritical: true,
-      ingestedInvocationId: 'ingestedInvocationId',
+      ingestedInvocationId: 'build-buildnumber',
       isIngestedInvocationBlocked: false,
       count: 1,
     };
@@ -68,6 +69,7 @@ class ClusterFailureBuilder {
       presubmitRunId: { system: 'cv', id: 'presubmitRunId' },
       owner: 'user',
       mode: 'DRY_RUN',
+      status: 'PRESUBMIT_RUN_STATUS_SUCCEEDED',
     };
     return this;
   }

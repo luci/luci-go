@@ -12,12 +12,19 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import TableCell from '@mui/material/TableCell';
+import { styled } from '@mui/material/styles';
+import TableCell, { tableCellClasses } from '@mui/material/TableCell';
 import TableHead from '@mui/material/TableHead';
 import TableRow from '@mui/material/TableRow';
 import TableSortLabel from '@mui/material/TableSortLabel';
 
 import { MetricName } from '@/tools/failures_tools';
+
+const NarrowTableCell = styled(TableCell)(() => ({
+  [`&.${tableCellClasses.root}`]: {
+    padding: '6px 6px',
+  },
+}));
 
 interface Props {
     toggleSort: (metric: MetricName) => void,
@@ -33,8 +40,16 @@ const FailuresTableHead = ({
   return (
     <TableHead data-testid="failure_table_head">
       <TableRow>
-        <TableCell></TableCell>
-        <TableCell
+        <NarrowTableCell
+          sx={{ padding: '10px' }}
+        >
+        </NarrowTableCell>
+        <NarrowTableCell sx={{ width: '160px' }}>Build</NarrowTableCell>
+        <NarrowTableCell sx={{ width: '80px' }}>Verdict</NarrowTableCell>
+        <NarrowTableCell sx={{ width: '40%' }}>Variant</NarrowTableCell>
+        <NarrowTableCell>CL(s)</NarrowTableCell>
+        <NarrowTableCell>Presubmit Run</NarrowTableCell>
+        <NarrowTableCell
           sortDirection={sortMetric === 'presubmitRejects' ? (isAscending ? 'asc' : 'desc') : false}
           sx={{ cursor: 'pointer' }}>
           <TableSortLabel
@@ -44,8 +59,8 @@ const FailuresTableHead = ({
             onClick={() => toggleSort('presubmitRejects')}>
               User CLs Failed Presubmit
           </TableSortLabel>
-        </TableCell>
-        <TableCell
+        </NarrowTableCell>
+        <NarrowTableCell
           sortDirection={sortMetric === 'invocationFailures' ? (isAscending ? 'asc' : 'desc') : false}
           sx={{ cursor: 'pointer' }}>
           <TableSortLabel
@@ -54,8 +69,8 @@ const FailuresTableHead = ({
             onClick={() => toggleSort('invocationFailures')}>
               Builds Failed
           </TableSortLabel>
-        </TableCell>
-        <TableCell
+        </NarrowTableCell>
+        <NarrowTableCell
           sortDirection={sortMetric === 'criticalFailuresExonerated' ? (isAscending ? 'asc' : 'desc') : false}
           sx={{ cursor: 'pointer' }}>
           <TableSortLabel
@@ -64,8 +79,8 @@ const FailuresTableHead = ({
             onClick={() => toggleSort('criticalFailuresExonerated')}>
               Presubmit-Blocking Failures Exonerated
           </TableSortLabel>
-        </TableCell>
-        <TableCell
+        </NarrowTableCell>
+        <NarrowTableCell
           sortDirection={sortMetric === 'failures' ? (isAscending ? 'asc' : 'desc') : false}
           sx={{ cursor: 'pointer' }}>
           <TableSortLabel
@@ -74,8 +89,8 @@ const FailuresTableHead = ({
             onClick={() => toggleSort('failures')}>
               Total Failures
           </TableSortLabel>
-        </TableCell>
-        <TableCell
+        </NarrowTableCell>
+        <NarrowTableCell
           sortDirection={sortMetric === 'latestFailureTime' ? (isAscending ? 'asc' : 'desc') : false}
           sx={{ cursor: 'pointer' }}>
           <TableSortLabel
@@ -84,7 +99,7 @@ const FailuresTableHead = ({
             onClick={() => toggleSort('latestFailureTime')}>
               Latest Failure Time
           </TableSortLabel>
-        </TableCell>
+        </NarrowTableCell>
       </TableRow>
     </TableHead>
   );

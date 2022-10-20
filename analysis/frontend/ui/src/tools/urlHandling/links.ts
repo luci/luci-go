@@ -13,10 +13,13 @@
 // limitations under the License.
 
 import {
-  Changelist,
   DistinctClusterFailure,
+  PresubmitRunId,
 } from '@/services/cluster';
-import { ClusterId } from '@/services/shared_models';
+import {
+  ClusterId,
+  Changelist,
+} from '@/services/shared_models';
 
 export const linkToCluster = (project: string, c: ClusterId): string => {
   if (c.algorithm.startsWith('rules-') || c.algorithm == 'rules') {
@@ -35,7 +38,7 @@ export const linkToRule = (project: string, ruleId: string): string => {
   return `/p/${projectEncoded}/rules/${ruleIdEncoded}`;
 };
 
-export const failureLink = (failure: DistinctClusterFailure) => {
+export const failureLink = (failure: DistinctClusterFailure): string => {
   const query = `ID:${failure.testId} `;
   if (failure.ingestedInvocationId?.startsWith('build-')) {
     return `https://ci.chromium.org/ui/b/${failure.ingestedInvocationId.replace('build-', '')}/test-results?q=${encodeURIComponent(query)}`;
@@ -43,27 +46,31 @@ export const failureLink = (failure: DistinctClusterFailure) => {
   return `https://ci.chromium.org/ui/inv/${failure.ingestedInvocationId}/test-results?q=${encodeURIComponent(query)}`;
 };
 
-export const clLink = (cl: Changelist) => {
+export const clLink = (cl: Changelist): string => {
   return `https://${cl.host}/c/${cl.change}/${cl.patchset}`;
 };
 
-export const clName = (cl: Changelist) => {
+export const clName = (cl: Changelist): string => {
   const host = cl.host.replace('-review.googlesource.com', '');
   return `${host}/${cl.change}/${cl.patchset}`;
 };
 
-export const testHistoryLink = (project: string, testId: string, query: string) => {
+export const presubmitRunLink = (runId: PresubmitRunId): string => {
+  return `https://luci-change-verifier.appspot.com/ui/run/${runId.id}`;
+};
+
+export const testHistoryLink = (project: string, testId: string, query: string): string => {
   return `https://ci.chromium.org/ui/test/${encodeURIComponent(project)}/${encodeURIComponent(testId)}?q=${encodeURIComponent(query)}`;
 };
 
 // loginLink constructs a URL to login to LUCI Analysis, with a redirect to
 // the given absolute URL (which should start with "/").
-export const loginLink = (redirectTarget: string) => {
+export const loginLink = (redirectTarget: string): string => {
   return window.loginUrl + '?r=' + encodeURIComponent(redirectTarget);
 };
 
 // loginLink constructs a URL to logout from LUCI Analysis, with a redirect to
 // the given absolute URL (which should start with "/").
-export const logoutLink = (redirectTarget: string) => {
+export const logoutLink = (redirectTarget: string): string => {
   return window.logoutUrl + '?r=' + encodeURIComponent(redirectTarget);
 };

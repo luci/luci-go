@@ -417,7 +417,7 @@ message DistinctClusterFailure {
         // The machine-readable reason for the exoneration.
         luci.analysis.v1.ExonerationReason reason = 1;
     }
-    
+
     // Representation of a presubmit run (e.g. LUCI CV Run).
     message PresubmitRun {
         // Identity of the presubmit run that contains this test result.
@@ -433,7 +433,7 @@ message DistinctClusterFailure {
         // If the test result was not collected as part of a presubmit run,
         // this is unset.
         luci.analysis.v1.PresubmitRunId presubmit_run_id = 1;
-    
+
         // The owner of the presubmit run (if any).
         // This is the owner of the CL on which CQ+1/CQ+2 was clicked
         // (even in case of presubmit run with multiple CLs).
@@ -441,9 +441,12 @@ message DistinctClusterFailure {
         // approval is obtained, until then it is "automation" (for automation
         // service accounts) and "user" otherwise.
         string owner = 2;
-    
+
         // The mode of the presubmit run. E.g. DRY_RUN, FULL_RUN, QUICK_DRY_RUN.
         luci.analysis.v1.PresubmitRunMode mode = 3;
+
+        // The status of the presubmit run. E.g. succeeded, failed or cancelled.
+        luci.analysis.v1.PresubmitRunStatus status = 4;
     }
 
     // The identity of the test.

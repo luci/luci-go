@@ -321,9 +321,9 @@ export const groupAndCountFailures = (
   if (failures) {
     let currentFailures = failures;
     if (failureFilter == 'Presubmit Failures') {
-      currentFailures = failures.filter((f) => f.presubmitRun);
+      currentFailures = failures.filter((f) => f.changelists);
     } else if (failureFilter == 'Postsubmit Failures') {
-      currentFailures = failures.filter((f) => !f.presubmitRun);
+      currentFailures = failures.filter((f) => !f.changelists);
     }
     const groups = groupFailures(currentFailures, (failure) => {
       const variantValues = variantGroups.filter((v) => v.isSelected)
