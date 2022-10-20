@@ -175,36 +175,38 @@ func (c *Client) CancelBuild(ctx context.Context, in *bbpb.CancelBuildRequest, o
 		return nil, status.Errorf(codes.InvalidArgument, "requested build id is 0")
 	}
 	var noAccess bool
-	updatedBuild := c.fa.updateBuild(in.GetId(), func(build *bbpb.Build) {
-		switch {
-		case !c.canAccessBuild(build):
-			noAccess = true
-		case bbutil.IsEnded(build.GetStatus()):
-			// noop on ended build
-		default:
-			build.Status = bbpb.Status_CANCELED
-			now := timestamppb.New(clock.Now(ctx).UTC())
-			if build.GetStartTime() == nil {
-				build.StartTime = now
+	var updatedBuild *bbpb.Build
+	if build := c.fa.getBuild(in.GetId()); build == nil {
+		noAccess = true
+	} else {
+		updatedBuild = c.fa.updateBuild(ctx, in.GetId(), func(build *bbpb.Build) {
+			switch {
+			case !c.canAccessBuild(build):
+				noAccess = true
+			case bbutil.IsEnded(build.GetStatus()):
+				// noop on ended build
+			default:
+				build.Status = bbpb.Status_CANCELED
+				now := timestamppb.New(clock.Now(ctx).UTC())
+				if build.GetStartTime() == nil {
+					build.StartTime = now
+				}
+				build.EndTime = now
+				build.UpdateTime = now
+				build.SummaryMarkdown = in.GetSummaryMarkdown()
 			}
-			build.EndTime = now
-			build.UpdateTime = now
-			build.SummaryMarkdown = in.GetSummaryMarkdown()
-		}
-	})
+		})
+	}
 
-	switch {
-	case updatedBuild == nil: // build not found
-		fallthrough
-	case noAccess:
+	if noAccess {
 		projIdentity := identity.Identity(fmt.Sprintf("%s:%s", identity.Project, c.luciProject))
 		return nil, status.Errorf(codes.NotFound, "requested resource not found or %q does not have permission to modify it", projIdentity)
-	default:
-		if err := applyMask(updatedBuild, in.GetMask()); err != nil {
-			return nil, err
-		}
-		return updatedBuild, nil
 	}
+
+	if err := applyMask(updatedBuild, in.GetMask()); err != nil {
+		return nil, err
+	}
+	return updatedBuild, nil
 }
 
 var supportedScheduleArguments = stringset.NewFromSlice(
@@ -287,32 +289,6 @@ func mkInputProps(builderCfg *bbpb.BuilderConfig, requestedProps *structpb.Struc
 		proto.Merge(ret, requestedProps)
 	}
 	return ret, nil
-}
-
-// UpdateBuild updates the given build.
-func (c *Client) UpdateBuild(ctx context.Context, in *bbpb.UpdateBuildRequest) (*bbpb.Build, error) {
-	if in.GetUpdateMask() != nil {
-		return nil, status.Errorf(codes.Unimplemented, "UpdateBuild with update mask is not supported yet")
-	}
-	id := in.GetBuild().GetId()
-	switch build := c.fa.getBuild(id); {
-	case build == nil:
-		fallthrough
-	case !c.canAccessBuild(build):
-		projIdentity := identity.Identity(fmt.Sprintf("%s:%s", identity.Project, c.luciProject))
-		return nil, status.Errorf(codes.NotFound, "requested resource not found or %q does not have permission to view it", projIdentity)
-	}
-
-	build := c.fa.updateBuild(id, func(storedBuild *bbpb.Build) {
-		storedBuild.Reset()
-		proto.Merge(storedBuild, in.GetBuild())
-		storedBuild.UpdateTime = timestamppb.New(clock.Now(ctx).UTC())
-	})
-
-	if err := applyMask(build, in.GetMask()); err != nil {
-		return nil, err
-	}
-	return build, nil
 }
 
 // Batch implements buildbucket.Client.

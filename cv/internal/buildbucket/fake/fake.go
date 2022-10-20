@@ -23,8 +23,10 @@ import (
 	"time"
 
 	bbpb "go.chromium.org/luci/buildbucket/proto"
+	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
 	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/cv/internal/buildbucket"
 )
@@ -42,7 +44,7 @@ type fakeApp struct {
 }
 
 type Fake struct {
-	hostsMu sync.Mutex
+	hostsMu sync.RWMutex
 	hosts   map[string]*fakeApp // hostname -> fakeApp
 }
 
@@ -115,6 +117,19 @@ func (f *Fake) AddBuilder(host string, builder *bbpb.BuilderID, properties inter
 	return f
 }
 
+// MutateBuild mutates the provided build.
+//
+// Panics if the provided build is not found.
+func (f *Fake) MutateBuild(ctx context.Context, host string, id int64, mutateFn func(*bbpb.Build)) *bbpb.Build {
+	f.hostsMu.RLock()
+	fakeApp, ok := f.hosts[host]
+	f.hostsMu.RUnlock()
+	if !ok {
+		panic(errors.Reason("unknown host %q", host))
+	}
+	return fakeApp.updateBuild(ctx, id, mutateFn)
+}
+
 // AddBuild adds a build to fake Buildbucket host.
 //
 // Reads Buildbucket hostname from `infra.buildbucket.hostname`.
@@ -168,17 +183,18 @@ func (fa *fakeApp) iterBuildStore(cb func(*bbpb.Build)) {
 	}
 }
 
-func (fa *fakeApp) updateBuild(id int64, cb func(*bbpb.Build)) *bbpb.Build {
+func (fa *fakeApp) updateBuild(ctx context.Context, id int64, cb func(*bbpb.Build)) *bbpb.Build {
 	fa.buildStoreMu.Lock()
 	defer fa.buildStoreMu.Unlock()
 	if build, ok := fa.buildStore[id]; ok {
 		cb(build)
+		build.UpdateTime = timestamppb.New(clock.Now(ctx).UTC())
 		// store a copy to avoid cb keeps the reference to the build and mutate it
 		// later.
 		fa.buildStore[id] = proto.Clone(build).(*bbpb.Build)
 		return build
 	}
-	return nil
+	panic(errors.Reason("unknown build %d", id).Err())
 }
 
 // insertBuild also generates a monotically decreasing build ID.
