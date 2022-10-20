@@ -3,9 +3,8 @@ runtime: go116
 
 instance_class: B4_1G
 
-basic_scaling:
-  max_instances: 1
-  idle_timeout: 10m
+manual_scaling:
+  instances: 2
 
 # Note: this is interpreted by gae.py, it maps the app ID being deployed to
 # values of ${...} vars.
