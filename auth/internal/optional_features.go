@@ -29,4 +29,8 @@ var (
 	//
 	// Implemented in luci_ts.go.
 	NewLUCITSTokenProvider func(ctx context.Context, host, actAs, realm string, scopes []string, audience string, transport http.RoundTripper) (TokenProvider, error)
+
+	// NewLoginSessionTokenProvider returns TokenProvider that can perform
+	// a user-interacting login flow that involves a LoginSessions service.
+	NewLoginSessionTokenProvider func(ctx context.Context, loginSessionsHost, clientID, clientSecret string, scopes []string, transport http.RoundTripper) (TokenProvider, error)
 )

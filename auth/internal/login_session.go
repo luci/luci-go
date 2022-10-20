@@ -12,6 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+//go:build !copybara
+// +build !copybara
+
 package internal
 
 import (
@@ -48,22 +51,22 @@ type loginSessionTokenProvider struct {
 	cacheKey          CacheKey
 }
 
-// NewLoginSessionTokenProvider returns TokenProvider that can perform
-// a user-interacting login flow that involves a LoginSessions service.
-func NewLoginSessionTokenProvider(ctx context.Context, loginSessionsHost, clientID, clientSecret string, scopes []string, transport http.RoundTripper) (TokenProvider, error) {
-	return &loginSessionTokenProvider{
-		loginSessionsHost: loginSessionsHost,
-		clientID:          clientID,
-		clientSecret:      clientSecret,
-		scopes:            scopes,
-		transport:         transport,
-		// Reuse the same key as userAuthTokenProvider to share refresh tokens
-		// between two methods. They are compatible.
-		cacheKey: CacheKey{
-			Key:    fmt.Sprintf("user/%s", clientID),
-			Scopes: scopes,
-		},
-	}, nil
+func init() {
+	NewLoginSessionTokenProvider = func(ctx context.Context, loginSessionsHost, clientID, clientSecret string, scopes []string, transport http.RoundTripper) (TokenProvider, error) {
+		return &loginSessionTokenProvider{
+			loginSessionsHost: loginSessionsHost,
+			clientID:          clientID,
+			clientSecret:      clientSecret,
+			scopes:            scopes,
+			transport:         transport,
+			// Reuse the same key as userAuthTokenProvider to share refresh tokens
+			// between two methods. They are compatible.
+			cacheKey: CacheKey{
+				Key:    fmt.Sprintf("user/%s", clientID),
+				Scopes: scopes,
+			},
+		}, nil
+	}
 }
 
 func (p *loginSessionTokenProvider) RequiresInteraction() bool {

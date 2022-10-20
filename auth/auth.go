@@ -1533,6 +1533,9 @@ func makeBaseTokenProvider(ctx context.Context, opts *Options, scopes []string, 
 		// ID tokens and OAuth access tokens at the same time. They ignore audience
 		// (it always matches ClientID).
 		if opts.LoginSessionsHost != "" {
+			if internal.NewLoginSessionTokenProvider == nil {
+				return nil, errors.New("support for interactive login flow is not compiled into this binary")
+			}
 			return internal.NewLoginSessionTokenProvider(
 				ctx,
 				opts.LoginSessionsHost,
