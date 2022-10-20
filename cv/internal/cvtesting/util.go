@@ -58,6 +58,8 @@ import (
 	_ "go.chromium.org/luci/server/tq/txn/datastore"
 
 	migrationpb "go.chromium.org/luci/cv/api/migration"
+	listenerpb "go.chromium.org/luci/cv/settings/listener"
+
 	bbfake "go.chromium.org/luci/cv/internal/buildbucket/fake"
 	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/common/bq"
@@ -77,9 +79,10 @@ const gaeTopLevelDomain = ".appspot.com"
 // Test encapsulates typical setup for CV test.
 //
 // Typical use:
-//   ct := cvtesting.Test{}
-//   ctx, cancel := ct.SetUp()
-//   defer cancel()
+//
+//	ct := cvtesting.Test{}
+//	ctx, cancel := ct.SetUp()
+//	defer cancel()
 type Test struct {
 	// Env simulates CV environment.
 	Env *common.Env
@@ -229,6 +232,9 @@ func (t *Test) SetUp() (context.Context, func()) {
 	if err := srvcfg.SetTestMigrationConfig(ctx, proto.Clone(t.InitialMigrationSettings).(*migrationpb.Settings)); err != nil {
 		panic(err)
 	}
+	if err := srvcfg.SetTestListenerConfig(ctx, &listenerpb.Settings{}); err != nil {
+		panic(err)
+	}
 
 	return ctx, t.cleanup
 }
@@ -329,12 +335,12 @@ func (t *Test) installDS(ctx context.Context) context.Context {
 //
 // To use, first
 //
-//    $ luci-auth context -- bash
-//    $ export DATASTORE_PROJECT=my-cloud-project-with-datastore
+//	$ luci-auth context -- bash
+//	$ export DATASTORE_PROJECT=my-cloud-project-with-datastore
 //
 // and then run go tests the usual way, e.g.:
 //
-//    $ go test ./...
+//	$ go test ./...
 func (t *Test) installDSReal(ctx context.Context) (context.Context, bool) {
 	project := os.Getenv("DATASTORE_PROJECT")
 	if project == "" {
@@ -365,7 +371,7 @@ func (t *Test) installDSReal(ctx context.Context) (context.Context, bool) {
 //
 // To use, run
 //
-//     $ gcloud beta emulators datastore start --consistency=1.0
+//	$ gcloud beta emulators datastore start --consistency=1.0
 //
 // and export DATASTORE_EMULATOR_HOST as printed by above command.
 //

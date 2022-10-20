@@ -46,6 +46,7 @@ type scheduler interface {
 // Listener fetches and process messages from the subscriptions configured
 // in the settings.
 type Listener struct {
+	mu        sync.Mutex
 	sbers     map[string]*subscriber
 	sch       scheduler
 	psClient  *pubsub.Client
@@ -95,6 +96,8 @@ func (l *Listener) reload(ctx context.Context, settings []*listenerpb.Settings_G
 	var wg sync.WaitGroup
 	activeHosts := stringset.New(len(settings))
 	startErrs := errors.NewLazyMultiError(len(settings))
+	l.mu.Lock()
+	defer l.mu.Unlock()
 
 	for i, setting := range settings {
 		i, setting := i, setting
@@ -151,4 +154,13 @@ func (l *Listener) reload(ctx context.Context, settings []*listenerpb.Settings_G
 	}
 	wg.Wait()
 	return startErrs.Get()
+}
+
+// getSubscriber returns the subscriber for a given host.
+//
+// Returns nil if there isn't any.
+func (l *Listener) getSubscriber(host string) *subscriber {
+	l.mu.Lock()
+	defer l.mu.Unlock()
+	return l.sbers[host]
 }
