@@ -1,0 +1,9 @@
+# This directory contains implementation of the "default-go" service for
+# Swarming (see service-default-go.yaml). However, gae.py requires
+# app.yaml to exist in order to upload any service. This is a dummy app.yaml
+# file, the real file and the complete Swarming implementation are here:
+# https://chromium.googlesource.com/infra/luci/luci-py/+/HEAD/appengine/swarming
+#
+# Upload only "default-go" service:
+# gae.py upload default-go
+ignore: me

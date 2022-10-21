@@ -1,0 +1,11 @@
+name: luci-go/swarming-go
+extends: ../gae.yaml
+
+inputsdir: ../../swarming/server
+
+sources:
+  - ../../swarming
+
+build:
+  - go_gae_bundle: ${inputsdir}/cmd/service-default-go.yaml
+    dest: ${contextdir}/cmd

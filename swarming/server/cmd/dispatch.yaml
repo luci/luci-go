@@ -1,0 +1,6 @@
+dispatch:
+  # Serve RPC Explorer using Go.
+  - url: "*/rpcexplorer/*"
+    service: default-go
+  - url: "*/prpc/discovery.Discovery/*"
+    service: default-go
