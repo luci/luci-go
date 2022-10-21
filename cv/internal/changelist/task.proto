@@ -32,8 +32,7 @@ message UpdateCLTask {
   int64 id = 2; // internal CLID
   string external_id = 3;
 
-  // TODO(crbug.com/1358208): remove updated_hint.
-  google.protobuf.Timestamp updated_hint = 4;
+  reserved 4; // updated_hint
 
   enum Requester {
     REQUESTER_CLASS_UNSPECIFIED = 0;

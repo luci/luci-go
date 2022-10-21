@@ -130,7 +130,8 @@ type Snapshot struct {
 	// interpreted by CV guts.
 	//
 	// For example,
-	//   [("No-Tree-Checks", "True"), ("NOTRY", "TRUE")].
+	//
+	//	[("No-Tree-Checks", "True"), ("NOTRY", "TRUE")].
 	//
 	// In case of Gerrit CLs, these are extracted from CL descriptions,
 	// The Git-Footer-Style keys are normalized.
@@ -139,6 +140,7 @@ type Snapshot struct {
 	// CL-kind specific data.
 	//
 	// Types that are assignable to Kind:
+	//
 	//	*Snapshot_Gerrit
 	Kind isSnapshot_Kind `protobuf_oneof:"kind"`
 }
@@ -321,38 +323,38 @@ type Gerrit struct {
 	// Info contains subset of ChangeInfo listed below.
 	//
 	// NOTE: keep this list in sync with RemoveUnusedGerritInfo() function.
-	//  * number
-	//  * owner
-	//      * id
-	//      * email (may be not set)
-	//  * project
-	//  * ref
-	//  * status
-	//  * current_revision
-	//  * revisions
-	//      * kind
-	//      * number
-	//      * ref
-	//      * created
-	//      * commit (for current_revision only)
-	//          * message (current CL description)
-	//  * labels
-	//      * optional
-	//      * all (only if vote != 0)
-	//          * user
-	//              * id
-	//              * email (may be not set)
-	//      * value
-	//  * messages
-	//      * id
-	//      * date
-	//      * message
-	//      * author
-	//        * id
-	//      * realauthor
-	//        * id
-	//  * updated
-	//  * created
+	//   - number
+	//   - owner
+	//   - id
+	//   - email (may be not set)
+	//   - project
+	//   - ref
+	//   - status
+	//   - current_revision
+	//   - revisions
+	//   - kind
+	//   - number
+	//   - ref
+	//   - created
+	//   - commit (for current_revision only)
+	//   - message (current CL description)
+	//   - labels
+	//   - optional
+	//   - all (only if vote != 0)
+	//   - user
+	//   - id
+	//   - email (may be not set)
+	//   - value
+	//   - messages
+	//   - id
+	//   - date
+	//   - message
+	//   - author
+	//   - id
+	//   - realauthor
+	//   - id
+	//   - updated
+	//   - created
 	Info *gerrit.ChangeInfo `protobuf:"bytes,1,opt,name=info,proto3" json:"info,omitempty"`
 	// Files are filenames touched in the current revision.
 	//
@@ -446,17 +448,18 @@ type GerritGitDep struct {
 	//
 	// Immediate dep must be submitted before its child.
 	// Non-immediate CLs don't necessarily have to be submitted before:
-	//   for example, for a chain <base> <- A1 <- B1 <- C1 <- D1
-	//   D1's deps are [A,B,C] but only C is immediate, and 1 stands for patchset.
-	//   Developer may then swap B,C without re-uploading D (say, to avoid
-	//   patchset churn), resulting in a new logical chain:
-	//      <base> <- A1 <- C2 <- B2
-	//                   \
-	//                    <- B1 <- C1 <- D1
 	//
-	//   In this case, Gerrit's related changes for D1 will still return A1,B1,C1,
-	//   which CV interprets as C must be landed before D, while B and A should
-	//   be landed before D.
+	//	for example, for a chain <base> <- A1 <- B1 <- C1 <- D1
+	//	D1's deps are [A,B,C] but only C is immediate, and 1 stands for patchset.
+	//	Developer may then swap B,C without re-uploading D (say, to avoid
+	//	patchset churn), resulting in a new logical chain:
+	//	   <base> <- A1 <- C2 <- B2
+	//	                \
+	//	                 <- B1 <- C1 <- D1
+	//
+	//	In this case, Gerrit's related changes for D1 will still return A1,B1,C1,
+	//	which CV interprets as C must be landed before D, while B and A should
+	//	be landed before D.
 	Immediate bool `protobuf:"varint,2,opt,name=immediate,proto3" json:"immediate,omitempty"`
 }
 
@@ -573,11 +576,12 @@ func (x *GerritSoftDep) GetChange() int64 {
 // group. If CL is no longer watched by CV, there will be 0 applicable configs.
 //
 // Sometimes, there can be 2+ applicable configs. This happens if either:
-//  * eventual consistency: responsibility for CL is moved from one LUCI project
-//    to another. Three is no way to make this atomically, so CL may temporarily
-//    end up with 0 or 2 projects watching it, before settling on just 1.
-//  * misconfiguration: two projects or 2 different ConfigGroups within the same
-//    project watch the same CL.
+//   - eventual consistency: responsibility for CL is moved from one LUCI project
+//     to another. Three is no way to make this atomically, so CL may temporarily
+//     end up with 0 or 2 projects watching it, before settling on just 1.
+//   - misconfiguration: two projects or 2 different ConfigGroups within the same
+//     project watch the same CL.
+//
 // In either case, CV refuses to guess and will abstain from processing such
 // CLs, but storing the list is very useful for CV debugging and potentially for
 // better diagnostic messages to CV users and LUCI project owners.
@@ -631,30 +635,35 @@ func (x *ApplicableConfig) GetProjects() []*ApplicableConfig_Project {
 // Access records which LUCI project can or can't see a CL.
 //
 // If a LUCI project has Access, it means both:
-//  (1) the project can read details of the CL (via Git/Gerrit ACLs);
-//  (2) the project is the only LUCI project watching this CL in CV
-//      (via the CV config).
-//      Note: there can still be several applicable ConfigGroups of the same
-//      project (see ApplicableConfig).
+//
+//	(1) the project can read details of the CL (via Git/Gerrit ACLs);
+//	(2) the project is the only LUCI project watching this CL in CV
+//	    (via the CV config).
+//	    Note: there can still be several applicable ConfigGroups of the same
+//	    project (see ApplicableConfig).
 //
 // In practice, .Access is set in 4 cases:
 //
 // (a) `CQ-Depend: host:number` Gerrit CL footers allow users to specify
-//     arbitrary dependencies, which typically happens due to typos,
-//     but malicious actors can try to get CL details of restricted projects.
-//     Either way, CV must not be a confused deputy here and must keep track
-//     which project can see what.
+//
+//	arbitrary dependencies, which typically happens due to typos,
+//	but malicious actors can try to get CL details of restricted projects.
+//	Either way, CV must not be a confused deputy here and must keep track
+//	which project can see what.
 //
 // (b) due to recent re-configuration of one or more LUCI projects, either
-//     in CV config and/or in Gerrit ACLs, the previously watched & readable CL
-//     becomes unwatched and/or unreadable.
+//
+//	in CV config and/or in Gerrit ACLs, the previously watched & readable CL
+//	becomes unwatched and/or unreadable.
 //
 // (c) a previously existing CL was deleted (e.g. by its owner or Gerrit
-//     administrators).
+//
+//	administrators).
 //
 // (d) eventual consistency of Gerrit masquerading as HTTP 404 on stale replica,
-//     while quorum of replicas think CL actually exists and specific LUCI
-//     project having access to it.
+//
+//	while quorum of replicas think CL actually exists and specific LUCI
+//	project having access to it.
 //
 // Unfortunately, (d) isn't easy to distinguish from (b) and (c), so CV resorts
 // to tracking time since CL became invisible -- the longer, the more likely it
@@ -665,7 +674,6 @@ func (x *ApplicableConfig) GetProjects() []*ApplicableConfig_Project {
 // LUCI project is allowed to watch this CL *before* fetching Gerrit project
 // (repo) and target ref.
 //
-//
 // NOTE on CV as confused deputy.
 //
 // CV works with multiple LUCI projects. As of this writing (June 2021),
@@ -675,38 +683,40 @@ func (x *ApplicableConfig) GetProjects() []*ApplicableConfig_Project {
 // This in turn brings 2 problems:
 //
 // (1) Denial of service: unsolved.
-//     Mitigation: CV will refuse to work with CLs which are watched by more
-//     than 1 project. Since CV will communicate by posting message to affected
-//     CL, this should be noticed and fixed quickly.
+//
+//	Mitigation: CV will refuse to work with CLs which are watched by more
+//	than 1 project. Since CV will communicate by posting message to affected
+//	CL, this should be noticed and fixed quickly.
 //
 // (2) Information leaks: solved.
-//     Each LUCI project MUST use project-scoped service account (PSSA)
-//     (migration is under way, see https://crbug.com/824492).
-//     CV uses this account for all interaction with Gerrit on behalf a specific
-//     LUCI project. Corresponding Gerrit repos:
-//       * SHOULD limit read access to its own PSSA + developers,
-//       * MUST limit Submit rights to its own PSSA and possibly developers.
+//
+//	Each LUCI project MUST use project-scoped service account (PSSA)
+//	(migration is under way, see https://crbug.com/824492).
+//	CV uses this account for all interaction with Gerrit on behalf a specific
+//	LUCI project. Corresponding Gerrit repos:
+//	  * SHOULD limit read access to its own PSSA + developers,
+//	  * MUST limit Submit rights to its own PSSA and possibly developers.
 //
 // For example,
-//   * `infra` project has all its Gerrit CLs public and doesn't care about
-//      information leaks. All other LUCI projects can read its CLs, as well
-//      as the whole Internet.
-//   * `infra-internal` project protects its Gerrit CLs, making them visible
+//   - `infra` project has all its Gerrit CLs public and doesn't care about
+//     information leaks. All other LUCI projects can read its CLs, as well
+//     as the whole Internet.
+//   - `infra-internal` project protects its Gerrit CLs, making them visible
 //     to `infra-internal-scoped@...` account only.
 //     When CV queries Gerrit on `infra-internal` behalf, CV uses
 //     `infra-internal-scoped` account and can fetch the data.
-//   * Suppose malicious actor compromised `infra` repo, and placed a new CV
+//   - Suppose malicious actor compromised `infra` repo, and placed a new CV
 //     config there to start watching CLs of the `infra-internal` project
 //     as well as super/secret/repo, which wasn't watched by any CV before.
-//       * Unfortunately, CV can't currently object to the new config.
-//       * However, when querying Gerrit on `infra` behalf, CV uses
-//         `infra-scoped@...` account, which presumably won't be configured with
-//         read access to neither infra-internal nor super/secret/repo.
-//       * So, corresponding CLs will have .Access entry recording that
-//         `infra` has no access to them.
-//       * NOTE: CLs of infra-internal will also have .ApplicableConfig with two
-//         projects there, which will prevent normal operation of
-//         `infra-internal` CV but will not cause any leaks.
+//   - Unfortunately, CV can't currently object to the new config.
+//   - However, when querying Gerrit on `infra` behalf, CV uses
+//     `infra-scoped@...` account, which presumably won't be configured with
+//     read access to neither infra-internal nor super/secret/repo.
+//   - So, corresponding CLs will have .Access entry recording that
+//     `infra` has no access to them.
+//   - NOTE: CLs of infra-internal will also have .ApplicableConfig with two
+//     projects there, which will prevent normal operation of
+//     `infra-internal` CV but will not cause any leaks.
 type Access struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -767,6 +777,7 @@ type CLError struct {
 	// Next tag is 10.
 	//
 	// Types that are assignable to Kind:
+	//
 	//	*CLError_OwnerLacksEmail
 	//	*CLError_WatchedByManyConfigGroups_
 	//	*CLError_WatchedByManyProjects_

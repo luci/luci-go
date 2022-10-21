@@ -121,13 +121,9 @@ type FetchInput struct {
 // NewFetchInput returns FetchInput for a given CL and UpdateCLTask.
 func NewFetchInput(cl *CL, task *UpdateCLTask) *FetchInput {
 	return &FetchInput{
-		CL:      cl,
-		Project: task.GetLuciProject(),
-		// TODO(crbug.com/1358208): replace the below by `Hint: task.GetHint()`,
-		Hint: &UpdateCLTask_Hint{
-			ExternalUpdateTime: task.getUpdateTimeHint(),
-			MetaRevId:          task.GetHint().GetMetaRevId(),
-		},
+		CL:        cl,
+		Project:   task.GetLuciProject(),
+		Hint:      task.GetHint(),
 		Requester: task.GetRequester(),
 	}
 }
@@ -553,7 +549,7 @@ func (u *Updater) trySkippingFetch(ctx context.Context, task *UpdateCLTask, cl *
 		return false, UpdateFields{}, nil
 	}
 
-	hintedTS := task.getUpdateTimeHint()
+	hintedTS := task.GetHint().GetExternalUpdateTime()
 	hintedRevID := task.GetHint().GetMetaRevId()
 	switch {
 	case hintedTS == nil && hintedRevID == "":
@@ -760,13 +756,13 @@ func makeTaskDeduplicationKey(ctx context.Context, t *UpdateCLTask, delay time.D
 	// Furthermore, de-dup window differs based on whether updatedHint is given
 	// or it's a blind refresh.
 	interval := blindRefreshInterval
-	if t.getUpdateTimeHint() != nil {
+	if t.GetHint().GetExternalUpdateTime() != nil {
 		interval = knownRefreshInterval
 	}
 	epochOffset := common.DistributeOffset(interval, "update-cl", t.GetLuciProject(), uniqArg)
 	epochTS := clock.Now(ctx).Add(delay).Truncate(interval).Add(interval + epochOffset)
 	_, _ = fmt.Fprintf(&sb, "\n%x", epochTS.UnixNano())
-	if h := t.getUpdateTimeHint(); h != nil {
+	if h := t.GetHint().GetExternalUpdateTime(); h != nil {
 		_, _ = fmt.Fprintf(&sb, "\n%x", h.AsTime().UnixNano())
 	}
 	return sb.String()
@@ -804,7 +800,7 @@ func makeTQTitleForHumans(t *UpdateCLTask) string {
 		}
 		sb.WriteString(eid)
 	}
-	if hintedTS := t.getUpdateTimeHint(); hintedTS != nil {
+	if hintedTS := t.GetHint().GetExternalUpdateTime(); hintedTS != nil {
 		sb.WriteString("/u")
 		sb.WriteString(hintedTS.AsTime().UTC().Format(time.RFC3339))
 	}
