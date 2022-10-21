@@ -289,10 +289,6 @@ func (g *Generator) priorityFieldName() string {
 
 // NeedsUpdate determines if the bug for the given cluster needs to be updated.
 func (g *Generator) NeedsUpdate(impact *bugs.ClusterImpact, issue *mpb.Issue) bool {
-	// Bugs must have restrict view label to be updated.
-	if !hasLabel(issue, restrictViewLabel) {
-		return false
-	}
 	// Cases that a bug may be updated follow.
 	switch {
 	case !g.isCompatibleWithVerified(impact, issueVerified(issue)):

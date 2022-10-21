@@ -359,15 +359,6 @@ func TestManager(t *testing.T) {
 					bm.Simulate = true
 					updateDoesNothing()
 				})
-				Convey("Does nothing if Restrict-View-Google is unset", func() {
-					// This requirement comes from security review, see crbug.com/1245877.
-					updateReq := removeLabelRequest(f.Issues[0].Issue.Name, restrictViewLabel)
-					err = usercl.ModifyIssues(ctx, updateReq)
-					So(err, ShouldBeNil)
-					So(hasLabel(f.Issues[0].Issue, restrictViewLabel), ShouldBeFalse)
-
-					updateDoesNothing()
-				})
 			})
 			Convey("If impact falls below lowest priority threshold", func() {
 				bugsToUpdate[0].Impact = ChromiumClosureImpact()
