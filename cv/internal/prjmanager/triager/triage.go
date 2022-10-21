@@ -16,7 +16,6 @@ package triager
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"time"
 
@@ -25,16 +24,6 @@ import (
 	"go.chromium.org/luci/cv/internal/prjmanager/itriager"
 	"go.chromium.org/luci/cv/internal/prjmanager/prjpb"
 )
-
-var banned = map[int64]interface{}{
-	5107835034140672: nil,
-	5170410157506560: nil,
-	6275854208860160: nil,
-	5703040292618240: nil,
-	5731038244896768: nil,
-	4677625339969536: nil,
-	6496970768646144: nil,
-}
 
 // Triage triages a component with 1+ CLs deciding what has to be done now and
 // when should the next re-Triage happen.
@@ -47,12 +36,6 @@ func Triage(ctx context.Context, c *prjpb.Component, s itriager.PMState) (itriag
 	var err error
 
 	cls := triageCLs(c, pm)
-	for clid := range cls {
-		if _, exist := banned[clid]; exist {
-			return res, errors.New("crbug.com/1377225: banned CL")
-		}
-	}
-
 	res.RunsToCreate, nextRun, err = stageNewRuns(ctx, c, cls, pm)
 	if err != nil {
 		return res, err
