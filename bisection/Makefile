@@ -22,10 +22,3 @@ build-frontend:
 
 deploy: build-frontend
 	$(GAE_PY) upload --target-version ${USER} -A luci-bisection-dev
-
-# TODO (nqmtuan): Remove those command after gofindit apps are turned off
-deploy-gofindit: build-frontend
-	$(GAE_PY) upload -A chops-gofindit-dev
-
-deploy-gofindit-prod: build-frontend
-	$(GAE_PY) upload -A chops-gofindit
