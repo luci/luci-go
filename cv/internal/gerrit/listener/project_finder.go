@@ -58,14 +58,10 @@ func (pf *projectFinder) reload(reStrs []string) error {
 	if isEqual(pf.enabledProjectRegexpStrs, reStrs) {
 		return nil
 	}
-	newREs := make([]*regexp.Regexp, len(reStrs))
-	for i, str := range reStrs {
-		re, err := regexp.Compile("^" + str + "$")
+	newREs, err := anchorRegexps(reStrs)
+	if err != nil {
 		// The config validation shouldn't allow this to happen.
-		if err != nil {
-			return errors.Annotate(err, "enabled_project_regexps[%d]: %q", i, str).Err()
-		}
-		newREs[i] = re
+		return err
 	}
 	pf.enabledProjectRegexpStrs = reStrs
 	pf.enabledProjectRegexps = newREs

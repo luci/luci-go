@@ -34,6 +34,7 @@ import (
 	"go.chromium.org/luci/cv/internal/changelist"
 	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/gerrit"
+	"go.chromium.org/luci/cv/internal/gerrit/listener"
 )
 
 const (
@@ -85,14 +86,22 @@ func (p *Poller) doOneQuery(ctx context.Context, luciProject string, qs *QuerySt
 	if q.client, err = p.gFactory.MakeClient(ctx, qs.GetHost(), luciProject); err != nil {
 		return err
 	}
-	if qs.GetLastFullTime() == nil {
+
+	// Time to trigger a full-poll?
+	now, lastFull := clock.Now(ctx), qs.GetLastFullTime()
+	if lastFull == nil || now.After(lastFull.AsTime().Add(fullPollInterval)) {
 		return p.doFullQuery(ctx, q)
 	}
-	nextFullAt := qs.GetLastFullTime().AsTime().Add(fullPollInterval)
-	if clock.Now(ctx).Before(nextFullAt) {
-		return p.doIncrementalQuery(ctx, q)
+
+	// If pub/sub is enabled for the project, skip incremental-poll.
+	switch yes, err := listener.IsPubsubEnabled(ctx, luciProject); {
+	case err != nil:
+		return errors.Annotate(err, "listener.IsPubsubEnabled").Err()
+	case yes:
+		return nil
 	}
-	return p.doFullQuery(ctx, q)
+
+	return p.doIncrementalQuery(ctx, q)
 }
 
 func (p *Poller) doFullQuery(ctx context.Context, q singleQuery) error {
