@@ -63,7 +63,7 @@ var Internal = struct {
 			"fetch operation in the updater backend",
 		nil,
 		field.String("requester"),
-		// Whether the CL Update actually mutates the CL entry.
+		// Whether the CL ingestion mutated the CL entry.
 		// If false, it's either
 		// - the CL Update wasn't necessary
 		// - Gerrit API returned stale data
@@ -72,6 +72,8 @@ var Internal = struct {
 		field.Bool("dep"),
 		// The LUCI project
 		field.String("project"),
+		// Whether the CL ingestion mutated the snapshot in the CL entity.
+		field.Bool("changed_snapshot"),
 	),
 	CLIngestionLatency: metric.NewCumulativeDistribution(
 		"cv/internal/changelist/ingestion_latency",
@@ -86,6 +88,7 @@ var Internal = struct {
 		field.String("requester"),
 		field.Bool("dep"),
 		field.String("project"),
+		field.Bool("changed_snapshot"),
 	),
 	CLIngestionLatencyWithoutFetch: metric.NewCumulativeDistribution(
 		"cv/internal/changelist/ingestion_latency_without_fetch",
@@ -101,6 +104,7 @@ var Internal = struct {
 		field.String("requester"),
 		field.Bool("dep"),
 		field.String("project"),
+		field.Bool("changed_snapshot"),
 	),
 	BigQueryExportDelay: metric.NewCumulativeDistribution(
 		"cv/internal/runs/bq_export_delay",

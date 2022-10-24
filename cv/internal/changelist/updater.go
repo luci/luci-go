@@ -174,7 +174,7 @@ func (u UpdateFields) shouldUpdateSnapshot(cl *CL, backend UpdaterBackend) bool 
 }
 
 // Apply applies the UpdatedFields to a given CL.
-func (u UpdateFields) Apply(cl *CL, backend UpdaterBackend) (changed bool) {
+func (u UpdateFields) Apply(cl *CL, backend UpdaterBackend) (changed, changedSnapshot bool) {
 	if u.ApplicableConfig != nil && !cl.ApplicableConfig.SemanticallyEqual(u.ApplicableConfig) {
 		cl.ApplicableConfig = u.ApplicableConfig
 		changed = true
@@ -182,7 +182,7 @@ func (u UpdateFields) Apply(cl *CL, backend UpdaterBackend) (changed bool) {
 
 	if u.shouldUpdateSnapshot(cl, backend) {
 		cl.Snapshot = u.Snapshot
-		changed = true
+		changed, changedSnapshot = true, true
 	}
 
 	switch {
@@ -490,9 +490,9 @@ func (u *Updater) handleCLWithBackend(ctx context.Context, task *UpdateCLTask, c
 	}
 
 	// Transactionally update the CL.
-	var changed bool
+	var changed, changedSnapshot bool
 	transClbk := func(latest *CL) error {
-		if changed = updateFields.Apply(latest, backend); !changed {
+		if changed, changedSnapshot = updateFields.Apply(latest, backend); !changed {
 			// Someone, possibly even us in case of Datastore transaction retry, has
 			// already updated this CL.
 			return ErrStopMutation
@@ -526,15 +526,15 @@ func (u *Updater) handleCLWithBackend(ctx context.Context, task *UpdateCLTask, c
 		}
 		metrics.Internal.CLIngestionLatency.Add(
 			ctx, delay.Seconds(), task.GetRequester().String(), task.GetIsForDep(),
-			task.GetLuciProject())
+			task.GetLuciProject(), changedSnapshot)
 		metrics.Internal.CLIngestionLatencyWithoutFetch.Add(
 			ctx, (delay - fetchDuration).Seconds(), task.GetRequester().String(),
-			task.GetIsForDep(), task.GetLuciProject())
+			task.GetIsForDep(), task.GetLuciProject(), changedSnapshot)
 		fallthrough
 	default:
 		metrics.Internal.CLIngestionAttempted.Add(
 			ctx, 1, task.GetRequester().String(), changed, task.GetIsForDep(),
-			task.GetLuciProject())
+			task.GetLuciProject(), changedSnapshot)
 	}
 	return nil
 }
