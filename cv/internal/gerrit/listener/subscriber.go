@@ -76,8 +76,8 @@ func (s *subscriber) start(ctx context.Context) error {
 		return errors.Reason("subscription %q doesn't exist", s.sub.ID()).Err()
 	}
 
-	cctx, cancel := context.WithCancel(ctx)
-	cctx = logging.SetField(cctx, "subscriptionID", s.sub.ID())
+	subctx, cancel := context.WithCancel(ctx)
+	subctx = logging.SetField(subctx, "subscriptionID", s.sub.ID())
 	s.cancelFunc = cancel
 	s.done = make(chan struct{})
 	ch := make(chan struct{})
@@ -95,24 +95,33 @@ func (s *subscriber) start(ctx context.Context) error {
 		// cancel the context on exit.
 		defer cancel()
 		defer close(s.done)
-		err := s.sub.Receive(cctx, func(ctx context.Context, m *pubsub.Message) {
-			switch err := s.proc.process(ctx, m); {
+		err := s.sub.Receive(subctx, func(pubctx context.Context, m *pubsub.Message) {
+			if pubctx.Err() != nil {
+				logging.Warningf(subctx, "subscriber.process: %s", pubctx.Err())
+				m.Nack()
+				return
+			}
+
+			switch err := s.proc.process(pubctx, m); {
 			case err == nil:
 				m.Ack()
+			case pubctx.Err() != nil:
+				m.Nack()
+				logging.Warningf(subctx, "%s.process: %s", procName, err)
 			case transient.Tag.In(err):
 				m.Nack()
-				logging.Warningf(cctx, "%s.process: transient error %s", procName, err)
+				logging.Warningf(subctx, "%s.process: transient error %s", procName, err)
 			default:
 				// Ack the message, if there is a permanent error, as retry
 				// will unlikely fix the error.
 				//
 				// Full poll should rediscover the lost event.
 				m.Ack()
-				logging.Errorf(cctx, "%s.process: permanent error %s", procName, err)
+				logging.Errorf(subctx, "%s.process: permanent error %s", procName, err)
 			}
 		})
 		if err != nil {
-			// cctx may be no longer valid at this moment.
+			// subctx may be no longer valid at this moment.
 			// use ctx for logging, instead.
 			logging.Errorf(ctx, "subscriber.start.Receive(%s): %s", s.sub.ID(), err)
 		}
