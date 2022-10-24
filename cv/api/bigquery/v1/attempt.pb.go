@@ -409,13 +409,13 @@ type Attempt struct {
 	// While Attempt is processed, CQ may consider more builds than included here.
 	//
 	// For example, the following builds will be not be included:
-	//   * builds triggered before this Attempt started, considered temporarily by
+	//   - builds triggered before this Attempt started, considered temporarily by
 	//     CQ, but then ignored because they ultimately failed such that CQ had to
 	//     trigger new builds instead.
-	//   * successful builds which were fresh enough at the Attempt start time,
+	//   - successful builds which were fresh enough at the Attempt start time,
 	//     but which were ignored after they became too old for consideration such
 	//     that CQ had to trigger new builds instead.
-	//   * builds triggered as part of this Attempt, which were later removed from
+	//   - builds triggered as part of this Attempt, which were later removed from
 	//     project CQ config and hence were no longer required by CQ by Attempt
 	//     end time.
 	Builds []*Build `protobuf:"bytes,8,rep,name=builds,proto3" json:"builds,omitempty"`

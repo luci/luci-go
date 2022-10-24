@@ -222,8 +222,8 @@ type Config struct {
 	// https://luci-change-verifier.appspot.com/ui/recents
 	//
 	// This field accepts the following values:
-	//   * "chromium-cq-status.appspot.com": all Runs in this Project are public.
-	//   * "internal-cq-status.appspot.com": all Runs in this Project are visible
+	//   - "chromium-cq-status.appspot.com": all Runs in this Project are public.
+	//   - "internal-cq-status.appspot.com": all Runs in this Project are visible
 	//     to Googler only.
 	//
 	// Note that the Run details page contains the name of the builders launched
@@ -620,7 +620,7 @@ func (x *Mode) GetTriggeringValue() int32 {
 // https://pdfium-review.googlesource.com may declare dependency on
 // https://chromium-review.googlesource.com/1111111 by adding this footer:
 //
-//    CQ-Depend: chromium:1111111
+//	CQ-Depend: chromium:1111111
 //
 // The "chromium" part means that 1111111 is on the
 // chromium-review.googlesource.com host. It can be omitted if dependency
@@ -723,9 +723,9 @@ type Verifiers struct {
 
 	// Required. GerritCQAbility ensures that a user who triggered
 	// this CQ attempt actually has rights to do so based on 3 factors:
-	//  * membership of the user in committers & dryrunners group,
-	//  * the state of CL/patchset on which CQ is triggered,
-	//  * relationship of the user to the CL.
+	//   - membership of the user in committers & dryrunners group,
+	//   - the state of CL/patchset on which CQ is triggered,
+	//   - relationship of the user to the CL.
 	GerritCqAbility *Verifiers_GerritCQAbility `protobuf:"bytes,1,opt,name=gerrit_cq_ability,json=gerritCqAbility,proto3" json:"gerrit_cq_ability,omitempty"`
 	// This verifier is used to check tree status before committing a CL. If the
 	// tree is closed, then the verifier will wait until it is reopened.
@@ -967,9 +967,10 @@ type ConfigGroup_Gerrit_Project struct {
 	// forcing authentication).
 	//
 	// Examples on https://chromium-review.googlesource.com:
-	//   catapult
-	//   chromium/src
-	//   chromium/tools/depot_tools
+	//
+	//	catapult
+	//	chromium/src
+	//	chromium/tools/depot_tools
 	Name string `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
 	// Limit CLs in this repo to only these refs. Required.
 	//
@@ -1404,8 +1405,9 @@ type Verifiers_Tryjob_Builder struct {
 	// Required. Name of the builder as <project>/<bucket>/<builder>
 	//
 	// Examples:
-	//   "chromium/try/linux-tester"
-	//   "other-project/try/shared-try-builder"
+	//
+	//	"chromium/try/linux-tester"
+	//	"other-project/try/shared-try-builder"
 	Name string `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
 	// If true, this builder will only be used if specified via
 	// `CQ-Include-Trybots:` on CL description.
@@ -1415,14 +1417,15 @@ type Verifiers_Tryjob_Builder struct {
 	//
 	// This is useful if you want individual CLs to opt-in to this builder,
 	// e.g.:
-	//  builder {name: "win-release"}                      # required for all.
-	//  builder {name: "win-debug" includable_only: true}  # opt in only.
+	//
+	//	builder {name: "win-release"}                      # required for all.
+	//	builder {name: "win-debug" includable_only: true}  # opt in only.
 	//
 	// Not combinable with:
-	//   * location_regexp[_exclude]
-	//   * location_filters
-	//   * experiment_percentage
-	//   * triggered_by
+	//   - location_regexp[_exclude]
+	//   - location_filters
+	//   - experiment_percentage
+	//   - triggered_by
 	IncludableOnly bool `protobuf:"varint,9,opt,name=includable_only,json=includableOnly,proto3" json:"includable_only,omitempty"`
 	// Determines how visible the results of a build for this builder are in
 	// Gerrit for this tryjob.
@@ -1461,30 +1464,32 @@ type Verifiers_Tryjob_Builder struct {
 	// Else, CQ will wait for `triggered_by` (parent) builder to trigger
 	// (possibly, indirectly) this (child) builder.
 	// Conditions:
-	//   * `triggered_by` (parent) builder must set a special property
+	//   - `triggered_by` (parent) builder must set a special property
 	//     `triggered_build_ids` upon successful completion with value set
 	//     to a list of triggered Buildbucket build IDs,
 	//     corresponding to each triggered build. One or more of the IDs must
 	//     correspond to this (child) builder, which will then be waited for
 	//     by CQ.
-	//   * parent->child relationship graph must be a forest (set of a trees).
+	//   - parent->child relationship graph must be a forest (set of a trees).
 	//     However, grandparent->parent->child triggering structure isn't well
 	//     tested. Please, talk to CQ maintainers to discuss your use case if you
 	//     actually need it.
 	//
 	// Failure/Retry semantics:
-	//   * If `triggered_by` (parent) builder succeeds, but doesn't set
+	//   - If `triggered_by` (parent) builder succeeds, but doesn't set
 	//     the right `triggered_build_ids` then CQ will wait for this child
 	//     build to complete for as long as parent build result remains valid.
-	//   * If this (child) builder fails and CQ still has retry budget,
+	//   - If this (child) builder fails and CQ still has retry budget,
 	//     CQ will retry a parent builder.
 	//
 	// For example, given config:
-	//   builder { name:         "*/m/mac_compiler" }
-	//   builder { name:         "*/m/mac_tester_10.12"
-	//             triggered_by: "*/m/mac_compiler" }
-	//   builder { name:         "*/m/mac_tester_10.13"
-	//             triggered_by: "*/m/mac_compiler" }
+	//
+	//	builder { name:         "*/m/mac_compiler" }
+	//	builder { name:         "*/m/mac_tester_10.12"
+	//	          triggered_by: "*/m/mac_compiler" }
+	//	builder { name:         "*/m/mac_tester_10.13"
+	//	          triggered_by: "*/m/mac_compiler" }
+	//
 	// CQ will trigger and wait for "mac_compiler" to succeed. Then, it'll
 	// check its `triggered_build_ids` and find which ones correspond to
 	// "mac_tester_10.12" and "mac_tester_10.13" and wait for each to
@@ -1505,11 +1510,11 @@ type Verifiers_Tryjob_Builder struct {
 	// the possibly already completed tryjobs.
 	//
 	// Note:
-	//  * None of the equivalent builders should be part of triggered_by
-	//    chain, although CQ may eventually relax this requirement.
-	//  * The equivalent builders can be included using `CQ-Include-Trybots:`
-	//    footer. In this case, CQ will always try to trigger the equivalent
-	//    builders regardless of the equivalent percentage.
+	//   - None of the equivalent builders should be part of triggered_by
+	//     chain, although CQ may eventually relax this requirement.
+	//   - The equivalent builders can be included using `CQ-Include-Trybots:`
+	//     footer. In this case, CQ will always try to trigger the equivalent
+	//     builders regardless of the equivalent percentage.
 	EquivalentTo *Verifiers_Tryjob_EquivalentBuilder `protobuf:"bytes,5,opt,name=equivalent_to,json=equivalentTo,proto3" json:"equivalent_to,omitempty"`
 	// Optional. Require this builder only if location_regexp matches a file
 	// in this CL.
@@ -1517,16 +1522,18 @@ type Verifiers_Tryjob_Builder struct {
 	// Replaced by location_filters. See crbug.com/1171945.
 	//
 	// This means:
-	//   * If specified and no file in a CL matches any of the
+	//   - If specified and no file in a CL matches any of the
 	//     location_regexp, then CQ will not care about this builder.
-	//   * If a file in a CL matches any location_regexp_exclude, then this
+	//   - If a file in a CL matches any location_regexp_exclude, then this
 	//     file won't be considered when matching location_regexp.
 	//
 	// If location_regexp is not specified (default), builder will be used
 	// on all CLs.
 	//
 	// The location_regexp matches are done against the following string:
-	//   <gerrit_url>/<gerrit_project_name>/+/<cl_file_path>
+	//
+	//	<gerrit_url>/<gerrit_project_name>/+/<cl_file_path>
+	//
 	// File path must be relative to root of the repo, and it uses Unix /
 	// directory separators.
 	//
@@ -1540,27 +1547,28 @@ type Verifiers_Tryjob_Builder struct {
 	//
 	// These options currently can not be combined with the following other
 	// options:
-	//   * triggered_by
-	//   * GerritCQAbility.allow_submit_with_open_deps
+	//   - triggered_by
+	//   - GerritCQAbility.allow_submit_with_open_deps
+	//
 	// If you need to combine them, please talk to CQ owners.
 	//
 	// Examples:
 	//
-	//   location_regexp:
-	//   "https://chromium-review.googlesource.com/chromium/src/[+]/third_party/blink/.+"
-	//     will enable builder for all CLs touching any file in
-	//     third_party/blink directory of the chromium/src repo, but not
-	//     just the directory itself.
+	//	location_regexp:
+	//	"https://chromium-review.googlesource.com/chromium/src/[+]/third_party/blink/.+"
+	//	  will enable builder for all CLs touching any file in
+	//	  third_party/blink directory of the chromium/src repo, but not
+	//	  just the directory itself.
 	//
-	//   location_regexp:         "https://example.com/repo/[+]/.+"
-	//   location_regexp_exclude: "https://example.com/repo/[+]/all/one.txt"
-	//     will match a CL which touches at least one file other than
-	//     'one.txt' inside all/ directory of the Gerrit project "repo".
+	//	location_regexp:         "https://example.com/repo/[+]/.+"
+	//	location_regexp_exclude: "https://example.com/repo/[+]/all/one.txt"
+	//	  will match a CL which touches at least one file other than
+	//	  'one.txt' inside all/ directory of the Gerrit project "repo".
 	//
-	//   location_regexp_exclude: "https://example.com/.+/[+]/one.txt"
-	//     will match a CL which touches at least one file other than
-	//     'one.txt' in any repository OR belongs to any other Gerrit server.
-	//     Note, in this case location_regexp defaults to ".*".
+	//	location_regexp_exclude: "https://example.com/.+/[+]/one.txt"
+	//	  will match a CL which touches at least one file other than
+	//	  'one.txt' in any repository OR belongs to any other Gerrit server.
+	//	  Note, in this case location_regexp defaults to ".*".
 	//
 	// Deprecated: Do not use.
 	LocationRegexp []string `protobuf:"bytes,6,rep,name=location_regexp,json=locationRegexp,proto3" json:"location_regexp,omitempty"`
@@ -1724,11 +1732,12 @@ type Verifiers_Tryjob_EquivalentBuilder struct {
 	// triggered by CQ, but an existing build can be re-used by CQ.
 	//
 	// To illustrate, suppose percentage=10. Then,
-	//   Without owner_whitelist_group,
-	//      ~10% of all CQ attempts will trigger this builder.
-	//   With owner_whitelist_group set and, suppose, 1/5 of CQ attempts are
-	//      ran on CLs owned by this group, then only ~(1/10)*(1/5) or
-	//      ~2% of all CQ attempts will trigger this builder.
+	//
+	//	Without owner_whitelist_group,
+	//	   ~10% of all CQ attempts will trigger this builder.
+	//	With owner_whitelist_group set and, suppose, 1/5 of CQ attempts are
+	//	   ran on CLs owned by this group, then only ~(1/10)*(1/5) or
+	//	   ~2% of all CQ attempts will trigger this builder.
 	Percentage float32 `protobuf:"fixed32,2,opt,name=percentage,proto3" json:"percentage,omitempty"`
 	// If specified, limits the builder to CL owners in this group.
 	OwnerWhitelistGroup string `protobuf:"bytes,3,opt,name=owner_whitelist_group,json=ownerWhitelistGroup,proto3" json:"owner_whitelist_group,omitempty"`
@@ -1976,32 +1985,33 @@ func (x *Verifiers_Tryjob_RetryConfig) GetTimeoutWeight() int32 {
 //
 // These options currently can not be combined with the following other
 // options:
-//   * triggered_by
-//   * GerritCQAbility.allow_submit_with_open_deps
+//   - triggered_by
+//   - GerritCQAbility.allow_submit_with_open_deps
+//
 // If you need to combine them, please talk to LUCI CV owners.
 // (https://chromium.googlesource.com/infra/luci/luci-go/+/HEAD/cv/OWNERS)
 //
 // Examples:
 //
-//   location_filters: {path_regexp: "excluded/.+", exclude: true}
-//   location_filters: {path_regexp: "excluded/exception", exclude: false}
+//	location_filters: {path_regexp: "excluded/.+", exclude: true}
+//	location_filters: {path_regexp: "excluded/exception", exclude: false}
 //
-//     Result: files outside of the "excluded" directory will be
-//     included, and so will "excluded/exception" will, but other files
-//     in the "excluded" directory will not match.
+//	  Result: files outside of the "excluded" directory will be
+//	  included, and so will "excluded/exception" will, but other files
+//	  in the "excluded" directory will not match.
 //
-//   location_filters: {path_regexp: ".*", exclude: false} // include all by default
-//   location_filters: {host_regexp: "example.com",
-//                      project_regexp: "repo",
-//                      exclude: true}
-//   location_filters: {host_regexp: "example.com",
-//                      project_regexp: "repo",
-//                      path_regexp: "all/one.txt",
-//                      exclude: false}
+//	location_filters: {path_regexp: ".*", exclude: false} // include all by default
+//	location_filters: {host_regexp: "example.com",
+//	                   project_regexp: "repo",
+//	                   exclude: true}
+//	location_filters: {host_regexp: "example.com",
+//	                   project_regexp: "repo",
+//	                   path_regexp: "all/one.txt",
+//	                   exclude: false}
 //
-//     Result: files in the specified host and repo will not be included,
-//     except all/one.txt which will be included; files outside of the
-//     given host/repo will be included.
+//	  Result: files in the specified host and repo will not be included,
+//	  except all/one.txt which will be included; files outside of the
+//	  given host/repo will be included.
 type Verifiers_Tryjob_Builder_LocationFilter struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -2089,6 +2099,7 @@ type UserLimit_Limit struct {
 	// Required. value must be > 0, unless unlimited is set to True.
 	//
 	// Types that are assignable to Limit:
+	//
 	//	*UserLimit_Limit_Value
 	//	*UserLimit_Limit_Unlimited
 	Limit isUserLimit_Limit_Limit `protobuf_oneof:"limit"`

@@ -321,8 +321,9 @@ type Output_Reuse struct {
 	// Implicitly wrapped with (?i)^...$  (= complete case-insensitive match).
 	//
 	// For example,
-	//   ".+" will match all modes of Runs,
-	//   "dryrun" and "fullrun" will match only Dry and Full runs, respectively.
+	//
+	//	".+" will match all modes of Runs,
+	//	"dryrun" and "fullrun" will match only Dry and Full runs, respectively.
 	ModeRegexp string `protobuf:"bytes,1,opt,name=mode_regexp,json=modeRegexp,proto3" json:"mode_regexp,omitempty"`
 	// If deny is true, then reuse of this build in the future Runs of the
 	// matched mode is not allowed.

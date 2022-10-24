@@ -54,11 +54,11 @@ const (
 	// Run is waiting for submission.
 	//
 	// Run is in this status if one of the following scenario is true:
-	//   1. Tree is closed at the time Run attempts to submit.
-	//   2. There is another Run in the same LUCI Project that is currently
-	//      submitting.
-	//   3. The submission is rate limited according to the submit option in
-	//      Project Config.
+	//  1. Tree is closed at the time Run attempts to submit.
+	//  2. There is another Run in the same LUCI Project that is currently
+	//     submitting.
+	//  3. The submission is rate limited according to the submit option in
+	//     Project Config.
 	//
 	// This status is cancellable.
 	Status_WAITING_FOR_SUBMISSION Status = 4
@@ -655,6 +655,7 @@ type LogEntry struct {
 	// Time is when something was changed.
 	Time *timestamppb.Timestamp `protobuf:"bytes,1,opt,name=time,proto3" json:"time,omitempty"`
 	// Types that are assignable to Kind:
+	//
 	//	*LogEntry_Created_
 	//	*LogEntry_Started_
 	//	*LogEntry_ConfigChanged_
@@ -913,14 +914,15 @@ type Tryjobs struct {
 	//
 	// It is typically set when the existing requirement is executing and waiting
 	// to be cancelled. For example:
-	//  T0: Run starts and computes the requirement. A long op task is executing
-	//      the requirement.
-	//  T1: A new config is ingested and results in a new requirement. RM
-	//      requests a cancellation for the long op task and set the new
-	//      requirement to this field.
-	//  T2: The long op task is successfully cancelled. RM promotes the
-	//      staging requirement to requirement and enqueue a new long op task to
-	//      execute the new requirement.
+	//
+	//	T0: Run starts and computes the requirement. A long op task is executing
+	//	    the requirement.
+	//	T1: A new config is ingested and results in a new requirement. RM
+	//	    requests a cancellation for the long op task and set the new
+	//	    requirement to this field.
+	//	T2: The long op task is successfully cancelled. RM promotes the
+	//	    staging requirement to requirement and enqueue a new long op task to
+	//	    execute the new requirement.
 	StagingRequirement *tryjob.Requirement `protobuf:"bytes,4,opt,name=staging_requirement,json=stagingRequirement,proto3" json:"staging_requirement,omitempty"`
 	// RequirementVersion increments by 1 every time this requirement changes.
 	//
@@ -1059,8 +1061,8 @@ type Tryjob struct {
 	// Reused is true, if this tryjob wasn't triggered by CV for this Run.
 	//
 	// In other words, either:
-	//  * tryjob was triggered by CV for a previous Run
-	//  * tryjob was triggered by non-CV.
+	//   - tryjob was triggered by CV for a previous Run
+	//   - tryjob was triggered by non-CV.
 	Reused bool `protobuf:"varint,6,opt,name=reused,proto3" json:"reused,omitempty"`
 	// If true, indicates this tryjob must pass in order for the Run to be
 	// considered successful.
@@ -1811,6 +1813,7 @@ type OngoingLongOps_Op struct {
 	// possible.
 	CancelRequested bool `protobuf:"varint,2,opt,name=cancel_requested,json=cancelRequested,proto3" json:"cancel_requested,omitempty"`
 	// Types that are assignable to Work:
+	//
 	//	*OngoingLongOps_Op_PostStartMessage
 	//	*OngoingLongOps_Op_CancelTriggers
 	//	*OngoingLongOps_Op_ExecuteTryjobs

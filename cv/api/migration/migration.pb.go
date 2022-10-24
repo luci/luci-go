@@ -307,8 +307,8 @@ type PostGerritMessageRequest struct {
 	// String comment to post.
 	Comment string `protobuf:"bytes,13,opt,name=comment,proto3" json:"comment,omitempty"`
 	// If true, send email to:
-	//   * OWNER_REVIEWERS if full run
-	//   * OWNER+all CQ voters if dry run
+	//   - OWNER_REVIEWERS if full run
+	//   - OWNER+all CQ voters if dry run
 	SendEmail bool `protobuf:"varint,14,opt,name=send_email,json=sendEmail,proto3" json:"send_email,omitempty"`
 }
 

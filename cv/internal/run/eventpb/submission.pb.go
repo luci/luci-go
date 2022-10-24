@@ -103,6 +103,7 @@ type SubmissionCompleted struct {
 	Result                SubmissionResult       `protobuf:"varint,1,opt,name=result,proto3,enum=cv.internal.run.eventpb.SubmissionResult" json:"result,omitempty"`
 	QueueReleaseTimestamp *timestamppb.Timestamp `protobuf:"bytes,5,opt,name=queue_release_timestamp,json=queueReleaseTimestamp,proto3" json:"queue_release_timestamp,omitempty"`
 	// Types that are assignable to FailureReason:
+	//
 	//	*SubmissionCompleted_Timeout
 	//	*SubmissionCompleted_ClFailures
 	FailureReason isSubmissionCompleted_FailureReason `protobuf_oneof:"failure_reason"`

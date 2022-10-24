@@ -44,6 +44,7 @@ type Event struct {
 	unknownFields protoimpl.UnknownFields
 
 	// Types that are assignable to Event:
+	//
 	//	*Event_Start
 	//	*Event_Cancel
 	//	*Event_Poke

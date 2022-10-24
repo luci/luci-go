@@ -260,6 +260,7 @@ type Definition struct {
 	unknownFields protoimpl.UnknownFields
 
 	// Types that are assignable to Backend:
+	//
 	//	*Definition_Buildbucket_
 	Backend isDefinition_Backend `protobuf_oneof:"backend"`
 	// If set, existing tryjob matching this definition is deemed equivalent
@@ -288,7 +289,9 @@ type Definition struct {
 	// footer).
 	Experimental bool `protobuf:"varint,7,opt,name=experimental,proto3" json:"experimental,omitempty"`
 	// If set to restricted, CV should only post generic messages such as
-	//   "Build failed: https://ci.chromium.org/b/1234"
+	//
+	//	"Build failed: https://ci.chromium.org/b/1234"
+	//
 	// and no summary markdown about tryjobs with this definition.
 	ResultVisibility v2.CommentLevel `protobuf:"varint,6,opt,name=result_visibility,json=resultVisibility,proto3,enum=cv.config.CommentLevel" json:"result_visibility,omitempty"`
 }
@@ -485,6 +488,7 @@ type Result struct {
 	// Backend houses backend-specific output.
 	//
 	// Types that are assignable to Backend:
+	//
 	//	*Result_Buildbucket_
 	Backend isResult_Backend `protobuf_oneof:"backend"`
 }
@@ -720,6 +724,7 @@ type ExecutionLogEntry struct {
 	// Time is when the event occurs.
 	Time *timestamppb.Timestamp `protobuf:"bytes,1,opt,name=time,proto3" json:"time,omitempty"`
 	// Types that are assignable to Kind:
+	//
 	//	*ExecutionLogEntry_RequirementChanged_
 	//	*ExecutionLogEntry_TryjobsLaunched_
 	//	*ExecutionLogEntry_TryjobsLaunchFailed_
@@ -1175,8 +1180,8 @@ type ExecutionState_Execution_Attempt struct {
 	// by CV for this Run specifically.
 	//
 	// In other words, either:
-	//  * the Tryjob was triggered by CV for a previous Run, or
-	//  * the Tryjob was triggered by non-CV (e.g. `git cl try`).
+	//   - the Tryjob was triggered by CV for a previous Run, or
+	//   - the Tryjob was triggered by non-CV (e.g. `git cl try`).
 	Reused bool `protobuf:"varint,5,opt,name=reused,proto3" json:"reused,omitempty"`
 	// Children Tryjobs indirectly triggered by CV.
 	Children []*ExecutionState_Execution_Attempt_Child `protobuf:"bytes,6,rep,name=children,proto3" json:"children,omitempty"`

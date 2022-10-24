@@ -20,8 +20,6 @@ option go_package = "go.chromium.org/luci/cv/internal/prjmanager/prjpb;prjpb";
 
 import "google/protobuf/timestamp.proto";
 
-import "go.chromium.org/luci/cv/internal/changelist/storage.proto";
-import "go.chromium.org/luci/cv/internal/run/storage.proto";
 import "go.chromium.org/luci/cv/internal/prjmanager/prjpb/storage.proto";
 
 

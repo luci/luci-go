@@ -52,11 +52,11 @@ const (
 	// Run is waiting for submission.
 	//
 	// Run is in this status if one of the following scenario is true:
-	//   1. Tree is closed at the time Run attempts to submit.
-	//   2. There is another Run in the same LUCI Project that is currently
-	//      submitting.
-	//   3. The submission is rate limited according to the submit option in
-	//      Project Config.
+	//  1. Tree is closed at the time Run attempts to submit.
+	//  2. There is another Run in the same LUCI Project that is currently
+	//     submitting.
+	//  3. The submission is rate limited according to the submit option in
+	//     Project Config.
 	//
 	// This status is cancellable.
 	Run_WAITING_FOR_SUBMISSION Run_Status = 4

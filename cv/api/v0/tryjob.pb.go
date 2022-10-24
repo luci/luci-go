@@ -273,6 +273,7 @@ type Tryjob_Result struct {
 	// Backend houses backend-specific output.
 	//
 	// Types that are assignable to Backend:
+	//
 	//	*Tryjob_Result_Buildbucket_
 	Backend isTryjob_Result_Backend `protobuf_oneof:"backend"`
 }

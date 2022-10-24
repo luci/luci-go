@@ -42,6 +42,7 @@ type Event struct {
 	unknownFields protoimpl.UnknownFields
 
 	// Types that are assignable to Event:
+	//
 	//	*Event_NewConfig
 	//	*Event_Poke
 	//	*Event_ClsUpdated

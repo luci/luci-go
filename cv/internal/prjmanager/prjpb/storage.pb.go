@@ -271,12 +271,12 @@ type PState struct {
 	//
 	// In response to OnRunCreated event, PM may append to this list new Runs if
 	// either:
-	//   * not all Run's CLs are already known to PM;
-	//   * Run's CLs are currently partitioned into different components.
+	//   - not all Run's CLs are already known to PM;
+	//   - Run's CLs are currently partitioned into different components.
 	//
 	// Thus,
-	//   * CLs referenced by these PRuns may not be tracked;
-	//   * If this field is not empty, re-partioning may be required.
+	//   - CLs referenced by these PRuns may not be tracked;
+	//   - If this field is not empty, re-partioning may be required.
 	CreatedPruns []*PRun `protobuf:"bytes,22,rep,name=created_pruns,json=createdPruns,proto3" json:"created_pruns,omitempty"`
 	// If set, establishes when components should be re-evaluated.
 	NextEvalTime *timestamppb.Timestamp `protobuf:"bytes,23,opt,name=next_eval_time,json=nextEvalTime,proto3" json:"next_eval_time,omitempty"`
@@ -457,9 +457,9 @@ type PCL struct {
 	// to track multiple triggers.
 	//
 	// It may be empty if CL is not triggered but nevertheless tracked as either:
-	//  * a dependency of another CL.
-	//  * previously triggered member of an incomplete Run, which is probably
-	//    being finalized right now by its Run Manager.
+	//   - a dependency of another CL.
+	//   - previously triggered member of an incomplete Run, which is probably
+	//     being finalized right now by its Run Manager.
 	//
 	// Doesn't store email nor Gerrit account ID.
 	Triggers *run.Triggers `protobuf:"bytes,16,opt,name=triggers,proto3" json:"triggers,omitempty"`
@@ -777,6 +777,7 @@ type PurgingCL struct {
 	// What trigger(s) are being purged.
 	//
 	// Types that are assignable to ApplyTo:
+	//
 	//	*PurgingCL_Triggers
 	//	*PurgingCL_AllActiveTriggers
 	ApplyTo isPurgingCL_ApplyTo `protobuf_oneof:"apply_to"`
@@ -889,6 +890,7 @@ type PurgeReason struct {
 	// What trigger(s) the error above applies to.
 	//
 	// Types that are assignable to ApplyTo:
+	//
 	//	*PurgeReason_Triggers
 	//	*PurgeReason_AllActiveTriggers
 	ApplyTo isPurgeReason_ApplyTo `protobuf_oneof:"apply_to"`

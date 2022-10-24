@@ -45,15 +45,15 @@ type MigrationClient interface {
 	// (etag like) updates.
 	//
 	// Use-cases:
-	//  * CQDaemon linter posting a warning/error.
-	//  * GerritCQAbility verifier posting error on each of Run's CL before
-	//    failing entire attempt.
+	//   - CQDaemon linter posting a warning/error.
+	//   - GerritCQAbility verifier posting error on each of Run's CL before
+	//     failing entire attempt.
 	//
 	// Error handling:
-	//  * If presumably transient Gerrit error, fails with Internal error (for
-	//    simplicity). CQDaemon will have to retry.
-	//  * If Gerrit error is 403, 404 or 412 (Precondition error), responds with
-	//    corresponding gRPC code.
+	//   - If presumably transient Gerrit error, fails with Internal error (for
+	//     simplicity). CQDaemon will have to retry.
+	//   - If Gerrit error is 403, 404 or 412 (Precondition error), responds with
+	//     corresponding gRPC code.
 	PostGerritMessage(ctx context.Context, in *PostGerritMessageRequest, opts ...grpc.CallOption) (*PostGerritMessageResponse, error)
 	// FetchActiveRuns returns all currently RUNNING runs in CV for the given
 	// project.
@@ -141,15 +141,15 @@ type MigrationServer interface {
 	// (etag like) updates.
 	//
 	// Use-cases:
-	//  * CQDaemon linter posting a warning/error.
-	//  * GerritCQAbility verifier posting error on each of Run's CL before
-	//    failing entire attempt.
+	//   - CQDaemon linter posting a warning/error.
+	//   - GerritCQAbility verifier posting error on each of Run's CL before
+	//     failing entire attempt.
 	//
 	// Error handling:
-	//  * If presumably transient Gerrit error, fails with Internal error (for
-	//    simplicity). CQDaemon will have to retry.
-	//  * If Gerrit error is 403, 404 or 412 (Precondition error), responds with
-	//    corresponding gRPC code.
+	//   - If presumably transient Gerrit error, fails with Internal error (for
+	//     simplicity). CQDaemon will have to retry.
+	//   - If Gerrit error is 403, 404 or 412 (Precondition error), responds with
+	//     corresponding gRPC code.
 	PostGerritMessage(context.Context, *PostGerritMessageRequest) (*PostGerritMessageResponse, error)
 	// FetchActiveRuns returns all currently RUNNING runs in CV for the given
 	// project.

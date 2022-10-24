@@ -198,10 +198,10 @@ func (x *Settings_ApiHost) GetProd() bool {
 // when starting the Run.
 //
 // The project is opted to CV status if and only if all 3 hold:
-//  * project matches at least one project_regexp.
-//  * project matches no project_regexp_exclude.
-//  * project matches exactly one ApiHost overall OR exactly one with
-//    prod=true.
+//   - project matches at least one project_regexp.
+//   - project matches no project_regexp_exclude.
+//   - project matches exactly one ApiHost overall OR exactly one with
+//     prod=true.
 type Settings_UseCVStatus struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -260,10 +260,10 @@ func (x *Settings_UseCVStatus) GetProjectRegexpExclude() []string {
 // Post starting message in CV.
 //
 // The project is opted to CV posting starting message if and only if all 3 hold:
-//  * project matches at least one project_regexp.
-//  * project matches no project_regexp_exclude.
-//  * project matches exactly one ApiHost overall OR exactly one with
-//    prod=true.
+//   - project matches at least one project_regexp.
+//   - project matches no project_regexp_exclude.
+//   - project matches exactly one ApiHost overall OR exactly one with
+//     prod=true.
 type Settings_UseCVStartMessage struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -322,10 +322,10 @@ func (x *Settings_UseCVStartMessage) GetProjectRegexpExclude() []string {
 // Use the Tryjob Executor in CV to handle Tryjobs.
 //
 // The project is opted to CV handling tryjobs if and only if all 3 hold:
-//  * project matches at least one project_regexp.
-//  * project matches no project_regexp_exclude.
-//  * project matches exactly one ApiHost overall OR exactly one with
-//    prod=true.
+//   - project matches at least one project_regexp.
+//   - project matches no project_regexp_exclude.
+//   - project matches exactly one ApiHost overall OR exactly one with
+//     prod=true.
 type Settings_UseCVTryjobExecutor struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache

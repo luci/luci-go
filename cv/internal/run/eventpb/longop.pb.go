@@ -110,6 +110,7 @@ type LongOpCompleted struct {
 	// Status of the long operation.
 	Status LongOpCompleted_Status `protobuf:"varint,2,opt,name=status,proto3,enum=cv.internal.run.eventpb.LongOpCompleted_Status" json:"status,omitempty"`
 	// Types that are assignable to Result:
+	//
 	//	*LongOpCompleted_PostStartMessage_
 	//	*LongOpCompleted_CancelTriggers_
 	//	*LongOpCompleted_ExecuteTryjobs
@@ -339,6 +340,7 @@ type LongOpCompleted_CancelTriggers_Result struct {
 	// The external id of the CL.
 	ExternalId string `protobuf:"bytes,2,opt,name=external_id,json=externalId,proto3" json:"external_id,omitempty"`
 	// Types that are assignable to Detail:
+	//
 	//	*LongOpCompleted_CancelTriggers_Result_SuccessInfo
 	//	*LongOpCompleted_CancelTriggers_Result_FailureInfo
 	Detail isLongOpCompleted_CancelTriggers_Result_Detail `protobuf_oneof:"detail"`
