@@ -62,6 +62,10 @@ message Buildbucket {
   //
   // By default, led will populate this with "build.proto.json".
   string final_build_proto_path = 11;
+
+  // Indicates that this build should be generated as a real buildbucket build
+  // instead of a raw swarming task.
+  bool real_build = 12;
 }
 
 // Swarming is the raw TaskRequest. When a Definition is in this form, the

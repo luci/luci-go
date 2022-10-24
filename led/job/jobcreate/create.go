@@ -52,6 +52,21 @@ func detectMode(r *swarming.SwarmingRpcsNewTaskRequest) string {
 	return "raw"
 }
 
+// setPriority mutates the provided build to set the priority of its underlying
+// swarming task.
+//
+// The priority for buildbucket type tasks is between 20 to 255.
+func setPriority(build *bbpb.Build, priorityDiff int) {
+	switch priority := build.Infra.Swarming.Priority + int32(priorityDiff); {
+	case priority < 20:
+		build.Infra.Swarming.Priority = 20
+	case priority > 255:
+		build.Infra.Swarming.Priority = 255
+	default:
+		build.Infra.Swarming.Priority = priority
+	}
+}
+
 // FromNewTaskRequest generates a new job.Definition by parsing the
 // given SwarmingRpcsNewTaskRequest.
 //
@@ -117,15 +132,7 @@ func FromNewTaskRequest(ctx context.Context, r *swarming.SwarmingRpcsNewTaskRequ
 		// set all buildbucket type tasks to experimental by default.
 		bb.BbagentArgs.Build.Input.Experimental = true
 
-		// the priority for buildbucket type tasks is between 20 to 255.
-		switch priority := bb.BbagentArgs.Build.Infra.Swarming.Priority + int32(priorityDiff); {
-		case priority < 20:
-			bb.BbagentArgs.Build.Infra.Swarming.Priority = 20
-		case priority > 255:
-			bb.BbagentArgs.Build.Infra.Swarming.Priority = 255
-		default:
-			bb.BbagentArgs.Build.Infra.Swarming.Priority = priority
-		}
+		setPriority(bb.BbagentArgs.Build, priorityDiff)
 
 		// clear fields which don't make sense
 		bb.BbagentArgs.Build.CanceledBy = ""
@@ -312,4 +319,39 @@ func bbagentArgsFromBuild(bld *bbpb.Build) *bbpb.BBAgentArgs {
 		KnownPublicGerritHosts: bld.Infra.Buildbucket.KnownPublicGerritHosts,
 		Build:                  bld,
 	}
+}
+
+// FromBuild generates a new job.Definition using the provided Build.
+func FromBuild(build *bbpb.Build, name string, priorityDiff int, extraTags []string) *job.Definition {
+	ret := &job.Definition{}
+
+	setPriority(build, priorityDiff)
+
+	// Attach tags.
+	tags := build.Tags
+	tags = append(tags, &bbpb.StringPair{
+		Key:   "led-job-name",
+		Value: name,
+	})
+	for _, tag := range extraTags {
+		k, v := strpair.Parse(tag)
+		tags = append(tags, &bbpb.StringPair{
+			Key:   k,
+			Value: v,
+		})
+	}
+	sort.Slice(tags, func(i, j int) bool { return tags[i].Key < tags[j].Key })
+	build.Tags = tags
+
+	ret.JobType = &job.Definition_Buildbucket{
+		Buildbucket: &job.Buildbucket{
+			Name: name,
+			BbagentArgs: &bbpb.BBAgentArgs{
+				Build: build,
+			},
+			RealBuild: true,
+		},
+	}
+
+	return ret
 }

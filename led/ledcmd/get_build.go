@@ -24,7 +24,9 @@ import (
 	bbpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
+
 	"go.chromium.org/luci/led/job"
+	"go.chromium.org/luci/led/job/jobcreate"
 )
 
 // GetBuildOpts are the options for GetBuild.
@@ -34,14 +36,24 @@ type GetBuildOpts struct {
 	PinBotID        bool
 	PriorityDiff    int
 	KitchenSupport  job.KitchenSupport
+	RealBuild       bool
+}
+
+func getBuildJobName(opts GetBuildOpts) string {
+	return fmt.Sprintf("get-build %d", opts.BuildID)
 }
 
 // GetBuild retrieves a job Definition from a Buildbucket build.
 func GetBuild(ctx context.Context, authClient *http.Client, opts GetBuildOpts) (*job.Definition, error) {
 	logging.Infof(ctx, "getting build definition")
-	bbucket := newBuildbucketClient(authClient, opts.BuildbucketHost)
 
-	answer, err := bbucket.GetBuild(ctx, &bbpb.GetBuildRequest{
+	if opts.RealBuild {
+		return synthesizeBuildFromTemplate(ctx, authClient, opts)
+	}
+
+	bbClient := newBuildbucketClient(authClient, opts.BuildbucketHost)
+
+	answer, err := bbClient.GetBuild(ctx, &bbpb.GetBuildRequest{
 		Id: opts.BuildID,
 		Mask: &bbpb.BuildMask{
 			Fields: &fieldmaskpb.FieldMask{
@@ -78,8 +90,19 @@ func GetBuild(ctx context.Context, authClient *http.Client, opts GetBuildOpts) (
 		SwarmingHost:   swarmingHostname,
 		TaskID:         swarmingTaskID,
 		PinBotID:       opts.PinBotID,
-		Name:           fmt.Sprintf("get-build %d", opts.BuildID),
+		Name:           getBuildJobName(opts),
 		PriorityDiff:   opts.PriorityDiff,
 		KitchenSupport: opts.KitchenSupport,
 	})
+}
+
+func synthesizeBuildFromTemplate(ctx context.Context, authClient *http.Client, opts GetBuildOpts) (*job.Definition, error) {
+	bbClient := newBuildbucketClient(authClient, opts.BuildbucketHost)
+	build, err := bbClient.SynthesizeBuild(ctx, &bbpb.SynthesizeBuildRequest{
+		TemplateBuildId: opts.BuildID,
+	})
+	if err != nil {
+		return nil, err
+	}
+	return jobcreate.FromBuild(build, getBuildJobName(opts), opts.PriorityDiff, nil), nil
 }

@@ -21,6 +21,7 @@ import (
 	"net/http"
 	"strings"
 
+	bbpb "go.chromium.org/luci/buildbucket/proto"
 	swarmbucket "go.chromium.org/luci/common/api/buildbucket/swarmbucket/v1"
 	swarming "go.chromium.org/luci/common/api/swarming/swarming/v1"
 	"go.chromium.org/luci/common/retry/transient"
@@ -31,6 +32,7 @@ import (
 // GetBuildersOpts are the options for GetBuilder.
 type GetBuildersOpts struct {
 	BuildbucketHost string
+	Project         string
 	Bucket          string
 	Builder         string
 	Canary          bool
@@ -38,10 +40,19 @@ type GetBuildersOpts struct {
 	PriorityDiff    int
 
 	KitchenSupport job.KitchenSupport
+	RealBuild      bool
+}
+
+func getBuilderJobName(opts GetBuildersOpts) string {
+	return fmt.Sprintf(`get-builder %s:%s`, opts.Bucket, opts.Builder)
 }
 
 // GetBuilder retrieves a new job Definition from a Buildbucket builder.
 func GetBuilder(ctx context.Context, authClient *http.Client, opts GetBuildersOpts) (*job.Definition, error) {
+	if opts.RealBuild {
+		return synthesizeBuildFromBuilder(ctx, authClient, opts)
+	}
+
 	if opts.KitchenSupport == nil {
 		opts.KitchenSupport = job.NoKitchenSupport()
 	}
@@ -83,7 +94,7 @@ func GetBuilder(ctx context.Context, authClient *http.Client, opts GetBuildersOp
 	}
 
 	jd, err := jobcreate.FromNewTaskRequest(
-		ctx, newTask, fmt.Sprintf(`get-builder %s:%s`, opts.Bucket, opts.Builder),
+		ctx, newTask, getBuilderJobName(opts),
 		answer.SwarmingHost, opts.KitchenSupport, opts.PriorityDiff, nil, opts.ExtraTags, authClient)
 	if err != nil {
 		return nil, err
@@ -94,4 +105,19 @@ func GetBuilder(ctx context.Context, authClient *http.Client, opts GetBuildersOp
 	}
 
 	return jd, nil
+}
+
+func synthesizeBuildFromBuilder(ctx context.Context, authClient *http.Client, opts GetBuildersOpts) (*job.Definition, error) {
+	bbClient := newBuildbucketClient(authClient, opts.BuildbucketHost)
+	build, err := bbClient.SynthesizeBuild(ctx, &bbpb.SynthesizeBuildRequest{
+		Builder: &bbpb.BuilderID{
+			Project: opts.Project,
+			Bucket:  opts.Bucket,
+			Builder: opts.Builder,
+		},
+	})
+	if err != nil {
+		return nil, err
+	}
+	return jobcreate.FromBuild(build, getBuilderJobName(opts), opts.PriorityDiff, opts.ExtraTags), nil
 }
