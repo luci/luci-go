@@ -460,6 +460,9 @@ func TestScheduleBuild(t *testing.T) {
 							Buildbucket: &pb.BuildInfra_Buildbucket{
 								Agent: &pb.BuildInfra_Buildbucket_Agent{
 									Input: &pb.BuildInfra_Buildbucket_Agent_Input{},
+									Purposes: map[string]pb.BuildInfra_Buildbucket_Agent_Purpose{
+										"kitchen-checkout": pb.BuildInfra_Buildbucket_Agent_PURPOSE_EXE_PAYLOAD,
+									},
 								},
 							},
 							Logdog: &pb.BuildInfra_LogDog{
@@ -577,6 +580,9 @@ func TestScheduleBuild(t *testing.T) {
 							Buildbucket: &pb.BuildInfra_Buildbucket{
 								Agent: &pb.BuildInfra_Buildbucket_Agent{
 									Input: &pb.BuildInfra_Buildbucket_Agent_Input{},
+									Purposes: map[string]pb.BuildInfra_Buildbucket_Agent_Purpose{
+										"kitchen-checkout": pb.BuildInfra_Buildbucket_Agent_PURPOSE_EXE_PAYLOAD,
+									},
 								},
 							},
 							Logdog: &pb.BuildInfra_LogDog{
@@ -680,6 +686,9 @@ func TestScheduleBuild(t *testing.T) {
 							Hostname: "app.appspot.com",
 							Agent: &pb.BuildInfra_Buildbucket_Agent{
 								Input: &pb.BuildInfra_Buildbucket_Agent_Input{},
+								Purposes: map[string]pb.BuildInfra_Buildbucket_Agent_Purpose{
+									"kitchen-checkout": pb.BuildInfra_Buildbucket_Agent_PURPOSE_EXE_PAYLOAD,
+								},
 							},
 						},
 						Logdog: &pb.BuildInfra_LogDog{
@@ -834,6 +843,9 @@ func TestScheduleBuild(t *testing.T) {
 							Hostname: "app.appspot.com",
 							Agent: &pb.BuildInfra_Buildbucket_Agent{
 								Input: &pb.BuildInfra_Buildbucket_Agent_Input{},
+								Purposes: map[string]pb.BuildInfra_Buildbucket_Agent_Purpose{
+									"kitchen-checkout": pb.BuildInfra_Buildbucket_Agent_PURPOSE_EXE_PAYLOAD,
+								},
 							},
 						},
 						Logdog: &pb.BuildInfra_LogDog{
@@ -899,6 +911,9 @@ func TestScheduleBuild(t *testing.T) {
 							Hostname: "app.appspot.com",
 							Agent: &pb.BuildInfra_Buildbucket_Agent{
 								Input: &pb.BuildInfra_Buildbucket_Agent_Input{},
+								Purposes: map[string]pb.BuildInfra_Buildbucket_Agent_Purpose{
+									"kitchen-checkout": pb.BuildInfra_Buildbucket_Agent_PURPOSE_EXE_PAYLOAD,
+								},
 							},
 						},
 						Logdog: &pb.BuildInfra_LogDog{
@@ -964,6 +979,9 @@ func TestScheduleBuild(t *testing.T) {
 							Hostname: "app.appspot.com",
 							Agent: &pb.BuildInfra_Buildbucket_Agent{
 								Input: &pb.BuildInfra_Buildbucket_Agent_Input{},
+								Purposes: map[string]pb.BuildInfra_Buildbucket_Agent_Purpose{
+									"kitchen-checkout": pb.BuildInfra_Buildbucket_Agent_PURPOSE_EXE_PAYLOAD,
+								},
 							},
 						},
 						Logdog: &pb.BuildInfra_LogDog{
@@ -1154,6 +1172,9 @@ func TestScheduleBuild(t *testing.T) {
 							Hostname: "app.appspot.com",
 							Agent: &pb.BuildInfra_Buildbucket_Agent{
 								Input: &pb.BuildInfra_Buildbucket_Agent_Input{},
+								Purposes: map[string]pb.BuildInfra_Buildbucket_Agent_Purpose{
+									"kitchen-checkout": pb.BuildInfra_Buildbucket_Agent_PURPOSE_EXE_PAYLOAD,
+								},
 							},
 						},
 						Logdog: &pb.BuildInfra_LogDog{
@@ -1355,6 +1376,9 @@ func TestScheduleBuild(t *testing.T) {
 							Hostname: "app.appspot.com",
 							Agent: &pb.BuildInfra_Buildbucket_Agent{
 								Input: &pb.BuildInfra_Buildbucket_Agent_Input{},
+								Purposes: map[string]pb.BuildInfra_Buildbucket_Agent_Purpose{
+									"kitchen-checkout": pb.BuildInfra_Buildbucket_Agent_PURPOSE_EXE_PAYLOAD,
+								},
 							},
 						},
 						Logdog: &pb.BuildInfra_LogDog{
@@ -4976,6 +5000,9 @@ func TestScheduleBuild(t *testing.T) {
 							Buildbucket: &pb.BuildInfra_Buildbucket{
 								Agent: &pb.BuildInfra_Buildbucket_Agent{
 									Input: &pb.BuildInfra_Buildbucket_Agent_Input{},
+									Purposes: map[string]pb.BuildInfra_Buildbucket_Agent_Purpose{
+										"kitchen-checkout": pb.BuildInfra_Buildbucket_Agent_PURPOSE_EXE_PAYLOAD,
+									},
 								},
 							},
 							Logdog: &pb.BuildInfra_LogDog{
@@ -6447,10 +6474,6 @@ func TestScheduleBuild(t *testing.T) {
 					Bucket:  "bucket",
 					Builder: "builder",
 				},
-				Exe: &pb.Executable{
-					CipdPackage: "exe",
-					CipdVersion: "exe-version",
-				},
 				Infra: &pb.BuildInfra{
 					Buildbucket: &pb.BuildInfra_Buildbucket{},
 				},
@@ -6469,10 +6492,6 @@ func TestScheduleBuild(t *testing.T) {
 					Builder: "builder",
 				},
 				Canary: true,
-				Exe: &pb.Executable{
-					CipdPackage: "exe",
-					CipdVersion: "exe-version",
-				},
 				Infra: &pb.BuildInfra{
 					Buildbucket: &pb.BuildInfra_Buildbucket{},
 				},
@@ -6545,6 +6564,123 @@ func TestScheduleBuild(t *testing.T) {
 						"kitchen-checkout": pb.BuildInfra_Buildbucket_Agent_PURPOSE_EXE_PAYLOAD,
 					},
 				})
+			})
+		})
+
+		Convey("bbagent_utilility_packages", func() {
+			b := &pb.Build{
+				Builder: &pb.BuilderID{
+					Project: "project",
+					Bucket:  "bucket",
+					Builder: "builder",
+				},
+				Canary: true,
+				Infra: &pb.BuildInfra{
+					Buildbucket: &pb.BuildInfra_Buildbucket{},
+				},
+				Input: &pb.Build_Input{
+					Experiments: []string{"omit", "include"},
+				},
+			}
+			cfg := &pb.SettingsCfg{
+				Swarming: &pb.SwarmingSettings{
+					BbagentPackage: &pb.SwarmingSettings_Package{
+						PackageName:   "infra/tools/luci/bbagent/${platform}",
+						Version:       "version",
+						VersionCanary: "canary-version",
+					},
+					BbagentUtilityPackages: []*pb.SwarmingSettings_Package{
+						{
+							PackageName:   "include",
+							Version:       "version",
+							VersionCanary: "canary-version",
+						},
+						{
+							Builders: &pb.BuilderPredicate{
+								RegexExclude: []string{
+									".*",
+								},
+							},
+							PackageName:   "exclude",
+							Version:       "version",
+							VersionCanary: "canary-version",
+						},
+						{
+							Builders: &pb.BuilderPredicate{
+								Regex: []string{
+									".*",
+								},
+							},
+							PackageName:   "subdir",
+							Subdir:        "subdir",
+							Version:       "version",
+							VersionCanary: "canary-version",
+						},
+						{
+							PackageName:         "include_experiment",
+							Version:             "version",
+							IncludeOnExperiment: []string{"include"},
+						},
+						{
+							PackageName:         "not_include_experiment",
+							Version:             "version",
+							IncludeOnExperiment: []string{"not_include"},
+						},
+						{
+							PackageName:      "omit_experiment",
+							Version:          "version",
+							OmitOnExperiment: []string{"omit"},
+						},
+					},
+				},
+				Cipd: &pb.CipdSettings{
+					Server: "cipd server",
+				},
+			}
+			err := setInfraAgent(b, cfg)
+			So(err, ShouldBeNil)
+			So(b.Infra.Buildbucket.Agent, ShouldResembleProto, &pb.BuildInfra_Buildbucket_Agent{
+				Source: &pb.BuildInfra_Buildbucket_Agent_Source{
+					DataType: &pb.BuildInfra_Buildbucket_Agent_Source_Cipd{
+						Cipd: &pb.BuildInfra_Buildbucket_Agent_Source_CIPD{
+							Package: "infra/tools/luci/bbagent/${platform}",
+							Version: "canary-version",
+							Server:  "cipd server",
+						},
+					},
+				},
+				Input: &pb.BuildInfra_Buildbucket_Agent_Input{
+					Data: map[string]*pb.InputDataRef{
+						"bbagent_utility_packages": {
+							DataType: &pb.InputDataRef_Cipd{
+								Cipd: &pb.InputDataRef_CIPD{
+									Server: "cipd server",
+									Specs: []*pb.InputDataRef_CIPD_PkgSpec{
+										{Package: "include", Version: "canary-version"},
+										{Package: "include_experiment", Version: "version"},
+									},
+								},
+							},
+							OnPath: []string{"bbagent_utility_packages", "bbagent_utility_packages/bin"},
+						},
+						"bbagent_utility_packages/subdir": {
+							DataType: &pb.InputDataRef_Cipd{
+								Cipd: &pb.InputDataRef_CIPD{
+									Server: "cipd server",
+									Specs: []*pb.InputDataRef_CIPD_PkgSpec{
+										{Package: "subdir", Version: "canary-version"},
+									},
+								},
+							},
+							OnPath: []string{"bbagent_utility_packages/subdir", "bbagent_utility_packages/subdir/bin"},
+						},
+					},
+				},
+				Purposes: map[string]pb.BuildInfra_Buildbucket_Agent_Purpose{
+					"kitchen-checkout":                pb.BuildInfra_Buildbucket_Agent_PURPOSE_EXE_PAYLOAD,
+					"bbagent_utility_packages":        pb.BuildInfra_Buildbucket_Agent_PURPOSE_BBAGENT_UTILITY,
+					"bbagent_utility_packages/subdir": pb.BuildInfra_Buildbucket_Agent_PURPOSE_BBAGENT_UTILITY,
+				},
 			})
 		})
 	})

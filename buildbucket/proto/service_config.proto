@@ -99,6 +99,10 @@ message SwarmingSettings {
   // so they should have constraints on either omit_on_experiment
   // or include_on_experiment.
   repeated Package alternative_agent_packages = 9;
+
+  // Packages for bbagent to use.
+  // Installed in "{TASK_RUN_DIR}/bbagent_utility_packages".
+  repeated Package bbagent_utility_packages = 10;
 }
 
 message LogDogSettings {

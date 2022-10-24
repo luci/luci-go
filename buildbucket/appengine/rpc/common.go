@@ -64,6 +64,9 @@ const (
 
 const UserPackageDir = "cipd_bin_packages"
 
+// BbagentUtilPkgDir is the directory containing packages that bbagent uses.
+const BbagentUtilPkgDir = "bbagent_utility_packages"
+
 var (
 	sha1Regex          = regexp.MustCompile(`^[a-f0-9]{40}$`)
 	reservedKeys       = stringset.NewFromSlice("build_address")

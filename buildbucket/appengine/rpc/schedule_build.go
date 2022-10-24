@@ -1014,10 +1014,6 @@ func setInfraAgent(build *pb.Build, globalCfg *pb.SettingsCfg) error {
 	experiments := stringset.NewFromSlice(build.GetInput().GetExperiments()...)
 	builderID := protoutil.FormatBuilderID(build.Builder)
 
-	setInfraAgentInputData(build, globalCfg, experiments, builderID)
-	if err := setInfraAgentSource(build, globalCfg, experiments, builderID); err != nil {
-		return err
-	}
 	// TODO(crbug.com/1345722) In the future, bbagent will entirely manage the
 	// user executable payload, which means Buildbucket should not specify the
 	// payload path.
@@ -1027,25 +1023,15 @@ func setInfraAgent(build *pb.Build, globalCfg *pb.SettingsCfg) error {
 	build.Infra.Buildbucket.Agent.Purposes = map[string]pb.BuildInfra_Buildbucket_Agent_Purpose{
 		"kitchen-checkout": pb.BuildInfra_Buildbucket_Agent_PURPOSE_EXE_PAYLOAD,
 	}
-	return nil
+
+	setInfraAgentInputData(build, globalCfg, experiments, builderID)
+	return setInfraAgentSource(build, globalCfg, experiments, builderID)
 }
 
-// setInfraAgentInputData populate input cipd info from the given settings.
-// In the future, they can be also from per-builder-level or per-request-level.
-// Mutates the given *pb.Build.
-// The build.Builder, build.Canary, build.Exe, and build.Infra.Buildbucket.Agent must be set
-func setInfraAgentInputData(build *pb.Build, globalCfg *pb.SettingsCfg, experiments stringset.Set, builderID string) {
-	inputData := make(map[string]*pb.InputDataRef)
-	build.Infra.Buildbucket.Agent.Input = &pb.BuildInfra_Buildbucket_Agent_Input{
-		Data: inputData,
-	}
-	userPackages := globalCfg.GetSwarming().GetUserPackages()
-	if userPackages == nil {
-		return
-	}
-	cipdServer := globalCfg.GetCipd().GetServer()
-
-	for _, p := range userPackages {
+func addInfraAgentInputData(build *pb.Build, builderID, cipdServer, basePath string, experiments stringset.Set, packages []*pb.SwarmingSettings_Package) {
+	inputData := build.Infra.Buildbucket.Agent.Input.Data
+	purposes := build.Infra.Buildbucket.Agent.Purposes
+	for _, p := range packages {
 		if !builderMatches(builderID, p.Builders) {
 			continue
 		}
@@ -1054,7 +1040,7 @@ func setInfraAgentInputData(build *pb.Build, globalCfg *pb.SettingsCfg, experime
 			continue
 		}
 
-		path := UserPackageDir
+		path := basePath
 		if p.Subdir != "" {
 			path = fmt.Sprintf("%s/%s", path, p.Subdir)
 		}
@@ -1067,6 +1053,9 @@ func setInfraAgentInputData(build *pb.Build, globalCfg *pb.SettingsCfg, experime
 				},
 				OnPath: []string{path, fmt.Sprintf("%s/%s", path, "bin")},
 			}
+			if basePath == BbagentUtilPkgDir {
+				purposes[path] = pb.BuildInfra_Buildbucket_Agent_PURPOSE_BBAGENT_UTILITY
+			}
 		}
 
 		inputData[path].GetCipd().Specs = append(inputData[path].GetCipd().Specs, &pb.InputDataRef_CIPD_PkgSpec{
@@ -1074,6 +1063,24 @@ func setInfraAgentInputData(build *pb.Build, globalCfg *pb.SettingsCfg, experime
 			Version: extractCipdVersion(p, build),
 		})
 	}
+}
+
+// setInfraAgentInputData populate input cipd info from the given settings.
+// In the future, they can be also from per-builder-level or per-request-level.
+// Mutates the given *pb.Build.
+// The build.Builder, build.Canary, build.Exe, and build.Infra.Buildbucket.Agent must be set
+func setInfraAgentInputData(build *pb.Build, globalCfg *pb.SettingsCfg, experiments stringset.Set, builderID string) {
+	inputData := make(map[string]*pb.InputDataRef)
+	build.Infra.Buildbucket.Agent.Input = &pb.BuildInfra_Buildbucket_Agent_Input{
+		Data: inputData,
+	}
+	cipdServer := globalCfg.GetCipd().GetServer()
+
+	// add user packages.
+	addInfraAgentInputData(build, builderID, cipdServer, UserPackageDir, experiments, globalCfg.GetSwarming().GetUserPackages())
+
+	// add bbagent utility packages.
+	addInfraAgentInputData(build, builderID, cipdServer, BbagentUtilPkgDir, experiments, globalCfg.GetSwarming().GetBbagentUtilityPackages())
 
 	if build.Exe.GetCipdPackage() != "" || build.Exe.GetCipdVersion() != "" {
 		inputData["kitchen-checkout"] = &pb.InputDataRef{

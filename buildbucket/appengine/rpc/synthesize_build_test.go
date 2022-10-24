@@ -208,6 +208,9 @@ func TestSynthesizeBuild(t *testing.T) {
 							},
 							Agent: &pb.BuildInfra_Buildbucket_Agent{
 								Input: &pb.BuildInfra_Buildbucket_Agent_Input{},
+								Purposes: map[string]pb.BuildInfra_Buildbucket_Agent_Purpose{
+									"kitchen-checkout": pb.BuildInfra_Buildbucket_Agent_PURPOSE_EXE_PAYLOAD,
+								},
 							},
 						},
 						Logdog: &pb.BuildInfra_LogDog{
@@ -293,6 +296,9 @@ func TestSynthesizeBuild(t *testing.T) {
 						Buildbucket: &pb.BuildInfra_Buildbucket{
 							Agent: &pb.BuildInfra_Buildbucket_Agent{
 								Input: &pb.BuildInfra_Buildbucket_Agent_Input{},
+								Purposes: map[string]pb.BuildInfra_Buildbucket_Agent_Purpose{
+									"kitchen-checkout": pb.BuildInfra_Buildbucket_Agent_PURPOSE_EXE_PAYLOAD,
+								},
 							},
 						},
 						Logdog: &pb.BuildInfra_LogDog{
