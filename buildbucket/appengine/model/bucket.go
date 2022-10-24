@@ -48,6 +48,9 @@ type Bucket struct {
 
 	// Bucket is the bucket in v2 format.
 	// e.g. try (never luci.chromium.try).
+	//
+	// Note: This field is "computed" in *Bucket.Save phase and exists because v1
+	// APIs are allowed to search without a luci project context.
 	Bucket string `gae:"bucket_name"`
 	// Proto is the pb.Bucket proto representation of the bucket.
 	//
@@ -68,4 +71,18 @@ func BucketKey(ctx context.Context, project, bucket string) *datastore.Key {
 		ID:     bucket,
 		Parent: ProjectKey(ctx, project),
 	})
+}
+
+var _ datastore.PropertyLoadSaver = (*Bucket)(nil)
+
+// Load implements datastore.PropertyLoadSaver
+func (b *Bucket) Load(p datastore.PropertyMap) error {
+	return datastore.GetPLS(b).Load(p)
+}
+
+// Save implements datastore.PropertyLoadSaver. It mutates this bucket entity
+// by always copying its ID value into the bucket_name field.
+func (b *Bucket) Save(withMeta bool) (datastore.PropertyMap, error) {
+	b.Bucket = b.ID
+	return datastore.GetPLS(b).Save(withMeta)
 }
