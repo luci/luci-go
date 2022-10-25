@@ -44,11 +44,19 @@ import (
 	"go.chromium.org/luci/buildbucket/protoutil"
 )
 
+const CurrentBucketSchemaVersion = 13
+
 // maximumExpiration is the maximum allowed expiration_secs for a builder
 // dimensions field.
 const maximumExpiration = 21 * (24 * time.Hour)
 
-const CurrentBucketSchemaVersion = 13
+// maxEntityCount is the Datastore maximum number of entities per transaction.
+const maxEntityCount = 500
+
+// maxBatchSize is the maximum allowed size in a batch Datastore operations. The
+// Datastore actual maximum API request size is 10MB. We set it to 9MB to give
+// some buffer room.
+var maxBatchSize = 9 * 1000 * 1000
 
 var (
 	authGroupNameRegex = regexp.MustCompile(`^([a-z\-]+/)?[0-9a-z_\-\.@]{1,100}$`)
@@ -174,14 +182,17 @@ func UpdateProjectCfg(ctx context.Context) error {
 			for _, bldr := range builders {
 				bldrMap[bldr.FullBuilderName()] = bldr
 			}
-			buildersToPut := make([]*model.Builder, 0, len(builders))
+			// buildersToPut[i] contains a list of builders to update which is under
+			// the maxEntityCount and maxBatchsize limit.
+			buildersToPut := [][]*model.Builder{[]*model.Builder{}}
+			currentBatchSize := 0
 			for _, cfgBuilder := range cfgBucket.GetSwarming().GetBuilders() {
 				if !checkPoolDimExists(cfgBuilder) {
 					cfgBuilder.Dimensions = append(cfgBuilder.Dimensions, fmt.Sprintf("pool:luci.%s.%s", project, cfgBktName))
 				}
 
 				cfgBldrName := fmt.Sprintf("%s.%s.%s", project, cfgBktName, cfgBuilder.Name)
-				cfgBuilderHash, err := computeBuilderHash(cfgBuilder)
+				cfgBuilderHash, bldrSize, err := computeBuilderHash(cfgBuilder)
 				if err != nil {
 					return errors.Annotate(err, "while computing hash for builder:%s", cfgBldrName).Err()
 				}
@@ -191,54 +202,65 @@ func UpdateProjectCfg(ctx context.Context) error {
 						continue
 					}
 				}
-				buildersToPut = append(buildersToPut, &model.Builder{
+
+				if bldrSize > maxBatchSize {
+					return errors.Reason("builder %s size exceeds %d bytes", cfgBldrName, maxBatchSize).Err()
+				}
+				bldrToPut := &model.Builder{
 					ID:         cfgBuilder.Name,
 					Parent:     bktKey,
 					Config:     cfgBuilder,
 					ConfigHash: cfgBuilderHash,
-				})
+				}
+				currentBatchIdx := len(buildersToPut) - 1
+				if currentBatchSize+bldrSize <= maxBatchSize && len(buildersToPut[currentBatchIdx])+1 <= maxEntityCount {
+					currentBatchSize += bldrSize
+					buildersToPut[currentBatchIdx] = append(buildersToPut[currentBatchIdx], bldrToPut)
+				} else {
+					buildersToPut = append(buildersToPut, []*model.Builder{bldrToPut})
+					currentBatchSize = bldrSize
+				}
 			}
 
-			// Update buckets, builders and delete non-existent builders.
-			err := datastore.RunInTransaction(ctx, func(ctx context.Context) error {
-				if len(cfgBucket.Swarming.GetBuilders()) != 0 {
-					// Trim builders. They're stored in separate Builder entities.
-					cfgBucket.Swarming.Builders = []*pb.BuilderConfig{}
-				}
-				if err := datastore.Put(ctx, &model.Bucket{
-					ID:       cfgBktName,
-					Parent:   model.ProjectKey(ctx, project),
-					Schema:   CurrentBucketSchemaVersion,
-					Revision: revision,
-					Proto:    cfgBucket,
-				}); err != nil {
-					return errors.Annotate(err, "failed to put bucket").Err()
-				}
+			// Update the bucket in this for loop iteration, its builders and delete non-existent builders.
+			if len(cfgBucket.Swarming.GetBuilders()) != 0 {
+				// Trim builders. They're stored in separate Builder entities.
+				cfgBucket.Swarming.Builders = []*pb.BuilderConfig{}
+			}
+			bucketToUpdate := &model.Bucket{
+				ID:       cfgBktName,
+				Parent:   model.ProjectKey(ctx, project),
+				Schema:   CurrentBucketSchemaVersion,
+				Revision: revision,
+				Proto:    cfgBucket,
+			}
+			var bldrsToDel []*model.Builder
+			for _, bldr := range bldrMap {
+				bldrsToDel = append(bldrsToDel, &model.Builder{
+					ID:     bldr.ID,
+					Parent: bldr.Parent,
+				})
+			}
+			var err error
+			// check if they can update transactionally.
+			if len(buildersToPut) == 1 && len(buildersToPut[0])+len(bldrsToDel) < maxEntityCount {
+				err = transacUpdate(ctx, bucketToUpdate, buildersToPut[0], bldrsToDel)
+			} else {
+				err = nonTransacUpdate(ctx, bucketToUpdate, buildersToPut, bldrsToDel)
+			}
+			if err != nil {
+				return errors.Annotate(err, "for bucket %s.%s", project, cfgBktName).Err()
+			}
 
-				if err := datastore.Put(ctx, buildersToPut); err != nil {
-					return errors.Annotate(err, "failed to put %d builders", len(buildersToPut)).Err()
-				}
-
-				var bldrsToDel []*model.Builder
-				for _, bldr := range bldrMap {
-					bldrsToDel = append(bldrsToDel, bldr)
-				}
-				if err := datastore.Delete(ctx, bldrsToDel); err != nil {
-					return errors.Annotate(err, "failed to delete %d builders", len(bldrsToDel)).Err()
-				}
-
-				// TODO(crbug.com/1362157) Delete after the correctness is proved in Prod.
-				changes = append(changes, &changeLog{item: project + "." + cfgBktName, action: "put"})
-				for _, bldr := range buildersToPut {
+			// TODO(crbug.com/1362157) Delete after the correctness is proved in Prod.
+			changes = append(changes, &changeLog{item: project + "." + cfgBktName, action: "put"})
+			for _, bldrs := range buildersToPut {
+				for _, bldr := range bldrs {
 					changes = append(changes, &changeLog{item: bldr.FullBuilderName(), action: "put"})
 				}
-				for _, bldr := range bldrsToDel {
-					changes = append(changes, &changeLog{item: bldr.FullBuilderName(), action: "delete"})
-				}
-				return nil
-			}, nil)
-			if err != nil {
-				return errors.Annotate(err, "while in transaction for bucket %s.%s", project, cfgBktName).Err()
+			}
+			for _, bldr := range bldrsToDel {
+				changes = append(changes, &changeLog{item: bldr.FullBuilderName(), action: "delete"})
 			}
 		}
 	}
@@ -271,6 +293,48 @@ func UpdateProjectCfg(ctx context.Context) error {
 	return datastore.Delete(ctx, toDelete)
 }
 
+// transacUpdate updates the given bucket, its builders or delete its builders transactionally.
+func transacUpdate(ctx context.Context, bucketToUpdate *model.Bucket, buildersToPut, bldrsToDel []*model.Builder) error {
+	err := datastore.RunInTransaction(ctx, func(ctx context.Context) error {
+		if err := datastore.Put(ctx, bucketToUpdate); err != nil {
+			return errors.Annotate(err, "failed to put bucket").Err()
+		}
+		if err := datastore.Put(ctx, buildersToPut); err != nil {
+			return errors.Annotate(err, "failed to put %d builders", len(buildersToPut)).Err()
+		}
+		if err := datastore.Delete(ctx, bldrsToDel); err != nil {
+			return errors.Annotate(err, "failed to delete %d builders", len(bldrsToDel)).Err()
+		}
+		return nil
+	}, nil)
+	return err
+}
+
+// nonTransacUpdate updates the given bucket, its builders or delete its builders non-transactionally.
+func nonTransacUpdate(ctx context.Context, bucketToUpdate *model.Bucket, buildersToPut [][]*model.Builder, bldrsToDel []*model.Builder) error {
+	// delete builders in bldrsToDel
+	for i := 0; i < (len(bldrsToDel)+maxBatchSize-1)/maxBatchSize; i++ {
+		startIdx := i * maxBatchSize
+		endIdx := startIdx + maxBatchSize
+		if endIdx > len(bldrsToDel) {
+			endIdx = len(bldrsToDel)
+		}
+		if err := datastore.Delete(ctx, bldrsToDel[startIdx:endIdx]); err != nil {
+			return errors.Annotate(err, "failed to delete builders[%d:%d]", startIdx, endIdx).Err()
+		}
+	}
+
+	// put builders in buildersToPut
+	for _, bldrs := range buildersToPut {
+		if err := datastore.Put(ctx, bldrs); err != nil {
+			return errors.Annotate(err, "failed to put builders starting from %s", bldrs[0].ID).Err()
+		}
+	}
+
+	// put the bucket
+	return datastore.Put(ctx, bucketToUpdate)
+}
+
 func min(i, j int) int {
 	if i < j {
 		return i
@@ -298,13 +362,14 @@ func shortBucketName(name string) string {
 }
 
 // computeBuilderHash computes BuilderConfig hash.
-func computeBuilderHash(cfg *pb.BuilderConfig) (string, error) {
-	bCfg, err := proto.Marshal(cfg)
+// It returns the computed hash, BuilderConfig size or the error.
+func computeBuilderHash(cfg *pb.BuilderConfig) (string, int, error) {
+	bCfg, err := proto.MarshalOptions{Deterministic: true}.Marshal(cfg)
 	if err != nil {
-		return "", err
+		return "", 0, err
 	}
 	sha256Bldr := sha256.Sum256(bCfg)
-	return hex.EncodeToString(sha256Bldr[:]), nil
+	return hex.EncodeToString(sha256Bldr[:]), len(bCfg), nil
 }
 
 // validateProjectCfg implements validation.Func and validates the content of

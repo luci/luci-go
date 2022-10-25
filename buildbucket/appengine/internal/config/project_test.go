@@ -692,8 +692,8 @@ func TestUpdateProject(t *testing.T) {
 				Cmd:         []string{"luciexe"},
 			},
 		}
-		expectedBldrHash1, _ := computeBuilderHash(expectedBuilder1)
-		expectedBldrHash2, _ := computeBuilderHash(expectedBuilder2)
+		expectedBldrHash1, _, _ := computeBuilderHash(expectedBuilder1)
+		expectedBldrHash2, _, _ := computeBuilderHash(expectedBuilder2)
 		So(stripBuilderProtos(actualBuilders), ShouldResembleProto, []*pb.BuilderConfig{expectedBuilder1, expectedBuilder2})
 		So(actualBuilders, ShouldResemble, []*model.Builder{
 			{
@@ -822,8 +822,8 @@ func TestUpdateProject(t *testing.T) {
 					Cmd:         []string{"luciexe"},
 				},
 			}
-			expectedBldrHash1, _ := computeBuilderHash(expectedBuilder1)
-			expectedBldrHash2, _ := computeBuilderHash(expectedBuilder2)
+			expectedBldrHash1, _, _ := computeBuilderHash(expectedBuilder1)
+			expectedBldrHash2, _, _ := computeBuilderHash(expectedBuilder2)
 			So(stripBuilderProtos(actualBuilders), ShouldResembleProto, []*pb.BuilderConfig{expectedBuilder1, expectedBuilder2})
 			So(actualBuilders, ShouldResemble, []*model.Builder{
 				{
@@ -886,7 +886,7 @@ func TestUpdateProject(t *testing.T) {
 					Cmd:         []string{"luciexe"},
 				},
 			}
-			dartBuilderHash, _ := computeBuilderHash(dartBuilder)
+			dartBuilderHash, _, _ := computeBuilderHash(dartBuilder)
 			So(stripBuilderProtos(actualBuilders), ShouldResembleProto, []*pb.BuilderConfig{dartBuilder})
 			So(actualBuilders, ShouldResemble, []*model.Builder{
 				{
@@ -944,7 +944,7 @@ func TestUpdateProject(t *testing.T) {
 					Cmd:         []string{"luciexe"},
 				},
 			}
-			dartBuilderHash, _ := computeBuilderHash(dartBuilder)
+			dartBuilderHash, _, _ := computeBuilderHash(dartBuilder)
 			So(stripBuilderProtos(actualBuilders), ShouldResembleProto, []*pb.BuilderConfig{dartBuilder})
 			So(actualBuilders, ShouldResemble, []*model.Builder{
 				{
@@ -952,6 +952,188 @@ func TestUpdateProject(t *testing.T) {
 					Parent:     model.BucketKey(ctx, "dart", "try"),
 					ConfigHash: dartBuilderHash,
 				},
+			})
+		})
+
+		Convey("large builders count", func() {
+			// clear dart configs first
+			defer restoreCfgVars()
+			dartBuildbucketCfg = `buckets {name: "try"}`
+			dartRevision = `clear_dart`
+
+			So(UpdateProjectCfg(ctx), ShouldBeNil)
+			actualBucket := &model.Bucket{ID: "try", Parent: model.ProjectKey(ctx, "dart")}
+			So(datastore.Get(ctx, actualBucket), ShouldBeNil)
+			So(actualBucket.Revision, ShouldEqual, "clear_dart")
+			var actualBuilders []*model.Builder
+			So(datastore.GetAll(ctx, datastore.NewQuery(model.BuilderKind).Ancestor(model.BucketKey(ctx, "dart", "try")).Order("__key__"), &actualBuilders), ShouldBeNil)
+			So(len(actualBuilders), ShouldEqual, 0)
+
+			Convey("to put 499 builders", func() {
+				defer restoreCfgVars()
+
+				bldrsCfg := ""
+				for i := 0; i < 499; i++ {
+					bldrsCfg += fmt.Sprintf("builders {name: \"builder%d\"}\n", i)
+				}
+				dartBuildbucketCfg = fmt.Sprintf(`buckets {name: "try"swarming {%s}}`, bldrsCfg)
+				dartRevision = "put499"
+
+				So(UpdateProjectCfg(ctx), ShouldBeNil)
+
+				actualBucket := &model.Bucket{ID: "try", Parent: model.ProjectKey(ctx, "dart")}
+				So(datastore.Get(ctx, actualBucket), ShouldBeNil)
+				So(actualBucket.Revision, ShouldEqual, "put499")
+				var actualBuilders []*model.Builder
+				So(datastore.GetAll(ctx, datastore.NewQuery(model.BuilderKind).Ancestor(model.BucketKey(ctx, "dart", "try")).Order("__key__"), &actualBuilders), ShouldBeNil)
+				So(len(actualBuilders), ShouldEqual, 499)
+			})
+
+			Convey("to put 500 builders", func() {
+				defer restoreCfgVars()
+
+				bldrsCfg := ""
+				for i := 0; i < 500; i++ {
+					bldrsCfg += fmt.Sprintf("builders {name: \"builder%d\"}\n", i)
+				}
+				dartBuildbucketCfg = fmt.Sprintf(`buckets {name: "try"swarming {%s}}`, bldrsCfg)
+				dartRevision = "put500"
+
+				So(UpdateProjectCfg(ctx), ShouldBeNil)
+
+				actualBucket := &model.Bucket{ID: "try", Parent: model.ProjectKey(ctx, "dart")}
+				So(datastore.Get(ctx, actualBucket), ShouldBeNil)
+				So(actualBucket.Revision, ShouldEqual, "put500")
+				var actualBuilders []*model.Builder
+				So(datastore.GetAll(ctx, datastore.NewQuery(model.BuilderKind).Ancestor(model.BucketKey(ctx, "dart", "try")).Order("__key__"), &actualBuilders), ShouldBeNil)
+				So(len(actualBuilders), ShouldEqual, 500)
+			})
+
+			Convey("to put 1105 builders", func() {
+				defer restoreCfgVars()
+
+				bldrsCfg := ""
+				for i := 0; i < 1105; i++ {
+					bldrsCfg += fmt.Sprintf("builders {name: \"builder%d\"}\n", i)
+				}
+				dartBuildbucketCfg = fmt.Sprintf(`buckets {name: "try"swarming {%s}}`, bldrsCfg)
+				dartRevision = "put1105"
+
+				So(UpdateProjectCfg(ctx), ShouldBeNil)
+
+				actualBucket := &model.Bucket{ID: "try", Parent: model.ProjectKey(ctx, "dart")}
+				So(datastore.Get(ctx, actualBucket), ShouldBeNil)
+				So(actualBucket.Revision, ShouldEqual, "put1105")
+				var actualBuilders []*model.Builder
+				So(datastore.GetAll(ctx, datastore.NewQuery(model.BuilderKind).Ancestor(model.BucketKey(ctx, "dart", "try")).Order("__key__"), &actualBuilders), ShouldBeNil)
+				So(len(actualBuilders), ShouldEqual, 1105)
+
+				Convey("delete 111 and update 994", func() {
+					bldrsCfg := ""
+					for i := 0; i < 1105; i++ {
+						// delete builders which the name ends with "1".
+						if i%10 == 1 {
+							continue
+						}
+						bldrsCfg += fmt.Sprintf("builders {name: \"builder%d\" \n dimensions: \"pool:newly_added\"}\n", i)
+					}
+					dartBuildbucketCfg = fmt.Sprintf(`buckets {name: "try"swarming {%s}}`, bldrsCfg)
+					dartRevision = "del111_update994"
+
+					So(UpdateProjectCfg(ctx), ShouldBeNil)
+
+					actualBucket := &model.Bucket{ID: "try", Parent: model.ProjectKey(ctx, "dart")}
+					So(datastore.Get(ctx, actualBucket), ShouldBeNil)
+					So(actualBucket.Revision, ShouldEqual, "del111_update994")
+					var actualBuilders []*model.Builder
+					So(datastore.GetAll(ctx, datastore.NewQuery(model.BuilderKind).Ancestor(model.BucketKey(ctx, "dart", "try")).Order("__key__"), &actualBuilders), ShouldBeNil)
+					So(len(actualBuilders), ShouldEqual, 994)
+					for _, bldr := range actualBuilders {
+						So(strings.HasSuffix(bldr.ID, "1"), ShouldBeFalse)
+						So(bldr.Config.Dimensions[0], ShouldEqual, "pool:newly_added")
+					}
+				})
+
+				Convey("delete 994 and update 111", func() {
+					bldrsCfg := ""
+					for i := 0; i < 1105; i++ {
+						// only keep builders which the name ends with "1" and update them.
+						if i%10 == 1 {
+							bldrsCfg += fmt.Sprintf("builders {name: \"builder%d\" \n dimensions: \"pool:newly_added\"}\n", i)
+						}
+					}
+					dartBuildbucketCfg = fmt.Sprintf(`buckets {name: "try"swarming {%s}}`, bldrsCfg)
+					dartRevision = "del994_update111"
+
+					So(UpdateProjectCfg(ctx), ShouldBeNil)
+
+					actualBucket := &model.Bucket{ID: "try", Parent: model.ProjectKey(ctx, "dart")}
+					So(datastore.Get(ctx, actualBucket), ShouldBeNil)
+					So(actualBucket.Revision, ShouldEqual, "del994_update111")
+					var actualBuilders []*model.Builder
+					So(datastore.GetAll(ctx, datastore.NewQuery(model.BuilderKind).Ancestor(model.BucketKey(ctx, "dart", "try")).Order("__key__"), &actualBuilders), ShouldBeNil)
+					So(len(actualBuilders), ShouldEqual, 111)
+					for _, bldr := range actualBuilders {
+						So(strings.HasSuffix(bldr.ID, "1"), ShouldBeTrue)
+						So(bldr.Config.Dimensions[0], ShouldEqual, "pool:newly_added")
+					}
+				})
+			})
+		})
+
+		Convey("large builder content", func() {
+			// clear dart configs first
+			defer restoreCfgVars()
+			dartBuildbucketCfg = `buckets {name: "try"}`
+			dartRevision = `clear_dart`
+
+			So(UpdateProjectCfg(ctx), ShouldBeNil)
+			actualBucket := &model.Bucket{ID: "try", Parent: model.ProjectKey(ctx, "dart")}
+			So(datastore.Get(ctx, actualBucket), ShouldBeNil)
+			So(actualBucket.Revision, ShouldEqual, "clear_dart")
+			var actualBuilders []*model.Builder
+			So(datastore.GetAll(ctx, datastore.NewQuery(model.BuilderKind).Ancestor(model.BucketKey(ctx, "dart", "try")).Order("__key__"), &actualBuilders), ShouldBeNil)
+			So(len(actualBuilders), ShouldEqual, 0)
+
+			originalMaxBatchSize := maxBatchSize
+			defer func() {
+				maxBatchSize = originalMaxBatchSize
+			}()
+			maxBatchSize = 200
+
+			Convey("a single too large", func() {
+				defer restoreCfgVars()
+
+				large := ""
+				for i := 0; i < 30; i++ {
+					large += "0123456789"
+				}
+				dartBuildbucketCfg = fmt.Sprintf(`buckets {name: "try" swarming {builders {name: "%s"}}}`, large)
+				dartRevision = "one_large"
+
+				err := UpdateProjectCfg(ctx)
+				So(err, ShouldErrLike, "size exceeds 200 bytes")
+			})
+
+			Convey("the sum > maxBatchSize while builders count < 500", func() {
+				defer restoreCfgVars()
+
+				bldrsCfg := ""
+				for i := 0; i < 212; i++ {
+					bldrsCfg += fmt.Sprintf("builders {name: \"medium_size_builder_%d\"}\n", i)
+				}
+
+				dartBuildbucketCfg = fmt.Sprintf(`buckets {name: "try"swarming {%s}}`, bldrsCfg)
+				dartRevision = "sum_large"
+
+				So(UpdateProjectCfg(ctx), ShouldBeNil)
+
+				actualBucket := &model.Bucket{ID: "try", Parent: model.ProjectKey(ctx, "dart")}
+				So(datastore.Get(ctx, actualBucket), ShouldBeNil)
+				So(actualBucket.Revision, ShouldEqual, "sum_large")
+				var actualBuilders []*model.Builder
+				So(datastore.GetAll(ctx, datastore.NewQuery(model.BuilderKind).Ancestor(model.BucketKey(ctx, "dart", "try")).Order("__key__"), &actualBuilders), ShouldBeNil)
+				So(len(actualBuilders), ShouldEqual, 212)
 			})
 		})
 	})
