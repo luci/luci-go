@@ -72,10 +72,10 @@ const (
 	// overhead.
 	//
 	// Examples include:
-	// - The temperature of the DUT (Device Under Test) is too high, and the bot
-	//   is waiting for cool down
-	// - host is doing self-cleaning work out of the bot's control (puppet is
-	//   running), etc.
+	//   - The temperature of the DUT (Device Under Test) is too high, and the bot
+	//     is waiting for cool down
+	//   - host is doing self-cleaning work out of the bot's control (puppet is
+	//     running), etc.
 	//
 	// Bot.status_msg shall include the bot provided rationale.
 	BotStatusType_OVERHEAD_MAINTENANCE_EXTERNAL BotStatusType = 4
@@ -181,7 +181,13 @@ const (
 	//
 	// BotEvent.event_msg shall contain the error message.
 	BotEventType_BOT_HOOK_ERROR BotEventType = 3
-	// Currently unused.
+	// Bot hook logged information. The bot hooks can log locally to the local log
+	// file, which itself can be streamed out of band. For special notifications
+	// that are worth notifying the administrator, this event can be used to raise
+	// these. Due to the cost of doing an RPC just for this, this should be used
+	// sparingly; vs local logging.
+	//
+	// BotEvent.event_msg shall contain the log entry.
 	BotEventType_BOT_HOOK_LOG BotEventType = 4
 	// Bot initiated a host reboot. An example is a bot hook requesting to reboot
 	// the host after a task failure.
@@ -587,6 +593,9 @@ const (
 	// The task never ran, the server had an internal failure, unrelated to the
 	// task itself. It can be due to a server bug or network I/O issues.
 	TaskState_SKIPPED_INTERNAL_FAILURE TaskState = 86 // Not used yet. https://crbug.com/916553
+	// The task encounted an error caused by the client. This means that
+	// rerunning the task with the same parameters will not change the result
+	TaskState_CLIENT_ERROR TaskState = 87
 )
 
 // Enum value maps for TaskState.
@@ -616,6 +625,7 @@ var (
 		84: "LOAD_SHED",
 		85: "RESOURCE_EXHAUSTED",
 		86: "SKIPPED_INTERNAL_FAILURE",
+		87: "CLIENT_ERROR",
 	}
 	TaskState_value = map[string]int32{
 		"TASK_STATE_INVALID":        0,
@@ -642,6 +652,7 @@ var (
 		"LOAD_SHED":                 84,
 		"RESOURCE_EXHAUSTED":        85,
 		"SKIPPED_INTERNAL_FAILURE":  86,
+		"CLIENT_ERROR":              87,
 	}
 )
 
@@ -1715,9 +1726,9 @@ type CASTree struct {
 	unknownFields protoimpl.UnknownFields
 
 	// server is one of:
-	// - The isolated server to fetch (or push) content from. Must contain
-	//   "https://" or "http://" prefix.
-	// - The Google Cloud Project name hosting the RBE CAS.
+	//   - The isolated server to fetch (or push) content from. Must contain
+	//     "https://" or "http://" prefix.
+	//   - The Google Cloud Project name hosting the RBE CAS.
 	Server string `protobuf:"bytes,1,opt,name=server,proto3" json:"server,omitempty"`
 	// The hex encoded hash of an isolated archive. It is expected to be a SHA-1
 	// (40 characters) or SHA-256 (64 characters), based on the namespace value
@@ -2061,13 +2072,13 @@ func (x *NamedCacheEntry) GetDestPath() string {
 // TODO(maruel): https://crbug.com/808836
 //
 // This is highly OS specific:
-// - Lower the integrity level on Windows. https://crbug.com/916586
-// - Job Object on Windows. https://crbug.com/732818
-// - Docker on Linux or Windows. https://crbug.com/916584
-// - cgroup on Linux. https://crbug.com/764493
-// - Creating a temporary user on Windows and macOS. https://crbug.com/916585
-// - Lightweight home directory override on Windows, Linux and macOS.
-//   https://crbug.com/811411
+//   - Lower the integrity level on Windows. https://crbug.com/916586
+//   - Job Object on Windows. https://crbug.com/732818
+//   - Docker on Linux or Windows. https://crbug.com/916584
+//   - cgroup on Linux. https://crbug.com/764493
+//   - Creating a temporary user on Windows and macOS. https://crbug.com/916585
+//   - Lightweight home directory override on Windows, Linux and macOS.
+//     https://crbug.com/811411
 type Containment struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -2209,21 +2220,23 @@ type TaskProperties struct {
 	//
 	// This allows one to safely modify variables like PATH, PYTHONPATH, or other
 	// PATH-like environment variables. The order of operations is:
-	// * Turn slashes into native-platform slashes
-	// * Make the path absolute
-	// * Prepend it to the current value of the envvar using the os-native list
-	//   separator (`;` on Windows, `:` on POSIX)
+	//   - Turn slashes into native-platform slashes
+	//   - Make the path absolute
+	//   - Prepend it to the current value of the envvar using the os-native list
+	//     separator (`;` on Windows, `:` on POSIX)
 	//
 	// Each key can have multiple paths to prepend. They will be prepended in
 	// the order seen here.
 	//
 	// For example, if env_paths is:
-	//   [ (key="PATH", values=["foo", "bar"]),
-	//     (key="CUSTOMPATH", values=["custom"]), ]
+	//
+	//	[ (key="PATH", values=["foo", "bar"]),
+	//	  (key="CUSTOMPATH", values=["custom"]), ]
 	//
 	// The task would see:
-	//   PATH=/path/to/swarming/rundir/foo:/path/to/swarming/rundir/bar:$PATH
-	//   CUSTOMPATH=/path/to/swarming/rundir/custom
+	//
+	//	PATH=/path/to/swarming/rundir/foo:/path/to/swarming/rundir/bar:$PATH
+	//	CUSTOMPATH=/path/to/swarming/rundir/custom
 	//
 	// Paths must always be specified here with forward-slashes, and must not
 	// attempt to escape the task's root (i.e. must not contain `..`).
@@ -2546,10 +2559,10 @@ type TaskRequest struct {
 	// Possible values are:
 	//   - 'none': do not use a task service account at all, this is the default.
 	//   - 'bot': use bot's own account, works only if bots authenticate with
-	//       OAuth2.
-	//  - <some email>: use this specific service account if it is allowed in the
-	//       pool (via 'allowed_service_account' pools.cfg setting) and configured
-	//       in the token server's service_accounts.cfg.
+	//     OAuth2.
+	//   - <some email>: use this specific service account if it is allowed in the
+	//     pool (via 'allowed_service_account' pools.cfg setting) and configured
+	//     in the token server's service_accounts.cfg.
 	//
 	// Note that the service account name is specified outside of task properties,
 	// and thus it is possible to have two tasks with different service accounts,
@@ -2786,11 +2799,11 @@ func (x *TaskRequest) GetBotPingTolerance() *durationpb.Duration {
 // To grant Swarming instance FOOBAR.appspot.com publisher rights to topic
 // projects/PROJ/topics/TOP, use:
 //
-//   gcloud beta pubsub topics add-iam-policy-binding \
-//       TOP \
-//       --project PROJ \
-//       --member serviceAccount:FOOBAR@appspot.gserviceaccount.com \
-//       --role roles/pubsub.publisher
+//	gcloud beta pubsub topics add-iam-policy-binding \
+//	    TOP \
+//	    --project PROJ \
+//	    --member serviceAccount:FOOBAR@appspot.gserviceaccount.com \
+//	    --role roles/pubsub.publisher
 //
 // See https://cloud.google.com/pubsub/docs/authentication for more
 // information.
@@ -4595,7 +4608,7 @@ var file_go_chromium_org_luci_swarming_proto_api_swarming_proto_rawDesc = []byte
 	0x4f, 0x52, 0x59, 0x5f, 0x45, 0x58, 0x45, 0x43, 0x55, 0x54, 0x49, 0x4f, 0x4e, 0x5f, 0x44, 0x4f,
 	0x4e, 0x45, 0x10, 0x40, 0x12, 0x1b, 0x0a, 0x17, 0x43, 0x41, 0x54, 0x45, 0x47, 0x4f, 0x52, 0x59,
 	0x5f, 0x4e, 0x45, 0x56, 0x45, 0x52, 0x5f, 0x52, 0x41, 0x4e, 0x5f, 0x44, 0x4f, 0x4e, 0x45, 0x10,
-	0x50, 0x2a, 0xd1, 0x03, 0x0a, 0x09, 0x54, 0x61, 0x73, 0x6b, 0x53, 0x74, 0x61, 0x74, 0x65, 0x12,
+	0x50, 0x2a, 0xe3, 0x03, 0x0a, 0x09, 0x54, 0x61, 0x73, 0x6b, 0x53, 0x74, 0x61, 0x74, 0x65, 0x12,
 	0x16, 0x0a, 0x12, 0x54, 0x41, 0x53, 0x4b, 0x5f, 0x53, 0x54, 0x41, 0x54, 0x45, 0x5f, 0x49, 0x4e,
 	0x56, 0x41, 0x4c, 0x49, 0x44, 0x10, 0x00, 0x12, 0x0b, 0x0a, 0x07, 0x50, 0x45, 0x4e, 0x44, 0x49,
 	0x4e, 0x47, 0x10, 0x10, 0x12, 0x14, 0x0a, 0x10, 0x50, 0x45, 0x4e, 0x44, 0x49, 0x4e, 0x47, 0x5f,
@@ -4624,16 +4637,17 @@ var file_go_chromium_org_luci_swarming_proto_api_swarming_proto_rawDesc = []byte
 	0x16, 0x0a, 0x12, 0x52, 0x45, 0x53, 0x4f, 0x55, 0x52, 0x43, 0x45, 0x5f, 0x45, 0x58, 0x48, 0x41,
 	0x55, 0x53, 0x54, 0x45, 0x44, 0x10, 0x55, 0x12, 0x1c, 0x0a, 0x18, 0x53, 0x4b, 0x49, 0x50, 0x50,
 	0x45, 0x44, 0x5f, 0x49, 0x4e, 0x54, 0x45, 0x52, 0x4e, 0x41, 0x4c, 0x5f, 0x46, 0x41, 0x49, 0x4c,
-	0x55, 0x52, 0x45, 0x10, 0x56, 0x32, 0x53, 0x0a, 0x06, 0x42, 0x6f, 0x74, 0x41, 0x50, 0x49, 0x12,
-	0x49, 0x0a, 0x06, 0x45, 0x76, 0x65, 0x6e, 0x74, 0x73, 0x12, 0x1d, 0x2e, 0x73, 0x77, 0x61, 0x72,
-	0x6d, 0x69, 0x6e, 0x67, 0x2e, 0x76, 0x31, 0x2e, 0x42, 0x6f, 0x74, 0x45, 0x76, 0x65, 0x6e, 0x74,
-	0x73, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x1e, 0x2e, 0x73, 0x77, 0x61, 0x72, 0x6d,
-	0x69, 0x6e, 0x67, 0x2e, 0x76, 0x31, 0x2e, 0x42, 0x6f, 0x74, 0x45, 0x76, 0x65, 0x6e, 0x74, 0x73,
-	0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x00, 0x42, 0x2f, 0x5a, 0x2d, 0x67, 0x6f,
-	0x2e, 0x63, 0x68, 0x72, 0x6f, 0x6d, 0x69, 0x75, 0x6d, 0x2e, 0x6f, 0x72, 0x67, 0x2f, 0x6c, 0x75,
-	0x63, 0x69, 0x2f, 0x73, 0x77, 0x61, 0x72, 0x6d, 0x69, 0x6e, 0x67, 0x2f, 0x70, 0x72, 0x6f, 0x74,
-	0x6f, 0x2f, 0x61, 0x70, 0x69, 0x3b, 0x61, 0x70, 0x69, 0x70, 0x62, 0x62, 0x06, 0x70, 0x72, 0x6f,
-	0x74, 0x6f, 0x33,
+	0x55, 0x52, 0x45, 0x10, 0x56, 0x12, 0x10, 0x0a, 0x0c, 0x43, 0x4c, 0x49, 0x45, 0x4e, 0x54, 0x5f,
+	0x45, 0x52, 0x52, 0x4f, 0x52, 0x10, 0x57, 0x32, 0x53, 0x0a, 0x06, 0x42, 0x6f, 0x74, 0x41, 0x50,
+	0x49, 0x12, 0x49, 0x0a, 0x06, 0x45, 0x76, 0x65, 0x6e, 0x74, 0x73, 0x12, 0x1d, 0x2e, 0x73, 0x77,
+	0x61, 0x72, 0x6d, 0x69, 0x6e, 0x67, 0x2e, 0x76, 0x31, 0x2e, 0x42, 0x6f, 0x74, 0x45, 0x76, 0x65,
+	0x6e, 0x74, 0x73, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x1e, 0x2e, 0x73, 0x77, 0x61,
+	0x72, 0x6d, 0x69, 0x6e, 0x67, 0x2e, 0x76, 0x31, 0x2e, 0x42, 0x6f, 0x74, 0x45, 0x76, 0x65, 0x6e,
+	0x74, 0x73, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x00, 0x42, 0x2f, 0x5a, 0x2d,
+	0x67, 0x6f, 0x2e, 0x63, 0x68, 0x72, 0x6f, 0x6d, 0x69, 0x75, 0x6d, 0x2e, 0x6f, 0x72, 0x67, 0x2f,
+	0x6c, 0x75, 0x63, 0x69, 0x2f, 0x73, 0x77, 0x61, 0x72, 0x6d, 0x69, 0x6e, 0x67, 0x2f, 0x70, 0x72,
+	0x6f, 0x74, 0x6f, 0x2f, 0x61, 0x70, 0x69, 0x3b, 0x61, 0x70, 0x69, 0x70, 0x62, 0x62, 0x06, 0x70,
+	0x72, 0x6f, 0x74, 0x6f, 0x33,
 }
 
 var (

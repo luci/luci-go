@@ -69,4 +69,8 @@ enum TaskState {
     // are situations where it is known that in some not-too-distant future a wild
     // bot will appear that will be able to run this task.
     NO_RESOURCE = 0x100;
+
+    // The task encounted an error caused by the client. This means that
+    // rerunning the task with the same parameters will not change the result
+    CLIENT_ERROR = 0x200;
 }

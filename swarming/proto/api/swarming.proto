@@ -368,7 +368,13 @@ enum BotEventType {
   // BotEvent.event_msg shall contain the error message.
   BOT_HOOK_ERROR = 3;
 
-  // Currently unused.
+  // Bot hook logged information. The bot hooks can log locally to the local log
+  // file, which itself can be streamed out of band. For special notifications
+  // that are worth notifying the administrator, this event can be used to raise
+  // these. Due to the cost of doing an RPC just for this, this should be used
+  // sparingly; vs local logging.
+  //
+  // BotEvent.event_msg shall contain the log entry.
   BOT_HOOK_LOG = 4;
 
   // Bot initiated a host reboot. An example is a bot hook requesting to reboot
@@ -1366,6 +1372,9 @@ enum TaskState {
   // The task never ran, the server had an internal failure, unrelated to the
   // task itself. It can be due to a server bug or network I/O issues.
   SKIPPED_INTERNAL_FAILURE = 0x56;  // Not used yet. https://crbug.com/916553
+  // The task encounted an error caused by the client. This means that
+  // rerunning the task with the same parameters will not change the result
+  CLIENT_ERROR = 0x57;
 }
 
 // Swarming:ResultDB integration configuration for a task.

@@ -6,10 +6,11 @@ syntax = "proto3";
 
 package swarming.config;
 
-import "go.chromium.org/luci/common/proto/options.proto";
 import "go.chromium.org/luci/swarming/proto/config/realms.proto";
 
 option go_package = "go.chromium.org/luci/swarming/proto/config;configpb";
+
+import "go.chromium.org/luci/common/proto/options.proto";
 
 option (luci.file_metadata) = {
   doc_url: "https://luci-config.appspot.com/schemas/services/swarming:settings.cfg";

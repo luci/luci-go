@@ -6,11 +6,12 @@ syntax = "proto3";
 
 package swarming.config;
 
-import "go.chromium.org/luci/common/proto/options.proto";
 import "go.chromium.org/luci/swarming/proto/config/config.proto";
 import "go.chromium.org/luci/swarming/proto/config/realms.proto";
 
 option go_package = "go.chromium.org/luci/swarming/proto/config;configpb";
+
+import "go.chromium.org/luci/common/proto/options.proto";
 
 option (luci.file_metadata) = {
   doc_url: "https://luci-config.appspot.com/schemas/services/swarming:pools.cfg";
@@ -134,6 +135,19 @@ message Pool {
 
   // Realm name to use for tasks if they don't have a realm associated.
   string default_task_realm = 12;
+
+  // Settings controlling migration to the RBE Scheduler.
+  message RBEMigration {
+    // An RBE instance to send tasks to.
+    //
+    // If empty, the RBE mode is disabled.
+    string rbe_instance = 1;
+    // Approximate percent of tasks targeting this pool to send to RBE.
+    //
+    // A task will be sent to RBE if `hash(props) % 100 <= rbe_mode_percent`.
+    int32 rbe_mode_percent = 2;
+  }
+  RBEMigration rbe_migration = 13;
 }
 
 
