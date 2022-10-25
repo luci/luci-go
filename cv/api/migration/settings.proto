@@ -81,5 +81,8 @@ message Settings {
     repeated string project_regexp = 1;
     repeated string project_regexp_exclude = 2;
   }
-  UseCVTryjobExecutor use_cv_tryjob_executor = 6;
+  UseCVTryjobExecutor use_cv_tryjob_executor = 6 [deprecated=true];
+
+  // The LUCI Projects that still use CQ for Tryjob execution.
+  repeated string projects_use_cq_tryjob = 7;
 }
