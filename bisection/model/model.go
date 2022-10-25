@@ -157,6 +157,14 @@ type SingleRerun struct {
 	Id int64 `gae:"$id"`
 	// Key to the parent CompileRerunBuild
 	RerunBuild *datastore.Key `gae:"rerun_build"`
+	// Type for the rerun build
+	// We need this for each rerun because we can mix running culprit verification
+	// rerun and nth-section rerun in one build
+	Type RerunBuildType `gae:"rerun_type"`
+	// Key to the CompileFailureAnalysis of this SingleRerun
+	// This is mainly used for getting all reruns for an analysis,
+	// for the purpose of nth-section analysis
+	Analysis *datastore.Key `gae:"analysis"`
 	// The commit that this SingleRerun runs on
 	buildbucketpb.GitilesCommit
 	// Time when the rerun starts.

@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// Package nthsection performs nthsection analysis.
 package nthsection
 
 import (
@@ -47,7 +48,25 @@ func Analyze(
 		return nil, err
 	}
 
+	err = startAnalysis(c, nthSectionAnalysis)
+	if err != nil {
+		return nil, err
+	}
 	return nthSectionAnalysis, nil
+}
+
+// startAnalysis will based on find next commit(s) for rerun and schedule them
+func startAnalysis(c context.Context, nthSectionAnalysis *lbm.CompileNthSectionAnalysis) error {
+	_, err := CreateSnapshot(c, nthSectionAnalysis)
+	if err != nil {
+		return err
+	}
+
+	// TODO (nqmtuan): find the commits to run and schedule the run
+	// maxRerun = 1 // bisection
+	// snapshot.FindNextIndicesToRun(3)
+
+	return nil
 }
 
 func updateBlameList(c context.Context, nthSectionAnalysis *lbm.CompileNthSectionAnalysis, changeLogs []*lbm.ChangeLog) error {

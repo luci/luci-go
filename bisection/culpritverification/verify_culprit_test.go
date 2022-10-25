@@ -96,16 +96,6 @@ func TestVerifySuspect(t *testing.T) {
 		c = gitiles.MockedGitilesClientContext(c, map[string]string{
 			"https://chromium.googlesource.com/chromium/src/+log/3425~2..3425^": string(gitilesResponseStr),
 		})
-		suspect := &model.Suspect{
-			Score: 10,
-			GitilesCommit: bbpb.GitilesCommit{
-				Host:    "chromium.googlesource.com",
-				Project: "chromium/src",
-				Id:      "3425",
-			},
-		}
-		So(datastore.Put(c, suspect), ShouldBeNil)
-		datastore.GetTestable(c).CatchupIndexes()
 
 		compileFailure := &model.CompileFailure{
 			Id:            111,
@@ -119,6 +109,24 @@ func TestVerifySuspect(t *testing.T) {
 			CompileFailure: datastore.KeyForObj(c, compileFailure),
 		}
 		So(datastore.Put(c, analysis), ShouldBeNil)
+		datastore.GetTestable(c).CatchupIndexes()
+
+		heuristicAnalysis := &model.CompileHeuristicAnalysis{
+			ParentAnalysis: datastore.KeyForObj(c, analysis),
+		}
+		So(datastore.Put(c, heuristicAnalysis), ShouldBeNil)
+		datastore.GetTestable(c).CatchupIndexes()
+
+		suspect := &model.Suspect{
+			Score:          10,
+			ParentAnalysis: datastore.KeyForObj(c, heuristicAnalysis),
+			GitilesCommit: bbpb.GitilesCommit{
+				Host:    "chromium.googlesource.com",
+				Project: "chromium/src",
+				Id:      "3425",
+			},
+		}
+		So(datastore.Put(c, suspect), ShouldBeNil)
 		datastore.GetTestable(c).CatchupIndexes()
 
 		err := VerifySuspect(c, suspect, 8000, 444)

@@ -140,6 +140,8 @@ func createRerunBuildModel(c context.Context, build *buildbucketpb.Build, suspec
 		Status:        gfipb.RerunStatus_IN_PROGRESS,
 		GitilesCommit: gitilesCommit,
 		StartTime:     startTime,
+		Analysis:      suspect.ParentAnalysis.Parent(),
+		Type:          gfim.RerunBuildType_CulpritVerification,
 	}
 	err = datastore.Put(c, singleRerun)
 	if err != nil {

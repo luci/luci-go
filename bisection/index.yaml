@@ -10,3 +10,8 @@ indexes:
   properties:
   - name: rerun_build
   - name: start_time
+
+- kind: SingleRerun
+  properties:
+  - name: analysis
+  - name: start_time

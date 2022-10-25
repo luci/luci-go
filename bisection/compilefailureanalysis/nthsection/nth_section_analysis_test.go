@@ -36,6 +36,17 @@ import (
 func TestAnalyze(t *testing.T) {
 	t.Parallel()
 	c := memory.Use(context.Background())
+	datastore.GetTestable(c).AddIndexes(&datastore.IndexDefinition{
+		Kind: "SingleRerun",
+		SortBy: []datastore.IndexColumn{
+			{
+				Property: "analysis",
+			},
+			{
+				Property: "start_time",
+			},
+		},
+	})
 	cl := testclock.New(testclock.TestTimeUTC)
 	c = clock.Set(c, cl)
 
