@@ -69,33 +69,23 @@ type MintParams struct {
 //
 // It uses either Common Name or X509v3 Subject Alternative Name DNS field
 // (depending on the presence of the later). If SAN DNS field is present, it
-// should be singular, it should contain machine's FQDN, and Common Name should
-// match the hostname part of the FQDN.
+// will be used, should it be consistent with the Common Name.
 //
 // The extracted FQDN is convert to lower case.
 //
-// Returns an error if values of CN and SAN DNS fields are not consistent.
+// Returns an error if CN field is empty.
 func (p *MintParams) MachineFQDN() (string, error) {
 	cn := strings.ToLower(p.Cert.Subject.CommonName)
 	if cn == "" {
 		return "", fmt.Errorf("unsupported cert, Subject CN field is required")
 	}
 
-	dns := ""
-	if len(p.Cert.DNSNames) != 0 {
-		if len(p.Cert.DNSNames) > 1 {
-			return "", fmt.Errorf("unsupported cert, more than one SAN DNS field")
+	for _, altName := range p.Cert.DNSNames {
+		if dns := strings.ToLower(altName); strings.HasPrefix(dns, cn+".") {
+			return dns, nil
 		}
-		dns = strings.ToLower(p.Cert.DNSNames[0])
 	}
-
-	switch {
-	case dns == "":
-		return cn, nil
-	case dns != cn && !strings.HasPrefix(dns, cn+"."):
-		return "", fmt.Errorf("unsupported cert, the CN (%q) should match hostname portion of the SAN DNS (%q)", cn, dns)
-	}
-	return dns, nil
+	return cn, nil
 }
 
 // Validate checks that token minting parameters are allowed.

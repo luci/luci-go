@@ -58,6 +58,18 @@ func TestMachineFQDN(t *testing.T) {
 		So(fqdn, ShouldEqual, "proto-chrome-focal.c.chromecompute.google.com.internal")
 	})
 
+	Convey("MachineFQDN with more than one SAN", t, func() {
+		params := MintParams{
+			Cert: &x509.Certificate{
+				Subject:  pkix.Name{CommonName: "name1"},
+				DNSNames: []string{"name1.example.com", "name2.example.com"},
+			},
+		}
+		fqdn, err := params.MachineFQDN()
+		So(fqdn, ShouldEqual, "name1.example.com")
+		So(err, ShouldBeNil)
+	})
+
 	// Test some synthetic cases.
 
 	Convey("MachineFQDN with empty CN", t, func() {
@@ -68,29 +80,6 @@ func TestMachineFQDN(t *testing.T) {
 		}
 		_, err := params.MachineFQDN()
 		So(err, ShouldErrLike, "unsupported cert, Subject CN field is required")
-	})
-
-	Convey("MachineFQDN with more than one SAN", t, func() {
-		params := MintParams{
-			Cert: &x509.Certificate{
-				Subject:  pkix.Name{CommonName: "name1"},
-				DNSNames: []string{"name1.example.com", "name2.example.com"},
-			},
-		}
-		_, err := params.MachineFQDN()
-		So(err, ShouldErrLike, "unsupported cert, more than one SAN DNS field")
-	})
-
-	Convey("MachineFQDN with SAN and CN not matching", t, func() {
-		params := MintParams{
-			Cert: &x509.Certificate{
-				Subject:  pkix.Name{CommonName: "name1"},
-				DNSNames: []string{"name2.example.com"},
-			},
-		}
-		_, err := params.MachineFQDN()
-		So(err, ShouldErrLike,
-			`unsupported cert, the CN ("name1") should match hostname portion of the SAN DNS ("name2.example.com")`)
 	})
 }
 
