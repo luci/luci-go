@@ -157,7 +157,7 @@ const FailuresTableRows = ({
 
   return (
     <>
-      <TableRow>
+      <TableRow hover={true}>
         {group.failure ? (
           <>
             <NarrowTableCell
