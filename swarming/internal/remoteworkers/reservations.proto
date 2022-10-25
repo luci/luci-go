@@ -1,0 +1,206 @@
+syntax = "proto3";
+
+package google.devtools.remoteworkers.v1test2;
+
+import "google/api/annotations.proto";
+import "google/api/field_behavior.proto";
+import "google/api/resource.proto";
+import "google/protobuf/any.proto";
+import "google/protobuf/timestamp.proto";
+import "google/rpc/status.proto";
+
+import "go.chromium.org/luci/swarming/internal/remoteworkers/worker.proto";
+
+option csharp_namespace = "Google.DevTools.RemoteWorkers.V1Test2";
+option go_package = "go.chromium.org/luci/swarming/internal/remoteworkers";
+option java_multiple_files = true;
+option java_outer_classname = "RemoteWorkersReservations";
+option java_package = "com.google.devtools.remoteworkers.v1test2";
+option objc_class_prefix = "RW";
+
+service Reservations {
+  // Creates a new reservation and enqueues it for submissions.
+  rpc CreateReservation(CreateReservationRequest) returns (Reservation) {
+    option (google.api.http) = {
+      post: "/v1test2/{parent=**}/reservations"
+      body: "reservation"
+    };
+  }
+
+  // Retrieves a reservation, along with its results if it's completed. Can
+  // optionally wait for completion as well.
+  rpc GetReservation(GetReservationRequest) returns (Reservation) {
+    option (google.api.http) = {
+      get: "/v1test2/{name=**/reservations/*}"
+    };
+  }
+
+  // Attempts to cancel a reservation. If it is successful, the reservation's
+  // state will change to COMPLETED and its status code to CANCELLED.
+  rpc CancelReservation(CancelReservationRequest)
+      returns (CancelReservationResponse) {
+    option (google.api.http) = {
+      post: "/v1test2/{name=**/reservations/*}:cancel"
+      body: "*"
+    };
+  }
+}
+
+// A low-level request for a lease of a worker.
+message Reservation {
+  option (google.api.resource) = {
+    type: "remoteworkers.googleapis.com/Reservation",
+    pattern: "{parent=**}/reservations/{reservation}"
+  };
+
+  // The full reservation resource in the form of
+  // "{parent}/reservations/{reservation}". The {reservation} component must be
+  // a globally unique random identifier, e.g.  UUID. This component must be set
+  // in the CreateReservation request.
+  string name = 1;
+
+  // A message describing what the worker should do.
+  google.protobuf.Any payload = 2;
+
+  // Any result provided by the worker. Output only.
+  google.protobuf.Any result = 3;
+
+  // The state of the reservation - see ReservationState for more information.
+  // Output only.
+  ReservationState state = 4;
+
+  // If `state` is COMPLETED, this is the final status of the reservation.
+  // Typically, this will be OK if a worker was successfully assigned - if the
+  // worker failed to do work, that failure will be reported in the `result`
+  // field, not here.
+  // Output only.
+  google.rpc.Status status = 5;
+
+  // The requirements of this reservation. Cannot be modified by
+  // UpdateReservation.
+  google.devtools.remoteworkers.v1test2.Worker requirements = 6;
+
+  // The time after which the client no longer cares about this reservation. The
+  // lease must be *completed* by this time, not started.
+  google.protobuf.Timestamp expire_time = 7;
+
+  // The priority (relative importance) of this reservation. Generally, a lower
+  // value means that the reservation should be run sooner than reservations
+  // having a greater priority value, but the interpretation of a given value is
+  // server-dependent. A priority of 0 means the *default* priority. Priorities
+  // may be positive or negative, and such reservations should run later or
+  // sooner than reservations having the default priority, respectively. The
+  // particular semantics of this field is up to the server. In particular,
+  // every server will have their own supported range of priorities, and will
+  // decide how these map into scheduling policy.
+  int32 priority = 8;
+
+  // The pubsub_metadata field is a PubSubMetadata message containing topic_id
+  // and publisher_id. If this message is provided, then the pubsub service will
+  // be used to publish a Reservation message to the topic_id using the
+  // publisher_id. The published Reservation message will contain the
+  // reservation ID along with basic status info about the result. The
+  // subscriber will then need to call GetReservation RPC to get more details.
+  PubSubMetadata pubsub_metadata = 9;
+
+  // The assigned_bot_id field is a string message of the name of the machine
+  // tasked with executing a Reservation. This is a necessary debugging field
+  // for Reservation users that control their own workers.
+  string assigned_bot_id = 10;
+
+  // The name of the machine that should execute the Reservation.
+  string requested_bot_id = 12 [(google.api.field_behavior) = OPTIONAL];
+
+  // Identifies the group that this reservation belongs to. For example, if this
+  // reservation represents one of several actions to be performed as part of a
+  // particular job, the group ID may be the ID of that job.
+  string group_id = 11 [(google.api.field_behavior) = OPTIONAL];
+}
+
+// The state of the reservation.
+enum ReservationState {
+  // Default value; do not use.
+  RESERVATION_STATE_UNSPECIFIED = 0;
+
+  // The reservation has not yet been assigned.
+  RESERVATION_PENDING = 1;
+
+  // The reservation has been assigned to a worker but is not yet active.
+  RESERVATION_ASSIGNED = 2;
+
+  // The reservation is currently active.
+  RESERVATION_ACTIVE = 3;
+
+  // The reservation has completed.
+  RESERVATION_COMPLETED = 4;
+
+  // The reservation is cancelled.
+  RESERVATION_CANCELLED = 5;
+}
+
+// Request message for CreateReservation.
+message CreateReservationRequest {
+  string parent = 1;
+  Reservation reservation = 2;
+}
+
+message GetReservationRequest {
+  string name = 1;
+
+  // If non-zero, GetReservation will attempt to wait for the reservation's
+  // state to become COMPLETED for up to this amount of time, though this is not
+  // guaranteed.
+  int64 wait_seconds = 2;
+}
+
+message CancelReservationRequest {
+  string name = 1;
+
+  // The intent indicates if a task can be cancelled based on its state. If set
+  // to ANY then assigned tasks may be cancelled. Otherwise, the task must be
+  // pending.
+  CancelReservationIntent intent = 2;
+}
+
+message CancelReservationResponse {
+  CancelResult result = 1;
+}
+
+// The intent of the cancellation request.
+enum CancelReservationIntent {
+  // Default intent.
+  CANCEL_RESERVATION_INTENT_UNSPECIFIED = 0;
+
+  // The reservation should only be cancelled if it is in pending state.
+  ONLY_IF_PENDING = 1;
+
+  // The reservation should be cancelled no matter its state.
+  ANY = 2;
+}
+
+// The result of canceling the reservation.
+enum CancelResult {
+  CANCEL_STATE_UNSPECIFIED = 0;
+
+  // The Reservation was canceled successfully.
+  CANCELED = 1;
+
+  // The Reservation was not canceled because the task is assigned.
+  TASK_ALREADY_ASSIGNED = 2;
+
+  // The Reservation was not canceled because the task is finished.
+  TASK_ALREADY_FINISHED = 3;
+
+  // The Reservation is cancelling.
+  CANCELLING = 4;
+}
+
+message PubSubMetadata {
+  // The topic_id is the name of the topic that the pubsub service will publish.
+  // The subscriber should be subscribing to the topic_id.
+  string topic_id = 1;
+
+  // The publisher_id is the id that the pubsub service will use when publishing
+  // the topic identified by the topic_id.
+  string publisher_id = 2;
+}

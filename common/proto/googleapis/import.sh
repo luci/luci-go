@@ -5,6 +5,7 @@ set -e
 # List of proto files within https://github.com/googleapis/googleapis to import.
 PROTOS_TO_IMPORT=(
   google/api/annotations.proto
+  google/api/client.proto
   google/api/field_behavior.proto
   google/api/http.proto
   google/api/resource.proto
