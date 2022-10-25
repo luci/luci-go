@@ -350,10 +350,10 @@ type BuilderPredicate struct {
 	// Each regex is wrapped in ^ and $ automatically.
 	// Examples:
 	//
-	//   # All builders in "chromium" project
-	//   regex: "chromium/.+"
-	//   # A specific builder.
-	//   regex: "infra/ci/infra-continuous-trusty-64"
+	//	# All builders in "chromium" project
+	//	regex: "chromium/.+"
+	//	# A specific builder.
+	//	regex: "infra/ci/infra-continuous-trusty-64"
 	//
 	// Defaults to [".*"].
 	Regex []string `protobuf:"bytes,1,rep,name=regex,proto3" json:"regex,omitempty"`

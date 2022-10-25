@@ -237,8 +237,8 @@ type Build struct {
 	// bbagent checks this field at the frequency of
 	// buildbucket.MinUpdateBuildInterval. When bbagent sees the build is in
 	// cancel process, there are two states:
-	//  * it has NOT yet started the exe payload,
-	//  * it HAS started the exe payload.
+	//   - it has NOT yet started the exe payload,
+	//   - it HAS started the exe payload.
 	//
 	// In the first state, bbagent will immediately terminate the build without
 	// invoking the exe payload at all.
@@ -585,6 +585,7 @@ type InputDataRef struct {
 	unknownFields protoimpl.UnknownFields
 
 	// Types that are assignable to DataType:
+	//
 	//	*InputDataRef_Cas
 	//	*InputDataRef_Cipd
 	DataType isInputDataRef_DataType `protobuf_oneof:"data_type"`
@@ -679,6 +680,7 @@ type ResolvedDataRef struct {
 	unknownFields protoimpl.UnknownFields
 
 	// Types that are assignable to DataType:
+	//
 	//	*ResolvedDataRef_Cas
 	//	*ResolvedDataRef_Cipd
 	DataType isResolvedDataRef_DataType `protobuf_oneof:"data_type"`
@@ -974,8 +976,8 @@ type Build_Output struct {
 	// In recipes, use step_result.presentation.properties to set these,
 	// for example
 	//
-	//   step_result = api.step(['echo'])
-	//   step_result.presentation.properties['foo'] = 'bar'
+	//	step_result = api.step(['echo'])
+	//	step_result.presentation.properties['foo'] = 'bar'
 	//
 	// More docs: https://chromium.googlesource.com/infra/luci/recipes-py/+/HEAD/doc/old_user_guide.md#Setting-properties
 	//
@@ -2205,6 +2207,7 @@ type BuildInfra_Buildbucket_Agent_Source struct {
 	unknownFields protoimpl.UnknownFields
 
 	// Types that are assignable to DataType:
+	//
 	//	*BuildInfra_Buildbucket_Agent_Source_Cipd
 	DataType isBuildInfra_Buildbucket_Agent_Source_DataType `protobuf_oneof:"data_type"`
 }
@@ -2529,11 +2532,12 @@ func (x *BuildInfra_Buildbucket_Agent_Source_CIPD) GetResolvedInstances() map[st
 // Builder cache.
 //
 // Buildbucket implicitly declares cache
-//   {"name": "<hash(project/bucket/builder)>", "path": "builder"}.
+//
+//	{"name": "<hash(project/bucket/builder)>", "path": "builder"}.
+//
 // This means that any LUCI builder has a "personal disk space" on the bot.
 // Builder cache is often a good start before customizing caching.
 // In recipes, it is available at api.buildbucket.builder_cache_path.
-//
 type BuildInfra_Swarming_CacheEntry struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache

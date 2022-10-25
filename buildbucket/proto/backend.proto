@@ -1,0 +1,281 @@
+// Copyright 2022 The LUCI Authors. All rights reserved.
+// Use of this source code is governed under the Apache License, Version 2.0
+// that can be found in the LICENSE file.
+
+syntax = "proto3";
+
+package buildbucket.v2;
+
+option go_package = "go.chromium.org/luci/buildbucket/proto;buildbucketpb";
+
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/duration.proto";
+import "google/protobuf/struct.proto";
+import "google/protobuf/empty.proto";
+
+import "go.chromium.org/luci/buildbucket/proto/common.proto";
+import "go.chromium.org/luci/buildbucket/proto/launcher.proto";
+import "go.chromium.org/luci/buildbucket/proto/project_config.proto";
+import "go.chromium.org/luci/buildbucket/proto/task.proto";
+
+
+service TaskBackend {
+  // RunTask instructs the backend to run a task (which contains payload for
+  // executing a Buildbucket Build).
+  //
+  // This should return OK as long as the backend will EVENTUALLY run the
+  // task. It's expected that the backend will either call
+  // Builds.UpdateBuildTask or the agent will call UpdateBuild once
+  // the task is running.
+  //
+  // Notably this doesn't return anything other than the gRPC status
+  // code due to complexities of the "RunTask Protocol" (see this section
+  // below).
+  //
+  // Buildbucket will invoke this RPC with the Project-scoped identity.
+  rpc RunTask(RunTaskRequest) returns (google.protobuf.Empty) {};
+
+  // BB will call FetchTasks when it needs to understand the current
+  // status of jobs.
+  //
+  // This will happen at a regular, unspecified, interval when
+  // UpdateBuild/UpdateBuildTask haven't been called recently.
+  //
+  // Once the build is in a terminal state, FetchTasks SHOULD return
+  // the same response every time.
+  //
+  // Buildbucket will invoke this RPC with the Project-scoped identity.
+  rpc FetchTasks(FetchTasksRequest) returns (FetchTasksResponse) {};
+
+  // BB will call this if it was requested to cancel some build(s).
+  // The backend SHOULD implement cancelation as best as it can, but
+  // simple backends may choose to ignore this (because the next call
+  // to UpdateBuild will indicate that the build is Canceled, and so the
+  // agent would quit).
+  //
+  // Buildbucket will invoke this RPC with the Project-scoped identity.
+  rpc CancelTasks(CancelTasksRequest) returns (CancelTasksResponse) {};
+
+  // BB will call this when it is asked to validate project configuration i.e.
+  // the Builder.backend.config_json field.
+  //
+  // Buildbucket will invoke this RPC with the Project-scoped identity.
+  rpc ValidateConfigs(ValidateConfigsRequest)
+     returns (ValidateConfigsResponse) {};
+
+
+}
+
+message RunTaskRequest {
+  // A string supplied by the builder configuration which will be interpreted
+  // by this backend. This should be used to encapsulate the connection
+  // information needed to target the specific backend host.
+  //
+  // For example, a backend might accept a target of
+  // 'swarming://chromium-swarm.appspot.com' to indicate "swarming"
+  // protocol and which Swarming instance it should issue the task on.
+  //
+  // In this example, we use 'swarming://' to allow for the possibility
+  // of a single backend handling multiple different protocols.
+  string target = 1;
+
+  // A token that the backend can use to preemptively report status back
+  // to Buildbucket via the UpdateBuildTask RPC.
+  string backend_token = 2;
+
+  // The LUCI Realm that the created task should be associated with.
+  string realm = 3;
+
+  message AgentExecutable {
+    message AgentSource {
+      string sha256 = 1;     // required
+      int64  size_bytes = 2; // required
+      string url = 3;        // required
+    }
+    // Mapping of cipd "${platform}" values to the direct download URL
+    // and sha256+size of the agent binary.
+    //
+    // ${platform} has the form $OS-$ARCH.
+    //
+    // $OS values:
+    //   * mac
+    //   * windows
+    //   * linux
+    //
+    // $ARCH values:
+    //   * amd64
+    //   * arm64
+    //  * i386
+    //
+    // The urls will be guaranteed to be valid until at least
+    // start_deadline+execution_timeout.
+    map<string, AgentSource> source = 1;
+  }
+  // The backend must run the agent with the given command line arguments
+  // (see `agent_args`) for full functionality.
+  AgentExecutable agent = 4;
+
+  // An opaque argv[1:] to be passed to the agent.
+  //
+  // Named caches set for this Build must be mounted all under some directory
+  // and that root directory must be passed by appending a CLI argument:
+  //   `-cache-base=/path/to/cache/base`.
+  //
+  // Additionally, the Backend must arrange for the agent to know the backend
+  // task id. This must exactly match the task id used by UpdateBuildTask,
+  // and the agent will use it to make UpdateBuild calls. The backend must
+  // supply the task id to the agent by appending a CLI argument:
+  //   `-task-id=<task id>`
+  //
+  // Also see `secrets` for one more potential CLI argument.
+  //
+  // For full functionality, the Backend must run the agent with this
+  // list of arguments. The agent knows how to execute the Build as defined
+  // by Buildbucket.
+  //
+  // Implementation note; I'd like to fix crbug.com/1219018 at the same time
+  // that we implement this. Otherwise we will continue to have the
+  // command-line-length issues that we do today, but they may get worse from
+  // e.g. -task-id and -cache-base.
+  repeated string agent_args = 5;
+
+  // Secrets contains key material for clients to call UpdateBuild.
+  // This can either be passed via LUCI_CONTEXT['secrets'] to the agent,
+  // or can be passed by adding a `-secrets=<binarypb>` CLI argument.
+  //
+  // NOTE: If passed via CLI, Backends SHOULD ensure that task
+  // command-lines are not widely readable, or the Backend risks tasks (or
+  // malicious actors) impersonating builds.
+  BuildSecrets secrets = 6;
+
+  // The hostname of the buildbucket service to send RPCs back to.
+  //
+  // e.g. `cr-buildbucket.appspot.com`.
+  string buildbucket_host = 7;
+
+  // The id of the build that this request is for.
+  //
+  // For backends which are NOT using the agent, they can use this build_id to
+  // directly service the build (e.g. by calling UpdateBuild).
+  //
+  // It's possible for multiple RunTaskRequests to be issued for the same
+  // build_id; See `request_id` for how this could happen.
+  string build_id = 8;
+
+  // Dimensions are key/value pairs which describe the type of "bot" which
+  // can process this build. The specific values depend on the Backend.
+  //
+  // These also detail how long the Backend should wait for each of these
+  // before dropping them as a requirement.
+  //
+  // NOTE: These do not include Swarming's "special" named cache dimensions.
+  // see `caches` for that information.
+  repeated RequestedDimension dimensions = 9;
+
+  // Start deadline is the absolute timestamp of when this Build must start
+  // by before Buildbucket marks it as INFRA_FAILURE.
+  google.protobuf.Timestamp start_deadline = 10;
+
+  // Execution timeout is the amount of time after the Build starts that
+  // the Backend should allow it to run before beginning the graceful shutdown
+  // process (described in LUCI_CONTEXT['deadline']).
+  //
+  // Builds which run for longer than this will be marked as INFRA_FAILURE.
+  google.protobuf.Duration execution_timeout = 11;
+
+  // The amount of time on either `execution_timeout` or on a `cancel` event
+  // that the agent should be given to shut down.
+  //
+  // See LUCI_CONTEXT['deadline'].
+  //
+  // Buildbucket may mark the build as INFRA_FAILURE if it fails to terminate
+  // this much time after being canceled, or after hitting execution_timeout.
+  google.protobuf.Duration grace_period = 12;
+
+  // Describes the list of cache ids, their paths (relative to the cache root)
+  // and how long the Backend should wait for a bot with a warm cache to
+  // become available.
+  repeated BuilderConfig.CacheEntry caches = 13;
+
+  // Additional backend-specific settings. For Swarming this would include:
+  //   * priority
+  //   * wait_for_capacity
+  //   * containment
+  google.protobuf.Struct backend_config = 14;
+
+  // Experiments are provided in order to allow Backends to roll out new
+  // features or behaviors triggered on experiments.
+  //
+  // This will be the full set of experiments selected for this Build
+  // (as they might appear in Build.input.experiments).
+  repeated string experiments = 15;
+
+  // Buildbucket will provide a request id (formatted as a UUID), which the
+  // TaskBackend SHOULD use to deduplicate the RunTaskRequest within a 10
+  // minute window.
+  //
+  // If the backend does NOT deduplicate the requests, it will put extra
+  // burden on the backend (because some useless tasks will be scheduled).
+  // However proper deduplication can be difficult to properly implement,
+  // so it may be worth the tradeoff for simple backends to just accept
+  // the possibility of occasional duplicated, useless, work.
+  //
+  // See the "RunTask Protocol" section for the full details on how
+  // Buildbucket will avoid raciness even in the face of duplicate tasks.
+  string request_id = 16;
+}
+
+message FetchTasksRequest {
+  // The number of TaskID will never be more than 1000.
+  repeated TaskID task_ids = 1;
+}
+
+message FetchTasksResponse {
+  // These should represent the current state of the requested tasks.
+  repeated Task tasks = 1;
+}
+
+message CancelTasksRequest {
+  // The number of TaskID will never be more than 500.
+  repeated TaskID task_ids = 1;
+}
+
+message CancelTasksResponse {
+  // These represent the current state of the tasks.
+  //
+  // If they're not indicated as canceled, Buildbucket will continue
+  // to call FetchTasks, or wait until the TaskBackend calls UpdateBuildTask.
+  // In other words, cancellation may be sync OR async (and this is up to
+  // the specific backend).
+  //
+  // The TaskBackend SHOULD only indicate a Task is in the canceled when that
+  // task has actually stopped execution. For example, if cancelation entails
+  // leaving a note for the bot to do the cancelation, ideally these Task
+  // objects should only contain the canceled status once the bot has actually
+  // terminated (not just when the 'please cancel' note was written).
+  repeated Task tasks = 1;
+}
+
+message ValidateConfigsRequest {
+  message ConfigContext {
+    string target = 1;
+    google.protobuf.Struct config_json = 2;  // guaranteed to be valid JSON
+  }
+  // A list of all unique target+config_jsons that Buildbucket is requesting
+  // validation for.
+  repeated ConfigContext configs = 1;
+}
+
+message ValidateConfigsResponse {
+  message ErrorDetail {
+    // The 0-based index in the ValidateConfigsRequest.configs list.
+    //
+    // Note: `config_errors` can contain multiple ErrorDetail messages with
+    // the same `index` value, to indicate multiple errors on the same item.
+    int32  index = 1;
+    string error = 2;
+  }
+  // Must be sorted by `index`, and multiple ErrorDetails for the same index
+  // should be assumed to be in an order which makes sense to the backend.
+  repeated ErrorDetail config_errors = 1;
+}
