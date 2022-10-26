@@ -958,6 +958,43 @@ func TestCompute(t *testing.T) {
 				}
 			})
 		})
+		Convey("ignores included builders if in NPR mode", func() {
+			in := makeInput(ctx, []*cfgpb.Verifiers_Tryjob_Builder{
+				builderConfigGenerator{
+					Name:  "test-proj/test/builder1",
+					Modes: []string{string(run.NewPatchsetRun)},
+				}.generate(),
+
+				builderConfigGenerator{
+					Name:           "test-proj/test.bucket/builder2",
+					IncludableOnly: true,
+				}.generate(),
+			})
+			in.RunMode = run.NewPatchsetRun
+			in.RunOptions.IncludedTryjobs = append(in.RunOptions.IncludedTryjobs, "test-proj/test.bucket:builder2")
+			res, err := Compute(ctx, *in)
+			So(err, ShouldBeNil)
+			So(res.ComputationFailure, ShouldBeNil)
+			So(res.Requirement, ShouldResembleProto, &tryjob.Requirement{
+				RetryConfig: &cfgpb.Verifiers_Tryjob_RetryConfig{
+					SingleQuota: 2,
+					GlobalQuota: 8,
+				},
+				Definitions: []*tryjob.Definition{{
+					Backend: &tryjob.Definition_Buildbucket_{
+						Buildbucket: &tryjob.Definition_Buildbucket{
+							Host: "cr-buildbucket.appspot.com",
+							Builder: &buildbucketpb.BuilderID{
+								Project: "test-proj",
+								Bucket:  "test",
+								Builder: "builder1",
+							},
+						},
+					},
+					Critical: true,
+				}},
+			})
+		})
 	})
 }
 
@@ -973,6 +1010,7 @@ type builderConfigGenerator struct {
 	LocationFilters       []*cfgpb.Verifiers_Tryjob_Builder_LocationFilter
 	TriggeredBy           string
 	CancelStale           cfgpb.Toggle
+	Modes                 []string
 }
 
 func (bcg builderConfigGenerator) generate() *cfgpb.Verifiers_Tryjob_Builder {
@@ -984,6 +1022,9 @@ func (bcg builderConfigGenerator) generate() *cfgpb.Verifiers_Tryjob_Builder {
 		LocationFilters:       bcg.LocationFilters,
 		TriggeredBy:           bcg.TriggeredBy,
 		CancelStale:           bcg.CancelStale,
+	}
+	if len(bcg.Modes) != 0 {
+		ret.ModeAllowlist = bcg.Modes
 	}
 	if bcg.Allowlist != "" {
 		ret.OwnerWhitelistGroup = []string{bcg.Allowlist}

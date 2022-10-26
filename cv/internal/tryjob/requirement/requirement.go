@@ -611,19 +611,26 @@ func Compute(ctx context.Context, in Input) (*ComputationResult, error) {
 	ret := &ComputationResult{Requirement: &tryjob.Requirement{
 		RetryConfig: in.ConfigGroup.GetVerifiers().GetTryjob().GetRetryConfig(),
 	}}
-
-	explicitlyIncluded, compFail := getIncludedTryjobs(in.RunOptions.GetIncludedTryjobs())
-	if compFail != nil {
-		return &ComputationResult{ComputationFailure: compFail}, nil
-	}
-	includableBuilders, triggeredByBuilders := getIncludablesAndTriggeredBy(in.ConfigGroup.GetVerifiers().GetTryjob().GetBuilders())
-	unincludable := explicitlyIncluded.Difference(includableBuilders)
-	undefined := unincludable.Difference(triggeredByBuilders)
-	switch {
-	case len(undefined) != 0:
-		return &ComputationResult{ComputationFailure: &buildersNotDefined{Builders: undefined.ToSlice()}}, nil
-	case len(unincludable) != 0:
-		return &ComputationResult{ComputationFailure: &buildersNotDirectlyIncludable{Builders: unincludable.ToSlice()}}, nil
+	explicitlyIncluded := stringset.New(0)
+	switch in.RunMode {
+	case run.NewPatchsetRun:
+		// Ignore tryjobs included by the cq-include-trybots: footer , these are
+		// intended for CQ-vote runs.
+	default:
+		var compFail ComputationFailure
+		explicitlyIncluded, compFail = getIncludedTryjobs(in.RunOptions.GetIncludedTryjobs())
+		if compFail != nil {
+			return &ComputationResult{ComputationFailure: compFail}, nil
+		}
+		includableBuilders, triggeredByBuilders := getIncludablesAndTriggeredBy(in.ConfigGroup.GetVerifiers().GetTryjob().GetBuilders())
+		unincludable := explicitlyIncluded.Difference(includableBuilders)
+		undefined := unincludable.Difference(triggeredByBuilders)
+		switch {
+		case len(undefined) != 0:
+			return &ComputationResult{ComputationFailure: &buildersNotDefined{Builders: undefined.ToSlice()}}, nil
+		case len(unincludable) != 0:
+			return &ComputationResult{ComputationFailure: &buildersNotDirectlyIncludable{Builders: unincludable.ToSlice()}}, nil
+		}
 	}
 
 	ownersSet := stringset.New(len(in.CLs))
