@@ -20,10 +20,14 @@ import (
 	"time"
 
 	"cloud.google.com/go/pubsub"
+	"google.golang.org/api/option"
+	"google.golang.org/grpc"
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/config/server/cfgmodule"
+	"go.chromium.org/luci/grpc/grpcmon"
 	"go.chromium.org/luci/server"
+	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/cron"
 	"go.chromium.org/luci/server/gaeemulation"
 	"go.chromium.org/luci/server/module"
@@ -47,7 +51,18 @@ func main() {
 	}
 
 	server.Main(nil, modules, func(srv *server.Server) error {
-		psc, err := pubsub.NewClient(srv.Context, srv.Options.CloudProject)
+		creds, err := auth.GetPerRPCCredentials(
+			srv.Context, auth.AsSelf,
+			auth.WithScopes(auth.CloudOAuthScopes...),
+		)
+		if err != nil {
+			return errors.Annotate(err, "failed to get per RPC credentials").Err()
+		}
+		psc, err := pubsub.NewClient(
+			srv.Context, srv.Options.CloudProject,
+			option.WithGRPCDialOption(grpcmon.WithClientRPCStatsMonitor()),
+			option.WithGRPCDialOption(grpc.WithPerRPCCredentials(creds)),
+		)
 		if err != nil {
 			return errors.Annotate(err, "pubsub.NewClient: %s", err).Err()
 		}
