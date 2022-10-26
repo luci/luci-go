@@ -51,6 +51,7 @@ type cmdGetBuild struct {
 	bbHost       string
 	pinBotID     bool
 	priorityDiff int
+	realBuild    bool
 
 	buildID int64
 }
@@ -64,6 +65,9 @@ func (c *cmdGetBuild) initFlags(opts cmdBaseOptions) {
 
 	c.Flags.IntVar(&c.priorityDiff, "adjust-priority", 10,
 		"Increase or decrease the priority of the generated job. Note: priority works like Unix 'niceness'; Higher values indicate lower priority.")
+
+	c.Flags.BoolVar(&c.realBuild, "real-build", false,
+		"Get a synthesized build using the provided build as template, instead the provided build itself.")
 
 	c.cmdBase.initFlags(opts)
 }
@@ -92,6 +96,7 @@ func (c *cmdGetBuild) execute(ctx context.Context, authClient *http.Client, _ au
 		PinBotID:        c.pinBotID,
 		PriorityDiff:    c.priorityDiff,
 		KitchenSupport:  c.kitchenSupport,
+		RealBuild:       c.realBuild,
 	})
 }
 

@@ -25,6 +25,7 @@ import (
 	"go.chromium.org/luci/auth"
 	"go.chromium.org/luci/client/cmd/swarming/swarmingimpl"
 	"go.chromium.org/luci/common/data/text"
+	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/system/terminal"
 	"go.chromium.org/luci/led/job"
@@ -62,6 +63,7 @@ type cmdLaunch struct {
 	dump      bool
 	noLEDTag  bool
 	resultdb  job.RDBEnablement
+	realBuild bool
 }
 
 func (c *cmdLaunch) initFlags(opts cmdBaseOptions) {
@@ -74,6 +76,8 @@ func (c *cmdLaunch) initFlags(opts cmdBaseOptions) {
 		 If "on", resultdb will be forcefully enabled.
 		 If "off", resultdb will be forcefully disabled.
 		 If unspecified, resultdb will be enabled if the original build had resultdb enabled.`))
+	c.Flags.BoolVar(&c.realBuild, "real-build", false,
+		"Launch a real buildbucket build instead of a raw swarming task.")
 	c.cmdBase.initFlags(opts)
 }
 
@@ -91,8 +95,14 @@ func (c *cmdLaunch) execute(ctx context.Context, authClient *http.Client, _ auth
 	}
 
 	// Currently modernize only means 'upgrade to bbagent from kitchen'.
-	if bb := inJob.GetBuildbucket(); c.modernize && bb != nil {
-		bb.LegacyKitchen = false
+	if bb := inJob.GetBuildbucket(); bb != nil {
+		if c.modernize {
+			bb.LegacyKitchen = false
+		}
+		// TODO(crbug.com/1114804): support launching real build.
+		if c.realBuild {
+			return nil, errors.New("launching real buildbucket build is not supported")
+		}
 	}
 
 	task, meta, err := ledcmd.LaunchSwarming(ctx, authClient, inJob, ledcmd.LaunchSwarmingOpts{
