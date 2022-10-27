@@ -7,7 +7,8 @@
     "build": "tsc --noEmit --skipLibCheck && node esbuild.mjs",
     "watch": "tsc --noEmit --skipLibCheck && node esbuild_watch.mjs",
     "typecheck": "tsc --noEmit --skipLibCheck",
-    "test": "tsc --noEmit --skipLibCheck && jest && cypress run"
+    "test": "tsc --noEmit --skipLibCheck && jest",
+    "e2e": "tsc --noEmit --skipLibCheck && cypress run"
   },
   "author": "mwarton@google.com",
   "devDependencies": {
