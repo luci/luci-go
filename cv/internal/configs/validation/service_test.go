@@ -146,6 +146,14 @@ func TestListenerConfigValidation(t *testing.T) {
 				So(validateListenerSettings(vctx, configSet, path, []byte(cfg)), ShouldBeNil)
 				So(vctx.Finalize().Error(), ShouldContainSubstring, "missing closing")
 			})
+
+			Convey("invalid disabled_project_regexps", func() {
+				cfg := []byte(`
+					disabled_project_regexps: "(123"
+				`)
+				So(validateListenerSettings(vctx, configSet, path, []byte(cfg)), ShouldBeNil)
+				So(vctx.Finalize().Error(), ShouldContainSubstring, "missing closing")
+			})
 		})
 	})
 }

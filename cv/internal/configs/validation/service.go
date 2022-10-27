@@ -15,8 +15,6 @@
 package validation
 
 import (
-	"regexp"
-
 	"google.golang.org/protobuf/encoding/prototext"
 
 	"go.chromium.org/luci/common/data/stringset"
@@ -83,13 +81,8 @@ func validateListenerSettings(ctx *validation.Context, configSet, path string, c
 		}
 		ctx.Exit()
 	}
-	for i, r := range cfg.GetEnabledProjectRegexps() {
-		ctx.Enter("enabled_project_regexps #%d", i+1)
-		if _, err := regexp.Compile(r); err != nil {
-			ctx.Errorf(err.Error())
-		}
-		ctx.Exit()
-	}
+	validateRegexp(ctx, "enabled_project_regexps", cfg.GetEnabledProjectRegexps())
+	validateRegexp(ctx, "disabled_project_regexps", cfg.GetDisabledProjectRegexps())
 	// TODO(crbug.com/1358208): check if listener-settings.cfg has
 	// a subscription for all the Gerrit hosts, if the LUCI project is
 	// enabled in the pubsub listener.

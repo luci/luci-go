@@ -69,5 +69,11 @@ message Settings {
   //
   // If not, CV will use the incremental poller to find changes in the Gerrit
   // hosts.
-  repeated string enabled_project_regexps = 2;
+  repeated string enabled_project_regexps = 2 [deprecated=true];
+  // If a LUCI Project matches any of the regexps, CV will not use the pubsub
+  // listener to find changes in the Gerrit hosts listed in the project config.
+  //
+  // Instead, CV will use the incremental poller to find changes from the Gerrit
+  // hosts.
+  repeated string disabled_project_regexps = 3;
 }
