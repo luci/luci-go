@@ -73,7 +73,7 @@ func validCreateBuildRequest() *pb.CreateBuildRequest {
 								"path_a": {
 									DataType: &pb.InputDataRef_Cipd{
 										Cipd: &pb.InputDataRef_CIPD{
-											Specs: []*pb.InputDataRef_CIPD_PkgSpec{{Package: "pkg_a", Version: "latest"}},
+											Specs: []*pb.InputDataRef_CIPD_PkgSpec{{Package: "pkg_a/${platform}", Version: "latest"}},
 										},
 									},
 									OnPath: []string{"path_a/bin", "path_a"},
@@ -81,7 +81,7 @@ func validCreateBuildRequest() *pb.CreateBuildRequest {
 								"path_b": {
 									DataType: &pb.InputDataRef_Cipd{
 										Cipd: &pb.InputDataRef_CIPD{
-											Specs: []*pb.InputDataRef_CIPD_PkgSpec{{Package: "pkg_b", Version: "latest"}},
+											Specs: []*pb.InputDataRef_CIPD_PkgSpec{{Package: "pkg_b/${platform}", Version: "latest"}},
 										},
 									},
 									OnPath: []string{"path_b/bin", "path_b"},
@@ -209,16 +209,32 @@ func TestValidateCreateBuildRequest(t *testing.T) {
 			})
 
 			Convey("Exe", func() {
-				Convey("cipd_package", func() {
+				Convey("cipd_package not specified", func() {
 					req.Build.Exe = &pb.Executable{
-						CipdPackage: "Invalid",
+						Cmd: []string{"recipes"},
 					}
 					_, err := validateCreateBuildRequest(ctx, wellknownExps, req)
-					So(err, ShouldErrLike, `build: exe: cipd_package`)
+					So(err, ShouldBeNil)
+				})
+				Convey("cipd_package", func() {
+					Convey("cipd_package without suffix", func() {
+						req.Build.Exe = &pb.Executable{
+							CipdPackage: "valid/package/name",
+						}
+						_, err := validateCreateBuildRequest(ctx, wellknownExps, req)
+						So(err, ShouldErrLike, `build: exe: cipd_package: expected to end with /${platform}`)
+					})
+					Convey("invalid cipd_package", func() {
+						req.Build.Exe = &pb.Executable{
+							CipdPackage: "{Invalid}/${platform}",
+						}
+						_, err := validateCreateBuildRequest(ctx, wellknownExps, req)
+						So(err, ShouldErrLike, `build: exe: cipd_package`)
+					})
 				})
 				Convey("cipd_version", func() {
 					req.Build.Exe = &pb.Executable{
-						CipdPackage: "valid/package/name",
+						CipdPackage: "valid/package/name/${platform}",
 						CipdVersion: "+100",
 					}
 					_, err := validateCreateBuildRequest(ctx, wellknownExps, req)
@@ -226,7 +242,7 @@ func TestValidateCreateBuildRequest(t *testing.T) {
 				})
 				Convey("exe doesn't match agent", func() {
 					req.Build.Exe = &pb.Executable{
-						CipdPackage: "valid/package/name",
+						CipdPackage: "valid/package/name/${platform}",
 						CipdVersion: "version",
 					}
 					req.Build.Infra.Buildbucket.Agent.Purposes = map[string]pb.BuildInfra_Buildbucket_Agent_Purpose{
@@ -272,7 +288,7 @@ func TestValidateCreateBuildRequest(t *testing.T) {
 								"payload_path": {
 									DataType: &pb.InputDataRef_Cipd{
 										Cipd: &pb.InputDataRef_CIPD{
-											Specs: []*pb.InputDataRef_CIPD_PkgSpec{{Package: "valid/package/name", Version: "latest"}},
+											Specs: []*pb.InputDataRef_CIPD_PkgSpec{{Package: "valid/package/name/${platform}", Version: "latest"}},
 										},
 									},
 								},
@@ -358,7 +374,7 @@ func TestValidateCreateBuildRequest(t *testing.T) {
 										"path_a": {
 											DataType: &pb.InputDataRef_Cipd{
 												Cipd: &pb.InputDataRef_CIPD{
-													Specs: []*pb.InputDataRef_CIPD_PkgSpec{{Package: "a/package", Version: ""}},
+													Specs: []*pb.InputDataRef_CIPD_PkgSpec{{Package: "a/package/${platform}", Version: ""}},
 												},
 											},
 										},
@@ -435,7 +451,7 @@ func TestValidateCreateBuildRequest(t *testing.T) {
 									"path_a": {
 										DataType: &pb.InputDataRef_Cipd{
 											Cipd: &pb.InputDataRef_CIPD{
-												Specs: []*pb.InputDataRef_CIPD_PkgSpec{{Package: "pkg_a", Version: "latest"}},
+												Specs: []*pb.InputDataRef_CIPD_PkgSpec{{Package: "pkg_a/${platform}", Version: "latest"}},
 											},
 										},
 										OnPath: []string{"path_a/bin", "path_a"},

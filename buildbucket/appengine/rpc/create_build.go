@@ -140,10 +140,18 @@ func validateHostName(host string) error {
 	return nil
 }
 
+func validateCipdPackage(pkg string) error {
+	pkgSuffix := "/${platform}"
+	if !strings.HasSuffix(pkg, pkgSuffix) {
+		return errors.Reason("expected to end with %s", pkgSuffix).Err()
+	}
+	return cipdCommon.ValidatePackageName(strings.TrimSuffix(pkg, pkgSuffix))
+}
+
 func validateAgentInput(in *pb.BuildInfra_Buildbucket_Agent_Input) error {
 	for path, ref := range in.GetData() {
 		for i, spec := range ref.GetCipd().GetSpecs() {
-			if err := cipdCommon.ValidatePackageName(spec.GetPackage()); err != nil {
+			if err := validateCipdPackage(spec.GetPackage()); err != nil {
 				return errors.Annotate(err, "[%s]: [%d]: cipd.package", path, i).Err()
 			}
 			if err := cipdCommon.ValidateInstanceVersion(spec.GetVersion()); err != nil {
@@ -168,8 +176,8 @@ func validateAgentInput(in *pb.BuildInfra_Buildbucket_Agent_Input) error {
 
 func validateAgentSource(src *pb.BuildInfra_Buildbucket_Agent_Source) error {
 	cipd := src.GetCipd()
-	if !strings.HasSuffix(cipd.GetPackage(), "/${platform}") {
-		return errors.Reason("cipd.package: must end with '/${platform}'").Err()
+	if err := validateCipdPackage(cipd.GetPackage()); err != nil {
+		return errors.Annotate(err, "cipd.package:").Err()
 	}
 	if err := cipdCommon.ValidateInstanceVersion(cipd.GetVersion()); err != nil {
 		return errors.Annotate(err, "cipd.version").Err()
@@ -350,7 +358,9 @@ func validateInput(wellKnownExperiments stringset.Set, in *pb.Build_Input) error
 func validateExe(exe *pb.Executable, agent *pb.BuildInfra_Buildbucket_Agent) error {
 	var err error
 	switch {
-	case exe.GetCipdPackage() != "" && teeErr(cipdCommon.ValidatePackageName(exe.CipdPackage), &err) != nil:
+	case exe.GetCipdPackage() == "":
+		return nil
+	case teeErr(validateCipdPackage(exe.CipdPackage), &err) != nil:
 		return errors.Annotate(err, "cipd_package").Err()
 	case exe.GetCipdVersion() != "" && teeErr(cipdCommon.ValidateInstanceVersion(exe.CipdVersion), &err) != nil:
 		return errors.Annotate(err, "cipd_version").Err()
