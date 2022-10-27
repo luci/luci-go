@@ -459,6 +459,26 @@ func TestFindNextIndicesToRun(t *testing.T) {
 	})
 }
 
+func TestFindNextCommitsToRun(t *testing.T) {
+	t.Parallel()
+
+	Convey("FindNextIndicesToRun", t, func() {
+		blamelist := createBlamelist(10)
+		snapshot := &NthSectionSnapshot{
+			BlameList: blamelist,
+			Runs: []*NthSectionSnapshotRun{
+				{
+					Index:  5,
+					Status: lbpb.RerunStatus_IN_PROGRESS,
+				},
+			},
+		}
+		indices, err := snapshot.FindNextCommitsToRun(2)
+		So(err, ShouldBeNil)
+		So(indices, ShouldResemble, []string{"commit2", "commit8"})
+	})
+}
+
 func TestCalculateChunkSize(t *testing.T) {
 	t.Parallel()
 

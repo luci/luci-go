@@ -145,6 +145,7 @@ type CompileRerunBuild struct {
 	Id int64 `gae:"$id"`
 	// Type for the rerun build
 	Type RerunBuildType `gae:"rerun_type"`
+	// TODO (nqmtuan): Remove this, use the SingleRerun one instead
 	// Key to the Suspect, if this is for culprit verification
 	Suspect *datastore.Key `gae:"suspect"`
 	// LUCI build data
@@ -173,6 +174,13 @@ type SingleRerun struct {
 	EndTime time.Time `gae:"end_time"`
 	// Status of the rerun
 	Status gofinditpb.RerunStatus
+	// Key to the Suspect, if this is for culprit verification
+	// Note: We have the keys to suspect and nthsection here instead of CompileRerunBuild
+	// because in theory, we can mix culprit verification and nthsection runs
+	// within the same build
+	Suspect *datastore.Key `gae:"suspect"`
+	// Key to NthSectionAnalysis, if this is for nthsection
+	NthSectionAnalysis *datastore.Key `gae:"nthsection_analysis"`
 }
 
 // Culprit is the culprit of rerun analysis.

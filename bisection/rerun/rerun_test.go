@@ -19,15 +19,18 @@ import (
 	"testing"
 
 	"go.chromium.org/luci/bisection/internal/buildbucket"
+	lbm "go.chromium.org/luci/bisection/model"
 
 	"github.com/golang/mock/gomock"
 	. "github.com/smartystreets/goconvey/convey"
 	bbpb "go.chromium.org/luci/buildbucket/proto"
 	"google.golang.org/protobuf/types/known/structpb"
+	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/gae/impl/memory"
+	"go.chromium.org/luci/gae/service/datastore"
 )
 
 func TestRerun(t *testing.T) {
@@ -122,5 +125,151 @@ func TestRerun(t *testing.T) {
 				Value: "Intel",
 			},
 		})
+	})
+}
+
+func TestCreateRerunBuildModel(t *testing.T) {
+	t.Parallel()
+	c := memory.Use(context.Background())
+
+	build := &bbpb.Build{
+		Builder: &bbpb.BuilderID{
+			Project: "chromium",
+			Bucket:  "findit",
+			Builder: "gofindit-single-revision",
+		},
+		Input: &bbpb.Build_Input{
+			GitilesCommit: &bbpb.GitilesCommit{
+				Host:    "chromium.googlesource.com",
+				Project: "chromium/src",
+				Ref:     "ref",
+				Id:      "3425",
+			},
+		},
+		Id:         123,
+		Status:     bbpb.Status_STARTED,
+		CreateTime: &timestamppb.Timestamp{Seconds: 100},
+		StartTime:  &timestamppb.Timestamp{Seconds: 101},
+	}
+
+	Convey("Create rerun build", t, func() {
+		compileFailure := &lbm.CompileFailure{
+			Id:            111,
+			OutputTargets: []string{"target1"},
+		}
+		So(datastore.Put(c, compileFailure), ShouldBeNil)
+		datastore.GetTestable(c).CatchupIndexes()
+
+		analysis := &lbm.CompileFailureAnalysis{
+			Id:             444,
+			CompileFailure: datastore.KeyForObj(c, compileFailure),
+		}
+		So(datastore.Put(c, analysis), ShouldBeNil)
+		datastore.GetTestable(c).CatchupIndexes()
+
+		nsa := &lbm.CompileNthSectionAnalysis{
+			ParentAnalysis: datastore.KeyForObj(c, analysis),
+		}
+		So(datastore.Put(c, nsa), ShouldBeNil)
+		datastore.GetTestable(c).CatchupIndexes()
+
+		heuristicAnalysis := &lbm.CompileHeuristicAnalysis{
+			ParentAnalysis: datastore.KeyForObj(c, analysis),
+		}
+		So(datastore.Put(c, heuristicAnalysis), ShouldBeNil)
+		datastore.GetTestable(c).CatchupIndexes()
+
+		suspect := &lbm.Suspect{
+			Score:          10,
+			ParentAnalysis: datastore.KeyForObj(c, heuristicAnalysis),
+			GitilesCommit: bbpb.GitilesCommit{
+				Host:    "chromium.googlesource.com",
+				Project: "chromium/src",
+				Ref:     "ref",
+				Id:      "3425",
+			},
+		}
+		So(datastore.Put(c, suspect), ShouldBeNil)
+		datastore.GetTestable(c).CatchupIndexes()
+
+		Convey("Invalid data", func() {
+			_, err := CreateRerunBuildModel(c, build, lbm.RerunBuildType_CulpritVerification, nil, nsa)
+			So(err, ShouldNotBeNil)
+			_, err = CreateRerunBuildModel(c, build, lbm.RerunBuildType_NthSection, suspect, nil)
+			So(err, ShouldNotBeNil)
+		})
+
+		Convey("Culprit verification", func() {
+			rerunBuildModel, err := CreateRerunBuildModel(c, build, lbm.RerunBuildType_CulpritVerification, suspect, nil)
+			datastore.GetTestable(c).CatchupIndexes()
+			So(err, ShouldBeNil)
+			So(rerunBuildModel, ShouldResemble, &lbm.CompileRerunBuild{
+				Id:      123,
+				Type:    lbm.RerunBuildType_CulpritVerification,
+				Suspect: datastore.KeyForObj(c, suspect),
+				LuciBuild: lbm.LuciBuild{
+					BuildId: 123,
+					Project: "chromium",
+					Bucket:  "findit",
+					Builder: "gofindit-single-revision",
+					Status:  bbpb.Status_STARTED,
+					GitilesCommit: bbpb.GitilesCommit{
+						Host:    "chromium.googlesource.com",
+						Project: "chromium/src",
+						Ref:     "ref",
+						Id:      "3425",
+					},
+					CreateTime: build.CreateTime.AsTime(),
+					StartTime:  build.StartTime.AsTime(),
+				},
+			})
+
+			// Check SingleRerun
+			q := datastore.NewQuery("SingleRerun").Eq("rerun_build", datastore.KeyForObj(c, rerunBuildModel))
+			singleReruns := []*lbm.SingleRerun{}
+			err = datastore.GetAll(c, q, &singleReruns)
+			So(err, ShouldBeNil)
+			So(len(singleReruns), ShouldEqual, 1)
+			So(singleReruns[0].Suspect, ShouldResemble, datastore.KeyForObj(c, suspect))
+			So(singleReruns[0].Analysis, ShouldResemble, datastore.KeyForObj(c, analysis))
+			So(singleReruns[0].Type, ShouldEqual, lbm.RerunBuildType_CulpritVerification)
+		})
+
+		Convey("Nth Section", func() {
+			build.Id = 124
+			rerunBuildModel1, err := CreateRerunBuildModel(c, build, lbm.RerunBuildType_NthSection, nil, nsa)
+			datastore.GetTestable(c).CatchupIndexes()
+			So(err, ShouldBeNil)
+			So(rerunBuildModel1, ShouldResemble, &lbm.CompileRerunBuild{
+				Id:   124,
+				Type: lbm.RerunBuildType_NthSection,
+				LuciBuild: lbm.LuciBuild{
+					BuildId: 124,
+					Project: "chromium",
+					Bucket:  "findit",
+					Builder: "gofindit-single-revision",
+					Status:  bbpb.Status_STARTED,
+					GitilesCommit: bbpb.GitilesCommit{
+						Host:    "chromium.googlesource.com",
+						Project: "chromium/src",
+						Ref:     "ref",
+						Id:      "3425",
+					},
+					CreateTime: build.CreateTime.AsTime(),
+					StartTime:  build.StartTime.AsTime(),
+				},
+			})
+
+			// Check SingleRerun
+			q := datastore.NewQuery("SingleRerun").Eq("rerun_build", datastore.KeyForObj(c, rerunBuildModel1))
+			singleReruns := []*lbm.SingleRerun{}
+			err = datastore.GetAll(c, q, &singleReruns)
+			So(err, ShouldBeNil)
+			So(len(singleReruns), ShouldEqual, 1)
+			So(singleReruns[0].NthSectionAnalysis, ShouldResemble, datastore.KeyForObj(c, nsa))
+			So(singleReruns[0].Analysis, ShouldResemble, datastore.KeyForObj(c, analysis))
+			So(singleReruns[0].Type, ShouldEqual, lbm.RerunBuildType_NthSection)
+		})
+
 	})
 }

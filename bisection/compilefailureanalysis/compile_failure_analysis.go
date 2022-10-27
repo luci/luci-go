@@ -82,9 +82,10 @@ func AnalyzeFailure(
 	// TODO (nqmtuan): Enable n-th section analysis when it is ready
 	// Enabling it now will use up resources
 	// Nth-section analysis
-	// _, e = nthsection.Analyze(c, analysis, regression_range)
+	// _, e = nthsection.Analyze(c, analysis)
 	// if e != nil {
 	// 	logging.Errorf(c, "Error during nthsection analysis: %v", e)
+	// 	errors.Log(c, e)
 	// }
 
 	// Heuristic analysis

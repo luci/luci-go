@@ -22,7 +22,6 @@ import (
 	"go.chromium.org/luci/bisection/compilefailureanalysis/heuristic"
 	"go.chromium.org/luci/bisection/internal/gitiles"
 	gfim "go.chromium.org/luci/bisection/model"
-	gfipb "go.chromium.org/luci/bisection/proto"
 	"go.chromium.org/luci/bisection/rerun"
 	"go.chromium.org/luci/bisection/util/datastoreutil"
 
@@ -76,12 +75,12 @@ func VerifySuspect(c context.Context, suspect *gfim.Suspect, failedBuildID int64
 		logging.Errorf(c, "Error triggering rerun for build %d: %s", failedBuildID, err)
 		return err
 	}
-	suspectRerunBuildModel, err := createRerunBuildModel(c, suspectBuild, suspect)
+	suspectRerunBuildModel, err := rerun.CreateRerunBuildModel(c, suspectBuild, gfim.RerunBuildType_CulpritVerification, suspect, nil)
 	if err != nil {
 		return err
 	}
 
-	parentRerunBuildModel, err := createRerunBuildModel(c, parentBuild, suspect)
+	parentRerunBuildModel, err := rerun.CreateRerunBuildModel(c, parentBuild, gfim.RerunBuildType_CulpritVerification, suspect, nil)
 	if err != nil {
 		return err
 	}
@@ -107,49 +106,6 @@ func hasNewTarget(c context.Context, failedFiles []string, changelog *gfim.Chang
 		}
 	}
 	return false
-}
-
-func createRerunBuildModel(c context.Context, build *buildbucketpb.Build, suspect *gfim.Suspect) (*gfim.CompileRerunBuild, error) {
-	gitilesCommit := *build.GetInput().GetGitilesCommit()
-	startTime := build.StartTime.AsTime()
-	rerunBuild := &gfim.CompileRerunBuild{
-		Id:      build.GetId(),
-		Type:    gfim.RerunBuildType_CulpritVerification,
-		Suspect: datastore.KeyForObj(c, suspect),
-		LuciBuild: gfim.LuciBuild{
-			BuildId:       build.GetId(),
-			Project:       build.Builder.Project,
-			Bucket:        build.Builder.Bucket,
-			Builder:       build.Builder.Builder,
-			CreateTime:    build.CreateTime.AsTime(),
-			StartTime:     startTime,
-			Status:        build.GetStatus(),
-			GitilesCommit: gitilesCommit,
-		},
-	}
-	err := datastore.Put(c, rerunBuild)
-	if err != nil {
-		logging.Errorf(c, "Error in creating CompileRerunBuild model for build %d", build.GetId())
-		return nil, err
-	}
-
-	// Create the first SingleRerun for CompileRerunBuild
-	// It will be updated when we receive updates from recipe
-	singleRerun := &gfim.SingleRerun{
-		RerunBuild:    datastore.KeyForObj(c, rerunBuild),
-		Status:        gfipb.RerunStatus_IN_PROGRESS,
-		GitilesCommit: gitilesCommit,
-		StartTime:     startTime,
-		Analysis:      suspect.ParentAnalysis.Parent(),
-		Type:          gfim.RerunBuildType_CulpritVerification,
-	}
-	err = datastore.Put(c, singleRerun)
-	if err != nil {
-		logging.Errorf(c, "Error in creating SingleRerun model for build %d", build.GetId())
-		return nil, err
-	}
-
-	return rerunBuild, nil
 }
 
 // VerifyCommit checks if a commit is the culprit of a build failure.

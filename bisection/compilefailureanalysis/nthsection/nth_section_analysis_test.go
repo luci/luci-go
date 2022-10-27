@@ -19,15 +19,18 @@ import (
 	"encoding/json"
 	"testing"
 
+	"github.com/golang/mock/gomock"
 	"github.com/google/go-cmp/cmp"
 	. "github.com/smartystreets/goconvey/convey"
-	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
+	bbpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
 	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/types/known/timestamppb"
 
+	"go.chromium.org/luci/bisection/internal/buildbucket"
 	"go.chromium.org/luci/bisection/internal/gitiles"
 	lbm "go.chromium.org/luci/bisection/model"
 	lbpb "go.chromium.org/luci/bisection/proto"
@@ -68,27 +71,62 @@ func TestAnalyze(t *testing.T) {
 		"https://chromium.googlesource.com/chromium/src/+log/12345..23456": string(gitilesResponseStr),
 	})
 
-	Convey("CheckBlameList", t, func() {
-		cfa := &lbm.CompileFailureAnalysis{
-			Id: 123,
-		}
-		So(datastore.Put(c, cfa), ShouldBeNil)
-		datastore.GetTestable(c).CatchupIndexes()
+	// Setup mock for buildbucket
+	ctl := gomock.NewController(t)
+	defer ctl.Finish()
+	mc := buildbucket.NewMockedClient(c, ctl)
+	c = mc.Ctx
+	res := &bbpb.Build{
+		Builder: &bbpb.BuilderID{
+			Project: "chromium",
+			Bucket:  "findit",
+			Builder: "gofindit-single-revision",
+		},
+		Input: &bbpb.Build_Input{
+			GitilesCommit: &bbpb.GitilesCommit{
+				Host:    "host",
+				Project: "proj",
+				Id:      "id1",
+				Ref:     "ref",
+			},
+		},
+		Id:         123,
+		Status:     bbpb.Status_STARTED,
+		CreateTime: &timestamppb.Timestamp{Seconds: 100},
+		StartTime:  &timestamppb.Timestamp{Seconds: 101},
+	}
+	mc.Client.EXPECT().ScheduleBuild(gomock.Any(), gomock.Any(), gomock.Any()).Return(res, nil).AnyTimes()
+	mc.Client.EXPECT().GetBuild(gomock.Any(), gomock.Any(), gomock.Any()).Return(&bbpb.Build{}, nil).AnyTimes()
 
+	Convey("CheckBlameList", t, func() {
 		rr := &lbpb.RegressionRange{
-			LastPassed: &buildbucketpb.GitilesCommit{
+			LastPassed: &bbpb.GitilesCommit{
 				Host:    "chromium.googlesource.com",
 				Project: "chromium/src",
 				Id:      "12345",
 			},
-			FirstFailed: &buildbucketpb.GitilesCommit{
+			FirstFailed: &bbpb.GitilesCommit{
 				Host:    "chromium.googlesource.com",
 				Project: "chromium/src",
 				Id:      "23456",
 			},
 		}
 
-		nsa, err := Analyze(c, cfa, rr)
+		cf := &lbm.CompileFailure{
+			OutputTargets: []string{"abc.xyz"},
+		}
+		So(datastore.Put(c, cf), ShouldBeNil)
+		datastore.GetTestable(c).CatchupIndexes()
+
+		cfa := &lbm.CompileFailureAnalysis{
+			Id:                     123,
+			CompileFailure:         datastore.KeyForObj(c, cf),
+			InitialRegressionRange: rr,
+		}
+		So(datastore.Put(c, cfa), ShouldBeNil)
+		datastore.GetTestable(c).CatchupIndexes()
+
+		nsa, err := Analyze(c, cfa)
 		So(err, ShouldBeNil)
 		So(nsa, ShouldNotBeNil)
 		datastore.GetTestable(c).CatchupIndexes()

@@ -152,6 +152,20 @@ func (snapshot *NthSectionSnapshot) FindNextIndicesToRun(n int) ([]int, error) {
 	return result, nil
 }
 
+// FindNextCommitsToRun is similar to FindNextIndicesToRun,
+// but it returns the commit hashes instead of indice
+func (snapshot *NthSectionSnapshot) FindNextCommitsToRun(n int) ([]string, error) {
+	indices, err := snapshot.FindNextIndicesToRun(n)
+	if err != nil {
+		return nil, err
+	}
+	commits := make([]string, len(indices))
+	for i, index := range indices {
+		commits[i] = snapshot.BlameList.Commits[index].Commit
+	}
+	return commits, nil
+}
+
 // findRegressionChunks finds the regression range and breaks it into chunks
 // the result will be sorted (biggest chunk will come first)
 func (snapshot *NthSectionSnapshot) findRegressionChunks() ([]*NthSectionSnapshotChunk, error) {
@@ -201,7 +215,7 @@ func chunking(chunks []*NthSectionSnapshotChunk, start int, nDivider int, maxAll
 	}
 	// Recursive, k is the number of dividers allocated the "start" chunk
 	dividerLeft := minInt(nDivider, maxAllocationForEachChunk)
-	min := math.MaxInt
+	min := math.MaxInt64
 	allocation := []int{}
 	for k := dividerLeft; k > 0; k-- {
 		startSize := calculateChunkSize(chunks[start].length(), k)

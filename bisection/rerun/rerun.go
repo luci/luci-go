@@ -23,10 +23,13 @@ import (
 
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/gae/service/datastore"
 	"google.golang.org/protobuf/types/known/fieldmaskpb"
 	"google.golang.org/protobuf/types/known/structpb"
 
 	"go.chromium.org/luci/bisection/internal/buildbucket"
+	lbm "go.chromium.org/luci/bisection/model"
+	lbpb "go.chromium.org/luci/bisection/proto"
 )
 
 // TriggerRerun triggers a rerun build for a particular build bucket build and Gitiles commit.
@@ -132,6 +135,80 @@ func getRerunDimensions(c context.Context, build *buildbucketpb.Build) []*buildb
 		}
 	}
 	return result
+}
+
+// CreateRerunBuildModel creates a CompileRerunBuild (and SingleRerun) in datastore
+func CreateRerunBuildModel(c context.Context, build *buildbucketpb.Build, rerunType lbm.RerunBuildType, suspect *lbm.Suspect, nsa *lbm.CompileNthSectionAnalysis) (*lbm.CompileRerunBuild, error) {
+	if rerunType == lbm.RerunBuildType_CulpritVerification && suspect == nil {
+		return nil, fmt.Errorf("CreateRerunBuildModel requires suspect when type is CulpritVerification")
+	}
+	if rerunType == lbm.RerunBuildType_NthSection && nsa == nil {
+		return nil, fmt.Errorf("CreateRerunBuildModel requires nth section analysis when type is NthSection")
+	}
+
+	gitilesCommit := *build.GetInput().GetGitilesCommit()
+	startTime := build.StartTime.AsTime()
+	rerunBuild := &lbm.CompileRerunBuild{
+		Id:   build.GetId(),
+		Type: rerunType,
+		LuciBuild: lbm.LuciBuild{
+			BuildId:    build.GetId(),
+			Project:    build.Builder.Project,
+			Bucket:     build.Builder.Bucket,
+			Builder:    build.Builder.Builder,
+			CreateTime: build.CreateTime.AsTime(),
+			StartTime:  startTime,
+			Status:     build.GetStatus(),
+			GitilesCommit: buildbucketpb.GitilesCommit{
+				Host:    gitilesCommit.Host,
+				Project: gitilesCommit.Project,
+				Ref:     gitilesCommit.Ref,
+				Id:      gitilesCommit.Id,
+			},
+		},
+	}
+	// TODO (nqmtuan): Remove this when we switch to use value from SingleRerun
+	if rerunType == lbm.RerunBuildType_CulpritVerification {
+		rerunBuild.Suspect = datastore.KeyForObj(c, suspect)
+	}
+
+	err := datastore.Put(c, rerunBuild)
+	if err != nil {
+		logging.Errorf(c, "Error in creating CompileRerunBuild model for build %d", build.GetId())
+		return nil, err
+	}
+
+	// Create the first SingleRerun for CompileRerunBuild
+	// It will be updated when we receive updates from recipe
+	singleRerun := &lbm.SingleRerun{
+		RerunBuild: datastore.KeyForObj(c, rerunBuild),
+		Status:     lbpb.RerunStatus_IN_PROGRESS,
+		GitilesCommit: buildbucketpb.GitilesCommit{
+			Host:    gitilesCommit.Host,
+			Project: gitilesCommit.Project,
+			Ref:     gitilesCommit.Ref,
+			Id:      gitilesCommit.Id,
+		},
+		StartTime: startTime,
+		Type:      rerunType,
+	}
+
+	if rerunType == lbm.RerunBuildType_CulpritVerification {
+		singleRerun.Analysis = suspect.ParentAnalysis.Parent()
+		singleRerun.Suspect = datastore.KeyForObj(c, suspect)
+	}
+	if rerunType == lbm.RerunBuildType_NthSection {
+		singleRerun.Analysis = nsa.ParentAnalysis
+		singleRerun.NthSectionAnalysis = datastore.KeyForObj(c, nsa)
+	}
+
+	err = datastore.Put(c, singleRerun)
+	if err != nil {
+		logging.Errorf(c, "Error in creating SingleRerun model for build %d", build.GetId())
+		return nil, err
+	}
+
+	return rerunBuild, nil
 }
 
 // TODO (nqmtuan): Move this into a helper class if it turns out we need to use
