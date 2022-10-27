@@ -396,9 +396,13 @@ func (jd *Definition) FlattenToSwarming(ctx context.Context, uid, parentTaskId s
 		}
 	}
 
-	casUserPayload, err := jd.Info().CurrentIsolated()
-	if err != nil {
-		return errors.Annotate(err, "failed to get CAS user payload for the build").Err()
+	var casUserPayload *swarmingpb.CASReference
+	// Do not set CAS input to task slices if bbagent handles downloading packages.
+	if !bb.BbagentDownloadCIPDPkgs() {
+		casUserPayload, err = jd.Info().CurrentIsolated()
+		if err != nil {
+			return errors.Annotate(err, "failed to get CAS user payload for the build").Err()
+		}
 	}
 	baseProperties := &swarmingpb.TaskProperties{
 		CipdInputs:   jd.generateCIPDInputs(),
@@ -443,7 +447,7 @@ func (jd *Definition) FlattenToSwarming(ctx context.Context, uid, parentTaskId s
 		return errors.Annotate(err, "generating Command").Err()
 	}
 
-	if exe := bb.BbagentArgs.Build.Exe; exe.GetCipdPackage() != "" {
+	if exe := bb.BbagentArgs.Build.Exe; exe.GetCipdPackage() != "" && !bb.BbagentDownloadCIPDPkgs() {
 		baseProperties.CipdInputs = append(baseProperties.CipdInputs, &swarmingpb.CIPDPackage{
 			PackageName: exe.CipdPackage,
 			Version:     exe.CipdVersion,
