@@ -124,6 +124,7 @@ func drainVM(c context.Context, vm *model.VM) error {
 			return nil
 		}
 		vm.Drained = true
+		logging.Debugf(c, "set VM %s as drained in db", vm.Hostname, vm.ID)
 		if err := datastore.Put(c, vm); err != nil {
 			return errors.Annotate(err, "failed to store VM").Err()
 		}
@@ -233,6 +234,7 @@ func updateCurrentAmount(c context.Context, id string) (cfg *model.Config, now t
 			return nil
 		}
 		cfg.Config.CurrentAmount = amt
+		logging.Debugf(c, "set config %q to allow %d VMs", cfg.ID, cfg.Config.CurrentAmount)
 		if err = datastore.Put(c, cfg); err != nil {
 			return errors.Annotate(err, "failed to store config").Err()
 		}
@@ -276,7 +278,7 @@ func expandConfig(c context.Context, payload proto.Message) error {
 			},
 		}
 	}
-	logging.Debugf(c, "creating %d VMs", len(t))
+	logging.Debugf(c, "for config %s, creating %d VMs", cfg.Config.Prefix, len(t))
 	if err := getDispatcher(c).AddTask(c, t...); err != nil {
 		return errors.Annotate(err, "failed to schedule tasks").Err()
 	}
