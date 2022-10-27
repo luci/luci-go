@@ -389,7 +389,7 @@ func (g *Generator) prepareBugVerifiedUpdate(impact *bugs.ClusterImpact, issue *
 		body.WriteString(g.priorityDecreaseJustification(oldPriorityIndex, newPriorityIndex))
 		body.WriteString("LUCI Analysis is marking the issue verified.")
 
-		trailer = fmt.Sprintf("Why issues are verified: https://%s.appspot.com/help#bug-verified", g.appID)
+		trailer = fmt.Sprintf("Why issues are verified and how to stop automatic verification: https://%s.appspot.com/help#bug-verified", g.appID)
 	} else {
 		if issue.GetOwner().GetUser() != "" {
 			status = AssignedStatus
