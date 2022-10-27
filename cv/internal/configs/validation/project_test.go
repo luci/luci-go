@@ -774,6 +774,57 @@ func TestTryjobValidation(t *testing.T) {
 				}`)), ShouldErrLike, `did you mean "https://x-review.googlesource.com/my/repo/[+]/*.cpp"?`)
 		})
 
+		Convey("location_filters", func() {
+			So(validate(`
+				builders {
+					name: "a/b/c"
+					location_filters: {
+						gerrit_host_regexp: ""
+						gerrit_project_regexp: ""
+						path_regexp: ".*"
+						exclude: false
+					}
+					location_filters: {
+						gerrit_host_regexp: "chromium-review.googlesource.com"
+						gerrit_project_regexp: "chromium/src"
+						path_regexp: "README.md"
+						exclude: true
+					}
+				}`), ShouldBeNil)
+
+			So(validate(`
+				builders {
+					name: "a/b/c"
+					location_filters: {
+						gerrit_host_regexp: "bad \\c regexp"
+					}
+				}`), ShouldErrLike, "gerrit_host_regexp", "invalid regexp")
+
+			So(validate(`
+				builders {
+					name: "a/b/c"
+					location_filters: {
+						gerrit_host_regexp: "https://chromium-review.googlesource.com"
+					}
+				}`), ShouldErrLike, "gerrit_host_regexp", "scheme", "not needed")
+
+			So(validate(`
+				builders {
+					name: "a/b/c"
+					location_filters: {
+						gerrit_project_regexp: "bad \\c regexp"
+					}
+				}`), ShouldErrLike, "gerrit_project_regexp", "invalid regexp")
+
+			So(validate(`
+				builders {
+					name: "a/b/c"
+					location_filters: {
+						path_regexp: "bad \\c regexp"
+					}
+				}`), ShouldErrLike, "path_regexp", "invalid regexp")
+		})
+
 		Convey("equivalent_to", func() {
 			So(validate(`
 				builders {
@@ -912,11 +963,17 @@ func TestTryjobValidation(t *testing.T) {
 				builders {
 					name: "a/b/c"
 					location_regexp: ".+\\.cpp"
+					location_filters: {
+						path_regexp: ".+\\.cpp"
+					}
 					triggered_by: "c/d/e"
 				}
 				builders {
 					name: "c/d/e"
 					location_regexp: ".+\\.cpp"
+					location_filters: {
+						path_regexp: ".+\\.cpp"
+					}
 				} `),
 				ShouldBeNil)
 			So(validate(`
@@ -956,6 +1013,16 @@ func TestTryjobValidation(t *testing.T) {
 				}`),
 				ShouldErrLike,
 				"includable_only is not combinable with location_regexp[_exclude]")
+			So(validate(`
+				builders {
+					name: "a/b/c"
+					location_filters: {
+						path_regexp: ".+\\.cpp"
+					}
+					includable_only: true
+				}`),
+				ShouldErrLike,
+				"includable_only is not combinable with location_filters")
 			So(validate(`
 				builders {
 					name: "a/b/c"

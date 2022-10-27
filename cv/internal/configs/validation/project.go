@@ -426,6 +426,13 @@ func validateTryjobVerifier(ctx *validation.Context, v *cfgpb.Verifiers, support
 				ctx.Errorf("includable_only is not combinable with location_regexp[_exclude]")
 			}
 		}
+		if len(b.LocationFilters) > 0 {
+			validateLocationFilters(ctx, b.GetLocationFilters())
+			if b.IncludableOnly {
+				ctx.Errorf("includable_only is not combinable with location_filters")
+			}
+		}
+
 		if len(b.OwnerWhitelistGroup) > 0 {
 			for i, g := range b.OwnerWhitelistGroup {
 				if g == "" {
@@ -620,6 +627,44 @@ func validateParentLocationRegexp(ctx *validation.Context, child, parent *cfgpb.
 		ctx.Errorf("location_regexp_exclude of a triggered builder must contain all those of its parent %q,"+
 			" but these are only in parent: %s",
 			parent.Name, strings.Join(p.Difference(c).ToSortedSlice(), ", "))
+	}
+}
+
+func validateLocationFilters(ctx *validation.Context, filters []*cfgpb.Verifiers_Tryjob_Builder_LocationFilter) {
+	for i, filter := range filters {
+		ctx.Enter("location_filters #%d", i+1)
+		if filter == nil {
+			ctx.Errorf("must not be nil")
+			continue
+		}
+
+		if hostRE := filter.GetGerritHostRegexp(); hostRE != "" {
+			ctx.Enter("gerrit_host_regexp")
+			if strings.HasPrefix(hostRE, "http") {
+				ctx.Errorf("scheme (http:// or https://) is not needed")
+			}
+			if _, err := regexpCompileCached(hostRE); err != nil {
+				ctx.Errorf("invalid regexp: %q; error: %s", hostRE, err)
+			}
+			ctx.Exit()
+		}
+
+		if repoRE := filter.GetGerritProjectRegexp(); repoRE != "" {
+			ctx.Enter("gerrit_project_regexp")
+			if _, err := regexpCompileCached(repoRE); err != nil {
+				ctx.Errorf("invalid regexp: %q; error: %s", repoRE, err)
+			}
+			ctx.Exit()
+		}
+
+		if pathRE := filter.GetPathRegexp(); pathRE != "" {
+			ctx.Enter("path_regexp")
+			if _, err := regexpCompileCached(pathRE); err != nil {
+				ctx.Errorf("invalid regexp: %q; error: %s", pathRE, err)
+			}
+			ctx.Exit()
+		}
+		ctx.Exit()
 	}
 }
 
