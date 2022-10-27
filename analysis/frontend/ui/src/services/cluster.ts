@@ -51,6 +51,10 @@ export class ClustersService {
   async queryClusterFailures(request: QueryClusterFailuresRequest): Promise<QueryClusterFailuresResponse> {
     return this.client.call(ClustersService.SERVICE, 'QueryClusterFailures', request);
   }
+
+  async queryExoneratedTestVariants(request: QueryClusterExoneratedTestVariantsRequest): Promise<QueryClusterExoneratedTestVariantsResponse> {
+    return this.client.call(ClustersService.SERVICE, 'QueryExoneratedTestVariants', request);
+  }
 }
 
 export interface BatchGetClustersRequest {
@@ -310,4 +314,38 @@ export interface DistinctClusterFailure {
 
   // The number of test results in the group.
   count : number;
+}
+
+export interface QueryClusterExoneratedTestVariantsRequest {
+  // The resource name of the cluster exonerated test variants to retrieve.
+  // Format: projects/{project}/clusters/{cluster_algorithm}/{cluster_id}/exoneratedTestVariants.
+  parent: string;
+}
+
+export interface QueryClusterExoneratedTestVariantsResponse {
+  // A list of test variants in the cluster which have exonerated critical
+  // failures. Ordered by recency of the exoneration (most recent exonerations
+  // first) and limited to at most 100 test variants.
+  testVariants?: ClusterExoneratedTestVariant[];
+}
+
+// ClusterExoneratedTestVariant represents a test variant in a cluster
+// which has been exonerated. A cluster test variant is the subset
+// of a test variant that intersects with the failures of a cluster.
+export interface ClusterExoneratedTestVariant {
+  // A unique identifier of the test in a LUCI project.
+  testId: string;
+
+  // The variant. Describes a way of running a test.
+  variant?: Variant;
+
+  // The number of critical (presubmit-blocking) failures in the
+  // cluster which have been exonerated on this test variant
+  // in the last week.
+  criticalFailuresExonerated: number;
+
+  // The partition time of the most recent exoneration of a
+  // critical failure.
+  // RFC 3339 encoded date/time.
+  lastExoneration: string;
 }

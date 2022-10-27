@@ -18,12 +18,15 @@ import {
   BatchGetClustersRequest,
   BatchGetClustersResponse,
   Cluster,
+  ClusterExoneratedTestVariant,
   ClusterSummary,
   DistinctClusterFailure,
   QueryClusterFailuresRequest,
   QueryClusterFailuresResponse,
   QueryClusterSummariesRequest,
   QueryClusterSummariesResponse,
+  QueryClusterExoneratedTestVariantsRequest,
+  QueryClusterExoneratedTestVariantsResponse,
 } from '@/services/cluster';
 
 export const getMockCluster = (id: string,
@@ -86,6 +89,14 @@ export const getMockSuggestedClusterSummary = (id: string, algorithm = 'reason-v
   };
 };
 
+export const getMockClusterExoneratedTestVariant = (id: string, exoneratedFailures: number): ClusterExoneratedTestVariant => {
+  return {
+    'testId': id,
+    'criticalFailuresExonerated': exoneratedFailures,
+    'lastExoneration': '2052-01-02T03:04:05.678901234Z',
+  };
+};
+
 export const mockQueryClusterSummaries = (request: QueryClusterSummariesRequest, response: QueryClusterSummariesResponse) => {
   fetchMock.post({
     url: 'http://localhost/prpc/luci.analysis.v1.Clusters/QueryClusterSummaries',
@@ -136,6 +147,24 @@ export const mockQueryClusterFailures = (parent: string, failures: DistinctClust
   };
   fetchMock.post({
     url: 'http://localhost/prpc/luci.analysis.v1.Clusters/QueryClusterFailures',
+    body: request,
+  }, {
+    headers: {
+      'X-Prpc-Grpc-Code': '0',
+    },
+    body: ')]}\'' + JSON.stringify(response),
+  }, { overwriteRoutes: true });
+};
+
+export const mockQueryExoneratedTestVariants = (parent: string, testVariants: ClusterExoneratedTestVariant[]) => {
+  const request: QueryClusterExoneratedTestVariantsRequest = {
+    parent: parent,
+  };
+  const response: QueryClusterExoneratedTestVariantsResponse = {
+    testVariants: testVariants,
+  };
+  fetchMock.post({
+    url: 'http://localhost/prpc/luci.analysis.v1.Clusters/QueryExoneratedTestVariants',
     body: request,
   }, {
     headers: {

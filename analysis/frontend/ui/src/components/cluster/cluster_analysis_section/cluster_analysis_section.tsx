@@ -13,6 +13,9 @@
 // limitations under the License.
 
 import {
+  useContext,
+} from 'react';
+import {
   useLocation,
   useNavigate,
 } from 'react-router-dom';
@@ -26,8 +29,14 @@ import TabList from '@mui/lab/TabList';
 
 import FailuresTab from '@/components/cluster/cluster_analysis_section/failures_tab/failures_tab';
 import OverviewTab from '@/components/cluster/cluster_analysis_section/overview_tab/overview_tab';
+import ExonerationsTab from '@/components/cluster/cluster_analysis_section/exonerations_tab/exonerations_tab';
+
+import { ClusterContext } from '../cluster_context';
 
 const ClusterAnalysisSection = () => {
+  const {
+    project,
+  } = useContext(ClusterContext);
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -35,12 +44,14 @@ const ClusterAnalysisSection = () => {
     navigate({ hash: '#' + newValue }, { replace: true });
   };
 
+  const exonerationsAvailable = project == 'chromium' || project == 'chrome';
+
   let value = location.hash;
   if (value.length > 0) {
     // Cut off the leading '#'.
     value = value.slice(1);
   }
-  if (value != 'overview' && value != 'recent-failures') {
+  if (value != 'overview' && value != 'recent-failures' && (!exonerationsAvailable || value != 'exonerations')) {
     // Default to a tab we know.
     value = 'overview';
   }
@@ -53,10 +64,16 @@ const ClusterAnalysisSection = () => {
             <TabList value={value} onChange={handleTabChange}>
               <Tab label='Overview' value='overview' />
               <Tab label='Recent Failures' value='recent-failures' />
+              <Tab label='Exonerations' value='exonerations' />
             </TabList>
           </Box>
           <OverviewTab value='overview'/>
           <FailuresTab value='recent-failures'/>
+          {
+            exonerationsAvailable && (
+              <ExonerationsTab value='exonerations'/>
+            )
+          }
         </TabContext>
       </Container>
     </Paper>
