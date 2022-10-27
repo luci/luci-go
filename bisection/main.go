@@ -21,20 +21,16 @@ import (
 	"fmt"
 	"net/http"
 
-	"go.chromium.org/luci/bisection/compilefailureanalysis"
 	"go.chromium.org/luci/bisection/compilefailuredetection"
 	"go.chromium.org/luci/bisection/frontend/handlers"
-	"go.chromium.org/luci/bisection/model"
 	gfipb "go.chromium.org/luci/bisection/proto"
 	"go.chromium.org/luci/bisection/pubsub"
 	gfis "go.chromium.org/luci/bisection/server"
 
 	"github.com/golang/protobuf/proto"
 	"go.chromium.org/luci/auth/identity"
-	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/config/server/cfgmodule"
-	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/server"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/openid"
@@ -186,48 +182,6 @@ func main() {
 		})
 
 		compilefailuredetection.RegisterTaskClass()
-
-		srv.Routes.GET("/test", mwc, func(c *router.Context) {
-			// For testing the flow
-			// TODO (nqmtuan) remove this endpoint later
-			failed_build := &model.LuciFailedBuild{
-				Id: 88128398584903,
-				LuciBuild: model.LuciBuild{
-					BuildId:     88128398584903,
-					Project:     "chromium",
-					Bucket:      "ci",
-					Builder:     "android",
-					BuildNumber: 123,
-					StartTime:   clock.Now(c.Context),
-					EndTime:     clock.Now(c.Context),
-					CreateTime:  clock.Now(c.Context),
-				},
-				BuildFailureType: gfipb.BuildFailureType_COMPILE,
-			}
-			if e := datastore.Put(c.Context, failed_build); e != nil {
-				logging.Errorf(c.Context, "Got error when saving LuciFailedBuild entity: %v", e)
-				return
-			}
-
-			compile_failure := &model.CompileFailure{
-				Build:         datastore.KeyForObj(c.Context, failed_build),
-				OutputTargets: []string{"abc.xyx"},
-				Rule:          "CXX",
-				Dependencies:  []string{"dep"},
-			}
-			if e := datastore.Put(c.Context, compile_failure); e != nil {
-				logging.Errorf(c.Context, "Got error when saving CompileFailure entity: %v", e)
-				return
-			}
-
-			_, e := compilefailureanalysis.AnalyzeFailure(c.Context, compile_failure, 8821136825293440641, 8821137635157166305)
-			if e != nil {
-				logging.Errorf(c.Context, "Got error when analyse failure: %v", e)
-				return
-			}
-			c.Writer.Write([]byte("Testing"))
-		})
-
 		return nil
 	})
 }
