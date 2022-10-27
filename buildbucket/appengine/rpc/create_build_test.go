@@ -367,6 +367,55 @@ func TestValidateCreateBuildRequest(t *testing.T) {
 								_, err := validateCreateBuildRequest(ctx, wellknownExps, req)
 								So(err, ShouldErrLike, `build: infra: buildbucket: agent: input: [path_a]: [0]: cipd.version`)
 							})
+							Convey("cas instance", func() {
+								req.Build.Infra.Buildbucket.Agent.Input = &pb.BuildInfra_Buildbucket_Agent_Input{
+									Data: map[string]*pb.InputDataRef{
+										"path_a": {
+											DataType: &pb.InputDataRef_Cas{
+												Cas: &pb.InputDataRef_CAS{
+													CasInstance: "instance",
+												},
+											},
+										},
+									},
+								}
+								_, err := validateCreateBuildRequest(ctx, wellknownExps, req)
+								So(err, ShouldErrLike, `build: infra: buildbucket: agent: input: [path_a]: cas.cas_instance`)
+							})
+							Convey("cas digest", func() {
+								req.Build.Infra.Buildbucket.Agent.Input = &pb.BuildInfra_Buildbucket_Agent_Input{
+									Data: map[string]*pb.InputDataRef{
+										"path_a": {
+											DataType: &pb.InputDataRef_Cas{
+												Cas: &pb.InputDataRef_CAS{
+													CasInstance: "projects/project/instances/instance",
+												},
+											},
+										},
+									},
+								}
+								_, err := validateCreateBuildRequest(ctx, wellknownExps, req)
+								So(err, ShouldErrLike, `build: infra: buildbucket: agent: input: [path_a]: cas.digest`)
+							})
+							Convey("cas digest size", func() {
+								req.Build.Infra.Buildbucket.Agent.Input = &pb.BuildInfra_Buildbucket_Agent_Input{
+									Data: map[string]*pb.InputDataRef{
+										"path_a": {
+											DataType: &pb.InputDataRef_Cas{
+												Cas: &pb.InputDataRef_CAS{
+													CasInstance: "projects/project/instances/instance",
+													Digest: &pb.InputDataRef_CAS_Digest{
+														Hash:      "hash",
+														SizeBytes: -1,
+													},
+												},
+											},
+										},
+									},
+								}
+								_, err := validateCreateBuildRequest(ctx, wellknownExps, req)
+								So(err, ShouldErrLike, `build: infra: buildbucket: agent: input: [path_a]: cas.digest.size_bytes`)
+							})
 						})
 						Convey("source", func() {
 							Convey("package", func() {

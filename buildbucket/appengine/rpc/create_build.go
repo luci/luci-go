@@ -17,6 +17,7 @@ package rpc
 import (
 	"context"
 	"fmt"
+	"regexp"
 	"sort"
 	"strings"
 	"time"
@@ -54,6 +55,8 @@ import (
 	pb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/buildbucket/protoutil"
 )
+
+var casInstanceRe = regexp.MustCompile(`^projects/[^/]*/instances/[^/]*$`)
 
 type CreateBuildChecker struct{}
 
@@ -145,6 +148,18 @@ func validateAgentInput(in *pb.BuildInfra_Buildbucket_Agent_Input) error {
 			}
 			if err := cipdCommon.ValidateInstanceVersion(spec.GetVersion()); err != nil {
 				return errors.Annotate(err, "[%s]: [%d]: cipd.version", path, i).Err()
+			}
+		}
+
+		cas := ref.GetCas()
+		if cas != nil {
+			switch {
+			case !casInstanceRe.MatchString(cas.GetCasInstance()):
+				return errors.Reason("[%s]: cas.cas_instance: does not match %s", path, casInstanceRe).Err()
+			case cas.GetDigest() == nil:
+				return errors.Reason("[%s]: cas.digest: not specified", path).Err()
+			case cas.Digest.GetSizeBytes() < 0:
+				return errors.Reason("[%s]: cas.digest.size_bytes: must be greater or equal to 0", path).Err()
 			}
 		}
 	}
