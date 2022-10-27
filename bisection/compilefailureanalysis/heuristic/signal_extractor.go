@@ -23,7 +23,6 @@ import (
 	"strings"
 
 	"go.chromium.org/luci/bisection/model"
-	gfim "go.chromium.org/luci/bisection/model"
 	"go.chromium.org/luci/bisection/util"
 )
 
@@ -62,7 +61,7 @@ const (
 )
 
 // ExtractSignals extracts necessary signals for heuristic analysis from logs
-func ExtractSignals(c context.Context, compileLogs *gfim.CompileLogs) (*model.CompileFailureSignal, error) {
+func ExtractSignals(c context.Context, compileLogs *model.CompileLogs) (*model.CompileFailureSignal, error) {
 	if compileLogs.NinjaLog == nil && compileLogs.StdOutLog == "" {
 		return nil, fmt.Errorf("Unable to extract signals from empty logs.")
 	}

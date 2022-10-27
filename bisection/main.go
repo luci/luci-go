@@ -23,15 +23,15 @@ import (
 
 	"go.chromium.org/luci/bisection/compilefailuredetection"
 	"go.chromium.org/luci/bisection/frontend/handlers"
-	gfipb "go.chromium.org/luci/bisection/proto"
+	pb "go.chromium.org/luci/bisection/proto"
 	"go.chromium.org/luci/bisection/pubsub"
-	gfis "go.chromium.org/luci/bisection/server"
+	"go.chromium.org/luci/bisection/server"
 
 	"github.com/golang/protobuf/proto"
 	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/config/server/cfgmodule"
-	"go.chromium.org/luci/server"
+	luciserver "go.chromium.org/luci/server"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/openid"
 	"go.chromium.org/luci/server/encryptedcookies"
@@ -84,7 +84,7 @@ func checkAccess(ctx *router.Context, next router.Handler) {
 }
 
 // prepareTemplates configures templates.Bundle used by all UI handlers.
-func prepareTemplates(opts *server.Options) *templates.Bundle {
+func prepareTemplates(opts *luciserver.Options) *templates.Bundle {
 	return &templates.Bundle{
 		Loader: templates.FileSystemLoader("frontend/templates"),
 		// Controls whether templates are cached.
@@ -105,7 +105,7 @@ func prepareTemplates(opts *server.Options) *templates.Bundle {
 	}
 }
 
-func pageMiddlewareChain(srv *server.Server) router.MiddlewareChain {
+func pageMiddlewareChain(srv *luciserver.Server) router.MiddlewareChain {
 	return router.NewMiddlewareChain(
 		auth.Authenticate(srv.CookieAuth),
 		templates.WithTemplates(prepareTemplates(&srv.Options)),
@@ -144,7 +144,7 @@ func main() {
 		tq.NewModuleFromFlags(),
 	}
 
-	server.Main(nil, modules, func(srv *server.Server) error {
+	luciserver.Main(nil, modules, func(srv *luciserver.Server) error {
 		mwc := pageMiddlewareChain(srv)
 
 		handlers.RegisterRoutes(srv.Routes, mwc)
@@ -170,14 +170,14 @@ func main() {
 		})
 
 		// Installs PRPC service.
-		gfipb.RegisterGoFinditServiceServer(srv.PRPC, &gfipb.DecoratedGoFinditService{
-			Service: &gfis.GoFinditServer{},
+		pb.RegisterGoFinditServiceServer(srv.PRPC, &pb.DecoratedGoFinditService{
+			Service: &server.GoFinditServer{},
 			Prelude: checkAPIAccess,
 		})
 
 		// Installs PRPC service to communicate with recipes
-		gfipb.RegisterGoFinditBotServiceServer(srv.PRPC, &gfipb.DecoratedGoFinditBotService{
-			Service: &gfis.GoFinditBotServer{},
+		pb.RegisterGoFinditBotServiceServer(srv.PRPC, &pb.DecoratedGoFinditBotService{
+			Service: &server.GoFinditBotServer{},
 			Prelude: checkBotAPIAccess,
 		})
 

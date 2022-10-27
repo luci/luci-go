@@ -20,8 +20,7 @@ import (
 	"fmt"
 
 	"go.chromium.org/luci/bisection/model"
-	gfim "go.chromium.org/luci/bisection/model"
-	gfipb "go.chromium.org/luci/bisection/proto"
+	pb "go.chromium.org/luci/bisection/proto"
 
 	bbpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/clock"
@@ -36,7 +35,7 @@ type GoFinditBotServer struct{}
 
 // UpdateAnalysisProgress is an RPC endpoints used by the recipes to update
 // analysis progress.
-func (server *GoFinditBotServer) UpdateAnalysisProgress(c context.Context, req *gfipb.UpdateAnalysisProgressRequest) (*gfipb.UpdateAnalysisProgressResponse, error) {
+func (server *GoFinditBotServer) UpdateAnalysisProgress(c context.Context, req *pb.UpdateAnalysisProgressRequest) (*pb.UpdateAnalysisProgressResponse, error) {
 	err := verifyUpdateAnalysisProgressRequest(c, req)
 	if err != nil {
 		return nil, status.Errorf(codes.InvalidArgument, "Invalid request: %s", err)
@@ -44,7 +43,7 @@ func (server *GoFinditBotServer) UpdateAnalysisProgress(c context.Context, req *
 	logging.Infof(c, "Update analysis with rerun_build_id = %d analysis_id = %d gitiles_commit=%v ", req.Bbid, req.AnalysisId, req.GitilesCommit)
 
 	// Get rerun model
-	rerunModel := &gfim.CompileRerunBuild{
+	rerunModel := &model.CompileRerunBuild{
 		Id: req.Bbid,
 	}
 	switch err := datastore.Get(c, rerunModel); {
@@ -58,7 +57,7 @@ func (server *GoFinditBotServer) UpdateAnalysisProgress(c context.Context, req *
 
 	// We only support analysis progress for culprit verification now
 	// TODO (nqmtuan): remove this when we support updating progress for nth-section
-	if rerunModel.Type != gfim.RerunBuildType_CulpritVerification {
+	if rerunModel.Type != model.RerunBuildType_CulpritVerification {
 		return nil, status.Errorf(codes.Unimplemented, "only CulpritVerification is supported at the moment")
 	}
 
@@ -70,7 +69,7 @@ func (server *GoFinditBotServer) UpdateAnalysisProgress(c context.Context, req *
 	}
 
 	// Get the suspect for the rerun build
-	suspect := &gfim.Suspect{
+	suspect := &model.Suspect{
 		Id:             rerunModel.Suspect.IntID(),
 		ParentAnalysis: rerunModel.Suspect.Parent(),
 	}
@@ -86,7 +85,7 @@ func (server *GoFinditBotServer) UpdateAnalysisProgress(c context.Context, req *
 		return nil, status.Errorf(codes.Internal, "error updating suspect %s", err)
 	}
 
-	if suspect.VerificationStatus == gfim.SuspectVerificationStatus_ConfirmedCulprit {
+	if suspect.VerificationStatus == model.SuspectVerificationStatus_ConfirmedCulprit {
 		err = updateSuspectAsConfirmedCulprit(c, suspect)
 		if err != nil {
 			logging.Errorf(c, "Error updating suspect as confirmed culprit for rerun build %d: %s", req.Bbid, err)
@@ -94,10 +93,10 @@ func (server *GoFinditBotServer) UpdateAnalysisProgress(c context.Context, req *
 		}
 	}
 
-	return &gfipb.UpdateAnalysisProgressResponse{}, nil
+	return &pb.UpdateAnalysisProgressResponse{}, nil
 }
 
-func verifyUpdateAnalysisProgressRequest(c context.Context, req *gfipb.UpdateAnalysisProgressRequest) error {
+func verifyUpdateAnalysisProgressRequest(c context.Context, req *pb.UpdateAnalysisProgressRequest) error {
 	if req.AnalysisId == 0 {
 		return fmt.Errorf("analysis_id is required")
 	}
@@ -114,7 +113,7 @@ func verifyUpdateAnalysisProgressRequest(c context.Context, req *gfipb.UpdateAna
 }
 
 // updateSuspect looks at rerun and set the suspect status
-func updateSuspect(c context.Context, suspect *gfim.Suspect) error {
+func updateSuspect(c context.Context, suspect *model.Suspect) error {
 	rerunStatus, err := getSingleRerunStatus(c, suspect.SuspectRerunBuild.IntID())
 	if err != nil {
 		return err
@@ -131,9 +130,9 @@ func updateSuspect(c context.Context, suspect *gfim.Suspect) error {
 }
 
 // updateSuspectAsConfirmedCulprit update the suspect as the confirmed culprit of analysis
-func updateSuspectAsConfirmedCulprit(c context.Context, suspect *gfim.Suspect) error {
+func updateSuspectAsConfirmedCulprit(c context.Context, suspect *model.Suspect) error {
 	analysisKey := suspect.ParentAnalysis.Parent()
-	analysis := &gfim.CompileFailureAnalysis{
+	analysis := &model.CompileFailureAnalysis{
 		Id: analysisKey.IntID(),
 	}
 	err := datastore.Get(c, analysis)
@@ -147,28 +146,28 @@ func updateSuspectAsConfirmedCulprit(c context.Context, suspect *gfim.Suspect) e
 		logging.Warningf(c, "found more than 2 suspects for analysis %d", analysis.Id)
 	}
 	analysis.VerifiedCulprits = verifiedCulprits
-	analysis.Status = gfipb.AnalysisStatus_FOUND
+	analysis.Status = pb.AnalysisStatus_FOUND
 	analysis.EndTime = clock.Now(c)
 	return datastore.Put(c, analysis)
 }
 
-func getSuspectStatus(c context.Context, rerunStatus gfipb.RerunStatus, parentRerunStatus gfipb.RerunStatus) gfim.SuspectVerificationStatus {
-	if rerunStatus == gfipb.RerunStatus_FAILED && parentRerunStatus == gfipb.RerunStatus_PASSED {
-		return gfim.SuspectVerificationStatus_ConfirmedCulprit
+func getSuspectStatus(c context.Context, rerunStatus pb.RerunStatus, parentRerunStatus pb.RerunStatus) model.SuspectVerificationStatus {
+	if rerunStatus == pb.RerunStatus_FAILED && parentRerunStatus == pb.RerunStatus_PASSED {
+		return model.SuspectVerificationStatus_ConfirmedCulprit
 	}
-	if rerunStatus == gfipb.RerunStatus_PASSED || parentRerunStatus == gfipb.RerunStatus_FAILED {
-		return gfim.SuspectVerificationStatus_Vindicated
+	if rerunStatus == pb.RerunStatus_PASSED || parentRerunStatus == pb.RerunStatus_FAILED {
+		return model.SuspectVerificationStatus_Vindicated
 	}
-	if rerunStatus == gfipb.RerunStatus_INFRA_FAILED || parentRerunStatus == gfipb.RerunStatus_INFRA_FAILED {
-		return gfim.SuspectVerificationStatus_VerificationError
+	if rerunStatus == pb.RerunStatus_INFRA_FAILED || parentRerunStatus == pb.RerunStatus_INFRA_FAILED {
+		return model.SuspectVerificationStatus_VerificationError
 	}
-	if rerunStatus == gfipb.RerunStatus_RERUN_STATUS_UNSPECIFIED || parentRerunStatus == gfipb.RerunStatus_RERUN_STATUS_UNSPECIFIED {
-		return gfim.SuspectVerificationStatus_Unverified
+	if rerunStatus == pb.RerunStatus_RERUN_STATUS_UNSPECIFIED || parentRerunStatus == pb.RerunStatus_RERUN_STATUS_UNSPECIFIED {
+		return model.SuspectVerificationStatus_Unverified
 	}
-	return gfim.SuspectVerificationStatus_UnderVerification
+	return model.SuspectVerificationStatus_UnderVerification
 }
 
-func updateRerun(c context.Context, req *gfipb.UpdateAnalysisProgressRequest, rerunModel *gfim.CompileRerunBuild) error {
+func updateRerun(c context.Context, req *pb.UpdateAnalysisProgressRequest, rerunModel *model.CompileRerunBuild) error {
 	// Find the last SingleRerun
 	reruns, err := getRerunsForRerunBuild(c, rerunModel)
 	if err != nil {
@@ -198,29 +197,29 @@ func updateRerun(c context.Context, req *gfipb.UpdateAnalysisProgressRequest, re
 	return nil
 }
 
-func getRerunsForRerunBuild(c context.Context, rerunBuild *gfim.CompileRerunBuild) ([]*gfim.SingleRerun, error) {
+func getRerunsForRerunBuild(c context.Context, rerunBuild *model.CompileRerunBuild) ([]*model.SingleRerun, error) {
 	q := datastore.NewQuery("SingleRerun").Eq("rerun_build", datastore.KeyForObj(c, rerunBuild)).Order("start_time")
 	singleReruns := []*model.SingleRerun{}
 	err := datastore.GetAll(c, q, &singleReruns)
 	return singleReruns, err
 }
 
-func getSingleRerunStatus(c context.Context, rerunId int64) (gfipb.RerunStatus, error) {
-	rerunBuild := &gfim.CompileRerunBuild{
+func getSingleRerunStatus(c context.Context, rerunId int64) (pb.RerunStatus, error) {
+	rerunBuild := &model.CompileRerunBuild{
 		Id: rerunId,
 	}
 	err := datastore.Get(c, rerunBuild)
 	if err != nil {
-		return gfipb.RerunStatus_RERUN_STATUS_UNSPECIFIED, err
+		return pb.RerunStatus_RERUN_STATUS_UNSPECIFIED, err
 	}
 
 	// Get SingleRerun
 	singleReruns, err := getRerunsForRerunBuild(c, rerunBuild)
 	if err != nil {
-		return gfipb.RerunStatus_RERUN_STATUS_UNSPECIFIED, err
+		return pb.RerunStatus_RERUN_STATUS_UNSPECIFIED, err
 	}
 	if len(singleReruns) != 1 {
-		return gfipb.RerunStatus_RERUN_STATUS_UNSPECIFIED, fmt.Errorf("expect 1 single rerun for build %d, got %d", rerunBuild.Id, len(singleReruns))
+		return pb.RerunStatus_RERUN_STATUS_UNSPECIFIED, fmt.Errorf("expect 1 single rerun for build %d, got %d", rerunBuild.Id, len(singleReruns))
 	}
 
 	return singleReruns[0].Status, nil

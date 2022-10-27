@@ -20,7 +20,7 @@ import (
 
 	"go.chromium.org/luci/bisection/internal/buildbucket"
 	"go.chromium.org/luci/bisection/model"
-	gfipb "go.chromium.org/luci/bisection/proto"
+	pb "go.chromium.org/luci/bisection/proto"
 
 	"github.com/golang/mock/gomock"
 	. "github.com/smartystreets/goconvey/convey"
@@ -331,7 +331,7 @@ func TestFailureDetection(t *testing.T) {
 				LuciBuild: model.LuciBuild{
 					BuildId: 8001,
 				},
-				BuildFailureType: gfipb.BuildFailureType_COMPILE,
+				BuildFailureType: pb.BuildFailureType_COMPILE,
 			}
 			So(datastore.Put(c, failed_build), ShouldBeNil)
 			datastore.GetTestable(c).CatchupIndexes()
@@ -414,7 +414,7 @@ func TestFailureDetection(t *testing.T) {
 					StartTime:  (&timestamppb.Timestamp{Seconds: 100}).AsTime(),
 					Status:     buildbucketpb.Status_FAILURE,
 				},
-				BuildFailureType: gfipb.BuildFailureType_COMPILE,
+				BuildFailureType: pb.BuildFailureType_COMPILE,
 			})
 		})
 	})

@@ -25,8 +25,8 @@ import (
 	"go.chromium.org/luci/bisection/compilefailureanalysis/heuristic"
 	"go.chromium.org/luci/bisection/culpritverification"
 	"go.chromium.org/luci/bisection/internal/buildbucket"
-	gfim "go.chromium.org/luci/bisection/model"
-	gfipb "go.chromium.org/luci/bisection/proto"
+	"go.chromium.org/luci/bisection/model"
+	pb "go.chromium.org/luci/bisection/proto"
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/logging"
@@ -39,10 +39,10 @@ import (
 // function should make sure this is not a duplicate analysis)
 func AnalyzeFailure(
 	c context.Context,
-	cf *gfim.CompileFailure,
+	cf *model.CompileFailure,
 	firstFailedBuildID int64,
 	lastPassedBuildID int64,
-) (*gfim.CompileFailureAnalysis, error) {
+) (*model.CompileFailureAnalysis, error) {
 	logging.Infof(c, "AnalyzeFailure firstFailed = %d", firstFailedBuildID)
 	regression_range, e := findRegressionRange(c, firstFailedBuildID, lastPassedBuildID)
 	if e != nil {
@@ -64,10 +64,10 @@ func AnalyzeFailure(
 	}
 
 	// Creates a new CompileFailureAnalysis entity in datastore
-	analysis := &gfim.CompileFailureAnalysis{
+	analysis := &model.CompileFailureAnalysis{
 		CompileFailure:         datastore.KeyForObj(c, cf),
 		CreateTime:             clock.Now(c),
-		Status:                 gfipb.AnalysisStatus_CREATED,
+		Status:                 pb.AnalysisStatus_CREATED,
 		FirstFailedBuildId:     firstFailedBuildID,
 		LastPassedBuildId:      lastPassedBuildID,
 		InitialRegressionRange: regression_range,
@@ -92,7 +92,7 @@ func AnalyzeFailure(
 	heuristicResult, e := heuristic.Analyze(c, analysis, regression_range, compileLogs)
 	if e != nil {
 		logging.Errorf(c, "Error during heuristic analysis for build %d: %v", e)
-		analysis.Status = gfipb.AnalysisStatus_ERROR
+		analysis.Status = pb.AnalysisStatus_ERROR
 		analysis.EndTime = clock.Now(c)
 		datastore.Put(c, analysis)
 		// As we only run heuristic analysis now, returns the error if heuristic
@@ -124,7 +124,7 @@ func AnalyzeFailure(
 // verifyHeuristicResults verifies if the suspects of heuristic analysis are the real culprit.
 // analysisID is CompileFailureAnalysis ID. It is meant to be propagated all the way to the
 // recipe, so we can identify the analysis in buildbucket.
-func verifyHeuristicResults(c context.Context, heuristicAnalysis *gfim.CompileHeuristicAnalysis, failedBuildID int64, analysisID int64) error {
+func verifyHeuristicResults(c context.Context, heuristicAnalysis *model.CompileHeuristicAnalysis, failedBuildID int64, analysisID int64) error {
 	// TODO (nqmtuan): Move the verification into a task queue
 	suspects, err := getHeuristicSuspectsToVerify(c, heuristicAnalysis)
 	if err != nil {
@@ -143,9 +143,9 @@ func verifyHeuristicResults(c context.Context, heuristicAnalysis *gfim.CompileHe
 // In case heuristic analysis returns too many results, we don't want to verify all of them.
 // Instead, we want to be selective in what we want to verify.
 // For now, we will just take top 3 results of heuristic analysis.
-func getHeuristicSuspectsToVerify(c context.Context, heuristicAnalysis *gfim.CompileHeuristicAnalysis) ([]*gfim.Suspect, error) {
+func getHeuristicSuspectsToVerify(c context.Context, heuristicAnalysis *model.CompileHeuristicAnalysis) ([]*model.Suspect, error) {
 	// Getting the suspects for heuristic analysis
-	suspects := []*gfim.Suspect{}
+	suspects := []*model.Suspect{}
 	q := datastore.NewQuery("Suspect").Ancestor(datastore.KeyForObj(c, heuristicAnalysis)).Order("-score")
 	err := datastore.GetAll(c, q, &suspects)
 	if err != nil {
@@ -166,7 +166,7 @@ func findRegressionRange(
 	c context.Context,
 	firstFailedBuildID int64,
 	lastPassedBuildID int64,
-) (*gfipb.RegressionRange, error) {
+) (*pb.RegressionRange, error) {
 	firstFailedBuild, err := buildbucket.GetBuild(c, firstFailedBuildID, nil)
 	if err != nil {
 		return nil, fmt.Errorf("error getting build %d: %w", firstFailedBuildID, err)
@@ -181,7 +181,7 @@ func findRegressionRange(
 		return nil, fmt.Errorf("couldn't get gitiles commit for builds (%d, %d)", lastPassedBuildID, firstFailedBuildID)
 	}
 
-	return &gfipb.RegressionRange{
+	return &pb.RegressionRange{
 		FirstFailed: firstFailedBuild.GetInput().GetGitilesCommit(),
 		LastPassed:  lastPassedBuild.GetInput().GetGitilesCommit(),
 	}, nil

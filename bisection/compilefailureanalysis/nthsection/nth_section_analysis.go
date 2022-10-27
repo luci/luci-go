@@ -19,8 +19,8 @@ import (
 	"context"
 	"fmt"
 
-	lbm "go.chromium.org/luci/bisection/model"
-	lbpb "go.chromium.org/luci/bisection/proto"
+	"go.chromium.org/luci/bisection/model"
+	pb "go.chromium.org/luci/bisection/proto"
 	"go.chromium.org/luci/bisection/rerun"
 	"go.chromium.org/luci/bisection/util/changelogutil"
 	"go.chromium.org/luci/bisection/util/datastoreutil"
@@ -35,12 +35,12 @@ import (
 
 func Analyze(
 	c context.Context,
-	cfa *lbm.CompileFailureAnalysis) (*lbm.CompileNthSectionAnalysis, error) {
+	cfa *model.CompileFailureAnalysis) (*model.CompileNthSectionAnalysis, error) {
 	// Create a new CompileNthSectionAnalysis Entity
-	nthSectionAnalysis := &lbm.CompileNthSectionAnalysis{
+	nthSectionAnalysis := &model.CompileNthSectionAnalysis{
 		ParentAnalysis: datastore.KeyForObj(c, cfa),
 		StartTime:      clock.Now(c),
-		Status:         lbpb.AnalysisStatus_CREATED,
+		Status:         pb.AnalysisStatus_CREATED,
 	}
 
 	changeLogs, err := changelogutil.GetChangeLogs(c, cfa.InitialRegressionRange)
@@ -61,7 +61,7 @@ func Analyze(
 }
 
 // startAnalysis will based on find next commit(s) for rerun and schedule them
-func startAnalysis(c context.Context, nsa *lbm.CompileNthSectionAnalysis, cfa *lbm.CompileFailureAnalysis) error {
+func startAnalysis(c context.Context, nsa *model.CompileNthSectionAnalysis, cfa *model.CompileFailureAnalysis) error {
 	snapshot, err := CreateSnapshot(c, nsa)
 	if err != nil {
 		return err
@@ -87,7 +87,7 @@ func startAnalysis(c context.Context, nsa *lbm.CompileNthSectionAnalysis, cfa *l
 		if err != nil {
 			return errors.Annotate(err, "rerunCommit for %s", commit).Err()
 		}
-		_, err = rerun.CreateRerunBuildModel(c, build, lbm.RerunBuildType_NthSection, nil, nsa)
+		_, err = rerun.CreateRerunBuildModel(c, build, model.RerunBuildType_NthSection, nil, nsa)
 		if err != nil {
 			return errors.Annotate(err, "createRerunBuildModel for %s", commit).Err()
 		}
@@ -96,7 +96,7 @@ func startAnalysis(c context.Context, nsa *lbm.CompileNthSectionAnalysis, cfa *l
 	return nil
 }
 
-func rerunCommit(c context.Context, nthSectionAnalysis *lbm.CompileNthSectionAnalysis, commit *buildbucketpb.GitilesCommit, failedBuildID int64) (*buildbucketpb.Build, error) {
+func rerunCommit(c context.Context, nthSectionAnalysis *model.CompileNthSectionAnalysis, commit *buildbucketpb.GitilesCommit, failedBuildID int64) (*buildbucketpb.Build, error) {
 	props, err := getRerunProps(c, nthSectionAnalysis)
 	if err != nil {
 		return nil, errors.Annotate(err, "failed getting rerun props").Err()
@@ -110,7 +110,7 @@ func rerunCommit(c context.Context, nthSectionAnalysis *lbm.CompileNthSectionAna
 	return build, nil
 }
 
-func getRerunProps(c context.Context, nthSectionAnalysis *lbm.CompileNthSectionAnalysis) (map[string]interface{}, error) {
+func getRerunProps(c context.Context, nthSectionAnalysis *model.CompileNthSectionAnalysis) (map[string]interface{}, error) {
 	analysisID := nthSectionAnalysis.ParentAnalysis.IntID()
 	compileFailure, err := datastoreutil.GetCompileFailureForAnalysis(c, analysisID)
 	if err != nil {
@@ -132,8 +132,8 @@ func getRerunProps(c context.Context, nthSectionAnalysis *lbm.CompileNthSectionA
 	return props, nil
 }
 
-func updateBlameList(c context.Context, nthSectionAnalysis *lbm.CompileNthSectionAnalysis, changeLogs []*lbm.ChangeLog) error {
-	commits := []*lbpb.BlameListSingleCommit{}
+func updateBlameList(c context.Context, nthSectionAnalysis *model.CompileNthSectionAnalysis, changeLogs []*model.ChangeLog) error {
+	commits := []*pb.BlameListSingleCommit{}
 	for _, cl := range changeLogs {
 		reviewURL, err := cl.GetReviewUrl()
 		if err != nil {
@@ -147,13 +147,13 @@ func updateBlameList(c context.Context, nthSectionAnalysis *lbm.CompileNthSectio
 			logging.Errorf(c, "Error getting review title: %s", err)
 		}
 
-		commits = append(commits, &lbpb.BlameListSingleCommit{
+		commits = append(commits, &pb.BlameListSingleCommit{
 			Commit:      cl.Commit,
 			ReviewUrl:   reviewURL,
 			ReviewTitle: reviewTitle,
 		})
 	}
-	nthSectionAnalysis.BlameList = &lbpb.BlameList{
+	nthSectionAnalysis.BlameList = &pb.BlameList{
 		Commits: commits,
 	}
 	return datastore.Put(c, nthSectionAnalysis)

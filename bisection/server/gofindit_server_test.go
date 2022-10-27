@@ -20,7 +20,7 @@ import (
 	"testing"
 
 	"go.chromium.org/luci/bisection/model"
-	gfipb "go.chromium.org/luci/bisection/proto"
+	pb "go.chromium.org/luci/bisection/proto"
 
 	. "github.com/smartystreets/goconvey/convey"
 	"google.golang.org/grpc/codes"
@@ -41,22 +41,22 @@ func TestQueryAnalysis(t *testing.T) {
 	datastore.GetTestable(c).AutoIndex(true)
 
 	Convey("No BuildFailure Info", t, func() {
-		req := &gfipb.QueryAnalysisRequest{}
+		req := &pb.QueryAnalysisRequest{}
 		_, err := server.QueryAnalysis(c, req)
 		So(err, ShouldNotBeNil)
 		So(status.Convert(err).Code(), ShouldEqual, codes.InvalidArgument)
 	})
 
 	Convey("No bbid", t, func() {
-		req := &gfipb.QueryAnalysisRequest{BuildFailure: &gfipb.BuildFailure{}}
+		req := &pb.QueryAnalysisRequest{BuildFailure: &pb.BuildFailure{}}
 		_, err := server.QueryAnalysis(c, req)
 		So(err, ShouldNotBeNil)
 		So(status.Convert(err).Code(), ShouldEqual, codes.InvalidArgument)
 	})
 
 	Convey("Unsupported step", t, func() {
-		req := &gfipb.QueryAnalysisRequest{
-			BuildFailure: &gfipb.BuildFailure{
+		req := &pb.QueryAnalysisRequest{
+			BuildFailure: &pb.BuildFailure{
 				FailedStepName: "some step",
 				Bbid:           123,
 			},
@@ -67,8 +67,8 @@ func TestQueryAnalysis(t *testing.T) {
 	})
 
 	Convey("No analysis found", t, func() {
-		req := &gfipb.QueryAnalysisRequest{
-			BuildFailure: &gfipb.BuildFailure{
+		req := &pb.QueryAnalysisRequest{
+			BuildFailure: &pb.BuildFailure{
 				FailedStepName: "compile",
 				Bbid:           123,
 			},
@@ -87,7 +87,7 @@ func TestQueryAnalysis(t *testing.T) {
 				Bucket:  "ci",
 				Builder: "android",
 			},
-			BuildFailureType: gfipb.BuildFailureType_COMPILE,
+			BuildFailureType: pb.BuildFailureType_COMPILE,
 		}
 		So(datastore.Put(c, failedBuild), ShouldBeNil)
 		datastore.GetTestable(c).CatchupIndexes()
@@ -125,8 +125,8 @@ func TestQueryAnalysis(t *testing.T) {
 		So(datastore.Put(c, heuristicAnalysis), ShouldBeNil)
 		datastore.GetTestable(c).CatchupIndexes()
 
-		req := &gfipb.QueryAnalysisRequest{
-			BuildFailure: &gfipb.BuildFailure{
+		req := &pb.QueryAnalysisRequest{
+			BuildFailure: &pb.BuildFailure{
 				FailedStepName: "compile",
 				Bbid:           123,
 			},
@@ -142,9 +142,9 @@ func TestQueryAnalysis(t *testing.T) {
 			Bucket:  "ci",
 			Builder: "android",
 		})
-		So(analysis.BuildFailureType, ShouldEqual, gfipb.BuildFailureType_COMPILE)
+		So(analysis.BuildFailureType, ShouldEqual, pb.BuildFailureType_COMPILE)
 		So(len(analysis.Culprits), ShouldEqual, 1)
-		So(proto.Equal(analysis.Culprits[0], &gfipb.Culprit{
+		So(proto.Equal(analysis.Culprits[0], &pb.Culprit{
 			Commit: &buildbucketpb.GitilesCommit{
 				Host:    "host1",
 				Project: "proj1",
@@ -190,8 +190,8 @@ func TestQueryAnalysis(t *testing.T) {
 		So(datastore.Put(c, compileFailureAnalysis), ShouldBeNil)
 		datastore.GetTestable(c).CatchupIndexes()
 
-		req := &gfipb.QueryAnalysisRequest{
-			BuildFailure: &gfipb.BuildFailure{
+		req := &pb.QueryAnalysisRequest{
+			BuildFailure: &pb.BuildFailure{
 				FailedStepName: "compile",
 				Bbid:           123,
 			},
@@ -237,7 +237,7 @@ func TestListAnalyses(t *testing.T) {
 		datastore.GetTestable(c).CatchupIndexes()
 
 		Convey("Invalid page size", func() {
-			req := &gfipb.ListAnalysesRequest{
+			req := &pb.ListAnalysesRequest{
 				PageSize: -5,
 			}
 			_, err := server.ListAnalyses(c, req)
@@ -246,7 +246,7 @@ func TestListAnalyses(t *testing.T) {
 		})
 
 		Convey("Specifying page size is optional", func() {
-			req := &gfipb.ListAnalysesRequest{}
+			req := &pb.ListAnalysesRequest{}
 			res, err := server.ListAnalyses(c, req)
 			So(err, ShouldBeNil)
 			So(len(res.Analyses), ShouldEqual, 4)
@@ -257,7 +257,7 @@ func TestListAnalyses(t *testing.T) {
 		})
 
 		Convey("Response is limited by the page size", func() {
-			req := &gfipb.ListAnalysesRequest{
+			req := &pb.ListAnalysesRequest{
 				PageSize: 3,
 			}
 			res, err := server.ListAnalyses(c, req)
@@ -271,7 +271,7 @@ func TestListAnalyses(t *testing.T) {
 				So(res.Analyses[2].AnalysisId, ShouldEqual, 3)
 
 				Convey("Page token will get the next page of analyses", func() {
-					req = &gfipb.ListAnalysesRequest{
+					req = &pb.ListAnalysesRequest{
 						PageSize:  3,
 						PageToken: res.NextPageToken,
 					}

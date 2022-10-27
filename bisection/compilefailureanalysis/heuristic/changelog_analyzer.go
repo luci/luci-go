@@ -20,7 +20,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	gfim "go.chromium.org/luci/bisection/model"
+	"go.chromium.org/luci/bisection/model"
 	"go.chromium.org/luci/bisection/util"
 
 	"go.chromium.org/luci/common/logging"
@@ -38,8 +38,8 @@ type ScoringCriteria struct {
 
 // AnalyzeChangeLogs analyzes the changelogs based on the failure signals.
 // Returns a dictionary that maps the commits and the result found.
-func AnalyzeChangeLogs(c context.Context, signal *gfim.CompileFailureSignal, changelogs []*gfim.ChangeLog) (*gfim.HeuristicAnalysisResult, error) {
-	result := &gfim.HeuristicAnalysisResult{}
+func AnalyzeChangeLogs(c context.Context, signal *model.CompileFailureSignal, changelogs []*model.ChangeLog) (*model.HeuristicAnalysisResult, error) {
+	result := &model.HeuristicAnalysisResult{}
 	for _, changelog := range changelogs {
 		justification, err := AnalyzeOneChangeLog(c, signal, changelog)
 		commit := changelog.Commit
@@ -71,14 +71,14 @@ func AnalyzeChangeLogs(c context.Context, signal *gfim.CompileFailureSignal, cha
 
 // AnalyzeOneChangeLog analyzes one changelog(revision) and returns the
 // justification of how likely that changelog is the culprit.
-func AnalyzeOneChangeLog(c context.Context, signal *gfim.CompileFailureSignal, changelog *gfim.ChangeLog) (*gfim.SuspectJustification, error) {
+func AnalyzeOneChangeLog(c context.Context, signal *model.CompileFailureSignal, changelog *model.ChangeLog) (*model.SuspectJustification, error) {
 	// TODO (crbug.com/1295566): check DEPs file as well, if the CL touches DEPs.
 	// This is a nice-to-have feature, and is an edge case.
-	justification := &gfim.SuspectJustification{}
+	justification := &model.SuspectJustification{}
 	author := changelog.Author.Email
 	for _, email := range getNonBlamableEmail() {
 		if email == author {
-			return &gfim.SuspectJustification{IsNonBlamable: true}, nil
+			return &model.SuspectJustification{IsNonBlamable: true}, nil
 		}
 	}
 
@@ -90,7 +90,7 @@ func AnalyzeOneChangeLog(c context.Context, signal *gfim.CompileFailureSignal, c
 	}
 	for file, lines := range signal.Files {
 		for _, diff := range changelog.ChangeLogDiffs {
-			e := updateJustification(c, justification, file, lines, diff, criteria, gfim.JustificationType_FAILURELOG)
+			e := updateJustification(c, justification, file, lines, diff, criteria, model.JustificationType_FAILURELOG)
 			if e != nil {
 				return nil, e
 			}
@@ -117,7 +117,7 @@ func AnalyzeOneChangeLog(c context.Context, signal *gfim.CompileFailureSignal, c
 				deps = append(oldPathDeps, newPathDeps...)
 			}
 			for _, dep := range deps {
-				e := updateJustification(c, justification, dep, []int{}, diff, criteria, gfim.JustificationType_DEPENDENCY)
+				e := updateJustification(c, justification, dep, []int{}, diff, criteria, model.JustificationType_DEPENDENCY)
 				if e != nil {
 					return nil, e
 				}
@@ -129,7 +129,7 @@ func AnalyzeOneChangeLog(c context.Context, signal *gfim.CompileFailureSignal, c
 	return justification, nil
 }
 
-func updateJustification(c context.Context, justification *gfim.SuspectJustification, fileInLog string, lines []int, diff gfim.ChangeLogDiff, criteria *ScoringCriteria, justificationType gfim.JustificationType) error {
+func updateJustification(c context.Context, justification *model.SuspectJustification, fileInLog string, lines []int, diff model.ChangeLogDiff, criteria *ScoringCriteria, justificationType model.JustificationType) error {
 	// TODO (crbug.com/1295566): In case of MODIFY, also query Gitiles for the
 	// changed region and compared with lines. If they intersect, increase the score.
 	// This may lead to a better score indicator.
@@ -137,11 +137,11 @@ func updateJustification(c context.Context, justification *gfim.SuspectJustifica
 	// Get the relevant file paths from CLs
 	relevantFilePaths := []string{}
 	switch diff.Type {
-	case gfim.ChangeType_ADD, gfim.ChangeType_COPY, gfim.ChangeType_MODIFY:
+	case model.ChangeType_ADD, model.ChangeType_COPY, model.ChangeType_MODIFY:
 		relevantFilePaths = append(relevantFilePaths, diff.NewPath)
-	case gfim.ChangeType_RENAME:
+	case model.ChangeType_RENAME:
 		relevantFilePaths = append(relevantFilePaths, diff.NewPath, diff.OldPath)
-	case gfim.ChangeType_DELETE:
+	case model.ChangeType_DELETE:
 		relevantFilePaths = append(relevantFilePaths, diff.OldPath)
 	default:
 		return fmt.Errorf("Unsupported diff type %s", diff.Type)
@@ -163,26 +163,26 @@ func updateJustification(c context.Context, justification *gfim.SuspectJustifica
 	return nil
 }
 
-func getReasonSameFile(filePath string, changeType gfim.ChangeType, justificationType gfim.JustificationType) string {
+func getReasonSameFile(filePath string, changeType model.ChangeType, justificationType model.JustificationType) string {
 	m := getChangeTypeActionMap()
 	action := m[string(changeType)]
 	switch justificationType {
-	case gfim.JustificationType_FAILURELOG:
+	case model.JustificationType_FAILURELOG:
 		return fmt.Sprintf("The file \"%s\" was %s and it was in the failure log.", filePath, action)
-	case gfim.JustificationType_DEPENDENCY:
+	case model.JustificationType_DEPENDENCY:
 		return fmt.Sprintf("The file \"%s\" was %s and it was in the dependency.", filePath, action)
 	default:
 		return ""
 	}
 }
 
-func getReasonRelatedFile(filePath string, changeType gfim.ChangeType, relatedFile string, justificationType gfim.JustificationType) string {
+func getReasonRelatedFile(filePath string, changeType model.ChangeType, relatedFile string, justificationType model.JustificationType) string {
 	m := getChangeTypeActionMap()
 	action := m[string(changeType)]
 	switch justificationType {
-	case gfim.JustificationType_FAILURELOG:
+	case model.JustificationType_FAILURELOG:
 		return fmt.Sprintf("The file \"%s\" was %s. It was related to the file %s which was in the failure log.", filePath, action, relatedFile)
-	case gfim.JustificationType_DEPENDENCY:
+	case model.JustificationType_DEPENDENCY:
 		return fmt.Sprintf("The file \"%s\" was %s. It was related to the dependency %s.", filePath, action, relatedFile)
 	default:
 		return ""
@@ -191,11 +191,11 @@ func getReasonRelatedFile(filePath string, changeType gfim.ChangeType, relatedFi
 
 func getChangeTypeActionMap() map[string]string {
 	return map[string]string{
-		gfim.ChangeType_ADD:    "added",
-		gfim.ChangeType_COPY:   "copied",
-		gfim.ChangeType_RENAME: "renamed",
-		gfim.ChangeType_MODIFY: "modified",
-		gfim.ChangeType_DELETE: "deleted",
+		model.ChangeType_ADD:    "added",
+		model.ChangeType_COPY:   "copied",
+		model.ChangeType_RENAME: "renamed",
+		model.ChangeType_MODIFY: "modified",
+		model.ChangeType_DELETE: "deleted",
 	}
 }
 

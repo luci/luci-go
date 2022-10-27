@@ -23,7 +23,7 @@ import (
 	"go.chromium.org/luci/bisection/compilefailureanalysis"
 	"go.chromium.org/luci/bisection/internal/buildbucket"
 	"go.chromium.org/luci/bisection/model"
-	gfipb "go.chromium.org/luci/bisection/proto"
+	pb "go.chromium.org/luci/bisection/proto"
 	tpb "go.chromium.org/luci/bisection/task/proto"
 	"go.chromium.org/luci/bisection/util"
 
@@ -269,7 +269,7 @@ func createCompileFailureModel(c context.Context, failedBuild *buildbucketpb.Bui
 				CreateTime:    failedBuild.CreateTime.AsTime(),
 				GitilesCommit: gitilesCommit,
 			},
-			BuildFailureType: gfipb.BuildFailureType_COMPILE,
+			BuildFailureType: pb.BuildFailureType_COMPILE,
 		}
 		e := datastore.Put(c, buildModel)
 		if e != nil {

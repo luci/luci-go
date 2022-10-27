@@ -21,7 +21,7 @@ import (
 
 	"go.chromium.org/luci/bisection/compilefailureanalysis/heuristic"
 	"go.chromium.org/luci/bisection/internal/gitiles"
-	gfim "go.chromium.org/luci/bisection/model"
+	"go.chromium.org/luci/bisection/model"
 	"go.chromium.org/luci/bisection/rerun"
 	"go.chromium.org/luci/bisection/util/datastoreutil"
 
@@ -34,7 +34,7 @@ import (
 // VerifySuspect verifies if a suspect is indeed the culprit.
 // analysisID is CompileFailureAnalysis ID. It is meant to be propagated all the way to the
 // recipe, so we can identify the analysis in buildbucket.
-func VerifySuspect(c context.Context, suspect *gfim.Suspect, failedBuildID int64, analysisID int64) error {
+func VerifySuspect(c context.Context, suspect *model.Suspect, failedBuildID int64, analysisID int64) error {
 	logging.Infof(c, "Verifying suspect %d for build %d", datastore.KeyForObj(c, suspect).IntID(), failedBuildID)
 
 	// Get failed compile targets
@@ -75,17 +75,17 @@ func VerifySuspect(c context.Context, suspect *gfim.Suspect, failedBuildID int64
 		logging.Errorf(c, "Error triggering rerun for build %d: %s", failedBuildID, err)
 		return err
 	}
-	suspectRerunBuildModel, err := rerun.CreateRerunBuildModel(c, suspectBuild, gfim.RerunBuildType_CulpritVerification, suspect, nil)
+	suspectRerunBuildModel, err := rerun.CreateRerunBuildModel(c, suspectBuild, model.RerunBuildType_CulpritVerification, suspect, nil)
 	if err != nil {
 		return err
 	}
 
-	parentRerunBuildModel, err := rerun.CreateRerunBuildModel(c, parentBuild, gfim.RerunBuildType_CulpritVerification, suspect, nil)
+	parentRerunBuildModel, err := rerun.CreateRerunBuildModel(c, parentBuild, model.RerunBuildType_CulpritVerification, suspect, nil)
 	if err != nil {
 		return err
 	}
 
-	suspect.VerificationStatus = gfim.SuspectVerificationStatus_UnderVerification
+	suspect.VerificationStatus = model.SuspectVerificationStatus_UnderVerification
 	suspect.SuspectRerunBuild = datastore.KeyForObj(c, suspectRerunBuildModel)
 	suspect.ParentRerunBuild = datastore.KeyForObj(c, parentRerunBuildModel)
 	err = datastore.Put(c, suspect)
@@ -95,10 +95,10 @@ func VerifySuspect(c context.Context, suspect *gfim.Suspect, failedBuildID int64
 	return nil
 }
 
-func hasNewTarget(c context.Context, failedFiles []string, changelog *gfim.ChangeLog) bool {
+func hasNewTarget(c context.Context, failedFiles []string, changelog *model.ChangeLog) bool {
 	for _, file := range failedFiles {
 		for _, diff := range changelog.ChangeLogDiffs {
-			if diff.Type == gfim.ChangeType_ADD || diff.Type == gfim.ChangeType_COPY || diff.Type == gfim.ChangeType_RENAME {
+			if diff.Type == model.ChangeType_ADD || diff.Type == model.ChangeType_COPY || diff.Type == model.ChangeType_RENAME {
 				if heuristic.IsSameFile(diff.NewPath, file) {
 					return true
 				}

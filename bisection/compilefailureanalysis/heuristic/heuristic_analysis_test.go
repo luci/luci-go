@@ -19,11 +19,10 @@ import (
 	"testing"
 
 	. "github.com/smartystreets/goconvey/convey"
+	"go.chromium.org/luci/bisection/model"
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
-
-	gfim "go.chromium.org/luci/bisection/model"
 )
 
 func TestSaveResultsToDatastore(t *testing.T) {
@@ -31,23 +30,23 @@ func TestSaveResultsToDatastore(t *testing.T) {
 	c := memory.Use(context.Background())
 
 	Convey("SaveResultsToDatastore", t, func() {
-		heuristicAnalysis := &gfim.CompileHeuristicAnalysis{}
+		heuristicAnalysis := &model.CompileHeuristicAnalysis{}
 		err := datastore.Put(c, heuristicAnalysis)
 		So(err, ShouldBeNil)
 		datastore.GetTestable(c).CatchupIndexes()
 
-		result := &gfim.HeuristicAnalysisResult{
-			Items: []*gfim.HeuristicAnalysisResultItem{
+		result := &model.HeuristicAnalysisResult{
+			Items: []*model.HeuristicAnalysisResultItem{
 				{
 					Commit:      "12345",
 					ReviewUrl:   "this/is/review/url",
 					ReviewTitle: "title",
-					Justification: &gfim.SuspectJustification{
-						Items: []*gfim.SuspectJustificationItem{
+					Justification: &model.SuspectJustification{
+						Items: []*model.SuspectJustificationItem{
 							{
 								Score:  10,
 								Reason: "failure reason",
-								Type:   gfim.JustificationType_FAILURELOG,
+								Type:   model.JustificationType_FAILURELOG,
 							},
 						},
 					},
@@ -59,12 +58,12 @@ func TestSaveResultsToDatastore(t *testing.T) {
 		So(err, ShouldBeNil)
 		datastore.GetTestable(c).CatchupIndexes()
 
-		suspects := []*gfim.Suspect{}
+		suspects := []*model.Suspect{}
 		q := datastore.NewQuery("Suspect")
 		err = datastore.GetAll(c, q, &suspects)
 		So(err, ShouldBeNil)
 		So(len(suspects), ShouldEqual, 1)
-		So(suspects[0], ShouldResemble, &gfim.Suspect{
+		So(suspects[0], ShouldResemble, &model.Suspect{
 			ParentAnalysis: datastore.KeyForObj(c, heuristicAnalysis),
 			Id:             suspects[0].Id,
 			ReviewUrl:      "this/is/review/url",
@@ -77,7 +76,7 @@ func TestSaveResultsToDatastore(t *testing.T) {
 				Ref:     "ref",
 				Id:      "12345",
 			},
-			VerificationStatus: gfim.SuspectVerificationStatus_Unverified,
+			VerificationStatus: model.SuspectVerificationStatus_Unverified,
 		})
 	})
 }

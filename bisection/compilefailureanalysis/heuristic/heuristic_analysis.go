@@ -19,8 +19,8 @@ import (
 	"fmt"
 
 	"go.chromium.org/luci/bisection/compilefailureanalysis/compilelog"
-	gfim "go.chromium.org/luci/bisection/model"
-	gfipb "go.chromium.org/luci/bisection/proto"
+	"go.chromium.org/luci/bisection/model"
+	pb "go.chromium.org/luci/bisection/proto"
 	"go.chromium.org/luci/bisection/util/changelogutil"
 	"go.chromium.org/luci/bisection/util/datastoreutil"
 
@@ -32,14 +32,14 @@ import (
 
 func Analyze(
 	c context.Context,
-	cfa *gfim.CompileFailureAnalysis,
-	rr *gfipb.RegressionRange,
-	compileLogs *gfim.CompileLogs) (*gfim.CompileHeuristicAnalysis, error) {
+	cfa *model.CompileFailureAnalysis,
+	rr *pb.RegressionRange,
+	compileLogs *model.CompileLogs) (*model.CompileHeuristicAnalysis, error) {
 	// Create a new HeuristicAnalysis Entity
-	heuristicAnalysis := &gfim.CompileHeuristicAnalysis{
+	heuristicAnalysis := &model.CompileHeuristicAnalysis{
 		ParentAnalysis: datastore.KeyForObj(c, cfa),
 		StartTime:      clock.Now(c),
-		Status:         gfipb.AnalysisStatus_CREATED,
+		Status:         pb.AnalysisStatus_CREATED,
 	}
 
 	if err := datastore.Put(c, heuristicAnalysis); err != nil {
@@ -86,13 +86,13 @@ func Analyze(
 
 	// Updates heuristic analysis
 	if len(analysisResult.Items) > 0 {
-		heuristicAnalysis.Status = gfipb.AnalysisStatus_SUSPECTFOUND
+		heuristicAnalysis.Status = pb.AnalysisStatus_SUSPECTFOUND
 		err = saveResultsToDatastore(c, heuristicAnalysis, analysisResult, rr.LastPassed.Host, rr.LastPassed.Project, rr.LastPassed.Ref)
 		if err != nil {
 			return nil, fmt.Errorf("Failed to store result in datastore: %w", err)
 		}
 	} else {
-		heuristicAnalysis.Status = gfipb.AnalysisStatus_NOTFOUND
+		heuristicAnalysis.Status = pb.AnalysisStatus_NOTFOUND
 	}
 
 	heuristicAnalysis.EndTime = clock.Now(c)
@@ -103,7 +103,7 @@ func Analyze(
 	return heuristicAnalysis, nil
 }
 
-func updateFailedFiles(c context.Context, heuristicAnalysis *gfim.CompileHeuristicAnalysis, signal *gfim.CompileFailureSignal) error {
+func updateFailedFiles(c context.Context, heuristicAnalysis *model.CompileHeuristicAnalysis, signal *model.CompileFailureSignal) error {
 	cfModel, err := datastoreutil.GetCompileFailureForAnalysis(c, heuristicAnalysis.ParentAnalysis.IntID())
 	if err != nil {
 		return err
@@ -116,10 +116,10 @@ func updateFailedFiles(c context.Context, heuristicAnalysis *gfim.CompileHeurist
 	return datastore.Put(c, cfModel)
 }
 
-func saveResultsToDatastore(c context.Context, analysis *gfim.CompileHeuristicAnalysis, result *gfim.HeuristicAnalysisResult, gitilesHost string, gitilesProject string, gitilesRef string) error {
-	suspects := make([]*gfim.Suspect, len(result.Items))
+func saveResultsToDatastore(c context.Context, analysis *model.CompileHeuristicAnalysis, result *model.HeuristicAnalysisResult, gitilesHost string, gitilesProject string, gitilesRef string) error {
+	suspects := make([]*model.Suspect, len(result.Items))
 	for i, item := range result.Items {
-		suspect := &gfim.Suspect{
+		suspect := &model.Suspect{
 			ParentAnalysis: datastore.KeyForObj(c, analysis),
 			ReviewUrl:      item.ReviewUrl,
 			ReviewTitle:    item.ReviewTitle,
@@ -131,7 +131,7 @@ func saveResultsToDatastore(c context.Context, analysis *gfim.CompileHeuristicAn
 				Ref:     gitilesRef,
 				Id:      item.Commit,
 			},
-			VerificationStatus: gfim.SuspectVerificationStatus_Unverified,
+			VerificationStatus: model.SuspectVerificationStatus_Unverified,
 		}
 		suspects[i] = suspect
 	}
@@ -140,14 +140,14 @@ func saveResultsToDatastore(c context.Context, analysis *gfim.CompileHeuristicAn
 
 // GetConfidenceLevel returns a description of how likely a suspect to be the
 // real culprit.
-func GetConfidenceLevel(score int) gfipb.SuspectConfidenceLevel {
+func GetConfidenceLevel(score int) pb.SuspectConfidenceLevel {
 	switch {
 	// score >= 10 means at least the suspect touched a file in the failure log
 	case score >= 10:
-		return gfipb.SuspectConfidenceLevel_HIGH
+		return pb.SuspectConfidenceLevel_HIGH
 	case score >= 5:
-		return gfipb.SuspectConfidenceLevel_MEDIUM
+		return pb.SuspectConfidenceLevel_MEDIUM
 	default:
-		return gfipb.SuspectConfidenceLevel_LOW
+		return pb.SuspectConfidenceLevel_LOW
 	}
 }

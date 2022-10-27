@@ -17,16 +17,15 @@ package datastoreutil
 import (
 	"context"
 
-	gfim "go.chromium.org/luci/bisection/model"
-
+	"go.chromium.org/luci/bisection/model"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/gae/service/datastore"
 )
 
 // GetBuild returns the failed build in the datastore with the given Buildbucket ID
 // Note: if the build is not found, this will return (nil, nil)
-func GetBuild(c context.Context, bbid int64) (*gfim.LuciFailedBuild, error) {
-	build := &gfim.LuciFailedBuild{Id: bbid}
+func GetBuild(c context.Context, bbid int64) (*model.LuciFailedBuild, error) {
+	build := &model.LuciFailedBuild{Id: bbid}
 	switch err := datastore.Get(c, build); {
 	case err == datastore.ErrNoSuchEntity:
 		return nil, nil
@@ -39,13 +38,13 @@ func GetBuild(c context.Context, bbid int64) (*gfim.LuciFailedBuild, error) {
 
 // GetAnalysisForBuild returns the failure analysis associated with the given Buildbucket ID
 // Note: if the build or its analysis is not found, this will return (nil, nil)
-func GetAnalysisForBuild(c context.Context, bbid int64) (*gfim.CompileFailureAnalysis, error) {
+func GetAnalysisForBuild(c context.Context, bbid int64) (*model.CompileFailureAnalysis, error) {
 	buildModel, err := GetBuild(c, bbid)
 	if (err != nil) || (buildModel == nil) {
 		return nil, err
 	}
 
-	cfModel := &gfim.CompileFailure{
+	cfModel := &model.CompileFailure{
 		Id:    bbid,
 		Build: datastore.KeyForObj(c, buildModel),
 	}
@@ -67,7 +66,7 @@ func GetAnalysisForBuild(c context.Context, bbid int64) (*gfim.CompileFailureAna
 
 	// Get the analysis for the compile failure
 	q := datastore.NewQuery("CompileFailureAnalysis").Eq("compile_failure", cfKey)
-	analyses := []*gfim.CompileFailureAnalysis{}
+	analyses := []*model.CompileFailureAnalysis{}
 	err = datastore.GetAll(c, q, &analyses)
 	if err != nil {
 		return nil, err
@@ -82,10 +81,10 @@ func GetAnalysisForBuild(c context.Context, bbid int64) (*gfim.CompileFailureAna
 }
 
 // GetHeuristicAnalysis returns the heuristic analysis associated with the given failure analysis
-func GetHeuristicAnalysis(c context.Context, analysis *gfim.CompileFailureAnalysis) (*gfim.CompileHeuristicAnalysis, error) {
+func GetHeuristicAnalysis(c context.Context, analysis *model.CompileFailureAnalysis) (*model.CompileHeuristicAnalysis, error) {
 	// Gets heuristic analysis results.
 	q := datastore.NewQuery("CompileHeuristicAnalysis").Ancestor(datastore.KeyForObj(c, analysis))
-	heuristicAnalyses := []*gfim.CompileHeuristicAnalysis{}
+	heuristicAnalyses := []*model.CompileHeuristicAnalysis{}
 	err := datastore.GetAll(c, q, &heuristicAnalyses)
 
 	if err != nil {
@@ -106,9 +105,9 @@ func GetHeuristicAnalysis(c context.Context, analysis *gfim.CompileFailureAnalys
 }
 
 // GetSuspects returns the heuristic suspects identified by the given heuristic analysis
-func GetSuspects(c context.Context, heuristicAnalysis *gfim.CompileHeuristicAnalysis) ([]*gfim.Suspect, error) {
+func GetSuspects(c context.Context, heuristicAnalysis *model.CompileHeuristicAnalysis) ([]*model.Suspect, error) {
 	// Getting the suspects for heuristic analysis
-	suspects := []*gfim.Suspect{}
+	suspects := []*model.Suspect{}
 	q := datastore.NewQuery("Suspect").Ancestor(datastore.KeyForObj(c, heuristicAnalysis)).Order("-score")
 	err := datastore.GetAll(c, q, &suspects)
 	if err != nil {
@@ -119,8 +118,8 @@ func GetSuspects(c context.Context, heuristicAnalysis *gfim.CompileHeuristicAnal
 }
 
 // GetCompileFailureForAnalysis gets CompileFailure for analysisID.
-func GetCompileFailureForAnalysis(c context.Context, analysisID int64) (*gfim.CompileFailure, error) {
-	analysis := &gfim.CompileFailureAnalysis{
+func GetCompileFailureForAnalysis(c context.Context, analysisID int64) (*model.CompileFailure, error) {
+	analysis := &model.CompileFailureAnalysis{
 		Id: analysisID,
 	}
 	err := datastore.Get(c, analysis)
@@ -128,7 +127,7 @@ func GetCompileFailureForAnalysis(c context.Context, analysisID int64) (*gfim.Co
 		logging.Errorf(c, "Error getting analysis %d: %s", analysisID, err)
 		return nil, err
 	}
-	compileFailure := &gfim.CompileFailure{
+	compileFailure := &model.CompileFailure{
 		Id: analysis.CompileFailure.IntID(),
 		// We need to specify the parent here because this is a multi-part key.
 		Build: analysis.CompileFailure.Parent(),

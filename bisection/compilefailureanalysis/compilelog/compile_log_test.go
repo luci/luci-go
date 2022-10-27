@@ -26,7 +26,7 @@ import (
 
 	"go.chromium.org/luci/bisection/internal/buildbucket"
 	"go.chromium.org/luci/bisection/internal/logdog"
-	gfim "go.chromium.org/luci/bisection/model"
+	"go.chromium.org/luci/bisection/model"
 )
 
 func TestGetCompileLogs(t *testing.T) {
@@ -81,9 +81,9 @@ func TestGetCompileLogs(t *testing.T) {
 		})
 		logs, err := GetCompileLogs(c, 12345)
 		So(err, ShouldBeNil)
-		So(*logs, ShouldResemble, gfim.CompileLogs{
-			NinjaLog: &gfim.NinjaLog{
-				Failures: []*gfim.NinjaLogFailure{
+		So(*logs, ShouldResemble, model.CompileLogs{
+			NinjaLog: &model.NinjaLog{
+				Failures: []*model.NinjaLogFailure{
 					{
 						Dependencies: []string{"d1", "d2"},
 						Output:       "/opt/s/w/ir/cache/goma/client/gomacc blah blah...",
@@ -106,14 +106,14 @@ func TestGetFailedTargets(t *testing.T) {
 	t.Parallel()
 
 	Convey("No Ninja log", t, func() {
-		compileLogs := &gfim.CompileLogs{}
+		compileLogs := &model.CompileLogs{}
 		So(GetFailedTargets(compileLogs), ShouldResemble, []string{})
 	})
 
 	Convey("Have Ninja log", t, func() {
-		compileLogs := &gfim.CompileLogs{
-			NinjaLog: &gfim.NinjaLog{
-				Failures: []*gfim.NinjaLogFailure{
+		compileLogs := &model.CompileLogs{
+			NinjaLog: &model.NinjaLog{
+				Failures: []*model.NinjaLogFailure{
 					{
 						OutputNodes: []string{"node1", "node2"},
 					},

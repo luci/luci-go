@@ -21,11 +21,11 @@ import (
 
 	"go.chromium.org/luci/bisection/internal/gitiles"
 	"go.chromium.org/luci/bisection/model"
-	lbpb "go.chromium.org/luci/bisection/proto"
+	pb "go.chromium.org/luci/bisection/proto"
 )
 
 // GetChangeLogs queries Gitiles for changelogs in the regression range
-func GetChangeLogs(c context.Context, rr *lbpb.RegressionRange) ([]*model.ChangeLog, error) {
+func GetChangeLogs(c context.Context, rr *pb.RegressionRange) ([]*model.ChangeLog, error) {
 	if rr.LastPassed.Host != rr.FirstFailed.Host || rr.LastPassed.Project != rr.FirstFailed.Project {
 		return nil, fmt.Errorf("RepoURL for last pass and first failed commits must be same, but aren't: %v and %v", rr.LastPassed, rr.FirstFailed)
 	}

@@ -33,7 +33,7 @@ import (
 	"go.chromium.org/luci/bisection/internal/gitiles"
 	"go.chromium.org/luci/bisection/internal/logdog"
 	"go.chromium.org/luci/bisection/model"
-	gofindit "go.chromium.org/luci/bisection/proto"
+	pb "go.chromium.org/luci/bisection/proto"
 )
 
 func TestAnalyzeFailure(t *testing.T) {
@@ -104,7 +104,7 @@ func TestAnalyzeFailure(t *testing.T) {
 				EndTime:     cl.Now(),
 				CreateTime:  cl.Now(),
 			},
-			BuildFailureType: gofindit.BuildFailureType_COMPILE,
+			BuildFailureType: pb.BuildFailureType_COMPILE,
 		}
 		So(datastore.Put(c, failed_build), ShouldBeNil)
 
@@ -214,7 +214,7 @@ func TestVerifyCulprit(t *testing.T) {
 
 	Convey("getHeuristicSuspectsToVerify", t, func() {
 		heuristicAnalysis := &model.CompileHeuristicAnalysis{
-			Status: gofindit.AnalysisStatus_SUSPECTFOUND,
+			Status: pb.AnalysisStatus_SUSPECTFOUND,
 		}
 
 		So(datastore.Put(c, heuristicAnalysis), ShouldBeNil)

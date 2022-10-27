@@ -19,7 +19,7 @@ import (
 	"testing"
 
 	"go.chromium.org/luci/bisection/internal/buildbucket"
-	lbm "go.chromium.org/luci/bisection/model"
+	"go.chromium.org/luci/bisection/model"
 
 	"github.com/golang/mock/gomock"
 	. "github.com/smartystreets/goconvey/convey"
@@ -153,33 +153,33 @@ func TestCreateRerunBuildModel(t *testing.T) {
 	}
 
 	Convey("Create rerun build", t, func() {
-		compileFailure := &lbm.CompileFailure{
+		compileFailure := &model.CompileFailure{
 			Id:            111,
 			OutputTargets: []string{"target1"},
 		}
 		So(datastore.Put(c, compileFailure), ShouldBeNil)
 		datastore.GetTestable(c).CatchupIndexes()
 
-		analysis := &lbm.CompileFailureAnalysis{
+		analysis := &model.CompileFailureAnalysis{
 			Id:             444,
 			CompileFailure: datastore.KeyForObj(c, compileFailure),
 		}
 		So(datastore.Put(c, analysis), ShouldBeNil)
 		datastore.GetTestable(c).CatchupIndexes()
 
-		nsa := &lbm.CompileNthSectionAnalysis{
+		nsa := &model.CompileNthSectionAnalysis{
 			ParentAnalysis: datastore.KeyForObj(c, analysis),
 		}
 		So(datastore.Put(c, nsa), ShouldBeNil)
 		datastore.GetTestable(c).CatchupIndexes()
 
-		heuristicAnalysis := &lbm.CompileHeuristicAnalysis{
+		heuristicAnalysis := &model.CompileHeuristicAnalysis{
 			ParentAnalysis: datastore.KeyForObj(c, analysis),
 		}
 		So(datastore.Put(c, heuristicAnalysis), ShouldBeNil)
 		datastore.GetTestable(c).CatchupIndexes()
 
-		suspect := &lbm.Suspect{
+		suspect := &model.Suspect{
 			Score:          10,
 			ParentAnalysis: datastore.KeyForObj(c, heuristicAnalysis),
 			GitilesCommit: bbpb.GitilesCommit{
@@ -193,21 +193,21 @@ func TestCreateRerunBuildModel(t *testing.T) {
 		datastore.GetTestable(c).CatchupIndexes()
 
 		Convey("Invalid data", func() {
-			_, err := CreateRerunBuildModel(c, build, lbm.RerunBuildType_CulpritVerification, nil, nsa)
+			_, err := CreateRerunBuildModel(c, build, model.RerunBuildType_CulpritVerification, nil, nsa)
 			So(err, ShouldNotBeNil)
-			_, err = CreateRerunBuildModel(c, build, lbm.RerunBuildType_NthSection, suspect, nil)
+			_, err = CreateRerunBuildModel(c, build, model.RerunBuildType_NthSection, suspect, nil)
 			So(err, ShouldNotBeNil)
 		})
 
 		Convey("Culprit verification", func() {
-			rerunBuildModel, err := CreateRerunBuildModel(c, build, lbm.RerunBuildType_CulpritVerification, suspect, nil)
+			rerunBuildModel, err := CreateRerunBuildModel(c, build, model.RerunBuildType_CulpritVerification, suspect, nil)
 			datastore.GetTestable(c).CatchupIndexes()
 			So(err, ShouldBeNil)
-			So(rerunBuildModel, ShouldResemble, &lbm.CompileRerunBuild{
+			So(rerunBuildModel, ShouldResemble, &model.CompileRerunBuild{
 				Id:      123,
-				Type:    lbm.RerunBuildType_CulpritVerification,
+				Type:    model.RerunBuildType_CulpritVerification,
 				Suspect: datastore.KeyForObj(c, suspect),
-				LuciBuild: lbm.LuciBuild{
+				LuciBuild: model.LuciBuild{
 					BuildId: 123,
 					Project: "chromium",
 					Bucket:  "findit",
@@ -226,24 +226,24 @@ func TestCreateRerunBuildModel(t *testing.T) {
 
 			// Check SingleRerun
 			q := datastore.NewQuery("SingleRerun").Eq("rerun_build", datastore.KeyForObj(c, rerunBuildModel))
-			singleReruns := []*lbm.SingleRerun{}
+			singleReruns := []*model.SingleRerun{}
 			err = datastore.GetAll(c, q, &singleReruns)
 			So(err, ShouldBeNil)
 			So(len(singleReruns), ShouldEqual, 1)
 			So(singleReruns[0].Suspect, ShouldResemble, datastore.KeyForObj(c, suspect))
 			So(singleReruns[0].Analysis, ShouldResemble, datastore.KeyForObj(c, analysis))
-			So(singleReruns[0].Type, ShouldEqual, lbm.RerunBuildType_CulpritVerification)
+			So(singleReruns[0].Type, ShouldEqual, model.RerunBuildType_CulpritVerification)
 		})
 
 		Convey("Nth Section", func() {
 			build.Id = 124
-			rerunBuildModel1, err := CreateRerunBuildModel(c, build, lbm.RerunBuildType_NthSection, nil, nsa)
+			rerunBuildModel1, err := CreateRerunBuildModel(c, build, model.RerunBuildType_NthSection, nil, nsa)
 			datastore.GetTestable(c).CatchupIndexes()
 			So(err, ShouldBeNil)
-			So(rerunBuildModel1, ShouldResemble, &lbm.CompileRerunBuild{
+			So(rerunBuildModel1, ShouldResemble, &model.CompileRerunBuild{
 				Id:   124,
-				Type: lbm.RerunBuildType_NthSection,
-				LuciBuild: lbm.LuciBuild{
+				Type: model.RerunBuildType_NthSection,
+				LuciBuild: model.LuciBuild{
 					BuildId: 124,
 					Project: "chromium",
 					Bucket:  "findit",
@@ -262,13 +262,13 @@ func TestCreateRerunBuildModel(t *testing.T) {
 
 			// Check SingleRerun
 			q := datastore.NewQuery("SingleRerun").Eq("rerun_build", datastore.KeyForObj(c, rerunBuildModel1))
-			singleReruns := []*lbm.SingleRerun{}
+			singleReruns := []*model.SingleRerun{}
 			err = datastore.GetAll(c, q, &singleReruns)
 			So(err, ShouldBeNil)
 			So(len(singleReruns), ShouldEqual, 1)
 			So(singleReruns[0].NthSectionAnalysis, ShouldResemble, datastore.KeyForObj(c, nsa))
 			So(singleReruns[0].Analysis, ShouldResemble, datastore.KeyForObj(c, analysis))
-			So(singleReruns[0].Type, ShouldEqual, lbm.RerunBuildType_NthSection)
+			So(singleReruns[0].Type, ShouldEqual, model.RerunBuildType_NthSection)
 		})
 
 	})

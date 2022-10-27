@@ -18,9 +18,8 @@ import (
 	"context"
 	"testing"
 
-	"go.chromium.org/luci/bisection/model"
-
 	. "github.com/smartystreets/goconvey/convey"
+	"go.chromium.org/luci/bisection/model"
 )
 
 func TestExtractSignal(t *testing.T) {

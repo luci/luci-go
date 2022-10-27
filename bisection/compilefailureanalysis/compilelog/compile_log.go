@@ -21,7 +21,7 @@ import (
 	"fmt"
 
 	"go.chromium.org/luci/bisection/internal/logdog"
-	gfim "go.chromium.org/luci/bisection/model"
+	"go.chromium.org/luci/bisection/model"
 	"go.chromium.org/luci/bisection/util"
 
 	"go.chromium.org/luci/bisection/internal/buildbucket"
@@ -33,7 +33,7 @@ import (
 
 // GetCompileLogs gets the compile log for a build bucket build
 // Returns the ninja log and stdout log
-func GetCompileLogs(c context.Context, bbid int64) (*gfim.CompileLogs, error) {
+func GetCompileLogs(c context.Context, bbid int64) (*model.CompileLogs, error) {
 	build, err := buildbucket.GetBuild(c, bbid, &buildbucketpb.BuildMask{
 		Fields: &fieldmaskpb.FieldMask{
 			Paths: []string{"steps"},
@@ -58,7 +58,7 @@ func GetCompileLogs(c context.Context, bbid int64) (*gfim.CompileLogs, error) {
 		}
 	}
 
-	ninjaLog := &gfim.NinjaLog{}
+	ninjaLog := &model.NinjaLog{}
 	stdoutLog := ""
 
 	// TODO(crbug.com/1295566): Parallelize downloading ninja & stdout logs
@@ -80,7 +80,7 @@ func GetCompileLogs(c context.Context, bbid int64) (*gfim.CompileLogs, error) {
 	}
 
 	if len(ninjaLog.Failures) > 0 || stdoutLog != "" {
-		return &gfim.CompileLogs{
+		return &model.CompileLogs{
 			NinjaLog:  ninjaLog,
 			StdOutLog: stdoutLog,
 		}, nil
@@ -89,7 +89,7 @@ func GetCompileLogs(c context.Context, bbid int64) (*gfim.CompileLogs, error) {
 	return nil, fmt.Errorf("Could not get compile log from build %d", bbid)
 }
 
-func GetFailedTargets(compileLogs *gfim.CompileLogs) []string {
+func GetFailedTargets(compileLogs *model.CompileLogs) []string {
 	if compileLogs.NinjaLog == nil {
 		return []string{}
 	}

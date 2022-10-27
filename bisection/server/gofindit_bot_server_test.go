@@ -20,8 +20,8 @@ import (
 
 	. "github.com/smartystreets/goconvey/convey"
 
-	gfim "go.chromium.org/luci/bisection/model"
-	gfipb "go.chromium.org/luci/bisection/proto"
+	"go.chromium.org/luci/bisection/model"
+	pb "go.chromium.org/luci/bisection/proto"
 
 	bbpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/clock"
@@ -54,17 +54,17 @@ func TestUpdateAnalysisProgress(t *testing.T) {
 	Convey("UpdateAnalysisProgress", t, func() {
 		// Setup the models
 		// Set up suspects
-		analysis := &gfim.CompileFailureAnalysis{}
+		analysis := &model.CompileFailureAnalysis{}
 		So(datastore.Put(c, analysis), ShouldBeNil)
 		datastore.GetTestable(c).CatchupIndexes()
 
-		heuristicAnalysis := &gfim.CompileHeuristicAnalysis{
+		heuristicAnalysis := &model.CompileHeuristicAnalysis{
 			ParentAnalysis: datastore.KeyForObj(c, analysis),
 		}
 		So(datastore.Put(c, heuristicAnalysis), ShouldBeNil)
 		datastore.GetTestable(c).CatchupIndexes()
 
-		suspect := &gfim.Suspect{
+		suspect := &model.Suspect{
 			ParentAnalysis: datastore.KeyForObj(c, heuristicAnalysis),
 			Score:          10,
 			GitilesCommit: bbpb.GitilesCommit{
@@ -77,16 +77,16 @@ func TestUpdateAnalysisProgress(t *testing.T) {
 		datastore.GetTestable(c).CatchupIndexes()
 
 		// Set up reruns
-		rerunBuildModel := &gfim.CompileRerunBuild{
+		rerunBuildModel := &model.CompileRerunBuild{
 			Id:      8800,
-			Type:    gfim.RerunBuildType_CulpritVerification,
+			Type:    model.RerunBuildType_CulpritVerification,
 			Suspect: datastore.KeyForObj(c, suspect),
 		}
 		So(datastore.Put(c, rerunBuildModel), ShouldBeNil)
 
-		parentRerunBuildModel := &gfim.CompileRerunBuild{
+		parentRerunBuildModel := &model.CompileRerunBuild{
 			Id:      8801,
-			Type:    gfim.RerunBuildType_CulpritVerification,
+			Type:    model.RerunBuildType_CulpritVerification,
 			Suspect: datastore.KeyForObj(c, suspect),
 		}
 		So(datastore.Put(c, parentRerunBuildModel), ShouldBeNil)
@@ -98,31 +98,31 @@ func TestUpdateAnalysisProgress(t *testing.T) {
 		datastore.GetTestable(c).CatchupIndexes()
 
 		// Setup single rerun
-		singleRerun1 := &gfim.SingleRerun{
+		singleRerun1 := &model.SingleRerun{
 			RerunBuild: datastore.KeyForObj(c, rerunBuildModel),
 			GitilesCommit: bbpb.GitilesCommit{
 				Host:    "chromium.googlesource.com",
 				Project: "chromium/src",
 				Id:      "3425",
 			},
-			Status: gfipb.RerunStatus_IN_PROGRESS,
+			Status: pb.RerunStatus_IN_PROGRESS,
 		}
 
-		singleRerun2 := &gfim.SingleRerun{
+		singleRerun2 := &model.SingleRerun{
 			RerunBuild: datastore.KeyForObj(c, parentRerunBuildModel),
 			GitilesCommit: bbpb.GitilesCommit{
 				Host:    "chromium.googlesource.com",
 				Project: "chromium/src",
 				Id:      "3426",
 			},
-			Status: gfipb.RerunStatus_IN_PROGRESS,
+			Status: pb.RerunStatus_IN_PROGRESS,
 		}
 		So(datastore.Put(c, singleRerun1), ShouldBeNil)
 		So(datastore.Put(c, singleRerun2), ShouldBeNil)
 		datastore.GetTestable(c).CatchupIndexes()
 
 		// Update analysis
-		req1 := &gfipb.UpdateAnalysisProgressRequest{
+		req1 := &pb.UpdateAnalysisProgressRequest{
 			AnalysisId: 1234,
 			Bbid:       8800,
 			GitilesCommit: &bbpb.GitilesCommit{
@@ -130,12 +130,12 @@ func TestUpdateAnalysisProgress(t *testing.T) {
 				Project: "chromium/src",
 				Id:      "3425",
 			},
-			RerunResult: &gfipb.RerunResult{
-				RerunStatus: gfipb.RerunStatus_FAILED,
+			RerunResult: &pb.RerunResult{
+				RerunStatus: pb.RerunStatus_FAILED,
 			},
 		}
 
-		req2 := &gfipb.UpdateAnalysisProgressRequest{
+		req2 := &pb.UpdateAnalysisProgressRequest{
 			AnalysisId: 1234,
 			Bbid:       8801,
 			GitilesCommit: &bbpb.GitilesCommit{
@@ -143,8 +143,8 @@ func TestUpdateAnalysisProgress(t *testing.T) {
 				Project: "chromium/src",
 				Id:      "3426",
 			},
-			RerunResult: &gfipb.RerunResult{
-				RerunStatus: gfipb.RerunStatus_PASSED,
+			RerunResult: &pb.RerunResult{
+				RerunStatus: pb.RerunStatus_PASSED,
 			},
 		}
 
@@ -152,26 +152,26 @@ func TestUpdateAnalysisProgress(t *testing.T) {
 		_, err := server.UpdateAnalysisProgress(c, req1)
 		So(err, ShouldBeNil)
 		datastore.Get(c, singleRerun1)
-		So(singleRerun1.Status, ShouldEqual, gfipb.RerunStatus_FAILED)
+		So(singleRerun1.Status, ShouldEqual, pb.RerunStatus_FAILED)
 		datastore.Get(c, suspect)
-		So(suspect.VerificationStatus, ShouldEqual, gfim.SuspectVerificationStatus_UnderVerification)
+		So(suspect.VerificationStatus, ShouldEqual, model.SuspectVerificationStatus_UnderVerification)
 
 		_, err = server.UpdateAnalysisProgress(c, req2)
 		So(err, ShouldBeNil)
 		datastore.Get(c, singleRerun2)
-		So(singleRerun2.Status, ShouldEqual, gfipb.RerunStatus_PASSED)
+		So(singleRerun2.Status, ShouldEqual, pb.RerunStatus_PASSED)
 		datastore.Get(c, suspect)
-		So(suspect.VerificationStatus, ShouldEqual, gfim.SuspectVerificationStatus_ConfirmedCulprit)
+		So(suspect.VerificationStatus, ShouldEqual, model.SuspectVerificationStatus_ConfirmedCulprit)
 
 		err = datastore.Get(c, analysis)
 		So(err, ShouldBeNil)
-		So(analysis.Status, ShouldEqual, gfipb.AnalysisStatus_FOUND)
+		So(analysis.Status, ShouldEqual, pb.AnalysisStatus_FOUND)
 		So(len(analysis.VerifiedCulprits), ShouldEqual, 1)
 		So(analysis.VerifiedCulprits[0], ShouldResemble, datastore.KeyForObj(c, suspect))
 	})
 
 	Convey("verifyUpdateAnalysisProgressRequest", t, func() {
-		req := &gfipb.UpdateAnalysisProgressRequest{}
+		req := &pb.UpdateAnalysisProgressRequest{}
 		So(verifyUpdateAnalysisProgressRequest(c, req), ShouldNotBeNil)
 		req.AnalysisId = 123
 		So(verifyUpdateAnalysisProgressRequest(c, req), ShouldNotBeNil)
@@ -179,8 +179,8 @@ func TestUpdateAnalysisProgress(t *testing.T) {
 		So(verifyUpdateAnalysisProgressRequest(c, req), ShouldNotBeNil)
 		req.GitilesCommit = &bbpb.GitilesCommit{}
 		So(verifyUpdateAnalysisProgressRequest(c, req), ShouldNotBeNil)
-		req.RerunResult = &gfipb.RerunResult{
-			RerunStatus: gfipb.RerunStatus_FAILED,
+		req.RerunResult = &pb.RerunResult{
+			RerunStatus: pb.RerunStatus_FAILED,
 		}
 		So(verifyUpdateAnalysisProgressRequest(c, req), ShouldBeNil)
 	})

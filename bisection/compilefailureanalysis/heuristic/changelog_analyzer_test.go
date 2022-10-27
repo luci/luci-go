@@ -18,9 +18,8 @@ import (
 	"context"
 	"testing"
 
-	gfim "go.chromium.org/luci/bisection/model"
-
 	. "github.com/smartystreets/goconvey/convey"
+	"go.chromium.org/luci/bisection/model"
 )
 
 func TestChangeLogAnalyzer(t *testing.T) {
@@ -52,12 +51,12 @@ func TestChangeLogAnalyzer(t *testing.T) {
 
 	Convey("AnalyzeOneChangeLog", t, func() {
 		c := context.Background()
-		signal := &gfim.CompileFailureSignal{
+		signal := &model.CompileFailureSignal{
 			Files: map[string][]int{
 				"src/a/b/x.cc":       {27},
 				"obj/content/util.o": {},
 			},
-			Edges: []*gfim.CompileFailureEdge{
+			Edges: []*model.CompileFailureEdge{
 				{
 					Dependencies: []string{
 						"x/y/aa_impl_mac.cc",
@@ -68,54 +67,54 @@ func TestChangeLogAnalyzer(t *testing.T) {
 		}
 		signal.CalculateDependencyMap(c)
 		Convey("Changelog from a non-blamable email", func() {
-			cl := &gfim.ChangeLog{
-				Author: gfim.ChangeLogActor{
+			cl := &model.ChangeLog{
+				Author: model.ChangeLogActor{
 					Email: "chrome-release-bot@chromium.org",
 				},
 			}
 
 			justification, err := AnalyzeOneChangeLog(c, signal, cl)
 			So(err, ShouldBeNil)
-			So(justification, ShouldResemble, &gfim.SuspectJustification{IsNonBlamable: true})
+			So(justification, ShouldResemble, &model.SuspectJustification{IsNonBlamable: true})
 		})
 
 		Convey("Changelog did not touch any file", func() {
-			cl := &gfim.ChangeLog{
-				ChangeLogDiffs: []gfim.ChangeLogDiff{
+			cl := &model.ChangeLog{
+				ChangeLogDiffs: []model.ChangeLogDiff{
 					{
-						Type:    gfim.ChangeType_ADD,
+						Type:    model.ChangeType_ADD,
 						NewPath: "some_file.cc",
 					},
 				},
 			}
 			justification, err := AnalyzeOneChangeLog(c, signal, cl)
 			So(err, ShouldBeNil)
-			So(justification, ShouldResemble, &gfim.SuspectJustification{})
+			So(justification, ShouldResemble, &model.SuspectJustification{})
 		})
 
 		Convey("Changelog touched relevant files", func() {
-			cl := &gfim.ChangeLog{
-				ChangeLogDiffs: []gfim.ChangeLogDiff{
+			cl := &model.ChangeLog{
+				ChangeLogDiffs: []model.ChangeLogDiff{
 					{
-						Type:    gfim.ChangeType_MODIFY,
+						Type:    model.ChangeType_MODIFY,
 						OldPath: "content/util.c",
 						NewPath: "content/util.c",
 					},
 					{
-						Type:    gfim.ChangeType_ADD,
+						Type:    model.ChangeType_ADD,
 						NewPath: "dir/a/b/x.cc",
 					},
 					{
-						Type:    gfim.ChangeType_RENAME,
+						Type:    model.ChangeType_RENAME,
 						OldPath: "unrelated_file_1.cc",
 						NewPath: "unrelated_file_2.cc",
 					},
 					{
-						Type:    gfim.ChangeType_DELETE,
+						Type:    model.ChangeType_DELETE,
 						OldPath: "x/y/aa.h",
 					},
 					{
-						Type:    gfim.ChangeType_MODIFY,
+						Type:    model.ChangeType_MODIFY,
 						OldPath: "y/z/bb.cc",
 						NewPath: "y/z/bb.cc",
 					},
@@ -123,31 +122,31 @@ func TestChangeLogAnalyzer(t *testing.T) {
 			}
 			justification, err := AnalyzeOneChangeLog(c, signal, cl)
 			So(err, ShouldBeNil)
-			So(justification, ShouldResemble, &gfim.SuspectJustification{
-				Items: []*gfim.SuspectJustificationItem{
+			So(justification, ShouldResemble, &model.SuspectJustification{
+				Items: []*model.SuspectJustificationItem{
 					{
 						Score:    10,
 						FilePath: "dir/a/b/x.cc",
 						Reason:   `The file "dir/a/b/x.cc" was added and it was in the failure log.`,
-						Type:     gfim.JustificationType_FAILURELOG,
+						Type:     model.JustificationType_FAILURELOG,
 					},
 					{
 						Score:    2,
 						FilePath: "content/util.c",
 						Reason:   "The file \"content/util.c\" was modified. It was related to the file obj/content/util.o which was in the failure log.",
-						Type:     gfim.JustificationType_FAILURELOG,
+						Type:     model.JustificationType_FAILURELOG,
 					},
 					{
 						Score:    1,
 						FilePath: "x/y/aa.h",
 						Reason:   "The file \"x/y/aa.h\" was deleted. It was related to the dependency x/y/aa_impl_mac.cc.",
-						Type:     gfim.JustificationType_DEPENDENCY,
+						Type:     model.JustificationType_DEPENDENCY,
 					},
 					{
 						Score:    1,
 						FilePath: "y/z/bb.cc",
 						Reason:   "The file \"y/z/bb.cc\" was modified. It was related to the dependency y/z/bb_impl.cc.",
-						Type:     gfim.JustificationType_DEPENDENCY,
+						Type:     model.JustificationType_DEPENDENCY,
 					},
 				},
 			})
@@ -156,7 +155,7 @@ func TestChangeLogAnalyzer(t *testing.T) {
 
 	Convey("AnalyzeChangeLogs", t, func() {
 		c := context.Background()
-		signal := &gfim.CompileFailureSignal{
+		signal := &model.CompileFailureSignal{
 			Files: map[string][]int{
 				"src/a/b/x.cc":       {27},
 				"obj/content/util.o": {},
@@ -164,13 +163,13 @@ func TestChangeLogAnalyzer(t *testing.T) {
 		}
 
 		Convey("Results should be sorted", func() {
-			cls := []*gfim.ChangeLog{
+			cls := []*model.ChangeLog{
 				{
 					Commit:  "abcd",
 					Message: "First blah blah\nReviewed-on: https://chromium-review.googlesource.com/c/chromium/src/+/123\n bla",
-					ChangeLogDiffs: []gfim.ChangeLogDiff{
+					ChangeLogDiffs: []model.ChangeLogDiff{
 						{
-							Type:    gfim.ChangeType_MODIFY,
+							Type:    model.ChangeType_MODIFY,
 							NewPath: "content/util.c",
 						},
 					},
@@ -178,9 +177,9 @@ func TestChangeLogAnalyzer(t *testing.T) {
 				{
 					Commit:  "efgh",
 					Message: "Second blah blah\nReviewed-on: https://chromium-review.googlesource.com/c/chromium/src/+/456\n bla",
-					ChangeLogDiffs: []gfim.ChangeLogDiff{
+					ChangeLogDiffs: []model.ChangeLogDiff{
 						{
-							Type:    gfim.ChangeType_RENAME,
+							Type:    model.ChangeType_RENAME,
 							OldPath: "unrelated_file_1.cc",
 							NewPath: "unrelated_file_2.cc",
 						},
@@ -189,9 +188,9 @@ func TestChangeLogAnalyzer(t *testing.T) {
 				{
 					Commit:  "wxyz",
 					Message: "Third blah blah\nReviewed-on: https://chromium-review.googlesource.com/c/chromium/src/+/789\n bla",
-					ChangeLogDiffs: []gfim.ChangeLogDiff{
+					ChangeLogDiffs: []model.ChangeLogDiff{
 						{
-							Type:    gfim.ChangeType_ADD,
+							Type:    model.ChangeType_ADD,
 							NewPath: "dir/a/b/x.cc",
 						},
 					},
@@ -200,19 +199,19 @@ func TestChangeLogAnalyzer(t *testing.T) {
 
 			analysisResult, err := AnalyzeChangeLogs(c, signal, cls)
 			So(err, ShouldBeNil)
-			So(analysisResult, ShouldResemble, &gfim.HeuristicAnalysisResult{
-				Items: []*gfim.HeuristicAnalysisResultItem{
+			So(analysisResult, ShouldResemble, &model.HeuristicAnalysisResult{
+				Items: []*model.HeuristicAnalysisResultItem{
 					{
 						Commit:      "wxyz",
 						ReviewUrl:   "https://chromium-review.googlesource.com/c/chromium/src/+/789",
 						ReviewTitle: "Third blah blah",
-						Justification: &gfim.SuspectJustification{
-							Items: []*gfim.SuspectJustificationItem{
+						Justification: &model.SuspectJustification{
+							Items: []*model.SuspectJustificationItem{
 								{
 									Score:    10,
 									FilePath: "dir/a/b/x.cc",
 									Reason:   `The file "dir/a/b/x.cc" was added and it was in the failure log.`,
-									Type:     gfim.JustificationType_FAILURELOG,
+									Type:     model.JustificationType_FAILURELOG,
 								},
 							},
 						},
@@ -221,13 +220,13 @@ func TestChangeLogAnalyzer(t *testing.T) {
 						Commit:      "abcd",
 						ReviewUrl:   "https://chromium-review.googlesource.com/c/chromium/src/+/123",
 						ReviewTitle: "First blah blah",
-						Justification: &gfim.SuspectJustification{
-							Items: []*gfim.SuspectJustificationItem{
+						Justification: &model.SuspectJustification{
+							Items: []*model.SuspectJustificationItem{
 								{
 									Score:    2,
 									FilePath: "content/util.c",
 									Reason:   "The file \"content/util.c\" was modified. It was related to the file obj/content/util.o which was in the failure log.",
-									Type:     gfim.JustificationType_FAILURELOG,
+									Type:     model.JustificationType_FAILURELOG,
 								},
 							},
 						},

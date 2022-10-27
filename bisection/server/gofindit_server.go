@@ -19,8 +19,8 @@ import (
 	"context"
 
 	"go.chromium.org/luci/bisection/compilefailureanalysis/heuristic"
-	gfim "go.chromium.org/luci/bisection/model"
-	gfipb "go.chromium.org/luci/bisection/proto"
+	"go.chromium.org/luci/bisection/model"
+	pb "go.chromium.org/luci/bisection/proto"
 	"go.chromium.org/luci/bisection/util/datastoreutil"
 
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
@@ -47,8 +47,8 @@ var listAnalysesPageSizeLimiter = PageSizeLimiter{
 type GoFinditServer struct{}
 
 // GetAnalysis returns the analysis given the analysis id
-func (server *GoFinditServer) GetAnalysis(c context.Context, req *gfipb.GetAnalysisRequest) (*gfipb.Analysis, error) {
-	analysis := &gfim.CompileFailureAnalysis{
+func (server *GoFinditServer) GetAnalysis(c context.Context, req *pb.GetAnalysisRequest) (*pb.Analysis, error) {
+	analysis := &model.CompileFailureAnalysis{
 		Id: req.AnalysisId,
 	}
 	switch err := datastore.Get(c, analysis); err {
@@ -67,7 +67,7 @@ func (server *GoFinditServer) GetAnalysis(c context.Context, req *gfipb.GetAnaly
 }
 
 // QueryAnalysis returns the analysis given a query
-func (server *GoFinditServer) QueryAnalysis(c context.Context, req *gfipb.QueryAnalysisRequest) (*gfipb.QueryAnalysisResponse, error) {
+func (server *GoFinditServer) QueryAnalysis(c context.Context, req *pb.QueryAnalysisRequest) (*pb.QueryAnalysisResponse, error) {
 	if err := validateQueryAnalysisRequest(req); err != nil {
 		return nil, err
 	}
@@ -92,14 +92,14 @@ func (server *GoFinditServer) QueryAnalysis(c context.Context, req *gfipb.QueryA
 		return nil, status.Errorf(codes.Internal, "failed to get analysis data %s", err)
 	}
 
-	res := &gfipb.QueryAnalysisResponse{
-		Analyses: []*gfipb.Analysis{analysispb},
+	res := &pb.QueryAnalysisResponse{
+		Analyses: []*pb.Analysis{analysispb},
 	}
 	return res, nil
 }
 
 // TriggerAnalysis triggers an analysis for a failure
-func (server *GoFinditServer) TriggerAnalysis(c context.Context, req *gfipb.TriggerAnalysisRequest) (*gfipb.TriggerAnalysisResponse, error) {
+func (server *GoFinditServer) TriggerAnalysis(c context.Context, req *pb.TriggerAnalysisRequest) (*pb.TriggerAnalysisResponse, error) {
 	// TODO(nqmtuan): Implement this
 	return nil, nil
 }
@@ -107,14 +107,14 @@ func (server *GoFinditServer) TriggerAnalysis(c context.Context, req *gfipb.Trig
 // UpdateAnalysis updates the information of an analysis.
 // At the mean time, it is only used for update the bugs associated with an
 // analysis.
-func (server *GoFinditServer) UpdateAnalysis(c context.Context, req *gfipb.UpdateAnalysisRequest) (*gfipb.Analysis, error) {
+func (server *GoFinditServer) UpdateAnalysis(c context.Context, req *pb.UpdateAnalysisRequest) (*pb.Analysis, error) {
 	// TODO(nqmtuan): Implement this
 	return nil, nil
 }
 
 // GetAnalysisResult returns an analysis for pRPC from CompileFailureAnalysis
-func GetAnalysisResult(c context.Context, analysis *gfim.CompileFailureAnalysis) (*gfipb.Analysis, error) {
-	result := &gfipb.Analysis{
+func GetAnalysisResult(c context.Context, analysis *model.CompileFailureAnalysis) (*pb.Analysis, error) {
+	result := &pb.Analysis{
 		AnalysisId:      analysis.Id,
 		Status:          analysis.Status,
 		CreatedTime:     timestamppb.New(analysis.CreateTime),
@@ -154,9 +154,9 @@ func GetAnalysisResult(c context.Context, analysis *gfim.CompileFailureAnalysis)
 		return nil, err
 	}
 
-	pbSuspects := make([]*gfipb.HeuristicSuspect, len(suspects))
+	pbSuspects := make([]*pb.HeuristicSuspect, len(suspects))
 	for i, suspect := range suspects {
-		pbSuspects[i] = &gfipb.HeuristicSuspect{
+		pbSuspects[i] = &pb.HeuristicSuspect{
 			GitilesCommit:   &suspect.GitilesCommit,
 			ReviewUrl:       suspect.ReviewUrl,
 			Score:           int32(suspect.Score),
@@ -169,7 +169,7 @@ func GetAnalysisResult(c context.Context, analysis *gfim.CompileFailureAnalysis)
 		//       should already be restricted to internal users only.
 		pbSuspects[i].ReviewTitle = suspect.ReviewTitle
 	}
-	heuristicResult := &gfipb.HeuristicAnalysisResult{
+	heuristicResult := &pb.HeuristicAnalysisResult{
 		Status:    heuristicAnalysis.Status,
 		StartTime: timestamppb.New(heuristicAnalysis.StartTime),
 		EndTime:   timestamppb.New(heuristicAnalysis.EndTime),
@@ -179,9 +179,9 @@ func GetAnalysisResult(c context.Context, analysis *gfim.CompileFailureAnalysis)
 	result.HeuristicResult = heuristicResult
 
 	// Get culprits
-	culprits := make([]*gfipb.Culprit, len(analysis.VerifiedCulprits))
+	culprits := make([]*pb.Culprit, len(analysis.VerifiedCulprits))
 	for i, culprit := range analysis.VerifiedCulprits {
-		suspect := &gfim.Suspect{
+		suspect := &model.Suspect{
 			Id:             culprit.IntID(),
 			ParentAnalysis: culprit.Parent(),
 		}
@@ -189,7 +189,7 @@ func GetAnalysisResult(c context.Context, analysis *gfim.CompileFailureAnalysis)
 		if err != nil {
 			return nil, err
 		}
-		culprits[i] = &gfipb.Culprit{
+		culprits[i] = &pb.Culprit{
 			Commit:      &suspect.GitilesCommit,
 			ReviewUrl:   suspect.ReviewUrl,
 			ReviewTitle: suspect.ReviewTitle,
@@ -206,7 +206,7 @@ func GetAnalysisResult(c context.Context, analysis *gfim.CompileFailureAnalysis)
 }
 
 // validateQueryAnalysisRequest checks if the request is valid.
-func validateQueryAnalysisRequest(req *gfipb.QueryAnalysisRequest) error {
+func validateQueryAnalysisRequest(req *pb.QueryAnalysisRequest) error {
 	if req.BuildFailure == nil {
 		return status.Errorf(codes.InvalidArgument, "BuildFailure must not be empty")
 	}
@@ -217,7 +217,7 @@ func validateQueryAnalysisRequest(req *gfipb.QueryAnalysisRequest) error {
 }
 
 // ListAnalyses returns existing analyses
-func (server *GoFinditServer) ListAnalyses(c context.Context, req *gfipb.ListAnalysesRequest) (*gfipb.ListAnalysesResponse, error) {
+func (server *GoFinditServer) ListAnalyses(c context.Context, req *pb.ListAnalysesRequest) (*pb.ListAnalysesResponse, error) {
 	// Validate the request
 	if err := validateListAnalysesRequest(req); err != nil {
 		return nil, err
@@ -241,9 +241,9 @@ func (server *GoFinditServer) ListAnalyses(c context.Context, req *gfipb.ListAna
 	q := datastore.NewQuery("CompileFailureAnalysis").Order("-create_time").Start(cursor)
 
 	// Query datastore for compile failure analyses
-	compileFailureAnalyses := make([]*gfim.CompileFailureAnalysis, 0, pageSize)
+	compileFailureAnalyses := make([]*model.CompileFailureAnalysis, 0, pageSize)
 	var nextCursor datastore.Cursor
-	err = datastore.Run(c, q, func(compileFailureAnalysis *gfim.CompileFailureAnalysis, getCursor datastore.CursorCB) error {
+	err = datastore.Run(c, q, func(compileFailureAnalysis *model.CompileFailureAnalysis, getCursor datastore.CursorCB) error {
 		compileFailureAnalyses = append(compileFailureAnalyses, compileFailureAnalysis)
 
 		// Check whether the page size limit has been reached
@@ -267,7 +267,7 @@ func (server *GoFinditServer) ListAnalyses(c context.Context, req *gfipb.ListAna
 	}
 
 	// Get the result for each compile failure analysis
-	analyses := make([]*gfipb.Analysis, len(compileFailureAnalyses))
+	analyses := make([]*pb.Analysis, len(compileFailureAnalyses))
 	err = parallel.FanOutIn(func(workC chan<- func() error) {
 		for i, compileFailureAnalysis := range compileFailureAnalyses {
 			i := i
@@ -288,13 +288,13 @@ func (server *GoFinditServer) ListAnalyses(c context.Context, req *gfipb.ListAna
 		return nil, err
 	}
 
-	return &gfipb.ListAnalysesResponse{
+	return &pb.ListAnalysesResponse{
 		Analyses:      analyses,
 		NextPageToken: nextPageToken,
 	}, nil
 }
 
-func validateListAnalysesRequest(req *gfipb.ListAnalysesRequest) error {
+func validateListAnalysesRequest(req *pb.ListAnalysesRequest) error {
 	if req.PageSize < 0 {
 		return status.Errorf(codes.InvalidArgument, "Page size can't be negative")
 	}

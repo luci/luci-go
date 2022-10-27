@@ -26,8 +26,8 @@ import (
 	"go.chromium.org/luci/gae/service/datastore"
 	"google.golang.org/protobuf/proto"
 
-	lbm "go.chromium.org/luci/bisection/model"
-	lbpb "go.chromium.org/luci/bisection/proto"
+	"go.chromium.org/luci/bisection/model"
+	pb "go.chromium.org/luci/bisection/proto"
 )
 
 func TestChunking(t *testing.T) {
@@ -182,19 +182,19 @@ func TestCreateSnapshot(t *testing.T) {
 	})
 
 	Convey("Create Snapshot", t, func() {
-		analysis := &lbm.CompileFailureAnalysis{}
+		analysis := &model.CompileFailureAnalysis{}
 		So(datastore.Put(c, analysis), ShouldBeNil)
 		datastore.GetTestable(c).CatchupIndexes()
 		blamelist := createBlamelist(4)
-		nthSectionAnalysis := &lbm.CompileNthSectionAnalysis{
+		nthSectionAnalysis := &model.CompileNthSectionAnalysis{
 			BlameList:      blamelist,
 			ParentAnalysis: datastore.KeyForObj(c, analysis),
 		}
 		So(datastore.Put(c, nthSectionAnalysis), ShouldBeNil)
 
-		rerun1 := &lbm.SingleRerun{
-			Type:   lbm.RerunBuildType_CulpritVerification,
-			Status: lbpb.RerunStatus_IN_PROGRESS,
+		rerun1 := &model.SingleRerun{
+			Type:   model.RerunBuildType_CulpritVerification,
+			Status: pb.RerunStatus_IN_PROGRESS,
 			GitilesCommit: buildbucketpb.GitilesCommit{
 				Id: "commit1",
 			},
@@ -203,9 +203,9 @@ func TestCreateSnapshot(t *testing.T) {
 
 		So(datastore.Put(c, rerun1), ShouldBeNil)
 
-		rerun2 := &lbm.SingleRerun{
-			Type:   lbm.RerunBuildType_NthSection,
-			Status: lbpb.RerunStatus_FAILED,
+		rerun2 := &model.SingleRerun{
+			Type:   model.RerunBuildType_NthSection,
+			Status: pb.RerunStatus_FAILED,
 			GitilesCommit: buildbucketpb.GitilesCommit{
 				Id: "commit3",
 			},
@@ -223,14 +223,14 @@ func TestCreateSnapshot(t *testing.T) {
 			{
 				Index:  1,
 				Commit: "commit1",
-				Status: lbpb.RerunStatus_IN_PROGRESS,
-				Type:   lbm.RerunBuildType_CulpritVerification,
+				Status: pb.RerunStatus_IN_PROGRESS,
+				Type:   model.RerunBuildType_CulpritVerification,
 			},
 			{
 				Index:  3,
 				Commit: "commit3",
-				Status: lbpb.RerunStatus_FAILED,
-				Type:   lbm.RerunBuildType_NthSection,
+				Status: pb.RerunStatus_FAILED,
+				Type:   model.RerunBuildType_NthSection,
 			},
 		})
 	})
@@ -260,19 +260,19 @@ func TestGetRegressionRange(t *testing.T) {
 			Runs: []*NthSectionSnapshotRun{
 				{
 					Index:  10,
-					Status: lbpb.RerunStatus_FAILED,
+					Status: pb.RerunStatus_FAILED,
 				},
 				{
 					Index:  15,
-					Status: lbpb.RerunStatus_FAILED,
+					Status: pb.RerunStatus_FAILED,
 				},
 				{
 					Index:  40,
-					Status: lbpb.RerunStatus_PASSED,
+					Status: pb.RerunStatus_PASSED,
 				},
 				{
 					Index:  50,
-					Status: lbpb.RerunStatus_PASSED,
+					Status: pb.RerunStatus_PASSED,
 				},
 			},
 		}
@@ -290,11 +290,11 @@ func TestGetRegressionRange(t *testing.T) {
 			Runs: []*NthSectionSnapshotRun{
 				{
 					Index:  17,
-					Status: lbpb.RerunStatus_FAILED,
+					Status: pb.RerunStatus_FAILED,
 				},
 				{
 					Index:  10,
-					Status: lbpb.RerunStatus_PASSED,
+					Status: pb.RerunStatus_PASSED,
 				},
 			},
 		}
@@ -314,11 +314,11 @@ func TestGetCulprit(t *testing.T) {
 			Runs: []*NthSectionSnapshotRun{
 				{
 					Index:  15,
-					Status: lbpb.RerunStatus_FAILED,
+					Status: pb.RerunStatus_FAILED,
 				},
 				{
 					Index:  16,
-					Status: lbpb.RerunStatus_PASSED,
+					Status: pb.RerunStatus_PASSED,
 				},
 			},
 		}
@@ -348,11 +348,11 @@ func TestGetCulprit(t *testing.T) {
 			Runs: []*NthSectionSnapshotRun{
 				{
 					Index:  10,
-					Status: lbpb.RerunStatus_FAILED,
+					Status: pb.RerunStatus_FAILED,
 				},
 				{
 					Index:  2,
-					Status: lbpb.RerunStatus_PASSED,
+					Status: pb.RerunStatus_PASSED,
 				},
 			},
 		}
@@ -372,27 +372,27 @@ func TestFindRegressionChunks(t *testing.T) {
 			Runs: []*NthSectionSnapshotRun{
 				{
 					Index:  15,
-					Status: lbpb.RerunStatus_FAILED,
+					Status: pb.RerunStatus_FAILED,
 				},
 				{
 					Index:  19,
-					Status: lbpb.RerunStatus_IN_PROGRESS,
+					Status: pb.RerunStatus_IN_PROGRESS,
 				},
 				{
 					Index:  26,
-					Status: lbpb.RerunStatus_IN_PROGRESS,
+					Status: pb.RerunStatus_IN_PROGRESS,
 				},
 				{
 					Index:  35,
-					Status: lbpb.RerunStatus_IN_PROGRESS,
+					Status: pb.RerunStatus_IN_PROGRESS,
 				},
 				{
 					Index:  39,
-					Status: lbpb.RerunStatus_IN_PROGRESS,
+					Status: pb.RerunStatus_IN_PROGRESS,
 				},
 				{
 					Index:  40,
-					Status: lbpb.RerunStatus_PASSED,
+					Status: pb.RerunStatus_PASSED,
 				},
 			},
 		}
@@ -449,7 +449,7 @@ func TestFindNextIndicesToRun(t *testing.T) {
 			Runs: []*NthSectionSnapshotRun{
 				{
 					Index:  5,
-					Status: lbpb.RerunStatus_IN_PROGRESS,
+					Status: pb.RerunStatus_IN_PROGRESS,
 				},
 			},
 		}
@@ -469,7 +469,7 @@ func TestFindNextCommitsToRun(t *testing.T) {
 			Runs: []*NthSectionSnapshotRun{
 				{
 					Index:  5,
-					Status: lbpb.RerunStatus_IN_PROGRESS,
+					Status: pb.RerunStatus_IN_PROGRESS,
 				},
 			},
 		}
@@ -491,10 +491,10 @@ func TestCalculateChunkSize(t *testing.T) {
 	})
 }
 
-func createBlamelist(nCommits int) *lbpb.BlameList {
-	blamelist := &lbpb.BlameList{}
+func createBlamelist(nCommits int) *pb.BlameList {
+	blamelist := &pb.BlameList{}
 	for i := 0; i < nCommits; i++ {
-		blamelist.Commits = append(blamelist.Commits, &lbpb.BlameListSingleCommit{
+		blamelist.Commits = append(blamelist.Commits, &pb.BlameListSingleCommit{
 			Commit: fmt.Sprintf("commit%d", i),
 		})
 	}

@@ -32,8 +32,8 @@ import (
 
 	"go.chromium.org/luci/bisection/internal/buildbucket"
 	"go.chromium.org/luci/bisection/internal/gitiles"
-	lbm "go.chromium.org/luci/bisection/model"
-	lbpb "go.chromium.org/luci/bisection/proto"
+	"go.chromium.org/luci/bisection/model"
+	pb "go.chromium.org/luci/bisection/proto"
 )
 
 func TestAnalyze(t *testing.T) {
@@ -53,8 +53,8 @@ func TestAnalyze(t *testing.T) {
 	cl := testclock.New(testclock.TestTimeUTC)
 	c = clock.Set(c, cl)
 
-	gitilesResponse := lbm.ChangeLogResponse{
-		Log: []*lbm.ChangeLog{
+	gitilesResponse := model.ChangeLogResponse{
+		Log: []*model.ChangeLog{
 			{
 				Commit:  "3424",
 				Message: "Use TestActivationManager for all page activations\n\nblah blah\n\nChange-Id: blah\nBug: blah\nReviewed-on: https://chromium-review.googlesource.com/c/chromium/src/+/3472129\nReviewed-by: blah blah\n",
@@ -99,7 +99,7 @@ func TestAnalyze(t *testing.T) {
 	mc.Client.EXPECT().GetBuild(gomock.Any(), gomock.Any(), gomock.Any()).Return(&bbpb.Build{}, nil).AnyTimes()
 
 	Convey("CheckBlameList", t, func() {
-		rr := &lbpb.RegressionRange{
+		rr := &pb.RegressionRange{
 			LastPassed: &bbpb.GitilesCommit{
 				Host:    "chromium.googlesource.com",
 				Project: "chromium/src",
@@ -112,13 +112,13 @@ func TestAnalyze(t *testing.T) {
 			},
 		}
 
-		cf := &lbm.CompileFailure{
+		cf := &model.CompileFailure{
 			OutputTargets: []string{"abc.xyz"},
 		}
 		So(datastore.Put(c, cf), ShouldBeNil)
 		datastore.GetTestable(c).CatchupIndexes()
 
-		cfa := &lbm.CompileFailureAnalysis{
+		cfa := &model.CompileFailureAnalysis{
 			Id:                     123,
 			CompileFailure:         datastore.KeyForObj(c, cf),
 			InitialRegressionRange: rr,
@@ -133,14 +133,14 @@ func TestAnalyze(t *testing.T) {
 
 		// Fetch the nth section analysis
 		q := datastore.NewQuery("CompileNthSectionAnalysis")
-		nthsectionAnalyses := []*lbm.CompileNthSectionAnalysis{}
+		nthsectionAnalyses := []*model.CompileNthSectionAnalysis{}
 		err = datastore.GetAll(c, q, &nthsectionAnalyses)
 		So(err, ShouldBeNil)
 		So(len(nthsectionAnalyses), ShouldEqual, 1)
 		nsa = nthsectionAnalyses[0]
 
-		diff := cmp.Diff(nsa.BlameList, &lbpb.BlameList{
-			Commits: []*lbpb.BlameListSingleCommit{
+		diff := cmp.Diff(nsa.BlameList, &pb.BlameList{
+			Commits: []*pb.BlameListSingleCommit{
 				{
 					Commit:      "3424",
 					ReviewTitle: "Use TestActivationManager for all page activations",

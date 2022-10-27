@@ -20,8 +20,8 @@ import (
 	"math"
 	"sort"
 
-	lbm "go.chromium.org/luci/bisection/model"
-	lbpb "go.chromium.org/luci/bisection/proto"
+	"go.chromium.org/luci/bisection/model"
+	pb "go.chromium.org/luci/bisection/proto"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/gae/service/datastore"
 )
@@ -29,7 +29,7 @@ import (
 // NthSectionSnapshot contains the current snapshot of the nth-section run
 // Including the blamelist, status of the reruns...
 type NthSectionSnapshot struct {
-	BlameList *lbpb.BlameList
+	BlameList *pb.BlameList
 	// Runs are sorted by index
 	Runs []*NthSectionSnapshotRun
 }
@@ -37,15 +37,15 @@ type NthSectionSnapshot struct {
 type NthSectionSnapshotRun struct {
 	Index  int // index of the run (on the blamelist)
 	Commit string
-	Status lbpb.RerunStatus   // status of the run
-	Type   lbm.RerunBuildType // Whether this is nth-section or culprit verification run
+	Status pb.RerunStatus       // status of the run
+	Type   model.RerunBuildType // Whether this is nth-section or culprit verification run
 }
 
-func CreateSnapshot(c context.Context, nthSectionAnalysis *lbm.CompileNthSectionAnalysis) (*NthSectionSnapshot, error) {
+func CreateSnapshot(c context.Context, nthSectionAnalysis *model.CompileNthSectionAnalysis) (*NthSectionSnapshot, error) {
 	// Get all reruns for the current analysis
 	// This should contain all reruns for nth section and culprit verification
 	q := datastore.NewQuery("SingleRerun").Eq("analysis", nthSectionAnalysis.ParentAnalysis).Order("start_time")
-	reruns := []*lbm.SingleRerun{}
+	reruns := []*model.SingleRerun{}
 	err := datastore.GetAll(c, q, &reruns)
 	if err != nil {
 		return nil, errors.Annotate(err, "getting all reruns").Err()
@@ -56,8 +56,8 @@ func CreateSnapshot(c context.Context, nthSectionAnalysis *lbm.CompileNthSection
 		Runs:      []*NthSectionSnapshotRun{},
 	}
 
-	statusMap := map[string]lbpb.RerunStatus{}
-	typeMap := map[string]lbm.RerunBuildType{}
+	statusMap := map[string]pb.RerunStatus{}
+	typeMap := map[string]model.RerunBuildType{}
 	for _, r := range reruns {
 		statusMap[r.GetId()] = r.Status
 		typeMap[r.GetId()] = r.Type
@@ -86,10 +86,10 @@ func (snapshot *NthSectionSnapshot) GetCurrentRegressionRange() (int, int, error
 	lastPassedIdx := len(snapshot.BlameList.Commits)
 	for _, run := range snapshot.Runs {
 		// The snapshot runs are sorted by index, so we don't need the (firstFailedIdx < run.Index) check here
-		if run.Status == lbpb.RerunStatus_FAILED {
+		if run.Status == pb.RerunStatus_FAILED {
 			firstFailedIdx = run.Index
 		}
-		if run.Status == lbpb.RerunStatus_PASSED {
+		if run.Status == pb.RerunStatus_PASSED {
 			if run.Index < lastPassedIdx {
 				lastPassedIdx = run.Index
 			}
@@ -179,7 +179,7 @@ func (snapshot *NthSectionSnapshot) findRegressionChunks() ([]*NthSectionSnapsho
 	// use those builds to break the range into smaller chunks
 	chunks := []*NthSectionSnapshotChunk{}
 	for _, run := range snapshot.Runs {
-		if run.Index >= start && run.Index <= end && run.Status == lbpb.RerunStatus_IN_PROGRESS {
+		if run.Index >= start && run.Index <= end && run.Status == pb.RerunStatus_IN_PROGRESS {
 			if start <= run.Index-1 {
 				chunks = append(chunks, &NthSectionSnapshotChunk{Begin: start, End: run.Index - 1})
 			}
