@@ -1152,6 +1152,159 @@ func TestClusters(t *testing.T) {
 				})
 			})
 		})
+
+		Convey("QueryExoneratedTestVariants", func() {
+			authState.IdentityPermissions = listTestResultsPermissions(
+				"testproject:realm1",
+				"testproject:realm2",
+				"otherproject:realm3",
+			)
+			authState.IdentityPermissions = append(authState.IdentityPermissions, authtest.RealmPermission{
+				Realm:      "testproject:@root",
+				Permission: perms.PermGetCluster,
+			}, authtest.RealmPermission{
+				Realm:      "testproject:@root",
+				Permission: perms.PermExpensiveClusterQueries,
+			})
+
+			request := &pb.QueryClusterExoneratedTestVariantsRequest{
+				Parent: "projects/testproject/clusters/reason-v1/cccccc00000000000000000000000001/exoneratedTestVariants",
+			}
+			Convey("Not authorised to get cluster", func() {
+				authState.IdentityPermissions = removePermission(authState.IdentityPermissions, perms.PermGetCluster)
+
+				response, err := server.QueryExoneratedTestVariants(ctx, request)
+				So(err, ShouldBeRPCPermissionDenied, "caller does not have permission analysis.clusters.get")
+				So(response, ShouldBeNil)
+			})
+			Convey("Not authorised to perform expensive queries", func() {
+				authState.IdentityPermissions = removePermission(authState.IdentityPermissions, perms.PermExpensiveClusterQueries)
+
+				response, err := server.QueryExoneratedTestVariants(ctx, request)
+				So(err, ShouldBeRPCPermissionDenied, "caller does not have permission analysis.clusters.expensiveQueries")
+				So(response, ShouldBeNil)
+			})
+			Convey("Not authorised to list test results in any realm", func() {
+				authState.IdentityPermissions = removePermission(authState.IdentityPermissions, rdbperms.PermListTestResults)
+
+				response, err := server.QueryExoneratedTestVariants(ctx, request)
+				So(err, ShouldBeRPCPermissionDenied, "caller does not have permissions [resultdb.testResults.list resultdb.testExonerations.list] in any realm in project \"testproject\"")
+				So(response, ShouldBeNil)
+			})
+			Convey("Not authorised to list test exonerations in any realm", func() {
+				authState.IdentityPermissions = removePermission(authState.IdentityPermissions, rdbperms.PermListTestExonerations)
+
+				response, err := server.QueryExoneratedTestVariants(ctx, request)
+				So(err, ShouldBeRPCPermissionDenied, "caller does not have permissions [resultdb.testResults.list resultdb.testExonerations.list] in any realm in project \"testproject\"")
+				So(response, ShouldBeNil)
+			})
+			Convey("With a valid request", func() {
+				analysisClient.expectedRealmsQueried = []string{"testproject:realm1", "testproject:realm2"}
+				analysisClient.exoneratedTVsByProjectAndCluster["testproject"] = map[clustering.ClusterID][]*analysis.ExoneratedTestVariant{
+					{
+						Algorithm: "reason-v1",
+						ID:        "cccccc00000000000000000000000001",
+					}: {
+						{
+							TestID: bqString("testID-1"),
+							Variant: []*analysis.Variant{
+								{
+									Key:   bqString("key1"),
+									Value: bqString("value1"),
+								},
+								{
+									Key:   bqString("key2"),
+									Value: bqString("value2"),
+								},
+							},
+							CriticalFailuresExonerated: 51,
+							LastExoneration:            bigquery.NullTimestamp{Timestamp: time.Date(2123, time.April, 1, 2, 3, 4, 5, time.UTC), Valid: true},
+						},
+						{
+							TestID: bigquery.NullString{StringVal: "testID-2"},
+							Variant: []*analysis.Variant{
+								{
+									Key:   bqString("key1"),
+									Value: bqString("value2"),
+								},
+								{
+									Key:   bqString("key3"),
+									Value: bqString("value3"),
+								},
+							},
+							CriticalFailuresExonerated: 172,
+							LastExoneration:            bigquery.NullTimestamp{Timestamp: time.Date(2124, time.May, 2, 3, 4, 5, 6, time.UTC), Valid: true},
+						},
+					},
+				}
+
+				expectedResponse := &pb.QueryClusterExoneratedTestVariantsResponse{
+					TestVariants: []*pb.ClusterExoneratedTestVariant{
+						{
+							TestId:                     "testID-1",
+							Variant:                    pbutil.Variant("key1", "value1", "key2", "value2"),
+							CriticalFailuresExonerated: 51,
+							LastExoneration:            timestamppb.New(time.Date(2123, time.April, 1, 2, 3, 4, 5, time.UTC)),
+						},
+						{
+							TestId:                     "testID-2",
+							Variant:                    pbutil.Variant("key1", "value2", "key3", "value3"),
+							CriticalFailuresExonerated: 172,
+							LastExoneration:            timestamppb.New(time.Date(2124, time.May, 2, 3, 4, 5, 6, time.UTC)),
+						},
+					},
+				}
+
+				// Run
+				response, err := server.QueryExoneratedTestVariants(ctx, request)
+
+				// Verify.
+				So(err, ShouldBeNil)
+				So(response, ShouldResembleProto, expectedResponse)
+			})
+			Convey("With an invalid request", func() {
+				Convey("Invalid parent", func() {
+					request.Parent = "blah"
+
+					// Run
+					response, err := server.QueryExoneratedTestVariants(ctx, request)
+
+					// Verify
+					So(response, ShouldBeNil)
+					So(err, ShouldBeRPCInvalidArgument, "parent: invalid cluster failures name, expected format: projects/{project}/clusters/{cluster_alg}/{cluster_id}/exoneratedTestVariants")
+				})
+				Convey("Invalid cluster algorithm in parent", func() {
+					request.Parent = "projects/blah/clusters/reason/cccccc00000000000000000000000001/exoneratedTestVariants"
+
+					// Run
+					response, err := server.QueryExoneratedTestVariants(ctx, request)
+
+					// Verify
+					So(response, ShouldBeNil)
+					So(err, ShouldBeRPCInvalidArgument, "parent: invalid cluster identity: algorithm not valid")
+				})
+				Convey("Invalid cluster ID in parent", func() {
+					request.Parent = "projects/blah/clusters/reason-v3/123/exoneratedTestVariants"
+
+					// Run
+					response, err := server.QueryExoneratedTestVariants(ctx, request)
+
+					// Verify
+					So(response, ShouldBeNil)
+					So(err, ShouldBeRPCInvalidArgument, "parent: invalid cluster identity: ID is not valid lowercase hexadecimal bytes")
+				})
+				Convey("Dataset does not exist", func() {
+					delete(analysisClient.clustersByProject, "testproject")
+
+					// Run
+					response, err := server.QueryExoneratedTestVariants(ctx, request)
+
+					// Verify
+					So(response, ShouldBeNil)
+					So(err, ShouldBeRPCNotFound, "LUCI Analysis BigQuery dataset not provisioned for project or clustered failures not yet available")
+				})
+			})
+		})
 	})
 }
 
@@ -1234,17 +1387,19 @@ func sortClusterEntries(entries []*pb.ClusterResponse_ClusteredTestResult_Cluste
 }
 
 type fakeAnalysisClient struct {
-	clustersByProject           map[string][]*analysis.Cluster
-	failuresByProjectAndCluster map[string]map[clustering.ClusterID][]*analysis.ClusterFailure
-	clusterMetricsByProject     map[string][]*analysis.ClusterSummary
-	expectedRealmsQueried       []string
+	clustersByProject                map[string][]*analysis.Cluster
+	failuresByProjectAndCluster      map[string]map[clustering.ClusterID][]*analysis.ClusterFailure
+	exoneratedTVsByProjectAndCluster map[string]map[clustering.ClusterID][]*analysis.ExoneratedTestVariant
+	clusterMetricsByProject          map[string][]*analysis.ClusterSummary
+	expectedRealmsQueried            []string
 }
 
 func newFakeAnalysisClient() *fakeAnalysisClient {
 	return &fakeAnalysisClient{
-		clustersByProject:           make(map[string][]*analysis.Cluster),
-		failuresByProjectAndCluster: make(map[string]map[clustering.ClusterID][]*analysis.ClusterFailure),
-		clusterMetricsByProject:     make(map[string][]*analysis.ClusterSummary),
+		clustersByProject:                make(map[string][]*analysis.Cluster),
+		failuresByProjectAndCluster:      make(map[string]map[clustering.ClusterID][]*analysis.ClusterFailure),
+		exoneratedTVsByProjectAndCluster: make(map[string]map[clustering.ClusterID][]*analysis.ExoneratedTestVariant),
+		clusterMetricsByProject:          make(map[string][]*analysis.ClusterSummary),
 	}
 }
 
@@ -1308,4 +1463,18 @@ func (f *fakeAnalysisClient) ReadClusterFailures(ctx context.Context, options an
 	}
 
 	return failuresByCluster[options.ClusterID], nil
+}
+
+func (f *fakeAnalysisClient) ReadClusterExoneratedTestVariants(ctx context.Context, options analysis.ReadClusterExoneratedTestVariantsOptions) ([]*analysis.ExoneratedTestVariant, error) {
+	exoneratedTVsByCluster, ok := f.exoneratedTVsByProjectAndCluster[options.Project]
+	if !ok {
+		return nil, analysis.ProjectNotExistsErr
+	}
+
+	set := stringset.NewFromSlice(options.Realms...)
+	if set.Len() != len(f.expectedRealmsQueried) || !set.HasAll(f.expectedRealmsQueried...) {
+		panic("realms passed to ReadClusterFailures do not match expected")
+	}
+
+	return exoneratedTVsByCluster[options.ClusterID], nil
 }

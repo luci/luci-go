@@ -872,7 +872,7 @@ type QueryClusterFailuresRequest struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// The resource name of the cluster to retrieve failures for.
+	// The resource name of the cluster failures to retrieve.
 	// Format: projects/{project}/clusters/{cluster_algorithm}/{cluster_id}/failures.
 	Parent string `protobuf:"bytes,1,opt,name=parent,proto3" json:"parent,omitempty"`
 }
@@ -974,7 +974,8 @@ type DistinctClusterFailure struct {
 
 	// The identity of the test.
 	TestId string `protobuf:"bytes,1,opt,name=test_id,json=testId,proto3" json:"test_id,omitempty"`
-	// The test variant.
+	// Description of one specific way of running the test,
+	// e.g. a specific bucket, builder and a test suite.
 	Variant *Variant `protobuf:"bytes,2,opt,name=variant,proto3" json:"variant,omitempty"`
 	// Timestamp representing the start of the data retention period for the
 	// test results in this group.
@@ -1127,6 +1128,187 @@ func (x *DistinctClusterFailure) GetCount() int32 {
 	return 0
 }
 
+type QueryClusterExoneratedTestVariantsRequest struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	// The resource name of the cluster exonerated test variants to retrieve.
+	// Format: projects/{project}/clusters/{cluster_algorithm}/{cluster_id}/exoneratedTestVariants.
+	Parent string `protobuf:"bytes,1,opt,name=parent,proto3" json:"parent,omitempty"`
+}
+
+func (x *QueryClusterExoneratedTestVariantsRequest) Reset() {
+	*x = QueryClusterExoneratedTestVariantsRequest{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_go_chromium_org_luci_analysis_proto_v1_clusters_proto_msgTypes[14]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *QueryClusterExoneratedTestVariantsRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*QueryClusterExoneratedTestVariantsRequest) ProtoMessage() {}
+
+func (x *QueryClusterExoneratedTestVariantsRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_go_chromium_org_luci_analysis_proto_v1_clusters_proto_msgTypes[14]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use QueryClusterExoneratedTestVariantsRequest.ProtoReflect.Descriptor instead.
+func (*QueryClusterExoneratedTestVariantsRequest) Descriptor() ([]byte, []int) {
+	return file_go_chromium_org_luci_analysis_proto_v1_clusters_proto_rawDescGZIP(), []int{14}
+}
+
+func (x *QueryClusterExoneratedTestVariantsRequest) GetParent() string {
+	if x != nil {
+		return x.Parent
+	}
+	return ""
+}
+
+type QueryClusterExoneratedTestVariantsResponse struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	// A list of test variants in the cluster which have exonerated critical
+	// failures. Ordered by recency of the exoneration (most recent exonerations
+	// first) and limited to at most 100 test variants.
+	TestVariants []*ClusterExoneratedTestVariant `protobuf:"bytes,1,rep,name=test_variants,json=testVariants,proto3" json:"test_variants,omitempty"`
+}
+
+func (x *QueryClusterExoneratedTestVariantsResponse) Reset() {
+	*x = QueryClusterExoneratedTestVariantsResponse{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_go_chromium_org_luci_analysis_proto_v1_clusters_proto_msgTypes[15]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *QueryClusterExoneratedTestVariantsResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*QueryClusterExoneratedTestVariantsResponse) ProtoMessage() {}
+
+func (x *QueryClusterExoneratedTestVariantsResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_go_chromium_org_luci_analysis_proto_v1_clusters_proto_msgTypes[15]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use QueryClusterExoneratedTestVariantsResponse.ProtoReflect.Descriptor instead.
+func (*QueryClusterExoneratedTestVariantsResponse) Descriptor() ([]byte, []int) {
+	return file_go_chromium_org_luci_analysis_proto_v1_clusters_proto_rawDescGZIP(), []int{15}
+}
+
+func (x *QueryClusterExoneratedTestVariantsResponse) GetTestVariants() []*ClusterExoneratedTestVariant {
+	if x != nil {
+		return x.TestVariants
+	}
+	return nil
+}
+
+// ClusterExoneratedTestVariant represents a test variant in a cluster
+// which has been exonerated. A cluster test variant is the subset
+// of a test variant that intersects with the failures of a cluster.
+type ClusterExoneratedTestVariant struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	// A unique identifier of the test in a LUCI project.
+	TestId string `protobuf:"bytes,1,opt,name=test_id,json=testId,proto3" json:"test_id,omitempty"`
+	// Description of one specific way of running the test,
+	// e.g. a specific bucket, builder and a test suite.
+	Variant *Variant `protobuf:"bytes,2,opt,name=variant,proto3" json:"variant,omitempty"`
+	// The number of critical (presubmit-blocking) failures in the
+	// cluster which have been exonerated on this test variant
+	// in the last week.
+	CriticalFailuresExonerated int32 `protobuf:"varint,3,opt,name=critical_failures_exonerated,json=criticalFailuresExonerated,proto3" json:"critical_failures_exonerated,omitempty"`
+	// The partition time of the most recent exoneration of a
+	// critical failure.
+	LastExoneration *timestamppb.Timestamp `protobuf:"bytes,4,opt,name=last_exoneration,json=lastExoneration,proto3" json:"last_exoneration,omitempty"`
+}
+
+func (x *ClusterExoneratedTestVariant) Reset() {
+	*x = ClusterExoneratedTestVariant{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_go_chromium_org_luci_analysis_proto_v1_clusters_proto_msgTypes[16]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *ClusterExoneratedTestVariant) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ClusterExoneratedTestVariant) ProtoMessage() {}
+
+func (x *ClusterExoneratedTestVariant) ProtoReflect() protoreflect.Message {
+	mi := &file_go_chromium_org_luci_analysis_proto_v1_clusters_proto_msgTypes[16]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ClusterExoneratedTestVariant.ProtoReflect.Descriptor instead.
+func (*ClusterExoneratedTestVariant) Descriptor() ([]byte, []int) {
+	return file_go_chromium_org_luci_analysis_proto_v1_clusters_proto_rawDescGZIP(), []int{16}
+}
+
+func (x *ClusterExoneratedTestVariant) GetTestId() string {
+	if x != nil {
+		return x.TestId
+	}
+	return ""
+}
+
+func (x *ClusterExoneratedTestVariant) GetVariant() *Variant {
+	if x != nil {
+		return x.Variant
+	}
+	return nil
+}
+
+func (x *ClusterExoneratedTestVariant) GetCriticalFailuresExonerated() int32 {
+	if x != nil {
+		return x.CriticalFailuresExonerated
+	}
+	return 0
+}
+
+func (x *ClusterExoneratedTestVariant) GetLastExoneration() *timestamppb.Timestamp {
+	if x != nil {
+		return x.LastExoneration
+	}
+	return nil
+}
+
 // TestResult captures information about a test result, sufficient to
 // cluster it. The fields requested here may be expanded over time.
 // For example, variant information may be requested in future.
@@ -1149,7 +1331,7 @@ type ClusterRequest_TestResult struct {
 func (x *ClusterRequest_TestResult) Reset() {
 	*x = ClusterRequest_TestResult{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_go_chromium_org_luci_analysis_proto_v1_clusters_proto_msgTypes[14]
+		mi := &file_go_chromium_org_luci_analysis_proto_v1_clusters_proto_msgTypes[17]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -1162,7 +1344,7 @@ func (x *ClusterRequest_TestResult) String() string {
 func (*ClusterRequest_TestResult) ProtoMessage() {}
 
 func (x *ClusterRequest_TestResult) ProtoReflect() protoreflect.Message {
-	mi := &file_go_chromium_org_luci_analysis_proto_v1_clusters_proto_msgTypes[14]
+	mi := &file_go_chromium_org_luci_analysis_proto_v1_clusters_proto_msgTypes[17]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1215,7 +1397,7 @@ type ClusterResponse_ClusteredTestResult struct {
 func (x *ClusterResponse_ClusteredTestResult) Reset() {
 	*x = ClusterResponse_ClusteredTestResult{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_go_chromium_org_luci_analysis_proto_v1_clusters_proto_msgTypes[15]
+		mi := &file_go_chromium_org_luci_analysis_proto_v1_clusters_proto_msgTypes[18]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -1228,7 +1410,7 @@ func (x *ClusterResponse_ClusteredTestResult) String() string {
 func (*ClusterResponse_ClusteredTestResult) ProtoMessage() {}
 
 func (x *ClusterResponse_ClusteredTestResult) ProtoReflect() protoreflect.Message {
-	mi := &file_go_chromium_org_luci_analysis_proto_v1_clusters_proto_msgTypes[15]
+	mi := &file_go_chromium_org_luci_analysis_proto_v1_clusters_proto_msgTypes[18]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1276,7 +1458,7 @@ type ClusterResponse_ClusteredTestResult_ClusterEntry struct {
 func (x *ClusterResponse_ClusteredTestResult_ClusterEntry) Reset() {
 	*x = ClusterResponse_ClusteredTestResult_ClusterEntry{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_go_chromium_org_luci_analysis_proto_v1_clusters_proto_msgTypes[16]
+		mi := &file_go_chromium_org_luci_analysis_proto_v1_clusters_proto_msgTypes[19]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -1289,7 +1471,7 @@ func (x *ClusterResponse_ClusteredTestResult_ClusterEntry) String() string {
 func (*ClusterResponse_ClusteredTestResult_ClusterEntry) ProtoMessage() {}
 
 func (x *ClusterResponse_ClusteredTestResult_ClusterEntry) ProtoReflect() protoreflect.Message {
-	mi := &file_go_chromium_org_luci_analysis_proto_v1_clusters_proto_msgTypes[16]
+	mi := &file_go_chromium_org_luci_analysis_proto_v1_clusters_proto_msgTypes[19]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1331,7 +1513,7 @@ type Cluster_Counts struct {
 func (x *Cluster_Counts) Reset() {
 	*x = Cluster_Counts{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_go_chromium_org_luci_analysis_proto_v1_clusters_proto_msgTypes[17]
+		mi := &file_go_chromium_org_luci_analysis_proto_v1_clusters_proto_msgTypes[20]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -1344,7 +1526,7 @@ func (x *Cluster_Counts) String() string {
 func (*Cluster_Counts) ProtoMessage() {}
 
 func (x *Cluster_Counts) ProtoReflect() protoreflect.Message {
-	mi := &file_go_chromium_org_luci_analysis_proto_v1_clusters_proto_msgTypes[17]
+	mi := &file_go_chromium_org_luci_analysis_proto_v1_clusters_proto_msgTypes[20]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1383,7 +1565,7 @@ type Cluster_ImpactValues struct {
 func (x *Cluster_ImpactValues) Reset() {
 	*x = Cluster_ImpactValues{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_go_chromium_org_luci_analysis_proto_v1_clusters_proto_msgTypes[18]
+		mi := &file_go_chromium_org_luci_analysis_proto_v1_clusters_proto_msgTypes[21]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -1396,7 +1578,7 @@ func (x *Cluster_ImpactValues) String() string {
 func (*Cluster_ImpactValues) ProtoMessage() {}
 
 func (x *Cluster_ImpactValues) ProtoReflect() protoreflect.Message {
-	mi := &file_go_chromium_org_luci_analysis_proto_v1_clusters_proto_msgTypes[18]
+	mi := &file_go_chromium_org_luci_analysis_proto_v1_clusters_proto_msgTypes[21]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1448,7 +1630,7 @@ type DistinctClusterFailure_Exoneration struct {
 func (x *DistinctClusterFailure_Exoneration) Reset() {
 	*x = DistinctClusterFailure_Exoneration{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_go_chromium_org_luci_analysis_proto_v1_clusters_proto_msgTypes[19]
+		mi := &file_go_chromium_org_luci_analysis_proto_v1_clusters_proto_msgTypes[22]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -1461,7 +1643,7 @@ func (x *DistinctClusterFailure_Exoneration) String() string {
 func (*DistinctClusterFailure_Exoneration) ProtoMessage() {}
 
 func (x *DistinctClusterFailure_Exoneration) ProtoReflect() protoreflect.Message {
-	mi := &file_go_chromium_org_luci_analysis_proto_v1_clusters_proto_msgTypes[19]
+	mi := &file_go_chromium_org_luci_analysis_proto_v1_clusters_proto_msgTypes[22]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1519,7 +1701,7 @@ type DistinctClusterFailure_PresubmitRun struct {
 func (x *DistinctClusterFailure_PresubmitRun) Reset() {
 	*x = DistinctClusterFailure_PresubmitRun{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_go_chromium_org_luci_analysis_proto_v1_clusters_proto_msgTypes[20]
+		mi := &file_go_chromium_org_luci_analysis_proto_v1_clusters_proto_msgTypes[23]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -1532,7 +1714,7 @@ func (x *DistinctClusterFailure_PresubmitRun) String() string {
 func (*DistinctClusterFailure_PresubmitRun) ProtoMessage() {}
 
 func (x *DistinctClusterFailure_PresubmitRun) ProtoReflect() protoreflect.Message {
-	mi := &file_go_chromium_org_luci_analysis_proto_v1_clusters_proto_msgTypes[20]
+	mi := &file_go_chromium_org_luci_analysis_proto_v1_clusters_proto_msgTypes[23]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1840,46 +2022,84 @@ var file_go_chromium_org_luci_analysis_proto_v1_clusters_proto_rawDesc = []byte{
 	0x65, 0x12, 0x3c, 0x0a, 0x06, 0x73, 0x74, 0x61, 0x74, 0x75, 0x73, 0x18, 0x04, 0x20, 0x01, 0x28,
 	0x0e, 0x32, 0x24, 0x2e, 0x6c, 0x75, 0x63, 0x69, 0x2e, 0x61, 0x6e, 0x61, 0x6c, 0x79, 0x73, 0x69,
 	0x73, 0x2e, 0x76, 0x31, 0x2e, 0x50, 0x72, 0x65, 0x73, 0x75, 0x62, 0x6d, 0x69, 0x74, 0x52, 0x75,
-	0x6e, 0x53, 0x74, 0x61, 0x74, 0x75, 0x73, 0x52, 0x06, 0x73, 0x74, 0x61, 0x74, 0x75, 0x73, 0x32,
-	0xad, 0x04, 0x0a, 0x08, 0x43, 0x6c, 0x75, 0x73, 0x74, 0x65, 0x72, 0x73, 0x12, 0x50, 0x0a, 0x07,
-	0x43, 0x6c, 0x75, 0x73, 0x74, 0x65, 0x72, 0x12, 0x20, 0x2e, 0x6c, 0x75, 0x63, 0x69, 0x2e, 0x61,
-	0x6e, 0x61, 0x6c, 0x79, 0x73, 0x69, 0x73, 0x2e, 0x76, 0x31, 0x2e, 0x43, 0x6c, 0x75, 0x73, 0x74,
-	0x65, 0x72, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x21, 0x2e, 0x6c, 0x75, 0x63, 0x69,
-	0x2e, 0x61, 0x6e, 0x61, 0x6c, 0x79, 0x73, 0x69, 0x73, 0x2e, 0x76, 0x31, 0x2e, 0x43, 0x6c, 0x75,
-	0x73, 0x74, 0x65, 0x72, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x00, 0x12, 0x63,
-	0x0a, 0x08, 0x42, 0x61, 0x74, 0x63, 0x68, 0x47, 0x65, 0x74, 0x12, 0x29, 0x2e, 0x6c, 0x75, 0x63,
-	0x69, 0x2e, 0x61, 0x6e, 0x61, 0x6c, 0x79, 0x73, 0x69, 0x73, 0x2e, 0x76, 0x31, 0x2e, 0x42, 0x61,
-	0x74, 0x63, 0x68, 0x47, 0x65, 0x74, 0x43, 0x6c, 0x75, 0x73, 0x74, 0x65, 0x72, 0x73, 0x52, 0x65,
-	0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x2a, 0x2e, 0x6c, 0x75, 0x63, 0x69, 0x2e, 0x61, 0x6e, 0x61,
-	0x6c, 0x79, 0x73, 0x69, 0x73, 0x2e, 0x76, 0x31, 0x2e, 0x42, 0x61, 0x74, 0x63, 0x68, 0x47, 0x65,
-	0x74, 0x43, 0x6c, 0x75, 0x73, 0x74, 0x65, 0x72, 0x73, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73,
-	0x65, 0x22, 0x00, 0x12, 0x75, 0x0a, 0x17, 0x47, 0x65, 0x74, 0x52, 0x65, 0x63, 0x6c, 0x75, 0x73,
-	0x74, 0x65, 0x72, 0x69, 0x6e, 0x67, 0x50, 0x72, 0x6f, 0x67, 0x72, 0x65, 0x73, 0x73, 0x12, 0x30,
-	0x2e, 0x6c, 0x75, 0x63, 0x69, 0x2e, 0x61, 0x6e, 0x61, 0x6c, 0x79, 0x73, 0x69, 0x73, 0x2e, 0x76,
-	0x31, 0x2e, 0x47, 0x65, 0x74, 0x52, 0x65, 0x63, 0x6c, 0x75, 0x73, 0x74, 0x65, 0x72, 0x69, 0x6e,
-	0x67, 0x50, 0x72, 0x6f, 0x67, 0x72, 0x65, 0x73, 0x73, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74,
-	0x1a, 0x26, 0x2e, 0x6c, 0x75, 0x63, 0x69, 0x2e, 0x61, 0x6e, 0x61, 0x6c, 0x79, 0x73, 0x69, 0x73,
-	0x2e, 0x76, 0x31, 0x2e, 0x52, 0x65, 0x63, 0x6c, 0x75, 0x73, 0x74, 0x65, 0x72, 0x69, 0x6e, 0x67,
-	0x50, 0x72, 0x6f, 0x67, 0x72, 0x65, 0x73, 0x73, 0x22, 0x00, 0x12, 0x7a, 0x0a, 0x15, 0x51, 0x75,
-	0x65, 0x72, 0x79, 0x43, 0x6c, 0x75, 0x73, 0x74, 0x65, 0x72, 0x53, 0x75, 0x6d, 0x6d, 0x61, 0x72,
-	0x69, 0x65, 0x73, 0x12, 0x2e, 0x2e, 0x6c, 0x75, 0x63, 0x69, 0x2e, 0x61, 0x6e, 0x61, 0x6c, 0x79,
-	0x73, 0x69, 0x73, 0x2e, 0x76, 0x31, 0x2e, 0x51, 0x75, 0x65, 0x72, 0x79, 0x43, 0x6c, 0x75, 0x73,
-	0x74, 0x65, 0x72, 0x53, 0x75, 0x6d, 0x6d, 0x61, 0x72, 0x69, 0x65, 0x73, 0x52, 0x65, 0x71, 0x75,
-	0x65, 0x73, 0x74, 0x1a, 0x2f, 0x2e, 0x6c, 0x75, 0x63, 0x69, 0x2e, 0x61, 0x6e, 0x61, 0x6c, 0x79,
-	0x73, 0x69, 0x73, 0x2e, 0x76, 0x31, 0x2e, 0x51, 0x75, 0x65, 0x72, 0x79, 0x43, 0x6c, 0x75, 0x73,
-	0x74, 0x65, 0x72, 0x53, 0x75, 0x6d, 0x6d, 0x61, 0x72, 0x69, 0x65, 0x73, 0x52, 0x65, 0x73, 0x70,
-	0x6f, 0x6e, 0x73, 0x65, 0x22, 0x00, 0x12, 0x77, 0x0a, 0x14, 0x51, 0x75, 0x65, 0x72, 0x79, 0x43,
-	0x6c, 0x75, 0x73, 0x74, 0x65, 0x72, 0x46, 0x61, 0x69, 0x6c, 0x75, 0x72, 0x65, 0x73, 0x12, 0x2d,
+	0x6e, 0x53, 0x74, 0x61, 0x74, 0x75, 0x73, 0x52, 0x06, 0x73, 0x74, 0x61, 0x74, 0x75, 0x73, 0x22,
+	0x43, 0x0a, 0x29, 0x51, 0x75, 0x65, 0x72, 0x79, 0x43, 0x6c, 0x75, 0x73, 0x74, 0x65, 0x72, 0x45,
+	0x78, 0x6f, 0x6e, 0x65, 0x72, 0x61, 0x74, 0x65, 0x64, 0x54, 0x65, 0x73, 0x74, 0x56, 0x61, 0x72,
+	0x69, 0x61, 0x6e, 0x74, 0x73, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x12, 0x16, 0x0a, 0x06,
+	0x70, 0x61, 0x72, 0x65, 0x6e, 0x74, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x06, 0x70, 0x61,
+	0x72, 0x65, 0x6e, 0x74, 0x22, 0x81, 0x01, 0x0a, 0x2a, 0x51, 0x75, 0x65, 0x72, 0x79, 0x43, 0x6c,
+	0x75, 0x73, 0x74, 0x65, 0x72, 0x45, 0x78, 0x6f, 0x6e, 0x65, 0x72, 0x61, 0x74, 0x65, 0x64, 0x54,
+	0x65, 0x73, 0x74, 0x56, 0x61, 0x72, 0x69, 0x61, 0x6e, 0x74, 0x73, 0x52, 0x65, 0x73, 0x70, 0x6f,
+	0x6e, 0x73, 0x65, 0x12, 0x53, 0x0a, 0x0d, 0x74, 0x65, 0x73, 0x74, 0x5f, 0x76, 0x61, 0x72, 0x69,
+	0x61, 0x6e, 0x74, 0x73, 0x18, 0x01, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x2e, 0x2e, 0x6c, 0x75, 0x63,
+	0x69, 0x2e, 0x61, 0x6e, 0x61, 0x6c, 0x79, 0x73, 0x69, 0x73, 0x2e, 0x76, 0x31, 0x2e, 0x43, 0x6c,
+	0x75, 0x73, 0x74, 0x65, 0x72, 0x45, 0x78, 0x6f, 0x6e, 0x65, 0x72, 0x61, 0x74, 0x65, 0x64, 0x54,
+	0x65, 0x73, 0x74, 0x56, 0x61, 0x72, 0x69, 0x61, 0x6e, 0x74, 0x52, 0x0c, 0x74, 0x65, 0x73, 0x74,
+	0x56, 0x61, 0x72, 0x69, 0x61, 0x6e, 0x74, 0x73, 0x22, 0xf5, 0x01, 0x0a, 0x1c, 0x43, 0x6c, 0x75,
+	0x73, 0x74, 0x65, 0x72, 0x45, 0x78, 0x6f, 0x6e, 0x65, 0x72, 0x61, 0x74, 0x65, 0x64, 0x54, 0x65,
+	0x73, 0x74, 0x56, 0x61, 0x72, 0x69, 0x61, 0x6e, 0x74, 0x12, 0x17, 0x0a, 0x07, 0x74, 0x65, 0x73,
+	0x74, 0x5f, 0x69, 0x64, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x06, 0x74, 0x65, 0x73, 0x74,
+	0x49, 0x64, 0x12, 0x33, 0x0a, 0x07, 0x76, 0x61, 0x72, 0x69, 0x61, 0x6e, 0x74, 0x18, 0x02, 0x20,
+	0x01, 0x28, 0x0b, 0x32, 0x19, 0x2e, 0x6c, 0x75, 0x63, 0x69, 0x2e, 0x61, 0x6e, 0x61, 0x6c, 0x79,
+	0x73, 0x69, 0x73, 0x2e, 0x76, 0x31, 0x2e, 0x56, 0x61, 0x72, 0x69, 0x61, 0x6e, 0x74, 0x52, 0x07,
+	0x76, 0x61, 0x72, 0x69, 0x61, 0x6e, 0x74, 0x12, 0x40, 0x0a, 0x1c, 0x63, 0x72, 0x69, 0x74, 0x69,
+	0x63, 0x61, 0x6c, 0x5f, 0x66, 0x61, 0x69, 0x6c, 0x75, 0x72, 0x65, 0x73, 0x5f, 0x65, 0x78, 0x6f,
+	0x6e, 0x65, 0x72, 0x61, 0x74, 0x65, 0x64, 0x18, 0x03, 0x20, 0x01, 0x28, 0x05, 0x52, 0x1a, 0x63,
+	0x72, 0x69, 0x74, 0x69, 0x63, 0x61, 0x6c, 0x46, 0x61, 0x69, 0x6c, 0x75, 0x72, 0x65, 0x73, 0x45,
+	0x78, 0x6f, 0x6e, 0x65, 0x72, 0x61, 0x74, 0x65, 0x64, 0x12, 0x45, 0x0a, 0x10, 0x6c, 0x61, 0x73,
+	0x74, 0x5f, 0x65, 0x78, 0x6f, 0x6e, 0x65, 0x72, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x18, 0x04, 0x20,
+	0x01, 0x28, 0x0b, 0x32, 0x1a, 0x2e, 0x67, 0x6f, 0x6f, 0x67, 0x6c, 0x65, 0x2e, 0x70, 0x72, 0x6f,
+	0x74, 0x6f, 0x62, 0x75, 0x66, 0x2e, 0x54, 0x69, 0x6d, 0x65, 0x73, 0x74, 0x61, 0x6d, 0x70, 0x52,
+	0x0f, 0x6c, 0x61, 0x73, 0x74, 0x45, 0x78, 0x6f, 0x6e, 0x65, 0x72, 0x61, 0x74, 0x69, 0x6f, 0x6e,
+	0x32, 0xca, 0x05, 0x0a, 0x08, 0x43, 0x6c, 0x75, 0x73, 0x74, 0x65, 0x72, 0x73, 0x12, 0x50, 0x0a,
+	0x07, 0x43, 0x6c, 0x75, 0x73, 0x74, 0x65, 0x72, 0x12, 0x20, 0x2e, 0x6c, 0x75, 0x63, 0x69, 0x2e,
+	0x61, 0x6e, 0x61, 0x6c, 0x79, 0x73, 0x69, 0x73, 0x2e, 0x76, 0x31, 0x2e, 0x43, 0x6c, 0x75, 0x73,
+	0x74, 0x65, 0x72, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x21, 0x2e, 0x6c, 0x75, 0x63,
+	0x69, 0x2e, 0x61, 0x6e, 0x61, 0x6c, 0x79, 0x73, 0x69, 0x73, 0x2e, 0x76, 0x31, 0x2e, 0x43, 0x6c,
+	0x75, 0x73, 0x74, 0x65, 0x72, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x00, 0x12,
+	0x63, 0x0a, 0x08, 0x42, 0x61, 0x74, 0x63, 0x68, 0x47, 0x65, 0x74, 0x12, 0x29, 0x2e, 0x6c, 0x75,
+	0x63, 0x69, 0x2e, 0x61, 0x6e, 0x61, 0x6c, 0x79, 0x73, 0x69, 0x73, 0x2e, 0x76, 0x31, 0x2e, 0x42,
+	0x61, 0x74, 0x63, 0x68, 0x47, 0x65, 0x74, 0x43, 0x6c, 0x75, 0x73, 0x74, 0x65, 0x72, 0x73, 0x52,
+	0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x2a, 0x2e, 0x6c, 0x75, 0x63, 0x69, 0x2e, 0x61, 0x6e,
+	0x61, 0x6c, 0x79, 0x73, 0x69, 0x73, 0x2e, 0x76, 0x31, 0x2e, 0x42, 0x61, 0x74, 0x63, 0x68, 0x47,
+	0x65, 0x74, 0x43, 0x6c, 0x75, 0x73, 0x74, 0x65, 0x72, 0x73, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e,
+	0x73, 0x65, 0x22, 0x00, 0x12, 0x75, 0x0a, 0x17, 0x47, 0x65, 0x74, 0x52, 0x65, 0x63, 0x6c, 0x75,
+	0x73, 0x74, 0x65, 0x72, 0x69, 0x6e, 0x67, 0x50, 0x72, 0x6f, 0x67, 0x72, 0x65, 0x73, 0x73, 0x12,
+	0x30, 0x2e, 0x6c, 0x75, 0x63, 0x69, 0x2e, 0x61, 0x6e, 0x61, 0x6c, 0x79, 0x73, 0x69, 0x73, 0x2e,
+	0x76, 0x31, 0x2e, 0x47, 0x65, 0x74, 0x52, 0x65, 0x63, 0x6c, 0x75, 0x73, 0x74, 0x65, 0x72, 0x69,
+	0x6e, 0x67, 0x50, 0x72, 0x6f, 0x67, 0x72, 0x65, 0x73, 0x73, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73,
+	0x74, 0x1a, 0x26, 0x2e, 0x6c, 0x75, 0x63, 0x69, 0x2e, 0x61, 0x6e, 0x61, 0x6c, 0x79, 0x73, 0x69,
+	0x73, 0x2e, 0x76, 0x31, 0x2e, 0x52, 0x65, 0x63, 0x6c, 0x75, 0x73, 0x74, 0x65, 0x72, 0x69, 0x6e,
+	0x67, 0x50, 0x72, 0x6f, 0x67, 0x72, 0x65, 0x73, 0x73, 0x22, 0x00, 0x12, 0x7a, 0x0a, 0x15, 0x51,
+	0x75, 0x65, 0x72, 0x79, 0x43, 0x6c, 0x75, 0x73, 0x74, 0x65, 0x72, 0x53, 0x75, 0x6d, 0x6d, 0x61,
+	0x72, 0x69, 0x65, 0x73, 0x12, 0x2e, 0x2e, 0x6c, 0x75, 0x63, 0x69, 0x2e, 0x61, 0x6e, 0x61, 0x6c,
+	0x79, 0x73, 0x69, 0x73, 0x2e, 0x76, 0x31, 0x2e, 0x51, 0x75, 0x65, 0x72, 0x79, 0x43, 0x6c, 0x75,
+	0x73, 0x74, 0x65, 0x72, 0x53, 0x75, 0x6d, 0x6d, 0x61, 0x72, 0x69, 0x65, 0x73, 0x52, 0x65, 0x71,
+	0x75, 0x65, 0x73, 0x74, 0x1a, 0x2f, 0x2e, 0x6c, 0x75, 0x63, 0x69, 0x2e, 0x61, 0x6e, 0x61, 0x6c,
+	0x79, 0x73, 0x69, 0x73, 0x2e, 0x76, 0x31, 0x2e, 0x51, 0x75, 0x65, 0x72, 0x79, 0x43, 0x6c, 0x75,
+	0x73, 0x74, 0x65, 0x72, 0x53, 0x75, 0x6d, 0x6d, 0x61, 0x72, 0x69, 0x65, 0x73, 0x52, 0x65, 0x73,
+	0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x00, 0x12, 0x77, 0x0a, 0x14, 0x51, 0x75, 0x65, 0x72, 0x79,
+	0x43, 0x6c, 0x75, 0x73, 0x74, 0x65, 0x72, 0x46, 0x61, 0x69, 0x6c, 0x75, 0x72, 0x65, 0x73, 0x12,
+	0x2d, 0x2e, 0x6c, 0x75, 0x63, 0x69, 0x2e, 0x61, 0x6e, 0x61, 0x6c, 0x79, 0x73, 0x69, 0x73, 0x2e,
+	0x76, 0x31, 0x2e, 0x51, 0x75, 0x65, 0x72, 0x79, 0x43, 0x6c, 0x75, 0x73, 0x74, 0x65, 0x72, 0x46,
+	0x61, 0x69, 0x6c, 0x75, 0x72, 0x65, 0x73, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x2e,
 	0x2e, 0x6c, 0x75, 0x63, 0x69, 0x2e, 0x61, 0x6e, 0x61, 0x6c, 0x79, 0x73, 0x69, 0x73, 0x2e, 0x76,
 	0x31, 0x2e, 0x51, 0x75, 0x65, 0x72, 0x79, 0x43, 0x6c, 0x75, 0x73, 0x74, 0x65, 0x72, 0x46, 0x61,
-	0x69, 0x6c, 0x75, 0x72, 0x65, 0x73, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x2e, 0x2e,
+	0x69, 0x6c, 0x75, 0x72, 0x65, 0x73, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x00,
+	0x12, 0x9a, 0x01, 0x0a, 0x1b, 0x51, 0x75, 0x65, 0x72, 0x79, 0x45, 0x78, 0x6f, 0x6e, 0x65, 0x72,
+	0x61, 0x74, 0x65, 0x64, 0x54, 0x65, 0x73, 0x74, 0x56, 0x61, 0x72, 0x69, 0x61, 0x6e, 0x74, 0x73,
+	0x12, 0x3b, 0x2e, 0x6c, 0x75, 0x63, 0x69, 0x2e, 0x61, 0x6e, 0x61, 0x6c, 0x79, 0x73, 0x69, 0x73,
+	0x2e, 0x76, 0x31, 0x2e, 0x51, 0x75, 0x65, 0x72, 0x79, 0x43, 0x6c, 0x75, 0x73, 0x74, 0x65, 0x72,
+	0x45, 0x78, 0x6f, 0x6e, 0x65, 0x72, 0x61, 0x74, 0x65, 0x64, 0x54, 0x65, 0x73, 0x74, 0x56, 0x61,
+	0x72, 0x69, 0x61, 0x6e, 0x74, 0x73, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x3c, 0x2e,
 	0x6c, 0x75, 0x63, 0x69, 0x2e, 0x61, 0x6e, 0x61, 0x6c, 0x79, 0x73, 0x69, 0x73, 0x2e, 0x76, 0x31,
-	0x2e, 0x51, 0x75, 0x65, 0x72, 0x79, 0x43, 0x6c, 0x75, 0x73, 0x74, 0x65, 0x72, 0x46, 0x61, 0x69,
-	0x6c, 0x75, 0x72, 0x65, 0x73, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x00, 0x42,
-	0x33, 0x5a, 0x31, 0x67, 0x6f, 0x2e, 0x63, 0x68, 0x72, 0x6f, 0x6d, 0x69, 0x75, 0x6d, 0x2e, 0x6f,
-	0x72, 0x67, 0x2f, 0x6c, 0x75, 0x63, 0x69, 0x2f, 0x61, 0x6e, 0x61, 0x6c, 0x79, 0x73, 0x69, 0x73,
-	0x2f, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x2f, 0x76, 0x31, 0x3b, 0x61, 0x6e, 0x61, 0x6c, 0x79, 0x73,
-	0x69, 0x73, 0x70, 0x62, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
+	0x2e, 0x51, 0x75, 0x65, 0x72, 0x79, 0x43, 0x6c, 0x75, 0x73, 0x74, 0x65, 0x72, 0x45, 0x78, 0x6f,
+	0x6e, 0x65, 0x72, 0x61, 0x74, 0x65, 0x64, 0x54, 0x65, 0x73, 0x74, 0x56, 0x61, 0x72, 0x69, 0x61,
+	0x6e, 0x74, 0x73, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x00, 0x42, 0x33, 0x5a,
+	0x31, 0x67, 0x6f, 0x2e, 0x63, 0x68, 0x72, 0x6f, 0x6d, 0x69, 0x75, 0x6d, 0x2e, 0x6f, 0x72, 0x67,
+	0x2f, 0x6c, 0x75, 0x63, 0x69, 0x2f, 0x61, 0x6e, 0x61, 0x6c, 0x79, 0x73, 0x69, 0x73, 0x2f, 0x70,
+	0x72, 0x6f, 0x74, 0x6f, 0x2f, 0x76, 0x31, 0x3b, 0x61, 0x6e, 0x61, 0x6c, 0x79, 0x73, 0x69, 0x73,
+	0x70, 0x62, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
 }
 
 var (
@@ -1894,7 +2114,7 @@ func file_go_chromium_org_luci_analysis_proto_v1_clusters_proto_rawDescGZIP() []
 	return file_go_chromium_org_luci_analysis_proto_v1_clusters_proto_rawDescData
 }
 
-var file_go_chromium_org_luci_analysis_proto_v1_clusters_proto_msgTypes = make([]protoimpl.MessageInfo, 21)
+var file_go_chromium_org_luci_analysis_proto_v1_clusters_proto_msgTypes = make([]protoimpl.MessageInfo, 24)
 var file_go_chromium_org_luci_analysis_proto_v1_clusters_proto_goTypes = []interface{}{
 	(*ClusterRequest)(nil),                                   // 0: luci.analysis.v1.ClusterRequest
 	(*ClusterResponse)(nil),                                  // 1: luci.analysis.v1.ClusterResponse
@@ -1910,75 +2130,83 @@ var file_go_chromium_org_luci_analysis_proto_v1_clusters_proto_goTypes = []inter
 	(*QueryClusterFailuresRequest)(nil),                      // 11: luci.analysis.v1.QueryClusterFailuresRequest
 	(*QueryClusterFailuresResponse)(nil),                     // 12: luci.analysis.v1.QueryClusterFailuresResponse
 	(*DistinctClusterFailure)(nil),                           // 13: luci.analysis.v1.DistinctClusterFailure
-	(*ClusterRequest_TestResult)(nil),                        // 14: luci.analysis.v1.ClusterRequest.TestResult
-	(*ClusterResponse_ClusteredTestResult)(nil),              // 15: luci.analysis.v1.ClusterResponse.ClusteredTestResult
-	(*ClusterResponse_ClusteredTestResult_ClusterEntry)(nil), // 16: luci.analysis.v1.ClusterResponse.ClusteredTestResult.ClusterEntry
-	(*Cluster_Counts)(nil),                                   // 17: luci.analysis.v1.Cluster.Counts
-	(*Cluster_ImpactValues)(nil),                             // 18: luci.analysis.v1.Cluster.ImpactValues
-	(*DistinctClusterFailure_Exoneration)(nil),               // 19: luci.analysis.v1.DistinctClusterFailure.Exoneration
-	(*DistinctClusterFailure_PresubmitRun)(nil),              // 20: luci.analysis.v1.DistinctClusterFailure.PresubmitRun
-	(*timestamppb.Timestamp)(nil),                            // 21: google.protobuf.Timestamp
-	(*ClusterId)(nil),                                        // 22: luci.analysis.v1.ClusterId
-	(*AssociatedBug)(nil),                                    // 23: luci.analysis.v1.AssociatedBug
-	(*Variant)(nil),                                          // 24: luci.analysis.v1.Variant
-	(BuildStatus)(0),                                         // 25: luci.analysis.v1.BuildStatus
-	(*Changelist)(nil),                                       // 26: luci.analysis.v1.Changelist
-	(*FailureReason)(nil),                                    // 27: luci.analysis.v1.FailureReason
-	(ExonerationReason)(0),                                   // 28: luci.analysis.v1.ExonerationReason
-	(*PresubmitRunId)(nil),                                   // 29: luci.analysis.v1.PresubmitRunId
-	(PresubmitRunMode)(0),                                    // 30: luci.analysis.v1.PresubmitRunMode
-	(PresubmitRunStatus)(0),                                  // 31: luci.analysis.v1.PresubmitRunStatus
+	(*QueryClusterExoneratedTestVariantsRequest)(nil),        // 14: luci.analysis.v1.QueryClusterExoneratedTestVariantsRequest
+	(*QueryClusterExoneratedTestVariantsResponse)(nil),       // 15: luci.analysis.v1.QueryClusterExoneratedTestVariantsResponse
+	(*ClusterExoneratedTestVariant)(nil),                     // 16: luci.analysis.v1.ClusterExoneratedTestVariant
+	(*ClusterRequest_TestResult)(nil),                        // 17: luci.analysis.v1.ClusterRequest.TestResult
+	(*ClusterResponse_ClusteredTestResult)(nil),              // 18: luci.analysis.v1.ClusterResponse.ClusteredTestResult
+	(*ClusterResponse_ClusteredTestResult_ClusterEntry)(nil), // 19: luci.analysis.v1.ClusterResponse.ClusteredTestResult.ClusterEntry
+	(*Cluster_Counts)(nil),                                   // 20: luci.analysis.v1.Cluster.Counts
+	(*Cluster_ImpactValues)(nil),                             // 21: luci.analysis.v1.Cluster.ImpactValues
+	(*DistinctClusterFailure_Exoneration)(nil),               // 22: luci.analysis.v1.DistinctClusterFailure.Exoneration
+	(*DistinctClusterFailure_PresubmitRun)(nil),              // 23: luci.analysis.v1.DistinctClusterFailure.PresubmitRun
+	(*timestamppb.Timestamp)(nil),                            // 24: google.protobuf.Timestamp
+	(*ClusterId)(nil),                                        // 25: luci.analysis.v1.ClusterId
+	(*AssociatedBug)(nil),                                    // 26: luci.analysis.v1.AssociatedBug
+	(*Variant)(nil),                                          // 27: luci.analysis.v1.Variant
+	(BuildStatus)(0),                                         // 28: luci.analysis.v1.BuildStatus
+	(*Changelist)(nil),                                       // 29: luci.analysis.v1.Changelist
+	(*FailureReason)(nil),                                    // 30: luci.analysis.v1.FailureReason
+	(ExonerationReason)(0),                                   // 31: luci.analysis.v1.ExonerationReason
+	(*PresubmitRunId)(nil),                                   // 32: luci.analysis.v1.PresubmitRunId
+	(PresubmitRunMode)(0),                                    // 33: luci.analysis.v1.PresubmitRunMode
+	(PresubmitRunStatus)(0),                                  // 34: luci.analysis.v1.PresubmitRunStatus
 }
 var file_go_chromium_org_luci_analysis_proto_v1_clusters_proto_depIdxs = []int32{
-	14, // 0: luci.analysis.v1.ClusterRequest.test_results:type_name -> luci.analysis.v1.ClusterRequest.TestResult
-	15, // 1: luci.analysis.v1.ClusterResponse.clustered_test_results:type_name -> luci.analysis.v1.ClusterResponse.ClusteredTestResult
+	17, // 0: luci.analysis.v1.ClusterRequest.test_results:type_name -> luci.analysis.v1.ClusterRequest.TestResult
+	18, // 1: luci.analysis.v1.ClusterResponse.clustered_test_results:type_name -> luci.analysis.v1.ClusterResponse.ClusteredTestResult
 	2,  // 2: luci.analysis.v1.ClusterResponse.clustering_version:type_name -> luci.analysis.v1.ClusteringVersion
-	21, // 3: luci.analysis.v1.ClusteringVersion.rules_version:type_name -> google.protobuf.Timestamp
-	21, // 4: luci.analysis.v1.ClusteringVersion.config_version:type_name -> google.protobuf.Timestamp
+	24, // 3: luci.analysis.v1.ClusteringVersion.rules_version:type_name -> google.protobuf.Timestamp
+	24, // 4: luci.analysis.v1.ClusteringVersion.config_version:type_name -> google.protobuf.Timestamp
 	5,  // 5: luci.analysis.v1.BatchGetClustersResponse.clusters:type_name -> luci.analysis.v1.Cluster
-	18, // 6: luci.analysis.v1.Cluster.user_cls_failed_presubmit:type_name -> luci.analysis.v1.Cluster.ImpactValues
-	18, // 7: luci.analysis.v1.Cluster.critical_failures_exonerated:type_name -> luci.analysis.v1.Cluster.ImpactValues
-	18, // 8: luci.analysis.v1.Cluster.failures:type_name -> luci.analysis.v1.Cluster.ImpactValues
-	17, // 9: luci.analysis.v1.Cluster.user_cls_with_failures:type_name -> luci.analysis.v1.Cluster.Counts
-	17, // 10: luci.analysis.v1.Cluster.postsubmit_builds_with_failures:type_name -> luci.analysis.v1.Cluster.Counts
+	21, // 6: luci.analysis.v1.Cluster.user_cls_failed_presubmit:type_name -> luci.analysis.v1.Cluster.ImpactValues
+	21, // 7: luci.analysis.v1.Cluster.critical_failures_exonerated:type_name -> luci.analysis.v1.Cluster.ImpactValues
+	21, // 8: luci.analysis.v1.Cluster.failures:type_name -> luci.analysis.v1.Cluster.ImpactValues
+	20, // 9: luci.analysis.v1.Cluster.user_cls_with_failures:type_name -> luci.analysis.v1.Cluster.Counts
+	20, // 10: luci.analysis.v1.Cluster.postsubmit_builds_with_failures:type_name -> luci.analysis.v1.Cluster.Counts
 	2,  // 11: luci.analysis.v1.ReclusteringProgress.last:type_name -> luci.analysis.v1.ClusteringVersion
 	2,  // 12: luci.analysis.v1.ReclusteringProgress.next:type_name -> luci.analysis.v1.ClusteringVersion
 	10, // 13: luci.analysis.v1.QueryClusterSummariesResponse.cluster_summaries:type_name -> luci.analysis.v1.ClusterSummary
-	22, // 14: luci.analysis.v1.ClusterSummary.cluster_id:type_name -> luci.analysis.v1.ClusterId
-	23, // 15: luci.analysis.v1.ClusterSummary.bug:type_name -> luci.analysis.v1.AssociatedBug
+	25, // 14: luci.analysis.v1.ClusterSummary.cluster_id:type_name -> luci.analysis.v1.ClusterId
+	26, // 15: luci.analysis.v1.ClusterSummary.bug:type_name -> luci.analysis.v1.AssociatedBug
 	13, // 16: luci.analysis.v1.QueryClusterFailuresResponse.failures:type_name -> luci.analysis.v1.DistinctClusterFailure
-	24, // 17: luci.analysis.v1.DistinctClusterFailure.variant:type_name -> luci.analysis.v1.Variant
-	21, // 18: luci.analysis.v1.DistinctClusterFailure.partition_time:type_name -> google.protobuf.Timestamp
-	20, // 19: luci.analysis.v1.DistinctClusterFailure.presubmit_run:type_name -> luci.analysis.v1.DistinctClusterFailure.PresubmitRun
-	19, // 20: luci.analysis.v1.DistinctClusterFailure.exonerations:type_name -> luci.analysis.v1.DistinctClusterFailure.Exoneration
-	25, // 21: luci.analysis.v1.DistinctClusterFailure.build_status:type_name -> luci.analysis.v1.BuildStatus
-	26, // 22: luci.analysis.v1.DistinctClusterFailure.changelists:type_name -> luci.analysis.v1.Changelist
-	27, // 23: luci.analysis.v1.ClusterRequest.TestResult.failure_reason:type_name -> luci.analysis.v1.FailureReason
-	16, // 24: luci.analysis.v1.ClusterResponse.ClusteredTestResult.clusters:type_name -> luci.analysis.v1.ClusterResponse.ClusteredTestResult.ClusterEntry
-	22, // 25: luci.analysis.v1.ClusterResponse.ClusteredTestResult.ClusterEntry.cluster_id:type_name -> luci.analysis.v1.ClusterId
-	23, // 26: luci.analysis.v1.ClusterResponse.ClusteredTestResult.ClusterEntry.bug:type_name -> luci.analysis.v1.AssociatedBug
-	17, // 27: luci.analysis.v1.Cluster.ImpactValues.one_day:type_name -> luci.analysis.v1.Cluster.Counts
-	17, // 28: luci.analysis.v1.Cluster.ImpactValues.three_day:type_name -> luci.analysis.v1.Cluster.Counts
-	17, // 29: luci.analysis.v1.Cluster.ImpactValues.seven_day:type_name -> luci.analysis.v1.Cluster.Counts
-	28, // 30: luci.analysis.v1.DistinctClusterFailure.Exoneration.reason:type_name -> luci.analysis.v1.ExonerationReason
-	29, // 31: luci.analysis.v1.DistinctClusterFailure.PresubmitRun.presubmit_run_id:type_name -> luci.analysis.v1.PresubmitRunId
-	30, // 32: luci.analysis.v1.DistinctClusterFailure.PresubmitRun.mode:type_name -> luci.analysis.v1.PresubmitRunMode
-	31, // 33: luci.analysis.v1.DistinctClusterFailure.PresubmitRun.status:type_name -> luci.analysis.v1.PresubmitRunStatus
-	0,  // 34: luci.analysis.v1.Clusters.Cluster:input_type -> luci.analysis.v1.ClusterRequest
-	3,  // 35: luci.analysis.v1.Clusters.BatchGet:input_type -> luci.analysis.v1.BatchGetClustersRequest
-	6,  // 36: luci.analysis.v1.Clusters.GetReclusteringProgress:input_type -> luci.analysis.v1.GetReclusteringProgressRequest
-	8,  // 37: luci.analysis.v1.Clusters.QueryClusterSummaries:input_type -> luci.analysis.v1.QueryClusterSummariesRequest
-	11, // 38: luci.analysis.v1.Clusters.QueryClusterFailures:input_type -> luci.analysis.v1.QueryClusterFailuresRequest
-	1,  // 39: luci.analysis.v1.Clusters.Cluster:output_type -> luci.analysis.v1.ClusterResponse
-	4,  // 40: luci.analysis.v1.Clusters.BatchGet:output_type -> luci.analysis.v1.BatchGetClustersResponse
-	7,  // 41: luci.analysis.v1.Clusters.GetReclusteringProgress:output_type -> luci.analysis.v1.ReclusteringProgress
-	9,  // 42: luci.analysis.v1.Clusters.QueryClusterSummaries:output_type -> luci.analysis.v1.QueryClusterSummariesResponse
-	12, // 43: luci.analysis.v1.Clusters.QueryClusterFailures:output_type -> luci.analysis.v1.QueryClusterFailuresResponse
-	39, // [39:44] is the sub-list for method output_type
-	34, // [34:39] is the sub-list for method input_type
-	34, // [34:34] is the sub-list for extension type_name
-	34, // [34:34] is the sub-list for extension extendee
-	0,  // [0:34] is the sub-list for field type_name
+	27, // 17: luci.analysis.v1.DistinctClusterFailure.variant:type_name -> luci.analysis.v1.Variant
+	24, // 18: luci.analysis.v1.DistinctClusterFailure.partition_time:type_name -> google.protobuf.Timestamp
+	23, // 19: luci.analysis.v1.DistinctClusterFailure.presubmit_run:type_name -> luci.analysis.v1.DistinctClusterFailure.PresubmitRun
+	22, // 20: luci.analysis.v1.DistinctClusterFailure.exonerations:type_name -> luci.analysis.v1.DistinctClusterFailure.Exoneration
+	28, // 21: luci.analysis.v1.DistinctClusterFailure.build_status:type_name -> luci.analysis.v1.BuildStatus
+	29, // 22: luci.analysis.v1.DistinctClusterFailure.changelists:type_name -> luci.analysis.v1.Changelist
+	16, // 23: luci.analysis.v1.QueryClusterExoneratedTestVariantsResponse.test_variants:type_name -> luci.analysis.v1.ClusterExoneratedTestVariant
+	27, // 24: luci.analysis.v1.ClusterExoneratedTestVariant.variant:type_name -> luci.analysis.v1.Variant
+	24, // 25: luci.analysis.v1.ClusterExoneratedTestVariant.last_exoneration:type_name -> google.protobuf.Timestamp
+	30, // 26: luci.analysis.v1.ClusterRequest.TestResult.failure_reason:type_name -> luci.analysis.v1.FailureReason
+	19, // 27: luci.analysis.v1.ClusterResponse.ClusteredTestResult.clusters:type_name -> luci.analysis.v1.ClusterResponse.ClusteredTestResult.ClusterEntry
+	25, // 28: luci.analysis.v1.ClusterResponse.ClusteredTestResult.ClusterEntry.cluster_id:type_name -> luci.analysis.v1.ClusterId
+	26, // 29: luci.analysis.v1.ClusterResponse.ClusteredTestResult.ClusterEntry.bug:type_name -> luci.analysis.v1.AssociatedBug
+	20, // 30: luci.analysis.v1.Cluster.ImpactValues.one_day:type_name -> luci.analysis.v1.Cluster.Counts
+	20, // 31: luci.analysis.v1.Cluster.ImpactValues.three_day:type_name -> luci.analysis.v1.Cluster.Counts
+	20, // 32: luci.analysis.v1.Cluster.ImpactValues.seven_day:type_name -> luci.analysis.v1.Cluster.Counts
+	31, // 33: luci.analysis.v1.DistinctClusterFailure.Exoneration.reason:type_name -> luci.analysis.v1.ExonerationReason
+	32, // 34: luci.analysis.v1.DistinctClusterFailure.PresubmitRun.presubmit_run_id:type_name -> luci.analysis.v1.PresubmitRunId
+	33, // 35: luci.analysis.v1.DistinctClusterFailure.PresubmitRun.mode:type_name -> luci.analysis.v1.PresubmitRunMode
+	34, // 36: luci.analysis.v1.DistinctClusterFailure.PresubmitRun.status:type_name -> luci.analysis.v1.PresubmitRunStatus
+	0,  // 37: luci.analysis.v1.Clusters.Cluster:input_type -> luci.analysis.v1.ClusterRequest
+	3,  // 38: luci.analysis.v1.Clusters.BatchGet:input_type -> luci.analysis.v1.BatchGetClustersRequest
+	6,  // 39: luci.analysis.v1.Clusters.GetReclusteringProgress:input_type -> luci.analysis.v1.GetReclusteringProgressRequest
+	8,  // 40: luci.analysis.v1.Clusters.QueryClusterSummaries:input_type -> luci.analysis.v1.QueryClusterSummariesRequest
+	11, // 41: luci.analysis.v1.Clusters.QueryClusterFailures:input_type -> luci.analysis.v1.QueryClusterFailuresRequest
+	14, // 42: luci.analysis.v1.Clusters.QueryExoneratedTestVariants:input_type -> luci.analysis.v1.QueryClusterExoneratedTestVariantsRequest
+	1,  // 43: luci.analysis.v1.Clusters.Cluster:output_type -> luci.analysis.v1.ClusterResponse
+	4,  // 44: luci.analysis.v1.Clusters.BatchGet:output_type -> luci.analysis.v1.BatchGetClustersResponse
+	7,  // 45: luci.analysis.v1.Clusters.GetReclusteringProgress:output_type -> luci.analysis.v1.ReclusteringProgress
+	9,  // 46: luci.analysis.v1.Clusters.QueryClusterSummaries:output_type -> luci.analysis.v1.QueryClusterSummariesResponse
+	12, // 47: luci.analysis.v1.Clusters.QueryClusterFailures:output_type -> luci.analysis.v1.QueryClusterFailuresResponse
+	15, // 48: luci.analysis.v1.Clusters.QueryExoneratedTestVariants:output_type -> luci.analysis.v1.QueryClusterExoneratedTestVariantsResponse
+	43, // [43:49] is the sub-list for method output_type
+	37, // [37:43] is the sub-list for method input_type
+	37, // [37:37] is the sub-list for extension type_name
+	37, // [37:37] is the sub-list for extension extendee
+	0,  // [0:37] is the sub-list for field type_name
 }
 
 func init() { file_go_chromium_org_luci_analysis_proto_v1_clusters_proto_init() }
@@ -2159,7 +2387,7 @@ func file_go_chromium_org_luci_analysis_proto_v1_clusters_proto_init() {
 			}
 		}
 		file_go_chromium_org_luci_analysis_proto_v1_clusters_proto_msgTypes[14].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*ClusterRequest_TestResult); i {
+			switch v := v.(*QueryClusterExoneratedTestVariantsRequest); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -2171,7 +2399,7 @@ func file_go_chromium_org_luci_analysis_proto_v1_clusters_proto_init() {
 			}
 		}
 		file_go_chromium_org_luci_analysis_proto_v1_clusters_proto_msgTypes[15].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*ClusterResponse_ClusteredTestResult); i {
+			switch v := v.(*QueryClusterExoneratedTestVariantsResponse); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -2183,7 +2411,7 @@ func file_go_chromium_org_luci_analysis_proto_v1_clusters_proto_init() {
 			}
 		}
 		file_go_chromium_org_luci_analysis_proto_v1_clusters_proto_msgTypes[16].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*ClusterResponse_ClusteredTestResult_ClusterEntry); i {
+			switch v := v.(*ClusterExoneratedTestVariant); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -2195,7 +2423,7 @@ func file_go_chromium_org_luci_analysis_proto_v1_clusters_proto_init() {
 			}
 		}
 		file_go_chromium_org_luci_analysis_proto_v1_clusters_proto_msgTypes[17].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*Cluster_Counts); i {
+			switch v := v.(*ClusterRequest_TestResult); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -2207,7 +2435,7 @@ func file_go_chromium_org_luci_analysis_proto_v1_clusters_proto_init() {
 			}
 		}
 		file_go_chromium_org_luci_analysis_proto_v1_clusters_proto_msgTypes[18].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*Cluster_ImpactValues); i {
+			switch v := v.(*ClusterResponse_ClusteredTestResult); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -2219,7 +2447,7 @@ func file_go_chromium_org_luci_analysis_proto_v1_clusters_proto_init() {
 			}
 		}
 		file_go_chromium_org_luci_analysis_proto_v1_clusters_proto_msgTypes[19].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*DistinctClusterFailure_Exoneration); i {
+			switch v := v.(*ClusterResponse_ClusteredTestResult_ClusterEntry); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -2231,6 +2459,42 @@ func file_go_chromium_org_luci_analysis_proto_v1_clusters_proto_init() {
 			}
 		}
 		file_go_chromium_org_luci_analysis_proto_v1_clusters_proto_msgTypes[20].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*Cluster_Counts); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_go_chromium_org_luci_analysis_proto_v1_clusters_proto_msgTypes[21].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*Cluster_ImpactValues); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_go_chromium_org_luci_analysis_proto_v1_clusters_proto_msgTypes[22].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*DistinctClusterFailure_Exoneration); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_go_chromium_org_luci_analysis_proto_v1_clusters_proto_msgTypes[23].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*DistinctClusterFailure_PresubmitRun); i {
 			case 0:
 				return &v.state
@@ -2249,7 +2513,7 @@ func file_go_chromium_org_luci_analysis_proto_v1_clusters_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: file_go_chromium_org_luci_analysis_proto_v1_clusters_proto_rawDesc,
 			NumEnums:      0,
-			NumMessages:   21,
+			NumMessages:   24,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
@@ -2340,6 +2604,13 @@ type ClustersClient interface {
 	// this RPC, as the implementation currently calls back to BigQuery and as
 	// such, is not cost-optimised if many queries are to be made.
 	QueryClusterFailures(ctx context.Context, in *QueryClusterFailuresRequest, opts ...grpc.CallOption) (*QueryClusterFailuresResponse, error)
+	// Queries test variants in the cluster which have recently had an
+	// exoneration recorded against them. Only exonerations on failures
+	// which are part of the cluster are considered.
+	//
+	// Consider solving this use case in future by a standard AIP-132 List
+	// method with filter and order_by support.
+	QueryExoneratedTestVariants(ctx context.Context, in *QueryClusterExoneratedTestVariantsRequest, opts ...grpc.CallOption) (*QueryClusterExoneratedTestVariantsResponse, error)
 }
 type clustersPRPCClient struct {
 	client *prpc.Client
@@ -2394,6 +2665,15 @@ func (c *clustersPRPCClient) QueryClusterFailures(ctx context.Context, in *Query
 	return out, nil
 }
 
+func (c *clustersPRPCClient) QueryExoneratedTestVariants(ctx context.Context, in *QueryClusterExoneratedTestVariantsRequest, opts ...grpc.CallOption) (*QueryClusterExoneratedTestVariantsResponse, error) {
+	out := new(QueryClusterExoneratedTestVariantsResponse)
+	err := c.client.Call(ctx, "luci.analysis.v1.Clusters", "QueryExoneratedTestVariants", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 type clustersClient struct {
 	cc grpc.ClientConnInterface
 }
@@ -2441,6 +2721,15 @@ func (c *clustersClient) QueryClusterSummaries(ctx context.Context, in *QueryClu
 func (c *clustersClient) QueryClusterFailures(ctx context.Context, in *QueryClusterFailuresRequest, opts ...grpc.CallOption) (*QueryClusterFailuresResponse, error) {
 	out := new(QueryClusterFailuresResponse)
 	err := c.cc.Invoke(ctx, "/luci.analysis.v1.Clusters/QueryClusterFailures", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *clustersClient) QueryExoneratedTestVariants(ctx context.Context, in *QueryClusterExoneratedTestVariantsRequest, opts ...grpc.CallOption) (*QueryClusterExoneratedTestVariantsResponse, error) {
+	out := new(QueryClusterExoneratedTestVariantsResponse)
+	err := c.cc.Invoke(ctx, "/luci.analysis.v1.Clusters/QueryExoneratedTestVariants", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -2514,6 +2803,13 @@ type ClustersServer interface {
 	// this RPC, as the implementation currently calls back to BigQuery and as
 	// such, is not cost-optimised if many queries are to be made.
 	QueryClusterFailures(context.Context, *QueryClusterFailuresRequest) (*QueryClusterFailuresResponse, error)
+	// Queries test variants in the cluster which have recently had an
+	// exoneration recorded against them. Only exonerations on failures
+	// which are part of the cluster are considered.
+	//
+	// Consider solving this use case in future by a standard AIP-132 List
+	// method with filter and order_by support.
+	QueryExoneratedTestVariants(context.Context, *QueryClusterExoneratedTestVariantsRequest) (*QueryClusterExoneratedTestVariantsResponse, error)
 }
 
 // UnimplementedClustersServer can be embedded to have forward compatible implementations.
@@ -2534,6 +2830,9 @@ func (*UnimplementedClustersServer) QueryClusterSummaries(context.Context, *Quer
 }
 func (*UnimplementedClustersServer) QueryClusterFailures(context.Context, *QueryClusterFailuresRequest) (*QueryClusterFailuresResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method QueryClusterFailures not implemented")
+}
+func (*UnimplementedClustersServer) QueryExoneratedTestVariants(context.Context, *QueryClusterExoneratedTestVariantsRequest) (*QueryClusterExoneratedTestVariantsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method QueryExoneratedTestVariants not implemented")
 }
 
 func RegisterClustersServer(s prpc.Registrar, srv ClustersServer) {
@@ -2630,6 +2929,24 @@ func _Clusters_QueryClusterFailures_Handler(srv interface{}, ctx context.Context
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Clusters_QueryExoneratedTestVariants_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(QueryClusterExoneratedTestVariantsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ClustersServer).QueryExoneratedTestVariants(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/luci.analysis.v1.Clusters/QueryExoneratedTestVariants",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ClustersServer).QueryExoneratedTestVariants(ctx, req.(*QueryClusterExoneratedTestVariantsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 var _Clusters_serviceDesc = grpc.ServiceDesc{
 	ServiceName: "luci.analysis.v1.Clusters",
 	HandlerType: (*ClustersServer)(nil),
@@ -2653,6 +2970,10 @@ var _Clusters_serviceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "QueryClusterFailures",
 			Handler:    _Clusters_QueryClusterFailures_Handler,
+		},
+		{
+			MethodName: "QueryExoneratedTestVariants",
+			Handler:    _Clusters_QueryExoneratedTestVariants_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

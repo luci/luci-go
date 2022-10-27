@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// Package analysis contains methods to query cluster analysis maintained
+// in BigQuery, and to add/update clustered failures used by the analysis.
 package analysis
 
 import (

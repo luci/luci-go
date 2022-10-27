@@ -53,6 +53,7 @@ const MaxBatchGetClustersRequestSize = 1000
 type AnalysisClient interface {
 	ReadClusters(ctx context.Context, luciProject string, clusterIDs []clustering.ClusterID) ([]*analysis.Cluster, error)
 	ReadClusterFailures(ctx context.Context, options analysis.ReadClusterFailuresOptions) (cfs []*analysis.ClusterFailure, err error)
+	ReadClusterExoneratedTestVariants(ctx context.Context, options analysis.ReadClusterExoneratedTestVariantsOptions) (tvs []*analysis.ExoneratedTestVariant, err error)
 	QueryClusterSummaries(ctx context.Context, luciProject string, options *analysis.QueryClusterSummariesOptions) ([]*analysis.ClusterSummary, error)
 }
 
@@ -636,18 +637,9 @@ func createDistinctClusterFailurePB(f *analysis.ClusterFailure) *pb.DistinctClus
 		}
 	}
 
-	variantDef := make(map[string]string)
-	for _, v := range f.Variant {
-		variantDef[v.Key.StringVal] = v.Value.StringVal
-	}
-	var variant *pb.Variant
-	if len(variantDef) > 0 {
-		variant = &pb.Variant{Def: variantDef}
-	}
-
 	return &pb.DistinctClusterFailure{
 		TestId:                      f.TestID.StringVal,
-		Variant:                     variant,
+		Variant:                     createVariantPB(f.Variant),
 		PartitionTime:               timestamppb.New(f.PartitionTime.Timestamp),
 		PresubmitRun:                presubmitRun,
 		IsBuildCritical:             f.IsBuildCritical.Bool,
@@ -657,5 +649,65 @@ func createDistinctClusterFailurePB(f *analysis.ClusterFailure) *pb.DistinctClus
 		IsIngestedInvocationBlocked: f.IsIngestedInvocationBlocked.Bool,
 		Changelists:                 changelists,
 		Count:                       f.Count,
+	}
+}
+
+func createVariantPB(variant []*analysis.Variant) *pb.Variant {
+	def := make(map[string]string)
+	for _, v := range variant {
+		def[v.Key.StringVal] = v.Value.StringVal
+	}
+	var result *pb.Variant
+	if len(def) > 0 {
+		result = &pb.Variant{Def: def}
+	}
+	return result
+}
+
+func (c *clustersServer) QueryExoneratedTestVariants(ctx context.Context, req *pb.QueryClusterExoneratedTestVariantsRequest) (*pb.QueryClusterExoneratedTestVariantsResponse, error) {
+	project, clusterID, err := parseClusterExoneratedTestVariantsName(req.Parent)
+	if err != nil {
+		return nil, invalidArgumentError(errors.Annotate(err, "parent").Err())
+	}
+
+	if err := perms.VerifyProjectPermissions(ctx, project, perms.PermGetCluster, perms.PermExpensiveClusterQueries); err != nil {
+		return nil, err
+	}
+	opts := analysis.ReadClusterExoneratedTestVariantsOptions{
+		Project:   project,
+		ClusterID: clusterID,
+	}
+	opts.Realms, err = perms.QueryRealmsNonEmpty(ctx, project, nil, perms.ListTestResultsAndExonerations...)
+	if err != nil {
+		// If the user has permission in no realms, QueryRealmsNonEmpty
+		// will return an appstatus error PERMISSION_DENIED.
+		// Otherwise, e.g. in case AuthDB was unavailable, the error will
+		// not be an appstatus error and the client will get an internal
+		// server error.
+		return nil, err
+	}
+
+	testVariants, err := c.analysisClient.ReadClusterExoneratedTestVariants(ctx, opts)
+	if err != nil {
+		if err == analysis.ProjectNotExistsErr {
+			return nil, appstatus.Error(codes.NotFound,
+				"LUCI Analysis BigQuery dataset not provisioned for project or clustered failures not yet available")
+		}
+		return nil, errors.Annotate(err, "query cluster failures").Err()
+	}
+	response := &pb.QueryClusterExoneratedTestVariantsResponse{}
+	for _, f := range testVariants {
+		response.TestVariants = append(response.TestVariants, createClusterExoneratedTestVariant(f))
+	}
+
+	return response, nil
+}
+
+func createClusterExoneratedTestVariant(tv *analysis.ExoneratedTestVariant) *pb.ClusterExoneratedTestVariant {
+	return &pb.ClusterExoneratedTestVariant{
+		TestId:                     tv.TestID.StringVal,
+		Variant:                    createVariantPB(tv.Variant),
+		CriticalFailuresExonerated: tv.CriticalFailuresExonerated,
+		LastExoneration:            timestamppb.New(tv.LastExoneration.Timestamp),
 	}
 }

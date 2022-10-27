@@ -127,6 +127,15 @@ service Clusters {
     // such, is not cost-optimised if many queries are to be made.
     rpc QueryClusterFailures(QueryClusterFailuresRequest)
         returns (QueryClusterFailuresResponse) {};
+
+    // Queries test variants in the cluster which have recently had an
+    // exoneration recorded against them. Only exonerations on failures
+    // which are part of the cluster are considered.
+    //
+    // Consider solving this use case in future by a standard AIP-132 List
+    // method with filter and order_by support.
+    rpc QueryExoneratedTestVariants(QueryClusterExoneratedTestVariantsRequest)
+        returns (QueryClusterExoneratedTestVariantsResponse) {};
 }
 
 message ClusterRequest {
@@ -396,7 +405,7 @@ message ClusterSummary {
 }
 
 message QueryClusterFailuresRequest {
-    // The resource name of the cluster to retrieve failures for.
+    // The resource name of the cluster failures to retrieve.
     // Format: projects/{project}/clusters/{cluster_algorithm}/{cluster_id}/failures.
     string parent = 1;
 }
@@ -452,7 +461,8 @@ message DistinctClusterFailure {
     // The identity of the test.
     string test_id = 1;
 
-    // The test variant.
+    // Description of one specific way of running the test,
+    // e.g. a specific bucket, builder and a test suite.
     luci.analysis.v1.Variant variant = 2;
 
     // Timestamp representing the start of the data retention period for the
@@ -503,4 +513,38 @@ message DistinctClusterFailure {
 
     // The number of test results which have these properties.
     int32 count = 11;
+}
+
+message QueryClusterExoneratedTestVariantsRequest {
+    // The resource name of the cluster exonerated test variants to retrieve.
+    // Format: projects/{project}/clusters/{cluster_algorithm}/{cluster_id}/exoneratedTestVariants.
+    string parent = 1;
+}
+
+message QueryClusterExoneratedTestVariantsResponse {
+    // A list of test variants in the cluster which have exonerated critical
+    // failures. Ordered by recency of the exoneration (most recent exonerations
+    // first) and limited to at most 100 test variants.
+    repeated ClusterExoneratedTestVariant test_variants = 1;
+}
+
+// ClusterExoneratedTestVariant represents a test variant in a cluster
+// which has been exonerated. A cluster test variant is the subset
+// of a test variant that intersects with the failures of a cluster.
+message ClusterExoneratedTestVariant {
+    // A unique identifier of the test in a LUCI project.
+    string test_id = 1;
+
+    // Description of one specific way of running the test,
+    // e.g. a specific bucket, builder and a test suite.
+    luci.analysis.v1.Variant variant = 2;
+
+    // The number of critical (presubmit-blocking) failures in the
+    // cluster which have been exonerated on this test variant
+    // in the last week.
+    int32 critical_failures_exonerated = 3;
+
+    // The partition time of the most recent exoneration of a
+    // critical failure.
+    google.protobuf.Timestamp last_exoneration = 4;
 }

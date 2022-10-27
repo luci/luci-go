@@ -37,10 +37,15 @@ var (
 	// name for a cluster's failures.
 	// Cluster algorithm and ID must be further validated by
 	// ClusterID.Validate().
-	ClusterFailuresNameRe      = regexp.MustCompile(`^projects/(` + config.ProjectRePattern + `)/clusters/(` + GenericKeyPattern + `)/(` + GenericKeyPattern + `)/failures$`)
-	ProjectNameRe              = regexp.MustCompile(`^projects/(` + config.ProjectRePattern + `)$`)
-	ProjectConfigNameRe        = regexp.MustCompile(`^projects/(` + config.ProjectRePattern + `)/config$`)
-	ReclusteringProgressNameRe = regexp.MustCompile(`^projects/(` + config.ProjectRePattern + `)/reclusteringProgress$`)
+	ClusterFailuresNameRe = regexp.MustCompile(`^projects/(` + config.ProjectRePattern + `)/clusters/(` + GenericKeyPattern + `)/(` + GenericKeyPattern + `)/failures$`)
+	// ClusterExoneratedTestVariantsNameRe performs a partial validation of
+	// the resource name for a cluster's exonerated test variants.
+	// Cluster algorithm and ID must be further validated by
+	// ClusterID.Validate().
+	ClusterExoneratedTestVariantsNameRe = regexp.MustCompile(`^projects/(` + config.ProjectRePattern + `)/clusters/(` + GenericKeyPattern + `)/(` + GenericKeyPattern + `)/exoneratedTestVariants$`)
+	ProjectNameRe                       = regexp.MustCompile(`^projects/(` + config.ProjectRePattern + `)$`)
+	ProjectConfigNameRe                 = regexp.MustCompile(`^projects/(` + config.ProjectRePattern + `)/config$`)
+	ReclusteringProgressNameRe          = regexp.MustCompile(`^projects/(` + config.ProjectRePattern + `)/reclusteringProgress$`)
 )
 
 // parseRuleName parses a rule resource name into its constituent ID parts.
@@ -103,6 +108,23 @@ func parseClusterFailuresName(name string) (project string, clusterID clustering
 	match := ClusterFailuresNameRe.FindStringSubmatch(name)
 	if match == nil {
 		return "", clustering.ClusterID{}, errors.New("invalid cluster failures name, expected format: projects/{project}/clusters/{cluster_alg}/{cluster_id}/failures")
+	}
+	algorithm := resolveAlgorithm(match[2])
+	id := match[3]
+	cID := clustering.ClusterID{Algorithm: algorithm, ID: id}
+	if err := cID.Validate(); err != nil {
+		return "", clustering.ClusterID{}, errors.Annotate(err, "invalid cluster identity").Err()
+	}
+	return match[1], cID, nil
+}
+
+// parseClusterExoneratedTestVariantsName parses the resource name for a cluster's
+// exonerated test variants into its constituent ID parts. Algorithm aliases are
+// resolved to concrete algorithm names.
+func parseClusterExoneratedTestVariantsName(name string) (project string, clusterID clustering.ClusterID, err error) {
+	match := ClusterExoneratedTestVariantsNameRe.FindStringSubmatch(name)
+	if match == nil {
+		return "", clustering.ClusterID{}, errors.New("invalid cluster failures name, expected format: projects/{project}/clusters/{cluster_alg}/{cluster_id}/exoneratedTestVariants")
 	}
 	algorithm := resolveAlgorithm(match[2])
 	id := match[3]
