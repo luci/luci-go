@@ -67,6 +67,7 @@ func (s *resultDBServer) QueryArtifacts(ctx context.Context, in *pb.QueryArtifac
 		FollowEdges:         in.GetPredicate().GetFollowEdges(),
 		ContentTypeRegexp:   in.GetPredicate().GetContentTypeRegexp(),
 		ArtifactIDRegexp:    in.GetPredicate().GetArtifactIdRegexp(),
+		WithGcsURI:          true,
 	}
 	arts, token, err := q.FetchProtos(ctx)
 	if err != nil {

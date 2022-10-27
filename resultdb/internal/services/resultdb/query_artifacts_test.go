@@ -179,5 +179,14 @@ func TestQueryArtifacts(t *testing.T) {
 			So(actual, ShouldHaveLength, 1)
 			So(actual[0].FetchUrl, ShouldEqual, "https://signed-url.example.com/invocations/inv1/artifacts/a")
 		})
+
+		Convey(`Fetch URL with GcsURI`, func() {
+			testutil.MustApply(ctx,
+				insert.Artifact("inv1", "", "a", map[string]interface{}{"GcsURI": "gs://bucket1/file1.txt"}),
+			)
+			actual, _ := mustFetch(req)
+			So(actual, ShouldHaveLength, 1)
+			So(actual[0].FetchUrl, ShouldEqual, "https://console.developers.google.com/storage/browser/bucket1/file1.txt")
+		})
 	})
 }

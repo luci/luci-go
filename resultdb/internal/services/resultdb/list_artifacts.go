@@ -80,6 +80,7 @@ func (s *resultDBServer) ListArtifacts(ctx context.Context, in *pb.ListArtifacts
 		PageToken:      in.PageToken,
 		InvocationIDs:  invocations.NewIDSet(invID),
 		ParentIDRegexp: parentIDRegexp,
+		WithGcsURI:     true,
 	}
 
 	// Read artifacts.

@@ -97,6 +97,21 @@ func TestGetArtifact(t *testing.T) {
 			So(art.FetchUrl, ShouldEqual, "https://signed-url.example.com/invocations/inv/artifacts/a")
 		})
 
+		Convey(`Exists with gcsURI`, func() {
+			// Insert a Artifact.
+			testutil.MustApply(ctx,
+				insert.Invocation("inv", pb.Invocation_ACTIVE, map[string]interface{}{"Realm": "testproject:testrealm"}),
+				insert.Artifact("inv", "", "a", map[string]interface{}{"GcsURI": "gs://bucket1/file1.txt"}),
+			)
+			const name = "invocations/inv/artifacts/a"
+			req := &pb.GetArtifactRequest{Name: name}
+			art, err := srv.GetArtifact(ctx, req)
+			So(err, ShouldBeNil)
+			So(art.Name, ShouldEqual, name)
+			So(art.ArtifactId, ShouldEqual, "a")
+			So(art.FetchUrl, ShouldEqual, "https://console.developers.google.com/storage/browser/bucket1/file1.txt")
+		})
+
 		Convey(`Does not exist`, func() {
 			testutil.MustApply(ctx,
 				insert.Invocation("inv", pb.Invocation_ACTIVE, map[string]interface{}{"Realm": "testproject:testrealm"}))

@@ -16,9 +16,12 @@ package resultdb
 
 import (
 	"context"
+	"strings"
+	"time"
 
 	"google.golang.org/grpc/metadata"
 
+	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/grpc/appstatus"
 	"go.chromium.org/luci/resultdb/internal/artifacts"
@@ -86,12 +89,27 @@ func (s *resultDBServer) populateFetchURLs(ctx context.Context, artifacts ...*pb
 	}
 
 	for _, a := range artifacts {
-		url, exp, err := s.generateArtifactURL(ctx, requestHost, a.Name)
-		if err != nil {
-			return err
+
+		if a.GcsUri != "" {
+			now := clock.Now(ctx).UTC()
+
+			// TODO: Validate whether the path belongs to the realm and change this to
+			// use signed url instead.
+			// Currently return the GCS url directly (gated by the bucket ACL)
+			url, exp := strings.Replace(a.GcsUri, "gs://",
+				"https://console.developers.google.com/storage/browser/", 1), now.Add(7*24*time.Hour)
+
+			a.FetchUrl = url
+			a.FetchUrlExpiration = pbutil.MustTimestampProto(exp)
+		} else {
+			url, exp, err := s.generateArtifactURL(ctx, requestHost, a.Name)
+			if err != nil {
+				return err
+			}
+
+			a.FetchUrl = url
+			a.FetchUrlExpiration = pbutil.MustTimestampProto(exp)
 		}
-		a.FetchUrl = url
-		a.FetchUrlExpiration = pbutil.MustTimestampProto(exp)
 	}
 	return nil
 }

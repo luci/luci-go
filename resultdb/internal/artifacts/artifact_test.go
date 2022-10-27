@@ -97,5 +97,23 @@ func TestRead(t *testing.T) {
 				SizeBytes:   54,
 			})
 		})
+
+		Convey(`Exists with GcsURI`, func() {
+			testutil.MustApply(ctx, insert.Artifact("inv", "tr/t/r", "b", map[string]interface{}{
+				"ContentType": "text/plain",
+				"Size":        "54",
+				"GcsURI":      "gs://test",
+			}))
+			const name = "invocations/inv/tests/t/results/r/artifacts/b"
+			a, err := Read(ctx, name)
+			So(err, ShouldBeNil)
+			So(a, ShouldResembleProto, &pb.Artifact{
+				Name:        name,
+				ArtifactId:  "b",
+				ContentType: "text/plain",
+				SizeBytes:   54,
+				GcsUri:      "gs://test",
+			})
+		})
 	})
 }

@@ -46,6 +46,7 @@ type Query struct {
 	PageSize            int // must be positive
 	PageToken           string
 	WithRBECASHash      bool
+	WithGcsURI          bool
 }
 
 // Artifact contains pb.Artifact and its RBECAS hash.
@@ -96,7 +97,10 @@ FilteredTestResults AS (
 )
 SELECT InvocationId, ParentId, ArtifactId, ContentType, Size,
 {{ if .Q.WithRBECASHash }}
-	RBECASHash
+	RBECASHash,
+{{ end }}
+{{ if .Q.WithGcsURI }}
+	GcsURI
 {{ end }}
 FROM Artifacts art
 {{ if .JoinWithTestResults }}
@@ -189,12 +193,16 @@ func (q *Query) run(ctx context.Context, f func(*Artifact) error) (err error) {
 		var contentType spanner.NullString
 		var size spanner.NullInt64
 		var rbecasHash spanner.NullString
+		var gcsURI spanner.NullString
 
 		ptrs := []interface{}{
 			&invID, &parentID, &a.ArtifactId, &contentType, &size,
 		}
 		if q.WithRBECASHash {
 			ptrs = append(ptrs, &rbecasHash)
+		}
+		if q.WithGcsURI {
+			ptrs = append(ptrs, &gcsURI)
 		}
 		if err := b.FromSpanner(row, ptrs...); err != nil {
 			return err
@@ -213,6 +221,7 @@ func (q *Query) run(ctx context.Context, f func(*Artifact) error) (err error) {
 		a.ContentType = contentType.StringVal
 		a.SizeBytes = size.Int64
 		a.RBECASHash = rbecasHash.StringVal
+		a.GcsUri = gcsURI.StringVal
 
 		return f(a)
 	})

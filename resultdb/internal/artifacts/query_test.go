@@ -439,5 +439,28 @@ func TestQuery(t *testing.T) {
 			So(actual, ShouldHaveLength, 1)
 			So(actual[0].RBECASHash, ShouldEqual, "deadbeef")
 		})
+
+		Convey(`WithGcsURI`, func() {
+			testutil.MustApply(ctx,
+				insert.Artifact("inv1", "tr/t/r", "a", map[string]interface{}{
+					"ContentType": "text/plain",
+					"Size":        64,
+					"GcsURI":      "gs://bucket/beyondbeef",
+				}),
+			)
+
+			q.WithGcsURI = true
+			q.PageSize = 0
+			ctx, cancel := span.ReadOnlyTransaction(ctx)
+			defer cancel()
+			var actual []*Artifact
+			err := q.Run(ctx, func(a *Artifact) error {
+				actual = append(actual, a)
+				return nil
+			})
+			So(err, ShouldBeNil)
+			So(actual, ShouldHaveLength, 1)
+			So(actual[0].GcsUri, ShouldEqual, "gs://bucket/beyondbeef")
+		})
 	})
 }
