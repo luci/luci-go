@@ -217,20 +217,11 @@ func TestValidateCreateBuildRequest(t *testing.T) {
 					So(err, ShouldBeNil)
 				})
 				Convey("cipd_package", func() {
-					Convey("cipd_package without suffix", func() {
-						req.Build.Exe = &pb.Executable{
-							CipdPackage: "valid/package/name",
-						}
-						_, err := validateCreateBuildRequest(ctx, wellknownExps, req)
-						So(err, ShouldErrLike, `build: exe: cipd_package: expected to end with /${platform}`)
-					})
-					Convey("invalid cipd_package", func() {
-						req.Build.Exe = &pb.Executable{
-							CipdPackage: "{Invalid}/${platform}",
-						}
-						_, err := validateCreateBuildRequest(ctx, wellknownExps, req)
-						So(err, ShouldErrLike, `build: exe: cipd_package`)
-					})
+					req.Build.Exe = &pb.Executable{
+						CipdPackage: "{Invalid}/${platform}",
+					}
+					_, err := validateCreateBuildRequest(ctx, wellknownExps, req)
+					So(err, ShouldErrLike, `build: exe: cipd_package`)
 				})
 				Convey("cipd_version", func() {
 					req.Build.Exe = &pb.Executable{

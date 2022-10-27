@@ -140,9 +140,9 @@ func validateHostName(host string) error {
 	return nil
 }
 
-func validateCipdPackage(pkg string) error {
+func validateCipdPackage(pkg string, mustWithSuffix bool) error {
 	pkgSuffix := "/${platform}"
-	if !strings.HasSuffix(pkg, pkgSuffix) {
+	if mustWithSuffix && !strings.HasSuffix(pkg, pkgSuffix) {
 		return errors.Reason("expected to end with %s", pkgSuffix).Err()
 	}
 	return cipdCommon.ValidatePackageName(strings.TrimSuffix(pkg, pkgSuffix))
@@ -151,7 +151,7 @@ func validateCipdPackage(pkg string) error {
 func validateAgentInput(in *pb.BuildInfra_Buildbucket_Agent_Input) error {
 	for path, ref := range in.GetData() {
 		for i, spec := range ref.GetCipd().GetSpecs() {
-			if err := validateCipdPackage(spec.GetPackage()); err != nil {
+			if err := validateCipdPackage(spec.GetPackage(), false); err != nil {
 				return errors.Annotate(err, "[%s]: [%d]: cipd.package", path, i).Err()
 			}
 			if err := cipdCommon.ValidateInstanceVersion(spec.GetVersion()); err != nil {
@@ -176,7 +176,7 @@ func validateAgentInput(in *pb.BuildInfra_Buildbucket_Agent_Input) error {
 
 func validateAgentSource(src *pb.BuildInfra_Buildbucket_Agent_Source) error {
 	cipd := src.GetCipd()
-	if err := validateCipdPackage(cipd.GetPackage()); err != nil {
+	if err := validateCipdPackage(cipd.GetPackage(), true); err != nil {
 		return errors.Annotate(err, "cipd.package:").Err()
 	}
 	if err := cipdCommon.ValidateInstanceVersion(cipd.GetVersion()); err != nil {
@@ -360,7 +360,7 @@ func validateExe(exe *pb.Executable, agent *pb.BuildInfra_Buildbucket_Agent) err
 	switch {
 	case exe.GetCipdPackage() == "":
 		return nil
-	case teeErr(validateCipdPackage(exe.CipdPackage), &err) != nil:
+	case teeErr(validateCipdPackage(exe.CipdPackage, false), &err) != nil:
 		return errors.Annotate(err, "cipd_package").Err()
 	case exe.GetCipdVersion() != "" && teeErr(cipdCommon.ValidateInstanceVersion(exe.CipdVersion), &err) != nil:
 		return errors.Annotate(err, "cipd_version").Err()
