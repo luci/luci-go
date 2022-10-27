@@ -21,7 +21,7 @@ import {
   screen,
 } from '@testing-library/react';
 
-import { renderWithRouterAndClient } from '@/testing_tools/libs/mock_router';
+import { renderTabWithRouterAndClient } from '@/testing_tools/libs/render_tab';
 import { mockFetchAuthState } from '@/testing_tools/mocks/authstate_mock';
 import { mockQueryClusterFailures } from '@/testing_tools/mocks/cluster_mock';
 import {
@@ -30,7 +30,8 @@ import {
 } from '@/testing_tools/mocks/failures_mock';
 import { FailureFilters } from '@/tools/failures_tools';
 
-import FailuresTable from './failures_table';
+import { ClusterContextProvider } from '../../cluster_context';
+import FailuresTab from './failures_tab';
 
 describe('Test FailureTable component', () => {
   afterEach(() => {
@@ -43,11 +44,10 @@ describe('Test FailureTable component', () => {
     const mockFailures = createDefaultMockFailures();
     mockQueryClusterFailures('projects/chrome/clusters/rules/rule-123345/failures', mockFailures);
 
-    renderWithRouterAndClient(
-        <FailuresTable
-          clusterAlgorithm="rules"
-          clusterId="rule-123345"
-          project="chrome"/>,
+    renderTabWithRouterAndClient(
+        <ClusterContextProvider project='chrome' clusterAlgorithm='rules' clusterId='rule-123345'>
+          <FailuresTab value='test' />,
+        </ClusterContextProvider>,
     );
 
     await screen.findByRole('table');
@@ -69,11 +69,10 @@ describe('Test FailureTable component', () => {
     ];
     mockQueryClusterFailures('projects/chrome/clusters/rules/rule-123345/failures', mockFailures);
 
-    renderWithRouterAndClient(
-        <FailuresTable
-          clusterAlgorithm="rules"
-          clusterId="rule-123345"
-          project="chrome"/>,
+    renderTabWithRouterAndClient(
+        <ClusterContextProvider project='chrome' clusterAlgorithm='rules' clusterId='rule-123345'>
+          <FailuresTab value='test' />,
+        </ClusterContextProvider>,
     );
 
     await screen.findByRole('table');
@@ -102,11 +101,10 @@ describe('Test FailureTable component', () => {
     ];
     mockQueryClusterFailures('projects/chrome/clusters/rules/rule-123345/failures', mockFailures);
 
-    renderWithRouterAndClient(
-        <FailuresTable
-          clusterAlgorithm="rules"
-          clusterId="rule-123345"
-          project="chrome"/>,
+    renderTabWithRouterAndClient(
+        <ClusterContextProvider project='chrome' clusterAlgorithm='rules' clusterId='rule-123345'>
+          <FailuresTab value='test' />,
+        </ClusterContextProvider>,
     );
 
     await screen.findByRole('table');
@@ -130,11 +128,10 @@ describe('Test FailureTable component', () => {
     ];
     mockQueryClusterFailures('projects/chrome/clusters/rules/rule-123345/failures', mockFailures);
 
-    renderWithRouterAndClient(
-        <FailuresTable
-          clusterAlgorithm="rules"
-          clusterId="rule-123345"
-          project="chrome"/>,
+    renderTabWithRouterAndClient(
+        <ClusterContextProvider project='chrome' clusterAlgorithm='rules' clusterId='rule-123345'>
+          <FailuresTab value='test' />,
+        </ClusterContextProvider>,
     );
 
     await screen.findByRole('table');
@@ -161,11 +158,10 @@ describe('Test FailureTable component', () => {
     ];
     mockQueryClusterFailures('projects/chrome/clusters/rules/rule-123345/failures', mockFailures);
 
-    renderWithRouterAndClient(
-        <FailuresTable
-          clusterAlgorithm="rules"
-          clusterId="rule-123345"
-          project="chrome"/>,
+    renderTabWithRouterAndClient(
+        <ClusterContextProvider project='chrome' clusterAlgorithm='rules' clusterId='rule-123345'>
+          <FailuresTab value='test' />,
+        </ClusterContextProvider>,
     );
 
     await screen.findByRole('table');
@@ -190,11 +186,10 @@ describe('Test FailureTable component', () => {
     ];
     mockQueryClusterFailures('projects/chrome/clusters/rules/rule-123345/failures', mockFailures);
 
-    renderWithRouterAndClient(
-        <FailuresTable
-          clusterAlgorithm="rules"
-          clusterId="rule-123345"
-          project="chrome"/>,
+    renderTabWithRouterAndClient(
+        <ClusterContextProvider project='chrome' clusterAlgorithm='rules' clusterId='rule-123345'>
+          <FailuresTab value='test' />,
+        </ClusterContextProvider>,
     );
 
     await screen.findByRole('table');

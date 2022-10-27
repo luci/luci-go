@@ -25,6 +25,7 @@ import {
   mockBatchGetCluster,
 } from '@/testing_tools/mocks/cluster_mock';
 
+import { ClusterContextProvider } from '../cluster_context';
 import ClusterInfo from './cluster_info';
 
 describe('test ClusterInfo component', () => {
@@ -45,9 +46,9 @@ describe('test ClusterInfo component', () => {
     mockBatchGetCluster(project, algorithm, id, mockCluster);
 
     renderWithRouterAndClient(
-        <ClusterInfo />,
-        `/p/${project}/clusters/${algorithm}/${id}`,
-        '/p/:project/clusters/:algorithm/:id',
+        <ClusterContextProvider project={project} clusterAlgorithm={algorithm} clusterId={id}>
+          <ClusterInfo/>
+        </ClusterContextProvider>,
     );
 
     await screen.findByText('Failure reason cluster');
@@ -65,9 +66,9 @@ describe('test ClusterInfo component', () => {
     mockBatchGetCluster(project, algorithm, id, mockCluster);
 
     renderWithRouterAndClient(
-        <ClusterInfo />,
-        `/p/${project}/clusters/${algorithm}/${id}`,
-        '/p/:project/clusters/:algorithm/:id',
+        <ClusterContextProvider project={project} clusterAlgorithm={algorithm} clusterId={id}>
+          <ClusterInfo/>
+        </ClusterContextProvider>,
     );
 
     await screen.findByText('Test name cluster');

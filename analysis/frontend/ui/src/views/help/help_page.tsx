@@ -53,9 +53,9 @@ const HelpPage = () => {
   const handleChange =
     (panel: string) => (_: React.SyntheticEvent, isExpanded: boolean) => {
       if (isExpanded) {
-        navigate({ hash: panel });
+        navigate({ hash: panel }, { replace: true });
       } else {
-        navigate({ hash: '' });
+        navigate({ hash: '' }, { replace: true });
       }
     };
 

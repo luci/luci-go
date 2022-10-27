@@ -43,7 +43,7 @@ const MultiRulesFound = ({
   return (
     <>
       <Grid item xs={12}>
-        Multiple projects have rules matching the specified bug (${bugSystem}:${bugId})
+        Multiple projects have rules matching the specified bug ({bugSystem}:{bugId})
       </Grid>
       <Grid item xs={12}>
         <Table>

@@ -17,14 +17,15 @@ import fetchMock from 'fetch-mock-jest';
 
 import { screen } from '@testing-library/react';
 
-import { renderWithRouterAndClient } from '@/testing_tools/libs/mock_router';
+import { renderTabWithRouterAndClient } from '@/testing_tools/libs/render_tab';
 import { mockFetchAuthState } from '@/testing_tools/mocks/authstate_mock';
 import {
   getMockCluster,
   mockBatchGetCluster,
 } from '@/testing_tools/mocks/cluster_mock';
 
-import ImpactSection from './impact_section';
+import { ClusterContextProvider } from '../../cluster_context';
+import ImpactTab from './overview_tab';
 
 describe('test ImpactSection component', () => {
   beforeEach(() => {
@@ -39,29 +40,12 @@ describe('test ImpactSection component', () => {
   it('given an algorithm, should fetch cluster for that algorithm', async () => {
     const cluster = getMockCluster('123456');
 
-    mockBatchGetCluster('chrome', 'rules-v2', '123456', cluster);
-
-    renderWithRouterAndClient(
-        <ImpactSection />,
-        '/p/chrome/clusters/rules-v2/123456',
-        '/p/:project/clusters/:algorithm/:id',
-    );
-
-    
-    await screen.findByText('Impact');
-
-    expect(screen.getByTestId('impact-table')).toBeInTheDocument();
-  });
-
-  it('given no algorithm, should default to `rule`', async () => {
-    const cluster = getMockCluster('123456');
-
     mockBatchGetCluster('chrome', 'rules', '123456', cluster);
 
-    renderWithRouterAndClient(
-        <ImpactSection />,
-        '/p/chrome/rules/123456',
-        '/p/:project/rules/:id',
+    renderTabWithRouterAndClient(
+        <ClusterContextProvider project='chrome' clusterAlgorithm='rules' clusterId='123456'>
+          <ImpactTab value='test' />
+        </ClusterContextProvider>,
     );
 
     await screen.findByText('Impact');

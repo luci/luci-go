@@ -23,7 +23,7 @@ import Grid from '@mui/material/Grid';
 import LinearProgress from '@mui/material/LinearProgress';
 import Paper from '@mui/material/Paper';
 
-import MultiRulesFound from '@/components/bugs/multii_rules_found/multi_rules_found';
+import MultiRulesFound from '@/components/bugs/multi_rules_found/multi_rules_found';
 import ErrorAlert from '@/components/error_alert/error_alert';
 import LoadErrorAlert from '@/components/load_error_alert/load_error_alert';
 import {
@@ -83,7 +83,10 @@ const BugPage = () => {
     data.rules.length === 1) {
     const ruleKey = parseRuleName(data.rules[0]);
     const link = linkToRule(ruleKey.project, ruleKey.ruleId);
-    navigate(link);
+    // For automatic redirects, replace the history entry in the browser
+    // so that if the user clicks 'back', they are not redirected forward
+    // again.
+    navigate(link, { replace: true });
   }
 
   return (

@@ -12,28 +12,41 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import { useParams } from 'react-router-dom';
+
 import Container from '@mui/material/Container';
 import Grid from '@mui/material/Grid';
 
 import ClusterTopPanel from '@/components/cluster/cluster_top_panel/cluster_top_panel';
-import ImpactSection from '@/components/impact_section/impact_section';
-import RecentFailuresSection from '@/components/recent_failures_section/recent_failures_section';
+import ClusterAnalysisSection from '@/components/cluster/cluster_analysis_section/cluster_analysis_section';
+import ErrorAlert from '@/components/error_alert/error_alert';
+import { ClusterContextProvider } from '@/components/cluster/cluster_context';
 
 const ClusterPage = () => {
+  const { project, algorithm, id } = useParams();
+
+  if (!project || !algorithm || !id) {
+    return (
+      <ErrorAlert
+        errorTitle="Project or Cluster ID is not specified"
+        errorText="Project or Cluster ID not specified in the URL, please make sure you have the correct URL and try again."
+        showError/>
+    );
+  }
+
   return (
-    <Container className='mt-1' maxWidth={false}>
-      <Grid sx={{ mt: 1 }} container spacing={2}>
-        <Grid item xs={12}>
-          <ClusterTopPanel />
+    <ClusterContextProvider project={project} clusterAlgorithm={algorithm} clusterId={id}>
+      <Container className='mt-1' maxWidth={false}>
+        <Grid sx={{ mt: 1 }} container spacing={2}>
+          <Grid item xs={12}>
+            <ClusterTopPanel/>
+          </Grid>
+          <Grid item xs={12}>
+            <ClusterAnalysisSection/>
+          </Grid>
         </Grid>
-        <Grid item xs={12}>
-          <ImpactSection />
-        </Grid>
-        <Grid item xs={12}>
-          <RecentFailuresSection />
-        </Grid>
-      </Grid>
-    </Container>
+      </Container>
+    </ClusterContextProvider>
   );
 };
 

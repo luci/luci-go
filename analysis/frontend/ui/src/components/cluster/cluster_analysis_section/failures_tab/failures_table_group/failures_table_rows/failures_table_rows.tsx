@@ -42,11 +42,14 @@ import {
   VariantGroup,
 } from '@/tools/failures_tools';
 import {
+  invocationName,
   failureLink,
   testHistoryLink,
   presubmitRunLink,
 } from '@/tools/urlHandling/links';
+
 import CLList from '@/components/cl_list/cl_list';
+import { Variant } from '@/services/shared_models';
 
 interface Props {
   project: string;
@@ -96,9 +99,16 @@ const FailuresTableRows = ({
     return unselectedVariantPairs.filter((vp) => vp != null).map((vp) => vp!);
   };
 
-  const query = parentKeys.filter((v) => v.type == 'variant').map((v) => {
-    return 'V:' + encodeURIComponent(v.key || '') + '=' + encodeURIComponent(v.value);
-  }).join(' ');
+  const groupByVariant = (): Variant => {
+    // Returns the parent grouping keys as a partial variant.
+    const result: Variant = { def: {} };
+    parentKeys.forEach((v) => {
+      if (v.type == 'variant' && v.key) {
+        result.def[v.key] = v.value;
+      }
+    });
+    return result;
+  };
 
   const presubmitRunIcon = (run: PresubmitRun) => {
     if (run.status == 'PRESUBMIT_RUN_STATUS_SUCCEEDED') {
@@ -126,13 +136,6 @@ const FailuresTableRows = ({
     } else {
       return 'Canceled';
     }
-  };
-
-  const trimmedInvocationId = (id: string): string => {
-    if (id.startsWith('build-')) {
-      return id.slice('build-'.length);
-    }
-    return id;
   };
 
   const verdictLabel = (failure: DistinctClusterFailure): string => {
@@ -174,10 +177,10 @@ const FailuresTableRows = ({
               <Link
                 aria-label="Failure invocation id"
                 sx={{ mr: 2 }}
-                href={failureLink(group.failure)}
+                href={failureLink(group.failure.ingestedInvocationId, group.failure.testId)}
                 target="_blank"
               >
-                {trimmedInvocationId(group.failure.ingestedInvocationId)}
+                {invocationName(group.failure.ingestedInvocationId)}
               </Link>
             </NarrowTableCell>
             <NarrowTableCell
@@ -257,7 +260,7 @@ const FailuresTableRows = ({
                   <Link
                     sx={{ display: 'inline-flex' }}
                     aria-label='Test history link'
-                    href={testHistoryLink(project, group.key.value, query)}
+                    href={testHistoryLink(project, group.key.value, groupByVariant())}
                     target="_blank">
                       History
                   </Link>

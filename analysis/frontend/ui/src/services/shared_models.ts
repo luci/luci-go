@@ -39,6 +39,40 @@ export interface Changelist {
   patchset: number;
 }
 
+export interface VariantDef {
+  [key: string]: string | undefined;
+}
+
+export interface Variant {
+  def: VariantDef;
+}
+
+interface VariantPair {
+  key: string;
+  value: string;
+}
+
+// variantAsPairs converts a variant (mapping from keys
+// to values) into a set of key-value pairs. key-value
+// pairs are returned in sorted key order.
+export function variantAsPairs(v?: Variant): VariantPair[] {
+  const result: VariantPair[] = [];
+  if (v === undefined) {
+    return result;
+  }
+  for (const key in v.def) {
+    if (!Object.prototype.hasOwnProperty.call(v.def, key)) {
+      continue;
+    }
+    const value = v.def[key] || '';
+    result.push({ key: key, value: value });
+  }
+  result.sort((a, b) => {
+    return a.key.localeCompare(b.key, 'en');
+  });
+  return result;
+}
+
 export function isRetriable(e: GrpcError) : boolean {
   // The following codes indicate transient errors that are retriable. See:
   // https://source.chromium.org/chromium/infra/infra/+/main:go/src/go.chromium.org/luci/grpc/grpcutil/errors.go;l=176?q=codeToStatus&type=cs

@@ -12,24 +12,22 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { useParams } from 'react-router-dom';
+import {
+  useContext,
+} from 'react';
 
 import Grid from '@mui/material/Grid';
 
 import ClusterInfo from '@/components/cluster/cluster_info/cluster_info';
-import ErrorAlert from '@/components/error_alert/error_alert';
 import ReclusteringProgressIndicator from '@/components/reclustering_progress_indicator/reclustering_progress_indicator';
 
+import { ClusterContext } from '../cluster_context';
+
 const ClusterTopPanel = () => {
-  const { project } = useParams();
-  if (!project) {
-    return (
-      <ErrorAlert
-        errorTitle="Project is not specified"
-        errorText="Project not specified in the URL, please make sure you have the correct URL and try again."
-        showError/>
-    );
-  }
+  const {
+    project,
+  } = useContext(ClusterContext);
+
   return (
     <Grid container columnSpacing={2}>
       <Grid item xs={12}>

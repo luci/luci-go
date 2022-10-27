@@ -13,12 +13,13 @@
 // limitations under the License.
 
 import {
-  DistinctClusterFailure,
   PresubmitRunId,
 } from '@/services/cluster';
 import {
-  ClusterId,
   Changelist,
+  ClusterId,
+  Variant,
+  variantAsPairs,
 } from '@/services/shared_models';
 
 export const linkToCluster = (project: string, c: ClusterId): string => {
@@ -38,12 +39,19 @@ export const linkToRule = (project: string, ruleId: string): string => {
   return `/p/${projectEncoded}/rules/${ruleIdEncoded}`;
 };
 
-export const failureLink = (failure: DistinctClusterFailure): string => {
-  const query = `ID:${failure.testId} `;
-  if (failure.ingestedInvocationId?.startsWith('build-')) {
-    return `https://ci.chromium.org/ui/b/${failure.ingestedInvocationId.replace('build-', '')}/test-results?q=${encodeURIComponent(query)}`;
+export const invocationName = (invocationId: string): string => {
+  if (invocationId.startsWith('build-')) {
+    return invocationId.slice('build-'.length);
   }
-  return `https://ci.chromium.org/ui/inv/${failure.ingestedInvocationId}/test-results?q=${encodeURIComponent(query)}`;
+  return invocationId;
+};
+
+export const failureLink = (invocationId: string, testId: string): string => {
+  const query = `ID:${testId} `;
+  if (invocationId.startsWith('build-')) {
+    return `https://ci.chromium.org/ui/b/${invocationId.slice('build-'.length)}/test-results?q=${encodeURIComponent(query)}`;
+  }
+  return `https://ci.chromium.org/ui/inv/${invocationId}/test-results?q=${encodeURIComponent(query)}`;
 };
 
 export const clLink = (cl: Changelist): string => {
@@ -59,7 +67,10 @@ export const presubmitRunLink = (runId: PresubmitRunId): string => {
   return `https://luci-change-verifier.appspot.com/ui/run/${runId.id}`;
 };
 
-export const testHistoryLink = (project: string, testId: string, query: string): string => {
+export const testHistoryLink = (project: string, testId: string, partialVariant?: Variant): string => {
+  const query = variantAsPairs(partialVariant).map((vp) => {
+    return 'V:' + encodeURIComponent(vp.key || '') + '=' + encodeURIComponent(vp.value);
+  }).join(' ');
   return `https://ci.chromium.org/ui/test/${encodeURIComponent(project)}/${encodeURIComponent(testId)}?q=${encodeURIComponent(query)}`;
 };
 
@@ -69,7 +80,7 @@ export const loginLink = (redirectTarget: string): string => {
   return window.loginUrl + '?r=' + encodeURIComponent(redirectTarget);
 };
 
-// loginLink constructs a URL to logout from LUCI Analysis, with a redirect to
+// logoutLink constructs a URL to logout from LUCI Analysis, with a redirect to
 // the given absolute URL (which should start with "/").
 export const logoutLink = (redirectTarget: string): string => {
   return window.logoutUrl + '?r=' + encodeURIComponent(redirectTarget);

@@ -50,13 +50,13 @@ const FailuresTableFilter = ({
 }: Props) => {
   return (
     <>
-      <Grid container item xs={12} columnGap={2} data-testid="failure_table_filter">
+      <Grid container xs={12} columnGap={2} data-testid="failure_table_filter" sx={{ paddingTop: '8px', paddingBottom: '12px' }}>
         <Grid item xs={2}>
           <FormControl fullWidth data-testid="failure_filter">
             <InputLabel id="failure_filter_label">Failure filter</InputLabel>
             <Select
               labelId="failure_filter_label"
-              id="impact_filter"
+              id="failure_filter"
               value={failureFilter}
               label="Failure filter"
               onChange={onFailureFilterChanged}

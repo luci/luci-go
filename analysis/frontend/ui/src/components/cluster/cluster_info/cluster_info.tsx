@@ -13,8 +13,10 @@
 // limitations under the License.
 
 import {
+  useContext,
+} from 'react';
+import {
   Link,
-  useParams,
 } from 'react-router-dom';
 
 import Box from '@mui/material/Box';
@@ -26,26 +28,27 @@ import Paper from '@mui/material/Paper';
 import Typography from '@mui/material/Typography';
 
 import CodeBlock from '@/components/codeblock/codeblock';
-import ErrorAlert from '@/components/error_alert/error_alert';
 import LoadErrorAlert from '@/components/load_error_alert/load_error_alert';
 import useFetchCluster from '@/hooks/use_fetch_cluster';
 import { Cluster } from '@/services/cluster';
 
+import { ClusterContext } from '../cluster_context';
+
 interface ClusterDetailsProps {
-  project: string;
   cluster: Cluster;
   criteriaName: string;
-  clusterAlgorithm: string;
-  clusterId: string;
 }
 
 const ClusterDetails = ({
-  project,
   cluster,
   criteriaName,
-  clusterAlgorithm,
-  clusterId,
 }: ClusterDetailsProps) => {
+  const {
+    project,
+    algorithm: clusterAlgorithm,
+    id: clusterId,
+  } = useContext(ClusterContext);
+
   const projectEncoded = encodeURIComponent(project);
   const ruleEncoded = encodeURIComponent(cluster.equivalentFailureAssociationRule || '');
   const sourceAlgEncoded = encodeURIComponent(clusterAlgorithm);
@@ -86,47 +89,24 @@ const ClusterDetails = ({
 };
 
 const ClusterInfo = () => {
-  const { project, algorithm, id } = useParams();
+  const {
+    project,
+    algorithm: clusterAlgorithm,
+    id: clusterId,
+  } = useContext(ClusterContext);
 
   const {
     isLoading,
     isSuccess,
     data: cluster,
     error,
-  } = useFetchCluster(project, algorithm, id);
-
-  if (!algorithm) {
-    return (
-      <ErrorAlert
-        errorTitle="Clustering algorithm not specified"
-        errorText="Clustering algorithm was not found in the URL, please make sure you have the corrent URL format for the cluster."
-        showError/>
-    );
-  }
+  } = useFetchCluster(project, clusterAlgorithm, clusterId);
 
   let criteriaName = '';
-  if (algorithm.startsWith('testname-')) {
+  if (clusterAlgorithm.startsWith('testname-')) {
     criteriaName = 'Test name cluster';
-  } else if (algorithm.startsWith('reason-')) {
+  } else if (clusterAlgorithm.startsWith('reason-')) {
     criteriaName = 'Failure reason cluster';
-  }
-
-  if (!project) {
-    return (
-      <ErrorAlert
-        errorTitle="Project not specified"
-        errorText="A project is required to load the cluster data, please check the URL and try again."
-        showError/>
-    );
-  }
-
-  if (!id) {
-    return (
-      <ErrorAlert
-        errorTitle="ClusterID not specified"
-        errorText="A cluster id is required to load the cluster data, please check the URL and try again."
-        showError/>
-    );
   }
 
   return (
@@ -150,11 +130,8 @@ const ClusterInfo = () => {
         {
           isSuccess && cluster && (
             <ClusterDetails
-              project={project}
               cluster={cluster}
               criteriaName={criteriaName}
-              clusterAlgorithm={algorithm}
-              clusterId={id}
             />
           )
         }

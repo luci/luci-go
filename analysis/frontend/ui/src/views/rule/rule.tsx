@@ -17,26 +17,33 @@ import { useParams } from 'react-router-dom';
 import Container from '@mui/material/Container';
 import Grid from '@mui/material/Grid';
 
-import ImpactSection from '@/components/impact_section/impact_section';
-import RecentFailuresSection from '@/components/recent_failures_section/recent_failures_section';
+import ClusterAnalysisSection from '@/components/cluster/cluster_analysis_section/cluster_analysis_section';
 import RuleTopPanel from '@/components/rule/rule_top_panel/rule_top_panel';
+import ErrorAlert from '@/components/error_alert/error_alert';
+import { ClusterContextProvider } from '@/components/cluster/cluster_context';
 
 const Rule = () => {
   const { project, id } = useParams();
+
+  if (!project || !id) {
+    return (
+      <ErrorAlert
+        errorTitle="Project or Rule ID is not specified"
+        errorText="Project or Rule ID not specified in the URL, please make sure you have the correct URL and try again."
+        showError/>
+    );
+  }
 
   return (
     <Container className='mt-1' maxWidth={false}>
       <Grid sx={{ mt: 1 }} container spacing={2}>
         <Grid item xs={12}>
-          {(project && id) && (
-            <RuleTopPanel project={project} ruleId={id} />
-          )}
+          <RuleTopPanel project={project} ruleId={id} />
         </Grid>
         <Grid item xs={12}>
-          <ImpactSection />
-        </Grid>
-        <Grid item xs={12}>
-          <RecentFailuresSection />
+          <ClusterContextProvider project={project} clusterAlgorithm='rules' clusterId={id}>
+            <ClusterAnalysisSection/>
+          </ClusterContextProvider>
         </Grid>
       </Grid>
     </Container>

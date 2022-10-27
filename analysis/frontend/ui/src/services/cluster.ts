@@ -16,8 +16,9 @@ import { AuthorizedPrpcClient } from '@/clients/authorized_client';
 
 import {
   AssociatedBug,
-  ClusterId,
   Changelist,
+  ClusterId,
+  Variant,
 } from './shared_models';
 
 export const getClustersService = () => {
@@ -78,13 +79,13 @@ export interface Cluster {
   // Only populated for suggested clusters where has_example = true.
   title?: string;
   // The total number of user changelists which failed presubmit.
-  userClsFailedPresubmit: MetricValues;
+  userClsFailedPresubmit: ImpactValues;
   // The total number of failures in the cluster that occurred on tryjobs
   // that were critical (presubmit-blocking) and were exonerated for a
   // reason other than NOT_CRITICAL or UNEXPECTED_PASS.
-  criticalFailuresExonerated: MetricValues;
+  criticalFailuresExonerated: ImpactValues;
   // The total number of failures in the cluster.
-  failures: MetricValues;
+  failures: ImpactValues;
   // The failure association rule equivalent to the cluster. Populated only
   // for suggested clusters where has_example = true; for rule-based
   // clusters, lookup the rule instead. Used to facilitate creating a new
@@ -92,7 +93,7 @@ export interface Cluster {
   equivalentFailureAssociationRule: string | undefined;
 }
 
-export interface MetricValues {
+export interface ImpactValues {
   // The impact for the last day.
   oneDay: Counts;
   // The impact for the last three days.
@@ -177,7 +178,7 @@ export interface ClusterSummary {
 }
 
 export interface QueryClusterFailuresRequest {
-  // The resource name of the cluster to retrieve failures for.
+  // The resource name of the cluster failures to retrieve.
   // Format: projects/{project}/clusters/{cluster_algorithm}/{cluster_id}/failures.
   parent: string;
 }
@@ -241,20 +242,6 @@ export interface Exoneration {
   reason: ExonerationReason;
 }
 
-// Key/Value Variant pair that describes (part of) a way to run a test.
-export interface VariantPair {
-  key?: string;
-  value?: string;
-}
-
-export interface VariantDef {
-  [key: string]: string | undefined;
-}
-
-export interface Variant {
-  def: VariantDef;
-}
-
 // Identity of a presubmit run.
 // Refer to luci.analysis.v1.PresubmitRunId for documentation.
 export interface PresubmitRunId {
@@ -279,7 +266,7 @@ export interface DistinctClusterFailure {
   // The identity of the test.
   testId: string;
 
-  // The test variant. Describes a way of running a test.
+  // The variant. Describes a way of running a test.
   variant?: Variant;
 
   partitionTime: string; // RFC 3339 encoded date/time.
