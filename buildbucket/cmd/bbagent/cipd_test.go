@@ -162,59 +162,6 @@ func TestPrependPath(t *testing.T) {
 	})
 }
 
-func TestDownloadCipdPackages(t *testing.T) {
-	resultsFilePath = filepath.Join(t.TempDir(), "cipd_ensure_results.json")
-	build := &bbpb.Build{
-		Id: 123,
-		Infra: &bbpb.BuildInfra{
-			Buildbucket: &bbpb.BuildInfra_Buildbucket{
-				Agent: &bbpb.BuildInfra_Buildbucket_Agent{
-					Input: &bbpb.BuildInfra_Buildbucket_Agent_Input{
-						Data: map[string]*bbpb.InputDataRef{
-							"path_a": {
-								DataType: &bbpb.InputDataRef_Cipd{
-									Cipd: &bbpb.InputDataRef_CIPD{
-										Specs: []*bbpb.InputDataRef_CIPD_PkgSpec{{Package: "pkg_a", Version: "latest"}},
-									},
-								},
-								OnPath: []string{"path_a/bin", "path_a"},
-							},
-						},
-					},
-					Output: &bbpb.BuildInfra_Buildbucket_Agent_Output{},
-				},
-			},
-		},
-		Input: &bbpb.Build_Input{
-			Experiments: []string{"luci.buildbucket.agent.cipd_installation"},
-		},
-		CancelTime: nil,
-	}
-
-	Convey("downloadCipdPackages", t, func(c C) {
-		Convey("success", func() {
-			testCase = "success"
-
-			ctx := memory.Use(context.Background())
-			ctx = memlogger.Use(ctx)
-			execCommandContext = fakeExecCommand
-			defer func() { execCommandContext = exec.CommandContext }()
-			cwd, err := os.Getwd()
-			So(err, ShouldBeNil)
-
-			bbclient := &testBBClient{}
-			input := &bbpb.BBAgentArgs{Build: build}
-			rc := downloadCipdPackages(ctx, cwd, clientInput{bbclient, input})
-
-			So(rc, ShouldEqual, 0)
-			So(len(bbclient.requests), ShouldEqual, 2)
-			So(bbclient.requests[0].Build.Infra.Buildbucket.Agent.Output.Status, ShouldEqual, bbpb.Status_STARTED)
-			So(bbclient.requests[1].Build.Infra.Buildbucket.Agent.Output.Status, ShouldEqual, bbpb.Status_SUCCESS)
-		})
-	})
-
-}
-
 func TestInstallCipdPackages(t *testing.T) {
 	t.Parallel()
 	resultsFilePath = filepath.Join(t.TempDir(), "cipd_ensure_results.json")
