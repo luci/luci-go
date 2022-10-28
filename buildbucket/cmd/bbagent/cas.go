@@ -63,7 +63,17 @@ func generateCasCmd(casClient, outputDir string, casRef *bbpb.InputDataRef_CAS) 
 }
 
 func execCasCmd(ctx context.Context, args []string) error {
-	cmd := execCommandContext(ctx, args[0], args[1:]...)
+	// Switch to swarming system account to download CAS inputs, it won't
+	// work for non-swarming backends in the future.
+	// TODO(crbug.com/1114804): Handle downloading CAS inputs within tasks
+	// running on non-swarming backends.
+	sysCtx, err := lucictx.SwitchLocalAccount(ctx, "system")
+	if err != nil {
+		return errors.Annotate(err, "could not switch to 'system' account in LUCI_CONTEXT").Err()
+	}
+	// TODO(crbug.com/1114804): remove log.
+	logging.Infof(ctx, "Running command with system account")
+	cmd := execCommandContext(sysCtx, args[0], args[1:]...)
 	logging.Infof(ctx, "Running command: %s", cmd.String())
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
@@ -73,7 +83,6 @@ func execCasCmd(ctx context.Context, args []string) error {
 func downloadCasFiles(ctx context.Context, b *bbpb.Build, workDir string) error {
 	var casClient string
 	var err error
-	var sysCtx context.Context
 
 	inputData := b.GetInfra().GetBuildbucket().GetAgent().GetInput().GetData()
 	for dir, ref := range inputData {
@@ -86,19 +95,11 @@ func downloadCasFiles(ctx context.Context, b *bbpb.Build, workDir string) error 
 			if casClient, err = findCasClient(b); err != nil {
 				return errors.Annotate(err, "download cas files").Err()
 			}
-			// Switch to swarming system account to download CAS inputs, it won't
-			// work for non-swarming backends in the future.
-			// TODO(crbug.com/1114804): Handle downloading CAS inputs within tasks
-			// runing on non-swarming backends.
-			sysCtx, err = lucictx.SwitchLocalAccount(ctx, "system")
-			if err != nil {
-				return errors.Annotate(err, "could not switch to 'system' account in LUCI_CONTEXT").Err()
-			}
 		}
 
 		outDir := filepath.Join(workDir, dir)
 		cmdArgs := generateCasCmd(casClient, outDir, casRef)
-		if err = execCasCmd(sysCtx, cmdArgs); err != nil {
+		if err = execCasCmd(ctx, cmdArgs); err != nil {
 			return errors.Annotate(err, "download cas files").Err()
 		}
 	}

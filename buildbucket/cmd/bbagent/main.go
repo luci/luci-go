@@ -328,11 +328,11 @@ func downloadInputs(ctx context.Context, cwd string, c clientInput) int {
 	}()
 
 	if err != nil {
-		logging.Errorf(ctx, "Failure in installing cipd packages: %s", err)
+		logging.Errorf(ctx, "Failure in installing user packages: %s", err)
 		agent.Output.Status = bbpb.Status_FAILURE
 		agent.Output.SummaryHtml = err.Error()
 		updateReq.Build.Status = bbpb.Status_INFRA_FAILURE
-		updateReq.Build.SummaryMarkdown = "Failed to install cipd packages for this build"
+		updateReq.Build.SummaryMarkdown = "Failed to install user packages for this build"
 		updateReq.UpdateMask.Paths = append(updateReq.UpdateMask.Paths, "build.status", "build.summary_markdown")
 	} else {
 		agent.Output.Status = bbpb.Status_SUCCESS
