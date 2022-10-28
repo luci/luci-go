@@ -17,10 +17,13 @@ package datastoreutil
 import (
 	"context"
 	"testing"
+	"time"
 
 	. "github.com/smartystreets/goconvey/convey"
 
 	"go.chromium.org/luci/bisection/model"
+	"go.chromium.org/luci/common/clock"
+	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
 )
@@ -282,5 +285,68 @@ func TestGetCompileFailureForAnalysis(t *testing.T) {
 		cf, err := GetCompileFailureForAnalysis(c, 456)
 		So(err, ShouldBeNil)
 		So(cf.Id, ShouldEqual, 123)
+	})
+}
+
+func TestGetRerunsForRerunBuild(t *testing.T) {
+	t.Parallel()
+	c := memory.Use(context.Background())
+	datastore.GetTestable(c).AddIndexes(&datastore.IndexDefinition{
+		Kind: "SingleRerun",
+		SortBy: []datastore.IndexColumn{
+			{
+				Property: "rerun_build",
+			},
+			{
+				Property: "start_time",
+			},
+		},
+	})
+	cl := testclock.New(testclock.TestTimeUTC)
+	c = clock.Set(c, cl)
+
+	Convey("GetRerunsForRerunBuild", t, func() {
+		// Set up reruns
+		rerunBuildModel := &model.CompileRerunBuild{
+			Id: 8800,
+		}
+		So(datastore.Put(c, rerunBuildModel), ShouldBeNil)
+		datastore.GetTestable(c).CatchupIndexes()
+
+		reruns, err := GetRerunsForRerunBuild(c, rerunBuildModel)
+		So(err, ShouldBeNil)
+		So(len(reruns), ShouldEqual, 0)
+		_, err = GetLastRerunForRerunBuild(c, rerunBuildModel)
+		So(err, ShouldNotBeNil)
+
+		singleRerun1 := &model.SingleRerun{
+			Id:         1,
+			RerunBuild: datastore.KeyForObj(c, rerunBuildModel),
+			StartTime:  clock.Now(c),
+		}
+
+		singleRerun2 := &model.SingleRerun{
+			Id:         2,
+			RerunBuild: datastore.KeyForObj(c, rerunBuildModel),
+			StartTime:  clock.Now(c).Add(time.Hour),
+		}
+
+		singleRerun3 := &model.SingleRerun{
+			Id:         3,
+			RerunBuild: datastore.KeyForObj(c, rerunBuildModel),
+			StartTime:  clock.Now(c).Add(time.Minute),
+		}
+
+		So(datastore.Put(c, singleRerun1), ShouldBeNil)
+		So(datastore.Put(c, singleRerun2), ShouldBeNil)
+		So(datastore.Put(c, singleRerun3), ShouldBeNil)
+		datastore.GetTestable(c).CatchupIndexes()
+
+		reruns, err = GetRerunsForRerunBuild(c, rerunBuildModel)
+		So(err, ShouldBeNil)
+		So(len(reruns), ShouldEqual, 3)
+		r, err := GetLastRerunForRerunBuild(c, rerunBuildModel)
+		So(err, ShouldBeNil)
+		So(r.Id, ShouldEqual, 2)
 	})
 }

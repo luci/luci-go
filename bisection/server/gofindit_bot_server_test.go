@@ -78,16 +78,12 @@ func TestUpdateAnalysisProgress(t *testing.T) {
 
 		// Set up reruns
 		rerunBuildModel := &model.CompileRerunBuild{
-			Id:      8800,
-			Type:    model.RerunBuildType_CulpritVerification,
-			Suspect: datastore.KeyForObj(c, suspect),
+			Id: 8800,
 		}
 		So(datastore.Put(c, rerunBuildModel), ShouldBeNil)
 
 		parentRerunBuildModel := &model.CompileRerunBuild{
-			Id:      8801,
-			Type:    model.RerunBuildType_CulpritVerification,
-			Suspect: datastore.KeyForObj(c, suspect),
+			Id: 8801,
 		}
 		So(datastore.Put(c, parentRerunBuildModel), ShouldBeNil)
 		datastore.GetTestable(c).CatchupIndexes()
@@ -105,7 +101,9 @@ func TestUpdateAnalysisProgress(t *testing.T) {
 				Project: "chromium/src",
 				Id:      "3425",
 			},
-			Status: pb.RerunStatus_IN_PROGRESS,
+			Status:  pb.RerunStatus_IN_PROGRESS,
+			Type:    model.RerunBuildType_CulpritVerification,
+			Suspect: datastore.KeyForObj(c, suspect),
 		}
 
 		singleRerun2 := &model.SingleRerun{
@@ -115,7 +113,9 @@ func TestUpdateAnalysisProgress(t *testing.T) {
 				Project: "chromium/src",
 				Id:      "3426",
 			},
-			Status: pb.RerunStatus_IN_PROGRESS,
+			Status:  pb.RerunStatus_IN_PROGRESS,
+			Type:    model.RerunBuildType_CulpritVerification,
+			Suspect: datastore.KeyForObj(c, suspect),
 		}
 		So(datastore.Put(c, singleRerun1), ShouldBeNil)
 		So(datastore.Put(c, singleRerun2), ShouldBeNil)

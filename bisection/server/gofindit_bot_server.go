@@ -21,9 +21,11 @@ import (
 
 	"go.chromium.org/luci/bisection/model"
 	pb "go.chromium.org/luci/bisection/proto"
+	"go.chromium.org/luci/bisection/util/datastoreutil"
 
 	bbpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/clock"
+	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/gae/service/datastore"
 	"google.golang.org/grpc/codes"
@@ -50,50 +52,79 @@ func (server *GoFinditBotServer) UpdateAnalysisProgress(c context.Context, req *
 	case err == datastore.ErrNoSuchEntity:
 		return nil, status.Errorf(codes.NotFound, "could not find rerun build with id %d", req.Bbid)
 	case err != nil:
-		return nil, status.Errorf(codes.Internal, "error finding rerun build %s", err)
+		return nil, status.Errorf(codes.Internal, "error finding rerun build")
 	default:
 		//continue
 	}
 
-	// We only support analysis progress for culprit verification now
-	// TODO (nqmtuan): remove this when we support updating progress for nth-section
-	if rerunModel.Type != model.RerunBuildType_CulpritVerification {
-		return nil, status.Errorf(codes.Unimplemented, "only CulpritVerification is supported at the moment")
+	lastRerun, err := datastoreutil.GetLastRerunForRerunBuild(c, rerunModel)
+	if err != nil {
+		err = errors.Annotate(err, "failed getting last rerun for build %d. Analysis ID: %d", rerunModel.Id, req.AnalysisId).Err()
+		errors.Log(c, err)
+		return nil, status.Errorf(codes.Internal, "error getting last rerun build")
 	}
 
 	// Update rerun model
-	err = updateRerun(c, req, rerunModel)
+	err = updateRerun(c, req, lastRerun)
 	if err != nil {
-		logging.Errorf(c, "Error updating rerun build %d: %s", req.Bbid, err)
-		return nil, status.Errorf(codes.Internal, "error updating rerun build %s", err)
+		err = errors.Annotate(err, "failed updating rerun for build %d. Analysis ID: %d", rerunModel.Id, req.AnalysisId).Err()
+		errors.Log(c, err)
+		return nil, status.Errorf(codes.Internal, "error updating rerun build")
 	}
 
-	// Get the suspect for the rerun build
-	suspect := &model.Suspect{
-		Id:             rerunModel.Suspect.IntID(),
-		ParentAnalysis: rerunModel.Suspect.Parent(),
+	// Safeguard, we really don't expect any other type
+	if lastRerun.Type != model.RerunBuildType_CulpritVerification && lastRerun.Type != model.RerunBuildType_NthSection {
+		logging.Errorf(c, "Invalid type %v for analysis %d", lastRerun.Type, req.AnalysisId)
+		return nil, status.Errorf(codes.Internal, "Invalid type %v", lastRerun.Type)
 	}
-	err = datastore.Get(c, suspect)
+
+	// Culprit verification
+	if lastRerun.Type == model.RerunBuildType_CulpritVerification {
+		err := updateSuspectWithRerunData(c, lastRerun)
+		if err != nil {
+			err = errors.Annotate(err, "updateSuspectWithRerunData for build id %d. Analysis ID: %d", rerunModel.Id, req.AnalysisId).Err()
+			errors.Log(c, err)
+			return nil, status.Errorf(codes.Internal, "error updating suspect")
+		}
+		return &pb.UpdateAnalysisProgressResponse{}, nil
+	}
+
+	// Nth section
+	if lastRerun.Type == model.RerunBuildType_NthSection {
+		// TODO (nqmtuan): Create a snapshot and return next commit(s) to run
+		return &pb.UpdateAnalysisProgressResponse{}, nil
+	}
+
+	return nil, status.Errorf(codes.Internal, "unknown error")
+}
+
+func updateSuspectWithRerunData(c context.Context, rerun *model.SingleRerun) error {
+	// Get the suspect for the rerun build
+	if rerun.Suspect == nil {
+		return fmt.Errorf("no suspect for rerun %d", rerun.Id)
+	}
+
+	suspect := &model.Suspect{
+		Id:             rerun.Suspect.IntID(),
+		ParentAnalysis: rerun.Suspect.Parent(),
+	}
+	err := datastore.Get(c, suspect)
 	if err != nil {
-		logging.Errorf(c, "Cannot find suspect for rerun build %d: %s", req.Bbid, err)
-		return nil, status.Errorf(codes.Internal, "cannot find suspect for rerun build %s", err)
+		return errors.Annotate(err, "couldn't find suspect for rerun %d", rerun.Id).Err()
 	}
 
 	err = updateSuspect(c, suspect)
 	if err != nil {
-		logging.Errorf(c, "Error updating suspect for rerun build %d: %s", req.Bbid, err)
-		return nil, status.Errorf(codes.Internal, "error updating suspect %s", err)
+		return errors.Annotate(err, "error updating suspect for rerun %d", rerun.Id).Err()
 	}
 
 	if suspect.VerificationStatus == model.SuspectVerificationStatus_ConfirmedCulprit {
 		err = updateSuspectAsConfirmedCulprit(c, suspect)
 		if err != nil {
-			logging.Errorf(c, "Error updating suspect as confirmed culprit for rerun build %d: %s", req.Bbid, err)
-			return nil, status.Errorf(codes.Internal, "error updating suspect as confirmed culprit %s", err)
+			return errors.Annotate(err, "error updateSuspectAsConfirmedCulprit for rerun %d", rerun.Id).Err()
 		}
 	}
-
-	return &pb.UpdateAnalysisProgressResponse{}, nil
+	return nil
 }
 
 func verifyUpdateAnalysisProgressRequest(c context.Context, req *pb.UpdateAnalysisProgressRequest) error {
@@ -167,41 +198,24 @@ func getSuspectStatus(c context.Context, rerunStatus pb.RerunStatus, parentRerun
 	return model.SuspectVerificationStatus_UnderVerification
 }
 
-func updateRerun(c context.Context, req *pb.UpdateAnalysisProgressRequest, rerunModel *model.CompileRerunBuild) error {
-	// Find the last SingleRerun
-	reruns, err := getRerunsForRerunBuild(c, rerunModel)
-	if err != nil {
-		return err
-	}
-	if len(reruns) == 0 {
-		logging.Errorf(c, "No SingleRerun has been created for rerun build %d", req.Bbid)
-		return fmt.Errorf("SingleRerun not found for build %d", req.Bbid)
-	}
-
-	lastRerun := reruns[len(reruns)-1]
-
+// updateRerun updates the last SingleRerun for rerunModel with the information from req.
+// Returns the last SingleRerun and error (if it occur).
+func updateRerun(c context.Context, req *pb.UpdateAnalysisProgressRequest, rerun *model.SingleRerun) error {
 	// Verify the gitiles commit, making sure it was the right rerun we are updating
-	if !sameGitilesCommit(req.GitilesCommit, &lastRerun.GitilesCommit) {
+	if !sameGitilesCommit(req.GitilesCommit, &rerun.GitilesCommit) {
 		logging.Errorf(c, "Got different Gitles commit for rerun build %d", req.Bbid)
 		return fmt.Errorf("different gitiles commit for rerun")
 	}
 
-	lastRerun.EndTime = clock.Now(c)
-	lastRerun.Status = req.RerunResult.RerunStatus
+	rerun.EndTime = clock.Now(c)
+	rerun.Status = req.RerunResult.RerunStatus
 
-	err = datastore.Put(c, lastRerun)
+	err := datastore.Put(c, rerun)
 	if err != nil {
-		logging.Errorf(c, "Error updating SingleRerun for build %d: %s", req.Bbid, err)
-		return fmt.Errorf("error saving SingleRerun %s", err)
+		logging.Errorf(c, "Error updating SingleRerun for build %d: %s", req.Bbid, rerun)
+		return errors.Annotate(err, "saving SingleRerun").Err()
 	}
 	return nil
-}
-
-func getRerunsForRerunBuild(c context.Context, rerunBuild *model.CompileRerunBuild) ([]*model.SingleRerun, error) {
-	q := datastore.NewQuery("SingleRerun").Eq("rerun_build", datastore.KeyForObj(c, rerunBuild)).Order("start_time")
-	singleReruns := []*model.SingleRerun{}
-	err := datastore.GetAll(c, q, &singleReruns)
-	return singleReruns, err
 }
 
 func getSingleRerunStatus(c context.Context, rerunId int64) (pb.RerunStatus, error) {
@@ -214,15 +228,12 @@ func getSingleRerunStatus(c context.Context, rerunId int64) (pb.RerunStatus, err
 	}
 
 	// Get SingleRerun
-	singleReruns, err := getRerunsForRerunBuild(c, rerunBuild)
+	singleRerun, err := datastoreutil.GetLastRerunForRerunBuild(c, rerunBuild)
 	if err != nil {
 		return pb.RerunStatus_RERUN_STATUS_UNSPECIFIED, err
 	}
-	if len(singleReruns) != 1 {
-		return pb.RerunStatus_RERUN_STATUS_UNSPECIFIED, fmt.Errorf("expect 1 single rerun for build %d, got %d", rerunBuild.Id, len(singleReruns))
-	}
 
-	return singleReruns[0].Status, nil
+	return singleRerun.Status, nil
 }
 
 func sameGitilesCommit(g1 *bbpb.GitilesCommit, g2 *bbpb.GitilesCommit) bool {

@@ -16,8 +16,10 @@ package datastoreutil
 
 import (
 	"context"
+	"fmt"
 
 	"go.chromium.org/luci/bisection/model"
+	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/gae/service/datastore"
 )
@@ -138,4 +140,24 @@ func GetCompileFailureForAnalysis(c context.Context, analysisID int64) (*model.C
 		return nil, err
 	}
 	return compileFailure, nil
+}
+
+// GetRerunsForRerunBuild returns all SingleRerun for a rerunBuild
+func GetRerunsForRerunBuild(c context.Context, rerunBuild *model.CompileRerunBuild) ([]*model.SingleRerun, error) {
+	q := datastore.NewQuery("SingleRerun").Eq("rerun_build", datastore.KeyForObj(c, rerunBuild)).Order("start_time")
+	singleReruns := []*model.SingleRerun{}
+	err := datastore.GetAll(c, q, &singleReruns)
+	return singleReruns, errors.Annotate(err, "get reruns for rerun build %d", rerunBuild.Id).Err()
+}
+
+// GetLastRerunForRerunBuild returns the last SingleRerun for a rerunBuild (based on start_time)
+func GetLastRerunForRerunBuild(c context.Context, rerunBuild *model.CompileRerunBuild) (*model.SingleRerun, error) {
+	reruns, err := GetRerunsForRerunBuild(c, rerunBuild)
+	if err != nil {
+		return nil, err
+	}
+	if len(reruns) == 0 {
+		return nil, fmt.Errorf("got no SingleRerun for build %d", rerunBuild.Id)
+	}
+	return reruns[len(reruns)-1], nil
 }
