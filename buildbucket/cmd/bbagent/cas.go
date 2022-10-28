@@ -71,8 +71,6 @@ func execCasCmd(ctx context.Context, args []string) error {
 	if err != nil {
 		return errors.Annotate(err, "could not switch to 'system' account in LUCI_CONTEXT").Err()
 	}
-	// TODO(crbug.com/1114804): remove log.
-	logging.Infof(ctx, "Running command with system account")
 	cmd := execCommandContext(sysCtx, args[0], args[1:]...)
 	logging.Infof(ctx, "Running command: %s", cmd.String())
 	cmd.Stdout = os.Stdout
