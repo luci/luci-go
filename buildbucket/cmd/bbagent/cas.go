@@ -23,6 +23,7 @@ import (
 	bbpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/lucictx"
 )
 
 // Find CAS Client. It should have been downloaded when bbagent installs
@@ -72,6 +73,7 @@ func execCasCmd(ctx context.Context, args []string) error {
 func downloadCasFiles(ctx context.Context, b *bbpb.Build, workDir string) error {
 	var casClient string
 	var err error
+	var sysCtx context.Context
 
 	inputData := b.GetInfra().GetBuildbucket().GetAgent().GetInput().GetData()
 	for dir, ref := range inputData {
@@ -84,11 +86,19 @@ func downloadCasFiles(ctx context.Context, b *bbpb.Build, workDir string) error 
 			if casClient, err = findCasClient(b); err != nil {
 				return errors.Annotate(err, "download cas files").Err()
 			}
+			// Switch to swarming system account to download CAS inputs, it won't
+			// work for non-swarming backends in the future.
+			// TODO(crbug.com/1114804): Handle downloading CAS inputs within tasks
+			// runing on non-swarming backends.
+			sysCtx, err = lucictx.SwitchLocalAccount(ctx, "system")
+			if err != nil {
+				return errors.Annotate(err, "could not switch to 'system' account in LUCI_CONTEXT").Err()
+			}
 		}
 
 		outDir := filepath.Join(workDir, dir)
 		cmdArgs := generateCasCmd(casClient, outDir, casRef)
-		if err = execCasCmd(ctx, cmdArgs); err != nil {
+		if err = execCasCmd(sysCtx, cmdArgs); err != nil {
 			return errors.Annotate(err, "download cas files").Err()
 		}
 	}
