@@ -293,7 +293,7 @@ func syncBuildWithTaskResult(ctx context.Context, buildID int64, taskID string, 
 		return failBuild(ctx, buildID, fmt.Sprintf("Swarming task %s unexpectedly disappeared", taskID))
 	}
 
-	var statusChanged bool
+	var shouldUpdate bool
 	bld := &model.Build{
 		ID: buildID,
 	}
@@ -303,11 +303,11 @@ func syncBuildWithTaskResult(ctx context.Context, buildID int64, taskID string, 
 			return transient.Tag.Apply(errors.Annotate(err, "failed to fetch build or buildInfra: %d", bld.ID).Err())
 		}
 
-		statusChanged, err = updateBuildFromTaskResult(ctx, bld, infra, taskResult)
+		shouldUpdate, err = updateBuildFromTaskResult(ctx, bld, infra, taskResult)
 		if err != nil {
 			return tq.Fatal.Apply(err)
 		}
-		if !statusChanged {
+		if !shouldUpdate {
 			return nil
 		}
 
@@ -341,7 +341,7 @@ func syncBuildWithTaskResult(ctx context.Context, buildID int64, taskID string, 
 
 	switch {
 	case err != nil:
-	case !statusChanged:
+	case !shouldUpdate:
 	case bld.Status == pb.Status_STARTED:
 		metrics.BuildStarted(ctx, bld)
 	case protoutil.IsEnded(bld.Status):
@@ -351,7 +351,8 @@ func syncBuildWithTaskResult(ctx context.Context, buildID int64, taskID string, 
 }
 
 // updateBuildFromTaskResult mutate the build and infra entities according to
-// the given task result. Return true if the build status has been changed.
+// the given task result. Return true if the build status has been changed or
+// the build need to be updated for bot dimensions.
 // Note, it will not write the entities into Datastore.
 func updateBuildFromTaskResult(ctx context.Context, bld *model.Build, infra *model.BuildInfra, taskResult *swarming.SwarmingRpcsTaskResult) (bool, error) {
 	if protoutil.IsEnded(bld.Status) {
@@ -361,13 +362,24 @@ func updateBuildFromTaskResult(ctx context.Context, bld *model.Build, infra *mod
 
 	oldStatus := bld.Status
 	sw := infra.Proto.Swarming
+	botDimsChanged := false
+
 	// Update BotDimensions
-	sw.BotDimensions = []*pb.StringPair{}
+	oldBotDimsMap := protoutil.StringPairMap(sw.BotDimensions)
+	newBotDims := []*pb.StringPair{}
 	for _, dim := range taskResult.BotDimensions {
 		for _, v := range dim.Value {
-			sw.BotDimensions = append(sw.BotDimensions, &pb.StringPair{Key: dim.Key, Value: v})
+			if !botDimsChanged && !oldBotDimsMap.Contains(dim.Key, v) {
+				botDimsChanged = true
+			}
+			newBotDims = append(newBotDims, &pb.StringPair{Key: dim.Key, Value: v})
 		}
 	}
+	if len(newBotDims) != len(sw.BotDimensions) {
+		botDimsChanged = true
+	}
+	sw.BotDimensions = newBotDims
+
 	sort.Slice(sw.BotDimensions, func(i, j int) bool {
 		if sw.BotDimensions[i].Key == sw.BotDimensions[j].Key {
 			return sw.BotDimensions[i].Value < sw.BotDimensions[j].Value
@@ -454,11 +466,16 @@ func updateBuildFromTaskResult(ctx context.Context, bld *model.Build, infra *mod
 	default:
 		return false, errors.Reason("Unexpected task state: %s", taskResult.State).Err()
 	}
-	if bld.Proto.Status == oldStatus {
-		return false, nil
+
+	if bld.Proto.Status != oldStatus {
+		logging.Infof(ctx, "Build %d status: %s -> %s", bld.ID, oldStatus, bld.Proto.Status)
+		return true, nil
 	}
-	logging.Infof(ctx, "Build %d status: %s -> %s", bld.ID, oldStatus, bld.Proto.Status)
-	return true, nil
+	if bld.Proto.Status == pb.Status_STARTED && botDimsChanged {
+		logging.Infof(ctx, "Detect bot dimensions change after Build %d started", bld.ID)
+		return true, nil
+	}
+	return false, nil
 }
 
 // createSwarmingTask creates a swarming task for the build.

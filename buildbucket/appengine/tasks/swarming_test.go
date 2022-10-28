@@ -1004,7 +1004,21 @@ func TestSubNotify(t *testing.T) {
 			So(err, ShouldEqual, caching.ErrCacheMiss)
 		})
 
-		Convey("success", func() {
+		Convey("status already ended", func() {
+			b.Proto.Status = pb.Status_SUCCESS
+			So(datastore.Put(ctx, b), ShouldBeNil)
+
+			body := makeSwarmingPubsubMsg(&userdata{
+				BuildID:          123,
+				CreatedTS:        1517260502000000,
+				SwarmingHostname: "swarm",
+			}, "task123", "msg1")
+			err := SubNotify(ctx, body)
+			So(err, ShouldBeNil)
+			mockSwarm.EXPECT().CreateTask(gomock.Any(), gomock.Any()).Times(0)
+		})
+
+		Convey("status changed to success", func() {
 			body := makeSwarmingPubsubMsg(&userdata{
 				BuildID:          123,
 				CreatedTS:        1517260502000000,
@@ -1013,7 +1027,14 @@ func TestSubNotify(t *testing.T) {
 			mockSwarm.EXPECT().GetTaskResult(ctx, "task123").Return(&swarming.SwarmingRpcsTaskResult{
 				State:       "COMPLETED",
 				StartedTs:   "2018-01-29T21:15:02.649750",
-				CompletedTs: "2018-01-30T00:15:18.162860"}, nil)
+				CompletedTs: "2018-01-30T00:15:18.162860",
+				BotDimensions: []*swarming.SwarmingRpcsStringListPair{
+					{
+						Key:   "new_key",
+						Value: []string{"new_val"},
+					},
+				},
+			}, nil)
 			err := SubNotify(ctx, body)
 			So(err, ShouldBeNil)
 			syncedBuild := &model.Build{ID: 123}
@@ -1022,10 +1043,79 @@ func TestSubNotify(t *testing.T) {
 			So(syncedBuild.Proto.StartTime, ShouldResembleProto, &timestamppb.Timestamp{Seconds: 1517260502, Nanos: 649750000})
 			So(syncedBuild.Proto.EndTime, ShouldResembleProto, &timestamppb.Timestamp{Seconds: 1517271318, Nanos: 162860000})
 
+			syncedInfra := &model.BuildInfra{Build: datastore.KeyForObj(ctx, syncedBuild)}
+			So(datastore.Get(ctx, syncedInfra), ShouldBeNil)
+			So(syncedInfra.Proto.Swarming.BotDimensions, ShouldResembleProto, []*pb.StringPair{
+				{
+					Key:   "new_key",
+					Value: "new_val",
+				},
+			})
+
 			cache := caching.GlobalCache(ctx, "swarming-pubsub-msg-id")
 			cached, err := cache.Get(ctx, "msg1")
 			So(err, ShouldBeNil)
 			So(cached, ShouldResemble, []byte{1})
+		})
+
+		Convey("status unchanged(in STARTED) while bot dimensions changed", func() {
+			b.Proto.Status = pb.Status_STARTED
+			So(datastore.Put(ctx, b), ShouldBeNil)
+			body := makeSwarmingPubsubMsg(&userdata{
+				BuildID:          123,
+				CreatedTS:        1517260502000000,
+				SwarmingHostname: "swarm",
+			}, "task123", "msg1")
+			mockSwarm.EXPECT().GetTaskResult(ctx, "task123").Return(&swarming.SwarmingRpcsTaskResult{
+				State:     "RUNNING",
+				StartedTs: "2018-01-29T21:15:02.649750",
+				BotDimensions: []*swarming.SwarmingRpcsStringListPair{
+					{
+						Key:   "new_key",
+						Value: []string{"new_val"},
+					},
+				},
+			}, nil)
+			err := SubNotify(ctx, body)
+			So(err, ShouldBeNil)
+			syncedBuild := &model.Build{ID: 123}
+			So(datastore.Get(ctx, syncedBuild), ShouldBeNil)
+			So(syncedBuild.Status, ShouldEqual, pb.Status_STARTED)
+
+			syncedInfra := &model.BuildInfra{Build: datastore.KeyForObj(ctx, syncedBuild)}
+			So(datastore.Get(ctx, syncedInfra), ShouldBeNil)
+			So(syncedInfra.Proto.Swarming.BotDimensions, ShouldResembleProto, []*pb.StringPair{{
+				Key:   "new_key",
+				Value: "new_val",
+			}})
+		})
+
+		Convey("status unchanged(not in STARTED) while bot dimensions changed", func() {
+			b.Proto.Status = pb.Status_STARTED
+			So(datastore.Put(ctx, b), ShouldBeNil)
+			body := makeSwarmingPubsubMsg(&userdata{
+				BuildID:          123,
+				CreatedTS:        1517260502000000,
+				SwarmingHostname: "swarm",
+			}, "task123", "msg1")
+			mockSwarm.EXPECT().GetTaskResult(ctx, "task123").Return(&swarming.SwarmingRpcsTaskResult{
+				State: "PENDING",
+				BotDimensions: []*swarming.SwarmingRpcsStringListPair{
+					{
+						Key:   "new_key",
+						Value: []string{"new_val"},
+					},
+				},
+			}, nil)
+			err := SubNotify(ctx, body)
+			So(err, ShouldBeNil)
+			syncedBuild := &model.Build{ID: 123}
+			So(datastore.Get(ctx, syncedBuild), ShouldBeNil)
+			So(syncedBuild.Status, ShouldEqual, pb.Status_STARTED)
+
+			currentInfra := &model.BuildInfra{Build: datastore.KeyForObj(ctx, syncedBuild)}
+			So(datastore.Get(ctx, currentInfra), ShouldBeNil)
+			So(currentInfra.Proto.Swarming.BotDimensions, ShouldBeEmpty)
 		})
 
 		Convey("duplicate message", func() {
