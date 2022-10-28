@@ -146,8 +146,6 @@ func TestDatastoreModel(t *testing.T) {
 			So(datastore.Put(c, suspect), ShouldBeNil)
 
 			rerun_build := &CompileRerunBuild{
-				Suspect: datastore.KeyForObj(c, suspect),
-				Type:    RerunBuildType_NthSection,
 				LuciBuild: LuciBuild{
 					BuildId:     88128398584903,
 					Project:     "chromium",

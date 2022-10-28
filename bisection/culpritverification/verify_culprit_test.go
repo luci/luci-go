@@ -141,9 +141,7 @@ func TestVerifySuspect(t *testing.T) {
 		err = datastore.Get(c, rerun1)
 		So(err, ShouldBeNil)
 		So(rerun1, ShouldResemble, &model.CompileRerunBuild{
-			Id:      123,
-			Type:    model.RerunBuildType_CulpritVerification,
-			Suspect: datastore.KeyForObj(c, suspect),
+			Id: 123,
 			LuciBuild: model.LuciBuild{
 				BuildId:       123,
 				Project:       "chromium",
@@ -162,9 +160,7 @@ func TestVerifySuspect(t *testing.T) {
 		err = datastore.Get(c, rerun2)
 		So(err, ShouldBeNil)
 		So(rerun2, ShouldResemble, &model.CompileRerunBuild{
-			Id:      456,
-			Type:    model.RerunBuildType_CulpritVerification,
-			Suspect: datastore.KeyForObj(c, suspect),
+			Id: 456,
 			LuciBuild: model.LuciBuild{
 				BuildId:       456,
 				Project:       "chromium",

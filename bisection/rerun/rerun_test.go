@@ -204,9 +204,7 @@ func TestCreateRerunBuildModel(t *testing.T) {
 			datastore.GetTestable(c).CatchupIndexes()
 			So(err, ShouldBeNil)
 			So(rerunBuildModel, ShouldResemble, &model.CompileRerunBuild{
-				Id:      123,
-				Type:    model.RerunBuildType_CulpritVerification,
-				Suspect: datastore.KeyForObj(c, suspect),
+				Id: 123,
 				LuciBuild: model.LuciBuild{
 					BuildId: 123,
 					Project: "chromium",
@@ -241,8 +239,7 @@ func TestCreateRerunBuildModel(t *testing.T) {
 			datastore.GetTestable(c).CatchupIndexes()
 			So(err, ShouldBeNil)
 			So(rerunBuildModel1, ShouldResemble, &model.CompileRerunBuild{
-				Id:   124,
-				Type: model.RerunBuildType_NthSection,
+				Id: 124,
 				LuciBuild: model.LuciBuild{
 					BuildId: 124,
 					Project: "chromium",

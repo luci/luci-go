@@ -149,8 +149,7 @@ func CreateRerunBuildModel(c context.Context, build *buildbucketpb.Build, rerunT
 	gitilesCommit := *build.GetInput().GetGitilesCommit()
 	startTime := build.StartTime.AsTime()
 	rerunBuild := &model.CompileRerunBuild{
-		Id:   build.GetId(),
-		Type: rerunType,
+		Id: build.GetId(),
 		LuciBuild: model.LuciBuild{
 			BuildId:    build.GetId(),
 			Project:    build.Builder.Project,
@@ -167,11 +166,6 @@ func CreateRerunBuildModel(c context.Context, build *buildbucketpb.Build, rerunT
 			},
 		},
 	}
-	// TODO (nqmtuan): Remove this when we switch to use value from SingleRerun
-	if rerunType == model.RerunBuildType_CulpritVerification {
-		rerunBuild.Suspect = datastore.KeyForObj(c, suspect)
-	}
-
 	err := datastore.Put(c, rerunBuild)
 	if err != nil {
 		logging.Errorf(c, "Error in creating CompileRerunBuild model for build %d", build.GetId())

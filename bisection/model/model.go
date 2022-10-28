@@ -143,13 +143,11 @@ type CompileFailureInRerunBuild struct {
 type CompileRerunBuild struct {
 	// Id is the buildbucket Id for the rerun build.
 	Id int64 `gae:"$id"`
-	// Type for the rerun build
-	Type RerunBuildType `gae:"rerun_type"`
-	// TODO (nqmtuan): Remove this, use the SingleRerun one instead
-	// Key to the Suspect, if this is for culprit verification
-	Suspect *datastore.Key `gae:"suspect"`
 	// LUCI build data
 	LuciBuild
+	// For backward compatability, because we removed some fields
+	// See https://source.chromium.org/chromium/infra/infra/+/main:go/src/go.chromium.org/luci/gae/service/datastore/pls.go;l=100
+	_ datastore.PropertyMap `gae:"-,extra"`
 }
 
 // SingleRerun represents one rerun for a particular compile/test failures for a particular commit.
