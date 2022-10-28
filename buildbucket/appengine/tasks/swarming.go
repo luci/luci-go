@@ -293,7 +293,7 @@ func syncBuildWithTaskResult(ctx context.Context, buildID int64, taskID string, 
 		return failBuild(ctx, buildID, fmt.Sprintf("Swarming task %s unexpectedly disappeared", taskID))
 	}
 
-	var shouldUpdate bool
+	var statusChanged bool
 	bld := &model.Build{
 		ID: buildID,
 	}
@@ -302,8 +302,9 @@ func syncBuildWithTaskResult(ctx context.Context, buildID int64, taskID string, 
 		if err := datastore.Get(ctx, bld, infra); err != nil {
 			return transient.Tag.Apply(errors.Annotate(err, "failed to fetch build or buildInfra: %d", bld.ID).Err())
 		}
+		oldStatus := bld.Status
 
-		shouldUpdate, err = updateBuildFromTaskResult(ctx, bld, infra, taskResult)
+		shouldUpdate, err := updateBuildFromTaskResult(ctx, bld, infra, taskResult)
 		if err != nil {
 			return tq.Fatal.Apply(err)
 		}
@@ -311,13 +312,14 @@ func syncBuildWithTaskResult(ctx context.Context, buildID int64, taskID string, 
 			return nil
 		}
 
+		statusChanged = oldStatus != bld.Proto.Status
 		toPut := []interface{}{bld, infra}
 		switch {
-		case bld.Proto.Status == pb.Status_STARTED:
+		case statusChanged && bld.Proto.Status == pb.Status_STARTED:
 			if err := NotifyPubSub(ctx, bld); err != nil {
 				return transient.Tag.Apply(err)
 			}
-		case protoutil.IsEnded(bld.Proto.Status):
+		case statusChanged && protoutil.IsEnded(bld.Proto.Status):
 			steps := &model.BuildSteps{Build: datastore.KeyForObj(ctx, bld)}
 			// If the build has no steps, CancelIncomplete will return false.
 			if err := model.GetIgnoreMissing(ctx, steps); err != nil {
@@ -341,7 +343,7 @@ func syncBuildWithTaskResult(ctx context.Context, buildID int64, taskID string, 
 
 	switch {
 	case err != nil:
-	case !shouldUpdate:
+	case !statusChanged:
 	case bld.Status == pb.Status_STARTED:
 		metrics.BuildStarted(ctx, bld)
 	case protoutil.IsEnded(bld.Status):

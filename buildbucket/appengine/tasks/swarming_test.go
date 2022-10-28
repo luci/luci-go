@@ -840,6 +840,7 @@ func TestSubNotify(t *testing.T) {
 				LRU: lru.New(0),
 			},
 		})
+		ctx, sch := tq.TestingContext(ctx, nil)
 
 		b := &model.Build{
 			ID: 123,
@@ -1016,6 +1017,8 @@ func TestSubNotify(t *testing.T) {
 			err := SubNotify(ctx, body)
 			So(err, ShouldBeNil)
 			mockSwarm.EXPECT().CreateTask(gomock.Any(), gomock.Any()).Times(0)
+
+			So(sch.Tasks(), ShouldHaveLength, 0)
 		})
 
 		Convey("status changed to success", func() {
@@ -1056,6 +1059,9 @@ func TestSubNotify(t *testing.T) {
 			cached, err := cache.Get(ctx, "msg1")
 			So(err, ShouldBeNil)
 			So(cached, ShouldResemble, []byte{1})
+
+			// FinalizeResultDB, ExportBigQuery, NotifyPubSub tasks.
+			So(sch.Tasks(), ShouldHaveLength, 3)
 		})
 
 		Convey("status unchanged(in STARTED) while bot dimensions changed", func() {
@@ -1088,6 +1094,8 @@ func TestSubNotify(t *testing.T) {
 				Key:   "new_key",
 				Value: "new_val",
 			}})
+
+			So(sch.Tasks(), ShouldHaveLength, 0)
 		})
 
 		Convey("status unchanged(not in STARTED) while bot dimensions changed", func() {
@@ -1116,6 +1124,8 @@ func TestSubNotify(t *testing.T) {
 			currentInfra := &model.BuildInfra{Build: datastore.KeyForObj(ctx, syncedBuild)}
 			So(datastore.Get(ctx, currentInfra), ShouldBeNil)
 			So(currentInfra.Proto.Swarming.BotDimensions, ShouldBeEmpty)
+
+			So(sch.Tasks(), ShouldHaveLength, 0)
 		})
 
 		Convey("duplicate message", func() {
