@@ -50,6 +50,15 @@ func recentsPage(c *router.Context) {
 		errPage(c, err)
 		return
 	}
+	if params.mode != "" {
+		var filteredRuns []*run.Run
+		for _, r := range runs {
+			if r.Mode == params.mode {
+				filteredRuns = append(filteredRuns, r)
+			}
+		}
+		runs = filteredRuns
+	}
 	runsWithCLs, err := resolveRunsCLs(c.Context, runs)
 	if err != nil {
 		errPage(c, err)
