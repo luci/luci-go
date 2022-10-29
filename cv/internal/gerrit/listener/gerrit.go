@@ -155,12 +155,25 @@ func newGerritSubscriber(c *pubsub.Client, sch scheduler, prjFinder *projectFind
 
 // sameGerritSubscriberSettings returns true if a given GerritSubscriber is
 // configured with given settings.
-func sameGerritSubscriberSettings(sber *subscriber, settings *listenerpb.Settings_GerritSubscription) bool {
-	subID := settings.GetSubscriptionId()
-	if subID == "" {
-		subID = settings.GetHost()
+func sameGerritSubscriberSettings(ctx context.Context, sber *subscriber, settings *listenerpb.Settings_GerritSubscription) (isSame bool) {
+	intendedSubID := settings.GetSubscriptionId()
+	if intendedSubID == "" {
+		intendedSubID = settings.GetHost()
 	}
-	return (sber.proc.(*gerritProcessor).host == settings.GetHost() &&
-		sber.sub.ID() == subID &&
-		sber.sameReceiveSettings(settings.GetReceiveSettings()))
+
+	ctx = logging.SetField(ctx, "subscriptionID", sber.sub.ID())
+	switch proc := sber.proc.(*gerritProcessor); {
+	case proc.host != settings.GetHost():
+		// This is suspicious enough to warn
+		logging.Warningf(ctx, "sameGerritSubscriberSettings: hostname changed from %q to %q",
+			proc.host, settings.GetHost())
+	case sber.sub.ID() != intendedSubID:
+		// Same
+		logging.Warningf(ctx, "sameGerritSubscriberSettings: subscription ID changed from %q to %q",
+			sber.sub.ID(), intendedSubID)
+	case !sber.sameReceiveSettings(ctx, settings.GetReceiveSettings()):
+	default:
+		isSame = true
+	}
+	return
 }

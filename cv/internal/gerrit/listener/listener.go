@@ -107,8 +107,12 @@ func (l *Listener) reload(ctx context.Context, settings []*listenerpb.Settings_G
 		}
 
 		switch sber, ok := l.sbers[host]; {
+		case ctx.Err() != nil:
+			return ctx.Err()
+
 		case !ok:
 			sber = newGerritSubscriber(l.psClient, l.sch, l.prjFinder, setting)
+			logging.Infof(ctx, "listener.reload: new host %q found; starting a subscriber", host)
 			if err := sber.start(ctx); err != nil {
 				startErrs.Assign(i, err)
 			}
@@ -116,7 +120,8 @@ func (l *Listener) reload(ctx context.Context, settings []*listenerpb.Settings_G
 
 		// If the setting changed, stop the existing subscriber and
 		// start a new one.
-		case !sameGerritSubscriberSettings(sber, setting):
+		case !sameGerritSubscriberSettings(ctx, sber, setting):
+			logging.Infof(ctx, "listener.reload: subscriber setting changed for host %q", host)
 			wg.Add(1)
 			newSber := newGerritSubscriber(l.psClient, l.sch, l.prjFinder, setting)
 			l.sbers[host] = newSber
@@ -131,7 +136,7 @@ func (l *Listener) reload(ctx context.Context, settings []*listenerpb.Settings_G
 
 		// did the subscriber stop or fail to start?
 		case sber.isStopped():
-			logging.Warningf(ctx, "Subscriber for gerrit host %q was found dead; restarting", host)
+			logging.Warningf(ctx, "listener.reload: subscriber for host %q was found dead; restarting", host)
 			if err := sber.start(ctx); err != nil {
 				startErrs.Assign(i, err)
 			}
@@ -141,7 +146,7 @@ func (l *Listener) reload(ctx context.Context, settings []*listenerpb.Settings_G
 	// stop the Gerrit subscribers for the removed Gerrit hosts.
 	for host, sber := range l.sbers {
 		if !activeHosts.Has(host) {
-			logging.Infof(ctx, "Gerrit host %q was removed from the settings", host)
+			logging.Infof(ctx, "listener.reload: host %q was removed from the settings", host)
 			delete(l.sbers, host)
 
 			sber := sber

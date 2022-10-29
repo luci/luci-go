@@ -76,8 +76,8 @@ func (s *subscriber) start(ctx context.Context) error {
 		return errors.Reason("subscription %q doesn't exist", s.sub.ID()).Err()
 	}
 
+	ctx = logging.SetField(ctx, "subscriptionID", s.sub.ID())
 	subctx, cancel := context.WithCancel(ctx)
-	subctx = logging.SetField(subctx, "subscriptionID", s.sub.ID())
 	s.cancelFunc = cancel
 	s.done = make(chan struct{})
 	ch := make(chan struct{})
@@ -95,6 +95,7 @@ func (s *subscriber) start(ctx context.Context) error {
 		// cancel the context on exit.
 		defer cancel()
 		defer close(s.done)
+		logging.Infof(ctx, "subscriber.start: worker started")
 		err := s.sub.Receive(subctx, func(pubctx context.Context, m *pubsub.Message) {
 			if pubctx.Err() != nil {
 				logging.Warningf(subctx, "subscriber.process: %s", pubctx.Err())
@@ -120,10 +121,12 @@ func (s *subscriber) start(ctx context.Context) error {
 				logging.Errorf(subctx, "%s.process: permanent error %s", procName, err)
 			}
 		})
-		if err != nil {
-			// subctx may be no longer valid at this moment.
-			// use ctx for logging, instead.
-			logging.Errorf(ctx, "subscriber.start.Receive(%s): %s", s.sub.ID(), err)
+		// subctx may be no longer valid at this moment, use ctx for logging.
+		switch err {
+		case nil:
+			logging.Infof(ctx, "subscriber.start: worker exiting normally")
+		default:
+			logging.Errorf(ctx, "subscriber.start: worker exiting: %s", err)
 		}
 	}()
 
@@ -140,28 +143,44 @@ func (s *subscriber) start(ctx context.Context) error {
 
 func (s *subscriber) stop(ctx context.Context) {
 	s.mu.Lock()
+	ctx = logging.SetField(ctx, "subscriptionID", s.sub.ID())
+	logging.Infof(ctx, "subscriber.stop: requested")
 	defer s.mu.Unlock()
 	if s.cancelFunc != nil {
+		logging.Infof(ctx, "subscriber.stop: cancelling the context")
 		s.cancelFunc()
 		select {
 		case <-s.done:
 		case <-ctx.Done():
+			logging.Warningf(ctx, "subscriber.stop: stop context cancelled before worker ended")
 		}
 	}
 }
 
 // sameReceiveSettings returns true if the current receive settings are the same
 // as given ones.
-func (s *subscriber) sameReceiveSettings(in *listenerpb.Settings_ReceiveSettings) bool {
-	nGoroutines := defaultNumGoroutines
-	maxOutstandingMessages := defaultMaxOutstandingMessages
-
-	if in != nil {
-		nGoroutines = int(in.NumGoroutines)
-		maxOutstandingMessages = int(in.MaxOutstandingMessages)
+func (s *subscriber) sameReceiveSettings(ctx context.Context, in *listenerpb.Settings_ReceiveSettings) (isSame bool) {
+	ctx = logging.SetField(ctx, "subscriptionID", s.sub.ID())
+	intended := &listenerpb.Settings_ReceiveSettings{
+		NumGoroutines:          defaultNumGoroutines,
+		MaxOutstandingMessages: defaultMaxOutstandingMessages,
 	}
-	return (s.sub.ReceiveSettings.NumGoroutines == nGoroutines &&
-		s.sub.ReceiveSettings.MaxOutstandingMessages == maxOutstandingMessages)
+	if in != nil {
+		intended.NumGoroutines = in.NumGoroutines
+		intended.MaxOutstandingMessages = in.MaxOutstandingMessages
+	}
+
+	switch current := s.sub.ReceiveSettings; {
+	case current.NumGoroutines != int(intended.NumGoroutines):
+		logging.Infof(ctx, "sameReceiveSettings: NumGoroutines changed from %d to %d",
+			current.NumGoroutines, intended.NumGoroutines)
+	case current.MaxOutstandingMessages != int(intended.MaxOutstandingMessages):
+		logging.Infof(ctx, "sameReceiveSettings: MaxOutstandingMessages changed from %d to %d",
+			current.MaxOutstandingMessages, intended.MaxOutstandingMessages)
+	default:
+		isSame = true
+	}
+	return
 }
 
 func (s *subscriber) isStopped() bool {

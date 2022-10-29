@@ -61,7 +61,7 @@ func TestGerrit(t *testing.T) {
 					MaxOutstandingMessages: defaultMaxOutstandingMessages + 1,
 				}
 				sber = newGerritSubscriber(client, &testScheduler{}, finder, settings)
-				So(sber.sameReceiveSettings(settings.ReceiveSettings), ShouldBeTrue)
+				So(sber.sameReceiveSettings(ctx, settings.ReceiveSettings), ShouldBeTrue)
 			})
 		})
 
@@ -72,7 +72,7 @@ func TestGerrit(t *testing.T) {
 			}
 			sber := newGerritSubscriber(client, &testScheduler{}, finder, settings)
 			check := func() bool {
-				return sameGerritSubscriberSettings(sber, settings)
+				return sameGerritSubscriberSettings(ctx, sber, settings)
 			}
 			So(check(), ShouldBeTrue)
 
@@ -96,7 +96,7 @@ func TestGerrit(t *testing.T) {
 
 				// same subscription ID, but different host.
 				settings.Host = "example-2.org"
-				So(sameGerritSubscriberSettings(sber, settings), ShouldBeFalse)
+				So(sameGerritSubscriberSettings(ctx, sber, settings), ShouldBeFalse)
 			})
 		})
 
