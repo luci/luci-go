@@ -1,7 +1,7 @@
 service: listener
 runtime: go116
 
-instance_class: B4_1G
+instance_class: F4
 
 automatic_scaling:
   min_idle_instances: 1
