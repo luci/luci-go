@@ -60,17 +60,17 @@ def _history_options(*, by_timestamp = False):
 
 def _bq_export(bq_table = None):
     if type(bq_table) == "tuple":
-      if len(bq_table) != 3:
-        fail("Expected tuple of length 3, got %s" % (bq_table,))
-      project, dataset, table = bq_table
+        if len(bq_table) != 3:
+            fail("Expected tuple of length 3, got %s" % (bq_table,))
+        project, dataset, table = bq_table
     elif type(bq_table) == "string":
-      project, dataset, table = validate.string(
-          "bq_table",
-          bq_table,
-          regexp = r"^([^.]+)\.([^.]+)\.([^.]+)$",
-      ).split(".")
+        project, dataset, table = validate.string(
+            "bq_table",
+            bq_table,
+            regexp = r"^([^.]+)\.([^.]+)\.([^.]+)$",
+        ).split(".")
     else:
-      fail("Unsupported bq_table type %s" % type(bq_table))
+        fail("Unsupported bq_table type %s" % type(bq_table))
 
     return resultdb_pb.BigQueryExport(
         project = project,

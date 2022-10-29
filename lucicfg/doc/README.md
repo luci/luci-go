@@ -2409,8 +2409,8 @@ Please talk to CQ owners if these restrictions are limiting you.
 
 ##### Examples
 
-Enable the verifier for all CLs touching any file in `third_party/blink`
-directory of the `chromium/src` repo, but not the directory itself:
+Enable the verifier only for all CLs touching any file in `third_party/blink`
+directory of the `chromium/src` repo.
 
     luci.cq_tryjob_verifier(
         location_filters = [
@@ -2421,31 +2421,40 @@ directory of the `chromium/src` repo, but not the directory itself:
         ],
     )
 
-Match a CL which touches at least one file other than `one.txt` inside
-`all/` directory of the Gerrit project `repo`:
+Enable the verifier for CLs that touch files in "foo/", on any host and repo.
+
+    luci.cq_tryjob_verifier(
+        location_filters = [
+            cq.location_filter(path_regexp = 'foo/.+')
+        ],
+    )
+
+Disable the verifier for CLs that *only* touches the "all/one.txt" file in
+"repo" of "example.com". If the CL touches anything else in the same host
+and repo, or touches any file in a different repo and/or host, the verifier
+will be enabled.
 
     luci.cq_tryjob_verifier(
         location_filters = [
             cq.location_filter(
-                gerrit_host_regexp = 'example.com,
-                gerrit_project_regexp = 'repo',
-                path_regexp = '.+'),
-            cq.location_filter(
-                gerrit_host_regexp = 'example.com,
+                gerrit_host_regexp = 'example.com',
                 gerrit_project_regexp = 'repo',
                 path_regexp = 'all/one.txt',
                 exclude = True),
         ],
     )
 
-Match a CL which touches at least one file other than `one.txt` in any
-repository **or** belongs to any other Gerrit server. Note, in this case
-`location_regexp` defaults to `.*`:
+Match a CL which touches at least one file other than `one.txt` inside
+`all/` directory of the Gerrit project `repo`:
 
     luci.cq_tryjob_verifier(
         location_filters = [
             cq.location_filter(
-                gerrit_host_regexp = 'example.com,
+                gerrit_host_regexp = 'example.com',
+                gerrit_project_regexp = 'repo',
+                path_regexp = 'all/.+'),
+            cq.location_filter(
+                gerrit_host_regexp = 'example.com',
                 gerrit_project_regexp = 'repo',
                 path_regexp = 'all/one.txt',
                 exclude = True),
