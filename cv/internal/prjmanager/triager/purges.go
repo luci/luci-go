@@ -34,6 +34,10 @@ func stagePurges(ctx context.Context, cls map[int64]*clInfo, pm pmState) ([]*prj
 	var out []*prjpb.PurgeCLTask
 	next := time.Time{}
 	for clid, info := range cls {
+		if info.purgingCL != nil {
+			// the CL is already being purged, do not schedule a new task.
+			continue
+		}
 		switch when := purgeETA(info, now, pm); {
 		case when.IsZero():
 		case when.After(now):
