@@ -22,7 +22,6 @@ import (
 	"go.chromium.org/luci/common/clock"
 	"google.golang.org/protobuf/proto"
 
-	"go.chromium.org/luci/cv/internal/changelist"
 	"go.chromium.org/luci/cv/internal/prjmanager/prjpb"
 	"go.chromium.org/luci/cv/internal/run"
 )
@@ -43,10 +42,6 @@ func stagePurges(ctx context.Context, cls map[int64]*clInfo, pm pmState) ([]*prj
 		case when.After(now):
 			next = earliest(next, when)
 		default:
-			var clErrors []*changelist.CLError
-			for _, pr := range info.purgeReasons {
-				clErrors = append(clErrors, pr.GetClError())
-			}
 			purgingCl := &prjpb.PurgingCL{
 				Clid: clid,
 			}
