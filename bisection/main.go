@@ -23,6 +23,7 @@ import (
 
 	"go.chromium.org/luci/bisection/compilefailuredetection"
 	"go.chromium.org/luci/bisection/frontend/handlers"
+	"go.chromium.org/luci/bisection/internal/config"
 	pb "go.chromium.org/luci/bisection/proto"
 	"go.chromium.org/luci/bisection/pubsub"
 	"go.chromium.org/luci/bisection/server"
@@ -34,6 +35,7 @@ import (
 	luciserver "go.chromium.org/luci/server"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/openid"
+	"go.chromium.org/luci/server/cron"
 	"go.chromium.org/luci/server/encryptedcookies"
 	"go.chromium.org/luci/server/templates"
 	"go.chromium.org/luci/server/tq"
@@ -138,6 +140,7 @@ func checkBotAPIAccess(ctx context.Context, methodName string, req proto.Message
 func main() {
 	modules := []module.Module{
 		cfgmodule.NewModuleFromFlags(),
+		cron.NewModuleFromFlags(),
 		gaeemulation.NewModuleFromFlags(),
 		encryptedcookies.NewModuleFromFlags(), // Required for auth sessions.
 		secrets.NewModuleFromFlags(),          // Needed by encryptedcookies.
@@ -181,7 +184,11 @@ func main() {
 			Prelude: checkBotAPIAccess,
 		})
 
+		// GAE crons
+		cron.RegisterHandler("update-config", config.Update)
+
 		compilefailuredetection.RegisterTaskClass()
+
 		return nil
 	})
 }
