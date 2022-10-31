@@ -165,9 +165,12 @@ func (s *subscriber) sameReceiveSettings(ctx context.Context, in *listenerpb.Set
 		NumGoroutines:          defaultNumGoroutines,
 		MaxOutstandingMessages: defaultMaxOutstandingMessages,
 	}
-	if in != nil {
-		intended.NumGoroutines = in.NumGoroutines
-		intended.MaxOutstandingMessages = in.MaxOutstandingMessages
+
+	if val := in.GetNumGoroutines(); val > 0 {
+		intended.NumGoroutines = val
+	}
+	if val := in.GetMaxOutstandingMessages(); val > 0 {
+		intended.MaxOutstandingMessages = val
 	}
 
 	switch current := s.sub.ReceiveSettings; {

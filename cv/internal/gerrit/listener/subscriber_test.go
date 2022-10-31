@@ -26,6 +26,8 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 
+	listenerpb "go.chromium.org/luci/cv/settings/listener"
+
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
 )
@@ -115,4 +117,42 @@ func TestSubscriber(t *testing.T) {
 			So(sber.isStopped(), ShouldBeTrue)
 		})
 	})
+}
+
+func TestSameReceiveSettings(t *testing.T) {
+	t.Parallel()
+
+	Convey("sameReceiveSettings", t, func() {
+		ctx := context.Background()
+		client, closeFn := mockPubSub(ctx)
+		defer closeFn()
+		cfgs := &listenerpb.Settings_ReceiveSettings{}
+		sber := &subscriber{sub: client.Subscription("sub_id_1")}
+		sber.sub.ReceiveSettings.NumGoroutines = defaultNumGoroutines
+		sber.sub.ReceiveSettings.MaxOutstandingMessages = defaultMaxOutstandingMessages
+
+		Convey("NumGoroutines", func() {
+			Convey("if 0, should be the default", func() {
+				cfgs.NumGoroutines = 0
+				So(sber.sameReceiveSettings(ctx, cfgs), ShouldBeTrue)
+
+			})
+			Convey("if != 0, should be different", func() {
+				cfgs.NumGoroutines = 1
+				So(sber.sameReceiveSettings(ctx, cfgs), ShouldBeFalse)
+			})
+		})
+		Convey("MaxOutstandingMessages", func() {
+			Convey("if 0, should be the default", func() {
+				cfgs.MaxOutstandingMessages = 0
+				So(sber.sameReceiveSettings(ctx, cfgs), ShouldBeTrue)
+
+			})
+			Convey("if != 0, should be different", func() {
+				cfgs.MaxOutstandingMessages = 1
+				So(sber.sameReceiveSettings(ctx, cfgs), ShouldBeFalse)
+			})
+		})
+	})
+
 }
