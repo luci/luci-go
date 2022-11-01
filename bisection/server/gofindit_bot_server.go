@@ -19,6 +19,7 @@ import (
 	"context"
 	"fmt"
 
+	"go.chromium.org/luci/bisection/compilefailureanalysis/nthsection"
 	"go.chromium.org/luci/bisection/model"
 	pb "go.chromium.org/luci/bisection/proto"
 	"go.chromium.org/luci/bisection/util/datastoreutil"
@@ -86,16 +87,71 @@ func (server *GoFinditBotServer) UpdateAnalysisProgress(c context.Context, req *
 			errors.Log(c, err)
 			return nil, status.Errorf(codes.Internal, "error updating suspect")
 		}
+		// TODO (nqmtuan): It is possible that we schedule an nth-section run right after
+		// a culprit verification run within the same build. We will do this later, for
+		// safety, after we verify nth-section analysis is running fine.
 		return &pb.UpdateAnalysisProgressResponse{}, nil
 	}
 
 	// Nth section
 	if lastRerun.Type == model.RerunBuildType_NthSection {
-		// TODO (nqmtuan): Create a snapshot and return next commit(s) to run
-		return &pb.UpdateAnalysisProgressResponse{}, nil
+		shouldRun, commit, err := findNextCommitToRun(c, req.AnalysisId)
+		if err != nil {
+			err = errors.Annotate(err, "findNextCommitToRun").Err()
+			errors.Log(c, err)
+			return nil, status.Errorf(codes.Internal, "error finding next commit to run for analysis %d", req.AnalysisId)
+		}
+		if !shouldRun {
+			return &pb.UpdateAnalysisProgressResponse{}, nil
+		}
+		return &pb.UpdateAnalysisProgressResponse{
+			NextRevisionToRun: &bbpb.GitilesCommit{
+				Host:    req.GitilesCommit.Host,
+				Project: req.GitilesCommit.Project,
+				Ref:     req.GitilesCommit.Ref,
+				Id:      commit,
+			},
+		}, nil
 	}
 
 	return nil, status.Errorf(codes.Internal, "unknown error")
+}
+
+// findNextCommitToRun return true (and the commit) if it can find a commit to run next
+func findNextCommitToRun(c context.Context, analysisID int64) (bool, string, error) {
+	// TODO (nqmtuan): It is possible that there are some pending culprit verification runs
+	// that have higher priority than nth-section run. In such case, we should
+	// return the culprit verification run first. However, it requires cancelling existing build
+	// etc... so we will do it later.
+	// For now, we will return the next nthsection commit that should run next
+	cfa, err := datastoreutil.GetCompileFailureAnalysis(c, analysisID)
+	if err != nil {
+		return false, "", err
+	}
+	nsa, err := datastoreutil.GetNthSectionAnalysis(c, cfa)
+	if err != nil {
+		return false, "", err
+	}
+
+	// There is no nthsection analysis for this analysis
+	if nsa == nil {
+		return false, "", nil
+	}
+
+	snapshot, err := nthsection.CreateSnapshot(c, nsa)
+	if err != nil {
+		return false, "", errors.Annotate(err, "couldn't create snapshot").Err()
+	}
+
+	// We pass 1 as argument here because at this moment, we only have 1 "slot" left for nth section
+	commits, err := snapshot.FindNextCommitsToRun(1)
+	if err != nil {
+		return false, "", errors.Annotate(err, "couldn't find next commits to run").Err()
+	}
+	if len(commits) != 1 {
+		return false, "", errors.Annotate(err, "expect only 1 commits to rerun. Got %d", len(commits)).Err()
+	}
+	return true, commits[0], nil
 }
 
 func updateSuspectWithRerunData(c context.Context, rerun *model.SingleRerun) error {

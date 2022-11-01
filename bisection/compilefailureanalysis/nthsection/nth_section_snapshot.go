@@ -134,6 +134,15 @@ func (chunk *NthSectionSnapshotChunk) length() int {
 // We can run at indices 2, 5, 8 to break the range into 4 "chunks"
 // [0-1], [3-4], [6-7], [9]. The biggest chunk is of size 2.
 func (snapshot *NthSectionSnapshot) FindNextIndicesToRun(n int) ([]int, error) {
+	hasCulprit, _, err := snapshot.GetCulprit()
+	if err != nil {
+		return nil, err
+	}
+	// There is a culprit, no need to run anymore
+	if hasCulprit {
+		return []int{}, nil
+	}
+
 	chunks, err := snapshot.findRegressionChunks()
 	if err != nil {
 		return nil, err
@@ -179,6 +188,12 @@ func (snapshot *NthSectionSnapshot) findRegressionChunks() ([]*NthSectionSnapsho
 	// use those builds to break the range into smaller chunks
 	chunks := []*NthSectionSnapshotChunk{}
 	for _, run := range snapshot.Runs {
+		// There is a special case where there is a failed run at the start
+		// In such case we don't want to include the failed run in any chunks
+		if run.Index == start && run.Status == pb.RerunStatus_FAILED {
+			start = run.Index + 1
+			continue
+		}
 		if run.Index >= start && run.Index <= end && run.Status == pb.RerunStatus_IN_PROGRESS {
 			if start <= run.Index-1 {
 				chunks = append(chunks, &NthSectionSnapshotChunk{Begin: start, End: run.Index - 1})

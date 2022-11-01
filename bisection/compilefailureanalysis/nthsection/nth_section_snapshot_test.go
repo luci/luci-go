@@ -16,7 +16,6 @@ package nthsection
 
 import (
 	"context"
-	"fmt"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
@@ -28,6 +27,7 @@ import (
 
 	"go.chromium.org/luci/bisection/model"
 	pb "go.chromium.org/luci/bisection/proto"
+	"go.chromium.org/luci/bisection/util/testutil"
 )
 
 func TestChunking(t *testing.T) {
@@ -185,7 +185,7 @@ func TestCreateSnapshot(t *testing.T) {
 		analysis := &model.CompileFailureAnalysis{}
 		So(datastore.Put(c, analysis), ShouldBeNil)
 		datastore.GetTestable(c).CatchupIndexes()
-		blamelist := createBlamelist(4)
+		blamelist := testutil.CreateBlamelist(4)
 		nthSectionAnalysis := &model.CompileNthSectionAnalysis{
 			BlameList:      blamelist,
 			ParentAnalysis: datastore.KeyForObj(c, analysis),
@@ -241,7 +241,7 @@ func TestGetRegressionRange(t *testing.T) {
 
 	Convey("GetRegressionRangeNoRun", t, func() {
 		// Create a blamelist with 100 commit
-		blamelist := createBlamelist(100)
+		blamelist := testutil.CreateBlamelist(100)
 		snapshot := &NthSectionSnapshot{
 			BlameList: blamelist,
 			Runs:      []*NthSectionSnapshotRun{},
@@ -254,7 +254,7 @@ func TestGetRegressionRange(t *testing.T) {
 
 	Convey("GetRegressionRangeOK", t, func() {
 		// Create a blamelist with 100 commit
-		blamelist := createBlamelist(100)
+		blamelist := testutil.CreateBlamelist(100)
 		snapshot := &NthSectionSnapshot{
 			BlameList: blamelist,
 			Runs: []*NthSectionSnapshotRun{
@@ -284,7 +284,7 @@ func TestGetRegressionRange(t *testing.T) {
 
 	Convey("GetRegressionRangeError", t, func() {
 		// Create a blamelist with 100 commit
-		blamelist := createBlamelist(100)
+		blamelist := testutil.CreateBlamelist(100)
 		snapshot := &NthSectionSnapshot{
 			BlameList: blamelist,
 			Runs: []*NthSectionSnapshotRun{
@@ -308,7 +308,7 @@ func TestGetCulprit(t *testing.T) {
 
 	Convey("GetCulpritOK", t, func() {
 		// Create a blamelist with 100 commit
-		blamelist := createBlamelist(100)
+		blamelist := testutil.CreateBlamelist(100)
 		snapshot := &NthSectionSnapshot{
 			BlameList: blamelist,
 			Runs: []*NthSectionSnapshotRun{
@@ -330,7 +330,7 @@ func TestGetCulprit(t *testing.T) {
 
 	Convey("GetCulpritFailed", t, func() {
 		// Create a blamelist with 100 commit
-		blamelist := createBlamelist(100)
+		blamelist := testutil.CreateBlamelist(100)
 		snapshot := &NthSectionSnapshot{
 			BlameList: blamelist,
 			Runs:      []*NthSectionSnapshotRun{},
@@ -342,7 +342,7 @@ func TestGetCulprit(t *testing.T) {
 
 	Convey("GetCulpritError", t, func() {
 		// Create a blamelist with 100 commit
-		blamelist := createBlamelist(100)
+		blamelist := testutil.CreateBlamelist(100)
 		snapshot := &NthSectionSnapshot{
 			BlameList: blamelist,
 			Runs: []*NthSectionSnapshotRun{
@@ -366,7 +366,7 @@ func TestFindRegressionChunks(t *testing.T) {
 	t.Parallel()
 
 	Convey("findRegressionChunks", t, func() {
-		blamelist := createBlamelist(100)
+		blamelist := testutil.CreateBlamelist(100)
 		snapshot := &NthSectionSnapshot{
 			BlameList: blamelist,
 			Runs: []*NthSectionSnapshotRun{
@@ -408,7 +408,7 @@ func TestFindRegressionChunks(t *testing.T) {
 				End:   25,
 			},
 			{
-				Begin: 15,
+				Begin: 16,
 				End:   18,
 			},
 			{
@@ -443,7 +443,7 @@ func TestFindNextIndicesToRun(t *testing.T) {
 	t.Parallel()
 
 	Convey("FindNextIndicesToRun", t, func() {
-		blamelist := createBlamelist(10)
+		blamelist := testutil.CreateBlamelist(10)
 		snapshot := &NthSectionSnapshot{
 			BlameList: blamelist,
 			Runs: []*NthSectionSnapshotRun{
@@ -457,13 +457,34 @@ func TestFindNextIndicesToRun(t *testing.T) {
 		So(err, ShouldBeNil)
 		So(indices, ShouldResemble, []int{2, 8})
 	})
+
+	Convey("FindNextIndicesToRun already found culprit", t, func() {
+		blamelist := testutil.CreateBlamelist(10)
+		snapshot := &NthSectionSnapshot{
+			BlameList: blamelist,
+			Runs: []*NthSectionSnapshotRun{
+				{
+					Index:  5,
+					Status: pb.RerunStatus_PASSED,
+				},
+				{
+					Index:  4,
+					Status: pb.RerunStatus_FAILED,
+				},
+			},
+		}
+		indices, err := snapshot.FindNextIndicesToRun(2)
+		So(err, ShouldBeNil)
+		So(indices, ShouldResemble, []int{})
+	})
+
 }
 
 func TestFindNextCommitsToRun(t *testing.T) {
 	t.Parallel()
 
 	Convey("FindNextIndicesToRun", t, func() {
-		blamelist := createBlamelist(10)
+		blamelist := testutil.CreateBlamelist(10)
 		snapshot := &NthSectionSnapshot{
 			BlameList: blamelist,
 			Runs: []*NthSectionSnapshotRun{
@@ -489,14 +510,4 @@ func TestCalculateChunkSize(t *testing.T) {
 		So(calculateChunkSize(10, 0), ShouldEqual, 10)
 		So(calculateChunkSize(3, 1), ShouldEqual, 1)
 	})
-}
-
-func createBlamelist(nCommits int) *pb.BlameList {
-	blamelist := &pb.BlameList{}
-	for i := 0; i < nCommits; i++ {
-		blamelist.Commits = append(blamelist.Commits, &pb.BlameListSingleCommit{
-			Commit: fmt.Sprintf("commit%d", i),
-		})
-	}
-	return blamelist
 }

@@ -121,12 +121,8 @@ func GetSuspects(c context.Context, heuristicAnalysis *model.CompileHeuristicAna
 
 // GetCompileFailureForAnalysis gets CompileFailure for analysisID.
 func GetCompileFailureForAnalysis(c context.Context, analysisID int64) (*model.CompileFailure, error) {
-	analysis := &model.CompileFailureAnalysis{
-		Id: analysisID,
-	}
-	err := datastore.Get(c, analysis)
+	analysis, err := GetCompileFailureAnalysis(c, analysisID)
 	if err != nil {
-		logging.Errorf(c, "Error getting analysis %d: %s", analysisID, err)
 		return nil, err
 	}
 	compileFailure := &model.CompileFailure{
@@ -160,4 +156,37 @@ func GetLastRerunForRerunBuild(c context.Context, rerunBuild *model.CompileRerun
 		return nil, fmt.Errorf("got no SingleRerun for build %d", rerunBuild.Id)
 	}
 	return reruns[len(reruns)-1], nil
+}
+
+// GetNthSectionAnalysis returns the nthsection analysis associated with the given failure analysis
+func GetNthSectionAnalysis(c context.Context, analysis *model.CompileFailureAnalysis) (*model.CompileNthSectionAnalysis, error) {
+	q := datastore.NewQuery("CompileNthSectionAnalysis").Ancestor(datastore.KeyForObj(c, analysis))
+	nthSectionAnalyses := []*model.CompileNthSectionAnalysis{}
+	err := datastore.GetAll(c, q, &nthSectionAnalyses)
+
+	if err != nil {
+		return nil, errors.Annotate(err, "couldn't get nthsection analysis for analysis %d", analysis.Id).Err()
+	}
+
+	if len(nthSectionAnalyses) == 0 {
+		return nil, nil
+	}
+
+	if len(nthSectionAnalyses) > 1 {
+		return nil, fmt.Errorf("found more than 1 nth section analysis for analysis %d", analysis.Id)
+	}
+
+	return nthSectionAnalyses[0], nil
+}
+
+// GetCompileFailureAnalysis gets compile failure analysis by its id
+func GetCompileFailureAnalysis(c context.Context, analysisID int64) (*model.CompileFailureAnalysis, error) {
+	analysis := &model.CompileFailureAnalysis{
+		Id: analysisID,
+	}
+	err := datastore.Get(c, analysis)
+	if err != nil {
+		return nil, errors.Annotate(err, "couldn't get CompileFailureAnalysis %d", analysis.Id).Err()
+	}
+	return analysis, err
 }

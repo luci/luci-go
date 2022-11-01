@@ -350,3 +350,67 @@ func TestGetRerunsForRerunBuild(t *testing.T) {
 		So(r.Id, ShouldEqual, 2)
 	})
 }
+
+func TestGetNthSectionAnalysis(t *testing.T) {
+	t.Parallel()
+	c := memory.Use(context.Background())
+
+	Convey("No nthsection analysis found", t, func() {
+		cfa := &model.CompileFailureAnalysis{
+			Id: 123,
+		}
+		nsa, err := GetNthSectionAnalysis(c, cfa)
+		So(err, ShouldBeNil)
+		So(nsa, ShouldBeNil)
+	})
+
+	Convey("More than one nthsection analysis found", t, func() {
+		cfa := &model.CompileFailureAnalysis{
+			Id: 456,
+		}
+		So(datastore.Put(c, cfa), ShouldBeNil)
+		nsa1 := &model.CompileNthSectionAnalysis{
+			ParentAnalysis: datastore.KeyForObj(c, cfa),
+		}
+		nsa2 := &model.CompileNthSectionAnalysis{
+			ParentAnalysis: datastore.KeyForObj(c, cfa),
+		}
+		So(datastore.Put(c, nsa1), ShouldBeNil)
+		So(datastore.Put(c, nsa2), ShouldBeNil)
+
+		_, err := GetNthSectionAnalysis(c, cfa)
+		So(err, ShouldNotBeNil)
+	})
+
+	Convey("Nthsection analysis found", t, func() {
+		cfa := &model.CompileFailureAnalysis{
+			Id: 789,
+		}
+		So(datastore.Put(c, cfa), ShouldBeNil)
+		nsa1 := &model.CompileNthSectionAnalysis{
+			ParentAnalysis: datastore.KeyForObj(c, cfa),
+			Id:             345,
+		}
+		So(datastore.Put(c, nsa1), ShouldBeNil)
+		nsa, err := GetNthSectionAnalysis(c, cfa)
+		So(err, ShouldBeNil)
+		So(nsa.Id, ShouldEqual, 345)
+	})
+}
+
+func TestGetCompileFailureAnalysis(t *testing.T) {
+	t.Parallel()
+	c := memory.Use(context.Background())
+
+	Convey("GetCompileFailureAnalysis", t, func() {
+		_, err := GetCompileFailureAnalysis(c, 123)
+		So(err, ShouldNotBeNil)
+		cfa := &model.CompileFailureAnalysis{
+			Id: 123,
+		}
+		So(datastore.Put(c, cfa), ShouldBeNil)
+		analysis, err := GetCompileFailureAnalysis(c, 123)
+		So(err, ShouldBeNil)
+		So(analysis.Id, ShouldEqual, 123)
+	})
+}
