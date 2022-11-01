@@ -254,12 +254,12 @@ type BuilderConfig struct {
 	// A requirement for a bot to execute the build.
 	//
 	// Supports 2 forms:
-	//   - "<key>:<value>" - require a bot with this dimension.
-	//     This is a shortcut for "0:<key>:<value>", see below.
-	//   - "<expiration_secs>:<key>:<value>" - wait for up to expiration_secs.
-	//     for a bot with the dimension.
-	//     Supports multiple values for different keys and expiration_secs.
-	//     expiration_secs must be a multiple of 60.
+	// - "<key>:<value>" - require a bot with this dimension.
+	//   This is a shortcut for "0:<key>:<value>", see below.
+	// - "<expiration_secs>:<key>:<value>" - wait for up to expiration_secs.
+	//   for a bot with the dimension.
+	//   Supports multiple values for different keys and expiration_secs.
+	//   expiration_secs must be a multiple of 60.
 	//
 	// If this builder is defined in a bucket, dimension "pool" is defaulted
 	// to the name of the bucket. See Bucket message below.
@@ -356,17 +356,17 @@ type BuilderConfig struct {
 	//
 	// For example, this config
 	//
-	//	builder {
-	//	  name: "linux-compiler"
-	//	  dimension: "builder:linux-compiler"
-	//	}
+	//   builder {
+	//     name: "linux-compiler"
+	//     dimension: "builder:linux-compiler"
+	//   }
 	//
 	// is equivalent to this:
 	//
-	//	builders {
-	//	  name: "linux-compiler"
-	//	  auto_builder_dimension: YES
-	//	}
+	//   builders {
+	//     name: "linux-compiler"
+	//     auto_builder_dimension: YES
+	//   }
 	//
 	// (see also http://docs.buildbot.net/0.8.9/manual/cfg-properties.html#interpolate)
 	// but are currently against complicating config with this.
@@ -399,7 +399,7 @@ type BuilderConfig struct {
 	// You may set any experiments you like, but experiments beginning with
 	// "luci." are reserved. Experiment names must conform to
 	//
-	//	[a-z][a-z0-9_]*(\.[a-z][a-z0-9_]*)*
+	//    [a-z][a-z0-9_]*(\.[a-z][a-z0-9_]*)*
 	//
 	// Any experiments which are selected for a build show up in
 	// `Build.input.experiments`.
@@ -414,7 +414,7 @@ type BuilderConfig struct {
 	// being set for your build (i.e. "if any experiment is set, don't affect
 	// production"). This is ulimately up to you, however.
 	//
-	// # Well-known experiments
+	// Well-known experiments
 	//
 	// Buildbucket has a number of 'global' experiments which are in various
 	// states of deployment at any given time. For the current state, see
@@ -724,6 +724,7 @@ type Bucket struct {
 	// Deprecated: Do not use.
 	Acls []*Acl `protobuf:"bytes,2,rep,name=acls,proto3" json:"acls,omitempty"`
 	// Buildbucket-swarming integration.
+	// Mutually exclusive with builder_template.
 	Swarming *Swarming `protobuf:"bytes,3,opt,name=swarming,proto3" json:"swarming,omitempty"`
 	// Name of this bucket's shadow bucket for the led builds to use.
 	//
@@ -734,10 +735,10 @@ type Bucket struct {
 	// service_accounts can do.
 	//
 	// It could also be noisy, such as:
-	//   - On the LUCI UI, led builds will show under the same builder as the real builds,
-	//   - Led builds will share the same ResultDB config as the real builds, so
-	//     their test results will be exported to the same BigQuery tables.
-	//   - Subscribers of Buildbucket PubSub need to filter them out.
+	// * On the LUCI UI, led builds will show under the same builder as the real builds,
+	// * Led builds will share the same ResultDB config as the real builds, so
+	//   their test results will be exported to the same BigQuery tables.
+	// * Subscribers of Buildbucket PubSub need to filter them out.
 	Shadow string `protobuf:"bytes,5,opt,name=shadow,proto3" json:"shadow,omitempty"`
 	// Security constraints of the bucket.
 	//
@@ -752,6 +753,13 @@ type Bucket struct {
 	// Buildbuceket.CreateBuild will validate the incoming requests to make sure
 	// they meet these constraints.
 	Constraints *Bucket_Constraints `protobuf:"bytes,6,opt,name=constraints,proto3" json:"constraints,omitempty"`
+	// Template of builders in a dynamic bucket.
+	// Mutually exclusive with swarming.
+	//
+	// If is not nil, the bucket is a dynamic LUCI bucket.
+	// If a bucket has both swarming and dynamic_builder_template as nil,
+	// the bucket is a legacy one.
+	DynamicBuilderTemplate *Bucket_DynamicBuilderTemplate `protobuf:"bytes,7,opt,name=dynamic_builder_template,json=dynamicBuilderTemplate,proto3" json:"dynamic_builder_template,omitempty"`
 }
 
 func (x *Bucket) Reset() {
@@ -822,6 +830,13 @@ func (x *Bucket) GetConstraints() *Bucket_Constraints {
 	return nil
 }
 
+func (x *Bucket) GetDynamicBuilderTemplate() *Bucket_DynamicBuilderTemplate {
+	if x != nil {
+		return x.DynamicBuilderTemplate
+	}
+	return nil
+}
+
 // Schema of buildbucket.cfg file, a project config.
 type BuildbucketCfg struct {
 	state         protoimpl.MessageState
@@ -877,20 +892,20 @@ func (x *BuildbucketCfg) GetBuckets() []*Bucket {
 //
 // To share a builder cache among multiple builders, it can be overridden:
 //
-//	builders {
-//	  name: "a"
-//	  caches {
-//	    path: "builder"
-//	    name: "my_shared_cache"
-//	  }
-//	}
-//	builders {
-//	  name: "b"
-//	  caches {
-//	    path: "builder"
-//	    name: "my_shared_cache"
-//	  }
-//	}
+//   builders {
+//     name: "a"
+//     caches {
+//       path: "builder"
+//       name: "my_shared_cache"
+//     }
+//   }
+//   builders {
+//     name: "b"
+//     caches {
+//       path: "builder"
+//       name: "my_shared_cache"
+//     }
+//   }
 //
 // Builders "a" and "b" share their builder cache. If an "a" build ran on a
 // bot and left some files in the builder cache and then a "b" build runs on
@@ -992,7 +1007,7 @@ type BuilderConfig_Recipe struct {
 	//
 	// Typically the package will look like:
 	//
-	//	infra/recipe_bundles/chromium.googlesource.com/chromium/tools/build
+	//   infra/recipe_bundles/chromium.googlesource.com/chromium/tools/build
 	//
 	// Recipes bundled from internal repositories are typically under
 	// `infra_internal/recipe_bundles/...`.
@@ -1014,9 +1029,7 @@ type BuilderConfig_Recipe struct {
 	// types.
 	Properties []string `protobuf:"bytes,3,rep,name=properties,proto3" json:"properties,omitempty"`
 	// Same as properties, but the value must valid JSON. For example
-	//
-	//	properties_j: "a:1"
-	//
+	//   properties_j: "a:1"
 	// means property a is a number 1, not string "1".
 	//
 	// If null, it means no property must be defined. In particular, it removes
@@ -1286,6 +1299,45 @@ func (x *Bucket_Constraints) GetServiceAccounts() []string {
 	return nil
 }
 
+// Template of builders in a dynamic bucket.
+type Bucket_DynamicBuilderTemplate struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+}
+
+func (x *Bucket_DynamicBuilderTemplate) Reset() {
+	*x = Bucket_DynamicBuilderTemplate{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_go_chromium_org_luci_buildbucket_proto_project_config_proto_msgTypes[11]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *Bucket_DynamicBuilderTemplate) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*Bucket_DynamicBuilderTemplate) ProtoMessage() {}
+
+func (x *Bucket_DynamicBuilderTemplate) ProtoReflect() protoreflect.Message {
+	mi := &file_go_chromium_org_luci_buildbucket_proto_project_config_proto_msgTypes[11]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use Bucket_DynamicBuilderTemplate.ProtoReflect.Descriptor instead.
+func (*Bucket_DynamicBuilderTemplate) Descriptor() ([]byte, []int) {
+	return file_go_chromium_org_luci_buildbucket_proto_project_config_proto_rawDescGZIP(), []int{3, 1}
+}
+
 var File_go_chromium_org_luci_buildbucket_proto_project_config_proto protoreflect.FileDescriptor
 
 var file_go_chromium_org_luci_buildbucket_proto_project_config_proto_rawDesc = []byte{
@@ -1458,7 +1510,7 @@ var file_go_chromium_org_luci_buildbucket_proto_project_config_proto_rawDesc = [
 	0x1c, 0x74, 0x61, 0x73, 0x6b, 0x54, 0x65, 0x6d, 0x70, 0x6c, 0x61, 0x74, 0x65, 0x43, 0x61, 0x6e,
 	0x61, 0x72, 0x79, 0x50, 0x65, 0x72, 0x63, 0x65, 0x6e, 0x74, 0x61, 0x67, 0x65, 0x4a, 0x04, 0x08,
 	0x01, 0x10, 0x02, 0x4a, 0x04, 0x08, 0x02, 0x10, 0x03, 0x4a, 0x04, 0x08, 0x03, 0x10, 0x04, 0x22,
-	0xaa, 0x02, 0x0a, 0x06, 0x42, 0x75, 0x63, 0x6b, 0x65, 0x74, 0x12, 0x12, 0x0a, 0x04, 0x6e, 0x61,
+	0xaa, 0x03, 0x0a, 0x06, 0x42, 0x75, 0x63, 0x6b, 0x65, 0x74, 0x12, 0x12, 0x0a, 0x04, 0x6e, 0x61,
 	0x6d, 0x65, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x04, 0x6e, 0x61, 0x6d, 0x65, 0x12, 0x28,
 	0x0a, 0x04, 0x61, 0x63, 0x6c, 0x73, 0x18, 0x02, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x10, 0x2e, 0x62,
 	0x75, 0x69, 0x6c, 0x64, 0x62, 0x75, 0x63, 0x6b, 0x65, 0x74, 0x2e, 0x41, 0x63, 0x6c, 0x42, 0x02,
@@ -1471,12 +1523,20 @@ var file_go_chromium_org_luci_buildbucket_proto_project_config_proto_rawDesc = [
 	0x74, 0x73, 0x18, 0x06, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x1f, 0x2e, 0x62, 0x75, 0x69, 0x6c, 0x64,
 	0x62, 0x75, 0x63, 0x6b, 0x65, 0x74, 0x2e, 0x42, 0x75, 0x63, 0x6b, 0x65, 0x74, 0x2e, 0x43, 0x6f,
 	0x6e, 0x73, 0x74, 0x72, 0x61, 0x69, 0x6e, 0x74, 0x73, 0x52, 0x0b, 0x63, 0x6f, 0x6e, 0x73, 0x74,
-	0x72, 0x61, 0x69, 0x6e, 0x74, 0x73, 0x1a, 0x4e, 0x0a, 0x0b, 0x43, 0x6f, 0x6e, 0x73, 0x74, 0x72,
-	0x61, 0x69, 0x6e, 0x74, 0x73, 0x12, 0x14, 0x0a, 0x05, 0x70, 0x6f, 0x6f, 0x6c, 0x73, 0x18, 0x01,
-	0x20, 0x03, 0x28, 0x09, 0x52, 0x05, 0x70, 0x6f, 0x6f, 0x6c, 0x73, 0x12, 0x29, 0x0a, 0x10, 0x73,
-	0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x5f, 0x61, 0x63, 0x63, 0x6f, 0x75, 0x6e, 0x74, 0x73, 0x18,
-	0x02, 0x20, 0x03, 0x28, 0x09, 0x52, 0x0f, 0x73, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x41, 0x63,
-	0x63, 0x6f, 0x75, 0x6e, 0x74, 0x73, 0x4a, 0x04, 0x08, 0x04, 0x10, 0x05, 0x22, 0x4b, 0x0a, 0x0e,
+	0x72, 0x61, 0x69, 0x6e, 0x74, 0x73, 0x12, 0x64, 0x0a, 0x18, 0x64, 0x79, 0x6e, 0x61, 0x6d, 0x69,
+	0x63, 0x5f, 0x62, 0x75, 0x69, 0x6c, 0x64, 0x65, 0x72, 0x5f, 0x74, 0x65, 0x6d, 0x70, 0x6c, 0x61,
+	0x74, 0x65, 0x18, 0x07, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x2a, 0x2e, 0x62, 0x75, 0x69, 0x6c, 0x64,
+	0x62, 0x75, 0x63, 0x6b, 0x65, 0x74, 0x2e, 0x42, 0x75, 0x63, 0x6b, 0x65, 0x74, 0x2e, 0x44, 0x79,
+	0x6e, 0x61, 0x6d, 0x69, 0x63, 0x42, 0x75, 0x69, 0x6c, 0x64, 0x65, 0x72, 0x54, 0x65, 0x6d, 0x70,
+	0x6c, 0x61, 0x74, 0x65, 0x52, 0x16, 0x64, 0x79, 0x6e, 0x61, 0x6d, 0x69, 0x63, 0x42, 0x75, 0x69,
+	0x6c, 0x64, 0x65, 0x72, 0x54, 0x65, 0x6d, 0x70, 0x6c, 0x61, 0x74, 0x65, 0x1a, 0x4e, 0x0a, 0x0b,
+	0x43, 0x6f, 0x6e, 0x73, 0x74, 0x72, 0x61, 0x69, 0x6e, 0x74, 0x73, 0x12, 0x14, 0x0a, 0x05, 0x70,
+	0x6f, 0x6f, 0x6c, 0x73, 0x18, 0x01, 0x20, 0x03, 0x28, 0x09, 0x52, 0x05, 0x70, 0x6f, 0x6f, 0x6c,
+	0x73, 0x12, 0x29, 0x0a, 0x10, 0x73, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x5f, 0x61, 0x63, 0x63,
+	0x6f, 0x75, 0x6e, 0x74, 0x73, 0x18, 0x02, 0x20, 0x03, 0x28, 0x09, 0x52, 0x0f, 0x73, 0x65, 0x72,
+	0x76, 0x69, 0x63, 0x65, 0x41, 0x63, 0x63, 0x6f, 0x75, 0x6e, 0x74, 0x73, 0x1a, 0x18, 0x0a, 0x16,
+	0x44, 0x79, 0x6e, 0x61, 0x6d, 0x69, 0x63, 0x42, 0x75, 0x69, 0x6c, 0x64, 0x65, 0x72, 0x54, 0x65,
+	0x6d, 0x70, 0x6c, 0x61, 0x74, 0x65, 0x4a, 0x04, 0x08, 0x04, 0x10, 0x05, 0x22, 0x4b, 0x0a, 0x0e,
 	0x42, 0x75, 0x69, 0x6c, 0x64, 0x62, 0x75, 0x63, 0x6b, 0x65, 0x74, 0x43, 0x66, 0x67, 0x12, 0x2d,
 	0x0a, 0x07, 0x62, 0x75, 0x63, 0x6b, 0x65, 0x74, 0x73, 0x18, 0x01, 0x20, 0x03, 0x28, 0x0b, 0x32,
 	0x13, 0x2e, 0x62, 0x75, 0x69, 0x6c, 0x64, 0x62, 0x75, 0x63, 0x6b, 0x65, 0x74, 0x2e, 0x42, 0x75,
@@ -1508,57 +1568,59 @@ func file_go_chromium_org_luci_buildbucket_proto_project_config_proto_rawDescGZI
 }
 
 var file_go_chromium_org_luci_buildbucket_proto_project_config_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
-var file_go_chromium_org_luci_buildbucket_proto_project_config_proto_msgTypes = make([]protoimpl.MessageInfo, 11)
+var file_go_chromium_org_luci_buildbucket_proto_project_config_proto_msgTypes = make([]protoimpl.MessageInfo, 12)
 var file_go_chromium_org_luci_buildbucket_proto_project_config_proto_goTypes = []interface{}{
-	(Toggle)(0),                      // 0: buildbucket.Toggle
-	(Acl_Role)(0),                    // 1: buildbucket.Acl.Role
-	(*Acl)(nil),                      // 2: buildbucket.Acl
-	(*BuilderConfig)(nil),            // 3: buildbucket.BuilderConfig
-	(*Swarming)(nil),                 // 4: buildbucket.Swarming
-	(*Bucket)(nil),                   // 5: buildbucket.Bucket
-	(*BuildbucketCfg)(nil),           // 6: buildbucket.BuildbucketCfg
-	(*BuilderConfig_CacheEntry)(nil), // 7: buildbucket.BuilderConfig.CacheEntry
-	(*BuilderConfig_Recipe)(nil),     // 8: buildbucket.BuilderConfig.Recipe
-	(*BuilderConfig_ResultDB)(nil),   // 9: buildbucket.BuilderConfig.ResultDB
-	(*BuilderConfig_Backend)(nil),    // 10: buildbucket.BuilderConfig.Backend
-	nil,                              // 11: buildbucket.BuilderConfig.ExperimentsEntry
-	(*Bucket_Constraints)(nil),       // 12: buildbucket.Bucket.Constraints
-	(*Executable)(nil),               // 13: buildbucket.v2.Executable
-	(*durationpb.Duration)(nil),      // 14: google.protobuf.Duration
-	(Trinary)(0),                     // 15: buildbucket.v2.Trinary
-	(*wrapperspb.UInt32Value)(nil),   // 16: google.protobuf.UInt32Value
-	(*v1.BigQueryExport)(nil),        // 17: luci.resultdb.v1.BigQueryExport
-	(*v1.HistoryOptions)(nil),        // 18: luci.resultdb.v1.HistoryOptions
+	(Toggle)(0),                           // 0: buildbucket.Toggle
+	(Acl_Role)(0),                         // 1: buildbucket.Acl.Role
+	(*Acl)(nil),                           // 2: buildbucket.Acl
+	(*BuilderConfig)(nil),                 // 3: buildbucket.BuilderConfig
+	(*Swarming)(nil),                      // 4: buildbucket.Swarming
+	(*Bucket)(nil),                        // 5: buildbucket.Bucket
+	(*BuildbucketCfg)(nil),                // 6: buildbucket.BuildbucketCfg
+	(*BuilderConfig_CacheEntry)(nil),      // 7: buildbucket.BuilderConfig.CacheEntry
+	(*BuilderConfig_Recipe)(nil),          // 8: buildbucket.BuilderConfig.Recipe
+	(*BuilderConfig_ResultDB)(nil),        // 9: buildbucket.BuilderConfig.ResultDB
+	(*BuilderConfig_Backend)(nil),         // 10: buildbucket.BuilderConfig.Backend
+	nil,                                   // 11: buildbucket.BuilderConfig.ExperimentsEntry
+	(*Bucket_Constraints)(nil),            // 12: buildbucket.Bucket.Constraints
+	(*Bucket_DynamicBuilderTemplate)(nil), // 13: buildbucket.Bucket.DynamicBuilderTemplate
+	(*Executable)(nil),                    // 14: buildbucket.v2.Executable
+	(*durationpb.Duration)(nil),           // 15: google.protobuf.Duration
+	(Trinary)(0),                          // 16: buildbucket.v2.Trinary
+	(*wrapperspb.UInt32Value)(nil),        // 17: google.protobuf.UInt32Value
+	(*v1.BigQueryExport)(nil),             // 18: luci.resultdb.v1.BigQueryExport
+	(*v1.HistoryOptions)(nil),             // 19: luci.resultdb.v1.HistoryOptions
 }
 var file_go_chromium_org_luci_buildbucket_proto_project_config_proto_depIdxs = []int32{
 	1,  // 0: buildbucket.Acl.role:type_name -> buildbucket.Acl.Role
 	10, // 1: buildbucket.BuilderConfig.backend:type_name -> buildbucket.BuilderConfig.Backend
 	10, // 2: buildbucket.BuilderConfig.backend_alt:type_name -> buildbucket.BuilderConfig.Backend
 	8,  // 3: buildbucket.BuilderConfig.recipe:type_name -> buildbucket.BuilderConfig.Recipe
-	13, // 4: buildbucket.BuilderConfig.exe:type_name -> buildbucket.v2.Executable
-	14, // 5: buildbucket.BuilderConfig.grace_period:type_name -> google.protobuf.Duration
-	15, // 6: buildbucket.BuilderConfig.wait_for_capacity:type_name -> buildbucket.v2.Trinary
+	14, // 4: buildbucket.BuilderConfig.exe:type_name -> buildbucket.v2.Executable
+	15, // 5: buildbucket.BuilderConfig.grace_period:type_name -> google.protobuf.Duration
+	16, // 6: buildbucket.BuilderConfig.wait_for_capacity:type_name -> buildbucket.v2.Trinary
 	7,  // 7: buildbucket.BuilderConfig.caches:type_name -> buildbucket.BuilderConfig.CacheEntry
 	0,  // 8: buildbucket.BuilderConfig.build_numbers:type_name -> buildbucket.Toggle
 	0,  // 9: buildbucket.BuilderConfig.auto_builder_dimension:type_name -> buildbucket.Toggle
 	0,  // 10: buildbucket.BuilderConfig.experimental:type_name -> buildbucket.Toggle
-	16, // 11: buildbucket.BuilderConfig.task_template_canary_percentage:type_name -> google.protobuf.UInt32Value
+	17, // 11: buildbucket.BuilderConfig.task_template_canary_percentage:type_name -> google.protobuf.UInt32Value
 	11, // 12: buildbucket.BuilderConfig.experiments:type_name -> buildbucket.BuilderConfig.ExperimentsEntry
-	15, // 13: buildbucket.BuilderConfig.critical:type_name -> buildbucket.v2.Trinary
+	16, // 13: buildbucket.BuilderConfig.critical:type_name -> buildbucket.v2.Trinary
 	9,  // 14: buildbucket.BuilderConfig.resultdb:type_name -> buildbucket.BuilderConfig.ResultDB
 	3,  // 15: buildbucket.Swarming.builders:type_name -> buildbucket.BuilderConfig
-	16, // 16: buildbucket.Swarming.task_template_canary_percentage:type_name -> google.protobuf.UInt32Value
+	17, // 16: buildbucket.Swarming.task_template_canary_percentage:type_name -> google.protobuf.UInt32Value
 	2,  // 17: buildbucket.Bucket.acls:type_name -> buildbucket.Acl
 	4,  // 18: buildbucket.Bucket.swarming:type_name -> buildbucket.Swarming
 	12, // 19: buildbucket.Bucket.constraints:type_name -> buildbucket.Bucket.Constraints
-	5,  // 20: buildbucket.BuildbucketCfg.buckets:type_name -> buildbucket.Bucket
-	17, // 21: buildbucket.BuilderConfig.ResultDB.bq_exports:type_name -> luci.resultdb.v1.BigQueryExport
-	18, // 22: buildbucket.BuilderConfig.ResultDB.history_options:type_name -> luci.resultdb.v1.HistoryOptions
-	23, // [23:23] is the sub-list for method output_type
-	23, // [23:23] is the sub-list for method input_type
-	23, // [23:23] is the sub-list for extension type_name
-	23, // [23:23] is the sub-list for extension extendee
-	0,  // [0:23] is the sub-list for field type_name
+	13, // 20: buildbucket.Bucket.dynamic_builder_template:type_name -> buildbucket.Bucket.DynamicBuilderTemplate
+	5,  // 21: buildbucket.BuildbucketCfg.buckets:type_name -> buildbucket.Bucket
+	18, // 22: buildbucket.BuilderConfig.ResultDB.bq_exports:type_name -> luci.resultdb.v1.BigQueryExport
+	19, // 23: buildbucket.BuilderConfig.ResultDB.history_options:type_name -> luci.resultdb.v1.HistoryOptions
+	24, // [24:24] is the sub-list for method output_type
+	24, // [24:24] is the sub-list for method input_type
+	24, // [24:24] is the sub-list for extension type_name
+	24, // [24:24] is the sub-list for extension extendee
+	0,  // [0:24] is the sub-list for field type_name
 }
 
 func init() { file_go_chromium_org_luci_buildbucket_proto_project_config_proto_init() }
@@ -1688,6 +1750,18 @@ func file_go_chromium_org_luci_buildbucket_proto_project_config_proto_init() {
 				return nil
 			}
 		}
+		file_go_chromium_org_luci_buildbucket_proto_project_config_proto_msgTypes[11].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*Bucket_DynamicBuilderTemplate); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
@@ -1695,7 +1769,7 @@ func file_go_chromium_org_luci_buildbucket_proto_project_config_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: file_go_chromium_org_luci_buildbucket_proto_project_config_proto_rawDesc,
 			NumEnums:      2,
-			NumMessages:   11,
+			NumMessages:   12,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

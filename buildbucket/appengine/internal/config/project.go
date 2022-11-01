@@ -404,6 +404,8 @@ func validateProjectCfg(ctx *validation.Context, configSet, path string, content
 			ctx.Errorf("duplicate bucket name %q", bucket.Name)
 		case i > 0 && strings.Compare(bucket.Name, cfg.Buckets[i-1].Name) < 0:
 			ctx.Warningf("bucket %q out of order", bucket.Name)
+		case bucket.GetSwarming() != nil && bucket.GetDynamicBuilderTemplate() != nil:
+			ctx.Errorf("mutually exclusive fields swarming and dynamic_builder_template both exist in bucket %q", bucket.Name)
 		}
 		bucketNames.Add(bucket.Name)
 		if s := bucket.Swarming; s != nil {

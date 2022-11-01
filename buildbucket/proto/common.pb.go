@@ -216,14 +216,10 @@ type Executable struct {
 	// Wrapper is a command and its args which will be used to 'wrap' the
 	// execution of `cmd`.
 	// Given:
-	//
-	//	wrapper = ['/some/exe', '--arg']
-	//	cmd = ['my_exe', '--other-arg']
-	//
+	//  wrapper = ['/some/exe', '--arg']
+	//  cmd = ['my_exe', '--other-arg']
 	// Buildbucket's agent will invoke
-	//
-	//	/some/exe --arg -- /path/to/task/root/dir/my_exe --other-arg
-	//
+	//  /some/exe --arg -- /path/to/task/root/dir/my_exe --other-arg
 	// Note that '--' is always inserted between the wrapper and the target
 	// cmd
 	//

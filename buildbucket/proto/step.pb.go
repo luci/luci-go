@@ -96,11 +96,11 @@ type Step struct {
 	//
 	// Tag keys SHOULD indicate the domain/system that interprets them, e.g.:
 	//
-	//	my_service.category = COMPILE
+	//   my_service.category = COMPILE
 	//
 	// Rather than
 	//
-	//	is_compile = true
+	//   is_compile = true
 	//
 	// This will help contextualize the tag values when looking at a build (who
 	// set this tag? who will interpret this tag?))
@@ -225,9 +225,9 @@ type Step_MergeBuild struct {
 	// Because this is a legacy feature, this intentionally omits other fields
 	// which "could be" merged, because there was no affordance to emit them
 	// under the legacy annotator scheme:
-	//   - output.gitiles_commit will not be merged.
-	//   - output.logs will not be merged.
-	//   - summary_markdown will not be merged.
+	//   * output.gitiles_commit will not be merged.
+	//   * output.logs will not be merged.
+	//   * summary_markdown will not be merged.
 	//
 	// This is NOT a recommended mode of operation, but legacy ChromeOS
 	// builders rely on this behavior.

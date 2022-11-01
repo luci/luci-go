@@ -448,6 +448,7 @@ message Bucket {
   // Deprecated and ignored. Use Realms ACLs instead.
   repeated Acl acls = 2 [deprecated = true];
   // Buildbucket-swarming integration.
+  // Mutually exclusive with builder_template.
   Swarming swarming = 3;
 
   // Name of this bucket's shadow bucket for the led builds to use.
@@ -491,6 +492,19 @@ message Bucket {
   // Buildbuceket.CreateBuild will validate the incoming requests to make sure
   // they meet these constraints.
   Constraints constraints = 6;
+
+  // Template of builders in a dynamic bucket.
+  message DynamicBuilderTemplate {
+
+  }
+
+  // Template of builders in a dynamic bucket.
+  // Mutually exclusive with swarming.
+  //
+  // If is not nil, the bucket is a dynamic LUCI bucket.
+  // If a bucket has both swarming and dynamic_builder_template as nil,
+  // the bucket is a legacy one.
+  DynamicBuilderTemplate dynamic_builder_template = 7;
 }
 
 // Schema of buildbucket.cfg file, a project config.

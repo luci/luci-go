@@ -109,6 +109,21 @@ func TestValidateProject(t *testing.T) {
 			So(warnings[0].Error(), ShouldContainSubstring, "bucket \"b\" out of order")
 			So(warnings[1].Error(), ShouldContainSubstring, "bucket \"a\" out of order")
 		})
+
+		Convey("swarming and dynamic_builder_template co-exist", func() {
+			badCfg := `
+				buckets {
+					name: "a"
+					swarming: {}
+					dynamic_builder_template: {}
+				}
+			`
+			So(validateProjectCfg(vctx, configSet, path, []byte(badCfg)), ShouldBeNil)
+			ve, ok := vctx.Finalize().(*validation.Error)
+			So(ok, ShouldEqual, true)
+			So(len(ve.Errors), ShouldEqual, 1)
+			So(ve.Errors[0].Error(), ShouldContainSubstring, "mutually exclusive fields swarming and dynamic_builder_template both exist in bucket \"a\"")
+		})
 	})
 
 	Convey("validate project_config.Swarming", t, func() {

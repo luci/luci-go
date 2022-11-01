@@ -310,11 +310,11 @@ type BatchRequest struct {
 
 	// Requests to execute in a single batch.
 	//
-	//   - All requests are executed in their own individual transactions.
-	//   - BatchRequest as a whole is not transactional.
-	//   - There's no guaranteed order of execution between batch items (i.e.
-	//     consider them to all operate independently).
-	//   - There is a limit of 200 requests per batch.
+	// * All requests are executed in their own individual transactions.
+	// * BatchRequest as a whole is not transactional.
+	// * There's no guaranteed order of execution between batch items (i.e.
+	//   consider them to all operate independently).
+	// * There is a limit of 200 requests per batch.
 	Requests []*BatchRequest_Request `protobuf:"bytes,1,rep,name=requests,proto3" json:"requests,omitempty"`
 }
 
@@ -556,14 +556,13 @@ type ScheduleBuildRequest struct {
 	// replaced with null.
 	//
 	// Reserved property paths:
-	//
-	//	["$recipe_engine/buildbucket"]
-	//	["$recipe_engine/runtime", "is_experimental"]
-	//	["$recipe_engine/runtime", "is_luci"]
-	//	["branch"]
-	//	["buildbucket"]
-	//	["buildername"]
-	//	["repository"]
+	//   ["$recipe_engine/buildbucket"]
+	//   ["$recipe_engine/runtime", "is_experimental"]
+	//   ["$recipe_engine/runtime", "is_luci"]
+	//   ["branch"]
+	//   ["buildbucket"]
+	//   ["buildername"]
+	//   ["repository"]
 	//
 	// The Builder configuration specifies which top-level property names are
 	// overridable via the `allowed_property_overrides` field. ScheduleBuild
@@ -1264,11 +1263,10 @@ type BuildPredicate struct {
 	//
 	// A "+" prefix means that returned builds MUST have that experiment set.
 	// A "-" prefix means that returned builds MUST NOT have that experiment set
-	//
-	//	AND that experiment was known for the builder at the time the build
-	//	was scheduled (either via `Builder.experiments` or via
-	//	`ScheduleBuildRequest.experiments`). Well-known experiments are always
-	//	considered to be available.
+	//   AND that experiment was known for the builder at the time the build
+	//   was scheduled (either via `Builder.experiments` or via
+	//   `ScheduleBuildRequest.experiments`). Well-known experiments are always
+	//   considered to be available.
 	Experiments []string `protobuf:"bytes,11,rep,name=experiments,proto3" json:"experiments,omitempty"`
 	// A build ID.
 	//
@@ -1530,7 +1528,6 @@ type BatchRequest_Request struct {
 	unknownFields protoimpl.UnknownFields
 
 	// Types that are assignable to Request:
-	//
 	//	*BatchRequest_Request_GetBuild
 	//	*BatchRequest_Request_SearchBuilds
 	//	*BatchRequest_Request_ScheduleBuild
@@ -1640,7 +1637,6 @@ type BatchResponse_Response struct {
 	unknownFields protoimpl.UnknownFields
 
 	// Types that are assignable to Response:
-	//
 	//	*BatchResponse_Response_GetBuild
 	//	*BatchResponse_Response_SearchBuilds
 	//	*BatchResponse_Response_ScheduleBuild
@@ -2613,11 +2609,10 @@ type BuildsClient interface {
 	//
 	// Buildbot: if the specified build is a buildbot build, converts it to Build
 	// message with the following rules:
-	//   - bucket names are full, e.g. "luci.infra.try". Note that LUCI buckets
-	//     in v2 are shortened, e.g. "try".
-	//   - if a v2 Build field does not make sense in V1, it is unset/empty.
-	//   - step support is not implemented for Buildbot builds.
-	//
+	// * bucket names are full, e.g. "luci.infra.try". Note that LUCI buckets
+	//   in v2 are shortened, e.g. "try".
+	// * if a v2 Build field does not make sense in V1, it is unset/empty.
+	// * step support is not implemented for Buildbot builds.
 	// Note that it does not support getting a buildbot build by build number.
 	// Examples: go/buildbucket-rpc#getbuild
 	GetBuild(ctx context.Context, in *GetBuildRequest, opts ...grpc.CallOption) (*Build, error)
@@ -2673,7 +2668,7 @@ type BuildsClient interface {
 	// The Backend must supply the RunTaskRequest.backend_token supplied during
 	// TaskBackend.RunTask() as the header:
 	//
-	//	X-Buildbucket-Backend-Token
+	//   X-Buildbucket-Backend-Token
 	//
 	// Buildbucket will validate this against the build ID supplied in
 	// the UpdateBuildTaskRequest and verify task ID in the request matches the task
@@ -2868,11 +2863,10 @@ type BuildsServer interface {
 	//
 	// Buildbot: if the specified build is a buildbot build, converts it to Build
 	// message with the following rules:
-	//   - bucket names are full, e.g. "luci.infra.try". Note that LUCI buckets
-	//     in v2 are shortened, e.g. "try".
-	//   - if a v2 Build field does not make sense in V1, it is unset/empty.
-	//   - step support is not implemented for Buildbot builds.
-	//
+	// * bucket names are full, e.g. "luci.infra.try". Note that LUCI buckets
+	//   in v2 are shortened, e.g. "try".
+	// * if a v2 Build field does not make sense in V1, it is unset/empty.
+	// * step support is not implemented for Buildbot builds.
 	// Note that it does not support getting a buildbot build by build number.
 	// Examples: go/buildbucket-rpc#getbuild
 	GetBuild(context.Context, *GetBuildRequest) (*Build, error)
@@ -2928,7 +2922,7 @@ type BuildsServer interface {
 	// The Backend must supply the RunTaskRequest.backend_token supplied during
 	// TaskBackend.RunTask() as the header:
 	//
-	//	X-Buildbucket-Backend-Token
+	//   X-Buildbucket-Backend-Token
 	//
 	// Buildbucket will validate this against the build ID supplied in
 	// the UpdateBuildTaskRequest and verify task ID in the request matches the task
