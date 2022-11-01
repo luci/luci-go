@@ -135,7 +135,7 @@ func TestNewArtifactCreationRequestsFromProto(t *testing.T) {
 
 func TestBatchCreateArtifacts(t *testing.T) {
 	// metric field values for Artifact table
-	artMFVs := []interface{}{string(spanutil.Artifacts), string(spanutil.Inserted), ""}
+	artMFVs := []interface{}{string(spanutil.Artifacts), string(spanutil.Inserted), insert.TestRealm}
 
 	Convey("TestBatchCreateArtifacts", t, func() {
 		ctx := testutil.SpannerTestContext(t)

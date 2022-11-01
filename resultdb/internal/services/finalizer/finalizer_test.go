@@ -15,6 +15,7 @@
 package finalizer
 
 import (
+	"sort"
 	"testing"
 	"time"
 
@@ -136,11 +137,36 @@ func TestFinalizeInvocation(t *testing.T) {
 			So(err, ShouldBeNil)
 
 			// Enqueued TQ tasks.
-			So(sched.Tasks().Payloads(), ShouldHaveLength, 2)
-			// Check only prefix, the order doesn't matter.
-			So(sched.Tasks().Payloads()[0].(*taskspb.TryFinalizeInvocation).InvocationId, ShouldStartWith, "finalizing")
-			So(sched.Tasks().Payloads()[1].(*taskspb.TryFinalizeInvocation).InvocationId, ShouldStartWith, "finalizing")
+			invocations := []string{}
+			for _, t := range sched.Tasks().Payloads() {
+				payload, ok := t.(*taskspb.TryFinalizeInvocation)
+				if !ok {
+					continue
+				}
+				invocations = append(invocations, payload.InvocationId)
+			}
+			sort.Strings(invocations)
+			So(invocations, ShouldResemble, []string{"finalizing1", "finalizing2"})
+		})
 
+		Convey(`Enqueues a finalization notification`, func() {
+			testutil.MustApply(ctx,
+				insert.Invocation("x", pb.Invocation_FINALIZING, map[string]interface{}{
+					"Realm": "myproject:myrealm",
+				}),
+			)
+
+			err := finalizeInvocation(ctx, "x")
+			So(err, ShouldBeNil)
+
+			// Enqueued pub/sub notification.
+			So(sched.Tasks().Payloads(), ShouldHaveLength, 1)
+			So(sched.Tasks().Payloads()[0], ShouldResembleProto, &taskspb.NotifyInvocationFinalized{
+				Message: &pb.InvocationFinalizedNotification{
+					Invocation: "invocations/x",
+					Realm:      "myproject:myrealm",
+				},
+			})
 		})
 
 		Convey(`Enqueues more bq_export tasks`, func() {

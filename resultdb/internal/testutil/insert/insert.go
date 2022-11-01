@@ -31,6 +31,9 @@ import (
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
 
+// TestRealm is the default realm used for invocation mutations returned by Invocation().
+const TestRealm = "testproject:testrealm"
+
 func updateDict(dest, source map[string]interface{}) {
 	for k, v := range source {
 		dest[k] = v
@@ -44,7 +47,7 @@ func Invocation(id invocations.ID, state pb.Invocation_State, extraValues map[st
 		"InvocationId":                      id,
 		"ShardId":                           0,
 		"State":                             state,
-		"Realm":                             "",
+		"Realm":                             TestRealm,
 		"InvocationExpirationTime":          future,
 		"ExpectedTestResultsExpirationTime": future,
 		"CreateTime":                        spanner.CommitTimestamp,

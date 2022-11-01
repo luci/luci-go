@@ -109,6 +109,7 @@ func TestReadInvocation(t *testing.T) {
 				CreateTime:   pbutil.MustTimestampProto(ct),
 				Deadline:     pbutil.MustTimestampProto(ct.Add(time.Hour)),
 				FinalizeTime: pbutil.MustTimestampProto(ct.Add(time.Hour)),
+				Realm:        insert.TestRealm,
 			}
 			So(inv, ShouldResembleProto, expected)
 

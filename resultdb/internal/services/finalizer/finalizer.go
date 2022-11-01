@@ -265,12 +265,13 @@ func finalizeInvocation(ctx context.Context, invID invocations.ID) error {
 				return
 			}
 
-			// Enqueue tasks to try to finalize invocations that include ours.
 			work <- func() error {
 				parentInvs, err := parentsInFinalizingState(ctx, invID)
 				if err != nil {
 					return err
 				}
+
+				// Enqueue tasks to try to finalize invocations that include ours.
 				// Note that MustAddTask in a Spanner transaction is essentially
 				// a BufferWrite (no RPCs inside), it's fine to call it sequentially
 				// and panic on errors.
@@ -280,6 +281,23 @@ func finalizeInvocation(ctx context.Context, invID invocations.ID) error {
 						Title:   string(id),
 					})
 				}
+
+				// Enqueue a notification to pub/sub listeners that the invocation
+				// has been finalized.
+				realm, err := invocations.ReadRealm(ctx, invID)
+				if err != nil {
+					return err
+				}
+
+				// Note that this submits the notification transactionally,
+				// i.e. conditionally on this transaction committing.
+				notification := &pb.InvocationFinalizedNotification{
+					Invocation: invID.Name(),
+					Realm:      realm,
+				}
+				tasks.NotifyInvocationFinalized(ctx, notification)
+
+				// Enqueue BigQuery exports transactionally.
 				return bqexporter.Schedule(ctx, invID)
 			}
 		})

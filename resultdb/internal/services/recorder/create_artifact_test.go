@@ -79,7 +79,7 @@ func (w *fakeWriter) Send(req *bytestream.WriteRequest) error {
 
 func TestCreateArtifact(t *testing.T) {
 	// metric field values for Artifact table
-	artMFVs := []interface{}{string(spanutil.Artifacts), string(spanutil.Inserted), ""}
+	artMFVs := []interface{}{string(spanutil.Artifacts), string(spanutil.Inserted), insert.TestRealm}
 
 	Convey(`CreateArtifact`, t, func() {
 		ctx := testutil.SpannerTestContext(t)

@@ -69,8 +69,8 @@ func TestExpiredInvocations(t *testing.T) {
 		})
 		So(state, ShouldEqual, resultpb.Invocation_ACTIVE)
 
-		So(store.Get(ctx, overdueInvocationsFinalized, time.Time{}, []interface{}{""}), ShouldEqual, 1)
-		d := store.Get(ctx, timeOverdue, time.Time{}, []interface{}{""}).(*distribution.Distribution)
+		So(store.Get(ctx, overdueInvocationsFinalized, time.Time{}, []interface{}{insert.TestRealm}), ShouldEqual, 1)
+		d := store.Get(ctx, timeOverdue, time.Time{}, []interface{}{insert.TestRealm}).(*distribution.Distribution)
 		// The 10 minute (600 s) delay should fall into bucket 29 (~400k - ~630k ms).
 		// allow +/- 1 bucket for clock shenanigans.
 		So(d.Buckets()[28] == 1 || d.Buckets()[29] == 1 || d.Buckets()[30] == 1, ShouldBeTrue)
