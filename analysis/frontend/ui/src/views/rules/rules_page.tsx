@@ -23,6 +23,7 @@ import Grid from '@mui/material/Grid';
 
 import HelpTooltip from '@/components/help_tooltip/help_tooltip';
 import RulesTable from '@/components/rules_table/rules_table';
+import PageHeading from '@/components/headings/page_heading/page_heading';
 
 const rulesDescription = 'Rules define an association between failures and bugs. LUCI Analysis uses these ' +
   'associations to calculate bug impact, automatically adjust bug priority and verified status, and ' +
@@ -34,7 +35,9 @@ const RulesPage = () => {
     <Container maxWidth={false}>
       <Grid container>
         <Grid item xs={8}>
-          <h2>Rules in project {project}<HelpTooltip text={rulesDescription}></HelpTooltip></h2>
+          <PageHeading>
+            Rules in project {project}<HelpTooltip text={rulesDescription}></HelpTooltip>
+          </PageHeading>
         </Grid>
         <Grid item xs={4} sx={{ textAlign: 'right' }}>
           <Button component={Link} variant='contained' to='new' sx={{ marginBlockStart: '20px' }}>New Rule</Button>

@@ -19,8 +19,9 @@ import Grid from '@mui/material/Grid';
 
 import ClustersTable from '@/components/clusters_table/clusters_table';
 import HelpTooltip from '@/components/help_tooltip/help_tooltip';
+import PageHeading from '@/components/headings/page_heading/page_heading';
 
-const rulesDescription = 'Clusters are groups of related test failures. LUCI Analysis\'s clusters ' +
+const clustersDescription = 'Clusters are groups of related test failures. LUCI Analysis\'s clusters ' +
   'comprise clusters identified by algorithms (based on test name or failure reason) ' +
   'and clusters defined by a failure association rule (where the cluster contains all failures ' +
   'associated with a specific bug).';
@@ -31,7 +32,9 @@ const ClustersPage = () => {
     <Container maxWidth={false}>
       <Grid container>
         <Grid item xs={8}>
-          <h2>Clusters in project {project}<HelpTooltip text={rulesDescription}></HelpTooltip></h2>
+          <PageHeading>
+            Clusters in project {project}<HelpTooltip text={clustersDescription} />
+          </PageHeading>
         </Grid>
       </Grid>
       {(project) && (

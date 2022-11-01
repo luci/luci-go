@@ -25,7 +25,7 @@ import Grid from '@mui/material/Grid';
 import IconButton from '@mui/material/IconButton';
 import Link from '@mui/material/Link';
 import Paper from '@mui/material/Paper';
-import Typography from '@mui/material/Typography';
+import PanelHeading from '@/components/headings/panel_heading/panel_heading';
 
 import CodeBlock from '@/components/codeblock/codeblock';
 import ConfirmDialog from '@/components/confirm_dialog/confirm_dialog';
@@ -77,12 +77,9 @@ const RuleInfo = ({ project, rule }: Props) => {
   return (
     <Paper data-cy="rule-info" elevation={3} sx={{ pt: 2, pb: 2, mt: 1 }} >
       <Container maxWidth={false}>
-        <Typography sx={{
-          fontWeight: 600,
-          fontSize: 20,
-        }}>
-            Rule Details
-        </Typography>
+        <PanelHeading>
+          Rule Details
+        </PanelHeading>
         <Grid container rowGap={1}>
           <GridLabel text="Rule definition">
             <HelpTooltip text={definitionTooltipText} />

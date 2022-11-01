@@ -22,6 +22,7 @@ import Grid from '@mui/material/Grid';
 import Link from '@mui/material/Link';
 import TabPanel from '@mui/lab/TabPanel';
 import Typography from '@mui/material/Typography';
+import PanelHeading from '@/components/headings/panel_heading/panel_heading';
 
 import LoadErrorAlert from '@/components/load_error_alert/load_error_alert';
 import ImpactTable from '@/components/cluster/cluster_analysis_section/overview_tab/impact_table/impact_table';
@@ -46,7 +47,7 @@ const OverviewTab = ({
   } = useFetchCluster(clusterId.project, clusterId.algorithm, clusterId.id);
   return (
     <TabPanel value={value}>
-      <Typography variant="h6">Impact</Typography>
+      <PanelHeading>Impact</PanelHeading>
       {
         isLoading && (
           <Grid container item alignItems="center" justifyContent="center">

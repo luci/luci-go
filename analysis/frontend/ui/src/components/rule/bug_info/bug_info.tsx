@@ -27,7 +27,7 @@ import LinearProgress from '@mui/material/LinearProgress';
 import Link from '@mui/material/Link';
 import Paper from '@mui/material/Paper';
 import Switch from '@mui/material/Switch';
-import Typography from '@mui/material/Typography';
+import PanelHeading from '@/components/headings/panel_heading/panel_heading';
 
 import { useMutateRule } from '@/hooks/use_mutate_rule';
 import {
@@ -125,12 +125,9 @@ const BugInfo = ({
   return (
     <Paper data-cy="bug-info" elevation={3} sx={{ pt: 2, pb: 2, mt: 1 }}>
       <Container maxWidth={false}>
-        <Typography sx={{
-          fontWeight: 600,
-          fontSize: 20,
-        }}>
-            Associated Bug
-        </Typography>
+        <PanelHeading>
+          Associated Bug
+        </PanelHeading>
         <Grid container rowGap={0}>
           <GridLabel xs={4} lg={2} text="Bug">
           </GridLabel>

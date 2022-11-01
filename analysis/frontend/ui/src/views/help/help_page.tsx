@@ -32,6 +32,7 @@ import Link from '@mui/material/Link';
 import Typography, {
   TypographyProps,
 } from '@mui/material/Typography';
+import PageHeading from '@/components/headings/page_heading/page_heading';
 
 import recentFailuresUrl from './recent_failures.png';
 import ruleIdentifiersUrl from './failure_association_rule_identifiers.png';
@@ -61,7 +62,9 @@ const HelpPage = () => {
 
   return (
     <Container maxWidth="xl">
-      <h1>Help</h1>
+      <PageHeading>
+        Help
+      </PageHeading>
       <Accordion expanded={location.hash === '#rules'} onChange={handleChange('rules')}>
         <AccordionSummary>
           <AccordionHeading>

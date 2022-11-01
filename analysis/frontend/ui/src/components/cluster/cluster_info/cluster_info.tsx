@@ -25,10 +25,10 @@ import CircularProgress from '@mui/material/CircularProgress';
 import Container from '@mui/material/Container';
 import Grid from '@mui/material/Grid';
 import Paper from '@mui/material/Paper';
-import Typography from '@mui/material/Typography';
 
 import CodeBlock from '@/components/codeblock/codeblock';
 import LoadErrorAlert from '@/components/load_error_alert/load_error_alert';
+import PanelHeading from '@/components/headings/panel_heading/panel_heading';
 import useFetchCluster from '@/hooks/use_fetch_cluster';
 import { Cluster } from '@/services/cluster';
 
@@ -36,12 +36,10 @@ import { ClusterContext } from '../cluster_context';
 
 interface ClusterDetailsProps {
   cluster: Cluster;
-  criteriaName: string;
 }
 
 const ClusterDetails = ({
   cluster,
-  criteriaName,
 }: ClusterDetailsProps) => {
   const {
     project,
@@ -58,13 +56,6 @@ const ClusterDetails = ({
 
   return (
     <>
-      <Typography sx={{
-        fontWeight: 600,
-        fontSize: 20,
-        mb: 2,
-      }}>
-        {criteriaName}
-      </Typography>
       <Grid
         container
         item
@@ -112,6 +103,9 @@ const ClusterInfo = () => {
   return (
     <Paper data-cy="cluster-info" elevation={3} sx={{ pt: 2, pb: 2, mt: 1 }} >
       <Container maxWidth={false}>
+        <PanelHeading gutterBottom>
+          {criteriaName}
+        </PanelHeading>
         {
           isLoading && (
             <Grid container item alignItems="center" justifyContent="center">
@@ -131,7 +125,6 @@ const ClusterInfo = () => {
           isSuccess && cluster && (
             <ClusterDetails
               cluster={cluster}
-              criteriaName={criteriaName}
             />
           )
         }

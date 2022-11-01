@@ -20,14 +20,16 @@ import {
 import Container from '@mui/material/Container';
 import Grid from '@mui/material/Grid';
 import { styled } from '@mui/material/styles';
-
 import {
   Alert,
   AlertTitle,
   Link,
 } from '@mui/material';
+
 import CentralizedProgress from '@/components/centralized_progress/centralized_progress';
 import LoadErrorAlert from '@/components/load_error_alert/load_error_alert';
+import PageHeading from '@/components/headings/page_heading/page_heading';
+
 import useFetchProjects from '@/hooks/use_fetch_projects';
 import { loginLink } from '@/tools/urlHandling/links';
 
@@ -37,7 +39,6 @@ const ProjectCard = styled(RouterLink)<LinkProps>(() => ({
   'justify-content': 'center',
   'align-items': 'center',
   'box-shadow': '0px 2px 1px -1px rgb(0 0 0 / 20%), 0px 1px 1px 0px rgb(0 0 0 / 14%), 0px 1px 3px 0px rgb(0 0 0 / 12%)',
-  'font-weight': 'bold',
   'font-size': '1.5rem',
   'text-decoration': 'none',
   'color': 'black',
@@ -53,7 +54,9 @@ const HomePage = () => {
   const { error, isLoading, data: projects } = useFetchProjects();
   return (
     <Container maxWidth="xl">
-      <h1>Projects</h1>
+      <PageHeading>
+        Projects
+      </PageHeading>
       {
         window.isAnonymous && (
           <Alert

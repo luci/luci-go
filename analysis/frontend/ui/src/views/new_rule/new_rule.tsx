@@ -36,6 +36,7 @@ import Container from '@mui/material/Container';
 import Grid from '@mui/material/Grid';
 import Paper from '@mui/material/Paper';
 import Typography from '@mui/material/Typography';
+import PanelHeading from '@/components/headings/panel_heading/panel_heading';
 
 import BugPicker from '@/components/bug_picker/bug_picker';
 import ErrorAlert from '@/components/error_alert/error_alert';
@@ -151,13 +152,9 @@ const NewRulePage = () => {
         mt: 1,
         mx: 2,
       }}>
-        <Typography sx={{
-          fontWeight: 600,
-          fontSize: 20,
-          mb: 1,
-        }}>
-             New Rule
-        </Typography>
+        <PanelHeading>
+          New Rule
+        </PanelHeading>
         <Grid container direction='column' spacing={1}>
           <Grid item xs>
             {validationError && (
@@ -169,16 +166,11 @@ const NewRulePage = () => {
               />
             )}
           </Grid>
-          <Grid item xs>
-            <Typography sx={{
-              fontWeight: 600,
-              fontSize: 15,
-            }}>
-             Associated Bug
-            </Typography>
-          </Grid>
           <Grid item container xs>
             <Grid item xs={6}>
+              <Typography variant='overline'>
+                Associated Bug
+              </Typography>
               <BugPicker
                 bugSystem={bugSystem}
                 bugId={bugId}
@@ -186,15 +178,10 @@ const NewRulePage = () => {
                 handleBugIdChanged={handleBugIdChange} />
             </Grid>
           </Grid>
-          <Grid item xs>
-            <Typography sx={{
-              fontWeight: 600,
-              fontSize: 15,
-            }}>
-             Rule definition
+          <Grid item xs marginTop='1rem'>
+            <Typography variant='overline'>
+              Rule definition
             </Typography>
-          </Grid>
-          <Grid item xs>
             <RuleEditInput
               definition={definition}
               onDefinitionChange={handleRuleDefinitionChange}
