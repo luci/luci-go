@@ -33,7 +33,6 @@ import (
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/tsmon/field"
 	"go.chromium.org/luci/common/tsmon/metric"
-	"go.chromium.org/luci/hardcoded/chromeinfra"
 	"go.chromium.org/luci/server"
 )
 
@@ -57,8 +56,7 @@ func main() {
 		"Path to the config file.")
 
 	opts := &server.Options{
-		ClientAuth: chromeinfra.DefaultAuthOptions(),
-		HTTPAddr:   "-", // not serving any HTTP routes
+		HTTPAddr: "-", // not serving any HTTP routes
 	}
 
 	server.Main(opts, nil, func(srv *server.Server) error {

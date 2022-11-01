@@ -16,9 +16,7 @@
 package impl
 
 import (
-	"go.chromium.org/luci/auth"
 	"go.chromium.org/luci/config/server/cfgmodule"
-	"go.chromium.org/luci/hardcoded/chromeinfra"
 	"go.chromium.org/luci/server"
 	"go.chromium.org/luci/server/gaeemulation"
 	"go.chromium.org/luci/server/module"
@@ -31,13 +29,6 @@ func Main(modules []module.Module, cb func(srv *server.Server) error) {
 	authDBProvider := &AuthDBProvider{}
 
 	opts := &server.Options{
-		// Options for getting OAuth2 tokens when running the server locally.
-		ClientAuth: chromeinfra.SetDefaultAuthOptions(auth.Options{
-			Scopes: []string{
-				"https://www.googleapis.com/auth/cloud-platform",
-				"https://www.googleapis.com/auth/userinfo.email",
-			},
-		}),
 		// Use the AuthDB built directly from the datastore entities.
 		AuthDBProvider: authDBProvider.GetAuthDB,
 	}

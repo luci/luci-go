@@ -300,11 +300,27 @@ var cloudRegionFromGAERegion = map[string]string{
 func Main(opts *Options, mods []module.Module, init func(srv *Server) error) {
 	mathrand.SeedRandomly()
 	if opts == nil {
-		opts = &Options{
-			ClientAuth: chromeinfra.SetDefaultAuthOptions(clientauth.Options{
-				Scopes: auth.CloudOAuthScopes, // matters only when using UserCredentialsMethod
-			}),
-		}
+		opts = &Options{}
+	}
+
+	// Populate unset ClientAuth fields with hardcoded defaults.
+	authDefaults := chromeinfra.DefaultAuthOptions()
+	if opts.ClientAuth.ClientID == "" {
+		opts.ClientAuth.ClientID = authDefaults.ClientID
+		opts.ClientAuth.ClientSecret = authDefaults.ClientSecret
+	}
+	if opts.ClientAuth.TokenServerHost == "" {
+		opts.ClientAuth.TokenServerHost = authDefaults.TokenServerHost
+	}
+	if opts.ClientAuth.SecretsDir == "" {
+		opts.ClientAuth.SecretsDir = authDefaults.SecretsDir
+	}
+
+	// Use CloudOAuthScopes by default when using UserCredentialsMethod auth mode.
+	// This is ignored when running in the cloud (the server uses the ambient
+	// credentials provided by the environment).
+	if len(opts.ClientAuth.Scopes) == 0 {
+		opts.ClientAuth.Scopes = auth.CloudOAuthScopes
 	}
 
 	opts.Register(flag.CommandLine)
