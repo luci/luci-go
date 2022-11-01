@@ -148,10 +148,18 @@ func (bbe *buildbucketEditor) CASTaskPayload(path string, casRef *swarmingpb.CAS
 				SizeBytes: casRef.GetDigest().GetSizeBytes(),
 			}
 		} else {
+			casInstance := casRef.CasInstance
+			if casInstance == "" {
+				var err error
+				casInstance, err = bbe.jd.CasInstance()
+				if err != nil {
+					return err
+				}
+			}
 			inputData[path] = &bbpb.InputDataRef{
 				DataType: &bbpb.InputDataRef_Cas{
 					Cas: &bbpb.InputDataRef_CAS{
-						CasInstance: casRef.CasInstance,
+						CasInstance: casInstance,
 						Digest: &bbpb.InputDataRef_CAS_Digest{
 							Hash:      casRef.GetDigest().GetHash(),
 							SizeBytes: casRef.GetDigest().GetSizeBytes(),
