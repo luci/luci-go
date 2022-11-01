@@ -132,14 +132,7 @@ func TestScheduleBuild(t *testing.T) {
 		testutil.PutBucket(ctx, "project", "bucket 1", &pb.Bucket{
 			Swarming: &pb.Swarming{},
 		})
-		testutil.PutBucket(ctx, "project", "bucket 2", nil)
-		So(datastore.Put(ctx, &model.Bucket{
-			Parent: model.ProjectKey(ctx, "project"),
-			ID:     "bucket 2",
-			Proto: &pb.Bucket{
-				Name: "bucket 2",
-			},
-		}), ShouldBeNil)
+		testutil.PutBucket(ctx, "project", "bucket 2", &pb.Bucket{DynamicBuilderTemplate: &pb.Bucket_DynamicBuilderTemplate{}})
 
 		Convey("bucket not found", func() {
 			bldrIDs := []*pb.BuilderID{
@@ -149,7 +142,7 @@ func TestScheduleBuild(t *testing.T) {
 					Builder: "builder 1",
 				},
 			}
-			bldrs, err := fetchBuilderConfigs(ctx, bldrIDs)
+			bldrs, _, err := fetchBuilderConfigs(ctx, bldrIDs)
 			So(len(err.(errors.MultiError)), ShouldEqual, len(bldrIDs))
 			So(err, ShouldErrLike, "bucket not found")
 			So(bldrs["project/bucket 3"]["builder 1"], ShouldBeNil)
@@ -163,7 +156,7 @@ func TestScheduleBuild(t *testing.T) {
 					Builder: "builder 3",
 				},
 			}
-			bldrs, err := fetchBuilderConfigs(ctx, bldrIDs)
+			bldrs, _, err := fetchBuilderConfigs(ctx, bldrIDs)
 			So(len(err.(errors.MultiError)), ShouldEqual, len(bldrIDs))
 			So(err, ShouldErrLike, "builder not found")
 			So(bldrs["project/bucket 3"]["builder 1"], ShouldBeNil)
@@ -182,7 +175,7 @@ func TestScheduleBuild(t *testing.T) {
 					Builder: "builder 100",
 				},
 			}
-			bldrs, err := fetchBuilderConfigs(ctx, bldrIDs)
+			bldrs, _, err := fetchBuilderConfigs(ctx, bldrIDs)
 			So(err.(errors.MultiError)[1], ShouldErrLike, "builder not found")
 			So(bldrs["project/bucket 3"]["builder 1"], ShouldBeNil)
 			So(bldrs["project/bucket 1"]["builder 1"], ShouldResembleProto, &pb.BuilderConfig{
@@ -198,9 +191,10 @@ func TestScheduleBuild(t *testing.T) {
 					Builder: "builder 1",
 				},
 			}
-			bldrs, err := fetchBuilderConfigs(ctx, bldrIDs)
+			bldrs, dynamicBuckets, err := fetchBuilderConfigs(ctx, bldrIDs)
 			So(err, ShouldBeNil)
 			So(bldrs["project/bucket 2"]["builder 1"], ShouldBeNil)
+			So(len(dynamicBuckets), ShouldEqual, 1)
 		})
 
 		Convey("one", func() {
@@ -211,7 +205,7 @@ func TestScheduleBuild(t *testing.T) {
 					Builder: "builder 1",
 				},
 			}
-			bldrs, err := fetchBuilderConfigs(ctx, bldrIDs)
+			bldrs, _, err := fetchBuilderConfigs(ctx, bldrIDs)
 			So(err, ShouldBeNil)
 			So(bldrs["project/bucket 1"]["builder 1"], ShouldResembleProto, &pb.BuilderConfig{
 				Name: "builder 1",
@@ -236,7 +230,7 @@ func TestScheduleBuild(t *testing.T) {
 					Builder: "builder 1",
 				},
 			}
-			bldrs, err := fetchBuilderConfigs(ctx, bldrIDs)
+			bldrs, _, err := fetchBuilderConfigs(ctx, bldrIDs)
 			So(err, ShouldBeNil)
 			So(bldrs["project/bucket 1"]["builder 1"], ShouldResembleProto, &pb.BuilderConfig{
 				Name: "builder 1",
@@ -804,7 +798,7 @@ func TestScheduleBuild(t *testing.T) {
 			}
 			testutil.PutBuilder(ctx, "project", "static bucket", "static builder")
 			testutil.PutBucket(ctx, "project", "static bucket", &pb.Bucket{Swarming: &pb.Swarming{}})
-			testutil.PutBucket(ctx, "project", "dynamic bucket", nil)
+			testutil.PutBucket(ctx, "project", "dynamic bucket", &pb.Bucket{DynamicBuilderTemplate: &pb.Bucket_DynamicBuilderTemplate{}})
 
 			blds, err := scheduleBuilds(ctx, globalCfg, reqs...)
 			So(err, ShouldBeNil)
@@ -1065,7 +1059,7 @@ func TestScheduleBuild(t *testing.T) {
 					CreateTime:        testclock.TestRecentTimeUTC,
 					StatusChangedTime: testclock.TestRecentTimeUTC,
 					Incomplete:        true,
-					IsLuci:            false,
+					IsLuci:            true,
 					Status:            pb.Status_SCHEDULED,
 					Tags: []string{
 						"builder:dynamic builder",
@@ -1077,7 +1071,7 @@ func TestScheduleBuild(t *testing.T) {
 				},
 			})
 
-			So(sch.Tasks(), ShouldHaveLength, 2)
+			So(sch.Tasks(), ShouldHaveLength, 3)
 			So(datastore.Get(ctx, blds), ShouldBeNil)
 		})
 
@@ -4826,7 +4820,7 @@ func TestScheduleBuild(t *testing.T) {
 					),
 				})
 
-				testutil.PutBucket(ctx, "project", "bucket", nil)
+				testutil.PutBucket(ctx, "project", "bucket", &pb.Bucket{DynamicBuilderTemplate: &pb.Bucket_DynamicBuilderTemplate{}})
 				req := &pb.ScheduleBuildRequest{
 					Builder: &pb.BuilderID{
 						Project: "project",
@@ -4850,7 +4844,7 @@ func TestScheduleBuild(t *testing.T) {
 					Input:      &pb.Build_Input{},
 					Status:     pb.Status_SCHEDULED,
 				})
-				So(sch.Tasks(), ShouldBeEmpty)
+				So(len(sch.Tasks()), ShouldEqual, 1)
 			})
 
 			Convey("static", func() {

@@ -455,6 +455,8 @@ type buildCreator struct {
 	// Builder configs referenced by the given requests in a map of
 	// Bucket ID -> Builder name -> *pb.BuilderConfig.
 	cfgs map[string]map[string]*pb.BuilderConfig
+	// dynamicBuckets contains dynamic buckets.
+	dynamicBuckets stringset.Set
 	// idxMapBldToReq is an index map of index of blds -> index of reqIDs.
 	idxMapBldToReq []int
 	// RequestIDs of each request.
@@ -582,7 +584,7 @@ func (bc *buildCreator) createBuilds(ctx context.Context) ([]*model.Build, error
 						return errors.Annotate(err, "failed to store build: %d", b.ID).Err()
 					}
 
-					if cfg == nil {
+					if !bc.dynamicBuckets.Has(bucket) && cfg == nil {
 						return nil
 					}
 
@@ -706,7 +708,7 @@ func (*Builds) CreateBuild(ctx context.Context, req *pb.CreateBuildRequest) (*pb
 	}
 
 	// Bucket -> Builder -> *pb.BuilderConfig.
-	cfgs, err := fetchBuilderConfigs(ctx, []*pb.BuilderID{req.Build.Builder})
+	cfgs, dynamicBuckets, err := fetchBuilderConfigs(ctx, []*pb.BuilderID{req.Build.Builder})
 	if err != nil {
 		return nil, errors.Annotate(err, "error fetching builder config").Err()
 	}
@@ -718,6 +720,7 @@ func (*Builds) CreateBuild(ctx context.Context, req *pb.CreateBuildRequest) (*pb
 		globalCfg:      globalCfg,
 		blds:           []*model.Build{bld},
 		cfgs:           cfgs,
+		dynamicBuckets: dynamicBuckets,
 		idxMapBldToReq: []int{0},
 		reqIDs:         []string{req.RequestId},
 		merr:           make(errors.MultiError, 1),

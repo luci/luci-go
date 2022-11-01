@@ -322,11 +322,12 @@ func scheduleRequestFromTemplate(ctx context.Context, req *pb.ScheduleBuildReque
 }
 
 // fetchBuilderConfigs returns the Builder configs referenced by the given
-// requests in a map of Bucket ID -> Builder name -> *pb.BuilderConfig.
+// requests in a map of Bucket ID -> Builder name -> *pb.BuilderConfig and also
+// a set of dynamic buckets.
 //
 // A single returned error means a global error which applies to every request.
 // Otherwise, it would be a MultiError where len(MultiError) equals to len(builderIDs).
-func fetchBuilderConfigs(ctx context.Context, builderIDs []*pb.BuilderID) (map[string]map[string]*pb.BuilderConfig, error) {
+func fetchBuilderConfigs(ctx context.Context, builderIDs []*pb.BuilderID) (map[string]map[string]*pb.BuilderConfig, stringset.Set, error) {
 	merr := make(errors.MultiError, len(builderIDs))
 	var bcks []*model.Bucket
 
@@ -337,8 +338,7 @@ func fetchBuilderConfigs(ctx context.Context, builderIDs []*pb.BuilderID) (map[s
 	bckCfgs := map[string]**pb.Bucket{} // Bucket ID -> **pb.Bucket
 	var bldrs []*model.Builder
 	bldrCfgs := map[string]map[string]**pb.BuilderConfig{} // Bucket ID -> Builder name -> **pb.BuilderConfig
-
-	idxMap := map[string]map[string][]int{} // Bucket ID -> Builder name -> a list of index
+	idxMap := map[string]map[string][]int{}                // Bucket ID -> Builder name -> a list of index
 	for i, bldr := range builderIDs {
 		bucket := protoutil.FormatBucketID(bldr.Project, bldr.Bucket)
 		if _, ok := bldrCfgs[bucket]; !ok {
@@ -368,9 +368,10 @@ func fetchBuilderConfigs(ctx context.Context, builderIDs []*pb.BuilderID) (map[s
 
 	// Note; this will fill in bckCfgs and bldrCfgs.
 	if err := model.GetIgnoreMissing(ctx, bcks, bldrs); err != nil {
-		return nil, errors.Annotate(err, "failed to fetch entities").Err()
+		return nil, nil, errors.Annotate(err, "failed to fetch entities").Err()
 	}
 
+	dynamicBuckets := stringset.New(0)
 	// Check buckets to see if they support dynamically scheduling builds for builders which are not pre-defined.
 	for _, b := range bcks {
 		if b.Proto.GetName() == "" {
@@ -393,6 +394,9 @@ func fetchBuilderConfigs(ctx context.Context, builderIDs []*pb.BuilderID) (map[s
 			// Currently buckets do not require pre-defined builders iff they have no Swarming config.
 			if (*bckCfgs[bucket]).GetSwarming() == nil {
 				delete(bldrCfgs[bucket], b.ID)
+				if (*bckCfgs[bucket]).GetDynamicBuilderTemplate() != nil {
+					dynamicBuckets.Add(bucket)
+				}
 				continue
 			}
 			for _, idx := range idxMap[bucket][b.ID] {
@@ -413,9 +417,9 @@ func fetchBuilderConfigs(ctx context.Context, builderIDs []*pb.BuilderID) (map[s
 
 	// doesn't contain any errors.
 	if merr.First() == nil {
-		return ret, nil
+		return ret, dynamicBuckets, nil
 	}
-	return ret, merr.AsError()
+	return ret, dynamicBuckets, merr.AsError()
 }
 
 // builderMatches returns whether or not the given builder matches the given
@@ -1184,7 +1188,7 @@ func scheduleBuilds(ctx context.Context, globalCfg *pb.SettingsCfg, reqs ...*pb.
 	for _, req := range reqs {
 		bldrIDs = append(bldrIDs, req.Builder)
 	}
-	cfgs, err := fetchBuilderConfigs(ctx, bldrIDs)
+	cfgs, dynamicBuckets, err := fetchBuilderConfigs(ctx, bldrIDs)
 	if me, ok := err.(errors.MultiError); ok {
 		merr = mergeErrs(merr, me, "error fetching builders", func(i int) int { return i })
 	} else if err != nil {
@@ -1236,7 +1240,7 @@ func scheduleBuilds(ctx context.Context, globalCfg *pb.SettingsCfg, reqs ...*pb.
 		}
 
 		setExperimentsFromProto(blds[i])
-		blds[i].IsLuci = cfg != nil
+		blds[i].IsLuci = cfg != nil || dynamicBuckets.Has(bucket)
 		blds[i].PubSubCallback.Topic = validReq[i].GetNotify().GetPubsubTopic()
 		blds[i].PubSubCallback.UserData = validReq[i].GetNotify().GetUserData()
 		// Tags are stored in the outer struct (see model/build.go).
@@ -1269,6 +1273,7 @@ func scheduleBuilds(ctx context.Context, globalCfg *pb.SettingsCfg, reqs ...*pb.
 		globalCfg:      globalCfg,
 		blds:           blds,
 		cfgs:           cfgs,
+		dynamicBuckets: dynamicBuckets,
 		idxMapBldToReq: idxMapBlds,
 		reqIDs:         reqIDs,
 		merr:           merr,
