@@ -24,11 +24,14 @@ import (
 	bbv1 "go.chromium.org/luci/common/api/buildbucket/buildbucket/v1"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/common/tsmon/field"
 	"go.chromium.org/luci/common/tsmon/metric"
 	"go.chromium.org/luci/resultdb/pbutil"
 	"go.chromium.org/luci/server/router"
 	"google.golang.org/genproto/protobuf/field_mask"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/analysis/internal/buildbucket"
@@ -53,6 +56,16 @@ var (
 		// The LUCI Project.
 		field.String("project"),
 		// "success", "ignored", "transient-failure" or "permanent-failure".
+		field.String("status"))
+
+	buildProcessingOutcomeCounter = metric.NewCounter(
+		"analysis/ingestion/pubsub/buildbucket_build_processing_outcome",
+		"The number of buildbucket builds processed by LUCI Analysis,"+
+			" by processing outcome (e.g. success, permission denied).",
+		nil,
+		// The LUCI Project.
+		field.String("project"),
+		// "success", "permission_denied".
 		field.String("status"))
 )
 
@@ -143,8 +156,16 @@ func processBBMessage(ctx context.Context, message *buildBucketMessage) (process
 		Paths: []string{"infra.resultdb"},
 	}
 	build, err := retrieveBuild(ctx, message.Hostname, message.Build.Id, buildReadMask)
+	code := status.Code(err)
+	if code == codes.NotFound {
+		// Build not found, handle gracefully.
+		logging.Warningf(ctx, "Buildbucket build %s/%d for project %s not found (or LUCI Analysis does not have access to read it).",
+			message.Hostname, message.Build.Id, project)
+		buildProcessingOutcomeCounter.Add(ctx, 1, "permission_denied")
+		return false, nil
+	}
 	if err != nil {
-		return false, errors.Annotate(err, "retrieving buildbucket build").Err()
+		return false, transient.Tag.Apply(errors.Annotate(err, "retrieving buildbucket build").Err())
 	}
 
 	invocation := build.GetInfra().GetResultdb()
@@ -160,6 +181,7 @@ func processBBMessage(ctx context.Context, message *buildBucketMessage) (process
 	if err := JoinBuildResult(ctx, id, project, isPresubmit, hasInvocation, result); err != nil {
 		return false, errors.Annotate(err, "joining build result").Err()
 	}
+	buildProcessingOutcomeCounter.Add(ctx, 1, "success")
 	return true, nil
 }
 
