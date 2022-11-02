@@ -52,8 +52,6 @@ var ErrTerminated = errors.Reason("terminated with 0 exit code").Err()
 // Implements plugin.Host interface.
 type Host struct {
 	// PluginsContext is used for asynchronous logging from plugins.
-	//
-	// If not set, all logs from plugins will be ignored.
 	PluginsContext context.Context
 
 	cfg atomic.Value // plugin.Config set in Initialize
@@ -95,11 +93,7 @@ func (h *Host) Config() plugin.Config {
 //
 // It is a part of plugin.Host interface.
 func (h *Host) NewAdmissionPlugin(cmdLine []string) (plugin.AdmissionPlugin, error) {
-	ctx := h.PluginsContext
-	if ctx == nil {
-		ctx = context.Background()
-	}
-	return NewAdmissionPlugin(ctx, h, cmdLine), nil
+	return NewAdmissionPlugin(h.PluginsContext, h, cmdLine), nil
 }
 
 // LaunchPlugin launches a plugin subprocesses.

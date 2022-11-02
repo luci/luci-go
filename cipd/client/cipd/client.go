@@ -15,16 +15,17 @@
 // Package cipd implements client side of Chrome Infra Package Deployer.
 //
 // Binary package file format (in free form representation):
-//   <binary package> := <zipped data>
-//   <zipped data> := DeterministicZip(<all input files> + <manifest json>)
-//   <manifest json> := File{
-//     name: ".cipdpkg/manifest.json",
-//     data: JSON({
-//       "FormatVersion": "1",
-//       "PackageName": <name of the package>
-//     }),
-//   }
-//   DeterministicZip = zip archive with deterministic ordering of files and stripped timestamps
+//
+//	<binary package> := <zipped data>
+//	<zipped data> := DeterministicZip(<all input files> + <manifest json>)
+//	<manifest json> := File{
+//	  name: ".cipdpkg/manifest.json",
+//	  data: JSON({
+//	    "FormatVersion": "1",
+//	    "PackageName": <name of the package>
+//	  }),
+//	}
+//	DeterministicZip = zip archive with deterministic ordering of files and stripped timestamps
 //
 // Main package data (<zipped data> above) is deterministic, meaning its content
 // depends only on inputs used to built it (byte to byte): contents and names of
@@ -669,7 +670,7 @@ func NewClient(opts ClientOptions) (Client, error) {
 	if len(opts.AdmissionPlugin) != 0 {
 		ctx := opts.PluginsContext
 		if ctx == nil {
-			ctx = context.Background()
+			return nil, errors.Reason("a plugins context is required when using plugins").Err()
 		}
 		if initPluginHost != nil {
 			pluginHost = initPluginHost(ctx)
