@@ -168,15 +168,15 @@ func processBBMessage(ctx context.Context, message *buildBucketMessage) (process
 		return false, transient.Tag.Apply(errors.Annotate(err, "retrieving buildbucket build").Err())
 	}
 
-	invocation := build.GetInfra().GetResultdb()
-	if invocation != nil {
-		wantInvocation := pbutil.InvocationName(fmt.Sprintf("build-%v", message.Build.Id))
-		if invocation.Invocation != wantInvocation {
-			logging.Warningf(ctx, "Build %v has unexpected ResultDB invocation (got %v, want %v)", id, invocation.Invocation, wantInvocation)
+	hasInvocation := false
+	invocationName := build.GetInfra().GetResultdb().GetInvocation()
+	if invocationName != "" {
+		wantInvocationName := pbutil.InvocationName(fmt.Sprintf("build-%v", message.Build.Id))
+		if invocationName != wantInvocationName {
+			logging.Warningf(ctx, "Build %v has unexpected ResultDB invocation (got %v, want %v)", id, invocationName, wantInvocationName)
 		}
+		hasInvocation = true
 	}
-
-	hasInvocation := invocation != nil
 
 	if err := JoinBuildResult(ctx, id, project, isPresubmit, hasInvocation, result); err != nil {
 		return false, errors.Annotate(err, "joining build result").Err()

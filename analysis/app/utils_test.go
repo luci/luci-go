@@ -141,12 +141,10 @@ func (b *buildBuilder) WithCreateTime(t time.Time) *buildBuilder {
 }
 
 func (b *buildBuilder) BuildProto() *bbpb.Build {
-	var rdb *bbpb.BuildInfra_ResultDB
+	rdb := &bbpb.BuildInfra_ResultDB{}
 	if b.hasInvocation {
-		rdb = &bbpb.BuildInfra_ResultDB{
-			Hostname:   "rdb.test.instance",
-			Invocation: fmt.Sprintf("invocations/build-%v", b.buildID),
-		}
+		rdb.Hostname = "rdb.test.instance"
+		rdb.Invocation = fmt.Sprintf("invocations/build-%v", b.buildID)
 	}
 	var tags []*bbpb.StringPair
 	for _, t := range b.tags {
