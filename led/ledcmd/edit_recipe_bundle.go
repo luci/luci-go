@@ -151,7 +151,10 @@ func EditRecipeBundle(ctx context.Context, authOpts auth.Options, jd *job.Defini
 		extraProperties[CASRecipeBundleProperty] = jsonCASRef
 	} else {
 		if err := EditIsolated(ctx, authOpts, jd, func(ctx context.Context, dir string) error {
-			bundlePath := filepath.Join(dir, RecipeDirectory)
+			bundlePath := dir
+			if !jd.GetBuildbucket().BbagentDownloadCIPDPkgs() {
+				bundlePath = filepath.Join(dir, RecipeDirectory)
+			}
 			// Remove existing bundled recipes, if any. Ignore the error.
 			os.RemoveAll(bundlePath)
 			if err := opts.prepBundle(ctx, opts.RepoDir, recipesPy, bundlePath); err != nil {
