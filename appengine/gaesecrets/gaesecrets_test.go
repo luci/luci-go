@@ -33,7 +33,7 @@ func TestWorks(t *testing.T) {
 		// Autogenerates one.
 		s1, err := secrets.RandomSecret(c, "key1")
 		So(err, ShouldBeNil)
-		So(len(s1.Current), ShouldEqual, 32)
+		So(len(s1.Active), ShouldEqual, 32)
 
 		// Returns same one.
 		s2, err := secrets.RandomSecret(c, "key1")

@@ -2166,7 +2166,7 @@ func (s *Server) initAdminPort() error {
 	if _, err := cryptorand.Read(secret); err != nil {
 		return err
 	}
-	store := secrets.NewDerivedStore(secrets.Secret{Current: secret})
+	store := secrets.NewDerivedStore(secrets.Secret{Active: secret})
 	withAdminSecret := router.NewMiddlewareChain(func(c *router.Context, next router.Handler) {
 		c.Context = secrets.Use(c.Context, store)
 		next(c)

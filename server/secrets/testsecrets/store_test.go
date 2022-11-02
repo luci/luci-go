@@ -33,27 +33,27 @@ func TestStore(t *testing.T) {
 		s1, err := store.RandomSecret(ctx, "key1")
 		So(err, ShouldBeNil)
 		So(s1, ShouldResemble, secrets.Secret{
-			Current: []byte{0xfa, 0x12, 0xf9, 0x2a, 0xfb, 0xe0, 0xf, 0x85},
+			Active: []byte{0xfa, 0x12, 0xf9, 0x2a, 0xfb, 0xe0, 0xf, 0x85},
 		})
 
 		// Getting same one back.
 		s2, err := store.RandomSecret(ctx, "key1")
 		So(err, ShouldBeNil)
 		So(s2, ShouldResemble, secrets.Secret{
-			Current: []byte{0xfa, 0x12, 0xf9, 0x2a, 0xfb, 0xe0, 0xf, 0x85},
+			Active: []byte{0xfa, 0x12, 0xf9, 0x2a, 0xfb, 0xe0, 0xf, 0x85},
 		})
 	})
 
 	Convey("StoredSecret", t, func() {
 		store := Store{
 			Secrets: map[string]secrets.Secret{
-				"key1": {Current: []byte("blah")},
+				"key1": {Active: []byte("blah")},
 			},
 		}
 
 		s, err := store.StoredSecret(ctx, "key1")
 		So(err, ShouldBeNil)
-		So(s, ShouldResemble, secrets.Secret{Current: []byte("blah")})
+		So(s, ShouldResemble, secrets.Secret{Active: []byte("blah")})
 
 		_, err = store.StoredSecret(ctx, "key2")
 		So(err, ShouldEqual, secrets.ErrNoSuchSecret)

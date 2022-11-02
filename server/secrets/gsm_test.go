@@ -113,7 +113,7 @@ func TestSecretManagerSource(t *testing.T) {
 			So(s, ShouldResemble, &trackedSecret{
 				name: "devsecret://YWJj",
 				value: Secret{
-					Current: []byte("abc"),
+					Active: []byte("abc"),
 				},
 			})
 		})
@@ -124,7 +124,7 @@ func TestSecretManagerSource(t *testing.T) {
 			So(s, ShouldResemble, &trackedSecret{
 				name: "devsecret-text://abc",
 				value: Secret{
-					Current: []byte("abc"),
+					Active: []byte("abc"),
 				},
 			})
 		})
@@ -135,7 +135,7 @@ func TestSecretManagerSource(t *testing.T) {
 			s, err := sm.readSecret(ctx, "sm://project/secret", false)
 			So(err, ShouldBeNil)
 			So(s.name, ShouldEqual, "sm://project/secret")
-			So(s.value, ShouldResemble, Secret{Current: []byte("zzz")})
+			So(s.value, ShouldResemble, Secret{Active: []byte("zzz")})
 			So(s.versions, ShouldEqual, [2]int64{1, 0})
 			So(s.nextReload.IsZero(), ShouldBeFalse)
 		})
@@ -147,8 +147,8 @@ func TestSecretManagerSource(t *testing.T) {
 			s, err := sm.readSecret(ctx, "sm://project/secret", true)
 			So(err, ShouldBeNil)
 			So(s.value, ShouldResemble, Secret{
-				Current: []byte("new"),
-				Previous: [][]byte{
+				Active: []byte("new"),
+				Passive: [][]byte{
 					[]byte("old"),
 				},
 			})
@@ -162,7 +162,7 @@ func TestSecretManagerSource(t *testing.T) {
 
 			s, err := sm.readSecret(ctx, "sm://project/secret", true)
 			So(err, ShouldBeNil)
-			So(s.value, ShouldResemble, Secret{Current: []byte("new")})
+			So(s.value, ShouldResemble, Secret{Active: []byte("new")})
 			So(s.versions, ShouldEqual, [2]int64{2, 0})
 		})
 
@@ -173,7 +173,7 @@ func TestSecretManagerSource(t *testing.T) {
 
 			s, err := sm.readSecret(ctx, "sm://project/secret", true)
 			So(err, ShouldBeNil)
-			So(s.value, ShouldResemble, Secret{Current: []byte("new")})
+			So(s.value, ShouldResemble, Secret{Active: []byte("new")})
 			So(s.versions, ShouldEqual, [2]int64{2, 0})
 		})
 
@@ -191,7 +191,7 @@ func TestSecretManagerSource(t *testing.T) {
 
 			s1, err := sm.RandomSecret(ctx, "name")
 			So(err, ShouldBeNil)
-			So(s1, ShouldResemble, Secret{Current: ver1})
+			So(s1, ShouldResemble, Secret{Active: ver1})
 
 			rotated := make(chan struct{})
 			sm.AddRotationHandler(ctx, "sm://project/secret", func(_ context.Context, s Secret) {
@@ -208,8 +208,8 @@ func TestSecretManagerSource(t *testing.T) {
 			s2, err := sm.RandomSecret(ctx, "name")
 			So(err, ShouldBeNil)
 			So(s2, ShouldResemble, Secret{
-				Current:  ver2,
-				Previous: [][]byte{ver1},
+				Active:  ver2,
+				Passive: [][]byte{ver1},
 			})
 		})
 
@@ -224,7 +224,7 @@ func TestSecretManagerSource(t *testing.T) {
 			expectSleeping()
 			s, err := sm.StoredSecret(ctx, "sm://project/secret")
 			So(err, ShouldBeNil)
-			So(s, ShouldResemble, Secret{Current: []byte("v1")})
+			So(s, ShouldResemble, Secret{Active: []byte("v1")})
 			expectWoken(false)
 
 			// Rotate the secret and make sure the change is picked up when expected.
@@ -234,7 +234,7 @@ func TestSecretManagerSource(t *testing.T) {
 
 			s, err = sm.StoredSecret(ctx, "sm://project/secret")
 			So(err, ShouldBeNil)
-			So(s, ShouldResemble, Secret{Current: []byte("v2")})
+			So(s, ShouldResemble, Secret{Active: []byte("v2")})
 
 			<-rotated // doesn't hang
 		})
@@ -245,7 +245,7 @@ func TestSecretManagerSource(t *testing.T) {
 			expectSleeping()
 			s, err := sm.StoredSecret(ctx, "sm://project/secret")
 			So(err, ShouldBeNil)
-			So(s, ShouldResemble, Secret{Current: []byte("v1")})
+			So(s, ShouldResemble, Secret{Active: []byte("v1")})
 			expectWoken(false)
 
 			// Rotate the secret and "break" the backend.

@@ -86,11 +86,11 @@ func (d *DerivedStore) SetRoot(root Secret) {
 }
 
 func (d *DerivedStore) generateLocked(name string) Secret {
-	s := Secret{Current: derive(d.root.Current, name)}
-	if len(d.root.Previous) != 0 {
-		s.Previous = make([][]byte, len(d.root.Previous))
-		for i, secret := range d.root.Previous {
-			s.Previous[i] = derive(secret, name)
+	s := Secret{Active: derive(d.root.Active, name)}
+	if len(d.root.Passive) != 0 {
+		s.Passive = make([][]byte, len(d.root.Passive))
+		for i, secret := range d.root.Passive {
+			s.Passive[i] = derive(secret, name)
 		}
 	}
 	return s

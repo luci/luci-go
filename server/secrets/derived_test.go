@@ -28,8 +28,8 @@ func TestDerivedStore(t *testing.T) {
 
 	Convey("Works", t, func() {
 		root := Secret{
-			Current: []byte("1"),
-			Previous: [][]byte{
+			Active: []byte("1"),
+			Passive: [][]byte{
 				[]byte("2"),
 				[]byte("3"),
 			},
@@ -38,8 +38,8 @@ func TestDerivedStore(t *testing.T) {
 
 		s1, _ := store.RandomSecret(ctx, "secret_1")
 		So(s1, ShouldResemble, Secret{
-			Current: derive([]byte("1"), "secret_1"),
-			Previous: [][]byte{
+			Active: derive([]byte("1"), "secret_1"),
+			Passive: [][]byte{
 				derive([]byte("2"), "secret_1"),
 				derive([]byte("3"), "secret_1"),
 			},
@@ -55,7 +55,7 @@ func TestDerivedStore(t *testing.T) {
 		So(s2, ShouldResemble, s1)
 
 		// Test actual root key change.
-		store.SetRoot(Secret{Current: []byte("zzz")})
+		store.SetRoot(Secret{Active: []byte("zzz")})
 		s2, _ = store.RandomSecret(ctx, "secret_1")
 		So(s2, ShouldNotResemble, s1)
 	})

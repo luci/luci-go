@@ -138,11 +138,11 @@ func (sm *SecretManagerStore) RandomSecret(ctx context.Context, name string) (Se
 // StoredSecret returns a previously stored secret given its name.
 //
 // Value of `name` should have form:
-//   * `sm://<project>/<secret>`: a concrete secret in Google Secret Manager.
-//   * `sm://<secret>`: same as `sm://<CloudProject>/<secret>`.
-//   * `devsecret://<base64-encoded secret>`: return this concrete secret.
-//   * `devsecret-gen://tink/aead`: generate a new secret of the Tink AEAD.
-//   * `devsecret-text://<string>`: return this concrete secret.
+//   - `sm://<project>/<secret>`: a concrete secret in Google Secret Manager.
+//   - `sm://<secret>`: same as `sm://<CloudProject>/<secret>`.
+//   - `devsecret://<base64-encoded secret>`: return this concrete secret.
+//   - `devsecret-gen://tink/aead`: generate a new secret of the Tink AEAD.
+//   - `devsecret-text://<string>`: return this concrete secret.
 func (sm *SecretManagerStore) StoredSecret(ctx context.Context, name string) (Secret, error) {
 	return sm.readAndTrackSecret(ctx, name, false)
 }
@@ -324,7 +324,7 @@ func (sm *SecretManagerStore) readSecret(ctx context.Context, name string, withP
 		}
 		return &trackedSecret{
 			name:  name,
-			value: Secret{Current: value},
+			value: Secret{Active: value},
 		}, nil
 
 	case strings.HasPrefix(name, "devsecret-gen://"):
@@ -336,7 +336,7 @@ func (sm *SecretManagerStore) readSecret(ctx context.Context, name string, withP
 			}
 			return &trackedSecret{
 				name:  name,
-				value: Secret{Current: value},
+				value: Secret{Active: value},
 			}, nil
 		default:
 			return nil, errors.Reason("devsecret-gen:// kind %q is not supported", kind).Err()
@@ -345,7 +345,7 @@ func (sm *SecretManagerStore) readSecret(ctx context.Context, name string, withP
 	case strings.HasPrefix(name, "devsecret-text://"):
 		return &trackedSecret{
 			name:  name,
-			value: Secret{Current: []byte(strings.TrimPrefix(name, "devsecret-text://"))},
+			value: Secret{Active: []byte(strings.TrimPrefix(name, "devsecret-text://"))},
 		}, nil
 
 	case strings.HasPrefix(name, "sm://"):
@@ -391,7 +391,7 @@ func (sm *SecretManagerStore) readSecretFromGSM(ctx context.Context, name string
 	result := &trackedSecret{
 		name:            name,
 		withPrevVersion: withPrevVersion,
-		value:           Secret{Current: latest.Payload.Data},
+		value:           Secret{Active: latest.Payload.Data},
 		versions:        [2]int64{version, 0}, // note: GSM versions start with 1
 		nextReload:      nextReloadTime(ctx),
 	}
@@ -406,7 +406,7 @@ func (sm *SecretManagerStore) readSecretFromGSM(ctx context.Context, name string
 	})
 	switch status.Code(err) {
 	case codes.OK:
-		result.value.Previous = [][]byte{previous.Payload.Data}
+		result.value.Passive = [][]byte{previous.Payload.Data}
 		result.versions[1] = prevVersion
 		return result, nil
 	case codes.FailedPrecondition, codes.NotFound:

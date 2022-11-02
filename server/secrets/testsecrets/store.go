@@ -80,6 +80,6 @@ func (t *Store) getSecret(ctx context.Context, k string, autogen bool) (secrets.
 	for i := range secret {
 		secret[i] = byte(t.Rand.Int31n(256))
 	}
-	t.Secrets[k] = secrets.Secret{Current: secret}
+	t.Secrets[k] = secrets.Secret{Active: secret}
 	return t.Secrets[k], nil
 }

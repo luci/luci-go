@@ -101,20 +101,25 @@ type Store interface {
 // a new version of a stored secret.
 type RotationHandler func(context.Context, Secret)
 
-// Secret represents a current value of a secret as well as a set of few
-// previous values. Previous values are important when the secret is being
-// rotated: there may be valid outstanding derivatives of previous values of
-// the secret.
+// Secret represents multiple versions of some secret blob.
+//
+// There's a current version (which is always set) that should be used for all
+// kinds of operations: active (like encryption, signing, etc) and passive
+// (like decryption, checking signatures, etc).
+//
+// And there's zero or more other versions that should be used only for passive
+// operations. Other versions contain previous or future values of the secret.
+// They are important for implementing graceful rotation of the secret.
 type Secret struct {
-	Current  []byte   `json:"current"`            // current value of the secret, always set
-	Previous [][]byte `json:"previous,omitempty"` // optional list of previous values, most recent first
+	Active  []byte   // current value of the secret, always set
+	Passive [][]byte // optional list of other values, in no particular order
 }
 
-// Blobs returns current blob and all previous blobs as one array.
+// Blobs returns the active version and all passive versions as one array.
 func (s Secret) Blobs() [][]byte {
-	out := make([][]byte, 0, 1+len(s.Previous))
-	out = append(out, s.Current)
-	out = append(out, s.Previous...)
+	out := make([][]byte, 0, 1+len(s.Passive))
+	out = append(out, s.Active)
+	out = append(out, s.Passive...)
 	return out
 }
 
@@ -124,13 +129,13 @@ func (s Secret) Blobs() [][]byte {
 // context due to susceptibility to timing attacks.
 func (s Secret) Equal(a Secret) bool {
 	switch {
-	case len(s.Previous) != len(a.Previous):
+	case len(s.Passive) != len(a.Passive):
 		return false
-	case !bytes.Equal(s.Current, a.Current):
+	case !bytes.Equal(s.Active, a.Active):
 		return false
 	}
-	for i, blob := range s.Previous {
-		if !bytes.Equal(blob, a.Previous[i]) {
+	for i, blob := range s.Passive {
+		if !bytes.Equal(blob, a.Passive[i]) {
 			return false
 		}
 	}

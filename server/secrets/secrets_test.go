@@ -15,7 +15,6 @@
 package secrets
 
 import (
-	"encoding/json"
 	"testing"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -26,8 +25,8 @@ func TestSecret(t *testing.T) {
 
 	Convey("Blobs works", t, func() {
 		s := Secret{
-			Current: []byte("s1"),
-			Previous: [][]byte{
+			Active: []byte("s1"),
+			Passive: [][]byte{
 				[]byte("s2"),
 				[]byte("s3"),
 			},
@@ -41,28 +40,28 @@ func TestSecret(t *testing.T) {
 
 	Convey("Equal works", t, func() {
 		s1 := Secret{
-			Current: []byte("1"),
-			Previous: [][]byte{
+			Active: []byte("1"),
+			Passive: [][]byte{
 				[]byte("2"),
 				[]byte("3"),
 			},
 		}
 		s2 := Secret{
-			Current: []byte("1"),
-			Previous: [][]byte{
+			Active: []byte("1"),
+			Passive: [][]byte{
 				[]byte("2"),
 			},
 		}
 		s3 := Secret{
-			Current: []byte("zzz"),
-			Previous: [][]byte{
+			Active: []byte("zzz"),
+			Passive: [][]byte{
 				[]byte("2"),
 				[]byte("3"),
 			},
 		}
 		s4 := Secret{
-			Current: []byte("1"),
-			Previous: [][]byte{
+			Active: []byte("1"),
+			Passive: [][]byte{
 				[]byte("2"),
 				[]byte("zzz"),
 			},
@@ -71,16 +70,5 @@ func TestSecret(t *testing.T) {
 		So(s1.Equal(s2), ShouldBeFalse)
 		So(s1.Equal(s3), ShouldBeFalse)
 		So(s1.Equal(s4), ShouldBeFalse)
-	})
-
-	Convey("JSON serialization", t, func() {
-		blob, _ := json.Marshal(&Secret{
-			Current: []byte("1"),
-			Previous: [][]byte{
-				[]byte("2"),
-				[]byte("3"),
-			},
-		})
-		So(string(blob), ShouldResemble, `{"current":"MQ==","previous":["Mg==","Mw=="]}`)
 	})
 }

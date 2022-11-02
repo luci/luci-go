@@ -310,7 +310,7 @@ func (m *serverModule) loadOpenIDConfig(ctx context.Context) (*atomic.Value, err
 		return &OpenIDConfig{
 			DiscoveryURL: m.opts.DiscoveryURL,
 			ClientID:     m.opts.ClientID,
-			ClientSecret: string(s.Current),
+			ClientSecret: string(s.Active),
 			RedirectURI:  m.opts.RedirectURL,
 		}
 	}

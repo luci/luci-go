@@ -117,7 +117,7 @@ func (k *TokenKind) Generate(c context.Context, state []byte, embedded map[strin
 	if err != nil {
 		return "", err
 	}
-	mac, err := computeMAC(k.Algo, secret.Current, dataToAuth(k.Version, public, state))
+	mac, err := computeMAC(k.Algo, secret.Active, dataToAuth(k.Version, public, state))
 	if err != nil {
 		return "", err
 	}

@@ -223,7 +223,7 @@ func loadTinkAEADLocked(ctx context.Context, secretName string, subscribe bool) 
 }
 
 func deserializeKeyset(s *Secret) (tink.AEAD, error) {
-	kh, err := insecurecleartextkeyset.Read(keyset.NewJSONReader(bytes.NewReader(s.Current)))
+	kh, err := insecurecleartextkeyset.Read(keyset.NewJSONReader(bytes.NewReader(s.Active)))
 	if err != nil {
 		return nil, err
 	}

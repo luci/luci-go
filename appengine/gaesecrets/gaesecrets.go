@@ -159,7 +159,7 @@ func (s *storeImpl) getSecretFromDatastore(ctx context.Context, k string, autoge
 	}
 
 	return secrets.Secret{
-		Current: ent.Secret,
+		Active: ent.Secret,
 	}, nil
 }
 

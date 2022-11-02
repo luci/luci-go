@@ -48,7 +48,7 @@ func TestAEAD(t *testing.T) {
 		ctx := Use(context.Background(), store)
 
 		putSecret := func(val []byte) {
-			store.secret = Secret{Current: val}
+			store.secret = Secret{Active: val}
 		}
 
 		Convey("PrimaryTinkAEADKey works", func() {
