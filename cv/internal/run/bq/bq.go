@@ -131,7 +131,7 @@ func send(ctx context.Context, env *common.Env, client cvbq.Client, id common.Ru
 			Payload:     a,
 		})
 		if err != nil {
-			logging.Errorf(ctx, "failed to export the Run to CV dataset: %s", err)
+			logging.Warningf(ctx, "failed to export the Run to CV dataset: %s", err)
 		}
 	}()
 	wg.Wait()
