@@ -56,7 +56,7 @@ import (
 
 func TestClusters(t *testing.T) {
 	Convey("With a clusters server", t, func() {
-		ctx := testutil.SpannerTestContext(t)
+		ctx := testutil.IntegrationTestContext(t)
 		ctx = caching.WithEmptyProcessCache(ctx)
 
 		// For user identification.

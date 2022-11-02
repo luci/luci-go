@@ -78,7 +78,7 @@ func TestSaveVerdicts(t *testing.T) {
 		ctl := gomock.NewController(t)
 		defer ctl.Finish()
 
-		mrc := resultdb.NewMockedClient(testutil.SpannerTestContext(t), ctl)
+		mrc := resultdb.NewMockedClient(testutil.IntegrationTestContext(t), ctl)
 		ctx := mrc.Ctx
 
 		realm := "chromium:ci"

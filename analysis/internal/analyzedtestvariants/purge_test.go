@@ -31,7 +31,7 @@ import (
 
 func TestPurge(t *testing.T) {
 	Convey(`TestPurge`, t, func() {
-		ctx := testutil.SpannerTestContext(t)
+		ctx := testutil.IntegrationTestContext(t)
 		const realm = "chromium:ci"
 		const tID1 = "ninja://test1"
 		const tID2 = "ninja://test2"

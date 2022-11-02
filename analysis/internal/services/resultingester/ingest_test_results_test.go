@@ -63,7 +63,7 @@ import (
 
 func TestSchedule(t *testing.T) {
 	Convey(`TestSchedule`, t, func() {
-		ctx := testutil.SpannerTestContext(t)
+		ctx := testutil.IntegrationTestContext(t)
 		ctx, skdr := tq.TestingContext(ctx, nil)
 
 		task := &taskspb.IngestTestResults{
@@ -154,7 +154,7 @@ func TestIngestTestResults(t *testing.T) {
 	testvariantupdator.RegisterTaskClass()
 
 	Convey(`TestIngestTestResults`, t, func() {
-		ctx := testutil.SpannerTestContext(t)
+		ctx := testutil.IntegrationTestContext(t)
 		ctx = caching.WithEmptyProcessCache(ctx) // For failure association rules cache.
 		ctx, skdr := tq.TestingContext(ctx, nil)
 		ctx = memory.Use(ctx)

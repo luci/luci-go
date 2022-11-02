@@ -34,7 +34,7 @@ import (
 
 func TestInitData(t *testing.T) {
 	Convey("Given an init data server", t, func() {
-		ctx := testutil.SpannerTestContext(t)
+		ctx := testutil.IntegrationTestContext(t)
 
 		// For user identification.
 		ctx = authtest.MockAuthConfig(ctx)

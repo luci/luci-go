@@ -30,7 +30,7 @@ import (
 
 func TestQueryFailureRate(t *testing.T) {
 	Convey("QueryFailureRate", t, func() {
-		ctx := testutil.SpannerTestContext(t)
+		ctx := testutil.IntegrationTestContext(t)
 
 		var1 := pbutil.Variant("key1", "val1", "key2", "val1")
 		var3 := pbutil.Variant("key1", "val2", "key2", "val2")

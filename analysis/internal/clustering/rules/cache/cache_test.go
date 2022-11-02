@@ -32,7 +32,7 @@ var cache = caching.RegisterLRUCache(50)
 
 func TestRulesCache(t *testing.T) {
 	Convey(`With Spanner Test Database`, t, func() {
-		ctx := testutil.SpannerTestContext(t)
+		ctx := testutil.IntegrationTestContext(t)
 		ctx, tc := testclock.UseTime(ctx, testclock.TestRecentTimeUTC)
 		ctx = caching.WithEmptyProcessCache(ctx)
 

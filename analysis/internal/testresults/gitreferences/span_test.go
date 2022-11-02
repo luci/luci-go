@@ -30,7 +30,7 @@ import (
 
 func TestSpan(t *testing.T) {
 	Convey("With Spanner Test Database", t, func() {
-		ctx := testutil.SpannerTestContext(t)
+		ctx := testutil.IntegrationTestContext(t)
 
 		Convey("EnsureExists", func() {
 			save := func(r *GitReference) (time.Time, error) {

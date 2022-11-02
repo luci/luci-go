@@ -38,7 +38,7 @@ import (
 
 func TestTestVariantsServer(t *testing.T) {
 	Convey("Given a projects server", t, func() {
-		ctx := testutil.SpannerTestContext(t)
+		ctx := testutil.IntegrationTestContext(t)
 
 		// For user identification.
 		ctx = authtest.MockAuthConfig(ctx)

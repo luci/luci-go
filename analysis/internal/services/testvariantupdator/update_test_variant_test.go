@@ -46,7 +46,7 @@ func init() {
 
 func TestSchedule(t *testing.T) {
 	Convey(`TestSchedule`, t, func() {
-		ctx, skdr := tq.TestingContext(testutil.SpannerTestContext(t), nil)
+		ctx, skdr := tq.TestingContext(testutil.IntegrationTestContext(t), nil)
 
 		realm := "chromium:ci"
 		testID := "ninja://test"
@@ -71,7 +71,7 @@ func TestSchedule(t *testing.T) {
 
 func TestCheckTask(t *testing.T) {
 	Convey(`checkTask`, t, func() {
-		ctx := testutil.SpannerTestContext(t)
+		ctx := testutil.IntegrationTestContext(t)
 		realm := "chromium:ci"
 		tID := "ninja://test"
 		vh := "varianthash"
@@ -133,7 +133,7 @@ func createProjectsConfig() map[string]*configpb.ProjectConfig {
 
 func TestUpdateTestVariantStatus(t *testing.T) {
 	Convey(`updateTestVariant`, t, func() {
-		ctx, skdr := tq.TestingContext(testutil.SpannerTestContext(t), nil)
+		ctx, skdr := tq.TestingContext(testutil.IntegrationTestContext(t), nil)
 		ctx = memory.Use(ctx)
 		config.SetTestProjectConfig(ctx, createProjectsConfig())
 		realm := "chromium:ci"

@@ -44,7 +44,7 @@ import (
 
 func TestRules(t *testing.T) {
 	Convey("With Server", t, func() {
-		ctx := testutil.SpannerTestContext(t)
+		ctx := testutil.IntegrationTestContext(t)
 
 		// For user identification.
 		ctx = authtest.MockAuthConfig(ctx)

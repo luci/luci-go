@@ -30,7 +30,7 @@ import (
 
 func TestGlobalMetrics(t *testing.T) {
 	Convey(`With Spanner Test Database`, t, func() {
-		ctx := testutil.SpannerTestContext(t)
+		ctx := testutil.IntegrationTestContext(t)
 
 		ctx = memory.Use(ctx) // For project config in datastore.
 

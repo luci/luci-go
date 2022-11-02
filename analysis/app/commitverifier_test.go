@@ -47,7 +47,7 @@ var bbCreateTime = time.Date(2025, time.December, 1, 2, 3, 4, 5000, time.UTC)
 
 func TestHandleCVRun(t *testing.T) {
 	Convey(`Test CVRunPubSubHandler`, t, func() {
-		ctx := testutil.SpannerTestContext(t)
+		ctx := testutil.IntegrationTestContext(t)
 		ctx, skdr := tq.TestingContext(ctx, nil)
 
 		// Setup two ingested tryjob builds. The first has

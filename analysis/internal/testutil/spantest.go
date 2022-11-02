@@ -25,6 +25,7 @@ import (
 	. "github.com/smartystreets/goconvey/convey"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/spantest"
+	"go.chromium.org/luci/common/tsmon"
 	"go.chromium.org/luci/server/span"
 )
 
@@ -44,6 +45,19 @@ func cleanupDatabase(ctx context.Context, client *spanner.Client) error {
 		spanner.Delete("TestRealms", spanner.AllKeys()),
 	})
 	return err
+}
+
+// IntegrationTestContext returns a context for testing code that talks to Spanner
+// and uses tsmon.
+// Skips the test if integration tests are not enabled.
+//
+// Tests that use Spanner must not call t.Parallel().
+func IntegrationTestContext(tb testing.TB) context.Context {
+	// tsmon metrics are used fairly extensively throughout LUCI Analysis,
+	// especially in contexts that also use Spanner.
+	ctx := SpannerTestContext(tb)
+	ctx, _ = tsmon.WithDummyInMemory(ctx)
+	return ctx
 }
 
 // SpannerTestContext returns a context for testing code that talks to Spanner.

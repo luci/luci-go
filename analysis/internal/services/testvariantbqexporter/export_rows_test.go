@@ -63,7 +63,7 @@ func (i *mockFailInserter) PutWithRetries(ctx context.Context, src []*bq.Row) er
 
 func TestQueryTestVariantsToExport(t *testing.T) {
 	Convey(`queryTestVariantsToExport`, t, func() {
-		ctx := testutil.SpannerTestContext(t)
+		ctx := testutil.IntegrationTestContext(t)
 		realm := "chromium:ci"
 		tID1 := "ninja://test1"
 		tID2 := "ninja://test2"

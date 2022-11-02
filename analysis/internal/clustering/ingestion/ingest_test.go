@@ -49,7 +49,7 @@ import (
 
 func TestIngest(t *testing.T) {
 	Convey(`With Ingestor`, t, func() {
-		ctx := testutil.SpannerTestContext(t)
+		ctx := testutil.IntegrationTestContext(t)
 		ctx = caching.WithEmptyProcessCache(ctx) // For rules cache.
 		ctx = memory.Use(ctx)                    // For project config in datastore.
 

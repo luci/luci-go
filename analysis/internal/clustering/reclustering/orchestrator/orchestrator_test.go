@@ -44,7 +44,7 @@ import (
 
 func TestOrchestrator(t *testing.T) {
 	Convey(`With Spanner Test Database`, t, func() {
-		ctx := testutil.SpannerTestContext(t)
+		ctx := testutil.IntegrationTestContext(t)
 
 		// Simulate the Orchestrator job running one second past the hour.
 		startTime := testclock.TestRecentTimeUTC.Truncate(time.Hour).Add(time.Second)

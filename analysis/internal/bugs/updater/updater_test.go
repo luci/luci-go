@@ -53,7 +53,7 @@ import (
 
 func TestRun(t *testing.T) {
 	Convey("Run bug updates", t, func() {
-		ctx := testutil.SpannerTestContext(t)
+		ctx := testutil.IntegrationTestContext(t)
 		ctx = memory.Use(ctx)
 
 		f := &monorail.FakeIssuesStore{

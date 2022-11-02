@@ -26,7 +26,7 @@ import (
 func TestClearRuleUsers(t *testing.T) {
 	Convey(`With Spanner Test Database`, t, func() {
 
-		ctx := testutil.SpannerTestContext(t)
+		ctx := testutil.IntegrationTestContext(t)
 
 		Convey(`Rules older than 30 days should have their CreationUser cleared`, func() {
 			expectedRule := NewRule(101).

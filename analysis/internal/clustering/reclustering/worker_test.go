@@ -84,7 +84,7 @@ type scenario struct {
 
 func TestReclustering(t *testing.T) {
 	Convey(`With Worker`, t, func() {
-		ctx := testutil.SpannerTestContext(t)
+		ctx := testutil.IntegrationTestContext(t)
 		ctx, tc := testclock.UseTime(ctx, testclock.TestRecentTimeUTC)
 		ctx = caching.WithEmptyProcessCache(ctx) // For rules cache.
 		ctx = memory.Use(ctx)                    // For project config.

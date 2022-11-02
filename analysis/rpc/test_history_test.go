@@ -36,7 +36,7 @@ import (
 
 func TestTestHistoryServer(t *testing.T) {
 	Convey("TestHistoryServer", t, func() {
-		ctx := testutil.SpannerTestContext(t)
+		ctx := testutil.IntegrationTestContext(t)
 
 		ctx = auth.WithState(ctx, &authtest.FakeState{
 			Identity: "user:someone@example.com",

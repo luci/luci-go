@@ -35,7 +35,7 @@ import (
 
 func TestHandleBuild(t *testing.T) {
 	Convey(`Test BuildbucketPubSubHandler`, t, func() {
-		ctx := testutil.SpannerTestContext(t)
+		ctx := testutil.IntegrationTestContext(t)
 		ctx, skdr := tq.TestingContext(ctx, nil)
 
 		// Buildbucket timestamps are only in microsecond precision.
