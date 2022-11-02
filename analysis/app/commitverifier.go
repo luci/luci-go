@@ -20,7 +20,6 @@ import (
 	"fmt"
 	"net/http"
 	"regexp"
-	"sort"
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
@@ -182,25 +181,6 @@ func cvPubSubHandlerImpl(ctx context.Context, request *http.Request) (project st
 	}
 
 	return project, true, nil
-}
-
-func sortChangelists(cls []*pb.Changelist) {
-	less := func(i, j int) bool {
-		if cls[i].Host < cls[j].Host {
-			return true
-		}
-		if cls[i].Host == cls[j].Host &&
-			cls[i].Change < cls[j].Change {
-			return true
-		}
-		if cls[i].Host == cls[j].Host &&
-			cls[i].Change == cls[j].Change &&
-			cls[i].Patchset < cls[j].Patchset {
-			return true
-		}
-		return false
-	}
-	sort.Slice(cls, less)
 }
 
 func extractPubSubRun(r *http.Request) (*cvv1.PubSubRun, error) {

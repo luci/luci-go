@@ -778,6 +778,10 @@ func TestIngestTestResults(t *testing.T) {
 				a.BuildResult = nil
 				e.BuildResult = nil
 
+				So(a.InvocationResult, ShouldResembleProto, e.InvocationResult)
+				a.InvocationResult = nil
+				e.InvocationResult = nil
+
 				// Do not compare last updated time, as it is determined
 				// by commit timestamp.
 				So(a.LastUpdated, ShouldNotBeEmpty)

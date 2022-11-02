@@ -17,18 +17,24 @@ package app
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"strings"
 
 	bbv1 "go.chromium.org/luci/common/api/buildbucket/buildbucket/v1"
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/tsmon/field"
 	"go.chromium.org/luci/common/tsmon/metric"
+	"go.chromium.org/luci/resultdb/pbutil"
 	"go.chromium.org/luci/server/router"
+	"google.golang.org/genproto/protobuf/field_mask"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
+	"go.chromium.org/luci/analysis/internal/buildbucket"
 	"go.chromium.org/luci/analysis/internal/ingestion/control"
 	ctlpb "go.chromium.org/luci/analysis/internal/ingestion/control/proto"
+	bbpb "go.chromium.org/luci/buildbucket/proto"
 )
 
 const (
@@ -124,7 +130,6 @@ func processBBMessage(ctx context.Context, message *buildBucketMessage) (process
 	isPresubmit := len(userAgents) == 1 && userAgents[0] == userAgentCQ
 
 	project := message.Build.Project
-	id := control.BuildID(message.Hostname, message.Build.Id)
 	result := &ctlpb.BuildResult{
 		CreationTime: timestamppb.New(bbv1.ParseTimestamp(message.Build.CreatedTs)),
 		Id:           message.Build.Id,
@@ -132,7 +137,27 @@ func processBBMessage(ctx context.Context, message *buildBucketMessage) (process
 		Project:      project,
 	}
 
-	if err := JoinBuildResult(ctx, id, project, isPresubmit, result); err != nil {
+	id := control.BuildID(message.Hostname, message.Build.Id)
+
+	buildReadMask := &field_mask.FieldMask{
+		Paths: []string{"infra.resultdb"},
+	}
+	build, err := retrieveBuild(ctx, message.Hostname, message.Build.Id, buildReadMask)
+	if err != nil {
+		return false, errors.Annotate(err, "retrieving buildbucket build").Err()
+	}
+
+	invocation := build.GetInfra().GetResultdb()
+	if invocation != nil {
+		wantInvocation := pbutil.InvocationName(fmt.Sprintf("build-%v", message.Build.Id))
+		if invocation.Invocation != wantInvocation {
+			logging.Warningf(ctx, "Build %v has unexpected ResultDB invocation (got %v, want %v)", id, invocation.Invocation, wantInvocation)
+		}
+	}
+
+	hasInvocation := invocation != nil
+
+	if err := JoinBuildResult(ctx, id, project, isPresubmit, hasInvocation, result); err != nil {
 		return false, errors.Annotate(err, "joining build result").Err()
 	}
 	return true, nil
@@ -151,4 +176,23 @@ func extractTagValues(tags []string, key string) []string {
 		}
 	}
 	return values
+}
+
+func retrieveBuild(ctx context.Context, bbHost string, id int64, readMask *field_mask.FieldMask) (*bbpb.Build, error) {
+	bc, err := buildbucket.NewClient(ctx, bbHost)
+	if err != nil {
+		return nil, err
+	}
+	request := &bbpb.GetBuildRequest{
+		Id: id,
+		Mask: &bbpb.BuildMask{
+			Fields: readMask,
+		},
+	}
+	b, err := bc.GetBuild(ctx, request)
+	switch {
+	case err != nil:
+		return nil, err
+	}
+	return b, nil
 }

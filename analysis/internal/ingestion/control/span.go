@@ -41,7 +41,7 @@ type Entry struct {
 	BuildID string
 
 	// Project is the LUCI Project the build belongs to. Used for
-	// metrics monitoring build/presubmit join performance.
+	// metrics monitoring join performance.
 	BuildProject string
 
 	// BuildResult is the result of the build bucket build, to be passed
@@ -50,27 +50,45 @@ type Entry struct {
 	BuildResult *ctlpb.BuildResult
 
 	// BuildJoinedTime is the Spanner commit time the build result was
-	// populated. If join has not yet occurred, this is the zero time.
+	// populated. If the result has not yet been populated, this is the zero time.
 	BuildJoinedTime time.Time
+
+	// HasInvocation records wether the build has an associated (ResultDB)
+	// invocation.
+	// Value only populated once either BuildResult or InvocationResult populated.
+	HasInvocation bool
+
+	// Project is the LUCI Project the invocation belongs to. Used for
+	// metrics monitoring join performance.
+	InvocationProject string
+
+	// InvocationResult is the result of the invocation, to be passed
+	// to the result ingestion task. This is nil if the result is
+	// not yet known.
+	InvocationResult *ctlpb.InvocationResult
+
+	// InvocationJoinedTime is the Spanner commit time the invocation result
+	// was populated. If the result has not yet been populated, this is the zero time.
+	InvocationJoinedTime time.Time
 
 	// IsPresubmit records whether the build is part of a presubmit run.
 	// If true, ingestion should wait for the presubmit result to be
 	// populated (in addition to the build result) before commencing
 	// ingestion.
+	// Value only populated once either BuildResult or PresubmitResult populated.
 	IsPresubmit bool
 
 	// PresubmitProject is the LUCI Project the presubmit run belongs to.
 	// This may differ from the LUCI Project teh build belongs to. Used for
-	// metrics monitoring build/presubmit join performance.
+	// metrics monitoring join performance.
 	PresubmitProject string
 
 	// PresubmitResult is result of the presubmit run, to be passed to the
-	// result ingestion task. This is nil if the result is
-	// not yet known.
+	// result ingestion task. This is nil if the result is not yet known.
 	PresubmitResult *ctlpb.PresubmitResult
 
 	// PresubmitJoinedTime is the Spanner commit time the presubmit result was
-	// populated. If join has not yet occurred, this is the zero time.
+	// populated. If the result has not yet been populated, this is the zero time.
 	PresubmitJoinedTime time.Time
 
 	// LastUpdated is the Spanner commit time the row was last updated.
@@ -110,6 +128,10 @@ func Read(ctx context.Context, buildIDs []string) ([]*Entry, error) {
 		"BuildProject",
 		"BuildResult",
 		"BuildJoinedTime",
+		"HasInvocation",
+		"InvocationProject",
+		"InvocationResult",
+		"InvocationJoinedTime",
 		"IsPresubmit",
 		"PresubmitProject",
 		"PresubmitResult",
@@ -121,11 +143,17 @@ func Read(ctx context.Context, buildIDs []string) ([]*Entry, error) {
 	rows := span.Read(ctx, "Ingestions", spanner.KeySetFromKeys(keys...), cols)
 	f := func(r *spanner.Row) error {
 		var buildID string
-		var buildProject, presubmitProject spanner.NullString
+		var buildProject spanner.NullString
 		var buildResultBytes []byte
+		var buildJoinedTime spanner.NullTime
+		var hasInvocation spanner.NullBool
+		var invocationProject spanner.NullString
+		var invocationResultBytes []byte
+		var invocationJoinedTime spanner.NullTime
 		var isPresubmit spanner.NullBool
+		var presubmitProject spanner.NullString
 		var presubmitResultBytes []byte
-		var buildJoinedTime, presubmitJoinedTime spanner.NullTime
+		var presubmitJoinedTime spanner.NullTime
 		var lastUpdated time.Time
 		var taskCount spanner.NullInt64
 
@@ -134,6 +162,10 @@ func Read(ctx context.Context, buildIDs []string) ([]*Entry, error) {
 			&buildProject,
 			&buildResultBytes,
 			&buildJoinedTime,
+			&hasInvocation,
+			&invocationProject,
+			&invocationResultBytes,
+			&invocationJoinedTime,
 			&isPresubmit,
 			&presubmitProject,
 			&presubmitResultBytes,
@@ -150,6 +182,13 @@ func Read(ctx context.Context, buildIDs []string) ([]*Entry, error) {
 				return errors.Annotate(err, "unmarshal build result").Err()
 			}
 		}
+		var invocationResult *ctlpb.InvocationResult
+		if invocationResultBytes != nil {
+			invocationResult = &ctlpb.InvocationResult{}
+			if err := proto.Unmarshal(invocationResultBytes, invocationResult); err != nil {
+				return errors.Annotate(err, "unmarshal invocation result").Err()
+			}
+		}
 		var presubmitResult *ctlpb.PresubmitResult
 		if presubmitResultBytes != nil {
 			presubmitResult = &ctlpb.PresubmitResult{}
@@ -163,6 +202,11 @@ func Read(ctx context.Context, buildIDs []string) ([]*Entry, error) {
 			BuildProject:    buildProject.StringVal,
 			BuildResult:     buildResult,
 			BuildJoinedTime: buildJoinedTime.Time,
+			// HasInvocation uses NULL to indicate false.
+			HasInvocation:        hasInvocation.Valid && hasInvocation.Bool,
+			InvocationProject:    invocationProject.StringVal,
+			InvocationResult:     invocationResult,
+			InvocationJoinedTime: invocationJoinedTime.Time,
 			// IsPresubmit uses NULL to indicate false.
 			IsPresubmit:         isPresubmit.Valid && isPresubmit.Bool,
 			PresubmitProject:    presubmitProject.StringVal,
@@ -195,16 +239,20 @@ func InsertOrUpdate(ctx context.Context, e *Entry) error {
 		return err
 	}
 	update := map[string]interface{}{
-		"BuildId":             e.BuildID,
-		"IsPresubmit":         spanner.NullBool{Valid: e.IsPresubmit, Bool: e.IsPresubmit},
-		"BuildProject":        spanner.NullString{Valid: e.BuildProject != "", StringVal: e.BuildProject},
-		"BuildResult":         e.BuildResult,
-		"BuildJoinedTime":     spanner.NullTime{Valid: e.BuildJoinedTime != time.Time{}, Time: e.BuildJoinedTime},
-		"PresubmitProject":    spanner.NullString{Valid: e.PresubmitProject != "", StringVal: e.PresubmitProject},
-		"PresubmitResult":     e.PresubmitResult,
-		"PresubmitJoinedTime": spanner.NullTime{Valid: e.PresubmitJoinedTime != time.Time{}, Time: e.PresubmitJoinedTime},
-		"LastUpdated":         spanner.CommitTimestamp,
-		"TaskCount":           e.TaskCount,
+		"BuildId":              e.BuildID,
+		"BuildProject":         spanner.NullString{Valid: e.BuildProject != "", StringVal: e.BuildProject},
+		"BuildResult":          e.BuildResult,
+		"BuildJoinedTime":      spanner.NullTime{Valid: e.BuildJoinedTime != time.Time{}, Time: e.BuildJoinedTime},
+		"HasInvocation":        spanner.NullBool{Valid: e.HasInvocation, Bool: e.HasInvocation},
+		"InvocationProject":    spanner.NullString{Valid: e.InvocationProject != "", StringVal: e.InvocationProject},
+		"InvocationResult":     e.InvocationResult,
+		"InvocationJoinedTime": spanner.NullTime{Valid: e.InvocationJoinedTime != time.Time{}, Time: e.InvocationJoinedTime},
+		"IsPresubmit":          spanner.NullBool{Valid: e.IsPresubmit, Bool: e.IsPresubmit},
+		"PresubmitProject":     spanner.NullString{Valid: e.PresubmitProject != "", StringVal: e.PresubmitProject},
+		"PresubmitResult":      e.PresubmitResult,
+		"PresubmitJoinedTime":  spanner.NullTime{Valid: e.PresubmitJoinedTime != time.Time{}, Time: e.PresubmitJoinedTime},
+		"LastUpdated":          spanner.CommitTimestamp,
+		"TaskCount":            e.TaskCount,
 	}
 	m := spanutil.InsertOrUpdateMap("Ingestions", update)
 	span.BufferWrite(ctx, m)
@@ -246,8 +294,8 @@ func ReadPresubmitRunJoinStatistics(ctx context.Context) (map[string]JoinStatist
 		  BuildProject as project,
 		  TIMESTAMP_DIFF(CURRENT_TIMESTAMP(), BuildJoinedTime, HOUR) as hour,
 		  COUNT(*) as total,
-		  COUNTIF(HasPresubmitResult) as joined,
-		FROM Ingestions@{FORCE_INDEX=IngestionsByIsPresubmit, spanner_emulator.disable_query_null_filtered_index_check=true}
+		  COUNTIF(PresubmitResult IS NOT NULL) as joined,
+		FROM Ingestions
 		WHERE IsPresubmit
 		  AND BuildJoinedTime >= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL @hours HOUR)
 		GROUP BY project, hour
@@ -271,8 +319,8 @@ func ReadBuildJoinStatistics(ctx context.Context) (map[string]JoinStatistics, er
 		  PresubmitProject as project,
 		  TIMESTAMP_DIFF(CURRENT_TIMESTAMP(), PresubmitJoinedTime, HOUR) as hour,
 		  COUNT(*) as total,
-		  COUNTIF(HasBuildResult) as joined,
-		FROM Ingestions@{FORCE_INDEX=IngestionsByIsPresubmit, spanner_emulator.disable_query_null_filtered_index_check=true}
+		  COUNTIF(BuildResult IS NOT NULL) as joined,
+		FROM Ingestions
 		WHERE IsPresubmit
 		  AND PresubmitJoinedTime >= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL @hours HOUR)
 		GROUP BY project, hour
@@ -318,6 +366,7 @@ func validateEntry(e *Entry) error {
 	if e.BuildID == "" {
 		return errors.New("build ID must be specified")
 	}
+
 	if e.BuildResult != nil {
 		if err := validateBuildResult(e.BuildResult); err != nil {
 			return errors.Annotate(err, "build result").Err()
@@ -329,6 +378,20 @@ func validateEntry(e *Entry) error {
 		if e.BuildProject != "" {
 			return errors.New("build project must only be specified" +
 				" if build result is specified")
+		}
+	}
+
+	if e.InvocationResult != nil {
+		if !e.HasInvocation {
+			return errors.New("invocation result must not be set unless HasInvocation is set")
+		}
+		if !config.ProjectRe.MatchString(e.InvocationProject) {
+			return errors.New("invocation project must be valid")
+		}
+	} else {
+		if e.InvocationProject != "" {
+			return errors.New("invocation project must only be specified" +
+				" if invocation result is specified")
 		}
 	}
 
@@ -348,6 +411,7 @@ func validateEntry(e *Entry) error {
 				" if presubmit result is specified")
 		}
 	}
+
 	if e.TaskCount < 0 {
 		return errors.New("task count must be non-negative")
 	}

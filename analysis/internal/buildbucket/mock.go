@@ -35,7 +35,7 @@ func NewMockedClient(ctx context.Context, ctl *gomock.Controller) *MockedClient 
 	mockClient := bbpb.NewMockBuildsClient(ctl)
 	return &MockedClient{
 		Client: mockClient,
-		Ctx:    context.WithValue(ctx, &mockedBBClientKey, mockClient),
+		Ctx:    useBuildsClientForTesting(ctx, mockClient),
 	}
 }
 

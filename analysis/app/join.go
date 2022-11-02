@@ -32,76 +32,88 @@ import (
 	"go.chromium.org/luci/analysis/internal/tasks/taskspb"
 )
 
-// For presubmit builds, proceeding to ingestion is conditional:
-// we must wait for the both the CV run and Buildbucket build to complete.
-// We define the following metrics to monitor the performance of that join.
 var (
-	cvPresubmitBuildInputCounter = metric.NewCounter(
-		"analysis/ingestion/join/cv_presubmit_builds_input",
-		"The number of unique presubmit builds for which CV Run Completion was received."+
+	cvBuildInputCounter = metric.NewCounter(
+		"analysis/ingestion/join/cv_builds_input",
+		"The number of builds for which CV Run completion was received."+
 			" Broken down by project of the CV run.",
 		nil,
 		// The LUCI Project of the CV run.
 		field.String("project"))
 
-	cvPresubmitBuildOutputCounter = metric.NewCounter(
-		"analysis/ingestion/join/cv_presubmit_builds_output",
-		"The number of presubmit builds which were successfully joined and for which ingestion was queued."+
+	cvBuildOutputCounter = metric.NewCounter(
+		"analysis/ingestion/join/cv_builds_output",
+		"The number of builds associated with a presubmit run which were successfully joined and for which ingestion was queued."+
 			" Broken down by project of the CV run.",
 		nil,
 		// The LUCI Project of the CV run.
 		field.String("project"))
 
-	bbPresubmitBuildInputCounter = metric.NewCounter(
-		"analysis/ingestion/join/bb_presubmit_builds_input",
-		"The number of unique presubmit build for which buildbucket build completion was received."+
-			" Broken down by project of the buildbucket build.",
+	bbBuildInputCounter = metric.NewCounter(
+		"analysis/ingestion/join/bb_builds_input",
+		"The number of builds for which buildbucket build completion was received."+
+			" Broken down by project of the buildbucket build, whether the build"+
+			" is part of a presubmit run, and whether the build has a ResultDB invocation.",
 		nil,
 		// The LUCI Project of the buildbucket run.
-		field.String("project"))
+		field.String("project"),
+		field.Bool("is_presubmit"),
+		field.Bool("has_invocation"))
 
-	bbPresubmitBuildOutputCounter = metric.NewCounter(
-		"analysis/ingestion/join/bb_presubmit_builds_output",
-		"The number of presubmit builds which were successfully joined and for which ingestion was queued."+
-			" Broken down by project of the buildbucket build.",
+	bbBuildOutputCounter = metric.NewCounter(
+		"analysis/ingestion/join/bb_builds_output",
+		"The number of builds which were successfully joined and for which ingestion was queued."+
+			" Broken down by project of the buildbucket build, whether the build"+
+			" is part of a presubmit run, and whether the build has a ResultDB invocation.",
 		nil,
 		// The LUCI Project of the buildbucket run.
-		field.String("project"))
-)
+		field.String("project"),
+		field.Bool("is_presubmit"),
+		field.Bool("has_invocation"))
 
-// For CI builds, no actual join needs to occur. So it is sufficient to
-// monitor only the output flow (same as input flow).
-var (
-	outputCIBuildCounter = metric.NewCounter(
-		"analysis/ingestion/join/ci_builds_output",
-		"The number of CI builds for which ingestion was queued.",
+	rdbBuildInputCounter = metric.NewCounter(
+		"analysis/ingestion/join/rdb_builds_input",
+		"The number of builds for which ResultDB invocation finalization was received."+
+			" Broken down by project of the ResultDB invocation.",
 		nil,
-		// The LUCI Project.
+		// The LUCI Project of the ResultDB invocation.
+		field.String("project"))
+
+	rdbBuildOutputCounter = metric.NewCounter(
+		"analysis/ingestion/join/rdb_builds_output",
+		"The number of builds associated with an invocation which were successfully joined and for which ingestion was queued."+
+			" Broken down by project of the ResultDB invocation.",
+		nil,
+		// The LUCI Project of the ResultDB invocation.
 		field.String("project"))
 )
 
 // JoinBuildResult sets the build result for the given build.
 //
 // An ingestion task is created if all required data for the
-// ingestion is available (for builds part of a presubmit run,
-// this is only after the presubmit result has joined, for
-// all other builds, this is straight away).
+// ingestion is available.
+// - for builds part of a presubmit run, we will need to wait
+//   for the presubmit run.
+// - for builds with a ResultDB invocation (note this is not
+//   mutually exclusive to the above), we will need to wait
+//   for the ResultDB invocation.
+// If none of the above applies, we will start an ingestion
+// straight away.
 //
 // If the build result has already been provided for a build,
 // this method has no effect.
-func JoinBuildResult(ctx context.Context, buildID, buildProject string, isPresubmit bool, br *ctlpb.BuildResult) error {
+func JoinBuildResult(ctx context.Context, buildID, buildProject string, isPresubmit, hasInvocation bool, br *ctlpb.BuildResult) error {
 	if br == nil {
 		return errors.New("build result must be specified")
 	}
 	var saved bool
-	var taskCreated bool
-	var cvProject string
+	var taskCreated *taskDetails
 	f := func(ctx context.Context) error {
-		// Clear variables to ensure nothing from a previous (failed)
-		// try of this transaction leaks out to the outer context.
+		// Reset variables to clear out anything from a previous
+		// (failed) try of this transaction to ensure nothing
+		// leaks forward.
 		saved = false
-		taskCreated = false
-		cvProject = ""
+		taskCreated = nil
 
 		entries, err := control.Read(ctx, []string{buildID})
 		if err != nil {
@@ -111,78 +123,81 @@ func JoinBuildResult(ctx context.Context, buildID, buildProject string, isPresub
 		if entry == nil {
 			// Record does not exist. Create it.
 			entry = &control.Entry{
-				BuildID:     buildID,
-				IsPresubmit: isPresubmit,
+				BuildID: buildID,
 			}
 		}
-		if entry.IsPresubmit != isPresubmit {
-			return fmt.Errorf("disagreement about whether ingestion is presubmit run (got %v, want %v)", isPresubmit, entry.IsPresubmit)
+		// IsPresubmit should be populated and valid if either the build result
+		// or presubmit result has been populated.
+		if (entry.BuildResult != nil || entry.PresubmitResult != nil) && entry.IsPresubmit != isPresubmit {
+			return fmt.Errorf("disagreement about whether build %q is part of presubmit run (got %v, want %v)", buildID, isPresubmit, entry.IsPresubmit)
+		}
+		// HasInvocation should be populated if either the build or invocation
+		// result has already been populated.
+		if (entry.BuildResult != nil || entry.InvocationResult != nil) && entry.HasInvocation != hasInvocation {
+			return fmt.Errorf("disagreement about whether build %q has an invocation (got %v, want %v)", buildID, hasInvocation, entry.HasInvocation)
 		}
 		if entry.BuildResult != nil {
 			// Build result already recorded. Do not modify and do not
 			// create a duplicate ingestion.
 			return nil
 		}
+		entry.IsPresubmit = isPresubmit
+		entry.HasInvocation = hasInvocation
 		entry.BuildProject = buildProject
 		entry.BuildResult = br
 		entry.BuildJoinedTime = spanner.CommitTimestamp
 
 		saved = true
-		taskCreated = createTasksIfNeeded(ctx, entry)
-		if taskCreated {
+		isTaskCreated := createTasksIfNeeded(ctx, entry)
+		if isTaskCreated {
 			entry.TaskCount = 1
 		}
 
 		if err := control.InsertOrUpdate(ctx, entry); err != nil {
 			return err
 		}
-		// Will only populated if IsPresubmit is not empty.
-		cvProject = entry.PresubmitProject
+		taskCreated = newTaskDetails(entry)
 		return nil
 	}
 	if _, err := span.ReadWriteTransaction(ctx, f); err != nil {
 		return err
 	}
 	if !saved {
-		logging.Warningf(ctx, "build result for ingestion %q was dropped as one was already recorded", buildID)
+		logging.Warningf(ctx, "build result for build %q was dropped as one was already recorded", buildID)
 	}
 
 	// Export metrics.
-	if saved && isPresubmit {
-		bbPresubmitBuildInputCounter.Add(ctx, 1, buildProject)
+	if saved {
+		bbBuildInputCounter.Add(ctx, 1, buildProject, isPresubmit, hasInvocation)
 	}
-	if taskCreated {
-		if isPresubmit {
-			bbPresubmitBuildOutputCounter.Add(ctx, 1, buildProject)
-			cvPresubmitBuildOutputCounter.Add(ctx, 1, cvProject)
-		} else {
-			outputCIBuildCounter.Add(ctx, 1, buildProject)
-		}
+	if taskCreated != nil {
+		taskCreated.reportMetrics(ctx)
 	}
 	return nil
 }
 
 // JoinPresubmitResult sets the presubmit result for the given builds.
 //
-// Ingestion task(s) are created for builds where all required data
-// is available (i.e. after the build result has also joined).
+// Ingestion task(s) are created for builds once all required data
+// is available.
 //
 // If the presubmit result has already been provided for a build,
 // this method has no effect.
 func JoinPresubmitResult(ctx context.Context, presubmitResultByBuildID map[string]*ctlpb.PresubmitResult, presubmitProject string) error {
 	for id, result := range presubmitResultByBuildID {
 		if result == nil {
-			return fmt.Errorf("presubmit result for build %v must be specified", id)
+			return fmt.Errorf("presubmit result for build %q must be specified", id)
 		}
 	}
 
 	var buildIDsSkipped []string
-	var buildsOutputByBuildProject map[string]int64
+	var tasksCreated []*taskDetails
 	f := func(ctx context.Context) error {
-		// Clear variables to ensure nothing from a previous (failed)
-		// try of this transaction leaks out to the outer context.
+		// Reset variables to clear out anything from a previous
+		// (failed) try of this transaction to ensure nothing
+		// leaks forward.
 		buildIDsSkipped = nil
-		buildsOutputByBuildProject = make(map[string]int64)
+		tasksCreated = nil
 
 		var buildIDs []string
 		for id := range presubmitResultByBuildID {
@@ -198,12 +213,13 @@ func JoinPresubmitResult(ctx context.Context, presubmitResultByBuildID map[strin
 			if entry == nil {
 				// Record does not exist. Create it.
 				entry = &control.Entry{
-					BuildID:     buildID,
-					IsPresubmit: true,
+					BuildID: buildID,
 				}
 			}
-			if !entry.IsPresubmit {
-				return fmt.Errorf("attempt to save presubmit result on build (%q) not marked as presubmit", buildID)
+			// IsPresubmit should be populated and valid if either the build result
+			// or presubmit result has been populated.
+			if (entry.BuildResult != nil || entry.PresubmitResult != nil) && !entry.IsPresubmit {
+				return fmt.Errorf("attempt to save presubmit result on build %q not marked as presubmit", buildID)
 			}
 			if entry.PresubmitResult != nil {
 				// Presubmit result already recorded. Do not modify and do not
@@ -211,13 +227,14 @@ func JoinPresubmitResult(ctx context.Context, presubmitResultByBuildID map[strin
 				buildIDsSkipped = append(buildIDsSkipped, buildID)
 				continue
 			}
+			entry.IsPresubmit = true
 			entry.PresubmitProject = presubmitProject
 			entry.PresubmitResult = presubmitResultByBuildID[buildID]
 			entry.PresubmitJoinedTime = spanner.CommitTimestamp
 
-			taskCreated := createTasksIfNeeded(ctx, entry)
-			if taskCreated {
-				buildsOutputByBuildProject[entry.BuildProject]++
+			isTaskCreated := createTasksIfNeeded(ctx, entry)
+			if isTaskCreated {
+				tasksCreated = append(tasksCreated, newTaskDetails(entry))
 				entry.TaskCount = 1
 			}
 			if err := control.InsertOrUpdate(ctx, entry); err != nil {
@@ -234,19 +251,140 @@ func JoinPresubmitResult(ctx context.Context, presubmitResultByBuildID map[strin
 	}
 
 	// Export metrics.
-	cvPresubmitBuildInputCounter.Add(ctx, int64(len(presubmitResultByBuildID)-len(buildIDsSkipped)), presubmitProject)
-	for buildProject, count := range buildsOutputByBuildProject {
-		bbPresubmitBuildOutputCounter.Add(ctx, count, buildProject)
-		cvPresubmitBuildOutputCounter.Add(ctx, count, presubmitProject)
+	cvBuildInputCounter.Add(ctx, int64(len(presubmitResultByBuildID)-len(buildIDsSkipped)), presubmitProject)
+	for _, task := range tasksCreated {
+		task.reportMetrics(ctx)
 	}
 	return nil
 }
 
-// createTaskIfNeeded transactionally creates a test-result-ingestion task
+// JoinInvocationResult sets the invocation result for the given builds.
+//
+// Ingestion task(s) are created for builds once all required data
+// is available.
+//
+// If the invocation result has already been provided for a build,
+// this method has no effect.
+func JoinInvocationResult(ctx context.Context, buildID, invocationProject string, ir *ctlpb.InvocationResult) error {
+	if ir == nil {
+		return errors.New("invocation result must be specified")
+	}
+	var saved bool
+	var taskCreated *taskDetails
+	f := func(ctx context.Context) error {
+		// Reset variables to clear out anything from a previous
+		// (failed) try of this transaction to ensure nothing
+		// leaks forward.
+		saved = false
+		taskCreated = nil
+
+		entries, err := control.Read(ctx, []string{buildID})
+		if err != nil {
+			return err
+		}
+		entry := entries[0]
+		if entry == nil {
+			// Record does not exist. Create it.
+			entry = &control.Entry{
+				BuildID: buildID,
+			}
+		}
+		// HasInvocation should be populated if either the build or invocation
+		// result has already been populated.
+		if (entry.BuildResult != nil || entry.InvocationResult != nil) && !entry.HasInvocation {
+			return fmt.Errorf("attempt to save invocation result on build %q marked as not having invocation", buildID)
+		}
+		if entry.InvocationResult != nil {
+			// Invocation result already recorded. Do not modify and
+			// do not create a duplicate ingestion.
+			return nil
+		}
+		entry.HasInvocation = true
+		entry.InvocationProject = invocationProject
+		entry.InvocationResult = ir
+		entry.InvocationJoinedTime = spanner.CommitTimestamp
+
+		saved = true
+		isTaskCreated := createTasksIfNeeded(ctx, entry)
+		if isTaskCreated {
+			entry.TaskCount = 1
+		}
+
+		if err := control.InsertOrUpdate(ctx, entry); err != nil {
+			return err
+		}
+		taskCreated = newTaskDetails(entry)
+		return nil
+	}
+	if _, err := span.ReadWriteTransaction(ctx, f); err != nil {
+		return err
+	}
+	if !saved {
+		logging.Warningf(ctx, "invocation result for build %q was dropped as one was already recorded", buildID)
+	}
+
+	// Export metrics.
+	if saved {
+		rdbBuildInputCounter.Add(ctx, 1, invocationProject)
+	}
+	if taskCreated != nil {
+		taskCreated.reportMetrics(ctx)
+	}
+	return nil
+}
+
+// taskDetails contains information about a result-ingestion task
+// that was created (if any).
+type taskDetails struct {
+	// BuildProject is the LUCI Project that contained the build.
+	BuildProject string
+	// IsPresubmit is whether this build was part of a LUCI CV Run.
+	IsPresubmit bool
+	// PresubmitProject is the LUCI Project that contained the CV Run.
+	// Only set if IsPresubmit is set.
+	PresubmitProject string
+	// HasInvocation is whether this build has a ResultDB invocation.
+	HasInvocation bool
+	// BuildProject is the LUCI Project that contained the invocation
+	// (should be the same as the build).
+	InvocationProject string
+}
+
+func newTaskDetails(e *control.Entry) *taskDetails {
+	return &taskDetails{
+		BuildProject:      e.BuildProject,
+		IsPresubmit:       e.IsPresubmit,
+		PresubmitProject:  e.PresubmitProject,
+		HasInvocation:     e.HasInvocation,
+		InvocationProject: e.InvocationProject,
+	}
+}
+
+func (t *taskDetails) reportMetrics(ctx context.Context) {
+	bbBuildOutputCounter.Add(ctx, 1, t.BuildProject, t.IsPresubmit, t.HasInvocation)
+	if t.IsPresubmit {
+		cvBuildOutputCounter.Add(ctx, 1, t.PresubmitProject)
+	}
+	if t.HasInvocation {
+		rdbBuildOutputCounter.Add(ctx, 1, t.InvocationProject)
+	}
+}
+
+// createTaskIfNeeded transactionally creates a result-ingestion task
 // if all necessary data for the ingestion is available. Returns true if the
 // task was created.
 func createTasksIfNeeded(ctx context.Context, e *control.Entry) bool {
+	// TODO(b/255850466): Update the join criteria to include the InvocationResult,
+	// once the data has been populating into the table for a time.
 	if e.BuildResult == nil || (e.IsPresubmit && e.PresubmitResult == nil) {
+		return false
+	}
+	// TODO(b/255850466): Stop creating another task if one has already been
+	// created. This is needed to avoid a duplicate result-ingestion task
+	// being created when the invocation result joins and the join criteria
+	// is already satisfied.
+	// Remove once migration to new join logic complete.
+	if e.TaskCount > 0 {
 		return false
 	}
 

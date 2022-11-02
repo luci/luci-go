@@ -45,9 +45,13 @@ func NewEntry(uniqifier int) *EntryBuilder {
 				Id:           int64(uniqifier),
 				CreationTime: timestamppb.New(time.Date(2025, time.December, 1, 1, 2, 3, uniqifier*1000, time.UTC)),
 			},
-			BuildJoinedTime:  time.Date(2020, time.December, 11, 1, 1, 1, uniqifier*1000, time.UTC),
-			IsPresubmit:      true,
-			PresubmitProject: "presubmit-project",
+			BuildJoinedTime:      time.Date(2020, time.December, 11, 1, 1, 1, uniqifier*1000, time.UTC),
+			HasInvocation:        true,
+			InvocationProject:    "invocation-project",
+			InvocationResult:     &controlpb.InvocationResult{},
+			InvocationJoinedTime: time.Date(2020, time.December, 12, 1, 1, 1, uniqifier*1000, time.UTC),
+			IsPresubmit:          true,
+			PresubmitProject:     "presubmit-project",
 			PresubmitResult: &controlpb.PresubmitResult{
 				PresubmitRunId: &pb.PresubmitRunId{
 					System: "luci-cv",
@@ -58,8 +62,8 @@ func NewEntry(uniqifier int) *EntryBuilder {
 				Owner:        "automation",
 				CreationTime: timestamppb.New(time.Date(2026, time.December, 1, 1, 2, 3, uniqifier*1000, time.UTC)),
 			},
-			PresubmitJoinedTime: time.Date(2020, time.December, 12, 1, 1, 1, uniqifier*1000, time.UTC),
-			LastUpdated:         time.Date(2020, time.December, 13, 1, 1, 1, uniqifier*1000, time.UTC),
+			PresubmitJoinedTime: time.Date(2020, time.December, 13, 1, 1, 1, uniqifier*1000, time.UTC),
+			LastUpdated:         time.Date(2020, time.December, 14, 1, 1, 1, uniqifier*1000, time.UTC),
 			TaskCount:           int64(uniqifier),
 		},
 	}
@@ -68,12 +72,6 @@ func NewEntry(uniqifier int) *EntryBuilder {
 // WithBuildID specifies the build ID to use on the ingestion control record.
 func (b *EntryBuilder) WithBuildID(id string) *EntryBuilder {
 	b.record.BuildID = id
-	return b
-}
-
-// WithIsPresubmit specifies whether the ingestion relates to a presubmit run.
-func (b *EntryBuilder) WithIsPresubmit(isPresubmit bool) *EntryBuilder {
-	b.record.IsPresubmit = isPresubmit
 	return b
 }
 
@@ -92,6 +90,37 @@ func (b *EntryBuilder) WithBuildResult(value *controlpb.BuildResult) *EntryBuild
 // WithBuildJoinedTime specifies the time the build result was populated.
 func (b *EntryBuilder) WithBuildJoinedTime(value time.Time) *EntryBuilder {
 	b.record.BuildJoinedTime = value
+	return b
+}
+
+// WithHasInvocation specifies whether the build that is the subject of the ingestion
+// has a ResultDB invocation.
+func (b *EntryBuilder) WithHasInvocation(hasInvocation bool) *EntryBuilder {
+	b.record.HasInvocation = hasInvocation
+	return b
+}
+
+// WithInvocationProject specifies the invocation project to use on the ingestion control record.
+func (b *EntryBuilder) WithInvocationProject(project string) *EntryBuilder {
+	b.record.InvocationProject = project
+	return b
+}
+
+// WithInvocationResult specifies the invocation result for the entry.
+func (b *EntryBuilder) WithInvocationResult(value *controlpb.InvocationResult) *EntryBuilder {
+	b.record.InvocationResult = value
+	return b
+}
+
+// WithInvocationJoinedTime specifies the time the invocation result was populated.
+func (b *EntryBuilder) WithInvocationJoinedTime(value time.Time) *EntryBuilder {
+	b.record.InvocationJoinedTime = value
+	return b
+}
+
+// WithIsPresubmit specifies whether the ingestion relates to a presubmit run.
+func (b *EntryBuilder) WithIsPresubmit(isPresubmit bool) *EntryBuilder {
+	b.record.IsPresubmit = isPresubmit
 	return b
 }
 
@@ -131,16 +160,20 @@ func SetEntriesForTesting(ctx context.Context, es ...*Entry) (time.Time, error) 
 	commitTime, err := span.ReadWriteTransaction(ctx, func(ctx context.Context) error {
 		for _, r := range es {
 			ms := spanutil.InsertMap("Ingestions", map[string]interface{}{
-				"BuildId":             r.BuildID,
-				"BuildProject":        r.BuildProject,
-				"BuildResult":         r.BuildResult,
-				"BuildJoinedTime":     r.BuildJoinedTime,
-				"IsPresubmit":         r.IsPresubmit,
-				"PresubmitProject":    r.PresubmitProject,
-				"PresubmitResult":     r.PresubmitResult,
-				"PresubmitJoinedTime": r.PresubmitJoinedTime,
-				"LastUpdated":         r.LastUpdated,
-				"TaskCount":           r.TaskCount,
+				"BuildId":              r.BuildID,
+				"BuildProject":         r.BuildProject,
+				"BuildResult":          r.BuildResult,
+				"BuildJoinedTime":      r.BuildJoinedTime,
+				"HasInvocation":        r.HasInvocation,
+				"InvocationProject":    r.InvocationProject,
+				"InvocationResult":     r.InvocationResult,
+				"InvocationJoinedTime": r.InvocationJoinedTime,
+				"IsPresubmit":          r.IsPresubmit,
+				"PresubmitProject":     r.PresubmitProject,
+				"PresubmitResult":      r.PresubmitResult,
+				"PresubmitJoinedTime":  r.PresubmitJoinedTime,
+				"LastUpdated":          r.LastUpdated,
+				"TaskCount":            r.TaskCount,
 			})
 			span.BufferWrite(ctx, ms)
 		}

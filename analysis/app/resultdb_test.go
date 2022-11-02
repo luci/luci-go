@@ -15,15 +15,16 @@
 package app
 
 import (
-	"encoding/json"
+	"fmt"
 	"io"
 	"testing"
 	"time"
 
 	. "github.com/smartystreets/goconvey/convey"
-	bbv1 "go.chromium.org/luci/common/api/buildbucket/buildbucket/v1"
 	. "go.chromium.org/luci/common/testing/assertions"
+	resultpb "go.chromium.org/luci/resultdb/proto/v1"
 	"go.chromium.org/luci/server/tq"
+	"google.golang.org/protobuf/encoding/protojson"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	controlpb "go.chromium.org/luci/analysis/internal/ingestion/control/proto"
@@ -33,71 +34,64 @@ import (
 	pb "go.chromium.org/luci/analysis/proto/v1"
 )
 
-func TestHandleBuild(t *testing.T) {
-	Convey(`Test BuildbucketPubSubHandler`, t, func() {
+func TestHandleInvocationFinalization(t *testing.T) {
+	Convey(`Test InvocationFinalizedPubSubHandler`, t, func() {
 		ctx := testutil.SpannerTestContext(t)
 		ctx, skdr := tq.TestingContext(ctx, nil)
 
 		// Buildbucket timestamps are only in microsecond precision.
 		t := time.Now().Truncate(time.Nanosecond * 1000)
 
-		build := newBuildBuilder(14141414).
-			WithCreateTime(t)
+		build := newBuildBuilder(6363636363).
+			WithCreateTime(t).
+			WithInvocation()
 
 		expectedTask := &taskspb.IngestTestResults{
 			PartitionTime: timestamppb.New(t),
 			Build: &controlpb.BuildResult{
 				Host:         bbHost,
-				Id:           14141414,
+				Id:           6363636363,
 				CreationTime: timestamppb.New(t),
 				Project:      "buildproject",
 			},
 		}
 
 		assertTasksExpected := func() {
+			// Verify exactly one ingestion has been created.
 			So(len(skdr.Tasks().Payloads()), ShouldEqual, 1)
 			resultsTask := skdr.Tasks().Payloads()[0].(*taskspb.IngestTestResults)
 			So(resultsTask, ShouldResembleProto, expectedTask)
 		}
 
-		Convey(`With vanilla build`, func() {
-			Convey(`Vanilla CI Build`, func() {
-				// Process build.
-				So(ingestBuild(ctx, build), ShouldBeNil)
+		Convey(`Without build ingested previously`, func() {
+			So(ingestFinalization(ctx, build.buildID), ShouldBeNil)
 
-				assertTasksExpected()
-
-				// Test repeated processing does not lead to further
-				// ingestion tasks.
-				So(ingestBuild(ctx, build), ShouldBeNil)
-
-				assertTasksExpected()
-			})
-			Convey(`Unusual CI Build`, func() {
-				// v8 project had some buildbucket-triggered builds
-				// with both the user_agent:cq and user_agent:recipe tags.
-				// These should be treated as CI builds.
-				build = build.WithTags([]string{"user_agent:cq", "user_agent:recipe"})
-
-				// Process build.
-				So(ingestBuild(ctx, build), ShouldBeNil)
-				assertTasksExpected()
-			})
+			So(len(skdr.Tasks().Payloads()), ShouldEqual, 0)
 		})
-		Convey(`With build that is part of a LUCI CV run`, func() {
-			build := build.WithTags([]string{"user_agent:cq"})
+		Convey(`With non-presubmit build ingested previously`, func() {
+			So(ingestBuild(ctx, build), ShouldBeNil)
 
-			Convey(`Without LUCI CV run processed previously`, func() {
-				So(ingestBuild(ctx, build), ShouldBeNil)
+			// TODO(b/255850466): Stop expecting join to complete
+			// at this point once join condition updated.
+			assertTasksExpected()
 
-				So(len(skdr.Tasks().Payloads()), ShouldEqual, 0)
-			})
-			Convey(`With LUCI CV run processed previously`, func() {
-				So(ingestCVRun(ctx, []int64{11111171, build.buildID}), ShouldBeNil)
+			So(ingestFinalization(ctx, build.buildID), ShouldBeNil)
 
-				So(len(skdr.Tasks().Payloads()), ShouldEqual, 0)
+			assertTasksExpected()
 
-				So(ingestBuild(ctx, build), ShouldBeNil)
+			// Repeated messages should not trigger new ingestions.
+			So(ingestFinalization(ctx, build.buildID), ShouldBeNil)
+
+			assertTasksExpected()
+		})
+		Convey(`With presubmit build ingested previously`, func() {
+			build = build.WithTags([]string{"user_agent:cq"})
+			So(ingestBuild(ctx, build), ShouldBeNil)
+
+			So(len(skdr.Tasks().Payloads()), ShouldEqual, 0)
+
+			Convey(`With LUCI CV run ingested previously`, func() {
+				So(ingestCVRun(ctx, []int64{8137171, build.buildID}), ShouldBeNil)
 
 				expectedTask.PartitionTime = timestamppb.New(cvCreateTime)
 				expectedTask.PresubmitRun = &controlpb.PresubmitResult{
@@ -109,39 +103,29 @@ func TestHandleBuild(t *testing.T) {
 					Owner:        "automation",
 					Mode:         pb.PresubmitRunMode_FULL_RUN,
 					CreationTime: timestamppb.New(cvCreateTime),
-					Critical:     true,
 				}
-				assertTasksExpected()
-			})
-		})
-		Convey(`With build that has a ResultDB invocation`, func() {
-			build := build.WithInvocation()
-
-			Convey(`Without invocation finalization acknowledged previously`, func() {
-				So(ingestBuild(ctx, build), ShouldBeNil)
 
 				// TODO(b/255850466): Stop expecting join to complete
 				// at this point once join condition updated.
 				assertTasksExpected()
+
+				So(ingestFinalization(ctx, build.buildID), ShouldBeNil)
+
+				assertTasksExpected()
 			})
-			Convey(`With invocation finalization acknowledged previously`, func() {
+			Convey(`Without LUCI CV run ingested previously`, func() {
 				So(ingestFinalization(ctx, build.buildID), ShouldBeNil)
 
 				So(len(skdr.Tasks().Payloads()), ShouldEqual, 0)
-
-				So(ingestBuild(ctx, build), ShouldBeNil)
-
-				assertTasksExpected()
 			})
 		})
 	})
 }
 
-func makeBBReq(build bbv1.LegacyApiCommonBuildMessage, hostname string) io.ReadCloser {
-	bmsg := struct {
-		Build    bbv1.LegacyApiCommonBuildMessage `json:"build"`
-		Hostname string                           `json:"hostname"`
-	}{build, hostname}
-	bm, _ := json.Marshal(bmsg)
-	return makeReq(bm)
+func makeInvocationFinalizedReq(buildID int64, realm string) io.ReadCloser {
+	blob, _ := protojson.Marshal(&resultpb.InvocationFinalizedNotification{
+		Invocation: fmt.Sprintf("invocations/build-%v", buildID),
+		Realm:      realm,
+	})
+	return makeReq(blob)
 }

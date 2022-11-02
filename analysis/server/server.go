@@ -129,6 +129,7 @@ func Main(init func(srv *luciserver.Server) error) {
 		// Pub/Sub subscription endpoints.
 		srv.Routes.POST("/_ah/push-handlers/buildbucket", nil, app.BuildbucketPubSubHandler)
 		srv.Routes.POST("/_ah/push-handlers/cvrun", nil, app.CVRunPubSubHandler)
+		srv.Routes.POST("/_ah/push-handlers/invocation-finalized", nil, app.InvocationFinalizedPubSubHandler)
 
 		// Register task queue tasks.
 		if err := reclustering.RegisterTaskHandler(srv); err != nil {

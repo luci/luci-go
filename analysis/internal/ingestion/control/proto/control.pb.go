@@ -216,6 +216,46 @@ func (x *PresubmitResult) GetCritical() bool {
 	return false
 }
 
+// InvocationResult represents the result from the invocation finalization
+// pub/sub that should be passed to the result ingestion task.
+type InvocationResult struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+}
+
+func (x *InvocationResult) Reset() {
+	*x = InvocationResult{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_go_chromium_org_luci_analysis_internal_ingestion_control_proto_control_proto_msgTypes[2]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *InvocationResult) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*InvocationResult) ProtoMessage() {}
+
+func (x *InvocationResult) ProtoReflect() protoreflect.Message {
+	mi := &file_go_chromium_org_luci_analysis_internal_ingestion_control_proto_control_proto_msgTypes[2]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use InvocationResult.ProtoReflect.Descriptor instead.
+func (*InvocationResult) Descriptor() ([]byte, []int) {
+	return file_go_chromium_org_luci_analysis_internal_ingestion_control_proto_control_proto_rawDescGZIP(), []int{2}
+}
+
 var File_go_chromium_org_luci_analysis_internal_ingestion_control_proto_control_proto protoreflect.FileDescriptor
 
 var file_go_chromium_org_luci_analysis_internal_ingestion_control_proto_control_proto_rawDesc = []byte{
@@ -262,12 +302,13 @@ var file_go_chromium_org_luci_analysis_internal_ingestion_control_proto_control_
 	0x65, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x54, 0x69, 0x6d, 0x65, 0x12, 0x1a, 0x0a, 0x08, 0x63, 0x72,
 	0x69, 0x74, 0x69, 0x63, 0x61, 0x6c, 0x18, 0x07, 0x20, 0x01, 0x28, 0x08, 0x52, 0x08, 0x63, 0x72,
 	0x69, 0x74, 0x69, 0x63, 0x61, 0x6c, 0x4a, 0x04, 0x08, 0x02, 0x10, 0x03, 0x4a, 0x04, 0x08, 0x05,
-	0x10, 0x06, 0x4a, 0x04, 0x08, 0x06, 0x10, 0x07, 0x42, 0x4a, 0x5a, 0x48, 0x67, 0x6f, 0x2e, 0x63,
-	0x68, 0x72, 0x6f, 0x6d, 0x69, 0x75, 0x6d, 0x2e, 0x6f, 0x72, 0x67, 0x2f, 0x6c, 0x75, 0x63, 0x69,
-	0x2f, 0x61, 0x6e, 0x61, 0x6c, 0x79, 0x73, 0x69, 0x73, 0x2f, 0x69, 0x6e, 0x74, 0x65, 0x72, 0x6e,
-	0x61, 0x6c, 0x2f, 0x69, 0x6e, 0x67, 0x65, 0x73, 0x74, 0x69, 0x6f, 0x6e, 0x2f, 0x63, 0x6f, 0x6e,
-	0x74, 0x72, 0x6f, 0x6c, 0x2f, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x3b, 0x63, 0x6f, 0x6e, 0x74, 0x72,
-	0x6f, 0x6c, 0x70, 0x62, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
+	0x10, 0x06, 0x4a, 0x04, 0x08, 0x06, 0x10, 0x07, 0x22, 0x12, 0x0a, 0x10, 0x49, 0x6e, 0x76, 0x6f,
+	0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x52, 0x65, 0x73, 0x75, 0x6c, 0x74, 0x42, 0x4a, 0x5a, 0x48,
+	0x67, 0x6f, 0x2e, 0x63, 0x68, 0x72, 0x6f, 0x6d, 0x69, 0x75, 0x6d, 0x2e, 0x6f, 0x72, 0x67, 0x2f,
+	0x6c, 0x75, 0x63, 0x69, 0x2f, 0x61, 0x6e, 0x61, 0x6c, 0x79, 0x73, 0x69, 0x73, 0x2f, 0x69, 0x6e,
+	0x74, 0x65, 0x72, 0x6e, 0x61, 0x6c, 0x2f, 0x69, 0x6e, 0x67, 0x65, 0x73, 0x74, 0x69, 0x6f, 0x6e,
+	0x2f, 0x63, 0x6f, 0x6e, 0x74, 0x72, 0x6f, 0x6c, 0x2f, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x3b, 0x63,
+	0x6f, 0x6e, 0x74, 0x72, 0x6f, 0x6c, 0x70, 0x62, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
 }
 
 var (
@@ -282,21 +323,22 @@ func file_go_chromium_org_luci_analysis_internal_ingestion_control_proto_control
 	return file_go_chromium_org_luci_analysis_internal_ingestion_control_proto_control_proto_rawDescData
 }
 
-var file_go_chromium_org_luci_analysis_internal_ingestion_control_proto_control_proto_msgTypes = make([]protoimpl.MessageInfo, 2)
+var file_go_chromium_org_luci_analysis_internal_ingestion_control_proto_control_proto_msgTypes = make([]protoimpl.MessageInfo, 3)
 var file_go_chromium_org_luci_analysis_internal_ingestion_control_proto_control_proto_goTypes = []interface{}{
 	(*BuildResult)(nil),           // 0: luci.analysis.internal.ingestion.control.BuildResult
 	(*PresubmitResult)(nil),       // 1: luci.analysis.internal.ingestion.control.PresubmitResult
-	(*timestamppb.Timestamp)(nil), // 2: google.protobuf.Timestamp
-	(*v1.PresubmitRunId)(nil),     // 3: luci.analysis.v1.PresubmitRunId
-	(v1.PresubmitRunStatus)(0),    // 4: luci.analysis.v1.PresubmitRunStatus
-	(v1.PresubmitRunMode)(0),      // 5: luci.analysis.v1.PresubmitRunMode
+	(*InvocationResult)(nil),      // 2: luci.analysis.internal.ingestion.control.InvocationResult
+	(*timestamppb.Timestamp)(nil), // 3: google.protobuf.Timestamp
+	(*v1.PresubmitRunId)(nil),     // 4: luci.analysis.v1.PresubmitRunId
+	(v1.PresubmitRunStatus)(0),    // 5: luci.analysis.v1.PresubmitRunStatus
+	(v1.PresubmitRunMode)(0),      // 6: luci.analysis.v1.PresubmitRunMode
 }
 var file_go_chromium_org_luci_analysis_internal_ingestion_control_proto_control_proto_depIdxs = []int32{
-	2, // 0: luci.analysis.internal.ingestion.control.BuildResult.creation_time:type_name -> google.protobuf.Timestamp
-	3, // 1: luci.analysis.internal.ingestion.control.PresubmitResult.presubmit_run_id:type_name -> luci.analysis.v1.PresubmitRunId
-	4, // 2: luci.analysis.internal.ingestion.control.PresubmitResult.status:type_name -> luci.analysis.v1.PresubmitRunStatus
-	5, // 3: luci.analysis.internal.ingestion.control.PresubmitResult.mode:type_name -> luci.analysis.v1.PresubmitRunMode
-	2, // 4: luci.analysis.internal.ingestion.control.PresubmitResult.creation_time:type_name -> google.protobuf.Timestamp
+	3, // 0: luci.analysis.internal.ingestion.control.BuildResult.creation_time:type_name -> google.protobuf.Timestamp
+	4, // 1: luci.analysis.internal.ingestion.control.PresubmitResult.presubmit_run_id:type_name -> luci.analysis.v1.PresubmitRunId
+	5, // 2: luci.analysis.internal.ingestion.control.PresubmitResult.status:type_name -> luci.analysis.v1.PresubmitRunStatus
+	6, // 3: luci.analysis.internal.ingestion.control.PresubmitResult.mode:type_name -> luci.analysis.v1.PresubmitRunMode
+	3, // 4: luci.analysis.internal.ingestion.control.PresubmitResult.creation_time:type_name -> google.protobuf.Timestamp
 	5, // [5:5] is the sub-list for method output_type
 	5, // [5:5] is the sub-list for method input_type
 	5, // [5:5] is the sub-list for extension type_name
@@ -334,6 +376,18 @@ func file_go_chromium_org_luci_analysis_internal_ingestion_control_proto_control
 				return nil
 			}
 		}
+		file_go_chromium_org_luci_analysis_internal_ingestion_control_proto_control_proto_msgTypes[2].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*InvocationResult); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
@@ -341,7 +395,7 @@ func file_go_chromium_org_luci_analysis_internal_ingestion_control_proto_control
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: file_go_chromium_org_luci_analysis_internal_ingestion_control_proto_control_proto_rawDesc,
 			NumEnums:      0,
-			NumMessages:   2,
+			NumMessages:   3,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

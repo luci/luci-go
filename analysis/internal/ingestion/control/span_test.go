@@ -35,12 +35,13 @@ func TestSpan(t *testing.T) {
 				NewEntry(0).WithBuildID("buildbucket-instance/1").Build(),
 				NewEntry(2).WithBuildID("buildbucket-instance/2").WithBuildResult(nil).Build(),
 				NewEntry(3).WithBuildID("buildbucket-instance/3").WithPresubmitResult(nil).Build(),
+				NewEntry(4).WithBuildID("buildbucket-instance/4").WithInvocationResult(nil).Build(),
 			}
 			_, err := SetEntriesForTesting(ctx, entriesToCreate...)
 			So(err, ShouldBeNil)
 
 			Convey(`None exist`, func() {
-				buildIDs := []string{"buildbucket-instance/4"}
+				buildIDs := []string{"buildbucket-instance/5"}
 				results, err := Read(span.Single(ctx), buildIDs)
 				So(err, ShouldBeNil)
 				So(len(results), ShouldEqual, 1)
@@ -50,16 +51,18 @@ func TestSpan(t *testing.T) {
 				buildIDs := []string{
 					"buildbucket-instance/3",
 					"buildbucket-instance/4",
+					"buildbucket-instance/5",
 					"buildbucket-instance/2",
 					"buildbucket-instance/1",
 				}
 				results, err := Read(span.Single(ctx), buildIDs)
 				So(err, ShouldBeNil)
-				So(len(results), ShouldEqual, 4)
+				So(len(results), ShouldEqual, 5)
 				So(results[0], ShouldResembleEntry, entriesToCreate[2])
-				So(results[1], ShouldResembleEntry, nil)
-				So(results[2], ShouldResembleEntry, entriesToCreate[1])
-				So(results[3], ShouldResembleEntry, entriesToCreate[0])
+				So(results[1], ShouldResembleEntry, entriesToCreate[3])
+				So(results[2], ShouldResembleEntry, nil)
+				So(results[3], ShouldResembleEntry, entriesToCreate[1])
+				So(results[4], ShouldResembleEntry, entriesToCreate[0])
 			})
 		})
 		Convey(`InsertOrUpdate`, func() {
@@ -102,6 +105,11 @@ func TestSpan(t *testing.T) {
 					So(result[0], ShouldResembleEntry, e)
 				})
 			})
+			Convey(`With missing Build ID`, func() {
+				e.BuildID = ""
+				_, err := testInsertOrUpdate(e)
+				So(err, ShouldErrLike, "build ID must be specified")
+			})
 			Convey(`With invalid Build Project`, func() {
 				Convey(`Missing`, func() {
 					e.BuildProject = ""
@@ -113,11 +121,6 @@ func TestSpan(t *testing.T) {
 					_, err := testInsertOrUpdate(e)
 					So(err, ShouldErrLike, "build project must be valid")
 				})
-			})
-			Convey(`With missing Build ID`, func() {
-				e.BuildID = ""
-				_, err := testInsertOrUpdate(e)
-				So(err, ShouldErrLike, "build ID must be specified")
 			})
 			Convey(`With invalid Build Result`, func() {
 				Convey(`Missing host`, func() {
@@ -136,6 +139,26 @@ func TestSpan(t *testing.T) {
 					So(err, ShouldErrLike, "build result: creation time must be specified")
 				})
 			})
+			Convey(`With invalid Invocation Project`, func() {
+				Convey(`Missing`, func() {
+					e.InvocationProject = ""
+					_, err := testInsertOrUpdate(e)
+					So(err, ShouldErrLike, "invocation project must be valid")
+				})
+				Convey(`Invalid`, func() {
+					e.InvocationProject = "!"
+					_, err := testInsertOrUpdate(e)
+					So(err, ShouldErrLike, "invocation project must be valid")
+				})
+			})
+			Convey(`With invalid Invocation Result`, func() {
+				Convey(`Set when HasInvocation = false`, func() {
+					So(e.InvocationResult, ShouldNotBeNil)
+					e.HasInvocation = false
+					_, err := testInsertOrUpdate(e)
+					So(err, ShouldErrLike, "invocation result must not be set unless HasInvocation is set")
+				})
+			})
 			Convey(`With invalid Presubmit Project`, func() {
 				Convey(`Missing`, func() {
 					e.PresubmitProject = ""
@@ -148,13 +171,13 @@ func TestSpan(t *testing.T) {
 					So(err, ShouldErrLike, "presubmit project must be valid")
 				})
 			})
-			Convey(`Missing Presubmit run ID`, func() {
-				e.PresubmitResult.PresubmitRunId = nil
-				_, err := testInsertOrUpdate(e)
-				So(err, ShouldErrLike, "presubmit run ID must be specified")
-			})
 			Convey(`With invalid Presubmit Result`, func() {
-				e = NewEntry(100).Build()
+				Convey(`Set when IsPresbumit = false`, func() {
+					So(e.PresubmitResult, ShouldNotBeNil)
+					e.IsPresubmit = false
+					_, err := testInsertOrUpdate(e)
+					So(err, ShouldErrLike, "presubmit result must not be set unless IsPresubmit is set")
+				})
 				Convey(`Missing Presubmit run ID`, func() {
 					e.PresubmitResult.PresubmitRunId = nil
 					_, err := testInsertOrUpdate(e)

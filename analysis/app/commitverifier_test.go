@@ -24,7 +24,6 @@ import (
 	"time"
 
 	. "github.com/smartystreets/goconvey/convey"
-	bbv1 "go.chromium.org/luci/common/api/buildbucket/buildbucket/v1"
 	"go.chromium.org/luci/common/clock"
 	. "go.chromium.org/luci/common/testing/assertions"
 	cvv0 "go.chromium.org/luci/cv/api/v0"
@@ -51,23 +50,22 @@ func TestHandleCVRun(t *testing.T) {
 		ctx := testutil.SpannerTestContext(t)
 		ctx, skdr := tq.TestingContext(ctx, nil)
 
-		// Setup two ingested tryjob builds.
+		// Setup two ingested tryjob builds. The first has
+		// an invocation, the second does not.
 		buildIDs := []int64{87654321, 87654322}
-		for _, buildID := range buildIDs {
-			buildExp := bbv1.LegacyApiCommonBuildMessage{
-				Project:   "buildproject",
-				Bucket:    "luci.buildproject.bucket",
-				Id:        buildID,
-				Status:    bbv1.StatusCompleted,
-				CreatedTs: bbv1.FormatTimestamp(bbCreateTime),
-				Tags:      []string{"user_agent:cq"},
-			}
-			r := &http.Request{Body: makeBBReq(buildExp, bbHost)}
-			project, processed, err := bbPubSubHandlerImpl(ctx, r)
-			So(err, ShouldBeNil)
-			So(processed, ShouldBeTrue)
-			So(project, ShouldEqual, "buildproject")
-		}
+		buildOne := newBuildBuilder(buildIDs[0]).
+			WithCreateTime(bbCreateTime).
+			WithTags([]string{"user_agent:cq"}).
+			WithInvocation()
+		buildTwo := newBuildBuilder(buildIDs[1]).
+			WithCreateTime(bbCreateTime).
+			WithTags([]string{"user_agent:cq"})
+		So(ingestBuild(ctx, buildOne), ShouldBeNil)
+		So(ingestBuild(ctx, buildTwo), ShouldBeNil)
+
+		// Ingest the invocation finalization.
+		So(ingestFinalization(ctx, buildOne.buildID), ShouldBeNil)
+
 		So(len(skdr.Tasks().Payloads()), ShouldEqual, 0)
 
 		Convey(`CV run is processed`, func() {
@@ -82,7 +80,7 @@ func TestHandleCVRun(t *testing.T) {
 					fullRunID: run,
 				}
 				ctx = cv.UseFakeClient(ctx, runs)
-				r := &http.Request{Body: makeCVChromiumRunReq(fullRunID)}
+				r := &http.Request{Body: makeCVRunReq(fullRunID)}
 				project, processed, err := cvPubSubHandlerImpl(ctx, r)
 				So(err, ShouldBeNil)
 				So(project, ShouldEqual, "cvproject")
@@ -207,17 +205,13 @@ func TestHandleCVRun(t *testing.T) {
 	})
 }
 
-func makeCVRunReq(psRun *cvv1.PubSubRun) io.ReadCloser {
-	blob, _ := protojson.Marshal(psRun)
-	return makeReq(blob)
-}
-
-func makeCVChromiumRunReq(runID string) io.ReadCloser {
-	return makeCVRunReq(&cvv1.PubSubRun{
+func makeCVRunReq(runID string) io.ReadCloser {
+	blob, _ := protojson.Marshal(&cvv1.PubSubRun{
 		Id:       runID,
 		Status:   cvv1.Run_SUCCEEDED,
 		Hostname: "cvhost",
 	})
+	return makeReq(blob)
 }
 
 func tryjob(bID int64) *cvv0.Tryjob {

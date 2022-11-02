@@ -70,3 +70,8 @@ message PresubmitResult {
   // True if the failure of the build would cause the presubmit run to fail.
   bool critical = 7;
 }
+
+// InvocationResult represents the result from the invocation finalization
+// pub/sub that should be passed to the result ingestion task.
+message InvocationResult {
+}
