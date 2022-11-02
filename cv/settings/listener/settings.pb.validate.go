@@ -349,6 +349,8 @@ func (m *Settings_GerritSubscription) validate(all bool) error {
 		}
 	}
 
+	// no validation rules for MessageFormat
+
 	if len(errors) > 0 {
 		return Settings_GerritSubscriptionMultiError(errors)
 	}

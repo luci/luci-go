@@ -56,6 +56,17 @@ message Settings {
 
     // Configuration for the pubsub receive function.
     ReceiveSettings receive_settings = 3;
+
+    enum MessageFormat {
+      MESSAGE_FORMAT_UNSPECIFIED = 0;
+      JSON = 1;
+      PROTO_BINARY = 2;
+    }
+    // The format of the pubsub payload.
+    //
+    // TODO: add
+    // [(validate.rules).enum = {not_in: MESSAGE_FORMAT_UNSPECIFIED}];
+    MessageFormat message_format = 4;
   }
 
   // Subscriptions for the Gerrit hosts that have enabled Gerrit Pub/Sub.
