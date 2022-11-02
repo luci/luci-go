@@ -22,8 +22,6 @@ import (
 
 	"go.chromium.org/luci/auth/identity"
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
-	"go.chromium.org/luci/common/logging"
-	"go.chromium.org/luci/common/logging/memlogger"
 	gerritpb "go.chromium.org/luci/common/proto/gerrit"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
@@ -868,48 +866,8 @@ func TestCompute(t *testing.T) {
 					})
 				})
 			})
-
-			// TODO(crbug/1171945): This can be removed after migrating to location_filters.
-			Convey("location_filters and location_regexp result mismatch", func() {
-				ctx = memlogger.Use(ctx)
-				log := logging.Get(ctx).(*memlogger.MemLogger)
-
-				in := makeInput(ctx, []*cfgpb.Verifiers_Tryjob_Builder{
-					builderConfigGenerator{
-						Name: "test-proj/test/builder1",
-						// Include those in some/ but not in some/excluded/..
-						LocationRegexp:        []string{".*/[+]/some/.+"},
-						LocationRegexpExclude: []string{".*/[+]/some/excluded/.*"},
-						LocationFilters: []*cfgpb.Verifiers_Tryjob_Builder_LocationFilter{
-							{
-								PathRegexp: "some/.+",
-								Exclude:    false,
-							},
-							{
-								PathRegexp: "some/OTHER/.*",
-								Exclude:    true,
-							},
-						},
-					}.generate()},
-				)
-				Convey("matching CL skipping builder but location_filters doesn't match", func() {
-					in.CLs[0].Detail.GetGerrit().Files = []string{
-						"some/excluded/file",
-					}
-					res, err := Compute(ctx, *in)
-
-					So(err, ShouldBeNil)
-					So(res.ComputationFailure, ShouldBeNil)
-					So(res.Requirement, ShouldResembleProto, &tryjob.Requirement{
-						RetryConfig: &cfgpb.Verifiers_Tryjob_RetryConfig{
-							SingleQuota: 2,
-							GlobalQuota: 8,
-						},
-					})
-					So(log, memlogger.ShouldHaveLog, logging.Error, "disagreed location outputs")
-				})
-			})
 		})
+
 		Convey("stale check", func() {
 			Convey("from config", func() {
 				in := makeInput(ctx, []*cfgpb.Verifiers_Tryjob_Builder{

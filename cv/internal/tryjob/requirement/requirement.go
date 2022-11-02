@@ -28,7 +28,6 @@ import (
 
 	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/common/data/stringset"
-	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/sync/parallel"
 	"go.chromium.org/luci/hardcoded/chromeinfra"
 	"go.chromium.org/luci/server/auth"
@@ -467,83 +466,22 @@ func shouldInclude(ctx context.Context, in Input, dm *definitionMaker, experimen
 		return skipBuilder, nil, nil
 	}
 
-	// Check for LocationRegexp match to decide whether to skip the builder.
-	// Also evaluate with LocationFilter (if it is set) to assess the
-	// correctness of LocationFilter matching if the file count is not too large.
-	locationRegexpSpecified := (len(b.LocationRegexp) + len(b.LocationRegexpExclude)) > 0
-	locationRegexpMatched, err := locationMatch(ctx, b.LocationRegexp, b.LocationRegexpExclude, in.CLs)
-	if err != nil {
-		return skipBuilder, nil, err
-	}
-
-	// Only evaluate LocationFilters iff the total file count is fewer than
-	// 1000 to save latency on large file count use case. Otherwise, treat
-	// LocationFilter as not specified.
-	var locationFilterSpecified, locationFilterMatched bool
-	var totalFileCnt int
-	for _, cl := range in.CLs {
-		totalFileCnt += len(cl.Detail.GetGerrit().GetFiles())
-	}
-	if totalFileCnt <= 1000 {
-		locationFilterSpecified = len(b.LocationFilters) > 0
-		locationFilterMatched, err = locationFilterMatch(ctx, b.LocationFilters, in.CLs)
-		if err != nil {
+	// Check for location filter match to decide whether to conditionally skip
+	// the builder based on location.
+	switch {
+	case len(b.LocationRegexp)+len(b.LocationRegexpExclude) > 0:
+		// If LocationRegexp was specified, use it as the source of truth.
+		// TODO(crbug/1171945): After all projects are migrated to use only
+		// LocationFilters, this can be removed.
+		matched, err := locationMatch(ctx, b.LocationRegexp, b.LocationRegexpExclude, in.CLs)
+		if !matched || err != nil {
 			return skipBuilder, nil, err
 		}
-	}
-	switch {
-	case locationRegexpSpecified && locationFilterSpecified:
-		if locationRegexpMatched != locationFilterMatched {
-			// If the result using LocationRegexp is not the same as LocationFilter,
-			// we want to know about it because this means that locationFilterMatch
-			// is not correct.
-			var sb strings.Builder
-			var filterResult, regexpResult = "skip", "include"
-			if locationFilterMatched {
-				filterResult, regexpResult = "include", "skip"
-			}
-			fmt.Fprintf(&sb, "FIXME(crbug/1171945): disagreed location outputs: Filter(%s) Regexp(%s)", filterResult, regexpResult)
-			sb.WriteString("\n\n")
-			sb.WriteString("location_filters:")
-			for _, lf := range b.GetLocationFilters() {
-				var inclusiveness = "include"
-				if lf.Exclude {
-					inclusiveness = "exclude"
-				}
-				fmt.Fprintf(&sb, "\n  * %s host: %q; project: %q; path: %q", inclusiveness, lf.GetGerritHostRegexp(), lf.GetGerritProjectRegexp(), lf.GetPathRegexp())
-			}
-
-			sb.WriteString("\n\n")
-			sb.WriteString("location_regexp:")
-			for _, lr := range b.GetLocationRegexp() {
-				fmt.Fprintf(&sb, "\n  * %q", lr)
-			}
-			sb.WriteString("\n")
-			sb.WriteString("location_regexp_exclude:")
-			for _, lre := range b.GetLocationRegexpExclude() {
-				fmt.Fprintf(&sb, "\n  * %q", lre)
-			}
-
-			sb.WriteString("\n")
-			fmt.Fprintf(&sb, "\nbuilder name: %s", b.GetName())
-			fmt.Fprintf(&sb, "\nconfig group name: %s", in.ConfigGroup.GetName())
-			sb.WriteString("\ncls:")
-			for _, cl := range in.CLs {
-				fmt.Fprintf(&sb, "\n  * %s", cl.ExternalID.MustURL())
-			}
-
-			logging.Errorf(ctx, "%s", sb.String())
-		}
-		fallthrough
-	case locationRegexpSpecified:
-		// If LocationRegexp was specified, use it as the source of truth.
-		if !locationRegexpMatched {
-			return skipBuilder, nil, nil
-		}
-	case locationFilterSpecified:
+	case len(b.LocationFilters) > 0:
 		// If only LocationFilters was specified, use it as the source of truth.
-		if !locationFilterMatched {
-			return skipBuilder, nil, nil
+		matched, err := locationFilterMatch(ctx, b.LocationFilters, in.CLs)
+		if !matched || err != nil {
+			return skipBuilder, nil, err
 		}
 	}
 
@@ -551,7 +489,7 @@ func shouldInclude(ctx context.Context, in Input, dm *definitionMaker, experimen
 	case err != nil:
 		return skipBuilder, nil, err
 	case allowed:
-		// decide whether CV should use main builder or equivalent builder
+		// Decide whether CV should use main builder or equivalent builder.
 		dm.equivalence = mainOnly
 		if b.GetEquivalentTo() != nil && !in.RunOptions.GetSkipEquivalentBuilders() {
 			dm.equivalence = bothMainAndEquivalent
