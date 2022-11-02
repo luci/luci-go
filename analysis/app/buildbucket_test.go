@@ -112,6 +112,16 @@ func TestHandleBuild(t *testing.T) {
 					Critical:     true,
 				}
 				assertTasksExpected()
+
+				// Check metrics were reported correctly for this sequence.
+				isPresubmit := true
+				hasInvocation := false
+				So(bbBuildInputCounter.Get(ctx, "buildproject", isPresubmit, hasInvocation), ShouldEqual, 1)
+				So(bbBuildOutputCounter.Get(ctx, "buildproject", isPresubmit, hasInvocation), ShouldEqual, 1)
+				So(cvBuildInputCounter.Get(ctx, "cvproject"), ShouldEqual, 2)
+				So(cvBuildOutputCounter.Get(ctx, "cvproject"), ShouldEqual, 1)
+				So(rdbBuildInputCounter.Get(ctx, "invproject"), ShouldEqual, 0)
+				So(rdbBuildOutputCounter.Get(ctx, "invproject"), ShouldEqual, 0)
 			})
 		})
 		Convey(`With build that has a ResultDB invocation`, func() {
@@ -132,6 +142,16 @@ func TestHandleBuild(t *testing.T) {
 				So(ingestBuild(ctx, build), ShouldBeNil)
 
 				assertTasksExpected()
+
+				// Check metrics were reported correctly for this sequence.
+				isPresubmit := false
+				hasInvocation := true
+				So(bbBuildInputCounter.Get(ctx, "buildproject", isPresubmit, hasInvocation), ShouldEqual, 1)
+				So(bbBuildOutputCounter.Get(ctx, "buildproject", isPresubmit, hasInvocation), ShouldEqual, 1)
+				So(cvBuildInputCounter.Get(ctx, "cvproject"), ShouldEqual, 0)
+				So(cvBuildOutputCounter.Get(ctx, "cvproject"), ShouldEqual, 0)
+				So(rdbBuildInputCounter.Get(ctx, "invproject"), ShouldEqual, 1)
+				So(rdbBuildOutputCounter.Get(ctx, "invproject"), ShouldEqual, 1)
 			})
 		})
 	})

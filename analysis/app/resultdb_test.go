@@ -91,7 +91,7 @@ func TestHandleInvocationFinalization(t *testing.T) {
 			So(len(skdr.Tasks().Payloads()), ShouldEqual, 0)
 
 			Convey(`With LUCI CV run ingested previously`, func() {
-				So(ingestCVRun(ctx, []int64{8137171, build.buildID}), ShouldBeNil)
+				So(ingestCVRun(ctx, []int64{build.buildID}), ShouldBeNil)
 
 				expectedTask.PartitionTime = timestamppb.New(cvCreateTime)
 				expectedTask.PresubmitRun = &controlpb.PresubmitResult{
@@ -112,6 +112,19 @@ func TestHandleInvocationFinalization(t *testing.T) {
 				So(ingestFinalization(ctx, build.buildID), ShouldBeNil)
 
 				assertTasksExpected()
+
+				// Check metrics were reported correctly for this sequence.
+				isPresubmit := true
+				hasInvocation := true
+				So(bbBuildInputCounter.Get(ctx, "buildproject", isPresubmit, hasInvocation), ShouldEqual, 1)
+				So(bbBuildOutputCounter.Get(ctx, "buildproject", isPresubmit, hasInvocation), ShouldEqual, 1)
+				So(cvBuildInputCounter.Get(ctx, "cvproject"), ShouldEqual, 1)
+				So(cvBuildOutputCounter.Get(ctx, "cvproject"), ShouldEqual, 1)
+				So(rdbBuildInputCounter.Get(ctx, "invproject"), ShouldEqual, 1)
+
+				// TODO(b/255850466): Expect this to report join of the
+				// invocation once join condition updated.
+				So(rdbBuildOutputCounter.Get(ctx, "invproject"), ShouldEqual, 0)
 			})
 			Convey(`Without LUCI CV run ingested previously`, func() {
 				So(ingestFinalization(ctx, build.buildID), ShouldBeNil)

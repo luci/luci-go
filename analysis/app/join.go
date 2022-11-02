@@ -107,13 +107,13 @@ func JoinBuildResult(ctx context.Context, buildID, buildProject string, isPresub
 		return errors.New("build result must be specified")
 	}
 	var saved bool
-	var taskCreated *taskDetails
+	var createdTask *taskDetails
 	f := func(ctx context.Context) error {
 		// Reset variables to clear out anything from a previous
 		// (failed) try of this transaction to ensure nothing
 		// leaks forward.
 		saved = false
-		taskCreated = nil
+		createdTask = nil
 
 		entries, err := control.Read(ctx, []string{buildID})
 		if err != nil {
@@ -150,13 +150,13 @@ func JoinBuildResult(ctx context.Context, buildID, buildProject string, isPresub
 		saved = true
 		isTaskCreated := createTasksIfNeeded(ctx, entry)
 		if isTaskCreated {
+			createdTask = newTaskDetails(entry)
 			entry.TaskCount = 1
 		}
 
 		if err := control.InsertOrUpdate(ctx, entry); err != nil {
 			return err
 		}
-		taskCreated = newTaskDetails(entry)
 		return nil
 	}
 	if _, err := span.ReadWriteTransaction(ctx, f); err != nil {
@@ -170,8 +170,8 @@ func JoinBuildResult(ctx context.Context, buildID, buildProject string, isPresub
 	if saved {
 		bbBuildInputCounter.Add(ctx, 1, buildProject, isPresubmit, hasInvocation)
 	}
-	if taskCreated != nil {
-		taskCreated.reportMetrics(ctx)
+	if createdTask != nil {
+		createdTask.reportMetrics(ctx)
 	}
 	return nil
 }
@@ -270,13 +270,13 @@ func JoinInvocationResult(ctx context.Context, buildID, invocationProject string
 		return errors.New("invocation result must be specified")
 	}
 	var saved bool
-	var taskCreated *taskDetails
+	var createdTask *taskDetails
 	f := func(ctx context.Context) error {
 		// Reset variables to clear out anything from a previous
 		// (failed) try of this transaction to ensure nothing
 		// leaks forward.
 		saved = false
-		taskCreated = nil
+		createdTask = nil
 
 		entries, err := control.Read(ctx, []string{buildID})
 		if err != nil {
@@ -307,13 +307,13 @@ func JoinInvocationResult(ctx context.Context, buildID, invocationProject string
 		saved = true
 		isTaskCreated := createTasksIfNeeded(ctx, entry)
 		if isTaskCreated {
+			createdTask = newTaskDetails(entry)
 			entry.TaskCount = 1
 		}
 
 		if err := control.InsertOrUpdate(ctx, entry); err != nil {
 			return err
 		}
-		taskCreated = newTaskDetails(entry)
 		return nil
 	}
 	if _, err := span.ReadWriteTransaction(ctx, f); err != nil {
@@ -327,8 +327,8 @@ func JoinInvocationResult(ctx context.Context, buildID, invocationProject string
 	if saved {
 		rdbBuildInputCounter.Add(ctx, 1, invocationProject)
 	}
-	if taskCreated != nil {
-		taskCreated.reportMetrics(ctx)
+	if createdTask != nil {
+		createdTask.reportMetrics(ctx)
 	}
 	return nil
 }
