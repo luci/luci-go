@@ -303,7 +303,7 @@ export const BuildState = types
     },
     get recipeLink() {
       let csHost = 'source.chromium.org';
-      if (self.data.exe.cipdPackage.includes('internal')) {
+      if (self.data.exe.cipdPackage?.includes('internal')) {
         csHost = 'source.corp.google.com';
       }
       // TODO(crbug.com/1149540): remove this conditional once the long-term

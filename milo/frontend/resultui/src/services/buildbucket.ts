@@ -297,9 +297,9 @@ export interface BuildInfraResultdb {
 }
 
 export interface Executable {
-  readonly cipdPackage: string;
-  readonly cipdVersion: string;
-  readonly cmd: readonly string[];
+  readonly cipdPackage?: string;
+  readonly cipdVersion?: string;
+  readonly cmd?: readonly string[];
 }
 
 export interface CancelBuildRequest {
