@@ -63,10 +63,9 @@ message Settings {
       PROTO_BINARY = 2;
     }
     // The format of the pubsub payload.
-    //
-    // TODO: add
-    // [(validate.rules).enum = {not_in: MESSAGE_FORMAT_UNSPECIFIED}];
-    MessageFormat message_format = 4;
+    MessageFormat message_format = 4 [(validate.rules).enum = {
+      not_in: [0] // MESSAGE_FORMAT_UNSPECIFIED
+    }];
   }
 
   // Subscriptions for the Gerrit hosts that have enabled Gerrit Pub/Sub.

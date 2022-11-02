@@ -104,6 +104,7 @@ func TestListenerConfigValidation(t *testing.T) {
 						num_goroutines: 100
 						max_outstanding_messages: 5000
 					}
+					message_format: JSON
 				}
 				gerrit_subscriptions {
 					host: "pigweed-review.googlesource.com"
@@ -112,6 +113,7 @@ func TestListenerConfigValidation(t *testing.T) {
 						num_goroutines: 100
 						max_outstanding_messages: 5000
 					}
+					message_format: PROTO_BINARY
 				}
 			`)
 			Convey("fully loaded", func() {
@@ -129,10 +131,12 @@ func TestListenerConfigValidation(t *testing.T) {
 				cfg := []byte(`
 					gerrit_subscriptions {
 						host: "example.org"
+						message_format: JSON
 					}
 					gerrit_subscriptions {
 						host: "example2.org"
 						subscription_id: "example.org"
+						message_format: JSON
 					}
 				`)
 				So(validateListenerSettings(vctx, configSet, path, []byte(cfg)), ShouldBeNil)
@@ -153,6 +157,17 @@ func TestListenerConfigValidation(t *testing.T) {
 				`)
 				So(validateListenerSettings(vctx, configSet, path, []byte(cfg)), ShouldBeNil)
 				So(vctx.Finalize().Error(), ShouldContainSubstring, "missing closing")
+			})
+
+			Convey("invalid message_format", func() {
+				cfg := []byte(`
+					gerrit_subscriptions {
+						host: "example.org"
+					}
+				`)
+				So(validateListenerSettings(vctx, configSet, path, []byte(cfg)), ShouldBeNil)
+				So(vctx.Finalize().Error(), ShouldContainSubstring,
+					"invalid Settings_GerritSubscription.MessageFormat: value must not be in list [0]")
 			})
 		})
 	})

@@ -349,7 +349,16 @@ func (m *Settings_GerritSubscription) validate(all bool) error {
 		}
 	}
 
-	// no validation rules for MessageFormat
+	if _, ok := _Settings_GerritSubscription_MessageFormat_NotInLookup[m.GetMessageFormat()]; ok {
+		err := Settings_GerritSubscriptionValidationError{
+			field:  "MessageFormat",
+			reason: "value must not be in list [0]",
+		}
+		if !all {
+			return err
+		}
+		errors = append(errors, err)
+	}
 
 	if len(errors) > 0 {
 		return Settings_GerritSubscriptionMultiError(errors)
@@ -431,3 +440,7 @@ var _ interface {
 	Cause() error
 	ErrorName() string
 } = Settings_GerritSubscriptionValidationError{}
+
+var _Settings_GerritSubscription_MessageFormat_NotInLookup = map[Settings_GerritSubscription_MessageFormat]struct{}{
+	0: {},
+}
