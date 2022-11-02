@@ -1,0 +1,16 @@
+diff --git a/node_modules/html-webpack-plugin/index.js b/node_modules/html-webpack-plugin/index.js
+index de9a629..afb4d3e 100644
+--- a/node_modules/html-webpack-plugin/index.js
++++ b/node_modules/html-webpack-plugin/index.js
+@@ -681,7 +681,10 @@ function hookIntoCompiler (compiler, options, plugin) {
+       // E.g. bundle.js -> /bundle.js?hash
+       const entryPointPublicPaths = entryPointFiles
+         .map(chunkFile => {
+-          const entryPointPublicPath = publicPath + urlencodePath(chunkFile);
++          // TODO(weiweilin): remove the patch once html-webpack-plugin no
++          // longer encodes the chunkFile.
++          // See https://github.com/jantimon/html-webpack-plugin/issues/1771
++          const entryPointPublicPath = publicPath + chunkFile;
+           return options.hash
+             ? appendHash(entryPointPublicPath, compilationHash)
+             : entryPointPublicPath;

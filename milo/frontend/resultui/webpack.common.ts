@@ -71,7 +71,7 @@ const config: Configuration = {
           test: /[\\/]node_modules[\\/]/,
           name(module: { context: string }) {
             const packageName = module.context.match(/[\\/]node_modules[\\/](.*?)([\\/]|$)/)![1];
-            return `npm.${encodeURIComponent(packageName)}`;
+            return `npm.${packageName}`;
           },
         },
       },
