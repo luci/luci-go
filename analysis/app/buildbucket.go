@@ -161,7 +161,7 @@ func processBBMessage(ctx context.Context, message *buildBucketMessage) (process
 		// Build not found, handle gracefully.
 		logging.Warningf(ctx, "Buildbucket build %s/%d for project %s not found (or LUCI Analysis does not have access to read it).",
 			message.Hostname, message.Build.Id, project)
-		buildProcessingOutcomeCounter.Add(ctx, 1, "permission_denied")
+		buildProcessingOutcomeCounter.Add(ctx, 1, project, "permission_denied")
 		return false, nil
 	}
 	if err != nil {
@@ -181,7 +181,7 @@ func processBBMessage(ctx context.Context, message *buildBucketMessage) (process
 	if err := JoinBuildResult(ctx, id, project, isPresubmit, hasInvocation, result); err != nil {
 		return false, errors.Annotate(err, "joining build result").Err()
 	}
-	buildProcessingOutcomeCounter.Add(ctx, 1, "success")
+	buildProcessingOutcomeCounter.Add(ctx, 1, project, "success")
 	return true, nil
 }
 
