@@ -1293,6 +1293,7 @@ luci.bucket(
     bindings = None,
     shadows = None,
     constraints = None,
+    dynamic = None,
 )
 ```
 
@@ -1312,6 +1313,7 @@ this bucket and all resources these builds produce. See [luci.realm(...)](#luci.
 * **bindings**: a list of [luci.binding(...)](#luci.binding) to add to the bucket's realm. Will eventually replace `acls`.
 * **shadows**: one or a list of bucket names that this bucket shadows. It means that when triggering a led build for the listed buckets (shadowed buckets), Buildbucket will replace the bucket of the led build with this one (shadowing bucket). Note that this is a part of the new led process (WIP) so it's not in use at the moment. TODO(crbug.com/1114804): update the docstring when we start to use shadow.
 * **constraints**: a [luci.bucket_constraints(...)](#luci.bucket-constraints) to add to the bucket.
+* **dynamic**: a flag for if the bucket is a dynamic bucket. A dynamic bucket must not have pre-defined builders.  Note that this is a part of the new led process (WIP) so it's not in use at the moment. TODO(crbug.com/1114804): update the docstring when we start to use the new feature.
 
 
 

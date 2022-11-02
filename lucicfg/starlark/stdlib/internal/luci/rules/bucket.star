@@ -30,7 +30,8 @@ def _bucket(
         extends = None,
         bindings = None,
         shadows = None,
-        constraints = None):
+        constraints = None,
+        dynamic = False):
     """Defines a bucket: a container for LUCI builds.
 
     This rule also implicitly defines the realm to use for the builds in this
@@ -55,6 +56,12 @@ def _bucket(
         at the moment.
         TODO(crbug.com/1114804): update the docstring when we start to use shadow.
       constraints: a luci.bucket_constraints(...) to add to the bucket.
+      dynamic: a flag for if the bucket is a dynamic bucket.
+        A dynamic bucket must not have pre-defined builders.
+         Note that this is a part of the new led process (WIP) so it's not in use
+        at the moment.
+        TODO(crbug.com/1114804): update the docstring when we start to use the
+        new feature.
     """
     name = validate.string("name", name)
     if name.startswith("luci."):
@@ -64,6 +71,7 @@ def _bucket(
     graph.add_node(key, props = {
         "name": name,
         "acls": aclimpl.validate_acls(acls, project_level = False),
+        "dynamic": dynamic,
     })
     graph.add_edge(keys.project(), key)
 

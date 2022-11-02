@@ -316,12 +316,17 @@ def gen_buildbucket_cfg(ctx):
     _buildbucket_check_connections()
 
     for bucket in buckets:
+        swarming = _buildbucket_builders(bucket)
+        dynamic_builder_template = {} if bucket.props.dynamic else None
+        if dynamic_builder_template != None and swarming != None:
+            error("dynamic bucket \"%s\" must not have pre-defined builders" % bucket.props.name, trace = bucket.trace)
         cfg.buckets.append(buildbucket_pb.Bucket(
             name = bucket.props.name,
             acls = _buildbucket_acls(get_bucket_acls(bucket)),
-            swarming = _buildbucket_builders(bucket),
+            swarming = swarming,
             shadow = _buildbucket_shadow(bucket),
             constraints = _buildbucket_constraints(bucket),
+            dynamic_builder_template = dynamic_builder_template,
         ))
 
 def _buildbucket_check_connections():
