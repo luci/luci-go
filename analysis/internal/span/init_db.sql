@@ -322,9 +322,6 @@ CREATE TABLE Ingestions (
   BuildProject STRING(40),
   -- The build result.
   BuildResult BYTES(MAX),
-  -- Whether the record has any build result.
-  -- Used in index to speed-up to some statistical queries.
-  HasBuildResult BOOL NOT NULL AS (BuildResult IS NOT NULL) STORED,
   -- The Spanner commit time the build result was populated.
   BuildJoinedTime TIMESTAMP OPTIONS (allow_commit_timestamp=true),
   -- Does the build have a ResultDB invocation? If yes, then ingestion should
@@ -351,9 +348,6 @@ CREATE TABLE Ingestions (
   PresubmitProject STRING(40),
   -- The presubmit result.
   PresubmitResult BYTES(MAX),
-  -- Whether the record has any presubmit result.
-  -- Used in index to speed-up to some statistical queries.
-  HasPresubmitResult BOOL NOT NULL AS (PresubmitResult IS NOT NULL) STORED,
   -- The Spanner commit time the presubmit result was populated.
   PresubmitJoinedTime TIMESTAMP OPTIONS (allow_commit_timestamp=true),
   -- The Spanner commit time the row last last updated.
@@ -370,12 +364,6 @@ CREATE TABLE Ingestions (
 -- the partition time on ingested chunks may be later than the LastUpdated
 -- time if clocks are not synchronised).
 , ROW DELETION POLICY (OLDER_THAN(LastUpdated, INTERVAL 100 DAY));
-
--- Used to speed-up querying join statistics for presubmit runs.
-CREATE NULL_FILTERED INDEX IngestionsByIsPresubmit
-  ON Ingestions(IsPresubmit, BuildId)
-  STORING (BuildProject,     HasBuildResult,     BuildJoinedTime,
-           PresubmitProject, HasPresubmitResult, PresubmitJoinedTime);
 
 -- Stores transactional tasks reminders.
 -- See https://go.chromium.org/luci/server/tq. Scanned by tq-sweeper-spanner.

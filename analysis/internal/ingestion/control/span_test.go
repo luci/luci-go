@@ -200,12 +200,12 @@ func TestSpan(t *testing.T) {
 				})
 			})
 		})
-		Convey(`ReadPresubmitRunJoinStatistics`, func() {
+		Convey(`ReadBuildToPresubmitRunJoinStatistics`, func() {
 			Convey(`No data`, func() {
 				_, err := SetEntriesForTesting(ctx, nil...)
 				So(err, ShouldBeNil)
 
-				results, err := ReadPresubmitRunJoinStatistics(span.Single(ctx))
+				results, err := ReadBuildToPresubmitRunJoinStatistics(span.Single(ctx))
 				So(err, ShouldBeNil)
 				So(results, ShouldResemble, map[string]JoinStatistics{})
 			})
@@ -222,7 +222,7 @@ func TestSpan(t *testing.T) {
 					//                          with all results.
 					//  ]-37 hours, -36 hours]: 1 presubmit build,
 					//                          with all results
-					//                         (should be ignored).
+					//                         (should be ignored as >36 hours old).
 					// Project Beta ("beta") :=
 					//  ]-37 hours, -36 hours]: 1 presubmit build,
 					//                          without presubmit result.
@@ -238,7 +238,7 @@ func TestSpan(t *testing.T) {
 				_, err := SetEntriesForTesting(ctx, entriesToCreate...)
 				So(err, ShouldBeNil)
 
-				results, err := ReadPresubmitRunJoinStatistics(span.Single(ctx))
+				results, err := ReadBuildToPresubmitRunJoinStatistics(span.Single(ctx))
 				So(err, ShouldBeNil)
 
 				expectedAlpha := JoinStatistics{
@@ -260,12 +260,12 @@ func TestSpan(t *testing.T) {
 				})
 			})
 		})
-		Convey(`ReadBuildJoinStatistics`, func() {
+		Convey(`ReadPresubmitToBuildJoinStatistics`, func() {
 			Convey(`No data`, func() {
 				_, err := SetEntriesForTesting(ctx, nil...)
 				So(err, ShouldBeNil)
 
-				results, err := ReadBuildJoinStatistics(span.Single(ctx))
+				results, err := ReadPresubmitToBuildJoinStatistics(span.Single(ctx))
 				So(err, ShouldBeNil)
 				So(results, ShouldResemble, map[string]JoinStatistics{})
 			})
@@ -282,7 +282,7 @@ func TestSpan(t *testing.T) {
 					//                          with all results.
 					//  ]-37 hours, -36 hours]: 1 presubmit build,
 					//                          with all results
-					//                          (should be ignored).
+					//                         (should be ignored as >36 hours old).
 					// Project Beta ("beta") :=
 					//  ]-37 hours, -36 hours]: 1 presubmit build,
 					//                          without build result.
@@ -298,7 +298,127 @@ func TestSpan(t *testing.T) {
 				_, err := SetEntriesForTesting(ctx, entriesToCreate...)
 				So(err, ShouldBeNil)
 
-				results, err := ReadBuildJoinStatistics(span.Single(ctx))
+				results, err := ReadPresubmitToBuildJoinStatistics(span.Single(ctx))
+				So(err, ShouldBeNil)
+
+				expectedAlpha := JoinStatistics{
+					TotalByHour:  make([]int64, 36),
+					JoinedByHour: make([]int64, 36),
+				}
+				expectedAlpha.TotalByHour[0] = 3
+				expectedAlpha.JoinedByHour[0] = 1
+				expectedAlpha.TotalByHour[35] = 1
+				expectedAlpha.JoinedByHour[35] = 1
+				// Only data in the last 36 hours is included, so the build
+				// older than 36 hours is excluded.
+
+				// Expect no entry to be returned for Project beta
+				// as all data is older than 36 hours.
+
+				So(results, ShouldResemble, map[string]JoinStatistics{
+					"alpha": expectedAlpha,
+				})
+			})
+		})
+		Convey(`ReadBuildToInvocationJoinStatistics`, func() {
+			Convey(`No data`, func() {
+				_, err := SetEntriesForTesting(ctx, nil...)
+				So(err, ShouldBeNil)
+
+				results, err := ReadBuildToInvocationJoinStatistics(span.Single(ctx))
+				So(err, ShouldBeNil)
+				So(results, ShouldResemble, map[string]JoinStatistics{})
+			})
+			Convey(`Data`, func() {
+				reference := time.Now().Add(-1 * time.Minute)
+				entriesToCreate := []*Entry{
+					// Setup following data:
+					// Project Alpha ("alpha") :=
+					//  ]-1 hour, now]: 4 builds /w invocation, 2 of which without
+					//                  invocation result, 1 of which without
+					//                  build result.
+					//                  1 build w/o invocation.
+					//  ]-36 hours, -35 hours]: 1 build /w invocation,
+					//                          with all results.
+					//  ]-37 hours, -36 hours]: 1 build /w invocation,
+					//                          with all results
+					//                         (should be ignored as >36 hours old).
+					// Project Beta ("beta") :=
+					//  ]-37 hours, -36 hours]: 1 build /w invocation,
+					//                          without invocation result.
+					NewEntry(0).WithBuildProject("alpha").WithBuildJoinedTime(reference).Build(),
+					NewEntry(1).WithBuildProject("alpha").WithBuildJoinedTime(reference).WithInvocationResult(nil).Build(),
+					NewEntry(2).WithBuildProject("alpha").WithBuildJoinedTime(reference).WithInvocationResult(nil).Build(),
+					NewEntry(3).WithInvocationProject("alpha").WithInvocationJoinedTime(reference).WithBuildResult(nil).Build(),
+					NewEntry(4).WithBuildProject("alpha").WithBuildJoinedTime(reference).WithHasInvocation(false).WithInvocationResult(nil).Build(),
+					NewEntry(5).WithBuildProject("alpha").WithBuildJoinedTime(reference.Add(-35 * time.Hour)).Build(),
+					NewEntry(6).WithBuildProject("alpha").WithBuildJoinedTime(reference.Add(-36 * time.Hour)).Build(),
+					NewEntry(7).WithBuildProject("beta").WithBuildJoinedTime(reference.Add(-36 * time.Hour)).WithInvocationResult(nil).Build(),
+				}
+				_, err := SetEntriesForTesting(ctx, entriesToCreate...)
+				So(err, ShouldBeNil)
+
+				results, err := ReadBuildToInvocationJoinStatistics(span.Single(ctx))
+				So(err, ShouldBeNil)
+
+				expectedAlpha := JoinStatistics{
+					TotalByHour:  make([]int64, 36),
+					JoinedByHour: make([]int64, 36),
+				}
+				expectedAlpha.TotalByHour[0] = 3
+				expectedAlpha.JoinedByHour[0] = 1
+				expectedAlpha.TotalByHour[35] = 1
+				expectedAlpha.JoinedByHour[35] = 1
+				// Only data in the last 36 hours is included, so the build
+				// older than 36 hours is excluded.
+
+				// Expect no entry to be returned for Project beta
+				// as all data is older than 36 hours.
+
+				So(results, ShouldResemble, map[string]JoinStatistics{
+					"alpha": expectedAlpha,
+				})
+			})
+		})
+		Convey(`ReadInvocationToBuildJoinStatistics`, func() {
+			Convey(`No data`, func() {
+				_, err := SetEntriesForTesting(ctx, nil...)
+				So(err, ShouldBeNil)
+
+				results, err := ReadInvocationToBuildJoinStatistics(span.Single(ctx))
+				So(err, ShouldBeNil)
+				So(results, ShouldResemble, map[string]JoinStatistics{})
+			})
+			Convey(`Data`, func() {
+				reference := time.Now().Add(-1 * time.Minute)
+				entriesToCreate := []*Entry{
+					// Setup following data:
+					// Project Alpha ("alpha") :=
+					//  ]-1 hour, now]: 4 builds /w invocation, 2 of which without
+					//                  build result, 1 of which without
+					//                  invocation result.
+					//                  1 build w/o invocation.
+					//  ]-36 hours, -35 hours]: 1 build /w invocation,
+					//                          with all results.
+					//  ]-37 hours, -36 hours]: 1 build /w invocation,
+					//                          with all results
+					//                         (should be ignored as >36 hours old).
+					// Project Beta ("beta") :=
+					//  ]-37 hours, -36 hours]: 1 build /w invocation,
+					//                          without build result.
+					NewEntry(0).WithInvocationProject("alpha").WithInvocationJoinedTime(reference).Build(),
+					NewEntry(1).WithInvocationProject("alpha").WithInvocationJoinedTime(reference).WithBuildResult(nil).Build(),
+					NewEntry(2).WithInvocationProject("alpha").WithInvocationJoinedTime(reference).WithBuildResult(nil).Build(),
+					NewEntry(3).WithBuildProject("alpha").WithBuildJoinedTime(reference).WithInvocationResult(nil).Build(),
+					NewEntry(4).WithInvocationProject("alpha").WithInvocationJoinedTime(reference).WithHasInvocation(false).WithBuildResult(nil).Build(),
+					NewEntry(5).WithInvocationProject("alpha").WithInvocationJoinedTime(reference.Add(-35 * time.Hour)).Build(),
+					NewEntry(6).WithInvocationProject("alpha").WithInvocationJoinedTime(reference.Add(-36 * time.Hour)).Build(),
+					NewEntry(7).WithInvocationProject("beta").WithInvocationJoinedTime(reference.Add(-36 * time.Hour)).WithBuildResult(nil).Build(),
+				}
+				_, err := SetEntriesForTesting(ctx, entriesToCreate...)
+				So(err, ShouldBeNil)
+
+				results, err := ReadInvocationToBuildJoinStatistics(span.Single(ctx))
 				So(err, ShouldBeNil)
 
 				expectedAlpha := JoinStatistics{

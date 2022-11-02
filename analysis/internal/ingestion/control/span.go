@@ -259,36 +259,39 @@ func InsertOrUpdate(ctx context.Context, e *Entry) error {
 	return nil
 }
 
-// JoinStatistics captures indicators of how well buildbucket build
-// completions are being joined to presubmit run completions.
+// JoinStatistics captures indicators of how well two join inputs
+// (e.g. buildbucket build completions and presubmit run completions,
+//  or buildbucket build completions and invocation finalizations)
+// are being joined.
 type JoinStatistics struct {
-	// TotalByHour captures the number of presubmit builds in the ingestions
-	// table eligible to be joined.
+	// TotalByHour captures the number of builds in the ingestions
+	// table eligible to be joined (i.e. have the left-hand join input).
 	//
-	// Data is broken down by by hours since the presubmit build became
+	// Data is broken down by by hours since the build became
 	// eligible for joining. Index 0 indicates the period
 	// from ]-1 hour, now], index 1 indicates [-2 hour, -1 hour] and so on.
 	TotalByHour []int64
 
-	// JoinedByHour captures the number of presubmit builds in the ingestions
+	// JoinedByHour captures the number of builds in the ingestions
 	// table eligible to be joined, which were successfully joined (have
-	// both presubmit run and buildbucket build completion present).
+	// results for both join inputs present).
 	//
-	// Data is broken down by by hours since the presubmit build became
+	// Data is broken down by by hours since the build became
 	// eligible for joining. Index 0 indicates the period
 	// from ]-1 hour, now], index 1 indicates [-2 hour, -1 hour] and so on.
 	JoinedByHour []int64
 }
 
-// ReadPresubmitJoinStatistics measures the performance joining presubmit runs.
+// ReadBuildToPresubmitRunJoinStatistics measures the performance joining
+// builds to presubmit runs.
 //
-// The statistics returned uses presubmit builds with a buildbucket
-// build result received as the denominator for measuring join performance.
+// The statistics returned uses completed builds with a presubmit run
+// as the denominator for measuring join performance.
 // The performance joining to presubmit run results is then measured.
 // Data is broken down by the project of the buildbucket build.
 // The last 36 hours of data for each project is returned. Hours are
 // measured since the buildbucket build result was received.
-func ReadPresubmitRunJoinStatistics(ctx context.Context) (map[string]JoinStatistics, error) {
+func ReadBuildToPresubmitRunJoinStatistics(ctx context.Context) (map[string]JoinStatistics, error) {
 	stmt := spanner.NewStatement(`
 		SELECT
 		  BuildProject as project,
@@ -304,16 +307,16 @@ func ReadPresubmitRunJoinStatistics(ctx context.Context) (map[string]JoinStatist
 	return readJoinStatistics(ctx, stmt)
 }
 
-// ReadPresubmitJoinStatistics reads indicators of how well buildbucket build
-// completions are being joined to presubmit run completions.
+// ReadPresubmitToBuildJoinStatistics measures the performance joining
+// presubmit runs to builds.
 //
-// The statistics returned uses builds with a presubmit run
-// received as the denominator for measuring join performance.
+// The statistics returned uses builds as reported by completed
+// presubmit runs as the denominator for measuring join performance.
 // The performance joining to buildbucket build results is then measured.
 // Data is broken down by the project of the presubmit run.
 // The last 36 hours of data for each project is returned. Hours are
 // measured since the presubmit run result was received.
-func ReadBuildJoinStatistics(ctx context.Context) (map[string]JoinStatistics, error) {
+func ReadPresubmitToBuildJoinStatistics(ctx context.Context) (map[string]JoinStatistics, error) {
 	stmt := spanner.NewStatement(`
 		SELECT
 		  PresubmitProject as project,
@@ -323,6 +326,58 @@ func ReadBuildJoinStatistics(ctx context.Context) (map[string]JoinStatistics, er
 		FROM Ingestions
 		WHERE IsPresubmit
 		  AND PresubmitJoinedTime >= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL @hours HOUR)
+		GROUP BY project, hour
+	`)
+	stmt.Params["hours"] = JoinStatsHours
+	return readJoinStatistics(ctx, stmt)
+}
+
+// ReadBuildToInvocationJoinStatistics measures the performance joining
+// builds to finalized invocations.
+//
+// The statistics returned uses completed builds with an invocation
+// as the denominator for measuring join performance.
+// The performance joining to finalized invocations is then measured.
+// Data is broken down by the project of the buildbucket build.
+// The last 36 hours of data for each project is returned. Hours are
+// measured since the buildbucket build result was received.
+func ReadBuildToInvocationJoinStatistics(ctx context.Context) (map[string]JoinStatistics, error) {
+	stmt := spanner.NewStatement(`
+		SELECT
+		  BuildProject as project,
+		  TIMESTAMP_DIFF(CURRENT_TIMESTAMP(), BuildJoinedTime, HOUR) as hour,
+		  COUNT(*) as total,
+		  COUNTIF(InvocationResult IS NOT NULL) as joined,
+		FROM Ingestions
+		WHERE HasInvocation
+		  AND BuildJoinedTime >= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL @hours HOUR)
+		GROUP BY project, hour
+	`)
+	stmt.Params["hours"] = JoinStatsHours
+	return readJoinStatistics(ctx, stmt)
+}
+
+// ReadInvocationToBuildJoinStatistics measures the performance joining
+// finalized invocations to builds.
+//
+// The statistics returned uses finalized invocations (for buildbucket builds)
+// as the denominator for measuring join performance.
+// The performance joining to buildbucket build results is then measured.
+// Data is broken down by the project of the ingested invocation (this
+// should be the same as the ingested build, although it comes from a
+// different source).
+// The last 36 hours of data for each project is returned. Hours are
+// measured since the finalized invocation was received.
+func ReadInvocationToBuildJoinStatistics(ctx context.Context) (map[string]JoinStatistics, error) {
+	stmt := spanner.NewStatement(`
+		SELECT
+		  InvocationProject as project,
+		  TIMESTAMP_DIFF(CURRENT_TIMESTAMP(), InvocationJoinedTime, HOUR) as hour,
+		  COUNT(*) as total,
+		  COUNTIF(BuildResult IS NOT NULL) as joined,
+		FROM Ingestions
+		WHERE HasInvocation
+		  AND InvocationJoinedTime >= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL @hours HOUR)
 		GROUP BY project, hour
 	`)
 	stmt.Params["hours"] = JoinStatsHours

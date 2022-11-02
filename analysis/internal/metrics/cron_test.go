@@ -55,17 +55,26 @@ func TestGlobalMetrics(t *testing.T) {
 			control.NewEntry(0).
 				WithBuildProject("project-a").
 				WithPresubmitProject("project-b").
+				WithInvocationProject("project-c").
 				WithBuildJoinedTime(reference).
 				WithPresubmitJoinedTime(reference).
+				WithInvocationJoinedTime(reference).
 				Build(),
 			control.NewEntry(1).
-				WithBuildProject("project-b").
+				WithBuildProject("project-d").
 				WithBuildJoinedTime(reference).
+				WithInvocationResult(nil).
 				WithPresubmitResult(nil).Build(),
 			control.NewEntry(2).
-				WithPresubmitProject("project-a").
+				WithPresubmitProject("project-e").
 				WithPresubmitJoinedTime(reference).
-				WithBuildResult(nil).Build(),
+				WithBuildResult(nil).
+				WithInvocationResult(nil).Build(),
+			control.NewEntry(3).
+				WithInvocationProject("project-f").
+				WithInvocationJoinedTime(reference).
+				WithBuildResult(nil).
+				WithPresubmitResult(nil).Build(),
 		}
 		_, err = control.SetEntriesForTesting(ctx, entriesToCreate...)
 		So(err, ShouldBeNil)
