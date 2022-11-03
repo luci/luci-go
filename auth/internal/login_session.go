@@ -87,7 +87,10 @@ func (p *loginSessionTokenProvider) CacheKey(ctx context.Context) (*CacheKey, er
 }
 
 func (p *loginSessionTokenProvider) MintToken(ctx context.Context, base *Token) (*Token, error) {
-	// It is never correct to use this login method on bots or from scripts.
+	// It is never correct to use this login method on bots.
+	if os.Getenv("SWARMING_HEADLESS") == "1" {
+		return nil, errors.Reason("interactive login flow is forbidden on bots").Err()
+	}
 	// Check if stdout is really a terminal a real user can interact with.
 	if !terminal.IsTerminal(int(os.Stdout.Fd())) {
 		return nil, errors.Reason("interactive login flow requires the stdout to be attached to a terminal").Err()
