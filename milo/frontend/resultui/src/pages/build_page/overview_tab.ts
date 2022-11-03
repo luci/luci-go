@@ -42,6 +42,7 @@ import {
 } from '../../libs/build_utils';
 import { BUILD_STATUS_CLASS_MAP, BUILD_STATUS_DISPLAY_MAP } from '../../libs/constants';
 import { consumer } from '../../libs/context';
+import { errorHandler, forwardWithoutMsg, reportRenderError } from '../../libs/error_handler';
 import { renderMarkdown } from '../../libs/markdown_utils';
 import { renderSanitizedHTML } from '../../libs/sanitize_html';
 import { displayDuration } from '../../libs/time_utils';
@@ -61,6 +62,7 @@ const enum Dialog {
 }
 
 @customElement('milo-overview-tab')
+@errorHandler(forwardWithoutMsg)
 @consumer
 export class OverviewTabElement extends MobxLitElement {
   @observable.ref
@@ -469,7 +471,7 @@ export class OverviewTabElement extends MobxLitElement {
     `;
   }
 
-  protected render() {
+  protected render = reportRenderError(this, () => {
     const build = this.store.buildPage.build?.data;
     if (!build) {
       return html``;
@@ -507,7 +509,7 @@ export class OverviewTabElement extends MobxLitElement {
         </div>
       </div>
     `;
-  }
+  });
 
   static styles = [
     commonStyle,
