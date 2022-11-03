@@ -75,7 +75,10 @@ func NewUpdater(env *common.Env, tn *tryjob.Notifier, rm rmNotifier) *Updater {
 		backends:   make(map[string]updaterBackend, 1),
 	}
 	tn.Bindings.Update.AttachHandler(func(ctx context.Context, payload proto.Message) error {
-		return common.TQifyError(ctx, u.handleTask(ctx, payload.(*tryjob.UpdateTryjobTask)))
+		err := u.handleTask(ctx, payload.(*tryjob.UpdateTryjobTask))
+		return common.TQIfy{
+			KnownRetry: []error{errStaleTryjobData},
+		}.Error(ctx, err)
 	})
 	return u
 }
@@ -96,6 +99,10 @@ func (u *Updater) RegisterBackend(b updaterBackend) {
 	u.backends[kind] = b
 }
 
+// errStaleTryjobData may be returned by handle task if a concurrent task
+// updates the Tryjob entity while this task is in the middle of update.
+var errStaleTryjobData = errors.New("loaded stale Tryjob data", transient.Tag)
+
 // handleTask handles an UpdateTryjobTask.
 //
 // This task involves checking the status of a Tryjob and updating its
@@ -104,12 +111,12 @@ func (u *Updater) handleTask(ctx context.Context, task *tryjob.UpdateTryjobTask)
 	tj := &tryjob.Tryjob{ID: common.TryjobID(task.Id)}
 	switch {
 	case task.GetId() != 0:
-		switch err := datastore.Get(ctx, tj); {
-		case err == nil:
+		switch err := datastore.Get(ctx, tj); err {
+		case nil:
 			if task.GetExternalId() != "" && task.GetExternalId() != string(tj.ExternalID) {
 				return errors.Reason("the given internal and external IDs for the Tryjob do not match").Err()
 			}
-		case err == datastore.ErrNoSuchEntity:
+		case datastore.ErrNoSuchEntity:
 			return errors.Annotate(err, "unknown Tryjob with ID %d", task.Id).Err()
 		default:
 			return errors.Annotate(err, "loading Tryjob with ID %d", task.Id).Tag(transient.Tag).Err()
@@ -152,7 +159,7 @@ func (u *Updater) handleTask(ctx context.Context, task *tryjob.UpdateTryjobTask)
 		}
 		if loadedEVer != tj.EVersion {
 			// A parallel task must have already updated this Tryjob; retry.
-			return errors.Reason("the tryjob data has changed").Tag(transient.Tag).Err()
+			return errStaleTryjobData
 		}
 
 		if tj.LaunchedBy != "" && status == tryjob.Status_ENDED && tj.Status != status {
