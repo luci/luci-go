@@ -900,6 +900,117 @@ func TestSetReview(t *testing.T) {
 			},
 		})
 	})
+
+	Convey("Set Review can add reviewers", t, func() {
+		var actualURL *url.URL
+		var actualRawBody []byte
+		srv, c := newMockPbClient(func(w http.ResponseWriter, r *http.Request) {
+			actualURL = r.URL
+			actualRawBody, _ = io.ReadAll(r.Body)
+			w.WriteHeader(200)
+			w.Header().Set("Content-Type", "application/json")
+			fmt.Fprint(w, `)]}'
+			{
+				"reviewers": {
+					"jdoe@example.com": {
+						"input": "jdoe@example.com",
+						"reviewers": [
+							{
+								"_account_id": 10001,
+								"name": "John Doe",
+								"email": "jdoe@example.com",
+								"approvals": {
+									"Verified": "0",
+									"Code-Review": "0"
+								}
+							}
+						]
+					},
+					"10003": {
+						"input": "10003",
+						"ccs": [
+							{
+								"_account_id": 10003,
+								"name": "Eve Smith",
+								"email": "esmith@example.com",
+								"approvals": {
+									"Verified": "0",
+									"Code-Review": "0"
+								}
+							}
+						]
+					}
+				}
+			}`)
+		})
+		defer srv.Close()
+
+		res, err := c.SetReview(ctx, &gerritpb.SetReviewRequest{
+			Number:     42,
+			Project:    "someproject",
+			RevisionId: "somerevision",
+			Message:    "This is a message",
+			Reviewers: []*gerritpb.ReviewerInput{
+				{
+					Reviewer: "jdoe@example.com",
+				},
+				{
+					Reviewer: "10003",
+					State:    gerritpb.ReviewerInput_REVIEWER_INPUT_STATE_CC,
+				},
+			},
+		})
+		So(err, ShouldBeNil)
+		So(actualURL.Path, ShouldEqual, "/changes/someproject~42/revisions/somerevision/review")
+
+		var actualBody, expectedBody map[string]interface{}
+		So(json.Unmarshal(actualRawBody, &actualBody), ShouldBeNil)
+		So(json.Unmarshal([]byte(`{
+			"message": "This is a message",
+			"reviewers": [
+				{"reviewer": "jdoe@example.com"},
+				{"reviewer": "10003", "state": "CC"}
+			]
+		}`), &expectedBody), ShouldBeNil)
+		So(actualBody, ShouldResemble, expectedBody)
+
+		So(res, ShouldResembleProto, &gerritpb.ReviewResult{
+			Reviewers: map[string]*gerritpb.AddReviewerResult{
+				"jdoe@example.com": {
+					Input: "jdoe@example.com",
+					Reviewers: []*gerritpb.ReviewerInfo{
+						{
+							Account: &gerritpb.AccountInfo{
+								Name:      "John Doe",
+								Email:     "jdoe@example.com",
+								AccountId: 10001,
+							},
+							Approvals: map[string]int32{
+								"Verified":    0,
+								"Code-Review": 0,
+							},
+						},
+					},
+				},
+				"10003": {
+					Input: "10003",
+					Ccs: []*gerritpb.ReviewerInfo{
+						{
+							Account: &gerritpb.AccountInfo{
+								Name:      "Eve Smith",
+								Email:     "esmith@example.com",
+								AccountId: 10003,
+							},
+							Approvals: map[string]int32{
+								"Verified":    0,
+								"Code-Review": 0,
+							},
+						},
+					},
+				},
+			},
+		})
+	})
 }
 
 func TestAddToAttentionSet(t *testing.T) {

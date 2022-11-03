@@ -260,6 +260,7 @@ func (c *client) SetReview(ctx context.Context, in *gerritpb.SetReviewRequest, o
 		AddToAttentionSet:                toAttentionSetInputs(in.GetAddToAttentionSet()),
 		RemoveFromAttentionSet:           toAttentionSetInputs(in.GetRemoveFromAttentionSet()),
 		IgnoreAutomaticAttentionSetRules: in.IgnoreAutomaticAttentionSetRules,
+		Reviewers:                        toReviewerInputs(in.GetReviewers()),
 	}
 	if in.Labels != nil {
 		data.Labels = make(map[string]int32)
@@ -267,11 +268,15 @@ func (c *client) SetReview(ctx context.Context, in *gerritpb.SetReviewRequest, o
 			data.Labels[k] = v
 		}
 	}
-	var resp gerritpb.ReviewResult
+	var resp reviewResult
 	if _, err := c.call(ctx, "POST", path, url.Values{}, &data, &resp, opts); err != nil {
 		return nil, errors.Annotate(err, "set review").Err()
 	}
-	return &resp, nil
+	rr, err := resp.ToProto()
+	if err != nil {
+		return nil, errors.Annotate(err, "decoding response").Err()
+	}
+	return rr, nil
 }
 
 func (c *client) AddToAttentionSet(ctx context.Context, req *gerritpb.AttentionSetRequest, opts ...grpc.CallOption) (*gerritpb.AccountInfo, error) {

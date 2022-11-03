@@ -100,6 +100,7 @@ type SourceRepoEvent struct {
 	// The detail data of the event.
 	//
 	// Types that are assignable to Event:
+	//
 	//	*SourceRepoEvent_RefUpdateEvent_
 	//	*SourceRepoEvent_CreateRepoEvent_
 	//	*SourceRepoEvent_DeleteRepoEvent_

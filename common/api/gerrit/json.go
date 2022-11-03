@@ -500,6 +500,7 @@ type reviewInput struct {
 	AddToAttentionSet                []*attentionSetInput `json:"add_to_attention_set,omitempty"`
 	RemoveFromAttentionSet           []*attentionSetInput `json:"remove_from_attention_set,omitempty"`
 	IgnoreAutomaticAttentionSetRules bool                 `json:"ignore_automatic_attention_set_rules,omitempty"`
+	Reviewers                        []*reviewerInput     `json:"reviewers,omitempty"`
 }
 
 type notifyInfo struct {
@@ -578,6 +579,52 @@ func toAttentionSetInputs(in []*gerritpb.AttentionSetInput) []*attentionSetInput
 		out[i] = toAttentionSetInput(x)
 	}
 	return out
+}
+
+type reviewerInput struct {
+	Reviewer string `json:"reviewer"`
+	State    string `json:"state,omitempty"`
+}
+
+func toReviewerInputs(in []*gerritpb.ReviewerInput) []*reviewerInput {
+	if len(in) == 0 {
+		return nil
+	}
+
+	out := make([]*reviewerInput, len(in))
+	for i, x := range in {
+		out[i] = &reviewerInput{
+			Reviewer: x.Reviewer,
+			State:    enumToString(int32(x.State.Number()), gerritpb.ReviewerInput_State_name),
+		}
+	}
+	return out
+}
+
+type reviewResult struct {
+	Labels    map[string]int32              `json:"labels,omitempty"`
+	Reviewers map[string]*addReviewerResult `json:"reviewers,omitempty"`
+}
+
+func (rr *reviewResult) ToProto() (*gerritpb.ReviewResult, error) {
+	result := &gerritpb.ReviewResult{
+		Labels: rr.Labels,
+	}
+	if len(rr.Reviewers) == 0 {
+		return result, nil
+	}
+
+	reviewers := make(map[string]*gerritpb.AddReviewerResult, len(rr.Reviewers))
+	for i, x := range rr.Reviewers {
+		reviewerDetails, err := x.ToProto()
+		if err != nil {
+			return nil, err
+		}
+		reviewers[i] = reviewerDetails
+	}
+	result.Reviewers = reviewers
+
+	return result, nil
 }
 
 type projectInfo struct {

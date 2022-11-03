@@ -1087,6 +1087,35 @@ message SetReviewRequest {
   // Updates in add_to_attention_set and remove_from_attention_set are not
   // ignored.
   bool ignore_automatic_attention_set_rules = 14;
+
+  // list of ReviewerInput entities representing reviewers that should be
+  // added to the change.
+  repeated ReviewerInput reviewers = 15;
+}
+
+// Information to add reviewers to a change.
+//
+// Fields are a subset of arguments from:
+// https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#reviewer-input
+message ReviewerInput {
+  // The ID of a single account or group to review the change.
+  //
+  // https://gerrit-review.googlesource.com/Documentation/rest-api-accounts.html#account-id
+  string reviewer = 1;
+
+  // Subset of reviewer states. See the "state" entry at
+  // https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#reviewer-input
+  enum State {
+    REVIEWER_INPUT_STATE_UNSPECIFIED = 0;
+    REVIEWER_INPUT_STATE_REVIEWER = 1;
+    REVIEWER_INPUT_STATE_CC = 2;
+  }
+
+  // Optional - Add reviewer in this state.
+  //
+  // Possible reviewer states are REVIEWER and CC. If not given,
+  // Gerrit defaults to REVIEWER.
+  State state = 2;
 }
 
 // Information returned by a SetReview RPC.
@@ -1097,6 +1126,12 @@ message ReviewResult {
   // Map of labels to values after the review was posted. Null if any reviewer
   // additions were rejected.
   map<string, int32> labels = 1;
+
+  // Map of account or group identifier to ReviewerResult representing
+  // the outcome of adding a reviewer.
+  //
+  // Absent if no reviewer additions were requested.
+  map<string, AddReviewerResult> reviewers = 2;
 }
 
 // Information to add/remove a user from the attention set of a change.
