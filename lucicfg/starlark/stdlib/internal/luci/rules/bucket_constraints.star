@@ -15,9 +15,10 @@
 """Defines luci.bucket_constraints(...) rule."""
 
 load("@stdlib//internal/graph.star", "graph")
+load("@stdlib//internal/luci/common.star", "keys", "kinds")
+load("@stdlib//internal/luci/rules/binding.star", "binding")
 load("@stdlib//internal/lucicfg.star", "lucicfg")
 load("@stdlib//internal/validate.star", "validate")
-load("@stdlib//internal/luci/common.star", "keys", "kinds")
 
 def _bucket_constraints(
         ctx,  # @unused
@@ -25,6 +26,9 @@ def _bucket_constraints(
         pools = None,
         service_accounts = None):
     """Adds constraints to a bucket.
+
+    `service_accounts` added as the bucket's constraints will also be granted
+    `role/buildbucket.builderServiceAccount` role.
 
     Used inline in luci.bucket(...) declarations to provide `pools` and
     `service_accounts` constraints for a bucket. `bucket` argument can be
@@ -72,6 +76,16 @@ def _bucket_constraints(
       service_accounts: list of allowed service accounts to add to the bucket's
         constraints.
     """
+    pools = validate.str_list("pools", pools, required = False)
+    service_accounts = validate.str_list("service_accounts", service_accounts, required = False)
+
+    # This will be attached to the realm that has this constraint.
+    binding_key = None
+    if service_accounts:
+        binding_key = binding(
+            roles = "role/buildbucket.builderServiceAccount",
+            users = service_accounts,
+        ).get(kinds.BINDING)
 
     # Note: name of this node is important only for error messages. It isn't
     # showing up in any generated files and by construction it can't
@@ -79,21 +93,25 @@ def _bucket_constraints(
     if bucket == None:
         key = keys.unique(kinds.BUCKET_CONSTRAINTS, "")
     else:
-        key = keys.unique(kinds.BUCKET_CONSTRAINTS, bucket)
+        key = keys.unique(kinds.BUCKET_CONSTRAINTS, keys.bucket(bucket).id)
 
-    props = {
-        "pools": validate.str_list("pools", pools, required = False),
-        "service_accounts": validate.str_list("service_accounts", service_accounts, required = False),
-    }
-    graph.add_node(key, props = props)
+    graph.add_node(key, props = {
+        "pools": pools,
+        "service_accounts": service_accounts,
+    })
     if bucket != None:
         graph.add_edge(parent = keys.bucket(bucket), child = key)
+        if binding_key:
+            graph.add_edge(parent = keys.realm(bucket), child = binding_key)
 
-    # This is used to detect bucket_constraints nodes that aren't connected to any
-    # bucket. Such orphan nodes aren't allowed.
+    # This is used to detect bucket_constraints nodes that aren't connected to
+    # any bucket. Such orphan nodes aren't allowed.
     graph.add_node(keys.bucket_constraints_root(), idempotent = True)
     graph.add_edge(parent = keys.bucket_constraints_root(), child = key)
 
-    return graph.keyset(key)
+    keyset = [key]
+    if binding_key:
+        keyset.append(binding_key)
+    return graph.keyset(*keyset)
 
 bucket_constraints = lucicfg.rule(impl = _bucket_constraints)

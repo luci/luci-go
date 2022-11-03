@@ -2605,6 +2605,9 @@ luci.bucket_constraints(bucket = None, pools = None, service_accounts = None)
 
 Adds constraints to a bucket.
 
+`service_accounts` added as the bucket's constraints will also be granted
+`role/buildbucket.builderServiceAccount` role.
+
 Used inline in [luci.bucket(...)](#luci.bucket) declarations to provide `pools` and
 `service_accounts` constraints for a bucket. `bucket` argument can be
 omitted in this case:

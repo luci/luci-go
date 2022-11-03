@@ -11,13 +11,13 @@ luci.bucket(
     shadows = "ci",
     constraints = luci.bucket_constraints(
         pools = ["luci.project.shadow"],
-        service_accounts = ["shadow-sa@chops-service-account.com"],
+        service_accounts = ["account-1@example.com"],
     ),
 )
 
 luci.bucket_constraints(
     bucket = "ci.shadow",
-    service_accounts = ["ci-sa@chops-service-accounts.iam.gserviceaccount.com"],
+    service_accounts = ["account-2@example.com"],
 )
 luci.bucket_constraints(
     bucket = "ci.shadow",
@@ -33,16 +33,33 @@ luci.builder(
     name = "linux ci builder",
     bucket = "ci",
     executable = "main/recipe",
-    service_account = "builder@example.com",
+    service_account = "account-3@example.com",
     dimensions = {
         "os": "Linux",
         "pool": "luci.ci.tester",
     },
 )
 
+luci.bucket_constraints(
+    bucket = luci.bucket(name = "another"),
+    service_accounts = ["account-4@example.com"],
+)
+
+# Service accounts are actually optional.
+luci.bucket(
+    name = "one-more",
+    constraints = luci.bucket_constraints(pools = ["luci.chromium.ci"]),
+)
+
 # Expect configs:
 #
 # === cr-buildbucket.cfg
+# buckets {
+#   name: "another"
+#   constraints {
+#     service_accounts: "account-4@example.com"
+#   }
+# }
 # buckets {
 #   name: "ci"
 #   swarming {
@@ -56,13 +73,13 @@ luci.builder(
 #         cipd_package: "recipe/bundles/main"
 #         cipd_version: "refs/heads/main"
 #       }
-#       service_account: "builder@example.com"
+#       service_account: "account-3@example.com"
 #     }
 #   }
 #   shadow: "ci.shadow"
 #   constraints {
 #     pools: "luci.ci.tester"
-#     service_accounts: "builder@example.com"
+#     service_accounts: "account-3@example.com"
 #   }
 # }
 # buckets {
@@ -70,8 +87,14 @@ luci.builder(
 #   constraints {
 #     pools: "luci.chromium.ci"
 #     pools: "luci.project.shadow"
-#     service_accounts: "ci-sa@chops-service-accounts.iam.gserviceaccount.com"
-#     service_accounts: "shadow-sa@chops-service-account.com"
+#     service_accounts: "account-1@example.com"
+#     service_accounts: "account-2@example.com"
+#   }
+# }
+# buckets {
+#   name: "one-more"
+#   constraints {
+#     pools: "luci.chromium.ci"
 #   }
 # }
 # ===
@@ -85,13 +108,28 @@ luci.builder(
 #   name: "@root"
 # }
 # realms {
+#   name: "another"
+#   bindings {
+#     role: "role/buildbucket.builderServiceAccount"
+#     principals: "user:account-4@example.com"
+#   }
+# }
+# realms {
 #   name: "ci"
 #   bindings {
 #     role: "role/buildbucket.builderServiceAccount"
-#     principals: "user:builder@example.com"
+#     principals: "user:account-3@example.com"
 #   }
 # }
 # realms {
 #   name: "ci.shadow"
+#   bindings {
+#     role: "role/buildbucket.builderServiceAccount"
+#     principals: "user:account-1@example.com"
+#     principals: "user:account-2@example.com"
+#   }
+# }
+# realms {
+#   name: "one-more"
 # }
 # ===

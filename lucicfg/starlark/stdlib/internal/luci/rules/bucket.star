@@ -99,19 +99,21 @@ def _bucket(
             # Use an edge to make sure that `shadows` bucket is actually defined.
             graph.add_edge(key, keys.shadowed_bucket(shadowed), title = "shadows")
 
-    # Add bucket constraints.
-    if constraints != None:
-        graph.add_edge(key, constraints.get(kinds.BUCKET_CONSTRAINTS))
-
-    # Define the realm and grab its keyset.
-    realm_ref = realm(
+    # Define the realm and grab its key.
+    realm_key = realm(
         name = name,
         extends = extends,
         bindings = bindings,
-    )
+    ).get(kinds.REALM)
+
+    # Add bucket constraints, including the associated binding.
+    if constraints != None:
+        graph.add_edge(key, constraints.get(kinds.BUCKET_CONSTRAINTS))
+        if constraints.has(kinds.BINDING):
+            graph.add_edge(realm_key, constraints.get(kinds.BINDING))
 
     # Return both the bucket and the realm keys, so callers can pick the one
     # they need based on its kind.
-    return graph.keyset(key, realm_ref.get(kinds.REALM))
+    return graph.keyset(key, realm_key)
 
 bucket = lucicfg.rule(impl = _bucket)
