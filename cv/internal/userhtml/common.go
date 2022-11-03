@@ -28,7 +28,6 @@ import (
 	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
-	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/grpc/grpcutil"
 	"go.chromium.org/luci/server"
 	"go.chromium.org/luci/server/analytics"
@@ -142,7 +141,6 @@ func displayCLExternalID(eid changelist.ExternalID) string {
 }
 
 func errPage(c *router.Context, err error) {
-	logging.Errorf(c.Context, "Error: %s", err)
 	err = errors.Unwrap(err)
 	code := grpcutil.CodeStatus(status.Code(err))
 	c.Writer.WriteHeader(code)
