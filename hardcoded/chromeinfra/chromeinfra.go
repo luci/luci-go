@@ -90,18 +90,29 @@ const (
 	TokenServerDevHost = "luci-token-server-dev.appspot.com"
 )
 
+var (
+	oauthInit         sync.Once
+	oauthClientID     string
+	oauthClientSecret string
+)
+
 // DefaultAuthOptions returns auth.Options struct prefilled with chrome-infra
 // defaults.
 func DefaultAuthOptions() auth.Options {
-	// Note that ClientSecret is not really a secret since it's hardcoded into
-	// the source code (and binaries). It's totally fine, as long as it's callback
-	// URI is configured to be 'localhost'. If someone decides to reuse such
-	// ClientSecret they have to run something on user's local machine anyway
-	// to get the refresh_token.
+	// This is temporary until the client ID becomes default.
+	oauthInit.Do(func() {
+		if os.Getenv("LUCI_AUTH_LOGIN_SESSIONS_HOST") != "" {
+			oauthClientID = "446450136466-mj75ourhccki9fffaq8bc1e50di315po.apps.googleusercontent.com"
+			oauthClientSecret = "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"
+		} else {
+			oauthClientID = "446450136466-2hr92jrq8e6i4tnsa56b52vacp7t3936.apps.googleusercontent.com"
+			oauthClientSecret = "uBfbay2KCy9t4QveJ-dOqHtp"
+		}
+	})
 	return auth.Options{
 		TokenServerHost: TokenServerHost,
-		ClientID:        "446450136466-2hr92jrq8e6i4tnsa56b52vacp7t3936.apps.googleusercontent.com",
-		ClientSecret:    "uBfbay2KCy9t4QveJ-dOqHtp",
+		ClientID:        oauthClientID,
+		ClientSecret:    oauthClientSecret,
 		SecretsDir:      SecretsDir(),
 	}
 }
