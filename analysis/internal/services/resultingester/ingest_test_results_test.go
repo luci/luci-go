@@ -1047,25 +1047,10 @@ func TestIngestTestResults(t *testing.T) {
 						Fields: buildReadMask,
 					},
 				}
-				ancestorResponse := mockedGetBuildRsp(inv)
+				ancestorInvocation := "invocations/build-999324"
+				ancestorResponse := mockedGetBuildRsp(ancestorInvocation)
 
-				Convey(`build not ingested if ancestor has ResultDB invocation`, func() {
-					mbc.GetBuild(ancestorRequest, ancestorResponse)
-
-					// Act
-					err := ri.ingestTestResults(ctx, payload)
-					So(err, ShouldBeNil)
-
-					// Verify no test results ingested into test history.
-					var actualTRs []*testresults.TestResult
-					err = testresults.ReadTestResults(span.Single(ctx), spanner.AllKeys(), func(tr *testresults.TestResult) error {
-						actualTRs = append(actualTRs, tr)
-						return nil
-					})
-					So(err, ShouldBeNil)
-					So(actualTRs, ShouldHaveLength, 0)
-				})
-				Convey(`build ingested if ancestor has no ResultDB invocation`, func() {
+				Convey(`if ancestor has no ResultDB invocation`, func() {
 					ancestorResponse.Infra.Resultdb = nil
 					mbc.GetBuild(ancestorRequest, ancestorResponse)
 
@@ -1083,6 +1068,54 @@ func TestIngestTestResults(t *testing.T) {
 					// Verify test results still ingested.
 					expectCommitPosition := true
 					verifyTestResults(expectCommitPosition)
+				})
+				Convey(`if ancestor has ResultDB invocation`, func() {
+					mbc.GetBuild(ancestorRequest, ancestorResponse)
+
+					invReq := &rdbpb.GetInvocationRequest{
+						Name: ancestorInvocation,
+					}
+					invRes := &rdbpb.Invocation{
+						Name:  ancestorInvocation,
+						Realm: realm,
+					}
+
+					Convey(`if ancestor ResultDB invocation contains invocation`, func() {
+						invRes.IncludedInvocations = []string{inv}
+						mrc.GetInvocation(invReq, invRes)
+
+						// Act
+						err := ri.ingestTestResults(ctx, payload)
+						So(err, ShouldBeNil)
+
+						// Verify no test results ingested into test history.
+						var actualTRs []*testresults.TestResult
+						err = testresults.ReadTestResults(span.Single(ctx), spanner.AllKeys(), func(tr *testresults.TestResult) error {
+							actualTRs = append(actualTRs, tr)
+							return nil
+						})
+						So(err, ShouldBeNil)
+						So(actualTRs, ShouldHaveLength, 0)
+					})
+					Convey(`if ancestor ResultDB invocation does not contain invocation`, func() {
+						invRes.IncludedInvocations = nil
+						mrc.GetInvocation(invReq, invRes)
+
+						// Setup other mocks required to support test result
+						// ingestion.
+						setupGetInvocationMock()
+						setupQueryTestVariantsMock()
+						_, err := control.SetEntriesForTesting(ctx, ingestionCtl)
+						So(err, ShouldBeNil)
+
+						// Act
+						err = ri.ingestTestResults(ctx, payload)
+						So(err, ShouldBeNil)
+
+						// Verify test results still ingested.
+						expectCommitPosition := true
+						verifyTestResults(expectCommitPosition)
+					})
 				})
 			})
 		})
