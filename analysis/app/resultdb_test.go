@@ -71,9 +71,7 @@ func TestHandleInvocationFinalization(t *testing.T) {
 		Convey(`With non-presubmit build ingested previously`, func() {
 			So(ingestBuild(ctx, build), ShouldBeNil)
 
-			// TODO(b/255850466): Stop expecting join to complete
-			// at this point once join condition updated.
-			assertTasksExpected()
+			So(len(skdr.Tasks().Payloads()), ShouldEqual, 0)
 
 			So(ingestFinalization(ctx, build.buildID), ShouldBeNil)
 
@@ -105,9 +103,7 @@ func TestHandleInvocationFinalization(t *testing.T) {
 					CreationTime: timestamppb.New(cvCreateTime),
 				}
 
-				// TODO(b/255850466): Stop expecting join to complete
-				// at this point once join condition updated.
-				assertTasksExpected()
+				So(len(skdr.Tasks().Payloads()), ShouldEqual, 0)
 
 				So(ingestFinalization(ctx, build.buildID), ShouldBeNil)
 
@@ -121,10 +117,7 @@ func TestHandleInvocationFinalization(t *testing.T) {
 				So(cvBuildInputCounter.Get(ctx, "cvproject"), ShouldEqual, 1)
 				So(cvBuildOutputCounter.Get(ctx, "cvproject"), ShouldEqual, 1)
 				So(rdbBuildInputCounter.Get(ctx, "invproject"), ShouldEqual, 1)
-
-				// TODO(b/255850466): Expect this to report join of the
-				// invocation once join condition updated.
-				So(rdbBuildOutputCounter.Get(ctx, "invproject"), ShouldEqual, 0)
+				So(rdbBuildOutputCounter.Get(ctx, "invproject"), ShouldEqual, 1)
 			})
 			Convey(`Without LUCI CV run ingested previously`, func() {
 				So(ingestFinalization(ctx, build.buildID), ShouldBeNil)

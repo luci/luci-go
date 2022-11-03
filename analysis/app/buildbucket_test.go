@@ -130,9 +130,7 @@ func TestHandleBuild(t *testing.T) {
 			Convey(`Without invocation finalization acknowledged previously`, func() {
 				So(ingestBuild(ctx, build), ShouldBeNil)
 
-				// TODO(b/255850466): Stop expecting join to complete
-				// at this point once join condition updated.
-				assertTasksExpected()
+				So(len(skdr.Tasks().Payloads()), ShouldEqual, 0)
 			})
 			Convey(`With invocation finalization acknowledged previously`, func() {
 				So(ingestFinalization(ctx, build.buildID), ShouldBeNil)

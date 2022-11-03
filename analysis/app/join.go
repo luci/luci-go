@@ -374,17 +374,10 @@ func (t *taskDetails) reportMetrics(ctx context.Context) {
 // if all necessary data for the ingestion is available. Returns true if the
 // task was created.
 func createTasksIfNeeded(ctx context.Context, e *control.Entry) bool {
-	// TODO(b/255850466): Update the join criteria to include the InvocationResult,
-	// once the data has been populating into the table for a time.
-	if e.BuildResult == nil || (e.IsPresubmit && e.PresubmitResult == nil) {
-		return false
-	}
-	// TODO(b/255850466): Stop creating another task if one has already been
-	// created. This is needed to avoid a duplicate result-ingestion task
-	// being created when the invocation result joins and the join criteria
-	// is already satisfied.
-	// Remove once migration to new join logic complete.
-	if e.TaskCount > 0 {
+	joinComplete := e.BuildResult != nil &&
+		(!e.IsPresubmit || e.PresubmitResult != nil) &&
+		(!e.HasInvocation || e.InvocationResult != nil)
+	if !joinComplete {
 		return false
 	}
 

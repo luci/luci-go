@@ -173,7 +173,10 @@ func processBBMessage(ctx context.Context, message *buildBucketMessage) (process
 	if invocationName != "" {
 		wantInvocationName := pbutil.InvocationName(fmt.Sprintf("build-%v", message.Build.Id))
 		if invocationName != wantInvocationName {
-			logging.Warningf(ctx, "Build %v has unexpected ResultDB invocation (got %v, want %v)", id, invocationName, wantInvocationName)
+			// If a build does not have an invocation of this form, it will never
+			// be successfully joined by our implementation. It is better to
+			// fail now in an obvious manner than fail later silently.
+			return false, errors.Reason("build %v had unexpected ResultDB invocation (got %v, want %v)", id, invocationName, wantInvocationName).Err()
 		}
 		hasInvocation = true
 	}
