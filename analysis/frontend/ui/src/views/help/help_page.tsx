@@ -207,7 +207,7 @@ const HelpPage = () => {
           </Typography>
           <Typography paragraph>
             <strong>If the bug closure is erroneous,</strong> go to the rule page (a link to this page is in the comment accompanying
-            the the closure), and turn the <em>Update bug</em> slider in the <em>Associated bug</em> panel to off.
+            the the closure), and turn the <em>Update bug</em> switch in the <em>Associated bug</em> panel to off.
             Then manually set the bug state you desire.
           </Typography>
         </AccordionDetails>
@@ -233,7 +233,7 @@ const HelpPage = () => {
                 let LUCI Analysis verify the fix (this could take up to 7 days).</li>
               <li>
                 Alternatively, you can stop LUCI Analysis overriding the bug by turning off the <em>Update bug</em>
-                &nbsp;slider on the rule page.
+                &nbsp;switch on the rule page.
               </li>
             </ul>
           </Typography>
