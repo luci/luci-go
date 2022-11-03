@@ -167,7 +167,7 @@ func TestListenerConfigValidation(t *testing.T) {
 				`)
 				So(validateListenerSettings(vctx, configSet, path, []byte(cfg)), ShouldBeNil)
 				So(vctx.Finalize().Error(), ShouldContainSubstring,
-					"invalid Settings_GerritSubscription.MessageFormat: value must not be in list [0]")
+					"message_format): must be specified")
 			})
 		})
 	})

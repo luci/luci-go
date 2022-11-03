@@ -79,6 +79,11 @@ func validateListenerSettings(ctx *validation.Context, configSet, path string, c
 		if !hosts.Add(id) {
 			ctx.Errorf("duplicate subscription ID %q", id)
 		}
+		if sub.GetMessageFormat() == listenerpb.Settings_GerritSubscription_MESSAGE_FORMAT_UNSPECIFIED {
+			ctx.Enter("message_format")
+			ctx.Errorf("must be specified")
+			ctx.Exit()
+		}
 		ctx.Exit()
 	}
 	validateRegexp(ctx, "enabled_project_regexps", cfg.GetEnabledProjectRegexps())
