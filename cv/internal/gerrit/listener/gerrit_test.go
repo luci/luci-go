@@ -16,9 +16,15 @@ package listener
 
 import (
 	"context"
+	"fmt"
 	"testing"
 
 	"cloud.google.com/go/pubsub"
+	"google.golang.org/protobuf/encoding/protojson"
+	"google.golang.org/protobuf/proto"
+
+	gerritpb "go.chromium.org/luci/common/proto/gerrit"
+
 	"go.chromium.org/luci/cv/internal/changelist"
 	"go.chromium.org/luci/cv/internal/cvtesting"
 	listenerpb "go.chromium.org/luci/cv/settings/listener"
@@ -46,7 +52,10 @@ func TestGerrit(t *testing.T) {
 		client, closeFn := mockPubSub(ctx)
 		defer closeFn()
 		finder := &projectFinder{}
-		settings := &listenerpb.Settings_GerritSubscription{Host: "example.org"}
+		settings := &listenerpb.Settings_GerritSubscription{
+			Host:          "example.org",
+			MessageFormat: listenerpb.Settings_GerritSubscription_JSON,
+		}
 
 		Convey("create a reference to subscription", func() {
 			sber := newGerritSubscriber(client, &testScheduler{}, finder, settings)
@@ -102,7 +111,6 @@ func TestGerrit(t *testing.T) {
 
 		Convey("processes", func() {
 			sch := &testScheduler{}
-			sber := newGerritSubscriber(client, sch, finder, settings)
 			msg := &pubsub.Message{}
 			createTestLUCIProject(ctx, "chromium", "https://example.org/", "abc/foo")
 			payload := []byte(`{
@@ -121,20 +129,36 @@ func TestGerrit(t *testing.T) {
 					}
 				}
 			}`)
+			process := func() *subscriber {
+				sber := newGerritSubscriber(client, sch, finder, settings)
+				So(sber.proc.process(ctx, msg), ShouldBeNil)
+				return sber
+			}
 
 			Convey("empty", func() {
-				So(sber.proc.process(ctx, msg), ShouldBeNil)
+				process()
 				So(sch.tasks, ShouldHaveLength, 0)
 			})
 			Convey("message from an unwatched repo", func() {
 				msg.Data = payload
-				So(sber.proc.process(ctx, msg), ShouldBeNil)
+				process()
 				So(sch.tasks, ShouldHaveLength, 0)
 			})
 			Convey("message from a watched repo", func() {
 				So(finder.reload([]string{"chromium"}), ShouldBeNil)
-				msg.Data = payload
-				So(sber.proc.process(ctx, msg), ShouldBeNil)
+
+				Convey("in json", func() {
+					msg.Data = payload
+				})
+				Convey("in binary", func() {
+					event := &gerritpb.SourceRepoEvent{}
+					So(protojson.Unmarshal(payload, event), ShouldBeNil)
+					bin, err := proto.Marshal(event)
+					So(err, ShouldBeNil)
+					msg.Data = bin
+					settings.MessageFormat = listenerpb.Settings_GerritSubscription_PROTO_BINARY
+				})
+				process()
 				So(sch.tasks, ShouldResembleProto, []*changelist.UpdateCLTask{
 					{
 						LuciProject: "chromium",
@@ -143,6 +167,31 @@ func TestGerrit(t *testing.T) {
 						Hint:        &changelist.UpdateCLTask_Hint{MetaRevId: "feas"},
 					},
 				})
+			})
+
+			Convey("panic for an unknown enum", func() {
+				// This test is to ensure that gerritProcessor.process() handles
+				// all the enums defined for gerrit_subscription.message_format.
+				//
+				// If this test ever panics, it means that a new enum was added
+				// but gerritProcessor.process() was not updated to handle
+				// the new format. Please fix.
+				msg.Data = payload
+				for name, val := range listenerpb.Settings_GerritSubscription_MessageFormat_value {
+					switch name {
+					case listenerpb.Settings_GerritSubscription_MESSAGE_FORMAT_UNSPECIFIED.String():
+					case listenerpb.Settings_GerritSubscription_JSON.String():
+					case listenerpb.Settings_GerritSubscription_PROTO_BINARY.String():
+					default:
+						// this must cause a panic.
+						settings.MessageFormat = listenerpb.Settings_GerritSubscription_MessageFormat(val)
+						process()
+						panic(fmt.Errorf(
+							"gerritProcessor.process() didn't panic for an unknown enum %s",
+							name,
+						))
+					}
+				}
 			})
 		})
 	})

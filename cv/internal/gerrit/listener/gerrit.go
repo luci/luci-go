@@ -16,11 +16,13 @@ package listener
 
 import (
 	"context"
+	"fmt"
 	"strconv"
 	"strings"
 
 	"cloud.google.com/go/pubsub"
 	"google.golang.org/protobuf/encoding/protojson"
+	"google.golang.org/protobuf/proto"
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
@@ -36,6 +38,7 @@ type gerritProcessor struct {
 	sch       scheduler
 	host      string
 	prjFinder *projectFinder
+	msgFormat listenerpb.Settings_GerritSubscription_MessageFormat
 }
 
 // process processes a given Gerrit pubsub message and schedules UpdateCLTask(s)
@@ -45,8 +48,21 @@ func (p *gerritProcessor) process(ctx context.Context, m *pubsub.Message) error 
 		return nil
 	}
 	msg := &gerritpb.SourceRepoEvent{}
-	if err := protojson.Unmarshal(m.Data, msg); err != nil {
-		return errors.Annotate(err, "json.Unmarshal").Err()
+	switch p.msgFormat {
+	case listenerpb.Settings_GerritSubscription_MESSAGE_FORMAT_UNSPECIFIED:
+		// Validation shouldn't allow this config.
+		panic(fmt.Errorf("impossible; MESSAGE_FORMAT_UNSPECIFIED"))
+	case listenerpb.Settings_GerritSubscription_JSON:
+		if err := protojson.Unmarshal(m.Data, msg); err != nil {
+			return errors.Annotate(err, "protojson.Unmarshal").Err()
+		}
+	case listenerpb.Settings_GerritSubscription_PROTO_BINARY:
+		if err := proto.Unmarshal(m.Data, msg); err != nil {
+			return errors.Annotate(err, "proto.Unmarshal").Err()
+		}
+	default:
+		// This must be a bug. A unit test should prevent this from happening.
+		panic(fmt.Errorf("impossible; missing an enum for GerritSubscription.MessageFormat"))
 	}
 
 	var repo string
@@ -140,6 +156,7 @@ func newGerritSubscriber(c *pubsub.Client, sch scheduler, prjFinder *projectFind
 			sch:       sch,
 			host:      settings.GetHost(),
 			prjFinder: prjFinder,
+			msgFormat: settings.GetMessageFormat(),
 		},
 	}
 	sber.sub.ReceiveSettings.NumGoroutines = defaultNumGoroutines
