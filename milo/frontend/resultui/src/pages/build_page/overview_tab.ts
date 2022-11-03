@@ -46,6 +46,7 @@ import { errorHandler, forwardWithoutMsg, reportRenderError } from '../../libs/e
 import { renderMarkdown } from '../../libs/markdown_utils';
 import { renderSanitizedHTML } from '../../libs/sanitize_html';
 import { displayDuration } from '../../libs/time_utils';
+import { unwrapOrElse } from '../../libs/utils';
 import { router } from '../../routes';
 import { ADD_BUILD_PERM, BuildStatus, CANCEL_BUILD_PERM, GitilesCommit } from '../../services/buildbucket';
 import { createTVPropGetter, getPropKeyLabel } from '../../services/resultdb';
@@ -188,7 +189,15 @@ export class OverviewTabElement extends MobxLitElement {
   }
 
   private renderBuilderDescription() {
-    const descriptionHtml = this.store.buildPage.builder?.config.descriptionHtml;
+    const descriptionHtml = unwrapOrElse(
+      () => this.store.buildPage.builder?.config.descriptionHtml,
+      (err) => {
+        // The builder config might've been deleted from buildbucket or the
+        // builder is a dynamic builder.
+        console.warn('failed to get builder description', err);
+        return undefined;
+      }
+    );
     if (!descriptionHtml) {
       return html``;
     }
