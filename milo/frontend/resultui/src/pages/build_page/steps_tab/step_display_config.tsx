@@ -77,7 +77,7 @@ export const StepDisplayConfig = observer(() => {
   return (
     <Box sx={{ mt: -0.5 }}>
       <LabeledCheckBox
-        label="Elide Succeeded Steps"
+        label="Hide Succeeded Steps"
         checked={stepsConfig.elideSucceededSteps}
         onChange={(checked) => stepsConfig.setElideSucceededSteps(checked)}
         sx={{ mr: 1 }}
