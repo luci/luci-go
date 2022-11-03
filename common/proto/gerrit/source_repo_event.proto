@@ -6,6 +6,8 @@ syntax = "proto3";
 
 package gerrit;
 
+import "google/protobuf/timestamp.proto";
+
 option go_package = "go.chromium.org/luci/common/proto/gerrit;gerritpb";
 
 // Cloud Pub/Sub message payload for all events in Source Repo API.
@@ -64,7 +66,7 @@ message SourceRepoEvent {
   }
 
   // The timestamp that this event happened.
-  string event_time = 3;
+  google.protobuf.Timestamp event_time = 3;
 
   // The detail data of the event.
   oneof event {
