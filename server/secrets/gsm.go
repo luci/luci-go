@@ -65,7 +65,7 @@ type SecretManagerStore struct {
 //
 // See StoredSecret for the format of the root secret.
 func (sm *SecretManagerStore) LoadRootSecret(ctx context.Context, rootSecret string) error {
-	secret, err := sm.readAndTrackSecret(ctx, rootSecret, true)
+	secret, err := sm.StoredSecret(ctx, rootSecret)
 	if err != nil {
 		return errors.Annotate(err, "failed to read the initial value of the root secret").Err()
 	}
@@ -104,7 +104,7 @@ func (sm *SecretManagerStore) MaintenanceLoop(ctx context.Context) {
 			nextReload = sm.secretsByTime[0].nextReload
 		}
 		wakeUp = make(chan struct{})
-		sm.wakeUp = wakeUp // closed in readAndTrackSecret
+		sm.wakeUp = wakeUp // closed in StoredSecret
 		sm.rwm.Unlock()
 
 		sm.emitTestingEvent(ctx, "sleeping")
@@ -135,7 +135,7 @@ func (sm *SecretManagerStore) RandomSecret(ctx context.Context, name string) (Se
 	return sm.randomSecrets.RandomSecret(ctx, name)
 }
 
-// StoredSecret returns a previously stored secret given its name.
+// StoredSecret returns a stored secret given its name.
 //
 // Value of `name` should have form:
 //   - `sm://<project>/<secret>`: a concrete secret in Google Secret Manager.
@@ -143,8 +143,62 @@ func (sm *SecretManagerStore) RandomSecret(ctx context.Context, name string) (Se
 //   - `devsecret://<base64-encoded secret>`: return this concrete secret.
 //   - `devsecret-gen://tink/aead`: generate a new secret of the Tink AEAD.
 //   - `devsecret-text://<string>`: return this concrete secret.
+//
+// Caches secrets loaded from Google Secret Manager in memory and sets up
+// a periodic background task to update the cached values to facilitate graceful
+// rotation.
+//
+// Calls to StoredSecret return the latest value from this local cache and thus
+// are fast. To be notified about changes to the secret as soon as they are
+// detected use AddRotationHandler.
 func (sm *SecretManagerStore) StoredSecret(ctx context.Context, name string) (Secret, error) {
-	return sm.readAndTrackSecret(ctx, name, false)
+	name, err := sm.normalizeName(name)
+	if err != nil {
+		return Secret{}, err
+	}
+
+	sm.rwm.RLock()
+	known := sm.secretsByName[name]
+	sm.rwm.RUnlock()
+	if known != nil {
+		return known.value, nil
+	}
+
+	// Note: this lock effectively means we load one secret at a time. This should
+	// be fine, there shouldn't be many secrets. And it is probably better to
+	// serialize all loading than to hit the GSM from a lot of handlers at the
+	// same time when referring to a "popular" secret.
+	sm.rwm.Lock()
+	defer sm.rwm.Unlock()
+
+	// Double check after grabbing the write lock.
+	if known := sm.secretsByName[name]; known != nil {
+		return known.value, nil
+	}
+
+	// Read the initial values of the secret.
+	secret, err := sm.readSecret(ctx, name)
+	if err != nil {
+		return Secret{}, err
+	}
+	secret.logActiveVersions(ctx)
+	secret.logNextReloadTime(ctx)
+
+	if sm.secretsByName == nil {
+		sm.secretsByName = make(map[string]*trackedSecret, 1)
+	}
+	sm.secretsByName[name] = secret
+
+	// Wake up the MaintenanceLoop (if any) to let it reschedule the next refresh.
+	if !secret.nextReload.IsZero() {
+		heap.Push(&sm.secretsByTime, secret)
+		if sm.wakeUp != nil {
+			close(sm.wakeUp)
+			sm.wakeUp = nil
+		}
+	}
+
+	return secret.value, nil
 }
 
 // AddRotationHandler registers a callback which is called when the stored
@@ -186,13 +240,15 @@ const (
 )
 
 // trackedSecret is a secret that is periodically reread in MaintenanceLoop.
+//
+// Instances of this type are static once constructed and thus are safe to
+// share across goroutines.
 type trackedSecret struct {
-	name            string    // the name it was loaded under
-	withPrevVersion bool      // true to fetch the previous version
-	value           Secret    // the actual value
-	versions        [2]int64  // the latest and one previous (if enabled) version numbers
-	attempts        int       // how many consecutive times we failed to reload the secret
-	nextReload      time.Time // when we should reload the secret or zero if reloads are disabled
+	name       string    // the name it was loaded under
+	value      Secret    // the latest fetched state of the secret
+	versions   [2]int64  // the latest and one previous (if enabled) version numbers
+	attempts   int       // how many consecutive times we failed to reload the secret
+	nextReload time.Time // when we should reload the secret or zero for static dev secrets
 }
 
 func (s *trackedSecret) logActiveVersions(ctx context.Context) {
@@ -231,59 +287,6 @@ func (pq *trackedSecretsPQ) Pop() interface{} {
 	panic("Pop is not actually used, but defined to comply with heap.Interface")
 }
 
-func (sm *SecretManagerStore) readAndTrackSecret(ctx context.Context, name string, withPrevVersion bool) (Secret, error) {
-	name, err := sm.normalizeName(name)
-	if err != nil {
-		return Secret{}, err
-	}
-
-	sm.rwm.RLock()
-	known := sm.secretsByName[name]
-	sm.rwm.RUnlock()
-	if known != nil {
-		return known.value, nil
-	}
-
-	// Note: this lock effectively means we load one secret at a time. This should
-	// be fine, there shouldn't be many secrets. And it is probably better to
-	// serialize all loading than to hit the GSM from a lot of handlers at the
-	// same time when referring to a "popular" secret.
-	sm.rwm.Lock()
-	defer sm.rwm.Unlock()
-
-	// Double check after grabbing the write lock.
-	if known := sm.secretsByName[name]; known != nil {
-		return known.value, nil
-	}
-
-	// Read the initial values of the secret.
-	secret, err := sm.readSecret(ctx, name, withPrevVersion)
-	if err != nil {
-		return Secret{}, err
-	}
-	secret.logActiveVersions(ctx)
-	secret.logNextReloadTime(ctx)
-
-	// Note: first withPrevVersion option wins, i.e. it is impossible to convert
-	// a secret loaded withPrevVersion=false to the one withPrevVersion=true
-	// and vice-versa. This is fine, since it is private API for now.
-	if sm.secretsByName == nil {
-		sm.secretsByName = make(map[string]*trackedSecret, 1)
-	}
-	sm.secretsByName[name] = secret
-
-	// Wake up the MaintenanceLoop (if any) to let it reschedule the next refresh.
-	if !secret.nextReload.IsZero() {
-		heap.Push(&sm.secretsByTime, secret)
-		if sm.wakeUp != nil {
-			close(sm.wakeUp)
-			sm.wakeUp = nil
-		}
-	}
-
-	return secret.value, nil
-}
-
 // normalizeName check the secret name format and normalizes it.
 func (sm *SecretManagerStore) normalizeName(name string) (string, error) {
 	switch {
@@ -315,7 +318,7 @@ func (sm *SecretManagerStore) normalizeName(name string) (string, error) {
 }
 
 // readSecret fetches a secret given its normalized name.
-func (sm *SecretManagerStore) readSecret(ctx context.Context, name string, withPrevVersion bool) (*trackedSecret, error) {
+func (sm *SecretManagerStore) readSecret(ctx context.Context, name string) (*trackedSecret, error) {
 	switch {
 	case strings.HasPrefix(name, "devsecret://"):
 		value, err := base64.RawStdEncoding.DecodeString(strings.TrimPrefix(name, "devsecret://"))
@@ -349,7 +352,7 @@ func (sm *SecretManagerStore) readSecret(ctx context.Context, name string, withP
 		}, nil
 
 	case strings.HasPrefix(name, "sm://"):
-		return sm.readSecretFromGSM(ctx, name, withPrevVersion)
+		return sm.readSecretFromGSM(ctx, name)
 
 	default:
 		panic("impossible, already checked in normalizeSecretName")
@@ -357,7 +360,7 @@ func (sm *SecretManagerStore) readSecret(ctx context.Context, name string, withP
 }
 
 // readSecretFromGSM returns a sm://... secret given its normalized name.
-func (sm *SecretManagerStore) readSecretFromGSM(ctx context.Context, name string, withPrevVersion bool) (*trackedSecret, error) {
+func (sm *SecretManagerStore) readSecretFromGSM(ctx context.Context, name string) (*trackedSecret, error) {
 	logging.Debugf(ctx, "Loading secret %q", name)
 
 	// `name` here must have sm://<project>/<secret> format.
@@ -389,13 +392,12 @@ func (sm *SecretManagerStore) readSecretFromGSM(ctx context.Context, name string
 	}
 
 	result := &trackedSecret{
-		name:            name,
-		withPrevVersion: withPrevVersion,
-		value:           Secret{Active: latest.Payload.Data},
-		versions:        [2]int64{version, 0}, // note: GSM versions start with 1
-		nextReload:      nextReloadTime(ctx),
+		name:       name,
+		value:      Secret{Active: latest.Payload.Data},
+		versions:   [2]int64{version, 0}, // note: GSM versions start with 1
+		nextReload: nextReloadTime(ctx),
 	}
-	if !withPrevVersion || version == 1 {
+	if version == 1 {
 		return result, nil
 	}
 
@@ -459,7 +461,7 @@ func (sm *SecretManagerStore) reloadNextSecretLocked(ctx context.Context, wg *sy
 // Logs errors inside. Fields `secret.attempts` and `secret.nextReload` are
 // mutated even on failures.
 func (sm *SecretManagerStore) tryReloadSecretLocked(ctx context.Context, secret *trackedSecret) bool {
-	fresh, err := sm.readSecret(ctx, secret.name, secret.withPrevVersion)
+	fresh, err := sm.readSecret(ctx, secret.name)
 	if err != nil {
 		secret.attempts += 1
 		sleep := reloadBackoffInterval(ctx, secret.attempts)

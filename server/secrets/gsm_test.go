@@ -108,7 +108,7 @@ func TestSecretManagerSource(t *testing.T) {
 		})
 
 		Convey("readSecret devsecret", func() {
-			s, err := sm.readSecret(ctx, "devsecret://YWJj", false)
+			s, err := sm.readSecret(ctx, "devsecret://YWJj")
 			So(err, ShouldBeNil)
 			So(s, ShouldResemble, &trackedSecret{
 				name: "devsecret://YWJj",
@@ -119,7 +119,7 @@ func TestSecretManagerSource(t *testing.T) {
 		})
 
 		Convey("readSecret devsecret-text", func() {
-			s, err := sm.readSecret(ctx, "devsecret-text://abc", false)
+			s, err := sm.readSecret(ctx, "devsecret-text://abc")
 			So(err, ShouldBeNil)
 			So(s, ShouldResemble, &trackedSecret{
 				name: "devsecret-text://abc",
@@ -132,7 +132,7 @@ func TestSecretManagerSource(t *testing.T) {
 		Convey("readSecret sm://<project>/<secret>", func() {
 			gsm.createVersion("project", "secret", "zzz")
 
-			s, err := sm.readSecret(ctx, "sm://project/secret", false)
+			s, err := sm.readSecret(ctx, "sm://project/secret")
 			So(err, ShouldBeNil)
 			So(s.name, ShouldEqual, "sm://project/secret")
 			So(s.value, ShouldResemble, Secret{Active: []byte("zzz")})
@@ -144,7 +144,7 @@ func TestSecretManagerSource(t *testing.T) {
 			gsm.createVersion("project", "secret", "old")
 			gsm.createVersion("project", "secret", "new")
 
-			s, err := sm.readSecret(ctx, "sm://project/secret", true)
+			s, err := sm.readSecret(ctx, "sm://project/secret")
 			So(err, ShouldBeNil)
 			So(s.value, ShouldResemble, Secret{
 				Active: []byte("new"),
@@ -160,7 +160,7 @@ func TestSecretManagerSource(t *testing.T) {
 			gsm.createVersion("project", "secret", "new")
 			gsm.disableVersion(ref)
 
-			s, err := sm.readSecret(ctx, "sm://project/secret", true)
+			s, err := sm.readSecret(ctx, "sm://project/secret")
 			So(err, ShouldBeNil)
 			So(s.value, ShouldResemble, Secret{Active: []byte("new")})
 			So(s.versions, ShouldEqual, [2]int64{2, 0})
@@ -171,7 +171,7 @@ func TestSecretManagerSource(t *testing.T) {
 			gsm.createVersion("project", "secret", "new")
 			gsm.deleteVersion(ref)
 
-			s, err := sm.readSecret(ctx, "sm://project/secret", true)
+			s, err := sm.readSecret(ctx, "sm://project/secret")
 			So(err, ShouldBeNil)
 			So(s.value, ShouldResemble, Secret{Active: []byte("new")})
 			So(s.versions, ShouldEqual, [2]int64{2, 0})
@@ -234,7 +234,12 @@ func TestSecretManagerSource(t *testing.T) {
 
 			s, err = sm.StoredSecret(ctx, "sm://project/secret")
 			So(err, ShouldBeNil)
-			So(s, ShouldResemble, Secret{Active: []byte("v2")})
+			So(s, ShouldResemble, Secret{
+				Active: []byte("v2"),
+				Passive: [][]byte{
+					[]byte("v1"),
+				},
+			})
 
 			<-rotated // doesn't hang
 		})
