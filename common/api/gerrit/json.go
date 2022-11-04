@@ -248,6 +248,7 @@ type changeMessageInfo struct {
 	RealAuthor *accountInfo `json:"real_author"`
 	Date       Timestamp    `json:"date"`
 	Message    string       `json:"message"`
+	Tag        string       `json:"tag"`
 }
 
 func (cmi *changeMessageInfo) ToProto() *gerritpb.ChangeMessageInfo {
@@ -260,6 +261,7 @@ func (cmi *changeMessageInfo) ToProto() *gerritpb.ChangeMessageInfo {
 		RealAuthor: cmi.RealAuthor.ToProto(),
 		Date:       timestamppb.New(cmi.Date.Time),
 		Message:    cmi.Message,
+		Tag:        cmi.Tag,
 	}
 }
 

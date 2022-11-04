@@ -709,6 +709,9 @@ message ChangeMessageInfo {
 
   // The text left by the user.
   string message = 5;
+
+  // Value of the tag field from ReviewInput set while posting the review
+  string tag = 6;
 }
 
 // The Requirement entity contains information about a requirement relative to a
