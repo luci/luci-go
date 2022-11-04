@@ -433,7 +433,7 @@ func TestOnCompletedPostStartMessage(t *testing.T) {
 			So(res.State.LogEntries[0].GetTime().AsTime(), ShouldResemble, postedAt.UTC())
 		})
 
-		Convey("on failure, fails the Runs", func() {
+		Convey("on failure, cleans Run's state and record reasons", func() {
 			result.Status = eventpb.LongOpCompleted_FAILED
 			// The result is set in practice but serves debugging purposes only,
 			// and is ignored by the onCompletedPostStartMessage.
@@ -445,20 +445,22 @@ func TestOnCompletedPostStartMessage(t *testing.T) {
 			}
 			res, err := h.OnLongOpCompleted(ctx, rs, result)
 			So(err, ShouldBeNil)
-			So(res.State.Status, ShouldEqual, run.Status_FAILED)
+			So(res.State.Status, ShouldEqual, run.Status_RUNNING)
 			So(res.State.OngoingLongOps, ShouldBeNil)
+			So(res.SideEffectFn, ShouldBeNil)
 			So(res.PreserveEvents, ShouldBeFalse)
-			So(res.SideEffectFn, ShouldNotBeNil) // side effects to finalize the Run.
+			So(res.State.LogEntries[0].GetInfo().GetMessage(), ShouldContainSubstring, "Failed to post the starting message")
 		})
 
-		Convey("on expiration, also fails the Runs", func() {
+		Convey("on expiration,cleans Run's state and record reasons", func() {
 			result.Status = eventpb.LongOpCompleted_EXPIRED
 			res, err := h.OnLongOpCompleted(ctx, rs, result)
 			So(err, ShouldBeNil)
-			So(res.State.Status, ShouldEqual, run.Status_FAILED)
+			So(res.State.Status, ShouldEqual, run.Status_RUNNING)
 			So(res.State.OngoingLongOps, ShouldBeNil)
+			So(res.SideEffectFn, ShouldBeNil)
 			So(res.PreserveEvents, ShouldBeFalse)
-			So(res.SideEffectFn, ShouldNotBeNil) // side effects to finalize the Run.
+			So(res.State.LogEntries[0].GetInfo().GetMessage(), ShouldContainSubstring, "Failed to post the starting message")
 		})
 	})
 }

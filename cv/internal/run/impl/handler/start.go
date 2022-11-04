@@ -37,7 +37,6 @@ import (
 	"go.chromium.org/luci/cv/internal/run/eventpb"
 	"go.chromium.org/luci/cv/internal/run/impl/state"
 	"go.chromium.org/luci/cv/internal/tryjob/requirement"
-	"go.chromium.org/luci/cv/internal/usertext"
 )
 
 const (
@@ -186,7 +185,6 @@ func (impl *Impl) onCompletedPostStartMessage(ctx context.Context, rs *state.Run
 		return &Result{State: rs}, nil
 	}
 
-	failRunReason := "Failed to post the starting message"
 	switch result.GetStatus() {
 	case eventpb.LongOpCompleted_FAILED:
 		// NOTE: if there are several CLs across different projects, detailed
@@ -194,10 +192,9 @@ func (impl *Impl) onCompletedPostStartMessage(ctx context.Context, rs *state.Run
 		// Future improvement: if posting start message is a common problem,
 		// record `result` message and render links to CLs on which CV failed to
 		// post starting message.
-		rs.LogInfo(ctx, logEntryLabelPostStartMessage, failRunReason)
+		rs.LogInfo(ctx, logEntryLabelPostStartMessage, "Failed to post the starting message")
 	case eventpb.LongOpCompleted_EXPIRED:
-		failRunReason += fmt.Sprintf(" within the %s deadline", maxPostStartMessageDuration)
-		rs.LogInfo(ctx, logEntryLabelPostStartMessage, failRunReason)
+		rs.LogInfo(ctx, logEntryLabelPostStartMessage, fmt.Sprintf("Failed to post the starting message within the %s deadline", maxPostStartMessageDuration))
 	case eventpb.LongOpCompleted_SUCCEEDED:
 		// TODO(tandrii): simplify once all such events have timestamp.
 		if t := result.GetPostStartMessage().GetTime(); t != nil {
@@ -205,29 +202,13 @@ func (impl *Impl) onCompletedPostStartMessage(ctx context.Context, rs *state.Run
 		} else {
 			rs.LogInfo(ctx, logEntryLabelPostStartMessage, "posted start message on each CL")
 		}
-		return &Result{State: rs}, nil
 	case eventpb.LongOpCompleted_CANCELLED:
 		rs.LogInfo(ctx, logEntryLabelPostStartMessage, "cancelled posting start message on CL(s)")
-		return &Result{State: rs}, nil
 	default:
 		panic(fmt.Errorf("unexpected LongOpCompleted status: %s", result.GetStatus()))
 	}
 
-	whoms := rs.Mode.GerritNotifyTargets()
-	msgPrefix, attentionReason := usertext.OnRunFailed(rs.Mode)
-	meta := reviewInputMeta{
-		notify:         whoms,
-		addToAttention: whoms,
-		reason:         attentionReason,
-		message:        msgPrefix + "\n\n" + failRunReason,
-	}
-	if err := impl.cancelTriggers(ctx, rs, meta); err != nil {
-		return nil, err
-	}
-	return &Result{
-		State:        rs,
-		SideEffectFn: impl.endRun(ctx, rs, run.Status_FAILED),
-	}, nil
+	return &Result{State: rs}, nil
 }
 
 const customTryjobTagRe = `^[a-z0-9_\-]+:.+$`

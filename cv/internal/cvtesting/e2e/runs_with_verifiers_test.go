@@ -873,7 +873,7 @@ func TestCreatesMultiCLsFailPostStartMessage(t *testing.T) {
 			gChange1, gf.Project(gRepo), gf.Ref(gRef),
 			gf.Owner("user-1"),
 			gf.Updated(tStart),
-			gf.CQ(+2, tStart, gf.U("user-1")),
+			gf.CQ(+1, tStart, gf.U("user-1")),
 			gf.Approve(),
 			gf.Desc(fmt.Sprintf("This is the first CL\n\nCq-Depend: %d", gChange2)),
 		)
@@ -881,7 +881,7 @@ func TestCreatesMultiCLsFailPostStartMessage(t *testing.T) {
 			gChange2, gf.Project(gRepo), gf.Ref(gRef),
 			gf.Owner("user-1"),
 			gf.Updated(tStart),
-			gf.CQ(+2, tStart, gf.U("user-1")),
+			gf.CQ(+1, tStart, gf.U("user-1")),
 			gf.Approve(),
 			gf.Desc(fmt.Sprintf("This is the second CL\n\nCq-Depend: %d", gChange1)),
 		)
@@ -921,7 +921,7 @@ func TestCreatesMultiCLsFailPostStartMessage(t *testing.T) {
 			r = ct.EarliestCreatedRunOf(ctx, lProject)
 			return r != nil
 		})
-		So(r.Mode, ShouldEqual, run.FullRun)
+		So(r.Mode, ShouldEqual, run.DryRun)
 		So(r.CLs, ShouldHaveLength, 2)
 
 		ct.LogPhase(ctx, "CV posts a message on the first CL, but fails on another CL")
@@ -929,18 +929,26 @@ func TestCreatesMultiCLsFailPostStartMessage(t *testing.T) {
 			return ct.LastMessage(gHost, gChange1) != nil
 		})
 
-		ct.LogPhase(ctx, "CV fails the Run")
+		ct.LogPhase(ctx, "CV continues the Run and eventually succeeds")
+		ct.MustCQD(ctx, lProject).SetVerifyClbk(
+			func(r *migrationpb.ReportedRun) *migrationpb.ReportedRun {
+				r = proto.Clone(r).(*migrationpb.ReportedRun)
+				r.Attempt.Status = cvbqpb.AttemptStatus_SUCCESS
+				r.Attempt.Substatus = cvbqpb.AttemptSubstatus_NO_SUBSTATUS
+				return r
+			},
+		)
 		ct.RunUntil(ctx, func() bool {
 			r = ct.LoadRun(ctx, r.ID)
-			return run.IsEnded(r.Status)
+			proj := ct.LoadProject(ctx, lProject)
+			cl1 := ct.LoadGerritCL(ctx, gHost, gChange1)
+			cl2 := ct.LoadGerritCL(ctx, gHost, gChange2)
+			return run.IsEnded(r.Status) &&
+				len(proj.State.GetComponents()) == 0 &&
+				!cl1.IncompleteRuns.ContainsSorted(r.ID) &&
+				!cl2.IncompleteRuns.ContainsSorted(r.ID)
 		})
-		So(r.Status, ShouldEqual, run.Status_FAILED)
-		// Both CLs should have the failure message, but first CL should also have
-		// the starting message.
-		const expecteFailMsg = "Full run: This CL failed the CQ full run.\n\nFailed to post the starting message"
-		So(ct.LastMessage(gHost, gChange2).GetMessage(), ShouldContainSubstring, expecteFailMsg)
-		msgs1 := ct.GFake.GetChange(gHost, gChange1).Info.GetMessages()
-		So(msgs1[len(msgs1)-1].GetMessage(), ShouldContainSubstring, expecteFailMsg)
-		So(msgs1[len(msgs1)-2].GetMessage(), ShouldContainSubstring, "CV is trying the patch.")
+
+		So(r.Status, ShouldEqual, run.Status_SUCCEEDED)
 	})
 }
