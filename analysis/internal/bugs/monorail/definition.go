@@ -176,10 +176,15 @@ func (g *Generator) PrepareNew(impact *bugs.ClusterImpact, description *clusteri
 			"Provide feedback: https://%s.appspot.com/help#feedback", g.appID, g.appID),
 	}
 
+	componentSelectionCommentary := Commentary{
+		Footer: fmt.Sprintf("Was this bug filed in the wrong component? See:"+
+			"https://%s.appspot.com/help#component-selection", g.appID),
+	}
+
 	return &mpb.MakeIssueRequest{
 		Parent:      fmt.Sprintf("projects/%s", g.monorailCfg.Project),
 		Issue:       issue,
-		Description: MergeCommentary(commentary),
+		Description: MergeCommentary(commentary, componentSelectionCommentary),
 		NotifyType:  mpb.NotifyType_EMAIL,
 	}
 }
@@ -608,7 +613,9 @@ func (g *Generator) isCompatibleWithPriority(impact *bugs.ClusterImpact, issuePr
 // a priority no longer applied, and the issue was marked as verified.)
 //
 // priorityIndex(s) are indices into the per-project priority list:
-//   g.monorailCfg.Priorities
+//
+//	g.monorailCfg.Priorities
+//
 // If newPriorityIndex = len(g.monorailCfg.Priorities), it indicates
 // the decrease being justified is to a priority lower than the lowest
 // configured, i.e. a closed/verified issue.
@@ -661,7 +668,9 @@ func explainThresholdNotMet(thresoldNotMet *configpb.ImpactThreshold) string {
 // where a bug was re-opened.)
 //
 // priorityIndex(s) are indices into the per-project priority list:
-//   g.monorailCfg.Priorities
+//
+//	g.monorailCfg.Priorities
+//
 // The special index len(g.monorailCfg.Priorities) indicates an issue
 // with a priority lower than the lowest priority configured to be
 // assigned by LUCI Analysis.

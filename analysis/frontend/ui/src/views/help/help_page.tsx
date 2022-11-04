@@ -34,8 +34,9 @@ import Typography, {
 } from '@mui/material/Typography';
 import PageHeading from '@/components/headings/page_heading/page_heading';
 
-import recentFailuresUrl from './recent_failures.png';
-import ruleIdentifiersUrl from './failure_association_rule_identifiers.png';
+import recentFailuresImageUrl from './recent_failures.png';
+import ruleIdentifiersImageUrl from './failure_association_rule_identifiers.png';
+import monorailComponentImageUrl from './monorail_component.png';
 
 const AccordionSummary = (props: AccordionSummaryProps) => (
   <MuiAccordionSummary
@@ -94,7 +95,7 @@ const HelpPage = () => {
           <Typography paragraph>
             The information queriable via the <em>test</em> and <em>reason</em> identifiers is shown below. (The
             diagram shows a ci.chromium.org build page).
-            <img src={ruleIdentifiersUrl} alt="Test is the fully-qualified test ID. It appears under the MILO Test Results tab
+            <img src={ruleIdentifiersImageUrl} alt="Test is the fully-qualified test ID. It appears under the MILO Test Results tab
                     under the heading ID. The reason is the failure reason, which appears in the MILO Test Results tab under the heading Failure Reason."></img>
           </Typography>
           <Typography paragraph>
@@ -164,7 +165,7 @@ const HelpPage = () => {
               <li>
                 Review the history of the problematic test variants using the <em>History</em> link. Alternatively, look at examples by
                 expanding the node for the test and clicking on the build- link in each row.
-                <img src={recentFailuresUrl} alt="The recent failures panel has links to test history and failure examples."></img>
+                <img src={recentFailuresImageUrl} alt="The recent failures panel has links to test history and failure examples."></img>
               </li>
             </ul>
           </Typography>
@@ -284,7 +285,33 @@ const HelpPage = () => {
           </Typography>
         </AccordionDetails>
       </Accordion>
-
+      <Accordion expanded={location.hash === '#component-selection'} onChange={handleChange('component-selection')}>
+        <AccordionSummary>
+          <AccordionHeading>
+            How does LUCI Analysis determine which component(s) to assign to an auto-filed bug?
+          </AccordionHeading>
+        </AccordionSummary>
+        <AccordionDetails>
+          <Typography paragraph>
+          When LUCI Analysis auto-files a bug for a cluster, it assigns it to all components which contribute at least 30% of the cluster&abpos;s test failures.
+          </Typography>
+          <Typography paragraph>
+          In chromium projects, the component associated with a test failure is controlled by
+            <Link href="https://chromium.googlesource.com/infra/infra/+/HEAD/go/src/infra/tools/dirmd/README.md" target="_blank">
+            DIR_METADATA
+            </Link>
+          files in the directory hierarchy of the test.
+          The component associated with a specific test failure can be validated by viewing the failure in MILO (ci.chromium.org), and looking for the monorail_component tag.
+          </Typography>
+          <img src={monorailComponentImageUrl} alt="Monorail component is the component that test matches, it appears in Milo in the test variant tags."/>
+          <Typography paragraph>
+           If a failure does not have this tag, it means the test result uploader is not providing component information for the test.
+          </Typography>
+          <Typography paragraph>
+           In most cases, bugs being assigned to the wrong component can be fixed by updating the DIR_METADATA for the test.
+          </Typography>
+        </AccordionDetails>
+      </Accordion>
       <Accordion expanded={location.hash === '#setup'} onChange={handleChange('setup')}>
         <AccordionSummary>
           <AccordionHeading>
