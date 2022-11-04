@@ -259,6 +259,9 @@ enum PresubmitRunMode {
 
   // Run some tests but do not submit.
   QUICK_DRY_RUN = 3;
+
+  // Runs some tests on patchset upload but do not submit.
+  NEW_PATCHSET_RUN = 4;
 }
 
 // PresubmitRunStatus is the ending status of a presubmit run.

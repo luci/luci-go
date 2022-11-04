@@ -119,6 +119,14 @@ func TestShouldIngestForTestVariants(t *testing.T) {
 				payload.PresubmitRun.Mode = pb.PresubmitRunMode_DRY_RUN
 				So(shouldIngestForTestVariants(realm, payload), ShouldBeFalse)
 			})
+			Convey(`Successful quick dry run`, func() {
+				payload.PresubmitRun.Mode = pb.PresubmitRunMode_QUICK_DRY_RUN
+				So(shouldIngestForTestVariants(realm, payload), ShouldBeFalse)
+			})
+			Convey(`Successful new patchset run`, func() {
+				payload.PresubmitRun.Mode = pb.PresubmitRunMode_NEW_PATCHSET_RUN
+				So(shouldIngestForTestVariants(realm, payload), ShouldBeFalse)
+			})
 			Convey(`Failed run`, func() {
 				payload.PresubmitRun.Status = pb.PresubmitRunStatus_PRESUBMIT_RUN_STATUS_FAILED
 				So(shouldIngestForTestVariants(realm, payload), ShouldBeFalse)

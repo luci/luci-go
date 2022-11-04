@@ -194,6 +194,8 @@ func PresubmitRunModeFromString(mode string) (pb.PresubmitRunMode, error) {
 		return pb.PresubmitRunMode_DRY_RUN, nil
 	case "QUICK_DRY_RUN":
 		return pb.PresubmitRunMode_QUICK_DRY_RUN, nil
+	case "NEW_PATCHSET_RUN":
+		return pb.PresubmitRunMode_NEW_PATCHSET_RUN, nil
 	}
 	return pb.PresubmitRunMode_PRESUBMIT_RUN_MODE_UNSPECIFIED, fmt.Errorf("unknown run mode %q", mode)
 }

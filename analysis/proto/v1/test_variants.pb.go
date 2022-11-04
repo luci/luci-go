@@ -269,8 +269,8 @@ type TestVariantFailureRateAnalysis struct {
 	// by recency, starting at the most recent interval (age = 1).
 	//
 	// The following filtering applies to verdicts used in time interval data:
-	// - Verdicts are filtered to at most one per unique CL under test,
-	//   with verdicts for multi-CL tryjob runs excluded.
+	//   - Verdicts are filtered to at most one per unique CL under test,
+	//     with verdicts for multi-CL tryjob runs excluded.
 	IntervalStats []*TestVariantFailureRateAnalysis_IntervalStats `protobuf:"bytes,4,rep,name=interval_stats,json=intervalStats,proto3" json:"interval_stats,omitempty"`
 	// Examples of verdicts which had both expected and unexpected runs.
 	//
@@ -283,11 +283,12 @@ type TestVariantFailureRateAnalysis struct {
 	// The most recent verdicts for the test variant.
 	//
 	// The following filtering applies to verdicts used in this field:
-	// - Verdicts are filtered to at most one per unique CL under test,
-	//   with verdicts for multi-CL tryjob runs excluded.
-	// - Verdicts for CLs authored by automation are excluded, to avoid a
-	//   single repeatedly failing automatic uprev process populating
-	//   this list with 10 failures.
+	//   - Verdicts are filtered to at most one per unique CL under test,
+	//     with verdicts for multi-CL tryjob runs excluded.
+	//   - Verdicts for CLs authored by automation are excluded, to avoid a
+	//     single repeatedly failing automatic uprev process populating
+	//     this list with 10 failures.
+	//
 	// Ordered by recency, starting at the most recent verdict at offset 0.
 	//
 	// Limited to at most 10. Further limited to only verdicts produced

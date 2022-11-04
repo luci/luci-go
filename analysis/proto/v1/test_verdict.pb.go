@@ -61,11 +61,11 @@ const (
 	TestResultStatus_ABORT TestResultStatus = 4
 	// The test case did not execute.
 	// Examples:
-	// - The execution of the collection of test cases, such as a test
-	//   binary, was aborted prematurely and execution of some test cases was
-	//   skipped.
-	// - The test harness configuration specified that the test case MUST be
-	//   skipped.
+	//   - The execution of the collection of test cases, such as a test
+	//     binary, was aborted prematurely and execution of some test cases was
+	//     skipped.
+	//   - The test harness configuration specified that the test case MUST be
+	//     skipped.
 	TestResultStatus_SKIP TestResultStatus = 5
 )
 

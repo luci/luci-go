@@ -41,6 +41,7 @@ type VariantPredicate struct {
 	unknownFields protoimpl.UnknownFields
 
 	// Types that are assignable to Predicate:
+	//
 	//	*VariantPredicate_Equals
 	//	*VariantPredicate_Contains
 	//	*VariantPredicate_HashEquals

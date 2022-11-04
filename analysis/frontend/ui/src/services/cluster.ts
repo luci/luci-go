@@ -223,7 +223,8 @@ export type PresubmitRunMode =
     'PRESUBMIT_RUN_MODE_UNSPECIFIED'
     | 'DRY_RUN'
     | 'FULL_RUN'
-    | 'QUICK_DRY_RUN';
+    | 'QUICK_DRY_RUN'
+    | 'NEW_PATCHSET_RUN';
 
 // Refer to luci.analysis.v1.PresubmitRunStatus for documentation.
 export type PresubmitRunStatus =

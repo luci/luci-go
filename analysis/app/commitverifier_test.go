@@ -144,6 +144,15 @@ func TestHandleCVRun(t *testing.T) {
 				So(sortTasks(tasks), ShouldResembleProto,
 					sortTasks(expectedTasks(expectedTaskTemplate, buildIDs)))
 			})
+			Convey(`New patchset run`, func() {
+				run.Mode = "NEW_PATCHSET_RUN"
+				expectedTaskTemplate.PresubmitRun.Mode = pb.PresubmitRunMode_NEW_PATCHSET_RUN
+
+				processed, tasks := processCVRun(run)
+				So(processed, ShouldBeTrue)
+				So(sortTasks(tasks), ShouldResembleProto,
+					sortTasks(expectedTasks(expectedTaskTemplate, buildIDs)))
+			})
 			Convey(`CV Run owned by Automation`, func() {
 				run.Owner = "chromium-autoroll@skia-public.iam.gserviceaccount.com"
 				expectedTaskTemplate.PresubmitRun.Owner = "automation"
