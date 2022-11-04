@@ -42,13 +42,6 @@ function sanitizeHTML(html: string) {
   return domPurify.sanitize(html, { ADD_ATTR: ['target', 'artifact-id', 'inv-level'], ADD_TAGS: ['text-artifact'] });
 }
 
-/**
- * Sanitizes the input HTML string and renders it.
- */
-export function renderSanitizedHTML(html: string) {
-  return unsafeHTML(sanitizeHTML(html));
-}
-
 const defaultHtmlPolicy = window.trustedTypes?.createPolicy('default-html', {
   createHTML: sanitizeHTML,
 });
@@ -59,4 +52,11 @@ const defaultHtmlPolicy = window.trustedTypes?.createPolicy('default-html', {
  */
 export function renderTrustedHTML(html: string) {
   return defaultHtmlPolicy?.createHTML(html) || sanitizeHTML(html);
+}
+
+/**
+ * Sanitizes the input HTML string and renders it.
+ */
+export function renderSanitizedHTML(html: string) {
+  return unsafeHTML(renderTrustedHTML(html));
 }
