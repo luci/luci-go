@@ -22,11 +22,14 @@ import (
 	"sync"
 	"time"
 
-	bbpb "go.chromium.org/luci/buildbucket/proto"
-	"go.chromium.org/luci/common/clock"
-	"go.chromium.org/luci/common/errors"
+	"cloud.google.com/go/pubsub"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/timestamppb"
+
+	bbpb "go.chromium.org/luci/buildbucket/proto"
+	bbutil "go.chromium.org/luci/buildbucket/protoutil"
+	"go.chromium.org/luci/common/clock"
+	"go.chromium.org/luci/common/errors"
 
 	"go.chromium.org/luci/cv/internal/buildbucket"
 )
@@ -37,6 +40,7 @@ type fakeApp struct {
 	hostname      string
 	nextBuildID   int64 // for generating monotonically decreasing build ID
 	requestCache  timedMap
+	pubsubTopic   *pubsub.Topic
 	buildStoreMu  sync.RWMutex
 	buildStore    map[int64]*bbpb.Build // build ID -> build
 	configStoreMu sync.RWMutex
@@ -68,6 +72,15 @@ func (f *Fake) MustNewClient(ctx context.Context, host, luciProject string) *Cli
 		panic(errors.Annotate(err, "failed to create new buildbucket client").Err())
 	}
 	return client.(*Client)
+}
+
+// RegisterPubsubTopic registers a pubsub topic for the given host.
+//
+// If a build is updated to the terminal status, a message will be sent to
+// the topic for this build.
+func (f *Fake) RegisterPubsubTopic(host string, topic *pubsub.Topic) {
+	fa := f.ensureApp(host)
+	fa.pubsubTopic = topic
 }
 
 // AddBuilder adds a new builder configuration to fake Buildbucket host.
@@ -173,12 +186,13 @@ func (fa *fakeApp) updateBuild(ctx context.Context, id int64, cb func(*bbpb.Buil
 		// store a copy to avoid cb keeps the reference to the build and mutate it
 		// later.
 		fa.buildStore[id] = proto.Clone(build).(*bbpb.Build)
+		fa.publishToTopicIfNecessary(ctx, build)
 		return build
 	}
 	panic(errors.Reason("unknown build %d", id).Err())
 }
 
-// insertBuild also generates a monotically decreasing build ID.
+// insertBuild also generates a monotonically decreasing build ID.
 //
 // Caches the build for `requestDeduplicationWindow` to deduplicate request
 // with same request ID later.
@@ -195,7 +209,39 @@ func (fa *fakeApp) insertBuild(ctx context.Context, build *bbpb.Build, requestID
 	if requestID != "" {
 		fa.requestCache.set(ctx, requestID, cloned, requestDeduplicationWindow)
 	}
+	fa.publishToTopicIfNecessary(ctx, build)
 	return build
+}
+
+func (fa *fakeApp) publishToTopicIfNecessary(ctx context.Context, build *bbpb.Build) {
+	topic := fa.pubsubTopic
+	if topic == nil || !bbutil.IsEnded(build.GetStatus()) {
+		return
+	}
+	data, err := json.Marshal(buildbucket.PubsubMessage{
+		Build: buildbucket.PubsubBuildMessage{
+			ID: build.GetId(),
+		},
+		Hostname: fa.hostname,
+	})
+	if err != nil {
+		panic(errors.Annotate(err, "failed to marshal pubsub message").Err())
+	}
+	res := topic.Publish(ctx, &pubsub.Message{
+		Data: data,
+	})
+	// Publish will batch messages. However, in the test, we want buildbucket
+	// fake to publish messages asap. Therefore, flush immediately after publish
+	// the messages
+	topic.Flush()
+	select {
+	case <-res.Ready():
+		if _, err := res.Get(ctx); err != nil {
+			panic(errors.Annotate(err, "failed to publish the pubsub message").Err())
+		}
+	case <-time.After(10 * time.Second):
+		panic(errors.Reason("took too long to publish the pubsub message").Err())
+	}
 }
 
 func (fa *fakeApp) findDupRequest(ctx context.Context, requestID string) *bbpb.Build {

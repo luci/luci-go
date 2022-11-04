@@ -16,12 +16,18 @@ package bbfake
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"math"
 	"testing"
 	"time"
 
+	"cloud.google.com/go/pubsub"
+	"cloud.google.com/go/pubsub/pstest"
+	"google.golang.org/api/option"
+	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/fieldmaskpb"
@@ -31,6 +37,7 @@ import (
 	"go.chromium.org/luci/buildbucket/appengine/model"
 	bbpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/clock/testclock"
+	"go.chromium.org/luci/cv/internal/buildbucket"
 
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
@@ -328,6 +335,19 @@ func TestCancelBuild(t *testing.T) {
 			bbHost   = "buildbucket.example.com"
 			lProject = "testProj"
 		)
+		pubsubSrv := pstest.NewServer()
+		defer func() { _ = pubsubSrv.Close() }()
+		pubsubClient, err := pubsub.NewClient(ctx, "luci-change-verifier",
+			option.WithEndpoint(pubsubSrv.Addr),
+			option.WithoutAuthentication(),
+			option.WithGRPCDialOption(grpc.WithTransportCredentials(insecure.NewCredentials())),
+		)
+		defer func() { _ = pubsubClient.Close() }()
+		So(err, ShouldBeNil)
+		topic, err := pubsubClient.CreateTopic(ctx, "test-topic")
+		So(err, ShouldBeNil)
+		fake.RegisterPubsubTopic(bbHost, topic)
+
 		client := fake.MustNewClient(ctx, bbHost, lProject)
 
 		tc.Add(1 * time.Minute)
@@ -360,6 +380,12 @@ func TestCancelBuild(t *testing.T) {
 					WithUpdateTime(tc.Now()).
 					WithSummaryMarkdown("no longer needed").
 					Construct()))
+				So(pubsubSrv.Messages(), ShouldHaveLength, 1)
+				pubsubMsg := &buildbucket.PubsubMessage{}
+				err = json.Unmarshal(pubsubSrv.Messages()[0].Data, pubsubMsg)
+				So(err, ShouldBeNil)
+				So(pubsubMsg.Hostname, ShouldEqual, bbHost)
+				So(pubsubMsg.Build.ID, ShouldEqual, build.GetId())
 			})
 			Convey("With mask", func() {
 				res, err := client.CancelBuild(ctx, &bbpb.CancelBuildRequest{
