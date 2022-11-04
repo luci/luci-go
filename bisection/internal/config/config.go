@@ -21,6 +21,8 @@ import (
 
 	"google.golang.org/protobuf/proto"
 
+	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/config/server/cfgcache"
 	"go.chromium.org/luci/config/validation"
 )
@@ -45,5 +47,11 @@ func Update(ctx context.Context) error {
 // Get returns the cached service-level config
 func Get(ctx context.Context) (*configpb.Config, error) {
 	cfg, err := cachedCfg.Get(ctx, nil)
-	return cfg.(*configpb.Config), err
+	if err != nil {
+		err = errors.Annotate(err, "failed to get cached config").Err()
+		logging.Errorf(ctx, err.Error())
+		return nil, err
+	}
+
+	return cfg.(*configpb.Config), nil
 }
