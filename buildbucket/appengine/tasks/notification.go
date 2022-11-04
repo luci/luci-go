@@ -18,6 +18,7 @@ import (
 	"context"
 
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/server/tq"
 
 	"go.chromium.org/luci/buildbucket/appengine/model"
@@ -46,6 +47,7 @@ func NotifyPubSub(ctx context.Context, b *model.Build) error {
 		return nil
 	}
 
+	logging.Warningf(ctx, "Build %d is using the legacy PubSubCallback field", b.ID)
 	if err := notifyPubSub(ctx, &taskdefs.NotifyPubSub{
 		BuildId:  b.ID,
 		Callback: true,
