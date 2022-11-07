@@ -254,12 +254,12 @@ type BuilderConfig struct {
 	// A requirement for a bot to execute the build.
 	//
 	// Supports 2 forms:
-	// - "<key>:<value>" - require a bot with this dimension.
-	//   This is a shortcut for "0:<key>:<value>", see below.
-	// - "<expiration_secs>:<key>:<value>" - wait for up to expiration_secs.
-	//   for a bot with the dimension.
-	//   Supports multiple values for different keys and expiration_secs.
-	//   expiration_secs must be a multiple of 60.
+	//   - "<key>:<value>" - require a bot with this dimension.
+	//     This is a shortcut for "0:<key>:<value>", see below.
+	//   - "<expiration_secs>:<key>:<value>" - wait for up to expiration_secs.
+	//     for a bot with the dimension.
+	//     Supports multiple values for different keys and expiration_secs.
+	//     expiration_secs must be a multiple of 60.
 	//
 	// If this builder is defined in a bucket, dimension "pool" is defaulted
 	// to the name of the bucket. See Bucket message below.
@@ -356,17 +356,17 @@ type BuilderConfig struct {
 	//
 	// For example, this config
 	//
-	//   builder {
-	//     name: "linux-compiler"
-	//     dimension: "builder:linux-compiler"
-	//   }
+	//	builder {
+	//	  name: "linux-compiler"
+	//	  dimension: "builder:linux-compiler"
+	//	}
 	//
 	// is equivalent to this:
 	//
-	//   builders {
-	//     name: "linux-compiler"
-	//     auto_builder_dimension: YES
-	//   }
+	//	builders {
+	//	  name: "linux-compiler"
+	//	  auto_builder_dimension: YES
+	//	}
 	//
 	// (see also http://docs.buildbot.net/0.8.9/manual/cfg-properties.html#interpolate)
 	// but are currently against complicating config with this.
@@ -399,7 +399,7 @@ type BuilderConfig struct {
 	// You may set any experiments you like, but experiments beginning with
 	// "luci." are reserved. Experiment names must conform to
 	//
-	//    [a-z][a-z0-9_]*(\.[a-z][a-z0-9_]*)*
+	//	[a-z][a-z0-9_]*(\.[a-z][a-z0-9_]*)*
 	//
 	// Any experiments which are selected for a build show up in
 	// `Build.input.experiments`.
@@ -414,7 +414,7 @@ type BuilderConfig struct {
 	// being set for your build (i.e. "if any experiment is set, don't affect
 	// production"). This is ulimately up to you, however.
 	//
-	// Well-known experiments
+	// # Well-known experiments
 	//
 	// Buildbucket has a number of 'global' experiments which are in various
 	// states of deployment at any given time. For the current state, see
@@ -735,10 +735,10 @@ type Bucket struct {
 	// service_accounts can do.
 	//
 	// It could also be noisy, such as:
-	// * On the LUCI UI, led builds will show under the same builder as the real builds,
-	// * Led builds will share the same ResultDB config as the real builds, so
-	//   their test results will be exported to the same BigQuery tables.
-	// * Subscribers of Buildbucket PubSub need to filter them out.
+	//   - On the LUCI UI, led builds will show under the same builder as the real builds,
+	//   - Led builds will share the same ResultDB config as the real builds, so
+	//     their test results will be exported to the same BigQuery tables.
+	//   - Subscribers of Buildbucket PubSub need to filter them out.
 	Shadow string `protobuf:"bytes,5,opt,name=shadow,proto3" json:"shadow,omitempty"`
 	// Security constraints of the bucket.
 	//
@@ -892,20 +892,20 @@ func (x *BuildbucketCfg) GetBuckets() []*Bucket {
 //
 // To share a builder cache among multiple builders, it can be overridden:
 //
-//   builders {
-//     name: "a"
-//     caches {
-//       path: "builder"
-//       name: "my_shared_cache"
-//     }
-//   }
-//   builders {
-//     name: "b"
-//     caches {
-//       path: "builder"
-//       name: "my_shared_cache"
-//     }
-//   }
+//	builders {
+//	  name: "a"
+//	  caches {
+//	    path: "builder"
+//	    name: "my_shared_cache"
+//	  }
+//	}
+//	builders {
+//	  name: "b"
+//	  caches {
+//	    path: "builder"
+//	    name: "my_shared_cache"
+//	  }
+//	}
 //
 // Builders "a" and "b" share their builder cache. If an "a" build ran on a
 // bot and left some files in the builder cache and then a "b" build runs on
@@ -1007,7 +1007,7 @@ type BuilderConfig_Recipe struct {
 	//
 	// Typically the package will look like:
 	//
-	//   infra/recipe_bundles/chromium.googlesource.com/chromium/tools/build
+	//	infra/recipe_bundles/chromium.googlesource.com/chromium/tools/build
 	//
 	// Recipes bundled from internal repositories are typically under
 	// `infra_internal/recipe_bundles/...`.
@@ -1029,7 +1029,9 @@ type BuilderConfig_Recipe struct {
 	// types.
 	Properties []string `protobuf:"bytes,3,rep,name=properties,proto3" json:"properties,omitempty"`
 	// Same as properties, but the value must valid JSON. For example
-	//   properties_j: "a:1"
+	//
+	//	properties_j: "a:1"
+	//
 	// means property a is a number 1, not string "1".
 	//
 	// If null, it means no property must be defined. In particular, it removes

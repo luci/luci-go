@@ -62,13 +62,15 @@ type RunTaskRequest struct {
 	//
 	// Named caches set for this Build must be mounted all under some directory
 	// and that root directory must be passed by appending a CLI argument:
-	//   `-cache-base=/path/to/cache/base`.
+	//
+	//	`-cache-base=/path/to/cache/base`.
 	//
 	// Additionally, the Backend must arrange for the agent to know the backend
 	// task id. This must exactly match the task id used by UpdateBuildTask,
 	// and the agent will use it to make UpdateBuild calls. The backend must
 	// supply the task id to the agent by appending a CLI argument:
-	//   `-task-id=<task id>`
+	//
+	//	`-task-id=<task id>`
 	//
 	// Also see `secrets` for one more potential CLI argument.
 	//
@@ -132,9 +134,9 @@ type RunTaskRequest struct {
 	// become available.
 	Caches []*BuilderConfig_CacheEntry `protobuf:"bytes,13,rep,name=caches,proto3" json:"caches,omitempty"`
 	// Additional backend-specific settings. For Swarming this would include:
-	//   * priority
-	//   * wait_for_capacity
-	//   * containment
+	//   - priority
+	//   - wait_for_capacity
+	//   - containment
 	BackendConfig *structpb.Struct `protobuf:"bytes,14,opt,name=backend_config,json=backendConfig,proto3" json:"backend_config,omitempty"`
 	// Experiments are provided in order to allow Backends to roll out new
 	// features or behaviors triggered on experiments.
@@ -613,14 +615,14 @@ type RunTaskRequest_AgentExecutable struct {
 	// ${platform} has the form $OS-$ARCH.
 	//
 	// $OS values:
-	//   * mac
-	//   * windows
-	//   * linux
+	//   - mac
+	//   - windows
+	//   - linux
 	//
 	// $ARCH values:
-	//   * amd64
-	//   * arm64
-	//  * i386
+	//   - amd64
+	//   - arm64
+	//   - i386
 	//
 	// The urls will be guaranteed to be valid until at least
 	// start_deadline+execution_timeout.
