@@ -19,6 +19,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"time"
 
 	"go.chromium.org/luci/common/api/gerrit"
 	"go.chromium.org/luci/common/errors"
@@ -123,9 +124,11 @@ func (c *Client) CreateRevert(ctx context.Context, changeID int64,
 		Message: message,
 	}
 
-	// TODO (aredulla): specify 120s timeout as creating the revert may take some time.
-	// For context, see https://bugs.chromium.org/p/chromium/issues/detail?id=1372059#c13
-	res, err := c.gerritClient.RevertChange(ctx, req)
+	// Set timeout to be 2min for creating a revert
+	waitCtx, cancel := context.WithTimeout(ctx, time.Minute*2)
+	defer cancel()
+
+	res, err := c.gerritClient.RevertChange(waitCtx, req)
 	if err != nil {
 		err = errors.Annotate(err, "error creating revert change on Gerrit host %s for change %s~%d",
 			c.host, c.project, changeID).Err()
