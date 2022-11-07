@@ -81,5 +81,5 @@ for mod in ${deps[@]}; do
   go get -d ${mod}
 done
 
-echo go mod tidy -compat=1.17
-go mod tidy -compat=1.17
+echo go mod tidy
+go mod tidy

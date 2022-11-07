@@ -43,7 +43,7 @@ def main(args):
     # This command modifies go.mod and/or go.sum if they are untidy. There's
     # currently no way to ask it to check their tidiness without overriding
     # them. See https://github.com/golang/go/issues/27005.
-    subprocess.check_call(['go', 'mod', 'tidy', '-compat=1.17'])
+    subprocess.check_call(['go', 'mod', 'tidy'])
 
     # Check the diff, it should be empty.
     for old, new in MOD_FILES:
@@ -52,7 +52,7 @@ def main(args):
         print('%s file is stale:' % old)
         print(mod_diff)
         print()
-        print('Run "go mod tidy -compat=1.17" to update it.')
+        print('Run "go mod tidy" to update it.')
         return 1
 
   except subprocess.CalledProcessError as exc:
