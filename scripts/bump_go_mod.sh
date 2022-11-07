@@ -29,7 +29,6 @@ deps=(
   cloud.google.com/go/bigtable@latest
   cloud.google.com/go/cloudtasks@latest
   cloud.google.com/go/compute@latest
-  cloud.google.com/go/compute/metadata@latest
   cloud.google.com/go/datastore@latest
   cloud.google.com/go/errorreporting@latest
   cloud.google.com/go/iam@latest
