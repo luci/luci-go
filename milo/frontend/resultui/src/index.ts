@@ -12,16 +12,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import createInnerHTMLSanitizingPolicy from '@chopsui/trusted-types-policy';
 import { configure } from 'mobx';
 import { Workbox } from 'workbox-window';
 
-import './stackdriver_errors';
 import './routes';
+import './stackdriver_errors';
 import { NEW_MILO_VERSION_EVENT_TYPE } from './libs/constants';
+import { initDefaultTrustedTypesPolicy } from './libs/sanitize_html';
 import { createStaticTrustedURL } from './libs/utils';
 
-createInnerHTMLSanitizingPolicy();
+initDefaultTrustedTypesPolicy();
 
 // TODO(crbug/1347294): encloses all state modifying actions in mobx actions
 // then delete this.

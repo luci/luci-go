@@ -15,6 +15,7 @@
 import { MobxLitElement } from '@adobe/lit-mobx';
 import { css, customElement, html } from 'lit-element';
 import { repeat } from 'lit-html/directives/repeat';
+import { unsafeHTML } from 'lit-html/directives/unsafe-html';
 import { makeObservable, observable } from 'mobx';
 
 import '../../components/dot_spinner';
@@ -114,7 +115,7 @@ export class RelatedBuildsTabElement extends MobxLitElement {
         <td>${build.createTime.toFormat(NUMERIC_TIME_FORMAT)}</td>
         <td>${displayDuration(build.pendingDuration) || 'N/A'}</td>
         <td>${(build.executionDuration && displayDuration(build.executionDuration)) || 'N/A'}</td>
-        <td>${renderMarkdown(build.data.summaryMarkdown || '')}</td>
+        <td>${unsafeHTML(renderMarkdown(build.data.summaryMarkdown || ''))}</td>
       </tr>
     `;
   }

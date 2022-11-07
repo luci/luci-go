@@ -16,6 +16,7 @@ import * as chai from 'chai';
 import { expect } from 'chai';
 import chaiSubset from 'chai-subset';
 import { render } from 'lit-html';
+import { unsafeHTML } from 'lit-html/directives/unsafe-html';
 import { DateTime } from 'luxon';
 import { action, computed, makeAutoObservable } from 'mobx';
 import { destroy } from 'mobx-state-tree';
@@ -127,13 +128,13 @@ describe('StepExt', () => {
     function getExpectedHeaderHTML(markdownBody: string): string {
       const container = document.createElement('div');
       // Wrap in a <p> and remove it later so <!----> are not injected.
-      render(renderMarkdown(`<p>${markdownBody}</p>`), container);
+      render(unsafeHTML(renderMarkdown(`<p>${markdownBody}</p>`)), container);
       return container.firstElementChild!.innerHTML;
     }
 
     function getExpectedBodyHTML(markdownBody: string): string {
       const container = document.createElement('div');
-      render(renderMarkdown(markdownBody), container);
+      render(unsafeHTML(renderMarkdown(markdownBody)), container);
       return container.innerHTML;
     }
 

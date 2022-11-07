@@ -16,6 +16,7 @@ import '@material/mwc-button';
 import '@material/mwc-textarea';
 import { MobxLitElement } from '@adobe/lit-mobx';
 import { css, customElement, html, TemplateResult } from 'lit-element';
+import { unsafeHTML } from 'lit-html/directives/unsafe-html';
 import { action, computed, makeObservable, observable } from 'mobx';
 
 import '../../components/build_tag_row';
@@ -44,7 +45,6 @@ import { BUILD_STATUS_CLASS_MAP, BUILD_STATUS_DISPLAY_MAP } from '../../libs/con
 import { consumer } from '../../libs/context';
 import { errorHandler, forwardWithoutMsg, reportRenderError } from '../../libs/error_handler';
 import { renderMarkdown } from '../../libs/markdown_utils';
-import { renderSanitizedHTML } from '../../libs/sanitize_html';
 import { displayDuration } from '../../libs/time_utils';
 import { unwrapOrElse } from '../../libs/utils';
 import { router } from '../../routes';
@@ -183,7 +183,7 @@ export class OverviewTabElement extends MobxLitElement {
 
     return html`
       <div id="summary-html" class="${BUILD_STATUS_CLASS_MAP[build.status]}-bg">
-        ${renderMarkdown(build.summaryMarkdown)}
+        ${unsafeHTML(renderMarkdown(build.summaryMarkdown))}
       </div>
     `;
   }
@@ -203,7 +203,7 @@ export class OverviewTabElement extends MobxLitElement {
     }
     return html`
       <h3>Builder Info</h3>
-      <div id="builder-description">${renderSanitizedHTML(descriptionHtml)}</div>
+      <div id="builder-description">${unsafeHTML(descriptionHtml)}</div>
     `;
   }
 

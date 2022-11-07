@@ -25,7 +25,6 @@ import '../../components/dot_spinner';
 import { MiloLink } from '../../components/link';
 import { getCipdLink } from '../../libs/build_utils';
 import { BUILD_STATUS_CLASS_MAP, BUILD_STATUS_DISPLAY_MAP } from '../../libs/constants';
-import { renderTrustedHTML } from '../../libs/sanitize_html';
 import { Build } from '../../services/buildbucket';
 import colorClasses from '../../styles/color_classes.css';
 import commonStyle from '../../styles/common_style.css';
@@ -51,7 +50,7 @@ export function BuildPackagesInfo({ build }: BuildPackagesInfoProps) {
         <Box
           sx={{ padding: '10px', marginBottom: '10px', clear: 'both', overlapWrap: 'break-word' }}
           className={`${BUILD_STATUS_CLASS_MAP[agent.output.status]}-bg`}
-          dangerouslySetInnerHTML={{ __html: renderTrustedHTML(agent.output.summaryHtml) as string }}
+          dangerouslySetInnerHTML={{ __html: agent.output.summaryHtml }}
         />
       )}
       {/*Use table instead of MUI or CSS grid to be consistent with other

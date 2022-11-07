@@ -14,8 +14,11 @@
 
 import { fixture, fixtureCleanup, html } from '@open-wc/testing/index-no-side-effects';
 import { assert } from 'chai';
+import { unsafeHTML } from 'lit-html/directives/unsafe-html';
 
-import { renderSanitizedHTML } from './sanitize_html';
+import { initDefaultTrustedTypesPolicy, sanitizeHTML } from './sanitize_html';
+
+initDefaultTrustedTypesPolicy();
 
 const DIRTY_HTML = `
 <div>
@@ -33,7 +36,7 @@ describe('sanitize_html', () => {
   let root: Element;
   let anchors: NodeListOf<HTMLAnchorElement>;
   before(async () => {
-    root = await fixture(html`${renderSanitizedHTML(DIRTY_HTML)}`);
+    root = await fixture(html`${unsafeHTML(sanitizeHTML(DIRTY_HTML))}`);
     anchors = root.querySelectorAll('a');
   });
   after(fixtureCleanup);

@@ -16,6 +16,7 @@ import '@material/mwc-icon';
 import { MobxLitElement } from '@adobe/lit-mobx';
 import { css, customElement, html } from 'lit-element';
 import { repeat } from 'lit-html/directives/repeat';
+import { unsafeHTML } from 'lit-html/directives/unsafe-html';
 import { DateTime } from 'luxon';
 import { computed, makeObservable, observable } from 'mobx';
 import { fromPromise } from 'mobx-utils';
@@ -25,7 +26,6 @@ import '../../../components/result_entry';
 import { VARIANT_STATUS_CLASS_MAP, VARIANT_STATUS_ICON_MAP, VERDICT_VARIANT_STATUS_MAP } from '../../../libs/constants';
 import { unwrapObservable } from '../../../libs/milo_mobx_utils';
 import { lazyRendering, RenderPlaceHolder } from '../../../libs/observer_element';
-import { renderSanitizedHTML } from '../../../libs/sanitize_html';
 import { LONG_TIME_FORMAT, SHORT_TIME_FORMAT } from '../../../libs/time_utils';
 import { router } from '../../../routes';
 import { TestVerdictBundle } from '../../../services/luci_analysis';
@@ -190,7 +190,7 @@ export class TestHistoryDetailsEntryElement extends MobxLitElement implements Re
         (e) => e.exonerationId,
         (e) => html`
           <div class="explanation-html">
-            ${renderSanitizedHTML(
+            ${unsafeHTML(
               e.explanationHtml || 'This test variant had unexpected results, but was exonerated (reason not provided).'
             )}
           </div>

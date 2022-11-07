@@ -25,7 +25,6 @@ import { bugnizerLink } from '../libs/markdown_it_plugins/bugnizer_link';
 import { crbugLink } from '../libs/markdown_it_plugins/crbug_link';
 import { defaultTarget } from '../libs/markdown_it_plugins/default_target';
 import { reviewerLine } from '../libs/markdown_it_plugins/reviewer_line';
-import { renderSanitizedHTML } from '../libs/sanitize_html';
 import { NUMERIC_TIME_FORMAT } from '../libs/time_utils';
 import { GitCommit } from '../services/milo_internal';
 import commonStyle from '../styles/common_style.css';
@@ -68,7 +67,7 @@ export class CommitEntryElement extends MobxLitElement {
   }
 
   @computed private get descriptionHTML() {
-    return renderSanitizedHTML(md.render(this.commit.message));
+    return md.render(this.commit.message);
   }
 
   @computed private get changedFilenames() {

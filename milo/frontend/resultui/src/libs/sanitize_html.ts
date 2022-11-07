@@ -13,7 +13,7 @@
 // limitations under the License.
 
 import createDomPurify from 'dompurify';
-import { unsafeHTML } from 'lit-html/directives/unsafe-html';
+import { trustedTypes } from 'trusted-types';
 
 const domPurify = createDomPurify(window);
 
@@ -38,25 +38,16 @@ domPurify.addHook('afterSanitizeAttributes', (node) => {
 /**
  * Sanitizes the input HTML string.
  */
-function sanitizeHTML(html: string) {
+export function sanitizeHTML(html: string) {
   return domPurify.sanitize(html, { ADD_ATTR: ['target', 'artifact-id', 'inv-level'], ADD_TAGS: ['text-artifact'] });
 }
 
-const defaultHtmlPolicy = window.trustedTypes?.createPolicy('default-html', {
-  createHTML: sanitizeHTML,
-});
+export function initDefaultTrustedTypesPolicy() {
+  if (!window.trustedTypes || !window.trustedTypes.createPolicy) {
+    window.trustedTypes = trustedTypes;
+  }
 
-/**
- * Sanitizes the input HTML string and convert it to TrustedHTML if
- * `window.trustedTypes` is defined.
- */
-export function renderTrustedHTML(html: string) {
-  return defaultHtmlPolicy?.createHTML(html) || sanitizeHTML(html);
-}
-
-/**
- * Sanitizes the input HTML string and renders it.
- */
-export function renderSanitizedHTML(html: string) {
-  return unsafeHTML(renderTrustedHTML(html));
+  window.trustedTypes!.createPolicy('default', {
+    createHTML: sanitizeHTML,
+  });
 }

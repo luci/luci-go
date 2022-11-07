@@ -13,6 +13,7 @@
 // limitations under the License.
 
 import { render } from 'lit-html';
+import { unsafeHTML } from 'lit-html/directives/unsafe-html';
 import { DateTime, Duration } from 'luxon';
 import { action, computed, makeObservable, untracked } from 'mobx';
 import { Instance, SnapshotIn, SnapshotOut, types } from 'mobx-state-tree';
@@ -93,7 +94,7 @@ export class StepExt {
   // explicitly in another field.
   @computed get summaryParts() {
     const bodyContainer = document.createElement('div');
-    render(renderMarkdown(this.summaryMarkdown || ''), bodyContainer);
+    render(unsafeHTML(renderMarkdown(this.summaryMarkdown || '')), bodyContainer);
     // The body has no content.
     // We don't need to check bodyContainer.firstChild because text are
     // automatically wrapped in <p>.

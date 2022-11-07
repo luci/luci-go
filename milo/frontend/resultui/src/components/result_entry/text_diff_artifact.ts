@@ -16,6 +16,7 @@ import '@material/mwc-icon';
 import { MobxLitElement } from '@adobe/lit-mobx';
 import * as Diff2Html from 'diff2html';
 import { css, customElement, html } from 'lit-element';
+import { unsafeHTML } from 'lit-html/directives/unsafe-html';
 import { computed, makeObservable, observable } from 'mobx';
 import { fromPromise, IPromiseBasedObservable } from 'mobx-utils';
 
@@ -23,7 +24,6 @@ import '../expandable_entry';
 import { ARTIFACT_LENGTH_LIMIT } from '../../libs/constants';
 import { reportRenderError } from '../../libs/error_handler';
 import { unwrapObservable } from '../../libs/milo_mobx_utils';
-import { renderSanitizedHTML } from '../../libs/sanitize_html';
 import { urlSetSearchQueryParam } from '../../libs/utils';
 import { getRawArtifactUrl, router } from '../../routes';
 import { Artifact } from '../../services/resultdb';
@@ -70,7 +70,7 @@ export class TextDiffArtifactElement extends MobxLitElement {
           (<a href=${getRawArtifactUrl(this.artifact.name)} target="_blank">view raw</a>)
         </span>
         <div id="content" slot="content">
-          ${renderSanitizedHTML(Diff2Html.html(this.content || '', { drawFileList: false }))}
+          ${unsafeHTML(Diff2Html.html(this.content || '', { drawFileList: false }))}
         </div>
       </milo-expandable-entry>
     `;

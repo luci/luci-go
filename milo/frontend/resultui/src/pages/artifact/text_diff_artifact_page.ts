@@ -15,6 +15,7 @@
 import { MobxLitElement } from '@adobe/lit-mobx';
 import * as Diff2Html from 'diff2html';
 import { css, customElement, html } from 'lit-element';
+import { unsafeHTML } from 'lit-html/directives/unsafe-html';
 import { computed, makeObservable, observable } from 'mobx';
 import { fromPromise } from 'mobx-utils';
 
@@ -24,7 +25,6 @@ import { ARTIFACT_LENGTH_LIMIT } from '../../libs/constants';
 import { consumer } from '../../libs/context';
 import { reportRenderError } from '../../libs/error_handler';
 import { unwrapObservable } from '../../libs/milo_mobx_utils';
-import { renderSanitizedHTML } from '../../libs/sanitize_html';
 import { urlSetSearchQueryParam } from '../../libs/utils';
 import { getRawArtifactUrl } from '../../routes';
 import { ArtifactIdentifier, constructArtifactName } from '../../services/resultdb';
@@ -91,7 +91,7 @@ export class TextDiffArtifactPageElement extends MobxLitElement {
           type="text/css"
           href="https://cdn.jsdelivr.net/npm/diff2html/bundles/css/diff2html.min.css"
         />
-        ${renderSanitizedHTML(Diff2Html.html(this.content || '', { drawFileList: false, outputFormat: 'side-by-side' }))}
+        ${unsafeHTML(Diff2Html.html(this.content || '', { drawFileList: false, outputFormat: 'side-by-side' }))}
       </div>
     `;
   });
