@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import fs from 'fs';
 import { Config } from 'karma';
 import { DefinePlugin, ProvidePlugin } from 'webpack';
 
@@ -60,7 +59,17 @@ module.exports = (config: Config) => {
       },
       plugins: [
         new DefinePlugin({
-          CONFIGS: fs.readFileSync('./dev-configs/configs.json', 'utf-8'),
+          CONFIGS: JSON.stringify({
+            RESULT_DB: {
+              HOST: 'staging.results.api.cr.dev',
+            },
+            BUILDBUCKET: {
+              HOST: 'cr-buildbucket-dev.appspot.com',
+            },
+            LUCI_ANALYSIS: {
+              HOST: 'luci-analysis.appspot.com',
+            },
+          }),
           WORKBOX_PROMISE: 'Promise.race([])',
           // JS values need to be converted to JSON notation.
           IS_DEV: JSON.stringify(true),
