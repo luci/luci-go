@@ -83,31 +83,33 @@ func startAnalysis(c context.Context, nsa *model.CompileNthSectionAnalysis, cfa 
 			Ref:     cfa.InitialRegressionRange.FirstFailed.Ref,
 			Id:      commit,
 		}
-		build, err := rerunCommit(c, nsa, gitilesCommit, cfa.FirstFailedBuildId)
+		err := RerunCommit(c, nsa, gitilesCommit, cfa.FirstFailedBuildId, nil)
 		if err != nil {
 			return errors.Annotate(err, "rerunCommit for %s", commit).Err()
-		}
-		_, err = rerun.CreateRerunBuildModel(c, build, model.RerunBuildType_NthSection, nil, nsa)
-		if err != nil {
-			return errors.Annotate(err, "createRerunBuildModel for %s", commit).Err()
 		}
 	}
 
 	return nil
 }
 
-func rerunCommit(c context.Context, nthSectionAnalysis *model.CompileNthSectionAnalysis, commit *buildbucketpb.GitilesCommit, failedBuildID int64) (*buildbucketpb.Build, error) {
-	props, err := getRerunProps(c, nthSectionAnalysis)
+func RerunCommit(c context.Context, nsa *model.CompileNthSectionAnalysis, commit *buildbucketpb.GitilesCommit, failedBuildID int64, dims map[string]string) error {
+	props, err := getRerunProps(c, nsa)
 	if err != nil {
-		return nil, errors.Annotate(err, "failed getting rerun props").Err()
+		return errors.Annotate(err, "failed getting rerun props").Err()
 	}
 
 	// TODO(nqmtuan): Support priority here
-	build, err := rerun.TriggerRerun(c, commit, failedBuildID, props)
+	build, err := rerun.TriggerRerun(c, commit, failedBuildID, props, dims)
 	if err != nil {
-		return nil, errors.Annotate(err, "couldn't trigger rerun").Err()
+		return errors.Annotate(err, "couldn't trigger rerun").Err()
 	}
-	return build, nil
+
+	_, err = rerun.CreateRerunBuildModel(c, build, model.RerunBuildType_NthSection, nil, nsa)
+	if err != nil {
+		return errors.Annotate(err, "createRerunBuildModel").Err()
+	}
+
+	return nil
 }
 
 func getRerunProps(c context.Context, nthSectionAnalysis *model.CompileNthSectionAnalysis) (map[string]interface{}, error) {

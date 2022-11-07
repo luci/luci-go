@@ -19,10 +19,11 @@ import (
 	"testing"
 	"time"
 
-	"github.com/google/go-cmp/cmp"
+	"github.com/golang/mock/gomock"
 	. "github.com/smartystreets/goconvey/convey"
-	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/types/known/timestamppb"
 
+	"go.chromium.org/luci/bisection/internal/buildbucket"
 	"go.chromium.org/luci/bisection/model"
 	pb "go.chromium.org/luci/bisection/proto"
 	"go.chromium.org/luci/bisection/util/testutil"
@@ -149,6 +150,7 @@ func TestUpdateAnalysisProgress(t *testing.T) {
 			RerunResult: &pb.RerunResult{
 				RerunStatus: pb.RerunStatus_FAILED,
 			},
+			BotId: "abc",
 		}
 
 		req2 := &pb.UpdateAnalysisProgressRequest{
@@ -162,6 +164,7 @@ func TestUpdateAnalysisProgress(t *testing.T) {
 			RerunResult: &pb.RerunResult{
 				RerunStatus: pb.RerunStatus_PASSED,
 			},
+			BotId: "abc",
 		}
 
 		server := &GoFinditBotServer{}
@@ -187,9 +190,42 @@ func TestUpdateAnalysisProgress(t *testing.T) {
 	})
 
 	Convey("UpdateAnalysisProgress NthSection", t, func() {
-		Convey("Return next commit", func() {
+		ctl := gomock.NewController(t)
+		defer ctl.Finish()
+		mc := buildbucket.NewMockedClient(c, ctl)
+		c = mc.Ctx
+
+		mc.Client.EXPECT().GetBuild(gomock.Any(), gomock.Any(), gomock.Any()).Return(&bbpb.Build{}, nil).AnyTimes()
+
+		Convey("Schedule run for next commit", func() {
+			bbres := &bbpb.Build{
+				Builder: &bbpb.BuilderID{
+					Project: "chromium",
+					Bucket:  "findit",
+					Builder: "gofindit-single-revision",
+				},
+				Input: &bbpb.Build_Input{
+					GitilesCommit: &bbpb.GitilesCommit{
+						Host:    "host",
+						Project: "proj",
+						Id:      "id1",
+						Ref:     "ref",
+					},
+				},
+				Id:         9999,
+				Status:     bbpb.Status_STARTED,
+				CreateTime: &timestamppb.Timestamp{Seconds: 100},
+				StartTime:  &timestamppb.Timestamp{Seconds: 101},
+			}
+			mc.Client.EXPECT().ScheduleBuild(gomock.Any(), gomock.Any(), gomock.Any()).Return(bbres, nil).Times(1)
+
+			cf := &model.CompileFailure{}
+			So(datastore.Put(c, cf), ShouldBeNil)
+			datastore.GetTestable(c).CatchupIndexes()
+
 			cfa := &model.CompileFailureAnalysis{
-				Id: 1234,
+				Id:             1234,
+				CompileFailure: datastore.KeyForObj(c, cf),
 			}
 			So(datastore.Put(c, cfa), ShouldBeNil)
 			datastore.GetTestable(c).CatchupIndexes()
@@ -235,25 +271,31 @@ func TestUpdateAnalysisProgress(t *testing.T) {
 				RerunResult: &pb.RerunResult{
 					RerunStatus: pb.RerunStatus_FAILED,
 				},
+				BotId: "abc",
 			}
 
 			server := &GoFinditBotServer{}
 			res, err := server.UpdateAnalysisProgress(c, req)
+			datastore.GetTestable(c).CatchupIndexes()
 			So(err, ShouldBeNil)
 			So(datastore.Get(c, singleRerun), ShouldBeNil)
 			So(singleRerun.Status, ShouldEqual, pb.RerunStatus_FAILED)
-			diff := cmp.Diff(res.NextRevisionToRun, &bbpb.GitilesCommit{
-				Host:    "chromium.googlesource.com",
-				Project: "chromium/src",
-				Ref:     "ref",
-				Id:      "commit8",
-			}, cmp.Comparer(proto.Equal))
-			So(diff, ShouldEqual, "")
+			So(res, ShouldResemble, &pb.UpdateAnalysisProgressResponse{})
+			// Check that another rerun is scheduled
+			rr := &model.CompileRerunBuild{
+				Id: 9999,
+			}
+			So(datastore.Get(c, rr), ShouldBeNil)
 		})
 
-		Convey("Culprit found - return no commit", func() {
+		Convey("Culprit found", func() {
+			cf := &model.CompileFailure{}
+			So(datastore.Put(c, cf), ShouldBeNil)
+			datastore.GetTestable(c).CatchupIndexes()
+
 			cfa := &model.CompileFailureAnalysis{
-				Id: 3456,
+				Id:             3456,
+				CompileFailure: datastore.KeyForObj(c, cf),
 			}
 			So(datastore.Put(c, cfa), ShouldBeNil)
 			datastore.GetTestable(c).CatchupIndexes()
@@ -269,6 +311,7 @@ func TestUpdateAnalysisProgress(t *testing.T) {
 				Id: 9876,
 			}
 			So(datastore.Put(c, rerunBuildModel), ShouldBeNil)
+			datastore.GetTestable(c).CatchupIndexes()
 
 			// Create 2 SingleRerun of 2 commits next to each other
 			singleRerun1 := &model.SingleRerun{
@@ -317,8 +360,11 @@ func TestUpdateAnalysisProgress(t *testing.T) {
 				RerunResult: &pb.RerunResult{
 					RerunStatus: pb.RerunStatus_FAILED,
 				},
+				BotId: "abc",
 			}
 
+			// We do not expect any calls to ScheduleBuild
+			mc.Client.EXPECT().ScheduleBuild(gomock.Any(), gomock.Any(), gomock.Any()).Return(&bbpb.Build{}, nil).Times(0)
 			server := &GoFinditBotServer{}
 			res, err := server.UpdateAnalysisProgress(c, req)
 			So(err, ShouldBeNil)
@@ -340,6 +386,8 @@ func TestUpdateAnalysisProgress(t *testing.T) {
 		req.RerunResult = &pb.RerunResult{
 			RerunStatus: pb.RerunStatus_FAILED,
 		}
+		So(verifyUpdateAnalysisProgressRequest(c, req), ShouldNotBeNil)
+		req.BotId = "botid"
 		So(verifyUpdateAnalysisProgressRequest(c, req), ShouldBeNil)
 	})
 }

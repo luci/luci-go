@@ -34,9 +34,10 @@ import (
 
 // TriggerRerun triggers a rerun build for a particular build bucket build and Gitiles commit.
 // props is the extra properties to set to the rerun build
-func TriggerRerun(c context.Context, commit *buildbucketpb.GitilesCommit, failedBuildID int64, props map[string]interface{}) (*buildbucketpb.Build, error) {
+// dims is the extra dimension to set to the rerun build
+func TriggerRerun(c context.Context, commit *buildbucketpb.GitilesCommit, failedBuildID int64, props map[string]interface{}, dims map[string]string) (*buildbucketpb.Build, error) {
 	logging.Infof(c, "triggerRerun with commit %s", commit.Id)
-	properties, dimensions, err := getRerunPropertiesAndDimensions(c, failedBuildID, props)
+	properties, dimensions, err := getRerunPropertiesAndDimensions(c, failedBuildID, props, dims)
 	if err != nil {
 		logging.Errorf(c, "Failed getRerunPropertiesAndDimension for build %d", failedBuildID)
 		return nil, err
@@ -73,7 +74,7 @@ func getRerunTags(c context.Context, bbid int64) []*buildbucketpb.StringPair {
 }
 
 // getRerunProperty returns the properties and dimensions for a rerun of a buildID
-func getRerunPropertiesAndDimensions(c context.Context, bbid int64, props map[string]interface{}) (*structpb.Struct, []*buildbucketpb.RequestedDimension, error) {
+func getRerunPropertiesAndDimensions(c context.Context, bbid int64, props map[string]interface{}, dims map[string]string) (*structpb.Struct, []*buildbucketpb.RequestedDimension, error) {
 	build, err := buildbucket.GetBuild(c, bbid, &buildbucketpb.BuildMask{
 		Fields: &fieldmaskpb.FieldMask{
 			Paths: []string{"input.properties", "builder", "infra.swarming.task_dimensions"},
@@ -86,7 +87,7 @@ func getRerunPropertiesAndDimensions(c context.Context, bbid int64, props map[st
 	if err != nil {
 		return nil, nil, err
 	}
-	dimens := getRerunDimensions(c, build)
+	dimens := getRerunDimensions(c, build, dims)
 	return properties, dimens, nil
 }
 
@@ -118,7 +119,7 @@ func getRerunProperties(c context.Context, build *buildbucketpb.Build, props map
 	return spb, nil
 }
 
-func getRerunDimensions(c context.Context, build *buildbucketpb.Build) []*buildbucketpb.RequestedDimension {
+func getRerunDimensions(c context.Context, build *buildbucketpb.Build, dims map[string]string) []*buildbucketpb.RequestedDimension {
 	result := []*buildbucketpb.RequestedDimension{}
 
 	// Only copy these dimensions from the analyzed builder to the rerun job request.
@@ -134,6 +135,15 @@ func getRerunDimensions(c context.Context, build *buildbucketpb.Build) []*buildb
 			}
 		}
 	}
+
+	// Add extra dimension from dims
+	for k, v := range dims {
+		result = append(result, &buildbucketpb.RequestedDimension{
+			Key:   k,
+			Value: v,
+		})
+	}
+
 	return result
 }
 

@@ -99,7 +99,10 @@ func TestRerun(t *testing.T) {
 			"compile_targets": []string{"target"},
 			"bisection_host":  "luci-bisection.appspot.com",
 		}
-		props, dimens, err := getRerunPropertiesAndDimensions(c, 1234, extraProps)
+		extraDimens := map[string]string{
+			"id": "bot-12345",
+		}
+		props, dimens, err := getRerunPropertiesAndDimensions(c, 1234, extraProps, extraDimens)
 		So(err, ShouldBeNil)
 		So(props, ShouldResemble, &structpb.Struct{
 			Fields: map[string]*structpb.Value{
@@ -115,6 +118,23 @@ func TestRerun(t *testing.T) {
 				"bisection_host":  structpb.NewStringValue("luci-bisection.appspot.com"),
 			},
 		})
+		So(dimens, ShouldResemble, []*bbpb.RequestedDimension{
+			{
+				Key:   "os",
+				Value: "ubuntu",
+			},
+			{
+				Key:   "gpu",
+				Value: "Intel",
+			},
+			{
+				Key:   "id",
+				Value: "bot-12345",
+			},
+		})
+
+		_, dimens, err = getRerunPropertiesAndDimensions(c, 1234, extraProps, nil)
+		So(err, ShouldBeNil)
 		So(dimens, ShouldResemble, []*bbpb.RequestedDimension{
 			{
 				Key:   "os",

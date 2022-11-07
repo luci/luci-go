@@ -95,49 +95,62 @@ func (server *GoFinditBotServer) UpdateAnalysisProgress(c context.Context, req *
 
 	// Nth section
 	if lastRerun.Type == model.RerunBuildType_NthSection {
-		shouldRun, commit, err := findNextCommitToRun(c, req.AnalysisId)
+		err := processNthSectionUpdate(c, req)
 		if err != nil {
-			err = errors.Annotate(err, "findNextCommitToRun").Err()
-			errors.Log(c, err)
-			return nil, status.Errorf(codes.Internal, "error finding next commit to run for analysis %d", req.AnalysisId)
+			err = errors.Annotate(err, "processNthSectionUpdate").Err()
+			logging.Errorf(c, err.Error())
+			return nil, status.Errorf(codes.Internal, err.Error())
 		}
-		if !shouldRun {
-			return &pb.UpdateAnalysisProgressResponse{}, nil
-		}
-		return &pb.UpdateAnalysisProgressResponse{
-			NextRevisionToRun: &bbpb.GitilesCommit{
-				Host:    req.GitilesCommit.Host,
-				Project: req.GitilesCommit.Project,
-				Ref:     req.GitilesCommit.Ref,
-				Id:      commit,
-			},
-		}, nil
+		return &pb.UpdateAnalysisProgressResponse{}, nil
 	}
 
 	return nil, status.Errorf(codes.Internal, "unknown error")
 }
 
-// findNextCommitToRun return true (and the commit) if it can find a commit to run next
-func findNextCommitToRun(c context.Context, analysisID int64) (bool, string, error) {
-	// TODO (nqmtuan): It is possible that there are some pending culprit verification runs
-	// that have higher priority than nth-section run. In such case, we should
-	// return the culprit verification run first. However, it requires cancelling existing build
-	// etc... so we will do it later.
-	// For now, we will return the next nthsection commit that should run next
-	cfa, err := datastoreutil.GetCompileFailureAnalysis(c, analysisID)
+// processNthSectionUpdate processes the bot update for nthsection analysis run
+// It will schedule the next run for nthsection analysis targeting the same bot
+func processNthSectionUpdate(c context.Context, req *pb.UpdateAnalysisProgressRequest) error {
+	cfa, err := datastoreutil.GetCompileFailureAnalysis(c, req.AnalysisId)
 	if err != nil {
-		return false, "", err
+		return err
 	}
 	nsa, err := datastoreutil.GetNthSectionAnalysis(c, cfa)
 	if err != nil {
-		return false, "", err
+		return err
 	}
 
 	// There is no nthsection analysis for this analysis
 	if nsa == nil {
-		return false, "", nil
+		return nil
 	}
 
+	shouldRun, commit, err := findNextNthSectionCommitToRun(c, nsa)
+	if err != nil {
+		return errors.Annotate(err, "findNextNthSectionCommitToRun").Err()
+	}
+	if !shouldRun {
+		return nil
+	}
+
+	// We got the next commit to run. We will schedule a rerun targetting the same bot
+	gitilesCommit := &bbpb.GitilesCommit{
+		Host:    req.GitilesCommit.Host,
+		Project: req.GitilesCommit.Project,
+		Ref:     req.GitilesCommit.Ref,
+		Id:      commit,
+	}
+	dims := map[string]string{
+		"id": req.BotId,
+	}
+	err = nthsection.RerunCommit(c, nsa, gitilesCommit, cfa.FirstFailedBuildId, dims)
+	if err != nil {
+		return errors.Annotate(err, "rerun commit for %s", commit).Err()
+	}
+	return nil
+}
+
+// findNextNthSectionCommitToRun return true (and the commit) if it can find a nthsection commit to run next
+func findNextNthSectionCommitToRun(c context.Context, nsa *model.CompileNthSectionAnalysis) (bool, string, error) {
 	snapshot, err := nthsection.CreateSnapshot(c, nsa)
 	if err != nil {
 		return false, "", errors.Annotate(err, "couldn't create snapshot").Err()
@@ -195,6 +208,9 @@ func verifyUpdateAnalysisProgressRequest(c context.Context, req *pb.UpdateAnalys
 	}
 	if req.RerunResult == nil {
 		return fmt.Errorf("rerun result is required")
+	}
+	if req.BotId == "" {
+		return fmt.Errorf("bot_id is required")
 	}
 	return nil
 }

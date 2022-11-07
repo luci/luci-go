@@ -127,12 +127,12 @@ func VerifyCommit(c context.Context, commit *buildbucketpb.GitilesCommit, failed
 	}
 
 	// Trigger a rerun with commit and parent commit
-	build1, err := rerun.TriggerRerun(c, commit, failedBuildID, props)
+	build1, err := rerun.TriggerRerun(c, commit, failedBuildID, props, nil)
 	if err != nil {
 		return nil, nil, err
 	}
 
-	build2, err := rerun.TriggerRerun(c, parentCommit, failedBuildID, props)
+	build2, err := rerun.TriggerRerun(c, parentCommit, failedBuildID, props, nil)
 	if err != nil {
 		return nil, nil, err
 	}
