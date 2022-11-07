@@ -39,9 +39,12 @@ Delete the items corresponding the the framework you won't use.
    2. `react-query` from `package.json`.
 
 ## Building and running the project
+After making the modifications mentioned above and you have a working project,
+you can use the following commands:
 
 1. Run with watch for development: `npm run watch`.
 2. Run tests: `npm run test`.
-3. Fix eslint-fixable issues: `npm run fix-eslint`.
-4. Type check: `npm run typecheck`.
-5. Build the project for production: `npm run build`.
+3. Run End to End tests with Cypress: `npm run e2e`.
+4. Fix eslint-fixable issues: `npm run fix-eslint`.
+5. Type check: `npm run typecheck`.
+6. Build the project for production: `npm run build`.
