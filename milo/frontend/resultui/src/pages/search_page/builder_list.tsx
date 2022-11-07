@@ -17,6 +17,7 @@ import { observer } from 'mobx-react-lite';
 import { useEffect } from 'react';
 
 import '../../components/dot_spinner';
+import { DotSpinner } from '../../components/dot_spinner';
 import { getURLPathForBuilder } from '../../libs/build_utils';
 import { useStore } from '../../store';
 
@@ -45,7 +46,7 @@ export const BuilderList = observer(() => {
       ))}
       {(builderLoader?.isLoading ?? true) && (
         <Typography component="span">
-          Loading <milo-dot-spinner></milo-dot-spinner>
+          Loading <DotSpinner />
         </Typography>
       )}
     </>

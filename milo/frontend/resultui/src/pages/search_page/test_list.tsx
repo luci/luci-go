@@ -17,6 +17,7 @@ import { observer } from 'mobx-react-lite';
 import { useEffect } from 'react';
 
 import '../../components/dot_spinner';
+import { DotSpinner } from '../../components/dot_spinner';
 import { useStore } from '../../store';
 
 export const TestList = observer(() => {
@@ -34,7 +35,7 @@ export const TestList = observer(() => {
     return (
       <Typography component="span">
         Loading
-        <milo-dot-spinner></milo-dot-spinner>
+        <DotSpinner />
       </Typography>
     );
   }
@@ -53,7 +54,7 @@ export const TestList = observer(() => {
       {testLoader?.isLoading ?? true ? (
         <Typography component="span">
           Loading
-          <milo-dot-spinner></milo-dot-spinner>
+          <DotSpinner />
         </Typography>
       ) : (
         !testLoader.loadedAll && (
