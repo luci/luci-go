@@ -15,6 +15,7 @@
 import '@material/mwc-icon';
 import { MobxLitElement } from '@adobe/lit-mobx';
 import { css, customElement, html } from 'lit-element';
+import { unsafeHTML } from 'lit-html/directives/unsafe-html';
 import { DateTime } from 'luxon';
 import MarkdownIt from 'markdown-it';
 import { computed, makeObservable, observable } from 'mobx';
@@ -110,7 +111,7 @@ export class CommitEntryElement extends MobxLitElement {
           <div id="header-description">${this.commitTitle}</div>
         </div>
         <div slot="content" id="entry-content">
-          <div id="summary">${this.descriptionHTML}</div>
+          <div id="summary">${unsafeHTML(this.descriptionHTML)}</div>
           ${this.renderChangedFiles()}
         </div>
       </milo-expandable-entry>
