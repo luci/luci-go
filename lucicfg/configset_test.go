@@ -20,6 +20,9 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"sort"
+	"strings"
+	"sync"
 	"testing"
 
 	"go.chromium.org/luci/common/api/luci_config/config/v1"
@@ -147,6 +150,120 @@ func TestConfigSet(t *testing.T) {
 		So(result("INFO").OverallError(true), ShouldBeNil)
 		So(result("INFO", "WARNING", "ERROR").OverallError(true), ShouldErrLike, "some files were invalid")
 		So(result("INFO", "WARNING").OverallError(true), ShouldErrLike, "some files had validation warnings")
+	})
+}
+
+func TestRemoteValidator(t *testing.T) {
+	t.Parallel()
+
+	ctx := context.Background()
+
+	testReq := &ValidationRequest{
+		ConfigSet: "config-set",
+		Files: []*config.LuciConfigValidateConfigRequestMessageFile{
+			{
+				Path:    "a",
+				Content: "aaa",
+			},
+			{
+				Path:    "b",
+				Content: "bb",
+			},
+			{
+				Path:    "c",
+				Content: "cccccc",
+			},
+			{
+				Path:    "d",
+				Content: "ddddd",
+			},
+		},
+	}
+
+	Convey("Splits requests, collects messages", t, func() {
+		var reqs []*ValidationRequest
+		var lock sync.Mutex
+
+		val := &remoteValidator{
+			requestSizeLimitBytes: 5,
+
+			validateConfig: func(ctx context.Context, req *ValidationRequest) (*config.LuciConfigValidateConfigResponseMessage, error) {
+				lock.Lock()
+				reqs = append(reqs, req)
+				lock.Unlock()
+
+				if req.ConfigSet != "config-set" {
+					panic("bad ConfigSet")
+				}
+
+				var messages []*ValidationMessage
+				for _, f := range req.Files {
+					messages = append(messages, &ValidationMessage{
+						Path: f.Path,
+						Text: fmt.Sprintf("Boom in %s", f.Path),
+					})
+				}
+
+				return &config.LuciConfigValidateConfigResponseMessage{
+					Messages: messages,
+				}, nil
+			},
+		}
+
+		msg, err := val.Validate(ctx, testReq)
+		So(err, ShouldBeNil)
+		So(msg, ShouldResemble, []*ValidationMessage{
+			{Path: "a", Text: "Boom in a"},
+			{Path: "b", Text: "Boom in b"},
+			{Path: "c", Text: "Boom in c"},
+			{Path: "d", Text: "Boom in d"},
+		})
+
+		var sets []string
+		for _, req := range reqs {
+			var names []string
+			for _, f := range req.Files {
+				names = append(names, f.Path)
+			}
+			sets = append(sets, strings.Join(names, "+"))
+		}
+		sort.Strings(sets)
+		So(sets, ShouldResemble, []string{"b+a", "c", "d"})
+	})
+
+	Convey("Handles errors", t, func() {
+		val := &remoteValidator{
+			requestSizeLimitBytes: 5,
+
+			validateConfig: func(ctx context.Context, req *ValidationRequest) (*config.LuciConfigValidateConfigResponseMessage, error) {
+				if req.ConfigSet != "config-set" {
+					panic("bad ConfigSet")
+				}
+
+				var messages []*ValidationMessage
+				for _, f := range req.Files {
+					if f.Path == "c" || f.Path == "d" {
+						return nil, fmt.Errorf("fake error")
+					}
+					messages = append(messages, &ValidationMessage{
+						Path: f.Path,
+						Text: fmt.Sprintf("Boom in %s", f.Path),
+					})
+				}
+
+				return &config.LuciConfigValidateConfigResponseMessage{
+					Messages: messages,
+				}, nil
+			},
+		}
+
+		msg, err := val.Validate(ctx, testReq)
+		So(err, ShouldNotBeNil)
+		So(err.Error(), ShouldEqual, "fake error (and 1 other error)")
+		So(msg, ShouldResemble, []*ValidationMessage{
+			{Path: "a", Text: "Boom in a"},
+			{Path: "b", Text: "Boom in b"},
+		})
 	})
 }
 

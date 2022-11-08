@@ -22,10 +22,15 @@ import (
 	"os"
 	"path/filepath"
 	"sort"
+	"strings"
+	"sync"
+
+	"github.com/dustin/go-humanize"
 
 	config "go.chromium.org/luci/common/api/luci_config/config/v1"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/common/sync/parallel"
 )
 
 // Alias some ridiculously long type names that we round-trip in the public API.
@@ -79,20 +84,89 @@ type ConfigSetValidator interface {
 }
 
 type remoteValidator struct {
-	svc *config.Service
+	validateConfig        func(context.Context, *ValidationRequest) (*config.LuciConfigValidateConfigResponseMessage, error)
+	requestSizeLimitBytes int64
 }
 
-func (r remoteValidator) Validate(ctx context.Context, req *ValidationRequest) ([]*ValidationMessage, error) {
-	resp, err := r.svc.ValidateConfig(req).Context(ctx).Do()
-	if err != nil {
-		return nil, err
+func (r *remoteValidator) Validate(ctx context.Context, req *ValidationRequest) ([]*ValidationMessage, error) {
+	// Sort by size, smaller first, to group small files in a single request.
+	files := append([]*config.LuciConfigValidateConfigRequestMessageFile(nil), req.Files...)
+	sort.Slice(files, func(i, j int) bool {
+		return len(files[i].Content) < len(files[j].Content)
+	})
+
+	// Split all files into a bunch of smallish validation requests to avoid
+	// hitting 32MB request size limit.
+	var (
+		requests []*ValidationRequest
+		curFiles []*config.LuciConfigValidateConfigRequestMessageFile
+		curSize  int64
+	)
+	flush := func() {
+		if len(curFiles) > 0 {
+			requests = append(requests, &ValidationRequest{
+				ConfigSet: req.ConfigSet,
+				Files:     curFiles,
+			})
+		}
+		curFiles = nil
+		curSize = 0
 	}
-	return resp.Messages, nil
+	for _, f := range files {
+		curFiles = append(curFiles, f)
+		curSize += int64(len(f.Content))
+		if curSize >= r.requestSizeLimitBytes {
+			flush()
+		}
+	}
+	flush()
+
+	var (
+		lock     sync.Mutex
+		messages []*ValidationMessage
+	)
+
+	// Execute all requests in parallel.
+	err := parallel.FanOutIn(func(gen chan<- func() error) {
+		for _, req := range requests {
+			req := req
+			gen <- func() error {
+				resp, err := r.validateConfig(ctx, req)
+				if resp != nil {
+					lock.Lock()
+					messages = append(messages, resp.Messages...)
+					lock.Unlock()
+				}
+				return err
+			}
+		}
+	})
+
+	// Sort messages by path for determinism.
+	sort.Slice(messages, func(i, j int) bool {
+		return messages[i].Path < messages[j].Path
+	})
+
+	return messages, err
 }
 
 // RemoteValidator returns ConfigSetValidator that makes RPCs to LUCI Config.
 func RemoteValidator(svc *config.Service) ConfigSetValidator {
-	return remoteValidator{svc}
+	return &remoteValidator{
+		requestSizeLimitBytes: 8 * 1024 * 1024,
+		validateConfig: func(ctx context.Context, req *ValidationRequest) (*config.LuciConfigValidateConfigResponseMessage, error) {
+			debug := make([]string, len(req.Files))
+			for i, f := range req.Files {
+				debug[i] = fmt.Sprintf("%s (%s)", f.Path, humanize.Bytes(uint64(len(f.Content))))
+			}
+			logging.Debugf(ctx, "Sending request to %s to validate %d files: %s",
+				svc.BasePath,
+				len(req.Files),
+				strings.Join(debug, ", "),
+			)
+			return svc.ValidateConfig(req).Context(ctx).Do()
+		},
+	}
 }
 
 // ReadConfigSet reads all regular files in the given directory (recursively)
@@ -148,7 +222,7 @@ func (cs ConfigSet) Validate(ctx context.Context, val ConfigSetValidator) *Valid
 
 	logging.Infof(ctx, "Sending to LUCI Config for validation as config set %q:", cs.Name)
 	for idx, f := range cs.Files() {
-		logging.Infof(ctx, "  %s (%d bytes)", f, len(cs.Data[f]))
+		logging.Infof(ctx, "  %s (%s)", f, humanize.Bytes(uint64(len(cs.Data[f]))))
 		req.Files[idx] = &config.LuciConfigValidateConfigRequestMessageFile{
 			Path:    f,
 			Content: base64.StdEncoding.EncodeToString(cs.Data[f]),
