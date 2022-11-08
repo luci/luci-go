@@ -23,7 +23,6 @@ import (
 
 	"go.chromium.org/luci/common/api/gerrit"
 	"go.chromium.org/luci/common/errors"
-	"go.chromium.org/luci/common/logging"
 	gerritpb "go.chromium.org/luci/common/proto/gerrit"
 	"go.chromium.org/luci/server/auth"
 )
@@ -61,7 +60,7 @@ func newGerritClient(ctx context.Context, host string) (gerritpb.GerritClient, e
 func NewClient(ctx context.Context, host string, project string) (*Client, error) {
 	client, err := newGerritClient(ctx, host)
 	if err != nil {
-		return nil, err
+		return nil, errors.Annotate(err, "error making Gerrit client for host %s", host).Err()
 	}
 
 	return &Client{
@@ -71,12 +70,10 @@ func NewClient(ctx context.Context, host string, project string) (*Client, error
 	}, nil
 }
 
-// GetChange gets the corresponding change info given the commit ID.
-// This function returns an error if none or more than 1 changes are returned
-// by Gerrit.
-func (c *Client) GetChange(ctx context.Context, commitID string) (*gerritpb.ChangeInfo, error) {
+// queryChanges gets the info for corresponding change(s) given the query string.
+func (c *Client) queryChanges(ctx context.Context, query string) ([]*gerritpb.ChangeInfo, error) {
 	req := &gerritpb.ListChangesRequest{
-		Query: fmt.Sprintf("commit:\"%s\"", commitID),
+		Query: query,
 		Options: []gerritpb.QueryOption{
 			gerritpb.QueryOption_LABELS,
 			gerritpb.QueryOption_MESSAGES,
@@ -88,31 +85,48 @@ func (c *Client) GetChange(ctx context.Context, commitID string) (*gerritpb.Chan
 
 	res, err := c.gerritClient.ListChanges(ctx, req)
 	if err != nil {
-		err = errors.Annotate(err, "error getting change from Gerrit host %s for commit %s",
-			c.host, commitID).Err()
-		logging.Errorf(ctx, err.Error())
 		return nil, err
 	}
 
-	if len(res.Changes) == 0 {
-		logging.Errorf(ctx, "no change found from Gerrit host %s for commit %s",
-			c.host, commitID,
-		)
-		return nil, fmt.Errorf("no change found from Gerrit host %s for commit %s",
-			c.host, commitID,
+	return res.Changes, nil
+}
+
+// GetChange gets the corresponding change info given the commit ID.
+// This function returns an error if none or more than 1 changes are returned
+// by Gerrit.
+func (c *Client) GetChange(ctx context.Context, commitID string) (*gerritpb.ChangeInfo, error) {
+	query := fmt.Sprintf("commit:\"%s\"", commitID)
+	changes, err := c.queryChanges(ctx, query)
+	if err != nil {
+		return nil, errors.Annotate(err, "error getting change from Gerrit host %s using query %s",
+			c.host, query).Err()
+	}
+
+	if len(changes) == 0 {
+		return nil, fmt.Errorf("no change found from Gerrit host %s using query %s",
+			c.host, query,
 		)
 	}
 
-	if len(res.Changes) > 1 {
-		logging.Errorf(ctx, "multiple changes found from Gerrit host %s for commit %s",
-			c.host, commitID,
-		)
-		return nil, fmt.Errorf("multiple changes found from Gerrit host %s for commit %s",
-			c.host, commitID,
+	if len(changes) > 1 {
+		return nil, fmt.Errorf("multiple changes found from Gerrit host %s using query %s",
+			c.host, query,
 		)
 	}
 
-	return res.Changes[0], nil
+	return changes[0], nil
+}
+
+// GetReverts gets the corresponding revert(s) for the given change.
+func (c *Client) GetReverts(ctx context.Context, change *gerritpb.ChangeInfo) ([]*gerritpb.ChangeInfo, error) {
+	query := fmt.Sprintf("project:\"%s\" revertof:%d", change.Project, change.Number)
+	changes, err := c.queryChanges(ctx, query)
+	if err != nil {
+		return nil, errors.Annotate(err, "error getting reverts of a change from Gerrit host %s using query %s",
+			c.host, query).Err()
+	}
+
+	return changes, nil
 }
 
 // CreateRevert creates a revert change in Gerrit for the specified change.
@@ -130,10 +144,8 @@ func (c *Client) CreateRevert(ctx context.Context, changeID int64,
 
 	res, err := c.gerritClient.RevertChange(waitCtx, req)
 	if err != nil {
-		err = errors.Annotate(err, "error creating revert change on Gerrit host %s for change %s~%d",
+		return nil, errors.Annotate(err, "error creating revert change on Gerrit host %s for change %s~%d",
 			c.host, c.project, changeID).Err()
-		logging.Errorf(ctx, err.Error())
-		return nil, err
 	}
 
 	return res, nil
@@ -144,9 +156,7 @@ func (c *Client) AddComment(ctx context.Context, changeID int64, message string)
 	req := c.createSetReviewRequest(ctx, changeID, message)
 	res, err := c.setReview(ctx, req)
 	if err != nil {
-		err = errors.Annotate(err, "error adding comment").Err()
-		logging.Errorf(ctx, err.Error())
-		return nil, err
+		return nil, errors.Annotate(err, "error adding comment").Err()
 	}
 
 	return res, nil
@@ -177,9 +187,7 @@ func (c *Client) SendForReview(ctx context.Context, changeID int64, message stri
 
 	res, err := c.setReview(ctx, req)
 	if err != nil {
-		err = errors.Annotate(err, "error sending for review").Err()
-		logging.Errorf(ctx, err.Error())
-		return nil, err
+		return nil, errors.Annotate(err, "error sending for review").Err()
 	}
 	return res, nil
 }
@@ -208,9 +216,7 @@ func (c *Client) Commit(ctx context.Context, changeID int64, message string,
 
 	res, err := c.setReview(ctx, req)
 	if err != nil {
-		err = errors.Annotate(err, "error committing").Err()
-		logging.Errorf(ctx, err.Error())
-		return nil, err
+		return nil, errors.Annotate(err, "error committing").Err()
 	}
 
 	return res, nil

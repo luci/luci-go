@@ -98,6 +98,64 @@ func TestGetChange(t *testing.T) {
 	})
 }
 
+func TestGetRevertOf(t *testing.T) {
+	t.Parallel()
+
+	Convey("GetReverts", t, func() {
+		ctx := context.Background()
+
+		// Set up mock Gerrit client
+		ctl := gomock.NewController(t)
+		defer ctl.Finish()
+		mockClient := NewMockedClient(ctx, ctl)
+		ctx = mockClient.Ctx
+
+		// Set up Gerrit client
+		client, err := NewClient(ctx, testGerritHost, testGerritProject)
+		So(err, ShouldBeNil)
+		So(client, ShouldNotBeNil)
+
+		Convey("No revert found", func() {
+			// Set up mock response
+			res := &gerritpb.ListChangesResponse{}
+			mockClient.Client.EXPECT().ListChanges(gomock.Any(), gomock.Any()).Return(res, nil).Times(1)
+
+			changeInfo := &gerritpb.ChangeInfo{
+				Number:  123456,
+				Project: testGerritProject,
+			}
+			reverts, err := client.GetReverts(ctx, changeInfo)
+			So(err, ShouldBeNil)
+			So(len(reverts), ShouldEqual, 0)
+		})
+
+		Convey("At least 1 revert found", func() {
+			// Set up mock response
+			res := &gerritpb.ListChangesResponse{
+				Changes: []*gerritpb.ChangeInfo{
+					{
+						Number:  234567,
+						Project: testGerritProject,
+					},
+					{
+						Number:  345678,
+						Project: testGerritProject,
+					},
+				},
+			}
+			mockClient.Client.EXPECT().ListChanges(gomock.Any(), gomock.Any()).Return(res, nil).Times(1)
+
+			changeInfo := &gerritpb.ChangeInfo{
+				Number:  123456,
+				Project: testGerritProject,
+			}
+			reverts, err := client.GetReverts(ctx, changeInfo)
+			So(err, ShouldBeNil)
+			So(reverts, ShouldResemble, res.Changes)
+		})
+	})
+}
+
 func TestCreateRevert(t *testing.T) {
 	t.Parallel()
 
