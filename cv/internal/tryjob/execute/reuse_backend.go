@@ -30,7 +30,16 @@ import (
 // Buildbucket).
 func (w *worker) findReuseInBackend(ctx context.Context, definitions []*tryjob.Definition) (map[*tryjob.Definition]*tryjob.Tryjob, error) {
 	candidates := make(map[*tryjob.Definition]*tryjob.Tryjob, len(definitions))
+	cutOffTime := clock.Now(ctx).Add(-staleTryjobAge)
 	err := w.backend.Search(ctx, w.cls, definitions, w.run.ID.LUCIProject(), func(tj *tryjob.Tryjob) bool {
+		// backend.Search returns matching Tryjob from newest to oldest, if backend
+		// starts to return stale Tryjob (Tryjob created before cutoff time), then
+		// there's no point resuming the search as none of the returning Tryjobs
+		// will be reusable anyway.
+		if createTime := tj.Result.GetCreateTime(); createTime != nil && createTime.AsTime().Before(cutOffTime) {
+			return false
+		}
+
 		switch candidate, ok := candidates[tj.Definition]; {
 		case ok:
 			// Matching Tryjob already found.
