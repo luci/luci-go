@@ -538,12 +538,13 @@ func TestDetails(t *testing.T) {
 				Convey("missing 2nd Chunk", func() {
 					// Originally, it has >4 chunks. Now, intentionally delete the 2nd chunk
 					chunk2 := &PropertyChunk{
-						ID: 2,
+						ID:    2,
+						Bytes: []byte("I am not valid compressed bytes."),
 						Parent: datastore.KeyForObj(ctx, &BuildOutputProperties{
 							Build: datastore.KeyForObj(ctx, &Build{ID: 123}),
 						}),
 					}
-					So(datastore.Delete(ctx, chunk2), ShouldBeNil)
+					So(datastore.Put(ctx, chunk2), ShouldBeNil)
 
 					outPropInDB := &BuildOutputProperties{
 						Build: datastore.KeyForObj(ctx, &Build{ID: 123}),

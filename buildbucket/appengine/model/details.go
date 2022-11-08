@@ -130,8 +130,8 @@ type BuildInputProperties struct {
 // datastore.Put, as it may be chunked if it exceeds maxPropertySize.
 // Please always use *BuildOutputProperties.Get and *BuildOutputProperties.Put.
 type BuildOutputProperties struct {
-	_ datastore.PropertyMap `gae:"-,extra"`
-	_kind string `gae:"$kind,BuildOutputProperties"`
+	_     datastore.PropertyMap `gae:"-,extra"`
+	_kind string                `gae:"$kind,BuildOutputProperties"`
 	// _id is always 1 because only one such entity exists.
 	_id int `gae:"$id,1"`
 	// Build is the key for the build this entity belongs to.
@@ -209,7 +209,11 @@ func (bo *BuildOutputProperties) Get(c context.Context) error {
 	})
 	// Preemptively fetch up to 4 chunks to minimize Datastore RPC calls so that
 	// in most cases, it only needs one call.
-	const preFetchedChunkCnt = 4
+	//
+	// BUG(b/258241457) - Setting this to 0 to see if it tamps down suprious
+	// Lookup costs in datastore. Should evaluate re-enabling after we turn
+	// entity caching back on.
+	const preFetchedChunkCnt = 0
 	chunks := make([]*PropertyChunk, preFetchedChunkCnt)
 	for i := 0; i < preFetchedChunkCnt; i++ {
 		chunks[i] = &PropertyChunk{
@@ -224,7 +228,7 @@ func (bo *BuildOutputProperties) Get(c context.Context) error {
 			return err
 		case me[0] != nil:
 			return me[0]
-		case errors.Filter(me[1], datastore.ErrNoSuchEntity) != nil :
+		case errors.Filter(me[1], datastore.ErrNoSuchEntity) != nil:
 			return errors.Annotate(me[1], "fail to fetch first %d chunks for BuildOutputProperties", preFetchedChunkCnt).Err()
 		}
 	}
@@ -235,8 +239,8 @@ func (bo *BuildOutputProperties) Get(c context.Context) error {
 	}
 
 	// Fetch the rest chunks.
-	if bo.ChunkCount - preFetchedChunkCnt > 0 {
-		for i := preFetchedChunkCnt+1; i <= bo.ChunkCount; i++ {
+	if bo.ChunkCount-preFetchedChunkCnt > 0 {
+		for i := preFetchedChunkCnt + 1; i <= bo.ChunkCount; i++ {
 			chunks = append(chunks, &PropertyChunk{
 				ID:     i,
 				Parent: pk,
@@ -248,7 +252,6 @@ func (bo *BuildOutputProperties) Get(c context.Context) error {
 		}
 	}
 	chunks = chunks[:bo.ChunkCount]
-
 
 	// Assemble proto bytes and restore to proto.
 	var compressedBytes []byte
