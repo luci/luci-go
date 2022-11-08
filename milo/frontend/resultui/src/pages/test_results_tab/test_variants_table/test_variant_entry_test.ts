@@ -19,7 +19,7 @@ import { destroy } from 'mobx-state-tree';
 import * as sinon from 'sinon';
 
 import './test_variant_entry';
-import { ExpandableEntry } from '../../../components/expandable_entry';
+import { ExpandableEntryElement } from '../../../components/expandable_entry';
 import { provider } from '../../../libs/context';
 import { Notifier, provideNotifier } from '../../../libs/observer_element';
 import { Cluster } from '../../../services/luci_analysis';
@@ -205,6 +205,7 @@ describe('test_variant_entry_test', () => {
     // New interactions are still handled.
     tvEntry.expanded = true;
     await tvEntry.updateComplete;
-    expect(tvEntry.shadowRoot!.querySelector<ExpandableEntry>(':host>milo-expandable-entry')!.expanded).to.be.true;
+    expect(tvEntry.shadowRoot!.querySelector<ExpandableEntryElement>(':host>milo-expandable-entry')!.expanded).to.be
+      .true;
   });
 });
