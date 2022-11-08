@@ -203,9 +203,6 @@ func TestSynthesizeBuild(t *testing.T) {
 							PayloadPath: "kitchen-checkout",
 						},
 						Buildbucket: &pb.BuildInfra_Buildbucket{
-							ExperimentReasons: map[string]pb.BuildInfra_Buildbucket_ExperimentReason{
-								"luci.non_production": pb.BuildInfra_Buildbucket_EXPERIMENT_REASON_REQUESTED,
-							},
 							Agent: &pb.BuildInfra_Buildbucket_Agent{
 								Input: &pb.BuildInfra_Buildbucket_Agent_Input{},
 								Purposes: map[string]pb.BuildInfra_Buildbucket_Agent_Purpose{
@@ -338,6 +335,105 @@ func TestSynthesizeBuild(t *testing.T) {
 						Project: "project",
 						Bucket:  "bucket",
 						Builder: "builder",
+					},
+				}
+				b, err := srv.SynthesizeBuild(ctx, req)
+				So(err, ShouldBeNil)
+
+				expected.Builder.Bucket = "bucket.shadow"
+				So(b, ShouldResembleProto, expected)
+			})
+
+			Convey("set experiments", func() {
+				So(datastore.Put(ctx, &model.Bucket{
+					ID:     "bucket",
+					Parent: model.ProjectKey(ctx, "project"),
+					Proto: &pb.Bucket{
+						Acls: []*pb.Acl{
+							{
+								Identity: "user:caller@example.com",
+								Role:     pb.Acl_READER,
+							},
+						},
+						Shadow: "bucket.shadow",
+					},
+				}), ShouldBeNil)
+				expected := &pb.Build{
+					Builder: &pb.BuilderID{
+						Project: "project",
+						Bucket:  "bucket",
+						Builder: "builder",
+					},
+					Exe: &pb.Executable{
+						Cmd: []string{"recipes"},
+					},
+					ExecutionTimeout: &durationpb.Duration{
+						Seconds: 10800,
+					},
+					GracePeriod: &durationpb.Duration{
+						Seconds: 30,
+					},
+					Infra: &pb.BuildInfra{
+						Bbagent: &pb.BuildInfra_BBAgent{
+							CacheDir:    "cache",
+							PayloadPath: "kitchen-checkout",
+						},
+						Buildbucket: &pb.BuildInfra_Buildbucket{
+							ExperimentReasons: map[string]pb.BuildInfra_Buildbucket_ExperimentReason{
+								"cool.experiment_thing":     pb.BuildInfra_Buildbucket_EXPERIMENT_REASON_REQUESTED,
+								"disabled.experiment_thing": pb.BuildInfra_Buildbucket_EXPERIMENT_REASON_REQUESTED,
+							},
+							Agent: &pb.BuildInfra_Buildbucket_Agent{
+								Input: &pb.BuildInfra_Buildbucket_Agent_Input{},
+								Purposes: map[string]pb.BuildInfra_Buildbucket_Agent_Purpose{
+									"kitchen-checkout": pb.BuildInfra_Buildbucket_Agent_PURPOSE_EXE_PAYLOAD,
+								},
+							},
+						},
+						Logdog: &pb.BuildInfra_LogDog{
+							Project: "project",
+						},
+						Resultdb: &pb.BuildInfra_ResultDB{
+							Hostname: "rdbHost",
+						},
+						Swarming: &pb.BuildInfra_Swarming{
+							Caches: []*pb.BuildInfra_Swarming_CacheEntry{
+								{
+									Name: "builder_1809c38861a9996b1748e4640234fbd089992359f6f23f62f68deb98528f5f2b_v2",
+									Path: "builder",
+									WaitForWarmCache: &durationpb.Duration{
+										Seconds: 240,
+									},
+								},
+							},
+							Priority: 30,
+						},
+					},
+					Input: &pb.Build_Input{
+						Properties: &structpb.Struct{},
+						Experiments: []string{
+							"cool.experiment_thing",
+						},
+					},
+					SchedulingTimeout: &durationpb.Duration{
+						Seconds: 21600,
+					},
+					Tags: []*pb.StringPair{
+						{
+							Key:   "builder",
+							Value: "builder",
+						},
+					},
+				}
+				req := &pb.SynthesizeBuildRequest{
+					Builder: &pb.BuilderID{
+						Project: "project",
+						Bucket:  "bucket",
+						Builder: "builder",
+					},
+					Experiments: map[string]bool{
+						"cool.experiment_thing":     true,
+						"disabled.experiment_thing": false,
 					},
 				}
 				b, err := srv.SynthesizeBuild(ctx, req)

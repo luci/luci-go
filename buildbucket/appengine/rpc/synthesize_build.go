@@ -86,6 +86,11 @@ func synthesizeBuildFromTemplate(ctx context.Context, req *pb.SynthesizeBuildReq
 		return nil, err
 	}
 
+	if len(req.GetExperiments()) > 0 {
+		ret.Experiments = req.Experiments
+	} else {
+		ret.Experiments = map[string]bool{}
+	}
 	return synthesizeBuild(ctx, ret)
 }
 
@@ -99,5 +104,12 @@ func (*Builds) SynthesizeBuild(ctx context.Context, req *pb.SynthesizeBuildReque
 		return synthesizeBuildFromTemplate(ctx, req)
 	}
 
-	return synthesizeBuild(ctx, &pb.ScheduleBuildRequest{Builder: req.GetBuilder()})
+	exps := map[string]bool{}
+	if len(req.GetExperiments()) > 0 {
+		exps = req.Experiments
+	}
+	return synthesizeBuild(ctx, &pb.ScheduleBuildRequest{
+		Builder:     req.GetBuilder(),
+		Experiments: exps,
+	})
 }

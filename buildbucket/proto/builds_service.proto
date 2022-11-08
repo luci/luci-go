@@ -525,6 +525,11 @@ message SynthesizeBuildRequest {
   // Value for Build.builder. See its comments.
   // Required, unless template_build_id is specified.
   BuilderID builder = 2;
+
+  // Sets (or prevents) these experiments on the synthesized build.
+  //
+  // See `Builder.experiments` for well-known experiments.
+  map<string, bool> experiments = 3;
 }
 
 // Defines a subset of Build fields and properties to return.
