@@ -18,17 +18,54 @@ import (
 	"context"
 	"testing"
 
-	. "github.com/smartystreets/goconvey/convey"
+	"go.chromium.org/luci/gae/impl/memory"
+	"go.chromium.org/luci/gae/service/datastore"
+
 	"go.chromium.org/luci/buildbucket/appengine/model"
+	pb "go.chromium.org/luci/buildbucket/proto"
+
+	. "github.com/smartystreets/goconvey/convey"
+
 	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestBackendTask(t *testing.T) {
-	ctx := context.Background()
-	build := &model.Build{}
+	t.Parallel()
 
 	Convey("assert createBackendTask", t, func() {
-		err := createBackendTask(ctx, build)
+		ctx := memory.Use(context.Background())
+
+		build := &model.Build{
+			ID: 1,
+			Proto: &pb.Build{
+				Builder: &pb.BuilderID{
+					Builder: "builder",
+					Bucket:  "bucket",
+					Project: "project",
+				},
+				Id: 1,
+			},
+		}
+		bk := datastore.KeyForObj(ctx, build)
+		infra := &model.BuildInfra{
+			Build: bk,
+			Proto: &pb.BuildInfra{
+				Backend: &pb.BuildInfra_Backend{
+					Task: &pb.Task{
+						Id: &pb.TaskID{
+							Id:     "1",
+							Target: "swarming://mytarget",
+						},
+					},
+				},
+				Buildbucket: &pb.BuildInfra_Buildbucket{
+					Hostname: "some unique host name",
+				},
+			},
+		}
+
+		So(datastore.Put(ctx, build, infra), ShouldBeNil)
+		err := CreateBackendTask(ctx, 1)
 		So(err, ShouldErrLike, "Method not implemented")
 	})
 }
