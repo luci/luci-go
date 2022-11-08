@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// Package datastoreutil contains utility functions related to datastore entities
 package datastoreutil
 
 import (

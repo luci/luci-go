@@ -6,6 +6,16 @@ indexes:
   - name: score
     direction: desc
 
+- kind: Suspect
+  properties:
+  - name: is_revert_created
+  - name: revert_create_time
+
+- kind: Suspect
+  properties:
+  - name: is_revert_committed
+  - name: revert_commit_time
+
 - kind: SingleRerun
   properties:
   - name: rerun_build

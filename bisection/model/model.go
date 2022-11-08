@@ -188,6 +188,25 @@ type Culprit struct {
 	buildbucketpb.GitilesCommit
 }
 
+// RevertDetails encapsulate the details of revert-related actions.
+type RevertDetails struct {
+	// URL to the code review of the revert created by LUCI Bisection.
+	// Empty if no revert has been created.
+	RevertURL string `gae:"revert_url"`
+
+	// Whether LUCI Bisection has created the revert
+	IsRevertCreated bool `gae:"is_revert_created"`
+
+	// Time when the revert was created
+	RevertCreateTime time.Time `gae:"revert_create_time"`
+
+	// Whether LUCI Bisection has committed the revert
+	IsRevertCommitted bool `gae:"is_revert_committed"`
+
+	// Time when the revert for the suspect was bot-committed
+	RevertCommitTime time.Time `gae:"revert_commit_time"`
+}
+
 // Suspect is the suspect of heuristic analysis.
 type Suspect struct {
 	Id int64 `gae:"$id"`
@@ -222,6 +241,9 @@ type Suspect struct {
 
 	// Key to the CompileRerunBuild of the parent commit of the suspect, for culprit verification purpose.
 	ParentRerunBuild *datastore.Key `gae:"parent_rerun_build"`
+
+	// Details of revert actions for this suspect
+	RevertDetails
 }
 
 // CompileHeuristicAnalysis is heuristic analysis for compile failures.
