@@ -46,6 +46,13 @@ const (
 	SuspectVerificationStatus_VerificationError = "Verification Error"
 )
 
+type SuspectType string
+
+const (
+	SuspectType_Heuristic  SuspectType = "Heuristic"
+	SuspectType_NthSection SuspectType = "NthSection"
+)
+
 // LuciBuild represents one LUCI build
 type LuciBuild struct {
 	BuildId     int64  `gae:"build_id"`
@@ -181,13 +188,6 @@ type SingleRerun struct {
 	NthSectionAnalysis *datastore.Key `gae:"nthsection_analysis"`
 }
 
-// Culprit is the culprit of rerun analysis.
-type Culprit struct {
-	// Key to the CompileFailureAnalysis that results in this culprit.
-	ParentAnalysis *datastore.Key `gae:"$parent"`
-	buildbucketpb.GitilesCommit
-}
-
 // RevertDetails encapsulate the details of revert-related actions.
 type RevertDetails struct {
 	// URL to the code review of the revert created by LUCI Bisection.
@@ -211,7 +211,11 @@ type RevertDetails struct {
 type Suspect struct {
 	Id int64 `gae:"$id"`
 
-	// Key to the CompileFailureHeuristicAnalysis that results in this suspect.
+	// Type of the suspect, either heuristic or nthsection
+	Type SuspectType `gae:"type"`
+
+	// Key to the CompileFailureHeuristicAnalysis or CompileFailureNthSectionAnalysis
+	// that results in this suspect
 	ParentAnalysis *datastore.Key `gae:"$parent"`
 
 	// The commit of the suspect
@@ -227,10 +231,12 @@ type Suspect struct {
 	// is indeed the culprit.
 	// A higher score means a stronger signal that the suspect is responsible for
 	// a failure.
+	// Only applies to Heuristic suspect
 	Score int `gae:"score"`
 
 	// A short, human-readable string that concisely describes a fact about the
 	// suspect. e.g. 'add a/b/x.cc'
+	// Only applies to Heuristic suspect
 	Justification string `gae:"justification,noindex"`
 
 	// Whether if a suspect has been verified
@@ -276,4 +282,8 @@ type CompileNthSectionAnalysis struct {
 	// We can also declare zstd compression here, but there seems to be a bug where
 	// the message size is 0
 	BlameList *gofinditpb.BlameList `gae:"blame_list"`
+
+	// Suspect is the result of nthsection analysis.
+	// Note: We call it "suspect" because it has not been verified (by culprit verification component)
+	Suspect *datastore.Key `gae:"suspect"`
 }

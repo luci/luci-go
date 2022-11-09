@@ -77,6 +77,7 @@ func TestSaveResultsToDatastore(t *testing.T) {
 				Id:      "12345",
 			},
 			VerificationStatus: model.SuspectVerificationStatus_Unverified,
+			Type:               model.SuspectType_Heuristic,
 		})
 	})
 }

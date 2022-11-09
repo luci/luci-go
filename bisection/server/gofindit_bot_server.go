@@ -97,7 +97,7 @@ func (server *GoFinditBotServer) UpdateAnalysisProgress(c context.Context, req *
 	if lastRerun.Type == model.RerunBuildType_NthSection {
 		err := processNthSectionUpdate(c, req)
 		if err != nil {
-			err = errors.Annotate(err, "processNthSectionUpdate").Err()
+			err = errors.Annotate(err, "processNthSectionUpdate. Analysis ID: %d", req.AnalysisId).Err()
 			logging.Errorf(c, err.Error())
 			return nil, status.Errorf(codes.Internal, err.Error())
 		}
@@ -124,7 +124,27 @@ func processNthSectionUpdate(c context.Context, req *pb.UpdateAnalysisProgressRe
 		return nil
 	}
 
-	shouldRun, commit, err := findNextNthSectionCommitToRun(c, nsa)
+	snapshot, err := nthsection.CreateSnapshot(c, nsa)
+	if err != nil {
+		return errors.Annotate(err, "couldn't create snapshot").Err()
+	}
+
+	// Check if we already found the culprit or not
+	ok, cul, err := snapshot.GetCulprit()
+	if err != nil {
+		return errors.Annotate(err, "couldn't get culprit").Err()
+	}
+
+	// Found culprit -> Update the nthsection analysis
+	if ok {
+		err := storeNthSectionResultToDatastore(c, nsa, snapshot.BlameList.Commits[cul], req)
+		if err != nil {
+			return errors.Annotate(err, "storeNthSectionResultToDatastore").Err()
+		}
+		return nil
+	}
+
+	shouldRun, commit, err := findNextNthSectionCommitToRun(c, snapshot)
 	if err != nil {
 		return errors.Annotate(err, "findNextNthSectionCommitToRun").Err()
 	}
@@ -149,17 +169,46 @@ func processNthSectionUpdate(c context.Context, req *pb.UpdateAnalysisProgressRe
 	return nil
 }
 
-// findNextNthSectionCommitToRun return true (and the commit) if it can find a nthsection commit to run next
-func findNextNthSectionCommitToRun(c context.Context, nsa *model.CompileNthSectionAnalysis) (bool, string, error) {
-	snapshot, err := nthsection.CreateSnapshot(c, nsa)
+func storeNthSectionResultToDatastore(c context.Context, nsa *model.CompileNthSectionAnalysis, blCommit *pb.BlameListSingleCommit, req *pb.UpdateAnalysisProgressRequest) error {
+	suspect := &model.Suspect{
+		Type: model.SuspectType_NthSection,
+		GitilesCommit: bbpb.GitilesCommit{
+			Host:    req.GitilesCommit.Host,
+			Project: req.GitilesCommit.Project,
+			Ref:     req.GitilesCommit.Ref,
+			Id:      blCommit.Commit,
+		},
+		ParentAnalysis:     datastore.KeyForObj(c, nsa),
+		VerificationStatus: model.SuspectVerificationStatus_Unverified,
+		ReviewUrl:          blCommit.ReviewUrl,
+		ReviewTitle:        blCommit.ReviewTitle,
+	}
+	err := datastore.Put(c, suspect)
 	if err != nil {
-		return false, "", errors.Annotate(err, "couldn't create snapshot").Err()
+		return errors.Annotate(err, "couldn't save suspect").Err()
 	}
 
+	nsa.Status = pb.AnalysisStatus_SUSPECTFOUND
+	nsa.Suspect = datastore.KeyForObj(c, suspect)
+	nsa.EndTime = clock.Now(c)
+	err = datastore.Put(c, nsa)
+	if err != nil {
+		return errors.Annotate(err, "couldn't save nthsection analysis").Err()
+	}
+	return nil
+}
+
+// findNextNthSectionCommitToRun return true (and the commit) if it can find a nthsection commit to run next
+func findNextNthSectionCommitToRun(c context.Context, snapshot *nthsection.NthSectionSnapshot) (bool, string, error) {
 	// We pass 1 as argument here because at this moment, we only have 1 "slot" left for nth section
 	commits, err := snapshot.FindNextCommitsToRun(1)
 	if err != nil {
 		return false, "", errors.Annotate(err, "couldn't find next commits to run").Err()
+	}
+	// There is no commit to run, perhaps we already found a culprit, or we
+	// have already scheduled the necessary build to be run.
+	if len(commits) == 0 {
+		return false, "", nil
 	}
 	if len(commits) != 1 {
 		return false, "", errors.Annotate(err, "expect only 1 commits to rerun. Got %d", len(commits)).Err()

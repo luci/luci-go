@@ -132,6 +132,7 @@ func saveResultsToDatastore(c context.Context, analysis *model.CompileHeuristicA
 				Id:      item.Commit,
 			},
 			VerificationStatus: model.SuspectVerificationStatus_Unverified,
+			Type:               model.SuspectType_Heuristic,
 		}
 		suspects[i] = suspect
 	}

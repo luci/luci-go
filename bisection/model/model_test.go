@@ -117,18 +117,6 @@ func TestDatastoreModel(t *testing.T) {
 			}
 			So(datastore.Put(c, nthsection_analysis), ShouldBeNil)
 
-			culprit := &Culprit{
-				ParentAnalysis: datastore.KeyForObj(c, compile_failure_analysis),
-				GitilesCommit: buildbucketpb.GitilesCommit{
-					Project:  "my project",
-					Host:     "host",
-					Ref:      "ref",
-					Id:       "id",
-					Position: 3433,
-				},
-			}
-			So(datastore.Put(c, culprit), ShouldBeNil)
-
 			suspect := &Suspect{
 				ParentAnalysis: datastore.KeyForObj(c, compile_failure_analysis),
 				GitilesCommit: buildbucketpb.GitilesCommit{

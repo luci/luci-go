@@ -371,6 +371,18 @@ func TestUpdateAnalysisProgress(t *testing.T) {
 			So(datastore.Get(c, singleRerun1), ShouldBeNil)
 			So(singleRerun1.Status, ShouldEqual, pb.RerunStatus_FAILED)
 			So(res, ShouldResemble, &pb.UpdateAnalysisProgressResponse{})
+
+			// Check that the nthsection analysis is updated with Suspect
+			datastore.GetTestable(c).CatchupIndexes()
+			So(datastore.Get(c, nsa), ShouldBeNil)
+			So(nsa.Status, ShouldEqual, pb.AnalysisStatus_SUSPECTFOUND)
+			So(nsa.Suspect, ShouldNotBeNil)
+			nsaSuspect := &model.Suspect{
+				Id:             nsa.Suspect.IntID(),
+				ParentAnalysis: nsa.Suspect.Parent(),
+			}
+			So(datastore.Get(c, nsaSuspect), ShouldBeNil)
+			So(nsaSuspect.GitilesCommit.Id, ShouldEqual, "commit5")
 		})
 	})
 
