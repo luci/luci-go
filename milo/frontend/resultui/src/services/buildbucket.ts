@@ -201,6 +201,7 @@ export interface Step {
   readonly status: BuildStatus;
   readonly logs?: Log[];
   readonly summaryMarkdown?: string;
+  readonly tags?: readonly StringPair[];
 }
 
 export interface BuildInfra {

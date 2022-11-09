@@ -95,6 +95,7 @@ export class BuildPageStepEntryElement extends MiloBaseElement implements Render
       <ul id="log-links" style=${styleMap({ display: this.step.filteredLogs.length ? '' : 'none' })}>
         ${this.step.filteredLogs.map((log) => html`<li><milo-log .log=${log}></li>`)}
       </ul>
+      ${this.step.tags.length ? html`<milo-tags-entry .tags=${this.step.tags}></milo-tags-entry>` : ''}
       ${this.step.clusteredChildren.map(
         (cluster) => html`<milo-bp-step-cluster .steps=${cluster}></milo-bp-step-cluster>`
       ) || ''}

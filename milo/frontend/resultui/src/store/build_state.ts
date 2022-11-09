@@ -22,6 +22,7 @@ import { renderMarkdown } from '../libs/markdown_utils';
 import { keepAliveComputed } from '../libs/milo_mobx_utils';
 import { parseProtoDuration } from '../libs/time_utils';
 import { BLAMELIST_PIN_KEY, Build, BuildStatus, GitilesCommit, Log, Step } from '../services/buildbucket';
+import { StringPair } from '../services/common';
 import { Timestamp, TimestampInstance } from './timestamp';
 import { UserConfig, UserConfigInstance } from './user_config';
 
@@ -46,6 +47,8 @@ export class StepExt {
   readonly status: BuildStatus;
   readonly logs: readonly Log[];
   readonly summaryMarkdown?: string | undefined;
+  readonly tags: readonly StringPair[];
+
   readonly depth: number;
   readonly index: number;
   readonly selfName: string;
@@ -66,6 +69,8 @@ export class StepExt {
     this.status = step.status;
     this.logs = step.logs || [];
     this.summaryMarkdown = step.summaryMarkdown;
+    this.tags = step.tags || [];
+
     this.depth = init.depth;
     this.index = init.index;
     this.selfName = init.selfName;
