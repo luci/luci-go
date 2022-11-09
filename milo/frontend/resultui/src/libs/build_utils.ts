@@ -63,7 +63,7 @@ export function getBotLink(swarming: BuildInfraSwarming): Link | null {
   for (const dim of swarming.botDimensions || []) {
     if (dim.key === 'id') {
       return {
-        label: dim.value,
+        label: dim.value || '',
         url: `https://${swarming.hostname}/bot?id=${dim.value}`,
         ariaLabel: `swarming bot ${dim.value}`,
       };

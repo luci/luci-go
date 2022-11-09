@@ -15,7 +15,6 @@
 import '@material/mwc-icon';
 import { MobxLitElement } from '@adobe/lit-mobx';
 import { css, customElement, html } from 'lit-element';
-import { styleMap } from 'lit-html/directives/style-map';
 import { unsafeHTML } from 'lit-html/directives/unsafe-html';
 import { Duration } from 'luxon';
 import { computed, makeObservable, observable } from 'mobx';
@@ -24,6 +23,7 @@ import { fromPromise, IPromiseBasedObservable, PENDING } from 'mobx-utils';
 import '../../context/artifact_provider';
 import '../associated_bugs_badge';
 import '../expandable_entry';
+import '../tags_entry';
 import './image_diff_artifact';
 import './text_artifact';
 import './text_diff_artifact';
@@ -34,7 +34,7 @@ import { unwrapObservable } from '../../libs/milo_mobx_utils';
 import { displayCompactDuration, displayDuration, parseProtoDuration } from '../../libs/time_utils';
 import { getRawArtifactUrl, router } from '../../routes';
 import { Cluster, makeClusterLink } from '../../services/luci_analysis';
-import { Artifact, ListArtifactsResponse, parseTestResultName, Tag, TestResult } from '../../services/resultdb';
+import { Artifact, ListArtifactsResponse, parseTestResultName, TestResult } from '../../services/resultdb';
 import { consumeStore, StoreInstance } from '../../store';
 import colorClasses from '../../styles/color_classes.css';
 import commonStyle from '../../styles/common_style.css';
@@ -67,7 +67,6 @@ export class ResultEntryElement extends MobxLitElement {
   }
 
   @observable.ref private shouldRenderContent = false;
-  @observable.ref private tagExpanded = false;
 
   @computed
   private get duration() {
@@ -184,53 +183,6 @@ export class ResultEntryElement extends MobxLitElement {
     `;
   }
 
-  private renderTags() {
-    if ((this.testResult.tags || []).length === 0) {
-      return html``;
-    }
-
-    return html`
-      <milo-expandable-entry
-        .contentRuler="invisible"
-        .onToggle=${(expanded: boolean) => {
-          this.tagExpanded = expanded;
-        }}
-      >
-        <span slot="header" class="one-line-content">
-          Tags:
-          <span class="greyed-out" style=${styleMap({ display: this.tagExpanded ? 'none' : '' })}>
-            ${this.testResult.tags?.map(
-              (tag) => html`
-                <span class="kv-key">${tag.key}</span>
-                <span class="kv-value">${tag.value}</span>
-              `
-            )}
-          </span>
-        </span>
-        <table id="tag-table" slot="content" border="0">
-          ${this.testResult.tags?.map((tag) => this.renderTag(tag))}
-        </table>
-      </milo-expandable-entry>
-    `;
-  }
-
-  private renderTag(tag: Tag) {
-    if (tag.value?.match(/^https?:\/\//i)) {
-      return html`
-        <tr>
-          <td>${tag.key}:</td>
-          <td><a href=${tag.value} target="_blank">${tag.value}</a></td>
-        </tr>
-      `;
-    }
-    return html`
-      <tr>
-        <td>${tag.key}:</td>
-        <td>${tag.value}</td>
-      </tr>
-    `;
-  }
-
   private renderInvocationLevelArtifacts() {
     if (this.invArtifacts.length === 0) {
       return html``;
@@ -295,7 +247,8 @@ export class ResultEntryElement extends MobxLitElement {
         >
         </milo-image-diff-artifact>
       `}
-      ${this.renderArtifacts()} ${this.renderTags()}
+      ${this.renderArtifacts()}
+      ${this.testResult.tags?.length ? html`<milo-tags-entry .tags=${this.testResult.tags}></milo-tags-entry>` : ''}
     `;
   }
 
@@ -380,14 +333,6 @@ export class ResultEntryElement extends MobxLitElement {
         font-weight: 500;
       }
 
-      [slot='header'] {
-        overflow: hidden;
-        text-overflow: ellipsis;
-      }
-      [slot='content'] {
-        overflow: hidden;
-      }
-
       .info-block {
         background-color: var(--block-background-color);
         padding: 5px;
@@ -405,23 +350,6 @@ export class ResultEntryElement extends MobxLitElement {
       }
       #summary-html p:last-child {
         margin-bottom: 0;
-      }
-
-      #tag-table {
-        width: fit-content;
-      }
-
-      .kv-key::after {
-        content: ':';
-      }
-      .kv-value::after {
-        content: ',';
-      }
-      .kv-value:last-child::after {
-        content: '';
-      }
-      .greyed-out {
-        color: var(--greyed-out-text-color);
       }
 
       ul {

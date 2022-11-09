@@ -290,7 +290,7 @@ export const BuildState = types
       return Boolean(self.data.input?.experiments?.includes('luci.buildbucket.canary_software'));
     },
     get buildSets(): readonly string[] {
-      return self.data.tags.filter((tag) => tag.key === 'buildset').map((tag) => tag.value);
+      return self.data.tags.filter((tag) => tag.key === 'buildset').map((tag) => tag.value || '');
     },
     get associatedGitilesCommit() {
       return self.data.output?.gitilesCommit || self.data.input?.gitilesCommit;

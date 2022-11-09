@@ -16,6 +16,7 @@ import stableStringify from 'fast-json-stable-stringify';
 
 import { cached, CacheOption } from '../libs/cached_fn';
 import { PrpcClientExt } from '../libs/prpc_client_ext';
+import { StringPair } from './common';
 
 /* eslint-disable max-len */
 /**
@@ -266,11 +267,6 @@ export interface BuildInfraSwarming {
   readonly taskDimensions: readonly RequestedDimension[];
   readonly botDimensions?: StringPair[];
   readonly caches: readonly BuildInfraSwarmingCacheEntry[];
-}
-
-export interface StringPair {
-  readonly key: string;
-  readonly value: string;
 }
 
 export interface BuildInfraSwarmingCacheEntry {

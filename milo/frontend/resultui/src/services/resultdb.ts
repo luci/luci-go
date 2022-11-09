@@ -19,6 +19,7 @@ import { cached, CacheOption } from '../libs/cached_fn';
 import { PrpcClientExt } from '../libs/prpc_client_ext';
 import { sha256 } from '../libs/utils';
 import { BuilderID } from './buildbucket';
+import { StringPair } from './common';
 
 /* eslint-disable max-len */
 /**
@@ -53,7 +54,7 @@ export interface Invocation {
   readonly finalizeTime: string;
   readonly deadline: string;
   readonly includedInvocations?: string[];
-  readonly tags?: Tag[];
+  readonly tags?: StringPair[];
 }
 
 export interface TestResult {
@@ -67,7 +68,7 @@ export interface TestResult {
   readonly summaryHtml: string;
   readonly startTime: string;
   readonly duration?: string;
-  readonly tags?: Tag[];
+  readonly tags?: StringPair[];
   readonly failureReason?: FailureReason;
 }
 
@@ -97,11 +98,6 @@ export interface Artifact {
 
 export interface Variant {
   readonly def: { [key: string]: string };
-}
-
-export interface Tag {
-  readonly key: string;
-  readonly value?: string;
 }
 
 export interface FailureReason {
