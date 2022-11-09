@@ -87,17 +87,10 @@ message CancelBuildTask {
 
 // BuildsV2PubSub is the "builds_v2" pubsub topic message data schema.
 message BuildsV2PubSub {
-  message BuildLargeFields {
-    // Compressed bytes in proto binary format of build.input.properties field.
-    bytes input_properties = 1;
-    // Compressed bytes in proto binary format of build.output.properties field.
-    bytes output_properties = 2;
-    // Compressed bytes in proto binary format of build.steps field.
-    bytes steps = 3;
-  }
-
+  // Contains all field except large fields
   buildbucket.v2.Build build = 1;
-  // Large build fields are stripped from the above build field and put into
-  // here with compression.
-  BuildLargeFields build_large_fields = 2;
+  // A Compressed bytes in proto binary format of buildbucket.v2.Build where
+  // it only contains the large build fields - build.input.properties,
+  // build.output.properties and build.steps.
+  bytes build_large_fields = 2;
 }

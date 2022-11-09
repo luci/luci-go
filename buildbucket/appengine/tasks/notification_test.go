@@ -15,9 +15,16 @@
 package tasks
 
 import (
+	"bytes"
+	"compress/zlib"
 	"context"
+	"io"
 	"testing"
 
+	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/types/known/structpb"
+
+	pb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/gae/filter/txndefer"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
@@ -29,6 +36,8 @@ import (
 	taskdefs "go.chromium.org/luci/buildbucket/appengine/tasks/defs"
 
 	. "github.com/smartystreets/goconvey/convey"
+
+	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestNotification(t *testing.T) {
@@ -73,4 +82,224 @@ func TestNotification(t *testing.T) {
 			So(n1.GetCallback() != n2.GetCallback(), ShouldBeTrue)
 		})
 	})
+
+	Convey("PublishBuildsV2Notification", t, func() {
+		ctx := auth.WithState(memory.Use(context.Background()), &authtest.FakeState{})
+		ctx = txndefer.FilterRDS(ctx)
+		ctx, sch := tq.TestingContext(ctx, nil)
+		datastore.GetTestable(ctx).AutoIndex(true)
+		datastore.GetTestable(ctx).Consistent(true)
+
+		b := &model.Build{
+			ID: 123,
+			Proto: &pb.Build{
+				Id: 123,
+				Builder: &pb.BuilderID{
+					Project: "project",
+					Bucket:  "bucket",
+					Builder: "builder",
+				},
+				Status: pb.Status_CANCELED,
+			},
+		}
+		bk := datastore.KeyForObj(ctx, b)
+		bsBytes, err := proto.Marshal(&pb.Build{
+			Steps: []*pb.Step{
+				{
+					Name:            "step",
+					SummaryMarkdown: "summary",
+					Logs: []*pb.Log{{
+						Name:    "log1",
+						Url:     "url",
+						ViewUrl: "view_url",
+					},
+					},
+				},
+			},
+		})
+		So(err, ShouldBeNil)
+		bs := &model.BuildSteps{ID: 1, Build: bk, Bytes: bsBytes}
+		bi := &model.BuildInfra{
+			ID:    1,
+			Build: bk,
+			Proto: &pb.BuildInfra{
+				Buildbucket: &pb.BuildInfra_Buildbucket{
+					Hostname: "hostname",
+				},
+			},
+		}
+		bo := &model.BuildOutputProperties{
+			Build: bk,
+			Proto: &structpb.Struct{
+				Fields: map[string]*structpb.Value{
+					"output": {
+						Kind: &structpb.Value_StringValue{
+							StringValue: "output value",
+						},
+					},
+				},
+			},
+		}
+		binpProp := &model.BuildInputProperties{
+			Build: bk,
+			Proto: &structpb.Struct{
+				Fields: map[string]*structpb.Value{
+					"input": {
+						Kind: &structpb.Value_StringValue{
+							StringValue: "input value",
+						},
+					},
+				},
+			},
+		}
+		So(datastore.Put(ctx, b, bi, bs, bo, binpProp), ShouldBeNil)
+
+		Convey("build not exist", func() {
+			err := PublishBuildsV2Notification(ctx, 999)
+			So(err, ShouldBeNil)
+			tasks := sch.Tasks()
+			So(tasks, ShouldHaveLength, 0)
+		})
+
+		Convey("success", func() {
+			err := PublishBuildsV2Notification(ctx, 123)
+			So(err, ShouldBeNil)
+
+			tasks := sch.Tasks()
+			So(tasks, ShouldHaveLength, 1)
+			So(tasks[0].Message.Attributes["project"], ShouldEqual, "project")
+			So(tasks[0].Message.Attributes["is_completed"], ShouldEqual, "true")
+			So(tasks[0].Payload.(*taskdefs.BuildsV2PubSub).GetBuild(), ShouldResembleProto, &pb.Build{
+				Id: 123,
+				Builder: &pb.BuilderID{
+					Project: "project",
+					Bucket:  "bucket",
+					Builder: "builder",
+				},
+				Status: pb.Status_CANCELED,
+				Infra: &pb.BuildInfra{
+					Buildbucket: &pb.BuildInfra_Buildbucket{
+						Hostname: "hostname",
+					},
+				},
+				Input:  &pb.Build_Input{},
+				Output: &pb.Build_Output{},
+			})
+			So(tasks[0].Payload.(*taskdefs.BuildsV2PubSub).GetBuildLargeFields(), ShouldNotBeNil)
+			bLargeBytes := tasks[0].Payload.(*taskdefs.BuildsV2PubSub).GetBuildLargeFields()
+			buildLarge, err := zlibUncompressBuild(bLargeBytes)
+			So(err, ShouldBeNil)
+			So(buildLarge, ShouldResembleProto, &pb.Build{
+				Steps: []*pb.Step{
+					{
+						Name:            "step",
+						SummaryMarkdown: "summary",
+						Logs: []*pb.Log{{
+							Name:    "log1",
+							Url:     "url",
+							ViewUrl: "view_url",
+						},
+						},
+					},
+				},
+				Input: &pb.Build_Input{
+					Properties: &structpb.Struct{
+						Fields: map[string]*structpb.Value{
+							"input": {
+								Kind: &structpb.Value_StringValue{
+									StringValue: "input value",
+								},
+							},
+						},
+					},
+				},
+				Output: &pb.Build_Output{
+					Properties: &structpb.Struct{
+						Fields: map[string]*structpb.Value{
+							"output": {
+								Kind: &structpb.Value_StringValue{
+									StringValue: "output value",
+								},
+							},
+						},
+					},
+				},
+			})
+		})
+
+		Convey("success - no large fields", func() {
+			b := &model.Build{
+				ID: 456,
+				Proto: &pb.Build{
+					Id: 456,
+					Builder: &pb.BuilderID{
+						Project: "project",
+						Bucket:  "bucket",
+						Builder: "builder",
+					},
+					Status: pb.Status_CANCELED,
+				},
+			}
+			bk := datastore.KeyForObj(ctx, b)
+			bi := &model.BuildInfra{
+				ID:    1,
+				Build: bk,
+				Proto: &pb.BuildInfra{
+					Buildbucket: &pb.BuildInfra_Buildbucket{
+						Hostname: "hostname",
+					},
+				},
+			}
+			So(datastore.Put(ctx, b, bi), ShouldBeNil)
+
+			err := PublishBuildsV2Notification(ctx, 456)
+			So(err, ShouldBeNil)
+
+			tasks := sch.Tasks()
+			So(tasks, ShouldHaveLength, 1)
+			So(tasks[0].Payload.(*taskdefs.BuildsV2PubSub).GetBuild(), ShouldResembleProto, &pb.Build{
+				Id: 456,
+				Builder: &pb.BuilderID{
+					Project: "project",
+					Bucket:  "bucket",
+					Builder: "builder",
+				},
+				Status: pb.Status_CANCELED,
+				Infra: &pb.BuildInfra{
+					Buildbucket: &pb.BuildInfra_Buildbucket{
+						Hostname: "hostname",
+					},
+				},
+				Input:  &pb.Build_Input{},
+				Output: &pb.Build_Output{},
+			})
+			So(tasks[0].Payload.(*taskdefs.BuildsV2PubSub).GetBuildLargeFields(), ShouldNotBeNil)
+			bLargeBytes := tasks[0].Payload.(*taskdefs.BuildsV2PubSub).GetBuildLargeFields()
+			buildLarge, err := zlibUncompressBuild(bLargeBytes)
+			So(err, ShouldBeNil)
+			So(buildLarge, ShouldResembleProto, &pb.Build{
+				Input:  &pb.Build_Input{},
+				Output: &pb.Build_Output{},
+			})
+		})
+	})
+}
+
+func zlibUncompressBuild(compressed []byte) (*pb.Build, error) {
+	r, err := zlib.NewReader(bytes.NewReader(compressed))
+	if err != nil {
+		return nil, err
+	}
+	originalData, err := io.ReadAll(r)
+	if err != nil {
+		return nil, err
+	}
+	if err := r.Close(); err != nil {
+		return nil, err
+	}
+	b := &pb.Build{}
+	if err := proto.Unmarshal(originalData, b); err != nil {
+		return nil, err
+	}
+	return b, nil
 }
