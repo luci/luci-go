@@ -18,6 +18,7 @@ import (
 	"context"
 	"fmt"
 	"math/rand"
+	"strconv"
 	"strings"
 	"sync"
 	"testing"
@@ -136,11 +137,126 @@ func TestSecretManagerSource(t *testing.T) {
 			So(err, ShouldBeNil)
 			So(s.name, ShouldEqual, "sm://project/secret")
 			So(s.value, ShouldResemble, Secret{Active: []byte("zzz")})
-			So(s.versions, ShouldEqual, [2]int64{1, 0})
+			So(s.versionCurrent, ShouldEqual, 1)
+			So(s.versionPrevious, ShouldEqual, 0)
+			So(s.versionNext, ShouldEqual, 0)
 			So(s.nextReload.IsZero(), ShouldBeFalse)
 		})
 
-		Convey("readSecret with prev version", func() {
+		Convey("readSecret with all aliases", func() {
+			prev := gsm.createVersion("project", "secret", "prev")
+			gsm.createVersion("project", "secret", "unreferenced 1")
+			cur := gsm.createVersion("project", "secret", "cur")
+			gsm.createVersion("project", "secret", "unreferenced 2")
+			next := gsm.createVersion("project", "secret", "next")
+
+			gsm.setAlias("current", cur)
+			gsm.setAlias("previous", prev)
+			gsm.setAlias("next", next)
+
+			s, err := sm.readSecret(ctx, "sm://project/secret")
+			So(err, ShouldBeNil)
+			So(s.value, ShouldResemble, Secret{
+				Active: []byte("cur"),
+				Passive: [][]byte{
+					[]byte("prev"),
+					[]byte("next"),
+				},
+			})
+			So(s.versionCurrent, ShouldEqual, 3)
+			So(s.versionPrevious, ShouldEqual, 1)
+			So(s.versionNext, ShouldEqual, 5)
+		})
+
+		Convey("readSecret without next", func() {
+			prev := gsm.createVersion("project", "secret", "prev")
+			gsm.createVersion("project", "secret", "unreferenced 1")
+			cur := gsm.createVersion("project", "secret", "cur")
+			gsm.createVersion("project", "secret", "unreferenced 2")
+
+			gsm.setAlias("current", cur)
+			gsm.setAlias("previous", prev)
+
+			s, err := sm.readSecret(ctx, "sm://project/secret")
+			So(err, ShouldBeNil)
+			So(s.value, ShouldResemble, Secret{
+				Active: []byte("cur"),
+				Passive: [][]byte{
+					[]byte("prev"),
+				},
+			})
+			So(s.versionCurrent, ShouldEqual, 3)
+			So(s.versionPrevious, ShouldEqual, 1)
+			So(s.versionNext, ShouldEqual, 0)
+		})
+
+		Convey("readSecret with next disabled", func() {
+			prev := gsm.createVersion("project", "secret", "prev")
+			gsm.createVersion("project", "secret", "unreferenced 1")
+			cur := gsm.createVersion("project", "secret", "cur")
+			gsm.createVersion("project", "secret", "unreferenced 2")
+			next := gsm.createVersion("project", "secret", "next")
+
+			gsm.setAlias("current", cur)
+			gsm.setAlias("previous", prev)
+			gsm.setAlias("next", next)
+
+			gsm.disableVersion(next)
+
+			s, err := sm.readSecret(ctx, "sm://project/secret")
+			So(err, ShouldBeNil)
+			So(s.value, ShouldResemble, Secret{
+				Active: []byte("cur"),
+				Passive: [][]byte{
+					[]byte("prev"),
+				},
+			})
+			So(s.versionCurrent, ShouldEqual, 3)
+			So(s.versionPrevious, ShouldEqual, 1)
+			So(s.versionNext, ShouldEqual, 0)
+		})
+
+		Convey("readSecret with next set to current", func() {
+			prev := gsm.createVersion("project", "secret", "prev")
+			gsm.createVersion("project", "secret", "unreferenced 1")
+			cur := gsm.createVersion("project", "secret", "cur")
+			gsm.createVersion("project", "secret", "unreferenced 2")
+
+			gsm.setAlias("current", cur)
+			gsm.setAlias("previous", prev)
+			gsm.setAlias("next", cur)
+
+			s, err := sm.readSecret(ctx, "sm://project/secret")
+			So(err, ShouldBeNil)
+			So(s.value, ShouldResemble, Secret{
+				Active: []byte("cur"),
+				Passive: [][]byte{
+					[]byte("prev"),
+				},
+			})
+			So(s.versionCurrent, ShouldEqual, 3)
+			So(s.versionPrevious, ShouldEqual, 1)
+			So(s.versionNext, ShouldEqual, 3)
+		})
+
+		Convey("readSecret with all aliases set to the same version", func() {
+			cur := gsm.createVersion("project", "secret", "cur")
+
+			gsm.setAlias("current", cur)
+			gsm.setAlias("previous", cur)
+			gsm.setAlias("next", cur)
+
+			s, err := sm.readSecret(ctx, "sm://project/secret")
+			So(err, ShouldBeNil)
+			So(s.value, ShouldResemble, Secret{
+				Active: []byte("cur"),
+			})
+			So(s.versionCurrent, ShouldEqual, 1)
+			So(s.versionPrevious, ShouldEqual, 1)
+			So(s.versionNext, ShouldEqual, 1)
+		})
+
+		Convey("readSecret with prev version, legacy scheme", func() {
 			gsm.createVersion("project", "secret", "old")
 			gsm.createVersion("project", "secret", "new")
 
@@ -152,10 +268,12 @@ func TestSecretManagerSource(t *testing.T) {
 					[]byte("old"),
 				},
 			})
-			So(s.versions, ShouldEqual, [2]int64{2, 1})
+			So(s.versionCurrent, ShouldEqual, 2)
+			So(s.versionPrevious, ShouldEqual, 1)
+			So(s.versionNext, ShouldEqual, 0)
 		})
 
-		Convey("readSecret with prev version disabled", func() {
+		Convey("readSecret with prev version disabled, legacy scheme", func() {
 			ref := gsm.createVersion("project", "secret", "old")
 			gsm.createVersion("project", "secret", "new")
 			gsm.disableVersion(ref)
@@ -163,10 +281,12 @@ func TestSecretManagerSource(t *testing.T) {
 			s, err := sm.readSecret(ctx, "sm://project/secret")
 			So(err, ShouldBeNil)
 			So(s.value, ShouldResemble, Secret{Active: []byte("new")})
-			So(s.versions, ShouldEqual, [2]int64{2, 0})
+			So(s.versionCurrent, ShouldEqual, 2)
+			So(s.versionPrevious, ShouldEqual, 0)
+			So(s.versionNext, ShouldEqual, 0)
 		})
 
-		Convey("readSecret with prev version deleted", func() {
+		Convey("readSecret with prev version deleted, legacy scheme", func() {
 			ref := gsm.createVersion("project", "secret", "old")
 			gsm.createVersion("project", "secret", "new")
 			gsm.deleteVersion(ref)
@@ -174,7 +294,9 @@ func TestSecretManagerSource(t *testing.T) {
 			s, err := sm.readSecret(ctx, "sm://project/secret")
 			So(err, ShouldBeNil)
 			So(s.value, ShouldResemble, Secret{Active: []byte("new")})
-			So(s.versions, ShouldEqual, [2]int64{2, 0})
+			So(s.versionCurrent, ShouldEqual, 2)
+			So(s.versionPrevious, ShouldEqual, 0)
+			So(s.versionNext, ShouldEqual, 0)
 		})
 
 		Convey("Derived secrets work", func() {
@@ -313,7 +435,7 @@ type secretManagerMock struct {
 	m        sync.Mutex
 	err      error
 	versions map[string]string // full ref => a value or "" if disabled
-	latest   map[string]int    // latest ref => version number
+	aliases  map[string]int    // full ref => version number
 }
 
 func (sm *secretManagerMock) createVersion(project, name, value string) string {
@@ -322,16 +444,16 @@ func (sm *secretManagerMock) createVersion(project, name, value string) string {
 
 	if sm.versions == nil {
 		sm.versions = make(map[string]string, 1)
-		sm.latest = make(map[string]int, 1)
+		sm.aliases = make(map[string]int, 1)
 	}
 
 	latestRef := fmt.Sprintf("projects/%s/secrets/%s/versions/latest", project, name)
 
-	nextVer := sm.latest[latestRef] + 1
+	nextVer := sm.aliases[latestRef] + 1
 	versionRef := fmt.Sprintf("projects/%s/secrets/%s/versions/%d", project, name, nextVer)
 
 	sm.versions[versionRef] = value
-	sm.latest[latestRef] = nextVer
+	sm.aliases[latestRef] = nextVer
 
 	return versionRef
 }
@@ -350,6 +472,23 @@ func (sm *secretManagerMock) deleteVersion(ref string) {
 	delete(sm.versions, ref)
 }
 
+func (sm *secretManagerMock) setAlias(alias, versionRef string) {
+	sm.m.Lock()
+	defer sm.m.Unlock()
+
+	parts := strings.Split(versionRef, "/")
+
+	ver, err := strconv.ParseInt(parts[len(parts)-1], 10, 64)
+	if err != nil {
+		panic(fmt.Sprintf("wrong version reference %s", versionRef))
+	}
+
+	parts[len(parts)-1] = alias
+	aliasRef := strings.Join(parts, "/")
+
+	sm.aliases[aliasRef] = int(ver)
+}
+
 func (sm *secretManagerMock) setError(err error) {
 	sm.m.Lock()
 	defer sm.m.Unlock()
@@ -364,10 +503,12 @@ func (sm *secretManagerMock) AccessSecretVersion(_ context.Context, req *secretm
 		return nil, sm.err
 	}
 
-	// Recognize ".../versions/latest" aliases.
+	// Recognize aliases like "latest".
 	versionRef := req.Name
-	if ver := sm.latest[versionRef]; ver != 0 {
-		versionRef = strings.ReplaceAll(versionRef, "/versions/latest", fmt.Sprintf("/versions/%d", ver))
+	if ver := sm.aliases[versionRef]; ver != 0 {
+		parts := strings.Split(versionRef, "/")
+		parts[len(parts)-1] = fmt.Sprintf("%d", ver)
+		versionRef = strings.Join(parts, "/")
 	}
 
 	switch val, ok := sm.versions[versionRef]; {

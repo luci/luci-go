@@ -30,6 +30,7 @@ import (
 	"github.com/google/tink/go/insecurecleartextkeyset"
 	"github.com/google/tink/go/keyset"
 	gax "github.com/googleapis/gax-go/v2"
+	"golang.org/x/sync/errgroup"
 	secretmanagerpb "google.golang.org/genproto/googleapis/cloud/secretmanager/v1"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -244,27 +245,38 @@ const (
 // Instances of this type are static once constructed and thus are safe to
 // share across goroutines.
 type trackedSecret struct {
-	name       string    // the name it was loaded under
-	value      Secret    // the latest fetched state of the secret
-	versions   [2]int64  // the latest and one previous (if enabled) version numbers
+	name  string // the name it was loaded under
+	value Secret // the latest fetched state of the secret
+
+	versionCurrent  int64 // the currently active version or 0 for static dev secrets
+	versionPrevious int64 // the previously active version or 0 if not available
+	versionNext     int64 // the next active version or 0 if not available
+
 	attempts   int       // how many consecutive times we failed to reload the secret
 	nextReload time.Time // when we should reload the secret or zero for static dev secrets
 }
 
 func (s *trackedSecret) logActiveVersions(ctx context.Context) {
-	if s.versions != [2]int64{0, 0} {
-		formatVer := func(v int64) string {
-			if v == 0 {
-				return "none"
-			}
-			return strconv.FormatInt(v, 10)
-		}
-		logging.Infof(ctx, "Loaded secret %q, active versions latest=%s, previous=%s",
-			s.name,
-			formatVer(s.versions[0]),
-			formatVer(s.versions[1]),
-		)
+	if s.versionCurrent == 0 {
+		return
 	}
+
+	// TODO(vadimsh): Report them as monitoring metrics as well so there's
+	// visibility into what is cached in memory during rotations.
+
+	formatVer := func(v int64) string {
+		if v == 0 {
+			return "none"
+		}
+		return strconv.FormatInt(v, 10)
+	}
+
+	logging.Infof(ctx, "Loaded secret %q (versions: current=%s, previous=%s, next=%s)",
+		s.name,
+		formatVer(s.versionCurrent),
+		formatVer(s.versionPrevious),
+		formatVer(s.versionNext),
+	)
 }
 
 func (s *trackedSecret) logNextReloadTime(ctx context.Context) {
@@ -370,52 +382,105 @@ func (sm *SecretManagerStore) readSecretFromGSM(ctx context.Context, name string
 	}
 	project, secret := parts[0], parts[1]
 
-	// The latest version is used as the primary active version.
-	latest, err := sm.AccessSecretVersion(ctx, &secretmanagerpb.AccessSecretVersionRequest{
-		Name: fmt.Sprintf("projects/%s/secrets/%s/versions/latest", project, secret),
-	})
-	if err != nil {
-		return nil, errors.Annotate(err, "failed to get the latest version of the secret %q", name).Err()
+	// Try to access "current", "previous", "next" versions if they are available.
+	eg, egctx := errgroup.WithContext(ctx)
+	var (
+		current  secretVersion
+		previous secretVersion
+		next     secretVersion
+	)
+	attemptAccess := func(ver string, dest *secretVersion) error {
+		switch resp, err := sm.accessSecretVersion(egctx, project, secret, ver); {
+		case err == nil:
+			*dest = *resp
+		case !isMissingOrDisabledVersion(err):
+			return errors.Annotate(err, "version %q", ver).Err()
+		}
+		return nil
+	}
+	eg.Go(func() error { return attemptAccess("current", &current) })
+	eg.Go(func() error { return attemptAccess("previous", &previous) })
+	eg.Go(func() error { return attemptAccess("next", &next) })
+	if err := eg.Wait(); err != nil {
+		return nil, errors.Annotate(err, "loading the secret %q", name).Err()
 	}
 
+	// If there's no "current", fallback to loading "latest" instead of "current"
+	// and the one version before it as instead of "previous" (if necessary). This
+	// is a scheme used by this code previously.
+	if current.version == 0 {
+		latest, err := sm.accessSecretVersion(ctx, project, secret, "latest")
+		if err != nil {
+			return nil, errors.Annotate(err, "failed to get the latest version of the secret %q", name).Err()
+		}
+		current = *latest
+		if current.version > 1 && previous.version == 0 {
+			prev, err := sm.accessSecretVersion(ctx, project, secret, fmt.Sprintf("%d", current.version-1))
+			switch {
+			case err == nil:
+				previous = *prev
+			case !isMissingOrDisabledVersion(err):
+				return nil, errors.Annotate(err, "failed to get the previous version of the secret %q", name).Err()
+			}
+		}
+	}
+
+	// Set the active version, collect non-current versions into "Passive" list.
+	value := Secret{Active: current.payload}
+	seen := map[int64]bool{current.version: true}
+	if previous.version != 0 && !seen[previous.version] {
+		value.Passive = append(value.Passive, previous.payload)
+		seen[previous.version] = true
+	}
+	if next.version != 0 && !seen[next.version] {
+		value.Passive = append(value.Passive, next.payload)
+		seen[next.version] = true
+	}
+
+	return &trackedSecret{
+		name:            name,
+		value:           value,
+		versionCurrent:  current.version,
+		versionPrevious: previous.version, // may be 0
+		versionNext:     next.version,     // may be 0
+		nextReload:      nextReloadTime(ctx),
+	}, nil
+}
+
+type secretVersion struct {
+	version int64  // integer version, >=1 for loaded secrets
+	payload []byte // the actual secret value
+}
+
+// accessSecretVersion wraps the AccessSecretVersion RPC, decoding the version.
+//
+// Returns gRPC errors.
+func (sm *SecretManagerStore) accessSecretVersion(ctx context.Context, project, secret, version string) (*secretVersion, error) {
+	resp, err := sm.AccessSecretVersion(ctx, &secretmanagerpb.AccessSecretVersionRequest{
+		Name: fmt.Sprintf("projects/%s/secrets/%s/versions/%s", project, secret, version),
+	})
+	if err != nil {
+		return nil, err
+	}
 	// The version name has format "projects/.../secrets/.../versions/<number>".
-	// We want to grab the version number to peek at the previous one (if any).
-	// Note that GSM uses numeric project IDs in `latest.Name` instead of Cloud
-	// Project names, so we can't just trim the prefix.
-	idx := strings.LastIndex(latest.Name, "/")
+	// We want to grab the version number. Note that GSM uses numeric project IDs
+	// in `resp.Name` instead of Cloud Project names, so we can't just trim
+	// the prefix.
+	idx := strings.LastIndex(resp.Name, "/")
 	if idx == -1 {
-		return nil, errors.Reason("unexpected version name format %q", latest.Name).Err()
+		return nil, status.Errorf(codes.Unknown, "unexpected version name format %q", resp.Name)
 	}
-	version, err := strconv.ParseInt(latest.Name[idx+1:], 10, 64)
+	ver, err := strconv.ParseInt(resp.Name[idx+1:], 10, 64)
 	if err != nil {
-		return nil, errors.Reason("unexpected version name format %q", latest.Name).Err()
+		return nil, status.Errorf(codes.Unknown, "unexpected version name format %q", resp.Name)
 	}
-
-	result := &trackedSecret{
-		name:       name,
-		value:      Secret{Active: latest.Payload.Data},
-		versions:   [2]int64{version, 0}, // note: GSM versions start with 1
-		nextReload: nextReloadTime(ctx),
+	if ver <= 0 {
+		return nil, status.Errorf(codes.Unknown, "the version is unexpectedly non-positive %q", resp.Name)
 	}
-	if version == 1 {
-		return result, nil
-	}
-
-	// Potentially have a previous version. Try to grab it.
-	prevVersion := version - 1
-	previous, err := sm.AccessSecretVersion(ctx, &secretmanagerpb.AccessSecretVersionRequest{
-		Name: fmt.Sprintf("projects/%s/secrets/%s/versions/%d", project, secret, prevVersion),
-	})
-	switch status.Code(err) {
-	case codes.OK:
-		result.value.Passive = [][]byte{previous.Payload.Data}
-		result.versions[1] = prevVersion
-		return result, nil
-	case codes.FailedPrecondition, codes.NotFound:
-		return result, nil // already disabled or deleted, this is fine
-	default:
-		return nil, errors.Annotate(err, "failed to read the previous version %d of the secret %q", prevVersion, name).Err()
-	}
+	return &secretVersion{
+		version: ver,
+		payload: resp.Payload.Data,
+	}, nil
 }
 
 // reloadNextSecretLocked looks at the secret at the top of secretsByTime PQ and
@@ -486,6 +551,13 @@ func (sm *SecretManagerStore) emitTestingEvent(ctx context.Context, msg string, 
 		case <-ctx.Done():
 		}
 	}
+}
+
+// isMissingOrDisabledVersion checks for the gRPC code representing missing or
+// disabled versions.
+func isMissingOrDisabledVersion(err error) bool {
+	code := status.Code(err)
+	return code == codes.NotFound || code == codes.FailedPrecondition
 }
 
 // nextReloadTime returns a time when we should try to reload the secret.
