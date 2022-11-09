@@ -18,21 +18,19 @@ import '@material/mwc-snackbar';
 import { BeforeEnterObserver, Router } from '@vaadin/router';
 import { BroadcastChannel } from 'broadcast-channel';
 import { css, customElement, html } from 'lit-element';
-import { makeObservable, observable, reaction } from 'mobx';
+import { makeObservable, observable } from 'mobx';
 import { destroy } from 'mobx-state-tree';
 
 import './tooltip';
 import './top_bar';
-import { getAuthStateCache, setAuthStateCache } from '../auth_state_cache';
 import { MAY_REQUIRE_SIGNIN, OPTIONAL_RESOURCE } from '../common_tags';
 import { NEW_MILO_VERSION_EVENT_TYPE } from '../libs/constants';
 import { provider } from '../libs/context';
 import { errorHandler, handleLocally } from '../libs/error_handler';
 import { ProgressiveNotifier, provideNotifier } from '../libs/observer_element';
 import { hasTags } from '../libs/tag';
-import { timeout } from '../libs/utils';
 import { router } from '../routes';
-import { ANONYMOUS_IDENTITY, queryAuthState } from '../services/milo_internal';
+import { ANONYMOUS_IDENTITY } from '../services/milo_internal';
 import { provideStore, Store } from '../store';
 import commonStyle from '../styles/common_style.css';
 import { MiloBaseElement } from './milo_base';
@@ -89,89 +87,18 @@ export class PageLayoutElement extends MiloBaseElement implements BeforeEnterObs
   connectedCallback() {
     super.connectedCallback();
 
+    this.store.authState.init();
     const onNewMiloVersion = () => (this.showUpdateBanner = true);
     window.addEventListener(NEW_MILO_VERSION_EVENT_TYPE, onNewMiloVersion);
     this.addDisposer(() => window.removeEventListener(NEW_MILO_VERSION_EVENT_TYPE, onNewMiloVersion));
 
-    const onRefreshAuth = () => this.scheduleAuthStateUpdate(true);
+    const onRefreshAuth = () => this.store.authState.scheduleUpdate(true);
     refreshAuthChannel.addEventListener('message', onRefreshAuth);
     this.addDisposer(() => refreshAuthChannel.removeEventListener('message', onRefreshAuth));
 
     this.addDisposer(() => {
       destroy(this.store);
     });
-
-    let firstUpdate = true;
-    getAuthStateCache()
-      .then((authState) => this.store.authState.setValue(authState))
-      .finally(() => {
-        if (!this.isConnected) {
-          return;
-        }
-
-        this.addDisposer(
-          reaction(
-            () => this.store.authState,
-            () => {
-              const wasFirstUpdate = firstUpdate;
-              firstUpdate = false;
-              // Cookie could be updated when the page was offline. Update the
-              // auth state immediately in the first update schedule.
-              this.scheduleAuthStateUpdate(wasFirstUpdate);
-            },
-            {
-              fireImmediately: true,
-              // Ensure there are at least 10s between updates. So the backend
-              // returning short-lived tokens won't cause the update action to
-              // fire rapidly.
-              // Note: the delay is not applied to the first call.
-              delay: 10000,
-            }
-          )
-        );
-      });
-  }
-
-  // A unique reference that functions as the ID of the last
-  // this.scheduleAuthStateUpdate call.
-  private lastScheduleId = {};
-
-  /**
-   * Updates the auth state when before it expires. When called multiple times,
-   * only the last call is respected.
-   *
-   * @param forceUpdate when set to true, update the auth state immediately.
-   */
-  private async scheduleAuthStateUpdate(forceUpdate = false) {
-    const scheduleId = {};
-    this.lastScheduleId = scheduleId;
-    const authState = this.store.authState.value;
-
-    let validDuration = 0;
-    if (!forceUpdate && authState) {
-      if (!authState.accessTokenExpiry) {
-        return;
-      }
-      // Refresh the access token 10s earlier to prevent the token from
-      // expiring before the new token is returned.
-      validDuration = authState.accessTokenExpiry * 1000 - Date.now() - 10000;
-    }
-
-    await timeout(validDuration);
-
-    if (!this.isConnected) {
-      return;
-    }
-
-    const newAuthState = await queryAuthState();
-
-    // There's another scheduled update. Abort the current one.
-    if (this.lastScheduleId !== scheduleId) {
-      return;
-    }
-
-    setAuthStateCache(newAuthState);
-    this.store.authState.setValue(newAuthState);
   }
 
   protected render() {
