@@ -20,6 +20,7 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/maruel/subcommands"
@@ -31,6 +32,7 @@ import (
 	"go.chromium.org/luci/common/cli"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/flag/stringmapflag"
 	"go.chromium.org/luci/common/logging"
 	job "go.chromium.org/luci/led/job"
 )
@@ -177,4 +179,16 @@ func pingHost(host string) error {
 		return errors.Reason("%q: bad status %d", host, rsp.StatusCode).Err()
 	}
 	return nil
+}
+
+func processExperiments(experiments stringmapflag.Value) (map[string]bool, error) {
+	processed := make(map[string]bool, len(experiments))
+	for k, v := range experiments {
+		lower := strings.ToLower(v)
+		if lower != "true" && lower != "false" {
+			return nil, errors.Reason("bad -experiment %s=...: the value should be `true` or `false`, got %q", k, v).Err()
+		}
+		processed[k] = lower == "true"
+	}
+	return processed, nil
 }

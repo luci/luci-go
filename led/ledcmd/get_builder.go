@@ -38,6 +38,7 @@ type GetBuildersOpts struct {
 	Canary          bool
 	ExtraTags       []string
 	PriorityDiff    int
+	Experiments     map[string]bool
 
 	KitchenSupport job.KitchenSupport
 	RealBuild      bool
@@ -115,6 +116,7 @@ func synthesizeBuildFromBuilder(ctx context.Context, authClient *http.Client, op
 			Bucket:  opts.Bucket,
 			Builder: opts.Builder,
 		},
+		Experiments: opts.Experiments,
 	})
 	if err != nil {
 		return nil, err

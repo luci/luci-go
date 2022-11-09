@@ -37,6 +37,7 @@ type GetBuildOpts struct {
 	PriorityDiff    int
 	KitchenSupport  job.KitchenSupport
 	RealBuild       bool
+	Experiments     map[string]bool
 }
 
 func getBuildJobName(opts GetBuildOpts) string {
@@ -100,6 +101,7 @@ func synthesizeBuildFromTemplate(ctx context.Context, authClient *http.Client, o
 	bbClient := newBuildbucketClient(authClient, opts.BuildbucketHost)
 	build, err := bbClient.SynthesizeBuild(ctx, &bbpb.SynthesizeBuildRequest{
 		TemplateBuildId: opts.BuildID,
+		Experiments:     opts.Experiments,
 	})
 	if err != nil {
 		return nil, err

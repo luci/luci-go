@@ -24,6 +24,7 @@ import (
 
 	"go.chromium.org/luci/auth"
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/flag/stringmapflag"
 	"go.chromium.org/luci/led/job"
 	"go.chromium.org/luci/led/ledcmd"
 )
@@ -48,10 +49,12 @@ which is useful when copying it from ci.chromium.org URL.`,
 type cmdGetBuild struct {
 	cmdBase
 
-	bbHost       string
-	pinBotID     bool
-	priorityDiff int
-	realBuild    bool
+	bbHost               string
+	pinBotID             bool
+	priorityDiff         int
+	realBuild            bool
+	experiments          stringmapflag.Value
+	processedExperiments map[string]bool
 
 	buildID int64
 }
@@ -69,6 +72,12 @@ func (c *cmdGetBuild) initFlags(opts cmdBaseOptions) {
 	c.Flags.BoolVar(&c.realBuild, "real-build", false,
 		"Get a synthesized build using the provided build as template, instead the provided build itself.")
 
+	c.Flags.Var(&c.experiments, "experiment",
+		"Note: only works in real-build mode.\n"+
+			"(repeatable) enable or disable an experiment. This takes a parameter of `experiment_name=true|false` and "+
+			"adds/removes the corresponding experiment. Already enabled experiments are left as is unless they "+
+			"are explicitly disabled.")
+
 	c.cmdBase.initFlags(opts)
 }
 
@@ -85,8 +94,16 @@ func (c *cmdGetBuild) validateFlags(ctx context.Context, positionals []string, e
 		// Milo URL structure prefixes buildbucket builds id with "b".
 		buildIDStr = positionals[0][1:]
 	}
-	c.buildID, err = strconv.ParseInt(buildIDStr, 10, 64)
-	return errors.Annotate(err, "bad <buildbucket_build_id>").Err()
+	if c.buildID, err = strconv.ParseInt(buildIDStr, 10, 64); err != nil {
+		return errors.Annotate(err, "bad <buildbucket_build_id>").Err()
+	}
+	if !c.realBuild && len(c.experiments) > 0 {
+		return errors.Reason("setting experiments only works in real-build mode.").Err()
+	}
+	if c.processedExperiments, err = processExperiments(c.experiments); err != nil {
+		return err
+	}
+	return nil
 }
 
 func (c *cmdGetBuild) execute(ctx context.Context, authClient *http.Client, _ auth.Options, inJob *job.Definition) (out interface{}, err error) {
@@ -97,6 +114,7 @@ func (c *cmdGetBuild) execute(ctx context.Context, authClient *http.Client, _ au
 		PriorityDiff:    c.priorityDiff,
 		KitchenSupport:  c.kitchenSupport,
 		RealBuild:       c.realBuild,
+		Experiments:     c.processedExperiments,
 	})
 }
 

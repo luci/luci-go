@@ -21,7 +21,6 @@ import (
 	"github.com/maruel/subcommands"
 
 	"go.chromium.org/luci/auth"
-	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/flag/stringlistflag"
 	"go.chromium.org/luci/common/flag/stringmapflag"
 	"go.chromium.org/luci/led/job"
@@ -120,7 +119,8 @@ func (c *cmdEdit) initFlags(opts cmdBaseOptions) {
 		"set to `true` or `false` to change the Build.Input.Experimental value. `led` jobs, "+
 			"by default, always start as experimental.")
 	c.Flags.Var(&c.experiments, "experiment",
-		"(repeatable) enable or disable an experiment. This takes a parameter of `experiment_name=true|false` and "+
+		"DEPRECATED: use `led get-build|get-builder -experiment` instead."+
+			"(repeatable) enable or disable an experiment. This takes a parameter of `experiment_name=true|false` and "+
 			"adds/removes the corresponding experiment. Already enabled experiments are left as is unless they "+
 			"are explicitly disabled.")
 
@@ -136,12 +136,8 @@ func (c *cmdEdit) validateFlags(ctx context.Context, _ []string, _ subcommands.E
 		return err
 	}
 
-	c.processedExperiments = make(map[string]bool, len(c.experiments))
-	for k, v := range c.experiments {
-		if v != "true" && v != "false" {
-			return errors.Reason("bad -experiment %s=...: the value should be `true` or `false`, got %q", k, v).Err()
-		}
-		c.processedExperiments[k] = v == "true"
+	if c.processedExperiments, err = processExperiments(c.experiments); err != nil {
+		return err
 	}
 
 	return

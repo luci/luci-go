@@ -26,6 +26,7 @@ import (
 	"go.chromium.org/luci/buildbucket/protoutil"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/flag/stringlistflag"
+	"go.chromium.org/luci/common/flag/stringmapflag"
 	"go.chromium.org/luci/led/job"
 	"go.chromium.org/luci/led/ledcmd"
 )
@@ -47,11 +48,13 @@ func getBuilderCmd(opts cmdBaseOptions) *subcommands.Command {
 type cmdGetBuilder struct {
 	cmdBase
 
-	tags         stringlistflag.Flag
-	bbHost       string
-	canary       bool
-	priorityDiff int
-	realBuild    bool
+	tags                 stringlistflag.Flag
+	bbHost               string
+	canary               bool
+	priorityDiff         int
+	realBuild            bool
+	experiments          stringmapflag.Value
+	processedExperiments map[string]bool
 
 	project string
 	bucket  string
@@ -69,6 +72,11 @@ func (c *cmdGetBuilder) initFlags(opts cmdBaseOptions) {
 		"Increase or decrease the priority of the generated job. Note: priority works like Unix 'niceness'; Higher values indicate lower priority.")
 	c.Flags.BoolVar(&c.realBuild, "real-build", false,
 		"Get a synthesized build for the builder, instead of the swarmbucket template.")
+	c.Flags.Var(&c.experiments, "experiment",
+		"Note: only works in real-build mode.\n"+
+			"(repeatable) enable or disable an experiment. This takes a parameter of `experiment_name=true|false` and "+
+			"adds/removes the corresponding experiment. Already enabled experiments are left as is unless they "+
+			"are explicitly disabled.")
 	c.cmdBase.initFlags(opts)
 }
 
@@ -141,6 +149,12 @@ func (c *cmdGetBuilder) validateFlags(ctx context.Context, positionals []string,
 	if c.builder == "" {
 		return errors.New("empty builder")
 	}
+	if !c.realBuild && len(c.experiments) > 0 {
+		return errors.Reason("setting experiments only works in real-build mode.").Err()
+	}
+	if c.processedExperiments, err = processExperiments(c.experiments); err != nil {
+		return err
+	}
 	return nil
 }
 
@@ -153,6 +167,7 @@ func (c *cmdGetBuilder) execute(ctx context.Context, authClient *http.Client, _ 
 		Canary:          c.canary,
 		ExtraTags:       c.tags,
 		PriorityDiff:    c.priorityDiff,
+		Experiments:     c.processedExperiments,
 
 		KitchenSupport: c.kitchenSupport,
 		RealBuild:      c.realBuild,
