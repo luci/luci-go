@@ -212,11 +212,14 @@ func validateAgent(agent *pb.BuildInfra_Buildbucket_Agent) error {
 	}
 }
 
-func validateInfraBuildbucket(ib *pb.BuildInfra_Buildbucket) error {
+func validateInfraBuildbucket(ctx context.Context, ib *pb.BuildInfra_Buildbucket) error {
 	var err error
+	bbHost := fmt.Sprintf("%s.appspot.com", info.AppID(ctx))
 	switch {
 	case teeErr(validateHostName(ib.GetHostname()), &err) != nil:
 		return errors.Annotate(err, "hostname").Err()
+	case ib.GetHostname() != "" && ib.Hostname != bbHost:
+		return errors.Reason("incorrect hostname, want: %s, got: %s", bbHost, ib.Hostname).Err()
 	case teeErr(validateAgent(ib.GetAgent()), &err) != nil:
 		return errors.Annotate(err, "agent").Err()
 	case teeErr(validateRequestedDimensions(ib.RequestedDimensions), &err) != nil:
@@ -319,10 +322,10 @@ func validateInfraResultDB(irdb *pb.BuildInfra_ResultDB) error {
 	}
 }
 
-func validateInfra(infra *pb.BuildInfra) error {
+func validateInfra(ctx context.Context, infra *pb.BuildInfra) error {
 	var err error
 	switch {
-	case teeErr(validateInfraBuildbucket(infra.GetBuildbucket()), &err) != nil:
+	case teeErr(validateInfraBuildbucket(ctx, infra.GetBuildbucket()), &err) != nil:
 		return errors.Annotate(err, "buildbucket").Err()
 	case teeErr(validateInfraSwarming(infra.GetSwarming()), &err) != nil:
 		return errors.Annotate(err, "swarming").Err()
@@ -411,7 +414,7 @@ func validateBuild(ctx context.Context, wellKnownExperiments stringset.Set, b *p
 		return errors.Annotate(err, "exe").Err()
 	case teeErr(validateInput(wellKnownExperiments, b.Input), &err) != nil:
 		return errors.Annotate(err, "input").Err()
-	case teeErr(validateInfra(b.Infra), &err) != nil:
+	case teeErr(validateInfra(ctx, b.Infra), &err) != nil:
 		return errors.Annotate(err, "infra").Err()
 	case teeErr(validateBucketConstraints(ctx, b), &err) != nil:
 		return err
@@ -486,7 +489,9 @@ func (bc *buildCreator) createBuilds(ctx context.Context) ([]*model.Build, error
 		bc.blds[i].Proto.CreatedBy = string(user)
 		bc.blds[i].Proto.CreateTime = timestamppb.New(now)
 		bc.blds[i].Proto.Id = ids[i]
-		bc.blds[i].Proto.Infra.Buildbucket.Hostname = fmt.Sprintf("%s.appspot.com", appID)
+		if bc.blds[i].Proto.Infra.Buildbucket.Hostname == "" {
+			bc.blds[i].Proto.Infra.Buildbucket.Hostname = fmt.Sprintf("%s.appspot.com", appID)
+		}
 		bc.blds[i].Proto.Infra.Logdog.Prefix = fmt.Sprintf("buildbucket/%s/%d", appID, bc.blds[i].Proto.Id)
 		protoutil.SetStatus(now, bc.blds[i].Proto, pb.Status_SCHEDULED)
 

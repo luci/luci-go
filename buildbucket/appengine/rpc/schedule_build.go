@@ -37,6 +37,7 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/sync/parallel"
+	"go.chromium.org/luci/gae/service/info"
 	"go.chromium.org/luci/grpc/appstatus"
 
 	bb "go.chromium.org/luci/buildbucket"
@@ -752,15 +753,17 @@ func configuredCacheToTaskCache(builderCache *pb.BuilderConfig_CacheEntry) *pb.B
 
 // setInfra computes the infra values from the given request and builder config,
 // setting them in the proto. Mutates the given *pb.Build. build.Builder must be
-// set. Does not set build.Infra.Buildbucket.Hostname or
-// build.Infra.Logdog.Prefix, which can only be determined at creation time.
-func setInfra(req *pb.ScheduleBuildRequest, cfg *pb.BuilderConfig, build *pb.Build, globalCfg *pb.SettingsCfg) {
+// set. Does not set build.Infra.Logdog.Prefix, which can only be determined at
+// creation time.
+func setInfra(ctx context.Context, req *pb.ScheduleBuildRequest, cfg *pb.BuilderConfig, build *pb.Build, globalCfg *pb.SettingsCfg) {
+	appID := info.AppID(ctx) // e.g. cr-buildbucket
 	build.Infra = &pb.BuildInfra{
 		Bbagent: &pb.BuildInfra_BBAgent{
 			CacheDir:    "cache",
 			PayloadPath: "kitchen-checkout",
 		},
 		Buildbucket: &pb.BuildInfra_Buildbucket{
+			Hostname:               fmt.Sprintf("%s.appspot.com", appID),
 			RequestedDimensions:    req.GetDimensions(),
 			RequestedProperties:    req.GetProperties(),
 			KnownPublicGerritHosts: globalCfg.GetKnownPublicGerritHosts(),
@@ -997,7 +1000,7 @@ func buildFromScheduleRequest(ctx context.Context, req *pb.ScheduleBuildRequest,
 	}
 
 	setExecutable(req, cfg, b)
-	setInfra(req, cfg, b, globalCfg) // Requires setExecutable.
+	setInfra(ctx, req, cfg, b, globalCfg) // Requires setExecutable.
 	setInput(ctx, req, cfg, b)
 	setTags(req, b, pRunID)
 	setTimeouts(req, cfg, b)

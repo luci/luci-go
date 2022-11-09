@@ -203,6 +203,7 @@ func TestSynthesizeBuild(t *testing.T) {
 							PayloadPath: "kitchen-checkout",
 						},
 						Buildbucket: &pb.BuildInfra_Buildbucket{
+							Hostname: "app.appspot.com",
 							Agent: &pb.BuildInfra_Buildbucket_Agent{
 								Input: &pb.BuildInfra_Buildbucket_Agent_Input{},
 								Purposes: map[string]pb.BuildInfra_Buildbucket_Agent_Purpose{
@@ -291,6 +292,7 @@ func TestSynthesizeBuild(t *testing.T) {
 							PayloadPath: "kitchen-checkout",
 						},
 						Buildbucket: &pb.BuildInfra_Buildbucket{
+							Hostname: "app.appspot.com",
 							Agent: &pb.BuildInfra_Buildbucket_Agent{
 								Input: &pb.BuildInfra_Buildbucket_Agent_Input{},
 								Purposes: map[string]pb.BuildInfra_Buildbucket_Agent_Purpose{
@@ -379,6 +381,7 @@ func TestSynthesizeBuild(t *testing.T) {
 							PayloadPath: "kitchen-checkout",
 						},
 						Buildbucket: &pb.BuildInfra_Buildbucket{
+							Hostname: "app.appspot.com",
 							ExperimentReasons: map[string]pb.BuildInfra_Buildbucket_ExperimentReason{
 								"cool.experiment_thing":     pb.BuildInfra_Buildbucket_EXPERIMENT_REASON_REQUESTED,
 								"disabled.experiment_thing": pb.BuildInfra_Buildbucket_EXPERIMENT_REASON_REQUESTED,

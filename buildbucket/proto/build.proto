@@ -558,7 +558,7 @@ message BuildInfra {
     repeated RequestedDimension requested_dimensions = 6;
 
     // Buildbucket hostname, e.g. "cr-buildbucket.appspot.com".
-    string hostname = 7 [ (google.api.field_behavior) = OUTPUT_ONLY ];
+    string hostname = 7;
 
     enum ExperimentReason {
       // This value is unused (i.e. if you see this, it's a bug).

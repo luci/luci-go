@@ -342,6 +342,11 @@ func TestValidateCreateBuildRequest(t *testing.T) {
 			Convey("Infra", func() {
 
 				Convey("buildbucket", func() {
+					Convey("host", func() {
+						req.Build.Infra.Buildbucket.Hostname = "wrong.appspot.com"
+						_, err := validateCreateBuildRequest(ctx, wellknownExps, req)
+						So(err, ShouldErrLike, `build: infra: buildbucket: incorrect hostname, want: app.appspot.com, got: wrong.appspot.com`)
+					})
 					Convey("agent", func() {
 						Convey("input", func() {
 							Convey("package", func() {

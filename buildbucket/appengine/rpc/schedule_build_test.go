@@ -452,6 +452,7 @@ func TestScheduleBuild(t *testing.T) {
 								PayloadPath: "kitchen-checkout",
 							},
 							Buildbucket: &pb.BuildInfra_Buildbucket{
+								Hostname: "app.appspot.com",
 								Agent: &pb.BuildInfra_Buildbucket_Agent{
 									Input: &pb.BuildInfra_Buildbucket_Agent_Input{},
 									Purposes: map[string]pb.BuildInfra_Buildbucket_Agent_Purpose{
@@ -572,6 +573,7 @@ func TestScheduleBuild(t *testing.T) {
 								PayloadPath: "kitchen-checkout",
 							},
 							Buildbucket: &pb.BuildInfra_Buildbucket{
+								Hostname: "app.appspot.com",
 								Agent: &pb.BuildInfra_Buildbucket_Agent{
 									Input: &pb.BuildInfra_Buildbucket_Agent_Input{},
 									Purposes: map[string]pb.BuildInfra_Buildbucket_Agent_Purpose{
@@ -2350,6 +2352,7 @@ func TestScheduleBuild(t *testing.T) {
 				Build: datastore.MakeKey(ctx, "Build", 1),
 				Proto: &pb.BuildInfra{
 					Buildbucket: &pb.BuildInfra_Buildbucket{
+						Hostname: "app.appspot.com",
 						RequestedDimensions: []*pb.RequestedDimension{
 							{Key: "key_in_db", Value: "value_in_db"},
 						},
@@ -2937,8 +2940,10 @@ func TestScheduleBuild(t *testing.T) {
 				},
 				Exe: &pb.Executable{},
 				Infra: &pb.BuildInfra{
-					Swarming:    &pb.BuildInfra_Swarming{},
-					Buildbucket: &pb.BuildInfra_Buildbucket{},
+					Swarming: &pb.BuildInfra_Swarming{},
+					Buildbucket: &pb.BuildInfra_Buildbucket{
+						Hostname: "app.appspot.com",
+					},
 				},
 				Input: &pb.Build_Input{},
 			},
@@ -2955,8 +2960,10 @@ func TestScheduleBuild(t *testing.T) {
 					Cmd: []string{"recipes"},
 				},
 				Infra: &pb.BuildInfra{
-					Swarming:    &pb.BuildInfra_Swarming{},
-					Buildbucket: &pb.BuildInfra_Buildbucket{},
+					Swarming: &pb.BuildInfra_Swarming{},
+					Buildbucket: &pb.BuildInfra_Buildbucket{
+						Hostname: "app.appspot.com",
+					},
 				},
 				Input: &pb.Build_Input{},
 			},
@@ -3081,7 +3088,7 @@ func TestScheduleBuild(t *testing.T) {
 			Convey("req > experiment", func() {
 				req.Experiments[bb.ExperimentNonProduction] = true
 				req.Priority = 1
-				setInfra(req, cfg, ent.Proto, gCfg)
+				setInfra(ctx, req, cfg, ent.Proto, gCfg)
 				setExps()
 
 				So(ent.Proto.Infra.Swarming.Priority, ShouldEqual, 1)
@@ -3334,6 +3341,8 @@ func TestScheduleBuild(t *testing.T) {
 	})
 
 	Convey("setInfra", t, func() {
+		ctx := mathrand.Set(memory.Use(context.Background()), rand.New(rand.NewSource(1)))
+		ctx = metrics.WithServiceInfo(ctx, "svc", "job", "ins")
 		Convey("nil", func() {
 			b := &pb.Build{
 				Builder: &pb.BuilderID{
@@ -3343,13 +3352,15 @@ func TestScheduleBuild(t *testing.T) {
 				},
 			}
 
-			setInfra(nil, nil, b, nil)
+			setInfra(ctx, nil, nil, b, nil)
 			So(b.Infra, ShouldResembleProto, &pb.BuildInfra{
 				Bbagent: &pb.BuildInfra_BBAgent{
 					CacheDir:    "cache",
 					PayloadPath: "kitchen-checkout",
 				},
-				Buildbucket: &pb.BuildInfra_Buildbucket{},
+				Buildbucket: &pb.BuildInfra_Buildbucket{
+					Hostname: "app.appspot.com",
+				},
 				Logdog: &pb.BuildInfra_LogDog{
 					Project: "project",
 				},
@@ -3383,13 +3394,14 @@ func TestScheduleBuild(t *testing.T) {
 				},
 			}
 
-			setInfra(nil, nil, b, s)
+			setInfra(ctx, nil, nil, b, s)
 			So(b.Infra, ShouldResembleProto, &pb.BuildInfra{
 				Bbagent: &pb.BuildInfra_BBAgent{
 					CacheDir:    "cache",
 					PayloadPath: "kitchen-checkout",
 				},
 				Buildbucket: &pb.BuildInfra_Buildbucket{
+					Hostname: "app.appspot.com",
 					KnownPublicGerritHosts: []string{
 						"host",
 					},
@@ -3427,13 +3439,15 @@ func TestScheduleBuild(t *testing.T) {
 				},
 			}
 
-			setInfra(nil, nil, b, s)
+			setInfra(ctx, nil, nil, b, s)
 			So(b.Infra, ShouldResembleProto, &pb.BuildInfra{
 				Bbagent: &pb.BuildInfra_BBAgent{
 					CacheDir:    "cache",
 					PayloadPath: "kitchen-checkout",
 				},
-				Buildbucket: &pb.BuildInfra_Buildbucket{},
+				Buildbucket: &pb.BuildInfra_Buildbucket{
+					Hostname: "app.appspot.com",
+				},
 				Logdog: &pb.BuildInfra_LogDog{
 					Hostname: "host",
 					Project:  "project",
@@ -3469,13 +3483,15 @@ func TestScheduleBuild(t *testing.T) {
 				},
 			}
 
-			setInfra(nil, nil, b, s)
+			setInfra(ctx, nil, nil, b, s)
 			So(b.Infra, ShouldResembleProto, &pb.BuildInfra{
 				Bbagent: &pb.BuildInfra_BBAgent{
 					PayloadPath: "kitchen-checkout",
 					CacheDir:    "cache",
 				},
-				Buildbucket: &pb.BuildInfra_Buildbucket{},
+				Buildbucket: &pb.BuildInfra_Buildbucket{
+					Hostname: "app.appspot.com",
+				},
 				Logdog: &pb.BuildInfra_LogDog{
 					Hostname: "",
 					Project:  "project",
@@ -3514,13 +3530,15 @@ func TestScheduleBuild(t *testing.T) {
 					},
 				}
 
-				setInfra(nil, cfg, b, nil)
+				setInfra(ctx, nil, cfg, b, nil)
 				So(b.Infra, ShouldResembleProto, &pb.BuildInfra{
 					Bbagent: &pb.BuildInfra_BBAgent{
 						CacheDir:    "cache",
 						PayloadPath: "kitchen-checkout",
 					},
-					Buildbucket: &pb.BuildInfra_Buildbucket{},
+					Buildbucket: &pb.BuildInfra_Buildbucket{
+						Hostname: "app.appspot.com",
+					},
 					Logdog: &pb.BuildInfra_LogDog{
 						Project: "project",
 					},
@@ -3559,13 +3577,15 @@ func TestScheduleBuild(t *testing.T) {
 						},
 					}
 
-					setInfra(nil, cfg, b, nil)
+					setInfra(ctx, nil, cfg, b, nil)
 					So(b.Infra, ShouldResembleProto, &pb.BuildInfra{
 						Bbagent: &pb.BuildInfra_BBAgent{
 							PayloadPath: "kitchen-checkout",
 							CacheDir:    "cache",
 						},
-						Buildbucket: &pb.BuildInfra_Buildbucket{},
+						Buildbucket: &pb.BuildInfra_Buildbucket{
+							Hostname: "app.appspot.com",
+						},
 						Logdog: &pb.BuildInfra_LogDog{
 							Project: "project",
 						},
@@ -3597,13 +3617,15 @@ func TestScheduleBuild(t *testing.T) {
 							},
 						}
 
-						setInfra(nil, nil, b, nil)
+						setInfra(ctx, nil, nil, b, nil)
 						So(b.Infra, ShouldResembleProto, &pb.BuildInfra{
 							Bbagent: &pb.BuildInfra_BBAgent{
 								CacheDir:    "cache",
 								PayloadPath: "kitchen-checkout",
 							},
-							Buildbucket: &pb.BuildInfra_Buildbucket{},
+							Buildbucket: &pb.BuildInfra_Buildbucket{
+								Hostname: "app.appspot.com",
+							},
 							Logdog: &pb.BuildInfra_LogDog{
 								Project: "project",
 							},
@@ -3641,13 +3663,15 @@ func TestScheduleBuild(t *testing.T) {
 							},
 						}
 
-						setInfra(nil, nil, b, s)
+						setInfra(ctx, nil, nil, b, s)
 						So(b.Infra, ShouldResembleProto, &pb.BuildInfra{
 							Bbagent: &pb.BuildInfra_BBAgent{
 								CacheDir:    "cache",
 								PayloadPath: "kitchen-checkout",
 							},
-							Buildbucket: &pb.BuildInfra_Buildbucket{},
+							Buildbucket: &pb.BuildInfra_Buildbucket{
+								Hostname: "app.appspot.com",
+							},
 							Logdog: &pb.BuildInfra_LogDog{
 								Project: "project",
 							},
@@ -3687,13 +3711,15 @@ func TestScheduleBuild(t *testing.T) {
 							},
 						}
 
-						setInfra(nil, cfg, b, nil)
+						setInfra(ctx, nil, cfg, b, nil)
 						So(b.Infra, ShouldResembleProto, &pb.BuildInfra{
 							Bbagent: &pb.BuildInfra_BBAgent{
 								CacheDir:    "cache",
 								PayloadPath: "kitchen-checkout",
 							},
-							Buildbucket: &pb.BuildInfra_Buildbucket{},
+							Buildbucket: &pb.BuildInfra_Buildbucket{
+								Hostname: "app.appspot.com",
+							},
 							Logdog: &pb.BuildInfra_LogDog{
 								Project: "project",
 							},
@@ -3768,13 +3794,15 @@ func TestScheduleBuild(t *testing.T) {
 							},
 						}
 
-						setInfra(nil, cfg, b, s)
+						setInfra(ctx, nil, cfg, b, s)
 						So(b.Infra, ShouldResembleProto, &pb.BuildInfra{
 							Bbagent: &pb.BuildInfra_BBAgent{
 								CacheDir:    "cache",
 								PayloadPath: "kitchen-checkout",
 							},
-							Buildbucket: &pb.BuildInfra_Buildbucket{},
+							Buildbucket: &pb.BuildInfra_Buildbucket{
+								Hostname: "app.appspot.com",
+							},
 							Logdog: &pb.BuildInfra_LogDog{
 								Project: "project",
 							},
@@ -3839,13 +3867,14 @@ func TestScheduleBuild(t *testing.T) {
 					},
 				}
 
-				setInfra(req, nil, b, nil)
+				setInfra(ctx, req, nil, b, nil)
 				So(b.Infra, ShouldResembleProto, &pb.BuildInfra{
 					Bbagent: &pb.BuildInfra_BBAgent{
 						CacheDir:    "cache",
 						PayloadPath: "kitchen-checkout",
 					},
 					Buildbucket: &pb.BuildInfra_Buildbucket{
+						Hostname: "app.appspot.com",
 						RequestedDimensions: []*pb.RequestedDimension{
 							{
 								Expiration: &durationpb.Duration{
@@ -3904,13 +3933,14 @@ func TestScheduleBuild(t *testing.T) {
 					},
 				}
 
-				setInfra(req, nil, b, nil)
+				setInfra(ctx, req, nil, b, nil)
 				So(b.Infra, ShouldResembleProto, &pb.BuildInfra{
 					Bbagent: &pb.BuildInfra_BBAgent{
 						CacheDir:    "cache",
 						PayloadPath: "kitchen-checkout",
 					},
 					Buildbucket: &pb.BuildInfra_Buildbucket{
+						Hostname: "app.appspot.com",
 						RequestedProperties: &structpb.Struct{
 							Fields: map[string]*structpb.Value{
 								"key": {
@@ -3954,13 +3984,15 @@ func TestScheduleBuild(t *testing.T) {
 					},
 				}
 
-				setInfra(req, nil, b, nil)
+				setInfra(ctx, req, nil, b, nil)
 				So(b.Infra, ShouldResembleProto, &pb.BuildInfra{
 					Bbagent: &pb.BuildInfra_BBAgent{
 						CacheDir:    "cache",
 						PayloadPath: "kitchen-checkout",
 					},
-					Buildbucket: &pb.BuildInfra_Buildbucket{},
+					Buildbucket: &pb.BuildInfra_Buildbucket{
+						Hostname: "app.appspot.com",
+					},
 					Logdog: &pb.BuildInfra_LogDog{
 						Project: "project",
 					},
@@ -3993,13 +4025,15 @@ func TestScheduleBuild(t *testing.T) {
 					},
 				}
 
-				setInfra(req, nil, b, nil)
+				setInfra(ctx, req, nil, b, nil)
 				So(b.Infra, ShouldResembleProto, &pb.BuildInfra{
 					Bbagent: &pb.BuildInfra_BBAgent{
 						CacheDir:    "cache",
 						PayloadPath: "kitchen-checkout",
 					},
-					Buildbucket: &pb.BuildInfra_Buildbucket{},
+					Buildbucket: &pb.BuildInfra_Buildbucket{
+						Hostname: "app.appspot.com",
+					},
 					Logdog: &pb.BuildInfra_LogDog{
 						Project: "project",
 					},
@@ -4992,6 +5026,7 @@ func TestScheduleBuild(t *testing.T) {
 								PayloadPath: "kitchen-checkout",
 							},
 							Buildbucket: &pb.BuildInfra_Buildbucket{
+								Hostname: "app.appspot.com",
 								Agent: &pb.BuildInfra_Buildbucket_Agent{
 									Input: &pb.BuildInfra_Buildbucket_Agent_Input{},
 									Purposes: map[string]pb.BuildInfra_Buildbucket_Agent_Purpose{
@@ -6317,7 +6352,9 @@ func TestScheduleBuild(t *testing.T) {
 					CipdVersion: "exe-version",
 				},
 				Infra: &pb.BuildInfra{
-					Buildbucket: &pb.BuildInfra_Buildbucket{},
+					Buildbucket: &pb.BuildInfra_Buildbucket{
+						Hostname: "app.appspot.com",
+					},
 				},
 				Input: &pb.Build_Input{
 					Experiments: []string{"omit", "include"},
@@ -6445,7 +6482,9 @@ func TestScheduleBuild(t *testing.T) {
 					CipdVersion: "exe-version",
 				},
 				Infra: &pb.BuildInfra{
-					Buildbucket: &pb.BuildInfra_Buildbucket{},
+					Buildbucket: &pb.BuildInfra_Buildbucket{
+						Hostname: "app.appspot.com",
+					},
 				},
 			}
 			cfg := &pb.SettingsCfg{
@@ -6469,7 +6508,9 @@ func TestScheduleBuild(t *testing.T) {
 					Builder: "builder",
 				},
 				Infra: &pb.BuildInfra{
-					Buildbucket: &pb.BuildInfra_Buildbucket{},
+					Buildbucket: &pb.BuildInfra_Buildbucket{
+						Hostname: "app.appspot.com",
+					},
 				},
 			}
 			err := setInfraAgent(b, &pb.SettingsCfg{})
@@ -6487,7 +6528,9 @@ func TestScheduleBuild(t *testing.T) {
 				},
 				Canary: true,
 				Infra: &pb.BuildInfra{
-					Buildbucket: &pb.BuildInfra_Buildbucket{},
+					Buildbucket: &pb.BuildInfra_Buildbucket{
+						Hostname: "app.appspot.com",
+					},
 				},
 				Input: &pb.Build_Input{
 					Experiments: []string{"omit", "include"},
@@ -6570,7 +6613,9 @@ func TestScheduleBuild(t *testing.T) {
 				},
 				Canary: true,
 				Infra: &pb.BuildInfra{
-					Buildbucket: &pb.BuildInfra_Buildbucket{},
+					Buildbucket: &pb.BuildInfra_Buildbucket{
+						Hostname: "app.appspot.com",
+					},
 				},
 				Input: &pb.Build_Input{
 					Experiments: []string{"omit", "include"},
