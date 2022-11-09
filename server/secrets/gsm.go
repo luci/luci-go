@@ -39,6 +39,19 @@ import (
 	"go.chromium.org/luci/common/data/rand/mathrand"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/common/tsmon/field"
+	"go.chromium.org/luci/common/tsmon/metric"
+	"go.chromium.org/luci/common/tsmon/types"
+)
+
+// The version of the loaded secret per alias.
+var versionMetric = metric.NewInt(
+	"secrets/gsm/version",
+	"Version number of a currently loaded Google Secret Manager secret",
+	&types.MetricMetadata{},
+	field.String("project"), // GCP project with the secret
+	field.String("secret"),  // the name of the secret
+	field.String("alias"),   // one of "current", "previous", "next"
 )
 
 // SecretManagerStore implements Store using Google Secret Manager.
@@ -227,6 +240,23 @@ func (sm *SecretManagerStore) AddRotationHandler(ctx context.Context, name strin
 	}
 }
 
+// ReportMetrics is called on each metrics flush to populate metrics.
+func (sm *SecretManagerStore) ReportMetrics(ctx context.Context) {
+	sm.rwm.RLock()
+	defer sm.rwm.RUnlock()
+	for name, secret := range sm.secretsByName {
+		// `name` is output of normalizeName(...)
+		if strings.HasPrefix(name, "sm://") {
+			// `name` is "sm://<project>/<secret>".
+			parts := strings.SplitN(name[len("sm://"):], "/", 2)
+			project, name := parts[0], parts[1]
+			versionMetric.Set(ctx, secret.versionCurrent, project, name, "current")
+			versionMetric.Set(ctx, secret.versionPrevious, project, name, "previous")
+			versionMetric.Set(ctx, secret.versionNext, project, name, "next")
+		}
+	}
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 
 const (
@@ -260,9 +290,6 @@ func (s *trackedSecret) logActiveVersions(ctx context.Context) {
 	if s.versionCurrent == 0 {
 		return
 	}
-
-	// TODO(vadimsh): Report them as monitoring metrics as well so there's
-	// visibility into what is cached in memory during rotations.
 
 	formatVer := func(v int64) string {
 		if v == 0 {

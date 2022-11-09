@@ -22,6 +22,7 @@ import (
 	"google.golang.org/api/option"
 
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/tsmon"
 	"go.chromium.org/luci/grpc/grpcmon"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/module"
@@ -160,5 +161,10 @@ func (m *serverModule) Initialize(ctx context.Context, host module.Host, opts mo
 	}
 
 	host.RunInBackground("luci.secrets", store.MaintenanceLoop)
+
+	// Report initial values of metrics and refresh them on every tsmon flush.
+	store.ReportMetrics(ctx)
+	tsmon.RegisterCallbackIn(ctx, store.ReportMetrics)
+
 	return ctx, nil
 }
