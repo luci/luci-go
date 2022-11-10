@@ -25,7 +25,6 @@ import (
 	"go.chromium.org/luci/auth"
 	"go.chromium.org/luci/client/cmd/swarming/swarmingimpl"
 	"go.chromium.org/luci/common/data/text"
-	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/system/terminal"
 	"go.chromium.org/luci/led/job"
@@ -94,18 +93,7 @@ func (c *cmdLaunch) execute(ctx context.Context, authClient *http.Client, _ auth
 		return nil, err
 	}
 
-	// Currently modernize only means 'upgrade to bbagent from kitchen'.
-	if bb := inJob.GetBuildbucket(); bb != nil {
-		if c.modernize {
-			bb.LegacyKitchen = false
-		}
-		// TODO(crbug.com/1114804): support launching real build.
-		if c.realBuild {
-			return nil, errors.New("launching real buildbucket build is not supported")
-		}
-	}
-
-	task, meta, err := ledcmd.LaunchSwarming(ctx, authClient, inJob, ledcmd.LaunchSwarmingOpts{
+	opts := ledcmd.LaunchSwarmingOpts{
 		DryRun:          c.dump,
 		UserID:          uid,
 		FinalBuildProto: "build.proto.json",
@@ -113,7 +101,49 @@ func (c *cmdLaunch) execute(ctx context.Context, authClient *http.Client, _ auth
 		ParentTaskId:    os.Getenv(swarmingimpl.TaskIDEnvVar),
 		ResultDB:        c.resultdb,
 		NoLEDTag:        c.noLEDTag,
-	})
+	}
+
+	buildbucketHostname := inJob.GetBuildbucket().GetBbagentArgs().GetBuild().GetInfra().GetBuildbucket().GetHostname()
+	swarmingHostname := inJob.Info().SwarmingHostname()
+	miloHost := "ci.chromium.org"
+	if strings.Contains(buildbucketHostname, "-dev") || strings.Contains(swarmingHostname, "-dev") {
+		miloHost = "luci-milo-dev.appspot.com"
+	}
+
+	// Currently modernize only means 'upgrade to bbagent from kitchen'.
+	if bb := inJob.GetBuildbucket(); bb != nil {
+		if c.modernize {
+			bb.LegacyKitchen = false
+		}
+		if c.realBuild {
+			build, err := ledcmd.LaunchBuild(ctx, authClient, inJob, opts)
+			if err != nil {
+				return nil, err
+			}
+			if c.dump {
+				return build, nil
+			}
+			logging.Infof(ctx, "LUCI UI: https://%s/b/%d", miloHost, build.Id)
+			if !terminal.IsTerminal(int(os.Stdout.Fd())) {
+				ret := &struct {
+					Buildbucket struct {
+						// The id of the launched build.
+						BuildID int64 `json:"build_id"`
+
+						// The hostname of the buildbucket server
+						Hostname string `json:"host_name"`
+					} `json:"buildbucket"`
+				}{}
+
+				ret.Buildbucket.BuildID = build.Id
+				ret.Buildbucket.Hostname = buildbucketHostname
+				return ret, nil
+			}
+			return nil, nil
+		}
+	}
+
+	task, meta, err := ledcmd.LaunchSwarming(ctx, authClient, inJob, opts)
 	if err != nil {
 		return nil, err
 	}
@@ -121,13 +151,8 @@ func (c *cmdLaunch) execute(ctx context.Context, authClient *http.Client, _ auth
 		return task, nil
 	}
 
-	swarmingHostname := inJob.Info().SwarmingHostname()
 	logging.Infof(ctx, "Launched swarming task: https://%s/task?id=%s",
 		swarmingHostname, meta.TaskId)
-	miloHost := "ci.chromium.org"
-	if strings.Contains(swarmingHostname, "-dev") {
-		miloHost = "luci-milo-dev.appspot.com"
-	}
 	logging.Infof(ctx, "LUCI UI: https://%s/swarming/task/%s?server=%s",
 		miloHost, meta.TaskId, swarmingHostname)
 

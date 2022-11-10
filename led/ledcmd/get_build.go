@@ -106,5 +106,5 @@ func synthesizeBuildFromTemplate(ctx context.Context, authClient *http.Client, o
 	if err != nil {
 		return nil, err
 	}
-	return jobcreate.FromBuild(build, getBuildJobName(opts), opts.PriorityDiff, nil), nil
+	return jobcreate.FromBuild(build, opts.BuildbucketHost, getBuildJobName(opts), opts.PriorityDiff, nil), nil
 }

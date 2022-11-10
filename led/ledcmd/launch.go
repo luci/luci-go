@@ -20,6 +20,7 @@ import (
 	"time"
 
 	"go.chromium.org/luci/auth"
+	bbpb "go.chromium.org/luci/buildbucket/proto"
 	swarming "go.chromium.org/luci/common/api/swarming/swarming/v1"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/gcloud/googleoauth"
@@ -134,4 +135,19 @@ func addUserAgentTag(req *swarming.SwarmingRpcsNewTaskRequest) {
 		}
 	}
 	req.Tags = append(req.Tags, UserAgentTag)
+}
+
+// LaunchBuild creates a real Buildbucket build based on the given job Definition.
+func LaunchBuild(ctx context.Context, authClient *http.Client, jd *job.Definition, opts LaunchSwarmingOpts) (*bbpb.Build, error) {
+	if jd.GetBuildbucket() == nil {
+		return nil, nil
+	}
+	if opts.DryRun {
+		return jd.GetBuildbucket().GetBbagentArgs().GetBuild(), nil
+	}
+
+	bbClient := newBuildbucketClient(authClient, jd.GetBuildbucket().GetBbagentArgs().GetBuild().GetInfra().GetBuildbucket().GetHostname())
+	return bbClient.CreateBuild(ctx, &bbpb.CreateBuildRequest{
+		Build: jd.GetBuildbucket().GetBbagentArgs().GetBuild(),
+	})
 }

@@ -322,7 +322,7 @@ func bbagentArgsFromBuild(bld *bbpb.Build) *bbpb.BBAgentArgs {
 }
 
 // FromBuild generates a new job.Definition using the provided Build.
-func FromBuild(build *bbpb.Build, name string, priorityDiff int, extraTags []string) *job.Definition {
+func FromBuild(build *bbpb.Build, hostname, name string, priorityDiff int, extraTags []string) *job.Definition {
 	ret := &job.Definition{}
 
 	setPriority(build, priorityDiff)
@@ -342,6 +342,11 @@ func FromBuild(build *bbpb.Build, name string, priorityDiff int, extraTags []str
 	}
 	sort.Slice(tags, func(i, j int) bool { return tags[i].Key < tags[j].Key })
 	build.Tags = tags
+
+	// Set buildbucket hostname.
+	if build.Infra.Buildbucket.Hostname == "" {
+		build.Infra.Buildbucket.Hostname = hostname
+	}
 
 	ret.JobType = &job.Definition_Buildbucket{
 		Buildbucket: &job.Buildbucket{

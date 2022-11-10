@@ -121,5 +121,5 @@ func synthesizeBuildFromBuilder(ctx context.Context, authClient *http.Client, op
 	if err != nil {
 		return nil, err
 	}
-	return jobcreate.FromBuild(build, getBuilderJobName(opts), opts.PriorityDiff, opts.ExtraTags), nil
+	return jobcreate.FromBuild(build, opts.BuildbucketHost, getBuilderJobName(opts), opts.PriorityDiff, opts.ExtraTags), nil
 }
