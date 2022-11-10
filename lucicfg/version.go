@@ -24,7 +24,7 @@ const (
 	// Version is the version of lucicfg tool.
 	//
 	// It ends up in CLI output and in User-Agent headers.
-	Version = "1.33.7"
+	Version = "1.34.0"
 
 	// UserAgent is used for User-Agent header in HTTP requests from lucicfg.
 	UserAgent = "lucicfg v" + Version

@@ -25,6 +25,11 @@ def unrecognized_field():
   proto.from_textpb(testprotos.Simple, 'unknown: 123')
 assert.fails(unrecognized_field, 'unknown field')
 
+# The returned message is frozen.
+def from_textpb_frozen():
+  proto.from_textpb(testprotos.Simple, 'i: 123').i = 456
+assert.fails(from_textpb_frozen, 'cannot modify frozen')
+
 # Bad text proto. Detailed tests for type conversions are in from_proto.star.
 def from_textpb_bad_proto():
   proto.from_textpb(testprotos.Simple, '???')

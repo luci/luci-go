@@ -60,6 +60,11 @@ func (m *Message) MessageType() *MessageType {
 	return m.typ
 }
 
+// IsFrozen returns true if this message was frozen already.
+func (m *Message) IsFrozen() bool {
+	return m.frozen
+}
+
 // ToProto returns a new populated proto message of an appropriate type.
 func (m *Message) ToProto() proto.Message {
 	msg := dynamicpb.NewMessage(m.typ.desc)
@@ -74,8 +79,8 @@ func (m *Message) ToProto() proto.Message {
 //
 // Doesn't reset the message. Basically does this:
 //
-//   for k in d:
-//     setattr(msg, k, d[k])
+//	for k in d:
+//	  setattr(msg, k, d[k])
 //
 // Returns an error on type mismatch.
 func (m *Message) FromDict(d starlark.IterableMapping) error {

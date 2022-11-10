@@ -48,31 +48,40 @@ def _to_wirepb(msg):
 def _from_textpb(ctor, text):
     """Deserializes a protobuf message given its ASCII proto serialization.
 
+    The returned message is frozen. Use proto.clone(...) to get a mutable
+    copy if necessary.
+
     Args:
       ctor: a message constructor function, the same one you would normally use
         to create a new message. Required.
       text: a string with the serialized message. Required.
 
     Returns:
-      Deserialized message constructed via `ctor`.
+      Deserialized frozen message constructed via `ctor`.
     """
     _unused(ctor, text)
 
 def _from_jsonpb(ctor, text):
     """Deserializes a protobuf message given its JSONPB serialization.
 
+    The returned message is frozen. Use proto.clone(...) to get a mutable
+    copy if necessary.
+
     Args:
       ctor: a message constructor function, the same one you would normally use
         to create a new message. Required.
       text: a string with the serialized message. Required.
 
     Returns:
-      Deserialized message constructed via `ctor`.
+      Deserialized frozen message constructed via `ctor`.
     """
     _unused(ctor, text)
 
 def _from_wirepb(ctor, blob):
     """Deserializes a protobuf message given its wire serialization.
+
+    The returned message is frozen. Use proto.clone(...) to get a mutable
+    copy if necessary.
 
     Args:
       ctor: a message constructor function, the same one you would normally use
@@ -80,7 +89,7 @@ def _from_wirepb(ctor, blob):
       blob: a string with the serialized message. Required.
 
     Returns:
-      Deserialized message constructed via `ctor`.
+      Deserialized frozen message constructed via `ctor`.
     """
     _unused(ctor, blob)
 

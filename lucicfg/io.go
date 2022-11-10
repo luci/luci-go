@@ -31,12 +31,20 @@ import (
 const cachingThreshold = 2
 
 type fileCache struct {
-	cache map[interpreter.ModuleKey]fileCacheEntry
+	interner stringInterner
+	cache    map[interpreter.ModuleKey]fileCacheEntry
 }
 
 type fileCacheEntry struct {
 	hits int    // 0, 1, .., cachingThreshold (no counting after cachingThreshold)
 	data string // the cached data if hits == cachingThreshold, "" otherwise
+}
+
+func newFileCache(interner stringInterner) fileCache {
+	return fileCache{
+		interner: interner,
+		cache:    map[interpreter.ModuleKey]fileCacheEntry{},
+	}
 }
 
 func (c *fileCache) get(key interpreter.ModuleKey, load func() (string, error)) (string, error) {
@@ -53,18 +61,14 @@ func (c *fileCache) get(key interpreter.ModuleKey, load func() (string, error)) 
 	if data != "" {
 		entry.hits += 1
 		if entry.hits == cachingThreshold {
-			entry.data = data
+			entry.data = c.interner.internString(data)
 		}
 	} else {
 		// Can cache "" right away, no RAM impact.
 		entry.hits = cachingThreshold
 	}
 
-	if c.cache == nil {
-		c.cache = make(map[interpreter.ModuleKey]fileCacheEntry, 1)
-	}
 	c.cache[key] = entry
-
 	return data, nil
 }
 

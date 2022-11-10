@@ -58,10 +58,7 @@ type Inputs struct {
 // Returns a multi-error with all captured errors. Some of them may implement
 // BacktracableError interface.
 func Generate(ctx context.Context, in Inputs) (*State, error) {
-	state := &State{
-		Inputs: in,
-		Meta:   in.Meta.Copy(),
-	}
+	state := NewState(in)
 	ctx = withState(ctx, state)
 
 	// Do not put frequently changing version string into test outputs.
@@ -135,6 +132,7 @@ func Generate(ctx context.Context, in Inputs) (*State, error) {
 
 		ThreadModifier: func(th *starlark.Thread) {
 			starlarkproto.SetDefaultLoader(th, ploader)
+			starlarkproto.SetMessageCache(th, &state.protos)
 			if !in.testDisableFailureCollector {
 				failures.Install(th)
 			}

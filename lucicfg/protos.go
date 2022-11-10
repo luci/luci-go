@@ -17,13 +17,16 @@ package lucicfg
 import (
 	"fmt"
 
+	"go.starlark.net/starlark"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/reflect/protodesc"
 	"google.golang.org/protobuf/reflect/protoregistry"
 	"google.golang.org/protobuf/types/descriptorpb"
 
 	"go.chromium.org/luci/common/data/stringset"
+	"go.chromium.org/luci/common/logging"
 	luciproto "go.chromium.org/luci/common/proto"
+	"go.chromium.org/luci/starlark/interpreter"
 	"go.chromium.org/luci/starlark/starlarkproto"
 
 	_ "google.golang.org/protobuf/types/known/anypb"
@@ -182,4 +185,59 @@ func protoMessageDoc(msg *starlarkproto.Message) (name, doc string) {
 		}
 	}
 	return "", "" // not a public proto
+}
+
+// protoCache holds a frozen copy of deserialized proto messages.
+//
+// Implements starlarkproto.MessageCache.
+type protoCache struct {
+	interner stringInterner
+	cache    map[protoCacheKey]*starlarkproto.Message
+	total    int64
+	warned   bool
+}
+
+type protoCacheKey struct {
+	cache string
+	body  string
+	typ   *starlarkproto.MessageType
+}
+
+func newProtoCache(interner stringInterner) protoCache {
+	return protoCache{
+		interner: interner,
+		cache:    map[protoCacheKey]*starlarkproto.Message{},
+	}
+}
+
+// Fetch returns a previously stored message or (nil, nil) if missing.
+func (pc *protoCache) Fetch(th *starlark.Thread, cache, body string, typ *starlarkproto.MessageType) (*starlarkproto.Message, error) {
+	return pc.cache[protoCacheKey{cache: cache, body: body, typ: typ}], nil
+}
+
+// Store stores a deserialized message.
+func (pc *protoCache) Store(th *starlark.Thread, cache, body string, msg *starlarkproto.Message) error {
+	if !msg.IsFrozen() {
+		panic("can store only frozen messages")
+	}
+
+	key := protoCacheKey{
+		cache: cache,
+		body:  pc.interner.internString(body),
+		typ:   msg.MessageType(),
+	}
+	if _, ok := pc.cache[key]; ok {
+		return nil
+	}
+
+	pc.cache[key] = msg
+
+	pc.total += int64(len(body))
+	if pc.total > 500*1000*1000 && !pc.warned {
+		logging.Warningf(interpreter.Context(th),
+			"lucicfg internals: proto cache is too large, see https://crbug.com/1382916 if this causes issues like OOMs")
+		pc.warned = true
+	}
+
+	return nil
 }

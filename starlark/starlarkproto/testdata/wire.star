@@ -33,3 +33,8 @@ mapMsg = testprotos.MapWithPrimitiveType(m3={i: i for i in range(100)})
 b1 = proto.to_wirepb(mapMsg)
 b2 = proto.to_wirepb(mapMsg)
 assert.eq(b1, b2)
+
+# The returned message is frozen.
+def from_wirepb_frozen():
+  proto.from_wirepb(testprotos.Complex, blob).i64 = 456
+assert.fails(from_wirepb_frozen, 'cannot modify frozen')

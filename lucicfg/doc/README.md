@@ -3863,6 +3863,9 @@ proto.from_textpb(ctor, text)
 
 Deserializes a protobuf message given its ASCII proto serialization.
 
+The returned message is frozen. Use [proto.clone(...)](#proto.clone) to get a mutable
+copy if necessary.
+
 #### Arguments {#proto.from-textpb-args}
 
 * **ctor**: a message constructor function, the same one you would normally use to create a new message. Required.
@@ -3871,7 +3874,7 @@ Deserializes a protobuf message given its ASCII proto serialization.
 
 #### Returns  {#proto.from-textpb-returns}
 
-Deserialized message constructed via `ctor`.
+Deserialized frozen message constructed via `ctor`.
 
 
 
@@ -3885,6 +3888,9 @@ proto.from_jsonpb(ctor, text)
 
 Deserializes a protobuf message given its JSONPB serialization.
 
+The returned message is frozen. Use [proto.clone(...)](#proto.clone) to get a mutable
+copy if necessary.
+
 #### Arguments {#proto.from-jsonpb-args}
 
 * **ctor**: a message constructor function, the same one you would normally use to create a new message. Required.
@@ -3893,7 +3899,7 @@ Deserializes a protobuf message given its JSONPB serialization.
 
 #### Returns  {#proto.from-jsonpb-returns}
 
-Deserialized message constructed via `ctor`.
+Deserialized frozen message constructed via `ctor`.
 
 
 
@@ -3907,6 +3913,9 @@ proto.from_wirepb(ctor, blob)
 
 Deserializes a protobuf message given its wire serialization.
 
+The returned message is frozen. Use [proto.clone(...)](#proto.clone) to get a mutable
+copy if necessary.
+
 #### Arguments {#proto.from-wirepb-args}
 
 * **ctor**: a message constructor function, the same one you would normally use to create a new message. Required.
@@ -3915,7 +3924,7 @@ Deserializes a protobuf message given its wire serialization.
 
 #### Returns  {#proto.from-wirepb-returns}
 
-Deserialized message constructed via `ctor`.
+Deserialized frozen message constructed via `ctor`.
 
 
 

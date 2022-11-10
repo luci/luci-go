@@ -37,6 +37,8 @@ import (
 // Starlark side. Starlark code operates with the state exclusively through
 // these functions.
 //
+// Use NewState to construct it.
+//
 // All Starlark code is executed sequentially in a single goroutine, thus the
 // state is not protected by any mutexes.
 type State struct {
@@ -52,10 +54,24 @@ type State struct {
 	seenErrs    stringset.Set     // set of all string backtraces in 'errors', for deduping
 	failOnErrs  bool              // if true, 'emit_error' aborts the execution
 
-	generators generators    // callbacks that generate config files based on state
-	graph      graph.Graph   // the graph with config entities defined so far
-	templates  templateCache // cached parsed text templates, see templates.go
-	files      fileCache     // cache of files read from disk, see io.go
+	generators generators     // callbacks that generate config files based on state
+	graph      graph.Graph    // the graph with config entities defined so far
+	templates  templateCache  // cached parsed text templates, see templates.go
+	interner   stringInterner // a general purpose string interner used by other guts
+	files      fileCache      // cache of files read from disk, see io.go
+	protos     protoCache     // cache of deserialized protos, see protos.go
+}
+
+// NewState initializes the state.
+func NewState(inputs Inputs) *State {
+	interner := stringInterner{}
+	return &State{
+		Inputs:   inputs,
+		Meta:     inputs.Meta.Copy(),
+		interner: interner,
+		files:    newFileCache(interner),
+		protos:   newProtoCache(interner),
+	}
 }
 
 // checkUncosumedVars returns an error per a provided (via Inputs.Vars), but
@@ -77,12 +93,17 @@ func (s *State) checkUncosumedVars() (errs []error) {
 	return
 }
 
-// clear resets the state.
+// clear resets the state, preserving registered vars (but not their values).
+//
+// Used in tests.
 func (s *State) clear() {
 	*s = State{
-		Inputs: s.Inputs,
-		Meta:   s.Inputs.Meta.Copy(),
-		vars:   s.vars,
+		Inputs:   s.Inputs,
+		Meta:     s.Inputs.Meta.Copy(),
+		vars:     s.vars,
+		interner: s.interner,
+		files:    s.files,
+		protos:   s.protos,
 	}
 	s.vars.ClearValues()
 }

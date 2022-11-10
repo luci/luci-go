@@ -78,6 +78,10 @@ func ToWirePB(msg *Message) ([]byte, error) {
 }
 
 // FromTextPB deserializes a protobuf message given in text proto form.
+//
+// Unlike the equivalent Starlark proto.from_textpb(...), this low-level native
+// function doesn't freeze returned messages, but also doesn't use the message
+// cache.
 func FromTextPB(typ *MessageType, blob []byte) (*Message, error) {
 	pb := dynamicpb.NewMessage(typ.desc)
 	opts := prototext.UnmarshalOptions{
@@ -91,6 +95,10 @@ func FromTextPB(typ *MessageType, blob []byte) (*Message, error) {
 }
 
 // FromJSONPB deserializes a protobuf message given as JBONPB string.
+//
+// Unlike the equivalent Starlark proto.from_jsonpb(...), this low-level native
+// function doesn't freeze returned messages, but also doesn't use the message
+// cache.
 func FromJSONPB(typ *MessageType, blob []byte) (*Message, error) {
 	pb := dynamicpb.NewMessage(typ.desc)
 	opts := protojson.UnmarshalOptions{
@@ -105,6 +113,10 @@ func FromJSONPB(typ *MessageType, blob []byte) (*Message, error) {
 }
 
 // FromWirePB deserializes a protobuf message given as a wire-encoded blob.
+//
+// Unlike the equivalent Starlark proto.from_wirepb(...), this low-level native
+// function doesn't freeze returned messages, but also doesn't use the message
+// cache.
 func FromWirePB(typ *MessageType, blob []byte) (*Message, error) {
 	pb := dynamicpb.NewMessage(typ.desc)
 	opts := proto.UnmarshalOptions{
@@ -123,128 +135,128 @@ func FromWirePB(typ *MessageType, blob []byte) (*Message, error) {
 //
 // Exported functions:
 //
-//    def new_descriptor_set(name=None, blob=None, deps=None):
-//      """Returns a new DescriptorSet.
+//	def new_descriptor_set(name=None, blob=None, deps=None):
+//	  """Returns a new DescriptorSet.
 //
-//      Args:
-//        name: name of this set for debug and error messages, default is '???'.
-//        blob: raw serialized FileDescriptorSet, if any.
-//        deps: an iterable of DescriptorSet's with dependencies, if any.
+//	  Args:
+//	    name: name of this set for debug and error messages, default is '???'.
+//	    blob: raw serialized FileDescriptorSet, if any.
+//	    deps: an iterable of DescriptorSet's with dependencies, if any.
 //
-//      Returns:
-//        New DescriptorSet.
-//      """
+//	  Returns:
+//	    New DescriptorSet.
+//	  """
 //
-//    def new_loader(*descriptor_sets):
-//      """Returns a new proto loader."""
+//	def new_loader(*descriptor_sets):
+//	  """Returns a new proto loader."""
 //
-//    def default_loader():
-//      """Returns a loader used by default when registering descriptor sets."""
+//	def default_loader():
+//	  """Returns a loader used by default when registering descriptor sets."""
 //
-//    def message_type(msg):
-//      """Returns proto.MessageType of the given message."""
+//	def message_type(msg):
+//	  """Returns proto.MessageType of the given message."""
 //
-//    def to_textpb(msg):
-//      """Serializes a protobuf message to text proto.
+//	def to_textpb(msg):
+//	  """Serializes a protobuf message to text proto.
 //
-//      Args:
-//        msg: a *Message to serialize.
+//	  Args:
+//	    msg: a *Message to serialize.
 //
-//      Returns:
-//        A str representing msg in text format.
-//      """
+//	  Returns:
+//	    A str representing msg in text format.
+//	  """
 //
-//    def to_jsonpb(msg, use_proto_names = None):
-//      """Serializes a protobuf message to JSONPB string.
+//	def to_jsonpb(msg, use_proto_names = None):
+//	  """Serializes a protobuf message to JSONPB string.
 //
-//      Args:
-//        msg: a *Message to serialize.
-//        use_proto_names: boolean, whether to use snake_case in field names
-//          instead of camelCase. The default is False.
+//	  Args:
+//	    msg: a *Message to serialize.
+//	    use_proto_names: boolean, whether to use snake_case in field names
+//	      instead of camelCase. The default is False.
 //
-//      Returns:
-//        A str representing msg in JSONPB format.
-//      """
+//	  Returns:
+//	    A str representing msg in JSONPB format.
+//	  """
 //
-//    def to_wirepb(msg):
-//      """Serializes a protobuf message to a string using binary wire encoding.
+//	def to_wirepb(msg):
+//	  """Serializes a protobuf message to a string using binary wire encoding.
 //
-//      Args:
-//        msg: a *Message to serialize.
+//	  Args:
+//	    msg: a *Message to serialize.
 //
-//      Returns:
-//        A str representing msg in binary wire format.
-//      """
+//	  Returns:
+//	    A str representing msg in binary wire format.
+//	  """
 //
-//    def from_textpb(ctor, body):
-//      """Deserializes a protobuf message given in text proto form.
+//	def from_textpb(ctor, body):
+//	  """Deserializes a protobuf message given in text proto form.
 //
-//      Unknown fields are not allowed.
+//	  Unknown fields are not allowed.
 //
-//      Args:
-//        ctor: a message constructor function.
-//        body: a string with serialized message.
+//	  Args:
+//	    ctor: a message constructor function.
+//	    body: a string with serialized message.
 //
-//      Returns:
-//        Deserialized message constructed via `ctor`.
-//      """
+//	  Returns:
+//	    Deserialized frozen message constructed via `ctor`.
+//	  """
 //
-//    def from_jsonpb(ctor, body):
-//      """Deserializes a protobuf message given as JBONPB string.
+//	def from_jsonpb(ctor, body):
+//	  """Deserializes a protobuf message given as JBONPB string.
 //
-//      Unknown fields are silently skipped.
+//	  Unknown fields are silently skipped.
 //
-//      Args:
-//        ctor: a message constructor function.
-//        body: a string with serialized message.
+//	  Args:
+//	    ctor: a message constructor function.
+//	    body: a string with serialized message.
 //
-//      Returns:
-//        Deserialized message constructed via `ctor`.
-//      """
+//	  Returns:
+//	    Deserialized frozen message constructed via `ctor`.
+//	  """
 //
-//    def from_wirepb(ctor, body):
-//      """Deserializes a protobuf message given its wire serialization.
+//	def from_wirepb(ctor, body):
+//	  """Deserializes a protobuf message given its wire serialization.
 //
-//      Unknown fields are silently skipped.
+//	  Unknown fields are silently skipped.
 //
-//      Args:
-//        ctor: a message constructor function.
-//        body: a string with serialized message.
+//	  Args:
+//	    ctor: a message constructor function.
+//	    body: a string with serialized message.
 //
-//      Returns:
-//        Deserialized message constructed via `ctor`.
-//      """
+//	  Returns:
+//	    Deserialized frozen message constructed via `ctor`.
+//	  """
 //
-//    def struct_to_textpb(s):
-//      """Converts a struct to a text proto string.
+//	def struct_to_textpb(s):
+//	  """Converts a struct to a text proto string.
 //
-//      Args:
-//        s: a struct object. May not contain dicts.
+//	  Args:
+//	    s: a struct object. May not contain dicts.
 //
-//      Returns:
-//        A str containing a text format protocol buffer message.
-//      """
+//	  Returns:
+//	    A str containing a text format protocol buffer message.
+//	  """
 //
-//    def clone(msg):
-//      """Returns a deep copy of a given proto message.
+//	def clone(msg):
+//	  """Returns a deep copy of a given proto message.
 //
-//      Args:
-//        msg: a proto message to make a copy of.
+//	  Args:
+//	    msg: a proto message to make a copy of.
 //
-//      Returns:
-//        A deep copy of the message
-//      """
+//	  Returns:
+//	    A deep copy of the message
+//	  """
 //
-//    def has(msg, field):
-//      """Checks if a proto message has the given optional field set.
+//	def has(msg, field):
+//	  """Checks if a proto message has the given optional field set.
 //
-//      Args:
-//        msg: a message to check.
-//        field: a string name of the field to check.
+//	  Args:
+//	    msg: a message to check.
+//	    field: a string name of the field to check.
 //
-//      Returns:
-//        True if the message has the field set.
-//      """
+//	  Returns:
+//	    True if the message has the field set.
+//	  """
 func ProtoLib() starlark.StringDict {
 	return starlark.StringDict{
 		"proto": starlarkstruct.FromStringDict(starlark.String("proto"), starlark.StringDict{
@@ -394,8 +406,11 @@ func toJSONPBBuiltin(name string) *starlark.Builtin {
 }
 
 // unmarshallerBuiltin implements Starlark shim for From*PB() functions.
+//
+// It also knows how to use the message cache in the thread to cache
+// deserialized messages.
 func unmarshallerBuiltin(name string, impl func(*MessageType, []byte) (*Message, error)) *starlark.Builtin {
-	return starlark.NewBuiltin(name, func(_ *starlark.Thread, _ *starlark.Builtin, args starlark.Tuple, kwargs []starlark.Tuple) (starlark.Value, error) {
+	return starlark.NewBuiltin(name, func(th *starlark.Thread, _ *starlark.Builtin, args starlark.Tuple, kwargs []starlark.Tuple) (starlark.Value, error) {
 		var ctor starlark.Value
 		var body string
 		if err := starlark.UnpackArgs(name, args, kwargs, "ctor", &ctor, "body", &body); err != nil {
@@ -405,10 +420,36 @@ func unmarshallerBuiltin(name string, impl func(*MessageType, []byte) (*Message,
 		if !ok {
 			return nil, fmt.Errorf("%s: got %s, expecting a proto message constructor", name, ctor.Type())
 		}
+
+		cache := messageCache(th)
+		if cache != nil {
+			cached, err := cache.Fetch(th, name, body, typ)
+			if err != nil {
+				return nil, fmt.Errorf("%s: internal message cache error when fetching: %s", name, err)
+			}
+			if cached != nil {
+				if cached.MessageType() != typ {
+					panic(fmt.Sprintf("the message cache returned message of type %s, but %s was expected", cached.MessageType(), typ))
+				}
+				if !cached.IsFrozen() {
+					panic("the message cache returned non-frozen message")
+				}
+				return cached, nil
+			}
+		}
+
 		msg, err := impl(typ, []byte(body))
 		if err != nil {
 			return nil, fmt.Errorf("%s: %s", name, err)
 		}
+		msg.Freeze()
+
+		if cache != nil {
+			if err := cache.Store(th, name, body, msg); err != nil {
+				return nil, fmt.Errorf("%s: internal message cache error when storing: %s", name, err)
+			}
+		}
+
 		return msg, nil
 	})
 }

@@ -23,6 +23,11 @@ assert.eq(m.i, 123)
 # Unrecognized fields are OK.
 proto.from_jsonpb(testprotos.Simple, '{"unknown": 123}')
 
+# The returned message is frozen.
+def from_jsonpb_frozen():
+  proto.from_jsonpb(testprotos.Simple, '{"i": 123}').i = 456
+assert.fails(from_jsonpb_frozen, 'cannot modify frozen')
+
 # Bad JSONPB proto.
 def from_jsonpb_bad_proto():
   proto.from_jsonpb(testprotos.Simple, 'huh?')
