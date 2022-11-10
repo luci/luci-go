@@ -16,7 +16,10 @@
         "experimentalDecorators": true,
         "noEmit": true,
         "jsx": "react-jsx",
-        "lib": ["dom", "dom.iterable", "esnext"]
+        "lib": ["dom", "dom.iterable", "esnext"],
+        "paths": {
+            "@/*": ["./src/*"]
+        }
     },
     "include": [
         "src/**/*.ts", "src/**/*.tsx"
