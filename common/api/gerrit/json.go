@@ -365,6 +365,9 @@ type relatedChangeAndCommitInfo struct {
 	Number          int64      `json:"_change_number"`
 	Patchset        int64      `json:"_revision_number"`
 	CurrentPatchset int64      `json:"_current_revision_number"`
+
+	// json.Unmarshal cannot convert enum string to value,
+	// so this field is handled specially in ToProto.
 	Status          string     `json:"status"`
 }
 
@@ -375,6 +378,7 @@ func (r *relatedChangeAndCommitInfo) ToProto() *gerritpb.GetRelatedChangesRespon
 		Patchset:        r.Patchset,
 		CurrentPatchset: r.CurrentPatchset,
 		Commit:          r.Commit.ToProto(),
+		Status:          gerritpb.ChangeStatus(gerritpb.ChangeStatus_value[r.Status]),
 	}
 }
 

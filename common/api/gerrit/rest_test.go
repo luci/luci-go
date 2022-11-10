@@ -1374,6 +1374,7 @@ func TestGetRelatedChanges(t *testing.T) {
 					Number:          1563639,
 					Patchset:        1,
 					CurrentPatchset: 1,
+					Status:          gerritpb.ChangeStatus_NEW,
 				},
 				{
 					Project: "playground/gerrit-cq",
@@ -1384,6 +1385,7 @@ func TestGetRelatedChanges(t *testing.T) {
 					Number:          1563638,
 					Patchset:        2,
 					CurrentPatchset: 2,
+					Status:          gerritpb.ChangeStatus_NEW,
 				},
 				{
 					Project: "playground/gerrit-cq",
@@ -1394,6 +1396,7 @@ func TestGetRelatedChanges(t *testing.T) {
 					Number:          1563637,
 					Patchset:        1,
 					CurrentPatchset: 1,
+					Status:          gerritpb.ChangeStatus_NEW,
 				},
 			},
 		})

@@ -1330,8 +1330,7 @@ message GetRelatedChangesResponse {
     // Optional. The current patchset number.
     int64 current_patchset = 5;
     // Optional. The status of the change.
-    // TODO(tandrii): add status once it can be shared with ChangeInfo.
-    // Status status = 6;
+    ChangeStatus status = 6;
   }
 
   // A list of describing the related changes.
