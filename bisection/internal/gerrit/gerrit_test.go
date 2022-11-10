@@ -42,16 +42,17 @@ func TestGetChange(t *testing.T) {
 		ctx = mockClient.Ctx
 
 		// Set up Gerrit client
-		client, err := NewClient(ctx, testGerritHost, testGerritProject)
+		client, err := NewClient(ctx, testGerritHost)
 		So(err, ShouldBeNil)
 		So(client, ShouldNotBeNil)
 
 		Convey("No change found", func() {
 			// Set up mock response
 			res := &gerritpb.ListChangesResponse{}
-			mockClient.Client.EXPECT().ListChanges(gomock.Any(), gomock.Any()).Return(res, nil).Times(1)
+			mockClient.Client.EXPECT().ListChanges(gomock.Any(), gomock.Any()).
+				Return(res, nil).Times(1)
 
-			changeInfo, err := client.GetChange(ctx, "abcdefgh")
+			changeInfo, err := client.GetChange(ctx, testGerritProject, "abcdefgh")
 			So(err, ShouldErrLike, "no change found")
 			So(changeInfo, ShouldBeNil)
 		})
@@ -72,9 +73,10 @@ func TestGetChange(t *testing.T) {
 					},
 				},
 			}
-			mockClient.Client.EXPECT().ListChanges(gomock.Any(), gomock.Any()).Return(res, nil).Times(1)
+			mockClient.Client.EXPECT().ListChanges(gomock.Any(), gomock.Any()).
+				Return(res, nil).Times(1)
 
-			changeInfo, err := client.GetChange(ctx, "abcdefgh")
+			changeInfo, err := client.GetChange(ctx, testGerritProject, "abcdefgh")
 			So(err, ShouldErrLike, "multiple changes found")
 			So(changeInfo, ShouldBeNil)
 		})
@@ -89,16 +91,17 @@ func TestGetChange(t *testing.T) {
 			res := &gerritpb.ListChangesResponse{
 				Changes: []*gerritpb.ChangeInfo{expectedChange},
 			}
-			mockClient.Client.EXPECT().ListChanges(gomock.Any(), gomock.Any()).Return(res, nil).Times(1)
+			mockClient.Client.EXPECT().ListChanges(gomock.Any(), gomock.Any()).
+				Return(res, nil).Times(1)
 
-			changeInfo, err := client.GetChange(ctx, "abcdefgh")
+			changeInfo, err := client.GetChange(ctx, testGerritProject, "abcdefgh")
 			So(err, ShouldBeNil)
 			So(changeInfo, ShouldResemble, expectedChange)
 		})
 	})
 }
 
-func TestGetRevertOf(t *testing.T) {
+func TestGetReverts(t *testing.T) {
 	t.Parallel()
 
 	Convey("GetReverts", t, func() {
@@ -111,14 +114,15 @@ func TestGetRevertOf(t *testing.T) {
 		ctx = mockClient.Ctx
 
 		// Set up Gerrit client
-		client, err := NewClient(ctx, testGerritHost, testGerritProject)
+		client, err := NewClient(ctx, testGerritHost)
 		So(err, ShouldBeNil)
 		So(client, ShouldNotBeNil)
 
 		Convey("No revert found", func() {
 			// Set up mock response
 			res := &gerritpb.ListChangesResponse{}
-			mockClient.Client.EXPECT().ListChanges(gomock.Any(), gomock.Any()).Return(res, nil).Times(1)
+			mockClient.Client.EXPECT().ListChanges(gomock.Any(), gomock.Any()).
+				Return(res, nil).Times(1)
 
 			changeInfo := &gerritpb.ChangeInfo{
 				Number:  123456,
@@ -143,7 +147,8 @@ func TestGetRevertOf(t *testing.T) {
 					},
 				},
 			}
-			mockClient.Client.EXPECT().ListChanges(gomock.Any(), gomock.Any()).Return(res, nil).Times(1)
+			mockClient.Client.EXPECT().ListChanges(gomock.Any(), gomock.Any()).
+				Return(res, nil).Times(1)
 
 			changeInfo := &gerritpb.ChangeInfo{
 				Number:  123456,
@@ -152,6 +157,123 @@ func TestGetRevertOf(t *testing.T) {
 			reverts, err := client.GetReverts(ctx, changeInfo)
 			So(err, ShouldBeNil)
 			So(reverts, ShouldResemble, res.Changes)
+		})
+	})
+}
+
+func TestHasDependency(t *testing.T) {
+	t.Parallel()
+
+	Convey("HasMergedDependency", t, func() {
+		ctx := context.Background()
+
+		// Set up mock Gerrit client
+		ctl := gomock.NewController(t)
+		defer ctl.Finish()
+		mockClient := NewMockedClient(ctx, ctl)
+		ctx = mockClient.Ctx
+
+		// Set up Gerrit client
+		client, err := NewClient(ctx, testGerritHost)
+		So(err, ShouldBeNil)
+		So(client, ShouldNotBeNil)
+
+		Convey("no related changes", func() {
+			// Set up mock response
+			mockClient.Client.EXPECT().GetRelatedChanges(gomock.Any(), gomock.Any()).
+				Return(&gerritpb.GetRelatedChangesResponse{}, nil).Times(1)
+
+			changeInfo := &gerritpb.ChangeInfo{
+				Number:  123456,
+				Project: testGerritProject,
+			}
+			hasDependency, err := client.HasDependency(ctx, changeInfo)
+			So(err, ShouldBeNil)
+			So(hasDependency, ShouldEqual, false)
+		})
+
+		Convey("change is newest merged commit", func() {
+			// Set up mock response
+			relatedChanges := &gerritpb.GetRelatedChangesResponse{
+				Changes: []*gerritpb.GetRelatedChangesResponse_ChangeAndCommit{
+					{
+						Project: testGerritProject,
+						Number:  123456,
+						Status:  gerritpb.ChangeStatus_MERGED,
+					},
+					{
+						Project: testGerritProject,
+						Number:  123401,
+						Status:  gerritpb.ChangeStatus_MERGED,
+					},
+				},
+			}
+			mockClient.Client.EXPECT().GetRelatedChanges(gomock.Any(), gomock.Any()).
+				Return(relatedChanges, nil).Times(1)
+
+			changeInfo := &gerritpb.ChangeInfo{
+				Number:  123456,
+				Project: testGerritProject,
+			}
+			hasDependency, err := client.HasDependency(ctx, changeInfo)
+			So(err, ShouldBeNil)
+			So(hasDependency, ShouldEqual, false)
+		})
+
+		Convey("change has a merged dependency", func() {
+			// Set up mock response
+			relatedChanges := &gerritpb.GetRelatedChangesResponse{
+				Changes: []*gerritpb.GetRelatedChangesResponse_ChangeAndCommit{
+					{
+						Project: testGerritProject,
+						Number:  123456,
+						Status:  gerritpb.ChangeStatus_MERGED,
+					},
+					{
+						Project: testGerritProject,
+						Number:  123401,
+						Status:  gerritpb.ChangeStatus_MERGED,
+					},
+				},
+			}
+			mockClient.Client.EXPECT().GetRelatedChanges(gomock.Any(), gomock.Any()).
+				Return(relatedChanges, nil).Times(1)
+
+			changeInfo := &gerritpb.ChangeInfo{
+				Number:  123401,
+				Project: testGerritProject,
+			}
+			hasDependency, err := client.HasDependency(ctx, changeInfo)
+			So(err, ShouldBeNil)
+			So(hasDependency, ShouldEqual, true)
+		})
+
+		Convey("change has an unmerged dependency", func() {
+			// Set up mock response
+			relatedChanges := &gerritpb.GetRelatedChangesResponse{
+				Changes: []*gerritpb.GetRelatedChangesResponse_ChangeAndCommit{
+					{
+						Project: testGerritProject,
+						Number:  123456,
+						Status:  gerritpb.ChangeStatus_NEW,
+					},
+					{
+						Project: testGerritProject,
+						Number:  123401,
+						Status:  gerritpb.ChangeStatus_MERGED,
+					},
+				},
+			}
+			mockClient.Client.EXPECT().GetRelatedChanges(gomock.Any(), gomock.Any()).
+				Return(relatedChanges, nil).Times(1)
+
+			changeInfo := &gerritpb.ChangeInfo{
+				Number:  123401,
+				Project: testGerritProject,
+			}
+			hasDependency, err := client.HasDependency(ctx, changeInfo)
+			So(err, ShouldBeNil)
+			So(hasDependency, ShouldEqual, false)
 		})
 	})
 }
@@ -169,12 +291,12 @@ func TestCreateRevert(t *testing.T) {
 		ctx = mockClient.Ctx
 
 		// Set up Gerrit client
-		client, err := NewClient(ctx, testGerritHost, testGerritProject)
+		client, err := NewClient(ctx, testGerritHost)
 		So(err, ShouldBeNil)
 		So(client, ShouldNotBeNil)
 
 		// Set up mock response
-		expectedChange := &gerritpb.ChangeInfo{
+		expectedRevert := &gerritpb.ChangeInfo{
 			Number:  234567,
 			Project: testGerritProject,
 			Status:  gerritpb.ChangeStatus_NEW,
@@ -186,11 +308,16 @@ func TestCreateRevert(t *testing.T) {
 				AccountId: 10001,
 			},
 		}
-		mockClient.Client.EXPECT().RevertChange(gomock.Any(), gomock.Any(), gomock.Any()).Return(expectedChange, nil).Times(1)
+		mockClient.Client.EXPECT().RevertChange(gomock.Any(), gomock.Any(), gomock.Any()).
+			Return(expectedRevert, nil).Times(1)
 
-		changeInfo, err := client.CreateRevert(ctx, 123456, "LUCI Bisection created this revert automatically")
+		changeInfo := &gerritpb.ChangeInfo{
+			Number:  123456,
+			Project: testGerritProject,
+		}
+		revertInfo, err := client.CreateRevert(ctx, changeInfo, "LUCI Bisection created this revert automatically")
 		So(err, ShouldBeNil)
-		So(changeInfo, ShouldResemble, expectedChange)
+		So(revertInfo, ShouldResemble, expectedRevert)
 	})
 }
 
@@ -207,14 +334,19 @@ func TestAddComment(t *testing.T) {
 		ctx = mockClient.Ctx
 
 		// Set up Gerrit client
-		client, err := NewClient(ctx, testGerritHost, testGerritProject)
+		client, err := NewClient(ctx, testGerritHost)
 		So(err, ShouldBeNil)
 		So(client, ShouldNotBeNil)
 
 		// Set up mock response
-		mockClient.Client.EXPECT().SetReview(gomock.Any(), gomock.Any()).Return(&gerritpb.ReviewResult{}, nil).Times(1)
+		mockClient.Client.EXPECT().SetReview(gomock.Any(), gomock.Any()).
+			Return(&gerritpb.ReviewResult{}, nil).Times(1)
 
-		reviewResult, err := client.AddComment(ctx, 123456, "This change has been confirmed as the culprit.")
+		changeInfo := &gerritpb.ChangeInfo{
+			Number:  123456,
+			Project: testGerritProject,
+		}
+		reviewResult, err := client.AddComment(ctx, changeInfo, "This change has been confirmed as the culprit.")
 		So(err, ShouldBeNil)
 		So(reviewResult, ShouldNotBeNil)
 	})
@@ -233,7 +365,7 @@ func TestSendForReview(t *testing.T) {
 		ctx = mockClient.Ctx
 
 		// Set up Gerrit client
-		client, err := NewClient(ctx, testGerritHost, testGerritProject)
+		client, err := NewClient(ctx, testGerritHost)
 		So(err, ShouldBeNil)
 		So(client, ShouldNotBeNil)
 
@@ -274,21 +406,26 @@ func TestSendForReview(t *testing.T) {
 				},
 			},
 		}
-		mockClient.Client.EXPECT().SetReview(gomock.Any(), gomock.Any()).Return(expectedResult, nil).Times(1)
+		mockClient.Client.EXPECT().SetReview(gomock.Any(), gomock.Any()).
+			Return(expectedResult, nil).Times(1)
 
+		changeInfo := &gerritpb.ChangeInfo{
+			Number:  123456,
+			Project: testGerritProject,
+		}
 		reviewerAccounts := []*gerritpb.AccountInfo{{AccountId: 10001}}
 		ccAccounts := []*gerritpb.AccountInfo{{AccountId: 10003}}
-		reviewResult, err := client.SendForReview(ctx, 123456,
+		reviewResult, err := client.SendForReview(ctx, changeInfo,
 			"This change has been identified as a possible culprit.", reviewerAccounts, ccAccounts)
 		So(err, ShouldBeNil)
 		So(reviewResult, ShouldResemble, expectedResult)
 	})
 }
 
-func TestCommit(t *testing.T) {
+func TestCommitRevert(t *testing.T) {
 	t.Parallel()
 
-	Convey("Commit", t, func() {
+	Convey("CommitRevert", t, func() {
 		ctx := context.Background()
 
 		// Set up mock Gerrit client
@@ -298,74 +435,104 @@ func TestCommit(t *testing.T) {
 		ctx = mockClient.Ctx
 
 		// Set up Gerrit client
-		client, err := NewClient(ctx, testGerritHost, testGerritProject)
+		client, err := NewClient(ctx, testGerritHost)
 		So(err, ShouldBeNil)
 		So(client, ShouldNotBeNil)
 
-		// Set up mock response
-		expectedResult := &gerritpb.ReviewResult{
-			Labels: map[string]int32{
-				"Owners-Override": 1,
-				"Bot-Commit":      1,
-				"CQ":              2,
-			},
-			Reviewers: map[string]*gerritpb.AddReviewerResult{
-				"90000": {
-					Input: "90000",
-					Reviewers: []*gerritpb.ReviewerInfo{
-						{
-							Account: &gerritpb.AccountInfo{
-								Name:      "LUCI Bisection",
-								Email:     "luci-bisection@example.com",
-								AccountId: 90000,
-							},
-							Approvals: map[string]int32{
-								"Verified":    0,
-								"Code-Review": 0,
-							},
-						},
-					},
-				},
-				"jdoe@example.com": {
-					Input: "jdoe@example.com",
-					Ccs: []*gerritpb.ReviewerInfo{
-						{
-							Account: &gerritpb.AccountInfo{
-								Name:      "John Doe",
-								Email:     "jdoe@example.com",
-								AccountId: 10001,
-							},
-							Approvals: map[string]int32{
-								"Verified":    0,
-								"Code-Review": 0,
-							},
-						},
-					},
-				},
-				"10003": {
-					Input: "10003",
-					Ccs: []*gerritpb.ReviewerInfo{
-						{
-							Account: &gerritpb.AccountInfo{
-								Name:      "Eve Smith",
-								Email:     "esmith@example.com",
-								AccountId: 10003,
-							},
-							Approvals: map[string]int32{
-								"Verified":    0,
-								"Code-Review": 0,
-							},
-						},
-					},
-				},
-			},
-		}
-		mockClient.Client.EXPECT().SetReview(gomock.Any(), gomock.Any()).Return(expectedResult, nil).Times(1)
+		Convey("change which isn't a pure revert cannot be committed", func() {
+			// Set up mock response
+			mockClient.Client.EXPECT().GetPureRevert(gomock.Any(), gomock.Any()).
+				Return(&gerritpb.PureRevertInfo{
+					IsPureRevert: false,
+				}, nil).Times(1)
 
-		ccAccounts := []*gerritpb.AccountInfo{{AccountId: 10001}, {AccountId: 10003}}
-		reviewResult, err := client.Commit(ctx, 123456,
-			"This change has been confirmed as the culprit and has been auto-reverted.", ccAccounts)
-		So(err, ShouldBeNil)
-		So(reviewResult, ShouldResemble, expectedResult)
+			revertInfo := &gerritpb.ChangeInfo{
+				Number:  234567,
+				Project: testGerritProject,
+			}
+			ccAccounts := []*gerritpb.AccountInfo{{AccountId: 10001}, {AccountId: 10003}}
+			reviewResult, err := client.CommitRevert(ctx, revertInfo,
+				"This revert has been submitted automatically.", ccAccounts)
+			So(err, ShouldErrLike, "not a pure revert")
+			So(reviewResult, ShouldBeNil)
+		})
+
+		Convey("change which is a pure revert can be committed", func() {
+			// Set up mock responses
+			mockClient.Client.EXPECT().GetPureRevert(gomock.Any(), gomock.Any()).
+				Return(&gerritpb.PureRevertInfo{
+					IsPureRevert: true,
+				}, nil).Times(1)
+			expectedResult := &gerritpb.ReviewResult{
+				Labels: map[string]int32{
+					"Owners-Override": 1,
+					"Bot-Commit":      1,
+					"CQ":              2,
+				},
+				Reviewers: map[string]*gerritpb.AddReviewerResult{
+					"90000": {
+						Input: "90000",
+						Reviewers: []*gerritpb.ReviewerInfo{
+							{
+								Account: &gerritpb.AccountInfo{
+									Name:      "LUCI Bisection",
+									Email:     "luci-bisection@example.com",
+									AccountId: 90000,
+								},
+								Approvals: map[string]int32{
+									"Verified":    0,
+									"Code-Review": 0,
+								},
+							},
+						},
+					},
+					"jdoe@example.com": {
+						Input: "jdoe@example.com",
+						Ccs: []*gerritpb.ReviewerInfo{
+							{
+								Account: &gerritpb.AccountInfo{
+									Name:      "John Doe",
+									Email:     "jdoe@example.com",
+									AccountId: 10001,
+								},
+								Approvals: map[string]int32{
+									"Verified":    0,
+									"Code-Review": 0,
+								},
+							},
+						},
+					},
+					"10003": {
+						Input: "10003",
+						Ccs: []*gerritpb.ReviewerInfo{
+							{
+								Account: &gerritpb.AccountInfo{
+									Name:      "Eve Smith",
+									Email:     "esmith@example.com",
+									AccountId: 10003,
+								},
+								Approvals: map[string]int32{
+									"Verified":    0,
+									"Code-Review": 0,
+								},
+							},
+						},
+					},
+				},
+			}
+			mockClient.Client.EXPECT().SetReview(gomock.Any(), gomock.Any()).
+				Return(expectedResult, nil).Times(1)
+
+			revertInfo := &gerritpb.ChangeInfo{
+				Number:  234567,
+				Project: testGerritProject,
+			}
+			ccAccounts := []*gerritpb.AccountInfo{{AccountId: 10001}, {AccountId: 10003}}
+			reviewResult, err := client.CommitRevert(ctx, revertInfo,
+				"This change has been confirmed as the culprit and has been auto-reverted.", ccAccounts)
+			So(err, ShouldBeNil)
+			So(reviewResult, ShouldResemble, expectedResult)
+		})
+
 	})
 }
