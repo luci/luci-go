@@ -188,7 +188,5 @@ func findRegressionRange(
 }
 
 func shouldVerifyHeuristicResult(c context.Context) bool {
-	appID := info.AppID(c)
-	// TODO (nqmtuan): Remove chops-gofindit when luci-bisection app is ready
-	return appID == "chops-gofindit" || appID == "luci-bisection"
+	return info.AppID(c) == "luci-bisection"
 }

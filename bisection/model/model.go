@@ -173,6 +173,8 @@ type SingleRerun struct {
 	Analysis *datastore.Key `gae:"analysis"`
 	// The commit that this SingleRerun runs on
 	buildbucketpb.GitilesCommit
+	// Time when the rerun was created
+	CreateTime time.Time `gae:"create_time"`
 	// Time when the rerun starts.
 	StartTime time.Time `gae:"start_time"`
 	// Time when the rerun ends.

@@ -22,6 +22,7 @@ import (
 	"strconv"
 
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
+	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/gae/service/datastore"
 	"google.golang.org/protobuf/types/known/fieldmaskpb"
@@ -30,6 +31,7 @@ import (
 	"go.chromium.org/luci/bisection/internal/buildbucket"
 	"go.chromium.org/luci/bisection/model"
 	pb "go.chromium.org/luci/bisection/proto"
+	"go.chromium.org/luci/bisection/util/datastoreutil"
 )
 
 // TriggerRerun triggers a rerun build for a particular build bucket build and Gitiles commit.
@@ -158,6 +160,7 @@ func CreateRerunBuildModel(c context.Context, build *buildbucketpb.Build, rerunT
 
 	gitilesCommit := *build.GetInput().GetGitilesCommit()
 	startTime := build.StartTime.AsTime()
+	createTime := build.CreateTime.AsTime()
 	rerunBuild := &model.CompileRerunBuild{
 		Id: build.GetId(),
 		LuciBuild: model.LuciBuild{
@@ -165,7 +168,7 @@ func CreateRerunBuildModel(c context.Context, build *buildbucketpb.Build, rerunT
 			Project:    build.Builder.Project,
 			Bucket:     build.Builder.Bucket,
 			Builder:    build.Builder.Builder,
-			CreateTime: build.CreateTime.AsTime(),
+			CreateTime: createTime,
 			StartTime:  startTime,
 			Status:     build.GetStatus(),
 			GitilesCommit: buildbucketpb.GitilesCommit{
@@ -193,8 +196,9 @@ func CreateRerunBuildModel(c context.Context, build *buildbucketpb.Build, rerunT
 			Ref:     gitilesCommit.Ref,
 			Id:      gitilesCommit.Id,
 		},
-		StartTime: startTime,
-		Type:      rerunType,
+		CreateTime: createTime,
+		StartTime:  startTime,
+		Type:       rerunType,
 	}
 
 	if rerunType == model.RerunBuildType_CulpritVerification {
@@ -213,6 +217,55 @@ func CreateRerunBuildModel(c context.Context, build *buildbucketpb.Build, rerunT
 	}
 
 	return rerunBuild, nil
+}
+
+// UpdateRerunStartTime updates the start time of rerun builds (when we received buildbucket pubsub messages)
+func UpdateRerunStartTime(c context.Context, bbid int64) error {
+	logging.Infof(c, "UpdateRerunStartTime for build %d", bbid)
+	rerunModel := &model.CompileRerunBuild{
+		Id: bbid,
+	}
+
+	err := datastore.Get(c, rerunModel)
+	if err == datastore.ErrNoSuchEntity {
+		// There are cases where we cannot find datastore entries, like
+		// luci-bisection-dev receives pubsub message for a prod run
+		// In this case, just log and return nil
+		logging.Warningf(c, "Couldn't find rerun to UpdateRerunStartTime: %d", bbid)
+		return nil
+	}
+	if err != nil {
+		return errors.Annotate(err, "couldn't get rerun model %d", bbid).Err()
+	}
+
+	lastRerun, err := datastoreutil.GetLastRerunForRerunBuild(c, rerunModel)
+	if err != nil {
+		return errors.Annotate(err, "failed getting last rerun for build %d", rerunModel.Id).Err()
+	}
+
+	build, err := buildbucket.GetBuild(c, bbid, &buildbucketpb.BuildMask{
+		Fields: &fieldmaskpb.FieldMask{
+			Paths: []string{"id", "builder", "start_time"},
+		},
+	})
+	if err != nil {
+		return errors.Annotate(err, "couldn't get build %d", bbid).Err()
+	}
+
+	startTime := build.StartTime.AsTime()
+	rerunModel.StartTime = startTime
+
+	err = datastore.Put(c, rerunModel)
+	if err != nil {
+		return errors.Annotate(err, "couldn't save rerun model %d", bbid).Err()
+	}
+
+	lastRerun.StartTime = startTime
+	err = datastore.Put(c, lastRerun)
+	if err != nil {
+		return errors.Annotate(err, "failed saving last rerun for build %d", rerunModel.Id).Err()
+	}
+	return nil
 }
 
 // TODO (nqmtuan): Move this into a helper class if it turns out we need to use

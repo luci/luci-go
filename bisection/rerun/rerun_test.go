@@ -287,6 +287,60 @@ func TestCreateRerunBuildModel(t *testing.T) {
 			So(singleReruns[0].Analysis, ShouldResemble, datastore.KeyForObj(c, analysis))
 			So(singleReruns[0].Type, ShouldEqual, model.RerunBuildType_NthSection)
 		})
+	})
+}
 
+func TestUpdateRerunStartTime(t *testing.T) {
+	t.Parallel()
+	c := memory.Use(context.Background())
+
+	datastore.GetTestable(c).AddIndexes(&datastore.IndexDefinition{
+		Kind: "SingleRerun",
+		SortBy: []datastore.IndexColumn{
+			{
+				Property: "rerun_build",
+			},
+			{
+				Property: "start_time",
+			},
+		},
+	})
+
+	// Setup mock for buildbucket
+	ctl := gomock.NewController(t)
+	defer ctl.Finish()
+	mc := buildbucket.NewMockedClient(c, ctl)
+	c = mc.Ctx
+	res := &bbpb.Build{
+		Id: 1234,
+		Builder: &bbpb.BuilderID{
+			Project: "chromium",
+			Bucket:  "findit",
+			Builder: "gofindit-single-revision",
+		},
+		Status:    bbpb.Status_STARTED,
+		StartTime: &timestamppb.Timestamp{Seconds: 100},
+	}
+	mc.Client.EXPECT().GetBuild(gomock.Any(), gomock.Any(), gomock.Any()).Return(res, nil).AnyTimes()
+
+	Convey("UpdateRerunStartTime", t, func() {
+		rerunBuild := &model.CompileRerunBuild{
+			Id: 1234,
+		}
+		So(datastore.Put(c, rerunBuild), ShouldBeNil)
+		datastore.GetTestable(c).CatchupIndexes()
+		singleRerun := &model.SingleRerun{
+			RerunBuild: datastore.KeyForObj(c, rerunBuild),
+		}
+		So(datastore.Put(c, singleRerun), ShouldBeNil)
+		datastore.GetTestable(c).CatchupIndexes()
+		So(UpdateRerunStartTime(c, 1234), ShouldBeNil)
+		datastore.GetTestable(c).CatchupIndexes()
+
+		// Checking the start time
+		So(datastore.Get(c, rerunBuild), ShouldBeNil)
+		So(rerunBuild.StartTime.Unix(), ShouldEqual, 100)
+		So(datastore.Get(c, singleRerun), ShouldBeNil)
+		So(singleRerun.StartTime.Unix(), ShouldEqual, 100)
 	})
 }

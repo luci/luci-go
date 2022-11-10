@@ -21,6 +21,7 @@ import (
 	"fmt"
 	"net/http"
 
+	"go.chromium.org/luci/bisection/rerun"
 	taskpb "go.chromium.org/luci/bisection/task/proto"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
@@ -70,6 +71,15 @@ func buildbucketPubSubHandlerImpl(c context.Context, r *http.Request) error {
 		return err
 	}
 	logging.Debugf(c, "Received message for build id %d", bbmsg.Build.Id)
+
+	// Special handling for pubsub message for LUCI Bisection
+	if bbmsg.Build.Project == "chromium" && bbmsg.Build.Bucket == "luci.chromium.findit" {
+		logging.Infof(c, "Received pubsub for luci bisection build %d", bbmsg.Build.Id)
+		if bbmsg.Build.Status == bbv1.StatusStarted {
+			return rerun.UpdateRerunStartTime(c, bbmsg.Build.Id)
+		}
+		return nil
+	}
 
 	// For now, we only handle chromium/ci builds
 	// TODO (nqmtuan): Move this into config
