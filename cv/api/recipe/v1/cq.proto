@@ -45,6 +45,14 @@ message Input {
 
   // The mode of the CQ Run that triggers this Tryjob.
   string run_mode = 5;
+
+  // Tells whether the Run owner is a Googler.
+  //
+  // DO NOT USE: This is a temporary workaround for crbug/1259887 which
+  // is supposed to be used by Chromium only.
+  // TODO(crbug/1382195): Remove this field after long term solution is
+  // ready.
+  bool owner_is_googler = 20;
 }
 
 // Output provides build-specific instructions back to CQ.
