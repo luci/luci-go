@@ -366,6 +366,7 @@ export class OverviewTabElement extends MobxLitElement {
           <milo-test-variant-entry
             .variant=${testVariant}
             .columnGetters=${this.columnGetters}
+            .historyUrl=${this.invocationState.getHistoryUrl(testVariant.testId, testVariant.variantHash)}
           ></milo-test-variant-entry>
         `);
       }
