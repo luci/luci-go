@@ -129,9 +129,18 @@ export class ResultEntryElement extends MobxLitElement {
     };
   }
 
-  @computed private get failureReasonCluster(): Cluster | null {
+  @computed private get clusterLink() {
+    if (!this.project) {
+      return null;
+    }
+
     // There can be at most one failureReason cluster.
-    return this.clusters.filter((c) => c.clusterId.algorithm.startsWith('reason-'))?.[0] ?? null;
+    const reasonCluster = this.clusters.filter((c) => c.clusterId.algorithm.startsWith('reason-'))?.[0];
+    if (!reasonCluster) {
+      return null;
+    }
+
+    return makeClusterLink(this.project, reasonCluster.clusterId);
   }
 
   constructor() {
@@ -141,7 +150,7 @@ export class ResultEntryElement extends MobxLitElement {
 
   private renderFailureReason() {
     const errMsg = this.testResult.failureReason?.primaryErrorMessage;
-    if (!errMsg || !this.project) {
+    if (!errMsg) {
       return html``;
     }
 
@@ -149,11 +158,8 @@ export class ResultEntryElement extends MobxLitElement {
       <milo-expandable-entry .contentRuler="none" .expanded=${true}>
         <span slot="header"
           >Failure
-          Reason${this.failureReasonCluster
-            ? html` (<a
-                  href=${makeClusterLink(this.project, this.failureReasonCluster.clusterId)}
-                  target="_balnk"
-                  @click=${(e: Event) => e.stopImmediatePropagation()}
+          Reason${this.clusterLink
+            ? html` (<a href=${this.clusterLink} target="_blank" @click=${(e: Event) => e.stopImmediatePropagation()}
                   >similar failures</a
                 >)`
             : ''}:

@@ -206,6 +206,7 @@ export class TestHistoryDetailsEntryElement extends MobxLitElement implements Re
           <milo-result-entry
             .id=${i + 1}
             .testResult=${r.result}
+            .project=${this.store.testHistoryPage.project || ''}
             .expanded=${i === this.expandedResultIndex}
           ></milo-result-entry>
         `
