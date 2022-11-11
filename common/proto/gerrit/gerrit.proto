@@ -421,7 +421,7 @@ message AccountInfo {
 // Source of truth:
 // https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#change-info
 //
-// Next tag: 21.
+// Next tag: 22.
 message ChangeInfo {
   // The change number.
   int64 number = 1;
@@ -484,6 +484,11 @@ message ChangeInfo {
 
   // Timestamp of when the change was last updated
   google.protobuf.Timestamp updated = 12;
+
+  // Timestamp of when the change was submitted.
+  //
+  // Only set for merged changes.
+  google.protobuf.Timestamp submitted = 21;
 
   // The numeric Change-Id of the change that this change reverts.
   int64 revert_of = 15;

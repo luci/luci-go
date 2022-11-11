@@ -87,6 +87,7 @@ type changeInfo struct {
 
 	Created     Timestamp `json:"created"`
 	Updated     Timestamp `json:"updated"`
+	Submitted   Timestamp `json:"submitted"`
 	Submittable bool      `json:"submittable,omitempty"`
 	IsPrivate   bool      `json:"is_private,omitempty"`
 	MetaRevID   string    `json:"meta_rev_id,omitempty"`
@@ -114,6 +115,7 @@ func (ci *changeInfo) ToProto() (*gerritpb.ChangeInfo, error) {
 		MetaRevId:          ci.MetaRevID,
 		Created:            timestamppb.New(ci.Created.Time),
 		Updated:            timestamppb.New(ci.Updated.Time),
+		Submitted:          timestamppb.New(ci.Submitted.Time),
 		RevertOf:           ci.RevertOf,
 		CherryPickOfChange: ci.CherryPickOfChange,
 	}
@@ -368,7 +370,7 @@ type relatedChangeAndCommitInfo struct {
 
 	// json.Unmarshal cannot convert enum string to value,
 	// so this field is handled specially in ToProto.
-	Status          string     `json:"status"`
+	Status string `json:"status"`
 }
 
 func (r *relatedChangeAndCommitInfo) ToProto() *gerritpb.GetRelatedChangesResponse_ChangeAndCommit {

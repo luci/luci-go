@@ -98,10 +98,12 @@ func TestListChanges(t *testing.T) {
 							Email:     "jdoe@example.com",
 							Username:  "jdoe",
 						},
-						Project: "example/repo",
-						Ref:     "refs/heads/master",
-						Created: timestamppb.New(parseTime("2014-05-05T07:15:44.639000000Z")),
-						Updated: timestamppb.New(parseTime("2014-05-05T07:15:44.639000000Z")),
+						Status:    gerritpb.ChangeStatus_MERGED,
+						Project:   "example/repo",
+						Ref:       "refs/heads/master",
+						Created:   timestamppb.New(parseTime("2014-05-05T07:15:44.639000000Z")),
+						Updated:   timestamppb.New(parseTime("2014-05-05T07:15:44.639000000Z")),
+						Submitted: timestamppb.New(parseTime("2014-05-05T07:15:44.639000000Z")),
 					},
 				},
 				MoreChanges: true,
@@ -120,10 +122,12 @@ func TestListChanges(t *testing.T) {
 							"email":            "jdoe@example.com",
 							"username":         "jdoe"
 						},
+						"status": "MERGED",
 						"project": "example/repo",
 						"branch":  "master",
 						"created":   "2014-05-05 07:15:44.639000000",
 						"updated":   "2014-05-05 07:15:44.639000000",
+						"submitted": "2014-05-05 07:15:44.639000000",
 						"_more_changes": true
 					}
 				]`)
@@ -242,8 +246,9 @@ func TestGetChange(t *testing.T) {
 						},
 					},
 				},
-				Created: timestamppb.New(parseTime("2014-05-05T07:15:44.639000000Z")),
-				Updated: timestamppb.New(parseTime("2014-05-05T07:15:44.639000000Z")),
+				Created:   timestamppb.New(parseTime("2014-05-05T07:15:44.639000000Z")),
+				Updated:   timestamppb.New(parseTime("2014-05-05T07:15:44.639000000Z")),
+				Submitted: timestamppb.New(parseTime("0001-01-01T00:00:00.00000000Z")),
 				Messages: []*gerritpb.ChangeMessageInfo{
 					{
 						Id: "YH-egE",
@@ -633,6 +638,7 @@ func TestRestCreateChange(t *testing.T) {
 			Submittable: false,
 			Created:     timestamppb.New(parseTime("2014-05-05T07:15:44.639000000Z")),
 			Updated:     timestamppb.New(parseTime("2014-05-05T07:15:44.639000000Z")),
+			Submitted:   timestamppb.New(parseTime("0001-01-01T00:00:00.00000000Z")),
 		})
 
 		var ci changeInput
@@ -1100,11 +1106,12 @@ func TestRevertChange(t *testing.T) {
 					SecondaryEmails: []string{"johndoe@chromium.org"},
 					Username:        "jdoe",
 				},
-				Project: "example/repo",
-				Ref:     "refs/heads/master",
-				Status:  gerritpb.ChangeStatus_NEW,
-				Created: timestamppb.New(parseTime("2014-05-05T07:15:44.639000000Z")),
-				Updated: timestamppb.New(parseTime("2014-05-05T07:15:44.639000000Z")),
+				Project:   "example/repo",
+				Ref:       "refs/heads/master",
+				Status:    gerritpb.ChangeStatus_NEW,
+				Created:   timestamppb.New(parseTime("2014-05-05T07:15:44.639000000Z")),
+				Updated:   timestamppb.New(parseTime("2014-05-05T07:15:44.639000000Z")),
+				Submitted: timestamppb.New(parseTime("0001-01-01T00:00:00.00000000Z")),
 				Messages: []*gerritpb.ChangeMessageInfo{
 					{
 						Id: "YH-egE",
