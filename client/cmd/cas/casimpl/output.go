@@ -94,6 +94,14 @@ func writeStats(path string, hot, cold []int64) error {
 	sort.Slice(cold, func(i, j int) bool { return cold[i] < cold[j] })
 	sort.Slice(hot, func(i, j int) bool { return hot[i] < hot[j] })
 
+	var sizeCold, sizeHot int64
+	for _, fileSize := range cold {
+		sizeCold += fileSize
+	}
+	for _, fileSize := range hot {
+		sizeHot += fileSize
+	}
+
 	packedCold, err := pack(cold)
 	if err != nil {
 		return errors.Annotate(err, "failed to pack uploaded items").Err()
@@ -106,11 +114,15 @@ func writeStats(path string, hot, cold []int64) error {
 
 	statsJSON, err := json.Marshal(struct {
 		ItemsCold []byte `json:"items_cold"`
+		SizeCold  int64  `json:"size_cold"`
 		ItemsHot  []byte `json:"items_hot"`
+		SizeHot   int64  `json:"size_hot"`
 		Result    string `json:"result"`
 	}{
 		ItemsCold: packedCold,
+		SizeCold:  sizeCold,
 		ItemsHot:  packedHot,
+		SizeHot:   sizeHot,
 		Result:    "success",
 	})
 	if err != nil {
