@@ -17,9 +17,13 @@ package gerrit
 import (
 	"context"
 	"testing"
+	"time"
 
 	. "github.com/smartystreets/goconvey/convey"
+	"google.golang.org/protobuf/types/known/timestamppb"
 
+	"go.chromium.org/luci/common/clock"
+	"go.chromium.org/luci/common/clock/testclock"
 	gerritpb "go.chromium.org/luci/common/proto/gerrit"
 	. "go.chromium.org/luci/common/testing/assertions"
 	"go.chromium.org/luci/gae/impl/memory"
@@ -168,5 +172,37 @@ func TestIsOwnedByLUCIBisection(t *testing.T) {
 		lbOwned, err := IsOwnedByLUCIBisection(ctx, change)
 		So(err, ShouldBeNil)
 		So(lbOwned, ShouldEqual, true)
+	})
+}
+
+func TestIsRecentSubmit(t *testing.T) {
+	t.Parallel()
+	ctx := context.Background()
+
+	// Set test clock
+	cl := testclock.New(testclock.TestTimeUTC)
+	ctx = clock.Set(ctx, cl)
+
+	Convey("IsRecentSubmit", t, func() {
+		change := &gerritpb.ChangeInfo{
+			Project: "chromium/test/src",
+			Number:  234567,
+		}
+		maxAge := time.Duration(6) * time.Hour
+
+		Convey("change submitted now is recent", func() {
+			change.Submitted = timestamppb.New(clock.Now(ctx))
+			So(IsRecentSubmit(ctx, change, maxAge), ShouldEqual, true)
+		})
+
+		Convey("change submitted at threshold time is recent", func() {
+			change.Submitted = timestamppb.New(clock.Now(ctx).Add(-time.Hour * 6))
+			So(IsRecentSubmit(ctx, change, maxAge), ShouldEqual, true)
+		})
+
+		Convey("change submitted a while ago is not recent", func() {
+			change.Submitted = timestamppb.New(clock.Now(ctx).Add(-time.Hour * 30))
+			So(IsRecentSubmit(ctx, change, maxAge), ShouldEqual, false)
+		})
 	})
 }

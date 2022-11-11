@@ -19,7 +19,9 @@ import (
 	"fmt"
 	"regexp"
 	"strings"
+	"time"
 
+	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
 	gerritpb "go.chromium.org/luci/common/proto/gerrit"
 	"go.chromium.org/luci/gae/service/info"
@@ -79,4 +81,12 @@ func IsOwnedByLUCIBisection(ctx context.Context, change *gerritpb.ChangeInfo) (b
 	}
 
 	return change.Owner.Email == lbAccount, nil
+}
+
+// IsRecentSubmit returns whether the change was submitted recently, as defined
+// by the maximum age duration given relative to now.
+func IsRecentSubmit(ctx context.Context, change *gerritpb.ChangeInfo, maxAge time.Duration) bool {
+	earliest := clock.Now(ctx).Add(-maxAge)
+	submitted := change.Submitted.AsTime()
+	return submitted.Equal(earliest) || submitted.After(earliest)
 }
