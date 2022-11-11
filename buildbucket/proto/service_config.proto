@@ -39,6 +39,18 @@ message SettingsCfg {
   // has very low quota. Context needs to know all such hostnames in advance to
   // be able to force authenticated access to them.
   repeated string known_public_gerrit_hosts = 3;
+
+  // List of known backend configufations.
+  repeated BackendSettings backend = 7;
+}
+
+// Backend settings.
+message BackendSettings {
+  // Target backend. e.g. "swarming://chromium-swarm".
+  string target = 1;
+
+  // hostname for the target backend. e.g. chromium-swarm.appspot.com
+  string hostname = 2;
 }
 
 // Swarmbucket settings.
