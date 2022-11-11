@@ -20,6 +20,7 @@ import (
 	"encoding/hex"
 	"fmt"
 	"math/rand"
+	"net/mail"
 	"os"
 	"regexp"
 	"strconv"
@@ -540,9 +541,13 @@ func (t *Test) setTestClockTimerCB(ctx context.Context) context.Context {
 
 // AddMember adds a given member into a given luci auth group.
 //
-// The email must not include the domain.
+// The email may omit domain. In that case, this method will add "@example.com"
+// as the domain name.
 func (t *Test) AddMember(email, group string) {
-	id, err := identity.MakeIdentity(fmt.Sprintf("user:%s@example.com", email))
+	if _, err := mail.ParseAddress(email); err != nil {
+		email = fmt.Sprintf("%s@example.com", email)
+	}
+	id, err := identity.MakeIdentity(fmt.Sprintf("user:%s", email))
 	if err != nil {
 		panic(err)
 	}

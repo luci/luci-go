@@ -26,12 +26,14 @@ import (
 	"google.golang.org/protobuf/encoding/protojson"
 	"google.golang.org/protobuf/types/known/structpb"
 
+	"go.chromium.org/luci/auth/identity"
 	bbpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/common/sync/parallel"
+	"go.chromium.org/luci/server/auth"
 
 	"go.chromium.org/luci/cv/api/recipe/v1"
 	"go.chromium.org/luci/cv/internal/run"
@@ -47,9 +49,9 @@ const propertyKey = "$recipe_engine/cq"
 //
 // Updates the Tryjobs that are scheduled successfully in Buildbucket in place.
 // The following fields will be updated:
-//  * ExternalID
-//  * Status
-//  * Result
+//   - ExternalID
+//   - Status
+//   - Result
 //
 // Returns nil if all tryjobs have been successfully launched. Otherwise,
 // returns `errors.MultiError` where each element is the launch error of
@@ -109,7 +111,7 @@ func (f *Facade) schedule(ctx context.Context, host string, r *run.Run, cls []*r
 	if err != nil {
 		return errors.Annotate(err, "failed to create Buildbucket client").Err()
 	}
-	batchReq, err := prepareBatchRequest(tryjobs, r, cls)
+	batchReq, err := prepareBatchRequest(ctx, tryjobs, r, cls)
 	if err != nil {
 		return errors.Annotate(err, "failed to create batch schedule build request").Err()
 	}
@@ -142,9 +144,9 @@ func (f *Facade) schedule(ctx context.Context, host string, r *run.Run, cls []*r
 	return ret.Get()
 }
 
-func prepareBatchRequest(tryjobs []*tryjob.Tryjob, r *run.Run, cls []*run.RunCL) (*bbpb.BatchRequest, error) {
+func prepareBatchRequest(ctx context.Context, tryjobs []*tryjob.Tryjob, r *run.Run, cls []*run.RunCL) (*bbpb.BatchRequest, error) {
 	gcs := makeGerritChanges(cls)
-	nonExpProp, expProp, err := makeProperties(r.Mode)
+	nonExpProp, expProp, err := makeProperties(ctx, r.Mode, r.Owner)
 	if err != nil {
 		return nil, errors.Annotate(err, "failed to make input properties").Err()
 	}
@@ -178,12 +180,17 @@ func prepareBatchRequest(tryjobs []*tryjob.Tryjob, r *run.Run, cls []*run.RunCL)
 	return batchReq, nil
 }
 
-func makeProperties(mode run.Mode) (nonexp, exp *structpb.Struct, err error) {
+func makeProperties(ctx context.Context, mode run.Mode, owner identity.Identity) (nonexp, exp *structpb.Struct, err error) {
+	isGoogler, err := auth.GetState(ctx).DB().IsMember(ctx, owner, []string{"googlers"})
+	if err != nil {
+		return nil, nil, err
+	}
 	in := &recipe.Input{
-		Active:   true,
-		DryRun:   mode == run.DryRun,
-		RunMode:  string(mode),
-		TopLevel: true,
+		Active:         true,
+		DryRun:         mode == run.DryRun,
+		RunMode:        string(mode),
+		TopLevel:       true,
+		OwnerIsGoogler: isGoogler,
 	}
 	if nonexp, err = makeCVProperties(in); err != nil {
 		return nil, nil, err

@@ -15,12 +15,14 @@
 package bbfacade
 
 import (
+	"fmt"
 	"testing"
 	"time"
 
 	"google.golang.org/protobuf/types/known/structpb"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
+	"go.chromium.org/luci/auth/identity"
 	bbpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/errors"
 	gerritpb "go.chromium.org/luci/common/proto/gerrit"
@@ -58,6 +60,9 @@ func TestLaunch(t *testing.T) {
 			owner2Email  = "owner2@example.com"
 			triggerEmail = "triggerer@example.com"
 		)
+		ownerIdentity, err := identity.MakeIdentity(fmt.Sprintf("user:%s", owner1Email))
+		So(err, ShouldBeNil)
+		ct.AddMember(ownerIdentity.Email(), "googlers") // Run owner is a googler
 		builderID := &bbpb.BuilderID{
 			Project: lProject,
 			Bucket:  "testBucket",
@@ -118,9 +123,10 @@ func TestLaunch(t *testing.T) {
 		}
 		cls := []*run.RunCL{cl1, cl2}
 		r := &run.Run{
-			ID:   common.MakeRunID(lProject, epoch, 1, []byte("cafe")),
-			CLs:  common.CLIDs{cl1.ID, cl2.ID},
-			Mode: run.DryRun,
+			ID:    common.MakeRunID(lProject, epoch, 1, []byte("cafe")),
+			Owner: ownerIdentity,
+			CLs:   common.CLIDs{cl1.ID, cl2.ID},
+			Mode:  run.DryRun,
 			Options: &run.Options{
 				CustomTryjobTags: []string{"foo:bar"},
 			},
@@ -173,10 +179,11 @@ func TestLaunch(t *testing.T) {
 						"foo": structpb.NewStringValue("bar"),
 						propertyKey: structpb.NewStructValue(&structpb.Struct{
 							Fields: map[string]*structpb.Value{
-								"active":   structpb.NewBoolValue(true),
-								"dryRun":   structpb.NewBoolValue(true),
-								"topLevel": structpb.NewBoolValue(true),
-								"runMode":  structpb.NewStringValue(string(run.DryRun)),
+								"active":         structpb.NewBoolValue(true),
+								"dryRun":         structpb.NewBoolValue(true),
+								"topLevel":       structpb.NewBoolValue(true),
+								"runMode":        structpb.NewStringValue(string(run.DryRun)),
+								"ownerIsGoogler": structpb.NewBoolValue(true),
 							},
 						}),
 					},
