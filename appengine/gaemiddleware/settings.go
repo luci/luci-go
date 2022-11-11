@@ -158,8 +158,7 @@ real memcache outage happens.`,
 			},
 			Help: `An <code>sm://[project]/[secret]</code> URI pointing to an existing
 secret in Google Secret Manager to use as an encryption key for encrypting
-cookies and other sensitive strings. The key can be created via tink-aead-key
-tool.`,
+cookies and other sensitive strings.`,
 		},
 	}, nil
 }
