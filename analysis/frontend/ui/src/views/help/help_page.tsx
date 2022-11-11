@@ -34,9 +34,9 @@ import Typography, {
 } from '@mui/material/Typography';
 import PageHeading from '@/components/headings/page_heading/page_heading';
 
-import recentFailuresImageUrl from './recent_failures.png';
-import ruleIdentifiersImageUrl from './failure_association_rule_identifiers.png';
-import monorailComponentImageUrl from './monorail_component.png';
+import recentFailuresImageUrl from './images/recent_failures.png';
+import ruleIdentifiersImageUrl from './images/failure_association_rule_identifiers.png';
+import monorailComponentImageUrl from './images/monorail_component.png';
 
 const AccordionSummary = (props: AccordionSummaryProps) => (
   <MuiAccordionSummary
@@ -293,14 +293,13 @@ const HelpPage = () => {
         </AccordionSummary>
         <AccordionDetails>
           <Typography paragraph>
-          When LUCI Analysis auto-files a bug for a cluster, it assigns it to all components which contribute at least 30% of the cluster&abpos;s test failures.
+          When LUCI Analysis auto-files a bug for a cluster, it assigns it to all components which contribute at least 30% of the cluster&apos;s test failures.
           </Typography>
           <Typography paragraph>
-          In chromium projects, the component associated with a test failure is controlled by
+          In chromium projects, the component associated with a test failure is controlled by&nbsp;
             <Link href="https://chromium.googlesource.com/infra/infra/+/HEAD/go/src/infra/tools/dirmd/README.md" target="_blank">
             DIR_METADATA
-            </Link>
-          files in the directory hierarchy of the test.
+            </Link>&nbsp;files in the directory hierarchy of the test.
           The component associated with a specific test failure can be validated by viewing the failure in MILO (ci.chromium.org), and looking for the monorail_component tag.
           </Typography>
           <img src={monorailComponentImageUrl} alt="Monorail component is the component that test matches, it appears in Milo in the test variant tags."/>
