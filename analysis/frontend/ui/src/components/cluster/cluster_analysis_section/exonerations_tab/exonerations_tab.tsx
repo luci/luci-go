@@ -155,7 +155,7 @@ const ExonerationsTab = ({
               {
                 testVariants.length == 0 && (
                   <TableRow>
-                    <TableCell colSpan={6}>Hooray! There were no exonerated failures in this cluster in the last week.</TableCell>
+                    <TableCell colSpan={6}>Hooray! There were no presubmit-blocking failures exonerated in the last week.</TableCell>
                   </TableRow>
                 )
               }

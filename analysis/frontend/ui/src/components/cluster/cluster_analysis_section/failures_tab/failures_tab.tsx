@@ -207,7 +207,7 @@ const FailuresTable = ({
                 {
                   groups.length == 0 && (
                     <TableRow>
-                      <TableCell colSpan={10}>Hooray! There were no failures in this cluster in the last week.</TableCell>
+                      <TableCell colSpan={10}>Hooray! There were no failures matching the filter criteria in the last week.</TableCell>
                     </TableRow>
                   )
                 }
