@@ -421,7 +421,7 @@ message AccountInfo {
 // Source of truth:
 // https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#change-info
 //
-// Next tag: 22.
+// Next tag: 23.
 message ChangeInfo {
   // The change number.
   int64 number = 1;
@@ -504,6 +504,9 @@ message ChangeInfo {
 
   // The evaluation results of the submit requirements for this change.
   repeated SubmitRequirementResultInfo submit_requirements = 20;
+
+  // The subject of the change (header line of the commit message).
+  string subject = 22;
 }
 
 enum ChangeStatus {

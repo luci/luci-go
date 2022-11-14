@@ -184,6 +184,7 @@ func TestGetChange(t *testing.T) {
 				},
 				Project:         "example/repo",
 				Ref:             "refs/heads/master",
+				Subject:         "Added new feature",
 				Status:          gerritpb.ChangeStatus_NEW,
 				CurrentRevision: "deadbeef",
 				Submittable:     true,
@@ -375,6 +376,7 @@ func TestGetChange(t *testing.T) {
 					"is_private": true,
 					"meta_rev_id": "cafecafe",
 					"hashtags": ["example_tag"],
+					"subject": "Added new feature",
 					"revisions": {
 						"deadbeef": {
 							"_number": 1,
