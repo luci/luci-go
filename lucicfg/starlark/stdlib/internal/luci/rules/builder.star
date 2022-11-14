@@ -121,7 +121,9 @@ def _builder(
       ctx: the implicit rule context, see lucicfg.rule(...).
       name: name of the builder, will show up in UIs and logs. Required.
       bucket: a bucket the builder is in, see luci.bucket(...) rule. Required.
-      description_html: description of the builder, will show up in UIs.
+      description_html: description of the builder, will show up in UIs. See
+        https://pkg.go.dev/go.chromium.org/luci/common/data/text/sanitizehtml
+        for the list of allowed HTML elements.
       executable: an executable to run, e.g. a luci.recipe(...) or
         luci.executable(...). Required.
 

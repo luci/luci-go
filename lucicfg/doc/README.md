@@ -1512,7 +1512,7 @@ Buildbucket.
 
 * **name**: name of the builder, will show up in UIs and logs. Required.
 * **bucket**: a bucket the builder is in, see [luci.bucket(...)](#luci.bucket) rule. Required.
-* **description_html**: description of the builder, will show up in UIs.
+* **description_html**: description of the builder, will show up in UIs. See https://pkg.go.dev/go.chromium.org/luci/common/data/text/sanitizehtml for the list of allowed HTML elements.
 * **executable**: an executable to run, e.g. a [luci.recipe(...)](#luci.recipe) or [luci.executable(...)](#luci.executable). Required.
 * **properties**: a dict with string keys and JSON-serializable values, defining properties to pass to the executable. Supports the module-scoped defaults. They are merged (non-recursively) with the explicitly passed properties.
 * **allowed_property_overrides**: a list of top-level property keys that can be overridden by users calling the buildbucket ScheduleBuild RPC. If this is set exactly to ['*'], ScheduleBuild is allowed to override any properties. Only property keys which are populated via the `properties` parameter here (or via the module-scoped defaults) are allowed.
