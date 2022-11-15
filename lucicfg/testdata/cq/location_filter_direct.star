@@ -1,8 +1,6 @@
 # This example includes examples of location_filters that are directly
 # specified.
 
-lucicfg.enable_experiment("crbug.com/1171945")
-
 luci.project(
     name = "foo",
 )

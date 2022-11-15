@@ -69,7 +69,7 @@ def _cq_tryjob_verifier(
 
     Note that `location_regexp` and `location_regexp_exclude` is the deprecated
     way to perform filtering. You may continue to use them but they are
-    mutually exclusive with `location_filter`. See crbug.com/1171945.
+    mutually exclusive with `location_filters`. See crbug.com/1171945.
 
       * If `location_regexp` is specified and no file in a CL matches any of the
         `location_regexp`, then the CQ will not care about this verifier.

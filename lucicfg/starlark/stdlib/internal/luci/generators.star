@@ -934,9 +934,6 @@ def _milo_builder_pb(entry, view, project_name, seen):
 ################################################################################
 ## commit-queue.cfg.
 
-# Enables generation of the location_filters field.
-_cq_generate_location_filters = experiments.register("crbug.com/1171945", "1.31.1")
-
 def gen_cq_cfg(ctx):
     """Generates commit-queue.cfg.
 
@@ -1120,10 +1117,6 @@ def _cq_tryjob_builder(verifier, cq_group, project, seen):
         return None
     seen[name] = verifier
 
-    location_filters = None
-    if _cq_generate_location_filters.is_enabled():
-        location_filters = [_cq_location_filter(n) for n in verifier.props.location_filters]
-
     return cq_pb.Verifiers.Tryjob.Builder(
         name = name,
         result_visibility = _cq_visibility(verifier.props.result_visibility),
@@ -1134,7 +1127,7 @@ def _cq_tryjob_builder(verifier, cq_group, project, seen):
         owner_whitelist_group = verifier.props.owner_whitelist,
         location_regexp = verifier.props.location_regexp,
         location_regexp_exclude = verifier.props.location_regexp_exclude,
-        location_filters = location_filters,
+        location_filters = [_cq_location_filter(n) for n in verifier.props.location_filters],
         equivalent_to = _cq_equivalent_to(verifier, project),
         mode_allowlist = verifier.props.mode_allowlist,
     )

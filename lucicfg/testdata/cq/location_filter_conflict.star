@@ -2,8 +2,6 @@
 # used in the same config. This should be disallowed because of ambiguity in
 # how it would be interpreted.
 
-lucicfg.enable_experiment("crbug.com/1171945")
-
 luci.project(
     name = "foo",
 )

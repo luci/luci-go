@@ -18,18 +18,30 @@ luci.cq_group(
         luci.cq_tryjob_verifier(
             builder = "infra:analyzer/go-linter",
             owner_whitelist = ["project-contributor"],
-            location_regexp = [
-                r"https://example-review.googlesource.com/proj/repo1/[+]/.+\.go",
-                r"https://example-internal-review.googlesource.com/proj/repo2/[+]/.+\.go",
+            location_filters = [
+                cq.location_filter(
+                  gerrit_host_regexp = "example-review.googlesource.com",
+                  gerrit_project_regexp = "proj/repo1",
+                  path_regexp = ".+\\.go"),
+                cq.location_filter(
+                  gerrit_host_regexp = "example-internal-review.googlesource.com",
+                  gerrit_project_regexp = "proj/repo2",
+                  path_regexp = ".+\\.go"),
             ],
             mode_allowlist = [cq.MODE_ANALYZER_RUN],
         ),
         luci.cq_tryjob_verifier(
             builder = "infra:analyzer/spell-checker",
             owner_whitelist = ["project-contributor"],
-            location_regexp = [
-                r"https://example-review.googlesource.com/proj/repo1/[+]/.+",
-                r"https://example-internal-review.googlesource.com/proj/repo2/[+]/.+",
+            location_filters = [
+                cq.location_filter(
+                  gerrit_host_regexp = "example-review.googlesource.com",
+                  gerrit_project_regexp = "proj/repo1",
+                  path_regexp = ".*"),
+                cq.location_filter(
+                  gerrit_host_regexp = "example-internal-review.googlesource.com",
+                  gerrit_project_regexp = "proj/repo2",
+                  path_regexp = ".+"),
             ],
             mode_allowlist = [cq.MODE_ANALYZER_RUN],
         ),
@@ -70,15 +82,31 @@ luci.cq_group(
 #     tryjob {
 #       builders {
 #         name: "infra/analyzer/go-linter"
-#         location_regexp: "https://example-review.googlesource.com/proj/repo1/[+]/.+\\.go"
-#         location_regexp: "https://example-internal-review.googlesource.com/proj/repo2/[+]/.+\\.go"
+#         location_filters {
+#           gerrit_host_regexp: "example-review.googlesource.com"
+#           gerrit_project_regexp: "proj/repo1"
+#           path_regexp: ".+\\.go"
+#         }
+#         location_filters {
+#           gerrit_host_regexp: "example-internal-review.googlesource.com"
+#           gerrit_project_regexp: "proj/repo2"
+#           path_regexp: ".+\\.go"
+#         }
 #         owner_whitelist_group: "project-contributor"
 #         mode_allowlist: "ANALYZER_RUN"
 #       }
 #       builders {
 #         name: "infra/analyzer/spell-checker"
-#         location_regexp: "https://example-review.googlesource.com/proj/repo1/[+]/.+"
-#         location_regexp: "https://example-internal-review.googlesource.com/proj/repo2/[+]/.+"
+#         location_filters {
+#           gerrit_host_regexp: "example-review.googlesource.com"
+#           gerrit_project_regexp: "proj/repo1"
+#           path_regexp: ".*"
+#         }
+#         location_filters {
+#           gerrit_host_regexp: "example-internal-review.googlesource.com"
+#           gerrit_project_regexp: "proj/repo2"
+#           path_regexp: ".+"
+#         }
 #         owner_whitelist_group: "project-contributor"
 #         mode_allowlist: "ANALYZER_RUN"
 #       }

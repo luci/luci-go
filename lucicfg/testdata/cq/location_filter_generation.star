@@ -3,8 +3,6 @@
 # TODO(crbug/1171945): This test could be removed after location_regexp is
 # removed.
 
-lucicfg.enable_experiment("crbug.com/1171945")
-
 luci.project(
     name = "foo",
 )

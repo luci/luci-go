@@ -16,17 +16,26 @@ luci.cq_group(
         luci.cq_tryjob_verifier(
             builder = "infra:analyzer/go-linter",
             owner_whitelist = ["project-contributor"],
-            location_regexp = [
-                r"https://example-review.googlesource.com/repo1/[+]/.+\.go",
+            location_filters = [
+                cq.location_filter(
+                  gerrit_host_regexp = "example-review.googlesource.com",
+                  gerrit_project_regexp = "repo1",
+                  path_regexp = ".+\\.go"),
             ],
             mode_allowlist = [cq.MODE_ANALYZER_RUN],
         ),
         luci.cq_tryjob_verifier(
             builder = "infra:analyzer/spell-checker",
             owner_whitelist = ["project-contributor"],
-            location_regexp = [
-                r"https://example-review.googlesource.com/repo1/[+]/.+",
-                r"https://example-review.googlesource.com/repo2/[+]/.+",
+            location_filters = [
+                cq.location_filter(
+                  gerrit_host_regexp = "example-review.googlesource.com",
+                  gerrit_project_regexp = "repo1",
+                  path_regexp = ".+\\.go"),
+                cq.location_filter(
+                  gerrit_host_regexp = "example-review.googlesource.com",
+                  gerrit_project_regexp = "repo2",
+                  path_regexp = ".+\\.go"),
             ],
             mode_allowlist = [cq.MODE_ANALYZER_RUN],
         ),

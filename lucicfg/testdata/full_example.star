@@ -460,13 +460,25 @@ luci.cq_group(
             builder = "linux try builder",
             cancel_stale = False,
             result_visibility = cq.COMMENT_LEVEL_RESTRICTED,
-            location_regexp_exclude = ["https://example.com/repo/[+]/all/one.txt"],
+            location_filters = [
+                cq.location_filter(
+                    gerrit_host_regexp = "example.com",
+                    gerrit_project_regexp = "repo",
+                    path_regexp = "all/one.txt",
+                    exclude = True),
+            ],
             mode_allowlist = [cq.MODE_DRY_RUN, cq.MODE_QUICK_DRY_RUN],
         ),
-        # An experimental verifier with location_regexp_exclude.
+        # An experimental verifier with a location filter.
         luci.cq_tryjob_verifier(
             builder = "linux try builder 2",
-            location_regexp_exclude = ["https://example.com/repo/[+]/all/two.txt"],
+            location_filters = [
+                cq.location_filter(
+                    gerrit_host_regexp = "example.com",
+                    gerrit_project_regexp = "repo",
+                    path_regexp = "all/two.txt",
+                    exclude = True)
+            ],
             experiment_percentage = 50,
         ),
         # An alias for luci.cq_tryjob_verifier(**{...}).
@@ -539,7 +551,11 @@ luci.cq_tryjob_verifier(
 luci.cq_tryjob_verifier(
     builder = "another-project:analyzer/format checker",
     cq_group = "main-cq",
-    location_regexp = [r".+\.py", r".+\.go", r".+\.X4"],
+    location_filters = [
+        cq.location_filter(path_regexp = ".+\\.py"),
+        cq.location_filter(path_regexp = ".+\\.go"),
+        cq.location_filter(path_regexp = ".+\\.X4"),
+    ],
     owner_whitelist = ["project-contributor"],
     mode_allowlist = [cq.MODE_ANALYZER_RUN, cq.MODE_FULL_RUN],
 )
@@ -591,9 +607,21 @@ lucicfg.emit(
 #     tryjob {
 #       builders {
 #         name: "another-project/analyzer/format checker"
-#         location_regexp: ".+\\.py"
-#         location_regexp: ".+\\.go"
-#         location_regexp: ".+\\.X4"
+#         location_filters {
+#           gerrit_host_regexp: ".*"
+#           gerrit_project_regexp: ".*"
+#           path_regexp: ".+\\.py"
+#         }
+#         location_filters {
+#           gerrit_host_regexp: ".*"
+#           gerrit_project_regexp: ".*"
+#           path_regexp: ".+\\.go"
+#         }
+#         location_filters {
+#           gerrit_host_regexp: ".*"
+#           gerrit_project_regexp: ".*"
+#           path_regexp: ".+\\.X4"
+#         }
 #         owner_whitelist_group: "project-contributor"
 #         mode_allowlist: "ANALYZER_RUN"
 #         mode_allowlist: "FULL_RUN"
@@ -622,16 +650,24 @@ lucicfg.emit(
 #         name: "infra/try/linux try builder"
 #         result_visibility: COMMENT_LEVEL_RESTRICTED
 #         cancel_stale: NO
-#         location_regexp: ".*"
-#         location_regexp_exclude: "https://example.com/repo/[+]/all/one.txt"
+#         location_filters {
+#           gerrit_host_regexp: "example.com"
+#           gerrit_project_regexp: "repo"
+#           path_regexp: "all/one.txt"
+#           exclude: true
+#         }
 #         mode_allowlist: "DRY_RUN"
 #         mode_allowlist: "QUICK_DRY_RUN"
 #       }
 #       builders {
 #         name: "infra/try/linux try builder 2"
 #         experiment_percentage: 50
-#         location_regexp: ".*"
-#         location_regexp_exclude: "https://example.com/repo/[+]/all/two.txt"
+#         location_filters {
+#           gerrit_host_regexp: "example.com"
+#           gerrit_project_regexp: "repo"
+#           path_regexp: "all/two.txt"
+#           exclude: true
+#         }
 #       }
 #       builders {
 #         name: "infra/try/main cq builder"
