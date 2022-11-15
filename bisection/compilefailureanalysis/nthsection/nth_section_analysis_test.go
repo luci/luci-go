@@ -156,3 +156,12 @@ func TestAnalyze(t *testing.T) {
 		So(diff, ShouldEqual, "")
 	})
 }
+
+func TestGetPriority(t *testing.T) {
+	t.Parallel()
+	c := context.Background()
+	Convey("Has New Targets", t, func() {
+		So(getRerunPriority(c, nil, nil, nil), ShouldEqual, 130)
+		So(getRerunPriority(c, nil, nil, map[string]string{"id": "1"}), ShouldEqual, 115)
+	})
+}

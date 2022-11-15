@@ -37,7 +37,7 @@ import (
 // TriggerRerun triggers a rerun build for a particular build bucket build and Gitiles commit.
 // props is the extra properties to set to the rerun build
 // dims is the extra dimension to set to the rerun build
-func TriggerRerun(c context.Context, commit *buildbucketpb.GitilesCommit, failedBuildID int64, props map[string]interface{}, dims map[string]string) (*buildbucketpb.Build, error) {
+func TriggerRerun(c context.Context, commit *buildbucketpb.GitilesCommit, failedBuildID int64, props map[string]interface{}, dims map[string]string, priority int32) (*buildbucketpb.Build, error) {
 	logging.Infof(c, "triggerRerun with commit %s", commit.Id)
 	properties, dimensions, err := getRerunPropertiesAndDimensions(c, failedBuildID, props, dims)
 	if err != nil {
@@ -54,6 +54,7 @@ func TriggerRerun(c context.Context, commit *buildbucketpb.GitilesCommit, failed
 		Dimensions:    dimensions,
 		Tags:          getRerunTags(c, failedBuildID),
 		GitilesCommit: commit,
+		Priority:      priority,
 	}
 	build, err := buildbucket.ScheduleBuild(c, req)
 	if err != nil {

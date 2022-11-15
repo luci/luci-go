@@ -22,6 +22,7 @@ import (
 	"go.chromium.org/luci/bisection/compilefailureanalysis/heuristic"
 	"go.chromium.org/luci/bisection/internal/gitiles"
 	"go.chromium.org/luci/bisection/model"
+	pb "go.chromium.org/luci/bisection/proto"
 	"go.chromium.org/luci/bisection/rerun"
 	"go.chromium.org/luci/bisection/util/datastoreutil"
 
@@ -70,7 +71,7 @@ func VerifySuspect(c context.Context, suspect *model.Suspect, failedBuildID int6
 	}
 
 	// Verify the suspect
-	suspectBuild, parentBuild, err := VerifyCommit(c, &suspect.GitilesCommit, failedBuildID, props)
+	suspectBuild, parentBuild, err := VerifySuspectCommit(c, suspect, failedBuildID, props)
 	if err != nil {
 		logging.Errorf(c, "Error triggering rerun for build %d: %s", failedBuildID, err)
 		return err
@@ -112,7 +113,9 @@ func hasNewTarget(c context.Context, failedFiles []string, changelog *model.Chan
 // Returns 2 builds:
 // - The 1st build is the rerun build for the commit
 // - The 2nd build is the rerun build for the parent commit
-func VerifyCommit(c context.Context, commit *buildbucketpb.GitilesCommit, failedBuildID int64, props map[string]interface{}) (*buildbucketpb.Build, *buildbucketpb.Build, error) {
+func VerifySuspectCommit(c context.Context, suspect *model.Suspect, failedBuildID int64, props map[string]interface{}) (*buildbucketpb.Build, *buildbucketpb.Build, error) {
+	commit := &suspect.GitilesCommit
+
 	// Query Gitiles to get parent commit
 	repoUrl := gitiles.GetRepoUrl(c, commit)
 	p, err := gitiles.GetParentCommit(c, repoUrl, commit.Id)
@@ -126,16 +129,35 @@ func VerifyCommit(c context.Context, commit *buildbucketpb.GitilesCommit, failed
 		Id:      p,
 	}
 
+	priority := getSuspectPriority(c, suspect)
+
 	// Trigger a rerun with commit and parent commit
-	build1, err := rerun.TriggerRerun(c, commit, failedBuildID, props, nil)
+	build1, err := rerun.TriggerRerun(c, commit, failedBuildID, props, nil, priority)
 	if err != nil {
 		return nil, nil, err
 	}
 
-	build2, err := rerun.TriggerRerun(c, parentCommit, failedBuildID, props, nil)
+	build2, err := rerun.TriggerRerun(c, parentCommit, failedBuildID, props, nil, priority)
 	if err != nil {
 		return nil, nil, err
 	}
 
 	return build1, build2, nil
+}
+
+func getSuspectPriority(c context.Context, suspect *model.Suspect) int32 {
+	// TODO (nqmtuan): Support priority for nth-section case
+	// For now let's return the baseline for culprit verification
+	// We can add offset later
+	confidence := heuristic.GetConfidenceLevel(suspect.Score)
+	var pri int32 = 0
+	switch confidence {
+	case pb.SuspectConfidenceLevel_HIGH:
+		pri = rerun.PriorityCulpritVerificationHighConfidence
+	case pb.SuspectConfidenceLevel_MEDIUM:
+		pri = rerun.PriorityCulpritVerificationMediumConfidence
+	case pb.SuspectConfidenceLevel_LOW:
+		pri = rerun.PriorityCulpritVerificationLowConfidence
+	}
+	return rerun.CapPriority(pri)
 }

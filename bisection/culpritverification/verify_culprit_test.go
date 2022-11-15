@@ -219,3 +219,18 @@ func TestHasNewTargets(t *testing.T) {
 		So(hasNewTarget(c, []string{"device/bluetooth/floss/bluetooth_gatt_service_floss_3.h"}, cls), ShouldBeFalse)
 	})
 }
+
+func TestGetPriority(t *testing.T) {
+	t.Parallel()
+	c := context.Background()
+	Convey("GetPriority", t, func() {
+		suspect := &model.Suspect{
+			Score: 1,
+		}
+		So(getSuspectPriority(c, suspect), ShouldEqual, 140)
+		suspect.Score = 5
+		So(getSuspectPriority(c, suspect), ShouldEqual, 120)
+		suspect.Score = 15
+		So(getSuspectPriority(c, suspect), ShouldEqual, 100)
+	})
+}

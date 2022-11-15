@@ -98,8 +98,10 @@ func RerunCommit(c context.Context, nsa *model.CompileNthSectionAnalysis, commit
 		return errors.Annotate(err, "failed getting rerun props").Err()
 	}
 
+	priority := getRerunPriority(c, nsa, commit, dims)
+
 	// TODO(nqmtuan): Support priority here
-	build, err := rerun.TriggerRerun(c, commit, failedBuildID, props, dims)
+	build, err := rerun.TriggerRerun(c, commit, failedBuildID, props, dims, priority)
 	if err != nil {
 		return errors.Annotate(err, "couldn't trigger rerun").Err()
 	}
@@ -110,6 +112,16 @@ func RerunCommit(c context.Context, nsa *model.CompileNthSectionAnalysis, commit
 	}
 
 	return nil
+}
+
+func getRerunPriority(c context.Context, nsa *model.CompileNthSectionAnalysis, commit *buildbucketpb.GitilesCommit, dims map[string]string) int32 {
+	// TODO (nqmtuan): Add other priority offset
+	var pri int32 = rerun.PriorityNthSection
+	// If targetting a particular bot
+	if _, ok := dims["id"]; ok {
+		pri += rerun.PriorityScheduleOnSameBotOffset
+	}
+	return rerun.CapPriority(pri)
 }
 
 func getRerunProps(c context.Context, nthSectionAnalysis *model.CompileNthSectionAnalysis) (map[string]interface{}, error) {
