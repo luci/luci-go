@@ -22,6 +22,8 @@ option go_package = "go.chromium.org/luci/bisection/proto/config;configpb";
 message Config {
   // Service-wide configuration data for Gerrit integration
   GerritConfig gerrit_config = 1;
+  // Configuration data for analysis
+  AnalysisConfig analysis_config = 2;
 }
 
 // GerritConfig is the configuration data for Gerrit integration
@@ -51,4 +53,13 @@ message GerritConfig {
   // If a culprit is older than this limit, LUCI Bisection will skip
   // submitting its corresponding revert.
   int64 max_revertible_culprit_age = 4;
+}
+
+// GerritConfig is the configuration data for running analysis
+message AnalysisConfig {
+  // Whether we should run culprit verification
+  bool culprit_verification_enabled = 1;
+
+  // Whether we should run nthsection analysis
+  bool nthsection_enabled = 2;
 }

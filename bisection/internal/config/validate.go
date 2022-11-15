@@ -27,6 +27,7 @@ func validateConfig(ctx *validation.Context, cfg *configpb.Config) {
 		return
 	}
 	validateGerritConfig(ctx, cfg.GerritConfig)
+	// TODO(nqmtuan): Validate analysis config when we actually have it
 }
 
 // Validates the settings in a GerritConfig

@@ -41,6 +41,10 @@ const sampleConfigFileContents = `
 
 		max_revertible_culprit_age: 123
 	}
+	analysis_config {
+		culprit_verification_enabled: true
+		nthsection_enabled: true
+	}
 `
 
 // CreateTestConfig returns a new valid configpb.Config for tests
