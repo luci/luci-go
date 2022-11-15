@@ -25,7 +25,7 @@ import "go.chromium.org/luci/buildbucket/proto/common.proto";
 option go_package = "go.chromium.org/luci/bisection/proto;gofindit";
 
 
-// GoFinditService contains API called from GoFindit clients such as
+// GoFinditService contains API called from LUCI Bisection clients such as
 // SoM, Milo, ... to query or trigger analysis
 service GoFinditService {
   // GetAnalysis is used to get an analysis by analysis ID.
@@ -40,7 +40,7 @@ service GoFinditService {
   rpc ListAnalyses(ListAnalysesRequest) returns (ListAnalysesResponse);
 
   // TriggerAnalysis is used to trigger an analysis for a failed build.
-  // This RPC is called from a GoFindit client like SoM or Milo.
+  // This RPC is called from a LUCI Bisection client like SoM or Milo.
   // If an existing analysis is found for the same failure, no new analysis
   // will be triggered.
   rpc TriggerAnalysis(TriggerAnalysisRequest) returns (TriggerAnalysisResponse);
@@ -48,7 +48,7 @@ service GoFinditService {
   // Update the information of an analysis.
   // At the mean time, it is only used for update the bugs associated with an
   // analysis.
-  // Mainly used by SoM, since GoFindit does not have any information about
+  // Mainly used by SoM, since LUCI Bisection does not have any information about
   // bugs created by sheriffs.
   rpc UpdateAnalysis(UpdateAnalysisRequest) returns (Analysis);
 }
@@ -119,7 +119,7 @@ message TriggerAnalysisResponse {
 // Update the information of an analysis.
 // At the mean time, it is only used for update the bugs associated with an
 // analysis.
-// GoFindit will comment on the bug with analysis progress/results.
+// LUCI Bisection will comment on the bug with analysis progress/results.
 // Note: Existing bugs associated with the analysis will be replaced.
 message UpdateAnalysisRequest {
   // ID of the analysis
@@ -187,7 +187,7 @@ message Analysis {
 message Culprit {
   // The gitiles commit for the culprit
   buildbucket.v2.GitilesCommit commit = 1;
-  // The review URL for the culprit  
+  // The review URL for the culprit
   string review_url = 2;
   // The review title for the culprit
   string review_title = 3;
@@ -284,7 +284,7 @@ enum AnalysisStatus {
   SUSPECTFOUND = 6;
 }
 
-// An action that GoFindit has taken with the culprit
+// An action that LUCI Bisection has taken with the culprit
 message CulpritAction {
   CulpritActionType action_type = 1;
   // URL to the revert CL, if action_type = CULPRIT_AUTO_REVERTED
@@ -292,21 +292,23 @@ message CulpritAction {
   string revert_cl_url = 2;
   // URL to the bug, if action_type = BUG_COMMENTED
   string bug_url = 3;
+  // Timestamp when the culprit action was done
+  google.protobuf.Timestamp action_time = 4;
 }
 
 enum CulpritActionType {
   CULPRIT_ACTION_TYPE_UNSPECIFIED = 0;
   // No action has been taken with the culprit
   NO_ACTION = 1;
-  // The culprit was auto reverted by GoFindit
+  // The culprit was auto reverted by LUCI Bisection
   CULPRIT_AUTO_REVERTED = 2;
   // The revert CL for the culprit was created.
   // Maybe waiting for a human to review or for the verification process
   // to finish.
   REVERT_CL_CREATED = 3;
-  // GoFindit made a comment on the culprit CL
+  // LUCI Bisection made a comment on the culprit CL
   CULPRIT_CL_COMMENTED = 4;
-  // GoFindit commented on the bug for the failure
+  // LUCI Bisection commented on the bug for the failure
   BUG_COMMENTED = 5;
 }
 
@@ -338,7 +340,7 @@ message SingleRerun {
 }
 
 // RerunResult contains the result of one rerun.
-// It is for the bots to update result back to GoFindit.
+// It is for the bots to update result back to LUCI Bisection.
 message RerunResult {
   // Status of the rerun
   RerunStatus rerun_status = 1;

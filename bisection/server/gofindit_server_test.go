@@ -107,6 +107,13 @@ func TestQueryAnalysis(t *testing.T) {
 			},
 			ReviewUrl:   "http://this/is/review/url",
 			ReviewTitle: "This is review title",
+			RevertDetails: model.RevertDetails{
+				RevertURL:         "https://this/is/revert/review/url",
+				IsRevertCreated:   true,
+				RevertCreateTime:  (&timestamppb.Timestamp{Seconds: 100}).AsTime(),
+				IsRevertCommitted: true,
+				RevertCommitTime:  (&timestamppb.Timestamp{Seconds: 200}).AsTime(),
+			},
 		}
 		So(datastore.Put(c, suspect), ShouldBeNil)
 		datastore.GetTestable(c).CatchupIndexes()
@@ -152,6 +159,13 @@ func TestQueryAnalysis(t *testing.T) {
 			},
 			ReviewUrl:   "http://this/is/review/url",
 			ReviewTitle: "This is review title",
+			CulpritAction: []*pb.CulpritAction{
+				{
+					ActionType:  pb.CulpritActionType_CULPRIT_AUTO_REVERTED,
+					RevertClUrl: "https://this/is/revert/review/url",
+					ActionTime:  &timestamppb.Timestamp{Seconds: 200},
+				},
+			},
 		}), ShouldBeTrue)
 	})
 

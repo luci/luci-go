@@ -189,18 +189,38 @@ func GetAnalysisResult(c context.Context, analysis *model.CompileFailureAnalysis
 		if err != nil {
 			return nil, err
 		}
-		culprits[i] = &pb.Culprit{
+
+		pbCulprit := &pb.Culprit{
 			Commit:      &suspect.GitilesCommit,
 			ReviewUrl:   suspect.ReviewUrl,
 			ReviewTitle: suspect.ReviewTitle,
 		}
+
+		// Add culprit action for creating/auto-committing a revert
+		if suspect.IsRevertCreated {
+			culpritAction := &pb.CulpritAction{
+				RevertClUrl: suspect.RevertURL,
+			}
+			if suspect.IsRevertCommitted {
+				culpritAction.ActionType = pb.CulpritActionType_CULPRIT_AUTO_REVERTED
+				culpritAction.ActionTime = timestamppb.New(suspect.RevertCommitTime)
+			} else {
+				culpritAction.ActionType = pb.CulpritActionType_REVERT_CL_CREATED
+				culpritAction.ActionTime = timestamppb.New(suspect.RevertCreateTime)
+			}
+			pbCulprit.CulpritAction = []*pb.CulpritAction{culpritAction}
+		}
+
+		culprits[i] = pbCulprit
 	}
 	result.Culprits = culprits
 
 	// TODO (nqmtuan): query for nth-section result
 
-	// TODO (aredulla): get culprit actions, such as the revert CL for the culprit
-	//                  and any related bugs
+	// TODO (aredulla): add culprit actions for:
+	//     * commenting on culprit CLs
+	//     * commenting on manually created revert CLs
+	//     * commenting on related bugs
 
 	return result, nil
 }
