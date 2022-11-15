@@ -24,6 +24,7 @@ import (
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/common/sync/parallel"
 	"go.chromium.org/luci/common/tsmon"
 	"go.chromium.org/luci/common/tsmon/field"
 	"go.chromium.org/luci/common/tsmon/metric"
@@ -316,11 +317,22 @@ func startProjectRun(ctx context.Context, project string, runEnd time.Time, work
 
 	// Kick off the worker tasks for each of the shards.
 	tasks := nextWorkerTasks(newRun, workers)
-	for _, task := range tasks {
-		err := reclustering.Schedule(ctx, task)
-		if err != nil {
-			return errors.Annotate(err, "schedule workers").Err()
+
+	// Each task takes around 20 milliseconds (November 2022) to send to
+	// cloud tasks. For a project with 500 worker tasks, this could take 10
+	// seconds if we performed it serially, so let's parallelise to cut down
+	// the time a bit.
+	err = parallel.WorkPool(10, func(c chan<- func() error) {
+		for _, task := range tasks {
+			// Assign to variable to capture current value of loop variable.
+			t := task
+			c <- func() error {
+				return reclustering.Schedule(ctx, t)
+			}
 		}
+	})
+	if err != nil {
+		return errors.Annotate(err, "schedule workers").Err()
 	}
 	return nil
 }

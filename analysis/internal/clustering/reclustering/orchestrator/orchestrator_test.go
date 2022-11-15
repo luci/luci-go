@@ -16,6 +16,7 @@ package orchestrator
 
 import (
 	"context"
+	"sort"
 	"strings"
 	"testing"
 	"time"
@@ -405,6 +406,9 @@ func tasks(s *tqtesting.Scheduler) []*taskspb.ReclusterChunks {
 		task := pl.(*taskspb.ReclusterChunks)
 		tasks = append(tasks, task)
 	}
+	sort.Slice(tasks, func(i, j int) bool {
+		return tasks[i].ShardNumber < tasks[j].ShardNumber
+	})
 	return tasks
 }
 
