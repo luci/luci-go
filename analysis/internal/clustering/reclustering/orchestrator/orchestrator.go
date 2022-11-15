@@ -35,6 +35,7 @@ import (
 	worker "go.chromium.org/luci/analysis/internal/clustering/reclustering"
 	"go.chromium.org/luci/analysis/internal/clustering/rules"
 	"go.chromium.org/luci/analysis/internal/clustering/runs"
+	"go.chromium.org/luci/analysis/internal/clustering/shards"
 	"go.chromium.org/luci/analysis/internal/clustering/state"
 	"go.chromium.org/luci/analysis/internal/config"
 	"go.chromium.org/luci/analysis/internal/services/reclustering"
@@ -136,19 +137,13 @@ func orchestrate(ctx context.Context) error {
 	}
 
 	workers := int(cfg.ReclusteringWorkers)
-	intervalMinutes := int(cfg.ReclusteringIntervalMinutes)
 	if workers <= 0 {
 		status = "disabled"
 		logging.Warningf(ctx, "Reclustering is disabled because configured worker count is zero.")
 		return nil
 	}
-	if intervalMinutes <= 0 {
-		status = "disabled"
-		logging.Warningf(ctx, "Reclustering is disabled because configured reclustering interval is zero.")
-		return nil
-	}
 
-	err = orchestrateWithOptions(ctx, projects, workers, intervalMinutes)
+	err = startRuns(ctx, projects, workers)
 	if err != nil {
 		status = "failure"
 		return err
@@ -157,26 +152,41 @@ func orchestrate(ctx context.Context) error {
 	return nil
 }
 
-func orchestrateWithOptions(ctx context.Context, projects []string, workers, intervalMins int) error {
-	currentMinute := clock.Now(ctx).Truncate(time.Minute)
-	intervalDuration := time.Duration(intervalMins) * time.Minute
-	attemptStart := clock.Now(ctx).Truncate(intervalDuration)
-	if attemptStart != currentMinute {
-		logging.Infof(ctx, "Orchestrator ran, but determined the current run start %v"+
-			" does not match the current minute %v.", attemptStart, currentMinute)
-		return nil
+// startRuns commences a reclustering run for the given
+// projects, splitting the work into a number of shards equal to the
+// given number of workers. Each reclustering run takes one minute, and
+// the orchestrator should be run just after the start of each minute.
+//
+// For each project:
+//   - One ReclusteringRun record is created defining the minimum versions of
+//     algorithms, project configuration and rules the reclustering run
+//     aims to achieve.
+//   - One ReclusteringShard record is created for every worker allocated
+//     to the project, providing a means for the worker to report its progress
+//     reclustering a fraction of the project's chunks.
+//   - One reclustering task is created for every worker allocated to
+//     the project. (Thus starting the worker, which will work on one shard.)
+//   - Progress is read from the previous run's ReclusteringShards and
+//     used to update the previous run's ReclusteringRun record with
+//     the actual progress achieved (towards the reclustering objectives)
+//     in that run.
+func startRuns(ctx context.Context, projects []string, workers int) error {
+	runStart := clock.Now(ctx).Truncate(time.Minute)
+	runEnd := runStart.Add(time.Minute)
+	err := condenseShardProgressIntoRunProgress(ctx, projects, runEnd)
+	if err != nil {
+		return errors.Annotate(err, "condensing shard progress into run progress").Err()
 	}
-	attemptEnd := attemptStart.Add(intervalDuration)
 
-	workerCounts, err := projectWorkerCounts(ctx, projects, workers)
+	workerAllocs, err := projectWorkerAllocations(ctx, projects, workers)
 	if err != nil {
 		return err
 	}
 
 	var errs []error
 	for _, project := range projects {
-		projectWorkers := workerCounts[project]
-		err := orchestrateProject(ctx, project, attemptStart, attemptEnd, projectWorkers)
+		projectWorkers := workerAllocs[project]
+		err := startProjectRun(ctx, project, runEnd, projectWorkers)
 		if err != nil {
 			// If an error occurs with one project, capture it, but continue
 			// to avoid impacting other projects.
@@ -189,10 +199,22 @@ func orchestrateWithOptions(ctx context.Context, projects []string, workers, int
 	return nil
 }
 
-// projectWorkerCounts distributes workers between LUCI projects.
+// workerAllocation represents a set of reclustering workers allocated
+// to a project. Each worker represents a single reclustering task that is
+// scheduled (and its continuation tasks).
+type workerAllocation struct {
+	// start is the starting sequence number of the range of workers allocated.
+	// The range of workers represented by the allocation
+	// is [start, start+count).
+	start int
+	// count is the number of workers allocated to the project.
+	count int
+}
+
+// projectWorkerAllocations distributes workers between LUCI projects.
 // The workers are allocated proportionately to the number of chunks in each
 // project, with a minimum of one worker per project.
-func projectWorkerCounts(ctx context.Context, projects []string, workers int) (map[string]int, error) {
+func projectWorkerAllocations(ctx context.Context, projects []string, workers int) (map[string]workerAllocation, error) {
 	chunksByProject := make(map[string]int64)
 	var totalChunks int64
 
@@ -217,7 +239,8 @@ func projectWorkerCounts(ctx context.Context, projects []string, workers int) (m
 		return nil, errors.New("more projects configured than workers")
 	}
 
-	result := make(map[string]int)
+	sequence := 1
+	result := make(map[string]workerAllocation)
 	for _, project := range projects {
 
 		projectChunks := chunksByProject[project]
@@ -230,41 +253,74 @@ func projectWorkerCounts(ctx context.Context, projects []string, workers int) (m
 
 		// Every project gets at least one worker, plus
 		// a number of workers depending on it size.
-		result[project] = 1 + additionalWorkers
+		alloc := workerAllocation{
+			start: sequence,
+			count: 1 + additionalWorkers,
+		}
+		sequence += alloc.count
+		result[project] = alloc
 	}
 	return result, nil
 }
 
-// orchestrateProject starts a new reclustering run for the given project,
-// with the specified start and end time, and number of workers.
-func orchestrateProject(ctx context.Context, project string, attemptStart, attemptEnd time.Time, workers int) error {
-	projectCfg, err := config.Project(ctx, project)
-	if err != nil {
-		return errors.Annotate(err, "get project config").Err()
-	}
-	configVersion := projectCfg.LastUpdated.AsTime()
+// startProjectRun starts a new reclustering run for the given project,
+// with the specified end time, and number of workers.
+func startProjectRun(ctx context.Context, project string, runEnd time.Time, workers workerAllocation) error {
+	var progress *metrics
+	var newRun *runs.ReclusteringRun
+	_, err := span.ReadWriteTransaction(ctx, func(ctx context.Context) error {
+		lastComplete, err := runs.ReadLastComplete(ctx, project)
+		if err != nil {
+			return errors.Annotate(err, "read last complete run").Err()
+		}
+		lastRun, err := runs.ReadLast(ctx, project)
+		if err != nil {
+			return errors.Annotate(err, "read last run").Err()
+		}
+		progress = &metrics{
+			progress:      float64(int(lastRun.Progress/lastRun.ShardCount)) / 1000.0,
+			lastCompleted: lastComplete.AttemptTimestamp,
+		}
 
-	var metrics *metrics
-	_, err = span.ReadWriteTransaction(ctx, func(ctx context.Context) error {
-		var err error
-		metrics, err = createProjectRun(ctx, project, attemptStart, attemptEnd, configVersion, workers)
-		return err
+		// Create the run for the project.
+		newRun, err = nextProjectRun(ctx, project, runEnd, workers, lastRun)
+		if err != nil {
+			return errors.Annotate(err, "create run").Err()
+		}
+		err = runs.Create(ctx, newRun)
+		if err != nil {
+			return errors.Annotate(err, "create new run").Err()
+		}
+
+		// Create the shard entries for that run.
+		newShards := nextShards(project, runEnd, workers)
+		for _, shard := range newShards {
+			err := shards.Create(ctx, shard)
+			if err != nil {
+				return errors.Annotate(err, "create shard").Err()
+			}
+		}
+		return nil
 	})
 	if err != nil {
-		return errors.Annotate(err, "create run").Err()
+		return err
 	}
 
 	// Export metrics.
-	progressGauge.Set(ctx, float64(metrics.progress), project)
-	workersGauge.Set(ctx, int64(workers), project)
-	if metrics.lastCompleted != runs.StartingEpoch {
+	progressGauge.Set(ctx, float64(progress.progress), project)
+	workersGauge.Set(ctx, int64(workers.count), project)
+	if progress.lastCompleted != runs.StartingEpoch {
 		// Only report time since last completion once there is a last completion.
-		lastCompletedGauge.Set(ctx, metrics.lastCompleted.Unix(), project)
+		lastCompletedGauge.Set(ctx, progress.lastCompleted.Unix(), project)
 	}
 
-	err = scheduleWorkers(ctx, project, attemptStart, attemptEnd, workers)
-	if err != nil {
-		return errors.Annotate(err, "schedule workers").Err()
+	// Kick off the worker tasks for each of the shards.
+	tasks := nextWorkerTasks(newRun, workers)
+	for _, task := range tasks {
+		err := reclustering.Schedule(ctx, task)
+		if err != nil {
+			return errors.Annotate(err, "schedule workers").Err()
+		}
 	}
 	return nil
 }
@@ -277,29 +333,62 @@ type metrics struct {
 	progress float64
 }
 
-// createProjectRun creates a new run entry for a project, returning whether
-// the previous run achieved its re-clustering goal (and any errors).
-func createProjectRun(ctx context.Context, project string, attemptStart, attemptEnd, latestConfigVersion time.Time, workers int) (*metrics, error) {
-	lastComplete, err := runs.ReadLastComplete(ctx, project)
-	if err != nil {
-		return nil, errors.Annotate(err, "read last complete run").Err()
-	}
+// condenseShardProgressIntoRunProgress updates the progress of the last
+// reclustering runs (if any) based on the per-shard progress reports,
+// and then deletes the per-shard progress reports.
+func condenseShardProgressIntoRunProgress(ctx context.Context, projects []string, runEnd time.Time) error {
+	txn, cancel := span.ReadOnlyTransaction(ctx)
+	defer cancel()
 
-	lastRun, err := runs.ReadLast(ctx, project)
+	lastAttempt := runEnd.Add(-1 * time.Minute)
+
+	progresses, err := shards.ReadAllProgresses(txn, lastAttempt)
 	if err != nil {
-		return nil, errors.Annotate(err, "read last run").Err()
+		return errors.Annotate(err, "read shard progress").Err()
 	}
+	// Perform in a separate transaction to the read
+	// above to avoid this transaction aborting and retrying if a
+	// shard has overrun beyond the attempt finish time has updated
+	// its progress. Shards will never reverse in progress within a given
+	// attempt, so the progress we set on the run will always be a lower bound
+	// on the actual value.
+	_, err = span.ReadWriteTransaction(ctx, func(ctx context.Context) error {
+		for _, p := range progresses {
+			// Note that if there is progress for a run, there must
+			// be a run as well, as runs are created with the shards.
+			err := runs.UpdateProgress(ctx, p.Project, p.AttemptTimestamp, p.ShardsReported, p.Progress)
+			if err != nil {
+				return errors.Annotate(err, "updating progress for project %s", p.Project).Err()
+			}
+		}
+		// Delete the shard rows, so that we don't clog up the
+		// table with millions of useless rows.
+		shards.DeleteAll(ctx)
+		return nil
+	})
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+// nextProjectRun defines the next reclustering run for a project, based on the
+// results of the last run and the current configuration, algorithms and rules
+// versions.
+func nextProjectRun(ctx context.Context, project string, runEnd time.Time, workers workerAllocation, lastRun *runs.ReclusteringRun) (*runs.ReclusteringRun, error) {
+	projectCfg, err := config.Project(ctx, project)
+	if err != nil {
+		return nil, errors.Annotate(err, "get project config").Err()
+	}
+	latestConfigVersion := projectCfg.LastUpdated.AsTime()
 
 	// run.Progress is a value between 0 and 1000 * lastRun.ShardCount.
 	progress := int(lastRun.Progress / lastRun.ShardCount)
 
-	if lastRun.AttemptTimestamp.After(attemptStart) {
-		return nil, errors.New("an attempt which overlaps the proposed attempt already exists")
-	}
 	newRun := &runs.ReclusteringRun{
 		Project:          project,
-		AttemptTimestamp: attemptEnd,
-		ShardCount:       int64(workers),
+		AttemptTimestamp: runEnd,
+		ShardCount:       int64(workers.count),
 		ShardsReported:   0,
 		Progress:         0,
 	}
@@ -336,49 +425,59 @@ func createProjectRun(ctx context.Context, project string, attemptStart, attempt
 		newRun.ConfigVersion = lastRun.ConfigVersion
 		newRun.AlgorithmsVersion = lastRun.AlgorithmsVersion
 	}
-	err = runs.Create(ctx, newRun)
-	if err != nil {
-		return nil, errors.Annotate(err, "create new run").Err()
-	}
-	metrics := &metrics{
-		progress: float64(progress) / 1000.0,
-	}
-	metrics.lastCompleted = lastComplete.AttemptTimestamp
-	return metrics, err
+	return newRun, nil
 }
 
-// scheduleWorkers creates reclustering tasks for the given project
-// and attempt. Workers are each assigned an equally large slice
+// nexShards defines the shard entries needed for each reclustering
+// worker to report its progress.
+func nextShards(project string, runEnd time.Time, alloc workerAllocation) []shards.ReclusteringShard {
+	var result []shards.ReclusteringShard
+	for i := 0; i < alloc.count; i++ {
+		shard := shards.ReclusteringShard{
+			ShardNumber:      int64(alloc.start + i),
+			AttemptTimestamp: runEnd,
+			Project:          project,
+		}
+		result = append(result, shard)
+	}
+	return result
+}
+
+// nextWorkerTasks creates reclustering tasks for the given reclustering
+// run and worker allocation. Workers are each assigned an equally large slice
 // of the keyspace to recluster.
-func scheduleWorkers(ctx context.Context, project string, attemptStart time.Time, attemptEnd time.Time, count int) error {
-	splits := workerSplits(count)
-	for i := 0; i < count; i++ {
-		start := splits[i]
-		end := splits[i+1]
+func nextWorkerTasks(newRun *runs.ReclusteringRun, alloc workerAllocation) []*taskspb.ReclusterChunks {
+	splits := workerSplits(alloc.count)
+
+	var tasks []*taskspb.ReclusterChunks
+	for i := 0; i < alloc.count; i++ {
+		splitStart := splits[i]
+		splitEnd := splits[i+1]
+
+		attemptStart := newRun.AttemptTimestamp.Add(-1 * time.Minute)
 
 		// Space out the initial progress reporting of each task in the range
-		// [0,progressIntervalSeconds).
-		// This avoids creating contention on the ReclusteringRuns row.
-		reportOffset := time.Duration((int64(worker.ProgressInterval) / int64(count)) * int64(i))
+		// [0,progressIntervalSeconds). This spreads out some of the progress
+		// update load on Spanner.
+		reportOffset := time.Duration((int64(worker.ProgressInterval) * int64(i)) / int64(alloc.count))
 
 		task := &taskspb.ReclusterChunks{
-			Project:      project,
-			AttemptTime:  timestamppb.New(attemptEnd),
-			StartChunkId: start,
-			EndChunkId:   end,
+			ShardNumber:       int64(alloc.start + i),
+			Project:           newRun.Project,
+			AttemptTime:       timestamppb.New(newRun.AttemptTimestamp),
+			StartChunkId:      splitStart,
+			EndChunkId:        splitEnd,
+			AlgorithmsVersion: newRun.AlgorithmsVersion,
+			RulesVersion:      timestamppb.New(newRun.RulesVersion),
+			ConfigVersion:     timestamppb.New(newRun.ConfigVersion),
 			State: &taskspb.ReclusterChunkState{
-				CurrentChunkId:       start,
-				NextReportDue:        timestamppb.New(attemptStart.Add(reportOffset)),
-				ReportedOnce:         false,
-				LastReportedProgress: 0,
+				CurrentChunkId: splitStart,
+				NextReportDue:  timestamppb.New(attemptStart.Add(reportOffset)),
 			},
 		}
-		err := reclustering.Schedule(ctx, task)
-		if err != nil {
-			return err
-		}
+		tasks = append(tasks, task)
 	}
-	return nil
+	return tasks
 }
 
 // workerSplits divides the chunk ID key space evenly into the given

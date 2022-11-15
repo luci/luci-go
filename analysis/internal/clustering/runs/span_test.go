@@ -25,6 +25,7 @@ import (
 
 	"go.chromium.org/luci/analysis/internal/clustering/algorithms"
 	"go.chromium.org/luci/analysis/internal/clustering/rules"
+	"go.chromium.org/luci/analysis/internal/clustering/shards"
 	"go.chromium.org/luci/analysis/internal/config"
 	"go.chromium.org/luci/analysis/internal/testutil"
 )
@@ -185,14 +186,116 @@ func TestSpan(t *testing.T) {
 				So(progress.IsReclusteringToNewAlgorithms(), ShouldBeFalse)
 				So(progress.IsReclusteringToNewConfig(), ShouldBeFalse)
 			})
+			Convey(`Uses live progress`, func() {
+				rulesVersion := time.Date(2021, time.January, 1, 1, 0, 0, 0, time.UTC)
+				configVersion := time.Date(2025, time.January, 1, 1, 0, 0, 0, time.UTC)
+
+				reference := time.Date(2020, time.January, 1, 1, 0, 0, 0, time.UTC)
+				runs := []*ReclusteringRun{
+					NewRun(0).WithAttemptTimestamp(reference.Add(-1 * time.Minute)).
+						WithRulesVersion(rulesVersion).
+						WithConfigVersion(configVersion).
+						WithAlgorithmsVersion(algorithms.AlgorithmsVersion + 1).
+						WithShardCount(2).
+						WithNoReportedProgress().Build(),
+					NewRun(1).WithAttemptTimestamp(reference.Add(-2 * time.Minute)).
+						WithRulesVersion(rulesVersion).
+						WithConfigVersion(configVersion).
+						WithAlgorithmsVersion(algorithms.AlgorithmsVersion + 1).
+						WithReportedProgress(500).Build(),
+					NewRun(2).WithAttemptTimestamp(reference.Add(-3 * time.Minute)).
+						WithRulesVersion(rulesVersion.Add(-1 * time.Hour)).
+						WithConfigVersion(configVersion.Add(-2 * time.Hour)).
+						WithAlgorithmsVersion(algorithms.AlgorithmsVersion).
+						WithCompletedProgress().Build(),
+				}
+				err := SetRunsForTesting(ctx, runs)
+				So(err, ShouldBeNil)
+
+				expectedProgress := &ReclusteringProgress{
+					ProgressPerMille: 500,
+					Next: ReclusteringTarget{
+						RulesVersion:      rulesVersion,
+						ConfigVersion:     configVersion,
+						AlgorithmsVersion: algorithms.AlgorithmsVersion + 1,
+					},
+					Last: ReclusteringTarget{
+						RulesVersion:      rulesVersion.Add(-1 * time.Hour),
+						ConfigVersion:     configVersion.Add(-2 * time.Hour),
+						AlgorithmsVersion: algorithms.AlgorithmsVersion,
+					},
+				}
+
+				Convey(`No live progress available`, func() {
+					// No reclustering shard entries to use to calculate progress.
+
+					progress, err := ReadReclusteringProgress(ctx, testProject)
+					So(err, ShouldBeNil)
+
+					So(progress, ShouldResemble, expectedProgress)
+				})
+				Convey(`No shard progress`, func() {
+					// Not all shards have reported progress.
+					shds := []shards.ReclusteringShard{
+						shards.NewShard(0).WithProject(testProject).WithAttemptTimestamp(reference.Add(-1 * time.Minute)).WithNoProgress().Build(),
+						shards.NewShard(1).WithProject(testProject).WithAttemptTimestamp(reference.Add(-1 * time.Minute)).WithProgress(100).Build(),
+					}
+					err := shards.SetShardsForTesting(ctx, shds)
+					So(err, ShouldBeNil)
+
+					progress, err := ReadReclusteringProgress(ctx, testProject)
+					So(err, ShouldBeNil)
+
+					So(progress, ShouldResemble, expectedProgress)
+				})
+				Convey(`Partial progress`, func() {
+					// All shards have reported partial progress.
+					shds := []shards.ReclusteringShard{
+						shards.NewShard(0).WithProject(testProject).WithAttemptTimestamp(reference.Add(-1 * time.Minute)).WithProgress(200).Build(),
+						shards.NewShard(1).WithProject(testProject).WithAttemptTimestamp(reference.Add(-1 * time.Minute)).WithProgress(100).Build(),
+					}
+					err := shards.SetShardsForTesting(ctx, shds)
+					So(err, ShouldBeNil)
+
+					expectedProgress.ProgressPerMille = 150
+					progress, err := ReadReclusteringProgress(ctx, testProject)
+					So(err, ShouldBeNil)
+					So(progress, ShouldResemble, expectedProgress)
+				})
+				Convey(`Complete progress`, func() {
+					// All shards have reported progress as being complete.
+					shds := []shards.ReclusteringShard{
+						shards.NewShard(0).WithProject(testProject).WithAttemptTimestamp(reference.Add(-1 * time.Minute)).WithProgress(shards.MaxProgress).Build(),
+						shards.NewShard(1).WithProject(testProject).WithAttemptTimestamp(reference.Add(-1 * time.Minute)).WithProgress(shards.MaxProgress).Build(),
+					}
+					err := shards.SetShardsForTesting(ctx, shds)
+					So(err, ShouldBeNil)
+
+					expectedProgress.ProgressPerMille = 1000
+					expectedProgress.Last = ReclusteringTarget{
+						RulesVersion:      rulesVersion,
+						ConfigVersion:     configVersion,
+						AlgorithmsVersion: algorithms.AlgorithmsVersion + 1,
+					}
+					progress, err := ReadReclusteringProgress(ctx, testProject)
+					So(err, ShouldBeNil)
+					So(progress, ShouldResemble, expectedProgress)
+				})
+			})
 		})
-		Convey(`Reporting Progress`, func() {
+		Convey(`UpdateProgress`, func() {
 			reference := time.Date(2020, time.January, 1, 1, 0, 0, 0, time.UTC)
 			assertProgress := func(shardsReported, progress int64) {
 				run, err := Read(span.Single(ctx), testProject, reference)
 				So(err, ShouldBeNil)
 				So(run.ShardsReported, ShouldEqual, shardsReported)
 				So(run.Progress, ShouldEqual, progress)
+			}
+			updateProgress := func(shardsReported, progress int64) error {
+				_, err := span.ReadWriteTransaction(ctx, func(ctx context.Context) error {
+					return UpdateProgress(ctx, testProject, reference, shardsReported, progress)
+				})
+				return err
 			}
 
 			runs := []*ReclusteringRun{
@@ -201,53 +304,13 @@ func TestSpan(t *testing.T) {
 			err := SetRunsForTesting(ctx, runs)
 			So(err, ShouldBeNil)
 
-			Convey(`Concurrent`, func() {
-				token1 := NewProgressToken(testProject, reference, &ProgressState{})
-				token2 := NewProgressToken(testProject, reference, &ProgressState{})
-				assertProgress(0, 0)
+			err = updateProgress(0, 0)
+			So(err, ShouldBeNil)
+			assertProgress(0, 0)
 
-				So(token1.ReportProgress(ctx, 0), ShouldBeNil)
-				assertProgress(1, 0)
-
-				So(token1.ReportProgress(ctx, 150), ShouldBeNil)
-				assertProgress(1, 150)
-
-				So(token2.ReportProgress(ctx, 200), ShouldBeNil)
-				assertProgress(2, 350)
-
-				So(token1.ReportProgress(ctx, 200), ShouldBeNil)
-				assertProgress(2, 400)
-
-				So(token2.ReportProgress(ctx, 1000), ShouldBeNil)
-				assertProgress(2, 1200)
-
-				So(token1.ReportProgress(ctx, 1000), ShouldBeNil)
-				assertProgress(2, 2000)
-			})
-			Convey(`Export State`, func() {
-				token := NewProgressToken(testProject, reference, &ProgressState{})
-				assertProgress(0, 0)
-
-				state, err := token.ExportState()
-				So(err, ShouldBeNil)
-				So(state, ShouldResemble, &ProgressState{ReportedOnce: false, LastReportedProgress: 0})
-
-				token = NewProgressToken(testProject, reference, state)
-				So(token.ReportProgress(ctx, 150), ShouldBeNil)
-				assertProgress(1, 150)
-
-				state, err = token.ExportState()
-				So(err, ShouldBeNil)
-				So(state, ShouldResemble, &ProgressState{ReportedOnce: true, LastReportedProgress: 150})
-
-				token = NewProgressToken(testProject, reference, state)
-				So(token.ReportProgress(ctx, 1000), ShouldBeNil)
-				assertProgress(1, 1000)
-
-				state, err = token.ExportState()
-				So(err, ShouldBeNil)
-				So(state, ShouldResemble, &ProgressState{ReportedOnce: true, LastReportedProgress: 1000})
-			})
+			err = updateProgress(2, 2000)
+			So(err, ShouldBeNil)
+			assertProgress(2, 2000)
 		})
 		Convey(`Create`, func() {
 			testCreate := func(bc *ReclusteringRun) error {

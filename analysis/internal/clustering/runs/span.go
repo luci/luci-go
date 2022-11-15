@@ -23,6 +23,7 @@ import (
 	"go.chromium.org/luci/server/span"
 
 	"go.chromium.org/luci/analysis/internal/clustering/rules"
+	"go.chromium.org/luci/analysis/internal/clustering/shards"
 	"go.chromium.org/luci/analysis/internal/config"
 	spanutil "go.chromium.org/luci/analysis/internal/span"
 )
@@ -61,7 +62,7 @@ type ReclusteringRun struct {
 var NotFound = errors.New("reclustering run row not found")
 
 // StartingEpoch is the earliest valid run attempt time.
-var StartingEpoch = time.Date(1900, 1, 1, 0, 0, 0, 0, time.UTC)
+var StartingEpoch = shards.StartingEpoch
 
 // Read reads the run with the given attempt timestamp in the given LUCI
 // project. If the row does not exist, the error NotFound is returned.
@@ -232,23 +233,14 @@ func validateRun(r *ReclusteringRun) error {
 	return nil
 }
 
-// reportProgress adds progress to a particular run. To ensure correct
-// usage, this should only be called from ProgressToken.
-func reportProgress(ctx context.Context, projectID string, attemptTimestamp time.Time, firstReport bool, deltaProgress int) error {
-	stmt := spanner.NewStatement(`
-	  UPDATE ReclusteringRuns
-	  SET ShardsReported = ShardsReported + @deltaShardsReported,
-	      Progress = Progress + @deltaProgress
-	  WHERE Project = @projectID AND AttemptTimestamp = @attemptTimestamp
-	`)
-	deltaShardsReported := 0
-	if firstReport {
-		deltaShardsReported = 1
-	}
-	stmt.Params["deltaShardsReported"] = deltaShardsReported
-	stmt.Params["deltaProgress"] = deltaProgress
-	stmt.Params["projectID"] = projectID
-	stmt.Params["attemptTimestamp"] = attemptTimestamp
-	_, err := span.Update(ctx, stmt)
-	return err
+// UpdateProgress sets the progress of a particular run.
+func UpdateProgress(ctx context.Context, projectID string, attemptTimestamp time.Time, shardsReported, progress int64) error {
+	ms := spanutil.UpdateMap("ReclusteringRuns", map[string]interface{}{
+		"Project":          projectID,
+		"AttemptTimestamp": attemptTimestamp,
+		"ShardsReported":   shardsReported,
+		"Progress":         progress,
+	})
+	span.BufferWrite(ctx, ms)
+	return nil
 }

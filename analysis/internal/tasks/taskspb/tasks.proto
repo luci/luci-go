@@ -118,6 +118,12 @@ message ExportTestVariants {
 
 // Payload of the ReclusterChunks task.
 message ReclusterChunks {
+  // The number of the reclustering shard being processed by this task.
+  // A shard corresponds to a project + Chunk ID keyspace fraction that
+  // is being re-clustered.
+  // Shards are numbered sequentially, starting at one.
+  int64 shard_number = 6;
+
   // The LUCI Project containing test results to be re-clustered.
   string project = 1;
 
@@ -135,6 +141,16 @@ message ReclusterChunks {
   // "ffffffffffffffffffffffffffffffff".
   string end_chunk_id = 4;
 
+  // The version of algorithms to re-cluster to. If the worker executing the
+  // task is not running at least this version of algorithms, it is an error.
+  int64 algorithms_version = 7;
+
+  // The version of rules to recluster to.
+  google.protobuf.Timestamp rules_version = 8;
+
+  // The version of project configuration to recluster to.
+  google.protobuf.Timestamp config_version = 9;
+
   // State to be passed from one execution of the task to the next.
   // To fit with autoscaling, each task aims to execute only for a short time
   // before enqueuing another task to act as its continuation.
@@ -150,10 +166,4 @@ message ReclusterChunkState {
 
   // The next time a progress report should be made.
   google.protobuf.Timestamp next_report_due = 2;
-
-  // Whether progress has been reported at least once.
-  bool reported_once = 3;
-
-  // The last progress value which was reported.
-  int64 last_reported_progress = 4;
 }

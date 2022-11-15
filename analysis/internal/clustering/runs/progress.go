@@ -18,6 +18,7 @@ import (
 	"context"
 	"time"
 
+	"go.chromium.org/luci/analysis/internal/clustering/shards"
 	"go.chromium.org/luci/server/span"
 )
 
@@ -60,33 +61,52 @@ func ReadReclusteringProgress(ctx context.Context, project string) (*Reclusterin
 		return nil, err
 	}
 
-	lastWithProgress, err := ReadLastWithProgress(txn, project)
-	if err != nil {
-		return nil, err
-	}
-
 	last, err := ReadLast(txn, project)
 	if err != nil {
 		return nil, err
 	}
 
 	runProgress := 0
-	next := ReclusteringTarget{
-		RulesVersion:      last.RulesVersion,
-		ConfigVersion:     last.ConfigVersion,
-		AlgorithmsVersion: last.AlgorithmsVersion,
-	}
 
-	if last.RulesVersion.Equal(lastWithProgress.RulesVersion) &&
-		last.AlgorithmsVersion == lastWithProgress.AlgorithmsVersion &&
-		last.ConfigVersion.Equal(lastWithProgress.ConfigVersion) {
+	// For the most recent run, try to read live progress
+	// from the reclustering shards table.
+	liveProgress, err := shards.ReadProgress(txn, project, last.AttemptTimestamp)
+	if err != nil {
+		return nil, err
+	}
+	// Use live progress if it is available.
+	if liveProgress.ShardCount > 0 && liveProgress.ShardCount == liveProgress.ShardsReported {
 		// Scale run progress to being from 0 to 1000.
-		runProgress = int(lastWithProgress.Progress / lastWithProgress.ShardCount)
+		runProgress = int(liveProgress.Progress / liveProgress.ShardCount)
+		if runProgress == shards.MaxProgress {
+			// If the run is complete.
+			lastCompleted = last
+		}
+	} else {
+		// Otherwise, try to use the progress that was on the last
+		// run with progress.
+		lastWithProgress, err := ReadLastWithProgress(txn, project)
+		if err != nil {
+			return nil, err
+		}
+
+		// If the last reclustering run row with progress has the same
+		// reclustering objective as the current run, use its progress.
+		if last.RulesVersion.Equal(lastWithProgress.RulesVersion) &&
+			last.AlgorithmsVersion == lastWithProgress.AlgorithmsVersion &&
+			last.ConfigVersion.Equal(lastWithProgress.ConfigVersion) {
+			// Scale run progress to being from 0 to 1000.
+			runProgress = int(lastWithProgress.Progress / lastWithProgress.ShardCount)
+		}
 	}
 
 	return &ReclusteringProgress{
 		ProgressPerMille: runProgress,
-		Next:             next,
+		Next: ReclusteringTarget{
+			RulesVersion:      last.RulesVersion,
+			ConfigVersion:     last.ConfigVersion,
+			AlgorithmsVersion: last.AlgorithmsVersion,
+		},
 		Last: ReclusteringTarget{
 			RulesVersion:      lastCompleted.RulesVersion,
 			ConfigVersion:     lastCompleted.ConfigVersion,

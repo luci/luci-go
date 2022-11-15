@@ -303,12 +303,28 @@ CREATE TABLE ReclusteringRuns (
 ) PRIMARY KEY (Project, AttemptTimestamp DESC)
 , ROW DELETION POLICY (OLDER_THAN(AttemptTimestamp, INTERVAL 90 DAY));
 
+-- ReclusteringShards is used to for shards to report progress re-clustering
+-- test results. Generally only progress for the most recent minute will
+-- be in this table.
+CREATE TABLE ReclusteringShards (
+  -- A unique number for the shard. Shards are numbered sequentially,
+  -- starting from one.
+  ShardNumber INT64 NOT NULL,
+  -- The attempt. This is the timestamp the orchestrator run ends.
+  AttemptTimestamp TIMESTAMP NOT NULL,
+  -- The LUCI Project the shard is doing reclustering for.
+  Project STRING(40) NOT NULL,
+  -- The progress. This is a value between 0 and 1000. If this is NULL,
+  -- it means progress has not yet been reported by the shard.
+  Progress INT64,
+) PRIMARY KEY (ShardNumber, AttemptTimestamp DESC);
+
 -- Ingestions is used to synchronise and deduplicate the ingestion
 -- of test results which require data from one or more sources.
 --
 -- Ingestion may only start after the following events are received:
 -- 1. The build has completed.
--- 2. The invocation containing its test results (if any) 
+-- 2. The invocation containing its test results (if any)
 --    has been finalized.
 -- 3. The presubmit run (if any) has completed.
 -- These events may occur in any order (e.g. 3 can occur before 1 if the

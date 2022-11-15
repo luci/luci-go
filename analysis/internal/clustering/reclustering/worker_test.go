@@ -46,7 +46,7 @@ import (
 	cpb "go.chromium.org/luci/analysis/internal/clustering/proto"
 	"go.chromium.org/luci/analysis/internal/clustering/rules"
 	"go.chromium.org/luci/analysis/internal/clustering/rules/cache"
-	"go.chromium.org/luci/analysis/internal/clustering/runs"
+	"go.chromium.org/luci/analysis/internal/clustering/shards"
 	"go.chromium.org/luci/analysis/internal/clustering/state"
 	"go.chromium.org/luci/analysis/internal/config"
 	"go.chromium.org/luci/analysis/internal/config/compiledcfg"
@@ -95,34 +95,31 @@ func TestReclustering(t *testing.T) {
 
 		worker := NewWorker(chunkStore, analysis)
 
-		attemptTime := tc.Now().Add(time.Minute * 10)
-		run := &runs.ReclusteringRun{
-			Project:           testProject,
-			AttemptTimestamp:  attemptTime,
-			AlgorithmsVersion: algorithms.AlgorithmsVersion,
-			RulesVersion:      time.Time{}, // To be set by the test.
-			ShardCount:        1,
-			ShardsReported:    0,
-			Progress:          0,
+		runEndTime := tc.Now().Add(time.Minute * 10)
+		shard := shards.ReclusteringShard{
+			ShardNumber:      5,
+			AttemptTimestamp: runEndTime,
+			Project:          testProject,
 		}
 		task := &taskspb.ReclusterChunks{
+			ShardNumber:  shard.ShardNumber,
 			Project:      testProject,
-			AttemptTime:  timestamppb.New(attemptTime),
+			AttemptTime:  timestamppb.New(runEndTime),
 			StartChunkId: "",
 			EndChunkId:   state.EndOfTable,
 			State: &taskspb.ReclusterChunkState{
-				CurrentChunkId:       "",
-				NextReportDue:        timestamppb.New(tc.Now()),
-				ReportedOnce:         false,
-				LastReportedProgress: 0,
+				CurrentChunkId: "",
+				NextReportDue:  timestamppb.New(tc.Now()),
 			},
+			AlgorithmsVersion: algorithms.AlgorithmsVersion,
 		}
 
 		setupScenario := func(s *scenario) {
-			// Create the run entry corresponding to the task.
-			run.RulesVersion = s.rulesVersion.Predicates
-			run.ConfigVersion = s.configVersion
-			So(runs.SetRunsForTesting(ctx, []*runs.ReclusteringRun{run}), ShouldBeNil)
+			task.RulesVersion = timestamppb.New(s.rulesVersion.Predicates)
+			task.ConfigVersion = timestamppb.New(s.configVersion)
+
+			// Create a shard entry corresponding to the task.
+			So(shards.SetShardsForTesting(ctx, []shards.ReclusteringShard{shard}), ShouldBeNil)
 
 			// Set stored failure association rules.
 			So(rules.SetRulesForTesting(ctx, s.rules), ShouldBeNil)
@@ -175,9 +172,10 @@ func TestReclustering(t *testing.T) {
 				So(netExports, ShouldResembleProto, expected.netBQExports)
 
 				// Run is reported as complete.
-				actualRun, err := runs.Read(span.Single(ctx), testProject, run.AttemptTimestamp)
+				actualShards, err := shards.ReadAll(span.Single(ctx))
 				So(err, ShouldBeNil)
-				So(actualRun.Progress, ShouldEqual, 1000)
+				So(actualShards, ShouldHaveLength, 1)
+				So(actualShards[0].Progress, ShouldResemble, spanner.NullInt64{Valid: true, Int64: 1000})
 			}
 
 			Convey("Already up-to-date", func() {
@@ -232,9 +230,9 @@ func TestReclustering(t *testing.T) {
 			s.rulesVersion = expected.rulesVersion
 			setupScenario(s)
 
-			// Start the worker after the attempt time.
+			// Start the worker after the run end time.
 			tc.Add(11 * time.Minute)
-			So(tc.Now(), ShouldHappenAfter, run.AttemptTimestamp)
+			So(tc.Now(), ShouldHappenAfter, task.AttemptTime.AsTime())
 
 			// Run the task.
 			continuation, err := worker.Do(ctx, task, TargetTaskDuration)
@@ -250,9 +248,10 @@ func TestReclustering(t *testing.T) {
 			So(clusteredFailures.InsertionsByProject[testProject], ShouldBeEmpty)
 
 			// No progress is reported.
-			actualRun, err := runs.Read(span.Single(ctx), testProject, run.AttemptTimestamp)
+			actualShards, err := shards.ReadAll(span.Single(ctx))
 			So(err, ShouldBeNil)
-			So(actualRun.Progress, ShouldEqual, 0)
+			So(actualShards, ShouldHaveLength, 1)
+			So(actualShards[0].Progress, ShouldResemble, spanner.NullInt64{Valid: false, Int64: 0})
 		})
 		Convey(`Handles update/update races`, func() {
 			finalState := newScenario().build()
@@ -319,25 +318,24 @@ func TestReclustering(t *testing.T) {
 			// No changes written to BigQuery.
 			So(clusteredFailures.InsertionsByProject[testProject], ShouldBeEmpty)
 
-			// Run is reported as complete.
-			actualRun, err := runs.Read(span.Single(ctx), testProject, run.AttemptTimestamp)
+			// Shard is reported as complete.
+			actualShards, err := shards.ReadAll(span.Single(ctx))
 			So(err, ShouldBeNil)
-			So(actualRun.Progress, ShouldEqual, 1000)
+			So(actualShards, ShouldHaveLength, 1)
+			So(actualShards[0].Progress, ShouldResemble, spanner.NullInt64{Valid: true, Int64: 1000})
 		})
 		Convey(`Worker running out of date algorithms`, func() {
-			run.AlgorithmsVersion = algorithms.AlgorithmsVersion + 1
-			run.ConfigVersion = config.StartingEpoch
-			run.RulesVersion = rules.StartingEpoch
-			So(runs.SetRunsForTesting(ctx, []*runs.ReclusteringRun{run}), ShouldBeNil)
+			task.AlgorithmsVersion = algorithms.AlgorithmsVersion + 1
+			task.ConfigVersion = timestamppb.New(config.StartingEpoch)
+			task.RulesVersion = timestamppb.New(rules.StartingEpoch)
 
 			continuation, err := worker.Do(ctx, task, TargetTaskDuration)
 			So(err, ShouldErrLike, "running out-of-date algorithms version")
 			So(continuation, ShouldBeNil)
 		})
 		Convey(`Continuation correctly scheduled`, func() {
-			run.RulesVersion = rules.StartingEpoch
-			run.ConfigVersion = config.StartingEpoch
-			So(runs.SetRunsForTesting(ctx, []*runs.ReclusteringRun{run}), ShouldBeNil)
+			task.RulesVersion = timestamppb.New(rules.StartingEpoch)
+			task.ConfigVersion = timestamppb.New(config.StartingEpoch)
 
 			// Leave no time for the task to run.
 			continuation, err := worker.Do(ctx, task, 0*time.Second)
@@ -792,9 +790,9 @@ func (b *chunkBuilder) buildBQExport() []*bqpb.ClusteredFailureRow {
 // scenarioBuilder is used to generate LUCI Analysis system states used for
 // testing. Each scenario represents a consistent state of the LUCI Analysis
 // system, i.e.
-// - where the clustering state matches the configured rules, and
-// - the BigQuery exports match the clustering state, and the test results
-//   in the chunk store.
+//   - where the clustering state matches the configured rules, and
+//   - the BigQuery exports match the clustering state, and the test results
+//     in the chunk store.
 type scenarioBuilder struct {
 	project       string
 	chunkCount    int

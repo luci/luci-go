@@ -20,6 +20,7 @@ import (
 	"testing"
 	"time"
 
+	"cloud.google.com/go/spanner"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/gae/impl/memory"
@@ -31,6 +32,7 @@ import (
 	"go.chromium.org/luci/analysis/internal/clustering/algorithms"
 	"go.chromium.org/luci/analysis/internal/clustering/rules"
 	"go.chromium.org/luci/analysis/internal/clustering/runs"
+	"go.chromium.org/luci/analysis/internal/clustering/shards"
 	"go.chromium.org/luci/analysis/internal/clustering/state"
 	"go.chromium.org/luci/analysis/internal/config"
 	"go.chromium.org/luci/analysis/internal/tasks/taskspb"
@@ -54,8 +56,7 @@ func TestOrchestrator(t *testing.T) {
 		ctx, skdr := tq.TestingContext(ctx, nil)
 
 		cfg := &configpb.Config{
-			ReclusteringWorkers:         4,
-			ReclusteringIntervalMinutes: 5,
+			ReclusteringWorkers: 4,
 		}
 		config.SetTestConfig(ctx, cfg)
 
@@ -76,7 +77,8 @@ func TestOrchestrator(t *testing.T) {
 
 		Convey("Without Projects", func() {
 			projectCfg := make(map[string]*configpb.ProjectConfig)
-			config.SetTestProjectConfig(ctx, projectCfg)
+			err := config.SetTestProjectConfig(ctx, projectCfg)
+			So(err, ShouldBeNil)
 
 			testOrchestratorDoesNothing()
 		})
@@ -110,53 +112,85 @@ func TestOrchestrator(t *testing.T) {
 			err = rules.SetRulesForTesting(ctx, []*rules.FailureAssociationRule{rule})
 			So(err, ShouldBeNil)
 
-			expectedAttemptStartTime := tc.Now().Truncate(5 * time.Minute)
-			expectedAttemptTime := expectedAttemptStartTime.Add(5 * time.Minute)
+			expectedRunStartTime := tc.Now().Truncate(time.Minute)
+			expectedRunEndTime := expectedRunStartTime.Add(time.Minute)
 			expectedTasks := []*taskspb.ReclusterChunks{
 				{
 					Project:      "project-a",
-					AttemptTime:  timestamppb.New(expectedAttemptTime),
+					AttemptTime:  timestamppb.New(expectedRunEndTime),
 					StartChunkId: "",
 					EndChunkId:   state.EndOfTable,
 					State: &taskspb.ReclusterChunkState{
 						CurrentChunkId: "",
-						NextReportDue:  timestamppb.New(expectedAttemptStartTime),
+						NextReportDue:  timestamppb.New(expectedRunStartTime),
 					},
+					ShardNumber: 1,
 				},
 				{
 					Project:      "project-b",
-					AttemptTime:  timestamppb.New(expectedAttemptTime),
+					AttemptTime:  timestamppb.New(expectedRunEndTime),
 					StartChunkId: "",
 					EndChunkId:   strings.Repeat("55", 15) + "54",
 					State: &taskspb.ReclusterChunkState{
 						CurrentChunkId: "",
-						NextReportDue:  timestamppb.New(expectedAttemptStartTime),
+						NextReportDue:  timestamppb.New(expectedRunStartTime),
 					},
+					ShardNumber: 2,
 				},
 				{
 					Project:      "project-b",
-					AttemptTime:  timestamppb.New(expectedAttemptTime),
+					AttemptTime:  timestamppb.New(expectedRunEndTime),
 					StartChunkId: strings.Repeat("55", 15) + "54",
 					EndChunkId:   strings.Repeat("aa", 15) + "a9",
 					State: &taskspb.ReclusterChunkState{
 						CurrentChunkId: strings.Repeat("55", 15) + "54",
-						NextReportDue:  timestamppb.New(expectedAttemptStartTime.Add(10 * time.Second)),
+						NextReportDue:  timestamppb.New(expectedRunStartTime.Add(5 * time.Second / 3)),
 					},
+					ShardNumber: 3,
 				},
 				{
 					Project:      "project-b",
-					AttemptTime:  timestamppb.New(expectedAttemptTime),
+					AttemptTime:  timestamppb.New(expectedRunEndTime),
 					StartChunkId: strings.Repeat("aa", 15) + "a9",
 					EndChunkId:   state.EndOfTable,
 					State: &taskspb.ReclusterChunkState{
 						CurrentChunkId: strings.Repeat("aa", 15) + "a9",
-						NextReportDue:  timestamppb.New(expectedAttemptStartTime.Add(20 * time.Second)),
+						NextReportDue:  timestamppb.New(expectedRunStartTime.Add((5 * time.Second * 2) / 3)),
 					},
+					ShardNumber: 4,
 				},
 			}
+
+			expectedShards := []shards.ReclusteringShard{
+				{
+					ShardNumber:      1,
+					AttemptTimestamp: expectedRunEndTime,
+					Project:          "project-a",
+					Progress:         spanner.NullInt64{},
+				},
+				{
+					ShardNumber:      2,
+					AttemptTimestamp: expectedRunEndTime,
+					Project:          "project-b",
+					Progress:         spanner.NullInt64{},
+				},
+				{
+					ShardNumber:      3,
+					AttemptTimestamp: expectedRunEndTime,
+					Project:          "project-b",
+					Progress:         spanner.NullInt64{},
+				},
+				{
+					ShardNumber:      4,
+					AttemptTimestamp: expectedRunEndTime,
+					Project:          "project-b",
+					Progress:         spanner.NullInt64{},
+				},
+			}
+
 			expectedRunA := &runs.ReclusteringRun{
 				Project:           "project-a",
-				AttemptTimestamp:  expectedAttemptTime,
+				AttemptTimestamp:  expectedRunEndTime,
 				AlgorithmsVersion: algorithms.AlgorithmsVersion,
 				ConfigVersion:     configVersionA,
 				RulesVersion:      rules.StartingEpoch,
@@ -166,7 +200,7 @@ func TestOrchestrator(t *testing.T) {
 			}
 			expectedRunB := &runs.ReclusteringRun{
 				Project:           "project-b",
-				AttemptTimestamp:  expectedAttemptTime,
+				AttemptTimestamp:  expectedRunEndTime,
 				AlgorithmsVersion: algorithms.AlgorithmsVersion,
 				ConfigVersion:     configVersionB,
 				RulesVersion:      rulesVersionB,
@@ -178,15 +212,22 @@ func TestOrchestrator(t *testing.T) {
 			expectedRuns["project-a"] = expectedRunA
 			expectedRuns["project-b"] = expectedRunB
 
+			// updateExpectedTasks sets the Algorithms Version,
+			// Rules Version and Config Version of expected tasks
+			// to match those of the expected runs.
+			updateExpectedTasks := func() {
+				for _, t := range expectedTasks {
+					run := expectedRuns[t.Project]
+					t.AlgorithmsVersion = run.AlgorithmsVersion
+					t.RulesVersion = timestamppb.New(run.RulesVersion)
+					t.ConfigVersion = timestamppb.New(run.ConfigVersion)
+				}
+			}
+			updateExpectedTasks()
+
 			Convey("Disabled orchestrator does nothing", func() {
 				Convey("Workers is zero", func() {
 					cfg.ReclusteringWorkers = 0
-					config.SetTestConfig(ctx, cfg)
-
-					testOrchestratorDoesNothing()
-				})
-				Convey("Interval Minutes is zero", func() {
-					cfg.ReclusteringIntervalMinutes = 0
 					config.SetTestConfig(ctx, cfg)
 
 					testOrchestratorDoesNothing()
@@ -201,24 +242,47 @@ func TestOrchestrator(t *testing.T) {
 
 				actualRuns := readRuns(ctx, testProjects)
 				So(actualRuns, ShouldResemble, expectedRuns)
+
+				actualShards, err := shards.ReadAll(span.Single(ctx))
+				So(err, ShouldBeNil)
+				So(actualShards, ShouldResemble, expectedShards)
 			})
-			Convey("Schedules successfully with an existing run", func() {
-				existingRunB := &runs.ReclusteringRun{
-					Project: "project-b",
-					// So as not to overlap with the run that should be created.
-					AttemptTimestamp:  expectedAttemptTime.Add(-5 * time.Minute),
+			Convey("Schedules successfully with a previous run", func() {
+				previousRunB := &runs.ReclusteringRun{
+					Project:           "project-b",
+					AttemptTimestamp:  expectedRunEndTime.Add(-1 * time.Minute),
 					AlgorithmsVersion: 1,
 					ConfigVersion:     configVersionB.Add(-1 * time.Hour),
 					RulesVersion:      rulesVersionB.Add(-1 * time.Hour),
 					ShardCount:        10,
-					ShardsReported:    10,
-					// Complete.
-					Progress: 10 * 1000,
+				}
+				var previousShards []shards.ReclusteringShard
+				for i := 0; i < 10; i++ {
+					previousShards = append(previousShards, shards.ReclusteringShard{
+						ShardNumber:      int64(50 + i),
+						AttemptTimestamp: expectedRunEndTime.Add(-1 * time.Minute),
+						Project:          "project-b",
+						Progress:         spanner.NullInt64{Valid: true, Int64: 1000},
+					})
 				}
 
+				expectedProgress := 10 * 1000
+				expectedShardsReported := 10
 				test := func() {
 					err = CronHandler(ctx)
 					So(err, ShouldBeNil)
+
+					// Verify that the previous run had its progress set correctly.
+					updatedPreviousRun, err := runs.Read(span.Single(ctx), previousRunB.Project, previousRunB.AttemptTimestamp)
+					So(err, ShouldBeNil)
+					So(updatedPreviousRun.Progress, ShouldEqual, expectedProgress)
+					So(updatedPreviousRun.ShardsReported, ShouldEqual, expectedShardsReported)
+
+					// Verify that correct shards were created and that shards
+					// from previous runs were deleted.
+					actualShards, err := shards.ReadAll(span.Single(ctx))
+					So(err, ShouldBeNil)
+					So(actualShards, ShouldResemble, expectedShards)
 
 					actualTasks := tasks(skdr)
 					So(actualTasks, ShouldResembleProto, expectedTasks)
@@ -228,7 +292,10 @@ func TestOrchestrator(t *testing.T) {
 				}
 
 				Convey("existing complete run", func() {
-					err := runs.SetRunsForTesting(ctx, []*runs.ReclusteringRun{existingRunB})
+					err := runs.SetRunsForTesting(ctx, []*runs.ReclusteringRun{previousRunB})
+					So(err, ShouldBeNil)
+
+					err = shards.SetShardsForTesting(ctx, previousShards)
 					So(err, ShouldBeNil)
 
 					// A run scheduled after an existing complete run should
@@ -237,24 +304,63 @@ func TestOrchestrator(t *testing.T) {
 					test()
 				})
 				Convey("existing incomplete run", func() {
-					existingRunB.Progress = 500
+					for i := range previousShards {
+						previousShards[i].Progress = spanner.NullInt64{Valid: true, Int64: 500}
+					}
+					expectedProgress = 10 * 500
+					expectedShardsReported = 10
 
-					err := runs.SetRunsForTesting(ctx, []*runs.ReclusteringRun{existingRunB})
+					err := runs.SetRunsForTesting(ctx, []*runs.ReclusteringRun{previousRunB})
+					So(err, ShouldBeNil)
+
+					err = shards.SetShardsForTesting(ctx, previousShards)
+					So(err, ShouldBeNil)
+
+					sds, err := shards.ReadAll(span.Single(ctx))
+					So(err, ShouldBeNil)
+					So(sds, ShouldResemble, previousShards)
+
+					// Expect the same algorithms and rules version to be used as
+					// the previous run, to ensure forward progress (if new rules
+					// are being constantly created, we don't want to be
+					// reclustering only the beginning of the workers' keyspaces).
+					expectedRunB.AlgorithmsVersion = previousRunB.AlgorithmsVersion
+					expectedRunB.ConfigVersion = previousRunB.ConfigVersion
+					expectedRunB.RulesVersion = previousRunB.RulesVersion
+					updateExpectedTasks()
+					test()
+				})
+				Convey("existing unreported run", func() {
+					for i := range previousShards {
+						// Assume the shards did not report progress at all.
+						previousShards[i].Progress = spanner.NullInt64{}
+					}
+					expectedProgress = 0
+					expectedShardsReported = 0
+
+					err := runs.SetRunsForTesting(ctx, []*runs.ReclusteringRun{previousRunB})
+					So(err, ShouldBeNil)
+
+					err = shards.SetShardsForTesting(ctx, previousShards)
 					So(err, ShouldBeNil)
 
 					// Expect the same algorithms and rules version to be used as
 					// the previous run, to ensure forward progress (if new rules
 					// are being constantly created, we don't want to be
 					// reclustering only the beginning of the workers' keyspaces).
-					expectedRunB.AlgorithmsVersion = existingRunB.AlgorithmsVersion
-					expectedRunB.ConfigVersion = existingRunB.ConfigVersion
-					expectedRunB.RulesVersion = existingRunB.RulesVersion
+					expectedRunB.AlgorithmsVersion = previousRunB.AlgorithmsVersion
+					expectedRunB.ConfigVersion = previousRunB.ConfigVersion
+					expectedRunB.RulesVersion = previousRunB.RulesVersion
+					updateExpectedTasks()
 					test()
 				})
 				Convey("existing complete run with later algorithms version", func() {
-					existingRunB.AlgorithmsVersion = algorithms.AlgorithmsVersion + 5
+					previousRunB.AlgorithmsVersion = algorithms.AlgorithmsVersion + 5
 
-					err := runs.SetRunsForTesting(ctx, []*runs.ReclusteringRun{existingRunB})
+					err := runs.SetRunsForTesting(ctx, []*runs.ReclusteringRun{previousRunB})
+					So(err, ShouldBeNil)
+
+					err = shards.SetShardsForTesting(ctx, previousShards)
 					So(err, ShouldBeNil)
 
 					// If new algorithms are being rolled out, some GAE instances
@@ -264,13 +370,17 @@ func TestOrchestrator(t *testing.T) {
 					// correctness of re-clustering progress logic, we require
 					// the algorithms version of subsequent runs to always be
 					// non-decreasing.
-					expectedRunB.AlgorithmsVersion = existingRunB.AlgorithmsVersion
+					expectedRunB.AlgorithmsVersion = previousRunB.AlgorithmsVersion
+					updateExpectedTasks()
 					test()
 				})
 				Convey("existing complete run with later config version", func() {
-					existingRunB.ConfigVersion = configVersionB.Add(time.Hour)
+					previousRunB.ConfigVersion = configVersionB.Add(time.Hour)
 
-					err := runs.SetRunsForTesting(ctx, []*runs.ReclusteringRun{existingRunB})
+					err := runs.SetRunsForTesting(ctx, []*runs.ReclusteringRun{previousRunB})
+					So(err, ShouldBeNil)
+
+					err = shards.SetShardsForTesting(ctx, previousShards)
 					So(err, ShouldBeNil)
 
 					// If new config is being rolled out, some GAE instances
@@ -280,67 +390,10 @@ func TestOrchestrator(t *testing.T) {
 					// correctness of re-clustering progress logic, we require
 					// the config version of subsequent runs to always be
 					// non-decreasing.
-					expectedRunB.ConfigVersion = existingRunB.ConfigVersion
+					expectedRunB.ConfigVersion = previousRunB.ConfigVersion
+					updateExpectedTasks()
 					test()
 				})
-			})
-			Convey("Does not schedule with an overlapping run", func() {
-				// This can occur if the reclustering interval changes.
-				runA := &runs.ReclusteringRun{
-					Project: "project-a",
-					// So as to overlap with the run that should be created.
-					AttemptTimestamp:  expectedAttemptTime.Add(-1 * time.Minute),
-					AlgorithmsVersion: 1,
-					ConfigVersion:     config.StartingEpoch,
-					RulesVersion:      rules.StartingEpoch,
-					ShardCount:        1,
-					ShardsReported:    1,
-					Progress:          500,
-				}
-				err := runs.SetRunsForTesting(ctx, []*runs.ReclusteringRun{runA})
-				So(err, ShouldBeNil)
-
-				// Expect only project-b to have been scheduled.
-				expectedRuns["project-a"] = runA
-				expectedTasks = expectedTasks[1:]
-
-				err = CronHandler(ctx)
-				So(err, ShouldErrLike, "an attempt which overlaps the proposed attempt already exists")
-
-				actualTasks := tasks(skdr)
-				So(actualTasks, ShouldResembleProto, expectedTasks)
-
-				actualRuns := readRuns(ctx, testProjects)
-				So(actualRuns, ShouldResemble, expectedRuns)
-			})
-			Convey("Does not schedule on off-interval minutes", func() {
-				// The test uses a 5-minute re-clustering interval, so
-				// minutes modulo 1, 2, 3 and 4 should not have runs start.
-				for i := 0; i < 4; i++ {
-					tc.Add(time.Minute)
-					testOrchestratorDoesNothing()
-				}
-
-				tc.Add(time.Minute)
-				err := CronHandler(ctx)
-				So(err, ShouldBeNil)
-
-				// Because we ran on the next scheduling interval five minutes later,
-				// expect all tasks and runs to be shifted five minutes back.
-				expectedAttemptTime = expectedAttemptTime.Add(5 * time.Minute)
-				for _, task := range expectedTasks {
-					task.AttemptTime = timestamppb.New(expectedAttemptTime)
-					task.State.NextReportDue = timestamppb.New(
-						task.State.NextReportDue.AsTime().Add(5 * time.Minute))
-				}
-				expectedRunA.AttemptTimestamp = expectedAttemptTime
-				expectedRunB.AttemptTimestamp = expectedAttemptTime
-
-				actualTasks := tasks(skdr)
-				So(actualTasks, ShouldResembleProto, expectedTasks)
-
-				actualRuns := readRuns(ctx, testProjects)
-				So(actualRuns, ShouldResemble, expectedRuns)
 			})
 		})
 	})

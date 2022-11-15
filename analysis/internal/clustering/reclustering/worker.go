@@ -23,7 +23,7 @@ import (
 
 	"go.chromium.org/luci/analysis/internal/clustering/algorithms"
 	cpb "go.chromium.org/luci/analysis/internal/clustering/proto"
-	"go.chromium.org/luci/analysis/internal/clustering/runs"
+	"go.chromium.org/luci/analysis/internal/clustering/shards"
 	"go.chromium.org/luci/analysis/internal/clustering/state"
 	"go.chromium.org/luci/analysis/internal/config/compiledcfg"
 	"go.chromium.org/luci/analysis/internal/tasks/taskspb"
@@ -35,6 +35,8 @@ import (
 	"go.chromium.org/luci/common/trace"
 	"go.chromium.org/luci/server/span"
 
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
@@ -57,7 +59,7 @@ const (
 	// be reported for a shard of work; individual tasks are usually
 	// much shorter lived and consequently most will not report any progress
 	// (unless it is time for the shard to report progress again).
-	ProgressInterval = 30 * time.Second
+	ProgressInterval = 5 * time.Second
 )
 
 // ChunkStore is the interface for the blob store archiving chunks of test
@@ -85,10 +87,8 @@ func NewWorker(chunkStore ChunkStore, analysis Analysis) *Worker {
 // taskContext provides objects relevant to working on a particular
 // re-clustering task.
 type taskContext struct {
-	worker        *Worker
-	task          *taskspb.ReclusterChunks
-	run           *runs.ReclusteringRun
-	progressToken *runs.ProgressToken
+	worker *Worker
+	task   *taskspb.ReclusterChunks
 	// nextReportDue is the time at which the next progress update is
 	// due.
 	nextReportDue time.Time
@@ -98,7 +98,7 @@ type taskContext struct {
 }
 
 // Do works on a re-clustering task for approximately duration, returning a
-// continuation task (if the attempt end time has not been reached).
+// continuation task (if the run end time has not been reached).
 //
 // Continuation tasks are used to better integrate with GAE autoscaling,
 // autoscaling work best when tasks are relatively small (so that work
@@ -107,48 +107,41 @@ func (w *Worker) Do(ctx context.Context, task *taskspb.ReclusterChunks, duration
 	if task.State == nil {
 		return nil, errors.New("task does not have state")
 	}
-
-	attemptTime := task.AttemptTime.AsTime()
-
-	run, err := runs.Read(span.Single(ctx), task.Project, attemptTime)
-	if err != nil {
-		return nil, errors.Annotate(err, "read run for task").Err()
+	if task.ShardNumber <= 0 {
+		return nil, errors.New("task must have valid shard number")
+	}
+	if task.AlgorithmsVersion <= 0 {
+		return nil, errors.New("task must have valid algorithms version")
 	}
 
-	if run.AlgorithmsVersion > algorithms.AlgorithmsVersion {
+	runEndTime := task.AttemptTime.AsTime()
+
+	if task.AlgorithmsVersion > algorithms.AlgorithmsVersion {
 		return nil, fmt.Errorf("running out-of-date algorithms version (task requires %v, worker running %v)",
-			run.AlgorithmsVersion, algorithms.AlgorithmsVersion)
+			task.AlgorithmsVersion, algorithms.AlgorithmsVersion)
 	}
 
-	progressState := &runs.ProgressState{
-		ReportedOnce:         task.State.ReportedOnce,
-		LastReportedProgress: int(task.State.LastReportedProgress),
-	}
-
-	pt := runs.NewProgressToken(task.Project, attemptTime, progressState)
 	tctx := &taskContext{
 		worker:         w,
 		task:           task,
-		run:            run,
-		progressToken:  pt,
 		nextReportDue:  task.State.NextReportDue.AsTime(),
 		currentChunkID: task.State.CurrentChunkId,
 	}
 
-	// finishTime is the (soft) deadline for the run.
-	finishTime := clock.Now(ctx).Add(duration)
-	if attemptTime.Before(finishTime) {
-		// Stop by the attempt time.
-		finishTime = attemptTime
+	// softEndTime is the (soft) deadline for the run.
+	softEndTime := clock.Now(ctx).Add(duration)
+	if runEndTime.Before(softEndTime) {
+		// Stop by the run end time.
+		softEndTime = runEndTime
 	}
 
 	var done bool
-	for clock.Now(ctx).Before(finishTime) && !done {
+	for clock.Now(ctx).Before(softEndTime) && !done {
 		err := retry.Retry(ctx, transient.Only(retry.Default), func() error {
-			// Stop harder if retrying after the attemptTime, to avoid
+			// Stop harder if retrying after the run end time, to avoid
 			// getting stuck in a retry loop if we are running in
 			// parallel with another worker.
-			if !clock.Now(ctx).Before(attemptTime) {
+			if !clock.Now(ctx).Before(runEndTime) {
 				return nil
 			}
 			var err error
@@ -161,21 +154,19 @@ func (w *Worker) Do(ctx context.Context, task *taskspb.ReclusterChunks, duration
 	}
 
 	var continuation *taskspb.ReclusterChunks
-	if finishTime.Before(attemptTime) && !done {
-		ps, err := pt.ExportState()
-		if err != nil {
-			return nil, err
-		}
+	if softEndTime.Before(runEndTime) && !done {
 		continuation = &taskspb.ReclusterChunks{
-			Project:      task.Project,
-			AttemptTime:  task.AttemptTime,
-			StartChunkId: task.StartChunkId,
-			EndChunkId:   task.EndChunkId,
+			ShardNumber:       task.ShardNumber,
+			Project:           task.Project,
+			AttemptTime:       task.AttemptTime,
+			StartChunkId:      task.StartChunkId,
+			EndChunkId:        task.EndChunkId,
+			AlgorithmsVersion: task.AlgorithmsVersion,
+			RulesVersion:      task.RulesVersion,
+			ConfigVersion:     task.ConfigVersion,
 			State: &taskspb.ReclusterChunkState{
-				CurrentChunkId:       tctx.currentChunkID,
-				NextReportDue:        timestamppb.New(tctx.nextReportDue),
-				ReportedOnce:         ps.ReportedOnce,
-				LastReportedProgress: int64(ps.LastReportedProgress),
+				CurrentChunkId: tctx.currentChunkID,
+				NextReportDue:  timestamppb.New(tctx.nextReportDue),
 			},
 		}
 	}
@@ -194,9 +185,9 @@ func (t *taskContext) recluster(ctx context.Context) (done bool, err error) {
 	readOpts := state.ReadNextOptions{
 		StartChunkID:      t.currentChunkID,
 		EndChunkID:        t.task.EndChunkId,
-		AlgorithmsVersion: t.run.AlgorithmsVersion,
-		ConfigVersion:     t.run.ConfigVersion,
-		RulesVersion:      t.run.RulesVersion,
+		AlgorithmsVersion: t.task.AlgorithmsVersion,
+		ConfigVersion:     t.task.ConfigVersion.AsTime(),
+		RulesVersion:      t.task.RulesVersion.AsTime(),
 	}
 	entries, err := state.ReadNextN(span.Single(ctx), t.task.Project, readOpts, batchSize)
 	if err != nil {
@@ -204,9 +195,9 @@ func (t *taskContext) recluster(ctx context.Context) (done bool, err error) {
 	}
 	if len(entries) == 0 {
 		// We have finished re-clustering.
-		err = t.progressToken.ReportProgress(ctx, 1000)
+		err = t.updateProgress(ctx, shards.MaxProgress)
 		if err != nil {
-			return true, errors.Annotate(err, "report progress").Err()
+			return true, err
 		}
 		return true, nil
 	}
@@ -221,13 +212,13 @@ func (t *taskContext) recluster(ctx context.Context) (done bool, err error) {
 		}
 
 		// Obtain a recent ruleset of at least RulesVersion.
-		ruleset, err := Ruleset(ctx, t.task.Project, t.run.RulesVersion)
+		ruleset, err := Ruleset(ctx, t.task.Project, t.task.RulesVersion.AsTime())
 		if err != nil {
 			return false, errors.Annotate(err, "obtain ruleset").Err()
 		}
 
 		// Obtain a recent configuration of at least ConfigVersion.
-		cfg, err := compiledcfg.Project(ctx, t.task.Project, t.run.ConfigVersion)
+		cfg, err := compiledcfg.Project(ctx, t.task.Project, t.task.ConfigVersion.AsTime())
 		if err != nil {
 			return false, errors.Annotate(err, "obtain config").Err()
 		}
@@ -255,7 +246,7 @@ func (t *taskContext) recluster(ctx context.Context) (done bool, err error) {
 			// Advance our position only on successful commit.
 			t.currentChunkID = entry.ChunkID
 
-			if err := t.reportProgress(ctx); err != nil {
+			if err := t.calculateAndReportProgress(ctx); err != nil {
 				return false, err
 			}
 		}
@@ -265,10 +256,10 @@ func (t *taskContext) recluster(ctx context.Context) (done bool, err error) {
 	return false, nil
 }
 
-// reportProgress reports progress on the task, based on the current value
-// of t.currentChunkID. It can only be used to report interim progress (it
+// calculateAndReportProgress reports progress on the shard, based on the current
+// value of t.currentChunkID. It can only be used to report interim progress (it
 // will never report a progress value of 1000).
-func (t *taskContext) reportProgress(ctx context.Context) error {
+func (t *taskContext) calculateAndReportProgress(ctx context.Context) (err error) {
 	// Manage contention on the ReclusteringRun row by only periodically
 	// reporting progress.
 	if clock.Now(ctx).After(t.nextReportDue) {
@@ -277,11 +268,35 @@ func (t *taskContext) reportProgress(ctx context.Context) error {
 			return errors.Annotate(err, "calculate progress").Err()
 		}
 
-		err = t.progressToken.ReportProgress(ctx, progress)
+		err = t.updateProgress(ctx, progress)
 		if err != nil {
-			return errors.Annotate(err, "report progress").Err()
+			return err
 		}
 		t.nextReportDue = t.nextReportDue.Add(ProgressInterval)
+	}
+	return nil
+}
+
+// updateProgress sets progress on the shard.
+func (t *taskContext) updateProgress(ctx context.Context, value int) (err error) {
+	ctx, s := trace.StartSpan(ctx, "go.chromium.org/luci/analysis/internal/clustering/reclustering.updateProgress")
+	defer func() { s.End(err) }()
+
+	_, err = span.ReadWriteTransaction(ctx, func(ctx context.Context) error {
+		err = shards.UpdateProgress(ctx, t.task.ShardNumber, t.task.AttemptTime.AsTime(), value)
+		if err != nil {
+			return errors.Annotate(err, "update progress").Err()
+		}
+		return nil
+	})
+	if err != nil {
+		if status.Code(err) == codes.NotFound {
+			// If the row for the shard has been deleted (i.e. because
+			// we have overrun the end of our reclustering run), drop
+			// the progress update.
+			return nil
+		}
+		return err
 	}
 	return nil
 }
@@ -316,11 +331,11 @@ func calculateProgress(task *taskspb.ReclusterChunks, nextChunkID string) (int, 
 		return 0, fmt.Errorf("next chunk ID %q is after end %q", nextChunkID, task.EndChunkId)
 	}
 
-	// progress = (((nextID - 1) - startID) * 1000) / (endID - startID)
+	// progress = (((nextID - 1) - startID) * shards.MaxProgress) / (endID - startID)
 	var numerator big.Int
 	numerator.Sub(nextID, big.NewInt(1))
 	numerator.Sub(&numerator, startID)
-	numerator.Mul(&numerator, big.NewInt(1000))
+	numerator.Mul(&numerator, big.NewInt(shards.MaxProgress))
 
 	var denominator big.Int
 	denominator.Sub(endID, startID)
