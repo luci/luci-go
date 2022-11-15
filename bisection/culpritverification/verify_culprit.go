@@ -72,17 +72,22 @@ func VerifySuspect(c context.Context, suspect *model.Suspect, failedBuildID int6
 	}
 
 	// Verify the suspect
-	suspectBuild, parentBuild, err := VerifySuspectCommit(c, suspect, failedBuildID, props)
+	priority, err := getSuspectPriority(c, suspect)
+	if err != nil {
+		return errors.Annotate(err, "failed getting priority").Err()
+	}
+
+	suspectBuild, parentBuild, err := VerifySuspectCommit(c, suspect, failedBuildID, props, priority)
 	if err != nil {
 		logging.Errorf(c, "Error triggering rerun for build %d: %s", failedBuildID, err)
 		return err
 	}
-	suspectRerunBuildModel, err := rerun.CreateRerunBuildModel(c, suspectBuild, model.RerunBuildType_CulpritVerification, suspect, nil)
+	suspectRerunBuildModel, err := rerun.CreateRerunBuildModel(c, suspectBuild, model.RerunBuildType_CulpritVerification, suspect, nil, priority)
 	if err != nil {
 		return err
 	}
 
-	parentRerunBuildModel, err := rerun.CreateRerunBuildModel(c, parentBuild, model.RerunBuildType_CulpritVerification, suspect, nil)
+	parentRerunBuildModel, err := rerun.CreateRerunBuildModel(c, parentBuild, model.RerunBuildType_CulpritVerification, suspect, nil, priority)
 	if err != nil {
 		return err
 	}
@@ -114,7 +119,7 @@ func hasNewTarget(c context.Context, failedFiles []string, changelog *model.Chan
 // Returns 2 builds:
 // - The 1st build is the rerun build for the commit
 // - The 2nd build is the rerun build for the parent commit
-func VerifySuspectCommit(c context.Context, suspect *model.Suspect, failedBuildID int64, props map[string]interface{}) (*buildbucketpb.Build, *buildbucketpb.Build, error) {
+func VerifySuspectCommit(c context.Context, suspect *model.Suspect, failedBuildID int64, props map[string]interface{}, priority int32) (*buildbucketpb.Build, *buildbucketpb.Build, error) {
 	commit := &suspect.GitilesCommit
 
 	// Query Gitiles to get parent commit
@@ -128,11 +133,6 @@ func VerifySuspectCommit(c context.Context, suspect *model.Suspect, failedBuildI
 		Project: commit.Project,
 		Ref:     commit.Ref,
 		Id:      p,
-	}
-
-	priority, err := getSuspectPriority(c, suspect)
-	if err != nil {
-		return nil, nil, errors.Annotate(err, "failed getting priority").Err()
 	}
 
 	// Trigger a rerun with commit and parent commit

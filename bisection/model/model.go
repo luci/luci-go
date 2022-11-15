@@ -188,6 +188,8 @@ type SingleRerun struct {
 	Suspect *datastore.Key `gae:"suspect"`
 	// Key to NthSectionAnalysis, if this is for nthsection
 	NthSectionAnalysis *datastore.Key `gae:"nthsection_analysis"`
+	// Priority of this run
+	Priority int32 `gae:"priority"`
 }
 
 // RevertDetails encapsulate the details of revert-related actions.

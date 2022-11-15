@@ -151,7 +151,7 @@ func getRerunDimensions(c context.Context, build *buildbucketpb.Build, dims map[
 }
 
 // CreateRerunBuildModel creates a CompileRerunBuild (and SingleRerun) in datastore
-func CreateRerunBuildModel(c context.Context, build *buildbucketpb.Build, rerunType model.RerunBuildType, suspect *model.Suspect, nsa *model.CompileNthSectionAnalysis) (*model.CompileRerunBuild, error) {
+func CreateRerunBuildModel(c context.Context, build *buildbucketpb.Build, rerunType model.RerunBuildType, suspect *model.Suspect, nsa *model.CompileNthSectionAnalysis, priority int32) (*model.CompileRerunBuild, error) {
 	if rerunType == model.RerunBuildType_CulpritVerification && suspect == nil {
 		return nil, fmt.Errorf("CreateRerunBuildModel requires suspect when type is CulpritVerification")
 	}
@@ -200,6 +200,7 @@ func CreateRerunBuildModel(c context.Context, build *buildbucketpb.Build, rerunT
 		CreateTime: createTime,
 		StartTime:  startTime,
 		Type:       rerunType,
+		Priority:   priority,
 	}
 
 	if rerunType == model.RerunBuildType_CulpritVerification {

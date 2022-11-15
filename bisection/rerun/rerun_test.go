@@ -213,14 +213,14 @@ func TestCreateRerunBuildModel(t *testing.T) {
 		datastore.GetTestable(c).CatchupIndexes()
 
 		Convey("Invalid data", func() {
-			_, err := CreateRerunBuildModel(c, build, model.RerunBuildType_CulpritVerification, nil, nsa)
+			_, err := CreateRerunBuildModel(c, build, model.RerunBuildType_CulpritVerification, nil, nsa, 0)
 			So(err, ShouldNotBeNil)
-			_, err = CreateRerunBuildModel(c, build, model.RerunBuildType_NthSection, suspect, nil)
+			_, err = CreateRerunBuildModel(c, build, model.RerunBuildType_NthSection, suspect, nil, 0)
 			So(err, ShouldNotBeNil)
 		})
 
 		Convey("Culprit verification", func() {
-			rerunBuildModel, err := CreateRerunBuildModel(c, build, model.RerunBuildType_CulpritVerification, suspect, nil)
+			rerunBuildModel, err := CreateRerunBuildModel(c, build, model.RerunBuildType_CulpritVerification, suspect, nil, 100)
 			datastore.GetTestable(c).CatchupIndexes()
 			So(err, ShouldBeNil)
 			So(rerunBuildModel, ShouldResemble, &model.CompileRerunBuild{
@@ -255,7 +255,7 @@ func TestCreateRerunBuildModel(t *testing.T) {
 
 		Convey("Nth Section", func() {
 			build.Id = 124
-			rerunBuildModel1, err := CreateRerunBuildModel(c, build, model.RerunBuildType_NthSection, nil, nsa)
+			rerunBuildModel1, err := CreateRerunBuildModel(c, build, model.RerunBuildType_NthSection, nil, nsa, 100)
 			datastore.GetTestable(c).CatchupIndexes()
 			So(err, ShouldBeNil)
 			So(rerunBuildModel1, ShouldResemble, &model.CompileRerunBuild{

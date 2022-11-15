@@ -106,7 +106,7 @@ func RerunCommit(c context.Context, nsa *model.CompileNthSectionAnalysis, commit
 		return errors.Annotate(err, "couldn't trigger rerun").Err()
 	}
 
-	_, err = rerun.CreateRerunBuildModel(c, build, model.RerunBuildType_NthSection, nil, nsa)
+	_, err = rerun.CreateRerunBuildModel(c, build, model.RerunBuildType_NthSection, nil, nsa, priority)
 	if err != nil {
 		return errors.Annotate(err, "createRerunBuildModel").Err()
 	}
