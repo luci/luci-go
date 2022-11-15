@@ -18,22 +18,84 @@ import (
 	"context"
 	"testing"
 
+	"github.com/golang/mock/gomock"
+	grpc "google.golang.org/grpc"
+	emptypb "google.golang.org/protobuf/types/known/emptypb"
+
+	"go.chromium.org/luci/common/clock/testclock"
+	"go.chromium.org/luci/gae/filter/txndefer"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
+	"go.chromium.org/luci/server/tq"
 
+	"go.chromium.org/luci/buildbucket/appengine/internal/config"
+	"go.chromium.org/luci/buildbucket/appengine/internal/metrics"
 	"go.chromium.org/luci/buildbucket/appengine/model"
 	pb "go.chromium.org/luci/buildbucket/proto"
 
 	. "github.com/smartystreets/goconvey/convey"
-
 	. "go.chromium.org/luci/common/testing/assertions"
 )
+
+type MockedClient struct {
+	Client *MockTaskBackendClient
+	Ctx    context.Context
+}
+
+// MockTaskBackendClient is a mock of TaskBackendClient interface.
+type MockTaskBackendClient struct {
+	ctrl     *gomock.Controller
+	recorder *MockTaskBackendClientMockRecorder
+}
+
+// MockTaskBackendClientMockRecorder is the mock recorder for MockTaskBackendClient.
+type MockTaskBackendClientMockRecorder struct {
+	mock *MockTaskBackendClient
+}
+
+// NewMockTaskBackendClient creates a new mock instance.
+func NewMockTaskBackendClient(ctrl *gomock.Controller) *MockTaskBackendClient {
+	mock := &MockTaskBackendClient{ctrl: ctrl}
+	mock.recorder = &MockTaskBackendClientMockRecorder{mock}
+	return mock
+}
+
+// NewMockedClient creates a MockedClient for testing.
+func NewMockedClient(ctx context.Context, ctl *gomock.Controller) *MockedClient {
+	mockClient := NewMockTaskBackendClient(ctl)
+	return &MockedClient{
+		Client: mockClient,
+		Ctx:    useTaskBackendClientForTesting(ctx, mockClient),
+	}
+}
+
+// RunTask Mocks the RunTask RPC.
+func (mc *MockedClient) RunTask(ctx context.Context, taskReq *pb.RunTaskRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	return new(emptypb.Empty), nil
+}
+
+// useBuildsClientForTesting specifies that the given test double shall be used
+// instead of making calls to TaskBackend.
+func useTaskBackendClientForTesting(ctx context.Context, client *MockTaskBackendClient) context.Context {
+	return context.WithValue(ctx, MockTaskBackendClientKey{}, client)
+}
 
 func TestBackendTask(t *testing.T) {
 	t.Parallel()
 
 	Convey("assert createBackendTask", t, func() {
-		ctx := memory.Use(context.Background())
+		ctl := gomock.NewController(t)
+		defer ctl.Finish()
+		mc := NewMockedClient(context.Background(), ctl)
+		now := testclock.TestRecentTimeUTC
+		ctx, _ := testclock.UseTime(context.Background(), now)
+		ctx = context.WithValue(ctx, MockTaskBackendClientKey{}, mc)
+		ctx = memory.UseWithAppID(ctx, "dev~app-id")
+		ctx = txndefer.FilterRDS(ctx)
+		ctx = metrics.WithServiceInfo(ctx, "svc", "job", "ins")
+		datastore.GetTestable(ctx).AutoIndex(true)
+		datastore.GetTestable(ctx).Consistent(true)
+		ctx, _ = tq.TestingContext(ctx, nil)
 
 		build := &model.Build{
 			ID: 1,
@@ -63,9 +125,34 @@ func TestBackendTask(t *testing.T) {
 				},
 			},
 		}
-
 		So(datastore.Put(ctx, build, infra), ShouldBeNil)
-		err := CreateBackendTask(ctx, 1)
-		So(err, ShouldErrLike, "Method not implemented")
+
+		Convey("global settings not defined", func() {
+			err := CreateBackendTask(ctx, 1)
+			So(err, ShouldErrLike, "could not get global settings config")
+		})
+
+		Convey("target not in global config", func() {
+			backendSettings := []*pb.BackendSettings{}
+			settingsCfg := &pb.SettingsCfg{Backend: backendSettings}
+			err := config.SetTestSettingsCfg(ctx, settingsCfg)
+			So(err, ShouldBeNil)
+			err = CreateBackendTask(ctx, 1)
+			So(err, ShouldErrLike, "could not find target in global config settings")
+		})
+
+		Convey("target is in global config", func() {
+			backendSettings := []*pb.BackendSettings{}
+			backendSettings = append(backendSettings, &pb.BackendSettings{
+				Target:   "swarming://mytarget",
+				Hostname: "hostname",
+			})
+			settingsCfg := &pb.SettingsCfg{Backend: backendSettings}
+			err := config.SetTestSettingsCfg(ctx, settingsCfg)
+			So(err, ShouldBeNil)
+			err = CreateBackendTask(ctx, 1)
+			So(err, ShouldBeNil)
+		})
+
 	})
 }

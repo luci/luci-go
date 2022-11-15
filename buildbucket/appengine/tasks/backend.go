@@ -16,20 +16,96 @@ package tasks
 
 import (
 	"context"
+	"net/http"
 	"strconv"
 	"time"
 
 	"github.com/google/uuid"
+	"google.golang.org/api/googleapi"
 
+	grpc "google.golang.org/grpc"
+	emptypb "google.golang.org/protobuf/types/known/emptypb"
+
+	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/gae/service/datastore"
+	"go.chromium.org/luci/grpc/prpc"
+	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/tq"
 
+	"go.chromium.org/luci/buildbucket/appengine/internal/config"
 	"go.chromium.org/luci/buildbucket/appengine/model"
 	pb "go.chromium.org/luci/buildbucket/proto"
 )
 
+const (
+	// runTaskGiveUpTimeout indicates how long to retry
+	// the CreateBackendTask before giving up with INFRA_FAILURE.
+	runTaskGiveUpTimeout = 10 * 60 * time.Second
+)
+
+type MockTaskBackendClientKey struct{}
+
+type TaskBackendClient interface {
+	RunTask(ctx context.Context, taskReq *pb.RunTaskRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
+}
+
+func newTaskBackendClient(ctx context.Context, host string, project string) (TaskBackendClient, error) {
+	if mockClient, ok := ctx.Value(MockTaskBackendClientKey{}).(TaskBackendClient); ok {
+		return mockClient, nil
+	}
+
+	t, err := auth.GetRPCTransport(ctx, auth.AsProject, auth.WithProject(project))
+	if err != nil {
+		return nil, err
+	}
+
+	return pb.NewTaskBackendPRPCClient(&prpc.Client{
+		C:       &http.Client{Transport: t},
+		Host:    host,
+		Options: prpc.DefaultOptions(),
+	}), nil
+}
+
+// Client is the client to communicate with TaskBackend.
+// It wraps a pb.TaskBackendClient.
+type Client struct {
+	client TaskBackendClient
+}
+
+// NewClient creates a client to communicate with Buildbucket.
+func NewClient(ctx context.Context, host string, project string) (*Client, error) {
+	client, err := newTaskBackendClient(ctx, host, project)
+	if err != nil {
+		return nil, err
+	}
+
+	return &Client{
+		client: client,
+	}, nil
+}
+
+// RunTask returns for the requested task.
+func (c *Client) RunTask(ctx context.Context, taskReq *pb.RunTaskRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	return c.client.RunTask(ctx, taskReq)
+}
+
+func computeHostnameFromTarget(ctx context.Context, target string) (hostname string, err error) {
+	globalCfg, err := config.GetSettingsCfg(ctx)
+	if err != nil {
+		return "", errors.Annotate(err, "could not get global settings config").Err()
+	}
+	for _, config := range globalCfg.Backend {
+		if config.Target == target {
+			return config.Hostname, nil
+		}
+	}
+	return "", errors.Reason("could not find target in global config settings").Err()
+}
+
+// RunTaskRequest related code
 func computeRequestID(hostname string) uuid.UUID {
 	// RequestId = current timestamp + GAE Hostname (which is random)
 	timpestamp := time.Now().Unix()
@@ -66,10 +142,37 @@ func CreateBackendTask(ctx context.Context, buildID int64) error {
 	case err != nil:
 		return transient.Tag.Apply(errors.Annotate(err, "failed to fetch build %d or buildInfra", buildID).Err())
 	}
-	_, err := computeBackendNewTaskReq(ctx, bld, infra)
+
+	taskReq, err := computeBackendNewTaskReq(ctx, bld, infra)
 	if err != nil {
 		return tq.Fatal.Apply(err)
 	}
 
-	return errors.Reason("Method not implemented").Err()
+	hostname, err := computeHostnameFromTarget(ctx, infra.Proto.Backend.Task.Id.Target)
+	if err != nil {
+		return tq.Fatal.Apply(err)
+	}
+
+	// Create a backend task client
+	backend, err := NewClient(ctx, hostname, bld.Proto.Builder.Project)
+	if err != nil {
+		return tq.Fatal.Apply(errors.Annotate(err, "failed to connect to backend service").Err())
+	}
+
+	// Create a backend task via RunTask
+	_, err = backend.RunTask(ctx, taskReq)
+	if err != nil {
+		// Give up if HTTP 500s are happening continuously. Otherwise re-throw the
+		// error so Cloud Tasks retries the task.
+		if apiErr, _ := err.(*googleapi.Error); apiErr == nil || apiErr.Code >= 500 {
+			if clock.Now(ctx).Sub(bld.CreateTime) < runTaskGiveUpTimeout {
+				return transient.Tag.Apply(errors.Annotate(err, "failed to create a backend task").Err())
+			}
+			logging.Errorf(ctx, "Give up backend task creation retry after %s", runTaskGiveUpTimeout.String())
+		}
+		logging.Errorf(ctx, "Backend task creation failure:%s. RunTask request: %+v", err, taskReq)
+		return tq.Fatal.Apply(errors.Annotate(err, "failed to create a backend task").Err())
+	}
+
+	return nil
 }
