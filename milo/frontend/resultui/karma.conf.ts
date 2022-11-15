@@ -15,7 +15,11 @@
 import { Config } from 'karma';
 import { DefinePlugin, ProvidePlugin } from 'webpack';
 
+import puppeteer from 'puppeteer';
+
 import webpackConfig from './webpack.common';
+
+process.env.CHROME_BIN = puppeteer.executablePath();
 
 module.exports = (config: Config) => {
   const isDebug = process.argv.some((arg) => arg === '--debug');
