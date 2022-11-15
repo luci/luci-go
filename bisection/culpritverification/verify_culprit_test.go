@@ -222,15 +222,38 @@ func TestHasNewTargets(t *testing.T) {
 
 func TestGetPriority(t *testing.T) {
 	t.Parallel()
-	c := context.Background()
+	c := memory.Use(context.Background())
 	Convey("GetPriority", t, func() {
 		suspect := &model.Suspect{
-			Score: 1,
+			Score:     1,
+			Id:        123,
+			ReviewUrl: "reviewUrl",
 		}
-		So(getSuspectPriority(c, suspect), ShouldEqual, 140)
+		So(datastore.Put(c, suspect), ShouldBeNil)
+		datastore.GetTestable(c).CatchupIndexes()
+		pri, err := getSuspectPriority(c, suspect)
+		So(err, ShouldBeNil)
+		So(pri, ShouldEqual, 140)
 		suspect.Score = 5
-		So(getSuspectPriority(c, suspect), ShouldEqual, 120)
+		pri, err = getSuspectPriority(c, suspect)
+		So(err, ShouldBeNil)
+		So(pri, ShouldEqual, 120)
 		suspect.Score = 15
-		So(getSuspectPriority(c, suspect), ShouldEqual, 100)
+		pri, err = getSuspectPriority(c, suspect)
+		So(err, ShouldBeNil)
+		So(pri, ShouldEqual, 100)
+
+		// Add another suspect
+		suspect1 := &model.Suspect{
+			Score:              1,
+			Id:                 124,
+			ReviewUrl:          "reviewUrl",
+			VerificationStatus: model.SuspectVerificationStatus_UnderVerification,
+		}
+		So(datastore.Put(c, suspect1), ShouldBeNil)
+		datastore.GetTestable(c).CatchupIndexes()
+		pri, err = getSuspectPriority(c, suspect)
+		So(err, ShouldBeNil)
+		So(pri, ShouldEqual, 120)
 	})
 }

@@ -27,6 +27,7 @@ import (
 	"go.chromium.org/luci/bisection/util/datastoreutil"
 
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
+	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/gae/service/info"
@@ -129,7 +130,10 @@ func VerifySuspectCommit(c context.Context, suspect *model.Suspect, failedBuildI
 		Id:      p,
 	}
 
-	priority := getSuspectPriority(c, suspect)
+	priority, err := getSuspectPriority(c, suspect)
+	if err != nil {
+		return nil, nil, errors.Annotate(err, "failed getting priority").Err()
+	}
 
 	// Trigger a rerun with commit and parent commit
 	build1, err := rerun.TriggerRerun(c, commit, failedBuildID, props, nil, priority)
@@ -145,7 +149,7 @@ func VerifySuspectCommit(c context.Context, suspect *model.Suspect, failedBuildI
 	return build1, build2, nil
 }
 
-func getSuspectPriority(c context.Context, suspect *model.Suspect) int32 {
+func getSuspectPriority(c context.Context, suspect *model.Suspect) (int32, error) {
 	// TODO (nqmtuan): Support priority for nth-section case
 	// For now let's return the baseline for culprit verification
 	// We can add offset later
@@ -159,5 +163,20 @@ func getSuspectPriority(c context.Context, suspect *model.Suspect) int32 {
 	case pb.SuspectConfidenceLevel_LOW:
 		pri = rerun.PriorityCulpritVerificationLowConfidence
 	}
-	return rerun.CapPriority(pri)
+
+	// Check if the same suspect has any running build
+	otherSuspects, err := datastoreutil.GetOtherSuspectsWithSameCL(c, suspect)
+	if err != nil {
+		return 0, errors.Annotate(err, "failed GetOtherSuspectsWithSameCL %d", suspect.Id).Err()
+	}
+
+	// If there is a running/finished suspect run -> lower priority of this run
+	for _, s := range otherSuspects {
+		if s.VerificationStatus == model.SuspectVerificationStatus_UnderVerification || s.VerificationStatus == model.SuspectVerificationStatus_ConfirmedCulprit || s.VerificationStatus == model.SuspectVerificationStatus_Vindicated {
+			pri += rerun.PriorityAnotherVerificationBuildExistOffset
+			break
+		}
+	}
+
+	return rerun.CapPriority(pri), nil
 }

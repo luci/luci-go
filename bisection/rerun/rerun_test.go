@@ -340,6 +340,7 @@ func TestUpdateRerunStartTime(t *testing.T) {
 		// Checking the start time
 		So(datastore.Get(c, rerunBuild), ShouldBeNil)
 		So(rerunBuild.StartTime.Unix(), ShouldEqual, 100)
+		So(rerunBuild.Status, ShouldEqual, bbpb.Status_STARTED)
 		So(datastore.Get(c, singleRerun), ShouldBeNil)
 		So(singleRerun.StartTime.Unix(), ShouldEqual, 100)
 	})

@@ -414,3 +414,31 @@ func TestGetCompileFailureAnalysis(t *testing.T) {
 		So(analysis.Id, ShouldEqual, 123)
 	})
 }
+
+func TestGetOtherSuspectsWithSameCL(t *testing.T) {
+	t.Parallel()
+	c := memory.Use(context.Background())
+
+	Convey("GetOtherSuspectsWithSameCL", t, func() {
+		suspect := &model.Suspect{
+			ReviewUrl: "https://this/is/review/url",
+			Id:        123,
+		}
+		So(datastore.Put(c, suspect), ShouldBeNil)
+		datastore.GetTestable(c).CatchupIndexes()
+		suspects, err := GetOtherSuspectsWithSameCL(c, suspect)
+		So(err, ShouldBeNil)
+		So(len(suspects), ShouldEqual, 0)
+
+		suspect1 := &model.Suspect{
+			ReviewUrl: "https://this/is/review/url",
+			Id:        124,
+		}
+		So(datastore.Put(c, suspect1), ShouldBeNil)
+		datastore.GetTestable(c).CatchupIndexes()
+		suspects, err = GetOtherSuspectsWithSameCL(c, suspect)
+		So(err, ShouldBeNil)
+		So(len(suspects), ShouldEqual, 1)
+		So(suspects[0].Id, ShouldEqual, 124)
+	})
+}

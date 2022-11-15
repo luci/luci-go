@@ -255,6 +255,7 @@ func UpdateRerunStartTime(c context.Context, bbid int64) error {
 
 	startTime := build.StartTime.AsTime()
 	rerunModel.StartTime = startTime
+	rerunModel.Status = build.Status
 
 	err = datastore.Put(c, rerunModel)
 	if err != nil {

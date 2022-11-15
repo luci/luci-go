@@ -191,3 +191,23 @@ func GetCompileFailureAnalysis(c context.Context, analysisID int64) (*model.Comp
 	}
 	return analysis, err
 }
+
+// GetOtherSuspectsWithSameCL returns the list of Suspect(from different analyses)
+// that has the same reviewURL as this suspect.
+// It is meant to check if the same CL is the suspects for multiple failures.
+func GetOtherSuspectsWithSameCL(c context.Context, suspect *model.Suspect) ([]*model.Suspect, error) {
+	suspects := []*model.Suspect{}
+	q := datastore.NewQuery("Suspect").Eq("review_url", suspect.ReviewUrl)
+	err := datastore.GetAll(c, q, &suspects)
+	if err != nil {
+		return nil, errors.Annotate(err, "failed GetSameSuspects").Err()
+	}
+
+	// Remove this suspect
+	for i, s := range suspects {
+		if s.Id == suspect.Id {
+			return append(suspects[:i], suspects[i+1:]...), nil
+		}
+	}
+	return suspects, nil
+}
