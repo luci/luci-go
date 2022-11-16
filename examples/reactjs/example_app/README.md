@@ -38,6 +38,23 @@ Delete the items corresponding the the framework you won't use.
    1. `example_react_query` folder.
    2. `react-query` from `package.json`.
 
+
+## Getting ESLint to work with TypeScript paths in the VSCode
+
+To get `TypeScript`'s paths (such as `@/`) working with ESLint
+you will need to add the following line to your vscode settings:
+
+```json
+"eslint.workingDirectories": [
+   {
+      "mode": "auto"
+   }
+],
+```
+
+This is because we use a monorepo and we need to localize the `tsconfig`
+loaded for vscode's ESlint plugin.
+
 ## Building and running the project
 After making the modifications mentioned above and you have a working project,
 you can use the following commands:

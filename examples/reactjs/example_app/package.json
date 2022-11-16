@@ -9,7 +9,7 @@
         "typecheck": "tsc --noEmit --skipLibCheck",
         "test": "tsc --noEmit --skipLibCheck && jest",
         "e2e": "tsc --noEmit --skipLibCheck && cypress run",
-        "fix-eslint": "npx eslint --fix"
+        "fix-eslint": "npx eslint --fix ./"
     },
     "author": "{USER}@google.com",
     "devDependencies": {
@@ -29,6 +29,7 @@
         "eslint-config-google": "^0.14.0",
         "eslint-config-prettier": "^8.5.0",
         "eslint-import-resolver-typescript": "^3.5.2",
+        "eslint-plugin-cypress": "^2.12.1",
         "eslint-plugin-import": "^2.26.0",
         "eslint-plugin-jest": "^26.8.7",
         "eslint-plugin-jsx-a11y": "^6.6.1",
