@@ -90,42 +90,55 @@ func TestHandleBuild(t *testing.T) {
 			mrc := resultdb.NewMockedClient(ctx, ctl)
 			ctx := mrc.Ctx
 
-			Convey(`Not contained by ancestor`, func() {
+			Convey(`Without invocation`, func() {
 				build = build.WithContainedByAncestor(false)
 				expectedTask.Build = build.ExpectedResult()
-
-				req := &resultpb.GetInvocationRequest{
-					Name: "invocations/build-57575757",
-				}
-				res := &resultpb.Invocation{
-					Name:                "invocations/build-57575757",
-					IncludedInvocations: []string{"invocations/build-unrelated"},
-				}
-				mrc.GetInvocation(req, res)
 
 				// Process build.
 				So(ingestBuild(ctx, build), ShouldBeNil)
 				assertTasksExpected()
 			})
-			Convey(`Contained by ancestor`, func() {
-				build = build.WithContainedByAncestor(true)
-				expectedTask.Build = build.ExpectedResult()
+			Convey(`With invocation`, func() {
+				So(ingestFinalization(ctx, build.buildID), ShouldBeNil)
+				So(len(skdr.Tasks().Payloads()), ShouldEqual, 0)
 
-				req := &resultpb.GetInvocationRequest{
-					Name: "invocations/build-57575757",
-				}
-				res := &resultpb.Invocation{
-					Name: "invocations/build-57575757",
-					IncludedInvocations: []string{
-						"invocations/build-unrelated",
-						fmt.Sprintf("invocations/build-%v", build.buildID),
-					},
-				}
-				mrc.GetInvocation(req, res)
+				Convey(`Not contained by ancestor`, func() {
+					build = build.WithInvocation().WithContainedByAncestor(false)
+					expectedTask.Build = build.ExpectedResult()
 
-				// Process build.
-				So(ingestBuild(ctx, build), ShouldBeNil)
-				assertTasksExpected()
+					req := &resultpb.GetInvocationRequest{
+						Name: "invocations/build-57575757",
+					}
+					res := &resultpb.Invocation{
+						Name:                "invocations/build-57575757",
+						IncludedInvocations: []string{"invocations/build-unrelated"},
+					}
+					mrc.GetInvocation(req, res)
+
+					// Process build.
+					So(ingestBuild(ctx, build), ShouldBeNil)
+					assertTasksExpected()
+				})
+				Convey(`Contained by ancestor`, func() {
+					build = build.WithInvocation().WithContainedByAncestor(true)
+					expectedTask.Build = build.ExpectedResult()
+
+					req := &resultpb.GetInvocationRequest{
+						Name: "invocations/build-57575757",
+					}
+					res := &resultpb.Invocation{
+						Name: "invocations/build-57575757",
+						IncludedInvocations: []string{
+							"invocations/build-unrelated",
+							fmt.Sprintf("invocations/build-%v", build.buildID),
+						},
+					}
+					mrc.GetInvocation(req, res)
+
+					// Process build.
+					So(ingestBuild(ctx, build), ShouldBeNil)
+					assertTasksExpected()
+				})
 			})
 		})
 		Convey(`With build that is part of a LUCI CV run`, func() {

@@ -101,7 +101,8 @@ func JoinBuild(ctx context.Context, bbHost, project string, buildID int64) (proc
 
 	hasInvocation := false
 	invocationName := build.GetInfra().GetResultdb().GetInvocation()
-	if invocationName != "" {
+	rdbHostName := build.GetInfra().GetResultdb().GetHostname()
+	if rdbHostName != "" && invocationName != "" {
 		wantInvocationName := control.BuildInvocationName(buildID)
 		if invocationName != wantInvocationName {
 			// If a build does not have an invocation of this form, it will never
@@ -113,14 +114,14 @@ func JoinBuild(ctx context.Context, bbHost, project string, buildID int64) (proc
 	}
 
 	isIncludedByAncestor := false
-	if len(build.AncestorIds) > 0 {
+	if len(build.AncestorIds) > 0 && hasInvocation {
 		// If the build has an ancestor build, see if its immediate
 		// ancestor is accessible by LUCI Analysis and has a ResultDB
 		// invocation (likely indicating it includes the test results
 		// from this build).
 		ancestorBuildID := build.AncestorIds[len(build.AncestorIds)-1]
 		var err error
-		isIncludedByAncestor, err = includedByAncestorBuild(ctx, buildID, ancestorBuildID, bbHost, project)
+		isIncludedByAncestor, err = includedByAncestorBuild(ctx, buildID, ancestorBuildID, rdbHostName, project)
 		if err != nil {
 			return false, transient.Tag.Apply(err)
 		}
