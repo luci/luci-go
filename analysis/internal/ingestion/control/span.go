@@ -27,6 +27,7 @@ import (
 	"go.chromium.org/luci/analysis/internal/config"
 	ctlpb "go.chromium.org/luci/analysis/internal/ingestion/control/proto"
 	spanutil "go.chromium.org/luci/analysis/internal/span"
+	analysispb "go.chromium.org/luci/analysis/proto/v1"
 )
 
 // JoinStatsHours is the number of previous hours
@@ -423,7 +424,7 @@ func validateEntry(e *Entry) error {
 	}
 
 	if e.BuildResult != nil {
-		if err := validateBuildResult(e.BuildResult); err != nil {
+		if err := ValidateBuildResult(e.BuildResult); err != nil {
 			return errors.Annotate(err, "build result").Err()
 		}
 		if !config.ProjectRe.MatchString(e.BuildProject) {
@@ -454,7 +455,7 @@ func validateEntry(e *Entry) error {
 		if !e.IsPresubmit {
 			return errors.New("presubmit result must not be set unless IsPresubmit is set")
 		}
-		if err := validatePresubmitResult(e.PresubmitResult); err != nil {
+		if err := ValidatePresubmitResult(e.PresubmitResult); err != nil {
 			return errors.Annotate(err, "presubmit result").Err()
 		}
 		if !config.ProjectRe.MatchString(e.PresubmitProject) {
@@ -473,7 +474,7 @@ func validateEntry(e *Entry) error {
 	return nil
 }
 
-func validateBuildResult(r *ctlpb.BuildResult) error {
+func ValidateBuildResult(r *ctlpb.BuildResult) error {
 	switch {
 	case r.Host == "":
 		return errors.New("host must be specified")
@@ -481,11 +482,19 @@ func validateBuildResult(r *ctlpb.BuildResult) error {
 		return errors.New("id must be specified")
 	case !r.CreationTime.IsValid():
 		return errors.New("creation time must be specified")
+	case r.Project == "":
+		return errors.New("project must be specified")
+	case r.HasInvocation && r.ResultdbHost == "":
+		return errors.New("resultdb_host must be specified if has_invocation set")
+	case r.Builder == "":
+		return errors.New("builder must be specified")
+	case r.Status == analysispb.BuildStatus_BUILD_STATUS_UNSPECIFIED:
+		return errors.New("build status must be specified")
 	}
 	return nil
 }
 
-func validatePresubmitResult(r *ctlpb.PresubmitResult) error {
+func ValidatePresubmitResult(r *ctlpb.PresubmitResult) error {
 	switch {
 	case r.PresubmitRunId == nil:
 		return errors.New("presubmit run ID must be specified")
@@ -496,6 +505,10 @@ func validatePresubmitResult(r *ctlpb.PresubmitResult) error {
 		return errors.New("presubmit run system-specific ID must be specified")
 	case !r.CreationTime.IsValid():
 		return errors.New("creation time must be specified and valid")
+	case r.Status == analysispb.PresubmitRunStatus_PRESUBMIT_RUN_STATUS_UNSPECIFIED:
+		return errors.New("status must be specified")
+	case r.Mode == analysispb.PresubmitRunMode_PRESUBMIT_RUN_MODE_UNSPECIFIED:
+		return errors.New("mode must be specified")
 	}
 	return nil
 }

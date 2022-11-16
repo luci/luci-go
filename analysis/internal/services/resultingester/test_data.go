@@ -15,10 +15,8 @@
 package resultingester
 
 import (
-	"strings"
 	"time"
 
-	bbpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/proto/mask"
 	"go.chromium.org/luci/resultdb/pbutil"
 	rdbpb "go.chromium.org/luci/resultdb/proto/v1"
@@ -44,58 +42,6 @@ var updatedTmd = &rdbpb.TestMetadata{
 		FileName: "file_name",
 		Line:     456,
 	},
-}
-
-func mockedGetBuildRsp(inv string) *bbpb.Build {
-	build := &bbpb.Build{
-		Builder: &bbpb.BuilderID{
-			Project: "project",
-			Bucket:  "ci",
-			Builder: "builder",
-		},
-		Infra: &bbpb.BuildInfra{
-			Resultdb: &bbpb.BuildInfra_ResultDB{
-				Hostname:   "results.api.cr.dev",
-				Invocation: inv,
-			},
-		},
-		Status: bbpb.Status_FAILURE,
-		Input: &bbpb.Build_Input{
-			GerritChanges: []*bbpb.GerritChange{
-				{
-					Host:     "mygerrit-review.googlesource.com",
-					Change:   12345,
-					Patchset: 5,
-				},
-				{
-					Host:     "anothergerrit-review.googlesource.com",
-					Change:   77788,
-					Patchset: 19,
-				},
-			},
-		},
-		Output: &bbpb.Build_Output{
-			GitilesCommit: &bbpb.GitilesCommit{
-				Host:     "myproject.googlesource.com",
-				Project:  "someproject/src",
-				Id:       strings.Repeat("0a", 20),
-				Ref:      "refs/heads/mybranch",
-				Position: 111888,
-			},
-		},
-		AncestorIds: []int64{},
-	}
-
-	isFieldNameJSON := false
-	isUpdateMask := false
-	m, err := mask.FromFieldMask(buildReadMask, build, isFieldNameJSON, isUpdateMask)
-	if err != nil {
-		panic(err)
-	}
-	if err := m.Trim(build); err != nil {
-		panic(err)
-	}
-	return build
 }
 
 func mockedQueryTestVariantsRsp() *rdbpb.QueryTestVariantsResponse {

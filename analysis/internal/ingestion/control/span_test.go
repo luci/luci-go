@@ -25,6 +25,7 @@ import (
 	"go.chromium.org/luci/server/span"
 
 	"go.chromium.org/luci/analysis/internal/testutil"
+	analysispb "go.chromium.org/luci/analysis/proto/v1"
 )
 
 func TestSpan(t *testing.T) {
@@ -138,6 +139,27 @@ func TestSpan(t *testing.T) {
 					_, err := testInsertOrUpdate(e)
 					So(err, ShouldErrLike, "build result: creation time must be specified")
 				})
+				Convey(`Missing project`, func() {
+					e.BuildResult.Project = ""
+					_, err := testInsertOrUpdate(e)
+					So(err, ShouldErrLike, "build result: project must be specified")
+				})
+				Convey(`Missing resultdb_host`, func() {
+					e.BuildResult.HasInvocation = true
+					e.BuildResult.ResultdbHost = ""
+					_, err := testInsertOrUpdate(e)
+					So(err, ShouldErrLike, "build result: resultdb_host must be specified if has_invocation set")
+				})
+				Convey(`Missing builder`, func() {
+					e.BuildResult.Builder = ""
+					_, err := testInsertOrUpdate(e)
+					So(err, ShouldErrLike, "build result: builder must be specified")
+				})
+				Convey(`Missing status`, func() {
+					e.BuildResult.Status = analysispb.BuildStatus_BUILD_STATUS_UNSPECIFIED
+					_, err := testInsertOrUpdate(e)
+					So(err, ShouldErrLike, "build result: build status must be specified")
+				})
 			})
 			Convey(`With invalid Invocation Project`, func() {
 				Convey(`Missing`, func() {
@@ -197,6 +219,16 @@ func TestSpan(t *testing.T) {
 					e.PresubmitResult.CreationTime = nil
 					_, err := testInsertOrUpdate(e)
 					So(err, ShouldErrLike, "presubmit result: creation time must be specified")
+				})
+				Convey(`Missing mode`, func() {
+					e.PresubmitResult.Mode = analysispb.PresubmitRunMode_PRESUBMIT_RUN_MODE_UNSPECIFIED
+					_, err := testInsertOrUpdate(e)
+					So(err, ShouldErrLike, "presubmit result: mode must be specified")
+				})
+				Convey(`Missing status`, func() {
+					e.PresubmitResult.Status = analysispb.PresubmitRunStatus_PRESUBMIT_RUN_STATUS_UNSPECIFIED
+					_, err := testInsertOrUpdate(e)
+					So(err, ShouldErrLike, "presubmit result: status must be specified")
 				})
 			})
 		})

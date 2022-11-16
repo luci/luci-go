@@ -16,7 +16,6 @@ package resultingester
 
 import (
 	"context"
-	"fmt"
 	"strings"
 	"time"
 
@@ -58,7 +57,7 @@ func extractGitReference(project string, commit *bbpb.GitilesCommit) *gitreferen
 
 // extractIngestionContext extracts the ingested invocation and
 // the git reference tested (if any).
-func extractIngestionContext(task *taskspb.IngestTestResults, build *bbpb.Build, inv *rdbpb.Invocation) (*testresults.IngestedInvocation, *gitreferences.GitReference, error) {
+func extractIngestionContext(task *taskspb.IngestTestResults, inv *rdbpb.Invocation) (*testresults.IngestedInvocation, *gitreferences.GitReference, error) {
 	invID, err := rdbpbutil.ParseInvocationName(inv.Name)
 	if err != nil {
 		// This should never happen. Inv was originated from ResultDB.
@@ -74,29 +73,11 @@ func extractIngestionContext(task *taskspb.IngestTestResults, build *bbpb.Build,
 			proj, task.Build.Project, task.Build.Host, task.Build.Id).Err()
 	}
 
-	var buildStatus pb.BuildStatus
-	switch build.Status {
-	case bbpb.Status_CANCELED:
-		buildStatus = pb.BuildStatus_BUILD_STATUS_CANCELED
-	case bbpb.Status_SUCCESS:
-		buildStatus = pb.BuildStatus_BUILD_STATUS_SUCCESS
-	case bbpb.Status_FAILURE:
-		buildStatus = pb.BuildStatus_BUILD_STATUS_FAILURE
-	case bbpb.Status_INFRA_FAILURE:
-		buildStatus = pb.BuildStatus_BUILD_STATUS_INFRA_FAILURE
-	default:
-		return nil, nil, fmt.Errorf("build has unknown status: %v", build.Status)
-	}
-
-	gerritChanges := build.GetInput().GetGerritChanges()
+	gerritChanges := task.Build.Changelists
 	changelists := make([]testresults.Changelist, 0, len(gerritChanges))
 	for _, change := range gerritChanges {
-		if !strings.HasSuffix(change.Host, testresults.GerritHostnameSuffix) {
-			return nil, nil, fmt.Errorf(`gerrit host %q does not end in expected suffix %q`, change.Host, testresults.GerritHostnameSuffix)
-		}
-		host := strings.TrimSuffix(change.Host, testresults.GerritHostnameSuffix)
 		changelists = append(changelists, testresults.Changelist{
-			Host:     host,
+			Host:     change.Host,
 			Change:   change.Change,
 			Patchset: change.Patchset,
 		})
@@ -124,15 +105,12 @@ func extractIngestionContext(task *taskspb.IngestTestResults, build *bbpb.Build,
 		IngestedInvocationID: invID,
 		SubRealm:             subRealm,
 		PartitionTime:        task.PartitionTime.AsTime(),
-		BuildStatus:          buildStatus,
+		BuildStatus:          task.Build.Status,
 		PresubmitRun:         presubmitRun,
 		Changelists:          changelists,
 	}
 
-	commit := build.Output.GetGitilesCommit()
-	if commit == nil {
-		commit = build.Input.GetGitilesCommit()
-	}
+	commit := task.Build.Commit
 	var gitRef *gitreferences.GitReference
 	if commit != nil {
 		gitRef = extractGitReference(proj, commit)

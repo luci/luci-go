@@ -20,7 +20,6 @@ import (
 	"regexp"
 	"time"
 
-	bbpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
@@ -40,7 +39,6 @@ import (
 
 	"go.chromium.org/luci/analysis/internal/analysis"
 	"go.chromium.org/luci/analysis/internal/analysis/clusteredfailures"
-	"go.chromium.org/luci/analysis/internal/buildbucket"
 	"go.chromium.org/luci/analysis/internal/clustering/chunkstore"
 	"go.chromium.org/luci/analysis/internal/clustering/ingestion"
 	"go.chromium.org/luci/analysis/internal/config"
@@ -77,20 +75,9 @@ var (
 		// The LUCI Project.
 		field.String("project"),
 		// "success", "failed_validation",
-		// "ignored_no_bb_access", "ignored_no_project_config",
-		// "ignored_no_invocation", "ignored_has_ancestor".
+		// "ignored_no_invocation", "ignored_has_ancestor",
+		// "ignored_no_resultdb_access".
 		field.String("outcome"))
-
-	ancestorCounter = metric.NewCounter(
-		"analysis/ingestion/ancestor_build_status",
-		"The status retrieving ancestor builds in ingestion tasks, by build project.",
-		nil,
-		// The LUCI Project.
-		field.String("project"),
-		// "no_bb_access_to_ancestor",
-		// "no_resultdb_invocation_on_ancestor",
-		// "ok".
-		field.String("ancestor_status"))
 
 	testVariantReadMask = &fieldmaskpb.FieldMask{
 		Paths: []string{
@@ -187,21 +174,7 @@ func (i *resultIngester) ingestTestResults(ctx context.Context, payload *taskspb
 		return tq.Fatal.Apply(err)
 	}
 
-	// Buildbucket build only has builder, infra.resultdb, status populated.
-	build, err := retrieveBuild(ctx, payload.Build.Host, payload.Build.Id)
-	code := status.Code(err)
-	if code == codes.NotFound {
-		// Build not found, end the task gracefully.
-		logging.Warningf(ctx, "Buildbucket build %s/%d for project %s not found (or LUCI Analysis does not have access to read it).",
-			payload.Build.Host, payload.Build.Id, payload.Build.Project)
-		taskCounter.Add(ctx, 1, payload.Build.Project, "ignored_no_bb_access")
-		return nil
-	}
-	if err != nil {
-		return transient.Tag.Apply(err)
-	}
-
-	if build.Infra.GetResultdb().GetInvocation() == "" {
+	if !payload.Build.HasInvocation {
 		// Build does not have a ResultDB invocation to ingest.
 		logging.Debugf(ctx, "Skipping ingestion of build %s-%d because it has no ResultDB invocation.",
 			payload.Build.Host, payload.Build.Id)
@@ -209,36 +182,21 @@ func (i *resultIngester) ingestTestResults(ctx context.Context, payload *taskspb
 		return nil
 	}
 
-	if payload.TaskIndex == 0 {
-		// Before ingesting any of the build. If we are already ingesting the
-		// build (TaskIndex > 0), we made it past this check before.
-		if len(build.AncestorIds) > 0 {
-			// If the build has an ancestor build, see if its immediate
-			// ancestor is accessible by LUCI Analysis and has a ResultDB
-			// invocation (likely indicating it includes the test results
-			// from this build).
-			included, err := includedByAncestorBuild(ctx, build, payload.Build.Host, payload.Build.Project)
-			if err != nil {
-				return transient.Tag.Apply(err)
-			}
-			if included {
-				// Yes. Do not ingest this build to avoid ingesting the same test
-				// results multiple times.
-				taskCounter.Add(ctx, 1, payload.Build.Project, "ignored_has_ancestor")
-				return nil
-			}
-		}
+	if payload.Build.IsIncludedByAncestor {
+		// Yes. Do not ingest this build to avoid ingesting the same test
+		// results multiple times.
+		taskCounter.Add(ctx, 1, payload.Build.Project, "ignored_has_ancestor")
+		return nil
 	}
 
-	rdbHost := build.Infra.Resultdb.Hostname
-	invName := build.Infra.Resultdb.Invocation
-	builder := build.Builder.Builder
+	rdbHost := payload.Build.ResultdbHost
+	invName := control.BuildInvocationName(payload.Build.Id)
 	rc, err := resultdb.NewClient(ctx, rdbHost)
 	if err != nil {
 		return transient.Tag.Apply(err)
 	}
 	inv, err := rc.GetInvocation(ctx, invName)
-	code = status.Code(err)
+	code := status.Code(err)
 	if code == codes.NotFound {
 		// Invocation not found, end the task gracefully.
 		logging.Warningf(ctx, "Invocation %s for project %s not found (or LUCI Analysis does not have access to read it).",
@@ -250,7 +208,7 @@ func (i *resultIngester) ingestTestResults(ctx context.Context, payload *taskspb
 		return transient.Tag.Apply(err)
 	}
 
-	ingestedInv, gitRef, err := extractIngestionContext(payload, build, inv)
+	ingestedInv, gitRef, err := extractIngestionContext(payload, inv)
 	if err != nil {
 		return err
 	}
@@ -324,6 +282,7 @@ func (i *resultIngester) ingestTestResults(ctx context.Context, payload *taskspb
 		shouldIngestForTestVariants(realmCfg, payload)
 
 	if ingestForTestVariantAnalysis {
+		builder := payload.Build.Builder
 		if err := createOrUpdateAnalyzedTestVariants(ctx, inv.Realm, builder, failingTVs); err != nil {
 			err = errors.Annotate(err, "ingesting for test variant analysis").Err()
 			return transient.Tag.Apply(err)
@@ -335,7 +294,7 @@ func (i *resultIngester) ingestTestResults(ctx context.Context, payload *taskspb
 			contributedToCLSubmission := payload.PresubmitRun != nil &&
 				payload.PresubmitRun.Mode == pb.PresubmitRunMode_FULL_RUN &&
 				payload.PresubmitRun.Status == pb.PresubmitRunStatus_PRESUBMIT_RUN_STATUS_SUCCEEDED
-			if err = resultcollector.Schedule(ctx, inv, rdbHost, build.Builder.Builder, isPreSubmit, contributedToCLSubmission); err != nil {
+			if err = resultcollector.Schedule(ctx, inv, rdbHost, builder, isPreSubmit, contributedToCLSubmission); err != nil {
 				return transient.Tag.Apply(err)
 			}
 		}
@@ -346,73 +305,6 @@ func (i *resultIngester) ingestTestResults(ctx context.Context, payload *taskspb
 		taskCounter.Add(ctx, 1, payload.Build.Project, "success")
 	}
 	return nil
-}
-
-func includedByAncestorBuild(ctx context.Context, build *bbpb.Build, buildHost string, project string) (bool, error) {
-	ancestorBuildID := build.AncestorIds[len(build.AncestorIds)-1]
-
-	// Retrieve the ancestor build.
-	ancestorBuild, err := retrieveBuild(ctx, buildHost, ancestorBuildID)
-	code := status.Code(err)
-	if code == codes.NotFound {
-		logging.Warningf(ctx, "Buildbucket ancestor build %s/%d for project %s not found (or LUCI Analysis does not have access to read it).",
-			buildHost, ancestorBuildID, project)
-		// LUCI Analysis won't be able to retrieve the ancestor build to
-		// ingest it, even if it did include the test results from this build.
-		// Continue ingestion of this build.
-		ancestorCounter.Add(ctx, 1, project, "no_bb_access_to_ancestor")
-		return false, nil
-	}
-	if err != nil {
-		return false, errors.Annotate(err, "retrieving ancestor build").Err()
-	}
-	if ancestorBuild.Infra.GetResultdb().GetInvocation() == "" {
-		ancestorCounter.Add(ctx, 1, project, "no_resultdb_invocation_on_ancestor")
-		return false, nil
-	}
-
-	rdbHost := ancestorBuild.Infra.Resultdb.Hostname
-	ancestorInvName := ancestorBuild.Infra.Resultdb.Invocation
-
-	rc, err := resultdb.NewClient(ctx, rdbHost)
-	if err != nil {
-		return false, transient.Tag.Apply(err)
-	}
-	ancestorInv, err := rc.GetInvocation(ctx, ancestorInvName)
-	code = status.Code(err)
-	if code == codes.NotFound {
-		logging.Warningf(ctx, "ResultDB invocation on ancestor build %s/%d for project %s not found (or LUCI Analysis does not have access to read it).",
-			buildHost, ancestorBuildID, project)
-		// Invocation on the ancestor build not found.
-		// Continue ingestion of this build.
-		ancestorCounter.Add(ctx, 1, project, "resultdb_invocation_on_ancestor_not_found")
-		return false, nil
-	}
-	if err != nil {
-		return false, transient.Tag.Apply(errors.Annotate(err, "fetch ancestor build ResultDB invocation").Err())
-	}
-
-	containsThisBuild := false
-	buildInvocation := build.Infra.GetResultdb().GetInvocation()
-
-	for _, inv := range ancestorInv.IncludedInvocations {
-		if inv == buildInvocation {
-			containsThisBuild = true
-		}
-	}
-
-	if !containsThisBuild {
-		// The ancestor build's invocation does not contain the ResultDB
-		// invocation of this build. Continue ingestion of this build.
-		ancestorCounter.Add(ctx, 1, project, "resultdb_invocation_on_ancestor_does_not_contain")
-		return false, nil
-	}
-
-	// The ancestor build also has a ResultDB invocation, and it
-	// contains this invocation. We will ingest the ancestor build
-	// only to avoid ingesting the same test results multiple times.
-	ancestorCounter.Add(ctx, 1, project, "ok")
-	return true, nil
 }
 
 // filterToTestVariantsWithUnexpectedFailures filters the given list of
@@ -556,27 +448,8 @@ func validateRequest(ctx context.Context, payload *taskspb.IngestTestResults) er
 	if payload.Build == nil {
 		return errors.New("build must be specified")
 	}
-	if payload.Build.Project == "" {
-		return errors.New("project must be specified")
+	if err := control.ValidateBuildResult(payload.Build); err != nil {
+		return err
 	}
 	return nil
-}
-
-func retrieveBuild(ctx context.Context, bbHost string, id int64) (*bbpb.Build, error) {
-	bc, err := buildbucket.NewClient(ctx, bbHost)
-	if err != nil {
-		return nil, err
-	}
-	request := &bbpb.GetBuildRequest{
-		Id: id,
-		Mask: &bbpb.BuildMask{
-			Fields: buildReadMask,
-		},
-	}
-	b, err := bc.GetBuild(ctx, request)
-	switch {
-	case err != nil:
-		return nil, err
-	}
-	return b, nil
 }

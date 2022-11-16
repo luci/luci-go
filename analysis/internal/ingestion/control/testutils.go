@@ -17,9 +17,11 @@ package control
 import (
 	"context"
 	"fmt"
+	"strings"
 	"time"
 
 	"cloud.google.com/go/spanner"
+	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/server/span"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
@@ -44,6 +46,26 @@ func NewEntry(uniqifier int) *EntryBuilder {
 				Host:         "buildbucket-host",
 				Id:           int64(uniqifier),
 				CreationTime: timestamppb.New(time.Date(2025, time.December, 1, 1, 2, 3, uniqifier*1000, time.UTC)),
+				Project:      "myproject",
+				Builder:      "builder",
+				Status:       pb.BuildStatus_BUILD_STATUS_SUCCESS,
+				Changelists: []*controlpb.BuildResult_Changelist{
+					{
+						Host:     "myhost",
+						Change:   123456,
+						Patchset: 123,
+					},
+				},
+				Commit: &buildbucketpb.GitilesCommit{
+					Host:     "myproject.googlesource.com",
+					Project:  "someproject/src",
+					Id:       strings.Repeat("0a", 20),
+					Ref:      "refs/heads/mybranch",
+					Position: 111888,
+				},
+				HasInvocation:        true,
+				ResultdbHost:         "resultdb_host",
+				IsIncludedByAncestor: true,
 			},
 			BuildJoinedTime:      time.Date(2020, time.December, 11, 1, 1, 1, uniqifier*1000, time.UTC),
 			HasInvocation:        true,

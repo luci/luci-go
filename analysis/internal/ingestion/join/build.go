@@ -57,17 +57,16 @@ var (
 		// "success", "permission_denied".
 		field.String("status"))
 
-	// TODO(b/258734241): Enable when switching ancestor checks from ingestion task to here.
-	// ancestorCounter = metric.NewCounter(
-	// 	"analysis/ingestion/ancestor_build_status",
-	// 	"The status retrieving ancestor builds in ingestion tasks, by build project.",
-	// 	nil,
-	// 	// The LUCI Project.
-	// 	field.String("project"),
-	// 	// "no_bb_access_to_ancestor",
-	// 	// "no_resultdb_invocation_on_ancestor",
-	// 	// "ok".
-	// 	field.String("ancestor_status"))
+	ancestorCounter = metric.NewCounter(
+		"analysis/ingestion/ancestor_build_status",
+		"The status retrieving ancestor builds in ingestion tasks, by build project.",
+		nil,
+		// The LUCI Project.
+		field.String("project"),
+		// "no_bb_access_to_ancestor",
+		// "no_resultdb_invocation_on_ancestor",
+		// "ok".
+		field.String("ancestor_status"))
 )
 
 // JoinBuild notifies ingestion that the given buildbucket build has finished.
@@ -194,8 +193,7 @@ func includedByAncestorBuild(ctx context.Context, buildID, ancestorBuildID int64
 			rdbHost, ancestorBuildID, project)
 		// Invocation on the ancestor build not found or permission denied.
 		// Continue ingestion of this build.
-		// TODO(b/258734241): Enable when switching ancestor checks from ingestion task to here.
-		// ancestorCounter.Add(ctx, 1, project, "resultdb_invocation_on_ancestor_not_found")
+		ancestorCounter.Add(ctx, 1, project, "resultdb_invocation_on_ancestor_not_found")
 		return false, nil
 	}
 	if err != nil {
@@ -214,16 +212,14 @@ func includedByAncestorBuild(ctx context.Context, buildID, ancestorBuildID int64
 	if !containsThisBuild {
 		// The ancestor build's invocation does not contain the ResultDB
 		// invocation of this build. Continue ingestion of this build.
-		// TODO(b/258734241): Enable when switching ancestor checks from ingestion task to here.
-		// ancestorCounter.Add(ctx, 1, project, "resultdb_invocation_on_ancestor_does_not_contain")
+		ancestorCounter.Add(ctx, 1, project, "resultdb_invocation_on_ancestor_does_not_contain")
 		return false, nil
 	}
 
 	// The ancestor build also has a ResultDB invocation, and it
 	// contains this invocation. We will ingest the ancestor build
 	// only to avoid ingesting the same test results multiple times.
-	// TODO(b/258734241): Enable when switching ancestor checks from ingestion task to here.
-	// ancestorCounter.Add(ctx, 1, project, "ok")
+	ancestorCounter.Add(ctx, 1, project, "ok")
 	return true, nil
 }
 
