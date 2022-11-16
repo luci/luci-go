@@ -1,0 +1,5 @@
+/node_modules
+/out
+/dev-configs/*
+!/dev-configs/*.json.sample
+/stats.json

@@ -22,15 +22,15 @@ import (
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/grpc/prpc"
 	"go.chromium.org/luci/milo/api/config"
-	"go.chromium.org/luci/milo/backend"
 	"go.chromium.org/luci/milo/common"
+	"go.chromium.org/luci/milo/rpc"
 	"go.chromium.org/luci/server/auth"
 )
 
 // UpdateBuilders updates the builders cache if the cache TTL falls below
 // cacheRefreshThreshold.
 func UpdateBuilders(c context.Context) error {
-	service := &backend.MiloInternalService{
+	service := &rpc.MiloInternalService{
 		GetSettings: func(c context.Context) (*config.Settings, error) {
 			settings := common.GetSettings(c)
 			return settings, nil

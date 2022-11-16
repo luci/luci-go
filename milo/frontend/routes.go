@@ -264,7 +264,7 @@ func redirectFromProjectlessBuilder(c *router.Context) {
 
 // configsJSHandler serves /configs.js used by ResultUI frontend code.
 func configsJSHandler(c *router.Context) error {
-	template, err := template.ParseFiles("templates/configs.template.js")
+	template, err := template.ParseFiles("frontend/templates/configs.template.js")
 	if err != nil {
 		logging.Errorf(c.Context, "Failed to load configs.template.js: %s", err)
 		return err

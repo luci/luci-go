@@ -40,10 +40,10 @@ import (
 	gitilespb "go.chromium.org/luci/common/proto/gitiles"
 	"go.chromium.org/luci/grpc/grpcutil"
 	milopb "go.chromium.org/luci/milo/api/service/v1"
-	"go.chromium.org/luci/milo/backend"
 	"go.chromium.org/luci/milo/buildsource/buildbucket"
 	"go.chromium.org/luci/milo/common"
 	"go.chromium.org/luci/milo/frontend/ui"
+	"go.chromium.org/luci/milo/rpc"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/realms"
 	"go.chromium.org/luci/server/auth/xsrf"
@@ -145,9 +145,9 @@ func GetBuildPage(ctx *router.Context, br *buildbucketpb.GetBuildRequest, blamel
 //
 // HACK(iannucci) - Getting the frontend to render a proper blamelist will
 // require some significant refactoring. To do this properly, we'll need:
-//   * The frontend to get BuildSummary from the backend.
-//   * BuildSummary to have a .PreviousBuild() API.
-//   * The frontend to obtain the annotation streams itself (so it could see
+//   - The frontend to get BuildSummary from the backend.
+//   - BuildSummary to have a .PreviousBuild() API.
+//   - The frontend to obtain the annotation streams itself (so it could see
 //     the SourceManifest objects inside of them). Currently getRespBuild defers
 //     to swarming's implementation of buildsource.ID.Get(), which only returns
 //     the resp object.
@@ -157,7 +157,7 @@ func simplisticBlamelist(c context.Context, build *buildbucketpb.Build) (result 
 		return
 	}
 
-	svc := &backend.MiloInternalService{
+	svc := &rpc.MiloInternalService{
 		GetGitilesClient: func(c context.Context, host string, as auth.RPCAuthorityKind) (gitilespb.GitilesClient, error) {
 			// Override to use `auth.AsSessionUser` because we know the function is
 			// called in the context of a cookie authenticated request not an actual

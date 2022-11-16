@@ -5,14 +5,11 @@
 mkfile_path := $(abspath $(lastword $(MAKEFILE_LIST)))
 projdir := $(patsubst %/,%,$(dir $(mkfile_path)))
 
-dev:
-	gae.py devserver --app-dir $(projdir)/frontend -A luci-milo-dev -- --host 0.0.0.0 --port 8082 --admin_port 7999 --log_level debug
+up-dev: build-ui
+	gae.py upload -p ./ -A luci-milo-dev --target-version $$USER
 
-up-dev: build-resultui
-	gcloud app deploy ./frontend/appengine/app.yaml ./frontend/appengine/service-pubsub.yaml --project luci-milo-dev --no-promote -v $$USER
-
-up-dev-default: build-resultui
-	gcloud app deploy ./frontend/appengine/app.yaml --project luci-milo-dev --no-promote -v $$USER
+up-dev-default: build-ui
+	gae.py upload -p ./ -A luci-milo-dev default --target-version $$USER
 
 test:
 	go test ./...
@@ -23,5 +20,5 @@ train: gen
 gen:
 	go generate ./...
 
-build-resultui:
-	cd frontend/resultui && make build
+build-ui:
+	cd ui && make build
