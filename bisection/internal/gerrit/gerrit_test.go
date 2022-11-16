@@ -29,6 +29,26 @@ import (
 const testGerritHost = "test-review.googlesource.com"
 const testGerritProject = "chromium/test"
 
+func TestHost(t *testing.T) {
+	t.Parallel()
+
+	Convey("Host", t, func() {
+		ctx := context.Background()
+
+		// Set up mock Gerrit client
+		ctl := gomock.NewController(t)
+		defer ctl.Finish()
+		mockClient := NewMockedClient(ctx, ctl)
+		ctx = mockClient.Ctx
+
+		// Set up Gerrit client
+		client, err := NewClient(ctx, testGerritHost)
+		So(err, ShouldBeNil)
+		So(client, ShouldNotBeNil)
+		So(client.Host(ctx), ShouldEqual, testGerritHost)
+	})
+}
+
 func TestGetChange(t *testing.T) {
 	t.Parallel()
 

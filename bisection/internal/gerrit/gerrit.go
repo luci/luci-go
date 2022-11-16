@@ -27,9 +27,6 @@ import (
 	"go.chromium.org/luci/server/auth"
 )
 
-// TODO (aredulla): check if Gerrit actions are enabled in config settings
-// for each action
-
 // mockedGerritClientKey is the context key to indicate using mocked
 // Gerrit client in tests
 var mockedGerritClientKey = "mock Gerrit client"
@@ -66,6 +63,11 @@ func NewClient(ctx context.Context, host string) (*Client, error) {
 		gerritClient: client,
 		host:         host,
 	}, nil
+}
+
+// Host returns the Gerrit host string
+func (c *Client) Host(ctx context.Context) string {
+	return c.host
 }
 
 // queryChanges gets the info for corresponding change(s) given the query string.
