@@ -12,17 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-syntax = "proto3";
-
-package cv.internal.configs.prjcfg;
-
-option go_package = "go.chromium.org/luci/cv/internal/configs/prjcfg;prjcfg";
-
-// RefreshProjectConfigTask is used to import latest CV config for a LUCI
-// Project from LUCI Config or disable a LUCI Project if `disable` is true.
+// Package refresher handles RefreshProjectConfigTask.
 //
-// Queue: "refresh-project-config".
-message RefreshProjectConfigTask {
-  string project = 1;
-  bool disable = 2;
-}
+// Each time it receives RefreshProjectConfigTask, it
+// - fetches the latest project-scoped CV config for the project,
+// - updates the stored project config if there is a config change, and
+// - sends a config change notification to corresponding Project Manager.
+package refresher

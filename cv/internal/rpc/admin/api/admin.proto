@@ -26,7 +26,7 @@ import "go.chromium.org/luci/server/dsmapper/dsmapperpb/messages.proto";
 
 import "go.chromium.org/luci/cv/internal/changelist/storage.proto";
 import "go.chromium.org/luci/cv/internal/changelist/task.proto";
-import "go.chromium.org/luci/cv/internal/configs/prjcfg/tasks.proto";
+import "go.chromium.org/luci/cv/internal/configs/prjcfg/refresher/tasks.proto";
 import "go.chromium.org/luci/cv/internal/gerrit/poller/storage.proto";
 import "go.chromium.org/luci/cv/internal/gerrit/poller/task.proto";
 import "go.chromium.org/luci/cv/internal/prjmanager/prjpb/events.proto";
@@ -298,7 +298,7 @@ message ScheduleTaskRequest {
   cv.internal.changelist.UpdateCLTask update_cl = 13;
   cv.internal.changelist.BatchUpdateCLTask batch_update_cl = 14;
   cv.internal.changelist.BatchOnCLUpdatedTask batch_on_cl_updated = 15;
-  cv.internal.configs.prjcfg.RefreshProjectConfigTask refresh_project_config = 1;
+  cv.internal.configs.prjcfg.refresher.RefreshProjectConfigTask refresh_project_config = 1;
   cv.internal.gerrit.poller.PollGerritTask poll_gerrit = 2;
   cv.internal.prjmanager.prjpb.ManageProjectTask manage_project = 5;
   cv.internal.prjmanager.prjpb.KickManageProjectTask kick_manage_project = 6;

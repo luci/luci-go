@@ -12,7 +12,17 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package prjcfg handles project-scoped CV config.
+syntax = "proto3";
+
+package cv.internal.configs.prjcfg.refresher;
+
+option go_package = "go.chromium.org/luci/cv/internal/configs/prjcfg/refresher;refresher";
+
+// RefreshProjectConfigTask is used to import latest CV config for a LUCI
+// Project from LUCI Config or disable a LUCI Project if `disable` is true.
 //
-// TODO(crbug/1221908): implement pruning of old configs.
-package prjcfg
+// Queue: "refresh-project-config".
+message RefreshProjectConfigTask {
+  string project = 1;
+  bool disable = 2;
+}

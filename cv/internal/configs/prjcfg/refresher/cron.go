@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package prjcfg
+package refresher
 
 import (
 	"context"
@@ -28,6 +28,7 @@ import (
 	"go.chromium.org/luci/server/tq"
 
 	"go.chromium.org/luci/cv/internal/common"
+	"go.chromium.org/luci/cv/internal/configs/prjcfg"
 )
 
 // PM encapsulates Project Manager notified by the ConfigRefresher.
@@ -38,6 +39,7 @@ type PM interface {
 	UpdateConfig(ctx context.Context, luciProject string) error
 }
 
+// Refresher handles RefreshProjectConfigTask.
 type Refresher struct {
 	pm  PM
 	tqd *tq.Dispatcher
@@ -72,7 +74,7 @@ func NewRefresher(tqd *tq.Dispatcher, pm PM, env *common.Env) *Refresher {
 //
 // It's expected to be called by a cron.
 func (r *Refresher) SubmitRefreshTasks(ctx context.Context) error {
-	projects, err := ProjectsWithConfig(ctx)
+	projects, err := prjcfg.ProjectsWithConfig(ctx)
 	if err != nil {
 		return err
 	}
@@ -100,7 +102,7 @@ func (r *Refresher) SubmitRefreshTasks(ctx context.Context) error {
 		}
 	}
 
-	curEnabledProjects, err := GetAllProjectIDs(ctx, true)
+	curEnabledProjects, err := prjcfg.GetAllProjectIDs(ctx, true)
 	if err != nil {
 		return err
 	}
@@ -136,9 +138,9 @@ func (r *Refresher) SubmitRefreshTasks(ctx context.Context) error {
 }
 
 func (r *Refresher) refreshProject(ctx context.Context, project string, disable bool) error {
-	action, actionFn := "update", UpdateProject
+	action, actionFn := "update", prjcfg.UpdateProject
 	if disable {
-		action, actionFn = "disable", DisableProject
+		action, actionFn = "disable", prjcfg.DisableProject
 	}
 	err := actionFn(ctx, project, func(ctx context.Context) error {
 		return r.pm.UpdateConfig(ctx, project)
